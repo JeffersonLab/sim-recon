@@ -129,6 +129,7 @@ void DEventWriterROOT::Create_DataTree(const DReaction* locReaction, JEventLoop*
 	//create basic/misc. tree branches (run#, event#, etc.)
 	locBranchRegister.Register_Single<UInt_t>("RunNumber");
 	locBranchRegister.Register_Single<ULong64_t>("EventNumber");
+	locBranchRegister.Register_Single<UInt_t>("L1TriggerBits");
 
 	//create X4_Production
 	locBranchRegister.Register_Single<TLorentzVector>("X4_Production");
@@ -895,6 +896,8 @@ void DEventWriterROOT::Fill_DataTree(JEventLoop* locEventLoop, const DReaction* 
 		return;
 	}
 
+	bool locSaveUnusedFlag = locReaction->Get_SaveUnusedFlag();
+
 	//GET THROWN INFO
 	vector<const DMCThrown*> locMCThrowns_FinalState;
 	locEventLoop->Get(locMCThrowns_FinalState, "FinalState");
@@ -926,6 +929,10 @@ void DEventWriterROOT::Fill_DataTree(JEventLoop* locEventLoop, const DReaction* 
 	//GET DVERTEX
 	const DVertex* locVertex = NULL;
 	locEventLoop->GetSingle(locVertex);
+
+	//GET TRIGGER
+	const DTrigger* locTrigger = NULL;
+	locEventLoop->GetSingle(locTrigger);
 
 	//Check whether beam is used in the combo
 	bool locBeamUsedFlag = (locReaction->Get_ReactionStep(0)->Get_TargetParticleID() != Unknown);
@@ -965,8 +972,18 @@ void DEventWriterROOT::Fill_DataTree(JEventLoop* locEventLoop, const DReaction* 
 		locReactionPIDs.insert(locDetectedPIDs[loc_j]);
 
 	//GET HYPOTHESES
-	vector<const DChargedTrackHypothesis*> locChargedTrackHypotheses = Get_ChargedHypotheses(locEventLoop, locReactionPIDs, locObjectToArrayIndexMap["DChargedTrackHypothesis"]);
-	vector<const DNeutralParticleHypothesis*> locNeutralParticleHypotheses = Get_NeutralHypotheses(locEventLoop, locReactionPIDs, locObjectToArrayIndexMap["DNeutralParticleHypothesis"]);
+	vector<const DChargedTrackHypothesis*> locChargedTrackHypotheses;
+	vector<const DNeutralParticleHypothesis*> locNeutralParticleHypotheses;
+	if(locSaveUnusedFlag)
+	{
+		locChargedTrackHypotheses = Get_ChargedHypotheses(locEventLoop, locReactionPIDs, locObjectToArrayIndexMap["DChargedTrackHypothesis"]);
+		locNeutralParticleHypotheses = Get_NeutralHypotheses(locEventLoop, locReactionPIDs, locObjectToArrayIndexMap["DNeutralParticleHypothesis"]);
+	}
+	else
+	{
+		locChargedTrackHypotheses = Get_ChargedHypotheses_Used(locEventLoop, locParticleCombos, locObjectToArrayIndexMap["DChargedTrackHypothesis"]);
+		locNeutralParticleHypotheses = Get_NeutralHypotheses_Used(locEventLoop, locParticleCombos, locObjectToArrayIndexMap["DNeutralParticleHypothesis"]);
+	}
 
 	//EXECUTE ANALYSIS ACTIONS
 	Bool_t locIsThrownTopologyFlag = kFALSE;
@@ -994,6 +1011,7 @@ void DEventWriterROOT::Fill_DataTree(JEventLoop* locEventLoop, const DReaction* 
 	//PRIMARY EVENT INFO
 	locTreeFillData->Fill_Single<UInt_t>("RunNumber", locEventLoop->GetJEvent().GetRunNumber());
 	locTreeFillData->Fill_Single<ULong64_t>("EventNumber", locEventLoop->GetJEvent().GetEventNumber());
+	locTreeFillData->Fill_Single<UInt_t>("L1TriggerBits", locTrigger->Get_L1TriggerBits());
 
 	//PRODUCTION X4
 	DLorentzVector locProductionX4 = locVertex->dSpacetimeVertex;
@@ -1063,6 +1081,8 @@ vector<const DChargedTrackHypothesis*> DEventWriterROOT::Get_ChargedHypotheses(J
 
 	//hypos not-findable in PreSelect, but not saved either //not saved: different RF time than main, or #-votes different
 	set<const DChargedTrackHypothesis*> locUnsavedNonPreselectHypotheses;
+
+	//loop
 	for(size_t loc_i = 0; loc_i < locComboChargedTrackHypotheses.size(); ++loc_i)
 	{
 		Particle_t locPID = locComboChargedTrackHypotheses[loc_i]->PID();
@@ -1118,6 +1138,79 @@ vector<const DChargedTrackHypothesis*> DEventWriterROOT::Get_ChargedHypotheses(J
 	//Register array indices for the main (directly-saved, measured) hypos
 	for(size_t loc_i = 0; loc_i < locIndependentChargedTrackHypotheses.size(); ++loc_i)
 		locObjectToArrayIndexMap[locIndependentChargedTrackHypotheses[loc_i]->id] = loc_i;
+
+	//Register array indices for the not-directly-saved hypos (point to other saved ones)
+	set<const DChargedTrackHypothesis*>::iterator locSetIterator = locUnsavedNonPreselectHypotheses.begin();
+	for(; locSetIterator != locUnsavedNonPreselectHypotheses.end(); ++locSetIterator)
+	{
+		const DChargedTrack* locOrigChargedTrack = NULL;
+		(*locSetIterator)->GetSingle(locOrigChargedTrack);
+		oid_t locSourceID = locNewChargedHypothesesMap[locOrigChargedTrack][(*locSetIterator)->PID()]->id;
+		locObjectToArrayIndexMap[(*locSetIterator)->id] = locObjectToArrayIndexMap[locSourceID];
+	}
+
+	return locIndependentChargedTrackHypotheses;
+}
+
+vector<const DChargedTrackHypothesis*> DEventWriterROOT::Get_ChargedHypotheses_Used(JEventLoop* locEventLoop, deque<const DParticleCombo*>& locParticleCombos, map<oid_t, int>& locObjectToArrayIndexMap) const
+{
+	set<const DChargedTrackHypothesis*> locFoundHypos;
+	for(auto locCombo : locParticleCombos)
+	{
+		deque<const DKinematicData*> locChargedParticles;
+		locCombo->Get_DetectedFinalChargedParticles_Measured(locChargedParticles);
+
+		for(auto locParticle : locChargedParticles)
+			locFoundHypos.insert(static_cast<const DChargedTrackHypothesis*>(locParticle));
+	}
+
+	const DEventRFBunch* locEventRFBunch = NULL;
+	locEventLoop->GetSingle(locEventRFBunch);
+
+	//Search for hypotheses with PIDs that were needed for the DReaction but that weren't reconstructed:
+	map<const DChargedTrack*, map<Particle_t, const DChargedTrackHypothesis*> > locNewChargedHypothesesMap;
+
+	//hypos not-findable in PreSelect, but not saved either //not saved: different RF time than main, or #-votes different
+	set<const DChargedTrackHypothesis*> locUnsavedNonPreselectHypotheses;
+
+	vector<const DChargedTrackHypothesis*> locIndependentChargedTrackHypotheses;
+	set<const DChargedTrackHypothesis*> locSavedHypos;
+	for(auto locChargedHypo : locFoundHypos)
+	{
+		Particle_t locPID = locChargedHypo->PID();
+		const DChargedTrackHypothesis* locOrigChargedTrackHypothesis = NULL;
+		locChargedHypo->GetSingle(locOrigChargedTrackHypothesis);
+
+		//see if PID in REST file
+		if(locOrigChargedTrackHypothesis != NULL)
+		{
+			//yes, save this (if not already)
+			if(locSavedHypos.find(locOrigChargedTrackHypothesis) != locSavedHypos.end())
+				continue;
+			locIndependentChargedTrackHypotheses.push_back(locOrigChargedTrackHypothesis);
+			locSavedHypos.insert(locOrigChargedTrackHypothesis);
+			locObjectToArrayIndexMap[locOrigChargedTrackHypothesis->id] = locIndependentChargedTrackHypotheses.size() - 1;
+			continue;
+		}
+
+		//Get original DChargedTrack
+		const DChargedTrack* locOrigChargedTrack = NULL;
+		locChargedHypo->GetSingle(locOrigChargedTrack);
+
+		//Of these hypos, choose only one: can be multiple (different #-votes): Make sure haven't saved one already
+		map<Particle_t, const DChargedTrackHypothesis*>& locNewChargedHyposPIDMap = locNewChargedHypothesesMap[locOrigChargedTrack];
+		if(locNewChargedHyposPIDMap.find(locPID) != locNewChargedHyposPIDMap.end())
+		{
+			locUnsavedNonPreselectHypotheses.insert(locChargedHypo);
+			continue; //already found for this PID //different #-votes
+		}
+
+		//unique! save!
+		locNewChargedHyposPIDMap[locPID] = locChargedHypo;
+		locIndependentChargedTrackHypotheses.push_back(locChargedHypo);
+		locSavedHypos.insert(locChargedHypo);
+		locObjectToArrayIndexMap[locChargedHypo->id] = locIndependentChargedTrackHypotheses.size() - 1;
+	}
 
 	//Register array indices for the not-directly-saved hypos (point to other saved ones)
 	set<const DChargedTrackHypothesis*>::iterator locSetIterator = locUnsavedNonPreselectHypotheses.begin();
@@ -1204,6 +1297,79 @@ vector<const DNeutralParticleHypothesis*> DEventWriterROOT::Get_NeutralHypothese
 	//Register array indices for the main (directly-saved, measured) hypos
 	for(size_t loc_i = 0; loc_i < locIndependentNeutralParticleHypotheses.size(); ++loc_i)
 		locObjectToArrayIndexMap[locIndependentNeutralParticleHypotheses[loc_i]->id] = loc_i;
+
+	//Register array indices for the not-directly-saved hypos (point to other saved ones)
+	set<const DNeutralParticleHypothesis*>::iterator locSetIterator = locUnsavedNonPreselectHypotheses.begin();
+	for(; locSetIterator != locUnsavedNonPreselectHypotheses.end(); ++locSetIterator)
+	{
+		const DNeutralParticle* locOrigNeutralParticle = NULL;
+		(*locSetIterator)->GetSingle(locOrigNeutralParticle);
+		oid_t locSourceID = locNewNeutralHypothesesMap[locOrigNeutralParticle][(*locSetIterator)->PID()]->id;
+		locObjectToArrayIndexMap[(*locSetIterator)->id] = locObjectToArrayIndexMap[locSourceID];
+	}
+
+	return locIndependentNeutralParticleHypotheses;
+}
+
+vector<const DNeutralParticleHypothesis*> DEventWriterROOT::Get_NeutralHypotheses_Used(JEventLoop* locEventLoop, deque<const DParticleCombo*>& locParticleCombos, map<oid_t, int>& locObjectToArrayIndexMap) const
+{
+	set<const DNeutralParticleHypothesis*> locFoundHypos;
+	for(auto locCombo : locParticleCombos)
+	{
+		deque<const DKinematicData*> locNeutralParticles;
+		locCombo->Get_DetectedFinalNeutralParticles_Measured(locNeutralParticles);
+
+		for(auto locParticle : locNeutralParticles)
+			locFoundHypos.insert(static_cast<const DNeutralParticleHypothesis*>(locParticle));
+	}
+
+	const DEventRFBunch* locEventRFBunch = NULL;
+	locEventLoop->GetSingle(locEventRFBunch);
+
+	//Search for hypotheses with PIDs that were needed for the DReaction but that weren't reconstructed:
+	map<const DNeutralParticle*, map<Particle_t, const DNeutralParticleHypothesis*> > locNewNeutralHypothesesMap;
+
+	//hypos not-findable in PreSelect, but not saved either //not saved: different RF time than main, or #-votes different
+	set<const DNeutralParticleHypothesis*> locUnsavedNonPreselectHypotheses;
+
+	vector<const DNeutralParticleHypothesis*> locIndependentNeutralParticleHypotheses;
+	set<const DNeutralParticleHypothesis*> locSavedHypos;
+	for(auto locNeutralHypo : locFoundHypos)
+	{
+		Particle_t locPID = locNeutralHypo->PID();
+		const DNeutralParticleHypothesis* locOrigNeutralParticleHypothesis = NULL;
+		locNeutralHypo->GetSingle(locOrigNeutralParticleHypothesis);
+
+		//see if PID in REST file
+		if(locOrigNeutralParticleHypothesis != NULL)
+		{
+			//yes, save this (if not already)
+			if(locSavedHypos.find(locOrigNeutralParticleHypothesis) != locSavedHypos.end())
+				continue;
+			locIndependentNeutralParticleHypotheses.push_back(locOrigNeutralParticleHypothesis);
+			locSavedHypos.insert(locOrigNeutralParticleHypothesis);
+			locObjectToArrayIndexMap[locOrigNeutralParticleHypothesis->id] = locIndependentNeutralParticleHypotheses.size() - 1;
+			continue;
+		}
+
+		//Get original DNeutralParticle
+		const DNeutralParticle* locOrigNeutralParticle = NULL;
+		locNeutralHypo->GetSingle(locOrigNeutralParticle);
+
+		//Of these hypos, choose only one: can be multiple (different #-votes): Make sure haven't saved one already
+		map<Particle_t, const DNeutralParticleHypothesis*>& locNewNeutralHyposPIDMap = locNewNeutralHypothesesMap[locOrigNeutralParticle];
+		if(locNewNeutralHyposPIDMap.find(locPID) != locNewNeutralHyposPIDMap.end())
+		{
+			locUnsavedNonPreselectHypotheses.insert(locNeutralHypo);
+			continue; //already found for this PID //different #-votes
+		}
+
+		//unique! save!
+		locNewNeutralHyposPIDMap[locPID] = locNeutralHypo;
+		locIndependentNeutralParticleHypotheses.push_back(locNeutralHypo);
+		locSavedHypos.insert(locNeutralHypo);
+		locObjectToArrayIndexMap[locNeutralHypo->id] = locIndependentNeutralParticleHypotheses.size() - 1;
+	}
 
 	//Register array indices for the not-directly-saved hypos (point to other saved ones)
 	set<const DNeutralParticleHypothesis*>::iterator locSetIterator = locUnsavedNonPreselectHypotheses.begin();

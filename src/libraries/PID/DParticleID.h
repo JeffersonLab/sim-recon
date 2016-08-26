@@ -160,6 +160,7 @@ class DParticleID:public jana::JObject{
 		double dA_FDC;
 
 		double BCAL_Z_CUT,BCAL_PHI_CUT_PAR1,BCAL_PHI_CUT_PAR2;
+		double BCAL_PHI_CUT_PAR3;
 		double FCAL_CUT_PAR1,FCAL_CUT_PAR2;
 
 		double DELTA_R_FCAL;

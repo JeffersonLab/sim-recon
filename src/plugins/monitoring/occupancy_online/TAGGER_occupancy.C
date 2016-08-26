@@ -105,7 +105,7 @@
 	legend_s->Draw();
 	legend_n->Draw();
 
-	TVirtualPad *pad1 = c1->cd(2);
+	pad1 = c1->cd(2);
 	pad1->SetTicks();
 	pad1->SetGridy();
 	if(tagh_adc_occ) tagh_tdc_occ->Draw("BAR");

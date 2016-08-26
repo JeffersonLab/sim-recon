@@ -12,9 +12,21 @@
 #include "DCustomAction_dEdxCut.h"
 
 //------------------
-// init
+// brun
 //------------------
-jerror_t DReaction_factory_trackeff_missing::init(void)
+jerror_t DReaction_factory_trackeff_missing::brun(JEventLoop* locEventLoop, int32_t locRunNumber)
+{
+	vector<double> locBeamPeriodVector;
+	locEventLoop->GetCalib("PHOTON_BEAM/RF/beam_period", locBeamPeriodVector);
+	dBeamBunchPeriod = locBeamPeriodVector[0];
+
+	return NOERROR;
+}
+
+//------------------
+// evnt
+//------------------
+jerror_t DReaction_factory_trackeff_missing::evnt(JEventLoop* locEventLoop, uint64_t locEventNumber)
 {
 	// Make as many DReaction objects as desired
 	DReactionStep* locReactionStep = NULL;
@@ -43,7 +55,7 @@ jerror_t DReaction_factory_trackeff_missing::init(void)
 
 	// Recommended: Type of kinematic fit to perform (default is d_NoFit)
 		//fit types are of type DKinFitType, an enum defined in sim-recon/src/libraries/ANALYSIS/DKinFitResults.h
-	//locReaction->Set_KinFitType(d_P4AndVertexFit); //simultaneously constrain apply four-momentum conservation, invariant masses, and common-vertex constraints
+	//locReaction->Set_KinFitType(d_P4Fit); //simultaneously constrain apply four-momentum conservation, invariant masses, and common-vertex constraints
 	locReaction->Set_KinFitType(d_P4Fit);
 
 	// Highly Recommended: When generating particle combinations, reject all photon candidates with a PID confidence level < 5.73303E-7 (+/- 5-sigma)
@@ -53,20 +65,18 @@ jerror_t DReaction_factory_trackeff_missing::init(void)
 	// locReaction->Set_MinChargedPIDFOM(5.73303E-7);
 
 	// Highly Recommended: When generating particle combinations, reject all beam photons that match to a different RF bunch (delta_t > 1.002 ns)
-	locReaction->Set_MaxPhotonRFDeltaT(2.004); //beam bunches are every 4.008 ns, (2.004 should be minimum cut value)
+	locReaction->Set_MaxPhotonRFDeltaT(1.5*dBeamBunchPeriod); //should be minimum cut value
 
 	// Highly Recommended: Cut on number of extra "good" tracks. "Good" tracks are ones that survive the "PreSelect" (or user custom) factory.
 		// Current (09/26/2014): "Good" tracks have a detector-hit match, and tracking FOM > 0.0027 (+/- 3 sigma). 
 		// Important: Keep cut large: Can have many ghost and accidental tracks that look "good"
-	locReaction->Set_MaxExtraGoodTracks(1);
-
-	locReaction->Set_MaxNumBeamPhotonsInBunch(1); //not ideal: throws away a lot of signal
+//	locReaction->Set_MaxExtraGoodTracks(1);
 
 	/************************************************** TrackEff_MissingProton Pre-Combo Custom Cuts *************************************************/
 
 	// Highly Recommended: Very loose DAnalysisAction cuts, applied just after creating the combination (before saving it)
 	// Example: Missing mass squared of proton
-	locReaction->Add_ComboPreSelectionAction(new DCutAction_MissingMass(locReaction, false, 0.7, 1.2));
+	locReaction->Add_ComboPreSelectionAction(new DCutAction_MissingMass(locReaction, false, 0.5, 1.4));
 
 	/**************************************************** TrackEff_MissingProton Analysis Actions ****************************************************/
 
@@ -84,10 +94,10 @@ jerror_t DReaction_factory_trackeff_missing::init(void)
 	locReaction->Add_AnalysisAction(new DCustomAction_dEdxCut(locReaction, true)); //true: focus on rejecting background
 	locReaction->Add_AnalysisAction(new DCutAction_PIDDeltaT(locReaction, false, 0.5, PiPlus, SYS_TOF)); //false: measured data
 	locReaction->Add_AnalysisAction(new DCutAction_PIDDeltaT(locReaction, false, 1.0, PiPlus, SYS_BCAL)); //false: measured data
-	locReaction->Add_AnalysisAction(new DCutAction_PIDDeltaT(locReaction, false, 2.0, PiPlus, SYS_FCAL)); //false: measured data
+	locReaction->Add_AnalysisAction(new DCutAction_PIDDeltaT(locReaction, false, 1.5, PiPlus, SYS_FCAL)); //false: measured data
 	locReaction->Add_AnalysisAction(new DCutAction_PIDDeltaT(locReaction, false, 0.5, PiMinus, SYS_TOF)); //false: measured data
 	locReaction->Add_AnalysisAction(new DCutAction_PIDDeltaT(locReaction, false, 1.0, PiMinus, SYS_BCAL)); //false: measured data
-	locReaction->Add_AnalysisAction(new DCutAction_PIDDeltaT(locReaction, false, 2.0, PiMinus, SYS_FCAL)); //false: measured data
+	locReaction->Add_AnalysisAction(new DCutAction_PIDDeltaT(locReaction, false, 1.5, PiMinus, SYS_FCAL)); //false: measured data
 	locReaction->Add_AnalysisAction(new DCutAction_TrackFCALShowerEOverP(locReaction, false, 0.5)); //false: measured data //value: cut e+/e- below this, tracks above this
 	locReaction->Add_AnalysisAction(new DCutAction_EachPIDFOM(locReaction, -9.9E9, true)); //cut particles with PID FOM = 0
 
@@ -101,10 +111,10 @@ jerror_t DReaction_factory_trackeff_missing::init(void)
 	locReaction->Add_AnalysisAction(new DHistogramAction_TrackVertexComparison(locReaction));
 
 	// Missing Mass Squared
-	locReaction->Add_AnalysisAction(new DHistogramAction_MissingMass(locReaction, false, 500, 0.7, 1.2));
+	locReaction->Add_AnalysisAction(new DHistogramAction_MissingMass(locReaction, false, 900, 0.5, 1.4));
 	locReaction->Add_AnalysisAction(new DCustomAction_CutExtraPi0(locReaction, 0.0775209, 0.188047));
 	locReaction->Add_AnalysisAction(new DCutAction_MinTrackHits(locReaction, 10));
-	locReaction->Add_AnalysisAction(new DHistogramAction_MissingMass(locReaction, false, 500, 0.7, 1.2, "PostPi0"));
+	locReaction->Add_AnalysisAction(new DHistogramAction_MissingMass(locReaction, false, 900, 0.5, 1.4, "PostPi0"));
 
 	// Kinematics
 	locReaction->Add_AnalysisAction(new DHistogramAction_ParticleComboKinematics(locReaction, true)); //true: fill histograms with kinematic-fit particle data
@@ -135,7 +145,7 @@ jerror_t DReaction_factory_trackeff_missing::init(void)
 
 	// Recommended: Type of kinematic fit to perform (default is d_NoFit)
 		//fit types are of type DKinFitType, an enum defined in sim-recon/src/libraries/ANALYSIS/DKinFitResults.h
-	//locReaction->Set_KinFitType(d_P4AndVertexFit); //simultaneously constrain apply four-momentum conservation, invariant masses, and common-vertex constraints
+	//locReaction->Set_KinFitType(d_P4Fit); //simultaneously constrain apply four-momentum conservation, invariant masses, and common-vertex constraints
 	locReaction->Set_KinFitType(d_P4Fit);
 
 	// Highly Recommended: When generating particle combinations, reject all photon candidates with a PID confidence level < 5.73303E-7 (+/- 5-sigma)
@@ -145,20 +155,18 @@ jerror_t DReaction_factory_trackeff_missing::init(void)
 	// locReaction->Set_MinChargedPIDFOM(5.73303E-7);
 
 	// Highly Recommended: When generating particle combinations, reject all beam photons that match to a different RF bunch (delta_t > 1.002 ns)
-	locReaction->Set_MaxPhotonRFDeltaT(2.004); //beam bunches are every 4.008 ns, (2.004 should be minimum cut value)
+	locReaction->Set_MaxPhotonRFDeltaT(1.5*dBeamBunchPeriod); //should be minimum cut value
 
 	// Highly Recommended: Cut on number of extra "good" tracks. "Good" tracks are ones that survive the "PreSelect" (or user custom) factory.
 		// Current (09/26/2014): "Good" tracks have a detector-hit match, and tracking FOM > 0.0027 (+/- 3 sigma).
 		// Important: Keep cut large: Can have many ghost and accidental tracks that look "good"
-	locReaction->Set_MaxExtraGoodTracks(1);
-
-	locReaction->Set_MaxNumBeamPhotonsInBunch(1); //not ideal: throws away a lot of signal
+//	locReaction->Set_MaxExtraGoodTracks(1);
 
 	/************************************************** TrackEff_MissingPiMinus Pre-Combo Custom Cuts *************************************************/
 
 	// Highly Recommended: Very loose DAnalysisAction cuts, applied just after creating the combination (before saving it)
 	// Example: Missing mass squared of proton
-	locReaction->Add_ComboPreSelectionAction(new DCutAction_MissingMassSquared(locReaction, false, -0.3, 0.4));
+	locReaction->Add_ComboPreSelectionAction(new DCutAction_MissingMassSquared(locReaction, false, -0.5, 0.6));
 
 	/**************************************************** TrackEff_MissingPiMinus Analysis Actions ****************************************************/
 
@@ -176,12 +184,12 @@ jerror_t DReaction_factory_trackeff_missing::init(void)
 
 	// PID Cuts
 	locReaction->Add_AnalysisAction(new DCustomAction_dEdxCut(locReaction, true)); //true: focus on rejecting background
-	locReaction->Add_AnalysisAction(new DCutAction_PIDDeltaT(locReaction, false, 1.0, Proton, SYS_TOF)); //false: measured data
-	locReaction->Add_AnalysisAction(new DCutAction_PIDDeltaT(locReaction, false, 1.0, Proton, SYS_BCAL)); //false: measured data
-	locReaction->Add_AnalysisAction(new DCutAction_PIDDeltaT(locReaction, false, 2.0, Proton, SYS_FCAL)); //false: measured data
+	locReaction->Add_AnalysisAction(new DCutAction_PIDDeltaT(locReaction, false, 0.5, Proton, SYS_TOF)); //false: measured data
+	locReaction->Add_AnalysisAction(new DCutAction_PIDDeltaT(locReaction, false, 0.8, Proton, SYS_BCAL)); //false: measured data
+	locReaction->Add_AnalysisAction(new DCutAction_PIDDeltaT(locReaction, false, 1.5, Proton, SYS_FCAL)); //false: measured data
 	locReaction->Add_AnalysisAction(new DCutAction_PIDDeltaT(locReaction, false, 0.5, PiPlus, SYS_TOF)); //false: measured data
 	locReaction->Add_AnalysisAction(new DCutAction_PIDDeltaT(locReaction, false, 1.0, PiPlus, SYS_BCAL)); //false: measured data
-	locReaction->Add_AnalysisAction(new DCutAction_PIDDeltaT(locReaction, false, 2.0, PiPlus, SYS_FCAL)); //false: measured data
+	locReaction->Add_AnalysisAction(new DCutAction_PIDDeltaT(locReaction, false, 1.5, PiPlus, SYS_FCAL)); //false: measured data
 	locReaction->Add_AnalysisAction(new DCutAction_TrackFCALShowerEOverP(locReaction, false, 0.5)); //false: measured data //value: cut e+/e- below this, tracks above this
 	locReaction->Add_AnalysisAction(new DCutAction_EachPIDFOM(locReaction, -9.9E9, true)); //cut particles with PID FOM = 0
 
@@ -195,10 +203,10 @@ jerror_t DReaction_factory_trackeff_missing::init(void)
 	locReaction->Add_AnalysisAction(new DHistogramAction_TrackVertexComparison(locReaction));
 
 	// Missing Mass Squared
-	locReaction->Add_AnalysisAction(new DHistogramAction_MissingMassSquared(locReaction, false, 700, -0.3, 0.4));
+	locReaction->Add_AnalysisAction(new DHistogramAction_MissingMassSquared(locReaction, false, 1100, -0.5, 0.6));
 	locReaction->Add_AnalysisAction(new DCustomAction_CutExtraPi0(locReaction, 0.0775209, 0.188047));
 	locReaction->Add_AnalysisAction(new DCutAction_MinTrackHits(locReaction, 10));
-	locReaction->Add_AnalysisAction(new DHistogramAction_MissingMassSquared(locReaction, false, 700, -0.3, 0.4, "PostPi0"));
+	locReaction->Add_AnalysisAction(new DHistogramAction_MissingMassSquared(locReaction, false, 1100, -0.5, 0.6, "PostPi0"));
 
 	// Kinematics
 	locReaction->Add_AnalysisAction(new DHistogramAction_ParticleComboKinematics(locReaction, true)); //true: fill histograms with kinematic-fit particle data
@@ -230,7 +238,7 @@ jerror_t DReaction_factory_trackeff_missing::init(void)
 
 	// Recommended: Type of kinematic fit to perform (default is d_NoFit)
 		//fit types are of type DKinFitType, an enum defined in sim-recon/src/libraries/ANALYSIS/DKinFitResults.h
-	//locReaction->Set_KinFitType(d_P4AndVertexFit); //simultaneously constrain apply four-momentum conservation, invariant masses, and common-vertex constraints
+	//locReaction->Set_KinFitType(d_P4Fit); //simultaneously constrain apply four-momentum conservation, invariant masses, and common-vertex constraints
 	locReaction->Set_KinFitType(d_P4Fit);
 
 	// Highly Recommended: When generating particle combinations, reject all photon candidates with a PID confidence level < 5.73303E-7 (+/- 5-sigma)
@@ -240,20 +248,18 @@ jerror_t DReaction_factory_trackeff_missing::init(void)
 	// locReaction->Set_MinChargedPIDFOM(5.73303E-7);
 
 	// Highly Recommended: When generating particle combinations, reject all beam photons that match to a different RF bunch (delta_t > 1.002 ns)
-	locReaction->Set_MaxPhotonRFDeltaT(2.004); //beam bunches are every 4.008 ns, (2.004 should be minimum cut value)
+	locReaction->Set_MaxPhotonRFDeltaT(1.5*dBeamBunchPeriod); //should be minimum cut value
 
 	// Highly Recommended: Cut on number of extra "good" tracks. "Good" tracks are ones that survive the "PreSelect" (or user custom) factory.
 		// Current (09/26/2014): "Good" tracks have a detector-hit match, and tracking FOM > 0.0027 (+/- 3 sigma).
 		// Important: Keep cut large: Can have many ghost and accidental tracks that look "good"
-	locReaction->Set_MaxExtraGoodTracks(1);
-
-	locReaction->Set_MaxNumBeamPhotonsInBunch(1); //not ideal: throws away a lot of signal
+//	locReaction->Set_MaxExtraGoodTracks(1);
 
 	/************************************************** TrackEff_MissingPiPlus Pre-Combo Custom Cuts *************************************************/
 
 	// Highly Recommended: Very loose DAnalysisAction cuts, applied just after creating the combination (before saving it)
 	// Example: Missing mass squared of proton
-	locReaction->Add_ComboPreSelectionAction(new DCutAction_MissingMassSquared(locReaction, false, -0.3, 0.4));
+	locReaction->Add_ComboPreSelectionAction(new DCutAction_MissingMassSquared(locReaction, false, -0.5, 0.6));
 
 	/**************************************************** TrackEff_MissingPiPlus Analysis Actions ****************************************************/
 
@@ -271,12 +277,12 @@ jerror_t DReaction_factory_trackeff_missing::init(void)
 
 	// PID Cuts
 	locReaction->Add_AnalysisAction(new DCustomAction_dEdxCut(locReaction, true)); //true: focus on rejecting background
-	locReaction->Add_AnalysisAction(new DCutAction_PIDDeltaT(locReaction, false, 1.0, Proton, SYS_TOF)); //false: measured data
-	locReaction->Add_AnalysisAction(new DCutAction_PIDDeltaT(locReaction, false, 1.0, Proton, SYS_BCAL)); //false: measured data
-	locReaction->Add_AnalysisAction(new DCutAction_PIDDeltaT(locReaction, false, 2.0, Proton, SYS_FCAL)); //false: measured data
+	locReaction->Add_AnalysisAction(new DCutAction_PIDDeltaT(locReaction, false, 0.5, Proton, SYS_TOF)); //false: measured data
+	locReaction->Add_AnalysisAction(new DCutAction_PIDDeltaT(locReaction, false, 0.8, Proton, SYS_BCAL)); //false: measured data
+	locReaction->Add_AnalysisAction(new DCutAction_PIDDeltaT(locReaction, false, 1.5, Proton, SYS_FCAL)); //false: measured data
 	locReaction->Add_AnalysisAction(new DCutAction_PIDDeltaT(locReaction, false, 0.5, PiMinus, SYS_TOF)); //false: measured data
 	locReaction->Add_AnalysisAction(new DCutAction_PIDDeltaT(locReaction, false, 1.0, PiMinus, SYS_BCAL)); //false: measured data
-	locReaction->Add_AnalysisAction(new DCutAction_PIDDeltaT(locReaction, false, 2.0, PiMinus, SYS_FCAL)); //false: measured data
+	locReaction->Add_AnalysisAction(new DCutAction_PIDDeltaT(locReaction, false, 1.5, PiMinus, SYS_FCAL)); //false: measured data
 	locReaction->Add_AnalysisAction(new DCutAction_TrackFCALShowerEOverP(locReaction, false, 0.5)); //false: measured data //value: cut e+/e- below this, tracks above this
 	locReaction->Add_AnalysisAction(new DCutAction_EachPIDFOM(locReaction, -9.9E9, true)); //cut particles with PID FOM = 0
 
@@ -290,10 +296,10 @@ jerror_t DReaction_factory_trackeff_missing::init(void)
 	locReaction->Add_AnalysisAction(new DHistogramAction_TrackVertexComparison(locReaction));
 
 	// Missing Mass Squared
-	locReaction->Add_AnalysisAction(new DHistogramAction_MissingMassSquared(locReaction, false, 700, -0.3, 0.4));
+	locReaction->Add_AnalysisAction(new DHistogramAction_MissingMassSquared(locReaction, false, 1100, -0.5, 0.6));
 	locReaction->Add_AnalysisAction(new DCustomAction_CutExtraPi0(locReaction, 0.0775209, 0.188047));
 	locReaction->Add_AnalysisAction(new DCutAction_MinTrackHits(locReaction, 10));
-	locReaction->Add_AnalysisAction(new DHistogramAction_MissingMassSquared(locReaction, false, 700, -0.3, 0.4, "PostPi0"));
+	locReaction->Add_AnalysisAction(new DHistogramAction_MissingMassSquared(locReaction, false, 1100, -0.5, 0.6, "PostPi0"));
 
 	// Kinematics
 	locReaction->Add_AnalysisAction(new DHistogramAction_ParticleComboKinematics(locReaction, true)); //true: fill histograms with kinematic-fit particle data
@@ -336,10 +342,8 @@ jerror_t DReaction_factory_trackeff_missing::init(void)
 	/**************************************************** TrackEff_MissingProton_3pi Control Settings ****************************************************/
 
 	locReaction->Set_KinFitType(d_P4Fit);
-	locReaction->Set_MaxPhotonRFDeltaT(2.004); //beam bunches are every 4.008 ns, (2.004 should be minimum cut value)
-	locReaction->Set_MaxExtraGoodTracks(1);
-
-	locReaction->Set_MaxNumBeamPhotonsInBunch(1); //not ideal: throws away a lot of signal
+	locReaction->Set_MaxPhotonRFDeltaT(1.5*dBeamBunchPeriod); //should be minimum cut value
+//	locReaction->Set_MaxExtraGoodTracks(1);
 
 	/************************************************** TrackEff_MissingProton_3pi Pre-Combo Custom Cuts *************************************************/
 
@@ -348,7 +352,7 @@ jerror_t DReaction_factory_trackeff_missing::init(void)
 
 	// Highly Recommended: Very loose DAnalysisAction cuts, applied just after creating the combination (before saving it)
 	// Example: Missing mass squared of proton
-	locReaction->Add_ComboPreSelectionAction(new DCutAction_MissingMass(locReaction, false, 0.7, 1.2));
+	locReaction->Add_ComboPreSelectionAction(new DCutAction_MissingMass(locReaction, false, 0.5, 1.4));
 
 	/**************************************************** TrackEff_MissingProton_3pi Analysis Actions ****************************************************/
 
@@ -368,10 +372,10 @@ jerror_t DReaction_factory_trackeff_missing::init(void)
 	locReaction->Add_AnalysisAction(new DCustomAction_dEdxCut(locReaction, true)); //true: focus on rejecting background
 	locReaction->Add_AnalysisAction(new DCutAction_PIDDeltaT(locReaction, false, 0.5, PiPlus, SYS_TOF)); //false: measured data
 	locReaction->Add_AnalysisAction(new DCutAction_PIDDeltaT(locReaction, false, 1.0, PiPlus, SYS_BCAL)); //false: measured data
-	locReaction->Add_AnalysisAction(new DCutAction_PIDDeltaT(locReaction, false, 2.0, PiPlus, SYS_FCAL)); //false: measured data
+	locReaction->Add_AnalysisAction(new DCutAction_PIDDeltaT(locReaction, false, 1.5, PiPlus, SYS_FCAL)); //false: measured data
 	locReaction->Add_AnalysisAction(new DCutAction_PIDDeltaT(locReaction, false, 0.5, PiMinus, SYS_TOF)); //false: measured data
 	locReaction->Add_AnalysisAction(new DCutAction_PIDDeltaT(locReaction, false, 1.0, PiMinus, SYS_BCAL)); //false: measured data
-	locReaction->Add_AnalysisAction(new DCutAction_PIDDeltaT(locReaction, false, 2.0, PiMinus, SYS_FCAL)); //false: measured data
+	locReaction->Add_AnalysisAction(new DCutAction_PIDDeltaT(locReaction, false, 1.5, PiMinus, SYS_FCAL)); //false: measured data
 	locReaction->Add_AnalysisAction(new DCutAction_TrackFCALShowerEOverP(locReaction, false, 0.5)); //false: measured data //value: cut e+/e- below this, tracks above this
 	locReaction->Add_AnalysisAction(new DCutAction_PIDDeltaT(locReaction, false, 1.5, Gamma, SYS_BCAL)); //false: measured data
 	locReaction->Add_AnalysisAction(new DCutAction_PIDDeltaT(locReaction, false, 2.0, Gamma, SYS_FCAL)); //false: measured data
@@ -386,21 +390,21 @@ jerror_t DReaction_factory_trackeff_missing::init(void)
 	// Missing Mass
 	locReaction->Add_AnalysisAction(new DHistogramAction_InvariantMass(locReaction, Pi0, false, 400, 0.05, 0.22, "Pi0"));
 	locReaction->Add_AnalysisAction(new DHistogramAction_InvariantMass(locReaction, 0, locToIncludePIDs, true, 600, 0.5, 1.7, "3pi"));
-	locReaction->Add_AnalysisAction(new DHistogramAction_MissingMass(locReaction, false, 500, 0.7, 1.2));
+	locReaction->Add_AnalysisAction(new DHistogramAction_MissingMass(locReaction, false, 900, 0.5, 1.4));
 	locReaction->Add_AnalysisAction(new DCustomAction_CutExtraPi0(locReaction, 0.0775209, 0.188047));
 	locReaction->Add_AnalysisAction(new DCutAction_MinTrackHits(locReaction, 10));
 
 	locReaction->Add_AnalysisAction(new DHistogramAction_InvariantMass(locReaction, Pi0, false, 400, 0.05, 0.22, "Pi0_PostExtraPi0"));
 	locReaction->Add_AnalysisAction(new DHistogramAction_InvariantMass(locReaction, 0, locToIncludePIDs, true, 600, 0.5, 1.7, "3pi_PostExtraPi0"));
-	locReaction->Add_AnalysisAction(new DHistogramAction_MissingMass(locReaction, false, 500, 0.7, 1.2, "PostExtraPi0"));
+	locReaction->Add_AnalysisAction(new DHistogramAction_MissingMass(locReaction, false, 900, 0.5, 1.4, "PostExtraPi0"));
 	
 	locReaction->Add_AnalysisAction(new DCutAction_InvariantMass(locReaction, Pi0, false, 0.115, 0.155));
 	locReaction->Add_AnalysisAction(new DHistogramAction_InvariantMass(locReaction, 0, locToIncludePIDs, true, 600, 0.5, 1.7, "3pi_PostPi0Mass"));
-	locReaction->Add_AnalysisAction(new DHistogramAction_MissingMass(locReaction, false, 500, 0.7, 1.2, "PostPi0Mass"));
+	locReaction->Add_AnalysisAction(new DHistogramAction_MissingMass(locReaction, false, 900, 0.5, 1.4, "PostPi0Mass"));
 	locReaction->Add_AnalysisAction(new DHistogramAction_ParticleComboKinematics(locReaction, true, "PostPi0Mass")); //true: fill histograms with kinematic-fit particle data
 	
 	//locReaction->Add_AnalysisAction(new DCutAction_InvariantMass(locReaction, 0, locToIncludePIDs, true, 1.2, 1.7));
-	locReaction->Add_AnalysisAction(new DHistogramAction_MissingMass(locReaction, false, 500, 0.7, 1.2, "Post3piMass"));
+	locReaction->Add_AnalysisAction(new DHistogramAction_MissingMass(locReaction, false, 900, 0.5, 1.4, "Post3piMass"));
 
 	// Kinematics
 	locReaction->Add_AnalysisAction(new DHistogramAction_ParticleComboKinematics(locReaction, true)); //true: fill histograms with kinematic-fit particle data
@@ -436,10 +440,8 @@ jerror_t DReaction_factory_trackeff_missing::init(void)
 	/**************************************************** TrackEff_MissingPiPlus_3pi Control Settings ****************************************************/
 
 	locReaction->Set_KinFitType(d_P4Fit);
-	locReaction->Set_MaxPhotonRFDeltaT(2.004); //beam bunches are every 4.008 ns, (2.004 should be minimum cut value)
-	locReaction->Set_MaxExtraGoodTracks(1);
-
-	locReaction->Set_MaxNumBeamPhotonsInBunch(1); //not ideal: throws away a lot of signal
+	locReaction->Set_MaxPhotonRFDeltaT(1.5*dBeamBunchPeriod); //should be minimum cut value
+//	locReaction->Set_MaxExtraGoodTracks(1);
 
 	/************************************************** TrackEff_MissingPiPlus_3pi Pre-Combo Custom Cuts *************************************************/
 
@@ -448,7 +450,7 @@ jerror_t DReaction_factory_trackeff_missing::init(void)
 
 	// Highly Recommended: Very loose DAnalysisAction cuts, applied just after creating the combination (before saving it)
 	// Example: Missing mass squared of proton
-	locReaction->Add_ComboPreSelectionAction(new DCutAction_MissingMassSquared(locReaction, false, -0.3, 0.4));
+	locReaction->Add_ComboPreSelectionAction(new DCutAction_MissingMassSquared(locReaction, false, -0.5, 0.6));
 
 	/**************************************************** TrackEff_MissingPiPlus_3pi Analysis Actions ****************************************************/
 
@@ -464,12 +466,12 @@ jerror_t DReaction_factory_trackeff_missing::init(void)
 
 	// PID Cuts
 	locReaction->Add_AnalysisAction(new DCustomAction_dEdxCut(locReaction, true)); //true: focus on rejecting background
-	locReaction->Add_AnalysisAction(new DCutAction_PIDDeltaT(locReaction, false, 1.0, Proton, SYS_TOF)); //false: measured data
-	locReaction->Add_AnalysisAction(new DCutAction_PIDDeltaT(locReaction, false, 1.0, Proton, SYS_BCAL)); //false: measured data
-	locReaction->Add_AnalysisAction(new DCutAction_PIDDeltaT(locReaction, false, 2.0, Proton, SYS_FCAL)); //false: measured data
+	locReaction->Add_AnalysisAction(new DCutAction_PIDDeltaT(locReaction, false, 0.5, Proton, SYS_TOF)); //false: measured data
+	locReaction->Add_AnalysisAction(new DCutAction_PIDDeltaT(locReaction, false, 0.8, Proton, SYS_BCAL)); //false: measured data
+	locReaction->Add_AnalysisAction(new DCutAction_PIDDeltaT(locReaction, false, 1.5, Proton, SYS_FCAL)); //false: measured data
 	locReaction->Add_AnalysisAction(new DCutAction_PIDDeltaT(locReaction, false, 0.5, PiMinus, SYS_TOF)); //false: measured data
 	locReaction->Add_AnalysisAction(new DCutAction_PIDDeltaT(locReaction, false, 1.0, PiMinus, SYS_BCAL)); //false: measured data
-	locReaction->Add_AnalysisAction(new DCutAction_PIDDeltaT(locReaction, false, 2.0, PiMinus, SYS_FCAL)); //false: measured data
+	locReaction->Add_AnalysisAction(new DCutAction_PIDDeltaT(locReaction, false, 1.5, PiMinus, SYS_FCAL)); //false: measured data
 	locReaction->Add_AnalysisAction(new DCutAction_TrackFCALShowerEOverP(locReaction, false, 0.5)); //false: measured data //value: cut e+/e- below this, tracks above this
 	locReaction->Add_AnalysisAction(new DCutAction_PIDDeltaT(locReaction, false, 1.5, Gamma, SYS_BCAL)); //false: measured data
 	locReaction->Add_AnalysisAction(new DCutAction_PIDDeltaT(locReaction, false, 2.0, Gamma, SYS_FCAL)); //false: measured data
@@ -530,10 +532,8 @@ jerror_t DReaction_factory_trackeff_missing::init(void)
 	/**************************************************** TrackEff_MissingPiMinus_3pi Control Settings ****************************************************/
 
 	locReaction->Set_KinFitType(d_P4Fit);
-	locReaction->Set_MaxPhotonRFDeltaT(2.004); //beam bunches are every 4.008 ns, (2.004 should be minimum cut value)
-	locReaction->Set_MaxExtraGoodTracks(1);
-
-	locReaction->Set_MaxNumBeamPhotonsInBunch(1); //not ideal: throws away a lot of signal
+	locReaction->Set_MaxPhotonRFDeltaT(1.5*dBeamBunchPeriod); //should be minimum cut value
+//	locReaction->Set_MaxExtraGoodTracks(1);
 
 	/************************************************** TrackEff_MissingPiMinus_3pi Pre-Combo Custom Cuts *************************************************/
 
@@ -542,7 +542,7 @@ jerror_t DReaction_factory_trackeff_missing::init(void)
 
 	// Highly Recommended: Very loose DAnalysisAction cuts, applied just after creating the combination (before saving it)
 	// Example: Missing mass squared of proton
-	locReaction->Add_ComboPreSelectionAction(new DCutAction_MissingMassSquared(locReaction, false, -0.3, 0.4));
+	locReaction->Add_ComboPreSelectionAction(new DCutAction_MissingMassSquared(locReaction, false, -0.5, 0.6));
 
 	/**************************************************** TrackEff_MissingPiMinus_3pi Analysis Actions ****************************************************/
 
@@ -558,12 +558,12 @@ jerror_t DReaction_factory_trackeff_missing::init(void)
 
 	// PID Cuts
 	locReaction->Add_AnalysisAction(new DCustomAction_dEdxCut(locReaction, true)); //true: focus on rejecting background
-	locReaction->Add_AnalysisAction(new DCutAction_PIDDeltaT(locReaction, false, 1.0, Proton, SYS_TOF)); //false: measured data
-	locReaction->Add_AnalysisAction(new DCutAction_PIDDeltaT(locReaction, false, 1.0, Proton, SYS_BCAL)); //false: measured data
-	locReaction->Add_AnalysisAction(new DCutAction_PIDDeltaT(locReaction, false, 2.0, Proton, SYS_FCAL)); //false: measured data
+	locReaction->Add_AnalysisAction(new DCutAction_PIDDeltaT(locReaction, false, 0.5, Proton, SYS_TOF)); //false: measured data
+	locReaction->Add_AnalysisAction(new DCutAction_PIDDeltaT(locReaction, false, 0.8, Proton, SYS_BCAL)); //false: measured data
+	locReaction->Add_AnalysisAction(new DCutAction_PIDDeltaT(locReaction, false, 1.5, Proton, SYS_FCAL)); //false: measured data
 	locReaction->Add_AnalysisAction(new DCutAction_PIDDeltaT(locReaction, false, 0.5, PiPlus, SYS_TOF)); //false: measured data
 	locReaction->Add_AnalysisAction(new DCutAction_PIDDeltaT(locReaction, false, 1.0, PiPlus, SYS_BCAL)); //false: measured data
-	locReaction->Add_AnalysisAction(new DCutAction_PIDDeltaT(locReaction, false, 2.0, PiPlus, SYS_FCAL)); //false: measured data
+	locReaction->Add_AnalysisAction(new DCutAction_PIDDeltaT(locReaction, false, 1.5, PiPlus, SYS_FCAL)); //false: measured data
 	locReaction->Add_AnalysisAction(new DCutAction_TrackFCALShowerEOverP(locReaction, false, 0.5)); //false: measured data //value: cut e+/e- below this, tracks above this
 	locReaction->Add_AnalysisAction(new DCutAction_PIDDeltaT(locReaction, false, 1.5, Gamma, SYS_BCAL)); //false: measured data
 	locReaction->Add_AnalysisAction(new DCutAction_PIDDeltaT(locReaction, false, 2.0, Gamma, SYS_FCAL)); //false: measured data
@@ -624,16 +624,14 @@ jerror_t DReaction_factory_trackeff_missing::init(void)
 	/**************************************************** TrackEff_MissingProton_4pi Control Settings ****************************************************/
 
 	locReaction->Set_KinFitType(d_P4Fit);
-	locReaction->Set_MaxPhotonRFDeltaT(2.004); //beam bunches are every 4.008 ns, (2.004 should be minimum cut value)
-	locReaction->Set_MaxExtraGoodTracks(1);
-
-	locReaction->Set_MaxNumBeamPhotonsInBunch(1); //not ideal: throws away a lot of signal
+	locReaction->Set_MaxPhotonRFDeltaT(1.5*dBeamBunchPeriod); //should be minimum cut value
+//	locReaction->Set_MaxExtraGoodTracks(1);
 
 	/************************************************** TrackEff_MissingProton_4pi Pre-Combo Custom Cuts *************************************************/
 
 	// Highly Recommended: Very loose DAnalysisAction cuts, applied just after creating the combination (before saving it)
 	// Example: Missing mass squared of proton
-	locReaction->Add_ComboPreSelectionAction(new DCutAction_MissingMass(locReaction, false, 0.7, 1.2));
+	locReaction->Add_ComboPreSelectionAction(new DCutAction_MissingMass(locReaction, false, 0.5, 1.4));
 
 	/**************************************************** TrackEff_MissingProton_4pi Analysis Actions ****************************************************/
 
@@ -653,10 +651,10 @@ jerror_t DReaction_factory_trackeff_missing::init(void)
 	locReaction->Add_AnalysisAction(new DCustomAction_dEdxCut(locReaction, true)); //true: focus on rejecting background
 	locReaction->Add_AnalysisAction(new DCutAction_PIDDeltaT(locReaction, false, 0.5, PiPlus, SYS_TOF)); //false: measured data
 	locReaction->Add_AnalysisAction(new DCutAction_PIDDeltaT(locReaction, false, 1.0, PiPlus, SYS_BCAL)); //false: measured data
-	locReaction->Add_AnalysisAction(new DCutAction_PIDDeltaT(locReaction, false, 2.0, PiPlus, SYS_FCAL)); //false: measured data
+	locReaction->Add_AnalysisAction(new DCutAction_PIDDeltaT(locReaction, false, 1.5, PiPlus, SYS_FCAL)); //false: measured data
 	locReaction->Add_AnalysisAction(new DCutAction_PIDDeltaT(locReaction, false, 0.5, PiMinus, SYS_TOF)); //false: measured data
 	locReaction->Add_AnalysisAction(new DCutAction_PIDDeltaT(locReaction, false, 1.0, PiMinus, SYS_BCAL)); //false: measured data
-	locReaction->Add_AnalysisAction(new DCutAction_PIDDeltaT(locReaction, false, 2.0, PiMinus, SYS_FCAL)); //false: measured data
+	locReaction->Add_AnalysisAction(new DCutAction_PIDDeltaT(locReaction, false, 1.5, PiMinus, SYS_FCAL)); //false: measured data
 	locReaction->Add_AnalysisAction(new DCutAction_TrackFCALShowerEOverP(locReaction, false, 0.5)); //false: measured data //value: cut e+/e- below this, tracks above this
 	locReaction->Add_AnalysisAction(new DCutAction_EachPIDFOM(locReaction, -9.9E9, true)); //cut particles with PID FOM = 0
 
@@ -670,11 +668,11 @@ jerror_t DReaction_factory_trackeff_missing::init(void)
 	locReaction->Add_AnalysisAction(new DHistogramAction_TrackVertexComparison(locReaction));
 
 	// Missing Mass Squared
-	locReaction->Add_AnalysisAction(new DHistogramAction_MissingMass(locReaction, false, 500, 0.7, 1.2));
+	locReaction->Add_AnalysisAction(new DHistogramAction_MissingMass(locReaction, false, 900, 0.5, 1.4));
 	locReaction->Add_AnalysisAction(new DCustomAction_CutExtraPi0(locReaction, 0.0775209, 0.188047));
 	locReaction->Add_AnalysisAction(new DCutAction_MinTrackHits(locReaction, 10));
 
-	locReaction->Add_AnalysisAction(new DHistogramAction_MissingMass(locReaction, false, 500, 0.7, 1.2, "PostExtraPi0"));
+	locReaction->Add_AnalysisAction(new DHistogramAction_MissingMass(locReaction, false, 900, 0.5, 1.4, "PostExtraPi0"));
 
 	// Kinematics
 	locReaction->Add_AnalysisAction(new DHistogramAction_ParticleComboKinematics(locReaction, true)); //true: fill histograms with kinematic-fit particle data
@@ -707,16 +705,14 @@ jerror_t DReaction_factory_trackeff_missing::init(void)
 	/**************************************************** TrackEff_MissingPiPlus_4pi Control Settings ****************************************************/
 
 	locReaction->Set_KinFitType(d_P4Fit);
-	locReaction->Set_MaxPhotonRFDeltaT(2.004); //beam bunches are every 4.008 ns, (2.004 should be minimum cut value)
-	locReaction->Set_MaxExtraGoodTracks(1);
-
-	locReaction->Set_MaxNumBeamPhotonsInBunch(1); //not ideal: throws away a lot of signal
+	locReaction->Set_MaxPhotonRFDeltaT(1.5*dBeamBunchPeriod); //should be minimum cut value
+//	locReaction->Set_MaxExtraGoodTracks(1);
 
 	/************************************************** TrackEff_MissingPiPlus_4pi Pre-Combo Custom Cuts *************************************************/
 
 	// Highly Recommended: Very loose DAnalysisAction cuts, applied just after creating the combination (before saving it)
 	// Example: Missing mass squared of proton
-	locReaction->Add_ComboPreSelectionAction(new DCutAction_MissingMassSquared(locReaction, false, -0.3, 0.4));
+	locReaction->Add_ComboPreSelectionAction(new DCutAction_MissingMassSquared(locReaction, false, -0.5, 0.6));
 
 	/**************************************************** TrackEff_MissingPiPlus_4pi Analysis Actions ****************************************************/
 
@@ -732,15 +728,15 @@ jerror_t DReaction_factory_trackeff_missing::init(void)
 
 	// PID Cuts
 	locReaction->Add_AnalysisAction(new DCustomAction_dEdxCut(locReaction, true)); //true: focus on rejecting background
-	locReaction->Add_AnalysisAction(new DCutAction_PIDDeltaT(locReaction, false, 1.0, Proton, SYS_TOF)); //false: measured data
-	locReaction->Add_AnalysisAction(new DCutAction_PIDDeltaT(locReaction, false, 1.0, Proton, SYS_BCAL)); //false: measured data
-	locReaction->Add_AnalysisAction(new DCutAction_PIDDeltaT(locReaction, false, 2.0, Proton, SYS_FCAL)); //false: measured data
+	locReaction->Add_AnalysisAction(new DCutAction_PIDDeltaT(locReaction, false, 0.5, Proton, SYS_TOF)); //false: measured data
+	locReaction->Add_AnalysisAction(new DCutAction_PIDDeltaT(locReaction, false, 0.8, Proton, SYS_BCAL)); //false: measured data
+	locReaction->Add_AnalysisAction(new DCutAction_PIDDeltaT(locReaction, false, 1.5, Proton, SYS_FCAL)); //false: measured data
 	locReaction->Add_AnalysisAction(new DCutAction_PIDDeltaT(locReaction, false, 0.5, PiPlus, SYS_TOF)); //false: measured data
 	locReaction->Add_AnalysisAction(new DCutAction_PIDDeltaT(locReaction, false, 1.0, PiPlus, SYS_BCAL)); //false: measured data
-	locReaction->Add_AnalysisAction(new DCutAction_PIDDeltaT(locReaction, false, 2.0, PiPlus, SYS_FCAL)); //false: measured data
+	locReaction->Add_AnalysisAction(new DCutAction_PIDDeltaT(locReaction, false, 1.5, PiPlus, SYS_FCAL)); //false: measured data
 	locReaction->Add_AnalysisAction(new DCutAction_PIDDeltaT(locReaction, false, 0.5, PiMinus, SYS_TOF)); //false: measured data
 	locReaction->Add_AnalysisAction(new DCutAction_PIDDeltaT(locReaction, false, 1.0, PiMinus, SYS_BCAL)); //false: measured data
-	locReaction->Add_AnalysisAction(new DCutAction_PIDDeltaT(locReaction, false, 2.0, PiMinus, SYS_FCAL)); //false: measured data
+	locReaction->Add_AnalysisAction(new DCutAction_PIDDeltaT(locReaction, false, 1.5, PiMinus, SYS_FCAL)); //false: measured data
 	locReaction->Add_AnalysisAction(new DCutAction_TrackFCALShowerEOverP(locReaction, false, 0.5)); //false: measured data //value: cut e+/e- below this, tracks above this
 	locReaction->Add_AnalysisAction(new DCutAction_EachPIDFOM(locReaction, -9.9E9, true)); //cut particles with PID FOM = 0
 
@@ -751,10 +747,10 @@ jerror_t DReaction_factory_trackeff_missing::init(void)
 	locReaction->Add_AnalysisAction(new DHistogramAction_TrackVertexComparison(locReaction));
 
 	// Missing Mass Squared
-	locReaction->Add_AnalysisAction(new DHistogramAction_MissingMassSquared(locReaction, false, 700, -0.3, 0.4));
+	locReaction->Add_AnalysisAction(new DHistogramAction_MissingMassSquared(locReaction, false, 1100, -0.5, 0.6));
 	locReaction->Add_AnalysisAction(new DCustomAction_CutExtraPi0(locReaction, 0.0775209, 0.188047));
 	locReaction->Add_AnalysisAction(new DCutAction_MinTrackHits(locReaction, 10));
-	locReaction->Add_AnalysisAction(new DHistogramAction_MissingMassSquared(locReaction, false, 700, -0.3, 0.4, "PostExtraPi0"));
+	locReaction->Add_AnalysisAction(new DHistogramAction_MissingMassSquared(locReaction, false, 1100, -0.5, 0.6, "PostExtraPi0"));
 
 	// Kinematics
 	locReaction->Add_AnalysisAction(new DHistogramAction_ParticleComboKinematics(locReaction, true)); //true: fill histograms with kinematic-fit particle data
@@ -787,16 +783,14 @@ jerror_t DReaction_factory_trackeff_missing::init(void)
 	/**************************************************** TrackEff_MissingPiMinus_4pi Control Settings ****************************************************/
 
 	locReaction->Set_KinFitType(d_P4Fit);
-	locReaction->Set_MaxPhotonRFDeltaT(2.004); //beam bunches are every 4.008 ns, (2.004 should be minimum cut value)
-	locReaction->Set_MaxExtraGoodTracks(1);
-
-	locReaction->Set_MaxNumBeamPhotonsInBunch(1); //not ideal: throws away a lot of signal
+	locReaction->Set_MaxPhotonRFDeltaT(1.5*dBeamBunchPeriod); //should be minimum cut value
+//	locReaction->Set_MaxExtraGoodTracks(1);
 
 	/************************************************** TrackEff_MissingPiMinus_4pi Pre-Combo Custom Cuts *************************************************/
 
 	// Highly Recommended: Very loose DAnalysisAction cuts, applied just after creating the combination (before saving it)
 	// Example: Missing mass squared of proton
-	locReaction->Add_ComboPreSelectionAction(new DCutAction_MissingMassSquared(locReaction, false, -0.3, 0.4));
+	locReaction->Add_ComboPreSelectionAction(new DCutAction_MissingMassSquared(locReaction, false, -0.5, 0.6));
 
 	/**************************************************** TrackEff_MissingPiMinus_4pi Analysis Actions ****************************************************/
 
@@ -812,15 +806,15 @@ jerror_t DReaction_factory_trackeff_missing::init(void)
 
 	// PID Cuts
 	locReaction->Add_AnalysisAction(new DCustomAction_dEdxCut(locReaction, true)); //true: focus on rejecting background
-	locReaction->Add_AnalysisAction(new DCutAction_PIDDeltaT(locReaction, false, 1.0, Proton, SYS_TOF)); //false: measured data
-	locReaction->Add_AnalysisAction(new DCutAction_PIDDeltaT(locReaction, false, 1.0, Proton, SYS_BCAL)); //false: measured data
-	locReaction->Add_AnalysisAction(new DCutAction_PIDDeltaT(locReaction, false, 2.0, Proton, SYS_FCAL)); //false: measured data
+	locReaction->Add_AnalysisAction(new DCutAction_PIDDeltaT(locReaction, false, 0.5, Proton, SYS_TOF)); //false: measured data
+	locReaction->Add_AnalysisAction(new DCutAction_PIDDeltaT(locReaction, false, 0.8, Proton, SYS_BCAL)); //false: measured data
+	locReaction->Add_AnalysisAction(new DCutAction_PIDDeltaT(locReaction, false, 1.5, Proton, SYS_FCAL)); //false: measured data
 	locReaction->Add_AnalysisAction(new DCutAction_PIDDeltaT(locReaction, false, 0.5, PiPlus, SYS_TOF)); //false: measured data
 	locReaction->Add_AnalysisAction(new DCutAction_PIDDeltaT(locReaction, false, 1.0, PiPlus, SYS_BCAL)); //false: measured data
-	locReaction->Add_AnalysisAction(new DCutAction_PIDDeltaT(locReaction, false, 2.0, PiPlus, SYS_FCAL)); //false: measured data
+	locReaction->Add_AnalysisAction(new DCutAction_PIDDeltaT(locReaction, false, 1.5, PiPlus, SYS_FCAL)); //false: measured data
 	locReaction->Add_AnalysisAction(new DCutAction_PIDDeltaT(locReaction, false, 0.5, PiMinus, SYS_TOF)); //false: measured data
 	locReaction->Add_AnalysisAction(new DCutAction_PIDDeltaT(locReaction, false, 1.0, PiMinus, SYS_BCAL)); //false: measured data
-	locReaction->Add_AnalysisAction(new DCutAction_PIDDeltaT(locReaction, false, 2.0, PiMinus, SYS_FCAL)); //false: measured data
+	locReaction->Add_AnalysisAction(new DCutAction_PIDDeltaT(locReaction, false, 1.5, PiMinus, SYS_FCAL)); //false: measured data
 	locReaction->Add_AnalysisAction(new DCutAction_TrackFCALShowerEOverP(locReaction, false, 0.5)); //false: measured data //value: cut e+/e- below this, tracks above this
 	locReaction->Add_AnalysisAction(new DCutAction_EachPIDFOM(locReaction, -9.9E9, true)); //cut particles with PID FOM = 0
 
@@ -831,10 +825,10 @@ jerror_t DReaction_factory_trackeff_missing::init(void)
 	locReaction->Add_AnalysisAction(new DHistogramAction_TrackVertexComparison(locReaction));
 
 	// Missing Mass Squared
-	locReaction->Add_AnalysisAction(new DHistogramAction_MissingMassSquared(locReaction, false, 700, -0.3, 0.4));
+	locReaction->Add_AnalysisAction(new DHistogramAction_MissingMassSquared(locReaction, false, 1100, -0.5, 0.6));
 	locReaction->Add_AnalysisAction(new DCustomAction_CutExtraPi0(locReaction, 0.0775209, 0.188047));
 	locReaction->Add_AnalysisAction(new DCutAction_MinTrackHits(locReaction, 10));
-	locReaction->Add_AnalysisAction(new DHistogramAction_MissingMassSquared(locReaction, false, 700, -0.3, 0.4, "PostExtraPi0"));
+	locReaction->Add_AnalysisAction(new DHistogramAction_MissingMassSquared(locReaction, false, 1100, -0.5, 0.6, "PostExtraPi0"));
 
 	// Kinematics
 	locReaction->Add_AnalysisAction(new DHistogramAction_ParticleComboKinematics(locReaction, true)); //true: fill histograms with kinematic-fit particle data
@@ -880,16 +874,14 @@ jerror_t DReaction_factory_trackeff_missing::init(void)
 	/**************************************************** TrackEff_MissingProton_Omega Control Settings ****************************************************/
 
 	locReaction->Set_KinFitType(d_P4Fit);
-	locReaction->Set_MaxPhotonRFDeltaT(2.004); //beam bunches are every 4.008 ns, (2.004 should be minimum cut value)
-	locReaction->Set_MaxExtraGoodTracks(1);
-
-	locReaction->Set_MaxNumBeamPhotonsInBunch(1); //not ideal: throws away a lot of signal
+	locReaction->Set_MaxPhotonRFDeltaT(1.5*dBeamBunchPeriod); //should be minimum cut value
+//	locReaction->Set_MaxExtraGoodTracks(1);
 
 	/************************************************** TrackEff_MissingProton_Omega Pre-Combo Custom Cuts *************************************************/
 
 	// Highly Recommended: Very loose DAnalysisAction cuts, applied just after creating the combination (before saving it)
 	// Example: Missing mass squared of proton
-	locReaction->Add_ComboPreSelectionAction(new DCutAction_MissingMass(locReaction, false, 0.7, 1.2));
+	locReaction->Add_ComboPreSelectionAction(new DCutAction_MissingMass(locReaction, false, 0.5, 1.4));
 
 	/**************************************************** TrackEff_MissingProton_Omega Analysis Actions ****************************************************/
 
@@ -914,18 +906,18 @@ jerror_t DReaction_factory_trackeff_missing::init(void)
 	// Missing Mass Squared
 	locReaction->Add_AnalysisAction(new DHistogramAction_InvariantMass(locReaction, Pi0, false, 400, 0.05, 0.22, "Pi0"));
 	locReaction->Add_AnalysisAction(new DHistogramAction_InvariantMass(locReaction, omega, true, 300, 0.5, 1.1, "Omega"));
-	locReaction->Add_AnalysisAction(new DHistogramAction_MissingMass(locReaction, false, 500, 0.7, 1.2));
+	locReaction->Add_AnalysisAction(new DHistogramAction_MissingMass(locReaction, false, 900, 0.5, 1.4));
 
 	locReaction->Add_AnalysisAction(new DCustomAction_CutExtraPi0(locReaction, 0.0775209, 0.188047));	
 	locReaction->Add_AnalysisAction(new DHistogramAction_InvariantMass(locReaction, Pi0, false, 400, 0.05, 0.22, "Pi0_PostExtraPi0"));
 	locReaction->Add_AnalysisAction(new DHistogramAction_InvariantMass(locReaction, omega, true, 300, 0.5, 1.1, "Omega_PostExtraPi0"));
-	locReaction->Add_AnalysisAction(new DHistogramAction_MissingMass(locReaction, false, 500, 0.7, 1.2, "PostExtraPi0"));
+	locReaction->Add_AnalysisAction(new DHistogramAction_MissingMass(locReaction, false, 900, 0.5, 1.4, "PostExtraPi0"));
 
 	locReaction->Add_AnalysisAction(new DCutAction_InvariantMass(locReaction, Pi0, false, 0.115, 0.155));
 	locReaction->Add_AnalysisAction(new DHistogramAction_InvariantMass(locReaction, omega, true, 300, 0.5, 1.1, "Omega_PostPi0Mass"));
 
 	locReaction->Add_AnalysisAction(new DCutAction_InvariantMass(locReaction, omega, true, 0.757, 0.807));
-	locReaction->Add_AnalysisAction(new DHistogramAction_MissingMass(locReaction, false, 500, 0.7, 1.2, "PostOmegaMass"));
+	locReaction->Add_AnalysisAction(new DHistogramAction_MissingMass(locReaction, false, 900, 0.5, 1.4, "PostOmegaMass"));
 
 	// Kinematics
 	locReaction->Add_AnalysisAction(new DHistogramAction_ParticleComboKinematics(locReaction, true)); //true: fill histograms with kinematic-fit particle data

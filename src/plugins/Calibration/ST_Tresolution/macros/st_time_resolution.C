@@ -139,6 +139,7 @@ void st_time_resolution(char*input_filename)
       	    } 
       	}
       pytotal->Fit("gaus");
+      TF1 *gaus = pytotal->GetFunction("gaus");
       gPad->Update();
        PT_can[j]->Print(Form("ST_Sector_%i.png",j+1));
       t_total_fit[j][2] = gaus->GetParameter(2)*1000;
@@ -156,7 +157,7 @@ void st_time_resolution(char*input_filename)
   ntuple->Write();
   in.close();
   //Create the canvas
-  Time_can = new TCanvas( "Time_can", "Time_can", 800, 600);
+  TCanvas *Time_can = new TCanvas( "Time_can", "Time_can", 800, 600);
   Time_can->SetFillColor(41);
   gStyle->SetOptFit(011);
   ntuple->Draw("sector:tall:taller:ser");

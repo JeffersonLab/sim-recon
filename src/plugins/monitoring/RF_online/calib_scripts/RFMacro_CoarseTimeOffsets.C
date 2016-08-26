@@ -173,4 +173,6 @@ int RFMacro_CoarseTimeOffsets(int locRunNumber, string locVariation = "default")
 		locHist_RFDeltaT_PSC_TAGH->GetYaxis()->SetLabelSize(0.05);
 		locHist_RFDeltaT_PSC_TAGH->Draw();
 	}
+
+    return 1;
 }

@@ -584,7 +584,7 @@ jerror_t JEventProcessor_TAGM_online::evnt(JEventLoop *eventLoop, uint64_t event
   std::vector<const DTAGMHit*> hits;                     // hits
   eventLoop->Get(digihits);
   eventLoop->Get(tdcdigihits);
-  eventLoop->Get(hits);
+  eventLoop->Get(hits, "Calib");
 
 	// FILL HISTOGRAMS
 	// Since we are filling histograms local to this plugin, it will not interfere with other ROOT operations: can use plugin-wide ROOT fill lock

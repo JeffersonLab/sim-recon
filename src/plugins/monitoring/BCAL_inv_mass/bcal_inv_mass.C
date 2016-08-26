@@ -26,18 +26,21 @@
   float par_500[15];
   float par_700[15];
   float par_900[15];
-  if(gPad == NULL){
 
-    TCanvas *c1 = new TCanvas( "c1", "BCAL_inv_mass_plot", 800, 800 );
+  TCanvas *c1 = NULL;
+  if(gPad == NULL){
+    c1 = new TCanvas( "c1", "BCAL_inv_mass_plot", 800, 800 );
     c1->cd(0);
     c1->Draw();
     c1->Update();
-
-    TCanvas *c2 = new TCanvas( "c2", "BCAL_inv_mass_dependencies", 800, 800 );
-    c2->cd(0);
-    c2->Draw();
-    c2->Update();
+  } else {
+      c1 = gPad->GetCanvas();
   }
+
+  TCanvas *c2 = new TCanvas( "c2", "BCAL_inv_mass_dependencies", 800, 800 );
+  c2->cd(0);
+  c2->Draw();
+  c2->Update();
 
   if( !gPad ) return;
   c1->Divide(2,2);
@@ -61,7 +64,7 @@
     fitfunc_300->SetParLimits(2,0.006,0.02);
     fitfunc_300->SetLineWidth(2);
     bcal_diphoton_mass_300->Fit(fitfunc_300,"RQ");
-    for (int i=0; i<9; i++) {
+    for (int i=0; i<3+polnumber; i++) {
          par_300[i] = fitfunc_300->GetParameter(i);
     }
     fitfunc_300->Draw("same");
@@ -89,7 +92,7 @@
     fitfunc_500->SetParLimits(2,0.001,0.050);
     fitfunc_500->SetLineWidth(2);
     bcal_diphoton_mass_500->Fit(fitfunc_500,"RQ");
-    for (int i=0; i<9; i++) {
+    for (int i=0; i<3+polnumber; i++) {
          par_500[i] = fitfunc_500->GetParameter(i);
     }
     fitfunc_500->Draw("same");
@@ -119,7 +122,7 @@
     fitfunc_700->SetParLimits(2,0.001,0.050);
     fitfunc_700->SetLineWidth(2);
     bcal_diphoton_mass_700->Fit(fitfunc_700,"RQ");
-    for (int i=0; i<9; i++) {
+    for (int i=0; i<3+polnumber; i++) {
          par_700[i] = fitfunc_700->GetParameter(i);
     }
     fitfunc_700->Draw("same");
@@ -149,7 +152,7 @@
     fitfunc_900->SetParLimits(2,0.001,0.050);
     fitfunc_900->SetLineWidth(2);
     bcal_diphoton_mass_900->Fit(fitfunc_900,"RQ");
-    for (int i=0; i<9; i++) {
+    for (int i=0; i<3+polnumber; i++) {
          par_900[i] = fitfunc_900->GetParameter(i);
     }
     fitfunc_900->Draw("same");

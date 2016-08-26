@@ -602,11 +602,14 @@ jerror_t DParticleCombo_factory_PreKinFit::evnt(jana::JEventLoop *locEventLoop, 
 	//finally, now build the combos
 	map<const DReaction*, deque<size_t> > locNumBlueprintsSurvivedCuts;
 	map<const DParticleComboStep*, deque<const DParticleComboStep*> >::iterator locIterator;
+	set<const DReaction*> locComboFoundFlagSet;
 	for(size_t loc_i = 0; loc_i < locParticleComboBlueprints.size(); ++loc_i)
 	{
 		const DParticleComboBlueprint* locParticleComboBlueprint = locParticleComboBlueprints[loc_i];
 		DParticleCombo* locParticleCombo = new DParticleCombo();
 		const DReaction* locReaction = locParticleComboBlueprint->Get_Reaction();
+		if(locComboFoundFlagSet.find(locReaction) != locComboFoundFlagSet.end())
+			continue;
 		locParticleCombo->Set_Reaction(locReaction);
 		locParticleCombo->AddAssociatedObject(locParticleComboBlueprint);
 		locParticleCombo->Set_KinFitResults(NULL);
@@ -877,12 +880,8 @@ jerror_t DParticleCombo_factory_PreKinFit::evnt(jana::JEventLoop *locEventLoop, 
 
 			//if true, once one is found: bail on search
 			if(locReaction->Get_AnyComboFlag())
-				break; //skip to the end
+				locComboFoundFlagSet.insert(locReaction); //skip to the end
 		}
-
-		//if true, once one is found: bail on search
-		if(locReaction->Get_AnyComboFlag())
-			break; //skip to the end
 	}
 
 	//fill passed-cut histograms

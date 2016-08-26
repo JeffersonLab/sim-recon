@@ -139,4 +139,6 @@ void Draw_Array(string locSystem, TObjArray* locTotalArray)
 	locCanvasName = string("DeltaTKurtosis_") + locSystem + string("RFCanvas");
 	new TCanvas(locCanvasName.c_str(), locCanvasName.c_str(), 1600, 900);
 	locKurtosisHist->Draw("COLZ");
+
+    return 1;
 }

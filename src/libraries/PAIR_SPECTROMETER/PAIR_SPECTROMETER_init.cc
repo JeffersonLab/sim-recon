@@ -3,7 +3,6 @@
 #include <JANA/JEventLoop.h>
 using namespace jana;
 
-//#include "DPSCTruthHit.h"
 #include "DPSDigiHit.h"
 #include "DPSHit_factory.h"
 #include "DPSCDigiHit.h"

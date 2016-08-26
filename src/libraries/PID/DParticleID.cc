@@ -100,20 +100,23 @@ DParticleID::DParticleID(JEventLoop *loop)
 		cout << "DParticleID: Error loading values from PID data base" <<endl;
 		DELTA_R_FCAL = 15.0;
 	}
-	FCAL_CUT_PAR1=3.3;
+	FCAL_CUT_PAR1=4.5;
 	gPARMS->SetDefaultParameter("FCAL:CUT_PAR1",FCAL_CUT_PAR1);
 
 	FCAL_CUT_PAR2=0.0;
 	gPARMS->SetDefaultParameter("FCAL:CUT_PAR2",FCAL_CUT_PAR2);
 
-	BCAL_Z_CUT=20.;
+	BCAL_Z_CUT=50.;
 	gPARMS->SetDefaultParameter("BCAL:Z_CUT",BCAL_Z_CUT);
 
-	BCAL_PHI_CUT_PAR1=0.016;
+	BCAL_PHI_CUT_PAR1=0.021;
 	gPARMS->SetDefaultParameter("BCAL:PHI_CUT_PAR1",BCAL_PHI_CUT_PAR1);
 
 	BCAL_PHI_CUT_PAR2=0.01;
 	gPARMS->SetDefaultParameter("BCAL:PHI_CUT_PAR2",BCAL_PHI_CUT_PAR2);
+
+	BCAL_PHI_CUT_PAR3=1280.;
+	gPARMS->SetDefaultParameter("BCAL:PHI_CUT_PAR3",BCAL_PHI_CUT_PAR3);
 
 	SC_DPHI_CUT=0.125;
 	gPARMS->SetDefaultParameter("SC:DPHI_CUT",SC_DPHI_CUT);
@@ -566,7 +569,7 @@ bool DParticleID::MatchToBCAL(const DKinematicData* locTrack, const DReferenceTr
 	while(dphi < -M_PI)
 	  dphi += M_TWO_PI;
 	
-	if (fabs(dphi)>0.13) // 7.5 degrees = one bcal module
+	if (fabs(dphi)>0.26) //0.13 radians = 7.5 degrees = one bcal module
 	  return false;
 	
 	// rough z cut
@@ -593,26 +596,28 @@ bool DParticleID::MatchToBCAL(const DKinematicData* locTrack, const DReferenceTr
         locBCALShower->Get(points);
     }
 
-	// loop over points associated with this shower, finding 
-	// the closest match between a point and the track
-	double dphi_min=1000.;
+    // loop over points associated with this shower, finding 
+    // the closest match between a point and the track
+    double dphi_min=1000.;
+    double z_for_dphi_min=1000.;
     for (unsigned int m=0;m<points.size();m++){
       double rpoint=points[m]->r();
-	  if (rt->GetIntersectionWithRadius(rpoint,proj_pos)==NOERROR){
+      if (rt->GetIntersectionWithRadius(rpoint,proj_pos)==NOERROR){
         dphi=points[m]->phi()-proj_pos.Phi();
         while(dphi > M_PI)
-		  dphi -= M_TWO_PI;
+	  dphi -= M_TWO_PI;
 	    while(dphi < -M_PI)
 		  dphi += M_TWO_PI;
 	    if (fabs(dphi)<fabs(dphi_min)){
-		  dphi_min=dphi;
+	      dphi_min=dphi;
+		  z_for_dphi_min=proj_pos.z();
 	    }
-	  }
-	}
-
+      }
+    }
 
 	double p = rt->swim_steps[0].mom.Mag();
-	double phi_cut = BCAL_PHI_CUT_PAR1 + BCAL_PHI_CUT_PAR2/(p*p);
+	double phi_cut = (BCAL_PHI_CUT_PAR1 + BCAL_PHI_CUT_PAR2/(p*p))
+	*(1.+BCAL_PHI_CUT_PAR3*pow(450.-z_for_dphi_min,-2));
 	// Look for a match in phi 
 	if (fabs(dphi_min) >= phi_cut)
 	  return false; //not close enough

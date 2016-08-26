@@ -468,11 +468,21 @@ bool HDEVIO::readNoFileBuff(uint32_t *user_buff, uint32_t user_buff_len, bool al
 	EVIOBlockRecord &br = NB_block_record;
 	if(br.evio_events.empty()){
 
+		// Check if we are at end of file
+		uint64_t words_left_in_file = (total_size_bytes-NB_next_pos)/4;
+		if( words_left_in_file == 8 ){ // (if <8 then let read below fail and return HDEVIO_FILE_TRUNCATED)
+			SetErrorMessage("No more events");
+			err_code = HDEVIO_EOF;
+			return false;			
+		}
+
 		// read EVIO block header
 		BLOCKHEADER_t bh;
 		ifs.seekg( NB_next_pos, ios_base::beg);
+		ifs.clear();
 		ifs.read((char*)&bh, sizeof(bh));
 		if(!ifs.good()){
+			err_mess << "Error reading EVIO block header (truncated?)";
 			err_code = HDEVIO_FILE_TRUNCATED;
 			return false;
 		}
@@ -484,7 +494,7 @@ bool HDEVIO::readNoFileBuff(uint32_t *user_buff, uint32_t user_buff_len, bool al
 			swap_needed = true;
 		}else{
 			if(bh.magic!=0xc0da0100){
-				err_mess.str() = "Bad magic word";
+				err_mess.str("Bad magic word");
 				err_code = HDEVIO_BAD_BLOCK_HEADER;
 				return false;
 			}
@@ -654,7 +664,7 @@ vector<HDEVIO::EVIOBlockRecord>& HDEVIO::GetEVIOBlockRecords(void)
 void HDEVIO::MapBlocks(bool print_ticker)
 {
 	if(!is_open){
-		err_mess.str() = "File is not open";
+		err_mess.str("File is not open");
 		err_code = HDEVIO_FILE_NOT_OPEN;
 		return;
 	}
@@ -679,7 +689,7 @@ void HDEVIO::MapBlocks(bool print_ticker)
 			swap_needed = true;
 		}else{
 			if(bh.magic!=0xc0da0100){
-				err_mess.str() = "Bad magic word";
+				err_mess.str("Bad magic word");
 				err_code = HDEVIO_BAD_BLOCK_HEADER;
 				break;
 			}

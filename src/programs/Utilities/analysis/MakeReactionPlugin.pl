@@ -222,13 +222,18 @@ jerror_t DReaction_factory_${ReactionFactoryTag}::evnt(JEventLoop* locEventLoop,
 
 	/**************************************************** ${ReactionName} Control Settings ****************************************************/
 
+	// Highly Recommended: Set EventStore skim query (use with \"eventstore\" source)
+		// This will skip creating particle combos for events that aren't in the skims you list
+		// Query should be comma-separated list of skims to boolean-AND together
+	//locReaction->Set_EventStoreSkims(\"myskim1,myskim2,myskim3\"); //boolean-AND of skims
+
 	// Recommended: Type of kinematic fit to perform (default is d_NoFit)
 		//fit types are of type DKinFitType, an enum defined in sim-recon/src/libraries/ANALYSIS/DReaction.h
 		//Options: d_NoFit (default), d_P4Fit, d_VertexFit, d_P4AndVertexFit
 		//P4 fits automatically constrain decaying particle masses, unless they are manually disabled
 	// locReaction->Set_KinFitType(d_P4AndVertexFit);
 
-	// Highly Recommended: When generating particle combinations, reject all beam photons that match to a different RF bunch (delta_t > 1.002 ns)
+	// Highly Recommended: When generating particle combinations, reject all beam photons that match to a different RF bunch
 	locReaction->Set_MaxPhotonRFDeltaT(0.5*dBeamBunchPeriod); //should be minimum cut value
 
 	// Optional: When generating particle combinations, reject all photon candidates with a PID confidence level < 5.73303E-7 (+/- 5-sigma)
@@ -244,7 +249,8 @@ jerror_t DReaction_factory_${ReactionFactoryTag}::evnt(JEventLoop* locEventLoop,
 	locReaction->Set_MaxExtraGoodTracks(4);
 
 	// Highly Recommended: Enable ROOT TTree output for this DReaction
-	// locReaction->Enable_TTreeOutput(\"tree_${ReactionName}.root\"); //string is file name (must end in \".root\"!!): doen't need to be unique, feel free to change
+	// string is file name (must end in \".root\"!!): doen't need to be unique, feel free to change
+	// locReaction->Enable_TTreeOutput(\"tree_${ReactionName}.root\", false); //true/false: do/don't save unused hypotheses
 
 	/************************************************** ${ReactionName} Pre-Combo Custom Cuts *************************************************/
 
@@ -433,13 +439,6 @@ jerror_t DEventProcessor_${PluginName}::init(void)
 jerror_t DEventProcessor_${PluginName}::brun(jana::JEventLoop* locEventLoop, int32_t locRunNumber)
 {
 	// This is called whenever the run number changes
-
-	/*
-	//Recommended: Create output ROOT TTrees (nothing is done if already created)
-	const DEventWriterROOT* locEventWriterROOT = NULL;
-	locEventLoop->GetSingle(locEventWriterROOT);
-	locEventWriterROOT->Create_DataTrees(locEventLoop);
-	*/
 
 	return NOERROR;
 }

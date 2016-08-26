@@ -51,8 +51,8 @@ class DReaction : public JObject
 		// SET PRE-COMBO-BLUEPRINT INVARIANT MASS CUTS
 		void Set_InvariantMassCut(Particle_t locStepInitialPID, double locMinInvariantMass, double locMaxInvariantMass);
 
-		// SET EventStore QUERY
-		void Set_EventStoreQuery(string locSkimName, string locAdditionalQuery = "");
+		// SET EventStore SKIMS //comma-separated list expected
+		void Set_EventStoreSkims(string locEventStoreSkims){dEventStoreSkims = locEventStoreSkims;}
 
 		// ADD COMBO PRE-SELECTION ACTION
 		void Add_ComboPreSelectionAction(DAnalysisAction* locAction){dComboPreSelectionActions.push_back(locAction);}
@@ -104,12 +104,13 @@ class DReaction : public JObject
 		// GET PRE-COMBO-BLUEPRINT MASS CUTS
 		bool Get_InvariantMassCut(Particle_t locStepInitialPID, double& locMinInvariantMass, double& locMaxInvariantMass) const;
 
-		// GET EventStore QUERY
-		pair<string, string> Get_EventStoreQuery(void) const{return dEventStoreQuery;}
+		// GET EventStore SKIMS //comma-separated list expected
+		string Get_EventStoreSkims(void) const{return dEventStoreSkims;}
 
 		// ROOT OUTPUT:
-		void Enable_TTreeOutput(string locTTreeOutputFileName);
+		void Enable_TTreeOutput(string locTTreeOutputFileName, bool locSaveUnusedFlag = false);
 		string Get_TTreeOutputFileName(void) const{return dTTreeOutputFileName;}
+		bool Get_SaveUnusedFlag(void) const{return dSaveUnusedFlag;}
 		bool Get_EnableTTreeOutputFlag(void) const{return dEnableTTreeOutputFlag;}
 
 		// BUILD ANY FLAGS
@@ -132,6 +133,7 @@ class DReaction : public JObject
 
 		// ROOT TTREE OUTPUT:
 		bool dEnableTTreeOutputFlag; //default is false
+		bool dSaveUnusedFlag; //default is false
 		string dTTreeOutputFileName;
 
 		// REACTION AND ANALYSIS MEMBERS:
@@ -157,7 +159,7 @@ class DReaction : public JObject
 		deque<DAnalysisAction*> dComboPreSelectionActions;
 
 		// EVENT STORE QUERY
-		pair<string, string> dEventStoreQuery; // First is skim name (default = "all"), second is additional query (default = "")
+		string dEventStoreSkims; // First is skim name (default = "all"), second is additional query (default = "")
 
 		// BUILD ANY FLAGS
 		//Default false. If true: Once one is built, don't bother making others. 
@@ -168,11 +170,6 @@ class DReaction : public JObject
 inline void DReaction::Set_InvariantMassCut(Particle_t locStepInitialPID, double locMinInvariantMass, double locMaxInvariantMass)
 {
 	dInvariantMassCuts[locStepInitialPID] = pair<double, double>(locMinInvariantMass, locMaxInvariantMass);
-}
-
-inline void DReaction::Set_EventStoreQuery(string locSkimName, string locAdditionalQuery)
-{
-	dEventStoreQuery = pair<string, string>(locSkimName, locAdditionalQuery);
 }
 
 inline const DReactionStep* DReaction::Get_ReactionStep(size_t locStepIndex) const
@@ -262,9 +259,10 @@ inline bool DReaction::Check_AreStepsIdentical(const DReaction* locReaction) con
 	return true;
 }
 
-inline void DReaction::Enable_TTreeOutput(string locTTreeOutputFileName)
+inline void DReaction::Enable_TTreeOutput(string locTTreeOutputFileName, bool locSaveUnusedFlag)
 {
 	dEnableTTreeOutputFlag = true;
+	dSaveUnusedFlag = locSaveUnusedFlag;
 	dTTreeOutputFileName = locTTreeOutputFileName;
 }
 

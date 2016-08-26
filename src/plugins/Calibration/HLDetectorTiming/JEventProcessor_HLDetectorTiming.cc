@@ -12,7 +12,7 @@ using namespace jana;
 #include <JANA/JApplication.h>
 #include <JANA/JFactory.h>
 
-#include "PID/DDetectorMatches.h"
+#include "PID/DChargedTrack.h"
 #include "PID/DEventRFBunch.h"
 #include "TTAB/DTTabUtilities.h"
 #include "TTAB/DTranslationTable.h"
@@ -85,7 +85,7 @@ jerror_t JEventProcessor_HLDetectorTiming::init(void)
         NBINS_TDIFF = 2800; MIN_TDIFF = -150.0; MAX_TDIFF = 550.0;
     }
     else{
-        NBINS_TDIFF = 50; MIN_TDIFF = -10.0; MAX_TDIFF = 10.0;
+        NBINS_TDIFF = 200; MIN_TDIFF = -40.0; MAX_TDIFF = 40.0;
     }
 
     if (DO_TRACK_BASED){
@@ -94,9 +94,11 @@ jerror_t JEventProcessor_HLDetectorTiming::init(void)
     }
     else{
         NBINS_TAGGER_TIME = 100; MIN_TAGGER_TIME = -50; MAX_TAGGER_TIME = 50;
-        NBINS_MATCHING = 100; MIN_MATCHING_T = -25; MAX_MATCHING_T = 25;
+        NBINS_MATCHING = 100; MIN_MATCHING_T = -10; MAX_MATCHING_T = 10;
     }
+
     NBINS_RF_COMPARE = 200; MIN_RF_COMPARE = -2.2; MAX_RF_COMPARE = 2.2;
+
     return NOERROR;
 }
 
@@ -175,82 +177,59 @@ jerror_t JEventProcessor_HLDetectorTiming::evnt(JEventLoop *loop, uint64_t event
         return NOERROR;
     }
 
-
+    // Get the objects from the event loop
     vector<const DCDCHit *> cdcHitVector;
-    loop->Get(cdcHitVector);
-
     vector<const DFDCHit *> fdcHitVector;
-    loop->Get(fdcHitVector);
-
     vector<const DSCHit *> scHitVector;
-    loop->Get(scHitVector);
-
-    // Grab the unified hits since we are also interested in the TDC times
-    //vector<const DBCALHit *> bcalHitVector;
-    //loop->Get(bcalHitVector);
-
     vector<const DBCALUnifiedHit *> bcalUnifiedHitVector;
-    loop->Get(bcalUnifiedHitVector);
-
     vector<const DTOFHit *> tofHitVector;
-    loop->Get(tofHitVector);
-
     vector<const DFCALHit *> fcalHitVector;
-    loop->Get(fcalHitVector);
-
     vector<const DTAGMHit *> tagmHitVector;
-    loop->Get(tagmHitVector);
-
     vector<const DTAGHHit *> taghHitVector;
-    loop->Get(taghHitVector);
 
-    vector<const DRFTDCDigiTime *> tdcRFTimeVector;
-    loop->Get(tdcRFTimeVector);
+    loop->Get(cdcHitVector);
+    loop->Get(fdcHitVector);
+    loop->Get(scHitVector);
+    loop->Get(bcalUnifiedHitVector);
+    loop->Get(tofHitVector);
+    loop->Get(fcalHitVector);
+    loop->Get(tagmHitVector, "Calib");
+    loop->Get(taghHitVector, "Calib");
 
     // TTabUtilities object used for RF time conversion
     const DTTabUtilities* locTTabUtilities = NULL;
     loop->GetSingle(locTTabUtilities);
-
-    const DRFTime* thisRFTime = NULL;
-    vector <const DRFTime*> RFTimeVector;
-    loop->Get(RFTimeVector);
-    if (RFTimeVector.size() != 0){
-        thisRFTime = RFTimeVector[0];
-    }
 
     unsigned int i = 0;
     int nBins = 2000;
     float xMin = -500, xMax = 1500;
     for (i = 0; i < cdcHitVector.size(); i++){
         Fill1DHistogram ("HLDetectorTiming", "CDC", "CDCHit time", cdcHitVector[i]->t, 
-                "CDCHit time", nBins, xMin, xMax);
+                "CDCHit time;t [ns];", nBins, xMin, xMax);
         if(DO_VERIFY || DO_CDC_TIMING){
             int nStraws = 3522;
             Fill2DHistogram("HLDetectorTiming", "CDC", "CDCHit time per Straw Raw", 
                     cdcHitVector[i]->t, GetCCDBIndexCDC(cdcHitVector[i]),
                     "Hit time for each CDC wire; t [ns]; CCDB Index",
                     750, -500, 1000, nStraws, 0.5, nStraws + 0.5);
-            if (DO_OPTIONAL){
-                /*
-                   Fill2DHistogram("HLDetectorTiming", "CDC", "CDC Energy Vs. Drift Time",
-                   cdcHitVector[i]->t, cdcHitVector[i]->q , 
-                   "CDC Energy Vs. Drift Time; Drift Time [ns]; Integral [arb.]",
-                   800, 0, 800, 500, -10000, 7000000);
-                   */
-            }
         }
     }
 
     for (i = 0; i < fdcHitVector.size(); i++){
-        if(fdcHitVector[i]->type != 1 ) continue; // ADC hits only
-        Fill1DHistogram ("HLDetectorTiming", "FDC", "FDCHit time", fdcHitVector[i]->t,
-                "FDCHit time", nBins, xMin, xMax);
+        if(fdcHitVector[i]->type == 0 ) {
+            Fill1DHistogram ("HLDetectorTiming", "FDC", "FDCHit Wire time", fdcHitVector[i]->t,
+                    "FDCHit Wire time;t [ns];", nBins, xMin, xMax);
+        }
+        else{
+            Fill1DHistogram ("HLDetectorTiming", "FDC", "FDCHit Cathode time", fdcHitVector[i]->t,
+                    "FDCHit Cathode time;t [ns];", nBins, xMin, xMax);
+        }
     }
 
     for (i = 0; i < scHitVector.size(); i++){
         //if(!scHitVector[i]->has_fADC || !scHitVector[i]->has_TDC) continue;
         Fill1DHistogram ("HLDetectorTiming", "SC", "SCHit time", scHitVector[i]->t,
-                "SCHit time", nBins, xMin, xMax);
+                "SCHit time;t [ns];", nBins, xMin, xMax);
     }
     for (i = 0; i < bcalUnifiedHitVector.size(); i++){
         int the_cell = (bcalUnifiedHitVector[i]->module - 1) * 16 + (bcalUnifiedHitVector[i]->layer - 1) * 4 + bcalUnifiedHitVector[i]->sector;
@@ -320,11 +299,11 @@ jerror_t JEventProcessor_HLDetectorTiming::evnt(JEventLoop *loop, uint64_t event
 
     for (i = 0; i < tofHitVector.size(); i++){
         Fill1DHistogram ("HLDetectorTiming", "TOF", "TOFHit time", tofHitVector[i]->t,
-                "TOFHit time", nBins, xMin, xMax);
+                "TOFHit time;t [ns];", nBins, xMin, xMax);
     }
     for (i = 0; i < fcalHitVector.size(); i++){
         Fill1DHistogram ("HLDetectorTiming", "FCAL", "FCALHit time", fcalHitVector[i]->t,
-                "FCALHit time", nBins, xMin, xMax);
+                "FCALHit time;t [ns];", nBins, xMin, xMax);
         if (DO_OPTIONAL){
             // extract the FCAL Geometry
             vector<const DFCALGeometry*> fcalGeomVect;
@@ -343,11 +322,11 @@ jerror_t JEventProcessor_HLDetectorTiming::evnt(JEventLoop *loop, uint64_t event
 
     for (i = 0; i < tagmHitVector.size(); i++){
         Fill1DHistogram ("HLDetectorTiming", "TAGM", "TAGMHit time", tagmHitVector[i]->t,
-                "TAGMHit time", nBins, xMin, xMax);
+                "TAGMHit time;t [ns];", nBins, xMin, xMax);
     }
     for (i = 0; i < taghHitVector.size(); i++){
         Fill1DHistogram ("HLDetectorTiming", "TAGH", "TAGHHit time", taghHitVector[i]->t,
-                "TAGHHit time", nBins, xMin, xMax);
+                "TAGHHit time;t [ns];", nBins, xMin, xMax);
     }
 
     // The detectors with both TDCs and ADCs need these two to be aligned
@@ -355,113 +334,71 @@ jerror_t JEventProcessor_HLDetectorTiming::evnt(JEventLoop *loop, uint64_t event
 
     // Break these histograms up into hits coming from the TDC and hits coming from the ADC
     for (i = 0; i < scHitVector.size(); i++){
-        //if(!scHitVector[i]->has_fADC || !scHitVector[i]->has_TDC) continue;
+        int nSCCounters = 30;
         const DSCHit *thisSCHit = scHitVector[i];
-        if(thisSCHit->has_fADC && thisRFTime != NULL){
-            char name [200];
-            char title[500];
-            sprintf(name, "Sector %.2i", scHitVector[i]->sector);
-            sprintf(title, "SC Sector %i t_{ADC} - t_{RF}; t_{ADC} - t_{RF} [ns]; Entries", scHitVector[i]->sector);
-            double locShiftedTime = dRFTimeFactory->Step_TimeToNearInputTime(thisRFTime->dTime, scHitVector[i]->t_fADC);
-            Fill1DHistogram("HLDetectorTiming", "SC_ADC_RF_Compare", name,
-                    scHitVector[i]->t_fADC - locShiftedTime,
-                    title,
-                    NBINS_RF_COMPARE, MIN_RF_COMPARE, MAX_RF_COMPARE);
-        }
-
-        if(thisSCHit->has_TDC && thisRFTime != NULL){
-            char name [200];
-            char title[500];
-            sprintf(name, "Sector %.2i", scHitVector[i]->sector);
-            sprintf(title, "SC Sector %i t_{TDC} - t_{RF}; t_{TDC} - t_{RF} [ns]; Entries", scHitVector[i]->sector);
-            double locShiftedTime = dRFTimeFactory->Step_TimeToNearInputTime(thisRFTime->dTime, scHitVector[i]->t_TDC);
-            Fill1DHistogram("HLDetectorTiming", "SC_TDC_RF_Compare", name,
-                    scHitVector[i]->t_TDC - locShiftedTime,
-                    title,
-                    NBINS_RF_COMPARE, MIN_RF_COMPARE, MAX_RF_COMPARE);
-        }
         if (thisSCHit->has_fADC && !thisSCHit->has_TDC){
             Fill1DHistogram ("HLDetectorTiming", "SC", "SCHit ADC time", scHitVector[i]->t,
-                    "SCHit ADC only time", nBins, xMin, xMax);
+                    "SCHit ADC only time;t [ns];", nBins, xMin, xMax);
+            // Manual loop over hits to match out of time
+            for (auto hit = scHitVector.begin(); hit != scHitVector.end(); hit++){
+                if ((*hit)->has_TDC && !(*hit)->has_fADC){
+                    if (scHitVector[i]->sector == (*hit)->sector){
+                        Fill2DHistogram("HLDetectorTiming", "SC", "SCHit TDC_ADC Difference",
+                                scHitVector[i]->sector, (*hit)->t_TDC - scHitVector[i]->t_fADC,
+                                "SC #Deltat TDC-ADC; Sector ;t_{TDC} - t_{ADC} [ns]", nSCCounters, 0.5, nSCCounters + 0.5, NBINS_TDIFF, MIN_TDIFF, MAX_TDIFF);
+                    }
+                }
+            }
         }
         else if (!thisSCHit->has_fADC && thisSCHit->has_TDC){
             Fill1DHistogram ("HLDetectorTiming", "SC", "SCHit TDC time", scHitVector[i]->t,
-                    "SCHit TDC only time", nBins, xMin, xMax);
+                    "SCHit TDC only time;t [ns];", nBins, xMin, xMax);
         }
         else{
             Fill1DHistogram ("HLDetectorTiming", "SC", "SCHit Matched time", scHitVector[i]->t,
-                    "SCHit Matched ADC/TDC time", nBins, xMin, xMax);
+                    "SCHit Matched ADC/TDC time;t [ns];", nBins, xMin, xMax);
             Fill1DHistogram ("HLDetectorTiming", "SC", "SCHit ADC time", scHitVector[i]->t_fADC,
-                    "SCHit ADC only time", nBins, xMin, xMax);
+                    "SCHit ADC only time;t [ns];", nBins, xMin, xMax);
             Fill1DHistogram ("HLDetectorTiming", "SC", "SCHit TDC time", scHitVector[i]->t_TDC,
-                    "SCHit TDC only time", nBins, xMin, xMax);
+                    "SCHit TDC only time;t [ns];", nBins, xMin, xMax);
 
-            int nSCCounters = 30;
             Fill2DHistogram("HLDetectorTiming", "SC", "SCHit TDC_ADC Difference",
                     scHitVector[i]->sector, scHitVector[i]->t_TDC - scHitVector[i]->t_fADC,
                     "SC #Deltat TDC-ADC; Sector ;t_{TDC} - t_{ADC} [ns]", nSCCounters, 0.5, nSCCounters + 0.5, NBINS_TDIFF, MIN_TDIFF, MAX_TDIFF);
-            if (DO_TRACK_BASED){
-                char name [200];
-                char title[500];
-                sprintf(name, "Sector %.2i", scHitVector[i]->sector);
-                sprintf(title, "SC Sector %i #Deltat Vs dE; dE [Arb.]; t_{TDC} - t_{ADC} [ns]", scHitVector[i]->sector);
-                Fill2DHistogram("HLDetectorTiming", "SC_TimeWalk", name,
-                        scHitVector[i]->dE, scHitVector[i]->t_TDC - scHitVector[i]->t_fADC,
-                        title,
-                        100, 0, 0.0075, 100, -10, 10, false);
-            }
-            if (DO_OPTIONAL){
-                Fill2DHistogram("HLDetectorTiming", "SC", "SC Per Channel TDC Time",
-                        scHitVector[i]->sector, scHitVector[i]->t_TDC,
-                        "SC t_{TDC} ; Sector; t_{TDC} [ns]",
-                        nSCCounters, 0.5, nSCCounters + 0.5, 100, -50, 50);
-            }
         }
 
     }
     for (i = 0; i < tagmHitVector.size(); i++){
-        const DTAGMHit *thisTAGMHit = tagmHitVector[i];
-        if(thisTAGMHit->has_fADC && thisRFTime != NULL){
-            char name [200];
-            char title[500];
-            sprintf(name, "Column %.3i Row %.1i", tagmHitVector[i]->column, tagmHitVector[i]->row);
-            sprintf(title, "TAGM Column %i t_{ADC} - t_{RF}; t_{ADC} - t_{RF} [ns]; Entries", tagmHitVector[i]->column);
-            double locShiftedTime = dRFTimeFactory->Step_TimeToNearInputTime(thisRFTime->dTime, tagmHitVector[i]->time_fadc);
-            Fill1DHistogram("HLDetectorTiming", "TAGM_ADC_RF_Compare", name,
-                    tagmHitVector[i]->time_fadc - locShiftedTime,
-                    title,
-                    NBINS_RF_COMPARE, MIN_RF_COMPARE, MAX_RF_COMPARE);
-        }
 
-        if(thisTAGMHit->has_TDC && thisRFTime != NULL){
-            char name [200];
-            char title[500];
-            sprintf(name, "Column %.3i Row %.1i", tagmHitVector[i]->column, tagmHitVector[i]->row);
-            sprintf(title, "TAGM Column %i t_{TDC} - t_{RF}; t_{TDC} - t_{RF} [ns]; Entries", tagmHitVector[i]->column);
-            double locShiftedTime = dRFTimeFactory->Step_TimeToNearInputTime(thisRFTime->dTime, tagmHitVector[i]->time_tdc);
-            Fill1DHistogram("HLDetectorTiming", "TAGM_TDC_RF_Compare", name,
-                    tagmHitVector[i]->time_tdc - locShiftedTime,
-                    title,
-                    NBINS_RF_COMPARE, MIN_RF_COMPARE, MAX_RF_COMPARE);
-        }
+        const DTAGMHit *thisTAGMHit = tagmHitVector[i];
+        int nTAGMCounters = 122; // 102 + 20 including 4 fully read out columns
 
         if(thisTAGMHit->has_fADC && !thisTAGMHit->has_TDC){
             Fill1DHistogram ("HLDetectorTiming", "TAGM", "TAGMHit ADC time", tagmHitVector[i]->t,
-                    "TAGMHit ADC only time", nBins, xMin, xMax);
+                    "TAGMHit ADC only time;t [ns];", nBins, xMin, xMax);
+            // Manual loop over hits to match out of time
+            for (auto hit = tagmHitVector.begin(); hit != tagmHitVector.end(); hit++){
+                if ((*hit)->has_TDC && !(*hit)->has_fADC){
+                    if (GetCCDBIndexTAGM(tagmHitVector[i]) == GetCCDBIndexTAGM(*hit)){
+                        Fill2DHistogram("HLDetectorTiming", "TAGM", "TAGMHit TDC_ADC Difference",
+                                GetCCDBIndexTAGM(tagmHitVector[i]), (*hit)->time_tdc - tagmHitVector[i]->time_fadc,
+                                "TAGM #Deltat TDC-ADC; Column ;t_{TDC} - t_{ADC} [ns]", nTAGMCounters, 0.5, nTAGMCounters + 0.5, NBINS_TDIFF, MIN_TDIFF, MAX_TDIFF);
+                    }
+                }
+            }
         }
         else if (!thisTAGMHit->has_fADC && thisTAGMHit->has_TDC){
             Fill1DHistogram ("HLDetectorTiming", "TAGM", "TAGMHit TDC time", tagmHitVector[i]->t,
-                    "TAGMHit TDC only time", nBins, xMin, xMax);
+                    "TAGMHit TDC only time;t [ns];", nBins, xMin, xMax);
         }
         else{
             Fill1DHistogram ("HLDetectorTiming", "TAGM", "TAGMHit Matched time", tagmHitVector[i]->t,
-                    "TAGMHit Matched ADC/TDC time", nBins, xMin, xMax);
+                    "TAGMHit Matched ADC/TDC time;t [ns];", nBins, xMin, xMax);
             Fill1DHistogram ("HLDetectorTiming", "TAGM", "TAGMHit ADC time", tagmHitVector[i]->time_fadc,
-                    "TAGMHit ADC only time", nBins, xMin, xMax);
+                    "TAGMHit ADC only time;t [ns];", nBins, xMin, xMax);
             Fill1DHistogram ("HLDetectorTiming", "TAGM", "TAGMHit TDC time", tagmHitVector[i]->time_tdc,
-                    "TAGMHit TDC only time", nBins, xMin, xMax);
+                    "TAGMHit TDC only time;t [ns];", nBins, xMin, xMax);
 
-            int nTAGMCounters = 122; // 102 + 20 including 4 fully read out columns
             Fill2DHistogram("HLDetectorTiming", "TAGM", "TAGMHit TDC_ADC Difference",
                     GetCCDBIndexTAGM(tagmHitVector[i]), tagmHitVector[i]->time_tdc - tagmHitVector[i]->time_fadc,
                     "TAGM #Deltat TDC-ADC; Column ;t_{TDC} - t_{ADC} [ns]", nTAGMCounters, 0.5, nTAGMCounters + 0.5, NBINS_TDIFF, MIN_TDIFF, MAX_TDIFF);
@@ -471,124 +408,78 @@ jerror_t JEventProcessor_HLDetectorTiming::evnt(JEventLoop *loop, uint64_t event
                         "TAGM Per Channel TDC time; Column ;t_{TDC} [ns]", nTAGMCounters, 0.5, nTAGMCounters + 0.5, 100, -50, 50);
             }
 
-            if (DO_TRACK_BASED){
-                // TString::Form() is not thread safe! (I learned this the hard way)
-                // Do it the old fashioned way
-                char name [200];
-                char title[500];
-                sprintf(name, "Column %.3i", tagmHitVector[i]->column);
-                sprintf(title, "TAGM Column %i #Deltat Vs Integral; Integral [ADC Units]; t_{TDC} - t_{ADC} [ns]", tagmHitVector[i]->column);
-                Fill2DHistogram("HLDetectorTiming", "TAGM_TimeWalk", name,
-                        tagmHitVector[i]->integral, tagmHitVector[i]->time_tdc - tagmHitVector[i]->time_fadc,
-                        title,
-                        100, 0, 2000, 100, -10, 10, false);
-            }
         }
 
     }
     for (i = 0; i < taghHitVector.size(); i++){
+
         const DTAGHHit *thisTAGHHit = taghHitVector[i];
-        if(thisTAGHHit->has_fADC && thisRFTime != NULL){
-            char name [200];
-            char title[500];
-            sprintf(name, "Counter ID %.3i", taghHitVector[i]->counter_id);
-            sprintf(title, "TAGH Counter ID %i t_{ADC} - t_{RF}; t_{ADC} - t_{RF} [ns]; Entries", taghHitVector[i]->counter_id);
-            double locShiftedTime = dRFTimeFactory->Step_TimeToNearInputTime(thisRFTime->dTime, taghHitVector[i]->time_fadc);
-            Fill1DHistogram("HLDetectorTiming", "TAGH_ADC_RF_Compare", name,
-                    taghHitVector[i]->time_fadc - locShiftedTime,
-                    title,
-                    NBINS_RF_COMPARE, MIN_RF_COMPARE, MAX_RF_COMPARE);
-        }
-        if(thisTAGHHit->has_TDC && thisRFTime != NULL){
-            char name [200];
-            char title[500];
-            sprintf(name, "Counter ID %.3i", taghHitVector[i]->counter_id);
-            sprintf(title, "TAGH Counter ID %i t_{TDC} - t_{RF}; t_{TDC} - t_{RF} [ns]; Entries", taghHitVector[i]->counter_id);
-            double locShiftedTime = dRFTimeFactory->Step_TimeToNearInputTime(thisRFTime->dTime, taghHitVector[i]->time_tdc);
-            Fill1DHistogram("HLDetectorTiming", "TAGH_TDC_RF_Compare", name,
-                    taghHitVector[i]->time_tdc - locShiftedTime,
-                    title,
-                    NBINS_RF_COMPARE, MIN_RF_COMPARE, MAX_RF_COMPARE);
-        }
+        int nTAGHCounters = 274;
 
         if(thisTAGHHit->has_fADC && !thisTAGHHit->has_TDC){
             Fill1DHistogram ("HLDetectorTiming", "TAGH", "TAGHHit ADC time", taghHitVector[i]->t,
-                    "TAGHHit ADC only time", nBins, xMin, xMax);
+                    "TAGHHit ADC only time;t [ns];", nBins, xMin, xMax);
+            // Manual loop over hits to match out of time
+            for (auto hit = taghHitVector.begin(); hit != taghHitVector.end(); hit++){
+                if ((*hit)->has_TDC && !(*hit)->has_fADC){
+                    if (taghHitVector[i]->counter_id == (*hit)->counter_id){
+                        Fill2DHistogram("HLDetectorTiming", "TAGH", "TAGHHit TDC_ADC Difference",
+                                taghHitVector[i]->counter_id, (*hit)->time_tdc - taghHitVector[i]->time_fadc,
+                                "TAGH #Deltat TDC-ADC; Counter ID ;t_{TDC} - t_{ADC} [ns]", nTAGHCounters, 0.5, nTAGHCounters + 0.5, NBINS_TDIFF, MIN_TDIFF, MAX_TDIFF);
+                    }
+                }
+            }
         }
         else if (!thisTAGHHit->has_fADC && thisTAGHHit->has_TDC){
             Fill1DHistogram ("HLDetectorTiming", "TAGH", "TAGHHit TDC time", taghHitVector[i]->t,
-                    "TAGHHit TDC only time", nBins, xMin, xMax);
+                    "TAGHHit TDC only time;t [ns];", nBins, xMin, xMax);
         }
         else{
             Fill1DHistogram ("HLDetectorTiming", "TAGH", "TAGHHit Matched time", taghHitVector[i]->t,
-                    "TAGHHit Matched ADC/TDC time", nBins, xMin, xMax);
+                    "TAGHHit Matched ADC/TDC time;t [ns];", nBins, xMin, xMax);
             Fill1DHistogram ("HLDetectorTiming", "TAGH", "TAGHHit ADC time", taghHitVector[i]->time_fadc,
-                    "TAGHHit ADC only time", nBins, xMin, xMax);
+                    "TAGHHit ADC only time;t [ns];", nBins, xMin, xMax);
             Fill1DHistogram ("HLDetectorTiming", "TAGH", "TAGHHit TDC time", taghHitVector[i]->time_tdc,
-                    "TAGHHit TDC only time", nBins, xMin, xMax);
+                    "TAGHHit TDC only time;t [ns];", nBins, xMin, xMax);
 
-            int nTAGHCounters = 274;
             // We want to look at the timewalk within these ADC/TDC detectors
             Fill2DHistogram("HLDetectorTiming", "TAGH", "TAGHHit TDC_ADC Difference",
                     taghHitVector[i]->counter_id, taghHitVector[i]->time_tdc - taghHitVector[i]->time_fadc,
                     "TAGH #Deltat TDC-ADC; Counter ID ;t_{TDC} - t_{ADC} [ns]", nTAGHCounters, 0.5, nTAGHCounters + 0.5, NBINS_TDIFF, MIN_TDIFF, MAX_TDIFF);
-            if (DO_OPTIONAL){
-                Fill2DHistogram("HLDetectorTiming", "TAGH", "TAGM Per Channel TDC Time",
-                        taghHitVector[i]->counter_id, taghHitVector[i]->time_tdc,
-                        "TAGH Per Channel TDC Time; Counter ID ;t_{TDC} [ns]", nTAGHCounters, 0.5, nTAGHCounters + 0.5, 100, -50, 50);
-            }
-
-            if (DO_TRACK_BASED){
-                char name [200];
-                char title[500];
-                sprintf(name, "Counter ID %.3i", taghHitVector[i]->counter_id);
-                sprintf(title, "TAGH Counter ID %i #Deltat Vs Integral; Integral [ADC Units]; t_{TDC} - t_{ADC} [ns]", taghHitVector[i]->counter_id);
-                Fill2DHistogram("HLDetectorTiming", "TAGH_TimeWalk", name,
-                        taghHitVector[i]->integral, taghHitVector[i]->time_tdc - taghHitVector[i]->time_fadc,
-                        title,
-                        100, 1000, 7000, 100, -10, 10, false);
-            }
         }
     }
     for (i = 0; i < tofHitVector.size(); i++){
         const DTOFHit *thisTOFHit = tofHitVector[i];
+        int nTOFCounters = 176;
         if(thisTOFHit->has_fADC && !thisTOFHit->has_TDC){
             Fill1DHistogram ("HLDetectorTiming", "TOF", "TOFHit ADC time", tofHitVector[i]->t,
-                    "TOFHit ADC only time", nBins, xMin, xMax);
+                    "TOFHit ADC only time;t [ns];", nBins, xMin, xMax);
+            // Manual loop over hits to match out of time
+            for (auto hit = tofHitVector.begin(); hit != tofHitVector.end(); hit++){
+                if ((*hit)->has_TDC && !(*hit)->has_fADC){
+                    if (GetCCDBIndexTOF(tofHitVector[i]) == GetCCDBIndexTOF(*hit)){
+                        Fill2DHistogram("HLDetectorTiming", "TOF", "TOFHit TDC_ADC Difference",
+                                GetCCDBIndexTOF(tofHitVector[i]), (*hit)->t_TDC - tofHitVector[i]->t_fADC,
+                                "TOF #Deltat TDC-ADC; CDCB Index ;t_{TDC} - t_{ADC} [ns]", nTOFCounters, 0.5, nTOFCounters + 0.5, NBINS_TDIFF, MIN_TDIFF, MAX_TDIFF);
+                    }
+                }
+            }
         }
         else if (!thisTOFHit->has_fADC && thisTOFHit->has_TDC){
             Fill1DHistogram ("HLDetectorTiming", "TOF", "TOFHit TDC time", tofHitVector[i]->t,
-                    "TOFHit TDC only time", nBins, xMin, xMax);
+                    "TOFHit TDC only time;t [ns];", nBins, xMin, xMax);
         }
         else{
             Fill1DHistogram ("HLDetectorTiming", "TOF", "TOFHit Matched time", tofHitVector[i]->t,
-                    "TOFHit Matched ADC/TDC time", nBins, xMin, xMax);
+                    "TOFHit Matched ADC/TDC time;t [ns];", nBins, xMin, xMax);
             Fill1DHistogram ("HLDetectorTiming", "TOF", "TOFHit ADC time", tofHitVector[i]->t_fADC,
-                    "TOFHit ADC only time", nBins, xMin, xMax);
+                    "TOFHit ADC only time;t [ns];", nBins, xMin, xMax);
             Fill1DHistogram ("HLDetectorTiming", "TOF", "TOFHit TDC time", tofHitVector[i]->t_TDC,
-                    "TOFHit TDC only time", nBins, xMin, xMax);
+                    "TOFHit TDC only time;t [ns];", nBins, xMin, xMax);
 
-            int nTOFCounters = 176;
             Fill2DHistogram("HLDetectorTiming", "TOF", "TOFHit TDC_ADC Difference",
                     GetCCDBIndexTOF(tofHitVector[i]), tofHitVector[i]->t_TDC - tofHitVector[i]->t_fADC,
                     "TOF #Deltat TDC-ADC; CDCB Index ;t_{TDC} - t_{ADC} [ns]", nTOFCounters, 0.5, nTOFCounters + 0.5, NBINS_TDIFF, MIN_TDIFF, MAX_TDIFF);
-            if (DO_OPTIONAL){
-                Fill2DHistogram("HLDetectorTiming", "TOF", "TOFHit Per Channel TDC Time",
-                        GetCCDBIndexTOF(tofHitVector[i]), tofHitVector[i]->t_TDC,
-                        "TOF Per Channel TDC Time; CDCB Index ;t_{TDC} [ns]", nTOFCounters, 0.5, nTOFCounters + 0.5, 100, -50, 50);
-            }
-
-            if (DO_TRACK_BASED){
-                // TString->Form(...) is not thread safe, trying sprintf
-                char name [200];
-                char title[500];
-                sprintf(name, "Counter ID %.3i", GetCCDBIndexTOF(tofHitVector[i]));
-                sprintf(title, "TOF CCDB Counter ID %i #Deltat Vs dE; dE [Arb.]; t_{TDC} - t_{ADC} [ns]", GetCCDBIndexTOF(tofHitVector[i]));
-                Fill2DHistogram("HLDetectorTiming", "TOF_TimeWalk", name,
-                        tofHitVector[i]->dE, tofHitVector[i]->t_TDC - tofHitVector[i]->t_fADC,
-                        title,
-                        150, 0, 0.01, 100, -10, 10, false);
-            }
         }
     }
 
@@ -597,64 +488,248 @@ jerror_t JEventProcessor_HLDetectorTiming::evnt(JEventLoop *loop, uint64_t event
     // Certainly good enough to take a pass at the time based tracking
     // This will be the final alignment step for now
 
-    if (!DO_TRACK_BASED && !DO_VERIFY && !DO_CDC_TIMING) return NOERROR; // Before this stage we aren't really ready yet, so just return
-
     // We want to plot the delta t at the target between the SC hit and the tagger hits
     // Some limits for these
-    float nBinsE = 160, EMin = 2.0, EMax = 10;
+    float nBinsE = 160, EMin = 3.0, EMax = 12.0;
 
     const DEventRFBunch *thisRFBunch = NULL;
     loop->GetSingle(thisRFBunch, "Calibrations"); // SC only hits
 
-    if (USE_RF_BUNCH && thisRFBunch->dNumParticleVotes >= 2){
+    if (thisRFBunch->dNumParticleVotes < 2) return NOERROR;
+
+    // Loop over TAGM hits
+    for (unsigned int j = 0 ; j < tagmHitVector.size(); j++){
+        int nTAGMColumns = 122; // Not really just columns, but a name is a name
+        if(tagmHitVector[j]->has_fADC){
+            char name [200];
+            char title[500];
+            sprintf(name, "Column %.3i Row %.1i", tagmHitVector[j]->column, tagmHitVector[j]->row);
+            sprintf(title, "TAGM Column %i t_{ADC} - t_{RF}; t_{ADC} - t_{RF} [ns]; Entries", tagmHitVector[j]->column);
+            double locShiftedTime = dRFTimeFactory->Step_TimeToNearInputTime(thisRFBunch->dTime, tagmHitVector[j]->time_fadc);
+            Fill1DHistogram("HLDetectorTiming", "TAGM_ADC_RF_Compare", name,
+                    tagmHitVector[j]->time_fadc - locShiftedTime,
+                    title,
+                    NBINS_RF_COMPARE, MIN_RF_COMPARE, MAX_RF_COMPARE);
+        }
+
+        if(tagmHitVector[j]->has_TDC){
+            char name [200];
+            char title[500];
+            sprintf(name, "Column %.3i Row %.1i", tagmHitVector[j]->column, tagmHitVector[j]->row);
+            sprintf(title, "TAGM Column %i t_{TDC} - t_{RF}; t_{TDC} - t_{RF} [ns]; Entries", tagmHitVector[j]->column);
+            double locShiftedTime = dRFTimeFactory->Step_TimeToNearInputTime(thisRFBunch->dTime, tagmHitVector[j]->time_tdc);
+            Fill1DHistogram("HLDetectorTiming", "TAGM_TDC_RF_Compare", name,
+                    tagmHitVector[j]->time_tdc - locShiftedTime,
+                    title,
+                    NBINS_RF_COMPARE, MIN_RF_COMPARE, MAX_RF_COMPARE);
+        }
+
+        Fill2DHistogram("HLDetectorTiming", "TRACKING", "TAGM - RFBunch Time",
+                GetCCDBIndexTAGM(tagmHitVector[j]), tagmHitVector[j]->t - thisRFBunch->dTime,
+                "#Deltat TAGM-RFBunch; CCDB Index ;t_{TAGM} - t_{SC @ target} [ns]",
+                nTAGMColumns, 0.5, nTAGMColumns + 0.5, NBINS_TAGGER_TIME,MIN_TAGGER_TIME,MAX_TAGGER_TIME);
+        Fill2DHistogram("HLDetectorTiming", "TRACKING", "Tagger - RFBunch Time",
+                tagmHitVector[j]->t - thisRFBunch->dTime, tagmHitVector[j]->E,
+                "Tagger - RFBunch Time; #Deltat_{Tagger - SC} [ns]; Energy [GeV]",
+                NBINS_TAGGER_TIME,MIN_TAGGER_TIME,MAX_TAGGER_TIME, nBinsE, EMin, EMax);
+        Fill1DHistogram("HLDetectorTiming", "TRACKING", "Tagger - RFBunch 1D Time",
+                tagmHitVector[j]->t - thisRFBunch->dTime,
+                "Tagger - RFBunch Time; #Deltat_{Tagger - RFBunch} [ns]; Entries",
+                160, -20, 20);
+        if (tagmHitVector[j]->row == 0){
+            Fill1DHistogram("HLDetectorTiming", "TRACKING", "TAGM - RFBunch 1D Time",
+                    tagmHitVector[j]->t - thisRFBunch->dTime,
+                    "TAGM - RFBunch Time; #Deltat_{TAGM - RFBunch} [ns]; Entries",
+                    160, -20, 20);
+        }
+    }
+
+    // Loop over TAGH hits
+    for (unsigned int j = 0 ; j < taghHitVector.size(); j++){
+        int nTAGHCounters = 274;
+
+        if(taghHitVector[j]->has_fADC){
+            char name [200];
+            char title[500];
+            sprintf(name, "Counter ID %.3i", taghHitVector[j]->counter_id);
+            sprintf(title, "TAGH Counter ID %i t_{ADC} - t_{RF}; t_{ADC} - t_{RF} [ns]; Entries", taghHitVector[j]->counter_id);
+            double locShiftedTime = dRFTimeFactory->Step_TimeToNearInputTime(thisRFBunch->dTime, taghHitVector[j]->time_fadc);
+            Fill1DHistogram("HLDetectorTiming", "TAGH_ADC_RF_Compare", name,
+                    taghHitVector[j]->time_fadc - locShiftedTime,
+                    title,
+                    NBINS_RF_COMPARE, MIN_RF_COMPARE, MAX_RF_COMPARE);
+        }
+        if(taghHitVector[j]->has_TDC){
+            char name [200];
+            char title[500];
+            sprintf(name, "Counter ID %.3i", taghHitVector[j]->counter_id);
+            sprintf(title, "TAGH Counter ID %i t_{TDC} - t_{RF}; t_{TDC} - t_{RF} [ns]; Entries", taghHitVector[j]->counter_id);
+            double locShiftedTime = dRFTimeFactory->Step_TimeToNearInputTime(thisRFBunch->dTime, taghHitVector[j]->time_tdc);
+            Fill1DHistogram("HLDetectorTiming", "TAGH_TDC_RF_Compare", name,
+                    taghHitVector[j]->time_tdc - locShiftedTime,
+                    title,
+                    NBINS_RF_COMPARE, MIN_RF_COMPARE, MAX_RF_COMPARE);
+        }
+
+        Fill2DHistogram("HLDetectorTiming", "TRACKING", "TAGH - RFBunch Time",
+                taghHitVector[j]->counter_id, taghHitVector[j]->t - thisRFBunch->dTime,
+                "#Deltat TAGH-RFBunch; Counter ID ;t_{TAGH} - t_{RFBunch} [ns]",
+                nTAGHCounters, 0.5, nTAGHCounters + 0.5, NBINS_TAGGER_TIME,MIN_TAGGER_TIME,MAX_TAGGER_TIME);
+
+        Fill2DHistogram("HLDetectorTiming", "TRACKING", "Tagger - RFBunch Time",
+                taghHitVector[j]->t - thisRFBunch->dTime, taghHitVector[j]->E,
+                "Tagger - RFBunch Time; #Deltat_{Tagger - RFBunch} [ns]; Energy [GeV]",
+                NBINS_TAGGER_TIME,MIN_TAGGER_TIME,MAX_TAGGER_TIME, nBinsE, EMin, EMax);
+
+        Fill1DHistogram("HLDetectorTiming", "TRACKING", "Tagger - RFBunch 1D Time",
+                taghHitVector[j]->t - thisRFBunch->dTime,
+                "Tagger - RFBunch Time; #Deltat_{Tagger - RFBunch} [ns]; Entries",
+                160, -20, 20);
+    }
+
+
+    if (!DO_TRACK_BASED && !DO_VERIFY ) return NOERROR; // Before this stage we aren't really ready yet, so just return
+
+    // Try using the detector matches
+    // Loop over the charged tracks
+
+    vector<const DChargedTrack *> chargedTrackVector;
+    loop->Get(chargedTrackVector);
+
+    for (i = 0; i < chargedTrackVector.size(); i++){
+
+        // We only want negative particles to kick out protons
+        if (chargedTrackVector[i]->Get_Charge() > 0) continue;
+        const DChargedTrackHypothesis *pionHypothesis = chargedTrackVector[i]->Get_Hypothesis(PiMinus);
+
+        if (pionHypothesis == NULL) continue;
+
+        double trackingFOM = TMath::Prob(pionHypothesis->dChiSq_Track, pionHypothesis->dNDF_Track);
+        // Some quality cuts for the tracks we will use
+        // Keep this minimal for now and investigate later
+        //float trackingFOMCut = 0.01;
+        //float trackingFOMCut =0.0027;
+        float trackingFOMCut = 2.87E-7;
+        unsigned int trackingNDFCut = 5;
+
+        if(trackingFOM < trackingFOMCut) continue;
+        if( pionHypothesis->dNDF_Track < trackingNDFCut) continue;
+
+        //////////////////////////////////////////
+        // get best matches to SC/TOF/FCAL/BCAL //
+        //////////////////////////////////////////
+        const DSCHitMatchParams      *locSCHitMatchParams       = pionHypothesis->Get_SCHitMatchParams();
+        const DTOFHitMatchParams     *locTOFHitMatchParams      = pionHypothesis->Get_TOFHitMatchParams();
+        const DFCALShowerMatchParams *locFCALShowerMatchParams  = pionHypothesis->Get_FCALShowerMatchParams();
+        const DBCALShowerMatchParams *locBCALShowerMatchParams  = pionHypothesis->Get_BCALShowerMatchParams();
+
+        // We will only use tracks matched to the start counter for our calibration since this will be our reference for t0
+        if (locSCHitMatchParams == NULL) continue;
+
+        // the idea will be to fix the SC time and reference the other PID detectors off of this
+
+        // These "flightTime" corrected time are essentially that detector's estimate of the target time
+        float targetCenterCorrection = ((pionHypothesis->position()).Z() - Z_TARGET) / SPEED_OF_LIGHT;
+        float flightTimeCorrectedSCTime = locSCHitMatchParams->dHitTime - locSCHitMatchParams->dFlightTime - targetCenterCorrection; 
+        char name [200];
+        char title[500];
+        sprintf(name, "Sector %.2i", locSCHitMatchParams->dSCHit->sector);
+        sprintf(title, "SC Sector %i t_{Target} - t_{RF}; t_{Target} - t_{RF} [ns]; Entries", locSCHitMatchParams->dSCHit->sector);
+        double locShiftedTime = dRFTimeFactory->Step_TimeToNearInputTime(thisRFBunch->dTime, flightTimeCorrectedSCTime);
+        Fill1DHistogram("HLDetectorTiming", "SC_Target_RF_Compare", name,
+                flightTimeCorrectedSCTime - locShiftedTime,
+                title,
+                NBINS_RF_COMPARE, MIN_RF_COMPARE, MAX_RF_COMPARE);
+
+        vector < const DCDCTrackHit *> cdcTrackHitVector;
+        pionHypothesis->Get(cdcTrackHitVector);
+        if (cdcTrackHitVector.size() != 0){
+            float earliestTime = 10000; // Initialize high
+            for (unsigned int iCDC = 0; iCDC < cdcTrackHitVector.size(); iCDC++){
+                if (cdcTrackHitVector[iCDC]->tdrift < earliestTime) earliestTime = cdcTrackHitVector[iCDC]->tdrift;
+            }
+
+            Fill1DHistogram("HLDetectorTiming", "TRACKING", "Earliest CDC Time Minus Matched SC Time",
+                    earliestTime - locSCHitMatchParams->dHitTime,
+                    "Earliest CDC Time Minus Matched SC Time; t_{CDC} - t_{SC} [ns];",
+                    200, -50, 150);
+        }
+
         // Loop over TAGM hits
         for (unsigned int j = 0 ; j < tagmHitVector.size(); j++){
-            int nTAGMColumns = 122; // Not really just columns, but a name is a name
-            if(tagmHitVector[j]->has_fADC && tagmHitVector[j]->has_TDC){
-                Fill2DHistogram("HLDetectorTiming", "TRACKING", "TAGM Pulse Peak Vs. TAGM - RFBunch 1D Time",
-                        tagmHitVector[j]->t - thisRFBunch->dTime, tagmHitVector[j]->pulse_peak,
-                        "TAGM - RFBunch Time; #Deltat_{TAGM - RFBunch} [ns]; Pulse Peak [ADC Counts]",
-                        160, -20, 20, 500, 0, 1000);
-            }
-            if(tagmHitVector[j]->pulse_peak > 48){ // Make a peak cut ~12mV , Lot of noise in 2016 data...
-                // We want to look at the timewalk within these ADC/TDC detectors
-                Fill2DHistogram("HLDetectorTiming", "TRACKING", "TAGM - RFBunch Time",
-                        GetCCDBIndexTAGM(tagmHitVector[j]), tagmHitVector[j]->t - thisRFBunch->dTime,
-                        "#Deltat TAGM-RFBunch; CCDB Index ;t_{TAGM} - t_{SC @ target} [ns]",
-                        nTAGMColumns, 0.5, nTAGMColumns + 0.5, NBINS_TAGGER_TIME,MIN_TAGGER_TIME,MAX_TAGGER_TIME);
-                Fill2DHistogram("HLDetectorTiming", "TRACKING", "Tagger - RFBunch Time",
-                        tagmHitVector[j]->t - thisRFBunch->dTime, tagmHitVector[j]->E,
-                        "Tagger - RFBunch Time; #Deltat_{Tagger - SC} [ns]; Energy [GeV]",
-                        NBINS_TAGGER_TIME,MIN_TAGGER_TIME,MAX_TAGGER_TIME, nBinsE, EMin, EMax);
-                Fill1DHistogram("HLDetectorTiming", "TRACKING", "Tagger - RFBunch 1D Time",
-                        tagmHitVector[j]->t - thisRFBunch->dTime,
-                        "Tagger - RFBunch Time; #Deltat_{Tagger - RFBunch} [ns]; Entries",
-                        160, -20, 20);
-                Fill1DHistogram("HLDetectorTiming", "TRACKING", "TAGM - RFBunch 1D Time",
-                        tagmHitVector[j]->t - thisRFBunch->dTime,
-                        "TAGM - RFBunch Time; #Deltat_{TAGM - RFBunch} [ns]; Entries",
-                        160, -20, 20);
-            }
+            int nTAGMColumns = 122;
+            // We want to look at the timewalk within these ADC/TDC detectors
+            Fill2DHistogram("HLDetectorTiming", "TRACKING", "TAGM - SC Target Time",
+                    GetCCDBIndexTAGM(tagmHitVector[j]), tagmHitVector[j]->t - flightTimeCorrectedSCTime,
+                    "#Deltat TAGM-SC; Column ;t_{TAGM} - t_{SC @ target} [ns]", nTAGMColumns, 0.5, nTAGMColumns + 0.5, NBINS_TAGGER_TIME,MIN_TAGGER_TIME,MAX_TAGGER_TIME);
+            Fill2DHistogram("HLDetectorTiming", "TRACKING", "Tagger - SC Target Time",
+                    tagmHitVector[j]->t - flightTimeCorrectedSCTime, tagmHitVector[j]->E,
+                    "Tagger - SC Target Time; #Deltat_{Tagger - SC} [ns]; Energy [GeV]",
+                    NBINS_TAGGER_TIME,MIN_TAGGER_TIME,MAX_TAGGER_TIME, nBinsE, EMin, EMax);   
+            Fill1DHistogram("HLDetectorTiming", "TRACKING", "Tagger - SC 1D Target Time",
+                    tagmHitVector[j]->t - flightTimeCorrectedSCTime,
+                    "Tagger - SC Time at Target; #Deltat_{Tagger - SC} [ns]; Entries",
+                    160, -20, 20);
         }
         // Loop over TAGH hits
         for (unsigned int j = 0 ; j < taghHitVector.size(); j++){
             int nTAGHCounters = 274;
-            Fill2DHistogram("HLDetectorTiming", "TRACKING", "TAGH - RFBunch Time",
-                    taghHitVector[j]->counter_id, taghHitVector[j]->t - thisRFBunch->dTime,
-                    "#Deltat TAGH-RFBunch; Counter ID ;t_{TAGH} - t_{RFBunch} [ns]",
-                    nTAGHCounters, 0.5, nTAGHCounters + 0.5, NBINS_TAGGER_TIME,MIN_TAGGER_TIME,MAX_TAGGER_TIME);
+            Fill2DHistogram("HLDetectorTiming", "TRACKING", "TAGH - SC Target Time",
+                    taghHitVector[j]->counter_id, taghHitVector[j]->t - flightTimeCorrectedSCTime,
+                    "#Deltat TAGH-SC; Counter ID ;t_{TAGH} - t_{SC @ target} [ns]", nTAGHCounters, 0.5, nTAGHCounters + 0.5, NBINS_TAGGER_TIME,MIN_TAGGER_TIME,MAX_TAGGER_TIME);
 
-            Fill2DHistogram("HLDetectorTiming", "TRACKING", "Tagger - RFBunch Time",
-                    taghHitVector[j]->t - thisRFBunch->dTime, taghHitVector[j]->E,
-                    "Tagger - RFBunch Time; #Deltat_{Tagger - RFBunch} [ns]; Energy [GeV]",
+            Fill2DHistogram("HLDetectorTiming", "TRACKING", "Tagger - SC Target Time",
+                    taghHitVector[j]->t - flightTimeCorrectedSCTime, taghHitVector[j]->E,
+                    "Tagger - SC Target Time; #Deltat_{Tagger - SC} [ns]; Energy [GeV]",
                     NBINS_TAGGER_TIME,MIN_TAGGER_TIME,MAX_TAGGER_TIME, nBinsE, EMin, EMax);
 
-            Fill1DHistogram("HLDetectorTiming", "TRACKING", "Tagger - RFBunch 1D Time",
-                    taghHitVector[j]->t - thisRFBunch->dTime,
-                    "Tagger - RFBunch Time; #Deltat_{Tagger - RFBunch} [ns]; Entries",
+            Fill1DHistogram("HLDetectorTiming", "TRACKING", "Tagger - SC 1D Target Time",
+                    taghHitVector[j]->t - flightTimeCorrectedSCTime,
+                    "Tagger - SC Time at Target; #Deltat_{Tagger - SC} [ns]; Entries",
                     160, -20, 20);
         }
-    }
+
+        if (locTOFHitMatchParams != NULL){
+            // Now check the TOF matching. Do this on a full detector level.
+            float flightTimeCorrectedTOFTime = locTOFHitMatchParams->dHitTime - locTOFHitMatchParams->dFlightTime - targetCenterCorrection;
+            Fill1DHistogram("HLDetectorTiming", "TRACKING", "TOF - SC Target Time",
+                    flightTimeCorrectedTOFTime - flightTimeCorrectedSCTime,
+                    "t_{TOF} - t_{SC} at Target; t_{TOF} - t_{SC} at Target [ns]; Entries",
+                    NBINS_MATCHING, MIN_MATCHING_T, MAX_MATCHING_T);
+            Fill1DHistogram("HLDetectorTiming", "TRACKING", "TOF - RF Time",
+                    flightTimeCorrectedTOFTime - thisRFBunch->dTime,
+                    "t_{TOF} - t_{RF} at Target; t_{TOF} - t_{RF} at Target [ns]; Entries",
+                    NBINS_MATCHING, MIN_MATCHING_T, MAX_MATCHING_T);
+        }
+        if (locBCALShowerMatchParams != NULL){
+            float flightTimeCorrectedBCALTime = locBCALShowerMatchParams->dBCALShower->t - locBCALShowerMatchParams->dFlightTime - targetCenterCorrection;
+            Fill1DHistogram("HLDetectorTiming", "TRACKING", "BCAL - SC Target Time",
+                    flightTimeCorrectedBCALTime - flightTimeCorrectedSCTime,
+                    "t_{BCAL} - t_{SC} at Target; t_{BCAL} - t_{SC} [ns]; Entries",
+                    NBINS_MATCHING, MIN_MATCHING_T, MAX_MATCHING_T);
+            Fill1DHistogram("HLDetectorTiming", "TRACKING", "BCAL - RF Time",
+                    flightTimeCorrectedBCALTime - thisRFBunch->dTime,
+                    "t_{BCAL} - t_{RF} at Target; t_{BCAL} - t_{RF} [ns]; Entries",
+                    NBINS_MATCHING, MIN_MATCHING_T, MAX_MATCHING_T);
+            // Add histogram suggested by Mark Dalton
+            Fill2DHistogram("HLDetectorTiming", "TRACKING", "BCAL - SC Target Time Vs Correction",
+                    locBCALShowerMatchParams->dFlightTime, flightTimeCorrectedBCALTime - flightTimeCorrectedSCTime,
+                    "t_{BCAL} - t_{SC} at Target; Flight time [ns]; t_{BCAL} - t_{SC} [ns]",
+                    100, 0, 20, 50, -10, 10);
+        }
+        if (locFCALShowerMatchParams != NULL){
+            float flightTimeCorrectedFCALTime = locFCALShowerMatchParams->dFCALShower->getTime() - locFCALShowerMatchParams->dFlightTime - targetCenterCorrection;
+            Fill1DHistogram("HLDetectorTiming", "TRACKING", "FCAL - SC Target Time",
+                    flightTimeCorrectedFCALTime - flightTimeCorrectedSCTime,
+                    "t_{FCAL} - t_{SC} at Target; t_{FCAL} - t_{SC} [ns]; Entries",
+                    NBINS_MATCHING, MIN_MATCHING_T, MAX_MATCHING_T);
+            Fill1DHistogram("HLDetectorTiming", "TRACKING", "FCAL - RF Time",
+                    flightTimeCorrectedFCALTime - thisRFBunch->dTime,
+                    "t_{FCAL} - t_{RF} at Target; t_{FCAL} - t_{RF} [ns]; Entries",
+                    NBINS_MATCHING, MIN_MATCHING_T, MAX_MATCHING_T);
+        }
+
+    } // End of loop over time based tracks
 
     if (DO_REACTION){
         // Trigger the analysis
@@ -708,184 +783,9 @@ jerror_t JEventProcessor_HLDetectorTiming::evnt(JEventLoop *loop, uint64_t event
             }
         }
     }
-
-    // Try using the detector matches
-    // Loop over the charged tracks
-    vector<const DTrackTimeBased *> timeBasedTrackVector;
-    loop->Get(timeBasedTrackVector);
-
-    const DDetectorMatches* locDetectorMatches = NULL;
-    loop->GetSingle(locDetectorMatches);
-
-    for (i = 0; i < timeBasedTrackVector.size(); i++){
-
-        const DTrackTimeBased * thisTrack = timeBasedTrackVector[i];
-
-        // Some quality cuts for the tracks we will use
-        // Keep this minimal for now and investigate later
-        //float trackingFOMCut = 0.01;
-        //float trackingFOMCut =0.0027;
-        float trackingFOMCut = 2.87E-7;
-        int trackingNDFCut = 5;
-
-        if(thisTrack->FOM < trackingFOMCut) continue;
-        if(thisTrack->Ndof < trackingNDFCut) continue;
-
-
-        // Do CDC Fine timing with these tracks (Requires a lot of statistics)
-        if (DO_OPTIONAL || DO_CDC_TIMING){
-            const vector<DTrackFitter::pull_t> *pulls = &thisTrack->pulls;
-
-            // Since there is no smoothing of the track, the first value in the pulls is tied to the 
-            // tracking result. Dont use this one since the residual is always zero.
-
-            for (unsigned int iPull = 1; iPull < pulls->size(); iPull++){
-                if ((*pulls)[iPull].cdc_hit == NULL) continue;
-                int ring = (*pulls)[iPull].cdc_hit->wire->ring;
-                int straw = (*pulls)[iPull].cdc_hit->wire->straw;
-
-                double tdrift = (*pulls)[iPull].tdrift;
-                double residual = (*pulls)[iPull].resi;
-                int nStraws = 3522;
-                int CCDBIndex = GetCCDBIndexCDC(ring, straw);
-                Fill2DHistogram("HLDetectorTiming", "CDC", "CDC Drift time per Straw",
-                        tdrift, CCDBIndex,
-                        "Drift time for each CDC wire (flight time/B-field corr.); t [ns]; CCDB Index",
-                        750, -500, 1000, nStraws, 0.5, nStraws + 0.5);
-                Fill2DHistogram("HLDetectorTiming", "CDC", "CDC Residual Vs Drift Time",
-                        tdrift, residual,
-                        "CDC Residual Vs Drift time; Drift time [ns]; Residual [cm]",
-                        1020,-20, 1000, 200, -0.1, 0.1);
-            }
-        }
-
-
-        // For calibration of the timing, we might as well just look at the negatively charged tracks 
-        // Should reject proton candidates
-        // Will move this cut to later, statistics are lacking for Tagger SC alignment.
-        // if(thisTrack->charge() > 0) continue; 
-
-        // At this point the timing alignment is good enough to make some use of the PID libraries
-        // Copied from Justin's physics_detcom plugin
-
-        //////////////////////////////////////////
-        // get best matches to SC/TOF/FCAL/BCAL //
-        //////////////////////////////////////////
-        DSCHitMatchParams locSCHitMatchParams;
-        DTOFHitMatchParams locTOFHitMatchParams;
-        DFCALShowerMatchParams locFCALShowerMatchParams;
-        DBCALShowerMatchParams locBCALShowerMatchParams;
-
-        bool foundSC = dParticleID->Get_BestSCMatchParams(thisTrack, locDetectorMatches, locSCHitMatchParams);
-        bool foundTOF = dParticleID->Get_BestTOFMatchParams(thisTrack, locDetectorMatches, locTOFHitMatchParams);
-        bool foundFCAL = dParticleID->Get_BestFCALMatchParams(thisTrack, locDetectorMatches, locFCALShowerMatchParams);
-        bool foundBCAL = dParticleID->Get_BestBCALMatchParams(thisTrack, locDetectorMatches, locBCALShowerMatchParams);
-
-        // We will only use tracks matched to the start counter for our calibration since this will be our reference for t0
-        if (!foundSC) continue;
-
-        // the idea will be to fix the SC time and reference the other PID detectors off of this
-
-        // These "flightTime" corrected time are essentially that detector's estimate of the target time
-        float targetCenterCorrection = ((thisTrack->position()).Z() - Z_TARGET) / SPEED_OF_LIGHT;
-        float flightTimeCorrectedSCTime = locSCHitMatchParams.dHitTime - locSCHitMatchParams.dFlightTime - targetCenterCorrection; 
-        // There appears to be some problem with the CDC times when the SC is used as t0
-        // This histogram should help diagnose the issue
-        if (USE_RF_BUNCH && thisRFBunch->dNumParticleVotes >= 2){
-            char name [200];
-            char title[500];
-            sprintf(name, "Sector %.2i", locSCHitMatchParams.dSCHit->sector);
-            sprintf(title, "SC Sector %i t_{Target} - t_{RF}; t_{Target} - t_{RF} [ns]; Entries", locSCHitMatchParams.dSCHit->sector);
-            double locShiftedTime = dRFTimeFactory->Step_TimeToNearInputTime(thisRFTime->dTime, flightTimeCorrectedSCTime);
-            Fill1DHistogram("HLDetectorTiming", "SC_Target_RF_Compare", name,
-                    flightTimeCorrectedSCTime - locShiftedTime,
-                    title,
-                    NBINS_RF_COMPARE, MIN_RF_COMPARE, MAX_RF_COMPARE);
-        }
-
-        vector < const DCDCTrackHit *> cdcTrackHitVector;
-        thisTrack->Get(cdcTrackHitVector);
-        if (cdcTrackHitVector.size() != 0){
-            float earliestTime = 10000; // Initialize high
-            for (unsigned int iCDC = 0; iCDC < cdcTrackHitVector.size(); iCDC++){
-                if (cdcTrackHitVector[iCDC]->tdrift < earliestTime) earliestTime = cdcTrackHitVector[iCDC]->tdrift;
-            }
-
-            Fill1DHistogram("HLDetectorTiming", "TRACKING", "Earliest CDC Time Minus Matched SC Time",
-                    earliestTime - locSCHitMatchParams.dHitTime,
-                    "Earliest CDC Time Minus Matched SC Time; t_{CDC} - t_{SC} [ns];",
-                    200, -50, 150);
-        }
-
-        // Loop over TAGM hits
-        for (unsigned int j = 0 ; j < tagmHitVector.size(); j++){
-            int nTAGMColumns = 122;
-            // We want to look at the timewalk within these ADC/TDC detectors
-            Fill2DHistogram("HLDetectorTiming", "TRACKING", "TAGM - SC Target Time",
-                    GetCCDBIndexTAGM(tagmHitVector[j]), tagmHitVector[j]->t - flightTimeCorrectedSCTime,
-                    "#Deltat TAGM-SC; Column ;t_{TAGM} - t_{SC @ target} [ns]", nTAGMColumns, 0.5, nTAGMColumns + 0.5, NBINS_TAGGER_TIME,MIN_TAGGER_TIME,MAX_TAGGER_TIME);
-            Fill2DHistogram("HLDetectorTiming", "TRACKING", "Tagger - SC Target Time",
-                    tagmHitVector[j]->t - flightTimeCorrectedSCTime, tagmHitVector[j]->E,
-                    "Tagger - SC Target Time; #Deltat_{Tagger - SC} [ns]; Energy [GeV]",
-                    NBINS_TAGGER_TIME,MIN_TAGGER_TIME,MAX_TAGGER_TIME, nBinsE, EMin, EMax);   
-            Fill1DHistogram("HLDetectorTiming", "TRACKING", "Tagger - SC 1D Target Time",
-                    tagmHitVector[j]->t - flightTimeCorrectedSCTime,
-                    "Tagger - SC Time at Target; #Deltat_{Tagger - SC} [ns]; Entries",
-                    160, -20, 20);
-        }
-        // Loop over TAGH hits
-        for (unsigned int j = 0 ; j < taghHitVector.size(); j++){
-            int nTAGHCounters = 274;
-            Fill2DHistogram("HLDetectorTiming", "TRACKING", "TAGH - SC Target Time",
-                    taghHitVector[j]->counter_id, taghHitVector[j]->t - flightTimeCorrectedSCTime,
-                    "#Deltat TAGH-SC; Counter ID ;t_{TAGH} - t_{SC @ target} [ns]", nTAGHCounters, 0.5, nTAGHCounters + 0.5, NBINS_TAGGER_TIME,MIN_TAGGER_TIME,MAX_TAGGER_TIME);
-
-            Fill2DHistogram("HLDetectorTiming", "TRACKING", "Tagger - SC Target Time",
-                    taghHitVector[j]->t - flightTimeCorrectedSCTime, taghHitVector[j]->E,
-                    "Tagger - SC Target Time; #Deltat_{Tagger - SC} [ns]; Energy [GeV]",
-                    NBINS_TAGGER_TIME,MIN_TAGGER_TIME,MAX_TAGGER_TIME, nBinsE, EMin, EMax);
-
-            Fill1DHistogram("HLDetectorTiming", "TRACKING", "Tagger - SC 1D Target Time",
-                    taghHitVector[j]->t - flightTimeCorrectedSCTime,
-                    "Tagger - SC Time at Target; #Deltat_{Tagger - SC} [ns]; Entries",
-                    160, -20, 20);
-        }
-
-        if(thisTrack->charge() > 0) continue; // Cut on the charge to kill protons
-
-        if (foundTOF){
-            // Now check the TOF matching. Do this on a full detector level.
-            float flightTimeCorrectedTOFTime = locTOFHitMatchParams.dHitTime - locTOFHitMatchParams.dFlightTime - targetCenterCorrection;
-            Fill1DHistogram("HLDetectorTiming", "TRACKING", "TOF - SC Target Time",
-                    flightTimeCorrectedTOFTime - flightTimeCorrectedSCTime,
-                    "t_{TOF} - t_{SC} at Target; t_{TOF} - t_{SC} at Target [ns]; Entries",
-                    NBINS_MATCHING, MIN_MATCHING_T, MAX_MATCHING_T);
-        }
-        if (foundBCAL){
-            float flightTimeCorrectedBCALTime = locBCALShowerMatchParams.dBCALShower->t - locBCALShowerMatchParams.dFlightTime - targetCenterCorrection;
-            Fill1DHistogram("HLDetectorTiming", "TRACKING", "BCAL - SC Target Time",
-                    flightTimeCorrectedBCALTime - flightTimeCorrectedSCTime,
-                    "t_{BCAL} - t_{SC} at Target; t_{BCAL} - t_{SC} [ns]; Entries",
-                    NBINS_MATCHING, MIN_MATCHING_T, MAX_MATCHING_T);
-            // Add histogram suggested by Mark Dalton
-            Fill2DHistogram("HLDetectorTiming", "TRACKING", "BCAL - SC Target Time Vs Correction",
-                    locBCALShowerMatchParams.dFlightTime, flightTimeCorrectedBCALTime - flightTimeCorrectedSCTime,
-                    "t_{BCAL} - t_{SC} at Target; Flight time [ns]; t_{BCAL} - t_{SC} [ns]",
-                    100, 0, 20, 50, -10, 10);
-        }
-        if (foundFCAL){
-            float flightTimeCorrectedFCALTime = locFCALShowerMatchParams.dFCALShower->getTime() - locFCALShowerMatchParams.dFlightTime - targetCenterCorrection;
-            Fill1DHistogram("HLDetectorTiming", "TRACKING", "FCAL - SC Target Time",
-                    flightTimeCorrectedFCALTime - flightTimeCorrectedSCTime,
-                    "t_{FCAL} - t_{SC} at Target; t_{FCAL} - t_{SC} [ns]; Entries",
-                    NBINS_MATCHING, MIN_MATCHING_T, MAX_MATCHING_T);
-        }
-
-
-    } // End of loop over time based tracks
-
     return NOERROR;
 }
+
 
 //------------------
 // erun

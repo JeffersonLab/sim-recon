@@ -37,12 +37,14 @@ class DTrackCandidate_factory_StraightLine:public jana::JFactory<DTrackCandidate
 
   class trajectory_t{
   public:
-    trajectory_t(double z,double t,DMatrix4x1 S,DMatrix4x4 J,unsigned int id=0,
-		 unsigned int numhits=0)
-      :z(z),t(t),S(S),J(J),id(id),numhits(numhits){}
+  trajectory_t(double z,double t,DMatrix4x1 S,DMatrix4x4 J,DMatrix4x1 Skk,
+	       DMatrix4x4 Ckk,unsigned int id=0,unsigned int numhits=0)
+      :z(z),t(t),S(S),J(J),Skk(Skk),Ckk(Ckk),id(id),numhits(numhits){}
     double z,t; 
     DMatrix4x1 S;
     DMatrix4x4 J;
+    DMatrix4x1 Skk;
+    DMatrix4x4 Ckk;
     unsigned int id,numhits;
 
   };
@@ -51,6 +53,14 @@ class DTrackCandidate_factory_StraightLine:public jana::JFactory<DTrackCandidate
     double resi,err,d,tdrift,s;
   }update_t;
 
+  typedef struct{
+    double d,tdrift,s;
+    DMatrix4x1 S;
+    DMatrix4x4 C;
+    DMatrix2x2 V;
+  }fdc_update_t;
+  
+
  private:
   jerror_t init(void);						///< Called once at program start.
   jerror_t brun(jana::JEventLoop *eventLoop, int32_t runnumber);	///< Called everytime a new run number is detected.
@@ -58,7 +68,7 @@ class DTrackCandidate_factory_StraightLine:public jana::JFactory<DTrackCandidate
   jerror_t erun(void);						///< Called everytime run number changes, provided brun has been called.
   jerror_t fini(void);						///< Called after last event of last event source has been processed.
   
-  
+  double fdc_drift_distance(double time);
   jerror_t DoFilter(double t0,double start_z,DMatrix4x1 &S,
 		    vector<const DFDCPseudo *>&hits);
   jerror_t DoFilter(double t0,double OuterZ,DMatrix4x1 &S,
@@ -75,7 +85,7 @@ class DTrackCandidate_factory_StraightLine:public jana::JFactory<DTrackCandidate
 			vector<const DFDCPseudo *>&hits,
 			vector<int>&used_fdc_hits,
 			deque<trajectory_t>&trajectory,
-			vector<update_t>&pulls,
+			vector<fdc_update_t>&pulls,
 			double &chi2,unsigned int &ndof);
   jerror_t KalmanFilter(DMatrix4x1 &S,DMatrix4x4 &C,
 			vector<const DCDCTrackHit *>&hits,
@@ -83,15 +93,20 @@ class DTrackCandidate_factory_StraightLine:public jana::JFactory<DTrackCandidate
 			deque<trajectory_t>&trajectory,
 			vector<update_t>&pulls,
 			double &chi2,unsigned int &ndof,bool timebased=false);
+  jerror_t Smooth(deque<trajectory_t>&trajectory,
+		  vector<fdc_update_t>&updates,
+		  vector<const DFDCPseudo *>&hits,
+		  DTrackCandidate *cand); 
 
   double CDCDriftDistance(double t);
   double CDCDriftDistance(double dphi, double delta,double t);
   double CDCDriftVariance(double t);
   unsigned int Locate(vector<double>&xx,double x);
 
-  bool COSMICS,DEBUG_HISTS;
+  bool COSMICS,DEBUG_HISTS,USE_FDC_DRIFT_TIMES;
   float CHI2CUT;
   int DO_PRUNING;
+  int PLANE_TO_SKIP;
 
   DTrackFinder *finder;
   const DParticleID* dParticleID;

@@ -87,6 +87,9 @@ class DEVIOWorkerThread{
 		bool  PARSE_EVENTTAG;
 		bool  PARSE_TRIGGER;
 		
+		bool  LINK_TRIGGERTIME;
+		bool  LINK_CONFIG;
+		
 		void Run(void);
 		void Finish(bool wait_to_complete=true);
 		void Prune(void);

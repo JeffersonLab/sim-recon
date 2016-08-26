@@ -23,7 +23,7 @@ int main(int narg, char *argv[])
 	// Run though all events, calling our event processor's methods
 	app.Run(NULL, 1);
 	
-	return 0;
+	return app.GetExitCode();
 }
 
 //-----------

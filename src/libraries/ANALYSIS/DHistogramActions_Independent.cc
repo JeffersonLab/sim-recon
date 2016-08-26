@@ -297,7 +297,8 @@ void DHistogramAction_Reconstruction::Initialize(JEventLoop* locEventLoop)
 
 	string locHistName, locHistTitle;
 
-	bool locIsRESTEvent = (string(locEventLoop->GetJEvent().GetJEventSource()->className()) == string("DEventSourceREST"));
+	//Check if is REST event (high-level objects only)
+	bool locIsRESTEvent = locEventLoop->GetJEvent().GetStatusBit(kSTATUS_REST);
 
 	vector<const DMCThrown*> locMCThrowns;
 	locEventLoop->Get(locMCThrowns);
@@ -475,7 +476,7 @@ bool DHistogramAction_Reconstruction::Perform_Action(JEventLoop* locEventLoop, c
 	if(Get_NumPreviousParticleCombos() != 0)
 		return true;
 
-	bool locIsRESTEvent = (string(locEventLoop->GetJEvent().GetJEventSource()->className()) == string("DEventSourceREST"));
+	bool locIsRESTEvent = locEventLoop->GetJEvent().GetStatusBit(kSTATUS_REST);
 
 	vector<const DBCALShower*> locBCALShowers;
 	locEventLoop->Get(locBCALShowers);
@@ -769,7 +770,7 @@ void DHistogramAction_DetectorMatching::Initialize(JEventLoop* locEventLoop)
 		//Objects created within a plugin (such as reaction-independent actions) can be accessed by many threads simultaneously. 
 	string locHistName, locHistTitle;
 
-	bool locIsRESTEvent = (string(locEventLoop->GetJEvent().GetJEventSource()->className()) == string("DEventSourceREST"));
+	bool locIsRESTEvent = locEventLoop->GetJEvent().GetStatusBit(kSTATUS_REST);
 
 	//CREATE THE HISTOGRAMS
 	//Since we are creating histograms, the contents of gDirectory will be modified: must use JANA-wide ROOT lock
@@ -1026,7 +1027,7 @@ bool DHistogramAction_DetectorMatching::Perform_Action(JEventLoop* locEventLoop,
 	if(Get_NumPreviousParticleCombos() != 0)
 		return true;
 
-	bool locIsRESTEvent = (string(locEventLoop->GetJEvent().GetJEventSource()->className()) == string("DEventSourceREST"));
+	bool locIsRESTEvent = locEventLoop->GetJEvent().GetStatusBit(kSTATUS_REST);
 
 	Fill_MatchingHists(locEventLoop, true); //Time-based tracks
 	if(!locIsRESTEvent)
@@ -2818,7 +2819,7 @@ void DHistogramAction_NumReconstructedObjects::Initialize(JEventLoop* locEventLo
 {
 	string locHistName;
 
-	bool locIsRESTEvent = (string(locEventLoop->GetJEvent().GetJEventSource()->className()) == string("DEventSourceREST"));
+	bool locIsRESTEvent = locEventLoop->GetJEvent().GetStatusBit(kSTATUS_REST);
 
 	//CREATE THE HISTOGRAMS
 	//Since we are creating histograms, the contents of gDirectory will be modified: must use JANA-wide ROOT lock
@@ -2961,7 +2962,7 @@ bool DHistogramAction_NumReconstructedObjects::Perform_Action(JEventLoop* locEve
 	if(Get_NumPreviousParticleCombos() != 0)
 		return true; //else double-counting!
 
-	bool locIsRESTEvent = (string(locEventLoop->GetJEvent().GetJEventSource()->className()) == string("DEventSourceREST"));
+	bool locIsRESTEvent = locEventLoop->GetJEvent().GetStatusBit(kSTATUS_REST);
 
 	vector<const DTrackTimeBased*> locTrackTimeBasedVector;
 	locEventLoop->Get(locTrackTimeBasedVector);

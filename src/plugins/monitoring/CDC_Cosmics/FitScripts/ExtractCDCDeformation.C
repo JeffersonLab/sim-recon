@@ -19,7 +19,7 @@ TH1I * Get1DHistogram(const char * plugin, const char * directoryName, const cha
 TH2I * Get2DHistogram(const char * plugin, const char * directoryName, const char * name){
     TH2I * histogram;
     TString fullName = TString(plugin) + "/" + TString(directoryName) + "/" + TString(name);
-    histogram = thisFile->GetObject(fullName, histogram);
+    thisFile->GetObject(fullName, histogram);
     if (histogram == 0){
         cout << "Unable to find histogram " << fullName.Data() << endl;
         return NULL;
@@ -52,7 +52,7 @@ void ExtractCDCDeformation(TString filename = "hd_root.root"){
 
     // Check to make sure it is open
     if (thisFile == 0) {
-        cout << "Unable to open file " << fileName.Data() << "...Exiting" << endl;
+        cout << "Unable to open file " << filename.Data() << "...Exiting" << endl;
         return;
     }
 

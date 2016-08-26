@@ -2,7 +2,7 @@
 
 //Leave this global so the accesors don't need the pointer as an argument
 
-namespace ExtractTimeWalk {
+namespace ExtractTimeWalkNS {
   TFile *thisFile;
 
 // Accessor functions to grab histograms from our file
@@ -21,7 +21,7 @@ namespace ExtractTimeWalk {
   TH2I * Get2DHistogram(const char * plugin, const char * directoryName, const char * name){
     TH2I * histogram;
     TString fullName = TString(plugin) + "/" + TString(directoryName) + "/" + TString(name);
-    histogram = thisFile->GetObject(fullName, histogram);
+    thisFile->GetObject(fullName, histogram);
     if (histogram == 0){
         cout << "Unable to find histogram " << fullName.Data() << endl;
         return NULL;
@@ -34,14 +34,14 @@ namespace ExtractTimeWalk {
 void ExtractTimeWalk(TString filename = "hd_root.root"){
 
     // Open our input and output file
-    ExtractTimeWalk::thisFile = TFile::Open(filename);
+    ExtractTimeWalkNS::thisFile = TFile::Open(filename);
     TFile *outputFile = TFile::Open("BCALTimewalk_Results.root", "RECREATE");
     outputFile->mkdir("Upstream");
     outputFile->mkdir("Downstream");
 
     // Check to make sure it is open
-    if (ExtractTimeWalk::thisFile == 0) {
-        cout << "Unable to open file " << fileName.Data() << "...Exiting" << endl;
+    if (ExtractTimeWalkNS::thisFile == 0) {
+        cout << "Unable to open file " << filename.Data() << "...Exiting" << endl;
         return;
     }
 
@@ -57,7 +57,7 @@ void ExtractTimeWalk(TString filename = "hd_root.root"){
     // The threshold in ADC counts is ~14 so this is in the denominator
     double a_thresh = 14.0;
     char formula[100];
-    sprintf(formula,  "[0]+[1]/TMath::Power(x/%d,[2])", a_thresh);
+    sprintf(formula,  "[0]+[1]/TMath::Power(x/%f,[2])", a_thresh);
     TF1 *f1 = new TF1("f1", formula , 15, 400);
     f1->SetParLimits(2, 0.25, 1.5);
 
@@ -82,10 +82,10 @@ void ExtractTimeWalk(TString filename = "hd_root.root"){
                 // For each M/L/S we have Upstream and downstream, lets grab them
                 // These histograms are created on the fly in the plugin, so there is a chance that they do not exist, in which case the pointer will be NULL
 
-                TH2I *h_UpstreamTW_E   = ExtractTimeWalk::Get2DHistogram ("BCAL_TDC_Timing", "BCAL_Upstream_Timewalk_NoCorrection_E", name);
-                TH2I *h_UpstreamTW_PP  = ExtractTimeWalk::Get2DHistogram ("BCAL_TDC_Timing", "BCAL_Upstream_Timewalk_NoCorrection_PP", name);
-                TH2I *h_DownstreamTW_E = ExtractTimeWalk::Get2DHistogram ("BCAL_TDC_Timing", "BCAL_Downstream_Timewalk_NoCorrection_E", name);
-                TH2I *h_DownstreamTW_PP = ExtractTimeWalk::Get2DHistogram ("BCAL_TDC_Timing", "BCAL_Downstream_Timewalk_NoCorrection_PP", name); 
+                TH2I *h_UpstreamTW_E   = ExtractTimeWalkNS::Get2DHistogram ("BCAL_TDC_Timing", "BCAL_Upstream_Timewalk_NoCorrection_E", name);
+                TH2I *h_UpstreamTW_PP  = ExtractTimeWalkNS::Get2DHistogram ("BCAL_TDC_Timing", "BCAL_Upstream_Timewalk_NoCorrection_PP", name);
+                TH2I *h_DownstreamTW_E = ExtractTimeWalkNS::Get2DHistogram ("BCAL_TDC_Timing", "BCAL_Downstream_Timewalk_NoCorrection_E", name);
+                TH2I *h_DownstreamTW_PP = ExtractTimeWalkNS::Get2DHistogram ("BCAL_TDC_Timing", "BCAL_Downstream_Timewalk_NoCorrection_PP", name); 
 
                 // Use FitSlicesY routine to extract the mean of each x bin
                 TObjArray ySlicesUpstream;
@@ -145,7 +145,7 @@ void ExtractTimeWalk(TString filename = "hd_root.root"){
     }
     textFile.close();
     outputFile->Write();
-    ExtractTimeWalk::thisFile->Close();
+    ExtractTimeWalkNS::thisFile->Close();
     return;
 }
 

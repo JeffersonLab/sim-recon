@@ -1096,6 +1096,7 @@ jerror_t JEventSource_EVIO::ReadEVIOEvent(uint32_t* &buff)
 						default:
 							cout << endl << "err_code=" << hdevio->err_code << endl;
 							cout << endl << mess << endl;
+							japp->SetExitCode(hdevio->err_code);
 							if(hdevio) delete hdevio;
 							hdevio = NULL;
 							return NO_MORE_EVENTS_IN_SOURCE;

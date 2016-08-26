@@ -69,7 +69,13 @@ jerror_t JEventProcessor_L3BDTtree::init(void)
 	l3tree->Branch("Efcal_clusters",    &bdt.Efcal_clusters,    "Efcal_clusters/F");
 	l3tree->Branch("Ntrack_candidates", &bdt.Ntrack_candidates, "Ntrack_candidates/I");
 	l3tree->Branch("Ptot_candidates",   &bdt.Ptot_candidates,   "Ptot_candidates/F");
+	l3tree->Branch("Npshits",           &bdt.Npshits,           "Npshits/I");
+	l3tree->Branch("Npschits",          &bdt.Npschits,          "Npschits/I");
 	l3tree->Branch("is_good",           &bdt.is_good,           "is_good/I");
+
+	l3tree->Branch("Evisible",          &bdt.Evisible,          "Evisible/F");
+	l3tree->Branch("FCAL_rmax",         &bdt.FCAL_rmax,         "FCAL_rmax/F");
+	l3tree->Branch("FCAL_rmin",         &bdt.FCAL_rmin,         "FCAL_rmin/F");
 
 	return NOERROR;
 }
@@ -136,13 +142,33 @@ jerror_t JEventProcessor_L3BDTtree::evnt(JEventLoop *loop, uint64_t eventnumber)
 	for(auto bp : bcalpoints  ) Ebcal_points   += bp->E();
 	for(auto bc : bcalclusters) Ebcal_clusters += bc->E();
 	for(auto fc : fcalclusters) Efcal_clusters += fc->getEnergy();
+	
+	// FCAL Rmin and Rmax (for Eugene)
+	Float_t FCAL_rmin = 10000.0;
+	Float_t FCAL_rmax = 0.0;
+	for(auto fc : fcalclusters){
+		Float_t r = fc->getCentroid().Perp();
+		if( r < FCAL_rmin ) FCAL_rmin = r;
+		if( r > FCAL_rmax ) FCAL_rmax = r;
+	}
 
 	// Ptot for candidates
 	double Ptot_candidates = 0.0;
 	for(auto tc : trackcandidates) Ptot_candidates += tc->momentum().Mag();
 
+	// PS
 	bool has_ps = (pshits.size() + pschits.size()) > 1;
+
+	// Tagged Photon
 	bool has_tagged_photon = false; // in coherent region
+	for(auto ph : photons){
+		double Etagged = ph->energy();
+		if( Etagged>8.0 ) {
+			has_tagged_photon=true;
+			break;
+		}
+	}
+
 	bool is_good = has_ps || ((Evisible>=4.0) && has_tagged_photon);
 
 	japp->RootWriteLock();
@@ -157,7 +183,13 @@ jerror_t JEventProcessor_L3BDTtree::evnt(JEventLoop *loop, uint64_t eventnumber)
 	bdt.Efcal_clusters = Efcal_clusters;
 	bdt.Ntrack_candidates = trackcandidates.size();
 	bdt.Ptot_candidates = Ptot_candidates;
+	bdt.Npshits = pshits.size();
+	bdt.Npschits = pschits.size();
 	bdt.is_good = is_good ? 1:0;
+
+	bdt.Evisible  = Evisible;
+	bdt.FCAL_rmax = FCAL_rmax;
+	bdt.FCAL_rmin = FCAL_rmin;
 
 	l3tree->Fill();
 

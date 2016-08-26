@@ -46,7 +46,7 @@ double JEventSourceGenerator_EVIOpp::CheckOpenable(string source)
 	}
 	delete hdevio;
 	
-	if(is_good_evio) return 0.001;
+	if(is_good_evio) return 0.4;
 	
 	return 0.0;
 }

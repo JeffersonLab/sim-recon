@@ -41,9 +41,9 @@ JEventSource_EVIOpp::JEventSource_EVIOpp(const char* source_name):JEventSource(s
 {
 	DONE = false;
 	NEVENTS_PROCESSED = 0;
-	NWAITS_FOR_THREAD = 0;
-	NWAITS_FOR_PARSED_EVENT = 0;
-	
+	NDISPATCHER_STALLED  = 0;
+	NEVENTBUFF_STALLED   = 0;
+	NPARSER_STALLED      = 0;
 
 	// Initialize dedicated JStreamLog used for debugging messages
 	evioout.SetTag("--- EVIO ---: ");
@@ -66,6 +66,9 @@ JEventSource_EVIOpp::JEventSource_EVIOpp(const char* source_name):JEventSource(s
 	PRINT_STATS = true;
 	SWAP = true;
 	LINK = true;
+	LINK_TRIGGERTIME = true;
+	LINK_BORCONFIG = true;
+	LINK_CONFIG = true;
 	PARSE = true;
 	PARSE_F250 = true;
 	PARSE_F125 = true;
@@ -94,6 +97,9 @@ JEventSource_EVIOpp::JEventSource_EVIOpp(const char* source_name):JEventSource(s
 
 	gPARMS->SetDefaultParameter("EVIO:SWAP", SWAP, "Allow swapping automatic swapping. Turning this off should only be used for debugging.");
 	gPARMS->SetDefaultParameter("EVIO:LINK", LINK, "Link associated objects. Turning this off should only be used for debugging.");
+	gPARMS->SetDefaultParameter("EVIO:LINK_TRIGGERTIME", LINK_TRIGGERTIME, "Link D*TriggerTime associated objects. This is on by default and may be OK to turn off (but please check output if you do!)");
+	gPARMS->SetDefaultParameter("EVIO:LINK_BORCONFIG", LINK_BORCONFIG, "Link BORConfig associated objects. This is on by default. If turned off, it will break emulation (and possibly other things in the future).");
+	gPARMS->SetDefaultParameter("EVIO:LINK_CONFIG", LINK_CONFIG, "Link Config associated objects. This is on by default.");
 
 	gPARMS->SetDefaultParameter("EVIO:PARSE", PARSE, "Set this to 0 to disable parsing of event buffers and generation of any objects (for benchmarking/debugging)");
 	gPARMS->SetDefaultParameter("EVIO:PARSE_F250", PARSE_F250, "Set this to 0 to disable parsing of data from F250 ADC modules (for benchmarking/debugging)");
@@ -112,8 +118,9 @@ JEventSource_EVIOpp::JEventSource_EVIOpp(const char* source_name):JEventSource(s
 	if(gPARMS->Exists("RECORD_CALL_STACK")) gPARMS->GetParameter("RECORD_CALL_STACK", RECORD_CALL_STACK);
 
 	jobtype = DEVIOWorkerThread::JOB_NONE;
-	if(PARSE) jobtype |= DEVIOWorkerThread::JOB_FULL_PARSE;
-	if(LINK ) jobtype |= DEVIOWorkerThread::JOB_ASSOCIATE;
+	if( PARSE ) jobtype |= DEVIOWorkerThread::JOB_FULL_PARSE;
+	if( LINK  ) jobtype |= DEVIOWorkerThread::JOB_ASSOCIATE;
+	if(!LINK  ) LINK_BORCONFIG = false;
 	
 	source_type          = kNoSource;
 	hdevio               = NULL;
@@ -169,6 +176,8 @@ JEventSource_EVIOpp::JEventSource_EVIOpp(const char* source_name):JEventSource(s
 		w->PARSE_EPICS         = PARSE_EPICS;
 		w->PARSE_EVENTTAG      = PARSE_EVENTTAG;
 		w->PARSE_TRIGGER       = PARSE_TRIGGER;
+		w->LINK_TRIGGERTIME    = LINK_TRIGGERTIME;
+		w->LINK_CONFIG         = LINK_CONFIG;
 		w->run_number_seed     = run_number_seed;
 		worker_threads.push_back(w);
 	}
@@ -212,11 +221,28 @@ JEventSource_EVIOpp::~JEventSource_EVIOpp()
 	if(PRINT_STATS){
 		auto tdiff = duration_cast<duration<double>>(tend - tstart);
 		double rate = (double)NEVENTS_PROCESSED/tdiff.count();
+		
+		uint32_t NTHREADS_PROC = 1;
+		if(gPARMS->Exists("NTHREADS")) gPARMS->GetParameter("NTHREADS", NTHREADS_PROC);
+
+		// Calculate fraction of total time each stage spent
+		// idle. There was a 1ms sleep for each one of these
+		double tfrac_dis   = (double)NDISPATCHER_STALLED/1000.0/tdiff.count()*100.0;
+		double tfrac_parse = (double)NPARSER_STALLED/1000.0/(double)NTHREADS/tdiff.count()*100.0;
+		double tfrac_proc  = (double)NEVENTBUFF_STALLED/1000.0/tdiff.count()*100.0;
+		
+		char sdispatcher[256];
+		char sparser[256];
+		char sprocessor[256];
+		sprintf(sdispatcher, "  NDISPATCHER_STALLED = %10ld (%4.1f%%)", (unsigned long)NDISPATCHER_STALLED, tfrac_dis  );
+		sprintf(sparser    , "      NPARSER_STALLED = %10ld (%4.1f%%)", (unsigned long)NPARSER_STALLED    , tfrac_parse);
+		sprintf(sprocessor , "   NEVENTBUFF_STALLED = %10ld (%4.1f%%)", (unsigned long)NEVENTBUFF_STALLED , tfrac_proc );
 
 		cout << endl;
-		cout << "   EVIO Processing rate = " << rate << " Hz" << endl;
-		cout << "      NWAITS_FOR_THREAD = " << NWAITS_FOR_THREAD << endl;
-		cout << "NWAITS_FOR_PARSED_EVENT = " << NWAITS_FOR_PARSED_EVENT << endl;
+		cout << " EVIO Processing rate = " << rate << " Hz" << endl;
+		cout << sdispatcher << endl;
+		cout << sparser     << endl;
+		cout << sprocessor  << endl;
 	}
 	
 	// Delete all BOR objects
@@ -265,7 +291,7 @@ void JEventSource_EVIOpp::Dispatcher(void)
 				break;
 			}
 			if(!thr) {
-				NWAITS_FOR_THREAD++;
+				NDISPATCHER_STALLED++;
 				this_thread::sleep_for(milliseconds(1));
 			}
 			if(DONE) break;
@@ -296,6 +322,7 @@ void JEventSource_EVIOpp::Dispatcher(void)
 					}
 				}else{
 					cout << hdevio->err_mess.str() << endl;
+					if(hdevio->err_code != HDEVIO::HDEVIO_EOF) japp->SetExitCode(hdevio->err_code);
 				}
 				break;
 			}else{
@@ -354,7 +381,7 @@ jerror_t JEventSource_EVIOpp::GetEvent(JEvent &event)
 	unique_lock<std::mutex> lck(PARSED_EVENTS_MUTEX);
 	while(parsed_events.empty()){
 		if(DONE) return NO_MORE_EVENTS_IN_SOURCE;
-		NWAITS_FOR_PARSED_EVENT++;
+		NEVENTBUFF_STALLED++;
 		PARSED_EVENTS_CV.wait_for(lck,std::chrono::milliseconds(1));
 	}
 
@@ -448,7 +475,7 @@ jerror_t JEventSource_EVIOpp::GetObjects(JEvent &event, JFactory_base *factory)
 	if(!pe->copied_to_factories){
 
 		// Optionally link BOR object associations
-		if(LINK && pe->borptrs) LinkBORassociations(pe);
+		if(LINK_BORCONFIG && pe->borptrs) LinkBORassociations(pe);
 		
 		// Optionally emulate flash firmware
 		if(!pe->vDf250WindowRawData.empty()) EmulateDf250Firmware(pe);

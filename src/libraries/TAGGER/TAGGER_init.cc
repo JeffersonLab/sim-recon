@@ -14,7 +14,9 @@ using namespace jana;
 #include "DTAGMGeometry_factory.h"
 #include "DTAGHGeometry_factory.h"
 #include "DTAGMHit_factory.h"
+#include "DTAGMHit_factory_Calib.h"
 #include "DTAGHHit_factory.h"
+#include "DTAGHHit_factory_Calib.h"
 
 
 jerror_t TAGGER_init(JEventLoop *loop)
@@ -25,11 +27,13 @@ jerror_t TAGGER_init(JEventLoop *loop)
   loop->AddFactory(new JFactory<DTAGHDigiHit>());
   loop->AddFactory(new JFactory<DTAGHTDCDigiHit>());
   loop->AddFactory(new DTAGMHit_factory());
+  loop->AddFactory(new DTAGMHit_factory_Calib());
   loop->AddFactory(new DTAGHHit_factory());
+  loop->AddFactory(new DTAGHHit_factory_Calib());
   loop->AddFactory(new JFactory<DTAGMHit>("TRUTH"));
   loop->AddFactory(new JFactory<DTAGHHit>("TRUTH"));
   loop->AddFactory(new DTAGMGeometry_factory());
   loop->AddFactory(new DTAGHGeometry_factory());
-  
+
   return NOERROR;
 }

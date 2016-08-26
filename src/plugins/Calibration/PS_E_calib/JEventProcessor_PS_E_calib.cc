@@ -108,6 +108,7 @@ jerror_t JEventProcessor_PS_E_calib::init(void)
 	//
 
    // create root folder tagm
+   TDirectory *mainDir = gDirectory;
    TDirectory *tagmDir = gDirectory->mkdir("TAGM");
    TDirectory *taghDir = gDirectory->mkdir("TAGH");
 
@@ -133,7 +134,9 @@ jerror_t JEventProcessor_PS_E_calib::init(void)
                                         Energy asymmetry;PS energy (GeV)",hodo+1),
                                         50,0,1,NEb_PS,Ebl_PS,Ebh_PS);
    }
-   
+ 
+
+   mainDir->cd();
 	return NOERROR;
 }
 

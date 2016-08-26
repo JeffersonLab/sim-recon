@@ -34,9 +34,13 @@ using namespace std;
 extern double Ecoherent_peak;
 extern double Eelectron_beam;
 extern double Emin;
+extern double EnergyMax;
+extern double TMin;
+extern double TMax;
 extern double CollimatorDiameter;
 extern bool   ONLY_COHERENT;
 extern bool   ONLY_INCOHERENT;
+int Nen;
 
 static TRandom2 RAND(1);
 
@@ -626,6 +630,8 @@ void GlueXPrimaryGeneratorAction::prepareCobremsImportanceSamplingPDFs()
 
 void GlueXPrimaryGeneratorAction::GenerateBeamPhoton(TVector3 &pgamma, TVector3 &pol)
 {
+	int Nenergy = 0;
+	for(Nenergy=0; Nenergy<500000; Nenergy++){
    // Generates a single beam photon according to the coherent bremsstrahlung
    // model defined by class CobremsGenerator.  The photon begins its lifetime
    // just upstream of the primary collimator (WARNING: position is hard-wired
@@ -861,6 +867,9 @@ void GlueXPrimaryGeneratorAction::GenerateBeamPhoton(TVector3 &pgamma, TVector3 
    double px = pabs * alphax;
    double py = pabs * alphay;
    double pz = sqrt(pabs*pabs - px*px - py*py);
+	//cout << "Energy is " << pabs <<"  Beam" << endl;
+
+//	cout << "Energy is " << pabs <<"  Beam" << endl;
 //   double colphi = twopi * RAND.Rndm();
 //   double vspotrms = fCobremsGenerator->getCollimatorSpotrms() * m;
 //   double colrho = vspotrms * sqrt(-2 * log(RAND.Rndm()));
@@ -877,7 +886,27 @@ void GlueXPrimaryGeneratorAction::GenerateBeamPhoton(TVector3 &pgamma, TVector3 
 //   TVector3 pol(0, polarization, -polarization * py / pz);
 	pgamma.SetXYZ(px, py, pz);
 	pol.SetXYZ(0, polarization, -polarization * py / pz);
+	
+	int limit_n = 400000;
+	if(Nenergy>limit_n){  
 
+		cout << "Warning: Event generation looped more" << endl;
+		cout << "than " << limit_n << " times to generate particle" << endl;
+		cout << "in proper energy range of " << Emin << " GeV to "<< EnergyMax << " GeV"<< endl;
+		cout << "Consider expanding energy range or examining gen_2mu source code" << endl;
+		break;
+	}
+
+	if(pabs<EnergyMax){  
+
+		// The below 3 lines were used for debugging only
+		//cout << "Number of steps for theta             " << Ntheta << endl;
+		//cout << "Value of thetaplus            "  <<   thetaPlus*180/pi   << endl;
+		//cout << "Value of thetaminus           "  <<   thetaMinus*180/pi   << endl;
+		//cout << "Final Energy is " << pabs <<"  Beam" << endl;
+		break;
+				} 
+	}
 //   // Generate a new primary for the beam photon
 //   double lightSpeed = 2.99792e8 * m/s;
 //   double t0rf = fBeamBucketPeriod * int(t0 / fBeamBucketPeriod + 0.5);

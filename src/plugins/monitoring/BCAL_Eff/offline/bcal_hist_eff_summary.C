@@ -1,10 +1,11 @@
+#include <TRandom.h>
+#include <iostream>
+#include <fstream>
+
 void bcal_hist_eff_summary(void)
 {
 // read in histograms plotting BCAL efficiencies and print history to file.
 //
-
-#include <TRandom.h>
-#include <fstream.h>
 
 gROOT->Reset();
 //TTree *Bfield = (TTree *) gROOT->FindObject("Bfield");
@@ -93,7 +94,7 @@ gStyle->SetPadBottomMargin(0.15);
      printf ("Histogram input filename=%s does not open\n",string);
      continue;
    }
-   else if {
+   else {
      printf ("Histogram input filename=%s OK\n",string);
    }
 
@@ -103,11 +104,11 @@ gStyle->SetPadBottomMargin(0.15);
 
    TH1F *h1eff_eff= NULL;
    h1eff_eff = (TH1F*)gDirectory->FindObjectAny("h1eff_eff");
-   TH1F *h1eff_cellideff = (TH1F*))gDirectory->FindObjectAny("h1eff_cellideff");
-   TH1F *h1eff2_eff2 = (TH1F*))gDirectory->FindObjectAny("h1eff2_eff2");
-   TH1F *h1eff2_cellideff2 = (TH1F*))gDirectory->FindObjectAny("h1eff2_cellideff2");
+   TH1F *h1eff_cellideff = (TH1F*)gDirectory->FindObjectAny("h1eff_cellideff");
+   TH1F *h1eff2_eff2 = (TH1F*)gDirectory->FindObjectAny("h1eff2_eff2");
+   TH1F *h1eff2_cellideff2 = (TH1F*)gDirectory->FindObjectAny("h1eff2_cellideff2");
 
-   if (!h1eff_eff == NULL !! h1eff_eff->GetEntries() <=0) continue;
+   if ( (h1eff_eff == NULL) ||  (h1eff_eff->GetEntries() <=0)) continue;
 
    // retrieving information from the histogram
 
@@ -148,11 +149,11 @@ gStyle->SetPadBottomMargin(0.15);
 
    // retrieving information from the histogram
 
-   Int_t ndim = h1eff2_eff2->GetNbinsX();
-   Double_t xlo = h1eff2_eff2->GetBinLowEdge(1);
-   Double_t width = h1eff2_eff2->GetBinWidth(1);
-   Double_t xhi = xlo + width*ndim;
-   printf ("\nbcal_hist_eff2_summary: ndx=%d, ndim=%d, xlo=%f, width=%f, xhi=%d\n\n",ndx,ndim,xlo,width,xhi);
+   ndim = h1eff2_eff2->GetNbinsX();
+   xlo = h1eff2_eff2->GetBinLowEdge(1);
+   width = h1eff2_eff2->GetBinWidth(1);
+   xhi = xlo + width*ndim;
+   printf ("\nbcal_hist_eff2_summary: ndx=%d, ndim=%d, xlo=%f, width=%f, xhi=%f\n\n",ndx,ndim,xlo,width,xhi);
 
       for(j=0;j<ndim;j++) {
       Double_t xbin = xlo + j*width;
@@ -230,7 +231,7 @@ gStyle->SetPadBottomMargin(0.15);
 
    sprintf(string,"hd_rawdata_002179");
    printf ("Histogram input filename=%s\n",string);
-   t1 = new TLatex(0.15,0.92,string);
+   TLatex *t1 = new TLatex(0.15,0.92,string);
    t1->SetNDC();
    t1->SetTextSize(0.03);
    t1->Draw();
@@ -247,7 +248,7 @@ gStyle->SetPadBottomMargin(0.15);
    c2->SetBorderMode(0);
    c2->SetFillColor(0);
 
-  TLegend *leg = new TLegend(0.6,0.80,0.85,0.95);
+   leg = new TLegend(0.6,0.80,0.85,0.95);
   leg->AddEntry(hsummary2_layer1,"Layer 1","p");
   leg->AddEntry(hsummary2_layer2,"Layer 2","p");
   leg->AddEntry(hsummary2_layer3,"Layer 3","p");
