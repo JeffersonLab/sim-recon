@@ -129,6 +129,7 @@ void DEventWriterROOT::Create_DataTree(const DReaction* locReaction, JEventLoop*
 	//create basic/misc. tree branches (run#, event#, etc.)
 	locBranchRegister.Register_Single<UInt_t>("RunNumber");
 	locBranchRegister.Register_Single<ULong64_t>("EventNumber");
+	locBranchRegister.Register_Single<UInt_t>("L1TriggerBits");
 
 	//create X4_Production
 	locBranchRegister.Register_Single<TLorentzVector>("X4_Production");
@@ -929,6 +930,10 @@ void DEventWriterROOT::Fill_DataTree(JEventLoop* locEventLoop, const DReaction* 
 	const DVertex* locVertex = NULL;
 	locEventLoop->GetSingle(locVertex);
 
+	//GET TRIGGER
+	const DTrigger* locTrigger = NULL;
+	locEventLoop->GetSingle(locTrigger);
+
 	//Check whether beam is used in the combo
 	bool locBeamUsedFlag = (locReaction->Get_ReactionStep(0)->Get_TargetParticleID() != Unknown);
 
@@ -1006,6 +1011,7 @@ void DEventWriterROOT::Fill_DataTree(JEventLoop* locEventLoop, const DReaction* 
 	//PRIMARY EVENT INFO
 	locTreeFillData->Fill_Single<UInt_t>("RunNumber", locEventLoop->GetJEvent().GetRunNumber());
 	locTreeFillData->Fill_Single<ULong64_t>("EventNumber", locEventLoop->GetJEvent().GetEventNumber());
+	locTreeFillData->Fill_Single<UInt_t>("L1TriggerBits", locTrigger->Get_L1TriggerBits());
 
 	//PRODUCTION X4
 	DLorentzVector locProductionX4 = locVertex->dSpacetimeVertex;
