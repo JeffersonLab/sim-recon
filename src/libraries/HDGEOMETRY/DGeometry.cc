@@ -1319,6 +1319,7 @@ bool DGeometry::GetCDCEndplate(double &z,double &dz,double &rmin,double &rmax)
 
   vector<double>cdc_origin;
   vector<double>cdc_center;
+  vector<double>cdc_layers_offset;
   vector<double>cdc_endplate_pos;
   vector<double>cdc_endplate_dim;
   
@@ -1326,7 +1327,8 @@ bool DGeometry::GetCDCEndplate(double &z,double &dz,double &rmin,double &rmax)
   if(!Get("//posXYZ[@volume='centralDC']/@X_Y_Z",cdc_center)) return false;
   if(!Get("//posXYZ[@volume='CDPD']/@X_Y_Z",cdc_endplate_pos)) return false;
   if(!Get("//tubs[@name='CDPD']/@Rio_Z",cdc_endplate_dim)) return false;
-  
+  if(!Get("//posXYZ[@volume='CDClayers']/@X_Y_Z",cdc_layers_offset)) return false;
+
 	if(cdc_origin.size()<3){
   		_DBG_<<"cdc_origin.size()<3 !"<<endl;
 		return false;
@@ -1343,8 +1345,12 @@ bool DGeometry::GetCDCEndplate(double &z,double &dz,double &rmin,double &rmax)
   		_DBG_<<"cdc_endplate_dim.size()<3 !"<<endl;
 		return false;
 	}
+	if (cdc_layers_offset.size()<3){
+	  _DBG_<<"cdc_layers_offset.size()<3 !"<<endl;
+	  return false;
+	}
   
-  z=cdc_origin[2]+cdc_center[2]+cdc_endplate_pos[2];
+	z=cdc_origin[2]+cdc_center[2]+cdc_endplate_pos[2]+cdc_layers_offset[2];
   dz=cdc_endplate_dim[2];
   rmin=cdc_endplate_dim[0];
   rmax=cdc_endplate_dim[1];
