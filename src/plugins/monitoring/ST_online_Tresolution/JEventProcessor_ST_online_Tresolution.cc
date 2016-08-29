@@ -205,7 +205,7 @@ jerror_t JEventProcessor_ST_online_Tresolution::evnt(JEventLoop *loop, uint64_t 
 					    st_params[0].dSCHit, 
 					    st_params[0].dSCHit->t, 
 					    locSCHitMatchParams, 
-					    true,
+					    true, NULL,
 					    &IntersectionPoint, &IntersectionDir); 
       if(!sc_match_pid) continue; 
       // Cut on the number of particle votes to find the best RF time

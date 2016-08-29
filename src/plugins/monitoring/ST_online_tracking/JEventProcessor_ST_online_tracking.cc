@@ -214,7 +214,7 @@ jerror_t JEventProcessor_ST_online_tracking::evnt(JEventLoop *eventLoop, uint64_
 						 st_params[0].dSCHit, 
 						 st_params[0].dSCHit->t, 
 						 locSCHitMatchParams, 
-						 true,
+						 true, NULL,
 						 &IntersectionPoint, &IntersectionDir);      
       if(!st_match_pid) continue;  
 
