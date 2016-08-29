@@ -79,6 +79,7 @@ DBCALShower_factory_IU::evnt( JEventLoop *loop, uint64_t eventnumber ){
     DBCALShower* shower = new DBCALShower();
     
     shower->E_raw = (**clItr).E();
+    shower->E_preshower = (**clItr).E_preshower();
     shower->x = rho * sinTh * cosPhi;
     shower->y = rho * sinTh * sinPhi;
     shower->z = rho * cosTh + m_zTarget;
