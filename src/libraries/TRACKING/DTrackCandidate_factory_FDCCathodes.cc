@@ -608,7 +608,7 @@ DTrackCandidate_factory_FDCCathodes::GetPositionAndMomentum(
   double pt=0.003*Bz*segment->rc; 
   double px=pt*sin(dphi1);
   double py=pt*cos(dphi1);
-  double pz=pt*tanl;
+  double pz=pt*segment->tanl;
   mom.SetXYZ(px,py,pz);
 
   return NOERROR;
