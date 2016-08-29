@@ -56,6 +56,7 @@ using namespace jana;
 #include <DAQ/DF1TDCBORConfig.h>
 #include <DAQ/DCAEN1290TDCBORConfig.h>
 #include <DAQ/DBORptrs.h>
+#include <PID/DVertex.h>
 
 // Here is some C++ macro script-fu. For each type of class the DParsedEvent
 // can hold, we want to have a vector of pointers to that type of object. 
@@ -93,7 +94,8 @@ using namespace jana;
 		X(DCODAROCInfo) \
 		X(DL1Info) \
 		X(DEPICSvalue) \
-		X(DEventTag)
+		X(DEventTag) \
+        X(DVertex)
 
 
 class DParsedEvent{

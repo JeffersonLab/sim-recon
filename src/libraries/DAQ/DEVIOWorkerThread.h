@@ -106,6 +106,7 @@ class DEVIOWorkerThread{
 		void      ParsePhysicsBank(uint32_t* &iptr, uint32_t *iend);
 		void ParseBuiltTriggerBank(uint32_t* &iptr, uint32_t *iend);
 		void         ParseDataBank(uint32_t* &iptr, uint32_t *iend);
+        void      ParseDVertexBank(uint32_t* &iptr, uint32_t *iend);
 
 		void        ParseJLabModuleData(uint32_t rocid, uint32_t* &iptr, uint32_t *iend);
 		void              ParseCAEN1190(uint32_t rocid, uint32_t* &iptr, uint32_t *iend);
