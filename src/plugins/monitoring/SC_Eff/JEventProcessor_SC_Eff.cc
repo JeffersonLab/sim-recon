@@ -33,7 +33,7 @@ jerror_t JEventProcessor_SC_Eff::init(void)
 	//action initialize not necessary: is empty
 	dMaxPIDDeltaTMap[SYS_BCAL] = 1.0;
 	dMaxPIDDeltaTMap[SYS_TOF] = 1.0;
-	*dLooseSCDeltaPhiCut = 99999.9; //intentionally wide: accept and save all: for sideband subtraction
+	dLooseSCDeltaPhiCut = 99999.9; //intentionally wide: accept and save all: for sideband subtraction
 
 	TDirectory* locOriginalDir = gDirectory;
 	gDirectory->mkdir("SC_Eff")->cd();
@@ -65,18 +65,17 @@ jerror_t JEventProcessor_SC_Eff::init(void)
 	locTreeBranchRegister.Register_Single<UChar_t>("ProjectedSCHitSector");
 
 	//SEARCH
-	locTreeBranchRegister.Register_Single<UChar_t>("NumSCHits");
-	locTreeBranchRegister.Register_FundamentalArray<UChar_t>("SCHitSector", "NumSCHits"); //0 if none in time: PID:OUT_OF_TIME_CUT
-	locTreeBranchRegister.Register_FundamentalArray<Float_t>("TrackHitDeltaPhi", "NumSCHits"); //is signed: SC - Track
-	locTreeBranchRegister.Register_FundamentalArray<Float_t>("TrackHitDeltaT", "NumSCHits"); //is signed: SC - Track
-	locTreeBranchRegister.Register_FundamentalArray<Bool_t>("IsMatchedToTrack", "NumSCHits"); //false if not registered in DDetectorMatches
+	locTreeBranchRegister.Register_Single<UChar_t>("NumMatchingSCHits");
+	locTreeBranchRegister.Register_FundamentalArray<UChar_t>("SCHitSector", "NumMatchingSCHits"); //0 if none in time: PID:OUT_OF_TIME_CUT
+	locTreeBranchRegister.Register_FundamentalArray<Float_t>("TrackHitDeltaPhi", "NumMatchingSCHits"); //is signed: SC - Track
+	locTreeBranchRegister.Register_FundamentalArray<Float_t>("TrackHitDeltaT", "NumMatchingSCHits"); //is signed: SC - Track
+	locTreeBranchRegister.Register_FundamentalArray<Bool_t>("IsMatchedToTrack", "NumMatchingSCHits"); //false if not registered in DDetectorMatches
 
 	//REGISTER BRANCHES
 	dTreeInterface->Create_Branches(locTreeBranchRegister);
 
 	return NOERROR;
 }
-
 
 //------------------
 // brun
@@ -209,34 +208,37 @@ jerror_t JEventProcessor_SC_Eff::evnt(jana::JEventLoop* locEventLoop, uint64_t l
 		dTreeFillData.Fill_Single<Float_t>("ProjectedSCHitZ", locPredictedSurfacePosition.Z());
 		dTreeFillData.Fill_Single<UChar_t>("ProjectedSCHitSector", locPredictedSCSector);
 
-		//FILL ARRAYS
-		dTreeFillData.Fill_Single<UChar_t>("NumSCHits", (UChar_t)locSCHits.size());
-
 		vector<DSCHitMatchParams> locAllSCMatchParams;
 		locDetectorMatches->Get_SCMatchParams(locTrackTimeBased, locAllSCMatchParams);
 
 		//pre-sort
 		set<const DSCHit*> locMatchedSCHits;
 		for(auto locSCMatchParams : locAllSCMatchParams)
-			locMatchedSCHits.insert(locSCMatchParams->dSCHit);
+			locMatchedSCHits.insert(locSCMatchParams.dSCHit);
 
-		//COMPARE
+		//FILL ARRAYS
+		size_t locArrayIndex = 0;
 		for(size_t loc_i = 0; loc_i < locSCHits.size(); ++loc_i)
 		{
 			const DSCHit* locSCHit = locSCHits[loc_i];
 
 			DSCHitMatchParams locSCHitMatchParams;
-			if(!MatchToSC(locTrackTimeBased, locTrackTimeBased->rt, locSCHit, locTrackTimeBased->t0(), locSCHitMatchParams, true, dLooseSCDeltaPhiCut))
+			if(!locParticleID->MatchToSC(locTrackTimeBased, locTrackTimeBased->rt, locSCHit, locTrackTimeBased->t0(), locSCHitMatchParams, true, &dLooseSCDeltaPhiCut))
 				continue;
 
-			double locDeltaT = locSCHitMatchParams->dHitTime - locSCHitMatchParams->dFlightTime - locChargedTrackHypothesis->time();
+			double locDeltaT = locSCHitMatchParams.dHitTime - locSCHitMatchParams.dFlightTime - locChargedTrackHypothesis->time();
 			bool locIsMatchedToTrack = (locMatchedSCHits.find(locSCHit) != locMatchedSCHits.end());
 
-			dTreeFillData.Fill_Array<UChar_t>("SCHitSector", locSCHit->sector, loc_i);
-			dTreeFillData.Fill_Array<Float_t>("TrackHitDeltaPhi", locSCHitMatchParams->dDeltaPhiToHit, loc_i); //is signed: SC - Track
-			dTreeFillData.Fill_Array<Float_t>("TrackHitDeltaT", locDeltaT, loc_i); //is signed: SC - Track
-			dTreeFillData.Fill_Array<Bool_t>("IsMatchedToTrack", locIsMatchedToTrack, loc_i);
+			dTreeFillData.Fill_Array<UChar_t>("SCHitSector", locSCHit->sector, locArrayIndex);
+			dTreeFillData.Fill_Array<Float_t>("TrackHitDeltaPhi", locSCHitMatchParams.dDeltaPhiToHit, locArrayIndex); //is signed: SC - Track
+			dTreeFillData.Fill_Array<Float_t>("TrackHitDeltaT", locDeltaT, locArrayIndex); //is signed: SC - Track
+			dTreeFillData.Fill_Array<Bool_t>("IsMatchedToTrack", locIsMatchedToTrack, locArrayIndex);
+
+			++locArrayIndex;
 		}
+
+		//FILL ARRAY SIZE
+		dTreeFillData.Fill_Single<UChar_t>("NumMatchingSCHits", locArrayIndex);
 
 		//FILL TTREE
 		dTreeInterface->Fill(dTreeFillData);
