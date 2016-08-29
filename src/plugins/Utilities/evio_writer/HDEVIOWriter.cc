@@ -418,7 +418,7 @@ void HDEVIOWriter::FlushOutput(uint32_t Nwords, deque< vector<uint32_t>* > &my_o
 	output_block[6] = 0; // Reserved 2
 	output_block[7] = 0xc0da0100; // Magic number
 
-    jout << "Writing out " << my_output_deque.size() << " events with " << Nwords << " words " << endl;
+    //jout << "Writing out " << my_output_deque.size() << " events with " << Nwords << " words " << endl;
 
 	// Write all event buffers into output buffer
 	deque< vector<uint32_t>* >::iterator it;

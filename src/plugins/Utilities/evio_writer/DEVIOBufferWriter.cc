@@ -212,7 +212,8 @@ void DEVIOBufferWriter::WriteEventToBuffer(JEventLoop *loop, vector<uint32_t> &b
 	WriteBuiltTriggerBank(buff, loop, coda_rocinfos, coda_events);
 
 	// Write EventTag
-	WriteEventTagData(buff, loop->GetJEvent().GetStatus(), l3trigger);
+    // Skip for now, put this back in later
+	//WriteEventTagData(buff, loop->GetJEvent().GetStatus(), l3trigger);
 
 	// Write CAEN1290TDC hits
 	WriteCAEN1290Data(buff, caen1290hits, caen1290configs, Nevents);
@@ -1172,31 +1173,39 @@ void DEVIOBufferWriter::WriteDVertexData(JEventLoop *loop, vector<uint32_t> &buf
     // DVertex data block bank
     uint32_t vertex_bank_len_idx = buff.size();
     buff.push_back(0); // Length
-    buff.push_back(0x0D010100); // 0x0D01=DVertexTag, 0x01=u32int
+    buff.push_back(0x1D010100); // 0x1D01=DVertexTag, 0x01=u32int 
 
 
     // Save 4-vector information - assume doubles are stored in 64-bits
     // This is usually a good assumption, but is not 100% portable...
-    uint64_t vertex_x = static_cast<uint64_t>(vertex->dSpacetimeVertex.X());
-	buff.push_back( (vertex_x>> 0)&0xFFFFFFFF ); // low order word
-	buff.push_back( (vertex_x>>32)&0xFFFFFFFF ); // high order word
-    uint64_t vertex_y = static_cast<uint64_t>(vertex->dSpacetimeVertex.Y());
-	buff.push_back( (vertex_y>> 0)&0xFFFFFFFF ); // low order word
-	buff.push_back( (vertex_y>>32)&0xFFFFFFFF ); // high order word
-    uint64_t vertex_z = static_cast<uint64_t>(vertex->dSpacetimeVertex.Z());
-	buff.push_back( (vertex_z>> 0)&0xFFFFFFFF ); // low order word
-	buff.push_back( (vertex_z>>32)&0xFFFFFFFF ); // high order word
-    uint64_t vertex_t = static_cast<uint64_t>(vertex->dSpacetimeVertex.T());
-	buff.push_back( (vertex_t>> 0)&0xFFFFFFFF ); // low order word
-	buff.push_back( (vertex_t>>32)&0xFFFFFFFF ); // high order word
+    // We use memcpy to convert between doubles and integers, since
+    // we only need the integers for the bit representations, and this avoids
+    // a nest of nasty casting...
+    uint64_t vertex_x_out, vertex_y_out, vertex_z_out, vertex_t_out;
+    double vertex_x = vertex->dSpacetimeVertex.X();
+    double vertex_y = vertex->dSpacetimeVertex.Y();
+    double vertex_z = vertex->dSpacetimeVertex.Z();
+    double vertex_t = vertex->dSpacetimeVertex.T();
+    memcpy(&vertex_x_out, &vertex_x, sizeof(double));
+	buff.push_back( (vertex_x_out>> 0)&0xFFFFFFFF ); // low order word
+    buff.push_back( (vertex_x_out>>32)&0xFFFFFFFF ); // high order word
+    memcpy(&vertex_y_out, &vertex_y, sizeof(double));
+	buff.push_back( (vertex_y_out>> 0)&0xFFFFFFFF ); // low order word
+	buff.push_back( (vertex_y_out>>32)&0xFFFFFFFF ); // high order word
+    memcpy(&vertex_z_out, &vertex_z, sizeof(double));
+    buff.push_back( (vertex_z_out>> 0)&0xFFFFFFFF ); // low order word
+	buff.push_back( (vertex_z_out>>32)&0xFFFFFFFF ); // high order word
+    memcpy(&vertex_t_out, &vertex_t, sizeof(double));
+	buff.push_back( (vertex_t_out>> 0)&0xFFFFFFFF ); // low order word
+	buff.push_back( (vertex_t_out>>32)&0xFFFFFFFF ); // high order word
     
-
     // Save other information
     buff.push_back( vertex->dKinFitNDF );
-    uint64_t vertex_chi_sq = static_cast<uint64_t>(vertex->dKinFitChiSq);
-    buff.push_back( (vertex_chi_sq>> 0)&0xFFFFFFFF ); // low order word
-	buff.push_back( (vertex_chi_sq>>32)&0xFFFFFFFF ); // high order word
-
+    uint64_t vertex_chi_sq_out;
+    double vertex_chi_sq = vertex->dKinFitChiSq;
+    memcpy(&vertex_chi_sq_out, &vertex_chi_sq, sizeof(double));
+	buff.push_back( (vertex_chi_sq_out>>32)&0xFFFFFFFF ); // high order word
+    buff.push_back( (vertex_chi_sq_out>> 0)&0xFFFFFFFF ); // low order word
 
     // Update bank length
     buff[vertex_bank_len_idx] = buff.size() - vertex_bank_len_idx - 1;
