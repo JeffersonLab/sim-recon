@@ -56,6 +56,7 @@ class JEventProcessor_SC_Eff : public jana::JEventProcessor
 		int dMinHitRingsPerCDCSuperlayer, dMinHitPlanesPerFDCPackage;
 		DCutAction_TrackHitPattern* dCutAction_TrackHitPattern;
 		map<DetectorSystem_t, double> dMaxPIDDeltaTMap;
+		float dLooseSCDeltaPhiCut;
 
 		//HISTOGRAMS
 		TH2I* dHist_HitFound;
