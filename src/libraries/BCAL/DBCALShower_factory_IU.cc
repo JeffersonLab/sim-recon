@@ -53,6 +53,60 @@ jerror_t DBCALShower_factory_IU::brun(JEventLoop *loop, int32_t runnumber) {
   DGeometry* geom = app->GetDGeometry(runnumber);
   geom->GetTargetZ(m_zTarget);
 
+  // load information for covariance matrix
+  map<string,string> covariance_data;
+  if (eventLoop->GetCalib("/BCAL/shower_covariance", covariance_data))
+    jerr << "Error loading /BCAL/shower_covariance !" << endl;
+  if (covariance_data.size() == 15)  {  // there are 15 elements in the covariance matrix
+    // for example, print it all out
+    for(auto element : covariance_data) {
+      cout << element.first << " = " << element.second << endl;
+    }
+
+    // example how to access elements
+    //cout << "TEST = " << covariance_data["covmatrix_30"] << endl;
+    //covariance_data["covmatrix_30"] == "more data";
+
+    /*
+ifarm1102> ccdb info /BCAL/shower_covariance
++------------------------------------------+
+| Type table information                   |
++------------------------------------------+
+ Name       :  shower_covariance
+ Full path  :  /BCAL/shower_covariance
+ Rows       :  1
+ Columns    :  15
+ Created    :  2016-08-30 13-19-48
+ Modified   :  2016-08-30 13-19-48
+ DB Id      :  496
++------------------------------------------+
+| Columns info                             |
++------------------------------------------+
+
+Columns info 
+ N.   (type)    : (name)
+ 0    string    : covmatrix_00
+ 1    string    : covmatrix_10
+ 2    string    : covmatrix_11
+ 3    string    : covmatrix_20
+ 4    string    : covmatrix_21
+ 5    string    : covmatrix_22
+ 6    string    : covmatrix_30
+ 7    string    : covmatrix_31
+ 8    string    : covmatrix_32
+ 9    string    : covmatrix_33
+ 10   string    : covmatrix_40
+ 11   string    : covmatrix_41
+ 12   string    : covmatrix_42
+ 13   string    : covmatrix_43
+ 14   string    : covmatrix_44
+
++------------------------------------------+
+    */
+  } else {
+    jerr << "Wrong data size from /BCAL/shower_covariance !" << endl;
+  }
+
   return NOERROR;
 }
 
