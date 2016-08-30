@@ -14,12 +14,41 @@
 #include "units.h"
 
 DBCALShower_factory_IU::DBCALShower_factory_IU(){
+
+  LOAD_CCDB_CONSTANTS = 1.;
+  gPARMS->SetDefaultParameter("BCAL:LOAD_NONLIN_CCDB", LOAD_CCDB_CONSTANTS);
+
+  energy_cutoff = 0;
+  linear_intercept = 0;
+  linear_slope = 0;
+  exponential_parm0 = 0;
+  exponential_parm1 = 0;
+  exponential_parm2 = 0;
+
+  gPARMS->SetDefaultParameter("BCAL:energy_cutoff", energy_cutoff);
+  gPARMS->SetDefaultParameter("BCAL:linear_slope", linear_slope);
+  gPARMS->SetDefaultParameter("BCAL:linear_intercept", linear_intercept);
+  gPARMS->SetDefaultParameter("BCAL:exponential_parm0", exponential_parm0);
+  gPARMS->SetDefaultParameter("BCAL:exponential_parm1", exponential_parm1);
+  gPARMS->SetDefaultParameter("BCAL:exponential_parm2", exponential_parm2);
+
 }
 
 jerror_t DBCALShower_factory_IU::brun(JEventLoop *loop, int32_t runnumber) {
   DApplication* app = dynamic_cast<DApplication*>(loop->GetJApplication());
   DGeometry* geom = app->GetDGeometry(runnumber);
   geom->GetTargetZ(m_zTarget);
+
+    if(LOAD_CCDB_CONSTANTS > 0.5){
+	map<string, double> shower_corrs;
+	loop->GetCalib("BCAL/shower_corrs", shower_corrs);
+	energy_cutoff = shower_corrs["energy_cutoff"];
+	linear_intercept = shower_corrs["linear_intercept"];
+	linear_slope = shower_corrs["linear_slope"];
+	exponential_parm0 = shower_corrs["exponential_parm0"];
+	exponential_parm1 = shower_corrs["exponential_parm1"];
+	exponential_parm2 = shower_corrs["exponential_parm2"]; 
+    }
 
   return NOERROR;
 }
@@ -111,7 +140,10 @@ DBCALShower_factory_IU::evnt( JEventLoop *loop, uint64_t eventnumber ){
     
     shower->tErr = (**clItr).sigT();
     
-    shower->E = shower->E_raw;
+    if( shower->E_raw < energy_cutoff ) shower->E = shower->E_raw / (linear_intercept + linear_slope * shower->E_raw ) ;
+    if( shower->E_raw >= energy_cutoff ) shower->E = shower->E_raw / (exponential_parm0 - exp(exponential_parm1 * shower->E_raw + exponential_parm2));
+
+    //cout << " cutoff = " << energy_cutoff << " lin int = " << linear_intercept << " lin slope = " << linear_slope << " exp0 = " << exponential_parm0 << " exp1 = " << exponential_parm1 << " exp2 = " << exponential_parm2 << endl;
 
     shower->AddAssociatedObject(*clItr);
     
