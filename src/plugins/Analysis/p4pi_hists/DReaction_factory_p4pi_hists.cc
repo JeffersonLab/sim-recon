@@ -112,10 +112,21 @@ jerror_t DReaction_factory_p4pi_hists::evnt(JEventLoop* locEventLoop, uint64_t l
 	
 	locReaction->Add_AnalysisAction(new DHistogramAction_PID(locReaction, "PostPIDCuts"));
 
-
 	// HISTOGRAM MASSES //false/true: measured/kinfit data
-	locReaction->Add_AnalysisAction(new DHistogramAction_MissingMassSquared(locReaction, false, 1000, 0.04, 0.04, "PreKinFit"));
+	locReaction->Add_AnalysisAction(new DHistogramAction_MissingMassSquared(locReaction, false, 1000, 0.04, 0.04));
 	
+	// Kinematics
+	locReaction->Add_AnalysisAction(new DHistogramAction_ParticleComboKinematics(locReaction, false));
+	locReaction->Add_AnalysisAction(new DHistogramAction_TrackVertexComparison(locReaction));
+	
+	// KINEMATIC FIT
+	locReaction->Add_AnalysisAction(new DHistogramAction_KinFitResults(locReaction, 0.05)); //5% confidence level cut on pull histograms only
+	locReaction->Add_AnalysisAction(new DCutAction_KinFitFOM(locReaction, -1.0)); // -1.0 confidence level cut //require kinematic fit converges
+
+	// Cut for the Invariant Mass Plots
+	locReaction->Add_AnalysisAction(new DCutAction_MissingMassSquared(locReaction, false, -0.005, 0.005));
+	
+	// PARTICLE COMBINATIONS
 	std::deque<Particle_t> Four, Two, Zp, Zm;
 	Four.push_back(PiPlus); Four.push_back(PiMinus); Four.push_back(PiPlus); Four.push_back(PiMinus);
 	Two.push_back(PiPlus); Two.push_back(PiMinus);
@@ -127,16 +138,7 @@ jerror_t DReaction_factory_p4pi_hists::evnt(JEventLoop* locEventLoop, uint64_t l
 	locReaction->Add_AnalysisAction(new DHistogramAction_Dalitz(locReaction, 0, Two, Two, false, 600, 0, 3, 600, 0, 3, "Dalitz"));
 	locReaction->Add_AnalysisAction(new DHistogramAction_InvariantMass(locReaction, 0, Zp, false, 500, 1.0, 3.0, "ProtonPip"));
 	locReaction->Add_AnalysisAction(new DHistogramAction_InvariantMass(locReaction, 0, Zm, false, 500, 1.0, 3.0, "ProtonPim"));
-	
-	// KINEMATIC FIT
-	locReaction->Add_AnalysisAction(new DHistogramAction_KinFitResults(locReaction, 0.05)); //5% confidence level cut on pull histograms only
-	locReaction->Add_AnalysisAction(new DCutAction_KinFitFOM(locReaction, -1.0)); // -1.0 confidence level cut //require kinematic fit converges
-	
-	// Kinematics
-	locReaction->Add_AnalysisAction(new DHistogramAction_ParticleComboKinematics(locReaction, false)); //false: measured data
-	locReaction->Add_AnalysisAction(new DHistogramAction_ParticleComboKinematics(locReaction, true, "KinFit")); //true: kinematic-fit data
-	locReaction->Add_AnalysisAction(new DHistogramAction_TrackVertexComparison(locReaction));
-	
+		
 	_data.push_back(locReaction); //Register the DReaction with the factory
 
 	return NOERROR;
