@@ -18,11 +18,11 @@
 	locDirectory->cd();
 	TH1I* locHist_4Pi = (TH1I*)gROOT->FindObject("InvariantMass");
 
- 	locDirectory = (TDirectory*)locReactionDirectory->FindObjectAny("Hist_2DInvariantMass_TwoPi_vs_TwoPi");
+ 	locDirectory = (TDirectory*)locReactionDirectory->FindObjectAny("Hist_Dalitz_Dalitz");
 	if(!locDirectory)
 	  return;
 	locDirectory->cd();
-	TH2I* locHist_Dalitz = (TH2I*)gROOT->FindObject("2DInvariantMass");
+	TH2I* locHist_Dalitz = (TH2I*)gROOT->FindObject("DalitzPlot");
 	
  	locDirectory = (TDirectory*)locReactionDirectory->FindObjectAny("Hist_InvariantMass_ProtonPip");
 	if(!locDirectory)
@@ -47,7 +47,6 @@
 	//Draw
 	locCanvas->cd(1);
 	if(locHist_MM2 != NULL) {	
-	  locHist_MM2->GetXaxis()->SetRangeUser(-0.04,0.04);
 	  locHist_MM2->Draw();
 	}
 

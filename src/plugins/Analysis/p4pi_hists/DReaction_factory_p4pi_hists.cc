@@ -113,7 +113,7 @@ jerror_t DReaction_factory_p4pi_hists::evnt(JEventLoop* locEventLoop, uint64_t l
 	locReaction->Add_AnalysisAction(new DHistogramAction_PID(locReaction, "PostPIDCuts"));
 
 	// HISTOGRAM MASSES //false/true: measured/kinfit data
-	locReaction->Add_AnalysisAction(new DHistogramAction_MissingMassSquared(locReaction, false, 1000, 0.04, 0.04));
+	locReaction->Add_AnalysisAction(new DHistogramAction_MissingMassSquared(locReaction, false, 800, -0.04, 0.04));
 	
 	// Kinematics
 	locReaction->Add_AnalysisAction(new DHistogramAction_ParticleComboKinematics(locReaction, false));
