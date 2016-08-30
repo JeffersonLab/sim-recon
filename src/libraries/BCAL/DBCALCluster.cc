@@ -185,9 +185,10 @@ DBCALCluster::makeFromPoints(){
       ++pt ){
      
     double E = (**pt).E();
-
+    
     m_E_points += E;
     m_E = m_E_points + m_hit_E_unattenuated_sum;  // add the energy sum from points to the energy sum from single ended hits
+    if ((**pt).layer() == 1) m_E_preshower += E;
     double wt1, wt2;
     if ((**pt).layer() != 4 || average_layer4) {
       wt1 = E;
@@ -339,6 +340,7 @@ DBCALCluster::toStrings( vector< pair < string, string > > &items) const {
 //  AddString(items, "dtheta", "%5.2f", m_sig_theta);
   AddString(items, "t", "%5.2f", m_t );
   AddString(items, "E", "%5.2f", m_E );
+  AddString(items, "E_preshower", "%5.2f", m_E_preshower );
   AddString(items, "N_cell", "%i", m_points.size() );
 }
 
@@ -348,6 +350,7 @@ DBCALCluster::clear(){
  
   m_E = 0;
   m_E_points = 0; 
+  m_E_preshower = 0; 
   m_t = 0;
   m_sig_t = 0;
   
