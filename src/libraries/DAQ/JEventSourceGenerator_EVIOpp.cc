@@ -18,7 +18,7 @@ using namespace jana;
 //---------------------------------
 const char* JEventSourceGenerator_EVIOpp::Description(void)
 {
-	return "EVIOpp";
+	return "EVIOpp  - Reads EVIO formatted data from file or ET system";
 }
 
 //---------------------------------
@@ -36,7 +36,7 @@ double JEventSourceGenerator_EVIOpp::CheckOpenable(string source)
 	// will allow the program to print an appropriate error
 	// message/
 
-	if(source.find("ET:")==0) return 0.4;
+	if(source.find("ET:")==0) return 0.6;
 
 	HDEVIO *hdevio = new HDEVIO(source);
 	bool is_good_evio = false;
@@ -46,7 +46,8 @@ double JEventSourceGenerator_EVIOpp::CheckOpenable(string source)
 	}
 	delete hdevio;
 	
-	if(is_good_evio) return 0.4;
+	if(is_good_evio) return 0.6;
+	if(source.find(".evio") != source.npos) return 0.01;
 	
 	return 0.0;
 }

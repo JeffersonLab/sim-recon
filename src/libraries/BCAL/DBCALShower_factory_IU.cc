@@ -14,38 +14,6 @@
 #include "units.h"
 
 DBCALShower_factory_IU::DBCALShower_factory_IU(){
-  
-  if( ! DBCALGeometry::summingOn() ) {
-    // in libraries/PID/DNeutralShowerCandidate.h, there are some constants used to calculate the energy uncertainty. If you are updating these constants, you might want to update that also...
-
-    // these are energy calibration parameters -- no summing of cells
-    
-    m_scaleZ_p0 =  0.950774;
-    m_scaleZ_p1 =  0.000483979;
-    m_scaleZ_p2 =  -2.08086e-06;
-    m_scaleZ_p3 =  8.08534e-10;
-    
-    m_nonlinZ_p0 =  0.0152548;
-    m_nonlinZ_p1 =  0;
-    m_nonlinZ_p2 =  0;    
-    m_nonlinZ_p3 =  0;
-  }
-  else{
-    
-    // these are energy calibration parameters -- 1.2.3.4 summing
-    
-    //last updated for svn revision 9233 
-    m_scaleZ_p0 =  0.992437;
-    m_scaleZ_p1 =  0.00039242;
-    m_scaleZ_p2 =  -2.23135e-06;
-    m_scaleZ_p3 =  1.40158e-09;
-    
-    m_nonlinZ_p0 =  -0.0147086;
-    m_nonlinZ_p1 =  9.69207e-05;
-    m_nonlinZ_p2 =  0;    
-    m_nonlinZ_p3 =  0;
-
-  }
 }
 
 jerror_t DBCALShower_factory_IU::brun(JEventLoop *loop, int32_t runnumber) {
@@ -79,6 +47,7 @@ DBCALShower_factory_IU::evnt( JEventLoop *loop, uint64_t eventnumber ){
     DBCALShower* shower = new DBCALShower();
     
     shower->E_raw = (**clItr).E();
+    shower->E_preshower = (**clItr).E_preshower();
     shower->x = rho * sinTh * cosPhi;
     shower->y = rho * sinTh * sinPhi;
     shower->z = rho * cosTh + m_zTarget;
@@ -142,27 +111,6 @@ DBCALShower_factory_IU::evnt( JEventLoop *loop, uint64_t eventnumber ){
     
     shower->tErr = (**clItr).sigT();
     
-    // calibrate energy:
-    // Energy calibration has a z dependence -- the
-    // calibration comes from fitting E_rec / E_gen to scale * E_gen^nonlin
-    // for slices of z.  These fit parameters (scale and nonlin) are then plotted 
-    // as a function of z and fit.
-    
-/*  float r = sqrt( shower->x * shower->x + shower->y * shower->y );
-    
-    float zEntry = ( shower->z - m_zTarget ) * ( DBCALGeometry::GetBCAL_inner_rad() / r );
-    
-    float scale = m_scaleZ_p0  + m_scaleZ_p1*zEntry + 
-    m_scaleZ_p2*(zEntry*zEntry) + m_scaleZ_p3*(zEntry*zEntry*zEntry);
-    float nonlin = m_nonlinZ_p0  + m_nonlinZ_p1*zEntry + 
-    m_nonlinZ_p2*(zEntry*zEntry) + m_nonlinZ_p3*(zEntry*zEntry*zEntry);
-*/    
-    // shower->E = pow( (shower->E_raw ) / scale, 1 / ( 1 + nonlin ) );  shower level energy correction was
-    // produced from old MC studies around early 2010s? This correction gives us a wider inclusive pi0
-    // width than using the raw energy produced in the cluster factory. For the time being we will make 
-    // members E and E_raw the same so people and DNeutralShower are always grabbing the most correct
-    // energy, but shower level corrections will need to be made.
-   
     shower->E = shower->E_raw;
 
     shower->AddAssociatedObject(*clItr);

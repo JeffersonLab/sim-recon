@@ -39,6 +39,7 @@ public:
   // the total energy in the cluster
   
   float E() const { return m_E; }
+  float E_preshower() const { return m_E_preshower; }
   
   // this is the time at the inner radius of BCAL assuming shower
   // particles propagte into module at the speed of light
@@ -81,7 +82,8 @@ private:
   float m_hit_E_unattenuated_sum; //attenuation-corrected sum of energies from single-ended hits
   float m_E_points;
   float m_E;
-  
+  float m_E_preshower;  
+
   float m_t;
   float m_sig_t;
   
