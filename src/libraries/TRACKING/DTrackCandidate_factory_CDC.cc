@@ -4529,6 +4529,10 @@ void DTrackCandidate_factory_CDC::Create_TrackCandidiate(DCDCTrackCircle* locCDC
 	}
 
 	DTrackCandidate *locTrackCandidate = new DTrackCandidate;
+	//circle fit parameters
+	locTrackCandidate->rc=locCDCTrackCircle->fit->r0;
+	locTrackCandidate->xc=locCDCTrackCircle->fit->x0;
+	locTrackCandidate->yc=locCDCTrackCircle->fit->y0;
 	locTrackCandidate->setCharge(locCDCTrackCircle->fit->h*dFactorForSenseOfRotation);
 
 	locTrackCandidate->chisq = locCDCTrackCircle->fit->chisq;

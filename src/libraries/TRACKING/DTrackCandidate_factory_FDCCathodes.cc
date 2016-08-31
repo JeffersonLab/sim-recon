@@ -323,7 +323,11 @@ jerror_t DTrackCandidate_factory_FDCCathodes::evnt(JEventLoop *loop, uint64_t ev
     
     // Create new track, starting with the most upstream segment
     DTrackCandidate *track = new DTrackCandidate;
-    
+    //circle fit parameters
+    track->rc=rc;
+    track->xc=xc;
+    track->yc=yc;
+
     // Get the momentum and position just upstream of first hit
     DVector3 mom,pos;
     GetPositionAndMomentum(mytracks[i],pos,mom);
@@ -374,6 +378,10 @@ jerror_t DTrackCandidate_factory_FDCCathodes::evnt(JEventLoop *loop, uint64_t ev
 	
 	// Create new track, starting with the current segment
 	DTrackCandidate *track = new DTrackCandidate;
+	track->rc=segment->rc;
+	track->xc=segment->xc;
+	track->yc=segment->yc;
+	
 	track->setPosition(pos);
 	track->setMomentum(mom);    
 	track->setCharge(segment->q);
