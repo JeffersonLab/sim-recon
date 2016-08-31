@@ -876,7 +876,7 @@ jerror_t DTrackCandidate_factory::GetPositionAndMomentum(DHelicalFit &fit,
   double tanl=fit.tanl;
   double pt=0.003*Bz*rc;
 
-  if(!isfinite(temp1) || !isfinite(temp2)){
+  if((!isfinite(temp1)) || (!isfinite(temp2))){
     // We did not find an intersection between the two circles, so return 
     // an error.  The values of mom and pos are not changed. 
     //    _DBG_ << endl;
@@ -944,7 +944,7 @@ jerror_t DTrackCandidate_factory::GetPositionAndMomentum(DHelicalFit &fit,
   double tanl=fit.tanl;
   double pt=0.003*Bz*rc;
 
-  if(!isfinite(temp1) || !isfinite(temp2)){
+  if((!isfinite(temp1)) || (!isfinite(temp2))){
     // We did not find an intersection between the two circles, so return 
     // an error.  The values of mom and pos are not changed. 
     //    _DBG_ << endl;
@@ -1024,7 +1024,7 @@ jerror_t DTrackCandidate_factory::GetPositionAndMomentum(const DTrackCandidate *
   double tanl=tan(M_PI_2-mom.Theta());
   double pt=0.003*Bz*rc;
 
-  if(!isfinite(temp1) || !isfinite(temp2)){
+  if((!isfinite(temp1)) || (!isfinite(temp2))){
     // We did not find an intersection between the two circles, so return 
     // an error.  The values of mom and pos are not changed. 
     //    _DBG_ << endl;
