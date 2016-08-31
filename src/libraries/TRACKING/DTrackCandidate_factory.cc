@@ -2969,8 +2969,9 @@ bool DTrackCandidate_factory::MatchMethod12(DTrackCandidate *can,
 	      forward_matches[i]=1;
 	      num_fdc_cands_remaining--;
 	      
-	      //if (DEBUG_LEVEL>0)
-	      _DBG_ << "... Found match!" << endl;
+	      if (DEBUG_LEVEL>0){
+		_DBG_ << "... Found match!" << endl;
+	      }
 	      return true;
 	    } 
 	  } // circle fit	   
