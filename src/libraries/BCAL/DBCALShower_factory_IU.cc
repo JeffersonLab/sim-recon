@@ -14,12 +14,45 @@
 #include "units.h"
 
 DBCALShower_factory_IU::DBCALShower_factory_IU(){
+
+  LOAD_CCDB_CONSTANTS = 1.;
+  gPARMS->SetDefaultParameter("BCAL:LOAD_NONLIN_CCDB", LOAD_CCDB_CONSTANTS);
+
+  energy_cutoff = 0;
+  linear_intercept = 0;
+  linear_slope = 0;
+  exponential_param0 = 0;
+  exponential_param1 = 0;
+  exponential_param2 = 0;
+
+  //use to set energy corrections on command line
+
+  gPARMS->SetDefaultParameter("BCAL:energy_cutoff", energy_cutoff);
+  gPARMS->SetDefaultParameter("BCAL:linear_slope", linear_slope);
+  gPARMS->SetDefaultParameter("BCAL:linear_intercept", linear_intercept);
+  gPARMS->SetDefaultParameter("BCAL:exponential_param0", exponential_param0);
+  gPARMS->SetDefaultParameter("BCAL:exponential_param1", exponential_param1);
+  gPARMS->SetDefaultParameter("BCAL:exponential_param2", exponential_param2);
+
 }
 
 jerror_t DBCALShower_factory_IU::brun(JEventLoop *loop, int32_t runnumber) {
   DApplication* app = dynamic_cast<DApplication*>(loop->GetJApplication());
   DGeometry* geom = app->GetDGeometry(runnumber);
   geom->GetTargetZ(m_zTarget);
+
+    //by default, energy correction parameters are obtained through ccdb
+
+    if(LOAD_CCDB_CONSTANTS > 0.5){
+	map<string, double> shower_calib;
+	loop->GetCalib("BCAL/shower_calib", shower_calib);
+	energy_cutoff = shower_calib["energy_cutoff"];
+	linear_intercept = shower_calib["linear_intercept"];
+	linear_slope = shower_calib["linear_slope"];
+	exponential_param0 = shower_calib["exponential_param0"];
+	exponential_param1 = shower_calib["exponential_param1"];
+	exponential_param2 = shower_calib["exponential_param2"]; 
+    }
 
   return NOERROR;
 }
@@ -110,8 +143,12 @@ DBCALShower_factory_IU::evnt( JEventLoop *loop, uint64_t eventnumber ){
     shower->zErr = sqrt(shower->xyzCovariance[2][2]);
     
     shower->tErr = (**clItr).sigT();
+   
+    // non-linear energy corrections can be found at https://logbooks.jlab.org/entry/3419524 
     
-    shower->E = shower->E_raw;
+    if( shower->E_raw < energy_cutoff ) shower->E = shower->E_raw / (linear_intercept + linear_slope * shower->E_raw ) ;
+   
+    if( shower->E_raw >= energy_cutoff ) shower->E = shower->E_raw / (exponential_param0 - exp(exponential_param1 * shower->E_raw + exponential_param2));
 
     shower->AddAssociatedObject(*clItr);
     
