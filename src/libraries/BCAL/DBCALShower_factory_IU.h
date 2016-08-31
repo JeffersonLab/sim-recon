@@ -34,9 +34,9 @@ private:
   double energy_cutoff;
   double linear_intercept;
   double linear_slope;
-  double exponential_parm0;
-  double exponential_parm1;
-  double exponential_parm2;
+  double exponential_param0;
+  double exponential_param1;
+  double exponential_param2;
 
   double m_zTarget;
 
