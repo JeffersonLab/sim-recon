@@ -71,11 +71,6 @@
 #define MIN_FDC_HITS 2 
 #define MIN_CDC_HITS 2 
 
-// Functions of Moliere fraction F
-#define MOLIERE_FRACTION 0.995
-#define MOLIERE_RATIO1 (0.5/(1.-MOLIERE_FRACTION)) // = 0.5/(1-F)
-#define MOLIERE_RATIO2 (1.e-6/(1.+MOLIERE_FRACTION*MOLIERE_FRACTION)) //scale_factor/(1+F*F)
-
 //#define DE_PER_STEP_WIRE_BASED 0.0005 // in GeV
 //#define DE_PER_STEP_TIME_BASED 0.0005 // in GeV
 #define DE_PER_STEP 0.001 // in GeV
@@ -426,6 +421,7 @@ class DTrackFitterKalmanSIMD: public DTrackFitter{
 
   // endplate dimensions and location
   double endplate_z, endplate_dz, endplate_r2min, endplate_r2max;
+  double endplate_z_downstream;
   // upstream cdc start position
   vector<double>cdc_origin;
 
@@ -443,6 +439,13 @@ class DTrackFitterKalmanSIMD: public DTrackFitter{
   // Lorentz deflection parameters
   double LORENTZ_NR_PAR1,LORENTZ_NR_PAR2,LORENTZ_NZ_PAR1,LORENTZ_NZ_PAR2;
   
+  // CDC material properties
+  double dKRhoZoverA_CDC,dRhoZoverA_CDC,dLnI_CDC,dChi2c_factor_CDC;
+  double dChi2a_factor_CDC,dChi2a_corr_CDC,dZ_CDC;  
+
+  // Moliere fraction F and functions that depend on it
+  double MOLIERE_FRACTION,MOLIERE_RATIO1,MOLIERE_RATIO2;
+  double MS_SCALE_FACTOR;
 
   // tables of time-to-drift values
   vector<double>cdc_drift_table;

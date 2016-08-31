@@ -279,6 +279,8 @@ DTrackFitterKalmanSIMD::DTrackFitterKalmanSIMD(JEventLoop *loop):DTrackFitter(lo
     double endplate_rmin,endplate_rmax;
     geom->GetCDCEndplate(endplate_z,endplate_dz,endplate_rmin,endplate_rmax);
     endplate_z-=0.5*endplate_dz;
+    endplate_z_downstream=endplate_z+endplate_dz;
+    endplate_rmin+=0.1;  // put just inside CDC
     endplate_r2min=endplate_rmin*endplate_rmin;
     endplate_r2max=endplate_rmax*endplate_rmax;
 
@@ -292,6 +294,13 @@ DTrackFitterKalmanSIMD::DTrackFitterKalmanSIMD(JEventLoop *loop):DTrackFitter(lo
     geom->Get("//tubs[@name='CDPU']/@Rio_Z",cdc_endplate_dim);
     cdc_origin[2]+=cdc_center[2]+cdc_upstream_endplate_pos[2]
         +0.5*cdc_endplate_dim[2];
+
+    // CDC material properties
+    last_material_map=0;
+    DVector3 pos(30,30,92.); // position near middle of CDC active volume
+    geom->FindMatKalman(pos,dKRhoZoverA_CDC,dRhoZoverA_CDC,dLnI_CDC,dZ_CDC,
+			dChi2c_factor_CDC,dChi2a_factor_CDC,
+			dChi2a_corr_CDC,last_material_map);
 
     ADD_VERTEX_POINT=false; 
     gPARMS->SetDefaultParameter("KALMAN:ADD_VERTEX_POINT", ADD_VERTEX_POINT);
@@ -379,6 +388,13 @@ DTrackFitterKalmanSIMD::DTrackFitterKalmanSIMD(JEventLoop *loop):DTrackFitter(lo
     CDC_T_DRIFT_MIN=0.;
     gPARMS->SetDefaultParameter("KALMAN:CDC_T_DRIFT_MIN",CDC_T_DRIFT_MIN);
 
+    MOLIERE_FRACTION=0.9;
+    gPARMS->SetDefaultParameter("KALMAN:MOLIERE_FRACTION",MOLIERE_FRACTION);    
+    MS_SCALE_FACTOR=2.0;
+    gPARMS->SetDefaultParameter("KALMAN:MS_SCALE_FACTOR",MS_SCALE_FACTOR);
+    MOLIERE_RATIO1=0.5/(1.-MOLIERE_FRACTION);
+    MOLIERE_RATIO2=MS_SCALE_FACTOR*1.e-6/(1.+MOLIERE_FRACTION*MOLIERE_FRACTION); //scale_factor/(1+F*F)
+						      
     DApplication* dapp = dynamic_cast<DApplication*>(loop->GetJApplication());
     JCalibration *jcalib = dapp->GetJCalibration((loop->GetJEvent()).GetRunNumber());
     vector< map<string, double> > tvals;
@@ -1129,39 +1145,44 @@ jerror_t DTrackFitterKalmanSIMD::PropagateForwardCDC(int length,int &index,
 
     temp.s=len;  
     temp.t=ftime;
-    temp.K_rho_Z_over_A=temp.rho_Z_over_A=temp.LnI=0.; //initialize
-    temp.chi2c_factor=temp.chi2a_factor=temp.chi2a_corr=0.;
-    temp.Z=0.;
+    temp.K_rho_Z_over_A=dKRhoZoverA_CDC;
+    temp.rho_Z_over_A=dRhoZoverA_CDC;
+    temp.LnI=dLnI_CDC;
+    temp.chi2c_factor=dChi2c_factor_CDC;
+    temp.chi2a_factor=dChi2a_factor_CDC;
+    temp.chi2a_corr=dChi2a_corr_CDC;
+    temp.Z=dZ_CDC;
     temp.S=S;
 
     // Kinematic variables
     double q_over_p_sq=S(state_q_over_p)*S(state_q_over_p);
     double one_over_beta2=1.+mass2*q_over_p_sq;
     if (one_over_beta2>BIG) one_over_beta2=BIG;
-
-    // get material properties from the Root Geometry
-    if (ENABLE_BOUNDARY_CHECK && fit_type==kTimeBased){
+    
+    if (z>endplate_z || r2<endplate_r2min || r2>endplate_r2max){
+      // get material properties from the Root Geometry
+      if (ENABLE_BOUNDARY_CHECK && fit_type==kTimeBased){
         DVector3 mom(S(state_tx),S(state_ty),1.);
         if(geom->FindMatKalman(pos,mom,temp.K_rho_Z_over_A,
 			       temp.rho_Z_over_A,temp.LnI,temp.Z,
-                    temp.chi2c_factor,temp.chi2a_factor,
-                    temp.chi2a_corr,
-                    last_material_map,
-                    &s_to_boundary)!=NOERROR){
-            return UNRECOVERABLE_ERROR;
+			       temp.chi2c_factor,temp.chi2a_factor,
+			       temp.chi2a_corr,
+			       last_material_map,
+			       &s_to_boundary)!=NOERROR){
+	  return UNRECOVERABLE_ERROR;
         }
-    }
-    else
-    {
-        if(geom->FindMatKalman(pos,temp.K_rho_Z_over_A,
-			       temp.rho_Z_over_A,temp.LnI,temp.Z,
-                    temp.chi2c_factor,temp.chi2a_factor,
-                    temp.chi2a_corr,
+      }
+      else
+	{
+	  if(geom->FindMatKalman(pos,temp.K_rho_Z_over_A,
+				 temp.rho_Z_over_A,temp.LnI,temp.Z,
+				 temp.chi2c_factor,temp.chi2a_factor,
+				 temp.chi2a_corr,
                     last_material_map)!=NOERROR){
             return UNRECOVERABLE_ERROR;
-        }
+	  }
+	}
     }
-
     // Get dEdx for the upcoming step
     if (CORRECT_FOR_ELOSS){
         dEdx=GetdEdx(S(state_q_over_p),temp.K_rho_Z_over_A,temp.rho_Z_over_A,
@@ -1282,34 +1303,41 @@ jerror_t DTrackFitterKalmanSIMD::PropagateCentral(int length, int &index,
     temp.s=len;
     temp.t=ftime;
     temp.h_id=0;
-    temp.K_rho_Z_over_A=0.,temp.rho_Z_over_A=0.,temp.LnI=0.; //initialize
-    temp.chi2c_factor=0.,temp.chi2a_factor=0.,temp.chi2a_corr=0.;
-    temp.Z=0.;
+    temp.K_rho_Z_over_A=dKRhoZoverA_CDC;
+    temp.rho_Z_over_A=dRhoZoverA_CDC;
+    temp.LnI=dLnI_CDC;
+    temp.chi2c_factor=dChi2c_factor_CDC;
+    temp.chi2a_factor=dChi2a_factor_CDC;
+    temp.chi2a_corr=dChi2a_corr_CDC;
+    temp.Z=dZ_CDC;
     temp.S=Sc;
 
     // Store magnitude of magnetic field
     temp.B=sqrt(Bx*Bx+By*By+Bz*Bz);
 
     // get material properties from the Root Geometry
-    DVector3 pos3d(my_xy.X(),my_xy.Y(),Sc(state_z));
-    if (ENABLE_BOUNDARY_CHECK && fit_type==kTimeBased){
+    double r2=my_xy.Mod2();
+    if (Sc(state_z)>endplate_z || r2<endplate_r2min || r2>endplate_r2max){
+      DVector3 pos3d(my_xy.X(),my_xy.Y(),Sc(state_z));
+      if (ENABLE_BOUNDARY_CHECK && fit_type==kTimeBased){
         DVector3 mom(cos(Sc(state_phi)),sin(Sc(state_phi)),Sc(state_tanl));
         if(geom->FindMatKalman(pos3d,mom,temp.K_rho_Z_over_A,
 			       temp.rho_Z_over_A,temp.LnI,temp.Z,
-                    temp.chi2c_factor,temp.chi2a_factor,
-                    temp.chi2a_corr,
-                    last_material_map,
-                    &s_to_boundary)
-                !=NOERROR){
-            return UNRECOVERABLE_ERROR;
+			       temp.chi2c_factor,temp.chi2a_factor,
+			       temp.chi2a_corr,
+			       last_material_map,
+			       &s_to_boundary)
+	   !=NOERROR){
+	  return UNRECOVERABLE_ERROR;
         }
-    }
-    else if(geom->FindMatKalman(pos3d,temp.K_rho_Z_over_A,
-				temp.rho_Z_over_A,temp.LnI,temp.Z,
-                temp.chi2c_factor,temp.chi2a_factor,
-                temp.chi2a_corr,
-                last_material_map)!=NOERROR){
+      }
+      else if(geom->FindMatKalman(pos3d,temp.K_rho_Z_over_A,
+				  temp.rho_Z_over_A,temp.LnI,temp.Z,
+				  temp.chi2c_factor,temp.chi2a_factor,
+				  temp.chi2a_corr,
+				  last_material_map)!=NOERROR){
         return UNRECOVERABLE_ERROR;
+      }
     }
 
     if (CORRECT_FOR_ELOSS){
@@ -1350,7 +1378,7 @@ jerror_t DTrackFitterKalmanSIMD::PropagateCentral(int length, int &index,
         }
         if(step_size<MIN_STEP_SIZE)step_size=MIN_STEP_SIZE;
     } 
-    double r2=my_xy.Mod2();
+    //    double r2=my_xy.Mod2();
     if (r2>endplate_r2min 
             && step_size>mCDCInternalStepSize) step_size=mCDCInternalStepSize;
     // Propagate the state through the field
@@ -1563,8 +1591,13 @@ jerror_t DTrackFitterKalmanSIMD::PropagateForward(int length,int &i,
     temp.s=len;
     temp.t=ftime;
     temp.z=z;
-    temp.K_rho_Z_over_A=temp.rho_Z_over_A=temp.LnI=0.; //initialize
-    temp.chi2c_factor=temp.chi2a_factor=temp.chi2a_corr=0.;
+    temp.K_rho_Z_over_A=dKRhoZoverA_CDC;
+    temp.rho_Z_over_A=dRhoZoverA_CDC;
+    temp.LnI=dLnI_CDC;
+    temp.chi2c_factor=dChi2c_factor_CDC;
+    temp.chi2a_factor=dChi2a_factor_CDC;
+    temp.chi2a_corr=dChi2a_corr_CDC;
+    temp.Z=dZ_CDC;
     temp.S=S;
 
     // Kinematic variables  
@@ -1572,28 +1605,31 @@ jerror_t DTrackFitterKalmanSIMD::PropagateForward(int length,int &i,
     double one_over_beta2=1.+mass2*q_over_p_sq;
     if (one_over_beta2>BIG) one_over_beta2=BIG;
 
-    // get material properties from the Root Geometry
-    if (ENABLE_BOUNDARY_CHECK && fit_type==kTimeBased){
+    double r2=S(state_x)*S(state_x)+S(state_y)*S(state_y);
+    if (z>endplate_z-1.0 || r2<endplate_r2min || r2>endplate_r2max){
+      // get material properties from the Root Geometry
+      if (ENABLE_BOUNDARY_CHECK && fit_type==kTimeBased){
         DVector3 mom(S(state_tx),S(state_ty),1.);
         if (geom->FindMatKalman(pos,mom,temp.K_rho_Z_over_A,
 				temp.rho_Z_over_A,temp.LnI,temp.Z,
-                    temp.chi2c_factor,temp.chi2a_factor,
-                    temp.chi2a_corr,
-                    last_material_map,
-                    &s_to_boundary)
-                !=NOERROR){
-            return UNRECOVERABLE_ERROR;      
+				temp.chi2c_factor,temp.chi2a_factor,
+				temp.chi2a_corr,
+				last_material_map,
+				&s_to_boundary)
+	    !=NOERROR){
+	  return UNRECOVERABLE_ERROR;      
         }  
-    }
-    else
-    {
-        if (geom->FindMatKalman(pos,temp.K_rho_Z_over_A,
-				temp.rho_Z_over_A,temp.LnI,temp.Z,
-                    temp.chi2c_factor,temp.chi2a_factor,
+      }
+      else
+	{
+	  if (geom->FindMatKalman(pos,temp.K_rho_Z_over_A,
+				  temp.rho_Z_over_A,temp.LnI,temp.Z,
+				  temp.chi2c_factor,temp.chi2a_factor,
                     temp.chi2a_corr,
-                    last_material_map)!=NOERROR){
+				  last_material_map)!=NOERROR){
             return UNRECOVERABLE_ERROR;      
-        }       
+	  }       
+	}
     }
     // Get dEdx for the upcoming step
     double dEdx=0.;
@@ -1621,7 +1657,7 @@ jerror_t DTrackFitterKalmanSIMD::PropagateForward(int length,int &i,
     // Determine the step size based on energy loss 
     //  step=mStepSizeS*dz_ds;
     double max_step_size
-      =(z<endplate_z&& S(state_x)*S(state_x)+S(state_y)*S(state_y)>endplate_r2min)?mCentralStepSize:mStepSizeS;
+      =(z<endplate_z&& r2>endplate_r2min)?mCentralStepSize:mStepSizeS;
     double ds=mStepSizeS;
     if (z>cdc_origin[2]){
         if (!stepped_to_boundary){
