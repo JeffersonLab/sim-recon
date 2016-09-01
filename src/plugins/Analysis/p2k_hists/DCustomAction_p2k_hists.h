@@ -47,6 +47,7 @@ class DCustomAction_p2k_hists : public DAnalysisAction
 
 		//Store any histograms as member variables here
 		TH1I *dEgamma;
+		TH1I *dInvariantMass, *dMissingMassSq;
 		TH2I *dKplus_deltaInvBeta_P, *dKminus_deltaInvBeta_P;
 		TH2I *dM2pi_M2k, *dM2pi_M2k_ProtonTag;
 		TH2I *dMM2_M2k, *dProton_dEdx_P, *dProton_P_Theta, *dDeltaE_M2k;
