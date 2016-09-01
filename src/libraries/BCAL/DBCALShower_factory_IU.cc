@@ -55,13 +55,17 @@ jerror_t DBCALShower_factory_IU::brun(JEventLoop *loop, int32_t runnumber) {
 
   // load information for covariance matrix
   map<string,string> covariance_data;
-  if (eventLoop->GetCalib("/BCAL/shower_covariance", covariance_data))
+  // We need to access the JCalibration object directly to access the full string
+  // data directly, since JEventLoop::Getcalib() uses JCalibration::Get(),
+  // which runs the data through a stringstream::operator()>>, giving only the first
+  // element of the data!
+  if (eventLoop->GetJCalibration()->GetCalib("/BCAL/shower_covariance", covariance_data))
     jerr << "Error loading /BCAL/shower_covariance !" << endl;
   if (covariance_data.size() == 15)  {  // there are 15 elements in the covariance matrix
     // for example, print it all out
-    for(auto element : covariance_data) {
-      cout << element.first << " = " << element.second << endl;
-    }
+    //for(auto element : covariance_data) {
+    //  cout << element.first << " = " << element.second << endl;
+    //}
 
     // example how to access elements
     //cout << "TEST = " << covariance_data["covmatrix_30"] << endl;
