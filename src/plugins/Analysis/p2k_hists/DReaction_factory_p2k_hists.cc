@@ -51,7 +51,7 @@ jerror_t DReaction_factory_p2k_hists::evnt(JEventLoop* locEventLoop, uint64_t lo
 	// Event Store
 	locReaction->Set_EventStoreSkims("2q+,q-"); // boolean-AND of skims
 
-	locReaction->Set_KinFitType(d_P4AndVertexFit); //simultaneously constrain apply four-momentum conservation, invariant masses, and common-vertex constraints
+	//locReaction->Set_KinFitType(d_P4AndVertexFit); //simultaneously constrain apply four-momentum conservation, invariant masses, and common-vertex constraints
 	locReaction->Set_MaxPhotonRFDeltaT(0.5*dBeamBunchPeriod); //beam bunches are every 4.008 ns, (2.004 should be minimum cut value)
 	locReaction->Set_MaxExtraGoodTracks(4);
 
@@ -85,8 +85,8 @@ jerror_t DReaction_factory_p2k_hists::evnt(JEventLoop* locEventLoop, uint64_t lo
 	locReaction->Add_AnalysisAction(new DHistogramAction_ParticleComboKinematics(locReaction, false)); //false: fill histograms with measured particle data
 
 	// Kinematics fit
-	locReaction->Add_AnalysisAction(new DHistogramAction_KinFitResults(locReaction, 0.05)); // 5% confidence level cut on pull histograms only
-	locReaction->Add_AnalysisAction(new DCutAction_KinFitFOM(locReaction, -1.0)); // -1.0 confidence level cut // require kinematic fit converges
+	// locReaction->Add_AnalysisAction(new DHistogramAction_KinFitResults(locReaction, 0.05)); // 5% confidence level cut on pull histograms only
+	// locReaction->Add_AnalysisAction(new DCutAction_KinFitFOM(locReaction, -1.0)); // -1.0 confidence level cut // require kinematic fit converges
 
 	_data.push_back(locReaction); //Register the DReaction with the factory
 
