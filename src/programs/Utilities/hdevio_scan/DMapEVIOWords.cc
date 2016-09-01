@@ -45,7 +45,7 @@ DMapEVIOWords::DMapEVIOWords()
 	daq_hits_per_event = new TProfile("daq_hits_per_event", "Hits/event vs. rocid", 100, 0.5, 100.5);
 	daq_words_per_event = new TProfile("daq_words_per_event", "words/event vs. rocid", 100, 0.5, 100.5);
 	daq_event_size = new TH1D("daq_event_size", "Event size in kB", 1000, 0.0, 1.0E3);
-	daq_event_tdiff = new TH1D("daq_event_tdiff", "Time between events", 10000, 0.0, 1.0E2);
+	daq_event_tdiff = new TH1D("daq_event_tdiff", "Time between events", 10000, 0.0, 1.0E1);
 	daq_words_by_type = new TH1D("daq_words_by_type", "Number of words in EVIO file by type", kNEVIOWordTypes, 0, (double)kNEVIOWordTypes);
 	
 	daq_words_per_event->GetXaxis()->SetBinLabel(1 ,"Trigger Bank");
@@ -241,12 +241,30 @@ void DMapEVIOWords::ParseEvent(uint32_t *buff)
 	// Trigger bank event length
 	uint32_t trigger_bank_len = istart[2];
 	if( (istart[3] & 0xFF202000) != 0xFF202000 ) return; // not a trigger bank
-// 	uint64_t tlo = istart[2+5];
-// 	uint64_t thi = istart[2+6];  
-// 	uint64_t timestamp = (thi<<32) + (tlo<<0);
 	if( trigger_bank_len+2 > evio_buffwords ){
 		cout << "Too many words in trigger bank " << trigger_bank_len << " > " << evio_buffwords-2 << endl;
 		return;
+	}
+	
+	// Time difference between events
+	// since events may be out of order due to L3, we
+	// keep track of up to 400 timestamps and only make 
+	// entries once we have accumulated that many.
+	// (probably better to look for adjacent event numbers
+	// but that will take a littel refactoring.)
+	uint64_t tlo = istart[2+5];
+	uint64_t thi = istart[2+6];  
+	uint64_t timestamp = (thi<<32) + (tlo<<0);
+	ts_history.insert(timestamp);
+	if(ts_history.size()>400){
+		auto it1 = ts_history.begin();
+		auto it2 = it1;
+		uint64_t t1 = *(it1);
+		uint64_t t2 = *(++it2);
+		ts_history.erase(it1, ++it2);
+		double tdiff_ns = (double)(t2 - t1)*4.0;
+		double tdiff_ms = tdiff_ns/1.0E6;
+		daq_event_tdiff->Fill(tdiff_ms);
 	}
 	
 	// Allocate memory to hold stats data

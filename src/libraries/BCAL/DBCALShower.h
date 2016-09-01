@@ -13,6 +13,7 @@ class DBCALShower:public JObject{
 
     float E;
     float E_raw;
+    float E_preshower;
     float x;
     float y;
     float z;
@@ -37,6 +38,7 @@ class DBCALShower:public JObject{
 			AddString(items, "z", "%5.1f", z);
 			AddString(items, "t", "%5.1f", t);
 			AddString(items, "E", "%5.3f", E);
+			AddString(items, "E_preshower", "%5.3f", E_preshower);
 			AddString(items, "N_cell", "%d", N_cell);
 	}
 };
