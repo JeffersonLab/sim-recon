@@ -152,7 +152,8 @@ jerror_t JEventProcessor_pi0fcalskim::evnt(JEventLoop *loop, uint64_t eventnumbe
       num_epics_events++;
       return NOERROR;
   }
-  
+
+  vector< const JObject* > locObjectsToSave;  
 
   bool Candidate = false;
   
@@ -160,6 +161,9 @@ jerror_t JEventProcessor_pi0fcalskim::evnt(JEventLoop *loop, uint64_t eventnumbe
   
   for (unsigned int i = 0 ; i < kinfitVertex.size(); i++)
     {
+      if(i==0)
+          locObjectsToSave.push_back(static_cast<const JObject *>(kinfitVertex[0]));
+
       kinfitVertexX = kinfitVertex[i]->dSpacetimeVertex.X();
       kinfitVertexY = kinfitVertex[i]->dSpacetimeVertex.Y();
       kinfitVertexZ = kinfitVertex[i]->dSpacetimeVertex.Z();
@@ -251,6 +255,13 @@ jerror_t JEventProcessor_pi0fcalskim::evnt(JEventLoop *loop, uint64_t eventnumbe
 	Double_t inv_mass = ptot.M();
 
         Candidate |= (E1 > 0.5 && E2 > 0.5 && s1->getPosition().Pt() > 20*k_cm && s2->getPosition().Pt() > 20*k_cm && (fabs (t1-t2) < 10) && (inv_mass<0.30) ) ;
+
+        if(E1 > 0.5 && E2 > 0.5 && s1->getPosition().Pt() > 20*k_cm && s2->getPosition().Pt() > 20*k_cm && (fabs (t1-t2) < 10) && (inv_mass<0.30) ) {
+            if(find(locObjectsToSave.begin(), locObjectsToSave.end(), locFCALShowers[i]) == locObjectsToSave.end())
+                locObjectsToSave.push_back(static_cast<const JObject *>(locFCALShowers[i]));
+            if(find(locObjectsToSave.begin(), locObjectsToSave.end(), locFCALShowers[j]) == locObjectsToSave.end())
+                locObjectsToSave.push_back(static_cast<const JObject *>(locFCALShowers[j]));
+        }
  			}
  	}		
  
@@ -258,7 +269,7 @@ jerror_t JEventProcessor_pi0fcalskim::evnt(JEventLoop *loop, uint64_t eventnumbe
 
     if( WRITE_EVIO ){
 
-      locEventWriterEVIO->Write_EVIOEvent( loop, "pi0fcalskim" );
+        locEventWriterEVIO->Write_EVIOEvent( loop, "pi0fcalskim", locObjectsToSave );
     }
  }
  

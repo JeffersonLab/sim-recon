@@ -34,6 +34,7 @@ DEventWriterEVIO::DEventWriterEVIO(JEventLoop* locEventLoop)
 	COMPACT = true;
 	PREFER_EMULATED = false;
 	DEBUG_FILES = false; // n.b. also defined in HDEVIOWriter
+    dMergeFiles = false;
     dMergedFilename = "merged.evio";  
 
 	ofs_debug_input = NULL;
@@ -178,6 +179,9 @@ bool DEventWriterEVIO::Write_EVIOEvent(JEventLoop* locEventLoop, string locOutpu
 	}
 	
 	// Optionally write input buffer to a debug file
+    // Note that this only works with JEventSource_EVIO (old-style parser)
+    // since JEventSource_EVIOpp (new parser) doesn't have access to the 
+    // raw EVIO buffer
 	if(DEBUG_FILES){
 		JEvent &jevent = locEventLoop->GetJEvent();
 		JEventSource *jes = jevent.GetJEventSource();

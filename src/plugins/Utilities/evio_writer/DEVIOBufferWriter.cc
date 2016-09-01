@@ -1,5 +1,6 @@
 // This class is responsible for taking a single event and writing it 
-// into a buffer in EVIO format
+// into a buffer in EVIO format - based on hdl3
+//   https://halldsvn.jlab.org/repos/trunk/online/packages/monitoring/src/hdl3
 
 #include "DEVIOBufferWriter.h"
 
@@ -206,14 +207,13 @@ void DEVIOBufferWriter::WriteEventToBuffer(JEventLoop *loop, vector<uint32_t> &b
 	// Physics Bank Header
 	buff.clear();
 	buff.push_back(0); // Physics Event Length (must be updated at the end)
-	buff.push_back( 0xFF701001);// 0xFF70=SEB in single event mode, 0x10=bank of banks, 0x01=1event
+	buff.push_back(0xFF701001);// 0xFF70=SEB in single event mode, 0x10=bank of banks, 0x01=1event
 	
 	// Write Built Trigger Bank
 	WriteBuiltTriggerBank(buff, loop, coda_rocinfos, coda_events);
 
 	// Write EventTag
-    // Skip for now, put this back in later
-	//WriteEventTagData(buff, loop->GetJEvent().GetStatus(), l3trigger);
+	WriteEventTagData(buff, loop->GetJEvent().GetStatus(), l3trigger);
 
 	// Write CAEN1290TDC hits
 	WriteCAEN1290Data(buff, caen1290hits, caen1290configs, Nevents);
@@ -279,7 +279,6 @@ void DEVIOBufferWriter::WriteBuiltTriggerBank(vector<uint32_t> &buff,
 	buff.push_back(event_number>>32);           // high 32 bits of event number
 	buff.push_back(avg_timestamp & 0xFFFFFFFF); // low 32 bits of avg. timestamp
 	buff.push_back(avg_timestamp>>32);          // high 32 bits of avg. timestamp
-	//buff.push_back(run_number);
 	buff.push_back(run_type);
     buff.push_back(run_number);   // this is swapped from what one would expect (see JEventSource_EVIO::FindRunNumber()) - sdobbs (3/13/2016)
 
@@ -1038,52 +1037,57 @@ void DEVIOBufferWriter::WriteEventTagData(vector<uint32_t> &buff,
                                           uint64_t event_status,
                                           const DL3Trigger* l3trigger) const
 {
-	// Here we purposefully write the DEventTag data into a bank
-	// based only on data extracted from other data objects, but
-	// NOT the DEventTag object. This is so whenever an event is
-	// written, it is guaranteed to have event tag data based on
-	// current information as opposed to data passed in from a
-	// previously run algorithm.
-	uint32_t eventtag_bank_idx = buff.size();
-	
-	uint64_t L3_status = 0;
-	uint32_t L3_decision = 0;
-	uint32_t L3_algorithm = 0;
-	if(l3trigger){
-		L3_status = l3trigger->status;
-		L3_decision = l3trigger->L3_decision;
-		L3_algorithm = l3trigger->algorithm;
-	}
-	
-	// Set L3 pass/fail status in event_status word to be written
-	// (this is redundant with the L3_decision word written below
-	// but makes the bits in the status word valid and costs nothing)
-	switch(L3_decision){
-		case DL3Trigger::kKEEP_EVENT   : event_status |= kSTATUS_L3PASS; break;
-		case DL3Trigger::kDISCARD_EVENT: event_status |= kSTATUS_L3FAIL; break;
-		case DL3Trigger::kNO_DECISION  : break;
-	}
-	
-	// Length and Header words
-	buff.push_back(0); // Total bank length (will be overwritten later)
-	buff.push_back( 0x00560101 ); // 0x56=event tag bank, 0x01=uint32_t bank, 0x01=1 event
+    // Here we purposefully write the DEventTag data into a bank
+    // based only on data extracted from other data objects, but
+    // NOT the DEventTag object. This is so whenever an event is
+    // written, it is guaranteed to have event tag data based on
+    // current information as opposed to data passed in from a
+    // previously run algorithm.
+    uint32_t eventtag_bank_idx = buff.size();
+    
+    uint64_t L3_status = 0;
+    uint32_t L3_decision = 0;
+    uint32_t L3_algorithm = 0;
+    if(l3trigger){
+        L3_status = l3trigger->status;
+        L3_decision = l3trigger->L3_decision;
+        L3_algorithm = l3trigger->algorithm;
+    }
+    
+    // Set L3 pass/fail status in event_status word to be written
+    // (this is redundant with the L3_decision word written below
+    // but makes the bits in the status word valid and costs nothing)
+    switch(L3_decision){
+    case DL3Trigger::kKEEP_EVENT   : event_status |= kSTATUS_L3PASS; break;
+    case DL3Trigger::kDISCARD_EVENT: event_status |= kSTATUS_L3FAIL; break;
+    case DL3Trigger::kNO_DECISION  : break;
+    }
+    
+    // Length and Header words
+    // This must fit the format of ROC data so we add a bank of banks
+    // header with rocid=0xF56
+    buff.push_back(0); // Total bank length (will be overwritten later)
+    buff.push_back( 0x0F561001 ); // rocid=0xF56
+    buff.push_back(0); // Bank length (will be overwritten later)
+    buff.push_back( 0x00560101 ); // 0x56=event tag bank, 0x01=uint32_t bank, 0x01=1 event
 
-	// event_status
-	buff.push_back( (event_status>> 0)&0xFFFFFFFF ); // low order word
-	buff.push_back( (event_status>>32)&0xFFFFFFFF ); // high order word
+    // event_status
+    buff.push_back( (event_status>> 0)&0xFFFFFFFF ); // low order word
+    buff.push_back( (event_status>>32)&0xFFFFFFFF ); // high order word
 
-	// L3_status
-	buff.push_back( (L3_status>> 0)&0xFFFFFFFF ); // low order word
-	buff.push_back( (L3_status>>32)&0xFFFFFFFF ); // high order word
+    // L3_status
+    buff.push_back( (L3_status>> 0)&0xFFFFFFFF ); // low order word
+    buff.push_back( (L3_status>>32)&0xFFFFFFFF ); // high order word
 
-	// L3_decision
-	buff.push_back( L3_decision );
+    // L3_decision
+    buff.push_back( L3_decision );
 
-	// L3_algorithm
-	buff.push_back( L3_algorithm );
+    // L3_algorithm
+    buff.push_back( L3_algorithm );
 
-	// Update event tag Bank length
-	buff[eventtag_bank_idx] = buff.size() - eventtag_bank_idx - 1;
+    // Update event tag Bank lengths
+    buff[eventtag_bank_idx] = buff.size() - eventtag_bank_idx - 1;
+    buff[eventtag_bank_idx+2] = buff[eventtag_bank_idx] - 2;
 }
 
 
