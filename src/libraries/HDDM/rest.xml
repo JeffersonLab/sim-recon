@@ -33,6 +33,7 @@
                 xycorr="float" xzcorr="float" yzcorr="float"
                 tzcorr="float" Ezcorr="float"
                 lunit="cm" tunit="ns" Eunit="GeV">
+      <preshower minOccurs="0" maxOccurs="1" preshowerE="float"/>
 	 <bcalCluster maxOccurs="1" minOccurs="0" ncell="int"/>
     </bcalShower>
     <chargedTrack minOccurs="0" maxOccurs="unbounded" jtag="string"
