@@ -813,21 +813,27 @@ jerror_t DEventSourceREST::Extract_DBCALShower(hddm_r::HDDM *record,
       shower->zErr = iter->getZerr();
       shower->tErr = iter->getTerr();
 
-      const hddm_r::BcalClusterList& locBcalClusterList = iter->getBcalClusters();
-      hddm_r::BcalClusterList::iterator locBcalClusterIterator = locBcalClusterList.begin();
-      if(locBcalClusterIterator == locBcalClusterList.end())
-	      {
-		      shower->N_cell = -1;
-	      }
-      else //should only be 1
-	      {
-		      for(; locBcalClusterIterator != locBcalClusterList.end(); ++locBcalClusterIterator)
-			      {
-				      shower->N_cell = locBcalClusterIterator->getNcell();
-			      }
-		      
-	      }
-      
+		// preshower
+      const hddm_r::PreshowerList& locPreShowerList = iter->getPreshowers();
+	   hddm_r::PreshowerList::iterator locPreShowerIterator = locPreShowerList.begin();
+		if(locPreShowerIterator == locPreShowerList.end())
+			shower->E_preshower = 0.0;
+		else //should only be 1
+		{
+			for(; locPreShowerIterator != locPreShowerList.end(); ++locPreShowerIterator)
+				shower->E_preshower = locPreShowerIterator->getPreshowerE();
+		}
+
+		const hddm_r::BcalClusterList& locBcalClusterList = iter->getBcalClusters();
+		hddm_r::BcalClusterList::iterator locBcalClusterIterator = locBcalClusterList.begin();
+		if(locBcalClusterIterator == locBcalClusterList.end())
+			shower->N_cell = -1;
+		else //should only be 1
+		{
+			for(; locBcalClusterIterator != locBcalClusterList.end(); ++locBcalClusterIterator)
+				shower->N_cell = locBcalClusterIterator->getNcell();
+		}
+
       data.push_back(shower);
    }
 
