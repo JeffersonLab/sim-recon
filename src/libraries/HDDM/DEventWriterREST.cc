@@ -218,6 +218,9 @@ bool DEventWriterREST::Write_RESTEvent(JEventLoop* locEventLoop, string locOutpu
 		bcal().setEzcorr(0);
 		bcal().setTzcorr(0);
 
+		hddm_r::PreshowerList locPreShowerList = bcal().addPreshowers(1);
+		locPreShowerList().setPreshowerE(bcalshowers[i]->E_preshower);
+
 		//N_cell
 		hddm_r::BcalClusterList bcalcluster = bcal().addBcalClusters(1);
 		bcalcluster().setNcell(bcalshowers[i]->N_cell);
