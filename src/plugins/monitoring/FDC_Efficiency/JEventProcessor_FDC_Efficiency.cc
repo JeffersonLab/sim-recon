@@ -142,7 +142,7 @@ jerror_t JEventProcessor_FDC_Efficiency::init(void)
     sprintf(hname_Y, "hPseudoResV_cell[%d]", icell+1);
     hPseudoResU[icell+1] = new TH1I(hname_X,"Pseudo Residual along Wire", 600, -3, 3);
     hPseudoResV[icell+1] = new TH1I(hname_Y,"Pseudo Residual perp. to Wire", 600, -3, 3);
-    for (int r=0; r<rad; r++){
+    for (unsigned int r=0; r<rad; r++){
       sprintf(hname_XY, "hPseudoResUvsV_cell[%d]_radius[%d]", icell+1, (r+1)*45/rad);
       hPseudoResUvsV[icell+1][r] = new TH2I(hname_XY,"Pseudo Residual 2D", 200, -1, 1, 200, -1, 1);
     }
@@ -177,6 +177,7 @@ jerror_t JEventProcessor_FDC_Efficiency::brun(JEventLoop *eventLoop, int32_t run
 
   // Get outer radius of FDC 
   dgeom->GetFDCRmax(fdcrmax);
+  fdcrmax = 48; // fix to 48cm from DFDCPseudo_factory
 		  
   return NOERROR;
 }
@@ -484,7 +485,7 @@ jerror_t JEventProcessor_FDC_Efficiency::evnt(JEventLoop *loop, uint64_t eventnu
 	    hPseudoResY[cellNum]->Fill(residualY);
 	    hPseudoResU[cellNum]->Fill(residualU);
 	    hPseudoResV[cellNum]->Fill(residualV);
-	    int radius = interPosition2D.Mod()/(45/rad);
+	    unsigned int radius = interPosition2D.Mod()/(45/rad);
 	    if (radius<rad)
 	      hPseudoResUvsV[cellNum][radius]->Fill(residualU, residualV);
 	    japp->RootFillUnLock(this); //RELEASE ROOT FILL LOCK
@@ -501,7 +502,7 @@ jerror_t JEventProcessor_FDC_Efficiency::evnt(JEventLoop *loop, uint64_t eventnu
 		japp->RootFillLock(this); //ACQUIRE ROOT FILL LOCK
 		fdc_pseudo_measured_cell[cellNum]->Fill(interPosition.X(), interPosition.Y());
 		hPseudoTime_accepted->Fill(locPseudo->time);
-		hPseudoResVsT->Fill(residualR, locPseudo->time);
+		hPseudoResVsT->Fill(residualU, locPseudo->time);
 		japp->RootFillUnLock(this); //RELEASE ROOT FILL LOCK
 	      }
 	    }

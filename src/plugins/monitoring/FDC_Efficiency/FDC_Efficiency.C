@@ -106,8 +106,7 @@ void FDC_Efficiency(bool save = 0){
       eff[icell-1] /= (double) h4->GetEntries();
       
       h3->Divide(h4);
-      //h3->SetMinimum(minScale);
-      h3->SetMinimum(0);
+      h3->SetMinimum(minScale);
       h3->SetMaximum(maxScale);
       h3->GetXaxis()->SetTitle("X Position (cm)");
       h3->GetYaxis()->SetTitle("Y Position (cm)");
