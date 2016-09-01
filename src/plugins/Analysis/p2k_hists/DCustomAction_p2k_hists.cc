@@ -42,6 +42,8 @@ void DCustomAction_p2k_hists::Initialize(JEventLoop* locEventLoop)
 		CreateAndChangeTo_ActionDirectory();
 		
 		dEgamma = GetOrCreate_Histogram<TH1I>("Egamma", "TAGGER photon energy; E_{#gamma}", endpoint_energy_bins, 0., endpoint_energy);
+		dInvariantMass = GetOrCreate_Histogram<TH1I>("InvariantMass", "Invariant Mass of K^{+}K^{-};Invariant Mass of K^{+}K^{-} (GeV/c^{2}",270,0.9,1.8);
+		dMissingMassSq = GetOrCreate_Histogram<TH1I>("MissingMassSq", "Missing Mass Sq. of K^{+}K^{-};MM^{2}_{K^{+}K^{-}} (GeV/c^{2}",600,-0.6,0.6);
 		dKplus_deltaInvBeta_P = GetOrCreate_Histogram<TH2I>("Kplus_deltaInvBeta_P","K+ Inverse #Delta#beta vs p; p; 1/#beta_{exp} - 1/#beta_{meas}",200,0,10,500,-0.5,0.5);
 		dKminus_deltaInvBeta_P = GetOrCreate_Histogram<TH2I>("Kminus_deltaInvBeta_P","K- Inverse #Delta#beta vs p; p; 1/#beta_{exp} - 1/#beta_{meas}",200,0,10,500,-0.5,0.5);
 
@@ -162,6 +164,8 @@ bool DCustomAction_p2k_hists::Perform_Action(JEventLoop* locEventLoop, const DPa
 		dMM2_M2k->Fill(locP4_2k.M(), locMissingP4.M2());
 		dDeltaE_M2k->Fill(locP4_2k.M(),locMissingP4.E());
 		dM2pi_M2k->Fill(locP4_2k.M(), locP4_2pi.M());
+
+		dMissingMassSq->Fill(locMissingP4.M2());
 		
 		if(locMissingP4.M2() > minMM2Cut && locMissingP4.M2() < maxMM2Cut) {
 		
@@ -180,6 +184,8 @@ bool DCustomAction_p2k_hists::Perform_Action(JEventLoop* locEventLoop, const DPa
 				
 				// plots vs phi mass
 				dEgamma_M2k_ProtonTag->Fill(locP4_2k.M(),locBeamPhotonEnergy);
+
+				dInvariantMass->Fill(locP4_2k.M());
 				
 				// correlations for rho vs phi mass regions
 				if(locP4_2k.M() < maxPhiMassCut){
