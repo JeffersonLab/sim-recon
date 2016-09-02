@@ -991,6 +991,41 @@ bool DGeometry::GetFDCWires(vector<vector<DFDCWire *> >&fdcwires) const{
   if(!GetFDCZ(z_wires)) return false;
   if(!GetFDCStereo(stereo_angles)) return false;
 
+  // Get package rotation angles
+  double ThetaX[4],ThetaY[4],ThetaZ[4];
+  vector<double>rot_angles;
+  Get("//posXYZ[@volume='forwardDC_package_1']/@rot", rot_angles);
+  ThetaX[0]=rot_angles[0]*M_PI/180.;
+  ThetaY[0]=rot_angles[1]*M_PI/180.;
+  ThetaZ[0]=rot_angles[2]*M_PI/180.; 
+  Get("//posXYZ[@volume='forwardDC_package_2']/@rot", rot_angles);
+  ThetaX[1]=rot_angles[0]*M_PI/180.;
+  ThetaY[1]=rot_angles[1]*M_PI/180.;
+  ThetaZ[1]=rot_angles[2]*M_PI/180.;  
+  Get("//posXYZ[@volume='forwardDC_package_3']/@rot", rot_angles);
+  ThetaX[2]=rot_angles[0]*M_PI/180.;
+  ThetaY[2]=rot_angles[1]*M_PI/180.;
+  ThetaZ[2]=rot_angles[2]*M_PI/180.; 
+  Get("//posXYZ[@volume='forwardDC_package_4']/@rot", rot_angles);
+  ThetaX[3]=rot_angles[0]*M_PI/180.;
+  ThetaY[3]=rot_angles[1]*M_PI/180.;
+  ThetaZ[3]=rot_angles[2]*M_PI/180.;
+  // Get package offsets
+  double dX[4],dY[4];
+  vector<double>offsets;
+  Get("//posXYZ[@volume='forwardDC_package_1']/@X_Y_Z",offsets);
+  dX[0]=offsets[0];
+  dY[0]=offsets[1];
+  Get("//posXYZ[@volume='forwardDC_package_2']/@X_Y_Z",offsets);
+  dX[1]=offsets[0];
+  dY[1]=offsets[1]; 
+  Get("//posXYZ[@volume='forwardDC_package_3']/@X_Y_Z",offsets);
+  dX[2]=offsets[0];
+  dY[2]=offsets[1];
+  Get("//posXYZ[@volume='forwardDC_package_4']/@X_Y_Z",offsets);
+  dX[3]=offsets[0];
+  dY[3]=offsets[1];
+
   // Get offsets tweaking nominal geometry from calibration database
   JCalibration * jcalib = dapp->GetJCalibration(runnumber);
   vector<map<string,double> >vals;
@@ -1023,7 +1058,8 @@ bool DGeometry::GetFDCWires(vector<vector<DFDCWire *> >&fdcwires) const{
 
     vector<DFDCWire *>temp;
     for(int j=0; j<WIRES_PER_PLANE; j++){
-      
+      unsigned int pack_id=i/6;
+
       DFDCWire *w = new DFDCWire;
       w->layer = i+1;
       w->wire = j+1;
@@ -1039,15 +1075,19 @@ bool DGeometry::GetFDCWires(vector<vector<DFDCWire *> >&fdcwires) const{
       // (i.e. at phi=90 degrees).
       float x = u*sin(angle + M_PI/2.0);
       float y = u*cos(angle + M_PI/2.0);
-      w->origin.SetXYZ(x,y,z_wires[i]+fdc_wire_offsets[i].dz);
-
+      w->origin.SetXYZ(x+dX[pack_id],y+dY[pack_id],z_wires[i]);
+    
       // Length of wire is set by active radius
       w->L = 2.0*sqrt(pow(FDC_ACTIVE_RADIUS,2.0) - u*u);
 			
       // Set directions of wire's coordinate system with "udir"
       // along wire.
       w->udir.SetXYZ(sin(angle),cos(angle),0.0);
-			
+      w->udir.RotateX(ThetaX[pack_id]);
+      w->udir.RotateY(ThetaY[pack_id]);
+      w->udir.RotateZ(ThetaZ[pack_id]);
+      w->u+=dX[pack_id]*w->udir.y()-dY[pack_id]*w->udir.x();
+
       // "s" points in direction from beamline to midpoint of
       // wire. This happens to be the same direction as "origin"
       w->sdir = w->origin;
