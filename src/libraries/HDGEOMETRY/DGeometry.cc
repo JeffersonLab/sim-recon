@@ -577,7 +577,9 @@ _DBG_<<"Components for compsite "<<name<<endl;
 bool DGeometry::GetCDCStereoWires(unsigned int ring,unsigned int ncopy,
 				  double zcenter,double dz,  
 				  vector<vector<cdc_offset_t> >&cdc_offsets,
-				  vector<DCDCWire*> &stereowires) const{
+				  vector<DCDCWire*> &stereowires,
+				  vector<double>&rot_angles,double dx,
+				  double dy) const{
   stringstream r_z_s,phi0_s,rot_s;
   
   // Create search strings for the straw geometrical properties 
@@ -621,11 +623,11 @@ bool DGeometry::GetCDCStereoWires(unsigned int ring,unsigned int ncopy,
       origin.RotateZ(phi);
     }
     else{
-      origin.SetX(r_z[0]*cos(phi));
-      origin.SetY(r_z[0]*sin(phi));    
+      origin.SetX(r_z[0]*cos(phi)+dx);
+      origin.SetY(r_z[0]*sin(phi)+dy);    
     }
     origin.SetZ(zcenter);
-   
+    
     // Here, we need to define a coordinate system for the wire
     // in which the wire runs along one axis. We call the directions
     // of the axes in this coordinate system s,t, and u with
@@ -657,10 +659,17 @@ bool DGeometry::GetCDCStereoWires(unsigned int ring,unsigned int ncopy,
 		      y0-half_dz*uy+cdc_offsets[ringid][i].dy_u,
 		      zcenter-half_dz);
     w->origin=0.5*(upstream+downstream);
+    w->origin.RotateX(rot_angles[0]);
+    w->origin.RotateY(rot_angles[1]);
+    w->origin.RotateZ(rot_angles[2]);
+    
     w->phi=w->origin.Phi();
     
     // Wire direction
     w->udir=downstream-upstream;
+    w->udir.RotateX(rot_angles[0]);
+    w->udir.RotateY(rot_angles[1]);
+    w->udir.RotateZ(rot_angles[2]);
     w->udir.SetMag(1.);
     w->stereo=stereo_sign*w->udir.Angle(DVector3(0.,0.,1.));
     // other directions for our wire coordinate system
@@ -681,7 +690,9 @@ bool DGeometry::GetCDCStereoWires(unsigned int ring,unsigned int ncopy,
 bool DGeometry::GetCDCAxialWires(unsigned int ring,unsigned int ncopy,
 				 double zcenter,double dz,
 				 vector<vector<cdc_offset_t> >&cdc_offsets,
-				 vector<DCDCWire*> &axialwires) const{
+				 vector<DCDCWire*> &axialwires,
+				 vector<double>&rot_angles,double dx,
+				 double dy) const{
   stringstream phi0_s,r_z_s;
 
   // Create search strings for the number of straws and the straw geometrical properties 
@@ -707,8 +718,8 @@ bool DGeometry::GetCDCAxialWires(unsigned int ring,unsigned int ncopy,
     w->straw=i+1;
 
     // Find the nominal wire position from the XML
-    double x0=r_z[0]*cos(phi);
-    double y0=r_z[0]*sin(phi);
+    double x0=r_z[0]*cos(phi)+dx;
+    double y0=r_z[0]*sin(phi)+dy;
 
     // Apply offsets in x and y
     double half_dz=0.5*dz;
@@ -720,6 +731,9 @@ bool DGeometry::GetCDCAxialWires(unsigned int ring,unsigned int ncopy,
 		      y0+cdc_offsets[ringid][i].dy_u,
 		      zcenter-half_dz);
     w->origin=0.5*(upstream+downstream);
+    w->origin.RotateX(rot_angles[0]);
+    w->origin.RotateY(rot_angles[1]);
+    w->origin.RotateZ(rot_angles[2]);
     w->phi=w->origin.Phi();
 
     // Here, we need to define a coordinate system for the wire
@@ -730,6 +744,9 @@ bool DGeometry::GetCDCAxialWires(unsigned int ring,unsigned int ncopy,
     // to the midpoint of the wire.
     w->udir=downstream-upstream;
     w->udir.SetMag(1.);
+    w->udir.RotateX(rot_angles[0]);
+    w->udir.RotateY(rot_angles[1]);
+    w->udir.RotateZ(rot_angles[2]);
     w->stereo=w->udir.Angle(DVector3(0.,0.,1.));
     // other directions for our wire coordinate system
     w->sdir=w->origin;
@@ -751,6 +768,14 @@ bool DGeometry::GetCDCWires(vector<vector<DCDCWire *> >&cdcwires) const{
   vector<double>cdc_length;
   Get("//posXYZ[@volume='CentralDC']/@X_Y_Z",cdc_origin);
   Get("//tubs[@name='STRW']/@Rio_Z",cdc_length);
+  
+  // Get CDC rotation angles
+  vector<double>rot_angles;
+  Get("//posXYZ[@volume='CentralDC']/@rot", rot_angles);
+  rot_angles[0]*=M_PI/180.;
+  rot_angles[1]*=M_PI/180.;
+  rot_angles[2]*=M_PI/180.; 
+
 
   double zmin=cdc_origin[2];
   double zmax=zmin+cdc_length[2];
@@ -819,35 +844,40 @@ bool DGeometry::GetCDCWires(vector<vector<DCDCWire *> >&cdcwires) const{
   // First axial layer
   for (unsigned int ring=1;ring<5;ring++){ 
     vector<DCDCWire*>straws;
-    if (!GetCDCAxialWires(ring,numstraws[ring-1],zcenter,L,cdc_offsets,straws)) return false;    
+    if (!GetCDCAxialWires(ring,numstraws[ring-1],zcenter,L,cdc_offsets,straws,
+			  rot_angles,cdc_origin[0],cdc_origin[1])) return false;    
     cdcwires.push_back(straws);
   }  
   
   // First set of stereo layers
   for (unsigned int i=0;i<8;i++){
     vector<DCDCWire*>straws;
-    if (!GetCDCStereoWires(i+5,numstraws[i+4],zcenter,L,cdc_offsets,straws)) return false;
+    if (!GetCDCStereoWires(i+5,numstraws[i+4],zcenter,L,cdc_offsets,straws,
+			   rot_angles,cdc_origin[0],cdc_origin[1])) return false;
     cdcwires.push_back(straws);
   }
 
   // Second axial layer
   for (unsigned int ring=13;ring<17;ring++){ 
     vector<DCDCWire*>straws;
-    if (!GetCDCAxialWires(ring,numstraws[ring-1],zcenter,L,cdc_offsets,straws)) return false;    
+    if (!GetCDCAxialWires(ring,numstraws[ring-1],zcenter,L,cdc_offsets,straws,
+			  rot_angles,cdc_origin[0],cdc_origin[1])) return false;    
     cdcwires.push_back(straws);
   }
   
   // Second set of stereo layers
   for (unsigned int i=8;i<16;i++){
     vector<DCDCWire*>straws;
-    if (!GetCDCStereoWires(i+9,numstraws[i+8],zcenter,L,cdc_offsets,straws)) return false;
+    if (!GetCDCStereoWires(i+9,numstraws[i+8],zcenter,L,cdc_offsets,straws,
+			   rot_angles,cdc_origin[0],cdc_origin[1])) return false;
     cdcwires.push_back(straws);
   }
 
   // Third axial layer
   for (unsigned int ring=25;ring<29;ring++){ 
     vector<DCDCWire*>straws;
-    if (!GetCDCAxialWires(ring,numstraws[ring-1],zcenter,L,cdc_offsets,straws)) return false;    
+    if (!GetCDCAxialWires(ring,numstraws[ring-1],zcenter,L,cdc_offsets,straws,
+			  rot_angles,cdc_origin[0],cdc_origin[1])) return false;    
     cdcwires.push_back(straws);
   }
 
