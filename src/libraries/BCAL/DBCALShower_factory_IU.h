@@ -30,20 +30,16 @@ private:
   jerror_t evnt(JEventLoop *loop, uint64_t eventnumber);
   jerror_t brun(JEventLoop *loop, int32_t runnumber);
 
+  double LOAD_CCDB_CONSTANTS;
+  double energy_cutoff;
+  double linear_intercept;
+  double linear_slope;
+  double exponential_param0;
+  double exponential_param1;
+  double exponential_param2;
+
   double m_zTarget;
 
-// energy calibration parameters
-  
-  float m_scaleZ_p0;
-  float m_scaleZ_p1;
-  float m_scaleZ_p2;
-  float m_scaleZ_p3;
-  
-  float m_nonlinZ_p0;
-  float m_nonlinZ_p1;
-  float m_nonlinZ_p2;
-  float m_nonlinZ_p3;
-  
 };
 
 #endif

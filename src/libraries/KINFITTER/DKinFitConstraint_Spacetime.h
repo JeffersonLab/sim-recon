@@ -42,7 +42,7 @@ class DKinFitConstraint_Spacetime : public DKinFitConstraint_Vertex
 		void Reset(void);
 
 		void Set_CommonTime(double locTime);
-		void Set_CommonVertex(TVector3& locVertex);
+		void Set_CommonVertex(const TVector3& locVertex);
 		void Set_CommonSpacetime(TLorentzVector& locSpacetime);
 
 		void Set_CommonTParamIndex(int locCommonTParamIndex);
@@ -111,7 +111,7 @@ inline void DKinFitConstraint_Spacetime::Set_CommonTime(double locTime)
 		(*locIterator)->Set_CommonTime(locTime);
 }
 
-inline void DKinFitConstraint_Spacetime::Set_CommonVertex(TVector3& locVertex)
+inline void DKinFitConstraint_Spacetime::Set_CommonVertex(const TVector3& locVertex)
 {
 	DKinFitConstraint_Vertex::Set_CommonVertex(locVertex);
 	set<DKinFitParticle*>::iterator locIterator = dOnlyConstrainTimeParticles.begin();
