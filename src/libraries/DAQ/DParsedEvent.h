@@ -31,6 +31,7 @@ using namespace jana;
 #include <DAQ/Df250TriggerTime.h>
 #include <DAQ/Df250PulseTime.h>
 #include <DAQ/Df250PulsePedestal.h>
+#include <DAQ/Df250PulseData.h>
 #include <DAQ/Df250WindowRawData.h>
 #include <DAQ/Df125Config.h>
 #include <DAQ/Df125TriggerTime.h>
@@ -74,6 +75,7 @@ using namespace jana;
 		X(Df250TriggerTime) \
 		X(Df250PulseTime) \
 		X(Df250PulsePedestal) \
+		X(Df250PulseData) \
 		X(Df250WindowRawData) \
 		X(Df125Config) \
 		X(Df125TriggerTime) \

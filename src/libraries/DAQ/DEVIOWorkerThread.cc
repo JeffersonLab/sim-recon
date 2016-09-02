@@ -1199,10 +1199,67 @@ void DEVIOWorkerThread::Parsef250Bank(uint32_t rocid, uint32_t* &iptr, uint32_t 
 					if(pe) pe->NEW_Df250PulseTime(rocid, slot, channel, itrigger, pulse_number, quality_factor, pulse_time);
 				}
 				break;
-            case 9: // Streaming Raw Data
-                // This is marked "reserved for future implementation" in the current manual (v2).
-                // As such, we don't try handling it here just yet.
-                if(VERBOSE>7) cout << "      FADC250 Streaming Raw Data (unsupported)"<<" ("<<hex<<*iptr<<dec<<")"<<endl;
+            case 9: // Pulse Data (firmware instroduce in Fall 2016)
+				{
+					// from word 1
+					uint32_t event_number_within_block = (*iptr>>19) & 0xFF;
+					uint32_t channel                   = (*iptr>>15) & 0x0F;
+					bool     QF_pedestal               = (*iptr>>14) & 0x01;
+					uint32_t pedestal                  = (*iptr>>0 ) & 0x3FFF;
+
+					// Event headers may be supressed so determine event from hit data
+					if( (event_number_within_block > current_parsed_events.size()) || (event_number_within_block==0) ) throw JException("Bad f250 event number", __FILE__, __LINE__);
+					pe_iter = current_parsed_events.begin();
+					advance( pe_iter, (event_number_within_block-1) );
+					pe = *pe_iter++;
+					
+					itrigger = event_number_within_block; // is this right?
+					uint32_t pulse_number = 0;
+					
+					while( (*++iptr>>31) == 0 ){
+					
+						if( (*iptr>>30) != 0x01) throw JException("Bad f250 Pulse Data!", __FILE__, __LINE__);
+
+						// from word 2
+						uint32_t integral                  = (*iptr>>12) & 0x3FFFF;
+						bool     QF_NSA_beyond_PTW         = (*iptr>>11) & 0x01;
+						bool     QF_overflow               = (*iptr>>10) & 0x01;
+						bool     QF_underflow              = (*iptr>>9 ) & 0x01;
+						uint32_t nsamples_over_threshold   = (*iptr>>0 ) & 0x1FF;
+
+						iptr++;
+						if( (*iptr>>30) != 0x00) throw JException("Bad f250 Pulse Data!", __FILE__, __LINE__);
+
+						// from word 3
+						uint32_t course_time               = (*iptr>>21) & 0x1FF;//< 4 ns/count
+						uint32_t fine_time                 = (*iptr>>15) & 0x3F;//< 0.0625 ns/count
+						uint32_t pulse_peak                = (*iptr>>3 ) & 0xFFF;
+						bool     QF_vpeak_beyond_NSA       = (*iptr>>2 ) & 0x01;
+						bool     QF_vpeak_not_found        = (*iptr>>1 ) & 0x01;
+						bool     QF_bad_pedestal           = (*iptr>>0 ) & 0x01;
+
+						if( pe ) {
+							pe->NEW_Df250PulseData(rocid, slot, channel, itrigger
+							, event_number_within_block
+							, QF_pedestal
+							, pedestal
+							, integral
+							, QF_NSA_beyond_PTW
+							, QF_overflow
+							, QF_underflow
+							, nsamples_over_threshold
+							, course_time
+							, fine_time
+							, pulse_peak
+							, QF_vpeak_beyond_NSA
+							, QF_vpeak_not_found
+							, QF_bad_pedestal
+							, pulse_number++);
+						}
+					}
+					iptr--; // backup so when outer loop advances, it points to next data defining word
+
+				}
                 break;
             case 10: // Pulse Pedestal
 				{
@@ -1791,6 +1848,7 @@ void DEVIOWorkerThread::LinkAllAssociations(void)
 			if(pe->vDCAEN1290TDCConfig.size()>1) sort(pe->vDCAEN1290TDCConfig.begin(), pe->vDCAEN1290TDCConfig.end(), SortByROCID<DCAEN1290TDCConfig>       );
 
 			LinkConfigSamplesCopy(pe->vDf250Config, pe->vDf250PulseIntegral);
+			LinkConfigSamplesCopy(pe->vDf250Config, pe->vDf250PulseData);
 			LinkConfigSamplesCopy(pe->vDf125Config, pe->vDf125PulseIntegral);
 			LinkConfigSamplesCopy(pe->vDf125Config, pe->vDf125CDCPulse);
 			LinkConfigSamplesCopy(pe->vDf125Config, pe->vDf125FDCPulse);
