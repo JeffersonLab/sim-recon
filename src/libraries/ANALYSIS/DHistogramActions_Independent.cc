@@ -2760,29 +2760,15 @@ bool DHistogramAction_DetectedParticleKinematics::Perform_Action(JEventLoop* loc
 	}
 
 	vector<const DNeutralParticle*> locNeutralParticles;
-	locEventLoop->Get(locNeutralParticles);
+	locEventLoop->Get(locNeutralParticles, dShowerSelectionTag.c_str());
 
-	vector<const DNeutralShower*> locNeutralShowers;
-	locEventLoop->Get(locNeutralShowers, dShowerSelectionTag.c_str());
-
-	for(size_t loc_i = 0; loc_i < locNeutralShowers.size(); ++loc_i)
+	for(size_t loc_i = 0; loc_i < locNeutralParticles.size(); ++loc_i)
 	{
-		const DNeutralParticle* locNeutralParticle = NULL;
-		for(size_t loc_j = 0; loc_j < locNeutralParticles.size(); ++loc_j)
-		{
-			if(locNeutralParticles[loc_j]->dNeutralShower != locNeutralShowers[loc_i])
-				continue;
-			locNeutralParticle = locNeutralParticles[loc_j];
-			break;
-		}
-		if(locNeutralParticle == NULL)
-			continue;
-		const DNeutralParticleHypothesis* locNeutralParticleHypothesis = locNeutralParticle->Get_Hypothesis(Gamma);
+		const DNeutralParticleHypothesis* locNeutralParticleHypothesis = locNeutralParticles[loc_i]->Get_Hypothesis(Gamma);
 		if(locNeutralParticleHypothesis->dFOM < dMinPIDFOM)
 			continue;
 
 		Particle_t locPID = locNeutralParticleHypothesis->PID();
-
 		if(dHistMap_P.find(locPID) == dHistMap_P.end())
 			continue; //e.g. a decaying particle, or not interested in histogramming
 
@@ -2812,6 +2798,320 @@ bool DHistogramAction_DetectedParticleKinematics::Perform_Action(JEventLoop* loc
 		}
 		Unlock_Action();
 	}
+	return true;
+}
+
+void DHistogramAction_TrackShowerErrors::Initialize(JEventLoop* locEventLoop)
+{
+	string locHistName, locHistTitle, locParticleName, locParticleROOTName;
+	Particle_t locPID;
+
+	string locTrackSelectionTag = "NotATag", locShowerSelectionTag = "NotATag";
+	if(gPARMS->Exists("COMBO:TRACK_SELECT_TAG"))
+		gPARMS->GetParameter("COMBO:TRACK_SELECT_TAG", locTrackSelectionTag);
+	if(gPARMS->Exists("COMBO:SHOWER_SELECT_TAG"))
+		gPARMS->GetParameter("COMBO:SHOWER_SELECT_TAG", locShowerSelectionTag);
+
+	//CREATE THE HISTOGRAMS
+	//Since we are creating histograms, the contents of gDirectory will be modified: must use JANA-wide ROOT lock
+	japp->RootWriteLock(); //ACQUIRE ROOT LOCK!!
+	{
+		//So: Default tag is "", User can set it to something else
+		//In here, if tag is "", get from gparms, if not, leave it alone
+			//If gparms value does not exist, set it to (and use) "PreSelect"
+		if(dTrackSelectionTag == "NotATag")
+			dTrackSelectionTag = (locTrackSelectionTag == "NotATag") ? "PreSelect" : locTrackSelectionTag;
+		if(dShowerSelectionTag == "NotATag")
+			dShowerSelectionTag = (locShowerSelectionTag == "NotATag") ? "PreSelect" : locShowerSelectionTag;
+
+		CreateAndChangeTo_ActionDirectory();
+
+		//TRACKS
+		for(size_t loc_i = 0; loc_i < dFinalStatePIDs.size(); ++loc_i)
+		{
+			locPID = dFinalStatePIDs[loc_i];
+			locParticleName = ParticleType(locPID);
+			locParticleROOTName = ParticleName_ROOT(locPID);
+			CreateAndChangeTo_Directory(locParticleName, locParticleName);
+
+			// Px
+			locHistName = "PxErrorVsP";
+			locHistTitle = locParticleROOTName + string(";p (GeV/c);#sigma_{p_{x}}");
+			dHistMap_TrackPxErrorVsP[locPID] = GetOrCreate_Histogram<TH2I>(locHistName, locHistTitle, dNum2DPBins, dMinP, dMaxP, dNum2DPxyErrorBins, 0.0, dMaxPxyError);
+
+			locHistName = "PxErrorVsTheta";
+			locHistTitle = locParticleROOTName + string(";#theta#circ;#sigma_{p_{x}}");
+			dHistMap_TrackPxErrorVsTheta[locPID] = GetOrCreate_Histogram<TH2I>(locHistName, locHistTitle, dNum2DThetaBins, dMinTheta, dMaxTheta, dNum2DPxyErrorBins, 0.0, dMaxPxyError);
+
+			locHistName = "PxErrorVsPhi";
+			locHistTitle = locParticleROOTName + string(";#phi#circ;#sigma_{p_{x}}");
+			dHistMap_TrackPxErrorVsPhi[locPID] = GetOrCreate_Histogram<TH2I>(locHistName, locHistTitle, dNum2DPhiBins, dMinPhi, dMaxPhi, dNum2DPxyErrorBins, 0.0, dMaxPxyError);
+
+			// Py
+			locHistName = "PyErrorVsP";
+			locHistTitle = locParticleROOTName + string(";p (GeV/c);#sigma_{p_{y}}");
+			dHistMap_TrackPyErrorVsP[locPID] = GetOrCreate_Histogram<TH2I>(locHistName, locHistTitle, dNum2DPBins, dMinP, dMaxP, dNum2DPxyErrorBins, 0.0, dMaxPxyError);
+
+			locHistName = "PyErrorVsTheta";
+			locHistTitle = locParticleROOTName + string(";#theta#circ;#sigma_{p_{y}}");
+			dHistMap_TrackPyErrorVsTheta[locPID] = GetOrCreate_Histogram<TH2I>(locHistName, locHistTitle, dNum2DThetaBins, dMinTheta, dMaxTheta, dNum2DPxyErrorBins, 0.0, dMaxPxyError);
+
+			locHistName = "PyErrorVsPhi";
+			locHistTitle = locParticleROOTName + string(";#phi#circ;#sigma_{p_{y}}");
+			dHistMap_TrackPyErrorVsPhi[locPID] = GetOrCreate_Histogram<TH2I>(locHistName, locHistTitle, dNum2DPhiBins, dMinPhi, dMaxPhi, dNum2DPxyErrorBins, 0.0, dMaxPxyError);
+
+			// Pz
+			locHistName = "PzErrorVsP";
+			locHistTitle = locParticleROOTName + string(";p (GeV/c);#sigma_{p_{z}}");
+			dHistMap_TrackPzErrorVsP[locPID] = GetOrCreate_Histogram<TH2I>(locHistName, locHistTitle, dNum2DPBins, dMinP, dMaxP, dNum2DPzErrorBins, 0.0, dMaxPzError);
+
+			locHistName = "PzErrorVsTheta";
+			locHistTitle = locParticleROOTName + string(";#theta#circ;#sigma_{p_{z}}");
+			dHistMap_TrackPzErrorVsTheta[locPID] = GetOrCreate_Histogram<TH2I>(locHistName, locHistTitle, dNum2DThetaBins, dMinTheta, dMaxTheta, dNum2DPzErrorBins, 0.0, dMaxPzError);
+
+			locHistName = "PzErrorVsPhi";
+			locHistTitle = locParticleROOTName + string(";#phi#circ;#sigma_{p_{z}}");
+			dHistMap_TrackPzErrorVsPhi[locPID] = GetOrCreate_Histogram<TH2I>(locHistName, locHistTitle, dNum2DPhiBins, dMinPhi, dMaxPhi, dNum2DPzErrorBins, 0.0, dMaxPzError);
+
+			// X
+			locHistName = "XErrorVsP";
+			locHistTitle = locParticleROOTName + string(";p (GeV/c);#sigma_{x}");
+			dHistMap_TrackXErrorVsP[locPID] = GetOrCreate_Histogram<TH2I>(locHistName, locHistTitle, dNum2DPBins, dMinP, dMaxP, dNum2DXYErrorBins, 0.0, dMaxXYError);
+
+			locHistName = "XErrorVsTheta";
+			locHistTitle = locParticleROOTName + string(";#theta#circ;#sigma_{x}");
+			dHistMap_TrackXErrorVsTheta[locPID] = GetOrCreate_Histogram<TH2I>(locHistName, locHistTitle, dNum2DThetaBins, dMinTheta, dMaxTheta, dNum2DXYErrorBins, 0.0, dMaxXYError);
+
+			locHistName = "XErrorVsPhi";
+			locHistTitle = locParticleROOTName + string(";#phi#circ;#sigma_{x}");
+			dHistMap_TrackXErrorVsPhi[locPID] = GetOrCreate_Histogram<TH2I>(locHistName, locHistTitle, dNum2DPhiBins, dMinPhi, dMaxPhi, dNum2DXYErrorBins, 0.0, dMaxXYError);
+
+			// Y
+			locHistName = "YErrorVsP";
+			locHistTitle = locParticleROOTName + string(";p (GeV/c);#sigma_{y}");
+			dHistMap_TrackYErrorVsP[locPID] = GetOrCreate_Histogram<TH2I>(locHistName, locHistTitle, dNum2DPBins, dMinP, dMaxP, dNum2DXYErrorBins, 0.0, dMaxXYError);
+
+			locHistName = "YErrorVsTheta";
+			locHistTitle = locParticleROOTName + string(";#theta#circ;#sigma_{y}");
+			dHistMap_TrackYErrorVsTheta[locPID] = GetOrCreate_Histogram<TH2I>(locHistName, locHistTitle, dNum2DThetaBins, dMinTheta, dMaxTheta, dNum2DXYErrorBins, 0.0, dMaxXYError);
+
+			locHistName = "YErrorVsPhi";
+			locHistTitle = locParticleROOTName + string(";#phi#circ;#sigma_{y}");
+			dHistMap_TrackYErrorVsPhi[locPID] = GetOrCreate_Histogram<TH2I>(locHistName, locHistTitle, dNum2DPhiBins, dMinPhi, dMaxPhi, dNum2DXYErrorBins, 0.0, dMaxXYError);
+
+			// Z
+			locHistName = "ZErrorVsP";
+			locHistTitle = locParticleROOTName + string(";p (GeV/c);#sigma_{z}");
+			dHistMap_TrackZErrorVsP[locPID] = GetOrCreate_Histogram<TH2I>(locHistName, locHistTitle, dNum2DPBins, dMinP, dMaxP, dNum2DZErrorBins, 0.0, dMaxZError);
+
+			locHistName = "ZErrorVsTheta";
+			locHistTitle = locParticleROOTName + string(";#theta#circ;#sigma_{z}");
+			dHistMap_TrackZErrorVsTheta[locPID] = GetOrCreate_Histogram<TH2I>(locHistName, locHistTitle, dNum2DThetaBins, dMinTheta, dMaxTheta, dNum2DZErrorBins, 0.0, dMaxZError);
+
+			locHistName = "ZErrorVsPhi";
+			locHistTitle = locParticleROOTName + string(";#phi#circ;#sigma_{z}");
+			dHistMap_TrackZErrorVsPhi[locPID] = GetOrCreate_Histogram<TH2I>(locHistName, locHistTitle, dNum2DPhiBins, dMinPhi, dMaxPhi, dNum2DZErrorBins, 0.0, dMaxZError);
+
+			gDirectory->cd("..");
+		}
+
+		//SHOWERS
+		for(bool locIsBCALFlag : {false, true})
+		{
+			string locDirName = locIsBCALFlag ? "Photon_BCAL" : "Photon_FCAL";
+			locParticleROOTName = ParticleName_ROOT(Gamma);
+			CreateAndChangeTo_Directory(locDirName, locDirName);
+
+			double locMaxP = locIsBCALFlag ? dMaxPBCAL : dMaxP;
+			double locMinTheta = locIsBCALFlag ? dMinThetaBCAL : dMinTheta;
+			double locMaxTheta = locIsBCALFlag ? dMaxTheta : dMaxThetaFCAL;
+
+			// E
+			locHistName = "EErrorVsP";
+			locHistTitle = locParticleROOTName + string(";p (GeV/c);#sigma_{E}");
+			dHistMap_ShowerEErrorVsP[locIsBCALFlag] = GetOrCreate_Histogram<TH2I>(locHistName, locHistTitle, dNum2DPBins, dMinP, locMaxP, dNum2DEErrorBins, 0.0, dMaxEError);
+
+			locHistName = "EErrorVsTheta";
+			locHistTitle = locParticleROOTName + string(";#theta#circ;#sigma_{E}");
+			dHistMap_ShowerEErrorVsTheta[locIsBCALFlag] = GetOrCreate_Histogram<TH2I>(locHistName, locHistTitle, dNum2DThetaBins, locMinTheta, locMaxTheta, dNum2DEErrorBins, 0.0, dMaxEError);
+
+			locHistName = "EErrorVsPhi";
+			locHistTitle = locParticleROOTName + string(";#phi#circ;#sigma_{E}");
+			dHistMap_ShowerEErrorVsPhi[locIsBCALFlag] = GetOrCreate_Histogram<TH2I>(locHistName, locHistTitle, dNum2DPhiBins, dMinPhi, dMaxPhi, dNum2DEErrorBins, 0.0, dMaxEError);
+
+			// X
+			locHistName = "XErrorVsP";
+			locHistTitle = locParticleROOTName + string(";p (GeV/c);#sigma_{x}");
+			dHistMap_ShowerXErrorVsP[locIsBCALFlag] = GetOrCreate_Histogram<TH2I>(locHistName, locHistTitle, dNum2DPBins, dMinP, locMaxP, dNum2DXYErrorBins, 0.0, dMaxXYError);
+
+			locHistName = "XErrorVsTheta";
+			locHistTitle = locParticleROOTName + string(";#theta#circ;#sigma_{x}");
+			dHistMap_ShowerXErrorVsTheta[locIsBCALFlag] = GetOrCreate_Histogram<TH2I>(locHistName, locHistTitle, dNum2DThetaBins, locMinTheta, locMaxTheta, dNum2DXYErrorBins, 0.0, dMaxXYError);
+
+			locHistName = "XErrorVsPhi";
+			locHistTitle = locParticleROOTName + string(";#phi#circ;#sigma_{x}");
+			dHistMap_ShowerXErrorVsPhi[locIsBCALFlag] = GetOrCreate_Histogram<TH2I>(locHistName, locHistTitle, dNum2DPhiBins, dMinPhi, dMaxPhi, dNum2DXYErrorBins, 0.0, dMaxXYError);
+
+			// Y
+			locHistName = "YErrorVsP";
+			locHistTitle = locParticleROOTName + string(";p (GeV/c);#sigma_{y}");
+			dHistMap_ShowerYErrorVsP[locIsBCALFlag] = GetOrCreate_Histogram<TH2I>(locHistName, locHistTitle, dNum2DPBins, dMinP, locMaxP, dNum2DXYErrorBins, 0.0, dMaxXYError);
+
+			locHistName = "YErrorVsTheta";
+			locHistTitle = locParticleROOTName + string(";#theta#circ;#sigma_{y}");
+			dHistMap_ShowerYErrorVsTheta[locIsBCALFlag] = GetOrCreate_Histogram<TH2I>(locHistName, locHistTitle, dNum2DThetaBins, locMinTheta, locMaxTheta, dNum2DXYErrorBins, 0.0, dMaxXYError);
+
+			locHistName = "YErrorVsPhi";
+			locHistTitle = locParticleROOTName + string(";#phi#circ;#sigma_{y}");
+			dHistMap_ShowerYErrorVsPhi[locIsBCALFlag] = GetOrCreate_Histogram<TH2I>(locHistName, locHistTitle, dNum2DPhiBins, dMinPhi, dMaxPhi, dNum2DXYErrorBins, 0.0, dMaxXYError);
+
+			// Z
+			locHistName = "ZErrorVsP";
+			locHistTitle = locParticleROOTName + string(";p (GeV/c);#sigma_{z}");
+			dHistMap_ShowerZErrorVsP[locIsBCALFlag] = GetOrCreate_Histogram<TH2I>(locHistName, locHistTitle, dNum2DPBins, dMinP, locMaxP, dNum2DZErrorBins, 0.0, dMaxZError);
+
+			locHistName = "ZErrorVsTheta";
+			locHistTitle = locParticleROOTName + string(";#theta#circ;#sigma_{z}");
+			dHistMap_ShowerZErrorVsTheta[locIsBCALFlag] = GetOrCreate_Histogram<TH2I>(locHistName, locHistTitle, dNum2DThetaBins, locMinTheta, locMaxTheta, dNum2DZErrorBins, 0.0, dMaxZError);
+
+			locHistName = "ZErrorVsPhi";
+			locHistTitle = locParticleROOTName + string(";#phi#circ;#sigma_{z}");
+			dHistMap_ShowerZErrorVsPhi[locIsBCALFlag] = GetOrCreate_Histogram<TH2I>(locHistName, locHistTitle, dNum2DPhiBins, dMinPhi, dMaxPhi, dNum2DZErrorBins, 0.0, dMaxZError);
+
+			// E
+			locHistName = "TErrorVsP";
+			locHistTitle = locParticleROOTName + string(";p (GeV/c);#sigma_{E}");
+			dHistMap_ShowerTErrorVsP[locIsBCALFlag] = GetOrCreate_Histogram<TH2I>(locHistName, locHistTitle, dNum2DPBins, dMinP, locMaxP, dNum2DTErrorBins, 0.0, dMaxTError);
+
+			locHistName = "TErrorVsTheta";
+			locHistTitle = locParticleROOTName + string(";#theta#circ;#sigma_{E}");
+			dHistMap_ShowerTErrorVsTheta[locIsBCALFlag] = GetOrCreate_Histogram<TH2I>(locHistName, locHistTitle, dNum2DThetaBins, locMinTheta, locMaxTheta, dNum2DTErrorBins, 0.0, dMaxTError);
+
+			locHistName = "TErrorVsPhi";
+			locHistTitle = locParticleROOTName + string(";#phi#circ;#sigma_{E}");
+			dHistMap_ShowerTErrorVsPhi[locIsBCALFlag] = GetOrCreate_Histogram<TH2I>(locHistName, locHistTitle, dNum2DPhiBins, dMinPhi, dMaxPhi, dNum2DTErrorBins, 0.0, dMaxTError);
+
+			gDirectory->cd("..");
+		}
+
+		//Return to the base directory
+		ChangeTo_BaseDirectory();
+	}
+	japp->RootUnLock(); //RELEASE ROOT LOCK!!
+}
+
+bool DHistogramAction_TrackShowerErrors::Perform_Action(JEventLoop* locEventLoop, const DParticleCombo* locParticleCombo)
+{
+	if(Get_NumPreviousParticleCombos() != 0)
+		return true; //else double-counting!
+
+	vector<const DChargedTrack*> locPreSelectChargedTracks;
+	locEventLoop->Get(locPreSelectChargedTracks, dTrackSelectionTag.c_str());
+
+	for(size_t loc_i = 0; loc_i < locPreSelectChargedTracks.size(); ++loc_i)
+	{
+		const DChargedTrackHypothesis* locChargedTrackHypothesis = locPreSelectChargedTracks[loc_i]->Get_BestFOM();
+
+		Particle_t locPID = (locChargedTrackHypothesis->dFOM < dMinPIDFOM) ? Unknown : locChargedTrackHypothesis->PID();
+		if(dHistMap_TrackPxErrorVsP.find(locPID) == dHistMap_TrackPxErrorVsP.end())
+			continue; //not interested in histogramming
+
+		DVector3 locMomentum = locChargedTrackHypothesis->momentum();
+		double locPhi = locMomentum.Phi()*180.0/TMath::Pi();
+		double locTheta = locMomentum.Theta()*180.0/TMath::Pi();
+		double locP = locMomentum.Mag();
+
+		const DMatrixDSym& locCovarianceMatrix = locChargedTrackHypothesis->errorMatrix();
+		double locPxError = sqrt(locCovarianceMatrix(0, 0));
+		double locPyError = sqrt(locCovarianceMatrix(1, 1));
+		double locPzError = sqrt(locCovarianceMatrix(2, 2));
+		double locXError = sqrt(locCovarianceMatrix(3, 3));
+		double locYError = sqrt(locCovarianceMatrix(4, 4));
+		double locZError = sqrt(locCovarianceMatrix(5, 5));
+
+		//FILL HISTOGRAMS
+		//Since we are filling histograms local to this action, it will not interfere with other ROOT operations: can use action-wide ROOT lock
+		//Note, the mutex is unique to this DReaction + action_string combo: actions of same class with different hists will have a different mutex
+		Lock_Action();
+		{
+			dHistMap_TrackPxErrorVsP[locPID]->Fill(locP, locPxError);
+			dHistMap_TrackPxErrorVsTheta[locPID]->Fill(locTheta, locPxError);
+			dHistMap_TrackPxErrorVsPhi[locPID]->Fill(locPhi, locPxError);
+
+			dHistMap_TrackPyErrorVsP[locPID]->Fill(locP, locPyError);
+			dHistMap_TrackPyErrorVsTheta[locPID]->Fill(locTheta, locPyError);
+			dHistMap_TrackPyErrorVsPhi[locPID]->Fill(locPhi, locPyError);
+
+			dHistMap_TrackPzErrorVsP[locPID]->Fill(locP, locPzError);
+			dHistMap_TrackPzErrorVsTheta[locPID]->Fill(locTheta, locPzError);
+			dHistMap_TrackPzErrorVsPhi[locPID]->Fill(locPhi, locPzError);
+
+			dHistMap_TrackXErrorVsP[locPID]->Fill(locP, locXError);
+			dHistMap_TrackXErrorVsTheta[locPID]->Fill(locTheta, locXError);
+			dHistMap_TrackXErrorVsPhi[locPID]->Fill(locPhi, locXError);
+
+			dHistMap_TrackYErrorVsP[locPID]->Fill(locP, locYError);
+			dHistMap_TrackYErrorVsTheta[locPID]->Fill(locTheta, locYError);
+			dHistMap_TrackYErrorVsPhi[locPID]->Fill(locPhi, locYError);
+
+			dHistMap_TrackZErrorVsP[locPID]->Fill(locP, locZError);
+			dHistMap_TrackZErrorVsTheta[locPID]->Fill(locTheta, locZError);
+			dHistMap_TrackZErrorVsPhi[locPID]->Fill(locPhi, locZError);
+		}
+		Unlock_Action();
+	}
+
+	vector<const DNeutralParticle*> locNeutralParticles;
+	locEventLoop->Get(locNeutralParticles, dShowerSelectionTag.c_str());
+
+	for(size_t loc_i = 0; loc_i < locNeutralParticles.size(); ++loc_i)
+	{
+		const DNeutralParticleHypothesis* locNeutralParticleHypothesis = locNeutralParticles[loc_i]->Get_Hypothesis(Gamma);
+		if(locNeutralParticleHypothesis->dFOM < dMinPIDFOM)
+			continue;
+
+		DVector3 locMomentum = locNeutralParticleHypothesis->momentum();
+		double locPhi = locMomentum.Phi()*180.0/TMath::Pi();
+		double locTheta = locMomentum.Theta()*180.0/TMath::Pi();
+		double locP = locMomentum.Mag();
+
+		const DNeutralShower* locNeutralShower = locNeutralParticles[loc_i]->dNeutralShower;
+		const DMatrixDSym& locCovarianceMatrix = locNeutralShower->dCovarianceMatrix;
+		bool locIsBCALFlag = (locNeutralShower->dDetectorSystem == SYS_BCAL);
+		double locEError = sqrt(locCovarianceMatrix(0, 0));
+		double locXError = sqrt(locCovarianceMatrix(1, 1));
+		double locYError = sqrt(locCovarianceMatrix(2, 2));
+		double locZError = sqrt(locCovarianceMatrix(3, 3));
+		double locTError = sqrt(locCovarianceMatrix(4, 4));
+
+		//FILL HISTOGRAMS
+		//Since we are filling histograms local to this action, it will not interfere with other ROOT operations: can use action-wide ROOT lock
+		//Note, the mutex is unique to this DReaction + action_string combo: actions of same class with different hists will have a different mutex
+		Lock_Action();
+		{
+			dHistMap_ShowerEErrorVsP[locIsBCALFlag]->Fill(locP, locEError);
+			dHistMap_ShowerEErrorVsTheta[locIsBCALFlag]->Fill(locTheta, locEError);
+			dHistMap_ShowerEErrorVsPhi[locIsBCALFlag]->Fill(locPhi, locEError);
+
+			dHistMap_ShowerXErrorVsP[locIsBCALFlag]->Fill(locP, locXError);
+			dHistMap_ShowerXErrorVsTheta[locIsBCALFlag]->Fill(locTheta, locXError);
+			dHistMap_ShowerXErrorVsPhi[locIsBCALFlag]->Fill(locPhi, locXError);
+
+			dHistMap_ShowerYErrorVsP[locIsBCALFlag]->Fill(locP, locYError);
+			dHistMap_ShowerYErrorVsTheta[locIsBCALFlag]->Fill(locTheta, locYError);
+			dHistMap_ShowerYErrorVsPhi[locIsBCALFlag]->Fill(locPhi, locYError);
+
+			dHistMap_ShowerZErrorVsP[locIsBCALFlag]->Fill(locP, locZError);
+			dHistMap_ShowerZErrorVsTheta[locIsBCALFlag]->Fill(locTheta, locZError);
+			dHistMap_ShowerZErrorVsPhi[locIsBCALFlag]->Fill(locPhi, locZError);
+
+			dHistMap_ShowerTErrorVsP[locIsBCALFlag]->Fill(locP, locTError);
+			dHistMap_ShowerTErrorVsTheta[locIsBCALFlag]->Fill(locTheta, locTError);
+			dHistMap_ShowerTErrorVsPhi[locIsBCALFlag]->Fill(locPhi, locTError);
+		}
+		Unlock_Action();
+	}
+
 	return true;
 }
 
