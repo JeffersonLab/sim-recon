@@ -184,7 +184,7 @@ jerror_t DFDCPseudo_factory::brun(JEventLoop *loop, int32_t runnumber)
     if (!tv_vs_tu) tv_vs_tu=new TH2F("tv_vs_tu","t(v) vs t(u)",100,-100,250,100,-100,250);
 
     dtv_vs_dtu= (TH2F*) gROOT->FindObject("dtv_vs_dtu");
-    if (!dtv_vs_dtu) dtv_vs_dtu=new TH2F("dtv_vs_dtu","t(wire)-t(v) vs t(wire)-t(u)",100,-500,500,100,-500,500);
+    if (!dtv_vs_dtu) dtv_vs_dtu=new TH2F("dtv_vs_dtu","t(wire)-t(v) vs t(wire)-t(u)",200,-100,100,200,-100,100);
 
     u_wire_dt_vs_wire=(TH2F *) gROOT->FindObject("u_wire_dt_vs_wire");
     if (!u_wire_dt_vs_wire) u_wire_dt_vs_wire=new TH2F("u_wire_dt_vs_wire","wire/u cathode time difference vs wire number",
@@ -221,16 +221,16 @@ jerror_t DFDCPseudo_factory::brun(JEventLoop *loop, int32_t runnumber)
     if (!v_cl_n) v_cl_n=new TH1F("v_cl_n","v_cl_n",20,.5,20.5);
 
     x_dist_2=(TH1F*)gROOT->FindObject("x_dist_2");
-    if (!x_dist_2) x_dist_2=new TH1F("x_dist_2","x_dist_2",200,-2,2);
+    if (!x_dist_2) x_dist_2=new TH1F("x_dist_2","x_dist_2",400,-2,2);
 
     x_dist_3=(TH1F*)gROOT->FindObject("x_dist_3");
-    if (!x_dist_3) x_dist_3=new TH1F("x_dist_3","x_dist_3",200,-2,2);
+    if (!x_dist_3) x_dist_3=new TH1F("x_dist_3","x_dist_3",400,-2,2);
 
     x_dist_23=(TH1F*)gROOT->FindObject("x_dist_23");
-    if (!x_dist_23) x_dist_23=new TH1F("x_dist_23","x_dist_23",200,-2,2);
+    if (!x_dist_23) x_dist_23=new TH1F("x_dist_23","x_dist_23",400,-2,2);
 
     x_dist_33=(TH1F*)gROOT->FindObject("x_dist_33");
-    if (!x_dist_33) x_dist_33=new TH1F("x_dist_33","x_dist_33",200,-2,2);
+    if (!x_dist_33) x_dist_33=new TH1F("x_dist_33","x_dist_33",400,-2,2);
 
     d_uv=(TH1F*)gROOT->FindObject("d_uv");
     if (!d_uv) d_uv=new TH1F("d_uv","d_uv",160,-40,40);
@@ -886,12 +886,13 @@ jerror_t DFDCPseudo_factory::TwoStripCluster(const vector<const DFDCHit*>& H,
 
   // weighted sum
   temp.pos=(pos1*amp1+pos2*amp2)/sum;
-  temp.q_from_pulse_height=sum;
+  
+  (amp2 > amp1) ? temp.q_from_pulse_height=amp2 : temp.q_from_pulse_height=amp1;
+  temp.q=sum;
   temp.numstrips=2;
 
   // time from greater amplitude
-  if (amp1 > amp2) temp.t=t1;
-  else  temp.t=t2;
+  (amp2 > amp1) ? temp.t=t2 : temp.t=t1;
   temp.t_rms=0.;
 
   //CalcMeanTime(peak,temp.t,temp.t_rms);
@@ -931,10 +932,11 @@ jerror_t DFDCPseudo_factory::ThreeStripCluster(const vector<const DFDCHit*>& H,
     sum+=amp;
     wsum+=amp*pos;
     
-    // time and correction from largest amplitude
+    // time, pulseheight and correction from largest amplitude
     if (amp > o_amp){
       t=double((*j)->t);
       o_amp = amp;
+      temp.q_from_pulse_height=amp;
       i_corr++;
     }
   }
@@ -948,7 +950,7 @@ jerror_t DFDCPseudo_factory::ThreeStripCluster(const vector<const DFDCHit*>& H,
   // weighted sum
   temp.pos=wsum/sum + i_corr*pos_corr;
 
-  temp.q_from_pulse_height=sum;
+  temp.q=sum;
   temp.numstrips=10;
   temp.t=t;
   temp.t_rms=0.;

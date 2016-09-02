@@ -65,7 +65,7 @@ jerror_t DReaction_factory_p4pi_hists::evnt(JEventLoop* locEventLoop, uint64_t l
 	//fit types are of type DKinFitType, an enum defined in sim-recon/src/libraries/ANALYSIS/DReaction.h
 	//Options: d_NoFit (default), d_P4Fit, d_VertexFit, d_P4AndVertexFit
 	//P4 fits automatically constrain decaying particle masses, unless they are manually disabled
-	locReaction->Set_KinFitType(d_P4Fit);
+	//locReaction->Set_KinFitType(d_P4Fit);
 
 	// Highly Recommended: When generating particle combinations, reject all beam photons that match to a different RF bunch
 	locReaction->Set_MaxPhotonRFDeltaT(0.5*dBeamBunchPeriod); //should be minimum cut value
@@ -120,8 +120,8 @@ jerror_t DReaction_factory_p4pi_hists::evnt(JEventLoop* locEventLoop, uint64_t l
 	locReaction->Add_AnalysisAction(new DHistogramAction_TrackVertexComparison(locReaction));
 	
 	// KINEMATIC FIT
-	locReaction->Add_AnalysisAction(new DHistogramAction_KinFitResults(locReaction, 0.05)); //5% confidence level cut on pull histograms only
-	locReaction->Add_AnalysisAction(new DCutAction_KinFitFOM(locReaction, -1.0)); // -1.0 confidence level cut //require kinematic fit converges
+	// locReaction->Add_AnalysisAction(new DHistogramAction_KinFitResults(locReaction, 0.05)); //5% confidence level cut on pull histograms only
+	// locReaction->Add_AnalysisAction(new DCutAction_KinFitFOM(locReaction, -1.0)); // -1.0 confidence level cut //require kinematic fit converges
 
 	// Cut for the Invariant Mass Plots
 	locReaction->Add_AnalysisAction(new DCutAction_MissingMassSquared(locReaction, false, -0.005, 0.005));
