@@ -18,8 +18,6 @@
 #include <TH1F.h>
 #include <TH2F.h>
 
-//#define MATCH_RADIUS(p) (2.79+2.88/(p)/(p))
-#define MATCH_RADIUS(p) (2.75+2./(p+0.25)/(p+0.25))
 #define MAX_SEGMENTS 20
 #define HALF_PACKAGE 6.0
 #define FDC_OUTER_RADIUS 50.0 
@@ -166,56 +164,212 @@ jerror_t DTrackCandidate_factory_FDCCathodes::evnt(JEventLoop *loop, uint64_t ev
     const DFDCSegment *segment=segments[i];
     packages[segment->package].push_back((DFDCSegment*)segment);
   }
-
-  // Loop over all the packages to match to segments in packages downstream
-  // of the current package
+  // Keep track of the segments in each package that have been paired with
+  // other segments
+  vector<vector<int> >is_paired;
   for (unsigned int i=0;i<4;i++){
-    if (packages[i].size()>0) LinkSegments(i,packages);
+    vector<int>temp(packages[i].size());
+    is_paired.push_back(temp);
+  } 
+  // Loop over all the packages to match to segments in packages downstream
+  // of the current package 
+  vector<pair<const DFDCSegment*,const DFDCSegment*> >paired_segments;
+  for (unsigned int i=0;i<3;i++){
+    if (packages[i].size()>0) LinkSegments(i,packages,paired_segments,is_paired);
+  }
+  
+  // Link pairs of segments into groups of three linked segments
+  vector<vector<const DFDCSegment *> >triplets;
+  vector<int>is_tripled(paired_segments.size());
+  for (unsigned int i=0;i<paired_segments.size();i++){
+    for (unsigned int j=0;j<paired_segments.size();j++){
+      if (i==j) continue;
+      if (paired_segments[i].second==paired_segments[j].first){
+	is_tripled[i]=1;
+	is_tripled[j]=1;
+
+	vector<const DFDCSegment *>triplet;
+	triplet.push_back(paired_segments[i].first);
+	triplet.push_back(paired_segments[i].second);
+	triplet.push_back(paired_segments[j].second);
+	triplets.push_back(triplet);
+      }  
+    }
+  } 
+  // Link triplets with pairs to form groups of four linked segments
+  vector<int>is_quadrupled(triplets.size());
+  vector<vector<const DFDCSegment *> >quadruplets;
+  for (unsigned int i=0;i<triplets.size();i++){
+    for (unsigned int j=0;j<paired_segments.size();j++){
+      if (triplets[i][2]==paired_segments[j].first){
+	is_quadrupled[i]=1;
+	is_tripled[j]=1;
+
+	vector<const DFDCSegment*>quadruplet=triplets[i];
+	quadruplet.push_back(paired_segments[j].second);
+	quadruplets.push_back(quadruplet);
+      } 
+    }
+  }
+  // Mark all triplets that are subsets of quadruplets that have not been marked
+  // previously.
+  for (unsigned int i=0;i<quadruplets.size();i++){
+    for (unsigned int j=0;j<triplets.size();j++){
+      if (is_quadrupled[j]==0){
+	unsigned int num=0;
+	for (unsigned int k=0;k<4;k++){
+	  for (unsigned int n=0;n<3;n++){
+	    if (quadruplets[i][k]==triplets[j][n]) num++;
+	  }
+	}
+	if (num==3) is_quadrupled[j]=1;
+      }
+    }
   }
 
-  // Now collect stray segments
-  //if (false)
+  // Start gathering groups into a list of linked segments to elevate to track
+  // candidates
+  vector<vector<const DFDCSegment *> >mytracks;
+  if (quadruplets.size()==1){
+    mytracks.push_back(quadruplets[0]);
+  }
+  else if (quadruplets.size()>1){    
+    // Because segments could have been added to the triplets on either end,
+    // we need to check for clones
+    vector<int>is_clone(quadruplets.size());
+    for (unsigned int i=0;i<is_clone.size()-1;i++){
+      for (unsigned int j=i+1;j<is_clone.size();j++){
+	unsigned int num=0;
+	for (unsigned int k=0;k<4;k++){
+	  if (quadruplets[i][k]==quadruplets[j][k]) num++;
+	}
+	if (num==4){
+	  is_clone[j]=1;
+	  printf("Got clone!\n");
+	}
+      }
+    }
+    for (unsigned int i=0;i<quadruplets.size();i++){
+      if (is_clone[i]==0){
+	mytracks.push_back(quadruplets[i]);
+      }
+    }
+  }
+  // If we could not link some of the pairs together, create two-segment 
+  // "tracks"
+  for (unsigned int i=0;i<is_tripled.size();i++){
+    if (is_tripled[i]==0){
+      vector<const DFDCSegment *>mytrack;
+      mytrack.push_back(paired_segments[i].first);
+      mytrack.push_back(paired_segments[i].second);
+      mytracks.push_back(mytrack);
+    }
+  }
+  // if we could not link some of the triplets to other segments, create 
+  // three-segment "tracks"
+  for (unsigned int i=0;i<triplets.size();i++){
+    if (is_quadrupled[i]==0){
+      mytracks.push_back(triplets[i]);
+    }
+  }
+
+  // For each set of matched segments, redo the helical fit with all the hits 
+  // and create a new track candidate
+  for (unsigned int i=0;i<mytracks.size();i++){  
+    // Create the fit object and add the hits
+    DHelicalFit fit;
+    double max_r=0.;
+    for (unsigned int m=0;m<mytracks[i].size();m++){
+      for (unsigned int n=0;n<mytracks[i][m]->hits.size();n++){
+	const DFDCPseudo *hit=mytracks[i][m]->hits[n];
+	fit.AddHit(hit);
+	
+	double r=hit->xy.Mod();
+	if (r>max_r){
+	  max_r=r;
+	}
+      }
+    }
+    // Fake point at origin
+    bool use_fake_point=false;
+    if (max_r<MAX_R_VERTEX_LIMIT){
+      fit.AddHitXYZ(0.,0.,TARGET_Z,BEAM_VAR,BEAM_VAR,0.);
+      use_fake_point=true;
+    }
+    // Do the fit
+    if (fit.FitTrackRiemann(rc)==NOERROR){    
+      // New track parameters
+      tanl=fit.tanl;
+      xc=fit.x0;
+      yc=fit.y0;
+      rc=fit.r0;
+      q=FactorForSenseOfRotation*fit.h;
+    }
+    
+    // Try to fix relatively high momentum tracks in the very forward 
+    // direction that look like low momentum tracks due to small pt.
+    // Assume that the particle came from the center of the target.
+    
+    if (rc<0.5*max_r && max_r<10.0){
+      if (use_fake_point) fit.PruneHit(0); 
+      fit.FitTrack_FixedZvertex(TARGET_Z);
+      tanl=fit.tanl;
+      rc=fit.r0;
+      xc=fit.x0;
+      yc=fit.y0;
+      fit.FindSenseOfRotation();
+      q=FactorForSenseOfRotation*fit.h;
+    }      
+    
+    // Create new track, starting with the most upstream segment
+    DTrackCandidate *track = new DTrackCandidate;
+    //circle fit parameters
+    track->rc=rc;
+    track->xc=xc;
+    track->yc=yc;
+
+    // Get the momentum and position just upstream of first hit
+    DVector3 mom,pos;
+    GetPositionAndMomentum(mytracks[i],pos,mom);
+    
+    // Empirical correction to the momentum
+    if (APPLY_MOMENTUM_CORRECTION){
+      double p_mag=mom.Mag();
+      mom.SetMag(p_mag*(1.+p_factor1/mom.Theta()+p_factor2));
+    }
+    
+    track->chisq=fit.chisq;
+    track->Ndof=fit.ndof;
+    track->setCharge(q);
+    track->setPosition(pos);
+    track->setMomentum(mom);
+    
+    for (unsigned int m=0;m<mytracks[i].size();m++){
+      track->AddAssociatedObject(mytracks[i][m]);
+    }
+    
+    _data.push_back(track); 
+ 
+  }
+
+  // Now try to attach stray segments to existing tracks
   for (unsigned int i=0;i<4;i++){
     for (unsigned int k=0;k<packages[i].size();k++){
       DFDCSegment *segment=packages[i][k];
+      if (is_paired[i][k]==0 && LinkStraySegment(segment)) is_paired[i][k]=1;
+    }
+  }
 
-      // Make sure that this segment does not match one of the previously 
-      // linked tracks
-      if (LinkStraySegment(segment)==false){   
-	// Circle parameters
-	xc=segment->xc;
-	yc=segment->yc;
-	rc=segment->rc;
-	// Sign of the charge
-	q=segment->q;
-	// Angle parameter
-	tanl=segment->tanl;
+  // Create track stubs for unused segments
+  for (unsigned int j=0;j<4;j++){
+    for (unsigned int i=0;i<packages[j].size();i++){
+      if (is_paired[j][i]==0){
+	const DFDCSegment* segment=packages[j][i];
 	
-	// Try to fix relatively high momentum tracks in the very forward 
-	// direction that look like low momentum tracks due to small pt.
-	// Assume that the particle came from the center of the target.
-	const DFDCPseudo *segment_hit=segment->hits[segment->hits.size()-1];
-	if (rc<10.0 && segment_hit->xy.Mod()<10.0 ){
-	  DHelicalFit fit;
-	  for (unsigned int n=0;n<segment->hits.size();n++){
-	    const DFDCPseudo *hit=segment->hits[n];
-	    fit.AddHit(hit);
-	  }
-	  fit.FitTrack_FixedZvertex(TARGET_Z);
-	  tanl=fit.tanl;
-	  rc=fit.r0;
-	  xc=fit.x0;
-	  yc=fit.y0;
-	  fit.FindSenseOfRotation();
-	  q=FactorForSenseOfRotation*fit.h;
-	}	
-
 	// Get the momentum and position at a specific z position
-	DVector3 mom, pos(segment_hit->xy.X(),segment_hit->xy.Y(),
-			  segment_hit->wire->origin.z()); 
-	//Get position and momentum just upstream of this hit
-	GetPositionAndMomentum(pos,mom);
-	
+	DVector3 mom, pos;
+	GetPositionAndMomentum(segment,pos,mom);
+
 	// Empirical correction to the momentum 
 	if (APPLY_MOMENTUM_CORRECTION){
 	  double p_mag=mom.Mag();
@@ -224,12 +378,16 @@ jerror_t DTrackCandidate_factory_FDCCathodes::evnt(JEventLoop *loop, uint64_t ev
 	
 	// Create new track, starting with the current segment
 	DTrackCandidate *track = new DTrackCandidate;
+	track->rc=segment->rc;
+	track->xc=segment->xc;
+	track->yc=segment->yc;
+	
 	track->setPosition(pos);
 	track->setMomentum(mom);    
-	track->setCharge(q);
+	track->setCharge(segment->q);
 	track->Ndof=segment->Ndof;
 	track->chisq=segment->chisq;
-	
+      
 	track->AddAssociatedObject(segment);
 	
 	_data.push_back(track);
@@ -288,81 +446,45 @@ DFDCSegment *DTrackCandidate_factory_FDCCathodes::GetTrackMatch(DFDCSegment *seg
   if(DEBUG_HISTS){
     match_dist_fdc->Fill(p,doca2_min);
   }
+  if (match!=NULL) return match;
 
   // If matching in the forward direction did not work, try 
   // matching backwards...
-  if (match==NULL){
-    doca2_min=1e6;
-    for (unsigned int i=0;i<package.size();i++){
-      DFDCSegment *segment2=package[i];
-      GetPositionAndMomentum(segment2);
-      doca2=DocaSqToHelix(segment->hits[segment->hits.size()-1]);
-      if (doca2<doca2_min){
-	doca2_min=doca2;
-	if (doca2<Match(p)){
-	  match=segment2;
-	  match_id=i;
-	}
-      }       
-    }
-  }
-
-  
-  if (match==NULL){
-    // Match by centers of circles
-    double circle_center_diff2_min=1e6;
-    for (unsigned int j=0;j<package.size();j++){
-      DFDCSegment *segment2=package[j];
-      
-      double dx=segment->xc-segment2->xc;
-      double dy=segment->yc-segment2->yc;
-      double circle_center_diff2=dx*dx+dy*dy;
-		
-      if (circle_center_diff2<circle_center_diff2_min){
-        circle_center_diff2_min=circle_center_diff2;
-	if (circle_center_diff2_min<4.0){
-	  match=segment2;
-	  match_id=j;
-	}
+  doca2_min=1e6;
+  for (unsigned int i=0;i<package.size();i++){
+    DFDCSegment *segment2=package[i];
+    GetPositionAndMomentum(segment2);
+    doca2=DocaSqToHelix(segment->hits[segment->hits.size()-1]);
+    if (doca2<doca2_min){
+      doca2_min=doca2;
+      if (doca2<Match(p)){
+	match=segment2;
+	match_id=i;
       }
-    }
-    if (DEBUG_HISTS){
-      match_center_dist2->Fill(my_p,circle_center_diff2_min);
-    }
+    }       
   }
+  if (match!=NULL) return match;
 
-  if (match==NULL) { // Try Hough transform
-    double max=0.;
-    for (unsigned int j=0;j<package.size();j++){    
-      DFDCSegment *segment2=package[j];
-      double dphi=segment2->hits[0]->xy.Phi()-segment->hits[0]->xy.Phi();
-      if (dphi>M_PI) dphi-=2*M_PI;
-      else if (dphi<-M_PI) dphi+=2.*M_PI;
-      dphi*=180./M_PI;
-
-      if (fabs(dphi)<MATCHING_PHI_CUT){
-        DHoughFind hough(-400.0, +400.0, -400.0, +400.0, 100, 100);
-	for (unsigned int m=0;m<segment->hits.size();m++){
-	  const DFDCPseudo *hit=segment->hits[m];
-	  hough.AddPoint(hit->xy.X(),hit->xy.Y());
-	}
-
-	for (unsigned int m=0;m<segment2->hits.size();m++){
-	  const DFDCPseudo *hit=segment2->hits[m];
-	  hough.AddPoint(hit->xy.X(),hit->xy.Y());
-	}
-	DVector2 Ro=hough.Find();
-	double this_max=hough.GetMaxBinContent();
-	if (this_max>10.0 && this_max>max){
-	  max=this_max;
-	  match=segment2;
-	  match_id=j;
-	}
-      }
-    }
-  }
- 
+  // Match by centers of circles
+  double circle_center_diff2_min=1e6;
+  for (unsigned int j=0;j<package.size();j++){
+    DFDCSegment *segment2=package[j];
     
+    double dx=segment->xc-segment2->xc;
+    double dy=segment->yc-segment2->yc;
+    double circle_center_diff2=dx*dx+dy*dy;
+    
+    if (circle_center_diff2<circle_center_diff2_min){
+      circle_center_diff2_min=circle_center_diff2;
+      if (circle_center_diff2_min<4.0){
+	match=segment2;
+	match_id=j;
+      }
+    }
+  }
+  if (DEBUG_HISTS){
+    match_center_dist2->Fill(my_p,circle_center_diff2_min);
+  }  
   return match;
 }
 
@@ -403,86 +525,6 @@ jerror_t DTrackCandidate_factory_FDCCathodes::GetPositionAndMomentum(const DFDCS
 
   return NOERROR;
 }
-
-
-
-// Obtain position and momentum at the exit of a given package using the 
-// helical track model.
-//
-jerror_t DTrackCandidate_factory_FDCCathodes::GetPositionAndMomentum(DFDCSegment *segment,
-					      DVector3 &pos, DVector3 &mom){
-  // Position of track segment at last hit plane of package
-  double x=segment->xc+segment->rc*cos(segment->Phi1);
-  double y=segment->yc+segment->rc*sin(segment->Phi1);
-  double z=segment->hits[0]->wire->origin.z();
-
-  zs=z;
-  ys=y;
-  xs=x;
-
-  // Make sure that the position makes sense!
-  //  if (sqrt(x*x+y*y)>FDC_OUTER_RADIUS) return VALUE_OUT_OF_RANGE;
-
-  // Track parameters
-  //double kappa=segment->q/(2.*segment->rc);
-  double my_phi0=segment->phi0;
-  double my_tanl=segment->tanl;
-  double z0=segment->z_vertex;
-  twokappa=FactorForSenseOfRotation*segment->q/segment->rc; 
-  one_over_twokappa=1./twokappa;
-  cotl=1./my_tanl;
-
-  // Useful intermediate variables
-  double cosp=cos(my_phi0);
-  double sinp=sin(my_phi0);
-  double twoks=twokappa*(z-z0)*cotl;
-  double sin2ks=sin(twoks);
-  double cos2ks=cos(twoks); 
-
-  // Get Bfield
-  double Bz=fabs(bfield->GetBz(x,y,z));
-
-  // Momentum
-  double pt=0.003*Bz*segment->rc;
-  cosphi=cosp*cos2ks-sinp*sin2ks;
-  sinphi=sinp*cos2ks+cosp*sin2ks;
-  mom.SetXYZ(pt*cosphi,pt*sinphi,pt*my_tanl);
-
-  return NOERROR;
-}
-
-// Routine to return momentum and position given the helical parameters and the
-// z-component of the magnetic field
-jerror_t 
-DTrackCandidate_factory_FDCCathodes::GetPositionAndMomentum(DVector3 &pos,
-							    DVector3 &mom){
-  // Position
-  double phi1=atan2(pos.y()-yc,pos.x()-xc);
-  double q_over_rc_tanl=q/(rc*tanl);
-  double dz=1.;
-  double dphi_s=dz*q_over_rc_tanl;
-  double dphi1=phi1-dphi_s;// was -
-  double x=xc+rc*cos(dphi1);
-  double y=yc+rc*sin(dphi1);
-  double z=pos.z()-dz;
-  pos.SetXYZ(x,y,z);
-
-  dphi1*=-1.;
-  if (FactorForSenseOfRotation*q<0) dphi1+=M_PI;
-
-  // Find Bz
-  double Bz=fabs(bfield->GetBz(x,y,z));
-
-  // Momentum 
-  double pt=0.003*Bz*rc; 
-  double px=pt*sin(dphi1);
-  double py=pt*cos(dphi1);
-  double pz=pt*tanl;
-  mom.SetXYZ(px,py,pz);
-
-  return NOERROR;
-}
-
 
 // Routine to return momentum and position given the helical parameters and the
 // z-component of the magnetic field
@@ -540,161 +582,73 @@ DTrackCandidate_factory_FDCCathodes::GetPositionAndMomentum(
   return NOERROR;
 }
 
+// Routine to return momentum and position given the helical parameters and the
+// z-component of the magnetic field
+jerror_t 
+DTrackCandidate_factory_FDCCathodes::GetPositionAndMomentum(
+							    const DFDCSegment *segment,
+							    DVector3 &pos,
+							    DVector3 &mom){
+  // Hit in the most upstream package
+  const DFDCPseudo *hit=segment->hits[segment->hits.size()-1];
+  double zhit=hit->wire->origin.z();
+  double xhit=hit->xy.X();
+  double yhit=hit->xy.Y();
+  
+  // Position
+  double dz=1.;
+  double zmin=zhit-dz;
+  double phi1=atan2(yhit-segment->yc,xhit-segment->xc);
+  double q_over_rc_tanl=segment->q/(segment->rc*segment->tanl);
+  double dphi_s=dz*q_over_rc_tanl;
+  double dphi1=phi1-dphi_s;// was -
+  double x=segment->xc+segment->rc*cos(dphi1);
+  double y=segment->yc+segment->rc*sin(dphi1);
+  pos.SetXYZ(x,y,zmin);
+
+  dphi1*=-1.;
+  if (FactorForSenseOfRotation*segment->q<0) dphi1+=M_PI;
+
+  // Find Bz at x,y,zmin
+  double Bz=bfield->GetBz(x,y,zmin);
+  
+  // Momentum 
+  double pt=0.003*Bz*segment->rc; 
+  double px=pt*sin(dphi1);
+  double py=pt*cos(dphi1);
+  double pz=pt*segment->tanl;
+  mom.SetXYZ(px,py,pz);
+
+  return NOERROR;
+}
+
+
 // Routine to loop over segments in one of the packages, linking them with 
-// segments in the packages downstream of this package
+// segments in the package downstream of this package
 void DTrackCandidate_factory_FDCCathodes::LinkSegments(unsigned int pack1,
-						       vector<DFDCSegment *>packages[4]){ 
+						       vector<DFDCSegment *>packages[4], vector<pair<const DFDCSegment*,const DFDCSegment*> >&paired_segments,
+						       vector<vector<int> >&is_paired){ 
   unsigned int match_id=0;
   unsigned int pack2=pack1+1;
-  unsigned int pack3=pack2+1;
-  unsigned int pack4=pack3+1;
-  bool pack2_exists=(pack2<4);
-  bool pack3_exists=(pack3<4);
-  bool pack4_exists=(pack4<4);
 
-  // Keep track of the segments in the first package that have been matched to
-  // other segments
-  unsigned int num_pack1=packages[pack1].size();
-  vector<int>matched(num_pack1);
-
-  // Loop over the segments in the first package
-  for (unsigned int i=0;i<num_pack1;i++){
+  // Loop over the segments in package "pack1"
+  for (unsigned int i=0;i<packages[pack1].size();i++){
     DFDCSegment *segment=packages[pack1][i];
     DFDCSegment *match2=NULL;
-    DFDCSegment *match3=NULL;
-    DFDCSegment *match4=NULL;
- 
-    // Tracking parameters from first segment
-    xc=segment->xc;
-    yc=segment->yc;
-    rc=segment->rc;
-    tanl=segment->tanl;
 
-    // Sign of the charge
-    q=segment->q;
-    
-    // Start filling vector of segments belonging to current track    
-    vector<const DFDCSegment*>mysegments; 
-    mysegments.push_back(segment);
-
-    // Try matching to package 2
-    if (pack2_exists && packages[pack2].size()>0 
+    // Try matching to the next package
+    if (packages[pack2].size()>0 
 	&& (match2=GetTrackMatch(segment,packages[pack2],match_id))!=NULL){
-
-      // Insert the segment from package 2 into the track 
-      mysegments.push_back(match2);
-         
-      // remove the segment from the list 
-      packages[pack2].erase(packages[pack2].begin()+match_id);
       
-      // Try matching to package 3 starting from package 2
-      if (pack3_exists && packages[pack3].size()>0
-	  && (match3=GetTrackMatch(match2,packages[pack3],match_id))!=NULL){
-
-	// Insert the segment from package 3 into the track 
-	mysegments.push_back(match3);
-
-	// remove the segment from the list 
-	packages[pack3].erase(packages[pack3].begin()+match_id);
-	
-	// Try matching to package 4 starting from package 3
-	if (pack4_exists && packages[pack4].size()>0 &&  
-	    (match4=GetTrackMatch(match3,packages[pack4],match_id))!=NULL){
-	  
-	  // Insert the segment from package 4 into the track 
-	  mysegments.push_back(match4);
-
-	  // remove the segment from the list 
-	  packages[pack4].erase(packages[pack4].begin()+match_id);
-	}
-      }
+      pair<const DFDCSegment*,const DFDCSegment*> mypair;
+      mypair.first=segment;
+      mypair.second=match2;
+      paired_segments.push_back(mypair);
+      is_paired[pack2][match_id]=1;
+      is_paired[pack1][i]=1;
     }
-       
-    // If we found a match, redo the helical fit with all the hits
-    if (mysegments.size()>1){
-      // Mark the segment in the first package as matched
-      matched[i]=1;
-
-      // Create the fit object and add the hits
-      DHelicalFit fit;
-      double max_r=0.;
-      for (unsigned int m=0;m<mysegments.size();m++){
-	for (unsigned int n=0;n<mysegments[m]->hits.size();n++){
-	  const DFDCPseudo *hit=mysegments[m]->hits[n];
-	  fit.AddHit(hit);
-
-	  double r=hit->xy.Mod();
-	  if (r>max_r){
-	    max_r=r;
-	  }
-	}
-      }
-      // Fake point at origin
-      bool use_fake_point=false;
-      if (max_r<MAX_R_VERTEX_LIMIT){
-	fit.AddHitXYZ(0.,0.,TARGET_Z,BEAM_VAR,BEAM_VAR,0.);
-	use_fake_point=true;
-      }
-      // Do the fit
-      if (fit.FitTrackRiemann(rc)==NOERROR){    
-	// New track parameters
-	tanl=fit.tanl;
-	xc=fit.x0;
-	yc=fit.y0;
-	rc=fit.r0;
-	q=FactorForSenseOfRotation*fit.h;
-      }
-
-      // Try to fix relatively high momentum tracks in the very forward 
-      // direction that look like low momentum tracks due to small pt.
-      // Assume that the particle came from the center of the target.
-      
-      if (rc<0.5*max_r && max_r<10.0){
-	if (use_fake_point) fit.PruneHit(0); 
-	fit.FitTrack_FixedZvertex(TARGET_Z);
-	tanl=fit.tanl;
-	rc=fit.r0;
-	xc=fit.x0;
-	yc=fit.y0;
-	fit.FindSenseOfRotation();
-	q=FactorForSenseOfRotation*fit.h;
-      }      
-
-      // Create new track, starting with the current segment
-      DTrackCandidate *track = new DTrackCandidate;
-
-      // Get the momentum and position just upstream of first hit
-      DVector3 mom,pos;
-      GetPositionAndMomentum(mysegments,pos,mom);
-    	
-      // Empirical correction to the momentum
-      if (APPLY_MOMENTUM_CORRECTION){
-	double p_mag=mom.Mag();
-	mom.SetMag(p_mag*(1.+p_factor1/mom.Theta()+p_factor2));
-      }
-      
-      track->chisq=fit.chisq;
-      track->Ndof=fit.ndof;
-      track->setCharge(q);
-      track->setPosition(pos);
-      track->setMomentum(mom);
-      
-      for (unsigned int m=0;m<mysegments.size();m++){
-	track->AddAssociatedObject(mysegments[m]);
-      }
-	
-      _data.push_back(track); 
-    }
-  }
   
-  // Cull the segments that have been matched already from the list of segments
-  // in the first package
-  vector<DFDCSegment*>left_over;
-  for (unsigned int i=0;i<num_pack1;i++){
-    if (matched[i]!=1) left_over.push_back(packages[pack1][i]);
   }
-  packages[pack1].assign(left_over.begin(),left_over.end());
-
 }
 
 // Routine for matching to a segment using the stepper
@@ -744,9 +698,8 @@ bool DTrackCandidate_factory_FDCCathodes::LinkStraySegment(const DFDCSegment *se
       if (segment->hits[0]->wire->origin.z()<pos.z()){
 	mom=-1.0*mom;
       }
-   
+
       if (GetTrackMatch(_data[i]->charge(),pos,mom,segment)){
-	
 	// Add the segment as an associated object to _data[i]
 	_data[i]->AddAssociatedObject(segment);
    
@@ -783,7 +736,7 @@ bool DTrackCandidate_factory_FDCCathodes::LinkStraySegment(const DFDCSegment *se
 	  _data[i]->Ndof=fit.ndof;
 	  _data[i]->setCharge(q);
 	  _data[i]->setPosition(pos);
-	_data[i]->setMomentum(mom); 
+	  _data[i]->setMomentum(mom); 
 	}
 
 	return true;
