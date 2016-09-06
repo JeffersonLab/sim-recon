@@ -1,4 +1,4 @@
-// $Id$
+/// $Id$
 //
 //    File: DEVIOWorkerThread.cc
 // Created: Mon Mar 28 07:40:07 EDT 2016
@@ -107,7 +107,7 @@ void DEVIOWorkerThread::Run(void)
 			if( jobtype & JOB_ASSOCIATE  ) LinkAllAssociations();
 			
 			if( !current_parsed_events.empty() ) PublishEvents();
-
+            
 		} catch (exception &e) {
 			jerr << e.what() << endl;
 			for(auto pe : parsed_event_pool) delete pe; // delete all parsed events any any objects they hold
@@ -789,7 +789,7 @@ void DEVIOWorkerThread::ParseDataBank(uint32_t* &iptr, uint32_t *iend)
             // When we write out single events in the offline, we also can save some
             // higher level data objects to save disk space and speed up 
             // specialized processing (e.g. pi0 calibration)
-                case 0xD01:
+            case 0xD01:
                 ParseDVertexBank(iptr, iend);
                 break;
 
