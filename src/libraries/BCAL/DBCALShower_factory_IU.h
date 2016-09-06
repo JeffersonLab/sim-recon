@@ -16,6 +16,8 @@ using namespace jana;
 
 #include "BCAL/DBCALShower.h"
 
+#include "TH2F.h"
+
 class DBCALShower_factory_IU : public JFactory< DBCALShower > {
   
 public:
@@ -29,6 +31,11 @@ private:
   
   jerror_t evnt(JEventLoop *loop, uint64_t eventnumber);
   jerror_t brun(JEventLoop *loop, int32_t runnumber);
+  jerror_t CreateCovarianceMatrix();
+
+  int VERBOSE;
+  string COVARIANCEFILENAME;
+  TH2F *CovarEmntLookup[5][5];
 
   double m_zTarget;
 

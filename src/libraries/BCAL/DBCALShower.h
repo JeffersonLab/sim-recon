@@ -26,7 +26,7 @@ class DBCALShower:public JObject{
 
     //for now errors are stored both in xErr,yErr,zErr and in xyzCovariance.
     //This is redundant and should be fixed.
-    DMatrix xyzCovariance;
+    DMatrix ExyztCovariance;
   
 	void toStrings(vector<pair<string,string> > &items)const{
 	                /*Old, easier to compare r-phi rather than x-y, for Truth Hits
