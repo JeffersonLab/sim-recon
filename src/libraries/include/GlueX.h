@@ -109,7 +109,7 @@ inline DetectorSystem_t NameToSystem(const char* locSystemName)
 	else if(strcmp(locSystemName, "FCAL") == 0)
 		return SYS_FCAL;
 	else if(strcmp(locSystemName, "UPV") == 0)
-		return SYS_FCAL;
+		return SYS_UPV;
 	else if(strcmp(locSystemName, "TAGM") == 0)
 		return SYS_TAGM;
 	else if(strcmp(locSystemName, "TAGH") == 0)
