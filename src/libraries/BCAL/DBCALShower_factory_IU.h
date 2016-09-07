@@ -35,7 +35,7 @@ private:
 
   int VERBOSE;
   string COVARIANCEFILENAME;
-  TH2F *CovarEmntLookup[5][5];
+  TH2F *CovarElementLookup[5][5];
 
   double m_zTarget;
 

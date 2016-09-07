@@ -21,7 +21,7 @@
 
 DBCALShower_factory_IU::DBCALShower_factory_IU(){
 
-	VERBOSE = 0; // >0 once off info ; >2 event by event
+	VERBOSE = 0; // >0 once off info ; >2 event by event ; >3 everything
 	COVARIANCEFILENAME = ""; 
 	// setting the filename will take precidence over the CCDB.  
 	// Files must end in ij.txt, where i and j are integers corresponding to the element of the matrix
@@ -39,7 +39,7 @@ jerror_t DBCALShower_factory_IU::brun(JEventLoop *loop, int32_t runnumber) {
 
   jerror_t result = CreateCovarianceMatrix();
   if (result!=NOERROR) return result;
-  
+
   return NOERROR;
 }
 
@@ -63,7 +63,7 @@ DBCALShower_factory_IU::evnt( JEventLoop *loop, uint64_t eventnumber ){
     float sinPhi = sin( (**clItr).phi() );
     float rho = (**clItr).rho();
 	float r = rho * sinTh;
-	if (VERBOSE>3) printf("cluster: E=%f th=%f phi=%f rho=%f t=%f\n",
+	if (VERBOSE>2) printf("cluster: E=%f th=%f phi=%f rho=%f t=%f\n",
 						  (**clItr).E(),(**clItr).theta()/3.14159265*180,(**clItr).phi()/3.14159265*180,(**clItr).rho(),(**clItr).t());
 
     DBCALShower* shower = new DBCALShower();
@@ -87,13 +87,13 @@ DBCALShower_factory_IU::evnt( JEventLoop *loop, uint64_t eventnumber ){
     
     shower->E = shower->E_raw;
 
-	if (VERBOSE>3) printf("shower:  E=%f x=%f y=%f z=%f t=%f\n",
+	if (VERBOSE>2) printf("shower:  E=%f x=%f y=%f z=%f t=%f\n",
 						  shower->E,shower->x,shower->y,shower->z,shower->t);
 	// Get covariance matrix and uncertainties
 
 	// Get histogram edges. Assuming that all histograms have the same limits
-	TAxis *xaxis = CovarEmntLookup[0][0]->GetXaxis();
-	TAxis *yaxis = CovarEmntLookup[0][0]->GetYaxis();
+	TAxis *xaxis = CovarElementLookup[0][0]->GetXaxis();
+	TAxis *yaxis = CovarElementLookup[0][0]->GetYaxis();
 	float minElookup = xaxis->GetBinLowEdge(1);
 	float maxElookup = xaxis->GetBinUpEdge(xaxis->GetNbins());
 	float minthlookup = yaxis->GetBinLowEdge(1);
@@ -110,7 +110,7 @@ DBCALShower_factory_IU::evnt( JEventLoop *loop, uint64_t eventnumber ){
 	DMatrix ErphiztCovariance(5,5);
 	for (int i=0; i<5; i++) {
 		for (int j=0; j<=i; j++) {
-			float val = CovarEmntLookup[i][j]->Interpolate(Elookup, thlookup);
+			float val = CovarElementLookup[i][j]->Interpolate(Elookup, thlookup);
 			if (i==2) val*=r; // convert phi to phihat
 			if (j==2) val*=r; // convert phi to phihat
 			ErphiztCovariance(i,j) = ErphiztCovariance(j,i) = val;
@@ -153,8 +153,31 @@ DBCALShower_factory_IU::CreateCovarianceMatrix(){
 	std::thread::id this_id = std::this_thread::get_id();
 	stringstream idstring;
 	idstring << this_id;
-
 	if (VERBOSE>0) printf("DBCALShower_factory_IU::CreateCovarianceMatrix():  Thread %s\n",idstring.str().c_str());
+
+	bool USECCDB=0;
+	// if filename specified try to use filename else get info from CCDB
+	if (COVARIANCEFILENAME == "") USECCDB=1;
+	
+	map<string,string> covariance_data;	
+	if (USECCDB) {
+		// load information for covariance matrix
+		if (eventLoop->GetJCalibration()->GetCalib("/BCAL/shower_covariance", covariance_data)) {
+			jerr << "Error loading /BCAL/shower_covariance !" << endl;
+			return ERROR_OPENING_EVENT_SOURCE;
+		}
+		if (covariance_data.size() == 15)  {  // there are 15 elements in the covariance matrix
+			// for example, print it all out
+			if (VERBOSE>0) {				
+				for(auto element : covariance_data) {
+					cout << "\nTEST:   " << element.first << " = " << element.second << endl;
+				}
+			}
+		} else {
+			jerr << "Wrong number of elements /BCAL/shower_covariance !" << endl;
+			return ERROR_OPENING_EVENT_SOURCE;	
+		}
+	}
 
 	for (int i=0; i<5; i++) {
 		for (int j=0; j<=i; j++) {
@@ -164,67 +187,59 @@ DBCALShower_factory_IU::CreateCovarianceMatrix(){
 			TDirectory *savedir = gDirectory;
 			gROOT->cd();  
 
-
-			char filename[255];
-			sprintf(filename,"covmatrix/covmatrix_%i%i_bcal.txt",i,j);
-			if (VERBOSE>0) cout  << filename << std::endl;
-			ifstream ifs(filename);
-			if (! ifs.is_open()) {
-				cout << " Error: Cannot open file! " << filename << std::endl;
-				return ERROR_OPENING_EVENT_SOURCE;
+			// Read in string
+			ifstream ifs;
+			string line;
+			stringstream ss;
+			if (USECCDB) {
+				stringstream matrixname; 
+				matrixname << "covmatrix_" << i << j;
+				if (VERBOSE>1) cout << "Using CCDB \"" << matrixname.str() << "\"  " << covariance_data[matrixname.str()] << endl;
+				ss.str(covariance_data[matrixname.str()]);
+			} else {
+				char filename[255];
+				sprintf(filename,"%s%i%i.txt",COVARIANCEFILENAME.c_str(),i,j);
+				if (VERBOSE>0) cout  << filename << std::endl;
+				ifs.open(filename);
+				if (! ifs.is_open()) {
+					jerr << " Error: Cannot open file! " << filename << std::endl;
+					return ERROR_OPENING_EVENT_SOURCE;
+				}
+				getline(ifs, line, '\n');
+				ss.str(line);
+				if (VERBOSE>1) cout << "Using file " <<line<<endl;
 			}
 
-			// Parse string and create histogram
+			// Parse string 
+			int nxbins, nybins;
+			ss>>nxbins;
+			ss>>nybins;
+			if (VERBOSE>1) printf("bins (%i,%i)\n",nxbins,nybins);
+			Float_t xbins[nxbins+1];
+			Float_t ybins[nybins+1];
+			for (int count=0; count<=nxbins; count++) {
+				ss>>xbins[count];
+				if (VERBOSE>1) printf("%i  %f\n",count,xbins[count]);
+			}
+			for (int count=0; count<=nybins; count++) {
+				ss>>ybins[count];
+				if (VERBOSE>1) printf("(%i,%f)  ",count,ybins[count]);
+			}
+			if (VERBOSE>1) printf("\n");
+			int xbin=1;
+			double cont;
+			int ybin=1;
+			// create histogram
 			char histname[255];
 			sprintf(histname,"covariance_%i%i_thread%s",i,j,idstring.str().c_str());
-			int nxbins, nybins;
-			
-			string line;
-			getline(ifs, line, '\n');
-			if (VERBOSE>1) cout<<line<<endl;
-			stringstream ss1(line);
-			ss1>>nxbins;
-			getline(ifs, line, '\n');
-			if (VERBOSE>1) cout<<line<<endl;
-			stringstream ss2(line);
-			ss2>>nybins;
-			if (VERBOSE>1) printf("bins %i %i\n",nxbins,nybins);
-
-			Float_t xbins[nxbins];
-			Float_t ybins[nybins];
-			int count=0;
-			getline(ifs, line, '\n');
-			if (VERBOSE>1) cout<<line<<endl;
-			stringstream ss3(line);
-			while(ss3>>xbins[count]){
-				if (VERBOSE>1) printf("%i  %f\n",count,xbins[count]);
-				count++;
+			CovarElementLookup[i][j] = new TH2F(histname,"Covariance histogram",nxbins,xbins,nybins,ybins);
+			// fill histogram
+			while(ss>>cont){
+				if (VERBOSE>1) printf("(%2i,%2i)  (%2i,%2i)  %e\n",i,j,xbin,ybin,cont);
+				CovarElementLookup[i][j]->SetBinContent(xbin,ybin,cont);
+				ybin++;
+				if (ybin>nybins) { xbin++; ybin=1; }
 			}
-			count=0;
-			getline(ifs, line, '\n');
-			if (VERBOSE>1) cout<<line<<endl;
-			stringstream ss4(line);
-			while(ss4>>ybins[count]){
-				if (VERBOSE>1) printf("%i  %f\n",count,ybins[count]);
-				count++;
-			}
-			CovarEmntLookup[i][j] = new TH2F(histname,"Covariance histogram",nxbins,xbins,nybins,ybins);
-			CovarEmntLookup[i][j]->Draw();
-			int xbin=0;
-			while(getline(ifs, line, '\n')){
-				if (VERBOSE>1) cout<<line<<endl;
-				stringstream ss(line);
-				double cont;
-				xbin++;
-				int ybin=0;
-				while(ss>>cont){
-					if (VERBOSE>1) cout<<cont<<endl;
-					ybin++;
-					if (VERBOSE>1) printf("%2i  %2i  %2i  %2i  %f\n",i,j,xbin,ybin,cont);
-					CovarEmntLookup[i][j]->SetBinContent(xbin,ybin,cont);
-				}
-			}
-
 			// Close file
 			ifs.close();
 
@@ -235,3 +250,4 @@ DBCALShower_factory_IU::CreateCovarianceMatrix(){
 	}
 	return NOERROR;
 }
+
