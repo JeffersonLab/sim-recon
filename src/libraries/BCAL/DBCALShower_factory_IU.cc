@@ -19,6 +19,10 @@
 
 #include <thread>
 
+#include <DMatrix.h>
+#include <DMatrixDSym.h>
+
+
 DBCALShower_factory_IU::DBCALShower_factory_IU(){
 
 	LOAD_CCDB_CONSTANTS = 1.;
@@ -120,6 +124,7 @@ DBCALShower_factory_IU::evnt( JEventLoop *loop, uint64_t eventnumber ){
 
 	if (VERBOSE>2) printf("shower:  E=%f x=%f y=%f z=%f t=%f\n",
 						  shower->E,shower->x,shower->y,shower->z,shower->t);
+
 	// Get covariance matrix and uncertainties
 
 	// Get histogram edges. Assuming that all histograms have the same limits
@@ -138,7 +143,8 @@ DBCALShower_factory_IU::evnt( JEventLoop *loop, uint64_t eventnumber ){
 	if (thlookup>maxthlookup) thlookup=maxthlookup-0.0001;
 	if (VERBOSE>3) printf("(%f,%F)    limits (%f,%f)  (%f,%f)\n",Elookup,thlookup,minElookup,maxElookup,minthlookup,maxthlookup);
 
-	DMatrix ErphiztCovariance(5,5);
+	DMatrixDSym ErphiztCovariance;
+	ErphiztCovariance.ResizeTo(5, 5);
 	for (int i=0; i<5; i++) {
 		for (int j=0; j<=i; j++) {
 			float val = CovarElementLookup[i][j]->Interpolate(Elookup, thlookup);
@@ -155,11 +161,11 @@ DBCALShower_factory_IU::evnt( JEventLoop *loop, uint64_t eventnumber ){
 	rotationmatrix(1,2) = -sinPhi;
 	rotationmatrix(2,1) = sinPhi;
 	rotationmatrix(2,2) = cosPhi;
-	DMatrix rotationmatrixT(DMatrix::kTransposed,rotationmatrix);
 
 	if (VERBOSE>3) {printf("(E,r,phi,z,t)  "); ErphiztCovariance.Print(); }
 	shower->ExyztCovariance.ResizeTo(5,5);
-	shower->ExyztCovariance = rotationmatrix*ErphiztCovariance*rotationmatrixT;  
+	DMatrixDSym &D = ErphiztCovariance.Similarity(rotationmatrix);
+	shower->ExyztCovariance = D;
 	if (VERBOSE>2) {printf("(E,x,y,z,t)    "); shower->ExyztCovariance.Print(); }
 
 	// Redundant duplication of uncertainties.  Should be removed
