@@ -55,10 +55,10 @@ class DTrackCandidate_factory_FDCCathodes:public JFactory<DTrackCandidate>{
   jerror_t fini(void);						///< Called after last event of last event source has been processed.
 
   jerror_t GetPositionAndMomentum(const DFDCSegment *segment);
-  jerror_t GetPositionAndMomentum(DFDCSegment *segment,
-				  DVector3 &pos, DVector3 &mom);
   jerror_t GetPositionAndMomentum(DVector3 &pos,DVector3 &mom);
   jerror_t GetPositionAndMomentum(vector<const DFDCSegment *>segments,
+				  DVector3 &pos,DVector3 &mom); 
+  jerror_t GetPositionAndMomentum(const DFDCSegment *segment,
 				  DVector3 &pos,DVector3 &mom);
   
   double GetCharge(const DVector3 &pos,const DFDCSegment *segment);
@@ -67,7 +67,8 @@ class DTrackCandidate_factory_FDCCathodes:public JFactory<DTrackCandidate>{
   double DocaSqToHelix(const DFDCPseudo *hit);
   DFDCSegment *GetTrackMatch(DFDCSegment *segment,vector<DFDCSegment*>package,
 			     unsigned int &match_id);
-  void LinkSegments(unsigned int pack1,vector<DFDCSegment *>packages[4]); 
+  void LinkSegments(unsigned int pack1,vector<DFDCSegment *>packages[4],
+		    vector<pair<const DFDCSegment*,const DFDCSegment*> >&paired_segments, vector<vector<int> >&is_paired); 
   double Match(double p);
 
   bool GetTrackMatch(double q,DVector3 &pos,DVector3 &mom,
@@ -98,8 +99,8 @@ class DTrackCandidate_factory_FDCCathodes:public JFactory<DTrackCandidate>{
 };
 
 inline double DTrackCandidate_factory_FDCCathodes::Match(double p){
-  double cut=-1.0+13.5/p;
-  if (cut>16.0) cut=16.0;
+  double cut=5.5/p;
+  if (cut>9.0) cut=9.0;
   if (cut<1.) cut=1.0;
   return cut;
 }
