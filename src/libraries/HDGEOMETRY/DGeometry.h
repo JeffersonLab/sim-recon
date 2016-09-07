@@ -127,12 +127,16 @@ class DGeometry{
 		bool GetCDCAxialWires(unsigned int ring,unsigned int ncopy,
 				      double zcenter,double dz,
 				      vector<vector<cdc_offset_t> >&cdc_offsets,
-				      vector<DCDCWire*> &axialwires) const;
+				      vector<DCDCWire*> &axialwires,
+				      vector<double>&rot_angles,double dx,
+				      double dy) const;
 		bool GetCDCStereoWires(unsigned int ring,unsigned int ncopy,
 				       double zcenter,
 				       double dz,
 				       vector<vector<cdc_offset_t> >&cdc_offsets,
-				       vector<DCDCWire*> &stereowires) const;
+				       vector<DCDCWire*> &stereowires,
+				       vector<double>&rot_angles,
+				       double dx,double dy) const;
 
 		bool GetBCALRmin(float &bcal_rmin) const; ///< minimum distance of BCAL module from beam line
 		bool GetBCALfADCRadii(vector<float> &fADC_radii) const; ///< fADC radii including the outer radius of the last layer

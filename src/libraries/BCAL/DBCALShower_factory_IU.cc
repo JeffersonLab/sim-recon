@@ -21,15 +21,28 @@
 
 DBCALShower_factory_IU::DBCALShower_factory_IU(){
 
-	VERBOSE = 0; // >0 once off info ; >2 event by event ; >3 everything
-	COVARIANCEFILENAME = ""; 
-	// setting the filename will take precidence over the CCDB.  
-	// Files must end in ij.txt, where i and j are integers corresponding to the element of the matrix
+	LOAD_CCDB_CONSTANTS = 1.;
+	energy_cutoff = 0;
+	linear_intercept = 0;
+	linear_slope = 0;
+	exponential_param0 = 0;
+	exponential_param1 = 0;
+	exponential_param2 = 0;
+	VERBOSE = 0;              ///< >0 once off info ; >2 event by event ; >3 everything
+	COVARIANCEFILENAME = "";  ///<  Setting the filename will take precidence over the CCDB.  Files must end in ij.txt, where i and j are integers corresponding to the element of the matrix
+
 	if (gPARMS){
+		gPARMS->SetDefaultParameter("BCAL:LOAD_NONLIN_CCDB", LOAD_CCDB_CONSTANTS);
+		/// use to set energy corrections on command line
+		gPARMS->SetDefaultParameter("BCAL:energy_cutoff", energy_cutoff);
+		gPARMS->SetDefaultParameter("BCAL:linear_slope", linear_slope);
+		gPARMS->SetDefaultParameter("BCAL:linear_intercept", linear_intercept);
+		gPARMS->SetDefaultParameter("BCAL:exponential_param0", exponential_param0);
+		gPARMS->SetDefaultParameter("BCAL:exponential_param1", exponential_param1);
+		gPARMS->SetDefaultParameter("BCAL:exponential_param2", exponential_param2);
 		gPARMS->SetDefaultParameter("DBCALShower:VERBOSE", VERBOSE, "Verbosity level for DBCALShower objects and factories");
 		gPARMS->SetDefaultParameter("DBCALShower:COVARIANCEFILENAME", COVARIANCEFILENAME, "File name for covariance files");
 	}
-
 }
 
 jerror_t DBCALShower_factory_IU::brun(JEventLoop *loop, int32_t runnumber) {
@@ -37,8 +50,22 @@ jerror_t DBCALShower_factory_IU::brun(JEventLoop *loop, int32_t runnumber) {
   DGeometry* geom = app->GetDGeometry(runnumber);
   geom->GetTargetZ(m_zTarget);
 
-  jerror_t result = CreateCovarianceMatrix();
-  if (result!=NOERROR) return result;
+
+	jerror_t result = CreateCovarianceMatrix();
+	if (result!=NOERROR) return result;
+
+    //by default, energy correction parameters are obtained through ccdb
+	
+    if(LOAD_CCDB_CONSTANTS > 0.5){
+	map<string, double> shower_calib;
+	loop->GetCalib("BCAL/shower_calib", shower_calib);
+	energy_cutoff = shower_calib["energy_cutoff"];
+	linear_intercept = shower_calib["linear_intercept"];
+	linear_slope = shower_calib["linear_slope"];
+	exponential_param0 = shower_calib["exponential_param0"];
+	exponential_param1 = shower_calib["exponential_param1"];
+	exponential_param2 = shower_calib["exponential_param2"]; 
+    }
 
   return NOERROR;
 }
@@ -85,7 +112,11 @@ DBCALShower_factory_IU::evnt( JEventLoop *loop, uint64_t eventnumber ){
 
     shower->N_cell = (**clItr).nCells();
     
-    shower->E = shower->E_raw;
+    // non-linear energy corrections can be found at https://logbooks.jlab.org/entry/3419524 
+    
+    if( shower->E_raw < energy_cutoff ) shower->E = shower->E_raw / (linear_intercept + linear_slope * shower->E_raw ) ;
+   
+    if( shower->E_raw >= energy_cutoff ) shower->E = shower->E_raw / (exponential_param0 - exp(exponential_param1 * shower->E_raw + exponential_param2));
 
 	if (VERBOSE>2) printf("shower:  E=%f x=%f y=%f z=%f t=%f\n",
 						  shower->E,shower->x,shower->y,shower->z,shower->t);

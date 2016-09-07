@@ -8,9 +8,21 @@
 #include "DReaction_factory_p2k_hists.h"
 
 //------------------
-// init
+// brun
 //------------------
-jerror_t DReaction_factory_p2k_hists::init(void)
+jerror_t DReaction_factory_p2k_hists::brun(JEventLoop* locEventLoop, int32_t locRunNumber)
+{
+	vector<double> locBeamPeriodVector;
+	locEventLoop->GetCalib("PHOTON_BEAM/RF/beam_period", locBeamPeriodVector);
+	dBeamBunchPeriod = locBeamPeriodVector[0];
+
+	return NOERROR;
+}
+
+//------------------
+// evnt
+//------------------
+jerror_t DReaction_factory_p2k_hists::evnt(JEventLoop* locEventLoop, uint64_t locEventNumber)
 {
 	// Make as many DReaction objects as desired
 	DReactionStep* locReactionStep = NULL;
@@ -36,8 +48,12 @@ jerror_t DReaction_factory_p2k_hists::init(void)
 
 	/**************************************************** p2k_preco Control Settings ****************************************************/
 
-	locReaction->Set_KinFitType(d_P4AndVertexFit); //simultaneously constrain apply four-momentum conservation, invariant masses, and common-vertex constraints
-	locReaction->Set_MaxPhotonRFDeltaT(0.5*4.008); //beam bunches are every 4.008 ns, (2.004 should be minimum cut value)
+	// Event Store
+	locReaction->Set_EventStoreSkims("2q+,q-"); // boolean-AND of skims
+
+	//locReaction->Set_KinFitType(d_P4AndVertexFit); //simultaneously constrain apply four-momentum conservation, invariant masses, and common-vertex constraints
+	locReaction->Set_MaxPhotonRFDeltaT(0.5*dBeamBunchPeriod); //beam bunches are every 4.008 ns, (2.004 should be minimum cut value)
+	locReaction->Set_MaxExtraGoodTracks(4);
 
 	/**************************************************** p2k_preco Analysis Actions ****************************************************/
 
@@ -47,15 +63,30 @@ jerror_t DReaction_factory_p2k_hists::init(void)
 
 	// PID
 	locReaction->Add_AnalysisAction(new DHistogramAction_PID(locReaction));
-        locReaction->Add_AnalysisAction(new DCutAction_PIDDeltaT(locReaction, false, 1.0, Unknown, SYS_TOF)); //false: measured data //Unknown: All PIDs
-        locReaction->Add_AnalysisAction(new DCutAction_PIDDeltaT(locReaction, false, 10.0, Unknown, SYS_BCAL)); //false: measured data //Unknown: All PIDs
-        locReaction->Add_AnalysisAction(new DCutAction_PIDDeltaT(locReaction, false, 10.0, Unknown, SYS_FCAL)); //false: measured data //Unknown: All PIDs
+
+        locReaction->Add_AnalysisAction(new DCutAction_PIDDeltaT(locReaction, false, 0.75, KPlus, SYS_TOF)); //cut at delta-t +/- 1.0 //false: measured data
+        locReaction->Add_AnalysisAction(new DCutAction_PIDDeltaT(locReaction, false, 2.5, KPlus, SYS_BCAL)); //cut at delta-t +/- 1.0 //false: measured data
+        locReaction->Add_AnalysisAction(new DCutAction_PIDDeltaT(locReaction, false, 3.0, KPlus, SYS_FCAL)); //cut at delta-t +/- 1.0 //false: measured data
+
+        locReaction->Add_AnalysisAction(new DCutAction_PIDDeltaT(locReaction, false, 0.75, KMinus, SYS_TOF)); //cut at delta-t +/- 1.0 //false: measured data
+        locReaction->Add_AnalysisAction(new DCutAction_PIDDeltaT(locReaction, false, 2.5, KMinus, SYS_BCAL)); //cut at delta-t +/- 1.0 //false: measured data
+        locReaction->Add_AnalysisAction(new DCutAction_PIDDeltaT(locReaction, false, 3.0, KMinus, SYS_FCAL)); //cut at delta-t +/- 1.0 //false: measured data
+
+        locReaction->Add_AnalysisAction(new DCutAction_PIDDeltaT(locReaction, false, 2.5, Proton, SYS_TOF)); //cut at delta-t +/- 1.0 //false: measured data
+        locReaction->Add_AnalysisAction(new DCutAction_PIDDeltaT(locReaction, false, 2.5, Proton, SYS_BCAL)); //cut at delta-t +/- 1.0 //false: measured data
+        locReaction->Add_AnalysisAction(new DCutAction_PIDDeltaT(locReaction, false, 3.0, Proton, SYS_FCAL)); //cut at delta-t +/- 1.0 //false: measured data
+
+	locReaction->Add_AnalysisAction(new DHistogramAction_PID(locReaction, "PostPIDCuts"));
 
 	// Custom histograms for p2k (no KinFit cut)
         locReaction->Add_AnalysisAction(new DCustomAction_p2k_hists(locReaction, false, "NoKinFit_Measured"));
 
 	// Kinematics of final selection
 	locReaction->Add_AnalysisAction(new DHistogramAction_ParticleComboKinematics(locReaction, false)); //false: fill histograms with measured particle data
+
+	// Kinematics fit
+	// locReaction->Add_AnalysisAction(new DHistogramAction_KinFitResults(locReaction, 0.05)); // 5% confidence level cut on pull histograms only
+	// locReaction->Add_AnalysisAction(new DCutAction_KinFitFOM(locReaction, -1.0)); // -1.0 confidence level cut // require kinematic fit converges
 
 	_data.push_back(locReaction); //Register the DReaction with the factory
 
