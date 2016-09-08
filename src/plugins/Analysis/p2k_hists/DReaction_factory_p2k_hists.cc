@@ -6,6 +6,7 @@
 //
 
 #include "DReaction_factory_p2k_hists.h"
+#include "DCustomAction_dEdxCut.h"
 
 //------------------
 // brun
@@ -37,14 +38,14 @@ jerror_t DReaction_factory_p2k_hists::evnt(JEventLoop* locEventLoop, uint64_t lo
 	//locReaction = new DReaction("p2k_preco"); //needs to be a unique name for each DReaction object, CANNOT (!) be "Thrown"
 
 	// g, p -> k+, k- ,p
-        locReactionStep = new DReactionStep();
-        locReactionStep->Set_InitialParticleID(Gamma);
-        locReactionStep->Set_TargetParticleID(Proton);
-        locReactionStep->Add_FinalParticleID(KPlus);
-        locReactionStep->Add_FinalParticleID(KMinus);
-        locReactionStep->Add_FinalParticleID(Proton);
-        locReaction->Add_ReactionStep(locReactionStep);
-        dReactionStepPool.push_back(locReactionStep); //register so will be deleted later: prevent memory leak
+	locReactionStep = new DReactionStep();
+	locReactionStep->Set_InitialParticleID(Gamma);
+	locReactionStep->Set_TargetParticleID(Proton);
+	locReactionStep->Add_FinalParticleID(KPlus);
+	locReactionStep->Add_FinalParticleID(KMinus);
+	locReactionStep->Add_FinalParticleID(Proton);
+	locReaction->Add_ReactionStep(locReactionStep);
+	dReactionStepPool.push_back(locReactionStep); //register so will be deleted later: prevent memory leak
 
 	/**************************************************** p2k_preco Control Settings ****************************************************/
 
@@ -55,6 +56,12 @@ jerror_t DReaction_factory_p2k_hists::evnt(JEventLoop* locEventLoop, uint64_t lo
 	locReaction->Set_MaxPhotonRFDeltaT(0.5*dBeamBunchPeriod); //beam bunches are every 4.008 ns, (2.004 should be minimum cut value)
 	locReaction->Set_MaxExtraGoodTracks(4);
 
+	/************************************************** p2k_preco Pre-Combo Custom Cuts *************************************************/
+
+	// Highly Recommended: Very loose DAnalysisAction cuts, applied just after creating the combination (before saving it)
+	// Example: Missing mass squared of proton
+	locReaction->Add_ComboPreSelectionAction(new DCutAction_MissingMassSquared(locReaction, false, -0.1, 0.1));
+
 	/**************************************************** p2k_preco Analysis Actions ****************************************************/
 
 	// Recommended: Analysis actions automatically performed by the DAnalysisResults factories to histogram useful quantities.
@@ -64,29 +71,37 @@ jerror_t DReaction_factory_p2k_hists::evnt(JEventLoop* locEventLoop, uint64_t lo
 	// PID
 	locReaction->Add_AnalysisAction(new DHistogramAction_PID(locReaction));
 
-        locReaction->Add_AnalysisAction(new DCutAction_PIDDeltaT(locReaction, false, 0.75, KPlus, SYS_TOF)); //cut at delta-t +/- 1.0 //false: measured data
-        locReaction->Add_AnalysisAction(new DCutAction_PIDDeltaT(locReaction, false, 2.5, KPlus, SYS_BCAL)); //cut at delta-t +/- 1.0 //false: measured data
-        locReaction->Add_AnalysisAction(new DCutAction_PIDDeltaT(locReaction, false, 3.0, KPlus, SYS_FCAL)); //cut at delta-t +/- 1.0 //false: measured data
+	locReaction->Add_AnalysisAction(new DCutAction_PIDDeltaT(locReaction, false, 0.75, KPlus, SYS_TOF)); //cut at delta-t +/- 1.0 //false: measured data
+	locReaction->Add_AnalysisAction(new DCutAction_PIDDeltaT(locReaction, false, 1.5, KPlus, SYS_BCAL)); //cut at delta-t +/- 1.0 //false: measured data
+	locReaction->Add_AnalysisAction(new DCutAction_PIDDeltaT(locReaction, false, 3.0, KPlus, SYS_FCAL)); //cut at delta-t +/- 1.0 //false: measured data
 
-        locReaction->Add_AnalysisAction(new DCutAction_PIDDeltaT(locReaction, false, 0.75, KMinus, SYS_TOF)); //cut at delta-t +/- 1.0 //false: measured data
-        locReaction->Add_AnalysisAction(new DCutAction_PIDDeltaT(locReaction, false, 2.5, KMinus, SYS_BCAL)); //cut at delta-t +/- 1.0 //false: measured data
-        locReaction->Add_AnalysisAction(new DCutAction_PIDDeltaT(locReaction, false, 3.0, KMinus, SYS_FCAL)); //cut at delta-t +/- 1.0 //false: measured data
+	locReaction->Add_AnalysisAction(new DCutAction_PIDDeltaT(locReaction, false, 0.75, KMinus, SYS_TOF)); //cut at delta-t +/- 1.0 //false: measured data
+	locReaction->Add_AnalysisAction(new DCutAction_PIDDeltaT(locReaction, false, 1.5, KMinus, SYS_BCAL)); //cut at delta-t +/- 1.0 //false: measured data
+	locReaction->Add_AnalysisAction(new DCutAction_PIDDeltaT(locReaction, false, 3.0, KMinus, SYS_FCAL)); //cut at delta-t +/- 1.0 //false: measured data
 
-        locReaction->Add_AnalysisAction(new DCutAction_PIDDeltaT(locReaction, false, 2.5, Proton, SYS_TOF)); //cut at delta-t +/- 1.0 //false: measured data
-        locReaction->Add_AnalysisAction(new DCutAction_PIDDeltaT(locReaction, false, 2.5, Proton, SYS_BCAL)); //cut at delta-t +/- 1.0 //false: measured data
-        locReaction->Add_AnalysisAction(new DCutAction_PIDDeltaT(locReaction, false, 3.0, Proton, SYS_FCAL)); //cut at delta-t +/- 1.0 //false: measured data
+	locReaction->Add_AnalysisAction(new DCutAction_PIDDeltaT(locReaction, false, 2.0, Proton, SYS_TOF)); //cut at delta-t +/- 1.0 //false: measured data
+	locReaction->Add_AnalysisAction(new DCutAction_PIDDeltaT(locReaction, false, 2.5, Proton, SYS_BCAL)); //cut at delta-t +/- 1.0 //false: measured data
+	locReaction->Add_AnalysisAction(new DCutAction_PIDDeltaT(locReaction, false, 3.0, Proton, SYS_FCAL)); //cut at delta-t +/- 1.0 //false: measured data
+
+	locReaction->Add_AnalysisAction(new DCutAction_NoPIDHit(locReaction, KPlus));
+	locReaction->Add_AnalysisAction(new DCutAction_NoPIDHit(locReaction, KMinus));
+	locReaction->Add_AnalysisAction(new DCustomAction_dEdxCut(locReaction, false)); //false: focus on keeping signal
 
 	locReaction->Add_AnalysisAction(new DHistogramAction_PID(locReaction, "PostPIDCuts"));
 
+	//MISSING MASS
+	locReaction->Add_AnalysisAction(new DHistogramAction_MissingMassSquared(locReaction, false, 1000, -0.1, 0.1));
+	locReaction->Add_AnalysisAction(new DCutAction_MissingMassSquared(locReaction, false, -0.01, 0.005));
+
+	//PHI MASS
+	deque<Particle_t> locPhiPIDs;  locPhiPIDs.push_back(KPlus);  locPhiPIDs.push_back(KMinus);
+	locReaction->Add_AnalysisAction(new DHistogramAction_InvariantMass(locReaction, 0, locPhiPIDs, false, 900, 0.9, 1.2, "Phi"));
+
 	// Custom histograms for p2k (no KinFit cut)
-        locReaction->Add_AnalysisAction(new DCustomAction_p2k_hists(locReaction, false, "NoKinFit_Measured"));
+	locReaction->Add_AnalysisAction(new DCustomAction_p2k_hists(locReaction, false, "NoKinFit_Measured"));
 
 	// Kinematics of final selection
 	locReaction->Add_AnalysisAction(new DHistogramAction_ParticleComboKinematics(locReaction, false)); //false: fill histograms with measured particle data
-
-	// Kinematics fit
-	// locReaction->Add_AnalysisAction(new DHistogramAction_KinFitResults(locReaction, 0.05)); // 5% confidence level cut on pull histograms only
-	// locReaction->Add_AnalysisAction(new DCutAction_KinFitFOM(locReaction, -1.0)); // -1.0 confidence level cut // require kinematic fit converges
 
 	_data.push_back(locReaction); //Register the DReaction with the factory
 

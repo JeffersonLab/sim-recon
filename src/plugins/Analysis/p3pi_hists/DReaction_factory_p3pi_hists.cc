@@ -13,9 +13,21 @@
 #include "DCustomAction_CutExtraTrackPID.h"
 
 //------------------
+// brun
+//------------------
+jerror_t DReaction_factory_p3pi_hists::brun(JEventLoop* locEventLoop, int32_t locRunNumber)
+{
+	vector<double> locBeamPeriodVector;
+	locEventLoop->GetCalib("PHOTON_BEAM/RF/beam_period", locBeamPeriodVector);
+	dBeamBunchPeriod = locBeamPeriodVector[0];
+
+	return NOERROR;
+}
+
+//------------------
 // init
 //------------------
-jerror_t DReaction_factory_p3pi_hists::init(void)
+jerror_t DReaction_factory_p3pi_hists::evnt(JEventLoop* locEventLoop, uint64_t locEventNumber)
 {
 	// Make as many DReaction objects as desired
 	DReactionStep* locReactionStep = NULL;
@@ -65,8 +77,23 @@ jerror_t DReaction_factory_p3pi_hists::init(void)
 
 	/**************************************************** p3pi_preco_2FCAL Control Settings ****************************************************/
 
+	// Event Store
+	locReaction->Set_EventStoreSkims("2q+,q-,pi0"); // boolean-AND of skims
+
 	//locReaction->Set_KinFitType(d_P4AndVertexFit); //simultaneously constrain apply four-momentum conservation, invariant masses, and common-vertex constraints
-	locReaction->Set_MaxPhotonRFDeltaT(0.5*4.008); //beam bunches are every 4.008 ns, (2.004 should be minimum cut value)
+
+	// Highly Recommended: When generating particle combinations, reject all beam photons that match to a different RF bunch
+	locReaction->Set_MaxPhotonRFDeltaT(0.5*dBeamBunchPeriod);
+
+	/************************************************** p3pi_preco_2FCAL Pre-Combo Custom Cuts *************************************************/
+
+	// Highly Recommended: Very loose invariant mass cuts, applied during DParticleComboBlueprint construction
+	locReaction->Set_InvariantMassCut(Pi0, 0.05, 0.22);
+	locReaction->Set_InvariantMassCut(omega, 0.4, 1.2);
+
+	// Highly Recommended: Very loose DAnalysisAction cuts, applied just after creating the combination (before saving it)
+	// Example: Missing mass squared of proton
+	locReaction->Add_ComboPreSelectionAction(new DCutAction_MissingMassSquared(locReaction, false, -0.1, 0.1));
 
 	/**************************************************** p3pi_preco_2FCAL Analysis Actions ****************************************************/
 
@@ -75,53 +102,38 @@ jerror_t DReaction_factory_p3pi_hists::init(void)
 
 	// PID
 	locReaction->Add_AnalysisAction(new DHistogramAction_PID(locReaction));
-	locReaction->Add_AnalysisAction(new DCutAction_PIDDeltaT(locReaction, false, 1.0, Proton, SYS_TOF)); //false: measured data
-	locReaction->Add_AnalysisAction(new DCutAction_PIDDeltaT(locReaction, false, 1.0, Proton, SYS_BCAL)); //false: measured data
-	locReaction->Add_AnalysisAction(new DCutAction_PIDDeltaT(locReaction, false, 2.0, Proton, SYS_FCAL)); //false: measured data
-	locReaction->Add_AnalysisAction(new DCutAction_PIDDeltaT(locReaction, false, 1.0, PiPlus, SYS_TOF)); //false: measured data
-	locReaction->Add_AnalysisAction(new DCutAction_PIDDeltaT(locReaction, false, 1.0, PiPlus, SYS_BCAL)); //false: measured data
-	locReaction->Add_AnalysisAction(new DCutAction_PIDDeltaT(locReaction, false, 2.0, PiPlus, SYS_FCAL)); //false: measured data
-	locReaction->Add_AnalysisAction(new DCutAction_PIDDeltaT(locReaction, false, 1.5, Gamma, SYS_BCAL)); //false: measured data
-	locReaction->Add_AnalysisAction(new DCutAction_PIDDeltaT(locReaction, false, 2.0, Gamma, SYS_FCAL)); //false: measured data
+	locReaction->Add_AnalysisAction(new DCutAction_PIDDeltaT(locReaction, false, 2.0, Proton, SYS_TOF));
+	locReaction->Add_AnalysisAction(new DCutAction_PIDDeltaT(locReaction, false, 2.5, Proton, SYS_BCAL));
+	locReaction->Add_AnalysisAction(new DCutAction_PIDDeltaT(locReaction, false, 3.0, Proton, SYS_FCAL));
+	locReaction->Add_AnalysisAction(new DCutAction_PIDDeltaT(locReaction, false, 2.0, PiPlus, SYS_TOF));
+	locReaction->Add_AnalysisAction(new DCutAction_PIDDeltaT(locReaction, false, 1.5, PiPlus, SYS_BCAL));
+	locReaction->Add_AnalysisAction(new DCutAction_PIDDeltaT(locReaction, false, 3.0, PiPlus, SYS_FCAL));
+	locReaction->Add_AnalysisAction(new DCutAction_PIDDeltaT(locReaction, false, 2.0, PiMinus, SYS_TOF));
+	locReaction->Add_AnalysisAction(new DCutAction_PIDDeltaT(locReaction, false, 1.5, PiMinus, SYS_BCAL));
+	locReaction->Add_AnalysisAction(new DCutAction_PIDDeltaT(locReaction, false, 3.0, PiMinus, SYS_FCAL));
+	locReaction->Add_AnalysisAction(new DCutAction_PIDDeltaT(locReaction, false, 2.0, Gamma, SYS_BCAL)); //false: measured data
+	locReaction->Add_AnalysisAction(new DCutAction_PIDDeltaT(locReaction, false, 3.0, Gamma, SYS_FCAL)); //false: measured data
+	locReaction->Add_AnalysisAction(new DCustomAction_dEdxCut(locReaction, false)); //false: focus on keeping signal
+	locReaction->Add_AnalysisAction(new DHistogramAction_PID(locReaction, "PostPIDCuts"));
 
-	//Kinematics Pre-Pi0Cut
-	locReaction->Add_AnalysisAction(new DHistogramAction_TrackVertexComparison(locReaction, "Pre-Pi0Cut"));
-	locReaction->Add_AnalysisAction(new DHistogramAction_ParticleComboKinematics(locReaction, false, "Pre-Pi0Cut"));
-
-	// Custom histograms for p3pi (no KinFit cut)
-	locReaction->Add_AnalysisAction(new DHistogramAction_InvariantMass(locReaction, Pi0, false,500,0.,1., "NoKinFit_Measured"));
-	locReaction->Add_AnalysisAction(new DCustomAction_p3pi_hists(locReaction, false, "NoKinFit_Measured"));
-
-	// Pi0 mass cut
+	// Pi0
+	locReaction->Add_AnalysisAction(new DHistogramAction_InvariantMass(locReaction, Pi0, false, 850, 0.05, 0.22, "Pi0"));
 	locReaction->Add_AnalysisAction(new DCutAction_InvariantMass(locReaction, Pi0, false, minPi0FCAL, maxPi0FCAL));
 
-	//Kinematics Post-Pi0Cut
-	locReaction->Add_AnalysisAction(new DHistogramAction_TrackVertexComparison(locReaction, "Post-Pi0Cut"));
-	locReaction->Add_AnalysisAction(new DHistogramAction_ParticleComboKinematics(locReaction, false, "Post-Pi0Cut"));
+	// Custom histograms for p3pi
+	locReaction->Add_AnalysisAction(new DCustomAction_p3pi_hists(locReaction, false));
 
-	// Custom histograms for p3pi (after Pi0 mass cut)
-	locReaction->Add_AnalysisAction(new DCustomAction_p3pi_hists(locReaction, false, "CutPi0_Measured"));
-
-	// dE/dx Cut (after custom action since it does dE/dx studies)
-	locReaction->Add_AnalysisAction(new DCutAction_ProtonPiPlusdEdx(locReaction, 2.2, false)); //select p/pi+ above/below 2.2, //true/false: cut all/no proton candidates above p = 1 GeV/c
-
-	//	Missing Pt
-	locReaction->Add_AnalysisAction(new DHistogramAction_MissingTransverseMomentum(locReaction, false, 500, 0.0, 1.0));
-
-	//	Missing Mass Squared (Hist and Cut)
-	locReaction->Add_AnalysisAction(new DHistogramAction_MissingMassSquared(locReaction, false, 600, -0.06, 0.06));
+	// MISSING MASS
+	locReaction->Add_AnalysisAction(new DHistogramAction_MissingMassSquared(locReaction, false, 1000, -0.1, 0.1));
 	locReaction->Add_AnalysisAction(new DCutAction_MissingMassSquared(locReaction, false, -0.01, 0.005));
 
-	// Omega Mass (Hist and Cut)
-	//locReaction->Add_AnalysisAction(new DHistogramAction_InvariantMass(locReaction, omega, true, 500, 0.4, 1.4, "Omega_Kinfit"));
-	//locReaction->Add_AnalysisAction(new DCutAction_InvariantMass(locReaction, omega, true, 0.7, 0.9));
+	// OMEGA
+	locReaction->Add_AnalysisAction(new DHistogramAction_InvariantMass(locReaction, omega, false, 600, 0.5, 1.1, "Omega"));
 
 	// Kinematics of final selection
 	locReaction->Add_AnalysisAction(new DHistogramAction_ParticleComboKinematics(locReaction, false, "Final")); //false: fill histograms with measured particle data
 
 	_data.push_back(locReaction); //Register the DReaction with the factory
-
-
 
 	/**************************************************** p3pi_preco_FCAL-BCAL Reaction Steps ****************************************************/
 
@@ -130,10 +142,25 @@ jerror_t DReaction_factory_p3pi_hists::init(void)
 	locReaction->Add_ReactionStep(dReactionStepPool[1]);
 	locReaction->Add_ReactionStep(dReactionStepPool[2]);
 
-	/**************************************************** p3pi_preco FCAL-BCAL Control Settings ****************************************************/
+	/**************************************************** p3pi_preco_FCAL-BCAL Control Settings ****************************************************/
+
+	// Event Store
+	locReaction->Set_EventStoreSkims("2q+,q-,pi0"); // boolean-AND of skims
 
 	//locReaction->Set_KinFitType(d_P4AndVertexFit); //simultaneously constrain apply four-momentum conservation, invariant masses, and common-vertex constraints
-	locReaction->Set_MaxPhotonRFDeltaT(0.5*4.008); //beam bunches are every 4.008 ns, (2.004 should be minimum cut value)
+
+	// Highly Recommended: When generating particle combinations, reject all beam photons that match to a different RF bunch
+	locReaction->Set_MaxPhotonRFDeltaT(0.5*dBeamBunchPeriod);
+
+	/************************************************** p3pi_preco_FCAL-BCAL Pre-Combo Custom Cuts *************************************************/
+
+	// Highly Recommended: Very loose invariant mass cuts, applied during DParticleComboBlueprint construction
+	locReaction->Set_InvariantMassCut(Pi0, 0.05, 0.22);
+	locReaction->Set_InvariantMassCut(omega, 0.4, 1.2);
+
+	// Highly Recommended: Very loose DAnalysisAction cuts, applied just after creating the combination (before saving it)
+	// Example: Missing mass squared of proton
+	locReaction->Add_ComboPreSelectionAction(new DCutAction_MissingMassSquared(locReaction, false, -0.1, 0.1));
 
 	/**************************************************** p3pi_preco FCAL-BCAL Analysis Actions ****************************************************/
 
@@ -142,53 +169,38 @@ jerror_t DReaction_factory_p3pi_hists::init(void)
 
 	// PID
 	locReaction->Add_AnalysisAction(new DHistogramAction_PID(locReaction));
-	locReaction->Add_AnalysisAction(new DCutAction_PIDDeltaT(locReaction, false, 1.0, Proton, SYS_TOF)); //false: measured data
-	locReaction->Add_AnalysisAction(new DCutAction_PIDDeltaT(locReaction, false, 1.0, Proton, SYS_BCAL)); //false: measured data
-	locReaction->Add_AnalysisAction(new DCutAction_PIDDeltaT(locReaction, false, 2.0, Proton, SYS_FCAL)); //false: measured data
-	locReaction->Add_AnalysisAction(new DCutAction_PIDDeltaT(locReaction, false, 1.0, PiPlus, SYS_TOF)); //false: measured data
-	locReaction->Add_AnalysisAction(new DCutAction_PIDDeltaT(locReaction, false, 1.0, PiPlus, SYS_BCAL)); //false: measured data
-	locReaction->Add_AnalysisAction(new DCutAction_PIDDeltaT(locReaction, false, 2.0, PiPlus, SYS_FCAL)); //false: measured data
-	locReaction->Add_AnalysisAction(new DCutAction_PIDDeltaT(locReaction, false, 1.5, Gamma, SYS_BCAL)); //false: measured data
-	locReaction->Add_AnalysisAction(new DCutAction_PIDDeltaT(locReaction, false, 2.0, Gamma, SYS_FCAL)); //false: measured data
+	locReaction->Add_AnalysisAction(new DCutAction_PIDDeltaT(locReaction, false, 2.0, Proton, SYS_TOF));
+	locReaction->Add_AnalysisAction(new DCutAction_PIDDeltaT(locReaction, false, 2.5, Proton, SYS_BCAL));
+	locReaction->Add_AnalysisAction(new DCutAction_PIDDeltaT(locReaction, false, 3.0, Proton, SYS_FCAL));
+	locReaction->Add_AnalysisAction(new DCutAction_PIDDeltaT(locReaction, false, 2.0, PiPlus, SYS_TOF));
+	locReaction->Add_AnalysisAction(new DCutAction_PIDDeltaT(locReaction, false, 1.5, PiPlus, SYS_BCAL));
+	locReaction->Add_AnalysisAction(new DCutAction_PIDDeltaT(locReaction, false, 3.0, PiPlus, SYS_FCAL));
+	locReaction->Add_AnalysisAction(new DCutAction_PIDDeltaT(locReaction, false, 2.0, PiMinus, SYS_TOF));
+	locReaction->Add_AnalysisAction(new DCutAction_PIDDeltaT(locReaction, false, 1.5, PiMinus, SYS_BCAL));
+	locReaction->Add_AnalysisAction(new DCutAction_PIDDeltaT(locReaction, false, 3.0, PiMinus, SYS_FCAL));
+	locReaction->Add_AnalysisAction(new DCutAction_PIDDeltaT(locReaction, false, 2.0, Gamma, SYS_BCAL)); //false: measured data
+	locReaction->Add_AnalysisAction(new DCutAction_PIDDeltaT(locReaction, false, 3.0, Gamma, SYS_FCAL)); //false: measured data
+	locReaction->Add_AnalysisAction(new DCustomAction_dEdxCut(locReaction, false)); //false: focus on keeping signal
+	locReaction->Add_AnalysisAction(new DHistogramAction_PID(locReaction, "PostPIDCuts"));
 
-	//Kinematics Pre-Pi0Cut
-	locReaction->Add_AnalysisAction(new DHistogramAction_TrackVertexComparison(locReaction, "Pre-Pi0Cut"));
-	locReaction->Add_AnalysisAction(new DHistogramAction_ParticleComboKinematics(locReaction, false, "Pre-Pi0Cut"));
-
-	// Custom histograms for p3pi (no KinFit cut)
-	locReaction->Add_AnalysisAction(new DHistogramAction_InvariantMass(locReaction, Pi0, false,500,0.,1., "NoKinFit_Measured"));
-	locReaction->Add_AnalysisAction(new DCustomAction_p3pi_hists(locReaction, false, "NoKinFit_Measured"));
-
-	// Pi0 mass cut
+	// Pi0
+	locReaction->Add_AnalysisAction(new DHistogramAction_InvariantMass(locReaction, Pi0, false, 850, 0.05, 0.22, "Pi0"));
 	locReaction->Add_AnalysisAction(new DCutAction_InvariantMass(locReaction, Pi0, false, minPi0FCAL_BCAL, maxPi0FCAL_BCAL));
 
-	//Kinematics Post-Pi0Cut
-	locReaction->Add_AnalysisAction(new DHistogramAction_TrackVertexComparison(locReaction, "Post-Pi0Cut"));
-	locReaction->Add_AnalysisAction(new DHistogramAction_ParticleComboKinematics(locReaction, false, "Post-Pi0Cut"));
+	// Custom histograms for p3pi
+	locReaction->Add_AnalysisAction(new DCustomAction_p3pi_hists(locReaction, false));
 
-	// Custom histograms for p3pi (after Pi0 mass cut)
-	locReaction->Add_AnalysisAction(new DCustomAction_p3pi_hists(locReaction, false, "CutPi0_Measured"));
-
-	// dE/dx Cut (after custom action since it does dE/dx studies)
-	locReaction->Add_AnalysisAction(new DCutAction_ProtonPiPlusdEdx(locReaction, 2.2, false)); //select p/pi+ above/below 2.2, //true/false: cut all/no proton candidates above p = 1 GeV/c
-
-	//	Missing Pt
-	locReaction->Add_AnalysisAction(new DHistogramAction_MissingTransverseMomentum(locReaction, false, 500, 0.0, 1.0));
-
-	//	Missing Mass Squared (Hist and Cut)
-	locReaction->Add_AnalysisAction(new DHistogramAction_MissingMassSquared(locReaction, false, 600, -0.06, 0.06));
+	// MISSING MASS
+	locReaction->Add_AnalysisAction(new DHistogramAction_MissingMassSquared(locReaction, false, 1000, -0.1, 0.1));
 	locReaction->Add_AnalysisAction(new DCutAction_MissingMassSquared(locReaction, false, -0.01, 0.005));
 
-	// Omega Mass (Hist and Cut)
-	//locReaction->Add_AnalysisAction(new DHistogramAction_InvariantMass(locReaction, omega, true, 500, 0.4, 1.4, "Omega_Kinfit"));
-	//locReaction->Add_AnalysisAction(new DCutAction_InvariantMass(locReaction, omega, true, 0.7, 0.9));
+	// OMEGA
+	locReaction->Add_AnalysisAction(new DHistogramAction_InvariantMass(locReaction, omega, false, 600, 0.5, 1.1, "Omega"));
 
 	// Kinematics of final selection
 	locReaction->Add_AnalysisAction(new DHistogramAction_ParticleComboKinematics(locReaction, false, "Final")); //false: fill histograms with measured particle data
 
 	_data.push_back(locReaction); //Register the DReaction with the factory
-
-
 
 	/**************************************************** p3pi_preco_2BCAL Reaction Steps ****************************************************/
 
@@ -197,65 +209,65 @@ jerror_t DReaction_factory_p3pi_hists::init(void)
 	locReaction->Add_ReactionStep(dReactionStepPool[1]);
 	locReaction->Add_ReactionStep(dReactionStepPool[2]);
 
-	/**************************************************** p3pi_preco 2BCAL Control Settings ****************************************************/
+	/**************************************************** p3pi_preco_2BCAL Control Settings ****************************************************/
+
+	// Event Store
+	locReaction->Set_EventStoreSkims("2q+,q-,pi0"); // boolean-AND of skims
 
 	//locReaction->Set_KinFitType(d_P4AndVertexFit); //simultaneously constrain apply four-momentum conservation, invariant masses, and common-vertex constraints
-	locReaction->Set_MaxPhotonRFDeltaT(0.5*4.008); //beam bunches are every 4.008 ns, (2.004 should be minimum cut value)
 
-	/**************************************************** p3pi_preco 2BCAL Analysis Actions ****************************************************/
+	// Highly Recommended: When generating particle combinations, reject all beam photons that match to a different RF bunch
+	locReaction->Set_MaxPhotonRFDeltaT(0.5*dBeamBunchPeriod);
+
+	/************************************************** p3pi_preco_2BCAL Pre-Combo Custom Cuts *************************************************/
+
+	// Highly Recommended: Very loose invariant mass cuts, applied during DParticleComboBlueprint construction
+	locReaction->Set_InvariantMassCut(Pi0, 0.05, 0.22);
+	locReaction->Set_InvariantMassCut(omega, 0.4, 1.2);
+
+	// Highly Recommended: Very loose DAnalysisAction cuts, applied just after creating the combination (before saving it)
+	// Example: Missing mass squared of proton
+	locReaction->Add_ComboPreSelectionAction(new DCutAction_MissingMassSquared(locReaction, false, -0.1, 0.1));
+
+	/**************************************************** p3pi_preco_2BCAL Analysis Actions ****************************************************/
 
 	// Require 1 photon in FCAL and 1 photon in BCAL
 	locReaction->Add_AnalysisAction(new DCustomAction_p3pi_Pi0Cuts(locReaction, false, 0));
 
 	// PID
 	locReaction->Add_AnalysisAction(new DHistogramAction_PID(locReaction));
-	locReaction->Add_AnalysisAction(new DCutAction_PIDDeltaT(locReaction, false, 1.0, Proton, SYS_TOF)); //false: measured data
-	locReaction->Add_AnalysisAction(new DCutAction_PIDDeltaT(locReaction, false, 1.0, Proton, SYS_BCAL)); //false: measured data
-	locReaction->Add_AnalysisAction(new DCutAction_PIDDeltaT(locReaction, false, 2.0, Proton, SYS_FCAL)); //false: measured data
-	locReaction->Add_AnalysisAction(new DCutAction_PIDDeltaT(locReaction, false, 1.0, PiPlus, SYS_TOF)); //false: measured data
-	locReaction->Add_AnalysisAction(new DCutAction_PIDDeltaT(locReaction, false, 1.0, PiPlus, SYS_BCAL)); //false: measured data
-	locReaction->Add_AnalysisAction(new DCutAction_PIDDeltaT(locReaction, false, 2.0, PiPlus, SYS_FCAL)); //false: measured data
-	locReaction->Add_AnalysisAction(new DCutAction_PIDDeltaT(locReaction, false, 1.5, Gamma, SYS_BCAL)); //false: measured data
-	locReaction->Add_AnalysisAction(new DCutAction_PIDDeltaT(locReaction, false, 2.0, Gamma, SYS_FCAL)); //false: measured data
+	locReaction->Add_AnalysisAction(new DCutAction_PIDDeltaT(locReaction, false, 2.0, Proton, SYS_TOF));
+	locReaction->Add_AnalysisAction(new DCutAction_PIDDeltaT(locReaction, false, 2.5, Proton, SYS_BCAL));
+	locReaction->Add_AnalysisAction(new DCutAction_PIDDeltaT(locReaction, false, 3.0, Proton, SYS_FCAL));
+	locReaction->Add_AnalysisAction(new DCutAction_PIDDeltaT(locReaction, false, 2.0, PiPlus, SYS_TOF));
+	locReaction->Add_AnalysisAction(new DCutAction_PIDDeltaT(locReaction, false, 1.5, PiPlus, SYS_BCAL));
+	locReaction->Add_AnalysisAction(new DCutAction_PIDDeltaT(locReaction, false, 3.0, PiPlus, SYS_FCAL));
+	locReaction->Add_AnalysisAction(new DCutAction_PIDDeltaT(locReaction, false, 2.0, PiMinus, SYS_TOF));
+	locReaction->Add_AnalysisAction(new DCutAction_PIDDeltaT(locReaction, false, 1.5, PiMinus, SYS_BCAL));
+	locReaction->Add_AnalysisAction(new DCutAction_PIDDeltaT(locReaction, false, 3.0, PiMinus, SYS_FCAL));
+	locReaction->Add_AnalysisAction(new DCutAction_PIDDeltaT(locReaction, false, 2.0, Gamma, SYS_BCAL)); //false: measured data
+	locReaction->Add_AnalysisAction(new DCutAction_PIDDeltaT(locReaction, false, 3.0, Gamma, SYS_FCAL)); //false: measured data
+	locReaction->Add_AnalysisAction(new DCustomAction_dEdxCut(locReaction, false)); //false: focus on keeping signal
+	locReaction->Add_AnalysisAction(new DHistogramAction_PID(locReaction, "PostPIDCuts"));
 
-	//Kinematics Pre-Pi0Cut
-	locReaction->Add_AnalysisAction(new DHistogramAction_TrackVertexComparison(locReaction, "Pre-Pi0Cut"));
-	locReaction->Add_AnalysisAction(new DHistogramAction_ParticleComboKinematics(locReaction, false, "Pre-Pi0Cut"));
-
-	// Custom histograms for p3pi (no KinFit cut)
-	locReaction->Add_AnalysisAction(new DHistogramAction_InvariantMass(locReaction, Pi0, false,500,0.,1., "NoKinFit_Measured"));
-	locReaction->Add_AnalysisAction(new DCustomAction_p3pi_hists(locReaction, false, "NoKinFit_Measured"));
-
-	// Pi0 mass cut
+	// Pi0
+	locReaction->Add_AnalysisAction(new DHistogramAction_InvariantMass(locReaction, Pi0, false, 850, 0.05, 0.22, "Pi0"));
 	locReaction->Add_AnalysisAction(new DCutAction_InvariantMass(locReaction, Pi0, false, minPi0BCAL, maxPi0BCAL));
 
-	//Kinematics Post-Pi0Cut
-	locReaction->Add_AnalysisAction(new DHistogramAction_TrackVertexComparison(locReaction, "Post-Pi0Cut"));
-	locReaction->Add_AnalysisAction(new DHistogramAction_ParticleComboKinematics(locReaction, false, "Post-Pi0Cut"));
+	// Custom histograms for p3pi
+	locReaction->Add_AnalysisAction(new DCustomAction_p3pi_hists(locReaction, false));
 
-	// Custom histograms for p3pi (after Pi0 mass cut)
-	locReaction->Add_AnalysisAction(new DCustomAction_p3pi_hists(locReaction, false, "CutPi0_Measured"));
-
-	// dE/dx Cut (after custom action since it does dE/dx studies)
-	locReaction->Add_AnalysisAction(new DCutAction_ProtonPiPlusdEdx(locReaction, 2.2, false)); //select p/pi+ above/below 2.2, //true/false: cut all/no proton candidates above p = 1 GeV/c
-
-	//	Missing Pt
-	locReaction->Add_AnalysisAction(new DHistogramAction_MissingTransverseMomentum(locReaction, false, 500, 0.0, 1.0));
-
-	//	Missing Mass Squared (Hist and Cut)
-	locReaction->Add_AnalysisAction(new DHistogramAction_MissingMassSquared(locReaction, false, 600, -0.06, 0.06));
+	// MISSING MASS
+	locReaction->Add_AnalysisAction(new DHistogramAction_MissingMassSquared(locReaction, false, 1000, -0.1, 0.1));
 	locReaction->Add_AnalysisAction(new DCutAction_MissingMassSquared(locReaction, false, -0.01, 0.005));
 
-	// Omega Mass (Hist and Cut)
-	//locReaction->Add_AnalysisAction(new DHistogramAction_InvariantMass(locReaction, omega, true, 500, 0.4, 1.4, "Omega_Kinfit"));
-	//locReaction->Add_AnalysisAction(new DCutAction_InvariantMass(locReaction, omega, true, 0.7, 0.9));
+	// OMEGA
+	locReaction->Add_AnalysisAction(new DHistogramAction_InvariantMass(locReaction, omega, false, 600, 0.5, 1.1, "Omega"));
 
 	// Kinematics of final selection
 	locReaction->Add_AnalysisAction(new DHistogramAction_ParticleComboKinematics(locReaction, false, "Final")); //false: fill histograms with measured particle data
 
 	_data.push_back(locReaction); //Register the DReaction with the factory
-
-
 
 	/**************************************************** p3pi_preco_any Reaction Steps ****************************************************/
 
@@ -266,138 +278,61 @@ jerror_t DReaction_factory_p3pi_hists::init(void)
 
 	/**************************************************** p3pi_preco_any Control Settings ****************************************************/
 
-	//locReaction->Set_KinFitType(d_P4Fit); //simultaneously constrain apply four-momentum conservation, invariant masses, and common-vertex constraints
-	locReaction->Set_MaxPhotonRFDeltaT(0.5*4.008); //beam bunches are every 4.008 ns, (2.004 should be minimum cut value)
+	// Event Store
+	locReaction->Set_EventStoreSkims("2q+,q-,pi0"); // boolean-AND of skims
 
-	// Highly Recommended: Enable ROOT TTree output for this DReaction
-	//locReaction->Enable_TTreeOutput("tree_p3pi.root"); //string is file name (must end in ".root"!!): doen't need to be unique, feel free to change
+	//locReaction->Set_KinFitType(d_P4Fit); //simultaneously constrain apply four-momentum conservation, invariant masses, and common-vertex constraints
+
+	// Highly Recommended: When generating particle combinations, reject all beam photons that match to a different RF bunch
+	locReaction->Set_MaxPhotonRFDeltaT(0.5*dBeamBunchPeriod);
 
 	/*********************************************** p3pi_preco_any Pre-Combo Custom Cuts ***********************************************/
 
 	// Loose Pi0 Cut, Applied during Blueprint Construction
-	locReaction->Set_InvariantMassCut(Pi0, 0.0, 0.3);
+	locReaction->Set_InvariantMassCut(Pi0, 0.05, 0.22);
 
 	// Loose omega Cut, Applied during Blueprint Construction
-	locReaction->Set_InvariantMassCut(omega, 0.5, 1.1);
+	locReaction->Set_InvariantMassCut(omega, 0.4, 1.2);
 
 	// Loose missing mass squared cut, applied just after creating the combination (before saving it)
-	locReaction->Add_ComboPreSelectionAction(new DCutAction_MissingMassSquared(locReaction, false, -0.06, 0.06));
+	locReaction->Add_ComboPreSelectionAction(new DCutAction_MissingMassSquared(locReaction, false, -0.1, 0.1));
 
 	/**************************************************** p3pi_preco_any Analysis Actions ****************************************************/
 
 	// PID
 	locReaction->Add_AnalysisAction(new DHistogramAction_PID(locReaction));
+	locReaction->Add_AnalysisAction(new DCutAction_PIDDeltaT(locReaction, false, 2.0, Proton, SYS_TOF));
+	locReaction->Add_AnalysisAction(new DCutAction_PIDDeltaT(locReaction, false, 2.5, Proton, SYS_BCAL));
+	locReaction->Add_AnalysisAction(new DCutAction_PIDDeltaT(locReaction, false, 3.0, Proton, SYS_FCAL));
+	locReaction->Add_AnalysisAction(new DCutAction_PIDDeltaT(locReaction, false, 0.5, PiPlus, SYS_TOF));
+	locReaction->Add_AnalysisAction(new DCutAction_PIDDeltaT(locReaction, false, 1.5, PiPlus, SYS_BCAL));
+	locReaction->Add_AnalysisAction(new DCutAction_PIDDeltaT(locReaction, false, 3.0, PiPlus, SYS_FCAL));
+	locReaction->Add_AnalysisAction(new DCutAction_PIDDeltaT(locReaction, false, 0.5, PiMinus, SYS_TOF));
+	locReaction->Add_AnalysisAction(new DCutAction_PIDDeltaT(locReaction, false, 1.5, PiMinus, SYS_BCAL));
+	locReaction->Add_AnalysisAction(new DCutAction_PIDDeltaT(locReaction, false, 3.0, PiMinus, SYS_FCAL));
+	locReaction->Add_AnalysisAction(new DCutAction_PIDDeltaT(locReaction, false, 2.0, Gamma, SYS_BCAL)); //false: measured data
+	locReaction->Add_AnalysisAction(new DCutAction_PIDDeltaT(locReaction, false, 3.0, Gamma, SYS_FCAL)); //false: measured data
 	locReaction->Add_AnalysisAction(new DCustomAction_dEdxCut(locReaction, false)); //false: focus on keeping signal
-	locReaction->Add_AnalysisAction(new DCutAction_PIDDeltaT(locReaction, false, 1.0, Proton, SYS_TOF)); //false: measured data
-	locReaction->Add_AnalysisAction(new DCutAction_PIDDeltaT(locReaction, false, 1.0, Proton, SYS_BCAL)); //false: measured data
-	locReaction->Add_AnalysisAction(new DCutAction_PIDDeltaT(locReaction, false, 2.0, Proton, SYS_FCAL)); //false: measured data
-	locReaction->Add_AnalysisAction(new DCutAction_PIDDeltaT(locReaction, false, 1.0, PiPlus, SYS_TOF)); //false: measured data
-	locReaction->Add_AnalysisAction(new DCutAction_PIDDeltaT(locReaction, false, 1.0, PiPlus, SYS_BCAL)); //false: measured data
-	locReaction->Add_AnalysisAction(new DCutAction_PIDDeltaT(locReaction, false, 2.0, PiPlus, SYS_FCAL)); //false: measured data
-	locReaction->Add_AnalysisAction(new DCutAction_PIDDeltaT(locReaction, false, 1.5, Gamma, SYS_BCAL)); //false: measured data
-	locReaction->Add_AnalysisAction(new DCutAction_PIDDeltaT(locReaction, false, 2.0, Gamma, SYS_FCAL)); //false: measured data
 	locReaction->Add_AnalysisAction(new DHistogramAction_PID(locReaction, "PostPIDCuts"));
 
-	// Kinematic Fit: Hist-P4, Cut Vertex-Only Fit
-	//locReaction->Add_AnalysisAction(new DHistogramAction_KinFitResults(locReaction, 0.05)); //5% confidence level cut on pull histograms only
-	//locReaction->Add_AnalysisAction(new DCutAction_OneVertexKinFit(locReaction, 5.73303E-7, 44.0, 85.0)); //cut +/- 5 sigma, vertex-z between 44 & 85
-	locReaction->Add_AnalysisAction(new DHistogramAction_TrackVertexComparison(locReaction));
-
 	// Pi0
-	locReaction->Add_AnalysisAction(new DHistogramAction_InvariantMass(locReaction, Pi0, false, 600, 0.0, 0.3, "Pi0")); //false: measured data
-	//locReaction->Add_AnalysisAction(new DHistogramAction_InvariantMass(locReaction, Pi0, true, 600, 0.0, 0.3, "Pi0_KinFit"));//true: kinfit
-//	locReaction->Add_AnalysisAction(new DCutAction_InvariantMass(locReaction, Pi0, false, 0.0775209, 0.188047)); //+/- 3sigma
+	locReaction->Add_AnalysisAction(new DHistogramAction_InvariantMass(locReaction, Pi0, false, 850, 0.05, 0.22, "Pi0"));
+	locReaction->Add_AnalysisAction(new DCutAction_InvariantMass(locReaction, Pi0, false, minPi0FCAL_BCAL, maxPi0FCAL_BCAL));
 
-	//	Missing Mass Squared (Hist and Cut)
-	locReaction->Add_AnalysisAction(new DHistogramAction_MissingMassSquared(locReaction, false, 600, -0.06, 0.06));
-//	locReaction->Add_AnalysisAction(new DCutAction_MissingMassSquared(locReaction, false, -0.01, 0.005));
+	// Custom histograms for p3pi
+	locReaction->Add_AnalysisAction(new DCustomAction_p3pi_hists(locReaction, false));
 
-	// Omega Mass (Hist and Cut)
-	locReaction->Add_AnalysisAction(new DHistogramAction_InvariantMass(locReaction, omega, false, 600, 0.5, 1.1, "Omega"));  //false: measured data
-	//locReaction->Add_AnalysisAction(new DHistogramAction_InvariantMass(locReaction, omega, true, 600, 0.5, 1.1, "Omega_Kinfit")); //true: kinfit
-//	locReaction->Add_AnalysisAction(new DCutAction_InvariantMass(locReaction, omega, true, 0.69, 0.88)); //~ +/- 3sigma-ish //true: kinfit
+	// MISSING MASS
+	locReaction->Add_AnalysisAction(new DHistogramAction_MissingMassSquared(locReaction, false, 1000, -0.1, 0.1));
+	locReaction->Add_AnalysisAction(new DCutAction_MissingMassSquared(locReaction, false, -0.01, 0.005));
+
+	// OMEGA
+	locReaction->Add_AnalysisAction(new DHistogramAction_InvariantMass(locReaction, omega, false, 600, 0.5, 1.1, "Omega"));
 
 	// Kinematics of final selection
 	locReaction->Add_AnalysisAction(new DHistogramAction_ParticleComboKinematics(locReaction, false, "Final")); //false: fill histograms with measured particle data
 
 	_data.push_back(locReaction); //Register the DReaction with the factory
-
-
-
-	/**************************************************** p3pi_pmiss_any Reaction Steps ****************************************************/
-
-	locReaction = new DReaction("p3pi_pmiss_any"); //needs to be a unique name for each DReaction object, CANNOT (!) be "Thrown"
-
-	// g, p -> omega, (p)
-	locReactionStep = new DReactionStep();
-	locReactionStep->Set_InitialParticleID(Gamma);
-	locReactionStep->Set_TargetParticleID(Proton);
-	locReactionStep->Add_FinalParticleID(omega);
-	locReactionStep->Add_FinalParticleID(Proton, true); //true: missing
-	locReaction->Add_ReactionStep(locReactionStep);
-	dReactionStepPool.push_back(locReactionStep); //register so will be deleted later: prevent memory leak
-
-	locReaction->Add_ReactionStep(dReactionStepPool[1]);
-	locReaction->Add_ReactionStep(dReactionStepPool[2]);
-
-	/**************************************************** p3pi_pmiss_any Control Settings ****************************************************/
-
-	//locReaction->Set_KinFitType(d_P4Fit); //simultaneously constrain apply four-momentum conservation, invariant masses, and common-vertex constraints
-	locReaction->Set_MaxPhotonRFDeltaT(0.5*4.008); //beam bunches are every 4.008 ns, (2.004 should be minimum cut value)
-
-	locReaction->Set_MaxExtraGoodTracks(1); //not ideal
-	locReaction->Set_MaxNumBeamPhotonsInBunch(1); //not ideal: throws away a lot of signal
-
-	/*********************************************** p3pi_pmiss_any Pre-Combo Custom Cuts ***********************************************/
-
-	// Loose Pi0 Cut, Applied during Blueprint Construction
-	locReaction->Set_InvariantMassCut(Pi0, 0.0, 0.3);
-
-	// Loose omega Cut, Applied during Blueprint Construction
-	locReaction->Set_InvariantMassCut(omega, 0.5, 1.1);
-
-	// Loose missing mass squared cut, applied just after creating the combination (before saving it)
-	locReaction->Add_ComboPreSelectionAction(new DCutAction_MissingMassSquared(locReaction, false, -0.1, 2.56));
-
-	/**************************************************** p3pi_pmiss_any Analysis Actions ****************************************************/
-
-	// PID
-	locReaction->Add_AnalysisAction(new DHistogramAction_PID(locReaction));
-	locReaction->Add_AnalysisAction(new DCustomAction_dEdxCut(locReaction, true)); //true: focus on rejecting background
-	locReaction->Add_AnalysisAction(new DCutAction_PIDDeltaT(locReaction, false, 1.0, PiPlus, SYS_TOF)); //false: measured data
-	locReaction->Add_AnalysisAction(new DCutAction_PIDDeltaT(locReaction, false, 1.0, PiPlus, SYS_BCAL)); //false: measured data
-	locReaction->Add_AnalysisAction(new DCutAction_PIDDeltaT(locReaction, false, 2.0, PiPlus, SYS_FCAL)); //false: measured data
-	locReaction->Add_AnalysisAction(new DCutAction_PIDDeltaT(locReaction, false, 1.5, Gamma, SYS_BCAL)); //false: measured data
-	locReaction->Add_AnalysisAction(new DCutAction_PIDDeltaT(locReaction, false, 2.0, Gamma, SYS_FCAL)); //false: measured data
-	locReaction->Add_AnalysisAction(new DHistogramAction_PID(locReaction, "PostPIDCuts"));
-
-	// Kinematic Fit: Vertex-Only Fit
-	//locReaction->Add_AnalysisAction(new DHistogramAction_KinFitResults(locReaction, 0.05)); //5% confidence level cut on pull histograms only
-//	locReaction->Add_AnalysisAction(new DCutAction_KinFitFOM(locReaction, 5.73303E-7)); //cut +/- 5 sigma
-	//locReaction->Add_AnalysisAction(new DCutAction_OneVertexKinFit(locReaction, 5.73303E-7, 44.0, 85.0)); //cut +/- 5 sigma, vertex-z between 44 & 85
-	locReaction->Add_AnalysisAction(new DHistogramAction_TrackVertexComparison(locReaction));
-
-	// Pi0
-	locReaction->Add_AnalysisAction(new DHistogramAction_InvariantMass(locReaction, Pi0, false, 600, 0.0, 0.3, "Pi0"));
-	locReaction->Add_AnalysisAction(new DCutAction_InvariantMass(locReaction, Pi0, false, 0.0775209, 0.188047)); //+/- 3sigma
-
-	// Extra pi0
-	locReaction->Add_AnalysisAction(new DCustomAction_CutExtraPi0(locReaction, 0.1, 0.16));
-
-	// Extra-track PID (if any)
-	locReaction->Add_AnalysisAction(new DCustomAction_CutExtraTrackPID(locReaction, Proton));
-
-	// Omega vs missing proton
-	locReaction->Add_AnalysisAction(new DCustomAction_HistOmegaVsMissProton(locReaction));
-
-	//	Missing Mass Squared (Hist)
-	locReaction->Add_AnalysisAction(new DHistogramAction_MissingMassSquared(locReaction, false, 1064, -0.1, 2.56));
-
-	// Omega Mass (Hist)
-	//locReaction->Add_AnalysisAction(new DHistogramAction_InvariantMass(locReaction, omega, true, 600, 0.5, 1.1, "Omega_Kinfit"));
-
-	_data.push_back(locReaction); //Register the DReaction with the factory
-
 
 	return NOERROR;
 }
@@ -411,4 +346,3 @@ jerror_t DReaction_factory_p3pi_hists::fini(void)
 		delete dReactionStepPool[loc_i]; //cleanup memory
 	return NOERROR;
 }
-
