@@ -197,8 +197,6 @@ jerror_t JEventProcessor_TS_scaler::evnt(JEventLoop *locEventLoop, uint64_t locE
 	if(!locL1Trigger)
 		return NOERROR;
 
-	dEventNumber = locEventNumber;
-
 	// get trigger masks and count triggers
 	uint32_t trig_mask = locL1Trigger->trig_mask;
 	for (int j=0; j<kScalers; j++) {
@@ -220,10 +218,13 @@ jerror_t JEventProcessor_TS_scaler::evnt(JEventLoop *locEventLoop, uint64_t locE
 	if(locL1Trigger->gtp_sc.size() <= 0)
 		return NOERROR;
 
-	const DTSscalers *locTSscaler = NULL;
-	locEventLoop->GetSingle(locTSscaler);
-	if(!locTSscaler)
+	vector<const DTSscalers*> locTSscalers;
+	locEventLoop->Get(locTSscalers);
+	if(locTSscalers.empty())
 		return NOERROR;
+	const DTSscalers *locTSscaler = locTSscalers[0];
+
+	dEventNumber = locEventNumber;
 
 	uint32_t nsync_event;  /* sync event number */
 	uint32_t livetime;    /* accumulated livetime */

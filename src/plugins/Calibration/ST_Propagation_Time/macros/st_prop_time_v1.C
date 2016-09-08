@@ -44,7 +44,10 @@ Double_t ss_max[NCHANNELS];
 Double_t low_cut = 0.25;
 // Declare canvas
 TCanvas *PT_can[30];
-
+TDirectory* TopDirectory;
+TH1I* h2_ss;
+TH1I* h2_bs;
+TH1I* h2_ns;
 void st_prop_time_v1(char*input_filename)
 //void st_tw_fits()
 {

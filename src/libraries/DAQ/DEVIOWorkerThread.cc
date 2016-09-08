@@ -815,6 +815,17 @@ void DEVIOWorkerThread::ParseDataBank(uint32_t* &iptr, uint32_t *iend)
 }
 
 //----------------
+// ParseTIBank
+//----------------
+void DEVIOWorkerThread::ParseTIBank(uint32_t rocid, uint32_t* &iptr, uint32_t* iend)
+{
+    while(iptr<iend && ((*iptr) & 0xF8000000) != 0x88000000) iptr++; // Skip to JLab block trailer
+    iptr++; // advance past JLab block trailer
+    while(iptr<iend && *iptr == 0xF8000000) iptr++; // skip filler words after block trailer
+    //iptr = iend;
+}
+
+//----------------
 // ParseCAEN1190
 //----------------
 void DEVIOWorkerThread::ParseCAEN1190(uint32_t rocid, uint32_t* &iptr, uint32_t *iend)
@@ -1097,12 +1108,14 @@ void DEVIOWorkerThread::ParseJLabModuleData(uint32_t rocid, uint32_t* &iptr, uin
                 break;
 
            case DModuleType::TID:
-               //ParseTIBank(rocid, iptr, iend);    
-
+               ParseTIBank(rocid, iptr, iend);    
+               /*
                // Ignore this data and skip over it
                while(iptr<iend && ((*iptr) & 0xF8000000) != 0x88000000) iptr++; // Skip to JLab block trailer
                iptr++; // advance past JLab block trailer
                while(iptr<iend && *iptr == 0xF8000000) iptr++; // skip filler words after block trailer
+               break;
+               */
                break;
 
             case DModuleType::UNKNOWN:

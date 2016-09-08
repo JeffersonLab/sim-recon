@@ -82,6 +82,9 @@ class DTrackCandidate_factory:public JFactory<DTrackCandidate>{
 				  DVector3 &mom);
   jerror_t GetPositionAndMomentum(double z,DHelicalFit &fit,
 				  double Bz,DVector3 &pos,DVector3 &mom);
+  jerror_t GetPositionAndMomentum(const DTrackCandidate *cand,double Bz,
+				  const DVector3 &origin,DVector3 &pos,
+				  DVector3 &mom);
 
   void UpdatePositionAndMomentum(DTrackCandidate *can,const DFDCPseudo *fdchit,
 				 DHelicalFit &fit,double Bz_avg,int axial_id);
@@ -124,6 +127,9 @@ class DTrackCandidate_factory:public JFactory<DTrackCandidate>{
   bool MatchMethod11(double q,DVector3 &mypos,DVector3 &mymom,
 		     DHelicalFit &fit2,const DFDCSegment *segment1,
 		     const DFDCSegment *segment2);
+  bool MatchMethod12(DTrackCandidate *srccan,vector<int> &forward_matches,
+		     int &num_fdc_cands_remaining);
+
  
  private:
   const DMagneticFieldMap *bfield;
