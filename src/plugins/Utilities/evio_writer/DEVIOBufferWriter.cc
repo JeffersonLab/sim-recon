@@ -1092,27 +1092,95 @@ void DEVIOBufferWriter::WriteEventTagData(vector<uint32_t> &buff,
 
 
 //------------------
+// WriteBORSingle
+//------------------
+template<typename T, typename M, typename F>
+void DEVIOBufferWriter::WriteBORSingle(vector<uint32_t> &buff, M m, F&& modFunc) const
+{
+    /// Write BOR config objects for all crates containing
+    /// a single module type. This is called from WriteBORData
+    /// below.
+    
+    // This templated function saves duplicating this code for all
+    // 4 BORconfig data types. It is complicated slightly by the
+    // fact that the F1TDC comes in 2 types and so the last argument
+    // must be a lambda function in order to set the module type
+    // based on a value in object "c" in the innermost loop.
+    // It is also a bit tricky since the DXXXBORConfig data types
+    // use multiple inheritance with one type being the actual
+    // data structure from bor_roc.h. This is really only needed 
+    // for the data structure length so we make it the first
+    // template parameter so that it can be specified using the 
+    // template syntax when calling this.
+
+    for(auto p : m){
+        uint32_t rocid = p.first;
+        uint32_t crate_idx = buff.size();
+        buff.push_back(0); // crate bank length (will be overwritten later)
+        buff.push_back( (0x71<<16) + (0x0C<<8) + (rocid<<0) ); // 0x71=crate config, 0x0c=tag segment, num=rocid
+        
+        for(auto c : p.second){
+            uint32_t slot = c->slot;
+            uint32_t modtype = modFunc(c);
+            uint32_t tag = (slot<<5) + (modtype); 
+            uint32_t Nwords = sizeof(T)/sizeof(uint32_t);
+            buff.push_back( (tag<<20) + (0x01<<16) + (Nwords)); // 0x1=uint32
+            uint32_t *d = (uint32_t*)&c->rocid;
+            for(uint32_t j=0; j<Nwords; j++) buff.push_back(*d++);
+        }
+        
+        buff[crate_idx] = buff.size() - crate_idx - 1;
+    }
+}
+
+
+//------------------
 // WriteBORData
 //------------------
 void DEVIOBufferWriter::WriteBORData(JEventLoop *loop, vector<uint32_t> &buff) const
 {
-    // The Begin-Of-Run (BOR) record is a special record that should show up
-    // at the beginning of each EVIO file and any time a new run starts during a file
-    // We want to preserve its format, so the easiest way to handle it is just to copy 
-    // it straight to the output.  It's always (so far) saved as a single event, 
-    // consisting of a bank of banks of config information
+    // Write the BOR data into EVIO format.
+    
+    vector<const Df250BORConfig*> vDf250BORConfig;
+    vector<const Df125BORConfig*> vDf125BORConfig;
+    vector<const DF1TDCBORConfig*> vDF1TDCBORConfig;
+    vector<const DCAEN1290TDCBORConfig*> vDCAEN1290TDCBORConfig;
 
-    // grab buffer corresponding to this event
-    // note that we get everything after the EVIO block header
-    void *ref = loop->GetJEvent().GetRef();
-    uint32_t *in_buff = JEventSource_EVIO::GetEVIOBufferFromRef(ref);
-    //uint32_t buff_size = JEventSource_EVIO::GetEVIOBufferSizeFromRef(ref);  // this is much larger than the bank size - not sure why
+    loop->Get(vDf250BORConfig);
+    loop->Get(vDf125BORConfig);
+    loop->Get(vDF1TDCBORConfig);
+    loop->Get(vDCAEN1290TDCBORConfig);
+    
+    uint32_t Nconfig_objs = vDf250BORConfig.size() + vDf125BORConfig.size() + vDF1TDCBORConfig.size() + vDCAEN1290TDCBORConfig.size();
+    if(Nconfig_objs == 0) return;
 
-    uint32_t Nwords = in_buff[0];   // number of words in BOR config bank
-    // copy entire bank
-    for(uint32_t i=0; i<Nwords+1; i++)  buff.push_back( in_buff[i] );
+    // Sort config. objects by rocid into containers
+    map<uint32_t, decltype(vDf250BORConfig)> mDf250BORConfig;
+    map<uint32_t, decltype(vDf125BORConfig)> mDf125BORConfig;
+    map<uint32_t, decltype(vDF1TDCBORConfig)> mDF1TDCBORConfig;
+    map<uint32_t, decltype(vDCAEN1290TDCBORConfig)> mDCAEN1290TDCBORConfig;
+    for(auto c : vDf250BORConfig) mDf250BORConfig[c->rocid].push_back(c);
+    for(auto c : vDf125BORConfig) mDf125BORConfig[c->rocid].push_back(c);
+    for(auto c : vDF1TDCBORConfig) mDF1TDCBORConfig[c->rocid].push_back(c);
+    for(auto c : vDCAEN1290TDCBORConfig) mDCAEN1290TDCBORConfig[c->rocid].push_back(c);
 
+    // Outermost EVIO header for BOR event
+    uint32_t bor_bank_idx = buff.size();
+    buff.push_back(0); // Total bank length (will be overwritten later)
+    buff.push_back( (0x70<<16) + (0x0E<<8) + (0x1<<0) ); // 0x70=BOR event  0x0E=bank of banks 0x1=num
+
+    // Write all config objects for each BOR data type
+    // using the templated function above.
+    WriteBORSingle<f250config>(buff, mDf250BORConfig, [](const Df250BORConfig *c){return DModuleType::FADC250;});
+    WriteBORSingle<f125config>(buff, mDf125BORConfig, [](const Df125BORConfig *c){return DModuleType::FADC125;});
+    WriteBORSingle<F1TDCconfig>(buff, mDF1TDCBORConfig, [](const DF1TDCBORConfig *c){return c->nchips==8 ? 0x3:0x4;});
+    WriteBORSingle<caen1190config>(buff, mDCAEN1290TDCBORConfig, [](const DCAEN1290TDCBORConfig *c){return DModuleType::CAEN1290;});
+
+    // Update BOR Bank length
+    buff[bor_bank_idx] = buff.size() - bor_bank_idx - 1;
 }
+
+
 
 //------------------
 // WriteTSSyncData

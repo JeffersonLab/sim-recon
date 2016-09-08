@@ -102,8 +102,9 @@ class DEVIOBufferWriter
                                uint64_t event_status,
                                const DL3Trigger* l3trigger) const;
 
-        void WriteBORData(JEventLoop *loop,
-                          vector<uint32_t> &buff) const;
+        template<typename T, typename M, typename F>
+            void WriteBORSingle(vector<uint32_t> &buff, M m, F&& modFunc) const;
+        void WriteBORData(JEventLoop *loop, vector<uint32_t> &buff) const;
 
         void WriteTSSyncData(JEventLoop *loop,
                              vector<uint32_t> &buff,
