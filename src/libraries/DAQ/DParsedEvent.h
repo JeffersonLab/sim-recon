@@ -56,6 +56,7 @@ using namespace jana;
 #include <DAQ/DF1TDCBORConfig.h>
 #include <DAQ/DCAEN1290TDCBORConfig.h>
 #include <DAQ/DBORptrs.h>
+#include <PID/DVertex.h>
 
 // Here is some C++ macro script-fu. For each type of class the DParsedEvent
 // can hold, we want to have a vector of pointers to that type of object. 
@@ -93,7 +94,13 @@ using namespace jana;
 		X(DCODAROCInfo) \
 		X(DL1Info) \
 		X(DEPICSvalue) \
-		X(DEventTag)
+		X(DEventTag) 
+
+// These data types are optionally stored in EVIO files from specialized process
+// (e.g. calibration skims) and could be provided by standard analysis factories
+// Therefore, we deliver these data types ONLY IF they exist in the file
+#define MyDerivedTypes(X) \
+        X(DVertex)
 
 
 class DParsedEvent{
@@ -121,6 +128,7 @@ class DParsedEvent{
 		#define makevector(A) vector<A*>  v##A;
 		MyTypes(makevector)
 		MyBORTypes(makevector)
+        MyDerivedTypes(makevector)
 		
 		// DParsedEvent objects are recycled to save malloc/delete cycles. Do the
 		// same for the objects they provide by creating a pool vector for each
@@ -128,6 +136,7 @@ class DParsedEvent{
 		// by the same worker thread.
 		#define makepoolvector(A) vector<A*>  v##A##_pool;
 		MyTypes(makepoolvector)
+        MyDerivedTypes(makepoolvector)
 
 		// Method to return all objects in vectors to their respective pools and 
 		// clear the vectors to set up for processing the next event. Vectors
@@ -139,6 +148,7 @@ class DParsedEvent{
 			MyTypes(returntopool)
 			MyTypes(clearvectors)
 			MyBORTypes(clearvectors)
+            MyDerivedTypes(clearvectors)
 		}
 
 		// Method to delete all objects in all vectors and all pools. This should
@@ -151,6 +161,10 @@ class DParsedEvent{
 			MyTypes(deletepool)
 			MyTypes(clearvectors)
 			MyTypes(clearpoolvectors)
+			MyDerivedTypes(deletevector)
+			MyDerivedTypes(deletepool)
+			MyDerivedTypes(clearvectors)
+			MyDerivedTypes(clearpoolvectors)
 			MyBORTypes(clearvectors)
 		}
 		
@@ -160,6 +174,8 @@ class DParsedEvent{
 		void Prune(void){
 			MyTypes(deletepool)
 			MyTypes(clearpoolvectors)
+			MyDerivedTypes(deletepool)
+			MyDerivedTypes(clearpoolvectors)
 		}
 		
 		// Define a class that has pointers to factories for each data type.
@@ -171,6 +187,7 @@ class DParsedEvent{
 			public:
 				JEventLoop *loop;
 				MyTypes(makefactoryptr)
+				MyDerivedTypes(makefactoryptr)
 				MyBORTypes(makefactoryptr)
 
 				DFactoryPointers():loop(NULL){}
@@ -179,6 +196,7 @@ class DParsedEvent{
 				void Init(JEventLoop *loop){
 					this->loop = loop;
 					MyTypes(copyfactoryptr)
+					MyDerivedTypes(copyfactoryptr)
 					MyBORTypes(copyfactoryptr)
 				}
 		};
@@ -193,15 +211,21 @@ class DParsedEvent{
 		#define copybortofactory(A) facptrs.fac_##A->CopyTo(borptrs->v##A);
 		#define setevntcalled(A)    facptrs.fac_##A->Set_evnt_called();
 		#define keepownership(A)    facptrs.fac_##A->SetFactoryFlag(JFactory_base::NOT_OBJECT_OWNER);
+        #define copytofactorynonempty(A)    if(!v##A.empty()) facptrs.fac_##A->CopyTo(v##A);
+        #define setevntcallednonempty(A)    if(!v##A.empty()) facptrs.fac_##A->Set_evnt_called();
+        #define keepownershipnonempty(A)    if(!v##A.empty()) facptrs.fac_##A->SetFactoryFlag(JFactory_base::NOT_OBJECT_OWNER);
 		void CopyToFactories(JEventLoop *loop){
 			// Get DFactoryPointers for this JEventLoop, creating new one if necessary
 			DFactoryPointers &facptrs = factory_pointers[loop];
 			if(facptrs.loop == NULL) facptrs.Init(loop);
-
+            
 			// Copy all data vectors to appropriate factories
 			MyTypes(copytofactory)
 			MyTypes(setevntcalled)
 			MyTypes(keepownership)
+			MyDerivedTypes(copytofactorynonempty)
+			MyDerivedTypes(setevntcallednonempty)
+			MyDerivedTypes(keepownershipnonempty)
 			if(borptrs){
 				MyBORTypes(copybortofactory)
 				MyBORTypes(setevntcalled)
@@ -215,15 +239,26 @@ class DParsedEvent{
 		#define checkclassname(A) if(classname==#A) return true;
 		bool IsParsedDataType(string &classname)const {
 			MyTypes(checkclassname)
+			MyDerivedTypes(checkclassname)
 			MyBORTypes(checkclassname)
 			return false;
-		}
-		
+        }
+
+        // Method to check class name against each classname in MyTypes returning
+        // true only if this is a class that is usually produced by some
+        // ther factor, but we have some data of this type.  Otherwise returns false
+        #define checknonemptyderivedclassname(A) if((classname==#A)&&(!v##A.empty())) return true;
+        bool IsNonEmptyDerivedDataType(string &classname)const {
+            MyDerivedTypes(checknonemptyderivedclassname)
+            return false;
+        }
+
 		// Get name of all classes we provide. Default is to provide only
 		// those with non-empty vector unless "include_all" is set true
 		#define addclassname(A) if(include_all || !v##A.empty())classnames.push_back(#A);
 		void GetParsedDataTypes(vector<string> &classnames, bool include_all=false) const {
 			MyTypes(addclassname)
+			MyDerivedTypes(addclassname)
 			MyBORTypes(addclassname)
 		}
 		
@@ -270,6 +305,7 @@ class DParsedEvent{
 			return t; \
 		}
 		MyTypes(makeallocator);
+        MyDerivedTypes(makeallocator);
 
 		// Constructor and destructor
 		DParsedEvent(uint64_t MAX_OBJECT_RECYCLES=1000):in_use(false),Nrecycled(0),MAX_RECYCLES(MAX_OBJECT_RECYCLES),borptrs(NULL){}
@@ -289,7 +325,32 @@ class DParsedEvent{
 
 };
 
+// clean out #defines to avoid compilation warnings with other classes (e.g. DTranslationTable)
 #undef MyTypes
+#undef MyDerivedTypes
+#undef makevector
+#undef makepoolvector
+#undef returntopool
+#undef clearvectors
+#undef deletevector
+#undef deletepool
+#undef clearpoolvectors
+#undef makefactoryptr
+#undef copyfactoryptr
+#undef copytofactory
+#undef copybortofactory
+#undef setevntcalled
+#undef keepownership
+#undef copytofactorynonempty
+#undef setevntcallednonempty
+#undef keepownershipnonempty
+#undef checkclassname
+#undef checknonemptyderivedclassname
+#undef addclassname
+#undef makeallocator
+#undef printcounts
+#undef printpoolcounts
+
 
 #endif // _DParsedEvent_
 

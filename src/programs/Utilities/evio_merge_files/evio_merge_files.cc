@@ -12,9 +12,6 @@ using namespace std;
 #include <time.h>
 #include <stdlib.h>
 
-#include <evioFileChannel.hxx>
-#include <evioUtil.hxx>
-using namespace evio;
 
 
 #ifndef _DBG_
@@ -27,11 +24,20 @@ void Usage(void);
 void ctrlCHandle(int x);
 void Process(unsigned int &NEvents, unsigned int &NEvents_read);
 
-vector<char*> INFILENAMES;
-char *OUTFILENAME = NULL;
-int QUIT = 0;
+static vector<char*> INFILENAMES;
+static char *OUTFILENAME = NULL;
+static int QUIT = 0;
+static int BLOCKSIZE = 10485760;   // 10 M
+static bool VERBOSE = false;
 
-
+//-----------
+// GetFilesize
+//-----------
+ifstream::pos_type GetFilesize(const char* filename)
+{
+    std::ifstream in(filename, ifstream::ate | ifstream::binary);
+    return in.tellg(); 
+}
 
 //-----------
 // main
@@ -49,8 +55,8 @@ int main(int narg,char* argv[])
 	// Process all events
 	Process(NEvents, NEvents_read);
 	
-	cout<<endl;
-	cout<<" "<<NEvents_read<<" events read, "<<NEvents<<" events written"<<endl;
+	//cout<<endl;
+	//cout<<" "<<NEvents_read<<" events read, "<<NEvents<<" events written"<<endl;
 
 	return 0;
 }
@@ -114,6 +120,88 @@ void ctrlCHandle(int x)
 	QUIT++;
 	cerr<<endl<<"SIGINT received ("<<QUIT<<")....."<<endl;
 }
+
+
+
+//-----------
+// Process
+//-----------
+void Process(unsigned int &NEvents, unsigned int &NEvents_read)
+{
+    // An EVIO file is made of a series of independent blocks, so one should be
+    // able to concatenate EVIO files together, except that the end-of-file
+    // is indicated by an empty EVIO block, i.e., an 8-word EVIO header 
+    // with no data payload.  Therefore, we concatenate the files leaving 
+    // out the end-of-file headers, except for the final files.
+    // This is different than the previous algorithm, which used the standard
+    // EVIO library and required parsing each EVIO event.  This new algorithm
+    // should be faster and reduce our dependency on the EVIO library.
+    // Note that the merged files are currently unreliable.  We leave this
+    // code in for future development, since the old code currently crashes.
+    // sdobbs, 6/15/2016
+
+    // Set up a buffer
+    char *buffer = new char[BLOCKSIZE];
+
+	// Output file
+	cout<<" output file: "<<OUTFILENAME<<endl;
+    ofstream outfile (OUTFILENAME, ios::out|ios::binary);
+    if(!outfile.is_open()) {
+        cerr<<"Could not open output file " << OUTFILENAME << endl;
+        return;
+    }
+	
+	// Open all input files
+	for(unsigned int i=0; i<INFILENAMES.size(); i++){
+		cout << "Opening input file : \"" << INFILENAMES[i] << "\"" << endl;
+        ifstream infile (INFILENAMES[i] , ios::in|ios::binary);
+        if(!infile.is_open()) {
+            cerr<<"Could not open input file " << INFILENAMES[i] << endl;
+            continue;
+        }
+
+        // figure out the size of the file
+        ifstream::pos_type length_to_read = GetFilesize(INFILENAMES[i]);
+
+        if(VERBOSE) {
+            cout << "first block" << endl;
+            infile.read(buffer, 32);
+            unsigned int *int_buffer = (unsigned int*)buffer;
+            for(int i=0; i<8; i++)
+                cout << "0x" << hex << int_buffer[i] << endl;
+            infile.seekg(-32, ios_base::cur);
+        }
+        // copy files in blocks to avoid reading in gigs of memory at once
+        while(length_to_read > BLOCKSIZE) {
+            infile.read(buffer, BLOCKSIZE);
+            outfile.write(buffer, BLOCKSIZE);
+            length_to_read -= BLOCKSIZE;
+        }
+        //strip out EOF blocks for all files but the last one
+        if(i+1 != INFILENAMES.size())
+            length_to_read -= 8*4L;
+        infile.read(buffer, length_to_read);
+        outfile.write(buffer, length_to_read);
+
+        if(VERBOSE) {
+            // dump end
+            cout << "last block" << endl;
+            infile.read(buffer, 32);
+            //unsigned int *int_buffer = (unsigned int*)buffer;
+            unsigned int *int_buffer = (unsigned int*)buffer;
+            for(int i=0; i<8; i++)
+                cout << "0x" << hex << int_buffer[i] << endl;
+        }
+
+        infile.close();
+    }
+
+    outfile.close();
+}
+
+#if 0
+
+// old code disabled, see description above (sdobbs, 6/15/2016)
 
 //-----------
 // Process
@@ -212,3 +300,4 @@ void Process(unsigned int &NEvents, unsigned int &NEvents_read)
 
 }
 
+#endif

@@ -39,12 +39,12 @@ class HDEVIOWriter{
 		HDEVIOWriter(string sink_name);
 		virtual ~HDEVIOWriter();
 
-		            void* HDEVIOOutputThread(void);
+        void* HDEVIOOutputThread(void);
 		vector<uint32_t>* GetBufferFromPool(void);
-		             void ReturnBufferToPool(vector<uint32_t> *buff);
-		             void AddBufferToOutput(vector<uint32_t> *buff);
-		             void FlushOutput(uint32_t Nwords, deque< vector<uint32_t>* > &my_output_deque);
-		             void Quit(void);
+        void ReturnBufferToPool(vector<uint32_t> *buff);
+        void AddBufferToOutput(vector<uint32_t> *buff);
+        void FlushOutput(uint32_t Nwords, deque< vector<uint32_t>* > &my_output_deque);
+        void Quit(void);
 		
 	protected:
 
