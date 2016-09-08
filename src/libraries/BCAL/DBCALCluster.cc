@@ -15,7 +15,6 @@ DBCALCluster::DBCALCluster( const DBCALPoint* point, double z_target_center )
   : m_points ( 0 ),  m_hit_E_unattenuated_sum(0.0),  m_z_target_center(z_target_center) {
 
   m_points.push_back( point );
-  AddAssociatedObject( point );
   makeFromPoints();
 }
 
@@ -45,7 +44,6 @@ DBCALCluster::addPoint( const DBCALPoint* point ){
   }
   
   m_points.push_back( point );
-  AddAssociatedObject( point );
   
   makeFromPoints();
 }
@@ -63,8 +61,7 @@ if( phi() > point->phi() ){
   }
 
   if(find(m_points.begin(),m_points.end(),point) != m_points.end()) m_points.erase( find(m_points.begin(),m_points.end(),point ));
-  RemoveAssociatedObject( point );
-
+ 
   // We should only be removing points from clusters during the recycle_points routine, where they are also added to a different cluster.
 
   makeFromPoints();
@@ -101,7 +98,6 @@ DBCALCluster::mergeClust( const DBCALCluster& clust ){
     }
     
     m_points.push_back( *pt );
-    AddAssociatedObject( *pt );
   }
 
   vector<pair<const DBCALUnifiedHit*,double> > otherHits = clust.hits();
