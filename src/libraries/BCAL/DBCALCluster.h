@@ -66,6 +66,8 @@ public:
   void addHit ( const DBCALUnifiedHit* hit, double hit_E_unattenuated );
   void mergeClust( const DBCALCluster& clust );
   void removePoint( const DBCALPoint* point ); 
+
+  vector<const DBCALPoint*>getPoints(void) const {return m_points;};
  
   // this prints out info
   void toStrings( vector< pair < string, string > > &items ) const;
