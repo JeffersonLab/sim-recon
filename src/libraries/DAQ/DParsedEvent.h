@@ -305,6 +305,7 @@ class DParsedEvent{
 			return t; \
 		}
 		MyTypes(makeallocator);
+        MyDerivedTypes(makeallocator);
 
 		// Constructor and destructor
 		DParsedEvent(uint64_t MAX_OBJECT_RECYCLES=1000):in_use(false),Nrecycled(0),MAX_RECYCLES(MAX_OBJECT_RECYCLES),borptrs(NULL){}
@@ -324,8 +325,32 @@ class DParsedEvent{
 
 };
 
+// clean out #defines to avoid compilation warnings with other classes (e.g. DTranslationTable)
 #undef MyTypes
 #undef MyDerivedTypes
+#undef makevector
+#undef makepoolvector
+#undef returntopool
+#undef clearvectors
+#undef deletevector
+#undef deletepool
+#undef clearpoolvectors
+#undef makefactoryptr
+#undef copyfactoryptr
+#undef copytofactory
+#undef copybortofactory
+#undef setevntcalled
+#undef keepownership
+#undef copytofactorynonempty
+#undef setevntcallednonempty
+#undef keepownershipnonempty
+#undef checkclassname
+#undef checknonemptyderivedclassname
+#undef addclassname
+#undef makeallocator
+#undef printcounts
+#undef printpoolcounts
+
 
 #endif // _DParsedEvent_
 
