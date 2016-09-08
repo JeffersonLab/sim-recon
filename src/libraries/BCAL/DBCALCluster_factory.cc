@@ -33,11 +33,13 @@ DBCALCluster_factory::DBCALCluster_factory() :
 	m_moliereRadius( 3.7*k_cm ),
 	m_clust_hit_timecut ( 20.0*k_nsec ),
 	m_timeCut( 8.0*k_nsec ){
+  /*
 	sep_inclusion_curve = new TF1("sep_inclusion_curve","exp(-x/30.)-.1",0.,7.*m_moliereRadius); 
         dtheta_inclusion_curve = new TF1("dtheta_inclusion_curve","exp(-(x-0.1)/[0])-[1]+.15",m_moliereRadius,7.*m_moliereRadius);
         dphi_inclusion_curve = new TF1("dphi_inclusion_curve","exp(-(x-2.)/2.5)-x*0.002+.07",m_moliereRadius,6.*m_moliereRadius);
 	C1_parm = new TF1("C1_parm","23.389+19.093*tanh(-0.0104*(x-201.722))",-50.,450.);
 	C2_parm = new TF1("C2_parm","0.151+0.149*tanh(-0.016*(x-275.194))",-50.,450.);
+  */
 	// The phi and theta direction inclusion curves are described in: 
 	// http://argus.phys.uregina.ca/gluex/DocDB/0029/002998/003/CAL_meeting_may5.pdf.
 	// The theta direction inclusion curve needs to be a function of theta. C1_parm and
@@ -503,19 +505,27 @@ DBCALCluster_factory::overlap( const DBCALCluster& clust,
 
 	double clust_z = clust.rho()*cos(clust.theta());
 
-	double c1 = C1_parm->Eval(clust_z);
-	double c2 = C2_parm->Eval(clust_z);
+	//double c1 = C1_parm->Eval(clust_z);
+	double c1=23.389+19.093*tanh(-0.0104*(clust_z-201.722));
 
-	dtheta_inclusion_curve->SetParameter(0,c1);
-	dtheta_inclusion_curve->SetParameter(1,c2); 
+	//double c2 = C2_parm->Eval(clust_z);
+	double c2=0.151+0.149*tanh(-0.016*(clust_z-275.194));
+
+	//dtheta_inclusion_curve->SetParameter(0,c1);
+	//dtheta_inclusion_curve->SetParameter(1,c2); 
 	
-	double inclusion_val = sep_inclusion_curve->Eval(sep);
-        double inclusion_val1 = dtheta_inclusion_curve->Eval(sep_term1);
-        double inclusion_val2 = dphi_inclusion_curve->Eval(sep_term2);
+	//double inclusion_val = sep_inclusion_curve->Eval(sep);
+	double inclusion_val=exp(-sep/30.)-0.1;
 
+        //double inclusion_val1 = dtheta_inclusion_curve->Eval(sep_term1);
+	double inclusion_val1=exp(-(sep_term1-0.1)/c1)-c2+.15;
+	
+        //double inclusion_val2 = dphi_inclusion_curve->Eval(sep_term2);	
+	double inclusion_val2=exp(-(sep_term2-2.)/2.5)-sep_term2*0.002+0.07;
+	
 	// We consider fractional energy (point.E/Clust.E) as a function of spatial separation between
 	// a point and cluster to determine if the point should be included in the cluster.
-	// These distrbutions are tigher in the phihat direction than along thetahat. For more details
+	// These distributions are tighter in the phihat direction than along thetahat. For more details
 	// on how the selection criteria for cluster,point overlap function go to logbook entry 3396018.	
 
 	if(BCALCLUSTERVERBOSE>0) cout << "(m,l,s) = (" <<point->module()<<","<<point->layer()<<","<<point->sector()<<")" <<  " sep = " << sep << "sep1 = " << sep_term1 << " sep2 = " << sep_term2 << " inclusion value = " << inclusion_val << " inclusion val1= " << inclusion_val1 << " inclusion val2= " << inclusion_val2<< " time match = " << time_match << " clust E = " << clust.E() << " point E = " << point->E() << " energy ratio = " << point->E()/(point->E()+clust.E()) <<  " clust theta = " << clust.theta()*180./3.14159 << " point theta = " << point->theta()*180./3.14159 << " sep rho*deltaTheta = " << ( rho * deltaTheta ) << endl;

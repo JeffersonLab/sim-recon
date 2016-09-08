@@ -34,6 +34,8 @@ DEventWriterEVIO::DEventWriterEVIO(JEventLoop* locEventLoop)
 	COMPACT = true;
 	PREFER_EMULATED = false;
 	DEBUG_FILES = false; // n.b. also defined in HDEVIOWriter
+    dMergeFiles = false;
+    dMergedFilename = "merged.evio";  
 
 	ofs_debug_input = NULL;
 	ofs_debug_output = NULL;
@@ -156,7 +158,7 @@ bool DEventWriterEVIO::Write_EVIOEvent(JEventLoop* locEventLoop, string locOutpu
 
 
 bool DEventWriterEVIO::Write_EVIOEvent(JEventLoop* locEventLoop, string locOutputFileNameSubString,
-                                       vector<const JObject *> locObjectsToSave) const
+                                       vector<const JObject *> &locObjectsToSave) const
 {
 	JEvent& locEvent = locEventLoop->GetJEvent();
 
@@ -171,13 +173,16 @@ bool DEventWriterEVIO::Write_EVIOEvent(JEventLoop* locEventLoop, string locOutpu
 #endif // HAVE_EVIO
 
 	JEventSource_EVIO* locEvioSource = dynamic_cast<JEventSource_EVIO*>(locEventSource);
-	if(locEvioSource == NULL)
-	{
+	JEventSource_EVIOpp* locEvioSourcepp = dynamic_cast<JEventSource_EVIOpp*>(locEventSource);
+	if( (locEvioSource == NULL) && (locEvioSourcepp == NULL) ) {
 		jerr << "WARNING!!! You MUST use this only with EVIO formatted data!!!" << endl;
 		return false;
 	}
 	
 	// Optionally write input buffer to a debug file
+    // Note that this only works with JEventSource_EVIO (old-style parser)
+    // since JEventSource_EVIOpp (new parser) doesn't have access to the 
+    // raw EVIO buffer
 	if(DEBUG_FILES){
 		JEvent &jevent = locEventLoop->GetJEvent();
 		JEventSource *jes = jevent.GetJEventSource();
@@ -198,8 +203,7 @@ bool DEventWriterEVIO::Write_EVIOEvent(JEventLoop* locEventLoop, string locOutpu
 	japp->WriteLock("EVIOWriter");
 	{
 		//check to see if the EVIO file is open
-		if(Get_EVIOOutputters().find(locOutputFileName) == Get_EVIOOutputters().end())
-		{
+		if(Get_EVIOOutputters().find(locOutputFileName) == Get_EVIOOutputters().end()) {
 			//not open, open it
 			if(!Open_OutputFile(locEventLoop, locOutputFileName))
 				return false; //failed to open
@@ -226,8 +230,77 @@ bool DEventWriterEVIO::Write_EVIOEvent(JEventLoop* locEventLoop, string locOutpu
     return true;
 }
 
+bool DEventWriterEVIO::Write_EVIOBuffer(JEventLoop* locEventLoop, uint32_t *locOutputBuffer, uint32_t locOutputBufferSize, string locOutputFileNameSubString) const
+{
+    vector<uint32_t> *locOutputBufferVec = new vector<uint32_t>();
+    locOutputBufferVec->reserve(locOutputBufferSize);
+    // buffer size is passed to us as number of bytes, but we are copying words, so do the unit conversion
+    double locOutputBufferWords = locOutputBufferSize/4;
+    
+    //cout << "event" << endl;
+
+    // build ouptut buffer from C-style array
+    for(uint32_t i=0; i<locOutputBufferWords; i++) {
+        //if(i<8)
+        //  cout << "0x" << hex << locOutputBuffer[i] << endl;
+        locOutputBufferVec->push_back(locOutputBuffer[i]);
+    }
+
+    //cout << "Write_EVIOBuffer() locOutputBufferSize = " << locOutputBufferSize << "  vector size = " << locOutputBufferVec->size() << endl;
+
+    return Write_EVIOBuffer(locEventLoop, locOutputBufferVec, locOutputFileNameSubString);
+}
+
+
+bool DEventWriterEVIO::Write_EVIOBuffer(JEventLoop* locEventLoop, vector<uint32_t> *locOutputBuffer, string locOutputFileNameSubString) const
+{
+    // write out raw EVIO buffer
+
+	JEvent& locEvent = locEventLoop->GetJEvent();
+
+	// Get pointer to JEventSource and make sure it is the right type
+	JEventSource* locEventSource = locEvent.GetJEventSource();
+	if(locEventSource == NULL)
+		return false;
+
+#if !HAVE_EVIO
+	jerr << "Compiled without EVIO! Cannot write event." <<  << endl;
+	return false;
+#endif // HAVE_EVIO
+
+	JEventSource_EVIO* locEvioSource = dynamic_cast<JEventSource_EVIO*>(locEventSource);
+	if(locEvioSource == NULL) {
+		jerr << "WARNING!!! You MUST use this only with EVIO formatted data!!!" << endl;
+		return false;
+	}
+
+	string locOutputFileName = Get_OutputFileName(locEventLoop, locOutputFileNameSubString);
+	japp->WriteLock("EVIOWriter");
+	{
+		//check to see if the EVIO file is open
+		if(Get_EVIOOutputters().find(locOutputFileName) == Get_EVIOOutputters().end())  {
+			//not open, open it
+			if(!Open_OutputFile(locEventLoop, locOutputFileName))
+				return false; //failed to open
+		}
+
+		//open: get handle, write event
+		HDEVIOWriter *locEVIOWriter = Get_EVIOOutputters()[locOutputFileName];
+		// Add event to output queue
+		locEVIOWriter->AddBufferToOutput(locOutputBuffer);
+	}
+	japp->Unlock("EVIOWriter");
+
+    return true;
+}
+
 string DEventWriterEVIO::Get_OutputFileName(JEventLoop* locEventLoop, string locOutputFileNameSubString) const
 {
+    // if we're merging input files, write everything to the specified file
+    if(dMergeFiles) {
+        return dMergedFilename;
+    }
+
 	//get the event source
 	JEvent& locEvent = locEventLoop->GetJEvent();
 	JEventSource* locEventSource = locEvent.GetJEventSource();
