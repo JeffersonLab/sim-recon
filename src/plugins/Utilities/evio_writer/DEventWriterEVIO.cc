@@ -173,7 +173,8 @@ bool DEventWriterEVIO::Write_EVIOEvent(JEventLoop* locEventLoop, string locOutpu
 #endif // HAVE_EVIO
 
 	JEventSource_EVIO* locEvioSource = dynamic_cast<JEventSource_EVIO*>(locEventSource);
-	if(locEvioSource == NULL) {
+	JEventSource_EVIOpp* locEvioSourcepp = dynamic_cast<JEventSource_EVIOpp*>(locEventSource);
+	if( (locEvioSource == NULL) && (locEvioSourcepp == NULL) ) {
 		jerr << "WARNING!!! You MUST use this only with EVIO formatted data!!!" << endl;
 		return false;
 	}

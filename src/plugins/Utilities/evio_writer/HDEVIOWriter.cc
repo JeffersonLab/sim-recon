@@ -296,8 +296,6 @@ void* HDEVIOWriter::HDEVIOOutputThread(void)
 		// Lock output_deque_mutex
 		pthread_mutex_lock(&output_deque_mutex);
 		
-        //cout << "output time " << endl;
-
 		// Count how many events will bring us up to
 		// MAX_OUTPUT_BUFFER_SIZE without going over. We'll
 		// need this to help decide if we're going to write
@@ -439,6 +437,8 @@ void HDEVIOWriter::FlushOutput(uint32_t Nwords, deque< vector<uint32_t>* > &my_o
 		output_block.resize(istart + len);
 		uint32_t *inbuff  = &(*buff)[0];
 		uint32_t *outbuff = &output_block[istart];
+
+        //cout << " block = " << len << endl;
 
 		// copy and swap at same time
 		swap_bank_out(outbuff, inbuff, len); 
