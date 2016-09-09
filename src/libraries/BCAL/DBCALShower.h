@@ -5,6 +5,7 @@
 #include <JANA/JFactory.h>
 #include <math.h>
 #include <DMatrix.h>
+#include <DMatrixDSym.h>
 using namespace jana;
 
 class DBCALShower:public JObject{
@@ -26,7 +27,7 @@ class DBCALShower:public JObject{
 
     //for now errors are stored both in xErr,yErr,zErr and in xyzCovariance.
     //This is redundant and should be fixed.
-    DMatrix xyzCovariance;
+    DMatrixDSym ExyztCovariance;
   
 	void toStrings(vector<pair<string,string> > &items)const{
 	                /*Old, easier to compare r-phi rather than x-y, for Truth Hits

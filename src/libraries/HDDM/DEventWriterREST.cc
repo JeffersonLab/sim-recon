@@ -211,12 +211,21 @@ bool DEventWriterREST::Write_RESTEvent(JEventLoop* locEventLoop, string locOutpu
 		bcal().setYerr(bcalshowers[i]->yErr);
 		bcal().setZerr(bcalshowers[i]->zErr);
 		bcal().setTerr(bcalshowers[i]->tErr);
-		bcal().setEerr(0);
-		bcal().setXycorr(0);
-		bcal().setXzcorr(0);
-		bcal().setYzcorr(0);
-		bcal().setEzcorr(0);
-		bcal().setTzcorr(0);
+		float EErr = sqrt(bcalshowers[i]->ExyztCovariance(0,0));
+		bcal().setEerr(EErr);
+		if (bcalshowers[i]->xErr>0 && bcalshowers[i]->yErr>0 && bcalshowers[i]->zErr>0 && bcalshowers[i]->tErr>0 && EErr>0) {
+			bcal().setXycorr(bcalshowers[i]->ExyztCovariance(1,2)/bcalshowers[i]->xErr/bcalshowers[i]->yErr);
+			bcal().setXzcorr(bcalshowers[i]->ExyztCovariance(1,3)/bcalshowers[i]->xErr/bcalshowers[i]->zErr);
+			bcal().setYzcorr(bcalshowers[i]->ExyztCovariance(2,3)/bcalshowers[i]->yErr/bcalshowers[i]->zErr);
+			bcal().setEzcorr(bcalshowers[i]->ExyztCovariance(0,3)/bcalshowers[i]->zErr/EErr);
+			bcal().setTzcorr(bcalshowers[i]->ExyztCovariance(4,3)/bcalshowers[i]->zErr/bcalshowers[i]->tErr);
+		} else {
+			bcal().setXycorr(0);
+			bcal().setXzcorr(0);
+			bcal().setYzcorr(0);
+			bcal().setEzcorr(0);
+			bcal().setTzcorr(0);
+		}
 
 		hddm_r::PreshowerList locPreShowerList = bcal().addPreshowers(1);
 		locPreShowerList().setPreshowerE(bcalshowers[i]->E_preshower);
