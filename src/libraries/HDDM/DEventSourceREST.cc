@@ -812,10 +812,36 @@ jerror_t DEventSourceREST::Extract_DBCALShower(hddm_r::HDDM *record,
       shower->yErr = iter->getYerr();
       shower->zErr = iter->getZerr();
       shower->tErr = iter->getTerr();
+//      shower->EErr = iter->getEerr();
+
+      /*
+      //correlations
+      shower->EZCorr = iter->getEzcorr();
+      shower->TZCorr = iter->getTzcorr();
+      shower->XYCorr = iter->getXycorr();
+      shower->XZCorr = iter->getXzcorr();
+      shower->YZCorr = iter->getYzcorr();
+
+		// further correlations
+		const hddm_r::BcalCorrelationsList& locBcalCorrelationsList = iter->getBcalCorrelationses();
+		hddm_r::BcalCorrelationsList::iterator locBcalCorrelationsIterator = locBcalCorrelationsList.begin();
+		if(locBcalCorrelationsIterator == locBcalCorrelationsList.end())
+			shower->E_preshower = 0.0;
+		else //should only be 1
+		{
+			auto locCorrelations = *locBcalCorrelationsIterator;
+			shower->E_preshower = locCorrelations->getEzcorr();
+			shower->ETCorr = iter->getEtcorr();
+			shower->EXCorr = iter->getExcorr();
+			shower->EYCorr = iter->getEycorr();
+			shower->TXCorr = iter->getTxcorr();
+			shower->TYCorr = iter->getTycorr();
+		}
+		*/
 
 		// preshower
-      const hddm_r::PreshowerList& locPreShowerList = iter->getPreshowers();
-	   hddm_r::PreshowerList::iterator locPreShowerIterator = locPreShowerList.begin();
+		const hddm_r::PreshowerList& locPreShowerList = iter->getPreshowers();
+		hddm_r::PreshowerList::iterator locPreShowerIterator = locPreShowerList.begin();
 		if(locPreShowerIterator == locPreShowerList.end())
 			shower->E_preshower = 0.0;
 		else //should only be 1

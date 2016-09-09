@@ -211,12 +211,22 @@ bool DEventWriterREST::Write_RESTEvent(JEventLoop* locEventLoop, string locOutpu
 		bcal().setYerr(bcalshowers[i]->yErr);
 		bcal().setZerr(bcalshowers[i]->zErr);
 		bcal().setTerr(bcalshowers[i]->tErr);
-		bcal().setEerr(0);
+//		bcal().setEerr(bcalshowers[i]->EErr);
 		bcal().setXycorr(0);
 		bcal().setXzcorr(0);
 		bcal().setYzcorr(0);
 		bcal().setEzcorr(0);
 		bcal().setTzcorr(0);
+
+		/*
+		// further correlations
+		hddm_r::BcalCorrelationsList locBcalCorrelationsList = bcal().addBcalCorrelationses(1);
+		locBcalCorrelationsList().getEtcorr(bcalshowers[i]->ETCorr);
+		locBcalCorrelationsList().getExcorr(bcalshowers[i]->EXCorr);
+		locBcalCorrelationsList().getEycorr(bcalshowers[i]->EYCorr);
+		locBcalCorrelationsList().getTxcorr(bcalshowers[i]->TxCorr);
+		locBcalCorrelationsList().getTycorr(bcalshowers[i]->TyCorr);
+		*/
 
 		hddm_r::PreshowerList locPreShowerList = bcal().addPreshowers(1);
 		locPreShowerList().setPreshowerE(bcalshowers[i]->E_preshower);
