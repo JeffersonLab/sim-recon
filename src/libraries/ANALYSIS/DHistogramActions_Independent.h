@@ -85,6 +85,7 @@ REACTION-INDEPENDENT ACTIONS:
 	DHistogramAction_DetectorMatching
 	DHistogramAction_Reconstruction
 	DHistogramAction_NumReconstructedObjects
+	DHistogramAction_TrackShowerErrors
 */
 
 class DHistogramAction_ObjectMemory : public DAnalysisAction
@@ -652,6 +653,98 @@ class DHistogramAction_DetectedParticleKinematics : public DAnalysisAction
 		map<Particle_t, TH1I*> dHistMap_VertexZ;
 		map<Particle_t, TH2I*> dHistMap_VertexYVsX;
 		map<Particle_t, TH1I*> dHistMap_VertexT;
+};
+
+class DHistogramAction_TrackShowerErrors : public DAnalysisAction
+{
+	public:
+		DHistogramAction_TrackShowerErrors(const DReaction* locReaction, string locActionUniqueString = "") :
+		DAnalysisAction(locReaction, "Hist_TrackShowerErrors", false, locActionUniqueString),
+		dMinPIDFOM(5.73303E-7), dNum2DPBins(250), dNum2DThetaBins(140), dNum2DPhiBins(180),
+		dNum2DXYErrorBins(200), dNum2DZErrorBins(400), dNum2DPxyErrorBins(200), dNum2DPzErrorBins(400), dNum2DEErrorBins(200), dNum2DTErrorBins(200),
+		dMinP(0.0), dMaxP(10.0), dMaxPBCAL(2.0), dMinTheta(0.0), dMinThetaBCAL(10.0), dMaxTheta(140.0), dMaxThetaFCAL(15.0), dMinPhi(-180.0), dMaxPhi(180.0),
+		dMaxPxyError(0.5), dMaxPzError(5.0), dMaxXYError(5.0), dMaxZError(50.0), dMaxEError(3.0), dMaxTError(10.0),
+		dTrackSelectionTag("NotATag"), dShowerSelectionTag("NotATag")
+		{
+			dFinalStatePIDs.push_back(PiPlus);  dFinalStatePIDs.push_back(PiMinus);  dFinalStatePIDs.push_back(Proton);
+		}
+
+		DHistogramAction_TrackShowerErrors(string locActionUniqueString) :
+		DAnalysisAction(NULL, "Hist_TrackShowerErrors", false, locActionUniqueString),
+		dMinPIDFOM(5.73303E-7), dNum2DPBins(250), dNum2DThetaBins(140), dNum2DPhiBins(180),
+		dNum2DXYErrorBins(200), dNum2DZErrorBins(400), dNum2DPxyErrorBins(200), dNum2DPzErrorBins(400), dNum2DEErrorBins(200), dNum2DTErrorBins(200),
+		dMinP(0.0), dMaxP(10.0), dMaxPBCAL(2.0), dMinTheta(0.0), dMinThetaBCAL(10.0), dMaxTheta(140.0), dMaxThetaFCAL(15.0), dMinPhi(-180.0), dMaxPhi(180.0),
+		dMaxPxyError(0.5), dMaxPzError(5.0), dMaxXYError(5.0), dMaxZError(50.0), dMaxEError(3.0), dMaxTError(10.0),
+		dTrackSelectionTag("NotATag"), dShowerSelectionTag("NotATag")
+		{
+			dFinalStatePIDs.push_back(PiPlus);  dFinalStatePIDs.push_back(PiMinus);  dFinalStatePIDs.push_back(Proton);
+		}
+
+		DHistogramAction_TrackShowerErrors(void) :
+		DAnalysisAction(NULL, "Hist_TrackShowerErrors", false, ""),
+		dMinPIDFOM(5.73303E-7), dNum2DPBins(250), dNum2DThetaBins(140), dNum2DPhiBins(180),
+		dNum2DXYErrorBins(200), dNum2DZErrorBins(400), dNum2DPxyErrorBins(200), dNum2DPzErrorBins(400), dNum2DEErrorBins(200), dNum2DTErrorBins(200),
+		dMinP(0.0), dMaxP(10.0), dMaxPBCAL(2.0), dMinTheta(0.0), dMinThetaBCAL(10.0), dMaxTheta(140.0), dMaxThetaFCAL(15.0), dMinPhi(-180.0), dMaxPhi(180.0),
+		dMaxPxyError(0.5), dMaxPzError(5.0), dMaxXYError(5.0), dMaxZError(50.0), dMaxEError(3.0), dMaxTError(10.0),
+		dTrackSelectionTag("NotATag"), dShowerSelectionTag("NotATag")
+		{
+			dFinalStatePIDs.push_back(PiPlus);  dFinalStatePIDs.push_back(PiMinus);  dFinalStatePIDs.push_back(Proton);
+		}
+
+		double dMinPIDFOM;
+		unsigned int dNum2DPBins, dNum2DThetaBins, dNum2DPhiBins, dNum2DXYErrorBins, dNum2DZErrorBins;
+		unsigned int dNum2DPxyErrorBins, dNum2DPzErrorBins, dNum2DEErrorBins, dNum2DTErrorBins;
+		double dMinP, dMaxP, dMaxPBCAL, dMinTheta, dMinThetaBCAL, dMaxTheta, dMaxThetaFCAL, dMinPhi, dMaxPhi;
+		double dMaxPxyError, dMaxPzError, dMaxXYError, dMaxZError, dMaxEError, dMaxTError;
+		string dTrackSelectionTag, dShowerSelectionTag; //In Initialize, will default to "PreSelect" unless otherwise specified
+
+		deque<Particle_t> dFinalStatePIDs;
+
+		void Initialize(JEventLoop* locEventLoop);
+
+	private:
+		bool Perform_Action(JEventLoop* locEventLoop, const DParticleCombo* locParticleCombo);
+
+		//tracks
+		map<Particle_t, TH2I*> dHistMap_TrackPxErrorVsP;
+		map<Particle_t, TH2I*> dHistMap_TrackPyErrorVsP;
+		map<Particle_t, TH2I*> dHistMap_TrackPzErrorVsP;
+		map<Particle_t, TH2I*> dHistMap_TrackXErrorVsP;
+		map<Particle_t, TH2I*> dHistMap_TrackYErrorVsP;
+		map<Particle_t, TH2I*> dHistMap_TrackZErrorVsP;
+
+		map<Particle_t, TH2I*> dHistMap_TrackPxErrorVsTheta;
+		map<Particle_t, TH2I*> dHistMap_TrackPyErrorVsTheta;
+		map<Particle_t, TH2I*> dHistMap_TrackPzErrorVsTheta;
+		map<Particle_t, TH2I*> dHistMap_TrackXErrorVsTheta;
+		map<Particle_t, TH2I*> dHistMap_TrackYErrorVsTheta;
+		map<Particle_t, TH2I*> dHistMap_TrackZErrorVsTheta;
+
+		map<Particle_t, TH2I*> dHistMap_TrackPxErrorVsPhi;
+		map<Particle_t, TH2I*> dHistMap_TrackPyErrorVsPhi;
+		map<Particle_t, TH2I*> dHistMap_TrackPzErrorVsPhi;
+		map<Particle_t, TH2I*> dHistMap_TrackXErrorVsPhi;
+		map<Particle_t, TH2I*> dHistMap_TrackYErrorVsPhi;
+		map<Particle_t, TH2I*> dHistMap_TrackZErrorVsPhi;
+
+		//shower //bool: true/false for BCAL/FCAL
+		map<bool, TH2I*> dHistMap_ShowerEErrorVsP;
+		map<bool, TH2I*> dHistMap_ShowerXErrorVsP;
+		map<bool, TH2I*> dHistMap_ShowerYErrorVsP;
+		map<bool, TH2I*> dHistMap_ShowerZErrorVsP;
+		map<bool, TH2I*> dHistMap_ShowerTErrorVsP;
+
+		map<bool, TH2I*> dHistMap_ShowerEErrorVsTheta;
+		map<bool, TH2I*> dHistMap_ShowerXErrorVsTheta;
+		map<bool, TH2I*> dHistMap_ShowerYErrorVsTheta;
+		map<bool, TH2I*> dHistMap_ShowerZErrorVsTheta;
+		map<bool, TH2I*> dHistMap_ShowerTErrorVsTheta;
+
+		map<bool, TH2I*> dHistMap_ShowerEErrorVsPhi;
+		map<bool, TH2I*> dHistMap_ShowerXErrorVsPhi;
+		map<bool, TH2I*> dHistMap_ShowerYErrorVsPhi;
+		map<bool, TH2I*> dHistMap_ShowerZErrorVsPhi;
+		map<bool, TH2I*> dHistMap_ShowerTErrorVsPhi;
 };
 
 class DHistogramAction_NumReconstructedObjects : public DAnalysisAction
