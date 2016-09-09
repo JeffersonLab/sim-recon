@@ -808,10 +808,18 @@ jerror_t DEventSourceREST::Extract_DBCALShower(hddm_r::HDDM *record,
       shower->y = iter->getY();
       shower->z = iter->getZ();
       shower->t = iter->getT();
-      shower->xErr = iter->getXerr();
-      shower->yErr = iter->getYerr();
-      shower->zErr = iter->getZerr();
-      shower->tErr = iter->getTerr();
+      DMatrixDSym covariance(5);
+	  covariance(0,0) = iter->getEerr();
+	  covariance(1,1) = iter->getXerr();
+	  covariance(2,2) = iter->getYerr();
+	  covariance(3,3) = iter->getZerr();
+	  covariance(4,4) = iter->getTerr();
+	  covariance(1,2) = covariance(2,1) = iter->getXycorr();
+	  covariance(1,3) = covariance(3,1) = iter->getXzcorr();
+	  covariance(2,3) = covariance(3,2) = iter->getYzcorr();
+	  covariance(0,3) = covariance(3,0) = iter->getEzcorr();
+	  covariance(4,3) = covariance(3,4) = iter->getTzcorr();
+	  shower->ExyztCovariance = covariance;
 
 		// preshower
       const hddm_r::PreshowerList& locPreShowerList = iter->getPreshowers();

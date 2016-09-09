@@ -143,8 +143,7 @@ DBCALShower_factory_IU::evnt( JEventLoop *loop, uint64_t eventnumber ){
 	if (thlookup>maxthlookup) thlookup=maxthlookup-0.0001;
 	if (VERBOSE>3) printf("(%f,%F)    limits (%f,%f)  (%f,%f)\n",Elookup,thlookup,minElookup,maxElookup,minthlookup,maxthlookup);
 
-	DMatrixDSym ErphiztCovariance;
-	ErphiztCovariance.ResizeTo(5, 5);
+	DMatrixDSym ErphiztCovariance(5);
 	for (int i=0; i<5; i++) {
 		for (int j=0; j<=i; j++) {
 			float val = CovarElementLookup[i][j]->Interpolate(Elookup, thlookup);
@@ -163,16 +162,9 @@ DBCALShower_factory_IU::evnt( JEventLoop *loop, uint64_t eventnumber ){
 	rotationmatrix(2,2) = cosPhi;
 
 	if (VERBOSE>3) {printf("(E,r,phi,z,t)  "); ErphiztCovariance.Print(); }
-	shower->ExyztCovariance.ResizeTo(5,5);
 	DMatrixDSym &D = ErphiztCovariance.Similarity(rotationmatrix);
 	shower->ExyztCovariance = D;
 	if (VERBOSE>2) {printf("(E,x,y,z,t)    "); shower->ExyztCovariance.Print(); }
-
-	// Redundant duplication of uncertainties.  Should be removed
-	shower->xErr = sqrt(shower->ExyztCovariance(1,1));
-	shower->yErr = sqrt(shower->ExyztCovariance(2,2));
-	shower->zErr = sqrt(shower->ExyztCovariance(3,3));
-	shower->tErr = sqrt(shower->ExyztCovariance(4,4));
 
     shower->AddAssociatedObject(*clItr);
     

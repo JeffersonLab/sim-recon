@@ -22,6 +22,7 @@ using namespace jana;
 #include "BCAL/DBCALCluster.h"
 #include "BCAL/DBCALShower.h"
 #include "BCAL/DBCALGeometry.h"
+#include "DANA/DStatusBits.h"
 #include "DAQ/DEPICSvalue.h"
 #include "DAQ/DF1TDCHit.h"
 #include "DAQ/Df250PulseIntegral.h"
@@ -136,6 +137,7 @@ static TH1I *bcal_shower_xErr = NULL;
 static TH1I *bcal_shower_yErr = NULL;
 static TH1I *bcal_shower_zErr = NULL;
 static TH1I *bcal_shower_tErr = NULL;
+static TH1I *bcal_shower_EErr = NULL;
 static TH2I *bcal_shower_plane = NULL;
 
 static TH1I *bcal_num_events;
@@ -339,7 +341,8 @@ jerror_t JEventProcessor_BCAL_online::init(void) {
 	bcal_shower_xErr = new TH1I("bcal_shower_xErr","xErr (DBCALShower)", 100, 0, 30);
 	bcal_shower_yErr = new TH1I("bcal_shower_yErr","yErr (DBCALShower)", 100, 0, 30);
 	bcal_shower_zErr = new TH1I("bcal_shower_zErr","zErr (DBCALShower)", 100, 0, 40);
-	bcal_shower_tErr = new TH1I("bcal_shower_tErr","tErr (DBCALShower)", 100, 0, 50);
+	bcal_shower_tErr = new TH1I("bcal_shower_tErr","tErr (DBCALShower)", 100, 0, 2);
+	bcal_shower_EErr = new TH1I("bcal_shower_EErr","EErr (DBCALShower);#sigma_E/E", 100, 0, 0.2);
 	bcal_shower_plane = new TH2I("bcal_shower_plane","Shower position (DBCALShower);X position  (cm);Y position  (cm)", 100, -100, 100, 100, -100, 100);
 
 	// Turn off stats window for occupancy plots
@@ -484,7 +487,9 @@ jerror_t JEventProcessor_BCAL_online::evnt(JEventLoop *loop, uint64_t eventnumbe
 			goodtrigger=0;
 		}
 	} else {
-		goodtrigger=0;
+		// HDDM files are from simulation, so keep them even though they have no trigger
+		bool locIsHDDMEvent = loop->GetJEvent().GetStatusBit(kSTATUS_HDDM);
+		if (!locIsHDDMEvent) goodtrigger=0;		
 	}
 	
 	if (!goodtrigger) {
@@ -747,10 +752,11 @@ jerror_t JEventProcessor_BCAL_online::evnt(JEventLoop *loop, uint64_t eventnumbe
 		bcal_shower_y->Fill(shower->y);
 		bcal_shower_z->Fill(shower->z);
 		bcal_shower_t->Fill(shower->t);
-		bcal_shower_xErr->Fill(shower->xErr);
-		bcal_shower_yErr->Fill(shower->yErr);
-		bcal_shower_zErr->Fill(shower->zErr);
-		bcal_shower_tErr->Fill(shower->tErr);
+		bcal_shower_xErr->Fill(shower->xErr());
+		bcal_shower_yErr->Fill(shower->yErr());
+		bcal_shower_zErr->Fill(shower->zErr());
+		bcal_shower_tErr->Fill(shower->tErr());
+		bcal_shower_EErr->Fill(shower->EErr()/shower->E);
 		bcal_shower_plane->Fill(shower->x,shower->y);
 	}
 

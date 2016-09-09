@@ -290,11 +290,11 @@ jerror_t DBCALShower_factory_KLOE::evnt(JEventLoop *loop, uint64_t eventnumber)
         shower->t                   = t;
         shower->N_cell              = N_cell;
       
-        shower->xErr                = sig_x;
-        shower->yErr                = sig_y;
-        shower->zErr                = sig_z;
+        // shower->xErr                = sig_x;
+        // shower->yErr                = sig_y;
+        // shower->zErr                = sig_z;
 
-        shower->tErr                = sig_t;
+        // shower->tErr                = sig_t;
       
         // calibrate energy:
         // Energy calibration has a z dependence -- the
