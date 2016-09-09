@@ -135,7 +135,7 @@ DBCALCluster_factory::evnt( JEventLoop *loop, uint64_t eventnumber ){
 			delete *clust;
 			continue;
 		}
-		vector<const DBCALPoint*>points=(**clust).getPoints();
+		vector<const DBCALPoint*>points=(**clust).points();
 		for (unsigned int i=0;i<points.size();i++){
 		  (**clust).AddAssociatedObject(points[i]);
 		}
@@ -320,7 +320,7 @@ DBCALCluster_factory::recycle_points( vector<const DBCALPoint*> usedPoints, vect
 			bool clust_match;
 			bool point_match;
 			int best_clust = 0;
-			vector<const DBCALPoint*>associated_points=(**clust).getPoints();
+			vector<const DBCALPoint*>associated_points=(**clust).points();
 			float deltaTheta = fabs( (**clust).theta() - (*usedpt)->theta() );
 			float deltaPhi = (**clust).phi() - (*usedpt)->phi();
 			float deltaPhiAlt = ( (**clust).phi() > (*usedpt)->phi() ?
