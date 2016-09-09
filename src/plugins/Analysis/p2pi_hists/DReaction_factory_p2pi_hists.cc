@@ -54,7 +54,7 @@ jerror_t DReaction_factory_p2pi_hists::evnt(JEventLoop* locEventLoop, uint64_t l
 	locReaction->Set_EventStoreSkims("2q+,q-"); // boolean-AND of skims
 
 	// Kinematic Fit
-	locReaction->Set_KinFitType(d_P4AndVertexFit); //simultaneously constrain apply four-momentum conservation, invariant masses, and common-vertex constraints
+	//locReaction->Set_KinFitType(d_NoFit); //simultaneously constrain apply four-momentum conservation, invariant masses, and common-vertex constraints
 
 	// Highly Recommended: When generating particle combinations, reject all beam photons that match to a different RF bunch
 	locReaction->Set_MaxPhotonRFDeltaT(0.5*dBeamBunchPeriod);
@@ -85,7 +85,7 @@ jerror_t DReaction_factory_p2pi_hists::evnt(JEventLoop* locEventLoop, uint64_t l
 	locReaction->Add_AnalysisAction(new DCustomAction_dEdxCut(locReaction, false)); //false: focus on keeping signal
 	locReaction->Add_AnalysisAction(new DHistogramAction_PID(locReaction, "PostPIDCuts"));
 
-	// Custom histograms for p2pi (KinFit converges)
+	// Custom histograms for p2pi
 	locReaction->Add_AnalysisAction(new DCustomAction_p2pi_hists(locReaction, false));
 
 	//MISSING MASS
@@ -95,15 +95,6 @@ jerror_t DReaction_factory_p2pi_hists::evnt(JEventLoop* locEventLoop, uint64_t l
 	// RHO
 	deque<Particle_t> locRhoPIDs;  locRhoPIDs.push_back(PiPlus);  locRhoPIDs.push_back(PiMinus);
 	locReaction->Add_AnalysisAction(new DHistogramAction_InvariantMass(locReaction, 0, locRhoPIDs, false, 900, 0.3, 1.2, "Rho"));
-	locReaction->Add_AnalysisAction(new DHistogramAction_InvariantMass(locReaction, 0, locRhoPIDs, true, 900, 0.3, 1.2, "Rho_KinFit"));
-
-	// Kinematic Fit Results
-	locReaction->Add_AnalysisAction(new DHistogramAction_KinFitResults(locReaction, 0.05)); //5% confidence level cut on pull histograms only
-	locReaction->Add_AnalysisAction(new DCutAction_KinFitFOM(locReaction, 5.73303E-7)); // confidence level cut //+/- 5 sigma
-
-	// RHO, POST-KINFIT
-	locReaction->Add_AnalysisAction(new DHistogramAction_InvariantMass(locReaction, 0, locRhoPIDs, false, 900, 0.3, 1.2, "Rho_PostKinFitCut"));
-	locReaction->Add_AnalysisAction(new DHistogramAction_InvariantMass(locReaction, 0, locRhoPIDs, true, 900, 0.3, 1.2, "Rho_KinFit_PostKinFitCut"));
 
 	if(unused)
 	{
@@ -113,6 +104,71 @@ jerror_t DReaction_factory_p2pi_hists::evnt(JEventLoop* locEventLoop, uint64_t l
 		// Diagnostics for unused tracks and showers with final selection (only useful when analyzing EVIO data)
 		locReaction->Add_AnalysisAction(new DCustomAction_p2pi_unusedHists(locReaction, false, "Unused"));
 	}
+
+	// Kinematics of final selection
+	locReaction->Add_AnalysisAction(new DHistogramAction_ParticleComboKinematics(locReaction, false)); //false: fill histograms with measured particle data
+
+	_data.push_back(locReaction); //Register the DReaction with the factory
+
+
+
+	/**************************************************** p2pi_preco_kinfit Reaction Steps ****************************************************/
+
+	locReaction = new DReaction("p2pi_preco_kinfit"); //needs to be a unique name for each DReaction object, CANNOT (!) be "Thrown"
+
+	// g, p -> pi+, pi- ,p
+	locReaction->Add_ReactionStep(locReactionStep);
+
+	/**************************************************** p2pi_preco_kinfit Control Settings ****************************************************/
+
+	// Event Store
+	locReaction->Set_EventStoreSkims("2q+,q-"); // boolean-AND of skims
+
+	// Kinematic Fit
+	locReaction->Set_KinFitType(d_P4AndVertexFit); //simultaneously constrain apply four-momentum conservation, invariant masses, and common-vertex constraints
+
+	// Highly Recommended: When generating particle combinations, reject all beam photons that match to a different RF bunch
+	locReaction->Set_MaxPhotonRFDeltaT(0.5*dBeamBunchPeriod);
+
+	/************************************************** p2pi_preco_kinfit Pre-Combo Custom Cuts *************************************************/
+
+	// Highly Recommended: Very loose DAnalysisAction cuts, applied just after creating the combination (before saving it)
+	// Example: Missing mass squared of proton
+	locReaction->Add_ComboPreSelectionAction(new DCutAction_MissingMassSquared(locReaction, false, -0.1, 0.1));
+
+	/**************************************************** p2pi_preco_kinfit Analysis Actions ****************************************************/
+
+	// Recommended: Analysis actions automatically performed by the DAnalysisResults factories to histogram useful quantities.
+	//These actions are executed sequentially, and are executed on each surviving (non-cut) particle combination
+	//Pre-defined actions can be found in ANALYSIS/DHistogramActions.h and ANALYSIS/DCutActions.h
+
+	// PID
+	locReaction->Add_AnalysisAction(new DHistogramAction_PID(locReaction));
+	locReaction->Add_AnalysisAction(new DCutAction_PIDDeltaT(locReaction, false, 2.0, Proton, SYS_TOF));
+	locReaction->Add_AnalysisAction(new DCutAction_PIDDeltaT(locReaction, false, 2.5, Proton, SYS_BCAL));
+	locReaction->Add_AnalysisAction(new DCutAction_PIDDeltaT(locReaction, false, 3.0, Proton, SYS_FCAL));
+	locReaction->Add_AnalysisAction(new DCutAction_PIDDeltaT(locReaction, false, 2.0, PiPlus, SYS_TOF));
+	locReaction->Add_AnalysisAction(new DCutAction_PIDDeltaT(locReaction, false, 1.5, PiPlus, SYS_BCAL));
+	locReaction->Add_AnalysisAction(new DCutAction_PIDDeltaT(locReaction, false, 3.0, PiPlus, SYS_FCAL));
+	locReaction->Add_AnalysisAction(new DCutAction_PIDDeltaT(locReaction, false, 2.0, PiMinus, SYS_TOF));
+	locReaction->Add_AnalysisAction(new DCutAction_PIDDeltaT(locReaction, false, 1.5, PiMinus, SYS_BCAL));
+	locReaction->Add_AnalysisAction(new DCutAction_PIDDeltaT(locReaction, false, 3.0, PiMinus, SYS_FCAL));
+	locReaction->Add_AnalysisAction(new DCustomAction_dEdxCut(locReaction, false)); //false: focus on keeping signal
+	locReaction->Add_AnalysisAction(new DHistogramAction_PID(locReaction, "PostPIDCuts"));
+
+	//MASSES
+	locReaction->Add_AnalysisAction(new DHistogramAction_MissingMassSquared(locReaction, false, 1000, -0.1, 0.1));
+	locReaction->Add_AnalysisAction(new DHistogramAction_InvariantMass(locReaction, 0, locRhoPIDs, false, 900, 0.3, 1.2, "Rho"));
+	locReaction->Add_AnalysisAction(new DHistogramAction_InvariantMass(locReaction, 0, locRhoPIDs, true, 900, 0.3, 1.2, "Rho_KinFit"));
+
+	// Kinematic Fit Results
+	locReaction->Add_AnalysisAction(new DHistogramAction_KinFitResults(locReaction, 0.05)); //5% confidence level cut on pull histograms only
+	locReaction->Add_AnalysisAction(new DCutAction_KinFitFOM(locReaction, 5.73303E-7)); // confidence level cut //+/- 5 sigma
+
+	// MASSES, POST-KINFIT
+	locReaction->Add_AnalysisAction(new DHistogramAction_MissingMassSquared(locReaction, false, 1000, -0.1, 0.1, "PostKinFitCut"));
+	locReaction->Add_AnalysisAction(new DHistogramAction_InvariantMass(locReaction, 0, locRhoPIDs, false, 900, 0.3, 1.2, "Rho_PostKinFitCut"));
+	locReaction->Add_AnalysisAction(new DHistogramAction_InvariantMass(locReaction, 0, locRhoPIDs, true, 900, 0.3, 1.2, "Rho_KinFit_PostKinFitCut"));
 
 	// Kinematics of final selection
 	locReaction->Add_AnalysisAction(new DHistogramAction_ParticleComboKinematics(locReaction, false)); //false: fill histograms with measured particle data
