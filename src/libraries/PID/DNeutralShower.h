@@ -32,6 +32,8 @@ class DNeutralShower : public jana::JObject
 		double dEnergy;
 		DMatrixDSym dCovarianceMatrix; //E, x, y, z, t
 
+		const JObject* dBCALFCALShower; //is either DBCALShower or DFCALShower: dynamic_cast as appropriate (based on dDetectorSystem)
+
 		void toStrings(vector<pair<string,string> > &items) const{
 			AddString(items, "E", "%3.5f", dEnergy);
 			AddString(items, "x", "%3.2f", dSpacetimeVertex.X());
