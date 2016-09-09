@@ -15,6 +15,7 @@
 #include <mutex>
 #include <condition_variable>
 #include <list>
+#include <iterator>
 using namespace std;
 
 #include <JANA/jerror.h>
