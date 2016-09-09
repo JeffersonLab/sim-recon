@@ -12,6 +12,7 @@
 
 #if HAVE_EVIO
 #include <DAQ/JEventSource_EVIO.h>
+#include <DAQ/JEventSource_EVIOpp.h>
 #include <evioUtil.hxx>
 #include <evioFileChannel.hxx>
 #endif // HAVE_EVIO
@@ -58,10 +59,17 @@ class DEventWriterEVIO : public JObject
 
 		bool Write_EVIOEvent(JEventLoop* locEventLoop, string locOutputFileNameSubString) const;
 		bool Write_EVIOEvent(JEventLoop* locEventLoop, string locOutputFileNameSubString,
-                             vector<const JObject *> locObjectsToSave) const;
-		string Get_OutputFileName(JEventLoop* locEventLoop, string locOutputFileNameSubString) const;
+                             vector<const JObject *> &locObjectsToSave) const;
+		bool Write_EVIOBuffer(JEventLoop* locEventLoop, vector<uint32_t> *locOutputBuffer, string locOutputFileNameSubString) const;
+		bool Write_EVIOBuffer(JEventLoop* locEventLoop, uint32_t *locOutputBuffer, uint32_t locOutputBufferSize, string locOutputFileNameSubString) const;
 
+		string Get_OutputFileName(JEventLoop* locEventLoop, string locOutputFileNameSubString) const;
         void SetDetectorsToWriteOut(string detector_list, string locOutputFileNameSubString) const;
+
+        bool Is_MergingFiles() const { return dMergeFiles; }
+        void Set_MergeFiles(bool in_flag) { dMergeFiles = in_flag; }
+        string Get_MergedFilename() const { return dMergedFilename; }
+        void Set_MergedFilename(string in_filename) { dMergedFilename = in_filename; }
 
 		bool COMPACT;
 		bool PREFER_EMULATED;
@@ -75,6 +83,9 @@ class DEventWriterEVIO : public JObject
 
         // the Translation Table is needed to get the mapping of detector type to ROC number
         const DTranslationTable *ttab;
+
+        bool dMergeFiles;
+        string dMergedFilename;
 
 	private:
 

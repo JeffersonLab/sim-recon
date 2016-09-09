@@ -5305,6 +5305,10 @@ kalman_error_t DTrackFitterKalmanSIMD::KalmanForward(double fdc_anneal_factor,
     cout << "Momentum " << 1./S(state_q_over_p) <<endl;
   }
 
+  if ((!isfinite(S(state_x))) || (!isfinite(S(state_y))) 
+      || (!isfinite(S(state_tx))) || (!isfinite(S(state_ty)))
+      || (!isfinite(S(state_q_over_p)))) return FIT_FAILED;
+
   // Check if we have a kink in the track or threw away too many hits
   if (num_cdc>0 && break_point_fdc_index>0 && break_point_cdc_index>2){ 
     if (break_point_fdc_index+num_cdc<MIN_HITS_FOR_REFIT){
@@ -5916,6 +5920,11 @@ kalman_error_t DTrackFitterKalmanSIMD::KalmanForwardCDC(double anneal,DMatrix5x1
     x_=S(state_x);
     y_=S(state_y);
     z_=forward_traj[forward_traj.size()-1].z;
+
+    if ((!isfinite(S(state_x))) || (!isfinite(S(state_y))) 
+	|| (!isfinite(S(state_tx))) || (!isfinite(S(state_ty)))
+	|| (!isfinite(S(state_q_over_p)))) return FIT_FAILED;
+    
 
     // Check if the momentum is unphysically large
     if (1./fabs(S(state_q_over_p))>12.0){

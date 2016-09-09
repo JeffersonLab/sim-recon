@@ -1,4 +1,4 @@
-// $Id$
+/// $Id$
 //
 //    File: DEVIOWorkerThread.cc
 // Created: Mon Mar 28 07:40:07 EDT 2016
@@ -107,7 +107,7 @@ void DEVIOWorkerThread::Run(void)
 			if( jobtype & JOB_ASSOCIATE  ) LinkAllAssociations();
 			
 			if( !current_parsed_events.empty() ) PublishEvents();
-
+            
 		} catch (exception &e) {
 			jerr << e.what() << endl;
 			for(auto pe : parsed_event_pool) delete pe; // delete all parsed events any any objects they hold
@@ -786,6 +786,13 @@ void DEVIOWorkerThread::ParseDataBank(uint32_t* &iptr, uint32_t *iend)
 				Parsef250scalerBank(iptr, iend);
 				break;
 
+            // When we write out single events in the offline, we also can save some
+            // higher level data objects to save disk space and speed up 
+            // specialized processing (e.g. pi0 calibration)
+            case 0xD01:
+                ParseDVertexBank(iptr, iend);
+                break;
+
 			case 5:
 				// old ROL Beni used had this but I don't think its
 				// been used for years. Run 10390 seems to have
@@ -805,6 +812,17 @@ void DEVIOWorkerThread::ParseDataBank(uint32_t* &iptr, uint32_t *iend)
 		iptr = iend_data_block_bank;
 	}
 	
+}
+
+//----------------
+// ParseTIBank
+//----------------
+void DEVIOWorkerThread::ParseTIBank(uint32_t rocid, uint32_t* &iptr, uint32_t* iend)
+{
+    while(iptr<iend && ((*iptr) & 0xF8000000) != 0x88000000) iptr++; // Skip to JLab block trailer
+    iptr++; // advance past JLab block trailer
+    while(iptr<iend && *iptr == 0xF8000000) iptr++; // skip filler words after block trailer
+    //iptr = iend;
 }
 
 //----------------
@@ -1070,7 +1088,7 @@ void DEVIOWorkerThread::ParseJLabModuleData(uint32_t rocid, uint32_t* &iptr, uin
 		// Get module type from next word (bits 18-21)
 		uint32_t mod_id = ((*iptr) >> 18) & 0x000F;
 		MODULE_TYPE type = (MODULE_TYPE)mod_id;
-//		cout << "      rocid=" << rocid << "  Encountered module type: " << type << " (=" << DModuleType::GetModule(type).GetName() << ")  word=" << hex << (*iptr) << dec << endl;
+		//cout << "      rocid=" << rocid << "  Encountered module type: " << type << " (=" << DModuleType::GetModule(type).GetName() << ")  word=" << hex << (*iptr) << dec << endl;
 
         switch(type){
             case DModuleType::FADC250:
@@ -1090,8 +1108,15 @@ void DEVIOWorkerThread::ParseJLabModuleData(uint32_t rocid, uint32_t* &iptr, uin
                 break;
 
            case DModuleType::TID:
-//                ParseTIBank(rocid, iptr, iend);
-                break;
+               ParseTIBank(rocid, iptr, iend);    
+               /*
+               // Ignore this data and skip over it
+               while(iptr<iend && ((*iptr) & 0xF8000000) != 0x88000000) iptr++; // Skip to JLab block trailer
+               iptr++; // advance past JLab block trailer
+               while(iptr<iend && *iptr == 0xF8000000) iptr++; // skip filler words after block trailer
+               break;
+               */
+               break;
 
             case DModuleType::UNKNOWN:
             default:
@@ -1778,6 +1803,50 @@ void DEVIOWorkerThread::ParseF1TDCBank(uint32_t rocid, uint32_t* &iptr, uint32_t
 	// Skip filler words
 	while(iptr<iend && (*iptr&0xF8000000)==0xF8000000)iptr++;
 }
+
+//----------------
+// ParseDVertexBank
+//----------------
+void DEVIOWorkerThread::ParseDVertexBank(uint32_t* &iptr, uint32_t *iend)
+{
+    uint32_t Nwords = ((uint64_t)iend - (uint64_t)iptr)/sizeof(uint32_t);
+    uint32_t Nwords_expected = 11;  // ?
+    if(Nwords != Nwords_expected){
+        _DBG_ << "DVertex size does not match expected!!" << endl;
+        _DBG_ << "Found " << Nwords << " words. Expected " << Nwords_expected << endl;
+    }else{
+		DParsedEvent *pe = current_parsed_events.back();
+		DVertex *the_vertex = pe->NEW_DVertex();
+
+        uint64_t in_word = *iptr++;    // 1st word, lo word;  2nd word, hi word
+        uint64_t in_word_hi = *iptr++;
+        in_word |= in_word_hi<<32;
+        //uint64_t hi_word = *iptr++;
+        double vertex_x_pos;
+        memcpy(&vertex_x_pos, &in_word, sizeof(double));
+        in_word = *iptr++;   in_word_hi = *iptr++;
+        in_word |= in_word_hi<<32;
+        double vertex_y_pos;
+        memcpy(&vertex_y_pos, &in_word, sizeof(double));
+        in_word = *iptr++;   in_word_hi = *iptr++;
+        in_word |= in_word_hi<<32;
+        double vertex_z_pos;
+        memcpy(&vertex_z_pos, &in_word, sizeof(double));
+        in_word = *iptr++;   in_word_hi = *iptr++;
+        in_word |= in_word_hi<<32;
+        double vertex_t;
+        memcpy(&vertex_t, &in_word, sizeof(double));
+
+        DVector3 vertex_position(vertex_x_pos, vertex_y_pos, vertex_z_pos);
+        the_vertex->dSpacetimeVertex = DLorentzVector(vertex_position, vertex_t);
+        the_vertex->dKinFitNDF = *iptr++;
+
+        in_word = *iptr++;   in_word_hi = *iptr++;
+        in_word |= in_word_hi<<32;
+        memcpy(&(the_vertex->dKinFitChiSq), &in_word, sizeof(double));
+    }
+}
+
 
 //----------------
 // LinkAllAssociations
