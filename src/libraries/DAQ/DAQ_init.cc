@@ -11,6 +11,7 @@ using namespace jana;
 #include "Df250TriggerTime.h"
 #include "Df250PulseTime.h"
 #include "Df250PulsePedestal.h"
+#include "Df250PulseData.h"
 #include "Df250WindowRawData.h"
 #include "Df125Config.h"
 #include "Df125TriggerTime.h"
@@ -54,6 +55,7 @@ jerror_t DAQ_init(JEventLoop *loop)
 	loop->AddFactory(new JFactory<Df250TriggerTime>());
 	loop->AddFactory(new JFactory<Df250PulseTime>());
 	loop->AddFactory(new JFactory<Df250PulsePedestal>());
+	loop->AddFactory(new JFactory<Df250PulseData>());
 	loop->AddFactory(new JFactory<Df250WindowRawData>());
 	loop->AddFactory(new JFactory<Df125Config>());
 	loop->AddFactory(new JFactory<Df125TriggerTime>());

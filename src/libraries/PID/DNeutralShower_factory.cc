@@ -64,6 +64,7 @@ jerror_t DNeutralShower_factory::evnt(jana::JEventLoop *locEventLoop, uint64_t e
 
 		// create DNeutralShower
 		DNeutralShower* locNeutralShower = new DNeutralShower();
+		locNeutralShower->dBCALFCALShower = static_cast<const JObject*>(locBCALShowers[loc_i]);
 		locNeutralShower->dDetectorSystem = SYS_BCAL;
 		locNeutralShower->dShowerID = locShowerID;
 		++locShowerID;
@@ -87,6 +88,7 @@ jerror_t DNeutralShower_factory::evnt(jana::JEventLoop *locEventLoop, uint64_t e
 
 		// create DNeutralShower
 		DNeutralShower* locNeutralShower = new DNeutralShower();
+		locNeutralShower->dBCALFCALShower = static_cast<const JObject*>(locFCALShowers[loc_i]);
 		locNeutralShower->dDetectorSystem = SYS_FCAL;
 		locNeutralShower->dShowerID = locShowerID;
 		++locShowerID;
