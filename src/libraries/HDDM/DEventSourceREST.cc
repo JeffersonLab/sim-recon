@@ -818,12 +818,22 @@ jerror_t DEventSourceREST::Extract_DBCALShower(hddm_r::HDDM *record,
 	  covariance(1,3) = covariance(3,1) = iter->getXzcorr();
 	  covariance(2,3) = covariance(3,2) = iter->getYzcorr();
 	  covariance(0,3) = covariance(3,0) = iter->getEzcorr();
-	  covariance(4,3) = covariance(3,4) = iter->getTzcorr();
+	  covariance(3,4) = covariance(4,3) = iter->getTzcorr();
+	  // further correlations (an extension of REST format, so code is different.)
+	  const hddm_r::BcalCorrelationsList& locBcalCorrelationsList = iter->getBcalCorrelationses();
+	  hddm_r::BcalCorrelationsList::iterator locBcalCorrelationsIterator = locBcalCorrelationsList.begin();
+	  if(locBcalCorrelationsIterator != locBcalCorrelationsList.end()) {
+		  covariance(0,4) = covariance(4,0) = locBcalCorrelationsIterator->getEtcorr();
+		  covariance(0,1) = covariance(1,0) = locBcalCorrelationsIterator->getExcorr();
+		  covariance(0,2) = covariance(2,0) = locBcalCorrelationsIterator->getEycorr();
+		  covariance(1,4) = covariance(4,1) = locBcalCorrelationsIterator->getTxcorr();
+		  covariance(2,4) = covariance(4,2) = locBcalCorrelationsIterator->getTycorr();
+	  }
 	  shower->ExyztCovariance = covariance;
 
 		// preshower
-      const hddm_r::PreshowerList& locPreShowerList = iter->getPreshowers();
-	   hddm_r::PreshowerList::iterator locPreShowerIterator = locPreShowerList.begin();
+		const hddm_r::PreshowerList& locPreShowerList = iter->getPreshowers();
+		hddm_r::PreshowerList::iterator locPreShowerIterator = locPreShowerList.begin();
 		if(locPreShowerIterator == locPreShowerList.end())
 			shower->E_preshower = 0.0;
 		else //should only be 1
