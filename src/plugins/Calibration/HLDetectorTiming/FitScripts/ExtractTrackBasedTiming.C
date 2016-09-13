@@ -1,7 +1,7 @@
 namespace ExtractTrackBasedTimingNS {
 TFile * thisFile;
 
-TH1I * ExtractTrackBasedTimingNS::Get1DHistogram(const char * plugin, const char * directoryName, const char * name){
+TH1I * Get1DHistogram(const char * plugin, const char * directoryName, const char * name){
     TH1I * histogram;
     TString fullName = TString(plugin) + "/" + TString(directoryName) + "/" + TString(name);
     thisFile->GetObject(fullName, histogram);
