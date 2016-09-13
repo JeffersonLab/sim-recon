@@ -129,6 +129,7 @@ void DEventWriterROOT::Create_DataTree(const DReaction* locReaction, JEventLoop*
 	//create basic/misc. tree branches (run#, event#, etc.)
 	locBranchRegister.Register_Single<UInt_t>("RunNumber");
 	locBranchRegister.Register_Single<ULong64_t>("EventNumber");
+	locBranchRegister.Register_Single<UInt_t>("L1TriggerBits");
 
 	//create X4_Production
 	locBranchRegister.Register_Single<TLorentzVector>("X4_Production");
@@ -587,6 +588,7 @@ void DEventWriterROOT::Create_Branches_ChargedHypotheses(DTreeBranchRegister& lo
 	locBranchRegister.Register_FundamentalArray<Float_t>(Build_BranchName(locParticleBranchName, "dEdx_TOF"), locArraySizeString, dInitNumTrackArraySize);
 	locBranchRegister.Register_FundamentalArray<Float_t>(Build_BranchName(locParticleBranchName, "dEdx_ST"), locArraySizeString, dInitNumTrackArraySize);
 	locBranchRegister.Register_FundamentalArray<Float_t>(Build_BranchName(locParticleBranchName, "Energy_BCAL"), locArraySizeString, dInitNumTrackArraySize);
+	locBranchRegister.Register_FundamentalArray<Float_t>(Build_BranchName(locParticleBranchName, "Energy_BCALPreshower"), locArraySizeString, dInitNumTrackArraySize);
 	locBranchRegister.Register_FundamentalArray<Float_t>(Build_BranchName(locParticleBranchName, "Energy_FCAL"), locArraySizeString, dInitNumTrackArraySize);
 
 	//SHOWER MATCHING:
@@ -619,6 +621,7 @@ void DEventWriterROOT::Create_Branches_NeutralHypotheses(DTreeBranchRegister& lo
 	//SHOWER INFO
 	locBranchRegister.Register_ClonesArray<TLorentzVector>(Build_BranchName(locParticleBranchName, "X4_Shower"), dInitNumNeutralArraySize);
 	locBranchRegister.Register_FundamentalArray<Float_t>(Build_BranchName(locParticleBranchName, "Energy_BCAL"), locArraySizeString, dInitNumNeutralArraySize);
+	locBranchRegister.Register_FundamentalArray<Float_t>(Build_BranchName(locParticleBranchName, "Energy_BCALPreshower"), locArraySizeString, dInitNumNeutralArraySize);
 	locBranchRegister.Register_FundamentalArray<Float_t>(Build_BranchName(locParticleBranchName, "Energy_FCAL"), locArraySizeString, dInitNumNeutralArraySize);
 
 	//NEARBY TRACKS
@@ -929,6 +932,10 @@ void DEventWriterROOT::Fill_DataTree(JEventLoop* locEventLoop, const DReaction* 
 	const DVertex* locVertex = NULL;
 	locEventLoop->GetSingle(locVertex);
 
+	//GET TRIGGER
+	const DTrigger* locTrigger = NULL;
+	locEventLoop->GetSingle(locTrigger);
+
 	//Check whether beam is used in the combo
 	bool locBeamUsedFlag = (locReaction->Get_ReactionStep(0)->Get_TargetParticleID() != Unknown);
 
@@ -1006,6 +1013,7 @@ void DEventWriterROOT::Fill_DataTree(JEventLoop* locEventLoop, const DReaction* 
 	//PRIMARY EVENT INFO
 	locTreeFillData->Fill_Single<UInt_t>("RunNumber", locEventLoop->GetJEvent().GetRunNumber());
 	locTreeFillData->Fill_Single<ULong64_t>("EventNumber", locEventLoop->GetJEvent().GetEventNumber());
+	locTreeFillData->Fill_Single<UInt_t>("L1TriggerBits", locTrigger->Get_L1TriggerBits());
 
 	//PRODUCTION X4
 	DLorentzVector locProductionX4 = locVertex->dSpacetimeVertex;
@@ -1612,6 +1620,9 @@ void DEventWriterROOT::Fill_ChargedHypo(DTreeFillData* locTreeFillData, unsigned
 	locTreeFillData->Fill_Array<Float_t>(Build_BranchName(locParticleBranchName, "dEdx_ST"), locSCdEdx, locArrayIndex);
 	double locBCALEnergy = (locBCALShower != NULL) ? locBCALShower->E : 0.0;
 	locTreeFillData->Fill_Array<Float_t>(Build_BranchName(locParticleBranchName, "Energy_BCAL"), locBCALEnergy, locArrayIndex);
+	double locBCALPreshowerEnergy = (locBCALShower != NULL) ? locBCALShower->E_preshower : 0.0;
+	locTreeFillData->Fill_Array<Float_t>(Build_BranchName(locParticleBranchName, "Energy_BCALPreshower"), locBCALPreshowerEnergy, locArrayIndex);
+
 	double locFCALEnergy = (locFCALShower != NULL) ? locFCALShower->getEnergy() : 0.0;
 	locTreeFillData->Fill_Array<Float_t>(Build_BranchName(locParticleBranchName, "Energy_FCAL"), locFCALEnergy, locArrayIndex);
 
@@ -1686,9 +1697,12 @@ void DEventWriterROOT::Fill_NeutralHypo(DTreeFillData* locTreeFillData, unsigned
 	locTreeFillData->Fill_Array<UInt_t>(Build_BranchName(locParticleBranchName, "NDF_Timing"), locNeutralParticleHypothesis->dNDF, locArrayIndex);
 
 	//SHOWER ENERGY
-	double locBCALEnergy = (locNeutralShower->dDetectorSystem == SYS_BCAL) ? locNeutralShower->dEnergy : 0.0;
+	DetectorSystem_t locDetector = locNeutralShower->dDetectorSystem;
+	double locBCALEnergy = (locDetector == SYS_BCAL) ? locNeutralShower->dEnergy : 0.0;
 	locTreeFillData->Fill_Array<Float_t>(Build_BranchName(locParticleBranchName, "Energy_BCAL"), locBCALEnergy, locArrayIndex);
-	double locFCALEnergy = (locNeutralShower->dDetectorSystem == SYS_FCAL) ? locNeutralShower->dEnergy : 0.0;
+	double locBCALPreshowerEnergy = (locDetector == SYS_BCAL) ? static_cast<const DBCALShower*>(locNeutralShower->dBCALFCALShower)->E_preshower : 0.0;
+	locTreeFillData->Fill_Array<Float_t>(Build_BranchName(locParticleBranchName, "Energy_BCALPreshower"), locBCALPreshowerEnergy, locArrayIndex);
+	double locFCALEnergy = (locDetector == SYS_FCAL) ? locNeutralShower->dEnergy : 0.0;
 	locTreeFillData->Fill_Array<Float_t>(Build_BranchName(locParticleBranchName, "Energy_FCAL"), locFCALEnergy, locArrayIndex);
 
 	//SHOWER POSITION

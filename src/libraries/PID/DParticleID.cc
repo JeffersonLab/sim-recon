@@ -989,7 +989,7 @@ bool DParticleID::MatchToSC(const DReferenceTrajectory* rt, const vector<const D
 	for(size_t loc_i = 0; loc_i < locSCHits.size(); ++loc_i)
 	{
 		DSCHitMatchParams locSCHitMatchParams;
-		if(MatchToSC(NULL, rt, locSCHits[loc_i], locStartTime, locSCHitMatchParams,locIsTimeBased))
+		if(MatchToSC(NULL, rt, locSCHits[loc_i], locStartTime, locSCHitMatchParams, locIsTimeBased))
 			locSCHitMatchParamsVector.push_back(locSCHitMatchParams);
 	}
 	if(locSCHitMatchParamsVector.empty())
@@ -1005,7 +1005,7 @@ bool DParticleID::MatchToSC(const DReferenceTrajectory* rt, const vector<const D
 	return true;
 }
 
-bool DParticleID::MatchToSC(const DKinematicData* locTrack, const DReferenceTrajectory* rt, const DSCHit* locSCHit, double locInputStartTime, DSCHitMatchParams& locSCHitMatchParams, bool locIsTimeBased, DVector3 *IntersectionPoint, DVector3 *IntersectionDir) const
+bool DParticleID::MatchToSC(const DKinematicData* locTrack, const DReferenceTrajectory* rt, const DSCHit* locSCHit, double locInputStartTime, DSCHitMatchParams& locSCHitMatchParams, bool locIsTimeBased, const float* locInputDeltaPhiCut, DVector3 *IntersectionPoint, DVector3 *IntersectionDir) const
 {
 	// NOTE: locTrack is NULL if calling from track reconstruction!!!
 	if(sc_pos.empty() || sc_norm.empty())
@@ -1014,14 +1014,9 @@ bool DParticleID::MatchToSC(const DKinematicData* locTrack, const DReferenceTraj
 	// Find intersection with a "barrel" approximation for the start counter
 	DVector3 proj_pos(NaN,NaN,NaN), proj_mom(NaN,NaN,NaN);
 	double locPathLength = 9.9E9, locFlightTime = 9.9E9;
-	double locFlightTimeVariance=9.9E9;
-	unsigned int sc_index=locSCHit->sector-1;
-	
-	if(rt->GetIntersectionWithPlane(sc_pos[sc_index][0],
-					sc_norm[sc_index][0], 
-					proj_pos, proj_mom, 
-					&locPathLength, &locFlightTime,
-					&locFlightTimeVariance) != NOERROR)
+	double locFlightTimeVariance = 9.9E9;
+	unsigned int sc_index=locSCHit->sector - 1;
+	if(rt->GetIntersectionWithPlane(sc_pos[sc_index][0], sc_norm[sc_index][0], proj_pos, proj_mom, &locPathLength, &locFlightTime, &locFlightTimeVariance) != NOERROR)
 		return false;
 
 	// Check that the hit is not out of time with respect to the track
@@ -1030,35 +1025,22 @@ bool DParticleID::MatchToSC(const DKinematicData* locTrack, const DReferenceTraj
 
 	// Check that the intersection isn't upstream of the paddle
 	double myz = proj_pos.z();
-	if (myz<sc_pos[sc_index][0].z()+1e-4) return false;
+	if (myz < sc_pos[sc_index][0].z() + 1e-4)
+		return false;
 	
-	double proj_phi = proj_pos.Phi();
-	//if(proj_phi < 0.0)
-	//proj_phi += M_TWO_PI;
-
 	// Look for a match in phi
 	//double phi = dSCphi0 + dSCdphi*(locSCHit->sector - 1);
-	double sc_dphi_cut=(locIsTimeBased)?SC_DPHI_CUT:SC_DPHI_CUT_WB;
-	DVector3 sc_pos_at_myz=sc_pos[sc_index][0]
-	  +(myz-sc_pos[sc_index][0].z())*sc_dir[sc_index][0];
-		
-	double phi=sc_pos_at_myz.Phi();
-	double dphi = phi - proj_phi; //phi could be 0 degrees & proj_phi could be 359 degrees
-	while(dphi > TMath::Pi())
-		dphi -= M_TWO_PI;
-	while(dphi < -1.0*TMath::Pi())
-		dphi += M_TWO_PI;
-	// reject match if not consistent with this paddle or the one adjacent
-	if(fabs(dphi) >= 0.21)
-	  return false; //no match
-	
-	// Rough match in phi successful, refine match in nose region were applicable
+	double sc_dphi_cut = 0.0;
+	if(locInputDeltaPhiCut != NULL)
+		sc_dphi_cut = *locInputDeltaPhiCut;
+	else
+		sc_dphi_cut = (locIsTimeBased) ? SC_DPHI_CUT : SC_DPHI_CUT_WB;
 
-	// Length along scintillator
-	double L = 0.;
+	double L = 0.; // Length along scintillator
+	double dphi = 0.;
 
 	// Initialize the normal vector for the SC paddle to the long, unbent region
-	DVector3 norm=sc_norm[sc_index][0];
+	DVector3 norm = sc_norm[sc_index][0];
 
 	// Now check to see if the intersection is in the nose region and find the
 	// start time
@@ -1080,112 +1062,112 @@ bool DParticleID::MatchToSC(const DKinematicData* locTrack, const DReferenceTraj
 	// Check to see if hit occured in the straight section
 	if (myz <= sc_pos_eoss)
 	{
-	  //L=myz;
-	  //locCorrectedHitTime -= L/C_EFFECTIVE;
+		//L=myz;
+		//locCorrectedHitTime -= L/C_EFFECTIVE;
 
-	  // Apply a user-specified matching cut in the leg region
-	  if(fabs(dphi) >= sc_dphi_cut)
-	    return false; //no match
-	  
-	  // Calculate hit distance along scintillator relative to upstream end
-	  L = myz - sc_pos_soss;
-	  // Apply propagation time correction
-	  locCorrectedHitTime -= L*sc_pt_slope[SC_STRAIGHT][sc_index] + sc_pt_yint[SC_STRAIGHT][sc_index];
-	  // Apply attenuation correction
-	  locCorrectedHitEnergy *= 1.0/(exp(sc_attn_B[SC_STRAIGHT_ATTN][sc_index]*L));
+		// Apply a user-specified matching cut in the leg region
+		DVector3 sc_pos_at_myz = sc_pos[sc_index][0] + (myz - sc_pos[sc_index][0].z())*sc_dir[sc_index][0];
+		dphi = sc_pos_at_myz.Phi() - proj_pos.Phi(); //phi could be 0 degrees & proj_phi could be 359 degrees
+		while(dphi > TMath::Pi())
+			dphi -= M_TWO_PI;
+		while(dphi < -1.0*TMath::Pi())
+			dphi += M_TWO_PI;
+		if(fabs(dphi) > sc_dphi_cut)
+			return false; //no match
+
+		// Calculate hit distance along scintillator relative to upstream end
+		L = myz - sc_pos_soss;
+		// Apply propagation time correction
+		locCorrectedHitTime -= L*sc_pt_slope[SC_STRAIGHT][sc_index] + sc_pt_yint[SC_STRAIGHT][sc_index];
+		// Apply attenuation correction
+		locCorrectedHitEnergy *= 1.0/(exp(sc_attn_B[SC_STRAIGHT_ATTN][sc_index]*L));
 	}
 	else
 	{
-	  unsigned int num = sc_norm[sc_index].size() - 1;
-	  for (unsigned int loc_i = 1; loc_i < num; ++loc_i)
-	    {
-	      locPathLength = 9.9E9;
-	      locFlightTime = 9.9E9;
-	      if(rt->GetIntersectionWithPlane(sc_pos[sc_index][loc_i],
-					      sc_norm[sc_index][loc_i], 
-					      proj_pos, proj_mom, 
-					      &locPathLength, &locFlightTime, 
-					      &locFlightTimeVariance) != NOERROR)
-		continue;
-	      myz = proj_pos.z();
-	      norm=sc_norm[sc_index][loc_i];
-	      if(myz < sc_pos[sc_index][loc_i + 1].z()){
-		sc_pos_at_myz=sc_pos[sc_index][loc_i]
-		  +(myz-sc_pos[sc_index][loc_i].z())*sc_dir[sc_index][loc_i];
-		
-		dphi=sc_pos_at_myz.Phi()-proj_pos.Phi();
-		while(dphi > TMath::Pi())
-		  dphi -= M_TWO_PI;
-		while(dphi < -1.0*TMath::Pi())
-		  dphi += M_TWO_PI;
-		
-		// Open up the phi cut in the nose region
-		sc_dphi_cut+=SC_DPHI_CUT_SLOPE*(myz-sc_pos_eoss);
-		
-		if (fabs(dphi)>sc_dphi_cut) return false;
-		break;
-	      }
-	    }	
-	  // Check for intersection point beyond nose
-	  if (myz > sc_pos[sc_index][num].z()) return false;
+		unsigned int num = sc_norm[sc_index].size() - 1;
+		for (unsigned int loc_i = 1; loc_i < num; ++loc_i)
+		{
+			locPathLength = 9.9E9;
+			locFlightTime = 9.9E9;
+			if(rt->GetIntersectionWithPlane(sc_pos[sc_index][loc_i], sc_norm[sc_index][loc_i], proj_pos, proj_mom, &locPathLength, &locFlightTime, &locFlightTimeVariance) != NOERROR)
+				continue;
 
-	  
-	  // Note: in the following code, L does not include a correction for where the start counter starts
-	  // in z...	This is absorbed into locCorrectedHitTime, above.
-	  //if(myz < sc_pos1)
-	  
-	  // If location cannot be located in straight, bend, or nose section then 
-	  // force it to be located at the end/start of the straight/bend section
-	  if(myz < sc_pos_eoss)  // Assume hit at end of straight section
-	    {
-	      // L = sc_pos1;
-	      // locCorrectedHitTime -= L/C_EFFECTIVE;
-	      
-	      // Define the distance to be at the end of the end/start of the straight/bend section
-	      L = sc_pos_eoss - sc_pos_soss;
-	      // Apply propagation time correction
-	      locCorrectedHitTime -= L*sc_pt_slope[SC_STRAIGHT][sc_index] + sc_pt_yint[SC_STRAIGHT][sc_index];
-	      // Apply attenuation correction
-	      locCorrectedHitEnergy *= 1.0/(exp(sc_attn_B[SC_STRAIGHT_ATTN][sc_index]*L));
-	    }
-	  // else
-	  //   {
-	  //     L = (myz - sc_pos1)*sc_angle_cor + sc_pos1;
-	  //     locCorrectedHitTime -= L/C_EFFECTIVE;
-	  //   }
-	  
-	  // Check to see if hit occured in bend section and apply corrections
-	  else if(myz > sc_pos_eoss && myz <= sc_pos_eobs)
-	    {     
-	      //L = (myz - sc_pos_eoss)*sc_angle_corr);
-	      //locCorrectedHitTime -= L/C_EFFECTIVE;
-	      
-	      // Calculate the hit position relative to the upstream end
-	      L = (myz - sc_pos_eoss)*sc_angle_cor + (sc_pos_eoss - sc_pos_soss);
-	      // Apply propagation time correction
-	      locCorrectedHitTime -= L*sc_pt_slope[SC_BEND][sc_index] + sc_pt_yint[SC_BEND][sc_index];  
-	      // Apply attenuation correction
-	      locCorrectedHitEnergy *= (sc_attn_A[SC_STRAIGHT_ATTN][sc_index]/
-					((sc_attn_A[SC_BENDNOSE_ATTN][sc_index]*
-					  exp(sc_attn_B[SC_BENDNOSE_ATTN][sc_index]*L)) +
-					 sc_attn_C[SC_BENDNOSE_ATTN][sc_index]));
-	    }
+			myz = proj_pos.z();
+			norm = sc_norm[sc_index][loc_i];
+			if(myz > sc_pos[sc_index][loc_i + 1].z())
+				continue;
 
-	  // Check to see if hit occured in nose section and apply corrections
-	  else if(myz > sc_pos_eobs && myz <= sc_pos_eons)
+			DVector3 sc_pos_at_myz = sc_pos[sc_index][loc_i] + (myz - sc_pos[sc_index][loc_i].z())*sc_dir[sc_index][loc_i];
+
+			dphi = sc_pos_at_myz.Phi() - proj_pos.Phi();
+			while(dphi > TMath::Pi())
+				dphi -= M_TWO_PI;
+			while(dphi < -1.0*TMath::Pi())
+				dphi += M_TWO_PI;
+
+			// Open up the phi cut in the nose region
+			if(locInputDeltaPhiCut == NULL)
+				sc_dphi_cut += SC_DPHI_CUT_SLOPE*(myz - sc_pos_eoss);
+
+			if (fabs(dphi) > sc_dphi_cut)
+				return false;
+		}
+
+		// Check for intersection point beyond nose
+		if (myz > sc_pos[sc_index][num].z())
+			return false;
+	  
+		// Note: in the following code, L does not include a correction for where the start counter starts in z ...
+		// This is absorbed into locCorrectedHitTime, above.
+		// if(myz < sc_pos1)
+
+		// If location cannot be located in straight, bend, or nose section then
+		// force it to be located at the end/start of the straight/bend section
+		if(myz < sc_pos_eoss)  // Assume hit at end of straight section
 	    {
-	      //L = (myz - sc_pos_eoss)*sc_angle_cor;
-	      
-	      // Calculate the hit position relative to the upstream end
-	      L = (myz - sc_pos_eoss)*sc_angle_cor + (sc_pos_eoss - sc_pos_soss);
-	      // Apply propagation time correction
-	      locCorrectedHitTime -= L*sc_pt_slope[SC_NOSE][sc_index] + sc_pt_yint[SC_NOSE][sc_index]; 
-	      // Apply attenuation correction
-	      locCorrectedHitEnergy *= (sc_attn_A[SC_STRAIGHT_ATTN][sc_index]/
-					((sc_attn_A[SC_BENDNOSE_ATTN][sc_index]*
-					  exp(sc_attn_B[SC_BENDNOSE_ATTN][sc_index]*L)) +
-					 sc_attn_C[SC_BENDNOSE_ATTN][sc_index]));
-	    }
+			// L = sc_pos1;
+			// locCorrectedHitTime -= L/C_EFFECTIVE;
+
+			// Define the distance to be at the end of the end/start of the straight/bend section
+			L = sc_pos_eoss - sc_pos_soss;
+			// Apply propagation time correction
+			locCorrectedHitTime -= L*sc_pt_slope[SC_STRAIGHT][sc_index] + sc_pt_yint[SC_STRAIGHT][sc_index];
+			// Apply attenuation correction
+			locCorrectedHitEnergy *= 1.0/(exp(sc_attn_B[SC_STRAIGHT_ATTN][sc_index]*L));
+		}
+		//else
+		//{
+		//	L = (myz - sc_pos1)*sc_angle_cor + sc_pos1;
+		//	locCorrectedHitTime -= L/C_EFFECTIVE;
+		//}
+	  
+		// Check to see if hit occured in bend section and apply corrections
+		else if(myz > sc_pos_eoss && myz <= sc_pos_eobs)
+		{
+			//L = (myz - sc_pos_eoss)*sc_angle_corr);
+			//locCorrectedHitTime -= L/C_EFFECTIVE;
+
+			// Calculate the hit position relative to the upstream end
+			L = (myz - sc_pos_eoss)*sc_angle_cor + (sc_pos_eoss - sc_pos_soss);
+			// Apply propagation time correction
+			locCorrectedHitTime -= L*sc_pt_slope[SC_BEND][sc_index] + sc_pt_yint[SC_BEND][sc_index];
+			// Apply attenuation correction
+			locCorrectedHitEnergy *= (sc_attn_A[SC_STRAIGHT_ATTN][sc_index] / ((sc_attn_A[SC_BENDNOSE_ATTN][sc_index]*
+					exp(sc_attn_B[SC_BENDNOSE_ATTN][sc_index]*L)) + sc_attn_C[SC_BENDNOSE_ATTN][sc_index]));
+		}
+		// Check to see if hit occured in nose section and apply corrections
+		else if(myz > sc_pos_eobs && myz <= sc_pos_eons)
+		{
+			//L = (myz - sc_pos_eoss)*sc_angle_cor;
+
+			// Calculate the hit position relative to the upstream end
+			L = (myz - sc_pos_eoss)*sc_angle_cor + (sc_pos_eoss - sc_pos_soss);
+			// Apply propagation time correction
+			locCorrectedHitTime -= L*sc_pt_slope[SC_NOSE][sc_index] + sc_pt_yint[SC_NOSE][sc_index];
+			// Apply attenuation correction
+			locCorrectedHitEnergy *= (sc_attn_A[SC_STRAIGHT_ATTN][sc_index] / ((sc_attn_A[SC_BENDNOSE_ATTN][sc_index]*
+					exp(sc_attn_B[SC_BENDNOSE_ATTN][sc_index]*L)) + sc_attn_C[SC_BENDNOSE_ATTN][sc_index]));
+		}
 	}
 
 	double ds = 0.3*proj_mom.Mag()/fabs(proj_mom.Dot(norm));
@@ -1205,12 +1187,12 @@ bool DParticleID::MatchToSC(const DKinematicData* locTrack, const DReferenceTraj
 	locSCHitMatchParams.dDeltaPhiToHit = dphi;
 
 	// Optionally output intersection position	
-	if (IntersectionPoint!=NULL){
-	  *IntersectionPoint=proj_pos;
-	}
-	if (IntersectionDir!=NULL){
-	  *IntersectionDir=proj_mom;
-	  IntersectionDir->SetMag(1.);
+	if (IntersectionPoint!=NULL)
+		*IntersectionPoint=proj_pos;
+	if (IntersectionDir!=NULL)
+	{
+		*IntersectionDir=proj_mom;
+		IntersectionDir->SetMag(1.);
 	}
 
 	return true;

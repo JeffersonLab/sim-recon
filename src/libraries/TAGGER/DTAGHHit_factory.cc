@@ -8,6 +8,7 @@
 
 #include <iostream>
 #include <iomanip>
+#include <cmath>
 using namespace std;
 
 #include "DTAGHHit_factory.h"

@@ -317,8 +317,8 @@ jerror_t JEventProcessor_BCAL_point_time::evnt(JEventLoop *loop, uint64_t eventn
 		thrown_NVsTheta->Fill(theta_thrown);
 
 	} else {
-		printf("Event %6lu numthrown %2i   \n",eventnumber,numthrown);
-        japp->RootFillUnLock(this); //RELEASE ROOT FILL LOCK
+	  if (VERBOSE>=1) printf("Event %6lu numthrown %2i   \n",eventnumber,numthrown);
+		japp->RootFillUnLock(this); //RELEASE ROOT FILL LOCK
 		return NOERROR;
 	}
 

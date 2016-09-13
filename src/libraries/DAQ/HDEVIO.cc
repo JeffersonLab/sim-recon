@@ -799,6 +799,22 @@ void HDEVIO::MapEvents(BLOCKHEADER_t &bh, EVIOBlockRecord &br)
 			ifs.seekg(sizeof(EVENTHEADER_t), ios_base::cur);
 		}
 
+		if (eh->event_len < 2) {
+			// Before disabling this warning (or hiding it behind a VERBOSE flag)
+			// you should ask yourself the question, "Is this something that we
+			// should simply be ignoring, garbage bytes in the input evio file?"
+			std::cout << "HDEVIO::MapEvents warning - "
+                      << "Attempt to swap bank with len<2" << std::endl;
+			Nbad_events++;
+			Nerrors++;
+			--i;
+			streampos delta = (streampos)((eh->event_len+1)<<2) - 
+                              (streampos)sizeof(EVENTHEADER_t);
+			ifs.seekg(delta, ios_base::cur);
+			pos += (streampos)((eh->event_len+1)<<2);
+			continue;
+		}
+
 		EVIOEventRecord er;
 		er.pos = pos;
 		er.event_len   = eh->event_len + 1; // +1 to include length word

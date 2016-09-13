@@ -15,6 +15,7 @@
 #include <mutex>
 #include <condition_variable>
 #include <list>
+#include <iterator>
 using namespace std;
 
 #include <JANA/jerror.h>
@@ -106,8 +107,10 @@ class DEVIOWorkerThread{
 		void      ParsePhysicsBank(uint32_t* &iptr, uint32_t *iend);
 		void ParseBuiltTriggerBank(uint32_t* &iptr, uint32_t *iend);
 		void         ParseDataBank(uint32_t* &iptr, uint32_t *iend);
+        void      ParseDVertexBank(uint32_t* &iptr, uint32_t *iend);
 
 		void        ParseJLabModuleData(uint32_t rocid, uint32_t* &iptr, uint32_t *iend);
+		void                ParseTIBank(uint32_t rocid, uint32_t* &iptr, uint32_t *iend);
 		void              ParseCAEN1190(uint32_t rocid, uint32_t* &iptr, uint32_t *iend);
 		void   ParseModuleConfiguration(uint32_t rocid, uint32_t* &iptr, uint32_t *iend);
 		void              Parsef250Bank(uint32_t rocid, uint32_t* &iptr, uint32_t *iend);

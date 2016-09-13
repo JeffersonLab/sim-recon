@@ -33,59 +33,21 @@ DBCALCluster_factory::DBCALCluster_factory() :
 	m_moliereRadius( 3.7*k_cm ),
 	m_clust_hit_timecut ( 20.0*k_nsec ),
 	m_timeCut( 8.0*k_nsec ){
+  /*
 	sep_inclusion_curve = new TF1("sep_inclusion_curve","exp(-x/30.)-.1",0.,7.*m_moliereRadius); 
         dtheta_inclusion_curve = new TF1("dtheta_inclusion_curve","exp(-(x-0.1)/[0])-[1]+.15",m_moliereRadius,7.*m_moliereRadius);
         dphi_inclusion_curve = new TF1("dphi_inclusion_curve","exp(-(x-2.)/2.5)-x*0.002+.07",m_moliereRadius,6.*m_moliereRadius);
 	C1_parm = new TF1("C1_parm","23.389+19.093*tanh(-0.0104*(x-201.722))",-50.,450.);
 	C2_parm = new TF1("C2_parm","0.151+0.149*tanh(-0.016*(x-275.194))",-50.,450.);
+  */
 	// The phi and theta direction inclusion curves are described in: 
 	// http://argus.phys.uregina.ca/gluex/DocDB/0029/002998/003/CAL_meeting_may5.pdf.
 	// The theta direction inclusion curve needs to be a function of theta. C1_parm and
 	// C2_parm are parameters [0] and [1] in dtheta_inclusion_curve. 
 	}
 
-#ifdef BCAL_CLUSTER_DIAGNOSTIC
-
 jerror_t
 DBCALCluster_factory::init(void){
-
-	m_rootFile = new TFile( "bcal_clust_diag.root", "RECREATE" );
-
-	m_twoEndPtTr = new TTree( "twoEndPtTr", "BCAL two-ended points" );
-	m_twoEndPtTr->Branch( "n2EPt", &m_n2EPt, "n2EPt/I" );
-	m_twoEndPtTr->Branch( "rhoPt", m_rhoPt, "rhoPt[n2EPt]/F" );
-	m_twoEndPtTr->Branch( "phiPt", m_phiPt, "phiPt[n2EPt]/F" );
-	m_twoEndPtTr->Branch( "thePt", m_thePt, "thePt[n2EPt]/F" );
-	m_twoEndPtTr->Branch( "rhoSPt", m_rhoSPt, "rhoSPt[n2EPt]/F" );
-	m_twoEndPtTr->Branch( "phiSPt", m_phiSPt, "phiSPt[n2EPt]/F" );
-	m_twoEndPtTr->Branch( "theSPt", m_theSPt, "theSPt[n2EPt]/F" );
-	m_twoEndPtTr->Branch( "ePt", m_ePt, "ePt[n2EPt]/F" );
-	m_twoEndPtTr->Branch( "tPt", m_tPt, "tPt[n2EPt]/F" );
-	m_twoEndPtTr->Branch( "t0Pt", m_t0Pt, "t0Pt[n2EPt]/F" );
-
-	m_firstClustTr = new TTree( "firstClustTr", "First-pass clusters" );
-	m_firstClustTr->Branch( "nCl", &m_nCl, "nCl/I" );
-	m_firstClustTr->Branch( "nPts", m_nPts, "nPts[nCl]/I" );
-	m_firstClustTr->Branch( "rhoCl", m_rhoCl, "rhoCl[nCl]/F" );
-	m_firstClustTr->Branch( "phiCl", m_phiCl, "phiCl[nCl]/F" );
-	m_firstClustTr->Branch( "theCl", m_theCl, "theCl[nCl]/F" );
-	m_firstClustTr->Branch( "rhoSCl", m_rhoSCl, "rhoSCl[nCl]/F" );
-	m_firstClustTr->Branch( "phiSCl", m_phiSCl, "phiSCl[nCl]/F" );
-	m_firstClustTr->Branch( "theSCl", m_theSCl, "theSCl[nCl]/F" );
-	m_firstClustTr->Branch( "eCl", m_eCl, "eCl[nCl]/F" );
-	m_firstClustTr->Branch( "tCl", m_tCl, "tCl[nCl]/F" );
-
-	m_ovrlpTr = new TTree( "ovrlpTr", "Point Cluster Overlap" );
-	m_ovrlpTr->Branch( "dPhi", &m_dPhi, "dPhi/F" );
-	m_ovrlpTr->Branch( "dThe", &m_dThe, "dThe/F" );
-	m_ovrlpTr->Branch( "sep", &m_sep, "sep/F" );
-	m_ovrlpTr->Branch( "sigPhi", &m_sigPhi, "sigPhi/F" );
-	m_ovrlpTr->Branch( "sigThe", &m_sigThe, "sigThe/F" );
-	m_ovrlpTr->Branch( "eClus", &m_eClus, "eClus/F" );
-	m_ovrlpTr->Branch( "rhoClus", &m_rhoClus, "rhoClus/F" );
-	m_ovrlpTr->Branch( "phiClus", &m_phiClus, "phiClus/F" );
-	m_ovrlpTr->Branch( "theClus", &m_theClus, "theClus/F" );
-	m_ovrlpTr->Branch( "nClClus", &m_nClClus, "nClClus/I" );
 
 	return NOERROR;
 
@@ -94,18 +56,8 @@ DBCALCluster_factory::init(void){
 jerror_t
 DBCALCluster_factory::fini( void ){
 
-	m_rootFile->cd();
-
-	m_twoEndPtTr->Write();
-	m_firstClustTr->Write();
-	m_ovrlpTr->Write();
-	m_rootFile->Write();
-	m_rootFile->Close();
-
 	return NOERROR;
 }
-
-#endif
 
 jerror_t DBCALCluster_factory::brun(JEventLoop *loop, int32_t runnumber) {
 	DApplication* app = dynamic_cast<DApplication*>(loop->GetJApplication());
@@ -129,53 +81,6 @@ DBCALCluster_factory::evnt( JEventLoop *loop, uint64_t eventnumber ){
 	vector< const DBCALPoint* > twoEndPoint;
 	vector< const DBCALPoint* > usedPoints;
 	loop->Get(twoEndPoint);
-
-#ifdef BCAL_CLUSTER_DIAGNOSTIC
-
-	m_rootFile->cd();
-
-	m_n2EPt = twoEndPoint.size();
-	assert( m_n2EPt <= MAX_POINT );
-
-	for( int i = 0; i < m_n2EPt; ++i ){
-
-		m_rhoPt[i] = twoEndPoint[i]->rho();
-		m_phiPt[i] = twoEndPoint[i]->phi();
-		m_thePt[i] = twoEndPoint[i]->theta();
-		m_rhoSPt[i] = twoEndPoint[i]->sigRho();
-		m_phiSPt[i] = twoEndPoint[i]->sigPhi();
-		m_theSPt[i] = twoEndPoint[i]->sigTheta();
-		m_ePt[i] = twoEndPoint[i]->E();
-		m_tPt[i] = twoEndPoint[i]->t();
-		m_t0Pt[i] = twoEndPoint[i]->tInnerRadius();
-	}
-
-	m_twoEndPtTr->Fill();
-
-#endif // BCAL_CLUSTER_DIAGNOSTIC
-
-#ifdef BCAL_CLUSTER_DIAGNOSTIC
-
-	m_nCl = clusters.size();
-	assert( m_nCl <= MAX_CLUST );
-
-	for( int i = 0; i < m_nCl; ++i ){
-
-		m_nPts[i] = clusters[i]->nCells();
-		m_rhoCl[i] = clusters[i]->rho();
-		m_phiCl[i] = clusters[i]->phi();
-		m_theCl[i] = clusters[i]->theta();
-		m_rhoSCl[i] = clusters[i]->sigRho();
-		m_phiSCl[i] = clusters[i]->sigPhi();
-		m_theSCl[i] = clusters[i]->.sigTheta();
-		m_eCl[i] = clusters[i]->E();
-		m_tCl[i] = clusters[i]->t();
-	}
-
-	m_firstClustTr->Fill();
-
-#endif // BCAL_CLUSTER_DIAGNOSTIC
-
 
 	// Want to add singled-ended hits to the Clusters. 
 
@@ -230,7 +135,10 @@ DBCALCluster_factory::evnt( JEventLoop *loop, uint64_t eventnumber ){
 			delete *clust;
 			continue;
 		}
-
+		vector<const DBCALPoint*>points=(**clust).points();
+		for (unsigned int i=0;i<points.size();i++){
+		  (**clust).AddAssociatedObject(points[i]);
+		}
 		_data.push_back(*clust);
 	}
 
@@ -412,9 +320,7 @@ DBCALCluster_factory::recycle_points( vector<const DBCALPoint*> usedPoints, vect
 			bool clust_match;
 			bool point_match;
 			int best_clust = 0;
-			vector<const DBCALPoint*> associated_points;
-			associated_points.clear();
-			(**clust).Get(associated_points);
+			vector<const DBCALPoint*>associated_points=(**clust).points();
 			float deltaTheta = fabs( (**clust).theta() - (*usedpt)->theta() );
 			float deltaPhi = (**clust).phi() - (*usedpt)->phi();
 			float deltaPhiAlt = ( (**clust).phi() > (*usedpt)->phi() ?
@@ -595,41 +501,32 @@ DBCALCluster_factory::overlap( const DBCALCluster& clust,
 	float sep_term1 = rho*deltaTheta;
 	float sep_term2 = rho*sin(theta)*deltaPhi;
 
-#ifdef BCAL_CLUSTER_DIAGNOSTIC
-
-	m_dPhi = deltaPhi;
-	m_dThe = fabs( clust.theta() - point->theta() );
-	m_sep  = sep;
-	m_sigPhi = sigPhi;
-	m_sigThe = sigTheta;
-	m_eClus = clust.E();
-	m_rhoClus = clust.rho();
-	m_phiClus = clust.phi();
-	m_theClus = clust.theta();
-	m_nClClus = clust.nCells();
-
-	m_ovrlpTr->Fill();
-
-#endif // BCAL_CLUSTER_DIAGNOSTIC
-
 	//very loose cuts to make sure the two hits are in time
 	bool time_match = fabs(clust.t() - point->t()) < m_timeCut;
 
 	double clust_z = clust.rho()*cos(clust.theta());
 
-	double c1 = C1_parm->Eval(clust_z);
-	double c2 = C2_parm->Eval(clust_z);
+	//double c1 = C1_parm->Eval(clust_z);
+	double c1=23.389+19.093*tanh(-0.0104*(clust_z-201.722));
 
-	dtheta_inclusion_curve->SetParameter(0,c1);
-	dtheta_inclusion_curve->SetParameter(1,c2); 
+	//double c2 = C2_parm->Eval(clust_z);
+	double c2=0.151+0.149*tanh(-0.016*(clust_z-275.194));
+
+	//dtheta_inclusion_curve->SetParameter(0,c1);
+	//dtheta_inclusion_curve->SetParameter(1,c2); 
 	
-	double inclusion_val = sep_inclusion_curve->Eval(sep);
-        double inclusion_val1 = dtheta_inclusion_curve->Eval(sep_term1);
-        double inclusion_val2 = dphi_inclusion_curve->Eval(sep_term2);
+	//double inclusion_val = sep_inclusion_curve->Eval(sep);
+	double inclusion_val=exp(-sep/30.)-0.1;
 
+        //double inclusion_val1 = dtheta_inclusion_curve->Eval(sep_term1);
+	double inclusion_val1=exp(-(sep_term1-0.1)/c1)-c2+.15;
+	
+        //double inclusion_val2 = dphi_inclusion_curve->Eval(sep_term2);	
+	double inclusion_val2=exp(-(sep_term2-2.)/2.5)-sep_term2*0.002+0.07;
+	
 	// We consider fractional energy (point.E/Clust.E) as a function of spatial separation between
 	// a point and cluster to determine if the point should be included in the cluster.
-	// These distrbutions are tigher in the phihat direction than along thetahat. For more details
+	// These distributions are tighter in the phihat direction than along thetahat. For more details
 	// on how the selection criteria for cluster,point overlap function go to logbook entry 3396018.	
 
 	if(BCALCLUSTERVERBOSE>0) cout << "(m,l,s) = (" <<point->module()<<","<<point->layer()<<","<<point->sector()<<")" <<  " sep = " << sep << "sep1 = " << sep_term1 << " sep2 = " << sep_term2 << " inclusion value = " << inclusion_val << " inclusion val1= " << inclusion_val1 << " inclusion val2= " << inclusion_val2<< " time match = " << time_match << " clust E = " << clust.E() << " point E = " << point->E() << " energy ratio = " << point->E()/(point->E()+clust.E()) <<  " clust theta = " << clust.theta()*180./3.14159 << " point theta = " << point->theta()*180./3.14159 << " sep rho*deltaTheta = " << ( rho * deltaTheta ) << endl;

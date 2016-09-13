@@ -468,7 +468,7 @@ jerror_t JEventSource_EVIOpp::GetObjects(JEvent &event, JFactory_base *factory)
 	vector<const DTranslationTable*> translationTables;
 	DTranslationTable_factory *ttfac = static_cast<DTranslationTable_factory*>(loop->GetFactory("DTranslationTable"));
 	if(ttfac) ttfac->Get(translationTables);
-	
+  
 	// Copy pointers to all hits to appropriate factories.
 	// Link BORconfig objects and apply translation tables if appropriate.
 	DParsedEvent *pe = (DParsedEvent*)event.GetRef();
@@ -494,7 +494,14 @@ jerror_t JEventSource_EVIOpp::GetObjects(JEvent &event, JFactory_base *factory)
 	if(RECORD_CALL_STACK) AddToCallStack(pe, loop);
 
 	// Decide whether this is a data type the source supplies
-	bool isSuppliedType = pe->IsParsedDataType(dataClassName);
+    // If the data type is that of some derived data that is nominally
+    // supplied by another factory, but is being stored in EVIO format
+    // for some special reason (e.g. calibration skims), then we 
+    // say that we supply this data ONLY IF we actually have data
+    // of this type.  Otherwise, we feign ignorance so that the 
+    // data is produced by its usual factory
+	bool isSuppliedType = pe->IsParsedDataType(dataClassName)
+                           && pe->IsNonEmptyDerivedDataType(dataClassName);
 	for(auto tt : translationTables){
 		if(isSuppliedType) break;  // once this is set, it's set
 		isSuppliedType = tt->IsSuppliedType(dataClassName);

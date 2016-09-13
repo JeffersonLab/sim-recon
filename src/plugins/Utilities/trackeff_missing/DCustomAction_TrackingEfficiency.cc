@@ -40,9 +40,11 @@ void DCustomAction_TrackingEfficiency::Initialize(JEventLoop* locEventLoop)
 
 	//CHANNEL INFO
 	locBranchRegister.Register_Single<Float_t>("BeamEnergy");
+	locBranchRegister.Register_Single<Float_t>("BeamRFDeltaT");
 	locBranchRegister.Register_Single<Float_t>("MissingMassSquared"); //is measured
 	locBranchRegister.Register_Single<TVector3>("MissingP3"); //is kinfit if kinfit
 	locBranchRegister.Register_Single<Float_t>("ComboVertexZ");
+	locBranchRegister.Register_Single<UChar_t>("NumExtraTracks");
 
 	//TRACKING INFO: //"Recon:" Time-based track
 	locBranchRegister.Register_Single<Float_t>("ReconMatchFOM"); //FOM < 0 if nothing, no-match
@@ -78,6 +80,9 @@ bool DCustomAction_TrackingEfficiency::Perform_Action(JEventLoop* locEventLoop, 
 	vector<const DBCALShower*> locBCALShowers;
 	locEventLoop->Get(locBCALShowers);
 
+	vector<const DChargedTrack*> locUnusedChargedTracks;
+	dAnalysisUtilities->Get_UnusedChargedTracks(locEventLoop, locParticleCombo, locUnusedChargedTracks);
+
 	const DEventRFBunch* locEventRFBunch = locParticleCombo->Get_EventRFBunch();
 
 	/*********************************************** MISSING PARTICLE INFO ***********************************************/
@@ -110,9 +115,22 @@ bool DCustomAction_TrackingEfficiency::Perform_Action(JEventLoop* locEventLoop, 
 	}
 	
 	double locVertexZ = locParticleCombo->Get_EventVertex().Z();
+	double locBeamRFDeltaT = locBeamParticle->time() - locEventRFBunch->dTime;
+
+	//get number of extra tracks that have at least 10 hits
+	size_t locNumExtraTracks = 0;
+	for(auto locChargedTrack : locUnusedChargedTracks)
+	{
+		auto locBestHypothesis = locChargedTrack->Get_BestFOM();
+		auto locNumTrackHits = locBestHypothesis->dNDF_Track + 5;
+		if(locNumTrackHits >= 10)
+			++locNumExtraTracks;
+	}
 
 	//FILL CHANNEL INFO
 	dTreeFillData.Fill_Single<Float_t>("BeamEnergy", locBeamParticle->energy());
+	dTreeFillData.Fill_Single<Float_t>("BeamRFDeltaT", locBeamRFDeltaT);
+	dTreeFillData.Fill_Single<UChar_t>("NumExtraTracks", (UChar_t)locNumExtraTracks);
 	dTreeFillData.Fill_Single<Float_t>("MissingMassSquared", locMeasuredMissingP4.M2());
 	TVector3 locTMissingP3(locMissingP3.Px(), locMissingP3.Py(), locMissingP3.Pz());
 	dTreeFillData.Fill_Single<TVector3>("MissingP3", locTMissingP3); //is kinfit if kinfit

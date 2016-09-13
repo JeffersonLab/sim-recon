@@ -14,44 +14,45 @@
 #include "units.h"
 
 DBCALShower_factory_IU::DBCALShower_factory_IU(){
-  
-  if( ! DBCALGeometry::summingOn() ) {
-    // in libraries/PID/DNeutralShowerCandidate.h, there are some constants used to calculate the energy uncertainty. If you are updating these constants, you might want to update that also...
 
-    // these are energy calibration parameters -- no summing of cells
-    
-    m_scaleZ_p0 =  0.950774;
-    m_scaleZ_p1 =  0.000483979;
-    m_scaleZ_p2 =  -2.08086e-06;
-    m_scaleZ_p3 =  8.08534e-10;
-    
-    m_nonlinZ_p0 =  0.0152548;
-    m_nonlinZ_p1 =  0;
-    m_nonlinZ_p2 =  0;    
-    m_nonlinZ_p3 =  0;
-  }
-  else{
-    
-    // these are energy calibration parameters -- 1.2.3.4 summing
-    
-    //last updated for svn revision 9233 
-    m_scaleZ_p0 =  0.992437;
-    m_scaleZ_p1 =  0.00039242;
-    m_scaleZ_p2 =  -2.23135e-06;
-    m_scaleZ_p3 =  1.40158e-09;
-    
-    m_nonlinZ_p0 =  -0.0147086;
-    m_nonlinZ_p1 =  9.69207e-05;
-    m_nonlinZ_p2 =  0;    
-    m_nonlinZ_p3 =  0;
+  LOAD_CCDB_CONSTANTS = 1.;
+  gPARMS->SetDefaultParameter("BCAL:LOAD_NONLIN_CCDB", LOAD_CCDB_CONSTANTS);
 
-  }
+  energy_cutoff = 0;
+  linear_intercept = 0;
+  linear_slope = 0;
+  exponential_param0 = 0;
+  exponential_param1 = 0;
+  exponential_param2 = 0;
+
+  //use to set energy corrections on command line
+
+  gPARMS->SetDefaultParameter("BCAL:energy_cutoff", energy_cutoff);
+  gPARMS->SetDefaultParameter("BCAL:linear_slope", linear_slope);
+  gPARMS->SetDefaultParameter("BCAL:linear_intercept", linear_intercept);
+  gPARMS->SetDefaultParameter("BCAL:exponential_param0", exponential_param0);
+  gPARMS->SetDefaultParameter("BCAL:exponential_param1", exponential_param1);
+  gPARMS->SetDefaultParameter("BCAL:exponential_param2", exponential_param2);
+
 }
 
 jerror_t DBCALShower_factory_IU::brun(JEventLoop *loop, int32_t runnumber) {
   DApplication* app = dynamic_cast<DApplication*>(loop->GetJApplication());
   DGeometry* geom = app->GetDGeometry(runnumber);
   geom->GetTargetZ(m_zTarget);
+
+    //by default, energy correction parameters are obtained through ccdb
+
+    if(LOAD_CCDB_CONSTANTS > 0.5){
+	map<string, double> shower_calib;
+	loop->GetCalib("BCAL/shower_calib", shower_calib);
+	energy_cutoff = shower_calib["energy_cutoff"];
+	linear_intercept = shower_calib["linear_intercept"];
+	linear_slope = shower_calib["linear_slope"];
+	exponential_param0 = shower_calib["exponential_param0"];
+	exponential_param1 = shower_calib["exponential_param1"];
+	exponential_param2 = shower_calib["exponential_param2"]; 
+    }
 
   return NOERROR;
 }
@@ -79,6 +80,7 @@ DBCALShower_factory_IU::evnt( JEventLoop *loop, uint64_t eventnumber ){
     DBCALShower* shower = new DBCALShower();
     
     shower->E_raw = (**clItr).E();
+    shower->E_preshower = (**clItr).E_preshower();
     shower->x = rho * sinTh * cosPhi;
     shower->y = rho * sinTh * sinPhi;
     shower->z = rho * cosTh + m_zTarget;
@@ -141,29 +143,12 @@ DBCALShower_factory_IU::evnt( JEventLoop *loop, uint64_t eventnumber ){
     shower->zErr = sqrt(shower->xyzCovariance[2][2]);
     
     shower->tErr = (**clItr).sigT();
-    
-    // calibrate energy:
-    // Energy calibration has a z dependence -- the
-    // calibration comes from fitting E_rec / E_gen to scale * E_gen^nonlin
-    // for slices of z.  These fit parameters (scale and nonlin) are then plotted 
-    // as a function of z and fit.
-    
-/*  float r = sqrt( shower->x * shower->x + shower->y * shower->y );
-    
-    float zEntry = ( shower->z - m_zTarget ) * ( DBCALGeometry::GetBCAL_inner_rad() / r );
-    
-    float scale = m_scaleZ_p0  + m_scaleZ_p1*zEntry + 
-    m_scaleZ_p2*(zEntry*zEntry) + m_scaleZ_p3*(zEntry*zEntry*zEntry);
-    float nonlin = m_nonlinZ_p0  + m_nonlinZ_p1*zEntry + 
-    m_nonlinZ_p2*(zEntry*zEntry) + m_nonlinZ_p3*(zEntry*zEntry*zEntry);
-*/    
-    // shower->E = pow( (shower->E_raw ) / scale, 1 / ( 1 + nonlin ) );  shower level energy correction was
-    // produced from old MC studies around early 2010s? This correction gives us a wider inclusive pi0
-    // width than using the raw energy produced in the cluster factory. For the time being we will make 
-    // members E and E_raw the same so people and DNeutralShower are always grabbing the most correct
-    // energy, but shower level corrections will need to be made.
    
-    shower->E = shower->E_raw;
+    // non-linear energy corrections can be found at https://logbooks.jlab.org/entry/3419524 
+    
+    if( shower->E_raw < energy_cutoff ) shower->E = shower->E_raw / (linear_intercept + linear_slope * shower->E_raw ) ;
+   
+    if( shower->E_raw >= energy_cutoff ) shower->E = shower->E_raw / (exponential_param0 - exp(exponential_param1 * shower->E_raw + exponential_param2));
 
     shower->AddAssociatedObject(*clItr);
     

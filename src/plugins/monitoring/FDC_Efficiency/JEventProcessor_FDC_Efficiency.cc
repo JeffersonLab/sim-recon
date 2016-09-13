@@ -16,6 +16,8 @@ static TH1D *fdc_wire_expected_cell[25]; // Contains total number of expected hi
 static TH2D *fdc_pseudo_measured_cell[25]; //Filled with total actually detected before division at end
 static TH2D *fdc_pseudo_expected_cell[25]; // Contains total number of expected hits by DOCA
 
+const unsigned int rad = 1; // 1, 5 or 9
+
 static TH1I *hChi2OverNDF;
 static TH1I *hChi2OverNDF_accepted;
 static TH1I *hPseudoRes;
@@ -23,7 +25,7 @@ static TH1I *hPseudoResX[25];
 static TH1I *hPseudoResY[25];
 static TH1I *hPseudoResU[25];
 static TH1I *hPseudoResV[25];
-static TH2I *hPseudoResUvsV[25][9];
+static TH2I *hPseudoResUvsV[25][rad];
 static TH2I *hPseudoResVsT;
 static TH2I *hResVsT;
 static TH1I *hMom;
@@ -86,8 +88,8 @@ jerror_t JEventProcessor_FDC_Efficiency::init(void)
     char hname_expected[256];
     sprintf(hname_measured, "fdc_wire_measured_cell[%d]", icell+1);
     sprintf(hname_expected, "fdc_wire_expected_cell[%d]", icell+1);
-    fdc_wire_measured_cell[icell+1] = new TH1D(hname_measured, "", 96, 0, 95);
-    fdc_wire_expected_cell[icell+1] = new TH1D(hname_expected, "", 96, 0, 95);
+    fdc_wire_measured_cell[icell+1] = new TH1D(hname_measured, "", 96, 0.5, 96.5);
+    fdc_wire_expected_cell[icell+1] = new TH1D(hname_expected, "", 96, 0.5, 96.5);
 
     sprintf(hname_measured, "fdc_pseudo_measured_cell[%d]", icell+1);
     sprintf(hname_expected, "fdc_pseudo_expected_cell[%d]", icell+1);
@@ -113,12 +115,11 @@ jerror_t JEventProcessor_FDC_Efficiency::init(void)
 
   hRingsHit_vs_P = new TH2I("hRingsHit_vs_P", "Rings of CDC Contributing to Track vs P (accepted)", 25, -0.5, 24.5, 34, 0.6, 4);
 
-  hWireTime = new TH1I("hWireTime", "Timing of Hits", 500, -500, 1000);
-  hWireTime_accepted = new TH1I("hWireTime_accepted", "Timing of Hits (accepted)", 500, -500, 1000);
+  hWireTime = new TH1I("hWireTime", "Timing of Hits", 1500, -500, 1000);
+  hWireTime_accepted = new TH1I("hWireTime_accepted", "Timing of Hits (accepted)", 1500, -500, 1000);
 
-  hPseudoTime = new TH1I("hPseudoTime", "Timing of Pseudos", 500, -500, 1000);
-  hPseudoTime_accepted = new TH1I("hPseudoTime_accepted", "Timing of Pseudos (accepted)", 500, -500, 1000);
-
+  hPseudoTime = new TH1I("hPseudoTime", "Timing of Pseudos", 600, -200, 400);
+  hPseudoTime_accepted = new TH1I("hPseudoTime_accepted", "Timing of Pseudos (accepted)", 600, -200, 400);
 
   gDirectory->cd("/FDC_Efficiency");
   gDirectory->mkdir("Residuals")->cd();
@@ -141,8 +142,8 @@ jerror_t JEventProcessor_FDC_Efficiency::init(void)
     sprintf(hname_Y, "hPseudoResV_cell[%d]", icell+1);
     hPseudoResU[icell+1] = new TH1I(hname_X,"Pseudo Residual along Wire", 600, -3, 3);
     hPseudoResV[icell+1] = new TH1I(hname_Y,"Pseudo Residual perp. to Wire", 600, -3, 3);
-    for (int r=0; r<9; r++){
-      sprintf(hname_XY, "hPseudoResUvsV_cell[%d]_radius[%d]", icell+1, (r+1)*5);
+    for (unsigned int r=0; r<rad; r++){
+      sprintf(hname_XY, "hPseudoResUvsV_cell[%d]_radius[%d]", icell+1, (r+1)*45/rad);
       hPseudoResUvsV[icell+1][r] = new TH2I(hname_XY,"Pseudo Residual 2D", 200, -1, 1, 200, -1, 1);
     }
 
@@ -176,6 +177,7 @@ jerror_t JEventProcessor_FDC_Efficiency::brun(JEventLoop *eventLoop, int32_t run
 
   // Get outer radius of FDC 
   dgeom->GetFDCRmax(fdcrmax);
+  fdcrmax = 48; // fix to 48cm from DFDCPseudo_factory
 		  
   return NOERROR;
 }
@@ -311,7 +313,7 @@ jerror_t JEventProcessor_FDC_Efficiency::evnt(JEventLoop *loop, uint64_t eventnu
       // }
       
       if(!detMatches->Get_TOFMatchParams(thisTimeBasedTrack, TOFMatches) && !detMatches->Get_BCALMatchParams(thisTimeBasedTrack,BCALMatches)) {
-	continue; // At least one match either to the Time-Of-Flight (forward) OR the BCAL (large angles)
+      	continue; // At least one match either to the Time-Of-Flight (forward) OR the BCAL (large angles)
       }
     }
     else return NOERROR; // Field off not supported for now !!
@@ -483,8 +485,8 @@ jerror_t JEventProcessor_FDC_Efficiency::evnt(JEventLoop *loop, uint64_t eventnu
 	    hPseudoResY[cellNum]->Fill(residualY);
 	    hPseudoResU[cellNum]->Fill(residualU);
 	    hPseudoResV[cellNum]->Fill(residualV);
-	    int radius = interPosition2D.Mod()/5;
-	    if (radius<9)
+	    unsigned int radius = interPosition2D.Mod()/(45/rad);
+	    if (radius<rad)
 	      hPseudoResUvsV[cellNum][radius]->Fill(residualU, residualV);
 	    japp->RootFillUnLock(this); //RELEASE ROOT FILL LOCK
 	    
@@ -500,7 +502,7 @@ jerror_t JEventProcessor_FDC_Efficiency::evnt(JEventLoop *loop, uint64_t eventnu
 		japp->RootFillLock(this); //ACQUIRE ROOT FILL LOCK
 		fdc_pseudo_measured_cell[cellNum]->Fill(interPosition.X(), interPosition.Y());
 		hPseudoTime_accepted->Fill(locPseudo->time);
-		hPseudoResVsT->Fill(residualR, locPseudo->time);
+		hPseudoResVsT->Fill(residualU, locPseudo->time);
 		japp->RootFillUnLock(this); //RELEASE ROOT FILL LOCK
 	      }
 	    }

@@ -296,7 +296,7 @@ jerror_t JEventProcessor_ST_Propagation_Time::evnt(JEventLoop *loop, uint64_t ev
                                                 st_params[0].dSCHit, 
                                                 st_params[0].dSCHit->t, 
                                                 locSCHitMatchParams, 
-                                                true,
+                                                true, NULL,
                                                 &IntersectionPoint, &IntersectionDir);      
           if(!sc_match_pid) continue;
           // For each paddle calculate the hit time, flight time, intersection point (z), and t0 from TOF

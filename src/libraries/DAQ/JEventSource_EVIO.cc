@@ -278,6 +278,7 @@ JEventSource_EVIO::JEventSource_EVIO(const char* source_name):JEventSource(sourc
 	event_source_data_types.insert("DL1Info");
 	event_source_data_types.insert("Df250Scaler");
 	event_source_data_types.insert("Df250AsyncPedestal");
+	//event_source_data_types.insert("DVertex");
 
 	// Read in optional module type translation map if it exists	
 	ReadOptionalModuleTypeTranslation();
@@ -2832,7 +2833,14 @@ void JEventSource_EVIO::ParseEVIOEvent(evioDOMTree *evt, list<ObjList*> &full_ev
 	    continue;
         }
 
-
+        /*
+        // Check if this bank stores DVertex data
+        if(bankPtr->tag == 0x0D01){
+            if(VERBOSE>4) evioout << "      DVertex bank tag="<<hex<<bankPtr->tag<<dec<< endl;
+            ParseDVertexBank(bankPtr, full_events);
+            continue;
+        }
+        */
 
         // The number of events in block is stored in lower 8 bits
         // of header word (aka the "num") of Data Bank. This should
@@ -4890,6 +4898,53 @@ void JEventSource_EVIO::ParseTSSync(evioDOMNodeP bankPtr, list<ObjList*> &events
 
 
 }
+
+//----------------
+// ParseDVertexBank
+//----------------
+void JEventSource_EVIO::ParseDVertexBank(evioDOMNodeP bankPtr, list<ObjList*> &events)
+{
+    const vector<uint32_t> *vec = bankPtr->getVector<uint32_t>();
+    
+    if(vec->size() != 11) {
+        
+        DVertex* the_vertex = new DVertex();
+
+        uint64_t lo_word = (*vec)[0];
+        uint64_t hi_word = (*vec)[1];
+        double vertex_x_pos = static_cast<double>( lo_word | (hi_word<<32) );
+        lo_word = (*vec)[2];
+        hi_word = (*vec)[3];
+        double vertex_y_pos = static_cast<double>( lo_word | (hi_word<<32) );
+        lo_word = (*vec)[4];
+        hi_word = (*vec)[5];
+        double vertex_z_pos = static_cast<double>( lo_word | (hi_word<<32) );
+        lo_word = (*vec)[6];
+        hi_word = (*vec)[7];
+        double vertex_t = static_cast<double>( lo_word | (hi_word<<32) );
+
+        DVector3 vertex_position(vertex_x_pos, vertex_y_pos, vertex_z_pos);
+        the_vertex->dSpacetimeVertex = DLorentzVector(vertex_position, vertex_t);
+        the_vertex->dKinFitNDF = (*vec)[8];
+
+        lo_word = (*vec)[9];
+        hi_word = (*vec)[10];
+        the_vertex->dKinFitChiSq = static_cast<double>( lo_word | (hi_word<<32) );
+
+        if(events.empty()) {				
+            events.push_back(new ObjList());
+        }
+
+        ObjList *objs = *(events.begin());
+
+        objs->misc_objs.push_back(the_vertex);
+
+    } else {
+        evioout << "  DVertex bank: inconsistent bank format. Don't parse " << endl;
+    }
+
+}
+
 
 
 //----------------

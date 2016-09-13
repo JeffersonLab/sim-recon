@@ -15,7 +15,6 @@ DBCALCluster::DBCALCluster( const DBCALPoint* point, double z_target_center )
   : m_points ( 0 ),  m_hit_E_unattenuated_sum(0.0),  m_z_target_center(z_target_center) {
 
   m_points.push_back( point );
-  AddAssociatedObject( point );
   makeFromPoints();
 }
 
@@ -45,7 +44,6 @@ DBCALCluster::addPoint( const DBCALPoint* point ){
   }
   
   m_points.push_back( point );
-  AddAssociatedObject( point );
   
   makeFromPoints();
 }
@@ -63,8 +61,7 @@ if( phi() > point->phi() ){
   }
 
   if(find(m_points.begin(),m_points.end(),point) != m_points.end()) m_points.erase( find(m_points.begin(),m_points.end(),point ));
-  RemoveAssociatedObject( point );
-
+ 
   // We should only be removing points from clusters during the recycle_points routine, where they are also added to a different cluster.
 
   makeFromPoints();
@@ -101,7 +98,6 @@ DBCALCluster::mergeClust( const DBCALCluster& clust ){
     }
     
     m_points.push_back( *pt );
-    AddAssociatedObject( *pt );
   }
 
   vector<pair<const DBCALUnifiedHit*,double> > otherHits = clust.hits();
@@ -185,9 +181,10 @@ DBCALCluster::makeFromPoints(){
       ++pt ){
      
     double E = (**pt).E();
-
+    
     m_E_points += E;
     m_E = m_E_points + m_hit_E_unattenuated_sum;  // add the energy sum from points to the energy sum from single ended hits
+    if ((**pt).layer() == 1) m_E_preshower += E;
     double wt1, wt2;
     if ((**pt).layer() != 4 || average_layer4) {
       wt1 = E;
@@ -339,6 +336,7 @@ DBCALCluster::toStrings( vector< pair < string, string > > &items) const {
 //  AddString(items, "dtheta", "%5.2f", m_sig_theta);
   AddString(items, "t", "%5.2f", m_t );
   AddString(items, "E", "%5.2f", m_E );
+  AddString(items, "E_preshower", "%5.2f", m_E_preshower );
   AddString(items, "N_cell", "%i", m_points.size() );
 }
 
@@ -348,6 +346,7 @@ DBCALCluster::clear(){
  
   m_E = 0;
   m_E_points = 0; 
+  m_E_preshower = 0; 
   m_t = 0;
   m_sig_t = 0;
   

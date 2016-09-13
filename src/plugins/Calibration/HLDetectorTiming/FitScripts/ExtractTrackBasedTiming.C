@@ -30,11 +30,11 @@ void GetCCDBConstants(TString path, Int_t run, TString variation, vector<double>
     sprintf(command, "ccdb dump %s:%i:%s", path.Data(), run, variation.Data());
     FILE* inputPipe = gSystem->OpenPipe(command, "r");
     if(inputPipe == NULL)
-        return 0;
+        return;
     //get the first (comment) line
     char buff[1024];
     if(fgets(buff, sizeof(buff), inputPipe) == NULL)
-        return 0;
+        return;
     //get the remaining lines
     double entry;
     int counter = 0;
@@ -55,11 +55,11 @@ void GetCCDBConstants1(TString path, Int_t run, TString variation, double& const
     sprintf(command, "ccdb dump %s:%i:%s", path.Data(), run, variation.Data());
     FILE* inputPipe = gSystem->OpenPipe(command, "r");
     if(inputPipe == NULL)
-        return 0;
+        return;
     //get the first (comment) line
     char buff[1024];
     if(fgets(buff, sizeof(buff), inputPipe) == NULL)
-        return 0;
+        return;
     //get the line containing the values
     while(fgets(buff, sizeof(buff), inputPipe) != NULL){
         istringstream locConstantsStream(buff);
@@ -74,11 +74,11 @@ void GetCCDBConstants2(TString path, Int_t run, TString variation, double& const
     sprintf(command, "ccdb dump %s:%i:%s", path.Data(), run, variation.Data());
     FILE* inputPipe = gSystem->OpenPipe(command, "r");
     if(inputPipe == NULL)
-        return 0;
+        return;
     //get the first (comment) line
     char buff[1024];
     if(fgets(buff, sizeof(buff), inputPipe) == NULL)
-        return 0;
+        return;
     //get the line containing the values
     while(fgets(buff, sizeof(buff), inputPipe) != NULL){
         istringstream locConstantsStream(buff);

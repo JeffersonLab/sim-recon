@@ -17,11 +17,9 @@ using namespace jana;
 #include "BCAL/DBCALCluster.h"
 #include "BCAL/DBCALUnifiedHit.h"
 
-#include "TTree.h"
-#include "TFile.h"
-#include "TF1.h"
-
-//#define BCAL_CLUSTER_DIAGNOSTIC
+//#include "TTree.h"
+//#include "TFile.h"
+//#include "TF1.h"
 
 class DBCALCluster_factory : public JFactory< DBCALCluster > {
   
@@ -65,60 +63,15 @@ private:
   double m_z_target_center;
   vector<double> effective_velocities;
   vector< vector<double > > attenuation_parameters;
-
+  /*
   TF1* sep_inclusion_curve;
   TF1* dtheta_inclusion_curve;
   TF1* dphi_inclusion_curve;
   TF1* C1_parm;
   TF1* C2_parm;
-
-#ifdef BCAL_CLUSTER_DIAGNOSTIC
-  
-#define MAX_POINT 1000
-#define MAX_CLUST 50 
-  
+  */
   jerror_t init();
   jerror_t fini();
-  
-  TFile* m_rootFile;
-  TTree* m_twoEndPtTr;
-  TTree* m_firstClustTr;
-  TTree* m_ovrlpTr;
-
-  mutable int m_n2EPt;
-  mutable float m_rhoPt[MAX_POINT];
-  mutable float m_phiPt[MAX_POINT];
-  mutable float m_thePt[MAX_POINT];
-  mutable float m_rhoSPt[MAX_POINT];
-  mutable float m_phiSPt[MAX_POINT];
-  mutable float m_theSPt[MAX_POINT];
-  mutable float m_ePt[MAX_POINT];
-  mutable float m_tPt[MAX_POINT];
-  mutable float m_t0Pt[MAX_POINT];
-  
-  mutable int m_nCl;
-  mutable int m_nPts[MAX_CLUST];
-  mutable float m_rhoCl[MAX_CLUST];
-  mutable float m_phiCl[MAX_CLUST];
-  mutable float m_theCl[MAX_CLUST];
-  mutable float m_rhoSCl[MAX_CLUST];
-  mutable float m_phiSCl[MAX_CLUST];
-  mutable float m_theSCl[MAX_CLUST];
-  mutable float m_eCl[MAX_CLUST];
-  mutable float m_tCl[MAX_CLUST];
-  
-  mutable float m_dPhi;
-  mutable float m_dThe;
-  mutable float m_sep;
-  mutable float m_sigPhi;
-  mutable float m_sigThe;
-  mutable float m_eClus;
-  mutable float m_rhoClus;
-  mutable float m_theClus;
-  mutable float m_phiClus;
-  mutable int m_nClClus;
-  
-#endif
   
 };
 

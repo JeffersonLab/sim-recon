@@ -41,7 +41,7 @@ DApplication::DApplication(int narg, char* argv[]):JApplication(narg, argv)
 	pthread_mutex_init(&mutex, NULL);
 	
 	//disable inherently (and horrorifically)-unsafe registration of EVERY TObject with the global TObjectTable //multithreading!!
-		//simply setting/checking a bool is not thread-safe due to cache non-coherence and operation re-shuffling by the compiler
+    //simply setting/checking a bool is not thread-safe due to cache non-coherence and operation re-shuffling by the compiler
 	TObject::SetObjectStat(kFALSE);
 
 	// Add plugin paths to Hall-D specific binary directories
@@ -89,9 +89,9 @@ DApplication::DApplication(int narg, char* argv[]):JApplication(narg, argv)
 		event_source_generator = new DEventSourceHDDMGenerator();
 		AddEventSourceGenerator(event_source_generator);
 		AddEventSourceGenerator(new DEventSourceRESTGenerator());
+		AddEventSourceGenerator(new JEventSourceGenerator_EVIOpp());
 		AddEventSourceGenerator(new JEventSourceGenerator_EVIO());
 		AddEventSourceGenerator(new DEventSourceEventStoreGenerator());
-		AddEventSourceGenerator(new JEventSourceGenerator_EVIOpp());
 	}
 	factory_generator = new DFactoryGenerator();
 	AddFactoryGenerator(factory_generator);

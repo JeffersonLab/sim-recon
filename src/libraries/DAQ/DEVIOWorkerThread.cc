@@ -1,4 +1,4 @@
-// $Id$
+/// $Id$
 //
 //    File: DEVIOWorkerThread.cc
 // Created: Mon Mar 28 07:40:07 EDT 2016
@@ -107,7 +107,7 @@ void DEVIOWorkerThread::Run(void)
 			if( jobtype & JOB_ASSOCIATE  ) LinkAllAssociations();
 			
 			if( !current_parsed_events.empty() ) PublishEvents();
-
+            
 		} catch (exception &e) {
 			jerr << e.what() << endl;
 			for(auto pe : parsed_event_pool) delete pe; // delete all parsed events any any objects they hold
@@ -786,6 +786,13 @@ void DEVIOWorkerThread::ParseDataBank(uint32_t* &iptr, uint32_t *iend)
 				Parsef250scalerBank(iptr, iend);
 				break;
 
+            // When we write out single events in the offline, we also can save some
+            // higher level data objects to save disk space and speed up 
+            // specialized processing (e.g. pi0 calibration)
+            case 0xD01:
+                ParseDVertexBank(iptr, iend);
+                break;
+
 			case 5:
 				// old ROL Beni used had this but I don't think its
 				// been used for years. Run 10390 seems to have
@@ -805,6 +812,17 @@ void DEVIOWorkerThread::ParseDataBank(uint32_t* &iptr, uint32_t *iend)
 		iptr = iend_data_block_bank;
 	}
 	
+}
+
+//----------------
+// ParseTIBank
+//----------------
+void DEVIOWorkerThread::ParseTIBank(uint32_t rocid, uint32_t* &iptr, uint32_t* iend)
+{
+    while(iptr<iend && ((*iptr) & 0xF8000000) != 0x88000000) iptr++; // Skip to JLab block trailer
+    iptr++; // advance past JLab block trailer
+    while(iptr<iend && *iptr == 0xF8000000) iptr++; // skip filler words after block trailer
+    //iptr = iend;
 }
 
 //----------------
@@ -1070,7 +1088,7 @@ void DEVIOWorkerThread::ParseJLabModuleData(uint32_t rocid, uint32_t* &iptr, uin
 		// Get module type from next word (bits 18-21)
 		uint32_t mod_id = ((*iptr) >> 18) & 0x000F;
 		MODULE_TYPE type = (MODULE_TYPE)mod_id;
-//		cout << "      rocid=" << rocid << "  Encountered module type: " << type << " (=" << DModuleType::GetModule(type).GetName() << ")  word=" << hex << (*iptr) << dec << endl;
+		//cout << "      rocid=" << rocid << "  Encountered module type: " << type << " (=" << DModuleType::GetModule(type).GetName() << ")  word=" << hex << (*iptr) << dec << endl;
 
         switch(type){
             case DModuleType::FADC250:
@@ -1090,8 +1108,15 @@ void DEVIOWorkerThread::ParseJLabModuleData(uint32_t rocid, uint32_t* &iptr, uin
                 break;
 
            case DModuleType::TID:
-//                ParseTIBank(rocid, iptr, iend);
-                break;
+               ParseTIBank(rocid, iptr, iend);    
+               /*
+               // Ignore this data and skip over it
+               while(iptr<iend && ((*iptr) & 0xF8000000) != 0x88000000) iptr++; // Skip to JLab block trailer
+               iptr++; // advance past JLab block trailer
+               while(iptr<iend && *iptr == 0xF8000000) iptr++; // skip filler words after block trailer
+               break;
+               */
+               break;
 
             case DModuleType::UNKNOWN:
             default:
@@ -1199,10 +1224,67 @@ void DEVIOWorkerThread::Parsef250Bank(uint32_t rocid, uint32_t* &iptr, uint32_t 
 					if(pe) pe->NEW_Df250PulseTime(rocid, slot, channel, itrigger, pulse_number, quality_factor, pulse_time);
 				}
 				break;
-            case 9: // Streaming Raw Data
-                // This is marked "reserved for future implementation" in the current manual (v2).
-                // As such, we don't try handling it here just yet.
-                if(VERBOSE>7) cout << "      FADC250 Streaming Raw Data (unsupported)"<<" ("<<hex<<*iptr<<dec<<")"<<endl;
+            case 9: // Pulse Data (firmware instroduce in Fall 2016)
+				{
+					// from word 1
+					uint32_t event_number_within_block = (*iptr>>19) & 0xFF;
+					uint32_t channel                   = (*iptr>>15) & 0x0F;
+					bool     QF_pedestal               = (*iptr>>14) & 0x01;
+					uint32_t pedestal                  = (*iptr>>0 ) & 0x3FFF;
+
+					// Event headers may be supressed so determine event from hit data
+					if( (event_number_within_block > current_parsed_events.size()) || (event_number_within_block==0) ) throw JException("Bad f250 event number", __FILE__, __LINE__);
+					pe_iter = current_parsed_events.begin();
+					advance( pe_iter, (event_number_within_block-1) );
+					pe = *pe_iter++;
+					
+					itrigger = event_number_within_block; // is this right?
+					uint32_t pulse_number = 0;
+					
+					while( (*++iptr>>31) == 0 ){
+					
+						if( (*iptr>>30) != 0x01) throw JException("Bad f250 Pulse Data!", __FILE__, __LINE__);
+
+						// from word 2
+						uint32_t integral                  = (*iptr>>12) & 0x3FFFF;
+						bool     QF_NSA_beyond_PTW         = (*iptr>>11) & 0x01;
+						bool     QF_overflow               = (*iptr>>10) & 0x01;
+						bool     QF_underflow              = (*iptr>>9 ) & 0x01;
+						uint32_t nsamples_over_threshold   = (*iptr>>0 ) & 0x1FF;
+
+						iptr++;
+						if( (*iptr>>30) != 0x00) throw JException("Bad f250 Pulse Data!", __FILE__, __LINE__);
+
+						// from word 3
+						uint32_t course_time               = (*iptr>>21) & 0x1FF;//< 4 ns/count
+						uint32_t fine_time                 = (*iptr>>15) & 0x3F;//< 0.0625 ns/count
+						uint32_t pulse_peak                = (*iptr>>3 ) & 0xFFF;
+						bool     QF_vpeak_beyond_NSA       = (*iptr>>2 ) & 0x01;
+						bool     QF_vpeak_not_found        = (*iptr>>1 ) & 0x01;
+						bool     QF_bad_pedestal           = (*iptr>>0 ) & 0x01;
+
+						if( pe ) {
+							pe->NEW_Df250PulseData(rocid, slot, channel, itrigger
+							, event_number_within_block
+							, QF_pedestal
+							, pedestal
+							, integral
+							, QF_NSA_beyond_PTW
+							, QF_overflow
+							, QF_underflow
+							, nsamples_over_threshold
+							, course_time
+							, fine_time
+							, pulse_peak
+							, QF_vpeak_beyond_NSA
+							, QF_vpeak_not_found
+							, QF_bad_pedestal
+							, pulse_number++);
+						}
+					}
+					iptr--; // backup so when outer loop advances, it points to next data defining word
+
+				}
                 break;
             case 10: // Pulse Pedestal
 				{
@@ -1723,6 +1805,50 @@ void DEVIOWorkerThread::ParseF1TDCBank(uint32_t rocid, uint32_t* &iptr, uint32_t
 }
 
 //----------------
+// ParseDVertexBank
+//----------------
+void DEVIOWorkerThread::ParseDVertexBank(uint32_t* &iptr, uint32_t *iend)
+{
+    uint32_t Nwords = ((uint64_t)iend - (uint64_t)iptr)/sizeof(uint32_t);
+    uint32_t Nwords_expected = 11;  // ?
+    if(Nwords != Nwords_expected){
+        _DBG_ << "DVertex size does not match expected!!" << endl;
+        _DBG_ << "Found " << Nwords << " words. Expected " << Nwords_expected << endl;
+    }else{
+		DParsedEvent *pe = current_parsed_events.back();
+		DVertex *the_vertex = pe->NEW_DVertex();
+
+        uint64_t in_word = *iptr++;    // 1st word, lo word;  2nd word, hi word
+        uint64_t in_word_hi = *iptr++;
+        in_word |= in_word_hi<<32;
+        //uint64_t hi_word = *iptr++;
+        double vertex_x_pos;
+        memcpy(&vertex_x_pos, &in_word, sizeof(double));
+        in_word = *iptr++;   in_word_hi = *iptr++;
+        in_word |= in_word_hi<<32;
+        double vertex_y_pos;
+        memcpy(&vertex_y_pos, &in_word, sizeof(double));
+        in_word = *iptr++;   in_word_hi = *iptr++;
+        in_word |= in_word_hi<<32;
+        double vertex_z_pos;
+        memcpy(&vertex_z_pos, &in_word, sizeof(double));
+        in_word = *iptr++;   in_word_hi = *iptr++;
+        in_word |= in_word_hi<<32;
+        double vertex_t;
+        memcpy(&vertex_t, &in_word, sizeof(double));
+
+        DVector3 vertex_position(vertex_x_pos, vertex_y_pos, vertex_z_pos);
+        the_vertex->dSpacetimeVertex = DLorentzVector(vertex_position, vertex_t);
+        the_vertex->dKinFitNDF = *iptr++;
+
+        in_word = *iptr++;   in_word_hi = *iptr++;
+        in_word |= in_word_hi<<32;
+        memcpy(&(the_vertex->dKinFitChiSq), &in_word, sizeof(double));
+    }
+}
+
+
+//----------------
 // LinkAllAssociations
 //----------------
 void DEVIOWorkerThread::LinkAllAssociations(void)
@@ -1791,6 +1917,7 @@ void DEVIOWorkerThread::LinkAllAssociations(void)
 			if(pe->vDCAEN1290TDCConfig.size()>1) sort(pe->vDCAEN1290TDCConfig.begin(), pe->vDCAEN1290TDCConfig.end(), SortByROCID<DCAEN1290TDCConfig>       );
 
 			LinkConfigSamplesCopy(pe->vDf250Config, pe->vDf250PulseIntegral);
+			LinkConfigSamplesCopy(pe->vDf250Config, pe->vDf250PulseData);
 			LinkConfigSamplesCopy(pe->vDf125Config, pe->vDf125PulseIntegral);
 			LinkConfigSamplesCopy(pe->vDf125Config, pe->vDf125CDCPulse);
 			LinkConfigSamplesCopy(pe->vDf125Config, pe->vDf125FDCPulse);
