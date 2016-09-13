@@ -33,9 +33,11 @@ class DReaction_factory_p3pi_hists : public jana::JFactory<DReaction>
 		const char* Tag(void){return "p3pi_hists";}
 
 	private:
-		jerror_t init(void);						///< Called once at program start.
+		jerror_t brun(JEventLoop* locEventLoop, int32_t locRunNumber);
+		jerror_t evnt(JEventLoop* locEventLoop, uint64_t locEventNumber);
 		jerror_t fini(void);						///< Called after last event of last event source has been processed.
 
+		double dBeamBunchPeriod;
 		deque<DReactionStep*> dReactionStepPool; //to prevent memory leaks
 };
 
