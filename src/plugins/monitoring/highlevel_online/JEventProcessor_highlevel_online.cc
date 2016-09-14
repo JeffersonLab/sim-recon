@@ -27,7 +27,7 @@ jerror_t JEventProcessor_highlevel_online::init(void)
 
 	/*************************************************************** TRIGGER **************************************************************/
 
-	dHist_L1GTPRate = new TH2F("L1GTPRate",";Trigger Bit;L1 GTP Rate", 32, 0.5, 32.5, 1000, 0.0, 100.0);
+	dHist_L1GTPRate = new TH2F("L1GTPRate",";Trigger Bit;L1 GTP Rate (kHz)", 8, 0.5, 8.5, 1000, 0.0, 100.0);
 
 	dHist_BCALVsFCAL_TrigBit1 = new TH2I("BCALVsFCAL_TrigBit1","TRIG BIT 1;E (FCAL) (count);E (BCAL) (count)", 200, 0., 10000, 200, 0., 50000);
 	dHist_BCALVsFCAL_TrigBit6 = new TH2I("BCALVsFCAL_TrigBit6","TRIG BIT 6;E (FCAL) (count);E (BCAL) (count)", 200, 0., 10000, 200, 0., 50000);
@@ -58,7 +58,7 @@ jerror_t JEventProcessor_highlevel_online::init(void)
 	dHist_PVsTheta_Tracks = new TH2I("PVsTheta_Tracks", ";#theta#circ;p (GeV/c)", 280, 0.0, 140.0, 300, 0.0, 12.0);
 
 	// PhiVsTheta Time-Based Tracks
-	dHist_PhiVsTheta_Tracks = new TH2I("PhiVsTheta_Tracks", ";#phi#circ;p (GeV/c)", 280, 0.0, 140.0, 360, -180.0, 180.0);
+	dHist_PhiVsTheta_Tracks = new TH2I("PhiVsTheta_Tracks", ";#theta#circ;#phi#circ", 280, 0.0, 140.0, 360, -180.0, 180.0);
 
 	/*************************************************************** VERTEX ***************************************************************/
 
