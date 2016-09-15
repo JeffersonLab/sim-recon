@@ -34,6 +34,8 @@ class DBCALDigiHit:public JObject{
 		uint32_t nsamples_integral;    ///< number of samples used in integral 
 		uint32_t nsamples_pedestal;    ///< number of samples used in pedestal
 		
+		uint32_t datasource;           ///<  0=window raw data, 1=old(pre-Fall16) firmware, 2=Df250PulseData
+		
 		void toStrings(vector<pair<string,string> > &items)const{
 			AddString(items, "module", "%d", module);
 			AddString(items, "layer", "%d", layer);
