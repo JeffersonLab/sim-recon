@@ -601,12 +601,6 @@ namespace z {
                     read += _sb->sgetn(in.buf + read, block_size - read);
                 }
                 else {
-                    if (read >= block_size) {
-                        printf("Blistering blunderbusts! read=%d > block_size=%ld\n", read, block_size);
-                        sleep(1);
-                        int *pbad = 0;
-                        *pbad = 0;
-                    }
                     read = _sb->sgetn(in.buf, block_size - read);
                 }
                 leftovers->len = _sb->sgetn(leftovers->buf, 8);
