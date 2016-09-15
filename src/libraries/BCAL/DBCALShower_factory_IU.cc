@@ -24,17 +24,17 @@
 
 
 DBCALShower_factory_IU::DBCALShower_factory_IU(){
-
+	// defaults set to minimize probles if new values are not loaded
 	LOAD_CCDB_CONSTANTS = 1.;
-	energy_cutoff = 0;
-	linear_intercept = 0;
-	linear_slope = 0;
-	exponential_param0 = 0;
-	exponential_param1 = 0;
-	exponential_param2 = 0;
+	energy_cutoff = 100;         ///< default to use linear part for all showers
+	linear_intercept = 1;        ///< default to make no change to energy
+	linear_slope = 0;            ///< default to make no change to energy
+	exponential_param0 = 1;      ///< default to make no change to energy
+	exponential_param1 = -10000; ///< default to make no change to energy
+	exponential_param2 = 0;      ///< default to make no change to energy
 	VERBOSE = 0;              ///< >0 once off info ; >2 event by event ; >3 everything
 	COVARIANCEFILENAME = "";  ///<  Setting the filename will take precidence over the CCDB.  Files must end in ij.txt, where i and j are integers corresponding to the element of the matrix
-
+	
 	if (gPARMS){
 		gPARMS->SetDefaultParameter("BCAL:LOAD_NONLIN_CCDB", LOAD_CCDB_CONSTANTS);
 		/// use to set energy corrections on command line
@@ -54,23 +54,32 @@ jerror_t DBCALShower_factory_IU::brun(JEventLoop *loop, int32_t runnumber) {
   DGeometry* geom = app->GetDGeometry(runnumber);
   geom->GetTargetZ(m_zTarget);
 
-
-	jerror_t result = CreateCovarianceMatrix();
-	if (result!=NOERROR) return result;
-
     //by default, energy correction parameters are obtained through ccdb
-	
     if(LOAD_CCDB_CONSTANTS > 0.5){
-	map<string, double> shower_calib;
-	loop->GetCalib("BCAL/shower_calib", shower_calib);
-	energy_cutoff = shower_calib["energy_cutoff"];
-	linear_intercept = shower_calib["linear_intercept"];
-	linear_slope = shower_calib["linear_slope"];
-	exponential_param0 = shower_calib["exponential_param0"];
-	exponential_param1 = shower_calib["exponential_param1"];
-	exponential_param2 = shower_calib["exponential_param2"]; 
-    }
-
+		map<string, double> shower_calib;
+		if (loop->GetCalib("BCAL/shower_calib", shower_calib)) {
+			jerr << "Error loading from CCDB\n";
+		} else {
+			energy_cutoff = shower_calib["energy_cutoff"];
+			linear_intercept = shower_calib["linear_intercept"];
+			linear_slope = shower_calib["linear_slope"];
+			exponential_param0 = shower_calib["exponential_param0"];
+			exponential_param1 = shower_calib["exponential_param1"];
+			exponential_param2 = shower_calib["exponential_param2"];
+		}
+	}
+	if (VERBOSE>0) {
+		printf("%20s = %f\n","energy_cutoff",energy_cutoff);
+		printf("%20s = %f\n","linear_intercept",linear_intercept);
+		printf("%20s = %f\n","linear_slope",linear_slope);
+		printf("%20s = %f\n","exponential_param0",exponential_param0);
+		printf("%20s = %f\n","exponential_param1",exponential_param1);
+		printf("%20s = %f\n","exponential_param2",exponential_param2);
+	}
+	
+	jerror_t result = LoadCovarianceLookupTables();
+	if (result!=NOERROR) return result;
+	
   return NOERROR;
 }
 
@@ -93,8 +102,7 @@ DBCALShower_factory_IU::evnt( JEventLoop *loop, uint64_t eventnumber ){
     float cosPhi = cos( (**clItr).phi() );
     float sinPhi = sin( (**clItr).phi() );
     float rho = (**clItr).rho();
-	float r = rho * sinTh;
-	if (VERBOSE>2) printf("cluster: E=%f th=%f phi=%f rho=%f t=%f\n",
+	if (VERBOSE>2) printf("cluster:   E=%f  th=%f phi=%f rho=%f   t=%f\n",
 						  (**clItr).E(),(**clItr).theta()/3.14159265*180,(**clItr).phi()/3.14159265*180,(**clItr).rho(),(**clItr).t());
 
     DBCALShower* shower = new DBCALShower();
@@ -119,24 +127,49 @@ DBCALShower_factory_IU::evnt( JEventLoop *loop, uint64_t eventnumber ){
     // non-linear energy corrections can be found at https://logbooks.jlab.org/entry/3419524 
     
     if( shower->E_raw < energy_cutoff ) shower->E = shower->E_raw / (linear_intercept + linear_slope * shower->E_raw ) ;
-   
     if( shower->E_raw >= energy_cutoff ) shower->E = shower->E_raw / (exponential_param0 - exp(exponential_param1 * shower->E_raw + exponential_param2));
 
-	if (VERBOSE>2) printf("shower:  E=%f x=%f y=%f z=%f t=%f\n",
-						  shower->E,shower->x,shower->y,shower->z,shower->t);
-
 	// Get covariance matrix and uncertainties
+	FillCovarianceMatrix(shower);
+	if (VERBOSE>2) {
+		printf("shower:    E=%f   x=%f   y=%f   z=%f   t=%f\n",
+			   shower->E,shower->x,shower->y,shower->z,shower->t);
+		printf("shower:   dE=%f  dx=%f  dy=%f  dz=%f  dt=%f\n",
+			   shower->EErr(),shower->xErr(),shower->yErr(),shower->zErr(),shower->tErr());
+		printf("shower:   Ex=%f  Ey=%f  Ez=%f  Et=%f  xy=%f\n",
+			   shower->EXcorr(),shower->EYcorr(),shower->EZcorr(),shower->ETcorr(),shower->XYcorr());
+		printf("shower:   xz=%f  xt=%f  yz=%f  yt=%f  zt=%f\n",
+			   shower->XZcorr(),shower->XTcorr(),shower->YZcorr(),shower->YTcorr(),shower->ZTcorr());
+	}
 
-	// Get histogram edges. Assuming that all histograms have the same limits
-	TAxis *xaxis = CovarElementLookup[0][0]->GetXaxis();
-	TAxis *yaxis = CovarElementLookup[0][0]->GetYaxis();
+    shower->AddAssociatedObject(*clItr);
+    
+    _data.push_back( shower );
+  }
+  
+  return NOERROR;
+}
+
+
+jerror_t
+DBCALShower_factory_IU::FillCovarianceMatrix(DBCALShower *shower){
+	/// This function takes a BCALShower object and using the internal variables 
+	/// overwrites any existing covaraince matrix using lookup tables. 
+
+	// Get edges of lookup table histograms (assume that all histograms have the same limits.)
+	TAxis *xaxis = CovarianceLookupTable[0][0]->GetXaxis();
+	TAxis *yaxis = CovarianceLookupTable[0][0]->GetYaxis();
 	float minElookup = xaxis->GetBinLowEdge(1);
 	float maxElookup = xaxis->GetBinUpEdge(xaxis->GetNbins());
 	float minthlookup = yaxis->GetBinLowEdge(1);
 	float maxthlookup = yaxis->GetBinUpEdge(yaxis->GetNbins());
-	float thlookup = (**clItr).theta()/3.14159265*180;
+
+	float shower_r = sqrt(shower->x*shower->x + shower->y*shower->y);
+	float shower_theta = atan2(shower_r,shower->z);
+	float thlookup = shower_theta/3.14159265*180;
 	float Elookup = shower->E;
-	// Adjust values in order to use Interpolate()
+
+	// Adjust values: in order to use Interpolate() must be within histogram range
 	if (Elookup<minElookup) Elookup=minElookup;
 	if (Elookup>maxElookup) Elookup=maxElookup-0.0001; // move below edge, on edge doesn't work.
 	if (thlookup<minthlookup) thlookup=minthlookup;
@@ -146,12 +179,16 @@ DBCALShower_factory_IU::evnt( JEventLoop *loop, uint64_t eventnumber ){
 	DMatrixDSym ErphiztCovariance(5);
 	for (int i=0; i<5; i++) {
 		for (int j=0; j<=i; j++) {
-			float val = CovarElementLookup[i][j]->Interpolate(Elookup, thlookup);
-			if (i==2) val*=r; // convert phi to phihat
-			if (j==2) val*=r; // convert phi to phihat
+			float val = CovarianceLookupTable[i][j]->Interpolate(Elookup, thlookup);
+			//if (i==2) val*=shower_r; // convert phi to phihat
+			//if (j==2) val*=shower_r; // convert phi to phihat
 			ErphiztCovariance(i,j) = ErphiztCovariance(j,i) = val;
 		}
 	}
+	
+	float shower_phi = atan2(shower->y,shower->x);
+    float cosPhi = cos(shower_phi);
+    float sinPhi = sin(shower_phi);
 	DMatrix rotationmatrix(5,5);
 	rotationmatrix(0,0) = 1;
 	rotationmatrix(3,3) = 1;
@@ -166,23 +203,16 @@ DBCALShower_factory_IU::evnt( JEventLoop *loop, uint64_t eventnumber ){
 	shower->ExyztCovariance = D;
 	if (VERBOSE>2) {printf("(E,x,y,z,t)    "); shower->ExyztCovariance.Print(); }
 
-    shower->AddAssociatedObject(*clItr);
-    
-    _data.push_back( shower );
-  }
-  
-  return NOERROR;
+	return NOERROR;
 }
 
 
-
-
 jerror_t
-DBCALShower_factory_IU::CreateCovarianceMatrix(){
+DBCALShower_factory_IU::LoadCovarianceLookupTables(){
 	std::thread::id this_id = std::this_thread::get_id();
 	stringstream idstring;
 	idstring << this_id;
-	if (VERBOSE>0) printf("DBCALShower_factory_IU::CreateCovarianceMatrix():  Thread %s\n",idstring.str().c_str());
+	if (VERBOSE>0) printf("DBCALShower_factory_IU::LoadCovarianceLookupTables():  Thread %s\n",idstring.str().c_str());
 
 	bool USECCDB=0;
 	// if filename specified try to use filename else get info from CCDB
@@ -248,8 +278,9 @@ DBCALShower_factory_IU::CreateCovarianceMatrix(){
 			Float_t ybins[nybins+1];
 			for (int count=0; count<=nxbins; count++) {
 				ss>>xbins[count];
-				if (VERBOSE>1) printf("%i  %f\n",count,xbins[count]);
+				if (VERBOSE>1) printf("(%i,%f)  ",count,xbins[count]);
 			}
+			if (VERBOSE>1) printf("\n");
 			for (int count=0; count<=nybins; count++) {
 				ss>>ybins[count];
 				if (VERBOSE>1) printf("(%i,%f)  ",count,ybins[count]);
@@ -261,14 +292,15 @@ DBCALShower_factory_IU::CreateCovarianceMatrix(){
 			// create histogram
 			char histname[255];
 			sprintf(histname,"covariance_%i%i_thread%s",i,j,idstring.str().c_str());
-			CovarElementLookup[i][j] = new TH2F(histname,"Covariance histogram",nxbins,xbins,nybins,ybins);
+			CovarianceLookupTable[i][j] = new TH2F(histname,"Covariance histogram",nxbins,xbins,nybins,ybins);
 			// fill histogram
 			while(ss>>cont){
-				if (VERBOSE>1) printf("(%2i,%2i)  (%2i,%2i)  %e\n",i,j,xbin,ybin,cont);
-				CovarElementLookup[i][j]->SetBinContent(xbin,ybin,cont);
+				if (VERBOSE>1) printf("(%2i,%2i)  (%2i,%2i)  %e  ",i,j,xbin,ybin,cont);
+				CovarianceLookupTable[i][j]->SetBinContent(xbin,ybin,cont);
 				ybin++;
 				if (ybin>nybins) { xbin++; ybin=1; }
 			}
+			if (VERBOSE>1) printf("\n");
 			// Close file
 			ifs.close();
 

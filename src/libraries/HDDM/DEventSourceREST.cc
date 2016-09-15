@@ -809,25 +809,25 @@ jerror_t DEventSourceREST::Extract_DBCALShower(hddm_r::HDDM *record,
       shower->z = iter->getZ();
       shower->t = iter->getT();
       DMatrixDSym covariance(5);
-	  covariance(0,0) = iter->getEerr();
-	  covariance(1,1) = iter->getXerr();
-	  covariance(2,2) = iter->getYerr();
-	  covariance(3,3) = iter->getZerr();
-	  covariance(4,4) = iter->getTerr();
-	  covariance(1,2) = covariance(2,1) = iter->getXycorr();
-	  covariance(1,3) = covariance(3,1) = iter->getXzcorr();
-	  covariance(2,3) = covariance(3,2) = iter->getYzcorr();
-	  covariance(0,3) = covariance(3,0) = iter->getEzcorr();
-	  covariance(3,4) = covariance(4,3) = iter->getTzcorr();
+	  covariance(0,0) = iter->getEerr()*iter->getEerr();
+	  covariance(1,1) = iter->getXerr()*iter->getXerr();
+	  covariance(2,2) = iter->getYerr()*iter->getYerr();
+	  covariance(3,3) = iter->getZerr()*iter->getZerr();
+	  covariance(4,4) = iter->getTerr()*iter->getTerr();
+	  covariance(1,2) = covariance(2,1) = iter->getXycorr()*iter->getXerr()*iter->getYerr();
+	  covariance(1,3) = covariance(3,1) = iter->getXzcorr()*iter->getXerr()*iter->getZerr();
+	  covariance(2,3) = covariance(3,2) = iter->getYzcorr()*iter->getYerr()*iter->getZerr();
+	  covariance(0,3) = covariance(3,0) = iter->getEzcorr()*iter->getEerr()*iter->getZerr();
+	  covariance(3,4) = covariance(4,3) = iter->getTzcorr()*iter->getTerr()*iter->getZerr();
 	  // further correlations (an extension of REST format, so code is different.)
 	  const hddm_r::BcalCorrelationsList& locBcalCorrelationsList = iter->getBcalCorrelationses();
 	  hddm_r::BcalCorrelationsList::iterator locBcalCorrelationsIterator = locBcalCorrelationsList.begin();
 	  if(locBcalCorrelationsIterator != locBcalCorrelationsList.end()) {
-		  covariance(0,4) = covariance(4,0) = locBcalCorrelationsIterator->getEtcorr();
-		  covariance(0,1) = covariance(1,0) = locBcalCorrelationsIterator->getExcorr();
-		  covariance(0,2) = covariance(2,0) = locBcalCorrelationsIterator->getEycorr();
-		  covariance(1,4) = covariance(4,1) = locBcalCorrelationsIterator->getTxcorr();
-		  covariance(2,4) = covariance(4,2) = locBcalCorrelationsIterator->getTycorr();
+		  covariance(0,4) = covariance(4,0) = locBcalCorrelationsIterator->getEtcorr()*iter->getEerr()*iter->getTerr();
+		  covariance(0,1) = covariance(1,0) = locBcalCorrelationsIterator->getExcorr()*iter->getEerr()*iter->getXerr();
+		  covariance(0,2) = covariance(2,0) = locBcalCorrelationsIterator->getEycorr()*iter->getEerr()*iter->getYerr();
+		  covariance(1,4) = covariance(4,1) = locBcalCorrelationsIterator->getTxcorr()*iter->getTerr()*iter->getXerr();
+		  covariance(2,4) = covariance(4,2) = locBcalCorrelationsIterator->getTycorr()*iter->getTerr()*iter->getYerr();
 	  }
 	  shower->ExyztCovariance = covariance;
 
