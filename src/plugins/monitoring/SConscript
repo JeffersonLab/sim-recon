@@ -37,7 +37,9 @@ subdirs = [
 'CDC_Cosmics',
 'EPICS_dump',
 'CDC_Efficiency',
-'L1_online']
+'L1_online',
+'highlevel_online'
+]
 
 #'L3_online',
 #'CODA_online',

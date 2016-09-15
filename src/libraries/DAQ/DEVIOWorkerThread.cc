@@ -649,7 +649,15 @@ void DEVIOWorkerThread::ParseBuiltTriggerBank(uint32_t* &iptr, uint32_t *iend)
 	uint32_t Nrocs   = (*iptr++) & 0xFF;
 	uint32_t Mevents = current_parsed_events.size();
 	
-	//-------- Common data (64bit)
+    // sanity check: 
+    if(Mevents == 0) {
+		stringstream ss;
+		ss << "DEVIOWorkerThread::ParseBuiltTriggerBank() called with zero events! "<<endl;
+		throw JException(ss.str(), __FILE__, __LINE__);
+	}
+
+	
+    //-------- Common data (64bit)
 	uint32_t common_header64 = *iptr++;
 	uint32_t common_header64_len = common_header64 & 0xFFFF;
 	uint64_t *iptr64 = (uint64_t*)iptr;
@@ -916,7 +924,7 @@ void DEVIOWorkerThread::ParseCAEN1190(uint32_t rocid, uint32_t* &iptr, uint32_t 
                 if(VERBOSE>7) cout << "         CAEN TDC TDC Measurement (" << (edge ? "trailing":"leading") << " , channel=" << channel << " , tdc=" << tdc << ")" << endl;
 
                 // Create DCAEN1290TDCHit object
-                pe->NEW_DCAEN1290TDCHit(rocid, slot, channel, 0, edge, tdc_num, event_id, bunch_id, tdc);
+                if(pe) pe->NEW_DCAEN1290TDCHit(rocid, slot, channel, 0, edge, tdc_num, event_id, bunch_id, tdc);
                 break;
             case 0b00100:  // TDC Error
                 error_flags = (*iptr) & 0x7fff;
@@ -1186,7 +1194,7 @@ void DEVIOWorkerThread::Parsef250Bank(uint32_t rocid, uint32_t* &iptr, uint32_t 
             case 4: // Window Raw Data
                 // iptr passed by reference and so will be updated automatically
                 if(VERBOSE>7) cout << "      FADC250 Window Raw Data"<<" ("<<hex<<*iptr<<dec<<")"<<endl;
-                MakeDf250WindowRawData(pe, rocid, slot, itrigger, iptr);
+                if(pe) MakeDf250WindowRawData(pe, rocid, slot, itrigger, iptr);
                 break;
             case 5: // Window Sum
 				{
@@ -1414,7 +1422,7 @@ void DEVIOWorkerThread::Parsef125Bank(uint32_t rocid, uint32_t* &iptr, uint32_t 
             case 4: // Window Raw Data
 					// iptr passed by reference and so will be updated automatically
 					if(VERBOSE>7) cout << "      FADC125 Window Raw Data"<<endl;
-					MakeDf125WindowRawData(pe, rocid, slot, itrigger, iptr);
+					if(pe) MakeDf125WindowRawData(pe, rocid, slot, itrigger, iptr);
 					break;
 
             case 5: // CDC pulse data (new)  (GlueX-doc-2274-v8)
