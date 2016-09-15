@@ -1,10 +1,12 @@
 #include <xstream/config.h>
+#include <fstream>
 
 #if HAVE_LIBZ
 
 #include <algorithm>
 #include <string.h>
 #include <string>
+#include <cstring>
 
 #include <xstream/z.h>
 #include <xstream/except/z.h>
@@ -19,6 +21,31 @@
 #include "debug.h"
 
 #define COMPRESSION_BLOCK_SIZE 32000
+
+// The following two macros must always occur in pairs within a single
+// block of code, otherwise it will not even compile. This is done on
+// purpose, to reduce the risk of blunders with deadlocks. Please take
+// the lock, do the operation, and then release the lock as quickly as
+// possible. If your function needs to return between the MUTEX_LOCK and
+// MUTEX_UNLOCK statements, use MUTEX_ESCAPE before the return statement.
+
+#define MUTEX_LOCK \
+   { \
+      if (streambuf_mutex != 0) \
+         pthread_mutex_lock(streambuf_mutex); \
+      pthread_mutex_t *mutex_saved = streambuf_mutex; \
+      streambuf_mutex = 0;
+
+#define MUTEX_UNLOCK \
+      streambuf_mutex = mutex_saved; \
+      if (streambuf_mutex != 0) \
+         pthread_mutex_unlock(streambuf_mutex); \
+   }
+
+#define MUTEX_ESCAPE \
+      streambuf_mutex = mutex_saved; \
+      if (streambuf_mutex != 0) \
+         pthread_mutex_unlock(streambuf_mutex);
 
 namespace xstream {
 namespace z {
@@ -78,7 +105,8 @@ namespace z {
     
 
     common::common(std::streambuf * sb)
-    : xstream::common_buffer(sb), z_strm(0), block_offset(0)
+    : xstream::common_buffer(sb), z_strm(0), block_start(0), block_offset(0),
+      streambuf_mutex(0)
     {
         LOG("z::common");    
 
@@ -127,12 +155,14 @@ namespace z {
     ostreambuf::ostreambuf (std::streambuf * sb)
     : common(sb), level(Z_DEFAULT_COMPRESSION) {
         LOG("z::ostreambuf without compression level");
+        block_start = _sb->pubseekoff(0, std::ios_base::cur, std::ios_base::out);
         init();
     }
 
     ostreambuf::ostreambuf(std::streambuf *sb, int l)
     : common(sb), level (l) {
         LOG ("z::ostreambuf with compression level " << l);
+        block_start = _sb->pubseekoff(0, std::ios_base::cur, std::ios_base::out);
         init();
     }
 
@@ -153,7 +183,6 @@ namespace z {
 
         if (Z_DEFAULT_COMPRESSION == level || (level <= 9 && level >= 1)) {
             int cret =::deflateInit(z_strm, level);
-
             if (Z_OK != cret) {
                 LOG ("z::ostreambuf::init: error creating zstream " << cret);
                 //XXX exception ins constructor
@@ -174,12 +203,14 @@ namespace z {
         flush(finish_sync);
 
         //sync underlying streambuf
+        MUTEX_LOCK
         _sb->pubsync();
+        MUTEX_UNLOCK
 
         if (0 != z_strm) {
             //XXX should I throw an exception in case of error?
             //remember this is a destructor
-            //I should definitly LOG something
+            //I should definitely LOG something
             int cret = ::deflateEnd(z_strm);
             if (Z_OK != cret){
                 LOG("z::~ostreambuf error dealocating zstream");
@@ -189,8 +220,11 @@ namespace z {
 
     int ostreambuf::sync () {
       LOG ("z::ostreambuf::sync");
-      int ret = flush(normal_sync);
+      int ret;
+      MUTEX_LOCK
+      ret = flush(normal_sync);
       _sb->pubsync();
+      MUTEX_UNLOCK
       return ret;
     }
 
@@ -241,10 +275,11 @@ namespace z {
         }
         block_offset += written;
         if (block_offset > (std::streamoff)COMPRESSION_BLOCK_SIZE) {
-            f = (f == no_sync)? full_sync : f;
+            f = (f == no_sync)? finish_sync : f;
         }
 
         bool redo = false;
+        bool reinit_deflator = false;
 
         do {
             int cret;
@@ -263,7 +298,11 @@ namespace z {
 
             //error handling
             if (f == finish_sync) {
-                if (Z_STREAM_END != cret) {
+                if (Z_STREAM_END == cret) {
+                    redo = false;
+                    reinit_deflator = true;
+                }
+                else {
                     //serious error, throw exception
                     LOG ("\terror :" << cret);
                 }
@@ -273,22 +312,27 @@ namespace z {
                 raise_error(cret);
             }
 
-            if (f != no_sync) {
+            if (f == finish_sync) { // only completed streams can be written
                 std::streamsize count = out.size - z_strm->avail_out;
-                LOG ("\twriting " << count << " bytes");
-                int size = htonl(count);
-                const std::streamsize wrote = _sb->sputn((char*)&size, 4) +
-                                              _sb->sputn(out.buf, count);
-                if (wrote != count + 4) {
-                    LOG("\terror writting, only wrote " << wrote 
-                        << " but asked for " << count);
-                    raise_error(Z_STREAM_ERROR);
+                if (count > 0) { // ignore empty blocks
+                    LOG ("\twriting " << count << " bytes");
+                    int size = htonl(count);
+                    MUTEX_LOCK
+                    const std::streamsize wrote = _sb->sputn((char*)&size, 4) +
+                                                  _sb->sputn(out.buf, count);
+                    if (wrote != count + 4) {
+                        MUTEX_ESCAPE
+                        LOG("\terror writting, only wrote " << wrote 
+                            << " but asked for " << count);
+                        raise_error(Z_STREAM_ERROR);
+                    }
+                    block_start = _sb->pubseekoff(0, std::ios_base::cur,
+                                                     std::ios_base::out);
+                    block_offset = 0;
+                    MUTEX_UNLOCK
                 }
-
-                // reset output
                 z_strm->next_out = reinterpret_cast < Bytef* >(out.buf);
                 z_strm->avail_out = out.size;
-                block_offset = 0;
             }
 
             if (0 == z_strm->avail_out) { // && 0 != z_strm->avail_in)
@@ -306,6 +350,28 @@ namespace z {
         }
         while (redo);
         assert (0 == z_strm->avail_in);
+
+        if (reinit_deflator) {
+            int cret;
+            cret = ::deflateEnd(z_strm);
+            if (Z_OK != cret) {
+                LOG("\tERROR: deflateEnd returned " << cret);
+                raise_error(cret);
+            }
+            z_strm->zalloc = Z_NULL;
+            z_strm->zfree = Z_NULL;
+            z_strm->opaque = Z_NULL;
+            z_strm->avail_out = out.size;
+            z_strm->next_out = reinterpret_cast < Bytef* >(out.buf);
+            z_strm->avail_in = 0;
+            z_strm->next_in = reinterpret_cast < Bytef* >(in.buf);
+            cret =::deflateInit(z_strm, level);
+            if (Z_OK != cret) {
+                LOG("\tERROR: deflateInit returned " << cret);
+                raise_error(cret);
+            }
+        }
+
         //reset buffer
         setp(in.buf, in.buf + in.size);
         return written;
@@ -315,10 +381,14 @@ namespace z {
     // istream follows //
     /////////////////////
 
-    istreambuf::istreambuf (std::streambuf * sb)
-    : common(sb), end(false), block_size(0) {
+    istreambuf::istreambuf (std::streambuf *sb, int *left, unsigned int left_size)
+    : common(sb), end(false), block_size(0), block_next(0), 
+      new_block_start(0), new_block_offset(0),
+      leftovers(0)
+    {
         LOG ("z::istreambuf");
 
+        memset(z_strm, 0, sizeof(*z_strm));
         int cret = ::inflateInit(z_strm);
 
         if (Z_OK != cret) {
@@ -330,6 +400,15 @@ namespace z {
         //first call will call uflow and this will set the buffer accordingly
         //no buffering
         setg(out.buf, out.buf, out.buf);
+        block_start = _sb->pubseekoff(0, std::ios_base::cur, std::ios_base::in);
+
+        if (left_size >= sizeof(leftovers_buf)) {
+            leftovers = (leftovers_buf*)left;
+        }
+        else {
+            LOG("\terror - insufficient space for leftovers buffer");
+            raise_error(cret);
+        }
     }
 
     void istreambuf::raise_error(int err) {
@@ -351,6 +430,28 @@ namespace z {
             LOG("\tend of stream (EOF)");
             //signal the stream has reached it's end
             return eof;
+        }
+
+        if (new_block_start > 0 || new_block_offset > 0) {
+            if (block_start != new_block_start ||
+                block_offset > new_block_offset ||
+                block_size == 0)
+            {
+                z_strm->next_out = reinterpret_cast < Bytef* >(out.buf);
+                z_strm->avail_out = 0;
+                read_inflate();
+            }
+            while (block_offset < new_block_offset) {
+                z_strm->next_out = reinterpret_cast < Bytef* >(out.buf);
+                z_strm->avail_out = new_block_offset - block_offset;
+                if (z_strm->avail_out > out.size) {
+                    z_strm->avail_out = out.size;
+                }
+                block_offset += z_strm->avail_out;
+                inflate();
+            }
+            new_block_start = 0;
+            new_block_offset = 0;
         }
 
         z_strm->avail_out = out.size;
@@ -378,6 +479,39 @@ namespace z {
     //read to buffer in place (apart from data already buffered)
     std::streamsize istreambuf::xsgetn(char *buffer, std::streamsize n) {
         LOG("z::istreambuf::xsgetn (" << n << ")");
+
+        if (new_block_start > 0 || new_block_offset > 0) {
+            if (block_start != new_block_start ||
+                block_offset > new_block_offset ||
+                block_size == 0)
+            {
+                z_strm->next_out = reinterpret_cast < Bytef* >(out.buf);
+                z_strm->avail_out = 0;
+                read_inflate();
+                setg(out.buf, out.buf, out.buf);
+            }
+            else
+            {
+                std::streamsize available = egptr() - gptr();
+                int waste = new_block_offset - block_offset;
+                waste = (available < waste)? available : waste;
+                if (waste > 0) {
+                    gbump(waste);
+                    block_offset += waste;
+                }
+            }
+            while (block_offset < new_block_offset) {
+                z_strm->next_out = reinterpret_cast < Bytef* >(out.buf);
+                z_strm->avail_out = new_block_offset - block_offset;
+                if (z_strm->avail_out > out.size) {
+                    z_strm->avail_out = out.size;
+                }
+                block_offset += z_strm->avail_out;
+                inflate();
+            }
+            new_block_start = 0;
+            new_block_offset = 0;
+        }
 
         //try to satisfy request from buffered input
         std::streamsize available = egptr() - gptr();
@@ -417,26 +551,74 @@ namespace z {
 
     void istreambuf::read_inflate( const flush_kind f) {
         LOG("z::istreambuf::read_inflate " << f);
+        bool reinit_inflator = false;
         int read;
-        int block_pending = 0;
         if (block_size < 0) { // stream has no blocksize markers
+            MUTEX_LOCK
+            if (new_block_start > 0) {
+               _sb->pubseekoff(new_block_start, std::ios_base::beg,
+                                                std::ios_base::in);
+               new_block_start = 0;
+               leftovers->len = 0;
+               block_next = 0;
+               end = false;
+            }
             read = _sb->sgetn(in.buf, in.size);
+            MUTEX_UNLOCK
         }
         else { // look for prefixed blocksize: leading byte = 0
-            read = _sb->sgetn(in.buf, 4);
-            if (read < 4) {
-                end = true;
-                return;
+            MUTEX_LOCK
+            if (new_block_start > 0) {
+               _sb->pubseekoff(new_block_start, std::ios_base::beg,
+                                                std::ios_base::in);
+               block_start = new_block_start;
+               new_block_start = 0;
+               leftovers->len = 0;
+               block_next = 0;
+               end = false;
             }
-            if (in.buf[0] == 0) { // z blocks have prefixed blocksize
-                int *size = (int*)in.buf;
-                block_pending = ntohl(*size);
-                read = _sb->sgetn(in.buf, block_pending);
+            else {
+               block_start = _sb->pubseekoff(0, std::ios_base::cur,
+                                                std::ios_base::in);
+               block_start -= leftovers->len;
+            }
+            reinit_inflator = (block_next != block_start);
+            read = leftovers->len;
+            if (read < 4) {
+                read += _sb->sgetn(leftovers->buf + read, 4 - read);
+                if (read != 4) {
+                    end = true;
+                    MUTEX_ESCAPE
+                    return;
+                }
+            }
+            if (leftovers->buf[0] == 0) { // z blocks have prefixed blocksize
+                int *size = (int*)leftovers->buf;
+                block_size = ntohl(*size);
+                read -= 4;
+                if (reinit_inflator && read > 0) {
+                    std::memcpy(in.buf, leftovers->buf + 4, read);
+                    read += _sb->sgetn(in.buf + read, block_size - read);
+                }
+                else {
+                    read = _sb->sgetn(in.buf, block_size - read);
+                }
+                leftovers->len = _sb->sgetn(leftovers->buf, 8);
+                if (leftovers->len > 4) {
+                    std::memcpy(in.buf + read, leftovers->buf + 4,
+                                               leftovers->len - 4);
+                    read += leftovers->len - 4;
+                }
             }
             else { // z blocks are jammed together, no blocksize available
-                read += _sb->sgetn(in.buf + 4, in.size - 4);
+                read += _sb->sgetn(in.buf + read, in.size - read);
+                leftovers->len = 0;
                 block_size = -1;
             }
+            block_next = _sb->pubseekoff(0, std::ios_base::cur,
+                                            std::ios_base::in);
+            block_next -= leftovers->len;
+            MUTEX_UNLOCK
         }
         LOG("\tread " << read << " bytes");
         block_offset = 0;
@@ -446,34 +628,29 @@ namespace z {
             return;
         }
 
-        // We want to be able to start decompression at an arbitrary position
-        // in the input stream. This is possible with bzip2 streams, but there
-        // is a problem that the compressed blocks are arbitrary numbers of 
-        // bits long and they are catenated one after another in a bit stream
-        // without any reference to byte boundaries. This makes it difficult 
-        // to jump into the middle of a stream and start the decompressor 
-        // since it expects a stream header followed by the first block that
-        // happens to start on a byte boundary. To make this work, I splice
-        // an artificial stream header followed by a dummy compressed block
-        // onto the beginning of the input stream, where the length of the
-        // dummy block in bits is chosen so that it abutts without padding 
-        // the next block in the input stream. I have prepared 8 dummy blocks
-        // so there should be one to match the alignment of any input block.
-        // To match them, I look for the first place in the input stream
-        // with a byte string that matches the last 5 bytes in one of my
-        // dummy headers, and then I inject the dummy header into the 
-        // decompressor ahead of the actual data. The dummy blocks are all
-        // contrived to decompress to an 8-byte string, so throwing away the
-        // first 8 bytes out of the decompressor, it is primed to decompress
-        // the remaining stream without any need for bit-shifting the input.
-
         const char* head = (const char*)z_header;
-        if (block_size == 0 && strncmp(head, in.buf, z_header_length) != 0) {
-            z_strm->avail_in = z_header_length;
-            z_strm->next_in = reinterpret_cast < Bytef* >(z_header);
-            inflate(f); // inject the z stream header
+        if (reinit_inflator) {
+            int cret = ::inflateEnd(z_strm);
+            if (Z_OK != cret) {
+                LOG ("\terror terminating zstream " << cret);
+                //XXX throw exception here
+                raise_error(cret);
+            }
+            z_strm->zalloc = Z_NULL;
+            z_strm->zfree = Z_NULL;
+            z_strm->opaque = Z_NULL;
+            cret = ::inflateInit(z_strm);
+            if (Z_OK != cret) {
+                LOG ("\terror initializing zstream " << cret);
+                //XXX throw exception here
+                raise_error(cret);
+            }
+            if (strncmp(head, in.buf, z_header_length) != 0) {
+                z_strm->avail_in = z_header_length;
+                z_strm->next_in = reinterpret_cast < Bytef* >(z_header);
+                inflate(f); // inject the z stream header
+            }
         }
-        block_size = read;
         z_strm->next_in = reinterpret_cast < Bytef* >(in.buf);
         z_strm->avail_in = read;
         inflate(f);
@@ -485,16 +662,17 @@ namespace z {
         int cret = ::inflate(z_strm, flush_macro(f));
 
         if (Z_STREAM_END == cret) {
-            end = true;
+            z_strm->avail_in = 0;
+            block_next = 0;
         }
         else if (cret == Z_DATA_ERROR && z_strm->avail_in == 0) {
             // Ignore CRC errors at the end of stream because we may not have
-            // started decompressing at the beginning. We can rely on the CRC
+            // started inflating at the beginning. We can rely on the CRC
             // checks that are present within each compressed block anyway.
-            cret = Z_OK;
             end = true;
         }
         else if (Z_OK != cret) {
+            printf("z input stream crapping out, cret is %d\n", cret);
             LOG("\terror inflating: " << cret);
             //XXX throw exception
             raise_error(cret);
