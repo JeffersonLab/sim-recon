@@ -137,29 +137,6 @@ jerror_t DSCHit_factory::brun(jana::JEventLoop *eventLoop, int32_t runnumber)
         jout << "Error loading /START_COUNTER/timewalk_parms_v2 !" << endl;
 
 
-    /* 
-    // load higher order corrections
-    map<string,double> in_prop_corr;
-    map<string,double> in_atten_corr;
-
-    if(!eventLoop->GetCalib("/START_COUNTER/propagation_speed",in_prop_corr ))
-    jout << "Error loading /START_COUNTER/propagation_speed !" << endl;
-    if(!eventLoop->GetCalib("/START_COUNTER/attenuation_factor", in_atten_corr))
-    jout << "Error loading /START_COUNTER/attenuation_factor !" << endl;
-
-    // propogation correction:  A + Bx
-    propogation_corr_factors.push_back(in_prop_corr["A"]);
-    propogation_corr_factors.push_back(in_prop_corr["B"]);
-
-    // attenuation correction:  A + Bx + Cx^2 + Dx^3 + Ex^4 + Fx^5
-    attenuation_corr_factors.push_back(in_atten_corr["A"]);
-    attenuation_corr_factors.push_back(in_atten_corr["B"]);
-    attenuation_corr_factors.push_back(in_atten_corr["C"]);
-    attenuation_corr_factors.push_back(in_atten_corr["D"]);
-    attenuation_corr_factors.push_back(in_atten_corr["E"]);
-    attenuation_corr_factors.push_back(in_atten_corr["F"]);
-    */
-
     return NOERROR;
 }
 
@@ -187,57 +164,54 @@ jerror_t DSCHit_factory::evnt(JEventLoop *loop, uint64_t eventnumber)
 
     char str[256];
 
-    for (unsigned int i = 0; i < digihits.size(); i++)
-    {
+    for (unsigned int i = 0; i < digihits.size(); i++)  {
         const DSCDigiHit *digihit = digihits[i];
+        double ped_corr_pulse_peak = 0.;
 
-        // There is a slight difference between Mode 7 and 8 data
-        // The following condition signals an error state in the flash algorithm
-        // Do not make hits out of these
-        const Df250PulsePedestal* PPobj = NULL;
-        digihit->GetSingle(PPobj);
-        if (PPobj != NULL)
-	  {
-            if (PPobj->pedestal == 0 || PPobj->pulse_peak == 0) continue;
-	  }
-	else continue;
-
-	// Make sure sector is in valid range
-        if( (digihit->sector <= 0) && (digihit->sector > MAX_SECTORS)) 
-        {
+        // Make sure sector is in valid range
+        if( (digihit->sector <= 0) && (digihit->sector > MAX_SECTORS))  {
             sprintf(str, "DSCDigiHit sector out of range! sector=%d (should be 1-%d)", 
                     digihit->sector, MAX_SECTORS);
             throw JException(str);
         }
 
-        // Initialize pedestal to one found in CCDB, but override it
-        // with one found in event if is available
-        double pedestal = a_pedestals[digihit->sector-1];
-        const Df250PulseIntegral *pulse_integral = NULL;
-        digihit->GetSingle(pulse_integral);
-        if (pulse_integral != NULL) 
-	  {
-            double single_sample_ped = (double)pulse_integral->pedestal;
-            double nsamples_integral = (double)pulse_integral->nsamples_integral;
-            double nsamples_pedestal = (double)pulse_integral->nsamples_pedestal;
-            pedestal          = single_sample_ped * nsamples_integral/nsamples_pedestal;
-	  }      	
-	else continue;
+        // Error checking for pre-Fall 2016 firmware
+        if(digihit->datasource == 1) {
+            // There is a slight difference between Mode 7 and 8 data
+            // The following condition signals an error state in the flash algorithm
+            // Do not make hits out of these
+            const Df250PulsePedestal* PPobj = NULL;
+            digihit->GetSingle(PPobj);
+            if (PPobj != NULL) {
+                if (PPobj->pedestal == 0 || PPobj->pulse_peak == 0) continue;
+            } else 
+                continue;
 
-        // Apply calibration constants here
+            if (digihit->pulse_time == 0) continue; // Should already be caught, but I'll leave it
+        }
+
+        if(!locTTabUtilities->CheckFADC250_NoErrors(digihit->QF))
+            continue;
+
+        // Initialize pedestal to one found in CCDB, but override it
+        // with one found in event if is available (?)
+        // For now, only keep events with a correct pedestal
+        double pedestal = a_pedestals[digihit->sector-1];
+        if( (digihit->pedestal>0) && locTTabUtilities->CheckFADC250_PedestalOK(digihit->QF) ) {
+            pedestal = digihit->pedestal * (digihit->nsamples_integral/digihit->nsamples_pedestal);
+        } else 
+            continue;
+
+        //if ( ((double)digihit->pulse_integral) < ADC_THRESHOLD) continue; // Will comment out until this is set to something useful by default
+
         double A = (double)digihit->pulse_integral;
         double T = (double)digihit->pulse_time;
-        double dA = A - pedestal;
-	double ped_corr_pulse_peak = PPobj->pulse_peak - PPobj->pedestal;
-
-        if (digihit->pulse_time == 0) continue; // Should already be caught, but I'll leave it
-        //if (dA < ADC_THRESHOLD) continue; // Will comment out until this is set to something useful by default
 
         DSCHit *hit = new DSCHit;
+        // Sectors are numbered from 1-30
         hit->sector = digihit->sector;
 
-        // Sectors are numbered from 1-30
-        hit->dE = dA; // This will be scaled to energy units later
+        hit->dE = a_scale * a_gains[digihit->sector-1] * (A - pedestal); 
         hit->t_fADC = t_scale * T - adc_time_offsets[hit->sector-1] + t_base;
         hit->t_TDC = numeric_limits<double>::quiet_NaN();
 
@@ -245,19 +219,13 @@ jerror_t DSCHit_factory::evnt(JEventLoop *loop, uint64_t eventnumber)
         hit->has_fADC = true;
 
         hit->t = hit->t_fADC; // set time from fADC in case no TDC hit
-	hit->pulse_height = ped_corr_pulse_peak;
-
-        // add in higher order corrections?
+        hit->pulse_height = digihit->pulse_peak - (digihit->pedestal/digihit->nsamples_pedestal);
 
         hit->AddAssociatedObject(digihit);
 
         _data.push_back(hit);
     }
-
-
-    // Get the trigger time from the f1 TDC
-//     vector<const DF1TDCHit*> tdchit;
-//     eventLoop->Get(tdchit);
+    
 
 	// Next, loop over TDC hits, matching them to the
 	// existing fADC hits where possible and updating
@@ -267,82 +235,64 @@ jerror_t DSCHit_factory::evnt(JEventLoop *loop, uint64_t eventnumber)
 	loop->Get(tdcdigihits);
 	sort(tdcdigihits.begin(),tdcdigihits.end(),DSCHit_tdc_cmp);
 
-	for (unsigned int i = 0; i < tdcdigihits.size(); i++)
-	  {
+	for (unsigned int i = 0; i < tdcdigihits.size(); i++) {
 	    const DSCTDCDigiHit *digihit = tdcdigihits[i];
 
 	    // Make sure sector is in valid range
-	    if((digihit->sector <= 0) && (digihit->sector > MAX_SECTORS))
-	      {
-		sprintf(str, "DSCDigiHit sector out of range! sector=%d (should be 1-%d)",
-			digihit->sector, MAX_SECTORS);
-		throw JException(str);
-	      }
-
+	    if((digihit->sector <= 0) && (digihit->sector > MAX_SECTORS)) {
+            sprintf(str, "DSCDigiHit sector out of range! sector=%d (should be 1-%d)",
+                    digihit->sector, MAX_SECTORS);
+            throw JException(str);
+        }
+        
 	    unsigned int id = digihit->sector - 1;
 	    double T = locTTabUtilities->Convert_DigiTimeToNs_F1TDC(digihit) - tdc_time_offsets[id] + t_tdc_base;
-
-	    // cout << "T = " << T << endl;
-	    // jout << "T = " << T << endl;
 
 	    // Look for existing hits to see if there is a match
 	    //   or create new one if there is no match
 	    // Require that the trigger corrected TDC time fall within
 	    //   a reasonable time window so that when a hit is associated with
 	    //   a hit in the TDC and not the ADC it is a "decent" TDC hit
-	    if (fabs(T) < HIT_TIME_WINDOW)
-	      {
-		//jout << " T cut = " << T << endl;
-		DSCHit *hit = FindMatch(digihit->sector, T);
-		if (! hit)
-		  {
-		    hit = new DSCHit;
-		    hit->sector = digihit->sector;
-		    hit->dE = 0.0;
-		    hit->t_fADC= numeric_limits<double>::quiet_NaN();
-		    hit->has_fADC=false;
-		    _data.push_back(hit);
-		  }
+        if (fabs(T) < HIT_TIME_WINDOW) {
+            DSCHit *hit = FindMatch(digihit->sector, T);
+            if (! hit) {
+                hit = new DSCHit;
+                hit->sector = digihit->sector;
+                hit->dE = 0.0;
+                hit->t_fADC= numeric_limits<double>::quiet_NaN();
+                hit->has_fADC=false;
+                _data.push_back(hit);
+            }
 
-		hit->has_TDC=true;
-		hit->t_TDC=T;
-		//jout << "t_tDC = " << hit->t_TDC << endl;
+            hit->has_TDC=true;
+            hit->t_TDC=T;
 
+            if (USE_TIMEWALK_CORRECTION && (hit->dE > 0.0) ) {
+                // Correct for time walk
+                // The correction is the form t=t_tdc- C1 (A^C2 - A0^C2)
+                // double A  = hit->dE;
+                // double C1 = timewalk_parameters[id][1];
+                // double C2 = timewalk_parameters[id][2];
+                // double A0 = timewalk_parameters[id][3];
+                // T -= C1*(pow(A,C2) - pow(A0,C2));
 
-		if (USE_TIMEWALK_CORRECTION && (hit->dE > 0.0) )
-		  {
-		    // // Correct for time walk
-		    // // The correction is the form t=t_tdc- C1 (A^C2 - A0^C2)
-		    // double A  = hit->dE;
-		    // double C1 = timewalk_parameters[id][1];
-		    // double C2 = timewalk_parameters[id][2];
-		    // double A0 = timewalk_parameters[id][3];
-		    // T -= C1*(pow(A,C2) - pow(A0,C2));
+                // Correct for timewalk using pulse peak instead of pulse integral
+                double A        = hit->pulse_height;
+                // double C0       = timewalk_parameters[id][0];
+                double C1       = timewalk_parameters[id][1];
+                double C2       = timewalk_parameters[id][2];
+                double A_THRESH = timewalk_parameters[id][3];
+                double A0       = timewalk_parameters[id][4];
+                // do correction
+                T -= C1*(pow(A/A_THRESH, C2) - pow(A0/A_THRESH, C2));
+            }
 
-		    // Correct for timewalk using pulse peak instead of pulse integral
-		    double A        = hit->pulse_height;
-		    //		    double C0       = timewalk_parameters[id][0];
-		    double C1       = timewalk_parameters[id][1];
-		    double C2       = timewalk_parameters[id][2];
-		    double A_THRESH = timewalk_parameters[id][3];
-		    double A0       = timewalk_parameters[id][4];
-            // do correction
-		    T -= C1*(pow(A/A_THRESH, C2) - pow(A0/A_THRESH, C2));
-		  }
-		hit->t=T;
-		//jout << " T cut TW Corr = " << T << endl;
-		hit->AddAssociatedObject(digihit);
-	      } // Hit time window cut
+            hit->t=T;
+
+            hit->AddAssociatedObject(digihit);
+        } // Hit time window cut
 
 	}
-
-
-    // Apply calibration constants to convert pulse integrals to energy 
-    // units
-    for (unsigned int i=0;i<_data.size();i++)
-      {
-        _data[i]->dE*=a_scale * a_gains[_data[i]->sector-1];
-      }
 
 
     return NOERROR;
