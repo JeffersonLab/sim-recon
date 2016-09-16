@@ -145,30 +145,37 @@ jerror_t DTAGHHit_factory_Calib::evnt(JEventLoop *loop, uint64_t eventnumber)
         if (quality == k_counter_bad || quality == k_counter_noisy)
             continue;
 
-        // Throw away hits where the fADC timing algorithm failed
-        //if (digihit->pulse_time == 0) continue;
-        // The following condition signals an error state in the flash algorithm
-        // Do not make hits out of these
-        const Df250PulsePedestal* PPobj = nullptr;
-        digihit->GetSingle(PPobj);
+        // Throw away hits with firmware errors (post-summer 2016 firmware)
+        if(!locTTabUtilities->CheckFADC250_NoErrors(digihit->QF))
+            continue;
+
         double pulse_peak = 0.0;
-        if (PPobj != nullptr){
-            if (PPobj->pedestal == 0 || PPobj->pulse_peak == 0) continue;
-            pulse_peak = PPobj->pulse_peak - PPobj->pedestal;
+        if(digihit->datasource == 1) {     // handle pre-Fall 2016 firmware
+            // Throw away hits where the fADC timing algorithm failed
+            //if (digihit->pulse_time == 0) continue;
+            // The following condition signals an error state in the flash algorithm
+            // Do not make hits out of these
+            const Df250PulsePedestal* PPobj = nullptr;
+            digihit->GetSingle(PPobj);
+            if (PPobj != nullptr){
+                if (PPobj->pedestal == 0 || PPobj->pulse_peak == 0) continue;
+                pulse_peak = PPobj->pulse_peak - PPobj->pedestal;
+            }
+        } else {
+            // starting with the Fall 2016 firmware, we can get all of the values directly from the digihit
+            pulse_peak = digihit->pulse_peak - digihit->pedestal;
         }
 
         // Get pedestal, prefer associated event pedestal if it exists,
         // otherwise, use the average pedestal from CCDB
         double pedestal = fadc_pedestals[counter];
-        const Df250PulseIntegral* PIobj = nullptr;
-        digihit->GetSingle(PIobj);
-        if (PIobj != nullptr) {
+        if ( (digihit->pedestal>0) && locTTabUtilities->CheckFADC250_PedestalOK(digihit->QF) ) {
             // the measured pedestal must be scaled by the ratio of the number
             // of samples used to calculate the integral and the pedestal
             // Changed to conform to D. Lawrence changes Dec. 4 2014
-            double ped_sum = (double)PIobj->pedestal;
-            double nsamples_integral = (double)PIobj->nsamples_integral;
-            double nsamples_pedestal = (double)PIobj->nsamples_pedestal;
+            double ped_sum = (double)digihit->pedestal;
+            double nsamples_integral = (double)digihit->nsamples_integral;
+            double nsamples_pedestal = (double)digihit->nsamples_pedestal;
             pedestal          = ped_sum * nsamples_integral/nsamples_pedestal;
         }
 

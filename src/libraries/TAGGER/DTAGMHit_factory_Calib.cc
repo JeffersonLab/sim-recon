@@ -142,29 +142,41 @@ jerror_t DTAGMHit_factory_Calib::evnt(JEventLoop *loop, uint64_t eventnumber)
     for (unsigned int i=0; i < digihits.size(); i++) {
         const DTAGMDigiHit *digihit = digihits[i];
 
-        // The following condition signals an error state in the flash algorithm
-        // Do not make hits out of these
-        const Df250PulsePedestal* PPobj = nullptr;
-        digihit->GetSingle(PPobj);
-        if (PPobj != nullptr){
-            if (PPobj->pedestal == 0 || PPobj->pulse_peak == 0) continue;
+        // Throw away hits with firmware errors (post-summer 2016 firmware)
+        if(!locTTabUtilities->CheckFADC250_NoErrors(digihit->QF))
+            continue;
+
+        double pulse_peak = 0.0;
+        if(digihit->datasource == 1) {     // handle pre-Fall 2016 firmware
+            // Throw away hits where the fADC timing algorithm failed
+            //if (digihit->pulse_time == 0) continue;
+            // The following condition signals an error state in the flash algorithm
+            // Do not make hits out of these
+            const Df250PulsePedestal* PPobj = nullptr;
+            digihit->GetSingle(PPobj);
+            if (PPobj != nullptr){
+                if (PPobj->pedestal == 0 || PPobj->pulse_peak == 0) continue;
+                pulse_peak = PPobj->pulse_peak - PPobj->pedestal;
+            }
+
+            // Skip events where fADC algorithm fails
+            //if (digihit->pulse_time == 0) continue; // Should already be caught above
+        } else {
+            // starting with the Fall 2016 firmware, we can get all of the values directly from the digihit
+            pulse_peak = digihit->pulse_peak - digihit->pedestal;
         }
-        else continue;
 
         // Get pedestal, prefer associated event pedestal if it exists,
         // otherwise, use the average pedestal from CCDB
         double pedestal = fadc_pedestals[digihit->row][digihit->column];
-
-        const Df250PulseIntegral* PIobj = nullptr;
-        digihit->GetSingle(PIobj);
-        if (PIobj != nullptr) {
+        if ( (digihit->pedestal>0) && locTTabUtilities->CheckFADC250_PedestalOK(digihit->QF) ) {
             // the measured pedestal must be scaled by the ratio of the number
-            // of samples used to calculate the pedestal and the actual pulse
-            // Changed to match D. Lawrence Dec 4 2014 changes
-            double single_sample_ped = (double)PIobj->pedestal;
-            double nsamples_integral = (double)PIobj->nsamples_integral;
-            double nsamples_pedestal = (double)PIobj->nsamples_pedestal;
-            pedestal          = single_sample_ped * nsamples_integral/nsamples_pedestal;
+            // of samples used to calculate the integral and the pedestal
+            // Changed to conform to D. Lawrence changes Dec. 4 2014
+            double ped_sum = (double)digihit->pedestal;
+            double nsamples_integral = (double)digihit->nsamples_integral;
+            double nsamples_pedestal = (double)digihit->nsamples_pedestal;
+            pedestal          = ped_sum * nsamples_integral/nsamples_pedestal;
         }
 
         // throw away hits from bad or noisy fibers
@@ -172,11 +184,8 @@ jerror_t DTAGMHit_factory_Calib::evnt(JEventLoop *loop, uint64_t eventnumber)
         if (quality == k_fiber_bad || quality == k_fiber_noisy)
             continue;
 
-        // Skip events where fADC algorithm fails
-        //if (digihit->pulse_time == 0) continue; // Should already be caught above
-
         // Skip digihit if pulse peak is lower than cut value
-        double P = PPobj->pulse_peak - PPobj->pedestal;
+        double P = digihit->pulse_peak - digihit->pedestal/digihit->nsamples_pedestal;
 
         // Apply calibration constants
         double A = digihit->pulse_integral;
