@@ -107,6 +107,7 @@ int main( int argc, char* argv[] ){
   plotGen.enableReaction( reactionName );
   vector<string> sums = plotGen.uniqueSums();
 
+
   // loop over sum configurations (one for each of the individual contributions, and the combined sum of all)
   for (unsigned int isum = 0; isum <= sums.size(); isum++){
 
@@ -122,6 +123,7 @@ int main( int argc, char* argv[] ){
       }
     }
 
+
     // loop over data, accMC, and genMC
     for (unsigned int iplot = 0; iplot < PlotGenerator::kNumTypes; iplot++){
       if (isum < sums.size() && iplot == PlotGenerator::kData) continue; // only plot data once
@@ -136,6 +138,7 @@ int main( int argc, char* argv[] ){
         else if (ivar == TwoPiPlotGenerator::kPhi)  histname += "Phi";
         else if (ivar == TwoPiPlotGenerator::kphi)  histname += "phi";
         else if (ivar == TwoPiPlotGenerator::kPsi)  histname += "psi";
+        else if (ivar == TwoPiPlotGenerator::kt)  histname += "t";
         else continue;
 
         if (iplot == PlotGenerator::kData) histname += "dat";
