@@ -12,7 +12,7 @@ class DBCALShower:public JObject{
 	public:
 		JOBJECT_PUBLIC(DBCALShower);
 
- DBCALShower():ExyztCovariance(5) {}
+ DBCALShower():ExyztCovariance(5) {} ///< Consrtructor initializes matrix to 5x5
 
     float E;
     float E_raw;
@@ -71,17 +71,30 @@ class DBCALShower:public JObject{
 	}
 
 	void toStrings(vector<pair<string,string> > &items)const{
-	                /*Old, easier to compare r-phi rather than x-y, for Truth Hits
+			AddString(items, "E", "%5.3f", E);
 			AddString(items, "x", "%5.2f", x);
 			AddString(items, "y", "%5.2f", y);
-			*/
-			AddString(items, "r", "%5.1f", sqrt(x*x+y*y));
-			AddString(items, "phi", "%5.3f",atan2(y,x));
 			AddString(items, "z", "%5.1f", z);
 			AddString(items, "t", "%5.1f", t);
-			AddString(items, "E", "%5.3f", E);
+			AddString(items, "r", "%5.1f", sqrt(x*x+y*y));
+			AddString(items, "phi", "%5.3f",atan2(y,x));
 			AddString(items, "E_preshower", "%5.3f", E_preshower);
 			AddString(items, "N_cell", "%d", N_cell);
+			AddString(items, "dE", "%5.3f", EErr());
+			AddString(items, "dx", "%5.3f", xErr());
+			AddString(items, "dy", "%5.3f", yErr());
+			AddString(items, "dz", "%5.2f", zErr());
+			AddString(items, "dt", "%5.3f", tErr());
+			AddString(items, "EXcorr", "%5.3f", EXcorr());
+			AddString(items, "EYcorr", "%5.3f", EYcorr());
+			AddString(items, "EZcorr", "%5.3f", EZcorr());
+			AddString(items, "ETcorr", "%5.3f", ETcorr());
+			AddString(items, "XYcorr", "%5.3f", XYcorr());
+			AddString(items, "XZcorr", "%5.3f", XZcorr());
+			AddString(items, "XTcorr", "%5.3f", XTcorr());
+			AddString(items, "YZcorr", "%5.3f", YZcorr());
+			AddString(items, "YTcorr", "%5.3f", YTcorr());
+			AddString(items, "ZTcorr", "%5.3f", ZTcorr());
 	}
 };
 
