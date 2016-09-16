@@ -15,6 +15,7 @@ using namespace std;
 #include "DBCALHit_factory.h"
 #include <DAQ/Df250PulseIntegral.h>
 #include <DAQ/Df250Config.h>
+#include <TTAB/DTTabUtilities.h>
 using namespace jana;
 
 
@@ -124,44 +125,63 @@ jerror_t DBCALHit_factory::evnt(JEventLoop *loop, uint64_t eventnumber)
    /// data in HDDM format. The HDDM event source will copy
    /// the precalibrated values directly into the _data vector.
 
+   const DTTabUtilities* locTTabUtilities = NULL;
+   loop->GetSingle(locTTabUtilities);
+
    vector<const DBCALDigiHit*> digihits;
    loop->Get(digihits);
    for(unsigned int i=0; i<digihits.size(); i++){
       const DBCALDigiHit *digihit = digihits[i];
 
-      // There is a slight difference between Mode 7 and 8 data
-      // The following condition signals an error state in the flash algorithm
-      // Do not make hits out of these
-      const Df250PulsePedestal* PPobj = NULL;
-      digihit->GetSingle(PPobj);
-      if (PPobj != NULL){
-          if (PPobj->pedestal == 0 || PPobj->pulse_peak == 0) continue;
+      // Error checking for pre-Fall 2016 firmware
+      if(digihit->datasource == 1) {
+          // There is a slight difference between Mode 7 and 8 data
+          // The following condition signals an error state in the flash algorithm
+          // Do not make hits out of these
+          const Df250PulsePedestal* PPobj = NULL;
+          digihit->GetSingle(PPobj);
+          if (PPobj != NULL){
+              if (PPobj->pedestal == 0 || PPobj->pulse_peak == 0) continue;
+          }
       }
      
-      // Get Df250PulseIntegral object from DBCALDigiHit object
-      const Df250PulseIntegral* PIobj = NULL;
-      digihit->GetSingle(PIobj);
-      double integral, single_sample_ped, nsamples_integral, nsamples_pedestal;
+      if(!locTTabUtilities->CheckFADC250_NoErrors(digihit->QF))
+          continue;
 
-      if (PIobj == NULL && digihit->pedestal == 1 && digihit->QF == 1){ // This is a simulated event.  Set the pedestal to zero.
-          integral = (double)digihit->pulse_integral;
-          single_sample_ped = 0.;
-          nsamples_integral = 0.;
-          nsamples_pedestal = 1.;
-      }
-      else { // Calculate attenuated energy for channel
-          integral          = (double)PIobj->integral;
-          single_sample_ped = (double)PIobj->pedestal;
-          nsamples_integral = (double)PIobj->nsamples_integral;
-          nsamples_pedestal = (double)PIobj->nsamples_pedestal;
+      // parse digi-hit data
+      double integral, pedestal, nsamples_integral, nsamples_pedestal;
+      if(digihit->datasource == 1) {      // pre-fall 2016 firmware
+          // Get Df250PulseIntegral object from DBCALDigiHit object
+          const Df250PulseIntegral* PIobj = NULL;
+          digihit->GetSingle(PIobj);
+
+          if (PIobj == NULL && digihit->pedestal == 1 && digihit->QF == 1){ // This is a simulated event.  Set the pedestal to zero.
+              integral = (double)digihit->pulse_integral;
+              pedestal = 0.;
+              nsamples_integral = 0.;
+              nsamples_pedestal = 1.;
+          } else {       
+              // Calculate attenuated energy for channel
+              integral          = (double)PIobj->integral;
+              pedestal          = (double)PIobj->pedestal;
+              nsamples_integral = (double)PIobj->nsamples_integral;
+              nsamples_pedestal = (double)PIobj->nsamples_pedestal;
+          }
+      } else {                        // post-fall 2016 firmware  (& emulated hits)
+          // Calculate attenuated energy for channel
+          integral          = (double)digihit->pulse_integral;
+          if(locTTabUtilities->CheckFADC250_PedestalOK(digihit->QF))
+              pedestal = (double)digihit->pedestal;
+          nsamples_integral = (double)digihit->nsamples_integral;
+          nsamples_pedestal = (double)digihit->nsamples_pedestal;
       }
 
-      double totalpedestal     = single_sample_ped * nsamples_integral/nsamples_pedestal;
+      double totalpedestal     = pedestal * nsamples_integral/nsamples_pedestal;
       double gain              = GetConstant(gains,digihit);
       double hit_E = 0;
-      if (integral > 0) hit_E  = gain * (integral - totalpedestal);
+      if ( integral > 0 ) hit_E = gain * (integral - totalpedestal);
       if ( hit_E < 0 ) continue;  // Throw away negative energy hits  
-      int pulse_peak_pedsub = digihit->pulse_peak - digihit->pedestal / digihit->nsamples_pedestal;
+      int pulse_peak_pedsub    = digihit->pulse_peak - digihit->pedestal / digihit->nsamples_pedestal;
       // Calculate time for channel
       double pulse_time        = (double)digihit->pulse_time;
       double end_sign          = digihit->end ? -1.0 : 1.0; // Upstream = 0 -> Positive (then subtracted)
