@@ -176,26 +176,31 @@ jerror_t DTOFHit_factory::evnt(JEventLoop *loop, uint64_t eventnumber)
 	for(unsigned int i=0; i<digihits.size(); i++){
 		const DTOFDigiHit *digihit = digihits[i];
 
-        // The following condition signals an error state in the flash algorithm
-        // Do not make hits out of these
-        const Df250PulsePedestal* PPobj = NULL;
-        digihit->GetSingle(PPobj);
-        if (PPobj != NULL){
-            if (PPobj->pedestal == 0 || PPobj->pulse_peak == 0) continue;
+        // Error checking for pre-Fall 2016 firmware
+        if(digihit->datasource == 1) {
+            // There is a slight difference between Mode 7 and 8 data
+            // The following condition signals an error state in the flash algorithm
+            // Do not make hits out of these
+            const Df250PulsePedestal* PPobj = NULL;
+            digihit->GetSingle(PPobj);
+            if (PPobj != NULL) {
+                if (PPobj->pedestal == 0 || PPobj->pulse_peak == 0) continue;
+            } else 
+                continue;
+            
+            //if (digihit->pulse_time == 0) continue; // Should already be caught
         }
+        
+        if(!locTTabUtilities->CheckFADC250_NoErrors(digihit->QF))
+            continue;
 
-        // Get pedestal.  Prefer associated event pedestal if it exists.
-        // Otherwise, use the average pedestal from CCDB
-        double pedestal = GetConstant(adc_pedestals,digihit);
-        const Df250PulseIntegral *pulse_integral = NULL;
-        digihit->GetSingle(pulse_integral);
-        if (pulse_integral != NULL)
-        {
-            double single_sample_ped = (double)pulse_integral->pedestal;
-            double nsamples_integral = (double)pulse_integral->nsamples_integral;
-            double nsamples_pedestal = (double)pulse_integral->nsamples_pedestal;
-            pedestal          = single_sample_ped * nsamples_integral/nsamples_pedestal;
-        }
+        // Initialize pedestal to one found in CCDB, but override it
+        // with one found in event if is available (?)
+        // For now, only keep events with a correct pedestal
+        double pedestal = GetConstant(adc_pedestals, digihit);
+        if( (digihit->pedestal>0) && locTTabUtilities->CheckFADC250_PedestalOK(digihit->QF) ) {
+            pedestal = digihit->pedestal * (digihit->nsamples_integral/digihit->nsamples_pedestal);
+        } 
 
         // Apply calibration constants here
         double A = (double)digihit->pulse_integral;
@@ -203,7 +208,6 @@ jerror_t DTOFHit_factory::evnt(JEventLoop *loop, uint64_t eventnumber)
         T =  t_scale * T - GetConstant(adc_time_offsets, digihit) + t_base;
         double dA = A - pedestal;
 
-        // if (digihit->pulse_time==0) continue; // Should already be caught
         if (dA<0) continue; 
 
         DTOFHit *hit = new DTOFHit;
@@ -288,8 +292,7 @@ jerror_t DTOFHit_factory::evnt(JEventLoop *loop, uint64_t eventnumber)
         hit->AddAssociatedObject(digihit);
     }
 
-    // Apply calibration constants to convert pulse integrals to energy 
-    // units
+    // Apply calibration constants to convert pulse integrals to energy units
     for (unsigned int i=0;i<_data.size();i++){
       int id=88*_data[i]->plane + 44*_data[i]->end + _data[i]->bar-1;
       _data[i]->dE *= adc2E[id];
