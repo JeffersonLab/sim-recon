@@ -7174,6 +7174,7 @@ kalman_error_t DTrackFitterKalmanSIMD::ForwardFit(const DMatrix5x1 &S0,const DMa
     }
 
     // Convert from forward rep. to central rep.
+    DMatrix5x1 Sc;
     ConvertStateVector(z_,Slast,Sc);
 
     // Track Parameters at "vertex"
@@ -7410,7 +7411,8 @@ kalman_error_t DTrackFitterKalmanSIMD::ForwardCDCFit(const DMatrix5x1 &S0,const 
         if (ExtrapolateToVertex(Slast,Clast)!=NOERROR) return EXTRAPOLATION_FAILED;
 
     // Convert from forward rep. to central rep.
-    ConvertStateVectorAndCovariance(z_,Slast,Sc);
+    DMatrix5x1 Sc;
+    ConvertStateVector(z_,Slast,Sc);
 
     // Track Parameters at "vertex"
     phi_=Sc(state_phi);
