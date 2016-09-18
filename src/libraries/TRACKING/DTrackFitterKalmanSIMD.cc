@@ -99,41 +99,6 @@ double DTrackFitterKalmanSIMD::fdc_drift_variance(double t){
     return sigma*sigma;
 }
 
-// Convert time to distance for the cdc
-double DTrackFitterKalmanSIMD::cdc_drift_distance(double t,double B){
-    double d=0.;
-    if (t>0){
-        double dtc =(CDC_DRIFT_BSCALE_PAR1 + CDC_DRIFT_BSCALE_PAR2 * B)* t;
-        double tcorr=t-dtc;
-
-        if (tcorr>cdc_drift_table[cdc_drift_table.size()-1]){
-            return 0.78;
-        }
-
-        unsigned int index=0;
-        index=locate(cdc_drift_table,tcorr);
-        double dt=cdc_drift_table[index+1]-cdc_drift_table[index];
-        double frac=(tcorr-cdc_drift_table[index])/dt;
-        d=0.01*(double(index)+frac); 
-    }
-    return d;
-
-    // The following functional form was derived from the simulated
-    // time-to-distance relationship derived from GARFIELD.  It should really
-    // be determined empirically...
-    /*
-       double two_a=2.*(1129.0+78.66*B);
-       double b=49.41-4.74*B;
-       d=b/two_a;
-    //  if (t>0.0) d+=0.0279*sqrt(t);
-    if (t>0.0) d+=sqrt(b*b+2.*two_a*t)/two_a;
-
-    //_DBG_ << d << endl;
-
-    return d;
-    */
-}
-
 // Convert time to distance for the cdc and compute variance
 void DTrackFitterKalmanSIMD::ComputeCDCDrift(double dphi,double delta,double t,
 					     double B,
@@ -804,7 +769,7 @@ DTrackFitter::fit_status_t DTrackFitterKalmanSIMD::FitTrack(void)
 
     DMatrixDSym errMatrix(5);
     // Fill the tracking error matrix and the one needed for kinematic fitting
-    if (FORWARD_PARMS_COV && fcov.size()!=0){
+    if (fcov.size()!=0){
         fit_params.setForwardParmFlag(true);
 
         // We MUST fill the entire matrix (not just upper right) even though 
@@ -922,8 +887,9 @@ jerror_t DTrackFitterKalmanSIMD::AddFDCHit(const DFDCPseudo *fdchit){
     hit->vstrip=fdchit->s;
     hit->vvar=fdchit->ds*fdchit->ds;
     hit->z=fdchit->wire->origin.z();
-    hit->cosa=fdchit->wire->udir.y();
-    hit->sina=fdchit->wire->udir.x();
+    double tilt_factor=1./fdchit->wire->sdir.z();
+    hit->cosa=fdchit->wire->udir.y()*tilt_factor;
+    hit->sina=fdchit->wire->udir.x()*tilt_factor;
     hit->nr=0.;
     hit->nz=0.;
     hit->dE=1e6*fdchit->dE;
@@ -2384,11 +2350,9 @@ jerror_t DTrackFitterKalmanSIMD::CalcDerivAndJacobian(const DVector2 &xy,
 
 // Convert between the forward parameter set {x,y,tx,ty,q/p} and the central
 // parameter set {q/pT,phi,tan(lambda),D,z}
-jerror_t DTrackFitterKalmanSIMD::ConvertStateVectorAndCovariance(double z,
-        const DMatrix5x1 &S, 
-        DMatrix5x1 &Sc,
-        const DMatrix5x5 &C,
-        DMatrix5x5 &Cc){
+jerror_t DTrackFitterKalmanSIMD::ConvertStateVector(double z,
+						    const DMatrix5x1 &S, 
+						    DMatrix5x1 &Sc){
     //double x=S(state_x),y=S(state_y);
     //double tx=S(state_tx),ty=S(state_ty),q_over_p=S(state_q_over_p);
     // Copy over to the class variables
@@ -2409,31 +2373,6 @@ jerror_t DTrackFitterKalmanSIMD::ConvertStateVectorAndCovariance(double z,
     double sinphi=sin(Sc(state_phi));
     if ((x_>0.0 && sinphi>0.0) || (y_ <0.0 && cosphi>0.0) || (y_>0.0 && cosphi<0.0) 
             || (x_<0.0 && sinphi<0.0)) Sc(state_D)*=-1.; 
-
-    // Rotate the covariance matrix from forward parameter space to central 
-    // parameter space
-    DMatrix5x5 J;
-
-    double tanl2=tanl*tanl;
-    double tanl3=tanl2*tanl;
-    double factor=1./sqrt(1.+tsquare);
-    J(state_z,state_x)=-tx_/tsquare;
-    J(state_z,state_y)=-ty_/tsquare;
-    double diff=tx_*tx_-ty_*ty_;
-    double frac=1./(tsquare*tsquare);
-    J(state_z,state_tx)=(x_*diff+2.*tx_*ty_*y_)*frac;
-    J(state_z,state_ty)=(2.*tx_*ty_*x_-y_*diff)*frac;
-    J(state_tanl,state_tx)=-tx_*tanl3;
-    J(state_tanl,state_ty)=-ty_*tanl3;
-    J(state_q_over_pt,state_q_over_p)=1./cosl;
-    J(state_q_over_pt,state_tx)=-q_over_p_*tx_*tanl3*factor;
-    J(state_q_over_pt,state_ty)=-q_over_p_*ty_*tanl3*factor;
-    J(state_phi,state_tx)=-ty_*tanl2;
-    J(state_phi,state_ty)=tx_*tanl2;
-    J(state_D,state_x)=x_/Sc(state_D);
-    J(state_D,state_y)=y_/Sc(state_D);
-
-    Cc=J*C*J.Transpose();
 
     return NOERROR;
 }
@@ -3220,6 +3159,13 @@ jerror_t DTrackFitterKalmanSIMD::KalmanLoop(void){
 
         // Parameters at "vertex"
         double D=D_,phi=phi_,q_over_pt=q_over_pt_,tanl=tanl_,x=x_,y=y_,z=z_;
+	vector< vector <double> > fcov_save;
+	if (!fcov.empty()){
+	  fcov_save.assign(fcov.begin(),fcov.end());
+	}
+	if (my_fdchits.size()>0){
+	  if (error==INVALID_FIT) _DBG_<< "Invalid fit " << fcov.size() << " " << fdc_ndf <<endl;
+	}
 
         // Use forward parameters for CDC-only tracks with theta<THETA_CUT degrees
         if (theta_deg<THETA_CUT){
@@ -3254,11 +3200,11 @@ jerror_t DTrackFitterKalmanSIMD::KalmanLoop(void){
 
             error=ForwardCDCFit(S0,C0);
 
-            if (error!=FIT_FAILED){
+            if (error!=FIT_FAILED && error!=EXTRAPOLATION_FAILED){
                 // Find the CL of the fit
                 forward_prob=TMath::Prob(chisq_,ndf_);
                 if (my_fdchits.size()>0){
-                    if (forward_prob>fdc_prob){
+                    if (fdc_ndf==0 || forward_prob>fdc_prob){
                         // We did not end up using the fdc hits after all...
                         fdchits_used_in_fit.clear();
                     }
@@ -3272,6 +3218,9 @@ jerror_t DTrackFitterKalmanSIMD::KalmanLoop(void){
                         phi_=phi;
                         tanl_=tanl;
                         q_over_pt_=q_over_pt;
+			if (!fcov_save.empty()){
+			  fcov.assign(fcov_save.begin(),fcov_save.end());
+			}
 
 			//                         _DBG_ << endl;
                         return NOERROR;
@@ -3290,6 +3239,7 @@ jerror_t DTrackFitterKalmanSIMD::KalmanLoop(void){
                 phi=phi_;
                 tanl=tanl_;
                 q_over_pt=q_over_pt_;
+		fcov_save.assign(fcov.begin(),fcov.end());
 
                 // Save the list of hits used in the fit
                 forward_cdc_used_in_fit.assign(cdchits_used_in_fit.begin(),cdchits_used_in_fit.end());
@@ -3353,6 +3303,7 @@ jerror_t DTrackFitterKalmanSIMD::KalmanLoop(void){
                 z_=z;
                 chisq_=chisq_forward;
                 ndf_= ndof_forward;
+		fcov.assign(fcov_save.begin(),fcov_save.end());
 
                 cdchits_used_in_fit.assign(forward_cdc_used_in_fit.begin(),forward_cdc_used_in_fit.end());
 
@@ -7223,9 +7174,7 @@ kalman_error_t DTrackFitterKalmanSIMD::ForwardFit(const DMatrix5x1 &S0,const DMa
     }
 
     // Convert from forward rep. to central rep.
-    DMatrix5x1 Sc;
-    DMatrix5x5 Cc;
-    ConvertStateVectorAndCovariance(z_,Slast,Sc,Clast,Cc);
+    ConvertStateVector(z_,Slast,Sc);
 
     // Track Parameters at "vertex"
     phi_=Sc(state_phi);
@@ -7235,24 +7184,13 @@ kalman_error_t DTrackFitterKalmanSIMD::ForwardFit(const DMatrix5x1 &S0,const DMa
 
     // Covariance matrix  
     vector<double>dummy;
-    if (FORWARD_PARMS_COV==true){
-        for (unsigned int i=0;i<5;i++){
-            dummy.clear();
-            for(unsigned int j=0;j<5;j++){
-                dummy.push_back(Clast(i,j));
-            }
-            fcov.push_back(dummy);
-        }
-    }
-    // Central parametrization
     for (unsigned int i=0;i<5;i++){
-        dummy.clear();
-        for(unsigned int j=0;j<5;j++){
-            dummy.push_back(Cc(i,j));
-        }
-        cov.push_back(dummy);
+      dummy.clear();
+      for(unsigned int j=0;j<5;j++){
+	dummy.push_back(Clast(i,j));
+      }
+      fcov.push_back(dummy);
     }
-
 
     return FIT_SUCCEEDED;
 }
@@ -7472,9 +7410,7 @@ kalman_error_t DTrackFitterKalmanSIMD::ForwardCDCFit(const DMatrix5x1 &S0,const 
         if (ExtrapolateToVertex(Slast,Clast)!=NOERROR) return EXTRAPOLATION_FAILED;
 
     // Convert from forward rep. to central rep.
-    DMatrix5x1 Sc;
-    DMatrix5x5 Cc;
-    ConvertStateVectorAndCovariance(z_,Slast,Sc,Clast,Cc);
+    ConvertStateVectorAndCovariance(z_,Slast,Sc);
 
     // Track Parameters at "vertex"
     phi_=Sc(state_phi);
@@ -7485,24 +7421,14 @@ kalman_error_t DTrackFitterKalmanSIMD::ForwardCDCFit(const DMatrix5x1 &S0,const 
     // Covariance matrix  
     vector<double>dummy;
     // ... forward parameterization
-    if (FORWARD_PARMS_COV==true){
-        for (unsigned int i=0;i<5;i++){
-            dummy.clear();
-            for(unsigned int j=0;j<5;j++){
-                dummy.push_back(Clast(i,j));
-            }
-            fcov.push_back(dummy);
-        }  
-    }
-    // Central parametrization
+    fcov.clear();
     for (unsigned int i=0;i<5;i++){
-        dummy.clear();
-        for(unsigned int j=0;j<5;j++){
-            dummy.push_back(Cc(i,j));
-        }
-        cov.push_back(dummy);
-    }
-
+      dummy.clear();
+      for(unsigned int j=0;j<5;j++){
+	dummy.push_back(Clast(i,j));
+      }
+      fcov.push_back(dummy);
+    }  
 
     return FIT_SUCCEEDED;
 }

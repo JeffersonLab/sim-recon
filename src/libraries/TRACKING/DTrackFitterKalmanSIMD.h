@@ -258,10 +258,8 @@ class DTrackFitterKalmanSIMD: public DTrackFitter{
  
   void locate(const double *xx,int n,double x,int *j);
   unsigned int locate(vector<double>&xx,double x);
-  double fdc_y_variance(double dE);
+  
   double fdc_drift_variance(double t);
-  double cdc_variance(double B,double t);   
-  double cdc_drift_distance(double t,double Bz);  
   double fdc_drift_distance(double t,double Bz);
 
   void ResetKalmanSIMD(void);
@@ -299,9 +297,8 @@ class DTrackFitterKalmanSIMD: public DTrackFitter{
   jerror_t CalcDerivAndJacobian(const DVector2 &xy,DVector2 &dxy,
 				const DMatrix5x1 &S,double dEdx,
 				DMatrix5x5 &J1,DMatrix5x1 &D1);
-  jerror_t ConvertStateVectorAndCovariance(double z,const DMatrix5x1 &S,
-                                           DMatrix5x1 &Sc,const DMatrix5x5 &C,
-                                           DMatrix5x5 &Cc);
+  jerror_t ConvertStateVector(double z,const DMatrix5x1 &S,DMatrix5x1 &Sc);
+
 
   jerror_t GetProcessNoiseCentral(double ds,double chi2c_factor,
 				  double chi2a_factor,double chi2a_corr,
@@ -531,26 +528,5 @@ class DTrackFitterKalmanSIMD: public DTrackFitter{
   unsigned int last_material_map;
 
 };
-
-// Smearing function derived from fitting residuals
-inline double DTrackFitterKalmanSIMD::cdc_variance(double B,double t){ 
-  //return CDC_VARIANCE;
-  if (t<0.0) t=0.;
-  
-  //double sigma=0.13/(t+3.6)+10e-3;
-  double sigma=CDC_RES_PAR1/(t+1.)+CDC_RES_PAR2;
-
-  sigma*=10.0;
-
-  return sigma*sigma;
-}
-// Variance for position along wire
-inline double DTrackFitterKalmanSIMD::fdc_y_variance(double dE){
-  double sigma=0.025;
-
-  return sigma*sigma;
-}
-
-
 
 #endif //  _DTrackFitterKalmanSIMD_H_
