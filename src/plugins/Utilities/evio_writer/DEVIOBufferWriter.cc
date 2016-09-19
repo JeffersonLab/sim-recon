@@ -1,5 +1,6 @@
 // This class is responsible for taking a single event and writing it 
-// into a buffer in EVIO format
+// into a buffer in EVIO format - based on hdl3
+//   https://halldsvn.jlab.org/repos/trunk/online/packages/monitoring/src/hdl3
 
 #include "DEVIOBufferWriter.h"
 
@@ -24,6 +25,7 @@ void DEVIOBufferWriter::WriteEventToBuffer(JEventLoop *loop, vector<uint32_t> &b
     // Handle BOR events separately
     // These should only be at the beginning of a file or when the run changes
 	if( loop->GetJEvent().GetStatusBit(kSTATUS_BOR_EVENT) ){
+        buff.clear();
 		WriteBORData(loop, buff);
 		return;
 	}
@@ -114,7 +116,7 @@ void DEVIOBufferWriter::WriteEventToBuffer(JEventLoop *loop, vector<uint32_t> &b
             } else if(auto *llobj_ptr = dynamic_cast<const DF1TDCTriggerTime *>(obj_ptr)) {
                 F1tts.push_back(llobj_ptr);
             } else {
-                // if not, for a reconstructed object, just get all of the possible hits
+                // if not, assume this is a reconstructed object, and just get all of the possible hits
                 vector<const Df250TriggerTime*>   obj_f250tts;
                 vector<const Df250PulseIntegral*> obj_f250pis;
                 vector<const Df250WindowRawData*> obj_f250wrds;
@@ -171,6 +173,7 @@ void DEVIOBufferWriter::WriteEventToBuffer(JEventLoop *loop, vector<uint32_t> &b
 	// with no CODA data. In this case, write the EPICS banks and then
 	// return before writing the Physics Bank
 	if( !epicsValues.empty() ){
+        buff.clear();
 		WriteEPICSData(buff, epicsValues);
 		return;
 	}
@@ -206,7 +209,7 @@ void DEVIOBufferWriter::WriteEventToBuffer(JEventLoop *loop, vector<uint32_t> &b
 	// Physics Bank Header
 	buff.clear();
 	buff.push_back(0); // Physics Event Length (must be updated at the end)
-	buff.push_back( 0xFF701001);// 0xFF70=SEB in single event mode, 0x10=bank of banks, 0x01=1event
+	buff.push_back(0xFF701001);// 0xFF70=SEB in single event mode, 0x10=bank of banks, 0x01=1event
 	
 	// Write Built Trigger Bank
 	WriteBuiltTriggerBank(buff, loop, coda_rocinfos, coda_events);
@@ -231,6 +234,16 @@ void DEVIOBufferWriter::WriteEventToBuffer(JEventLoop *loop, vector<uint32_t> &b
         WriteTSSyncData(loop, buff, l1_info[0]);
     }
 
+    // save any extra objects 
+    for(vector<const JObject *>::iterator obj_itr = objects_to_save.begin();
+        obj_itr != objects_to_save.end(); obj_itr++) {
+        const JObject *obj_ptr = *obj_itr;
+        
+        // first, see if these are low-level hit objects
+        if(auto *vertex_ptr = dynamic_cast<const DVertex *>(obj_ptr)) {
+            WriteDVertexData(loop, buff, vertex_ptr);
+        }
+    }
 
 	// Update global header length
 	if(!buff.empty()) buff[0] = buff.size()-1;
@@ -268,7 +281,6 @@ void DEVIOBufferWriter::WriteBuiltTriggerBank(vector<uint32_t> &buff,
 	buff.push_back(event_number>>32);           // high 32 bits of event number
 	buff.push_back(avg_timestamp & 0xFFFFFFFF); // low 32 bits of avg. timestamp
 	buff.push_back(avg_timestamp>>32);          // high 32 bits of avg. timestamp
-	//buff.push_back(run_number);
 	buff.push_back(run_type);
     buff.push_back(run_number);   // this is swapped from what one would expect (see JEventSource_EVIO::FindRunNumber()) - sdobbs (3/13/2016)
 
@@ -1027,52 +1039,100 @@ void DEVIOBufferWriter::WriteEventTagData(vector<uint32_t> &buff,
                                           uint64_t event_status,
                                           const DL3Trigger* l3trigger) const
 {
-	// Here we purposefully write the DEventTag data into a bank
-	// based only on data extracted from other data objects, but
-	// NOT the DEventTag object. This is so whenever an event is
-	// written, it is guaranteed to have event tag data based on
-	// current information as opposed to data passed in from a
-	// previously run algorithm.
-	uint32_t eventtag_bank_idx = buff.size();
-	
-	uint64_t L3_status = 0;
-	uint32_t L3_decision = 0;
-	uint32_t L3_algorithm = 0;
-	if(l3trigger){
-		L3_status = l3trigger->status;
-		L3_decision = l3trigger->L3_decision;
-		L3_algorithm = l3trigger->algorithm;
-	}
-	
-	// Set L3 pass/fail status in event_status word to be written
-	// (this is redundant with the L3_decision word written below
-	// but makes the bits in the status word valid and costs nothing)
-	switch(L3_decision){
-		case DL3Trigger::kKEEP_EVENT   : event_status |= kSTATUS_L3PASS; break;
-		case DL3Trigger::kDISCARD_EVENT: event_status |= kSTATUS_L3FAIL; break;
-		case DL3Trigger::kNO_DECISION  : break;
-	}
-	
-	// Length and Header words
-	buff.push_back(0); // Total bank length (will be overwritten later)
-	buff.push_back( 0x00560101 ); // 0x56=event tag bank, 0x01=uint32_t bank, 0x01=1 event
+    // Here we purposefully write the DEventTag data into a bank
+    // based only on data extracted from other data objects, but
+    // NOT the DEventTag object. This is so whenever an event is
+    // written, it is guaranteed to have event tag data based on
+    // current information as opposed to data passed in from a
+    // previously run algorithm.
+    uint32_t eventtag_bank_idx = buff.size();
+    
+    uint64_t L3_status = 0;
+    uint32_t L3_decision = 0;
+    uint32_t L3_algorithm = 0;
+    if(l3trigger){
+        L3_status = l3trigger->status;
+        L3_decision = l3trigger->L3_decision;
+        L3_algorithm = l3trigger->algorithm;
+    }
+    
+    // Set L3 pass/fail status in event_status word to be written
+    // (this is redundant with the L3_decision word written below
+    // but makes the bits in the status word valid and costs nothing)
+    switch(L3_decision){
+    case DL3Trigger::kKEEP_EVENT   : event_status |= kSTATUS_L3PASS; break;
+    case DL3Trigger::kDISCARD_EVENT: event_status |= kSTATUS_L3FAIL; break;
+    case DL3Trigger::kNO_DECISION  : break;
+    }
+    
+    // Length and Header words
+    // This must fit the format of ROC data so we add a bank of banks
+    // header with rocid=0xF56
+    buff.push_back(0); // Total bank length (will be overwritten later)
+    buff.push_back( 0x0F561001 ); // rocid=0xF56
+    buff.push_back(0); // Bank length (will be overwritten later)
+    buff.push_back( 0x00560101 ); // 0x56=event tag bank, 0x01=uint32_t bank, 0x01=1 event
 
-	// event_status
-	buff.push_back( (event_status>> 0)&0xFFFFFFFF ); // low order word
-	buff.push_back( (event_status>>32)&0xFFFFFFFF ); // high order word
+    // event_status
+    buff.push_back( (event_status>> 0)&0xFFFFFFFF ); // low order word
+    buff.push_back( (event_status>>32)&0xFFFFFFFF ); // high order word
 
-	// L3_status
-	buff.push_back( (L3_status>> 0)&0xFFFFFFFF ); // low order word
-	buff.push_back( (L3_status>>32)&0xFFFFFFFF ); // high order word
+    // L3_status
+    buff.push_back( (L3_status>> 0)&0xFFFFFFFF ); // low order word
+    buff.push_back( (L3_status>>32)&0xFFFFFFFF ); // high order word
 
-	// L3_decision
-	buff.push_back( L3_decision );
+    // L3_decision
+    buff.push_back( L3_decision );
 
-	// L3_algorithm
-	buff.push_back( L3_algorithm );
+    // L3_algorithm
+    buff.push_back( L3_algorithm );
 
-	// Update event tag Bank length
-	buff[eventtag_bank_idx] = buff.size() - eventtag_bank_idx - 1;
+    // Update event tag Bank lengths
+    buff[eventtag_bank_idx] = buff.size() - eventtag_bank_idx - 1;
+    buff[eventtag_bank_idx+2] = buff[eventtag_bank_idx] - 2;
+}
+
+
+//------------------
+// WriteBORSingle
+//------------------
+template<typename T, typename M, typename F>
+void DEVIOBufferWriter::WriteBORSingle(vector<uint32_t> &buff, M m, F&& modFunc) const
+{
+    /// Write BOR config objects for all crates containing
+    /// a single module type. This is called from WriteBORData
+    /// below.
+    
+    // This templated function saves duplicating this code for all
+    // 4 BORconfig data types. It is complicated slightly by the
+    // fact that the F1TDC comes in 2 types and so the last argument
+    // must be a lambda function in order to set the module type
+    // based on a value in object "c" in the innermost loop.
+    // It is also a bit tricky since the DXXXBORConfig data types
+    // use multiple inheritance with one type being the actual
+    // data structure from bor_roc.h. This is really only needed 
+    // for the data structure length so we make it the first
+    // template parameter so that it can be specified using the 
+    // template syntax when calling this.
+
+    for(auto p : m){
+        uint32_t rocid = p.first;
+        uint32_t crate_idx = buff.size();
+        buff.push_back(0); // crate bank length (will be overwritten later)
+        buff.push_back( (0x71<<16) + (0x0C<<8) + (rocid<<0) ); // 0x71=crate config, 0x0c=tag segment, num=rocid
+        
+        for(auto c : p.second){
+            uint32_t slot = c->slot;
+            uint32_t modtype = modFunc(c);
+            uint32_t tag = (slot<<5) + (modtype); 
+            uint32_t Nwords = sizeof(T)/sizeof(uint32_t);
+            buff.push_back( (tag<<20) + (0x01<<16) + (Nwords)); // 0x1=uint32
+            uint32_t *d = (uint32_t*)&c->rocid;
+            for(uint32_t j=0; j<Nwords; j++) buff.push_back(*d++);
+        }
+        
+        buff[crate_idx] = buff.size() - crate_idx - 1;
+    }
 }
 
 
@@ -1081,23 +1141,48 @@ void DEVIOBufferWriter::WriteEventTagData(vector<uint32_t> &buff,
 //------------------
 void DEVIOBufferWriter::WriteBORData(JEventLoop *loop, vector<uint32_t> &buff) const
 {
-    // The Begin-Of-Run (BOR) record is a special record that should show up
-    // at the beginning of each EVIO file and any time a new run starts during a file
-    // We want to preserve its format, so the easiest way to handle it is just to copy 
-    // it straight to the output.  It's always (so far) saved as a single event, 
-    // consisting of a bank of banks of config information
+    // Write the BOR data into EVIO format.
+    
+    vector<const Df250BORConfig*> vDf250BORConfig;
+    vector<const Df125BORConfig*> vDf125BORConfig;
+    vector<const DF1TDCBORConfig*> vDF1TDCBORConfig;
+    vector<const DCAEN1290TDCBORConfig*> vDCAEN1290TDCBORConfig;
 
-    // grab buffer corresponding to this event
-    // note that we get everything after the EVIO block header
-    void *ref = loop->GetJEvent().GetRef();
-    uint32_t *in_buff = JEventSource_EVIO::GetEVIOBufferFromRef(ref);
-    //uint32_t buff_size = JEventSource_EVIO::GetEVIOBufferSizeFromRef(ref);  // this is much larger than the bank size - not sure why
+    loop->Get(vDf250BORConfig);
+    loop->Get(vDf125BORConfig);
+    loop->Get(vDF1TDCBORConfig);
+    loop->Get(vDCAEN1290TDCBORConfig);
+    
+    uint32_t Nconfig_objs = vDf250BORConfig.size() + vDf125BORConfig.size() + vDF1TDCBORConfig.size() + vDCAEN1290TDCBORConfig.size();
+    if(Nconfig_objs == 0) return;
 
-    uint32_t Nwords = in_buff[0];   // number of words in BOR config bank
-    // copy entire bank
-    for(uint32_t i=0; i<Nwords+1; i++)  buff.push_back( in_buff[i] );
+    // Sort config. objects by rocid into containers
+    map<uint32_t, decltype(vDf250BORConfig)> mDf250BORConfig;
+    map<uint32_t, decltype(vDf125BORConfig)> mDf125BORConfig;
+    map<uint32_t, decltype(vDF1TDCBORConfig)> mDF1TDCBORConfig;
+    map<uint32_t, decltype(vDCAEN1290TDCBORConfig)> mDCAEN1290TDCBORConfig;
+    for(auto c : vDf250BORConfig) mDf250BORConfig[c->rocid].push_back(c);
+    for(auto c : vDf125BORConfig) mDf125BORConfig[c->rocid].push_back(c);
+    for(auto c : vDF1TDCBORConfig) mDF1TDCBORConfig[c->rocid].push_back(c);
+    for(auto c : vDCAEN1290TDCBORConfig) mDCAEN1290TDCBORConfig[c->rocid].push_back(c);
 
+    // Outermost EVIO header for BOR event
+    uint32_t bor_bank_idx = buff.size();
+    buff.push_back(0); // Total bank length (will be overwritten later)
+    buff.push_back( (0x70<<16) + (0x0E<<8) + (0x1<<0) ); // 0x70=BOR event  0x0E=bank of banks 0x1=num
+
+    // Write all config objects for each BOR data type
+    // using the templated function above.
+    WriteBORSingle<f250config>(buff, mDf250BORConfig, [](const Df250BORConfig *c){return DModuleType::FADC250;});
+    WriteBORSingle<f125config>(buff, mDf125BORConfig, [](const Df125BORConfig *c){return DModuleType::FADC125;});
+    WriteBORSingle<F1TDCconfig>(buff, mDF1TDCBORConfig, [](const DF1TDCBORConfig *c){return c->nchips==8 ? 0x3:0x4;});
+    WriteBORSingle<caen1190config>(buff, mDCAEN1290TDCBORConfig, [](const DCAEN1290TDCBORConfig *c){return DModuleType::CAEN1290;});
+
+    // Update BOR Bank length
+    buff[bor_bank_idx] = buff.size() - bor_bank_idx - 1;
 }
+
+
 
 //------------------
 // WriteTSSyncData
@@ -1144,6 +1229,60 @@ void DEVIOBufferWriter::WriteTSSyncData(JEventLoop *loop, vector<uint32_t> &buff
 
     // Update bank length
     buff[trigger_bank_len_idx] = buff.size() - trigger_bank_len_idx - 1;
+    buff[data_bank_len_idx] = buff.size() - data_bank_len_idx - 1;
+
+}
+
+//------------------
+// WriteDVertexData
+//------------------
+void DEVIOBufferWriter::WriteDVertexData(JEventLoop *loop, vector<uint32_t> &buff, const DVertex *vertex) const
+{
+    // Physics Event's Data Bank
+    uint32_t data_bank_len_idx = buff.size();
+    buff.push_back(0); // will be updated later
+    buff.push_back(0x00011001); // Data bank header: 0001=TS rocid , 10=Bank of Banks, 01=1 event
+                                //   Use TS rocid for event-level data
+
+    // DVertex data block bank
+    uint32_t vertex_bank_len_idx = buff.size();
+    buff.push_back(0); // Length
+    buff.push_back(0x1D010100); // 0x1D01=DVertexTag, 0x01=u32int 
+
+
+    // Save 4-vector information - assume doubles are stored in 64-bits
+    // This is usually a good assumption, but is not 100% portable...
+    // We use memcpy to convert between doubles and integers, since
+    // we only need the integers for the bit representations, and this avoids
+    // a nest of nasty casting...
+    uint64_t vertex_x_out, vertex_y_out, vertex_z_out, vertex_t_out;
+    double vertex_x = vertex->dSpacetimeVertex.X();
+    double vertex_y = vertex->dSpacetimeVertex.Y();
+    double vertex_z = vertex->dSpacetimeVertex.Z();
+    double vertex_t = vertex->dSpacetimeVertex.T();
+    memcpy(&vertex_x_out, &vertex_x, sizeof(double));
+	buff.push_back( (vertex_x_out>> 0)&0xFFFFFFFF ); // low order word
+    buff.push_back( (vertex_x_out>>32)&0xFFFFFFFF ); // high order word
+    memcpy(&vertex_y_out, &vertex_y, sizeof(double));
+	buff.push_back( (vertex_y_out>> 0)&0xFFFFFFFF ); // low order word
+	buff.push_back( (vertex_y_out>>32)&0xFFFFFFFF ); // high order word
+    memcpy(&vertex_z_out, &vertex_z, sizeof(double));
+    buff.push_back( (vertex_z_out>> 0)&0xFFFFFFFF ); // low order word
+	buff.push_back( (vertex_z_out>>32)&0xFFFFFFFF ); // high order word
+    memcpy(&vertex_t_out, &vertex_t, sizeof(double));
+	buff.push_back( (vertex_t_out>> 0)&0xFFFFFFFF ); // low order word
+	buff.push_back( (vertex_t_out>>32)&0xFFFFFFFF ); // high order word
+    
+    // Save other information
+    buff.push_back( vertex->dKinFitNDF );
+    uint64_t vertex_chi_sq_out;
+    double vertex_chi_sq = vertex->dKinFitChiSq;
+    memcpy(&vertex_chi_sq_out, &vertex_chi_sq, sizeof(double));
+	buff.push_back( (vertex_chi_sq_out>>32)&0xFFFFFFFF ); // high order word
+    buff.push_back( (vertex_chi_sq_out>> 0)&0xFFFFFFFF ); // low order word
+
+    // Update bank length
+    buff[vertex_bank_len_idx] = buff.size() - vertex_bank_len_idx - 1;
     buff[data_bank_len_idx] = buff.size() - data_bank_len_idx - 1;
 
 }

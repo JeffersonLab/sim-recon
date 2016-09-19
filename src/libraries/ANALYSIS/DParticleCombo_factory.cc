@@ -108,7 +108,10 @@ jerror_t DParticleCombo_factory::evnt(JEventLoop* locEventLoop, uint64_t eventnu
 	vector<const DBeamPhoton*> locBeamPhotons;
 	locEventLoop->Get(locBeamPhotons, "KinFit");
 
-	map<const DParticleCombo*, DParticleCombo*> locKinFitParticleComboMap;
+	 //map from old combo to new combo
+	map<const DParticleCombo*, DParticleCombo*> locNewParticleComboMap;
+
+	//loop over kinfit results
 	for(size_t loc_i = 0; loc_i < locKinFitResultsVector.size(); ++loc_i)
 	{
 		map<const DParticleCombo*, const DKinFitChain*> locParticleComboMap;
@@ -135,15 +138,14 @@ jerror_t DParticleCombo_factory::evnt(JEventLoop* locEventLoop, uint64_t eventnu
 
 			//search to see if the results were the same as a previous combo. if so, copy them:
 				//note that it is possible for two combos with different steps to have the same kinfit results (e.g. one has an omega or phi, and the other doesn't)
-			const DParticleCombo* locPreviousParticleCombo = Check_IsDuplicateCombo(locParticleComboMap, locParticleCombo);
-			if(locPreviousParticleCombo != NULL)
+			const DParticleCombo* locPreviousNewParticleCombo = Check_IsDuplicateCombo(locNewParticleComboMap, locParticleCombo);
+			if(locPreviousNewParticleCombo != NULL)
 			{
 				//everything is identical: copy results
-				const DParticleCombo* locPreviousNewParticleCombo = locKinFitParticleComboMap[locPreviousParticleCombo];
 				for(size_t loc_k = 0; loc_k < locPreviousNewParticleCombo->Get_NumParticleComboSteps(); ++loc_k)
 					locNewParticleCombo->Add_ParticleComboStep(locPreviousNewParticleCombo->Get_ParticleComboStep(loc_k));
 
-				locKinFitParticleComboMap[locParticleCombo] = locNewParticleCombo;
+				locNewParticleComboMap[locParticleCombo] = locNewParticleCombo;
 				_data.push_back(locNewParticleCombo);
 				continue;
 			}
@@ -217,11 +219,10 @@ jerror_t DParticleCombo_factory::evnt(JEventLoop* locEventLoop, uint64_t eventnu
 				}
 
 				Set_SpacetimeVertex(locNewParticleCombo, locNewParticleComboStep, loc_j, locKinFitResultsVector[loc_i], locKinFitChain);
-
 				locNewParticleCombo->Add_ParticleComboStep(locNewParticleComboStep);
 			}
 
-			locKinFitParticleComboMap[locParticleCombo] = locNewParticleCombo;
+			locNewParticleComboMap[locParticleCombo] = locNewParticleCombo;
 			_data.push_back(locNewParticleCombo);
 		}
 	}
@@ -234,15 +235,14 @@ jerror_t DParticleCombo_factory::evnt(JEventLoop* locEventLoop, uint64_t eventnu
 	return NOERROR;
 }
 
-const DParticleCombo* DParticleCombo_factory::Check_IsDuplicateCombo(const map<const DParticleCombo*, const DKinFitChain*>& locParticleComboMap, const DParticleCombo* locParticleCombo)
+const DParticleCombo* DParticleCombo_factory::Check_IsDuplicateCombo(const map<const DParticleCombo*, DParticleCombo*>& locNewParticleComboMap, const DParticleCombo* locParticleCombo)
 {
-	//if is duplicate, returns the matching previous particle combo
+	//if is duplicate, returns the newly-created combo from the matching previous particle combo
 	//otherwise, returns NULL
-	map<const DParticleCombo*, const DKinFitChain*>::const_iterator locPreviousComboIterator = locParticleComboMap.begin();
-	for(; locPreviousComboIterator != locParticleComboMap.end(); ++locPreviousComboIterator)
+	const DReaction* locReaction = locParticleCombo->Get_Reaction();
+	for(auto locNewComboPair : locNewParticleComboMap)
 	{
-		const DParticleCombo* locPreviousParticleCombo = locPreviousComboIterator->first;
-		const DReaction* locReaction = locParticleCombo->Get_Reaction();
+		const DParticleCombo* locPreviousParticleCombo = locNewComboPair.first;
 		if(locReaction == locPreviousParticleCombo->Get_Reaction()) //probably shouldn't be possible
 			continue; //dreaction is the same: particle combos were different for a reason, even if the kinfit results are the same: keep both
 
@@ -253,7 +253,7 @@ const DParticleCombo* DParticleCombo_factory::Check_IsDuplicateCombo(const map<c
 		if(!locParticleCombo->Check_AreMeasuredParticlesIdentical(locPreviousParticleCombo))
 			continue; //particles are not identical
 
-		return locPreviousParticleCombo;
+		return locNewComboPair.second;
 	}
 
 	return NULL;

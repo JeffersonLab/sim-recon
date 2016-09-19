@@ -17,9 +17,9 @@ using namespace jana;
 #include "BCAL/DBCALCluster.h"
 #include "BCAL/DBCALUnifiedHit.h"
 
-#include "TTree.h"
-#include "TFile.h"
-#include "TF1.h"
+//#include "TTree.h"
+//#include "TFile.h"
+//#include "TF1.h"
 
 class DBCALCluster_factory : public JFactory< DBCALCluster > {
   
@@ -63,13 +63,13 @@ private:
   double m_z_target_center;
   vector<double> effective_velocities;
   vector< vector<double > > attenuation_parameters;
-
+  /*
   TF1* sep_inclusion_curve;
   TF1* dtheta_inclusion_curve;
   TF1* dphi_inclusion_curve;
   TF1* C1_parm;
   TF1* C2_parm;
-
+  */
   jerror_t init();
   jerror_t fini();
   

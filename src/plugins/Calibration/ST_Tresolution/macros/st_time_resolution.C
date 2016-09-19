@@ -19,6 +19,8 @@
 #include <stdio.h>
 #include <stdint.h>
 #include <fstream>
+#include <TNtuple.h>
+#include <TGraphErrors.h>
 using namespace std;
 using std::string;
 // ***************** define constants and varibles*************************
@@ -63,20 +65,22 @@ Float_t binsss[210];
 Float_t binsbs[210];
 Float_t binsns[210];
 Float_t binsbn[210];
-
+//TNtuple *ntuple;
+//TGraphErrors *gr;
 //****   Declare fits *****************************
 TF1 *t_vs_z_fit_chan[NCHANNELS];
 TH1D *py[NCHANNELS];
 // Declare canvas
 TCanvas *PT_can[30];
-
+TDirectory* TopDirectory;
+TH2I* h2_total;
 Double_t fitf_pp(Double_t *x, Double_t *par)
 {
   Double_t fitval_pp = par[0] + par[1]*x[0];//(TMath::Power(x[0]/adc_thresh_calc, par[2]));
   return fitval_pp;
 }
 
-void st_time_resolution(char*input_filename)
+void st_time_resolution(char const*input_filename)
 //void st_tw_fits()
 {
   TFile *df = new TFile(input_filename);

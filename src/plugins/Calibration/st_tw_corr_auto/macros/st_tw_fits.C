@@ -41,7 +41,7 @@ Double_t fitf_pp(Double_t *x, Double_t *par)
   return fitval_pp;
 }
 
-void st_tw_fits(char*input_filename)
+void st_tw_fits(char const*input_filename)
 //void st_tw_fits()
 {
   // df = new TFile("/lustre/expphy/work/halld/home/mkamel/st_tw_corr_auto/hd_root_pass0.root");

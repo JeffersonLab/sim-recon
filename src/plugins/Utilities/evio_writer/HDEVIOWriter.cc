@@ -107,6 +107,18 @@ HDEVIOWriter::HDEVIOWriter(string sink_name)
 //---------------------------------
 HDEVIOWriter::~HDEVIOWriter()
 {
+    jerr << "DESTRUCTOR" << endl;
+/*
+    // Write out any events that are still enqueued
+	if( !output_deque.empty() ){
+		uint32_t Nwords = 8; // include 8 header words for EVIO block
+		deque< vector<uint32_t>* >::iterator it;
+		for(it=output_deque.begin(); it!=output_deque.end(); it++){
+			Nwords += (*it)->size();
+		}
+		FlushOutput(Nwords, output_deque);
+	}
+*/
 	// Free up any memory used in the buffer pool
 	pthread_mutex_lock(&buff_pool_mutex);
 	for(uint32_t i=0; i<buff_pool.size(); i++) delete buff_pool[i];
@@ -296,7 +308,9 @@ void* HDEVIOWriter::HDEVIOOutputThread(void)
 			if( (Nwords+N) > MAX_OUTPUT_BUFFER_SIZE) break;
 			Nbuffs++;
 			Nwords += N;
-			
+
+            //cout << " buff " << Nbuffs << " words = " << N << "   total words = " << Nwords << endl;
+            
 			// If we've reached NEVENTS_PER_BLOCK then stop counting
 			if( Nbuffs >= NEVENTS_PER_BLOCK ) break;
 		}
@@ -324,6 +338,11 @@ void* HDEVIOWriter::HDEVIOOutputThread(void)
 			continue;
 		}
 
+        // Make sure we're writing out at least one event
+        // This should never happen, unless we're being passed some huge events...
+        if(flush_event && (Nbuffs==0))
+            Nbuffs = 1;
+
 		// Make copy of first Nbuffs buffer pointers so we can do the
 		// expensive copying of their contents into the single output
 		// buffer outside of the output_deque_mutex lock.
@@ -332,7 +351,7 @@ void* HDEVIOWriter::HDEVIOOutputThread(void)
 
 		// Unlock mutex so other threads can access output_deque
 		pthread_mutex_unlock(&output_deque_mutex);
-		
+
 		// Write the buffers to the output 
 		FlushOutput(Nwords, my_output_deque);
 		
@@ -397,6 +416,8 @@ void HDEVIOWriter::FlushOutput(uint32_t Nwords, deque< vector<uint32_t>* > &my_o
 	output_block[6] = 0; // Reserved 2
 	output_block[7] = 0xc0da0100; // Magic number
 
+    //jout << "Writing out " << my_output_deque.size() << " events with " << Nwords << " words " << endl;
+
 	// Write all event buffers into output buffer
 	deque< vector<uint32_t>* >::iterator it;
 	for(it=my_output_deque.begin(); it!=my_output_deque.end(); it++){
@@ -416,6 +437,8 @@ void HDEVIOWriter::FlushOutput(uint32_t Nwords, deque< vector<uint32_t>* > &my_o
 		output_block.resize(istart + len);
 		uint32_t *inbuff  = &(*buff)[0];
 		uint32_t *outbuff = &output_block[istart];
+
+        //cout << " block = " << len << endl;
 
 		// copy and swap at same time
 		swap_bank_out(outbuff, inbuff, len); 
@@ -563,6 +586,7 @@ void HDEVIOWriter::AddBufferToOutput(vector<uint32_t> *buff)
 //---------------------------------
 void HDEVIOWriter::Quit(void)
 {
+    jerr << "QUITTING" << endl;
 	quit=true;
 }
 

@@ -54,8 +54,13 @@ Double_t low_cut = 0.00 ; // set bin content to zero if bin content is below low
 TH1D *py[NCHANNELS];
 // Declare canvas
 TCanvas *PT_can[30];
+TDirectory* TopDirectory;
+TH2I* h2_ss;
+TH2I* h2_bs;
+TH2I* h2_ns;
+TH2I* h2_total;
 
-void st_prop_time_corr_v1(char*input_filename)
+void st_prop_time_corr_v1(char const* input_filename)
 //void st_tw_fits()
 {
   TFile *df = new TFile(input_filename);

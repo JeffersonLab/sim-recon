@@ -85,6 +85,8 @@ typedef pair<int,int> tagNum;
 #include "Df125EmulatorAlgorithm.h"
 #include "Df250EmulatorAlgorithm.h"
 
+#include <PID/DVertex.h>
+
 extern set<uint32_t> ROCIDS_TO_PARSE;
 
 
@@ -414,6 +416,7 @@ class JEventSource_EVIO: public jana::JEventSource{
 		void MakeDf125PulseRawData(ObjList *objs, uint32_t rocid, uint32_t slot, uint32_t itrigger, const uint32_t* &iptr);
 
 		void ParseTSSync(evioDOMNodeP bankPtr, list<ObjList*> &events);
+		void ParseDVertexBank(evioDOMNodeP bankPtr, list<ObjList*> &events);
 
 		void ParseFA250Scalers(evioDOMNodeP bankPtr, list<ObjList*> &events, uint32_t rocid);
 		void ParseFA250AsyncPedestals(evioDOMNodeP bankPtr, list<ObjList*> &events, uint32_t rocid);
