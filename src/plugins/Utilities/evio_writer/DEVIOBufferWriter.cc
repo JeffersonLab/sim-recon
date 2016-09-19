@@ -25,6 +25,7 @@ void DEVIOBufferWriter::WriteEventToBuffer(JEventLoop *loop, vector<uint32_t> &b
     // Handle BOR events separately
     // These should only be at the beginning of a file or when the run changes
 	if( loop->GetJEvent().GetStatusBit(kSTATUS_BOR_EVENT) ){
+        buff.clear();
 		WriteBORData(loop, buff);
 		return;
 	}
@@ -172,6 +173,7 @@ void DEVIOBufferWriter::WriteEventToBuffer(JEventLoop *loop, vector<uint32_t> &b
 	// with no CODA data. In this case, write the EPICS banks and then
 	// return before writing the Physics Bank
 	if( !epicsValues.empty() ){
+        buff.clear();
 		WriteEPICSData(buff, epicsValues);
 		return;
 	}

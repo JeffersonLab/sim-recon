@@ -599,6 +599,8 @@ uint64_t JEventSource_EVIOpp::SearchFileForRunNumber(void)
 	/// number, then that will be reported to JANA in lieu of
 	/// the one in DParsedEvent.
 
+    if(VERBOSE>2) evioout << "     In JEventSource_EVIOpp::SearchFileForRunNumber() ..." << endl;
+
 	uint32_t buff_len = 4000000;
 	uint32_t *buff = new uint32_t[buff_len];
 	HDEVIO *hdevio = new HDEVIO(source_name);
