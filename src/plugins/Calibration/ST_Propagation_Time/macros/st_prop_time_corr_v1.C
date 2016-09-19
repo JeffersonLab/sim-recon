@@ -60,7 +60,7 @@ TH2I* h2_bs;
 TH2I* h2_ns;
 TH2I* h2_total;
 
-void st_prop_time_corr_v1(char*input_filename)
+void st_prop_time_corr_v1(char const* input_filename)
 //void st_tw_fits()
 {
   TFile *df = new TFile(input_filename);

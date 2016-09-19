@@ -48,7 +48,7 @@ TDirectory* TopDirectory;
 TH1I* h2_ss;
 TH1I* h2_bs;
 TH1I* h2_ns;
-void st_prop_time_v1(char*input_filename)
+void st_prop_time_v1(char const* input_filename)
 //void st_tw_fits()
 {
   TFile *df = new TFile(input_filename);
