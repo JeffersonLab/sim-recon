@@ -803,11 +803,10 @@ void HDEVIO::MapEvents(BLOCKHEADER_t &bh, EVIOBlockRecord &br)
 			// Before disabling this warning (or hiding it behind a VERBOSE flag)
 			// you should ask yourself the question, "Is this something that we
 			// should simply be ignoring, garbage bytes in the input evio file?"
-			std::cout << "HDEVIO::MapEvents warning - "
-                      << "Attempt to swap bank with len<2" << std::endl;
+			std::cout << "HDEVIO::MapEvents warning - " << "Attempt to swap bank with len<2 (len="<<eh->event_len<<" header="<<hex<<eh->header<<dec<<" pos=" << pos << " tellg=" << ifs.tellg() << " i=" << i << ")" << std::endl;
 			Nbad_events++;
 			Nerrors++;
-			--i;
+			// --i;  // This caused an infinite loop when reading hd_rawdata_020058_000.evio DL
 			streampos delta = (streampos)((eh->event_len+1)<<2) - 
                               (streampos)sizeof(EVENTHEADER_t);
 			ifs.seekg(delta, ios_base::cur);
