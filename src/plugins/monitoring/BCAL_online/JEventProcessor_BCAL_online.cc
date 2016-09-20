@@ -488,7 +488,7 @@ jerror_t JEventProcessor_BCAL_online::evnt(JEventLoop *loop, uint64_t eventnumbe
 	}
 	
 	if (!goodtrigger) {
-//		return NOERROR;
+		return NOERROR;
 	}
 
 	loop->Get(dbcaldigihits);
