@@ -106,10 +106,16 @@ jerror_t DEventSourceHDDM::GetEvent(JEvent &event)
       return NO_MORE_EVENTS_IN_SOURCE;
    }
    
-   ++Nevents_read;
-   
    hddm_s::HDDM *record = new hddm_s::HDDM();
-   *fin >> *record;
+   if (! (*fin >> *record)) {
+      delete fin;
+      fin = NULL;
+      delete ifs;
+      ifs = NULL;
+      return NO_MORE_EVENTS_IN_SOURCE;
+   }
+
+   ++Nevents_read;
 
    int event_number = -1;
    int run_number = -1;
