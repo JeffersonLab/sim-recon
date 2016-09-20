@@ -2348,35 +2348,6 @@ jerror_t DTrackFitterKalmanSIMD::CalcDerivAndJacobian(const DVector2 &xy,
     return NOERROR;
 }
 
-// Convert between the forward parameter set {x,y,tx,ty,q/p} and the central
-// parameter set {q/pT,phi,tan(lambda),D,z}
-jerror_t DTrackFitterKalmanSIMD::ConvertStateVector(double z,
-						    const DMatrix5x1 &S, 
-						    DMatrix5x1 &Sc){
-    //double x=S(state_x),y=S(state_y);
-    //double tx=S(state_tx),ty=S(state_ty),q_over_p=S(state_q_over_p);
-    // Copy over to the class variables
-    x_=S(state_x), y_=S(state_y);
-    tx_=S(state_tx),ty_=S(state_ty);
-    double tsquare=tx_*tx_+ty_*ty_;
-    double tanl=1./sqrt(tsquare);
-    double cosl=cos(atan(tanl));
-    q_over_p_=S(state_q_over_p);
-    Sc(state_q_over_pt)=q_over_p_/cosl;
-    Sc(state_phi)=atan2(ty_,tx_);
-    Sc(state_tanl)=tanl;
-    Sc(state_D)=sqrt(x_*x_+y_*y_);
-    Sc(state_z)=z;
-
-    // D is a signed quantity
-    double cosphi=cos(Sc(state_phi));
-    double sinphi=sin(Sc(state_phi));
-    if ((x_>0.0 && sinphi>0.0) || (y_ <0.0 && cosphi>0.0) || (y_>0.0 && cosphi<0.0) 
-            || (x_<0.0 && sinphi<0.0)) Sc(state_D)*=-1.; 
-
-    return NOERROR;
-}
-
 // Step the state and the covariance matrix through the field
 jerror_t DTrackFitterKalmanSIMD::StepStateAndCovariance(DVector2 &xy,
         double ds,
@@ -3158,7 +3129,7 @@ jerror_t DTrackFitterKalmanSIMD::KalmanLoop(void){
         unsigned int ndof_forward=0;
 
         // Parameters at "vertex"
-        double D=D_,phi=phi_,q_over_pt=q_over_pt_,tanl=tanl_,x=x_,y=y_,z=z_;
+        double phi=phi_,q_over_pt=q_over_pt_,tanl=tanl_,x=x_,y=y_,z=z_;
 	vector< vector <double> > fcov_save;
 	if (!fcov.empty()){
 	  fcov_save.assign(fcov.begin(),fcov.end());
@@ -3211,7 +3182,6 @@ jerror_t DTrackFitterKalmanSIMD::KalmanLoop(void){
                     else{
                         chisq_=fdc_chisq;
                         ndf_=fdc_ndf;
-                        D_=D;
                         x_=x;
                         y_=y;
                         z_=z;
@@ -3232,7 +3202,6 @@ jerror_t DTrackFitterKalmanSIMD::KalmanLoop(void){
                 // Save the best values for the parameters and chi2 for now
                 chisq_forward=chisq_;
                 ndof_forward=ndf_;
-                D=D_;
                 x=x_;
                 y=y_;
                 z=z_;
@@ -3260,7 +3229,7 @@ jerror_t DTrackFitterKalmanSIMD::KalmanLoop(void){
         S0(state_phi)=phi_=phi0;
         S0(state_tanl)=tanl_=tanl0;
         S0(state_z)=z_=z0;  
-        S0(state_D)=D_=0.;
+        S0(state_D)=0.;
 
         // Initialize the covariance matrix
         double dz=1.0;
@@ -3297,7 +3266,6 @@ jerror_t DTrackFitterKalmanSIMD::KalmanLoop(void){
                 phi_=phi;
                 q_over_pt_=q_over_pt;
                 tanl_=tanl;
-                D_=D;
                 x_=x;
                 y_=y;
                 z_=z;
@@ -3319,7 +3287,6 @@ jerror_t DTrackFitterKalmanSIMD::KalmanLoop(void){
             phi_=phi;
             q_over_pt_=q_over_pt;
             tanl_=tanl;
-            D_=D;
             x_=x;
             y_=y;
             z_=z;
@@ -7172,16 +7139,18 @@ kalman_error_t DTrackFitterKalmanSIMD::ForwardFit(const DMatrix5x1 &S0,const DMa
             z_=ztemp;
         }
     }
+    
+    // Final momentum, positions and tangents
+    x_=Slast(state_x), y_=Slast(state_y);
+    tx_=Slast(state_tx),ty_=Slast(state_ty);
+    q_over_p_=Slast(state_q_over_p);
 
     // Convert from forward rep. to central rep.
-    DMatrix5x1 Sc;
-    ConvertStateVector(z_,Slast,Sc);
-
-    // Track Parameters at "vertex"
-    phi_=Sc(state_phi);
-    q_over_pt_=Sc(state_q_over_pt);
-    tanl_=Sc(state_tanl);
-    D_=Sc(state_D);
+    double tsquare=tx_*tx_+ty_*ty_;
+    tanl_=1./sqrt(tsquare);
+    double cosl=cos(atan(tanl_));
+    q_over_pt_=q_over_p_/cosl;
+    phi_=atan2(ty_,tx_);
 
     // Covariance matrix  
     vector<double>dummy;
@@ -7409,16 +7378,18 @@ kalman_error_t DTrackFitterKalmanSIMD::ForwardCDCFit(const DMatrix5x1 &S0,const 
     if (sqrt(Slast(state_x)*Slast(state_x)+Slast(state_y)*Slast(state_y))
             >EPS2) 
         if (ExtrapolateToVertex(Slast,Clast)!=NOERROR) return EXTRAPOLATION_FAILED;
+    
+    // Final momentum, positions and tangents
+    x_=Slast(state_x), y_=Slast(state_y);
+    tx_=Slast(state_tx),ty_=Slast(state_ty);
+    q_over_p_=Slast(state_q_over_p);
 
     // Convert from forward rep. to central rep.
-    DMatrix5x1 Sc;
-    ConvertStateVector(z_,Slast,Sc);
-
-    // Track Parameters at "vertex"
-    phi_=Sc(state_phi);
-    q_over_pt_=Sc(state_q_over_pt);
-    tanl_=Sc(state_tanl);
-    D_=Sc(state_D);
+    double tsquare=tx_*tx_+ty_*ty_;
+    tanl_=1./sqrt(tsquare);
+    double cosl=cos(atan(tanl_));
+    q_over_pt_=q_over_p_/cosl;
+    phi_=atan2(ty_,tx_);
 
     // Covariance matrix  
     vector<double>dummy;
@@ -7611,7 +7582,7 @@ kalman_error_t DTrackFitterKalmanSIMD::CentralFit(const DVector2 &startpos,
         }
     }
     
-    if (last_pos.Mod()>EPS2){
+    if (last_pos.Mod()>0.001){ // in cm
         if (ExtrapolateToVertex(last_pos,Sclast,Cclast)!=NOERROR) return EXTRAPOLATION_FAILED; 
     }
 
@@ -7632,28 +7603,6 @@ kalman_error_t DTrackFitterKalmanSIMD::CentralFit(const DVector2 &startpos,
         }
     }
 
-    // Rotate covariance matrix from a coordinate system whose origin is on the track to the global coordinate system
-    double B=sqrt(Bx*Bx+By*By+Bz*Bz);
-    double qrc_old=1./(qBr2p*B*Sclast(state_q_over_pt));
-    double qrc_plus_D=Sclast(state_D)+qrc_old;
-    double q=(qrc_old>0.0)?1.:-1.;
-    double dx=-last_pos.X();
-    double dy=-last_pos.Y();
-    double d2=dx*dx+dy*dy;
-    double sinphi=sin(Sclast(state_phi));
-    double cosphi=cos(Sclast(state_phi));
-    double dx_sinphi_minus_dy_cosphi=dx*sinphi-dy*cosphi;
-    double rc=sqrt(d2
-            +2.*qrc_plus_D*(dx_sinphi_minus_dy_cosphi)
-            +qrc_plus_D*qrc_plus_D);
-
-    DMatrix5x5 Jc=I5x5;
-    Jc(state_D,state_D)=q*(dx_sinphi_minus_dy_cosphi+qrc_plus_D)/rc;
-    Jc(state_D,state_q_over_pt)=qrc_old*(Jc(state_D,state_D)-1.)/Sclast(state_q_over_pt);
-    Jc(state_D,state_phi)=q*qrc_plus_D*(dx*cosphi+dy*sinphi)/rc;
-
-    Cclast=Cclast.SandwichMultiply(Jc);
-
     // Track Parameters at "vertex"
     phi_=Sclast(state_phi);
     q_over_pt_=Sclast(state_q_over_pt);
@@ -7661,9 +7610,16 @@ kalman_error_t DTrackFitterKalmanSIMD::CentralFit(const DVector2 &startpos,
     x_=last_pos.X();
     y_=last_pos.Y();
     z_=Sclast(state_z);
-    D_=sqrt(d2);
-    if ((x_>0.0 && sinphi>0.0) || (y_ <0.0 && cosphi>0.0) || (y_>0.0 && cosphi<0.0) 
-            || (x_<0.0 && sinphi<0.0)) D_*=-1.; 
+    D_=sqrt(x_*x_+y_*y_)+EPS2;
+    double cosphi=cos(phi_);
+    double sinphi=sin(phi_);
+    if ((x_>0.0 && sinphi>0.0) || (y_ <0.0 && cosphi>0.0) 
+	    || (y_>0.0 && cosphi<0.0) || (x_<0.0 && sinphi<0.0)) D_*=-1.; 
+    // Rotate covariance matrix to coordinate system centered on x=0,y=0 in the 
+    // lab 
+    DMatrix5x5 Jc=I5x5;
+    Jc(state_D,state_D)=(y_*cosphi-x_*sinphi)/D_;
+    Cclast=Cclast.SandwichMultiply(Jc);
 
     if (!isfinite(x_) || !isfinite(y_) || !isfinite(z_) || !isfinite(phi_) 
             || !isfinite(q_over_pt_) || !isfinite(tanl_)){

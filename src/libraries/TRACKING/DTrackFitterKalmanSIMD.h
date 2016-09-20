@@ -297,8 +297,6 @@ class DTrackFitterKalmanSIMD: public DTrackFitter{
   jerror_t CalcDerivAndJacobian(const DVector2 &xy,DVector2 &dxy,
 				const DMatrix5x1 &S,double dEdx,
 				DMatrix5x5 &J1,DMatrix5x1 &D1);
-  jerror_t ConvertStateVector(double z,const DMatrix5x1 &S,DMatrix5x1 &Sc);
-
 
   jerror_t GetProcessNoiseCentral(double ds,double chi2c_factor,
 				  double chi2a_factor,double chi2a_corr,
