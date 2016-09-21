@@ -80,7 +80,7 @@ Double_t fitf_pp(Double_t *x, Double_t *par)
   return fitval_pp;
 }
 
-void st_time_resolution(char*input_filename)
+void st_time_resolution(char const*input_filename)
 //void st_tw_fits()
 {
   TFile *df = new TFile(input_filename);

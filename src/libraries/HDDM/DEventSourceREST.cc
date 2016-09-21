@@ -96,20 +96,19 @@ jerror_t DEventSourceREST::GetEvent(JEvent &event)
 
    hddm_r::HDDM *record = new hddm_r::HDDM();
    try{
-      *fin >> *record;
+      if (! (*fin >> *record)) {
+         delete fin;
+         fin = NULL;
+         delete ifs;
+         ifs = NULL;
+	     return NO_MORE_EVENTS_IN_SOURCE;
+      }
    }catch(std::runtime_error &e){
       cerr << "Exception caught while trying to read REST file!" << endl;
 	  cerr << e.what() << endl;
 	  _DBG__;
-	  // returning now is the right thing to do but at the moment,
-	  // a bug in HDDM causes it to throw exceptions even when the data
-	  // for the event is read in OK. I sent an e-mail to Richard on
-	  // 8/8/2014 describing this. Once he's had a chance to fix that,
-	  // the following line can be uncommented.
-	  // 8/17/2014  DL
-	  //return NO_MORE_EVENTS_IN_SOURCE;
+	  return NO_MORE_EVENTS_IN_SOURCE;
    }
-
 
    // Copy the reference info into the JEvent object
    while (true) {
@@ -141,7 +140,14 @@ jerror_t DEventSourceREST::GetEvent(JEvent &event)
              gPARMS->SetDefaultParameter("REST:JANACALIBCONTEXT", REST_JANA_CALIB_CONTEXT);
          }
 
-         *fin >> *record;
+         if (! (*fin >> *record)) {
+            delete fin;
+            fin = NULL;
+            delete ifs;
+            ifs = NULL;
+	        return NO_MORE_EVENTS_IN_SOURCE;
+         }
+
          continue;
       }
       event.SetEventNumber(re.getEventNo());

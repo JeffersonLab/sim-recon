@@ -333,9 +333,16 @@ void JEventSource_EVIOpp::Dispatcher(void)
 			// ---- Read From ET ----
 			hdet->read(buff, buff_len, allow_swap);
 			thr->pos = 0;
+			static uint64_t ntimeouts=0;
 			if(hdet->err_code == HDET::HDET_TIMEOUT){
 				if(et_quit_next_timeout) break;
-				this_thread::sleep_for(milliseconds(1));
+				if( ++ntimeouts>=2 ){ // timeout is set to 2 seconds in HDET.cc
+					int ic = ntimeouts%4;
+					const char *c[4] = {"|","/","-","\\"};
+					if(ntimeouts==2) cout << endl;
+					cout << " ET stalled ... " << c[ic] << " \r";
+					cout.flush();
+				}
 				continue;
 			}else if(hdet->err_code != HDET::HDET_OK){
 				cout << hdet->err_mess.str() << endl;
@@ -343,6 +350,8 @@ void JEventSource_EVIOpp::Dispatcher(void)
 			}else{
 				// HDET_OK
 				swap_needed = hdet->swap_needed;
+				if(ntimeouts>=2) cout << endl;
+				ntimeouts=0;
 			}
 		}
 
