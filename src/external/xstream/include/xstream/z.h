@@ -13,6 +13,7 @@
 
 #include <xstream/common.h>
 #include <streambuf>
+#include <sstream>
 
 namespace xstream{
 /*!
@@ -45,7 +46,9 @@ class common: public xstream::common_buffer
     protected:
         pimpl* z_strm; /*!< zlib stream "object" */
 
+        std::streampos block_start;
         std::streamoff block_offset;
+        pthread_mutex_t *streambuf_mutex;
 
         /*!
          *    \brief grows the output buffer
@@ -89,6 +92,19 @@ class common: public xstream::common_buffer
          *
          */
         ~common();
+
+        std::streamoff get_block_start() {
+            return block_start;
+        }
+        std::streamoff get_block_offset() {
+            return block_offset;
+        }
+        pthread_mutex_t *get_streambuf_mutex() {
+            return streambuf_mutex;
+        }
+        void set_streambuf_mutex(pthread_mutex_t *mutex) {
+            streambuf_mutex = mutex;
+        }
 };
 
 
@@ -162,9 +178,6 @@ class ostreambuf: public common, public xstream::ostreambuf {
         std::streambuf *get_streambuf() {
             return _sb;
         }
-        std::streamoff get_block_offset() {
-            return block_offset;
-        }
 };
 
 /*!
@@ -188,6 +201,14 @@ class istreambuf: public common, public std::streambuf{
         bool end; /*!<signals if stream has reached the end */
 
         std::streamsize block_size;
+        std::streampos block_next;
+        std::streamoff new_block_start;
+        unsigned int new_block_offset;
+        typedef struct {
+            int len;
+            char buf[64];
+        } leftovers_buf;
+        leftovers_buf *leftovers;
 
         /*!
          * \brief requests that input buffer be reloaded (overloaded from streambuf)
@@ -216,7 +237,7 @@ class istreambuf: public common, public std::streambuf{
         /*!
          * \brief construct using a streambuf
          */
-        istreambuf(std::streambuf* sb);
+        istreambuf(std::streambuf* sb, int* left=0, unsigned int left_size=0);
 
         /*!
          * \brief closes the zlib stream
@@ -227,17 +248,12 @@ class istreambuf: public common, public std::streambuf{
         std::streambuf *get_streambuf() {
             return _sb;
         }
-        std::streamoff get_block_offset() {
-            return block_offset;
-        }
         std::streamsize get_block_size() {
             return block_size;
         }
-        std::streamsize get_block_buffered() {
-            if (block_size > 0)
-                return block_size + 4;
-            else
-                return 0;
+        void set_new_position(std::streamoff start, unsigned int offset) {
+           new_block_start = start;
+           new_block_offset = offset;
         }
 };
 
