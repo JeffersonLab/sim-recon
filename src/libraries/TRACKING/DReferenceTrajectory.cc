@@ -49,8 +49,8 @@ DReferenceTrajectory::DReferenceTrajectory(const DMagneticFieldMap *bfield
 	this->check_material_boundaries = true;
 	this->zmin_track_boundary = -100.0;  // boundary at which to stop swimming
 	this->zmax_track_boundary = 670.0;   // boundary at which to stop swimming
-	this->Rmax_interior = 65.0; // Maximum radius (in cm) corresponding to inside of BCAL
-	this->Rmax_exterior = 88.0; // Maximum radius (in cm) corresponding to outside of BCAL
+	this->Rsqmax_interior = 65.0*65.0; // Maximum radius (in cm) corresponding to inside of BCAL
+	this->Rsqmax_exterior = 88.0*88.0; // Maximum radius (in cm) corresponding to outside of BCAL
 	
 	this->last_phi = 0.0;
 	this->last_swim_step = NULL;
@@ -117,8 +117,8 @@ DReferenceTrajectory::DReferenceTrajectory(const DReferenceTrajectory& rt)
 	this->debug_level=rt.debug_level;
 	this->zmin_track_boundary = -100.0;  // boundary at which to stop swimming
 	this->zmax_track_boundary = 670.0;   // boundary at which to stop swimming
-	this->Rmax_interior = 65.0; // Maximum radius (in cm) corresponding to inside of BCAL
-	this->Rmax_exterior = 88.0; // Maximum radius (in cm) corresponding to outside of BCAL
+	this->Rsqmax_interior = 65.0*65.0; // Maximum radius (in cm) corresponding to inside of BCAL
+	this->Rsqmax_exterior = 88.0*88.0; // Maximum radius (in cm) corresponding to outside of BCAL
 	
 
 	this->swim_steps = new swim_step_t[this->max_swim_steps];
@@ -328,7 +328,7 @@ void DReferenceTrajectory::FastSwim(const DVector3 &pos, const DVector3 &mom, do
   double itheta02s2 = 0.0;
   double X0sum=0.0;
   swim_step_t *last_step=NULL;
-  double old_radius=10000.;
+  double old_radius_sq=1e6;
 
   // Variables used to tag the step at which the track passes into one one of
   // the outer detectors
@@ -393,7 +393,7 @@ void DReferenceTrajectory::FastSwim(const DVector3 &pos, const DVector3 &mom, do
 	    //double theta02 = theta0*theta0;
 	    double factor=1.0+0.038*log(radlen);
 	    double theta02=1.8496e-4*factor*factor*radlen*one_over_beta_sq/p_sq;
-			      
+
 	    itheta02 += theta02;
 	    itheta02s += s*theta02;
 	    itheta02s2 += s*s*theta02;
@@ -410,6 +410,7 @@ void DReferenceTrajectory::FastSwim(const DVector3 &pos, const DVector3 &mom, do
     swim_step->itheta02s = itheta02s;
     swim_step->itheta02s2 = itheta02s2;
     swim_step->invX0=Nswim_steps/X0sum;
+    
     
     if(step_size<0.0){ // step_size<0 indicates auto-calculated step size
       // Adjust step size to take smaller steps in regions of high momentum loss
@@ -442,9 +443,9 @@ void DReferenceTrajectory::FastSwim(const DVector3 &pos, const DVector3 &mom, do
   
     // Mark places along trajectory where we pass into one of the 
     // main detectors
-    double R=swim_step->origin.Perp();
+    double Rsq=swim_step->origin.Perp2();
     double z=swim_step->origin.Z();
-    if (hit_bcal==false && R>65. && z<407 &&z>0){
+    if (hit_bcal==false && Rsq>Rsqmax_interior && z<407 &&z>0){
       index_at_bcal=Nswim_steps-1;
       hit_bcal=true;
     }
@@ -459,20 +460,20 @@ void DReferenceTrajectory::FastSwim(const DVector3 &pos, const DVector3 &mom, do
     
     // Exit the loop if we are already inside the volume of the BCAL
     // and the radius is decreasing
-    if (R<old_radius && R>65.0 && z<407.0 && z>-100.0){
+    if (Rsq<old_radius_sq && Rsq>Rsqmax_interior && z<407.0 && z>-100.0){
       Nswim_steps++; break;
     }
 			
     // Exit loop if we leave the tracking volume
     if (z>zmax){Nswim_steps++; break;} 
-    if(R>88.0 && z<407.0){Nswim_steps++; break;} // ran into BCAL
+    if(Rsq>Rsqmax_exterior && z<407.0){Nswim_steps++; break;} // ran into BCAL
     if (fabs(swim_step->origin.X())>129.  
 	|| fabs(swim_step->origin.Y())>129.)
       {Nswim_steps++; break;} // left extent of TOF 
     if(z>670.0){Nswim_steps++; break;} // ran into FCAL
     if(z<zmin){Nswim_steps++; break;} // exit upstream
     
-    old_radius=swim_step->origin.Perp();
+    old_radius_sq=Rsq;
   }
   
   // OK. At this point the positions of the trajectory in the lab
@@ -515,7 +516,7 @@ void DReferenceTrajectory::Swim(const DVector3 &pos, const DVector3 &mom, double
 	double itheta02s2 = 0.0;
 	double X0sum=0.0;
 	swim_step_t *last_step=NULL;
-	double old_radius=10000.;
+	double old_radius_sq=1e6;
 	
 	DMatrixDSym mycov(7);
 	if (cov!=NULL){
@@ -726,9 +727,9 @@ void DReferenceTrajectory::Swim(const DVector3 &pos, const DVector3 &mom, double
 
 		// Mark places along trajectory where we pass into one of the 
 		// main detectors
-		double R=swim_step->origin.Perp();
+		double Rsq=swim_step->origin.Perp2();
 		double z=swim_step->origin.Z();
-		if (hit_bcal==false && R>65. && z<407 &&z>0){
+		if (hit_bcal==false && Rsq>Rsqmax_interior && z<407 &&z>0){
 		  index_at_bcal=Nswim_steps-1;
 		  hit_bcal=true;
 		}
@@ -743,13 +744,13 @@ void DReferenceTrajectory::Swim(const DVector3 &pos, const DVector3 &mom, double
 
 		// Exit the loop if we are already inside the volume of the BCAL
 		// and the radius is decreasing
-		if (R<old_radius && R>Rmax_interior && z<407.0 && z>-100.0){
+		if (Rsq<old_radius_sq && Rsq>Rsqmax_interior && z<407.0 && z>-100.0){
 		  Nswim_steps++; break;
 		}
 	
 		
 		// Exit loop if we leave the tracking volume
-		if(R>Rmax_exterior && z<407.0){Nswim_steps++; break;} // ran into BCAL
+		if(Rsq>Rsqmax_exterior && z<407.0){Nswim_steps++; break;} // ran into BCAL
 		if (fabs(swim_step->origin.X())>129.  
 		    || fabs(swim_step->origin.Y())>129.)
 		  {Nswim_steps++; break;} // left extent of TOF 
@@ -760,7 +761,7 @@ void DReferenceTrajectory::Swim(const DVector3 &pos, const DVector3 &mom, double
 			if(++closest_step!=swim_step){Nswim_steps++; break;}
 		}
 
-		old_radius=swim_step->origin.Perp();
+		old_radius_sq=Rsq;
 	}
 
 	// OK. At this point the positions of the trajectory in the lab
