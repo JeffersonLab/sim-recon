@@ -305,7 +305,7 @@ void DEVIOWorkerThread::ParseBank(void)
 		uint32_t event_head = iptr[1];
 		uint32_t tag = (event_head >> 16) & 0xFFFF;
 
-//_DBG_ << "tag=" << hex << tag << dec << endl;
+// _DBG_ << "0x" << hex << (uint64_t)iptr << dec << ": event_len=" << event_len << "tag=" << hex << tag << dec << endl;
 
 		switch(tag){
 			case 0x0060:       ParseEPICSbank(iptr, iend);    break;
@@ -669,7 +669,7 @@ void DEVIOWorkerThread::ParseBuiltTriggerBank(uint32_t* &iptr, uint32_t *iend)
    // Hi and lo 32bit words in 64bit numbers seem to be
    // switched for events read from ET, but not read from
    // file. Not sure if this is in the swapping routine
-//   if(source_type==kETSource) first_event_num = (first_event_num>>32) | (first_event_num<<32);
+   if(event_source->source_type==event_source->kETSource) first_event_num = (first_event_num>>32) | (first_event_num<<32);
 
 	// Average timestamps
    uint32_t Ntimestamps = (common_header64_len/2)-1;
