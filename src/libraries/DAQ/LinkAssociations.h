@@ -88,7 +88,7 @@ inline void LinkConfig(vector<T*> &a, vector<U*> &b)
 // LinkConfigSamplesCopy
 template<class T, class U>
 inline void LinkConfigSamplesCopy(vector<T*> &a, vector<U*> &b)
-{ MatchConfigF(a, b, [](T *a, U *b){b->AddAssociatedObject(a); b->nsamples_integral = a->NSA_NSB;}); }
+{ MatchConfigF(a, b, [](T *a, U *b){b->AddAssociatedObject(a); b->nsamples_integral = a->NSA_NSB; b->nsamples_pedestal = a->NPED;}); }
 
 // LinkModule
 template<class T, class U>

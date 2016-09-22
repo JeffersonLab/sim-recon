@@ -54,8 +54,10 @@ class Df250PulseData:public DDAQAddress{
 			, uint32_t nsamples_integral=0
 			, uint32_t nsamples_pedestal=0
 			, bool     emulated=false
-        	, bool     integral_emulated=false
-        	, bool     pedestal_emulated=false)
+        	, uint32_t integral_emulated=0
+        	, uint32_t pedestal_emulated=0
+			, uint32_t time_emulated=0
+			, uint32_t pulse_peak_emulated=0)
 			:DDAQAddress(rocid, slot, channel, itrigger)
 			, event_within_block(event_within_block)
 			, QF_pedestal(QF_pedestal)
@@ -76,7 +78,9 @@ class Df250PulseData:public DDAQAddress{
 			, nsamples_pedestal(nsamples_pedestal)
 			, emulated(emulated)
 			, integral_emulated(integral_emulated)
-			, pedestal_emulated(pedestal_emulated){}
+			, pedestal_emulated(pedestal_emulated)
+			, time_emulated(time_emulated)
+			, pulse_peak_emulated(pulse_peak_emulated){}
 
 		
 		// from word 1
@@ -104,8 +108,10 @@ class Df250PulseData:public DDAQAddress{
 		uint32_t nsamples_integral;    ///< number of samples used in integral 
 		uint32_t nsamples_pedestal;    ///< number of samples used in pedestal
 		bool     emulated;             ///< true if made from Window Raw Data
-        bool     integral_emulated;    ///< Value calculated from raw data (if available)
-        bool     pedestal_emulated;    ///< Value calculated from raw data (if available)
+        uint32_t integral_emulated;    ///< Value calculated from raw data (if available)
+        uint32_t pedestal_emulated;    ///< Value calculated from raw data (if available)
+        uint32_t time_emulated;        ///< Value calculated from raw data (if available)
+        uint32_t pulse_peak_emulated;  ///< Value calculated from raw data (if available)
 
 		// This method is used primarily for pretty printing
 		// the second argument to AddString is printf style format
@@ -127,13 +133,15 @@ class Df250PulseData:public DDAQAddress{
 		
 			DDAQAddress::toStrings(items);
 			AddString(items, "event_within_block"      , "%d", event_within_block      );
-			AddString(items, "pedestal"                , "%d", pedestal                );
 			AddString(items, "integral"                , "%d", integral                );
-			AddString(items, "nsamples_over_threshold" , "%d", nsamples_over_threshold );
+			AddString(items, "pedestal"                , "%d", pedestal                );
 			AddString(items, "course_time"             , "%d", course_time             );
 			AddString(items, "fine_time"               , "%d", fine_time               );
 			AddString(items, "pulse_peak"              , "%d", pulse_peak              );
 			AddString(items, "pulse_number"            , "%d", pulse_number            );
+			AddString(items, "nsamples_integral"       , "%d", nsamples_integral       );
+			AddString(items, "nsamples_pedestal"       , "%d", nsamples_pedestal       );
+			AddString(items, "nsamples_over_threshold" , "%d", nsamples_over_threshold );
 			AddString(items, "QF"                      , "%x", QF                      );
 			AddString(items, "emulated"                , "%x", emulated_all            );
 		}

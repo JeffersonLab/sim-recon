@@ -56,6 +56,6 @@ hddm_mc_s.hpp hddm_mc_s++.cpp: mc.xml
 	hddm-cpp $<
 	mv hddm_mc_s.cpp hddm_mc_s++.cpp
 
-t_rest: t_rest.cpp
+t_rest: t_rest.cxx
 	g++ -O4 -o $@ -g -std=c++11 $^ -I. -I$(HALLD_HOME)/$(BMS_OSNAME)/include \
     -L$(HALLD_HOME)/$(BMS_OSNAME)/lib -lHDDM -lxstream -lbz2 -lz -lpthread -lrt
