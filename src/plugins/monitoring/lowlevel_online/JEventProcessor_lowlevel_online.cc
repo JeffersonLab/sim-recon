@@ -1,8 +1,6 @@
 // $Id$
 //
 //    File: JEventProcessor_lowlevel_online.cc
-// Created: Tue Apr 12 09:43:54 EDT 2016
-// Creator: zihlmann (on Linux gluon47.jlab.org 2.6.32-358.23.2.el6.x86_64 x86_64)
 //
 
 #include <TMath.h>
@@ -34,6 +32,7 @@ using namespace jana;
 #include <TAGGER/DTAGMDigiHit.h>
 #include <TAGGER/DTAGMTDCDigiHit.h>
 
+#include <FCAL/DFCALGeometry.h>
 
 // Routine used to create our JEventProcessor
 #include <JANA/JApplication.h>
@@ -77,9 +76,19 @@ jerror_t JEventProcessor_lowlevel_online::init(void)
 
 
 	//------------------------ BCAL -----------------------
-	//FADC
-	bcal_adc_occ = new TH2I("bcal_adc_occ","ADC occupancy (DBCALDigiHit);Module", 48, 0.5, 48.5, 33, 0.5, 33.5);
-	// Set y-axis labels for occupancy plots
+	//TDirectory *bcaldir = gDirectory->mkdir("BCAL");
+	gDirectory->mkdir("BCAL");
+    
+    bcal_adc_integral = new TH1I("bcal_adc_integral", "BCAL fADC250 Pulse Integral;Integral (fADC counts)", 1000, 0, 40000);
+    bcal_adc_integral_pedsub = new TH1I("bcal_adc_integral_pedsub", "BCAL fADC250 Pulse Integral (Pedestal Subtracted);Integral (fADC counts)", 1000, 0, 40000);
+    bcal_adc_peak = new TH1I("bcal_adc_peak", "BCAL fADC250 Pulse Peak;Peak (fADC counts)", 500, 0, 1000);
+    bcal_adc_peak_pedsub = new TH1I("bcal_adc_peak_pedsub", "BCAL fADC250 Pulse Peak;Peak (fADC counts)", 500, 0, 1000);
+    bcal_adc_time = new TH1I("bcal_adc_time", "BCAL fADC250 Pulse Time;Time (ns)", 550, 0, 550);
+    bcal_adc_pedestal = new TH1I("bcal_adc_pedestal", "BCAL fADC250 Summed Pedestal;Pedestal Sum (fADC counts)", 164, 0, 8200);
+    bcal_adc_quality = new TH1I("bcal_adc_quality", "BCAL fADC250 Quality Factor;Quality Factor", 128, 0, 128);
+
+	// Set y-axis labels for individual channel plots
+    /*
 	for(int ibin = 1; ibin <= 16; ibin++)
 	{
 		int idy = ibin-1; // convenient to use index that starts from zero!
@@ -94,28 +103,15 @@ jerror_t JEventProcessor_lowlevel_online::init(void)
 		ss << "U  S" << sector << "  L" << layer;
 		bcal_adc_occ->GetYaxis()->SetBinLabel(ibin + 17, ss.str().c_str());
 	}
+    */
 
-	// TDC
-	bcal_tdc_occ = new TH2I("bcal_tdc_occ","TDC occupancy (DBCALDigiTDCHit);Module", 48, 0.5, 48.5, 25, 0.5, 25.5);
-	// Set y-axis labels for occupancy plots (without layer 4)
-	for(int ibin = 1; ibin <= 12; ibin++)
-	{
-		int idy = ibin-1; // convenient to use index that starts from zero!
-		
-		int layer  = 1 + (idy%3);
-		int sector = 1 + idy/3;
-		
-		ostringstream ss;
-		ss << "D  S" << sector << "  L" << layer;
-		bcal_tdc_occ->GetYaxis()->SetBinLabel(ibin, ss.str().c_str());
-
-		ss.str("");
-		ss << "U  S" << sector << "  L" << layer;
-		bcal_tdc_occ->GetYaxis()->SetBinLabel(ibin + 13, ss.str().c_str());
-	}
 	bcal_num_events = new TH1I("bcal_num_events", "BCAL number of events", 1, 0.0, 1.0);
 
 	//------------------------ CDC ------------------------
+    maindir->cd();
+	gDirectory->mkdir("CDC");
+
+    // Save some geometry information
 	int Nstraws[28] = {42, 42, 54, 54, 66, 66, 80, 80, 93, 93, 106, 106, 123, 123, 
 			 135, 135, 146, 146, 158, 158, 170, 170, 182, 182, 197, 197, 209, 209};
     Nstraws_integrated.clear();
@@ -123,91 +119,133 @@ jerror_t JEventProcessor_lowlevel_online::init(void)
     for(int i=1; i<28; i++)
         Nstraws_integrated.push_back( Nstraws[i]+Nstraws_integrated[i-1] );
 
-	double radius[28] = {10.72134, 12.08024, 13.7795, 15.14602, 18.71726, 20.2438, 22.01672, 
-			   23.50008, 25.15616, 26.61158, 28.33624, 29.77388, 31.3817, 32.75838, 
-			   34.43478, 35.81146, 38.28542, 39.7002, 41.31564, 42.73042, 44.34078, 
-			   45.75302, 47.36084, 48.77054, 50.37582, 51.76012, 53.36286, 54.74716};
-	double phi[28] = {0, 0.074707844, 0.038166294, 0.096247609, 0.05966371, 0.012001551, 0.040721951, 
-			0.001334527, 0.014963808, 0.048683644, 0.002092645, 0.031681749, 0.040719354, 
-			0.015197341, 0.006786058, 0.030005892, 0.019704045, -0.001782064, -0.001306618, 
-			0.018592421, 0.003686784, 0.022132975, 0.019600866, 0.002343723, 0.021301449, 
-			0.005348855, 0.005997358, 0.021018761}; 
+    const int Nstraws_total = Nstraws_integrated[27];
 
-	// Define a different 2D histogram for each ring. 
-	// X-axis is phi, Y-axis is radius (to plot correctly with "pol" option)
-	for(int iring=0; iring<28; iring++){
-		double r_start = radius[iring] - 0.8;
-		double r_end = radius[iring] + 0.8;
-		double phi_start = phi[iring]; // this is for center of straw. Need additional calculation for phi at end plate
-		double phi_end = phi_start + TMath::TwoPi();
+    cdc_adc_integral = new TH1I("cdc_adc_integral", "BCAL fADC250 Pulse Integral;Integral (fADC counts)", 1000, 0, 40000);
+    cdc_adc_integral_pedsub = new TH1I("cdc_adc_integral_pedsub", "BCAL fADC250 Pulse Integral (Pedestal Subtracted);Integral (fADC counts)", 1000, 0, 40000);
+    cdc_adc_time = new TH1I("cdc_adc_time", "BCAL fADC250 Pulse Time;Time (ns)", 550, 0, 550);
+    cdc_adc_pedestal = new TH1I("cdc_adc_pedestal", "BCAL fADC250 Summed Pedestal;Pedestal Sum (fADC counts)", 164, 0, 8200);
+    cdc_adc_quality = new TH1I("cdc_adc_quality", "BCAL fADC250 Quality Factor;Quality Factor", 128, 0, 128);
 
-		char hname[256];
-		sprintf(hname, "cdc_occ_ring_%02d", iring+1);
-		cdc_occ_ring[iring] = new TH2F(hname, "", Nstraws[iring], phi_start, phi_end, 1, r_start, r_end);
-	}
+    if(INDIVIDUAL_CHANNEL_DATA) {
+        cdc_adc_integral_chan = new TH2I("cdc_adc_integral", "BCAL fADC250 Pulse Integral;Integral (fADC counts)", 1000, 0, 40000, Nstraws_total, 0, Nstraws_total);
+        cdc_adc_integral_pedsub_chan = new TH2I("cdc_adc_integral_pedsub", "BCAL fADC250 Pulse Integral (Pedestal Subtracted);Integral (fADC counts)", 
+                                                1000, 0, 40000, Nstraws_total, 0, Nstraws_total);
+        cdc_adc_time_chan = new TH2I("cdc_adc_time", "BCAL fADC250 Pulse Time;Time (ns)", 550, 0, 550, Nstraws_total, 0, Nstraws_total);
+        cdc_adc_pedestal_chan = new TH2I("cdc_adc_pedestal", "BCAL fADC250 Summed Pedestal;Pedestal Sum (fADC counts)", 164, 0, 8200, Nstraws_total, 0, Nstraws_total);
+        cdc_adc_quality_chan = new TH2I("cdc_adc_quality", "BCAL fADC250 Quality Factor;Quality Factor", 128, 0, 128, Nstraws_total, 0, Nstraws_total);        
+    }
+
 	cdc_num_events = new TH1I("cdc_num_events", "CDC number of events", 1, 0.0, 1.0);
     
 	//------------------------ FCAL -----------------------
-	fcal_occ = new TH2F("fcal_occ", "FCAL Occupancy; column; row", 61, -1.5, 59.5, 61, -1.5, 59.5);
+    maindir->cd();
+	gDirectory->mkdir("FCAL");
+
+    fcal_adc_integral = new TH1I("fcal_adc_integral", "BCAL fADC250 Pulse Integral;Integral (fADC counts)", 1000, 0, 40000);
+    fcal_adc_integral_pedsub = new TH1I("fcal_adc_integral_pedsub", "BCAL fADC250 Pulse Integral (Pedestal Subtracted);Integral (fADC counts)", 1000, 0, 40000);
+    fcal_adc_peak = new TH1I("fcal_adc_peak", "BCAL fADC250 Pulse Peak;Peak (fADC counts)", 500, 0, 1000);
+    fcal_adc_peak_pedsub = new TH1I("fcal_adc_peak_pedsub", "BCAL fADC250 Pulse Peak;Peak (fADC counts)", 500, 0, 1000);
+    fcal_adc_time = new TH1I("fcal_adc_time", "BCAL fADC250 Pulse Time;Time (ns)", 550, 0, 550);
+    fcal_adc_pedestal = new TH1I("fcal_adc_pedestal", "BCAL fADC250 Summed Pedestal;Pedestal Sum (fADC counts)", 164, 0, 8200);
+    fcal_adc_quality = new TH1I("fcal_adc_quality", "BCAL fADC250 Quality Factor;Quality Factor", 128, 0, 128);
+
 	fcal_num_events = new TH1I("fcal_num_events", "FCAL number of events", 1, 0.0, 1.0);
 
 	//------------------------ FDC ------------------------
-    fdc_cathode_occ = new TH2F("fdc_cathode_occ","FDC Cathode Occupancy; Channel;", 48, 0.5, 48.5, 216, 0.5, 216.5); 
-    fdc_wire_occ = new TH2F("fdc_wire_occ", "FDC Wire Occupancy; Channel;", 24, 0.5, 24.5, 96, 0.5, 96.5); 
+    maindir->cd();
+	gDirectory->mkdir("FDC");
+
+    fdc_adc_integral = new TH1I("fdc_adc_integral", "BCAL fADC250 Pulse Integral;Integral (fADC counts)", 1000, 0, 40000);
+    fdc_adc_integral_pedsub = new TH1I("fdc_adc_integral_pedsub", "BCAL fADC250 Pulse Integral (Pedestal Subtracted);Integral (fADC counts)", 1000, 0, 40000);
+    fdc_adc_time = new TH1I("fdc_adc_time", "BCAL fADC250 Pulse Time;Time (ns)", 550, 0, 550);
+    fdc_adc_pedestal = new TH1I("fdc_adc_pedestal", "BCAL fADC250 Summed Pedestal;Pedestal Sum (fADC counts)", 164, 0, 8200);
+    fdc_adc_quality = new TH1I("fdc_adc_quality", "BCAL fADC250 Quality Factor;Quality Factor", 128, 0, 128);
+
     fdc_num_events = new TH1I("fdc_num_events", "FDC number of events", 1, 0.0, 1.0);
 
-	//------------------------ PS/PSC ---------------------
-	psc_adc_left_occ   = new TH1I("psc_adc_left_occ",  "PSC fADC hit occupancy Left", 8, 0.5, 8.5);
-	psc_adc_right_occ  = new TH1I("psc_adc_right_occ", "PSC fADC hit occupancy Right", 8, 0.5, 8.5);
-	psc_tdc_left_occ   = new TH1I("psc_tdc_left_occ",  "PSC TDC hit occupancy Left",  8, 0.5, 8.5);
-	psc_tdc_right_occ  = new TH1I("psc_tdc_right_occ", "PSC TDC hit occupancy Right",  8, 0.5, 8.5);
-	ps_left_occ        = new TH1I("ps_left_occ",       "PS fADC hit occupancy Left", 145, 0.5, 145.5);
-	ps_right_occ       = new TH1I("ps_right_occ",      "PS fADC hit occupancy Right", 145, 0.5, 145.5);
+	//------------------------ PSC ---------------------
+    maindir->cd();
+	gDirectory->mkdir("PSC");
+
+    psc_adc_integral = new TH1I("psc_adc_integral", "BCAL fADC250 Pulse Integral;Integral (fADC counts)", 1000, 0, 40000);
+    psc_adc_integral_pedsub = new TH1I("psc_adc_integral_pedsub", "BCAL fADC250 Pulse Integral (Pedestal Subtracted);Integral (fADC counts)", 1000, 0, 40000);
+    psc_adc_peak = new TH1I("psc_adc_peak", "BCAL fADC250 Pulse Peak;Peak (fADC counts)", 500, 0, 1000);
+    psc_adc_peak_pedsub = new TH1I("psc_adc_peak_pedsub", "BCAL fADC250 Pulse Peak;Peak (fADC counts)", 500, 0, 1000);
+    psc_adc_time = new TH1I("psc_adc_time", "BCAL fADC250 Pulse Time;Time (ns)", 550, 0, 550);
+    psc_adc_pedestal = new TH1I("psc_adc_pedestal", "BCAL fADC250 Summed Pedestal;Pedestal Sum (fADC counts)", 164, 0, 8200);
+    psc_adc_quality = new TH1I("psc_adc_quality", "BCAL fADC250 Quality Factor;Quality Factor", 128, 0, 128);
+
+	//------------------------ PS ---------------------
+    maindir->cd();
+	gDirectory->mkdir("PS");
+
+    ps_adc_integral = new TH1I("ps_adc_integral", "BCAL fADC250 Pulse Integral;Integral (fADC counts)", 1000, 0, 40000);
+    ps_adc_integral_pedsub = new TH1I("ps_adc_integral_pedsub", "BCAL fADC250 Pulse Integral (Pedestal Subtracted);Integral (fADC counts)", 1000, 0, 40000);
+    ps_adc_peak = new TH1I("ps_adc_peak", "BCAL fADC250 Pulse Peak;Peak (fADC counts)", 500, 0, 1000);
+    ps_adc_peak_pedsub = new TH1I("ps_adc_peak_pedsub", "BCAL fADC250 Pulse Peak;Peak (fADC counts)", 500, 0, 1000);
+    ps_adc_time = new TH1I("ps_adc_time", "BCAL fADC250 Pulse Time;Time (ns)", 550, 0, 550);
+    ps_adc_pedestal = new TH1I("ps_adc_pedestal", "BCAL fADC250 Summed Pedestal;Pedestal Sum (fADC counts)", 164, 0, 8200);
+    ps_adc_quality = new TH1I("ps_adc_quality", "BCAL fADC250 Quality Factor;Quality Factor", 128, 0, 128);
+
 	ps_num_events = new TH1I("ps_num_events", "PS number of events", 1, 0.0, 1.0);
 
-	//------------------------ RF -------------------------
-	rf_occ = new TH1D("rf_occ", "RF TDC Occupancy", 4, 0.5, 4.5);
-	rf_occ->GetXaxis()->SetBinLabel(1, "FDC");
-	rf_occ->GetXaxis()->SetBinLabel(2, "PSC");
-	rf_occ->GetXaxis()->SetBinLabel(3, "TAGH");
-	rf_occ->GetXaxis()->SetBinLabel(4, "TOF");
-	rf_num_events = new TH1I("rf_num_events", "RF number of events", 1, 0.0, 1.0);
-	dRFBinValueMap[SYS_FDC]  = 1.0;
-	dRFBinValueMap[SYS_PSC]  = 2.0;
-	dRFBinValueMap[SYS_TAGH] = 3.0;
-	dRFBinValueMap[SYS_TOF]  = 4.0;
-
 	//------------------------ ST -------------------------
-	st_adc_occ    = new TH1I("st_adc_occ", "ST fADC250 DigiHit Occupancy; Channel Number; fADC250 Counts", 30, 0.5, 30 + 0.5);
-	st_tdc_occ    = new TH1I("st_tdc_occ", "ST TDC DigiHit Occupancy; Channel Number; TDC Counts", 30, 0.5, 30 + 0.5);
+    maindir->cd();
+	gDirectory->mkdir("ST");
+
+    st_adc_integral = new TH1I("st_adc_integral", "BCAL fADC250 Pulse Integral;Integral (fADC counts)", 1000, 0, 40000);
+    st_adc_integral_pedsub = new TH1I("st_adc_integral_pedsub", "BCAL fADC250 Pulse Integral (Pedestal Subtracted);Integral (fADC counts)", 1000, 0, 40000);
+    st_adc_peak = new TH1I("st_adc_peak", "BCAL fADC250 Pulse Peak;Peak (fADC counts)", 500, 0, 1000);
+    st_adc_peak_pedsub = new TH1I("st_adc_peak_pedsub", "BCAL fADC250 Pulse Peak;Peak (fADC counts)", 500, 0, 1000);
+    st_adc_time = new TH1I("st_adc_time", "BCAL fADC250 Pulse Time;Time (ns)", 550, 0, 550);
+    st_adc_pedestal = new TH1I("st_adc_pedestal", "BCAL fADC250 Summed Pedestal;Pedestal Sum (fADC counts)", 164, 0, 8200);
+    st_adc_quality = new TH1I("st_adc_quality", "BCAL fADC250 Quality Factor;Quality Factor", 128, 0, 128);
+
 	st_num_events = new TH1I("st_num_events", "Start Counter number of events", 1, 0.0, 1.0);
 
 	//------------------------ TAGH -----------------------
+    maindir->cd();
+	gDirectory->mkdir("TAGH");
+
 	const int Nslots = DTAGHGeometry::kCounterCount;
-	tagh_adc_occ = new TH1I("tagh_adc_occ","TAGH fADC hit occupancy;counter (slot) ID;raw hits / counter",Nslots,0.5,0.5+Nslots);
-	tagh_tdc_occ = new TH1I("tagh_tdc_occ","TAGH TDC hit occupancy;counter (slot) ID;raw hits / counter",Nslots,0.5,0.5+Nslots);
+
+    tagh_adc_integral = new TH1I("tagh_adc_integral", "BCAL fADC250 Pulse Integral;Integral (fADC counts)", 1000, 0, 40000);
+    tagh_adc_integral_pedsub = new TH1I("tagh_adc_integral_pedsub", "BCAL fADC250 Pulse Integral (Pedestal Subtracted);Integral (fADC counts)", 1000, 0, 40000);
+    tagh_adc_peak = new TH1I("tagh_adc_peak", "BCAL fADC250 Pulse Peak;Peak (fADC counts)", 500, 0, 1000);
+    tagh_adc_peak_pedsub = new TH1I("tagh_adc_peak_pedsub", "BCAL fADC250 Pulse Peak;Peak (fADC counts)", 500, 0, 1000);
+    tagh_adc_time = new TH1I("tagh_adc_time", "BCAL fADC250 Pulse Time;Time (ns)", 550, 0, 550);
+    tagh_adc_pedestal = new TH1I("tagh_adc_pedestal", "BCAL fADC250 Summed Pedestal;Pedestal Sum (fADC counts)", 164, 0, 8200);
+    tagh_adc_quality = new TH1I("tagh_adc_quality", "BCAL fADC250 Quality Factor;Quality Factor", 128, 0, 128);
+
 	tag_num_events = new TH1I("tag_num_events", "TAGGER number of events", 1, 0.0, 1.0);
 
 	//------------------------ TAGM -----------------------
-	const uint32_t NCOLUMNS = 102;
-	tagm_adc_occ = new TH1I("tagm_adc_occ", "TAGM FADC250 column occupancy", NCOLUMNS, 0., NCOLUMNS + 1.);
-	tagm_tdc_occ = new TH1I("tagm_tdc_occ", "TAGM F1TDC column occupancy",  NCOLUMNS, 0., NCOLUMNS + 1.);
+    maindir->cd();
+	gDirectory->mkdir("TAGM");
 
-	//------------------------ TPOL -----------------------
-	const int Nsectors = DTPOLHit_factory::NSECTORS;
-	tpol_occ = new TH1I("tpol_occ","TPOL fADC hit occupancy;sector;raw hits / counter",Nsectors,0.5,0.5+Nsectors);
+	const uint32_t NCOLUMNS = 102;
+    tagm_adc_integral = new TH1I("tagm_adc_integral", "BCAL fADC250 Pulse Integral;Integral (fADC counts)", 1000, 0, 40000);
+    tagm_adc_integral_pedsub = new TH1I("tagm_adc_integral_pedsub", "BCAL fADC250 Pulse Integral (Pedestal Subtracted);Integral (fADC counts)", 1000, 0, 40000);
+    tagm_adc_peak = new TH1I("tagm_adc_peak", "BCAL fADC250 Pulse Peak;Peak (fADC counts)", 500, 0, 1000);
+    tagm_adc_peak_pedsub = new TH1I("tagm_adc_peak_pedsub", "BCAL fADC250 Pulse Peak;Peak (fADC counts)", 500, 0, 1000);
+    tagm_adc_time = new TH1I("tagm_adc_time", "BCAL fADC250 Pulse Time;Time (ns)", 550, 0, 550);
+    tagm_adc_pedestal = new TH1I("tagm_adc_pedestal", "BCAL fADC250 Summed Pedestal;Pedestal Sum (fADC counts)", 164, 0, 8200);
+    tagm_adc_quality = new TH1I("tagm_adc_quality", "BCAL fADC250 Quality Factor;Quality Factor", 128, 0, 128);
 
 	//------------------------ TOF ------------------------
-	tof_num_events = new TH1I("tof_num_events", "TOF number of events", 1, 0.0, 1.0);
-	tof_tdc_S_occ = new TH1I("tof_tdc_S_occ","TOF, TDC Occupancy",86,1,44);
-	tof_tdc_N_occ = new TH1I("tof_tdc_N_occ","TOF, TDC Occupancy",86,1,44);
-	tof_tdc_U_occ = new TH1I("tof_tdc_U_occ","TOF, TDC Occupancy",86,1,44);
-	tof_tdc_D_occ = new TH1I("tof_tdc_D_occ","TOF, TDC Occupancy",86,1,44);
+    maindir->cd();
+	gDirectory->mkdir("TOF");
 
-	tof_adc_S_occ = new TH1I("tof_adc_S_occ","TOF, fADC Occupancy",86,1,44);
-	tof_adc_N_occ = new TH1I("tof_adc_N_occ","TOF, fADC Occupancy",86,1,44);
-	tof_adc_U_occ = new TH1I("tof_adc_U_occ","TOF, fADC Occupancy",86,1,44);
-	tof_adc_D_occ = new TH1I("tof_adc_D_occ","TOF, fADC Occupancy",86,1,44);
+    tof_adc_integral = new TH1I("tof_adc_integral", "BCAL fADC250 Pulse Integral;Integral (fADC counts)", 1000, 0, 40000);
+    tof_adc_integral_pedsub = new TH1I("tof_adc_integral_pedsub", "BCAL fADC250 Pulse Integral (Pedestal Subtracted);Integral (fADC counts)", 1000, 0, 40000);
+    tof_adc_peak = new TH1I("tof_adc_peak", "BCAL fADC250 Pulse Peak;Peak (fADC counts)", 500, 0, 1000);
+    tof_adc_peak_pedsub = new TH1I("tof_adc_peak_pedsub", "BCAL fADC250 Pulse Peak;Peak (fADC counts)", 500, 0, 1000);
+    tof_adc_time = new TH1I("tof_adc_time", "BCAL fADC250 Pulse Time;Time (ns)", 550, 0, 550);
+    tof_adc_pedestal = new TH1I("tof_adc_pedestal", "BCAL fADC250 Summed Pedestal;Pedestal Sum (fADC counts)", 164, 0, 8200);
+    tof_adc_quality = new TH1I("tof_adc_quality", "BCAL fADC250 Quality Factor;Quality Factor", 128, 0, 128);
+
+	tof_num_events = new TH1I("tof_num_events", "TOF number of events", 1, 0.0, 1.0);
 
 
 	// back to base dir
@@ -272,7 +310,7 @@ jerror_t JEventProcessor_lowlevel_online::evnt(JEventLoop *loop, uint64_t eventn
 	loop->Get(tpoldigihits);
 
     vector< const DFCALGeometry* > geomVec;
-    eventLoop->Get( geomVec );
+    loop->Get( geomVec );
     const DFCALGeometry& fcalGeom = *(geomVec[0]);
 
     // For oow, just histogram fADC data and don't worry about TDCs
@@ -289,7 +327,7 @@ jerror_t JEventProcessor_lowlevel_online::evnt(JEventLoop *loop, uint64_t eventn
         bcal_adc_integral->Fill(hit->pulse_integral);
         bcal_adc_integral_pedsub->Fill(hit->pulse_integral - hit->pedestal*(hit->nsamples_integral/hit->nsamples_pedestal));
         bcal_adc_peak->Fill(hit->pulse_peak);
-        bcal_adc_peak_pedsub->Fill(hit->pulse_peak_pedsub - hit->pedestal/hit->nsamples_pedestal);
+        bcal_adc_peak_pedsub->Fill(hit->pulse_peak - hit->pedestal/hit->nsamples_pedestal);
         bcal_adc_time->Fill(hit->pulse_time);
         bcal_adc_pedestal->Fill(hit->pedestal);
         bcal_adc_quality->Fill(hit->QF);
@@ -304,7 +342,7 @@ jerror_t JEventProcessor_lowlevel_online::evnt(JEventLoop *loop, uint64_t eventn
             bcal_adc_integral_chan->Fill(hit->pulse_integral, ichan);
             bcal_adc_integral_pedsub_chan->Fill(hit->pulse_integral - hit->pedestal*(hit->nsamples_integral/hit->nsamples_pedestal), ichan);
             bcal_adc_peak_chan->Fill(hit->pulse_peak, ichan);
-            bcal_adc_peak_pedsub_chan->Fill(hit->pulse_peak_pedsub - hit->pedestal/hit->nsamples_pedestal, ichan);
+            bcal_adc_peak_pedsub_chan->Fill(hit->pulse_peak - hit->pedestal/hit->nsamples_pedestal, ichan);
             bcal_adc_time_chan->Fill(hit->pulse_time, ichan);
             bcal_adc_pedestal_chan->Fill(hit->pedestal, ichan);
             bcal_adc_quality_chan->Fill(hit->QF, ichan);
@@ -323,19 +361,19 @@ jerror_t JEventProcessor_lowlevel_online::evnt(JEventLoop *loop, uint64_t eventn
 
         cdc_adc_integral->Fill(hit->pulse_integral);
         cdc_adc_integral_pedsub->Fill(hit->pulse_integral - hit->pedestal*(hit->nsamples_integral/hit->nsamples_pedestal));
-        cdc_adc_peak->Fill(hit->pulse_peak);
-        cdc_adc_peak_pedsub->Fill(hit->pulse_peak_pedsub - hit->pedestal/hit->nsamples_pedestal);
+        //cdc_adc_peak->Fill(hit->pulse_peak);
+        //cdc_adc_peak_pedsub->Fill(hit->pulse_peak - hit->pedestal/hit->nsamples_pedestal);
         cdc_adc_time->Fill(hit->pulse_time);
         cdc_adc_pedestal->Fill(hit->pedestal);
         cdc_adc_quality->Fill(hit->QF);
 
         if(INDIVIDUAL_CHANNEL_DATA) {
-            int ichan = Nstraws_integrated[ring] + hit->straw;
+            int ichan = Nstraws_integrated[hit->ring] + hit->straw;
             
             cdc_adc_integral_chan->Fill(hit->pulse_integral, ichan);
             cdc_adc_integral_pedsub_chan->Fill(hit->pulse_integral - hit->pedestal*(hit->nsamples_integral/hit->nsamples_pedestal), ichan);
-            cdc_adc_peak_chan->Fill(hit->pulse_peak, ichan);
-            cdc_adc_peak_pedsub_chan->Fill(hit->pulse_peak_pedsub - hit->pedestal/hit->nsamples_pedestal, ichan);
+            //cdc_adc_peak_chan->Fill(hit->pulse_peak, ichan);
+            //cdc_adc_peak_pedsub_chan->Fill(hit->pulse_peak - hit->pedestal/hit->nsamples_pedestal, ichan);
             cdc_adc_time_chan->Fill(hit->pulse_time, ichan);
             cdc_adc_pedestal_chan->Fill(hit->pedestal, ichan);
             cdc_adc_quality_chan->Fill(hit->QF, ichan);
@@ -345,23 +383,23 @@ jerror_t JEventProcessor_lowlevel_online::evnt(JEventLoop *loop, uint64_t eventn
 	//------------------------ FCAL -----------------------
 	fcal_num_events->Fill(0.5);
 	for(size_t loc_i = 0; loc_i < fcaldigihits.size(); ++loc_i){
-		fcal_occ->Fill(fcaldigihits[loc_i]->column, fcaldigihits[loc_i]->row);
+		const DFCALDigiHit *hit = fcaldigihits[loc_i];
 
         fcal_adc_integral->Fill(hit->pulse_integral);
         fcal_adc_integral_pedsub->Fill(hit->pulse_integral - hit->pedestal*(hit->nsamples_integral/hit->nsamples_pedestal));
         fcal_adc_peak->Fill(hit->pulse_peak);
-        fcal_adc_peak_pedsub->Fill(hit->pulse_peak_pedsub - hit->pedestal/hit->nsamples_pedestal);
+        fcal_adc_peak_pedsub->Fill(hit->pulse_peak - hit->pedestal/hit->nsamples_pedestal);
         fcal_adc_time->Fill(hit->pulse_time);
         fcal_adc_pedestal->Fill(hit->pedestal);
         fcal_adc_quality->Fill(hit->QF);
 
         if(INDIVIDUAL_CHANNEL_DATA) {
-            int ichan = fcalGeom.channel( hit1.row, hit1.column );
+            int ichan = fcalGeom.channel( hit->row, hit->column );
             
             fcal_adc_integral_chan->Fill(hit->pulse_integral, ichan);
             fcal_adc_integral_pedsub_chan->Fill(hit->pulse_integral - hit->pedestal*(hit->nsamples_integral/hit->nsamples_pedestal), ichan);
             fcal_adc_peak_chan->Fill(hit->pulse_peak, ichan);
-            fcal_adc_peak_pedsub_chan->Fill(hit->pulse_peak_pedsub - hit->pedestal/hit->nsamples_pedestal, ichan);
+            fcal_adc_peak_pedsub_chan->Fill(hit->pulse_peak - hit->pedestal/hit->nsamples_pedestal, ichan);
             fcal_adc_time_chan->Fill(hit->pulse_time, ichan);
             fcal_adc_pedestal_chan->Fill(hit->pedestal, ichan);
             fcal_adc_quality_chan->Fill(hit->QF, ichan);
@@ -375,25 +413,22 @@ jerror_t JEventProcessor_lowlevel_online::evnt(JEventLoop *loop, uint64_t eventn
 
         fdc_adc_integral->Fill(hit->pulse_integral);
         fdc_adc_integral_pedsub->Fill(hit->pulse_integral - hit->pedestal*(hit->nsamples_integral/hit->nsamples_pedestal));
-        fdc_adc_peak->Fill(hit->pulse_peak);
-        fdc_adc_peak_pedsub->Fill(hit->pulse_peak_pedsub - hit->pedestal/hit->nsamples_pedestal);
+        //fdc_adc_peak->Fill(hit->pulse_peak);
+        //fdc_adc_peak_pedsub->Fill(hit->pulse_peak - hit->pedestal/hit->nsamples_pedestal);
         fdc_adc_time->Fill(hit->pulse_time);
         fdc_adc_pedestal->Fill(hit->pedestal);
         fdc_adc_quality->Fill(hit->QF);
 
         // fix this
         if(INDIVIDUAL_CHANNEL_DATA) {
-            int ichan = 0.; // ??  (fdccathodehits[i]->package - 1)*12 + fdccathodehits[i]->chamber*2 + ud, strip
-
-            uint32_t strip = fdccathodehits[i]->strip;
-            if(fdccathodehits[i]->strip_type == 3) strip += 9*12;
             int ud = -1;
-            if (fdccathodehits[i]->view == 3) ud = 0;
+            if (hit->view == 3) ud = 0;
+            int ichan = (hit->strip - 1) + 192*(2.*hit->chamber+ud) + 192*6*4*(hit->package-1);
 
             fdc_adc_integral_chan->Fill(hit->pulse_integral, ichan);
             fdc_adc_integral_pedsub_chan->Fill(hit->pulse_integral - hit->pedestal*(hit->nsamples_integral/hit->nsamples_pedestal), ichan);
-            fdc_adc_peak_chan->Fill(hit->pulse_peak, ichan);
-            fdc_adc_peak_pedsub_chan->Fill(hit->pulse_peak_pedsub - hit->pedestal/hit->nsamples_pedestal, ichan);
+            //fdc_adc_peak_chan->Fill(hit->pulse_peak, ichan);
+            //fdc_adc_peak_pedsub_chan->Fill(hit->pulse_peak - hit->pedestal/hit->nsamples_pedestal, ichan);
             fdc_adc_time_chan->Fill(hit->pulse_time, ichan);
             fdc_adc_pedestal_chan->Fill(hit->pedestal, ichan);
             fdc_adc_quality_chan->Fill(hit->QF, ichan);
@@ -405,25 +440,25 @@ jerror_t JEventProcessor_lowlevel_online::evnt(JEventLoop *loop, uint64_t eventn
 
 	//------------------------ PS/PSC ---------------------
 	ps_num_events->Fill(0.5);
-	const int Nmods = 8; 
 	for(unsigned int i=0; i < pscdigihits.size(); i++) {
+        //const int Nmods = 8; 
 		const DPSCDigiHit *hit = pscdigihits[i];
 
         psc_adc_integral->Fill(hit->pulse_integral);
         psc_adc_integral_pedsub->Fill(hit->pulse_integral - hit->pedestal*(hit->nsamples_integral/hit->nsamples_pedestal));
         psc_adc_peak->Fill(hit->pulse_peak);
-        psc_adc_peak_pedsub->Fill(hit->pulse_peak_pedsub - hit->pedestal/hit->nsamples_pedestal);
+        psc_adc_peak_pedsub->Fill(hit->pulse_peak - hit->pedestal/hit->nsamples_pedestal);
         psc_adc_time->Fill(hit->pulse_time);
         psc_adc_pedestal->Fill(hit->pedestal);
         psc_adc_quality->Fill(hit->QF);
 
         if(INDIVIDUAL_CHANNEL_DATA) {
-            int ichan = hit->counter_id;
+            int ichan = hit->counter_id-1;
 
             psc_adc_integral_chan->Fill(hit->pulse_integral, ichan);
             psc_adc_integral_pedsub_chan->Fill(hit->pulse_integral - hit->pedestal*(hit->nsamples_integral/hit->nsamples_pedestal), ichan);
             psc_adc_peak_chan->Fill(hit->pulse_peak, ichan);
-            psc_adc_peak_pedsub_chan->Fill(hit->pulse_peak_pedsub - hit->pedestal/hit->nsamples_pedestal, ichan);
+            psc_adc_peak_pedsub_chan->Fill(hit->pulse_peak - hit->pedestal/hit->nsamples_pedestal, ichan);
             psc_adc_time_chan->Fill(hit->pulse_time, ichan);
             psc_adc_pedestal_chan->Fill(hit->pedestal, ichan);
             psc_adc_quality_chan->Fill(hit->QF, ichan);
@@ -440,34 +475,25 @@ jerror_t JEventProcessor_lowlevel_online::evnt(JEventLoop *loop, uint64_t eventn
 	for(unsigned int i=0; i < psdigihits.size(); i++) {
 		const DPSDigiHit *hit = psdigihits[i];
 
-        bcal_adc_integral->Fill(hit->pulse_integral);
-        bcal_adc_integral_pedsub->Fill(hit->pulse_integral - hit->pedestal*(hit->nsamples_integral/hit->nsamples_pedestal));
-        bcal_adc_peak->Fill(hit->pulse_peak);
-        bcal_adc_peak_pedsub->Fill(hit->pulse_peak_pedsub - hit->pedestal/hit->nsamples_pedestal);
-        bcal_adc_time->Fill(hit->pulse_time);
-        bcal_adc_pedestal->Fill(hit->pedestal);
-        bcal_adc_quality->Fill(hit->QF);
+        ps_adc_integral->Fill(hit->pulse_integral);
+        ps_adc_integral_pedsub->Fill(hit->pulse_integral - hit->pedestal*(hit->nsamples_integral/hit->nsamples_pedestal));
+        ps_adc_peak->Fill(hit->pulse_peak);
+        ps_adc_peak_pedsub->Fill(hit->pulse_peak - hit->pedestal/hit->nsamples_pedestal);
+        ps_adc_time->Fill(hit->pulse_time);
+        ps_adc_pedestal->Fill(hit->pedestal);
+        ps_adc_quality->Fill(hit->QF);
 
         if(INDIVIDUAL_CHANNEL_DATA) {
-            int ichan = 48*(hit->module-1) - 4*(hit->sector-1) + hit->layer-1;
+            int ichan = hit->column-1 + 145*hit->arm;
             
-            // plot all of the downstream channels, then the downstream ones
-            if(hit->end == DBCALGeometry::kUpstream)
-                ichan += 768;
-
-            bcal_adc_integral_chan->Fill(hit->pulse_integral, ichan);
-            bcal_adc_integral_pedsub_chan->Fill(hit->pulse_integral - hit->pedestal*(hit->nsamples_integral/hit->nsamples_pedestal), ichan);
-            bcal_adc_peak_chan->Fill(hit->pulse_peak, ichan);
-            bcal_adc_peak_pedsub_chan->Fill(hit->pulse_peak_pedsub - hit->pedestal/hit->nsamples_pedestal, ichan);
-            bcal_adc_time_chan->Fill(hit->pulse_time, ichan);
-            bcal_adc_pedestal_chan->Fill(hit->pedestal, ichan);
-            bcal_adc_quality_chan->Fill(hit->QF, ichan);
+            ps_adc_integral_chan->Fill(hit->pulse_integral, ichan);
+            ps_adc_integral_pedsub_chan->Fill(hit->pulse_integral - hit->pedestal*(hit->nsamples_integral/hit->nsamples_pedestal), ichan);
+            ps_adc_peak_chan->Fill(hit->pulse_peak, ichan);
+            ps_adc_peak_pedsub_chan->Fill(hit->pulse_peak - hit->pedestal/hit->nsamples_pedestal, ichan);
+            ps_adc_time_chan->Fill(hit->pulse_time, ichan);
+            ps_adc_pedestal_chan->Fill(hit->pedestal, ichan);
+            ps_adc_quality_chan->Fill(hit->QF, ichan);
         }
-
-		if( hit->arm == 0 )
-			ps_left_occ->Fill(hit->column);
-		else
-			ps_right_occ->Fill(hit->column);
 	}
 
 	//------------------------ RF -------------------------
@@ -479,19 +505,84 @@ jerror_t JEventProcessor_lowlevel_online::evnt(JEventLoop *loop, uint64_t eventn
 
 	//------------------------ ST -------------------------
 	st_num_events->Fill(0.5);
-	for(uint32_t i = 0; i < scdigihits.size();    i++) st_adc_occ->Fill(scdigihits[i]->sector);
+	for(uint32_t i = 0; i < scdigihits.size();    i++) { 
+		const DSCDigiHit *hit = scdigihits[i];
+
+        st_adc_integral->Fill(hit->pulse_integral);
+        st_adc_integral_pedsub->Fill(hit->pulse_integral - hit->pedestal*(hit->nsamples_integral/hit->nsamples_pedestal));
+        st_adc_peak->Fill(hit->pulse_peak);
+        st_adc_peak_pedsub->Fill(hit->pulse_peak - hit->pedestal/hit->nsamples_pedestal);
+        st_adc_time->Fill(hit->pulse_time);
+        st_adc_pedestal->Fill(hit->pedestal);
+        st_adc_quality->Fill(hit->QF);
+
+        if(INDIVIDUAL_CHANNEL_DATA) {
+            int ichan = hit->sector-1;
+            
+            st_adc_integral_chan->Fill(hit->pulse_integral, ichan);
+            st_adc_integral_pedsub_chan->Fill(hit->pulse_integral - hit->pedestal*(hit->nsamples_integral/hit->nsamples_pedestal), ichan);
+            st_adc_peak_chan->Fill(hit->pulse_peak, ichan);
+            st_adc_peak_pedsub_chan->Fill(hit->pulse_peak - hit->pedestal/hit->nsamples_pedestal, ichan);
+            st_adc_time_chan->Fill(hit->pulse_time, ichan);
+            st_adc_pedestal_chan->Fill(hit->pedestal, ichan);
+            st_adc_quality_chan->Fill(hit->QF, ichan);
+        }
+	}
 	//for(uint32_t i = 0; i < sctdcdigihits.size(); i++) st_tdc_occ->Fill(sctdcdigihits[i]->sector);
 
 	//------------------------ TAGH -----------------------
  	tag_num_events->Fill(0.5);
-   for(unsigned int i=0; i < taghdigihits.size();    i++) tagh_adc_occ->Fill(taghdigihits[i]->counter_id);
-   //for(unsigned int i=0; i < taghtdcdigihits.size(); i++) tagh_tdc_occ->Fill(taghtdcdigihits[i]->counter_id);
+    for(unsigned int i=0; i < taghdigihits.size();    i++) {
+		const DTAGHDigiHit *hit = taghdigihits[i];
+
+        tagh_adc_integral->Fill(hit->pulse_integral);
+        tagh_adc_integral_pedsub->Fill(hit->pulse_integral - hit->pedestal*(hit->nsamples_integral/hit->nsamples_pedestal));
+        tagh_adc_peak->Fill(hit->pulse_peak);
+        tagh_adc_peak_pedsub->Fill(hit->pulse_peak - hit->pedestal/hit->nsamples_pedestal);
+        tagh_adc_time->Fill(hit->pulse_time);
+        tagh_adc_pedestal->Fill(hit->pedestal);
+        tagh_adc_quality->Fill(hit->QF);
+
+        if(INDIVIDUAL_CHANNEL_DATA) {
+            int ichan = hit->counter_id-1;
+            
+            tagh_adc_integral_chan->Fill(hit->pulse_integral, ichan);
+            tagh_adc_integral_pedsub_chan->Fill(hit->pulse_integral - hit->pedestal*(hit->nsamples_integral/hit->nsamples_pedestal), ichan);
+            tagh_adc_peak_chan->Fill(hit->pulse_peak, ichan);
+            tagh_adc_peak_pedsub_chan->Fill(hit->pulse_peak - hit->pedestal/hit->nsamples_pedestal, ichan);
+            tagh_adc_time_chan->Fill(hit->pulse_time, ichan);
+            tagh_adc_pedestal_chan->Fill(hit->pedestal, ichan);
+            tagh_adc_quality_chan->Fill(hit->QF, ichan);
+        }
+	}
+    //for(unsigned int i=0; i < taghtdcdigihits.size(); i++) tagh_tdc_occ->Fill(taghtdcdigihits[i]->counter_id);
 
 	//------------------------ TAGM -----------------------
 	for(uint32_t i=0; i< tagmdigihits.size(); i++) {
 		const DTAGMDigiHit *hit = tagmdigihits[i];
-		if (hit->row == 0) tagm_adc_occ->Fill(hit->column);
+		if (hit->row != 0) continue;   // ignore individually read out columns
+
+        tagm_adc_integral->Fill(hit->pulse_integral);
+        tagm_adc_integral_pedsub->Fill(hit->pulse_integral - hit->pedestal*(hit->nsamples_integral/hit->nsamples_pedestal));
+        tagm_adc_peak->Fill(hit->pulse_peak);
+        tagm_adc_peak_pedsub->Fill(hit->pulse_peak - hit->pedestal/hit->nsamples_pedestal);
+        tagm_adc_time->Fill(hit->pulse_time);
+        tagm_adc_pedestal->Fill(hit->pedestal);
+        tagm_adc_quality->Fill(hit->QF);
+
+        if(INDIVIDUAL_CHANNEL_DATA) {
+            int ichan = hit->column - 1;
+            
+            tagm_adc_integral_chan->Fill(hit->pulse_integral, ichan);
+            tagm_adc_integral_pedsub_chan->Fill(hit->pulse_integral - hit->pedestal*(hit->nsamples_integral/hit->nsamples_pedestal), ichan);
+            tagm_adc_peak_chan->Fill(hit->pulse_peak, ichan);
+            tagm_adc_peak_pedsub_chan->Fill(hit->pulse_peak - hit->pedestal/hit->nsamples_pedestal, ichan);
+            tagm_adc_time_chan->Fill(hit->pulse_time, ichan);
+            tagm_adc_pedestal_chan->Fill(hit->pedestal, ichan);
+            tagm_adc_quality_chan->Fill(hit->QF, ichan);
+        }
 	}
+
 	//for(uint32_t i=0; i< tagmtdcdigihits.size(); i++) {
 	//	const DTAGMTDCDigiHit *hit = tagmtdcdigihits[i];
 	//	if (hit->row == 0) tagm_tdc_occ->Fill(hit->column);
@@ -504,42 +595,30 @@ jerror_t JEventProcessor_lowlevel_online::evnt(JEventLoop *loop, uint64_t eventn
 	//------------------------ TOF ------------------------
 	tof_num_events->Fill(0.5);
 	// fADC Hits
-	for(uint32_t i=0; i<tofdigihits.size(); i++){
+	for(uint32_t i=0; i<tofdigihits.size(); i++) {
+        const DTOFDigiHit *hit = tofdigihits[i];
 
-        bcal_adc_integral->Fill(hit->pulse_integral);
-        bcal_adc_integral_pedsub->Fill(hit->pulse_integral - hit->pedestal*(hit->nsamples_integral/hit->nsamples_pedestal));
-        bcal_adc_peak->Fill(hit->pulse_peak);
-        bcal_adc_peak_pedsub->Fill(hit->pulse_peak_pedsub - hit->pedestal/hit->nsamples_pedestal);
-        bcal_adc_time->Fill(hit->pulse_time);
-        bcal_adc_pedestal->Fill(hit->pedestal);
-        bcal_adc_quality->Fill(hit->QF);
+        tof_adc_integral->Fill(hit->pulse_integral);
+        tof_adc_integral_pedsub->Fill(hit->pulse_integral - hit->pedestal*(hit->nsamples_integral/hit->nsamples_pedestal));
+        tof_adc_peak->Fill(hit->pulse_peak);
+        tof_adc_peak_pedsub->Fill(hit->pulse_peak - hit->pedestal/hit->nsamples_pedestal);
+        tof_adc_time->Fill(hit->pulse_time);
+        tof_adc_pedestal->Fill(hit->pedestal);
+        tof_adc_quality->Fill(hit->QF);
 
         if(INDIVIDUAL_CHANNEL_DATA) {
-            int ichan = 48*(hit->module-1) - 4*(hit->sector-1) + hit->layer-1;
+            int ichan = 48*2*hit->plane + 2.*(hit->bar-1) + hit->end; 
             
-            // plot all of the downstream channels, then the downstream ones
-            if(hit->end == DBCALGeometry::kUpstream)
-                ichan += 768;
-
-            bcal_adc_integral_chan->Fill(hit->pulse_integral, ichan);
-            bcal_adc_integral_pedsub_chan->Fill(hit->pulse_integral - hit->pedestal*(hit->nsamples_integral/hit->nsamples_pedestal), ichan);
-            bcal_adc_peak_chan->Fill(hit->pulse_peak, ichan);
-            bcal_adc_peak_pedsub_chan->Fill(hit->pulse_peak_pedsub - hit->pedestal/hit->nsamples_pedestal, ichan);
-            bcal_adc_time_chan->Fill(hit->pulse_time, ichan);
-            bcal_adc_pedestal_chan->Fill(hit->pedestal, ichan);
-            bcal_adc_quality_chan->Fill(hit->QF, ichan);
+            tof_adc_integral_chan->Fill(hit->pulse_integral, ichan);
+            tof_adc_integral_pedsub_chan->Fill(hit->pulse_integral - hit->pedestal*(hit->nsamples_integral/hit->nsamples_pedestal), ichan);
+            tof_adc_peak_chan->Fill(hit->pulse_peak, ichan);
+            tof_adc_peak_pedsub_chan->Fill(hit->pulse_peak - hit->pedestal/hit->nsamples_pedestal, ichan);
+            tof_adc_time_chan->Fill(hit->pulse_time, ichan);
+            tof_adc_pedestal_chan->Fill(hit->pedestal, ichan);
+            tof_adc_quality_chan->Fill(hit->QF, ichan);
         }
 
-		const DTOFDigiHit *hit = tofdigihits[i];
-		int plane = hit->plane;
-		int bar   = hit->bar;
-		int end   = hit->end;
-
-		if( plane==0 && end==0 ) tof_adc_U_occ->Fill(bar);
-		if( plane==0 && end==1 ) tof_adc_D_occ->Fill(bar);
-		if( plane==1 && end==0 ) tof_adc_N_occ->Fill(bar);
-		if( plane==1 && end==1 ) tof_adc_S_occ->Fill(bar);
-	}
+    }
 
 	// TDC Hits
 	//for(uint32_t i=0; i<toftdcdigihits.size(); i++){

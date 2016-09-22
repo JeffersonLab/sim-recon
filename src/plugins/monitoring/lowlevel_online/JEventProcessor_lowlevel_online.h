@@ -33,7 +33,6 @@ class JEventProcessor_lowlevel_online:public jana::JEventProcessor{
 
 		//------------------------ BCAL -----------------------
         TH1I *bcal_num_events;
-
         TH1I *bcal_adc_integral;
         TH1I *bcal_adc_integral_pedsub;
         TH1I *bcal_adc_peak;
@@ -49,61 +48,168 @@ class JEventProcessor_lowlevel_online:public jana::JEventProcessor{
         TH2I *bcal_adc_pedestal_chan;
         TH2I *bcal_adc_quality_chan;
 
+
 		//------------------------ CDC ------------------------
-		TH1I *cdc_num_events;
-		TH2F *cdc_occ_ring[28];
+        TH1I *cdc_num_events;
+        TH1I *cdc_adc_integral;
+        TH1I *cdc_adc_integral_pedsub;
+        TH1I *cdc_adc_peak;
+        TH1I *cdc_adc_peak_pedsub;
+        TH1I *cdc_adc_time;
+        TH1I *cdc_adc_pedestal;
+        TH1I *cdc_adc_quality;
+        TH2I *cdc_adc_integral_chan;
+        TH2I *cdc_adc_integral_pedsub_chan;
+        TH2I *cdc_adc_peak_chan;
+        TH2I *cdc_adc_peak_pedsub_chan;
+        TH2I *cdc_adc_time_chan;
+        TH2I *cdc_adc_pedestal_chan;
+        TH2I *cdc_adc_quality_chan;
+
 
 		//------------------------ FCAL -----------------------
-		TH1I *fcal_num_events;
-		TH2F* fcal_occ;
+        TH1I *fcal_num_events;
+        TH1I *fcal_adc_integral;
+        TH1I *fcal_adc_integral_pedsub;
+        TH1I *fcal_adc_peak;
+        TH1I *fcal_adc_peak_pedsub;
+        TH1I *fcal_adc_time;
+        TH1I *fcal_adc_pedestal;
+        TH1I *fcal_adc_quality;
+        TH2I *fcal_adc_integral_chan;
+        TH2I *fcal_adc_integral_pedsub_chan;
+        TH2I *fcal_adc_peak_chan;
+        TH2I *fcal_adc_peak_pedsub_chan;
+        TH2I *fcal_adc_time_chan;
+        TH2I *fcal_adc_pedestal_chan;
+        TH2I *fcal_adc_quality_chan;
+
 
 		//------------------------ FDC ------------------------
         TH1I *fdc_num_events;
-        TH2F *fdc_cathode_occ;
-        TH2F *fdc_wire_occ;
+        TH1I *fdc_adc_integral;
+        TH1I *fdc_adc_integral_pedsub;
+        TH1I *fdc_adc_peak;
+        TH1I *fdc_adc_peak_pedsub;
+        TH1I *fdc_adc_time;
+        TH1I *fdc_adc_pedestal;
+        TH1I *fdc_adc_quality;
+        TH2I *fdc_adc_integral_chan;
+        TH2I *fdc_adc_integral_pedsub_chan;
+        TH2I *fdc_adc_peak_chan;
+        TH2I *fdc_adc_peak_pedsub_chan;
+        TH2I *fdc_adc_time_chan;
+        TH2I *fdc_adc_pedestal_chan;
+        TH2I *fdc_adc_quality_chan;
 
-		//------------------------ PS/PSC ---------------------
-		TH1I *ps_num_events;
-		TH1I *psc_adc_left_occ;
-		TH1I *psc_adc_right_occ;
-		TH1I *psc_tdc_left_occ;
-		TH1I *psc_tdc_right_occ;
-		TH1I *ps_left_occ;
-		TH1I *ps_right_occ;
 
-		//------------------------ RF -------------------------
-		TH1I *rf_num_events;
-		TH1D* rf_occ; //TH1D ON PURPOSE!
-		map<DetectorSystem_t, double> dRFBinValueMap;
+		//------------------------ PSC ---------------------
+        TH1I *psc_adc_integral;
+        TH1I *psc_adc_integral_pedsub;
+        TH1I *psc_adc_peak;
+        TH1I *psc_adc_peak_pedsub;
+        TH1I *psc_adc_time;
+        TH1I *psc_adc_pedestal;
+        TH1I *psc_adc_quality;
+        TH2I *psc_adc_integral_chan;
+        TH2I *psc_adc_integral_pedsub_chan;
+        TH2I *psc_adc_peak_chan;
+        TH2I *psc_adc_peak_pedsub_chan;
+        TH2I *psc_adc_time_chan;
+        TH2I *psc_adc_pedestal_chan;
+        TH2I *psc_adc_quality_chan;
+
+
+		//------------------------ PS ---------------------
+        TH1I *ps_num_events;
+
+        TH1I *ps_adc_integral;
+        TH1I *ps_adc_integral_pedsub;
+        TH1I *ps_adc_peak;
+        TH1I *ps_adc_peak_pedsub;
+        TH1I *ps_adc_time;
+        TH1I *ps_adc_pedestal;
+        TH1I *ps_adc_quality;
+        TH2I *ps_adc_integral_chan;
+        TH2I *ps_adc_integral_pedsub_chan;
+        TH2I *ps_adc_peak_chan;
+        TH2I *ps_adc_peak_pedsub_chan;
+        TH2I *ps_adc_time_chan;
+        TH2I *ps_adc_pedestal_chan;
+        TH2I *ps_adc_quality_chan;
+
 
 		//------------------------ ST -------------------------
-		TH1I *st_num_events;
-		TH1I *st_adc_occ;
-		TH1I *st_tdc_occ;
+        TH1I *st_num_events;
+        TH1I *st_adc_integral;
+        TH1I *st_adc_integral_pedsub;
+        TH1I *st_adc_peak;
+        TH1I *st_adc_peak_pedsub;
+        TH1I *st_adc_time;
+        TH1I *st_adc_pedestal;
+        TH1I *st_adc_quality;
+        TH2I *st_adc_integral_chan;
+        TH2I *st_adc_integral_pedsub_chan;
+        TH2I *st_adc_peak_chan;
+        TH2I *st_adc_peak_pedsub_chan;
+        TH2I *st_adc_time_chan;
+        TH2I *st_adc_pedestal_chan;
+        TH2I *st_adc_quality_chan;
+
 
 		//------------------------ TAGH -----------------------
-		TH1I *tag_num_events;
-		TH1I *tagh_adc_occ;
-		TH1I *tagh_tdc_occ;
+        TH1I *tag_num_events;
+
+        TH1I *tagh_adc_integral;
+        TH1I *tagh_adc_integral_pedsub;
+        TH1I *tagh_adc_peak;
+        TH1I *tagh_adc_peak_pedsub;
+        TH1I *tagh_adc_time;
+        TH1I *tagh_adc_pedestal;
+        TH1I *tagh_adc_quality;
+        TH2I *tagh_adc_integral_chan;
+        TH2I *tagh_adc_integral_pedsub_chan;
+        TH2I *tagh_adc_peak_chan;
+        TH2I *tagh_adc_peak_pedsub_chan;
+        TH2I *tagh_adc_time_chan;
+        TH2I *tagh_adc_pedestal_chan;
+        TH2I *tagh_adc_quality_chan;
+
 
 		//------------------------ TAGM -----------------------
-		TH1I *tagm_adc_occ;
-		TH1I *tagm_tdc_occ;
+        TH1I *tagm_adc_integral;
+        TH1I *tagm_adc_integral_pedsub;
+        TH1I *tagm_adc_peak;
+        TH1I *tagm_adc_peak_pedsub;
+        TH1I *tagm_adc_time;
+        TH1I *tagm_adc_pedestal;
+        TH1I *tagm_adc_quality;
+        TH2I *tagm_adc_integral_chan;
+        TH2I *tagm_adc_integral_pedsub_chan;
+        TH2I *tagm_adc_peak_chan;
+        TH2I *tagm_adc_peak_pedsub_chan;
+        TH2I *tagm_adc_time_chan;
+        TH2I *tagm_adc_pedestal_chan;
+        TH2I *tagm_adc_quality_chan;
 
-		//------------------------ TPOL -----------------------
-		TH1I *tpol_occ;
 
 		//------------------------ TOF ------------------------
-		TH1I *tof_num_events;
-		TH1I *tof_tdc_S_occ;
-		TH1I *tof_tdc_N_occ;
-		TH1I *tof_tdc_U_occ;
-		TH1I *tof_tdc_D_occ;
+        TH1I *tof_num_events;
+        TH1I *tof_adc_integral;
+        TH1I *tof_adc_integral_pedsub;
+        TH1I *tof_adc_peak;
+        TH1I *tof_adc_peak_pedsub;
+        TH1I *tof_adc_time;
+        TH1I *tof_adc_pedestal;
+        TH1I *tof_adc_quality;
+        TH2I *tof_adc_integral_chan;
+        TH2I *tof_adc_integral_pedsub_chan;
+        TH2I *tof_adc_peak_chan;
+        TH2I *tof_adc_peak_pedsub_chan;
+        TH2I *tof_adc_time_chan;
+        TH2I *tof_adc_pedestal_chan;
+        TH2I *tof_adc_quality_chan;
 
-		TH1I *tof_adc_S_occ;
-		TH1I *tof_adc_N_occ;
-		TH1I *tof_adc_U_occ;
-		TH1I *tof_adc_D_occ;
 
 
 	private:
