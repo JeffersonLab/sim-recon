@@ -1241,9 +1241,9 @@ void DEVIOWorkerThread::Parsef250Bank(uint32_t rocid, uint32_t* &iptr, uint32_t 
 					uint32_t pedestal                  = (*iptr>>0 ) & 0x3FFF;
 
 					// Event headers may be supressed so determine event from hit data
-					if( (event_number_within_block > current_parsed_events.size()) || (event_number_within_block==0) ) throw JException("Bad f250 event number", __FILE__, __LINE__);
+					if( (event_number_within_block > current_parsed_events.size()) ) throw JException("Bad f250 event number", __FILE__, __LINE__);
 					pe_iter = current_parsed_events.begin();
-					advance( pe_iter, (event_number_within_block-1) );
+					advance( pe_iter, event_number_within_block );
 					pe = *pe_iter++;
 					
 					itrigger = event_number_within_block; // is this right?
@@ -1869,6 +1869,7 @@ void DEVIOWorkerThread::LinkAllAssociations(void)
 		//----------------- Sort hit objects
 
 		// fADC250
+		if(pe->vDf250PulseData.size()>1    ) sort(pe->vDf250PulseData.begin(),     pe->vDf250PulseData.end(),     SortByPulseNumber<Df250PulseData> );
 		if(pe->vDf250PulseIntegral.size()>1) sort(pe->vDf250PulseIntegral.begin(), pe->vDf250PulseIntegral.end(), SortByPulseNumber<Df250PulseIntegral> );
 		if(pe->vDf250PulseTime.size()>1    ) sort(pe->vDf250PulseTime.begin(),     pe->vDf250PulseTime.end(),     SortByPulseNumber<Df250PulseTime>     );
 		if(pe->vDf250PulsePedestal.size()>1) sort(pe->vDf250PulsePedestal.begin(), pe->vDf250PulsePedestal.end(), SortByPulseNumber<Df250PulsePedestal> );
