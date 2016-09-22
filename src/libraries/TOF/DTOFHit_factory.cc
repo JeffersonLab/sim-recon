@@ -40,6 +40,9 @@ jerror_t DTOFHit_factory::init(void)
 	if(analyze_cosmic_data > 0)
 		COSMIC_DATA = true;
 
+    CHECK_FADC_ERRORS = false;
+    gPARMS->SetDefaultParameter("TOF:CHECK_FADC_ERRORS", CHECK_FADC_ERRORS, "Set to 1 to reject hits with fADC250 errors, ser to 0 to keep these hits");
+
 
 	/// Set basic conversion constants
 	a_scale    = 0.2/5.2E5;
@@ -191,16 +194,29 @@ jerror_t DTOFHit_factory::evnt(JEventLoop *loop, uint64_t eventnumber)
             //if (digihit->pulse_time == 0) continue; // Should already be caught
         }
         
-        if(!locTTabUtilities->CheckFADC250_NoErrors(digihit->QF))
+        if(CHECK_FADC_ERRORS && !locTTabUtilities->CheckFADC250_NoErrors(digihit->QF))
             continue;
 
         // Initialize pedestal to one found in CCDB, but override it
         // with one found in event if is available (?)
         // For now, only keep events with a correct pedestal
         double pedestal = GetConstant(adc_pedestals, digihit);
+        double nsamples_integral = digihit->nsamples_integral;
+        double nsamples_pedestal = digihit->nsamples_pedestal;
+
+        // nsamples_pedestal should always be positive for valid data - err on the side of caution for now
+        if(nsamples_pedestal == 0) {
+            jerr << "DTOFDigiHit with nsamples_pedestal == 0 !   Event = " << eventnumber << endl;
+            continue;
+        }
+
         if( (digihit->pedestal>0) && locTTabUtilities->CheckFADC250_PedestalOK(digihit->QF) ) {
-            pedestal = digihit->pedestal * (digihit->nsamples_integral/digihit->nsamples_pedestal);
-        } 
+            pedestal = digihit->pedestal * (nsamples_integral/nsamples_pedestal);
+        } else {
+            continue;
+        }
+
+        //double single_sample_ped = pedestal/nsamples_pedestal;
 
         // Apply calibration constants here
         double A = (double)digihit->pulse_integral;

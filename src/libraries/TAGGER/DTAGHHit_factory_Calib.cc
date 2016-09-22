@@ -39,6 +39,9 @@ jerror_t DTAGHHit_factory_Calib::init(void)
     gPARMS->SetDefaultParameter("TAGHHit:ADC_THRESHOLD",ADC_THRESHOLD,
     "pedestal-subtracted pulse integral threshold");
 
+    CHECK_FADC_ERRORS = false;
+    gPARMS->SetDefaultParameter("TAGHHit:CHECK_FADC_ERRORS", CHECK_FADC_ERRORS, "Set to 1 to reject hits with fADC250 errors, ser to 0 to keep these hits");
+
     // initialize calibration constants
     fadc_a_scale = 0;
     fadc_t_scale = 0;
@@ -146,9 +149,30 @@ jerror_t DTAGHHit_factory_Calib::evnt(JEventLoop *loop, uint64_t eventnumber)
             continue;
 
         // Throw away hits with firmware errors (post-summer 2016 firmware)
-        if(!locTTabUtilities->CheckFADC250_NoErrors(digihit->QF))
+        if(CHECK_FADC_ERRORS && !locTTabUtilities->CheckFADC250_NoErrors(digihit->QF))
             continue;
 
+        // Get pedestal, prefer associated event pedestal if it exists,
+        // otherwise, use the average pedestal from CCDB
+        double pedestal = fadc_pedestals[counter];
+        double nsamples_integral = (double)digihit->nsamples_integral;
+        double nsamples_pedestal = (double)digihit->nsamples_pedestal;
+
+        // nsamples_pedestal should always be positive for valid data - err on the side of caution for now
+        if(nsamples_pedestal == 0) {
+            jerr << "DTAGHDigiHit with nsamples_pedestal == 0 !   Event = " << eventnumber << endl;
+            continue;
+        }
+
+        if ( (digihit->pedestal>0) && locTTabUtilities->CheckFADC250_PedestalOK(digihit->QF) ) {
+            // the measured pedestal must be scaled by the ratio of the number
+            // of samples used to calculate the integral and the pedestal
+            // Changed to conform to D. Lawrence changes Dec. 4 2014
+            double ped_sum = (double)digihit->pedestal;
+            pedestal          = ped_sum * nsamples_integral/nsamples_pedestal;
+        }
+
+        double single_sample_ped = pedestal/nsamples_pedestal;
         double pulse_peak = 0.0;
         if(digihit->datasource == 1) {     // handle pre-Fall 2016 firmware
             // Throw away hits where the fADC timing algorithm failed
@@ -163,21 +187,9 @@ jerror_t DTAGHHit_factory_Calib::evnt(JEventLoop *loop, uint64_t eventnumber)
             }
         } else {
             // starting with the Fall 2016 firmware, we can get all of the values directly from the digihit
-            pulse_peak = digihit->pulse_peak - digihit->pedestal;
+            pulse_peak = digihit->pulse_peak - single_sample_ped;
         }
 
-        // Get pedestal, prefer associated event pedestal if it exists,
-        // otherwise, use the average pedestal from CCDB
-        double pedestal = fadc_pedestals[counter];
-        if ( (digihit->pedestal>0) && locTTabUtilities->CheckFADC250_PedestalOK(digihit->QF) ) {
-            // the measured pedestal must be scaled by the ratio of the number
-            // of samples used to calculate the integral and the pedestal
-            // Changed to conform to D. Lawrence changes Dec. 4 2014
-            double ped_sum = (double)digihit->pedestal;
-            double nsamples_integral = (double)digihit->nsamples_integral;
-            double nsamples_pedestal = (double)digihit->nsamples_pedestal;
-            pedestal          = ped_sum * nsamples_integral/nsamples_pedestal;
-        }
 
         // Subtract pedestal from pulse integral
         double A = digihit->pulse_integral;

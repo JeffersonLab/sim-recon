@@ -47,6 +47,9 @@ jerror_t DFCALHit_factory::init(void)
     t_scale = 0.0625;   // 62.5 ps/count
     t_base  = 0.;       // ns
 
+    CHECK_FADC_ERRORS = false;
+    gPARMS->SetDefaultParameter("FCAL:CHECK_FADC_ERRORS", CHECK_FADC_ERRORS, "Set to 1 to reject hits with fADC250 errors, ser to 0 to keep these hits");
+
     return NOERROR;
 }
 
@@ -167,7 +170,7 @@ jerror_t DFCALHit_factory::evnt(JEventLoop *loop, uint64_t eventnumber)
             if (digihit->pulse_time == 0) continue; // Should already be caught, but I'll leave it
         }
 
-        if(!locTTabUtilities->CheckFADC250_NoErrors(digihit->QF))
+        if(CHECK_FADC_ERRORS && !locTTabUtilities->CheckFADC250_NoErrors(digihit->QF))
             continue;
 
         // Check to see if the hit corresponds to a valid channel
@@ -185,22 +188,32 @@ jerror_t DFCALHit_factory::evnt(JEventLoop *loop, uint64_t eventnumber)
 
         // get pedestal from CCDB -- we should use it instead
         // of the event-by-event pedestal
+        // Corresponds to the value of the pedestal for a single sample
         double pedestal = pedestals[digihit->row][digihit->column];
 
         // we should use the fixed database pedestal
         // object as it is less susceptible to noise
         // than the event-by-event pedestal
+        double nsamples_integral = digihit->nsamples_integral;
+        double nsamples_pedestal = digihit->nsamples_pedestal;
 
         // if the database pedestal is zero then try
         // the event-by-event one:
         if(pedestal == 0) {
+            // nsamples_pedestal should always be positive for valid data - err on the side of caution for now
+            if(nsamples_pedestal == 0) {
+                jerr << "DFCALDigiHit with nsamples_pedestal == 0 !   Event = " << eventnumber << endl;
+                continue;
+            }
+
             if( (digihit->pedestal>0.) && locTTabUtilities->CheckFADC250_PedestalOK(digihit->QF) )
-                pedestal = digihit->pedestal * (digihit->nsamples_integral/digihit->nsamples_pedestal);
+                pedestal = (double)digihit->pedestal * (nsamples_integral/nsamples_pedestal);
         }
-        double integratedPedestal = pedestal * static_cast<double>(digihit->nsamples_integral);
+        double integratedPedestal = pedestal * nsamples_integral;
+        double single_sample_ped = pedestal;
 
         // Calculate pedestal-subtracted pulse amplitude
-        double pulse_amplitude = digihit->pulse_peak - (digihit->pedestal/digihit->nsamples_pedestal);
+        double pulse_amplitude = digihit->pulse_peak - single_sample_ped;
         
         
         // Build hit object
