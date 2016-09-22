@@ -27,14 +27,14 @@ class DBCALDigiHit:public JObject{
 		int sector;
 		DBCALGeometry::End end;
 		uint32_t pulse_integral; ///< identified pulse integral as returned by FPGA algorithm
-        uint32_t pulse_peak;     ///< identified pulse height as returned by FPGA algorithm
+		uint32_t pulse_peak;     ///< identified pulse height as returned by FPGA algorithm
 		uint32_t pulse_time;     ///< identified pulse time as returned by FPGA algorithm
 		uint32_t pedestal;       ///< pedestal info used by FPGA (if any)
 		uint32_t QF;             ///< Quality Factor from FPGA algorithms
 		uint32_t nsamples_integral;    ///< number of samples used in integral 
 		uint32_t nsamples_pedestal;    ///< number of samples used in pedestal
 		
-		uint32_t datasource;           ///<  0=window raw data, 1=old(pre-Fall16) firmware, 2=Df250PulseData
+		uint32_t datasource;           ///<  0=window raw data, 1=old(pre-Fall16) firmware, 2=Df250PulseData,  3=MC
 		
 		void toStrings(vector<pair<string,string> > &items)const{
 			AddString(items, "module", "%d", module);

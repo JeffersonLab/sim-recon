@@ -170,18 +170,31 @@ jerror_t DBCALHit_factory::evnt(JEventLoop *loop, uint64_t eventnumber)
       } else {                        // post-fall 2016 firmware  (& emulated hits)
           // Calculate attenuated energy for channel
           integral          = (double)digihit->pulse_integral;
-          if(locTTabUtilities->CheckFADC250_PedestalOK(digihit->QF))
+          // require an accurate pedestal
+          if(locTTabUtilities->CheckFADC250_PedestalOK(digihit->QF)) {
               pedestal = (double)digihit->pedestal;
+          } else {
+              //pedestal = 0.;   // need to set to some reasonable default value?
+              continue;
+          }
           nsamples_integral = (double)digihit->nsamples_integral;
           nsamples_pedestal = (double)digihit->nsamples_pedestal;
       }
 
+      // nsamples_pedestal should always be positive for valid data - err on the side of caution for now
+      if(nsamples_pedestal == 0)
+          throw JException("DBCALDigiHit with nsamples_pedestal == 0 !");
+
       double totalpedestal     = pedestal * nsamples_integral/nsamples_pedestal;
+      double single_sample_ped = pedestal/nsamples_pedestal;
+
       double gain              = GetConstant(gains,digihit);
       double hit_E = 0;
       if ( integral > 0 ) hit_E = gain * (integral - totalpedestal);
       if ( hit_E < 0 ) continue;  // Throw away negative energy hits  
-      int pulse_peak_pedsub    = digihit->pulse_peak - digihit->pedestal / digihit->nsamples_pedestal;
+
+      int pulse_peak_pedsub = digihit->pulse_peak - (int)single_sample_ped;
+ 
       // Calculate time for channel
       double pulse_time        = (double)digihit->pulse_time;
       double end_sign          = digihit->end ? -1.0 : 1.0; // Upstream = 0 -> Positive (then subtracted)
