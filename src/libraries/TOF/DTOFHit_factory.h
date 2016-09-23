@@ -83,7 +83,8 @@ class DTOFHit_factory:public jana::JFactory<DTOFHit>{
   
   void FillCalibTable(tof_digi_constants_t &table, vector<double> &raw_table,
 		      const DTOFGeometry &tofGeom);
-  
+
+  bool CHECK_FADC_ERRORS;
 };
 
 #endif // _DTOFHit_factory_

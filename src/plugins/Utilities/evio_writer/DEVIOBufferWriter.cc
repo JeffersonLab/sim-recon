@@ -32,6 +32,7 @@ void DEVIOBufferWriter::WriteEventToBuffer(JEventLoop *loop, vector<uint32_t> &b
 	
 	// First, grab all of the low level objects
 	vector<const Df250TriggerTime*>   f250tts;
+	vector<const Df250PulseData*>     f250pulses;
 	vector<const Df250PulseIntegral*> f250pis;
 	vector<const Df250WindowRawData*> f250wrds;
 	vector<const Df125TriggerTime*>   f125tts;
@@ -54,6 +55,7 @@ void DEVIOBufferWriter::WriteEventToBuffer(JEventLoop *loop, vector<uint32_t> &b
     if(objects_to_save.size()==0) {
         // If no special object list is passed, assume we should save everything
         loop->Get(f250tts);
+        loop->Get(f250pulses);
         loop->Get(f250pis);
         loop->Get(f250wrds);
         loop->Get(f125tts);
@@ -95,6 +97,8 @@ void DEVIOBufferWriter::WriteEventToBuffer(JEventLoop *loop, vector<uint32_t> &b
             // first, see if these are low-level hit objects
             if(auto *llobj_ptr = dynamic_cast<const Df250TriggerTime *>(obj_ptr)) {
                 f250tts.push_back(llobj_ptr);
+            } else if(auto *llobj_ptr = dynamic_cast<const Df250PulseData *>(obj_ptr)) {
+                f250pulses.push_back(llobj_ptr);
             } else if(auto *llobj_ptr = dynamic_cast<const Df250PulseIntegral *>(obj_ptr)) {
                 f250pis.push_back(llobj_ptr);
             } else if(auto *llobj_ptr = dynamic_cast<const Df250WindowRawData *>(obj_ptr)) {
@@ -118,6 +122,7 @@ void DEVIOBufferWriter::WriteEventToBuffer(JEventLoop *loop, vector<uint32_t> &b
             } else {
                 // if not, assume this is a reconstructed object, and just get all of the possible hits
                 vector<const Df250TriggerTime*>   obj_f250tts;
+                vector<const Df250PulseData*>     obj_f250pulses;
                 vector<const Df250PulseIntegral*> obj_f250pis;
                 vector<const Df250WindowRawData*> obj_f250wrds;
                 vector<const Df125TriggerTime*>   obj_f125tts;
@@ -130,6 +135,7 @@ void DEVIOBufferWriter::WriteEventToBuffer(JEventLoop *loop, vector<uint32_t> &b
                 vector<const DF1TDCTriggerTime*>  obj_F1tts;
                 
                 obj_ptr->Get(obj_f250tts);
+                obj_ptr->Get(obj_f250pulses);
                 obj_ptr->Get(obj_f250pis);
                 obj_ptr->Get(obj_f250wrds);
                 obj_ptr->Get(obj_f125tts);
@@ -142,6 +148,7 @@ void DEVIOBufferWriter::WriteEventToBuffer(JEventLoop *loop, vector<uint32_t> &b
                 obj_ptr->Get(obj_F1tts);
                 
                 f250tts.insert(f250tts.end(), obj_f250tts.begin(), obj_f250tts.end());
+                f250pulses.insert(f250pulses.end(), obj_f250pulses.begin(), obj_f250pulses.end());
                 f250pis.insert(f250pis.end(), obj_f250pis.begin(), obj_f250pis.end());
                 f250wrds.insert(f250wrds.end(), obj_f250wrds.begin(), obj_f250wrds.end());
                 f125tts.insert(f125tts.end(), obj_f125tts.begin(), obj_f125tts.end());
@@ -181,6 +188,7 @@ void DEVIOBufferWriter::WriteEventToBuffer(JEventLoop *loop, vector<uint32_t> &b
 	// Get list of rocids with hits
 	set<uint32_t> rocids;
 	rocids.insert(1); // This *may* be from TS (don't know). There is such a id in run 2391 
+	for(uint32_t i=0; i<f250pulses.size();   i++) rocids.insert( f250pulses[i]->rocid   );
 	for(uint32_t i=0; i<f250pis.size();      i++) rocids.insert( f250pis[i]->rocid      );
 	for(uint32_t i=0; i<f250wrds.size();     i++) rocids.insert( f250wrds[i]->rocid     );
 	for(uint32_t i=0; i<f125pis.size();      i++) rocids.insert( f125pis[i]->rocid      );
@@ -224,7 +232,11 @@ void DEVIOBufferWriter::WriteEventToBuffer(JEventLoop *loop, vector<uint32_t> &b
 	WriteF1Data(buff, F1hits, F1tts, F1configs, Nevents);
 	
 	// Write f250 hits
-	Writef250Data(buff, f250pis, f250tts, f250wrds, Nevents);
+    // For now, output with the same data format as we got in
+    if(f250pis.size() > 0)
+        Writef250Data(buff, f250pis, f250tts, f250wrds, Nevents);
+    if(f250pulses.size() > 0)
+        Writef250Data(buff, f250pulses, f250tts, f250wrds, Nevents);
 	
 	// Write f125 hits
 	Writef125Data(buff, f125pis, f125cdcpulses, f125fdcpulses, f125tts, f125wrds, f125configs, Nevents);
@@ -572,6 +584,7 @@ void DEVIOBufferWriter::WriteF1Data(vector<uint32_t> &buff,
 
 //------------------
 // Writef250Data
+//  old data format (pre-Fall 2016)
 //------------------
 void DEVIOBufferWriter::Writef250Data(vector<uint32_t> &buff,
                                       vector<const Df250PulseIntegral*> &f250pis,
@@ -701,6 +714,174 @@ void DEVIOBufferWriter::Writef250Data(vector<uint32_t> &buff,
 				// Pulse Pedestal
 				if(pp && (pp->emulated == PREFER_EMULATED) ){
 					buff.push_back(0xD0000000 + (pp->channel<<23) + (pp->pulse_number<<21) + (pp->pedestal<<12) + (pp->pulse_peak&0x0FFF) );
+				}
+			}
+			
+			// Write Window Raw Data
+			// This is not the most efficient, but is needed to get these under
+			// the correct block header.
+			if(!PREFER_EMULATED){
+				for(uint32_t i=0; i<f250wrds.size(); i++){
+					const Df250WindowRawData *wrd = f250wrds[i];
+					if(wrd->rocid!=rocid || wrd->slot!=slot) continue;
+					
+					// IMPORTANT: At this time, the individual "not valid" bits for
+					// the samples is not preserved in the Df250WindowRawData class.
+					// We set them here only to indicate if the last sample is not
+					// valid due to there being an odd number of samples.
+					buff.push_back(0xA0000000 + (wrd->channel<<23) + (wrd->samples.size()) );
+					for(uint32_t j=0; j<(wrd->samples.size()+1)/2; j++){
+						uint32_t idx1 = 2*j;
+						uint32_t idx2 = idx1 + 1;
+						uint32_t sample_1 = wrd->samples[idx1];
+						uint32_t sample_2 = idx2<wrd->samples.size() ? wrd->samples[idx2]:0;
+						uint32_t invalid1 = 0;
+						uint32_t invalid2 = idx2>=wrd->samples.size();
+						buff.push_back( (invalid1<<29) + (sample_1<<16) + (invalid2<<13) + (sample_2<<0) );
+					}
+				}
+			}
+			
+			// Write module block trailer
+			uint32_t Nwords_in_block = buff.size()-block_header_idx+1;
+			buff.push_back( 0x88000000 + (slot<<22) + Nwords_in_block );
+		}
+
+		// Update Data Block Bank length
+		buff[data_block_bank_idx] = buff.size() - data_block_bank_idx - 1;
+		
+		// Update Physics Event's Data Bank length
+		buff[data_bank_idx] = buff.size() - data_bank_idx - 1;
+	}
+}
+
+//------------------
+// Writef250Data
+//  new data format (starting Fall 2016)
+//------------------
+void DEVIOBufferWriter::Writef250Data(vector<uint32_t> &buff,
+                                      vector<const Df250PulseData*>     &f250pulses,
+                                      vector<const Df250TriggerTime*>   &f250tts,
+                                      vector<const Df250WindowRawData*> &f250wrds,
+                                      unsigned int Nevents) const
+{
+	// Create lists of Pulse Integral objects indexed by rocid,slot
+	// At same time, make list of config objects to write
+	map<uint32_t, map<uint32_t, vector<const Df250PulseData*> > > modules; // outer map index is rocid, inner map index is slot
+	map<uint32_t, set<const Df250Config*> > configs;
+	for(uint32_t i=0; i<f250pulses.size(); i++){
+        const Df250PulseData *pulse = f250pulses[i];
+        if(write_out_all_rocs || (rocs_to_write_out.find(pulse->rocid) != rocs_to_write_out.end()) ) {
+            modules[pulse->rocid][pulse->slot].push_back(pulse);
+            
+            const Df250Config *config = NULL;
+            pulse->GetSingle(config);
+            if(config) configs[pulse->rocid].insert(config);
+        }
+    }
+	
+	// Make sure entries exist for all Df250WindowRawData objects as well
+	// so when we loop over rocid,slot below we can write those out under
+	// the appropriate block header.
+	for(uint32_t i=0; i<f250wrds.size(); i++) modules[f250wrds[i]->rocid][f250wrds[i]->slot];
+
+	// Loop over rocids
+	map<uint32_t, map<uint32_t, vector<const Df250PulseData*> > >::iterator it;
+	for(it=modules.begin(); it!=modules.end(); it++){
+		uint32_t rocid = it->first;
+		
+		// Write Physics Event's Data Bank Header for this rocid
+		uint32_t data_bank_idx = buff.size();
+		buff.push_back(0); // Total bank length (will be overwritten later)
+		buff.push_back( (rocid<<16) + 0x1001 ); // 0x10=bank of banks, 0x01=1 event
+		
+		// Write Config Bank
+		set<const Df250Config*> &confs = configs[rocid];
+		if(!confs.empty()){
+			
+			uint32_t config_bank_idx = buff.size();
+			buff.push_back(0); // Total bank length (will be overwritten later)
+			buff.push_back( 0x00550101 ); // 0x55=config bank, 0x01=uint32_t bank, 0x01=1 event
+		
+			set<const Df250Config*>::iterator it_conf;
+			for(it_conf=confs.begin(); it_conf!=confs.end(); it_conf++){
+				const Df250Config *conf = *it_conf;
+				
+				uint32_t header_idx = buff.size();
+				buff.push_back(0); // Nvals and slot mask (will be filled below)
+				uint32_t Nvals = 0; // keep count of how many params we write
+				if(conf->NSA     != 0xFFFF) {buff.push_back( (kPARAM250_NSA    <<16) + conf->NSA    ); Nvals++;}
+				if(conf->NSB     != 0xFFFF) {buff.push_back( (kPARAM250_NSB    <<16) + conf->NSB    ); Nvals++;}
+				if(conf->NSA_NSB != 0xFFFF) {buff.push_back( (kPARAM250_NSA_NSB<<16) + conf->NSA_NSB); Nvals++;}
+				if(conf->NPED    != 0xFFFF) {buff.push_back( (kPARAM250_NPED   <<16) + conf->NPED   ); Nvals++;}
+
+				buff[header_idx] = (Nvals<<24) + conf->slot_mask;
+			}
+			
+			// Update Config Bank length
+			buff[config_bank_idx] = buff.size() - config_bank_idx - 1;
+		}
+
+		// Write Data Block Bank Header
+		// In principle, we could write one of these for each module, but
+		// we write all modules into the same data block bank to save space.
+		// n.b. the documentation mentions Single Event Mode (SEM) and that
+		// the values in the header and even the first couple of words depend
+		// on whether it is in that mode. It appears this mode is an alternative
+		// to having a Built Trigger Bank. Our data all seems to have been taken
+		// *not* in SEM. Empirically, it looks like the data also doesn't have
+		// the initial "Starting Event Number" though the documentation does not
+		// declare that as optional. We omit it here as well.
+		uint32_t data_block_bank_idx = buff.size();
+		buff.push_back(0); // Total bank length (will be overwritten later)
+		buff.push_back(0x00060101); // 0x00=status w/ little endian, 0x06=f250, 0x01=uint32_t bank, 0x01=1 event
+		
+		// Loop over slots
+		map<uint32_t, vector<const Df250PulseData*> >::iterator it2;
+		for(it2=it->second.begin(); it2!=it->second.end(); it2++){
+			uint32_t slot  = it2->first;
+			
+			// Find Trigger Time object
+			const Df250TriggerTime *tt = NULL;
+			for(uint32_t i=0; i<f250tts.size(); i++){
+				if( (f250tts[i]->rocid==rocid) && (f250tts[i]->slot==slot) ){
+					tt = f250tts[i];				
+					break;
+				}
+			}
+			
+			// Should we print a warning if no Trigger Time object found?
+			
+			// Set itrigger number and trigger time
+			uint32_t itrigger  = (tt==NULL) ? (Nevents&0x3FFFFF):tt->itrigger;
+			uint64_t trig_time = (tt==NULL) ? time(NULL):tt->time;
+
+			// Write module block and event headers
+			uint32_t block_header_idx = buff.size();
+			buff.push_back( 0x80040101 + (slot<<22) ); // Block Header 0x80=data defining, 0x04=FADC250, 0x01=event block number,0x01=number of events in block
+			buff.push_back( 0x90000000 + (slot<<22) + itrigger);    // Event Header
+
+			// Write Trigger Time
+			buff.push_back(0x98000000 + ((trig_time>>0 )&0x00FFFFFF));
+			buff.push_back(0x00000000 + ((trig_time>>24)&0x00FFFFFF));
+
+			// Write module data
+			vector<const Df250PulseData*> &pulses = it2->second;
+			for(uint32_t i=0; i<pulses.size(); i++){
+				const Df250PulseData *pulse = pulses[i];
+
+				if(pulse->emulated == PREFER_EMULATED){
+                    // Word 1: Pulse Pedestal
+					buff.push_back(0xC8000000 + (pulse->event_within_block<<19) + (pulse->channel<<15) 
+                                   + (pulse->QF_pedestal<<14) + (pulse->pedestal&0x3FFF) );
+				
+                    // Word 2: Pulse Integral
+					buff.push_back(0x40000000 + (pulse->integral<<12) + (pulse->QF_NSA_beyond_PTW<<11) + (pulse->QF_overflow<<10) 
+                                   + (pulse->QF_underflow<<9) + (pulse->nsamples_over_threshold&0x1FF) );
+				
+                    // Word 3: Pulse Time
+					buff.push_back(0x00000000 + (pulse->course_time<<21) + (pulse->fine_time<<15) + (pulse->pulse_peak<<3) 
+                                   + (pulse->QF_vpeak_beyond_NSA<<2) + (pulse->QF_vpeak_not_found<<1) + (pulse->QF_bad_pedestal&0x1) );
 				}
 			}
 			
