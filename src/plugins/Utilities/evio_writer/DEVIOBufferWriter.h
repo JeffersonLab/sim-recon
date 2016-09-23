@@ -14,6 +14,7 @@
 
 #include <DAQ/JEventSource_EVIO.h>
 
+#include <DAQ/Df250PulseData.h>
 #include <DAQ/Df250PulseIntegral.h>
 #include <DAQ/Df250TriggerTime.h>
 #include <DAQ/Df250WindowRawData.h>
@@ -80,6 +81,14 @@ class DEVIOBufferWriter
                          vector<const DF1TDCConfig*>       &F1configs,
                          unsigned int Nevents) const;
 
+        // new (Fall 2016+) firmware data format
+		void Writef250Data(vector<uint32_t> &buff,
+                           vector<const Df250PulseData*>     &f250pulses,
+                           vector<const Df250TriggerTime*>   &f250tts,
+                           vector<const Df250WindowRawData*> &f250wrds,
+                           unsigned int Nevents) const;
+
+        // old (pre-Fall 2016) firmware data format
 		void Writef250Data(vector<uint32_t> &buff,
                            vector<const Df250PulseIntegral*> &f250pis,
                            vector<const Df250TriggerTime*>   &f250tts,

@@ -74,6 +74,7 @@ class DPSCHit_factory:public jana::JFactory<DPSCHit>{
   void FillCalibTable(psc_digi_constants_t &table, vector<double> &raw_table,
 		      const DPSGeometry &tofGeom);
 
+  bool CHECK_FADC_ERRORS;
 };
 
 #endif // _DPSCHit_factory_
