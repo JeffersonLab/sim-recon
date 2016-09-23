@@ -16,6 +16,7 @@ using namespace std;
 #include "DAQ/Df250PulseIntegral.h"
 #include "DAQ/Df250PulsePedestal.h"
 #include "DAQ/Df250Config.h"
+#include "TTAB/DTTabUtilities.h"
 using namespace jana;
 
 //------------------
@@ -45,6 +46,9 @@ jerror_t DFCALHit_factory::init(void)
     a_scale = 0.0;      // GeV/FADC integral unit
     t_scale = 0.0625;   // 62.5 ps/count
     t_base  = 0.;       // ns
+
+    CHECK_FADC_ERRORS = false;
+    gPARMS->SetDefaultParameter("FCAL:CHECK_FADC_ERRORS", CHECK_FADC_ERRORS, "Set to 1 to reject hits with fADC250 errors, ser to 0 to keep these hits");
 
     return NOERROR;
 }
@@ -142,21 +146,32 @@ jerror_t DFCALHit_factory::evnt(JEventLoop *loop, uint64_t eventnumber)
         return OBJECT_NOT_AVAILABLE;
     const DFCALGeometry& fcalGeom = *(fcalGeomVect[0]);
 
+    const DTTabUtilities* locTTabUtilities = NULL;
+    loop->GetSingle(locTTabUtilities);
+
     vector<const DFCALDigiHit*> digihits;
     loop->Get(digihits);
     for (unsigned int i=0; i < digihits.size(); i++) {
 
         const DFCALDigiHit *digihit = digihits[i];
 
-        // There is a slight difference between Mode 7 and 8 data
-        // The following condition signals an error state in the flash algorithm in both modes
-        // Do not make hits out of these
-        const Df250PulsePedestal* PPobj = NULL;
-        digihit->GetSingle(PPobj);
-        if (PPobj != NULL){
-            if (PPobj->pedestal == 0 || PPobj->pulse_peak == 0) continue;
+        // Error checking for pre-Fall 2016 firmware
+        if(digihit->datasource == 1) {
+            // There is a slight difference between Mode 7 and 8 data
+            // The following condition signals an error state in the flash algorithm
+            // Do not make hits out of these
+            const Df250PulsePedestal* PPobj = NULL;
+            digihit->GetSingle(PPobj);
+            if (PPobj != NULL) {
+                if (PPobj->pedestal == 0 || PPobj->pulse_peak == 0) continue;
+            } else 
+                continue;
+
+            if (digihit->pulse_time == 0) continue; // Should already be caught, but I'll leave it
         }
-        //if (digihit->pulse_time==0) continue;
+
+        if(CHECK_FADC_ERRORS && !locTTabUtilities->CheckFADC250_NoErrors(digihit->QF))
+            continue;
 
         // Check to see if the hit corresponds to a valid channel
         if (fcalGeom.isBlockActive(digihit->row,digihit->column) == false) {
@@ -172,53 +187,36 @@ jerror_t DFCALHit_factory::evnt(JEventLoop *loop, uint64_t eventnumber)
         if ( (quality==BAD) || (quality==NOISY) ) continue;
 
         // get pedestal from CCDB -- we should use it instead
-        // of the event-by-even pedestal
-
+        // of the event-by-event pedestal
+        // Corresponds to the value of the pedestal for a single sample
         double pedestal = pedestals[digihit->row][digihit->column];
-        double integratedPedestal = 0.0;
-        const Df250PulseIntegral* PIobj = NULL;
 
-        digihit->GetSingle(PIobj);
+        // we should use the fixed database pedestal
+        // object as it is less susceptible to noise
+        // than the event-by-event pedestal
+        double nsamples_integral = digihit->nsamples_integral;
+        double nsamples_pedestal = digihit->nsamples_pedestal;
 
-        if( PIobj != NULL ){
-
-            if( pedestal == 0 ) {
-
-                // we should use the fixed database pedestal
-                // object as it is less susceptible to noise
-                // than the event-by-event pedestal
-
-                // if the database pedestal is zero then try
-                // the event-by-event one:
-
-                pedestal = (double)PIobj->pedestal / 
-                    (double)PIobj->nsamples_pedestal;
+        // if the database pedestal is zero then try
+        // the event-by-event one:
+        if(pedestal == 0) {
+            // nsamples_pedestal should always be positive for valid data - err on the side of caution for now
+            if(nsamples_pedestal == 0) {
+                jerr << "DFCALDigiHit with nsamples_pedestal == 0 !   Event = " << eventnumber << endl;
+                continue;
             }
 
-            double nsamples_integral = (double)PIobj->nsamples_integral;
-            integratedPedestal = pedestal * nsamples_integral;
+            if( (digihit->pedestal>0.) && locTTabUtilities->CheckFADC250_PedestalOK(digihit->QF) )
+                pedestal = (double)digihit->pedestal * (nsamples_integral/nsamples_pedestal);
         }
-        else{
+        double integratedPedestal = pedestal * nsamples_integral;
+        double single_sample_ped = pedestal;
 
-	  static uint64_t nWarningsFCALIntegral = 0;
-	  if(++nWarningsFCALIntegral <= 20) cerr << "ERROR! no associated FCAL integral object." << endl;
-	  if(nWarningsFCALIntegral == 20  ) cerr << "DFCALHit_factory: LAST WARNING (others will be suppressed)" << endl;
-        }
-
-        double pulse_amplitude = 0;
-
-        if( PPobj != NULL ){
-
-            pulse_amplitude = (double)PPobj->pulse_peak - pedestal;
-        }
-        else{
-
-	  static uint64_t nWarningsFCALPedestal = 0;
-	  if(++nWarningsFCALPedestal <= 20) cerr << "ERROR! no associated FCAL pedestal object." << endl;
-	  if(nWarningsFCALPedestal == 20  ) cerr << "DFCALHit_factory: LAST WARNING (others will be suppressed)" << endl;
-	  
-        }
-
+        // Calculate pedestal-subtracted pulse amplitude
+        double pulse_amplitude = digihit->pulse_peak - single_sample_ped;
+        
+        
+        // Build hit object
         DFCALHit *hit = new DFCALHit;
         hit->row    = digihit->row;
         hit->column = digihit->column;
@@ -238,17 +236,13 @@ jerror_t DFCALHit_factory::evnt(JEventLoop *loop, uint64_t eventnumber)
         // recored the pulse integral to peak ratio since this is
         // a useful quality metric for the PMT pulse
         hit->intOverPeak = ( A - integratedPedestal ) / pulse_amplitude;
-
+        
         // do some basic quality checks before creating the objects
         if( ( hit->E > 0 ) &&
-                ( digihit->pulse_time > 0 ) 
-          ){
-
+            ( digihit->pulse_time > 0 )  ) {
             hit->AddAssociatedObject(digihit);
             _data.push_back(hit);
-        }
-        else{
-
+        } else {
             delete hit;
         }
     }

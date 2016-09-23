@@ -22,6 +22,10 @@
 	else
 		locCanvas = gPad->GetCanvas();
 	locCanvas->Divide(3, 1);
+	
+	TLatex latex;
+	latex.SetTextSize(0.04);
+	char str[256];
 
 	//Draw
 	locCanvas->cd(1);
@@ -30,10 +34,14 @@
 	if(locHist_L1GTPRate != NULL)
 	{
 		locHist_L1GTPRate->GetXaxis()->SetTitleSize(0.05);
-		locHist_L1GTPRate->GetYaxis()->SetTitleSize(0.05);
+		locHist_L1GTPRate->GetYaxis()->SetTitleSize(0.04);
 		locHist_L1GTPRate->GetXaxis()->SetLabelSize(0.05);
 		locHist_L1GTPRate->GetYaxis()->SetLabelSize(0.05);
+		locHist_L1GTPRate->SetStats(0);
 		locHist_L1GTPRate->Draw("colz");
+		
+		sprintf(str, "from %d sync events", (uint32_t)locHist_L1GTPRate->GetEntries()/8);
+		latex.DrawLatex(1.0, 101.0, str);
 	}
 
 	locCanvas->cd(2);
@@ -42,8 +50,13 @@
 	if(locHist_BCALVsFCAL_TrigBit1 != NULL)
 	{
 		locHist_BCALVsFCAL_TrigBit1->GetXaxis()->SetTitleSize(0.05);
-		locHist_BCALVsFCAL_TrigBit1->GetYaxis()->SetTitleSize(0.05);
+		locHist_BCALVsFCAL_TrigBit1->GetYaxis()->SetTitleSize(0.04);
+		locHist_BCALVsFCAL_TrigBit1->SetStats(0);
 		locHist_BCALVsFCAL_TrigBit1->Draw("colz");
+
+		sprintf(str, "%d entries", (uint32_t)locHist_BCALVsFCAL_TrigBit1->GetEntries());
+		latex.DrawLatex(500.0, 50000.0*1.01, str);
+
 		gPad->SetLogz();
 		gPad->Update();
 	}
@@ -54,8 +67,13 @@
 	if(locHist_BCALVsFCAL_TrigBit6 != NULL)
 	{
 		locHist_BCALVsFCAL_TrigBit6->GetXaxis()->SetTitleSize(0.05);
-		locHist_BCALVsFCAL_TrigBit6->GetYaxis()->SetTitleSize(0.05);
+		locHist_BCALVsFCAL_TrigBit6->GetYaxis()->SetTitleSize(0.04);
+		locHist_BCALVsFCAL_TrigBit6->SetStats(0);
 		locHist_BCALVsFCAL_TrigBit6->Draw("colz");
+
+		sprintf(str, "%d entries", (uint32_t)locHist_BCALVsFCAL_TrigBit6->GetEntries());
+		latex.DrawLatex(500.0, 50000.0*1.01, str);
+
 		gPad->SetLogz();
 		gPad->Update();
 	}

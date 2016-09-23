@@ -62,7 +62,7 @@ class DSCHit_factory:public jana::JFactory<DSCHit>{
 		jerror_t erun(void);						///< Called everytime run number changes, provided brun has been called.
 		jerror_t fini(void);						///< Called after last event of last event source has been processed.
 
-
+        bool CHECK_FADC_ERRORS;
 };
 
 #endif // _DSCHit_factory_

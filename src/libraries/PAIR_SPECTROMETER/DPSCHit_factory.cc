@@ -33,6 +33,9 @@ jerror_t DPSCHit_factory::init(void)
   gPARMS->SetDefaultParameter("PSCHit:ADC_THRESHOLD",ADC_THRESHOLD,
 			      "pedestal-subtracted pulse integral threshold");
 
+  CHECK_FADC_ERRORS = false;
+  gPARMS->SetDefaultParameter("PSCHit:CHECK_FADC_ERRORS", CHECK_FADC_ERRORS, "Set to 1 to reject hits with fADC250 errors, ser to 0 to keep these hits");
+
   /// set the base conversion scales
   a_scale    = 0.0001; 
   t_scale    = 0.0625;   // 62.5 ps/count
@@ -166,35 +169,48 @@ jerror_t DPSCHit_factory::evnt(JEventLoop *loop, uint64_t eventnumber)
       throw JException(str);
     }
 
-    // Throw away hits where the fADC timing algorithm failed
-    //if (digihit->pulse_time == 0) continue;
-    // The following condition signals an error state in the flash algorithm
-    // Do not make hits out of these
-    const Df250PulsePedestal* PPobj = NULL;
-    digihit->GetSingle(PPobj);
-    if (PPobj != NULL){
-      if (PPobj->pedestal == 0 || PPobj->pulse_peak == 0) continue;
+    // Throw away hits with firmware errors (post-summer 2016 firmware)
+    if(CHECK_FADC_ERRORS && !locTTabUtilities->CheckFADC250_NoErrors(digihit->QF))
+        continue;
+
+    if(digihit->datasource == 1) {     // handle pre-Fall 2016 firmware
+        // Throw away hits where the fADC timing algorithm failed
+        //if (digihit->pulse_time == 0) continue;
+        // The following condition signals an error state in the flash algorithm
+        // Do not make hits out of these
+        const Df250PulsePedestal* PPobj = NULL;
+        digihit->GetSingle(PPobj);
+        if (PPobj != NULL){
+            if (PPobj->pedestal == 0 || PPobj->pulse_peak == 0) continue;
+        }
+        else continue;
     }
-    else continue;
-    
+
     // Get pedestal, prefer associated event pedestal if it exists,
     // otherwise, use the average pedestal from CCDB
     double pedestal = GetConstant(adc_pedestals,digihit,psGeom);
-    const Df250PulseIntegral* PIobj = NULL;
-    digihit->GetSingle(PIobj);
-    if (PIobj != NULL) {
+    double nsamples_integral = (double)digihit->nsamples_integral;
+    double nsamples_pedestal = (double)digihit->nsamples_pedestal;
+
+    // nsamples_pedestal should always be positive for valid data - err on the side of caution for now
+    if(nsamples_pedestal == 0) {
+        jerr << "DPSCDigiHit with nsamples_pedestal == 0 !   Event = " << eventnumber << endl;
+        continue;
+    }
+
+    if ( (digihit->pedestal>0) && locTTabUtilities->CheckFADC250_PedestalOK(digihit->QF) ) {
       // the measured pedestal must be scaled by the ratio of the number
       // of samples used to calculate the integral and the pedestal          
       // Changed to conform to D. Lawrence changes Dec. 4 2014
-      double ped_sum = (double)PIobj->pedestal;
-      double nsamples_integral = (double)PIobj->nsamples_integral;
-      double nsamples_pedestal = (double)PIobj->nsamples_pedestal;
+      double ped_sum = (double)digihit->pedestal;
       pedestal          = ped_sum * nsamples_integral/nsamples_pedestal;
     }
     else continue;
 
+    double single_sample_ped = pedestal/nsamples_pedestal;
+
     // Apply calibration constants here
-    double P = PPobj->pulse_peak - PPobj->pedestal;
+    double P = digihit->pulse_peak - single_sample_ped;
     double A = (double)digihit->pulse_integral;
     A -= pedestal;
     // Throw away hits with small pedestal-subtracted integrals
