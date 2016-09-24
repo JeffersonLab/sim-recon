@@ -10,6 +10,7 @@ using namespace jana;
 #include <DAQ/Df250WindowRawData.h>
 #include <DAQ/Df250PulsePedestal.h>
 #include <DAQ/Df250PulseIntegral.h>
+#include <DAQ/Df250PulseData.h>
 #include <TRIGGER/DL1Trigger.h>
 #include <TPOL/DTPOLSectorDigiHit.h>
 #include <TPOL/DTPOLHit.h>
@@ -184,14 +185,18 @@ jerror_t JEventProcessor_TPOL_online::evnt(JEventLoop *eventLoop, uint64_t event
     eventLoop->Get(windowrawdata);
     // cache pulse pedestal and window raw data objects
     map< const DTPOLSectorDigiHit*, pair<const Df250PulsePedestal*, const Df250WindowRawData*> > pp_wr_cache;
+    map< const DTPOLSectorDigiHit*, const Df250PulseData* > pd_cache;
     for(unsigned int i=0; i < sdhits.size(); i++) {
         const Df250PulsePedestal* pulsePed = NULL;
         const Df250PulseIntegral* pulseInt = NULL;
+        const Df250PulseData* pulseDat = NULL;
         const Df250WindowRawData* rawData = NULL;
         sdhits[i]->GetSingle(pulsePed);
         sdhits[i]->GetSingle(pulseInt);
+        sdhits[i]->GetSingle(pulseDat);
         if (pulseInt) pulseInt->GetSingle(rawData);
         pp_wr_cache[sdhits[i]] = pair<const Df250PulsePedestal*, const Df250WindowRawData*>(pulsePed, rawData);
+        pd_cache[sdhits[i]] = pulseDat;
     }
 
 	// FILL HISTOGRAMS
@@ -213,9 +218,21 @@ jerror_t JEventProcessor_TPOL_online::evnt(JEventLoop *eventLoop, uint64_t event
         //double ped = sdhits[i]->pedestal/sdhits[i]->nsamples_pedestal;
         hDigiHit_NSamplesPedestal->Fill(sdhits[i]->nsamples_pedestal);
         const Df250PulsePedestal* pulsePed = pp_wr_cache[sdhits[i]].first;
+        const Df250PulseData* pulseDat = pd_cache[sdhits[i]];
         double ped = 0.0; double peak = 0.0;
-        if (pulsePed) ped = pulsePed->pedestal;
-        if (pulsePed) peak = pulsePed->pulse_peak;
+        if (pulsePed) {
+            ped = pulsePed->pedestal;
+            peak = pulsePed->pulse_peak;
+            hDigiHit_PulseNumber->Fill(pulsePed->pulse_number);
+            hDigiHit_PulseNumberVsSector->Fill(sdhits[i]->sector,pulsePed->pulse_number);
+        } else {
+            ped = sdhits[i]->pedestal;
+            peak = sdhits[i]->pulse_peak;
+            if(pulseDat) {
+                hDigiHit_PulseNumber->Fill(pulseDat->pulse_number);
+                hDigiHit_PulseNumberVsSector->Fill(sdhits[i]->sector,pulseDat->pulse_number);
+            }
+        }
         hDigiHit_RawPeak->Fill(peak);
         hDigiHit_Pedestal->Fill(ped);
         if (ped==0.0||peak==0.0) continue;
@@ -236,8 +253,6 @@ jerror_t JEventProcessor_TPOL_online::evnt(JEventLoop *eventLoop, uint64_t event
         hDigiHit_TimeVsPeak->Fill(peak-ped,t_ns);
         hDigiHit_TimeVsIntegral->Fill(Pint,t_ns);
         hDigiHit_QualityFactor->Fill(sdhits[i]->QF);
-        if (pulsePed) hDigiHit_PulseNumber->Fill(pulsePed->pulse_number);
-        if (pulsePed) hDigiHit_PulseNumberVsSector->Fill(sdhits[i]->sector,pulsePed->pulse_number);
     }
     hHit_NHits->Fill(hits.size());
     for(unsigned int i=0; i<hits.size(); i++) {

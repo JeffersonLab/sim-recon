@@ -17,6 +17,7 @@ using namespace jana;
 
 #include <DAQ/DF1TDCHit.h>
 #include <DAQ/Df250PulseIntegral.h>
+#include <DAQ/Df250PulseData.h>
 #include <DAQ/JEventSource_EVIO.h>
 #include <TTAB/DTranslationTable.h>
 
@@ -241,6 +242,7 @@ jerror_t JEventProcessor_DAQ_online::evnt(JEventLoop *loop, uint64_t eventnumber
 	// since multiple threads may call this method at the same time.
 	// Here's an example:
 	vector<const DF1TDCHit*> f1tdchits;
+	vector<const Df250PulseData*> f250PDs;
 	vector<const Df250PulseIntegral*> f250PIs;
 	vector<const Df125PulseIntegral*> f125PIs;
 	vector<const Df125CDCPulse*> f125CDCs;
@@ -248,6 +250,7 @@ jerror_t JEventProcessor_DAQ_online::evnt(JEventLoop *loop, uint64_t eventnumber
 	vector<const DCAEN1290TDCHit*> caen1290hits;
 
 	loop->Get(f1tdchits);
+	loop->Get(f250PDs);
 	loop->Get(f250PIs);
 	loop->Get(f125PIs);
 	loop->Get(f125CDCs);
@@ -305,9 +308,43 @@ jerror_t JEventProcessor_DAQ_online::evnt(JEventLoop *loop, uint64_t eventnumber
 		daq_TDCovr_crates[rocid]->Fill(slot,channel,(data_word>>24)&(1));
 	}
 
-	// Access F250 from Df250PulseIntegral object
+	// Access F250 from Df250PulseIntegral object - pre-Fall 2016 firmware
 	for(unsigned int i=0; i<f250PIs.size(); i++) {
 		const Df250PulseIntegral *hit = f250PIs[i];
+		int rocid = hit->rocid;
+		int slot = hit->slot;
+		int channel = hit->channel;
+
+		if(rocid>=0 && rocid<=100) {
+			Nhits_rocid[rocid]++;
+
+			if (daq_occ_crates[rocid]==NULL) {
+				printf("JEventProcessor_DAQ_online::evnt  creating occupancy histogram for crate %i\n",rocid);
+				char cratename[255],title[255];
+				sprintf(cratename,"daq_occ_crate%i",rocid);
+				sprintf(title,"Crate %i occupancy (F250);Slot;Channel",rocid);
+				daq_occ_crates[rocid] = new TH2I(cratename,title,21,0.5,21.5,16,-0.5,15.5);
+				daq_occ_crates[rocid]->SetStats(0);
+			} 
+			daq_occ_crates[rocid]->Fill(slot,channel);
+			
+			if (daq_ped_crates[rocid]==NULL) {
+				printf("JEventProcessor_DAQ_online::evnt  creating pedestal histogram for crate %i\n",rocid);
+				char cratename[255],title[255];
+				sprintf(cratename,"daq_ped_crate%i",rocid);
+				sprintf(title,"Crate %i Average Pedestal (F250);Slot;Channel",rocid);
+				daq_ped_crates[rocid] = new TProfile2D(cratename,title,21,0.5,21.5,16,-0.5,15.5);
+				daq_ped_crates[rocid]->SetStats(0);
+			} 
+			if (hit->pedestal > 0) {
+				daq_ped_crates[rocid]->Fill(slot,channel,hit->pedestal);
+			}
+		}
+	}
+
+	// Access F250 from Df250PulseData object - post-Fall 2016 firmware
+	for(unsigned int i=0; i<f250PDs.size(); i++) {
+		const Df250PulseData *hit = f250PDs[i];
 		int rocid = hit->rocid;
 		int slot = hit->slot;
 		int channel = hit->channel;
