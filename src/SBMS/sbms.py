@@ -851,6 +851,7 @@ def RootSpyMacroCodeGen(target, source, env):
 	for line in fin:
 		line = line.replace('"', '\\\"')
 		line = line.replace('\r', '')
+		line = line.replace('\#', '\\#')  # used when macro actually wants a "#" in title
 		fout.write('"%s\\n"\n' % line[:-1])
 	fout.write(';\n')
 	fout.write('class %s{\n' % class_name)

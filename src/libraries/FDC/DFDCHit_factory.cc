@@ -186,7 +186,7 @@ jerror_t DFDCHit_factory::evnt(JEventLoop *loop, uint64_t eventnumber)
 
         // Grab the pedestal from the digihit since this should be consistent between the old and new formats
         uint32_t raw_ped           = digihit->pedestal;
-        uint32_t nsamples_integral = digihit->nsamples_integral;
+        uint32_t nsamples_integral;
 
         // There are a few values from the new data type that are critical for the interpretation of the data
         //uint16_t IBIT = 0; // 2^{IBIT} Scale factor for integral
