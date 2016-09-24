@@ -850,6 +850,7 @@ def RootSpyMacroCodeGen(target, source, env):
 	fout.write('static string macro_data=""\n')
 	for line in fin:
 		line = line.replace('"', '\\\"')
+		line = line.replace('\r', '')
 		fout.write('"%s\\n"\n' % line[:-1])
 	fout.write(';\n')
 	fout.write('class %s{\n' % class_name)
