@@ -170,8 +170,6 @@ jerror_t DTAGMHit_factory_Calib::evnt(JEventLoop *loop, uint64_t eventnumber)
         // Subtract pedestal from pulse peak
         double pulse_peak = 0.0;
         if(digihit->datasource == 1) {     // handle pre-Fall 2016 firmware
-            // Throw away hits where the fADC timing algorithm failed
-            //if (digihit->pulse_time == 0) continue;
             // The following condition signals an error state in the flash algorithm
             // Do not make hits out of these
             const Df250PulsePedestal* PPobj = nullptr;
@@ -185,6 +183,8 @@ jerror_t DTAGMHit_factory_Calib::evnt(JEventLoop *loop, uint64_t eventnumber)
             if (digihit->pedestal == 0 || digihit->pulse_peak == 0) continue;
             pulse_peak = digihit->pulse_peak - pedestal;
         }
+
+        if (pulse_peak == 0.0 || digihit->pulse_time == 0) continue;
 
         // throw away hits from bad or noisy fibers
         int quality = fiber_quality[digihit->row][digihit->column];

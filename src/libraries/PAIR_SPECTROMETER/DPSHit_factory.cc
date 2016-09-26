@@ -161,8 +161,6 @@ jerror_t DPSHit_factory::evnt(JEventLoop *loop, uint64_t eventnumber)
     // Subtract pedestal from pulse peak
     double pulse_peak = 0.0;
     if(digihit->datasource == 1) {     // handle pre-Fall 2016 firmware
-        // Throw away hits where the fADC timing algorithm failed
-        //if (digihit->pulse_time == 0) continue;
         // The following condition signals an error state in the flash algorithm
         // Do not make hits out of these
         const Df250PulsePedestal* PPobj = nullptr;
@@ -177,11 +175,15 @@ jerror_t DPSHit_factory::evnt(JEventLoop *loop, uint64_t eventnumber)
         pulse_peak = digihit->pulse_peak - pedestal;
     }
 
+    if (pulse_peak == 0.0 || digihit->pulse_time == 0) continue;
+
     // Apply calibration constants here
     double A = (double)digihit->pulse_integral;
     A -= pedestal*nsamples_integral;
+
     // Throw away hits with small pedestal-subtracted integrals
     if (A < ADC_THRESHOLD) continue;
+
     double T = (double)digihit->pulse_time;
 
     DPSHit *hit = new DPSHit;
