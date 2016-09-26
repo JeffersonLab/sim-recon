@@ -164,15 +164,13 @@ jerror_t DTAGHHit_factory_Calib::evnt(JEventLoop *loop, uint64_t eventnumber)
             continue;
         }
 
+        // digihit->pedestal is the sum of "nsamples_pedestal" samples
+        // Calculate the average pedestal
         if ( (digihit->pedestal>0) && locTTabUtilities->CheckFADC250_PedestalOK(digihit->QF) ) {
-            // the measured pedestal must be scaled by the ratio of the number
-            // of samples used to calculate the integral and the pedestal
-            // Changed to conform to D. Lawrence changes Dec. 4 2014
-            double ped_sum = (double)digihit->pedestal;
-            pedestal          = ped_sum * nsamples_integral/nsamples_pedestal;
+            pedestal = (double)digihit->pedestal/nsamples_pedestal;
         }
 
-        double single_sample_ped = pedestal/nsamples_pedestal;
+        // Subtract pedestal from pulse peak
         double pulse_peak = 0.0;
         if(digihit->datasource == 1) {     // handle pre-Fall 2016 firmware
             // Throw away hits where the fADC timing algorithm failed
@@ -181,19 +179,19 @@ jerror_t DTAGHHit_factory_Calib::evnt(JEventLoop *loop, uint64_t eventnumber)
             // Do not make hits out of these
             const Df250PulsePedestal* PPobj = nullptr;
             digihit->GetSingle(PPobj);
-            if (PPobj != nullptr){
+            if (PPobj != nullptr) {
                 if (PPobj->pedestal == 0 || PPobj->pulse_peak == 0) continue;
                 pulse_peak = PPobj->pulse_peak - PPobj->pedestal;
             }
         } else {
             // starting with the Fall 2016 firmware, we can get all of the values directly from the digihit
-            pulse_peak = digihit->pulse_peak - single_sample_ped;
+            if (digihit->pedestal == 0 || digihit->pulse_peak == 0) continue;
+            pulse_peak = digihit->pulse_peak - pedestal;
         }
-
 
         // Subtract pedestal from pulse integral
         double A = digihit->pulse_integral;
-        A -= pedestal;
+        A -= pedestal*nsamples_integral;
         // Throw away hits with small pedestal-subtracted integrals
         if (A < ADC_THRESHOLD) continue;
 

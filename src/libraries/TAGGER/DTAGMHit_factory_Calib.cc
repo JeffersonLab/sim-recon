@@ -161,16 +161,14 @@ jerror_t DTAGMHit_factory_Calib::evnt(JEventLoop *loop, uint64_t eventnumber)
             continue;
         }
 
+        // digihit->pedestal is the sum of "nsamples_pedestal" samples
+        // Calculate the average pedestal
         if ( (digihit->pedestal>0) && locTTabUtilities->CheckFADC250_PedestalOK(digihit->QF) ) {
-            // the measured pedestal must be scaled by the ratio of the number
-            // of samples used to calculate the integral and the pedestal
-            // Changed to conform to D. Lawrence changes Dec. 4 2014
-            double ped_sum = (double)digihit->pedestal;
-            pedestal          = ped_sum * nsamples_integral/nsamples_pedestal;
+            pedestal = (double)digihit->pedestal/nsamples_pedestal;
         }
-//        double single_sample_ped = pedestal/nsamples_pedestal;
 
-//        double pulse_peak = 0.0;
+        // Subtract pedestal from pulse peak
+        double pulse_peak = 0.0;
         if(digihit->datasource == 1) {     // handle pre-Fall 2016 firmware
             // Throw away hits where the fADC timing algorithm failed
             //if (digihit->pulse_time == 0) continue;
@@ -178,16 +176,14 @@ jerror_t DTAGMHit_factory_Calib::evnt(JEventLoop *loop, uint64_t eventnumber)
             // Do not make hits out of these
             const Df250PulsePedestal* PPobj = nullptr;
             digihit->GetSingle(PPobj);
-            if (PPobj != nullptr){
+            if (PPobj != nullptr) {
                 if (PPobj->pedestal == 0 || PPobj->pulse_peak == 0) continue;
-//                pulse_peak = PPobj->pulse_peak - PPobj->pedestal;
+                pulse_peak = PPobj->pulse_peak - PPobj->pedestal;
             }
-
-            // Skip events where fADC algorithm fails
-            //if (digihit->pulse_time == 0) continue; // Should already be caught above
         } else {
             // starting with the Fall 2016 firmware, we can get all of the values directly from the digihit
-//            pulse_peak = digihit->pulse_peak - single_sample_ped;
+            if (digihit->pedestal == 0 || digihit->pulse_peak == 0) continue;
+            pulse_peak = digihit->pulse_peak - pedestal;
         }
 
         // throw away hits from bad or noisy fibers
@@ -195,18 +191,15 @@ jerror_t DTAGMHit_factory_Calib::evnt(JEventLoop *loop, uint64_t eventnumber)
         if (quality == k_fiber_bad || quality == k_fiber_noisy)
             continue;
 
-        // Skip digihit if pulse peak is lower than cut value
-        double P = digihit->pulse_peak - pedestal/nsamples_pedestal;
-
         // Apply calibration constants
         double A = digihit->pulse_integral;
         double T = digihit->pulse_time;
-        A -= pedestal;
+        A -= pedestal*nsamples_integral;
         int row = digihit->row;
         int column = digihit->column;
         if (A < CUT_FACTOR*int_cuts[row][column]) continue;
 
-        DTAGMHit *hit = new DTAGMHit;    
+        DTAGMHit *hit = new DTAGMHit;
         hit->row = row;
         hit->column = column;
         double Elow = tagmGeom.getElow(column);
@@ -214,7 +207,7 @@ jerror_t DTAGMHit_factory_Calib::evnt(JEventLoop *loop, uint64_t eventnumber)
         hit->E = (Elow + Ehigh)/2;
 
         hit->integral = A;
-        hit->pulse_peak = P;
+        hit->pulse_peak = pulse_peak;
         hit->npix_fadc = A * fadc_a_scale * fadc_gains[row][column];
         hit->time_fadc = T * fadc_t_scale - fadc_time_offsets[row][column] + t_base;
         hit->t=hit->time_fadc;

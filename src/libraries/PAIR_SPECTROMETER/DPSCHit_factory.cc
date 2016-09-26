@@ -150,7 +150,7 @@ jerror_t DPSCHit_factory::evnt(JEventLoop *loop, uint64_t eventnumber)
     return OBJECT_NOT_AVAILABLE;
   const DPSGeometry& psGeom = *(psGeomVect[0]);
 
-  const DTTabUtilities* locTTabUtilities = NULL;
+  const DTTabUtilities* locTTabUtilities = nullptr;
   loop->GetSingle(locTTabUtilities);
 
   // First, make hits out of all fADC250 hits
@@ -158,7 +158,7 @@ jerror_t DPSCHit_factory::evnt(JEventLoop *loop, uint64_t eventnumber)
   loop->Get(digihits);
   char str[256];
 
-  for (unsigned int i=0; i < digihits.size(); i++){
+  for (unsigned int i=0; i < digihits.size(); i++) {
     const DPSCDigiHit *digihit = digihits[i];
 
     // Make sure channel id is in valid range
@@ -173,19 +173,6 @@ jerror_t DPSCHit_factory::evnt(JEventLoop *loop, uint64_t eventnumber)
     if(CHECK_FADC_ERRORS && !locTTabUtilities->CheckFADC250_NoErrors(digihit->QF))
         continue;
 
-    if(digihit->datasource == 1) {     // handle pre-Fall 2016 firmware
-        // Throw away hits where the fADC timing algorithm failed
-        //if (digihit->pulse_time == 0) continue;
-        // The following condition signals an error state in the flash algorithm
-        // Do not make hits out of these
-        const Df250PulsePedestal* PPobj = NULL;
-        digihit->GetSingle(PPobj);
-        if (PPobj != NULL){
-            if (PPobj->pedestal == 0 || PPobj->pulse_peak == 0) continue;
-        }
-        else continue;
-    }
-
     // Get pedestal, prefer associated event pedestal if it exists,
     // otherwise, use the average pedestal from CCDB
     double pedestal = GetConstant(adc_pedestals,digihit,psGeom);
@@ -198,21 +185,34 @@ jerror_t DPSCHit_factory::evnt(JEventLoop *loop, uint64_t eventnumber)
         continue;
     }
 
+    // digihit->pedestal is the sum of "nsamples_pedestal" samples
+    // Calculate the average pedestal
     if ( (digihit->pedestal>0) && locTTabUtilities->CheckFADC250_PedestalOK(digihit->QF) ) {
-      // the measured pedestal must be scaled by the ratio of the number
-      // of samples used to calculate the integral and the pedestal          
-      // Changed to conform to D. Lawrence changes Dec. 4 2014
-      double ped_sum = (double)digihit->pedestal;
-      pedestal          = ped_sum * nsamples_integral/nsamples_pedestal;
+        pedestal = (double)digihit->pedestal/nsamples_pedestal;
     }
-    else continue;
 
-    double single_sample_ped = pedestal/nsamples_pedestal;
+    // Subtract pedestal from pulse peak
+    double pulse_peak = 0.0;
+    if(digihit->datasource == 1) {     // handle pre-Fall 2016 firmware
+        // Throw away hits where the fADC timing algorithm failed
+        //if (digihit->pulse_time == 0) continue;
+        // The following condition signals an error state in the flash algorithm
+        // Do not make hits out of these
+        const Df250PulsePedestal* PPobj = nullptr;
+        digihit->GetSingle(PPobj);
+        if (PPobj != nullptr) {
+            if (PPobj->pedestal == 0 || PPobj->pulse_peak == 0) continue;
+            pulse_peak = PPobj->pulse_peak - PPobj->pedestal;
+        }
+    } else {
+        // starting with the Fall 2016 firmware, we can get all of the values directly from the digihit
+        if (digihit->pedestal == 0 || digihit->pulse_peak == 0) continue;
+        pulse_peak = digihit->pulse_peak - pedestal;
+    }
 
     // Apply calibration constants here
-    double P = digihit->pulse_peak - single_sample_ped;
     double A = (double)digihit->pulse_integral;
-    A -= pedestal;
+    A -= pedestal*nsamples_integral;
     // Throw away hits with small pedestal-subtracted integrals
     if (A < ADC_THRESHOLD) continue;
     double T = (double)digihit->pulse_time;
@@ -221,7 +221,7 @@ jerror_t DPSCHit_factory::evnt(JEventLoop *loop, uint64_t eventnumber)
     hit->arm = GetArm(digihit->counter_id,psGeom.NUM_COARSE_COLUMNS);
     hit->module = GetModule(digihit->counter_id,psGeom.NUM_COARSE_COLUMNS);
     hit->integral = A;
-    hit->pulse_peak = P;
+    hit->pulse_peak = pulse_peak;
     hit->npe_fadc = A * a_scale * GetConstant(adc_gains, digihit, psGeom);
     hit->time_fadc = t_scale * T - GetConstant(adc_time_offsets, digihit, psGeom) + t_base;
     hit->t = hit->time_fadc;
@@ -230,7 +230,7 @@ jerror_t DPSCHit_factory::evnt(JEventLoop *loop, uint64_t eventnumber)
     hit->has_TDC  = false; // will get set to true below if appropriate
 
     hit->AddAssociatedObject(digihit);
-                
+
     _data.push_back(hit);
   }
 
@@ -296,7 +296,7 @@ jerror_t DPSCHit_factory::evnt(JEventLoop *loop, uint64_t eventnumber)
 //------------------
 DPSCHit* DPSCHit_factory::FindMatch(DPSGeometry::Arm arm, int module, double T)
 {
-  DPSCHit* best_match = NULL;
+  DPSCHit* best_match = nullptr;
 	
   // Loop over existing hits (from fADC) and look for a match
   // in both the sector and the time.
@@ -313,7 +313,7 @@ DPSCHit* DPSCHit_factory::FindMatch(DPSGeometry::Arm arm, int module, double T)
     return hit;
                 
     // if there are multiple hits, pick the one that is closest in time
-    if(best_match != NULL) {
+    if(best_match != nullptr) {
       if(delta_T < fabs(best_match->t - T))
 	best_match = hit;
     } else {
