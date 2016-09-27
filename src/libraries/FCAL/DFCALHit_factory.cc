@@ -146,7 +146,7 @@ jerror_t DFCALHit_factory::evnt(JEventLoop *loop, uint64_t eventnumber)
         return OBJECT_NOT_AVAILABLE;
     const DFCALGeometry& fcalGeom = *(fcalGeomVect[0]);
 
-    const DTTabUtilities* locTTabUtilities = NULL;
+    const DTTabUtilities* locTTabUtilities = nullptr;
     loop->GetSingle(locTTabUtilities);
 
     vector<const DFCALDigiHit*> digihits;
@@ -155,21 +155,7 @@ jerror_t DFCALHit_factory::evnt(JEventLoop *loop, uint64_t eventnumber)
 
         const DFCALDigiHit *digihit = digihits[i];
 
-        // Error checking for pre-Fall 2016 firmware
-        if(digihit->datasource == 1) {
-            // There is a slight difference between Mode 7 and 8 data
-            // The following condition signals an error state in the flash algorithm
-            // Do not make hits out of these
-            const Df250PulsePedestal* PPobj = NULL;
-            digihit->GetSingle(PPobj);
-            if (PPobj != NULL) {
-                if (PPobj->pedestal == 0 || PPobj->pulse_peak == 0) continue;
-            } else 
-                continue;
-
-            if (digihit->pulse_time == 0) continue; // Should already be caught, but I'll leave it
-        }
-
+        // Throw away hits with firmware errors (post-summer 2016 firmware)
         if(CHECK_FADC_ERRORS && !locTTabUtilities->CheckFADC250_NoErrors(digihit->QF))
             continue;
 
@@ -206,16 +192,19 @@ jerror_t DFCALHit_factory::evnt(JEventLoop *loop, uint64_t eventnumber)
                 continue;
             }
 
-            if( (digihit->pedestal>0.) && locTTabUtilities->CheckFADC250_PedestalOK(digihit->QF) )
-                pedestal = (double)digihit->pedestal * (nsamples_integral/nsamples_pedestal);
+            // digihit->pedestal is the sum of "nsamples_pedestal" samples
+            // Calculate the average pedestal per sample
+            if( (digihit->pedestal>0) && locTTabUtilities->CheckFADC250_PedestalOK(digihit->QF) ) {
+                pedestal = (double)digihit->pedestal/nsamples_pedestal;
+            }
         }
-        double integratedPedestal = pedestal * nsamples_integral;
-        double single_sample_ped = pedestal;
 
-        // Calculate pedestal-subtracted pulse amplitude
-        double pulse_amplitude = digihit->pulse_peak - single_sample_ped;
-        
-        
+        // Subtract pedestal from pulse peak
+        if (digihit->pulse_time == 0 || digihit->pedestal == 0 || digihit->pulse_peak == 0) continue;
+        double pulse_amplitude = digihit->pulse_peak - pedestal;
+
+        double integratedPedestal = pedestal * nsamples_integral;
+
         // Build hit object
         DFCALHit *hit = new DFCALHit;
         hit->row    = digihit->row;
