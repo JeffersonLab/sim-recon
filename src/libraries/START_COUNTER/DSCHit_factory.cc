@@ -169,7 +169,6 @@ jerror_t DSCHit_factory::evnt(JEventLoop *loop, uint64_t eventnumber)
 
     for (unsigned int i = 0; i < digihits.size(); i++)  {
         const DSCDigiHit *digihit = digihits[i];
-        double ped_corr_pulse_peak = 0.;
 
         // Make sure sector is in valid range
         if( (digihit->sector <= 0) && (digihit->sector > MAX_SECTORS))  {
