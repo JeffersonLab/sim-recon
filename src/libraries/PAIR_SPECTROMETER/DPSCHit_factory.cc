@@ -186,37 +186,23 @@ jerror_t DPSCHit_factory::evnt(JEventLoop *loop, uint64_t eventnumber)
     }
 
     // digihit->pedestal is the sum of "nsamples_pedestal" samples
-    // Calculate the average pedestal
+    // Calculate the average pedestal per sample
     if ( (digihit->pedestal>0) && locTTabUtilities->CheckFADC250_PedestalOK(digihit->QF) ) {
         pedestal = (double)digihit->pedestal/nsamples_pedestal;
     }
 
     // Subtract pedestal from pulse peak
-    double pulse_peak = 0.0;
-    if(digihit->datasource == 1) {     // handle pre-Fall 2016 firmware
-        // The following condition signals an error state in the flash algorithm
-        // Do not make hits out of these
-        const Df250PulsePedestal* PPobj = nullptr;
-        digihit->GetSingle(PPobj);
-        if (PPobj != nullptr) {
-            if (PPobj->pedestal == 0 || PPobj->pulse_peak == 0) continue;
-            pulse_peak = PPobj->pulse_peak - PPobj->pedestal;
-        }
-    } else {
-        // starting with the Fall 2016 firmware, we can get all of the values directly from the digihit
-        if (digihit->pedestal == 0 || digihit->pulse_peak == 0) continue;
-        pulse_peak = digihit->pulse_peak - pedestal;
-    }
+    if (digihit->pulse_time == 0 || digihit->pedestal == 0 || digihit->pulse_peak == 0) continue;
+    double pulse_peak = digihit->pulse_peak - pedestal;
 
-    if (pulse_peak == 0.0 || digihit->pulse_time == 0) continue;
-
-    // Apply calibration constants here
+    // Subtract pedestal from pulse integral
     double A = (double)digihit->pulse_integral;
     A -= pedestal*nsamples_integral;
 
     // Throw away hits with small pedestal-subtracted integrals
     if (A < ADC_THRESHOLD) continue;
 
+    // Apply calibration constants
     double T = (double)digihit->pulse_time;
 
     DPSCHit *hit = new DPSCHit;
@@ -245,7 +231,7 @@ jerror_t DPSCHit_factory::evnt(JEventLoop *loop, uint64_t eventnumber)
 
     for(unsigned int i=0; i<tdcdigihits.size(); i++) {
       const DPSCTDCDigiHit *digihit = tdcdigihits[i];
-	    
+
       // calculate geometry information 
       DPSGeometry::Arm arm = GetArm(digihit->counter_id,psGeom.NUM_COARSE_COLUMNS);
       int module = GetModule(digihit->counter_id,psGeom.NUM_COARSE_COLUMNS);
@@ -255,16 +241,16 @@ jerror_t DPSCHit_factory::evnt(JEventLoop *loop, uint64_t eventnumber)
       // Look for existing hits to see if there is a match
       // or create new one if there is no match
       DPSCHit *hit = FindMatch(arm, module, T);
-      if (!hit) {
-	hit = new DPSCHit;
-	hit->arm    = arm;
-	hit->module = module;
-	hit->time_fadc = numeric_limits<double>::quiet_NaN();
-	hit->integral = numeric_limits<double>::quiet_NaN();
-	hit->pulse_peak = numeric_limits<double>::quiet_NaN();
-	hit->npe_fadc = numeric_limits<double>::quiet_NaN();
-	hit->has_fADC = false;
-	_data.push_back(hit);
+      if (hit == nullptr) {
+          hit = new DPSCHit;
+          hit->arm    = arm;
+          hit->module = module;
+          hit->time_fadc = numeric_limits<double>::quiet_NaN();
+          hit->integral = numeric_limits<double>::quiet_NaN();
+          hit->pulse_peak = numeric_limits<double>::quiet_NaN();
+          hit->npe_fadc = numeric_limits<double>::quiet_NaN();
+          hit->has_fADC = false;
+          _data.push_back(hit);
       }
       hit->time_tdc = T;
       hit->has_TDC = true;

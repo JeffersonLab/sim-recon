@@ -177,7 +177,7 @@ jerror_t DSCHit_factory::evnt(JEventLoop *loop, uint64_t eventnumber)
             throw JException(str);
         }
 
-        // Error checking for pre-Fall 2016 firmware
+        // Throw away hits with firmware errors (post-summer 2016 firmware)
         if(CHECK_FADC_ERRORS && !locTTabUtilities->CheckFADC250_NoErrors(digihit->QF))
             continue;
 
@@ -195,31 +195,16 @@ jerror_t DSCHit_factory::evnt(JEventLoop *loop, uint64_t eventnumber)
         }
 
         // digihit->pedestal is the sum of "nsamples_pedestal" samples
-        // Calculate the average pedestal
+        // Calculate the average pedestal per sample
         if( (digihit->pedestal>0) && locTTabUtilities->CheckFADC250_PedestalOK(digihit->QF) ) {
             pedestal = (double)digihit->pedestal/nsamples_pedestal;
         }
 
         // Subtract pedestal from pulse peak
-        double pulse_peak = 0.0;
-        if(digihit->datasource == 1) {
-            // There is a slight difference between Mode 7 and 8 data
-            // The following condition signals an error state in the flash algorithm
-            // Do not make hits out of these
-            const Df250PulsePedestal* PPobj = nullptr;
-            digihit->GetSingle(PPobj);
-            if (PPobj != nullptr) {
-                if (PPobj->pedestal == 0 || PPobj->pulse_peak == 0) continue;
-                pulse_peak = PPobj->pulse_peak - PPobj->pedestal;
-            }
-        } else {
-            // starting with the Fall 2016 firmware, we can get all of the values directly from the digihit
-            if (digihit->pedestal == 0 || digihit->pulse_peak == 0) continue;
-            pulse_peak = digihit->pulse_peak - pedestal;
-        }
+        if (digihit->pulse_time == 0 || digihit->pedestal == 0 || digihit->pulse_peak == 0) continue;
+        double pulse_peak = digihit->pulse_peak - pedestal;
 
-        if (pulse_peak == 0.0 || digihit->pulse_time == 0) continue;
-
+        // Subtract pedestal from pulse integral
         double A = (double)digihit->pulse_integral;
         A -= pedestal*nsamples_integral;
 
@@ -275,7 +260,7 @@ jerror_t DSCHit_factory::evnt(JEventLoop *loop, uint64_t eventnumber)
 	    //   a hit in the TDC and not the ADC it is a "decent" TDC hit
         if (fabs(T) < HIT_TIME_WINDOW) {
             DSCHit *hit = FindMatch(digihit->sector, T);
-            if (! hit) {
+            if (hit == nullptr) {
                 hit = new DSCHit;
                 hit->sector = digihit->sector;
                 hit->dE = 0.0;
@@ -323,7 +308,7 @@ jerror_t DSCHit_factory::evnt(JEventLoop *loop, uint64_t eventnumber)
 //------------------
 DSCHit* DSCHit_factory::FindMatch(int sector, double T)
 {
-    DSCHit *best_match=nullptr;
+    DSCHit *best_match = nullptr;
 
     // Loop over existing hits (from fADC) and look for a match
     // in both the sector and the time.
