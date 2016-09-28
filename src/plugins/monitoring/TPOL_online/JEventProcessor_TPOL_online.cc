@@ -8,8 +8,7 @@ using namespace std;
 using namespace jana;
 
 #include <DAQ/Df250WindowRawData.h>
-#include <DAQ/Df250PulsePedestal.h>
-#include <DAQ/Df250PulseIntegral.h>
+#include <DAQ/Df250PulseData.h>
 #include <TRIGGER/DL1Trigger.h>
 #include <TPOL/DTPOLSectorDigiHit.h>
 #include <TPOL/DTPOLHit.h>
@@ -37,7 +36,7 @@ static TH2I *hHit_TimeVsSector;
 static TH2F *hHit_TimeVsPhi;
 static TH2I *hHit_TimeVsPeak;
 static TH2I *hHit_TimeVsIntegral;
-//
+
 static TH1I *hDigiHit_NHits;
 static TH1I *hDigiHit_NSamplesPedestal;
 static TH1I *hDigiHit_Pedestal;
@@ -158,12 +157,12 @@ jerror_t JEventProcessor_TPOL_online::evnt(JEventLoop *eventLoop, uint64_t event
     // loop-Get(...) to get reconstructed objects (and thereby activating the
     // reconstruction algorithm) should be done outside of any mutex lock
     // since multiple threads may call this method at the same time.
-    const DL1Trigger *trig_words = NULL;
+    const DL1Trigger *trig_words = nullptr;
     uint32_t trig_mask, fp_trig_mask;
     try {
         eventLoop->GetSingle(trig_words);
     } catch(...) {};
-    if (trig_words) {
+    if (trig_words != nullptr) {
         trig_mask = trig_words->trig_mask;
         fp_trig_mask = trig_words->fp_trig_mask;
     }
@@ -173,7 +172,7 @@ jerror_t JEventProcessor_TPOL_online::evnt(JEventLoop *eventLoop, uint64_t event
     }
     int trig_bits = fp_trig_mask > 0 ? 10 + fp_trig_mask:trig_mask;
     // Select PS-triggered events
-    if (trig_bits!=8) {
+    if (trig_bits != 8) {
         return NOERROR;
     }
     vector<const DTPOLHit*> hits;
@@ -182,79 +181,77 @@ jerror_t JEventProcessor_TPOL_online::evnt(JEventLoop *eventLoop, uint64_t event
     eventLoop->Get(sdhits);
     vector<const Df250WindowRawData*> windowrawdata;
     eventLoop->Get(windowrawdata);
-    // cache pulse pedestal and window raw data objects
-    map< const DTPOLSectorDigiHit*, pair<const Df250PulsePedestal*, const Df250WindowRawData*> > pp_wr_cache;
-    for(unsigned int i=0; i < sdhits.size(); i++) {
-        const Df250PulsePedestal* pulsePed = NULL;
-        const Df250PulseIntegral* pulseInt = NULL;
-        const Df250WindowRawData* rawData = NULL;
-        sdhits[i]->GetSingle(pulsePed);
-        sdhits[i]->GetSingle(pulseInt);
-        if (pulseInt) pulseInt->GetSingle(rawData);
-        pp_wr_cache[sdhits[i]] = pair<const Df250PulsePedestal*, const Df250WindowRawData*>(pulsePed, rawData);
+
+    // Cache pulse data objects
+    map< const DTPOLSectorDigiHit*, const Df250PulseData* > pd_cache;
+    for (const auto& hit : sdhits) {
+        const Df250PulseData* pd = nullptr;
+        hit->GetSingle(pd);
+        pd_cache[hit] = pd;
     }
 
-	// FILL HISTOGRAMS
-	// Since we are filling histograms local to this plugin, it will not interfere with other ROOT operations: can use plugin-wide ROOT fill lock
-	japp->RootFillLock(this); //ACQUIRE ROOT FILL LOCK
+    // FILL HISTOGRAMS
+    // Since we are filling histograms local to this plugin, it will not interfere with other ROOT operations: can use plugin-wide ROOT fill lock
+    japp->RootFillLock(this); //ACQUIRE ROOT FILL LOCK
 
     int NHits = 0;
-    for(unsigned int i=0;i<windowrawdata.size();i++) {
-        if(windowrawdata[i]->rocid == 84
+    for (const auto& wrd : windowrawdata) {
+        if (wrd->rocid == 84
             &&
-            (windowrawdata[i]->slot == 13 || windowrawdata[i]->slot == 14)) {
+            (wrd->slot == 13 || wrd->slot == 14)) {
                 NHits++;
         }
     }
     hRaw_NHits->Fill(NHits);
-    if(sdhits.size()>0) tpol_num_events->Fill(1);
+
+    if (sdhits.size() > 0) tpol_num_events->Fill(1);
+
     hDigiHit_NHits->Fill(sdhits.size());
-    for(unsigned int i=0; i < sdhits.size(); i++) {
-        //double ped = sdhits[i]->pedestal/sdhits[i]->nsamples_pedestal;
-        hDigiHit_NSamplesPedestal->Fill(sdhits[i]->nsamples_pedestal);
-        const Df250PulsePedestal* pulsePed = pp_wr_cache[sdhits[i]].first;
-        double ped = 0.0; double peak = 0.0;
-        if (pulsePed) ped = pulsePed->pedestal;
-        if (pulsePed) peak = pulsePed->pulse_peak;
-        hDigiHit_RawPeak->Fill(peak);
+    for (const auto& hit : sdhits) {
+        double ped = (double)hit->pedestal/hit->nsamples_pedestal;
+        hDigiHit_NSamplesPedestal->Fill(hit->nsamples_pedestal);
+        hDigiHit_RawPeak->Fill(hit->pulse_peak);
         hDigiHit_Pedestal->Fill(ped);
-        if (ped==0.0||peak==0.0) continue;
-        hDigiHit_PedestalVsSector->Fill(sdhits[i]->sector,ped);
-        hDigiHit_Occupancy->Fill(sdhits[i]->sector);
-        hDigiHit_RawPeakVsSector->Fill(sdhits[i]->sector,peak);
-        hDigiHit_RawIntegral->Fill(sdhits[i]->pulse_integral);
-        hDigiHit_RawIntegralVsSector->Fill(sdhits[i]->sector,sdhits[i]->pulse_integral);
-        hDigiHit_NSamplesIntegral->Fill(sdhits[i]->nsamples_integral);
-        double Pint = sdhits[i]->pulse_integral-sdhits[i]->nsamples_integral*ped; // pedestal-subtracted pulse integral
-        hDigiHit_IntegralVsSector->Fill(sdhits[i]->sector,Pint);
-        hDigiHit_IntegralVsPeak->Fill(peak-ped,Pint);
-        hDigiHit_PeakVsSector->Fill(sdhits[i]->sector,peak-ped);
-        hDigiHit_PulseTime->Fill(sdhits[i]->pulse_time);
-        double t_ns = 0.0625*sdhits[i]->pulse_time;
+        if (ped == 0.0 || hit->pulse_peak == 0) continue;
+        hDigiHit_PedestalVsSector->Fill(hit->sector,ped);
+        hDigiHit_Occupancy->Fill(hit->sector);
+        hDigiHit_RawPeakVsSector->Fill(hit->sector,hit->pulse_peak);
+        hDigiHit_RawIntegral->Fill(hit->pulse_integral);
+        hDigiHit_RawIntegralVsSector->Fill(hit->sector,hit->pulse_integral);
+        hDigiHit_NSamplesIntegral->Fill(hit->nsamples_integral);
+        double pI = hit->pulse_integral-hit->nsamples_integral*ped;
+        hDigiHit_IntegralVsSector->Fill(hit->sector,pI);
+        hDigiHit_IntegralVsPeak->Fill(hit->pulse_peak-ped,pI);
+        hDigiHit_PeakVsSector->Fill(hit->sector,hit->pulse_peak-ped);
+        hDigiHit_PulseTime->Fill(hit->pulse_time);
+        double t_ns = 0.0625*hit->pulse_time;
         hDigiHit_Time->Fill(t_ns);
-        hDigiHit_TimeVsSector->Fill(sdhits[i]->sector,t_ns);
-        hDigiHit_TimeVsPeak->Fill(peak-ped,t_ns);
-        hDigiHit_TimeVsIntegral->Fill(Pint,t_ns);
-        hDigiHit_QualityFactor->Fill(sdhits[i]->QF);
-        if (pulsePed) hDigiHit_PulseNumber->Fill(pulsePed->pulse_number);
-        if (pulsePed) hDigiHit_PulseNumberVsSector->Fill(sdhits[i]->sector,pulsePed->pulse_number);
-    }
-    hHit_NHits->Fill(hits.size());
-    for(unsigned int i=0; i<hits.size(); i++) {
-        hHit_Occupancy->Fill(hits[i]->sector);
-        hHit_Phi->Fill(hits[i]->phi);
-        hHit_Integral->Fill(hits[i]->integral);
-        hHit_IntegralVsSector->Fill(hits[i]->sector,hits[i]->integral);
-        hHit_Peak->Fill(hits[i]->pulse_peak);
-        hHit_PeakVsSector->Fill(hits[i]->sector,hits[i]->pulse_peak);
-        hHit_Time->Fill(hits[i]->t);
-        hHit_TimeVsSector->Fill(hits[i]->sector,hits[i]->t);
-        hHit_TimeVsPhi->Fill(hits[i]->phi,hits[i]->t);
-        hHit_TimeVsIntegral->Fill(hits[i]->integral,hits[i]->t);
-        hHit_TimeVsPeak->Fill(hits[i]->pulse_peak,hits[i]->t);
+        hDigiHit_TimeVsSector->Fill(hit->sector,t_ns);
+        hDigiHit_TimeVsPeak->Fill(hit->pulse_peak-ped,t_ns);
+        hDigiHit_TimeVsIntegral->Fill(pI,t_ns);
+        hDigiHit_QualityFactor->Fill(hit->QF);
+        const Df250PulseData* pd = pd_cache[hit];
+        int pN = (pd != nullptr) ? pd->pulse_number : -1;
+        if (pN > -1) hDigiHit_PulseNumber->Fill(pN);
+        if (pN > -1) hDigiHit_PulseNumberVsSector->Fill(hit->sector,pN);
     }
 
-	japp->RootFillUnLock(this); //RELEASE ROOT FILL LOCK
+    hHit_NHits->Fill(hits.size());
+    for (const auto& hit : hits) {
+        hHit_Occupancy->Fill(hit->sector);
+        hHit_Phi->Fill(hit->phi);
+        hHit_Integral->Fill(hit->integral);
+        hHit_IntegralVsSector->Fill(hit->sector,hit->integral);
+        hHit_Peak->Fill(hit->pulse_peak);
+        hHit_PeakVsSector->Fill(hit->sector,hit->pulse_peak);
+        hHit_Time->Fill(hit->t);
+        hHit_TimeVsSector->Fill(hit->sector,hit->t);
+        hHit_TimeVsPhi->Fill(hit->phi,hit->t);
+        hHit_TimeVsIntegral->Fill(hit->integral,hit->t);
+        hHit_TimeVsPeak->Fill(hit->pulse_peak,hit->t);
+    }
+
+    japp->RootFillUnLock(this); //RELEASE ROOT FILL LOCK
 
     return NOERROR;
 }
