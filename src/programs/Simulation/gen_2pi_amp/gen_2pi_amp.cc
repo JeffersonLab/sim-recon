@@ -14,7 +14,7 @@
 #include "AMPTOOLS_DATAIO/ROOTDataWriter.h"
 #include "AMPTOOLS_DATAIO/HDDMDataWriter.h"
 
-#include "AMPTOOLS_AMPS/TwoPiAngles.h"
+#include "AMPTOOLS_AMPS/TwoPiAngles_amp.h"
 #include "AMPTOOLS_AMPS/BreitWigner.h"
 
 #include "AMPTOOLS_MCGEN/ProductionMechanism.h"
@@ -137,7 +137,7 @@ int main( int argc, char* argv[] ){
 	gRandom->SetSeed(seed);
 
 	// setup AmpToolsInterface
-	AmpToolsInterface::registerAmplitude( TwoPiAngles() );
+	AmpToolsInterface::registerAmplitude( TwoPiAngles_amp() );
 	AmpToolsInterface::registerAmplitude( BreitWigner() );
 	AmpToolsInterface ati( cfgInfo, AmpToolsInterface::kMCGeneration );
 	
@@ -215,8 +215,10 @@ int main( int argc, char* argv[] ){
 			double genWeight = evt->weight();
 			
 			// cannot ask for the intensity if we haven't called process events above
-			double weightedInten = ( genFlat ? 1 : ati.intensity( i ) );
-			
+			double intensity_i = ati.intensity( i );
+			double weightedInten = ( genFlat ? 1 : ati.intensity( i ) ); // multiply by ten to get output: Elton 9/21/2016
+			cout << " i=" << i << "  intensity_i=" << intensity_i << endl;
+
 			if( !diag ){
 				
 				// obtain this by looking at the maximum value of intensity * genWeight
