@@ -287,8 +287,7 @@ jerror_t JEventProcessor_PSPair_online::brun(JEventLoop *eventLoop, int32_t runn
     // extract the PS geometry
     vector<const DPSGeometry*> psGeomVect;
     eventLoop->Get(psGeomVect);
-    if (psGeomVect.size() < 1)
-    return OBJECT_NOT_AVAILABLE;
+    if (psGeomVect.size() == 0) return OBJECT_NOT_AVAILABLE;
     const DPSGeometry& psGeom = *(psGeomVect[0]);
     // get photon energy bin lows for variable-width energy binning
     double Elows_PSarm[Narms][NC_PS+1];
@@ -318,8 +317,7 @@ jerror_t JEventProcessor_PSPair_online::brun(JEventLoop *eventLoop, int32_t runn
     // extract the TAGH geometry
     vector<const DTAGHGeometry*> taghGeomVect;
     eventLoop->Get(taghGeomVect);
-    if (taghGeomVect.size() < 1)
-    return OBJECT_NOT_AVAILABLE;
+    if (taghGeomVect.size() == 0) return OBJECT_NOT_AVAILABLE;
     const DTAGHGeometry& taghGeom = *(taghGeomVect[0]);
     // get photon energy bin low of each counter for energy histogram binning
     double Elows_TAGH[NC_TAGH+1];
