@@ -1845,6 +1845,10 @@ jerror_t DTrackFitterKalmanSIMD::SetReferenceTrajectory(DMatrix5x1 &S){
             if (fabs(z-my_fdchits[hit_id]->z)<EPS2){
                 forward_traj[m].h_id=my_id;
 
+		if (my_id==mMinDriftID&&fit_type==kWireBased){
+		  mT0=mMinDriftTime-forward_traj[m].t*TIME_UNIT_CONVERSION;
+		}
+
                 // Get the magnetic field at this position along the trajectory
                 bfield->GetField(forward_traj[m].S(state_x),forward_traj[m].S(state_y),
                         z,Bx,By,Bz);
@@ -4224,7 +4228,7 @@ kalman_error_t DTrackFitterKalmanSIMD::KalmanForward(double fdc_anneal_factor,
   DMatrix5x5 Q;  // Process noise covariance matrix
   DMatrix5x2 K;  // Kalman gain matrix
   DMatrix5x1 Kc;  // Kalman gain matrix for cdc hits
-  DMatrix2x2 V(0.0833,0.,0.,FDC_CATHODE_VARIANCE);  // Measurement covariance matrix
+  DMatrix2x2 V(0.11,0.,0.,FDC_CATHODE_VARIANCE);  // Measurement covariance matrix
   DMatrix2x1 R;  // Filtered residual
   DMatrix2x2 RC;  // Covariance of filtered residual
   DMatrix5x1 S0,S0_; //State vector 
