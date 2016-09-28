@@ -186,7 +186,7 @@ jerror_t DFDCHit_factory::evnt(JEventLoop *loop, uint64_t eventnumber)
 
         // Grab the pedestal from the digihit since this should be consistent between the old and new formats
         uint32_t raw_ped           = digihit->pedestal;
-        uint32_t nsamples_integral;
+//        uint32_t nsamples_integral;
 
         // There are a few values from the new data type that are critical for the interpretation of the data
         //uint16_t IBIT = 0; // 2^{IBIT} Scale factor for integral
@@ -222,10 +222,10 @@ jerror_t DFDCHit_factory::evnt(JEventLoop *loop, uint64_t eventnumber)
 					}
 				}
             if ((NW - (digihit->pulse_time / 10)) < IE){
-                nsamples_integral = (NW - (digihit->pulse_time / 10));
+//                nsamples_integral = (NW - (digihit->pulse_time / 10));
             }
             else{
-                nsamples_integral = IE;
+//                nsamples_integral = IE;
             }
 
             pulse_peak = FDCPulseObj->peak_amp << ABIT;
