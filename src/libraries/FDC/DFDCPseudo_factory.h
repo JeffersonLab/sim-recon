@@ -140,6 +140,7 @@ class DFDCPseudo_factory : public JFactory<DFDCPseudo> {
 		bool DEBUG_HISTS,USE_FDC;
 		double MIDDLE_STRIP_THRESHOLD;
 		double FDC_RES_PAR1,FDC_RES_PAR2;
+		double CHARGE_THRESHOLD;
 
 		TH2F *qv_vs_qu, *dtv_vs_dtu;
 		TH2F *uv_dt_vs_u,*uv_dt_vs_v,*v_wire_dt_vs_wire;
