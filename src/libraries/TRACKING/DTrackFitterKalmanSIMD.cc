@@ -887,9 +887,8 @@ jerror_t DTrackFitterKalmanSIMD::AddFDCHit(const DFDCPseudo *fdchit){
     hit->vstrip=fdchit->s;
     hit->vvar=fdchit->ds*fdchit->ds;
     hit->z=fdchit->wire->origin.z();
-    double tilt_factor=1./fdchit->wire->sdir.z();
-    hit->cosa=fdchit->wire->udir.y()*tilt_factor;
-    hit->sina=fdchit->wire->udir.x()*tilt_factor;
+    hit->cosa=fdchit->wire->udir.y();
+    hit->sina=fdchit->wire->udir.x();
     hit->nr=0.;
     hit->nz=0.;
     hit->dE=1e6*fdchit->dE;
@@ -4228,7 +4227,7 @@ kalman_error_t DTrackFitterKalmanSIMD::KalmanForward(double fdc_anneal_factor,
   DMatrix5x5 Q;  // Process noise covariance matrix
   DMatrix5x2 K;  // Kalman gain matrix
   DMatrix5x1 Kc;  // Kalman gain matrix for cdc hits
-  DMatrix2x2 V(0.11,0.,0.,FDC_CATHODE_VARIANCE);  // Measurement covariance matrix
+  DMatrix2x2 V(0.12,0.,0.,FDC_CATHODE_VARIANCE);  // Measurement covariance matrix
   DMatrix2x1 R;  // Filtered residual
   DMatrix2x2 RC;  // Covariance of filtered residual
   DMatrix5x1 S0,S0_; //State vector 
