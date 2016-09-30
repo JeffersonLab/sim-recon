@@ -241,7 +241,7 @@ namespace bz {
         LOG("bz::ostreambuf::sync");
         int ret;
         MUTEX_LOCK
-        ret = flush(full_sync);
+        ret = flush(finish_sync);
         _sb->pubsync();
         MUTEX_UNLOCK
         return ret;
@@ -295,6 +295,12 @@ namespace bz {
         block_offset += written;
         if (block_offset > (std::streamoff)level * 100000) {
             f = (f == no_sync)? finish_sync : f;
+        }
+
+        if (z_strm->avail_in + 
+            z_strm->total_in_lo32 + z_strm->total_in_hi32 == 0)
+        {
+           return 0;
         }
 
         bool redo = false;
