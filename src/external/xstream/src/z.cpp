@@ -222,7 +222,7 @@ namespace z {
       LOG ("z::ostreambuf::sync");
       int ret;
       MUTEX_LOCK
-      ret = flush(normal_sync);
+      ret = flush(finish_sync);
       _sb->pubsync();
       MUTEX_UNLOCK
       return ret;
@@ -277,6 +277,9 @@ namespace z {
         if (block_offset > (std::streamoff)COMPRESSION_BLOCK_SIZE) {
             f = (f == no_sync)? finish_sync : f;
         }
+
+        if (z_strm->avail_in + z_strm->total_in == 0)
+           return 0;
 
         bool redo = false;
         bool reinit_deflator = false;
