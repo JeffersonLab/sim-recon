@@ -29,7 +29,7 @@ bool   PRINT_SUMMARY = true;
 bool   MAP_WORDS     = false;
 string ROOT_FILENAME = "hdevio_scan.root";
 uint64_t MAX_EVIO_EVENTS = 20000;
-
+uint32_t BLOCK_SIZE = 20; // used for daq_block_size histogram
 
 //----------------
 // main
@@ -62,6 +62,7 @@ void Usage(string mess="")
 	cout << "   -r file.root  Set name of ROOT file to save histo to. " << endl;
 	cout << "                 (implies -w)" << endl;
 	cout << "   -m max_events Max. EVIO events (not physics events) to process." << endl;
+	cout << "   -b block_size EVIO events to add for daq_block_size histo." << endl;
 	cout << endl;
 
 	if(mess != "") cout << endl << mess << endl << endl;
@@ -85,6 +86,7 @@ void ParseCommandLineArguments(int narg, char *argv[])
 		else if(arg == "-w"){ MAP_WORDS = true; PRINT_SUMMARY = false; }
 		else if(arg == "-r"){ MAP_WORDS = true; PRINT_SUMMARY = false; ROOT_FILENAME = next; i++;}
 		else if(arg == "-m"){ MAX_EVIO_EVENTS = atoi(next.c_str()); i++;}
+		else if(arg == "-b"){ BLOCK_SIZE = atoi(next.c_str()); i++;}
 		else if(arg[0] == '-') {cout << "Unknown option \""<<arg<<"\" !" << endl; exit(-1);}
 		else filenames.push_back(arg);
 	}

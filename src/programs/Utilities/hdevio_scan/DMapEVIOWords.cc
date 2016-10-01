@@ -26,11 +26,13 @@ using namespace jana;
 #include <TProfile2D.h>
 #include <TROOT.h>
 
+extern uint32_t BLOCK_SIZE;
 
 // root hist pointers
 static TProfile *daq_hits_per_event;
 static TProfile *daq_words_per_event;
 static TH1D *daq_event_size;
+static TH1D *daq_block_size; // Adds together BLOCK_SIZE EVIO events (n.b. evio events could already be blocks!)
 static TH1D *daq_event_tdiff;
 static TH1D *daq_words_by_type;
 //static bool ttab_labels_set = false;
@@ -42,9 +44,13 @@ static TH1D *daq_words_by_type;
 //------------------
 DMapEVIOWords::DMapEVIOWords()
 {
+	char daq_block_size_title[256];
+	sprintf(daq_block_size_title, "Block size (%d EVIO events) in kB", BLOCK_SIZE);
+
 	daq_hits_per_event = new TProfile("daq_hits_per_event", "Hits/event vs. rocid", 100, 0.5, 100.5);
 	daq_words_per_event = new TProfile("daq_words_per_event", "words/event vs. rocid", 100, 0.5, 100.5);
-	daq_event_size = new TH1D("daq_event_size", "Event size in kB", 1000, 0.0, 1.0E3);
+	daq_event_size = new TH1D("daq_event_size", "Event size in kB", 10000, 0.0, 1.0E3);
+	daq_block_size = new TH1D("daq_block_size", daq_block_size_title, 1000, 0.0, 1.0E3);
 	daq_event_tdiff = new TH1D("daq_event_tdiff", "Time between events", 10000, 0.0, 1.0E1);
 	daq_words_by_type = new TH1D("daq_words_by_type", "Number of words in EVIO file by type", kNEVIOWordTypes, 0, (double)kNEVIOWordTypes);
 	
@@ -329,6 +335,16 @@ void DMapEVIOWords::ParseEvent(uint32_t *buff)
 	// Fill event size histos
 	double physics_event_len_kB = (double)((physics_event_len+1)*sizeof(uint32_t))/1024.0;
 	daq_event_size->Fill(physics_event_len_kB);
+	static int Nin_block = 1;
+	static double block_size = 0;
+	block_size += physics_event_len_kB;
+	Nin_block++;
+	if( (Nin_block%BLOCK_SIZE) == 0 ){
+		daq_block_size->Fill(block_size);
+		block_size = 0.0;
+		Nin_block  = 0;
+	}
+	
 	uint32_t TotalWords = 0;
 	for(uint32_t rocid=0; rocid<100; rocid++){
 		daq_words_per_event->Fill(rocid, Nwords[rocid]);
