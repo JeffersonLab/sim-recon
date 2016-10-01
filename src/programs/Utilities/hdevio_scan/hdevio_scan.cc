@@ -159,6 +159,7 @@ void MapEVIOWords(void)
 					break;
 				case HDEVIO::HDEVIO_EOF:
 					cout << endl << " end of file" << endl;
+					done = true;
 					break;
 				default:
 					cout << endl;
