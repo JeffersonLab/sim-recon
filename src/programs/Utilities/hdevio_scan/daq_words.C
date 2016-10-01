@@ -36,7 +36,8 @@ void daq_words(void)
 	daq_words_by_type->SetYTitle("Total number of 32-bit words");
 	daq_words_by_type->GetYaxis()->SetTitleOffset(0.6);
 	daq_words_by_type->GetYaxis()->SetRangeUser(min, max);
-	daq_words_by_type->Draw();
+	daq_words_by_type->SetFillColor(kBlue);
+	daq_words_by_type->Draw("bar");
 	
 	double ylab = pow(10.0, 0.3*(log(max)-log(min)) + log(min));
 	
