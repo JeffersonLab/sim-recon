@@ -37,12 +37,14 @@ class DMapEVIOWords{
 			kf250WindowRawData,
 			kf250WindowSum,
 			kf250PulseRawData,
+			kf250PulseData,
 			kf250PulseIntegral,
 			kf250PulseTime,
 			kf250PulsePedestal,
 			kf250EventTrailer,
 			kf250DataNotValid,
 			kf250Filler,
+			kf250Unknown,
 			
 			kSpacer2,
 
@@ -60,6 +62,7 @@ class DMapEVIOWords{
 			kf125EventTrailer,
 			kf125DataNotValid,
 			kf125Filler,
+			kf125Unknown,
 			
 			kSpacer3,
 			
@@ -71,6 +74,7 @@ class DMapEVIOWords{
 			kF1v2Data,
 			kF1v2Filler,
 			kF1v2BreakWord,
+			kF1v2Unknown,
 			
 			kSpacer4,
 
@@ -82,6 +86,7 @@ class DMapEVIOWords{
 			kF1v3Data,
 			kF1v3Filler,
 			kF1v3BreakWord,
+			kF1v3Unknown,
 			
 			kSpacer5,
 
@@ -93,6 +98,7 @@ class DMapEVIOWords{
 			kCAEN1190TDCError,
 			kCAEN1190TDCTrailer,
 			kCAEN1190Filler,
+			kCAEN1190Unknown,
 			
 			kSpacer6,
 			
@@ -123,6 +129,8 @@ class DMapEVIOWords{
 		void AddROCIDLabels(void);
 		void ParseEvent(uint32_t *buff);
 		void DataWordStats(uint32_t *iptr, uint32_t *iend, uint32_t *word_stats);
+
+		uint32_t TotWordCount(uint32_t *word_stats);
 
 		void ParseJLabModuleData(uint32_t rocid, uint32_t *&iptr, uint32_t *iend, uint32_t *word_stats);
 		void Parsef250Bank(uint32_t rocid, uint32_t *&iptr, uint32_t *iend, uint32_t *word_stats);
