@@ -353,6 +353,9 @@ int main(int argC, char* argV[])
          std::streambuf *fin_sb = 0;
          xstream::z::istreambuf *zin_sb = 0;
          xstream::bz::istreambuf *bzin_sb = 0;
+         int *leftovers = new int[100];
+         int sizeof_leftovers = sizeof(int[100]);
+         leftovers[0] = 0;
          if (compression_flags == compression_mode) {
             fin_sb = ifs->rdbuf();
          }
@@ -361,7 +364,8 @@ int main(int argC, char* argV[])
                bzin_sb = (xstream::bz::istreambuf*)ifs->rdbuf();
             }
             compression_mode = compression_flags;
-            zin_sb = new xstream::z::istreambuf(ifs->rdbuf());
+            zin_sb = new xstream::z::istreambuf(ifs->rdbuf(),
+                                                leftovers, sizeof_leftovers);
             ifs->rdbuf(zin_sb);
             if (bzin_sb != 0)
                delete bzin_sb;
@@ -371,7 +375,8 @@ int main(int argC, char* argV[])
                zin_sb = (xstream::z::istreambuf*)ifs->rdbuf();
             }
             compression_mode = compression_flags;
-            bzin_sb = new xstream::bz::istreambuf(ifs->rdbuf());
+            bzin_sb = new xstream::bz::istreambuf(ifs->rdbuf(),
+                                                  leftovers, sizeof_leftovers);
             ifs->rdbuf(bzin_sb);
             if (zin_sb != 0)
                delete zin_sb;

@@ -194,12 +194,12 @@ jerror_t DParticleComboBlueprint_factory::evnt(JEventLoop *locEventLoop, uint64_
 			string locReactionSkimString = locReactions[loc_i]->Get_EventStoreSkims();
 			vector<string> locReactionSkimVector;
 			SplitString(locReactionSkimString, locReactionSkimVector, ",");
-			bool locSkimMissingFlag = false;
+//			bool locSkimMissingFlag = false;
 			for(size_t loc_j = 0; loc_j < locReactionSkimVector.size(); ++loc_j)
 			{
 				if(locESSkimData && locESSkimData->Get_IsEventSkim(locReactionSkimVector[loc_j]))
 					continue; //ok so far
-				locSkimMissingFlag = true;
+//				locSkimMissingFlag = true;
 				break;
 			}
 	//		if(locSkimMissingFlag)

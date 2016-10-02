@@ -923,6 +923,7 @@ jerror_t DFDCPseudo_factory::ThreeStripCluster(const vector<const DFDCHit*>& H,
   double t=0;
   double o_amp=0;
   int i_corr=-2;
+  double q_from_pulse_height = 0;
   for (vector<const DFDCHit*>::const_iterator j=peak-1;j<=peak+1;j++){
     unsigned int index=2*((*j)->gLayer-1)+(*j)->plane/2;
     
@@ -936,7 +937,7 @@ jerror_t DFDCPseudo_factory::ThreeStripCluster(const vector<const DFDCHit*>& H,
     if (amp > o_amp){
       t=double((*j)->t);
       o_amp = amp;
-      temp.q_from_pulse_height=amp;
+      q_from_pulse_height=amp;
       i_corr++;
     }
   }
@@ -951,6 +952,7 @@ jerror_t DFDCPseudo_factory::ThreeStripCluster(const vector<const DFDCHit*>& H,
   temp.pos=wsum/sum + i_corr*pos_corr;
 
   temp.q=sum;
+  temp.q_from_pulse_height = q_from_pulse_height;
   temp.numstrips=10;
   temp.t=t;
   temp.t_rms=0.;

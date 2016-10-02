@@ -162,14 +162,13 @@ jerror_t DSCHit_factory::evnt(JEventLoop *loop, uint64_t eventnumber)
     loop->Get(digihits);
     sort(digihits.begin(),digihits.end(),DSCHit_fadc_cmp);
 
-	const DTTabUtilities* locTTabUtilities = NULL;
+	const DTTabUtilities* locTTabUtilities = nullptr;
 	loop->GetSingle(locTTabUtilities);
 
     char str[256];
 
     for (unsigned int i = 0; i < digihits.size(); i++)  {
         const DSCDigiHit *digihit = digihits[i];
-        double ped_corr_pulse_peak = 0.;
 
         // Make sure sector is in valid range
         if( (digihit->sector <= 0) && (digihit->sector > MAX_SECTORS))  {
@@ -178,21 +177,7 @@ jerror_t DSCHit_factory::evnt(JEventLoop *loop, uint64_t eventnumber)
             throw JException(str);
         }
 
-        // Error checking for pre-Fall 2016 firmware
-        if(digihit->datasource == 1) {
-            // There is a slight difference between Mode 7 and 8 data
-            // The following condition signals an error state in the flash algorithm
-            // Do not make hits out of these
-            const Df250PulsePedestal* PPobj = NULL;
-            digihit->GetSingle(PPobj);
-            if (PPobj != NULL) {
-                if (PPobj->pedestal == 0 || PPobj->pulse_peak == 0) continue;
-            } else 
-                continue;
-
-            if (digihit->pulse_time == 0) continue; // Should already be caught, but I'll leave it
-        }
-        
+        // Throw away hits with firmware errors (post-summer 2016 firmware)
         if(CHECK_FADC_ERRORS && !locTTabUtilities->CheckFADC250_NoErrors(digihit->QF))
             continue;
 
@@ -209,24 +194,29 @@ jerror_t DSCHit_factory::evnt(JEventLoop *loop, uint64_t eventnumber)
             continue;
         }
 
+        // digihit->pedestal is the sum of "nsamples_pedestal" samples
+        // Calculate the average pedestal per sample
         if( (digihit->pedestal>0) && locTTabUtilities->CheckFADC250_PedestalOK(digihit->QF) ) {
-            pedestal = digihit->pedestal * (nsamples_integral/nsamples_pedestal);
-        } else {
-            continue;
+            pedestal = (double)digihit->pedestal/nsamples_pedestal;
         }
 
-        double single_sample_ped = pedestal/nsamples_pedestal;
+        // Subtract pedestal from pulse peak
+        if (digihit->pulse_time == 0 || digihit->pedestal == 0 || digihit->pulse_peak == 0) continue;
+        double pulse_peak = digihit->pulse_peak - pedestal;
+
+        // Subtract pedestal from pulse integral
+        double A = (double)digihit->pulse_integral;
+        A -= pedestal*nsamples_integral;
 
         //if ( ((double)digihit->pulse_integral) < ADC_THRESHOLD) continue; // Will comment out until this is set to something useful by default
 
-        double A = (double)digihit->pulse_integral;
         double T = (double)digihit->pulse_time;
 
         DSCHit *hit = new DSCHit;
         // Sectors are numbered from 1-30
         hit->sector = digihit->sector;
 
-        hit->dE = a_scale * a_gains[digihit->sector-1] * (A - pedestal); 
+        hit->dE = a_scale * a_gains[digihit->sector-1] * A;
         hit->t_fADC = t_scale * T - adc_time_offsets[hit->sector-1] + t_base;
         hit->t_TDC = numeric_limits<double>::quiet_NaN();
 
@@ -234,7 +224,7 @@ jerror_t DSCHit_factory::evnt(JEventLoop *loop, uint64_t eventnumber)
         hit->has_fADC = true;
 
         hit->t = hit->t_fADC; // set time from fADC in case no TDC hit
-        hit->pulse_height = digihit->pulse_peak - single_sample_ped;
+        hit->pulse_height = pulse_peak;
 
         hit->AddAssociatedObject(digihit);
 
@@ -270,7 +260,7 @@ jerror_t DSCHit_factory::evnt(JEventLoop *loop, uint64_t eventnumber)
 	    //   a hit in the TDC and not the ADC it is a "decent" TDC hit
         if (fabs(T) < HIT_TIME_WINDOW) {
             DSCHit *hit = FindMatch(digihit->sector, T);
-            if (! hit) {
+            if (hit == nullptr) {
                 hit = new DSCHit;
                 hit->sector = digihit->sector;
                 hit->dE = 0.0;
@@ -318,7 +308,7 @@ jerror_t DSCHit_factory::evnt(JEventLoop *loop, uint64_t eventnumber)
 //------------------
 DSCHit* DSCHit_factory::FindMatch(int sector, double T)
 {
-    DSCHit *best_match=NULL;
+    DSCHit *best_match = nullptr;
 
     // Loop over existing hits (from fADC) and look for a match
     // in both the sector and the time.
@@ -336,7 +326,7 @@ DSCHit* DSCHit_factory::FindMatch(int sector, double T)
         if (delta_T > DELTA_T_ADC_TDC_MAX)
 	  continue;
 	  
-        if (best_match != NULL)
+        if (best_match != nullptr)
         {
             if (delta_T < fabs(best_match->t - T))
                 best_match = hit;

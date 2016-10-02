@@ -279,7 +279,6 @@ jerror_t JEventProcessor_lowlevel_online::init(void)
     maindir->cd();
 	gDirectory->mkdir("TAGH");
 
-
     tagh_adc_integral = new TH1I("tagh_adc_integral", "TAGH fADC250 Pulse Integral;Integral (fADC counts)", 1000, 0, 40000);
     tagh_adc_integral_pedsub = new TH1I("tagh_adc_integral_pedsub", "TAGH fADC250 Pulse Integral (Pedestal Subtracted);Integral (fADC counts)", 1000, 0, 40000);
     tagh_adc_peak = new TH1I("tagh_adc_peak", "TAGH fADC250 Pulse Peak;Peak (fADC counts)", 500, 0, 1000);

@@ -8084,7 +8084,7 @@ jerror_t DTrackFitterKalmanSIMD::SmoothForwardCDC(void){
 	    }
 
             Cs=cdc_updates[cdc_index].C+A*(Cs-C)*A.Transpose();
-	    if(cdc_updates[cdc_index].used_in_fit == false) continue; 
+	    if(cdc_used_in_fit[cdc_index] == false) continue; 
 	    FillPullsVectorEntry(Ss,Cs,forward_traj[m],my_cdchits[cdc_index],
 				 cdc_updates[cdc_index]);
 	    
