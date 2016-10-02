@@ -258,10 +258,7 @@ jerror_t JEventProcessor_PSC_online::evnt(JEventLoop *eventLoop, uint64_t eventn
     hDigiHit_Pedestal[arm]->Fill(ped);
     const Df250PulsePedestal* pulsePed = pp_cache[digihits[i]];
     double peak = -999.0;
-    if (pulsePed) 
-        peak = pulsePed->pulse_peak; 
-    else 
-        peak = digihits[i]->pulse_peak;
+    if (pulsePed) peak = pulsePed->pulse_peak; 
     hDigiHit_RawPeak[arm]->Fill(peak);
     if (ped==0.0||peak==0.0) continue;
     NDigiHits[arm]++;

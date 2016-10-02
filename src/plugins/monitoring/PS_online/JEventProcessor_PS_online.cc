@@ -18,7 +18,6 @@ using namespace jana;
 #include <PAIR_SPECTROMETER/DPSHit.h>
 #include <PAIR_SPECTROMETER/DPSGeometry.h>
 #include <DAQ/Df250PulsePedestal.h>
-#include <DAQ/Df250PulseData.h>
 
 #include <TDirectory.h>
 #include <TH1.h>
@@ -254,10 +253,7 @@ jerror_t JEventProcessor_PS_online::evnt(JEventLoop *eventLoop, uint64_t eventnu
     hDigiHit_Pedestal[arm]->Fill(ped);
     const Df250PulsePedestal* pulsePed = pp_cache[digihits[i]];
     double peak = -999.0;
-    if (pulsePed) 
-        peak = pulsePed->pulse_peak; 
-    else 
-        peak = digihits[i]->pulse_peak;
+    if (pulsePed) peak = pulsePed->pulse_peak; 
     hDigiHit_RawPeak[arm]->Fill(peak);
     if (ped==0.0||peak==0.0) continue;
     hDigiHit_PedestalVsColumn[arm]->Fill(digihits[i]->column,ped);

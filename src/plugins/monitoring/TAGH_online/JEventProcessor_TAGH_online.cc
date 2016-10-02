@@ -19,7 +19,6 @@ using namespace jana;
 #include <TAGGER/DTAGHDigiHit.h>
 #include <TAGGER/DTAGHHit.h>
 #include <TAGGER/DTAGHGeometry.h>
-#include <DAQ/Df250PulseData.h>
 #include <DAQ/Df250PulsePedestal.h>
 #include <DAQ/Df250PulseIntegral.h>
 #include <DAQ/Df250WindowRawData.h>
@@ -284,19 +283,14 @@ jerror_t JEventProcessor_TAGH_online::evnt(JEventLoop *eventLoop, uint64_t event
     eventLoop->GetSingle(ttabUtilities);
     // cache pulse pedestal and window raw data objects
     map< const DTAGHDigiHit*, pair<const Df250PulsePedestal*, const Df250WindowRawData*> > pp_wr_cache;
-    // for newer firmware, cache pulse data objects
-    map< const DTAGHDigiHit*, const Df250PulseData* > pd_cache;
     for(unsigned int i=0; i < digihits.size(); i++) {
         const Df250PulsePedestal* pulsePed = NULL;
         const Df250PulseIntegral* pulseInt = NULL;
-        const Df250PulseData* pulseDat = NULL;
         const Df250WindowRawData* rawData = NULL;
         digihits[i]->GetSingle(pulsePed);
         digihits[i]->GetSingle(pulseInt);
-        digihits[i]->GetSingle(pulseDat);
         if (pulseInt) pulseInt->GetSingle(rawData);
         pp_wr_cache[digihits[i]] = pair<const Df250PulsePedestal*, const Df250WindowRawData*>(pulsePed, rawData);
-        pd_cache[digihits[i]] = pulseDat;
     }
     // get beam current
     vector<const DEPICSvalue*> epicsVals;
@@ -326,19 +320,8 @@ jerror_t JEventProcessor_TAGH_online::evnt(JEventLoop *eventLoop, uint64_t event
         hDigiHit_NSamplesPedestal->Fill(digihits[i]->nsamples_pedestal);
         hDigiHit_Pedestal->Fill(ped);
         const Df250PulsePedestal* pulsePed = pp_wr_cache[digihits[i]].first;
-        const Df250PulseData* pulseDat = pd_cache[digihits[i]];
         double peak = -1.0;
-        if (pulsePed)  {
-            peak = pulsePed->pulse_peak;
-            hDigiHit_PulseNumber->Fill(pulsePed->pulse_number);
-            hDigiHit_PulseNumberVsSlotID->Fill(digihits[i]->counter_id,pulsePed->pulse_number);
-        } else {
-            peak = digihits[i]->pulse_peak;
-            if (pulseDat) { 
-                hDigiHit_PulseNumber->Fill(pulseDat->pulse_number);
-                hDigiHit_PulseNumberVsSlotID->Fill(digihits[i]->counter_id,pulseDat->pulse_number);
-            }
-        }
+        if (pulsePed) peak = pulsePed->pulse_peak;
         hDigiHit_RawPeak->Fill(peak);
         if (ped==0.0||peak==0.0) continue;
         hDigiHit_PedestalVsSlotID->Fill(digihits[i]->counter_id,ped);
@@ -357,6 +340,8 @@ jerror_t JEventProcessor_TAGH_online::evnt(JEventLoop *eventLoop, uint64_t event
         hDigiHit_fadcTimeVsSlotID->Fill(digihits[i]->counter_id,t_ns);
         hDigiHit_fadcTimeVsIntegral->Fill(PI,t_ns);
         hDigiHit_QualityFactor->Fill(digihits[i]->QF);
+        if (pulsePed) hDigiHit_PulseNumber->Fill(pulsePed->pulse_number);
+        if (pulsePed) hDigiHit_PulseNumberVsSlotID->Fill(digihits[i]->counter_id,pulsePed->pulse_number);
         if (PI>counts_cut)  {
             NfadcHits_cut++;
             hDigiHit_fadcOccupancy_cut->Fill(digihits[i]->counter_id);
