@@ -125,22 +125,11 @@ jerror_t JEventProcessor_st_tw_corr_auto::evnt(JEventLoop *loop, uint64_t eventn
       if(the_digihit == NULL)
 	continue;
       
-      // There is a slight difference between Mode 7 and 8 data
-      // The following condition signals an error state in the flash algorithm
-      // Do not make hits out of these
-      const Df250PulsePedestal* PPobj = NULL;
-      the_digihit->GetSingle(PPobj);
-      if (PPobj != NULL)
-	{
-	  if (PPobj->pedestal == 0 || PPobj->pulse_peak == 0) continue;
-	}
-	else continue;
       // Extract the information we're interested in 
-      double adc_pp;
-      if(PPobj != NULL)
-	adc_pp   = (double)PPobj->pulse_peak - (double)PPobj->pedestal;
-      else
-	adc_pp =0.;
+      double pulse_peak = the_digihit->pulse_peak;
+      double pedestal = the_digihit->pedestal;
+      double nsamples_pedestal = the_digihit->nsamples_pedestal;
+      double adc_pp = pulse_peak - pedestal/nsamples_pedestal;
       
       double T   = st_hits[k]->t;             // this is always set to the TDC time
       // timewalk corrections are controlled by command line flag

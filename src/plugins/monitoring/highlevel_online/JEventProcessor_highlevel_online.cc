@@ -1,6 +1,8 @@
 #include "JEventProcessor_highlevel_online.h"
 using namespace jana;
 
+#include <DAQ/Df250PulseData.h>
+
 // Routine used to create our JEventProcessor
 #include <JANA/JApplication.h>
 #include <JANA/JFactory.h>
@@ -158,7 +160,7 @@ jerror_t JEventProcessor_highlevel_online::evnt(JEventLoop *locEventLoop, uint64
 
     vector<const DFCALDigiHit*> locFCALDigiHits;
     locEventLoop->Get(locFCALDigiHits);
-
+    
 	const DDetectorMatches* locDetectorMatches = NULL;
 	locEventLoop->GetSingle(locDetectorMatches);
 
@@ -260,11 +262,14 @@ jerror_t JEventProcessor_highlevel_online::evnt(JEventLoop *locEventLoop, uint64
 
 		const Df250PulsePedestal *pulsepedestal = NULL;
 		fcal_hit->GetSingle(pulsepedestal);
-
+		const Df250PulseData *pulsedata = NULL;
+		fcal_hit->GetSingle(pulsedata);
 
 		Int_t pulse_peak = -10;
-		if(pulsepedestal)
+		if(pulsepedestal)   // pre-Fall 2016 firmware
 			pulse_peak = pulsepedestal->pulse_peak - 100;
+		if(pulsedata)       // post-Fall 2016 firmware
+			pulse_peak = pulsedata->pulse_peak - 100;
 
 		if(pulse_peak <= fcal_cell_thr)
 			continue;

@@ -211,15 +211,13 @@ jerror_t JEventProcessor_ST_online_lowlevel::evnt(JEventLoop *loop, uint64_t eve
   h2_st_adc_hit_multi->Fill(Hits, ADC_hits);
   //========================== DSCDigiHits ** ADC Hits=================
   //*******************************************************************
-  for(uint32_t i = 0; i < ADC_hits; i++)
-    {
+  for(uint32_t i = 0; i < ADC_hits; i++) {
       //***************************************************************
       //=========== Wave Form online O'Scope ==========================
       // **************************************************************
       // Define some objects
-      const Df250PulseIntegral *pulseintegral = NULL;
-      const Df250PulsePedestal *pulsepedestal = NULL;
-      const Df250WindowRawData *windowrawdata = NULL;
+      const Df250PulseIntegral *pulseintegral = nullptr;
+      const Df250WindowRawData *windowrawdata = nullptr;
       // Define a vector to store the adc samples
       vector<uint16_t> samples;  // Declare empty vector
       // Get the sector values
@@ -227,121 +225,88 @@ jerror_t JEventProcessor_ST_online_lowlevel::evnt(JEventLoop *loop, uint64_t eve
       Int_t hit_sector_adc_index = hit_sector_adc - 1;
       
       dscdigihits[i]->GetSingle(pulseintegral);
-      dscdigihits[i]->GetSingle(pulsepedestal);
       dscdigihits[i]->GetSingle(windowrawdata);
       // Obtain the pedestal and raw window data
-      if (pulseintegral) 
-	{
-	  pulseintegral->GetSingle(pulsepedestal);
-	  pulseintegral->GetSingle(windowrawdata);
-	}
+      if (pulseintegral != nullptr) {
+          pulseintegral->GetSingle(windowrawdata);
+      }
       // Histogram the raw window data
-      if (windowrawdata)
-	{  
-	  const Df250PulsePedestal* PPobj = NULL;
-	  dscdigihits[i]->GetSingle(PPobj);
-	  if (PPobj != NULL)
-	    {
-	      if (PPobj->pedestal == 0 || PPobj->pulse_peak == 0) continue;
-	    }
-	  adc_pp   = PPobj->pulse_peak;
-	  if ((100 < adc_pp) && (adc_pp <= 150))
-	    {
-	      if (!bool_sec150[hit_sector_adc_index])
-		{
-		  bool_sec150[hit_sector_adc_index] = true;
-		  if (bool_sec150[hit_sector_adc_index])
-		    {
-		      for (uint32_t j = 0; j < windowrawdata->samples.size(); j++)
-			{
-			  samples.push_back(windowrawdata->samples[j]);
-			  h_amp_vs_sampl_chan150[hit_sector_adc_index]->Fill(j, samples[j]);
-			}
-		    }
-		}
-	    }
-	  if ((150 < adc_pp) && (adc_pp <= 1000))
-	    {
-	      if (!bool_sec[hit_sector_adc_index])
-		{
-		  bool_sec[hit_sector_adc_index] = true;
-		  if (bool_sec[hit_sector_adc_index])
-		    {
-		      for (uint32_t j = 0; j < windowrawdata->samples.size(); j++)
-			{
-			  samples.push_back(windowrawdata->samples[j]);
-			  h_amp_vs_sampl_chan[hit_sector_adc_index]->Fill(j, samples[j]);
-			}
-		    }
-		}
-	    }
-	  if ( (1000 < adc_pp) && (adc_pp <= 2000))
-	    {
-	      if (!bool_sec1000[hit_sector_adc_index])
-		{
-		  bool_sec1000[hit_sector_adc_index] = true;
-		  if (bool_sec1000[hit_sector_adc_index])
-		    {
-		      for (uint32_t j = 0; j < windowrawdata->samples.size(); j++)
-			{
-			  samples.push_back(windowrawdata->samples[j]);
-			  h_amp_vs_sampl_chan1000[hit_sector_adc_index]->Fill(j, samples[j]);
-			}
-		    }
-		}
-	    }
-	  if ( (2000 < adc_pp) && (adc_pp <= 3000))
-	    {
-	      if (!bool_sec2000[hit_sector_adc_index])
-		{
-		  bool_sec2000[hit_sector_adc_index] = true;
-		  if (bool_sec2000[hit_sector_adc_index])
-		    {
-		      for (uint32_t j = 0; j < windowrawdata->samples.size(); j++)
-			{
-			  samples.push_back(windowrawdata->samples[j]);
-			  h_amp_vs_sampl_chan2000[hit_sector_adc_index]->Fill(j, samples[j]);
-			}
-		    }
-		}
-	    }
-	  if ( (3000 < adc_pp) && (adc_pp <= 4000))
-	    {
-	      if (!bool_sec3000[hit_sector_adc_index])
-		{
-		  bool_sec3000[hit_sector_adc_index] = true;
-		  if (bool_sec3000[hit_sector_adc_index])
-		    {
-		      for (uint32_t j = 0; j < windowrawdata->samples.size(); j++)
-			{
-			  samples.push_back(windowrawdata->samples[j]);
-			  h_amp_vs_sampl_chan3000[hit_sector_adc_index]->Fill(j, samples[j]);
-			}
-		    }
-		}
-	    }
-	  if ( (4000 < adc_pp))
-	    {
-	      if (!bool_sec4000[hit_sector_adc_index])
-		{
-		  bool_sec4000[hit_sector_adc_index] = true;
-		  if (bool_sec4000[hit_sector_adc_index])
-		    {
-		      for (uint32_t j = 0; j < windowrawdata->samples.size(); j++)
-			{
-			  samples.push_back(windowrawdata->samples[j]);
-			  h_amp_vs_sampl_chan4000[hit_sector_adc_index]->Fill(j, samples[j]);
-			}
-		    }
-		}
-	    }
-	} // Windowrawdata cut
+      if (windowrawdata != nullptr) {
+          adc_pp   = dscdigihits[i]->pulse_peak;
+          if ((100 < adc_pp) && (adc_pp <= 150)) {
+              if (!bool_sec150[hit_sector_adc_index]) {
+
+                  bool_sec150[hit_sector_adc_index] = true;
+                  if (bool_sec150[hit_sector_adc_index]) {
+                      for (uint32_t j = 0; j < windowrawdata->samples.size(); j++) {
+                          samples.push_back(windowrawdata->samples[j]);
+                          h_amp_vs_sampl_chan150[hit_sector_adc_index]->Fill(j, samples[j]);
+                      }
+                  }
+              }
+          }
+          if ((150 < adc_pp) && (adc_pp <= 1000)) {
+              if (!bool_sec[hit_sector_adc_index]) {
+                  bool_sec[hit_sector_adc_index] = true;
+                  if (bool_sec[hit_sector_adc_index]) {
+                      for (uint32_t j = 0; j < windowrawdata->samples.size(); j++) {
+                          samples.push_back(windowrawdata->samples[j]);
+                          h_amp_vs_sampl_chan[hit_sector_adc_index]->Fill(j, samples[j]);
+                      }
+                  }
+              }
+          }
+          if ( (1000 < adc_pp) && (adc_pp <= 2000)) {
+              if (!bool_sec1000[hit_sector_adc_index]) {
+                  bool_sec1000[hit_sector_adc_index] = true;
+                  if (bool_sec1000[hit_sector_adc_index]) {
+                      for (uint32_t j = 0; j < windowrawdata->samples.size(); j++) {
+                          samples.push_back(windowrawdata->samples[j]);
+                          h_amp_vs_sampl_chan1000[hit_sector_adc_index]->Fill(j, samples[j]);
+                      }
+                  }
+              }
+          }
+          if ( (2000 < adc_pp) && (adc_pp <= 3000)) {
+              if (!bool_sec2000[hit_sector_adc_index]) {
+                  bool_sec2000[hit_sector_adc_index] = true;
+                  if (bool_sec2000[hit_sector_adc_index]) {
+                      for (uint32_t j = 0; j < windowrawdata->samples.size(); j++) {
+                          samples.push_back(windowrawdata->samples[j]);
+                          h_amp_vs_sampl_chan2000[hit_sector_adc_index]->Fill(j, samples[j]);
+                      }
+                  }
+              }
+          }
+          if ( (3000 < adc_pp) && (adc_pp <= 4000)) {
+              if (!bool_sec3000[hit_sector_adc_index]) {
+                  bool_sec3000[hit_sector_adc_index] = true;
+                  if (bool_sec3000[hit_sector_adc_index]) {
+                      for (uint32_t j = 0; j < windowrawdata->samples.size(); j++) {
+                          samples.push_back(windowrawdata->samples[j]);
+                          h_amp_vs_sampl_chan3000[hit_sector_adc_index]->Fill(j, samples[j]);
+                      }
+                  }
+              }
+          }
+          if ( (4000 < adc_pp)) {
+              if (!bool_sec4000[hit_sector_adc_index]) {
+                  bool_sec4000[hit_sector_adc_index] = true;
+                  if (bool_sec4000[hit_sector_adc_index]) {
+                      for (uint32_t j = 0; j < windowrawdata->samples.size(); j++) {
+                          samples.push_back(windowrawdata->samples[j]);
+                          h_amp_vs_sampl_chan4000[hit_sector_adc_index]->Fill(j, samples[j]);
+                      }
+                  }
+              }
+          }
+      } // Windowrawdata cut
       //****************************************************************************
       // ================= Get the raw data variables from ADC digihit object======
       //****************************************************************************
       int hit_channel       = dscdigihits[i]->sector - 1;             // channel hit (ranging from 0 to NCHANNELS-1)
       int adc_sector         = dscdigihits[i]->sector ;                // channel hit (ranging from 1 to NCHANNELS)   
-      uint32_t avg_pedestal  = dscdigihits[i]->pedestal;               // average pedestal (should be around 100 chan1)
+      uint32_t avg_pedestal  = dscdigihits[i]->pedestal/dscdigihits[i]->nsamples_pedestal;    // average single-sample pedestal (should be around 100 chan1)
       uint32_t pulse_time    = dscdigihits[i]->pulse_time*ADC_PT_RES;  // converted pulse time to ns
       uint32_t pulse_integral= dscdigihits[i]->pulse_integral;         // pulse integral
       //Occupancy Histo
@@ -353,32 +318,20 @@ jerror_t JEventProcessor_ST_online_lowlevel::evnt(JEventLoop *loop, uint64_t eve
       //************************************************************************      
       //=================Apply the calibration constants========================
       //************************************************************************
-      const Df250PulsePedestal* PPobj = NULL;
-      dscdigihits[i]->GetSingle(PPobj);
-      if (PPobj != NULL)
-	{
-	  if (PPobj->pedestal == 0 || PPobj->pulse_peak == 0) continue;
-	}
+      // maybe throw away bad hits?
       // Initialize pedestal to one found in CCDB, but override it
       // with one found in event if is available
       double pedestal = a_pedestals[hit_channel];
-      const Df250PulseIntegral *PIobj = NULL;
-      dscdigihits[i]->GetSingle(PIobj);
-      if (PIobj != NULL) 
-	{
-	  double single_sample_ped = (double)PIobj->pedestal;
-	  double nsamples_integral = (double)PIobj->nsamples_integral;
-	  double nsamples_pedestal = (double)PIobj->nsamples_pedestal;
+	  double single_sample_ped = (double)dscdigihits[i]->pedestal;
+	  double nsamples_integral = (double)dscdigihits[i]->nsamples_integral;
+	  double nsamples_pedestal = (double)dscdigihits[i]->nsamples_pedestal;
 	  pedestal = single_sample_ped * nsamples_integral/nsamples_pedestal;
-	}      	
+
       // Apply calibration constants here
       adc_ped  = pedestal;
       adc_pi   =  dscdigihits[i]->pulse_integral;
       adc_pcpi = adc_pi - adc_ped;
-      if(PPobj != NULL)
-	adc_pp   = PPobj->pulse_peak;
-      else
-	adc_pp =0;
+      adc_pp   = dscdigihits[i]->pulse_peak;
       adc_t    =  dscdigihits[i]->pulse_time * t_scale  - adc_time_offsets[hit_channel] + t_base; // Convert to ns
       //Fill 2D Histos
       h2_adc_pp_sector->Fill(adc_sector,adc_pp);
@@ -388,22 +341,20 @@ jerror_t JEventProcessor_ST_online_lowlevel::evnt(JEventLoop *loop, uint64_t eve
       //******************************************************************************
       // Aquire the TDC DigiHits******* get the tdc hits when there is an adc hit*****
       //******************************************************************************
-      for(uint32_t i = 0; i < TDC_hits; i++)
-	{
-	  //sort(dsctdcdigihits.begin(), dsctdcdigihits.end(), DSCHit_tdc_cmp);
-	  const DSCTDCDigiHit *tdc_dhit = dsctdcdigihits[i];
-	  float tdc_dhit_time = TTabUtilities->Convert_DigiTimeToNs_F1TDC(tdc_dhit);//tdc_dhit->time*TDC_RES;
-	  int tdc_sector = tdc_dhit->sector;
-	  if (adc_sector == tdc_sector)
-	    {
-	      h2_tdcTime_sec->Fill(tdc_sector,tdc_dhit_time);
-	      tdc_t = TTabUtilities->Convert_DigiTimeToNs_F1TDC(tdc_dhit) - tdc_time_offsets[tdc_sector] + t_tdc_base;
-	      st_time = tdc_t - adc_t;
-	      h2_st_time_vs_pcpi->Fill(adc_pcpi,st_time);
-	      h2_st_time_vs_pp->Fill(adc_pp,st_time);
-	    }
-	}// End TDC loop
-    }// End ADC loop
+      for(uint32_t i = 0; i < TDC_hits; i++) {
+          //sort(dsctdcdigihits.begin(), dsctdcdigihits.end(), DSCHit_tdc_cmp);
+          const DSCTDCDigiHit *tdc_dhit = dsctdcdigihits[i];
+          float tdc_dhit_time = TTabUtilities->Convert_DigiTimeToNs_F1TDC(tdc_dhit);//tdc_dhit->time*TDC_RES;
+          int tdc_sector = tdc_dhit->sector;
+          if (adc_sector == tdc_sector) {
+              h2_tdcTime_sec->Fill(tdc_sector,tdc_dhit_time);
+              tdc_t = TTabUtilities->Convert_DigiTimeToNs_F1TDC(tdc_dhit) - tdc_time_offsets[tdc_sector] + t_tdc_base;
+              st_time = tdc_t - adc_t;
+              h2_st_time_vs_pcpi->Fill(adc_pcpi,st_time);
+              h2_st_time_vs_pp->Fill(adc_pp,st_time);
+          }
+      }// End TDC loop
+  }// End ADC loop
   //************************************************************************
   //========================== DSCTDCDigiHits ** TDC Hits=================
   //************************************************************************
