@@ -1958,8 +1958,8 @@ void MyProcessor::AddKinematicDataTrack(const DKinematicData* kd, int color, dou
 	// Create a reference trajectory with the given kinematic data and swim
 	// it through the detector.
 	DReferenceTrajectory rt(Bfield);
-	rt.Rmax_interior = RMAX_INTERIOR;
-	rt.Rmax_exterior = RMAX_EXTERIOR;
+	rt.Rsqmax_interior = RMAX_INTERIOR*RMAX_INTERIOR;
+	rt.Rsqmax_exterior = RMAX_EXTERIOR*RMAX_EXTERIOR;
 
 	if(MATERIAL_MAP_MODEL=="DRootGeom"){
 		rt.SetDRootGeom(RootGeom);
@@ -1994,8 +1994,8 @@ void MyProcessor::GetIntersectionWithCalorimeter(const DKinematicData* kd, DVect
 	// Create a reference trajectory with the given kinematic data and swim
 	// it through the detector.
 	DReferenceTrajectory rt(Bfield);
-	rt.Rmax_interior = RMAX_INTERIOR;
-	rt.Rmax_exterior = RMAX_EXTERIOR;
+	rt.Rsqmax_interior = RMAX_INTERIOR*RMAX_INTERIOR;
+	rt.Rsqmax_exterior = RMAX_EXTERIOR*RMAX_EXTERIOR;
 
 	if(MATERIAL_MAP_MODEL=="DRootGeom"){
 		rt.SetDRootGeom(RootGeom);
@@ -2179,8 +2179,8 @@ _DBG_<<"mass="<<mass<<endl;
 	// Create a new DReference trajectory object. The caller takes
 	// ownership of this and so they are responsible for deleting it.
 	rt = new DReferenceTrajectory(Bfield);
-	rt->Rmax_interior = RMAX_INTERIOR;
-	rt->Rmax_exterior = RMAX_EXTERIOR;
+	rt->Rsqmax_interior = RMAX_INTERIOR*RMAX_INTERIOR;
+	rt->Rsqmax_exterior = RMAX_EXTERIOR*RMAX_EXTERIOR;
 	rt->SetMass(mass);
 	if(MATERIAL_MAP_MODEL=="DRootGeom"){
 		rt->SetDRootGeom(RootGeom);

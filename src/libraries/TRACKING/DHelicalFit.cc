@@ -782,7 +782,7 @@ jerror_t DHelicalFit::FitCircleStraightTrack(void)
 	size_t num_hits=hits.size();
 	for(unsigned int i=0;i<num_hits;i++){
 		a = hits[i];
-		double r = sqrt(pow((double)a->x,2.0) + pow((double)a->y, 2.0));
+		double r = sqrt(a->x*a->x+a->y*a->y);
 		// weight by r to give outer points more influence. Note that
 		// we really are really weighting by r^2 since x and y already
 		// have a magnitude component.
