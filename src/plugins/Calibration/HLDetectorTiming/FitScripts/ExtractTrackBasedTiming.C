@@ -156,7 +156,7 @@ void ExtractTrackBasedTiming(TString fileName = "hd_root.root", int runNumber = 
     cout << "SC base times = " << sc_t_base_fadc << ", " << sc_t_base_tdc << endl;
     cout << "TOF base times = " << tof_t_base_fadc << ", " << tof_t_base_tdc << endl;
     cout << "TAGH base times = " << tagh_t_base_fadc << ", " << tagh_t_base_tdc << endl;
-    cout << "TAGH base times = " << tagm_t_base_fadc << ", " << tagm_t_base_tdc << endl;
+    cout << "TAGM base times = " << tagm_t_base_fadc << ", " << tagm_t_base_tdc << endl;
     cout << endl;
 
     cout << "Done grabbing CCDB constants...Entering fits..." << endl;
@@ -297,7 +297,7 @@ void ExtractTrackBasedTiming(TString fileName = "hd_root.root", int runNumber = 
 
     thisHist = ExtractTrackBasedTimingNS::Get2DHistogram("HLDetectorTiming", "TRACKING", "TAGH - SC Target Time");
     if (useRF) thisHist = ExtractTrackBasedTimingNS::Get2DHistogram("HLDetectorTiming", "TRACKING", "TAGH - RFBunch Time");
-    if(thisHist != NULL){
+    if (thisHist != NULL) {
         outFile.open(prefix + "tagh_tdc_timing_offsets.txt", ios::out | ios::trunc);
         outFile.close(); // clear file
         outFile.open(prefix + "tagh_adc_timing_offsets.txt", ios::out | ios::trunc);
@@ -306,27 +306,27 @@ void ExtractTrackBasedTiming(TString fileName = "hd_root.root", int runNumber = 
         int nBinsX = thisHist->GetNbinsX();
         int nBinsY = thisHist->GetNbinsY();
         TH1D * selectedTAGHOffset = new TH1D("selectedTAGHOffset", "Selected TAGH Offset; ID; Offset [ns]", nBinsX, 0.5, nBinsX + 0.5);
-        TH1I * TAGHOffsetDistribution = new TH1I("TAGHOffsetDistribution", "TAGH Offset; TAGH Offset [ns]; Entries", 500, -250, 250);
-        for (int i = 1 ; i <= nBinsX; i++){
+        TH1I * tdcDist = new TH1I("TAGHOffsetDistribution", "TAGH Offset; TAGH Offset [ns]; Entries", 500, -250.5, 250.5);
+        for (int i = 1 ; i <= nBinsX; i++) {
             TH1D *projY = thisHist->ProjectionY("temp", i, i);
-            // Scan over the histogram
-            //chose the correct number of bins based on the histogram
-            float nsPerBin = (projY->GetBinCenter(projY->GetNbinsX()) - projY->GetBinCenter(1)) / projY->GetNbinsX();
-            float timeWindow = 2; //ns (Full Width)
+            // Scan over histogram to find mean offset in timeWindow with largest integral
+            // Choose the correct number of bins based on the histogram
+            double nsPerBin = (projY->GetBinCenter(projY->GetNbinsX()) - projY->GetBinCenter(1)) / projY->GetNbinsX();
+            double timeWindow = 2.0; // ns (Full Width)
             int binWindow = int(timeWindow / nsPerBin);
 
             double maxEntries = 0;
             double maxMean = 0;
-            for (int j = 1 ; j <= projY->GetNbinsX();j++){
+            for (int j = 1; j <= projY->GetNbinsX(); j++) {
                 int minBin = j;
                 int maxBin = (j + binWindow) <= projY->GetNbinsX() ? (j + binWindow) : projY->GetNbinsX();
                 double sum = 0; 
                 double nEntries = 0;
-                for (int bin = minBin; bin <= maxBin; bin++){
+                for (int bin = minBin; bin <= maxBin; bin++) {
                     sum += projY->GetBinContent(bin) * projY->GetBinCenter(bin);
                     nEntries += projY->GetBinContent(bin);
-                    if (bin == maxBin){
-                        if (nEntries > maxEntries){
+                    if (bin == maxBin) {
+                        if (nEntries > maxEntries) {
                             maxMean = sum / nEntries;
                             maxEntries = nEntries;
                         }
@@ -334,46 +334,62 @@ void ExtractTrackBasedTiming(TString fileName = "hd_root.root", int runNumber = 
                 }
             }
 
-            if(useRF) {
+            if (useRF) {
                 int beamBucket;
                 if (maxMean >= 0) beamBucket = int((maxMean / RF_Period) + 0.5); // +0.5 to handle rounding correctly
                 else beamBucket = int((maxMean / RF_Period) - 0.5);
                 selectedTAGHOffset->SetBinContent(i, beamBucket);
-                TAGHOffsetDistribution->Fill(beamBucket);
-            }
-            else{
+                if (maxEntries != 0.0) tdcDist->Fill(beamBucket);
+            } else {
                 selectedTAGHOffset->SetBinContent(i, maxMean);
+                if (maxEntries != 0.0) tdcDist->Fill(maxMean);
             }
         }
+        // Most probable change in offset or beam bucket
+        int mpBin = tdcDist->GetMaximumBin();
+        double mpDelta = (mpBin > 0) ? tdcDist->GetBinCenter(mpBin) : 0.0;
 
-        double meanOffset = TAGHOffsetDistribution->GetMean();
-        if (useRF) meanOffset *= RF_Period;
+        if (useRF) mpDelta *= RF_Period;
         if (verbose) {
             cout << "Dumping TAGH results...\n=======================================" << endl;
-            cout << "TAGH mean Offset = " << meanOffset << endl;
-            cout << "Type\tChannel\tvalueToUse\toldValue\tmeanOffset\tTotal" << endl;
+            cout << "TAGH most probable Offset = " << mpDelta << endl;
+            cout << "Type\tChannel\tvalueToUse\toldValue\tmpDelta\tTotal" << endl;
         }
-        for (int i = 1 ; i <= nBinsX; i++){
-            double valueToUse = selectedTAGHOffset->GetBinContent(i);
-            if (useRF) valueToUse *= RF_Period;
-            //if (valueToUse == 0) valueToUse = meanOffset;
+        double limit = 4.0; // ns
+        double ccdb_sum = 0.0;
+        for (int i = 1; i <= nBinsX; i++) ccdb_sum += tagh_tdc_time_offsets[i-1];
+        double c1_adcOffset = 0.0; double c1_tdcOffset = 0.0;
+        for (int i = 1; i <= nBinsX; i++) {
+            double delta = selectedTAGHOffset->GetBinContent(i);
+            if (useRF) delta *= RF_Period;
+            if (ccdb_sum > 0.0 && fabs(delta - mpDelta) > limit) delta = mpDelta;
+            // TDC
+            double ccdb = tagh_tdc_time_offsets[i-1];
+            double offset = ccdb + delta - mpDelta;
+            if (i == 1) c1_tdcOffset = offset;
+            offset -= c1_tdcOffset;
+            if (offset < -limit) offset = 0.0;
             outFile.open(prefix + "tagh_tdc_timing_offsets.txt", ios::out | ios::app);
-            outFile << i << " " << valueToUse + tagh_tdc_time_offsets[i-1] - meanOffset << endl;
-            if (verbose) printf("TDC\t%i\t%.3f\t\t%.3f\t\t%.3f\t\t%.3f\n", i, valueToUse, tagh_tdc_time_offsets[i-1], meanOffset,
-                    valueToUse + tagh_tdc_time_offsets[i-1] - meanOffset);
+            outFile << i << " " << offset << endl;
+            if (verbose) printf("TDC\t%i\t%.3f\t\t%.3f\t\t%.3f\t\t%.3f\n", i, delta, ccdb, mpDelta, offset);
             outFile.close();
+            // ADC
+            ccdb = tagh_fadc_time_offsets[i-1];
             outFile.open(prefix + "tagh_adc_timing_offsets.txt", ios::out | ios::app);
-            outFile << i << " " << valueToUse + tagh_fadc_time_offsets[i-1] - meanOffset << endl;
-            if (verbose) printf("ADC\t%i\t%.3f\t\t%.3f\t\t%.3f\t\t%.3f\n", i, valueToUse, tagh_fadc_time_offsets[i-1], meanOffset,
-                    valueToUse + tagh_fadc_time_offsets[i-1] - meanOffset);
+            offset = ccdb + delta - mpDelta;
+            if (i == 1) c1_adcOffset = offset;
+            offset -= c1_adcOffset;
+            if (offset < -limit) offset = 0.0;
+            outFile << i << " " << offset << endl;
+            if (verbose) printf("ADC\t%i\t%.3f\t\t%.3f\t\t%.3f\t\t%.3f\n", i, delta, ccdb, mpDelta, offset);
             outFile.close();
         }
 
         outFile.open(prefix + "tagh_base_time.txt", ios::out);
-        outFile << tagh_t_base_fadc - meanOffset << " " << tagh_t_base_tdc - meanOffset << endl;
+        outFile << tagh_t_base_fadc - mpDelta - c1_adcOffset << " " << tagh_t_base_tdc - mpDelta - c1_tdcOffset << endl;
         if (verbose) {
-            printf("TAGH ADC Base = %f - (%f) = %f\n", tagh_t_base_fadc, meanOffset, tagh_t_base_fadc - meanOffset);
-            printf("TAGH TDC Base = %f - (%f) = %f\n", tagh_t_base_tdc, meanOffset, tagh_t_base_tdc - meanOffset);
+            printf("TAGH ADC Base = %f - (%f) = %f\n", tagh_t_base_fadc, mpDelta, tagh_t_base_fadc - mpDelta - c1_adcOffset);
+            printf("TAGH TDC Base = %f - (%f) = %f\n", tagh_t_base_tdc, mpDelta, tagh_t_base_tdc - mpDelta - c1_tdcOffset);
         }
         outFile.close();
     }
