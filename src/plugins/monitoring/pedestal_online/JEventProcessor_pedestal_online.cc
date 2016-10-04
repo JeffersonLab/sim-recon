@@ -213,7 +213,6 @@ jerror_t JEventProcessor_pedestal_online::evnt(JEventLoop *loop, uint64_t eventn
 	for(unsigned int i=0; i<f250PDs.size(); i++) {
 		const Df250PulseData *hit = f250PDs[i];
 		int rocid = hit->rocid;
-
 		if(rocid>=0 && rocid<100) {
 			char cratename[255],title[255];
 			// only use time if it is good
@@ -236,6 +235,7 @@ jerror_t JEventProcessor_pedestal_online::evnt(JEventLoop *loop, uint64_t eventn
 				// if more than periodlength has elapsed, then end the average and fill the tree
 				if (recentwalltime > periodstarttime[rocid]+periodlength) {
 					if (VERBOSE>=3) printf("JEventProcessor_pedestal_online::evnt  filling tree crate %i\n",rocid);
+
 					treetime = periodstarttime[rocid];
 					pedmean = pedestal_vtime_hist[rocid]->GetMean();
 					pedrms = pedestal_vtime_hist[rocid]->GetRMS();
@@ -246,13 +246,13 @@ jerror_t JEventProcessor_pedestal_online::evnt(JEventLoop *loop, uint64_t eventn
 					pedestal_vtime_tree[rocid]->Fill();
 					pedestal_vtime_hist[rocid]->Reset();
 				}
+
 				// advance to the next period
 				while (recentwalltime > periodstarttime[rocid]+periodlength) {
 					periodstarttime[rocid]+=periodlength;
 					globalstoptime = periodstarttime[rocid];
 				}
 			}
-
 
 			if (pedestal_vevent[rocid]==NULL) {
 				if (VERBOSE>=1) printf("JEventProcessor_pedestal_online::evnt  creating event histogram for crate %i\n",rocid);
@@ -266,8 +266,11 @@ jerror_t JEventProcessor_pedestal_online::evnt(JEventLoop *loop, uint64_t eventn
 				pedestal_vevent[rocid]->SetBit(TH1::kCanRebin);
 #endif
 			} 
-            // monitor single-sample pedestal
-			pedestal_vevent[rocid]->Fill(eventnumber,hit->pedestal/hit->nsamples_pedestal);
+
+			// monitor single-sample pedestal
+			double locPedestalFraction = (hit->nsamples_pedestal == 0) ? 0.0 : double(hit->pedestal)/double(hit->nsamples_pedestal);
+			pedestal_vevent[rocid]->Fill(eventnumber, locPedestalFraction);
+			pedestal_vevent[rocid]->Fill(eventnumber,0);
 		}
 	}
 
@@ -330,7 +333,7 @@ jerror_t JEventProcessor_pedestal_online::evnt(JEventLoop *loop, uint64_t eventn
 			pedestal_vevent[rocid]->Fill(eventnumber,hit->pedestal);
 		}
 	}
-	
+
 	maindir->cd();
 	// Unlock ROOT
 	japp->RootUnLock();
