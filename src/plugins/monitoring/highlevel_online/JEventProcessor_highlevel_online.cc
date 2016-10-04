@@ -433,7 +433,7 @@ jerror_t JEventProcessor_highlevel_online::evnt(JEventLoop *locEventLoop, uint64
 			DLorentzVector ptot(v1+v2);
 			double mass = ptot.M();
 			d2gamma->Fill(mass);
-			if(mass>0.075 && mass<0.2) pi0s.push_back(ptot);
+			if(mass>0.1 && mass<0.17) pi0s.push_back(ptot);
 		}
 	}
 
