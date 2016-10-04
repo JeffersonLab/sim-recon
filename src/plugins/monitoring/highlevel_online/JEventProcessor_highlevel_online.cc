@@ -439,7 +439,6 @@ jerror_t JEventProcessor_highlevel_online::evnt(JEventLoop *locEventLoop, uint64
 
 	/*************************************************************** pi+ pi- pi0 ***************************************************************/
 	for(auto t1 : locChargedTracks){
-
 		//look for pi+
 		auto hypoth1 = t1->Get_Hypothesis(PiPlus);
 		if(!hypoth1) continue;
@@ -456,7 +455,7 @@ jerror_t JEventProcessor_highlevel_online::evnt(JEventLoop *locEventLoop, uint64
 			if(t2 == t1) continue;
 
 			//look for pi-
-			auto hypoth2 = t1->Get_Hypothesis(PiMinus);
+			auto hypoth2 = t2->Get_Hypothesis(PiMinus);
 			if(!hypoth2) continue;
 
 			//timing cut
@@ -486,7 +485,7 @@ jerror_t JEventProcessor_highlevel_online::evnt(JEventLoop *locEventLoop, uint64
 				//for rho: require at least one beam photon in time with missing mass squared near 0
 				DLorentzVector rhomom(pipmom + pimmom);
 				DLorentzVector locFinalStateP4 = rhomom + protonmom;
-				DLorentzVector locTargetP4(DVector3(), ParticleMass(Proton));
+				DLorentzVector locTargetP4(0.0, 0.0, 0.0, ParticleMass(Proton));
 				for(auto locBeamPhoton : locBeamPhotons_InTime)
 				{
 					DLorentzVector locMissingP4 = locBeamPhoton->lorentzMomentum() + locTargetP4 - locFinalStateP4;
