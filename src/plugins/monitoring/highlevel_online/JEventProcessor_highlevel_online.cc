@@ -18,6 +18,23 @@ extern "C"{
 //------------------
 jerror_t JEventProcessor_highlevel_online::init(void)
 {
+	//timing cuts
+	dTimingCutMap[Gamma][SYS_BCAL] = 3.0;
+	dTimingCutMap[Gamma][SYS_FCAL] = 5.0;
+	dTimingCutMap[Proton][SYS_NULL] = -1.0;
+	dTimingCutMap[Proton][SYS_TOF] = 2.5;
+	dTimingCutMap[Proton][SYS_BCAL] = 2.5;
+	dTimingCutMap[Proton][SYS_FCAL] = 3.0;
+	dTimingCutMap[PiPlus][SYS_NULL] = -1.0;
+	dTimingCutMap[PiPlus][SYS_TOF] = 2.0;
+	dTimingCutMap[PiPlus][SYS_BCAL] = 2.5;
+	dTimingCutMap[PiPlus][SYS_FCAL] = 3.0;
+	dTimingCutMap[PiMinus][SYS_NULL] = -1.0;
+	dTimingCutMap[PiMinus][SYS_TOF] = 2.0;
+	dTimingCutMap[PiMinus][SYS_BCAL] = 2.5;
+	dTimingCutMap[PiMinus][SYS_FCAL] = 3.0;
+	map<Particle_t, map<DetectorSystem_t, double> > dTimingCutMap;
+
 	// All histograms go in the "highlevel" directory
 	TDirectory *main = gDirectory;
 
@@ -103,6 +120,9 @@ jerror_t JEventProcessor_highlevel_online::init(void)
 jerror_t JEventProcessor_highlevel_online::brun(JEventLoop *locEventLoop, int32_t runnumber)
 {
   // This is called whenever the run number changes
+	vector<double> locBeamPeriodVector;
+	locEventLoop->GetCalib("PHOTON_BEAM/RF/beam_period", locBeamPeriodVector);
+	dBeamBunchPeriod = locBeamPeriodVector[0];
 
 	fcal_cell_thr  =  64;
 	bcal_cell_thr  =  20;
@@ -155,14 +175,17 @@ jerror_t JEventProcessor_highlevel_online::evnt(JEventLoop *locEventLoop, uint64
 	vector<const DTAGHHit*> locTAGHHits;
 	locEventLoop->Get(locTAGHHits);
 
-    vector<const DBCALDigiHit*> locBCALDigiHits;
-    locEventLoop->Get(locBCALDigiHits);
+	vector<const DBCALDigiHit*> locBCALDigiHits;
+	locEventLoop->Get(locBCALDigiHits);
 
-    vector<const DFCALDigiHit*> locFCALDigiHits;
-    locEventLoop->Get(locFCALDigiHits);
-    
+	vector<const DFCALDigiHit*> locFCALDigiHits;
+	locEventLoop->Get(locFCALDigiHits);
+
 	const DDetectorMatches* locDetectorMatches = NULL;
 	locEventLoop->GetSingle(locDetectorMatches);
+
+	const DEventRFBunch* locEventRFBunch = NULL;
+	locEventLoop->GetSingle(locEventRFBunch);
 
 	const DVertex* locVertex = NULL;
 	locEventLoop->GetSingle(locVertex);
@@ -296,8 +319,17 @@ jerror_t JEventProcessor_highlevel_online::evnt(JEventLoop *locEventLoop, uint64
 		bcal_tot_en += pulse_int;
 	}
 	
+	/********************************************************* PREPARE BEAM PHOTONS *******************************************************/
 
-    /***************************************************************** RF *****************************************************************/
+	vector<const DBeamPhoton*> locBeamPhotons_InTime;
+	for(auto locBeamPhoton : locBeamPhotons)
+	{
+		double locDeltaT = locBeamPhoton->time() - locEventRFBunch->dTime;
+		if(fabs(locDeltaT) <= 0.5*dBeamBunchPeriod)
+			locBeamPhotons_InTime.push_back(locBeamPhoton);
+	}
+
+	/***************************************************************** RF *****************************************************************/
 
 	japp->RootFillLock(this); //ACQUIRE ROOT FILL LOCK
 
@@ -370,62 +402,117 @@ jerror_t JEventProcessor_highlevel_online::evnt(JEventLoop *locEventLoop, uint64
 	}
 
 	/*************************************************************** 2 gamma inv. mass ***************************************************************/
+
 	vector<DLorentzVector> pi0s;
 	for(uint32_t i=0; i<locNeutralParticles.size(); i++){
 
 		auto hypoth1 = locNeutralParticles[i]->Get_Hypothesis(Gamma);
 		if(!hypoth1) continue;
+
+		//timing cut
+		auto dectector1 = hypoth1->t1_detector();
+		double locDeltaT = hypoth1->time() - hypoth1->t0();
+		if(fabs(locDeltaT) > dTimingCutMap[Gamma][dectector1])
+			continue;
+
 		const DLorentzVector &v1 = hypoth1->lorentzMomentum();
 
 		for(uint32_t j=i+1; j<locNeutralParticles.size(); j++){
 
 			auto hypoth2 = locNeutralParticles[j]->Get_Hypothesis(Gamma);
 			if(!hypoth2) continue;
+
+			//timing cut
+			auto dectector2 = hypoth2->t1_detector();
+			locDeltaT = hypoth2->time() - hypoth2->t0();
+			if(fabs(locDeltaT) > dTimingCutMap[Gamma][dectector2])
+				continue;
+
 			const DLorentzVector &v2 = hypoth2->lorentzMomentum();
 
 			DLorentzVector ptot(v1+v2);
 			double mass = ptot.M();
 			d2gamma->Fill(mass);
-			if(mass>0.075 && mass<0.2) pi0s.push_back(ptot);
+			if(mass>0.1 && mass<0.17) pi0s.push_back(ptot);
 		}
 	}
 
 	/*************************************************************** pi+ pi- pi0 ***************************************************************/
 	for(auto t1 : locChargedTracks){
-		auto hypoth1 = t1->Get_BestTrackingFOM();
+		//look for pi+
+		auto hypoth1 = t1->Get_Hypothesis(PiPlus);
 		if(!hypoth1) continue;
-		if(hypoth1->PID() != PiPlus) continue;
+
+		//timing cut
+		auto dectector1 = hypoth1->t1_detector();
+		double locDeltaT = hypoth1->time() - hypoth1->t0();
+		if(fabs(locDeltaT) > dTimingCutMap[PiPlus][dectector1])
+			continue;
+
 		const DLorentzVector &pipmom = hypoth1->lorentzMomentum();
 
 		for(auto t2 : locChargedTracks){
 			if(t2 == t1) continue;
-			auto hypoth2 = t2->Get_BestTrackingFOM();
+
+			//look for pi-
+			auto hypoth2 = t2->Get_Hypothesis(PiMinus);
 			if(!hypoth2) continue;
-			if(hypoth2->PID() != PiMinus) continue;
+
+			//timing cut
+			auto dectector2 = hypoth2->t1_detector();
+			locDeltaT = hypoth2->time() - hypoth2->t0();
+			if(fabs(locDeltaT) > dTimingCutMap[PiMinus][dectector2])
+				continue;
+
 			const DLorentzVector &pimmom = hypoth2->lorentzMomentum();
 
 			for(auto t3 : locChargedTracks){
 				if(t3 == t1) continue;
 				if(t3 == t2) continue;
-				auto hypoth3 = t3->Get_BestTrackingFOM();
+
+				//look for proton
+				auto hypoth3 = t3->Get_Hypothesis(Proton);
 				if(!hypoth3) continue;
-				if(hypoth3->PID() != Proton) continue;
+
+				//timing cut
+				auto dectector3 = hypoth3->t1_detector();
+				locDeltaT = hypoth3->time() - hypoth3->t0();
+				if(fabs(locDeltaT) > dTimingCutMap[Proton][dectector3])
+					continue;
+
 				const DLorentzVector &protonmom = hypoth3->lorentzMomentum();
 
+				//for rho: require at least one beam photon in time with missing mass squared near 0
 				DLorentzVector rhomom(pipmom + pimmom);
-				dpip_pim->Fill(rhomom.M());
+				DLorentzVector locFinalStateP4 = rhomom + protonmom;
+				DLorentzVector locTargetP4(0.0, 0.0, 0.0, ParticleMass(Proton));
+				for(auto locBeamPhoton : locBeamPhotons_InTime)
+				{
+					DLorentzVector locMissingP4 = locBeamPhoton->lorentzMomentum() + locTargetP4 - locFinalStateP4;
+					if(fabs(locMissingP4.M2()) > 0.01)
+						continue;
+					dpip_pim->Fill(rhomom.M());
+					break;
+				}
 
 				for(uint32_t i=0; i<pi0s.size(); i++){
 					DLorentzVector &pi0mom = pi0s[i];
 	
+					//for omega: require at least one beam photon in time with missing mass squared near 0
 					DLorentzVector omegamom(pi0mom + rhomom);
-					DLorentzVector totmom(omegamom + protonmom);
-					
-					double ptrans = totmom.Perp();
+					locFinalStateP4 = omegamom + protonmom;
+					for(auto locBeamPhoton : locBeamPhotons_InTime)
+					{
+						DLorentzVector locMissingP4 = locBeamPhoton->lorentzMomentum() + locTargetP4 - locFinalStateP4;
+						if(fabs(locMissingP4.M2()) > 0.01)
+							continue;
+						dpip_pim_pi0->Fill(omegamom.M());
+						break;
+					}
+
+					double ptrans = locFinalStateP4.Perp();
 					dptrans->Fill(ptrans);
 					if(ptrans > 0.1) continue;
-				
-					dpip_pim_pi0->Fill(omegamom.M());
 				}
 			}
 		}		
