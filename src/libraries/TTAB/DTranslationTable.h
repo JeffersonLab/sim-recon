@@ -22,6 +22,7 @@ using namespace std;
 using namespace jana;
 
 #include <DAQ/DModuleType.h>
+#include <DAQ/Df250PulseData.h>
 #include <DAQ/Df250PulseIntegral.h>
 #include <DAQ/Df250StreamingRawData.h>
 #include <DAQ/Df250WindowSum.h>
@@ -353,7 +354,19 @@ class DTranslationTable:public jana::JObject{
 		// Methods
 		void ApplyTranslationTable(jana::JEventLoop *loop) const;
 		
-		// fADC250
+		// fADC250 -- Fall 2016 -> ?
+		DBCALDigiHit*       MakeBCALDigiHit(       const BCALIndex_t &idx,       const Df250PulseData *pd) const;
+		DFCALDigiHit*       MakeFCALDigiHit(       const FCALIndex_t &idx,       const Df250PulseData *pd) const;
+		DSCDigiHit*         MakeSCDigiHit(         const SCIndex_t &idx,         const Df250PulseData *pd) const;
+		DTOFDigiHit*        MakeTOFDigiHit(        const TOFIndex_t &idx,        const Df250PulseData *pd) const;
+		DTAGMDigiHit*       MakeTAGMDigiHit(       const TAGMIndex_t &idx,       const Df250PulseData *pd) const;
+		DTAGHDigiHit*       MakeTAGHDigiHit(       const TAGHIndex_t &idx,       const Df250PulseData *pd) const;
+		DPSDigiHit*         MakePSDigiHit(         const PSIndex_t &idx,         const Df250PulseData *pd) const;
+		DPSCDigiHit*        MakePSCDigiHit(        const PSCIndex_t &idx,        const Df250PulseData *pd) const;
+		DRFDigiTime*        MakeRFDigiTime(        const RFIndex_t &idx,         const Df250PulseData *pd) const;
+		DTPOLSectorDigiHit* MakeTPOLSectorDigiHit( const TPOLSECTORIndex_t &idx, const Df250PulseData *pd) const;
+
+		// fADC250 -- commissioning -> Fall 2016
 		DBCALDigiHit*       MakeBCALDigiHit(const BCALIndex_t &idx, const Df250PulseIntegral *pi, const Df250PulseTime *pt, const Df250PulsePedestal *pp) const;
 		DFCALDigiHit*       MakeFCALDigiHit(const FCALIndex_t &idx, const Df250PulseIntegral *pi, const Df250PulseTime *pt, const Df250PulsePedestal *pp) const;
 		DSCDigiHit*         MakeSCDigiHit(  const SCIndex_t &idx,   const Df250PulseIntegral *pi, const Df250PulseTime *pt, const Df250PulsePedestal *pp) const;
@@ -397,6 +410,7 @@ class DTranslationTable:public jana::JObject{
 		void ReadTranslationTable(JCalibration *jcalib=NULL);
 		
 		template<class T> void CopyDf250Info(T *h, const Df250PulseIntegral *pi, const Df250PulseTime *pt, const Df250PulsePedestal *pp) const;
+		template<class T> void CopyDf250Info(T *h, const Df250PulseData *pd) const;
 		template<class T> void CopyDf125Info(T *h, const Df125PulseIntegral *pi, const Df125PulseTime *pt, const Df125PulsePedestal *pp) const;
 		template<class T> void CopyDF1TDCInfo(T *h, const DF1TDCHit *hit) const;
 		template<class T> void CopyDCAEN1290TDCInfo(T *h, const DCAEN1290TDCHit *hit) const;
@@ -488,14 +502,44 @@ void DTranslationTable::CopyDf250Info(T *h, const Df250PulseIntegral *pi, const 
 	/// Copy info from the fADC250 into a hit object.
 	h->pulse_integral    = pi->integral;
 	h->pulse_time        = pt==NULL ? 0:pt->time;
+	h->pulse_peak        = pp==NULL ? 0:pp->pulse_peak;
 	h->pedestal          = pi->pedestal;
 	h->QF                = pi->quality_factor;
 	h->nsamples_integral = pi->nsamples_integral;
 	h->nsamples_pedestal = pi->nsamples_pedestal;
+	h->datasource        = pi->emulated ? 0:1;
 	
 	h->AddAssociatedObject(pi);
 	if(pt) h->AddAssociatedObject(pt);
 	if(pp) h->AddAssociatedObject(pp);
+}
+
+//---------------------------------
+// CopyDf250Info
+//---------------------------------
+template<class T>
+void DTranslationTable::CopyDf250Info(T *h, const Df250PulseData *pd) const
+{
+	/// Copy info from the fADC250 into a hit object.
+	h->pulse_integral          = pd->integral;
+	h->pulse_time              = (pd->course_time<<6) + pd->fine_time;
+	h->pulse_peak              = pd->pulse_peak;
+	h->pedestal                = pd->pedestal;
+	h->nsamples_integral       = pd->nsamples_integral;
+	h->nsamples_pedestal       = pd->nsamples_pedestal;
+	h->datasource              = pd->emulated ? 0:2;
+
+	uint32_t QF = 0; // make single quality factor number for compactness
+	if( pd->QF_pedestal         ) QF |= (1<<0);
+	if( pd->QF_NSA_beyond_PTW   ) QF |= (1<<1);
+	if( pd->QF_overflow         ) QF |= (1<<2);
+	if( pd->QF_underflow        ) QF |= (1<<3);
+	if( pd->QF_vpeak_beyond_NSA ) QF |= (1<<4);
+	if( pd->QF_vpeak_not_found  ) QF |= (1<<5);
+	if( pd->QF_bad_pedestal     ) QF |= (1<<6);
+	h->QF = QF;
+	
+	h->AddAssociatedObject(pd);
 }
 
 //---------------------------------

@@ -305,7 +305,7 @@ void DEVIOWorkerThread::ParseBank(void)
 		uint32_t event_head = iptr[1];
 		uint32_t tag = (event_head >> 16) & 0xFFFF;
 
-//_DBG_ << "tag=" << hex << tag << dec << endl;
+// _DBG_ << "0x" << hex << (uint64_t)iptr << dec << ": event_len=" << event_len << "tag=" << hex << tag << dec << endl;
 
 		switch(tag){
 			case 0x0060:       ParseEPICSbank(iptr, iend);    break;
@@ -669,7 +669,7 @@ void DEVIOWorkerThread::ParseBuiltTriggerBank(uint32_t* &iptr, uint32_t *iend)
    // Hi and lo 32bit words in 64bit numbers seem to be
    // switched for events read from ET, but not read from
    // file. Not sure if this is in the swapping routine
-//   if(source_type==kETSource) first_event_num = (first_event_num>>32) | (first_event_num<<32);
+   if(event_source->source_type==event_source->kETSource) first_event_num = (first_event_num>>32) | (first_event_num<<32);
 
 	// Average timestamps
    uint32_t Ntimestamps = (common_header64_len/2)-1;
@@ -1241,9 +1241,9 @@ void DEVIOWorkerThread::Parsef250Bank(uint32_t rocid, uint32_t* &iptr, uint32_t 
 					uint32_t pedestal                  = (*iptr>>0 ) & 0x3FFF;
 
 					// Event headers may be supressed so determine event from hit data
-					if( (event_number_within_block > current_parsed_events.size()) || (event_number_within_block==0) ) throw JException("Bad f250 event number", __FILE__, __LINE__);
+					if( (event_number_within_block > current_parsed_events.size()) ) throw JException("Bad f250 event number", __FILE__, __LINE__);
 					pe_iter = current_parsed_events.begin();
-					advance( pe_iter, (event_number_within_block-1) );
+					advance( pe_iter, event_number_within_block );
 					pe = *pe_iter++;
 					
 					itrigger = event_number_within_block; // is this right?
@@ -1869,6 +1869,7 @@ void DEVIOWorkerThread::LinkAllAssociations(void)
 		//----------------- Sort hit objects
 
 		// fADC250
+		if(pe->vDf250PulseData.size()>1    ) sort(pe->vDf250PulseData.begin(),     pe->vDf250PulseData.end(),     SortByPulseNumber<Df250PulseData> );
 		if(pe->vDf250PulseIntegral.size()>1) sort(pe->vDf250PulseIntegral.begin(), pe->vDf250PulseIntegral.end(), SortByPulseNumber<Df250PulseIntegral> );
 		if(pe->vDf250PulseTime.size()>1    ) sort(pe->vDf250PulseTime.begin(),     pe->vDf250PulseTime.end(),     SortByPulseNumber<Df250PulseTime>     );
 		if(pe->vDf250PulsePedestal.size()>1) sort(pe->vDf250PulsePedestal.begin(), pe->vDf250PulsePedestal.end(), SortByPulseNumber<Df250PulsePedestal> );

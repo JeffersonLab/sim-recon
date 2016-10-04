@@ -247,7 +247,7 @@ bool  HDET::read(uint32_t* &buff, uint32_t &buff_len, bool allow_swap)
 		timeout.tv_nsec = (unsigned int)floor(1.0E9*(TIMEOUT-(float)timeout.tv_sec));
 		et_event *pe=NULL;
 		int err = et_event_get(sys_id, att_id, &pe, ET_TIMED , &timeout);
-		if(err == ET_ERROR_TIMEOUT) {Net_timeouts++; return HDET_TIMEOUT;}
+		if(err == ET_ERROR_TIMEOUT) {Net_timeouts++; return (err_code=HDET_TIMEOUT);}
 		Net_events++;
 		
 		// Read ET event
@@ -283,7 +283,7 @@ bool  HDET::read(uint32_t* &buff, uint32_t &buff_len, bool allow_swap)
 				case 0x0001dac0:  swap_needed = true;   break;
 				default:
 					cout << "EVIO magic word not present!" << endl;
-					return HDET_ERROR;
+					return (err_code=HDET_ERROR);
 			}
 			Nevio_blocks++;
 			uint32_t len = evio_block[0];
@@ -310,8 +310,7 @@ bool  HDET::read(uint32_t* &buff, uint32_t &buff_len, bool allow_swap)
 					err_mess << "idx="<<idx<<" mylen="<<mylen<<" len="<<len<<endl;
 					err_mess << "This indicates a problem either with the DAQ system"<<endl;
 					err_mess << "or this parser code! Contact davidl@jlab.org x5567 " <<endl;
-					err_code = HDET_BAD_FORMAT;
-					return HDET_BAD_FORMAT;
+					return (err_code=HDET_BAD_FORMAT);
 				}
 				Nevio_events++;
 
@@ -337,9 +336,8 @@ bool  HDET::read(uint32_t* &buff, uint32_t &buff_len, bool allow_swap)
 					mybuff_len = mylen+1;
 					mybuff = new uint32_t[mybuff_len];
 					if(mybuff==NULL){
-						err_code = HDET_ALLOC_FAILED;
 						err_mess << "Failed to allocate buffer of length " << mybuff_len << " words";
-						return HDET_ALLOC_FAILED;
+						return (err_code=HDET_ALLOC_FAILED);
 					}
 				}
 
@@ -376,7 +374,7 @@ bool  HDET::read(uint32_t* &buff, uint32_t &buff_len, bool allow_swap)
 	} // if( et_buffs.empty() )
 	
 	// If we still have no events then something has gone wrong!
-	if( et_buffs.empty() ) return HDET_ERROR;
+	if( et_buffs.empty() ) return (err_code=HDET_ERROR);
 
 	// recycle worker thread's old buffer to our pool
 	et_buff_pool.push_back(pair<uint32_t*, uint32_t>( buff, buff_len));
@@ -387,7 +385,7 @@ bool  HDET::read(uint32_t* &buff, uint32_t &buff_len, bool allow_swap)
 	buff     = p.first;
 	buff_len = p.second;
 
-	return HDET_OK;
+	return (err_code=HDET_OK);
 #endif  // HAVE_ET
 }
 

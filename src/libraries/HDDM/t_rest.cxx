@@ -79,9 +79,9 @@ void *random_reader(void *arg) {
       if (iter->first != rec.getReconstructedPhysicsEvent().getEventNo()) {
          pthread_mutex_lock(&lock);
          printf("bad event lookup for event %d in thread %d: ", iter->first, tid);
-         printf("requested %d but got %d\n", iter->first,
+         printf("requested %d but got %ld\n", iter->first,
                 rec.getReconstructedPhysicsEvent().getEventNo());
-         printf("requested (%d,%d,%d) and got (%d,%d,%d)\n", 
+         printf("requested (%ld,%d,%d) and got (%ld,%d,%d)\n", 
                 post[iter->first].block_start,
                 post[iter->first].block_offset,
                 post[iter->first].block_status,
@@ -94,7 +94,7 @@ void *random_reader(void *arg) {
       else if (fin.getPosition() != post[iter->first]) {
          pthread_mutex_lock(&lock);
          printf("bad record position for event %d: ", iter->first);
-         printf("requested (%d,%d,%d) but got (%d,%d,%d)\n", 
+         printf("requested (%ld,%d,%d) but got (%ld,%d,%d)\n", 
                 post[iter->first].block_start,
                 post[iter->first].block_offset,
                 post[iter->first].block_status,
@@ -627,9 +627,9 @@ int main(int argc, const char *argv[])
          if (iter->first != rec.getReconstructedPhysicsEvent().getEventNo()) {
             printf("bad event lookup for event %d in file %s: ", 
                    iter->first, rest_bz2.c_str());
-            printf("requested %d but got %d\n", iter->first, 
+            printf("requested %d but got %ld\n", iter->first, 
                    rec.getReconstructedPhysicsEvent().getEventNo());
-            printf("requested (%d,%d,%d) and got (%d,%d,%d)\n",
+            printf("requested (%ld,%d,%d) and got (%ld,%d,%d)\n",
                    iter->second.block_start,
                    iter->second.block_offset,
                    iter->second.block_status,
@@ -641,7 +641,7 @@ int main(int argc, const char *argv[])
          else if (fin.getPosition() != iter->second) {
             printf("bad record position for event %d in file %s: ",
                    iter->first, rest_bz2.c_str());
-            printf("requested (%d,%d,%d) but got (%d,%d,%d)\n",
+            printf("requested (%ld,%d,%d) but got (%ld,%d,%d)\n",
                    iter->second.block_start,
                    iter->second.block_offset,
                    iter->second.block_status,
@@ -677,9 +677,9 @@ int main(int argc, const char *argv[])
          if (iter->first != rec.getReconstructedPhysicsEvent().getEventNo()) {
             printf("bad event lookup for event %d in file %s: ", 
                    iter->first, rest_z.c_str());
-            printf("requested %d but got %d\n", iter->first, 
+            printf("requested %d but got %ld\n", iter->first, 
                    rec.getReconstructedPhysicsEvent().getEventNo());
-            printf("requested (%d,%d,%d) and got (%d,%d,%d)\n",
+            printf("requested (%ld,%d,%d) and got (%ld,%d,%d)\n",
                    iter->second.block_start,
                    iter->second.block_offset,
                    iter->second.block_status,
@@ -691,7 +691,7 @@ int main(int argc, const char *argv[])
          else if (fin.getPosition() != iter->second) {
             printf("bad record position for event %d in file %s: ",
                    iter->first, rest_z.c_str());
-            printf("requested (%d,%d,%d) but got (%d,%d,%d)\n",
+            printf("requested (%ld,%d,%d) but got (%ld,%d,%d)\n",
                    iter->second.block_start,
                    iter->second.block_offset,
                    iter->second.block_status,
@@ -727,9 +727,9 @@ int main(int argc, const char *argv[])
          if (iter->first != rec.getReconstructedPhysicsEvent().getEventNo()) {
             printf("bad event lookup for event %d in file %s: ", 
                    iter->first, rest_none.c_str());
-            printf("requested %d but got %d\n", iter->first, 
+            printf("requested %d but got %ld\n", iter->first, 
                    rec.getReconstructedPhysicsEvent().getEventNo());
-            printf("requested (%d,%d,%d) and got (%d,%d,%d)\n",
+            printf("requested (%ld,%d,%d) and got (%ld,%d,%d)\n",
                    iter->second.block_start,
                    iter->second.block_offset,
                    iter->second.block_status,
@@ -741,7 +741,7 @@ int main(int argc, const char *argv[])
          else if (fin.getPosition() != iter->second) {
             printf("bad record position for event %d in file %s: ",
                    iter->first, rest_none.c_str());
-            printf("requested (%d,%d,%d) but got (%d,%d,%d)\n",
+            printf("requested (%ld,%d,%d) but got (%ld,%d,%d)\n",
                    iter->second.block_start,
                    iter->second.block_offset,
                    iter->second.block_status,

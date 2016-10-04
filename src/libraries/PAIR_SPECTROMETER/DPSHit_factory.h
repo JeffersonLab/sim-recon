@@ -54,6 +54,7 @@ class DPSHit_factory:public jana::JFactory<DPSHit>{
   void FillCalibTable(ps_digi_constants_t &table, string table_name,
 		      const DPSGeometry &psGeom);
 
+  bool CHECK_FADC_ERRORS;
 };
 
 #endif // _DPSHit_factory_

@@ -50,7 +50,7 @@ Double_t fitf_pp(Double_t *x, Double_t *par)
   return fitval_pp;
 }
 
-void st_tw_resols(char*input_filename)
+void st_tw_resols(char const*input_filename)
 
 {
   TFile *df = new TFile(input_filename);

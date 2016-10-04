@@ -18,6 +18,7 @@ using namespace jana;
 
 #include <DAQ/DF1TDCHit.h>
 #include <DAQ/Df250PulseIntegral.h>
+#include <DAQ/Df250PulseData.h>
 #include <DAQ/JEventSource_EVIO.h>
 #include <TTAB/DTranslationTable.h>
 
@@ -134,9 +135,11 @@ jerror_t JEventProcessor_pedestal_online::evnt(JEventLoop *loop, uint64_t eventn
 		return NOERROR;
 	}
 
+	vector<const Df250PulseData*> f250PDs;
 	vector<const Df250PulseIntegral*> f250PIs;
 	vector<const Df125PulseIntegral*> f125PIs;
 
+	loop->Get(f250PDs);
 	loop->Get(f250PIs);
 	loop->Get(f125PIs);
 	
@@ -145,7 +148,7 @@ jerror_t JEventProcessor_pedestal_online::evnt(JEventLoop *loop, uint64_t eventn
 
 	if (peddir!=NULL) peddir->cd();
 	
-	// Access F250 from Df250PulseIntegral object
+	// Access F250 from Df250PulseIntegral object - pre-Fall 2016 data
 	for(unsigned int i=0; i<f250PIs.size(); i++) {
 		const Df250PulseIntegral *hit = f250PIs[i];
 		int rocid = hit->rocid;
@@ -176,7 +179,7 @@ jerror_t JEventProcessor_pedestal_online::evnt(JEventLoop *loop, uint64_t eventn
 					pedmean = pedestal_vtime_hist[rocid]->GetMean();
 					pedrms = pedestal_vtime_hist[rocid]->GetRMS();
 					pednumsamps = pedestal_vtime_hist[rocid]->GetEntries();
-					if (VERBOSE>=3) printf("\t\t%li  %li  %li  %li  %8.4f  %8.4f  %7i\n",
+                    if (VERBOSE>=3) printf("\t\t%li  %li  %li  %li  %8.4f  %8.4f  %7i\n",
 										   periodstarttime[rocid], globalstoptime, recentwalltime,  periodlength, 
 										   pedmean, pedrms, pednumsamps);
 					pedestal_vtime_tree[rocid]->Fill();
@@ -203,6 +206,71 @@ jerror_t JEventProcessor_pedestal_online::evnt(JEventLoop *loop, uint64_t eventn
 #endif
 			} 
 			pedestal_vevent[rocid]->Fill(eventnumber,hit->pedestal);
+		}
+	}
+
+	// Access F250 from Df250PulseData object - post-Fall 2016 data
+	for(unsigned int i=0; i<f250PDs.size(); i++) {
+		const Df250PulseData *hit = f250PDs[i];
+		int rocid = hit->rocid;
+		if(rocid>=0 && rocid<100) {
+			char cratename[255],title[255];
+			// only use time if it is good
+			if (recentwalltime>0) {
+				if (pedestal_vtime_tree[rocid]==NULL) {
+					if (VERBOSE>=1) printf("JEventProcessor_pedestal_online::evnt  creating time tree and histogram for crate %i\n",rocid);
+					sprintf(cratename,"pedestal_vtime_tree_crate%i",rocid);
+					sprintf(title,"Crate %i avg pedestal (F250)",rocid);
+					pedestal_vtime_tree[rocid] = new TTree(cratename,title);
+					pedestal_vtime_tree[rocid]->Branch("time",&treetime);
+					//pedestal_vtime_tree[rocid]->Branch("pedestal",&treepedestal[rocid]);
+					pedestal_vtime_tree[rocid]->Branch("pedmean",&pedmean);
+					pedestal_vtime_tree[rocid]->Branch("pedrms",&pedrms);
+					pedestal_vtime_tree[rocid]->Branch("pednumsamps",&pednumsamps);
+					sprintf(cratename,"pedestal_vtime_hist_crate%i",rocid);
+					pedestal_vtime_hist[rocid] = new TH1F(cratename,title,100,0.,0.);
+				}
+				// keep a running stats of the (single event) pedestal
+				if (hit->pedestal>0) pedestal_vtime_hist[rocid]->Fill(hit->pedestal/hit->nsamples_pedestal);
+				// if more than periodlength has elapsed, then end the average and fill the tree
+				if (recentwalltime > periodstarttime[rocid]+periodlength) {
+					if (VERBOSE>=3) printf("JEventProcessor_pedestal_online::evnt  filling tree crate %i\n",rocid);
+
+					treetime = periodstarttime[rocid];
+					pedmean = pedestal_vtime_hist[rocid]->GetMean();
+					pedrms = pedestal_vtime_hist[rocid]->GetRMS();
+					pednumsamps = pedestal_vtime_hist[rocid]->GetEntries();
+                    if (VERBOSE>=3) printf("\t\t%li  %li  %li  %li  %8.4f  %8.4f  %7i\n",
+										   periodstarttime[rocid], globalstoptime, recentwalltime,  periodlength, 
+										   pedmean, pedrms, pednumsamps);
+					pedestal_vtime_tree[rocid]->Fill();
+					pedestal_vtime_hist[rocid]->Reset();
+				}
+
+				// advance to the next period
+				while (recentwalltime > periodstarttime[rocid]+periodlength) {
+					periodstarttime[rocid]+=periodlength;
+					globalstoptime = periodstarttime[rocid];
+				}
+			}
+
+			if (pedestal_vevent[rocid]==NULL) {
+				if (VERBOSE>=1) printf("JEventProcessor_pedestal_online::evnt  creating event histogram for crate %i\n",rocid);
+				sprintf(cratename,"pedestal_vevent_crate%i",rocid);
+				sprintf(title,"Crate %i avg pedestal (F250);event num;pedestal (all chan avg)",rocid);
+				pedestal_vevent[rocid] = new TProfile(cratename,title,200,0.0,10000.0);
+				pedestal_vevent[rocid]->SetStats(0);
+#if ROOT_VERSION_CODE >= ROOT_VERSION(6,0,0)
+				pedestal_vevent[rocid]->SetCanExtend(TH1::kXaxis);
+#else
+				pedestal_vevent[rocid]->SetBit(TH1::kCanRebin);
+#endif
+			} 
+
+			// monitor single-sample pedestal
+			double locPedestalFraction = (hit->nsamples_pedestal == 0) ? 0.0 : double(hit->pedestal)/double(hit->nsamples_pedestal);
+			pedestal_vevent[rocid]->Fill(eventnumber, locPedestalFraction);
+			pedestal_vevent[rocid]->Fill(eventnumber,0);
 		}
 	}
 
@@ -265,7 +333,7 @@ jerror_t JEventProcessor_pedestal_online::evnt(JEventLoop *loop, uint64_t eventn
 			pedestal_vevent[rocid]->Fill(eventnumber,hit->pedestal);
 		}
 	}
-	
+
 	maindir->cd();
 	// Unlock ROOT
 	japp->RootUnLock();

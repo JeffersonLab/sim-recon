@@ -25,6 +25,7 @@ using namespace jana;
 #include "DANA/DStatusBits.h"
 #include "DAQ/DEPICSvalue.h"
 #include "DAQ/DF1TDCHit.h"
+#include "DAQ/Df250PulseData.h"
 #include "DAQ/Df250PulseIntegral.h"
 #include "DAQ/Df250WindowRawData.h"
 #include "TRIGGER/DL1Trigger.h"
@@ -604,12 +605,28 @@ jerror_t JEventProcessor_BCAL_online::evnt(JEventLoop *loop, uint64_t eventnumbe
 		vector<const DBCALDigiHit*> assoc_BCALDigiHit;
 		hit->Get(assoc_BCALDigiHit);
 		if (assoc_BCALDigiHit.size()>0) {
+            // pre-Fall 2016 firmware
 			vector<const Df250PulseIntegral*> f250PulseIntegral;
 			assoc_BCALDigiHit[0]->Get(f250PulseIntegral);
 			//printf("got %i DBCALDigiHit %i f250PulseIntegral\n", assoc_BCALDigiHit.size(),f250PulseIntegral.size());
 			if (f250PulseIntegral.size()>0) {
 				vector<const Df250WindowRawData*> f250WindowRawData;
 				f250PulseIntegral[0]->Get(f250WindowRawData);
+				if (f250WindowRawData.size()>0) {
+					//printf("got Df250WindowRawData\n");
+					if (f250WindowRawData[0]->overflow==1) {
+						saturated=1;
+					}
+				}
+			}
+
+            // post-Fall 2016 firmware
+			vector<const Df250PulseData*> f250PulseData;
+			assoc_BCALDigiHit[0]->Get(f250PulseData);
+			//printf("got %i DBCALDigiHit %i f250PulseData\n", assoc_BCALDigiHit.size(),f250PulseData.size());
+			if (f250PulseData.size()>0) {
+				vector<const Df250WindowRawData*> f250WindowRawData;
+				f250PulseData[0]->Get(f250WindowRawData);
 				if (f250WindowRawData.size()>0) {
 					//printf("got Df250WindowRawData\n");
 					if (f250WindowRawData[0]->overflow==1) {

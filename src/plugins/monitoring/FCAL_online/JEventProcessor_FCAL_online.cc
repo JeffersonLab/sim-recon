@@ -18,6 +18,7 @@
 #include "FCAL/DFCALShower.h"
 #include "DAQ/Df250PulseIntegral.h"
 #include "DAQ/Df250PulsePedestal.h"
+#include "DAQ/Df250PulseData.h"
 #include "units.h"
 #include "DLorentzVector.h"
 #include "DVector3.h"
@@ -219,6 +220,7 @@ jerror_t JEventProcessor_FCAL_online::evnt(JEventLoop *eventLoop, uint64_t event
   // the lock. This will eventually be fixed in JANA, but for now we implement
   // this caching solution to make multi-threading efficient.  3/4/2015 DL
   map< const DFCALDigiHit*, pair<const Df250PulseIntegral*, const Df250PulsePedestal*> > pi_pp_cache;
+  map< const DFCALDigiHit*, const Df250PulseData* > pd_cache;
 
   for( vector< const DFCALDigiHit* >::const_iterator dHitItr = digiHits.begin();
        dHitItr != digiHits.end(); ++dHitItr ){
@@ -229,12 +231,15 @@ jerror_t JEventProcessor_FCAL_online::evnt(JEventLoop *eventLoop, uint64_t event
     // fetch lower level FADC data
     const Df250PulseIntegral* pulseInt = NULL;
     const Df250PulsePedestal* pulsePed = NULL;
+    const Df250PulseData*     pulseDat = NULL;
 
     const DFCALDigiHit& dHit = (**dHitItr);
     dHit.GetSingle( pulseInt );
     if( pulseInt ) pulseInt->GetSingle( pulsePed );
+    dHit.GetSingle( pulseDat );
 	 
 	 pi_pp_cache[&dHit] = pair<const Df250PulseIntegral*, const Df250PulsePedestal*>(pulseInt, pulsePed);
+     pd_cache[&dHit] = pulseDat;
   }
 
   intWeightTime /= totIntegral;
@@ -350,12 +355,30 @@ if( digiHits.size() > 0 ){
     pair<const Df250PulseIntegral*, const Df250PulsePedestal*> &pulseX = pi_pp_cache[&dHit];
     const Df250PulseIntegral* pulseInt = pulseX.first;
     const Df250PulsePedestal* pulsePed = pulseX.second;
+    const Df250PulseData* pulseDat = pd_cache[&dHit];
 
     // dHit.GetSingle( pulseInt );
     // if( pulseInt ) pulseInt->GetSingle( pulsePed );
 
-    if( pulseInt && pulsePed ){
+    if( pulseDat || (pulseInt && pulsePed) ){
       
+        double pulse_peak, pulse_integral, pedestal, nsamples_integral, nsamples_pedestal;
+        if(pulseDat) {
+            // post-Fall 2016 firmware
+            pulse_peak = pulseDat->pulse_peak;
+            pulse_integral = pulseDat->integral;
+            pedestal = pulseDat->pedestal;
+            nsamples_integral = pulseDat->nsamples_integral;
+            nsamples_pedestal = pulseDat->nsamples_pedestal;
+        } else {
+            // pre-Fall 2016 firmware
+            pulse_peak = pulsePed->pulse_peak;
+            pulse_integral = pulseInt->integral;
+            pedestal = pulseInt->pedestal;
+            nsamples_integral = pulseInt->nsamples_integral;
+            nsamples_pedestal = 1;
+        }
+
       double peakV = pulsePed->pulse_peak * 2.0 / 4096;
       
       m_digPeakV->Fill( peakV );
@@ -365,14 +388,14 @@ if( digiHits.size() > 0 ){
       // is an imperfect way of trying to detect them as
       // "pulse_peak" is defined as the first sample for
       // which the subsequent sample is a lower amplitude
-      if( pulsePed->pulse_peak == 4096 ) ++nOverflow;
+      if( pulse_peak == 4096 ) ++nOverflow;
 
-      m_digIntVsPeak->Fill( pulsePed->pulse_peak, pulseInt->integral );
+      m_digIntVsPeak->Fill( pulse_peak, pulse_integral );
 
-      double integral = (double)( pulseInt->integral -  
-				  ( pulseInt->pedestal * 
-				    pulseInt->nsamples_integral ) );
-      double peak = (double)( pulsePed->pulse_peak - pulseInt->pedestal );
+      double integral = (double)( pulse_integral -  
+				  ( pedestal * 
+				    nsamples_integral/nsamples_pedestal ) );
+      double peak = (double)( pulse_peak - pedestal/nsamples_pedestal );
 
       if( pulsePed->pulse_peak > 300 )
 	m_digIntToPeak->Fill( integral / peak );

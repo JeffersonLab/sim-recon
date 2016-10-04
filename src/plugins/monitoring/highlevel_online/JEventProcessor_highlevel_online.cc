@@ -1,6 +1,8 @@
 #include "JEventProcessor_highlevel_online.h"
 using namespace jana;
 
+#include <DAQ/Df250PulseData.h>
+
 // Routine used to create our JEventProcessor
 #include <JANA/JApplication.h>
 #include <JANA/JFactory.h>
@@ -16,6 +18,23 @@ extern "C"{
 //------------------
 jerror_t JEventProcessor_highlevel_online::init(void)
 {
+	//timing cuts
+	dTimingCutMap[Gamma][SYS_BCAL] = 3.0;
+	dTimingCutMap[Gamma][SYS_FCAL] = 5.0;
+	dTimingCutMap[Proton][SYS_NULL] = -1.0;
+	dTimingCutMap[Proton][SYS_TOF] = 2.5;
+	dTimingCutMap[Proton][SYS_BCAL] = 2.5;
+	dTimingCutMap[Proton][SYS_FCAL] = 3.0;
+	dTimingCutMap[PiPlus][SYS_NULL] = -1.0;
+	dTimingCutMap[PiPlus][SYS_TOF] = 2.0;
+	dTimingCutMap[PiPlus][SYS_BCAL] = 2.5;
+	dTimingCutMap[PiPlus][SYS_FCAL] = 3.0;
+	dTimingCutMap[PiMinus][SYS_NULL] = -1.0;
+	dTimingCutMap[PiMinus][SYS_TOF] = 2.0;
+	dTimingCutMap[PiMinus][SYS_BCAL] = 2.5;
+	dTimingCutMap[PiMinus][SYS_FCAL] = 3.0;
+	map<Particle_t, map<DetectorSystem_t, double> > dTimingCutMap;
+
 	// All histograms go in the "highlevel" directory
 	TDirectory *main = gDirectory;
 
@@ -23,11 +42,19 @@ jerror_t JEventProcessor_highlevel_online::init(void)
 
 	/***************************************************************** RF *****************************************************************/
 
-	dHist_BeamBunchPeriod = new TH1I("RFBeamBunchPeriod", ";TAGH #Deltat (Within Same Counter) (ns)", 1000, 0.0, 200.0);
+	int NRFbins = 1024;
+	double ns_per_bin = 0.2;
+	double RFlo = 0.0;
+	double RFhi = RFlo + ns_per_bin*(double)NRFbins;
+	double dft_min =  50.0; // min frequency in Mhz
+	double dft_max = 900.0; // max frequency in Mhz
+	int Ndft_bins = (1.0/dft_min - 1.0/dft_max)*1000.0/ns_per_bin;
+	dHist_BeamBunchPeriod     = new TH1I("RFBeamBunchPeriod", "RF Beam Bunch Period;TAGH #Deltat (Within Same Counter) (ns)", NRFbins, RFlo, RFhi);
+	dHist_BeamBunchPeriod_DFT = new TH1F("RFBeamBunchPeriod_DFT", "Fourier Transform of RF Beam Bunch Period;Beam bunch frequency (MHz)", Ndft_bins, dft_min, dft_max);
 
 	/*************************************************************** TRIGGER **************************************************************/
 
-	dHist_L1GTPRate = new TH2F("L1GTPRate",";Trigger Bit;L1 GTP Rate (kHz)", 8, 0.5, 8.5, 1000, 0.0, 100.0);
+	dHist_L1GTPRate = new TH2F("L1GTPRate","L1 GTP Rate by bit;Trigger Bit;L1 GTP Rate (kHz)", 8, 0.5, 8.5, 1000, 0.0, 100.0);
 
 	dHist_BCALVsFCAL_TrigBit1 = new TH2I("BCALVsFCAL_TrigBit1","TRIG BIT 1;E (FCAL) (count);E (BCAL) (count)", 200, 0., 10000, 200, 0., 50000);
 	dHist_BCALVsFCAL_TrigBit6 = new TH2I("BCALVsFCAL_TrigBit6","TRIG BIT 6;E (FCAL) (count);E (BCAL) (count)", 200, 0., 10000, 200, 0., 50000);
@@ -52,21 +79,34 @@ jerror_t JEventProcessor_highlevel_online::init(void)
 	/************************************************************* KINEMATICS *************************************************************/
 
 	// Beam Energy
-	dHist_BeamEnergy = new TH1I("BeamEnergy", ";Beam Energy (GeV)", 1200, 0.0, 12.0);
+	dHist_BeamEnergy = new TH1I("BeamEnergy", "Reconstructed Tagger Beam Energy;Beam Energy (GeV)", 240, 0.0, 12.0);
 
 	// PVsTheta Time-Based Tracks
-	dHist_PVsTheta_Tracks = new TH2I("PVsTheta_Tracks", ";#theta#circ;p (GeV/c)", 280, 0.0, 140.0, 300, 0.0, 12.0);
+	dHist_PVsTheta_Tracks = new TH2I("PVsTheta_Tracks", "P vs. #theta for time-based tracks;#theta#circ;p (GeV/c)", 280, 0.0, 140.0, 150, 0.0, 12.0);
 
 	// PhiVsTheta Time-Based Tracks
-	dHist_PhiVsTheta_Tracks = new TH2I("PhiVsTheta_Tracks", ";#theta#circ;#phi#circ", 280, 0.0, 140.0, 360, -180.0, 180.0);
+	dHist_PhiVsTheta_Tracks = new TH2I("PhiVsTheta_Tracks", "#phi vs. #theta for time-based tracks;#theta#circ;#phi#circ", 280, 0.0, 140.0, 60, -180.0, 180.0);
 
 	/*************************************************************** VERTEX ***************************************************************/
 
 	// Event Vertex-Z
-	dEventVertexZ = new TH1I("EventVertexZ", ";Event Vertex-Z (cm)", 600, 0.0, 200.0);
+	dEventVertexZ = new TH1I("EventVertexZ", "Reconstructed Event Vertex Z;Event Vertex-Z (cm)", 600, 0.0, 200.0);
 
 	// Event Vertex-Y Vs Vertex-X
-	dEventVertexYVsX = new TH2I("EventVertexYVsX", ";Event Vertex-X (cm);Event Vertex-Y (cm)", 400, -10.0, 10.0, 400, -10.0, 10.0);
+	dEventVertexYVsX = new TH2I("EventVertexYVsX", "Reconstructed Event Vertex X/Y;Event Vertex-X (cm);Event Vertex-Y (cm)", 400, -10.0, 10.0, 400, -10.0, 10.0);
+
+	/*************************************************************** 2 gamma inv. mass ***************************************************************/
+	// 2-gamma inv. mass
+	d2gamma = new TH1I("TwoGammaMass", "2#gamma inv. mass;2#gamma inv. mass (GeV)", 400, 0.0, 1.2);
+
+	// pi+ pi-
+	dpip_pim = new TH1I("PiPlusPiMinus", "#pi^{+}#pi^{-} inv. mass w/ identified proton;#pi^{+}#pi^{-} inv. mass (GeV)", 400, 0.0, 2.0);
+
+	// pi+ pi- pi0
+	dpip_pim_pi0 = new TH1I("PiPlusPiMinusPiZero", "#pi^{+}#pi^{-}#pi^{o} inv. mass w/ identified proton;#pi^{+}#pi^{-}#pi^{o} inv. mass (GeV)", 200, 0.035, 2.0);
+	dptrans = new TH1I("PiPlusPiMinusPiZeroProton_t", ";#pi^{+}#pi^{-}#pi^{o}p transverse momentum(GeV)", 500, 0.0, 1.0);
+	
+	dbeta_vs_p = new TH2I("BetaVsP", "#beta vs. p (best FOM all charged tracks);p (GeV);#beta", 200, 0.0, 2.0, 100, 0.0, 1.1);
 
 	// back to main dir
 	main->cd();
@@ -80,6 +120,9 @@ jerror_t JEventProcessor_highlevel_online::init(void)
 jerror_t JEventProcessor_highlevel_online::brun(JEventLoop *locEventLoop, int32_t runnumber)
 {
   // This is called whenever the run number changes
+	vector<double> locBeamPeriodVector;
+	locEventLoop->GetCalib("PHOTON_BEAM/RF/beam_period", locBeamPeriodVector);
+	dBeamBunchPeriod = locBeamPeriodVector[0];
 
 	fcal_cell_thr  =  64;
 	bcal_cell_thr  =  20;
@@ -120,6 +163,9 @@ jerror_t JEventProcessor_highlevel_online::evnt(JEventLoop *locEventLoop, uint64
 	vector<const DNeutralShower*> locNeutralShowers;
 	locEventLoop->Get(locNeutralShowers);
 
+	vector<const DNeutralParticle*> locNeutralParticles;
+	locEventLoop->Get(locNeutralParticles, "PreSelect");
+
 	vector<const DTOFPoint*> locTOFPoints;
 	locEventLoop->Get(locTOFPoints);
 
@@ -129,14 +175,17 @@ jerror_t JEventProcessor_highlevel_online::evnt(JEventLoop *locEventLoop, uint64
 	vector<const DTAGHHit*> locTAGHHits;
 	locEventLoop->Get(locTAGHHits);
 
-    vector<const DBCALDigiHit*> locBCALDigiHits;
-    locEventLoop->Get(locBCALDigiHits);
+	vector<const DBCALDigiHit*> locBCALDigiHits;
+	locEventLoop->Get(locBCALDigiHits);
 
-    vector<const DFCALDigiHit*> locFCALDigiHits;
-    locEventLoop->Get(locFCALDigiHits);
+	vector<const DFCALDigiHit*> locFCALDigiHits;
+	locEventLoop->Get(locFCALDigiHits);
 
 	const DDetectorMatches* locDetectorMatches = NULL;
 	locEventLoop->GetSingle(locDetectorMatches);
+
+	const DEventRFBunch* locEventRFBunch = NULL;
+	locEventLoop->GetSingle(locEventRFBunch);
 
 	const DVertex* locVertex = NULL;
 	locEventLoop->GetSingle(locVertex);
@@ -147,6 +196,39 @@ jerror_t JEventProcessor_highlevel_online::evnt(JEventLoop *locEventLoop, uint64
 
 	vector<const DChargedTrack*> locChargedTracks;
 	locEventLoop->Get(locChargedTracks, "PreSelect");
+
+	/********************************************************* PREPARE RF ********************************************************/
+	
+	// Do discrete Fourier transform for selected frequency range
+	double *rf_dft = NULL;
+	if(dHist_BeamBunchPeriod->GetEntries() > 100){
+		
+		int NRF_bins      = dHist_BeamBunchPeriod->GetNbinsX();
+		int Ndft_bins     = dHist_BeamBunchPeriod_DFT->GetNbinsX();
+		double ns_per_bin = dHist_BeamBunchPeriod->GetBinWidth(1);
+		double rfdomain   = ns_per_bin*(double)NRF_bins;
+		rf_dft = new double[Ndft_bins];
+		for(int ibin=1; ibin<=Ndft_bins; ibin++){
+
+			// n.b. the factor of 1000 below is to convert from MHz to GHz
+			double f = dHist_BeamBunchPeriod_DFT->GetXaxis()->GetBinCenter(ibin);
+			double k = rfdomain/(1000.0/f); // k is number of oscillations in whole x-range for this freq.
+
+			double dphi = TMath::TwoPi()*k/(double)NRF_bins;
+
+			double sumc = 0.0;
+			double sums = 0.0;
+			for(int jbin=1; jbin<=(int)NRF_bins; jbin++){
+
+				double v = dHist_BeamBunchPeriod->GetBinContent(jbin);
+				double theta = (double)jbin*dphi;
+				sumc += v*cos(theta);
+				sums += v*sin(theta);
+			}
+
+			rf_dft[ibin-1] = sqrt(sumc*sumc + sums*sums);
+		}
+	}
 
 	/********************************************************* PREPARE TAGGER HITS ********************************************************/
 
@@ -203,11 +285,14 @@ jerror_t JEventProcessor_highlevel_online::evnt(JEventLoop *locEventLoop, uint64
 
 		const Df250PulsePedestal *pulsepedestal = NULL;
 		fcal_hit->GetSingle(pulsepedestal);
-
+		const Df250PulseData *pulsedata = NULL;
+		fcal_hit->GetSingle(pulsedata);
 
 		Int_t pulse_peak = -10;
-		if(pulsepedestal)
+		if(pulsepedestal)   // pre-Fall 2016 firmware
 			pulse_peak = pulsepedestal->pulse_peak - 100;
+		if(pulsedata)       // post-Fall 2016 firmware
+			pulse_peak = pulsedata->pulse_peak - 100;
 
 		if(pulse_peak <= fcal_cell_thr)
 			continue;
@@ -233,13 +318,30 @@ jerror_t JEventProcessor_highlevel_online::evnt(JEventLoop *locEventLoop, uint64
 
 		bcal_tot_en += pulse_int;
 	}
+	
+	/********************************************************* PREPARE BEAM PHOTONS *******************************************************/
 
-    /***************************************************************** RF *****************************************************************/
+	vector<const DBeamPhoton*> locBeamPhotons_InTime;
+	for(auto locBeamPhoton : locBeamPhotons)
+	{
+		double locDeltaT = locBeamPhoton->time() - locEventRFBunch->dTime;
+		if(fabs(locDeltaT) <= 0.5*dBeamBunchPeriod)
+			locBeamPhotons_InTime.push_back(locBeamPhoton);
+	}
+
+	/***************************************************************** RF *****************************************************************/
 
 	japp->RootFillLock(this); //ACQUIRE ROOT FILL LOCK
 
 	for(size_t loc_i = 0; loc_i < locTAGHDeltaTs.size(); ++loc_i)
 		dHist_BeamBunchPeriod->Fill(locTAGHDeltaTs[loc_i]);
+	
+	if(rf_dft){
+		for(int i=0; i<dHist_BeamBunchPeriod_DFT->GetNbinsX(); i++){
+			dHist_BeamBunchPeriod_DFT->SetBinContent(i+1, rf_dft[i]);
+		}
+		delete[] rf_dft;
+	}
 
 	/*************************************************************** TRIGGER **************************************************************/
 
@@ -285,8 +387,10 @@ jerror_t JEventProcessor_highlevel_online::evnt(JEventLoop *locEventLoop, uint64
 		double locP = locChargedHypo->momentum().Mag();
 		double locTheta = locChargedHypo->momentum().Theta()*180.0/TMath::Pi();
 		double locPhi = locChargedHypo->momentum().Phi()*180.0/TMath::Pi();
+		double locBeta = locChargedHypo->measuredBeta();
 		dHist_PVsTheta_Tracks->Fill(locTheta, locP);
 		dHist_PhiVsTheta_Tracks->Fill(locTheta, locPhi);
+		dbeta_vs_p->Fill(locP, locBeta);
 	}
 
 	/*************************************************************** VERTEX ***************************************************************/
@@ -296,6 +400,124 @@ jerror_t JEventProcessor_highlevel_online::evnt(JEventLoop *locEventLoop, uint64
 		dEventVertexZ->Fill(locVertex->dSpacetimeVertex.Z());
 		dEventVertexYVsX->Fill(locVertex->dSpacetimeVertex.X(), locVertex->dSpacetimeVertex.Y());
 	}
+
+	/*************************************************************** 2 gamma inv. mass ***************************************************************/
+
+	vector<DLorentzVector> pi0s;
+	for(uint32_t i=0; i<locNeutralParticles.size(); i++){
+
+		auto hypoth1 = locNeutralParticles[i]->Get_Hypothesis(Gamma);
+		if(!hypoth1) continue;
+
+		//timing cut
+		auto dectector1 = hypoth1->t1_detector();
+		double locDeltaT = hypoth1->time() - hypoth1->t0();
+		if(fabs(locDeltaT) > dTimingCutMap[Gamma][dectector1])
+			continue;
+
+		const DLorentzVector &v1 = hypoth1->lorentzMomentum();
+
+		for(uint32_t j=i+1; j<locNeutralParticles.size(); j++){
+
+			auto hypoth2 = locNeutralParticles[j]->Get_Hypothesis(Gamma);
+			if(!hypoth2) continue;
+
+			//timing cut
+			auto dectector2 = hypoth2->t1_detector();
+			locDeltaT = hypoth2->time() - hypoth2->t0();
+			if(fabs(locDeltaT) > dTimingCutMap[Gamma][dectector2])
+				continue;
+
+			const DLorentzVector &v2 = hypoth2->lorentzMomentum();
+
+			DLorentzVector ptot(v1+v2);
+			double mass = ptot.M();
+			d2gamma->Fill(mass);
+			if(mass>0.1 && mass<0.17) pi0s.push_back(ptot);
+		}
+	}
+
+	/*************************************************************** pi+ pi- pi0 ***************************************************************/
+	for(auto t1 : locChargedTracks){
+		//look for pi+
+		auto hypoth1 = t1->Get_Hypothesis(PiPlus);
+		if(!hypoth1) continue;
+
+		//timing cut
+		auto dectector1 = hypoth1->t1_detector();
+		double locDeltaT = hypoth1->time() - hypoth1->t0();
+		if(fabs(locDeltaT) > dTimingCutMap[PiPlus][dectector1])
+			continue;
+
+		const DLorentzVector &pipmom = hypoth1->lorentzMomentum();
+
+		for(auto t2 : locChargedTracks){
+			if(t2 == t1) continue;
+
+			//look for pi-
+			auto hypoth2 = t2->Get_Hypothesis(PiMinus);
+			if(!hypoth2) continue;
+
+			//timing cut
+			auto dectector2 = hypoth2->t1_detector();
+			locDeltaT = hypoth2->time() - hypoth2->t0();
+			if(fabs(locDeltaT) > dTimingCutMap[PiMinus][dectector2])
+				continue;
+
+			const DLorentzVector &pimmom = hypoth2->lorentzMomentum();
+
+			for(auto t3 : locChargedTracks){
+				if(t3 == t1) continue;
+				if(t3 == t2) continue;
+
+				//look for proton
+				auto hypoth3 = t3->Get_Hypothesis(Proton);
+				if(!hypoth3) continue;
+
+				//timing cut
+				auto dectector3 = hypoth3->t1_detector();
+				locDeltaT = hypoth3->time() - hypoth3->t0();
+				if(fabs(locDeltaT) > dTimingCutMap[Proton][dectector3])
+					continue;
+
+				const DLorentzVector &protonmom = hypoth3->lorentzMomentum();
+
+				//for rho: require at least one beam photon in time with missing mass squared near 0
+				DLorentzVector rhomom(pipmom + pimmom);
+				DLorentzVector locFinalStateP4 = rhomom + protonmom;
+				DLorentzVector locTargetP4(0.0, 0.0, 0.0, ParticleMass(Proton));
+				for(auto locBeamPhoton : locBeamPhotons_InTime)
+				{
+					DLorentzVector locMissingP4 = locBeamPhoton->lorentzMomentum() + locTargetP4 - locFinalStateP4;
+					if(fabs(locMissingP4.M2()) > 0.01)
+						continue;
+					dpip_pim->Fill(rhomom.M());
+					break;
+				}
+
+				for(uint32_t i=0; i<pi0s.size(); i++){
+					DLorentzVector &pi0mom = pi0s[i];
+	
+					//for omega: require at least one beam photon in time with missing mass squared near 0
+					DLorentzVector omegamom(pi0mom + rhomom);
+					locFinalStateP4 = omegamom + protonmom;
+					for(auto locBeamPhoton : locBeamPhotons_InTime)
+					{
+						DLorentzVector locMissingP4 = locBeamPhoton->lorentzMomentum() + locTargetP4 - locFinalStateP4;
+						if(fabs(locMissingP4.M2()) > 0.01)
+							continue;
+						dpip_pim_pi0->Fill(omegamom.M());
+						break;
+					}
+
+					double ptrans = locFinalStateP4.Perp();
+					dptrans->Fill(ptrans);
+					if(ptrans > 0.1) continue;
+				}
+			}
+		}		
+	}
+
 
 	japp->RootFillUnLock(this); //RELEASE ROOT FILL LOCK
 

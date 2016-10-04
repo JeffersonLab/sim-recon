@@ -365,6 +365,48 @@ void DTranslationTable::ApplyTranslationTable(JEventLoop *loop) const
       }
    }
 
+   // Df250PulseData
+   vector<const Df250PulseData*> pulsedatas250;
+   loop->Get(pulsedatas250);
+   if (VERBOSE > 2) ttout << "  Number Df250PulseData objects: "  << pulsedatas250.size() << std::endl;
+   for(auto pd : pulsedatas250){
+      
+      // Apply optional rocid translation
+      uint32_t rocid = pd->rocid;
+      map<uint32_t, uint32_t>::iterator rocid_iter = Get_ROCID_Map().find(rocid);
+      if (rocid_iter != Get_ROCID_Map().end()) rocid = rocid_iter->second;
+      
+      if (VERBOSE > 4) ttout << "    Looking for rocid:" << rocid << " slot:" << pd->slot << " chan:" << pd->channel << std::endl;
+      
+      // Create crate,slot,channel index and find entry in Translation table.
+      // If none is found, then just quietly skip this hit.
+      csc_t csc = {rocid, pd->slot, pd->channel};
+      map<csc_t, DChannelInfo>::const_iterator iter = Get_TT().find(csc);
+      if (iter == Get_TT().end()) {
+         if (VERBOSE > 6)  ttout << "     - Didn't find it" << std::endl;
+         continue;
+      }
+      const DChannelInfo &chaninfo = iter->second;
+      if (VERBOSE > 6) ttout << "     - Found entry for: " << DetectorName(chaninfo.det_sys) << std::endl;
+
+      // Create the appropriate hit type based on detector type
+      switch (chaninfo.det_sys) {
+         case BCAL:       MakeBCALDigiHit( chaninfo.bcal, pd);             break;
+         case FCAL:       MakeFCALDigiHit( chaninfo.fcal, pd);             break;
+         case SC:         MakeSCDigiHit(   chaninfo.sc,   pd);             break;
+         case TOF:        MakeTOFDigiHit(  chaninfo.tof,  pd);             break;
+         case TAGM:       MakeTAGMDigiHit( chaninfo.tagm, pd);             break;
+         case TAGH:       MakeTAGHDigiHit( chaninfo.tagh, pd);             break;
+         case PS:         MakePSDigiHit(   chaninfo.ps,   pd);             break;
+         case PSC:        MakePSCDigiHit(  chaninfo.psc,  pd);             break;
+         case RF:         MakeRFDigiTime(  chaninfo.rf,   pd);             break;
+         case TPOLSECTOR: MakeTPOLSectorDigiHit(chaninfo.tpolsector, pd);  break;
+         default:
+            if (VERBOSE > 4) ttout << "       - Don't know how to make DigiHit objects for this detector type!" << std::endl;
+            break;
+      }
+   }
+
    // Df125PulseIntegral (will apply Df125PulseTime via associated objects)
    vector<const Df125PulseIntegral*> pulseintegrals125;
    loop->Get(pulseintegrals125);
@@ -608,6 +650,147 @@ void DTranslationTable::ApplyTranslationTable(JEventLoop *loop) const
       	AddCAEN1290TDCObjectsToCallStack(loop, "DTOFTDCDigiHit");
 		}
    }
+}
+
+//---------------------------------
+// MakeBCALDigiHit
+//---------------------------------
+DBCALDigiHit* DTranslationTable::MakeBCALDigiHit(const BCALIndex_t &idx,
+                                                 const Df250PulseData *pd) const
+{
+   if (VERBOSE > 4)
+      ttout << "       - Making DBCALDigiHit for (mod,lay,sec,end)=("
+            << idx.module << "," << idx.layer << "," << idx.sector 
+            << "," << (DBCALGeometry::End)idx.end << std::endl;
+
+   DBCALDigiHit *h = new DBCALDigiHit();
+   CopyDf250Info(h, pd);
+
+   h->module = idx.module;
+   h->layer  = idx.layer;
+   h->sector = idx.sector;
+   h->end    = (DBCALGeometry::End)idx.end;
+
+   vDBCALDigiHit.push_back(h);
+
+   return h;
+}
+
+//---------------------------------
+// MakeFCALDigiHit
+//---------------------------------
+DFCALDigiHit* DTranslationTable::MakeFCALDigiHit(const FCALIndex_t &idx,
+                                                 const Df250PulseData *pd) const
+{
+   DFCALDigiHit *h = new DFCALDigiHit();
+   CopyDf250Info(h, pd);
+
+   h->row    = idx.row;
+   h->column = idx.col;
+
+   vDFCALDigiHit.push_back(h);
+   
+   return h;
+}
+
+//---------------------------------
+// MakeTOFDigiHit
+//---------------------------------
+DTOFDigiHit* DTranslationTable::MakeTOFDigiHit(const TOFIndex_t &idx,
+                                               const Df250PulseData *pd) const
+{
+   DTOFDigiHit *h = new DTOFDigiHit();
+   CopyDf250Info(h, pd);
+
+   h->plane = idx.plane;
+   h->bar   = idx.bar;
+   h->end   = idx.end;
+
+   vDTOFDigiHit.push_back(h);
+   
+   return h;
+}
+
+//---------------------------------
+// MakeSCDigiHit
+//---------------------------------
+DSCDigiHit* DTranslationTable::MakeSCDigiHit(const SCIndex_t &idx, 
+                                             const Df250PulseData *pd) const
+{
+   DSCDigiHit *h = new DSCDigiHit();
+   CopyDf250Info(h, pd);
+
+   h->sector = idx.sector;
+
+   vDSCDigiHit.push_back(h);
+   
+   return h;
+}
+
+//---------------------------------
+// MakeTAGMDigiHit
+//---------------------------------
+DTAGMDigiHit* DTranslationTable::MakeTAGMDigiHit(const TAGMIndex_t &idx,
+                                                 const Df250PulseData *pd) const
+{
+   DTAGMDigiHit *h = new DTAGMDigiHit();
+   CopyDf250Info(h, pd);
+
+   h->row = idx.row;
+   h->column = idx.col;
+
+   vDTAGMDigiHit.push_back(h);
+   
+   return h;
+}
+
+//---------------------------------
+// MakeTAGHDigiHit
+//---------------------------------
+DTAGHDigiHit* DTranslationTable::MakeTAGHDigiHit(const TAGHIndex_t &idx,
+                                                 const Df250PulseData *pd) const
+{
+   DTAGHDigiHit *h = new DTAGHDigiHit();
+   CopyDf250Info(h, pd);
+
+   h->counter_id = idx.id;
+
+   vDTAGHDigiHit.push_back(h);
+   
+   return h;
+}
+
+//---------------------------------
+// MakePSCDigiHit
+//---------------------------------
+DPSCDigiHit* DTranslationTable::MakePSCDigiHit(const PSCIndex_t &idx,
+											   const Df250PulseData *pd) const
+{
+   DPSCDigiHit *h = new DPSCDigiHit();
+   CopyDf250Info(h, pd);
+
+   h->counter_id = idx.id;
+
+   vDPSCDigiHit.push_back(h);
+   
+   return h;
+}
+
+//---------------------------------
+// MakePSDigiHit
+//---------------------------------
+DPSDigiHit* DTranslationTable::MakePSDigiHit(const PSIndex_t &idx,
+                                             const Df250PulseData *pd) const
+{
+   DPSDigiHit *h = new DPSDigiHit();
+   CopyDf250Info(h, pd);
+
+   h->arm = (DPSGeometry::Arm)idx.side;
+   h->column = idx.id;
+
+   vDPSDigiHit.push_back(h);
+   
+   return h;
 }
 
 //---------------------------------
@@ -955,6 +1138,23 @@ DRFDigiTime*  DTranslationTable::MakeRFDigiTime(
 }
 
 //---------------------------------
+// MakeRFDigiTime
+//---------------------------------
+DRFDigiTime*  DTranslationTable::MakeRFDigiTime(
+                                   const RFIndex_t &idx,
+                                   const Df250PulseData *hit) const
+{
+   DRFDigiTime *h = new DRFDigiTime();
+   h->time = (hit->course_time<<6) + hit->fine_time;
+
+   h->dSystem = idx.dSystem;
+
+   vDRFDigiTime.push_back(h);
+   
+   return h;
+}
+
+//---------------------------------
 // MakeSCTDCDigiHit
 //---------------------------------
 DSCTDCDigiHit*  DTranslationTable::MakeSCTDCDigiHit(
@@ -1052,6 +1252,22 @@ DTPOLSectorDigiHit* DTranslationTable::MakeTPOLSectorDigiHit(const TPOLSECTORInd
 {
    DTPOLSectorDigiHit *h = new DTPOLSectorDigiHit();
    CopyDf250Info(h, pi, pt, pp);
+
+   h->sector = idx.sector;
+
+   vDTPOLSectorDigiHit.push_back(h);
+   
+   return h;
+}
+
+//---------------------------------
+// MakeTPOLSectorDigiHit
+//---------------------------------
+DTPOLSectorDigiHit* DTranslationTable::MakeTPOLSectorDigiHit(const TPOLSECTORIndex_t &idx,
+							     const Df250PulseData *pd) const
+{
+   DTPOLSectorDigiHit *h = new DTPOLSectorDigiHit();
+   CopyDf250Info(h, pd);
 
    h->sector = idx.sector;
 

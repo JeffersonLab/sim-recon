@@ -106,10 +106,16 @@ jerror_t DEventSourceHDDM::GetEvent(JEvent &event)
       return NO_MORE_EVENTS_IN_SOURCE;
    }
    
-   ++Nevents_read;
-   
    hddm_s::HDDM *record = new hddm_s::HDDM();
-   *fin >> *record;
+   if (! (*fin >> *record)) {
+      delete fin;
+      fin = NULL;
+      delete ifs;
+      ifs = NULL;
+      return NO_MORE_EVENTS_IN_SOURCE;
+   }
+
+   ++Nevents_read;
 
    int event_number = -1;
    int run_number = -1;
@@ -872,11 +878,13 @@ jerror_t DEventSourceHDDM::Extract_DBCALDigiHit(hddm_s::HDDM *record,
       response->layer             = iter->getLayer();
       response->sector            = iter->getSector();
       response->pulse_integral    = (uint32_t)iter->getPulse_integral();
+      response->pulse_peak        = 0;
       response->pulse_time        = (uint32_t)iter->getPulse_time();
       response->pedestal          = 1;
       response->QF                = 1;
       response->nsamples_integral = 1;
       response->nsamples_pedestal = 1;
+      response->datasource        = 3;
       response->end               = (iter->getEnd() == 0)? DBCALGeometry::kUpstream :
                                                 DBCALGeometry::kDownstream;
       data.push_back(response);

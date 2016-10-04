@@ -18,6 +18,7 @@ using namespace jana;
 #include "BCAL/DBCALUnifiedHit.h"
 #include "BCAL/DBCALGeometry.h"
 #include "DAQ/DF1TDCHit.h"
+#include "DAQ/Df250PulseData.h"
 #include "DAQ/Df250PulseIntegral.h"
 #include "DAQ/Df250WindowRawData.h"
 #include "TRIGGER/DL1Trigger.h"
@@ -394,7 +395,7 @@ jerror_t JEventProcessor_BCAL_LEDonline::evnt(JEventLoop *loop, uint64_t eventnu
 
 		if( (dbcaldigihits.size() > 0) || (dbcaltdcdigihits.size() > 0) )
 			bcal_num_events->Fill(1);
-
+        
 		bcal_fadc_digi_nhits_evnt->Fill(dbcaldigihits.size());
 		bcal_tdc_digi_nhits_evnt->Fill(dbcaltdcdigihits.size());
 
@@ -413,7 +414,7 @@ jerror_t JEventProcessor_BCAL_LEDonline::evnt(JEventLoop *loop, uint64_t eventnu
 		// 	cellHitMap[chan].hits.push_back(*hitPtr);
 		// }
 
-
+        
 		// Digitized fADC hits for bcal
 		for(unsigned int i=0; i<dbcaldigihits.size(); i++) {
 			const DBCALDigiHit *hit = dbcaldigihits[i];
@@ -427,7 +428,7 @@ jerror_t JEventProcessor_BCAL_LEDonline::evnt(JEventLoop *loop, uint64_t eventnu
 			if (layer==2) bcal_fadc_digi_occ_layer2->Fill(glosect);
 			if (layer==3) bcal_fadc_digi_occ_layer3->Fill(glosect);
 			if (layer==4) bcal_fadc_digi_occ_layer4->Fill(glosect);
-
+            
 			int channelnumber = DBCALGeometry::getglobalchannelnumber(hit->module, hit->layer, hit->sector, hit->end);
 			if ( hit->pedestal > 0 ) {
 				double pedsubint = hit->pulse_integral-((float)hit->nsamples_integral/(float)hit->nsamples_pedestal)*hit->pedestal;
@@ -443,7 +444,7 @@ jerror_t JEventProcessor_BCAL_LEDonline::evnt(JEventLoop *loop, uint64_t eventnu
 				bcal_fadc_digi_pedsubint_vchannel->Fill(channelnumber,pedsubint);
 				bcal_fadc_digi_pedsubpeak_vchannel->Fill(channelnumber,pedsubpeak);
 			}
-
+            
 			// Occupancy histogram defined to give better aspect ratio
 			int ix = hit->module;
 			int iy = (hit->sector-1)*4 + hit->layer;
@@ -506,7 +507,22 @@ jerror_t JEventProcessor_BCAL_LEDonline::evnt(JEventLoop *loop, uint64_t eventnu
 						}
 					}
 				}
-			}
+			
+                // post-Fall 2016 firmware
+                vector<const Df250PulseData*> f250PulseData;
+                assoc_BCALDigiHit[0]->Get(f250PulseData);
+                //printf("got %i DBCALDigiHit %i f250PulseData\n", assoc_BCALDigiHit.size(),f250PulseData.size());
+                if (f250PulseData.size()>0) {
+                    vector<const Df250WindowRawData*> f250WindowRawData;
+                    f250PulseData[0]->Get(f250WindowRawData);
+                    if (f250WindowRawData.size()>0) {
+                        //printf("got Df250WindowRawData\n");
+                        if (f250WindowRawData[0]->overflow==1) {
+                            saturated=1;
+                        }
+                    }
+				}
+            }
 
 			// Occupancy histogram defined to give better aspect ratio
 			int ix = hit->module;
@@ -577,7 +593,7 @@ jerror_t JEventProcessor_BCAL_LEDonline::evnt(JEventLoop *loop, uint64_t eventnu
 		}
 
 		japp->RootFillUnLock(this); //RELEASE ROOT FILL LOCK
-	}
+    }
 	
 	return NOERROR;
 }

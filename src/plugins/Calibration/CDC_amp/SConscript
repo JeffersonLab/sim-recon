@@ -1,0 +1,15 @@
+
+
+import sbms
+
+# get env object and clone it
+Import('*')
+env = env.Clone()
+
+sbms.AddROOTSpyMacros(env)
+sbms.AddJANA(env)
+sbms.AddDANA(env)
+sbms.AddROOT(env)
+sbms.plugin(env)
+
+

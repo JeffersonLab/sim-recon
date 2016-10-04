@@ -133,8 +133,8 @@ bool mcsmear_config_t::ParseRCDBConfigFile(int runNumber)
     auto result = rcdb::ConfigParser::Parse(fileContent, SectionNames);    // Parse it!
 
     // EXAMPLE
-    double CDC_FADC125_DAC = stod(result.Sections["CDC"].NameValues["FADC125_DAC"]);
-    double CDC_FADC125_THR = stod(result.Sections["CDC"].NameValues["FADC125_THR"]);
+//    double CDC_FADC125_DAC = stod(result.Sections["CDC"].NameValues["FADC125_DAC"]);
+//    double CDC_FADC125_THR = stod(result.Sections["CDC"].NameValues["FADC125_THR"]);
 
     if(DUMP_RCDB_CONFIG) {
         //// DEBUG ////

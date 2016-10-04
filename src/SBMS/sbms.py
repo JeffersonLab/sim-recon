@@ -541,11 +541,14 @@ def IsNotSWIGWrapper(fileNode):
 ##################################
 def AddJANA(env):
 	jana_home = os.getenv('JANA_HOME', '/no/default/jana/path')
-	JANA_CFLAGS = subprocess.Popen(["%s/bin/jana-config" % jana_home,"--jana-only","--cflags"], stdout=subprocess.PIPE).communicate()[0]
-	JANA_LINKFLAGS = subprocess.Popen(["%s/bin/jana-config" % jana_home,"--jana-only","--libs"], stdout=subprocess.PIPE).communicate()[0]
 
-	AddCompileFlags(env, JANA_CFLAGS)
-	AddLinkFlags(env, JANA_LINKFLAGS)
+	# Only run jana-config the first time through
+	if "JANA_CFLAGS" not in AddJANA.__dict__:
+		AddJANA.JANA_CFLAGS = subprocess.Popen(["%s/bin/jana-config" % jana_home,"--jana-only","--cflags"], stdout=subprocess.PIPE).communicate()[0]
+		AddJANA.JANA_LINKFLAGS = subprocess.Popen(["%s/bin/jana-config" % jana_home,"--jana-only","--libs"], stdout=subprocess.PIPE).communicate()[0]
+
+	AddCompileFlags(env, AddJANA.JANA_CFLAGS)
+	AddLinkFlags(env, AddJANA.JANA_LINKFLAGS)
 
 
 ##################################
@@ -568,10 +571,13 @@ def AddHDDM(env):
 # MYSQL
 ##################################
 def AddMySQL(env):
-	MYSQL_CFLAGS = subprocess.Popen(["mysql_config","--cflags"], stdout=subprocess.PIPE).communicate()[0]
-	MYSQL_LINKFLAGS = subprocess.Popen(["mysql_config","--libs"], stdout=subprocess.PIPE).communicate()[0]
-	AddCompileFlags(env, MYSQL_CFLAGS)
-	AddLinkFlags(env, MYSQL_LINKFLAGS)
+
+	# Only run mysql_config the first time through
+	if "MYSQL_CFLAGS" not in AddMySQL.__dict__:
+		AddMySQL.MYSQL_CFLAGS = subprocess.Popen(["mysql_config","--cflags"], stdout=subprocess.PIPE).communicate()[0]
+		AddMySQL.MYSQL_LINKFLAGS = subprocess.Popen(["mysql_config","--libs"], stdout=subprocess.PIPE).communicate()[0]
+	AddCompileFlags(env, AddMySQL.MYSQL_CFLAGS)
+	AddLinkFlags(env, AddMySQL.MYSQL_LINKFLAGS)
 
 ##################################
 # DANA
@@ -632,12 +638,7 @@ def AddRCDB(env):
 		env.AppendUnique(CPPPATH = RCDB_CPPPATH)
 		env.AppendUnique(LIBPATH = RCDB_LIBPATH)
 		env.AppendUnique(LIBS    = RCDB_LIBS)
-
-		if env.WhereIs("mysql_config") is not None:
-			MYSQL_CFLAGS = subprocess.Popen(["mysql_config", "--cflags"], stdout=subprocess.PIPE).communicate()[0]
-			AddCompileFlags(env, MYSQL_CFLAGS)
-#			MYSQL_LINKFLAGS = subprocess.Popen(["mysql_config", "--libs"], stdout=subprocess.PIPE).communicate()[0]
-#			AddLinkFlags(env, MYSQL_LINKFLAGS)
+		AddMySQL(env)
 
 
 ##################################
@@ -769,10 +770,13 @@ def AddROOT(env):
 		print 'ROOTSYS not defined or points to a non-existant directory!'
 		sys.exit(-1)
 
-	ROOT_CFLAGS = subprocess.Popen(["%s/bin/root-config" % rootsys, "--cflags"], stdout=subprocess.PIPE).communicate()[0]
-	ROOT_LINKFLAGS = subprocess.Popen(["%s/bin/root-config" % rootsys, "--glibs"], stdout=subprocess.PIPE).communicate()[0]
-	AddCompileFlags(env, ROOT_CFLAGS)
-	AddLinkFlags(env, ROOT_LINKFLAGS)
+	# Only root-config the first time through
+	if "ROOT_CFLAGS" not in AddROOT.__dict__:
+		AddROOT.ROOT_CFLAGS    = subprocess.Popen(["%s/bin/root-config" % rootsys, "--cflags"], stdout=subprocess.PIPE).communicate()[0]
+		AddROOT.ROOT_LINKFLAGS = subprocess.Popen(["%s/bin/root-config" % rootsys, "--glibs" ], stdout=subprocess.PIPE).communicate()[0]
+
+	AddCompileFlags(env, AddROOT.ROOT_CFLAGS)
+	AddLinkFlags(env, AddROOT.ROOT_LINKFLAGS)
 	env.AppendUnique(LIBS = "Geom")
 	if os.getenv('LD_LIBRARY_PATH'  ) != None : env.Append(LD_LIBRARY_PATH   = os.environ['LD_LIBRARY_PATH'  ])
 	if os.getenv('DYLD_LIBRARY_PATH') != None : env.Append(DYLD_LIBRARY_PATH = os.environ['DYLD_LIBRARY_PATH'])
@@ -846,6 +850,8 @@ def RootSpyMacroCodeGen(target, source, env):
 	fout.write('static string macro_data=""\n')
 	for line in fin:
 		line = line.replace('"', '\\\"')
+		line = line.replace('\r', '')
+		line = line.replace('\\#', '\\\#')  # used when macro actually wants a "#" in title
 		fout.write('"%s\\n"\n' % line[:-1])
 	fout.write(';\n')
 	fout.write('class %s{\n' % class_name)

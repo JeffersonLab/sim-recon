@@ -33,6 +33,9 @@ jerror_t DPSCHit_factory::init(void)
   gPARMS->SetDefaultParameter("PSCHit:ADC_THRESHOLD",ADC_THRESHOLD,
 			      "pedestal-subtracted pulse integral threshold");
 
+  CHECK_FADC_ERRORS = false;
+  gPARMS->SetDefaultParameter("PSCHit:CHECK_FADC_ERRORS", CHECK_FADC_ERRORS, "Set to 1 to reject hits with fADC250 errors, ser to 0 to keep these hits");
+
   /// set the base conversion scales
   a_scale    = 0.0001; 
   t_scale    = 0.0625;   // 62.5 ps/count
@@ -147,7 +150,7 @@ jerror_t DPSCHit_factory::evnt(JEventLoop *loop, uint64_t eventnumber)
     return OBJECT_NOT_AVAILABLE;
   const DPSGeometry& psGeom = *(psGeomVect[0]);
 
-  const DTTabUtilities* locTTabUtilities = NULL;
+  const DTTabUtilities* locTTabUtilities = nullptr;
   loop->GetSingle(locTTabUtilities);
 
   // First, make hits out of all fADC250 hits
@@ -155,7 +158,7 @@ jerror_t DPSCHit_factory::evnt(JEventLoop *loop, uint64_t eventnumber)
   loop->Get(digihits);
   char str[256];
 
-  for (unsigned int i=0; i < digihits.size(); i++){
+  for (unsigned int i=0; i < digihits.size(); i++) {
     const DPSCDigiHit *digihit = digihits[i];
 
     // Make sure channel id is in valid range
@@ -166,46 +169,47 @@ jerror_t DPSCHit_factory::evnt(JEventLoop *loop, uint64_t eventnumber)
       throw JException(str);
     }
 
-    // Throw away hits where the fADC timing algorithm failed
-    //if (digihit->pulse_time == 0) continue;
-    // The following condition signals an error state in the flash algorithm
-    // Do not make hits out of these
-    const Df250PulsePedestal* PPobj = NULL;
-    digihit->GetSingle(PPobj);
-    if (PPobj != NULL){
-      if (PPobj->pedestal == 0 || PPobj->pulse_peak == 0) continue;
-    }
-    else continue;
-    
+    // Throw away hits with firmware errors (post-summer 2016 firmware)
+    if(CHECK_FADC_ERRORS && !locTTabUtilities->CheckFADC250_NoErrors(digihit->QF))
+        continue;
+
     // Get pedestal, prefer associated event pedestal if it exists,
     // otherwise, use the average pedestal from CCDB
     double pedestal = GetConstant(adc_pedestals,digihit,psGeom);
-    const Df250PulseIntegral* PIobj = NULL;
-    digihit->GetSingle(PIobj);
-    if (PIobj != NULL) {
-      // the measured pedestal must be scaled by the ratio of the number
-      // of samples used to calculate the integral and the pedestal          
-      // Changed to conform to D. Lawrence changes Dec. 4 2014
-      double ped_sum = (double)PIobj->pedestal;
-      double nsamples_integral = (double)PIobj->nsamples_integral;
-      double nsamples_pedestal = (double)PIobj->nsamples_pedestal;
-      pedestal          = ped_sum * nsamples_integral/nsamples_pedestal;
-    }
-    else continue;
+    double nsamples_integral = (double)digihit->nsamples_integral;
+    double nsamples_pedestal = (double)digihit->nsamples_pedestal;
 
-    // Apply calibration constants here
-    double P = PPobj->pulse_peak - PPobj->pedestal;
+    // nsamples_pedestal should always be positive for valid data - err on the side of caution for now
+    if(nsamples_pedestal == 0) {
+        jerr << "DPSCDigiHit with nsamples_pedestal == 0 !   Event = " << eventnumber << endl;
+        continue;
+    }
+
+    // digihit->pedestal is the sum of "nsamples_pedestal" samples
+    // Calculate the average pedestal per sample
+    if ( (digihit->pedestal>0) && locTTabUtilities->CheckFADC250_PedestalOK(digihit->QF) ) {
+        pedestal = (double)digihit->pedestal/nsamples_pedestal;
+    }
+
+    // Subtract pedestal from pulse peak
+    if (digihit->pulse_time == 0 || digihit->pedestal == 0 || digihit->pulse_peak == 0) continue;
+    double pulse_peak = digihit->pulse_peak - pedestal;
+
+    // Subtract pedestal from pulse integral
     double A = (double)digihit->pulse_integral;
-    A -= pedestal;
+    A -= pedestal*nsamples_integral;
+
     // Throw away hits with small pedestal-subtracted integrals
     if (A < ADC_THRESHOLD) continue;
+
+    // Apply calibration constants
     double T = (double)digihit->pulse_time;
 
     DPSCHit *hit = new DPSCHit;
     hit->arm = GetArm(digihit->counter_id,psGeom.NUM_COARSE_COLUMNS);
     hit->module = GetModule(digihit->counter_id,psGeom.NUM_COARSE_COLUMNS);
     hit->integral = A;
-    hit->pulse_peak = P;
+    hit->pulse_peak = pulse_peak;
     hit->npe_fadc = A * a_scale * GetConstant(adc_gains, digihit, psGeom);
     hit->time_fadc = t_scale * T - GetConstant(adc_time_offsets, digihit, psGeom) + t_base;
     hit->t = hit->time_fadc;
@@ -214,7 +218,7 @@ jerror_t DPSCHit_factory::evnt(JEventLoop *loop, uint64_t eventnumber)
     hit->has_TDC  = false; // will get set to true below if appropriate
 
     hit->AddAssociatedObject(digihit);
-                
+
     _data.push_back(hit);
   }
 
@@ -227,7 +231,7 @@ jerror_t DPSCHit_factory::evnt(JEventLoop *loop, uint64_t eventnumber)
 
     for(unsigned int i=0; i<tdcdigihits.size(); i++) {
       const DPSCTDCDigiHit *digihit = tdcdigihits[i];
-	    
+
       // calculate geometry information 
       DPSGeometry::Arm arm = GetArm(digihit->counter_id,psGeom.NUM_COARSE_COLUMNS);
       int module = GetModule(digihit->counter_id,psGeom.NUM_COARSE_COLUMNS);
@@ -237,16 +241,16 @@ jerror_t DPSCHit_factory::evnt(JEventLoop *loop, uint64_t eventnumber)
       // Look for existing hits to see if there is a match
       // or create new one if there is no match
       DPSCHit *hit = FindMatch(arm, module, T);
-      if (!hit) {
-	hit = new DPSCHit;
-	hit->arm    = arm;
-	hit->module = module;
-	hit->time_fadc = numeric_limits<double>::quiet_NaN();
-	hit->integral = numeric_limits<double>::quiet_NaN();
-	hit->pulse_peak = numeric_limits<double>::quiet_NaN();
-	hit->npe_fadc = numeric_limits<double>::quiet_NaN();
-	hit->has_fADC = false;
-	_data.push_back(hit);
+      if (hit == nullptr) {
+          hit = new DPSCHit;
+          hit->arm    = arm;
+          hit->module = module;
+          hit->time_fadc = numeric_limits<double>::quiet_NaN();
+          hit->integral = numeric_limits<double>::quiet_NaN();
+          hit->pulse_peak = numeric_limits<double>::quiet_NaN();
+          hit->npe_fadc = numeric_limits<double>::quiet_NaN();
+          hit->has_fADC = false;
+          _data.push_back(hit);
       }
       hit->time_tdc = T;
       hit->has_TDC = true;
@@ -280,7 +284,7 @@ jerror_t DPSCHit_factory::evnt(JEventLoop *loop, uint64_t eventnumber)
 //------------------
 DPSCHit* DPSCHit_factory::FindMatch(DPSGeometry::Arm arm, int module, double T)
 {
-  DPSCHit* best_match = NULL;
+  DPSCHit* best_match = nullptr;
 	
   // Loop over existing hits (from fADC) and look for a match
   // in both the sector and the time.
@@ -297,7 +301,7 @@ DPSCHit* DPSCHit_factory::FindMatch(DPSGeometry::Arm arm, int module, double T)
     return hit;
                 
     // if there are multiple hits, pick the one that is closest in time
-    if(best_match != NULL) {
+    if(best_match != nullptr) {
       if(delta_T < fabs(best_match->t - T))
 	best_match = hit;
     } else {

@@ -30,6 +30,7 @@
 #include "TAGGER/DTAGMHit.h"
 #include "CDC/DCDCHit.h"
 #include "FDC/DFDCHit.h"
+#include "FDC/DFDCPseudo.h"
 #include "TOF/DTOFPoint.h"
 #include "TOF/DTOFHit.h"
 #include "TOF/DTOFPaddleHit.h"
@@ -811,6 +812,7 @@ class DHistogramAction_NumReconstructedObjects : public DAnalysisAction
 		TH1I* dHist_NumCDCHits;
 		TH1I* dHist_NumFDCWireHits;
 		TH1I* dHist_NumFDCCathodeHits;
+		TH1I* dHist_NumFDCPseudoHits;
 		TH1I* dHist_NumTOFHits;
 		TH1I* dHist_NumBCALHits;
 		TH1I* dHist_NumFCALHits;

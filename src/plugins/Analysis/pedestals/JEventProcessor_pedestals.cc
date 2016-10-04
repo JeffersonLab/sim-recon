@@ -13,6 +13,7 @@ using namespace jana;
 using namespace std;
 
 
+#include <DAQ/Df250PulseData.h>
 #include <DAQ/Df250PulseIntegral.h>
 #include <DAQ/Df125PulseIntegral.h>
 #include <DAQ/DF1TDCHit.h>
@@ -67,6 +68,7 @@ jerror_t JEventProcessor_pedestals::brun(JEventLoop *eventLoop, int32_t runnumbe
 //------------------
 jerror_t JEventProcessor_pedestals::evnt(JEventLoop *loop, uint64_t eventnumber)
 {
+	vector<const Df250PulseData*> df250dats;
 	vector<const Df250PulseIntegral*> df250pis;
 	vector<const Df125PulseIntegral*> df125pis;
 	loop->Get(df250pis);
@@ -74,6 +76,12 @@ jerror_t JEventProcessor_pedestals::evnt(JEventLoop *loop, uint64_t eventnumber)
 
 	// Lock ROOT mutex	
 	japp->RootWriteLock();
+
+	for(unsigned int i=0; i<df250dats.size(); i++){
+		TH2D *h = GetHist(df250dats[i]);
+        // save single-sample pedestal
+		if(h) h->Fill(df250dats[i]->pedestal/df250dats[i]->nsamples_pedestal, (double)df250dats[i]->channel);
+	}
 
 	for(unsigned int i=0; i<df250pis.size(); i++){
 		TH2D *h = GetHist(df250pis[i]);

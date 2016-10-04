@@ -1600,6 +1600,8 @@ int main(int argC, char* argV[])
    "module1 = Extension('hddm_" + classPrefix + "',\n"
    "                    include_dirs = [os.environ['HALLD_HOME'] + '/' +\n"
    "                                    os.environ['BMS_OSNAME'] + '/include',\n"
+   "                                    os.environ['HALLD_HOME'] + \n"
+   "                                    '/src/libraries/include',\n"
    "                                    source_dir],\n"
    "                    libraries = ['HDDM', 'xstream', 'bz2', 'z'],\n"
    "                    library_dirs = [os.environ['HALLD_HOME'] + '/' +\n"

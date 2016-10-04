@@ -303,15 +303,7 @@ jerror_t JEventProcessor_L1_online::evnt(JEventLoop *loop, uint64_t eventnumber)
       for(unsigned int jj = 0; jj < fcal_hits.size(); jj++){
 	
 	const DFCALDigiHit *fcal_hit = fcal_hits[jj];	  
-	
-	const Df250PulsePedestal *pulsepedestal;
-	const Df250PulseIntegral *pulseintegral;
-	const Df250WindowRawData *windorawdata;
-	
-	fcal_hit->GetSingle(pulseintegral);	  
-	pulseintegral->GetSingle(windorawdata);
-	
-	
+		
 	uint32_t adc_time   =    0;
 	Int_t pulse_int     =   -10;
 	Int_t pulse_peak    =   -10;
@@ -321,19 +313,13 @@ jerror_t JEventProcessor_L1_online::evnt(JEventLoop *loop, uint64_t eventnumber)
 
 	pulse_int = fcal_hit->pulse_integral - fcal_hit->nsamples_integral*100;
 	
-	fcal_hit->GetSingle(pulsepedestal); 
-	
-
-	if(pulsepedestal){
-	  
-	  pulse_peak = pulsepedestal->pulse_peak - 100;
+	  pulse_peak = fcal_hit->pulse_peak - 100;
 	  
 	  if(fcal_debug){
 	    cout << " Pulse peak      = " << pulse_peak << endl;
 	    cout << " Pulse integral  = " << pulse_int << endl;
 	    cout << " Pulse time      = " << adc_time  << endl;
 	  }
-	}
 	
 	int fcal_cell_used = 1;
 	
@@ -382,14 +368,6 @@ jerror_t JEventProcessor_L1_online::evnt(JEventLoop *loop, uint64_t eventnumber)
 	
 	const DBCALDigiHit *bcal_hit = bcal_hits[jj];	  
 	  
-	const Df250PulsePedestal *pulsepedestal;
-	const Df250PulseIntegral *pulseintegral;
-	const Df250WindowRawData *windorawdata;
-	
-	bcal_hit->GetSingle(pulseintegral);	  
-	pulseintegral->GetSingle(windorawdata);
-
-
 	uint32_t adc_time   =    0;
 	Int_t pulse_int     =   -10;
 	Int_t pulse_peak    =   -10;
@@ -399,17 +377,13 @@ jerror_t JEventProcessor_L1_online::evnt(JEventLoop *loop, uint64_t eventnumber)
 	pulse_int = bcal_hit->pulse_integral - bcal_hit->nsamples_integral*100;
 
 
-	bcal_hit->GetSingle(pulsepedestal); 
-	  
-	if(pulsepedestal){
-	  pulse_peak = pulsepedestal->pulse_peak - 100;
-	  
+    pulse_peak = bcal_hit->pulse_peak - 100;
+      
 	  if(bcal_debug){
 	    cout << " Pulse peak      = " << pulse_peak << endl;
 	    cout << " Pulse integral  = " << pulse_int << endl;
 	    cout << " Pulse time      = " << adc_time  << endl;
 	  }
-	}
 	
 	if(pulse_peak > bcal_cell_thr){
 	  

@@ -469,7 +469,12 @@ bool DMagneticFieldStepper::SwimToPlane(DVector3 &mypos, DVector3 &mymom, const 
 			// Calculate momentum in plane
 			mom.Rotate(phi, zdir);
 			
-			double delta =  sqrt(pow(Ro*phi*phi/2.0, 2.0) + pow(Ro*phi, 2.0) + pow(dz_dphi*phi, 2.0));
+			//double delta =  sqrt(pow(Ro*phi*phi/2.0, 2.0) + pow(Ro*phi, 2.0) + pow(dz_dphi*phi, 2.0));
+			double temp1=Ro*phi;
+			double temp2=0.5*temp1*phi;
+			double temp3=dz_dphi*phi;
+			double delta=sqrt(temp1*temp1+temp2*temp2+temp3*temp3);
+
 			s += (phi<0 ? -delta:+delta);
 		}else{
 			use_straight_track_projection = true;

@@ -63,6 +63,7 @@ class DFCALHit_factory:public jana::JFactory<DFCALHit>{
 				     const vector<double> &raw_table, 
 				     const DFCALGeometry &fcalGeom);
 
+        bool CHECK_FADC_ERRORS;
 };
 
 #endif // _DFCALHit_factory_

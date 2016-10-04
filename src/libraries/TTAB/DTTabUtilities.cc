@@ -193,3 +193,29 @@ double DTTabUtilities::Convert_DigiTimeToNs_CAEN1290TDC(const DCAEN1290TDCHit* l
 
 	return dTScale_CAEN*double(locCAEN1290TDCHit->time) + 4.0*double(locNum4NsBlocksToShift);
 }
+
+bool DTTabUtilities::CheckFADC250_PedestalOK(uint32_t QF) const 
+{
+    // only check to see if the "bad pedestal" flag is set
+    return !( (QF>>6) & 0x01 );
+}
+
+bool DTTabUtilities::CheckFADC250_NoErrors(uint32_t QF) const 
+{
+    // only return true if there are no flagged errors from the flash algorithm
+    // this is probably stricter than we want...
+    
+    // check for integration errors
+    if ( (QF>>1) & 0x03 )  return false;
+    // check for timing errors
+    if ( (QF>>4) & 0x02 )  return false;
+
+    // add other options for future convenience...
+    // if( (QF>>1) & 0x01 )  return false;        // NSA beyond readout window
+    // if( (QF>>2) & 0x01 )  return false;        // one or more samples were overflow
+    // if( (QF>>3) & 0x01 )  return false;        // one or more samples were underflow
+    // if( (QF>>4) & 0x01 )  return false;        // timing peak beyond NSA
+    // if( (QF>>5) & 0x01 )  return false;        // timing peak not found
+
+    return true;
+}

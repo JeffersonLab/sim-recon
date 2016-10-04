@@ -33,7 +33,7 @@
 		locHist_EventVertexZ->GetXaxis()->SetTitleSize(0.05);
 		locHist_EventVertexZ->GetYaxis()->SetTitleSize(0.05);
 		locHist_EventVertexZ->GetXaxis()->SetLabelSize(0.05);
-		locHist_EventVertexZ->GetYaxis()->SetLabelSize(0.05);
+		locHist_EventVertexZ->GetYaxis()->SetLabelSize(0.035);
 		locHist_EventVertexZ->Draw();
 	}
 
@@ -43,7 +43,7 @@
 	if(locHist_EventVertexYVsX != NULL)
 	{
 		locHist_EventVertexYVsX->GetXaxis()->SetTitleSize(0.05);
-		locHist_EventVertexYVsX->GetYaxis()->SetTitleSize(0.05);
+		locHist_EventVertexYVsX->GetYaxis()->SetTitleSize(0.045);
 		locHist_EventVertexYVsX->GetXaxis()->SetLabelSize(0.05);
 		locHist_EventVertexYVsX->GetYaxis()->SetLabelSize(0.05);
 		locHist_EventVertexYVsX->Draw("colz");

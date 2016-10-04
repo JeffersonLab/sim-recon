@@ -56,6 +56,10 @@ class DTTabUtilities : public jana::JObject
 		double Calc_TDCToNsScaleFactor_CCDB(bool locIsLowResolutionReadout) const;
 		double Convert_TriggerReferenceSignal(void) const;
 
+        //FADC250s: convenience functions for v2 firmware (fall 2016 -> ?)
+        bool CheckFADC250_PedestalOK(uint32_t QF) const;
+        bool CheckFADC250_NoErrors(uint32_t QF) const;
+
 	private:
 
 		double Convert_DigiTimeToNs_F1TDC_GlobalSystemClock_ConfigInfo(const DF1TDCHit* locF1TDCHit, const DCODAROCInfo* locCODAROCInfo, const DF1TDCConfig* locF1TDCConfig) const;
