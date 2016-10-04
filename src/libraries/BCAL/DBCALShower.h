@@ -12,7 +12,7 @@ class DBCALShower:public JObject{
 	public:
 		JOBJECT_PUBLIC(DBCALShower);
 
- DBCALShower():ExyztCovariance(5) {} ///< Consrtructor initializes matrix to 5x5
+ DBCALShower():ExyztCovariance(5) {} ///< Constructor initializes matrix to 5x5
 
     float E;
     float E_raw;

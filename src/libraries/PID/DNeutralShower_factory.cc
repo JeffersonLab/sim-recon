@@ -94,17 +94,11 @@ jerror_t DNeutralShower_factory::evnt(jana::JEventLoop *locEventLoop, uint64_t e
 		++locShowerID;
 
 		locNeutralShower->dEnergy = locFCALShowers[loc_i]->getEnergy();
-		double locEnergyUncertainty = (locFCALShowers[loc_i]->getEnergy() >= 0.0) ? 0.042*sqrt(locFCALShowers[loc_i]->getEnergy()) + 0.0001 : 1e-3; //from old DPhoton_factory::makeFCalPhoton() function
 		locNeutralShower->dSpacetimeVertex.SetVect(locFCALShowers[loc_i]->getPosition());
 		locNeutralShower->dSpacetimeVertex.SetT(locFCALShowers[loc_i]->getTime());
 
 		locNeutralShower->dCovarianceMatrix.ResizeTo(5, 5);
-		locNeutralShower->dCovarianceMatrix(0, 0) = locEnergyUncertainty*locEnergyUncertainty;
-		locNeutralShower->dCovarianceMatrix(1, 1) = locFCALShowers[loc_i]->getPositionError().X()*locFCALShowers[loc_i]->getPositionError().X();
-		locNeutralShower->dCovarianceMatrix(2, 2) = locFCALShowers[loc_i]->getPositionError().Y()*locFCALShowers[loc_i]->getPositionError().Y();
-		locNeutralShower->dCovarianceMatrix(3, 3) = locFCALShowers[loc_i]->getPositionError().Z()*locFCALShowers[loc_i]->getPositionError().Z();
-		locNeutralShower->dCovarianceMatrix(4, 4) = 0.0; //not stored in DFCALShower
-		//NEED CORRELATIONS!
+		locNeutralShower->dCovarianceMatrix = locFCALShowers[loc_i]->ExyztCovariance;
 		locNeutralShower->AddAssociatedObject(locFCALShowers[loc_i]);
 
 		_data.push_back(locNeutralShower);
