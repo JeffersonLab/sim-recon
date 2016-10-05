@@ -1,5 +1,5 @@
-#if !defined(TWOPIANGLES)
-#define TWOPIANGLES
+#if !defined(TWOPIANGLES_AMP)
+#define TWOPIANGLES_AMP
 
 #include "IUAmpTools/Amplitude.h"
 #include "IUAmpTools/UserAmplitude.h"
@@ -48,6 +48,7 @@ private:
   Int_t m_rho;
   Int_t PhaseFactor;
   AmpParameter polFrac;
+  Int_t flat;
 
 };
 

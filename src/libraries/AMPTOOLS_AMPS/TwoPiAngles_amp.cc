@@ -16,21 +16,20 @@
 TwoPiAngles_amp::TwoPiAngles_amp( const vector< string >& args ) :
 UserAmplitude< TwoPiAngles_amp >( args )
 {
-	assert( args.size() == 4 );
+	assert( args.size() == 5 );
 	
 	phipol  = atof(args[0].c_str() )*3.14159/180.; // azimuthal angle of the photon polarization vector in the lab.
 	polFrac  = AmpParameter( args[1] ); // fraction of polarization (0-1)
 	m_rho = atoi( args[2].c_str() );  // Jz component of rho 
 	PhaseFactor  = AmpParameter( args[3] );  // prefix factor to amplitudes in computation ( 0=1/1=exp(2iPhi)/2=-exp(2iPhi) )
-
-
+	flat = atoi( args[4].c_str() );  // flat=1 uniform angles, flat=0 use YLMs 
 
 	assert( ( phipol >= 0.) && (phipol <= 2*3.14159));
 	assert( ( polFrac >= 0 ) && ( polFrac <= 1 ) );
         assert( ( m_rho == 1 ) || ( m_rho == 0 ) || ( m_rho == -1 ));
-        assert( ( PhaseFactor == 0 ) || ( PhaseFactor == 1 ) || ( PhaseFactor == 2 ) || ( PhaseFactor == 3 ));
-
-
+        assert( ( PhaseFactor == 0 ) || ( PhaseFactor == 1 ) || ( PhaseFactor == 2 ) || ( PhaseFactor == 3 )
+	  ||	( PhaseFactor == 4 ) || ( PhaseFactor == 5 ) || ( PhaseFactor == 6 ) || ( PhaseFactor == 7 ));
+	assert( (flat == 0) || (flat == 1) );
 
 	// need to register any free parameters so the framework knows about them
 	registerParameter( polFrac );
@@ -79,23 +78,53 @@ TwoPiAngles_amp::calcAmplitude( GDouble** pKin ) const {
 	complex< GDouble > i( 0, 1 );
 	complex< GDouble > prefactor( 0, 0 );
 	complex< GDouble > Amp( 0, 0 );
+	Int_t Mrho=0;
 
 	switch (PhaseFactor) {
         case 0:
-	  prefactor = 0.5*sqrt(1-polFrac);
+	  prefactor = 0.5*sqrt(1-polFrac)*(cos(Phi) - i*sin(Phi));
+	  Mrho = m_rho;
 	  break;
         case 1:
-	  prefactor = 0.5*sqrt(1+polFrac);
+	  prefactor = 0.5*sqrt(1+polFrac)*(cos(Phi) - i*sin(Phi));
+	  Mrho = m_rho;
 	  break;
         case 2:
-	  prefactor = 0.5*sqrt(1-polFrac)*(cos(2*Phi) + i*sin(2*Phi));
+	  prefactor = 0.5*sqrt(1-polFrac)*(cos(Phi) + i*sin(Phi));
+	  Mrho = m_rho;
 	  break;
         case 3:
-	  prefactor = -0.5*sqrt(1+polFrac)*(cos(2*Phi) - i*sin(2*Phi));
+	  prefactor = -0.5*sqrt(1+polFrac)*(cos(Phi) + i*sin(Phi));
+	  Mrho = m_rho;
+          break;
+        case 4:
+	  prefactor = 0.5*sqrt(1-polFrac)*(cos(Phi) - i*sin(Phi));
+	  prefactor *= pow(-1,m_rho);
+	  Mrho = -m_rho;
+	  break;
+        case 5:
+	  prefactor = 0.5*sqrt(1+polFrac)*(cos(Phi) - i*sin(Phi));
+	  prefactor *= pow(-1,m_rho);
+	  Mrho = -m_rho;
+	  break;
+        case 6:
+	  prefactor = 0.5*sqrt(1-polFrac)*(cos(Phi) + i*sin(Phi));
+	  prefactor *= pow(-1,m_rho);
+	  Mrho = -m_rho;
+	  break;
+        case 7:
+	  prefactor = -0.5*sqrt(1+polFrac)*(cos(Phi) + i*sin(Phi));
+	  prefactor *= pow(-1,m_rho);
+	  Mrho = -m_rho;
           break;
 	}
 	
-	Amp =  prefactor * Y( 1, m_rho, cosTheta, phi);
+	if (flat == 1) {
+	  Amp = 1;
+	}
+	else {
+	  Amp =  prefactor * Y( 1, Mrho, cosTheta, phi);
+	}
 
 	// cout << " m_rho=" << m_rho << " cosTheta=" << cosTheta << " phi=" << phi << " prefactor=" << prefactor << " Amp=" << Amp << endl;
 

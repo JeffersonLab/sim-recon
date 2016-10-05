@@ -216,7 +216,7 @@ int main( int argc, char* argv[] ){
 			
 			// cannot ask for the intensity if we haven't called process events above
 			double intensity_i = ati.intensity( i );
-			double weightedInten = ( genFlat ? 1 : ati.intensity( i ) ); // multiply by ten to get output: Elton 9/21/2016
+			double weightedInten = ( genFlat ? 1 : ati.intensity( i ) ); 
 			cout << " i=" << i << "  intensity_i=" << intensity_i << endl;
 
 			if( !diag ){
