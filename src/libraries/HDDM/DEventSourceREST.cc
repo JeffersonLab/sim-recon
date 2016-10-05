@@ -784,16 +784,17 @@ jerror_t DEventSourceREST::Extract_DFCALShower(hddm_r::HDDM *record,
 	  covariance(2,3) = covariance(3,2) = iter->getYzcorr()*iter->getYerr()*iter->getZerr();
 	  covariance(0,3) = covariance(3,0) = iter->getEzcorr()*iter->getEerr()*iter->getZerr();
 	  covariance(3,4) = covariance(4,3) = iter->getTzcorr()*iter->getTerr()*iter->getZerr();
-	  // // further correlations (an extension of REST format, so code is different.)
-	  // const hddm_r::FcalCorrelationsList& locFcalCorrelationsList = iter->getFcalCorrelationses();
-	  // hddm_r::FcalCorrelationsList::iterator locFcalCorrelationsIterator = locFcalCorrelationsList.begin();
-	  // if(locFcalCorrelationsIterator != locFcalCorrelationsList.end()) {
-	  // 	  covariance(0,4) = covariance(4,0) = locFcalCorrelationsIterator->getEtcorr()*iter->getEerr()*iter->getTerr();
-	  // 	  covariance(0,1) = covariance(1,0) = locFcalCorrelationsIterator->getExcorr()*iter->getEerr()*iter->getXerr();
-	  // 	  covariance(0,2) = covariance(2,0) = locFcalCorrelationsIterator->getEycorr()*iter->getEerr()*iter->getYerr();
-	  // 	  covariance(1,4) = covariance(4,1) = locFcalCorrelationsIterator->getTxcorr()*iter->getTerr()*iter->getXerr();
-	  // 	  covariance(2,4) = covariance(4,2) = locFcalCorrelationsIterator->getTycorr()*iter->getTerr()*iter->getYerr();
-	  // }
+
+	  // further correlations (an extension of REST format, so code is different.)
+	  const hddm_r::FcalCorrelationsList& locFcalCorrelationsList = iter->getFcalCorrelationses();
+	  hddm_r::FcalCorrelationsList::iterator locFcalCorrelationsIterator = locFcalCorrelationsList.begin();
+	  if(locFcalCorrelationsIterator != locFcalCorrelationsList.end()) {
+	  	  covariance(0,4) = covariance(4,0) = locFcalCorrelationsIterator->getEtcorr()*iter->getEerr()*iter->getTerr();
+	  	  covariance(0,1) = covariance(1,0) = locFcalCorrelationsIterator->getExcorr()*iter->getEerr()*iter->getXerr();
+	  	  covariance(0,2) = covariance(2,0) = locFcalCorrelationsIterator->getEycorr()*iter->getEerr()*iter->getYerr();
+	  	  covariance(1,4) = covariance(4,1) = locFcalCorrelationsIterator->getTxcorr()*iter->getTerr()*iter->getXerr();
+	  	  covariance(2,4) = covariance(4,2) = locFcalCorrelationsIterator->getTycorr()*iter->getTerr()*iter->getYerr();
+	  }
 	  shower->ExyztCovariance = covariance;
 
       data.push_back(shower);
@@ -848,6 +849,7 @@ jerror_t DEventSourceREST::Extract_DBCALShower(hddm_r::HDDM *record,
 	  covariance(2,3) = covariance(3,2) = iter->getYzcorr()*iter->getYerr()*iter->getZerr();
 	  covariance(0,3) = covariance(3,0) = iter->getEzcorr()*iter->getEerr()*iter->getZerr();
 	  covariance(3,4) = covariance(4,3) = iter->getTzcorr()*iter->getTerr()*iter->getZerr();
+
 	  // further correlations (an extension of REST format, so code is different.)
 	  const hddm_r::BcalCorrelationsList& locBcalCorrelationsList = iter->getBcalCorrelationses();
 	  hddm_r::BcalCorrelationsList::iterator locBcalCorrelationsIterator = locBcalCorrelationsList.begin();

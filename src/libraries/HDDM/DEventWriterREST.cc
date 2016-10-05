@@ -194,13 +194,14 @@ bool DEventWriterREST::Write_RESTEvent(JEventLoop* locEventLoop, string locOutpu
 		fcal().setYzcorr(fcalshowers[i]->YZcorr());
 		fcal().setEzcorr(fcalshowers[i]->EZcorr());
 		fcal().setTzcorr(fcalshowers[i]->ZTcorr());
-		// // further correlations (an extension of REST format so code is different.)
-		// hddm_r::FcalCorrelationsList locFcalCorrelationsList = fcal().addFcalCorrelationses(1);
-		// locFcalCorrelationsList().setEtcorr(fcalshowers[i]->ETcorr());
-		// locFcalCorrelationsList().setExcorr(fcalshowers[i]->EXcorr());
-		// locFcalCorrelationsList().setEycorr(fcalshowers[i]->EYcorr());
-		// locFcalCorrelationsList().setTxcorr(fcalshowers[i]->XTcorr());
-		// locFcalCorrelationsList().setTycorr(fcalshowers[i]->YTcorr());
+
+		// further correlations (an extension of REST format so code is different.)
+		hddm_r::FcalCorrelationsList locFcalCorrelationsList = fcal().addFcalCorrelationses(1);
+		locFcalCorrelationsList().setEtcorr(fcalshowers[i]->ETcorr());
+		locFcalCorrelationsList().setExcorr(fcalshowers[i]->EXcorr());
+		locFcalCorrelationsList().setEycorr(fcalshowers[i]->EYcorr());
+		locFcalCorrelationsList().setTxcorr(fcalshowers[i]->XTcorr());
+		locFcalCorrelationsList().setTycorr(fcalshowers[i]->YTcorr());
 	}
 
 	// push any DBCALShower objects to the output record
@@ -223,6 +224,7 @@ bool DEventWriterREST::Write_RESTEvent(JEventLoop* locEventLoop, string locOutpu
 		bcal().setYzcorr(bcalshowers[i]->YZcorr());
 		bcal().setEzcorr(bcalshowers[i]->EZcorr());
 		bcal().setTzcorr(bcalshowers[i]->ZTcorr());
+
 		// further correlations (an extension of REST format so code is different.)
 		hddm_r::BcalCorrelationsList locBcalCorrelationsList = bcal().addBcalCorrelationses(1);
 		locBcalCorrelationsList().setEtcorr(bcalshowers[i]->ETcorr());
