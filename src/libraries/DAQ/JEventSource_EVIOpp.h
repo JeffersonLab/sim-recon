@@ -196,6 +196,7 @@ class JEventSource_EVIOpp: public jana::JEventSource{
 		bool     LINK_TRIGGERTIME;
 		bool     LINK_BORCONFIG;
 		bool     LINK_CONFIG;
+		bool     IGNORE_EMPTY_BOR;
 		
 		uint32_t jobtype;
 };
