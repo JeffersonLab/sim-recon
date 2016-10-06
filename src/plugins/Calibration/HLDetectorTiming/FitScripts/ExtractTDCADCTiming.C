@@ -96,17 +96,24 @@ int GetCCDBIndexTAGM(int column, int row){
     return CCDBIndex;
 }
 
+int GetF1TDCslotTAGH(int id) {
+    double N = 32.0; // channels per slot
+    if (id >= 132 && id <= 172) throw("TAGH: unknown id in [132,172]");
+    int HVid = (id <= 131) ? id : (id - 274 + 233);
+    return int((HVid-1)/N) + 1;
+}
+
 Double_t FitFunctionLeft(Double_t *x, Double_t *par)
 {
     Float_t xx =x[0];
-    Double_t f = par[0]*TMath::Exp(-0.5 * (TMath::Power((xx - par[1]) / par[2] , 2) ) )+ par[0]*TMath::Exp(-0.5 * (TMath::Power((xx - par[1] - 4.008) / par[2] , 2) ) );
+    Double_t f = par[0]*TMath::Exp(-0.5 * (TMath::Power((xx - par[1]) / par[2] , 2) ) )+ par[0]*TMath::Exp(-0.5 * (TMath::Power((xx - par[1] - par[3]) / par[2] , 2) ) );
     return f;
 }
 
 Double_t FitFunctionRight(Double_t *x, Double_t *par)
 {
     Float_t xx =x[0];
-    Double_t f = par[0]*TMath::Exp(-0.5 * (TMath::Power((xx - par[1]) / par[2] , 2) ) )+ par[0]*TMath::Exp(-0.5 * (TMath::Power((xx - par[1] + 4.008) / par[2] , 2) ) );
+    Double_t f = par[0]*TMath::Exp(-0.5 * (TMath::Power((xx - par[1]) / par[2] , 2) ) )+ par[0]*TMath::Exp(-0.5 * (TMath::Power((xx - par[1] + par[3]) / par[2] , 2) ) );
     return f;
 }
 
@@ -134,8 +141,11 @@ void ExtractTDCADCTiming(TString fileName = "hd_root.root", int runNumber = 1039
     double tagh_base_time_tdc, tagh_base_time_adc;
     double tof_base_time_tdc,  tof_base_time_adc;
 
+    double beam_period;
+
     GetCCDBConstants1("/CDC/base_time_offset" ,runNumber, variation, cdc_base_time);
     GetCCDBConstants1("/FCAL/base_time_offset",runNumber, variation, fcal_base_time);
+    GetCCDBConstants1("/PHOTON_BEAM/RF/beam_period",runNumber, variation, beam_period);
     GetCCDBConstants2("/FDC/base_time_offset" ,runNumber, variation, fdc_base_time_adc, fdc_base_time_tdc);
     GetCCDBConstants2("/BCAL/base_time_offset" ,runNumber, variation, bcal_base_time_adc, bcal_base_time_tdc);
     GetCCDBConstants2("/PHOTON_BEAM/microscope/base_time_offset" ,runNumber, variation, tagm_base_time_adc, tagm_base_time_tdc);
@@ -152,12 +162,14 @@ void ExtractTDCADCTiming(TString fileName = "hd_root.root", int runNumber = 1039
     cout << "TAGH base times = " << tagh_base_time_adc << ", " << tagh_base_time_tdc << endl;
     cout << "TAGM base times = " << tagm_base_time_adc << ", " << tagm_base_time_tdc << endl;
 
+    cout << "beam_period = " << beam_period << endl;
+
     // Then the channel by channel ADC and TDC times for those that need the calibration
     vector<double> bcal_tdc_offsets;
     vector<double> fcal_adc_offsets;
     vector<double> sc_adc_offsets, sc_tdc_offsets;
     vector<double> tagm_adc_offsets, tagm_tdc_offsets;
-    vector<double> tagh_adc_offsets, tagh_tdc_offsets;
+    vector<double> tagh_adc_offsets, tagh_tdc_offsets, tagh_counter_quality;
     vector<double> tof_adc_offsets, tof_tdc_offsets;
     GetCCDBConstants("/BCAL/TDC_offsets"    ,runNumber, variation, bcal_tdc_offsets);
     GetCCDBConstants("/FCAL/timing_offsets" ,runNumber, variation, fcal_adc_offsets);
@@ -167,6 +179,7 @@ void ExtractTDCADCTiming(TString fileName = "hd_root.root", int runNumber = 1039
     GetCCDBConstants("/PHOTON_BEAM/microscope/tdc_time_offsets"  ,runNumber, variation, tagm_tdc_offsets,3);
     GetCCDBConstants("/PHOTON_BEAM/hodoscope/fadc_time_offsets"  ,runNumber, variation, tagh_adc_offsets,2);// Interested in 2nd column
     GetCCDBConstants("/PHOTON_BEAM/hodoscope/tdc_time_offsets"   ,runNumber, variation, tagh_tdc_offsets,2);
+    GetCCDBConstants("/PHOTON_BEAM/hodoscope/counter_quality"    ,runNumber, variation, tagh_counter_quality,2);
     GetCCDBConstants("/TOF/adc_timing_offsets",runNumber, variation, tof_adc_offsets);
     GetCCDBConstants("/TOF/timing_offsets",runNumber, variation, tof_tdc_offsets);
 
@@ -376,9 +389,8 @@ void ExtractTDCADCTiming(TString fileName = "hd_root.root", int runNumber = 1039
         float tdcRFOffset[122] = {}; // 122 possible offsets
         char name[100];
         //First loop through the TDC RF times to see which ones we can correct
-        float period = 4.008161;
-        TF1 * fitLeft = new TF1("fa",FitFunctionLeft, -1*period / 2, period / 2, 3);
-        TF1 * fitRight = new TF1("fa",FitFunctionRight, -1*period / 2, period / 2, 3);
+        TF1 * fitLeft = new TF1("fa",FitFunctionLeft, -1*beam_period / 2, beam_period / 2, 4);
+        TF1 * fitRight = new TF1("fa",FitFunctionRight, -1*beam_period / 2, beam_period / 2, 4);
         for (unsigned int column = 1; column <= 102; column++){
             for (unsigned int row = 0; row <= 5; row++){
                 sprintf(name, "Column %.3i Row %.1i", column, row);
@@ -390,11 +402,12 @@ void ExtractTDCADCTiming(TString fileName = "hd_root.root", int runNumber = 1039
                     TF1 *fa;
                     if (rf_hist->GetBinCenter(rf_hist->GetMaximumBin()) < 0.0) fa = fitLeft;
                     else fa = fitRight;
-                    fa->SetParLimits(1, -1*period / 2, period / 2);
+                    fa->SetParLimits(1, -1*beam_period / 2, beam_period / 2);
                     fa->SetParameter(1,rf_hist->GetBinCenter(rf_hist->GetMaximumBin()));
                     fa->SetParLimits(2, 0.175, 1.2);
                     fa->SetParameter(2, 0.4);
-                    TFitResultPtr r = rf_hist->Fit(fa, "S", "", -1*period / 2, period / 2);
+                    fa->FixParameter(3, beam_period);
+                    TFitResultPtr r = rf_hist->Fit(fa, "S", "", -1*beam_period / 2, beam_period / 2);
                     Int_t status = r;
                     if ( status == 0){ // Fit succeeded
                         Double_t offset  = r->Parameter(1);
@@ -482,14 +495,30 @@ void ExtractTDCADCTiming(TString fileName = "hd_root.root", int runNumber = 1039
 
     thisHist = ExtractTDCADCTimingNS::Get2DHistogram("HLDetectorTiming", "TAGH", "TAGHHit TDC_ADC Difference");
     if (thisHist != NULL) {
+
+        // Setup histograms for determining the most probable change in offset for each F1TDC slot
+        // This is needed to account for the occasional uniform shift in offsets of the 32 counters in a slot
+        const int NtdcSlots = 8;
+        TH1I * tdcDist[NtdcSlots];
+        TH1I * tdcadcDist[NtdcSlots];
+        for (int i = 1; i <= NtdcSlots; i++) {
+            stringstream ss; ss << i;
+            TString s = ss.str();
+            double range = 1000.0; double width = 0.1;
+            int Nbins = range/width;
+            double low = -0.5*range - 0.5*width;
+            double high = 0.5*range - 0.5*width;
+            tdcDist[i-1] = new TH1I("TAGHTDCOffsetDistribution_"+s, "TAGH TDC Offset (slot "+s+"); TDC Offset [ns]; Entries", Nbins, low, high);
+            tdcadcDist[i-1] = new TH1I("TAGHTDCADCOffsetDistribution_"+s, "TAGH TDC/ADC Offset (slot "+s+"); TDC/ADC Offset [ns]; Entries", Nbins, low, high);
+        }
+
         // First take a look at the RF offsets
         double tdcRFOffsetTAGH[274] = {}; // 274 possible offsets
         char name[100];
-        //First loop through the TDC RF times to see which ones we can correct
-        double period = 4.008161;
-        TF1 * fitLeft = new TF1("fa",FitFunctionLeft, -1*period / 2, period / 2, 3);
-        TF1 * fitRight = new TF1("fa",FitFunctionRight, -1*period / 2, period / 2, 3);
-        TH1I * tdcDist = new TH1I("TAGHTDCOffsetDistribution", "TAGH TDC Offset; TDC Offset [ns]; Entries", 10000, -500.5, 500.5);
+        // Loop through the TDC RF times to see which ones we can correct
+        TF1 * fitLeft = new TF1("fa",FitFunctionLeft, -1*beam_period / 2, beam_period / 2, 4);
+        TF1 * fitRight = new TF1("fa",FitFunctionRight, -1*beam_period / 2, beam_period / 2, 4);
+
         for (unsigned int counter_id = 1; counter_id <= 274; counter_id++) {
             sprintf(name, "Counter ID %.3i", counter_id);
             cout << "Fitting TAGH " << name << endl;
@@ -500,23 +529,28 @@ void ExtractTDCADCTiming(TString fileName = "hd_root.root", int runNumber = 1039
                 TF1 *fa;
                 if (rf_hist->GetBinCenter(rf_hist->GetMaximumBin()) < 0.0) fa = fitLeft;
                 else fa = fitRight;
-                fa->SetParLimits(1, -1*period / 2, period / 2);
+                fa->SetParLimits(1, -1*beam_period / 2, beam_period / 2);
                 fa->SetParameter(1,rf_hist->GetBinCenter(rf_hist->GetMaximumBin()));
                 fa->SetParLimits(2, 0.175, 1.2);
                 fa->SetParameter(2, 0.4);
-                TFitResultPtr r = rf_hist->Fit(fa, "S", "", -1*period / 2, period / 2);
+                fa->FixParameter(3, beam_period);
+                TFitResultPtr r = rf_hist->Fit(fa, "S", "", -1*beam_period / 2, beam_period / 2);
                 Int_t status = r;
                 if (status == 0) { // Fit succeeded
                     Double_t offset  = r->Parameter(1);
-                    cout << "offset: " << offset << endl;
                     tdcRFOffsetTAGH[counter_id - 1] = offset;
-                    tdcDist->Fill(offset);
+                    if (tagh_counter_quality[counter_id-1] == 0.0) continue;
+                    int tdc_slot = GetF1TDCslotTAGH(counter_id);
+                    tdcDist[tdc_slot - 1]->Fill(offset);
                 }
             }
         }
-        // Most probable change in TDC/RF offset
-        int mpBin = tdcDist->GetMaximumBin();
-        double mpDeltaTDC = (mpBin > 0) ? tdcDist->GetBinCenter(mpBin) : 0.0;
+        // Most probable change in TDC/RF offset per F1TDC slot
+        double mpDeltaTDC[NtdcSlots];
+        for (int i = 1; i <= NtdcSlots; i++) {
+            int mpBin = tdcDist[i-1]->GetMaximumBin();
+            mpDeltaTDC[i-1] = (mpBin > 0) ? tdcDist[i-1]->GetBinCenter(mpBin) : 0.0;
+        }
 
         outFile.open(prefix + "tagh_adc_timing_offsets.txt", ios::out | ios::trunc);
         outFile.close(); // clear file
@@ -524,7 +558,6 @@ void ExtractTDCADCTiming(TString fileName = "hd_root.root", int runNumber = 1039
         int nBinsX = thisHist->GetNbinsX();
 
         TH1D * selectedTAGHOffset = new TH1D("selectedTAGHOffset", "Selected TAGH Offset; Column; Offset [ns]", nBinsX, 0.5, nBinsX + 0.5);
-        TH1I * tdcadcDist = new TH1I("TAGHTDCADCOffsetDistribution", "TAGH TDC/ADC Offset; TDC/ADC Offset [ns]; Entries", 10000, -500.5, 500.5);
         for (int i = 1 ; i <= nBinsX; i++) {
             TH1D *projY = thisHist->ProjectionY("temp", i, i);
             // Scan over histogram to find mean offset in timeWindow with largest integral
@@ -549,27 +582,37 @@ void ExtractTDCADCTiming(TString fileName = "hd_root.root", int runNumber = 1039
                 }
             }
             selectedTAGHOffset->SetBinContent(i, maxMean);
-            if (maxEntries != 0.0) tdcadcDist->Fill(maxMean);
+            if (tagh_counter_quality[i-1] == 0.0) continue;
+            int tdc_slot = GetF1TDCslotTAGH(i);
+            if (maxEntries != 0.0) tdcadcDist[tdc_slot - 1]->Fill(maxMean);
         }
-        // Most probable change in TDC/ADC offset
-        mpBin = tdcadcDist->GetMaximumBin();
-        double mpDeltaTDCADC = (mpBin > 0) ? tdcadcDist->GetBinCenter(mpBin) : 0.0;
-
-        double mpDeltaADC = mpDeltaTDC - mpDeltaTDCADC;
+        // Most probable change in TDC/ADC offset per F1TDC slot
+        double mpDeltaADC[NtdcSlots];
+        for (int i = 1; i <= NtdcSlots; i++) {
+            int mpBin = tdcadcDist[i-1]->GetMaximumBin();
+            double mpDeltaTDCADC = (mpBin > 0) ? tdcadcDist[i-1]->GetBinCenter(mpBin) : 0.0;
+            mpDeltaADC[i-1] = mpDeltaTDC[i-1] - mpDeltaTDCADC;
+        }
 
         outFile.open(prefix + "tagh_adc_timing_offsets.txt");
-        double limit = 4.0; // ns
+        double limit = 2.5; // ns
         double ccdb_sum = 0.0;
         for (int i = 1; i <= nBinsX; i++) ccdb_sum += tagh_adc_offsets[i-1];
         double c1_adcOffset = 0.0;
         for (int i = 1; i <= nBinsX; i++) {
+            if (tagh_counter_quality[i-1] == 0.0) {
+                outFile << i << " " << 0 << endl;
+                continue;
+            }
+            int tdc_slot = GetF1TDCslotTAGH(i);
             double ccdb = tagh_adc_offsets[i-1];
             double delta = tdcRFOffsetTAGH[i-1] - selectedTAGHOffset->GetBinContent(i);
-            if (ccdb_sum > 0.0 && fabs(delta - mpDeltaADC) > limit) delta = mpDeltaADC;
-            double offset = ccdb + delta - mpDeltaADC;
+            if (ccdb_sum > 0.0 && fabs(delta - mpDeltaADC[tdc_slot-1]) > limit) {
+                delta = mpDeltaADC[tdc_slot-1];
+            }
+            double offset = ccdb + delta;
             if (i == 1) c1_adcOffset = offset;
             offset -= c1_adcOffset;
-            if (offset < -limit) offset = 0.0;
             outFile << i << " " << offset << endl;
         }
         outFile.close();
@@ -579,19 +622,25 @@ void ExtractTDCADCTiming(TString fileName = "hd_root.root", int runNumber = 1039
         for (int i = 1; i <= nBinsX; i++) ccdb_sum += tagh_tdc_offsets[i-1];
         double c1_tdcOffset = 0.0;
         for (int i = 1; i <= nBinsX; i++) {
+            if (tagh_counter_quality[i-1] == 0.0) {
+                outFile << i << " " << 0 << endl;
+                continue;
+            }
+            int tdc_slot = GetF1TDCslotTAGH(i);
             double ccdb = tagh_tdc_offsets[i-1];
             double delta = tdcRFOffsetTAGH[i-1];
-            if (ccdb_sum > 0.0 && fabs(delta - mpDeltaTDC) > limit) delta = mpDeltaTDC;
-            double offset = ccdb + delta - mpDeltaTDC;
+            if (ccdb_sum > 0.0 && fabs(delta - mpDeltaTDC[tdc_slot-1]) > limit) {
+                delta = mpDeltaTDC[tdc_slot-1];
+            }
+            double offset = ccdb + delta;
             if (i == 1) c1_tdcOffset = offset;
             offset -= c1_tdcOffset;
-            if (offset < -limit) offset = 0.0;
             outFile << i << " " << offset << endl;
         }
         outFile.close();
 
         outFile.open(prefix + "tagh_base_time.txt", ios::out);
-        outFile << tagh_base_time_adc - mpDeltaADC - c1_adcOffset << " " << tagh_base_time_tdc - mpDeltaTDC - c1_tdcOffset << endl;
+        outFile << tagh_base_time_adc - c1_adcOffset << " " << tagh_base_time_tdc - c1_tdcOffset << endl;
         outFile.close();
     }
 
