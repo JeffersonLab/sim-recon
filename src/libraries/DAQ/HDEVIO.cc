@@ -56,6 +56,8 @@ HDEVIO::HDEVIO(string filename):filename(filename)
 	
 	NB_next_pos = 0;
 	
+	IGNORE_EMPTY_BOR = false;
+	
 	ifs.seekg(0, ios_base::end);
 	total_size_bytes = ifs.tellg();
 	ifs.seekg(0, ios_base::beg);
@@ -804,6 +806,31 @@ void HDEVIO::MapEvents(BLOCKHEADER_t &bh, EVIOBlockRecord &br)
 			// you should ask yourself the question, "Is this something that we
 			// should simply be ignoring, garbage bytes in the input evio file?"
 			std::cout << "HDEVIO::MapEvents warning - " << "Attempt to swap bank with len<2 (len="<<eh->event_len<<" header="<<hex<<eh->header<<dec<<" pos=" << pos << " tellg=" << ifs.tellg() << " i=" << i << ")" << std::endl;
+			
+			// Reference run 20495: Seems ROL is putting BOR bank header, but
+			// the bank has no data in it. For this case we can go forward, but
+			// this is really a problem for production data. Detect this and warn
+			// user.
+			if(eh->event_len==1 && (eh->header&0xFFFF00FF)==0x00700001){
+				_DBG__;
+				_DBG_ << "WARNING: This looks like an empty BOR event. BOR configuration" << endl;
+				_DBG_ << "         data will not be available and it is unlikely you will" << endl;
+				_DBG_ << "         be able to do anything beyond the digihit level. " << endl;
+				_DBG__;
+				
+				if(IGNORE_EMPTY_BOR){
+					EVIOEventRecord er;
+					er.pos = pos;
+					er.event_len   = eh->event_len + 1; // +1 to include length word
+					er.event_type  = kBT_UNKNOWN;
+					er.first_event = 0;
+					er.last_event  = 0;
+					br.evio_events.push_back(er);
+				}else{
+					_DBG_ << "         The program will (probably) stop now." << endl;
+					_DBG_ << "         To avoid stopping, re-run with EVIO:IGNORE_EMPTY_BOR=1 ." << endl;				}
+			}
+			
 			Nbad_events++;
 			Nerrors++;
 			// --i;  // This caused an infinite loop when reading hd_rawdata_020058_000.evio DL

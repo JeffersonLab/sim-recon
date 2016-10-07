@@ -79,6 +79,7 @@ JEventSource_EVIOpp::JEventSource_EVIOpp(const char* source_name):JEventSource(s
 	PARSE_EPICS = true;
 	PARSE_EVENTTAG = true;
 	PARSE_TRIGGER = true;
+	IGNORE_EMPTY_BOR = false;
 	F250_EMULATION_MODE = kEmulationAuto;
 	F125_EMULATION_MODE = kEmulationAuto;
 	RECORD_CALL_STACK = false;
@@ -111,6 +112,7 @@ JEventSource_EVIOpp::JEventSource_EVIOpp(const char* source_name):JEventSource(s
 	gPARMS->SetDefaultParameter("EVIO:PARSE_EPICS", PARSE_EPICS, "Set this to 0 to disable parsing of EPICS events from the data stream (for benchmarking/debugging)");
 	gPARMS->SetDefaultParameter("EVIO:PARSE_EVENTTAG", PARSE_EVENTTAG, "Set this to 0 to disable parsing of event tag data in the data stream (for benchmarking/debugging)");
 	gPARMS->SetDefaultParameter("EVIO:PARSE_TRIGGER", PARSE_TRIGGER, "Set this to 0 to disable parsing of the built trigger bank from CODA (for benchmarking/debugging)");
+	gPARMS->SetDefaultParameter("EVIO:IGNORE_EMPTY_BOR", IGNORE_EMPTY_BOR, "Set to non-zero to continue processing data even if an empty BOR event is encountered.");
 
 	gPARMS->SetDefaultParameter("EVIO:F250_EMULATION_MODE", F250_EMULATION_MODE, "Set f250 emulation mode. 0=no emulation, 1=always, 2=auto. Default is 2 (auto).");
 	gPARMS->SetDefaultParameter("EVIO:F125_EMULATION_MODE", F125_EMULATION_MODE, "Set f125 emulation mode. 0=no emulation, 1=always, 2=auto. Default is 2 (auto).");
@@ -153,6 +155,7 @@ JEventSource_EVIOpp::JEventSource_EVIOpp(const char* source_name):JEventSource(s
 			throw JException("Failed to open EVIO file: " + this->source_name, __FILE__, __LINE__); // throw exception indicating error
 		}
 		source_type = kFileSource;
+		hdevio->IGNORE_EMPTY_BOR = IGNORE_EMPTY_BOR;
 		
 		run_number_seed = SearchFileForRunNumber(); // try and dig out run number from file
 	}
