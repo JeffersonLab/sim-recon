@@ -150,7 +150,7 @@ void ExtractTDCADCTiming(TString fileName = "hd_root.root", int runNumber = 1039
     cout << "SC base times = " << sc_base_time_adc << ", " << sc_base_time_tdc << endl;
     cout << "TOF base times = " << tof_base_time_adc << ", " << tof_base_time_tdc << endl;
     cout << "TAGH base times = " << tagh_base_time_adc << ", " << tagh_base_time_tdc << endl;
-    cout << "TAGH base times = " << tagm_base_time_adc << ", " << tagm_base_time_tdc << endl;
+    cout << "TAGM base times = " << tagm_base_time_adc << ", " << tagm_base_time_tdc << endl;
 
     // Then the channel by channel ADC and TDC times for those that need the calibration
     vector<double> bcal_tdc_offsets;
@@ -481,19 +481,20 @@ void ExtractTDCADCTiming(TString fileName = "hd_root.root", int runNumber = 1039
     }
 
     thisHist = ExtractTDCADCTimingNS::Get2DHistogram("HLDetectorTiming", "TAGH", "TAGHHit TDC_ADC Difference");
-    if(thisHist != NULL){
+    if (thisHist != NULL) {
         // First take a look at the RF offsets
-        float tdcRFOffsetTAGH[274] = {}; // 274 possible offsets
+        double tdcRFOffsetTAGH[274] = {}; // 274 possible offsets
         char name[100];
         //First loop through the TDC RF times to see which ones we can correct
-        float period = 4.008161;
+        double period = 4.008161;
         TF1 * fitLeft = new TF1("fa",FitFunctionLeft, -1*period / 2, period / 2, 3);
         TF1 * fitRight = new TF1("fa",FitFunctionRight, -1*period / 2, period / 2, 3);
-        for (unsigned int counter_id = 1; counter_id <= 274; counter_id++){
+        TH1I * tdcDist = new TH1I("TAGHTDCOffsetDistribution", "TAGH TDC Offset; TDC Offset [ns]; Entries", 10000, -500.5, 500.5);
+        for (unsigned int counter_id = 1; counter_id <= 274; counter_id++) {
             sprintf(name, "Counter ID %.3i", counter_id);
             cout << "Fitting TAGH " << name << endl;
             TH1I *rf_hist = ExtractTDCADCTimingNS::Get1DHistogram("HLDetectorTiming", "TAGH_TDC_RF_Compare", name, false);
-            if (rf_hist != NULL){
+            if (rf_hist != NULL) {
                 // do the fit and store the result
                 // Some fancy footwork to fit this periodic function
                 TF1 *fa;
@@ -505,38 +506,41 @@ void ExtractTDCADCTiming(TString fileName = "hd_root.root", int runNumber = 1039
                 fa->SetParameter(2, 0.4);
                 TFitResultPtr r = rf_hist->Fit(fa, "S", "", -1*period / 2, period / 2);
                 Int_t status = r;
-                if ( status == 0){ // Fit succeeded
+                if (status == 0) { // Fit succeeded
                     Double_t offset  = r->Parameter(1);
+                    cout << "offset: " << offset << endl;
                     tdcRFOffsetTAGH[counter_id - 1] = offset;
+                    tdcDist->Fill(offset);
                 }
             }
         }
+        // Most probable change in TDC/RF offset
+        int mpBin = tdcDist->GetMaximumBin();
+        double mpDeltaTDC = (mpBin > 0) ? tdcDist->GetBinCenter(mpBin) : 0.0;
+
         outFile.open(prefix + "tagh_adc_timing_offsets.txt", ios::out | ios::trunc);
         outFile.close(); // clear file
 
-        //int nbins = meanHist->GetNbinsX();
         int nBinsX = thisHist->GetNbinsX();
-        int nBinsY = thisHist->GetNbinsY();
 
         TH1D * selectedTAGHOffset = new TH1D("selectedTAGHOffset", "Selected TAGH Offset; Column; Offset [ns]", nBinsX, 0.5, nBinsX + 0.5);
-        TH1I * TAGHOffsetDistribution = new TH1I("TAGHOffsetDistribution", "TAGH ADC Offset; ADC Offset [ns]; Entries", 1000, -500, 500);
-
-        for (int i = 1 ; i <= nBinsX; i++){
+        TH1I * tdcadcDist = new TH1I("TAGHTDCADCOffsetDistribution", "TAGH TDC/ADC Offset; TDC/ADC Offset [ns]; Entries", 10000, -500.5, 500.5);
+        for (int i = 1 ; i <= nBinsX; i++) {
             TH1D *projY = thisHist->ProjectionY("temp", i, i);
-            // Scan over the histogram
-            float nsPerBin = (projY->GetBinCenter(projY->GetNbinsX()) - projY->GetBinCenter(1)) / projY->GetNbinsX();
-            float timeWindow = 2; //ns (Full Width)
+            // Scan over histogram to find mean offset in timeWindow with largest integral
+            double nsPerBin = (projY->GetBinCenter(projY->GetNbinsX()) - projY->GetBinCenter(1)) / projY->GetNbinsX();
+            double timeWindow = 2.0; //ns (Full Width)
             int binWindow = int(timeWindow / nsPerBin);
             double maxEntries = 0;
             double maxMean = 0;
-            for (int j = 1 ; j <= projY->GetNbinsX();j++){
+            for (int j = 1 ; j <= projY->GetNbinsX();j++) {
                 int minBin = j;
                 int maxBin = (j + binWindow) <= projY->GetNbinsX() ? (j + binWindow) : projY->GetNbinsX();
                 double sum = 0, nEntries = 0;
-                for (int bin = minBin; bin <= maxBin; bin++){
+                for (int bin = minBin; bin <= maxBin; bin++) {
                     sum += projY->GetBinContent(bin) * projY->GetBinCenter(bin);
                     nEntries += projY->GetBinContent(bin);
-                    if (bin == maxBin){
+                    if (bin == maxBin) {
                         if (nEntries > maxEntries) {
                             maxMean = sum / nEntries;
                             maxEntries = nEntries;
@@ -544,27 +548,50 @@ void ExtractTDCADCTiming(TString fileName = "hd_root.root", int runNumber = 1039
                     }
                 }
             }
-            selectedTAGHOffset->SetBinContent(i, -1 * maxMean);
-            if(maxMean != 0) TAGHOffsetDistribution->Fill(-1 * maxMean);
+            selectedTAGHOffset->SetBinContent(i, maxMean);
+            if (maxEntries != 0.0) tdcadcDist->Fill(maxMean);
         }
+        // Most probable change in TDC/ADC offset
+        mpBin = tdcadcDist->GetMaximumBin();
+        double mpDeltaTDCADC = (mpBin > 0) ? tdcadcDist->GetBinCenter(mpBin) : 0.0;
 
-        double meanOffset = TAGHOffsetDistribution->GetMean();
+        double mpDeltaADC = mpDeltaTDC - mpDeltaTDCADC;
+
         outFile.open(prefix + "tagh_adc_timing_offsets.txt");
-        for (int i = 1; i <= nBinsX; i++){
-            double mean = selectedTAGHOffset->GetBinContent(i);
-            if (mean == 0) mean = meanOffset;
-            outFile << i << " " << tagh_adc_offsets[i-1] + mean - meanOffset + tdcRFOffsetTAGH[i-1] << endl;
+        double limit = 4.0; // ns
+        double ccdb_sum = 0.0;
+        for (int i = 1; i <= nBinsX; i++) ccdb_sum += tagh_adc_offsets[i-1];
+        double c1_adcOffset = 0.0;
+        for (int i = 1; i <= nBinsX; i++) {
+            double ccdb = tagh_adc_offsets[i-1];
+            double delta = tdcRFOffsetTAGH[i-1] - selectedTAGHOffset->GetBinContent(i);
+            if (ccdb_sum > 0.0 && fabs(delta - mpDeltaADC) > limit) delta = mpDeltaADC;
+            double offset = ccdb + delta - mpDeltaADC;
+            if (i == 1) c1_adcOffset = offset;
+            offset -= c1_adcOffset;
+            if (offset < -limit) offset = 0.0;
+            outFile << i << " " << offset << endl;
         }
         outFile.close();
 
         outFile.open(prefix + "tagh_tdc_timing_offsets.txt");
-        for (int i = 1; i <= nBinsX; i++){
-            outFile << i << " " << tagh_tdc_offsets[i-1] + tdcRFOffsetTAGH[i-1] << endl;
+        ccdb_sum = 0.0;
+        for (int i = 1; i <= nBinsX; i++) ccdb_sum += tagh_tdc_offsets[i-1];
+        double c1_tdcOffset = 0.0;
+        for (int i = 1; i <= nBinsX; i++) {
+            double ccdb = tagh_tdc_offsets[i-1];
+            double delta = tdcRFOffsetTAGH[i-1];
+            if (ccdb_sum > 0.0 && fabs(delta - mpDeltaTDC) > limit) delta = mpDeltaTDC;
+            double offset = ccdb + delta - mpDeltaTDC;
+            if (i == 1) c1_tdcOffset = offset;
+            offset -= c1_tdcOffset;
+            if (offset < -limit) offset = 0.0;
+            outFile << i << " " << offset << endl;
         }
         outFile.close();
 
         outFile.open(prefix + "tagh_base_time.txt", ios::out);
-        outFile << tagh_base_time_adc - meanOffset << " " << tagh_base_time_tdc << endl;
+        outFile << tagh_base_time_adc - mpDeltaADC - c1_adcOffset << " " << tagh_base_time_tdc - mpDeltaTDC - c1_tdcOffset << endl;
         outFile.close();
     }
 

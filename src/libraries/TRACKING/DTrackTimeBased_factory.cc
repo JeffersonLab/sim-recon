@@ -286,6 +286,7 @@ jerror_t DTrackTimeBased_factory::evnt(JEventLoop *loop, uint64_t eventnumber)
 	timebased_track->AddAssociatedObject(fdchits[k]);
       }
 
+      timebased_track->AddAssociatedObject(track);
       _data.push_back(timebased_track);
 
     }
@@ -376,6 +377,7 @@ jerror_t DTrackTimeBased_factory::evnt(JEventLoop *loop, uint64_t eventnumber)
 	  // Compute the figure-of-merit based on tracking
 	  timebased_track->FOM = TMath::Prob(timebased_track->chisq, timebased_track->Ndof);
 	  
+      timebased_track->AddAssociatedObject(track);
 	  _data.push_back(timebased_track);
 	}
       } 
@@ -895,7 +897,6 @@ bool DTrackTimeBased_factory::DoFit(const DTrackWireBased *track,
 	timebased_track->AddAssociatedObject(myfdchits[m]); 
       for(unsigned int m=0; m<mycdchits.size(); m++)
 	timebased_track->AddAssociatedObject(mycdchits[m]);
-      timebased_track->AddAssociatedObject(track);
 
       // dEdx
       double locdEdx_FDC, locdx_FDC, locdEdx_CDC, locdx_CDC;
@@ -910,6 +911,7 @@ bool DTrackTimeBased_factory::DoFit(const DTrackWireBased *track,
       timebased_track->dNumHitsUsedFordEdx_CDC = locNumHitsUsedFordEdx_CDC;
       timebased_track->setdEdx((locNumHitsUsedFordEdx_CDC >= locNumHitsUsedFordEdx_FDC) ? locdEdx_CDC : locdEdx_FDC);
       
+      timebased_track->AddAssociatedObject(track);
       _data.push_back(timebased_track);
       
       return true;
@@ -1092,7 +1094,7 @@ void DTrackTimeBased_factory::AddMissingTrackHypothesis(vector<DTrackTimeBased*>
   // Add DTrack object as associate object
   vector<const DTrackWireBased*>wire_based_track;
   src_track->GetT(wire_based_track);
-  //  timebased_track->AddAssociatedObject(wire_based_track[0]);
+  timebased_track->AddAssociatedObject(wire_based_track[0]);
 
   // dEdx
   double locdEdx_FDC, locdx_FDC, locdEdx_CDC, locdx_CDC;

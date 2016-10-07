@@ -97,6 +97,7 @@ jerror_t DFDCPseudo_factory::init(void)
   MAX_ALLOWED_FDC_HITS=20000;
   STRIP_ANODE_TIME_CUT=25.;
   MIDDLE_STRIP_THRESHOLD=0.;
+  CHARGE_THRESHOLD=0.3;
 
   r2_out=ROUT_FIDUCIAL*ROUT_FIDUCIAL;
   r2_in=RIN_FIDUCIAL*RIN_FIDUCIAL;
@@ -105,6 +106,7 @@ jerror_t DFDCPseudo_factory::init(void)
   gPARMS->SetDefaultParameter("FDC:RIN_FIDUCIAL",RIN_FIDUCIAL, "Inner fiducial radius of FDC in cm");
   gPARMS->SetDefaultParameter("FDC:MAX_ALLOWED_FDC_HITS",MAX_ALLOWED_FDC_HITS, "Max. number of FDC hits (includes both cathode strips and wires hits) to allow before considering event too busy to attempt FDC tracking");
   gPARMS->SetDefaultParameter("FDC:STRIP_ANODE_TIME_CUT",STRIP_ANODE_TIME_CUT, "maximum time difference between strips and wires (in ns)"); 
+  gPARMS->SetDefaultParameter("FDC:CHARGE_THRESHOLD",CHARGE_THRESHOLD,"Minimum average charge on both cathode planes (in pC)");
 
   DEBUG_HISTS = false;
   gPARMS->SetDefaultParameter("FDC:DEBUG_HISTS",DEBUG_HISTS);
@@ -517,7 +519,8 @@ void DFDCPseudo_factory::makePseudo(vector<const DFDCHit*>& x,
 	      double dE=charge_to_energy*q_cathodes;
 	      double q_from_pulse_height=5.0e-4*(upeaks[i].q_from_pulse_height
 					      +vpeaks[j].q_from_pulse_height);
-      
+	      if (q_from_pulse_height<CHARGE_THRESHOLD) continue;
+	      
 	      if (DEBUG_HISTS){
 		qv_vs_qu->Fill(upeaks[i].q,vpeaks[j].q);
 	      }
@@ -923,6 +926,7 @@ jerror_t DFDCPseudo_factory::ThreeStripCluster(const vector<const DFDCHit*>& H,
   double t=0;
   double o_amp=0;
   int i_corr=-2;
+  double q_from_pulse_height = 0;
   for (vector<const DFDCHit*>::const_iterator j=peak-1;j<=peak+1;j++){
     unsigned int index=2*((*j)->gLayer-1)+(*j)->plane/2;
     
@@ -936,7 +940,7 @@ jerror_t DFDCPseudo_factory::ThreeStripCluster(const vector<const DFDCHit*>& H,
     if (amp > o_amp){
       t=double((*j)->t);
       o_amp = amp;
-      temp.q_from_pulse_height=amp;
+      q_from_pulse_height=amp;
       i_corr++;
     }
   }
@@ -951,6 +955,7 @@ jerror_t DFDCPseudo_factory::ThreeStripCluster(const vector<const DFDCHit*>& H,
   temp.pos=wsum/sum + i_corr*pos_corr;
 
   temp.q=sum;
+  temp.q_from_pulse_height = q_from_pulse_height;
   temp.numstrips=10;
   temp.t=t;
   temp.t_rms=0.;

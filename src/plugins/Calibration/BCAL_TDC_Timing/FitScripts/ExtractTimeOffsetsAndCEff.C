@@ -58,11 +58,11 @@ void ExtractTimeOffsetsAndCEff(int run = 2931, TString filename = "hd_root.root"
     sprintf(command, "ccdb dump /BCAL/tdiff_u_d:%i:default", run);
     FILE* locInputFile = gSystem->OpenPipe(command, "r");
     if(locInputFile == NULL)
-        return 0;
+        return;
     //get the first (comment) line
     char buff[1024];
     if(fgets(buff, sizeof(buff), locInputFile) == NULL)
-        return 0;
+        return;
     //get the remaining lines
     double time;
     int counter = 0;
@@ -80,11 +80,11 @@ void ExtractTimeOffsetsAndCEff(int run = 2931, TString filename = "hd_root.root"
     sprintf(command, "ccdb dump /BCAL/channel_global_offset:%i:default", run);
     locInputFile = gSystem->OpenPipe(command, "r");
     if(locInputFile == NULL)
-        return 0;
+        return;
     //get the first (comment) line
     //char buff[1024];
     if(fgets(buff, sizeof(buff), locInputFile) == NULL)
-        return 0;
+        return;
     //get the remaining lines
     counter = 0;
     while(fgets(buff, sizeof(buff), locInputFile) != NULL){

@@ -176,8 +176,8 @@ class DReferenceTrajectory{
 		int Nswim_steps;
 		float q;
 		int index_at_bcal,index_at_tof,index_at_fcal;
-		double Rmax_interior; // Maximum radius (in cm) corresponding to inside of BCAL
-		double Rmax_exterior; // Maximum radius (in cm) corresponding to outside of BCAL
+		double Rsqmax_interior; // Maximum squared radius (in cm^2) corresponding to inside of BCAL
+		double Rsqmax_exterior; // Maximum squared radius (in cm^2) corresponding to outside of BCAL
 
 	protected:
 	

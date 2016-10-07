@@ -174,6 +174,8 @@ class HDEVIO{
 		uint32_t last_event_len;  // used to hold last event length in words if user buffer was
 		                          // too small, this is how big is should be allocated
 		
+		bool IGNORE_EMPTY_BOR;
+		
 		stringstream err_mess;  // last error message
 		uint32_t err_code;    // last error code
 		

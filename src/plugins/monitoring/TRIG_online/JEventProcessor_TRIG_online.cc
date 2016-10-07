@@ -69,7 +69,8 @@ jerror_t JEventProcessor_TRIG_online::init(void) {
 	h1trig_trgbits = new TH1I("h1trig_trgbits", "Trig Trgbits",150,0,150);
 	h1trig_trgbits->SetXTitle("trig_mask || (128+fp_trig_mask/256)");
 	h1trig_trgbits->SetYTitle("counts");
-	h2trig_fcalVSbcal= new TH2I("h2trig_fcalVSbcal", "E fcal vs E bcal (GeV); Bcal Energy (GeV); Fcal Energy (GeV)",nbins,0,1,nbins,0,2);
+	//h2trig_fcalVSbcal= new TH2I("h2trig_fcalVSbcal", "E fcal vs E bcal (GeV); Bcal Energy (GeV); Fcal Energy (GeV)",nbins,0,1,nbins,0,2);
+	h2trig_fcalVSbcal= new TH2I("h2trig_fcalVSbcal", "E fcal vs E bcal (GeV); Bcal Energy (GeV); Fcal Energy (GeV)",nbins,0,15,nbins,0,15);
 
 	// include timing histograms only if flag set
 	if(timing) {	

@@ -19,8 +19,7 @@ using namespace jana;
 #include <TAGGER/DTAGHDigiHit.h>
 #include <TAGGER/DTAGHHit.h>
 #include <TAGGER/DTAGHGeometry.h>
-#include <DAQ/Df250PulsePedestal.h>
-#include <DAQ/Df250PulseIntegral.h>
+#include <DAQ/Df250PulseData.h>
 #include <DAQ/Df250WindowRawData.h>
 #include <DAQ/DEPICSvalue.h>
 
@@ -226,34 +225,32 @@ jerror_t JEventProcessor_TAGH_online::brun(JEventLoop *eventLoop, int32_t runnum
     // extract the TAGH geometry
     vector<const DTAGHGeometry*> taghGeomVect;
     eventLoop->Get(taghGeomVect);
-    if (taghGeomVect.size() < 1)
-    return OBJECT_NOT_AVAILABLE;
+    if (taghGeomVect.size() == 0) return OBJECT_NOT_AVAILABLE;
     const DTAGHGeometry& taghGeom = *(taghGeomVect[0]);
     // get photon energy bin low of each counter for energy histogram binning
-    double Elows[Nslots+1];
-    double slots[Nslots+1];
-    for (int i=0;i<Nslots;i++) {
-        Elows[i] = taghGeom.getElow(Nslots-i);
-        slots[i] = 0.5+i;
+    double Elows[Nslots + 1];
+    double slots[Nslots + 1];
+    for (int i = 0; i < Nslots; i++) {
+        Elows[i] = taghGeom.getElow(Nslots - i);
+        slots[i] = 0.5 + i;
     }
     // add the upper limit
     Elows[Nslots] = taghGeom.getEhigh(1);
-    slots[Nslots] = 0.5+Nslots;
-    //
+    slots[Nslots] = 0.5 + Nslots;
+
     const int Ntime = 2000;
-    double Tlows[Ntime+1];
-    for (int i=0;i<=Ntime;i++) {
-        Tlows[i] = -400.0+i*0.4;
+    double Tlows[Ntime + 1];
+    for (int i = 0; i <= Ntime; i++) {
+        Tlows[i] = -400.0 + i*0.4;
     }
-    //
 
     // FILL HISTOGRAMS
     // Since we are filling histograms local to this plugin, it will not interfere with other ROOT operations: can use plugin-wide ROOT fill lock
     japp->RootFillLock(this); //ACQUIRE ROOT FILL LOCK
 
-    if (hHit_Energy->GetEntries()==0) hHit_Energy->SetBins(Nslots,Elows);
-    if (hHit_EnergyVsSlotID->GetEntries()==0) hHit_EnergyVsSlotID->SetBins(Nslots,slots,Nslots,Elows);
-    if (hHit_TimeVsEnergy->GetEntries()==0) hHit_TimeVsEnergy->SetBins(Nslots,Elows,Ntime,Tlows);
+    if (hHit_Energy->GetEntries() == 0) hHit_Energy->SetBins(Nslots,Elows);
+    if (hHit_EnergyVsSlotID->GetEntries() == 0) hHit_EnergyVsSlotID->SetBins(Nslots,slots,Nslots,Elows);
+    if (hHit_TimeVsEnergy->GetEntries() == 0) hHit_TimeVsEnergy->SetBins(Nslots,Elows,Ntime,Tlows);
 
     japp->RootFillUnLock(this); //RELEASE ROOT FILL LOCK
 
@@ -271,39 +268,41 @@ jerror_t JEventProcessor_TAGH_online::evnt(JEventLoop *eventLoop, uint64_t event
     // reconstruction algorithm) should be done outside of any mutex lock
     // since multiple threads may call this method at the same time.
 
-    // get TAGH hits and digihits
+    // Get TAGH hits and digihits
     vector<const DTAGHHit*> hits;
     eventLoop->Get(hits, "Calib");
     vector<const DTAGHDigiHit*> digihits;
     eventLoop->Get(digihits);
     vector<const DTAGHTDCDigiHit*> tdcdigihits;
     eventLoop->Get(tdcdigihits);
-    // for converting f1TDC raw digihit time to time with respect to trigger in ns
-    const DTTabUtilities* ttabUtilities = NULL;
+
+    const DTTabUtilities* ttabUtilities = nullptr;
     eventLoop->GetSingle(ttabUtilities);
-    // cache pulse pedestal and window raw data objects
-    map< const DTAGHDigiHit*, pair<const Df250PulsePedestal*, const Df250WindowRawData*> > pp_wr_cache;
-    for(unsigned int i=0; i < digihits.size(); i++) {
-        const Df250PulsePedestal* pulsePed = NULL;
-        const Df250PulseIntegral* pulseInt = NULL;
-        const Df250WindowRawData* rawData = NULL;
-        digihits[i]->GetSingle(pulsePed);
-        digihits[i]->GetSingle(pulseInt);
-        if (pulseInt) pulseInt->GetSingle(rawData);
-        pp_wr_cache[digihits[i]] = pair<const Df250PulsePedestal*, const Df250WindowRawData*>(pulsePed, rawData);
+
+    // Cache pulse data and window raw data objects
+    map< const DTAGHDigiHit*, pair<const Df250PulseData*, const Df250WindowRawData*> > pd_wrd_cache;
+    for (const auto& hit : digihits) {
+        const Df250PulseData* pd = nullptr;
+        const Df250WindowRawData* wrd = nullptr;
+        hit->GetSingle(pd);
+        if (pd != nullptr) pd->GetSingle(wrd);
+        pd_wrd_cache[hit] = pair<const Df250PulseData*, const Df250WindowRawData*>(pd, wrd);
     }
-    // get beam current
+
+    // Get beam current
     vector<const DEPICSvalue*> epicsVals;
     eventLoop->Get(epicsVals);
-    for(unsigned int i = 0; i < epicsVals.size(); i++){
-        if (epicsVals[i]->name == "IBCAD00CRCUR6") {
-            beam_current = epicsVals[i]->fval;
+    for (const auto& ev : epicsVals) {
+        if (ev->name == "IBCAD00CRCUR6") {
+            beam_current = ev->fval;
             break;
         }
     }
+
     // FILL HISTOGRAMS
     // Since we are filling histograms local to this plugin, it will not interfere with other ROOT operations: can use plugin-wide ROOT fill lock
     japp->RootFillLock(this); //ACQUIRE ROOT FILL LOCK
+
     hBeamCurrent->Fill(beam_current);
     if (digihits.size() > 0 || tdcdigihits.size() > 0)
         tagh_num_events->Fill(1);
@@ -314,127 +313,131 @@ jerror_t JEventProcessor_TAGH_online::evnt(JEventLoop *eventLoop, uint64_t event
     int NfadcHits_cut = 0;
     int NHits_hasADC = 0;  int NHits_hasADC_us = 0;  int NHits_hasADC_ds = 0;
     int Nadc[Nslots];
-    for (int i=0;i<Nslots;i++) Nadc[i] = 0;
-    for(unsigned int i=0; i < digihits.size(); i++) {
-        double ped = digihits[i]->pedestal/digihits[i]->nsamples_pedestal;
-        hDigiHit_NSamplesPedestal->Fill(digihits[i]->nsamples_pedestal);
+    for (int i = 0; i < Nslots; i++) Nadc[i] = 0;
+    for (const auto& hit : digihits) {
+        double ped = (double)hit->pedestal/hit->nsamples_pedestal;
+        hDigiHit_NSamplesPedestal->Fill(hit->nsamples_pedestal);
         hDigiHit_Pedestal->Fill(ped);
-        const Df250PulsePedestal* pulsePed = pp_wr_cache[digihits[i]].first;
-        double peak = -1.0;
-        if (pulsePed) peak = pulsePed->pulse_peak;
-        hDigiHit_RawPeak->Fill(peak);
-        if (ped==0.0||peak==0.0) continue;
-        hDigiHit_PedestalVsSlotID->Fill(digihits[i]->counter_id,ped);
-        hDigiHit_fadcOccupancy->Fill(digihits[i]->counter_id);
-        hDigiHit_RawPeakVsSlotID->Fill(digihits[i]->counter_id,peak);
-        hDigiHit_RawIntegral->Fill(digihits[i]->pulse_integral);
-        hDigiHit_RawIntegralVsSlotID->Fill(digihits[i]->counter_id,digihits[i]->pulse_integral);
-        hDigiHit_NSamplesIntegral->Fill(digihits[i]->nsamples_integral);
-        double PI = digihits[i]->pulse_integral-digihits[i]->nsamples_integral*ped; // pedestal-subtracted pulse integral
-        hDigiHit_IntegralVsSlotID->Fill(digihits[i]->counter_id,PI);
-        hDigiHit_IntegralVsPeak->Fill(peak-ped,PI);
-        hDigiHit_PeakVsSlotID->Fill(digihits[i]->counter_id,peak-ped);
-        hDigiHit_PulseTime->Fill(digihits[i]->pulse_time);
-        double t_ns = 0.0625*digihits[i]->pulse_time;
+        hDigiHit_RawPeak->Fill(hit->pulse_peak);
+        if (ped == 0.0 || hit->pulse_peak == 0) continue;
+        hDigiHit_PedestalVsSlotID->Fill(hit->counter_id,ped);
+        hDigiHit_fadcOccupancy->Fill(hit->counter_id);
+        hDigiHit_RawPeakVsSlotID->Fill(hit->counter_id,hit->pulse_peak);
+        hDigiHit_RawIntegral->Fill(hit->pulse_integral);
+        hDigiHit_RawIntegralVsSlotID->Fill(hit->counter_id,hit->pulse_integral);
+        hDigiHit_NSamplesIntegral->Fill(hit->nsamples_integral);
+        double pI = hit->pulse_integral-hit->nsamples_integral*ped;
+        hDigiHit_IntegralVsSlotID->Fill(hit->counter_id,pI);
+        hDigiHit_IntegralVsPeak->Fill(hit->pulse_peak-ped,pI);
+        hDigiHit_PeakVsSlotID->Fill(hit->counter_id,hit->pulse_peak-ped);
+        hDigiHit_PulseTime->Fill(hit->pulse_time);
+        double t_ns = 0.0625*hit->pulse_time;
         hDigiHit_fadcTime->Fill(t_ns);
-        hDigiHit_fadcTimeVsSlotID->Fill(digihits[i]->counter_id,t_ns);
-        hDigiHit_fadcTimeVsIntegral->Fill(PI,t_ns);
-        hDigiHit_QualityFactor->Fill(digihits[i]->QF);
-        if (pulsePed) hDigiHit_PulseNumber->Fill(pulsePed->pulse_number);
-        if (pulsePed) hDigiHit_PulseNumberVsSlotID->Fill(digihits[i]->counter_id,pulsePed->pulse_number);
-        if (PI>counts_cut)  {
+        hDigiHit_fadcTimeVsSlotID->Fill(hit->counter_id,t_ns);
+        hDigiHit_fadcTimeVsIntegral->Fill(pI,t_ns);
+        hDigiHit_QualityFactor->Fill(hit->QF);
+        const Df250PulseData* pd = pd_wrd_cache[hit].first;
+        int pN = (pd != nullptr) ? pd->pulse_number : -1;
+        if (pN > -1) hDigiHit_PulseNumber->Fill(pN);
+        if (pN > -1) hDigiHit_PulseNumberVsSlotID->Fill(hit->counter_id,pN);
+        if (pI > counts_cut)  {
             NfadcHits_cut++;
-            hDigiHit_fadcOccupancy_cut->Fill(digihits[i]->counter_id);
+            hDigiHit_fadcOccupancy_cut->Fill(hit->counter_id);
             hDigiHit_fadcTime_cut->Fill(t_ns);
-            hDigiHit_fadcTimeVsSlotID_cut->Fill(digihits[i]->counter_id,t_ns);
-            hDigiHit_fadcTimeVsQF_cut->Fill(digihits[i]->QF,t_ns);
+            hDigiHit_fadcTimeVsSlotID_cut->Fill(hit->counter_id,t_ns);
+            hDigiHit_fadcTimeVsQF_cut->Fill(hit->QF,t_ns);
         }
-        const Df250WindowRawData* rawData = pp_wr_cache[digihits[i]].second;
-        if (rawData) {
-            int prevSample = 100;
+        const Df250WindowRawData* wrd = pd_wrd_cache[hit].second;
+        size_t threshold = 400;
+        if (wrd != nullptr) {
+            size_t prevSample = 100;
             int Ncrosses = 0;
-            if (!rawData->invalid_samples&&!rawData->overflow) {
-                for (unsigned int j=0;j<rawData->samples.size();j++) {
-                    int sample = rawData->samples[j];
-                    int threshold = 400;
-                    if (sample>threshold&&prevSample<threshold) Ncrosses++;
+            if (!wrd->invalid_samples && !wrd->overflow) {
+                for (size_t sample : wrd->samples) {
+                    if (sample > threshold && prevSample < threshold) {
+                        Ncrosses++;
+                    }
                     prevSample = sample;
                 }
             }
-            Nadc[digihits[i]->counter_id-1] = Ncrosses;
+            Nadc[hit->counter_id-1] = Ncrosses;
         }
         else {
-            if (peak>400.0) Nadc[digihits[i]->counter_id-1]++;
+            if (hit->pulse_peak > threshold) Nadc[hit->counter_id-1]++;
         }
     }
+
     int NmultiPeak = 0;
-    if (digihits.size()>0) {
-        for (int i=0;i<Nslots;i++) {
+    if (digihits.size() > 0) {
+        for (int i = 0; i < Nslots; i++) {
             NmultiPeak += Nadc[i];
             hDigiHit_NfadcHitsVsSlotID->Fill(i+1,Nadc[i]);
         }
     }
     hDigiHit_NfadcHits_multiPeak->Fill(NmultiPeak);
     hDigiHit_NfadcHits_cut->Fill(NfadcHits_cut);
-    for(unsigned int j=0; j < digihits.size(); j++) {
-        double PI = digihits[j]->pulse_integral-digihits[j]->nsamples_integral*digihits[j]->pedestal/digihits[j]->nsamples_pedestal; // pedestal-subtracted pulse integral
-        if (digihits[j]->pedestal>0.0&&PI>counts_cut) {
+    for (const auto& hit : digihits) {
+        double ped = (double)hit->pedestal/hit->nsamples_pedestal;
+        double pI = hit->pulse_integral-ped*hit->nsamples_integral;
+        if (hit->pedestal > 0 && pI > counts_cut) {
             int matches = 0;
-            for(unsigned int i=0; i < tdcdigihits.size(); i++) {
-                if (digihits[j]->counter_id==tdcdigihits[i]->counter_id) {
+            for (const auto& tdchit : tdcdigihits) {
+                if (hit->counter_id == tdchit->counter_id) {
                     matches++;
-                    double T_tdc = ttabUtilities->Convert_DigiTimeToNs_F1TDC(tdcdigihits[i]);
-                    double T_adc = 0.0625*digihits[j]->pulse_time;
+                    double T_tdc = ttabUtilities->Convert_DigiTimeToNs_F1TDC(tdchit);
+                    double T_adc = 0.0625*hit->pulse_time;
                     hDigiHit_tdcTimeVsfadcTime->Fill(T_adc,T_tdc);
                     hDigiHit_tdcadcTimeDiff->Fill(T_tdc-T_adc);
-                    hDigiHit_tdcadcTimeDiffVsSlotID->Fill(digihits[j]->counter_id,T_tdc-T_adc);
-                    hDigiHit_tdcadcTimeDiffVsIntegral->Fill(PI,T_tdc-T_adc);
+                    hDigiHit_tdcadcTimeDiffVsSlotID->Fill(hit->counter_id,T_tdc-T_adc);
+                    hDigiHit_tdcadcTimeDiffVsIntegral->Fill(pI,T_tdc-T_adc);
                 }
             }
-            hDigiHit_adctdcMatchesVsSlotID_cut->Fill(digihits[j]->counter_id,matches);
+            hDigiHit_adctdcMatchesVsSlotID_cut->Fill(hit->counter_id,matches);
         }
     }
+
     int Ntdc[Nslots];
-    for (int i=0;i<Nslots;i++) Ntdc[i] = 0;
-    for(unsigned int i=0; i < tdcdigihits.size(); i++) {
-        Ntdc[tdcdigihits[i]->counter_id-1]++;
-        hDigiHit_tdcOccupancy->Fill(tdcdigihits[i]->counter_id);
-        hDigiHit_tdcRawTime->Fill(tdcdigihits[i]->time);
-        double T_tdc = ttabUtilities->Convert_DigiTimeToNs_F1TDC(tdcdigihits[i]);
+    for (int i = 0; i < Nslots; i++) Ntdc[i] = 0;
+    for (const auto& hit : tdcdigihits) {
+        Ntdc[hit->counter_id-1]++;
+        hDigiHit_tdcOccupancy->Fill(hit->counter_id);
+        hDigiHit_tdcRawTime->Fill(hit->time);
+        double T_tdc = ttabUtilities->Convert_DigiTimeToNs_F1TDC(hit);
         hDigiHit_tdcTime->Fill(T_tdc);
-        hDigiHit_tdcTimeVsSlotID->Fill(tdcdigihits[i]->counter_id,T_tdc);
+        hDigiHit_tdcTimeVsSlotID->Fill(hit->counter_id,T_tdc);
     }
-    if (tdcdigihits.size()>0) {
-        for (int i=0;i<Nslots;i++) {
+    if (tdcdigihits.size() > 0) {
+        for (int i = 0; i < Nslots; i++) {
             hDigiHit_NtdcHitsVsSlotID->Fill(i+1,Ntdc[i]);
         }
     }
-    //
-    for(unsigned int i=0; i<hits.size(); i++) {
-        hHit_HasTDCvsHasADC->Fill(hits[i]->has_fADC,hits[i]->has_TDC);
-        if (hits[i]->has_fADC) {
+
+    // Fill histograms with calibrated-hit data
+    for (const auto& hit : hits) {
+        hHit_HasTDCvsHasADC->Fill(hit->has_fADC,hit->has_TDC);
+        if (hit->has_fADC) {
             NHits_hasADC++;
-            if (hits[i]->counter_id<=NupstreamCounters) NHits_hasADC_us++;
+            if (hit->counter_id<=NupstreamCounters) NHits_hasADC_us++;
             else NHits_hasADC_ds++;
-            hHit_Occupancy->Fill(hits[i]->counter_id);
-            int HVid = hits[i]->counter_id<=NupstreamCounters ? hits[i]->counter_id : hits[i]->counter_id-Nslots+NHVchannels;
-            hHit_HVidVsSlotID->Fill(hits[i]->counter_id,HVid);
-            hHit_Energy->Fill(hits[i]->E);
-            hHit_EnergyVsSlotID->Fill(hits[i]->counter_id,hits[i]->E);
-            hHit_Integral->Fill(hits[i]->integral);
-            hHit_IntegralVsSlotID->Fill(hits[i]->counter_id,hits[i]->integral);
-            //hHit_fadcNpe->Fill(hits[i]->npe_fadc);
-            hHit_fadcTime->Fill(hits[i]->time_fadc);
-            hHit_fadcTimeVsSlotID->Fill(hits[i]->counter_id,hits[i]->time_fadc);
-            hHit_Time->Fill(hits[i]->t);
-            hHit_TimeVsSlotID->Fill(hits[i]->counter_id,hits[i]->t);
-            hHit_TimeVsEnergy->Fill(hits[i]->E,hits[i]->t);
-            hHit_TimeVsIntegral->Fill(hits[i]->integral,hits[i]->t);
-            if (hits[i]->has_TDC) {
-                hHit_tdcTime->Fill(hits[i]->time_tdc);
-                hHit_tdcTimeVsSlotID->Fill(hits[i]->counter_id,hits[i]->time_tdc);
-                hHit_tdcadcTimeDiffVsSlotID->Fill(hits[i]->counter_id,hits[i]->time_tdc-hits[i]->time_fadc);
-                hHit_tdcadcTimeDiffVsIntegral->Fill(hits[i]->integral,hits[i]->time_tdc-hits[i]->time_fadc);
+            hHit_Occupancy->Fill(hit->counter_id);
+            int HVid = (hit->counter_id <= NupstreamCounters) ? hit->counter_id : (hit->counter_id - Nslots + NHVchannels);
+            hHit_HVidVsSlotID->Fill(hit->counter_id,HVid);
+            hHit_Energy->Fill(hit->E);
+            hHit_EnergyVsSlotID->Fill(hit->counter_id,hit->E);
+            hHit_Integral->Fill(hit->integral);
+            hHit_IntegralVsSlotID->Fill(hit->counter_id,hit->integral);
+            //hHit_fadcNpe->Fill(hit->npe_fadc);
+            hHit_fadcTime->Fill(hit->time_fadc);
+            hHit_fadcTimeVsSlotID->Fill(hit->counter_id,hit->time_fadc);
+            hHit_Time->Fill(hit->t);
+            hHit_TimeVsSlotID->Fill(hit->counter_id,hit->t);
+            hHit_TimeVsEnergy->Fill(hit->E,hit->t);
+            hHit_TimeVsIntegral->Fill(hit->integral,hit->t);
+            if (hit->has_TDC) {
+                hHit_tdcTime->Fill(hit->time_tdc);
+                hHit_tdcTimeVsSlotID->Fill(hit->counter_id,hit->time_tdc);
+                hHit_tdcadcTimeDiffVsSlotID->Fill(hit->counter_id,hit->time_tdc-hit->time_fadc);
+                hHit_tdcadcTimeDiffVsIntegral->Fill(hit->integral,hit->time_tdc-hit->time_fadc);
             }
         }
     }

@@ -26,11 +26,13 @@ using namespace jana;
 #include <TProfile2D.h>
 #include <TROOT.h>
 
+extern uint32_t BLOCK_SIZE;
 
 // root hist pointers
 static TProfile *daq_hits_per_event;
 static TProfile *daq_words_per_event;
 static TH1D *daq_event_size;
+static TH1D *daq_block_size; // Adds together BLOCK_SIZE EVIO events (n.b. evio events could already be blocks!)
 static TH1D *daq_event_tdiff;
 static TH1D *daq_words_by_type;
 //static bool ttab_labels_set = false;
@@ -42,9 +44,13 @@ static TH1D *daq_words_by_type;
 //------------------
 DMapEVIOWords::DMapEVIOWords()
 {
+	char daq_block_size_title[256];
+	sprintf(daq_block_size_title, "Block size (%d EVIO events) in kB", BLOCK_SIZE);
+
 	daq_hits_per_event = new TProfile("daq_hits_per_event", "Hits/event vs. rocid", 100, 0.5, 100.5);
 	daq_words_per_event = new TProfile("daq_words_per_event", "words/event vs. rocid", 100, 0.5, 100.5);
-	daq_event_size = new TH1D("daq_event_size", "Event size in kB", 1000, 0.0, 1.0E3);
+	daq_event_size = new TH1D("daq_event_size", "Event size in kB", 10000, 0.0, 1.0E3);
+	daq_block_size = new TH1D("daq_block_size", daq_block_size_title, 1000, 0.0, 1.0E3);
 	daq_event_tdiff = new TH1D("daq_event_tdiff", "Time between events", 10000, 0.0, 1.0E1);
 	daq_words_by_type = new TH1D("daq_words_by_type", "Number of words in EVIO file by type", kNEVIOWordTypes, 0, (double)kNEVIOWordTypes);
 	
@@ -69,12 +75,14 @@ DMapEVIOWords::DMapEVIOWords()
 	daq_words_by_type->GetXaxis()->SetBinLabel(1 + kf250WindowRawData, "f250 Window Raw Data");
 	daq_words_by_type->GetXaxis()->SetBinLabel(1 + kf250WindowSum, "f250 Window Sum");
 	daq_words_by_type->GetXaxis()->SetBinLabel(1 + kf250PulseRawData, "f250 Pulse Raw Data");
+	daq_words_by_type->GetXaxis()->SetBinLabel(1 + kf250PulseData, "f250 Pulse Data");
 	daq_words_by_type->GetXaxis()->SetBinLabel(1 + kf250PulseIntegral, "f250 Pulse Integral");
 	daq_words_by_type->GetXaxis()->SetBinLabel(1 + kf250PulseTime, "f250 Pulse Time");
 	daq_words_by_type->GetXaxis()->SetBinLabel(1 + kf250PulsePedestal, "f250 Pulse Pedestal");
 	daq_words_by_type->GetXaxis()->SetBinLabel(1 + kf250EventTrailer, "f250 Event Trailer");
 	daq_words_by_type->GetXaxis()->SetBinLabel(1 + kf250DataNotValid, "f250 Data Not Valid");
 	daq_words_by_type->GetXaxis()->SetBinLabel(1 + kf250Filler, "f250 Filler Word");
+	daq_words_by_type->GetXaxis()->SetBinLabel(1 + kf250Unknown, "f250 Unknown");
 
 	daq_words_by_type->GetXaxis()->SetBinLabel(1 + kf125BlockHeader, "f125 Block Header");
 	daq_words_by_type->GetXaxis()->SetBinLabel(1 + kf125BlockTrailer, "f125 Block Trailer");
@@ -90,6 +98,7 @@ DMapEVIOWords::DMapEVIOWords()
 	daq_words_by_type->GetXaxis()->SetBinLabel(1 + kf125EventTrailer, "f125 Event Trailer");
 	daq_words_by_type->GetXaxis()->SetBinLabel(1 + kf125DataNotValid, "f125 Data Not Valid");
 	daq_words_by_type->GetXaxis()->SetBinLabel(1 + kf125Filler, "f125 Filler Word");
+	daq_words_by_type->GetXaxis()->SetBinLabel(1 + kf125Unknown, "f125 Unknown");
 
 	daq_words_by_type->GetXaxis()->SetBinLabel(1 + kF1v2BlockHeader, "F1v2 Block Header");
 	daq_words_by_type->GetXaxis()->SetBinLabel(1 + kF1v2BLockTrailer, "F1v2 Block Trailer");
@@ -99,6 +108,7 @@ DMapEVIOWords::DMapEVIOWords()
 	daq_words_by_type->GetXaxis()->SetBinLabel(1 + kF1v2Data, "F1v2 Data");
 	daq_words_by_type->GetXaxis()->SetBinLabel(1 + kF1v2Filler, "F1v2 Filler");
 	daq_words_by_type->GetXaxis()->SetBinLabel(1 + kF1v2BreakWord, "F1v2 Break Word");
+	daq_words_by_type->GetXaxis()->SetBinLabel(1 + kF1v2Unknown, "F1v2 Unknown");
 
 	daq_words_by_type->GetXaxis()->SetBinLabel(1 + kF1v3BlockHeader, "F1v3 Block Header");
 	daq_words_by_type->GetXaxis()->SetBinLabel(1 + kF1v3BLockTrailer, "F1v3 Block Trailer");
@@ -108,6 +118,7 @@ DMapEVIOWords::DMapEVIOWords()
 	daq_words_by_type->GetXaxis()->SetBinLabel(1 + kF1v3Data, "F1v3 Data");
 	daq_words_by_type->GetXaxis()->SetBinLabel(1 + kF1v3Filler, "F1v3 Filler");
 	daq_words_by_type->GetXaxis()->SetBinLabel(1 + kF1v3BreakWord, "F1v3 Break Word");
+	daq_words_by_type->GetXaxis()->SetBinLabel(1 + kF1v3Unknown, "F1v3 Unknown");
 
 	daq_words_by_type->GetXaxis()->SetBinLabel(1 + kCAEN1190GlobalHeader, "CAEN1190 GLobal Header");
 	daq_words_by_type->GetXaxis()->SetBinLabel(1 + kCAEN1190GlobalTrailer, "CAEN1190 Global Trailer");
@@ -117,6 +128,7 @@ DMapEVIOWords::DMapEVIOWords()
 	daq_words_by_type->GetXaxis()->SetBinLabel(1 + kCAEN1190TDCError, "CAEN1190 TDC Error");
 	daq_words_by_type->GetXaxis()->SetBinLabel(1 + kCAEN1190TDCTrailer, "CAEN1190 TDC Trailer");
 	daq_words_by_type->GetXaxis()->SetBinLabel(1 + kCAEN1190Filler, "CAEN1190 Filler");
+	daq_words_by_type->GetXaxis()->SetBinLabel(1 + kCAEN1190Unknown, "CAEN1190 Unknown");
 
 	daq_words_by_type->GetXaxis()->SetBinLabel(1 + kConfig, "DAQ Config");
 	daq_words_by_type->GetXaxis()->SetBinLabel(1 + kConfigf250, "DAQ Config f250");
@@ -202,11 +214,12 @@ void DMapEVIOWords::ParseEvent(uint32_t *buff)
 
 	// Check if this is BOR data
 	if( evio_buffwords >= 4 ){
-		if( istart[1] == 0x00700001 ){
+		if( (istart[1]&0xFFFF00FF) == 0x00700001 ){
 				
 			// FILL HISTOGRAMS
 			// Since we are filling histograms local to this plugin, it will not interfere with other ROOT operations: can use plugin-wide ROOT fill lock
 			daq_words_by_type->Fill(kBORData, istart[0]/sizeof(uint32_t));
+			daq_words_by_type->Fill(kTotWords, istart[0]/sizeof(uint32_t));
 			return; // no further parsing needed
 		}
 	}
@@ -220,6 +233,7 @@ void DMapEVIOWords::ParseEvent(uint32_t *buff)
 				// Since we are filling histograms local to this plugin, it will not interfere with other ROOT operations: can use plugin-wide ROOT fill lock
 				daq_words_by_type->Fill(kEPICSheader, 3.0); // EVIO outer and segment headers + timestamp
 				daq_words_by_type->Fill(kEPICSdata, istart[0]/sizeof(uint32_t) - 3);
+				daq_words_by_type->Fill(kTotWords, istart[0]/sizeof(uint32_t));
 				return; // no further parsing needed
 			}
 		}
@@ -309,6 +323,10 @@ void DMapEVIOWords::ParseEvent(uint32_t *buff)
 		
 		iptr = &iptr[len +1];
 	}
+	
+	// Updated unknown words counter
+	uint32_t Nwords_added = TotWordCount(word_stats);
+	word_stats[kUnknown] += evio_buffwords - Nwords_added;
 
 	// FILL HISTOGRAMS
 	// Since we are filling histograms local to this plugin, it will not interfere with other ROOT operations: can use plugin-wide ROOT fill lock
@@ -317,6 +335,16 @@ void DMapEVIOWords::ParseEvent(uint32_t *buff)
 	// Fill event size histos
 	double physics_event_len_kB = (double)((physics_event_len+1)*sizeof(uint32_t))/1024.0;
 	daq_event_size->Fill(physics_event_len_kB);
+	static int Nin_block = 1;
+	static double block_size = 0;
+	block_size += physics_event_len_kB;
+	Nin_block++;
+	if( (Nin_block%BLOCK_SIZE) == 0 ){
+		daq_block_size->Fill(block_size);
+		block_size = 0.0;
+		Nin_block  = 0;
+	}
+	
 	uint32_t TotalWords = 0;
 	for(uint32_t rocid=0; rocid<100; rocid++){
 		daq_words_per_event->Fill(rocid, Nwords[rocid]);
@@ -330,6 +358,16 @@ void DMapEVIOWords::ParseEvent(uint32_t *buff)
 		daq_words_by_type->Fill(i, (double)word_stats[i]);
 	}
 	
+}
+
+//------------------
+// TotWordCount
+//------------------
+uint32_t DMapEVIOWords::TotWordCount(uint32_t *word_stats)
+{
+	uint32_t N=0;
+	for(uint32_t i=kUnknown; i<kTotWords; i++) N += word_stats[i];
+	return N;
 }
 
 //------------------
@@ -353,18 +391,12 @@ void DMapEVIOWords::DataWordStats(uint32_t *iptr, uint32_t *iend, uint32_t *word
 		word_stats[kEVIOHeader] += 2; // data block bank length and header words
 
 		iptr++; // advance to first raw data word
-
-		uint32_t Ntoprocess = data_block_bank_len - 1; // 1 for bank header
-
-#if 0  // I don't know if these words are actually implmented ??
-		word_stats[kEVIOEventNumber]++;  // starting event number
-		word_stats[kEVIOTimestamp] += 2; // 48-bit timestamp
-		iptr++;  // starting event number
-		iptr++;  // 48-bit timestamp
-		iptr++;	 // 48-bit timestamp
-		Ntoprocess -= 3;
-#endif		
-		uint32_t *irawdata = iptr;
+		
+		// Not sure where this comes from, but it needs to be skipped if present
+		while( (*iptr==0xF800FAFA) && (iptr<iend) ){
+			word_stats[kF800FAFA]++;
+			iptr++;
+		}
 		
 		switch(det_id){
 			case 0:
@@ -388,8 +420,6 @@ void DMapEVIOWords::DataWordStats(uint32_t *iptr, uint32_t *iend, uint32_t *word
 				break;
 		}
 
-		uint32_t Nprocessed = (uint32_t)((uint64_t)iptr - (uint64_t)irawdata)/sizeof(uint32_t);
-		if(Nprocessed < Ntoprocess) word_stats[kUnknown] += Ntoprocess - Nprocessed;
 		iptr = iendbank;
 	}
 	
@@ -425,7 +455,7 @@ void DMapEVIOWords::Parsef250Bank(uint32_t rocid, uint32_t *&iptr, uint32_t *ien
 {
 	while(iptr<iend){
 		
-		if(((*iptr>>31) & 0x1) == 0) { word_stats[kUnknown]++ ; iptr++; continue;}
+		if(((*iptr>>31) & 0x1) == 0) { word_stats[kf250Unknown]++ ; iptr++; continue;}
 		
 		uint32_t window_width;
 		uint32_t window_words;
@@ -447,12 +477,18 @@ void DMapEVIOWords::Parsef250Bank(uint32_t rocid, uint32_t *&iptr, uint32_t *ien
 				break;
 			case  7: word_stats[kf250PulseIntegral]++;    iptr++;  break;
 			case  8: word_stats[kf250PulseTime]++;        iptr++;  break;
+			case  9: word_stats[kf250PulseData]++;	       iptr++;
+				while( ((*iptr>>31) & 0x1) == 0 ){
+					word_stats[kf250PulseData]++;	          iptr++;
+					if(iptr == iend) break;
+				}
+				break;
 			case 10: word_stats[kf250PulsePedestal]++;    iptr++;  break;
 			case 13: word_stats[kf250EventTrailer]++;     iptr++;  break;
 			case 14: word_stats[kf250DataNotValid]++;     iptr++;  break;
 			case 15: word_stats[kf250Filler]++;           iptr++;  break;
 
-			default: word_stats[kUnknown]++;              iptr++;  break;				
+			default: word_stats[kf250Unknown]++;          iptr++;  break;				
 		}
 	}
 }
@@ -464,7 +500,7 @@ void DMapEVIOWords::Parsef125Bank(uint32_t rocid, uint32_t *&iptr, uint32_t *ien
 {
 	while(iptr<iend){
 		
-		if(((*iptr>>31) & 0x1) == 0) { word_stats[kUnknown]++ ; iptr++; continue;}
+		if(((*iptr>>31) & 0x1) == 0) { word_stats[kf125Unknown]++ ; iptr++; continue;}
 		
 		uint32_t window_width;
 		uint32_t window_words;
@@ -503,7 +539,7 @@ void DMapEVIOWords::Parsef125Bank(uint32_t rocid, uint32_t *&iptr, uint32_t *ien
 			case 14: word_stats[kf125DataNotValid]++;     iptr++;  break;
 			case 15: word_stats[kf125Filler]++;           iptr++;  break;
 
-			default: word_stats[kUnknown]++;              iptr++;  break;				
+			default: word_stats[kf125Unknown]++;          iptr++;  break;				
 		}
 	}
 }
@@ -523,7 +559,7 @@ void DMapEVIOWords::ParseF1v2TDCBank(uint32_t rocid, uint32_t *&iptr, uint32_t *
 			case 0x90000000: word_stats[kF1v2EventHeader]++;  break;
 			case 0x98000000: word_stats[kF1v2TriggerTime]++;  break;
 			case 0xF0000000: word_stats[kF1v2BreakWord]++;    break;
-			default:         word_stats[kUnknown]++;          break;
+			default:         word_stats[kF1v2Unknown]++;      break;
 		}
 	}
 }
@@ -543,7 +579,7 @@ void DMapEVIOWords::ParseF1v3TDCBank(uint32_t rocid, uint32_t *&iptr, uint32_t *
 			case 0x90000000: word_stats[kF1v3EventHeader]++;  break;
 			case 0x98000000: word_stats[kF1v3TriggerTime]++;  break;
 			case 0xF0000000: word_stats[kF1v3BreakWord]++;    break;
-			default:         word_stats[kUnknown]++;          break;
+			default:         word_stats[kF1v3Unknown]++;      break;
 		}
 	}
 }
@@ -573,7 +609,7 @@ void DMapEVIOWords::ParseCAEN1190(uint32_t rocid, uint32_t *&iptr, uint32_t *ien
 			case 0b00100: word_stats[kCAEN1190TDCError]++;          break;
 			case 0b00011: word_stats[kCAEN1190TDCTrailer]++;        break;
 			case 0b11000: word_stats[kCAEN1190Filler]++;            break;
-			default:      word_stats[kUnknown]++;                   break;
+			default:      word_stats[kCAEN1190Unknown]++;           break;
 		}
 	}
 }
