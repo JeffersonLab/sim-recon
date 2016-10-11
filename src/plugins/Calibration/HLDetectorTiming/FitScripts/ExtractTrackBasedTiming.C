@@ -98,6 +98,13 @@ int GetCCDBIndexTAGM(unsigned int column, unsigned int row){
    return CCDBIndex;
 }
 
+int GetF1TDCslotTAGH(int id) {
+   double N = 32.0; // channels per slot
+   if (id >= 132 && id <= 172) throw("TAGH: unknown id in [132,172]");
+   int HVid = (id <= 131) ? id : (id - 274 + 233);
+   return int((HVid-1)/N) + 1;
+}
+
 void ExtractTrackBasedTiming(TString fileName = "hd_root.root", int runNumber = 10390, TString variation = "default", bool verbose = false,TString prefix = ""){
 
    // set "prefix" in case you want to ship the txt files elsewhere...
@@ -118,6 +125,7 @@ void ExtractTrackBasedTiming(TString fileName = "hd_root.root", int runNumber = 
    vector<double> tagm_fadc_time_offsets;
    vector<double> tagh_tdc_time_offsets;
    vector<double> tagh_fadc_time_offsets;
+   vector<double> tagh_counter_quality;
 
    double sc_t_base_fadc, sc_t_base_tdc;
    double tof_t_base_fadc, tof_t_base_tdc;
@@ -127,11 +135,13 @@ void ExtractTrackBasedTiming(TString fileName = "hd_root.root", int runNumber = 
    double fdc_t_base_fadc, fdc_t_base_tdc;
    double fcal_t_base;
    double cdc_t_base;
+   double RF_Period;
 
    cout << "Grabbing CCDB constants..." << endl;
    // Base times
    GetCCDBConstants1("/CDC/base_time_offset" ,runNumber, variation, cdc_t_base);
    GetCCDBConstants1("/FCAL/base_time_offset",runNumber, variation, fcal_t_base);
+   GetCCDBConstants1("/PHOTON_BEAM/RF/beam_period",runNumber, variation, RF_Period);
    GetCCDBConstants2("/FDC/base_time_offset" ,runNumber, variation, fdc_t_base_fadc, fdc_t_base_tdc);
    GetCCDBConstants2("/BCAL/base_time_offset" ,runNumber, variation, bcal_t_base_fadc, bcal_t_base_tdc);
    GetCCDBConstants2("/PHOTON_BEAM/microscope/base_time_offset" ,runNumber, variation, tagm_t_base_fadc, tagm_t_base_tdc);
@@ -147,6 +157,7 @@ void ExtractTrackBasedTiming(TString fileName = "hd_root.root", int runNumber = 
    GetCCDBConstants("/PHOTON_BEAM/microscope/tdc_time_offsets"  ,runNumber, variation, tagm_tdc_time_offsets,3);
    GetCCDBConstants("/PHOTON_BEAM/hodoscope/fadc_time_offsets"  ,runNumber, variation, tagh_fadc_time_offsets,2);// Interested in 2nd column
    GetCCDBConstants("/PHOTON_BEAM/hodoscope/tdc_time_offsets"   ,runNumber, variation, tagh_tdc_time_offsets,2);
+   GetCCDBConstants("/PHOTON_BEAM/hodoscope/counter_quality"    ,runNumber, variation, tagh_counter_quality,2);
    GetCCDBConstants("/TOF/adc_timing_offsets",runNumber, variation, tof_fadc_time_offsets);
    GetCCDBConstants("/TOF/timing_offsets",runNumber, variation, tof_tdc_time_offsets);
 
@@ -158,6 +169,9 @@ void ExtractTrackBasedTiming(TString fileName = "hd_root.root", int runNumber = 
    cout << "TOF base times = " << tof_t_base_fadc << ", " << tof_t_base_tdc << endl;
    cout << "TAGH base times = " << tagh_t_base_fadc << ", " << tagh_t_base_tdc << endl;
    cout << "TAGM base times = " << tagm_t_base_fadc << ", " << tagm_t_base_tdc << endl;
+
+   cout << endl;
+   cout << "RF_Period = " << RF_Period << endl;
    cout << endl;
 
    cout << "Done grabbing CCDB constants...Entering fits..." << endl;
@@ -167,7 +181,6 @@ void ExtractTrackBasedTiming(TString fileName = "hd_root.root", int runNumber = 
    //When the RF is present we can try to simply pick out the correct beam bucket for each of the runs
    //First just a simple check to see if we have the appropriate data
    bool useRF = false;
-   double RF_Period = 4.0080161;
    TH1I *testHist = ExtractTrackBasedTimingNS::Get1DHistogram("HLDetectorTiming", "TAGH_TDC_RF_Compare","Counter ID 001");
    if (testHist != NULL){ // Not great since we rely on channel 1 working, but can be craftier later.
       cout << "Using RF Times for Calibration" << endl;
@@ -304,10 +317,22 @@ void ExtractTrackBasedTiming(TString fileName = "hd_root.root", int runNumber = 
       outFile.open(prefix + "tagh_adc_timing_offsets.txt", ios::out | ios::trunc);
       outFile.close(); // clear file
 
+      // Setup histogram for determining the most probable change in offset for each F1TDC slot
+      // This is needed to account for the occasional uniform shift in offsets of the 32 counters in a slot
+      const int NtdcSlots = 8;
+      TH1I * tdcDist[NtdcSlots];
+      for (int i = 1; i <= NtdcSlots; i++) {
+         stringstream ss; ss << i;
+         TString s = ss.str();
+         double range = 500.0; double width = 0.1;
+         int Nbins = range/width;
+         double low = -0.5*range - 0.5*width;
+         double high = 0.5*range - 0.5*width;
+         tdcDist[i-1] = new TH1I("TAGHOffsetDistribution_"+s, "TAGH Offset (slot "+s+"); TAGH Offset [ns]; Entries", Nbins, low, high);
+      }
+
       int nBinsX = thisHist->GetNbinsX();
-      int nBinsY = thisHist->GetNbinsY();
       TH1D * selectedTAGHOffset = new TH1D("selectedTAGHOffset", "Selected TAGH Offset; ID; Offset [ns]", nBinsX, 0.5, nBinsX + 0.5);
-      TH1I * tdcDist = new TH1I("TAGHOffsetDistribution", "TAGH Offset; TAGH Offset [ns]; Entries", 500, -250.5, 250.5);
       for (int i = 1 ; i <= nBinsX; i++) {
          TH1D *projY = thisHist->ProjectionY("temp", i, i);
          // Scan over histogram to find mean offset in timeWindow with largest integral
@@ -335,62 +360,92 @@ void ExtractTrackBasedTiming(TString fileName = "hd_root.root", int runNumber = 
             }
          }
 
+         if (tagh_counter_quality[i-1] == 0.0) {
+            selectedTAGHOffset->SetBinContent(i, 0);
+            continue;
+         }
+         int tdc_slot = GetF1TDCslotTAGH(i);
          if (useRF) {
             int beamBucket;
             if (maxMean >= 0) beamBucket = int((maxMean / RF_Period) + 0.5); // +0.5 to handle rounding correctly
             else beamBucket = int((maxMean / RF_Period) - 0.5);
             selectedTAGHOffset->SetBinContent(i, beamBucket);
-            if (maxEntries != 0.0) tdcDist->Fill(beamBucket);
+            if (maxEntries != 0.0) tdcDist[tdc_slot - 1]->Fill(beamBucket);
          } else {
             selectedTAGHOffset->SetBinContent(i, maxMean);
-            if (maxEntries != 0.0) tdcDist->Fill(maxMean);
+            if (maxEntries != 0.0) tdcDist[tdc_slot - 1]->Fill(maxMean);
          }
       }
-      // Most probable change in offset or beam bucket
-      int mpBin = tdcDist->GetMaximumBin();
-      double mpDelta = (mpBin > 0) ? tdcDist->GetBinCenter(mpBin) : 0.0;
+      // Most probable change in offset or beam bucket per F1TDC slot
+      double mpDelta[NtdcSlots];
+      for (int i = 1; i <= NtdcSlots; i++) {
+         int mpBin = tdcDist[i-1]->GetMaximumBin();
+         mpDelta[i-1] = (mpBin > 0) ? tdcDist[i-1]->GetBinCenter(mpBin) : 0.0;
+         if (useRF) mpDelta[i-1] *= RF_Period;
+         if (verbose) {
+            cout << "TAGH most probable Offset = " << i << ", " << mpDelta[i-1] << endl;
+         }
+      }
 
-      if (useRF) mpDelta *= RF_Period;
       if (verbose) {
          cout << "Dumping TAGH results...\n=======================================" << endl;
-         cout << "TAGH most probable Offset = " << mpDelta << endl;
          cout << "Type\tChannel\tvalueToUse\toldValue\tmpDelta\tTotal" << endl;
       }
-      double limit = 4.0; // ns
+
+      double limit = 2.5; // ns
       double ccdb_sum = 0.0;
       for (int i = 1; i <= nBinsX; i++) ccdb_sum += tagh_tdc_time_offsets[i-1];
-      double c1_adcOffset = 0.0; double c1_tdcOffset = 0.0;
+      double c1_tdcOffset = 0.0;
+      outFile.open(prefix + "tagh_tdc_timing_offsets.txt");
       for (int i = 1; i <= nBinsX; i++) {
+         if (tagh_counter_quality[i-1] == 0.0) {
+            outFile << i << " " << 0 << endl;
+            continue;
+         }
+         int tdc_slot = GetF1TDCslotTAGH(i);
          double delta = selectedTAGHOffset->GetBinContent(i);
          if (useRF) delta *= RF_Period;
-         if (ccdb_sum > 0.0 && fabs(delta - mpDelta) > limit) delta = mpDelta;
-         // TDC
+         if (ccdb_sum > 0.0 && fabs(delta - mpDelta[tdc_slot-1]) > limit) {
+            delta = mpDelta[tdc_slot-1];
+         }
          double ccdb = tagh_tdc_time_offsets[i-1];
-         double offset = ccdb + delta - mpDelta;
+         double offset = ccdb + delta;
          if (i == 1) c1_tdcOffset = offset;
          offset -= c1_tdcOffset;
-         if (offset < -limit) offset = 0.0;
-         outFile.open(prefix + "tagh_tdc_timing_offsets.txt", ios::out | ios::app);
          outFile << i << " " << offset << endl;
-         if (verbose) printf("TDC\t%i\t%.3f\t\t%.3f\t\t%.3f\t\t%.3f\n", i, delta, ccdb, mpDelta, offset);
-         outFile.close();
-         // ADC
-         ccdb = tagh_fadc_time_offsets[i-1];
-         outFile.open(prefix + "tagh_adc_timing_offsets.txt", ios::out | ios::app);
-         offset = ccdb + delta - mpDelta;
+         if (verbose) printf("TDC\t%i\t%.3f\t\t%.3f\t\t%.3f\t\t%.3f\n", i, delta, ccdb, mpDelta[tdc_slot-1], offset);
+      }
+      outFile.close();
+
+      ccdb_sum = 0.0;
+      for (int i = 1; i <= nBinsX; i++) ccdb_sum += tagh_fadc_time_offsets[i-1];
+      double c1_adcOffset = 0.0;
+      outFile.open(prefix + "tagh_adc_timing_offsets.txt");
+      for (int i = 1; i <= nBinsX; i++) {
+         if (tagh_counter_quality[i-1] == 0.0) {
+            outFile << i << " " << 0 << endl;
+            continue;
+         }
+         int tdc_slot = GetF1TDCslotTAGH(i);
+         double delta = selectedTAGHOffset->GetBinContent(i);
+         if (useRF) delta *= RF_Period;
+         if (ccdb_sum > 0.0 && fabs(delta - mpDelta[tdc_slot-1]) > limit) {
+            delta = mpDelta[tdc_slot-1];
+         }
+         double ccdb = tagh_fadc_time_offsets[i-1];
+         double offset = ccdb + delta;
          if (i == 1) c1_adcOffset = offset;
          offset -= c1_adcOffset;
-         if (offset < -limit) offset = 0.0;
          outFile << i << " " << offset << endl;
-         if (verbose) printf("ADC\t%i\t%.3f\t\t%.3f\t\t%.3f\t\t%.3f\n", i, delta, ccdb, mpDelta, offset);
-         outFile.close();
+         if (verbose) printf("ADC\t%i\t%.3f\t\t%.3f\t\t%.3f\t\t%.3f\n", i, delta, ccdb, mpDelta[tdc_slot-1], offset);
       }
+      outFile.close();
 
-      outFile.open(prefix + "tagh_base_time.txt", ios::out);
-      outFile << tagh_t_base_fadc - mpDelta - c1_adcOffset << " " << tagh_t_base_tdc - mpDelta - c1_tdcOffset << endl;
+      outFile.open(prefix + "tagh_base_time.txt");
+      outFile << tagh_t_base_fadc - c1_adcOffset << " " << tagh_t_base_tdc - c1_tdcOffset << endl;
       if (verbose) {
-         printf("TAGH ADC Base = %f - (%f) = %f\n", tagh_t_base_fadc, mpDelta, tagh_t_base_fadc - mpDelta - c1_adcOffset);
-         printf("TAGH TDC Base = %f - (%f) = %f\n", tagh_t_base_tdc, mpDelta, tagh_t_base_tdc - mpDelta - c1_tdcOffset);
+         printf("TAGH ADC Base = %f - (%f) = %f\n", tagh_t_base_fadc, c1_adcOffset, tagh_t_base_fadc - c1_adcOffset);
+         printf("TAGH TDC Base = %f - (%f) = %f\n", tagh_t_base_tdc, c1_tdcOffset, tagh_t_base_tdc - c1_tdcOffset);
       }
       outFile.close();
    }
@@ -518,7 +573,7 @@ void ExtractTrackBasedTiming(TString fileName = "hd_root.root", int runNumber = 
    if(this1DHist != NULL){
       //Landau
       Double_t maximum = this1DHist->GetBinCenter(this1DHist->GetMaximumBin());
-      TFitResultPtr fr = this1DHist->Fit("landau", "S", "", maximum - 15, maximum + 10);
+      TFitResultPtr fr = this1DHist->Fit("landau", "S", "", maximum - 5, maximum + 5);
       float MPV = fr->Parameter(1);
       outFile.open(prefix + "fdc_base_time.txt");
       if (verbose) {
