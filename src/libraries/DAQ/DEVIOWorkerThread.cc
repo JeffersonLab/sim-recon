@@ -1242,8 +1242,18 @@ void DEVIOWorkerThread::Parsef250Bank(uint32_t rocid, uint32_t* &iptr, uint32_t 
 					
 					// event_number_within_block=0 indicates error
 					if(event_number_within_block==0){
-						_DBG_<<"event_number_within_block==0. This indicates a bug in firmware." << endl;
-						exit(-1);
+						static bool warned = false;
+						if(!warned){
+							warned=true;
+							_DBG_<<"*****************************************"<<endl;
+							_DBG_<<"event_number_within_block==0. This indicates a bug in firmware." << endl;
+							_DBG_<< endl;
+							_DBG_<< "This special branch will attempt to ignore this by changing" << endl;
+							_DBG_<< "the value to 1. This may not work!" <<endl;
+							_DBG_<< "This is the only time this warning will print." << endl;
+							_DBG_<<"*****************************************"<<endl;
+						}
+						event_number_within_block = 1;
 					}
 
 					// Event headers may be supressed so determine event from hit data
