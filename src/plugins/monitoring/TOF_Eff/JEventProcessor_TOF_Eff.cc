@@ -265,11 +265,11 @@ jerror_t JEventProcessor_TOF_Eff::evnt(jana::JEventLoop* locEventLoop, uint64_t 
 		const DTOFPoint* locClosestTOFPoint = locParticleID->Get_ClosestToTrack_TOFPoint(locTrackTimeBased, locTOFPoints, locBestPointDeltaX, locBestPointDeltaY);
 
 		//Find closest TOF paddles
-		double locBestPaddleDeltaX = 999.9, locBestPaddleDeltaY = 999.9;
+		double locBestPaddleDeltaX = 999.9, locBestPaddleDeltaY = 999.9, locBestPaddleDistance_Vertical = 999.9, locBestPaddleDistance_Horizontal = 999.9;
 		//first in pair is vertical, second is horizontal // NULL If none / doesn't hit TOF
 		double locStartTime = locParticleID->Calc_PropagatedRFTime(locChargedTrackHypothesis, locEventRFBunch);
-		const DTOFPaddleHit* locClosestTOFPaddleHit_Vertical = locParticleID->Get_ClosestTOFPaddleHit_Vertical(locTrackTimeBased->rt, locTOFPaddleHits, locStartTime, locBestPaddleDeltaX);
-		const DTOFPaddleHit* locClosestTOFPaddleHit_Horizontal = locParticleID->Get_ClosestTOFPaddleHit_Horizontal(locTrackTimeBased->rt, locTOFPaddleHits, locStartTime, locBestPaddleDeltaY);
+		const DTOFPaddleHit* locClosestTOFPaddleHit_Vertical = locParticleID->Get_ClosestTOFPaddleHit_Vertical(locTrackTimeBased->rt, locTOFPaddleHits, locStartTime, locBestPaddleDeltaX, locBestPaddleDistance_Vertical);
+		const DTOFPaddleHit* locClosestTOFPaddleHit_Horizontal = locParticleID->Get_ClosestTOFPaddleHit_Horizontal(locTrackTimeBased->rt, locTOFPaddleHits, locStartTime, locBestPaddleDeltaY, locBestPaddleDistance_Horizontal);
 
 		//Is match to TOF point?
 		const DTOFHitMatchParams* locTOFHitMatchParams = locChargedTrackHypothesis->Get_TOFHitMatchParams();
