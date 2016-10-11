@@ -1239,11 +1239,17 @@ void DEVIOWorkerThread::Parsef250Bank(uint32_t rocid, uint32_t* &iptr, uint32_t 
 					uint32_t channel                   = (*iptr>>15) & 0x0F;
 					bool     QF_pedestal               = (*iptr>>14) & 0x01;
 					uint32_t pedestal                  = (*iptr>>0 ) & 0x3FFF;
+					
+					// event_number_within_block=0 indicates error
+					if(event_number_within_block==0){
+						_DBG_<<"event_number_within_block==0. This indicates a bug in firmware." << endl;
+						exit(-1);
+					}
 
 					// Event headers may be supressed so determine event from hit data
 					if( (event_number_within_block > current_parsed_events.size()) ) throw JException("Bad f250 event number", __FILE__, __LINE__);
 					pe_iter = current_parsed_events.begin();
-					advance( pe_iter, event_number_within_block );
+					advance( pe_iter, event_number_within_block-1 );
 					pe = *pe_iter++;
 					
 					itrigger = event_number_within_block; // is this right?
