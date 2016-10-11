@@ -31,7 +31,7 @@ mcsmear_config_t::mcsmear_config_t()
 	if( getenv("RCDB_CONNECTION")!= NULL )
 		RCDB_CONNECTION = getenv("RCDB_CONNECTION");
 	else
-		RCDB_CONNECTION = "mysql://rcdb@hallddb/rcdb";   // default to outward-facing MySQL DB
+		RCDB_CONNECTION = "mysql://rcdb@hallddb.jlab.org/rcdb";   // default to outward-facing MySQL DB
 
     // load RCDB later, so that the DApplication interface is initialized
     rcdb_connection = NULL;
