@@ -28,17 +28,21 @@ double GetMode(TH1 *h) {
 void WriteFitResults(ofstream &fout, TH1 *h, TString htype, int counter) {
     TString sep = ",";
     double max = h->GetBinContent(h->GetMaximumBin());
-    if (h->GetEntries() < 100.0 || GetMode(h) == 999.0) {
+    double mode = GetMode(h);
+    if (h->GetEntries() < 100.0 || mode == 999.0) {
         fout << counter << sep << max << sep << 0.0 << sep << 0.0 << sep << 0.0 << endl;
         return;
     }
-    double w = (htype == "TDCADC") ? 0.75 : 0.5;
-    double xlow = h->GetBinCenter(h->FindFirstBinAbove(0.5*max)) - w;
-    double xhigh = h->GetBinCenter(h->FindLastBinAbove(0.5*max)) + w;
+    double w = 0.75;
+    double xlow = mode - w; double xhigh = mode + w;
+    if (htype == "TDCADC") {
+        xlow = h->GetBinCenter(h->FindFirstBinAbove(0.5*max)) - w;
+        xhigh = h->GetBinCenter(h->FindLastBinAbove(0.5*max)) + w;
+    }
     RooRealVar x("TDC time difference","TDC time difference [ns]",xlow,xhigh);
     RooDataHist data("data","data",RooArgList(x),h);
     // model: gaussian
-    RooRealVar mean("mean","mean",GetMode(h),xlow,xhigh);
+    RooRealVar mean("mean","mean",mode,xlow,xhigh);
     RooRealVar sigma("sigma","sigma",0.2,0.01,0.5);
     RooGaussian gauss("gauss","gauss",x,mean,sigma);
     gauss.fitTo(data,PrintLevel(-1));
@@ -64,17 +68,18 @@ void WriteFitResults(ofstream &fout, TH1 *h, TString htype, int counter) {
 void WriteFitResults2(ofstream &fout, TH1 *h, TString htype, int counter) {
     TString sep = ",";
     double max = h->GetBinContent(h->GetMaximumBin());
-    if (h->GetEntries() < 100.0 || GetMode(h) == 999.0) {
+    double mode = GetMode(h);
+    if (h->GetEntries() < 100.0 || mode == 999.0) {
         if (counter > 0) fout << counter << sep << max << sep << 0.0 << sep << 0.0 << sep << 0.0 << endl;
         return;
     }
     double w = (htype == "TAGH") ? 1.0 : 0.75;
-    double xlow = GetMode(h) - w;
-    double xhigh = GetMode(h) + w;
+    double xlow = mode - w;
+    double xhigh = mode + w;
     RooRealVar x("TDC time difference","TDC time difference [ns]",xlow,xhigh);
     RooDataHist data("data","data",RooArgList(x),h);
     // model: add a narrow and wide gaussian with same mean
-    RooRealVar mean("mean","mean",GetMode(h),xlow,xhigh);
+    RooRealVar mean("mean","mean",mode,xlow,xhigh);
     RooRealVar sigma1("sigma1","sigma1",0.2,0.01,0.4);//0.01,0.6
     RooGaussian gauss1("gauss1","gauss1",x,mean,sigma1);
     RooRealVar sigma2("sigma2","sigma2",0.7,0.3,2.5);//0.1,2.5
