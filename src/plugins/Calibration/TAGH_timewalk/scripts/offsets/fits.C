@@ -1,21 +1,21 @@
 using namespace RooFit;
 TH1* GetHistogram(TFile *f, TString hname, TString htype, int counter) {
     stringstream ss; ss << counter;
-    TH2I *h2 = (TH2I*)f->Get("PS_timing/"+hname);
-    if (htype != "PSC" && htype != "PS" && htype != "TDCADC") {
-        cerr << "Unsupported histogram type: Choose 'PS', 'PSC', or 'TDCADC'" << endl;
+    TH1 *h;
+    if (htype == "TDCADC") {
+        TH2I *h2 = (TH2I*)f->Get("TAGH_timewalk/Offsets/"+hname);
+        h = h2->ProjectionY(TString(h2->GetName())+"_"+TString(ss.str()),counter,counter);
+        TString title = "TAGH counter "+TString(ss.str());
+        h->SetTitle(title);
+        h->GetXaxis()->SetTitle(h2->GetYaxis()->GetTitle());
     }
-    TH1 *h = h2->ProjectionY(TString(h2->GetName())+"_"+TString(ss.str()),counter,counter);
-    TString title = (htype == "TDCADC") ? "PSC counter "+TString(ss.str()) : htype+" counter "+TString(ss.str());
-    h->SetTitle(title);
-    h->GetXaxis()->SetTitle(h2->GetYaxis()->GetTitle());
-    return h;
-}
-TH1* GetTaggerHistogram(TFile *f) {
-    TH2I *h2 = (TH2I*)f->Get("PS_timing/TAGHRF_tdcTimeDiffVsID");
-    const int N = 127; // Use upstream counters (relative to microscope)
-    TH1 *h = h2->ProjectionY(TString(h2->GetName()),1,N+1);
-    h->GetXaxis()->SetTitle("time(TDC) - time(RF) [ns]");
+    if (htype == "TAGH") {
+        TH2I *h2 = (TH2I*)f->Get("TAGH_timewalk/Timewalk/TAGHRF_tdcTimeDiffVsPulseHeight_"+TString(ss.str()));
+        const int N = 40;
+        h = h2->ProjectionY(TString(h2->GetName()),1,N+1);
+        h->SetTitle("TAGH counter "+TString(ss.str()));
+        h->GetXaxis()->SetTitle("time(TDC) - time(RF) [ns]");
+    }
     return h;
 }
 double GetMode(TH1 *h) {
@@ -32,14 +32,13 @@ void WriteFitResults(ofstream &fout, TH1 *h, TString htype, int counter) {
         fout << counter << sep << max << sep << 0.0 << sep << 0.0 << sep << 0.0 << endl;
         return;
     }
-    double w = (htype == "TDCADC") ? 0.75 : 0.5;
-    double xlow = h->GetBinCenter(h->FindFirstBinAbove(0.5*max)) - w;
-    double xhigh = h->GetBinCenter(h->FindLastBinAbove(0.5*max)) + w;
+    double xlow = h->GetBinCenter(h->FindFirstBinAbove(0.5*max)) - 1.0;
+    double xhigh = h->GetBinCenter(h->FindLastBinAbove(0.5*max)) + 1.0;
     RooRealVar x("TDC time difference","TDC time difference [ns]",xlow,xhigh);
     RooDataHist data("data","data",RooArgList(x),h);
     // model: gaussian
     RooRealVar mean("mean","mean",GetMode(h),xlow,xhigh);
-    RooRealVar sigma("sigma","sigma",0.2,0.01,0.5);
+    RooRealVar sigma("sigma","sigma",0.2,0.01,0.6);//0.01,0.5
     RooGaussian gauss("gauss","gauss",x,mean,sigma);
     gauss.fitTo(data,PrintLevel(-1));
     // Make plot
@@ -47,8 +46,7 @@ void WriteFitResults(ofstream &fout, TH1 *h, TString htype, int counter) {
     RooPlot *plot = x.frame();
     plot->SetTitle(h->GetTitle());
     plot->SetXTitle(h->GetXaxis()->GetTitle());
-    TString ytitle = (htype == "PS") ? "PS hits" : "PSC hits";
-    plot->SetYTitle(ytitle);
+    plot->SetYTitle("TAGH hits");
     plot->SetTitleSize(0.0474,"XY");
     data.plotOn(plot);
     gauss.plotOn(plot,LineColor(kRed));
@@ -68,16 +66,15 @@ void WriteFitResults2(ofstream &fout, TH1 *h, TString htype, int counter) {
         if (counter > 0) fout << counter << sep << max << sep << 0.0 << sep << 0.0 << sep << 0.0 << endl;
         return;
     }
-    double w = (htype == "TAGH") ? 1.0 : 0.75;
-    double xlow = GetMode(h) - w;
-    double xhigh = GetMode(h) + w;
+    double xlow = GetMode(h) - 1.0;
+    double xhigh = GetMode(h) + 1.0;
     RooRealVar x("TDC time difference","TDC time difference [ns]",xlow,xhigh);
     RooDataHist data("data","data",RooArgList(x),h);
     // model: add a narrow and wide gaussian with same mean
     RooRealVar mean("mean","mean",GetMode(h),xlow,xhigh);
     RooRealVar sigma1("sigma1","sigma1",0.2,0.01,0.4);//0.01,0.6
     RooGaussian gauss1("gauss1","gauss1",x,mean,sigma1);
-    RooRealVar sigma2("sigma2","sigma2",0.7,0.3,2.5);//0.1,2.5
+    RooRealVar sigma2("sigma2","sigma2",0.7,0.3,3.0);//0.3,2.5
     RooGaussian gauss2("gauss2","gauss2",x,mean,sigma2);
     // f1: fraction of entries in first gaussian
     RooRealVar f1("f1","f1",0.75,0.01,1.);
@@ -88,9 +85,7 @@ void WriteFitResults2(ofstream &fout, TH1 *h, TString htype, int counter) {
     RooPlot *plot = x.frame();
     plot->SetTitle(h->GetTitle());
     plot->SetXTitle(h->GetXaxis()->GetTitle());
-    TString ytitle = (htype == "PS") ? "PS hits" : "PSC hits";
-    if (htype == "TAGH") ytitle = "TAGH hits";
-    plot->SetYTitle(ytitle);
+    plot->SetYTitle("TAGH hits");
     plot->SetTitleSize(0.0474,"XY");
     data.plotOn(plot);
     doubleGauss.plotOn(plot,LineColor(kRed));
@@ -107,24 +102,20 @@ void WriteFitResults2(ofstream &fout, TH1 *h, TString htype, int counter) {
 }
 int fits(TString rootFile, bool doAllFits) {
     TFile *f = new TFile(rootFile,"read");
-    TString hnames[] = {"PSC_tdcadcTimeDiffVsID","PSCRF_tdcTimeDiffVsID","PSRF_adcTimeDiffVsID"};
-    TString htypes[] = {"TDCADC","PSC","PS"};
-    int N_htypes = 2;
-    if (doAllFits) N_htypes = 3;
+    TString hnames[] = {"TAGH_tdcadcTimeDiffVsSlotID","TAGHRF_tdcTimeDiffVsSlotID"};
+    TString htypes[] = {"TDCADC","TAGH"};
+    int N_htypes = 1;
+    if (doAllFits) N_htypes = 2;
     for (int htype = 0; htype < N_htypes; htype++) {
         system("mkdir -p fits-csv");
         ofstream fout; fout.open("fits-csv/results_"+htypes[htype]+".txt");
-        const int N = (htypes[htype] == "PS") ? 290 : 16;
+        const int N = 274;
         for (int i = 1; i <= N; i++) { // counters
             TH1 *h = GetHistogram(f,hnames[htype],htypes[htype],i);
-            if (htypes[htype] != "PSC") WriteFitResults(fout,h,htypes[htype],i);
+            if (htype == 0) WriteFitResults(fout,h,htypes[htype],i);
             else WriteFitResults2(fout,h,htypes[htype],i);
         }
         fout.close();
     }
-    ofstream fout; fout.open("fits-csv/results_base.txt");
-    TH1 *h = GetTaggerHistogram(f);
-    WriteFitResults2(fout,h,"TAGH",1);
-    fout.close();
     return 0;
 }
