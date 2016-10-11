@@ -695,7 +695,7 @@ bool DParticleID::MatchToTOF(const DKinematicData* locTrack, const DReferenceTra
 	//If the position in one dimension is not well-defined, compare distance only in the other direction
 	//Otherwise, cut in R
 	//y = e^(-A*x + B) + 6
-	double locP = locTrack->momentum().Mag();
+	double locP = proj_mom.Mag();
 	double locMatchCut_2D = exp(-1.0*TOF_CUT_PAR1*locP + TOF_CUT_PAR2) + TOF_CUT_PAR3;
 	double locMatchCut_1D = locMatchCut_2D;
 
