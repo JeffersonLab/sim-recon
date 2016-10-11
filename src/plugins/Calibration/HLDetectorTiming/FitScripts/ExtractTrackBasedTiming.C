@@ -108,7 +108,7 @@ int GetF1TDCslotTAGH(int id) {
 void ExtractTrackBasedTiming(TString fileName = "hd_root.root", int runNumber = 10390, TString variation = "default", bool verbose = false,TString prefix = ""){
 
    // set "prefix" in case you want to ship the txt files elsewhere...
-   cout << "Performing TDC/ADC timing fits for File: " << fileName.Data() << " Run: " << runNumber << " Variation: " << variation.Data() << endl;
+   cout << "Performing Track Matched timing fits for File: " << fileName.Data() << " Run: " << runNumber << " Variation: " << variation.Data() << endl;
 
    ExtractTrackBasedTimingNS::thisFile = TFile::Open( fileName , "UPDATE");
    if (ExtractTrackBasedTimingNS::thisFile == 0) {
@@ -573,7 +573,7 @@ void ExtractTrackBasedTiming(TString fileName = "hd_root.root", int runNumber = 
    if(this1DHist != NULL){
       //Landau
       Double_t maximum = this1DHist->GetBinCenter(this1DHist->GetMaximumBin());
-      TFitResultPtr fr = this1DHist->Fit("landau", "S", "", maximum - 5, maximum + 5);
+      TFitResultPtr fr = this1DHist->Fit("landau", "S", "", maximum - 2.5, maximum + 4);
       float MPV = fr->Parameter(1);
       outFile.open(prefix + "fdc_base_time.txt");
       if (verbose) {
