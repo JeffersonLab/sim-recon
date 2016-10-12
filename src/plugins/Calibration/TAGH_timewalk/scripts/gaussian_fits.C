@@ -25,16 +25,17 @@ double GetMode(TH1 *h) {
 }
 void WriteGaussianFitResults(ofstream &fout, TH1 *h, int counter, int ph_bin) {
     TString sep = ",";
-    if (h->GetEntries() < 100.0 || GetMode(h) == 999.0) {
+    double mode = GetMode(h);
+    if (h->GetEntries() < 100.0 || mode == 999.0) {
         if (counter > 0) fout << counter << sep << ph_bin << sep << h->GetEntries() << sep << 0.0 << sep << 0.0 << sep << 0.0 << endl;
         return;
     }
-    double xlow = GetMode(h) - 1.0;
-    double xhigh = GetMode(h) + 1.0;
+    double xlow = mode - 1.0;
+    double xhigh = mode + 1.0;
     RooRealVar x("TDC time difference","TDC time difference [ns]",xlow,xhigh);
     RooDataHist data("data","data",RooArgList(x),h);
     // model: add a narrow and wide gaussian with same mean
-    RooRealVar mean("mean","mean",GetMode(h),xlow,xhigh);
+    RooRealVar mean("mean","mean",mode,xlow,xhigh);
     RooRealVar sigma1("sigma1","sigma1",0.2,0.01,0.4);//0.01,0.6
     RooGaussian gauss1("gauss1","gauss1",x,mean,sigma1);
     RooRealVar sigma2("sigma2","sigma2",0.7,0.3,3.0);//0.3,2.5
