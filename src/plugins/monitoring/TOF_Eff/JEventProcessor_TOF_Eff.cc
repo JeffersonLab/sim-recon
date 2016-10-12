@@ -219,7 +219,7 @@ jerror_t JEventProcessor_TOF_Eff::evnt(jana::JEventLoop* locEventLoop, uint64_t 
 
 			//Need PID for beta-dependence, but cannot use TOF info: would bias
 			if(!Cut_FCALTiming(locChargedTrackHypothesis, locParticleID, locEventRFBunch))
-				continue; //also requires match to FCAL: no need for separate check
+				continue;
 
 			const DTrackTimeBased* locTrackTimeBased = NULL;
 			locChargedTrackHypothesis->GetSingle(locTrackTimeBased);
@@ -330,7 +330,8 @@ jerror_t JEventProcessor_TOF_Eff::evnt(jana::JEventLoop* locEventLoop, uint64_t 
 		japp->RootFillUnLock(this); //RELEASE ROOT FILL LOCK
 
 		//TRACK
-		dTreeFillData.Fill_Single<Int_t>("PID_PDG", PDGtype(locChargedTrackHypothesis->PID()));
+		Particle_t locPID = (locChargedTrackHypothesis->Get_FCALShowerMatchParams() != NULL) ? locChargedTrackHypothesis->PID() : Unknown;
+		dTreeFillData.Fill_Single<Int_t>("PID_PDG", PDGtype(locPID));
 		dTreeFillData.Fill_Single<Float_t>("TrackVertexZ", locChargedTrackHypothesis->position().Z());
 		dTreeFillData.Fill_Single<UInt_t>("TrackCDCRings", locTrackTimeBased->dCDCRings);
 		dTreeFillData.Fill_Single<UInt_t>("TrackFDCPlanes", locTrackTimeBased->dFDCPlanes);
@@ -388,7 +389,7 @@ bool JEventProcessor_TOF_Eff::Cut_FCALTiming(const DChargedTrackHypothesis* locC
 {
 	const DFCALShowerMatchParams* locFCALShowerMatchParams = locChargedTrackHypothesis->Get_FCALShowerMatchParams();
 	if(locFCALShowerMatchParams == NULL)
-		return false;
+		return true; //don't require FCAL hit: limits reach of study
 
 	double locStartTime = locParticleID->Calc_PropagatedRFTime(locChargedTrackHypothesis, locEventRFBunch);
 	const DFCALShower* locFCALShower = locFCALShowerMatchParams->dFCALShower;
