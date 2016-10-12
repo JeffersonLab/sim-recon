@@ -123,9 +123,9 @@ jerror_t JEventProcessor_TOF_Eff::init(void)
 		//Nearest hit: //0 for none, 1 - 44 for both ends //101 - 144 for North/Top only, 201 - 244 for South/Bottom only (only = above threshold)
 		//Nearest: No time cut (yet?)
 	locTreeBranchRegister.Register_Single<UChar_t>("NearestTOFHit_Horizontal");
-	locTreeBranchRegister.Register_Single<Float_t>("HorizontalTOFHitDeltaY");
+	locTreeBranchRegister.Register_Single<Float_t>("HorizontalTOFHitDistance");
 	locTreeBranchRegister.Register_Single<UChar_t>("NearestTOFHit_Vertical");
-	locTreeBranchRegister.Register_Single<Float_t>("VerticalTOFHitDeltaX");
+	locTreeBranchRegister.Register_Single<Float_t>("VerticalTOFHitDistance");
 
 	//SEARCH TOF POINT //nearest: must be in time: PID:OUT_OF_TIME_CUT
 	locTreeBranchRegister.Register_Single<Float_t>("NearestTOFPointDeltaX");
@@ -347,9 +347,9 @@ jerror_t JEventProcessor_TOF_Eff::evnt(jana::JEventLoop* locEventLoop, uint64_t 
 
 		//SEARCH TOF PADDLE
 		dTreeFillData.Fill_Single<UChar_t>("NearestTOFHit_Horizontal", locNearestTOFHitHorizontal);
-		dTreeFillData.Fill_Single<Float_t>("HorizontalTOFHitDeltaY", locBestPaddleDeltaY);
+		dTreeFillData.Fill_Single<Float_t>("HorizontalTOFHitDistance", locBestPaddleDistance_Horizontal);
 		dTreeFillData.Fill_Single<UChar_t>("NearestTOFHit_Vertical", locNearestTOFHitVertical);
-		dTreeFillData.Fill_Single<Float_t>("VerticalTOFHitDeltaX", locBestPaddleDeltaX);
+		dTreeFillData.Fill_Single<Float_t>("VerticalTOFHitDistance", locBestPaddleDistance_Vertical);
 
 		//SEARCH TOF POINT
 		dTreeFillData.Fill_Single<Float_t>("NearestTOFPointDeltaX", locBestPointDeltaX);
