@@ -1357,9 +1357,9 @@ void DHistogramAction_DetectorMatching::Fill_MatchingHists(JEventLoop* locEventL
 			if(locDetectorMatches->Get_IsMatchedToDetector(locTrack, SYS_FCAL))
 			{
 				dHistMap_PVsTheta_HasHit[SYS_FCAL][locIsTimeBased]->Fill(locTheta, locP);
-				if(locP > 0.5)
+				if(locP > 1.0)
 					dHistMap_PhiVsTheta_HasHit[SYS_FCAL][locIsTimeBased]->Fill(locTheta, locPhi);
-				if((locP > 0.5) && (dProjectedFCALRowColumnMap.find(locTrack) != dProjectedFCALRowColumnMap.end()))
+				if((locP > 1.0) && (dProjectedFCALRowColumnMap.find(locTrack) != dProjectedFCALRowColumnMap.end()))
 				{
 					pair<float, float>& locPositionPair = dProjectedFCALXYMap[locTrack];
 					dHistMap_TrackFCALYVsX_HasHit[locIsTimeBased]->Fill(locPositionPair.first, locPositionPair.second);
@@ -1370,9 +1370,9 @@ void DHistogramAction_DetectorMatching::Fill_MatchingHists(JEventLoop* locEventL
 			else
 			{
 				dHistMap_PVsTheta_NoHit[SYS_FCAL][locIsTimeBased]->Fill(locTheta, locP);
-				if(locP > 0.5)
+				if(locP > 1.0)
 					dHistMap_PhiVsTheta_NoHit[SYS_FCAL][locIsTimeBased]->Fill(locTheta, locPhi);
-				if((locP > 0.5) && (dProjectedFCALRowColumnMap.find(locTrack) != dProjectedFCALRowColumnMap.end()))
+				if((locP > 1.0) && (dProjectedFCALRowColumnMap.find(locTrack) != dProjectedFCALRowColumnMap.end()))
 				{
 					pair<float, float>& locPositionPair = dProjectedFCALXYMap[locTrack];
 					dHistMap_TrackFCALYVsX_NoHit[locIsTimeBased]->Fill(locPositionPair.first, locPositionPair.second);
@@ -1382,7 +1382,7 @@ void DHistogramAction_DetectorMatching::Fill_MatchingHists(JEventLoop* locEventL
 			}
 
 			//TOF Paddle
-			if((locP > 0.5) && (dProjectedTOFXYMap.find(locTrack) != dProjectedTOFXYMap.end()))
+			if((locP > 1.0) && (dProjectedTOFXYMap.find(locTrack) != dProjectedTOFXYMap.end()))
 			{
 				pair<float, float>& locPositionPair = dProjectedTOFXYMap[locTrack];
 				pair<int, int>& locPaddlePair = dProjectedTOF2DPaddlesMap[locTrack]; //vertical, horizontal
@@ -1416,9 +1416,9 @@ void DHistogramAction_DetectorMatching::Fill_MatchingHists(JEventLoop* locEventL
 			if(locDetectorMatches->Get_IsMatchedToDetector(locTrack, SYS_TOF))
 			{
 				dHistMap_PVsTheta_HasHit[SYS_TOF][locIsTimeBased]->Fill(locTheta, locP);
-				if(locP > 0.5)
+				if(locP > 1.0)
 					dHistMap_PhiVsTheta_HasHit[SYS_TOF][locIsTimeBased]->Fill(locTheta, locPhi);
-				if((locP > 0.5) && (dProjectedTOFXYMap.find(locTrack) != dProjectedTOFXYMap.end()))
+				if((locP > 1.0) && (dProjectedTOFXYMap.find(locTrack) != dProjectedTOFXYMap.end()))
 				{
 					pair<float, float>& locPositionPair = dProjectedTOFXYMap[locTrack];
 					dHistMap_TrackTOFYVsX_HasHit[locIsTimeBased]->Fill(locPositionPair.first, locPositionPair.second);
@@ -1429,9 +1429,9 @@ void DHistogramAction_DetectorMatching::Fill_MatchingHists(JEventLoop* locEventL
 			else
 			{
 				dHistMap_PVsTheta_NoHit[SYS_TOF][locIsTimeBased]->Fill(locTheta, locP);
-				if(locP > 0.5)
+				if(locP > 1.0)
 					dHistMap_PhiVsTheta_NoHit[SYS_TOF][locIsTimeBased]->Fill(locTheta, locPhi);
-				if((locP > 0.5) && (dProjectedTOFXYMap.find(locTrack) != dProjectedTOFXYMap.end()))
+				if((locP > 1.0) && (dProjectedTOFXYMap.find(locTrack) != dProjectedTOFXYMap.end()))
 				{
 					pair<float, float>& locPositionPair = dProjectedTOFXYMap[locTrack];
 					dHistMap_TrackTOFYVsX_NoHit[locIsTimeBased]->Fill(locPositionPair.first, locPositionPair.second);

@@ -67,7 +67,7 @@ jerror_t JEventProcessor_FCAL_Hadronic_Eff::init(void)
 	DTreeBranchRegister locTreeBranchRegister;
 
 	//TRACK
-	locTreeBranchRegister.Register_Single<Int_t>("PID_PDG"); //gives charge, mass, beta
+	locTreeBranchRegister.Register_Single<Int_t>("PID_PDG"); //gives charge, mass, beta //is unknown if no TOF hit
 	locTreeBranchRegister.Register_Single<Float_t>("TrackVertexZ");
 	locTreeBranchRegister.Register_Single<TVector3>("TrackP3");
 	locTreeBranchRegister.Register_Single<UInt_t>("TrackCDCRings"); //rings correspond to bits (1 -> 28)

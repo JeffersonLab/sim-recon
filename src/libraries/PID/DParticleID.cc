@@ -1671,11 +1671,11 @@ const DTOFPaddleHit* DParticleID::Get_ClosestTOFPaddleHit_Horizontal(const DRefe
 				continue;
 			if(fabs(locDeltaY) > fabs(locBestDeltaY))
 				continue; //no info on delta-x, so make sure not unfair comparison
-			locBestDistance = locDeltaY;
+			locBestDistance = fabs(locDeltaY);
 		}
 		else
 		{
-			if(fabs(locDistance) > fabs(locBestDistance))
+			if(locDistance > locBestDistance)
 				continue;
 			locBestDistance = locDistance;
 		}
@@ -1749,11 +1749,11 @@ const DTOFPaddleHit* DParticleID::Get_ClosestTOFPaddleHit_Vertical(const DRefere
 				continue;
 			if(fabs(locDeltaX) > fabs(locBestDeltaX))
 				continue; //no info on delta-x, so make sure not unfair comparison
-			locBestDistance = locDeltaX;
+			locBestDistance = fabs(locDeltaX);
 		}
 		else
 		{
-			if(fabs(locDistance) > fabs(locBestDistance))
+			if(locDistance > locBestDistance)
 				continue;
 			locBestDistance = locDistance;
 		}
