@@ -42,6 +42,7 @@ class DBCALDigiHit:public JObject{
 			AddString(items, "sector", "%d", sector);
 			AddString(items, "end", "%s", end==0 ? "upstream":"downstream" );
 			AddString(items, "pulse_integral", "%d", pulse_integral);
+			AddString(items, "pulse_peak", "%d", pulse_peak);
 			AddString(items, "pulse_time", "%d", pulse_time);
 			AddString(items, "pedestal", "%d", pedestal);
 			AddString(items, "QF", "%d", QF);

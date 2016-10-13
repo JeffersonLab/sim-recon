@@ -35,6 +35,7 @@ class DTOFDigiHit:public jana::JObject{
 			AddString(items, "plane", "%d", plane);
 			AddString(items, "end", "%d", end);
 			AddString(items, "pulse_integral", "%d", pulse_integral);
+			AddString(items, "pulse_peak", "%d", pulse_peak);
 			AddString(items, "pulse_time", "%d", pulse_time);
 			AddString(items, "pedestal", "%d", pedestal);
 			AddString(items, "QF", "%d", QF);
