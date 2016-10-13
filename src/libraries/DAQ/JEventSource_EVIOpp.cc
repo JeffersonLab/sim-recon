@@ -542,6 +542,12 @@ void JEventSource_EVIOpp::LinkBORassociations(DParsedEvent *pe)
 	/// This is called from GetObjects() which is called from
 	/// one of the processing threads.
 	
+	// n.b. the values of nsamples_integral and nsamples_pedestal
+	// in the Df250PulseData objects that were copied from the 
+	// config objcts will be overwritten here with values from
+	// the BOR record (if available). f125 and older f250 data
+	// doesn't do this because nped is not available there.
+	//
 	// n.b. all of the BORConfig object vectors will already
 	// be sorted by rocid, then slot when the data was parsed.
 	// The other hit objects are also already sorted (in
@@ -551,6 +557,7 @@ void JEventSource_EVIOpp::LinkBORassociations(DParsedEvent *pe)
 
 	LinkModule(borptrs->vDf250BORConfig, pe->vDf250WindowRawData);
 	LinkModule(borptrs->vDf250BORConfig, pe->vDf250PulseIntegral);
+	LinkModuleBORSamplesCopy(borptrs->vDf250BORConfig, pe->vDf250PulseData);
 
 	LinkModule(borptrs->vDf125BORConfig, pe->vDf125WindowRawData);
 	LinkModule(borptrs->vDf125BORConfig, pe->vDf125PulseIntegral);

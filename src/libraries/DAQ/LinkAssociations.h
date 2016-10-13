@@ -95,6 +95,11 @@ template<class T, class U>
 inline void LinkModule(vector<T*> &a, vector<U*> &b)
 { MatchModuleF(a, b, [](T *a, U *b){b->AddAssociatedObject(a);}); }
 
+// LinkModuleBORSamplesCopy
+template<class T, class U>
+inline void LinkModuleBORSamplesCopy(vector<T*> &a, vector<U*> &b)
+{ MatchModuleF(a, b, [](T *a, U *b){b->AddAssociatedObject(a); b->nsamples_integral = a->adc_nsa+a->adc_nsb; b->nsamples_pedestal = a->nped;}); }
+
 // LinkChannel
 template<class T, class U>
 inline void LinkChannel(vector<T*> &a, vector<U*> &b)
