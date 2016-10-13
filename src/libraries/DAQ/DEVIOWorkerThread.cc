@@ -1876,7 +1876,7 @@ void DEVIOWorkerThread::LinkAllAssociations(void)
 
 		//----------------- Sort hit objects
 
-		// fADC250
+		// fADC250 (n.b. Df250PulseData values overwritten in JEventSource_EVIOpp::LinkBORassociations)
 		if(pe->vDf250PulseData.size()>1    ) sort(pe->vDf250PulseData.begin(),     pe->vDf250PulseData.end(),     SortByPulseNumber<Df250PulseData> );
 		if(pe->vDf250PulseIntegral.size()>1) sort(pe->vDf250PulseIntegral.begin(), pe->vDf250PulseIntegral.end(), SortByPulseNumber<Df250PulseIntegral> );
 		if(pe->vDf250PulseTime.size()>1    ) sort(pe->vDf250PulseTime.begin(),     pe->vDf250PulseTime.end(),     SortByPulseNumber<Df250PulseTime>     );
