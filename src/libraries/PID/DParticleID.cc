@@ -106,6 +106,15 @@ DParticleID::DParticleID(JEventLoop *loop)
 	FCAL_CUT_PAR2=0.0;
 	gPARMS->SetDefaultParameter("FCAL:CUT_PAR2",FCAL_CUT_PAR2);
 
+	TOF_CUT_PAR1 = 1.1;
+	gPARMS->SetDefaultParameter("TOF:CUT_PAR1",TOF_CUT_PAR1);
+
+	TOF_CUT_PAR2 = 1.5;
+	gPARMS->SetDefaultParameter("TOF:CUT_PAR2",TOF_CUT_PAR2);
+
+	TOF_CUT_PAR3 = 6.15;
+	gPARMS->SetDefaultParameter("TOF:CUT_PAR3",TOF_CUT_PAR3);
+
 	BCAL_Z_CUT=50.;
 	gPARMS->SetDefaultParameter("BCAL:Z_CUT",BCAL_Z_CUT);
 
@@ -685,8 +694,10 @@ bool DParticleID::MatchToTOF(const DKinematicData* locTrack, const DReferenceTra
 
 	//If the position in one dimension is not well-defined, compare distance only in the other direction
 	//Otherwise, cut in R
-	double locMatchCut_1D = 6.15;
-	double locMatchCut_2D = 6.15;
+	//y = e^(-A*x + B) + 6
+	double locP = proj_mom.Mag();
+	double locMatchCut_2D = exp(-1.0*TOF_CUT_PAR1*locP + TOF_CUT_PAR2) + TOF_CUT_PAR3;
+	double locMatchCut_1D = locMatchCut_2D;
 
 	double locDeltaX = locTOFPoint->Is_XPositionWellDefined() ? tof_pos.X() - proj_pos.X() : 999.0;
 	double locDeltaY = locTOFPoint->Is_YPositionWellDefined() ? tof_pos.Y() - proj_pos.Y() : 999.0;
@@ -1599,12 +1610,11 @@ const DTOFPoint* DParticleID::Get_ClosestToTrack_TOFPoint(const DKinematicData* 
 	return locClosestTOFPoint;
 }
 
-const DTOFPaddleHit* DParticleID::Get_ClosestTOFPaddleHit_Horizontal(const DReferenceTrajectory* locReferenceTrajectory, const vector<const DTOFPaddleHit*>& locTOFPaddleHits, double locInputStartTime, double& locBestDeltaY) const
+const DTOFPaddleHit* DParticleID::Get_ClosestTOFPaddleHit_Horizontal(const DReferenceTrajectory* locReferenceTrajectory, const vector<const DTOFPaddleHit*>& locTOFPaddleHits, double locInputStartTime, double& locBestDeltaY, double& locBestDistance) const
 {
 	if(locReferenceTrajectory == nullptr)
 		return nullptr;
 
-	// Evaluate matching solely by physical geometry of the paddle: NOT the distance along the paddle of the hit
 	DVector3 tof_pos(0.0, 0.0, dTOFGeometry->CenterHPlane); //a point on the TOF plane
 	DVector3 norm(0.0, 0.0, 1.0); //normal vector to TOF plane
 	DVector3 proj_pos, proj_mom;
@@ -1613,6 +1623,7 @@ const DTOFPaddleHit* DParticleID::Get_ClosestTOFPaddleHit_Horizontal(const DRefe
 		return nullptr;
 
 	const DTOFPaddleHit* locClosestPaddleHit = nullptr;
+	locBestDistance = 999.0;
 	locBestDeltaY = 999.0;
 	for(auto& locTOFPaddleHit : locTOFPaddleHits)
 	{
@@ -1623,11 +1634,6 @@ const DTOFPaddleHit* DParticleID::Get_ClosestTOFPaddleHit_Horizontal(const DRefe
 		bool locSouthIsGoodHitFlag = (locTOFPaddleHit->E_south > TOF_E_THRESHOLD);
 		if(!locNorthIsGoodHitFlag && !locSouthIsGoodHitFlag)
 			continue; //hit is junk
-
-		// Check geometric distance, if better than before
-		double locDeltaY = dTOFGeometry->bar2y(locTOFPaddleHit->bar) - proj_pos.Y();
-		if(fabs(locDeltaY) > fabs(locBestDeltaY))
-			continue;
 
 		// Check that the hit is not out of time with respect to the track
 
@@ -1654,6 +1660,26 @@ const DTOFPaddleHit* DParticleID::Get_ClosestTOFPaddleHit_Horizontal(const DRefe
 		if(fabs(locDeltaT) > OUT_OF_TIME_CUT)
 			continue;
 
+		// Check geometric distance, continue only if better than before
+		double locDeltaY = dTOFGeometry->bar2y(locTOFPaddleHit->bar) - proj_pos.Y();
+		double locDeltaX = locTOFPaddleHit->pos - proj_pos.X();
+		double locDistance = sqrt(locDeltaY*locDeltaY + locDeltaX*locDeltaX);
+		if(locNorthIsGoodHitFlag != locSouthIsGoodHitFlag)
+		{
+			//no position information along paddle: use delta-y cut only
+			if(fabs(locDeltaY) > fabs(locBestDistance))
+				continue;
+			if(fabs(locDeltaY) > fabs(locBestDeltaY))
+				continue; //no info on delta-x, so make sure not unfair comparison
+			locBestDistance = fabs(locDeltaY);
+		}
+		else
+		{
+			if(locDistance > locBestDistance)
+				continue;
+			locBestDistance = locDistance;
+		}
+
 		locBestDeltaY = locDeltaY;
 		locClosestPaddleHit = locTOFPaddleHit;
 	}
@@ -1661,7 +1687,7 @@ const DTOFPaddleHit* DParticleID::Get_ClosestTOFPaddleHit_Horizontal(const DRefe
 	return locClosestPaddleHit;
 }
 
-const DTOFPaddleHit* DParticleID::Get_ClosestTOFPaddleHit_Vertical(const DReferenceTrajectory* locReferenceTrajectory, const vector<const DTOFPaddleHit*>& locTOFPaddleHits, double locInputStartTime, double& locBestDeltaX) const
+const DTOFPaddleHit* DParticleID::Get_ClosestTOFPaddleHit_Vertical(const DReferenceTrajectory* locReferenceTrajectory, const vector<const DTOFPaddleHit*>& locTOFPaddleHits, double locInputStartTime, double& locBestDeltaX, double& locBestDistance) const
 {
 	if(locReferenceTrajectory == nullptr)
 		return nullptr;
@@ -1675,6 +1701,7 @@ const DTOFPaddleHit* DParticleID::Get_ClosestTOFPaddleHit_Vertical(const DRefere
 		return nullptr;
 
 	const DTOFPaddleHit* locClosestPaddleHit = nullptr;
+	locBestDistance = 999.0;
 	locBestDeltaX = 999.0;
 	for(auto& locTOFPaddleHit : locTOFPaddleHits)
 	{
@@ -1685,11 +1712,6 @@ const DTOFPaddleHit* DParticleID::Get_ClosestTOFPaddleHit_Vertical(const DRefere
 		bool locSouthIsGoodHitFlag = (locTOFPaddleHit->E_south > TOF_E_THRESHOLD);
 		if(!locNorthIsGoodHitFlag && !locSouthIsGoodHitFlag)
 			continue; //hit is junk
-
-		// Check geometric distance, if better than before
-		double locDeltaX = dTOFGeometry->bar2y(locTOFPaddleHit->bar) - proj_pos.X();
-		if(fabs(locDeltaX) > fabs(locBestDeltaX))
-			continue;
 
 		// Check that the hit is not out of time with respect to the track
 
@@ -1715,6 +1737,26 @@ const DTOFPaddleHit* DParticleID::Get_ClosestTOFPaddleHit_Vertical(const DRefere
 		double locDeltaT = locHitTime - locFlightTime - locInputStartTime;
 		if(fabs(locDeltaT) > OUT_OF_TIME_CUT)
 			continue;
+
+		// Check geometric distance, continue only if better than before
+		double locDeltaX = dTOFGeometry->bar2y(locTOFPaddleHit->bar) - proj_pos.X();
+		double locDeltaY = locTOFPaddleHit->pos - proj_pos.Y();
+		double locDistance = sqrt(locDeltaY*locDeltaY + locDeltaX*locDeltaX);
+		if(locNorthIsGoodHitFlag != locSouthIsGoodHitFlag)
+		{
+			//no position information along paddle: use delta-y cut only
+			if(fabs(locDeltaX) > fabs(locBestDistance))
+				continue;
+			if(fabs(locDeltaX) > fabs(locBestDeltaX))
+				continue; //no info on delta-x, so make sure not unfair comparison
+			locBestDistance = fabs(locDeltaX);
+		}
+		else
+		{
+			if(locDistance > locBestDistance)
+				continue;
+			locBestDistance = locDistance;
+		}
 
 		locBestDeltaX = locDeltaX;
 		locClosestPaddleHit = locTOFPaddleHit;

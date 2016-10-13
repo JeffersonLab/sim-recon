@@ -293,6 +293,28 @@ public:
 			AddString(items, "p(GeV/c)", "%2.3f", momentum().Mag());
 			AddString(items, "theta(deg)", "%2.3f", momentum().Theta()*180.0/M_PI);
 			AddString(items, "phi(deg)", "%2.3f", momentum().Phi()*180.0/M_PI);
+/*
+			AddString(items, "v_px", "%2.3f", errorMatrix()(0, 0));
+			AddString(items, "v_py", "%2.3f", errorMatrix()(1, 1));
+			AddString(items, "v_pz", "%2.3f", errorMatrix()(2, 2));
+			AddString(items, "v_x", "%2.3f", errorMatrix()(3, 3));
+			AddString(items, "v_y", "%2.3f", errorMatrix()(4, 4));
+			AddString(items, "v_z", "%2.3f", errorMatrix()(5, 5));
+			AddString(items, "v_t", "%2.3f", errorMatrix()(6, 6));
+			AddString(items, "v_pxpy", "%2.3f", errorMatrix()(0, 1));
+			AddString(items, "v_pypx", "%2.3f", errorMatrix()(1, 0));
+			AddString(items, "v_xy", "%2.3f", errorMatrix()(3, 4));
+			AddString(items, "v_yx", "%2.3f", errorMatrix()(4, 3));
+*/
+			AddString(items, "v_00", "%2.3f", TrackingErrorMatrix()(0, 0));
+			AddString(items, "v_11", "%2.3f", TrackingErrorMatrix()(1, 1));
+			AddString(items, "v_22", "%2.3f", TrackingErrorMatrix()(2, 2));
+			AddString(items, "v_33", "%2.3f", TrackingErrorMatrix()(3, 3));
+			AddString(items, "v_44", "%2.3f", TrackingErrorMatrix()(4, 4));
+			AddString(items, "v_01", "%2.3f", TrackingErrorMatrix()(0, 1));
+			AddString(items, "v_10", "%2.3f", TrackingErrorMatrix()(1, 0));
+			AddString(items, "v_34", "%2.3f", TrackingErrorMatrix()(3, 4));
+			AddString(items, "v_43", "%2.3f", TrackingErrorMatrix()(4, 3));
 		}
 
 protected:

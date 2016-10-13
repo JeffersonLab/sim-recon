@@ -67,7 +67,7 @@ jerror_t JEventProcessor_FCAL_Hadronic_Eff::init(void)
 	DTreeBranchRegister locTreeBranchRegister;
 
 	//TRACK
-	locTreeBranchRegister.Register_Single<Int_t>("PID_PDG"); //gives charge, mass, beta
+	locTreeBranchRegister.Register_Single<Int_t>("PID_PDG"); //gives charge, mass, beta //is unknown if no TOF hit
 	locTreeBranchRegister.Register_Single<Float_t>("TrackVertexZ");
 	locTreeBranchRegister.Register_Single<TVector3>("TrackP3");
 	locTreeBranchRegister.Register_Single<UInt_t>("TrackCDCRings"); //rings correspond to bits (1 -> 28)
@@ -165,7 +165,7 @@ jerror_t JEventProcessor_FCAL_Hadronic_Eff::evnt(jana::JEventLoop* locEventLoop,
 
 			//Need PID for beta-dependence, but cannot use FCAL info: would bias
 			if(!Cut_TOFTiming(locChargedTrackHypothesis))
-				continue; //also requires match to TOF: no need for separate check
+				continue;
 
 			const DTrackTimeBased* locTrackTimeBased = NULL;
 			locChargedTrackHypothesis->GetSingle(locTrackTimeBased);
@@ -236,7 +236,8 @@ jerror_t JEventProcessor_FCAL_Hadronic_Eff::evnt(jana::JEventLoop* locEventLoop,
 		japp->RootFillUnLock(this); //RELEASE ROOT FILL LOCK
 
 		//TRACK
-		dTreeFillData.Fill_Single<Int_t>("PID_PDG", PDGtype(locChargedTrackHypothesis->PID()));
+		Particle_t locPID = (locChargedTrackHypothesis->t1_detector() == SYS_TOF) ? locChargedTrackHypothesis->PID() : Unknown;
+		dTreeFillData.Fill_Single<Int_t>("PID_PDG", PDGtype(locPID));
 		dTreeFillData.Fill_Single<Float_t>("TrackVertexZ", locChargedTrackHypothesis->position().Z());
 		dTreeFillData.Fill_Single<UInt_t>("TrackCDCRings", locTrackTimeBased->dCDCRings);
 		dTreeFillData.Fill_Single<UInt_t>("TrackFDCPlanes", locTrackTimeBased->dFDCPlanes);
@@ -293,7 +294,7 @@ double JEventProcessor_FCAL_Hadronic_Eff::Calc_FCALTiming(const DChargedTrackHyp
 bool JEventProcessor_FCAL_Hadronic_Eff::Cut_TOFTiming(const DChargedTrackHypothesis* locChargedTrackHypothesis)
 {
 	if(locChargedTrackHypothesis->t1_detector() != SYS_TOF)
-		return false;
+		return true; //don't require TOF hit: limits reach of study
 
 	double locDeltaT = locChargedTrackHypothesis->time() - locChargedTrackHypothesis->t0();
 	return (fabs(locDeltaT) <= dMaxTOFDeltaT);

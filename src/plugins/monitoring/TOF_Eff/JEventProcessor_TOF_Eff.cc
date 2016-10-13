@@ -106,7 +106,7 @@ jerror_t JEventProcessor_TOF_Eff::init(void)
 	DTreeBranchRegister locTreeBranchRegister;
 
 	//TRACK
-	locTreeBranchRegister.Register_Single<Int_t>("PID_PDG"); //gives charge, mass, beta
+	locTreeBranchRegister.Register_Single<Int_t>("PID_PDG"); //gives charge, mass, beta //is unknown if no FCAL hit
 	locTreeBranchRegister.Register_Single<Float_t>("TrackVertexZ");
 	locTreeBranchRegister.Register_Single<TVector3>("TrackP3");
 	locTreeBranchRegister.Register_Single<UInt_t>("TrackCDCRings"); //rings correspond to bits (1 -> 28)
@@ -123,9 +123,9 @@ jerror_t JEventProcessor_TOF_Eff::init(void)
 		//Nearest hit: //0 for none, 1 - 44 for both ends //101 - 144 for North/Top only, 201 - 244 for South/Bottom only (only = above threshold)
 		//Nearest: No time cut (yet?)
 	locTreeBranchRegister.Register_Single<UChar_t>("NearestTOFHit_Horizontal");
-	locTreeBranchRegister.Register_Single<Float_t>("HorizontalTOFHitDeltaY");
+	locTreeBranchRegister.Register_Single<Float_t>("HorizontalTOFHitDistance");
 	locTreeBranchRegister.Register_Single<UChar_t>("NearestTOFHit_Vertical");
-	locTreeBranchRegister.Register_Single<Float_t>("VerticalTOFHitDeltaX");
+	locTreeBranchRegister.Register_Single<Float_t>("VerticalTOFHitDistance");
 
 	//SEARCH TOF POINT //nearest: must be in time: PID:OUT_OF_TIME_CUT
 	locTreeBranchRegister.Register_Single<Float_t>("NearestTOFPointDeltaX");
@@ -219,7 +219,7 @@ jerror_t JEventProcessor_TOF_Eff::evnt(jana::JEventLoop* locEventLoop, uint64_t 
 
 			//Need PID for beta-dependence, but cannot use TOF info: would bias
 			if(!Cut_FCALTiming(locChargedTrackHypothesis, locParticleID, locEventRFBunch))
-				continue; //also requires match to FCAL: no need for separate check
+				continue;
 
 			const DTrackTimeBased* locTrackTimeBased = NULL;
 			locChargedTrackHypothesis->GetSingle(locTrackTimeBased);
@@ -265,11 +265,11 @@ jerror_t JEventProcessor_TOF_Eff::evnt(jana::JEventLoop* locEventLoop, uint64_t 
 		const DTOFPoint* locClosestTOFPoint = locParticleID->Get_ClosestToTrack_TOFPoint(locTrackTimeBased, locTOFPoints, locBestPointDeltaX, locBestPointDeltaY);
 
 		//Find closest TOF paddles
-		double locBestPaddleDeltaX = 999.9, locBestPaddleDeltaY = 999.9;
+		double locBestPaddleDeltaX = 999.9, locBestPaddleDeltaY = 999.9, locBestPaddleDistance_Vertical = 999.9, locBestPaddleDistance_Horizontal = 999.9;
 		//first in pair is vertical, second is horizontal // NULL If none / doesn't hit TOF
 		double locStartTime = locParticleID->Calc_PropagatedRFTime(locChargedTrackHypothesis, locEventRFBunch);
-		const DTOFPaddleHit* locClosestTOFPaddleHit_Vertical = locParticleID->Get_ClosestTOFPaddleHit_Vertical(locTrackTimeBased->rt, locTOFPaddleHits, locStartTime, locBestPaddleDeltaX);
-		const DTOFPaddleHit* locClosestTOFPaddleHit_Horizontal = locParticleID->Get_ClosestTOFPaddleHit_Horizontal(locTrackTimeBased->rt, locTOFPaddleHits, locStartTime, locBestPaddleDeltaY);
+		const DTOFPaddleHit* locClosestTOFPaddleHit_Vertical = locParticleID->Get_ClosestTOFPaddleHit_Vertical(locTrackTimeBased->rt, locTOFPaddleHits, locStartTime, locBestPaddleDeltaX, locBestPaddleDistance_Vertical);
+		const DTOFPaddleHit* locClosestTOFPaddleHit_Horizontal = locParticleID->Get_ClosestTOFPaddleHit_Horizontal(locTrackTimeBased->rt, locTOFPaddleHits, locStartTime, locBestPaddleDeltaY, locBestPaddleDistance_Horizontal);
 
 		//Is match to TOF point?
 		const DTOFHitMatchParams* locTOFHitMatchParams = locChargedTrackHypothesis->Get_TOFHitMatchParams();
@@ -330,7 +330,8 @@ jerror_t JEventProcessor_TOF_Eff::evnt(jana::JEventLoop* locEventLoop, uint64_t 
 		japp->RootFillUnLock(this); //RELEASE ROOT FILL LOCK
 
 		//TRACK
-		dTreeFillData.Fill_Single<Int_t>("PID_PDG", PDGtype(locChargedTrackHypothesis->PID()));
+		Particle_t locPID = (locChargedTrackHypothesis->Get_FCALShowerMatchParams() != NULL) ? locChargedTrackHypothesis->PID() : Unknown;
+		dTreeFillData.Fill_Single<Int_t>("PID_PDG", PDGtype(locPID));
 		dTreeFillData.Fill_Single<Float_t>("TrackVertexZ", locChargedTrackHypothesis->position().Z());
 		dTreeFillData.Fill_Single<UInt_t>("TrackCDCRings", locTrackTimeBased->dCDCRings);
 		dTreeFillData.Fill_Single<UInt_t>("TrackFDCPlanes", locTrackTimeBased->dFDCPlanes);
@@ -347,9 +348,9 @@ jerror_t JEventProcessor_TOF_Eff::evnt(jana::JEventLoop* locEventLoop, uint64_t 
 
 		//SEARCH TOF PADDLE
 		dTreeFillData.Fill_Single<UChar_t>("NearestTOFHit_Horizontal", locNearestTOFHitHorizontal);
-		dTreeFillData.Fill_Single<Float_t>("HorizontalTOFHitDeltaY", locBestPaddleDeltaY);
+		dTreeFillData.Fill_Single<Float_t>("HorizontalTOFHitDistance", locBestPaddleDistance_Horizontal);
 		dTreeFillData.Fill_Single<UChar_t>("NearestTOFHit_Vertical", locNearestTOFHitVertical);
-		dTreeFillData.Fill_Single<Float_t>("VerticalTOFHitDeltaX", locBestPaddleDeltaX);
+		dTreeFillData.Fill_Single<Float_t>("VerticalTOFHitDistance", locBestPaddleDistance_Vertical);
 
 		//SEARCH TOF POINT
 		dTreeFillData.Fill_Single<Float_t>("NearestTOFPointDeltaX", locBestPointDeltaX);
@@ -388,7 +389,7 @@ bool JEventProcessor_TOF_Eff::Cut_FCALTiming(const DChargedTrackHypothesis* locC
 {
 	const DFCALShowerMatchParams* locFCALShowerMatchParams = locChargedTrackHypothesis->Get_FCALShowerMatchParams();
 	if(locFCALShowerMatchParams == NULL)
-		return false;
+		return true; //don't require FCAL hit: limits reach of study
 
 	double locStartTime = locParticleID->Calc_PropagatedRFTime(locChargedTrackHypothesis, locEventRFBunch);
 	const DFCALShower* locFCALShower = locFCALShowerMatchParams->dFCALShower;
