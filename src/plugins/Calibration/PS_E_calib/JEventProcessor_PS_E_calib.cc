@@ -19,6 +19,7 @@ using namespace jana;
 
 #include <TAGGER/DTAGMHit.h>
 #include <TAGGER/DTAGHHit.h>
+#include <TAGGER/DTAGMGeometry.h>
 #include <PAIR_SPECTROMETER/DPSCPair.h>
 #include <PAIR_SPECTROMETER/DPSPair.h>
 
@@ -30,7 +31,7 @@ const float Ebl_PS = 2.3;			// Low energy of the PS total energy in GeV
 const float Ebh_PS = 4.9;			// High energy of the PS total energy in GeV
 const float NEb_PS = (Ebh_PS - Ebl_PS)/Ebw_PS;	// Number of energy bins for the PS
 
-const int MAX_COLUMNS = 100;			// Total columns in the TAGM
+const int MAX_COLUMNS = 102;	// Total columns in the TAGM
 const int MAX_COUNTERS = 274;			// Total possible counters in the TAGH
 
 // Declare variables
