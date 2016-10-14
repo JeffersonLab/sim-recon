@@ -23,6 +23,8 @@
 #include "TRACKING/DTrackTimeBased.h"
 #include "PID/DEventRFBunch.h"
 #include "PID/DDetectorMatches.h"
+#include "TRIGGER/DL1Trigger.h"
+#include "DANA/DStatusBits.h"
 
 using namespace jana;
 
@@ -105,6 +107,22 @@ jerror_t JEventProcessor_BCAL_TDC_Timing::brun(JEventLoop *loop, int32_t runnumb
        tdc_timewalk_map[channel] = timewalk_coefficients(c0,c1,c2,a_thresh);
     }
 
+	/// Read in calibration constants
+	vector<double> raw_channel_global_offset;
+    //if(print_messages) jout << "In BCAL_TDC_Timing, loading constants..." << endl;
+	if(loop->GetCalib("/BCAL/channel_global_offset", raw_channel_global_offset))
+		jout << "Error loading /BCAL/channel_global_offset !" << endl;
+
+	japp->RootFillLock(this);
+	TH1D *CCDB_raw_channel_global_offset = new TH1D("CCDB_raw_channel_global_offset","Offsets at time of running;channel;offset",
+													768,0.5,768.5);
+	int counter = 1;
+	for (vector<double>::iterator iter = raw_channel_global_offset.begin(); iter != raw_channel_global_offset.end(); ++iter) {
+		CCDB_raw_channel_global_offset->SetBinContent(counter,*iter);
+		counter++;
+	}
+	japp->RootFillUnLock(this);
+
     return NOERROR;
 }
 
@@ -113,6 +131,27 @@ jerror_t JEventProcessor_BCAL_TDC_Timing::brun(JEventLoop *loop, int32_t runnumb
 //------------------
 jerror_t JEventProcessor_BCAL_TDC_Timing::evnt(JEventLoop *loop, uint64_t eventnumber)
 {
+   // First check that this is not a font panel trigger or no trigger
+   bool goodtrigger=1;
+
+   const DL1Trigger *trig = NULL;
+   try {
+	   loop->GetSingle(trig);
+   } catch (...) {}
+   if (trig) {
+	   if (trig->fp_trig_mask){
+		   goodtrigger=0;
+	   }
+   } else {
+	   // HDDM files are from simulation, so keep them even though they have no trigger
+	   bool locIsHDDMEvent = loop->GetJEvent().GetStatusBit(kSTATUS_HDDM);
+	   if (!locIsHDDMEvent) goodtrigger=0;
+   }
+
+   if (!goodtrigger) {
+	   return NOERROR;
+   }
+
    vector<const DBCALUnifiedHit *> bcalUnifiedHitVector;
    loop->Get(bcalUnifiedHitVector);
 
@@ -146,7 +185,7 @@ jerror_t JEventProcessor_BCAL_TDC_Timing::evnt(JEventLoop *loop, uint64_t eventn
       // The raw information from the DBCALHit and DBCALTDCHit is not corrected for timewalk yet, so we can always plot the before and after.
       if (thisADCHit != NULL && thisTDCHit != NULL){
          char name[200];
-         sprintf(name, "Module %.2i Layer %.2i Sector %.2i", bcalUnifiedHitVector[i]->module, bcalUnifiedHitVector[i]->layer, bcalUnifiedHitVector[i]->sector);
+         sprintf(name, "Module%.2iLayer%.2iSector%.2i", bcalUnifiedHitVector[i]->module, bcalUnifiedHitVector[i]->layer, bcalUnifiedHitVector[i]->sector);
          if (bcalUnifiedHitVector[i]->end == 0){
             Fill2DHistogram ("BCAL_TDC_Timing", "BCAL_Upstream_Timewalk_NoCorrection_E", name,
                   bcalUnifiedHitVector[i]->E, thisTDCHit->t - thisADCHit->t,
@@ -240,7 +279,20 @@ jerror_t JEventProcessor_BCAL_TDC_Timing::evnt(JEventLoop *loop, uint64_t eventn
 
    for (unsigned int iTrack = 0; iTrack < chargedTrackVector.size(); iTrack++){
       // Pick out the best charged track hypothesis for this charged track based only on the Tracking FOM
-      const DChargedTrackHypothesis* bestHypothesis = chargedTrackVector[iTrack]->Get_BestTrackingFOM();
+      // const DChargedTrackHypothesis* bestHypothesis = chargedTrackVector[iTrack]->Get_BestTrackingFOM();
+
+	  // get charge and choose pion hypothesis as most likely
+	  int charge = chargedTrackVector[iTrack]->Get_Charge();
+	  char q[2];
+	  const DChargedTrackHypothesis* bestHypothesis;
+	  if (charge>0) {
+		  bestHypothesis = chargedTrackVector[iTrack]->Get_Hypothesis(PiPlus);
+		  sprintf(q,"+");
+	  } else {
+		  bestHypothesis = chargedTrackVector[iTrack]->Get_Hypothesis(PiMinus);
+		  sprintf(q,"-");
+	  }
+	  if (bestHypothesis == NULL) continue;
 
       // Now from this hypothesis we can get the detector matches to the BCAL
       const DBCALShowerMatchParams* bcalMatch = bestHypothesis->Get_BCALShowerMatchParams();
@@ -251,46 +303,175 @@ jerror_t JEventProcessor_BCAL_TDC_Timing::evnt(JEventLoop *loop, uint64_t eventn
       const DTrackTimeBased *timeBasedTrack = (const DTrackTimeBased *) bcalMatch->dTrack;
       const DReferenceTrajectory *rt = timeBasedTrack->rt;
 
+	  // Use CDC dEdx to help reject protons
+	  double dEdx=1e6*timeBasedTrack->ddEdx_CDC;
+	  double P=timeBasedTrack->momentum().Mag();
+	  bool dEdx_pion = 0;
+	  if (dEdx<2.5) dEdx_pion = 1;
+
       // Get the shower from the match
       const DBCALShower *thisShower = bcalMatch->dBCALShower;
 
-      // Get the points
+	  // Fill histograms based on the shower
+	  char name[200], title[200];
+	  DVector3 proj_pos = rt->GetLastDOCAPoint();
+	  double pathLength, flightTime;
+	  double r_shower = sqrt(thisShower->x*thisShower->x+thisShower->y*thisShower->y);
+	  double t_shower = thisShower->t;
+	  double E_shower = thisShower->E;
+	  if (rt->GetIntersectionWithRadius(r_shower,proj_pos, &pathLength, &flightTime)==NOERROR){
+		  if (thisRFBunch->dNumParticleVotes >= 2 && scMatch != NULL){ // Require good RF bunch and this track match the SC
+			  // We have the flight time to our BCAL point, so we can get the target time
+			  double targetCenterTime = t_shower - flightTime - ((timeBasedTrack->position()).Z() - Z_TARGET) / SPEED_OF_LIGHT;
+			  sprintf(name, "AllShowers_q%s", q);
+			  sprintf(title, "Timing resolution; E [GeV]; t_{Target} - t_{RF} [ns]");
+			  Fill2DHistogram("BCAL_Global_Offsets", "Showers", name,
+							  E_shower, targetCenterTime - thisRFBunch->dTime, title,
+							  1000, 0.0, 5.0, 200, -10, 10);
+			  sprintf(name, "dEdxVsP_q%s", q);
+			  sprintf(title, "CDC dE/dx vs P; P [GeV]; dE/dx [keV/cm]");
+			  Fill2DHistogram("BCAL_Global_Offsets", "Showers_PID", name,
+							  P, dEdx, title,
+							  200, 0.0, 5.0, 200, 0.0, 5.0);
+			  sprintf(name, "deltaTVsdEdx_q%s", q);
+			  sprintf(title, "PID; dE/dx [keV/cm]; t_{Target} - t_{RF} [ns]");
+			  Fill2DHistogram("BCAL_Global_Offsets", "Showers_PID", name,
+							  dEdx, targetCenterTime - thisRFBunch->dTime, title,
+							  200, 0.0, 5.0, 200, -10, 10);
+			  sprintf(name, "EoverPVsP_q%s", q);
+			  sprintf(title, "PID; dE/dx [keV/cm]; t_{Target} - t_{RF} [ns]");
+			  Fill2DHistogram("BCAL_Global_Offsets", "Showers_PID", name,
+							  P, E_shower/P, title,
+							  200, 0.0, 5.0, 200, 0, 2);
+			  if (dEdx_pion) {
+				  sprintf(name, "PionShowers_q%s", q);
+				  sprintf(title, "Timing resolution; E [GeV]; t_{Target} - t_{RF} [ns]");
+				  Fill2DHistogram("BCAL_Global_Offsets", "Showers", name,
+								  E_shower, targetCenterTime - thisRFBunch->dTime, title,
+								  1000, 0.0, 5.0, 200, -10, 10);
+			  }
+		  }
+	  }
+
+
+      // Get the points from the shower
       vector <const DBCALPoint*> pointVector;
       thisShower->Get(pointVector);
 
       // Loop over the points within the cluster
       for (unsigned int iPoint = 0; iPoint < pointVector.size(); iPoint++){
          const DBCALPoint *thisPoint = pointVector[iPoint];
-         if (thisPoint->E() < 0.05) continue; // The timing is known not to be great for very low energy, so only use our best info 
-         DVector3 proj_pos = rt->GetLastDOCAPoint();
-         double pathLength, flightTime;
+         //if (thisPoint->E() < 0.05) continue; // The timing is known not to be great for very low energy, so only use our best info 
          double rpoint = thisPoint->r();
          if (rt->GetIntersectionWithRadius(rpoint,proj_pos, &pathLength, &flightTime)==NOERROR){
             // Now proj_pos contains the projected position of the track at this particular point within the BCAL
             // We can plot the difference of the projected position and the BCAL position as a function of the channel
-            char name[200];
-            sprintf(name , "Module %.2i Layer %.2i Sector %.2i", thisPoint->module(), thisPoint->layer(), thisPoint->sector());
+            sprintf(name , "Module%.2iLayer%.2iSector%.2i", thisPoint->module(), thisPoint->layer(), thisPoint->sector());
             // These results are in slightly different coordinate systems. We want one where the center of the BCAL is z=0
             double localTrackHitZ = proj_pos.z() - DBCALGeometry::GetBCAL_center();
             double localBCALHitZ = thisPoint->z() - DBCALGeometry::GetBCAL_center() + Z_TARGET;
+			Fill2DHistogram ("BCAL_TDC_Offsets", "Z Position", "AllPoints",
+							 localTrackHitZ, localBCALHitZ,
+							 "Z_{point} Vs. Z_{Track}; Z_{Track} [cm]; Z_{Point} [cm]",
+							 500, -250, 250, 500, -250, 250); 
             Fill2DHistogram ("BCAL_TDC_Offsets", "Z Position", name,
                   localTrackHitZ, localBCALHitZ,
                   "Z_{point} Vs. Z_{Track}; Z_{Track} [cm]; Z_{Point} [cm]",
                   500, -250, 250, 500, -250, 250); 
 
             // Now fill some histograms that are useful for aligning the BCAL with the rest of the detector systems
-            if (thisRFBunch->dNumParticleVotes >= 2 && scMatch != NULL){ // Require good RF bunch and this track match the SC
+            if (thisRFBunch->dNumParticleVotes >= 2 && scMatch != NULL && dEdx_pion){ // Require good RF bunch and this track match the SC
                // Get the time of the BCAL point
                double pointTime = thisPoint->t();
                // We have the flight time to our BCAL point, so we can get the target time
                double targetCenterTime = pointTime - flightTime - ((timeBasedTrack->position()).Z() - Z_TARGET) / SPEED_OF_LIGHT;
 
                // Now we just plot the difference in from the RF Time to get out the correction
-               int the_cell = (thisPoint->module() - 1) * 16 + (thisPoint->layer() - 1) * 4 + thisPoint->sector();
-               Fill2DHistogram("BCAL_Global_Offsets", "Target Time", "Target Time Minus RF Time Vs. Cell Number",
-                     the_cell, targetCenterTime - thisRFBunch->dTime,
-                     "Target Time Minus RF Time Vs. Cell Number; CCDB Index; t_{Target} - t_{RF} [ns]",
-                     768, 0.5, 768.5, 200, -10, 10);
+			   if (thisPoint->E() > 0.05) { // The timing is known not to be great for very low energy, so only use our best info 
+				   int the_cell = (thisPoint->module() - 1) * 16 + (thisPoint->layer() - 1) * 4 + thisPoint->sector();
+				   Fill2DHistogram("BCAL_Global_Offsets", "Target Time", "deltaTVsCell",
+								   the_cell, targetCenterTime - thisRFBunch->dTime,
+								   "Target Time Minus RF Time Vs. Cell Number; CCDB Index; t_{Target} - t_{RF} [ns]",
+								   768, 0.5, 768.5, 200, -10, 10);
+				   sprintf(name , "deltaTVsCell_q%s", q);
+				   Fill2DHistogram("BCAL_Global_Offsets", "Target Time", name,
+								   the_cell, targetCenterTime - thisRFBunch->dTime,
+								   "Target Time Minus RF Time Vs. Cell Number; CCDB Index; t_{Target} - t_{RF} [ns]",
+								   768, 0.5, 768.5, 200, -10, 10);
+			   }
+			   // Get the unifiedhits
+			   vector <const DBCALUnifiedHit*> unifiedhitVector;
+			   thisPoint->Get(unifiedhitVector);
+
+			   const DBCALUnifiedHit *thisUnifiedhit1 = unifiedhitVector[0];
+			   const DBCALUnifiedHit *thisUnifiedhit2 = unifiedhitVector[1];
+			   float t1 = thisUnifiedhit1->t;
+			   float t_ADC1 = thisUnifiedhit1->t_ADC;
+			   float t_TDC1 = thisUnifiedhit1->t_TDC;
+			   float t2 = thisUnifiedhit2->t;
+			   float t_ADC2 = thisUnifiedhit2->t_ADC;
+			   float t_TDC2 = thisUnifiedhit2->t_TDC;
+			   char type[10];
+			   sprintf(type,"Mixed");
+			   if (t1 == t_ADC1 && t2 == t_ADC2) sprintf(type,"ADC");
+			   if (t1 == t_TDC1 && t2 == t_TDC2) sprintf(type,"TDC");
+
+			   const DBCALHit * thisADCHit1;
+			   thisUnifiedhit1->GetSingle(thisADCHit1);
+			   const DBCALHit * thisADCHit2;
+			   thisUnifiedhit2->GetSingle(thisADCHit2);
+
+			   float pulse_peak_max = max(thisADCHit1->pulse_peak,thisADCHit2->pulse_peak);
+			   float pulse_peak_min = min(thisADCHit1->pulse_peak,thisADCHit2->pulse_peak);
+			   float E_point = thisPoint->E();
+
+			   sprintf(title, "Timing resolution; E [GeV]; t_{Target} - t_{RF} [ns]");
+			   sprintf(name, "AllHits_%s_q%s",type,q);
+			   Fill2DHistogram("BCAL_Global_Offsets", "Hits_deltaTVsE", name,
+							   E_point, targetCenterTime - thisRFBunch->dTime, title,
+							   1000, 0.0, 2.0, 200, -10, 10);
+
+			   sprintf(title, "Timing resolution; peak [counts]; t_{Target} - t_{RF} [ns]");
+			   sprintf(name, "AllHits_%s_q%s",type,q);
+			   Fill2DHistogram("BCAL_Global_Offsets", "Hits_deltaTVsPPmax", name,
+							   pulse_peak_max, targetCenterTime - thisRFBunch->dTime, title,
+							   1000, 0.0, 4000, 200, -10, 10);
+			   sprintf(name, "AllHits_%s_q%s",type,q);
+			   Fill2DHistogram("BCAL_Global_Offsets", "Hits_deltaTVsPPmin", name,
+							   pulse_peak_min, targetCenterTime - thisRFBunch->dTime, title,
+							   1000, 0.0, 4000, 200, -10, 10);
+
+			   int layer = thisPoint->layer();
+			   sprintf(name, "AllPoints_q%s", q);
+			   sprintf(title, "Timing resolution, all points; E [GeV]; t_{Target} - t_{RF} [ns]");
+			   Fill2DHistogram("BCAL_Global_Offsets", "Points_deltaTVsEnergy", name,
+							   E_point, targetCenterTime - thisRFBunch->dTime, title,
+							   1000, 0.0, 2.0, 200, -10, 10);
+			   sprintf(name, "Layer%i_q%s", layer, q);
+			   sprintf(title, "Timing resolution, layer %i; E [GeV]; t_{Target} - t_{RF} [ns]", layer);
+			   Fill2DHistogram("BCAL_Global_Offsets", "Points_deltaTVsEnergy", name,
+							   E_point, targetCenterTime - thisRFBunch->dTime, title,
+							   1000, 0.0, 2.0, 200, -10, 10);
+			   sprintf(name, "AllPoints_%s_q%s", type, q);
+			   sprintf(title, "Timing resolution, all points; E [GeV]; t_{Target} - t_{RF} [ns]");
+			   Fill2DHistogram("BCAL_Global_Offsets", "Points_deltaTVsEnergy", name,
+							   E_point, targetCenterTime - thisRFBunch->dTime, title,
+							   1000, 0.0, 2.0, 200, -10, 10);
+			   sprintf(name, "Layer%i_%s_q%s", layer, type, q);
+			   sprintf(title, "Timing resolution, layer %i; E [GeV]; t_{Target} - t_{RF} [ns]", layer);
+			   Fill2DHistogram("BCAL_Global_Offsets", "Points_deltaTVsEnergy", name,
+							   E_point, targetCenterTime - thisRFBunch->dTime, title,
+							   1000, 0.0, 2.0, 200, -10, 10);
+			   sprintf(name, "AllPoints_q%s", q);
+			   sprintf(title, "Timing resolution, all points; E [GeV]; t_{Target} - t_{RF} [ns]");
+			   Fill2DHistogram("BCAL_Global_Offsets", "Points_deltaTVsShowerEnergy", name,
+							   E_shower, targetCenterTime - thisRFBunch->dTime, title,
+							   1000, 0.0, 2.0, 200, -10, 10);
+			   sprintf(name, "Layer%i_q%s", layer, q);
+			   sprintf(title, "Timing resolution, layer %i; E [GeV]; t_{Target} - t_{RF} [ns]", layer);
+			   Fill2DHistogram("BCAL_Global_Offsets", "Points_deltaTVsShowerEnergy", name,
+							   E_shower, targetCenterTime - thisRFBunch->dTime, title,
+							   1000, 0.0, 2.0, 200, -10, 10);
             }
          }
       }
