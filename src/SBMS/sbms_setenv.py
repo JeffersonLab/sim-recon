@@ -117,6 +117,18 @@ def mk_setenv_csh(env):
 		str += 'setenv CCDB_CONNECTION ${JANA_CALIB_URL}\n'
 		str += '\n'
 
+	# RCDB
+	rcdb_home = os.getenv('RCDB_HOME')
+	rcdb_conn = os.getenv('RCDB_CONNECTION', 'mysql://rcdb@hallddb.jlab.org/rcdb')
+	if rcdb_home != None:
+		str += '# RCDB\n'
+		str += 'setenv RCDB_HOME %s\n' % rcdb_home
+		str += 'if ( -e $RCDB_HOME/environment.csh ) then\n'
+		str += '  source $RCDB_HOME/environment.csh\n'
+		str += 'endif\n'
+		str += 'setenv RCDB_CONNECTION %s\n' % rcdb_conn
+		str += '\n'
+
 	# ROOT
 	str += '# ROOT\n'
 	str += 'setenv ROOTSYS %s\n' % os.getenv('ROOTSYS', '$HOME/root')
@@ -270,6 +282,18 @@ def mk_setenv_bash(env):
 		str += '  . $CCDB_HOME/environment.bash\n'
 		str += 'fi\n'
 		str += 'export CCDB_CONNECTION=${JANA_CALIB_URL}\n'
+		str += '\n'
+
+	# RCDB
+	rcdb_home = os.getenv('RCDB_HOME')
+	rcdb_conn = os.getenv('RCDB_CONNECTION', 'mysql://rcdb@hallddb.jlab.org/rcdb')
+	if rcdb_home != None:
+		str += '# RCDB\n'
+		str += 'export RCDB_HOME=%s\n' % rcdb_home
+		str += 'if [ -e $RCDB_HOME/environment.bash ]; then\n'
+		str += '  . $RCDB_HOME/environment.bash\n'
+		str += 'fi\n'
+		str += 'export RCDB_CONNECTION=%s\n' % rcdb_conn
 		str += '\n'
 
 	# ROOT
