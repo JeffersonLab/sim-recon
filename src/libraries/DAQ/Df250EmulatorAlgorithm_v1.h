@@ -25,6 +25,11 @@ class Df250EmulatorAlgorithm_v1:public Df250EmulatorAlgorithm{
                              std::vector<Df250PulseTime*> &pt_objs,
                              std::vector<Df250PulsePedestal*> &pp_objs,
                              std::vector<Df250PulseIntegral*> &pi_objs);
+        void EmulateFirmware(const Df250WindowRawData* rawData,
+                             std::vector<Df250PulseData*> &pdatt_objs) {
+            throw JException("Invalid data format being called for Df250EmulatorAlgorithm_v1!");
+        }
+
     protected:
         Df250EmulatorAlgorithm_v1(){};
         // Enables forced use of default values

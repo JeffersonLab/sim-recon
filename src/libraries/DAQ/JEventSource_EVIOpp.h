@@ -166,6 +166,7 @@ class JEventSource_EVIOpp: public jana::JEventSource{
 		
 		uint32_t F250_EMULATION_MODE; // (EmulationModeType)
 		uint32_t F125_EMULATION_MODE; // (EmulationModeType)
+		uint32_t F250_EMULATION_VERSION;
 		Df250EmulatorAlgorithm *f250Emulator;
 		Df125EmulatorAlgorithm *f125Emulator;
 		

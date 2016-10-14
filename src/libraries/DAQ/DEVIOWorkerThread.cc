@@ -1911,6 +1911,7 @@ void DEVIOWorkerThread::LinkAllAssociations(void)
 			LinkChannel(pe->vDf250WindowRawData, pe->vDf250PulseIntegral);
 			LinkChannel(pe->vDf250WindowRawData, pe->vDf250PulseTime);
 			LinkChannel(pe->vDf250WindowRawData, pe->vDf250PulsePedestal);
+			LinkChannel(pe->vDf250WindowRawData, pe->vDf250PulseData);
 		}
 
 		// Connect Df125 window raw data objects
