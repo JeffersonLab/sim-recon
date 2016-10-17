@@ -362,6 +362,8 @@ class DTrackFitterKalmanSIMD: public DTrackFitter{
     
   void ComputeCDCDrift(double dphi,double delta,double t,double B,double &d, 
 		       double &V, double &tcorr);
+  void TransformCovariance(DMatrix5x5 &C);
+
   //const DMagneticFieldMap *bfield; ///< pointer to magnetic field map
   //const DGeometry *geom;
   //const DLorentzDeflections *lorentz_def;// pointer to lorentz correction map

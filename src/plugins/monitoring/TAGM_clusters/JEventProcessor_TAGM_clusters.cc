@@ -12,7 +12,10 @@ using namespace jana;
 #include <TH2.h>
 #include <TDirectory.h>
 
+#include <TAGGER/DTAGMGeometry.h>
 #include <TAGGER/DTAGMHit.h>
+
+const int NCOLUMNS = DTAGMGeometry::kColumnCount;
 
 static TH1D *h_occupancy_b;	// occupancy before merging
 static TH1D *h_occupancy_a;	// occupancy after merging
@@ -62,7 +65,7 @@ jerror_t JEventProcessor_TAGM_clusters::init(void)
    tagmDir->cd();
    // Before
    gDirectory->mkdir("Before")->cd();
-   h_occupancy_b = new TH1D("occupancy_b","Histogram of occupancy",100,1,101);
+   h_occupancy_b = new TH1D("occupancy_b","Histogram of occupancy",NCOLUMNS,1,NCOLUMNS+1);
    h_mult_b = new TH1I("mult_b","Multiplicity before",40,0.,40.);
    h_E_b = new TH1I("E_b","Energy before merging",110,8.2,9.3);
    for (uint32_t i = 0; i < 10; ++i)
@@ -76,7 +79,7 @@ jerror_t JEventProcessor_TAGM_clusters::init(void)
 
    // After
    gDirectory->mkdir("After")->cd();
-   h_occupancy_a = new TH1D("occupancy_a","Histogram of occupancy",100,1,101);
+   h_occupancy_a = new TH1D("occupancy_a","Histogram of occupancy",NCOLUMNS,1,NCOLUMNS+1);
    h_mult_a = new TH1I("mult_a","Multiplicity after",40,0.,40.);
    h_E_a = new TH1I("E_a","Energy after merging",110,8.2,9.3);
 
@@ -142,7 +145,6 @@ jerror_t JEventProcessor_TAGM_clusters::evnt(JEventLoop *loop, uint64_t eventnum
    for (uint32_t i = 0; i < tagm_merged_hits.size(); ++i)
    {
       if (!tagm_merged_hits[i]->has_fADC) continue;
-      //if (tagm_merged_hits[i]->row > 0) continue;
       if (tagm_merged_hits[i]->row > 0) 
       {
          int col = tagm_merged_hits[i]->column;

@@ -41,8 +41,9 @@ void DCustomAction_TrackingEfficiency::Initialize(JEventLoop* locEventLoop)
 	//CHANNEL INFO
 	locBranchRegister.Register_Single<Float_t>("BeamEnergy");
 	locBranchRegister.Register_Single<Float_t>("BeamRFDeltaT");
-	locBranchRegister.Register_Single<Float_t>("MissingMassSquared"); //is measured
-	locBranchRegister.Register_Single<TVector3>("MissingP3"); //is kinfit if kinfit
+	locBranchRegister.Register_Single<TLorentzVector>("MeasuredMissingP4");
+	if(Get_UseKinFitResultsFlag())
+		locBranchRegister.Register_Single<TVector3>("KinFitMissingP3"); //is kinfit if kinfit
 	locBranchRegister.Register_Single<Float_t>("ComboVertexZ");
 	locBranchRegister.Register_Single<UChar_t>("NumExtraTracks");
 
@@ -134,9 +135,11 @@ bool DCustomAction_TrackingEfficiency::Perform_Action(JEventLoop* locEventLoop, 
 	dTreeFillData.Fill_Single<Float_t>("BeamEnergy", locBeamParticle->energy());
 	dTreeFillData.Fill_Single<Float_t>("BeamRFDeltaT", locBeamRFDeltaT);
 	dTreeFillData.Fill_Single<UChar_t>("NumExtraTracks", (UChar_t)locNumExtraTracks);
-	dTreeFillData.Fill_Single<Float_t>("MissingMassSquared", locMeasuredMissingP4.M2());
+	TLorentzVector locTMeasuredMissingP4(locMeasuredMissingP4.Px(), locMeasuredMissingP4.Py(), locMeasuredMissingP4.Pz(), locMeasuredMissingP4.E());
+	dTreeFillData.Fill_Single<TLorentzVector>("MeasuredMissingP4", locTMeasuredMissingP4);
 	TVector3 locTMissingP3(locMissingP3.Px(), locMissingP3.Py(), locMissingP3.Pz());
-	dTreeFillData.Fill_Single<TVector3>("MissingP3", locTMissingP3); //is kinfit if kinfit
+	if(Get_UseKinFitResultsFlag())
+		dTreeFillData.Fill_Single<TVector3>("KinFitMissingP3", locTMissingP3); //is kinfit if kinfit
 	dTreeFillData.Fill_Single<Float_t>("ComboVertexZ", locVertexZ);
 
 	/************************************************* WIRE-BASED TRACKS *************************************************/

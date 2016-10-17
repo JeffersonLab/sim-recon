@@ -22,7 +22,7 @@
 
 // Declare constants
 #if TAGM
-const int MAX_COLUMNS			= 100;	// Number of TAGM channels
+const int MAX_COLUMNS			= 102;	// Number of TAGM channels
 int bad_channels_tm			= 0;	// Number of channels excluded in fit
 double fitResults_tm[MAX_COLUMNS][3]	= {0}; // fit parameters, 3 pol2 params
 double max_E_tm[MAX_COLUMNS]		= {0};	// maximum of fit

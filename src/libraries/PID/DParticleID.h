@@ -124,9 +124,8 @@ class DParticleID:public jana::JObject{
 	const DTOFPoint* Get_ClosestToTrack_TOFPoint(const DKinematicData* locTrack, vector<const DTOFPoint*>& locTOFPoints, double& locBestDeltaX, double& locBestDeltaY) const;
 
 	//first in pair is vertical, second is horizontal // NULL If none / doesn't hit TOF
-	pair<const DTOFPaddleHit*, const DTOFPaddleHit*> Get_ClosestToTrack_TOFPaddles(const DKinematicData* locTrack, vector<const DTOFPaddleHit*>& locTOFPaddleHits, double& locBestDeltaX, double& locBestDeltaY, double locMaxDeltaT = -1.0) const;
-	const DTOFPaddleHit* Get_ClosestTOFPaddleHit_Horizontal(const DReferenceTrajectory* locReferenceTrajectory, const vector<const DTOFPaddleHit*>& locTOFPaddleHits, double locInputStartTime, double& locBestDeltaY) const;
-	const DTOFPaddleHit* Get_ClosestTOFPaddleHit_Vertical(const DReferenceTrajectory* locReferenceTrajectory, const vector<const DTOFPaddleHit*>& locTOFPaddleHits, double locInputStartTime, double& locBestDeltaX) const;
+	const DTOFPaddleHit* Get_ClosestTOFPaddleHit_Horizontal(const DReferenceTrajectory* locReferenceTrajectory, const vector<const DTOFPaddleHit*>& locTOFPaddleHits, double locInputStartTime, double& locBestDeltaY, double& locBestDistance) const;
+	const DTOFPaddleHit* Get_ClosestTOFPaddleHit_Vertical(const DReferenceTrajectory* locReferenceTrajectory, const vector<const DTOFPaddleHit*>& locTOFPaddleHits, double locInputStartTime, double& locBestDeltaX, double& locBestDistance) const;
 
 	double Calc_BCALFlightTimePCorrelation(const DKinematicData* locTrack, DDetectorMatches* locDetectorMatches) const;
 	double Calc_FCALFlightTimePCorrelation(const DKinematicData* locTrack, DDetectorMatches* locDetectorMatches) const;
@@ -162,6 +161,7 @@ class DParticleID:public jana::JObject{
 		double BCAL_Z_CUT,BCAL_PHI_CUT_PAR1,BCAL_PHI_CUT_PAR2;
 		double BCAL_PHI_CUT_PAR3;
 		double FCAL_CUT_PAR1,FCAL_CUT_PAR2;
+		double TOF_CUT_PAR1, TOF_CUT_PAR2, TOF_CUT_PAR3;
 
 		double DELTA_R_FCAL;
 		double C_EFFECTIVE; // start counter light propagation speed

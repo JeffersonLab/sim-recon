@@ -13,7 +13,7 @@ using namespace jana;
 #include "TAGGER/DTAGMHit.h"
 
 // Define constants
-const uint32_t NCOLUMNS = 100;
+const uint32_t NCOLUMNS = 102;
 const uint32_t NROWS = 5;
 
 // Define histograms
