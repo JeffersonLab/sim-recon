@@ -175,11 +175,11 @@ jerror_t DEventProcessor_bcalfcaltof_res_tree::evnt(JEventLoop *loop, uint64_t e
 			dBCALMCComparison->dDeltaT = locDeltaT;
 			dBCALMCComparison->dPathLengthCorrection = locActualPathLengthCorrection;
 
-			dBCALMCComparison->dShowerUncertaintyX = locBCALShower->xErr;
-			dBCALMCComparison->dShowerUncertaintyY = locBCALShower->yErr;
-			dBCALMCComparison->dShowerUncertaintyZ = locBCALShower->zErr;
-			dBCALMCComparison->dShowerUncertaintyE = (locBCALShower->E >= 0.0) ? 0.0445*sqrt( locBCALShower->E ) + 0.009*locBCALShower->E : 1e-3; //from old DPhoton_factory::makeBCalPhoton() function
-			dBCALMCComparison->dShowerUncertaintyT = locBCALShower->tErr;
+			dBCALMCComparison->dShowerUncertaintyX = locBCALShower->xErr();
+			dBCALMCComparison->dShowerUncertaintyY = locBCALShower->yErr();
+			dBCALMCComparison->dShowerUncertaintyZ = locBCALShower->zErr();
+			dBCALMCComparison->dShowerUncertaintyE = locBCALShower->EErr();
+			dBCALMCComparison->dShowerUncertaintyT = locBCALShower->tErr();
 
 			dPluginTree_BCALMCComparison->Fill();
 

@@ -177,7 +177,7 @@ jerror_t DReaction_factory_trackeff_missing::evnt(JEventLoop* locEventLoop, uint
 	// Reject events with large unused shower energy
 	locReaction->Add_AnalysisAction(new DCustomAction_CutExtraShowers(locReaction, 0.5));
 
-	locReaction->Add_AnalysisAction(new DCutAction_BeamEnergy(locReaction, false, 3.0, 6.0));
+//	locReaction->Add_AnalysisAction(new DCutAction_BeamEnergy(locReaction, false, 3.0, 6.0));
 
 	// Hist PID
 	locReaction->Add_AnalysisAction(new DHistogramAction_PID(locReaction));
@@ -270,7 +270,7 @@ jerror_t DReaction_factory_trackeff_missing::evnt(JEventLoop* locEventLoop, uint
 	// Reject events with large unused shower energy
 	locReaction->Add_AnalysisAction(new DCustomAction_CutExtraShowers(locReaction, 0.5));
 
-	locReaction->Add_AnalysisAction(new DCutAction_BeamEnergy(locReaction, false, 3.0, 6.0));
+//	locReaction->Add_AnalysisAction(new DCutAction_BeamEnergy(locReaction, false, 3.0, 6.0));
 
 	// Hist PID
 	locReaction->Add_AnalysisAction(new DHistogramAction_PID(locReaction));
@@ -363,7 +363,7 @@ jerror_t DReaction_factory_trackeff_missing::evnt(JEventLoop* locEventLoop, uint
 	// Reject events with large unused shower energy
 	locReaction->Add_AnalysisAction(new DCustomAction_CutExtraShowers(locReaction, 0.5));
 
-	locReaction->Add_AnalysisAction(new DCutAction_BeamEnergy(locReaction, false, 3.0, 6.0));
+//	locReaction->Add_AnalysisAction(new DCutAction_BeamEnergy(locReaction, false, 3.0, 6.0));
 
 	// Hist PID
 	locReaction->Add_AnalysisAction(new DHistogramAction_PID(locReaction));
@@ -642,7 +642,7 @@ jerror_t DReaction_factory_trackeff_missing::evnt(JEventLoop* locEventLoop, uint
 	// Reject events with large unused shower energy
 	locReaction->Add_AnalysisAction(new DCustomAction_CutExtraShowers(locReaction, 0.5));
 
-	locReaction->Add_AnalysisAction(new DCutAction_BeamEnergy(locReaction, false, 3.0, 6.0));
+//	locReaction->Add_AnalysisAction(new DCutAction_BeamEnergy(locReaction, false, 3.0, 6.0));
 
 	// Hist PID
 	locReaction->Add_AnalysisAction(new DHistogramAction_PID(locReaction));
@@ -888,7 +888,7 @@ jerror_t DReaction_factory_trackeff_missing::evnt(JEventLoop* locEventLoop, uint
 	// Reject events with large unused shower energy
 	locReaction->Add_AnalysisAction(new DCustomAction_CutExtraShowers(locReaction, 0.5));
 
-	locReaction->Add_AnalysisAction(new DCutAction_BeamEnergy(locReaction, false, 3.0, 6.0));		
+//	locReaction->Add_AnalysisAction(new DCutAction_BeamEnergy(locReaction, false, 3.0, 6.0));		
 
 	// Hist PID
 	locReaction->Add_AnalysisAction(new DHistogramAction_PID(locReaction));

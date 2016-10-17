@@ -393,10 +393,10 @@ jerror_t DBCALShower_factory_CURVATURE::evnt(JEventLoop *loop, uint64_t eventnum
     shower->z = z + m_zTarget;
     shower->t = t;
     shower->N_cell = N_cell;
-    shower->xErr = sig_x;
-    shower->yErr = sig_y;
-    shower->zErr = sig_z;
-    shower->tErr = sig_t;
+    // shower->xErr = sig_x;
+    // shower->yErr = sig_y;
+    // shower->zErr = sig_z;
+    // shower->tErr = sig_t;
       
     // calibrate energy:
     // Energy calibration has a z dependence -- the
@@ -411,10 +411,10 @@ jerror_t DBCALShower_factory_CURVATURE::evnt(JEventLoop *loop, uint64_t eventnum
     shower->E = pow( (shower->E_raw ) / scale, 1 / ( 1 + nonlin ) );
 
     //copy xyz errors into covariance matrix
-    shower->xyzCovariance.ResizeTo(3,3);
-    shower->xyzCovariance[0][0] = shower->xErr*shower->xErr;
-    shower->xyzCovariance[1][1] = shower->yErr*shower->yErr;
-    shower->xyzCovariance[2][2] = shower->zErr*shower->zErr;
+    // shower->xyzCovariance.ResizeTo(3,3);
+    // shower->xyzCovariance[0][0] = shower->xErr*shower->xErr;
+    // shower->xyzCovariance[1][1] = shower->yErr*shower->yErr;
+    // shower->xyzCovariance[2][2] = shower->zErr*shower->zErr;
 
     _data.push_back(shower); 
   }

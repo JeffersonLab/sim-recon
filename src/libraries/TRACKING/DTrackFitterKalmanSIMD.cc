@@ -93,7 +93,7 @@ unsigned int DTrackFitterKalmanSIMD::locate(vector<double>&xx,double x){
 // Crude approximation for the variance in drift distance due to smearing
 double DTrackFitterKalmanSIMD::fdc_drift_variance(double t){
     //return FDC_ANODE_VARIANCE;
-    if (t<0) t=0;
+    if (t<10.) t=10.;
     double sigma=DRIFT_RES_PARMS[0]/(t+1.)+DRIFT_RES_PARMS[1]+DRIFT_RES_PARMS[2]*t*t;
 
     return sigma*sigma;
@@ -769,20 +769,30 @@ DTrackFitter::fit_status_t DTrackFitterKalmanSIMD::FitTrack(void)
 
     DMatrixDSym errMatrix(5);
     // Fill the tracking error matrix and the one needed for kinematic fitting
-    if (fcov.size()!=0){
-        fit_params.setForwardParmFlag(true);
-
-        // We MUST fill the entire matrix (not just upper right) even though 
-        // this is a DMatrixDSym
-        for (unsigned int i=0;i<5;i++){
-            for (unsigned int j=0;j<5;j++){
-                errMatrix(i,j)=fcov[i][j];
-            }
-        }
+    if (fcov.size()!=0){      
+      // We MUST fill the entire matrix (not just upper right) even though 
+      // this is a DMatrixDSym
+      for (unsigned int i=0;i<5;i++){
+	for (unsigned int j=0;j<5;j++){
+	  errMatrix(i,j)=fcov[i][j];
+	}
+      }
+      
+      if (FORWARD_PARMS_COV){
+        fit_params.setForwardParmFlag(true);    
         fit_params.setTrackingStateVector(x_,y_,tx_,ty_,q_over_p_);
+      
+	// Compute and fill the error matrix needed for kinematic fitting
+	fit_params.setErrorMatrix(Get7x7ErrorMatrixForward(errMatrix));
+      }
+      else {
+	fit_params.setForwardParmFlag(false); 
+	fit_params.setTrackingStateVector(q_over_pt_,phi_,tanl_,D_,z_);
 
-        // Compute and fill the error matrix needed for kinematic fitting
-        fit_params.setErrorMatrix(Get7x7ErrorMatrixForward(errMatrix));
+	// Compute and fill the error matrix needed for kinematic fitting
+	fit_params.setErrorMatrix(Get7x7ErrorMatrix(errMatrix));
+	
+      }
     }
     else if (cov.size()!=0){
         fit_params.setForwardParmFlag(false);
@@ -7135,7 +7145,14 @@ kalman_error_t DTrackFitterKalmanSIMD::ForwardFit(const DMatrix5x1 &S0,const DMa
     double cosl=cos(atan(tanl_));
     q_over_pt_=q_over_p_/cosl;
     phi_=atan2(ty_,tx_);
-
+    if (FORWARD_PARMS_COV==false){
+      D_=sqrt(x_*x_+y_*y_)+EPS;
+      double cosphi=cos(phi_);
+      double sinphi=sin(phi_);
+      if ((x_>0.0 && sinphi>0.0) || (y_ <0.0 && cosphi>0.0) 
+	  || (y_>0.0 && cosphi<0.0) || (x_<0.0 && sinphi<0.0)) D_*=-1.;
+      TransformCovariance(Clast);      
+    }
     // Covariance matrix  
     vector<double>dummy;
     for (unsigned int i=0;i<5;i++){
@@ -7370,7 +7387,14 @@ kalman_error_t DTrackFitterKalmanSIMD::ForwardCDCFit(const DMatrix5x1 &S0,const 
     double cosl=cos(atan(tanl_));
     q_over_pt_=q_over_p_/cosl;
     phi_=atan2(ty_,tx_);
-
+    if (FORWARD_PARMS_COV==false){
+      D_=sqrt(x_*x_+y_*y_)+EPS;
+      double cosphi=cos(phi_);
+      double sinphi=sin(phi_);
+      if ((x_>0.0 && sinphi>0.0) || (y_ <0.0 && cosphi>0.0) 
+	  || (y_>0.0 && cosphi<0.0) || (x_<0.0 && sinphi<0.0)) D_*=-1.;
+      TransformCovariance(Clast);
+    }
     // Covariance matrix  
     vector<double>dummy;
     // ... forward parameterization
@@ -8015,6 +8039,35 @@ void DTrackFitterKalmanSIMD::FillPullsVectorEntry(const DMatrix5x1 &Ss,
   pulls.push_back(pull_t(update.doca-d,sqrt(V),traj.s,update.tdrift,d,hit->hit,
 			 NULL,diff.Phi(),new_z,update.tcorr));
 }
+
+// Transform the 5x5 covariance matrix from the forward parametrization to the 
+// central parametrization.
+void DTrackFitterKalmanSIMD::TransformCovariance(DMatrix5x5 &C){
+  DMatrix5x5 J;
+  double tsquare=tx_*tx_+ty_*ty_;
+  double cosl=cos(atan(tanl_));
+  double tanl2=tanl_*tanl_;
+  double tanl3=tanl2*tanl_;
+  double factor=1./sqrt(1.+tsquare);
+  J(state_z,state_x)=-tx_/tsquare;
+  J(state_z,state_y)=-ty_/tsquare;
+  double diff=tx_*tx_-ty_*ty_;
+  double frac=1./(tsquare*tsquare);
+  J(state_z,state_tx)=(x_*diff+2.*tx_*ty_*y_)*frac;
+  J(state_z,state_ty)=(2.*tx_*ty_*x_-y_*diff)*frac;
+  J(state_tanl,state_tx)=-tx_*tanl3;
+  J(state_tanl,state_ty)=-ty_*tanl3;
+  J(state_q_over_pt,state_q_over_p)=1./cosl;
+  J(state_q_over_pt,state_tx)=-q_over_p_*tx_*tanl3*factor;
+  J(state_q_over_pt,state_ty)=-q_over_p_*ty_*tanl3*factor;
+  J(state_phi,state_tx)=-ty_*tanl2;
+  J(state_phi,state_ty)=tx_*tanl2;
+  J(state_D,state_x)=x_/D_;
+  J(state_D,state_y)=y_/D_;
+  
+  C=J*C*J.Transpose();      
+
+ }
 
 /*---------------------------------------------------------------------------*/
 

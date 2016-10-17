@@ -68,7 +68,7 @@ jerror_t JEventProcessor_TAGH_timewalk::init(void)
     hTAGHRF_tdcTimeDiffVsSlotID = new TH2I("TAGHRF_tdcTimeDiffVsSlotID","TAGH-RF TDC time difference vs. counter ID;counter ID;time(TDC) - time(RF) [ns]",Nslots,0.5,0.5+Nslots,NTb,Tl,Th);
     taghDir->cd();
     gDirectory->mkdir("Timewalk")->cd();
-    for (int i=0; i<1+Nslots; i++) {
+    for (int i = 0; i < 1+Nslots; i++) {
         stringstream ss; ss << i;
         TString name = "TAGHRF_tdcTimeDiffVsPulseHeight_" + ss.str();
         TString title = "TAGH counter " + ss.str();
@@ -103,7 +103,7 @@ jerror_t JEventProcessor_TAGH_timewalk::evnt(JEventLoop *loop, uint64_t eventnum
     // since multiple threads may call this method at the same time.
     vector<const DTAGHHit*> taghhits;
     loop->Get(taghhits, "Calib");
-    const DRFTime* rfTime = NULL;
+    const DRFTime* rfTime = nullptr;
     vector <const DRFTime*> rfTimes;
     loop->Get(rfTimes,"TAGH");
     if (rfTimes.size() > 0)
@@ -111,14 +111,14 @@ jerror_t JEventProcessor_TAGH_timewalk::evnt(JEventLoop *loop, uint64_t eventnum
     else
         return NOERROR;
 
-	// FILL HISTOGRAMS
-	// Since we are filling histograms local to this plugin, it will not interfere with other ROOT operations: can use plugin-wide ROOT fill lock
-	japp->RootFillLock(this); //ACQUIRE ROOT FILL LOCK
+    // FILL HISTOGRAMS
+    // Since we are filling histograms local to this plugin, it will not interfere with other ROOT operations: can use plugin-wide ROOT fill lock
+    japp->RootFillLock(this); //ACQUIRE ROOT FILL LOCK
 
     double t_RF = rfTime->dTime;
-    for(unsigned int i=0; i<taghhits.size(); i++) {
+    for (unsigned int i = 0; i < taghhits.size(); i++) {
         const DTAGHHit *hit = taghhits[i];
-        if (!hit->has_TDC||!hit->has_fADC) continue;
+        if (!hit->has_TDC || !hit->has_fADC) continue;
         int id = hit->counter_id;
         double t_tdc = hit->t;
         double t_adc = hit->time_fadc;
@@ -130,7 +130,7 @@ jerror_t JEventProcessor_TAGH_timewalk::evnt(JEventLoop *loop, uint64_t eventnum
         hTAGHRF_tdcTimeDiffVsPulseHeight[id]->Fill(pulse_height,t_tdc-t_RF);
     }
 
-	japp->RootFillUnLock(this); //RELEASE ROOT FILL LOCK
+    japp->RootFillUnLock(this); //RELEASE ROOT FILL LOCK
 
     return NOERROR;
 }
