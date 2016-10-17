@@ -67,7 +67,7 @@ void Df250EmulatorAlgorithm_v2::EmulateFirmware(const Df250WindowRawData* rawDat
     }
 
     // quality bits
-    bool bad_pedesta = false;
+    bool bad_pedestal = false;
  
     // Now we can start to loop over the raw data
     // This requires a few passes due to some features in the way the quantities are calculated...
