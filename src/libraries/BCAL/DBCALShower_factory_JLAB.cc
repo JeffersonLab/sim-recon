@@ -55,19 +55,19 @@ jerror_t DBCALShower_factory_JLAB::evnt(JEventLoop *loop, uint64_t eventnumber)
     shower->t                   = locClump->ClumpMT[0];
     shower->N_cell              = locClump->HitsU.size()+locClump->HitsD.size();
     
-    shower->xErr                = 0.5; // HARD CODED VALUE!!!!   
-    shower->yErr                = 0.5; // HARD CODED VALUE!!!!   
-    shower->zErr                = 2.5; // HARD CODED VALUE!!!!   
-    shower->tErr                = 0.2; // HARD CODED VALUE!!!!   
+    // shower->xErr                = 0.5; // HARD CODED VALUE!!!!   
+    // shower->yErr                = 0.5; // HARD CODED VALUE!!!!   
+    // shower->zErr                = 2.5; // HARD CODED VALUE!!!!   
+    // shower->tErr                = 0.2; // HARD CODED VALUE!!!!   
                                   
       
     shower->E = locClump->ClumpE[0];  // NO CALIBRATION DONE!!!!!
 
     //copy xyz errors into covariance matrix
-    shower->xyzCovariance.ResizeTo(3,3);
-    shower->xyzCovariance[0][0] = shower->xErr*shower->xErr;
-    shower->xyzCovariance[1][1] = shower->yErr*shower->yErr;
-    shower->xyzCovariance[2][2] = shower->zErr*shower->zErr;
+    // shower->xyzCovariance.ResizeTo(3,3);
+    // shower->xyzCovariance[0][0] = shower->xErr*shower->xErr;
+    // shower->xyzCovariance[1][1] = shower->yErr*shower->yErr;
+    // shower->xyzCovariance[2][2] = shower->zErr*shower->zErr;
     
     // add BCAL Hits as associated objects.
     for(unsigned int j=0; j<locClump->HitsU.size(); j++){

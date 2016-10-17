@@ -2,7 +2,7 @@
 
 #include "DFCALShower.h"
 
-DFCALShower::DFCALShower()
+DFCALShower::DFCALShower():ExyztCovariance(5)
 {
    fEnergy = 0.;
    fTime = 0.;
@@ -33,15 +33,6 @@ void DFCALShower::setPosition(const DVector3 aPosition )
 {
 
         fPosition = aPosition;
-
-}
-
-// Set position errors
-void DFCALShower::setPosError(const double aXerr, const double aYerr, const double aZerr) {
-
-        fPositionError.SetX( aXerr);
-        fPositionError.SetY( aYerr);
-        fPositionError.SetZ( aZerr);
 
 }
 
