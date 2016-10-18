@@ -41,7 +41,8 @@ class Df250BORConfig:public jana::JObject, public f250config{
 			AddString(items, "ptw"       , "%d", adc_ptw);
 			AddString(items, "pl"        , "%d", adc_pl);
 			AddString(items, "nsb"       , "%d", adc_nsb);
-			AddString(items, "nsa"       , "%d", adc_nsa);
+			AddString(items, "nsa"       , "%d", adc_nsa&0x1FF);
+			AddString(items, "nsa_trig"  , "%d", adc_nsa>>9);
 			AddString(items, "nped"      , "%d", nped);
 		}
 
