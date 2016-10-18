@@ -7,8 +7,9 @@ Df250EmulatorAlgorithm_v2::Df250EmulatorAlgorithm_v2(JEventLoop *loop){
     NSA_DEF = 20;
     NSB_DEF = 5;
     THR_DEF = 120;
+    NPED_DEF = 4;
+    MAXPED_DEF = 512;
 
-    MAXPED = 200;   // ???
     // Set verbosity
     VERBOSE = 0;
 
@@ -17,6 +18,8 @@ Df250EmulatorAlgorithm_v2::Df250EmulatorAlgorithm_v2(JEventLoop *loop){
         gPARMS->SetDefaultParameter("EMULATION250:NSA", NSA_DEF,"Set NSA for firmware emulation, will be overwritten by BORConfig if present");
         gPARMS->SetDefaultParameter("EMULATION250:NSB", NSB_DEF,"Set NSB for firmware emulation, will be overwritten by BORConfig if present");
         gPARMS->SetDefaultParameter("EMULATION250:THR", THR_DEF,"Set threshold for firmware emulation, will be overwritten by BORConfig if present");
+        gPARMS->SetDefaultParameter("EMULATION250:NPED", NPED_DEF,"Set NPED for firmware emulation, will be overwritten by BORConfig if present");
+        gPARMS->SetDefaultParameter("EMULATION250:MAXPED", MAXPED_DEF,"Set MAXPED for firmware emulation, will be overwritten by BORConfig if present");
         gPARMS->SetDefaultParameter("EMULATION250:VERBOSE", VERBOSE,"Set verbosity for f250 emulation");
     }
 }
@@ -46,6 +49,7 @@ void Df250EmulatorAlgorithm_v2::EmulateFirmware(const Df250WindowRawData* rawDat
     rawData->GetSingle(f250BORConfig);
 
     uint32_t NSA, NSB;
+    uint32_t NPED, MAXPED;
     uint16_t THR;
     //If this does not exist, or we force it, use the default values
     if (f250BORConfig == NULL || FORCE_DEFAULT){
@@ -53,6 +57,8 @@ void Df250EmulatorAlgorithm_v2::EmulateFirmware(const Df250WindowRawData* rawDat
         NSA = NSA_DEF;
         NSB = NSA_DEF;
         THR = THR_DEF;
+        NPED = NPED_DEF;
+        MAXPED = MAXPED_DEF;
         if (counter < 10){
             counter++;
             if (counter == 10) jout << " WARNING Df250EmulatorAlgorithm_v2::EmulateFirmware No Df250BORConfig == Using default values == LAST WARNING" << endl;
@@ -63,11 +69,15 @@ void Df250EmulatorAlgorithm_v2::EmulateFirmware(const Df250WindowRawData* rawDat
         NSA = f250BORConfig->adc_nsa & 0x7F;
         NSB = f250BORConfig->adc_nsb & 0x7F;
         THR = f250BORConfig->adc_thres[channel];
+        // set more parameters once the BOR is updated
+        NPED = NPED_DEF;
+        MAXPED = MAXPED_DEF;
         if (VERBOSE > 0) jout << "Df250EmulatorAlgorithm_v2::EmulateFirmware NSA: " << NSA << " NSB: " << NSB << " THR: " << THR << endl; 
     }
 
     // quality bits
     bool bad_pedestal = false;
+    bool bad_timing_pedestal = false;
  
     // Now we can start to loop over the raw data
     // This requires a few passes due to some features in the way the quantities are calculated...
@@ -81,6 +91,10 @@ void Df250EmulatorAlgorithm_v2::EmulateFirmware(const Df250WindowRawData* rawDat
     uint32_t TC[max_pulses] = {};
     uint32_t TMIN[max_pulses] = {3};
     uint32_t pulse_integral[max_pulses] = {};
+    bool has_overflow_samples[max_pulses] = {false};
+    bool has_underflow_samples[max_pulses] = {false};
+    uint32_t number_samples_above_threshold[max_pulses] = {0};
+    bool NSA_beyond_PTW[max_pulses] = {false};
 
     for (unsigned int i=0; i < NW; i++) {
         if (VERBOSE > 5) jout << "Df250EmulatorAlgorithm_v2::EmulateFirmware samples[" << i << "]: " << samples[i] << endl;
@@ -91,8 +105,19 @@ void Df250EmulatorAlgorithm_v2::EmulateFirmware(const Df250WindowRawData* rawDat
             TC[npulses] = i+1;
             unsigned int ibegin = i > NSB ? (i - NSB) : 0; // Set to beginning of window if too early
             unsigned int iend = (i + NSA) < uint32_t(NW) ? (i + NSA) : NW; // Set to last sample if too late
-            for (i = ibegin; i < iend; ++i)
+            // check to see if NSA extends beyond the end of the window
+            NSA_beyond_PTW[npulses] = (i + NSA) >= uint32_t(NW);
+            for (i = ibegin; i < iend; ++i) {
                 pulse_integral[npulses] += (samples[i] & 0xfff);
+                // quality monitoring
+                if(samples[i] == 0x1fff)
+                    has_overflow_samples[npulses] = true;
+                if(samples[i] == 0x1000)
+                    has_underflow_samples[npulses] = true;
+                // count number of samples within NSA that are above thresholds
+                if( (i+1>=TC[npulses]) && ((samples[i] & 0xfff) > THR) )
+                    number_samples_above_threshold[npulses]++;
+            }
             for (; i < NW && (samples[i] & 0xfff) > THR; ++i) {}
             if (++npulses == max_pulses)
                break;
@@ -110,18 +135,24 @@ void Df250EmulatorAlgorithm_v2::EmulateFirmware(const Df250WindowRawData* rawDat
     uint32_t pulse_time[max_pulses] = {};
     bool reportTC[max_pulses] = {};
 
-    // The first 4 samples are used for the pedestal calculation
+    // The first NPED samples are used for the pedestal calculation
     uint32_t VMIN = 0;
-    for (unsigned int i=0; i < 4; i++) {
+    for (unsigned int i=0; i < NPED; i++) {
         VMIN += (samples[i] & 0xfff);
         // error condition
         if ((samples[i] & 0xfff) > MAXPED) {
             bad_pedestal = true;
         }
+        // error condition for timing algorithm
+        if (i<4) {
+            if ( ((samples[i] & 0xfff) > MAXPED) || ((samples[i] & 0xfff) > THR) ) {
+                bad_timing_pedestal = true;
+            }
+        }
     }
     // The pulse pedestal is the sum of NPED (4-15) samples at the beginning of the window
     uint32_t pedestal = VMIN;
-    VMIN = VMIN >> 2;  
+    VMIN /= NPED;  
 
     for (unsigned int p=0; p < npulses; ++p) {
         while (true) {
@@ -250,22 +281,22 @@ void Df250EmulatorAlgorithm_v2::EmulateFirmware(const Df250WindowRawData* rawDat
             f250PulseData->itrigger = rawData->itrigger;
             // word 1
             f250PulseData->event_within_block = 1;
-            f250PulseData->QF_pedestal = 0;  // need to set
+            f250PulseData->QF_pedestal = bad_pedestal;  // is this right?
             f250PulseData->pedestal = pedestal;
             // word 2
             f250PulseData->integral = pulse_integral[p];
-            f250PulseData->QF_NSA_beyond_PTW = 0;  // need to set
-            f250PulseData->QF_overflow = 0;  // need to set
-            f250PulseData->QF_underflow = 0;  // need to set
-            f250PulseData->nsamples_over_threshold = 0;  // need to set
+            f250PulseData->QF_NSA_beyond_PTW = NSA_beyond_PTW[npulses];  // is this right?
+            f250PulseData->QF_overflow = has_overflow_samples[npulses];  // is this right?
+            f250PulseData->QF_underflow = has_underflow_samples[npulses];  // is this right?
+            f250PulseData->nsamples_over_threshold = number_samples_above_threshold[npulses];  // is this right?
             // word 3
             //f250PulseTime->time = pulse_time[p];
             f250PulseData->course_time = VMID[p];  // ????
-            f250PulseData->fine_time = TFINE[p];  // ?
+            f250PulseData->fine_time = TFINE[p];  // ???????
             //f250PulseData->time = pulse_time[p];
             f250PulseData->QF_vpeak_beyond_NSA = 0;  // need to set
             f250PulseData->QF_vpeak_not_found = 0;  // need to set
-            f250PulseData->QF_bad_pedestal = bad_pedestal;  // is this right?
+            f250PulseData->QF_bad_pedestal = bad_timing_pedestal;  // is this right?
             // other information
             f250PulseData->pulse_number = p;
             //f250PulseData->quality_factor = reportTC[p];
