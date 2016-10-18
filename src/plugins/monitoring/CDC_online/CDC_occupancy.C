@@ -63,12 +63,29 @@
 	TH2D *axes = (TH2D *)dir->Get("axes");
 	if(!axes) axes = new TH2D("axes", "CDC Occupancy", 100, -65.0, 65.0, 100, -65.0, 65.0);
 
-	double minScale = 0.0, maxScale = 0.10;
+	double minScale = 0.08, maxScale = 0.15;
 	axes->SetStats(0);
 	axes->Fill(100,100); // without this, the color ramp is not drawn
 	axes->GetZaxis()->SetRangeUser(minScale, maxScale);
 	axes->Draw("colz");
 
+	double TheMax = 0.;
+	double TheMin = 99999999;;
+	for(unsigned int iring=1; iring<=28; iring++){
+		char hname[256];
+		sprintf(hname, "cdc_occ_ring[%d]", iring);
+		TH1 *h = (TH1*)(dir->Get(hname));
+		if(h){
+		  double min = h->GetMinimum();
+		  if (min<TheMin){
+		    TheMin = min;
+		  }
+		  double max = h->GetMaximum();
+		  if (max>TheMax){
+		    TheMax = max;
+		  }
+		}
+	}
 	for(unsigned int iring=1; iring<=28; iring++){
 		char hname[256];
 		sprintf(hname, "cdc_occ_ring[%d]", iring);
@@ -77,9 +94,11 @@
 			sprintf(hname, "cdc_occ_ring_norm[%d]", iring);
 			TH1 *hh = (TH1*)h->Clone(hname);
 			hh->Scale(1.0/Nevents);
-			hh->GetZaxis()->SetRangeUser(minScale, maxScale);
+			//hh->GetZaxis()->SetRangeUser(minScale, maxScale);
+			hh->GetZaxis()->SetRangeUser(TheMin*0.95, TheMax*1.05);
 			hh->SetStats(0);
 			hh->Draw("same col pol");  // draw remaining histos without overwriting color palette
 		}
+		gPad->SetGrid();
 	}
 }
