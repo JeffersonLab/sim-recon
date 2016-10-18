@@ -70,7 +70,7 @@ void Df250EmulatorAlgorithm_v2::EmulateFirmware(const Df250WindowRawData* rawDat
         NSB = f250BORConfig->adc_nsb & 0x7F;
         THR = f250BORConfig->adc_thres[channel];
         // set more parameters once the BOR is updated
-        NPED = NPED_DEF;
+        NPED = f250BORConfig->nped;
         MAXPED = MAXPED_DEF;
         if (VERBOSE > 0) jout << "Df250EmulatorAlgorithm_v2::EmulateFirmware NSA: " << NSA << " NSB: " << NSB << " THR: " << THR << endl; 
     }
@@ -237,7 +237,7 @@ void Df250EmulatorAlgorithm_v2::EmulateFirmware(const Df250WindowRawData* rawDat
             VMID[p] = (VMIN + VPEAK[p]) >> 1;
             for (unsigned int i = TMIN[p] + 1; i < (uint32_t)ipeak; ++i) {
                 if ((samples[i] & 0xfff) > VMID[p]) {
-                    TMID[p] = i+1;  // sample time starts counting from 1
+                    TMID[p] = i;
                     break;
                 }
             }
@@ -339,17 +339,17 @@ void Df250EmulatorAlgorithm_v2::EmulateFirmware(const Df250WindowRawData* rawDat
         //f250PulseData->time_emulated = pulse_time[p]; 
         f250PulseData->pulse_peak_emulated = VPEAK[p]; 
         //f250PulseData->time_emulated = pulse_time[p]; 
-        f250PulseData->course_time_emulated = VMID[p];
+        f250PulseData->course_time_emulated = TMID[p];
         f250PulseData->fine_time_emulated = TFINE[p];
 
         // if we are using the emulated values, copy them
         if( f250PulseData->emulated ) {
-            f250PulseData->integral   = f250PulseData->integral_emulated;
-            f250PulseData->pedestal   = f250PulseData->pedestal_emulated;
+            f250PulseData->integral    = f250PulseData->integral_emulated;
+            f250PulseData->pedestal    = f250PulseData->pedestal_emulated;
             //f250PulseData->time       = f250PulseData->time_emulated;
-            f250PulseData->pulse_peak = f250PulseData->pulse_peak_emulated;
-            f250PulseData->course_time = VMID[p];
-            f250PulseData->fine_time   = TFINE[p];
+            f250PulseData->pulse_peak  = f250PulseData->pulse_peak_emulated;
+            f250PulseData->course_time = f250PulseData->course_time_emulated;
+            f250PulseData->fine_time   = f250PulseData->fine_time_emulated;
         }
     }
 
