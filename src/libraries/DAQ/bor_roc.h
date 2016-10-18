@@ -90,6 +90,7 @@ typedef struct{
 	uint32_t adc_nsa;          // 0x0128
 	uint16_t adc_thres[16];    // 0x012C - 0x0148
 	uint32_t adc_pedestal[16]; // 0x0158 - 0x0194
+	uint32_t nped;             // 0x0150 (labeled config7 in documentation)
 }f250config;
 
 typedef struct {

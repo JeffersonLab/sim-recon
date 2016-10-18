@@ -22,8 +22,33 @@ extern char *OUTFILENAME;
 static pthread_mutex_t output_file_mutex;
 static pthread_t output_file_mutex_last_owner;
 
-//#include <JANA/JCalibrationFile.h>
+#include <JANA/JCalibration.h>
 //static JCalibration *jcalib=NULL;
+static bool locCheckCCDBContext = true;
+
+//-----------
+// PrintCCDBWarning
+//-----------
+static void PrintCCDBWarning(string context)
+{
+	jout << endl;
+	jout << "===============================================================================" << endl;
+	jout << "                            !!!!! WARNING !!!!!" << endl;
+	jout << "You have either not specified a CCDB variation, or specified a variation" << endl;
+	jout << "that appears inconsistent with processing simulated data." << endl;
+	jout << "Be sure that this is what you want to do!" << endl;
+	jout << endl;
+	jout << "  JANA_CALIB_CONTEXT = " << context << endl;
+	jout << endl;
+	jout << "For a more detailed list of CCDB variations used for simulations" << endl;
+	jout << "see the following wiki page:" << endl;
+	jout << endl;
+	jout << "   https://halldweb.jlab.org/wiki/index.php/Simulations#Simulation_Conditions" << endl;
+	jout << "===============================================================================" << endl;
+	jout << endl;
+}
+
+
 
 void mcsmear_thread_HUP_sighandler(int sig)
 {
@@ -115,8 +140,36 @@ jerror_t MyProcessor::init(void)
 
 jerror_t MyProcessor::brun(JEventLoop *loop, int locRunNumber)
 {
-	//DApplication* locDApp = dynamic_cast<DApplication*>(japp);
-    //DGeometry *dgeom=locDApp->GetDGeometry(locRunNumber);
+    // Generally, simulations should be generated and analyzed with a non-default
+    // set of calibrations, since the calibrations needed for simulations are
+    // different than those needed for data.  
+    // Conventionally, the CCDB variations needed for simulations start with the 
+    // string "mc".  To guard against accidentally not setting the variation correctly
+    // we check to see if the variation is set and if it contains the string "mc".
+    // Note that for now, we only print a warning and do not exit immediately.
+    // It might be advisable to apply some tougher love.
+    jerr << "In MyProcessor::brun()" << endl;
+    if(locCheckCCDBContext) {
+        // only do this once
+        locCheckCCDBContext = false;        
+
+        // load the CCDB context
+        DApplication* locDApp = dynamic_cast<DApplication*>(japp);
+        //DGeometry *dgeom=locDApp->GetDGeometry(locRunNumber);
+        JCalibration* jcalib = locDApp->GetJCalibration(locRunNumber);
+    
+        string context = jcalib->GetContext();
+      
+        jerr << "checking context = " << context << endl;
+
+        // Really we should parse the context string, but since "mc" shouldn't show up
+        // outside of the context, we just search the whole string.
+        // Also make sure that the variation is being set
+        if( (context.find("variation") == string::npos) || (context.find("mc") == string::npos) ) {
+            PrintCCDBWarning(context);
+        }
+    }
+   
 
 	// load configuration parameters for all the detectors
 	if(smearer != NULL)

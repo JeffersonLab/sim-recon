@@ -179,22 +179,29 @@ bool DEventWriterREST::Write_RESTEvent(JEventLoop* locEventLoop, string locOutpu
 	{
 		hddm_r::FcalShowerList fcal = res().addFcalShowers(1);
 		DVector3 pos = fcalshowers[i]->getPosition();
-		DVector3 poserr = fcalshowers[i]->getPositionError();
 		fcal().setX(pos(0));
 		fcal().setY(pos(1));
 		fcal().setZ(pos(2));
 		fcal().setT(fcalshowers[i]->getTime());
 		fcal().setE(fcalshowers[i]->getEnergy());
-		fcal().setXerr(poserr(0));
-		fcal().setYerr(poserr(1));
-		fcal().setZerr(poserr(2));
-		fcal().setTerr(0);
-		fcal().setEerr(0);
-		fcal().setXycorr(0);
-		fcal().setXzcorr(0);
-		fcal().setYzcorr(0);
-		fcal().setEzcorr(0);
-		fcal().setTzcorr(0);
+		fcal().setXerr(fcalshowers[i]->xErr());
+		fcal().setYerr(fcalshowers[i]->yErr());
+		fcal().setZerr(fcalshowers[i]->zErr());
+		fcal().setTerr(fcalshowers[i]->tErr());
+		fcal().setEerr(fcalshowers[i]->EErr());
+		fcal().setXycorr(fcalshowers[i]->XYcorr());
+		fcal().setXzcorr(fcalshowers[i]->XZcorr());
+		fcal().setYzcorr(fcalshowers[i]->YZcorr());
+		fcal().setEzcorr(fcalshowers[i]->EZcorr());
+		fcal().setTzcorr(fcalshowers[i]->ZTcorr());
+
+		// further correlations (an extension of REST format so code is different.)
+		hddm_r::FcalCorrelationsList locFcalCorrelationsList = fcal().addFcalCorrelationses(1);
+		locFcalCorrelationsList().setEtcorr(fcalshowers[i]->ETcorr());
+		locFcalCorrelationsList().setExcorr(fcalshowers[i]->EXcorr());
+		locFcalCorrelationsList().setEycorr(fcalshowers[i]->EYcorr());
+		locFcalCorrelationsList().setTxcorr(fcalshowers[i]->XTcorr());
+		locFcalCorrelationsList().setTycorr(fcalshowers[i]->YTcorr());
 	}
 
 	// push any DBCALShower objects to the output record
@@ -207,16 +214,24 @@ bool DEventWriterREST::Write_RESTEvent(JEventLoop* locEventLoop, string locOutpu
 		bcal().setZ(bcalshowers[i]->z);
 		bcal().setT(bcalshowers[i]->t);
 		bcal().setE(bcalshowers[i]->E);
-		bcal().setXerr(bcalshowers[i]->xErr);
-		bcal().setYerr(bcalshowers[i]->yErr);
-		bcal().setZerr(bcalshowers[i]->zErr);
-		bcal().setTerr(bcalshowers[i]->tErr);
-		bcal().setEerr(0);
-		bcal().setXycorr(0);
-		bcal().setXzcorr(0);
-		bcal().setYzcorr(0);
-		bcal().setEzcorr(0);
-		bcal().setTzcorr(0);
+		bcal().setXerr(bcalshowers[i]->xErr());
+		bcal().setYerr(bcalshowers[i]->yErr());
+		bcal().setZerr(bcalshowers[i]->zErr());
+		bcal().setTerr(bcalshowers[i]->tErr());
+		bcal().setEerr(bcalshowers[i]->EErr());
+		bcal().setXycorr(bcalshowers[i]->XYcorr());
+		bcal().setXzcorr(bcalshowers[i]->XZcorr());
+		bcal().setYzcorr(bcalshowers[i]->YZcorr());
+		bcal().setEzcorr(bcalshowers[i]->EZcorr());
+		bcal().setTzcorr(bcalshowers[i]->ZTcorr());
+
+		// further correlations (an extension of REST format so code is different.)
+		hddm_r::BcalCorrelationsList locBcalCorrelationsList = bcal().addBcalCorrelationses(1);
+		locBcalCorrelationsList().setEtcorr(bcalshowers[i]->ETcorr());
+		locBcalCorrelationsList().setExcorr(bcalshowers[i]->EXcorr());
+		locBcalCorrelationsList().setEycorr(bcalshowers[i]->EYcorr());
+		locBcalCorrelationsList().setTxcorr(bcalshowers[i]->XTcorr());
+		locBcalCorrelationsList().setTycorr(bcalshowers[i]->YTcorr());
 
 		hddm_r::PreshowerList locPreShowerList = bcal().addPreshowers(1);
 		locPreShowerList().setPreshowerE(bcalshowers[i]->E_preshower);
