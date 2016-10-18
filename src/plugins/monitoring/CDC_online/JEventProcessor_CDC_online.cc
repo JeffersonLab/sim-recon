@@ -273,9 +273,9 @@ jerror_t JEventProcessor_CDC_online::evnt(JEventLoop *eventLoop, uint64_t eventn
 
 
 
-	// FILL HISTOGRAMS
-	// Since we are filling histograms local to this plugin, it will not interfere with other ROOT operations: can use plugin-wide ROOT fill lock
-	japp->RootFillLock(this); //ACQUIRE ROOT FILL LOCK
+  // FILL HISTOGRAMS
+  // Since we are filling histograms local to this plugin, it will not interfere with other ROOT operations: can use plugin-wide ROOT fill lock
+  japp->RootFillLock(this); //ACQUIRE ROOT FILL LOCK
 
   if(digihits.size() > 0)
 	  cdc_num_events->Fill(1);
