@@ -105,6 +105,9 @@ void Df250EmulatorAlgorithm_v2::EmulateFirmware(const Df250WindowRawData* rawDat
 
     for (unsigned int i=0; i < NW; i++) {
         if ((samples[i] & 0xfff) > THR) {
+            if (VERBOSE > 1) {
+                jout << "threshold crossing at " << i << endl;
+            }
             TC[npulses] = i+1;
             unsigned int ibegin = i > NSB ? (i - NSB) : 0; // Set to beginning of window if too early
             unsigned int iend = (i + NSA) < uint32_t(NW) ? (i + NSA) : NW; // Set to last sample if too late
@@ -132,21 +135,26 @@ void Df250EmulatorAlgorithm_v2::EmulateFirmware(const Df250WindowRawData* rawDat
     // Now we can head into the fine timing pass over the data.
 
     uint32_t VPEAK[max_pulses] = {};
+    uint32_t TPEAK[max_pulses] = {};
     uint16_t TMID[max_pulses] = {};
     uint16_t VMID[max_pulses] = {};
     uint16_t TFINE[max_pulses] = {};
     uint32_t pulse_time[max_pulses] = {};
-    bool reportTC[max_pulses] = {};
 
-    // The first NPED samples are used for the pedestal calculation
-    uint32_t VMIN = 0;
+    // The pulse pedestal is the sum of NPED (4-15) samples at the beginning of the window
+    uint32_t pedestal = 0;
+    uint32_t VMIN = 0;   // VMIN is just the average of the first 4 samples, needed for timing algorithm
     for (unsigned int i=0; i < NPED; i++) {
-        VMIN += (samples[i] & 0xfff);
+        pedestal += (samples[i] & 0xfff);
+        if(i<4)
+            VMIN += (samples[i] & 0xfff);
         // error condition
         if ((samples[i] & 0xfff) > MAXPED) {
             bad_pedestal = true;
         }
     }
+    VMIN /= 4;
+
     // error conditions for timing algorithm
     for (unsigned int i=0; i < 5; i++) {
         // "If any of the first 5 samples is greater than MaxPed but less than TET, the TDC algorithm will proceed
@@ -159,9 +167,6 @@ void Df250EmulatorAlgorithm_v2::EmulateFirmware(const Df250WindowRawData* rawDat
         if( ((samples[i] & 0xfff) > THR) || (samples[i] == 0x1000) )
             no_timing_calculation = true;
     }
-    // The pulse pedestal is the sum of NPED (4-15) samples at the beginning of the window
-    uint32_t pedestal = VMIN;
-    VMIN /= NPED;  
 
     for (unsigned int p=0; p < npulses; ++p) {
         // "If any of the first 5 samples is greater than TET or underflow the TDC will NOT proceed
@@ -175,26 +180,32 @@ void Df250EmulatorAlgorithm_v2::EmulateFirmware(const Df250WindowRawData* rawDat
             VPEAK[p] = 0;
             bad_timing_pedestal = true;
             vpeak_not_found[npulses] = true;
-            continue;
+            //continue;
         }
 
-        while (true) {
-            if (VMIN == 99999) {
-                VPEAK[p] = 0;
-                reportTC[p] = true;
-                pulse_time[p] = (TC[p] << 6);
-                break;
-            }
-            int ipeak;
+        while (!no_timing_calculation && true) {
+            //if (VMIN == 99999) {
+            //    VPEAK[p] = 0;
+            //    reportTC[p] = true;
+            //    pulse_time[p] = (TC[p] << 6);
+            //    break;
+            // }
+            unsigned int ipeak;
             for (ipeak = TC[p]; ipeak < NW; ++ipeak) {
                 if ((samples[ipeak] & 0xfff) < (samples[ipeak-1] & 0xfff)) {
                     VPEAK[p] = (samples[ipeak-1] & 0xfff);
+                    TPEAK[p] = ipeak-1;
                     break;
                 }
             }
             // check to see if the peak is beyond the NSA
             if(ipeak > TC[p]+NSA)
                 vpeak_beyond_NSA[p] = true;
+
+            if (VERBOSE > 1) {
+                jout << " pulse " << p << ": VMIN: " << VMIN 
+                     << " TC: " << TC[p] << " VPEAK: " << VPEAK[p] << endl;  
+            }
 
             // There is an error condition if the TC sample is within 5 from the end of the window
             // (and a typo in the document, the firmware is looking for (NW - TC) <= 5).
@@ -219,9 +230,8 @@ void Df250EmulatorAlgorithm_v2::EmulateFirmware(const Df250WindowRawData* rawDat
             //   1. Pulse time is set to TC
             //   2. Pulse peak is set to 0
             //   3. Time quality bit 1 is set to 1
-            if (VPEAK[p] == 0) {
-                // this will need to be changed when the timing algorithm is fixed
-                VMID[p] = TC[p];
+            if (VPEAK[p] == 0) { 
+                TMID[p] = TC[p];
                 TFINE[p] = 0;
                 VPEAK[p] = 0;
                 bad_timing_pedestal = true;
@@ -229,24 +239,34 @@ void Df250EmulatorAlgorithm_v2::EmulateFirmware(const Df250WindowRawData* rawDat
                 break;
             }
 
-            if (VERBOSE > 1) {
-                jout << " pulse " << p << ": VMIN: " << VMIN << " reportTC: " << int(reportTC[p]) 
-                     << " TC: " << TC[p] << " VPEAK: " << VPEAK[p] << endl;  
-            }
-
             VMID[p] = (VMIN + VPEAK[p]) >> 1;
+            
             for (unsigned int i = TMIN[p] + 1; i < (uint32_t)ipeak; ++i) {
                 if ((samples[i] & 0xfff) > VMID[p]) {
                     TMID[p] = i;
                     break;
                 }
             }
+            /*
+            for (unsigned int i = TPEAK[p]; i > 0; --i) {
+                if ((samples[i] & 0xfff) < VMID[p]) {
+                    TMID[p] = i+1;
+                    break;
+                }
+            }
+            */
             if (TMID[p] == 0) {  // redundant?
                 TFINE[p] = 0;
             }
             else {
-                int Vnext = (samples[TMID[p]-1] & 0xfff);  // should TMID be 1 smaller?
-                int Vlast = (samples[TMID[p]-2] & 0xfff);
+                int Vnext = (samples[TMID[p]] & 0xfff); 
+                int Vlast = (samples[TMID[p]-1] & 0xfff);
+                //int Vnext = (samples[TMID[p]-1] & 0xfff);  // should TMID be 1 smaller?
+                //int Vlast = (samples[TMID[p]-2] & 0xfff);
+                if (VERBOSE > 2) {
+                    jout << "   TMIN = " << TMIN[p] << "  TMID  = " << TMID[p] << "  TPEAK = " << TPEAK[p] << endl
+                         << "   VMID = " << VMID[p] << "  Vnext = " << Vnext   << "  Vlast = " << Vlast    << endl;
+                }
                 if (Vnext > Vlast && VMID[p] >= Vlast)
                     TFINE[p] = 64 * (VMID[p] - Vlast) / (Vnext - Vlast);
                 else
@@ -342,6 +362,7 @@ void Df250EmulatorAlgorithm_v2::EmulateFirmware(const Df250WindowRawData* rawDat
         f250PulseData->course_time_emulated = TMID[p];
         f250PulseData->fine_time_emulated = TFINE[p];
 
+        /*
         // if we are using the emulated values, copy them
         if( f250PulseData->emulated ) {
             f250PulseData->integral    = f250PulseData->integral_emulated;
@@ -351,6 +372,7 @@ void Df250EmulatorAlgorithm_v2::EmulateFirmware(const Df250WindowRawData* rawDat
             f250PulseData->course_time = f250PulseData->course_time_emulated;
             f250PulseData->fine_time   = f250PulseData->fine_time_emulated;
         }
+        */
     }
 
     if (VERBOSE > 0) jout << " Df250EmulatorAlgorithm_v2::EmulateFirmware ==> Emulation complete <==" << endl;    
