@@ -111,6 +111,7 @@ double CrossSection(double s,double t,double ms_sq){
   double g_omega_V=15.;
   double g_rho_V=3.4;
   double g_rho_T=11.0; // GeV^-1
+  double g_rho_V_and_T=g_rho_V+2.*m_p*g_rho_T;
   
   // s scale for regge trajectories
   double s0=1.;
@@ -130,11 +131,6 @@ double CrossSection(double s,double t,double ms_sq){
   double xfac1=s*(t-t1)*(t-t2);
   double xfac2=xfac1+2.*t*t_minus_ms_sq*t_minus_ms_sq;
 
-  // Regge trajectory for rho
-  double a_rho=0.55+0.8*t;
-  double a_rho_prime=0.8;
-  double regge_rho=pow(s/s0,a_rho-1.)*M_PI*a_rho_prime/(sin(M_PI*a_rho)*TMath::Gamma(a_rho));
-
   // Regge trajectory for omega
   double a_omega=0.44+0.9*t;
   double a_omega_prime=0.9;
@@ -149,7 +145,7 @@ double CrossSection(double s,double t,double ms_sq){
   double C_omega_P_cut=0.;
   double C_omega_f2_cut=0.;
 
-  // omega amplitude 
+  // omega amplitude squared
   double M_omega_sq=0.5*gsq_omega_S_gamma*g_omega_V*g_omega_V*xfac2
     *(regge_omega*regge_omega*0.5*(1.-cos(M_PI*a_omega))
       +C_omega_P_cut*C_omega_P_cut*regge_omega_P_cut*regge_omega_P_cut
@@ -161,22 +157,80 @@ double CrossSection(double s,double t,double ms_sq){
       +(C_omega_P_cut*regge_omega*regge_omega_P_cut
 	*(cos(M_PI*(a_omega+0.5*a_omega_P))-cos(M_PI_2*a_omega_P)))
       );
-      
-  
-  //M_omega=0.;
-  // M_omega_sq=0.;
-  
-  //M_rho=0.;
-  // M_rho_sq=0.;
 
   
-  //double pi_a_omega=M_PI*a_omega;
-  //double pi_a_rho=M_PI*a_rho;
-  double M_sq =M_omega_sq;//+M_rho_sq+2.*M_omega*M_rho*cos(pi_a_omega-pi_a_rho);
-  
+  // Regge trajectory for rho
+  double a_rho=0.55+0.8*t;
+  double a_rho_prime=0.8;
+  double regge_rho=pow(s/s0,a_rho-1.)*M_PI*a_rho_prime/(sin(M_PI*a_rho)*TMath::Gamma(a_rho)); // excluding phase factor
+
+  // Regge cuts for rho
+  double a_rho_P=0.64+0.16*t; // Pomeron
+  double a_rho_f2=0.222+0.404*t;
+  double regge_rho_P_cut=exp(dc*t)*pow(s/s0,a_rho_P-1.);
+  double regge_rho_f2_cut=exp(dc*t)*pow(s/s0,a_rho_f2-1.);
+  double C_rho_P_cut=0.;
+  double C_rho_f2_cut=0.;
+
+  // Rho amplitude squared
+  double rho_cut_interference=C_rho_f2_cut*regge_rho*regge_rho_f2_cut
+    *(cos(M_PI*(a_rho+0.5*a_rho_f2))-cos(M_PI_2*a_rho_f2))
+    +C_rho_P_cut*regge_rho*regge_rho_P_cut
+    *(cos(M_PI*(a_rho+0.5*a_rho_P))-cos(M_PI_2*a_rho_P));
+  double regge_rho_amp_sq=regge_rho*regge_rho*0.5*(1.-cos(M_PI*a_rho));      
+  double M_rho_sq
+    =0.125*gsq_rho_S_gamma
+    *(4*xfac2
+      *(g_rho_V_and_T*g_rho_V_and_T*regge_rho_amp_sq
+	+g_rho_V*g_rho_V_and_T*rho_cut_interference
+	+g_rho_V*g_rho_V*(C_rho_P_cut*C_rho_P_cut*regge_rho_P_cut*regge_rho_P_cut
+			  +C_rho_f2_cut*C_rho_f2_cut*regge_rho_f2_cut*regge_rho_f2_cut
+			  +(2.*C_rho_f2_cut*C_rho_P_cut*regge_rho_f2_cut*regge_rho_P_cut
+			    *cos(M_PI_2*(a_rho_f2-a_rho_P)))))
+      -4.*m_p*xfac1*(g_rho_T*g_rho_V_and_T*regge_rho_amp_sq
+		     +0.5*g_rho_T*g_rho_T*rho_cut_interference)
+      +g_rho_T*g_rho_T*xfac1*(4.*m_p_sq-t)*regge_rho_amp_sq);
+
+
+  // rho-omega interference
+  double regge_rho_omega_cut_P=regge_rho*regge_omega_P_cut
+    *(cos(M_PI*(a_rho-0.5*a_omega_P))-cos(0.5*M_PI*a_omega_P)); 
+  double regge_rho_omega_cut_f2=regge_rho*regge_omega_f2_cut
+    *(cos(M_PI*(a_rho-0.5*a_omega_f2))-cos(0.5*M_PI*a_omega_f2)); 
+  double regge_omega_rho_cut_P=regge_omega*regge_rho_P_cut
+    *(cos(M_PI*(a_omega-0.5*a_rho_P))-cos(0.5*M_PI*a_rho_P)); 
+  double regge_omega_rho_cut_f2=regge_omega*regge_rho_f2_cut
+    *(cos(M_PI*(a_omega-0.5*a_rho_f2))-cos(0.5*M_PI*a_rho_f2));
+  double regge_rho_cut_f2_omega_cut_f2=regge_rho_f2_cut*regge_omega_f2_cut
+    *cos(M_PI_2*(a_rho_f2-a_omega_f2)); 
+  double regge_rho_cut_P_omega_cut_f2=regge_rho_P_cut*regge_omega_f2_cut
+    *cos(M_PI_2*(a_rho_P-a_omega_f2)); 
+  double regge_rho_cut_f2_omega_cut_P=regge_rho_f2_cut*regge_omega_P_cut
+    *cos(M_PI_2*(a_rho_f2-a_omega_P)); 
+  double regge_rho_cut_P_omega_cut_P=regge_rho_P_cut*regge_omega_P_cut
+    *cos(M_PI_2*(a_rho_P-a_omega_P));
+  double regge_rho_omega=0.25*regge_rho*regge_omega*(1.+cos(M_PI*(a_omega-a_rho))
+						     -cos(M_PI*a_omega)
+						     -cos(M_PI*a_rho)
+						     );
+  double regge_rho_omega_sum=regge_rho_omega+C_omega_P_cut*regge_rho_omega_cut_P
+    +C_omega_f2_cut*regge_rho_omega_cut_f2; 
+  double M_rho_omega_sq=g_omega_V*sqrt(gsq_rho_S_gamma)*sqrt(gsq_omega_S_gamma)
+    *(xfac2*(g_rho_V_and_T*regge_rho_omega_sum			 
+	     +g_rho_V*(C_rho_P_cut*regge_omega_rho_cut_P
+		       +C_rho_f2_cut*regge_omega_rho_cut_f2
+		       +C_rho_P_cut*C_omega_P_cut*regge_rho_cut_P_omega_cut_P
+		       +C_rho_P_cut*C_omega_f2_cut*regge_rho_cut_P_omega_cut_f2
+		       +C_rho_f2_cut*C_omega_P_cut*regge_rho_cut_f2_omega_cut_P
+		       +C_rho_f2_cut*C_omega_f2_cut*regge_rho_cut_f2_omega_cut_f2
+		       )
+	     )
+      -2.*g_rho_T*xfac1*m_p*regge_rho_omega_sum);
+ 
+  double M_sq =M_omega_sq+M_rho_sq+M_rho_omega_sq;
+
   double hbarc_sq=389.; // Convert to micro-barns
   double dsigma_dt=-hbarc_sq*M_sq/(16.*M_PI*mp_sq_minus_s_sq);
-  // the extra factor 4 is for 2 photon spins x 2 proton spins
 
   return(dsigma_dt);
 				 
@@ -494,7 +548,7 @@ int main(int narg, char *argv[])
 	    /sqrt((1.-m1_plus_m2*m1_plus_m2/m_S_sq_R)
 		  *(1-m1_minus_m2*m1_minus_m2)/m_S_sq_R);
 	  double bw_test=0,bw=0;
-	  double m_max=m_p*(sqrt(1.-2.*Egamma/m_p)-1.);
+	  double m_max=m_p*(sqrt(1.+2.*Egamma/m_p)-1.);
 
 	  // Use a relativistic Breit-Wigner distribution for the shape
 	  do{
@@ -528,7 +582,7 @@ int main(int narg, char *argv[])
       xsec_test=myrand->Uniform(xsec_max);
     }
     while (xsec_test>xsec);
-    
+
     // Generate phi using uniform distribution
     double phi_cm=myrand->Uniform(2.*M_PI);
 
