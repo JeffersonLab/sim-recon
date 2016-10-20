@@ -19,7 +19,7 @@
 #include "ANALYSIS/DParticleCombo.h"
 #include "ANALYSIS/DAnalysisUtilities.h"
 
-#include "DCustomAction_dEdxCut.h"
+#include "DCustomAction_dEdxCut_p3pi.h"
 
 using namespace std;
 using namespace jana;
@@ -38,7 +38,7 @@ class DCustomAction_CutExtraTrackPID : public DAnalysisAction
 
 		Particle_t dExtraTrackTargetPID;
 		map<DetectorSystem_t, double> dPIDCuts;
-		DCustomAction_dEdxCut* ddEdxCutAction;
+		DCustomAction_dEdxCut_p3pi* ddEdxCutAction;
 
 		bool Perform_Action(JEventLoop* locEventLoop, const DParticleCombo* locParticleCombo);
 
