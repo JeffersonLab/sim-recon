@@ -109,10 +109,14 @@ void ParseCommandLineArguments(int narg, char* argv[])
 double CrossSection(double s,double t,double ms_sq){
   // Coupling constants 
   double g_omega_V=15.;
+  double gsq_omega_V=g_omega_V*g_omega_V;
   double g_rho_V=3.4;
+  double gsq_rho_V=g_rho_V*g_rho_V;
   double g_rho_T=11.0; // GeV^-1
   double g_rho_V_and_T=g_rho_V+2.*m_p*g_rho_T;
-  
+  double g_rho_S_gamma=sqrt(gsq_rho_S_gamma);
+  double g_omega_S_gamma=sqrt(gsq_omega_S_gamma);
+
   // s scale for regge trajectories
   double s0=1.;
 
@@ -139,14 +143,14 @@ double CrossSection(double s,double t,double ms_sq){
   // Regge cuts for omega
   double a_omega_P=0.52+0.196*t; // Pomeron
   double a_omega_f2=0.112+0.428*t;
-  double dc=0.;
+  double dc=2.;
   double regge_omega_P_cut=exp(dc*t)*pow(s/s0,a_omega_P-1.);
   double regge_omega_f2_cut=exp(dc*t)*pow(s/s0,a_omega_f2-1.);
-  double C_omega_P_cut=0.;
-  double C_omega_f2_cut=0.;
+  double C_omega_P_cut=0.1;
+  double C_omega_f2_cut=0.1;
 
   // omega amplitude squared
-  double M_omega_sq=0.5*gsq_omega_S_gamma*g_omega_V*g_omega_V*xfac2
+  double M_omega_sq=0.5*gsq_omega_S_gamma*gsq_omega_V*xfac2
     *(regge_omega*regge_omega*0.5*(1.-cos(M_PI*a_omega))
       +C_omega_P_cut*C_omega_P_cut*regge_omega_P_cut*regge_omega_P_cut
       +C_omega_f2_cut*C_omega_f2_cut*regge_omega_f2_cut*regge_omega_f2_cut
@@ -169,8 +173,8 @@ double CrossSection(double s,double t,double ms_sq){
   double a_rho_f2=0.222+0.404*t;
   double regge_rho_P_cut=exp(dc*t)*pow(s/s0,a_rho_P-1.);
   double regge_rho_f2_cut=exp(dc*t)*pow(s/s0,a_rho_f2-1.);
-  double C_rho_P_cut=0.;
-  double C_rho_f2_cut=0.;
+  double C_rho_P_cut=0.1;
+  double C_rho_f2_cut=0.1;
 
   // Rho amplitude squared
   double rho_cut_interference=C_rho_f2_cut*regge_rho*regge_rho_f2_cut
@@ -183,7 +187,7 @@ double CrossSection(double s,double t,double ms_sq){
     *(4*xfac2
       *(g_rho_V_and_T*g_rho_V_and_T*regge_rho_amp_sq
 	+g_rho_V*g_rho_V_and_T*rho_cut_interference
-	+g_rho_V*g_rho_V*(C_rho_P_cut*C_rho_P_cut*regge_rho_P_cut*regge_rho_P_cut
+	+gsq_rho_V*(C_rho_P_cut*C_rho_P_cut*regge_rho_P_cut*regge_rho_P_cut
 			  +C_rho_f2_cut*C_rho_f2_cut*regge_rho_f2_cut*regge_rho_f2_cut
 			  +(2.*C_rho_f2_cut*C_rho_P_cut*regge_rho_f2_cut*regge_rho_P_cut
 			    *cos(M_PI_2*(a_rho_f2-a_rho_P)))))
@@ -215,7 +219,7 @@ double CrossSection(double s,double t,double ms_sq){
 						     );
   double regge_rho_omega_sum=regge_rho_omega+C_omega_P_cut*regge_rho_omega_cut_P
     +C_omega_f2_cut*regge_rho_omega_cut_f2; 
-  double M_rho_omega_sq=g_omega_V*sqrt(gsq_rho_S_gamma)*sqrt(gsq_omega_S_gamma)
+  double M_rho_omega_sq=g_omega_V*g_rho_S_gamma*g_omega_S_gamma
     *(xfac2*(g_rho_V_and_T*regge_rho_omega_sum			 
 	     +g_rho_V*(C_rho_P_cut*regge_omega_rho_cut_P
 		       +C_rho_f2_cut*regge_omega_rho_cut_f2
@@ -226,8 +230,32 @@ double CrossSection(double s,double t,double ms_sq){
 		       )
 	     )
       -2.*g_rho_T*xfac1*m_p*regge_rho_omega_sum);
+
+  // Cut contribution from b1 exchange.  We ignore the pole term  
+  double regge_omega_cut_P_omega_cut_f2=regge_omega_P_cut*regge_omega_f2_cut
+    *cos(M_PI_2*(a_omega_P-a_omega_f2));  
+  double regge_rho_cut_P_rho_cut_f2=regge_rho_P_cut*regge_rho_f2_cut
+    *cos(M_PI_2*(a_rho_P-a_rho_f2)); 
+  double M_b1_sq=-0.5*t*xfac1/m_S_sq_R
+    *(gsq_omega_S_gamma*gsq_omega_V*(C_omega_P_cut*C_omega_P_cut
+				     *regge_omega_P_cut*regge_omega_P_cut
+				     +C_omega_f2_cut*C_omega_f2_cut
+				     *regge_omega_f2_cut*regge_omega_f2_cut
+				     +2.*C_omega_f2_cut*C_omega_f2_cut
+				     *regge_omega_cut_P_omega_cut_f2)
+      +gsq_rho_S_gamma*gsq_rho_V*(C_rho_P_cut*C_rho_P_cut
+				     *regge_rho_P_cut*regge_rho_P_cut
+				     +C_rho_f2_cut*C_rho_f2_cut
+				     *regge_rho_f2_cut*regge_rho_f2_cut
+				     +2.*C_rho_f2_cut*C_rho_f2_cut
+				     *regge_rho_cut_P_rho_cut_f2)
+      +g_rho_V*g_omega_V*g_rho_S_gamma*g_omega_S_gamma
+      *(2.*C_rho_P_cut*C_omega_P_cut*regge_rho_cut_P_omega_cut_P
+	+2.*C_rho_f2_cut*C_omega_f2_cut*regge_rho_cut_f2_omega_cut_f2
+	+2.*C_rho_P_cut*C_omega_f2_cut*regge_rho_cut_P_omega_cut_f2
+	+2.*C_rho_f2_cut*C_omega_P_cut*regge_rho_cut_f2_omega_cut_P));
  
-  double M_sq =M_omega_sq+M_rho_sq+M_rho_omega_sq;
+  double M_sq =M_omega_sq+M_rho_sq+M_rho_omega_sq+M_b1_sq;
 
   double hbarc_sq=389.; // Convert to micro-barns
   double dsigma_dt=-hbarc_sq*M_sq/(16.*M_PI*mp_sq_minus_s_sq);
