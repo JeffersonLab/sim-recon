@@ -212,47 +212,20 @@ bool DCustomAction_TrackingEfficiency::Perform_Action(JEventLoop* locEventLoop, 
 		}
 	}
 
-	//FILL TRACKING INFO:
+	//FILL WIRE-BASED TRACKING INFO:
 	dTreeFillData.Fill_Single<Float_t>("ReconMatchFOM_WireBased", locBestWireBasedMatchFOM); //FOM < 0 if nothing, no-match
 	if(locBestTrackWireBased == nullptr)
 	{
 		dTreeFillData.Fill_Single<Float_t>("ReconTrackingFOM_WireBased", -1.0);
 		dTreeFillData.Fill_Single<TVector3>("ReconP3_WireBased", TVector3());
-		dTreeFillData.Fill_Single<Float_t>("ReconTrackingFOM", -1.0);
-		dTreeFillData.Fill_Single<TVector3>("ReconP3", TVector3());
-		dTreeFillData.Fill_Single<Float_t>("MeasuredMissingE", -999.0);
-		dTreeFillData.Fill_Single<UInt_t>("TrackCDCRings", 0);
-		dTreeFillData.Fill_Single<UInt_t>("TrackFDCPlanes", 0);
-
-		//RECON P3 ERROR MATRIX
-		dTreeFillData.Fill_Single<Float_t>("ReconP3_CovPxPx", -1.0);
-		dTreeFillData.Fill_Single<Float_t>("ReconP3_CovPxPy", -1.0);
-		dTreeFillData.Fill_Single<Float_t>("ReconP3_CovPxPz", -1.0);
-		dTreeFillData.Fill_Single<Float_t>("ReconP3_CovPyPy", -1.0);
-		dTreeFillData.Fill_Single<Float_t>("ReconP3_CovPyPz", -1.0);
-		dTreeFillData.Fill_Single<Float_t>("ReconP3_CovPzPz", -1.0);
-
-		//HADRONIC BCAL SHOWER EFFICIENCY: TIMING, MATCHING
-		dTreeFillData.Fill_Single<Float_t>("ProjectedBCALHitPhi", 0.0);
-		dTreeFillData.Fill_Single<Float_t>("ProjectedBCALHitZ", 0.0);
-		dTreeFillData.Fill_Single<UChar_t>("ProjectedBCALSector", 0);
-		dTreeFillData.Fill_Single<Float_t>("NearestShowerEnergy", 0.0);
-		dTreeFillData.Fill_Single<Float_t>("TrackDeltaPhiToShower", 0.0);
-		dTreeFillData.Fill_Single<Float_t>("TrackDeltaZToShower", 0.0);
-		dTreeFillData.Fill_Single<Bool_t>("IsMatchedToBCALShower", false);
-		dTreeFillData.Fill_Single<Float_t>("BCALDeltaT", 0.0);
-		dTreeFillData.Fill_Single<Float_t>("BCALTimeFOM", -1.0);
-
-		//FILL TTREE
-		dTreeInterface->Fill(dTreeFillData);
-		return true;
 	}
-
-	//RESUME FILLING TRACKING INFO:
-	dTreeFillData.Fill_Single<Float_t>("ReconTrackingFOM_WireBased", locBestTrackWireBased->FOM);
-	DVector3 locWireBasedDP3 = locBestTrackWireBased->momentum();
-	TVector3 locWireBasedP3(locWireBasedDP3.X(), locWireBasedDP3.Y(), locWireBasedDP3.Z());
-	dTreeFillData.Fill_Single<TVector3>("ReconP3_WireBased", locWireBasedP3);
+	else
+	{
+		dTreeFillData.Fill_Single<Float_t>("ReconTrackingFOM_WireBased", locBestTrackWireBased->FOM);
+		DVector3 locWireBasedDP3 = locBestTrackWireBased->momentum();
+		TVector3 locWireBasedP3(locWireBasedDP3.X(), locWireBasedDP3.Y(), locWireBasedDP3.Z());
+		dTreeFillData.Fill_Single<TVector3>("ReconP3_WireBased", locWireBasedP3);
+	}
 
 	/************************************************* TIME-BASED TRACKS *************************************************/
 
