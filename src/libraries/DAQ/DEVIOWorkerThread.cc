@@ -534,6 +534,9 @@ void DEVIOWorkerThread::ParseBORbank(uint32_t* &iptr, uint32_t *iend)
 			// in case we are processing data from older firmware
 			for(uint32_t i=0; i<sizeof_dest; i++) *dest++ = i<module_len ? (*src++):0;
 
+			// Extract certain derived values to fill in convenience members
+			if(f250conf    ) f250conf->FillDerived();
+
 			// Store object for use in this and subsequent events
 			if(f250conf    ) borptrs->vDf250BORConfig.push_back(f250conf);
 			if(f125conf    ) borptrs->vDf125BORConfig.push_back(f125conf);

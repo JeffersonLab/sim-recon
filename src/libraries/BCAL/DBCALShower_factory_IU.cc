@@ -164,10 +164,11 @@ DBCALShower_factory_IU::FillCovarianceMatrix(DBCALShower *shower){
 	float minthlookup = yaxis->GetBinLowEdge(1);
 	float maxthlookup = yaxis->GetBinUpEdge(yaxis->GetNbins());
 
+	float shower_E = shower->E;
 	float shower_r = sqrt(shower->x*shower->x + shower->y*shower->y);
 	float shower_theta = atan2(shower_r,shower->z);
 	float thlookup = shower_theta/3.14159265*180;
-	float Elookup = shower->E;
+	float Elookup = shower_E;
 
 	// Adjust values: in order to use Interpolate() must be within histogram range
 	if (Elookup<minElookup) Elookup=minElookup;
@@ -180,8 +181,7 @@ DBCALShower_factory_IU::FillCovarianceMatrix(DBCALShower *shower){
 	for (int i=0; i<5; i++) {
 		for (int j=0; j<=i; j++) {
 			float val = CovarianceLookupTable[i][j]->Interpolate(Elookup, thlookup);
-			//if (i==2) val*=shower_r; // convert phi to phihat
-			//if (j==2) val*=shower_r; // convert phi to phihat
+			if (i==0 && j==0) val *= shower_E; // E variance is divided by energy in CCDB
 			ErphiztCovariance(i,j) = ErphiztCovariance(j,i) = val;
 		}
 	}

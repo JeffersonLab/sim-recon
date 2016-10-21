@@ -1,20 +1,20 @@
 // $Id$
 //
-//    File: DCustomAction_dEdxCut.cc
+//    File: DCustomAction_dEdxCut_p3pi.cc
 // Created: Thu Oct  1 11:18:05 EDT 2015
 // Creator: pmatt (on Darwin Pauls-MacBook-Pro-2.local 13.4.0 i386)
 //
 
-#include "DCustomAction_dEdxCut.h"
+#include "DCustomAction_dEdxCut_p3pi.h"
 
-void DCustomAction_dEdxCut::Initialize(JEventLoop* locEventLoop)
+void DCustomAction_dEdxCut_p3pi::Initialize(JEventLoop* locEventLoop)
 {
 	//Optional: Create histograms and/or modify member variables.
 	//Create any histograms/trees/etc. within a ROOT lock. 
 		//This is so that when running multithreaded, only one thread is writing to the ROOT file at a time. 
 
-	//CREATE THE HISTOGRAMS
-	//Since we are creating histograms, the contents of gDirectory will be modified: must use JANA-wide ROOT lock
+	//CREATE THE FUNCTIONS
+	//Since we are creating functions, the contents of gDirectory will be modified: must use JANA-wide ROOT lock
 	japp->RootWriteLock(); //ACQUIRE ROOT LOCK!!
 	{
 		string locFuncName = "df_dEdxCut_SelectHeavy"; //e.g. proton
@@ -38,7 +38,7 @@ void DCustomAction_dEdxCut::Initialize(JEventLoop* locEventLoop)
 	japp->RootUnLock(); //RELEASE ROOT LOCK!!
 }
 
-bool DCustomAction_dEdxCut::Perform_Action(JEventLoop* locEventLoop, const DParticleCombo* locParticleCombo)
+bool DCustomAction_dEdxCut_p3pi::Perform_Action(JEventLoop* locEventLoop, const DParticleCombo* locParticleCombo)
 {
 	//Write custom code to perform an action on the INPUT DParticleCombo (DParticleCombo)
 	//NEVER: Grab DParticleCombo or DAnalysisResults objects (of any tag!) from the JEventLoop within this function
@@ -56,7 +56,7 @@ bool DCustomAction_dEdxCut::Perform_Action(JEventLoop* locEventLoop, const DPart
 	return true; //return false if you want to use this action to apply a cut (and it fails the cut!)
 }
 
-bool DCustomAction_dEdxCut::Cut_dEdx(const DChargedTrackHypothesis* locChargedTrackHypothesis) const
+bool DCustomAction_dEdxCut_p3pi::Cut_dEdx(const DChargedTrackHypothesis* locChargedTrackHypothesis) const
 {
 	Particle_t locPID = locChargedTrackHypothesis->PID();
 
@@ -77,7 +77,7 @@ bool DCustomAction_dEdxCut::Cut_dEdx(const DChargedTrackHypothesis* locChargedTr
 	return true;
 }
 
-bool DCustomAction_dEdxCut::Cut_dEdx(Particle_t locPID, double locP, double locdEdx, bool locHasNoTimeInfoFlag) const
+bool DCustomAction_dEdxCut_p3pi::Cut_dEdx(Particle_t locPID, double locP, double locdEdx, bool locHasNoTimeInfoFlag) const
 {
 	if(ParticleCharge(locPID) < 0)
 		return true; //only need to separate q+

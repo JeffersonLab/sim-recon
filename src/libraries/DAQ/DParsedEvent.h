@@ -102,8 +102,19 @@ using namespace jana;
 // (e.g. calibration skims) and could be provided by standard analysis factories
 // Therefore, we deliver these data types ONLY IF they exist in the file
 #define MyDerivedTypes(X) \
-        X(DVertex)
+		X(DVertex)
 
+// It turns out that since we use object pools and in-place constructors, a
+// memory leak occurs for things like the samples vector in the Window Raw
+// data classes. This is because the in-place constructor re-initializes
+// the samples vector's underlying data pointer to NULL without freeing
+// the memory it points to. The easiest way around this is to just not use
+// a pool for these data types so the destructor is properly called. This
+// means a slight drop in efficiency, but only for data containing WRD which
+// is going to be slow anyway.
+#define MyNoPoolTypes(X) \
+		X(Df250WindowRawData) \
+		X(Df125WindowRawData)
 
 class DParsedEvent{
 	public:		
@@ -130,7 +141,7 @@ class DParsedEvent{
 		#define makevector(A) vector<A*>  v##A;
 		MyTypes(makevector)
 		MyBORTypes(makevector)
-        MyDerivedTypes(makevector)
+		MyDerivedTypes(makevector)
 		
 		// DParsedEvent objects are recycled to save malloc/delete cycles. Do the
 		// same for the objects they provide by creating a pool vector for each
@@ -138,7 +149,7 @@ class DParsedEvent{
 		// by the same worker thread.
 		#define makepoolvector(A) vector<A*>  v##A##_pool;
 		MyTypes(makepoolvector)
-        MyDerivedTypes(makepoolvector)
+		MyDerivedTypes(makepoolvector)
 
 		// Method to return all objects in vectors to their respective pools and 
 		// clear the vectors to set up for processing the next event. Vectors
@@ -146,18 +157,20 @@ class DParsedEvent{
 		// This is called from DEVIOWorkerThread::MakeEvents
 		#define returntopool(A) if(!v##A.empty()){ v##A##_pool.insert(v##A##_pool.end(), v##A.begin(), v##A.end()); }
 		#define clearvectors(A)     v##A.clear();
+		#define deletepool(A)       for(auto p : v##A##_pool) delete p;
+		#define clearpoolvectors(A) v##A##_pool.clear();
 		void Clear(void){ 
 			MyTypes(returntopool)
 			MyTypes(clearvectors)
 			MyBORTypes(clearvectors)
-            MyDerivedTypes(clearvectors)
+			MyDerivedTypes(clearvectors)
+			MyNoPoolTypes(deletepool)
+			MyNoPoolTypes(clearpoolvectors)
 		}
 
 		// Method to delete all objects in all vectors and all pools. This should
 		// usually only be called from the DParsedEvent destructor
 		#define deletevector(A)     for(auto p : v##A       ) delete p;
-		#define deletepool(A)       for(auto p : v##A##_pool) delete p;
-		#define clearpoolvectors(A) v##A##_pool.clear();
 		void Delete(void){
 			MyTypes(deletevector)
 			MyTypes(deletepool)
@@ -213,9 +226,9 @@ class DParsedEvent{
 		#define copybortofactory(A) facptrs.fac_##A->CopyTo(borptrs->v##A);
 		#define setevntcalled(A)    facptrs.fac_##A->Set_evnt_called();
 		#define keepownership(A)    facptrs.fac_##A->SetFactoryFlag(JFactory_base::NOT_OBJECT_OWNER);
-        #define copytofactorynonempty(A)    if(!v##A.empty()) facptrs.fac_##A->CopyTo(v##A);
-        #define setevntcallednonempty(A)    if(!v##A.empty()) facptrs.fac_##A->Set_evnt_called();
-        #define keepownershipnonempty(A)    if(!v##A.empty()) facptrs.fac_##A->SetFactoryFlag(JFactory_base::NOT_OBJECT_OWNER);
+		#define copytofactorynonempty(A)    if(!v##A.empty()) facptrs.fac_##A->CopyTo(v##A);
+		#define setevntcallednonempty(A)    if(!v##A.empty()) facptrs.fac_##A->Set_evnt_called();
+		#define keepownershipnonempty(A)    if(!v##A.empty()) facptrs.fac_##A->SetFactoryFlag(JFactory_base::NOT_OBJECT_OWNER);
 		void CopyToFactories(JEventLoop *loop){
 			// Get DFactoryPointers for this JEventLoop, creating new one if necessary
 			DFactoryPointers &facptrs = factory_pointers[loop];
@@ -244,16 +257,16 @@ class DParsedEvent{
 			MyDerivedTypes(checkclassname)
 			MyBORTypes(checkclassname)
 			return false;
-        }
+		}
 
-        // Method to check class name against each classname in MyTypes returning
-        // true only if this is a class that is usually produced by some
-        // ther factor, but we have some data of this type.  Otherwise returns false
-        #define checknonemptyderivedclassname(A) if((classname==#A)&&(!v##A.empty())) return true;
-        bool IsNonEmptyDerivedDataType(string &classname)const {
-            MyDerivedTypes(checknonemptyderivedclassname)
-            return false;
-        }
+		// Method to check class name against each classname in MyTypes returning
+		// true only if this is a class that is usually produced by some
+		// ther factor, but we have some data of this type.  Otherwise returns false
+		#define checknonemptyderivedclassname(A) if((classname==#A)&&(!v##A.empty())) return true;
+		bool IsNonEmptyDerivedDataType(string &classname)const {
+   		MyDerivedTypes(checknonemptyderivedclassname)
+   		return false;
+		}
 
 		// Get name of all classes we provide. Default is to provide only
 		// those with non-empty vector unless "include_all" is set true
@@ -307,7 +320,7 @@ class DParsedEvent{
 			return t; \
 		}
 		MyTypes(makeallocator);
-        MyDerivedTypes(makeallocator);
+		MyDerivedTypes(makeallocator);
 
 		// Constructor and destructor
 		DParsedEvent(uint64_t MAX_OBJECT_RECYCLES=1000):in_use(false),Nrecycled(0),MAX_RECYCLES(MAX_OBJECT_RECYCLES),borptrs(NULL){}
