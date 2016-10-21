@@ -69,9 +69,8 @@ void Df250EmulatorAlgorithm_v2::EmulateFirmware(const Df250WindowRawData* rawDat
         NSA = f250BORConfig->adc_nsa & 0x7F;
         NSB = f250BORConfig->adc_nsb & 0x7F;
         THR = f250BORConfig->adc_thres[channel];
-        // set more parameters once the BOR is updated
-        NPED = f250BORConfig->nped;
-        MAXPED = MAXPED_DEF;
+        NPED = f250BORConfig->NPED;
+        MAXPED = f250BORConfig->MaxPed;
         if (VERBOSE > 0) jout << "Df250EmulatorAlgorithm_v2::EmulateFirmware NSA: " << NSA << " NSB: " << NSB << " THR: " << THR << endl; 
     }
 
@@ -247,22 +246,12 @@ void Df250EmulatorAlgorithm_v2::EmulateFirmware(const Df250WindowRawData* rawDat
                     break;
                 }
             }
-            /*
-            for (unsigned int i = TPEAK[p]; i > 0; --i) {
-                if ((samples[i] & 0xfff) < VMID[p]) {
-                    TMID[p] = i+1;
-                    break;
-                }
-            }
-            */
             if (TMID[p] == 0) {  // redundant?
                 TFINE[p] = 0;
             }
             else {
                 int Vnext = (samples[TMID[p]] & 0xfff); 
                 int Vlast = (samples[TMID[p]-1] & 0xfff);
-                //int Vnext = (samples[TMID[p]-1] & 0xfff);  // should TMID be 1 smaller?
-                //int Vlast = (samples[TMID[p]-2] & 0xfff);
                 if (VERBOSE > 2) {
                     jout << "   TMIN = " << TMIN[p] << "  TMID  = " << TMID[p] << "  TPEAK = " << TPEAK[p] << endl
                          << "   VMID = " << VMID[p] << "  Vnext = " << Vnext   << "  Vlast = " << Vlast    << endl;
@@ -283,35 +272,6 @@ void Df250EmulatorAlgorithm_v2::EmulateFirmware(const Df250WindowRawData* rawDat
                  << " integral: " << pulse_integral[p] << endl;
         }
 
-        /*
-        Df250PulseTime* f250PulseTime = new Df250PulseTime;
-        f250PulseTime->rocid = rawData->rocid;
-        f250PulseTime->slot =  rawData->slot;
-        f250PulseTime->channel = rawData->channel;
-        f250PulseTime->itrigger = rawData->itrigger;
-        f250PulseTime->pulse_number = p;
-        f250PulseTime->quality_factor = reportTC[p];
-        f250PulseTime->time = pulse_time[p];
-        f250PulseTime->emulated = true;
-        f250PulseTime->time_emulated = pulse_time[p];
-        f250PulseTime->quality_factor_emulated = reportTC[p];
-        f250PulseTime->AddAssociatedObject(rawData);
-        pt_objs.push_back(f250PulseTime);
-
-        Df250PulsePedestal* f250PulsePedestal = new Df250PulsePedestal;
-        f250PulsePedestal->rocid = rawData->rocid;
-        f250PulsePedestal->slot = rawData->slot;
-        f250PulsePedestal->channel = rawData->channel;
-        f250PulsePedestal->itrigger = rawData->itrigger;
-        f250PulsePedestal->pulse_number = p;
-        f250PulsePedestal->pedestal = VMIN;
-        f250PulsePedestal->pulse_peak = VPEAK[p];
-        f250PulsePedestal->emulated = true;
-        f250PulsePedestal->pedestal_emulated = VMIN;
-        f250PulsePedestal->pulse_peak_emulated = VPEAK[p];
-        f250PulsePedestal->AddAssociatedObject(rawData);
-        pp_objs.push_back(f250PulsePedestal);
-        */
 
         Df250PulseData* f250PulseData;
         if( p < pdat_objs.size() ) {
@@ -335,16 +295,14 @@ void Df250EmulatorAlgorithm_v2::EmulateFirmware(const Df250WindowRawData* rawDat
             f250PulseData->QF_underflow = has_underflow_samples[npulses];  // is this right?
             f250PulseData->nsamples_over_threshold = number_samples_above_threshold[npulses];  // is this right?
             // word 3
-            //f250PulseTime->time = pulse_time[p];
-            f250PulseData->course_time = TMID[p]; // ?????
-            f250PulseData->fine_time = TFINE[p];  // ???????
+            f250PulseData->course_time = TMID[p]; 
+            f250PulseData->fine_time = TFINE[p];  
             //f250PulseData->time = pulse_time[p];
             f250PulseData->QF_vpeak_beyond_NSA = vpeak_beyond_NSA[npulses];  // is this right?
             f250PulseData->QF_vpeak_not_found = vpeak_not_found[npulses];  // is this right?
             f250PulseData->QF_bad_pedestal = bad_timing_pedestal;  // is this right?
             // other information
             f250PulseData->pulse_number = p;
-            //f250PulseData->quality_factor = reportTC[p];
             f250PulseData->nsamples_integral = NSA + NSB;
             f250PulseData->nsamples_pedestal = NPED;
             f250PulseData->emulated = true;
@@ -356,23 +314,20 @@ void Df250EmulatorAlgorithm_v2::EmulateFirmware(const Df250WindowRawData* rawDat
         // copy over emulated values
         f250PulseData->integral_emulated = pulse_integral[p];
         f250PulseData->pedestal_emulated = pedestal;
-        //f250PulseData->time_emulated = pulse_time[p]; 
         f250PulseData->pulse_peak_emulated = VPEAK[p]; 
-        //f250PulseData->time_emulated = pulse_time[p]; 
         f250PulseData->course_time_emulated = TMID[p];
         f250PulseData->fine_time_emulated = TFINE[p];
 
-        /*
+
         // if we are using the emulated values, copy them
         if( f250PulseData->emulated ) {
             f250PulseData->integral    = f250PulseData->integral_emulated;
             f250PulseData->pedestal    = f250PulseData->pedestal_emulated;
-            //f250PulseData->time       = f250PulseData->time_emulated;
             f250PulseData->pulse_peak  = f250PulseData->pulse_peak_emulated;
             f250PulseData->course_time = f250PulseData->course_time_emulated;
             f250PulseData->fine_time   = f250PulseData->fine_time_emulated;
         }
-        */
+
     }
 
     if (VERBOSE > 0) jout << " Df250EmulatorAlgorithm_v2::EmulateFirmware ==> Emulation complete <==" << endl;    
