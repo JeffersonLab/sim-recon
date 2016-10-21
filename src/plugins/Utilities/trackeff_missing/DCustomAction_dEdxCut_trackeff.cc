@@ -18,22 +18,12 @@ void DCustomAction_dEdxCut_trackeff::Initialize(JEventLoop* locEventLoop)
 	japp->RootWriteLock(); //ACQUIRE ROOT LOCK!!
 	{
 		string locFuncName = "df_dEdxCut_SelectHeavy"; //e.g. proton
-		if(gDirectory->Get(locFuncName.c_str()) != NULL) //already created by another thread
-			dFunc_dEdxCut_SelectHeavy = static_cast<TF1*>(gDirectory->Get(locFuncName.c_str()));
-		else
-		{
-			dFunc_dEdxCut_SelectHeavy = new TF1(locFuncName.c_str(), "exp(-1.0*[0]*x + [1]) + [2]", 0.0, 12.0);
-			dFunc_dEdxCut_SelectHeavy->SetParameters(3.93024, 3.0, 1.0);
-		}
+		dFunc_dEdxCut_SelectHeavy = new TF1(locFuncName.c_str(), "exp(-1.0*[0]*x + [1]) + [2]", 0.0, 12.0);
+		dFunc_dEdxCut_SelectHeavy->SetParameters(3.93024, 3.0, 1.0);
 
 		locFuncName = "df_dEdxCut_SelectLight"; //e.g. pions, kaons
-		if(gDirectory->Get(locFuncName.c_str()) != NULL) //already created by another thread
-			dFunc_dEdxCut_SelectLight = static_cast<TF1*>(gDirectory->Get(locFuncName.c_str()));
-		else
-		{
-			dFunc_dEdxCut_SelectLight = new TF1(locFuncName.c_str(), "exp(-1.0*[0]*x + [1]) + [2]", 0.0, 12.0);
-			dFunc_dEdxCut_SelectLight->SetParameters(6.0, 2.80149, 2.55);
-		}
+		dFunc_dEdxCut_SelectLight = new TF1(locFuncName.c_str(), "exp(-1.0*[0]*x + [1]) + [2]", 0.0, 12.0);
+		dFunc_dEdxCut_SelectLight->SetParameters(6.0, 2.80149, 2.55);
 	}
 	japp->RootUnLock(); //RELEASE ROOT LOCK!!
 }
