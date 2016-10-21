@@ -105,6 +105,73 @@ void ParseCommandLineArguments(int narg, char* argv[])
   }
 }
 
+// Breit-Wigner distribution for resonance shape
+double ResonanceShape(double m_S_sq,double width,double m1,double m2,
+		      int shape_type){
+  double bw=0.;
+  double m1_plus_m2=m1+m2;
+  double m1_minus_m2=m1-m2;  
+  bool got_pipi=(fabs(m1_minus_m2)>0.01)?false:true;
+
+  double M2diff=m_S_sq_R-m_S_sq;
+  double rho_m1m2
+    =sqrt((1.-m1_plus_m2*m1_plus_m2/m_S_sq)*(1-m1_minus_m2*m1_minus_m2/m_S_sq));
+
+  switch(shape_type){
+  case 0:  // Relativistic Breit-wigner with no channel-opening threshold effects
+    {
+      double fac=m_S_sq_R*sqrt(m_S_sq_R)*width
+	/sqrt((1.-m1_plus_m2*m1_plus_m2/m_S_sq_R)
+	      *(1-m1_minus_m2*m1_minus_m2)/m_S_sq_R);
+      bw=fac*rho_m1m2/(M2diff*M2diff+m_S_sq*width*width);
+    }
+    break;
+  case 1: // "No structure" model for a0(980)/f0(980)
+    {
+      // masses
+      double M_S=sqrt(m_S_sq);
+      double MK0=ParticleMass(KShort);
+      double MKPlus=ParticleMass(KPlus);
+
+      // coupling constants
+      double gK=3.05; 
+      double g_m1m2=2.82;
+      if (got_pipi){
+	gK=5.006;
+	g_m1m2=1.705;
+      }
+      double gKsq=gK*gK;     
+      double g_m1m2_sq=g_m1m2*g_m1m2;
+
+      // kinematic factors
+      double rhoK0sq=1.-4.*MK0*MK0/m_S_sq;
+      double rhoKPlussq=1.-4.*MKPlus*MKPlus/m_S_sq;
+
+      // Real and imaginary parts of BW amplitude
+      double ReDm=M2diff;
+      if (M_S<2.*MKPlus){
+	ReDm+=gKsq/(32.*M_PI)*sqrt(-rhoKPlussq);
+      }
+      if (M_S<2.*MK0){
+	ReDm+=gKsq/(32.*M_PI)*sqrt(-rhoK0sq);
+      }
+      double ImDm=g_m1m2_sq/(16*M_PI)*rho_m1m2;
+      if (M_S>2.*MKPlus){
+	ImDm+=gKsq/(32.*M_PI)*sqrt(rhoKPlussq);
+      }
+      if (M_S>2.*MK0){
+	ImDm+=gKsq/(32.*M_PI)*sqrt(rhoK0sq);
+      }
+      bw=g_m1m2_sq*rho_m1m2/(8*M_PI*M_PI*(ReDm*ReDm+ImDm*ImDm));
+    }
+    break;
+  default:
+    break;
+  }
+  return bw;
+}
+
+
 // Cross section dsigma/dt derived from 
 double CrossSection(double s,double t,double ms_sq){
   // Coupling constants 
@@ -565,28 +632,16 @@ int main(int narg, char *argv[])
       // Momenta of incoming photon and outgoing S and proton in cm frame
       double p_gamma=(s-m_p_sq)/(2.*Ecm);
 
+      double bw=0;
       if (width>0){  // Take into account width of resonance
 	if (num_decay_particles==2){
 	  double m1=decay_masses[0];
 	  double m2=decay_masses[1];
 	  double m1_plus_m2=m1+m2;
-	  double m1_minus_m2=m1-m2;
-	  double bw_max=1./width;
-	  double fac=m_S_sq_R*sqrt(m_S_sq_R)*width
-	    /sqrt((1.-m1_plus_m2*m1_plus_m2/m_S_sq_R)
-		  *(1-m1_minus_m2*m1_minus_m2)/m_S_sq_R);
-	  double bw_test=0,bw=0;
 	  double m_max=m_p*(sqrt(1.+2.*Egamma/m_p)-1.);
-
-	  // Use a relativistic Breit-Wigner distribution for the shape
-	  do{
-	    m_S_sq=m1_plus_m2+myrand->Uniform(m_max-m1_plus_m2);
-	    double M2diff=m_S_sq_R-m_S_sq;
-	    bw=fac*sqrt(1.-m1_plus_m2*m1_plus_m2/m_S_sq)
-	      *(1-m1_minus_m2*m1_minus_m2/m_S_sq)
-	      /(M2diff*M2diff+m_S_sq*width*width);
-	    bw_test=myrand->Uniform(bw_max);
-	  }while(bw_test>bw);
+	  double m_S=m1_plus_m2+myrand->Uniform(m_max-m1_plus_m2);
+	  m_S_sq=m_S*m_S;
+	  bw=ResonanceShape(m_S_sq,width,m1,m2,1);
 	}
       }
       double E_S=(s+m_S_sq-m_p_sq)/(2.*Ecm);
@@ -604,7 +659,7 @@ int main(int narg, char *argv[])
       
       sin_theta_over_2=sin(0.5*theta_cm);
       t=t0-4.*p_gamma*p_S*sin_theta_over_2*sin_theta_over_2;
-      xsec=CrossSection(s,t,m_S_sq);
+      xsec=bw*CrossSection(s,t,m_S_sq);
       
       // Generate a test value for the cross section
       xsec_test=myrand->Uniform(xsec_max);
