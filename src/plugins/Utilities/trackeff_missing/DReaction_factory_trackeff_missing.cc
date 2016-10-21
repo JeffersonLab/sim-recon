@@ -9,7 +9,7 @@
 #include "DCustomAction_TrackingEfficiency.h"
 #include "DCustomAction_CutExtraPi0.h"
 #include "DCustomAction_CutExtraShowers.h"
-#include "DCustomAction_dEdxCut.h"
+#include "DCustomAction_dEdxCut_trackeff.h"
 
 //------------------
 // brun
@@ -91,7 +91,7 @@ jerror_t DReaction_factory_trackeff_missing::evnt(JEventLoop* locEventLoop, uint
 	locReaction->Add_AnalysisAction(new DHistogramAction_PID(locReaction));
 
 	// PID Cuts
-	locReaction->Add_AnalysisAction(new DCustomAction_dEdxCut(locReaction, true)); //true: focus on rejecting background
+	locReaction->Add_AnalysisAction(new DCustomAction_dEdxCut_trackeff(locReaction, true)); //true: focus on rejecting background
 	locReaction->Add_AnalysisAction(new DCutAction_PIDDeltaT(locReaction, false, 0.5, PiPlus, SYS_TOF)); //false: measured data
 	locReaction->Add_AnalysisAction(new DCutAction_PIDDeltaT(locReaction, false, 1.0, PiPlus, SYS_BCAL)); //false: measured data
 	locReaction->Add_AnalysisAction(new DCutAction_PIDDeltaT(locReaction, false, 1.5, PiPlus, SYS_FCAL)); //false: measured data
@@ -183,7 +183,7 @@ jerror_t DReaction_factory_trackeff_missing::evnt(JEventLoop* locEventLoop, uint
 	locReaction->Add_AnalysisAction(new DHistogramAction_PID(locReaction));
 
 	// PID Cuts
-	locReaction->Add_AnalysisAction(new DCustomAction_dEdxCut(locReaction, true)); //true: focus on rejecting background
+	locReaction->Add_AnalysisAction(new DCustomAction_dEdxCut_trackeff(locReaction, true)); //true: focus on rejecting background
 	locReaction->Add_AnalysisAction(new DCutAction_PIDDeltaT(locReaction, false, 0.5, Proton, SYS_TOF)); //false: measured data
 	locReaction->Add_AnalysisAction(new DCutAction_PIDDeltaT(locReaction, false, 0.8, Proton, SYS_BCAL)); //false: measured data
 	locReaction->Add_AnalysisAction(new DCutAction_PIDDeltaT(locReaction, false, 1.5, Proton, SYS_FCAL)); //false: measured data
@@ -276,7 +276,7 @@ jerror_t DReaction_factory_trackeff_missing::evnt(JEventLoop* locEventLoop, uint
 	locReaction->Add_AnalysisAction(new DHistogramAction_PID(locReaction));
 
 	// PID Cuts
-	locReaction->Add_AnalysisAction(new DCustomAction_dEdxCut(locReaction, true)); //true: focus on rejecting background
+	locReaction->Add_AnalysisAction(new DCustomAction_dEdxCut_trackeff(locReaction, true)); //true: focus on rejecting background
 	locReaction->Add_AnalysisAction(new DCutAction_PIDDeltaT(locReaction, false, 0.5, Proton, SYS_TOF)); //false: measured data
 	locReaction->Add_AnalysisAction(new DCutAction_PIDDeltaT(locReaction, false, 0.8, Proton, SYS_BCAL)); //false: measured data
 	locReaction->Add_AnalysisAction(new DCutAction_PIDDeltaT(locReaction, false, 1.5, Proton, SYS_FCAL)); //false: measured data
@@ -369,7 +369,7 @@ jerror_t DReaction_factory_trackeff_missing::evnt(JEventLoop* locEventLoop, uint
 	locReaction->Add_AnalysisAction(new DHistogramAction_PID(locReaction));
 
 	// PID Cuts
-	locReaction->Add_AnalysisAction(new DCustomAction_dEdxCut(locReaction, true)); //true: focus on rejecting background
+	locReaction->Add_AnalysisAction(new DCustomAction_dEdxCut_trackeff(locReaction, true)); //true: focus on rejecting background
 	locReaction->Add_AnalysisAction(new DCutAction_PIDDeltaT(locReaction, false, 0.5, PiPlus, SYS_TOF)); //false: measured data
 	locReaction->Add_AnalysisAction(new DCutAction_PIDDeltaT(locReaction, false, 1.0, PiPlus, SYS_BCAL)); //false: measured data
 	locReaction->Add_AnalysisAction(new DCutAction_PIDDeltaT(locReaction, false, 1.5, PiPlus, SYS_FCAL)); //false: measured data
@@ -465,7 +465,7 @@ jerror_t DReaction_factory_trackeff_missing::evnt(JEventLoop* locEventLoop, uint
 	locReaction->Add_AnalysisAction(new DHistogramAction_PID(locReaction));
 
 	// PID Cuts
-	locReaction->Add_AnalysisAction(new DCustomAction_dEdxCut(locReaction, true)); //true: focus on rejecting background
+	locReaction->Add_AnalysisAction(new DCustomAction_dEdxCut_trackeff(locReaction, true)); //true: focus on rejecting background
 	locReaction->Add_AnalysisAction(new DCutAction_PIDDeltaT(locReaction, false, 0.5, Proton, SYS_TOF)); //false: measured data
 	locReaction->Add_AnalysisAction(new DCutAction_PIDDeltaT(locReaction, false, 0.8, Proton, SYS_BCAL)); //false: measured data
 	locReaction->Add_AnalysisAction(new DCutAction_PIDDeltaT(locReaction, false, 1.5, Proton, SYS_FCAL)); //false: measured data
@@ -557,7 +557,7 @@ jerror_t DReaction_factory_trackeff_missing::evnt(JEventLoop* locEventLoop, uint
 	locReaction->Add_AnalysisAction(new DHistogramAction_PID(locReaction));
 
 	// PID Cuts
-	locReaction->Add_AnalysisAction(new DCustomAction_dEdxCut(locReaction, true)); //true: focus on rejecting background
+	locReaction->Add_AnalysisAction(new DCustomAction_dEdxCut_trackeff(locReaction, true)); //true: focus on rejecting background
 	locReaction->Add_AnalysisAction(new DCutAction_PIDDeltaT(locReaction, false, 0.5, Proton, SYS_TOF)); //false: measured data
 	locReaction->Add_AnalysisAction(new DCutAction_PIDDeltaT(locReaction, false, 0.8, Proton, SYS_BCAL)); //false: measured data
 	locReaction->Add_AnalysisAction(new DCutAction_PIDDeltaT(locReaction, false, 1.5, Proton, SYS_FCAL)); //false: measured data
@@ -648,7 +648,7 @@ jerror_t DReaction_factory_trackeff_missing::evnt(JEventLoop* locEventLoop, uint
 	locReaction->Add_AnalysisAction(new DHistogramAction_PID(locReaction));
 
 	// PID Cuts
-	locReaction->Add_AnalysisAction(new DCustomAction_dEdxCut(locReaction, true)); //true: focus on rejecting background
+	locReaction->Add_AnalysisAction(new DCustomAction_dEdxCut_trackeff(locReaction, true)); //true: focus on rejecting background
 	locReaction->Add_AnalysisAction(new DCutAction_PIDDeltaT(locReaction, false, 0.5, PiPlus, SYS_TOF)); //false: measured data
 	locReaction->Add_AnalysisAction(new DCutAction_PIDDeltaT(locReaction, false, 1.0, PiPlus, SYS_BCAL)); //false: measured data
 	locReaction->Add_AnalysisAction(new DCutAction_PIDDeltaT(locReaction, false, 1.5, PiPlus, SYS_FCAL)); //false: measured data
@@ -727,7 +727,7 @@ jerror_t DReaction_factory_trackeff_missing::evnt(JEventLoop* locEventLoop, uint
 	locReaction->Add_AnalysisAction(new DHistogramAction_PID(locReaction));
 
 	// PID Cuts
-	locReaction->Add_AnalysisAction(new DCustomAction_dEdxCut(locReaction, true)); //true: focus on rejecting background
+	locReaction->Add_AnalysisAction(new DCustomAction_dEdxCut_trackeff(locReaction, true)); //true: focus on rejecting background
 	locReaction->Add_AnalysisAction(new DCutAction_PIDDeltaT(locReaction, false, 0.5, Proton, SYS_TOF)); //false: measured data
 	locReaction->Add_AnalysisAction(new DCutAction_PIDDeltaT(locReaction, false, 0.8, Proton, SYS_BCAL)); //false: measured data
 	locReaction->Add_AnalysisAction(new DCutAction_PIDDeltaT(locReaction, false, 1.5, Proton, SYS_FCAL)); //false: measured data
@@ -805,7 +805,7 @@ jerror_t DReaction_factory_trackeff_missing::evnt(JEventLoop* locEventLoop, uint
 	locReaction->Add_AnalysisAction(new DHistogramAction_PID(locReaction));
 
 	// PID Cuts
-	locReaction->Add_AnalysisAction(new DCustomAction_dEdxCut(locReaction, true)); //true: focus on rejecting background
+	locReaction->Add_AnalysisAction(new DCustomAction_dEdxCut_trackeff(locReaction, true)); //true: focus on rejecting background
 	locReaction->Add_AnalysisAction(new DCutAction_PIDDeltaT(locReaction, false, 0.5, Proton, SYS_TOF)); //false: measured data
 	locReaction->Add_AnalysisAction(new DCutAction_PIDDeltaT(locReaction, false, 0.8, Proton, SYS_BCAL)); //false: measured data
 	locReaction->Add_AnalysisAction(new DCutAction_PIDDeltaT(locReaction, false, 1.5, Proton, SYS_FCAL)); //false: measured data
@@ -894,7 +894,7 @@ jerror_t DReaction_factory_trackeff_missing::evnt(JEventLoop* locEventLoop, uint
 	locReaction->Add_AnalysisAction(new DHistogramAction_PID(locReaction));
 
 	// PID Cuts
-	locReaction->Add_AnalysisAction(new DCustomAction_dEdxCut(locReaction, true)); //true: focus on rejecting background
+	locReaction->Add_AnalysisAction(new DCustomAction_dEdxCut_trackeff(locReaction, true)); //true: focus on rejecting background
 	locReaction->Add_AnalysisAction(new DCutAction_PIDDeltaT(locReaction, false, 1.0, Gamma, SYS_BCAL)); //false: measured data
 	locReaction->Add_AnalysisAction(new DCutAction_PIDDeltaT(locReaction, false, 2.0, Gamma, SYS_FCAL)); //false: measured data
 	locReaction->Add_AnalysisAction(new DCutAction_TrackFCALShowerEOverP(locReaction, false, 0.5)); //false: measured data //value: cut e+/e- below this, tracks above this

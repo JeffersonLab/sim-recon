@@ -1,12 +1,12 @@
 // $Id$
 //
-//    File: DCustomAction_dEdxCut.h
+//    File: DCustomAction_dEdxCut_p2pi.h
 // Created: Thu Oct  1 11:18:05 EDT 2015
 // Creator: pmatt (on Darwin Pauls-MacBook-Pro-2.local 13.4.0 i386)
 //
 
-#ifndef _DCustomAction_dEdxCut_
-#define _DCustomAction_dEdxCut_
+#ifndef _DCustomAction_dEdxCut_p2pi_
+#define _DCustomAction_dEdxCut_p2pi_
 
 #include <string>
 #include <iostream>
@@ -24,11 +24,11 @@
 using namespace std;
 using namespace jana;
 
-class DCustomAction_dEdxCut : public DAnalysisAction
+class DCustomAction_dEdxCut_p2pi : public DAnalysisAction
 {
 	public:
 
-		DCustomAction_dEdxCut(const DReaction* locReaction, bool locMaxRejectionFlag = false, string locActionUniqueString = "") :
+		DCustomAction_dEdxCut_p2pi(const DReaction* locReaction, bool locMaxRejectionFlag = false, string locActionUniqueString = "") :
 		DAnalysisAction(locReaction, "Custom_dEdxCut", false, locActionUniqueString),
 		dMaxRejectionFlag(locMaxRejectionFlag) {}
 
@@ -55,4 +55,4 @@ class DCustomAction_dEdxCut : public DAnalysisAction
 		TF1* dFunc_dEdxCut_SelectLight; //e.g. pion, kaon //if dMaxRejectionFlag = true, then used to cut all light
 };
 
-#endif // _DCustomAction_dEdxCut_
+#endif // _DCustomAction_dEdxCut_p2pi_
