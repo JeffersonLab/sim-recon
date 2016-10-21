@@ -29,6 +29,13 @@ class Df250BORConfig:public jana::JObject, public f250config{
 		Df250BORConfig(){}
 		virtual ~Df250BORConfig(){}
 		
+		uint32_t NSA;      // extracted from adc_nsa
+		uint32_t NSA_trig; // extracted from adc_nsa
+		uint32_t NSB;      // extracted from adc_nsb
+		uint32_t NPED;     // extracted from config7
+		uint32_t MaxPed;   // extracted from config7
+		uint32_t NSAT;     // extraced from adc_config[0]
+		
 		// This method is used primarily for pretty printing
 		// the second argument to AddString is printf style format
 		void toStrings(vector<pair<string,string> > &items)const{
@@ -40,10 +47,12 @@ class Df250BORConfig:public jana::JObject, public f250config{
 			AddString(items, "blk_level" , "%d", blk_level);
 			AddString(items, "ptw"       , "%d", adc_ptw);
 			AddString(items, "pl"        , "%d", adc_pl);
-			AddString(items, "nsb"       , "%d", adc_nsb);
-			AddString(items, "nsa"       , "%d", adc_nsa&0x1FF);
-			AddString(items, "nsa_trig"  , "%d", adc_nsa>>9);
-			AddString(items, "nped"      , "%d", nped);
+			AddString(items, "NSB"       , "%d", NSB);
+			AddString(items, "NSA"       , "%d", NSA);
+			AddString(items, "NSA_trig"  , "%d", NSA_trig);
+			AddString(items, "NPED"      , "%d", NPED);
+			AddString(items, "MaxPed"    , "%d", MaxPed);
+			AddString(items, "NSAT"      , "%d", NSAT);
 		}
 
 };
