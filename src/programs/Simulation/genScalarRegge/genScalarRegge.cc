@@ -422,7 +422,7 @@ void CreateHistograms(){
 
 
 // Create a graph of the cross section dsigma/dt as a function of -t
-void GraphCrossSection(){
+void GraphCrossSection(double m1, double m2){
   // beam energy in lab
   double Egamma=Emin;
 
@@ -438,7 +438,19 @@ void GraphCrossSection(){
   // Momentum transfer t
   double p_diff=p_gamma-p_S;
   double t0=m_S_sq_R*m_S_sq_R/(4.*s)-p_diff*p_diff;
-  
+ 
+  // Integration over line shape	  
+  double m1_plus_m2=m1+m2;
+  double m_max=m_p*(sqrt(1.+2.*Egamma/m_p)-1.);
+  double bw=0;
+  double dmrange=m_max-m1_plus_m2;
+  double dm=dmrange/1000.;
+  for (int i=0;i<1000;i++){
+    double m=m1_plus_m2+dm*double(i);
+    bw+=ResonanceShape(m*m,width,m1,m2,1)*dm;
+  }
+
+  // differential cross section
   double sum=0.;
   double t_old=t0;
   double t_array[10000];
@@ -447,7 +459,7 @@ void GraphCrossSection(){
     double theta_cm=M_PI*double(k)/10000.;
     double sin_theta_over_2=sin(0.5*theta_cm);
     double t=t0-4.*p_gamma*p_S*sin_theta_over_2*sin_theta_over_2;
-    double xsec=CrossSection(s,t,m_S_sq_R);
+    double xsec=2.*m_S_sq_R/M_PI*bw*CrossSection(s,t,m_S_sq_R);
     
     t_array[k]=-t;
     xsec_array[k]=xsec;
@@ -584,7 +596,7 @@ int main(int narg, char *argv[])
   // Create some diagonistic histographs
   CreateHistograms();
   // Make a TGraph of the cross section at a fixed beam energy
-  GraphCrossSection();
+  GraphCrossSection(decay_masses[0],decay_masses[1]);
   
   // Fill histogram of coherent bremmsstrahlung distribution 
   for (int i=1;i<=1000;i++){
@@ -641,7 +653,7 @@ int main(int narg, char *argv[])
 	  double m_max=m_p*(sqrt(1.+2.*Egamma/m_p)-1.);
 	  double m_S=m1_plus_m2+myrand->Uniform(m_max-m1_plus_m2);
 	  m_S_sq=m_S*m_S;
-	  bw=ResonanceShape(m_S_sq,width,m1,m2,1);
+	  bw=ResonanceShape(m_S_sq,width,m1,m2,0);
 	}
       }
       double E_S=(s+m_S_sq-m_p_sq)/(2.*Ecm);
@@ -659,7 +671,7 @@ int main(int narg, char *argv[])
       
       sin_theta_over_2=sin(0.5*theta_cm);
       t=t0-4.*p_gamma*p_S*sin_theta_over_2*sin_theta_over_2;
-      xsec=bw*CrossSection(s,t,m_S_sq);
+      xsec=2.*m_S_sq_R/M_PI*bw*CrossSection(s,t,m_S_sq);
       
       // Generate a test value for the cross section
       xsec_test=myrand->Uniform(xsec_max);
