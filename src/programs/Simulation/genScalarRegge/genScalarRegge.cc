@@ -534,33 +534,9 @@ int main(int narg, char *argv[])
   cout << "Electron beam energy = " << Ee << " GeV, Coherent peak = " 
        << Epeak <<" GeV, collimator diameter = " 
        <<collDiam << " m" << endl;
-
-  // Get decaying particle mass and width
-  string comment_line2;
-  getline(infile,comment_line);
-  infile >> m_S;
-  infile >> width;
-  infile.ignore(); // ignore the '\n' at the end of this line
-
-  m_S_sq_R=m_S*m_S;
-  cout << "Mass, width of decaying particle [GeV] = "<< m_S <<"," << width << endl;
-
-  // Get coupling constants for photon vertex
-  getline(infile,comment_line);
-  infile >> gsq_rho_S_gamma;
-  infile >> gsq_omega_S_gamma;
-  infile.ignore(); // ignore the '\n' at the end of this line
-
-  cout << "Coupling constants:" <<endl;
-  cout << " gsq_rho_S_gamma = " << gsq_rho_S_gamma <<endl;
-  cout << " gsq_omega_S_gamma = " << gsq_omega_S_gamma << endl;
   
-  // Get number of decay particles
-  int num_decay_particles=0;
-  getline(infile,comment_line);
-  infile >> num_decay_particles;
-  infile.ignore(); // ignore the '\n' at the end of this line
-
+  // Set number of decay particles
+  int num_decay_particles=2;
   // Set up vectors of particle ids and 4-vectors
   int last_index=num_decay_particles;
   int num_final_state_particles=num_decay_particles+1;
@@ -579,8 +555,16 @@ int main(int narg, char *argv[])
     particle_types[k]=(Particle_t)ipart;
     decay_masses[k]=ParticleMass(particle_types[k]);
   }
+  infile.ignore(); // ignore the '\n' at the end of this line
   cout << endl;
 
+  // processes to simulate
+  int num_processes=5;
+  getline(infile,comment_line);
+  int *generate=new int[num_processes];
+  for (int k=0;k<num_processes;k++){
+    infile >> generate[k];
+  }
   infile.close();
  
   //----------------------------------------------------------------------------
@@ -607,6 +591,11 @@ int main(int narg, char *argv[])
     cobrems_vs_E->Fill(Ee*double(x),double(y));
   }
 
+  // Set up some variables for cross section calculation
+  // masses of decay particles
+  double m1=decay_masses[0];
+  double m2=decay_masses[1];
+  bool got_pipi=(fabs(m1-m2)>0.01)?false:true;
 
   //----------------------------------------------------------------------------
   // Event generation loop
@@ -632,6 +621,8 @@ int main(int narg, char *argv[])
     // vertex position at target
     float vert[4]={0.,0.,0.,0.};
 
+    // masses of decay particles
+
     // use the rejection method to produce S's based on the cross section
     do{
       // First generate a beam photon using bremsstrahlung spectrum
@@ -644,18 +635,13 @@ int main(int narg, char *argv[])
       // Momenta of incoming photon and outgoing S and proton in cm frame
       double p_gamma=(s-m_p_sq)/(2.*Ecm);
 
-      double bw=0;
-      if (width>0){  // Take into account width of resonance
-	if (num_decay_particles==2){
-	  double m1=decay_masses[0];
-	  double m2=decay_masses[1];
-	  double m1_plus_m2=m1+m2;
-	  double m_max=m_p*(sqrt(1.+2.*Egamma/m_p)-1.);
-	  double m_S=m1_plus_m2+myrand->Uniform(m_max-m1_plus_m2);
-	  m_S_sq=m_S*m_S;
-	  bw=ResonanceShape(m_S_sq,width,m1,m2,0);
-	}
-      }
+      // Mass of two-meson system     
+      double m1_plus_m2=m1+m2;
+      double m_max=m_p*(sqrt(1.+2.*Egamma/m_p)-1.);
+      double m_S=m1_plus_m2+myrand->Uniform(m_max-m1_plus_m2);
+      m_S_sq=m_S*m_S;
+
+      // Momentum and energy of two-meson system
       double E_S=(s+m_S_sq-m_p_sq)/(2.*Ecm);
       p_S=sqrt(E_S*E_S-m_S_sq);
     
@@ -668,11 +654,38 @@ int main(int narg, char *argv[])
       // Generate theta with a uniform distribution and compute the cross 
       // section at this value
       theta_cm=myrand->Uniform(M_PI);
-      
+      // compute t
       sin_theta_over_2=sin(0.5*theta_cm);
       t=t0-4.*p_gamma*p_S*sin_theta_over_2*sin_theta_over_2;
-      xsec=2.*m_S_sq_R/M_PI*bw*CrossSection(s,t,m_S_sq);
+
+      // Cross section
+      xsec=0.;
       
+      // f0(600)
+      if (got_pipi && generate[0]){
+	m_S_sq_R=0.6*0.6;
+	gsq_rho_S_gamma=0.8155; // GeV^-2
+	gsq_omega_S_gamma=0.05567;
+	width=0.6;
+	double bw=ResonanceShape(m_S_sq,width,m1,m2,0); 
+	xsec+=2.*m_S_sq_R/M_PI*bw*CrossSection(s,t,m_S_sq);
+      }
+      // f0(980)/a0(980)
+      if (generate[1]){
+	if (got_pipi){ // f0(980)
+	  m_S_sq_R=0.9783*0.9783;
+	  gsq_rho_S_gamma=0.239; // GeV^-2
+	  gsq_omega_S_gamma=0.02656;
+	}
+	else{ // a0(980)
+	  m_S_sq_R=0.9825*0.9825;	 
+	  gsq_rho_S_gamma=0.02537;
+	  gsq_omega_S_gamma=0.2283;
+	}
+	double bw=ResonanceShape(m_S_sq,width,m1,m2,1); 
+	xsec+=2.*m_S_sq_R/M_PI*bw*CrossSection(s,t,m_S_sq);
+      }
+
       // Generate a test value for the cross section
       xsec_test=myrand->Uniform(xsec_max);
     }
