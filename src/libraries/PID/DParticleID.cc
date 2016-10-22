@@ -1122,6 +1122,7 @@ bool DParticleID::MatchToSC(const DKinematicData* locTrack, const DReferenceTraj
 
 			if (fabs(dphi) > sc_dphi_cut)
 				return false;
+			break;
 		}
 
 		// Check for intersection point beyond nose

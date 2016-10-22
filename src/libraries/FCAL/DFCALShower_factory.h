@@ -14,10 +14,14 @@
 #include <FCAL/DFCALCluster.h>
 #include <DANA/DApplication.h>
 
+#include <TH2F.h>
+
 class DFCALShower_factory:public JFactory<DFCALShower>{
 	public:
 		DFCALShower_factory();
 		~DFCALShower_factory(){};
+		jerror_t LoadCovarianceLookupTables();
+		jerror_t FillCovarianceMatrix(DFCALShower* shower);
 	
 	private:
 		jerror_t evnt(JEventLoop *eventLoop, uint64_t eventnumber);	///< Invoked via JEventProcessor virtual method
@@ -41,6 +45,10 @@ class DFCALShower_factory:public JFactory<DFCALShower>{
 		double FCAL_CRITICAL_ENERGY;
 		double FCAL_SHOWER_OFFSET;
 		double FCAL_C_EFFECTIVE;
+
+		int VERBOSE;
+		string COVARIANCEFILENAME;
+		TH2F *CovarianceLookupTable[5][5];
 };
 
 

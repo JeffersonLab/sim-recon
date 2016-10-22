@@ -6,7 +6,7 @@
 //
 
 #include "DReaction_factory_p2k_hists.h"
-#include "DCustomAction_dEdxCut.h"
+#include "DCustomAction_dEdxCut_p2k.h"
 
 //------------------
 // brun
@@ -83,7 +83,7 @@ jerror_t DReaction_factory_p2k_hists::evnt(JEventLoop* locEventLoop, uint64_t lo
 	locReaction->Add_AnalysisAction(new DCutAction_PIDDeltaT(locReaction, false, 3.0, Proton, SYS_FCAL)); //cut at delta-t +/- 1.0 //false: measured data
 	locReaction->Add_AnalysisAction(new DCutAction_NoPIDHit(locReaction, KPlus));
 	locReaction->Add_AnalysisAction(new DCutAction_NoPIDHit(locReaction, KMinus));
-	locReaction->Add_AnalysisAction(new DCustomAction_dEdxCut(locReaction, false)); //false: focus on keeping signal
+	locReaction->Add_AnalysisAction(new DCustomAction_dEdxCut_p2k(locReaction, false)); //false: focus on keeping signal
 	locReaction->Add_AnalysisAction(new DHistogramAction_PID(locReaction, "PostPIDCuts"));
 
 	// Custom histograms for p2k (no KinFit cut)
@@ -147,7 +147,7 @@ jerror_t DReaction_factory_p2k_hists::evnt(JEventLoop* locEventLoop, uint64_t lo
 	locReaction->Add_AnalysisAction(new DCutAction_PIDDeltaT(locReaction, false, 3.0, Proton, SYS_FCAL)); //cut at delta-t +/- 1.0 //false: measured data
 	locReaction->Add_AnalysisAction(new DCutAction_NoPIDHit(locReaction, KPlus));
 	locReaction->Add_AnalysisAction(new DCutAction_NoPIDHit(locReaction, KMinus));
-	locReaction->Add_AnalysisAction(new DCustomAction_dEdxCut(locReaction, false)); //false: focus on keeping signal
+	locReaction->Add_AnalysisAction(new DCustomAction_dEdxCut_p2k(locReaction, false)); //false: focus on keeping signal
 	locReaction->Add_AnalysisAction(new DHistogramAction_PID(locReaction, "PostPIDCuts"));
 
 	//MASSES

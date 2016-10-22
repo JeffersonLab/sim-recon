@@ -1,44 +1,34 @@
 // $Id$
 //
-//    File: DCustomAction_dEdxCut.cc
+//    File: DCustomAction_dEdxCut_trackeff.cc
 // Created: Thu Oct  1 11:18:05 EDT 2015
 // Creator: pmatt (on Darwin Pauls-MacBook-Pro-2.local 13.4.0 i386)
 //
 
-#include "DCustomAction_dEdxCut.h"
+#include "DCustomAction_dEdxCut_trackeff.h"
 
-void DCustomAction_dEdxCut::Initialize(JEventLoop* locEventLoop)
+void DCustomAction_dEdxCut_trackeff::Initialize(JEventLoop* locEventLoop)
 {
 	//Optional: Create histograms and/or modify member variables.
 	//Create any histograms/trees/etc. within a ROOT lock. 
 		//This is so that when running multithreaded, only one thread is writing to the ROOT file at a time. 
 
-	//CREATE THE FUNCTIONS
-	//Since we are creating functions, the contents of gDirectory will be modified: must use JANA-wide ROOT lock
+	//CREATE THE HISTOGRAMS
+	//Since we are creating histograms, the contents of gDirectory will be modified: must use JANA-wide ROOT lock
 	japp->RootWriteLock(); //ACQUIRE ROOT LOCK!!
 	{
 		string locFuncName = "df_dEdxCut_SelectHeavy"; //e.g. proton
-		if(gDirectory->Get(locFuncName.c_str()) != NULL) //already created by another thread
-			dFunc_dEdxCut_SelectHeavy = static_cast<TF1*>(gDirectory->Get(locFuncName.c_str()));
-		else
-		{
-			dFunc_dEdxCut_SelectHeavy = new TF1(locFuncName.c_str(), "exp(-1.0*[0]*x + [1]) + [2]", 0.0, 12.0);
-			dFunc_dEdxCut_SelectHeavy->SetParameters(3.93024, 3.0, 1.0);
-		}
+		dFunc_dEdxCut_SelectHeavy = new TF1(locFuncName.c_str(), "exp(-1.0*[0]*x + [1]) + [2]", 0.0, 12.0);
+		dFunc_dEdxCut_SelectHeavy->SetParameters(3.93024, 3.0, 1.0);
 
 		locFuncName = "df_dEdxCut_SelectLight"; //e.g. pions, kaons
-		if(gDirectory->Get(locFuncName.c_str()) != NULL) //already created by another thread
-			dFunc_dEdxCut_SelectLight = static_cast<TF1*>(gDirectory->Get(locFuncName.c_str()));
-		else
-		{
-			dFunc_dEdxCut_SelectLight = new TF1(locFuncName.c_str(), "exp(-1.0*[0]*x + [1]) + [2]", 0.0, 12.0);
-			dFunc_dEdxCut_SelectLight->SetParameters(6.0, 2.80149, 2.55);
-		}
+		dFunc_dEdxCut_SelectLight = new TF1(locFuncName.c_str(), "exp(-1.0*[0]*x + [1]) + [2]", 0.0, 12.0);
+		dFunc_dEdxCut_SelectLight->SetParameters(6.0, 2.80149, 2.55);
 	}
 	japp->RootUnLock(); //RELEASE ROOT LOCK!!
 }
 
-bool DCustomAction_dEdxCut::Perform_Action(JEventLoop* locEventLoop, const DParticleCombo* locParticleCombo)
+bool DCustomAction_dEdxCut_trackeff::Perform_Action(JEventLoop* locEventLoop, const DParticleCombo* locParticleCombo)
 {
 	//Write custom code to perform an action on the INPUT DParticleCombo (DParticleCombo)
 	//NEVER: Grab DParticleCombo or DAnalysisResults objects (of any tag!) from the JEventLoop within this function
@@ -56,7 +46,7 @@ bool DCustomAction_dEdxCut::Perform_Action(JEventLoop* locEventLoop, const DPart
 	return true; //return false if you want to use this action to apply a cut (and it fails the cut!)
 }
 
-bool DCustomAction_dEdxCut::Cut_dEdx(const DChargedTrackHypothesis* locChargedTrackHypothesis) const
+bool DCustomAction_dEdxCut_trackeff::Cut_dEdx(const DChargedTrackHypothesis* locChargedTrackHypothesis) const
 {
 	Particle_t locPID = locChargedTrackHypothesis->PID();
 
@@ -77,7 +67,7 @@ bool DCustomAction_dEdxCut::Cut_dEdx(const DChargedTrackHypothesis* locChargedTr
 	return true;
 }
 
-bool DCustomAction_dEdxCut::Cut_dEdx(Particle_t locPID, double locP, double locdEdx, bool locHasNoTimeInfoFlag) const
+bool DCustomAction_dEdxCut_trackeff::Cut_dEdx(Particle_t locPID, double locP, double locdEdx, bool locHasNoTimeInfoFlag) const
 {
 	if(ParticleCharge(locPID) < 0)
 		return true; //only need to separate q+

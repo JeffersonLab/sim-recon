@@ -29,6 +29,27 @@ class Df250BORConfig:public jana::JObject, public f250config{
 		Df250BORConfig(){}
 		virtual ~Df250BORConfig(){}
 		
+		uint32_t NSA;      // extracted from adc_nsa
+		uint32_t NSA_trig; // extracted from adc_nsa
+		 int32_t NSB;      // extracted from adc_nsb
+		uint32_t NPED;     // extracted from config7
+		uint32_t MaxPed;   // extracted from config7
+		uint32_t NSAT;     // extracted from adc_config[0]
+		
+		/// Extract values as read from config registers
+		/// and fill in the derived members defined above.
+		/// This is called from DEVIOWorkerThread::ParseBORbank
+		void FillDerived(void){
+			
+			NSA      = (adc_nsa>> 0) & 0x1FF;
+			NSA_trig = (adc_nsa>> 9) & 0x3F;
+			NSB      = (adc_nsb>> 0) & 0x07;
+			if(adc_nsb&0x08) NSB = -NSB;
+			NPED     = (config7>>10) & 0xF;
+			MaxPed   = (config7>> 0) & 0x3FF;
+			NSAT     = (adc_config[0]>>10)&0x3;
+		}
+		
 		// This method is used primarily for pretty printing
 		// the second argument to AddString is printf style format
 		void toStrings(vector<pair<string,string> > &items)const{
@@ -40,8 +61,12 @@ class Df250BORConfig:public jana::JObject, public f250config{
 			AddString(items, "blk_level" , "%d", blk_level);
 			AddString(items, "ptw"       , "%d", adc_ptw);
 			AddString(items, "pl"        , "%d", adc_pl);
-			AddString(items, "nsb"       , "%d", adc_nsb);
-			AddString(items, "nsa"       , "%d", adc_nsa);
+			AddString(items, "NSB"       , "%d", NSB);
+			AddString(items, "NSA"       , "%d", NSA);
+			AddString(items, "NSA_trig"  , "%d", NSA_trig);
+			AddString(items, "NPED"      , "%d", NPED);
+			AddString(items, "MaxPed"    , "%d", MaxPed);
+			AddString(items, "NSAT"      , "%d", NSAT);
 		}
 
 };

@@ -491,26 +491,26 @@ void DEVIOWorkerThread::ParseBORbank(uint32_t* &iptr, uint32_t *iend)
 				case DModuleType::FADC250: // f250
 					f250conf = new Df250BORConfig;
 					dest = (uint32_t*)&f250conf->rocid;
-					sizeof_dest = sizeof(f250config);
+					sizeof_dest = sizeof(f250config)/sizeof(uint32_t);
 					break;
 				case DModuleType::FADC125: // f125
 					f125conf = new Df125BORConfig;
 					dest = (uint32_t*)&f125conf->rocid;
-					sizeof_dest = sizeof(f125config);
+					sizeof_dest = sizeof(f125config)/sizeof(uint32_t);
 					break;
 
 				case DModuleType::F1TDC32: // F1TDCv2
 				case DModuleType::F1TDC48: // F1TDCv3
 					F1TDCconf = new DF1TDCBORConfig;
 					dest = (uint32_t*)&F1TDCconf->rocid;
-					sizeof_dest = sizeof(F1TDCconfig);
+					sizeof_dest = sizeof(F1TDCconfig)/sizeof(uint32_t);
 					break;
 
 				case DModuleType::CAEN1190: // CAEN 1190 TDC
 				case DModuleType::CAEN1290: // CAEN 1290 TDC
 					caen1190conf = new DCAEN1290TDCBORConfig;
 					dest = (uint32_t*)&caen1190conf->rocid;
-					sizeof_dest = sizeof(caen1190config);
+					sizeof_dest = sizeof(caen1190config)/sizeof(uint32_t);
 					break;
 				
 				default:
@@ -523,14 +523,19 @@ void DEVIOWorkerThread::ParseBORbank(uint32_t* &iptr, uint32_t *iend)
 			}
 
 			// Check that the bank size and data structure size match.
-			if( module_len != (sizeof_dest/sizeof(uint32_t)) ){
+			if( module_len > sizeof_dest ){
 				stringstream ss;
-				ss << "BOR module bank size does not match structure! " << module_len << " != " << (sizeof_dest/sizeof(uint32_t)) << " for modType " << modType;
+				ss << "BOR module bank size does not match structure! " << module_len << " > " << sizeof_dest << " for modType " << modType;
 				throw JException(ss.str(), __FILE__, __LINE__);
 			}
 
 			// Copy bank data, assuming format is the same
-			for(uint32_t i=0; i<module_len; i++) *dest++ = *src++;
+			// Set extra words to "0" at end of structure
+			// in case we are processing data from older firmware
+			for(uint32_t i=0; i<sizeof_dest; i++) *dest++ = i<module_len ? (*src++):0;
+
+			// Extract certain derived values to fill in convenience members
+			if(f250conf    ) f250conf->FillDerived();
 
 			// Store object for use in this and subsequent events
 			if(f250conf    ) borptrs->vDf250BORConfig.push_back(f250conf);
@@ -1874,7 +1879,7 @@ void DEVIOWorkerThread::LinkAllAssociations(void)
 
 		//----------------- Sort hit objects
 
-		// fADC250
+		// fADC250 (n.b. Df250PulseData values overwritten in JEventSource_EVIOpp::LinkBORassociations)
 		if(pe->vDf250PulseData.size()>1    ) sort(pe->vDf250PulseData.begin(),     pe->vDf250PulseData.end(),     SortByPulseNumber<Df250PulseData> );
 		if(pe->vDf250PulseIntegral.size()>1) sort(pe->vDf250PulseIntegral.begin(), pe->vDf250PulseIntegral.end(), SortByPulseNumber<Df250PulseIntegral> );
 		if(pe->vDf250PulseTime.size()>1    ) sort(pe->vDf250PulseTime.begin(),     pe->vDf250PulseTime.end(),     SortByPulseNumber<Df250PulseTime>     );

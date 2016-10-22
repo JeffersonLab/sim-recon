@@ -26,7 +26,9 @@
                 xerr="float" yerr="float" zerr="float" terr="float" Eerr="float"
                 xycorr="float" xzcorr="float" yzcorr="float"
                 tzcorr="float" Ezcorr="float"
-                lunit="cm" tunit="ns" Eunit="GeV"/>
+                lunit="cm" tunit="ns" Eunit="GeV">
+	   <fcalCorrelations maxOccurs="1" minOccurs="0" Excorr="float" Eycorr="float" Etcorr="float" txcorr="float" tycorr="float"/>
+    </fcalShower>
     <bcalShower minOccurs="0" maxOccurs="unbounded" jtag="string"
                 x="float" y="float" z="float" t="float" E="float"
                 xerr="float" yerr="float" zerr="float" terr="float" Eerr="float"
@@ -35,6 +37,7 @@
                 lunit="cm" tunit="ns" Eunit="GeV">
       <preshower minOccurs="0" maxOccurs="1" preshowerE="float"/>
 	   <bcalCluster maxOccurs="1" minOccurs="0" ncell="int"/>
+	   <bcalCorrelations maxOccurs="1" minOccurs="0" Excorr="float" Eycorr="float" Etcorr="float" txcorr="float" tycorr="float"/>
     </bcalShower>
     <chargedTrack minOccurs="0" maxOccurs="unbounded" jtag="string"
                 ptype="Particle_t" candidateId="int">

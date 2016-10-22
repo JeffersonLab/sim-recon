@@ -3,8 +3,12 @@
 // Created: Tue May 17 11:57:50 EST 2005
 // Creator: remitche (on Linux mantrid00 2.4.20-18.8smp i686)
 
+#include <thread>
 #include <math.h>
 #include <DVector3.h>
+#include "TH2F.h"
+#include "TROOT.h"
+#include "TDirectory.h"
 using namespace std;
 
 #include "FCAL/DFCALShower_factory.h"
@@ -57,6 +61,11 @@ DFCALShower_factory::DFCALShower_factory()
   gPARMS->SetDefaultParameter("FCAL:FCAL_RADIATION_LENGTH", FCAL_RADIATION_LENGTH);
   gPARMS->SetDefaultParameter("FCAL:FCAL_CRITICAL_ENERGY", FCAL_CRITICAL_ENERGY);
   gPARMS->SetDefaultParameter("FCAL:FCAL_SHOWER_OFFSET", FCAL_SHOWER_OFFSET);
+
+  VERBOSE = 0;              ///< >0 once off info ; >2 event by event ; >3 everything
+  COVARIANCEFILENAME = "";  ///<  Setting the filename will take precidence over the CCDB.  Files must end in ij.txt, where i and j are integers corresponding to the element of the matrix
+  gPARMS->SetDefaultParameter("DFCALShower:VERBOSE", VERBOSE, "Verbosity level for DFCALShower objects and factories");
+  gPARMS->SetDefaultParameter("DFCALShower:COVARIANCEFILENAME", COVARIANCEFILENAME, "File name for covariance files");
 
 }
 
@@ -111,7 +120,9 @@ jerror_t DFCALShower_factory::brun(JEventLoop *loop, int32_t runnumber)
 
 	}
     }
-    
+	jerror_t result = LoadCovarianceLookupTables();
+	if (result!=NOERROR) return result;
+
     return NOERROR;
 }
 
@@ -136,9 +147,7 @@ jerror_t DFCALShower_factory::evnt(JEventLoop *eventLoop, uint64_t eventnumber)
     const DFCALCluster* cluster=*clItr;
 
     double cTime = cluster->getTime();
- 		
-    double errX = cluster->getRMS_x();
-    double errY = cluster->getRMS_y();
+
     double errZ;  // will be filled by call to GetCorrectedEnergyAndPosition()
 		
     // Get corrected energy, position, and errZ
@@ -159,9 +168,19 @@ jerror_t DFCALShower_factory::evnt(JEventLoop *eventLoop, uint64_t eventnumber)
       
       shower->setEnergy( Ecorrected );
       shower->setPosition( pos_corrected );   
-      shower->setPosError( errX, errY, errZ );
       shower->setTime ( cTime );
       
+	  FillCovarianceMatrix(shower);
+	  if (VERBOSE>2) {
+		  printf("FCAL shower:    E=%f   x=%f   y=%f   z=%f   t=%f\n",
+				 shower->getEnergy(),shower->getPosition().X(),shower->getPosition().Y(),shower->getPosition().Z(),shower->getTime());
+		  printf("FCAL shower:   dE=%f  dx=%f  dy=%f  dz=%f  dt=%f\n",
+				 shower->EErr(),shower->xErr(),shower->yErr(),shower->zErr(),shower->tErr());
+		  printf("FCAL shower:   Ex=%f  Ey=%f  Ez=%f  Et=%f  xy=%f\n",
+				 shower->EXcorr(),shower->EYcorr(),shower->EZcorr(),shower->ETcorr(),shower->XYcorr());
+		  printf("FCAL shower:   xz=%f  xt=%f  yz=%f  yt=%f  zt=%f\n",
+				 shower->XZcorr(),shower->XTcorr(),shower->YZcorr(),shower->YTcorr(),shower->ZTcorr());
+	  }
       shower->AddAssociatedObject(cluster);
 
       _data.push_back(shower);
@@ -248,4 +267,172 @@ void DFCALShower_factory::GetCorrectedEnergyAndPosition(const DFCALCluster* clus
 }
 
 
+
+jerror_t
+DFCALShower_factory::FillCovarianceMatrix(DFCALShower *shower){
+	/// This function takes a FCALShower object and using the internal variables
+	/// overwrites any existing covaraince matrix using lookup tables.
+
+	// Get edges of lookup table histograms (assume that all histograms have the same limits.)
+	TAxis *xaxis = CovarianceLookupTable[0][0]->GetXaxis();
+	TAxis *yaxis = CovarianceLookupTable[0][0]->GetYaxis();
+	float minElookup = xaxis->GetBinLowEdge(1);
+	float maxElookup = xaxis->GetBinUpEdge(xaxis->GetNbins());
+	float minthlookup = yaxis->GetBinLowEdge(1);
+	float maxthlookup = yaxis->GetBinUpEdge(yaxis->GetNbins());
+
+	float shower_E = shower->getEnergy();
+	float shower_x = shower->getPosition().X();
+	float shower_y = shower->getPosition().Y();
+	float shower_z = shower->getPosition().Z();
+	float shower_r = sqrt(shower_x*shower_x + shower_y*shower_y);
+	float shower_theta = atan2(shower_r,shower_z);
+	float thlookup = shower_theta/3.14159265*180;
+	float Elookup = shower_E;
+
+	// Adjust values: in order to use Interpolate() must be within histogram range
+	if (Elookup<minElookup) Elookup=minElookup;
+	if (Elookup>maxElookup) Elookup=maxElookup-0.0001; // move below edge, on edge doesn't work.
+	if (thlookup<minthlookup) thlookup=minthlookup;
+	if (thlookup>maxthlookup) thlookup=maxthlookup-0.0001;
+	if (VERBOSE>3) printf("(%f,%F)    limits (%f,%f)  (%f,%f)\n",Elookup,thlookup,minElookup,maxElookup,minthlookup,maxthlookup);
+
+	DMatrixDSym ErphiztCovariance(5);
+	for (int i=0; i<5; i++) {
+		for (int j=0; j<=i; j++) {
+			float val = CovarianceLookupTable[i][j]->Interpolate(Elookup, thlookup);
+			if (i==0 && j==0) val *= shower_E; // E variance is divided by energy in CCDB
+			ErphiztCovariance(i,j) = ErphiztCovariance(j,i) = val;
+		}
+	}
+
+	float shower_phi = atan2(shower_y,shower_x);
+    float cosPhi = cos(shower_phi);
+    float sinPhi = sin(shower_phi);
+	DMatrix rotationmatrix(5,5);
+	rotationmatrix(0,0) = 1;
+	rotationmatrix(3,3) = 1;
+	rotationmatrix(4,4) = 1;
+	rotationmatrix(1,1) = cosPhi;
+	rotationmatrix(1,2) = -sinPhi;
+	rotationmatrix(2,1) = sinPhi;
+	rotationmatrix(2,2) = cosPhi;
+
+	if (VERBOSE>3) {printf("(E,r,phi,z,t)  "); ErphiztCovariance.Print(); }
+	DMatrixDSym &D = ErphiztCovariance.Similarity(rotationmatrix);
+	shower->ExyztCovariance = D;
+	if (VERBOSE>2) {printf("(E,x,y,z,t)    "); shower->ExyztCovariance.Print(); }
+
+	return NOERROR;
+}
+
+
+jerror_t
+DFCALShower_factory::LoadCovarianceLookupTables(){
+	std::thread::id this_id = std::this_thread::get_id();
+	stringstream idstring;
+	idstring << this_id;
+	if (VERBOSE>0) printf("DFCALShower_factory::LoadCovarianceLookupTables():  Thread %s\n",idstring.str().c_str());
+
+	bool USECCDB=0;
+	bool DUMMYTABLES=0;
+	// if filename specified try to use filename else get info from CCDB
+	if (COVARIANCEFILENAME == "") USECCDB=1;
+
+	map<string,string> covariance_data;
+	if (USECCDB) {
+		// load information for covariance matrix
+		if (eventLoop->GetJCalibration()->GetCalib("/FCAL/shower_covariance", covariance_data)) {
+			jerr << "Error loading /FCAL/shower_covariance !" << endl;
+			DUMMYTABLES=1;
+		}
+		if (covariance_data.size() == 15)  {  // there are 15 elements in the covariance matrix
+			// for example, print it all out
+			if (VERBOSE>0) {
+				for(auto element : covariance_data) {
+					cout << "\nTEST:   " << element.first << " = " << element.second << endl;
+				}
+			}
+		} else {
+			jerr << "Wrong number of elements /FCAL/shower_covariance !" << endl;
+			DUMMYTABLES=1;
+		}
+	}
+
+	for (int i=0; i<5; i++) {
+		for (int j=0; j<=i; j++) {
+
+			japp->RootWriteLock();
+			// change directory to memory so that histograms are not saved to file
+			TDirectory *savedir = gDirectory;
+			gROOT->cd();
+
+			char histname[255];
+			sprintf(histname,"covariance_%i%i_thread%s",i,j,idstring.str().c_str());
+			// Read in string
+			ifstream ifs;
+			string line;
+			stringstream ss;
+			if (USECCDB) {
+				stringstream matrixname;
+				matrixname << "covmatrix_" << i << j;
+				if (VERBOSE>1) cout << "Using CCDB \"" << matrixname.str() << "\"  " << covariance_data[matrixname.str()] << endl;
+				ss.str(covariance_data[matrixname.str()]);
+			} else {
+				char filename[255];
+				sprintf(filename,"%s%i%i.txt",COVARIANCEFILENAME.c_str(),i,j);
+				if (VERBOSE>0) cout  << filename << std::endl;
+				ifs.open(filename);
+				if (! ifs.is_open()) {
+					jerr << " Error: Cannot open file! " << filename << std::endl;
+					DUMMYTABLES=1;
+				} else {
+					getline(ifs, line, '\n');
+					ss.str(line);
+					if (VERBOSE>1) cout << filename << " dump: " <<line<<endl;
+				}
+			}
+			if (DUMMYTABLES) {
+				// create dummy histogram since something went wrong
+				CovarianceLookupTable[i][j] = new TH2F(histname,"Covariance histogram",10,0,12,10,0,12);
+			} else {
+				// Parse string
+				int nxbins, nybins;
+				ss>>nxbins;
+				ss>>nybins;
+				if (VERBOSE>1) printf("parsed dump: bins (%i,%i)\n",nxbins,nybins);
+				Float_t xbins[nxbins+1];
+				Float_t ybins[nybins+1];
+				for (int count=0; count<=nxbins; count++) {
+					ss>>xbins[count];
+					if (VERBOSE>1) printf("(%i,%f)  ",count,xbins[count]);
+				}
+				if (VERBOSE>1) printf("\n");
+				for (int count=0; count<=nybins; count++) {
+					ss>>ybins[count];
+					if (VERBOSE>1) printf("(%i,%f)  ",count,ybins[count]);
+				}
+				if (VERBOSE>1) printf("\n");
+				int xbin=1;
+				double cont;
+				int ybin=1;
+				// create histogram
+				CovarianceLookupTable[i][j] = new TH2F(histname,"Covariance histogram",nxbins,xbins,nybins,ybins);
+				// fill histogram
+				while(ss>>cont){
+					if (VERBOSE>1) printf("(%i,%i) (%i,%i) %e  ",i,j,xbin,ybin,cont);
+					CovarianceLookupTable[i][j]->SetBinContent(xbin,ybin,cont);
+					ybin++;
+					if (ybin>nybins) { xbin++; ybin=1; }
+				}
+				if (VERBOSE>1) printf("\n");
+				// Close file
+				ifs.close();
+			}
+			savedir->cd();
+			japp->RootUnLock(); 
+		}
+	}
+	return NOERROR;
+}
 
