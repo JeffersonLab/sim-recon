@@ -27,6 +27,7 @@ using namespace std::chrono;
 
 #include <TTAB/DTranslationTable_factory.h>
 #include <DAQ/Df250EmulatorAlgorithm_v1.h>
+#include <DAQ/Df250EmulatorAlgorithm_v2.h>
 #include <DAQ/Df125EmulatorAlgorithm_v2.h>
 
 
@@ -82,8 +83,9 @@ JEventSource_EVIOpp::JEventSource_EVIOpp(const char* source_name):JEventSource(s
 	IGNORE_EMPTY_BOR = false;
 	F250_EMULATION_MODE = kEmulationAuto;
 	F125_EMULATION_MODE = kEmulationAuto;
+    F250_EMULATION_VERSION = 2;
 	RECORD_CALL_STACK = false;
-
+    
 
 	gPARMS->SetDefaultParameter("EVIO:VERBOSE", VERBOSE, "Set verbosity level for processing and debugging statements while parsing. 0=no debugging messages. 10=all messages");
 	gPARMS->SetDefaultParameter("EVIO:NTHREADS", NTHREADS, "Set the number of worker threads to use for parsing the EVIO data");
@@ -186,7 +188,16 @@ JEventSource_EVIOpp::JEventSource_EVIOpp(const char* source_name):JEventSource(s
 	}
 	
 	// Create emulator objects
-	f250Emulator = new Df250EmulatorAlgorithm_v1(NULL);
+
+    if(F250_EMULATION_VERSION == 1) {
+        f250Emulator = new Df250EmulatorAlgorithm_v1(NULL);
+    } else {
+        if(F250_EMULATION_VERSION != 2) 
+            jerr << "Invalid fADC250 firmware version specified for emulation == " << F250_EMULATION_VERSION
+                 << " ,  Using v2 firmware as default ..." << endl;
+        f250Emulator = new Df250EmulatorAlgorithm_v2(NULL);
+    }
+
 	f125Emulator = new Df125EmulatorAlgorithm_v2();
 
 	// Record start time
@@ -749,58 +760,89 @@ void JEventSource_EVIOpp::EmulateDf250Firmware(DParsedEvent *pe)
 
 	if(F250_EMULATION_MODE == kEmulationNone) return;
 
-	for(auto wrd : pe->vDf250WindowRawData){
-		const Df250PulseTime     *cf250PulseTime     = NULL;
-		const Df250PulsePedestal *cf250PulsePedestal = NULL;
+    // The output data format of the firmware versions is different
+    // so we handle their emulation separately...
+    if(F250_EMULATION_VERSION == 1) {   // pre-Fall 2016
 
-		try{ wrd->GetSingle(cf250PulseTime);     }catch(...){}
-		try{ wrd->GetSingle(cf250PulsePedestal); }catch(...){}
+        for(auto wrd : pe->vDf250WindowRawData){
+            const Df250PulseTime     *cf250PulseTime     = NULL;
+            const Df250PulsePedestal *cf250PulsePedestal = NULL;
+            
+            try{ wrd->GetSingle(cf250PulseTime);     }catch(...){}
+            try{ wrd->GetSingle(cf250PulsePedestal); }catch(...){}
+            
+            Df250PulseTime     *f250PulseTime     = (Df250PulseTime*    )cf250PulseTime;
+            Df250PulsePedestal *f250PulsePedestal = (Df250PulsePedestal*)cf250PulsePedestal;
+            
+            // Emulate firmware
+            vector<Df250PulseTime*>     em_pts;
+            vector<Df250PulsePedestal*> em_pps;
+            vector<Df250PulseIntegral*> em_pis;
+            f250Emulator->EmulateFirmware(wrd, em_pts, em_pps, em_pis);
+            
+            // Spring 2016 and earlier data may have one pulse time and
+            // one pedestal object in mode 8 data. Emulation mimics mode
+            // 7 which may have more. If there are firmware generated 
+            // pulse time/pedestal objects, copy the first emulated hit's
+            // info into them and then the rest of the emulated hits into
+            // appropriate lists.
+            if(!em_pts.empty() && f250PulseTime){
+                Df250PulseTime *em_pt = em_pts[0];
+                f250PulseTime->time_emulated = em_pt->time_emulated;
+                f250PulseTime->quality_factor_emulated = em_pt->quality_factor_emulated;
+                if(F250_EMULATION_MODE == kEmulationAlways){
+                    f250PulseTime->time = em_pt->time;
+                    f250PulseTime->quality_factor = em_pt->quality_factor;
+                    f250PulseTime->emulated = true;
+                }
+                delete em_pt;
+                em_pts.erase(em_pts.begin());
+            }
 
-		Df250PulseTime     *f250PulseTime     = (Df250PulseTime*    )cf250PulseTime;
-		Df250PulsePedestal *f250PulsePedestal = (Df250PulsePedestal*)cf250PulsePedestal;
+            if(!em_pps.empty() && f250PulsePedestal){
+                Df250PulsePedestal *em_pp = em_pps[0];
+                f250PulsePedestal->pedestal_emulated   = em_pp->pedestal_emulated;
+                f250PulsePedestal->pulse_peak_emulated = em_pp->pulse_peak_emulated;
+                if(F250_EMULATION_MODE == kEmulationAlways){
+                    f250PulsePedestal->pedestal   = em_pp->pedestal_emulated;
+                    f250PulsePedestal->pulse_peak = em_pp->pulse_peak_emulated;
+                    f250PulsePedestal->emulated = true;
+                }
+                delete em_pp;
+                em_pps.erase(em_pps.begin());
+            }
 
-		// Emulate firmware
-		vector<Df250PulseTime*>     em_pts;
-		vector<Df250PulsePedestal*> em_pps;
-		vector<Df250PulseIntegral*> em_pis;
-		f250Emulator->EmulateFirmware(wrd, em_pts, em_pps, em_pis);
-		
-		// Spring 2016 and earlier data may have one pulse time and
-		// one pedestal object in mode 8 data. Emulation mimics mode
-		// 7 which may have more. If there are firmware generated 
-		// pulse time/pedestal objects, copy the first emulated hit's
-		// info into them and then the rest of the emulated hits into
-		// appropriate lists.
-		if(!em_pts.empty() && f250PulseTime){
-			Df250PulseTime *em_pt = em_pts[0];
-			f250PulseTime->time_emulated = em_pt->time_emulated;
-			f250PulseTime->quality_factor_emulated = em_pt->quality_factor_emulated;
-			if(F250_EMULATION_MODE == kEmulationAlways){
-				f250PulseTime->time = em_pt->time;
-				f250PulseTime->quality_factor = em_pt->quality_factor;
-				f250PulseTime->emulated = true;
-			}
-			delete em_pt;
-			em_pts.erase(em_pts.begin());
-		}
+            pe->vDf250PulseTime.insert(pe->vDf250PulseTime.end(),         em_pts.begin(), em_pts.end());
+            pe->vDf250PulsePedestal.insert(pe->vDf250PulsePedestal.end(), em_pps.begin(), em_pps.end());
+            pe->vDf250PulseIntegral.insert(pe->vDf250PulseIntegral.end(), em_pis.begin(), em_pis.end());
+        }
 
-		if(!em_pps.empty() && f250PulsePedestal){
-			Df250PulsePedestal *em_pp = em_pps[0];
-			f250PulsePedestal->pedestal_emulated   = em_pp->pedestal_emulated;
-			f250PulsePedestal->pulse_peak_emulated = em_pp->pulse_peak_emulated;
-			if(F250_EMULATION_MODE == kEmulationAlways){
-				f250PulsePedestal->pedestal   = em_pp->pedestal_emulated;
-				f250PulsePedestal->pulse_peak = em_pp->pulse_peak_emulated;
-				f250PulsePedestal->emulated = true;
-			}
-			delete em_pp;
-			em_pps.erase(em_pps.begin());
-		}
+    } else if(F250_EMULATION_VERSION == 2) {   // Fall 2016 -> ?
 
-		pe->vDf250PulseTime.insert(pe->vDf250PulseTime.end(),         em_pts.begin(), em_pts.end());
-		pe->vDf250PulsePedestal.insert(pe->vDf250PulsePedestal.end(), em_pps.begin(), em_pps.end());
-		pe->vDf250PulseIntegral.insert(pe->vDf250PulseIntegral.end(), em_pis.begin(), em_pis.end());
-	}
+        for(auto wrd : pe->vDf250WindowRawData){
+            // See if we need to remake Df250PulseData objects?
+            vector<const Df250PulseData*> cpdats;   // existing pulse data objects
+            try{ wrd->Get(cpdats); }catch(...){}
+
+            vector<Df250PulseData*> pdats;
+            for(auto cpdat : cpdats) 
+                pdats.push_back((Df250PulseData*)cpdat);
+
+            // Flag all objects as emulated and their values will be replaced with emulated quantities
+            if (F250_EMULATION_MODE == kEmulationAlways){
+                for(auto pdat : pdats)
+                    pdat->emulated = 1;
+            }
+
+            // Emulate firmware
+            f250Emulator->EmulateFirmware(wrd, pdats);
+        }
+
+    } else {
+        stringstream ss;
+        ss << "Invalid fADC250 firmware version specified: " << F250_EMULATION_VERSION;
+        throw JException(ss.str());
+    }
 	
 	// One last bit of nastiness here. Because the emulator creates
 	// new objects rather than pulling them from the DParsedEvent pools,
