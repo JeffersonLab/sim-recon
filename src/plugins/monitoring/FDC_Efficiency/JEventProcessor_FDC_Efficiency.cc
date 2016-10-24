@@ -16,6 +16,7 @@ static TH1D *fdc_wire_expected_cell[25]; // Contains total number of expected hi
 static TH2D *fdc_pseudo_measured_cell[25]; //Filled with total actually detected before division at end
 static TH2D *fdc_pseudo_expected_cell[25]; // Contains total number of expected hits by DOCA
 
+//For extraction of magnetic field slope, split the detectors into bins in radius
 const unsigned int rad = 1; // 1, 5 or 9
 
 static TH1I *hChi2OverNDF;
@@ -42,8 +43,12 @@ static TH2I *hRingsHit_vs_P;
 
 static TH1I *hWireTime;
 static TH1I *hWireTime_accepted;
+static TH1I *hCathodeTime;
+static TH1I *hCathodeTime_accepted;
 static TH1I *hPseudoTime;
 static TH1I *hPseudoTime_accepted;
+
+static TH1I *hDeltaTime;
 
 // Routine used to create our JEventProcessor
 #include <JANA/JApplication.h>
@@ -118,8 +123,13 @@ jerror_t JEventProcessor_FDC_Efficiency::init(void)
   hWireTime = new TH1I("hWireTime", "Timing of Hits", 1500, -500, 1000);
   hWireTime_accepted = new TH1I("hWireTime_accepted", "Timing of Hits (accepted)", 1500, -500, 1000);
 
+  hCathodeTime = new TH1I("hCathodeTime", "Timing of Cathode Clusters", 600, -200, 400);
+  hCathodeTime_accepted = new TH1I("hCathodeTime_accepted", "Timing of Cathode Clusters (accepted)", 600, -200, 400);
+
   hPseudoTime = new TH1I("hPseudoTime", "Timing of Pseudos", 600, -200, 400);
   hPseudoTime_accepted = new TH1I("hPseudoTime_accepted", "Timing of Pseudos (accepted)", 600, -200, 400);
+
+  hDeltaTime = new TH1I("hDeltaTime", "Time Difference between Wires and Cathode Clusters", 200, -50, 50);
 
   gDirectory->cd("/FDC_Efficiency");
   gDirectory->mkdir("Residuals")->cd();
@@ -219,6 +229,8 @@ jerror_t JEventProcessor_FDC_Efficiency::evnt(JEventLoop *loop, uint64_t eventnu
 
     japp->RootFillLock(this); //ACQUIRE ROOT FILL LOCK
     hPseudoTime->Fill(locPseudo->time);
+    hCathodeTime->Fill(locPseudo->t_u);
+    hCathodeTime->Fill(locPseudo->t_v);
     japp->RootFillUnLock(this); //RELEASE ROOT FILL LOCK
 
   }
@@ -502,6 +514,10 @@ jerror_t JEventProcessor_FDC_Efficiency::evnt(JEventLoop *loop, uint64_t eventnu
 		japp->RootFillLock(this); //ACQUIRE ROOT FILL LOCK
 		fdc_pseudo_measured_cell[cellNum]->Fill(interPosition.X(), interPosition.Y());
 		hPseudoTime_accepted->Fill(locPseudo->time);
+		hCathodeTime_accepted->Fill(locPseudo->t_u);
+		hCathodeTime_accepted->Fill(locPseudo->t_v);
+		hDeltaTime->Fill(locPseudo->time - locPseudo->t_u);
+		hDeltaTime->Fill(locPseudo->time - locPseudo->t_v);
 		hPseudoResVsT->Fill(residualU, locPseudo->time);
 		japp->RootFillUnLock(this); //RELEASE ROOT FILL LOCK
 	      }
