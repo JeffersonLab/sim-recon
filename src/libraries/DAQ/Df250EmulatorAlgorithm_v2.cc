@@ -308,6 +308,7 @@ void Df250EmulatorAlgorithm_v2::EmulateFirmware(const Df250WindowRawData* rawDat
             f250PulseData->emulated = true;
 
             f250PulseData->AddAssociatedObject(rawData);
+            const_cast<Df250WindowRawData*>(rawData)->AddAssociatedObject(f250PulseData);
             pdat_objs.push_back(f250PulseData);
         }
 

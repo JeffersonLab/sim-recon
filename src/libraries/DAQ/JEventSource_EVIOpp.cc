@@ -836,6 +836,13 @@ void JEventSource_EVIOpp::EmulateDf250Firmware(DParsedEvent *pe)
 
             // Emulate firmware
             f250Emulator->EmulateFirmware(wrd, pdats);
+				
+				// Above call overwrites values with emulated values, but may also
+				// find additional pulses. Add any extra pulse data objects found
+				// to end of list
+				for(uint32_t i=cpdats.size(); i<pdats.size(); i++){
+					pe->vDf250PulseData.push_back(pdats[i]);
+				}
         }
 
     } else {
