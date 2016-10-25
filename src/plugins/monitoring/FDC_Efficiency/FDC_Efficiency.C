@@ -312,6 +312,11 @@ void FDC_Efficiency(bool save = 0){
 	slope[r][icell-1] = fp1->GetParameter(1);
 	slope_err[r][icell-1] = fp1->GetParError(1);
       }
+      else {
+	// histograms not present
+	slope[r][icell-1] = 0;
+	slope_err[r][icell-1] = 0;
+      }
     }
   }
 
@@ -364,5 +369,4 @@ void FDC_Efficiency(bool save = 0){
     else 
       gmagnet[r]->Draw("Psame");
   }
-  
 }

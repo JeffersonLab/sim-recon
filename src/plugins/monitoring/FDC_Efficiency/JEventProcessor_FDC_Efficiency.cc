@@ -335,7 +335,7 @@ jerror_t JEventProcessor_FDC_Efficiency::evnt(JEventLoop *loop, uint64_t eventnu
     for (unsigned int i = 0; i < cells; i++)
       packageHit[(cellsHit[i] - 1) / 6]++;
     
-    unsigned int minCells = 4; //At least 4 cells hit in any package for relatively "unbiased" efficiencies
+    unsigned int minCells = 5; //At least 5 cells hit in any package for relatively "unbiased" efficiencies
     if (packageHit[0] < minCells && packageHit[1] < minCells && packageHit[2] < minCells && packageHit[3] < minCells) continue;
     
     // Fill Histograms for accepted Tracks
@@ -357,9 +357,9 @@ jerror_t JEventProcessor_FDC_Efficiency::evnt(JEventLoop *loop, uint64_t eventnu
       unsigned int cellNum = cellIndex +1;
       vector< DFDCWire * > wireByNumber = fdcwires[cellIndex];
 
-      // Use only tracks that have at least 4 (or other # of) hits in the package this cell is in
+      // Use only tracks that have at least 5 (or other # of) hits in the package this cell is in
       // OR 12 hits in total
-      if (packageHit[cellIndex / 6] < minCells && cells < 12) continue;
+      if (packageHit[cellIndex / 6] < minCells /*&& cells < 12*/) continue;
 
       // Interpolate track to layer
       DVector3 plane_origin(0.0, 0.0, fdcz[cellIndex]);
