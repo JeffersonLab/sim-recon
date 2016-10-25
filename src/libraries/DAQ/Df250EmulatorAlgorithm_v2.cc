@@ -174,7 +174,7 @@ void Df250EmulatorAlgorithm_v2::EmulateFirmware(const Df250WindowRawData* rawDat
         //   3. Time quality bits 0 and 1 are set to 1"
         if(no_timing_calculation) {
             // this will need to be changed when the timing algorithm is fixed
-            VMID[p] = TC[p];
+            TMID[p] = TC[p];
             TFINE[p] = 0;
             VPEAK[p] = 0;
             bad_timing_pedestal = true;
@@ -240,8 +240,16 @@ void Df250EmulatorAlgorithm_v2::EmulateFirmware(const Df250WindowRawData* rawDat
 
             VMID[p] = (VMIN + VPEAK[p]) >> 1;
             
-            for (unsigned int i = TMIN[p] + 1; i < (uint32_t)ipeak; ++i) {
+            /*
+            for (unsigned int i = TMIN[p] + 1; i < (uint32_t)ipeak; ++i) { // old
                 if ((samples[i] & 0xfff) > VMID[p]) {
+                    TMID[p] = i;
+                    break;
+                }
+            }
+            */
+            for (unsigned int i = TPEAK[p]; i > 1; --i) { 
+                if ((samples[i-1] & 0xfff) <= VMID[p]) {
                     TMID[p] = i;
                     break;
                 }
