@@ -235,7 +235,7 @@ jerror_t DFDCPseudo_factory::brun(JEventLoop *loop, int32_t runnumber)
     if (!x_dist_33) x_dist_33=new TH1F("x_dist_33","x_dist_33",400,-2,2);
 
     d_uv=(TH1F*)gROOT->FindObject("d_uv");
-    if (!d_uv) d_uv=new TH1F("d_uv","d_uv",160,-40,40);
+    if (!d_uv) d_uv=new TH1F("d_uv","d_uv",100,0,50);
 
 
     for (unsigned int i=0;i<24;i++){
@@ -533,6 +533,8 @@ void DFDCPseudo_factory::makePseudo(vector<const DFDCHit*>& x,
 	      newPseu->phi_v=phi_v;
 	      newPseu->u = upeaks[i].pos;
 	      newPseu->v = vpeaks[j].pos;
+	      newPseu->t_u = upeaks[i].t;
+	      newPseu->t_v = vpeaks[j].t;
 	      newPseu->w      = x_from_wire+xshifts[ilay];
 	      newPseu->dw     = 0.; // place holder
 	      newPseu->w_c    = x_from_strips+xshifts[ilay];
