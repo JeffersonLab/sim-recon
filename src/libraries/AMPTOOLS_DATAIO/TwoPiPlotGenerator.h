@@ -17,7 +17,7 @@ class TwoPiPlotGenerator : public PlotGenerator
 public:
   
   // create an index for different histograms
-	enum { k2PiMass = 0, kPiPCosTheta, kPhiPiPlus, kPhiPiMinus, kPhi, kphi, kPsi, kNumHists };
+  enum { k2PiMass = 0, kPiPCosTheta, kPhiPiPlus, kPhiPiMinus, kPhi, kphi, kPsi, kt, kNumHists};
   
   TwoPiPlotGenerator( const FitResults& results );
     
