@@ -22,13 +22,13 @@ const unsigned int rad = 1; // 1, 5 or 9
 static TH1I *hChi2OverNDF;
 static TH1I *hChi2OverNDF_accepted;
 static TH1I *hPseudoRes;
-static TH1I *hPseudoResX[25];
-static TH1I *hPseudoResY[25];
+// static TH1I *hPseudoResX[25];
+// static TH1I *hPseudoResY[25];
 static TH1I *hPseudoResU[25];
 static TH1I *hPseudoResV[25];
 static TH2I *hPseudoResUvsV[25][rad];
-static TH2I *hPseudoResVsT;
-static TH2I *hResVsT;
+static TH2I *hPseudoResVsT[25];
+static TH2I *hResVsT[25];
 static TH1I *hMom;
 static TH1I *hMom_accepted;
 static TH1I *hTheta;
@@ -41,14 +41,14 @@ static TH1I *hRingsHit;
 static TH1I *hRingsHit_accepted;
 static TH2I *hRingsHit_vs_P;
 
-static TH1I *hWireTime;
-static TH1I *hWireTime_accepted;
-static TH1I *hCathodeTime;
-static TH1I *hCathodeTime_accepted;
-static TH1I *hPseudoTime;
-static TH1I *hPseudoTime_accepted;
+static TH1I *hWireTime[25];
+static TH1I *hWireTime_accepted[25];
+static TH1I *hCathodeTime[25];
+static TH1I *hCathodeTime_accepted[25];
+static TH1I *hPseudoTime[25];
+static TH1I *hPseudoTime_accepted[25];
 
-static TH1I *hDeltaTime;
+static TH1I *hDeltaTime[25];
 
 // Routine used to create our JEventProcessor
 #include <JANA/JApplication.h>
@@ -120,21 +120,8 @@ jerror_t JEventProcessor_FDC_Efficiency::init(void)
 
   hRingsHit_vs_P = new TH2I("hRingsHit_vs_P", "Rings of CDC Contributing to Track vs P (accepted)", 25, -0.5, 24.5, 34, 0.6, 4);
 
-  hWireTime = new TH1I("hWireTime", "Timing of Hits", 1500, -500, 1000);
-  hWireTime_accepted = new TH1I("hWireTime_accepted", "Timing of Hits (accepted)", 1500, -500, 1000);
-
-  hCathodeTime = new TH1I("hCathodeTime", "Timing of Cathode Clusters", 600, -200, 400);
-  hCathodeTime_accepted = new TH1I("hCathodeTime_accepted", "Timing of Cathode Clusters (accepted)", 600, -200, 400);
-
-  hPseudoTime = new TH1I("hPseudoTime", "Timing of Pseudos", 600, -200, 400);
-  hPseudoTime_accepted = new TH1I("hPseudoTime_accepted", "Timing of Pseudos (accepted)", 600, -200, 400);
-
-  hDeltaTime = new TH1I("hDeltaTime", "Time Difference between Wires and Cathode Clusters", 200, -50, 50);
-
   gDirectory->cd("/FDC_Efficiency");
   gDirectory->mkdir("Residuals")->cd();
-  hResVsT = new TH2I("hResVsT","Tracking Residual (Biased) Vs Wire Drift Time; DOCA (cm); Drift Time (ns)", 100, 0, 0.5, 600, -100, 500);
-  hPseudoResVsT = new TH2I("hPseudoResVsT","Tracking Residual (Biased) Vs Pseudo Time; Residual (cm); Drift Time (ns)", 100, 0, 0.5, 400, -100, 300);
   hPseudoRes = new TH1I("hPseudoRes","Pseudo Residual in R", 500, 0, 5);
 
   for(int icell=0; icell<24; icell++){
@@ -143,10 +130,10 @@ jerror_t JEventProcessor_FDC_Efficiency::init(void)
     char hname_Y[256];
     char hname_XY[256];
    
-    sprintf(hname_X, "hPseudoResX_cell[%d]", icell+1);
-    sprintf(hname_Y, "hPseudoResY_cell[%d]", icell+1);
-    hPseudoResX[icell+1] = new TH1I(hname_X,"Pseudo Residual in X", 600, -3, 3);
-    hPseudoResY[icell+1] = new TH1I(hname_Y,"Pseudo Residual in Y", 600, -3, 3);
+    // sprintf(hname_X, "hPseudoResX_cell[%d]", icell+1);
+    // sprintf(hname_Y, "hPseudoResY_cell[%d]", icell+1);
+    // hPseudoResX[icell+1] = new TH1I(hname_X,"Pseudo Residual in X", 600, -3, 3);
+    // hPseudoResY[icell+1] = new TH1I(hname_Y,"Pseudo Residual in Y", 600, -3, 3);
 
     sprintf(hname_X, "hPseudoResU_cell[%d]", icell+1);
     sprintf(hname_Y, "hPseudoResV_cell[%d]", icell+1);
@@ -156,6 +143,29 @@ jerror_t JEventProcessor_FDC_Efficiency::init(void)
       sprintf(hname_XY, "hPseudoResUvsV_cell[%d]_radius[%d]", icell+1, (r+1)*45/rad);
       hPseudoResUvsV[icell+1][r] = new TH2I(hname_XY,"Pseudo Residual 2D", 200, -1, 1, 200, -1, 1);
     }
+
+    sprintf(hname_X, "hResVsT_cell[%d]", icell+1);
+    sprintf(hname_Y, "hPseudoResVsT[%d]", icell+1);
+    hResVsT[icell+1] = new TH2I(hname_X,"Tracking Residual (Biased) Vs Wire Drift Time; DOCA (cm); Drift Time (ns)", 100, 0, 0.5, 600, -100, 500);
+    hPseudoResVsT[icell+1] = new TH2I(hname_Y,"Tracking Residual (Biased) Vs Pseudo Time; Residual (cm); Drift Time (ns)", 100, 0, 0.5, 400, -100, 300);
+
+    sprintf(hname_X, "hWireTime_cell[%d]", icell+1);
+    sprintf(hname_Y, "hWireTime_acc_cell[%d]", icell+1);
+    hWireTime[icell+1] = new TH1I(hname_X, "Timing of Hits", 600, -200, 400);
+    hWireTime_accepted[icell+1] = new TH1I(hname_Y, "Timing of Hits (accepted)", 600, -200, 400);
+    
+    sprintf(hname_X, "hCathodeTime_cell[%d]", icell+1);
+    sprintf(hname_Y, "hCathodeTime_acc_cell[%d]", icell+1);
+    hCathodeTime[icell+1] = new TH1I(hname_X, "Timing of Cathode Clusters", 600, -200, 400);
+    hCathodeTime_accepted[icell+1] = new TH1I(hname_Y, "Timing of Cathode Clusters (accepted)", 600, -200, 400);
+    
+    sprintf(hname_X, "hPseudoTime_cell[%d]", icell+1);
+    sprintf(hname_Y, "hPseudoTime_acc_cell[%d]", icell+1);
+    hPseudoTime[icell+1] = new TH1I(hname_X, "Timing of Pseudos", 600, -200, 400);
+    hPseudoTime_accepted[icell+1] = new TH1I(hname_Y, "Timing of Pseudos (accepted)", 600, -200, 400);
+    
+    sprintf(hname_X, "hDeltaTime_cell[%d]", icell+1);
+    hDeltaTime[icell+1] = new TH1I(hname_X, "Time Difference between Wires and Cathode Clusters", 200, -50, 50);
 
   }
 
@@ -210,7 +220,7 @@ jerror_t JEventProcessor_FDC_Efficiency::evnt(JEventLoop *loop, uint64_t eventnu
     if (locHit->plane != 2) continue; // only wires!
 
     japp->RootFillLock(this); //ACQUIRE ROOT FILL LOCK
-    hWireTime->Fill(locHit->t);
+    hWireTime[locHit->gLayer]->Fill(locHit->t);
     japp->RootFillUnLock(this); //RELEASE ROOT FILL LOCK
 
     // cut on timing of hits
@@ -228,9 +238,9 @@ jerror_t JEventProcessor_FDC_Efficiency::evnt(JEventLoop *loop, uint64_t eventnu
     locSortedFDCPseudos[locPseudo->wire->layer].insert(locPseudo);
 
     japp->RootFillLock(this); //ACQUIRE ROOT FILL LOCK
-    hPseudoTime->Fill(locPseudo->time);
-    hCathodeTime->Fill(locPseudo->t_u);
-    hCathodeTime->Fill(locPseudo->t_v);
+    hPseudoTime[locPseudo->wire->layer]->Fill(locPseudo->time);
+    hCathodeTime[locPseudo->wire->layer]->Fill(locPseudo->t_u);
+    hCathodeTime[locPseudo->wire->layer]->Fill(locPseudo->t_v);
     japp->RootFillUnLock(this); //RELEASE ROOT FILL LOCK
 
   }
@@ -335,7 +345,7 @@ jerror_t JEventProcessor_FDC_Efficiency::evnt(JEventLoop *loop, uint64_t eventnu
     for (unsigned int i = 0; i < cells; i++)
       packageHit[(cellsHit[i] - 1) / 6]++;
     
-    unsigned int minCells = 5; //At least 5 cells hit in any package for relatively "unbiased" efficiencies
+    unsigned int minCells = 4; //At least 5 cells hit in any package for relatively "unbiased" efficiencies
     if (packageHit[0] < minCells && packageHit[1] < minCells && packageHit[2] < minCells && packageHit[3] < minCells) continue;
     
     // Fill Histograms for accepted Tracks
@@ -430,8 +440,8 @@ jerror_t JEventProcessor_FDC_Efficiency::evnt(JEventLoop *loop, uint64_t eventnu
 	      const DFDCHit* locHit = *(locSortedFDCHits[cellNum][wireNum].begin());
 	      // Fill the histograms only for the cell in the center
 	      japp->RootFillLock(this); //ACQUIRE ROOT FILL LOCK
-	      hWireTime_accepted->Fill(locHit->t);
-	      hResVsT->Fill(distanceToWire, locHit->t);
+	      hWireTime_accepted[cellNum]->Fill(locHit->t);
+	      hResVsT[cellNum]->Fill(distanceToWire, locHit->t);
 	      japp->RootFillUnLock(this); //RELEASE ROOT FILL LOCK
 	    }
 	    	    
@@ -482,8 +492,8 @@ jerror_t JEventProcessor_FDC_Efficiency::evnt(JEventLoop *loop, uint64_t eventnu
 
 	    DVector2 residual2D = (pseudoPosition - interPosition2D);
 	    double residualR = residual2D.Mod();
-	    double residualX = pseudoPosition.X() - interPosition2D.X();
-	    double residualY = pseudoPosition.Y() - interPosition2D.Y();
+	    // double residualX = pseudoPosition.X() - interPosition2D.X();
+	    // double residualY = pseudoPosition.Y() - interPosition2D.Y();
 
 	    // rotate to wire coordinate system
 	    const DFDCWire * wire = locPseudo->wire;
@@ -493,8 +503,8 @@ jerror_t JEventProcessor_FDC_Efficiency::evnt(JEventLoop *loop, uint64_t eventnu
 	    // these can be used for background studies/correction
 	    japp->RootFillLock(this); //ACQUIRE ROOT FILL LOCK
 	    hPseudoRes->Fill(residualR);
-	    hPseudoResX[cellNum]->Fill(residualX);
-	    hPseudoResY[cellNum]->Fill(residualY);
+	    // hPseudoResX[cellNum]->Fill(residualX);
+	    // hPseudoResY[cellNum]->Fill(residualY);
 	    hPseudoResU[cellNum]->Fill(residualU);
 	    hPseudoResV[cellNum]->Fill(residualV);
 	    unsigned int radius = interPosition2D.Mod()/(45/rad);
@@ -513,12 +523,12 @@ jerror_t JEventProcessor_FDC_Efficiency::evnt(JEventLoop *loop, uint64_t eventnu
 		// fill histogramms with the predicted, not with the measured position
 		japp->RootFillLock(this); //ACQUIRE ROOT FILL LOCK
 		fdc_pseudo_measured_cell[cellNum]->Fill(interPosition.X(), interPosition.Y());
-		hPseudoTime_accepted->Fill(locPseudo->time);
-		hCathodeTime_accepted->Fill(locPseudo->t_u);
-		hCathodeTime_accepted->Fill(locPseudo->t_v);
-		hDeltaTime->Fill(locPseudo->time - locPseudo->t_u);
-		hDeltaTime->Fill(locPseudo->time - locPseudo->t_v);
-		hPseudoResVsT->Fill(residualU, locPseudo->time);
+		hPseudoTime_accepted[cellNum]->Fill(locPseudo->time);
+		hCathodeTime_accepted[cellNum]->Fill(locPseudo->t_u);
+		hCathodeTime_accepted[cellNum]->Fill(locPseudo->t_v);
+		hDeltaTime[cellNum]->Fill(locPseudo->time - locPseudo->t_u);
+		hDeltaTime[cellNum]->Fill(locPseudo->time - locPseudo->t_v);
+		hPseudoResVsT[cellNum]->Fill(residualU, locPseudo->time);
 		japp->RootFillUnLock(this); //RELEASE ROOT FILL LOCK
 	      }
 	    }
