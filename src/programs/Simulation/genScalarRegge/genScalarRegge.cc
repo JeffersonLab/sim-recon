@@ -210,11 +210,11 @@ double CrossSection(double s,double t,double ms_sq){
   // Regge cuts for omega
   double a_omega_P=0.52+0.196*t; // Pomeron
   double a_omega_f2=0.112+0.428*t;
-  double dc=2.;
+  double dc=2.19;
   double regge_omega_P_cut=exp(dc*t)*pow(s/s0,a_omega_P-1.);
   double regge_omega_f2_cut=exp(dc*t)*pow(s/s0,a_omega_f2-1.);
-  double C_omega_P_cut=0.1;
-  double C_omega_f2_cut=0.1;
+  double C_omega_P_cut=0.020;
+  double C_omega_f2_cut=-0.021;
 
   // omega amplitude squared
   double M_omega_sq=0.5*gsq_omega_S_gamma*gsq_omega_V*xfac2
@@ -240,8 +240,8 @@ double CrossSection(double s,double t,double ms_sq){
   double a_rho_f2=0.222+0.404*t;
   double regge_rho_P_cut=exp(dc*t)*pow(s/s0,a_rho_P-1.);
   double regge_rho_f2_cut=exp(dc*t)*pow(s/s0,a_rho_f2-1.);
-  double C_rho_P_cut=0.1;
-  double C_rho_f2_cut=0.1;
+  double C_rho_P_cut=-1.13;
+  double C_rho_f2_cut=6.31;
 
   // Rho amplitude squared
   double rho_cut_interference=C_rho_f2_cut*regge_rho*regge_rho_f2_cut
@@ -663,9 +663,10 @@ int main(int narg, char *argv[])
       
       // f0(600)
       if (got_pipi && generate[0]){
-	m_S_sq_R=0.6*0.6;
-	gsq_rho_S_gamma=0.8155; // GeV^-2
-	gsq_omega_S_gamma=0.05567;
+	double m_Sigma=0.65;
+	m_S_sq_R=m_Sigma*m_Sigma; 
+	gsq_rho_S_gamma=0.01*pow(0.7685*0.785-m_S_sq_R,-3); // GeV^-2
+	gsq_omega_S_gamma=8.97e-4*pow(0.78265*0.78265-m_S_sq_R,-3);
 	width=0.6;
 	double bw=ResonanceShape(m_S_sq,width,m1,m2,0); 
 	xsec+=2.*m_S_sq_R/M_PI*bw*CrossSection(s,t,m_S_sq);
