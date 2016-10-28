@@ -105,6 +105,177 @@ void ParseCommandLineArguments(int narg, char* argv[])
   }
 }
 
+double BackGroundCrossSection(TLorentzVector &q /* beam */,
+			      vector<Particle_t>&particle_types,
+			      vector<TLorentzVector>&particles){
+  
+  Particle_t two_particles=particle_types[0]+particle_types[1];
+  TLorentzVector p1(0,0,0.,ParticleMass(Proton));
+  TLorentzVector p2=particles[2];
+  TLorentzVector p=p1-p2;
+  TLorentzVector v1=particles[0]-q;
+  TLorentzVector v2=particles[1]-q;
+
+  double p1_dot_p2=p1.Dot(p2);
+  double q_dot_p=q.Dot(p);
+  double q_dot_v1=q.Dot(v1);
+  double p_dot_v1=p.Dot(v1);
+  double q_dot_v2=q.Dot(v2);
+  double p_dot_v2=p.Dot(v2);
+  double v1sq=v1.M2();
+  double v2sq=v2.M2();
+  double v1_dot_v2=v1.Dot(v2);
+  double psq=p.M2();
+  double b1=q_dot_p*v1sq-q_dot_v1*p_dot_v1;
+  double b2=q_dot_p*v2sq-q_dot_v2*p_dot_v2;
+  TLorentzVector c1=p_dot_v1*q-q_dot_p*v1;
+  TLorentzVector c2=p_dot_v2*q-q_dot_p*v2;
+  TLorentzVector d1=q_dot_v1*v1-v1sq*q;
+  TLorentzVector d2=q_dot_v2*v2-v2sq*q;
+  TLorentzVector N1=b1*p1+p1.Dot(c1)*v1+p1.Dot(d1)*p;
+  TLorentzVector N2=b2*p1+p1.Dot(c2)*v1+p1.Dot(d2)*p;
+  double N1_N1=N1.Dot(N1);
+  double N2_N2=N2.Dot(N2);
+  double N1_N2=N1.Dot(N2);
+  double M1_M2=p_dot_v1*p_dot_v1*q_dot_v2*q_dot_v2 
+    - 2.*v2_dot_v2*q_dot_p*(p_dot_v1*q_dot_v2+p_dot_v2*q_dot_v1)
+    + v1_dot_v2*v1_dot_v2*q_dot_p*q_dot_p + p_dot_v2*p_dot_v2*q_dot_v1*q_dot_v1
+    + v2sq*p_dot_v1*q_dot_v1*q_dot_p + v1sq*p_dot_v2*q_dot_v2*q_dot_p
+    + psq*v1_dot_v2*q_dot_v1*q_dot_v2 - psq*v2sq*q_dot_v1*q_dot_v1
+    - psq*v1_sq*q_dot_v2*q_dot_v2;
+  double M1_M1=2.*p_dot_v1*p_dot_v1*q_dot_v1*q_dot_v1
+    - 2.*v1sq*p_dot_v1*q_dot_v1*q_dot_p + v1sq*v1sq*q_dot_p*q_dot_p
+    - psq*v1sq*q_dot_v1*q_dot_v1; 
+  double M2_M2=2.*p_dot_v2*p_dot_v2*q_dot_v2*q_dot_v2
+    - 2.*v2sq*p_dot_v2*q_dot_v2*q_dot_p + v2sq*v2sq*q_dot_p*q_dot_p
+    - psq*v2sq*q_dot_v2*q_dot_v2;
+
+  double s1=(v1+p1).M2();
+  double s2=(v2+p1).M2();
+  double t1=(v1-particles[1]).M2();
+  double t2=(v2-particles[0]).M2();
+
+  // Rho propagator for top exchange
+  double m_rho=0.7685;
+  double Gamma_rho=0.1462;
+  double m_rhosq_minus_v1sq=m_rho*m_rho-v1sq;
+  double Pi_rho_1_sq=1./(m_rhosq_minus_v1sq*m_rhosq_minus_v1sq
+			 +m_rho*m_rho*Gamma_rho*Gamma_rho);
+  double m_rhosq_minus_v2sq=m_rho*m_rho-v2sq;
+  double Pi_rho_2_sq=1./(m_rhosq_minus_v2sq*m_rhosq_minus_v2sq
+			 +m_rho*m_rho*Gamma_rho*Gamma_rho);
+
+  double s0=1.;
+  // Regge trajectory for rho
+  double a_rho_1=0.55+0.8*t1;
+  double a_rho_prime=0.8;
+  double cos_rho_1=cos(M_PI*a_rho_1);
+  double sin_rho_1=sin(M_PI*a_rho_1);
+  double regge_rho_1=pow(s1/s0,a_rho_1-1.)*M_PI*a_rho_prime/(sin_rho_1*TMath::Gamma(a_rho_1)); // excluding phase factor
+  double regge_rho_1_sq=regge_rho_1*regge_rho_1*0.5*(1.-cos_rho_1); 
+  double a_rho_2=0.55+0.8*t2;
+  double cos_rho_2=cos(M_PI*a_rho_2);
+  double sin_rho_2=sin(M_PI*a_rho_2);
+  double regge_rho_2=pow(s2/s0,a_rho_2-1.)*M_PI*a_rho_prime/(sin_rho_2*TMath::Gamma(a_rho_2)); // excluding phase factor
+  double regge_rho_2_sq=regge_rho_2*regge_rho_2*0.5*(1.-cos_rho_2);
+
+  // omega propagator for top exchange
+  double m_omega=0.78265;
+  double Gamma_omega=0.00849;
+  double m_omegasq_minus_v1sq=m_omega*m_omega-v1sq;
+  double Pi_omega_1_sq=1./(m_omegasq_minus_v1sq*m_omegsq_minus_v1sq
+			   +m_omega*m_omega*Gamma_omega*Gamma_omega);
+  double m_omegasq_minus_v2sq=m_omega*m_omega-v2sq;
+  double Pi_omega_2_sq=1./(m_omegasq_minus_v2sq*m_omegasq_minus_v2sq
+			   +m_omega*m_omega*Gamma_omega*Gamma_omega);
+
+  // Regge trajectory for omega
+  double a_omega_1=0.44+0.9*t1;
+  double a_omega_prime=0.9; 
+  double cos_omega_1=cos(M_PI*a_omega_1);
+  double sin_omega_1=sin(M_PI*a_omega_1);
+  double regge_omega_1=pow(s1/s0,a_omega_1-1.)*M_PI*a_omega_prime/(sin_omega_1*TMath::Gamma(a_omega_1)); // excluding phase factor
+  double regge_omega_1_sq
+    =regge_omega_1*regge_omega_1*0.5*(1.-cos_omega_1);
+  double a_omega_2=0.44+0.9*t2;
+  double cos_omega_2=cos(M_PI*a_omega_2);
+  double sin_omega_2=sin(M_PI*a_omega_2);
+  double regge_omega_2=pow(s2/s0,a_omega_2-1.)*M_PI*a_omega_prime/(sin_omega_2*TMath::Gamma(a_omega_2)); // excluding phase factor
+  double regge_omega_2_sq
+    =regge_omega_2*regge_omega_2*0.5*(1.-cos_omega_2);
+
+  // rho-omega interference 
+  double cos_omega_1_rho_1=cos(M_PI*(a_omega_1-a_rho_1));
+  double sin_omega_1_rho_1=sin(M_PI*(a_omega_1-a_rho_1));
+  double cos_omega_2_rho_2=cos(M_PI*(a_omega_2-a_rho_2));
+  double sin_omega_2_rho_2=sin(M_PI*(a_omega_2-a_rho_2));
+  double regge_rho_1_omega_1=regge_rho_1*regge_omega_1;
+  double regge_rho_2_omega_2=regge_rho_2*regge_omega_2;
+
+  // Coupling constants  
+  double g_omega_V=15.;
+  double gsq_omega_V=g_omega_V*g_omega_V;
+  double g_rho_V=3.4;
+  double gsq_rho_V=g_rho_V*g_rho_V;
+  double g_rho_T=11.0; // GeV^-1
+  double g_rho_V_and_T=g_rho_V+2.*m_p*g_rho_T;
+
+  // terms involving complex conjugates of Regge propagators and rho/omega propagtors
+  double a1_a1=0.,b1_b1=0.;
+  double a2_a2=0.,b2_b2=0.;
+  double a1_a2=0.,b2_b2=0.;
+  double b1_a1=0,b2_a2=0.,b1_a2=0.;
+  double Csq=1.,zetasq=1./2.;
+  // Compute square of amplitude
+  if (two_particles==7+7){ // pi0 pi0
+  
+  }
+  else if (two_particles==7+17){ // pi0 eta
+    Csq=2./3.;
+    zetasq=1.;
+
+    a1_a1=Csq*((1./9.)*g_rho_V_and_T*g_rho_V_and_T*regge_rho_1_sq*Pi_rho_1_sq
+	       + g_omega_V*g_omega_V*regge_omega_1_sq*Pi_omega_1_sq
+	       + (1./3.)*g_rho_V_and_T*g_omega_V*regge_rho_1_omega_1
+	       *Pi_rho_1_sq*Pi_omega_1_sq
+	       *( (cos_omega_1_rho_1-cos_rho_1-cos_omega_1+1.)
+		  *(m_rhosq_minus_v1sq*m_omegasq_minus_v1sq
+		    +m_rho*m_omega*Gamma_rho*Gamma_omega)
+		  - (sin_omega_1_rho_1+sin_rho_1-sin_omega_1)
+		  *(m_rho*Gamma_rho*m_omegasq_minus_v1sq
+		    -m_omega*Gamm_omega*m_rhosq_minus_v1sq))	        
+	       ); 
+    a2_a2=Csq*((1./9.)*g_rho_V_and_T*g_rho_V_and_T*regge_rho_2_sq*Pi_rho_2_sq
+	       + g_omega_V*g_omega_V*regge_omega_2_sq*Pi_omega_2_sq
+	        
+	       );
+    double a1_a2=Csq*((1./9.)*g_rho_V_and_T*g_rho_V_and_T
+		      +g_omega_V*g_omega_V*
+    b1_b1=(4./9.)*Csq*g_rho_T*g_rho_T*regge_rho_1_sq*Pi_rho_1_sq;
+    b2_b2=(4./9.)*Csq*g_rho_T*g_rho_T*regge_rho_2_sq*Pi_omega_2_sq;
+  }
+  T=(m_p_sq-p1_dot_p2)*(a1_a1*M1_M1 + a1_a2*M1_M2 + a2_a2*M2_M2)
+    + 2.*(a1_a1*N1_N1 + a1_a2*N1_N2 + a2_a2*N2_N2)
+    + 2.*m_p*(b1_a1*N1_N1 + b1_a2*N1_N2 + b2_a2*N2_N2)
+    + (m_p_sq+p1_dot_p2)*(b1_b1*N1_N1 + b1_b2*N1_N2 + b2_b2*N2_N2);
+    
+  double Msq=(particle[0]+particle[1]).M2();
+  double s=(q+p1).M2();
+  double s_minus_mp_sq=s-m_p_sq;
+  double g0_sq=1.514e4/137.; // GeV^-2
+  double m1=ParticleMass(particle_types[0]);
+  double m2=ParticleMass(particle_types[1]);
+  double m1_plus_m2=m1+m2;
+  double m1_minus_m2=m1-m2;
+  double k=sqrt((Msq-m1_plus_m2*m1_plus_m2)*(Msq-m1_minus_m2*m1_minus_m2))
+    /(2.*sqrt(M_sq));
+  double hbarc_sq=389.; // Convert to micro-barns
+  double xsec=-zetasq*g0_sq*k*T*hbarc_sq
+    /(256*M_PI*M_PI*M_PI*M_PI*s_minus_mp_sq*s_minus_mp_sq);
+  
+  return xsec;				 
+}
+
 // Breit-Wigner distribution for resonance shape
 double ResonanceShape(double m_S_sq,double width,double m1,double m2,
 		      int shape_type){
@@ -739,6 +910,9 @@ int main(int narg, char *argv[])
     for (int j=0;j<num_decay_particles;j++){
       particle_vectors[j]=*phase_space.GetDecay(j);
     }
+    
+
+
     WriteEvent(i,beam,vert,particle_types,particle_vectors,file);
     
     if ((i%100)==0) cout << 100.*double(i)/double(Nevents) << "\% done" << endl;
