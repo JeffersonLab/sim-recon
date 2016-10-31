@@ -891,6 +891,12 @@ jerror_t DFDCPseudo_factory::TwoStripCluster(const vector<const DFDCHit*>& H,
 
   // weighted sum
   temp.pos=(pos1*amp1+pos2*amp2)/sum;
+
+  //correct for 'missing' signals on the other side
+  //largest amp on the left: -
+  //largest amp on the right: +
+  double pos_corr = 0.05;
+  (amp2 > amp1) ? temp.pos+=pos_corr : temp.pos-=pos_corr;
   
   (amp2 > amp1) ? temp.q_from_pulse_height=amp2 : temp.q_from_pulse_height=amp1;
   temp.q=sum;
