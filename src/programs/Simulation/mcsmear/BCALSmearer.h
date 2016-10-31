@@ -46,7 +46,7 @@ class bcal_config_t
 	double BCAL_SAMPLINGCOEFB;
 	double BCAL_TIMEDIFFCOEFA;
 	double BCAL_TIMEDIFFCOEFB;
-	double BCAL_TWO_HIT_RESOL;
+	double BCAL_TWO_HIT_RESO;
 	double BCAL_mevPerPE;
 	double BCAL_C_EFFECTIVE;
 
