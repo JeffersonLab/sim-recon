@@ -459,8 +459,8 @@ void DFDCPseudo_factory::makePseudo(vector<const DFDCHit*>& x,
 	      else if (upeaks[i].numstrips == 10 && vpeaks[j].numstrips == 3) x_dist_33->Fill(delta_x);
 	    }
 	 
+	    // Match between this wire and cathodes below, skip all other hits
 	    if (old_wire_num==(*xIt)->element) continue;
-	    old_wire_num=(*xIt)->element;
 
 	    if (fabs(delta_x)<0.5*WIRE_SPACING && r2test<r2_out
 		&& r2test>r2_in){
@@ -524,6 +524,9 @@ void DFDCPseudo_factory::makePseudo(vector<const DFDCHit*>& x,
 	      if (DEBUG_HISTS){
 		qv_vs_qu->Fill(upeaks[i].q,vpeaks[j].q);
 	      }
+
+	      // Match between this wire and cathodes, used to skip all other hits above
+	      old_wire_num=(*xIt)->element;
 	      
 	      int status=upeaks[i].numstrips+vpeaks[j].numstrips;
 	      //double xres=WIRE_SPACING/2./sqrt(12.);
