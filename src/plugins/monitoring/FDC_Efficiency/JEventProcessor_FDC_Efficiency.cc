@@ -47,7 +47,7 @@ static TH1I *hCathodeTime[25];
 static TH1I *hCathodeTime_accepted[25];
 static TH1I *hPseudoTime[25];
 static TH1I *hPseudoTime_accepted[25];
-
+static TH1I *hPullTime[25];
 static TH1I *hDeltaTime[25];
 
 // Routine used to create our JEventProcessor
@@ -163,6 +163,9 @@ jerror_t JEventProcessor_FDC_Efficiency::init(void)
     sprintf(hname_Y, "hPseudoTime_acc_cell[%d]", icell+1);
     hPseudoTime[icell+1] = new TH1I(hname_X, "Timing of Pseudos", 600, -200, 400);
     hPseudoTime_accepted[icell+1] = new TH1I(hname_Y, "Timing of Pseudos (accepted)", 600, -200, 400);
+
+    sprintf(hname_X, "hPullTime_cell[%d]", icell+1);
+    hPullTime[icell+1] = new TH1I(hname_X, "Timing of Wire Hits (from pulls)", 600, -200, 400);
     
     sprintf(hname_X, "hDeltaTime_cell[%d]", icell+1);
     hDeltaTime[icell+1] = new TH1I(hname_X, "Time Difference between Wires and Cathode Clusters", 200, -50, 50);
@@ -218,7 +221,7 @@ jerror_t JEventProcessor_FDC_Efficiency::evnt(JEventLoop *loop, uint64_t eventnu
   for( unsigned int hitNum = 0; hitNum < locFDCHitVector.size(); hitNum++){
     const DFDCHit * locHit = locFDCHitVector[hitNum];
     if (locHit->plane != 2) continue; // only wires!
-
+    
     japp->RootFillLock(this); //ACQUIRE ROOT FILL LOCK
     hWireTime[locHit->gLayer]->Fill(locHit->t);
     japp->RootFillUnLock(this); //RELEASE ROOT FILL LOCK
@@ -246,7 +249,7 @@ jerror_t JEventProcessor_FDC_Efficiency::evnt(JEventLoop *loop, uint64_t eventnu
   }
   
   const DDetectorMatches *detMatches;
-  //vector<DSCHitMatchParams> SCMatches;
+  vector<DSCHitMatchParams> SCMatches;
   vector<DTOFHitMatchParams> TOFMatches;
   vector<DBCALShowerMatchParams> BCALMatches;
 
@@ -267,7 +270,6 @@ jerror_t JEventProcessor_FDC_Efficiency::evnt(JEventLoop *loop, uint64_t eventnu
     bestHypothesis->GetSingle(thisTimeBasedTrack);
 
     // First loop over the FDC/CDC hits of the track to find out how many cells/rings were hit
-    
     // For the first track selection, use already pseudo hits from fdc
     // Determine how many cells (FDC) and rings (CDC) contribute to track in total, and in which package
     vector< int > cellsHit;
@@ -276,6 +278,7 @@ jerror_t JEventProcessor_FDC_Efficiency::evnt(JEventLoop *loop, uint64_t eventnu
     for (unsigned int i = 0; i < pulls.size(); i++){
       const DFDCPseudo * thisTrackFDCHit = pulls[i].fdc_hit;
       if (thisTrackFDCHit != NULL){      
+	hPullTime[thisTrackFDCHit->wire->layer]->Fill(pulls[i].tdrift);
 	if ( find(cellsHit.begin(), cellsHit.end(), thisTrackFDCHit->wire->layer) == cellsHit.end())
 	  cellsHit.push_back(thisTrackFDCHit->wire->layer);
       }
@@ -330,9 +333,9 @@ jerror_t JEventProcessor_FDC_Efficiency::evnt(JEventLoop *loop, uint64_t eventnu
       //  	continue; // for Low-Momentum Tracks < 2 GeV, check number of hits in CDC
       
       
-      // if(!detMatches->Get_SCMatchParams(thisTimeBasedTrack, SCMatches)) {
-      //  	continue; // At least one match to the Start Counter DISABLED
-      // }
+      if(!detMatches->Get_SCMatchParams(thisTimeBasedTrack, SCMatches)) {
+	continue; // At least one match to the Start Counter
+      }
       
       if(!detMatches->Get_TOFMatchParams(thisTimeBasedTrack, TOFMatches) && !detMatches->Get_BCALMatchParams(thisTimeBasedTrack,BCALMatches)) {
       	continue; // At least one match either to the Time-Of-Flight (forward) OR the BCAL (large angles)
@@ -345,7 +348,7 @@ jerror_t JEventProcessor_FDC_Efficiency::evnt(JEventLoop *loop, uint64_t eventnu
     for (unsigned int i = 0; i < cells; i++)
       packageHit[(cellsHit[i] - 1) / 6]++;
     
-    unsigned int minCells = 4; //At least 5 cells hit in any package for relatively "unbiased" efficiencies
+    unsigned int minCells = 4; //At least 4 cells hit in any package for relatively "unbiased" efficiencies
     if (packageHit[0] < minCells && packageHit[1] < minCells && packageHit[2] < minCells && packageHit[3] < minCells) continue;
     
     // Fill Histograms for accepted Tracks
@@ -367,7 +370,7 @@ jerror_t JEventProcessor_FDC_Efficiency::evnt(JEventLoop *loop, uint64_t eventnu
       unsigned int cellNum = cellIndex +1;
       vector< DFDCWire * > wireByNumber = fdcwires[cellIndex];
 
-      // Use only tracks that have at least 5 (or other # of) hits in the package this cell is in
+      // Use only tracks that have at least 4 (or other # of) hits in the package this cell is in
       // OR 12 hits in total
       if (packageHit[cellIndex / 6] < minCells /*&& cells < 12*/) continue;
 
@@ -430,19 +433,21 @@ jerror_t JEventProcessor_FDC_Efficiency::evnt(JEventLoop *loop, uint64_t eventnu
 	    japp->RootFillUnLock(this); //RELEASE ROOT FILL LOCK
 	  }
 	  
-	  
 	  // look in the presorted FDC Hits for a match
 	  if(!locSortedFDCHits[cellNum][wireNum].empty() || !locSortedFDCHits[cellNum][wireNum-1].empty() || !locSortedFDCHits[cellNum][wireNum+1].empty()){
 	    // Look not only in one wire, but also in adjacent ones (?)
 	    // This can remove the dependence on the track error
 
 	    if(!locSortedFDCHits[cellNum][wireNum].empty()){
-	      const DFDCHit* locHit = *(locSortedFDCHits[cellNum][wireNum].begin());
 	      // Fill the histograms only for the cell in the center
-	      japp->RootFillLock(this); //ACQUIRE ROOT FILL LOCK
-	      hWireTime_accepted[cellNum]->Fill(locHit->t);
-	      hResVsT[cellNum]->Fill(distanceToWire, locHit->t);
-	      japp->RootFillUnLock(this); //RELEASE ROOT FILL LOCK
+	      // Loop over multiple hits in the wire
+	      for(set<const DFDCHit*>::iterator locIterator = locSortedFDCHits[cellNum][wireNum].begin();  locIterator !=  locSortedFDCHits[cellNum][wireNum].end(); ++locIterator){
+	      	const DFDCHit* locHit = * locIterator;
+		japp->RootFillLock(this); //ACQUIRE ROOT FILL LOCK
+		hWireTime_accepted[cellNum]->Fill(locHit->t);
+		hResVsT[cellNum]->Fill(distanceToWire, locHit->t);
+		japp->RootFillUnLock(this); //RELEASE ROOT FILL LOCK
+	      }
 	    }
 	    	    
 	    Fill1DHistogram("FDC_Efficiency", "Offline", "Measured Hits Vs DOCA", distanceToWire, "Measured Hits", 100, 0 , 0.5);
