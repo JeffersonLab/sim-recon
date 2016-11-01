@@ -146,8 +146,8 @@ jerror_t JEventProcessor_FDC_Efficiency::init(void)
 
     sprintf(hname_X, "hResVsT_cell[%d]", icell+1);
     sprintf(hname_Y, "hPseudoResVsT[%d]", icell+1);
-    hResVsT[icell+1] = new TH2I(hname_X,"Tracking Residual (Biased) Vs Wire Drift Time; DOCA (cm); Drift Time (ns)", 100, 0, 0.5, 600, -100, 500);
-    hPseudoResVsT[icell+1] = new TH2I(hname_Y,"Tracking Residual (Biased) Vs Pseudo Time; Residual (cm); Drift Time (ns)", 100, 0, 0.5, 400, -100, 300);
+    hResVsT[icell+1] = new TH2I(hname_X,"Tracking Residual (Biased) Vs Wire Drift Time; DOCA (cm); Drift Time (ns)", 100, 0, 0.5, 400, -100, 300);
+    hPseudoResVsT[icell+1] = new TH2I(hname_Y,"Tracking Residual (Biased) Vs Pseudo Time; Residual (cm); Drift Time (ns)", 200, -0.5, 0.5, 400, -100, 300);
 
     sprintf(hname_X, "hWireTime_cell[%d]", icell+1);
     sprintf(hname_Y, "hWireTime_acc_cell[%d]", icell+1);
@@ -438,8 +438,8 @@ jerror_t JEventProcessor_FDC_Efficiency::evnt(JEventLoop *loop, uint64_t eventnu
 	    // Look not only in one wire, but also in adjacent ones (?)
 	    // This can remove the dependence on the track error
 
+	    // Fill the histograms only for the cell in the center
 	    if(!locSortedFDCHits[cellNum][wireNum].empty()){
-	      // Fill the histograms only for the cell in the center
 	      // Loop over multiple hits in the wire
 	      for(set<const DFDCHit*>::iterator locIterator = locSortedFDCHits[cellNum][wireNum].begin();  locIterator !=  locSortedFDCHits[cellNum][wireNum].end(); ++locIterator){
 	      	const DFDCHit* locHit = * locIterator;
