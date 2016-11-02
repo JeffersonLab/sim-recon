@@ -105,11 +105,13 @@ void ParseCommandLineArguments(int narg, char* argv[])
   }
 }
 
+// Non-resonant pi-pi or pi-eta background following Donnachie and Kalashnikova,
+// arXiv:0806.3698v1
 double BackGroundCrossSection(TLorentzVector &q /* beam */,
 			      vector<Particle_t>&particle_types,
 			      vector<TLorentzVector>&particles){
   
-  Particle_t two_particles=particle_types[0]+particle_types[1];
+  int two_particles=particle_types[0]+particle_types[1];
   TLorentzVector p1(0,0,0.,ParticleMass(Proton));
   TLorentzVector p2=particles[2];
   TLorentzVector p=p1-p2;
@@ -124,6 +126,7 @@ double BackGroundCrossSection(TLorentzVector &q /* beam */,
   double p_dot_v2=p.Dot(v2);
   double v1sq=v1.M2();
   double v2sq=v2.M2();
+  double v1sq_minus_v2sq=v1sq-v2sq;
   double v1_dot_v2=v1.Dot(v2);
   double psq=p.M2();
   double b1=q_dot_p*v1sq-q_dot_v1*p_dot_v1;
@@ -138,11 +141,11 @@ double BackGroundCrossSection(TLorentzVector &q /* beam */,
   double N2_N2=N2.Dot(N2);
   double N1_N2=N1.Dot(N2);
   double M1_M2=p_dot_v1*p_dot_v1*q_dot_v2*q_dot_v2 
-    - 2.*v2_dot_v2*q_dot_p*(p_dot_v1*q_dot_v2+p_dot_v2*q_dot_v1)
+    - 2.*v1_dot_v2*q_dot_p*(p_dot_v1*q_dot_v2+p_dot_v2*q_dot_v1)
     + v1_dot_v2*v1_dot_v2*q_dot_p*q_dot_p + p_dot_v2*p_dot_v2*q_dot_v1*q_dot_v1
     + v2sq*p_dot_v1*q_dot_v1*q_dot_p + v1sq*p_dot_v2*q_dot_v2*q_dot_p
     + psq*v1_dot_v2*q_dot_v1*q_dot_v2 - psq*v2sq*q_dot_v1*q_dot_v1
-    - psq*v1_sq*q_dot_v2*q_dot_v2;
+    - psq*v1sq*q_dot_v2*q_dot_v2;
   double M1_M1=2.*p_dot_v1*p_dot_v1*q_dot_v1*q_dot_v1
     - 2.*v1sq*p_dot_v1*q_dot_v1*q_dot_p + v1sq*v1sq*q_dot_p*q_dot_p
     - psq*v1sq*q_dot_v1*q_dot_v1; 
@@ -178,12 +181,14 @@ double BackGroundCrossSection(TLorentzVector &q /* beam */,
   double sin_rho_2=sin(M_PI*a_rho_2);
   double regge_rho_2=pow(s2/s0,a_rho_2-1.)*M_PI*a_rho_prime/(sin_rho_2*TMath::Gamma(a_rho_2)); // excluding phase factor
   double regge_rho_2_sq=regge_rho_2*regge_rho_2*0.5*(1.-cos_rho_2);
+  double cos_rho_1_rho_2=cos(M_PI*(a_rho_2-a_rho_1));
+  double sin_rho_1_rho_2=sin(M_PI*(a_rho_1-a_rho_2)); 
 
   // omega propagator for top exchange
   double m_omega=0.78265;
   double Gamma_omega=0.00849;
   double m_omegasq_minus_v1sq=m_omega*m_omega-v1sq;
-  double Pi_omega_1_sq=1./(m_omegasq_minus_v1sq*m_omegsq_minus_v1sq
+  double Pi_omega_1_sq=1./(m_omegasq_minus_v1sq*m_omegasq_minus_v1sq
 			   +m_omega*m_omega*Gamma_omega*Gamma_omega);
   double m_omegasq_minus_v2sq=m_omega*m_omega-v2sq;
   double Pi_omega_2_sq=1./(m_omegasq_minus_v2sq*m_omegasq_minus_v2sq
@@ -202,64 +207,279 @@ double BackGroundCrossSection(TLorentzVector &q /* beam */,
   double sin_omega_2=sin(M_PI*a_omega_2);
   double regge_omega_2=pow(s2/s0,a_omega_2-1.)*M_PI*a_omega_prime/(sin_omega_2*TMath::Gamma(a_omega_2)); // excluding phase factor
   double regge_omega_2_sq
-    =regge_omega_2*regge_omega_2*0.5*(1.-cos_omega_2);
+    =regge_omega_2*regge_omega_2*0.5*(1.-cos_omega_2); 
+  double cos_omega_1_omega_2=cos(M_PI*(a_omega_2-a_omega_1));
+  double sin_omega_1_omega_2=sin(M_PI*(a_omega_2-a_omega_1));
 
   // rho-omega interference 
   double cos_omega_1_rho_1=cos(M_PI*(a_omega_1-a_rho_1));
   double sin_omega_1_rho_1=sin(M_PI*(a_omega_1-a_rho_1));
+  double sin_rho_1_omega_1=-sin_omega_1_rho_1;
   double cos_omega_2_rho_2=cos(M_PI*(a_omega_2-a_rho_2));
   double sin_omega_2_rho_2=sin(M_PI*(a_omega_2-a_rho_2));
+  double sin_rho_2_omega_2=-sin_omega_2_rho_2;
   double regge_rho_1_omega_1=regge_rho_1*regge_omega_1;
-  double regge_rho_2_omega_2=regge_rho_2*regge_omega_2;
+  double regge_rho_2_omega_2=regge_rho_2*regge_omega_2; 
+  double cos_rho_1_omega_2=cos(M_PI*(a_omega_2-a_rho_1));
+  double sin_omega_2_rho_1=sin(M_PI*(a_omega_2-a_rho_1));
+  double sin_rho_1_omega_2=-sin_omega_2_rho_1;
+  double cos_rho_2_omega_1=cos(M_PI*(a_omega_1-a_rho_2));
+  double sin_rho_2_omega_1=sin(M_PI*(a_omega_1-a_rho_2));
+  double cos_omega_1_rho_1_sum=cos_omega_1_rho_1-cos_rho_1-cos_omega_1+1.; 
+  double cos_omega_2_rho_2_sum=cos_omega_2_rho_2-cos_rho_2-cos_omega_2+1.;
 
   // Coupling constants  
   double g_omega_V=15.;
   double gsq_omega_V=g_omega_V*g_omega_V;
   double g_rho_V=3.4;
-  double gsq_rho_V=g_rho_V*g_rho_V;
   double g_rho_T=11.0; // GeV^-1
+  double gsq_rho_T=g_rho_T*g_rho_T;
   double g_rho_V_and_T=g_rho_V+2.*m_p*g_rho_T;
+  double gsq_rho_V_and_T=g_rho_V_and_T*g_rho_V_and_T;
 
   // terms involving complex conjugates of Regge propagators and rho/omega propagtors
   double a1_a1=0.,b1_b1=0.;
   double a2_a2=0.,b2_b2=0.;
-  double a1_a2=0.,b2_b2=0.;
-  double b1_a1=0,b2_a2=0.,b1_a2=0.;
+  double a1_a2=0.,b1_b2=0.;
+  double b1_a1=0,b2_a2=0.,b1_a2_b2_a1=0.;
   double Csq=1.,zetasq=1./2.;
-  // Compute square of amplitude
-  if (two_particles==7+7){ // pi0 pi0
-  
+  // Compute square of amplitude    
+  if (two_particles==(7+7)){ // pi0 pi0
+    double a1_a1_rho_V_and_T_sq=gsq_rho_V_and_T*regge_rho_1_sq*Pi_omega_1_sq;
+    double a1_a1_omega_V_sq=gsq_omega_V*regge_omega_1_sq*Pi_rho_1_sq;
+    double a1_a1_omega_V_rho_V_and_T
+      =g_rho_V_and_T*g_omega_V*regge_rho_1_omega_1
+      *Pi_rho_1_sq*Pi_omega_1_sq*( (cos_omega_1_rho_1_sum)
+				   *(m_rhosq_minus_v1sq*m_omegasq_minus_v1sq
+				     +m_rho*m_omega*Gamma_rho*Gamma_omega)
+				   +(sin_omega_1_rho_1-sin_rho_1+sin_omega_1)
+				   *(m_rho*Gamma_rho*m_omegasq_minus_v1sq
+				   -m_omega*Gamma_omega*m_rhosq_minus_v1sq));
+    double a2_a2_rho_V_and_T_sq=gsq_rho_V_and_T*regge_rho_2_sq*Pi_omega_2_sq;
+    double a2_a2_omega_V_sq=gsq_omega_V*regge_omega_2_sq*Pi_rho_2_sq;
+    double a2_a2_omega_V_rho_V_and_T=g_rho_V_and_T*g_omega_V*regge_rho_2_omega_2
+      *Pi_rho_2_sq*Pi_omega_2_sq*( (cos_omega_2_rho_2-cos_rho_2-cos_omega_2+1.)
+				   *(m_rhosq_minus_v2sq*m_omegasq_minus_v2sq
+				     +m_rho*m_omega*Gamma_rho*Gamma_omega)
+				   +(sin_omega_2_rho_2-sin_rho_2+sin_omega_2)
+				   *(m_rho*Gamma_rho*m_omegasq_minus_v2sq
+				   -m_omega*Gamma_omega*m_rhosq_minus_v2sq));
+    double a1_a2_rho_V_and_T_sq
+      =gsq_rho_V_and_T*regge_rho_1*regge_rho_2*Pi_omega_1_sq*Pi_omega_2_sq
+      *((cos_rho_1_rho_2-cos_rho_1-cos_rho_2+1.)
+	*(m_omegasq_minus_v1sq*m_omegasq_minus_v2sq 
+	  + m_omega*Gamma_omega*m_omega*Gamma_omega)
+	+ (sin_rho_1_rho_2-sin_rho_2+sin_rho_1)
+	*m_omega*Gamma_omega*(m_omegasq_minus_v2sq- m_omegasq_minus_v1sq));
+    double a1_a2_omega_V_sq
+      =gsq_omega_V*regge_omega_1*regge_omega_2*Pi_rho_1_sq*Pi_rho_2_sq
+      *((cos_omega_1_omega_2-cos_omega_1-cos_omega_2+1.)
+	*(m_rhosq_minus_v1sq*m_rhosq_minus_v2sq
+	  +m_rho*m_rho*Gamma_rho*Gamma_rho)
+	+ (sin_omega_1_omega_2+sin_omega_2-sin_omega_1)
+	*m_rho*Gamma_rho*(m_rhosq_minus_v2sq-m_rhosq_minus_v1sq));
+    double a1_a2_omega_V_rho_V_and_T_term1=g_rho_V_and_T*g_omega_V
+      *Pi_omega_1_sq*Pi_rho_2_sq*regge_rho_1*regge_omega_2
+      *((cos_rho_1_omega_2-cos_rho_1-cos_omega_2+1.)
+	*(m_omegasq_minus_v1sq*m_rhosq_minus_v2sq
+	  +m_rho*Gamma_rho*m_omega*Gamma_omega)
+	+(sin_rho_1_omega_2+sin_omega_2-sin_rho_1)
+	*(m_omega*Gamma_omega*m_rhosq_minus_v2sq
+	  -m_rho*Gamma_rho*m_omegasq_minus_v1sq));
+     double a1_a2_omega_V_rho_V_and_T_term2=g_rho_V_and_T*g_omega_V
+      *Pi_omega_1_sq*Pi_omega_2_sq*regge_rho_2*regge_omega_1
+      *((cos_rho_2_omega_1-cos_omega_1-cos_rho_2+1.)
+	*(m_omegasq_minus_v1sq*m_omegasq_minus_v2sq
+	  +m_omega*Gamma_omega*m_omega*Gamma_omega)
+	+(sin_rho_2-sin_omega_1-sin_rho_2_omega_1)
+	*m_omega*Gamma_omega*v1sq_minus_v2sq);
+     double b1_a1_rho_T_rho_V_and_T
+       =-4.*g_rho_T*g_rho_V_and_T*regge_rho_1_sq*Pi_omega_1_sq;
+     double b1_a1_omega_V_rho_V_and_T
+       =-g_rho_T*g_omega_V*Pi_rho_1_sq*Pi_omega_1_sq*regge_omega_1*regge_rho_1
+       *((cos_omega_1_rho_1_sum)*(m_rhosq_minus_v1sq*m_omegasq_minus_v1sq
+				  +m_rho*Gamma_rho*m_omega*Gamma_omega)
+	 +(sin_rho_1_omega_1-sin_rho_1+sin_omega_1)
+		 *(m_omega*Gamma_omega*m_rhosq_minus_v1sq
+		   -m_rho*Gamma_rho*m_omegasq_minus_v1sq));
+     double b2_a2_rho_T_rho_V_and_T
+       =-4.*g_rho_T*g_rho_V_and_T*regge_rho_2_sq*Pi_omega_2_sq;
+     double b2_a2_omega_V_rho_V_and_T
+      =-g_rho_T*g_omega_V*Pi_rho_2_sq*Pi_omega_2_sq*regge_rho_2*regge_omega_2
+      *((cos_omega_2_rho_2_sum)*(m_rhosq_minus_v2sq*m_omegasq_minus_v2sq
+				 +m_rho*Gamma_rho*m_omega*Gamma_omega)
+	+(sin_rho_2_omega_2-sin_rho_2+sin_omega_2)
+	*(m_omega*Gamma_omega*m_rhosq_minus_v2sq
+	  -m_rho*Gamma_rho*m_omegasq_minus_v2sq));
+     double b1_a2_rho_T_rho_V_and_T
+       =-regge_rho_1*regge_rho_2*g_rho_T*g_rho_V_and_T
+       *Pi_omega_1_sq*Pi_omega_2_sq
+       *((cos_rho_1_rho_2-cos_rho_1-cos_rho_2+1.)
+	 *(m_omegasq_minus_v1sq*m_omegasq_minus_v2sq
+	   +m_omega*Gamma_omega*m_omega*Gamma_omega)
+	 +(sin_rho_1_rho_2-sin_rho_1+sin_rho_2)
+	 *m_omega*Gamma_omega*(m_omegasq_minus_v2sq-m_omegasq_minus_v1sq));
+     double b1_a2_omega_V_rho_T=-g_rho_T*g_omega_V*Pi_omega_1_sq*Pi_rho_2_sq
+       *regge_rho_1*regge_omega_2*((cos_rho_1_omega_2-cos_rho_1-cos_omega_2+1.)
+				 *(m_omegasq_minus_v1sq*m_rhosq_minus_v2sq
+				   +m_rho*m_omega*Gamma_omega*Gamma_rho)
+				  +(sin_rho_1_omega_2-sin_rho_1+sin_omega_2)
+				   *(m_omega*Gamma_omega*m_rhosq_minus_v2sq
+				     -m_rho*Gamma_rho*m_omegasq_minus_v1sq));
+     double b2_a1_rho_T_rho_V_and_T=b1_a2_rho_T_rho_V_and_T; 
+     double b2_a1_omega_V_rho_T=-g_rho_T*g_omega_V*Pi_rho_1_sq*Pi_omega_2_sq
+       *regge_rho_2*regge_omega_1*((cos_rho_2_omega_1-cos_rho_2-cos_omega_1+1.)
+				 *(m_rhosq_minus_v1sq*m_omegasq_minus_v2sq
+				   +m_rho*m_omega*Gamma_rho*Gamma_omega)
+				  +(sin_rho_2_omega_1-sin_rho_2+sin_omega_1)
+				   *(m_omega*Gamma_omega*m_rhosq_minus_v1sq
+				     -m_rho*Gamma_rho*m_omegasq_minus_v2sq));
+     
+     b1_b1=4.*gsq_rho_T*regge_rho_1_sq*Pi_omega_1_sq; 
+     b2_b2=4.*gsq_rho_T*regge_rho_2_sq*Pi_omega_2_sq;
+     b1_b2=2.*gsq_rho_T*regge_rho_1*regge_rho_2
+       *Pi_omega_1_sq*Pi_omega_2_sq
+       *((cos_rho_1_rho_2-cos_rho_1-cos_rho_2+1.)
+	 *(m_omegasq_minus_v1sq*m_omegasq_minus_v2sq
+	   +m_omega*m_rho*Gamma_rho*Gamma_rho)
+	 +(sin_rho_1_rho_2+sin_rho_2-sin_rho_1)
+	 *m_omega*Gamma_omega*(m_omegasq_minus_v2sq-m_omegasq_minus_v1sq));
+     
+     a1_a1=a1_a1_rho_V_and_T_sq + (1./9.)*a1_a1_omega_V_sq
+      + (1./6.)*a1_a1_omega_V_rho_V_and_T; 
+     a2_a2=a2_a2_rho_V_and_T_sq + (1./9.)*a2_a2_omega_V_sq
+       + (1./6.)*a2_a2_omega_V_rho_V_and_T;  
+     a1_a2=(1./2.)*a1_a2_rho_V_and_T_sq + (1./18.)*a1_a2_omega_V_sq	      
+       +(1./6.)*(a1_a2_omega_V_rho_V_and_T_term1
+		 +a1_a2_omega_V_rho_V_and_T_term2);
+
+     b1_a1=b1_a1_rho_T_rho_V_and_T+(1./3.)*b1_a1_omega_V_rho_V_and_T; 
+     b2_a2=b2_a2_rho_T_rho_V_and_T+(1./3.)*b2_a2_omega_V_rho_V_and_T;
+     b1_a2_b2_a1=b1_a2_rho_T_rho_V_and_T+b2_a1_rho_T_rho_V_and_T
+       +(1./3.)*(b1_a2_omega_V_rho_T+b2_a1_omega_V_rho_T);
+   
   }
-  else if (two_particles==7+17){ // pi0 eta
+  else if (two_particles==(7+17)){ // pi0 eta
     Csq=2./3.;
     zetasq=1.;
 
-    a1_a1=Csq*((1./9.)*g_rho_V_and_T*g_rho_V_and_T*regge_rho_1_sq*Pi_rho_1_sq
-	       + g_omega_V*g_omega_V*regge_omega_1_sq*Pi_omega_1_sq
-	       + (1./3.)*g_rho_V_and_T*g_omega_V*regge_rho_1_omega_1
-	       *Pi_rho_1_sq*Pi_omega_1_sq
-	       *( (cos_omega_1_rho_1-cos_rho_1-cos_omega_1+1.)
-		  *(m_rhosq_minus_v1sq*m_omegasq_minus_v1sq
-		    +m_rho*m_omega*Gamma_rho*Gamma_omega)
-		  - (sin_omega_1_rho_1+sin_rho_1-sin_omega_1)
-		  *(m_rho*Gamma_rho*m_omegasq_minus_v1sq
-		    -m_omega*Gamm_omega*m_rhosq_minus_v1sq))	        
-	       ); 
-    a2_a2=Csq*((1./9.)*g_rho_V_and_T*g_rho_V_and_T*regge_rho_2_sq*Pi_rho_2_sq
-	       + g_omega_V*g_omega_V*regge_omega_2_sq*Pi_omega_2_sq
-	        
-	       );
-    double a1_a2=Csq*((1./9.)*g_rho_V_and_T*g_rho_V_and_T
-		      +g_omega_V*g_omega_V*
-    b1_b1=(4./9.)*Csq*g_rho_T*g_rho_T*regge_rho_1_sq*Pi_rho_1_sq;
-    b2_b2=(4./9.)*Csq*g_rho_T*g_rho_T*regge_rho_2_sq*Pi_omega_2_sq;
+    double a1_a1_rho_V_and_T_sq=gsq_rho_V_and_T*regge_rho_1_sq*Pi_rho_1_sq;
+    double a1_a1_omega_V_sq=gsq_omega_V*regge_omega_1_sq*Pi_omega_1_sq;
+    double a1_a1_omega_V_rho_V_and_T=g_rho_V_and_T*g_omega_V*regge_rho_1_omega_1
+      *Pi_rho_1_sq*Pi_omega_1_sq*( (cos_omega_1_rho_1_sum)
+				   *(m_rhosq_minus_v1sq*m_omegasq_minus_v1sq
+				     +m_rho*m_omega*Gamma_rho*Gamma_omega)
+				   +(sin_omega_1_rho_1-sin_rho_1+sin_omega_1)
+				   *(m_rho*Gamma_rho*m_omegasq_minus_v1sq
+				   -m_omega*Gamma_omega*m_rhosq_minus_v1sq));
+    double a2_a2_rho_V_and_T_sq=gsq_rho_V_and_T*regge_rho_2_sq*Pi_omega_2_sq;
+    double a2_a2_omega_V_sq=gsq_omega_V*regge_omega_2_sq*Pi_rho_2_sq;
+    double a2_a2_omega_V_rho_V_and_T=g_rho_V_and_T*g_omega_V*regge_rho_2_omega_2
+      *Pi_rho_2_sq*Pi_omega_2_sq*( (cos_omega_2_rho_2_sum)
+				 *(m_rhosq_minus_v2sq*m_omegasq_minus_v2sq
+				   +m_rho*m_omega*Gamma_rho*Gamma_omega)
+				  + (sin_omega_2_rho_2-sin_rho_2+sin_omega_2)
+				   *(m_rho*Gamma_rho*m_omegasq_minus_v2sq
+				     -m_omega*Gamma_omega*m_rhosq_minus_v2sq));
+    double a1_a2_rho_V_and_T_sq
+      =gsq_rho_V_and_T*regge_rho_1*regge_rho_2*Pi_rho_1_sq*Pi_omega_2_sq
+      *((cos_rho_1_rho_2-cos_rho_1-cos_rho_2+1.)
+	*(m_rhosq_minus_v1sq*m_omegasq_minus_v2sq 
+	  + m_rho*Gamma_rho*m_omega*Gamma_omega)
+	+ (sin_rho_1_rho_2-sin_rho_2+sin_rho_1)
+	*(m_rho*Gamma_rho*m_omegasq_minus_v2sq
+	  - m_omega*Gamma_omega*m_rhosq_minus_v1sq));
+    double a1_a2_omega_V_rho_V_and_T_term1=g_rho_V_and_T*g_omega_V
+      *Pi_rho_1_sq*Pi_rho_2_sq*regge_rho_1*regge_omega_2
+      *((cos_rho_1_omega_2-cos_rho_1-cos_omega_2+1.)
+	*(m_rhosq_minus_v1sq*m_rhosq_minus_v2sq+m_rho*Gamma_rho*m_rho*Gamma_rho)
+	+(sin_rho_1_omega_2+sin_omega_2-sin_rho_1)*m_rho*Gamma_rho*v1sq_minus_v2sq);
+    double a1_a2_omega_V_rho_V_and_T_term2=g_rho_V_and_T*g_omega_V
+      *Pi_omega_1_sq*Pi_omega_2_sq*regge_rho_2*regge_omega_1
+      *((cos_rho_2_omega_1-cos_omega_1-cos_rho_2+1.)
+	*(m_omegasq_minus_v1sq*m_omegasq_minus_v2sq
+	  +m_omega*Gamma_omega*m_omega*Gamma_omega)
+	+(sin_rho_2-sin_omega_1-sin_rho_2_omega_1)
+	*m_omega*Gamma_omega*v1sq_minus_v2sq);
+    double a1_a2_omega_V_sq
+      =gsq_omega_V*regge_omega_1*regge_omega_2*Pi_omega_1_sq*Pi_rho_2_sq
+      *((cos_omega_1_omega_2-cos_omega_1-cos_omega_2+1.)
+	*(m_omegasq_minus_v1sq*m_rhosq_minus_v2sq
+	  +m_rho*m_omega*Gamma_rho*Gamma_omega)
+	+ (sin_omega_1_omega_2+sin_omega_2-sin_omega_1)
+	*(m_omega*Gamma_omega*m_rhosq_minus_v2sq
+	  -m_rho*Gamma_rho*m_omegasq_minus_v1sq));
+    double b1_a1_rho_T_rho_V_and_T
+      =-4.*g_rho_T*g_rho_V_and_T*regge_rho_1_sq*Pi_rho_1_sq;
+    double b1_a1_omega_V_rho_V_and_T
+      =-g_rho_T*g_omega_V*Pi_rho_1_sq*Pi_omega_1_sq*regge_omega_1*regge_rho_1
+      *((cos_omega_1_rho_1_sum)*(m_rhosq_minus_v1sq*m_omegasq_minus_v1sq
+			       +m_rho*Gamma_rho*m_omega*Gamma_omega)
+      +(sin_rho_1_omega_1-sin_rho_1+sin_omega_1)
+		 *(m_rho*Gamma_rho*m_omegasq_minus_v1sq
+		   -m_omega*Gamma_omega*m_rhosq_minus_v1sq));
+    double b2_a2_rho_T_rho_V_and_T
+      =-4.*g_rho_T*g_rho_V_and_T*regge_rho_2_sq*Pi_omega_2_sq;
+    double b2_a2_omega_V_rho_V_and_T
+      =-g_rho_T*g_omega_V*Pi_rho_2_sq*Pi_omega_2_sq*regge_rho_2*regge_omega_2
+      *((cos_omega_2_rho_2_sum)*(m_rhosq_minus_v2sq*m_omegasq_minus_v2sq
+				 +m_rho*Gamma_rho*m_omega*Gamma_omega)
+	+(sin_rho_2_omega_2-sin_rho_2+sin_omega_2)
+	*(m_omega*Gamma_omega*m_rhosq_minus_v2sq
+	  -m_rho*Gamma_rho*m_omegasq_minus_v2sq));
+    double b1_a2_rho_T_rho_V_and_T
+      =-regge_rho_1*regge_rho_2*g_rho_T*g_rho_V_and_T
+      *Pi_rho_1_sq*Pi_omega_2_sq*((cos_rho_1_rho_2-cos_rho_1-cos_rho_2+1.)
+				*(m_rhosq_minus_v1sq*m_omegasq_minus_v2sq
+				  +m_omega*Gamma_omega*m_rho*Gamma_rho)
+				  +(sin_rho_1_rho_2+sin_rho_1-sin_rho_2)
+				  *(m_rho*Gamma_rho*m_omegasq_minus_v2sq
+				    -m_omega*Gamma_omega*m_rhosq_minus_v1sq));
+    double b1_a2_omega_V_rho_T=-g_rho_T*g_omega_V*Pi_rho_1_sq*Pi_rho_2_sq
+      *regge_rho_1*regge_omega_2*((cos_rho_1_omega_2-cos_rho_1-cos_omega_2+1.)
+				 *(m_rhosq_minus_v1sq*m_rhosq_minus_v2sq
+				   +m_rho*m_rho*Gamma_rho*Gamma_rho)
+				  +(sin_rho_1_omega_2+sin_rho_1-sin_omega_2)
+				  *m_rho*Gamma_rho*(m_rhosq_minus_v2sq
+						    -m_rhosq_minus_v1sq));
+    double b2_a1_rho_T_rho_V_and_T=b1_a2_rho_T_rho_V_and_T; 
+    double b2_a1_omega_V_rho_T=-g_rho_T*g_omega_V*Pi_omega_1_sq*Pi_omega_2_sq
+      *regge_rho_1*regge_omega_2*((cos_rho_2_omega_1-cos_rho_2-cos_omega_1+1.)
+				 *(m_omegasq_minus_v1sq*m_omegasq_minus_v2sq
+				   +m_omega*m_omega*Gamma_omega*Gamma_omega)
+				  +(sin_rho_2_omega_1+sin_rho_2-sin_omega_1)
+				  *m_omega*Gamma_omega*(m_omegasq_minus_v1sq
+							-m_omegasq_minus_v2sq));
+     
+    b1_b1=(4./9.)*gsq_rho_T*regge_rho_1_sq*Pi_rho_1_sq; 
+    b2_b2=(4./9.)*gsq_rho_T*regge_rho_2_sq*Pi_omega_2_sq;
+    b1_b2=(2./9.)*gsq_rho_T*regge_rho_1*regge_rho_2
+      *Pi_rho_1_sq*Pi_omega_2_sq*((cos_rho_1_rho_2-cos_rho_1-cos_rho_2+1.)
+				  *(m_rhosq_minus_v1sq*m_rhosq_minus_v2sq
+				    +m_rho*m_rho*Gamma_rho*Gamma_rho)
+				  - (sin_rho_1_rho_2-sin_rho_2+sin_rho_1)
+				  *(m_omega*Gamma_omega*m_rhosq_minus_v1sq
+				    - m_rho*Gamma_rho*m_omegasq_minus_v2sq));
+   
+    a1_a1=(1./9.)*a1_a1_rho_V_and_T_sq + a1_a1_omega_V_sq 
+      + (1./6.)*a1_a1_omega_V_rho_V_and_T; 
+    a2_a2=(1./9.)*a2_a2_rho_V_and_T_sq + a2_a2_omega_V_sq 
+      + (1./6.)*a2_a2_omega_V_rho_V_and_T; 
+    a1_a2=(1./18.)*a1_a2_rho_V_and_T_sq + (1/2.)*a1_a2_omega_V_sq	      
+      +(1./6.)*(a1_a2_omega_V_rho_V_and_T_term1
+		+a1_a2_omega_V_rho_V_and_T_term2);
+          
+    b1_a1=(1./9.)*b1_a1_rho_T_rho_V_and_T+(1./3.)*b1_a1_omega_V_rho_V_and_T;
+    b2_a2=(1./9.)*b2_a2_rho_T_rho_V_and_T+(1./3.)*b2_a2_omega_V_rho_V_and_T;
+    b1_a2_b2_a1=(1./9.)*(b1_a2_rho_T_rho_V_and_T+b2_a1_rho_T_rho_V_and_T)
+      +(1./3.)*(b1_a2_omega_V_rho_T+b2_a1_omega_V_rho_T);
   }
-  T=(m_p_sq-p1_dot_p2)*(a1_a1*M1_M1 + a1_a2*M1_M2 + a2_a2*M2_M2)
-    + 2.*(a1_a1*N1_N1 + a1_a2*N1_N2 + a2_a2*N2_N2)
-    + 2.*m_p*(b1_a1*N1_N1 + b1_a2*N1_N2 + b2_a2*N2_N2)
-    + (m_p_sq+p1_dot_p2)*(b1_b1*N1_N1 + b1_b2*N1_N2 + b2_b2*N2_N2);
+  double T=Csq*((m_p_sq-p1_dot_p2)*(a1_a1*M1_M1 + a1_a2*M1_M2 + a2_a2*M2_M2)
+		+ 2.*(a1_a1*N1_N1 + a1_a2*N1_N2 + a2_a2*N2_N2)
+		+ 2.*m_p*(b1_a1*N1_N1 + b1_a2_b2_a1*N1_N2 + b2_a2*N2_N2)
+		+ (m_p_sq+p1_dot_p2)*(b1_b1*N1_N1 + b1_b2*N1_N2 + b2_b2*N2_N2));
     
-  double Msq=(particle[0]+particle[1]).M2();
+  double Msq=(particles[0]+particles[1]).M2();
   double s=(q+p1).M2();
   double s_minus_mp_sq=s-m_p_sq;
   double g0_sq=1.514e4/137.; // GeV^-2
@@ -268,7 +488,7 @@ double BackGroundCrossSection(TLorentzVector &q /* beam */,
   double m1_plus_m2=m1+m2;
   double m1_minus_m2=m1-m2;
   double k=sqrt((Msq-m1_plus_m2*m1_plus_m2)*(Msq-m1_minus_m2*m1_minus_m2))
-    /(2.*sqrt(M_sq));
+    /(2.*sqrt(Msq));
   double hbarc_sq=389.; // Convert to micro-barns
   double xsec=-zetasq*g0_sq*k*T*hbarc_sq
     /(256*M_PI*M_PI*M_PI*M_PI*s_minus_mp_sq*s_minus_mp_sq);
@@ -772,7 +992,10 @@ int main(int narg, char *argv[])
   // Event generation loop
   //----------------------------------------------------------------------------
   for (int i=1;i<=Nevents;i++){
+    // photon beam
     double Egamma=0.;
+    TLorentzVector beam;
+
     // Maximum value for cross section 
     double xsec_max=0.3;
     double xsec=0.,xsec_test=0.;
@@ -829,6 +1052,44 @@ int main(int narg, char *argv[])
       sin_theta_over_2=sin(0.5*theta_cm);
       t=t0-4.*p_gamma*p_S*sin_theta_over_2*sin_theta_over_2;
 
+      // Generate phi using uniform distribution
+      double phi_cm=myrand->Uniform(2.*M_PI);
+
+      // beam 4-vector (ignoring px and py, which are extremely small)
+      beam.SetXYZT(0.,0.,Egamma,Egamma);
+   
+      // Velocity of the cm frame with respect to the lab frame
+      TVector3 v_cm=(1./(Egamma+m_p))*beam.Vect();
+      // Four-momentum of the S in the CM frame
+      double pt=p_S*sin(theta_cm);
+      TLorentzVector S4(pt*cos(phi_cm),pt*sin(phi_cm),p_S*cos(theta_cm),
+			sqrt(p_S*p_S+m_S_sq));
+      // S4.Print();
+      
+      //Boost the S 4-momentum into the lab
+      S4.Boost(v_cm);
+      // S4.Print();
+      
+      
+      // Compute the 4-momentum for the recoil proton
+      TLorentzVector proton4=beam+target-S4;
+      
+      // Generate 3-body decay of S according to phase space
+      TGenPhaseSpace phase_space;
+      phase_space.SetDecay(S4,num_decay_particles,decay_masses);
+      double weight=0.,rand_weight=1.;
+      do{
+	weight=phase_space.Generate();
+	rand_weight=myrand->Uniform(1.);
+      }
+      while (rand_weight>weight);
+      
+      // Gather the particles in the reaction and write out event in hddm format
+      particle_vectors[last_index]=proton4;
+      for (int j=0;j<num_decay_particles;j++){
+	particle_vectors[j]=*phase_space.GetDecay(j);
+      }
+
       // Cross section
       xsec=0.;
       
@@ -840,7 +1101,7 @@ int main(int narg, char *argv[])
 	gsq_omega_S_gamma=8.97e-4*pow(0.78265*0.78265-m_S_sq_R,-3);
 	width=0.6;
 	double bw=ResonanceShape(m_S_sq,width,m1,m2,0); 
-	xsec+=2.*m_S_sq_R/M_PI*bw*CrossSection(s,t,m_S_sq);
+	xsec+=2.*weight*m_S_sq_R/M_PI*bw*CrossSection(s,t,m_S_sq);
       }
       // f0(980)/a0(980)
       if (generate[1]){
@@ -855,63 +1116,32 @@ int main(int narg, char *argv[])
 	  gsq_omega_S_gamma=0.2283;
 	}
 	double bw=ResonanceShape(m_S_sq,width,m1,m2,1); 
-	xsec+=2.*m_S_sq_R/M_PI*bw*CrossSection(s,t,m_S_sq);
+	xsec+=2.*weight*m_S_sq_R/M_PI*bw*CrossSection(s,t,m_S_sq);
       }
+        
+      if (generate[4]){ // background
+	xsec+=BackGroundCrossSection(beam,particle_types,particle_vectors);
+
+	if (generate[1]){ // interference with resonant signal
+
+	}
+      }
+      
+
 
       // Generate a test value for the cross section
       xsec_test=myrand->Uniform(xsec_max);
     }
     while (xsec_test>xsec);
 
-    // Generate phi using uniform distribution
-    double phi_cm=myrand->Uniform(2.*M_PI);
-
-    // beam 4-vector (ignoring px and py, which are extremely small)
-    TLorentzVector beam(0.,0.,Egamma,Egamma);
-    thrown_Egamma->Fill(Egamma);
-
-    // Velocity of the cm frame with respect to the lab frame
-    TVector3 v_cm=(1./(Egamma+m_p))*beam.Vect();
-    // Four-moementum of the S in the CM frame
-    double pt=p_S*sin(theta_cm);
-    TLorentzVector S4(pt*cos(phi_cm),pt*sin(phi_cm),p_S*cos(theta_cm),
-			sqrt(p_S*p_S+m_S_sq));
-    // S4.Print();
-
-    //Boost the S 4-momentum into the lab
-    S4.Boost(v_cm);
-    // S4.Print();
-
-  
-    // Compute the 4-momentum for the recoil proton
-    TLorentzVector proton4=beam+target-S4;
-
-    //proton4.Print();
-    thrown_theta_vs_p->Fill(proton4.P(),180./M_PI*proton4.Theta());
-
-    // Generate 3-body decay of S according to phase space
-    TGenPhaseSpace phase_space;
-    phase_space.SetDecay(S4,num_decay_particles,decay_masses);
-    double weight=0.,rand_weight=1.;
-    do{
-      weight=phase_space.Generate();
-      rand_weight=myrand->Uniform(1.);
-    }
-    while (rand_weight>weight);
-
     // Other diagnostic histograms
     thrown_t->Fill(t);
+    thrown_Egamma->Fill(Egamma);
+    thrown_theta_vs_p->Fill(particle_vectors[last_index].P(),
+			    180./M_PI*particle_vectors[last_index].Theta());
 
-    // Randomly generate z position in target
+     // Randomly generate z position in target
     vert[2]=zmin+myrand->Uniform(zmax-zmin);
-
-    // Gather the particles in the reaction and write out event in hddm format
-    particle_vectors[last_index]=proton4;
-    for (int j=0;j<num_decay_particles;j++){
-      particle_vectors[j]=*phase_space.GetDecay(j);
-    }
-    
-
 
     WriteEvent(i,beam,vert,particle_types,particle_vectors,file);
     
