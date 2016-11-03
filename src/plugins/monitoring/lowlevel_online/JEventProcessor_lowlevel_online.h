@@ -29,6 +29,9 @@ class JEventProcessor_lowlevel_online:public jana::JEventProcessor{
 		const char* className(void){return "JEventProcessor_lowlevel_online";}
 
         bool INDIVIDUAL_CHANNEL_DATA;
+        bool CHECK_EMULATED_DATA;
+        bool ANALYZE_F125_DATA;
+        bool ANALYZE_F250_DATA;
         vector<int> Nstraws_integrated;
 
 		//------------------------ BCAL -----------------------
@@ -47,6 +50,12 @@ class JEventProcessor_lowlevel_online:public jana::JEventProcessor{
         TH2I *bcal_adc_time_chan;
         TH2I *bcal_adc_pedestal_chan;
         TH2I *bcal_adc_quality_chan;
+
+        TH1I *bcal_adc_emudelta_integral;
+        TH1I *bcal_adc_emudelta_peak;
+        TH1I *bcal_adc_emudelta_pedestal;
+        TH1I *bcal_adc_emudelta_coarsetime;
+        TH1I *bcal_adc_emudelta_finetime;
 
 
 		//------------------------ CDC ------------------------
@@ -84,6 +93,12 @@ class JEventProcessor_lowlevel_online:public jana::JEventProcessor{
         TH2I *fcal_adc_pedestal_chan;
         TH2I *fcal_adc_quality_chan;
 
+        TH1I *fcal_adc_emudelta_integral;
+        TH1I *fcal_adc_emudelta_peak;
+        TH1I *fcal_adc_emudelta_pedestal;
+        TH1I *fcal_adc_emudelta_coarsetime;
+        TH1I *fcal_adc_emudelta_finetime;
+
 
 		//------------------------ FDC ------------------------
         TH1I *fdc_num_events;
@@ -119,6 +134,12 @@ class JEventProcessor_lowlevel_online:public jana::JEventProcessor{
         TH2I *psc_adc_pedestal_chan;
         TH2I *psc_adc_quality_chan;
 
+        TH1I *psc_adc_emudelta_integral;
+        TH1I *psc_adc_emudelta_peak;
+        TH1I *psc_adc_emudelta_pedestal;
+        TH1I *psc_adc_emudelta_coarsetime;
+        TH1I *psc_adc_emudelta_finetime;
+
 
 		//------------------------ PS ---------------------
         TH1I *ps_num_events;
@@ -138,6 +159,12 @@ class JEventProcessor_lowlevel_online:public jana::JEventProcessor{
         TH2I *ps_adc_pedestal_chan;
         TH2I *ps_adc_quality_chan;
 
+        TH1I *ps_adc_emudelta_integral;
+        TH1I *ps_adc_emudelta_peak;
+        TH1I *ps_adc_emudelta_pedestal;
+        TH1I *ps_adc_emudelta_coarsetime;
+        TH1I *ps_adc_emudelta_finetime;
+
 
 		//------------------------ ST -------------------------
         TH1I *st_num_events;
@@ -155,6 +182,12 @@ class JEventProcessor_lowlevel_online:public jana::JEventProcessor{
         TH2I *st_adc_time_chan;
         TH2I *st_adc_pedestal_chan;
         TH2I *st_adc_quality_chan;
+
+        TH1I *st_adc_emudelta_integral;
+        TH1I *st_adc_emudelta_peak;
+        TH1I *st_adc_emudelta_pedestal;
+        TH1I *st_adc_emudelta_coarsetime;
+        TH1I *st_adc_emudelta_finetime;
 
 
 		//------------------------ TAGH -----------------------
@@ -175,6 +208,12 @@ class JEventProcessor_lowlevel_online:public jana::JEventProcessor{
         TH2I *tagh_adc_pedestal_chan;
         TH2I *tagh_adc_quality_chan;
 
+        TH1I *tagh_adc_emudelta_integral;
+        TH1I *tagh_adc_emudelta_peak;
+        TH1I *tagh_adc_emudelta_pedestal;
+        TH1I *tagh_adc_emudelta_coarsetime;
+        TH1I *tagh_adc_emudelta_finetime;
+
 
 		//------------------------ TAGM -----------------------
         TH1I *tagm_adc_integral;
@@ -191,6 +230,12 @@ class JEventProcessor_lowlevel_online:public jana::JEventProcessor{
         TH2I *tagm_adc_time_chan;
         TH2I *tagm_adc_pedestal_chan;
         TH2I *tagm_adc_quality_chan;
+
+        TH1I *tagm_adc_emudelta_integral;
+        TH1I *tagm_adc_emudelta_peak;
+        TH1I *tagm_adc_emudelta_pedestal;
+        TH1I *tagm_adc_emudelta_coarsetime;
+        TH1I *tagm_adc_emudelta_finetime;
 
 
 		//------------------------ TOF ------------------------
@@ -209,6 +254,12 @@ class JEventProcessor_lowlevel_online:public jana::JEventProcessor{
         TH2I *tof_adc_time_chan;
         TH2I *tof_adc_pedestal_chan;
         TH2I *tof_adc_quality_chan;
+
+        TH1I *tof_adc_emudelta_integral;
+        TH1I *tof_adc_emudelta_peak;
+        TH1I *tof_adc_emudelta_pedestal;
+        TH1I *tof_adc_emudelta_coarsetime;
+        TH1I *tof_adc_emudelta_finetime;
 
 
 

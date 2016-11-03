@@ -21,6 +21,7 @@
 #include "AMPTOOLS_DATAIO/TwoPiPlotGenerator.h"
 #include "AMPTOOLS_DATAIO/ROOTDataReader.h"
 #include "AMPTOOLS_AMPS/TwoPiAngles.h"
+#include "AMPTOOLS_AMPS/TwoPiAngles_amp.h"
 #include "AMPTOOLS_AMPS/BreitWigner.h"
 
 typedef TwoPiPlotGenerator PlotGen;
@@ -28,6 +29,7 @@ typedef TwoPiPlotGenerator PlotGen;
 void atiSetup(){
   
   AmpToolsInterface::registerAmplitude( TwoPiAngles() );
+  AmpToolsInterface::registerAmplitude( TwoPiAngles_amp() );
   AmpToolsInterface::registerAmplitude( BreitWigner() );
   AmpToolsInterface::registerDataReader( ROOTDataReader() );
 }
@@ -168,22 +170,24 @@ int main( int argc, char* argv[] ){
   plotfile->Close();
 
     // ************************
-    // retrieve SDME parameters for plotting and asymmetry
+    // retrieve amplitudes for output
     // ************************
 
   // parameters to check
   vector< string > pars;
-  pars.push_back("rho000");
-  pars.push_back("rho100");
-  pars.push_back("rho1m10");
+  pars.push_back("Pi+Pi-::helplusN+::g1VM1_re");
+  pars.push_back("Pi+Pi-::helplusN+::g1VM0_re");
+  pars.push_back("Pi+Pi-::helplusN+::g1VM0_im");
 
-  pars.push_back("rho111");
-  pars.push_back("rho001");
-  pars.push_back("rho101");
-  pars.push_back("rho1m11");
+  pars.push_back("Pi+Pi-::helplusN+::g1VM-1_re");
+  pars.push_back("Pi+Pi-::helplusN+::g1VM-1_im");
+  pars.push_back("Pi+Pi-::helplusN+::g-1VM1_re");
+  pars.push_back("Pi+Pi-::helplusN+::g-1VM1_im");
 
-  pars.push_back("rho102");
-  pars.push_back("rho1m12");
+  pars.push_back("Pi+Pi-::helplusN+::g-1VM0_re");
+  pars.push_back("Pi+Pi-::helplusN+::g-1VM0_im");
+  pars.push_back("Pi+Pi-::helplusN+::g-1VM-1_re");
+  pars.push_back("Pi+Pi-::helplusN+::g-1VM-1_im");
 
   // file for writing parameters (later switch to putting in ROOT file)
   ofstream outfile;
@@ -194,6 +198,8 @@ int main( int argc, char* argv[] ){
     double parError = results.parError( pars[i] );
     outfile << parValue << "\t" << parError << "\t";
   }
+
+  // Note: For twopi_amp_plotter: The following computations are nonsense for amplitudes
 
   // covariance matrix
   vector< vector< double > > covMatrix;
@@ -207,10 +213,12 @@ int main( int argc, char* argv[] ){
 
   double Sigma = SigmaN/SigmaD;
   double Sigma_err = fabs(Sigma) * sqrt(SigmaN_err/SigmaN/SigmaN + SigmaD_err/SigmaD/SigmaD);
-  outfile << Sigma << "\t" << Sigma_err << "\t";
 
   double P = 2*results.parValue(pars[6]) - results.parValue(pars[4]);
   double P_err = sqrt(2*2*covMatrix[8][8] + covMatrix[6][6] - 2*2*covMatrix[6][8]);
+
+  Sigma = Sigma_err = P = P_err = 0;
+  outfile << Sigma << "\t" << Sigma_err << "\t";
   outfile << P << "\t" << P_err << "\t";
 
   outfile << endl;

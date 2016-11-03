@@ -1884,6 +1884,7 @@ void DEVIOWorkerThread::LinkAllAssociations(void)
 		if(pe->vDf250PulseIntegral.size()>1) sort(pe->vDf250PulseIntegral.begin(), pe->vDf250PulseIntegral.end(), SortByPulseNumber<Df250PulseIntegral> );
 		if(pe->vDf250PulseTime.size()>1    ) sort(pe->vDf250PulseTime.begin(),     pe->vDf250PulseTime.end(),     SortByPulseNumber<Df250PulseTime>     );
 		if(pe->vDf250PulsePedestal.size()>1) sort(pe->vDf250PulsePedestal.begin(), pe->vDf250PulsePedestal.end(), SortByPulseNumber<Df250PulsePedestal> );
+        if(pe->vDf250WindowRawData.size()>1) sort(pe->vDf250WindowRawData.begin(), pe->vDf250WindowRawData.end(), SortByChannel<Df250WindowRawData>     );
 
 		// fADC125
 		if(pe->vDf125PulseIntegral.size()>1) sort(pe->vDf125PulseIntegral.begin(), pe->vDf125PulseIntegral.end(), SortByPulseNumber<Df125PulseIntegral> );
@@ -1891,6 +1892,7 @@ void DEVIOWorkerThread::LinkAllAssociations(void)
 		if(pe->vDf125FDCPulse.size()>1     ) sort(pe->vDf125FDCPulse.begin(),      pe->vDf125FDCPulse.end(),      SortByChannel<Df125FDCPulse>          );
 		if(pe->vDf125PulseTime.size()>1    ) sort(pe->vDf125PulseTime.begin(),     pe->vDf125PulseTime.end(),     SortByPulseNumber<Df125PulseTime>     );
 		if(pe->vDf125PulsePedestal.size()>1) sort(pe->vDf125PulsePedestal.begin(), pe->vDf125PulsePedestal.end(), SortByPulseNumber<Df125PulsePedestal> );
+        if(pe->vDf125WindowRawData.size()>1) sort(pe->vDf125WindowRawData.begin(), pe->vDf125WindowRawData.end(), SortByChannel<Df125WindowRawData>     );
 
 		// F1TDC
 		if(pe->vDF1TDCHit.size()>1         ) sort(pe->vDF1TDCHit.begin(),          pe->vDF1TDCHit.end(),          SortByModule<DF1TDCHit>               );
@@ -1916,6 +1918,7 @@ void DEVIOWorkerThread::LinkAllAssociations(void)
 			LinkChannel(pe->vDf250WindowRawData, pe->vDf250PulseIntegral);
 			LinkChannel(pe->vDf250WindowRawData, pe->vDf250PulseTime);
 			LinkChannel(pe->vDf250WindowRawData, pe->vDf250PulsePedestal);
+			LinkChannel(pe->vDf250WindowRawData, pe->vDf250PulseData);
 		}
 
 		// Connect Df125 window raw data objects

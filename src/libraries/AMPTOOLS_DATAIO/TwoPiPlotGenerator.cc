@@ -20,6 +20,7 @@ PlotGenerator( results )
   bookHistogram( kPhi, new Histogram1D( 50, -1*PI, PI, "Phi", "#Phi" ) );
   bookHistogram( kphi, new Histogram1D( 50, -1*PI, PI, "phi", "#phi" ) );
   bookHistogram( kPsi, new Histogram1D( 50, -1*PI, PI, "psi", "#psi" ) );
+  bookHistogram( kt, new Histogram1D( 100, 0, 5, "t", "-t" ) );
 }
 
 void
@@ -57,6 +58,9 @@ TwoPiPlotGenerator::projectEvent( Kinematics* kin ){
   if(psi < -1*PI) psi += 2*PI;
   if(psi > PI) psi -= 2*PI;
 
+  // compute invariant t
+  GDouble t = - 2* recoil.M() * (recoil.E()-recoil.M());
+
   // calls to fillHistogram go here
   
   fillHistogram( k2PiMass, ( resonance ).M() );
@@ -69,4 +73,5 @@ TwoPiPlotGenerator::projectEvent( Kinematics* kin ){
   fillHistogram( kphi, phi );
 
   fillHistogram( kPsi, psi );
+  fillHistogram( kt, -t );      // fill with -t to make positive
 }

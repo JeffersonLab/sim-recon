@@ -235,7 +235,7 @@ jerror_t DFDCPseudo_factory::brun(JEventLoop *loop, int32_t runnumber)
     if (!x_dist_33) x_dist_33=new TH1F("x_dist_33","x_dist_33",400,-2,2);
 
     d_uv=(TH1F*)gROOT->FindObject("d_uv");
-    if (!d_uv) d_uv=new TH1F("d_uv","d_uv",160,-40,40);
+    if (!d_uv) d_uv=new TH1F("d_uv","d_uv",100,0,50);
 
 
     for (unsigned int i=0;i<24;i++){
@@ -459,8 +459,8 @@ void DFDCPseudo_factory::makePseudo(vector<const DFDCHit*>& x,
 	      else if (upeaks[i].numstrips == 10 && vpeaks[j].numstrips == 3) x_dist_33->Fill(delta_x);
 	    }
 	 
+	    // Match between this wire and cathodes below, skip all other hits
 	    if (old_wire_num==(*xIt)->element) continue;
-	    old_wire_num=(*xIt)->element;
 
 	    if (fabs(delta_x)<0.5*WIRE_SPACING && r2test<r2_out
 		&& r2test>r2_in){
@@ -524,6 +524,9 @@ void DFDCPseudo_factory::makePseudo(vector<const DFDCHit*>& x,
 	      if (DEBUG_HISTS){
 		qv_vs_qu->Fill(upeaks[i].q,vpeaks[j].q);
 	      }
+
+	      // Match between this wire and cathodes, used to skip all other hits above
+	      old_wire_num=(*xIt)->element;
 	      
 	      int status=upeaks[i].numstrips+vpeaks[j].numstrips;
 	      //double xres=WIRE_SPACING/2./sqrt(12.);
@@ -533,6 +536,8 @@ void DFDCPseudo_factory::makePseudo(vector<const DFDCHit*>& x,
 	      newPseu->phi_v=phi_v;
 	      newPseu->u = upeaks[i].pos;
 	      newPseu->v = vpeaks[j].pos;
+	      newPseu->t_u = upeaks[i].t;
+	      newPseu->t_v = vpeaks[j].t;
 	      newPseu->w      = x_from_wire+xshifts[ilay];
 	      newPseu->dw     = 0.; // place holder
 	      newPseu->w_c    = x_from_strips+xshifts[ilay];
@@ -889,6 +894,12 @@ jerror_t DFDCPseudo_factory::TwoStripCluster(const vector<const DFDCHit*>& H,
 
   // weighted sum
   temp.pos=(pos1*amp1+pos2*amp2)/sum;
+
+  //correct for 'missing' signals on the other side
+  //largest amp on the left: -
+  //largest amp on the right: +
+  double pos_corr = 0.05;
+  (amp2 > amp1) ? temp.pos+=pos_corr : temp.pos-=pos_corr;
   
   (amp2 > amp1) ? temp.q_from_pulse_height=amp2 : temp.q_from_pulse_height=amp1;
   temp.q=sum;

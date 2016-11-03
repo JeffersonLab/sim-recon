@@ -111,7 +111,10 @@ class Df250PulseData:public DDAQAddress{
         uint32_t integral_emulated;    ///< Value calculated from raw data (if available)
         uint32_t pedestal_emulated;    ///< Value calculated from raw data (if available)
         uint32_t time_emulated;        ///< Value calculated from raw data (if available)
+        uint32_t course_time_emulated;        ///< Value calculated from raw data (if available) - debug
+        uint32_t fine_time_emulated;        ///< Value calculated from raw data (if available) - debug
         uint32_t pulse_peak_emulated;  ///< Value calculated from raw data (if available)
+        //bool     QF_emulated;  // DEBUG
 
 		// This method is used primarily for pretty printing
 		// the second argument to AddString is printf style format
@@ -144,6 +147,13 @@ class Df250PulseData:public DDAQAddress{
 			AddString(items, "nsamples_over_threshold" , "%d", nsamples_over_threshold );
 			AddString(items, "QF"                      , "%x", QF                      );
 			AddString(items, "emulated"                , "%x", emulated_all            );
+
+			AddString(items, "integral_emulated"       , "%d", integral_emulated       );
+			AddString(items, "pedestal_emulated"       , "%d", pedestal_emulated       );
+			AddString(items, "course_time_emulated"           , "%d", course_time_emulated           );
+			AddString(items, "fine_time_emulated"           , "%d", fine_time_emulated           );
+			AddString(items, "pulse_peak_emulated"     , "%d", pulse_peak_emulated     );
+			//AddString(items, "QF_emulated"     , "%x", QF_emulated     );   // DEBUG
 		}
 };
 

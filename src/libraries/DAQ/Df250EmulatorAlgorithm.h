@@ -6,6 +6,7 @@
 
 #include <DAQ/Df250WindowRawData.h>
 #include <DAQ/Df250PulseTime.h>
+#include <DAQ/Df250PulseData.h>
 #include <DAQ/Df250PulsePedestal.h>
 #include <DAQ/Df250PulseIntegral.h>
 #include <DAQ/Df250Config.h>
@@ -26,6 +27,8 @@ class Df250EmulatorAlgorithm:public jana::JObject{
         ~Df250EmulatorAlgorithm(){};
 
         // The main emulation routines are overwritten in the inherited classes
+        
+        // firmware v1 data format
         virtual void EmulateFirmware(const Df250WindowRawData* wrd,
                                      std::vector<Df250PulseTime*> &pt_objs,
                                      std::vector<Df250PulsePedestal*> &pp_objs,
@@ -43,6 +46,19 @@ class Df250EmulatorAlgorithm:public jana::JObject{
 				for(auto p : mypt_objs) pt_objs.push_back(p);
 				for(auto p : mypp_objs) pp_objs.push_back(p);
 				for(auto p : mypi_objs) pi_objs.push_back(p);
+
+			}
+
+        // firmware v2 data format
+        virtual void EmulateFirmware(const Df250WindowRawData* wrd,
+                                     std::vector<Df250PulseData*> &pdat_objs)=0;
+
+        virtual void EmulateFirmware(const Df250WindowRawData* rawData,
+                                     std::vector<JObject*> &pdat_objs)
+			{
+				std::vector<Df250PulseData*> mypdat_objs;
+				EmulateFirmware(rawData, mypdat_objs);
+				for(auto p : mypdat_objs) pdat_objs.push_back(p);
 
 			}
     protected:

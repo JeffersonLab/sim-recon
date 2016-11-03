@@ -62,14 +62,14 @@ void BCALSmearer::SmearEvent(hddm_s::HDDM *record)
     ApplySamplingFluctuations(SiPMHits, incident_particles);
 
     // Merge hits associated with different incident particles
-    MergeHits(SiPMHits, bcal_config->BCAL_TWO_HIT_RESOL);
+    MergeHits(SiPMHits, bcal_config->BCAL_TWO_HIT_RESO);
 
     // Poisson Statistics
     ApplyPoissonStatistics(SiPMHits);
    
     // Place all hit cells into list indexed by fADC ID
     map<int, SumHits> bcalfADC;
-    SortSiPMHits(SiPMHits, bcalfADC, bcal_config->BCAL_TWO_HIT_RESOL);
+    SortSiPMHits(SiPMHits, bcalfADC, bcal_config->BCAL_TWO_HIT_RESO);
 
     // Electronic noise/Dark hits Smearing
     SimpleDarkHitsSmear(bcalfADC);
@@ -731,7 +731,7 @@ bcal_config_t::bcal_config_t(JEventLoop *loop)
 {
  	BCAL_SAMPLINGCOEFA        = 0.0; // 0.042 (from calibDB BCAL/bcal_parms)
  	BCAL_SAMPLINGCOEFB        = 0.0; // 0.013 (from calibDB BCAL/bcal_parms)
- 	BCAL_TWO_HIT_RESOL        = 0.0; // 50. (from calibDB BCAL/bcal_parms)
+ 	BCAL_TWO_HIT_RESO        = 0.0; // 50. (from calibDB BCAL/bcal_parms)
  	BCAL_mevPerPE             = 0.0; // Energy corresponding to one pixel firing in MeV - FIX 
 	BCAL_C_EFFECTIVE          = 0.0; // constant effective velocity, assumed to be property of fibers
 
@@ -771,7 +771,7 @@ bcal_config_t::bcal_config_t(JEventLoop *loop)
      } else {
      	BCAL_SAMPLINGCOEFA 		  = bcalparms["BCAL_SAMPLINGCOEFA"];
      	BCAL_SAMPLINGCOEFB 		  = bcalparms["BCAL_SAMPLINGCOEFB"];
-     	BCAL_TWO_HIT_RESOL 		  = bcalparms["BCAL_TWO_HIT_RESOL"];
+     	BCAL_TWO_HIT_RESO 		  = bcalparms["BCAL_TWO_HIT_RESO"];
 	BCAL_mevPerPE			  = bcalparms["BCAL_mevPerPE"];
 	BCAL_C_EFFECTIVE		  = bcalparms["BCAL_C_EFFECTIVE"];
 	BCAL_ADC_THRESHOLD_MEV		  = bcalparms["BCAL_ADC_THRESHOLD_MEV"];
