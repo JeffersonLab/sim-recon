@@ -20,13 +20,13 @@
 	locCanvas->Divide(3, 2);
 
 	TH1I* locHist_Pi0_2FCAL = (TH1I*)locReactionDirectory_2FCAL->Get("Hist_InvariantMass_Pi0/InvariantMass");
-	TH1I* locHist_Omega_2FCAL = (TH1I*)locReactionDirectory_2FCAL->Get("Hist_InvariantMass_Omega/InvariantMass");
+	TH1I* locHist_Omega_2FCAL = (TH1I*)locReactionDirectory_2FCAL->Get("Hist_InvariantMass_Omega_PostKinFitCut/InvariantMass");
 
 	TH1I* locHist_Pi0_2BCAL = (TH1I*)locReactionDirectory_2BCAL->Get("Hist_InvariantMass_Pi0/InvariantMass");
-	TH1I* locHist_Omega_2BCAL = (TH1I*)locReactionDirectory_2BCAL->Get("Hist_InvariantMass_Omega/InvariantMass");
+	TH1I* locHist_Omega_2BCAL = (TH1I*)locReactionDirectory_2BCAL->Get("Hist_InvariantMass_Omega_PostKinFitCut/InvariantMass");
 
 	TH1I* locHist_Pi0_Both = (TH1I*)locReactionDirectory_Both->Get("Hist_InvariantMass_Pi0/InvariantMass");
-	TH1I* locHist_Omega_Both = (TH1I*)locReactionDirectory_Both->Get("Hist_InvariantMass_Omega/InvariantMass");
+	TH1I* locHist_Omega_Both = (TH1I*)locReactionDirectory_Both->Get("Hist_InvariantMass_Omega_PostKinFitCut/InvariantMass");
 
 	TH1I* locHist_MM2 = (TH1I*)locReactionDirectory_KinFit->Get("Hist_MissingMassSquared/MissingMassSquared");
 	TH1I* locHist_MM2_KinFitCut = (TH1I*)locReactionDirectory_KinFit->Get("Hist_MissingMassSquared_PostKinFitCut/MissingMassSquared");
@@ -96,62 +96,8 @@
 		locLegend->Draw();
 	}
 
-	//measured omega for 3 cases (on top of each other)
-	locCanvas->cd(2);
-	gPad->SetTicks();
-	gPad->SetGrid();
-	if((locHist_Omega_2FCAL != NULL) && (locHist_Omega_2BCAL != NULL) && (locHist_Omega_Both != NULL))
-	{
-		locHist_Omega_2FCAL->Rebin(2*locNumRebin);
-		locHist_Omega_2BCAL->Rebin(2*locNumRebin);
-		locHist_Omega_Both->Rebin(2*locNumRebin);
-
-		double locMaxHeight = locHist_Omega_2FCAL->GetBinContent(locHist_Omega_2FCAL->GetMaximumBin());
-		double locOtherHeight = locHist_Omega_2BCAL->GetBinContent(locHist_Omega_2BCAL->GetMaximumBin());
-		if(locOtherHeight > locMaxHeight)
-			locMaxHeight = locOtherHeight;
-		locOtherHeight = locHist_Omega_Both->GetBinContent(locHist_Omega_Both->GetMaximumBin());
-		if(locOtherHeight > locMaxHeight)
-			locMaxHeight = locOtherHeight;
-
-		locHist_Omega_2FCAL->SetTitle("Measured");
-		locHist_Omega_2FCAL->GetXaxis()->SetTitleSize(0.05);
-		locHist_Omega_2FCAL->GetYaxis()->SetTitle("");
-		locHist_Omega_2FCAL->GetXaxis()->SetLabelSize(0.05);
-		locHist_Omega_2FCAL->GetYaxis()->SetLabelSize(0.05);
-		locHist_Omega_2FCAL->SetLineColor(kRed);
-		locHist_Omega_2FCAL->SetLineWidth(2);
-		locHist_Omega_2FCAL->GetYaxis()->SetRangeUser(0.0, 1.05*locMaxHeight);
-		locHist_Omega_2FCAL->Draw();
-
-		locHist_Omega_2BCAL->GetXaxis()->SetTitleSize(0.05);
-		locHist_Omega_2BCAL->GetYaxis()->SetTitle("");
-		locHist_Omega_2BCAL->GetXaxis()->SetLabelSize(0.05);
-		locHist_Omega_2BCAL->GetYaxis()->SetLabelSize(0.05);
-		locHist_Omega_2BCAL->SetLineColor(kBlue);
-		locHist_Omega_2BCAL->SetLineWidth(2);
-		locHist_Omega_2BCAL->GetYaxis()->SetRangeUser(0.0, 1.05*locMaxHeight);
-		locHist_Omega_2BCAL->Draw("SAME");
-
-		locHist_Omega_Both->GetXaxis()->SetTitleSize(0.05);
-		locHist_Omega_Both->GetYaxis()->SetTitle("");
-		locHist_Omega_Both->GetXaxis()->SetLabelSize(0.05);
-		locHist_Omega_Both->GetYaxis()->SetLabelSize(0.05);
-		locHist_Omega_Both->SetLineColor(kBlack);
-		locHist_Omega_Both->SetLineWidth(2);
-		locHist_Omega_Both->GetYaxis()->SetRangeUser(0.0, 1.05*locMaxHeight);
-		locHist_Omega_Both->Draw("SAME");
-
-		TLegend *locLegend = new TLegend(0.14, 0.70, 0.39, 0.86); //botleft x/y, topright x/y
-		locLegend->SetHeader("Legend");
-		locLegend->AddEntry(locHist_Omega_2FCAL, "2#gamma in FCAL", "F");
-		locLegend->AddEntry(locHist_Omega_2BCAL, "2#gamma in BCAL", "F");
-		locLegend->AddEntry(locHist_Omega_Both, "1 #gamma in Each", "F");
-		locLegend->Draw();
-	}
-
 	//con lev
-	locCanvas->cd(3);
+	locCanvas->cd(2);
 	gPad->SetTicks();
 	gPad->SetGrid();
 	if(locHist_KinFitConLev != NULL)
@@ -167,7 +113,7 @@
 	}
 
 	//mm2
-	locCanvas->cd(4);
+	locCanvas->cd(3);
 	gPad->SetTicks();
 	gPad->SetGrid();
 	if((locHist_MM2 != NULL) && (locHist_MM2_KinFitCut != NULL))
@@ -198,7 +144,7 @@
 	}
 
 	//pi0 before/after kinfit
-	locCanvas->cd(5);
+	locCanvas->cd(4);
 	gPad->SetTicks();
 	gPad->SetGrid();
 	if((locHist_Pi0 != NULL) && (locHist_Pi0_KinFitCut != NULL))
@@ -229,7 +175,7 @@
 	}
 
 	//compare omega kinfit / measured after kinfit cut
-	locCanvas->cd(6);
+	locCanvas->cd(5);
 	gPad->SetTicks();
 	gPad->SetGrid();
 	if((locHist_KinFitOmega_KinFitCut != NULL) && (locHist_Omega_KinFitCut != NULL))
@@ -265,6 +211,60 @@
 		locLegend->SetHeader("Legend");
 		locLegend->AddEntry(locHist_Omega_KinFitCut, "Measured", "F");
 		locLegend->AddEntry(locHist_KinFitOmega_KinFitCut, "KinFit", "F");
+		locLegend->Draw();
+	}
+
+	//measured omega for 3 cases (on top of each other)
+	locCanvas->cd(6);
+	gPad->SetTicks();
+	gPad->SetGrid();
+	if((locHist_Omega_2FCAL != NULL) && (locHist_Omega_2BCAL != NULL) && (locHist_Omega_Both != NULL))
+	{
+		locHist_Omega_2FCAL->Rebin(2*locNumRebin);
+		locHist_Omega_2BCAL->Rebin(2*locNumRebin);
+		locHist_Omega_Both->Rebin(2*locNumRebin);
+
+		double locMaxHeight = locHist_Omega_2FCAL->GetBinContent(locHist_Omega_2FCAL->GetMaximumBin());
+		double locOtherHeight = locHist_Omega_2BCAL->GetBinContent(locHist_Omega_2BCAL->GetMaximumBin());
+		if(locOtherHeight > locMaxHeight)
+			locMaxHeight = locOtherHeight;
+		locOtherHeight = locHist_Omega_Both->GetBinContent(locHist_Omega_Both->GetMaximumBin());
+		if(locOtherHeight > locMaxHeight)
+			locMaxHeight = locOtherHeight;
+
+		locHist_Omega_2FCAL->SetTitle("Post KinFit Cut");
+		locHist_Omega_2FCAL->GetXaxis()->SetTitleSize(0.05);
+		locHist_Omega_2FCAL->GetYaxis()->SetTitle("");
+		locHist_Omega_2FCAL->GetXaxis()->SetLabelSize(0.05);
+		locHist_Omega_2FCAL->GetYaxis()->SetLabelSize(0.05);
+		locHist_Omega_2FCAL->SetLineColor(kRed);
+		locHist_Omega_2FCAL->SetLineWidth(2);
+		locHist_Omega_2FCAL->GetYaxis()->SetRangeUser(0.0, 1.05*locMaxHeight);
+		locHist_Omega_2FCAL->Draw();
+
+		locHist_Omega_2BCAL->GetXaxis()->SetTitleSize(0.05);
+		locHist_Omega_2BCAL->GetYaxis()->SetTitle("");
+		locHist_Omega_2BCAL->GetXaxis()->SetLabelSize(0.05);
+		locHist_Omega_2BCAL->GetYaxis()->SetLabelSize(0.05);
+		locHist_Omega_2BCAL->SetLineColor(kBlue);
+		locHist_Omega_2BCAL->SetLineWidth(2);
+		locHist_Omega_2BCAL->GetYaxis()->SetRangeUser(0.0, 1.05*locMaxHeight);
+		locHist_Omega_2BCAL->Draw("SAME");
+
+		locHist_Omega_Both->GetXaxis()->SetTitleSize(0.05);
+		locHist_Omega_Both->GetYaxis()->SetTitle("");
+		locHist_Omega_Both->GetXaxis()->SetLabelSize(0.05);
+		locHist_Omega_Both->GetYaxis()->SetLabelSize(0.05);
+		locHist_Omega_Both->SetLineColor(kBlack);
+		locHist_Omega_Both->SetLineWidth(2);
+		locHist_Omega_Both->GetYaxis()->SetRangeUser(0.0, 1.05*locMaxHeight);
+		locHist_Omega_Both->Draw("SAME");
+
+		TLegend *locLegend = new TLegend(0.14, 0.70, 0.39, 0.86); //botleft x/y, topright x/y
+		locLegend->SetHeader("Legend");
+		locLegend->AddEntry(locHist_Omega_2FCAL, "2#gamma in FCAL", "F");
+		locLegend->AddEntry(locHist_Omega_2BCAL, "2#gamma in BCAL", "F");
+		locLegend->AddEntry(locHist_Omega_Both, "1 #gamma in Each", "F");
 		locLegend->Draw();
 	}
 }
