@@ -114,6 +114,7 @@ DChargedTrackHypothesis* DChargedTrackHypothesis_factory_KinFit::Build_ChargedTr
 	double locPathLengthUncertainty = sqrt(locPathLengthUncertainty_Orig*locPathLengthUncertainty_Orig + locPathLengthUncertainty_KinFit*locPathLengthUncertainty_KinFit);
 	locNewChargedTrackHypothesis->setPathLength(locPathLength, locPathLengthUncertainty);
 
+	//for this calc: if rf time part of timing constraint, don't use locKinFitParticle->Get_Time() for chisq calc!!!
 	dPIDAlgorithm->Calc_ChargedPIDFOM(locNewChargedTrackHypothesis, locParticleCombo->Get_EventRFBunch());
 
 	return locNewChargedTrackHypothesis;

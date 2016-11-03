@@ -133,6 +133,7 @@ DNeutralParticleHypothesis* DNeutralParticleHypothesis_factory_KinFit::Build_Neu
 	if(locNewNeutralParticleHypothesis->PID() == Gamma)
 	{
 		double locTimePull = 0.0;
+		//for this calc: if rf time part of timing constraint, don't use locKinFitParticle->Get_CommonTime() for chisq calc!!!
 		locChiSq = dParticleID->Calc_TimingChiSq(locNewNeutralParticleHypothesis, locNDF, locTimePull);
 		locFOM = TMath::Prob(locChiSq, locNDF);
 	}
