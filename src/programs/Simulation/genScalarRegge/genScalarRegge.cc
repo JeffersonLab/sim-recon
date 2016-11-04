@@ -495,90 +495,222 @@ double BackGroundCrossSection(TLorentzVector &q /* beam */,
   
   return xsec;				 
 }
+/*
+double InterferenceCrossSection(TLorentzVector &q /* beam,
+				vector<Particle_t>&particle_types,
+				vector<TLorentzVector>&particles){ 
+  int two_particles=particle_types[0]+particle_types[1];
+  
+  // Four vectors
+  TLorentzVector p1(0,0,0.,ParticleMass(Proton));
+  TLorentzVector p2=particles[2];
+  TLorentzVector p=p1-p2;
+  TLorentzVector v1=particles[0]-q;
+  TLorentzVector v2=particles[1]-q;
 
-// Breit-Wigner distribution for resonance shape
-double ResonanceShape(double m_S_sq,double width,double m1,double m2,
-		      int shape_type){
-  double bw=0.;
+  // Mandelstam variables
+  double s=(q+p1).M2();
+  double t=(p1-p2).M2();
+  double s1=(v1+p1).M2();
+  double s2=(v2+p1).M2();
+  double t1=(v1-particles[1]).M2();
+  double t2=(v2-particles[0]).M2();
+
+  // dot products 
+  double p1_dot_p2=p1.Dot(p2);
+  double q_dot_p=q.Dot(p);
+  double q_dot_v1=q.Dot(v1);
+  double p_dot_v1=p.Dot(v1);
+  double q_dot_v2=q.Dot(v2);
+  double p_dot_v2=p.Dot(v2);
+  double v1sq=v1.M2();
+  double v2sq=v2.M2();
+  double v1sq_minus_v2sq=v1sq-v2sq;
+  double v1_dot_v2=v1.Dot(v2);
+  double psq=p.M2();
+  double b1=q_dot_p*v1sq-q_dot_v1*p_dot_v1;
+  double b2=q_dot_p*v2sq-q_dot_v2*p_dot_v2;
+  TLorentzVector c1=p_dot_v1*q-q_dot_p*v1;
+  TLorentzVector c2=p_dot_v2*q-q_dot_p*v2;
+  TLorentzVector d1=q_dot_v1*v1-v1sq*q;
+  TLorentzVector d2=q_dot_v2*v2-v2sq*q;
+  TLorentzVector N1=b1*p1+p1.Dot(c1)*v1+p1.Dot(d1)*p;
+  TLorentzVector N2=b2*p1+p1.Dot(c2)*v1+p1.Dot(d2)*p;
+  TLorentzVector N=(q_dot_p)*p1-q.Dot(p1)*p;
+  double N_N1=N.Dot(N1);
+  double N_N2=N.Dot(N2);
+  double M_M1=3*b1*q_dot_p+v1.Dot(c1)*q_dot_p+p_dot_v1*q.Dot(c1)
+    +p.Dot(d1)*q_dot_p-psq*q.Dot(d1);  
+  double M_M2=3*b2*q_dot_p+v2.Dot(c2)*q_dot_p+p_dot_v2*q.Dot(c2)
+    +p.Dot(d2)*q_dot_p-psq*q.Dot(d2);
+
+
+  // Rho propagator for top exchange for double-exchange diagrams
+  double m_rho=0.7685;
+  double Gamma_rho=0.1462;
+  double m_rhosq_minus_v1sq=m_rho*m_rho-v1sq;
+  double Pi_rho_1_sq=1./(m_rhosq_minus_v1sq*m_rhosq_minus_v1sq
+			 +m_rho*m_rho*Gamma_rho*Gamma_rho);
+  double m_rhosq_minus_v2sq=m_rho*m_rho-v2sq;
+  double Pi_rho_2_sq=1./(m_rhosq_minus_v2sq*m_rhosq_minus_v2sq
+			 +m_rho*m_rho*Gamma_rho*Gamma_rho);
+  
+  double s0=1.;
+  // Regge trajectory for rho
+  double a_rho_1=0.55+0.8*t1;
+  double a_rho=0.55+0.8*t;
+  double a_rho_prime=0.8;
+  double cos_rho=cos(M_PI*a_rho);
+  double sin_rho=sin(M_PI*a_rho);
+  double cos_rho_1=cos(M_PI*a_rho_1);
+  double sin_rho_1=sin(M_PI*a_rho_1);
+  double regge_rho=pow(s/s0,a_rho-1.)*M_PI*a_rho_prime/(sin_rho*TMath::Gamma(a_rho)); // excluding phase factor
+  double regge_rho_1=pow(s1/s0,a_rho_1-1.)*M_PI*a_rho_prime/(sin_rho_1*TMath::Gamma(a_rho_1)); // excluding phase factor
+  double regge_rho_1_sq=regge_rho_1*regge_rho_1*0.5*(1.-cos_rho_1); 
+  double a_rho_2=0.55+0.8*t2;
+  double cos_rho_2=cos(M_PI*a_rho_2);
+  double sin_rho_2=sin(M_PI*a_rho_2);
+  double regge_rho_2=pow(s2/s0,a_rho_2-1.)*M_PI*a_rho_prime/(sin_rho_2*TMath::Gamma(a_rho_2)); // excluding phase factor
+  double regge_rho_2_sq=regge_rho_2*regge_rho_2*0.5*(1.-cos_rho_2);
+  double cos_rho_1_rho_2=cos(M_PI*(a_rho_2-a_rho_1));
+  double sin_rho_1_rho_2=sin(M_PI*(a_rho_1-a_rho_2)); 
+
+ // omega propagator for top exchange
+  double m_omega=0.78265;
+  double Gamma_omega=0.00849;
+  double m_omegasq_minus_v1sq=m_omega*m_omega-v1sq;
+  double Pi_omega_1_sq=1./(m_omegasq_minus_v1sq*m_omegasq_minus_v1sq
+			   +m_omega*m_omega*Gamma_omega*Gamma_omega);
+  double m_omegasq_minus_v2sq=m_omega*m_omega-v2sq;
+  double Pi_omega_2_sq=1./(m_omegasq_minus_v2sq*m_omegasq_minus_v2sq
+			   +m_omega*m_omega*Gamma_omega*Gamma_omega);
+
+  // Regge trajectory for omega
+  double a_omega=0.44+0.9*t;
+  double a_omega_1=0.44+0.9*t1;
+  double a_omega_prime=0.9; 
+  double cos_omega=cos(M_PI*a_omega);
+  double sin_omega=sin(M_PI*a_omega);
+  double cos_omega_1=cos(M_PI*a_omega_1);
+  double sin_omega_1=sin(M_PI*a_omega_1); 
+  double regge_omega=pow(s/s0,a_omega-1.)*M_PI*a_omega_prime/(sin_omega*TMath::Gamma(a_omega)); // excluding phase factor
+  double regge_omega_1=pow(s1/s0,a_omega_1-1.)*M_PI*a_omega_prime/(sin_omega_1*TMath::Gamma(a_omega_1)); // excluding phase factor
+  double regge_omega_1_sq
+    =regge_omega_1*regge_omega_1*0.5*(1.-cos_omega_1);
+  double a_omega_2=0.44+0.9*t2;
+  double cos_omega_2=cos(M_PI*a_omega_2);
+  double sin_omega_2=sin(M_PI*a_omega_2);
+  double regge_omega_2=pow(s2/s0,a_omega_2-1.)*M_PI*a_omega_prime/(sin_omega_2*TMath::Gamma(a_omega_2)); // excluding phase factor
+  double regge_omega_2_sq
+    =regge_omega_2*regge_omega_2*0.5*(1.-cos_omega_2); 
+  double cos_omega_1_omega_2=cos(M_PI*(a_omega_2-a_omega_1));
+  double sin_omega_1_omega_2=sin(M_PI*(a_omega_2-a_omega_1));
+
+  // Breit-Wigner real and imaginary terms
+  double ReB=0, ImB=0;
+  // phase between background and resonant signal
+  double phase=0.;
+
+  // terms involving complex conjugates of Regge propagators and rho/omega propagtors
+  double Re_a1_aS=0, Im_a1_aS=0, Re_a2_aS=0., Im_a2_aS=0.;
+  double Re_b1_aS=0, Im_b1_aS=0, Re_b2_aS=0., Im_b2_aS=0.;
+  double Re_a1_bS=0, Im_a1_bS=0., Re_b1_bS=0., Im_b2_bS=0.;
+
+  // Compute square of amplitude    
+  if (two_particles==(7+7)){ // pi0 pi0
+    double Re_a1_aS_rho_V_and_T_sq
+      =(1./2.)*gsq_rho_V_and_T*g_rho_S*regge_rho*regge_rho_1*Pi_omega_1_sq
+      *((cos_rho_rho_1-cos_rho-cos_rho_1+1)
+	*(m_omegasq_minus_v1sq*ReB+m_omega*Gamma_omega*ImB)
+	+(sin_rho_rho_1-sin_rho_1+sin_rho)
+	*(m_omega*Gamma_omega*ReB-m_omegasq_minus_v1sq*ImB));
+    double Im_a1_aS_rho_V_and_T_sq
+      =-(1./2)*gsq_rho_V_and_T*g_rho_S*regge_rho*regge_rho_1*Pi_omega_1_sq
+      *((sin_rho_1-sin_rho-sin_rho_rho_1)
+	*(m_omegasq_minus_v1sq*ReB+m_omega*Gamma_omega*ImB)
+	+(cos_rho_rho_1-cos_rho-cos_rho_1+1)
+	*(m_omega*Gamma_omega*ReB-m_omegasq_minus_v1sq*ImB));
+    
+    Re_a1_aS=Re_a1_aS_rho_V_and_T_sq;
+    Im_a1_aS=Im_a1_aS_rho_V_and_T_sq;
+  }
+
+  // Real and imaginary parts of the trace term
+  double ReT=(m_p_sq-p1_dot_p2)*(Re_a1_aS*M_M1+Re_a2_aS*M_M2
+				 +2.*Re_a1_aS*N_N1+2.*Re_a2_aS*N_N2)
+    +2.*m_p*((Re_b1_aS+Re_a1_bS)*N_N1+(Re_b2_aS+Re_a2_bS)*N_N2)
+    +(m_p_sq+p1_dot_p2)*(Re_b1_bS*N_N1+Re_b2_bS*N_N2);
+  double ImT=(m_p_sq-p1_dot_p2)*(Im_a1_aS*M_M1+Im_a2_aS*M_M2
+				 +2.*Im_a1_aS*N_N1+2.*Im_a2_aS*N_N2)
+    +2.*m_p*((Im_b1_aS+Im_a1_bS)*N_N1+(Im_b2_aS+Im_a2_bS)*N_N2)
+    +(m_p_sq+p1_dot_p2)*(Im_b1_bS*N_N1+Im_b2_bS*N_N2);
+  
+  double Msq=(particles[0]+particles[1]).M2();
+  double g0=sqrt(1.514e4/137); 
+  double s_minus_mp_sq=s-m_p_sq;
+  double m1=ParticleMass(particle_types[0]);
+  double m2=ParticleMass(particle_types[1]);
+  double m1_plus_m2=m1+m2;
+  double m1_minus_m2=m1-m2;
+  double k=sqrt((Msq-m1_plus_m2*m1_plus_m2)*(Msq-m1_minus_m2*m1_minus_m2))
+    /(2.*sqrt(Msq));
+  double hbarc_sq=389.; // Convert to micro-barns
+  double xsec=-zeta*gR*g0*k*hbarc_sq*(cos(phase)*ReT+sin(phase)*ImT)
+    /(256*M_PI*M_PI*M_PI*M_PI*s_minus_mp_sq*s_minus_mp_sq*(ReB*ReB+ImB*ImB));
+}
+*/
+
+// Get parameters for Breit-Wigner distribution for resonance shape
+void GetResonanceParameters(double m1,double m2, double m_S_sq,double &ReB,
+			    double &ImB){
   double m1_plus_m2=m1+m2;
   double m1_minus_m2=m1-m2;  
   bool got_pipi=(fabs(m1_minus_m2)>0.01)?false:true;
 
-  double M2diff=m_S_sq_R-m_S_sq;
+  // "No structure" model for a0(980)/f0(980)
+  // masses
+  double M_S=sqrt(m_S_sq);
+  double MK0=ParticleMass(KShort);
+  double MKPlus=ParticleMass(KPlus);
+
+  // coupling constants
+  double gK=3.05; 
+  double g_m1m2=2.82;
+  if (got_pipi){
+    gK=5.006;
+    g_m1m2=1.705;
+  }
+  double gKsq=gK*gK;    
+  double g_m1m2_sq=g_m1m2*g_m1m2;
+    
+  // kinematic factors
+  double rhoK0sq=1.-4.*MK0*MK0/m_S_sq;
+  double rhoKPlussq=1.-4.*MKPlus*MKPlus/m_S_sq;
   double rho_m1m2
-    =sqrt((1.-m1_plus_m2*m1_plus_m2/m_S_sq)*(1-m1_minus_m2*m1_minus_m2/m_S_sq));
-
-  switch(shape_type){
-  case 0:  // Relativistic Breit-wigner with no channel-opening threshold effects
-    {
-      double fac=m_S_sq_R*sqrt(m_S_sq_R)*width
-	/sqrt((1.-m1_plus_m2*m1_plus_m2/m_S_sq_R)
-	      *(1-m1_minus_m2*m1_minus_m2)/m_S_sq_R);
-      bw=fac*rho_m1m2/(M2diff*M2diff+m_S_sq*width*width);
-    }
-    break;
-  case 1: // "No structure" model for a0(980)/f0(980)
-    {
-      // masses
-      double M_S=sqrt(m_S_sq);
-      double MK0=ParticleMass(KShort);
-      double MKPlus=ParticleMass(KPlus);
-
-      // coupling constants
-      double gK=3.05; 
-      double g_m1m2=2.82;
-      if (got_pipi){
-	gK=5.006;
-	g_m1m2=1.705;
-      }
-      double gKsq=gK*gK;     
-      double g_m1m2_sq=g_m1m2*g_m1m2;
-
-      // kinematic factors
-      double rhoK0sq=1.-4.*MK0*MK0/m_S_sq;
-      double rhoKPlussq=1.-4.*MKPlus*MKPlus/m_S_sq;
+   =sqrt((1.-m1_plus_m2*m1_plus_m2/m_S_sq)*(1-m1_minus_m2*m1_minus_m2/m_S_sq));
 
       // Real and imaginary parts of BW amplitude
-      double ReDm=M2diff;
-      if (M_S<2.*MKPlus){
-	ReDm+=gKsq/(32.*M_PI)*sqrt(-rhoKPlussq);
-      }
-      if (M_S<2.*MK0){
-	ReDm+=gKsq/(32.*M_PI)*sqrt(-rhoK0sq);
-      }
-      double ImDm=g_m1m2_sq/(16*M_PI)*rho_m1m2;
-      if (M_S>2.*MKPlus){
-	ImDm+=gKsq/(32.*M_PI)*sqrt(rhoKPlussq);
-      }
-      if (M_S>2.*MK0){
-	ImDm+=gKsq/(32.*M_PI)*sqrt(rhoK0sq);
-      }
-      bw=g_m1m2_sq*rho_m1m2/(8*M_PI*M_PI*(ReDm*ReDm+ImDm*ImDm));
-    }
-    break;
-  default:
-    break;
+  ReB=m_S_sq_R-m_S_sq;
+  if (M_S<2.*MKPlus){
+    ReB+=gKsq/(32.*M_PI)*sqrt(-rhoKPlussq);
   }
-  return bw;
+  if (M_S<2.*MK0){
+    ReB+=gKsq/(32.*M_PI)*sqrt(-rhoK0sq);
+  }
+  ImB=g_m1m2_sq/(16*M_PI)*rho_m1m2;
+  if (M_S>2.*MKPlus){
+    ImB+=gKsq/(32.*M_PI)*sqrt(rhoKPlussq);
+  }
+  if (M_S>2.*MK0){
+    ImB+=gKsq/(32.*M_PI)*sqrt(rhoK0sq);
+  }
 }
 
 
-// Cross section dsigma/dt derived from 
-double CrossSection(double s,double t,double ms_sq){
-  // Coupling constants 
-  double g_omega_V=15.;
-  double gsq_omega_V=g_omega_V*g_omega_V;
-  double g_rho_V=3.4;
-  double gsq_rho_V=g_rho_V*g_rho_V;
-  double g_rho_T=11.0; // GeV^-1
-  double g_rho_V_and_T=g_rho_V+2.*m_p*g_rho_T;
-  double g_rho_S_gamma=sqrt(gsq_rho_S_gamma);
-  double g_omega_S_gamma=sqrt(gsq_omega_S_gamma);
-
-  // s scale for regge trajectories
-  double s0=1.;
-
-  // Kinematical boundaries
+// Cross section dsigma/(dt/dM/dOmega) from Donnachie and Kalashnikova
+double CrossSection(double m1,double m2, double ms_sq, double s, double t,
+		    double gR,double ReB,double ImB){
+  // Kinematic factors
   double mp_sq_minus_s=m_p_sq-s;
   double mp_sq_plus_s=m_p_sq+s;
   double mp_sq_minus_s_sq=mp_sq_minus_s*mp_sq_minus_s;
@@ -587,138 +719,181 @@ double CrossSection(double s,double t,double ms_sq){
 				  +ms_sq*ms_sq);
   double t1=(temp1+temp2)/(2.*s);
   double t2=(temp1-temp2)/(2.*s);
-
-  // Kinematic factors for cross section
   double t_minus_ms_sq=t-ms_sq;
-  double xfac1=s*(t-t1)*(t-t2);
-  double xfac2=xfac1+2.*t*t_minus_ms_sq*t_minus_ms_sq;
+  double kin1=s*(t-t1)*(t-t2);
+  double kin_aS_aS=0.5*kin1+0.25*t*t_minus_ms_sq*t_minus_ms_sq;
+  double kin_aS_bS=0.5*m_p*kin1;
+  double kin_bS_bS=0.125*(4.*m_p_sq-t)*kin1;
+
+  // Coupling constants 
+  double g_omega_V=15.;
+  double gsq_omega_V=g_omega_V*g_omega_V;
+  double g_rho_V=3.4;
+  double gsq_rho_V=g_rho_V*g_rho_V;
+  double g_rho_T=11.0; // GeV^-1
+  double g_rho_V_and_T=g_rho_V+2.*m_p*g_rho_T;
+  double gsq_rho_V_and_T=g_rho_V_and_T*g_rho_V_and_T;
+  double g_rho_S_gamma=sqrt(gsq_rho_S_gamma);
+  double g_omega_S_gamma=sqrt(gsq_omega_S_gamma);
+  double gRsq=gR*gR;
+
+  // s scale for regge trajectories
+  double s0=1.;
 
   // Regge trajectory for omega
   double a_omega=0.44+0.9*t;
   double a_omega_prime=0.9;
+  double cos_omega=cos(M_PI*a_omega);
   double regge_omega=pow(s/s0,a_omega-1.)*M_PI*a_omega_prime/(sin(M_PI*a_omega)*TMath::Gamma(a_omega)); // excluding phase factor
+  double regge_omega_sq=regge_omega*regge_omega*0.5*(1.-cos_omega);
 
   // Regge cuts for omega
   double a_omega_P=0.52+0.196*t; // Pomeron
   double a_omega_f2=0.112+0.428*t;
-  double dc=2.19;
+  double dc=1.36;
   double regge_omega_P_cut=exp(dc*t)*pow(s/s0,a_omega_P-1.);
   double regge_omega_f2_cut=exp(dc*t)*pow(s/s0,a_omega_f2-1.);
-  double C_omega_P_cut=0.020;
-  double C_omega_f2_cut=-0.021;
+  double C_omega_P_cut=0.271;
+  double C_omega_f2_cut=0.926;
+  double Csq_omega_P_cut=C_omega_P_cut*C_omega_P_cut;
+  double Csq_omega_f2_cut=C_omega_f2_cut*C_omega_f2_cut;
+  double C_omega_f2_C_omega_P=C_omega_f2_cut*C_omega_P_cut;
 
-  // omega amplitude squared
-  double M_omega_sq=0.5*gsq_omega_S_gamma*gsq_omega_V*xfac2
-    *(regge_omega*regge_omega*0.5*(1.-cos(M_PI*a_omega))
-      +C_omega_P_cut*C_omega_P_cut*regge_omega_P_cut*regge_omega_P_cut
-      +C_omega_f2_cut*C_omega_f2_cut*regge_omega_f2_cut*regge_omega_f2_cut
-      +(2.*C_omega_f2_cut*C_omega_P_cut*regge_omega_f2_cut*regge_omega_P_cut
-	*cos(M_PI_2*(a_omega_f2-a_omega_P)))
-      +(C_omega_f2_cut*regge_omega*regge_omega_f2_cut
-	*(cos(M_PI*(a_omega+0.5*a_omega_f2))-cos(M_PI_2*a_omega_f2)))
-      +(C_omega_P_cut*regge_omega*regge_omega_P_cut
-	*(cos(M_PI*(a_omega+0.5*a_omega_P))-cos(M_PI_2*a_omega_P)))
-      );
-
-  
   // Regge trajectory for rho
   double a_rho=0.55+0.8*t;
   double a_rho_prime=0.8;
+  double cos_rho=cos(M_PI*a_rho);
   double regge_rho=pow(s/s0,a_rho-1.)*M_PI*a_rho_prime/(sin(M_PI*a_rho)*TMath::Gamma(a_rho)); // excluding phase factor
+  double regge_rho_sq=regge_rho*regge_rho*0.5*(1.-cos_rho);
 
   // Regge cuts for rho
   double a_rho_P=0.64+0.16*t; // Pomeron
   double a_rho_f2=0.222+0.404*t;
   double regge_rho_P_cut=exp(dc*t)*pow(s/s0,a_rho_P-1.);
   double regge_rho_f2_cut=exp(dc*t)*pow(s/s0,a_rho_f2-1.);
-  double C_rho_P_cut=-1.13;
-  double C_rho_f2_cut=6.31;
-
-  // Rho amplitude squared
-  double rho_cut_interference=C_rho_f2_cut*regge_rho*regge_rho_f2_cut
-    *(cos(M_PI*(a_rho+0.5*a_rho_f2))-cos(M_PI_2*a_rho_f2))
-    +C_rho_P_cut*regge_rho*regge_rho_P_cut
-    *(cos(M_PI*(a_rho+0.5*a_rho_P))-cos(M_PI_2*a_rho_P));
-  double regge_rho_amp_sq=regge_rho*regge_rho*0.5*(1.-cos(M_PI*a_rho));      
-  double M_rho_sq
-    =0.125*gsq_rho_S_gamma
-    *(4*xfac2
-      *(g_rho_V_and_T*g_rho_V_and_T*regge_rho_amp_sq
-	+g_rho_V*g_rho_V_and_T*rho_cut_interference
-	+gsq_rho_V*(C_rho_P_cut*C_rho_P_cut*regge_rho_P_cut*regge_rho_P_cut
-			  +C_rho_f2_cut*C_rho_f2_cut*regge_rho_f2_cut*regge_rho_f2_cut
-			  +(2.*C_rho_f2_cut*C_rho_P_cut*regge_rho_f2_cut*regge_rho_P_cut
-			    *cos(M_PI_2*(a_rho_f2-a_rho_P)))))
-      -4.*m_p*xfac1*(g_rho_T*g_rho_V_and_T*regge_rho_amp_sq
-		     +0.5*g_rho_T*g_rho_T*rho_cut_interference)
-      +g_rho_T*g_rho_T*xfac1*(4.*m_p_sq-t)*regge_rho_amp_sq);
-
+  double C_rho_P_cut=-2.86;
+  double C_rho_f2_cut=-4.64;
+  double Csq_rho_P_cut=C_rho_P_cut*C_rho_P_cut;
+  double Csq_rho_f2_cut=C_rho_f2_cut*C_rho_f2_cut;
 
   // rho-omega interference
-  double regge_rho_omega_cut_P=regge_rho*regge_omega_P_cut
-    *(cos(M_PI*(a_rho-0.5*a_omega_P))-cos(0.5*M_PI*a_omega_P)); 
-  double regge_rho_omega_cut_f2=regge_rho*regge_omega_f2_cut
-    *(cos(M_PI*(a_rho-0.5*a_omega_f2))-cos(0.5*M_PI*a_omega_f2)); 
-  double regge_omega_rho_cut_P=regge_omega*regge_rho_P_cut
-    *(cos(M_PI*(a_omega-0.5*a_rho_P))-cos(0.5*M_PI*a_rho_P)); 
-  double regge_omega_rho_cut_f2=regge_omega*regge_rho_f2_cut
-    *(cos(M_PI*(a_omega-0.5*a_rho_f2))-cos(0.5*M_PI*a_rho_f2));
-  double regge_rho_cut_f2_omega_cut_f2=regge_rho_f2_cut*regge_omega_f2_cut
-    *cos(M_PI_2*(a_rho_f2-a_omega_f2)); 
-  double regge_rho_cut_P_omega_cut_f2=regge_rho_P_cut*regge_omega_f2_cut
-    *cos(M_PI_2*(a_rho_P-a_omega_f2)); 
-  double regge_rho_cut_f2_omega_cut_P=regge_rho_f2_cut*regge_omega_P_cut
-    *cos(M_PI_2*(a_rho_f2-a_omega_P)); 
-  double regge_rho_cut_P_omega_cut_P=regge_rho_P_cut*regge_omega_P_cut
+  double cos_rho_omega_sum=cos(M_PI*(a_rho-a_omega))-cos(M_PI*a_rho)
+    -cos(M_PI*a_omega)+1.;
+  // Regge propagator products
+  double regge_omega_omega_P_cut=regge_omega*regge_omega_P_cut
+    *(cos(M_PI*(a_omega-0.5*a_omega_P))-cos(M_PI_2*a_omega_P)) ;
+  double regge_omega_omega_f2_cut=regge_omega*regge_omega_f2_cut
+    *(cos(M_PI*(a_omega-0.5*a_omega_f2))-cos(M_PI_2*a_omega_f2));
+  double regge_rho_omega_P_cut=regge_rho*regge_omega_P_cut
+    *(cos(M_PI*(a_rho-0.5*a_omega_P))-cos(M_PI_2*a_omega_P)); 
+  double regge_rho_omega_f2_cut=regge_rho*regge_omega_f2_cut
+    *(cos(M_PI*(a_rho-0.5*a_omega_f2))-cos(M_PI_2*a_omega_f2));
+  double regge_omega_f2_omega_P_cuts
+    =regge_omega_f2_cut*regge_omega_P_cut*cos(M_PI_2*(a_omega_f2-a_omega_P));
+  double regge_omega_P_cut_sq=regge_omega_P_cut*regge_omega_P_cut;
+  double regge_omega_f2_cut_sq=regge_omega_f2_cut*regge_omega_f2_cut;
+  double regge_rho_P_cut_sq=regge_rho_P_cut*regge_rho_P_cut;
+  double regge_rho_f2_cut_sq=regge_rho_f2_cut*regge_rho_f2_cut;
+  double regge_rho_rho_P_cut=regge_rho*regge_rho_P_cut
+    *(cos(M_PI*(a_rho-0.5*a_rho_P))-cos(M_PI_2*a_rho_P));
+  double regge_rho_rho_f2_cut=regge_rho*regge_rho_f2_cut
+    *(cos(M_PI*(a_rho-0.5*a_rho_f2))-cos(M_PI_2*a_rho_f2));
+  double regge_omega_rho_P_cut=regge_omega*regge_rho_P_cut
+    *(cos(M_PI*(a_omega-0.5*a_rho_P))-cos(M_PI_2*a_rho_P));
+  double regge_omega_rho_f2_cut=regge_omega*regge_rho_f2_cut
+    *(cos(M_PI*(a_omega-0.5*a_rho_f2))-cos(M_PI_2*a_rho_f2));
+  double regge_rho_P_omega_P_cuts=regge_rho_P_cut*regge_omega_P_cut
     *cos(M_PI_2*(a_rho_P-a_omega_P));
-  double regge_rho_omega=0.25*regge_rho*regge_omega*(1.+cos(M_PI*(a_omega-a_rho))
-						     -cos(M_PI*a_omega)
-						     -cos(M_PI*a_rho)
-						     );
-  double regge_rho_omega_sum=regge_rho_omega+C_omega_P_cut*regge_rho_omega_cut_P
-    +C_omega_f2_cut*regge_rho_omega_cut_f2; 
-  double M_rho_omega_sq=g_omega_V*g_rho_S_gamma*g_omega_S_gamma
-    *(xfac2*(g_rho_V_and_T*regge_rho_omega_sum			 
-	     +g_rho_V*(C_rho_P_cut*regge_omega_rho_cut_P
-		       +C_rho_f2_cut*regge_omega_rho_cut_f2
-		       +C_rho_P_cut*C_omega_P_cut*regge_rho_cut_P_omega_cut_P
-		       +C_rho_P_cut*C_omega_f2_cut*regge_rho_cut_P_omega_cut_f2
-		       +C_rho_f2_cut*C_omega_P_cut*regge_rho_cut_f2_omega_cut_P
-		       +C_rho_f2_cut*C_omega_f2_cut*regge_rho_cut_f2_omega_cut_f2
-		       )
-	     )
-      -2.*g_rho_T*xfac1*m_p*regge_rho_omega_sum);
+  double regge_rho_P_omega_f2_cuts=regge_rho_P_cut*regge_omega_f2_cut
+    *cos(M_PI_2*(a_rho_P-a_omega_f2));
+  double regge_rho_f2_omega_P_cuts=regge_rho_f2_cut*regge_omega_P_cut
+    *cos(M_PI_2*(a_rho_f2-a_omega_P));
+  double regge_rho_f2_omega_f2_cuts=regge_rho_f2_cut*regge_omega_f2_cut
+    *cos(M_PI_2*(a_rho_f2-a_omega_f2));
+  double regge_rho_f2_rho_P_cuts=regge_rho_f2_cut*regge_rho_P_cut
+    *cos(M_PI_2*(a_rho_P-a_rho_f2));
 
-  // Cut contribution from b1 exchange.  We ignore the pole term  
-  double regge_omega_cut_P_omega_cut_f2=regge_omega_P_cut*regge_omega_f2_cut
-    *cos(M_PI_2*(a_omega_P-a_omega_f2));  
-  double regge_rho_cut_P_rho_cut_f2=regge_rho_P_cut*regge_rho_f2_cut
-    *cos(M_PI_2*(a_rho_P-a_rho_f2)); 
-  double M_b1_sq=-0.5*t*xfac1/m_S_sq_R
-    *(gsq_omega_S_gamma*gsq_omega_V*(C_omega_P_cut*C_omega_P_cut
-				     *regge_omega_P_cut*regge_omega_P_cut
-				     +C_omega_f2_cut*C_omega_f2_cut
-				     *regge_omega_f2_cut*regge_omega_f2_cut
-				     +2.*C_omega_f2_cut*C_omega_f2_cut
-				     *regge_omega_cut_P_omega_cut_f2)
-      +gsq_rho_S_gamma*gsq_rho_V*(C_rho_P_cut*C_rho_P_cut
-				     *regge_rho_P_cut*regge_rho_P_cut
-				     +C_rho_f2_cut*C_rho_f2_cut
-				     *regge_rho_f2_cut*regge_rho_f2_cut
-				     +2.*C_rho_f2_cut*C_rho_f2_cut
-				     *regge_rho_cut_P_rho_cut_f2)
+  // Compute contributions to square of amplitude
+  double Pi_R_sq=gRsq/(ReB*ReB+ImB*ImB);
+  Pi_R_sq=1;
+  double aS_aS_rho_V_and_T_sq
+    =Pi_R_sq*gsq_rho_S_gamma*gsq_rho_V_and_T*regge_rho_sq;
+  double aS_aS_omega_V_sq=Pi_R_sq*gsq_omega_V*gsq_omega_S_gamma
+    *(regge_omega_sq 
+      + C_omega_P_cut*regge_omega_omega_P_cut
+      + C_omega_f2_cut*regge_omega_omega_f2_cut
+      + Csq_omega_P_cut*regge_omega_P_cut_sq
+      + Csq_omega_f2_cut*regge_omega_f2_cut_sq
+      + 2.*C_omega_f2_C_omega_P*regge_omega_f2_omega_P_cuts);
+      
+  double aS_aS_omega_V_rho_V_and_T
+    =Pi_R_sq*g_rho_S_gamma*g_omega_S_gamma*g_rho_V_and_T*g_omega_V
+    *(0.5*regge_omega*regge_rho*cos_rho_omega_sum
+      + C_omega_P_cut*regge_rho_omega_P_cut
+      + C_omega_f2_cut*regge_rho_omega_f2_cut
+      );
+  double aS_aS_rho_V_rho_V_and_T=Pi_R_sq*gsq_rho_S_gamma*g_rho_V*g_rho_V_and_T
+    *(C_rho_P_cut*regge_rho_rho_P_cut
+      + C_rho_f2_cut*regge_rho_rho_f2_cut);
+  double aS_aS_rho_V_omega_V
+    =Pi_R_sq*g_rho_S_gamma*g_omega_S_gamma*g_rho_V*g_omega_V
+    *(C_rho_P_cut*regge_omega_rho_P_cut
+      + C_rho_f2_cut*regge_omega_rho_f2_cut
+      + 2.*C_rho_P_cut*C_omega_P_cut*regge_rho_P_omega_P_cuts
+      + 2.*C_rho_P_cut*C_omega_f2_cut*regge_rho_P_omega_f2_cuts
+      + 2.*C_rho_f2_cut*C_omega_P_cut*regge_rho_f2_omega_P_cuts
+      + 2.*C_rho_f2_cut*C_omega_f2_cut*regge_rho_f2_omega_f2_cuts);
+  double aS_aS_rho_cut_sq=Pi_R_sq*gsq_rho_S_gamma*gsq_rho_V
+    *(Csq_rho_P_cut*regge_rho_P_cut_sq
+      + Csq_rho_f2_cut*regge_rho_f2_cut_sq
+      + 2.*C_rho_P_cut*C_rho_f2_cut*regge_rho_f2_rho_P_cuts);
+  double aS_aS=aS_aS_rho_V_and_T_sq + aS_aS_omega_V_sq + aS_aS_rho_V_rho_V_and_T
+    + aS_aS_omega_V_rho_V_and_T+aS_aS_rho_V_omega_V + aS_aS_rho_cut_sq;
+
+  double bS_bS=4*Pi_R_sq*gsq_rho_S_gamma*g_rho_T*g_rho_T*regge_rho_sq;
+
+  double aS_bS_rho_T_rho_V_and_T
+    =-4.*Pi_R_sq*gsq_rho_S_gamma*g_rho_T*g_rho_V_and_T*regge_rho_sq;
+  double aS_bS_rho_cuts=-4.*Pi_R_sq*gsq_rho_S_gamma*g_rho_T*g_rho_V
+    *(C_rho_P_cut*regge_rho_rho_P_cut
+      + C_rho_f2_cut*regge_rho_rho_f2_cut);
+  double aS_bS_omega_cuts
+    =-4.*Pi_R_sq*g_rho_S_gamma*g_omega_S_gamma*g_rho_T*g_omega_V
+    *(C_omega_P_cut*regge_rho_omega_P_cut
+      + C_omega_f2_cut*regge_rho_omega_f2_cut);
+  double aS_bS_omega_V=-Pi_R_sq*g_rho_S_gamma*g_omega_S_gamma*g_rho_T*g_omega_V
+    *regge_rho*regge_omega*cos_rho_omega_sum;
+  double aS_bS=aS_bS_rho_T_rho_V_and_T+aS_bS_rho_cuts+aS_bS_omega_cuts+aS_bS_omega_V;
+
+
+  // Cut contribution from b1 exchange.  We ignore the pole term.
+  double Tb1=-0.5*t*kin1*Pi_R_sq
+    *(gsq_omega_S_gamma*gsq_omega_V*(Csq_omega_P_cut*regge_omega_P_cut_sq
+				     + Csq_omega_f2_cut*regge_omega_f2_cut_sq
+				     + 2.*C_omega_P_cut*C_omega_f2_cut
+				     *regge_omega_f2_omega_P_cuts)
+      +gsq_rho_S_gamma*gsq_rho_V*(Csq_rho_P_cut*regge_rho_P_cut_sq
+				  + Csq_rho_f2_cut*regge_rho_f2_cut_sq
+				  + 2.*C_rho_P_cut*C_rho_f2_cut
+				  *regge_rho_f2_rho_P_cuts)
       +g_rho_V*g_omega_V*g_rho_S_gamma*g_omega_S_gamma
-      *(2.*C_rho_P_cut*C_omega_P_cut*regge_rho_cut_P_omega_cut_P
-	+2.*C_rho_f2_cut*C_omega_f2_cut*regge_rho_cut_f2_omega_cut_f2
-	+2.*C_rho_P_cut*C_omega_f2_cut*regge_rho_cut_P_omega_cut_f2
-	+2.*C_rho_f2_cut*C_omega_P_cut*regge_rho_cut_f2_omega_cut_P));
- 
-  double M_sq =M_omega_sq+M_rho_sq+M_rho_omega_sq+M_b1_sq;
+      *(2.*C_rho_P_cut*C_omega_P_cut*regge_rho_P_omega_P_cuts
+	+ 2.*C_rho_f2_cut*C_omega_f2_cut*regge_rho_f2_omega_f2_cuts 
+	+ 2.*C_rho_P_cut*C_omega_f2_cut*regge_rho_P_omega_f2_cuts
+	+ 2.*C_rho_f2_cut*C_omega_P_cut*regge_rho_f2_omega_P_cuts));
+  	
+  double T=aS_aS*kin_aS_aS+aS_bS*kin_aS_bS+bS_bS*kin_bS_bS + Tb1;
 
+  // Compute cross section
+  double m1_plus_m2=m1+m2;
+  double m1_minus_m2=m1-m2;
+  double k=sqrt((ms_sq-m1_plus_m2*m1_plus_m2)*(ms_sq-m1_minus_m2*m1_minus_m2))
+    /(2.*sqrt(ms_sq));
   double hbarc_sq=389.; // Convert to micro-barns
-  double dsigma_dt=-hbarc_sq*M_sq/(16.*M_PI*mp_sq_minus_s_sq);
+  // double xsec=-hbarc_sq*k*T/(256.*M_PI*M_PI*M_PI*M_PI*mp_sq_minus_s_sq);
+  double xsec=-hbarc_sq*T/(16.*M_PI*mp_sq_minus_s_sq);
 
-  return(dsigma_dt);
+  return(xsec);
 				 
 
 }
@@ -813,9 +988,11 @@ void CreateHistograms(){
 
 
 // Create a graph of the cross section dsigma/dt as a function of -t
-void GraphCrossSection(double m1, double m2){
+void GraphCrossSection(double m1,double m2){
   // beam energy in lab
   double Egamma=Emin;
+  TLorentzVector beam(0,0,Egamma,Egamma);
+  TLorentzVector target(0,0,0,m_p);
 
   // CM energy
   double s=m_p*(m_p+2.*Egamma);
@@ -830,35 +1007,62 @@ void GraphCrossSection(double m1, double m2){
   double p_diff=p_gamma-p_S;
   double t0=m_S_sq_R*m_S_sq_R/(4.*s)-p_diff*p_diff;
  
-  // Integration over line shape	  
+  // Parameters for integration over line shape	  
   double m1_plus_m2=m1+m2;
   double m_max=m_p*(sqrt(1.+2.*Egamma/m_p)-1.);
-  double bw=0;
   double dmrange=m_max-m1_plus_m2;
   double dm=dmrange/1000.;
-  for (int i=0;i<1000;i++){
-    double m=m1_plus_m2+dm*double(i);
-    bw+=ResonanceShape(m*m,width,m1,m2,1)*dm;
+  double gR=0.,ImB=0,ReB=0; // resonance parameters
+  bool got_pipi=(fabs(m1-m2)>0.01)?false:true;
+  if (got_pipi){ // f0(980)
+    gR=1.705/(2.*M_PI);
+    m_S_sq_R=0.9783*0.9783;
+    gsq_rho_S_gamma=0.239; // GeV^-2
+    gsq_omega_S_gamma=0.02656;
+  }
+  else{ // a0(980)
+    gR=2.82/(2.*M_PI);
+    m_S_sq_R=0.9825*0.9825;	 
+    gsq_rho_S_gamma=0.02537;
+    gsq_omega_S_gamma=0.2283;
+  } 
+  double m1_minus_m2=m1-m2;
+  double rho_m1m2=sqrt((1.-m1_plus_m2*m1_plus_m2/m_S_sq_R)*(1-m1_minus_m2*m1_minus_m2/m_S_sq_R));
+
+
+  GetResonanceParameters(m1,m2,m_S_sq_R,ReB,ImB);
+  double scale_factor=4.*M_PI*M_PI*(ReB*ReB+ImB*ImB)/(gR*gR*rho_m1m2);
+  // Integral over Breit-Wigner
+  double bw=0;
+  for (unsigned int n=0;n<1000;n++){
+    double mass=m1_plus_m2+dm*double(n);
+    double m_S_sq=mass*mass;
+    rho_m1m2=sqrt((1.-m1_plus_m2*m1_plus_m2/m_S_sq)*(1-m1_minus_m2*m1_minus_m2/m_S_sq));
+
+    GetResonanceParameters(m1,m2,m_S_sq,ReB,ImB);
+    bw+=gR*gR*rho_m1m2/(ReB*ReB+ImB*ImB)*dm;
   }
 
+  scale_factor=2.*m_S_sq_R/M_PI;
+  
   // differential cross section
   double sum=0.;
   double t_old=t0;
-  double t_array[10000];
-  double xsec_array[10000];
-  for (unsigned int k=0;k<10000;k++){
-    double theta_cm=M_PI*double(k)/10000.;
+  double t_array[1000];
+  double xsec_array[1000];
+  for (unsigned int k=0;k<1000;k++){
+    double theta_cm=M_PI*double(k)/1000.;
     double sin_theta_over_2=sin(0.5*theta_cm);
     double t=t0-4.*p_gamma*p_S*sin_theta_over_2*sin_theta_over_2;
-    double xsec=2.*m_S_sq_R/M_PI*bw*CrossSection(s,t,m_S_sq_R);
-    
+    double xsec=scale_factor*bw*CrossSection(m1,m2,m_S_sq_R,s,t,gR,ReB,ImB);
+
     t_array[k]=-t;
     xsec_array[k]=xsec;
 
     sum-=xsec*(t-t_old);
     t_old=t;
   }
-  TGraph *Gxsec=new TGraph(10000,t_array,xsec_array);
+  TGraph *Gxsec=new TGraph(1000,t_array,xsec_array);
   Gxsec->Write("Cross section");
  
   cout << "Total cross section at " << Egamma << " GeV = "<< sum 
@@ -968,7 +1172,7 @@ int main(int narg, char *argv[])
   float radt=20.e-6; // radiator thickness in m
   cobrems_(&Ee,&Epeak,&emitmr,&radt,&radColDist,&collDiam,&doPolFlux);
   
-  // Create some diagonistic histographs
+  // Create some diagonistic histograms
   CreateHistograms();
   // Make a TGraph of the cross section at a fixed beam energy
   GraphCrossSection(decay_masses[0],decay_masses[1]);
@@ -1090,33 +1294,40 @@ int main(int narg, char *argv[])
 	particle_vectors[j]=*phase_space.GetDecay(j);
       }
 
+      //Resonance parameters 
+      double ReB=0.,ImB=0,gR=0.;
+
       // Cross section
       xsec=0.;
       
       // f0(600)
       if (got_pipi && generate[0]){
+	/*
 	double m_Sigma=0.65;
 	m_S_sq_R=m_Sigma*m_Sigma; 
 	gsq_rho_S_gamma=0.01*pow(0.7685*0.785-m_S_sq_R,-3); // GeV^-2
 	gsq_omega_S_gamma=8.97e-4*pow(0.78265*0.78265-m_S_sq_R,-3);
 	width=0.6;
 	double bw=ResonanceShape(m_S_sq,width,m1,m2,0); 
-	xsec+=2.*weight*m_S_sq_R/M_PI*bw*CrossSection(s,t,m_S_sq);
+	xsec+=CrossSection(s,t,m_S_sq);
+	*/
       }
       // f0(980)/a0(980)
       if (generate[1]){
+	GetResonanceParameters(m1,m2,m_S_sq,ReB,ImB);
 	if (got_pipi){ // f0(980)
+	  gR=1.705/(2.*M_PI);
 	  m_S_sq_R=0.9783*0.9783;
 	  gsq_rho_S_gamma=0.239; // GeV^-2
 	  gsq_omega_S_gamma=0.02656;
 	}
 	else{ // a0(980)
+	  gR=2.82/(2.*M_PI);
 	  m_S_sq_R=0.9825*0.9825;	 
 	  gsq_rho_S_gamma=0.02537;
 	  gsq_omega_S_gamma=0.2283;
-	}
-	double bw=ResonanceShape(m_S_sq,width,m1,m2,1); 
-	xsec+=2.*weight*m_S_sq_R/M_PI*bw*CrossSection(s,t,m_S_sq);
+	} 
+	xsec+=CrossSection(m1,m2,m_S_sq,s,t,gR,ReB,ImB);
       }
         
       if (generate[4]){ // background
@@ -1133,6 +1344,7 @@ int main(int narg, char *argv[])
       xsec_test=myrand->Uniform(xsec_max);
     }
     while (xsec_test>xsec);
+    cout << "xsec " << xsec <<endl;
 
     // Other diagnostic histograms
     thrown_t->Fill(t);
