@@ -482,7 +482,7 @@ double BackGroundCrossSection(TLorentzVector &q /* beam */,
   double Msq=(particles[0]+particles[1]).M2();
   double s=(q+p1).M2();
   double s_minus_mp_sq=s-m_p_sq;
-  double g0_sq=1.514e4/137.; // GeV^-2
+  double g0_sq=8.8; // GeV^-2
   double m1=ParticleMass(particle_types[0]);
   double m2=ParticleMass(particle_types[1]);
   double m1_plus_m2=m1+m2;
@@ -890,8 +890,7 @@ double CrossSection(double m1,double m2, double ms_sq, double s, double t,
   double k=sqrt((ms_sq-m1_plus_m2*m1_plus_m2)*(ms_sq-m1_minus_m2*m1_minus_m2))
     /(2.*sqrt(ms_sq));
   double hbarc_sq=389.; // Convert to micro-barns
-  // double xsec=-hbarc_sq*k*T/(256.*M_PI*M_PI*M_PI*M_PI*mp_sq_minus_s_sq);
-  double xsec=-hbarc_sq*T/(16.*M_PI*mp_sq_minus_s_sq);
+  double xsec=-hbarc_sq*k*T/(256.*M_PI*M_PI*M_PI*M_PI*mp_sq_minus_s_sq);
 
   return(xsec);
 				 
@@ -1027,23 +1026,22 @@ void GraphCrossSection(double m1,double m2){
     gsq_omega_S_gamma=0.2283;
   } 
   double m1_minus_m2=m1-m2;
-  double rho_m1m2=sqrt((1.-m1_plus_m2*m1_plus_m2/m_S_sq_R)*(1-m1_minus_m2*m1_minus_m2/m_S_sq_R));
-
+  double k=sqrt((m_S_sq_R-m1_plus_m2*m1_plus_m2)*(m_S_sq_R-m1_minus_m2*m1_minus_m2))
+    /(2.*sqrt(m_S_sq_R));
 
   GetResonanceParameters(m1,m2,m_S_sq_R,ReB,ImB);
-  double scale_factor=4.*M_PI*M_PI*(ReB*ReB+ImB*ImB)/(gR*gR*rho_m1m2);
+  // factor to (eventually ) get to dsigma/dt from dsigma/dt/dM/dOmega
+  double scale_factor=16.*M_PI*M_PI*M_PI*(ReB*ReB+ImB*ImB)/(gR*gR*k);
   // Integral over Breit-Wigner
   double bw=0;
   for (unsigned int n=0;n<1000;n++){
     double mass=m1_plus_m2+dm*double(n);
     double m_S_sq=mass*mass;
-    rho_m1m2=sqrt((1.-m1_plus_m2*m1_plus_m2/m_S_sq)*(1-m1_minus_m2*m1_minus_m2/m_S_sq));
+    double rho_m1m2=sqrt((1.-m1_plus_m2*m1_plus_m2/m_S_sq)*(1-m1_minus_m2*m1_minus_m2/m_S_sq));
 
     GetResonanceParameters(m1,m2,m_S_sq,ReB,ImB);
     bw+=gR*gR*rho_m1m2/(ReB*ReB+ImB*ImB)*dm;
   }
-
-  scale_factor=2.*m_S_sq_R/M_PI;
   
   // differential cross section
   double sum=0.;
@@ -1344,7 +1342,6 @@ int main(int narg, char *argv[])
       xsec_test=myrand->Uniform(xsec_max);
     }
     while (xsec_test>xsec);
-    cout << "xsec " << xsec <<endl;
 
     // Other diagnostic histograms
     thrown_t->Fill(t);
