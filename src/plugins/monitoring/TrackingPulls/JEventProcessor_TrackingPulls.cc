@@ -255,24 +255,36 @@ jerror_t JEventProcessor_TrackingPulls::evnt(JEventLoop *loop, uint64_t eventnum
             Fill2DHistogram("TrackingPulls", planeName,"Wire Residuals",
                   fdc_hit->wire->wire,resi,
                   ";Wire Number ;Residual", 96, 0.5, 96.5, 100, -0.1, 0.1);
-            if(fabs(resi) < 0.1){
+            if(fabs(resi/err) < 5.0){
                Fill2DProfile("TrackingPulls", planeName,"2D Wire Hit Pulls",
                      fdc_hit->xy.X(), fdc_hit->xy.Y(), resi/err,
                      "Mean of Wire Pulls vs. PseudoHit XY",
                      100, -50., 50., 100, -50., 50.);
+            }
+            if(fabs(resi) < 0.1){
                Fill2DProfile("TrackingPulls", planeName,"2D Wire Hit Residuals",
                      fdc_hit->xy.X(), fdc_hit->xy.Y(), resi,
-                     "Mean of Wire Pulls vs. PseudoHit XY",
+                     "Mean of Wire Residuals vs. PseudoHit XY",
+                     100, -50., 50., 100, -50., 50.);
+               Fill2DProfile("TrackingPulls", planeName,"2D Wire Hit Residuals Local",
+                     fdc_hit->w, fdc_hit->s, resi,
+                     "Mean of Wire Residuals vs. PseudoHit WS;Perpendicular Distance to Wire; Distance Along the Wire",
                      100, -50., 50., 100, -50., 50.);
             }
-            if(fabs(resic) < 0.1){
+            if(fabs(resic/errc) < 5.0){
                Fill2DProfile("TrackingPulls", planeName,"2D Cathode Hit Pulls",
                      fdc_hit->xy.X(), fdc_hit->xy.Y(), resic/errc,
                      "Mean of Cathode Pulls vs. PseudoHit XY",
                      100, -50., 50., 100, -50., 50.);
+            }
+            if(fabs(resic) < 0.1){
                Fill2DProfile("TrackingPulls", planeName,"2D Cathode Hit Residuals",
                      fdc_hit->xy.X(), fdc_hit->xy.Y(), resic,
-                     "Mean of Cathode Pulls vs. PseudoHit XY",
+                     "Mean of Cathode Residuals vs. PseudoHit XY",
+                     100, -50., 50., 100, -50., 50.);
+               Fill2DProfile("TrackingPulls", planeName,"2D Cathode Hit Residuals Local",
+                     fdc_hit->w, fdc_hit->s, resic,
+                     "Mean of Cathode Residuals vs. PseudoHit WS;Perpendicular Distance to Wire; Distance Along the Wire",
                      100, -50., 50., 100, -50., 50.);
             }
          }
