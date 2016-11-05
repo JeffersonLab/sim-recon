@@ -2361,6 +2361,9 @@ void DKinFitter::Update_ParticleParams(void)
 		bool locIsUnknownParticleFlag = ((locKinFitParticleType == d_DecayingParticle) || (locKinFitParticleType == d_MissingParticle));
 		TMatrixD& locSourceMatrix = locIsUnknownParticleFlag ? dXi : dEta;
 
+		TLorentzVector locP4 = locKinFitParticle->Get_P4();
+		TLorentzVector locPreviousP4 = locP4;
+
 		TVector3 locMomentum = locKinFitParticle->Get_Momentum();
 		TVector3 locPreviousMomentum = locMomentum;
 		double locPreviousPathLength = locKinFitParticle->Get_PathLength();
@@ -2370,6 +2373,7 @@ void DKinFitter::Update_ParticleParams(void)
 		{
 			locMomentum = TVector3(locSourceMatrix(locParamIndex, 0), locSourceMatrix(locParamIndex + 1, 0), locSourceMatrix(locParamIndex + 2, 0));
 			locKinFitParticle->Set_Momentum(locMomentum);
+			locP4 = locKinFitParticle->Get_P4();
 		}
 
 		//vertex
@@ -2404,40 +2408,6 @@ void DKinFitter::Update_ParticleParams(void)
 			locKinFitParticle->Set_Time(locTime);
 			if(locKinFitParticle->Get_CommonTParamIndex() < 0)
 				locKinFitParticle->Set_CommonTime(locTime);
-		}
-		else if(locKinFitParticle->Get_VxParamIndex() >= 0)
-		{
-			//vertex changed, but time is not a fit parameter, so must manually change time
-			double locTime = locKinFitParticle->Get_Time();
-			double locNewPathLength = locPreviousPathLength;
-
-			if((locKinFitParticle->Get_Charge() != 0) && dKinFitUtils->Get_IsBFieldNearBeamline()) //in b-field & charged
-			{
-				TVector3 locH = dKinFitUtils->Get_BField(locKinFitParticle->Get_Position()).Unit();
-				double locDeltaXDotH = locDeltaX.Dot(locH);
-				double locPDotH = locMomentum.Dot(locH);
-				locTime += locDeltaXDotH*locP4.E()/(29.9792458*locPDotH);
-			}
-			else //non-accelerating
-			{
-				double locP3Angle = locPreviousMomentum.Angle(locMomentum);
-				double locDistanceAtSamePathLength = locPreviousPathLength*sqrt(2.0 - 2.0*cos(locP4Angle));
-				double locAlpha = 0.5*(TMath::Pi() - locP4Angle);
-				double locF = TMath::Pi() - locAlpha;
-				double locDeltaXP3Angle = locDeltaX.Angle(locMomentum);
-				double locDeltaXDAngle = TMath::Pi() - locF - locDeltaXP3Angle;
-				double locDeltaPathLength = sqrt(locD*locD + locDeltaX.Mag2() - 2*locDeltaX.Mag()*locD*(1.0 - cos(locDeltaXDAngle))); //l3
-				double locDeltaT = locDeltaPathLength*locP4.E()/(29.9792458*locMomentum.Mag());
-
-				bool locFurtherAlongTrackFlag = (locDeltaX.Dot(locMomentum) > 0.0);
-				locTime += locFurtherAlongTrackFlag ? locDeltaT : -1.0*locDeltaT;
-				locNewPathLength += locFurtherAlongTrackFlag ? -1.0*locDeltaPathLength : locDeltaPathLength;
-				//double locDeltaXDotP = locDeltaX.Dot(locP4.Vect());
-				//locTime += locDeltaXDotP*locP4.E()/(29.9792458*locP4.Vect().Mag2());
-			}
-
-			locKinFitParticle->Set_Time(locTime);
-			locKinFitParticle->Set_PathLength(locNewPathLength);
 		}
 	}
 
