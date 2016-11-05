@@ -101,7 +101,11 @@ DChargedTrackHypothesis* DChargedTrackHypothesis_factory_KinFit::Build_ChargedTr
  	vector<const JObject*> locObjects;
 	locChargedTrackHypothesis->GetT(locObjects);
 	for(size_t loc_i = 0; loc_i < locObjects.size(); ++loc_i)
+	{
+		if(dynamic_cast<const DChargedTrackHypothesis*>(locObjects[loc_i]) != NULL)
+			continue; //don't save: won't be able to keep track of which is which! (combo or default factory)
 		locNewChargedTrackHypothesis->AddAssociatedObject(locObjects[loc_i]);
+	}
 
 	//p3 & v3
 	TVector3 locFitMomentum = locKinFitParticle->Get_Momentum();

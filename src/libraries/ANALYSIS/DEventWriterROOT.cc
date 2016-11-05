@@ -1077,9 +1077,16 @@ void DEventWriterROOT::Fill_DataTree(JEventLoop* locEventLoop, const DReaction* 
 	locTreeInterface->Fill(*locTreeFillData);
 }
 
-vector<const DChargedTrackHypothesis*> DEventWriterROOT::Get_ChargedHypotheses(JEventLoop* locEventLoop, set<Particle_t> locReactionPIDs, map<oid_t, int>& locObjectToArrayIndexMap) const
+vector<const DChargedTrackHypothesis*> DEventWriterROOT::Get_ChargedHypotheses(JEventLoop* locEventLoop, map<oid_t, int>& locObjectToArrayIndexMap) const
 {
-	//Want to save all "PreSelect" hypotheses to the tree, plus hypos from PIDs that were reconstructed later
+	//For default/preselect, save all
+	//For combo, of new PIDs ONLY, save one of each for each track
+		//save the one with the same RF bunch as the common bunch
+	//for index map, save mapping of these
+	//map is from oid_t (pointer) of DTrackTimeBased to array index
+
+//BEWARE FOR NEUTRAL: Should be DNeutralShower + PID (or just don't change)
+
 	vector<const DChargedTrack*> locChargedTracks;
 	locEventLoop->Get(locChargedTracks, dTrackSelectionTag.c_str());
 
@@ -1089,80 +1096,60 @@ vector<const DChargedTrackHypothesis*> DEventWriterROOT::Get_ChargedHypotheses(J
 	const DEventRFBunch* locEventRFBunch = NULL;
 	locEventLoop->GetSingle(locEventRFBunch);
 
-	//Search for hypotheses with PIDs that were needed for the DReaction but that weren't reconstructed:
-	map<const DChargedTrack*, map<Particle_t, const DChargedTrackHypothesis*> > locNewChargedHypothesesMap;
-
-	//hypos not-findable in PreSelect, but not saved either //not saved: different RF time than main, or #-votes different
-	set<const DChargedTrackHypothesis*> locUnsavedNonPreselectHypotheses;
-
-	//loop
-	for(size_t loc_i = 0; loc_i < locComboChargedTrackHypotheses.size(); ++loc_i)
+	//Find which PIDs were used for basic recon
+	set<Particle_t> locReconPIDs; 
+	for(auto locChargedTrack : locChargedTracks)
 	{
-		Particle_t locPID = locComboChargedTrackHypotheses[loc_i]->PID();
-		if(locReactionPIDs.find(locPID) == locReactionPIDs.end())
-			continue; //PID not needed for this DReaction, don't bother
+		for(auto locChargedHypo : locChargedTrack->dChargedTrackHypotheses)
+			locReconPIDs.insert(locChargedHypo->Get_PID());
+	}
 
-		//find Charged hypotheses not derived from the PreSelect factory
-		const DChargedTrackHypothesis* locOrigChargedTrackHypothesis = NULL;
-		locComboChargedTrackHypotheses[loc_i]->GetSingle(locOrigChargedTrackHypothesis);
-		if(locOrigChargedTrackHypothesis != NULL)
-			continue; //PID in REST file
+	//comb through combo hypos for the ones we actually need: non-recon PIDs (with the right RF bunch)
+	map<const DChargedTrack*, map<Particle_t, const DChargedTrackHypothesis*> > locNewChargedHypothesesMap;
+	for(auto locChargedHypo : locComboChargedTrackHypotheses)
+	{
+		if(locReconPIDs.find(locChargedHypo->Get_PID()) != locReconPIDs.end())
+			continue; //already have PID for this track
 
-		//OK, this hypo must at least be registered in locObjectToArrayIndexMap
+		const DEventRFBunch* locEventRFBunch_Hypo = NULL;
+		locChargedHypo->GetSingle(locEventRFBunch_Hypo);
 
-		//Of these, choose the ones with the RF bunch time identical to the "main" one
-		const DEventRFBunch* locComboEventRFBunch = NULL;
-		locComboChargedTrackHypotheses[loc_i]->GetSingle(locComboEventRFBunch);
-		if(fabs(locComboEventRFBunch->dTime - locEventRFBunch->dTime) > 0.01)
-		{
-			locUnsavedNonPreselectHypotheses.insert(locComboChargedTrackHypotheses[loc_i]);
-			continue; //not the same one!
-		}
+		//Of the hypos with this PID, choose only one the one with the right RF time
+		if(fabs(locEventRFBunch_Hypo->dTime - locEventRFBunch->dTime) > 0.001)
+			continue;
 
 		//Get original DChargedTrack
 		const DChargedTrack* locOrigChargedTrack = NULL;
-		locComboChargedTrackHypotheses[loc_i]->GetSingle(locOrigChargedTrack);
+		locChargedHypo->GetSingle(locOrigChargedTrack);
 
-		//Of these hypos, choose only one: can be multiple (different #-votes): Make sure haven't saved one already
+		//can be multiple of these (different #-votes): Make sure haven't saved one already
 		map<Particle_t, const DChargedTrackHypothesis*>& locNewChargedHyposPIDMap = locNewChargedHypothesesMap[locOrigChargedTrack];
-		if(locNewChargedHyposPIDMap.find(locPID) != locNewChargedHyposPIDMap.end())
-		{
-			locUnsavedNonPreselectHypotheses.insert(locComboChargedTrackHypotheses[loc_i]);
-			continue; //already found for this PID //different #-votes
-		}
-
-		//unique! save!
-		locNewChargedHyposPIDMap[locPID] = locComboChargedTrackHypotheses[loc_i];
+		if(locNewChargedHyposPIDMap.find(locPID) == locNewChargedHyposPIDMap.end())
+			locNewChargedHyposPIDMap[locPID] = locChargedHypo;
 	}
 
 	//Build vector of combo-independent charged hypotheses to save
-	vector<const DChargedTrackHypothesis*> locIndependentChargedTrackHypotheses;
-	for(size_t loc_i = 0; loc_i < locChargedTracks.size(); ++loc_i)
+	vector<const DChargedTrackHypothesis*> locChargedHyposToSave;
+	for(auto locChargedTrack : locChargedTracks)
 	{
-		const vector<const DChargedTrackHypothesis*>& locTrackHypoVector = locChargedTracks[loc_i]->dChargedTrackHypotheses;
-		locIndependentChargedTrackHypotheses.insert(locIndependentChargedTrackHypotheses.end(), locTrackHypoVector.begin(), locTrackHypoVector.end());
+		//first the recon'd PIDs
+		auto& locTrackHypos = locChargedTrack->dChargedTrackHypotheses;
+		locChargedHyposToSave.insert(locChargedHyposToSave.end(), locTrackHypos.begin(), locTrackHypos.end());
 
-		map<Particle_t, const DChargedTrackHypothesis*>& locNewChargedHyposPIDMap = locNewChargedHypothesesMap[locChargedTracks[loc_i]];
-		map<Particle_t, const DChargedTrackHypothesis*>::iterator locMapIterator = locNewChargedHyposPIDMap.begin();
-		for(; locMapIterator != locNewChargedHyposPIDMap.end(); ++locMapIterator)
-			locIndependentChargedTrackHypotheses.push_back(locMapIterator->second);
+		//then the new PIDs
+		for(auto locHypoPair : locNewChargedHypothesesMap[locChargedTrack])
+			locChargedHyposToSave.push_back(locHypoPair.second);
 	}
 
-	//Register array indices for the main (directly-saved, measured) hypos
-	for(size_t loc_i = 0; loc_i < locIndependentChargedTrackHypotheses.size(); ++loc_i)
-		locObjectToArrayIndexMap[locIndependentChargedTrackHypotheses[loc_i]->id] = loc_i;
-
-	//Register array indices for the not-directly-saved hypos (point to other saved ones)
-	set<const DChargedTrackHypothesis*>::iterator locSetIterator = locUnsavedNonPreselectHypotheses.begin();
-	for(; locSetIterator != locUnsavedNonPreselectHypotheses.end(); ++locSetIterator)
+	//Register array indices (by DTrackTimeBased)
+	for(size_t loc_i = 0; loc_i < locChargedHyposToSave.size(); ++loc_i)
 	{
-		const DChargedTrack* locOrigChargedTrack = NULL;
-		(*locSetIterator)->GetSingle(locOrigChargedTrack);
-		oid_t locSourceID = locNewChargedHypothesesMap[locOrigChargedTrack][(*locSetIterator)->PID()]->id;
-		locObjectToArrayIndexMap[(*locSetIterator)->id] = locObjectToArrayIndexMap[locSourceID];
+		const DTrackTimeBased* locTrackTimeBased = NULL;
+		locChargedHyposToSave[loc_i]->GetSingle(locTrackTimeBased);
+		locObjectToArrayIndexMap[locTrackTimeBased->id] = loc_i;
 	}
 
-	return locIndependentChargedTrackHypotheses;
+	return locChargedHyposToSave;
 }
 
 vector<const DChargedTrackHypothesis*> DEventWriterROOT::Get_ChargedHypotheses_Used(JEventLoop* locEventLoop, deque<const DParticleCombo*>& locParticleCombos, map<oid_t, int>& locObjectToArrayIndexMap) const
