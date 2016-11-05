@@ -746,9 +746,16 @@ void DEventWriterROOT::Create_Branches_ComboTrack(DTreeBranchRegister& locBranch
 	//IDENTIFIER
 	locBranchRegister.Register_FundamentalArray<Int_t>(Build_BranchName(locParticleBranchName, "ChargedIndex"), locArraySizeString, dInitNumComboArraySize);
 
-	//PID
-	locBranchRegister.Register_FundamentalArray<Float_t>(Build_BranchName(locParticleBranchName, "Beta_Timing"), locArraySizeString, dInitNumComboArraySize);
-	locBranchRegister.Register_FundamentalArray<Float_t>(Build_BranchName(locParticleBranchName, "ChiSq_Timing"), locArraySizeString, dInitNumComboArraySize);
+	//MEASURED PID
+	locBranchRegister.Register_FundamentalArray<Float_t>(Build_BranchName(locParticleBranchName, "Beta_Timing_Measured"), locArraySizeString, dInitNumComboArraySize);
+	locBranchRegister.Register_FundamentalArray<Float_t>(Build_BranchName(locParticleBranchName, "ChiSq_Timing_Measured"), locArraySizeString, dInitNumComboArraySize);
+
+	//KINFIT PID
+	if((locKinFitType != d_NoFit) && (locKinFitType != d_SpacetimeFit) && (locKinFitType != d_P4AndSpacetimeFit))
+	{
+		locBranchRegister.Register_FundamentalArray<Float_t>(Build_BranchName(locParticleBranchName, "Beta_Timing_KinFit"), locArraySizeString, dInitNumComboArraySize);
+		locBranchRegister.Register_FundamentalArray<Float_t>(Build_BranchName(locParticleBranchName, "ChiSq_Timing_KinFit"), locArraySizeString, dInitNumComboArraySize);
+	}
 
 	//KINFIT INFO //at the production vertex
 	if(locKinFitType != d_NoFit)
@@ -771,22 +778,25 @@ void DEventWriterROOT::Create_Branches_ComboNeutral(DTreeBranchRegister& locBran
 	locBranchRegister.Register_ClonesArray<TLorentzVector>(Build_BranchName(locParticleBranchName, "X4_Measured"), dInitNumComboArraySize);
 	locBranchRegister.Register_ClonesArray<TLorentzVector>(Build_BranchName(locParticleBranchName, "P4_Measured"), dInitNumComboArraySize);
 
-	//PID QUALITY
+	//MEASURED PID
 	locBranchRegister.Register_FundamentalArray<Float_t>(Build_BranchName(locParticleBranchName, "Beta_Timing_Measured"), locArraySizeString, dInitNumComboArraySize);
 	if(locParticleBranchName.substr(0, 6) == "Photon")
 		locBranchRegister.Register_FundamentalArray<Float_t>(Build_BranchName(locParticleBranchName, "ChiSq_Timing_Measured"), locArraySizeString, dInitNumComboArraySize);
+
+	//KINFIT PID
+	if((locKinFitType != d_NoFit) && (locKinFitType != d_SpacetimeFit) && (locKinFitType != d_P4AndSpacetimeFit))
+	{
+		locBranchRegister.Register_FundamentalArray<Float_t>(Build_BranchName(locParticleBranchName, "Beta_Timing_KinFit"), locArraySizeString, dInitNumComboArraySize);
+		if(locParticleBranchName.substr(0, 6) == "Photon")
+			locBranchRegister.Register_FundamentalArray<Float_t>(Build_BranchName(locParticleBranchName, "ChiSq_Timing_KinFit"), locArraySizeString, dInitNumComboArraySize);
+	}
 
 	//KINFIT INFO //at the production vertex
 	if(locKinFitType != d_NoFit)
 	{
 		locBranchRegister.Register_ClonesArray<TLorentzVector>(Build_BranchName(locParticleBranchName, "P4_KinFit"), dInitNumComboArraySize);
 		if(locKinFitType != d_P4Fit)
-		{
 			locBranchRegister.Register_ClonesArray<TLorentzVector>(Build_BranchName(locParticleBranchName, "X4_KinFit"), dInitNumComboArraySize);
-			locBranchRegister.Register_FundamentalArray<Float_t>(Build_BranchName(locParticleBranchName, "Beta_Timing_KinFit"), locArraySizeString, dInitNumComboArraySize);
-			if(locParticleBranchName.substr(0, 6) == "Photon")
-				locBranchRegister.Register_FundamentalArray<Float_t>(Build_BranchName(locParticleBranchName, "ChiSq_Timing_KinFit"), locArraySizeString, dInitNumComboArraySize);
-		}
 	}
 }
 
@@ -1947,9 +1957,16 @@ void DEventWriterROOT::Fill_ComboChargedData(DTreeFillData* locTreeFillData, uns
 	//IDENTIFIER
 	locTreeFillData->Fill_Array<Int_t>(Build_BranchName(locParticleBranchName, "ChargedIndex"), locChargedIndex, locComboIndex);
 
-	//PID
-	locTreeFillData->Fill_Array<Float_t>(Build_BranchName(locParticleBranchName, "Beta_Timing"), locChargedHypo->measuredBeta(), locComboIndex);
-	locTreeFillData->Fill_Array<Float_t>(Build_BranchName(locParticleBranchName, "ChiSq_Timing"), locChargedHypo->dChiSq_Timing, locComboIndex);
+	//MEASURED PID
+	locTreeFillData->Fill_Array<Float_t>(Build_BranchName(locParticleBranchName, "Beta_Timing_Measured"), locMeasuredChargedHypo->measuredBeta(), locComboIndex);
+	locTreeFillData->Fill_Array<Float_t>(Build_BranchName(locParticleBranchName, "ChiSq_Timing_Measured"), locMeasuredChargedHypo->dChiSq_Timing, locComboIndex);
+
+	//KINFIT PID
+	if((locKinFitType != d_NoFit) && (locKinFitType != d_SpacetimeFit) && (locKinFitType != d_P4AndSpacetimeFit))
+	{
+		locTreeFillData->Fill_Array<Float_t>(Build_BranchName(locParticleBranchName, "Beta_Timing_KinFit"), locChargedHypo->measuredBeta(), locComboIndex);
+		locTreeFillData->Fill_Array<Float_t>(Build_BranchName(locParticleBranchName, "ChiSq_Timing_KinFit"), locChargedHypo->dChiSq_Timing, locComboIndex);
+	}
 
 	//KINFIT
 	if(locKinFitType != d_NoFit)
@@ -1988,6 +2005,14 @@ void DEventWriterROOT::Fill_ComboNeutralData(DTreeFillData* locTreeFillData, uns
 	if(locParticleBranchName.substr(0, 6) == "Photon")
 		locTreeFillData->Fill_Array<Float_t>(Build_BranchName(locParticleBranchName, "ChiSq_Timing_Measured"), locMeasuredNeutralHypo->dChiSq, locComboIndex);
 
+	//KINFIT PID INFO
+	if((locKinFitType != d_NoFit) && (locKinFitType != d_SpacetimeFit) && (locKinFitType != d_P4AndSpacetimeFit))
+	{
+		locTreeFillData->Fill_Array<Float_t>(Build_BranchName(locParticleBranchName, "Beta_Timing_KinFit"), locNeutralHypo->measuredBeta(), locComboIndex);
+		if(locParticleBranchName.substr(0, 6) == "Photon")
+			locTreeFillData->Fill_Array<Float_t>(Build_BranchName(locParticleBranchName, "ChiSq_Timing_KinFit"), locNeutralHypo->dChiSq, locComboIndex);
+	}
+
 	//KINFIT
 	if(locKinFitType != d_NoFit)
 	{
@@ -2003,13 +2028,6 @@ void DEventWriterROOT::Fill_ComboNeutralData(DTreeFillData* locTreeFillData, uns
 		DLorentzVector locDP4 = locNeutralHypo->lorentzMomentum();
 		TLorentzVector locP4_KinFit(locDP4.Px(), locDP4.Py(), locDP4.Pz(), locDP4.E());
 		locTreeFillData->Fill_Array<TLorentzVector>(Build_BranchName(locParticleBranchName, "P4_KinFit"), locP4_KinFit, locComboIndex);
-
-		//PID INFO
-		if(locKinFitType != d_P4Fit)
-		{
-			locTreeFillData->Fill_Array<Float_t>(Build_BranchName(locParticleBranchName, "Beta_Timing_KinFit"), locNeutralHypo->measuredBeta(), locComboIndex);
-			if(locParticleBranchName.substr(0, 6) == "Photon")
-				locTreeFillData->Fill_Array<Float_t>(Build_BranchName(locParticleBranchName, "ChiSq_Timing_KinFit"), locNeutralHypo->dChiSq, locComboIndex);
-		}
 	}
 }
+
