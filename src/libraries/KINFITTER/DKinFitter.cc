@@ -2364,25 +2364,20 @@ void DKinFitter::Update_ParticleParams(void)
 		TLorentzVector locP4 = locKinFitParticle->Get_P4();
 		TLorentzVector locPreviousP4 = locP4;
 
-		TVector3 locMomentum = locKinFitParticle->Get_Momentum();
-		TVector3 locPreviousMomentum = locMomentum;
-		double locPreviousPathLength = locKinFitParticle->Get_PathLength();
-
 		int locParamIndex = locKinFitParticle->Get_PxParamIndex();
 		if(locParamIndex >= 0)
 		{
-			locMomentum = TVector3(locSourceMatrix(locParamIndex, 0), locSourceMatrix(locParamIndex + 1, 0), locSourceMatrix(locParamIndex + 2, 0));
+			TVector3 locMomentum(locSourceMatrix(locParamIndex, 0), locSourceMatrix(locParamIndex + 1, 0), locSourceMatrix(locParamIndex + 2, 0));
 			locKinFitParticle->Set_Momentum(locMomentum);
 			locP4 = locKinFitParticle->Get_P4();
 		}
 
 		//vertex
 		locParamIndex = locKinFitParticle->Get_VxParamIndex();
-		TVector3 locDeltaX;
 		if(locParamIndex >= 0)
 		{
 			TVector3 locPosition(locSourceMatrix(locParamIndex, 0), locSourceMatrix(locParamIndex + 1, 0), locSourceMatrix(locParamIndex + 2, 0));
-			locDeltaX = locPosition - locKinFitParticle->Get_Position();
+			TVector3 locDeltaX = locPosition - locKinFitParticle->Get_Position();
 			locKinFitParticle->Set_Position(locPosition);
 			if(locKinFitParticle->Get_CommonVxParamIndex() < 0)
 				locKinFitParticle->Set_CommonVertex(locPosition);
@@ -2395,7 +2390,7 @@ void DKinFitter::Update_ParticleParams(void)
 			double locE = locSourceMatrix(locParamIndex, 0);
 			locKinFitParticle->Set_ShowerEnergy(locE);
 			double locPMag = sqrt(locE*locE - locKinFitParticle->Get_Mass()*locKinFitParticle->Get_Mass());
-			locMomentum = locKinFitParticle->Get_Position() - locKinFitParticle->Get_CommonVertex();
+			TVector3 locMomentum = locKinFitParticle->Get_Position() - locKinFitParticle->Get_CommonVertex();
 			locMomentum.SetMag(locPMag);
 			locKinFitParticle->Set_Momentum(locMomentum);
 		}
@@ -2405,6 +2400,19 @@ void DKinFitter::Update_ParticleParams(void)
 		if(locParamIndex >= 0)
 		{
 			double locTime = locSourceMatrix(locParamIndex, 0);
+			locKinFitParticle->Set_Time(locTime);
+			if(locKinFitParticle->Get_CommonTParamIndex() < 0)
+				locKinFitParticle->Set_CommonTime(locTime);
+		}
+		else if((locKinFitParticle->Get_PxParamIndex() >= 0) && !locIsUnknownParticleFlag)
+		{
+			//momentum has changed: update time
+			//note: not dependent on position change: trajectory moved, but doesn't change path length (if does, is unknown & small)
+
+			//note: for charged, is losing energy along the trajectory
+				//however, this change in beta is very small, except for slow protons (which are easy to identify anyway)
+			double locDeltaT = (locKinFitParticle->Get_PathLength()/29.9792458)*(1.0/locPreviousP4.Beta() - 1.0/locP4.Beta());
+			double locTime = locKinFitParticle->Get_Time() + locDeltaT;
 			locKinFitParticle->Set_Time(locTime);
 			if(locKinFitParticle->Get_CommonTParamIndex() < 0)
 				locKinFitParticle->Set_CommonTime(locTime);
