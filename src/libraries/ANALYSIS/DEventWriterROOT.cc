@@ -1286,7 +1286,7 @@ vector<const DNeutralParticleHypothesis*> DEventWriterROOT::Get_NeutralHypothese
 	vector<const DNeutralParticleHypothesis*> locAllHypos = Get_NeutralHypotheses(locEventLoop, locReactionPIDs);
 
 	//get used showers
-	set<const DNeutralShower*> locUsedNeutralShowers;
+	set<pair<const DNeutralShower*, Particle_t> > locUsedNeutralShowers;
 	for(auto locCombo : locParticleCombos)
 	{
 		deque<const DKinematicData*> locNeutralParticles;
@@ -1296,7 +1296,9 @@ vector<const DNeutralParticleHypothesis*> DEventWriterROOT::Get_NeutralHypothese
 		{
 			const DNeutralShower* locNeutralShower = NULL;
 			locParticle->GetSingle(locNeutralShower);
-			locUsedNeutralShowers.insert(locNeutralShower);
+
+			pair<const DNeutralShower*, Particle_t> locShowerPair(locNeutralShower, locParticle->PID());
+			locUsedNeutralShowers.insert(locShowerPair);
 		}
 	}
 
@@ -1305,11 +1307,12 @@ vector<const DNeutralParticleHypothesis*> DEventWriterROOT::Get_NeutralHypothese
 	{
 		const DNeutralShower* locNeutralShower = NULL;
 		(*locIterator)->GetSingle(locNeutralShower);
+		pair<const DNeutralShower*, Particle_t> locShowerPair(locNeutralShower, (*locIterator)->PID());
 
-		if(locUsedNeutralShowers.find(locNeutralShower) != locUsedNeutralShowers.end())
-			++locIterator;
+		if(locUsedNeutralShowers.find(locShowerPair) == locUsedNeutralShowers.end())
+		   locIterator = locAllHypos.erase(locIterator);
 		else
-		   locIterator = locAllHypos.erase(locIterator); 
+			++locIterator;
 	}
 
 	return locAllHypos;
