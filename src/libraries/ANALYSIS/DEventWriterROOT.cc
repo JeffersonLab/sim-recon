@@ -1825,7 +1825,7 @@ void DEventWriterROOT::Fill_ComboStepData(DTreeFillData* locTreeFillData, const 
 			const DTrackTimeBased* locTrackTimeBased = NULL;
 			locMeasuredChargedHypo->GetSingle(locTrackTimeBased);
 			pair<oid_t, Particle_t> locTrackPair(locTrackTimeBased->id, locMeasuredChargedHypo->PID());
-			size_t locChargedIndex = locObjectToArrayIndexMap.find(locMeasuredChargedHypo)->second;
+			size_t locChargedIndex = locObjectToArrayIndexMap.find(locTrackPair)->second;
 
 			Fill_ComboChargedData(locTreeFillData, locComboIndex, locParticleBranchName, locMeasuredChargedHypo, locChargedHypo, locChargedIndex, locKinFitType);
 		}
