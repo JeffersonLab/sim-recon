@@ -956,8 +956,8 @@ void DEventWriterROOT::Fill_DataTree(JEventLoop* locEventLoop, const DReaction* 
 	}
 	else
 	{
-		locChargedTrackHypotheses = Get_ChargedHypotheses_Used(locEventLoop, locParticleCombos);
-		locNeutralParticleHypotheses = Get_NeutralHypotheses_Used(locEventLoop, locParticleCombos);
+		locChargedTrackHypotheses = Get_ChargedHypotheses_Used(locEventLoop, locReactionPIDs, locParticleCombos);
+		locNeutralParticleHypotheses = Get_NeutralHypotheses_Used(locEventLoop, locReactionPIDs, locParticleCombos);
 	}
 
 	//GET BEAM PHOTONS
@@ -972,7 +972,7 @@ void DEventWriterROOT::Fill_DataTree(JEventLoop* locEventLoop, const DReaction* 
 	map<pair<oid_t, Particle_t>, size_t> locObjectToArrayIndexMap; //particle_t necessary for neutral showers!
 	for(size_t loc_i = 0; loc_i < locBeamPhotons.size(); ++loc_i)
 	{
-		pair<oid_t, Particle_t> locBeamPair(locBeamPhotons[loc_i]->id, locBeamPhotons[loc_i]->Get_PID());
+		pair<oid_t, Particle_t> locBeamPair(locBeamPhotons[loc_i]->id, locBeamPhotons[loc_i]->PID());
 		locObjectToArrayIndexMap[locBeamPair] = loc_i;
 	}
 
@@ -982,7 +982,7 @@ void DEventWriterROOT::Fill_DataTree(JEventLoop* locEventLoop, const DReaction* 
 		const DTrackTimeBased* locTrackTimeBased = NULL;
 		locChargedTrackHypotheses[loc_i]->GetSingle(locTrackTimeBased);
 
-		pair<oid_t, Particle_t> locTrackPair(locTrackTimeBased->id, locTrackTimeBased->Get_PID());
+		pair<oid_t, Particle_t> locTrackPair(locTrackTimeBased->id, locTrackTimeBased->PID());
 		locObjectToArrayIndexMap[locTrackPair] = loc_i;
 	}
 
@@ -992,7 +992,7 @@ void DEventWriterROOT::Fill_DataTree(JEventLoop* locEventLoop, const DReaction* 
 		const DNeutralShower* locNeutralShower = NULL;
 		locNeutralParticleHypotheses[loc_i]->GetSingle(locNeutralShower);
 
-		pair<oid_t, Particle_t> locShowerPair(locNeutralShower->id, locNeutralParticleHypotheses[loc_i]->Get_PID());
+		pair<oid_t, Particle_t> locShowerPair(locNeutralShower->id, locNeutralParticleHypotheses[loc_i]->PID());
 		locObjectToArrayIndexMap[locShowerPair] = loc_i;
 	}
 
@@ -1113,7 +1113,7 @@ vector<const DBeamPhoton*> DEventWriterROOT::Get_BeamPhotons(const deque<const D
 	return locBeamPhotons;
 }
 
-vector<const DChargedTrackHypothesis*> DEventWriterROOT::Get_ChargedHypotheses(JEventLoop* locEventLoop, set<Particle_t> locReactionPIDs) const
+vector<const DChargedTrackHypothesis*> DEventWriterROOT::Get_ChargedHypotheses(JEventLoop* locEventLoop, const set<Particle_t>& locReactionPIDs) const
 {
 	//For default/preselect, save all
 	//For combo, of new PIDs ONLY, save one of each for each track
@@ -1133,7 +1133,7 @@ vector<const DChargedTrackHypothesis*> DEventWriterROOT::Get_ChargedHypotheses(J
 	for(auto locChargedTrack : locChargedTracks)
 	{
 		for(auto locChargedHypo : locChargedTrack->dChargedTrackHypotheses)
-			locReconPIDs.insert(locChargedHypo->Get_PID());
+			locReconPIDs.insert(locChargedHypo->PID());
 	}
 
 	//comb through combo hypos for the ones we actually need: non-recon PIDs (with the right RF bunch)
@@ -1179,10 +1179,10 @@ vector<const DChargedTrackHypothesis*> DEventWriterROOT::Get_ChargedHypotheses(J
 	return locChargedHyposToSave;
 }
 
-vector<const DChargedTrackHypothesis*> DEventWriterROOT::Get_ChargedHypotheses_Used(JEventLoop* locEventLoop, const deque<const DParticleCombo*>& locParticleCombos) const
+vector<const DChargedTrackHypothesis*> DEventWriterROOT::Get_ChargedHypotheses_Used(JEventLoop* locEventLoop, const set<Particle_t>& locReactionPIDs, const deque<const DParticleCombo*>& locParticleCombos) const
 {
 	//get all hypos
-	vector<const DChargedTrackHypothesis*> locAllHypos = Get_ChargedHypotheses(locEventLoop);
+	vector<const DChargedTrackHypothesis*> locAllHypos = Get_ChargedHypotheses(locEventLoop, locReactionPIDs);
 
 	//get used time-based tracks
 	set<const DTrackTimeBased*> locUsedTimeBasedTracks;
@@ -1214,7 +1214,7 @@ vector<const DChargedTrackHypothesis*> DEventWriterROOT::Get_ChargedHypotheses_U
 	return locAllHypos;
 }
 
-vector<const DNeutralParticleHypothesis*> DEventWriterROOT::Get_NeutralHypotheses(JEventLoop* locEventLoop, set<Particle_t> locReactionPIDs) const
+vector<const DNeutralParticleHypothesis*> DEventWriterROOT::Get_NeutralHypotheses(JEventLoop* locEventLoop, const set<Particle_t>& locReactionPIDs) const
 {
 	//For default/preselect, save all
 	//For combo, of new PIDs ONLY, save one of each for each shower
@@ -1234,7 +1234,7 @@ vector<const DNeutralParticleHypothesis*> DEventWriterROOT::Get_NeutralHypothese
 	for(auto locNeutralParticle : locNeutralParticles)
 	{
 		for(auto locNeutralHypo : locNeutralParticle->dNeutralParticleHypotheses)
-			locReconPIDs.insert(locNeutralHypo->Get_PID());
+			locReconPIDs.insert(locNeutralHypo->PID());
 	}
 
 	//comb through combo hypos for the ones we actually need: non-recon PIDs (with the right RF bunch)
@@ -1280,10 +1280,10 @@ vector<const DNeutralParticleHypothesis*> DEventWriterROOT::Get_NeutralHypothese
 	return locNeutralHyposToSave;
 }
 
-vector<const DNeutralParticleHypothesis*> DEventWriterROOT::Get_NeutralHypotheses_Used(JEventLoop* locEventLoop, const deque<const DParticleCombo*>& locParticleCombos) const
+vector<const DNeutralParticleHypothesis*> DEventWriterROOT::Get_NeutralHypotheses_Used(JEventLoop* locEventLoop, const set<Particle_t>& locReactionPIDs, const deque<const DParticleCombo*>& locParticleCombos) const
 {
 	//get all hypos
-	vector<const DNeutralParticleHypothesis*> locAllHypos = Get_NeutralHypotheses(locEventLoop);
+	vector<const DNeutralParticleHypothesis*> locAllHypos = Get_NeutralHypotheses(locEventLoop, locReactionPIDs);
 
 	//get used showers
 	set<const DNeutralShower*> locUsedNeutralShowers;
@@ -1733,7 +1733,7 @@ void DEventWriterROOT::Fill_ComboStepData(DTreeFillData* locTreeFillData, const 
 		const DBeamPhoton* locMeasuredBeamPhoton = dynamic_cast<const DBeamPhoton*>(locInitParticleMeasured);
 
 		//get array index
-		pair<oid_t, Particle_t> locBeamPair(locMeasuredBeamPhoton->id, locMeasuredBeamPhoton->PID())
+		pair<oid_t, Particle_t> locBeamPair(locMeasuredBeamPhoton->id, locMeasuredBeamPhoton->PID());
 		size_t locBeamIndex = locObjectToArrayIndexMap.find(locBeamPair)->second;
 
 		Fill_ComboBeamData(locTreeFillData, locComboIndex, locBeamPhoton, locBeamIndex, locKinFitType);
@@ -1811,7 +1811,7 @@ void DEventWriterROOT::Fill_ComboStepData(DTreeFillData* locTreeFillData, const 
 			//get array index
 			const DNeutralShower* locNeutralShower = NULL;
 			locMeasuredNeutralHypo->GetSingle(locNeutralShower);
-			pair<oid_t, Particle_t> locNeutralPair(locNeutralShower->id, locMeasuredNeutralHypo->PID())
+			pair<oid_t, Particle_t> locNeutralPair(locNeutralShower->id, locMeasuredNeutralHypo->PID());
 			size_t locNeutralIndex = locObjectToArrayIndexMap.find(locNeutralPair)->second;
 
 			Fill_ComboNeutralData(locTreeFillData, locComboIndex, locParticleBranchName, locMeasuredNeutralHypo, locNeutralHypo, locNeutralIndex, locKinFitType);
@@ -1824,7 +1824,7 @@ void DEventWriterROOT::Fill_ComboStepData(DTreeFillData* locTreeFillData, const 
 			//get array index
 			const DTrackTimeBased* locTrackTimeBased = NULL;
 			locMeasuredChargedHypo->GetSingle(locTrackTimeBased);
-			pair<oid_t, Particle_t> locTrackPair(locTrackTimeBased->id, locMeasuredChargedHypo->PID())
+			pair<oid_t, Particle_t> locTrackPair(locTrackTimeBased->id, locMeasuredChargedHypo->PID());
 			size_t locChargedIndex = locObjectToArrayIndexMap.find(locMeasuredChargedHypo)->second;
 
 			Fill_ComboChargedData(locTreeFillData, locComboIndex, locParticleBranchName, locMeasuredChargedHypo, locChargedHypo, locChargedIndex, locKinFitType);
@@ -1937,4 +1937,4 @@ void DEventWriterROOT::Fill_ComboNeutralData(DTreeFillData* locTreeFillData, uns
 		locTreeFillData->Fill_Array<TLorentzVector>(Build_BranchName(locParticleBranchName, "P4_KinFit"), locP4_KinFit, locComboIndex);
 	}
 }
-(...)
+

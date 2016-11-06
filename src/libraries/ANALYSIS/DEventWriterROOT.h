@@ -138,15 +138,15 @@ class DEventWriterROOT : public JObject
 		void Fill_ThrownInfo(DTreeFillData* locTreeFillData, const DMCReaction* locMCReaction, const vector<const DMCThrown*>& locMCThrowns,
 				const map<const DMCThrown*, unsigned int>& locThrownIndexMap, ULong64_t locNumPIDThrown_FinalState, ULong64_t locPIDThrown_Decaying,
 				const DMCThrownMatching* locMCThrownMatching = NULL) const;
-		void Fill_ThrownParticleData(DTreeFillData* locTreeFillData, unsigned int locArrayIndex, const DMCThrown* locMCThrown, const map<const DMCThrown*, unsigned int>& locThrownIndexMap,
-				const DMCThrownMatching* locMCThrownMatching, const map<pair<oid_t, Particle_t>, size_t>& locObjectToArrayIndexMap) const;
+		void Fill_ThrownParticleData(DTreeFillData* locTreeFillData, unsigned int locArrayIndex, const DMCThrown* locMCThrown, 
+				const map<const DMCThrown*, unsigned int>& locThrownIndexMap, const DMCThrownMatching* locMCThrownMatching) const;
 
 		//TREE FILLING: GET HYPOTHESES/BEAM
 		vector<const DBeamPhoton*> Get_BeamPhotons(const deque<const DParticleCombo*>& locParticleCombos) const;
-		vector<const DChargedTrackHypothesis*> Get_ChargedHypotheses(JEventLoop* locEventLoop, set<Particle_t> locReactionPIDs) const;
-		vector<const DChargedTrackHypothesis*> Get_ChargedHypotheses_Used(JEventLoop* locEventLoop, const deque<const DParticleCombo*>& locParticleCombos) const;
-		vector<const DNeutralParticleHypothesis*> Get_NeutralHypotheses(JEventLoop* locEventLoop, set<Particle_t> locReactionPIDs) const;
-		vector<const DNeutralParticleHypothesis*> Get_NeutralHypotheses_Used(JEventLoop* locEventLoop, const deque<const DParticleCombo*>& locParticleCombos) const;
+		vector<const DChargedTrackHypothesis*> Get_ChargedHypotheses(JEventLoop* locEventLoop, const set<Particle_t>& locReactionPIDs) const;
+		vector<const DChargedTrackHypothesis*> Get_ChargedHypotheses_Used(JEventLoop* locEventLoop, const set<Particle_t>& locReactionPIDs, const deque<const DParticleCombo*>& locParticleCombos) const;
+		vector<const DNeutralParticleHypothesis*> Get_NeutralHypotheses(JEventLoop* locEventLoop, const set<Particle_t>& locReactionPIDs) const;
+		vector<const DNeutralParticleHypothesis*> Get_NeutralHypotheses_Used(JEventLoop* locEventLoop, const set<Particle_t>& locReactionPIDs, const deque<const DParticleCombo*>& locParticleCombos) const;
 
 		//TREE FILLING: INDEPENDENT PARTICLES
 		void Fill_BeamData(DTreeFillData* locTreeFillData, unsigned int locArrayIndex, const DBeamPhoton* locBeamPhoton, const DVertex* locVertex, const DMCThrownMatching* locMCThrownMatching) const;
