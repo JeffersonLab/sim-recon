@@ -2361,23 +2361,38 @@ void DKinFitter::Update_ParticleParams(void)
 		bool locIsUnknownParticleFlag = ((locKinFitParticleType == d_DecayingParticle) || (locKinFitParticleType == d_MissingParticle));
 		TMatrixD& locSourceMatrix = locIsUnknownParticleFlag ? dXi : dEta;
 
+		TLorentzVector locP4 = locKinFitParticle->Get_P4();
+		TLorentzVector locPreviousP4 = locP4;
+
 		int locParamIndex = locKinFitParticle->Get_PxParamIndex();
 		if(locParamIndex >= 0)
 		{
 			TVector3 locMomentum(locSourceMatrix(locParamIndex, 0), locSourceMatrix(locParamIndex + 1, 0), locSourceMatrix(locParamIndex + 2, 0));
 			locKinFitParticle->Set_Momentum(locMomentum);
+			locP4 = locKinFitParticle->Get_P4();
 		}
 
 		//vertex
 		locParamIndex = locKinFitParticle->Get_VxParamIndex();
-		TVector3 locDeltaX;
 		if(locParamIndex >= 0)
 		{
 			TVector3 locPosition(locSourceMatrix(locParamIndex, 0), locSourceMatrix(locParamIndex + 1, 0), locSourceMatrix(locParamIndex + 2, 0));
-			locDeltaX = locPosition - locKinFitParticle->Get_Position();
+			TVector3 locDeltaX = locPosition - locKinFitParticle->Get_Position();
 			locKinFitParticle->Set_Position(locPosition);
 			if(locKinFitParticle->Get_CommonVxParamIndex() < 0)
 				locKinFitParticle->Set_CommonVertex(locPosition);
+		}
+
+		//energy
+		locParamIndex = locKinFitParticle->Get_EParamIndex();
+		if(locParamIndex >= 0) //neutral shower: set momentum also //must be after Vx & common vertex are set
+		{
+			double locE = locSourceMatrix(locParamIndex, 0);
+			locKinFitParticle->Set_ShowerEnergy(locE);
+			double locPMag = sqrt(locE*locE - locKinFitParticle->Get_Mass()*locKinFitParticle->Get_Mass());
+			TVector3 locMomentum = locKinFitParticle->Get_Position() - locKinFitParticle->Get_CommonVertex();
+			locMomentum.SetMag(locPMag);
+			locKinFitParticle->Set_Momentum(locMomentum);
 		}
 
 		//time
@@ -2389,37 +2404,18 @@ void DKinFitter::Update_ParticleParams(void)
 			if(locKinFitParticle->Get_CommonTParamIndex() < 0)
 				locKinFitParticle->Set_CommonTime(locTime);
 		}
-		else if(locKinFitParticle->Get_VxParamIndex() >= 0)
+		else if((locKinFitParticle->Get_PxParamIndex() >= 0) && !locIsUnknownParticleFlag)
 		{
-			//vertex changed, but time is not a fit parameter, so must manually change time
-			TLorentzVector locP4 = locKinFitParticle->Get_P4();
-			double locTime = locKinFitParticle->Get_Time();
+			//momentum has changed: update time
+			//note: not dependent on position change: trajectory moved, but doesn't change path length (if does, is unknown & small)
 
-			if((locKinFitParticle->Get_Charge() != 0) && dKinFitUtils->Get_IsBFieldNearBeamline()) //in b-field & charged
-			{
-				TVector3 locH = dKinFitUtils->Get_BField(locKinFitParticle->Get_Position()).Unit();
-				double locDeltaXDotH = locDeltaX.Dot(locH);
-				double locPDotH = locP4.Vect().Dot(locH);
-				locTime += locDeltaXDotH*locP4.E()/(29.9792458*locPDotH);
-			}
-			else //non-accelerating
-			{
-				double locDeltaXDotP = locDeltaX.Dot(locP4.Vect());
-				locTime += locDeltaXDotP*locP4.E()/(29.9792458*locP4.Vect().Mag2());
-			}
-
+			//note: for charged, is losing energy along the trajectory
+				//however, this change in beta is very small, except for slow protons (which are easy to identify anyway)
+			double locDeltaT = (locKinFitParticle->Get_PathLength()/29.9792458)*(1.0/locPreviousP4.Beta() - 1.0/locP4.Beta());
+			double locTime = locKinFitParticle->Get_Time() + locDeltaT;
 			locKinFitParticle->Set_Time(locTime);
-		}
-
-		locParamIndex = locKinFitParticle->Get_EParamIndex();
-		if(locParamIndex >= 0) //neutral shower: set momentum also //must be after Vx & common vertex are set
-		{
-			double locE = locSourceMatrix(locParamIndex, 0);
-			locKinFitParticle->Set_ShowerEnergy(locE);
-			double locPMag = sqrt(locE*locE - locKinFitParticle->Get_Mass()*locKinFitParticle->Get_Mass());
-			TVector3 locMomentum = locKinFitParticle->Get_Position() - locKinFitParticle->Get_CommonVertex();
-			locMomentum.SetMag(locPMag);
-			locKinFitParticle->Set_Momentum(locMomentum);
+			if(locKinFitParticle->Get_CommonTParamIndex() < 0)
+				locKinFitParticle->Set_CommonTime(locTime);
 		}
 	}
 

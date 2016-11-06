@@ -103,7 +103,11 @@ DNeutralParticleHypothesis* DNeutralParticleHypothesis_factory_KinFit::Build_Neu
  	vector<const JObject*> locObjects;
 	locNeutralParticleHypothesis->GetT(locObjects);
 	for(size_t loc_i = 0; loc_i < locObjects.size(); ++loc_i)
+	{
+		if(dynamic_cast<const DNeutralParticleHypothesis*>(locObjects[loc_i]) != NULL)
+			continue; //don't save: won't be able to keep track of which is which! (combo or default factory)
 		locNewNeutralParticleHypothesis->AddAssociatedObject(locObjects[loc_i]);
+	}
 
 	locNewNeutralParticleHypothesis->setMomentum(DVector3(locKinFitParticle->Get_Momentum().X(),locKinFitParticle->Get_Momentum().Y(),locKinFitParticle->Get_Momentum().Z()));
 	locNewNeutralParticleHypothesis->setPosition(DVector3(locKinFitParticle->Get_CommonVertex().X(),locKinFitParticle->Get_CommonVertex().Y(),locKinFitParticle->Get_CommonVertex().Z()));
@@ -133,6 +137,7 @@ DNeutralParticleHypothesis* DNeutralParticleHypothesis_factory_KinFit::Build_Neu
 	if(locNewNeutralParticleHypothesis->PID() == Gamma)
 	{
 		double locTimePull = 0.0;
+		//for this calc: if rf time part of timing constraint, don't use locKinFitParticle->Get_CommonTime() for chisq calc!!!
 		locChiSq = dParticleID->Calc_TimingChiSq(locNewNeutralParticleHypothesis, locNDF, locTimePull);
 		locFOM = TMath::Prob(locChiSq, locNDF);
 	}

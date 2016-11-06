@@ -1081,7 +1081,7 @@ deque<set<pair<int, int> > > DKinFitUtils_GlueX::Predict_VertexConstraints(const
 	for(size_t loc_i = 0; loc_i < locAllVertices.size(); ++loc_i)
 	{
 		set<pair<int, int> > locFullConstrainParticles, locDecayingParticles, locOnlyConstrainTimeParticles, locNoConstrainParticles;
-		Group_VertexParticles(locReaction, locAllVertices[loc_i], locFullConstrainParticles, locDecayingParticles, locOnlyConstrainTimeParticles, locNoConstrainParticles);
+		Group_VertexParticles(locReaction, locSpacetimeFitFlag, locAllVertices[loc_i], locFullConstrainParticles, locDecayingParticles, locOnlyConstrainTimeParticles, locNoConstrainParticles);
 		locAllFullConstrainParticles.push_back(locFullConstrainParticles);
 		locAllDecayingParticles.push_back(locDecayingParticles);
 		locAllOnlyConstrainTimeParticles.push_back(locOnlyConstrainTimeParticles);
@@ -1140,10 +1140,8 @@ deque<set<pair<int, int> > > DKinFitUtils_GlueX::Predict_VertexConstraints(const
 			locNumConstraints += locAllOnlyConstrainTimeParticles[locConstraintIndex].size();
 		}
 		else //vertex only
-		{
-			locAllNoConstrainParticles[locConstraintIndex].insert(locAllOnlyConstrainTimeParticles[locConstraintIndex].begin(), locAllOnlyConstrainTimeParticles[locConstraintIndex].end());
 			locNumConstraints += 2*locAllFullConstrainParticles[locConstraintIndex].size();
-		}
+
 		locVertexParticles.insert(locAllFullConstrainParticles[locConstraintIndex].begin(), locAllFullConstrainParticles[locConstraintIndex].end());
 		locVertexParticles.insert(locAllNoConstrainParticles[locConstraintIndex].begin(), locAllNoConstrainParticles[locConstraintIndex].end());
 		locAllVertexParticles.push_back(locVertexParticles);
@@ -1188,7 +1186,7 @@ deque<set<pair<int, int> > > DKinFitUtils_GlueX::Predict_VertexConstraints(const
 	return locAllVertexParticles;
 }
 
-void DKinFitUtils_GlueX::Group_VertexParticles(const DReaction* locReaction, const set<pair<int, int> >& locVertexParticles, set<pair<int, int> >& locFullConstrainParticles, set<pair<int, int> >& locDecayingParticles, set<pair<int, int> >& locOnlyConstrainTimeParticles, set<pair<int, int> >& locNoConstrainParticles) const
+void DKinFitUtils_GlueX::Group_VertexParticles(const DReaction* locReaction, bool locSpacetimeFitFlag, const set<pair<int, int> >& locVertexParticles, set<pair<int, int> >& locFullConstrainParticles, set<pair<int, int> >& locDecayingParticles, set<pair<int, int> >& locOnlyConstrainTimeParticles, set<pair<int, int> >& locNoConstrainParticles) const
 {
 	//Decaying: Only those that can conceivably be used to constrain: All unless dLinkVerticesFlag disabled (then none)
 	locFullConstrainParticles.clear();
@@ -1225,7 +1223,12 @@ void DKinFitUtils_GlueX::Group_VertexParticles(const DReaction* locReaction, con
 		else if(locParticleIndex == locReactionStep->Get_MissingParticleIndex()) //missing
 			locNoConstrainParticles.insert(*locIterator);
 		else if(ParticleCharge(locReactionStep->Get_FinalParticleID(locParticleIndex)) == 0) //detected neutral
-			locOnlyConstrainTimeParticles.insert(*locIterator);
+		{
+			if(locSpacetimeFitFlag)
+				locOnlyConstrainTimeParticles.insert(*locIterator);
+			else
+				locNoConstrainParticles.insert(*locIterator);
+		}
 		else //detected charged
 			locFullConstrainParticles.insert(*locIterator);
 	}
