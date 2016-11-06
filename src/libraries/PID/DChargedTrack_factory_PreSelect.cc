@@ -52,9 +52,9 @@ jerror_t DChargedTrack_factory_PreSelect::evnt(jana::JEventLoop *locEventLoop, u
 	{
 		for(auto locChargedHypo : locChargedTracks[loc_i]->dChargedTrackHypotheses)
 		{
-			if(Cut_TrackingFOM(locChargedHypo))
+			if(!Cut_TrackingFOM(locChargedHypo))
 				continue;
-			if(Cut_HasDetectorMatch(locChargedHypo, locDetectorMatches))
+			if(!Cut_HasDetectorMatch(locChargedHypo, locDetectorMatches))
 				continue;
 
 			_data.push_back(const_cast<DChargedTrack*>(locChargedTracks[loc_i])); //don't cut: copy it
