@@ -104,7 +104,7 @@ jerror_t DTrackTimeBased_factory_THROWN::evnt(JEventLoop *loop, uint64_t eventnu
 		*kd_track = *kd_thrown;
 
 		// Set PID		
-      timebased_track->setPID(thrown->PID());
+      track->setPID(thrown->PID());
 
 		// Add DMCThrown as associated object
 		track->AddAssociatedObject(thrown);
