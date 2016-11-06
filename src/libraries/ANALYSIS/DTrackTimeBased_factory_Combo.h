@@ -62,7 +62,6 @@ class DTrackTimeBased_factory_Combo:public jana::JFactory<DTrackTimeBased>
 		map<const DReaction*, set<Particle_t> > dNegativelyChargedPIDs;
 
 		string dTrackSelectionTag;
-		set<Particle_t> dAvailablePIDs;
 
 		// PRE-DPARTICLECOMBO CUT VALUES
 			//(first) bool = true/false for cut enabled/disabled, double = cut value
