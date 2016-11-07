@@ -1,4 +1,4 @@
-{
+void CDC_gains() {
 
   // Fits histograms from CDC_amp plugin to estimate CDC gains
   // writes digi_scales/ascale to cdc_new_ascale.txt
@@ -27,8 +27,9 @@
 
   // Need 80+ run files to get good fits for attsum.  2 run files are enough for atsum
 
-  // NSJ 22 Sept 2016
+  // NSJ 7 Nov 2016
 
+  const int EXIT_EARLY=0; //fit the sum histograms only
 
   // reference values
 
@@ -61,6 +62,7 @@
 
   float newascale = 0;
 
+  float thismpv = 0;
 
   // get histograms
    
@@ -87,7 +89,8 @@
   if (a_fitstat) printf("Bad fit to asum\n\n");
 
   if (USEGROUP==1 && !a_fitstat) {
-    newascale = ASCALE*IDEALMPV/f->GetParameter(1);
+    thismpv = f->GetParameter(1);
+    newascale = ASCALE*IDEALMPV/thismpv;
     printf("\nnew digi_scales/ascale should be %.3f\n\n",newascale);
   } 
 
@@ -97,7 +100,8 @@
   a_fitstat = attsum->Fit(f,"R");
 
   if (USEGROUP==2 && !a_fitstat) {
-    newascale = ASCALE*IDEALMPV/f->GetParameter(1);
+    thismpv = f->GetParameter(1);
+    newascale = ASCALE*IDEALMPV/thismpv;
     printf("\nnew digi_scales/ascale should be %.3f\n\n",newascale);
   }
 
@@ -124,7 +128,11 @@
   qsum->Write();
   qtsum->Write();
   qttsum->Write();
- 
+
+  if (EXIT_EARLY==1) hfile->Write();
+  if (EXIT_EARLY==1) hfile->Close();
+  if (EXIT_EARLY==1) return;
+
 
   TTree *atstats = new TTree("atstats","fit stats for tracked hits");
   TTree *attstats = new TTree("attstats","fit stats for tracked hits with restricted z and theta");
@@ -280,7 +288,7 @@
 
       if (igroup==USEGROUP) {
         wiregain=0;
-        if (a_mpv>0) wiregain = IDEALMPV/a_mpv;
+        if (a_mpv>0) wiregain = thismpv/a_mpv;
         fprintf(outfile,"%.3f\n",wiregain);
       }
 
