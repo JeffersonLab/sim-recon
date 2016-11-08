@@ -34,9 +34,9 @@ jerror_t JEventProcessor_RF_online::init(void)
 	dRFSamplingFactor[SYS_TOF] = 128;
 
 	dMaxDeltaTHits[SYS_TOF] = 15;
-	dMaxDeltaTHits[SYS_FDC] = 3;
-	dMaxDeltaTHits[SYS_TAGH] = 3;
-	dMaxDeltaTHits[SYS_PSC] = 3;
+	dMaxDeltaTHits[SYS_FDC] = 8;
+	dMaxDeltaTHits[SYS_TAGH] = 8;
+	dMaxDeltaTHits[SYS_PSC] = 8;
 
 	string locHistName, locHistTitle;
 
