@@ -74,6 +74,8 @@ void Df250EmulatorAlgorithm_v2::EmulateFirmware(const Df250WindowRawData* rawDat
         MAXPED = f250BORConfig->MaxPed;
         if (VERBOSE > 0) jout << "Df250EmulatorAlgorithm_v2::EmulateFirmware NSA: " << NSA << " NSB: " << NSB << " THR: " << THR << endl; 
     }
+    // Note that in principle we could get this information from the Df250Config objects as well, but generally only NPED and the value of NSA+NSB are saved
+    // not the individual NSA and NSB values
 
     // quality bits
     bool bad_pedestal = false;
@@ -99,17 +101,20 @@ void Df250EmulatorAlgorithm_v2::EmulateFirmware(const Df250WindowRawData* rawDat
     bool vpeak_beyond_NSA[max_pulses] = {false};
     bool vpeak_not_found[max_pulses] = {false};
 
+    // some verbose debugging output
     if(VERBOSE > 0) {
         for (unsigned int i=0; i < NW; i++) {
-            if(samples[i] == 0x1fff)
-                jout << "Overflow at sample " << i << endl;
-            if(samples[i] == 0x1000)
-                jout << "Overflow at sample " << i << endl;
-            
+            if(VERBOSE > 2) {
+                if(samples[i] == 0x1fff)
+                    jout << "Overflow at sample " << i << endl;
+                if(samples[i] == 0x1000)
+                    jout << "Underflow at sample " << i << endl;
+            }
             if (VERBOSE > 5) jout << "Df250EmulatorAlgorithm_v2::EmulateFirmware samples[" << i << "]: " << samples[i] << endl;
         }
     }
 
+    // look for the threhold crossings and compute the integrals
     for (unsigned int i=0; i < NW; i++) {
         if ((samples[i] & 0xfff) > THR) {
             if (VERBOSE > 1) {
@@ -130,10 +135,12 @@ void Df250EmulatorAlgorithm_v2::EmulateFirmware(const Df250WindowRawData* rawDat
             for (i = ibegin; i < iend; ++i) {
                 pulse_integral[npulses] += (samples[i] & 0xfff);
                 // quality monitoring
-                if(samples[i] == 0x1fff)
+                if(samples[i] == 0x1fff) {
                     has_overflow_samples[npulses] = true;
-                if(samples[i] == 0x1000)
+                }
+                if(samples[i] == 0x1000) {
                     has_underflow_samples[npulses] = true;
+                }
                 // count number of samples within NSA that are above thresholds
                 if( (i+1>=TC[npulses]) && ((samples[i] & 0xfff) > THR) )
                     number_samples_above_threshold[npulses]++;
@@ -167,7 +174,7 @@ void Df250EmulatorAlgorithm_v2::EmulateFirmware(const Df250WindowRawData* rawDat
             bad_pedestal = true;
         }
     }
-    VMIN /= 4;
+    VMIN /= 4;   // compute average
 
     // error conditions for timing algorithm
     for (unsigned int i=0; i < 5; i++) {
@@ -188,15 +195,15 @@ void Df250EmulatorAlgorithm_v2::EmulateFirmware(const Df250WindowRawData* rawDat
         //   2. pulse peak is set to zero
         //   3. Time quality bits 0 and 1 are set to 1"
         if(no_timing_calculation) {
-            // this will need to be changed when the timing algorithm is fixed
             TMID[p] = TC[p];
             TFINE[p] = 0;
             VPEAK[p] = 0;
             bad_timing_pedestal = true;
-            vpeak_not_found[npulses] = true;
+            vpeak_not_found[p] = true;
             //continue;
         }
 
+        // we set up a loop so that we can break out of it at appropriate times...
         while (!no_timing_calculation && true) {
             //if (VMIN == 99999) {
             //    VPEAK[p] = 0;
@@ -204,14 +211,18 @@ void Df250EmulatorAlgorithm_v2::EmulateFirmware(const Df250WindowRawData* rawDat
             //    pulse_time[p] = (TC[p] << 6);
             //    break;
             // }
+
+            // search for the peak of the pulse
+            // has to be before the last sample
             unsigned int ipeak;
-            for (ipeak = TC[p]; ipeak < NW; ++ipeak) {
+            for (ipeak = TC[p]; ipeak < NW-1; ++ipeak) {
                 if ((samples[ipeak] & 0xfff) < (samples[ipeak-1] & 0xfff)) {
                     VPEAK[p] = (samples[ipeak-1] & 0xfff);
                     TPEAK[p] = ipeak-1;
                     break;
                 }
             }
+
             // check to see if the peak is beyond the NSA
             if(ipeak > TC[p]+NSA)
                 vpeak_beyond_NSA[p] = true;
@@ -221,38 +232,17 @@ void Df250EmulatorAlgorithm_v2::EmulateFirmware(const Df250WindowRawData* rawDat
                      << " TC: " << TC[p] << " VPEAK: " << VPEAK[p] << endl;  
             }
 
-            // There is an error condition if the TC sample is within 5 from the end of the window
-            // (and a typo in the document, the firmware is looking for (NW - TC) <= 5).
-            // "In the current implementation of the algorithm, a technical difficulty arises when TC is near the 
-            // end of the trigger window.  If (NW - TC) < 5, the reported pulse time is TC, and the pulse parameter 
-            // data word (type 10) reports VPEAK = 0 and VMIN as measured. 
-            //
-            // Note by RTJ:
-            // I believe that the algorithmic glitch is associated with (NW - TPEAK) < 5,
-            // which Mike may have found often corresponds to (NW - TC) <= 5, but not always.
-            // NOTE: this should only be in the previous version
-            // though something like this should set vpeak_beyond_NSA
-            //if (NW - ipeak < 5) {
-            //    VPEAK[p] = 0;
-            //    pulse_time[p] = ((TC[p] - 1) << 6);
-            //    reportTC[p] = true;
-            //    break;
-            //}
-            // If the peak search failed, there is another special error condition
-            // "A problem with the algorithm occurs if VPEAK is not found within the trigger window. In this case,
-            //  the reported parameters are as follows:
-            //   1. Pulse time is set to TC
-            //   2. Pulse peak is set to 0
-            //   3. Time quality bit 1 is set to 1
+            // set error conditions in case we didn't find the peak
             if (VPEAK[p] == 0) { 
                 TMID[p] = TC[p];
                 TFINE[p] = 0;
                 VPEAK[p] = 0;
-                bad_timing_pedestal = true;
-                vpeak_not_found[npulses] = true;
+                vpeak_beyond_NSA[p] = true;
+                vpeak_not_found[p] = true;
                 break;
             }
 
+            // VMID is the half amplitude
             VMID[p] = (VMIN + VPEAK[p]) >> 1;
             
             /*
@@ -263,16 +253,21 @@ void Df250EmulatorAlgorithm_v2::EmulateFirmware(const Df250WindowRawData* rawDat
                 }
             }
             */
-            for (unsigned int i = TPEAK[p]; i > 1; --i) { 
-                if ((samples[i-1] & 0xfff) < VMID[p]) {
+            // look down the leading edge for the sample that satisfies V(N1) <= VMID < V(N+1)
+            // N1 is then the coarse time
+            for (unsigned int i = TPEAK[p]; i >= 1; --i) { 
+                if ( ((samples[i-1] & 0xfff) < VMID[p])                         // V(N1) <= VMID < V(N+1)
+                     || ( (samples[i-1] & 0xfff) > (samples[i] & 0xfff) ) ) {   // we aren't on the leading edge anymore
                     TMID[p] = i;
                     break;
                 }
             }
-            if (TMID[p] == 0) {  // redundant?
+
+            if (TMID[p] == 0) {  // handle the case where we couldn't find a coarse time - redundant?
                 TFINE[p] = 0;
             }
             else {
+                // fine timing algorithm (see documentation)
                 int Vnext = (samples[TMID[p]] & 0xfff); 
                 int Vlast = (samples[TMID[p]-1] & 0xfff);
                 if (VERBOSE > 2) {
@@ -289,7 +284,7 @@ void Df250EmulatorAlgorithm_v2::EmulateFirmware(const Df250WindowRawData* rawDat
             pulse_time[p] = ((TMID[p]-1) << 6) + TFINE[p];
             break;
         }
-        VMIN = (VMIN < 99999)? VMIN : 0;
+        VMIN = (VMIN < 99999)? VMIN : 0;  // deprecated?
 
         if (VERBOSE > 1) {
             jout << " pulse " << p << ": VMID: " << VMID[p] << " TMID: " << TMID[p] 
@@ -297,10 +292,15 @@ void Df250EmulatorAlgorithm_v2::EmulateFirmware(const Df250WindowRawData* rawDat
                  << " integral: " << pulse_integral[p] << endl;
         }
 
-
+        // algorithm is finished, fill the information
         Df250PulseData* f250PulseData;
         if( p < pdat_objs.size() ) {
             f250PulseData = pdat_objs[p];
+            
+            if(f250PulseData == NULL) {
+                jerr << " NULL f250PulseData object!" << endl;
+                continue;
+            }
         } else {
             // make a fresh object if one does not exist
             f250PulseData = new Df250PulseData;
@@ -315,17 +315,16 @@ void Df250EmulatorAlgorithm_v2::EmulateFirmware(const Df250WindowRawData* rawDat
             f250PulseData->pedestal = pedestal;
             // word 2
             f250PulseData->integral = pulse_integral[p];
-            f250PulseData->QF_NSA_beyond_PTW = NSA_beyond_PTW[npulses];  // is this right?
-            f250PulseData->QF_overflow = has_overflow_samples[npulses];  // is this right?
-            f250PulseData->QF_underflow = has_underflow_samples[npulses];  // is this right?
-            f250PulseData->nsamples_over_threshold = number_samples_above_threshold[npulses];  // is this right?
+            f250PulseData->QF_NSA_beyond_PTW = NSA_beyond_PTW[p];
+            f250PulseData->QF_overflow = has_overflow_samples[p];
+            f250PulseData->QF_underflow = has_underflow_samples[p];
+            f250PulseData->nsamples_over_threshold = number_samples_above_threshold[p];
             // word 3
             f250PulseData->course_time = TMID[p]; 
             f250PulseData->fine_time = TFINE[p];  
-            //f250PulseData->time = pulse_time[p];
-            f250PulseData->QF_vpeak_beyond_NSA = vpeak_beyond_NSA[npulses];  // is this right?
-            f250PulseData->QF_vpeak_not_found = vpeak_not_found[npulses];  // is this right?
-            f250PulseData->QF_bad_pedestal = bad_timing_pedestal;  // is this right?
+            f250PulseData->QF_vpeak_beyond_NSA = vpeak_beyond_NSA[p];
+            f250PulseData->QF_vpeak_not_found = vpeak_not_found[p];
+            f250PulseData->QF_bad_pedestal = bad_timing_pedestal;
             // other information
             f250PulseData->pulse_number = p;
             f250PulseData->nsamples_integral = NSA + NSB;
@@ -344,16 +343,28 @@ void Df250EmulatorAlgorithm_v2::EmulateFirmware(const Df250WindowRawData* rawDat
         f250PulseData->course_time_emulated = TMID[p];
         f250PulseData->fine_time_emulated = TFINE[p];
 
-        // DEBUG CODE
-        //uint32_t QF = 0; // make single quality factor number for compactness
-        //if( bad_pedestal         ) QF |= (1<<0);
-        //if( NSA_beyond_PTW[npulses]   ) QF |= (1<<1);
-        //if( has_overflow_samples[npulses]         ) QF |= (1<<2);
-        //if( has_underflow_samples[npulses]        ) QF |= (1<<3);
-        //if( vpeak_beyond_NSA[npulses] ) QF |= (1<<4);
-        //if( vpeak_not_found[npulses]  ) QF |= (1<<5);
-        //if( bad_timing_pedestal  ) QF |= (1<<6);
-        //f250PulseData->QF_emulated = QF;
+        // check the emulated quality factors as well
+        uint32_t QF = 0; // make single quality factor number for compactness
+        if( bad_pedestal         ) QF |= (1<<0);
+        if( NSA_beyond_PTW[p]   ) QF |= (1<<1);
+        if( has_overflow_samples[p]         ) QF |= (1<<2);
+        if( has_underflow_samples[p]        ) QF |= (1<<3);
+        if( vpeak_beyond_NSA[p] ) QF |= (1<<4);
+        if( vpeak_not_found[p]  ) QF |= (1<<5);
+        if( bad_timing_pedestal  ) QF |= (1<<6);
+        f250PulseData->QF_emulated = QF;
+
+        if(VERBOSE > 3) {
+            cout << boolalpha;
+            cout << "bad_pedestal          = " << bad_pedestal << endl;
+            cout << "NSA_beyond_PTW        = " << NSA_beyond_PTW[p] << endl;
+            cout << "has_overflow_samples  = " << has_overflow_samples[p] << endl;
+            cout << "has_underflow_samples = " << has_underflow_samples[p] << endl;
+            cout << "vpeak_beyond_NSA      = " << vpeak_beyond_NSA[p] << endl;
+            cout << "vpeak_not_found       = " << vpeak_not_found[p] << endl;
+            cout << "bad_timing_pedestal   = " << bad_timing_pedestal << endl;
+            cout << "total QF              = " << QF << endl;
+        }
 
         // if we are using the emulated values, copy them
         if( f250PulseData->emulated ) {
