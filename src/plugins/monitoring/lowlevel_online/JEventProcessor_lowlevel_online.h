@@ -35,6 +35,9 @@ class JEventProcessor_lowlevel_online:public jana::JEventProcessor{
         vector<int> Nstraws_integrated;
 
 		//------------------------ BCAL -----------------------
+        TH1I *bcal_adc_multi;
+        TH1I *bcal_tdc_multi;
+
         TH1I *bcal_num_events;
         TH1I *bcal_adc_integral;
         TH1I *bcal_adc_integral_pedsub;
@@ -59,6 +62,8 @@ class JEventProcessor_lowlevel_online:public jana::JEventProcessor{
 
 
 		//------------------------ CDC ------------------------
+        TH1I *cdc_adc_multi;
+
         TH1I *cdc_num_events;
         TH1I *cdc_adc_integral;
         TH1I *cdc_adc_integral_pedsub;
@@ -77,6 +82,8 @@ class JEventProcessor_lowlevel_online:public jana::JEventProcessor{
 
 
 		//------------------------ FCAL -----------------------
+        TH1I *fcal_adc_multi;
+
         TH1I *fcal_num_events;
         TH1I *fcal_adc_integral;
         TH1I *fcal_adc_integral_pedsub;
@@ -101,6 +108,9 @@ class JEventProcessor_lowlevel_online:public jana::JEventProcessor{
 
 
 		//------------------------ FDC ------------------------
+        TH1I *fdc_adc_multi;
+        TH1I *fdc_tdc_multi;
+
         TH1I *fdc_num_events;
         TH1I *fdc_adc_integral;
         TH1I *fdc_adc_integral_pedsub;
@@ -119,6 +129,9 @@ class JEventProcessor_lowlevel_online:public jana::JEventProcessor{
 
 
 		//------------------------ PSC ---------------------
+        TH1I *psc_adc_multi;
+        TH1I *psc_tdc_multi;
+
         TH1I *psc_adc_integral;
         TH1I *psc_adc_integral_pedsub;
         TH1I *psc_adc_peak;
@@ -142,8 +155,9 @@ class JEventProcessor_lowlevel_online:public jana::JEventProcessor{
 
 
 		//------------------------ PS ---------------------
-        TH1I *ps_num_events;
+        TH1I *ps_adc_multi;
 
+        TH1I *ps_num_events;
         TH1I *ps_adc_integral;
         TH1I *ps_adc_integral_pedsub;
         TH1I *ps_adc_peak;
@@ -167,6 +181,9 @@ class JEventProcessor_lowlevel_online:public jana::JEventProcessor{
 
 
 		//------------------------ ST -------------------------
+        TH1I *st_adc_multi;
+        TH1I *st_tdc_multi;
+
         TH1I *st_num_events;
         TH1I *st_adc_integral;
         TH1I *st_adc_integral_pedsub;
@@ -192,6 +209,9 @@ class JEventProcessor_lowlevel_online:public jana::JEventProcessor{
 
 		//------------------------ TAGH -----------------------
         TH1I *tag_num_events;
+        TH1I *tagh_adc_multi;
+        TH1I *tagh_tdc_multi;
+
 
         TH1I *tagh_adc_integral;
         TH1I *tagh_adc_integral_pedsub;
@@ -216,6 +236,9 @@ class JEventProcessor_lowlevel_online:public jana::JEventProcessor{
 
 
 		//------------------------ TAGM -----------------------
+        TH1I *tagm_adc_multi;
+        TH1I *tagm_tdc_multi;
+
         TH1I *tagm_adc_integral;
         TH1I *tagm_adc_integral_pedsub;
         TH1I *tagm_adc_peak;
@@ -239,6 +262,9 @@ class JEventProcessor_lowlevel_online:public jana::JEventProcessor{
 
 
 		//------------------------ TOF ------------------------
+        TH1I *tof_adc_multi;
+        TH1I *tof_tdc_multi;
+
         TH1I *tof_num_events;
         TH1I *tof_adc_integral;
         TH1I *tof_adc_integral_pedsub;
