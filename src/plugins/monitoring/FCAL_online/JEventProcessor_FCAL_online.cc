@@ -282,7 +282,7 @@ jerror_t JEventProcessor_FCAL_online::evnt(JEventLoop *eventLoop, uint64_t event
 
 	// FILL HISTOGRAMS
 	// Since we are filling histograms local to this plugin, it will not interfere with other ROOT operations: can use plugin-wide ROOT fill lock
-	japp->RootFillLock(this); //ACQUIRE ROOT FILL LOCK
+    japp->RootFillLock(this); //ACQUIRE ROOT FILL LOCK
 
   if( digiHits.size() > 0 )
 	  fcal_num_events->Fill(1);
@@ -379,7 +379,7 @@ if( digiHits.size() > 0 ){
             nsamples_pedestal = 1;
         }
 
-      double peakV = pulsePed->pulse_peak * 2.0 / 4096;
+        double peakV = pulse_peak * 2.0 / 4096;
       
       m_digPeakV->Fill( peakV );
       m_digPeakV2D->Fill( dHit.column, dHit.row, peakV );
@@ -397,8 +397,8 @@ if( digiHits.size() > 0 ){
 				    nsamples_integral/nsamples_pedestal ) );
       double peak = (double)( pulse_peak - pedestal/nsamples_pedestal );
 
-      if( pulsePed->pulse_peak > 300 )
-	m_digIntToPeak->Fill( integral / peak );
+      if( pulse_peak > 300 )
+          m_digIntToPeak->Fill( integral / peak );
     }
 
     // pulse_time is a 15-bit int - the lower six bits are
