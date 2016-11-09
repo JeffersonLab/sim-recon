@@ -133,9 +133,6 @@ JEventProcessor_CDC_expert_2::~JEventProcessor_CDC_expert_2() {
 jerror_t JEventProcessor_CDC_expert_2::init(void) {
 
 
-  japp->RootWriteLock(); //ACQUIRE ROOT LOCK!!
-
-
   // raw quantities for read out (fa125 new format) are
   //   time                    field max 2047   scaled x 1, units 0.8ns
   //   time qf                 field max 1 
@@ -355,9 +352,7 @@ jerror_t JEventProcessor_CDC_expert_2::init(void) {
 
 
 
-  main->cd();    // back to main dir
-
-  japp->RootUnLock(); //RELEASE ROOT LOCK!!
+  main->cd();    // back to main 
 
   return NOERROR;
 
@@ -430,7 +425,7 @@ jerror_t JEventProcessor_CDC_expert_2::evnt(JEventLoop *eventLoop, uint64_t even
   eventLoop->Get(digihits);
 
 
-  japp->RootWriteLock(); //ACQUIRE ROOT LOCK!!
+  japp->RootFillLock(this); //ACQUIRE ROOT LOCK!!
 
 
 
@@ -616,7 +611,7 @@ jerror_t JEventProcessor_CDC_expert_2::evnt(JEventLoop *eventLoop, uint64_t even
   } //end for each digihit
 
 
-  japp->RootUnLock(); //RELEASE ROOT LOCK!!
+  japp->RootFillUnLock(this); //RELEASE ROOT LOCK!!
 
 
   return NOERROR;
