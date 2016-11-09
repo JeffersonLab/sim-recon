@@ -1,4 +1,4 @@
-#include "JEventProcessor_FCAL_inv_mass.h"
+#include "JEventProcessor_FCALgains.h"
 #include <TLorentzVector.h>
 #include "TMath.h"
 #include "JANA/JApplication.h"
@@ -28,14 +28,14 @@ extern "C"
   void InitPlugin(JApplication *locApplication)
   {
     InitJANAPlugin(locApplication);
-    locApplication->AddProcessor(new JEventProcessor_FCAL_inv_mass()); //register this plugin
+    locApplication->AddProcessor(new JEventProcessor_FCALgains()); //register this plugin
   }
 } // "C"
 
 //------------------
 // init
 //------------------
-jerror_t JEventProcessor_FCAL_inv_mass::init(void)
+jerror_t JEventProcessor_FCALgains::init(void)
 {
   // This is called once at program startup. If you are creating
   // and filling historgrams in this plugin, you should lock the
@@ -113,14 +113,14 @@ jerror_t JEventProcessor_FCAL_inv_mass::init(void)
 
 			  return NOERROR;
 }
-int JEventProcessor_FCAL_inv_mass::XYtoAbsNum(int my_x, int my_y)
+int JEventProcessor_FCALgains::XYtoAbsNum(int my_x, int my_y)
 {
   return m_fcalgeom->channel( my_y/4 +29, my_x/4 +29 );
 }
 
 
 //returns in (x,y) coordinates in cm NOT in single step units or in row,column form
-pair<int,int> JEventProcessor_FCAL_inv_mass::AbsNumtoXY(int channel)
+pair<int,int> JEventProcessor_FCALgains::AbsNumtoXY(int channel)
 {
   int row =    4*(m_fcalgeom->row(channel) -29);
   int column = 4*(m_fcalgeom->column(channel) -29);
@@ -132,7 +132,7 @@ pair<int,int> JEventProcessor_FCAL_inv_mass::AbsNumtoXY(int channel)
 //------------------
 // brun
 //------------------
-jerror_t JEventProcessor_FCAL_inv_mass::brun(jana::JEventLoop* locEventLoop, int32_t locRunNumber)
+jerror_t JEventProcessor_FCALgains::brun(jana::JEventLoop* locEventLoop, int32_t locRunNumber)
 {
   DApplication* locApplication = dynamic_cast<DApplication*>(locEventLoop->GetJApplication());
   double z_target; double z_fcal;
@@ -152,7 +152,7 @@ jerror_t JEventProcessor_FCAL_inv_mass::brun(jana::JEventLoop* locEventLoop, int
 
 
 
-jerror_t JEventProcessor_FCAL_inv_mass::evnt(jana::JEventLoop* locEventLoop, uint64_t locEventNumber)
+jerror_t JEventProcessor_FCALgains::evnt(jana::JEventLoop* locEventLoop, uint64_t locEventNumber)
 {
 
   // This is called for every event. Use of common resources like writing
@@ -406,7 +406,7 @@ jerror_t JEventProcessor_FCAL_inv_mass::evnt(jana::JEventLoop* locEventLoop, uin
 //------------------
 // erun
 //------------------
-jerror_t JEventProcessor_FCAL_inv_mass::erun(void)
+jerror_t JEventProcessor_FCALgains::erun(void)
 {
   // This is called whenever the run number changes, before it is
   // changed to give you a chance to clean up before processing
@@ -420,7 +420,7 @@ jerror_t JEventProcessor_FCAL_inv_mass::erun(void)
 //------------------
 // fini
 //------------------
-jerror_t JEventProcessor_FCAL_inv_mass::fini(void)
+jerror_t JEventProcessor_FCALgains::fini(void)
 {
   // Called before program exit after event processing is finished.
   return NOERROR;
