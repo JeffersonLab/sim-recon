@@ -120,8 +120,9 @@ jerror_t JEventProcessor_RF_online::init(void)
 				pair<size_t, size_t> locTimePair(loc_j, loc_k);
 				ostringstream locHistNameStream, locHistTitleStream;
 				locHistNameStream << locSystemName << "RF_DeltaT_" << loc_j << "_" << loc_k;
+				double locHistRangeMin = -200.0 + (loc_k - loc_j)*dRFSignalPeriod*dRFSamplingFactor[locSystem];
 				locHistTitleStream << "RF_" << locSystemName << "_TDC;" << "#Deltat: Hit " << loc_k << " - Hit " << loc_j << " (ns)";
-				dHistMap_AdjacentRFDeltaTs[locSystem][locTimePair] = new TH1I(locHistNameStream.str().c_str(), locHistTitleStream.str().c_str(), 40000, -100.0, 100.0);
+				dHistMap_AdjacentRFDeltaTs[locSystem][locTimePair] = new TH1I(locHistNameStream.str().c_str(), locHistTitleStream.str().c_str(), 80000, locHistRangeMin, locHistRangeMin + 400.0);
 			}
 		}
 	}
@@ -409,13 +410,13 @@ jerror_t JEventProcessor_RF_online::evnt(JEventLoop* locEventLoop, uint64_t even
 				{
 					double locTimeFromStart2 = *locOtherIterator - *(locRFTimeSet.begin());
 					size_t locHitIndex2 = size_t(locTimeFromStart2 / locHitPeriod + 0.5);
-					locNumHitsMissing += locHitIndex2 - locExpectedHitIndex;
+					locNumHitsMissing += (int(locHitIndex2) > locExpectedHitIndex) ? locHitIndex2 - locExpectedHitIndex : 0;
 					if(locHitIndex2 >= dMaxDeltaTHits[locSystem])
 						break; //no histogram for this pair
 
 					pair<size_t, size_t> locTimePair(locHitIndex1, locHitIndex2);
-					double locShiftedDeltaT = *locOtherIterator - *locSetIterator - (locHitIndex2 - locHitIndex1)*locHitPeriod;
-					dHistMap_AdjacentRFDeltaTs[locSystem][locTimePair]->Fill(locShiftedDeltaT);
+					double locDeltaT = *locOtherIterator - *locSetIterator;
+					dHistMap_AdjacentRFDeltaTs[locSystem][locTimePair]->Fill(locDeltaT);
 
 					locExpectedHitIndex = locHitIndex2 + 1;
 				}
