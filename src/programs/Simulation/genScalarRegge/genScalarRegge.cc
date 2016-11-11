@@ -1679,7 +1679,7 @@ void CreateHistograms(){
   thrown_Egamma->SetTitle("E_{#gamma} [GeV]"); 
   thrown_mass=new TH1D("thrown_mass","Thrown mass distribution",
 		       1000,0,4.);
-  thrown_mass->SetTitle("mass [GeV]");
+  thrown_mass->SetXTitle("mass [GeV]");
   thrown_dalitzXY=new TH2D("thrown_dalitzXY","Dalitz distribution Y vs X",100,-1.,1.,100,-1.,1);
   
   thrown_theta_vs_p=new TH2D("thrown_theta_vs_p","Proton #theta_{LAB} vs. p",
