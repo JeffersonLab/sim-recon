@@ -101,10 +101,19 @@ DChargedTrackHypothesis* DChargedTrackHypothesis_factory_KinFit::Build_ChargedTr
  	vector<const JObject*> locObjects;
 	locChargedTrackHypothesis->GetT(locObjects);
 	for(size_t loc_i = 0; loc_i < locObjects.size(); ++loc_i)
+	{
+		if(dynamic_cast<const DChargedTrackHypothesis*>(locObjects[loc_i]) != NULL)
+			continue; //don't save: won't be able to keep track of which is which! (combo or default factory)
 		locNewChargedTrackHypothesis->AddAssociatedObject(locObjects[loc_i]);
+	}
 
-	locNewChargedTrackHypothesis->setMomentum(DVector3(locKinFitParticle->Get_Momentum().X(),locKinFitParticle->Get_Momentum().Y(),locKinFitParticle->Get_Momentum().Z()));
-	locNewChargedTrackHypothesis->setPosition(DVector3(locKinFitParticle->Get_Position().X(),locKinFitParticle->Get_Position().Y(),locKinFitParticle->Get_Position().Z()));
+	//p3 & v3
+	TVector3 locFitMomentum = locKinFitParticle->Get_Momentum();
+	TVector3 locFitVertex = locKinFitParticle->Get_Position();
+	locNewChargedTrackHypothesis->setMomentum(DVector3(locFitMomentum.X(), locFitMomentum.Y(), locFitMomentum.Z()));
+	locNewChargedTrackHypothesis->setPosition(DVector3(locFitVertex.X(), locFitVertex.Y(), locFitVertex.Z()));
+
+	//t & error matrix
 	locNewChargedTrackHypothesis->setTime(locKinFitParticle->Get_Time());
 	locNewChargedTrackHypothesis->setErrorMatrix(*locKinFitParticle->Get_CovarianceMatrix());
 
@@ -114,6 +123,7 @@ DChargedTrackHypothesis* DChargedTrackHypothesis_factory_KinFit::Build_ChargedTr
 	double locPathLengthUncertainty = sqrt(locPathLengthUncertainty_Orig*locPathLengthUncertainty_Orig + locPathLengthUncertainty_KinFit*locPathLengthUncertainty_KinFit);
 	locNewChargedTrackHypothesis->setPathLength(locPathLength, locPathLengthUncertainty);
 
+	//for this calc: if rf time part of timing constraint, don't use locKinFitParticle->Get_Time() for chisq calc!!!
 	dPIDAlgorithm->Calc_ChargedPIDFOM(locNewChargedTrackHypothesis, locParticleCombo->Get_EventRFBunch());
 
 	return locNewChargedTrackHypothesis;

@@ -39,9 +39,6 @@ jerror_t DChargedTrack_factory_PreSelect::brun(jana::JEventLoop *locEventLoop, i
 jerror_t DChargedTrack_factory_PreSelect::evnt(jana::JEventLoop *locEventLoop, uint64_t eventnumber)
 {
 	//Clear objects from last event
-	for(size_t loc_i = 0; loc_i < dCreatedChargedTracks.size(); ++loc_i)
-		delete dCreatedChargedTracks[loc_i];
-	dCreatedChargedTracks.clear();
 	_data.clear();
 
 	vector<const DChargedTrack*> locChargedTracks;
@@ -53,32 +50,15 @@ jerror_t DChargedTrack_factory_PreSelect::evnt(jana::JEventLoop *locEventLoop, u
 	//cut on min-tracking-FOM and has-detector-match
 	for(size_t loc_i = 0; loc_i < locChargedTracks.size(); ++loc_i)
 	{
-		vector<const DChargedTrackHypothesis*> locHypotheses = locChargedTracks[loc_i]->dChargedTrackHypotheses;
-		vector<const DChargedTrackHypothesis*>::iterator locIterator = locHypotheses.begin();
-		while(locIterator != locHypotheses.end())
+		for(auto locChargedHypo : locChargedTracks[loc_i]->dChargedTrackHypotheses)
 		{
-			if(!Cut_TrackingFOM(*locIterator))
-			{
-				locIterator = locHypotheses.erase(locIterator);
+			if(!Cut_TrackingFOM(locChargedHypo))
 				continue;
-			}
-			if(!Cut_HasDetectorMatch(*locIterator, locDetectorMatches))
-			{
-				locIterator = locHypotheses.erase(locIterator);
+			if(!Cut_HasDetectorMatch(locChargedHypo, locDetectorMatches))
 				continue;
-			}
-			++locIterator;
-		}
 
-		//copy/create new objects as needed
-		if(locHypotheses.size() == locChargedTracks[loc_i]->dChargedTrackHypotheses.size())
-			_data.push_back(const_cast<DChargedTrack*>(locChargedTracks[loc_i])); //nothing was cut, just copy it
-		else if(!locHypotheses.empty())
-		{
-			DChargedTrack* locChargedTrack = new DChargedTrack();
-			locChargedTrack->dChargedTrackHypotheses = locHypotheses;
-			dCreatedChargedTracks.push_back(locChargedTrack);
-			_data.push_back(locChargedTrack);
+			_data.push_back(const_cast<DChargedTrack*>(locChargedTracks[loc_i])); //don't cut: copy it
+			break;
 		}
 	}
 
@@ -113,11 +93,6 @@ jerror_t DChargedTrack_factory_PreSelect::erun(void)
 //------------------
 jerror_t DChargedTrack_factory_PreSelect::fini(void)
 {
-	//Clear objects from last event
-	for(size_t loc_i = 0; loc_i < dCreatedChargedTracks.size(); ++loc_i)
-		delete dCreatedChargedTracks[loc_i];
 
 	return NOERROR;
 }
-
-
