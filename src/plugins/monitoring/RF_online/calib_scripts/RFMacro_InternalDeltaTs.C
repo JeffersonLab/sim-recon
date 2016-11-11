@@ -1,6 +1,9 @@
 TObjArray* Get_RFDeltaTHists(string locSystem);
 void Draw_Array(string locSystem, TObjArray* locTotalArray);
 
+double gPreScaleFactor = 128.0;
+double gRFPeriod = 1000.0/499.0;
+
 int RFMacro_InternalDeltaTs(void)
 {
 	gDirectory->cd("/"); //return to file base directory
@@ -23,6 +26,8 @@ int RFMacro_InternalDeltaTs(void)
 	Draw_Array("PSC", locPSCArray);
 	Draw_Array("TAGH", locTAGHArray);
 	Draw_Array("TOF", locTOFArray);
+
+	return 1;
 }
 
 TObjArray* Get_RFDeltaTHists(string locSystem)
@@ -63,7 +68,7 @@ void Draw_Array(string locSystem, TObjArray* locTotalArray)
 
 	//Means
 	string locHistName = string("DeltaTMeans_") + locSystem + string("RF");
-	string locHistTitle = string("#Deltat Means (ns), ") + locSystem + string(" RF;First Hit;Second Hit");
+	string locHistTitle = string("Shifted #Deltat Means (ns), ") + locSystem + string(" RF;First Hit;Second Hit");
 	TH2F* locMeanHist = new TH2F(locHistName.c_str(), locHistTitle.c_str(), locNumHits, 0.5, locNumHits + 0.5, locNumHits, 0.5, locNumHits + 0.5);
 
 	//Std Dev
@@ -108,9 +113,10 @@ void Draw_Array(string locSystem, TObjArray* locTotalArray)
 			double locPeakLocation = locDeltaTHist->GetBinCenter(locDeltaTHist->GetMaximumBin());
 			locDeltaTHist->GetXaxis()->SetRangeUser(locPeakLocation - 10.0, locPeakLocation + 10.0);
 			double locMean = locDeltaTHist->GetMean();
+			double locShiftedMean = locMean - double(loc_j - loc_i)*gPreScaleFactor*gRFPeriod;
 			if(loc_i != loc_j)
 			{
-				locMeanHist->SetBinContent(loc_i + 1, loc_j + 1, locMean);
+				locMeanHist->SetBinContent(loc_i + 1, loc_j + 1, locShiftedMean);
 				locStdDevHist->SetBinContent(loc_i + 1, loc_j + 1, locDeltaTHist->GetStdDev()/sqrt(2.0));
 				locSkewnessHist->SetBinContent(loc_i + 1, loc_j + 1, locDeltaTHist->GetSkewness());
 				locKurtosisHist->SetBinContent(loc_i + 1, loc_j + 1, locDeltaTHist->GetKurtosis());
