@@ -282,7 +282,7 @@ void CDC_gains() {
       if (bincont==0 && a_n>MINCOUNTS) printf("straw %i no amplitudes above %i\n",i,lastbin*(int)ahisto->GetBinWidth(0));
 
 
-      if (igroup==0) astats->Fill();
+      //if (igroup==0) astats->Fill();
       if (igroup==1) atstats->Fill();
       if (igroup==2) attstats->Fill();
 
