@@ -2,7 +2,8 @@ TObjArray* Get_RFDeltaTHists(string locSystem);
 void Draw_Array(string locSystem, TObjArray* locTotalArray);
 
 double gPreScaleFactor = 128.0;
-double gRFPeriod = 1000.0/499.0;
+//double gRFPeriod = 1000.0/499.0;
+double gRFPeriod = 1000.0/(1.4971/3.0);
 
 int RFMacro_InternalDeltaTs(void)
 {
@@ -92,8 +93,8 @@ void Draw_Array(string locSystem, TObjArray* locTotalArray)
 	gStyle->SetOptStat(0000);
 	gStyle->SetNumberContours(20);
 
-	TCanvas* locCanvas = new TCanvas(locCanvasName.c_str(), locCanvasName.c_str(), locNumHits*locPadHeight*16.0/9.0, locNumHits*locPadHeight);
-	locCanvas->Divide(locNumHits, locNumHits);
+//	TCanvas* locCanvas = new TCanvas(locCanvasName.c_str(), locCanvasName.c_str(), locNumHits*locPadHeight*16.0/9.0, locNumHits*locPadHeight);
+//	locCanvas->Divide(locNumHits, locNumHits);
 	for(int loc_i = 0; loc_i < locNumHits; ++loc_i) //first hit: columns
 	{
 		TObjArray* locRowArray = (TObjArray*)locTotalArray->At(loc_i);
@@ -125,15 +126,15 @@ void Draw_Array(string locSystem, TObjArray* locTotalArray)
 			locDeltaTHist->GetXaxis()->SetRangeUser(locMean - 0.5, locMean + 0.5);
 			//i is
 			int locCanvasIndex = (locNumHits - loc_j - 1)*locNumHits + loc_i + 1;
-			locCanvas->cd(locCanvasIndex);
-			locDeltaTHist->Draw();
+//			locCanvas->cd(locCanvasIndex);
+//			locDeltaTHist->Draw();
 		}
 	}
 
 	locCanvasName = string("DeltaTMeans_") + locSystem + string("RFCanvas");
 	new TCanvas(locCanvasName.c_str(), locCanvasName.c_str(), 1600, 900);
 	locMeanHist->Draw("COLZ");
-
+return 0;
 	locCanvasName = string("DeltaTSigmas_") + locSystem + string("RFCanvas");
 	new TCanvas(locCanvasName.c_str(), locCanvasName.c_str(), 1600, 900);
 	locStdDevHist->Draw("COLZ");
