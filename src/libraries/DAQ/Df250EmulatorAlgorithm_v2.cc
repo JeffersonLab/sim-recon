@@ -63,7 +63,8 @@ void Df250EmulatorAlgorithm_v2::EmulateFirmware(const Df250WindowRawData* rawDat
         if (counter < 10){
             counter++;
             if (counter == 10) jout << " WARNING Df250EmulatorAlgorithm_v2::EmulateFirmware No Df250BORConfig == Using default values == LAST WARNING" << endl;
-            else jout << " WARNING Df250EmulatorAlgorithm_v2::EmulateFirmware No Df250BORConfig == Using default values" << endl;
+            else jout << " WARNING Df250EmulatorAlgorithm_v2::EmulateFirmware No Df250BORConfig == Using default values  " << endl;
+			 //<< rawData->rocid << "/" << rawData->slot << "/" << rawData->channel << endl;
         }
     }
     else{
@@ -131,7 +132,7 @@ void Df250EmulatorAlgorithm_v2::EmulateFirmware(const Df250WindowRawData* rawDat
             }
             unsigned int iend = (i + NSA) < uint32_t(NW) ? (i + NSA) : NW; // Set to last sample if too late
             // check to see if NSA extends beyond the end of the window
-            NSA_beyond_PTW[npulses] = (i + NSA) >= uint32_t(NW);
+            NSA_beyond_PTW[npulses] = (i + NSA - 1) >= uint32_t(NW);
             for (i = ibegin; i < iend; ++i) {
                 pulse_integral[npulses] += (samples[i] & 0xfff);
                 // quality monitoring
@@ -213,6 +214,7 @@ void Df250EmulatorAlgorithm_v2::EmulateFirmware(const Df250WindowRawData* rawDat
             // }
 
             // search for the peak of the pulse
+	    // has to be after the threshold crossing (NO)
             // has to be before the last sample
             unsigned int ipeak;
             for (ipeak = TC[p]; ipeak < NW-1; ++ipeak) {
@@ -255,9 +257,13 @@ void Df250EmulatorAlgorithm_v2::EmulateFirmware(const Df250WindowRawData* rawDat
             */
             // look down the leading edge for the sample that satisfies V(N1) <= VMID < V(N+1)
             // N1 is then the coarse time
+	    // note that when analyzing pulses after the first, we could end up with a time for the
+	    // second pulse that is before the first one!  this is a little crazy, but is how
+	    // the algorithm is currently implemented
             for (unsigned int i = TPEAK[p]; i >= 1; --i) { 
-                if ( ((samples[i-1] & 0xfff) < VMID[p])                         // V(N1) <= VMID < V(N+1)
-                     || ( (samples[i-1] & 0xfff) > (samples[i] & 0xfff) ) ) {   // we aren't on the leading edge anymore
+		    if ( ((samples[i-1] & 0xfff) <= VMID[p]) && ((samples[i] & 0xfff) > VMID[p]) ) {  // V(N1) <= VMID < V(N+1)
+		    // if ( ((samples[i-1] & 0xfff) <= VMID[p])                         // V(N1) <= VMID < V(N+1)
+                    // || ( (samples[i-1] & 0xfff) > (samples[i] & 0xfff) ) ) {   // we aren't on the leading edge anymore
                     TMID[p] = i;
                     break;
                 }
@@ -311,7 +317,7 @@ void Df250EmulatorAlgorithm_v2::EmulateFirmware(const Df250WindowRawData* rawDat
             f250PulseData->itrigger = rawData->itrigger;
             // word 1
             f250PulseData->event_within_block = 1;
-            f250PulseData->QF_pedestal = bad_pedestal;  // is this right?
+            f250PulseData->QF_pedestal = bad_pedestal; 
             f250PulseData->pedestal = pedestal;
             // word 2
             f250PulseData->integral = pulse_integral[p];
