@@ -20,6 +20,7 @@
 #include <mutex>
 #include <condition_variable>
 #include <cmath>
+#include <algorithm>
 
 using namespace std;
 using namespace std::chrono;
@@ -34,6 +35,13 @@ using namespace std::chrono;
 #include "JEventSource_EVIOpp.h"
 #include "LinkAssociations.h"
 using namespace jana;
+
+
+
+// sort Df250PulseData objects by pulse number 
+bool sortf250pulsenumbers(const Df250PulseData *a, const Df250PulseData *b) {
+	return a->pulse_number < b->pulse_number;
+}
 
 //----------------
 // Constructor
@@ -828,6 +836,9 @@ void JEventSource_EVIOpp::EmulateDf250Firmware(DParsedEvent *pe)
             for(auto cpdat : cpdats) 
                 pdats.push_back((Df250PulseData*)cpdat);
 
+	    // Sort the pulses since we apparently don't always get them in the right order
+	    sort(pdats.begin(), pdats.end(), sortf250pulsenumbers);
+
             // Flag all objects as emulated and their values will be replaced with emulated quantities
             if (F250_EMULATION_MODE == kEmulationAlways){
                 for(auto pdat : pdats)
@@ -837,12 +848,12 @@ void JEventSource_EVIOpp::EmulateDf250Firmware(DParsedEvent *pe)
             // Emulate firmware
             f250Emulator->EmulateFirmware(wrd, pdats);
 				
-				// Above call overwrites values with emulated values, but may also
-				// find additional pulses. Add any extra pulse data objects found
-				// to end of list
-				for(uint32_t i=cpdats.size(); i<pdats.size(); i++){
-					pe->vDf250PulseData.push_back(pdats[i]);
-				}
+	    // Above call overwrites values with emulated values, but may also
+	    // find additional pulses. Add any extra pulse data objects found
+	    // to end of list
+	    for(uint32_t i=cpdats.size(); i<pdats.size(); i++){
+		    pe->vDf250PulseData.push_back(pdats[i]);
+	    }
         }
 
     } else {
