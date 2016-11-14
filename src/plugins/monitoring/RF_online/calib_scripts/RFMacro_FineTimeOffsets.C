@@ -28,7 +28,7 @@ TF1* Create_FitFunc(TH1I* locHist)
 	string locFuncName = string(locHist->GetName()) + string("_Func");
 	TF1 *locFunc = new TF1(locFuncName.c_str(), Periodic_Gaussian_Func, -0.5*gBeamSignalPeriod, 0.5*gBeamSignalPeriod, 3);
 	locFunc->SetParameters(locHist->GetBinContent(locMaxBin), locMean, 0.1);
-	locFunc->SetParNames("Gaussian Height", "Gaussian #mu", "Gaussian #sigma");
+	locFunc->SetParNames("Height", "Fit #mu", "Fit #sigma");
 
 	return locFunc;
 }
