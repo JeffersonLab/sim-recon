@@ -16,6 +16,7 @@ using namespace jana;
 #include "BCAL/DBCALHit.h"
 #include "BCAL/DBCALCluster.h"
 #include "BCAL/DBCALUnifiedHit.h"
+#include "TRACKING/DTrackWireBased.h"
 
 //#include "TTree.h"
 //#include "TFile.h"
@@ -37,7 +38,7 @@ private:
   
   // these routines combine points and clusters together
 
-  vector<DBCALCluster*> clusterize( vector< const DBCALPoint* > points, vector< const DBCALPoint* > usedPoints,  vector< const DBCALUnifiedHit* > hits ) const;
+  vector<DBCALCluster*> clusterize( vector< const DBCALPoint* > points, vector< const DBCALPoint* > usedPoints,  vector< const DBCALUnifiedHit* > hits, vector< const DTrackWireBased* > tracks ) const;
   void merge( vector<DBCALCluster*>& clusters ) const;
 
   // This routine removes a point from its original cluster and adds it to its closest cluster if applicable.
@@ -51,7 +52,10 @@ private:
   
   bool overlap( const DBCALCluster& clust,
                 const DBCALPoint* point ) const;
-  
+ 
+  bool overlap_charged( const DBCALCluster& clust, 
+			const DBCALPoint* point ) const;
+ 
   bool overlap( const DBCALCluster& clust, 
                 const DBCALUnifiedHit* hit ) const; 
   

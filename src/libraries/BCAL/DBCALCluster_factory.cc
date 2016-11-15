@@ -33,7 +33,8 @@ DBCALCluster_factory::DBCALCluster_factory() :
 	m_moliereRadius( 3.7*k_cm ),
 	m_clust_hit_timecut ( 20.0*k_nsec ),
 	m_timeCut( 8.0*k_nsec ){
-  /*
+ 
+ /*
 	sep_inclusion_curve = new TF1("sep_inclusion_curve","exp(-x/30.)-.1",0.,7.*m_moliereRadius); 
         dtheta_inclusion_curve = new TF1("dtheta_inclusion_curve","exp(-(x-0.1)/[0])-[1]+.15",m_moliereRadius,7.*m_moliereRadius);
         dphi_inclusion_curve = new TF1("dphi_inclusion_curve","exp(-(x-2.)/2.5)-x*0.002+.07",m_moliereRadius,6.*m_moliereRadius);
@@ -89,6 +90,9 @@ DBCALCluster_factory::evnt( JEventLoop *loop, uint64_t eventnumber ){
 	vector< const DBCALUnifiedHit* > hits;
 	loop->Get(hits);
 
+	vector< const DTrackWireBased* > tracks;
+	loop->Get(tracks);
+
 	// first arrange the list of hits so they are grouped by cell
 	map< int, vector< const DBCALUnifiedHit* > > cellHitMap;
 	for( vector< const DBCALUnifiedHit* >::const_iterator hitPtr = hits.begin();
@@ -123,7 +127,7 @@ DBCALCluster_factory::evnt( JEventLoop *loop, uint64_t eventnumber ){
 
 		}
 	}
-	vector<DBCALCluster*> clusters = clusterize( twoEndPoint, usedPoints,  single_ended_hits );
+	vector<DBCALCluster*> clusters = clusterize( twoEndPoint, usedPoints,  single_ended_hits, tracks );
 
 	// load our vector of clusters into the factory member data
 	for( vector<DBCALCluster*>::iterator clust = clusters.begin();
@@ -146,7 +150,7 @@ DBCALCluster_factory::evnt( JEventLoop *loop, uint64_t eventnumber ){
 }
 
 vector<DBCALCluster*>
-DBCALCluster_factory::clusterize( vector< const DBCALPoint* > points , vector< const DBCALPoint* > usedPoints ,  vector< const DBCALUnifiedHit* > hits ) const {
+DBCALCluster_factory::clusterize( vector< const DBCALPoint* > points , vector< const DBCALPoint* > usedPoints ,  vector< const DBCALUnifiedHit* > hits, vector< const DTrackWireBased* > tracks ) const {
 
 	// first sort the points by energy
 	sort( points.begin(), points.end(), PointSort );
@@ -182,11 +186,36 @@ DBCALCluster_factory::clusterize( vector< const DBCALPoint* > points , vector< c
 			// first see if point should be added to an existing
 			// cluster
 
+			cout << " point E = " << (**pt).E() << endl;
+			int q = 0;			
+			DVector3 track_pos(0.0, 0.0, 0.0);
+			for( vector< const DTrackWireBased* >::iterator trk = tracks.begin();
+				trk != tracks.end();
+				++trk ){
+
+				double point_r = (**pt).r();
+				double point_z = (**pt).z();
+				double point_theta_global = fabs(atan2(point_r,point_z + m_z_target_center ));
+				(*trk)->rt->GetIntersectionWithRadius(point_r, track_pos);
+				double dPhi = fabs((**pt).phi() - track_pos.Phi());
+				double dTheta = fabs(point_theta_global - track_pos.Theta());
+				if(dPhi < .175 && dTheta < .087) q = 1;
+				cout << " dPhi = " << dPhi << " dTheta = " << dTheta << " q = " << q << endl;
+			}
+
 			for( vector<DBCALCluster*>::iterator clust = clusters.begin();
 					clust != clusters.end();
 					++clust ){
 
-				if( overlap( **clust, *pt ) ){
+				cout <<  " clust E = " << (**clust).E() << " clust Q = " << (**clust).Q() << endl;
+				if((**clust).Q() == 1 && overlap_charged( **clust,*pt) ){
+					usedPoints.push_back( *pt );
+					(**clust).addPoint( *pt );
+					points.erase( pt );
+					usedPoint = true;
+				}			
+
+				else if( (**clust).Q() == 0 && q == 0 && overlap( **clust, *pt ) ){
 					if(BCALCLUSTERVERBOSE>0) cout << " overlap success " << endl;            
 					usedPoints.push_back( *pt );  
 					(**clust).addPoint( *pt );
@@ -205,8 +234,8 @@ DBCALCluster_factory::clusterize( vector< const DBCALPoint* > points , vector< c
 			// if the point doesn't overlap with a cluster
 			// see if it can become a new seed
 			if( (**pt).E() > seedThresh && ((**pt).layer() != 4 || (**pt).E() > layer4_minSeed) ){
-
-				clusters.push_back(new DBCALCluster( *pt, m_z_target_center ) );
+				cout << " q = " << q << endl;
+				clusters.push_back(new DBCALCluster( *pt, m_z_target_center, q ) );
 				points.erase( pt );
 				usedPoint = true;
 			}
@@ -469,6 +498,7 @@ bool
 DBCALCluster_factory::overlap( const DBCALCluster& clust,
 		const DBCALPoint* point ) const {
 
+
 	float deltaTheta = fabs( clust.theta() - point->theta() );
 	/* sigTheta not used
 	   float sigTheta = deltaTheta / sqrt( clust.sigTheta() * clust.sigTheta() +
@@ -531,15 +561,102 @@ DBCALCluster_factory::overlap( const DBCALCluster& clust,
 
 	if(BCALCLUSTERVERBOSE>0) cout << "(m,l,s) = (" <<point->module()<<","<<point->layer()<<","<<point->sector()<<")" <<  " sep = " << sep << "sep1 = " << sep_term1 << " sep2 = " << sep_term2 << " inclusion value = " << inclusion_val << " inclusion val1= " << inclusion_val1 << " inclusion val2= " << inclusion_val2<< " time match = " << time_match << " clust E = " << clust.E() << " point E = " << point->E() << " energy ratio = " << point->E()/(point->E()+clust.E()) <<  " clust theta = " << clust.theta()*180./3.14159 << " point theta = " << point->theta()*180./3.14159 << " sep rho*deltaTheta = " << ( rho * deltaTheta ) << endl;
 
-	if(sep>m_moliereRadius && sep<7.*m_moliereRadius &&sep_term2>=2.*m_moliereRadius){
+/*	if(sep>m_moliereRadius && sep<7.*m_moliereRadius &&sep_term2>=2.*m_moliereRadius){
 		return ((point->E()/(point->E()+clust.E())) < inclusion_val1) && ((point->E()/(point->E()+clust.E())) < inclusion_val2) && time_match && deltaPhi*180./3.14159<10.;
 	}
+*/
+	if(sep>m_moliereRadius && sep<7.*m_moliereRadius &&sep_term2>=2.*m_moliereRadius){
+                return ((point->E()/(point->E()+clust.E())) < inclusion_val1 - 5.) && ((point->E()/(point->E()+clust.E())) < inclusion_val2 - 5.) && time_match && deltaPhi*180./3.14159<10.;
+        }
 
 	else{
 		return ((point->E()/(point->E()+clust.E())) < (inclusion_val1+.2)) && sep < 10.*m_moliereRadius && time_match && sep_term2<2.*m_moliereRadius;
 	}
 
 }
+
+
+bool
+DBCALCluster_factory::overlap_charged( const DBCALCluster& clust,
+		const DBCALPoint* point ) const {
+
+
+	float deltaTheta = fabs( clust.theta() - point->theta() );
+	/* sigTheta not used
+	   float sigTheta = deltaTheta / sqrt( clust.sigTheta() * clust.sigTheta() +
+	   point->sigTheta()  * point->sigTheta() );
+	   */
+
+	// difference in phi is tricky due to overlap at 0/2pi
+	// order based on phi and then take the minimum of the difference
+	// and the difference with 2pi added to the smallest
+
+	float deltaPhi = clust.phi() - point->phi();
+	float deltaPhiAlt = ( clust.phi() > point->phi() ? 
+			clust.phi() - point->phi() - 2*PI :
+			point->phi() - clust.phi() - 2*PI );
+
+	deltaPhi = min( fabs( deltaPhi ), fabs( deltaPhiAlt ) );
+
+	/* sigPhi not used
+	   float sigPhi = deltaPhi / 
+	   sqrt( clust.sigPhi() * clust.sigPhi() +
+	   point->sigPhi()  * point->sigPhi() );
+	   */
+
+	float rho = ( clust.rho() + point->rho() ) / 2;
+	float theta = ( clust.theta() + point->theta() ) / 2;
+
+	float sep = sqrt( ( rho * deltaTheta ) * ( rho * deltaTheta ) +
+			( rho * sin( theta ) * deltaPhi ) * ( rho * sin( theta ) * deltaPhi ) );
+
+	float sep_term1 = rho*deltaTheta;
+	float sep_term2 = rho*sin(theta)*deltaPhi;
+
+	//very loose cuts to make sure the two hits are in time
+	bool time_match = fabs(clust.t() - point->t()) < m_timeCut;
+
+	double clust_z = clust.rho()*cos(clust.theta());
+
+	//double c1 = C1_parm->Eval(clust_z);
+	double c1=23.389+19.093*tanh(-0.0104*(clust_z-201.722));
+
+	//double c2 = C2_parm->Eval(clust_z);
+	double c2=0.151+0.149*tanh(-0.016*(clust_z-275.194));
+
+	//dtheta_inclusion_curve->SetParameter(0,c1);
+	//dtheta_inclusion_curve->SetParameter(1,c2); 
+	
+	//double inclusion_val = sep_inclusion_curve->Eval(sep);
+	double inclusion_val=exp(-sep/30.)-0.1;
+
+        //double inclusion_val1 = dtheta_inclusion_curve->Eval(sep_term1);
+	double inclusion_val1=exp(-(sep_term1-0.1)/c1)-c2+.15;
+	
+        //double inclusion_val2 = dphi_inclusion_curve->Eval(sep_term2);	
+	double inclusion_val2=exp(-(sep_term2-2.)/2.5)-sep_term2*0.002+0.07;
+	
+	// We consider fractional energy (point.E/Clust.E) as a function of spatial separation between
+	// a point and cluster to determine if the point should be included in the cluster.
+	// These distributions are tighter in the phihat direction than along thetahat. For more details
+	// on how the selection criteria for cluster,point overlap function go to logbook entry 3396018.	
+
+	if(BCALCLUSTERVERBOSE>0) cout << "(m,l,s) = (" <<point->module()<<","<<point->layer()<<","<<point->sector()<<")" <<  " sep = " << sep << "sep1 = " << sep_term1 << " sep2 = " << sep_term2 << " inclusion value = " << inclusion_val << " inclusion val1= " << inclusion_val1 << " inclusion val2= " << inclusion_val2<< " time match = " << time_match << " clust E = " << clust.E() << " point E = " << point->E() << " energy ratio = " << point->E()/(point->E()+clust.E()) <<  " clust theta = " << clust.theta()*180./3.14159 << " point theta = " << point->theta()*180./3.14159 << " sep rho*deltaTheta = " << ( rho * deltaTheta ) << endl;
+
+/*	if(sep>m_moliereRadius && sep<7.*m_moliereRadius &&sep_term2>=2.*m_moliereRadius){
+		return ((point->E()/(point->E()+clust.E())) < inclusion_val1) && ((point->E()/(point->E()+clust.E())) < inclusion_val2) && time_match && deltaPhi*180./3.14159<10.;
+	}
+*/
+	if(sep>m_moliereRadius && sep<7.*m_moliereRadius &&sep_term2>=2.*m_moliereRadius){
+                return ((point->E()/(point->E()+clust.E())) < inclusion_val1 - 5.) && ((point->E()/(point->E()+clust.E())) < inclusion_val2 - 5.) && time_match && deltaPhi*180./3.14159<10.;
+        }
+
+	else{
+		return ((point->E()/(point->E()+clust.E())) < (inclusion_val1+.2)) && sep < 10.*m_moliereRadius && time_match && sep_term2<2.*m_moliereRadius;
+	}
+
+}
+
 
 bool
 DBCALCluster_factory::overlap( const DBCALCluster& clust,

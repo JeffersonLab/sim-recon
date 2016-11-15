@@ -26,7 +26,7 @@ public:
   JOBJECT_PUBLIC( DBCALCluster );
   
   DBCALCluster(double z_target_center);
-  DBCALCluster(const DBCALPoint* point, double z_target_center);
+  DBCALCluster(const DBCALPoint* point, double z_target_center, double q);
 
   vector< const DBCALPoint* > points() const { return m_points; }
   // Returns a vector of the single-ended hits used in the cluster.
@@ -60,7 +60,9 @@ public:
   
   float phi() const { return m_phi; }
   float sigPhi() const { return m_sig_phi; }
-  
+ 
+  int Q() const { return charge; }
+ 
   // these functions modify the cluster
   void addPoint( const DBCALPoint* point );
   void addHit ( const DBCALUnifiedHit* hit, double hit_E_unattenuated );
@@ -95,7 +97,9 @@ private:
   float m_sig_phi;
 
   float m_z_target_center;
-  
+  int m_q; 
+  int charge;
+ 
 };
 
 #endif

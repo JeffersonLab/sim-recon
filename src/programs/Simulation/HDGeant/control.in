@@ -18,8 +18,10 @@ c instructs HDGeant to open ./phi-1680.hddm, skip the first 25 events and then
 c process the following 100 input events and stop.  If the end of the file is
 c reached before the event count specified in card TRIG is exhausted then the
 c processing will stop at the end of file.
-cINFILE 'bggen.hddm'
-TRIG 10000
+c INFILE 'bggen_another_1M.hddm'
+TRIG 50000
+
+RUNG 10000
 
 c The BEAM card configures the built-in coherent bremsstralung photon
 c beam generator in HDGeant.  If the INFILE card is not present and BEAM
@@ -41,7 +43,7 @@ c Omitting the final parameter Emin results in the default value being used.
 cBEAM 10. 9.999 0.0012 76.00 0.005 10.e-9 20.e-6
 
 c Commenting out the following line will disable simulated hits output.
-OUTFILE 'bgtest.hddm'
+OUTFILE '50k_piplus.hddm'
 
 c The following are used to automatically invoke the mcsmear program
 c to do the final stage digitization of hits after the simulation
@@ -56,7 +58,7 @@ c POSTSMEAR  - set this 1 to auto-invoke the mcsmear program and 0 to not
 c DELETEUNSMEARED - set this to 1 to delete the OUTFILE after running mcsmear
 c MCSMEAROPTS - String to specify additional arguments to pass to mcsmear
 POSTSMEAR 1
-DELETEUNSMEARED 1
+DELETEUNSMEARED 0
 c MCSMEAROPTS '-t1000 -d0'
 
 c The following card enables single-track generation (for testing).
@@ -85,7 +87,7 @@ c PLOG 1
 c TLOG 1
 c
 c   particle  momentum  theta  phi  delta_momentum delta_theta delta_phi
-KINE   108      1.0       50.   0.      0.              0.        360.
+KINE   108      1.5       25.   0.      1.              10.        360.
 
 c The SCAP card determines the vertex position for the particle gun.  It
 c supports the following three arguments, all of which default to 0.

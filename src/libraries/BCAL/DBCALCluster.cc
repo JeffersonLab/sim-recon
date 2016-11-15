@@ -11,8 +11,8 @@
 
 #include <math.h>
 
-DBCALCluster::DBCALCluster( const DBCALPoint* point, double z_target_center )
-  : m_points ( 0 ),  m_hit_E_unattenuated_sum(0.0),  m_z_target_center(z_target_center) {
+DBCALCluster::DBCALCluster( const DBCALPoint* point, double z_target_center, double q )
+  : m_points ( 0 ),  m_hit_E_unattenuated_sum(0.0),  m_z_target_center(z_target_center), m_q(q) {
 
   m_points.push_back( point );
   makeFromPoints();
@@ -181,9 +181,11 @@ DBCALCluster::makeFromPoints(){
       ++pt ){
      
     double E = (**pt).E();
-    
+ 
     m_E_points += E;
     m_E = m_E_points + m_hit_E_unattenuated_sum;  // add the energy sum from points to the energy sum from single ended hits
+    if(E >= m_E_points) charge = m_q;
+
     if ((**pt).layer() == 1) m_E_preshower += E;
     double wt1, wt2;
     if ((**pt).layer() != 4 || average_layer4) {
@@ -338,6 +340,7 @@ DBCALCluster::toStrings( vector< pair < string, string > > &items) const {
   AddString(items, "E", "%5.2f", m_E );
   AddString(items, "E_preshower", "%5.2f", m_E_preshower );
   AddString(items, "N_cell", "%i", m_points.size() );
+  AddString(items, "charge", "%i", charge );
 }
 
 

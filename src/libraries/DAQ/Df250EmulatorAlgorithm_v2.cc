@@ -54,9 +54,11 @@ void Df250EmulatorAlgorithm_v2::EmulateFirmware(const Df250WindowRawData* rawDat
     //If this does not exist, or we force it, use the default values
     if (f250BORConfig == NULL || FORCE_DEFAULT){
         static int counter = 0;
-        NSA = NSA_DEF;
-        NSB = NSA_DEF;
-        THR = THR_DEF;
+        //NSA = NSA_DEF;
+        //NSB = NSA_DEF;
+      	NSA = 13;
+	NSB = -2;
+	  THR = THR_DEF;
         NPED = NPED_DEF;
         MAXPED = MAXPED_DEF;
         if (counter < 10){
@@ -66,9 +68,11 @@ void Df250EmulatorAlgorithm_v2::EmulateFirmware(const Df250WindowRawData* rawDat
         }
     }
     else{
-        NSA = f250BORConfig->adc_nsa & 0x7F;
-        NSB = f250BORConfig->adc_nsb & 0x7F;
-        THR = f250BORConfig->adc_thres[channel];
+       // NSA = f250BORConfig->adc_nsa & 0x7F;
+       // NSB = f250BORConfig->adc_nsb & 0x7F;
+     	NSA = 13;
+	NSB =-2;
+	   THR = f250BORConfig->adc_thres[channel];
         NPED = f250BORConfig->NPED;
         MAXPED = f250BORConfig->MaxPed;
         if (VERBOSE > 0) jout << "Df250EmulatorAlgorithm_v2::EmulateFirmware NSA: " << NSA << " NSB: " << NSB << " THR: " << THR << endl; 
