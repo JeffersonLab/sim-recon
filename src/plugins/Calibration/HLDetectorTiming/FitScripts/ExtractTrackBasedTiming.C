@@ -569,6 +569,44 @@ void ExtractTrackBasedTiming(TString fileName = "hd_root.root", int runNumber = 
       outFile.close();
    }
 
+   // We want to account for any residual difference between the cathode and anode times.
+   double FDC_ADC_Offset = 0.0, FDC_TDC_Offset = 0.0; 
+   this1DHist = ExtractTrackBasedTimingNS::Get1DHistogram("HLDetectorTiming", "FDC", "FDCHit Cathode time;1");
+    if(this1DHist != NULL){
+        Int_t firstBin = this1DHist->FindFirstBinAbove( 1 , 1); // Find first bin with content above 1 in the histogram
+        for (int i = 0; i <= 16; i++){
+            if ((firstBin + i) > 0) this1DHist->SetBinContent((firstBin + i), 0);
+        }
+        //Fit a gaussian to the left of the main peak
+        Double_t maximum = this1DHist->GetBinCenter(this1DHist->GetMaximumBin());
+        TF1 *f = new TF1("f", "gaus");
+        f->SetParameters(100, maximum, 20);
+        //this1DHist->Rebin(2);
+        TFitResultPtr fr = this1DHist->Fit(f, "S", "", maximum - 10, maximum + 7); // Cant fix value at end of range
+        double mean = fr->Parameter(1);
+        float sigma = fr->Parameter(2);
+        FDC_ADC_Offset = mean;
+        delete f;
+    }
+
+    this1DHist = ExtractTrackBasedTimingNS::Get1DHistogram("HLDetectorTiming", "FDC", "FDCHit Wire time;1");
+    if(this1DHist != NULL){
+        Int_t firstBin = this1DHist->FindLastBinAbove( 1 , 1); // Find first bin with content above 1 in the histogram
+        for (int i = 0; i <= 25; i++){
+            if ((firstBin + i) > 0) this1DHist->SetBinContent((firstBin + i), 0);
+        }
+        //Fit a gaussian to the left of the main peak
+        Double_t maximum = this1DHist->GetBinCenter(this1DHist->GetMaximumBin());
+        TF1 *f = new TF1("f", "gaus");
+        f->SetParameters(100, maximum, 20);
+        TFitResultPtr fr = this1DHist->Fit(f, "S", "", maximum - 10, maximum + 5); // Cant fix value at end of range
+        double mean = fr->Parameter(1);
+        float sigma = fr->Parameter(2);
+        FDC_TDC_Offset = mean;
+        delete f;
+    }
+    double FDC_ADC_TDC_Offset = FDC_ADC_Offset - FDC_TDC_Offset;
+
    this1DHist = ExtractTrackBasedTimingNS::Get1DHistogram("HLDetectorTiming", "TRACKING", "Earliest Flight-time Corrected FDC Time");
    if(this1DHist != NULL){
       //Landau
@@ -577,10 +615,10 @@ void ExtractTrackBasedTiming(TString fileName = "hd_root.root", int runNumber = 
       float MPV = fr->Parameter(1);
       outFile.open(prefix + "fdc_base_time.txt");
       if (verbose) {
-         printf("FDC ADC Base = %f - (%f) - (%f) = %f\n",fdc_t_base_fadc, MPV, meanSCOffset, fdc_t_base_fadc - MPV - meanSCOffset);
+         printf("FDC ADC Base = %f - (%f) - (%f) - (%f) = %f\n",fdc_t_base_fadc, MPV, meanSCOffset, FDC_ADC_TDC_Offset, fdc_t_base_fadc - MPV - meanSCOffset - FDC_ADC_TDC_Offset);
          printf("FDC TDC Base = %f - (%f) - (%f) = %f\n",fdc_t_base_tdc, MPV, meanSCOffset, fdc_t_base_tdc - MPV - meanSCOffset);
       }
-      outFile << fdc_t_base_fadc - MPV - meanSCOffset << " " << fdc_t_base_tdc - MPV - meanSCOffset << endl;
+      outFile << fdc_t_base_fadc - MPV - meanSCOffset - FDC_ADC_TDC_Offset << " " << fdc_t_base_tdc - MPV - meanSCOffset << endl;
       outFile.close();
    }
 
