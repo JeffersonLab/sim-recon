@@ -73,9 +73,12 @@ jerror_t JEventProcessor_lowlevel_online::init(void)
     ANALYZE_F250_DATA = true;
     ANALYZE_F125_DATA = true;
 
+    F250_THRESHOLD = 0;
+
     gPARMS->SetDefaultParameter("LOWLEVEL:INDIVIDUAL", INDIVIDUAL_CHANNEL_DATA, "Make histograms for individual channels.");
     gPARMS->SetDefaultParameter("LOWLEVEL:F250DATA", ANALYZE_F250_DATA, "Analyze f250ADC data");
     gPARMS->SetDefaultParameter("LOWLEVEL:F125DATA", ANALYZE_F125_DATA, "Analyze f125ADC data");
+    gPARMS->SetDefaultParameter("LOWLEVEL:F250THRESHOLD", ANALYZE_F125_DATA, "Analyze f125ADC data");
     
 	// Set a base directory
 	TDirectory *base = gDirectory;
@@ -553,6 +556,8 @@ jerror_t JEventProcessor_lowlevel_online::evnt(JEventLoop *loop, uint64_t eventn
         if(CHECK_EMULATED_DATA)
             hit->GetSingle(pulse);
 
+	if(hit->pulse_peak < F250_THRESHOLD)  continue;
+
         bcal_adc_multi->Fill(bcaldigihits.size());
         bcal_tdc_multi->Fill(bcaltdcdigihits.size());
 
@@ -570,6 +575,9 @@ jerror_t JEventProcessor_lowlevel_online::evnt(JEventLoop *loop, uint64_t eventn
             bcal_adc_emudelta_pedestal->Fill( pulse->pedestal - pulse->pedestal_emulated );
             bcal_adc_emudelta_coarsetime->Fill( pulse->course_time - pulse->course_time_emulated );
             bcal_adc_emudelta_finetime->Fill( pulse->fine_time - pulse->fine_time_emulated );
+
+	    if(pulse->pulse_peak - pulse->pulse_peak_emulated > 20)
+	    	    cout << eventnumber << " " << pulse->rocid << " " << pulse->slot << " " << pulse->channel << endl;
         }
 
         if(INDIVIDUAL_CHANNEL_DATA) {
@@ -601,6 +609,8 @@ jerror_t JEventProcessor_lowlevel_online::evnt(JEventLoop *loop, uint64_t eventn
         const Df250PulseData *pulse = NULL;
         if(CHECK_EMULATED_DATA)
             hit->GetSingle(pulse);
+
+	if(hit->pulse_peak < F250_THRESHOLD)  continue;
 
         fcal_adc_multi->Fill(fcaldigihits.size());
 
@@ -645,6 +655,8 @@ jerror_t JEventProcessor_lowlevel_online::evnt(JEventLoop *loop, uint64_t eventn
         const Df250PulseData *pulse = NULL;
         if(CHECK_EMULATED_DATA)
             hit->GetSingle(pulse);
+
+	if(hit->pulse_peak < F250_THRESHOLD)  continue;
 
         psc_adc_multi->Fill(pscdigihits.size());
         psc_tdc_multi->Fill(psctdcdigihits.size());
@@ -737,6 +749,8 @@ jerror_t JEventProcessor_lowlevel_online::evnt(JEventLoop *loop, uint64_t eventn
         if(CHECK_EMULATED_DATA)
             hit->GetSingle(pulse);
 
+	if(hit->pulse_peak < F250_THRESHOLD)  continue;
+
         st_adc_multi->Fill(scdigihits.size());
         st_tdc_multi->Fill(sctdcdigihits.size());
 
@@ -778,6 +792,8 @@ jerror_t JEventProcessor_lowlevel_online::evnt(JEventLoop *loop, uint64_t eventn
         if(CHECK_EMULATED_DATA)
             hit->GetSingle(pulse);
 
+	if(hit->pulse_peak < F250_THRESHOLD)  continue;
+
         tagh_adc_multi->Fill(taghdigihits.size());
         tagh_tdc_multi->Fill(taghtdcdigihits.size());
 
@@ -818,6 +834,8 @@ jerror_t JEventProcessor_lowlevel_online::evnt(JEventLoop *loop, uint64_t eventn
         const Df250PulseData *pulse = NULL;
         if(CHECK_EMULATED_DATA)
             hit->GetSingle(pulse);
+
+	if(hit->pulse_peak < F250_THRESHOLD)  continue;
 
         tagm_adc_multi->Fill(tagmdigihits.size());
         tagm_tdc_multi->Fill(tagmtdcdigihits.size());
@@ -868,6 +886,8 @@ jerror_t JEventProcessor_lowlevel_online::evnt(JEventLoop *loop, uint64_t eventn
         const Df250PulseData *pulse = NULL;
         if(CHECK_EMULATED_DATA)
             hit->GetSingle(pulse);
+
+	if(hit->pulse_peak < F250_THRESHOLD)  continue;
 
         tof_adc_multi->Fill(tofdigihits.size());
         tof_tdc_multi->Fill(toftdcdigihits.size());
