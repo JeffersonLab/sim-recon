@@ -208,7 +208,7 @@ void DEventWriterROOT_${WriterName}::Create_CustomBranches_DataTree(DTreeBranchR
 		//To match the default TTree branches, use either: 'NumThrown', 'NumBeam', 'NumChargedHypos', 'NumNeutralHypos', or 'NumCombos', as appropriate
 	unsigned int locInitArraySize = 10; //if too small, will auto-increase as needed, but requires new calls //if too large, uses more memory than needed
 	locBranchRegister.Register_Single<UInt_t>( \"DummyArraySize\"); //you must store the size of the fundamental array for each entry!!
-	locBranchRegister.Register_FundamentalArray<UInt_t>(\"PiPlus__DummyIntArray\", \"DummyArraySize\", locInitArraySize);
+	locBranchRegister.Register_FundamentalArray<Int_t>(\"PiPlus__DummyIntArray\", \"DummyArraySize\", locInitArraySize);
 	locBranchRegister.Register_FundamentalArray<Float_t>(\"DummyFloatArray\", \"DummyArraySize\", locInitArraySize);
 
 */
@@ -255,7 +255,7 @@ void DEventWriterROOT_${WriterName}::Fill_CustomBranches_DataTree(DTreeFillData*
 	//EXAMPLES: Fill a branch with an array of fundamental type:
 	//!!!!! YOU MUST BE SURE THAT template type matches the type you used to create the branch
 	Int_t locOutputArraySize = 7;
-	Fill_FundamentalData<UInt_t>(locTree, \"DummyArraySize\", locOutputArraySize);
+	locTreeFillData->Fill_Single<UInt_t>(\"DummyArraySize\", locOutputArraySize);
 	for(Int_t loc_i = 0; loc_i < locOutputArraySize; ++loc_i)
 	{
 		Int_t locValue = loc_i - 14; //dummy number
