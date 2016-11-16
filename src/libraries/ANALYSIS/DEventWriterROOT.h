@@ -44,8 +44,8 @@ class DEventWriterROOT : public JObject
 	public:
 		JOBJECT_PUBLIC(DEventWriterROOT);
 
-		DEventWriterROOT(JEventLoop* locEventLoop);
 		virtual ~DEventWriterROOT(void);
+		void Initialize(JEventLoop* locEventLoop);
 
 		void Create_ThrownTree(JEventLoop* locEventLoop, string locOutputFileName) const;
 
@@ -56,14 +56,10 @@ class DEventWriterROOT : public JObject
 	protected:
 
 		//CUSTOM FUNCTIONS: //Inherit from this class and write custom code in these functions
-			//DO: Use the inherited functions for creating/filling branches.  They will make your life MUCH easier: You don't need to manage the branch memory.
-			//DO NOT: Acquire/release the ROOT lock.  It is already acquired prior to entry into these functions
 			//DO NOT: Write any code that requires a lock of ANY KIND. No reading calibration constants, accessing gParams, etc. This can cause deadlock.
-				//Note that the JEventLoop is unavailable.  This is to prevent calls to other factories that may cause deadlock.
-			//DO NOT: Call TTree::Fill().  This will be called after calling the custom fill functions.
-		virtual void Create_CustomBranches_ThrownTree(DTreeBranchRegister& locTreeBranchRegister, JEventLoop* locEventLoop) const{};
+		virtual void Create_CustomBranches_ThrownTree(DTreeBranchRegister& locBranchRegister, JEventLoop* locEventLoop) const{};
 		virtual void Fill_CustomBranches_ThrownTree(DTreeFillData* locTreeFillData, JEventLoop* locEventLoop, const DMCReaction* locMCReaction, const vector<const DMCThrown*>& locMCThrowns) const{};
-		virtual void Create_CustomBranches_DataTree(DTreeBranchRegister& locTreeBranchRegister, JEventLoop* locEventLoop, const DReaction* locReaction, bool locIsMCDataFlag) const{};
+		virtual void Create_CustomBranches_DataTree(DTreeBranchRegister& locBranchRegister, JEventLoop* locEventLoop, const DReaction* locReaction, bool locIsMCDataFlag) const{};
 		virtual void Fill_CustomBranches_DataTree(DTreeFillData* locTreeFillData, JEventLoop* locEventLoop, const DMCReaction* locMCReaction, const vector<const DMCThrown*>& locMCThrowns,
 				const DMCThrownMatching* locMCThrownMatching, const DDetectorMatches* locDetectorMatches,
 				const vector<const DBeamPhoton*>& locBeamPhotons, const vector<const DChargedTrackHypothesis*>& locChargedHypos,
@@ -96,8 +92,6 @@ class DEventWriterROOT : public JObject
 
 		//add in future: let user execute custom actions (outside of lock): user adds and initializes actions in derived-writer constructor
 		//map<const DReaction*, map<string, map<const DParticleCombo*, bool> > > dCustomActionResultsMap; //string is action name
-
-		DEventWriterROOT(void){}; //don't allow default constructor
 
 		/****************************************************************************************************************************************/
 
