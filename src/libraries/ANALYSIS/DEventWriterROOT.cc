@@ -1,6 +1,6 @@
 #include "DEventWriterROOT.h"
 
-DEventWriterROOT::DEventWriterROOT(JEventLoop* locEventLoop)
+void DEventWriterROOT::Initialize(JEventLoop* locEventLoop)
 {
 	dInitNumThrownArraySize = 20;
 	dInitNumBeamArraySize = 20;
