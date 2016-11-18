@@ -785,8 +785,8 @@ DLorentzVector DAnalysisUtilities::Calc_MissingP4(const DParticleCombo* locParti
 	if(locStepIndex == 0)
 	{
 		//initial particle
-		locKinematicData = locParticleComboStep->Get_InitialParticle_Measured();
-		locSourceObjects.insert(pair<const JObject*, Particle_t>(locKinematicData, locKinematicData->PID())); //want to use source objects for comparing
+	        locKinematicData = locParticleComboStep->Get_InitialParticle_Measured();
+		locSourceObjects.insert(pair<const JObject*, unsigned int>(locKinematicData, abs(PDGtype(locKinematicData->PID())))); //want to use source objects for comparing
 		if(locUseKinFitDataFlag) //kinfit
 			locKinematicData = locParticleComboStep->Get_InitialParticle();
 		locMissingP4 += locKinematicData->lorentzMomentum();
@@ -795,7 +795,7 @@ DLorentzVector DAnalysisUtilities::Calc_MissingP4(const DParticleCombo* locParti
 		locKinematicData = locParticleComboStep->Get_TargetParticle();
 		if(locKinematicData != NULL)
 		{
-		  locSourceObjects.insert(pair<const JObject*, Particle_t>(locKinematicData, locKinematicData->PID()));
+		  locSourceObjects.insert(pair<const JObject*, unsigned int>(locKinematicData, abs(PDGtype(locKinematicData->PID()))));
 			locMissingP4 += locKinematicData->lorentzMomentum();
 		}
 	}
