@@ -1599,9 +1599,10 @@ void DHistogramAction_KinFitResults::Initialize(JEventLoop* locEventLoop)
 	bool locIncludeBeamlineInVertexFitFlag = dKinFitUtils->Get_IncludeBeamlineInVertexFitFlag();
 
 	bool locP4IsFit = ((locKinFitType != d_VertexFit) && (locKinFitType != d_SpacetimeFit));
+	bool locSpactimeIsFitFlag = (locKinFitType == d_SpacetimeFit) || (locKinFitType == d_P4AndSpacetimeFit);
 	//bool locIsInclusiveChannelFlag = Get_Reaction()->Get_IsInclusiveChannelFlag();
-	//Below, should in theory check on whether to create pxyz pull histograms in the inclusive channel case
-		//But, this is tricky: can have inclusive (no p4) but still have mass constraints (p4)
+//Below, should in theory check on whether to create pxyz pull histograms in the inclusive channel case
+	//But, this is tricky: can have inclusive (no p4) but still have mass constraints (p4)
 
 	//CREATE THE HISTOGRAMS
 	//Since we are creating histograms, the contents of gDirectory will be modified: must use JANA-wide ROOT lock
@@ -1625,6 +1626,7 @@ void DHistogramAction_KinFitResults::Initialize(JEventLoop* locEventLoop)
 			bool locIsInVertexFitFlag = (locVertexParticles.find(locParticlePair) != locVertexParticles.end());
 			if(!locIncludeBeamlineInVertexFitFlag)
 				locIsInVertexFitFlag = false;
+			bool locIsChargedFlag = (ParticleCharge(locInitialPID) != 0);
 
 			if(locP4IsFit || locIsInVertexFitFlag)
 			{
@@ -1641,7 +1643,7 @@ void DHistogramAction_KinFitResults::Initialize(JEventLoop* locEventLoop)
 				CreateAndChangeTo_Directory("Beam", "Beam");
 				map<DKinFitPullType, TH1I*> locParticlePulls;
 				map<DKinFitPullType, TH2I*> locParticlePullsVsP, locParticlePullsVsTheta, locParticlePullsVsPhi;
-				Create_ParticlePulls(locFullROOTName, locIsInVertexFitFlag, false, locParticlePulls, locParticlePullsVsP, locParticlePullsVsTheta, locParticlePullsVsPhi);
+				Create_ParticlePulls(locFullROOTName, locIsChargedFlag, locIsInVertexFitFlag, false, locParticlePulls, locParticlePullsVsP, locParticlePullsVsTheta, locParticlePullsVsPhi);
 				dHistMap_Pulls[pair<int, Particle_t>(-1, locInitialPID)] = locParticlePulls;
 				dHistMap_PullsVsP[pair<int, Particle_t>(-1, locInitialPID)] = locParticlePullsVsP;
 
@@ -1724,8 +1726,11 @@ void DHistogramAction_KinFitResults::Initialize(JEventLoop* locEventLoop)
 
 				pair<int, int> locParticlePair(loc_i, loc_j);
 				bool locIsInVertexFitFlag = (locVertexParticles.find(locParticlePair) != locVertexParticles.end());
+				bool locIsChargedFlag = (ParticleCharge(locPID) != 0);
 
 				bool locIsNeutralShowerFlag = (locIsInVertexFitFlag && (ParticleCharge(locPID) == 0));
+				if((ParticleMass(locPID) > 0.0) && !locSpactimeIsFitFlag)
+					locIsNeutralShowerFlag = false; //massive shower momentum is defined by t, which isn't fit: use particle
 				if(!locP4IsFit && !locIsInVertexFitFlag)
 					continue; //p4 is not fit, and this is not in a vertex fit: no pulls
 				if(locIsNeutralShowerFlag && !locP4IsFit)
@@ -1742,7 +1747,7 @@ void DHistogramAction_KinFitResults::Initialize(JEventLoop* locEventLoop)
 
 				map<DKinFitPullType, TH1I*> locParticlePulls;
 				map<DKinFitPullType, TH2I*> locParticlePullsVsP, locParticlePullsVsTheta, locParticlePullsVsPhi;
-				Create_ParticlePulls(locFullROOTName, locIsInVertexFitFlag, locIsNeutralShowerFlag, locParticlePulls, locParticlePullsVsP, locParticlePullsVsTheta, locParticlePullsVsPhi);
+				Create_ParticlePulls(locFullROOTName, locIsChargedFlag, locIsInVertexFitFlag, locIsNeutralShowerFlag, locParticlePulls, locParticlePullsVsP, locParticlePullsVsTheta, locParticlePullsVsPhi);
 				dHistMap_Pulls[pair<int, Particle_t>(loc_i, locPID)] = locParticlePulls;
 				dHistMap_PullsVsP[pair<int, Particle_t>(loc_i, locPID)] = locParticlePullsVsP;
 				dHistMap_PullsVsTheta[pair<int, Particle_t>(loc_i, locPID)] = locParticlePullsVsTheta;
@@ -1762,7 +1767,7 @@ void DHistogramAction_KinFitResults::Initialize(JEventLoop* locEventLoop)
 	japp->RootUnLock(); //RELEASE ROOT LOCK!!
 }
 
-void DHistogramAction_KinFitResults::Create_ParticlePulls(string locFullROOTName, bool locIsInVertexFitFlag, bool locIsNeutralShowerFlag, map<DKinFitPullType, TH1I*>& locParticlePulls, map<DKinFitPullType, TH2I*>& locParticlePullsVsP, map<DKinFitPullType, TH2I*>& locParticlePullsVsTheta, map<DKinFitPullType, TH2I*>& locParticlePullsVsPhi)
+void DHistogramAction_KinFitResults::Create_ParticlePulls(string locFullROOTName, bool locIsChargedFlag, bool locIsInVertexFitFlag, bool locIsNeutralShowerFlag, map<DKinFitPullType, TH1I*>& locParticlePulls, map<DKinFitPullType, TH2I*>& locParticlePullsVsP, map<DKinFitPullType, TH2I*>& locParticlePullsVsTheta, map<DKinFitPullType, TH2I*>& locParticlePullsVsPhi)
 {
 	locParticlePulls.clear();
 
@@ -1786,8 +1791,9 @@ void DHistogramAction_KinFitResults::Create_ParticlePulls(string locFullROOTName
 	}
 
 	//vertex pulls:
-	if((locIsNeutralShowerFlag && locP4IsFit) || (!locIsNeutralShowerFlag && locIsInVertexFitFlag))
+	if((locIsNeutralShowerFlag && locP4IsFit) || (locIsChargedFlag && locIsInVertexFitFlag))
 	{
+//should include case when beamline is in fit!!
 		locPullTypes.insert(pair<DKinFitPullType, pair<string, string> >(d_XxPull, pair<string, string>("Pull_Xx", "x_{x} Pull")));
 		locPullTypes.insert(pair<DKinFitPullType, pair<string, string> >(d_XyPull, pair<string, string>("Pull_Xy", "x_{y} Pull")));
 		locPullTypes.insert(pair<DKinFitPullType, pair<string, string> >(d_XzPull, pair<string, string>("Pull_Xz", "x_{z} Pull")));

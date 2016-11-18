@@ -23,7 +23,7 @@
 #include <DMatrix.h>
 #include <TMath.h>
 
-class DNeutralParticleHypothesis_factory:public jana::JFactory<DNeutralParticleHypothesis>
+class DNeutralParticleHypothesis_factory : public jana::JFactory<DNeutralParticleHypothesis>
 {
 	public:
 		DNeutralParticleHypothesis_factory(){};
@@ -31,20 +31,16 @@ class DNeutralParticleHypothesis_factory:public jana::JFactory<DNeutralParticleH
 
 		DNeutralParticleHypothesis* Create_DNeutralParticleHypothesis(const DNeutralShower* locNeutralShower, Particle_t locPID, const DEventRFBunch* locEventRFBunch, const DVertex* locVertex) const;
 
-		void Calc_ParticleCovariance_Photon(const DNeutralShower* locNeutralShower, const DVector3& locMomentum, const DVector3& locPathVector, DMatrixDSym& locParticleCovariance) const;
-		void Calc_ParticleCovariance_Massive(const DNeutralShower* locNeutralShower, double locMass, double locDeltaT, double locStartTimeVariance, const DVector3& locMomentum, const DVector3& locPathVector, DMatrixDSym& locParticleCovariance) const;
+		void Calc_ParticleCovariance_Photon(const DNeutralShower* locNeutralShower, const DVertex* locVertex, const DVector3& locMomentum, const DVector3& locPathVector, DMatrixDSym& locParticleCovariance) const;
+		void Calc_ParticleCovariance_Massive(const DNeutralShower* locNeutralShower, const DVertex* locVertex, double locMass, double locDeltaT, const DVector3& locMomentum, const DVector3& locPathVector, DMatrixDSym& locParticleCovariance) const;
 
 	private:
-		double dTargetLength;
-		double dTargetRadius;
-		DVector3 dTargetCenter;
+		double dTargetCenterZ;
 		const DParticleID* dParticleID;
 
 		jerror_t init(void);						///< Called once at program start.
 		jerror_t brun(jana::JEventLoop *locEventLoop, int32_t runnumber);	///< Called everytime a new run number is detected.
 		jerror_t evnt(jana::JEventLoop *locEventLoop, uint64_t eventnumber);	///< Called every event.
-		jerror_t erun(void);						///< Called everytime run number changes, provided brun has been called.
-		jerror_t fini(void);						///< Called after last event of last event source has been processed.
 };
 
 #endif // _DNeutralParticleHypothesis_factory_

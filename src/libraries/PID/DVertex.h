@@ -26,6 +26,7 @@ class DVertex: public jana::JObject
 		JOBJECT_PUBLIC(DVertex);
 
 		DLorentzVector dSpacetimeVertex; // vertex position in cm + vertex time in ns
+		DMatrixDSym dCovarianceMatrix; //xyzt order
 
 		unsigned int dKinFitNDF;
 		double dKinFitChiSq;

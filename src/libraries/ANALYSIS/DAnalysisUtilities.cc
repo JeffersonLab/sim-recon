@@ -1023,12 +1023,6 @@ double DAnalysisUtilities::Calc_DOCA(const DKinematicData* locKinematicData1, co
 	return Calc_DOCA(locKinematicData1, locKinematicData2, locPOCA1, locPOCA2);
 }
 
-double DAnalysisUtilities::Calc_DOCA(const DVector3 &locUnitDir1, const DVector3 &locUnitDir2, const DVector3 &locVertex1, const DVector3 &locVertex2) const
-{
-	DVector3 locPOCA1, locPOCA2;
-	return Calc_DOCA(locUnitDir1, locUnitDir2, locVertex1, locVertex2, locPOCA1, locPOCA2);
-}
-
 double DAnalysisUtilities::Calc_DOCA(const DKinFitParticle* locKinFitParticle1, const DKinFitParticle* locKinFitParticle2, DVector3 &locPOCA1, DVector3 &locPOCA2) const
 {
 	DVector3 locUnitDir1(locKinFitParticle1->Get_Momentum().Unit().X(),locKinFitParticle1->Get_Momentum().Unit().Y(),locKinFitParticle1->Get_Momentum().Unit().Z());
@@ -1047,26 +1041,36 @@ double DAnalysisUtilities::Calc_DOCA(const DKinematicData* locKinematicData1, co
 	return Calc_DOCA(locUnitDir1, locUnitDir2, locVertex1, locVertex2, locPOCA1, locPOCA2);
 }
 
+double DAnalysisUtilities::Calc_DOCA(const DVector3 &locUnitDir1, const DVector3 &locUnitDir2, const DVector3 &locVertex1, const DVector3 &locVertex2) const
+{
+	DVector3 locPOCA1, locPOCA2;
+	return Calc_DOCA(locUnitDir1, locUnitDir2, locVertex1, locVertex2, locPOCA1, locPOCA2);
+}
+
 double DAnalysisUtilities::Calc_DOCA(const DVector3 &locUnitDir1, const DVector3 &locUnitDir2, const DVector3 &locVertex1, const DVector3 &locVertex2, DVector3 &locPOCA1, DVector3 &locPOCA2) const
 {
-  //originated from code by Jörn Langheinrich
-  //you can use this function to find the DOCA to a fixed point by calling this function with locUnitDir1 and 2 parallel, and the fixed vertex as locVertex2
-  double locUnitDot = locUnitDir1.Dot(locUnitDir2);
-  double locDenominator = locUnitDot*locUnitDot - 1.0; /// scalar product of directions
-  double locDistVertToInterDOCA1 = 0.0, locDistVertToInterDOCA2 = 0.0; //distance from vertex to DOCA point
+	//originated from code by Jorn Langheinrich
+	//you can use this function to find the DOCA to a fixed point by calling this function with locUnitDir1 and 2 parallel, and the fixed vertex as locVertex2
+	double locUnitDot = locUnitDir1.Dot(locUnitDir2);
+	double locDenominator = locUnitDot*locUnitDot - 1.0; // scalar product of directions
+	double locDistVertToInterDOCA1 = 0.0, locDistVertToInterDOCA2 = 0.0; //distance from vertex to DOCA point
 
-  if(fabs(locDenominator) < 1.0e-15) //parallel
-    locDistVertToInterDOCA1 = (locVertex2 - locVertex1).Dot(locUnitDir2)/locUnitDot; //the opposite
-  else{
-    double locA = (locVertex1 - locVertex2).Dot(locUnitDir1);
-    double locB = (locVertex1 - locVertex2).Dot(locUnitDir2);
-    locDistVertToInterDOCA1 = (locA - locUnitDot*locB)/locDenominator;
-    locDistVertToInterDOCA2 = (locUnitDot*locA - locB)/locDenominator;
-  }
+	if(fabs(locDenominator) < 1.0e-15) //parallel
+	{
+		locDistVertToInterDOCA1 = (locVertex2 - locVertex1).Dot(locUnitDir2)/locUnitDot; //the opposite
+		locDistVertToInterDOCA2 = (locVertex1 - locVertex2).Dot(locUnitDir1)/locUnitDot;
+	}
+	else
+	{
+		double locA = (locVertex1 - locVertex2).Dot(locUnitDir1);
+		double locB = (locVertex1 - locVertex2).Dot(locUnitDir2);
+		locDistVertToInterDOCA1 = (locA - locUnitDot*locB)/locDenominator;
+		locDistVertToInterDOCA2 = (locUnitDot*locA - locB)/locDenominator;
+	}
 
-  locPOCA1 = locVertex1 + locDistVertToInterDOCA1*locUnitDir1; //intersection point of DOCA line and track 1
-  locPOCA2 = locVertex2 + locDistVertToInterDOCA2*locUnitDir2; //intersection point of DOCA line and track 2
-  return (locPOCA1 - locPOCA2).Mag();
+	locPOCA1 = locVertex1 + locDistVertToInterDOCA1*locUnitDir1; //intersection point of DOCA line and track 1
+	locPOCA2 = locVertex2 + locDistVertToInterDOCA2*locUnitDir2; //intersection point of DOCA line and track 2
+	return (locPOCA1 - locPOCA2).Mag();
 }
 
 double DAnalysisUtilities::Calc_CrudeTime(const deque<const DKinematicData*>& locParticles, const DVector3& locCommonVertex) const

@@ -218,7 +218,7 @@ TMap* DEventWriterROOT::Create_UserInfoMaps(DTreeBranchRegister& locBranchRegist
 	{
 		DKinFitUtils_GlueX locKinFitUtils(locEventLoop);
 		size_t locNumConstraints = 0, locNumUnknowns = 0;
-		string locConstraintString = dKinFitUtils.Get_ConstraintInfo(locReaction, locKinFitType, locNumConstraints, locNumUnknowns);
+		string locConstraintString = locKinFitUtils.Get_ConstraintInfo(locReaction, locKinFitType, locNumConstraints, locNumUnknowns);
 		locMiscInfoMap->Add(new TObjString("KinFitConstraints"), new TObjString(locConstraintString.c_str()));
 
 		ostringstream locKinFitInfoStream;
