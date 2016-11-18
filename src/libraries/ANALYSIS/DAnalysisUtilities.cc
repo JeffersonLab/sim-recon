@@ -756,22 +756,22 @@ bool DAnalysisUtilities::Are_ThrownPIDsSameAsDesired(JEventLoop* locEventLoop, c
 
 DLorentzVector DAnalysisUtilities::Calc_MissingP4(const DParticleCombo* locParticleCombo, bool locUseKinFitDataFlag) const
 {
-	set<pair<const JObject*, Particle_t> > locSourceObjects;
+	set<pair<const JObject*, unsigned int> > locSourceObjects;
 	return Calc_MissingP4(locParticleCombo, 0, -1, set<size_t>(), locSourceObjects, locUseKinFitDataFlag);
 }
 
-DLorentzVector DAnalysisUtilities::Calc_MissingP4(const DParticleCombo* locParticleCombo, set<pair<const JObject*, Particle_t> >& locSourceObjects, bool locUseKinFitDataFlag) const
+DLorentzVector DAnalysisUtilities::Calc_MissingP4(const DParticleCombo* locParticleCombo, set<pair<const JObject*, unsigned int> >& locSourceObjects, bool locUseKinFitDataFlag) const
 {
 	return Calc_MissingP4(locParticleCombo, 0, -1, set<size_t>(), locSourceObjects, locUseKinFitDataFlag);
 }
 
 DLorentzVector DAnalysisUtilities::Calc_MissingP4(const DParticleCombo* locParticleCombo, size_t locStepIndex, int locUpToStepIndex, set<size_t> locUpThroughIndices, bool locUseKinFitDataFlag) const
 {
-	set<pair<const JObject*, Particle_t> > locSourceObjects;
+	set<pair<const JObject*, unsigned int> > locSourceObjects;
 	return Calc_MissingP4(locParticleCombo, locStepIndex, locUpToStepIndex, locUpThroughIndices, locSourceObjects, locUseKinFitDataFlag);
 }
 
-DLorentzVector DAnalysisUtilities::Calc_MissingP4(const DParticleCombo* locParticleCombo, size_t locStepIndex, int locUpToStepIndex, set<size_t> locUpThroughIndices, set<pair<const JObject*, Particle_t> >& locSourceObjects, bool locUseKinFitDataFlag) const
+DLorentzVector DAnalysisUtilities::Calc_MissingP4(const DParticleCombo* locParticleCombo, size_t locStepIndex, int locUpToStepIndex, set<size_t> locUpThroughIndices, set<pair<const JObject*, unsigned int> >& locSourceObjects, bool locUseKinFitDataFlag) const
 {
 	//NOTE: this routine assumes that the p4 of a charged decaying particle with a detached vertex is the same at both vertices!
 	//assumes missing particle is not the beam particle
@@ -795,7 +795,7 @@ DLorentzVector DAnalysisUtilities::Calc_MissingP4(const DParticleCombo* locParti
 		locKinematicData = locParticleComboStep->Get_TargetParticle();
 		if(locKinematicData != NULL)
 		{
-			locSourceObjects.insert(pair<const JObject*, Particle_t>(locKinematicData, locKinematicData->PID()));
+		  locSourceObjects.insert(pair<const JObject*, Particle_t>(locKinematicData, locKinematicData->PID()));
 			locMissingP4 += locKinematicData->lorentzMomentum();
 		}
 	}
@@ -820,7 +820,7 @@ DLorentzVector DAnalysisUtilities::Calc_MissingP4(const DParticleCombo* locParti
 		if(locDecayStepIndex == -2) //detected
 		{
 			locMissingP4 -= locParticles[loc_j]->lorentzMomentum();
-			locSourceObjects.insert(pair<const JObject*, Particle_t>(locParticleComboStep->Get_FinalParticle_SourceObject(loc_j), locPID));
+			locSourceObjects.insert(pair<const JObject*, unsigned int>(locParticleComboStep->Get_FinalParticle_SourceObject(loc_j), abs(PDGtype(locPID))));
 		}
 		else //decaying-particle
 			locMissingP4 += Calc_MissingP4(locParticleCombo, locDecayStepIndex, locUpToStepIndex, locUpThroughIndices, locSourceObjects, locUseKinFitDataFlag); //p4 returned is already < 0
@@ -886,22 +886,22 @@ DMatrixDSym DAnalysisUtilities::Calc_MissingP3Covariance(const DParticleCombo* l
 
 DLorentzVector DAnalysisUtilities::Calc_FinalStateP4(const DParticleCombo* locParticleCombo, size_t locStepIndex, bool locUseKinFitDataFlag) const
 {
-	set<pair<const JObject*, Particle_t> > locSourceObjects;
+	set<pair<const JObject*, unsigned int> > locSourceObjects;
 	return Calc_FinalStateP4(locParticleCombo, locStepIndex, set<size_t>(), locSourceObjects, locUseKinFitDataFlag);
 }
 
-DLorentzVector DAnalysisUtilities::Calc_FinalStateP4(const DParticleCombo* locParticleCombo, size_t locStepIndex, set<pair<const JObject*, Particle_t> >& locSourceObjects, bool locUseKinFitDataFlag) const
+DLorentzVector DAnalysisUtilities::Calc_FinalStateP4(const DParticleCombo* locParticleCombo, size_t locStepIndex, set<pair<const JObject*, unsigned int> >& locSourceObjects, bool locUseKinFitDataFlag) const
 {
 	return Calc_FinalStateP4(locParticleCombo, locStepIndex, set<size_t>(), locSourceObjects, locUseKinFitDataFlag);
 }
 
 DLorentzVector DAnalysisUtilities::Calc_FinalStateP4(const DParticleCombo* locParticleCombo, size_t locStepIndex, set<size_t> locToIncludeIndices, bool locUseKinFitDataFlag) const
 {
-	set<pair<const JObject*, Particle_t> > locSourceObjects;
+	set<pair<const JObject*, unsigned int> > locSourceObjects;
 	return Calc_FinalStateP4(locParticleCombo, locStepIndex, locToIncludeIndices, locSourceObjects, locUseKinFitDataFlag);
 }
 
-DLorentzVector DAnalysisUtilities::Calc_FinalStateP4(const DParticleCombo* locParticleCombo, size_t locStepIndex, set<size_t> locToIncludeIndices, set<pair<const JObject*, Particle_t> >& locSourceObjects, bool locUseKinFitDataFlag) const
+DLorentzVector DAnalysisUtilities::Calc_FinalStateP4(const DParticleCombo* locParticleCombo, size_t locStepIndex, set<size_t> locToIncludeIndices, set<pair<const JObject*, unsigned int> >& locSourceObjects, bool locUseKinFitDataFlag) const
 {
 	if(locUseKinFitDataFlag && (locParticleCombo->Get_KinFitResults() == NULL))
 		return Calc_FinalStateP4(locParticleCombo, locStepIndex, locToIncludeIndices, locSourceObjects, false); //kinematic fit failed
@@ -941,7 +941,7 @@ DLorentzVector DAnalysisUtilities::Calc_FinalStateP4(const DParticleCombo* locPa
 		else
 		{
 			locFinalStateP4 += locParticles[loc_i]->lorentzMomentum();
-			locSourceObjects.insert(pair<const JObject*, Particle_t>(locParticleComboStep->Get_FinalParticle_SourceObject(loc_i), locParticles[loc_i]->PID()));
+			locSourceObjects.insert(pair<const JObject*, unsigned int>(locParticleComboStep->Get_FinalParticle_SourceObject(loc_i), abs(PDGtype(locParticles[loc_i]->PID()))));
 		}
 	}
 	return locFinalStateP4;
