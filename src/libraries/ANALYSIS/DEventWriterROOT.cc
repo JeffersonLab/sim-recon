@@ -122,7 +122,7 @@ void DEventWriterROOT::Create_DataTree(const DReaction* locReaction, JEventLoop*
 	DTreeBranchRegister locBranchRegister;
 
 	//fill maps
-	TMap* locPositionToNameMap = Create_UserInfoMaps(locBranchRegister, locReaction);
+	TMap* locPositionToNameMap = Create_UserInfoMaps(locBranchRegister, locEventLoop, locReaction);
 
 /******************************************************************** Create Branches ********************************************************************/
 
@@ -159,7 +159,7 @@ void DEventWriterROOT::Create_DataTree(const DReaction* locReaction, JEventLoop*
 	locTreeInterface->Create_Branches(locBranchRegister);
 }
 
-TMap* DEventWriterROOT::Create_UserInfoMaps(DTreeBranchRegister& locBranchRegister, const DReaction* locReaction) const
+TMap* DEventWriterROOT::Create_UserInfoMaps(DTreeBranchRegister& locBranchRegister, JEventLoop* locEventLoop, const DReaction* locReaction) const
 {
 	//kinfit type
 	DKinFitType locKinFitType = locReaction->Get_KinFitType();
@@ -213,6 +213,14 @@ TMap* DEventWriterROOT::Create_UserInfoMaps(DTreeBranchRegister& locBranchRegist
 		gPARMS->GetParameter("JANA_CALIB_CONTEXT", REST_JANA_CALIB_CONTEXT);
 	if(REST_JANA_CALIB_CONTEXT != "")
 		locMiscInfoMap->Add(new TObjString("REST:JANACALIBCONTEXT"), new TObjString(REST_JANA_CALIB_CONTEXT.c_str()));
+
+	if(locKinFitType != d_NoFit)
+	{
+		DKinFitUtils_GlueX locKinFitUtils(locEventLoop);
+		size_t locNumConstraints = 0, locNumUnknowns = 0;
+		string locConstraintString = dKinFitUtils.Get_ConstraintInfo(locReaction, locKinFitType, locNumConstraints, locNumUnknowns);
+		locMiscInfoMap->Add(new TObjString("KinFitConstraints"), new TObjString(locConstraintString.c_str()));
+	}
 
 	//find the # particles of each pid
 	map<Particle_t, unsigned int> locParticleNumberMap;
