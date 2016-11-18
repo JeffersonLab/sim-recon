@@ -220,6 +220,14 @@ TMap* DEventWriterROOT::Create_UserInfoMaps(DTreeBranchRegister& locBranchRegist
 		size_t locNumConstraints = 0, locNumUnknowns = 0;
 		string locConstraintString = dKinFitUtils.Get_ConstraintInfo(locReaction, locKinFitType, locNumConstraints, locNumUnknowns);
 		locMiscInfoMap->Add(new TObjString("KinFitConstraints"), new TObjString(locConstraintString.c_str()));
+
+		ostringstream locKinFitInfoStream;
+		locKinFitInfoStream << locNumConstraints;
+		locMiscInfoMap->Add(new TObjString("NumKinFitConstraints"), new TObjString(locKinFitInfoStream.str().c_str()));
+
+		locKinFitInfoStream.str("");
+		locKinFitInfoStream << locNumUnknowns;
+		locMiscInfoMap->Add(new TObjString("NumKinFitUnknowns"), new TObjString(locKinFitInfoStream.str().c_str()));
 	}
 
 	//find the # particles of each pid
