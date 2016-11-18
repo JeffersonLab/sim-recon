@@ -161,7 +161,11 @@ void DNeutralParticleHypothesis_factory::Calc_ParticleCovariance_Photon(const DN
 			locShowerPlusVertCovariance(5 + loc_l, 5 + loc_m) = locVertex->dCovarianceMatrix(loc_l, loc_m);
 	}
 
-	DVector3 locDeltaX = -1.0*locPathVector; //defined oppositely in document! //delta_x defined here as common_vertex - hit_point
+	//the input delta X is defined as "hit - start"
+	//however, the documentation and derivations define delta x as "start - hit"
+	//so, reverse the sign of the inputs to match the documentation
+	//and then the rest will follow the documentation
+	DVector3 locDeltaX = -1.0*locPathVector;
 	DVector3 locDeltaXOverDeltaXSq = (1.0/locDeltaX.Mag2())*locDeltaX;
 	DVector3 locUnitP = (1.0/locNeutralShower->dEnergy)*locMomentum;
 	DVector3 locUnitDeltaXOverC = (1.0/(29.9792458*locDeltaX.Mag()))*locDeltaX;
