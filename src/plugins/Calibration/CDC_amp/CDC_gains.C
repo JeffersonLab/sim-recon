@@ -1,4 +1,6 @@
-void CDC_gains() {
+void CDC_gains(int EXIT_EARLY=0) {
+
+  // set EXIT_EARLY to 1 to fit the sum histograms only, 0 for the individual straw gains
 
   // Fits histograms from CDC_amp plugin to estimate CDC gains
   // writes digi_scales/ascale to cdc_new_ascale.txt
@@ -27,13 +29,13 @@ void CDC_gains() {
 
   // Need 80+ run files to get good fits for attsum.  2 run files are enough for atsum
 
-  // NSJ 7 Nov 2016
+  // NSJ 18 Nov 2016
 
-  const int EXIT_EARLY=0; //fit the sum histograms only
+
 
   // reference values
 
-  const float IDEALMPV=33.014  ; //mpv for tracked hits with restricted z,theta from low pressure run 11621
+  const float IDEALMPV=32.385; //mpv for tracked hits with restricted z,theta from low pressure run 11621
   const float ASCALE=0.176;   //ascale for tracked ztheta hits from 011621
 
   const int USEGROUP=2; // use group 2 (attsum) to calc gain consts
@@ -41,8 +43,8 @@ void CDC_gains() {
   // fit limits
   const int AL0=26; //amp fit lower limit asum (untracked hits histo)
   const int AL1=20; //amp fit lower limit atsum
-  const int AL2=15; //amp fit lower limit attsum
-  const int AH=490; //amp fit upper limit landau
+  const int AL2=20; //amp fit lower limit attsum
+  const int AH=400; //amp fit upper limit landau
   const int AH0=60; //amp fit upper limit gaussian
 
   const int MINCOUNTS=5000; //counts required to fit histogram
@@ -269,7 +271,7 @@ void CDC_gains() {
       if (a_n > MINCOUNTS) {    // sum last 10 bins before amp histo usually ends 
         nbins = ahisto->GetNbinsX();
         bincont = 0;
-        for (int j=nbins-10; j < nbins; j++) bincont += ahisto->GetBinContent(j);
+        for (int j=nbins-50; j < nbins; j++) bincont += ahisto->GetBinContent(j);
         if (bincont==0) {
           lastbin = nbins-1;
           while (ahisto->GetBinContent(lastbin)==0) lastbin--;
