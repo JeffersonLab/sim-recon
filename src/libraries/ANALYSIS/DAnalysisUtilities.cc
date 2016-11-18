@@ -794,10 +794,9 @@ DLorentzVector DAnalysisUtilities::Calc_MissingP4(const DParticleCombo* locParti
 		//target particle
 		locKinematicData = locParticleComboStep->Get_TargetParticle();
 		if(locKinematicData != NULL)
-		{
-		  locSourceObjects.insert(pair<const JObject*, unsigned int>(locKinematicData, abs(PDGtype(locKinematicData->PID()))));
+		 {
 			locMissingP4 += locKinematicData->lorentzMomentum();
-		}
+		 }
 	}
 
 	deque<const DKinematicData*> locParticles;
