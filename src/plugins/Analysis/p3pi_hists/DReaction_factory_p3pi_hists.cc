@@ -33,10 +33,6 @@ jerror_t DReaction_factory_p3pi_hists::evnt(JEventLoop* locEventLoop, uint64_t l
 	DReactionStep* locReactionStep = NULL;
 	DReaction* locReaction;
 
-	double minPi0FCAL = 0.115;
-	double maxPi0FCAL = 0.145;
-	double minPi0BCAL = 0.11;
-	double maxPi0BCAL = 0.16;
 	double minPi0FCAL_BCAL = 0.11;
 	double maxPi0FCAL_BCAL = 0.16;
 

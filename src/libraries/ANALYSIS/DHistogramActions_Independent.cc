@@ -2838,80 +2838,80 @@ void DHistogramAction_TrackShowerErrors::Initialize(JEventLoop* locEventLoop)
 
 			// Px
 			locHistName = "PxErrorVsP";
-			locHistTitle = locParticleROOTName + string(";p (GeV/c);#sigma_{p_{x}}");
+			locHistTitle = locParticleROOTName + string(";p (GeV/c);#sigma_{p_{x}} (GeV/c)");
 			dHistMap_TrackPxErrorVsP[locPID] = GetOrCreate_Histogram<TH2I>(locHistName, locHistTitle, dNum2DPBins, dMinP, dMaxP, dNum2DPxyErrorBins, 0.0, dMaxPxyError);
 
 			locHistName = "PxErrorVsTheta";
-			locHistTitle = locParticleROOTName + string(";#theta#circ;#sigma_{p_{x}}");
+			locHistTitle = locParticleROOTName + string(";#theta#circ;#sigma_{p_{x}} (GeV/c)");
 			dHistMap_TrackPxErrorVsTheta[locPID] = GetOrCreate_Histogram<TH2I>(locHistName, locHistTitle, dNum2DThetaBins, dMinTheta, dMaxTheta, dNum2DPxyErrorBins, 0.0, dMaxPxyError);
 
 			locHistName = "PxErrorVsPhi";
-			locHistTitle = locParticleROOTName + string(";#phi#circ;#sigma_{p_{x}}");
+			locHistTitle = locParticleROOTName + string(";#phi#circ;#sigma_{p_{x}} (GeV/c)");
 			dHistMap_TrackPxErrorVsPhi[locPID] = GetOrCreate_Histogram<TH2I>(locHistName, locHistTitle, dNum2DPhiBins, dMinPhi, dMaxPhi, dNum2DPxyErrorBins, 0.0, dMaxPxyError);
 
 			// Py
 			locHistName = "PyErrorVsP";
-			locHistTitle = locParticleROOTName + string(";p (GeV/c);#sigma_{p_{y}}");
+			locHistTitle = locParticleROOTName + string(";p (GeV/c);#sigma_{p_{y}} (GeV/c)");
 			dHistMap_TrackPyErrorVsP[locPID] = GetOrCreate_Histogram<TH2I>(locHistName, locHistTitle, dNum2DPBins, dMinP, dMaxP, dNum2DPxyErrorBins, 0.0, dMaxPxyError);
 
 			locHistName = "PyErrorVsTheta";
-			locHistTitle = locParticleROOTName + string(";#theta#circ;#sigma_{p_{y}}");
+			locHistTitle = locParticleROOTName + string(";#theta#circ;#sigma_{p_{y}} (GeV/c)");
 			dHistMap_TrackPyErrorVsTheta[locPID] = GetOrCreate_Histogram<TH2I>(locHistName, locHistTitle, dNum2DThetaBins, dMinTheta, dMaxTheta, dNum2DPxyErrorBins, 0.0, dMaxPxyError);
 
 			locHistName = "PyErrorVsPhi";
-			locHistTitle = locParticleROOTName + string(";#phi#circ;#sigma_{p_{y}}");
+			locHistTitle = locParticleROOTName + string(";#phi#circ;#sigma_{p_{y}} (GeV/c)");
 			dHistMap_TrackPyErrorVsPhi[locPID] = GetOrCreate_Histogram<TH2I>(locHistName, locHistTitle, dNum2DPhiBins, dMinPhi, dMaxPhi, dNum2DPxyErrorBins, 0.0, dMaxPxyError);
 
 			// Pz
 			locHistName = "PzErrorVsP";
-			locHistTitle = locParticleROOTName + string(";p (GeV/c);#sigma_{p_{z}}");
+			locHistTitle = locParticleROOTName + string(";p (GeV/c);#sigma_{p_{z}} (GeV/c)");
 			dHistMap_TrackPzErrorVsP[locPID] = GetOrCreate_Histogram<TH2I>(locHistName, locHistTitle, dNum2DPBins, dMinP, dMaxP, dNum2DPzErrorBins, 0.0, dMaxPzError);
 
 			locHistName = "PzErrorVsTheta";
-			locHistTitle = locParticleROOTName + string(";#theta#circ;#sigma_{p_{z}}");
+			locHistTitle = locParticleROOTName + string(";#theta#circ;#sigma_{p_{z}} (GeV/c)");
 			dHistMap_TrackPzErrorVsTheta[locPID] = GetOrCreate_Histogram<TH2I>(locHistName, locHistTitle, dNum2DThetaBins, dMinTheta, dMaxTheta, dNum2DPzErrorBins, 0.0, dMaxPzError);
 
 			locHistName = "PzErrorVsPhi";
-			locHistTitle = locParticleROOTName + string(";#phi#circ;#sigma_{p_{z}}");
+			locHistTitle = locParticleROOTName + string(";#phi#circ;#sigma_{p_{z}} (GeV/c)");
 			dHistMap_TrackPzErrorVsPhi[locPID] = GetOrCreate_Histogram<TH2I>(locHistName, locHistTitle, dNum2DPhiBins, dMinPhi, dMaxPhi, dNum2DPzErrorBins, 0.0, dMaxPzError);
 
 			// X
 			locHistName = "XErrorVsP";
-			locHistTitle = locParticleROOTName + string(";p (GeV/c);#sigma_{x}");
+			locHistTitle = locParticleROOTName + string(";p (GeV/c);#sigma_{x} (cm)");
 			dHistMap_TrackXErrorVsP[locPID] = GetOrCreate_Histogram<TH2I>(locHistName, locHistTitle, dNum2DPBins, dMinP, dMaxP, dNum2DXYErrorBins, 0.0, dMaxXYError);
 
 			locHistName = "XErrorVsTheta";
-			locHistTitle = locParticleROOTName + string(";#theta#circ;#sigma_{x}");
+			locHistTitle = locParticleROOTName + string(";#theta#circ;#sigma_{x} (cm)");
 			dHistMap_TrackXErrorVsTheta[locPID] = GetOrCreate_Histogram<TH2I>(locHistName, locHistTitle, dNum2DThetaBins, dMinTheta, dMaxTheta, dNum2DXYErrorBins, 0.0, dMaxXYError);
 
 			locHistName = "XErrorVsPhi";
-			locHistTitle = locParticleROOTName + string(";#phi#circ;#sigma_{x}");
+			locHistTitle = locParticleROOTName + string(";#phi#circ;#sigma_{x} (cm)");
 			dHistMap_TrackXErrorVsPhi[locPID] = GetOrCreate_Histogram<TH2I>(locHistName, locHistTitle, dNum2DPhiBins, dMinPhi, dMaxPhi, dNum2DXYErrorBins, 0.0, dMaxXYError);
 
 			// Y
 			locHistName = "YErrorVsP";
-			locHistTitle = locParticleROOTName + string(";p (GeV/c);#sigma_{y}");
+			locHistTitle = locParticleROOTName + string(";p (GeV/c);#sigma_{y} (cm)");
 			dHistMap_TrackYErrorVsP[locPID] = GetOrCreate_Histogram<TH2I>(locHistName, locHistTitle, dNum2DPBins, dMinP, dMaxP, dNum2DXYErrorBins, 0.0, dMaxXYError);
 
 			locHistName = "YErrorVsTheta";
-			locHistTitle = locParticleROOTName + string(";#theta#circ;#sigma_{y}");
+			locHistTitle = locParticleROOTName + string(";#theta#circ;#sigma_{y} (cm)");
 			dHistMap_TrackYErrorVsTheta[locPID] = GetOrCreate_Histogram<TH2I>(locHistName, locHistTitle, dNum2DThetaBins, dMinTheta, dMaxTheta, dNum2DXYErrorBins, 0.0, dMaxXYError);
 
 			locHistName = "YErrorVsPhi";
-			locHistTitle = locParticleROOTName + string(";#phi#circ;#sigma_{y}");
+			locHistTitle = locParticleROOTName + string(";#phi#circ;#sigma_{y} (cm)");
 			dHistMap_TrackYErrorVsPhi[locPID] = GetOrCreate_Histogram<TH2I>(locHistName, locHistTitle, dNum2DPhiBins, dMinPhi, dMaxPhi, dNum2DXYErrorBins, 0.0, dMaxXYError);
 
 			// Z
 			locHistName = "ZErrorVsP";
-			locHistTitle = locParticleROOTName + string(";p (GeV/c);#sigma_{z}");
+			locHistTitle = locParticleROOTName + string(";p (GeV/c);#sigma_{z} (cm)");
 			dHistMap_TrackZErrorVsP[locPID] = GetOrCreate_Histogram<TH2I>(locHistName, locHistTitle, dNum2DPBins, dMinP, dMaxP, dNum2DZErrorBins, 0.0, dMaxZError);
 
 			locHistName = "ZErrorVsTheta";
-			locHistTitle = locParticleROOTName + string(";#theta#circ;#sigma_{z}");
+			locHistTitle = locParticleROOTName + string(";#theta#circ;#sigma_{z} (cm)");
 			dHistMap_TrackZErrorVsTheta[locPID] = GetOrCreate_Histogram<TH2I>(locHistName, locHistTitle, dNum2DThetaBins, dMinTheta, dMaxTheta, dNum2DZErrorBins, 0.0, dMaxZError);
 
 			locHistName = "ZErrorVsPhi";
-			locHistTitle = locParticleROOTName + string(";#phi#circ;#sigma_{z}");
+			locHistTitle = locParticleROOTName + string(";#phi#circ;#sigma_{z} (cm)");
 			dHistMap_TrackZErrorVsPhi[locPID] = GetOrCreate_Histogram<TH2I>(locHistName, locHistTitle, dNum2DPhiBins, dMinPhi, dMaxPhi, dNum2DZErrorBins, 0.0, dMaxZError);
 
 			gDirectory->cd("..");
@@ -2930,67 +2930,67 @@ void DHistogramAction_TrackShowerErrors::Initialize(JEventLoop* locEventLoop)
 
 			// E
 			locHistName = "EErrorVsP";
-			locHistTitle = locParticleROOTName + string(";p (GeV/c);#sigma_{E}");
+			locHistTitle = locParticleROOTName + string(";p (GeV/c);#sigma_{E} (GeV)");
 			dHistMap_ShowerEErrorVsP[locIsBCALFlag] = GetOrCreate_Histogram<TH2I>(locHistName, locHistTitle, dNum2DPBins, dMinP, locMaxP, dNum2DEErrorBins, 0.0, dMaxEError);
 
 			locHistName = "EErrorVsTheta";
-			locHistTitle = locParticleROOTName + string(";#theta#circ;#sigma_{E}");
+			locHistTitle = locParticleROOTName + string(";#theta#circ;#sigma_{E} (GeV)");
 			dHistMap_ShowerEErrorVsTheta[locIsBCALFlag] = GetOrCreate_Histogram<TH2I>(locHistName, locHistTitle, dNum2DThetaBins, locMinTheta, locMaxTheta, dNum2DEErrorBins, 0.0, dMaxEError);
 
 			locHistName = "EErrorVsPhi";
-			locHistTitle = locParticleROOTName + string(";#phi#circ;#sigma_{E}");
+			locHistTitle = locParticleROOTName + string(";#phi#circ;#sigma_{E} (GeV)");
 			dHistMap_ShowerEErrorVsPhi[locIsBCALFlag] = GetOrCreate_Histogram<TH2I>(locHistName, locHistTitle, dNum2DPhiBins, dMinPhi, dMaxPhi, dNum2DEErrorBins, 0.0, dMaxEError);
 
 			// X
 			locHistName = "XErrorVsP";
-			locHistTitle = locParticleROOTName + string(";p (GeV/c);#sigma_{x}");
+			locHistTitle = locParticleROOTName + string(";p (GeV/c);#sigma_{x} (cm)");
 			dHistMap_ShowerXErrorVsP[locIsBCALFlag] = GetOrCreate_Histogram<TH2I>(locHistName, locHistTitle, dNum2DPBins, dMinP, locMaxP, dNum2DXYErrorBins, 0.0, dMaxXYError);
 
 			locHistName = "XErrorVsTheta";
-			locHistTitle = locParticleROOTName + string(";#theta#circ;#sigma_{x}");
+			locHistTitle = locParticleROOTName + string(";#theta#circ;#sigma_{x} (cm)");
 			dHistMap_ShowerXErrorVsTheta[locIsBCALFlag] = GetOrCreate_Histogram<TH2I>(locHistName, locHistTitle, dNum2DThetaBins, locMinTheta, locMaxTheta, dNum2DXYErrorBins, 0.0, dMaxXYError);
 
 			locHistName = "XErrorVsPhi";
-			locHistTitle = locParticleROOTName + string(";#phi#circ;#sigma_{x}");
+			locHistTitle = locParticleROOTName + string(";#phi#circ;#sigma_{x} (cm)");
 			dHistMap_ShowerXErrorVsPhi[locIsBCALFlag] = GetOrCreate_Histogram<TH2I>(locHistName, locHistTitle, dNum2DPhiBins, dMinPhi, dMaxPhi, dNum2DXYErrorBins, 0.0, dMaxXYError);
 
 			// Y
 			locHistName = "YErrorVsP";
-			locHistTitle = locParticleROOTName + string(";p (GeV/c);#sigma_{y}");
+			locHistTitle = locParticleROOTName + string(";p (GeV/c);#sigma_{y} (cm)");
 			dHistMap_ShowerYErrorVsP[locIsBCALFlag] = GetOrCreate_Histogram<TH2I>(locHistName, locHistTitle, dNum2DPBins, dMinP, locMaxP, dNum2DXYErrorBins, 0.0, dMaxXYError);
 
 			locHistName = "YErrorVsTheta";
-			locHistTitle = locParticleROOTName + string(";#theta#circ;#sigma_{y}");
+			locHistTitle = locParticleROOTName + string(";#theta#circ;#sigma_{y} (cm)");
 			dHistMap_ShowerYErrorVsTheta[locIsBCALFlag] = GetOrCreate_Histogram<TH2I>(locHistName, locHistTitle, dNum2DThetaBins, locMinTheta, locMaxTheta, dNum2DXYErrorBins, 0.0, dMaxXYError);
 
 			locHistName = "YErrorVsPhi";
-			locHistTitle = locParticleROOTName + string(";#phi#circ;#sigma_{y}");
+			locHistTitle = locParticleROOTName + string(";#phi#circ;#sigma_{y} (cm)");
 			dHistMap_ShowerYErrorVsPhi[locIsBCALFlag] = GetOrCreate_Histogram<TH2I>(locHistName, locHistTitle, dNum2DPhiBins, dMinPhi, dMaxPhi, dNum2DXYErrorBins, 0.0, dMaxXYError);
 
 			// Z
 			locHistName = "ZErrorVsP";
-			locHistTitle = locParticleROOTName + string(";p (GeV/c);#sigma_{z}");
+			locHistTitle = locParticleROOTName + string(";p (GeV/c);#sigma_{z} (cm)");
 			dHistMap_ShowerZErrorVsP[locIsBCALFlag] = GetOrCreate_Histogram<TH2I>(locHistName, locHistTitle, dNum2DPBins, dMinP, locMaxP, dNum2DZErrorBins, 0.0, dMaxZError);
 
 			locHistName = "ZErrorVsTheta";
-			locHistTitle = locParticleROOTName + string(";#theta#circ;#sigma_{z}");
+			locHistTitle = locParticleROOTName + string(";#theta#circ;#sigma_{z} (cm)");
 			dHistMap_ShowerZErrorVsTheta[locIsBCALFlag] = GetOrCreate_Histogram<TH2I>(locHistName, locHistTitle, dNum2DThetaBins, locMinTheta, locMaxTheta, dNum2DZErrorBins, 0.0, dMaxZError);
 
 			locHistName = "ZErrorVsPhi";
-			locHistTitle = locParticleROOTName + string(";#phi#circ;#sigma_{z}");
+			locHistTitle = locParticleROOTName + string(";#phi#circ;#sigma_{z} (cm)");
 			dHistMap_ShowerZErrorVsPhi[locIsBCALFlag] = GetOrCreate_Histogram<TH2I>(locHistName, locHistTitle, dNum2DPhiBins, dMinPhi, dMaxPhi, dNum2DZErrorBins, 0.0, dMaxZError);
 
-			// E
+			// T
 			locHistName = "TErrorVsP";
-			locHistTitle = locParticleROOTName + string(";p (GeV/c);#sigma_{E}");
+			locHistTitle = locParticleROOTName + string(";p (GeV/c);#sigma_{t} (ns)");
 			dHistMap_ShowerTErrorVsP[locIsBCALFlag] = GetOrCreate_Histogram<TH2I>(locHistName, locHistTitle, dNum2DPBins, dMinP, locMaxP, dNum2DTErrorBins, 0.0, dMaxTError);
 
 			locHistName = "TErrorVsTheta";
-			locHistTitle = locParticleROOTName + string(";#theta#circ;#sigma_{E}");
+			locHistTitle = locParticleROOTName + string(";#theta#circ;#sigma_{t} (ns)");
 			dHistMap_ShowerTErrorVsTheta[locIsBCALFlag] = GetOrCreate_Histogram<TH2I>(locHistName, locHistTitle, dNum2DThetaBins, locMinTheta, locMaxTheta, dNum2DTErrorBins, 0.0, dMaxTError);
 
 			locHistName = "TErrorVsPhi";
-			locHistTitle = locParticleROOTName + string(";#phi#circ;#sigma_{E}");
+			locHistTitle = locParticleROOTName + string(";#phi#circ;#sigma_{t} (ns)");
 			dHistMap_ShowerTErrorVsPhi[locIsBCALFlag] = GetOrCreate_Histogram<TH2I>(locHistName, locHistTitle, dNum2DPhiBins, dMinPhi, dMaxPhi, dNum2DTErrorBins, 0.0, dMaxTError);
 
 			gDirectory->cd("..");
