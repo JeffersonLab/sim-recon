@@ -30,7 +30,7 @@ class DKinFitConstraint_Spacetime : public DKinFitConstraint_Vertex
 		int Get_CommonTParamIndex(void) const;
 
 		set<DKinFitParticle*> Get_OnlyConstrainTimeParticles(void) const{return dOnlyConstrainTimeParticles;}
-		set<DKinFitParticle*> Get_AllConstrainedParticles(void) const;
+		set<DKinFitParticle*> Get_AllConstrainingParticles(void) const;
 		set<DKinFitParticle*> Get_AllParticles(void) const;
 
 		void Print_ConstraintInfo(void) const;
@@ -74,7 +74,7 @@ inline set<DKinFitParticle*> DKinFitConstraint_Spacetime::Get_AllParticles(void)
 	return locAllParticles;
 }
 
-inline set<DKinFitParticle*> DKinFitConstraint_Spacetime::Get_AllConstrainedParticles(void) const
+inline set<DKinFitParticle*> DKinFitConstraint_Spacetime::Get_AllConstrainingParticles(void) const
 {
 	set<DKinFitParticle*> locAllConstrainedParticles;
 	set_union(dFullConstrainParticles.begin(), dFullConstrainParticles.end(), dOnlyConstrainTimeParticles.begin(), 

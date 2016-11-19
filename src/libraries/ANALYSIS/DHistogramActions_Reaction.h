@@ -275,7 +275,7 @@ class DHistogramAction_InvariantMass : public DAnalysisAction
 		const DAnalysisUtilities* dAnalysisUtilities;
 		TH1I* dHist_InvaraintMass;
 
-		set<set<pair<const JObject*, Particle_t> > > dPreviousSourceObjects;
+		set<set<pair<const JObject*, unsigned int> > > dPreviousSourceObjects;
 };
 
 class DHistogramAction_MissingMass : public DAnalysisAction
@@ -341,7 +341,7 @@ class DHistogramAction_MissingMass : public DAnalysisAction
 		TH2I* dHist_MissingMassVsMissingP;
 		const DAnalysisUtilities* dAnalysisUtilities;
 
-		set<set<pair<const JObject*, Particle_t> > > dPreviousSourceObjects;
+		set<set<pair<const JObject*, unsigned int> > > dPreviousSourceObjects;
 };
 
 class DHistogramAction_MissingMassSquared : public DAnalysisAction
@@ -407,7 +407,7 @@ class DHistogramAction_MissingMassSquared : public DAnalysisAction
 		TH2I* dHist_MissingMassSquaredVsMissingP;
 		const DAnalysisUtilities* dAnalysisUtilities;
 
-		set<set<pair<const JObject*, Particle_t> > > dPreviousSourceObjects;
+		set<set<pair<const JObject*, unsigned int> > > dPreviousSourceObjects;
 };
 
 class DHistogramAction_2DInvariantMass : public DAnalysisAction
@@ -431,7 +431,7 @@ class DHistogramAction_2DInvariantMass : public DAnalysisAction
 		const DAnalysisUtilities* dAnalysisUtilities;
 		TH2I* dHist_2DInvaraintMass;
 
-		set<set<set<pair<const JObject*, Particle_t> > > > dPreviousSourceObjects;
+		set<set<set<pair<const JObject*, unsigned int> > > > dPreviousSourceObjects;
 };
 
 
@@ -456,7 +456,7 @@ class DHistogramAction_Dalitz : public DAnalysisAction
 		const DAnalysisUtilities* dAnalysisUtilities;
 		TH2I* dHist_DalitzPlot;
 
-		set<set<set<pair<const JObject*, Particle_t> > > > dPreviousSourceObjects;
+		set<set<set<pair<const JObject*, unsigned int> > > > dPreviousSourceObjects;
 };
 
 class DHistogramAction_KinFitResults : public DAnalysisAction
@@ -476,7 +476,7 @@ class DHistogramAction_KinFitResults : public DAnalysisAction
 	private:
 		bool Perform_Action(JEventLoop* locEventLoop, const DParticleCombo* locParticleCombo);
 
-		void Create_ParticlePulls(string locFullROOTName, bool locIsInVertexFitFlag, bool locIsNeutralShowerFlag, map<DKinFitPullType, TH1I*>& locParticlePulls, map<DKinFitPullType, TH2I*>& locParticlePullsVsP, map<DKinFitPullType, TH2I*>& locParticlePullsVsTheta, map<DKinFitPullType, TH2I*>& locParticlePullsVsPhi);
+		void Create_ParticlePulls(string locFullROOTName, bool locIsChargedFlag, bool locIsInVertexFitFlag, bool locIsNeutralShowerFlag, map<DKinFitPullType, TH1I*>& locParticlePulls, map<DKinFitPullType, TH2I*>& locParticlePullsVsP, map<DKinFitPullType, TH2I*>& locParticlePullsVsTheta, map<DKinFitPullType, TH2I*>& locParticlePullsVsPhi);
 
 		double dPullHistConfidenceLevelCut;
 		const DAnalysisUtilities* dAnalysisUtilities;
@@ -514,7 +514,7 @@ class DHistogramAction_MissingTransverseMomentum : public DAnalysisAction
 		const DAnalysisUtilities* dAnalysisUtilities;
 		TH1I* dHist_MissingTransverseMomentum;
 
-		set<set<pair<const JObject*, Particle_t> > > dPreviousSourceObjects;
+		set<set<pair<const JObject*, unsigned int> > > dPreviousSourceObjects;
 };
 
 #endif // _DHistogramActions_Reaction_

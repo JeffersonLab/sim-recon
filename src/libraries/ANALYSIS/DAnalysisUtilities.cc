@@ -756,22 +756,22 @@ bool DAnalysisUtilities::Are_ThrownPIDsSameAsDesired(JEventLoop* locEventLoop, c
 
 DLorentzVector DAnalysisUtilities::Calc_MissingP4(const DParticleCombo* locParticleCombo, bool locUseKinFitDataFlag) const
 {
-	set<pair<const JObject*, Particle_t> > locSourceObjects;
+	set<pair<const JObject*, unsigned int> > locSourceObjects;
 	return Calc_MissingP4(locParticleCombo, 0, -1, set<size_t>(), locSourceObjects, locUseKinFitDataFlag);
 }
 
-DLorentzVector DAnalysisUtilities::Calc_MissingP4(const DParticleCombo* locParticleCombo, set<pair<const JObject*, Particle_t> >& locSourceObjects, bool locUseKinFitDataFlag) const
+DLorentzVector DAnalysisUtilities::Calc_MissingP4(const DParticleCombo* locParticleCombo, set<pair<const JObject*, unsigned int> >& locSourceObjects, bool locUseKinFitDataFlag) const
 {
 	return Calc_MissingP4(locParticleCombo, 0, -1, set<size_t>(), locSourceObjects, locUseKinFitDataFlag);
 }
 
 DLorentzVector DAnalysisUtilities::Calc_MissingP4(const DParticleCombo* locParticleCombo, size_t locStepIndex, int locUpToStepIndex, set<size_t> locUpThroughIndices, bool locUseKinFitDataFlag) const
 {
-	set<pair<const JObject*, Particle_t> > locSourceObjects;
+	set<pair<const JObject*, unsigned int> > locSourceObjects;
 	return Calc_MissingP4(locParticleCombo, locStepIndex, locUpToStepIndex, locUpThroughIndices, locSourceObjects, locUseKinFitDataFlag);
 }
 
-DLorentzVector DAnalysisUtilities::Calc_MissingP4(const DParticleCombo* locParticleCombo, size_t locStepIndex, int locUpToStepIndex, set<size_t> locUpThroughIndices, set<pair<const JObject*, Particle_t> >& locSourceObjects, bool locUseKinFitDataFlag) const
+DLorentzVector DAnalysisUtilities::Calc_MissingP4(const DParticleCombo* locParticleCombo, size_t locStepIndex, int locUpToStepIndex, set<size_t> locUpThroughIndices, set<pair<const JObject*, unsigned int> >& locSourceObjects, bool locUseKinFitDataFlag) const
 {
 	//NOTE: this routine assumes that the p4 of a charged decaying particle with a detached vertex is the same at both vertices!
 	//assumes missing particle is not the beam particle
@@ -785,8 +785,8 @@ DLorentzVector DAnalysisUtilities::Calc_MissingP4(const DParticleCombo* locParti
 	if(locStepIndex == 0)
 	{
 		//initial particle
-		locKinematicData = locParticleComboStep->Get_InitialParticle_Measured();
-		locSourceObjects.insert(pair<const JObject*, Particle_t>(locKinematicData, locKinematicData->PID())); //want to use source objects for comparing
+	        locKinematicData = locParticleComboStep->Get_InitialParticle_Measured();
+		locSourceObjects.insert(pair<const JObject*, unsigned int>(locKinematicData, abs(PDGtype(locKinematicData->PID())))); //want to use source objects for comparing
 		if(locUseKinFitDataFlag) //kinfit
 			locKinematicData = locParticleComboStep->Get_InitialParticle();
 		locMissingP4 += locKinematicData->lorentzMomentum();
@@ -794,10 +794,9 @@ DLorentzVector DAnalysisUtilities::Calc_MissingP4(const DParticleCombo* locParti
 		//target particle
 		locKinematicData = locParticleComboStep->Get_TargetParticle();
 		if(locKinematicData != NULL)
-		{
-			locSourceObjects.insert(pair<const JObject*, Particle_t>(locKinematicData, locKinematicData->PID()));
+		 {
 			locMissingP4 += locKinematicData->lorentzMomentum();
-		}
+		 }
 	}
 
 	deque<const DKinematicData*> locParticles;
@@ -820,7 +819,7 @@ DLorentzVector DAnalysisUtilities::Calc_MissingP4(const DParticleCombo* locParti
 		if(locDecayStepIndex == -2) //detected
 		{
 			locMissingP4 -= locParticles[loc_j]->lorentzMomentum();
-			locSourceObjects.insert(pair<const JObject*, Particle_t>(locParticleComboStep->Get_FinalParticle_SourceObject(loc_j), locPID));
+			locSourceObjects.insert(pair<const JObject*, unsigned int>(locParticleComboStep->Get_FinalParticle_SourceObject(loc_j), abs(PDGtype(locPID))));
 		}
 		else //decaying-particle
 			locMissingP4 += Calc_MissingP4(locParticleCombo, locDecayStepIndex, locUpToStepIndex, locUpThroughIndices, locSourceObjects, locUseKinFitDataFlag); //p4 returned is already < 0
@@ -886,22 +885,22 @@ DMatrixDSym DAnalysisUtilities::Calc_MissingP3Covariance(const DParticleCombo* l
 
 DLorentzVector DAnalysisUtilities::Calc_FinalStateP4(const DParticleCombo* locParticleCombo, size_t locStepIndex, bool locUseKinFitDataFlag) const
 {
-	set<pair<const JObject*, Particle_t> > locSourceObjects;
+	set<pair<const JObject*, unsigned int> > locSourceObjects;
 	return Calc_FinalStateP4(locParticleCombo, locStepIndex, set<size_t>(), locSourceObjects, locUseKinFitDataFlag);
 }
 
-DLorentzVector DAnalysisUtilities::Calc_FinalStateP4(const DParticleCombo* locParticleCombo, size_t locStepIndex, set<pair<const JObject*, Particle_t> >& locSourceObjects, bool locUseKinFitDataFlag) const
+DLorentzVector DAnalysisUtilities::Calc_FinalStateP4(const DParticleCombo* locParticleCombo, size_t locStepIndex, set<pair<const JObject*, unsigned int> >& locSourceObjects, bool locUseKinFitDataFlag) const
 {
 	return Calc_FinalStateP4(locParticleCombo, locStepIndex, set<size_t>(), locSourceObjects, locUseKinFitDataFlag);
 }
 
 DLorentzVector DAnalysisUtilities::Calc_FinalStateP4(const DParticleCombo* locParticleCombo, size_t locStepIndex, set<size_t> locToIncludeIndices, bool locUseKinFitDataFlag) const
 {
-	set<pair<const JObject*, Particle_t> > locSourceObjects;
+	set<pair<const JObject*, unsigned int> > locSourceObjects;
 	return Calc_FinalStateP4(locParticleCombo, locStepIndex, locToIncludeIndices, locSourceObjects, locUseKinFitDataFlag);
 }
 
-DLorentzVector DAnalysisUtilities::Calc_FinalStateP4(const DParticleCombo* locParticleCombo, size_t locStepIndex, set<size_t> locToIncludeIndices, set<pair<const JObject*, Particle_t> >& locSourceObjects, bool locUseKinFitDataFlag) const
+DLorentzVector DAnalysisUtilities::Calc_FinalStateP4(const DParticleCombo* locParticleCombo, size_t locStepIndex, set<size_t> locToIncludeIndices, set<pair<const JObject*, unsigned int> >& locSourceObjects, bool locUseKinFitDataFlag) const
 {
 	if(locUseKinFitDataFlag && (locParticleCombo->Get_KinFitResults() == NULL))
 		return Calc_FinalStateP4(locParticleCombo, locStepIndex, locToIncludeIndices, locSourceObjects, false); //kinematic fit failed
@@ -941,7 +940,7 @@ DLorentzVector DAnalysisUtilities::Calc_FinalStateP4(const DParticleCombo* locPa
 		else
 		{
 			locFinalStateP4 += locParticles[loc_i]->lorentzMomentum();
-			locSourceObjects.insert(pair<const JObject*, Particle_t>(locParticleComboStep->Get_FinalParticle_SourceObject(loc_i), locParticles[loc_i]->PID()));
+			locSourceObjects.insert(pair<const JObject*, unsigned int>(locParticleComboStep->Get_FinalParticle_SourceObject(loc_i), abs(PDGtype(locParticles[loc_i]->PID()))));
 		}
 	}
 	return locFinalStateP4;
@@ -1023,12 +1022,6 @@ double DAnalysisUtilities::Calc_DOCA(const DKinematicData* locKinematicData1, co
 	return Calc_DOCA(locKinematicData1, locKinematicData2, locPOCA1, locPOCA2);
 }
 
-double DAnalysisUtilities::Calc_DOCA(const DVector3 &locUnitDir1, const DVector3 &locUnitDir2, const DVector3 &locVertex1, const DVector3 &locVertex2) const
-{
-	DVector3 locPOCA1, locPOCA2;
-	return Calc_DOCA(locUnitDir1, locUnitDir2, locVertex1, locVertex2, locPOCA1, locPOCA2);
-}
-
 double DAnalysisUtilities::Calc_DOCA(const DKinFitParticle* locKinFitParticle1, const DKinFitParticle* locKinFitParticle2, DVector3 &locPOCA1, DVector3 &locPOCA2) const
 {
 	DVector3 locUnitDir1(locKinFitParticle1->Get_Momentum().Unit().X(),locKinFitParticle1->Get_Momentum().Unit().Y(),locKinFitParticle1->Get_Momentum().Unit().Z());
@@ -1047,26 +1040,36 @@ double DAnalysisUtilities::Calc_DOCA(const DKinematicData* locKinematicData1, co
 	return Calc_DOCA(locUnitDir1, locUnitDir2, locVertex1, locVertex2, locPOCA1, locPOCA2);
 }
 
+double DAnalysisUtilities::Calc_DOCA(const DVector3 &locUnitDir1, const DVector3 &locUnitDir2, const DVector3 &locVertex1, const DVector3 &locVertex2) const
+{
+	DVector3 locPOCA1, locPOCA2;
+	return Calc_DOCA(locUnitDir1, locUnitDir2, locVertex1, locVertex2, locPOCA1, locPOCA2);
+}
+
 double DAnalysisUtilities::Calc_DOCA(const DVector3 &locUnitDir1, const DVector3 &locUnitDir2, const DVector3 &locVertex1, const DVector3 &locVertex2, DVector3 &locPOCA1, DVector3 &locPOCA2) const
 {
-  //originated from code by Jörn Langheinrich
-  //you can use this function to find the DOCA to a fixed point by calling this function with locUnitDir1 and 2 parallel, and the fixed vertex as locVertex2
-  double locUnitDot = locUnitDir1.Dot(locUnitDir2);
-  double locDenominator = locUnitDot*locUnitDot - 1.0; /// scalar product of directions
-  double locDistVertToInterDOCA1 = 0.0, locDistVertToInterDOCA2 = 0.0; //distance from vertex to DOCA point
+	//originated from code by Jorn Langheinrich
+	//you can use this function to find the DOCA to a fixed point by calling this function with locUnitDir1 and 2 parallel, and the fixed vertex as locVertex2
+	double locUnitDot = locUnitDir1.Dot(locUnitDir2);
+	double locDenominator = locUnitDot*locUnitDot - 1.0; // scalar product of directions
+	double locDistVertToInterDOCA1 = 0.0, locDistVertToInterDOCA2 = 0.0; //distance from vertex to DOCA point
 
-  if(fabs(locDenominator) < 1.0e-15) //parallel
-    locDistVertToInterDOCA1 = (locVertex2 - locVertex1).Dot(locUnitDir2)/locUnitDot; //the opposite
-  else{
-    double locA = (locVertex1 - locVertex2).Dot(locUnitDir1);
-    double locB = (locVertex1 - locVertex2).Dot(locUnitDir2);
-    locDistVertToInterDOCA1 = (locA - locUnitDot*locB)/locDenominator;
-    locDistVertToInterDOCA2 = (locUnitDot*locA - locB)/locDenominator;
-  }
+	if(fabs(locDenominator) < 1.0e-15) //parallel
+	{
+		locDistVertToInterDOCA1 = (locVertex2 - locVertex1).Dot(locUnitDir2)/locUnitDot; //the opposite
+		locDistVertToInterDOCA2 = (locVertex1 - locVertex2).Dot(locUnitDir1)/locUnitDot;
+	}
+	else
+	{
+		double locA = (locVertex1 - locVertex2).Dot(locUnitDir1);
+		double locB = (locVertex1 - locVertex2).Dot(locUnitDir2);
+		locDistVertToInterDOCA1 = (locA - locUnitDot*locB)/locDenominator;
+		locDistVertToInterDOCA2 = (locUnitDot*locA - locB)/locDenominator;
+	}
 
-  locPOCA1 = locVertex1 + locDistVertToInterDOCA1*locUnitDir1; //intersection point of DOCA line and track 1
-  locPOCA2 = locVertex2 + locDistVertToInterDOCA2*locUnitDir2; //intersection point of DOCA line and track 2
-  return (locPOCA1 - locPOCA2).Mag();
+	locPOCA1 = locVertex1 + locDistVertToInterDOCA1*locUnitDir1; //intersection point of DOCA line and track 1
+	locPOCA2 = locVertex2 + locDistVertToInterDOCA2*locUnitDir2; //intersection point of DOCA line and track 2
+	return (locPOCA1 - locPOCA2).Mag();
 }
 
 double DAnalysisUtilities::Calc_CrudeTime(const deque<const DKinematicData*>& locParticles, const DVector3& locCommonVertex) const

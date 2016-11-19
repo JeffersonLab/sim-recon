@@ -1218,7 +1218,7 @@ bool DHistogramAction_InvariantMass::Perform_Action(JEventLoop* locEventLoop, co
 		set<set<size_t> >::iterator locComboIterator = locIndexCombos.begin();
 		for(; locComboIterator != locIndexCombos.end(); ++locComboIterator)
 		{
-			set<pair<const JObject*, Particle_t> > locSourceObjects;
+			set<pair<const JObject*, unsigned int> > locSourceObjects;
 			DLorentzVector locFinalStateP4 = dAnalysisUtilities->Calc_FinalStateP4(locParticleCombo, loc_i, *locComboIterator, locSourceObjects, Get_UseKinFitResultsFlag());
 
 			if(dPreviousSourceObjects.find(locSourceObjects) != dPreviousSourceObjects.end())
@@ -1296,8 +1296,8 @@ bool DHistogramAction_MissingMass::Perform_Action(JEventLoop* locEventLoop, cons
 	vector<pair<double, double> > locMassesToFill; //first is missing mass, second is missing p
 	set<set<size_t> >::iterator locComboIterator = locIndexCombos.begin();
 	for(; locComboIterator != locIndexCombos.end(); ++locComboIterator)
-	{
-		set<pair<const JObject*, Particle_t> > locSourceObjects;
+	  {
+		set<pair<const JObject*, unsigned int> > locSourceObjects;
 		DLorentzVector locMissingP4 = dAnalysisUtilities->Calc_MissingP4(locParticleCombo, 0, dMissingMassOffOfStepIndex, *locComboIterator, locSourceObjects, Get_UseKinFitResultsFlag());
 
 		if(dPreviousSourceObjects.find(locSourceObjects) != dPreviousSourceObjects.end())
@@ -1378,7 +1378,7 @@ bool DHistogramAction_MissingMassSquared::Perform_Action(JEventLoop* locEventLoo
 	set<set<size_t> >::iterator locComboIterator = locIndexCombos.begin();
 	for(; locComboIterator != locIndexCombos.end(); ++locComboIterator)
 	{
-		set<pair<const JObject*, Particle_t> > locSourceObjects;
+		set<pair<const JObject*, unsigned int> > locSourceObjects;
 		DLorentzVector locMissingP4 = dAnalysisUtilities->Calc_MissingP4(locParticleCombo, 0, dMissingMassOffOfStepIndex, *locComboIterator, locSourceObjects, Get_UseKinFitResultsFlag());
 
 		if(dPreviousSourceObjects.find(locSourceObjects) != dPreviousSourceObjects.end())
@@ -1443,7 +1443,7 @@ bool DHistogramAction_2DInvariantMass::Perform_Action(JEventLoop* locEventLoop, 
 
 	vector<pair<double, double> > locMassesToFill;
 	for(size_t loc_i = 0; loc_i < locParticleCombo->Get_NumParticleComboSteps(); ++loc_i)
-	{
+	  {
 		const DReactionStep* locReactionStep = Get_Reaction()->Get_ReactionStep(loc_i);
 		if((dStepIndex != -1) && (int(loc_i) != dStepIndex))
 			continue;
@@ -1456,19 +1456,19 @@ bool DHistogramAction_2DInvariantMass::Perform_Action(JEventLoop* locEventLoop, 
 		set<set<size_t> >::iterator locXComboIterator = locXIndexCombos.begin();
 		for(; locXComboIterator != locXIndexCombos.end(); ++locXComboIterator)
 		{
-			set<pair<const JObject*, Particle_t> > locXSourceObjects;
+		        set<pair<const JObject*, unsigned int> > locXSourceObjects;
 			DLorentzVector locXP4 = dAnalysisUtilities->Calc_FinalStateP4(locParticleCombo, loc_i, *locXComboIterator, locXSourceObjects, Get_UseKinFitResultsFlag());
 
 			set<set<size_t> >::iterator locYComboIterator = locYIndexCombos.begin();
 			for(; locYComboIterator != locYIndexCombos.end(); ++locYComboIterator)
 			{
-				set<pair<const JObject*, Particle_t> > locYSourceObjects;
+				set<pair<const JObject*, unsigned int> > locYSourceObjects;
 				DLorentzVector locYP4 = dAnalysisUtilities->Calc_FinalStateP4(locParticleCombo, loc_i, *locYComboIterator, locYSourceObjects, Get_UseKinFitResultsFlag());
 
 				if(locXSourceObjects == locYSourceObjects)
 					continue; //the same!
 
-				set<set<pair<const JObject*, Particle_t> > > locAllSourceObjects;
+				set<set<pair<const JObject*, unsigned int> > > locAllSourceObjects;
 				locAllSourceObjects.insert(locXSourceObjects);
 				locAllSourceObjects.insert(locYSourceObjects);
 				if(dPreviousSourceObjects.find(locAllSourceObjects) != dPreviousSourceObjects.end())
@@ -1544,19 +1544,19 @@ bool DHistogramAction_Dalitz::Perform_Action(JEventLoop* locEventLoop, const DPa
 		set<set<size_t> >::iterator locXComboIterator = locXIndexCombos.begin();
 		for(; locXComboIterator != locXIndexCombos.end(); ++locXComboIterator)
 		{
-			set<pair<const JObject*, Particle_t> > locXSourceObjects;
+			set<pair<const JObject*, unsigned int> > locXSourceObjects;
 			DLorentzVector locXP4 = dAnalysisUtilities->Calc_FinalStateP4(locParticleCombo, loc_i, *locXComboIterator, locXSourceObjects, Get_UseKinFitResultsFlag());
 
 			set<set<size_t> >::iterator locYComboIterator = locYIndexCombos.begin();
 			for(; locYComboIterator != locYIndexCombos.end(); ++locYComboIterator)
 			{
-				set<pair<const JObject*, Particle_t> > locYSourceObjects;
+				set<pair<const JObject*, unsigned int> > locYSourceObjects;
 				DLorentzVector locYP4 = dAnalysisUtilities->Calc_FinalStateP4(locParticleCombo, loc_i, *locYComboIterator, locYSourceObjects, Get_UseKinFitResultsFlag());
 
 				if(locXSourceObjects == locYSourceObjects)
 					continue; //the same!
 
-				set<set<pair<const JObject*, Particle_t> > > locAllSourceObjects;
+				set<set<pair<const JObject*, unsigned int> > > locAllSourceObjects;
 				locAllSourceObjects.insert(locXSourceObjects);
 				locAllSourceObjects.insert(locYSourceObjects);
 				if(dPreviousSourceObjects.find(locAllSourceObjects) != dPreviousSourceObjects.end())
@@ -1599,9 +1599,10 @@ void DHistogramAction_KinFitResults::Initialize(JEventLoop* locEventLoop)
 	bool locIncludeBeamlineInVertexFitFlag = dKinFitUtils->Get_IncludeBeamlineInVertexFitFlag();
 
 	bool locP4IsFit = ((locKinFitType != d_VertexFit) && (locKinFitType != d_SpacetimeFit));
+	bool locSpactimeIsFitFlag = (locKinFitType == d_SpacetimeFit) || (locKinFitType == d_P4AndSpacetimeFit);
 	//bool locIsInclusiveChannelFlag = Get_Reaction()->Get_IsInclusiveChannelFlag();
-	//Below, should in theory check on whether to create pxyz pull histograms in the inclusive channel case
-		//But, this is tricky: can have inclusive (no p4) but still have mass constraints (p4)
+//Below, should in theory check on whether to create pxyz pull histograms in the inclusive channel case
+	//But, this is tricky: can have inclusive (no p4) but still have mass constraints (p4)
 
 	//CREATE THE HISTOGRAMS
 	//Since we are creating histograms, the contents of gDirectory will be modified: must use JANA-wide ROOT lock
@@ -1625,6 +1626,7 @@ void DHistogramAction_KinFitResults::Initialize(JEventLoop* locEventLoop)
 			bool locIsInVertexFitFlag = (locVertexParticles.find(locParticlePair) != locVertexParticles.end());
 			if(!locIncludeBeamlineInVertexFitFlag)
 				locIsInVertexFitFlag = false;
+			bool locIsChargedFlag = (ParticleCharge(locInitialPID) != 0);
 
 			if(locP4IsFit || locIsInVertexFitFlag)
 			{
@@ -1641,7 +1643,7 @@ void DHistogramAction_KinFitResults::Initialize(JEventLoop* locEventLoop)
 				CreateAndChangeTo_Directory("Beam", "Beam");
 				map<DKinFitPullType, TH1I*> locParticlePulls;
 				map<DKinFitPullType, TH2I*> locParticlePullsVsP, locParticlePullsVsTheta, locParticlePullsVsPhi;
-				Create_ParticlePulls(locFullROOTName, locIsInVertexFitFlag, false, locParticlePulls, locParticlePullsVsP, locParticlePullsVsTheta, locParticlePullsVsPhi);
+				Create_ParticlePulls(locFullROOTName, locIsChargedFlag, locIsInVertexFitFlag, false, locParticlePulls, locParticlePullsVsP, locParticlePullsVsTheta, locParticlePullsVsPhi);
 				dHistMap_Pulls[pair<int, Particle_t>(-1, locInitialPID)] = locParticlePulls;
 				dHistMap_PullsVsP[pair<int, Particle_t>(-1, locInitialPID)] = locParticlePullsVsP;
 
@@ -1724,8 +1726,11 @@ void DHistogramAction_KinFitResults::Initialize(JEventLoop* locEventLoop)
 
 				pair<int, int> locParticlePair(loc_i, loc_j);
 				bool locIsInVertexFitFlag = (locVertexParticles.find(locParticlePair) != locVertexParticles.end());
+				bool locIsChargedFlag = (ParticleCharge(locPID) != 0);
 
 				bool locIsNeutralShowerFlag = (locIsInVertexFitFlag && (ParticleCharge(locPID) == 0));
+				if((ParticleMass(locPID) > 0.0) && !locSpactimeIsFitFlag)
+					locIsNeutralShowerFlag = false; //massive shower momentum is defined by t, which isn't fit: use particle
 				if(!locP4IsFit && !locIsInVertexFitFlag)
 					continue; //p4 is not fit, and this is not in a vertex fit: no pulls
 				if(locIsNeutralShowerFlag && !locP4IsFit)
@@ -1742,7 +1747,7 @@ void DHistogramAction_KinFitResults::Initialize(JEventLoop* locEventLoop)
 
 				map<DKinFitPullType, TH1I*> locParticlePulls;
 				map<DKinFitPullType, TH2I*> locParticlePullsVsP, locParticlePullsVsTheta, locParticlePullsVsPhi;
-				Create_ParticlePulls(locFullROOTName, locIsInVertexFitFlag, locIsNeutralShowerFlag, locParticlePulls, locParticlePullsVsP, locParticlePullsVsTheta, locParticlePullsVsPhi);
+				Create_ParticlePulls(locFullROOTName, locIsChargedFlag, locIsInVertexFitFlag, locIsNeutralShowerFlag, locParticlePulls, locParticlePullsVsP, locParticlePullsVsTheta, locParticlePullsVsPhi);
 				dHistMap_Pulls[pair<int, Particle_t>(loc_i, locPID)] = locParticlePulls;
 				dHistMap_PullsVsP[pair<int, Particle_t>(loc_i, locPID)] = locParticlePullsVsP;
 				dHistMap_PullsVsTheta[pair<int, Particle_t>(loc_i, locPID)] = locParticlePullsVsTheta;
@@ -1762,7 +1767,7 @@ void DHistogramAction_KinFitResults::Initialize(JEventLoop* locEventLoop)
 	japp->RootUnLock(); //RELEASE ROOT LOCK!!
 }
 
-void DHistogramAction_KinFitResults::Create_ParticlePulls(string locFullROOTName, bool locIsInVertexFitFlag, bool locIsNeutralShowerFlag, map<DKinFitPullType, TH1I*>& locParticlePulls, map<DKinFitPullType, TH2I*>& locParticlePullsVsP, map<DKinFitPullType, TH2I*>& locParticlePullsVsTheta, map<DKinFitPullType, TH2I*>& locParticlePullsVsPhi)
+void DHistogramAction_KinFitResults::Create_ParticlePulls(string locFullROOTName, bool locIsChargedFlag, bool locIsInVertexFitFlag, bool locIsNeutralShowerFlag, map<DKinFitPullType, TH1I*>& locParticlePulls, map<DKinFitPullType, TH2I*>& locParticlePullsVsP, map<DKinFitPullType, TH2I*>& locParticlePullsVsTheta, map<DKinFitPullType, TH2I*>& locParticlePullsVsPhi)
 {
 	locParticlePulls.clear();
 
@@ -1786,8 +1791,9 @@ void DHistogramAction_KinFitResults::Create_ParticlePulls(string locFullROOTName
 	}
 
 	//vertex pulls:
-	if((locIsNeutralShowerFlag && locP4IsFit) || (!locIsNeutralShowerFlag && locIsInVertexFitFlag))
+	if((locIsNeutralShowerFlag && locP4IsFit) || (locIsChargedFlag && locIsInVertexFitFlag))
 	{
+//should include case when beamline is in fit!!
 		locPullTypes.insert(pair<DKinFitPullType, pair<string, string> >(d_XxPull, pair<string, string>("Pull_Xx", "x_{x} Pull")));
 		locPullTypes.insert(pair<DKinFitPullType, pair<string, string> >(d_XyPull, pair<string, string>("Pull_Xy", "x_{y} Pull")));
 		locPullTypes.insert(pair<DKinFitPullType, pair<string, string> >(d_XzPull, pair<string, string>("Pull_Xz", "x_{z} Pull")));
@@ -1969,7 +1975,7 @@ bool DHistogramAction_MissingTransverseMomentum::Perform_Action(JEventLoop* locE
 	if(Get_NumPreviousParticleCombos() == 0)
 		dPreviousSourceObjects.clear();
 
-	set<pair<const JObject*, Particle_t> > locSourceObjects;
+	set<pair<const JObject*, unsigned int> > locSourceObjects;
 	DLorentzVector locFinalStateP4 = dAnalysisUtilities->Calc_FinalStateP4(locParticleCombo, 0, locSourceObjects, Get_UseKinFitResultsFlag()); // Use step '0'
 
 	if(dPreviousSourceObjects.find(locSourceObjects) != dPreviousSourceObjects.end())

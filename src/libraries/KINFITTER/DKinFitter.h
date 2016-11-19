@@ -114,7 +114,7 @@ class DKinFitter //purely virtual: cannot directly instantiate class, can only i
 		template <typename DType> bool Get_IsInConstraint(DKinFitParticle* locKinFitParticle, bool locOnlyDirectFlag = false) const;
 		template <typename DType> bool Get_IsIndirectlyInConstraint(DKinFitParticle* locKinFitParticle) const;
 
-		bool Get_IsVertexConstrained(DKinFitParticle* locKinFitParticle) const;
+		bool Get_IsConstrainingVertex(DKinFitParticle* locKinFitParticle) const;
 		bool Get_IsTimeConstrained(DKinFitParticle* locKinFitParticle) const;
 
 		/*********************************************************** FIT INITIALIZATION *************************************************************/
