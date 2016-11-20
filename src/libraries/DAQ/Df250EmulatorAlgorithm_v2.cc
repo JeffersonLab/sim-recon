@@ -59,7 +59,7 @@ void Df250EmulatorAlgorithm_v2::EmulateFirmware(const Df250WindowRawData* rawDat
     if (f250BORConfig == NULL || FORCE_DEFAULT){
         static int counter = 0;
         NSA = NSA_DEF;
-        NSB = NSA_DEF;
+        NSB = NSB_DEF;
         THR = THR_DEF;
         NPED = NPED_DEF;
         MAXPED = MAXPED_DEF;
@@ -78,8 +78,11 @@ void Df250EmulatorAlgorithm_v2::EmulateFirmware(const Df250WindowRawData* rawDat
         NPED   = f250BORConfig->NPED;
         MAXPED = f250BORConfig->MaxPed;
         NSAT   = f250BORConfig->NSAT;
-        if (VERBOSE > 0) jout << "Df250EmulatorAlgorithm_v2::EmulateFirmware NSA: " << NSA << " NSB: " << NSB << " THR: " << THR << endl; 
+        //if (VERBOSE > 0) jout << "Df250EmulatorAlgorithm_v2::EmulateFirmware NSA: " << NSA << " NSB: " << NSB << " THR: " << THR << endl; 
     }
+
+    if (VERBOSE > 0) jout << "Df250EmulatorAlgorithm_v2::EmulateFirmware NSA: " << NSA << " NSB: " << NSB << " THR: " << THR << endl; 
+
     // Note that in principle we could get this information from the Df250Config objects as well, but generally only NPED and the value of NSA+NSB are saved
     // not the individual NSA and NSB values
 
@@ -187,14 +190,19 @@ void Df250EmulatorAlgorithm_v2::EmulateFirmware(const Df250WindowRawData* rawDat
         pedestal += (samples[i] & 0xfff);
         if(i<4)
             VMIN += (samples[i] & 0xfff);
-        // error condition
+        // error conditions
         if ((samples[i] & 0xfff) > MAXPED) {
             bad_pedestal = true;
         }
+        // I think this is what the firmware is doing now
+        //if( (samples[i] == 0x1fff) || (samples[i] == 0x1000) ) {
+        //    bad_pedestal = true;
+        // }
     }
     VMIN /= 4;   // compute average
 
     // error conditions for timing algorithm
+    bool pedestal_underflow = false;
     for (unsigned int i=0; i < 5; i++) {
         // "If any of the first 5 samples is greater than MaxPed but less than TET, the TDC algorithm will proceed
         // and Time Quality bit 0 will be set to 1"
@@ -203,11 +211,25 @@ void Df250EmulatorAlgorithm_v2::EmulateFirmware(const Df250WindowRawData* rawDat
         }
         // "If any of the first 5 samples is greater than TET or underflow the TDC will NOT proceed..."
         // Waiit for iiit...
-        if( ((samples[i] & 0xfff) > THR) || (samples[i] == 0x1000) )
+        if( ((samples[i] & 0xfff) > THR) || (samples[i] == 0x1000) ) {
             no_timing_calculation = true;
+            if(samples[i] == 0x1000)
+                pedestal_underflow = true;
+        }
     }
 
     for (unsigned int p=0; p < npulses; ++p) {
+        // this is a hack to emulate the current version of the firmware
+        /*
+        if( bad_timing_pedestal ) {
+            vpeak_beyond_NSA[p] = true;
+            bad_timing_pedestal = false;
+            vpeak_not_found[p] = true;
+            has_overflow_samples[npulses] = false;
+            has_underflow_samples[npulses] = false;
+        }
+        */
+
         // "If any of the first 5 samples is greater than TET or underflow the TDC will NOT proceed
         //   1. pulse time is set to TC
         //   2. pulse peak is set to zero
@@ -216,13 +238,24 @@ void Df250EmulatorAlgorithm_v2::EmulateFirmware(const Df250WindowRawData* rawDat
             TMID[p] = TC[p];
             TFINE[p] = 0;
             VPEAK[p] = 0;
-            bad_timing_pedestal = true;
-            vpeak_not_found[p] = true;
+
+            // this part reproduces the current behavior of the algorithm, but it doesn't seem consistent with the specification (2.1.d.vi)
+            if(pedestal_underflow) {
+                bad_pedestal = true;
+                bad_timing_pedestal = true;
+                has_underflow_samples[p] = true;
+            } else {
+                // vpeak_beyond_NSA[p] = true;
+                vpeak_not_found[p] = true;
+                bad_timing_pedestal = true;
+            }
             //continue;
         }
 
         // we set up a loop so that we can break out of it at appropriate times...
-        while (!no_timing_calculation && true) {
+        // note that currently the timing algorithm is run when the pedestal has underflow samples,
+        // but according to the documentation, it shouldn't...
+        while ( (!no_timing_calculation || pedestal_underflow) && true) {
             //if (VMIN == 99999) {
             //    VPEAK[p] = 0;
             //    reportTC[p] = true;
