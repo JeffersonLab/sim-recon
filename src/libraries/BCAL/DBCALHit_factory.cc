@@ -27,7 +27,7 @@ jerror_t DBCALHit_factory::init(void)
    t_scale    = 0.0625;   // There are 62.5 ps/count from the fADC
    t_base     = 0.;
 
-  CHECK_FADC_ERRORS = false;
+  CHECK_FADC_ERRORS = true;
   gPARMS->SetDefaultParameter("BCAL:CHECK_FADC_ERRORS", CHECK_FADC_ERRORS, "Set to 1 to reject hits with fADC250 errors, ser to 0 to keep these hits");
 
    return NOERROR;
