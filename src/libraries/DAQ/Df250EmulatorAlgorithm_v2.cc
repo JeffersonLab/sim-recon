@@ -9,6 +9,7 @@ Df250EmulatorAlgorithm_v2::Df250EmulatorAlgorithm_v2(JEventLoop *loop){
     THR_DEF = 120;
     NPED_DEF = 4;
     MAXPED_DEF = 512;
+    NSAT_DEF = 2;
 
     // Set verbosity
     VERBOSE = 0;
@@ -20,6 +21,7 @@ Df250EmulatorAlgorithm_v2::Df250EmulatorAlgorithm_v2(JEventLoop *loop){
         gPARMS->SetDefaultParameter("EMULATION250:THR", THR_DEF,"Set threshold for firmware emulation, will be overwritten by BORConfig if present");
         gPARMS->SetDefaultParameter("EMULATION250:NPED", NPED_DEF,"Set NPED for firmware emulation, will be overwritten by BORConfig if present");
         gPARMS->SetDefaultParameter("EMULATION250:MAXPED", MAXPED_DEF,"Set MAXPED for firmware emulation, will be overwritten by BORConfig if present");
+        gPARMS->SetDefaultParameter("EMULATION250:NSAT", NSAT_DEF,"Set NSAT for firmware emulation, will be overwritten by BORConfig if present");
         gPARMS->SetDefaultParameter("EMULATION250:VERBOSE", VERBOSE,"Set verbosity for f250 emulation");
     }
 }
@@ -52,14 +54,16 @@ void Df250EmulatorAlgorithm_v2::EmulateFirmware(const Df250WindowRawData* rawDat
     int32_t NSB;
     uint32_t NPED, MAXPED;
     uint16_t THR;
+    uint16_t NSAT;
     //If this does not exist, or we force it, use the default values
     if (f250BORConfig == NULL || FORCE_DEFAULT){
         static int counter = 0;
         NSA = NSA_DEF;
-        NSB = NSA_DEF;
+        NSB = NSB_DEF;
         THR = THR_DEF;
         NPED = NPED_DEF;
         MAXPED = MAXPED_DEF;
+        NSAT = NSAT_DEF;
         if (counter < 10){
             counter++;
             if (counter == 10) jout << " WARNING Df250EmulatorAlgorithm_v2::EmulateFirmware No Df250BORConfig == Using default values == LAST WARNING" << endl;
@@ -68,13 +72,17 @@ void Df250EmulatorAlgorithm_v2::EmulateFirmware(const Df250WindowRawData* rawDat
         }
     }
     else{
-        NSA = f250BORConfig->NSA;
-        NSB = f250BORConfig->NSB;
-        THR = f250BORConfig->adc_thres[channel];
-        NPED = f250BORConfig->NPED;
+        NSA    = f250BORConfig->NSA;
+        NSB    = f250BORConfig->NSB;
+        THR    = f250BORConfig->adc_thres[channel];
+        NPED   = f250BORConfig->NPED;
         MAXPED = f250BORConfig->MaxPed;
-        if (VERBOSE > 0) jout << "Df250EmulatorAlgorithm_v2::EmulateFirmware NSA: " << NSA << " NSB: " << NSB << " THR: " << THR << endl; 
+        NSAT   = f250BORConfig->NSAT;
+        //if (VERBOSE > 0) jout << "Df250EmulatorAlgorithm_v2::EmulateFirmware NSA: " << NSA << " NSB: " << NSB << " THR: " << THR << endl; 
     }
+
+    if (VERBOSE > 0) jout << "Df250EmulatorAlgorithm_v2::EmulateFirmware NSA: " << NSA << " NSB: " << NSB << " THR: " << THR << endl; 
+
     // Note that in principle we could get this information from the Df250Config objects as well, but generally only NPED and the value of NSA+NSB are saved
     // not the individual NSA and NSB values
 
@@ -116,12 +124,24 @@ void Df250EmulatorAlgorithm_v2::EmulateFirmware(const Df250WindowRawData* rawDat
     }
 
     // look for the threhold crossings and compute the integrals
-    for (unsigned int i=0; i < NW; i++) {
+    for (unsigned int i=0; i < (NW-NSAT); i++) {
         if ((samples[i] & 0xfff) > THR) {
             if (VERBOSE > 1) {
                 jout << "threshold crossing at " << i << endl;
             }
             TC[npulses] = i+1;
+            // check that we have more than NSAT sample over threshold
+            if(NSAT>1) {
+                int samples_over_threshold = 1;
+                for(unsigned int j=1; j < NSAT; j++) {
+                    if ((samples[j] & 0xfff) > THR)
+                        samples_over_threshold++;
+                    else
+                        break;
+                }
+                if( samples_over_threshold != NSAT )
+                    continue;
+            }
             unsigned int ibegin;
             if(NSB > 0)
                 ibegin = i > uint32_t(NSB) ? (i - NSB) : 0; // Set to beginning of window if too early
@@ -146,7 +166,7 @@ void Df250EmulatorAlgorithm_v2::EmulateFirmware(const Df250WindowRawData* rawDat
                 if( (i+1>=TC[npulses]) && ((samples[i] & 0xfff) > THR) )
                     number_samples_above_threshold[npulses]++;
             }
-            for (; i < NW && (samples[i] & 0xfff) > THR; ++i) {}
+            for (; i < NW && (samples[i] & 0xfff) >= THR; ++i) {}
             if (++npulses == max_pulses)
                break;
             TMIN[npulses] = i;
@@ -170,14 +190,19 @@ void Df250EmulatorAlgorithm_v2::EmulateFirmware(const Df250WindowRawData* rawDat
         pedestal += (samples[i] & 0xfff);
         if(i<4)
             VMIN += (samples[i] & 0xfff);
-        // error condition
+        // error conditions
         if ((samples[i] & 0xfff) > MAXPED) {
             bad_pedestal = true;
         }
+        // I think this is what the firmware is doing now
+        //if( (samples[i] == 0x1fff) || (samples[i] == 0x1000) ) {
+        //    bad_pedestal = true;
+        // }
     }
     VMIN /= 4;   // compute average
 
     // error conditions for timing algorithm
+    bool pedestal_underflow = false;
     for (unsigned int i=0; i < 5; i++) {
         // "If any of the first 5 samples is greater than MaxPed but less than TET, the TDC algorithm will proceed
         // and Time Quality bit 0 will be set to 1"
@@ -186,11 +211,25 @@ void Df250EmulatorAlgorithm_v2::EmulateFirmware(const Df250WindowRawData* rawDat
         }
         // "If any of the first 5 samples is greater than TET or underflow the TDC will NOT proceed..."
         // Waiit for iiit...
-        if( ((samples[i] & 0xfff) > THR) || (samples[i] == 0x1000) )
+        if( ((samples[i] & 0xfff) > THR) || (samples[i] == 0x1000) ) {
             no_timing_calculation = true;
+            if(samples[i] == 0x1000)
+                pedestal_underflow = true;
+        }
     }
 
     for (unsigned int p=0; p < npulses; ++p) {
+        // this is a hack to emulate the current version of the firmware
+        /*
+        if( bad_timing_pedestal ) {
+            vpeak_beyond_NSA[p] = true;
+            bad_timing_pedestal = false;
+            vpeak_not_found[p] = true;
+            has_overflow_samples[npulses] = false;
+            has_underflow_samples[npulses] = false;
+        }
+        */
+
         // "If any of the first 5 samples is greater than TET or underflow the TDC will NOT proceed
         //   1. pulse time is set to TC
         //   2. pulse peak is set to zero
@@ -199,13 +238,24 @@ void Df250EmulatorAlgorithm_v2::EmulateFirmware(const Df250WindowRawData* rawDat
             TMID[p] = TC[p];
             TFINE[p] = 0;
             VPEAK[p] = 0;
-            bad_timing_pedestal = true;
-            vpeak_not_found[p] = true;
+
+            // this part reproduces the current behavior of the algorithm, but it doesn't seem consistent with the specification (2.1.d.vi)
+            if(pedestal_underflow) {
+                bad_pedestal = true;
+                bad_timing_pedestal = true;
+                has_underflow_samples[p] = true;
+            } else {
+                // vpeak_beyond_NSA[p] = true;
+                vpeak_not_found[p] = true;
+                bad_timing_pedestal = true;
+            }
             //continue;
         }
 
         // we set up a loop so that we can break out of it at appropriate times...
-        while (!no_timing_calculation && true) {
+        // note that currently the timing algorithm is run when the pedestal has underflow samples,
+        // but according to the documentation, it shouldn't...
+        while ( (!no_timing_calculation || pedestal_underflow) && true) {
             //if (VMIN == 99999) {
             //    VPEAK[p] = 0;
             //    reportTC[p] = true;

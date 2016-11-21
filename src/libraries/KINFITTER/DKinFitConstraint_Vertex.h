@@ -28,7 +28,7 @@ class DKinFitConstraint_Vertex : public DKinFitConstraint
 		int Get_CommonVxParamIndex(void) const;
 		int Get_FIndex(DKinFitParticle* locKinFitParticle) const;
 
-		virtual set<DKinFitParticle*> Get_AllConstrainedParticles(void) const{return dFullConstrainParticles;}
+		virtual set<DKinFitParticle*> Get_AllConstrainingParticles(void) const{return dFullConstrainParticles;}
 		set<DKinFitParticle*> Get_FullConstrainParticles(void) const{return dFullConstrainParticles;}
 		set<DKinFitParticle*> Get_NoConstrainParticles(void) const{return dNoConstrainParticles;}
 		virtual set<DKinFitParticle*> Get_AllParticles(void) const;

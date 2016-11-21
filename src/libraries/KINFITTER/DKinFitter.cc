@@ -37,7 +37,7 @@
 		//This is necessary if you want the neutral particle momentum (from an input shower) to change with the reconstructed vertex
 	//decaying particles should only be used to constrain a fit if the position is defined in another vertex constraint
 	//Massive neutral showers (e.g. neutron) cannot be used in vertex constraints: only spacetime constraints. However, photons can. 
-		//This is because their momentum is defined by the vertex time
+		//This is because their momentum is defined by the vertex time, which is not defined
 
 //SPACETIME CONSTRAINTS:
 	//THESE ARE CURRENTLY DISABLED
@@ -117,14 +117,14 @@ void DKinFitter::Print_Matrix(const TMatrixD& locMatrix) const
 	}
 }
 
-bool DKinFitter::Get_IsVertexConstrained(DKinFitParticle* locKinFitParticle) const
+bool DKinFitter::Get_IsConstrainingVertex(DKinFitParticle* locKinFitParticle) const
 {
 	set<DKinFitConstraint_Vertex*> locConstraints = Get_Constraints<DKinFitConstraint_Vertex>(locKinFitParticle);
 	set<DKinFitConstraint_Vertex*>::iterator locSetIterator = locConstraints.begin();
 	for(; locSetIterator != locConstraints.end(); ++locSetIterator)
 	{
-		set<DKinFitParticle*> locConstrainedParticles = (*locSetIterator)->Get_AllConstrainedParticles();
-		if(locConstrainedParticles.find(locKinFitParticle) != locConstrainedParticles.end())
+		set<DKinFitParticle*> locConstrainingParticles = (*locSetIterator)->Get_AllConstrainingParticles();
+		if(locConstrainingParticles.find(locKinFitParticle) != locConstrainingParticles.end())
 			return true;
 	}
 	return false;
@@ -136,7 +136,7 @@ bool DKinFitter::Get_IsTimeConstrained(DKinFitParticle* locKinFitParticle) const
 	set<DKinFitConstraint_Spacetime*>::iterator locSetIterator = locConstraints.begin();
 	for(; locSetIterator != locConstraints.end(); ++locSetIterator)
 	{
-		set<DKinFitParticle*> locConstrainedParticles = (*locSetIterator)->Get_AllConstrainedParticles();
+		set<DKinFitParticle*> locConstrainedParticles = (*locSetIterator)->Get_AllConstrainingParticles();
 		if(locConstrainedParticles.find(locKinFitParticle) != locConstrainedParticles.end())
 			return true;
 	}
@@ -332,9 +332,9 @@ void DKinFitter::Set_MatrixSizes(void)
 			cout << "PID, pointer, is in p4/mass/vert/indirectv, accel = " << locKinFitParticle->Get_PID() << ", " << locKinFitParticle << ", " << locIsInP4Constraint << ", " << locIsInMassConstraint << ", " << locIsInVertexConstraint << ", " << locIsIndirectlyInVertexConstraint << ", " << locChargedBFieldFlag << endl;
 		if(!locKinFitParticle->Get_IsNeutralShowerFlag())
 		{
-			if(locIsInP4Constraint || locIsInMassConstraint || Get_IsVertexConstrained(locKinFitParticle) || locIsIndirectlyInVertexConstraint)
+			if(locIsInP4Constraint || locIsInMassConstraint || Get_IsConstrainingVertex(locKinFitParticle) || locIsIndirectlyInVertexConstraint)
 				dNumEta += 3; //p3
-			if(Get_IsVertexConstrained(locKinFitParticle) || (locIsIndirectlyInVertexConstraint && locChargedBFieldFlag))
+			if(Get_IsConstrainingVertex(locKinFitParticle) || (locIsIndirectlyInVertexConstraint && locChargedBFieldFlag))
 				dNumEta += 3; //v3 //directly (first condition) or indirectly AND accelerating (second condition)
 		}
 		else //neutral shower
@@ -489,7 +489,7 @@ void DKinFitter::Fill_InputMatrices(void)
 
 		if(!locKinFitParticle->Get_IsNeutralShowerFlag()) //non-neutral-shower
 		{
-			if(locIsInP4Constraint || locIsInMassConstraint || Get_IsVertexConstrained(locKinFitParticle) || locIsIndirectlyInVertexConstraint)
+			if(locIsInP4Constraint || locIsInMassConstraint || Get_IsConstrainingVertex(locKinFitParticle) || locIsIndirectlyInVertexConstraint)
 			{
 				locKinFitParticle->Set_PxParamIndex(locParamIndex);
 				dY(locParamIndex, 0) = locMomentum.Px();
@@ -497,7 +497,7 @@ void DKinFitter::Fill_InputMatrices(void)
 				dY(locParamIndex + 2, 0) = locMomentum.Pz();
 				locParamIndex += 3;
 			}
-			if(Get_IsVertexConstrained(locKinFitParticle) || (locIsIndirectlyInVertexConstraint && locChargedBFieldFlag))
+			if(Get_IsConstrainingVertex(locKinFitParticle) || (locIsIndirectlyInVertexConstraint && locChargedBFieldFlag))
 			{
 				locKinFitParticle->Set_VxParamIndex(locParamIndex);
 				dY(locParamIndex, 0) = locPosition.Px();

@@ -31,16 +31,15 @@ using namespace jana;
 
 class DVertex_factory : public jana::JFactory<DVertex>
 {
-	public:
-
 	private:
 		jerror_t init(void);						///< Called once at program start.
 		jerror_t brun(jana::JEventLoop *locEventLoop, int32_t runnumber);	///< Called everytime a new run number is detected.
 		jerror_t evnt(jana::JEventLoop *locEventLoop, uint64_t eventnumber);	///< Called every event.
-		jerror_t erun(void);						///< Called everytime run number changes, provided brun has been called.
-		jerror_t fini(void);						///< Called after last event of last event source has been processed.
 
-		jerror_t Create_Vertex(DVector3 locPosition, double locRFTime, unsigned int locKinFitNDF = 0, double locKinFitChiSq = 0.0);
+		jerror_t Create_Vertex_NoTracks(const DEventRFBunch* locEventRFBunch);
+		jerror_t Create_Vertex_OneTrack(const DTrackTimeBased* locTrackTimeBased, const DEventRFBunch* locEventRFBunch);
+		jerror_t Create_Vertex_Rough(DVector3 locPosition, const DEventRFBunch* locEventRFBunch);
+		jerror_t Create_Vertex_KinFit(const DEventRFBunch* locEventRFBunch);
 
 		const DAnalysisUtilities* dAnalysisUtilities;
 		DKinFitter* dKinFitter;
@@ -49,6 +48,8 @@ class DVertex_factory : public jana::JFactory<DVertex>
 		int dKinFitDebugLevel;
 		bool dNoKinematicFitFlag;
 		double dTargetZCenter;
+		double dTargetLength;
+		double dTargetRadius;
 		double dMinTrackingFOM;
 };
 

@@ -826,39 +826,6 @@ set<pair<int, int> > DKinFitUtils_GlueX::Get_KinFitVertexParticles(const DReacti
 	return locVertexParticles;
 }
 
-set<pair<int, int> > DKinFitUtils_GlueX::Get_KinFitNeutralShowers(const DReaction* locReaction, const deque<set<pair<int, int> > >& locVertices) const
-{
-	//the indices of the particles that can be used as neutral showers are returned. else must be used as neutral particles
-		//neutral shower: if position is defined by a vertex constraint
-
-	set<pair<int, int> > locNeutralShowers;
-	for(size_t loc_i = 0; loc_i < locVertices.size(); ++loc_i)
-	{
-		const set<pair<int, int> >& locVertexParticles = locVertices[loc_i];
-		set<pair<int, int> >::const_iterator locIterator = locVertexParticles.begin();
-		for(; locIterator != locVertexParticles.end(); ++locIterator)
-		{
-			int locStepIndex = (*locIterator).first;
-			int locParticleIndex = (*locIterator).second;
-			if(locParticleIndex < 0)
-				continue; //initial state particle
-
-			const DReactionStep* locReactionStep = locReaction->Get_ReactionStep(locStepIndex);
-			if(locParticleIndex == locReactionStep->Get_MissingParticleIndex())
-				continue; //missing particle
-			int locDecayStepIndex = locReaction->Get_DecayStepIndex(locStepIndex, locParticleIndex);
-			if(locDecayStepIndex >= 0)
-				continue; //decaying particle
-
-			Particle_t locPID = locReactionStep->Get_FinalParticleID(locParticleIndex);
-			if(ParticleCharge(locPID) == 0)
-				locNeutralShowers.insert(*locIterator);
-		}
-	}
-
-	return locNeutralShowers;
-}
-
 string DKinFitUtils_GlueX::Get_ConstraintInfo(const DReaction* locReaction, DKinFitType locKinFitType, size_t& locNumConstraints, size_t& locNumUnknowns) const
 {
 	//returns constraint string, sets # constraints & unknowns

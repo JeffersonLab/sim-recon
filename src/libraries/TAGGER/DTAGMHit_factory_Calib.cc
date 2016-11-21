@@ -38,7 +38,7 @@ jerror_t DTAGMHit_factory_Calib::init(void)
     gPARMS->SetDefaultParameter("TAGMHit:CUT_FACTOR", CUT_FACTOR, "TAGM pulse integral cut factor, 0 = no cut");
     gPARMS->SetDefaultParameter("TAGMHit:USE_ADC", USE_ADC, "Use ADC times in TAGM");
 
-    CHECK_FADC_ERRORS = false;
+    CHECK_FADC_ERRORS = true;
     gPARMS->SetDefaultParameter("TAGMHit:CHECK_FADC_ERRORS", CHECK_FADC_ERRORS, "Set to 1 to reject hits with fADC250 errors, ser to 0 to keep these hits");
 
     // initialize calibration constants
