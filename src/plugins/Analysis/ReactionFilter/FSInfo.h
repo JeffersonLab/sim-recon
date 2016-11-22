@@ -122,5 +122,6 @@ inline string FSInfo::Get_ShortName(Particle_t locPID) const
 		return "lbar";
 	default:
 		return "";
+	}
 }
 
