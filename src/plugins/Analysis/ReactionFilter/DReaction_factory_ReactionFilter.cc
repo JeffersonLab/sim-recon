@@ -19,7 +19,13 @@ jerror_t DReaction_factory_ReactionFilter::init(void)
 	map<string, string> locParameterMap; //parameter key, value
 	gPARMS->GetParameters(locParameterMap, "ReactionFilter"); //gets all parameters with this filter at the beginning of the key
 	for(auto locParamPair : locParameterMap)
-		dFSInfos.push_back(new FSInfo(locParamPair.second));
+	{
+		//hack so that don't get warning message about no default
+		string locFullParamName = string("ReactionFilter") + locParamPair.first;
+		string locFSValue;
+		gPARMS->SetDefaultParameter(locFullParamName, locFSValue);
+		dFSInfos.push_back(new FSInfo(locFSValue));
+	}
 
 	return NOERROR;
 }

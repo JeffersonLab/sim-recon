@@ -7,16 +7,9 @@
 // **********************************************
 FSInfo::FSInfo(string FSName) : m_FSName(FSName)
 {
-	// print out final state name
-	// jout << "FSInfo:  Initializing Final State " << FSName << endl;
-
 	// set up member data
 	m_PIDs         = getPIDsFromFSName(FSName, m_ReactionName);
 	m_totalCharge  = getTotalChargeFromPIDs(m_PIDs);
-
-	// print out particle list
-	for (size_t i = 0; i < m_PIDs.size(); i++)
-		jout << "FSInfo:      " << ParticleType(m_PIDs[i]) << endl;
 
 	// do some checks
 	if (missingN() && totalCharge() != 0 && totalCharge() != 1)
