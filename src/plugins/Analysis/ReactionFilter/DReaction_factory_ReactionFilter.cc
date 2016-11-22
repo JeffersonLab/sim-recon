@@ -41,10 +41,6 @@ jerror_t DReaction_factory_ReactionFilter::brun(JEventLoop* locEventLoop, int32_
 //------------------
 jerror_t DReaction_factory_ReactionFilter::evnt(JEventLoop* locEventLoop, uint64_t locEventNumber)
 {
-	// Make as many DReaction objects as desired
-	DReactionStep* locReactionStep = NULL;
-	DReaction* locReaction = NULL; //create with a unique name for each DReaction object. CANNOT (!) be "Thrown"
-
 	// DOCUMENTATION:
 	// ANALYSIS library: https://halldweb1.jlab.org/wiki/index.php/GlueX_Analysis_Software
 	// DReaction factory: https://halldweb1.jlab.org/wiki/index.php/Analysis_DReaction
@@ -54,7 +50,7 @@ jerror_t DReaction_factory_ReactionFilter::evnt(JEventLoop* locEventLoop, uint64
 	{
 		/*************************************************** Reaction Definition **************************************************/
 
-		//Create reaction
+		//Create reaction //create with a unique name for each DReaction object. CANNOT (!) be "Thrown"
 		DReaction* locReaction = new DReaction(locFSInfo->ReactionName());
 		Create_FirstStep(locReaction, locFSInfo);
 		Create_DecaySteps(locReaction, locFSInfo);
@@ -168,11 +164,11 @@ void DReaction_factory_ReactionFilter::Create_DecaySteps(DReaction* locReaction,
 	map<pair<Particle_t, bool>, set<DReactionStep*> > locDecayStepMap_Available = dDecayStepMap_All; 
 	bool locConstrainMassFlag = locFSInfo->intermediateMassFits();
 
-	vector<Particle_t>& locPIDs = locFSInfo->PIDs;
+	vector<Particle_t> locPIDs = locFSInfo->PIDs;
 	for(auto locPID : locPIDs)
 	{
 		//see if a decay step has been previously created for this PID
-		pair<Particle_t, bool> locStepIDPair(locPID, locConstrainMassFlag)
+		pair<Particle_t, bool> locStepIDPair(locPID, locConstrainMassFlag);
 		auto locStepMapIterator = locDecayStepMap_Available.find(locStepIDPair);
 		if(locStepMapIterator == locDecayStepMap_Available.end())
 		{
@@ -239,7 +235,7 @@ void DReaction_factory_ReactionFilter::Create_DecayStep(DReaction* locReaction, 
 	locReaction->Add_ReactionStep(locReactionStep);
 	dReactionStepPool.push_back(locReactionStep);
 
-	pair<Particle_t, bool> locStepIDPair(locPID, locConstrainMassFlag)
+	pair<Particle_t, bool> locStepIDPair(locPID, locConstrainMassFlag);
 	dDecayStepMap_All[locStepIDPair].insert(locReactionStep);
 }
 
@@ -404,9 +400,9 @@ void DReaction_factory_ReactionFilter::Add_MassHistograms(DReaction* locReaction
 
 		//add histogram action
 		if(locCutPair.first >= 0.0)
-			locReaction->Add_ComboPreSelectionAction(new DHistogramAction_MissingMass(locReaction, false, locCutPair.first, locCutPair.second));
+			locReaction->Add_ComboPreSelectionAction(new DHistogramAction_MissingMass(locReaction, locNumBins, locCutPair.first, locCutPair.second));
 		else
-			locReaction->Add_ComboPreSelectionAction(new DHistogramAction_MissingMassSquared(locReaction, false, locCutPair.first, locCutPair.second));
+			locReaction->Add_ComboPreSelectionAction(new DHistogramAction_MissingMassSquared(locReaction, locNumBins, locCutPair.first, locCutPair.second));
 	}
 
 	//invariant mass
