@@ -355,7 +355,7 @@ void DReaction_factory_ReactionFilter::Add_PreComboCuts(DReaction* locReaction, 
 void DReaction_factory_ReactionFilter::Add_PIDActions(DReaction* locReaction)
 {
 	//Histogram before cuts
-	//locReaction->Add_ComboPreSelectionAction(new DHistogramAction_PID(locReaction));
+	locReaction->Add_ComboPreSelectionAction(new DHistogramAction_PID(locReaction));
 
 	//Get, loop over detected PIDs in reaction
 	deque<Particle_t> locDetectedPIDs;
@@ -379,7 +379,7 @@ void DReaction_factory_ReactionFilter::Add_PIDActions(DReaction* locReaction)
 	locReaction->Add_ComboPreSelectionAction(new DCustomAction_dEdxCut(locReaction, false)); //false: focus on keeping signal
 
 	//Histogram after cuts
-	//locReaction->Add_ComboPreSelectionAction(new DHistogramAction_PID(locReaction, "PostPIDCuts"));
+	locReaction->Add_ComboPreSelectionAction(new DHistogramAction_PID(locReaction, "PostPIDCuts"));
 }
 
 void DReaction_factory_ReactionFilter::Add_MassHistograms(DReaction* locReaction, FSInfo* locFSInfo, bool locUseKinFitResultsFlag, string locBaseUniqueName)
@@ -402,14 +402,16 @@ void DReaction_factory_ReactionFilter::Add_MassHistograms(DReaction* locReaction
 
 		//determine #bins
 		int locNumBins = int((locCutPair.second - locCutPair.first)*1000.0 + 0.001);
-		if(locNumBins < 1000)
-			locNumBins *= (1000 / locNumBins); //get close to 1000 bins
+		if(locNumBins < 200)
+			locNumBins *= 5; //get close to 1000 bins
+		if(locNumBins < 500)
+			locNumBins *= 2; //get close to 1000 bins
 
 		//add histogram action
 		if(locCutPair.first >= 0.0)
-			locReaction->Add_ComboPreSelectionAction(new DHistogramAction_MissingMass(locReaction, false, locNumBins, locCutPair.first, locCutPair.second));
+			locReaction->Add_AnalysisAction(new DHistogramAction_MissingMass(locReaction, false, locNumBins, locCutPair.first, locCutPair.second));
 		else
-			locReaction->Add_ComboPreSelectionAction(new DHistogramAction_MissingMassSquared(locReaction, false, locNumBins, locCutPair.first, locCutPair.second));
+			locReaction->Add_AnalysisAction(new DHistogramAction_MissingMassSquared(locReaction, false, locNumBins, locCutPair.first, locCutPair.second));
 	}
 
 	//invariant mass
@@ -423,9 +425,15 @@ void DReaction_factory_ReactionFilter::Add_MassHistograms(DReaction* locReaction
 		auto locCutPair = locPIDIterator->second;
 
 		//determine #bins
+		//range = 0.11
+		//num bins = 110
+		//range / #bins = good number
+		//#bins = range*good_number
 		int locNumBins = int((locCutPair.second - locCutPair.first)*1000.0 + 0.001);
-		if(locNumBins < 1000)
-			locNumBins *= (1000 / locNumBins); //get close to 1000 bins
+		if(locNumBins < 200)
+			locNumBins *= 5; //get close to 1000 bins
+		if(locNumBins < 500)
+			locNumBins *= 2; //get close to 1000 bins
 
 		//build name string
 		string locActionUniqueName = string(ParticleType(locPID)) + string("_") + locBaseUniqueName;
