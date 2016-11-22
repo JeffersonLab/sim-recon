@@ -406,7 +406,7 @@ jerror_t JEventProcessor_lowlevel_online::init(void)
         tagm_adc_multi = new TH1I("tagm_adc_multi", "TAGM ADC Multiplicity", 50, 0, 50);
         tagm_tdc_multi = new TH1I("tagm_tdc_multi", "TAGM TDC Multiplicity", 50, 0, 50);
 
-        const uint32_t NCOLUMNS = 102;
+        //const uint32_t NCOLUMNS = 102;
         tagm_adc_integral = new TH1I("tagm_adc_integral", "TAGM fADC250 Pulse Integral;Integral (fADC counts)", 1000, 0, 40000);
         tagm_adc_integral_pedsub = new TH1I("tagm_adc_integral_pedsub", "TAGM fADC250 Pulse Integral (Pedestal Subtracted);Integral (fADC counts)", 1000, 0, 40000);
         tagm_adc_peak = new TH1I("tagm_adc_peak", "TAGM fADC250 Pulse Peak;Peak (fADC counts)", 500, 0, 1000);
@@ -576,8 +576,8 @@ jerror_t JEventProcessor_lowlevel_online::evnt(JEventLoop *loop, uint64_t eventn
             bcal_adc_emudelta_coarsetime->Fill( pulse->course_time - pulse->course_time_emulated );
             bcal_adc_emudelta_finetime->Fill( pulse->fine_time - pulse->fine_time_emulated );
 
-	    if(pulse->pulse_peak - pulse->pulse_peak_emulated > 20)
-	    	    cout << eventnumber << " " << pulse->rocid << " " << pulse->slot << " " << pulse->channel << endl;
+            //if(pulse->pulse_peak - pulse->pulse_peak_emulated > 20)
+            //  cout << eventnumber << " " << pulse->rocid << " " << pulse->slot << " " << pulse->channel << endl;
         }
 
         if(INDIVIDUAL_CHANNEL_DATA) {
@@ -628,6 +628,9 @@ jerror_t JEventProcessor_lowlevel_online::evnt(JEventLoop *loop, uint64_t eventn
             fcal_adc_emudelta_pedestal->Fill( pulse->pedestal - pulse->pedestal_emulated );
             fcal_adc_emudelta_coarsetime->Fill( pulse->course_time - pulse->course_time_emulated );
             fcal_adc_emudelta_finetime->Fill( pulse->fine_time - pulse->fine_time_emulated );
+
+            if( pulse->course_time != pulse->course_time_emulated )
+                cout << eventnumber << " " << pulse->rocid << " " << pulse->slot << " " << pulse->channel << endl;
         }
 
         if(INDIVIDUAL_CHANNEL_DATA) {
