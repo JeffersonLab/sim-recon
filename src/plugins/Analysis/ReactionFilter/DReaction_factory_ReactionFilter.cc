@@ -88,7 +88,8 @@ jerror_t DReaction_factory_ReactionFilter::evnt(JEventLoop* locEventLoop, uint64
 		// Highly Recommended: Enable ROOT TTree output for this DReaction
 		// string is file name (must end in ".root"!!): doen't need to be unique, feel free to change
 		string locTreeFileName = string("tree_") + locFSInfo->ReactionName() + string(".root");
-		locReaction->Enable_TTreeOutput(locTreeFileName, true); //true/false: do/don't save unused hypotheses
+		bool locSaveUnusedFlag = locFSInfo->inclusive();
+		locReaction->Enable_TTreeOutput(locTreeFileName, locSaveUnusedFlag); //true/false: do/don't save unused hypotheses
 
 		/************************************************** Pre-Combo Custom Cuts *************************************************/
 
@@ -354,7 +355,7 @@ void DReaction_factory_ReactionFilter::Add_PreComboCuts(DReaction* locReaction, 
 void DReaction_factory_ReactionFilter::Add_PIDActions(DReaction* locReaction)
 {
 	//Histogram before cuts
-	locReaction->Add_AnalysisAction(new DHistogramAction_PID(locReaction));
+	locReaction->Add_ComboPreSelectionAction(new DHistogramAction_PID(locReaction));
 
 	//Get, loop over detected PIDs in reaction
 	deque<Particle_t> locDetectedPIDs;
@@ -366,19 +367,19 @@ void DReaction_factory_ReactionFilter::Add_PIDActions(DReaction* locReaction)
 
 		//Add timing cuts //false: measured data
 		for(auto locSystemPair : dPIDTimingCuts[locPID])
-			locReaction->Add_AnalysisAction(new DCutAction_PIDDeltaT(locReaction, false, locSystemPair.second, locPID, locSystemPair.first));
+			locReaction->Add_ComboPreSelectionAction(new DCutAction_PIDDeltaT(locReaction, false, locSystemPair.second, locPID, locSystemPair.first));
 
 		//For kaon candidates, cut tracks that don't have a matching hit in a timing detector
 			//Kaons are rare, cut ~necessary to reduce high backgrounds
 		if((locPID == KPlus) || (locPID == KMinus))
-			locReaction->Add_AnalysisAction(new DCutAction_NoPIDHit(locReaction, locPID));
+			locReaction->Add_ComboPreSelectionAction(new DCutAction_NoPIDHit(locReaction, locPID));
 	}
 
 	//Loose dE/dx cuts
-	locReaction->Add_AnalysisAction(new DCustomAction_dEdxCut(locReaction, false)); //false: focus on keeping signal
+	locReaction->Add_ComboPreSelectionAction(new DCustomAction_dEdxCut(locReaction, false)); //false: focus on keeping signal
 
 	//Histogram after cuts
-	locReaction->Add_AnalysisAction(new DHistogramAction_PID(locReaction, "PostPIDCuts"));
+	locReaction->Add_ComboPreSelectionAction(new DHistogramAction_PID(locReaction, "PostPIDCuts"));
 }
 
 void DReaction_factory_ReactionFilter::Add_MassHistograms(DReaction* locReaction, FSInfo* locFSInfo, bool locUseKinFitResultsFlag, string locBaseUniqueName)
