@@ -69,7 +69,7 @@ vector<Particle_t> FSInfo::getPIDsFromFSName( const string& FSName, string& locR
 	int index = 0;
 	bool lcode2 = false;
 	vector<Particle_t> locPIDs;
-	ostringstream locReactionName;
+	ostringstream locReactionStream;
 	for (int i = FSName.size()-1; i >= 0 && index < 16; i--)
 	{
 		string digit = FSName.substr(i,1);
@@ -81,8 +81,8 @@ vector<Particle_t> FSInfo::getPIDsFromFSName( const string& FSName, string& locR
 				locPIDs.push_back(locPID);
 
 			if(num > 1)
-				locReactionName << num;
-			locReactionName << Get_ShortName(locPID);
+				locReactionStream << num;
+			locReactionStream << Get_ShortName(locPID);
 
 			index++;
 		}
@@ -114,6 +114,7 @@ vector<Particle_t> FSInfo::getPIDsFromFSName( const string& FSName, string& locR
 		exit(1);
 	}
 
+	locReactionName = locReactionStream.str();
 	return locPIDs;
 }
 
