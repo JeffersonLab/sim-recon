@@ -27,7 +27,7 @@ DKinFitUtils_GlueX::DKinFitUtils_GlueX(JEventLoop* locEventLoop)
 void DKinFitUtils_GlueX::Set_MaxPoolSizes(size_t locNumReactions, size_t locExpectedNumCombos)
 {
 	//final x2: input/output
-	Set_MaxKinFitParticlePoolSize(5*locNumReactions*locExpectedNumCombos*2);
+	Set_MaxKinFitParticlePoolSize(10*locNumReactions*locExpectedNumCombos*2);
 
 	Set_MaxKinFitConstraintVertexPoolSize(2*2*locNumReactions*locExpectedNumCombos*2); //extra x2: guess fit!
 	Set_MaxKinFitConstraintSpacetimePoolSize(2*2*locNumReactions*locExpectedNumCombos*2); //extra x2: guess fit!
@@ -37,8 +37,7 @@ void DKinFitUtils_GlueX::Set_MaxPoolSizes(size_t locNumReactions, size_t locExpe
 	Set_MaxKinFitChainPoolSize(locNumReactions*locExpectedNumCombos);
 	Set_MaxKinFitChainStepPoolSize(3*locNumReactions*locExpectedNumCombos);
 
-	Set_MaxMatrixDSymPoolSize(5*locNumReactions*locExpectedNumCombos*2);
-	Set_MaxLargeMatrixDSymPoolSize(3*locNumReactions*locExpectedNumCombos);
+	Set_MaxMatrixDSymPoolSize(10*locNumReactions*locExpectedNumCombos*2*5); //extra x5: to be safe
 }
 
 /*********************************************************** OVERRIDE BASE CLASS FUNCTIONS *********************************************************/
@@ -1290,7 +1289,7 @@ bool DKinFitUtils_GlueX::Propagate_TrackInfoToCommonVertex(DKinematicData* locKi
 	TVector3 locMomentum;
 	TLorentzVector locSpacetimeVertex;
 	pair<double, double> locPathLengthPair;
-	TMatrixDSym* locCovarianceMatrix = Get_MatrixDSymResource();
+	TMatrixDSym* locCovarianceMatrix = Get_MatrixDSymResource(7);
 	if(!DKinFitUtils::Propagate_TrackInfoToCommonVertex(locKinFitParticle, locVXi, locMomentum, locSpacetimeVertex, locPathLengthPair, *locCovarianceMatrix))
 		return false;
 

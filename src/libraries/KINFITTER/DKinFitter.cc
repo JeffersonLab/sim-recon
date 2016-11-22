@@ -93,10 +93,6 @@ void DKinFitter::Reset_NewFit(void)
 	dNDF = 0;
 	dConfidenceLevel = 0.0;
 	dPulls.clear();
-
-	dV = dKinFitUtils->Get_LargeMatrixDSymResource();
-	dVXi = dKinFitUtils->Get_LargeMatrixDSymResource();
-	dVEta = dKinFitUtils->Get_LargeMatrixDSymResource();
 }
 
 /********************************************************************** UTILITIES **********************************************************************/
@@ -421,18 +417,19 @@ void DKinFitter::Resize_Matrices(void)
 		dEta.ResizeTo(dNumEta, 1);
 		dEpsilon.ResizeTo(dNumEta, 1);
 		dVY.ResizeTo(dNumEta, dNumEta);
+		dVEta.ResizeTo(dNumEta, dNumEta);
 	}
-	dVEta->ResizeTo(dNumEta, dNumEta);
 
 	if(dXi.GetNrows() != static_cast<int>(dNumXi))
 	{
 		dXi.ResizeTo(dNumXi, 1);
 		dU.ResizeTo(dNumXi, dNumXi);
 		dU_Inverse.ResizeTo(dNumXi, dNumXi);
+		dVXi.ResizeTo(dNumXi, dNumXi);
 	}
-	dVXi->ResizeTo(dNumXi, dNumXi);
 
-	dV->ResizeTo(dNumEta + dNumXi, dNumEta + dNumXi);
+	if(dV.GetNrows() != static_cast<int>(dNumEta + dNumXi))
+		dV.ResizeTo(dNumEta + dNumXi, dNumEta + dNumXi);
 
 	Zero_Matrices(); //zeroes all class matrices
 }
@@ -458,9 +455,9 @@ void DKinFitter::Zero_Matrices(void)
 	dU.Zero();
 	dU_Inverse.Zero();
 
-	dVXi->Zero();
-	dVEta->Zero();
-	dV->Zero();
+	dVXi.Zero();
+	dVEta.Zero();
+	dV.Zero();
 }
 
 void DKinFitter::Fill_InputMatrices(void)
@@ -743,7 +740,7 @@ bool DKinFitter::Fit_Reaction(void)
 
 	// Calculate final covariance matrices
 	if(dNumXi > 0)
-		*dVXi = dU;
+		dVXi = dU;
 	Calc_dVdEta();
 
 	// Calculate fit NDF, Confidence level
@@ -926,49 +923,49 @@ void DKinFitter::Calc_dVdEta(void)
 	locG.SimilarityT(dF_dEta);
 	if(dNumXi == 0)
 	{
-		*dVEta = dVY - locG.Similarity(dVY); //destroys locG, but it's not needed anymore
-		*dV = *dVEta;
+		dVEta = dVY - locG.Similarity(dVY); //destroys locG, but it's not needed anymore
+		dV = dVEta;
 		if(dDebugLevel > 20)
 		{
 			cout << "DKinFitter: dVEta: " << endl;
-			Print_Matrix(*dVEta);
+			Print_Matrix(dVEta);
 			cout << "DKinFitter: dV: " << endl;
-			Print_Matrix(*dV);
+			Print_Matrix(dV);
 		}
 		return;
 	}
 
 	TMatrixD locH = dF_dEta_T*dS_Inverse*dF_dXi;
-	TMatrixDSym locTempMatrix11 = *dVXi;
-	*dVEta = dVY - (locG - locTempMatrix11.Similarity(locH)).Similarity(dVY);
+	TMatrixDSym locTempMatrix11 = dVXi;
+	dVEta = dVY - (locG - locTempMatrix11.Similarity(locH)).Similarity(dVY);
 
 	//dV:
 	TMatrixD locEtaXiCovariance = -1.0*dVY*locH*dU;
 	for(unsigned int loc_i = 0; loc_i < dNumEta; ++loc_i)
 	{
 		for(unsigned int loc_j = 0; loc_j < dNumEta; ++loc_j)
-			(*dV)(loc_i, loc_j) = (*dVEta)(loc_i, loc_j);
+			dV(loc_i, loc_j) = dVEta(loc_i, loc_j);
 	}
 	for(unsigned int loc_i = 0; loc_i < dNumXi; ++loc_i)
 	{
 		for(unsigned int loc_j = 0; loc_j < dNumXi; ++loc_j)
-			(*dV)(loc_i + dNumEta, loc_j + dNumEta) = (*dVXi)(loc_i, loc_j);
+			dV(loc_i + dNumEta, loc_j + dNumEta) = dVXi(loc_i, loc_j);
 	}
 	for(unsigned int loc_i = 0; loc_i < dNumEta; ++loc_i)
 	{
 		for(unsigned int loc_j = 0; loc_j < dNumXi; ++loc_j)
 		{
-			(*dV)(loc_i, loc_j + dNumEta) = locEtaXiCovariance(loc_i, loc_j);
-			(*dV)(loc_j + dNumEta, loc_i) = locEtaXiCovariance(loc_i, loc_j);
+			dV(loc_i, loc_j + dNumEta) = locEtaXiCovariance(loc_i, loc_j);
+			dV(loc_j + dNumEta, loc_i) = locEtaXiCovariance(loc_i, loc_j);
 		}
 	}
 
 	if(dDebugLevel > 20)
 	{
 		cout << "DKinFitter: dVEta: " << endl;
-		Print_Matrix(*dVEta);
+		Print_Matrix(dVEta);
 		cout << "DKinFitter: dV: " << endl;
-		Print_Matrix(*dV);
+		Print_Matrix(dV);
 	}
 }
 
@@ -2453,40 +2450,40 @@ void DKinFitter::Calc_Pulls(void)
 		int locParamIndex = locKinFitParticle->Get_EParamIndex();
 		if(locParamIndex >= 0) //E
 		{
-			double locDenominator = sqrt(fabs(dVY(locParamIndex, locParamIndex) - (*dVEta)(locParamIndex, locParamIndex)));
+			double locDenominator = sqrt(fabs(dVY(locParamIndex, locParamIndex) - dVEta(locParamIndex, locParamIndex)));
 			locParticlePulls[d_EPull] = (locDenominator > 0.0) ? dEpsilon(locParamIndex, 0)/locDenominator : std::numeric_limits<double>::quiet_NaN();
 		}
 
 		locParamIndex = locKinFitParticle->Get_PxParamIndex();
 		if(locParamIndex >= 0) //px, py, pz
 		{
-			double locDenominator = sqrt(fabs(dVY(locParamIndex, locParamIndex) - (*dVEta)(locParamIndex, locParamIndex)));
+			double locDenominator = sqrt(fabs(dVY(locParamIndex, locParamIndex) - dVEta(locParamIndex, locParamIndex)));
 			locParticlePulls[d_PxPull] = (locDenominator > 0.0) ? dEpsilon(locParamIndex, 0)/locDenominator : std::numeric_limits<double>::quiet_NaN();
 			++locParamIndex;
-			locDenominator = sqrt(fabs(dVY(locParamIndex, locParamIndex) - (*dVEta)(locParamIndex, locParamIndex)));
+			locDenominator = sqrt(fabs(dVY(locParamIndex, locParamIndex) - dVEta(locParamIndex, locParamIndex)));
 			locParticlePulls[d_PyPull] = (locDenominator > 0.0) ? dEpsilon(locParamIndex, 0)/locDenominator : std::numeric_limits<double>::quiet_NaN();
 			++locParamIndex;
-			locDenominator = sqrt(fabs(dVY(locParamIndex, locParamIndex) - (*dVEta)(locParamIndex, locParamIndex)));
+			locDenominator = sqrt(fabs(dVY(locParamIndex, locParamIndex) - dVEta(locParamIndex, locParamIndex)));
 			locParticlePulls[d_PzPull] = (locDenominator > 0.0) ? dEpsilon(locParamIndex, 0)/locDenominator : std::numeric_limits<double>::quiet_NaN();
 		}
 
 		locParamIndex = locKinFitParticle->Get_VxParamIndex();
 		if(locParamIndex >= 0) //vx, vy, vz
 		{
-			double locDenominator = sqrt(fabs(dVY(locParamIndex, locParamIndex) - (*dVEta)(locParamIndex, locParamIndex)));
+			double locDenominator = sqrt(fabs(dVY(locParamIndex, locParamIndex) - dVEta(locParamIndex, locParamIndex)));
 			locParticlePulls[d_XxPull] = (locDenominator > 0.0) ? dEpsilon(locParamIndex, 0)/locDenominator : std::numeric_limits<double>::quiet_NaN();
 			++locParamIndex;
-			locDenominator = sqrt(fabs(dVY(locParamIndex, locParamIndex) - (*dVEta)(locParamIndex, locParamIndex)));
+			locDenominator = sqrt(fabs(dVY(locParamIndex, locParamIndex) - dVEta(locParamIndex, locParamIndex)));
 			locParticlePulls[d_XyPull] = (locDenominator > 0.0) ? dEpsilon(locParamIndex, 0)/locDenominator : std::numeric_limits<double>::quiet_NaN();
 			++locParamIndex;
-			locDenominator = sqrt(fabs(dVY(locParamIndex, locParamIndex) - (*dVEta)(locParamIndex, locParamIndex)));
+			locDenominator = sqrt(fabs(dVY(locParamIndex, locParamIndex) - dVEta(locParamIndex, locParamIndex)));
 			locParticlePulls[d_XzPull] = (locDenominator > 0.0) ? dEpsilon(locParamIndex, 0)/locDenominator : std::numeric_limits<double>::quiet_NaN();
 		}
 
 		locParamIndex = locKinFitParticle->Get_TParamIndex();
 		if(locParamIndex >= 0) //T
 		{
-			double locDenominator = sqrt(fabs(dVY(locParamIndex, locParamIndex) - (*dVEta)(locParamIndex, locParamIndex)));
+			double locDenominator = sqrt(fabs(dVY(locParamIndex, locParamIndex) - dVEta(locParamIndex, locParamIndex)));
 			locParticlePulls[d_TPull] = (locDenominator > 0.0) ? dEpsilon(locParamIndex, 0)/locDenominator : std::numeric_limits<double>::quiet_NaN();
 		}
 
@@ -2533,12 +2530,11 @@ void DKinFitter::Set_FinalTrackInfo(void)
 
 		//Get covariance matrix
 		bool locReconstructedParticleFlag = ((locKinFitParticleType == d_MissingParticle) || (locKinFitParticleType == d_DecayingParticle));
-		TMatrixDSym& locKinFitMatrix = locReconstructedParticleFlag ? *dVXi : *dVEta;
+		TMatrixDSym& locKinFitMatrix = locReconstructedParticleFlag ? dVXi : dVEta;
 		if(locReconstructedParticleFlag) //Brand new particle: Set the covariance matrix from scratch
 		{
 			//Particle had none: Make a new one
-			TMatrixDSym* locCovarianceMatrix = dKinFitUtils->Get_MatrixDSymResource();
-			locCovarianceMatrix->ResizeTo(7, 7);
+			TMatrixDSym* locCovarianceMatrix = dKinFitUtils->Get_MatrixDSymResource(7);
 			locCovarianceMatrix->Zero();
 			locKinFitParticle->Set_CovarianceMatrix(locCovarianceMatrix);
 		}
@@ -2611,13 +2607,13 @@ void DKinFitter::Set_FinalTrackInfo(void)
 			//build matrix, transform errors
 			if(locAdditionalPxParamIndices.empty())
 			{
-				TMatrixDSym locTempCovarianceMatrix = *dV;
+				TMatrixDSym locTempCovarianceMatrix = dV;
 				locCovarianceMatrix = locTempCovarianceMatrix.Similarity(locJacobian);
 			}
 			else //need to expand error matrix
 			{
 				TMatrixDSym locTempCovarianceMatrix(dNumEta + dNumXi + 3*locAdditionalPxParamIndices.size());
-				locTempCovarianceMatrix.SetSub(0, *dV); //insert dV
+				locTempCovarianceMatrix.SetSub(0, dV); //insert dV
 
 				//insert p3 covariance matrices of additional particles
 				map<DKinFitParticle*, int>::iterator locPxParamIterator = locAdditionalPxParamIndices.begin();
@@ -2842,7 +2838,7 @@ void DKinFitter::Set_FinalTrackInfo(void)
 
 		TVector3 locMomentum;
 		TLorentzVector locSpacetimeVertex;
-		if(!dKinFitUtils->Propagate_TrackInfoToCommonVertex(locKinFitParticle, dVXi, locMomentum, locSpacetimeVertex, locPathLengthPair, locCovarianceMatrix))
+		if(!dKinFitUtils->Propagate_TrackInfoToCommonVertex(locKinFitParticle, &dVXi, locMomentum, locSpacetimeVertex, locPathLengthPair, locCovarianceMatrix))
 			continue; // info not propagated
 
 		if(dDebugLevel >= 50)
@@ -2875,7 +2871,7 @@ void DKinFitter::Set_FinalTrackInfo(void)
 
 		pair<double, double> locPathLengthPair;
 		const TMatrixDSym& locCovarianceMatrix = *(locKinFitParticle->Get_CovarianceMatrix());
-		if(dKinFitUtils->Calc_PathLength(locKinFitParticle, dVXi, locCovarianceMatrix, locPathLengthPair))
+		if(dKinFitUtils->Calc_PathLength(locKinFitParticle, &dVXi, locCovarianceMatrix, locPathLengthPair))
 		{
 			locKinFitParticle->Set_PathLength(locPathLengthPair.first);
 			locKinFitParticle->Set_PathLengthUncertainty(locPathLengthPair.second);

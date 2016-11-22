@@ -256,7 +256,7 @@ void DReaction_factory_ReactionFilter::Define_LooseCuts(void)
 	dMissingMassCuts[Neutron] = pair<double, double>(0.5, 1.4);
 
 	// Invariant Mass Cuts: Mesons
-	dInvariantMassCuts[Pi0] = pair<double, double>(0.05, 0.22);
+	dInvariantMassCuts[Pi0] = pair<double, double>(0.08, 0.19);
 	dInvariantMassCuts[KShort] = pair<double, double>(0.3, 0.7);
 	dInvariantMassCuts[Eta] = pair<double, double>(0.3, 0.8);
 	dInvariantMassCuts[omega] = pair<double, double>(0.4, 1.2);
@@ -355,7 +355,7 @@ void DReaction_factory_ReactionFilter::Add_PreComboCuts(DReaction* locReaction, 
 void DReaction_factory_ReactionFilter::Add_PIDActions(DReaction* locReaction)
 {
 	//Histogram before cuts
-	locReaction->Add_ComboPreSelectionAction(new DHistogramAction_PID(locReaction));
+	//locReaction->Add_ComboPreSelectionAction(new DHistogramAction_PID(locReaction));
 
 	//Get, loop over detected PIDs in reaction
 	deque<Particle_t> locDetectedPIDs;
@@ -379,7 +379,7 @@ void DReaction_factory_ReactionFilter::Add_PIDActions(DReaction* locReaction)
 	locReaction->Add_ComboPreSelectionAction(new DCustomAction_dEdxCut(locReaction, false)); //false: focus on keeping signal
 
 	//Histogram after cuts
-	locReaction->Add_ComboPreSelectionAction(new DHistogramAction_PID(locReaction, "PostPIDCuts"));
+	//locReaction->Add_ComboPreSelectionAction(new DHistogramAction_PID(locReaction, "PostPIDCuts"));
 }
 
 void DReaction_factory_ReactionFilter::Add_MassHistograms(DReaction* locReaction, FSInfo* locFSInfo, bool locUseKinFitResultsFlag, string locBaseUniqueName)

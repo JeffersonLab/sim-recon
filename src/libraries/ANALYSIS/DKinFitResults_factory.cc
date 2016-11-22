@@ -26,7 +26,7 @@ jerror_t DKinFitResults_factory::brun(jana::JEventLoop* locEventLoop, int32_t ru
 	dKinFitter->Set_DebugLevel(dKinFitDebugLevel);
 
 	//set pool sizes
-	size_t locExpectedNumCombos = 50;
+	size_t locExpectedNumCombos = 100; //hopefully not often more than this
 	dKinFitUtils->Set_MaxPoolSizes(Get_NumKinFitReactions(locEventLoop), locExpectedNumCombos);
 
 	//pre-allocate matrix memory
@@ -159,9 +159,9 @@ DKinFitResults* DKinFitResults_factory::Build_KinFitResults(const DParticleCombo
 	locKinFitResults->Set_ChiSq(dKinFitter->Get_ChiSq());
 	locKinFitResults->Set_NDF(dKinFitter->Get_NDF());
 
-	locKinFitResults->Set_VEta(dKinFitter->Get_VEta());
+	//locKinFitResults->Set_VEta(dKinFitter->Get_VEta());
 	locKinFitResults->Set_VXi(dKinFitter->Get_VXi());
-	locKinFitResults->Set_V(dKinFitter->Get_V());
+	//locKinFitResults->Set_V(dKinFitter->Get_V());
 
 	locKinFitResults->Set_NumConstraints(dKinFitter->Get_NumConstraintEquations());
 	locKinFitResults->Set_NumUnknowns(dKinFitter->Get_NumUnknowns());
