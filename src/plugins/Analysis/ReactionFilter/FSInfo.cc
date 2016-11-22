@@ -69,15 +69,18 @@ vector<Particle_t> FSInfo::getPIDsFromFSName( const string& FSName, string& locR
 		if(isdigit(digit[0]))
 		{
 			Particle_t locPID = locIndexToPIDMap[index];
+			index++;
+
 			int num = atoi(digit.c_str());
+			if(num == 0)
+				continue;
+
 			for (int j = 0; j < num; j++)
 				locPIDs.push_back(locPID);
 
 			if(num > 1)
 				locReactionStream << num;
 			locReactionStream << Get_ShortName(locPID);
-
-			index++;
 		}
 		else if (digit == "_" && !lcode2)
 		{

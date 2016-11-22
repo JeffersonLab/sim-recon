@@ -384,7 +384,7 @@ void DReaction_factory_ReactionFilter::Add_PIDActions(DReaction* locReaction)
 void DReaction_factory_ReactionFilter::Add_MassHistograms(DReaction* locReaction, FSInfo* locFSInfo, bool locUseKinFitResultsFlag, string locBaseUniqueName)
 {
 	bool locConstrainMassFlag = locFSInfo->intermediateMassFits();
-	if(locUseKinFitResultsFlag && !locConstrainMassFlag)
+	if(locUseKinFitResultsFlag && locConstrainMassFlag)
 		return;
 
 	//missing mass
