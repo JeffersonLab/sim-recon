@@ -66,7 +66,7 @@ class FSInfo
 		// functions to unpack the final state name and parse strings
 		vector<Particle_t> getPIDsFromFSName( const string& FSName );
 		vector<Particle_t> getPIDsFromFSName( const string& FSName, string& locReactionName);
-		int getTotalChargeFromPIDs const( const vector<Particle_t>& locPIDs );
+		int getTotalChargeFromPIDs( const vector<Particle_t>& locPIDs ) const;
 };
 
 #endif
@@ -120,5 +120,7 @@ inline string FSInfo::Get_ShortName(Particle_t locPID) const
 		return "lambda";
 	case AntiLambda:
 		return "lbar";
+	default:
+		return "";
 }
 
