@@ -10,6 +10,7 @@ using namespace std;
 #include <cstdlib>
 #include <ctype.h>
 
+#include "JANA/JStreamLog.h"
 #include "particleType.h"
 
 // ********************************************************************

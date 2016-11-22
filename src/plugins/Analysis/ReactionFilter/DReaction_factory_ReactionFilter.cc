@@ -164,7 +164,7 @@ void DReaction_factory_ReactionFilter::Create_DecaySteps(DReaction* locReaction,
 	map<pair<Particle_t, bool>, set<DReactionStep*> > locDecayStepMap_Available = dDecayStepMap_All; 
 	bool locConstrainMassFlag = locFSInfo->intermediateMassFits();
 
-	vector<Particle_t> locPIDs = locFSInfo->PIDs;
+	vector<Particle_t> locPIDs = locFSInfo->PIDs();
 	for(auto locPID : locPIDs)
 	{
 		//see if a decay step has been previously created for this PID
@@ -182,8 +182,8 @@ void DReaction_factory_ReactionFilter::Create_DecaySteps(DReaction* locReaction,
 			Create_DecayStep(locReaction, locFSInfo, locPID);
 		else //re-use step
 		{
-			locReaction->Add_ReactionStep(locStepSet.rbegin());
-			locStepSet.erase(locStepSet.rbegin()); //no longer available
+			locReaction->Add_ReactionStep(*(locStepSet.begin()));
+			locStepSet.erase(locStepSet.begin()); //no longer available
 		}
 	}
 }
@@ -400,9 +400,9 @@ void DReaction_factory_ReactionFilter::Add_MassHistograms(DReaction* locReaction
 
 		//add histogram action
 		if(locCutPair.first >= 0.0)
-			locReaction->Add_ComboPreSelectionAction(new DHistogramAction_MissingMass(locReaction, locNumBins, locCutPair.first, locCutPair.second));
+			locReaction->Add_ComboPreSelectionAction(new DHistogramAction_MissingMass(locReaction, false, locNumBins, locCutPair.first, locCutPair.second));
 		else
-			locReaction->Add_ComboPreSelectionAction(new DHistogramAction_MissingMassSquared(locReaction, locNumBins, locCutPair.first, locCutPair.second));
+			locReaction->Add_ComboPreSelectionAction(new DHistogramAction_MissingMassSquared(locReaction, false, locNumBins, locCutPair.first, locCutPair.second));
 	}
 
 	//invariant mass
