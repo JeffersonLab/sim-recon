@@ -86,9 +86,9 @@ class DKinFitter //purely virtual: cannot directly instantiate class, can only i
 		void Get_Pulls(map<DKinFitParticle*, map<DKinFitPullType, double> >& locPulls) const{locPulls = dPulls;} //key is particle, 2nd key is param type
 
 		//GET UNCERTAINTIES
-		const TMatrixDSym* Get_VEta(void) {return dVEta;}
-		const TMatrixDSym* Get_VXi(void) {return dVXi;}
-		const TMatrixDSym* Get_V(void) {return dV;}
+		const TMatrixDSym& Get_VEta(void) {return dVEta;}
+		const TMatrixDSym& Get_VXi(void) {return dVXi;}
+		const TMatrixDSym& Get_V(void) {return dV;}
 
 		//GET OUTPUT PARTICLES & CONSTRAINTS
 		set<DKinFitConstraint*> Get_KinFitConstraints(void) const{return dKinFitConstraints;}
@@ -197,9 +197,9 @@ class DKinFitter //purely virtual: cannot directly instantiate class, can only i
 		TMatrixD dF_dXi; //partial derivative of constraint equations wrst the unmeasurable unknowns
 		TMatrixD dF_dXi_T;
 
-		TMatrixDSym* dVXi; //covariance matrix of dXi
-		TMatrixDSym* dVEta; //covariance matrix of dEta
-		TMatrixDSym* dV; //full covariance matrix: dVEta at top-left and dVXi at bottom-right (+ the eta, xi covariance)
+		TMatrixDSym dVXi; //covariance matrix of dXi
+		TMatrixDSym dVEta; //covariance matrix of dEta
+		TMatrixDSym dV; //full covariance matrix: dVEta at top-left and dVXi at bottom-right (+ the eta, xi covariance)
 
 		/*************************************************************** FIT RESULTS ****************************************************************/
 

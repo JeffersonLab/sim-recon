@@ -67,11 +67,11 @@ jerror_t DParticleCombo_factory::evnt(JEventLoop* locEventLoop, uint64_t eventnu
 	Reset_Data();
 	Reset_Pools();
 
-	vector<const DKinFitResults*> locKinFitResultsVector;
-	locEventLoop->Get(locKinFitResultsVector);
-
  	vector<const DAnalysisResults*> locAnalysisResultsVector;
 	locEventLoop->Get(locAnalysisResultsVector, "PreKinFit");
+
+	vector<const DKinFitResults*> locKinFitResultsVector;
+	locEventLoop->Get(locKinFitResultsVector);
 
 	set<const DParticleCombo*> locParticleCombos_FailedKinFit; //fill with all eligible, will erase as they are validated
 	for(size_t loc_i = 0; loc_i < locAnalysisResultsVector.size(); ++loc_i)
@@ -108,7 +108,7 @@ jerror_t DParticleCombo_factory::evnt(JEventLoop* locEventLoop, uint64_t eventnu
 	vector<const DBeamPhoton*> locBeamPhotons;
 	locEventLoop->Get(locBeamPhotons, "KinFit");
 
-	 //map from old combo to new combo
+	//map from old combo to new combo
 	map<const DParticleCombo*, DParticleCombo*> locNewParticleComboMap;
 
 	//loop over kinfit results
@@ -272,7 +272,7 @@ void DParticleCombo_factory::Set_DecayingParticles(const DParticleCombo* locNewP
 	DKinematicData* locKinematicData_Position = Build_KinematicData(locPID, locKinFitParticle);
 	DKinematicData* locKinematicData_Common = Build_KinematicData(locPID, locKinFitParticle);
 	if(locKinFitParticle->Get_CommonVxParamIndex() >= 0)
-		dKinFitUtils->Propagate_TrackInfoToCommonVertex(locKinematicData_Common, locKinFitParticle, locKinFitResults->Get_VXi());
+		dKinFitUtils->Propagate_TrackInfoToCommonVertex(locKinematicData_Common, locKinFitParticle, &locKinFitResults->Get_VXi());
 
 	bool locAtProdVertexFlag = locKinFitParticle->Get_VertexP4AtProductionVertex();
 	DKinematicData* locKinematicData_InitState = locAtProdVertexFlag ? locKinematicData_Common : locKinematicData_Position;
@@ -469,14 +469,16 @@ DKinematicData* DParticleCombo_factory::Build_KinematicData(Particle_t locPID, D
 void DParticleCombo_factory::Reset_Pools(void)
 {
 	// delete pool sizes if too large, preventing memory-leakage-like behavor.
-	if(dParticleComboStepPool_All.size() > MAX_DParticleComboStepPoolSize){
+	if(dParticleComboStepPool_All.size() > MAX_DParticleComboStepPoolSize)
+	{
 		for(size_t loc_i = MAX_DParticleComboStepPoolSize; loc_i < dParticleComboStepPool_All.size(); ++loc_i)
 			delete dParticleComboStepPool_All[loc_i];
 		dParticleComboStepPool_All.resize(MAX_DParticleComboStepPoolSize);
 	}
 	dParticleComboStepPool_Available = dParticleComboStepPool_All;
 
-	if(dKinematicDataPool_All.size() > MAX_DKinematicDataPoolSize){
+	if(dKinematicDataPool_All.size() > MAX_DKinematicDataPoolSize)
+	{
 		for(size_t loc_i = MAX_DKinematicDataPoolSize; loc_i < dKinematicDataPool_All.size(); ++loc_i)
 			delete dKinematicDataPool_All[loc_i];
 		dKinematicDataPool_All.resize(MAX_DKinematicDataPoolSize);
@@ -518,7 +520,6 @@ DParticleComboStep* DParticleCombo_factory::Get_ParticleComboStepResource(void)
 	return locParticleComboStep;
 }
 
-
 //------------------
 // erun
 //------------------
@@ -532,6 +533,8 @@ jerror_t DParticleCombo_factory::erun(void)
 //------------------
 jerror_t DParticleCombo_factory::fini(void)
 {
+	Reset_Data();
+
 	for(size_t loc_i = 0; loc_i < dParticleComboStepPool_All.size(); ++loc_i)
 		delete dParticleComboStepPool_All[loc_i];
 
@@ -540,4 +543,3 @@ jerror_t DParticleCombo_factory::fini(void)
 
 	return NOERROR;
 }
-

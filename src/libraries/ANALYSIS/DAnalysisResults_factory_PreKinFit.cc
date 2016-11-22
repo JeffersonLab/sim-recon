@@ -320,6 +320,7 @@ jerror_t DAnalysisResults_factory_PreKinFit::evnt(jana::JEventLoop* locEventLoop
 			if(locAnalysisAction->Get_UseKinFitResultsFlag())
 				break; //need to kinfit first!!!
 
+			locAnalysisAction->Reset_NewEvent(); //reset for new event
 			size_t locNumPreActionParticleCombos = locSurvivingParticleCombos.size();
 			if(dDebugLevel > 0)
 				cout << "Execute Action # " << loc_j + 1 << ": " << locAnalysisAction->Get_ActionName() << " on " << locSurvivingParticleCombos.size() << " surviving DParticleCombos." << endl;

@@ -22,7 +22,6 @@ DKinFitUtils::DKinFitUtils(void)
 	dMaxKinFitChainStepPoolSize = 3*locNumFitsPerEventGuess;
 
 	dMaxMatrixDSymPoolSize = 5*locNumFitsPerEventGuess*2;
-	dMaxLargeMatrixDSymPoolSize = 3*locNumFitsPerEventGuess;
 }
 
 DKinFitUtils::~DKinFitUtils(void)
@@ -50,9 +49,6 @@ DKinFitUtils::~DKinFitUtils(void)
 
 	for(size_t loc_i = 0; loc_i < dMatrixDSymPool_All.size(); ++loc_i)
 		delete dMatrixDSymPool_All[loc_i];
-
-	for(size_t loc_i = 0; loc_i < dLargeMatrixDSymPool_All.size(); ++loc_i)
-		delete dLargeMatrixDSymPool_All[loc_i];
 }
 
 void DKinFitUtils::Reset_NewEvent(void)
@@ -128,14 +124,6 @@ void DKinFitUtils::Reset_NewEvent(void)
 	}
 	dMatrixDSymPool_Available = dMatrixDSymPool_All;
 
-	if(dLargeMatrixDSymPool_All.size() > dMaxLargeMatrixDSymPoolSize)
-	{
-		for(size_t loc_i = dMaxLargeMatrixDSymPoolSize; loc_i < dLargeMatrixDSymPool_All.size(); ++loc_i)
-			delete dLargeMatrixDSymPool_All[loc_i];
-		dLargeMatrixDSymPool_All.resize(dMaxLargeMatrixDSymPoolSize);
-	}
-	dLargeMatrixDSymPool_Available = dLargeMatrixDSymPool_All;
-
 	Reset_NewFit();
 }
 
@@ -146,21 +134,10 @@ void DKinFitUtils::Preallocate_MatrixMemory(void)
 	{
 		for(size_t loc_i = 0; loc_i < dMaxMatrixDSymPoolSize; ++loc_i)
 		{
-			TMatrixDSym* locMatrix = Get_MatrixDSymResource();	
-			locMatrix->ResizeTo(7, 7);
+			TMatrixDSym* locMatrix = new TMatrixDSym(7);
+			dMatrixDSymPool_All.push_back(locMatrix);
 		}
 		dMatrixDSymPool_Available = dMatrixDSymPool_All;
-	}
-
-	//pre-allocate large matrix memory
-	if(dLargeMatrixDSymPool_Available.empty())
-	{
-		for(size_t loc_i = 0; loc_i < dMaxLargeMatrixDSymPoolSize; ++loc_i)
-		{
-			TMatrixDSym* locMatrix = Get_LargeMatrixDSymResource();	
-			locMatrix->ResizeTo(50, 50);
-		}
-		dLargeMatrixDSymPool_Available = dLargeMatrixDSymPool_All;
 	}
 }
 
@@ -283,34 +260,19 @@ DKinFitChainStep* DKinFitUtils::Get_KinFitChainStepResource(void)
 	return locKinFitChainStep;
 }
 
-TMatrixDSym* DKinFitUtils::Get_MatrixDSymResource(void)
+TMatrixDSym* DKinFitUtils::Get_MatrixDSymResource(unsigned int locNumMatrixRows)
 {
 	TMatrixDSym* locMatrixDSym;
 	if(dMatrixDSymPool_Available.empty())
 	{
-		locMatrixDSym = new TMatrixDSym();
+		locMatrixDSym = new TMatrixDSym(locNumMatrixRows);
 		dMatrixDSymPool_All.push_back(locMatrixDSym);
 	}
 	else
 	{
 		locMatrixDSym = dMatrixDSymPool_Available.back();
+		locMatrixDSym->ResizeTo(locNumMatrixRows, locNumMatrixRows);
 		dMatrixDSymPool_Available.pop_back();
-	}
-	return locMatrixDSym;
-}
-
-TMatrixDSym* DKinFitUtils::Get_LargeMatrixDSymResource(void)
-{
-	TMatrixDSym* locMatrixDSym;
-	if(dLargeMatrixDSymPool_Available.empty())
-	{
-		locMatrixDSym = new TMatrixDSym();
-		dLargeMatrixDSymPool_All.push_back(locMatrixDSym);
-	}
-	else
-	{
-		locMatrixDSym = dLargeMatrixDSymPool_Available.back();
-		dLargeMatrixDSymPool_Available.pop_back();
 	}
 	return locMatrixDSym;
 }
@@ -723,9 +685,8 @@ TMatrixDSym* DKinFitUtils::Clone_MatrixDSym(const TMatrixDSym* locMatrix)
 {
 	if(locMatrix == NULL)
 		return NULL;
-	TMatrixDSym* locNewMatrix = Get_MatrixDSymResource();
 	int locMatrixSize = locMatrix->GetNcols();
-	locNewMatrix->ResizeTo(locMatrixSize, locMatrixSize);
+	TMatrixDSym* locNewMatrix = Get_MatrixDSymResource(locMatrixSize);
 	*locNewMatrix = *locMatrix;
 	return locNewMatrix;
 }
