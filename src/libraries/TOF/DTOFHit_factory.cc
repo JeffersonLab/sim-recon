@@ -40,7 +40,7 @@ jerror_t DTOFHit_factory::init(void)
 	if(analyze_cosmic_data > 0)
 		COSMIC_DATA = true;
 
-    CHECK_FADC_ERRORS = false;
+    CHECK_FADC_ERRORS = true;
     gPARMS->SetDefaultParameter("TOF:CHECK_FADC_ERRORS", CHECK_FADC_ERRORS, "Set to 1 to reject hits with fADC250 errors, ser to 0 to keep these hits");
 
 

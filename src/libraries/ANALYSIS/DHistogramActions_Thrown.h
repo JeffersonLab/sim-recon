@@ -93,6 +93,11 @@ class DHistogramAction_ParticleComboGenReconComparison : public DAnalysisAction
 		double dMinP, dMaxP, dMinTheta, dMaxTheta, dMinRFDeltaT, dMaxRFDeltaT;
 
 		void Initialize(JEventLoop* locEventLoop);
+		void Reset_NewEvent(void)
+		{
+			dPreviouslyHistogrammedParticles.clear();
+			dPreviouslyHistogrammedBeamParticles.clear();
+		}
 
 	private:
 		bool Perform_Action(JEventLoop* locEventLoop, const DParticleCombo* locParticleCombo);
@@ -456,9 +461,11 @@ class DHistogramAction_TruePID : public DAnalysisAction
 		unsigned int dNumPBins, dNum2DPBins, dNumThetaBins;
 		double dMinP, dMaxP, dMinTheta, dMaxTheta;
 
+		void Initialize(JEventLoop* locEventLoop);
+		void Reset_NewEvent(void){dPreviouslyHistogrammedParticles.clear();}
+
 	private:
 		bool Perform_Action(JEventLoop* locEventLoop, const DParticleCombo* locParticleCombo);
-		void Initialize(JEventLoop* locEventLoop);
 
 //		double dMinThrownMatchFOM;
 		const DAnalysisUtilities* dAnalysisUtilities;

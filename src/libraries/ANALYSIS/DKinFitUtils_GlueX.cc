@@ -27,7 +27,7 @@ DKinFitUtils_GlueX::DKinFitUtils_GlueX(JEventLoop* locEventLoop)
 void DKinFitUtils_GlueX::Set_MaxPoolSizes(size_t locNumReactions, size_t locExpectedNumCombos)
 {
 	//final x2: input/output
-	Set_MaxKinFitParticlePoolSize(5*locNumReactions*locExpectedNumCombos*2);
+	Set_MaxKinFitParticlePoolSize(10*locNumReactions*locExpectedNumCombos*2);
 
 	Set_MaxKinFitConstraintVertexPoolSize(2*2*locNumReactions*locExpectedNumCombos*2); //extra x2: guess fit!
 	Set_MaxKinFitConstraintSpacetimePoolSize(2*2*locNumReactions*locExpectedNumCombos*2); //extra x2: guess fit!
@@ -37,8 +37,7 @@ void DKinFitUtils_GlueX::Set_MaxPoolSizes(size_t locNumReactions, size_t locExpe
 	Set_MaxKinFitChainPoolSize(locNumReactions*locExpectedNumCombos);
 	Set_MaxKinFitChainStepPoolSize(3*locNumReactions*locExpectedNumCombos);
 
-	Set_MaxMatrixDSymPoolSize(5*locNumReactions*locExpectedNumCombos*2);
-	Set_MaxLargeMatrixDSymPoolSize(3*locNumReactions*locExpectedNumCombos);
+	Set_MaxMatrixDSymPoolSize(10*locNumReactions*locExpectedNumCombos*2*5); //extra x5: to be safe
 }
 
 /*********************************************************** OVERRIDE BASE CLASS FUNCTIONS *********************************************************/
@@ -826,39 +825,6 @@ set<pair<int, int> > DKinFitUtils_GlueX::Get_KinFitVertexParticles(const DReacti
 	return locVertexParticles;
 }
 
-set<pair<int, int> > DKinFitUtils_GlueX::Get_KinFitNeutralShowers(const DReaction* locReaction, const deque<set<pair<int, int> > >& locVertices) const
-{
-	//the indices of the particles that can be used as neutral showers are returned. else must be used as neutral particles
-		//neutral shower: if position is defined by a vertex constraint
-
-	set<pair<int, int> > locNeutralShowers;
-	for(size_t loc_i = 0; loc_i < locVertices.size(); ++loc_i)
-	{
-		const set<pair<int, int> >& locVertexParticles = locVertices[loc_i];
-		set<pair<int, int> >::const_iterator locIterator = locVertexParticles.begin();
-		for(; locIterator != locVertexParticles.end(); ++locIterator)
-		{
-			int locStepIndex = (*locIterator).first;
-			int locParticleIndex = (*locIterator).second;
-			if(locParticleIndex < 0)
-				continue; //initial state particle
-
-			const DReactionStep* locReactionStep = locReaction->Get_ReactionStep(locStepIndex);
-			if(locParticleIndex == locReactionStep->Get_MissingParticleIndex())
-				continue; //missing particle
-			int locDecayStepIndex = locReaction->Get_DecayStepIndex(locStepIndex, locParticleIndex);
-			if(locDecayStepIndex >= 0)
-				continue; //decaying particle
-
-			Particle_t locPID = locReactionStep->Get_FinalParticleID(locParticleIndex);
-			if(ParticleCharge(locPID) == 0)
-				locNeutralShowers.insert(*locIterator);
-		}
-	}
-
-	return locNeutralShowers;
-}
-
 string DKinFitUtils_GlueX::Get_ConstraintInfo(const DReaction* locReaction, DKinFitType locKinFitType, size_t& locNumConstraints, size_t& locNumUnknowns) const
 {
 	//returns constraint string, sets # constraints & unknowns
@@ -1290,7 +1256,7 @@ bool DKinFitUtils_GlueX::Propagate_TrackInfoToCommonVertex(DKinematicData* locKi
 	TVector3 locMomentum;
 	TLorentzVector locSpacetimeVertex;
 	pair<double, double> locPathLengthPair;
-	TMatrixDSym* locCovarianceMatrix = Get_MatrixDSymResource();
+	TMatrixDSym* locCovarianceMatrix = Get_MatrixDSymResource(7);
 	if(!DKinFitUtils::Propagate_TrackInfoToCommonVertex(locKinFitParticle, locVXi, locMomentum, locSpacetimeVertex, locPathLengthPair, *locCovarianceMatrix))
 		return false;
 

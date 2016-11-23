@@ -135,7 +135,7 @@ class Df250PulseData:public DDAQAddress{
 			if( pedestal_emulated ) emulated_all |= (1<<2);
 		
 			DDAQAddress::toStrings(items);
-			AddString(items, "event_within_block"      , "%d", event_within_block      );
+			//AddString(items, "event_within_block"      , "%d", event_within_block      );
 			AddString(items, "integral"                , "%d", integral                );
 			AddString(items, "pedestal"                , "%d", pedestal                );
 			AddString(items, "course_time"             , "%d", course_time             );

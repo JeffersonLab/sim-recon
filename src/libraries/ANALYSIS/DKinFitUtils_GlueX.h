@@ -124,8 +124,6 @@ class DKinFitUtils_GlueX : public DKinFitUtils
 
 		/************************************************************ CONSTRAINT PREDICTORS *********************************************************/
 
-		set<pair<int, int> > Get_KinFitNeutralShowers(const DReaction* locReaction, const deque<set<pair<int, int> > >& locVertices) const;
-
 		string Build_VertexConstraintString(const DReaction* locReaction, const set<pair<int, int> >& locAllVertexParticles, set<pair<int, int> >& locFullConstrainParticles, set<pair<int, int> >& locOnlyConstrainTimeParticles, set<pair<int, int> >& locNoConstrainParticles, bool locSpacetimeFitFlag) const;
 
 		deque<set<pair<int, int> > > Setup_VertexPredictions(const DReaction* locReaction) const;

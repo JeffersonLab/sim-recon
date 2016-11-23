@@ -452,6 +452,16 @@ jerror_t DParticleCombo_factory_PreKinFit::evnt(jana::JEventLoop *locEventLoop, 
 
 	map<Particle_t, DKinematicData*> locTargetParticleMap;
 
+	//Reset actions for new event
+	for(size_t loc_i = 0; loc_i < dReactions.size(); ++loc_i)
+	{
+		for(size_t loc_k = 0; loc_k < dReactions[loc_i]->Get_NumComboPreSelectionActions(); ++loc_k)
+		{
+			DAnalysisAction* locAnalysisAction = dReactions[loc_i]->Get_ComboPreSelectionAction(loc_k);
+			locAnalysisAction->Reset_NewEvent();
+		}
+	}
+
 	//pre-select candidate photons for each RF bunch (as long as at least one DReaction needs the beam photon)
 	map<pair<const DReaction*, const DEventRFBunch*>, set<const DBeamPhoton*> > locCandidatePhotons;
 	map<const DReaction*, vector<double> > locDeltaTMap; //will fill histograms at end

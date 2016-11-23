@@ -94,6 +94,7 @@ class DHistogramAction_PID : public DAnalysisAction
 		}
 
 		void Initialize(JEventLoop* locEventLoop);
+		void Reset_NewEvent(void){dPreviouslyHistogrammedParticles.clear();}
 
 		unsigned int dNum2DPBins, dNum2DdEdxBins, dNum2DBetaBins, dNum2DBCALThetaBins, dNum2DFCALThetaBins, dNum2DThetaBins, dNumBetaBins;
 		unsigned int dNum2DEOverPBins, dNum2DDeltaBetaBins, dNum2DDeltadEdxBins, dNum2DDeltaTBins, dNum2DPullBins, dNumFOMBins, dNum2DFOMBins;
@@ -194,6 +195,11 @@ class DHistogramAction_ParticleComboKinematics : public DAnalysisAction
 		double dMinBeta, dMaxBeta, dMinDeltaBeta, dMaxDeltaBeta, dMinDeltaTRF, dMaxDeltaTRF, dMaxPathLength, dMaxLifetime;
 
 		void Initialize(JEventLoop* locEventLoop);
+		void Reset_NewEvent(void)
+		{
+			dPreviouslyHistogrammedBeamParticles.clear();
+			dPreviouslyHistogrammedParticles.clear();
+		}
 
 	private:
 		bool Perform_Action(JEventLoop* locEventLoop, const DParticleCombo* locParticleCombo);
@@ -261,6 +267,7 @@ class DHistogramAction_InvariantMass : public DAnalysisAction
 		dNumMassBins(locNumMassBins), dMinMass(locMinMass), dMaxMass(locMaxMass), dAnalysisUtilities(NULL) {}
 
 		void Initialize(JEventLoop* locEventLoop);
+		void Reset_NewEvent(void){dPreviousSourceObjects.clear();}
 
 	private:
 		bool Perform_Action(JEventLoop* locEventLoop, const DParticleCombo* locParticleCombo);
@@ -275,7 +282,7 @@ class DHistogramAction_InvariantMass : public DAnalysisAction
 		const DAnalysisUtilities* dAnalysisUtilities;
 		TH1I* dHist_InvaraintMass;
 
-		set<set<pair<const JObject*, Particle_t> > > dPreviousSourceObjects;
+		set<set<pair<const JObject*, unsigned int> > > dPreviousSourceObjects;
 };
 
 class DHistogramAction_MissingMass : public DAnalysisAction
@@ -322,6 +329,7 @@ class DHistogramAction_MissingMass : public DAnalysisAction
 		}
 
 		void Initialize(JEventLoop* locEventLoop);
+		void Reset_NewEvent(void){dPreviousSourceObjects.clear();}
 
 	private:
 		bool Perform_Action(JEventLoop* locEventLoop, const DParticleCombo* locParticleCombo);
@@ -341,7 +349,7 @@ class DHistogramAction_MissingMass : public DAnalysisAction
 		TH2I* dHist_MissingMassVsMissingP;
 		const DAnalysisUtilities* dAnalysisUtilities;
 
-		set<set<pair<const JObject*, Particle_t> > > dPreviousSourceObjects;
+		set<set<pair<const JObject*, unsigned int> > > dPreviousSourceObjects;
 };
 
 class DHistogramAction_MissingMassSquared : public DAnalysisAction
@@ -388,6 +396,7 @@ class DHistogramAction_MissingMassSquared : public DAnalysisAction
 		}
 
 		void Initialize(JEventLoop* locEventLoop);
+		void Reset_NewEvent(void){dPreviousSourceObjects.clear();}
 
 	private:
 		bool Perform_Action(JEventLoop* locEventLoop, const DParticleCombo* locParticleCombo);
@@ -407,7 +416,7 @@ class DHistogramAction_MissingMassSquared : public DAnalysisAction
 		TH2I* dHist_MissingMassSquaredVsMissingP;
 		const DAnalysisUtilities* dAnalysisUtilities;
 
-		set<set<pair<const JObject*, Particle_t> > > dPreviousSourceObjects;
+		set<set<pair<const JObject*, unsigned int> > > dPreviousSourceObjects;
 };
 
 class DHistogramAction_2DInvariantMass : public DAnalysisAction
@@ -419,6 +428,7 @@ class DHistogramAction_2DInvariantMass : public DAnalysisAction
 		dMinX(locMinX), dMaxX(locMaxX), dMinY(locMinY), dMaxY(locMaxY), dAnalysisUtilities(NULL) {}
 
 		void Initialize(JEventLoop* locEventLoop);
+		void Reset_NewEvent(void){dPreviousSourceObjects.clear();}
 
 	private:
 		bool Perform_Action(JEventLoop* locEventLoop, const DParticleCombo* locParticleCombo);
@@ -431,7 +441,7 @@ class DHistogramAction_2DInvariantMass : public DAnalysisAction
 		const DAnalysisUtilities* dAnalysisUtilities;
 		TH2I* dHist_2DInvaraintMass;
 
-		set<set<set<pair<const JObject*, Particle_t> > > > dPreviousSourceObjects;
+		set<set<set<pair<const JObject*, unsigned int> > > > dPreviousSourceObjects;
 };
 
 
@@ -444,6 +454,7 @@ class DHistogramAction_Dalitz : public DAnalysisAction
 		dMinX(locMinX), dMaxX(locMaxX), dMinY(locMinY), dMaxY(locMaxY), dAnalysisUtilities(NULL) {}
 
 		void Initialize(JEventLoop* locEventLoop);
+		void Reset_NewEvent(void){dPreviousSourceObjects.clear();}
 
 	private:
 		bool Perform_Action(JEventLoop* locEventLoop, const DParticleCombo* locParticleCombo);
@@ -456,7 +467,7 @@ class DHistogramAction_Dalitz : public DAnalysisAction
 		const DAnalysisUtilities* dAnalysisUtilities;
 		TH2I* dHist_DalitzPlot;
 
-		set<set<set<pair<const JObject*, Particle_t> > > > dPreviousSourceObjects;
+		set<set<set<pair<const JObject*, unsigned int> > > > dPreviousSourceObjects;
 };
 
 class DHistogramAction_KinFitResults : public DAnalysisAction
@@ -476,7 +487,7 @@ class DHistogramAction_KinFitResults : public DAnalysisAction
 	private:
 		bool Perform_Action(JEventLoop* locEventLoop, const DParticleCombo* locParticleCombo);
 
-		void Create_ParticlePulls(string locFullROOTName, bool locIsInVertexFitFlag, bool locIsNeutralShowerFlag, map<DKinFitPullType, TH1I*>& locParticlePulls, map<DKinFitPullType, TH2I*>& locParticlePullsVsP, map<DKinFitPullType, TH2I*>& locParticlePullsVsTheta, map<DKinFitPullType, TH2I*>& locParticlePullsVsPhi);
+		void Create_ParticlePulls(string locFullROOTName, bool locIsChargedFlag, bool locIsInVertexFitFlag, bool locIsNeutralShowerFlag, map<DKinFitPullType, TH1I*>& locParticlePulls, map<DKinFitPullType, TH2I*>& locParticlePullsVsP, map<DKinFitPullType, TH2I*>& locParticlePullsVsTheta, map<DKinFitPullType, TH2I*>& locParticlePullsVsPhi);
 
 		double dPullHistConfidenceLevelCut;
 		const DAnalysisUtilities* dAnalysisUtilities;
@@ -505,6 +516,7 @@ class DHistogramAction_MissingTransverseMomentum : public DAnalysisAction
 		}
 
 		void Initialize(JEventLoop* locEventLoop);
+		void Reset_NewEvent(void){dPreviousSourceObjects.clear();}
 
 	private:
 		bool Perform_Action(JEventLoop* locEventLoop, const DParticleCombo* locParticleCombo);
@@ -514,8 +526,7 @@ class DHistogramAction_MissingTransverseMomentum : public DAnalysisAction
 		const DAnalysisUtilities* dAnalysisUtilities;
 		TH1I* dHist_MissingTransverseMomentum;
 
-		set<set<pair<const JObject*, Particle_t> > > dPreviousSourceObjects;
+		set<set<pair<const JObject*, unsigned int> > > dPreviousSourceObjects;
 };
 
 #endif // _DHistogramActions_Reaction_
-

@@ -31,9 +31,10 @@ class DKinFitResults : public JObject
 		void Set_ChiSq(double locChiSq){dChiSq = locChiSq;}
 		void Set_ConfidenceLevel(double locConfidenceLevel){dConfidenceLevel = locConfidenceLevel;}
 
-		void Set_VEta(const TMatrixDSym* locVEta){dVEta = locVEta;}
-		void Set_VXi(const TMatrixDSym* locVXi){dVXi = locVXi;}
-		void Set_V(const TMatrixDSym* locV){dV = locV;}
+		void Set_VXi(const TMatrixDSym& locVXi){dVXi = locVXi;}
+		//void Set_VEta(const TMatrixDSym* locVEta){dVEta = locVEta;}
+		//void Set_VXi(const TMatrixDSym* locVXi){dVXi = locVXi;}
+		//void Set_V(const TMatrixDSym* locV){dV = locV;}
 
 		void Set_Pulls(const map<const JObject*, map<DKinFitPullType, double> >& locPulls){dPulls = locPulls;}
 
@@ -48,9 +49,10 @@ class DKinFitResults : public JObject
 		double Get_ChiSq(void) const{return dChiSq;}
 		double Get_ConfidenceLevel(void) const{return dConfidenceLevel;}
 
-		const TMatrixDSym* Get_VEta(void) const{return dVEta;}
-		const TMatrixDSym* Get_VXi(void) const{return dVXi;}
-		const TMatrixDSym* Get_V(void) const{return dV;}
+		const TMatrixDSym& Get_VXi(void) const{return dVXi;}
+		//const TMatrixDSym* Get_VEta(void) const{return dVEta;}
+		//const TMatrixDSym* Get_VXi(void) const{return dVXi;}
+		//const TMatrixDSym* Get_V(void) const{return dV;}
 
 		void Get_Pulls(map<const JObject*, map<DKinFitPullType, double> >& locPulls) const{locPulls = dPulls;}
 
@@ -86,9 +88,10 @@ class DKinFitResults : public JObject
 
 		map<const JObject*, map<DKinFitPullType, double> > dPulls; //JObject is the MEASURED particle (or shower!)
 
-		const TMatrixDSym* dVXi; //covariance matrix of dXi, the unmeasured parameters in the fit
-		const TMatrixDSym* dVEta; //covariance matrix of dEta, the measured parameters in the fit
-		const TMatrixDSym* dV; //full covariance matrix: dVEta at top-left and dVXi at bottom-right (+ the eta, xi covariance)
+		TMatrixDSym dVXi;
+		//const TMatrixDSym* dVXi; //covariance matrix of dXi, the unmeasured parameters in the fit
+		//const TMatrixDSym* dVEta; //covariance matrix of dEta, the measured parameters in the fit
+		//const TMatrixDSym* dV; //full covariance matrix: dVEta at top-left and dVXi at bottom-right (+ the eta, xi covariance)
 
 		//OUTPUT PARTICLES AND CONSTRAINTS
 		map<DKinFitParticleType, set<DKinFitParticle*> > dOutputKinFitParticles; //does not include particles not used in the constraints!
