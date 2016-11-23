@@ -2112,3 +2112,49 @@ int main(int narg, char *argv[])
 }
 
 
+double TensorCrossSection(){
+
+  // Form factors
+  double GD_term=1.-t/0.71;
+  double F_1=(1.-0.25*t/m_p_sq*2.7928)/(GD_term*GD_term*(1.-0.25*t/m_p_sq));
+  double F_M=0.25/(0.25-t);
+  double Lambda_T=1.;
+  double F_Tpipi=exp(-(m_T_sq-m_T_sq_R)/(Lambda_T*Lambda_T));
+
+  // other constant factors
+
+
+  // Coupling constants 
+  double g_omega_V=15.;
+  double gsq_omega_V=g_omega_V*g_omega_V;
+  double g_rho_V=3.4;
+  double gsq_rho_V=g_rho_V*g_rho_V;
+
+
+
+  double gRsq=gR*gR;
+
+  // s scale for regge trajectories
+  double s0=1.;
+
+  // Regge trajectory for omega
+  double a_omega=0.44+0.9*t;
+  double a_omega_prime=0.9;
+  double cos_omega=cos(M_PI*a_omega);
+  double regge_omega=pow(s/s0,a_omega-1.)*M_PI*a_omega_prime/(sin(M_PI*a_omega)*TMath::Gamma(a_omega)); // excluding phase factor
+  double regge_omega_sq=regge_omega*regge_omega*0.5*(1.-cos_omega);
+
+
+  // Regge trajectory for rho
+  double a_rho=0.55+0.8*t;
+  double a_rho_prime=0.8;
+  double cos_rho=cos(M_PI*a_rho);
+  double regge_rho=pow(s/s0,a_rho-1.)*M_PI*a_rho_prime/(sin(M_PI*a_rho)*TMath::Gamma(a_rho)); // excluding phase factor
+  double regge_rho_sq=regge_rho*regge_rho*0.5*(1.-cos_rho);
+
+
+
+
+
+
+}
