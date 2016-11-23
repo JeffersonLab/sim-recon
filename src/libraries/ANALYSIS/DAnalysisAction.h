@@ -37,6 +37,9 @@ class DAnalysisAction
 			//if not creating any objects, just define the function but leave it empty
 		virtual void Initialize(JEventLoop* locEventLoop) = 0;
 
+		//Reset event (for clearing previously-histogrammed info (duplicate checking)
+		virtual void Reset_NewEvent(void){};
+
 		//Function-call operators: Execute the action.
 		bool operator()(JEventLoop* locEventLoop); //DON'T CALL THIS FOR COMBO-DEPENDENT ACTIONS
 		bool operator()(JEventLoop* locEventLoop, const DParticleCombo* locParticleCombo); //THIS METHOD ASSUMES THAT ONLY ONE THREAD HAS ACCESS TO THIS OBJECT

@@ -33,6 +33,7 @@ class DChargedTrackHypothesis_factory_KinFit : public jana::JFactory<DChargedTra
 		jerror_t fini(void);						///< Called after last event of last event source has been processed.
 
 		DChargedTrackHypothesis* Build_ChargedTrackHypothesis(const DChargedTrackHypothesis* locChargedTrackHypothesis, DKinFitParticle* locKinFitParticle, const DChargedTrack* locChargedTrack, const DParticleCombo* locParticleCombo);
+
 		const DParticleID* dPIDAlgorithm;
 };
 

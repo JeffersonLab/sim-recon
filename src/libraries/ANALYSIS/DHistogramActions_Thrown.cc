@@ -343,12 +343,6 @@ bool DHistogramAction_ParticleComboGenReconComparison::Perform_Action(JEventLoop
 		return true; //no fit performed, but kinfit data requested!!
 	}
 
-	if(Get_NumPreviousParticleCombos() == 0)
-	{
-		dPreviouslyHistogrammedParticles.clear();
-		dPreviouslyHistogrammedBeamParticles.clear();
-	}
-
 	vector<const DMCThrown*> locMCThrowns;
 	locEventLoop->Get(locMCThrowns);
 	if(locMCThrowns.empty())
@@ -1728,9 +1722,6 @@ bool DHistogramAction_TruePID::Perform_Action(JEventLoop* locEventLoop, const DP
 	double locP, locTheta;
 	const DMCThrown* locMCThrown;
 	Particle_t locPID;
-
-	if(Get_NumPreviousParticleCombos() == 0)
-		dPreviouslyHistogrammedParticles.clear();
 
 	deque<const DKinematicData*> locParticles;
 	int locComboTruePIDStatus = 1;

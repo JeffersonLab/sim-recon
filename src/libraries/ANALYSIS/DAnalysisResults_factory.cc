@@ -294,6 +294,7 @@ jerror_t DAnalysisResults_factory::evnt(jana::JEventLoop* locEventLoop, uint64_t
 				}
 			}
 
+			locAnalysisAction->Reset_NewEvent(); //reset for new event
 			size_t locNumPreActionParticleCombos = locSurvivingParticleCombos.size();
 			if(dDebugLevel > 0)
 				cout << "Execute Action # " << loc_j + 1 << ": " << locAnalysisAction->Get_ActionName() << " on " << locSurvivingParticleCombos.size() << " surviving DParticleCombos." << endl;
