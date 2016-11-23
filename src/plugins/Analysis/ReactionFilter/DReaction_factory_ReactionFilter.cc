@@ -95,15 +95,15 @@ jerror_t DReaction_factory_ReactionFilter::evnt(JEventLoop* locEventLoop, uint64
 
 		Add_PreComboCuts(locReaction, locFSInfo);
 
+		// PID
+		Add_PIDActions(locReaction);
+
 		/**************************************************** Analysis Actions ****************************************************/
 
 		// Recommended: Analysis actions automatically performed by the DAnalysisResults factories to histogram useful quantities.
 			//These actions are executed sequentially, and are executed on each surviving (non-cut) particle combination 
 			//Pre-defined actions can be found in ANALYSIS/DHistogramActions_*.h and ANALYSIS/DCutActions.h
 			//If a histogram action is repeated, it should be created with a unique name (string) to distinguish them
-
-		// PID
-		Add_PIDActions(locReaction);
 
 		// HISTOGRAM MASSES //false/true: measured/kinfit data
 		Add_MassHistograms(locReaction, locFSInfo, false, "PreKinFit");
@@ -409,9 +409,9 @@ void DReaction_factory_ReactionFilter::Add_MassHistograms(DReaction* locReaction
 
 		//add histogram action
 		if(locCutPair.first >= 0.0)
-			locReaction->Add_AnalysisAction(new DHistogramAction_MissingMass(locReaction, false, locNumBins, locCutPair.first, locCutPair.second));
+			locReaction->Add_AnalysisAction(new DHistogramAction_MissingMass(locReaction, false, locNumBins, locCutPair.first, locCutPair.second, locBaseUniqueName));
 		else
-			locReaction->Add_AnalysisAction(new DHistogramAction_MissingMassSquared(locReaction, false, locNumBins, locCutPair.first, locCutPair.second));
+			locReaction->Add_AnalysisAction(new DHistogramAction_MissingMassSquared(locReaction, false, locNumBins, locCutPair.first, locCutPair.second, locBaseUniqueName));
 	}
 
 	//invariant mass
@@ -425,10 +425,6 @@ void DReaction_factory_ReactionFilter::Add_MassHistograms(DReaction* locReaction
 		auto locCutPair = locPIDIterator->second;
 
 		//determine #bins
-		//range = 0.11
-		//num bins = 110
-		//range / #bins = good number
-		//#bins = range*good_number
 		int locNumBins = int((locCutPair.second - locCutPair.first)*1000.0 + 0.001);
 		if(locNumBins < 200)
 			locNumBins *= 5; //get close to 1000 bins
