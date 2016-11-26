@@ -2700,8 +2700,8 @@ jerror_t DEventSourceHDDM::Extract_DDIRCHit(hddm_s::HDDM *record,
 
    vector<DDIRCHit*> data;
 
-   const hddm_s::DircHitList &hits = record->getDircHits();
-   hddm_s::DircHitList::iterator iter;
+   const hddm_s::DircTruthHitList &hits = record->getDircTruthHits();
+   hddm_s::DircTruthHitList::iterator iter;
    for (iter = hits.begin(); iter != hits.end(); ++iter) {
       DDIRCHit *hit = new DDIRCHit;
       hit->x = iter->getX();
