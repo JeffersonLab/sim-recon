@@ -377,9 +377,6 @@ void DReaction_factory_ReactionFilter::Add_PIDActions(DReaction* locReaction)
 
 	//Loose dE/dx cuts
 	locReaction->Add_ComboPreSelectionAction(new DCustomAction_dEdxCut(locReaction, false)); //false: focus on keeping signal
-
-	//Histogram after cuts
-	locReaction->Add_ComboPreSelectionAction(new DHistogramAction_PID(locReaction, "PostPIDCuts"));
 }
 
 void DReaction_factory_ReactionFilter::Add_MassHistograms(DReaction* locReaction, FSInfo* locFSInfo, bool locUseKinFitResultsFlag, string locBaseUniqueName)
