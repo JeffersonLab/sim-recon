@@ -115,7 +115,7 @@ void hitStartCntr (float xin[4], float xout[4],
           ncounter++;
         }
         if (!strcmp(strings[i].str,"START_THRESH_MEV")) {
-          TWO_HIT_RESOL  = values[i];
+          THRESH_MEV  = values[i];
           ncounter++;
         }
         if (!strcmp(strings[i].str,"START_LIGHT_GUIDE")) {
