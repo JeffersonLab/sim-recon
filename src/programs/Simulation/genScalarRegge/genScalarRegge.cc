@@ -26,8 +26,7 @@ extern "C"{
 // Masses
 const double m_p=0.93827; // GeV
 const double m_p_sq=m_p*m_p;
-double m_S=0.98; // GeV
-double m_S_sq_R=m_S*m_S;
+double M_sq_R=0.98*0.98;
 // Width
 double width=0.;
 // Coupling constants 
@@ -1364,7 +1363,7 @@ double InterferenceCrossSection(TLorentzVector &q /* beam */,
 
 
 // Get parameters for Breit-Wigner distribution for resonance shape
-void GetResonanceParameters(double m1,double m2, double m_S_sq,double &ReB,
+void GetResonanceParameters(double m1,double m2, double M_sq,double &ReB,
 			    double &ImB){
   double m1_plus_m2=m1+m2;
   double m1_minus_m2=m1-m2;  
@@ -1372,7 +1371,7 @@ void GetResonanceParameters(double m1,double m2, double m_S_sq,double &ReB,
 
   // "No structure" model for a0(980)/f0(980)
   // masses
-  double M_S=sqrt(m_S_sq);
+  double M_S=sqrt(M_sq);
   double MK0=ParticleMass(KShort);
   double MKPlus=ParticleMass(KPlus);
 
@@ -1387,13 +1386,13 @@ void GetResonanceParameters(double m1,double m2, double m_S_sq,double &ReB,
   double g_m1m2_sq=g_m1m2*g_m1m2;
     
   // kinematic factors
-  double rhoK0sq=1.-4.*MK0*MK0/m_S_sq;
-  double rhoKPlussq=1.-4.*MKPlus*MKPlus/m_S_sq;
+  double rhoK0sq=1.-4.*MK0*MK0/M_sq;
+  double rhoKPlussq=1.-4.*MKPlus*MKPlus/M_sq;
   double rho_m1m2
-   =sqrt((1.-m1_plus_m2*m1_plus_m2/m_S_sq)*(1-m1_minus_m2*m1_minus_m2/m_S_sq));
+   =sqrt((1.-m1_plus_m2*m1_plus_m2/M_sq)*(1-m1_minus_m2*m1_minus_m2/M_sq));
 
       // Real and imaginary parts of BW amplitude
-  ReB=m_S_sq_R-m_S_sq;
+  ReB=M_sq_R-M_sq;
   if (M_S<2.*MKPlus){
     ReB+=gKsq/(32.*M_PI)*sqrt(-rhoKPlussq);
   }
@@ -1601,6 +1600,126 @@ double CrossSection(double m1,double m2, double ms_sq, double s, double t,
 
 }
 
+double TensorCrossSection(TLorentzVector &q /* beam */,
+			  vector<Particle_t>&particle_types,
+			  vector<TLorentzVector>&particles,
+			  double gR,double ReB, double ImB){
+  int two_particles=particle_types[0]+particle_types[1];
+  
+  // Four vectors
+  TLorentzVector p1(0,0,0.,ParticleMass(Proton));
+  TLorentzVector p2=particles[2];
+  TLorentzVector dp=p1-p2;
+  TLorentzVector k1=particles[0];
+  TLorentzVector k2=particles[1];
+  TLorentzVector dk=k1-k2;
+  TLorentzVector k=k1+k2;
+  
+  // Mandelstam variables
+  double s=(q+p1).M2();
+  double t=(p1-p2).M2();
+
+  // dot products 
+  double p1_dot_p2=p1.Dot(p2);
+  double q_dot_p=q.Dot(p1);
+  double q_dot_dp=q.Dot(dp);
+  double q_dot_k=q.Dot(k);
+  double dp_dot_k=dp.Dot(k);
+  double q_dot_dk=q.Dot(dk);
+  double dp_dot_dk=dp.Dot(dk);
+  double k_dot_dk=k.Dot(dk);
+  double k_sq=k.Dot(k);
+  double dk_sq=dk.Dot(dk);
+
+  // Form factors
+  double GD_term=1.-t/0.71;
+  double F_1=(1.-0.25*t/m_p_sq*2.7928)/(GD_term*GD_term*(1.-0.25*t/m_p_sq));
+  double F_M=0.5/(0.5-t);
+  double Lambda_T=2.;
+  double F_Tpipi=exp(-(k_sq-M_sq_R)/(Lambda_T*Lambda_T));
+  double F_Tpipi_sq=F_Tpipi*F_Tpipi;
+
+  // other factors
+  double gamma_rho=sqrt(0.496/(4.*M_PI));
+  double gamma_omega=sqrt(0.042/(4.*M_PI));
+  
+  // Coupling constants 
+  double g_omega_V=15.;
+  double gsq_omega_V=g_omega_V*g_omega_V;
+  double g_rho_V=3.4;
+  double gsq_rho_V=g_rho_V*g_rho_V;
+  double g_Tpipi=9.26;
+  double a_Trhorho=2.92; // GeV^-3
+  double b_Trhorho=5.02; // GeV^-1
+  double a_Tomegaomega=2.92; // GeV^-3
+  double b_Tomegaomega=5.02; // GeV^-1
+  double a_O_gamma_f2=0.5;
+  double b_0_gamma_f2=0.5;
+  double g_Opp=0.18;
+  double eta_O=-1.;
+  double gRsq=gR*gR;
+
+  // s scale for regge trajectories
+  double s0=1.;
+
+  // Regge trajectory for omega
+  double a_omega=0.44+0.9*t;
+  double a_omega_prime=0.9;
+  double cos_omega=cos(M_PI*a_omega);
+  double regge_omega=pow(s/s0,a_omega-1.)*M_PI*a_omega_prime/(sin(M_PI*a_omega)*TMath::Gamma(a_omega)); // excluding phase factor
+  double regge_omega_sq=regge_omega*regge_omega;
+
+
+  // Regge trajectory for rho
+  double a_rho=0.55+0.8*t;
+  double a_rho_prime=0.8;
+  double cos_rho=cos(M_PI*a_rho);
+  double regge_rho=pow(s/s0,a_rho-1.)*M_PI*a_rho_prime/(sin(M_PI*a_rho)*TMath::Gamma(a_rho)); // excluding phase factor
+  double regge_rho_sq=regge_rho*regge_rho;
+
+  // "Odderon" trajectory;
+  double a_O=1.+0.25*t;
+  double a_O_prime=0.25;
+  double odderon=pow(s/s0,a_O-1.)*M_PI*a_O_prime/(sin(M_PI*a_O)*TMath::Gamma(a_O));// excluding phase factor
+  double odderon_sq=odderon*odderon;
+
+  double A=2.*a_Trhorho*g_rho_V/(1.41*1.41)/gamma_rho;
+  double B=2.*a_Tomegaomega*g_omega_V/(1.41*1.41)/gamma_omega;
+  double C=-3.*g_Opp*eta_O*2.*a_O_gamma_f2;
+  double N0kinfactor=2.*q_dot_dk*dp_dot_dk-(1./2.)*q_dot_dp*dk_sq
+    -k_dot_dk/k_sq*(2.*q_dot_k*dp_dot_dk+2.*q_dot_dk*dp_dot_k
+		       -q_dot_dp*k_dot_dk)
+    + (((1./3.)*dk_sq/k_sq+(2./3.)*k_dot_dk*k_dot_dk/(k_sq*k_sq))
+       *(2.*q_dot_k*dp_dot_k-(1./2.)*q_dot_dp*k_sq));
+  double N0sq=N0kinfactor*N0kinfactor*(2.*q_dot_p*q_dot_p*p2.Perp2()
+				       +(m_p_sq-p1_dot_p2)*q_dot_dp*q_dot_dp);
+  
+  double T=(1./137.)*F_1*F_1*F_M*F_M*F_Tpipi_sq*F_Tpipi_sq*g_Tpipi*g_Tpipi
+    *gRsq/(ReB*ReB+ImB*ImB)
+    *(N0sq*(A*A*regge_rho_sq+B*B*regge_omega_sq+C*C*odderon_sq
+	    +2.*cos(M_PI*(a_rho-a_omega))*regge_rho*regge_omega
+	    +2.*cos(M_PI*(a_rho-a_O))*regge_rho*odderon
+	    +2.*cos(M_PI*(a_omega-a_O))*regge_omega*odderon)
+	    );
+	      
+  // Compute cross section
+  double m1=particles[0].M();
+  double m2=particles[1].M();
+  double m1_plus_m2=m1+m2;
+  double m1_minus_m2=m1-m2;
+  double kappa=sqrt((k_sq-m1_plus_m2*m1_plus_m2)*(k_sq-m1_minus_m2*m1_minus_m2))
+    /(2.*sqrt(k_sq));
+  double mp_sq_minus_s=m_p_sq-s;
+  double mp_sq_minus_s_sq=mp_sq_minus_s*mp_sq_minus_s;
+  double hbarc_sq=389.; // Convert to micro-barns
+  double xsec=hbarc_sq*kappa*T/(256.*M_PI*M_PI*M_PI*M_PI*mp_sq_minus_s_sq);
+
+  return(xsec);
+			
+}
+
+
+
 // Put particle data into hddm format and output to file
 void WriteEvent(unsigned int eventNumber,TLorentzVector &beam, float vert[3],
 		vector<Particle_t>&particle_types,
@@ -1706,12 +1825,12 @@ void GraphCrossSection(double m1,double m2){
 
   // Momenta of incoming photon and outgoing S and proton in cm frame
   double p_gamma=(s-m_p_sq)/(2.*Ecm);
-  double E_S=(s+m_S_sq_R-m_p_sq)/(2.*Ecm);
-  double p_S=sqrt(E_S*E_S-m_S_sq_R);
+  double E_S=(s+M_sq_R-m_p_sq)/(2.*Ecm);
+  double p_S=sqrt(E_S*E_S-M_sq_R);
   
   // Momentum transfer t
   double p_diff=p_gamma-p_S;
-  double t0=m_S_sq_R*m_S_sq_R/(4.*s)-p_diff*p_diff;
+  double t0=M_sq_R*M_sq_R/(4.*s)-p_diff*p_diff;
  
   // Parameters for integration over line shape	  
   double m1_plus_m2=m1+m2;
@@ -1722,31 +1841,31 @@ void GraphCrossSection(double m1,double m2){
   bool got_pipi=(fabs(m1-m2)>0.01)?false:true;
   if (got_pipi){ // f0(980)
     gR=1.705/(2.*M_PI);
-    m_S_sq_R=0.9783*0.9783;
+    M_sq_R=0.9783*0.9783;
     gsq_rho_S_gamma=0.239; // GeV^-2
     gsq_omega_S_gamma=0.02656;
   }
   else{ // a0(980)
     gR=2.82/(2.*M_PI);
-    m_S_sq_R=0.9825*0.9825;	 
+    M_sq_R=0.9825*0.9825;	 
     gsq_rho_S_gamma=0.02537;
     gsq_omega_S_gamma=0.2283;
   } 
   double m1_minus_m2=m1-m2;
-  double k=sqrt((m_S_sq_R-m1_plus_m2*m1_plus_m2)*(m_S_sq_R-m1_minus_m2*m1_minus_m2))
-    /(2.*sqrt(m_S_sq_R));
+  double k=sqrt((M_sq_R-m1_plus_m2*m1_plus_m2)*(M_sq_R-m1_minus_m2*m1_minus_m2))
+    /(2.*sqrt(M_sq_R));
 
-  GetResonanceParameters(m1,m2,m_S_sq_R,ReB,ImB);
+  GetResonanceParameters(m1,m2,M_sq_R,ReB,ImB);
   // factor to (eventually ) get to dsigma/dt from dsigma/dt/dM/dOmega
   double scale_factor=16.*M_PI*M_PI*M_PI*(ReB*ReB+ImB*ImB)/(gR*gR*k);
   // Integral over Breit-Wigner
   double bw=0;
   for (unsigned int n=0;n<1000;n++){
     double mass=m1_plus_m2+dm*double(n);
-    double m_S_sq=mass*mass;
-    double rho_m1m2=sqrt((1.-m1_plus_m2*m1_plus_m2/m_S_sq)*(1-m1_minus_m2*m1_minus_m2/m_S_sq));
+    double M_sq=mass*mass;
+    double rho_m1m2=sqrt((1.-m1_plus_m2*m1_plus_m2/M_sq)*(1-m1_minus_m2*m1_minus_m2/M_sq));
 
-    GetResonanceParameters(m1,m2,m_S_sq,ReB,ImB);
+    GetResonanceParameters(m1,m2,M_sq,ReB,ImB);
     bw+=gR*gR*rho_m1m2/(ReB*ReB+ImB*ImB)*dm;
   }
   
@@ -1759,7 +1878,7 @@ void GraphCrossSection(double m1,double m2){
     double theta_cm=M_PI*double(k)/1000.;
     double sin_theta_over_2=sin(0.5*theta_cm);
     double t=t0-4.*p_gamma*p_S*sin_theta_over_2*sin_theta_over_2;
-    double xsec=scale_factor*bw*CrossSection(m1,m2,m_S_sq_R,s,t,gR,ReB,ImB);
+    double xsec=scale_factor*bw*CrossSection(m1,m2,M_sq_R,s,t,gR,ReB,ImB);
 
     t_array[k]=-t;
     xsec_array[k]=xsec;
@@ -1814,13 +1933,6 @@ int main(int narg, char *argv[])
   infile >> Emin;
   infile >> Emax;
   infile.ignore(); // ignore the '\n' at the end of this line
-  // Set sensible minimum energy
-  if (Emin<m_S){ 
-    Emin=m_S;
-    cout << "Warning:  Setting minimum beam energy to " << Emin << " [GeV]" 
-	 <<endl;
-  }
-  cout << "Photon energy min, max [Gev] = "<< Emin <<","<<Emax <<endl;
 
   // Get coherent peak and collimator diameter
   getline(infile,comment_line);
@@ -1929,7 +2041,7 @@ int main(int narg, char *argv[])
     TLorentzVector beam;
 
     // Maximum value for cross section 
-    double xsec_max=0.1;
+    double xsec_max=10.;
     double xsec=0.,xsec_test=0.;
 
     // Polar angle in center of mass frame
@@ -1939,7 +2051,7 @@ int main(int narg, char *argv[])
     double p_S=0.;
 
     // Mass squared of resonance
-    double m_S_sq=m_S_sq_R;
+    double M_sq=M_sq_R;
 
     // Transfer 4-momentum;
     double t=0.;
@@ -1964,16 +2076,16 @@ int main(int narg, char *argv[])
       // Mass of two-meson system     
       double m1_plus_m2=m1+m2;
       double m_max=m_p*(sqrt(1.+2.*Egamma/m_p)-1.);
-      double m_S=m1_plus_m2+myrand->Uniform(m_max-m1_plus_m2);
-      m_S_sq=m_S*m_S;
+      double M=m1_plus_m2+myrand->Uniform(m_max-m1_plus_m2);
+      M_sq=M*M;
 
       // Momentum and energy of two-meson system
-      double E_S=(s+m_S_sq-m_p_sq)/(2.*Ecm);
-      p_S=sqrt(E_S*E_S-m_S_sq);
+      double E_S=(s+M_sq-m_p_sq)/(2.*Ecm);
+      p_S=sqrt(E_S*E_S-M_sq);
     
       // Momentum transfer t
       double p_diff=p_gamma-p_S;
-      double t0=m_S_sq*m_S_sq/(4.*s)-p_diff*p_diff;
+      double t0=M_sq*M_sq/(4.*s)-p_diff*p_diff;
       double sin_theta_over_2=0.;
       t=t0;
       
@@ -1995,7 +2107,7 @@ int main(int narg, char *argv[])
       // Four-momentum of the S in the CM frame
       double pt=p_S*sin(theta_cm);
       TLorentzVector S4(pt*cos(phi_cm),pt*sin(phi_cm),p_S*cos(theta_cm),
-			sqrt(p_S*p_S+m_S_sq));
+			sqrt(p_S*p_S+M_sq));
       // S4.Print();
       
       //Boost the S 4-momentum into the lab
@@ -2032,36 +2144,50 @@ int main(int narg, char *argv[])
       if (got_pipi && generate[0]){
 	/*
  	double m_Sigma=0.5;
-	m_S_sq_R=m_Sigma*m_Sigma; 
-	gsq_rho_S_gamma=0.01*pow(0.7685*0.785-m_S_sq_R,-3); // GeV^-2
-	gsq_omega_S_gamma=8.97e-4*pow(0.78265*0.78265-m_S_sq_R,-3);
+	M_sq_R=m_Sigma*m_Sigma; 
+	gsq_rho_S_gamma=0.01*pow(0.7685*0.785-M_sq_R,-3); // GeV^-2
+	gsq_omega_S_gamma=8.97e-4*pow(0.78265*0.78265-M_sq_R,-3);
 	width=0.3;
-	ReB=m_S_sq_R-m_S_sq;
-	ImB=width*sqrt(m_S_sq);
-	gR=sqrt(16.*M_PI*(width/3.)/sqrt((1.-(m1+m2)*(m1+m2)/m_S_sq)*(1-(m1-m2)*(m1-m2)/m_S_sq)));
+	ReB=M_sq_R-M_sq;
+	ImB=width*sqrt(M_sq);
+	gR=sqrt(16.*M_PI*(width/3.)/sqrt((1.-(m1+m2)*(m1+m2)/M_sq)*(1-(m1-m2)*(m1-m2)/M_sq)));
 	cout << gR << " " << gsq_rho_S_gamma << " " << gsq_omega_S_gamma << endl;
-	xsec+=CrossSection(m1,m2,m_S_sq,s,t,gR,ReB,ImB);
+	xsec+=CrossSection(m1,m2,M_sq,s,t,gR,ReB,ImB);
 	*/
       }
       // f0(980)/a0(980)
       if (generate[1]){
-	GetResonanceParameters(m1,m2,m_S_sq,ReB,ImB);
+	GetResonanceParameters(m1,m2,M_sq,ReB,ImB);
 	if (got_pipi){ // f0(980)
 	  gR=1.705/(2.*M_PI);
-	  m_S_sq_R=0.9783*0.9783;
+	  M_sq_R=0.9783*0.9783;
 	  gsq_rho_S_gamma=0.239; // GeV^-2
 	  gsq_omega_S_gamma=0.02656;
 	}
 	else{ // a0(980)
 	  gR=2.82/(2.*M_PI);
-	  m_S_sq_R=0.9825*0.9825;	 
+	  M_sq_R=0.9825*0.9825;	 
 	  gsq_rho_S_gamma=0.02537;
 	  gsq_omega_S_gamma=0.2283;
 	} 
-	xsec+=CrossSection(m1,m2,m_S_sq,s,t,gR,ReB,ImB);
+	xsec+=CrossSection(m1,m2,M_sq,s,t,gR,ReB,ImB);
       }
+      if (generate[3]){ // Tensor background
+	double m_f2=1.275;
+	M_sq_R=m_f2*m_f2; 
+	width=0.185;
+	ReB=M_sq_R-M_sq;
+	ImB=width*sqrt(M_sq);
+	gR=1.; // change this!
+	//ReB=1.;
+	//ImB=0.;
+	gR=sqrt(16.*M_PI*(0.848*width/3.)/sqrt((1.-(m1+m2)*(m1+m2)/M_sq)*(1-(m1-m2)*(m1-m2)/M_sq)));
 
-      if (generate[4]){ // background
+	xsec+=TensorCrossSection(beam,particle_types,particle_vectors,
+				 gR,ReB,ImB);
+	
+      }
+      if (generate[4]){ // non-resonant background
 	xsec+=BackgroundCrossSection(beam,particle_types,particle_vectors);
 
 	if (generate[1]){ // interference with resonant signal
@@ -2112,49 +2238,3 @@ int main(int narg, char *argv[])
 }
 
 
-double TensorCrossSection(){
-
-  // Form factors
-  double GD_term=1.-t/0.71;
-  double F_1=(1.-0.25*t/m_p_sq*2.7928)/(GD_term*GD_term*(1.-0.25*t/m_p_sq));
-  double F_M=0.25/(0.25-t);
-  double Lambda_T=1.;
-  double F_Tpipi=exp(-(m_T_sq-m_T_sq_R)/(Lambda_T*Lambda_T));
-
-  // other constant factors
-
-
-  // Coupling constants 
-  double g_omega_V=15.;
-  double gsq_omega_V=g_omega_V*g_omega_V;
-  double g_rho_V=3.4;
-  double gsq_rho_V=g_rho_V*g_rho_V;
-
-
-
-  double gRsq=gR*gR;
-
-  // s scale for regge trajectories
-  double s0=1.;
-
-  // Regge trajectory for omega
-  double a_omega=0.44+0.9*t;
-  double a_omega_prime=0.9;
-  double cos_omega=cos(M_PI*a_omega);
-  double regge_omega=pow(s/s0,a_omega-1.)*M_PI*a_omega_prime/(sin(M_PI*a_omega)*TMath::Gamma(a_omega)); // excluding phase factor
-  double regge_omega_sq=regge_omega*regge_omega*0.5*(1.-cos_omega);
-
-
-  // Regge trajectory for rho
-  double a_rho=0.55+0.8*t;
-  double a_rho_prime=0.8;
-  double cos_rho=cos(M_PI*a_rho);
-  double regge_rho=pow(s/s0,a_rho-1.)*M_PI*a_rho_prime/(sin(M_PI*a_rho)*TMath::Gamma(a_rho)); // excluding phase factor
-  double regge_rho_sq=regge_rho*regge_rho*0.5*(1.-cos_rho);
-
-
-
-
-
-
-}
