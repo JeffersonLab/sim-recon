@@ -1731,7 +1731,17 @@ double TensorCrossSection(TLorentzVector &q /* beam */,
       );
   double N2_24=0.;
   double N2_25=0.;
-  double N2_34=0.;
+  double N2_34=4.*((q_dot_p2*p1_dot_dk+q_dot_p1*p2_dot_dk
+		    +q_dot_dk*(m_p_sq-p1_dot_p2))
+		   *(q_dot_dk-k_dot_dk/k_sq*q_dot_k)
+		   +(q_dot_p2*p1_dot_k+q_dot_p1*p2_dot_k
+		     +q_dot_k*(m_p_sq-p1_dot_p2))
+		   *(one_third_two_third_fac*q_dot_k-k_dot_dk/k_sq*q_dot_dk))
+    *(p2.Px()*(dp_dot_dk*k.Px()-k_dot_dk/k_sq*(dp_dot_dk*k.Px()+dp_dot_dk*dk.Px())
+	       +one_third_two_third_fac*dp_dot_k*k.Px())
+      +p2.Py()*(dp_dot_dk*k.Py()-k_dot_dk/k_sq*(dp_dot_dk*k.Py()+dp_dot_dk*dk.Py())
+		+one_third_two_third_fac*dp_dot_k*k.Py())
+      );
   double N2_35=(8./3.)*(q_dot_p1*q_dot_p1+q_dot_p2*q_dot_p2)
     *(dk_sq-k_dot_dk*k_dot_dk/k_sq)
     *(p2.Px()*(dp_dot_dk*dk.Px()-k_dot_dk/k_sq*(dp_dot_dk*k.Px()+dp_dot_k*dk.Px())
