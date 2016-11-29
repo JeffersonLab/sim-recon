@@ -1621,7 +1621,12 @@ double TensorCrossSection(TLorentzVector &q /* beam */,
 
   // dot products 
   double p1_dot_p2=p1.Dot(p2);
-  double q_dot_p=q.Dot(p1);
+  double p1_dot_dk=p1.Dot(dk);
+  double p2_dot_dk=p2.Dot(dk);
+  double p1_dot_k=p1.Dot(k);
+  double p2_dot_k=p2.Dot(k);
+  double q_dot_p1=q.Dot(p1);
+  double q_dot_p2=q.Dot(p2);
   double q_dot_dp=q.Dot(dp);
   double q_dot_k=q.Dot(k);
   double dp_dot_k=dp.Dot(k);
@@ -1645,16 +1650,14 @@ double TensorCrossSection(TLorentzVector &q /* beam */,
   
   // Coupling constants 
   double g_omega_V=15.;
-  double gsq_omega_V=g_omega_V*g_omega_V;
   double g_rho_V=3.4;
-  double gsq_rho_V=g_rho_V*g_rho_V;
   double g_Tpipi=9.26;
   double a_Trhorho=2.92; // GeV^-3
   double b_Trhorho=5.02; // GeV^-1
   double a_Tomegaomega=2.92; // GeV^-3
   double b_Tomegaomega=5.02; // GeV^-1
   double a_O_gamma_f2=0.5;
-  double b_0_gamma_f2=0.5;
+  double b_O_gamma_f2=0.5;
   double g_Opp=0.18;
   double eta_O=-1.;
   double gRsq=gR*gR;
@@ -1665,7 +1668,6 @@ double TensorCrossSection(TLorentzVector &q /* beam */,
   // Regge trajectory for omega
   double a_omega=0.44+0.9*t;
   double a_omega_prime=0.9;
-  double cos_omega=cos(M_PI*a_omega);
   double regge_omega=pow(s/s0,a_omega-1.)*M_PI*a_omega_prime/(sin(M_PI*a_omega)*TMath::Gamma(a_omega)); // excluding phase factor
   double regge_omega_sq=regge_omega*regge_omega;
 
@@ -1673,7 +1675,6 @@ double TensorCrossSection(TLorentzVector &q /* beam */,
   // Regge trajectory for rho
   double a_rho=0.55+0.8*t;
   double a_rho_prime=0.8;
-  double cos_rho=cos(M_PI*a_rho);
   double regge_rho=pow(s/s0,a_rho-1.)*M_PI*a_rho_prime/(sin(M_PI*a_rho)*TMath::Gamma(a_rho)); // excluding phase factor
   double regge_rho_sq=regge_rho*regge_rho;
 
@@ -1683,24 +1684,82 @@ double TensorCrossSection(TLorentzVector &q /* beam */,
   double odderon=pow(s/s0,a_O-1.)*M_PI*a_O_prime/(sin(M_PI*a_O)*TMath::Gamma(a_O));// excluding phase factor
   double odderon_sq=odderon*odderon;
 
-  double A=2.*a_Trhorho*g_rho_V/(1.41*1.41)/gamma_rho;
-  double B=2.*a_Tomegaomega*g_omega_V/(1.41*1.41)/gamma_omega;
-  double C=-3.*g_Opp*eta_O*2.*a_O_gamma_f2;
+  double A0=2.*a_Trhorho*g_rho_V/(1.41*1.41)/gamma_rho;
+  double B0=2.*a_Tomegaomega*g_omega_V/(1.41*1.41)/gamma_omega;
+  double C0=-3.*g_Opp*eta_O*2.*a_O_gamma_f2; 
   double N0kinfactor=2.*q_dot_dk*dp_dot_dk-(1./2.)*q_dot_dp*dk_sq
     -k_dot_dk/k_sq*(2.*q_dot_k*dp_dot_dk+2.*q_dot_dk*dp_dot_k
 		       -q_dot_dp*k_dot_dk)
     + (((1./3.)*dk_sq/k_sq+(2./3.)*k_dot_dk*k_dot_dk/(k_sq*k_sq))
        *(2.*q_dot_k*dp_dot_k-(1./2.)*q_dot_dp*k_sq));
-  double N0sq=N0kinfactor*N0kinfactor*(2.*q_dot_p*q_dot_p*p2.Perp2()
+  double N0sq=N0kinfactor*N0kinfactor*(2.*q_dot_p1*q_dot_p1*p2.Perp2()
 				       +(m_p_sq-p1_dot_p2)*q_dot_dp*q_dot_dp);
   
+  double A2=b_Trhorho*g_rho_V/(1.41*1.41)/gamma_rho;
+  double B2=b_Tomegaomega*g_omega_V/(1.41*1.41)/gamma_omega;
+  double C2=-3.*g_Opp*eta_O*b_O_gamma_f2;
+  double one_third_two_third_fac=(1./3.)*dk_sq/k_sq+(2./3.)*k_dot_dk*k_dot_dk/k_sq/k_sq;
+  double eps_kx_dkx_factor1=dk.Px()-k.Px()*k_dot_dk/k_sq;
+  double eps_ky_dky_factor1=dk.Py()-k.Py()*k_dot_dk/k_sq;
+  double eps_kx_dkx_factor2=one_third_two_third_fac*k.Px()-dk.Px()*k_dot_dk/k_sq;
+  double eps_ky_dky_factor2=one_third_two_third_fac*k.Py()-dk.Py()*k_dot_dk/k_sq;
+  double N2_11=4.*q_dot_dp*q_dot_dp
+    *((2.*p1_dot_dk*p2_dot_k+dk_sq*(m_p_sq-p1_dot_p2))
+      *(eps_kx_dkx_factor1*eps_kx_dkx_factor1+eps_ky_dky_factor1*eps_ky_dky_factor1)
+      +(2.*p1_dot_k*p2_dot_k+k_sq*(m_p_sq-p1_dot_p2))
+      *(eps_kx_dkx_factor2*eps_kx_dkx_factor2+eps_ky_dky_factor2*eps_ky_dky_factor2)
+      +2.*(p1_dot_dk*p2_dot_k+p1_dot_k*p2_dot_dk+k_dot_dk*(m_p_sq-p1_dot_p2))
+      *(eps_kx_dkx_factor1*eps_kx_dkx_factor2+eps_ky_dky_factor1*eps_ky_dky_factor2)
+      );
+  double dk_k_dot_dk_fac=dk_sq-k_dot_dk*k_dot_dk/k_sq;
+  double N2_22=(16./9.)*dk_k_dot_dk_fac*dk_k_dot_dk_fac
+    *(2.*q_dot_dp*q_dot_dp*(m_p_sq-p1_dot_p2)+2.*p2.Perp2()*q_dot_p1*q_dot_p1);
+  double N2_33=0.;
+  double N2_44=0.;
+  double N2_55=0.;
+  double N2_12=0.;
+  double N2_13=0.;
+  double N2_14=0.;
+  double N2_15=0.;
+  double N2_23=4.*q_dot_p1*(q_dot_dk*dp_dot_dk
+			   +one_third_two_third_fac*q_dot_k*dp_dot_k
+			   -k_dot_dk/k_sq*(q_dot_k*dp_dot_dk+q_dot_dk*dp_dot_k))
+    *(p2.Px()*(dp_dot_dk*dk.Px()-k_dot_dk/k_sq*(dp_dot_dk*k.Px()+dp_dot_k*dk.Px())
+	       +one_third_two_third_fac*dp_dot_k*k.Px())
+      +p2.Py()*(dp_dot_dk*dk.Py()-k_dot_dk/k_sq*(dp_dot_dk*k.Py()+dp_dot_k*dk.Py())
+		+one_third_two_third_fac*dp_dot_k*k.Py())
+      );
+  double N2_24=0.;
+  double N2_25=0.;
+  double N2_34=0.;
+  double N2_35=(8./3.)*(q_dot_p1*q_dot_p1+q_dot_p2*q_dot_p2)
+    *(dk_sq-k_dot_dk*k_dot_dk/k_sq)
+    *(p2.Px()*(dp_dot_dk*dk.Px()-k_dot_dk/k_sq*(dp_dot_dk*k.Px()+dp_dot_k*dk.Px())
+	       +one_third_two_third_fac*dp_dot_k*k.Px())
+      +p2.Py()*(dp_dot_dk*dk.Py()-k_dot_dk/k_sq*(dp_dot_dk*k.Py()+dp_dot_k*dk.Py())
+	       +one_third_two_third_fac*dp_dot_k*k.Py())
+      );
+  double N2_45=0.;
+  
+  double N2sq=N2_11+N2_22+N2_33+N2_44+N2_55
+    +2.*(N2_12+N2_13+N2_14+N2_15+N2_23+N2_24+N2_25+N2_34+N2_35+N2_45);
+
   double T=(1./137.)*F_1*F_1*F_M*F_M*F_Tpipi_sq*F_Tpipi_sq*g_Tpipi*g_Tpipi
     *gRsq/(ReB*ReB+ImB*ImB)
-    *(N0sq*(A*A*regge_rho_sq+B*B*regge_omega_sq+C*C*odderon_sq
-	    +2.*cos(M_PI*(a_rho-a_omega))*regge_rho*regge_omega
-	    +2.*cos(M_PI*(a_rho-a_O))*regge_rho*odderon
-	    +2.*cos(M_PI*(a_omega-a_O))*regge_omega*odderon)
-	    );
+    *(N0sq*(A0*A0*regge_rho_sq+B0*B0*regge_omega_sq+C0*C0*odderon_sq
+	    +2.*A0*B0*cos(M_PI*(a_rho-a_omega))*regge_rho*regge_omega
+	    +2.*A0*C0*cos(M_PI*(a_rho-a_O))*regge_rho*odderon
+	    +2.*B0*C0*cos(M_PI*(a_omega-a_O))*regge_omega*odderon)
+      /* -N0N2*(A0*A2*regge_rho_sq+B0*B2*regge_omega_sq+C0*C2*odderon_sq
+		+2.*A0*B0*cos(M_PI*(a_rho-a_omega))*regge_rho*regge_omega
+		+2.*A0*C0*cos(M_PI*(a_rho-a_O))*regge_rho*odderon
+		+2.*B0*C0*cos(M_PI*(a_omega-a_O))*regge_omega*odderon)
+      */
+      +N2sq*(A2*A2*regge_rho_sq+B2*B2*regge_omega_sq+C2*C2*odderon_sq
+	     +2.*A2*B2*cos(M_PI*(a_rho-a_omega))*regge_rho*regge_omega
+	     +2.*A2*C2*cos(M_PI*(a_rho-a_O))*regge_rho*odderon
+	     +2.*B2*C2*cos(M_PI*(a_omega-a_O))*regge_omega*odderon)
+      );
 	      
   // Compute cross section
   double m1=particles[0].M();
