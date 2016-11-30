@@ -12,6 +12,7 @@ subdirs = [
 'FCAL_invmass',
 'FDC_online',
 'FDC_Efficiency',
+'FDC_Residuals',
 'PSC_online',
 'RF_online',
 'pedestal_online',
