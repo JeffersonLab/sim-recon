@@ -154,8 +154,6 @@ void FDC_Residuals(bool save = 0){
 	h8->Fit("fp1","qr");
 	slope[r][icell-1] = fp1->GetParameter(1);
 	slope_err[r][icell-1] = fp1->GetParError(1);
-
-	cout << atan(slope[r][icell-1]) << endl;
       }
       else {
 	// histograms not present

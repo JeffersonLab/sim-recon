@@ -466,8 +466,9 @@ jerror_t JEventProcessor_FDC_Residuals::evnt(JEventLoop *loop, uint64_t eventnum
 	    hPseudoResU[cellNum]->Fill(residualU);
 	    hPseudoResV[cellNum]->Fill(residualV);
 	    
-	    // if (fabs(residualU) < 0.05)
-	    hPseudoResSvsQ->Fill(locPseudo->q,residualV);
+	    if (locPseudo->status == 6)
+	      hPseudoResSvsQ->Fill(locPseudo->q,residualV);
+	    
 	    unsigned int radius = interPosition2D.Mod()/(45/rad);
 	    if (radius<rad)
 	      hPseudoResUvsV[cellNum][radius]->Fill(residualU, residualV);
