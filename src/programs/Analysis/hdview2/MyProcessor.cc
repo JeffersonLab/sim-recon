@@ -307,6 +307,32 @@ void MyProcessor::FillGraphics(void)
 		  BCALPointZphiLayer[layer]->Reset();
 		  BCALPointPhiTLayer[layer]->Reset();
 	  }
+	
+	  vector<double> BCALpoints_z;
+          vector<double> BCALpoints_phi;
+          vector<double>::const_iterator points_min_phi;
+          vector<double>::const_iterator points_max_phi;
+          vector<double>::const_iterator points_min_z;
+          vector<double>::const_iterator points_max_z;	
+
+	  for(unsigned int k=0;k<locBcalPoint.size();k++){
+		  BCALpoints_z.push_back(locBcalPoint[k]->z());
+		  BCALpoints_phi.push_back(locBcalPoint[k]->phi()*TMath::RadToDeg());
+	  }
+
+	  if(BCALpoints_phi.size() > 0){
+	  	  points_min_phi = min_element(BCALpoints_phi.begin(),BCALpoints_phi.end());
+	  	  points_max_phi = max_element(BCALpoints_phi.begin(),BCALpoints_phi.end());
+	  }
+
+	  if(BCALpoints_z.size() > 0){
+		  points_min_z = min_element(BCALpoints_z.begin(),BCALpoints_z.end());
+		  points_max_z = max_element(BCALpoints_z.begin(),BCALpoints_z.end());
+	  }
+	
+	  BCALpoints_z.clear();
+	  BCALpoints_phi.clear();
+
 	  for (unsigned int k=0;k<locBcalPoint.size();k++){
 		  const DBCALPoint* point = locBcalPoint[k];
 		  float pointphi = point->phi()*TMath::RadToDeg();
@@ -317,6 +343,8 @@ void MyProcessor::FillGraphics(void)
 								   pointphi,point->t(),point->E()*1000);
 		  float weight = log(point->E()*1000);
 			  BCALPointZphiLayer[point->layer()-1]->Fill(pointphi,point->z(),weight);
+			  BCALPointZphiLayer[point->layer()-1]->GetXaxis()->SetRangeUser((*points_min_phi-2),(*points_max_phi+2));
+          	          BCALPointZphiLayer[point->layer()-1]->GetYaxis()->SetRangeUser((*points_min_z-5),(*points_max_z+5));
 		  float time = point->t();
 		  if (point->t()>100) time=99;    // put overflow in last bin
 		  if (point->t()<-100) time=-99;
@@ -336,6 +364,39 @@ void MyProcessor::FillGraphics(void)
 	  delete ClusterLegend;
 	  ClusterLegend = new TLegend(0.91,0.01,0.99,0.99);
 
+	  vector<double> clusterpoints_z;
+          vector<double> clusterpoints_phi;
+          vector<double>::const_iterator min_phi;
+          vector<double>::const_iterator max_phi;
+          vector<double>::const_iterator min_z;
+          vector<double>::const_iterator max_z;
+
+	  for(unsigned int k = 0 ; k < locBcalCluster.size() ; k++){
+	  	  const DBCALCluster* cluster_range = locBcalCluster[k];
+
+          	  vector<const DBCALPoint*> clusterpoints_range;
+          	  cluster_range->Get(clusterpoints_range);
+
+	  	  for(unsigned int l=0;l<clusterpoints_range.size();l++){
+		  	  clusterpoints_z.push_back(clusterpoints_range[l]->z());
+		  	  clusterpoints_phi.push_back(clusterpoints_range[l]->phi()*TMath::RadToDeg());
+	 	   }
+	
+	  	  if(clusterpoints_phi.size() > 0){
+		  	  min_phi = min_element(clusterpoints_phi.begin(),clusterpoints_phi.end());
+                  	  max_phi = max_element(clusterpoints_phi.begin(),clusterpoints_phi.end()); 
+	  	  }
+
+	  	  if(clusterpoints_z.size() > 0){
+		  	  min_z = min_element(clusterpoints_z.begin(),clusterpoints_z.end());
+                  	  max_z = max_element(clusterpoints_z.begin(),clusterpoints_z.end());
+	  	  }
+
+	  }
+
+	  clusterpoints_z.clear();
+	  clusterpoints_phi.clear();
+
 	  for (unsigned int k=0;k<locBcalCluster.size();k++){
 		  char name[255];
 		  sprintf(name,"ClusterZphi%i",k);
@@ -349,10 +410,10 @@ void MyProcessor::FillGraphics(void)
 		  ClusterLegend->AddEntry(BCALClusterZphiHistos[k], name);
 
 		  const DBCALCluster* cluster = locBcalCluster[k];
-		  if (BCALVERBOSE>0) printf("cluster %2i, (phi,theta,rho) = (%6.2f,%6.2f,%7.2f) t=%8.3f  E=%8.2f MeV\n",
-									k+1,cluster->phi(), cluster->theta(), cluster->rho(), cluster->t(), cluster->E()*1000); 
-		  vector<const DBCALPoint*> clusterpoints;
-		  cluster->Get(clusterpoints);
+                  if (BCALVERBOSE>0) printf("cluster %2i, (phi,theta,rho) = (%6.2f,%6.2f,%7.2f) t=%8.3f  E=%8.2f MeV\n", k+1,cluster->phi(), cluster->theta(), cluster->rho(), cluster->t(), cluster->E()*1000);
+          	  vector<const DBCALPoint*> clusterpoints;
+          	  cluster->Get(clusterpoints);	  
+
 		  for (unsigned int l=0;l<clusterpoints.size();l++){
 			  const DBCALPoint* clusterpoint = clusterpoints[l];
 			  float weight = log(clusterpoint->E()*1000);
@@ -363,6 +424,8 @@ void MyProcessor::FillGraphics(void)
 										clusterpoint->module(), clusterpoint->layer(), clusterpoint->sector(),clusterpoint->z(),
 										pointphi,clusterpoint->t(),clusterpoint->E()*1000);
 			  BCALClusterZphiHistos[k]->Fill(pointphi,clusterpoint->z(),weight);
+			  BCALClusterZphiHistos[k]->GetXaxis()->SetRangeUser((*min_phi - 2),(*max_phi + 2));
+			  BCALClusterZphiHistos[k]->GetYaxis()->SetRangeUser((*min_z-10),(*max_z+10));
 		  }
 	  }
 
