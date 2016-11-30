@@ -16,6 +16,11 @@ const double deflect[24]={0.256449, 0.257153, 0.259054, 0.257982, 0.257663, 0.25
 			  0.260384, 0.268576, 0.2578, 0.262166, 0.264653, 0.256705,
 			  0.226083, 0.233847, 0.222489, 0.220759, 0.222032, 0.212103};
 
+const double correct[24]={0.00555047, 0.00471467, 0.00451803, 0.00695173, 0.00838218, 0.00916391,
+			  0.015701, 0.0179723, 0.0186109, 0.0179447, 0.0186627, 0.0151424,
+			  0.0224091, 0.0278104, 0.0297215, 0.0257817, 0.0248605, 0.0266139, 
+			  0.0244911, 0.0248676, 0.0294895,  0.0273482, 0.019603, 0.0214564};
+
 //For extraction of magnetic field slope, split the detectors into bins in radius
 const unsigned int rad = 1; // 1, 5 or 9
 
@@ -455,8 +460,8 @@ jerror_t JEventProcessor_FDC_Residuals::evnt(JEventLoop *loop, uint64_t eventnum
 
 	    // rotate to wire coordinate system
 	    const DFDCWire * wire = locPseudo->wire;
-	    double residualU = -1*(residual2D.Rotate(wire->angle - deflect[cellIndex])).X();
-	    double residualV = -1*(residual2D.Rotate(wire->angle - deflect[cellIndex])).Y();
+	    double residualU = -1*(residual2D.Rotate(wire->angle - deflect[cellIndex] - correct[cellIndex])).X();
+	    double residualV = -1*(residual2D.Rotate(wire->angle - deflect[cellIndex] - correct[cellIndex])).Y();
 
 	    // these can be used for background studies/correction
 	    japp->RootFillLock(this); //ACQUIRE ROOT FILL LOCK

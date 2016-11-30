@@ -1,8 +1,6 @@
 
 void FDC_Residuals(bool save = 0){
   
-  gStyle->SetPalette(1);
-
   //gDirectory->cd();
   //TDirectory *gDirectory = TFile::Open("hd_root.root");
   TDirectory *dir = (TDirectory*)gDirectory->FindObjectAny("FDC_Residuals");
@@ -154,6 +152,8 @@ void FDC_Residuals(bool save = 0){
 	h8->Fit("fp1","qr");
 	slope[r][icell-1] = fp1->GetParameter(1);
 	slope_err[r][icell-1] = fp1->GetParError(1);
+
+	//cout << slope[r][icell-1] << endl;
       }
       else {
 	// histograms not present
@@ -212,4 +212,73 @@ void FDC_Residuals(bool save = 0){
     else 
       gmagnet[r]->Draw("Psame");
   }
+
+  TCanvas *cUncertain = new TCanvas("cUncertain", "Uncertainties", 1200, 600);
+  cUncertain->Divide(2);
+  cUncertain->cd(1);
+  
+  TH2 *hPseudoResSvsQ = (TH2*) (gDirectory->Get("hPseudoResSvsQ"));
+  hPseudoResSvsQ->Draw("colz");
+
+  cUncertain->cd(2);
+
+  nslices = 100;
+  TH1D *ResS[nslices];
+  double q[nslices];
+  double q_err[nslices];
+  double sigma[nslices];
+  double sigma_err[nslices];
+  char hname[256];
+  for (int i=0; i < nslices; i++) {
+    q[i] = 2*i/10. ;
+    q_err[i] = 0;
+
+    sprintf(hname, "ResS_[%d]", i);
+    
+    ResS[i] = hPseudoResSvsQ->ProjectionY(hname,  2*i, 2*(i+1) );
+    ResS[i]->GetYaxis()->SetLabelFont(132);
+    ResS[i]->GetYaxis()->SetTitleFont(132);
+    ResS[i]->GetXaxis()->SetLabelFont(132);
+    ResS[i]->GetXaxis()->SetTitleFont(132);
+    ResS[i]->GetXaxis()->SetLabelSize(0.04);
+    ResS[i]->GetXaxis()->SetTitleSize(0.04);
+    
+    //ResS[i]->Draw();
+    
+    if (ResS[i]->GetEntries() > 1000){
+      TF1 *fgaus = new TF1("fgaus", "gaus", -0.05, 0.05);
+      fgaus->SetLineColor(2);
+      fgaus->SetNpx(360);
+      ResS[i]->Fit("fgaus", "QR0");
+
+
+      sigma[i] = fgaus->GetParameter(2);
+      sigma_err[i] = fgaus->GetParError(2);
+
+    }
+    else {
+      sigma[i] = 0;
+      sigma_err[i] = 0;
+    }
+  }
+
+  TH1D *hsigma = new TH1D("hsigma", "", nslices, 0, 20);
+  hsigma->GetYaxis()->SetRangeUser(0,0.2);
+  hsigma->GetYaxis()->SetTitleFont(132);
+  hsigma->GetXaxis()->SetTitleFont(132);
+  hsigma->GetYaxis()->SetLabelFont(132);
+  hsigma->GetXaxis()->SetLabelFont(132);
+  // hsigma_para->GetXaxis()->SetTitle("Beam Energy (GeV)");
+  // hsigma_para->GetYaxis()->SetTitle("P#Sigma");
+  hsigma->SetStats(0);
+  hsigma->Draw();
+
+  TGraph *gsigma = new TGraphErrors(nslices, q, sigma, q_err, sigma_err);
+  gsigma->SetMarkerColor(1);
+  gsigma->SetMarkerStyle(8);
+  gsigma->Draw("Psame");
+
+  TF1 *funct=new TF1("funct", "0.01/x + 0.01", 0 ,50);
+  funct->Draw("same");
+    
 }
