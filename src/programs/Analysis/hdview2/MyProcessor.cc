@@ -363,14 +363,7 @@ void MyProcessor::FillGraphics(void)
 
 	  delete ClusterLegend;
 	  ClusterLegend = new TLegend(0.91,0.01,0.99,0.99);
-/*
-	  vector<double> clusterpoints_z;
-          vector<double> clusterpoints_phi;
-          vector<double>::const_iterator min_phi;
-          vector<double>::const_iterator max_phi;
-          vector<double>::const_iterator min_z;
-          vector<double>::const_iterator max_z;
-*/
+	  
 	  for(unsigned int k = 0 ; k < locBcalCluster.size() ; k++){
 	  	  const DBCALCluster* cluster_range = locBcalCluster[k];
 
@@ -393,9 +386,6 @@ void MyProcessor::FillGraphics(void)
 	  	  }
 
 	  }
-
-//	  clusterpoints_z.clear();
-//	  clusterpoints_phi.clear();
 
 	  BCALpoints_z.clear();
 	  BCALpoints_phi.clear();
