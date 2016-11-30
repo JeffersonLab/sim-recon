@@ -363,14 +363,14 @@ void MyProcessor::FillGraphics(void)
 
 	  delete ClusterLegend;
 	  ClusterLegend = new TLegend(0.91,0.01,0.99,0.99);
-
+/*
 	  vector<double> clusterpoints_z;
           vector<double> clusterpoints_phi;
           vector<double>::const_iterator min_phi;
           vector<double>::const_iterator max_phi;
           vector<double>::const_iterator min_z;
           vector<double>::const_iterator max_z;
-
+*/
 	  for(unsigned int k = 0 ; k < locBcalCluster.size() ; k++){
 	  	  const DBCALCluster* cluster_range = locBcalCluster[k];
 
@@ -378,24 +378,27 @@ void MyProcessor::FillGraphics(void)
           	  cluster_range->Get(clusterpoints_range);
 
 	  	  for(unsigned int l=0;l<clusterpoints_range.size();l++){
-		  	  clusterpoints_z.push_back(clusterpoints_range[l]->z());
-		  	  clusterpoints_phi.push_back(clusterpoints_range[l]->phi()*TMath::RadToDeg());
+		  	  BCALpoints_z.push_back(clusterpoints_range[l]->z());
+		  	  BCALpoints_phi.push_back(clusterpoints_range[l]->phi()*TMath::RadToDeg());
 	 	   }
 	
-	  	  if(clusterpoints_phi.size() > 0){
-		  	  min_phi = min_element(clusterpoints_phi.begin(),clusterpoints_phi.end());
-                  	  max_phi = max_element(clusterpoints_phi.begin(),clusterpoints_phi.end()); 
+	  	  if(BCALpoints_phi.size() > 0){
+		  	  points_min_phi = min_element(BCALpoints_phi.begin(),BCALpoints_phi.end());
+                  	  points_max_phi = max_element(BCALpoints_phi.begin(),BCALpoints_phi.end()); 
 	  	  }
 
-	  	  if(clusterpoints_z.size() > 0){
-		  	  min_z = min_element(clusterpoints_z.begin(),clusterpoints_z.end());
-                  	  max_z = max_element(clusterpoints_z.begin(),clusterpoints_z.end());
+	  	  if(BCALpoints_z.size() > 0){
+		  	  points_min_z = min_element(BCALpoints_z.begin(),BCALpoints_z.end());
+                  	  points_max_z = max_element(BCALpoints_z.begin(),BCALpoints_z.end());
 	  	  }
 
 	  }
 
-	  clusterpoints_z.clear();
-	  clusterpoints_phi.clear();
+//	  clusterpoints_z.clear();
+//	  clusterpoints_phi.clear();
+
+	  BCALpoints_z.clear();
+	  BCALpoints_phi.clear();
 
 	  for (unsigned int k=0;k<locBcalCluster.size();k++){
 		  char name[255];
@@ -424,8 +427,8 @@ void MyProcessor::FillGraphics(void)
 										clusterpoint->module(), clusterpoint->layer(), clusterpoint->sector(),clusterpoint->z(),
 										pointphi,clusterpoint->t(),clusterpoint->E()*1000);
 			  BCALClusterZphiHistos[k]->Fill(pointphi,clusterpoint->z(),weight);
-			  BCALClusterZphiHistos[k]->GetXaxis()->SetRangeUser((*min_phi - 2),(*max_phi + 2));
-			  BCALClusterZphiHistos[k]->GetYaxis()->SetRangeUser((*min_z-10),(*max_z+10));
+			  BCALClusterZphiHistos[k]->GetXaxis()->SetRangeUser((*points_min_phi - 2),(*points_max_phi + 2));
+			  BCALClusterZphiHistos[k]->GetYaxis()->SetRangeUser((*points_min_z-10),(*points_max_z+10));
 		  }
 	  }
 
