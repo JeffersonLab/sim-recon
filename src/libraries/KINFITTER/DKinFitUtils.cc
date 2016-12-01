@@ -21,7 +21,7 @@ DKinFitUtils::DKinFitUtils(void)
 	dMaxKinFitChainPoolSize = locNumFitsPerEventGuess;
 	dMaxKinFitChainStepPoolSize = 3*locNumFitsPerEventGuess;
 
-	dMaxMatrixDSymPoolSize = 5*locNumFitsPerEventGuess*2;
+	dMaxSymMatrixPoolSize = 5*locNumFitsPerEventGuess*2;
 }
 
 DKinFitUtils::~DKinFitUtils(void)
@@ -47,8 +47,8 @@ DKinFitUtils::~DKinFitUtils(void)
 	for(size_t loc_i = 0; loc_i < dKinFitChainStepPool_All.size(); ++loc_i)
 		delete dKinFitChainStepPool_All[loc_i];
 
-	for(size_t loc_i = 0; loc_i < dMatrixDSymPool_All.size(); ++loc_i)
-		delete dMatrixDSymPool_All[loc_i];
+	for(size_t loc_i = 0; loc_i < dSymMatrixPool_All.size(); ++loc_i)
+		delete dSymMatrixPool_All[loc_i];
 }
 
 void DKinFitUtils::Reset_NewEvent(void)
@@ -116,29 +116,15 @@ void DKinFitUtils::Reset_NewEvent(void)
 	}
 	dKinFitChainStepPool_Available = dKinFitChainStepPool_All;
 
-	if(dMatrixDSymPool_All.size() > dMaxMatrixDSymPoolSize)
+	if(dSymMatrixPool_All.size() > dMaxSymMatrixPoolSize)
 	{
-		for(size_t loc_i = dMaxMatrixDSymPoolSize; loc_i < dMatrixDSymPool_All.size(); ++loc_i)
-			delete dMatrixDSymPool_All[loc_i];
-		dMatrixDSymPool_All.resize(dMaxMatrixDSymPoolSize);
+		for(size_t loc_i = dMaxSymMatrixPoolSize; loc_i < dSymMatrixPool_All.size(); ++loc_i)
+			delete dSymMatrixPool_All[loc_i];
+		dSymMatrixPool_All.resize(dMaxSymMatrixPoolSize);
 	}
-	dMatrixDSymPool_Available = dMatrixDSymPool_All;
+	dSymMatrixPool_Available = dSymMatrixPool_All;
 
 	Reset_NewFit();
-}
-
-void DKinFitUtils::Preallocate_MatrixMemory(void)
-{
-	//pre-allocate matrix memory
-	if(dMatrixDSymPool_Available.empty())
-	{
-		for(size_t loc_i = 0; loc_i < dMaxMatrixDSymPoolSize; ++loc_i)
-		{
-			TMatrixDSym* locMatrix = new TMatrixDSym(7);
-			dMatrixDSymPool_All.push_back(locMatrix);
-		}
-		dMatrixDSymPool_Available = dMatrixDSymPool_All;
-	}
 }
 
 DKinFitParticle* DKinFitUtils::Get_KinFitParticleResource(void)
@@ -260,26 +246,26 @@ DKinFitChainStep* DKinFitUtils::Get_KinFitChainStepResource(void)
 	return locKinFitChainStep;
 }
 
-TMatrixDSym* DKinFitUtils::Get_MatrixDSymResource(unsigned int locNumMatrixRows)
+TMatrixFSym* DKinFitUtils::Get_SymMatrixResource(unsigned int locNumMatrixRows)
 {
-	TMatrixDSym* locMatrixDSym;
-	if(dMatrixDSymPool_Available.empty())
+	TMatrixFSym* locSymMatrix;
+	if(dSymMatrixPool_Available.empty())
 	{
-		locMatrixDSym = new TMatrixDSym(locNumMatrixRows);
-		dMatrixDSymPool_All.push_back(locMatrixDSym);
+		locSymMatrix = new TMatrixFSym(locNumMatrixRows);
+		dSymMatrixPool_All.push_back(locSymMatrix);
 	}
 	else
 	{
-		locMatrixDSym = dMatrixDSymPool_Available.back();
-		locMatrixDSym->ResizeTo(locNumMatrixRows, locNumMatrixRows);
-		dMatrixDSymPool_Available.pop_back();
+		locSymMatrix = dSymMatrixPool_Available.back();
+		locSymMatrix->ResizeTo(locNumMatrixRows, locNumMatrixRows);
+		dSymMatrixPool_Available.pop_back();
 	}
-	return locMatrixDSym;
+	return locSymMatrix;
 }
 
 /***************************************************************** CREATE PARTICLES ****************************************************************/
 
-DKinFitParticle* DKinFitUtils::Make_BeamParticle(int locPID, int locCharge, double locMass, TLorentzVector locSpacetimeVertex, TVector3 locMomentum, const TMatrixDSym* locCovarianceMatrix)
+DKinFitParticle* DKinFitUtils::Make_BeamParticle(int locPID, int locCharge, double locMass, TLorentzVector locSpacetimeVertex, TVector3 locMomentum, const TMatrixFSym* locCovarianceMatrix)
 {
 	if((locCovarianceMatrix->GetNrows() != 7) || (locCovarianceMatrix->GetNcols() != 7))
 		return NULL; //is not 7x7
@@ -292,7 +278,7 @@ DKinFitParticle* DKinFitUtils::Make_BeamParticle(int locPID, int locCharge, doub
 	locKinFitParticle->Set_CommonSpacetimeVertex(locSpacetimeVertex);
 
 	locKinFitParticle->Set_Momentum(locMomentum);
-	locKinFitParticle->Set_CovarianceMatrix(Clone_MatrixDSym(locCovarianceMatrix));
+	locKinFitParticle->Set_CovarianceMatrix(locCovarianceMatrix);
 
 	locKinFitParticle->Set_KinFitParticleType(d_BeamParticle);
 
@@ -322,7 +308,7 @@ DKinFitParticle* DKinFitUtils::Make_TargetParticle(int locPID, int locCharge, do
 	return locKinFitParticle;
 }
 
-DKinFitParticle* DKinFitUtils::Make_DetectedParticle(int locPID, int locCharge, double locMass, TLorentzVector locSpacetimeVertex, TVector3 locMomentum, const TMatrixDSym* locCovarianceMatrix)
+DKinFitParticle* DKinFitUtils::Make_DetectedParticle(int locPID, int locCharge, double locMass, TLorentzVector locSpacetimeVertex, TVector3 locMomentum, const TMatrixFSym* locCovarianceMatrix)
 {
 	if((locCovarianceMatrix->GetNrows() != 7) || (locCovarianceMatrix->GetNcols() != 7))
 		return NULL; //is not 7x7
@@ -334,7 +320,7 @@ DKinFitParticle* DKinFitUtils::Make_DetectedParticle(int locPID, int locCharge, 
 	locKinFitParticle->Set_SpacetimeVertex(locSpacetimeVertex);
 	locKinFitParticle->Set_CommonSpacetimeVertex(locSpacetimeVertex);
 	locKinFitParticle->Set_Momentum(locMomentum);
-	locKinFitParticle->Set_CovarianceMatrix(Clone_MatrixDSym(locCovarianceMatrix));
+	locKinFitParticle->Set_CovarianceMatrix(locCovarianceMatrix);
 
 	locKinFitParticle->Set_KinFitParticleType(d_DetectedParticle);
 
@@ -347,7 +333,7 @@ DKinFitParticle* DKinFitUtils::Make_DetectedParticle(int locPID, int locCharge, 
 	return locKinFitParticle;
 }
 
-DKinFitParticle* DKinFitUtils::Make_DetectedShower(int locPID, double locMass, TLorentzVector locSpacetimeVertex, double locShowerEnergy, const TMatrixDSym* locCovarianceMatrix)
+DKinFitParticle* DKinFitUtils::Make_DetectedShower(int locPID, double locMass, TLorentzVector locSpacetimeVertex, double locShowerEnergy, const TMatrixFSym* locCovarianceMatrix)
 {
 	if((locCovarianceMatrix->GetNrows() != 5) || (locCovarianceMatrix->GetNcols() != 5))
 		return NULL; //is not 5x5
@@ -360,7 +346,7 @@ DKinFitParticle* DKinFitUtils::Make_DetectedShower(int locPID, double locMass, T
 	locKinFitParticle->Set_SpacetimeVertex(locSpacetimeVertex);
 	locKinFitParticle->Set_CommonSpacetimeVertex(locSpacetimeVertex); //will be updated with vertex guess
 	locKinFitParticle->Set_ShowerEnergy(locShowerEnergy);
-	locKinFitParticle->Set_CovarianceMatrix(Clone_MatrixDSym(locCovarianceMatrix));
+	locKinFitParticle->Set_CovarianceMatrix(locCovarianceMatrix);
 
 	locKinFitParticle->Set_KinFitParticleType(d_DetectedParticle);
 
@@ -681,12 +667,12 @@ DKinFitConstraint_Spacetime* DKinFitUtils::Make_SpacetimeConstraint(const set<DK
 
 /********************************************************** CLONE PARTICLES AND CONSTRAINTS ********************************************************/
 
-TMatrixDSym* DKinFitUtils::Clone_MatrixDSym(const TMatrixDSym* locMatrix)
+TMatrixFSym* DKinFitUtils::Clone_SymMatrix(const TMatrixFSym* locMatrix)
 {
 	if(locMatrix == NULL)
 		return NULL;
 	int locMatrixSize = locMatrix->GetNcols();
-	TMatrixDSym* locNewMatrix = Get_MatrixDSymResource(locMatrixSize);
+	TMatrixFSym* locNewMatrix = Get_SymMatrixResource(locMatrixSize);
 	*locNewMatrix = *locMatrix;
 	return locNewMatrix;
 }
@@ -701,9 +687,9 @@ DKinFitParticle* DKinFitUtils::Clone_KinFitParticle(DKinFitParticle* locKinFitPa
 		cout << "Cloned Particle: PID, input, output = " << locKinFitParticle->Get_PID() << ", " << locKinFitParticle << ", " << locClonedKinFitParticle << endl;
 
 	//clone covariance matrix
-	const TMatrixDSym* locCovarianceMatrix = locClonedKinFitParticle->Get_CovarianceMatrix();
+	const TMatrixFSym* locCovarianceMatrix = locClonedKinFitParticle->Get_CovarianceMatrix();
 	if(locCovarianceMatrix != NULL)
-		locClonedKinFitParticle->Set_CovarianceMatrix(Clone_MatrixDSym(locCovarianceMatrix));
+		locClonedKinFitParticle->Set_CovarianceMatrix(Clone_SymMatrix(locCovarianceMatrix));
 
 	return locClonedKinFitParticle;
 }
@@ -994,7 +980,7 @@ TLorentzVector DKinFitUtils::Calc_DecayingP4(DKinFitParticle* locKinFitParticle,
 	return locP4Sum;
 }
 
-bool DKinFitUtils::Propagate_TrackInfoToCommonVertex(DKinFitParticle* locKinFitParticle, const TMatrixDSym* locVXi, TVector3& locMomentum, TLorentzVector& locSpacetimeVertex, pair<double, double>& locPathLengthPair, TMatrixDSym& locCovarianceMatrix) const
+bool DKinFitUtils::Propagate_TrackInfoToCommonVertex(DKinFitParticle* locKinFitParticle, const TMatrixDSym* locVXi, TVector3& locMomentum, TLorentzVector& locSpacetimeVertex, pair<double, double>& locPathLengthPair, TMatrixFSym& locCovarianceMatrix) const
 {
 	// propagates the track info to the fit common vertex
 		//returns false if nothing changed (info not propagated: e.g. missing particle), else returns true
@@ -1209,7 +1195,7 @@ bool DKinFitUtils::Propagate_TrackInfoToCommonVertex(DKinFitParticle* locKinFitP
 	return Calc_PathLength(locKinFitParticle, locVXi, locCovarianceMatrix, locPathLengthPair);
 }
 
-bool DKinFitUtils::Calc_PathLength(DKinFitParticle* locKinFitParticle, const TMatrixDSym* locVXi, const TMatrixDSym& locCovarianceMatrix, pair<double, double>& locPathLengthPair) const
+bool DKinFitUtils::Calc_PathLength(DKinFitParticle* locKinFitParticle, const TMatrixDSym* locVXi, const TMatrixFSym& locCovarianceMatrix, pair<double, double>& locPathLengthPair) const
 {
 	//locPathLengthPair: value, uncertainty
 	DKinFitParticleType locKinFitParticleType = locKinFitParticle->Get_KinFitParticleType();
@@ -1233,7 +1219,7 @@ bool DKinFitUtils::Calc_PathLength(DKinFitParticle* locKinFitParticle, const TMa
 	TVector3 locH = locBField.Unit();
 
 	//add common v3 to matrix: 10x10 or 8x8 (neutral shower)
-	TMatrixDSym locTempMatrix(locCovarianceMatrix);
+	TMatrixFSym locTempMatrix(locCovarianceMatrix);
 	int locCommonVxParamIndex_TempMatrix = locTempMatrix.GetNcols();
 	locTempMatrix.ResizeTo(locCommonVxParamIndex_TempMatrix + 3, locCommonVxParamIndex_TempMatrix + 3);
 	for(size_t loc_i = 0; loc_i < 3; ++loc_i)
@@ -1252,7 +1238,6 @@ bool DKinFitUtils::Calc_PathLength(DKinFitParticle* locKinFitParticle, const TMa
 
 		TMatrixD locTransformationMatrix_PathLength(1, locTempMatrix.GetNcols());
 
-//RESUME: DO I NEED TO BE CAREFUL ABOUT P3?? Probably
 		TVector3 locDPathDP3 = (locDeltaXDotH/locPDotH)*((1.0/locPMag)*locMomentum - (locPMag/locPDotH)*locH);
 		TVector3 locDPathDCommon = (locPMag/locPDotH)*locH;
 		TVector3 locDPathDPosition = -1.0*locDPathDCommon;

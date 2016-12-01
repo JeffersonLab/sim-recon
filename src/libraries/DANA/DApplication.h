@@ -43,6 +43,9 @@ class DApplication:public JApplication{
 		DGeometry* GetDGeometry(unsigned int run_number);
 		DRootGeom *GetRootGeom(unsigned int run_number);
 
+		TMatrixFSym* Get_CovarianceMatrixResource(unsigned int locNumMatrixRows);
+		TMatrixFSym* Get_CovarianceMatrixResource(unsigned int locNumMatrixRows, uint64_t locEventNumber);
+
 	protected:
 	
 		DMagneticFieldMap *bfield;
@@ -53,10 +56,12 @@ class DApplication:public JApplication{
 		vector<DGeometry*> geometries;
 
 		pthread_mutex_t mutex;
+		pthread_mutex_t matrix_mutex;
 		
-	private:
-
+		size_t dTargetMaxNumAvailableMatrices;
+		map<pthread_t, uint64_t> dEventNumberMap;
+		map<pthread_t, deque<TMatrixFSym*> > dUsedMatrixMap;
+		deque<TMatrixFSym*> dAvailableMatrices;
 };
 
 #endif // _DApplication_
-

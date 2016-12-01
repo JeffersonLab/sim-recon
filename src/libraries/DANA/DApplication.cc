@@ -39,9 +39,10 @@ using std::string;
 DApplication::DApplication(int narg, char* argv[]):JApplication(narg, argv)
 {
 	pthread_mutex_init(&mutex, NULL);
+	pthread_mutex_init(&matrix_mutex, NULL);
 	
 	//disable inherently (and horrorifically)-unsafe registration of EVERY TObject with the global TObjectTable //multithreading!!
-    //simply setting/checking a bool is not thread-safe due to cache non-coherence and operation re-shuffling by the compiler
+	//simply setting/checking a bool is not thread-safe due to cache non-coherence and operation re-shuffling by the compiler
 	TObject::SetObjectStat(kFALSE);
 
 	// Add plugin paths to Hall-D specific binary directories
@@ -95,6 +96,9 @@ DApplication::DApplication(int narg, char* argv[]):JApplication(narg, argv)
 	}
 	factory_generator = new DFactoryGenerator();
 	AddFactoryGenerator(factory_generator);
+
+	//target max size of available matrix resource pool
+	dTargetMaxNumAvailableMatrices = 50000; //~10 MB (if 7x7 float matrices)
 
 	if(JVersion::minor<5)Init();
 
@@ -418,3 +422,91 @@ DRootGeom* DApplication::GetRootGeom(unsigned int run_number)
 	return RootGeom;
 }
 
+//---------------------------------
+// Get_CovarianceMatrixResource
+//---------------------------------
+TMatrixFSym* DApplication::Get_CovarianceMatrixResource(unsigned int locNumMatrixRows)
+{
+	//Well, this is unfortunate.
+	//We must have the correct event number, so that we know when it's safe to recycle the memory for the next event.
+	//So, let's get the event number: find the JEventLoop corresponding to this thread, and then get it's event number.
+
+	pthread_t locThreadID = pthread_self();
+	vector<JEventLoop*> locEventLoops = GetJEventLoops();
+
+	uint64_t locEventNumber = 0;
+	for(auto locEventLoop : locEventLoops)
+	{
+		if(locEventLoop->GetPThreadID() != locThreadID)
+			continue;
+		locEventNumber = locEventLoop->GetJEvent().GetEventNumber();
+		break;
+	}
+
+	return Get_CovarianceMatrixResource(locNumMatrixRows, locEventNumber);
+}
+
+//---------------------------------
+// Get_CovarianceMatrixResource
+//---------------------------------
+TMatrixFSym* DApplication::Get_CovarianceMatrixResource(unsigned int locNumMatrixRows, uint64_t locEventNumber)
+{
+	TMatrixFSym* locMatrixFSym = nullptr;
+	pthread_t locThreadID = pthread_self();
+
+	//flags for what to do once back outside the lock
+	//Once acquired, can operate on locUsedMatrixDeque outside of lock because only the current thread has access
+	bool locDeleteAllUsedMatricesFlag = false;
+	bool locNewEventFlag = false;
+	bool locMakeNewMatrixFlag = false;
+
+	//LOCK
+	pthread_mutex_lock(&matrix_mutex);
+
+	//Declare "used" matrices available if on new event for this thread
+	deque<TMatrixFSym*>& locUsedMatrixDeque = dUsedMatrixMap[locThreadID];
+	auto locEventIterator = dEventNumberMap.find(locThreadID);
+	if(locEventIterator == dEventNumberMap.end())
+		dEventNumberMap[locThreadID] = locEventNumber;
+	else if(locEventIterator->second != locEventNumber)
+	{
+		locNewEventFlag = true;
+		dEventNumberMap[locThreadID] = locEventNumber;
+		//if available > max, wipe all used
+		locDeleteAllUsedMatricesFlag = (dAvailableMatrices.size() >= dTargetMaxNumAvailableMatrices);
+		if(!locDeleteAllUsedMatricesFlag)
+			dAvailableMatrices.insert(dAvailableMatrices.end(), locUsedMatrixDeque.begin(), locUsedMatrixDeque.end());
+	}
+
+	//Get matrix resource if available
+	if(dAvailableMatrices.empty())
+		locMakeNewMatrixFlag = true;
+	else
+	{
+		locMatrixFSym = dAvailableMatrices.back();
+		dAvailableMatrices.pop_back();
+	}
+
+	//UNLOCK
+	pthread_mutex_unlock(&matrix_mutex);
+
+	//create or resize matrix
+	if(locMakeNewMatrixFlag)
+		locMatrixFSym = new TMatrixFSym(locNumMatrixRows);
+	else
+		locMatrixFSym->ResizeTo(locNumMatrixRows, locNumMatrixRows);
+
+	//Reset used matrices, deleting if necessary
+	if(locDeleteAllUsedMatricesFlag)
+	{
+		for(auto locMatrix : locUsedMatrixDeque)
+			delete locMatrix;
+	}
+	if(locNewEventFlag)
+		locUsedMatrixDeque.clear();
+
+	//register as used
+	locUsedMatrixDeque.push_back(locMatrixFSym);
+
+	return locMatrixFSym;
+}

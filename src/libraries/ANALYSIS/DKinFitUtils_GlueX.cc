@@ -9,6 +9,8 @@
 DKinFitUtils_GlueX::DKinFitUtils_GlueX(const DMagneticFieldMap* locMagneticFieldMap, const DAnalysisUtilities* locAnalysisUtilities) : 
 dMagneticFieldMap(locMagneticFieldMap), dAnalysisUtilities(locAnalysisUtilities)
 {
+	dEventNumber = 0;
+	dApplication = dynamic_cast<DApplication*>(japp);
 	gPARMS->SetDefaultParameter("KINFIT:LINKVERTICES", dLinkVerticesFlag);
 	dWillBeamHaveErrorsFlag = false; //Until fixed!
 }
@@ -17,11 +19,12 @@ DKinFitUtils_GlueX::DKinFitUtils_GlueX(JEventLoop* locEventLoop)
 {
 	locEventLoop->GetSingle(dAnalysisUtilities);
 
-	DApplication* locApplication = dynamic_cast<DApplication*>(locEventLoop->GetJApplication());
-	dMagneticFieldMap = locApplication->GetBfield(locEventLoop->GetJEvent().GetRunNumber());
+	dApplication = dynamic_cast<DApplication*>(locEventLoop->GetJApplication());
+	dMagneticFieldMap = dApplication->GetBfield(locEventLoop->GetJEvent().GetRunNumber());
 
 	gPARMS->SetDefaultParameter("KINFIT:LINKVERTICES", dLinkVerticesFlag);
 	dWillBeamHaveErrorsFlag = false; //Until fixed!
+	dEventNumber = locEventLoop->GetJEvent().GetEventNumber();
 }
 
 void DKinFitUtils_GlueX::Set_MaxPoolSizes(size_t locNumReactions, size_t locExpectedNumCombos)
@@ -41,6 +44,12 @@ void DKinFitUtils_GlueX::Set_MaxPoolSizes(size_t locNumReactions, size_t locExpe
 }
 
 /*********************************************************** OVERRIDE BASE CLASS FUNCTIONS *********************************************************/
+
+void DKinFitUtils_GlueX::Reset_NewEvent(uint64_t locEventNumber)
+{
+	dEventNumber = locEventNumber;
+	Reset_NewEvent();
+}
 
 void DKinFitUtils_GlueX::Reset_NewEvent(void)
 {
@@ -117,7 +126,7 @@ DKinFitParticle* DKinFitUtils_GlueX::Make_BeamParticle(const DBeamPhoton* locBea
 	Particle_t locPID = locBeamPhoton->PID();
 
 	//set rf time variance in covariance matrix
-	TMatrixDSym locCovarianceMatrix = locBeamPhoton->errorMatrix();
+	TMatrixFSym locCovarianceMatrix = locBeamPhoton->errorMatrix();
 	locCovarianceMatrix(6, 6) = locEventRFBunch->dTimeVariance;
 	//zero the correlation terms
 	for(int loc_i = 0; loc_i < 6; ++loc_i)
@@ -707,7 +716,7 @@ void DKinFitUtils_GlueX::Construct_DetectedDecayingParticle_NoFit(DKinFitConstra
 
 		//create a new one
 		TLorentzVector locP4 = Calc_DecayingP4_ByP3Derived(locInputKinFitParticle, true, true);
-		TMatrixDSym locCovarianceMatrix(7);
+		TMatrixFSym locCovarianceMatrix(7);
 		locCovarianceMatrix(0, 0) = -1.0; //signal that you shouldn't do fits that need this particle
 		DKinFitParticle* locDetectedKinFitParticle = Make_DetectedParticle(locInputKinFitParticle->Get_PID(), 
 			locInputKinFitParticle->Get_Charge(), locInputKinFitParticle->Get_Mass(), locSpacetimeVertexGuess, locP4.Vect(), &locCovarianceMatrix);
@@ -1256,14 +1265,14 @@ bool DKinFitUtils_GlueX::Propagate_TrackInfoToCommonVertex(DKinematicData* locKi
 	TVector3 locMomentum;
 	TLorentzVector locSpacetimeVertex;
 	pair<double, double> locPathLengthPair;
-	TMatrixDSym* locCovarianceMatrix = Get_MatrixDSymResource(7);
+	TMatrixFSym* locCovarianceMatrix = Get_MatrixDSymResource(7);
 	if(!DKinFitUtils::Propagate_TrackInfoToCommonVertex(locKinFitParticle, locVXi, locMomentum, locSpacetimeVertex, locPathLengthPair, *locCovarianceMatrix))
 		return false;
 
 	locKinematicData->setMomentum(DVector3(locMomentum.X(),locMomentum.Y(),locMomentum.Z()));
 	locKinematicData->setPosition(DVector3(locSpacetimeVertex.Vect().X(),locSpacetimeVertex.Vect().Y(),locSpacetimeVertex.Vect().Z()));
 	locKinematicData->setTime(locSpacetimeVertex.T());
-	locKinematicData->setErrorMatrix(*locCovarianceMatrix);
+	locKinematicData->setErrorMatrix(locCovarianceMatrix);
 	locKinematicData->setPathLength(locPathLengthPair.first, locPathLengthPair.second);
 	return true;
 }

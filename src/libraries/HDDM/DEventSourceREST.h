@@ -71,7 +71,7 @@ class DEventSourceREST:public JEventSource
    jerror_t Extract_DBCALShower(hddm_r::HDDM *record,
                     JFactory<DBCALShower>* factory);
    jerror_t Extract_DTrackTimeBased(hddm_r::HDDM *record,
-                    JFactory<DTrackTimeBased>* factory);
+                    JFactory<DTrackTimeBased>* factory, JEventLoop* locEventLoop);
    jerror_t Extract_DTrigger(hddm_r::HDDM *record,
                     JFactory<DTrigger>* factory);
    jerror_t Extract_DDetectorMatches(JEventLoop* locEventLoop, hddm_r::HDDM *record,
@@ -81,7 +81,7 @@ class DEventSourceREST:public JEventSource
                     JFactory<DRFTime>* factory);
 #endif
 
-   DMatrixDSym Get7x7ErrorMatrix(double mass, const double vec[5], const DMatrixDSym& C5x5);
+   void Get7x7ErrorMatrix(double mass, const double vec[5], const TMatrixFSym* C5x5, TMatrixFSym* loc7x7ErrorMatrix);
  private:
    // Warning: Class JEventSource methods must be re-entrant, so do not
    // store any data here that might change from event to event.

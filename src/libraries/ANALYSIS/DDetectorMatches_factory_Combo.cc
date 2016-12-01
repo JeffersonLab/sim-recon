@@ -30,19 +30,15 @@ jerror_t DDetectorMatches_factory_Combo::brun(jana::JEventLoop *locEventLoop, in
 
 double DDetectorMatches_factory_Combo::Calc_PVariance(const DTrackTimeBased* locTrack) const
 {
-	DMatrixDSym locTrackingMatrix = locTrack->errorMatrix();
-	TMatrixDSym locP3CovarianceMatrix(3);
-	for(int loc_i = 0; loc_i < 3; ++loc_i)
-	{
-		for(int loc_j = 0; loc_j < 3; ++loc_j)
-			locP3CovarianceMatrix(loc_i, loc_j) = locTrackingMatrix(loc_i, loc_j);
-	}
+	TMatrixFSym locTrackingMatrix = *(locTrack->errorMatrix());
+	locTrackingMatrix.ResizeTo(3, 3);
+
 	TMatrixD locJacobian(1, 3);
 	DVector3 locUnitP = locTrack->momentum().Unit();
 	locJacobian(0, 0) = locUnitP.X();
 	locJacobian(0, 1) = locUnitP.Y();
 	locJacobian(0, 2) = locUnitP.Z();
-	TMatrixDSym locPVariance = locP3CovarianceMatrix.Similarity(locJacobian);
+	TMatrixDSym locPVariance = locTrackingMatrix.Similarity(locJacobian);
 	return locPVariance(0, 0);
 }
 

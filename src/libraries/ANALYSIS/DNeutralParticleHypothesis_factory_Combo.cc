@@ -128,7 +128,7 @@ jerror_t DNeutralParticleHypothesis_factory_Combo::evnt(jana::JEventLoop *locEve
 			{
 				//create
 				const DNeutralShower* locNeutralShower = locNeutralParticles[loc_j]->dNeutralShower;
-				DNeutralParticleHypothesis* locNeutralParticleHypothesis = dNeutralParticleHypothesisFactory->Create_DNeutralParticleHypothesis(locNeutralShower, locPID, *locRFIterator, locVertex);
+				DNeutralParticleHypothesis* locNeutralParticleHypothesis = dNeutralParticleHypothesisFactory->Create_DNeutralParticleHypothesis(locEventLoop, locNeutralShower, locPID, *locRFIterator, locVertex);
 				if(locNeutralParticleHypothesis == NULL)
 					continue;
 

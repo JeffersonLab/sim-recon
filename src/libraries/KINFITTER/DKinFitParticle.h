@@ -6,7 +6,7 @@
 
 #include "TVector3.h"
 #include "TLorentzVector.h"
-#include "TMatrixDSym.h"
+#include "TMatrixFSym.h"
 
 using namespace std;
 
@@ -62,7 +62,7 @@ class DKinFitParticle
 		double Get_ShowerEnergy(void) const{return dShowerEnergy;}
 		double Get_PathLength(void) const{return dPathLength;}
 		double Get_PathLengthUncertainty(void) const{return dPathLengthUncertainty;}
-		const TMatrixDSym* Get_CovarianceMatrix(void) const{return dCovarianceMatrix;}
+		const TMatrixFSym* Get_CovarianceMatrix(void) const{return dCovarianceMatrix;}
 		TLorentzVector Get_SpacetimeVertex(void) const{return dSpacetimeVertex;}
 		TVector3 Get_CommonVertex(void) const{return dCommonSpacetimeVertex.Vect();}
 		double Get_CommonTime(void) const{return dCommonSpacetimeVertex.T();}
@@ -110,7 +110,7 @@ class DKinFitParticle
 		void Set_SpacetimeVertex(TLorentzVector locSpacetimeVertex){dSpacetimeVertex = locSpacetimeVertex;}
 
 		void Set_Momentum(TVector3 locMomentum){dMomentum = locMomentum;}
-		void Set_CovarianceMatrix(TMatrixDSym* locCovarianceMatrix){dCovarianceMatrix = locCovarianceMatrix;}
+		void Set_CovarianceMatrix(const TMatrixFSym* locCovarianceMatrix){dCovarianceMatrix = locCovarianceMatrix;}
 		void Set_ShowerEnergy(double locShowerEnergy){dShowerEnergy = locShowerEnergy;}
 		void Set_PathLength(double locPathLength){dPathLength = locPathLength;}
 		void Set_PathLengthUncertainty(double locPathLengthUncertainty){dPathLengthUncertainty = locPathLengthUncertainty;}
@@ -147,7 +147,7 @@ class DKinFitParticle
 
 		double dShowerEnergy;
 		TVector3 dMomentum; //must be the value of the momentum at dSpacetimeVertex
-		TMatrixDSym* dCovarianceMatrix; //is 7x7 for charged particles, and is either 7x7 or 5x5 for neutrals
+		const TMatrixFSym* dCovarianceMatrix; //is 7x7 for charged particles, and is either 7x7 or 5x5 for neutrals
 		//7x7 format: px, py, pz, x, y, z, t
 		//5x5 format: E, x, y, z, t
 

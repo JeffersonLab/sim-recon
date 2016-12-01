@@ -7,10 +7,12 @@
 #include <set>
 
 #include "TVector3.h"
+#include "TMatrixFSym.h"
 #include "TLorentzVector.h"
 
 #include "particleType.h"
 
+#include "DANA/DApplication.h"
 #include "HDGEOMETRY/DMagneticFieldMap.h"
 #include "HDGEOMETRY/DMagneticFieldMapNoField.h"
 #include "PID/DBeamPhoton.h"
@@ -42,6 +44,7 @@ class DKinFitUtils_GlueX : public DKinFitUtils
 		//useful for manually using a different field:
 		DKinFitUtils_GlueX(const DMagneticFieldMap* locMagneticFieldMap, const DAnalysisUtilities* locAnalysisUtilities);
 
+		void Reset_NewEvent(uint64_t locEventNumber);
 		void Reset_NewEvent(void);
 		void Set_MaxPoolSizes(size_t locNumReactions, size_t locExpectedNumCombos);
 
@@ -177,7 +180,10 @@ class DKinFitUtils_GlueX : public DKinFitUtils
 
 		/************************************************************** MISCELLANEOUS ***************************************************************/
 
+		DApplication* dApplication;
 		bool dWillBeamHaveErrorsFlag;
+		uint64_t dEventNumber;
+		TMatrixFSym* Get_SymMatrixResource(unsigned int locNumMatrixRows); //use DANA global resource pool instead
 };
 
 inline TVector3 DKinFitUtils_GlueX::Make_TVector3(DVector3 locDVector3) const
@@ -213,6 +219,12 @@ inline bool DKinFitUtils_GlueX::DDecayingParticleInfo::operator<(const DKinFitUt
 		return false;
 
 	return (dFromFinalState < locDecayingParticleInfo.dFromFinalState);
+}
+
+inline TMatrixFSym* DKinFitUtils_GlueX::Get_SymMatrixResource(unsigned int locNumMatrixRows)
+{
+	//use DANA global resource pool instead
+	return dApplication->Get_CovarianceMatrixResource(locNumMatrixRows, dEventNumber);
 }
 
 #endif // _DKinFitUtils_GlueX_

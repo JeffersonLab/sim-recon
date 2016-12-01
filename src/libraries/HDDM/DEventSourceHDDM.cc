@@ -395,7 +395,7 @@ jerror_t DEventSourceHDDM::GetObjects(JEvent &event, JFactory_base *factory)
    if (dataClassName == "DTrackTimeBased")
       return Extract_DTrackTimeBased(record,
                      dynamic_cast<JFactory<DTrackTimeBased>*>(factory), tag,
-                     event.GetRunNumber());
+                     event.GetRunNumber(), loop);
 
    if (dataClassName == "DFMWPCTruthHit")
       return Extract_DFMWPCTruthHit(record, 
@@ -2150,7 +2150,7 @@ jerror_t DEventSourceHDDM::Extract_DSCTruthHit(hddm_s::HDDM *record,
 //------------------
 jerror_t DEventSourceHDDM::Extract_DTrackTimeBased(hddm_s::HDDM *record,
                                    JFactory<DTrackTimeBased> *factory, 
-                                   string tag, int32_t runnumber)
+                                   string tag, int32_t runnumber, JEventLoop* locEventLoop)
 {
    // Note: Since this is a reconstructed factory, we want to generally return OBJECT_NOT_AVAILABLE
    // rather than NOERROR. The reason being that the caller interprets "NOERROR" to mean "yes I
@@ -2211,17 +2211,18 @@ jerror_t DEventSourceHDDM::Extract_DTrackTimeBased(hddm_s::HDDM *record,
       track->id = iter->getId();
 
       // Reconstitute errorMatrix
+      uint64_t locEventNumber = locEventLoop->GetJEvent().GetEventNumber();
+      TMatrixFSym* locCovarianceMatrix = (dynamic_cast<DApplication*>(japp))->Get_CovarianceMatrixResource(7, locEventNumber);
       string str_vals = iter->getErrorMatrix().getVals();
-      DMatrixDSym errMatrix;
-      StringToDMatrixDSym(str_vals, errMatrix,
+      StringToTMatrixFSym(str_vals, locCovarianceMatrix,
                           iter->getErrorMatrix().getNrows(),
                           iter->getErrorMatrix().getNcols());
-      track->setErrorMatrix(errMatrix);
+      track->setErrorMatrix(locCovarianceMatrix);
 
       // Reconstitute TrackingErrorMatrix
       str_vals = iter->getTrackingErrorMatrix().getVals();
-      DMatrixDSym TrackingErrorMatrix;
-      StringToDMatrixDSym(str_vals, TrackingErrorMatrix,
+      TMatrixFSym* TrackingErrorMatrix = (dynamic_cast<DApplication*>(japp))->Get_CovarianceMatrixResource(7, locEventNumber);
+      StringToTMatrixFSym(str_vals, TrackingErrorMatrix,
                           iter->getTrackingErrorMatrix().getNrows(),
                           iter->getTrackingErrorMatrix().getNcols());
       track->setTrackingErrorMatrix(TrackingErrorMatrix);
@@ -2275,21 +2276,21 @@ jerror_t DEventSourceHDDM::Extract_DTrackTimeBased(hddm_s::HDDM *record,
 
 
 //-------------------------------
-// StringToDMatrixDSym
+// StringToTMatrixFSym
 //-------------------------------
-string DEventSourceHDDM::StringToDMatrixDSym(string &str_vals, DMatrixDSym &mat,
+string DEventSourceHDDM::StringToTMatrixFSym(string &str_vals, TMatrixFSym* mat,
                                              int Nrows, int Ncols)
 {
    /// This is the inverse of the DMatrixDSymToString method in the
    /// danahddm plugin.
 
    // Convert the given string into a symmetric matrix
-   mat.ResizeTo(Nrows, Ncols);
+   mat->ResizeTo(Nrows, Ncols);
    stringstream ss(str_vals);
-   for (int irow=0; irow<mat.GetNrows(); irow++) {
-      for (int icol=irow; icol<mat.GetNcols(); icol++) {
-         ss >> mat[irow][icol];
-         mat[icol][irow] = mat[irow][icol];
+   for (int irow=0; irow<mat->GetNrows(); irow++) {
+      for (int icol=irow; icol<mat->GetNcols(); icol++) {
+         ss >> (*mat)[irow][icol];
+         (*mat)[icol][irow] = (*mat)[irow][icol];
       }
    }
    

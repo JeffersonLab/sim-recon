@@ -484,8 +484,24 @@ void DReferenceTrajectory::FastSwim(const DVector3 &pos, const DVector3 &mom, do
 
 
 
+//---------------------------------
+// Swim
+//---------------------------------
+void DReferenceTrajectory::Swim(const DVector3 &pos, const DVector3 &mom, double q, const TMatrixFSym *cov,double smax, const DCoordinateSystem *wire)
+{
+	if(cov == NULL) //oops, go to the other one
+		Swim(pos, mom, q, (const DMatrixDSym*)NULL, smax, wire);
 
+	//build a DMatrixDSym and swim
+	DMatrixDSym loc7x7CovMatrix(cov->GetNrows());
+	for(int loc_i = 0; loc_i < cov->GetNrows(); ++loc_i)
+	{
+		for(int loc_j = 0; loc_j < cov->GetNrows(); ++loc_j)
+			loc7x7CovMatrix(loc_i, loc_j) = (*cov)(loc_i, loc_j);
+	}
 
+	Swim(pos, mom, q, &loc7x7CovMatrix, smax, wire);
+}
 
 //---------------------------------
 // Swim
@@ -2345,7 +2361,7 @@ jerror_t DReferenceTrajectory::PropagateCovariance(double ds,double q,
 						   const DVector3 &mom,
 						   const DVector3 &pos,
 						   const DVector3 &B,
-						   DMatrixDSym &C) const{
+						   TMatrixFSym &C) const{
   DMatrix J(7,7);
 
   double one_over_p_sq=1./mom.Mag2();
@@ -2412,9 +2428,10 @@ jerror_t DReferenceTrajectory::FindPOCAtoLine(const DVector3 &origin,
 					      DKinematicData *track_kd,
 					      DVector3 &commonpos, double &doca, double &var_doca) const{ 
   const swim_step_t *swim_step=this->swim_steps;
-  DMatrixDSym cov(7);
+
+  TMatrixFSym* cov = (track_kd!=NULL) ? (dynamic_cast<DApplication*>(japp))->Get_CovarianceMatrixResource(7) : NULL;
   if(track_kd!=NULL)
-    cov=track_kd->errorMatrix();	
+	  *cov = *(track_kd->errorMatrix());
   doca=1000.;
   double tflight=0.;
   double mass_sq=this->mass_sq;
@@ -2441,7 +2458,7 @@ jerror_t DReferenceTrajectory::FindPOCAtoLine(const DVector3 &origin,
 	
 	swim_step=this->swim_steps;
    if(track_kd!=NULL)
-	  cov=track_kd->errorMatrix();
+	   *cov=*track_kd->errorMatrix();
 	
 	pos=swim_step->origin;
 	DVector3 mom=swim_step->mom;
@@ -2459,7 +2476,7 @@ jerror_t DReferenceTrajectory::FindPOCAtoLine(const DVector3 &origin,
 
 	  // Propagate the covariance matrix of the track along the trajectory
 	  if(track_kd!=NULL){
-	    this->PropagateCovariance(ds,q,mass_sq,mom,oldpos,B,cov);
+	    this->PropagateCovariance(ds,q,mass_sq,mom,oldpos,B,*cov);
 	  }
 	  
 	  // Store the current positions, doca and adjust flight times
@@ -2500,9 +2517,9 @@ jerror_t DReferenceTrajectory::FindPOCAtoLine(const DVector3 &origin,
         break;
       //calculate var_doca
       if (covline==NULL){
-	var_doca=(dx*dx*(cov(kX,kX))+dy*dy*(cov(kY,kY))
-		  +dz*dz*(cov(kZ,kZ))+2.*dx*dy*(cov(kX,kY))
-		  +2.*dx*dz*(cov(kX,kZ))+2.*dy*dz*(cov(kY,kZ)))
+	var_doca=(dx*dx*((*cov)(kX,kX))+dy*dy*((*cov)(kY,kY))
+		  +dz*dz*((*cov)(kZ,kZ))+2.*dx*dy*((*cov)(kX,kY))
+		  +2.*dx*dz*((*cov)(kX,kZ))+2.*dy*dz*((*cov)(kY,kZ)))
 	  /(doca*doca);
       }
       else{
@@ -2514,12 +2531,12 @@ jerror_t DReferenceTrajectory::FindPOCAtoLine(const DVector3 &origin,
 	  cov2(kY,kY)+=two_s*cov2(kPy,kY)+s_sq*cov2(kPy,kPy);
 	  cov2(kZ,kZ)+=two_s*cov2(kPz,kZ)+s_sq*cov2(kPz,kPz);
 	}
-	var_doca=(dx*dx*(cov(kX,kX)+cov2(kX,kX))
-		  +dy*dy*(cov(kY,kY)+cov2(kY,kY))
-		  +dz*dz*(cov(kZ,kZ)+cov2(kZ,kZ))
-		  +2.*dx*dy*(cov(kX,kY)+cov2(kX,kY))
-		  +2.*dx*dz*(cov(kX,kZ)+cov2(kX,kZ))
-		  +2.*dy*dz*(cov(kY,kZ)+cov2(kY,kZ)))
+	var_doca=(dx*dx*((*cov)(kX,kX)+cov2(kX,kX))
+		  +dy*dy*((*cov)(kY,kY)+cov2(kY,kY))
+		  +dz*dz*((*cov)(kZ,kZ)+cov2(kZ,kZ))
+		  +2.*dx*dy*((*cov)(kX,kY)+cov2(kX,kY))
+		  +2.*dx*dz*((*cov)(kX,kZ)+cov2(kX,kZ))
+		  +2.*dy*dz*((*cov)(kY,kZ)+cov2(kY,kZ)))
 	  /(doca*doca);
       }
       break;
@@ -2531,7 +2548,8 @@ jerror_t DReferenceTrajectory::FindPOCAtoLine(const DVector3 &origin,
     }
 
     // Propagate the covariance matrix of the track along the trajectory
-    this->PropagateCovariance(this->swim_steps[i+1].s-swim_step->s,q,mass_sq,swim_step->mom,swim_step->origin,swim_step->B,cov);
+    if(track_kd!=NULL)
+    	this->PropagateCovariance(this->swim_steps[i+1].s-swim_step->s,q,mass_sq,swim_step->mom,swim_step->origin,swim_step->B,*cov);
 
     // Store the current position and doca
     oldpos=pos;
@@ -2569,11 +2587,13 @@ jerror_t DReferenceTrajectory::IntersectTracks(const DReferenceTrajectory *rt2, 
   const swim_step_t *swim_step1=this->swim_steps;
   const swim_step_t *swim_step2=rt2->swim_steps;
   
-  DMatrixDSym cov1(7), cov2(7);
+  TMatrixFSym cov1(7), cov2(7);
+  TMatrixFSym* locCovarianceMatrix1 = (track1_kd != NULL) ? (dynamic_cast<DApplication*>(japp))->Get_CovarianceMatrixResource(7) : NULL;
+  TMatrixFSym* locCovarianceMatrix2 = (track2_kd != NULL) ? (dynamic_cast<DApplication*>(japp))->Get_CovarianceMatrixResource(7) : NULL;
 
   if((track1_kd != NULL) && (track2_kd != NULL)){
-    cov1=track1_kd->errorMatrix();
-    cov2=track2_kd->errorMatrix();
+    cov1=*track1_kd->errorMatrix();
+    cov2=*track2_kd->errorMatrix();
   }
 
   double q1=this->q;
@@ -2604,8 +2624,8 @@ jerror_t DReferenceTrajectory::IntersectTracks(const DReferenceTrajectory *rt2, 
       if (i==1) {  // backtrack to find the true doca
 	tflight1=tflight2=0.;
 	if((track1_kd != NULL) && (track2_kd != NULL)){
-	  cov1=track1_kd->errorMatrix();
-	  cov2=track2_kd->errorMatrix();
+	  cov1=*track1_kd->errorMatrix();
+	  cov2=*track2_kd->errorMatrix();
 	}
 	// Initialize the steppers
 	DMagneticFieldStepper stepper1(this->bfield, q1, &pos1, &mom1);
@@ -2674,12 +2694,14 @@ jerror_t DReferenceTrajectory::IntersectTracks(const DReferenceTrajectory *rt2, 
 	double one_over_p2_sq=1./mom2.Mag2();
 	tflight2+=ds*sqrt(1.+mass_sq2*one_over_p2_sq)/SPEED_OF_LIGHT;
 
-	track1_kd->setErrorMatrix(cov1);
+    *locCovarianceMatrix1 = cov1;
+    track1_kd->setErrorMatrix(locCovarianceMatrix1);
 	track1_kd->setMomentum(mom1);
 	track1_kd->setPosition(pos1);
 	track1_kd->setTime(track1_kd->time() + tflight1);
 
-	track2_kd->setErrorMatrix(cov2);
+    *locCovarianceMatrix2 = cov2;
+	track2_kd->setErrorMatrix(locCovarianceMatrix2);
 	track2_kd->setMomentum(mom2);
 	track2_kd->setPosition(pos2);
 	track2_kd->setTime(track2_kd->time() + tflight2);

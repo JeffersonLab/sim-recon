@@ -39,8 +39,8 @@ using namespace std;
 class DMCThrownMatching_factory : public jana::JFactory<DMCThrownMatching>
 {
 	public:
-		bool Calc_InverseMatrix(const DMatrixDSym& locInputCovarianceMatrix, DMatrixDSym& locInverse3x3Matrix) const;
-		double Calc_MatchFOM(const DVector3& locMomentum_Thrown, const DVector3& locMomentum_Detected, DMatrixDSym locInverse3x3Matrix) const;
+		bool Calc_InverseMatrix(const TMatrixFSym& locInputCovarianceMatrix, TMatrixFSym& locInverse3x3Matrix) const;
+		double Calc_MatchFOM(const DVector3& locMomentum_Thrown, const DVector3& locMomentum_Detected, TMatrixFSym locInverse3x3Matrix) const;
 
 	private:
 		jerror_t init(void);						///< Called once at program start.

@@ -10,6 +10,9 @@
 
 #include <limits>
 
+#include <TMath.h>
+#include <TMatrixFSym.h>
+
 #include <JANA/JFactory.h>
 #include <DANA/DApplication.h>
 #include <HDGEOMETRY/DGeometry.h>
@@ -19,9 +22,7 @@
 #include <PID/DParticleID.h>
 #include <PID/DVertex.h>
 #include <DVector3.h>
-#include <DMatrixDSym.h>
 #include <DMatrix.h>
-#include <TMath.h>
 
 class DNeutralParticleHypothesis_factory : public jana::JFactory<DNeutralParticleHypothesis>
 {
@@ -29,10 +30,10 @@ class DNeutralParticleHypothesis_factory : public jana::JFactory<DNeutralParticl
 		DNeutralParticleHypothesis_factory(){};
 		~DNeutralParticleHypothesis_factory(){};
 
-		DNeutralParticleHypothesis* Create_DNeutralParticleHypothesis(const DNeutralShower* locNeutralShower, Particle_t locPID, const DEventRFBunch* locEventRFBunch, const DVertex* locVertex) const;
+		DNeutralParticleHypothesis* Create_DNeutralParticleHypothesis(JEventLoop *locEventLoop, const DNeutralShower* locNeutralShower, Particle_t locPID, const DEventRFBunch* locEventRFBunch, const DVertex* locVertex) const;
 
-		void Calc_ParticleCovariance_Photon(const DNeutralShower* locNeutralShower, const DVertex* locVertex, const DVector3& locMomentum, const DVector3& locPathVector, DMatrixDSym& locParticleCovariance) const;
-		void Calc_ParticleCovariance_Massive(const DNeutralShower* locNeutralShower, const DVertex* locVertex, double locMass, double locDeltaT, const DVector3& locMomentum, const DVector3& locPathVector, DMatrixDSym& locParticleCovariance) const;
+		void Calc_ParticleCovariance_Photon(const DNeutralShower* locNeutralShower, const DVertex* locVertex, const DVector3& locMomentum, const DVector3& locPathVector, TMatrixFSym* locParticleCovariance) const;
+		void Calc_ParticleCovariance_Massive(const DNeutralShower* locNeutralShower, const DVertex* locVertex, double locMass, double locDeltaT, const DVector3& locMomentum, const DVector3& locPathVector, TMatrixFSym* locParticleCovariance) const;
 
 	private:
 		double dTargetCenterZ;

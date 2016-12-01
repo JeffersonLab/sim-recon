@@ -29,9 +29,6 @@ jerror_t DKinFitResults_factory::brun(jana::JEventLoop* locEventLoop, int32_t ru
 	size_t locExpectedNumCombos = 100; //hopefully not often more than this
 	dKinFitUtils->Set_MaxPoolSizes(Get_NumKinFitReactions(locEventLoop), locExpectedNumCombos);
 
-	//pre-allocate matrix memory
-	dKinFitUtils->Preallocate_MatrixMemory();
-
 	return NOERROR;
 }
 
@@ -89,7 +86,7 @@ jerror_t DKinFitResults_factory::evnt(JEventLoop* locEventLoop, uint64_t eventnu
 		locParticleCombos.insert(locParticleCombos.end(), locSurvivedParticleCombos.begin(), locSurvivedParticleCombos.end());
 	}
 
-	dKinFitter->Reset_NewEvent();
+	dKinFitter->Reset_NewEvent(locEventLoop->GetJEvent().GetEventNumber());
 	for(size_t loc_i = 0; loc_i < locParticleCombos.size(); ++loc_i)
 	{
 		const DParticleCombo* locParticleCombo = locParticleCombos[loc_i];

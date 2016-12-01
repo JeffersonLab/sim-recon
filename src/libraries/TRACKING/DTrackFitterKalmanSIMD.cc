@@ -809,7 +809,9 @@ DTrackFitter::fit_status_t DTrackFitterKalmanSIMD::FitTrack(void)
         // Compute and fill the error matrix needed for kinematic fitting
         fit_params.setErrorMatrix(Get7x7ErrorMatrix(errMatrix));
     }
-    fit_params.setTrackingErrorMatrix(errMatrix);
+	TMatrixFSym* locTrackingCovarianceMatrix = (dynamic_cast<DApplication*>(japp))->Get_CovarianceMatrixResource(5);
+	*locTrackingCovarianceMatrix = *errMatrix;
+    fit_params.setTrackingErrorMatrix(locTrackingCovarianceMatrix);
     this->chisq = GetChiSq();
     this->Ndof = GetNDF();
     fit_status = kFitSuccess;
@@ -6497,8 +6499,8 @@ jerror_t DTrackFitterKalmanSIMD::ExtrapolateToVertex(DVector2 &xy,
 
 // Transform the 5x5 tracking error matrix into a 7x7 error matrix in cartesian
 // coordinates
-DMatrixDSym DTrackFitterKalmanSIMD::Get7x7ErrorMatrixForward(DMatrixDSym C){  
-    DMatrixDSym C7x7(7);
+TMatrixFSym* DTrackFitterKalmanSIMD::Get7x7ErrorMatrixForward(DMatrixDSym C){
+	TMatrixFSym* C7x7 = (dynamic_cast<DApplication*>(japp))->Get_CovarianceMatrixResource(7, locEventNumber);
     DMatrix J(7,5);
 
     double p=1./fabs(q_over_p_);
@@ -6525,18 +6527,17 @@ DMatrixDSym DTrackFitterKalmanSIMD::Get7x7ErrorMatrixForward(DMatrixDSym C){
     J(state_Z,state_ty)=(2.*tx_*ty_*x_-y_*diff)*frac;
 
     // C'= JCJ^T
-    C7x7=C.Similarity(J);
+    *C7x7=C.Similarity(J);
 
     return C7x7;
-
 }
 
 
 
 // Transform the 5x5 tracking error matrix into a 7x7 error matrix in cartesian
 // coordinates
-DMatrixDSym DTrackFitterKalmanSIMD::Get7x7ErrorMatrix(DMatrixDSym C){
-    DMatrixDSym C7x7(7);
+TMatrixFSym* DTrackFitterKalmanSIMD::Get7x7ErrorMatrix(DMatrixDSym C){
+	TMatrixFSym* C7x7 = (dynamic_cast<DApplication*>(japp))->Get_CovarianceMatrixResource(7, locEventNumber);
     DMatrix J(7,5);
     //double cosl=cos(atan(tanl_));
     double pt=1./fabs(q_over_pt_);
@@ -6566,7 +6567,7 @@ DMatrixDSym DTrackFitterKalmanSIMD::Get7x7ErrorMatrix(DMatrixDSym C){
     J(state_Z,state_z)=1.;
 
     // C'= JCJ^T
-    C7x7=C.Similarity(J);
+    *C7x7=C.Similarity(J);
 
     return C7x7;
 }

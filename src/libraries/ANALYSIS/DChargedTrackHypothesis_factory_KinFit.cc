@@ -115,7 +115,7 @@ DChargedTrackHypothesis* DChargedTrackHypothesis_factory_KinFit::Build_ChargedTr
 
 	//t & error matrix
 	locNewChargedTrackHypothesis->setTime(locKinFitParticle->Get_Time());
-	locNewChargedTrackHypothesis->setErrorMatrix(*locKinFitParticle->Get_CovarianceMatrix());
+	locNewChargedTrackHypothesis->setErrorMatrix(locKinFitParticle->Get_CovarianceMatrix());
 
 	double locPathLength = locNewChargedTrackHypothesis->pathLength() - locKinFitParticle->Get_PathLength();
 	double locPathLengthUncertainty_Orig = locNewChargedTrackHypothesis->pathLength_err();

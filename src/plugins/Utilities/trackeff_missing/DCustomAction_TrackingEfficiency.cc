@@ -120,7 +120,7 @@ bool DCustomAction_TrackingEfficiency::Perform_Action(JEventLoop* locEventLoop, 
 	// Get missing particle p4 & covariance
 	DLorentzVector locMeasuredMissingP4 = dAnalysisUtilities->Calc_MissingP4(locParticleCombo, false);
 	DVector3 locMissingP3 = locMeasuredMissingP4.Vect();
-	DMatrixDSym locMissingCovarianceMatrix(3);
+	TMatrixFSym locMissingCovarianceMatrix(3);
 	const DKinematicData* locBeamParticle = NULL;
 	if(locKinFitResults == NULL) //no kinfit (yet?), or kinfit failed
 	{
@@ -130,7 +130,7 @@ bool DCustomAction_TrackingEfficiency::Perform_Action(JEventLoop* locEventLoop, 
 	else //kinfit succeeded
 	{
 		locMissingP3 = locMissingParticle->momentum();
-		DMatrixDSym locKinFitCovarianceMatrix = locMissingParticle->errorMatrix();
+		TMatrixFSym locKinFitCovarianceMatrix = *(locMissingParticle->errorMatrix());
 		locKinFitCovarianceMatrix.ResizeTo(3, 3);
 		locMissingCovarianceMatrix = locKinFitCovarianceMatrix;
 		locBeamParticle = locParticleComboStep->Get_InitialParticle();
@@ -191,7 +191,7 @@ bool DCustomAction_TrackingEfficiency::Perform_Action(JEventLoop* locEventLoop, 
 		if(locUnusedWireBasedTracks[loc_i]->PID() != dMissingPID)
 			continue; //only use tracking results with correct PID
 
-		DMatrixDSym locCovarianceMatrix = locUnusedWireBasedTracks[loc_i]->errorMatrix();
+		TMatrixFSym locCovarianceMatrix = *(locUnusedWireBasedTracks[loc_i]->errorMatrix());
 		locCovarianceMatrix.ResizeTo(3, 3);
 		locCovarianceMatrix += locMissingCovarianceMatrix;
 
@@ -241,7 +241,7 @@ bool DCustomAction_TrackingEfficiency::Perform_Action(JEventLoop* locEventLoop, 
 		if(locUnusedTimeBasedTracks[loc_i]->PID() != dMissingPID)
 			continue; //only use tracking results with correct PID
 
-		DMatrixDSym locCovarianceMatrix = locUnusedTimeBasedTracks[loc_i]->errorMatrix();
+		TMatrixFSym locCovarianceMatrix = *(locUnusedTimeBasedTracks[loc_i]->errorMatrix());
 		locCovarianceMatrix.ResizeTo(3, 3);
 		locCovarianceMatrix += locMissingCovarianceMatrix;
 
@@ -307,7 +307,7 @@ bool DCustomAction_TrackingEfficiency::Perform_Action(JEventLoop* locEventLoop, 
 	dTreeFillData.Fill_Single<UInt_t>("TrackFDCPlanes", locBestTrackTimeBased->dFDCPlanes);
 
 	//RECON P3 ERROR MATRIX
-	DMatrixDSym locCovarianceMatrix = locBestTrackTimeBased->errorMatrix();
+	const TMatrixFSym& locCovarianceMatrix = *(locBestTrackTimeBased->errorMatrix());
 	dTreeFillData.Fill_Single<Float_t>("ReconP3_CovPxPx", locCovarianceMatrix(0, 0));
 	dTreeFillData.Fill_Single<Float_t>("ReconP3_CovPxPy", locCovarianceMatrix(0, 1));
 	dTreeFillData.Fill_Single<Float_t>("ReconP3_CovPxPz", locCovarianceMatrix(0, 2));
@@ -380,7 +380,7 @@ bool DCustomAction_TrackingEfficiency::Perform_Action(JEventLoop* locEventLoop, 
 	return true;
 }
 
-double DCustomAction_TrackingEfficiency::Calc_MatchFOM(const DVector3& locDeltaP3, DMatrixDSym locInverse3x3Matrix) const
+double DCustomAction_TrackingEfficiency::Calc_MatchFOM(const DVector3& locDeltaP3, TMatrixFSym locInverse3x3Matrix) const
 {
 	DMatrix locDeltas(3, 1);
 	locDeltas(0, 0) = locDeltaP3.Px();

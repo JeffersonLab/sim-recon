@@ -1,287 +1,108 @@
 #ifndef _DKINEMATICDATA_
 #define _DKINEMATICDATA_
 
-/*
- *  DKinematicData.h
- *  Hall D
- *
- *  Created by Matthew Shepherd on 5/28/07.
- 
- Class largely borrowed from the KTKinematicData class used in CLEO.
- Where applicable CLHEP objects have been converted int Hall D
- ROOT-based typdefs.
- 
- A portion of the original CLEO documenation appears below:
- 
- Usage:
- 
- Describes kinematic properties of charged tracks, photons, and
- virtual particles such as pi0, Ks,  so that a user
- can carry out standard operations such as calculating masses, adding
- 4-momenta together, etc. The basic information consists of the
- 3-momentum, 3-position, mass and charge. A 7x7 error matrix is stored
- for the quantities \c (Px,Py,Pz,E,x,y,z).
-  
- \par Building a simple DKinematicData object
- In addition to the usual copy constructor, DKinematicData objects can
- be built from basic momentum and position information, e.g.,
- \code
- DVector3 momentum(1.2, -0.5, 0.6);
- DVector3  position(0.002, 0.003, 0.);
- double mass = 0.1396;
- double charge = -1.0;
- DMatrixDSym errMatrix(7,1);  // Create a 7x7 unit matrix for now
- DKinematicData pion(momentum, position, mass, charge, errorMatrix);
- \endcode
- The error matrix argument is optional. If absent, a null error matrix
- is stored.
- <br><br>
- Most of the time you build a kinematic object from a helix read
- from the data access system. In that case you supply the helix
- parameters, magnetic field (to compute the momentum) and mass (needed
-                                                                for the energy). The kinematic parameters are evaluated at the point
- of closest approach to the reference point.
- <br><br>
- Note that the magnetic field is always specified in \e kilogauss.
- \code
- KTHelix helix;
- double mass = 0.1396;
- DVector3 bField(0., 0., -15.);
- DKinematicData pion(helix, mass, bField);
- \endcode
- By default, the helix error matrix is converted to the appropriate
- 7x7 form and added to the object. You can prevent the error matrix
- from being formed by replacing the above declaration by
- \code
- bool noErrorMatrix = false;
- KTKinematic pion(helix, mass, bField, noErrorMatrix);
- \endcode
- 
- \par Setting and retrieving information from DKinematicData objects.
- All kinds of information can be set or retrieved.
- \code
- DKinematicData pion(helix, mass, bField);            // Make a pion
- \endcode
- Modify some of the pion components
- \code
- pion.setMomentum(DVector3(0.2,0.5,-1.2));          // 3-momentum
- pion.setPosition(DVector3(0.002,0.005,0.02));       // Position
- pion.setMass(0.4937);                                 // Mass
- pion.clearErrorMatrix();                              // Clear err matrix
- \endcode
- Retrieve pion information
- \code
- DVector3 momentum = pion.momentum();               // 3-momentum
- DLorentzVector fourMomentum = pion.lorenzMomentum(); // 4-momentum
- DVector3  position = pion.position();               // Position
- double mass = pion.mass();                            // Mass
- double charge = pion.charge();                        // Charge
- DMatrixDSym errorMatrix = pion.errorMatrix();        // Error matrix
- double ptot = pion.pmag();                            // p
- double ptotsq = pion.pmag2();                         // p^2
- double pt = pion.pperp();                             // pt
- double ptsq = pion.pperp2();                          // pt^2
- double px = pion.px();                                // px
- double py = pion.py();                                // py
- double pz = pion.pz();                                // pz
- double E  = pion.energy();                            // E
- double x = pion.x();                                  // x
- double y = pion.y();                                  // y
- double z = pion.z();                                  // z
- \endcode
- 
- \par Fixed or floating mass
- Particles like pions, kaons and gammas have predetermined, fixed masses
- while those calculated from invariant masses or mass fits, such as
- D0's and B's, have masses which "float" because the energy is
- independent of the momentum. DKinematicData objects have a flag
- that specifies whether or not the mass is floating or not. The flag
- can be accessed as follows
- \code
- DKinematicData pion(...);
- bool massFixed = pion.hasFixedMass();  // Get the fixed mass flag
- pion.setMassFixed();                        // Set fixed mass
- pion.setMassFloat();                        // Set floating mass
- \endcode
- One should rarely need to set the mass flag since the defaults used by
- the tracking system are expected to be adequate. For example, when
- building a DKinematicData object from a helix or from the basic
- 3-momentum, 3-position, etc., the flag is set to "true". As kinematic
- fitting becomes available, particles built by combining the 4-momentum
- of daughter particles will have the flag set to "false" because the
- energy will be truly independent of the 3-momentum.
- 
- */
-
-#include <cmath>
-
 #include <JANA/JObject.h>
 using namespace jana;
 
 #include "GlueX.h"    
 
-#include "DRandom.h"    
-
 #include "DVector3.h"    
 #include "DLorentzVector.h" 
 #include "particleType.h" 
-#include "DMatrixDSym.h" 
+#include "TMatrixFSym.h"
 
-#define SPEED_OF_LIGHT 29.9792
+#ifndef SPEED_OF_LIGHT
+#define SPEED_OF_LIGHT 29.9792458
+#endif
 
 class DKinematicData : public JObject
 {
-    
-public:
-    
-	//virtual const char* className(void){return "DKinematicData"; }
-//	virtual const char* className(void){return static_className();}
-//	static const char* static_className(void){return "DKinematicData";}
+	public:
 
-    // constants, enums and typedefs
-    typedef double ValueType;
-    
-    enum { kDefaultMass = 0 ,
-           kDefaultCharge = 0
-    } ;
-    
-    ///This is needed to associate the elements correctly in the error matrix
-    enum ParameterOrder {kPx = 1,
-        kPy,
-        kPz,
-        kX,
-        kY,
-        kZ,
-        kT
-	};
-    
-    // constructors and destructor
+		// constructors and destructor
+		DKinematicData(void);
+		DKinematicData(const DVector3& aMomentum, const DVector3& aPosition, double aMass, double aCharge, const TMatrixFSym* aErrorMatrix = nullptr);
+		virtual ~DKinematicData(void) {};
 
-    DKinematicData( void ) ;
-    
-    DKinematicData( const oid_t id );
+		//Reset
+		void Reset(void);
 
-    DKinematicData( const DKinematicData& aKinematicData );
-    
-    DKinematicData( const DKinematicData& aKinematicData,
-                    const bool aCopyErrorMatrix ) ;
- 
-    DKinematicData( const DVector3& aMomentum ,
-                    const DVector3& aPosition,
-                    const ValueType aMass,
-                    const ValueType aCharge) ;
-    
-    DKinematicData( const DVector3& aMomentum ,
-                    const DVector3& aPosition,
-                    const ValueType aMass,
-                    const ValueType aCharge,
-                    const DMatrixDSym& aErrorMatrix ) ;
-    
-    // this class needs additional constructors to construct
-    // from kinematic data from tracking output
-    
-    virtual ~DKinematicData( void ) ;
-    
-    // assignment operator(s)
-    const DKinematicData& operator=( const DKinematicData& aOtherKinematicData ) ;
-    
-    bool operator==( const DKinematicData& rhs ) const ;
-    bool operator!=( const DKinematicData& rhs ) const ;
+		//GETTERS
+		Particle_t PID(void) const{return m_pid;}
+		double mass(void) const{return m_mass;}
+		double charge(void) const{return m_charge;}
+		const DVector3& momentum(void) const{return m_momentum;}
+		const DVector3& position(void) const{return m_position;}
+		double time(void) const{return m_time;}
 
-    //Reset //for when stored in resource pools
-    void Reset(void);
+		//components
+		double px(void) const{return m_momentum.Px();}
+		double py(void) const{return m_momentum.Py();}
+		double pz(void) const{return m_momentum.Pz();}
+		double x(void) const{return m_position.X();}
+		double y(void) const{return m_position.Y();}
+		double z(void) const{return m_position.Z();}
 
-    // member functions
-    void setPID(Particle_t locPID){m_pid = locPID;}
-    void setMass( const ValueType aMass ) ;
-    void setMomentum( const DVector3& aMomentum ) ;
-    void setPosition( const DVector3& aPosition ) ;
-    void setTime(double locTime){m_time = locTime;}
+		//derived quantities
+		double energy(void) const{return sqrt(m_mass*m_mass + pmag2());}
+		double pperp(void) const{return sqrt(px()*px() + py()*py());}
+		double pperp2(void) const{return px()*px() + py()*py();}
+		double pmag(void) const{return m_momentum.Mag();}
+		double pmag2(void) const{return m_momentum.Mag2();}
+		DLorentzVector lorentzMomentum(void) const{return DLorentzVector(m_momentum, energy());}
 
-    void setCharge( const ValueType aCharge);
-    void setMassFixed( void ) ;
-    void setMassFloat( void ) ;
-    void clearErrorMatrix( void ) ;
-    void clearTrackingErrorMatrix(void);
-    void setErrorMatrix( const DMatrixDSym& aMatrix ) ;
-    void setTrackingErrorMatrix(const DMatrixDSym& aMatrix);
-    void setTrackingStateVector(const double a1, const double a2, 
-				const double a3, const double a4, 
-				const double a5){
-      m_TrackingStateVector[0]=a1;
-      m_TrackingStateVector[1]=a2;
-      m_TrackingStateVector[2]=a3;
-      m_TrackingStateVector[3]=a4;
-      m_TrackingStateVector[4]=a5;
-    };
+		//matrices, tracking
+		const TMatrixFSym* errorMatrix(void) const{return m_errorMatrix;}
+		const TMatrixFSym* TrackingErrorMatrix(void) const{return m_TrackingErrorMatrix;}
+		bool forwardParmFlag(void) const{return m_use_forward_parameters;}
+		void TrackingStateVector(double aVec[5]) const;
 
-    void setForwardParmFlag(bool aFlag);
+		//detector timing
+		double t0(void) const{return m_t0;}
+		double t0_err(void) const{return m_t0_err;}
+		DetectorSystem_t t0_detector(void) const{return m_t0_detector;}
+		double t1(void) const{return m_t1;}
+		double t1_err(void) const{return m_t1_err;}
+		DetectorSystem_t t1_detector(void) const{return m_t1_detector;}
 
-    void setT0(const ValueType at0, const ValueType at0_err, const DetectorSystem_t at0_detector);
-    void setT1(const ValueType at1, const ValueType at1_err, const DetectorSystem_t at1_detector);
-    void setPathLength(const ValueType apathLength, const ValueType apathLength_err);
-    void setdEdx(const ValueType adedx);
-    
+		//pathlength, dE/dx
+		double pathLength(void) const{return m_pathLength;}
+		double pathLength_err(void) const{return m_pathLength_err;}
+		double dEdx(void) const{return m_dedx;}
 
-    // For debugging with MCThrown
-    void smearMCThrownMomentum( double smearPct );
+		//derived timing, PID info
+		double TOF(void) const{return ((m_t1 - m_t0));}
+		double TOF_err(void) const{return sqrt(m_t1_err*m_t1_err + m_t0_err*m_t0_err);}
+		double deltaInvBeta(void) const{return (1.0/lorentzMomentum().Beta() - 1.0/measuredBeta());}
+		double measuredInvBeta_err(void) const;
+		double deltaBeta(void) const{return (lorentzMomentum().Beta() - measuredBeta());}
+		double measuredBeta(void) const{return ((m_pathLength/(m_t1 - m_t0)))/29.9792458;}
+		double measuredBeta_err(void) const;
 
-    // const member functions
-    ValueType mass( void ) const ;
-    ValueType charge( void ) const ;
-    ValueType px( void ) const ;
-    ValueType py( void ) const ;
-    ValueType pz( void ) const ;
-    ValueType energy( void ) const ;
-    ValueType x( void ) const ;
-    ValueType y( void ) const ;
-    ValueType z( void ) const ;
-    ValueType pperp( void ) const ;
-    ValueType pperp2( void ) const ;
-    ValueType pmag( void ) const ;
-    ValueType pmag2( void ) const ;
-    const DVector3& momentum( void ) const ;
-    const DVector3& position( void ) const ;
-    const DLorentzVector lorentzMomentum( void ) const ;
-    bool hasFixedMass( void ) const ;
-    virtual const DMatrixDSym& errorMatrix( void ) const ;
-    const DMatrixDSym &TrackingErrorMatrix(void) const;
+		//SETTERS
+		void setPID(Particle_t locPID){m_pid = locPID;}
+		void setMass(double aMass){m_mass = aMass;}
+		void setCharge(double aCharge){m_charge = aCharge;}
+		void setMomentum(const DVector3& aMomentum){m_momentum = aMomentum;}
+		void setPosition(const DVector3& aPosition){m_position = aPosition;}
+		void setTime(double locTime){m_time = locTime;}
 
-    void TrackingStateVector(double aVec[5]) const {  
-      for (unsigned int i=0;i<5;i++) aVec[i]=m_TrackingStateVector[i];
-    };
+		// Time of flight information
+		void setT0(double at0, double at0_err, DetectorSystem_t at0_detector);
+		void setT1(double at1, double at1_err, DetectorSystem_t at1_detector);
 
-    bool forwardParmFlag(void)const;
+		//pathlength, dE/dx
+		void setPathLength(double apathLength, double apathLength_err);
+		void setdEdx(double adedx){m_dedx = adedx;}
 
-    Particle_t PID(void) const{return m_pid;}
-    ValueType time(void) const{return m_time;}
+		//Tracking
+		void setForwardParmFlag(bool aFlag){m_use_forward_parameters = aFlag;}
+		void setErrorMatrix(const TMatrixFSym* aMatrix){m_errorMatrix = aMatrix;}
+		void setTrackingErrorMatrix(const TMatrixFSym* aMatrix){m_TrackingErrorMatrix = aMatrix;}
+		void setTrackingStateVector(double a1, double a2, double a3, double a4, double a5);
 
-    ValueType t0( void ) const;
-    ValueType t0_err( void ) const;
-    DetectorSystem_t t0_detector( void ) const;
-    ValueType t1( void ) const;
-    ValueType t1_err( void ) const;
-    DetectorSystem_t t1_detector( void ) const;
-    ValueType pathLength( void ) const;
-    ValueType pathLength_err( void ) const;
-    ValueType TOF( void ) const;
-    ValueType TOF_err( void ) const;
-    ValueType dEdx(void) const;
-    
-    ValueType deltaInvBeta( void ) const;
-    ValueType measuredInvBeta_err( void ) const;
-    ValueType deltaBeta( void ) const;
-    ValueType measuredBeta( void ) const;
-    ValueType measuredBeta_err( void ) const;
-
-    /// \return TRUE if errors are all zero
-    bool hasNullErrorMatrix() const {
-        return (&errorMatrix() == nullMatrix());}; 
-    bool hasNull5x5Matrix() const {
-        return (&TrackingErrorMatrix() == null5x5Matrix());};
-
-    
-		void toStrings(vector<pair<string,string> > &items)const{
+		void toStrings(vector<pair<string,string> > &items) const
+		{
 			AddString(items, "PID", "%i", (int)PID());
 			AddString(items, "Name", "%s", ParticleType(PID()));
 			AddString(items, "q", "%+1.0f", charge());
@@ -293,79 +114,113 @@ public:
 			AddString(items, "p(GeV/c)", "%2.3f", momentum().Mag());
 			AddString(items, "theta(deg)", "%2.3f", momentum().Theta()*180.0/M_PI);
 			AddString(items, "phi(deg)", "%2.3f", momentum().Phi()*180.0/M_PI);
-/*
-			AddString(items, "v_px", "%2.3f", errorMatrix()(0, 0));
-			AddString(items, "v_py", "%2.3f", errorMatrix()(1, 1));
-			AddString(items, "v_pz", "%2.3f", errorMatrix()(2, 2));
-			AddString(items, "v_x", "%2.3f", errorMatrix()(3, 3));
-			AddString(items, "v_y", "%2.3f", errorMatrix()(4, 4));
-			AddString(items, "v_z", "%2.3f", errorMatrix()(5, 5));
-			AddString(items, "v_t", "%2.3f", errorMatrix()(6, 6));
-			AddString(items, "v_pxpy", "%2.3f", errorMatrix()(0, 1));
-			AddString(items, "v_pypx", "%2.3f", errorMatrix()(1, 0));
-			AddString(items, "v_xy", "%2.3f", errorMatrix()(3, 4));
-			AddString(items, "v_yx", "%2.3f", errorMatrix()(4, 3));
-*/
-			AddString(items, "v_00", "%2.3f", TrackingErrorMatrix()(0, 0));
-			AddString(items, "v_11", "%2.3f", TrackingErrorMatrix()(1, 1));
-			AddString(items, "v_22", "%2.3f", TrackingErrorMatrix()(2, 2));
-			AddString(items, "v_33", "%2.3f", TrackingErrorMatrix()(3, 3));
-			AddString(items, "v_44", "%2.3f", TrackingErrorMatrix()(4, 4));
-			AddString(items, "v_01", "%2.3f", TrackingErrorMatrix()(0, 1));
-			AddString(items, "v_10", "%2.3f", TrackingErrorMatrix()(1, 0));
-			AddString(items, "v_34", "%2.3f", TrackingErrorMatrix()(3, 4));
-			AddString(items, "v_43", "%2.3f", TrackingErrorMatrix()(4, 3));
 		}
 
-protected:
-        
-    // protected member functions
-        
-    // These routines are used to optimize the performance of some
-    // of the move routines
-    DMatrixDSym* takeOwnershipOfPointer( void );
-    void         restoreOwnershipOfPointer( DMatrixDSym* const aPointer);
-    
-    // left for reference -- KTHelix class not ported to GlueX
-    // void calculate7x7ErrorMatrixFrom5x5ErrorMatrix( const KTHelix& aHelix);
-    
-private:
-        
-    // data members
-    Particle_t m_pid;
-    bool m_hasFixedMass ;
-    ValueType m_mass ;
-    ValueType m_charge ;
-    DVector3 m_momentum ;
-    DVector3 m_position ;
-    DMatrixDSym* m_errorMatrix ;   // Order is (px, py, pz, x, y, z, t)
-    DMatrixDSym *m_TrackingErrorMatrix;  // order is q/pt,phi,tanl,D,z
-    double m_TrackingStateVector[5]; // order is q/pt,phi,tanl,D,z
+	private:
 
-    // Time of flight information
-    double m_time; // Time of the track propagated at m_position
-    double m_t0; /// Measured Start time (ns)
-    double m_t0_err; /// Measured Start time error
-    DetectorSystem_t m_t0_detector; /// Detector used to measure the start time
-    double m_t1; /// Measured End of flight time (ns)
-    double m_t1_err; /// Measured End of flight time error 
-    DetectorSystem_t m_t1_detector; /// Detector used to measure the end of flight time 
+		// data members
+		Particle_t m_pid;
+		double m_mass;
+		double m_charge;
+		DVector3 m_momentum;
+		DVector3 m_position;
+		double m_time; // Time of the track propagated at m_position
 
-    double m_pathLength; /// Flight path length (cm) 
-    double m_pathLength_err; /// Flight path length err
-    
-    // dEdx 
-    double m_dedx;
-    
-    // Flag indicating the use of the forward parameterization (x,y,tx,ty,q/p)
-    bool m_use_forward_parameters;
+		// detector timing
+		double m_t0; /// Measured Start time (ns)
+		double m_t0_err; /// Measured Start time error
+		DetectorSystem_t m_t0_detector; /// Detector used to measure the start time
+		double m_t1; /// Measured End of flight time (ns)
+		double m_t1_err; /// Measured End of flight time error
+		DetectorSystem_t m_t1_detector; /// Detector used to measure the end of flight time
 
-    //All matricies without a set error matrix can share the same nullMatrix
-    static DMatrixDSym* nullMatrix();
-    static DMatrixDSym* null5x5Matrix();
+		// pathlength, dE/dx
+		double m_pathLength; /// Flight path length (cm)
+		double m_pathLength_err; /// Flight path length err
+		double m_dedx;
+
+		// Tracking information //The setter's are responsible for managing the matrix memory!  These are NEVER the owners.
+		const TMatrixFSym* m_errorMatrix;   // Order is (px, py, pz, x, y, z, t)
+		const TMatrixFSym *m_TrackingErrorMatrix;  // order is q/pt,phi,tanl,D,z
+		bool m_use_forward_parameters; // Flag indicating the use of the forward parameterization (x,y,tx,ty,q/p)
+		double m_TrackingStateVector[5]; // order is q/pt,phi,tanl,D,z
 };
 
-// inline function definitions
+/******************************************************************** CONSTRUCTORS *********************************************************************/
+
+inline DKinematicData::DKinematicData(void) :
+m_pid(Unknown), m_mass(0.0), m_charge(0.0), m_momentum(DVector3()), m_position(DVector3()), m_time(0.0),
+m_t0(0.0), m_t0_err(0.0), m_t0_detector(SYS_NULL), m_t1(0.0), m_t1_err(0.0), m_t1_detector(SYS_NULL),
+m_pathLength(0.0), m_pathLength_err(0.0), m_dedx(0.0), m_errorMatrix(nullptr), m_TrackingErrorMatrix(nullptr), m_use_forward_parameters(false)
+{
+	for(unsigned int i = 0; i < 5; ++i)
+		m_TrackingStateVector[i] = 0.0;
+}
+
+inline DKinematicData::DKinematicData(const DVector3& aMomentum, const DVector3& aPosition, double aMass, double aCharge, const TMatrixFSym* aErrorMatrix):
+m_pid(Unknown), m_mass(aMass), m_charge(aCharge), m_momentum(aMomentum), m_position(aPosition), m_time(0.0),
+m_t0(0.0), m_t0_err(0.0), m_t0_detector(SYS_NULL), m_t1(0.0), m_t1_err(0.0), m_t1_detector(SYS_NULL),
+m_pathLength(0.0), m_pathLength_err(0.0), m_dedx(0.0), m_errorMatrix(aErrorMatrix), m_TrackingErrorMatrix(nullptr), m_use_forward_parameters(false)
+{
+	for(unsigned int i = 0; i < 5; ++i)
+		m_TrackingStateVector[i] = 0.0;
+}
+
+/********************************************************************** GETTERS ************************************************************************/
+
+inline void DKinematicData::TrackingStateVector(double aVec[5]) const
+{
+	for (unsigned int i = 0; i < 5; ++i)
+		aVec[i] = m_TrackingStateVector[i];
+}
+
+inline double DKinematicData::measuredBeta_err(void) const
+{
+	double a = pow(m_pathLength_err/m_pathLength, 2);
+	double b = (pow(m_t1_err,2) + pow(m_t0_err,2))/pow(m_t1 - m_t0,2);
+
+	double err = measuredBeta()*sqrt(a + b);
+	return err;
+}
+
+inline double DKinematicData::measuredInvBeta_err(void) const
+{
+	double a = (m_t1_err*m_t1_err + m_t0_err*m_t0_err)/pow(m_t1 - m_t0,2);
+	double b = pow(m_pathLength_err/m_pathLength,2);
+
+	double err = (1.0/measuredBeta())*sqrt(a+b);
+	return err;
+}
+
+/********************************************************************** SETTERS ************************************************************************/
+
+inline void DKinematicData::setTrackingStateVector(double a1, double a2, double a3, double a4, double a5)
+{
+	m_TrackingStateVector[0]=a1;
+	m_TrackingStateVector[1]=a2;
+	m_TrackingStateVector[2]=a3;
+	m_TrackingStateVector[3]=a4;
+	m_TrackingStateVector[4]=a5;
+}
+
+inline void DKinematicData::setT0(double at0, double at0_err, const DetectorSystem_t at0_detector)
+{
+	m_t0 = at0;
+	m_t0_err = at0_err;
+	m_t0_detector = at0_detector;
+}
+
+inline void DKinematicData::setT1(double at1, double at1_err, const DetectorSystem_t at1_detector)
+{
+	m_t1 = at1;
+	m_t1_err = at1_err;
+	m_t1_detector = at1_detector;
+}
+
+inline void DKinematicData::setPathLength(double apathLength, double apathLength_err)
+{
+	m_pathLength = apathLength;
+	m_pathLength_err = apathLength_err;
+}
 
 #endif /* _DKINEMATICDATA_ */
-

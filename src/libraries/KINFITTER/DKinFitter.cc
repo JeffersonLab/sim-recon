@@ -629,7 +629,7 @@ void DKinFitter::Fill_InputMatrices(void)
 
 		TVector3 locMomentum = locKinFitParticle->Get_Momentum();
 		TVector3 locPosition = locKinFitParticle->Get_Position();
-		const TMatrixDSym& locCovarianceMatrix = *(locKinFitParticle->Get_CovarianceMatrix());
+		const TMatrixFSym& locCovarianceMatrix = *(locKinFitParticle->Get_CovarianceMatrix());
 
 		int locPxParamIndex = locKinFitParticle->Get_PxParamIndex();
 		int locVxParamIndex = locKinFitParticle->Get_VxParamIndex();
@@ -2534,12 +2534,12 @@ void DKinFitter::Set_FinalTrackInfo(void)
 		if(locReconstructedParticleFlag) //Brand new particle: Set the covariance matrix from scratch
 		{
 			//Particle had none: Make a new one
-			TMatrixDSym* locCovarianceMatrix = dKinFitUtils->Get_MatrixDSymResource(7);
+			TMatrixFSym* locCovarianceMatrix = dKinFitUtils->Get_SymMatrixResource(7);
 			locCovarianceMatrix->Zero();
 			locKinFitParticle->Set_CovarianceMatrix(locCovarianceMatrix);
 		}
-		//need to update the values, so don't call Get_CovarianceMatrix() function (returns const matrix) //saves memory this way
-		TMatrixDSym& locCovarianceMatrix = *(locKinFitParticle->dCovarianceMatrix);
+		//updating the covariance matrix: a unique cov matrix object was cloned on fit start, so can safely update it directly
+		TMatrixFSym& locCovarianceMatrix = *(const_cast<TMatrixFSym*>(locKinFitParticle->Get_CovarianceMatrix()));
 
 		int locPxParamIndex = locKinFitParticle->Get_PxParamIndex();
 		int locVxParamIndex = locKinFitParticle->Get_VxParamIndex();
@@ -2612,7 +2612,7 @@ void DKinFitter::Set_FinalTrackInfo(void)
 			}
 			else //need to expand error matrix
 			{
-				TMatrixDSym locTempCovarianceMatrix(dNumEta + dNumXi + 3*locAdditionalPxParamIndices.size());
+				TMatrixFSym locTempCovarianceMatrix(dNumEta + dNumXi + 3*locAdditionalPxParamIndices.size());
 				locTempCovarianceMatrix.SetSub(0, dV); //insert dV
 
 				//insert p3 covariance matrices of additional particles
@@ -2631,7 +2631,7 @@ void DKinFitter::Set_FinalTrackInfo(void)
 					Print_Matrix(locTempCovarianceMatrix);
 				}
 
-				//transform errors
+				//transform errors and set
 				locCovarianceMatrix = locTempCovarianceMatrix.Similarity(locJacobian);
 			}
 
@@ -2834,7 +2834,8 @@ void DKinFitter::Set_FinalTrackInfo(void)
 			continue; // no distance over which to propagate
 
 		pair<double, double> locPathLengthPair;
-		TMatrixDSym& locCovarianceMatrix = *(locKinFitParticle->dCovarianceMatrix);
+		//updating the covariance matrix: a unique cov matrix object was cloned on fit start, so can safely update it directly
+		TMatrixFSym& locCovarianceMatrix = *(const_cast<TMatrixFSym*>(locKinFitParticle->Get_CovarianceMatrix()));
 
 		TVector3 locMomentum;
 		TLorentzVector locSpacetimeVertex;
@@ -2870,7 +2871,7 @@ void DKinFitter::Set_FinalTrackInfo(void)
 			continue;
 
 		pair<double, double> locPathLengthPair;
-		const TMatrixDSym& locCovarianceMatrix = *(locKinFitParticle->Get_CovarianceMatrix());
+		const TMatrixFSym& locCovarianceMatrix = *(locKinFitParticle->Get_CovarianceMatrix());
 		if(dKinFitUtils->Calc_PathLength(locKinFitParticle, &dVXi, locCovarianceMatrix, locPathLengthPair))
 		{
 			locKinFitParticle->Set_PathLength(locPathLengthPair.first);
@@ -2878,4 +2879,3 @@ void DKinFitter::Set_FinalTrackInfo(void)
 		}
 	}
 }
-

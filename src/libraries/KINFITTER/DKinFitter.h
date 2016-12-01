@@ -12,6 +12,7 @@
 #include "TVector3.h"
 #include "TMatrixD.h"
 #include "TMatrixDSym.h"
+#include "TMatrixFSym.h"
 #include "TLorentzVector.h"
 #include "TMath.h"
 #include "TDecompLU.h"

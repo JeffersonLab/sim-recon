@@ -8,7 +8,7 @@
 
 #include "TVector3.h"
 #include "TLorentzVector.h"
-#include "TMatrixDSym.h"
+#include "TMatrixFSym.h"
 
 #include "DKinFitter.h"
 #include "DKinFitChain.h"
@@ -37,8 +37,6 @@ class DKinFitUtils //purely virtual: cannot directly instantiate class, can only
 		virtual void Reset_NewEvent(void);
 		virtual void Reset_NewFit(void){};
 
-		void Preallocate_MatrixMemory(void);
-
 		/************************************************************ CONTROL AND MAPPING ***********************************************************/
 
 		//GET CONTROL
@@ -55,11 +53,11 @@ class DKinFitUtils //purely virtual: cannot directly instantiate class, can only
 		/************************************************************** CREATE PARTICLES ************************************************************/
 
 		//If multiple constraints, it is EXTREMELY CRITICAL that only one DKinFitParticle be created per particle, so that the particles are correctly linked across constraints!!
-		DKinFitParticle* Make_BeamParticle(int locPID, int locCharge, double locMass, TLorentzVector locSpacetimeVertex, TVector3 locMomentum, const TMatrixDSym* locCovarianceMatrix);
+		DKinFitParticle* Make_BeamParticle(int locPID, int locCharge, double locMass, TLorentzVector locSpacetimeVertex, TVector3 locMomentum, const TMatrixFSym* locCovarianceMatrix);
 		DKinFitParticle* Make_TargetParticle(int locPID, int locCharge, double locMass);
 
-		DKinFitParticle* Make_DetectedParticle(int locPID, int locCharge, double locMass, TLorentzVector locSpacetimeVertex, TVector3 locMomentum, const TMatrixDSym* locCovarianceMatrix);
-		DKinFitParticle* Make_DetectedShower(int locPID, double locMass, TLorentzVector locSpacetimeVertex, double locShowerEnergy, const TMatrixDSym* locCovarianceMatrix);
+		DKinFitParticle* Make_DetectedParticle(int locPID, int locCharge, double locMass, TLorentzVector locSpacetimeVertex, TVector3 locMomentum, const TMatrixFSym* locCovarianceMatrix);
+		DKinFitParticle* Make_DetectedShower(int locPID, double locMass, TLorentzVector locSpacetimeVertex, double locShowerEnergy, const TMatrixFSym* locCovarianceMatrix);
 
 		DKinFitParticle* Make_MissingParticle(int locPID, int locCharge, double locMass);
 		DKinFitParticle* Make_DecayingParticle(int locPID, int locCharge, double locMass, const set<DKinFitParticle*>& locFromInitialState, const set<DKinFitParticle*>& locFromFinalState);
@@ -92,7 +90,7 @@ class DKinFitUtils //purely virtual: cannot directly instantiate class, can only
 		//if input flag is true: return the value of the p4 at the production vertex //else return it at the decay vertex
 		TLorentzVector Calc_DecayingP4_ByVertex(DKinFitParticle* locKinFitParticle, bool locAtProductionVertexFlag, bool locDontPropagateAtAllFlag = false) const;
 
-		bool Propagate_TrackInfoToCommonVertex(DKinFitParticle* locKinFitParticle, const TMatrixDSym* locVXi, TVector3& locMomentum, TLorentzVector& locSpacetimeVertex, pair<double, double>& locPathLengthPair, TMatrixDSym& locCovarianceMatrix) const;
+		bool Propagate_TrackInfoToCommonVertex(DKinFitParticle* locKinFitParticle, const TMatrixDSym* locVXi, TVector3& locMomentum, TLorentzVector& locSpacetimeVertex, pair<double, double>& locPathLengthPair, TMatrixFSym& locCovarianceMatrix) const;
 
 		/********************************************************* BUILD OUTPUT DKINFITCHAIN ********************************************************/
 
@@ -108,7 +106,7 @@ class DKinFitUtils //purely virtual: cannot directly instantiate class, can only
 		size_t Get_KinFitConstraintMassPoolSize(void) const{return dKinFitConstraintMassPool_All.size();};
 		size_t Get_KinFitChainPoolSize(void) const{return dKinFitChainPool_All.size();};
 		size_t Get_KinFitChainStepPoolSize(void) const{return dKinFitChainStepPool_All.size();};
-		size_t Get_MatrixDSymPoolSize(void) const{return dMatrixDSymPool_All.size();};
+		size_t Get_SymMatrixPoolSize(void) const{return dSymMatrixPool_All.size();};
 
 		//GET MAX POOL SIZES
 		size_t Get_MaxKinFitParticlePoolSize(void) const{return dMaxKinFitParticlePoolSize;}
@@ -118,7 +116,7 @@ class DKinFitUtils //purely virtual: cannot directly instantiate class, can only
 		size_t Get_MaxKinFitConstraintMassPoolSize(void) const{return dMaxKinFitConstraintMassPoolSize;}
 		size_t Get_MaxKinFitChainPoolSize(void) const{return dMaxKinFitChainPoolSize;}
 		size_t Get_MaxKinFitChainStepPoolSize(void) const{return dMaxKinFitChainStepPoolSize;}
-		size_t Get_MaxMatrixDSymPoolSize(void) const{return dMaxMatrixDSymPoolSize;}
+		size_t Get_MaxSymMatrixPoolSize(void) const{return dMaxSymMatrixPoolSize;}
 
 		//SET MAX POOL SIZES
 		void Set_MaxKinFitParticlePoolSize(size_t locMaxKinFitParticlePoolSize){dMaxKinFitParticlePoolSize = locMaxKinFitParticlePoolSize;}
@@ -128,7 +126,7 @@ class DKinFitUtils //purely virtual: cannot directly instantiate class, can only
 		void Set_MaxKinFitConstraintMassPoolSize(size_t locMaxKinFitConstraintMassPoolSize){dMaxKinFitConstraintMassPoolSize = locMaxKinFitConstraintMassPoolSize;}
 		void Set_MaxKinFitChainPoolSize(size_t locMaxKinFitChainPoolSize){dMaxKinFitChainPoolSize = locMaxKinFitChainPoolSize;}
 		void Set_MaxKinFitChainStepPoolSize(size_t locMaxKinFitChainStepPoolSize){dMaxKinFitChainStepPoolSize = locMaxKinFitChainStepPoolSize;}
-		void Set_MaxMatrixDSymPoolSize(size_t locMaxMatrixDSymPoolSize){dMaxMatrixDSymPoolSize = locMaxMatrixDSymPoolSize;}
+		void Set_MaxSymMatrixPoolSize(size_t locMaxSymMatrixPoolSize){dMaxSymMatrixPoolSize = locMaxSymMatrixPoolSize;}
 
 		/********************************************************** END RESOURCE POOL SIZES *********************************************************/
 
@@ -149,7 +147,7 @@ class DKinFitUtils //purely virtual: cannot directly instantiate class, can only
 
 		DKinFitChain* Get_KinFitChainResource(void);
 		DKinFitChainStep* Get_KinFitChainStepResource(void);
-		TMatrixDSym* Get_MatrixDSymResource(unsigned int locNumMatrixRows);
+		virtual TMatrixFSym* Get_SymMatrixResource(unsigned int locNumMatrixRows);
 
 		/************************************************************** CLONE CONSTRAINTS ***********************************************************/
 
@@ -178,7 +176,7 @@ class DKinFitUtils //purely virtual: cannot directly instantiate class, can only
 		/************************************************************** CLONE RESOURCES *************************************************************/
 
 		DKinFitParticle* Clone_KinFitParticle(DKinFitParticle* locKinFitParticle);
-		TMatrixDSym* Clone_MatrixDSym(const TMatrixDSym* locMatrix);
+		TMatrixFSym* Clone_SymMatrix(const TMatrixFSym* locMatrix);
 
 		set<DKinFitParticle*> Build_CloneParticleSet(const set<DKinFitParticle*>& locInputParticles, const map<DKinFitParticle*, DKinFitParticle*>& locCloneIOMap) const;
 		set<DKinFitConstraint*> Clone_ParticlesAndConstraints(const set<DKinFitConstraint*>& locInputConstraints);
@@ -196,7 +194,7 @@ class DKinFitUtils //purely virtual: cannot directly instantiate class, can only
 		//Don't call directly: Rather, call the public wrappers (simpler)
 		TLorentzVector Calc_DecayingP4(DKinFitParticle* locKinFitParticle, bool locIsConstrainedParticle, double locStateSignMultiplier, bool locDontPropagateAtAllFlag = false) const;
 
-		bool Calc_PathLength(DKinFitParticle* locKinFitParticle, const TMatrixDSym* locVXi, const TMatrixDSym& locCovarianceMatrix, pair<double, double>& locPathLengthPair) const;
+		bool Calc_PathLength(DKinFitParticle* locKinFitParticle, const TMatrixDSym* locVXi, const TMatrixFSym& locCovarianceMatrix, pair<double, double>& locPathLengthPair) const;
 		void Calc_DecayingParticleJacobian(DKinFitParticle* locKinFitParticle, bool locDontPropagateDecayingP3Flag, double locStateSignMultiplier, int locNumEta, const map<DKinFitParticle*, int>& locAdditionalPxParamIndices, TMatrixD& locJacobian) const;
 
 		/*************************************************************** CLONE MAPPING **************************************************************/
@@ -234,7 +232,7 @@ class DKinFitUtils //purely virtual: cannot directly instantiate class, can only
 		size_t dMaxKinFitConstraintMassPoolSize;
 		size_t dMaxKinFitChainPoolSize;
 		size_t dMaxKinFitChainStepPoolSize;
-		size_t dMaxMatrixDSymPoolSize;
+		size_t dMaxSymMatrixPoolSize;
 
 		//PARTICLES
 		deque<DKinFitParticle*> dKinFitParticlePool_All;
@@ -261,8 +259,8 @@ class DKinFitUtils //purely virtual: cannot directly instantiate class, can only
 		deque<DKinFitChainStep*> dKinFitChainStepPool_Available;
 
 		//MATRICES
-		deque<TMatrixDSym*> dMatrixDSymPool_All;
-		deque<TMatrixDSym*> dMatrixDSymPool_Available;
+		deque<TMatrixFSym*> dSymMatrixPool_All;
+		deque<TMatrixFSym*> dSymMatrixPool_Available;
 };
 
 inline DKinFitParticle* DKinFitUtils::Get_InputKinFitParticle(DKinFitParticle* locOutputKinFitParticle) const

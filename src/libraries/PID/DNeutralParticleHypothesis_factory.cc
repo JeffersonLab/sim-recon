@@ -62,7 +62,7 @@ jerror_t DNeutralParticleHypothesis_factory::evnt(jana::JEventLoop *locEventLoop
 		// Loop over vertices and PID hypotheses & create DNeutralParticleHypotheses for each combination
 		for(size_t loc_j = 0; loc_j < locPIDHypotheses.size(); ++loc_j)
 		{
-			DNeutralParticleHypothesis* locNeutralParticleHypothesis = Create_DNeutralParticleHypothesis(locNeutralShower, locPIDHypotheses[loc_j], locEventRFBunch, locVertex);
+			DNeutralParticleHypothesis* locNeutralParticleHypothesis = Create_DNeutralParticleHypothesis(locEventLoop, locNeutralShower, locPIDHypotheses[loc_j], locEventRFBunch, locVertex);
 			if(locNeutralParticleHypothesis != NULL)
 				_data.push_back(locNeutralParticleHypothesis);	
 		}
@@ -71,7 +71,7 @@ jerror_t DNeutralParticleHypothesis_factory::evnt(jana::JEventLoop *locEventLoop
 	return NOERROR;
 }
 
-DNeutralParticleHypothesis* DNeutralParticleHypothesis_factory::Create_DNeutralParticleHypothesis(const DNeutralShower* locNeutralShower, Particle_t locPID, const DEventRFBunch* locEventRFBunch, const DVertex* locVertex) const
+DNeutralParticleHypothesis* DNeutralParticleHypothesis_factory::Create_DNeutralParticleHypothesis(JEventLoop *locEventLoop, const DNeutralShower* locNeutralShower, Particle_t locPID, const DEventRFBunch* locEventRFBunch, const DVertex* locVertex) const
 {
 	DVector3 locVertexGuess = locVertex->dSpacetimeVertex.Vect();
 	double locStartTime = locVertex->dSpacetimeVertex.T();
@@ -88,7 +88,9 @@ DNeutralParticleHypothesis* DNeutralParticleHypothesis_factory::Create_DNeutralP
 		return NULL; //invalid, will divide by zero when creating error matrix, so skip!
 
 	DVector3 locMomentum(locPath);
-	DMatrixDSym locParticleCovariance;
+
+	uint64_t locEventNumber = locEventLoop->GetJEvent().GetEventNumber();
+	TMatrixFSym* locParticleCovariance = (dynamic_cast<DApplication*>(japp))->Get_CovarianceMatrixResource(7, locEventNumber);
 
 	double locProjectedTime = 0.0, locPMag = 0.0;
 	if(locPID != Gamma)
@@ -146,10 +148,10 @@ DNeutralParticleHypothesis* DNeutralParticleHypothesis_factory::Create_DNeutralP
 	return locNeutralParticleHypothesis;
 }
 
-void DNeutralParticleHypothesis_factory::Calc_ParticleCovariance_Photon(const DNeutralShower* locNeutralShower, const DVertex* locVertex, const DVector3& locMomentum, const DVector3& locPathVector, DMatrixDSym& locParticleCovariance) const
+void DNeutralParticleHypothesis_factory::Calc_ParticleCovariance_Photon(const DNeutralShower* locNeutralShower, const DVertex* locVertex, const DVector3& locMomentum, const DVector3& locPathVector, TMatrixFSym* locParticleCovariance) const
 {
 	//build 8x8 matrix: 5x5 shower, 3x3 vertex position
-	DMatrixDSym locShowerPlusVertCovariance(8);
+	TMatrixFSym locShowerPlusVertCovariance(8);
 	for(unsigned int loc_l = 0; loc_l < 5; ++loc_l) //shower: e, x, y, z, t
 	{
 		for(unsigned int loc_m = 0; loc_m < 5; ++loc_m)
@@ -171,7 +173,7 @@ void DNeutralParticleHypothesis_factory::Calc_ParticleCovariance_Photon(const DN
 	DVector3 locUnitDeltaXOverC = (1.0/(29.9792458*locDeltaX.Mag()))*locDeltaX;
 
 	//build transform matrix
-	DMatrix locTransformMatrix(7, 8);
+	TMatrix locTransformMatrix(7, 8);
 
 	locTransformMatrix(0, 0) = locUnitP.X(); //partial deriv of px wrst shower-e
 	locTransformMatrix(0, 1) = locMomentum.Px()*(locDeltaXOverDeltaXSq.X() - 1.0/locDeltaX.X()); //partial deriv of px wrst shower-x
@@ -211,14 +213,13 @@ void DNeutralParticleHypothesis_factory::Calc_ParticleCovariance_Photon(const DN
 	locTransformMatrix(6, 7) = -1.0*locTransformMatrix(6, 3); //partial deriv of t wrst vert-z
 
 	//convert
-	locParticleCovariance.ResizeTo(7, 7);
-	locParticleCovariance = locShowerPlusVertCovariance.Similarity(locTransformMatrix);
+	*locParticleCovariance = locShowerPlusVertCovariance.Similarity(locTransformMatrix);
 }
 
-void DNeutralParticleHypothesis_factory::Calc_ParticleCovariance_Massive(const DNeutralShower* locNeutralShower, const DVertex* locVertex, double locMass, double locDeltaT, const DVector3& locMomentum, const DVector3& locPathVector, DMatrixDSym& locParticleCovariance) const
+void DNeutralParticleHypothesis_factory::Calc_ParticleCovariance_Massive(const DNeutralShower* locNeutralShower, const DVertex* locVertex, double locMass, double locDeltaT, const DVector3& locMomentum, const DVector3& locPathVector, TMatrixFSym* locParticleCovariance) const
 {
 	//build 9x9 matrix: 5x5 shower, 4x4 vertex position & time
-	DMatrixDSym locShowerPlusVertCovariance(9);
+	TMatrixFSym locShowerPlusVertCovariance(9);
 	for(unsigned int loc_l = 0; loc_l < 5; ++loc_l) //shower: e, x, y, z, t
 	{
 		for(unsigned int loc_m = 0; loc_m < 5; ++loc_m)
@@ -244,7 +245,7 @@ void DNeutralParticleHypothesis_factory::Calc_ParticleCovariance_Massive(const D
 	DVector3 locEPVecOverCPMagDeltaXMag = (locNeutralShower->dEnergy/(29.9792458*locDeltaX.Mag()*locMomentum.Mag()))*locDeltaX;
 
 	//build transform matrix
-	DMatrix locTransformMatrix(7, 9);
+	TMatrix locTransformMatrix(7, 9);
 
 	locTransformMatrix(0, 0) = 0.0; //partial deriv of px wrst shower-e
 	locTransformMatrix(0, 1) = locMomentum.Px()*(locDeltaXOverDeltaX4Sq.X() + 1.0/locDeltaX.X()); //partial deriv of px wrst shower-x
@@ -282,7 +283,5 @@ void DNeutralParticleHypothesis_factory::Calc_ParticleCovariance_Massive(const D
 	locTransformMatrix(6, 8) = 1.0; //partial deriv of t wrst vertex-t
 
 	//convert
-	locParticleCovariance.ResizeTo(7, 7);
-	locParticleCovariance = locShowerPlusVertCovariance.Similarity(locTransformMatrix);
+	*locParticleCovariance = locShowerPlusVertCovariance.Similarity(locTransformMatrix);
 }
-

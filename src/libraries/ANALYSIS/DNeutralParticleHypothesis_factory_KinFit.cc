@@ -112,7 +112,7 @@ DNeutralParticleHypothesis* DNeutralParticleHypothesis_factory_KinFit::Build_Neu
 	locNewNeutralParticleHypothesis->setMomentum(DVector3(locKinFitParticle->Get_Momentum().X(),locKinFitParticle->Get_Momentum().Y(),locKinFitParticle->Get_Momentum().Z()));
 	locNewNeutralParticleHypothesis->setPosition(DVector3(locKinFitParticle->Get_CommonVertex().X(),locKinFitParticle->Get_CommonVertex().Y(),locKinFitParticle->Get_CommonVertex().Z()));
 	locNewNeutralParticleHypothesis->setTime(locKinFitParticle->Get_CommonTime());
-	locNewNeutralParticleHypothesis->setErrorMatrix(*locKinFitParticle->Get_CovarianceMatrix());
+	locNewNeutralParticleHypothesis->setErrorMatrix(locKinFitParticle->Get_CovarianceMatrix());
 
 	if(locKinFitParticle->Get_ShowerEnergy() > 0.0) //particle was used in the fit as a neutral shower
 		locNewNeutralParticleHypothesis->setPathLength(locKinFitParticle->Get_PathLength(), locKinFitParticle->Get_PathLengthUncertainty());
