@@ -57,6 +57,10 @@ public:
 
   }
 
+  bool IsFinite(){
+     return (isfinite(mA[0]) && isfinite(mA[1]) && isfinite(mA[2]) && isfinite(mA[3]) && isfinite(mA[4]));
+  }
+
   
   void Print(){
       cout << "DMatrix5x1:" <<endl;
