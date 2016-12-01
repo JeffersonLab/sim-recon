@@ -33,7 +33,12 @@ static TH1I *hPseudoResU[25];
 static TH1I *hPseudoResV[25];
 static TH2I *hPseudoResUvsV[25][rad];
 static TH2I *hPseudoResVsT[25];
-static TH2I *hPseudoResSvsQ;
+static TH2I *hPseudoResSvsQ_6;
+static TH2I *hPseudoResSvsQ_4;
+static TH2I *hPseudoResSvsQ_5;
+static TH2I *hPseudoResSvsQ_13;
+static TH2I *hPseudoResSvsQ_12;
+static TH2I *hPseudoResSvsQ_20;
 static TH2I *hResVsT[25];
 static TH1I *hMom;
 static TH1I *hMom_accepted;
@@ -113,7 +118,19 @@ jerror_t JEventProcessor_FDC_Residuals::init(void)
   gDirectory->mkdir("Residuals")->cd();
   hPseudoRes = new TH1I("hPseudoRes","Pseudo Residual in R", 500, 0, 5);
 
-  hPseudoResSvsQ = new TH2I("hPseudoResSvsQ","Pseudo Residual along Wire vs. Charge", 500, 0, 50, 200, -0.1, 0.1);
+  // two normal clusters
+  hPseudoResSvsQ_6 = new TH2I("hPseudoResSvsQ_6","Pseudo Residual along Wire vs. Charge", 500, 0, 50, 200, -0.1, 0.1);
+  // two 2-strip clusters
+  hPseudoResSvsQ_4 = new TH2I("hPseudoResSvsQ_4","Pseudo Residual along Wire vs. Charge", 500, 0, 50, 200, -0.1, 0.1);
+  // mixed
+  hPseudoResSvsQ_5 = new TH2I("hPseudoResSvsQ_5","Pseudo Residual along Wire vs. Charge", 500, 0, 50, 200, -0.1, 0.1);
+
+  // one normal, one strange 3-strip cluster
+  hPseudoResSvsQ_13 = new TH2I("hPseudoResSvsQ_13","Pseudo Residual along Wire vs. Charge", 500, 0, 50, 200, -0.1, 0.1);
+  // one 2-strip, one strange 3-strip cluster
+  hPseudoResSvsQ_12 = new TH2I("hPseudoResSvsQ_12","Pseudo Residual along Wire vs. Charge", 500, 0, 50, 200, -0.1, 0.1);
+  // two strange 3-strip clusters
+  hPseudoResSvsQ_20 = new TH2I("hPseudoResSvsQ_20","Pseudo Residual along Wire vs. Charge", 500, 0, 50, 200, -0.1, 0.1);
 
   for(int icell=0; icell<24; icell++){
 
@@ -472,7 +489,17 @@ jerror_t JEventProcessor_FDC_Residuals::evnt(JEventLoop *loop, uint64_t eventnum
 	    hPseudoResV[cellNum]->Fill(residualV);
 	    
 	    if (locPseudo->status == 6)
-	      hPseudoResSvsQ->Fill(locPseudo->q,residualV);
+	      hPseudoResSvsQ_6->Fill(locPseudo->q,residualV);
+	    else if (locPseudo->status == 4)
+	      hPseudoResSvsQ_4->Fill(locPseudo->q,residualV);
+	    else if (locPseudo->status == 5)
+	      hPseudoResSvsQ_5->Fill(locPseudo->q,residualV);
+	    else if (locPseudo->status == 13)
+	      hPseudoResSvsQ_13->Fill(locPseudo->q,residualV);
+	    else if (locPseudo->status == 12)
+	      hPseudoResSvsQ_12->Fill(locPseudo->q,residualV);
+	    else if (locPseudo->status == 20)
+	      hPseudoResSvsQ_20->Fill(locPseudo->q,residualV);
 	    
 	    unsigned int radius = interPosition2D.Mod()/(45/rad);
 	    if (radius<rad)

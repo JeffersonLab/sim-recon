@@ -222,7 +222,7 @@ void FDC_Residuals(bool save = 0){
 
   cUncertain->cd(2);
 
-  nslices = 100;
+  nslices = 150;
   TH1D *ResS[nslices];
   double q[nslices];
   double q_err[nslices];
@@ -230,7 +230,7 @@ void FDC_Residuals(bool save = 0){
   double sigma_err[nslices];
   char hname[256];
   for (int i=0; i < nslices; i++) {
-    q[i] = 2*i/10. ;
+    q[i] = 2*i/10. + 1./10.  ;
     q_err[i] = 0;
 
     sprintf(hname, "ResS_[%d]", i);
@@ -262,7 +262,7 @@ void FDC_Residuals(bool save = 0){
     }
   }
 
-  TH1D *hsigma = new TH1D("hsigma", "", nslices, 0, 20);
+  TH1D *hsigma = new TH1D("hsigma", "", nslices, 0, 30);
   hsigma->GetYaxis()->SetRangeUser(0,0.2);
   hsigma->GetYaxis()->SetTitleFont(132);
   hsigma->GetXaxis()->SetTitleFont(132);
@@ -279,6 +279,20 @@ void FDC_Residuals(bool save = 0){
   gsigma->Draw("Psame");
 
   TF1 *funct=new TF1("funct", "0.01/x + 0.01", 0 ,50);
+  funct->SetLineColor(2);
   funct->Draw("same");
+
+  TF1 *fit=new TF1("fit", "[0]/x + [1]", 0.4 , 3.5);
+  fit->SetLineColor(4);
+  gsigma->Fit("fit","R");
+ 
+  TF1 *fit_full=new TF1("fit_full", "[0]/x + [1]", 0 , 50);
+  fit_full->SetLineColor(4);
+  fit_full->SetLineStyle(2);
+  fit_full->SetParameter(0, fit->GetParameter(0));
+  fit_full->SetParameter(1, fit->GetParameter(1));
+  fit_full->Draw("same");
+
+
     
 }
