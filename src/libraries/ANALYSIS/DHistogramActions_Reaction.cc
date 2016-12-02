@@ -766,7 +766,6 @@ void DHistogramAction_ParticleComboKinematics::Initialize(JEventLoop* locEventLo
 	dHistDeque_Theta.resize(locNumSteps);
 	dHistDeque_Phi.resize(locNumSteps);
 	dHistDeque_VertexZ.resize(locNumSteps);
-	dHistDeque_VertexT.resize(locNumSteps);
 	dHistDeque_VertexYVsX.resize(locNumSteps);
 
 	deque<deque<Particle_t> > locDetectedFinalPIDs;
@@ -830,11 +829,6 @@ void DHistogramAction_ParticleComboKinematics::Initialize(JEventLoop* locEventLo
 			locHistName = "VertexYVsX";
 			locHistTitle = string("Beam ") + locParticleROOTName + string(";Vertex-X (cm);Vertex-Y (cm)");
 			dBeamParticleHist_VertexYVsX = GetOrCreate_Histogram<TH2I>(locHistName, locHistTitle, dNumVertexXYBins, dMinVertexXY, dMaxVertexXY, dNumVertexXYBins, dMinVertexXY, dMaxVertexXY);
-
-			// Vertex-T
-			locHistName = "VertexT";
-			locHistTitle = string("Beam ") + locParticleROOTName + string(";Vertex-T (ns)");
-			dBeamParticleHist_VertexT = GetOrCreate_Histogram<TH1I>(locHistName, locHistTitle, dNumTBins, dMinT, dMaxT);
 
 			// Delta-T (Beam, RF)
 			locHistName = "DeltaTRF";
@@ -932,11 +926,6 @@ void DHistogramAction_ParticleComboKinematics::Initialize(JEventLoop* locEventLo
 				locHistTitle = locParticleROOTName + string(", ") + locStepROOTName + string(";Vertex-X (cm);Vertex-Y (cm)");
 				dHistDeque_VertexYVsX[loc_i][locPID] = GetOrCreate_Histogram<TH2I>(locHistName, locHistTitle, dNumVertexXYBins, dMinVertexXY, dMaxVertexXY, dNumVertexXYBins, dMinVertexXY, dMaxVertexXY);
 
-				// Vertex-T
-				locHistName = "VertexT";
-				locHistTitle = locParticleROOTName + string(", ") + locStepROOTName + string(";Vertex-T (ns)");
-				dHistDeque_VertexT[loc_i][locPID] = GetOrCreate_Histogram<TH1I>(locHistName, locHistTitle, dNumTBins, dMinT, dMaxT);
-
 				gDirectory->cd("..");
 			} //end of particle loop
 
@@ -959,10 +948,6 @@ void DHistogramAction_ParticleComboKinematics::Initialize(JEventLoop* locEventLo
 				locHistTitle = (loc_i == 0) ? "Production Vertex" : locInitParticleROOTName + string(" Decay Vertex");
 				locHistTitle += string(";Vertex-X (cm);Vertex-Y (cm)");
 				dHistMap_StepVertexYVsX[loc_i] = GetOrCreate_Histogram<TH2I>(locHistName, locHistTitle, dNumVertexXYBins, dMinVertexXY, dMaxVertexXY, dNumVertexXYBins, dMinVertexXY, dMaxVertexXY);
-
-				locHistName = "StepVertexT";
-				locHistTitle = (loc_i == 0) ? ";Production Vertex-T (ns)" : string(";") + locInitParticleROOTName + string(" Decay Vertex-T (ns)");
-				dHistMap_StepVertexT[loc_i] = GetOrCreate_Histogram<TH1I>(locHistName, locHistTitle, dNumTBins, dMinT, dMaxT);
 			}
 
 			if((loc_i != 0) && IsDetachedVertex(locInitialPID))
@@ -1046,7 +1031,6 @@ bool DHistogramAction_ParticleComboKinematics::Perform_Action(JEventLoop* locEve
 		{
 			dHistMap_StepVertexZ[loc_i]->Fill(locStepSpacetimeVertex.Z());
 			dHistMap_StepVertexYVsX[loc_i]->Fill(locStepSpacetimeVertex.X(), locStepSpacetimeVertex.Y());
-			dHistMap_StepVertexT[loc_i]->Fill(locStepSpacetimeVertex.T());
 		}
 
 		//DETACHED VERTEX INFORMATION
@@ -1131,7 +1115,6 @@ void DHistogramAction_ParticleComboKinematics::Fill_Hists(JEventLoop* locEventLo
 		dHistDeque_DeltaBetaVsP[locStepIndex][locPID]->Fill(locP, locDeltaBeta);
 		dHistDeque_VertexZ[locStepIndex][locPID]->Fill(locKinematicData->position().Z());
 		dHistDeque_VertexYVsX[locStepIndex][locPID]->Fill(locKinematicData->position().X(), locKinematicData->position().Y());
-		dHistDeque_VertexT[locStepIndex][locPID]->Fill(locKinematicData->time());
 	}
 	Unlock_Action();
 }
@@ -1156,7 +1139,6 @@ void DHistogramAction_ParticleComboKinematics::Fill_BeamHists(const DKinematicDa
 		dBeamParticleHist_PhiVsTheta->Fill(locTheta, locPhi);
 		dBeamParticleHist_VertexZ->Fill(locKinematicData->position().Z());
 		dBeamParticleHist_VertexYVsX->Fill(locKinematicData->position().X(), locKinematicData->position().Y());
-		dBeamParticleHist_VertexT->Fill(locKinematicData->time());
 		dBeamParticleHist_DeltaTRF->Fill(locDeltaTRF);
 		dBeamParticleHist_DeltaTRFVsBeamE->Fill(locKinematicData->energy(), locDeltaTRF);
 	}
@@ -1632,12 +1614,15 @@ void DHistogramAction_KinFitResults::Initialize(JEventLoop* locEventLoop)
 			{
 				string locFullROOTName = string("Beam ") + ParticleName_ROOT(locInitialPID);
 
-				//Conlev
-				locHistName = "ConfidenceLevel_VsBeamEnergy";
-				locHistTitle.str("");
-				locHistTitle << "Kinematic Fit Constraints: " << locConstraintString << ";Beam Energy (GeV);Confidence Level (" << locNumConstraints;
-				locHistTitle << " Constraints, " << locNumUnknowns << " Unknowns: " << locNDF << "-C Fit)";
-				dHistMap_ConfidenceLevel_VsP[pair<int, Particle_t>(-1, locInitialPID)] = GetOrCreate_Histogram<TH2I>(locHistName, locHistTitle.str(), dNum2DBeamEBins, dMinBeamE, dMaxBeamE, dNum2DConfidenceLevelBins, 0.0, 1.0);
+				if(dHistDependenceFlag)
+				{
+					//Conlev
+					locHistName = "ConfidenceLevel_VsBeamEnergy";
+					locHistTitle.str("");
+					locHistTitle << "Kinematic Fit Constraints: " << locConstraintString << ";Beam Energy (GeV);Confidence Level (" << locNumConstraints;
+					locHistTitle << " Constraints, " << locNumUnknowns << " Unknowns: " << locNDF << "-C Fit)";
+					dHistMap_ConfidenceLevel_VsP[pair<int, Particle_t>(-1, locInitialPID)] = GetOrCreate_Histogram<TH2I>(locHistName, locHistTitle.str(), dNum2DBeamEBins, dMinBeamE, dMaxBeamE, dNum2DConfidenceLevelBins, 0.0, 1.0);
+				}
 
 				//Pulls
 				CreateAndChangeTo_Directory("Beam", "Beam");
@@ -1687,26 +1672,29 @@ void DHistogramAction_KinFitResults::Initialize(JEventLoop* locEventLoop)
 				string locParticleName = ParticleType(locPID);
 				string locParticleROOTName = ParticleName_ROOT(locPID);
 
-				//vs p
-				locHistName = string("ConfidenceLevel_Vs") + locParticleName + string("P");
-				locHistTitle.str("");
-				locHistTitle << "Kinematic Fit Constraints: " << locConstraintString << ";" << locParticleROOTName << " p (GeV/c);Confidence Level (" << locNumConstraints;
-				locHistTitle << " Constraints, " << locNumUnknowns << " Unknowns: " << locNDF << "-C Fit)";
-				dHistMap_ConfidenceLevel_VsP[pair<int, Particle_t>(loc_i, locPID)] = GetOrCreate_Histogram<TH2I>(locHistName, locHistTitle.str(), dNum2DPBins, dMinP, dMaxP, dNum2DConfidenceLevelBins, 0.0, 1.0);
+				if(dHistDependenceFlag)
+				{
+					//vs p
+					locHistName = string("ConfidenceLevel_Vs") + locParticleName + string("P");
+					locHistTitle.str("");
+					locHistTitle << "Kinematic Fit Constraints: " << locConstraintString << ";" << locParticleROOTName << " p (GeV/c);Confidence Level (" << locNumConstraints;
+					locHistTitle << " Constraints, " << locNumUnknowns << " Unknowns: " << locNDF << "-C Fit)";
+					dHistMap_ConfidenceLevel_VsP[pair<int, Particle_t>(loc_i, locPID)] = GetOrCreate_Histogram<TH2I>(locHistName, locHistTitle.str(), dNum2DPBins, dMinP, dMaxP, dNum2DConfidenceLevelBins, 0.0, 1.0);
 
-				//vs theta
-				locHistName = string("ConfidenceLevel_Vs") + locParticleName + string("Theta");
-				locHistTitle.str("");
-				locHistTitle << "Kinematic Fit Constraints: " << locConstraintString << ";" << locParticleROOTName << " #theta#circ;Confidence Level (" << locNumConstraints;
-				locHistTitle << " Constraints, " << locNumUnknowns << " Unknowns: " << locNDF << "-C Fit)";
-				dHistMap_ConfidenceLevel_VsTheta[pair<int, Particle_t>(loc_i, locPID)] = GetOrCreate_Histogram<TH2I>(locHistName, locHistTitle.str(), dNum2DThetaBins, dMinTheta, dMaxTheta, dNum2DConfidenceLevelBins, 0.0, 1.0);
+					//vs theta
+					locHistName = string("ConfidenceLevel_Vs") + locParticleName + string("Theta");
+					locHistTitle.str("");
+					locHistTitle << "Kinematic Fit Constraints: " << locConstraintString << ";" << locParticleROOTName << " #theta#circ;Confidence Level (" << locNumConstraints;
+					locHistTitle << " Constraints, " << locNumUnknowns << " Unknowns: " << locNDF << "-C Fit)";
+					dHistMap_ConfidenceLevel_VsTheta[pair<int, Particle_t>(loc_i, locPID)] = GetOrCreate_Histogram<TH2I>(locHistName, locHistTitle.str(), dNum2DThetaBins, dMinTheta, dMaxTheta, dNum2DConfidenceLevelBins, 0.0, 1.0);
 
-				//vs phi
-				locHistName = string("ConfidenceLevel_Vs") + locParticleName + string("Phi");
-				locHistTitle.str("");
-				locHistTitle << "Kinematic Fit Constraints: " << locConstraintString << ";" << locParticleROOTName << " #phi#circ;Confidence Level (" << locNumConstraints;
-				locHistTitle << " Constraints, " << locNumUnknowns << " Unknowns: " << locNDF << "-C Fit)";
-				dHistMap_ConfidenceLevel_VsPhi[pair<int, Particle_t>(loc_i, locPID)] = GetOrCreate_Histogram<TH2I>(locHistName, locHistTitle.str(), dNum2DPhiBins, dMinPhi, dMaxPhi, dNum2DConfidenceLevelBins, 0.0, 1.0);
+					//vs phi
+					locHistName = string("ConfidenceLevel_Vs") + locParticleName + string("Phi");
+					locHistTitle.str("");
+					locHistTitle << "Kinematic Fit Constraints: " << locConstraintString << ";" << locParticleROOTName << " #phi#circ;Confidence Level (" << locNumConstraints;
+					locHistTitle << " Constraints, " << locNumUnknowns << " Unknowns: " << locNDF << "-C Fit)";
+					dHistMap_ConfidenceLevel_VsPhi[pair<int, Particle_t>(loc_i, locPID)] = GetOrCreate_Histogram<TH2I>(locHistName, locHistTitle.str(), dNum2DPhiBins, dMinPhi, dMaxPhi, dNum2DConfidenceLevelBins, 0.0, 1.0);
+				}
 
 				locPIDSet.insert(locPID);
 			}
@@ -1819,6 +1807,9 @@ void DHistogramAction_KinFitResults::Create_ParticlePulls(string locFullROOTName
 		locHistTitle = locFullROOTName + string(";") + locStrings.second + string(";# Combos");
 		locParticlePulls[(*locIterator).first] = GetOrCreate_Histogram<TH1I>(locHistName, locHistTitle, dNumPullBins, dMinPull, dMaxPull);
 
+		if(!dHistDependenceFlag)
+			continue;
+
 		//vs p
 		locHistName = locStrings.first + string("_VsP");
 		locHistTitle = locFullROOTName + string(";p (GeV/c);") + locStrings.second;
@@ -1875,7 +1866,8 @@ bool DHistogramAction_KinFitResults::Perform_Action(JEventLoop* locEventLoop, co
 				double locP = locMomentum.Mag();
 
 				//con lev
-				dHistMap_ConfidenceLevel_VsP[locParticlePair]->Fill(locP, locConfidenceLevel);
+				if(dHistDependenceFlag)
+					dHistMap_ConfidenceLevel_VsP[locParticlePair]->Fill(locP, locConfidenceLevel);
 
 				//pulls
 				if(locConfidenceLevel >= dPullHistConfidenceLevelCut)
@@ -1884,7 +1876,8 @@ bool DHistogramAction_KinFitResults::Perform_Action(JEventLoop* locEventLoop, co
 					for(; locIterator != locParticlePulls.end(); ++locIterator)
 					{
 						dHistMap_Pulls[locParticlePair][locIterator->first]->Fill(locIterator->second);
-						dHistMap_PullsVsP[locParticlePair][locIterator->first]->Fill(locP, locIterator->second);
+						if(dHistDependenceFlag)
+							dHistMap_PullsVsP[locParticlePair][locIterator->first]->Fill(locP, locIterator->second);
 					}
 				}
 			}
@@ -1920,9 +1913,12 @@ bool DHistogramAction_KinFitResults::Perform_Action(JEventLoop* locEventLoop, co
 				double locPhi = locMomentum.Phi()*180.0/TMath::Pi();
 
 				//con lev
-				dHistMap_ConfidenceLevel_VsP[locParticlePair]->Fill(locP, locConfidenceLevel);
-				dHistMap_ConfidenceLevel_VsTheta[locParticlePair]->Fill(locTheta, locConfidenceLevel);
-				dHistMap_ConfidenceLevel_VsPhi[locParticlePair]->Fill(locPhi, locConfidenceLevel);
+				if(dHistDependenceFlag)
+				{
+					dHistMap_ConfidenceLevel_VsP[locParticlePair]->Fill(locP, locConfidenceLevel);
+					dHistMap_ConfidenceLevel_VsTheta[locParticlePair]->Fill(locTheta, locConfidenceLevel);
+					dHistMap_ConfidenceLevel_VsPhi[locParticlePair]->Fill(locPhi, locConfidenceLevel);
+				}
 				if(locConfidenceLevel < dPullHistConfidenceLevelCut)
 					continue;
 
@@ -1931,6 +1927,8 @@ bool DHistogramAction_KinFitResults::Perform_Action(JEventLoop* locEventLoop, co
 				for(; locIterator != locParticlePulls.end(); ++locIterator)
 				{
 					dHistMap_Pulls[locParticlePair][locIterator->first]->Fill(locIterator->second);
+					if(!dHistDependenceFlag)
+						continue;
 					dHistMap_PullsVsP[locParticlePair][locIterator->first]->Fill(locP, locIterator->second);
 					dHistMap_PullsVsTheta[locParticlePair][locIterator->first]->Fill(locTheta, locIterator->second);
 					dHistMap_PullsVsPhi[locParticlePair][locIterator->first]->Fill(locPhi, locIterator->second);

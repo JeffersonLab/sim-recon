@@ -130,15 +130,19 @@ void Df250EmulatorAlgorithm_v2::EmulateFirmware(const Df250WindowRawData* rawDat
                 jout << "threshold crossing at " << i << endl;
             }
             TC[npulses] = i+1;
-            // check that we have more than NSAT sample over threshold
+            // check that we have more than NSAT samples over threshold
             if(NSAT>1) {
                 int samples_over_threshold = 1;
                 for(unsigned int j=1; j < NSAT; j++) {
-                    if ((samples[j] & 0xfff) > THR)
+                    if ((samples[i+j] & 0xfff) > THR) {
                         samples_over_threshold++;
-                    else
+                        if( samples_over_threshold == NSAT )
+                            break;
+                    } else {
                         break;
+                    }
                 }
+
                 if( samples_over_threshold != NSAT )
                     continue;
             }

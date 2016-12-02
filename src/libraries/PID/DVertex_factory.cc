@@ -202,13 +202,13 @@ jerror_t DVertex_factory::Create_Vertex_KinFit(const DEventRFBunch* locEventRFBu
 	locVertex->dKinFitChiSq = dKinFitter->Get_ChiSq();
 
 	//error matrix
-	const TMatrixDSym* locMatrixDSym = dKinFitter->Get_VXi();
+	const TMatrixDSym& locMatrixDSym = dKinFitter->Get_VXi();
 	locVertex->dCovarianceMatrix.ResizeTo(4, 4);
 	locVertex->dCovarianceMatrix.Zero();
 	for(size_t loc_i = 0; loc_i < 3; ++loc_i)
 	{
 		for(size_t loc_j = 0; loc_j < 3; ++loc_j)
-			locVertex->dCovarianceMatrix(loc_i, loc_j) = (*locMatrixDSym)(loc_i, loc_j);
+			locVertex->dCovarianceMatrix(loc_i, loc_j) = locMatrixDSym(loc_i, loc_j);
 	}
 	locVertex->dCovarianceMatrix(3, 3) = locEventRFBunch->dTimeVariance; //t variance
 

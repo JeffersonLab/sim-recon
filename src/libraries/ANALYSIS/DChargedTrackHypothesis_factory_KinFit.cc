@@ -37,7 +37,7 @@ jerror_t DChargedTrackHypothesis_factory_KinFit::evnt(jana::JEventLoop* locEvent
 	VT_TRACER("DChargedTrackHypothesis_factory_KinFit::evnt()");
 #endif
 
- 	vector<const DKinFitResults*> locKinFitResultsVector;
+	vector<const DKinFitResults*> locKinFitResultsVector;
 	locEventLoop->Get(locKinFitResultsVector);
 
 	map<DKinFitParticle*, DChargedTrackHypothesis*> locNewObjectMap;
@@ -144,5 +144,3 @@ jerror_t DChargedTrackHypothesis_factory_KinFit::fini(void)
 {
 	return NOERROR;
 }
-
-
