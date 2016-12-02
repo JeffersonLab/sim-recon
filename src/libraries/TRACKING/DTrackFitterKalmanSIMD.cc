@@ -810,7 +810,12 @@ DTrackFitter::fit_status_t DTrackFitterKalmanSIMD::FitTrack(void)
         fit_params.setErrorMatrix(Get7x7ErrorMatrix(errMatrix));
     }
 	TMatrixFSym* locTrackingCovarianceMatrix = (dynamic_cast<DApplication*>(japp))->Get_CovarianceMatrixResource(5);
-	*locTrackingCovarianceMatrix = *errMatrix;
+	for(unsigned int loc_i = 0; loc_i < 5; ++loc_i)
+	{
+		for(unsigned int loc_j = 0; loc_j < 5; ++loc_j)
+			(*locTrackingCovarianceMatrix)(loc_i, loc_j) = errMatrix(loc_i, loc_j);
+
+	}
     fit_params.setTrackingErrorMatrix(locTrackingCovarianceMatrix);
     this->chisq = GetChiSq();
     this->Ndof = GetNDF();
@@ -6500,7 +6505,7 @@ jerror_t DTrackFitterKalmanSIMD::ExtrapolateToVertex(DVector2 &xy,
 // Transform the 5x5 tracking error matrix into a 7x7 error matrix in cartesian
 // coordinates
 TMatrixFSym* DTrackFitterKalmanSIMD::Get7x7ErrorMatrixForward(DMatrixDSym C){
-	TMatrixFSym* C7x7 = (dynamic_cast<DApplication*>(japp))->Get_CovarianceMatrixResource(7, locEventNumber);
+	TMatrixFSym* C7x7 = (dynamic_cast<DApplication*>(japp))->Get_CovarianceMatrixResource(7);
     DMatrix J(7,5);
 
     double p=1./fabs(q_over_p_);
@@ -6537,7 +6542,7 @@ TMatrixFSym* DTrackFitterKalmanSIMD::Get7x7ErrorMatrixForward(DMatrixDSym C){
 // Transform the 5x5 tracking error matrix into a 7x7 error matrix in cartesian
 // coordinates
 TMatrixFSym* DTrackFitterKalmanSIMD::Get7x7ErrorMatrix(DMatrixDSym C){
-	TMatrixFSym* C7x7 = (dynamic_cast<DApplication*>(japp))->Get_CovarianceMatrixResource(7, locEventNumber);
+	TMatrixFSym* C7x7 = (dynamic_cast<DApplication*>(japp))->Get_CovarianceMatrixResource(7);
     DMatrix J(7,5);
     //double cosl=cos(atan(tanl_));
     double pt=1./fabs(q_over_pt_);

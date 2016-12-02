@@ -47,10 +47,9 @@ class DEventProcessor_monitoring_hists : public JEventProcessor
 		DHistogramAction_DetectorPID dHistogramAction_DetectorPID;
 		DHistogramAction_DetectorMatching dHistogramAction_DetectorMatching;
 		DHistogramAction_Reconstruction dHistogramAction_Reconstruction;
-//		DHistogramAction_ObjectMemory dHistogramAction_ObjectMemory;
+		DHistogramAction_ObjectMemory dHistogramAction_ObjectMemory;
 
 		TH1D* dHist_IsEvent; //counts events
 };
 
 #endif // _DEventProcessor_monitoring_hists_
-

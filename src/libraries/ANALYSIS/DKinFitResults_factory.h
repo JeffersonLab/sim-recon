@@ -33,7 +33,7 @@ class DKinFitResults_factory : public jana::JFactory<DKinFitResults>
 		size_t Get_KinFitConstraintMassPoolSize(void) const{return dKinFitUtils->Get_KinFitConstraintMassPoolSize();};
 		size_t Get_KinFitChainPoolSize(void) const{return dKinFitUtils->Get_KinFitChainPoolSize();};
 		size_t Get_KinFitChainStepPoolSize(void) const{return dKinFitUtils->Get_KinFitChainStepPoolSize();};
-		size_t Get_MatrixDSymPoolSize(void) const{return dKinFitUtils->Get_MatrixDSymPoolSize();};
+		size_t Get_SymMatrixPoolSize(void) const{return dKinFitUtils->Get_SymMatrixPoolSize();};
 
 	private:
 

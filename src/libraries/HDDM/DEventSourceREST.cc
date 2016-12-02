@@ -321,23 +321,14 @@ jerror_t DEventSourceREST::Extract_DMCReaction(hddm_r::HDDM *record,
 
       mcreaction->beam.setPosition(locPosition);
       mcreaction->beam.setMomentum(DVector3(0.0, 0.0, Ebeam));
-      mcreaction->beam.setMass(0.0);
-      mcreaction->beam.setCharge(0.0);
-      mcreaction->beam.clearErrorMatrix();
-      mcreaction->beam.setT0(0.0, 0.0, SYS_NULL);
-      mcreaction->beam.setT1(0.0, 0.0, SYS_NULL);
       mcreaction->beam.setTime(torig - (zorig - locTargetCenterZ)/29.9792458);
       mcreaction->beam.setPID(Gamma);
 
       mcreaction->target.setPosition(locPosition);
-      mcreaction->target.setMomentum(DVector3(0.0, 0.0, 0.0));
       Particle_t ttype = iter->getTargetType();
       mcreaction->target.setPID((Particle_t)ttype);
       mcreaction->target.setMass(ParticleMass(ttype));
       mcreaction->target.setCharge(ParticleCharge(ttype));
-      mcreaction->target.clearErrorMatrix();
-      mcreaction->target.setT0(0.0, 0.0, SYS_NULL);
-      mcreaction->target.setT1(0.0, 0.0, SYS_NULL);
       mcreaction->target.setTime(torig - (zorig - locTargetCenterZ)/29.9792458);
    }
    
@@ -1214,7 +1205,7 @@ jerror_t DEventSourceREST::Extract_DDetectorMatches(JEventLoop* locEventLoop, hd
 // This was copied and transformed from DKinFit.cc
 void DEventSourceREST::Get7x7ErrorMatrix(double mass, const double vec[5], const TMatrixFSym* C5x5, TMatrixFSym* loc7x7ErrorMatrix)
 {
-  DMatrix J(7,5);
+  TMatrixF J(7,5);
 
   // State vector
   double q_over_pt=vec[0];
@@ -1247,7 +1238,7 @@ void DEventSourceREST::Get7x7ErrorMatrix(double mass, const double vec[5], const
 
   // C'= JCJ^T
   TMatrixFSym locTempMatrix = *C5x5;
-  loc7x7ErrorMatrix=locTempMatrix.Similarity(J);
+  *loc7x7ErrorMatrix=locTempMatrix.Similarity(J);
 }
 
 uint32_t DEventSourceREST::Convert_SignedIntToUnsigned(int32_t locSignedInt) const

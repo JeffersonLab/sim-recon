@@ -662,11 +662,11 @@ void DMCThrownMatching_factory::Find_GenReconMatches_NeutralHypo(const vector<co
 		cout << "START IT!" << endl;
 
 	//build inverse covariance matrix map
-	map<const DNeutralParticleHypothesis*, TMatrixFSym> locInverseCovMatrixMap;
+	map<const DNeutralParticleHypothesis*, TMatrixDSym> locInverseCovMatrixMap;
 	for(size_t loc_i = 0; loc_i < locNeutralParticleHypothesisVector.size(); ++loc_i)
 	{
 		const DNeutralParticleHypothesis* locNeutralParticleHypothesis = locNeutralParticleHypothesisVector[loc_i];
-		TMatrixFSym locInverse3x3Matrix(3);
+		TMatrixDSym locInverse3x3Matrix(3);
 		if(Calc_InverseMatrix(*(locNeutralParticleHypothesis->errorMatrix()), locInverse3x3Matrix))
 			locInverseCovMatrixMap.insert(pair<const DNeutralParticleHypothesis*, TMatrixFSym>(locNeutralParticleHypothesis, locInverse3x3Matrix));
 	}
@@ -681,7 +681,7 @@ void DMCThrownMatching_factory::Find_GenReconMatches_NeutralHypo(const vector<co
 			const DNeutralParticleHypothesis* locNeutralParticleHypothesis = locNeutralParticleHypothesisVector[loc_j];
 			if(locInverseCovMatrixMap.find(locNeutralParticleHypothesis) == locInverseCovMatrixMap.end())
 				continue;
-			TMatrixFSym& locInverse3x3Matrix = locInverseCovMatrixMap[locNeutralParticleHypothesis];
+			TMatrixDSym& locInverse3x3Matrix = locInverseCovMatrixMap[locNeutralParticleHypothesis];
 
 			double locMatchFOM = Calc_MatchFOM(locMCThrown->momentum(), locNeutralParticleHypothesis->momentum(), locInverse3x3Matrix);
 
@@ -742,7 +742,7 @@ void DMCThrownMatching_factory::Find_GenReconMatches_NeutralHypo(const vector<co
 	locMCThrownMatching->Set_ThrownToNeutralHypoMap(locThrownToNeutralMap);
 }
 
-bool DMCThrownMatching_factory::Calc_InverseMatrix(const TMatrixFSym& locInputCovarianceMatrix, TMatrixFSym& locInverse3x3Matrix) const
+bool DMCThrownMatching_factory::Calc_InverseMatrix(const TMatrixFSym& locInputCovarianceMatrix, TMatrixDSym& locInverse3x3Matrix) const
 {
 	double locTotalError = sqrt(locInputCovarianceMatrix(0, 0) + locInputCovarianceMatrix(1, 1) + locInputCovarianceMatrix(2, 2));
 	if(locTotalError >= dMaxTotalParticleErrorForMatch)
@@ -764,7 +764,7 @@ bool DMCThrownMatching_factory::Calc_InverseMatrix(const TMatrixFSym& locInputCo
 	return true;
 }
 
-double DMCThrownMatching_factory::Calc_MatchFOM(const DVector3& locMomentum_Thrown, const DVector3& locMomentum_Detected, TMatrixFSym locInverse3x3Matrix) const
+double DMCThrownMatching_factory::Calc_MatchFOM(const DVector3& locMomentum_Thrown, const DVector3& locMomentum_Detected, TMatrixDSym locInverse3x3Matrix) const
 {
 	DVector3 locDeltaP3 = locMomentum_Detected - locMomentum_Thrown;
 	TMatrix locDeltas(3, 1);

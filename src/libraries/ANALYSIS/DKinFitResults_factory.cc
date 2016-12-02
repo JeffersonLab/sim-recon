@@ -86,7 +86,8 @@ jerror_t DKinFitResults_factory::evnt(JEventLoop* locEventLoop, uint64_t eventnu
 		locParticleCombos.insert(locParticleCombos.end(), locSurvivedParticleCombos.begin(), locSurvivedParticleCombos.end());
 	}
 
-	dKinFitter->Reset_NewEvent(locEventLoop->GetJEvent().GetEventNumber());
+	dKinFitUtils->Reset_NewEvent(locEventLoop->GetJEvent().GetEventNumber());
+	dKinFitter->Reset_NewEvent();
 	for(size_t loc_i = 0; loc_i < locParticleCombos.size(); ++loc_i)
 	{
 		const DParticleCombo* locParticleCombo = locParticleCombos[loc_i];

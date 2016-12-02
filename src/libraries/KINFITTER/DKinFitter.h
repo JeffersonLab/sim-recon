@@ -105,6 +105,7 @@ class DKinFitter //purely virtual: cannot directly instantiate class, can only i
 		/************************************************************ UTILITY FUNCTIONS *************************************************************/
 
 		void Print_Matrix(const TMatrixD& locMatrix) const;
+		void Print_Matrix(const TMatrixF& locMatrix) const;
 
 		template <typename DType> set<DType*> Get_Constraints(void) const;
 		template <typename DType> set<DType*> Get_Constraints(const set<DKinFitConstraint*>& locConstraints) const;

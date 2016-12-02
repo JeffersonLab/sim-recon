@@ -113,6 +113,16 @@ void DKinFitter::Print_Matrix(const TMatrixD& locMatrix) const
 	}
 }
 
+void DKinFitter::Print_Matrix(const TMatrixF& locMatrix) const
+{
+	for(int loc_i = 0; loc_i < locMatrix.GetNrows(); ++loc_i)
+	{
+		for(int loc_j = 0; loc_j < locMatrix.GetNcols(); ++loc_j)
+			cout << locMatrix(loc_i, loc_j) << ", ";
+		cout << endl;
+	}
+}
+
 bool DKinFitter::Get_IsConstrainingVertex(DKinFitParticle* locKinFitParticle) const
 {
 	set<DKinFitConstraint_Vertex*> locConstraints = Get_Constraints<DKinFitConstraint_Vertex>(locKinFitParticle);
@@ -2612,7 +2622,7 @@ void DKinFitter::Set_FinalTrackInfo(void)
 			}
 			else //need to expand error matrix
 			{
-				TMatrixFSym locTempCovarianceMatrix(dNumEta + dNumXi + 3*locAdditionalPxParamIndices.size());
+				TMatrixDSym locTempCovarianceMatrix(dNumEta + dNumXi + 3*locAdditionalPxParamIndices.size());
 				locTempCovarianceMatrix.SetSub(0, dV); //insert dV
 
 				//insert p3 covariance matrices of additional particles
@@ -2620,9 +2630,13 @@ void DKinFitter::Set_FinalTrackInfo(void)
 				for(; locPxParamIterator != locAdditionalPxParamIndices.end(); ++locPxParamIterator)
 				{
 					int locPxParamIndex = locPxParamIterator->second;
-					TMatrixDSym locAdditionalCovMatrix(3);
+					TMatrixFSym locAdditionalCovMatrix(3);
 					locAdditionalCovMatrix = locPxParamIterator->first->Get_CovarianceMatrix()->GetSub(0, 2, locAdditionalCovMatrix);
-					locTempCovarianceMatrix.SetSub(locPxParamIndex, locAdditionalCovMatrix);
+					for(int loc_q = 0; loc_q < 3; ++loc_q)
+					{
+						for(int loc_r = 0; loc_r < 3; ++loc_r)
+							locTempCovarianceMatrix(loc_q + locPxParamIndex, loc_r + locPxParamIndex) = locAdditionalCovMatrix(loc_q, loc_r);
+					}
 				}
 
 				if(dDebugLevel >= 50)
@@ -2632,7 +2646,12 @@ void DKinFitter::Set_FinalTrackInfo(void)
 				}
 
 				//transform errors and set
-				locCovarianceMatrix = locTempCovarianceMatrix.Similarity(locJacobian);
+				locTempCovarianceMatrix.Similarity(locJacobian);
+				for(int loc_q = 0; loc_q < 7; ++loc_q)
+				{
+					for(int loc_r = 0; loc_r < 7; ++loc_r)
+						locCovarianceMatrix(loc_q, loc_r) = locTempCovarianceMatrix(loc_q, loc_r);
+				}
 			}
 
 			if(dDebugLevel >= 50)

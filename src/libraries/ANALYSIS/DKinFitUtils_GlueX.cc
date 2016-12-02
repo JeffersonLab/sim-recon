@@ -40,7 +40,7 @@ void DKinFitUtils_GlueX::Set_MaxPoolSizes(size_t locNumReactions, size_t locExpe
 	Set_MaxKinFitChainPoolSize(locNumReactions*locExpectedNumCombos);
 	Set_MaxKinFitChainStepPoolSize(3*locNumReactions*locExpectedNumCombos);
 
-	Set_MaxMatrixDSymPoolSize(10*locNumReactions*locExpectedNumCombos*2*5); //extra x5: to be safe
+	Set_MaxSymMatrixPoolSize(10*locNumReactions*locExpectedNumCombos*2*5); //extra x5: to be safe
 }
 
 /*********************************************************** OVERRIDE BASE CLASS FUNCTIONS *********************************************************/
@@ -108,7 +108,7 @@ DKinFitParticle* DKinFitUtils_GlueX::Make_BeamParticle(const DBeamPhoton* locBea
 	Particle_t locPID = locBeamPhoton->PID();
 
 	DKinFitParticle* locKinFitParticle = DKinFitUtils::Make_BeamParticle(PDGtype(locPID), ParticleCharge(locPID), ParticleMass(locPID), 
-		locSpacetimeVertex, locMomentum, &(locBeamPhoton->errorMatrix()));
+		locSpacetimeVertex, locMomentum, locBeamPhoton->errorMatrix());
 	dParticleMap_SourceToInput_Beam[locSourcePair] = locKinFitParticle;
 	dParticleMap_InputToSource_JObject[locKinFitParticle] = locBeamPhoton;
 	return locKinFitParticle;
@@ -126,17 +126,18 @@ DKinFitParticle* DKinFitUtils_GlueX::Make_BeamParticle(const DBeamPhoton* locBea
 	Particle_t locPID = locBeamPhoton->PID();
 
 	//set rf time variance in covariance matrix
-	TMatrixFSym locCovarianceMatrix = locBeamPhoton->errorMatrix();
-	locCovarianceMatrix(6, 6) = locEventRFBunch->dTimeVariance;
+	TMatrixFSym* locCovarianceMatrix = Get_SymMatrixResource(7);
+	*locCovarianceMatrix = *(locBeamPhoton->errorMatrix());
+	(*locCovarianceMatrix)(6, 6) = locEventRFBunch->dTimeVariance;
 	//zero the correlation terms
 	for(int loc_i = 0; loc_i < 6; ++loc_i)
 	{
-		locCovarianceMatrix(6, loc_i) = 0.0;
-		locCovarianceMatrix(loc_i, 6) = 0.0;
+		(*locCovarianceMatrix)(6, loc_i) = 0.0;
+		(*locCovarianceMatrix)(loc_i, 6) = 0.0;
 	}
 
 	DKinFitParticle* locKinFitParticle = DKinFitUtils::Make_BeamParticle(PDGtype(locPID), ParticleCharge(locPID), ParticleMass(locPID), 
-		locSpacetimeVertex, locMomentum, &locCovarianceMatrix);
+		locSpacetimeVertex, locMomentum, locCovarianceMatrix);
 	dParticleMap_SourceToInput_Beam[locSourcePair] = locKinFitParticle;
 	dParticleMap_InputToSource_JObject[locKinFitParticle] = locBeamPhoton;
 	return locKinFitParticle;
@@ -152,7 +153,7 @@ DKinFitParticle* DKinFitUtils_GlueX::Make_DetectedParticle(const DKinematicData*
 	Particle_t locPID = locKinematicData->PID();
 
 	DKinFitParticle* locKinFitParticle = DKinFitUtils::Make_DetectedParticle(PDGtype(locPID), ParticleCharge(locPID), ParticleMass(locPID), 
-		locSpacetimeVertex, locMomentum, &(locKinematicData->errorMatrix()));
+		locSpacetimeVertex, locMomentum, locKinematicData->errorMatrix());
 	dParticleMap_SourceToInput_DetectedParticle[locKinematicData] = locKinFitParticle;
 	dParticleMap_InputToSource_JObject[locKinFitParticle] = locKinematicData;
 	return locKinFitParticle;
@@ -186,7 +187,7 @@ DKinFitParticle* DKinFitUtils_GlueX::Make_DetectedShower(const DNeutralShower* l
 	//use DNeutralShower object (doesn't make assumption about vertex!)
 	TLorentzVector locShowerSpacetime = Make_TLorentzVector(locNeutralShower->dSpacetimeVertex);
 	DKinFitParticle* locKinFitParticle = DKinFitUtils::Make_DetectedShower(PDGtype(locPID), ParticleMass(locPID), locShowerSpacetime, 
-		locNeutralShower->dEnergy, &(locNeutralShower->dCovarianceMatrix));
+		locNeutralShower->dEnergy, &locNeutralShower->dCovarianceMatrix);
 
 	dParticleMap_SourceToInput_Shower[locSourcePair] = locKinFitParticle;
 	dParticleMap_InputToSource_JObject[locKinFitParticle] = locNeutralShower;
@@ -1265,7 +1266,7 @@ bool DKinFitUtils_GlueX::Propagate_TrackInfoToCommonVertex(DKinematicData* locKi
 	TVector3 locMomentum;
 	TLorentzVector locSpacetimeVertex;
 	pair<double, double> locPathLengthPair;
-	TMatrixFSym* locCovarianceMatrix = Get_MatrixDSymResource(7);
+	TMatrixFSym* locCovarianceMatrix = Get_SymMatrixResource(7);
 	if(!DKinFitUtils::Propagate_TrackInfoToCommonVertex(locKinFitParticle, locVXi, locMomentum, locSpacetimeVertex, locPathLengthPair, *locCovarianceMatrix))
 		return false;
 

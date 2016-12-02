@@ -482,31 +482,10 @@ void DReferenceTrajectory::FastSwim(const DVector3 &pos, const DVector3 &mom, do
   // coordinate system at each point.
 }
 
-
-
 //---------------------------------
 // Swim
 //---------------------------------
 void DReferenceTrajectory::Swim(const DVector3 &pos, const DVector3 &mom, double q, const TMatrixFSym *cov,double smax, const DCoordinateSystem *wire)
-{
-	if(cov == NULL) //oops, go to the other one
-		Swim(pos, mom, q, (const DMatrixDSym*)NULL, smax, wire);
-
-	//build a DMatrixDSym and swim
-	DMatrixDSym loc7x7CovMatrix(cov->GetNrows());
-	for(int loc_i = 0; loc_i < cov->GetNrows(); ++loc_i)
-	{
-		for(int loc_j = 0; loc_j < cov->GetNrows(); ++loc_j)
-			loc7x7CovMatrix(loc_i, loc_j) = (*cov)(loc_i, loc_j);
-	}
-
-	Swim(pos, mom, q, &loc7x7CovMatrix, smax, wire);
-}
-
-//---------------------------------
-// Swim
-//---------------------------------
-void DReferenceTrajectory::Swim(const DVector3 &pos, const DVector3 &mom, double q, const DMatrixDSym *cov,double smax, const DCoordinateSystem *wire)
 {
         /// (Re)Swim the trajectory starting from pos with momentum mom.
 	/// This will use the charge and step size (if given) passed to
@@ -534,7 +513,7 @@ void DReferenceTrajectory::Swim(const DVector3 &pos, const DVector3 &mom, double
 	swim_step_t *last_step=NULL;
 	double old_radius_sq=1e6;
 	
-	DMatrixDSym mycov(7);
+	TMatrixFSym mycov(7);
 	if (cov!=NULL){
 	  mycov=*cov;
 	}

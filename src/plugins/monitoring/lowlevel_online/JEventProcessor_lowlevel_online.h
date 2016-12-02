@@ -34,7 +34,7 @@ class JEventProcessor_lowlevel_online:public jana::JEventProcessor{
         bool ANALYZE_F250_DATA;
         vector<int> Nstraws_integrated;
 
-	int F250_THRESHOLD;
+        uint32_t F250_THRESHOLD;
 
 		//------------------------ BCAL -----------------------
         TH1I *bcal_adc_multi;

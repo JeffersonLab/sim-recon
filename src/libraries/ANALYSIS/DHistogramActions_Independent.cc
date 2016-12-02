@@ -234,9 +234,9 @@ bool DHistogramAction_ObjectMemory::Perform_Action(JEventLoop* locEventLoop, con
 
 		//TMatrixDSym_KinFitter
 		locBin = dFactoryPoolBinMap["TMatrixDSym_KinFitter"];
-		locNumObjectsMap[locBin] = locKinFitResultsFactory->Get_MatrixDSymPoolSize();
+		locNumObjectsMap[locBin] = locKinFitResultsFactory->Get_SymMatrixPoolSize();
 		locNumObjectsMap[locBin] = 1;
-		locMemory = (sizeof(TMatrixDSym) + 7*7*8)*locKinFitResultsFactory->Get_MatrixDSymPoolSize(); //assume 7x7 matrix of doubles (8)
+		locMemory = (sizeof(TMatrixDSym) + 7*7*8)*locKinFitResultsFactory->Get_SymMatrixPoolSize(); //assume 7x7 matrix of doubles (8)
 		locMemoryMap[locBin] = locMemory;
 		locTotalMemory += double(locMemory);
 

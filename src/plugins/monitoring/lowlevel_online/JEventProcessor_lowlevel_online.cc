@@ -406,7 +406,7 @@ jerror_t JEventProcessor_lowlevel_online::init(void)
         tagm_adc_multi = new TH1I("tagm_adc_multi", "TAGM ADC Multiplicity", 50, 0, 50);
         tagm_tdc_multi = new TH1I("tagm_tdc_multi", "TAGM TDC Multiplicity", 50, 0, 50);
 
-        const uint32_t NCOLUMNS = 102;
+        //const uint32_t NCOLUMNS = 102;
         tagm_adc_integral = new TH1I("tagm_adc_integral", "TAGM fADC250 Pulse Integral;Integral (fADC counts)", 1000, 0, 40000);
         tagm_adc_integral_pedsub = new TH1I("tagm_adc_integral_pedsub", "TAGM fADC250 Pulse Integral (Pedestal Subtracted);Integral (fADC counts)", 1000, 0, 40000);
         tagm_adc_peak = new TH1I("tagm_adc_peak", "TAGM fADC250 Pulse Peak;Peak (fADC counts)", 500, 0, 1000);

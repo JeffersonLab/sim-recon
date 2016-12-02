@@ -11,6 +11,8 @@
 #include <deque>
 #include <map>
 
+#include "TMatrixFSym.h"
+
 #include <JANA/jerror.h>
 #include <JANA/JApplication.h>
 using namespace jana;

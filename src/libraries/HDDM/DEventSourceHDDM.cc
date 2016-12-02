@@ -1095,19 +1095,12 @@ jerror_t DEventSourceHDDM::Extract_DMCReaction(hddm_s::HDDM *record,
          mcreaction->beam.setCharge(beam.getProperties().getCharge());
          mcreaction->target.setPID(IDTrack(mcreaction->beam.charge(),
                                            mcreaction->beam.mass()));
-         mcreaction->beam.clearErrorMatrix();
          mcreaction->beam.setTime(torig - (zorig - locTargetCenterZ)/29.9792458);
       }
       else {
          // fake values for DMCReaction
-         DVector3 mom(0.0, 0.0, 0.0);
          mcreaction->beam.setPosition(locPosition);
-         mcreaction->beam.setMomentum(mom);
          mcreaction->beam.setPID(Gamma);
-         mcreaction->beam.setMass(0.0);
-         mcreaction->beam.setCharge(0.0);
-         mcreaction->beam.clearErrorMatrix();
-         mcreaction->beam.setTime(0.0);
       }
 
       const hddm_s::TargetList &targets = record->getTargets();
@@ -1123,19 +1116,11 @@ jerror_t DEventSourceHDDM::Extract_DMCReaction(hddm_s::HDDM *record,
          mcreaction->target.setCharge(target.getProperties().getCharge());
          mcreaction->target.setPID(IDTrack(mcreaction->target.charge(),
                                            mcreaction->target.mass()));
-         mcreaction->target.clearErrorMatrix();
          mcreaction->target.setTime(torig - (zorig - locTargetCenterZ)/29.9792458);
       }
       else {
          // fake values for DMCReaction
-         DVector3 mom(0.0, 0.0, 0.0);
          mcreaction->target.setPosition(locPosition);
-         mcreaction->target.setMomentum(mom);
-         mcreaction->target.setPID(Unknown);
-         mcreaction->target.setMass(0.0);
-         mcreaction->target.setCharge(0.0);
-         mcreaction->target.clearErrorMatrix();
-         mcreaction->target.setTime(0.0);
       }
    }
    
@@ -2233,7 +2218,7 @@ jerror_t DEventSourceHDDM::Extract_DTrackTimeBased(hddm_s::HDDM *record,
       if (rt) {
          rt->SetMass(track->mass());
          rt->SetDGeometry(geom);
-         rt->Swim(pos, mom, track->charge(),&errMatrix);
+         rt->Swim(pos, mom, track->charge(),locCovarianceMatrix);
          rts.push_back(rt);
       }
       track->rt = rt;

@@ -100,7 +100,6 @@ class DReferenceTrajectory{
 		swim_step_t* FindClosestSwimStep(const DVector3 &origin, DVector3 norm, int *istep_ptr=NULL) const;
 		swim_step_t* FindPlaneCrossing(const DVector3 &origin, DVector3 norm,int first_i=0, DetectorSystem_t detector=SYS_NULL) const;
 		void Swim(const DVector3 &pos, const DVector3 &mom, double q=-1000.0,const TMatrixFSym *cov=NULL, double smax=2000.0, const DCoordinateSystem *wire=NULL);
-		void Swim(const DVector3 &pos, const DVector3 &mom, double q=-1000.0,const DMatrixDSym *cov=NULL, double smax=2000.0, const DCoordinateSystem *wire=NULL);
 		void FastSwim(const DVector3 &pos, const DVector3 &mom, double q,double smax=2000.0, double zmin=-100.,double zmax=1000.0);
 
 

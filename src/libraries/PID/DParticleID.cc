@@ -1847,7 +1847,7 @@ double DParticleID::Calc_TimingChiSq(const DKinematicData* locKinematicData, uns
 	}
 
 	double locStartTimeError = locKinematicData->t0_err();
-	double locTimeDifferenceVariance = (locKinematicData->errorMatrix())(6, 6) + locStartTimeError*locStartTimeError;
+	double locTimeDifferenceVariance = (*locKinematicData->errorMatrix())(6, 6) + locStartTimeError*locStartTimeError;
 	locPull = (locKinematicData->t0() - locKinematicData->time())/sqrt(locTimeDifferenceVariance);
 	locNDF = 1;
 	return locPull*locPull;

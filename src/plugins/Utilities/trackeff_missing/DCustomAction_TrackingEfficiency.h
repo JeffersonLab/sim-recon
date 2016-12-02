@@ -49,7 +49,7 @@ class DCustomAction_TrackingEfficiency : public DAnalysisAction
 	private:
 
 		bool Perform_Action(JEventLoop* locEventLoop, const DParticleCombo* locParticleCombo);
-		double Calc_MatchFOM(const DVector3& locDeltaP3, TMatrixFSym locInverse3x3Matrix) const;
+		double Calc_MatchFOM(const DVector3& locDeltaP3, TMatrixDSym locInverse3x3Matrix) const;
 
 		Particle_t dMissingPID;
 

@@ -102,7 +102,8 @@ jerror_t DVertex_factory::evnt(JEventLoop* locEventLoop, uint64_t eventnumber)
 		return Create_Vertex_Rough(locRoughPosition, locEventRFBunch);
 
 	//prepare for kinematic fit
-	dKinFitter->Reset_NewEvent(locEventLoop->GetJEvent().GetEventNumber());
+	dKinFitUtils->Reset_NewEvent(locEventLoop->GetJEvent().GetEventNumber());
+	dKinFitter->Reset_NewEvent();
 	TVector3 locTRoughPosition(locRoughPosition.X(), locRoughPosition.Y(), locRoughPosition.Z());
 
 	// create particles for kinematic fit

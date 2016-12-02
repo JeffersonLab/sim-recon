@@ -34,6 +34,7 @@
 #include <TAGGER/DTAGMGeometry.h>
 #include <TAGGER/DTAGHGeometry.h>
 
+#include <TMatrixF.h>
 #include <DMatrix.h>
 #include <TMath.h>
 
