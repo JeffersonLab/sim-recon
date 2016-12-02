@@ -1730,10 +1730,47 @@ double TensorCrossSection(TLorentzVector &q /* beam */,
 			      *temp2*temp2
 			      +2.*(p1_dot_k*p2_dot_dk+p1_dot_dk*p2_dot_k
 				   +k_dot_dk*(m_p_sq-p1_dot_p2))*temp1*temp2);
-  double N2_12=0.;
-  double N2_13=0.;
+  double N2_12
+    =4.*q_dot_dp*(one_third_two_third_fac*q_dot_k*dp_dot_k+q_dot_dk*dp_dot_dk
+		 -k_dot_dk/k_sq*(q_dot_k*dp_dot_dk+q_dot_dk*dp_dot_k))
+    *((p1_dot_dk*p2.Px()+dk.Px()*(m_p_sq-p1_dot_p2))*(dk.Px()-k.Px()*k_dot_dk/k_sq)
+      +(p1_dot_k*p2.Px()+k.Px()*(m_p_sq-p1_dot_p2))
+      *(one_third_two_third_fac*k.Px()-k_dot_dk/k_sq*dk.Px())
+      +(p1_dot_dk*p2.Py()+dk.Py()*(m_p_sq-p1_dot_p2))*(dk.Py()-k.Py()*k_dot_dk/k_sq)
+      +(p1_dot_k*p2.Py()+k.Py()*(m_p_sq-p1_dot_p2))
+      *(one_third_two_third_fac*k.Py()-k_dot_dk/k_sq*dk.Py())
+      );
+  double N2_13
+    =4.*q_dot_dp*((one_third_two_third_fac*dp_dot_k*k.Px()+dp_dot_dk*dk.Px()
+		   -k_dot_dk/dk_sq*(dp_dot_dk*k.Px()+dp_dot_k*dk.Px()))
+		  *((p1_dot_dk*q_dot_p2+p2_dot_dk*q_dot_p1
+		     +q_dot_dk*(m_p_sq-p1_dot_p2))
+		    *(dk.Px()-k.Px()*k_dot_dk/k_sq)
+		    +(p1_dot_k*q_dot_p2+p2_dot_k*q_dot_p1
+		     +q_dot_k*(m_p_sq-p1_dot_p2))
+		    *(one_third_two_third_fac*k.Px()-dk.Px()*k_dot_dk/k_sq))
+		  +(one_third_two_third_fac*dp_dot_k*k.Py()+dp_dot_dk*dk.Py()
+		   -k_dot_dk/dk_sq*(dp_dot_dk*k.Py()+dp_dot_k*dk.Py()))
+		  *((p1_dot_dk*q_dot_p2+p2_dot_dk*q_dot_p1
+		     +q_dot_dk*(m_p_sq-p1_dot_p2))
+		    *(dk.Py()-k.Py()*k_dot_dk/k_sq)
+		    +(p1_dot_k*q_dot_p2+p2_dot_k*q_dot_p1
+		     +q_dot_k*(m_p_sq-p1_dot_p2))
+		    *(one_third_two_third_fac*k.Py()-dk.Py()*k_dot_dk/k_sq))
+		  );
   double N2_14=0.;
-  double N2_15=0.;
+  double N2_15=(8./3.)*q_dot_dp*(dk_sq-k_dot_dk*k_dot_dk/k_sq)
+    *(((m_p_sq-p1_dot_p2)*(q_dot_dp*dk.Px()+q_dot_dk*p2.Px())
+       +p2.Px()*q_dot_p1*(p1_dot_dk+p2_dot_dk))*(dk.Px()-k.Px()*k_dot_dk/k_sq)
+      +((m_p_sq-p1_dot_p2)*(q_dot_dp*k.Px()+q_dot_k*p2.Px())
+	+p2.Px()*q_dot_p1*(p1_dot_k+p2_dot_k))
+      *(one_third_two_third_fac*k.Px()-dk.Px()*k_dot_dk/k_sq)
+      +((m_p_sq-p1_dot_p2)*(q_dot_dp*dk.Py()+q_dot_dk*p2.Py())
+       +p2.Py()*q_dot_p1*(p1_dot_dk+p2_dot_dk))*(dk.Py()-k.Py()*k_dot_dk/k_sq)
+      +((m_p_sq-p1_dot_p2)*(q_dot_dp*k.Py()+q_dot_k*p2.Py())
+	+p2.Py()*q_dot_p1*(p1_dot_k+p2_dot_k))
+      *(one_third_two_third_fac*k.Py()-dk.Py()*k_dot_dk/k_sq)
+      );
   double N2_23=4.*q_dot_p1*(q_dot_dk*dp_dot_dk
 			   +one_third_two_third_fac*q_dot_k*dp_dot_k
 			   -k_dot_dk/k_sq*(q_dot_k*dp_dot_dk+q_dot_dk*dp_dot_k))
@@ -1742,9 +1779,24 @@ double TensorCrossSection(TLorentzVector &q /* beam */,
       +p2.Py()*(dp_dot_dk*dk.Py()-k_dot_dk/k_sq*(dp_dot_dk*k.Py()+dp_dot_k*dk.Py())
 		+one_third_two_third_fac*dp_dot_k*k.Py())
       );
-  double N2_24=0.;
-  double N2_25=0.;
-  double N2_34=4.*((q_dot_p2*p1_dot_dk+q_dot_p1*p2_dot_dk
+  double N2_24
+    =-4.*(q_dot_dk*dp_dot_dk-k_dot_dk/k_sq*(q_dot_k*dp_dot_dk+q_dot_dk*dp_dot_k)
+	  +one_third_two_third_fac*q_dot_k*dp_dot_k)
+    *(p2.Px()*((p2.Px()*p1_dot_dk+dk.Px()*(m_p_sq-p1_dot_p2))
+	       *(q_dot_dk-q_dot_k*k_dot_dk/k_sq)
+	       +(p2.Px()*p1_dot_k+k.Px()*(m_p_sq-p1_dot_p2))
+	       *(one_third_two_third_fac*q_dot_k-q_dot_dk*k_dot_dk/k_sq))
+      +p2.Py()*((p2.Py()*p1_dot_dk+dk.Py()*(m_p_sq-p1_dot_p2))
+	       *(q_dot_dk-q_dot_k*k_dot_dk/k_sq)
+	       +(p2.Py()*p1_dot_k+k.Py()*(m_p_sq-p1_dot_p2))
+	       *(one_third_two_third_fac*q_dot_k-q_dot_dk*k_dot_dk/k_sq))
+      );
+  double N2_25=2.*q_dot_p1*(q_dot_dk*dp_dot_dk
+			    -k_dot_dk*(q_dot_dk*dp_dot_k+q_dot_k*dp_dot_dk)
+			    +one_third_two_third_fac*q_dot_k*dp_dot_k)
+    *(dk_sq-2.*k_dot_dk*k_dot_dk/k_sq+k_sq*one_third_two_third_fac)
+    *(2.*(m_p_sq-p1_dot_p2)+p2.Perp2());
+  double N2_34=-4.*((q_dot_p2*p1_dot_dk+q_dot_p1*p2_dot_dk
 		    +q_dot_dk*(m_p_sq-p1_dot_p2))
 		   *(q_dot_dk-k_dot_dk/k_sq*q_dot_k)
 		   +(q_dot_p2*p1_dot_k+q_dot_p1*p2_dot_k
@@ -1762,8 +1814,20 @@ double TensorCrossSection(TLorentzVector &q /* beam */,
       +p2.Py()*(dp_dot_dk*dk.Py()-k_dot_dk/k_sq*(dp_dot_dk*k.Py()+dp_dot_k*dk.Py())
 	       +one_third_two_third_fac*dp_dot_k*k.Py())
       );
-  double N2_45=0.;
-  
+  double N2_45=-(8./3.)*(dk_sq-k_dot_dk*k_dot_dk/k_sq)
+    *(p2.Px()*(p2.Px()*(q_dot_dp*p1_dot_dk+q_dot_p1*p2_dot_dk+q_dot_p2*p1_dot_dk
+			+(m_p_sq-p1_dot_p2)*(q_dot_dp*dk.Px()+q_dot_dk*p2.Px()))
+	       *(q_dot_dk-q_dot_k*k_dot_dk/k_sq)
+	       +p2.Px()*(q_dot_dp*p1_dot_k+q_dot_p1*p2_dot_k+q_dot_p2*p1_dot_k
+			+(m_p_sq-p1_dot_p2)*(q_dot_dp*k.Px()+q_dot_k*p2.Px()))
+	       *(one_third_two_third_fac*q_dot_k-q_dot_dk*k_dot_dk/k_sq))
+      +p2.Py()*(p2.Py()*(q_dot_dp*p1_dot_dk+q_dot_p1*p2_dot_dk+q_dot_p2*p1_dot_dk
+			 +(m_p_sq-p1_dot_p2)*(q_dot_dp*dk.Py()+q_dot_dk*p2.Py()))
+		*(q_dot_dk-q_dot_k*k_dot_dk/k_sq)
+		+p2.Py()*(q_dot_dp*p1_dot_k+q_dot_p1*p2_dot_k+q_dot_p2*p1_dot_k
+			  +(m_p_sq-p1_dot_p2)*(q_dot_dp*k.Py()+q_dot_k*p2.Py()))
+		*(one_third_two_third_fac*q_dot_k-q_dot_dk*k_dot_dk/k_sq))	
+      );
   double N2sq=N2_11+N2_22+N2_33+N2_44+N2_55
     +2.*(N2_12+N2_13+N2_14+N2_15+N2_23+N2_24+N2_25+N2_34+N2_35+N2_45);
 
