@@ -1758,7 +1758,28 @@ double TensorCrossSection(TLorentzVector &q /* beam */,
 		     +q_dot_k*(m_p_sq-p1_dot_p2))
 		    *(one_third_two_third_fac*k.Py()-dk.Py()*k_dot_dk/k_sq))
 		  );
-  double N2_14=0.;
+  double tempkx1=dk.Px()-k.Px()*k_dot_dk/k_sq;
+  double tempky1=dk.Py()-k.Py()*k_dot_dk/k_sq;
+  double tempkx2=one_third_two_third_fac*k.Px()-dk.Px()*k_dot_dk/k_sq;
+  double tempky2=one_third_two_third_fac*k.Py()-dk.Py()*k_dot_dk/k_sq;
+  double tempqk1=q_dot_dk-q_dot_k*k_dot_dk/k_sq;
+  double tempqk2=one_third_two_third_fac*q_dot_k-q_dot_dk*k_dot_dk/k_sq;  
+  double N2_14
+    =-4.*q_dot_dp*(p2.Px()*((2.*p1_dot_dk*p2_dot_dk+dk_sq*(m_p_sq-p1_dot_p2))
+			    *tempkx1*tempqk1
+			    +(2.*p1_dot_k*p2_dot_k+k_sq*(m_p_sq-p1_dot_p2))
+			    *tempkx2*tempqk2
+			    +(p1_dot_dk*p2_dot_k+p1_dot_k*p2_dot_dk
+			      +k_dot_dk*(m_p_sq-p1_dot_p2))
+			    *(tempqk1*tempkx2+tempkx1*tempqk2))
+		   +p2.Py()*((2.*p1_dot_dk*p2_dot_dk+dk_sq*(m_p_sq-p1_dot_p2))
+			    *tempky1*tempqk1
+			    +(2.*p1_dot_k*p2_dot_k+k_sq*(m_p_sq-p1_dot_p2))
+			    *tempky2*tempqk2
+			    +(p1_dot_dk*p2_dot_k+p1_dot_k*p2_dot_dk
+			      +k_dot_dk*(m_p_sq-p1_dot_p2))
+			    *(tempqk1*tempky2+tempky1*tempqk2))
+		   );
   double N2_15=(8./3.)*q_dot_dp*(dk_sq-k_dot_dk*k_dot_dk/k_sq)
     *(((m_p_sq-p1_dot_p2)*(q_dot_dp*dk.Px()+q_dot_dk*p2.Px())
        +p2.Px()*q_dot_p1*(p1_dot_dk+p2_dot_dk))*(dk.Px()-k.Px()*k_dot_dk/k_sq)
