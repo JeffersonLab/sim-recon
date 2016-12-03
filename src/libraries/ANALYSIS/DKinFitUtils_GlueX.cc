@@ -717,10 +717,10 @@ void DKinFitUtils_GlueX::Construct_DetectedDecayingParticle_NoFit(DKinFitConstra
 
 		//create a new one
 		TLorentzVector locP4 = Calc_DecayingP4_ByP3Derived(locInputKinFitParticle, true, true);
-		TMatrixFSym locCovarianceMatrix(7);
-		locCovarianceMatrix(0, 0) = -1.0; //signal that you shouldn't do fits that need this particle
+		TMatrixFSym* locCovarianceMatrix = Get_SymMatrixResource(7);
+		(*locCovarianceMatrix)(0, 0) = -1.0; //signal that you shouldn't do fits that need this particle
 		DKinFitParticle* locDetectedKinFitParticle = Make_DetectedParticle(locInputKinFitParticle->Get_PID(), 
-			locInputKinFitParticle->Get_Charge(), locInputKinFitParticle->Get_Mass(), locSpacetimeVertexGuess, locP4.Vect(), &locCovarianceMatrix);
+			locInputKinFitParticle->Get_Charge(), locInputKinFitParticle->Get_Mass(), locSpacetimeVertexGuess, locP4.Vect(), locCovarianceMatrix);
 
 		//register it
 		locDecayingToDetectedParticleMap[locInputKinFitParticle] = locDetectedKinFitParticle;

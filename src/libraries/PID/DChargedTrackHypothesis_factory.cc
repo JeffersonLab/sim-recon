@@ -85,16 +85,18 @@ jerror_t DChargedTrackHypothesis_factory::evnt(jana::JEventLoop* locEventLoop, u
 DChargedTrackHypothesis* DChargedTrackHypothesis_factory::Create_ChargedTrackHypothesis(JEventLoop* locEventLoop, const DTrackTimeBased* locTrackTimeBased, const DDetectorMatches* locDetectorMatches, const DEventRFBunch* locEventRFBunch) const
 {
 	DChargedTrackHypothesis* locChargedTrackHypothesis = new DChargedTrackHypothesis();
-	locChargedTrackHypothesis->AddAssociatedObject(locTrackTimeBased);
-	locChargedTrackHypothesis->candidateid = locTrackTimeBased->candidateid;
-
-	// Chi square and degree-of-freedom data from the track fit
-	locChargedTrackHypothesis->dChiSq_Track = locTrackTimeBased->chisq;
-	locChargedTrackHypothesis->dNDF_Track = locTrackTimeBased->Ndof;
 
 	//Set DKinematicData Members
 	DKinematicData *locKinematicData = locChargedTrackHypothesis;
 	*locKinematicData = *(static_cast<const DKinematicData*>(locTrackTimeBased));
+
+	// Add associated object
+	locChargedTrackHypothesis->AddAssociatedObject(locTrackTimeBased);
+
+	// Set tracking info
+	locChargedTrackHypothesis->candidateid = locTrackTimeBased->candidateid;
+	locChargedTrackHypothesis->dChiSq_Track = locTrackTimeBased->chisq;
+	locChargedTrackHypothesis->dNDF_Track = locTrackTimeBased->Ndof;
 
 	uint64_t locEventNumber = locEventLoop->GetJEvent().GetEventNumber();
 	TMatrixFSym* locCovarianceMatrix = (dynamic_cast<DApplication*>(japp))->Get_CovarianceMatrixResource(7, locEventNumber);

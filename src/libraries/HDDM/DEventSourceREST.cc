@@ -452,6 +452,8 @@ jerror_t DEventSourceREST::Extract_DBeamPhoton(hddm_r::HDDM *record,
       return OBJECT_NOT_AVAILABLE;
    const DTAGMGeometry* tagmGeom = tagmGeomVect[0];
 
+   uint64_t locEventNumber = eventLoop->GetJEvent().GetEventNumber();
+
    if(tag == "MCGEN")
 	{
 		vector<const DMCReaction*> dmcreactions;
@@ -500,6 +502,10 @@ jerror_t DEventSourceREST::Extract_DBeamPhoton(hddm_r::HDDM *record,
 		gamma->setTime(locTAGMiter->getT());
 		gamma->setT0(locTAGMiter->getT(), 0.200, SYS_TAGM);
 
+		TMatrixFSym* loc7x7ErrorMatrix = (dynamic_cast<DApplication*>(japp))->Get_CovarianceMatrixResource(7, locEventNumber);
+		loc7x7ErrorMatrix->Zero();
+		gamma->setErrorMatrix(loc7x7ErrorMatrix);
+
         tagmGeom->E_to_column(locTAGMiter->getE(), gamma->dCounter);
 		dbeam_photons.push_back(gamma);
    }
@@ -522,6 +528,10 @@ jerror_t DEventSourceREST::Extract_DBeamPhoton(hddm_r::HDDM *record,
 		gamma->setMass(0);
 		gamma->setTime(locTAGHiter->getT());
 		gamma->setT0(locTAGHiter->getT(), 0.350, SYS_TAGH);
+
+		TMatrixFSym* loc7x7ErrorMatrix = (dynamic_cast<DApplication*>(japp))->Get_CovarianceMatrixResource(7, locEventNumber);
+		loc7x7ErrorMatrix->Zero();
+		gamma->setErrorMatrix(loc7x7ErrorMatrix);
 
 		taghGeom->E_to_counter(locTAGHiter->getE(), gamma->dCounter);
 		dbeam_photons.push_back(gamma);

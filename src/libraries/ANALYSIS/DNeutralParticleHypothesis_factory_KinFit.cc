@@ -97,17 +97,17 @@ jerror_t DNeutralParticleHypothesis_factory_KinFit::evnt(jana::JEventLoop* locEv
 DNeutralParticleHypothesis* DNeutralParticleHypothesis_factory_KinFit::Build_NeutralParticleHypothesis(const DNeutralParticleHypothesis* locNeutralParticleHypothesis, DKinFitParticle* locKinFitParticle, const DNeutralShower* locNeutralShower, const DParticleCombo* locParticleCombo)
 {
 	DNeutralParticleHypothesis* locNewNeutralParticleHypothesis = new DNeutralParticleHypothesis(*locNeutralParticleHypothesis);
-	locNewNeutralParticleHypothesis->AddAssociatedObject(locNeutralParticleHypothesis);
-	locNewNeutralParticleHypothesis->AddAssociatedObject(locNeutralShower);
 
+	//remove associated objects of type DChargedTrackHypothesis //won't be able to keep track of which is which!
  	vector<const JObject*> locObjects;
-	locNeutralParticleHypothesis->GetT(locObjects);
+ 	locNeutralParticleHypothesis->GetT(locObjects);
 	for(size_t loc_i = 0; loc_i < locObjects.size(); ++loc_i)
 	{
 		if(dynamic_cast<const DNeutralParticleHypothesis*>(locObjects[loc_i]) != NULL)
-			continue; //don't save: won't be able to keep track of which is which! (combo or default factory)
-		locNewNeutralParticleHypothesis->AddAssociatedObject(locObjects[loc_i]);
+			locNewNeutralParticleHypothesis->RemoveAssociatedObject(locObjects[loc_i]);
 	}
+	locNewNeutralParticleHypothesis->AddAssociatedObject(locNeutralParticleHypothesis);
+	locNewNeutralParticleHypothesis->AddAssociatedObject(locNeutralShower);
 
 	locNewNeutralParticleHypothesis->setMomentum(DVector3(locKinFitParticle->Get_Momentum().X(),locKinFitParticle->Get_Momentum().Y(),locKinFitParticle->Get_Momentum().Z()));
 	locNewNeutralParticleHypothesis->setPosition(DVector3(locKinFitParticle->Get_CommonVertex().X(),locKinFitParticle->Get_CommonVertex().Y(),locKinFitParticle->Get_CommonVertex().Z()));
@@ -163,5 +163,3 @@ jerror_t DNeutralParticleHypothesis_factory_KinFit::fini(void)
 {
 	return NOERROR;
 }
-
-

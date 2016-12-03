@@ -25,7 +25,7 @@ class DKinematicData : public JObject
 		virtual ~DKinematicData(void) {};
 
 		//Reset
-		void Reset(void);
+		virtual void Reset(void);
 
 		//GETTERS
 		Particle_t PID(void) const{return m_pid;}

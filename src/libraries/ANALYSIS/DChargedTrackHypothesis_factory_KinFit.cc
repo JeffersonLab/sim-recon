@@ -95,17 +95,17 @@ jerror_t DChargedTrackHypothesis_factory_KinFit::evnt(jana::JEventLoop* locEvent
 DChargedTrackHypothesis* DChargedTrackHypothesis_factory_KinFit::Build_ChargedTrackHypothesis(const DChargedTrackHypothesis* locChargedTrackHypothesis, DKinFitParticle* locKinFitParticle, const DChargedTrack* locChargedTrack, const DParticleCombo* locParticleCombo)
 {
 	DChargedTrackHypothesis* locNewChargedTrackHypothesis = new DChargedTrackHypothesis(*locChargedTrackHypothesis);
-	locNewChargedTrackHypothesis->AddAssociatedObject(locChargedTrackHypothesis);
-	locNewChargedTrackHypothesis->AddAssociatedObject(locChargedTrack);
 
+	//remove associated objects of type DChargedTrackHypothesis //won't be able to keep track of which is which!
  	vector<const JObject*> locObjects;
 	locChargedTrackHypothesis->GetT(locObjects);
 	for(size_t loc_i = 0; loc_i < locObjects.size(); ++loc_i)
 	{
 		if(dynamic_cast<const DChargedTrackHypothesis*>(locObjects[loc_i]) != NULL)
-			continue; //don't save: won't be able to keep track of which is which! (combo or default factory)
-		locNewChargedTrackHypothesis->AddAssociatedObject(locObjects[loc_i]);
+			locNewChargedTrackHypothesis->RemoveAssociatedObject(locObjects[loc_i]);
 	}
+	locNewChargedTrackHypothesis->AddAssociatedObject(locChargedTrackHypothesis);
+	locNewChargedTrackHypothesis->AddAssociatedObject(locChargedTrack);
 
 	//p3 & v3
 	TVector3 locFitMomentum = locKinFitParticle->Get_Momentum();
