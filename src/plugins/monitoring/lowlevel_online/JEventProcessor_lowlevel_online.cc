@@ -35,6 +35,8 @@ using namespace jana;
 
 #include <FCAL/DFCALGeometry.h>
 
+#include <map>
+
 // Routine used to create our JEventProcessor
 #include <JANA/JApplication.h>
 #include <JANA/JFactory.h>
@@ -74,6 +76,7 @@ jerror_t JEventProcessor_lowlevel_online::init(void)
     ANALYZE_F125_DATA = true;
 
     F250_THRESHOLD = 0;
+    F125_THRESHOLD = 0;
 
     gPARMS->SetDefaultParameter("LOWLEVEL:INDIVIDUAL", INDIVIDUAL_CHANNEL_DATA, "Make histograms for individual channels.");
     gPARMS->SetDefaultParameter("LOWLEVEL:F250DATA", ANALYZE_F250_DATA, "Analyze f250ADC data");
@@ -492,6 +495,12 @@ jerror_t JEventProcessor_lowlevel_online::brun(JEventLoop *eventLoop, int32_t ru
   return NOERROR;
 }
 
+
+// Sorting functions
+bool f250pulsedata_sorter(const Df250PulseData *a, const Df250PulseData *b) {
+    return a->pulse_number < b->pulse_number;
+}
+
 //------------------
 // evnt
 //------------------
@@ -548,6 +557,8 @@ jerror_t JEventProcessor_lowlevel_online::evnt(JEventLoop *loop, uint64_t eventn
     if(ANALYZE_F250_DATA) {
 
     //------------------------ BCAL -----------------------
+    map<int, vector<const Df250PulseData*> > bcalhitmap;
+
     bcal_num_events->Fill(0.5);
 	// fADC250
 	for(unsigned int i = 0; i < bcaldigihits.size(); i++){
@@ -556,7 +567,7 @@ jerror_t JEventProcessor_lowlevel_online::evnt(JEventLoop *loop, uint64_t eventn
         if(CHECK_EMULATED_DATA)
             hit->GetSingle(pulse);
 
-	if(hit->pulse_peak < F250_THRESHOLD)  continue;
+        if(hit->pulse_peak < F250_THRESHOLD)  continue;
 
         bcal_adc_multi->Fill(bcaldigihits.size());
         bcal_tdc_multi->Fill(bcaltdcdigihits.size());
@@ -578,6 +589,11 @@ jerror_t JEventProcessor_lowlevel_online::evnt(JEventLoop *loop, uint64_t eventn
 
             //if(pulse->pulse_peak - pulse->pulse_peak_emulated > 20)
             //  cout << eventnumber << " " << pulse->rocid << " " << pulse->slot << " " << pulse->channel << endl;
+
+            int ichan = 48*(hit->module-1) - 4*(hit->sector-1) + hit->layer;
+            if(hit->end == DBCALGeometry::kUpstream)
+                ichan += 768;
+            bcalhitmap[ichan].push_back(pulse);
         }
 
         if(INDIVIDUAL_CHANNEL_DATA) {
@@ -596,13 +612,28 @@ jerror_t JEventProcessor_lowlevel_online::evnt(JEventLoop *loop, uint64_t eventn
             bcal_adc_quality_chan->Fill(hit->QF, ichan);
         }
 	}
+    /*
+    // check to see if we have problems with pulse timing (seen when running with NSAT=1)
+    for( map<int, vector<const Df250PulseData*> >::iterator vit = bcalhitmap.begin();
+         vit != bcalhitmap.end(); vit++) {
+        sort(vit->second.begin(), vit->second.end(), f250pulsedata_sorter);
 
+        if(vit->second.size() < 2)
+            continue;
+
+        for(unsigned int j=0; j<vit->second.size()-1; j++)
+            if( vit->second[j]->course_time > vit->second[j+1]->course_time )
+                cout << "BCAL: " << eventnumber << " " << vit->second[j]->rocid << " " << vit->second[j]->slot << " " << vit->second[j]->channel << endl;
+    }
+    */
 	// F1TDC
 	//for(unsigned int i = 0; i < bcaltdcdigihits.size(); i++){
 	//	const DBCALTDCDigiHit *hit = bcaltdcdigihits[i];
     //}
 
 	//------------------------ FCAL -----------------------
+    map<int, vector<const Df250PulseData*> > fcalhitmap;
+
 	fcal_num_events->Fill(0.5);
 	for(size_t loc_i = 0; loc_i < fcaldigihits.size(); ++loc_i){
 		const DFCALDigiHit *hit = fcaldigihits[loc_i];
@@ -610,7 +641,7 @@ jerror_t JEventProcessor_lowlevel_online::evnt(JEventLoop *loop, uint64_t eventn
         if(CHECK_EMULATED_DATA)
             hit->GetSingle(pulse);
 
-	if(hit->pulse_peak < F250_THRESHOLD)  continue;
+        if(hit->pulse_peak < F250_THRESHOLD)  continue;
 
         fcal_adc_multi->Fill(fcaldigihits.size());
 
@@ -629,8 +660,11 @@ jerror_t JEventProcessor_lowlevel_online::evnt(JEventLoop *loop, uint64_t eventn
             fcal_adc_emudelta_coarsetime->Fill( pulse->course_time - pulse->course_time_emulated );
             fcal_adc_emudelta_finetime->Fill( pulse->fine_time - pulse->fine_time_emulated );
 
-            if( pulse->course_time != pulse->course_time_emulated )
-                cout << eventnumber << " " << pulse->rocid << " " << pulse->slot << " " << pulse->channel << endl;
+            //if( pulse->course_time != pulse->course_time_emulated )
+            //   cout << eventnumber << " " << pulse->rocid << " " << pulse->slot << " " << pulse->channel << endl;
+
+            int ichan = fcalGeom.channel( hit->row, hit->column );
+            fcalhitmap[ichan].push_back(pulse);
         }
 
         if(INDIVIDUAL_CHANNEL_DATA) {
@@ -646,6 +680,18 @@ jerror_t JEventProcessor_lowlevel_online::evnt(JEventLoop *loop, uint64_t eventn
         }
 	}
 	
+    // check to see if we have problems with pulse timing (seen when running with NSAT=1
+    for( map<int, vector<const Df250PulseData*> >::iterator vit = fcalhitmap.begin();
+         vit != fcalhitmap.end(); vit++) {
+        sort(vit->second.begin(), vit->second.end(), f250pulsedata_sorter);
+
+        if(vit->second.size() < 2) continue;
+
+        for(unsigned int j=0; j<vit->second.size()-1; j++)
+            if( vit->second[j]->course_time > vit->second[j+1]->course_time )
+                cout << "FCAL: " << eventnumber << " " << vit->second[j]->rocid << " " << vit->second[j]->slot << " " << vit->second[j]->channel << endl;
+    }
+
 	//for(unsigned int i = 0; i < fdcwirehits.size(); i++){
 	//	fdc_wire_occ->Fill((fdcwirehits[i]->package - 1)*6 + fdcwirehits[i]->chamber, fdcwirehits[i]->wire);
 	//}
@@ -659,7 +705,7 @@ jerror_t JEventProcessor_lowlevel_online::evnt(JEventLoop *loop, uint64_t eventn
         if(CHECK_EMULATED_DATA)
             hit->GetSingle(pulse);
 
-	if(hit->pulse_peak < F250_THRESHOLD)  continue;
+        if(hit->pulse_peak < F250_THRESHOLD)  continue;
 
         psc_adc_multi->Fill(pscdigihits.size());
         psc_tdc_multi->Fill(psctdcdigihits.size());
@@ -752,7 +798,7 @@ jerror_t JEventProcessor_lowlevel_online::evnt(JEventLoop *loop, uint64_t eventn
         if(CHECK_EMULATED_DATA)
             hit->GetSingle(pulse);
 
-	if(hit->pulse_peak < F250_THRESHOLD)  continue;
+        if(hit->pulse_peak < F250_THRESHOLD)  continue;
 
         st_adc_multi->Fill(scdigihits.size());
         st_tdc_multi->Fill(sctdcdigihits.size());
@@ -795,7 +841,7 @@ jerror_t JEventProcessor_lowlevel_online::evnt(JEventLoop *loop, uint64_t eventn
         if(CHECK_EMULATED_DATA)
             hit->GetSingle(pulse);
 
-	if(hit->pulse_peak < F250_THRESHOLD)  continue;
+        if(hit->pulse_peak < F250_THRESHOLD)  continue;
 
         tagh_adc_multi->Fill(taghdigihits.size());
         tagh_tdc_multi->Fill(taghtdcdigihits.size());
@@ -838,7 +884,7 @@ jerror_t JEventProcessor_lowlevel_online::evnt(JEventLoop *loop, uint64_t eventn
         if(CHECK_EMULATED_DATA)
             hit->GetSingle(pulse);
 
-	if(hit->pulse_peak < F250_THRESHOLD)  continue;
+        if(hit->pulse_peak < F250_THRESHOLD)  continue;
 
         tagm_adc_multi->Fill(tagmdigihits.size());
         tagm_tdc_multi->Fill(tagmtdcdigihits.size());
@@ -890,7 +936,7 @@ jerror_t JEventProcessor_lowlevel_online::evnt(JEventLoop *loop, uint64_t eventn
         if(CHECK_EMULATED_DATA)
             hit->GetSingle(pulse);
 
-	if(hit->pulse_peak < F250_THRESHOLD)  continue;
+        if(hit->pulse_peak < F250_THRESHOLD)  continue;
 
         tof_adc_multi->Fill(tofdigihits.size());
         tof_tdc_multi->Fill(toftdcdigihits.size());
@@ -935,6 +981,8 @@ jerror_t JEventProcessor_lowlevel_online::evnt(JEventLoop *loop, uint64_t eventn
 	for(uint32_t i=0; i<cdcdigihits.size(); i++) {
 		const DCDCDigiHit *hit = cdcdigihits[i];  
 
+        //if(hit->pulse_peak < F125_THRESHOLD)  continue;
+
         cdc_adc_multi->Fill(cdcdigihits.size());
 
         cdc_adc_integral->Fill(hit->pulse_integral);
@@ -962,6 +1010,8 @@ jerror_t JEventProcessor_lowlevel_online::evnt(JEventLoop *loop, uint64_t eventn
 	fdc_num_events->Fill(0.5);
 	for(unsigned int i = 0; i < fdccathodehits.size(); i++){
         const DFDCCathodeDigiHit *hit = fdccathodehits[i];
+
+        //if(hit->pulse_peak < F125_THRESHOLD)  continue;
 
         fdc_adc_multi->Fill(fdccathodehits.size());
         fdc_tdc_multi->Fill(fdcwirehits.size());
