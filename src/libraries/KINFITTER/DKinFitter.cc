@@ -776,7 +776,6 @@ bool DKinFitter::Iterate(void)
 	dChiSq = 9.9E99;
 	double locPreviousChiSq = 0.0;
 	unsigned int locNumIterations = 0;
-	TMatrixD locR(dNumF, 1);
 	while((fabs(dChiSq - locPreviousChiSq) > dConvergenceChiSqDiff) || (dChiSq < 0.0))
 	{
 		if(locNumIterations >= dMaxNumIterations)
@@ -807,7 +806,7 @@ bool DKinFitter::Iterate(void)
 			Print_Matrix(dF_dEta);
 		}
 
-		locR = dF + dF_dEta*(dY - dEta);
+		TMatrixD locR(dF + dF_dEta*(dY - dEta)); //dimensions are dNumF, 1
 
 		if(!Calc_dS())
 		{
@@ -823,8 +822,7 @@ bool DKinFitter::Iterate(void)
 				return false; // matrix is not invertible
 			}
 
-			TMatrixD locDeltaXi(dNumXi, 1);
-			locDeltaXi = -1.0*dU*dF_dXi_T*dS_Inverse*locR;
+			TMatrixD locDeltaXi(-1.0*dU*dF_dXi_T*dS_Inverse*locR); //dimensions are dNumXi, 1
 
 			dXi += locDeltaXi;
 			if(dDebugLevel > 20)
@@ -870,7 +868,7 @@ bool DKinFitter::Iterate(void)
 
 bool DKinFitter::Calc_dS(void)
 {
-	TMatrixDSym locTempMatrix = dVY;
+	TMatrixDSym locTempMatrix(dVY);
 	locTempMatrix.Similarity(dF_dEta);
 	dS = locTempMatrix;
 	if(dDebugLevel > 20)
@@ -900,7 +898,7 @@ bool DKinFitter::Calc_dS(void)
 
 bool DKinFitter::Calc_dU(void)
 {
-	TMatrixDSym locTempMatrix = dS_Inverse;
+	TMatrixDSym locTempMatrix(dS_Inverse);
 	locTempMatrix.SimilarityT(dF_dXi);
 	dU_Inverse = locTempMatrix;
 	if(dDebugLevel > 20)
@@ -2854,7 +2852,7 @@ void DKinFitter::Set_FinalTrackInfo(void)
 
 		pair<double, double> locPathLengthPair;
 		//updating the covariance matrix: a unique cov matrix object was cloned on fit start, so can safely update it directly
-		TMatrixFSym& locCovarianceMatrix = *(const_cast<TMatrixFSym*>(locKinFitParticle->Get_CovarianceMatrix()));
+		TMatrixFSym* locCovarianceMatrix = const_cast<TMatrixFSym*>(locKinFitParticle->Get_CovarianceMatrix());
 
 		TVector3 locMomentum;
 		TLorentzVector locSpacetimeVertex;
@@ -2867,10 +2865,10 @@ void DKinFitter::Set_FinalTrackInfo(void)
 			cout << "p_xyz, v_xyzt = " << locMomentum.Px() << ", " << locMomentum.Py() << ", " << locMomentum.Pz() << ", " << locSpacetimeVertex.X() << ", " << locSpacetimeVertex.Y() << ", " << locSpacetimeVertex.Z() << ", " << locSpacetimeVertex.T() << endl;
 			cout << "common v_xyzt = " << locKinFitParticle->Get_CommonVertex().X() << ", " << locKinFitParticle->Get_CommonVertex().Y() << ", " << locKinFitParticle->Get_CommonVertex().Z() << ", " << locKinFitParticle->Get_CommonTime() << endl;
 			cout << "path length & uncert = " << locPathLengthPair.first << ", " << locPathLengthPair.second << endl;
-			cout << "sizes = " << locCovarianceMatrix.GetNrows() << ", " << locCovarianceMatrix.GetNcols() << endl;
+			cout << "sizes = " << locCovarianceMatrix->GetNrows() << ", " << locCovarianceMatrix->GetNcols() << endl;
 		}
 
-		//no need to set the covariance matrix: already updated (passed in a reference to it)
+		//no need to set the covariance matrix: already updated
 		locKinFitParticle->Set_Momentum(locMomentum);
 		if(locKinFitParticle->Get_IsNeutralShowerFlag())
 			locKinFitParticle->Set_CommonSpacetimeVertex(locSpacetimeVertex);
@@ -2890,7 +2888,7 @@ void DKinFitter::Set_FinalTrackInfo(void)
 			continue;
 
 		pair<double, double> locPathLengthPair;
-		const TMatrixFSym& locCovarianceMatrix = *(locKinFitParticle->Get_CovarianceMatrix());
+		const TMatrixFSym* locCovarianceMatrix = locKinFitParticle->Get_CovarianceMatrix();
 		if(dKinFitUtils->Calc_PathLength(locKinFitParticle, &dVXi, locCovarianceMatrix, locPathLengthPair))
 		{
 			locKinFitParticle->Set_PathLength(locPathLengthPair.first);

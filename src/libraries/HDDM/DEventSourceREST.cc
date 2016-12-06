@@ -1247,7 +1247,7 @@ void DEventSourceREST::Get7x7ErrorMatrix(double mass, const double vec[5], const
   J(5, 4)=1.;
 
   // C'= JCJ^T
-  TMatrixFSym locTempMatrix = *C5x5;
+  TMatrixFSym locTempMatrix(*C5x5);
   *loc7x7ErrorMatrix=locTempMatrix.Similarity(J);
 }
 

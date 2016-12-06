@@ -26,6 +26,9 @@ extern "C"
 //------------------
 jerror_t DEventProcessor_monitoring_hists::init(void)
 {
+	dNumMemoryMonitorEvents = 0;
+	gPARMS->SetDefaultParameter("MONITOR:MEMORY_EVENTS", dNumMemoryMonitorEvents);
+
 	string locOutputFileName = "hd_root.root";
 	if(gPARMS->Exists("OUTPUT_FILENAME"))
 		gPARMS->GetParameter("OUTPUT_FILENAME", locOutputFileName);
@@ -46,6 +49,12 @@ jerror_t DEventProcessor_monitoring_hists::init(void)
 	dHist_IsEvent = new TH1D("IsEvent", "Is the event an event?", 2, -0.5, 1.5);
 	dHist_IsEvent->GetXaxis()->SetBinLabel(1, "False");
 	dHist_IsEvent->GetXaxis()->SetBinLabel(2, "True");
+
+	if(dNumMemoryMonitorEvents > 0)
+	{
+	        dVirtualMemoryVsEventNumber = new TH1D("VirtualMemoryVsEventNumber", ";Event # ;Virtual Memory (MB)", dNumMemoryMonitorEvents, 0.5, (double)dNumMemoryMonitorEvents + 0.5);
+        	dResidentMemoryVsEventNumber = new TH1D("ResidentMemoryVsEventNumber", ";Event # ;Resident Memory (MB)", dNumMemoryMonitorEvents, 0.5, (double)dNumMemoryMonitorEvents + 0.5);
+	}
 	gDirectory->cd("..");
 
 	return NOERROR;
@@ -73,8 +82,11 @@ jerror_t DEventProcessor_monitoring_hists::brun(JEventLoop *locEventLoop, int32_
 	dHistogramAction_DetectedParticleKinematics.Initialize(locEventLoop);
 	dHistogramAction_TrackShowerErrors.Initialize(locEventLoop);
 
-	dHistogramAction_ObjectMemory.dMaxNumEvents = 20000;
-	dHistogramAction_ObjectMemory.Initialize(locEventLoop);
+	if(dNumMemoryMonitorEvents > 0)
+	{
+		dHistogramAction_ObjectMemory.dMaxNumEvents = dNumMemoryMonitorEvents;
+		dHistogramAction_ObjectMemory.Initialize(locEventLoop);
+	}
 
 	if(!locMCThrowns.empty())
 	{
@@ -84,6 +96,40 @@ jerror_t DEventProcessor_monitoring_hists::brun(JEventLoop *locEventLoop, int32_
 	}
 
 	return NOERROR;
+}
+
+void DEventProcessor_monitoring_hists::Read_MemoryUsage(double& vm_usage, double& resident_set)
+{
+	using std::ios_base;
+	using std::ifstream;
+	using std::string;
+
+	vm_usage     = 0.0;
+	resident_set = 0.0;
+
+	// 'file' stat seems to give the most reliable results
+	ifstream stat_stream("/proc/self/stat",ios_base::in);
+
+	// dummy vars for leading entries in stat that we don't care about
+	string pid, comm, state, ppid, pgrp, session, tty_nr;
+	string tpgid, flags, minflt, cminflt, majflt, cmajflt;
+	string utime, stime, cutime, cstime, priority, nice;
+	string O, itrealvalue, starttime;
+
+	// the two fields we want
+	unsigned long vsize;
+	long rss;
+
+	stat_stream >> pid >> comm >> state >> ppid >> pgrp >> session >> tty_nr
+		>> tpgid >> flags >> minflt >> cminflt >> majflt >> cmajflt
+		>> utime >> stime >> cutime >> cstime >> priority >> nice
+		>> O >> itrealvalue >> starttime >> vsize >> rss; // don't care about the rest
+
+	stat_stream.close();
+
+	long page_size_kb = sysconf(_SC_PAGE_SIZE) / 1024; // in case x86-64 is configured to use 2MB pages
+	vm_usage     = vsize / 1024.0;
+	resident_set = rss * page_size_kb;
 }
 
 //------------------
@@ -103,6 +149,13 @@ jerror_t DEventProcessor_monitoring_hists::evnt(JEventLoop *locEventLoop, uint64
 	japp->RootFillLock(this); //ACQUIRE ROOT FILL LOCK
 	{
 		dHist_IsEvent->Fill(1);
+		if(dNumMemoryMonitorEvents > 0)
+		{
+			double vm, rss;
+			Read_MemoryUsage(vm, rss);
+			dVirtualMemoryVsEventNumber->SetBinContent(eventnumber, vm / 1024.0);
+			dResidentMemoryVsEventNumber->SetBinContent(eventnumber, rss / 1024.0);
+		}
 	}
 	japp->RootFillUnLock(this); //RELEASE ROOT FILL LOCK
 
@@ -122,7 +175,8 @@ jerror_t DEventProcessor_monitoring_hists::evnt(JEventLoop *locEventLoop, uint64
 	dHistogramAction_TrackMultiplicity(locEventLoop);
 	dHistogramAction_DetectedParticleKinematics(locEventLoop);
 	dHistogramAction_TrackShowerErrors(locEventLoop);
-	dHistogramAction_ObjectMemory(locEventLoop);
+	if(dNumMemoryMonitorEvents > 0)
+		dHistogramAction_ObjectMemory(locEventLoop);
 
 	if(!locMCThrowns.empty())
 	{
@@ -131,7 +185,7 @@ jerror_t DEventProcessor_monitoring_hists::evnt(JEventLoop *locEventLoop, uint64
 		dHistogramAction_GenReconTrackComparison(locEventLoop);
 	}
 
-  return NOERROR;
+	return NOERROR;
 }
 
 //------------------

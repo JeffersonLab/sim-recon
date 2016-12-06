@@ -45,6 +45,7 @@ class DApplication:public JApplication{
 		DGeometry* GetDGeometry(unsigned int run_number);
 		DRootGeom *GetRootGeom(unsigned int run_number);
 
+		size_t Get_NumCovarianceMatrices(void);
 		TMatrixFSym* Get_CovarianceMatrixResource(unsigned int locNumMatrixRows);
 		TMatrixFSym* Get_CovarianceMatrixResource(unsigned int locNumMatrixRows, uint64_t locEventNumber);
 

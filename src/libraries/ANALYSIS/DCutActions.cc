@@ -1168,6 +1168,7 @@ bool DCutAction_OneVertexKinFit::Perform_Action(JEventLoop* locEventLoop, const 
 	//need to call prior to use in each event (cleans up memory allocated from last event)
 		//this call invalidates memory from previous fits (but that's OK, we aren't saving them anywhere)
 	dKinFitter->Reset_NewEvent();
+	dKinFitUtils->Reset_NewEvent();
 
 	//Get particles for fit (all detected q+)
 	deque<const DKinematicData*> locDetectedParticles;

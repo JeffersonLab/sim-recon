@@ -90,7 +90,7 @@ class DKinFitUtils //purely virtual: cannot directly instantiate class, can only
 		//if input flag is true: return the value of the p4 at the production vertex //else return it at the decay vertex
 		TLorentzVector Calc_DecayingP4_ByVertex(DKinFitParticle* locKinFitParticle, bool locAtProductionVertexFlag, bool locDontPropagateAtAllFlag = false) const;
 
-		bool Propagate_TrackInfoToCommonVertex(DKinFitParticle* locKinFitParticle, const TMatrixDSym* locVXi, TVector3& locMomentum, TLorentzVector& locSpacetimeVertex, pair<double, double>& locPathLengthPair, TMatrixFSym& locCovarianceMatrix) const;
+		bool Propagate_TrackInfoToCommonVertex(DKinFitParticle* locKinFitParticle, const TMatrixDSym* locVXi, TVector3& locMomentum, TLorentzVector& locSpacetimeVertex, pair<double, double>& locPathLengthPair, TMatrixFSym* locCovarianceMatrix) const;
 
 		/********************************************************* BUILD OUTPUT DKINFITCHAIN ********************************************************/
 
@@ -194,7 +194,7 @@ class DKinFitUtils //purely virtual: cannot directly instantiate class, can only
 		//Don't call directly: Rather, call the public wrappers (simpler)
 		TLorentzVector Calc_DecayingP4(DKinFitParticle* locKinFitParticle, bool locIsConstrainedParticle, double locStateSignMultiplier, bool locDontPropagateAtAllFlag = false) const;
 
-		bool Calc_PathLength(DKinFitParticle* locKinFitParticle, const TMatrixDSym* locVXi, const TMatrixFSym& locCovarianceMatrix, pair<double, double>& locPathLengthPair) const;
+		bool Calc_PathLength(DKinFitParticle* locKinFitParticle, const TMatrixDSym* locVXi, const TMatrixFSym* locCovarianceMatrix, pair<double, double>& locPathLengthPair) const;
 		void Calc_DecayingParticleJacobian(DKinFitParticle* locKinFitParticle, bool locDontPropagateDecayingP3Flag, double locStateSignMultiplier, int locNumEta, const map<DKinFitParticle*, int>& locAdditionalPxParamIndices, TMatrixD& locJacobian) const;
 
 		/*************************************************************** CLONE MAPPING **************************************************************/

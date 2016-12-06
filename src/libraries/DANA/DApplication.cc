@@ -473,8 +473,8 @@ TMatrixFSym* DApplication::Get_CovarianceMatrixResource(unsigned int locNumMatri
 		locNewEventFlag = true;
 		dEventNumberMap[locThreadID] = locEventNumber;
 		//if available > max, wipe all used
-		locDeleteAllUsedMatricesFlag = (dAvailableMatrices.size() >= dTargetMaxNumAvailableMatrices);
-		if(!locDeleteAllUsedMatricesFlag)
+//		locDeleteAllUsedMatricesFlag = (dAvailableMatrices.size() >= dTargetMaxNumAvailableMatrices);
+//		if(!locDeleteAllUsedMatricesFlag)
 			dAvailableMatrices.insert(dAvailableMatrices.end(), locUsedMatrixDeque.begin(), locUsedMatrixDeque.end());
 	}
 
@@ -510,3 +510,21 @@ TMatrixFSym* DApplication::Get_CovarianceMatrixResource(unsigned int locNumMatri
 
 	return locMatrixFSym;
 }
+
+size_t DApplication::Get_NumCovarianceMatrices(void)
+{
+	size_t locNumMatrices = 0;
+	
+	//LOCK
+        pthread_mutex_lock(&matrix_mutex);
+
+	locNumMatrices += dAvailableMatrices.size();
+	for(auto locUsedMatrixPair : dUsedMatrixMap)
+		locNumMatrices += locUsedMatrixPair.second.size();
+
+	//UNLOCK
+        pthread_mutex_unlock(&matrix_mutex);
+
+	return locNumMatrices;
+}
+

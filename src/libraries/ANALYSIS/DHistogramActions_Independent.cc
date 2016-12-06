@@ -51,8 +51,8 @@ void DHistogramAction_ObjectMemory::Initialize(JEventLoop* locEventLoop)
 	dFactoryPoolBinMap["DKinFitConstraint_P4"] = 13;
 	locBinLabels.push_back("DKinFitConstraint_P4");
 
-	dFactoryPoolBinMap["TMatrixDSym_KinFitter"] = 14;
-	locBinLabels.push_back("TMatrixDSym_KinFitter");
+	dFactoryPoolBinMap["TMatrixFSym"] = 14;
+	locBinLabels.push_back("TMatrixFSym");
 
 	dFactoryPairsToTrack.push_back(pair<string, string>("DKinFitResults", ""));
 	dFactoryPairBinMap[dFactoryPairsToTrack.back()] = 15;
@@ -203,7 +203,6 @@ bool DHistogramAction_ObjectMemory::Perform_Action(JEventLoop* locEventLoop, con
 		locBaseFactory = locEventLoop->GetFactory("DKinFitResults", "");
 		DKinFitResults_factory* locKinFitResultsFactory = static_cast<DKinFitResults_factory*>(locBaseFactory);
 		locNumObjectsMap[locBin] = locKinFitResultsFactory->Get_KinFitParticlePoolSize();
-		locNumObjectsMap[locBin] = 1;
 		locMemory = sizeof(DKinFitParticle)*locNumObjectsMap[locBin];
 		locMemoryMap[locBin] = locMemory;
 		locTotalMemory += double(locMemory);
@@ -211,7 +210,6 @@ bool DHistogramAction_ObjectMemory::Perform_Action(JEventLoop* locEventLoop, con
 		//DKinFitConstraint_Vertex
 		locBin = dFactoryPoolBinMap["DKinFitConstraint_Vertex"];
 		locNumObjectsMap[locBin] = locKinFitResultsFactory->Get_KinFitConstraintVertexPoolSize();
-		locNumObjectsMap[locBin] = 1;
 		locMemory = sizeof(DKinFitConstraint_Vertex)*locNumObjectsMap[locBin];
 		locMemoryMap[locBin] = locMemory;
 		locTotalMemory += double(locMemory);
@@ -219,7 +217,6 @@ bool DHistogramAction_ObjectMemory::Perform_Action(JEventLoop* locEventLoop, con
 		//DKinFitConstraint_Spacetime
 		locBin = dFactoryPoolBinMap["DKinFitConstraint_Spacetime"];
 		locNumObjectsMap[locBin] = locKinFitResultsFactory->Get_KinFitConstraintSpacetimePoolSize();
-		locNumObjectsMap[locBin] = 1;
 		locMemory = sizeof(DKinFitConstraint_Spacetime)*locNumObjectsMap[locBin];
 		locMemoryMap[locBin] = locMemory;
 		locTotalMemory += double(locMemory);
@@ -227,16 +224,14 @@ bool DHistogramAction_ObjectMemory::Perform_Action(JEventLoop* locEventLoop, con
 		//DKinFitConstraint_P4
 		locBin = dFactoryPoolBinMap["DKinFitConstraint_P4"];
 		locNumObjectsMap[locBin] = locKinFitResultsFactory->Get_KinFitConstraintP4PoolSize();
-		locNumObjectsMap[locBin] = 1;
 		locMemory = sizeof(DKinFitConstraint_P4)*locNumObjectsMap[locBin];
 		locMemoryMap[locBin] = locMemory;
 		locTotalMemory += double(locMemory);
 
-		//TMatrixDSym_KinFitter
-		locBin = dFactoryPoolBinMap["TMatrixDSym_KinFitter"];
-		locNumObjectsMap[locBin] = locKinFitResultsFactory->Get_SymMatrixPoolSize();
-		locNumObjectsMap[locBin] = 1;
-		locMemory = (sizeof(TMatrixDSym) + 7*7*8)*locKinFitResultsFactory->Get_SymMatrixPoolSize(); //assume 7x7 matrix of doubles (8)
+		//TMatrixFSym
+		locBin = dFactoryPoolBinMap["TMatrixFSym"];
+		locNumObjectsMap[locBin] = (dynamic_cast<DApplication*>(japp))->Get_NumCovarianceMatrices();
+		locMemory = (sizeof(TMatrixDSym) + 7*7*4)*locNumObjectsMap[locBin]; //assume 7x7 matrix of floats (4)
 		locMemoryMap[locBin] = locMemory;
 		locTotalMemory += double(locMemory);
 
