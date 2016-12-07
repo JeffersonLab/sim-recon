@@ -92,9 +92,14 @@ class DKinFitUtils //purely virtual: cannot directly instantiate class, can only
 
 		bool Propagate_TrackInfoToCommonVertex(DKinFitParticle* locKinFitParticle, const TMatrixDSym* locVXi, TVector3& locMomentum, TLorentzVector& locSpacetimeVertex, pair<double, double>& locPathLengthPair, TMatrixFSym* locCovarianceMatrix) const;
 
-		/********************************************************* BUILD OUTPUT DKINFITCHAIN ********************************************************/
+		/********************************************************** DKINFITCHAIN RESOURCES **********************************************************/
 
+		//Build output chain
 		const DKinFitChain* Build_OutputKinFitChain(const DKinFitChain* locInputKinFitChain, set<DKinFitParticle*>& locKinFitOutputParticles);
+
+		//Recycle input chain (after output has been built, or fit no longer needed)
+		//Recycles the steps, but NOT the particles
+		void Recycle_DKinFitChain(const DKinFitChain* locKinFitChain);
 
 		/************************************************************ RESOURCE POOL SIZES ***********************************************************/
 
@@ -143,19 +148,23 @@ class DKinFitUtils //purely virtual: cannot directly instantiate class, can only
 		virtual TVector3 Get_BField(const TVector3& locPosition) const = 0; //must return in units of Tesla!!
 		virtual bool Get_IsBFieldNearBeamline(void) const = 0;
 
-		/*************************************************************** GET RESOURCES **************************************************************/
+		/********************************************************* GET AND RECYCLE RESOURCES ********************************************************/
 
 		DKinFitChain* Get_KinFitChainResource(void);
 		DKinFitChainStep* Get_KinFitChainStepResource(void);
 		virtual TMatrixFSym* Get_SymMatrixResource(unsigned int locNumMatrixRows);
 
-		/************************************************************** CLONE CONSTRAINTS ***********************************************************/
+		void Recycle_Particles(set<DKinFitParticle*>& locParticles);
+
+		/************************************************************** CLONE RESOURCES *************************************************************/
 
 		//if need to modify a constraint without disrupting the original: note that particles aren't cloned!
 		DKinFitConstraint_P4* Clone_KinFitConstraint_P4(const DKinFitConstraint_P4* locConstraint);
 		DKinFitConstraint_Mass* Clone_KinFitConstraint_Mass(const DKinFitConstraint_Mass* locConstraint);
 		DKinFitConstraint_Vertex* Clone_KinFitConstraint_Vertex(const DKinFitConstraint_Vertex* locConstraint);
 		DKinFitConstraint_Spacetime* Clone_KinFitConstraint_Spacetime(const DKinFitConstraint_Spacetime* locConstraint);
+
+		TMatrixFSym* Clone_SymMatrix(const TMatrixFSym* locMatrix); //use sparingly in inherited class (if at all)!!
 
 		/************************************************************** PROTECTED MEMBERS ***********************************************************/
 
@@ -176,10 +185,14 @@ class DKinFitUtils //purely virtual: cannot directly instantiate class, can only
 		/************************************************************** CLONE RESOURCES *************************************************************/
 
 		DKinFitParticle* Clone_KinFitParticle(DKinFitParticle* locKinFitParticle);
-		TMatrixFSym* Clone_SymMatrix(const TMatrixFSym* locMatrix);
-
 		set<DKinFitParticle*> Build_CloneParticleSet(const set<DKinFitParticle*>& locInputParticles, const map<DKinFitParticle*, DKinFitParticle*>& locCloneIOMap) const;
 		set<DKinFitConstraint*> Clone_ParticlesAndConstraints(const set<DKinFitConstraint*>& locInputConstraints);
+
+		/************************************************************* RECYCLE RESOURCES ************************************************************/
+
+		// Do this if you are discarding the results from the previous fit (e.g. fit failed, or used to get a vertex guess)
+		void Recycle_LastFitMemory(set<DKinFitConstraint*>& locKinFitConstraints);
+		virtual void Recycle_CovarianceMatrices(const deque<const TMatrixFSym*>& locMatrices);
 
 		/********************************************************** SETUP VERTEX CONSTRAINTS ********************************************************/
 
@@ -217,6 +230,10 @@ class DKinFitUtils //purely virtual: cannot directly instantiate class, can only
 				set<DKinFitParticle*> dNoConstrainParticles;
 		};
 
+		//Maps of user-created constraints, with the inputs necessary to create them as the keys.
+		//These are used to save memory: If a duplicate set of information is entered, instead of creating a new constraint, just return the original one.
+		//At the beginning of the fit, these resources are cloned, so that the originals (these) are not modified by the fit.
+		//Thus, they can be reused between fits/combos/reactions.
 		map<DKinFitParticle*, DKinFitConstraint_Mass*> dMassConstraintMap;
 		map<pair<set<DKinFitParticle*>, set<DKinFitParticle*> >, DKinFitConstraint_P4*> dP4ConstraintMap; //pair: initial/final state
 		map<pair<set<DKinFitParticle*>, set<DKinFitParticle*> >, DKinFitConstraint_Vertex*> dVertexConstraintMap; //pair: full/no constrain
@@ -282,6 +299,12 @@ inline bool DKinFitUtils::DSpacetimeParticles::operator<(const DKinFitUtils::DSp
 		return false;
 
 	return (dNoConstrainParticles < locSpacetimeParticles.dNoConstrainParticles);
+}
+
+inline void DKinFitUtils::Recycle_CovarianceMatrices(const deque<const TMatrixFSym*>& locMatrices)
+{
+	for(size_t loc_i = 0; loc_i < locMatrices.size(); ++loc_i)
+		dSymMatrixPool_Available.push_back(const_cast<TMatrixFSym*>(locMatrices[loc_i]));
 }
 
 #endif // _DKinFitUtils_

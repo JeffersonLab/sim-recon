@@ -455,7 +455,7 @@ TMatrixFSym* DApplication::Get_CovarianceMatrixResource(unsigned int locNumMatri
 	pthread_t locThreadID = pthread_self();
 
 	//flags for what to do once back outside the lock
-	//Once acquired, can operate on locUsedMatrixDeque outside of lock because only the current thread has access
+	//Once acquired, can operate on locUsedMatrices outside of lock because only the current thread has access
 	bool locDeleteAllUsedMatricesFlag = false;
 	bool locNewEventFlag = false;
 	bool locMakeNewMatrixFlag = false;
@@ -464,7 +464,7 @@ TMatrixFSym* DApplication::Get_CovarianceMatrixResource(unsigned int locNumMatri
 	pthread_mutex_lock(&matrix_mutex);
 
 	//Declare "used" matrices available if on new event for this thread
-	deque<TMatrixFSym*>& locUsedMatrixDeque = dUsedMatrixMap[locThreadID];
+	set<TMatrixFSym*>& locUsedMatrices = dUsedMatrixMap[locThreadID];
 	auto locEventIterator = dEventNumberMap.find(locThreadID);
 	if(locEventIterator == dEventNumberMap.end())
 		dEventNumberMap[locThreadID] = locEventNumber;
@@ -472,10 +472,14 @@ TMatrixFSym* DApplication::Get_CovarianceMatrixResource(unsigned int locNumMatri
 	{
 		locNewEventFlag = true;
 		dEventNumberMap[locThreadID] = locEventNumber;
+
+		//Memory fragmentation seems to be a very big problem, and these objects use the most memory
+		//So, don't delete them. To delete them, just uncomment the below lines.
+
 		//if available > max, wipe all used
 //		locDeleteAllUsedMatricesFlag = (dAvailableMatrices.size() >= dTargetMaxNumAvailableMatrices);
 //		if(!locDeleteAllUsedMatricesFlag)
-			dAvailableMatrices.insert(dAvailableMatrices.end(), locUsedMatrixDeque.begin(), locUsedMatrixDeque.end());
+			std::copy(locUsedMatrices.begin(), locUsedMatrices.end(), std::back_inserter(dAvailableMatrices));
 	}
 
 	//Get matrix resource if available
@@ -499,14 +503,14 @@ TMatrixFSym* DApplication::Get_CovarianceMatrixResource(unsigned int locNumMatri
 	//Reset used matrices, deleting if necessary
 	if(locDeleteAllUsedMatricesFlag)
 	{
-		for(auto locMatrix : locUsedMatrixDeque)
+		for(auto locMatrix : locUsedMatrices)
 			delete locMatrix;
 	}
 	if(locNewEventFlag)
-		locUsedMatrixDeque.clear();
+		locUsedMatrices.clear();
 
 	//register as used
-	locUsedMatrixDeque.push_back(locMatrixFSym);
+	locUsedMatrices.insert(locMatrixFSym);
 
 	return locMatrixFSym;
 }
@@ -516,15 +520,38 @@ size_t DApplication::Get_NumCovarianceMatrices(void)
 	size_t locNumMatrices = 0;
 	
 	//LOCK
-        pthread_mutex_lock(&matrix_mutex);
+	pthread_mutex_lock(&matrix_mutex);
 
 	locNumMatrices += dAvailableMatrices.size();
 	for(auto locUsedMatrixPair : dUsedMatrixMap)
 		locNumMatrices += locUsedMatrixPair.second.size();
 
 	//UNLOCK
-        pthread_mutex_unlock(&matrix_mutex);
+	pthread_mutex_unlock(&matrix_mutex);
 
 	return locNumMatrices;
 }
 
+void DApplication::Recycle_CovarianceMatrices(const deque<const TMatrixFSym*>& locMatrices)
+{
+	pthread_t locThreadID = pthread_self();
+
+	//first, cast away const-ness
+	deque<TMatrixFSym*> locNonConstMatrices;
+	for(auto locMatrix : locMatrices)
+		locNonConstMatrices.push_back(const_cast<TMatrixFSym*>(locMatrix));
+
+	//LOCK
+	pthread_mutex_lock(&matrix_mutex);
+
+	//the matrices are no longer used
+	set<TMatrixFSym*>& locUsedMatrices = dUsedMatrixMap[locThreadID];
+	for(auto locMatrix : locNonConstMatrices)
+		locUsedMatrices.erase(locMatrix);
+
+	//the matrices are now available
+	dAvailableMatrices.insert(dAvailableMatrices.end(), locNonConstMatrices.begin(), locNonConstMatrices.end());
+
+	//UNLOCK
+	pthread_mutex_unlock(&matrix_mutex);
+}

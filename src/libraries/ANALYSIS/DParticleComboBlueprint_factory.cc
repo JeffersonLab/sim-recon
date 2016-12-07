@@ -209,6 +209,7 @@ jerror_t DParticleComboBlueprint_factory::evnt(JEventLoop *locEventLoop, uint64_
 		Build_ParticleComboBlueprints(locReactions[loc_i]);
 	}
 
+	dBlueprintStepMap.clear();
 	return NOERROR;
 }
 

@@ -55,7 +55,6 @@ void DKinFitUtils_GlueX::Reset_NewEvent(void)
 {
 	dParticleMap_SourceToInput_Beam.clear();
 	dParticleMap_SourceToInput_DetectedParticle.clear();
-	dParticleMap_SourceToInput_DetectedParticleFromDecay.clear();
 	dParticleMap_SourceToInput_Shower.clear();
 	dParticleMap_SourceToInput_Target.clear();
 	dParticleMap_SourceToInput_Decaying.clear();
@@ -167,14 +166,10 @@ DKinFitParticle* DKinFitUtils_GlueX::Make_DetectedParticle(DKinFitParticle* locD
 		return NULL;
 	}
 
-	if(dParticleMap_SourceToInput_DetectedParticleFromDecay.find(locDecayingKinFitParticle) != dParticleMap_SourceToInput_DetectedParticleFromDecay.end())
-		return dParticleMap_SourceToInput_DetectedParticleFromDecay[locDecayingKinFitParticle]; //not unique, return existing
-
 	DKinFitParticle* locDetectedKinFitParticle = DKinFitUtils::Make_DetectedParticle(locDecayingKinFitParticle->Get_PID(), 
 		locDecayingKinFitParticle->Get_Charge(), locDecayingKinFitParticle->Get_Mass(), locDecayingKinFitParticle->Get_SpacetimeVertex(), 
-		locDecayingKinFitParticle->Get_Momentum(), locDecayingKinFitParticle->Get_CovarianceMatrix());
+		locDecayingKinFitParticle->Get_Momentum(), Clone_SymMatrix(locDecayingKinFitParticle->Get_CovarianceMatrix()));
 
-	dParticleMap_SourceToInput_DetectedParticleFromDecay[locDecayingKinFitParticle] = locDetectedKinFitParticle;
 	return locDetectedKinFitParticle;
 }
 
@@ -680,17 +675,17 @@ void DKinFitUtils_GlueX::Set_SpacetimeGuesses(const deque<DKinFitConstraint_Vert
 				locOrigSpacetimeConstraint->Set_InitTimeGuess(locNewSpacetimeConstraint->Get_CommonTime());
 			}
 
-			//create detected particles out of reconstructed decaying particles in this constraint
-			set<DKinFitParticle*> locOutputKinFitParticles = dKinFitter->Get_KinFitParticles();
-			set<DKinFitParticle*>::iterator locResultIterator = locOutputKinFitParticles.begin();
-			for(; locResultIterator != locOutputKinFitParticles.end(); ++locResultIterator)
+			//create detected particles out of reconstructed, detached decaying no-constrain particles in this constraint
+			set<DKinFitParticle*> locNoConstrainParticles = locNewVertexConstraint->Get_NoConstrainParticles();
+			set<DKinFitParticle*>::iterator locResultIterator = locNoConstrainParticles.begin();
+			for(; locResultIterator != locNoConstrainParticles.end(); ++locResultIterator)
 			{
 				if((*locResultIterator)->Get_KinFitParticleType() != d_DecayingParticle)
 					continue;
 
-				set<DKinFitParticle*> locAllVertexParticles = locNewVertexConstraint->Get_AllParticles();
-				if(locAllVertexParticles.find(*locResultIterator) == locAllVertexParticles.end())
-					continue; //not used in this constraint: vertex not yet defined
+				Particle_t locPID = PDGtoPType((*locResultIterator)->Get_PID());
+				if(!IsDetachedVertex(locPID))
+					continue; //won't be used as a constraining particle in a vertex constraint
 
 				DKinFitParticle* locInputKinFitParticle = Get_InputKinFitParticle(*locResultIterator);
 				locDecayingToDetectedParticleMap[locInputKinFitParticle] = Make_DetectedParticle(*locResultIterator);
@@ -701,7 +696,23 @@ void DKinFitUtils_GlueX::Set_SpacetimeGuesses(const deque<DKinFitConstraint_Vert
 			TLorentzVector locSpacetimeVertex(locVertexGuess, locTimeGuess);
 			Construct_DetectedDecayingParticle_NoFit(locOrigVertexConstraint, locDecayingToDetectedParticleMap, locSpacetimeVertex);
 		}
+
+		//RESET MEMORY FROM LAST KINFIT!!
+		dKinFitter->Recycle_LastFitMemory(); //results no longer needed
 	}
+
+	//RECYCLE CREATED DETECTED DECAYING PARTICLES
+	Recycle_DetectedDecayingParticles(locDecayingToDetectedParticleMap);
+}
+
+void DKinFitUtils_GlueX::Recycle_DetectedDecayingParticles(map<DKinFitParticle*, DKinFitParticle*>& locDecayingToDetectedParticleMap)
+{
+	set<DKinFitParticle*> locParticlesToRecycle;
+	for(auto locParticlePair : locDecayingToDetectedParticleMap)
+		locParticlesToRecycle.insert(locParticlePair.second);
+
+	Recycle_Particles(locParticlesToRecycle);
+	locDecayingToDetectedParticleMap.clear();
 }
 
 void DKinFitUtils_GlueX::Construct_DetectedDecayingParticle_NoFit(DKinFitConstraint_Vertex* locOrigVertexConstraint, map<DKinFitParticle*, DKinFitParticle*>& locDecayingToDetectedParticleMap, TLorentzVector locSpacetimeVertexGuess)

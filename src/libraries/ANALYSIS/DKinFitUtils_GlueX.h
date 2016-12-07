@@ -58,7 +58,6 @@ class DKinFitUtils_GlueX : public DKinFitUtils
 		DKinFitParticle* Make_BeamParticle(const DBeamPhoton* locBeamPhoton);
 		DKinFitParticle* Make_BeamParticle(const DBeamPhoton* locBeamPhoton, const DEventRFBunch* locEventRFBunch); //sets rf time for photon
 		DKinFitParticle* Make_DetectedParticle(const DKinematicData* locKinematicData);
-		DKinFitParticle* Make_DetectedParticle(DKinFitParticle* locDecayingKinFitParticle);
 		using DKinFitUtils::Make_DetectedParticle; //this is necessary because the above declaration hides the base class function, which is needed by DKinFitResults_factory
 
 		DKinFitParticle* Make_DetectedShower(const DNeutralShower* locNeutralShower, Particle_t locPID); //DO NOT call this unless the neutral is also in a vertex fit!
@@ -113,6 +112,13 @@ class DKinFitUtils_GlueX : public DKinFitUtils
 		//PRIVATE DEFAULT CONSTRUCTOR
 		DKinFitUtils_GlueX(void){} //Cannot use default constructor. Must construct with DMagneticFieldMap as argument
 
+		/************************************************************** CREATE PARTICLES ************************************************************/
+
+		//This method is only designed to be used when forming the vertex guesses.
+		//It creates a new particle from an existing particle, cloning the covariance matrix
+		//To recycle this memory between fits, the caller is responsible for doing so (between events is done automatically)
+		DKinFitParticle* Make_DetectedParticle(DKinFitParticle* locDecayingKinFitParticle);
+
 		/************************************************************ CREATE DKINFITCHAIN ***********************************************************/
 
 		void Make_KinFitChainStep(const DParticleCombo* locParticleCombo, DKinFitType locKinFitType, size_t locStepIndex, DKinFitChain* locKinFitChain, DKinFitChainStep* locKinFitChainStep, map<size_t, size_t>& locStepCreationMap);
@@ -166,7 +172,6 @@ class DKinFitUtils_GlueX : public DKinFitUtils
 			//Needed internally for cloning
 		map<pair<const DBeamPhoton*, const DEventRFBunch*>, DKinFitParticle*> dParticleMap_SourceToInput_Beam;
 		map<const DKinematicData*, DKinFitParticle*> dParticleMap_SourceToInput_DetectedParticle;
-		map<DKinFitParticle*, DKinFitParticle*> dParticleMap_SourceToInput_DetectedParticleFromDecay;
 		map<pair<const DNeutralShower*, Particle_t>, DKinFitParticle*> dParticleMap_SourceToInput_Shower;
 		map<Particle_t, DKinFitParticle*> dParticleMap_SourceToInput_Target;
 		map<DDecayingParticleInfo, DKinFitParticle*> dParticleMap_SourceToInput_Decaying;
@@ -178,12 +183,19 @@ class DKinFitUtils_GlueX : public DKinFitUtils
 		map<DKinFitParticle*, const JObject*> dParticleMap_InputToSource_JObject;
 		map<DKinFitParticle*, DDecayingParticleInfo> dParticleMap_InputToSource_Decaying;
 
+		/************************************************************ MEMORY RESOURCES **************************************************************/
+
+		 //use DANA global resource pool instead
+		TMatrixFSym* Get_SymMatrixResource(unsigned int locNumMatrixRows);
+		void Recycle_CovarianceMatrices(const deque<const TMatrixFSym*>& locMatrices){dApplication->Recycle_CovarianceMatrices(locMatrices);}
+
+		void Recycle_DetectedDecayingParticles(map<DKinFitParticle*, DKinFitParticle*>& locDecayingToDetectedParticleMap);
+
 		/************************************************************** MISCELLANEOUS ***************************************************************/
 
 		DApplication* dApplication;
 		bool dWillBeamHaveErrorsFlag;
 		uint64_t dEventNumber;
-		TMatrixFSym* Get_SymMatrixResource(unsigned int locNumMatrixRows); //use DANA global resource pool instead
 };
 
 inline TVector3 DKinFitUtils_GlueX::Make_TVector3(DVector3 locDVector3) const

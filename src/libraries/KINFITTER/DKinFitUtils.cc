@@ -791,7 +791,6 @@ set<DKinFitConstraint*> DKinFitUtils::Clone_ParticlesAndConstraints(const set<DK
 		for(locParticleIterator = locFromFinalState.begin(); locParticleIterator != locFromFinalState.end(); ++locParticleIterator)
 			locNewFromFinalState.insert(locCloneIOMap[*locParticleIterator]);
 		locOutputParticle->Set_FromFinalState(locNewFromFinalState);
-
 	}
 
 	//Clone the constraints, and then set the particles to the cloned particles
@@ -839,6 +838,98 @@ set<DKinFitConstraint*> DKinFitUtils::Clone_ParticlesAndConstraints(const set<DK
 	}
 
 	return locClonedConstraints;
+}
+
+void DKinFitUtils::Recycle_LastFitMemory(set<DKinFitConstraint*>& locKinFitConstraints)
+{
+	//Get all of the particles from the constraints (some particles may be listed in multiple constraints!)
+		//This is why you can't clone the constraint particles one constraint at a time
+	set<DKinFitParticle*> locAllParticles;
+	set<DKinFitConstraint*>::const_iterator locConstraintIterator = locKinFitConstraints.begin();
+	for(; locConstraintIterator != locKinFitConstraints.end(); ++locConstraintIterator)
+	{
+		set<DKinFitParticle*> locConstraintKinFitParticles = (*locConstraintIterator)->Get_AllParticles();
+		locAllParticles.insert(locConstraintKinFitParticles.begin(), locConstraintKinFitParticles.end());
+
+		//now, for those particles that may not directly be used in a constraint, but ARE used to define a decaying particle
+		set<DKinFitParticle*>::iterator locParticleIterator = locConstraintKinFitParticles.begin();
+		for(; locParticleIterator != locConstraintKinFitParticles.end(); ++locParticleIterator)
+		{
+			set<DKinFitParticle*> locFromAllParticles = (*locParticleIterator)->Get_FromAllParticles();
+			locAllParticles.insert(locFromAllParticles.begin(), locFromAllParticles.end());
+		}
+	}
+
+	//Recycle the particles (and their covariance matrices!)
+	Recycle_Particles(locAllParticles);
+
+	//Recycle the constraints
+	locConstraintIterator = locKinFitConstraints.begin();
+	for(; locConstraintIterator != locKinFitConstraints.end(); ++locConstraintIterator)
+	{
+		DKinFitConstraint_P4* locP4Constraint = dynamic_cast<DKinFitConstraint_P4*>(*locConstraintIterator);
+		if(locP4Constraint != NULL)
+		{
+			dKinFitConstraintP4Pool_Available.push_back(locP4Constraint);
+			continue;
+		}
+
+		DKinFitConstraint_Mass* locMassConstraint = dynamic_cast<DKinFitConstraint_Mass*>(*locConstraintIterator);
+		if(locMassConstraint != NULL)
+		{
+			dKinFitConstraintMassPool_Available.push_back(locMassConstraint);
+			continue;
+		}
+
+		//Inherits from Vertex, so must check this one first!
+		DKinFitConstraint_Spacetime* locSpacetimeConstraint = dynamic_cast<DKinFitConstraint_Spacetime*>(*locConstraintIterator);
+		if(locSpacetimeConstraint != NULL)
+		{
+			dKinFitConstraintSpacetimePool_Available.push_back(locSpacetimeConstraint);
+			continue;
+		}
+
+		DKinFitConstraint_Vertex* locVertexConstraint = dynamic_cast<DKinFitConstraint_Vertex*>(*locConstraintIterator);
+		if(locVertexConstraint != NULL)
+		{
+			dKinFitConstraintVertexPool_Available.push_back(locVertexConstraint);
+			continue;
+		}
+	}
+
+	locKinFitConstraints.clear();
+}
+
+void DKinFitUtils::Recycle_Particles(set<DKinFitParticle*>& locParticles)
+{
+	//And their matrices too!
+	deque<const TMatrixFSym*> locMatricesToRecycle;
+	set<DKinFitParticle*>::const_iterator locParticleIterator = locParticles.begin();
+	for(; locParticleIterator != locParticles.end(); ++locParticleIterator)
+	{
+		const TMatrixFSym* locCovMatrix = (*locParticleIterator)->Get_CovarianceMatrix();
+		if(locCovMatrix != NULL)
+			locMatricesToRecycle.push_back(locCovMatrix);
+
+		map<DKinFitParticle*, DKinFitParticle*>::iterator locOIIterator = dParticleMap_OutputToInput.find(*locParticleIterator);
+		if(locOIIterator != dParticleMap_OutputToInput.end())
+			dParticleMap_OutputToInput.erase(locOIIterator);
+
+		dKinFitParticlePool_Available.push_back(*locParticleIterator);
+	}
+	locParticles.clear();
+
+	Recycle_CovarianceMatrices(locMatricesToRecycle);
+}
+
+void DKinFitUtils::Recycle_DKinFitChain(const DKinFitChain* locKinFitChain)
+{
+	for(size_t loc_i = 0; loc_i < locKinFitChain->Get_NumKinFitChainSteps(); ++loc_i)
+	{
+		DKinFitChainStep* locKinFitChainStep = const_cast<DKinFitChainStep*>(locKinFitChain->Get_KinFitChainStep(loc_i));
+		dKinFitChainStepPool_Available.push_back(locKinFitChainStep);
+	}
+	dKinFitChainPool_Available.push_back(const_cast<DKinFitChain*>(locKinFitChain));
 }
 
 /*************************************************************** VALIDATE CONSTRAINTS **************************************************************/

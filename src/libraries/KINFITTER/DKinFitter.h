@@ -31,7 +31,8 @@ enum DKinFitStatus
 	d_KinFitSuccessful = 0,
 	d_KinFitFailedSetup,
 	d_KinFitFailedInversion,
-	d_KinFitTooManyIterations
+	d_KinFitTooManyIterations,
+	d_KinFitNotPerformed
 };
 
 class DKinFitUtils; //forward declaration
@@ -55,6 +56,9 @@ class DKinFitter //purely virtual: cannot directly instantiate class, can only i
 
 		//FIT!
 		bool Fit_Reaction(void); //IF YOU OVERRIDE THIS METHOD IN THE DERIVED CLASS, MAKE SURE YOU CALL THIS BASE CLASS METHOD!!
+
+		//RECYCLE MEMORY //only call if you are discarding the results from the previous fit
+		void Recycle_LastFitMemory(void); //e.g. fit failed, or used to get a vertex guess
 
 		/**************************************************************** FIT CONTROL ***************************************************************/
 

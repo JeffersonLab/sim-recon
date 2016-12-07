@@ -52,7 +52,7 @@ class DKinFitParticle
 
 		int Get_PID(void) const{return dPID;}
 		double Get_Energy(void) const{return sqrt(dMass*dMass + dMomentum.Mag2());}
-		int Get_Charge(void) const{return dCharge;}
+		char Get_Charge(void) const{return dCharge;}
 		TLorentzVector Get_P4(void) const{return TLorentzVector(dMomentum, Get_Energy());}
 		TVector3 Get_Momentum(void) const{return dMomentum;}
 		TVector3 Get_Position(void) const{return dSpacetimeVertex.Vect();}
@@ -68,7 +68,7 @@ class DKinFitParticle
 		double Get_CommonTime(void) const{return dCommonSpacetimeVertex.T();}
 		TLorentzVector Get_CommonSpacetimeVertex(void) const{return dCommonSpacetimeVertex;}
 
-		unsigned short int Get_VertexConstraintFlag(void) const{return dVertexConstraintFlag;}
+		unsigned char Get_VertexConstraintFlag(void) const{return dVertexConstraintFlag;}
 		bool Get_FitCommonVertexFlag(void) const{return (dCommonVxParamIndex >= 0);}
 		bool Get_FitCommonTimeFlag(void) const{return (dCommonTParamIndex >= 0);}
 		DKinFitParticleType Get_KinFitParticleType(void) const{return dKinFitParticleType;}
@@ -79,12 +79,12 @@ class DKinFitParticle
 
 		bool Get_VertexP4AtProductionVertex(void) const{return dVertexP4AtProductionVertex;}
 
-		int Get_PxParamIndex(void) const{return dPxParamIndex;}
-		int Get_VxParamIndex(void) const{return dVxParamIndex;}
-		int Get_TParamIndex(void) const{return dTParamIndex;}
-		int Get_CommonVxParamIndex(void) const{return dCommonVxParamIndex;}
-		int Get_CommonTParamIndex(void) const{return dCommonTParamIndex;}
-		int Get_EParamIndex(void) const{return dEParamIndex;}
+		char Get_PxParamIndex(void) const{return dPxParamIndex;}
+		char Get_VxParamIndex(void) const{return dVxParamIndex;}
+		char Get_TParamIndex(void) const{return dTParamIndex;}
+		char Get_CommonVxParamIndex(void) const{return dCommonVxParamIndex;}
+		char Get_CommonTParamIndex(void) const{return dCommonTParamIndex;}
+		char Get_EParamIndex(void) const{return dEParamIndex;}
 
 		int Get_CovMatrixEParamIndex(void) const{return ((dCovarianceMatrix == NULL) ? -1 : ((dCovarianceMatrix->GetNcols() == 7) ? -1 : 0));}
 		int Get_CovMatrixPxParamIndex(void) const{return ((dCovarianceMatrix == NULL) ? -1 : ((dCovarianceMatrix->GetNcols() == 7) ? 0 : -1));}
@@ -102,7 +102,7 @@ class DKinFitParticle
 
 		void Set_KinFitParticleType(DKinFitParticleType locKinFitParticleType){dKinFitParticleType = locKinFitParticleType;}
 		void Set_PID(int locPID){dPID = locPID;}
-		void Set_Charge(int locCharge){dCharge = locCharge;}
+		void Set_Charge(char locCharge){dCharge = locCharge;}
 		void Set_Mass(double locMass){dMass = locMass;}
 
 		void Set_Position(TVector3 locPosition){dSpacetimeVertex.SetVect(locPosition);}
@@ -119,15 +119,15 @@ class DKinFitParticle
 		void Set_CommonTime(double locCommonTime){dCommonSpacetimeVertex.SetT(locCommonTime);}
 		void Set_CommonSpacetimeVertex(TLorentzVector locCommonSpacetimeVertex){dCommonSpacetimeVertex = locCommonSpacetimeVertex;}
 
-		void Set_PxParamIndex(int locPxParamIndex){dPxParamIndex = locPxParamIndex;}
-		void Set_VxParamIndex(int locVxParamIndex){dVxParamIndex = locVxParamIndex;}
-		void Set_TParamIndex(int locTParamIndex){dTParamIndex = locTParamIndex;}
-		void Set_CommonVxParamIndex(int locCommonVxParamIndex){dCommonVxParamIndex = locCommonVxParamIndex;}
-		void Set_CommonTParamIndex(int locCommonTParamIndex){dCommonTParamIndex = locCommonTParamIndex;}
-		void Set_EParamIndex(int locEParamIndex){dEParamIndex = locEParamIndex;}
+		void Set_PxParamIndex(char locPxParamIndex){dPxParamIndex = locPxParamIndex;}
+		void Set_VxParamIndex(char locVxParamIndex){dVxParamIndex = locVxParamIndex;}
+		void Set_TParamIndex(char locTParamIndex){dTParamIndex = locTParamIndex;}
+		void Set_CommonVxParamIndex(char locCommonVxParamIndex){dCommonVxParamIndex = locCommonVxParamIndex;}
+		void Set_CommonTParamIndex(char locCommonTParamIndex){dCommonTParamIndex = locCommonTParamIndex;}
+		void Set_EParamIndex(char locEParamIndex){dEParamIndex = locEParamIndex;}
 
 		void Set_IsNeutralShowerFlag(bool locIsNeutralShowerFlag){dIsNeutralShowerFlag = locIsNeutralShowerFlag;}
-		void Set_VertexConstraintFlag(unsigned short int locVertexConstraintFlag){dVertexConstraintFlag = locVertexConstraintFlag;}
+		void Set_VertexConstraintFlag(unsigned char locVertexConstraintFlag){dVertexConstraintFlag = locVertexConstraintFlag;}
 
 		void Set_VertexP4AtProductionVertex(bool locVertexP4AtProductionVertex){dVertexP4AtProductionVertex = locVertexP4AtProductionVertex;}
 		void Set_FromInitialState(const set<DKinFitParticle*>& locFromInitialState){dFromInitialState = locFromInitialState;}
@@ -138,7 +138,7 @@ class DKinFitParticle
 		DKinFitParticleType dKinFitParticleType;
 
 		int dPID; //PDG PID
-		int dCharge;
+		char dCharge;
 		double dMass;
 
 		//p, x, & t must all coincide: t & p at point x (for charged tracks p is a function of x in a b-field!)
@@ -151,18 +151,17 @@ class DKinFitParticle
 		//7x7 format: px, py, pz, x, y, z, t
 		//5x5 format: E, x, y, z, t
 
-		//not sure if still needed
 		double dPathLength;
 		double dPathLengthUncertainty;
 
-		unsigned short int dVertexConstraintFlag; //unused unless in vertex fit //can choose between equations //only for non-accelerating particles not constrained in time
+		unsigned char dVertexConstraintFlag; //unused unless in vertex fit //can choose between equations //only for non-accelerating particles not constrained in time
 
-		int dEParamIndex;
-		int dPxParamIndex;
-		int dVxParamIndex;
-		int dTParamIndex;
-		int dCommonVxParamIndex;
-		int dCommonTParamIndex;
+		char dEParamIndex;
+		char dPxParamIndex;
+		char dVxParamIndex;
+		char dTParamIndex;
+		char dCommonVxParamIndex;
+		char dCommonTParamIndex;
 
 		//Decaying particles are reconstructed from these particles //ignored if not decaying
 		set<DKinFitParticle*> dFromInitialState;

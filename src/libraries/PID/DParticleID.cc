@@ -343,7 +343,7 @@ jerror_t DParticleID::CalcDCdEdx(const DTrackTimeBased *locTrackTimeBased, doubl
 }
 
 jerror_t DParticleID::CalcDCdEdx(const DTrackTimeBased *locTrackTimeBased, const vector<dedx_t>& locdEdxHits_CDC, const vector<dedx_t>& locdEdxHits_FDC, double& locdEdx_FDC, double& locdx_FDC, double& locdEdx_CDC, double& locdx_CDC, unsigned int& locNumHitsUsedFordEdx_FDC, unsigned int& locNumHitsUsedFordEdx_CDC) const
-	{
+{
 	locdx_CDC = 0.0;
 	locdEdx_CDC = 0.0;
 	locNumHitsUsedFordEdx_CDC = locdEdxHits_CDC.size()/2;

@@ -42,14 +42,14 @@ void DHistogramAction_ObjectMemory::Initialize(JEventLoop* locEventLoop)
 	dFactoryPoolBinMap["DKinFitParticle"] = 10;
 	locBinLabels.push_back("DKinFitParticle");
 
-	dFactoryPoolBinMap["DKinFitConstraint_Vertex"] = 11;
-	locBinLabels.push_back("DKinFitConstraint_Vertex");
+	dFactoryPoolBinMap["DKinFitChainStep"] = 11;
+	locBinLabels.push_back("DKinFitChainStep");
 
-	dFactoryPoolBinMap["DKinFitConstraint_Spacetime"] = 12;
-	locBinLabels.push_back("DKinFitConstraint_Spacetime");
+	dFactoryPoolBinMap["DKinFitChain"] = 12;
+	locBinLabels.push_back("DKinFitChain");
 
-	dFactoryPoolBinMap["DKinFitConstraint_P4"] = 13;
-	locBinLabels.push_back("DKinFitConstraint_P4");
+	dFactoryPoolBinMap["DKinFitConstraints"] = 13;
+	locBinLabels.push_back("DKinFitConstraints");
 
 	dFactoryPoolBinMap["TMatrixFSym"] = 14;
 	locBinLabels.push_back("TMatrixFSym");
@@ -86,22 +86,25 @@ void DHistogramAction_ObjectMemory::Initialize(JEventLoop* locEventLoop)
 	{
 		CreateAndChangeTo_ActionDirectory();
 
+        dVirtualMemoryVsEventNumber = new TH1D("VirtualMemoryVsEventNumber", ";Event Counter;Virtual Memory (MB)", dMaxNumEvents, 0.5, (double)dMaxNumEvents + 0.5);
+    	dResidentMemoryVsEventNumber = new TH1D("ResidentMemoryVsEventNumber", ";Event Counter;Resident Memory (MB)", dMaxNumEvents, 0.5, (double)dMaxNumEvents + 0.5);
+
 		// Total Memory
 		locHistName = "TotalMemory";
-		locHistTitle = ";Event # ;Total Memory (MB)";
-		dHist_TotalMemory = GetOrCreate_Histogram<TH1I>(locHistName, locHistTitle, dMaxNumEvents, 0.5, float(dMaxNumEvents) + 0.5);
+		locHistTitle = ";Event Counter;Total Memory (MB)";
+		dHist_TotalMemory = GetOrCreate_Histogram<TH1D>(locHistName, locHistTitle, dMaxNumEvents, 0.5, float(dMaxNumEvents) + 0.5);
 
 		// # Objects
 		locHistName = "NumObjects2D";
-		locHistTitle = "# Objects;Event #";
-		dHist_NumObjects = GetOrCreate_Histogram<TH2I>(locHistName, locHistTitle, dMaxNumEvents, 0.5, float(dMaxNumEvents) + 0.5, locBinLabels.size(), 0.5, float(locBinLabels.size()) + 0.5);
+		locHistTitle = "# Objects;Event Counter";
+		dHist_NumObjects = GetOrCreate_Histogram<TH2D>(locHistName, locHistTitle, dMaxNumEvents, 0.5, float(dMaxNumEvents) + 0.5, locBinLabels.size(), 0.5, float(locBinLabels.size()) + 0.5);
 		for(size_t loc_i = 0; loc_i < locBinLabels.size(); ++loc_i)
 			dHist_NumObjects->GetYaxis()->SetBinLabel(1 + loc_i, locBinLabels[loc_i].c_str());
 
 		// Object Memory
 		locHistName = "Memory2D";
-		locHistTitle = "Memory (Bytes);Event #";
-		dHist_Memory = GetOrCreate_Histogram<TH2I>(locHistName, locHistTitle, dMaxNumEvents, 0.5, float(dMaxNumEvents) + 0.5, locBinLabels.size(), 0.5, float(locBinLabels.size()) + 0.5);
+		locHistTitle = "Memory (Bytes);Event Counter";
+		dHist_Memory = GetOrCreate_Histogram<TH2D>(locHistName, locHistTitle, dMaxNumEvents, 0.5, float(dMaxNumEvents) + 0.5, locBinLabels.size(), 0.5, float(locBinLabels.size()) + 0.5);
 		for(size_t loc_i = 0; loc_i < locBinLabels.size(); ++loc_i)
 			dHist_Memory->GetYaxis()->SetBinLabel(1 + loc_i, locBinLabels[loc_i].c_str());
 
@@ -109,13 +112,13 @@ void DHistogramAction_ObjectMemory::Initialize(JEventLoop* locEventLoop)
 		{
 			// # Objects
 			locHistName = string("NumObjects_") + locBinLabels[loc_i];
-			locHistTitle = locBinLabels[loc_i] + string(";Event # ;# Objects");
-			dHistMap_NumObjects[loc_i + 1] = GetOrCreate_Histogram<TH1I>(locHistName, locHistTitle, dMaxNumEvents, 0.5, float(dMaxNumEvents) + 0.5);
+			locHistTitle = locBinLabels[loc_i] + string(";Event Counter;# Objects");
+			dHistMap_NumObjects[loc_i + 1] = GetOrCreate_Histogram<TH1D>(locHistName, locHistTitle, dMaxNumEvents, 0.5, float(dMaxNumEvents) + 0.5);
 
 			// # Objects
 			locHistName = string("Memory_") + locBinLabels[loc_i];
-			locHistTitle = locBinLabels[loc_i] + string(";Event # ;Memory (Bytes)");
-			dHistMap_Memory[loc_i + 1] = GetOrCreate_Histogram<TH1I>(locHistName, locHistTitle, dMaxNumEvents, 0.5, float(dMaxNumEvents) + 0.5);
+			locHistTitle = locBinLabels[loc_i] + string(";Event Counter;Memory (Bytes)");
+			dHistMap_Memory[loc_i + 1] = GetOrCreate_Histogram<TH1D>(locHistName, locHistTitle, dMaxNumEvents, 0.5, float(dMaxNumEvents) + 0.5);
 		}
 
 		//Return to the base directory
@@ -147,20 +150,16 @@ bool DHistogramAction_ObjectMemory::Perform_Action(JEventLoop* locEventLoop, con
 	//call get-n-rows first outside of lock, just to make sure 
 	map<int, size_t> locNumObjectsMap; //int is bin
 	map<int, unsigned long long> locMemoryMap; //int is bin
-	double locTotalMemory = 0;
+	double locTotalMemory = 0.0;
 	for(size_t loc_i = 0; loc_i < dFactoryPairsToTrack.size(); ++loc_i)
 	{
 		string locClassName = dFactoryPairsToTrack[loc_i].first;
-		JFactory_base* locFactory = locEventLoop->GetFactory(locClassName.c_str(), dFactoryPairsToTrack[loc_i].second.c_str());
+		string locTag = dFactoryPairsToTrack[loc_i].second;
+		JFactory_base* locFactory = locEventLoop->GetFactory(locClassName.c_str(), locTag.c_str());
 		unsigned long long locNumObjects = locFactory->GetNrows();
 		unsigned long long locDataClassSize = locFactory->GetDataClassSize();
 
 		unsigned long long locMemory = locDataClassSize*locNumObjects;
-		if(locClassName == "DChargedTrackHypothesis")
-			locMemory += locNumObjects*(7*7*8 + 5*5*8); //error matrices //8 = double
-		if((locClassName == "DNeutralParticleHypothesis") || (locClassName == "DBeamPhoton"))
-			locMemory += locNumObjects*(7*7*8); //error matrices //8 = double
-
 		int locBin = dFactoryPairBinMap[dFactoryPairsToTrack[loc_i]];
 		locNumObjectsMap[locBin] = locNumObjects;
 		locMemoryMap[locBin] = locMemory;
@@ -207,31 +206,42 @@ bool DHistogramAction_ObjectMemory::Perform_Action(JEventLoop* locEventLoop, con
 		locMemoryMap[locBin] = locMemory;
 		locTotalMemory += double(locMemory);
 
-		//DKinFitConstraint_Vertex
-		locBin = dFactoryPoolBinMap["DKinFitConstraint_Vertex"];
+		//DKinFitChainStep
+		locBin = dFactoryPoolBinMap["DKinFitChainStep"];
+		locNumObjectsMap[locBin] = locKinFitResultsFactory->Get_KinFitChainStepPoolSize();
+		locMemory = sizeof(DKinFitChainStep)*locNumObjectsMap[locBin];
+		locMemoryMap[locBin] = locMemory;
+		locTotalMemory += double(locMemory);
+
+		//DKinFitChain
+		locBin = dFactoryPoolBinMap["DKinFitChain"];
+		locNumObjectsMap[locBin] = locKinFitResultsFactory->Get_KinFitChainPoolSize();
+		locMemory = sizeof(DKinFitChain)*locNumObjectsMap[locBin];
+		locMemoryMap[locBin] = locMemory;
+		locTotalMemory += double(locMemory);
+
+		//DKinFitConstraints
+		locBin = dFactoryPoolBinMap["DKinFitConstraints"];
+		//vertex
 		locNumObjectsMap[locBin] = locKinFitResultsFactory->Get_KinFitConstraintVertexPoolSize();
-		locMemory = sizeof(DKinFitConstraint_Vertex)*locNumObjectsMap[locBin];
-		locMemoryMap[locBin] = locMemory;
-		locTotalMemory += double(locMemory);
-
-		//DKinFitConstraint_Spacetime
-		locBin = dFactoryPoolBinMap["DKinFitConstraint_Spacetime"];
-		locNumObjectsMap[locBin] = locKinFitResultsFactory->Get_KinFitConstraintSpacetimePoolSize();
-		locMemory = sizeof(DKinFitConstraint_Spacetime)*locNumObjectsMap[locBin];
-		locMemoryMap[locBin] = locMemory;
-		locTotalMemory += double(locMemory);
-
-		//DKinFitConstraint_P4
-		locBin = dFactoryPoolBinMap["DKinFitConstraint_P4"];
-		locNumObjectsMap[locBin] = locKinFitResultsFactory->Get_KinFitConstraintP4PoolSize();
-		locMemory = sizeof(DKinFitConstraint_P4)*locNumObjectsMap[locBin];
+		locMemory = sizeof(DKinFitConstraint_Vertex)*locKinFitResultsFactory->Get_KinFitConstraintVertexPoolSize();
+		//spacetime
+		locNumObjectsMap[locBin] += locKinFitResultsFactory->Get_KinFitConstraintSpacetimePoolSize();
+		locMemory += sizeof(DKinFitConstraint_Spacetime)*locKinFitResultsFactory->Get_KinFitConstraintSpacetimePoolSize();
+		//p4
+		locNumObjectsMap[locBin] += locKinFitResultsFactory->Get_KinFitConstraintP4PoolSize();
+		locMemory += sizeof(DKinFitConstraint_P4)*locKinFitResultsFactory->Get_KinFitConstraintP4PoolSize();
+		//mass
+		locNumObjectsMap[locBin] += locKinFitResultsFactory->Get_KinFitConstraintMassPoolSize();
+		locMemory += sizeof(DKinFitConstraint_Mass)*locKinFitResultsFactory->Get_KinFitConstraintMassPoolSize();
+		//save
 		locMemoryMap[locBin] = locMemory;
 		locTotalMemory += double(locMemory);
 
 		//TMatrixFSym
 		locBin = dFactoryPoolBinMap["TMatrixFSym"];
 		locNumObjectsMap[locBin] = (dynamic_cast<DApplication*>(japp))->Get_NumCovarianceMatrices();
-		locMemory = (sizeof(TMatrixDSym) + 7*7*4)*locNumObjectsMap[locBin]; //assume 7x7 matrix of floats (4)
+		locMemory = ((unsigned long long)(sizeof(TMatrixDSym) + 7*7*4))*locNumObjectsMap[locBin]; //assume 7x7 matrix of floats (4)
 		locMemoryMap[locBin] = locMemory;
 		locTotalMemory += double(locMemory);
 
@@ -274,11 +284,50 @@ bool DHistogramAction_ObjectMemory::Perform_Action(JEventLoop* locEventLoop, con
 				dHist_Memory->SetBinContent(dEventCounter, locObjectBin, locMemoryMap[locObjectBin]);
 			}
 			dHist_TotalMemory->SetBinContent(dEventCounter, locTotalMemory);
+
+			double vm, rss;
+			Read_MemoryUsage(vm, rss);
+			dVirtualMemoryVsEventNumber->SetBinContent(dEventCounter, vm / 1024.0);
+			dResidentMemoryVsEventNumber->SetBinContent(dEventCounter, rss / 1024.0);
 		}
 	}
 	Unlock_Action(); //RELEASE ROOT LOCK!!
 
 	return true;
+}
+
+void DHistogramAction_ObjectMemory::Read_MemoryUsage(double& vm_usage, double& resident_set)
+{
+	using std::ios_base;
+	using std::ifstream;
+	using std::string;
+
+	vm_usage     = 0.0;
+	resident_set = 0.0;
+
+	// 'file' stat seems to give the most reliable results
+	ifstream stat_stream("/proc/self/stat",ios_base::in);
+
+	// dummy vars for leading entries in stat that we don't care about
+	string pid, comm, state, ppid, pgrp, session, tty_nr;
+	string tpgid, flags, minflt, cminflt, majflt, cmajflt;
+	string utime, stime, cutime, cstime, priority, nice;
+	string O, itrealvalue, starttime;
+
+	// the two fields we want
+	unsigned long vsize;
+	long rss;
+
+	stat_stream >> pid >> comm >> state >> ppid >> pgrp >> session >> tty_nr
+		>> tpgid >> flags >> minflt >> cminflt >> majflt >> cmajflt
+		>> utime >> stime >> cutime >> cstime >> priority >> nice
+		>> O >> itrealvalue >> starttime >> vsize >> rss; // don't care about the rest
+
+	stat_stream.close();
+
+	long page_size_kb = sysconf(_SC_PAGE_SIZE) / 1024; // in case x86-64 is configured to use 2MB pages
+	vm_usage     = vsize / 1024.0;
+	resident_set = rss * page_size_kb;
 }
 
 void DHistogramAction_Reconstruction::Initialize(JEventLoop* locEventLoop)

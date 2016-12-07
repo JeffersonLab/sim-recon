@@ -103,7 +103,10 @@ jerror_t DKinFitResults_factory::evnt(JEventLoop* locEventLoop, uint64_t eventnu
 		deque<DKinFitConstraint_Vertex*> locSortedVertexConstraints;
 		set<DKinFitConstraint*> locConstraints = dKinFitUtils->Create_Constraints(locParticleCombo, locKinFitChain, locKinFitType, locSortedVertexConstraints);
 		if(locConstraints.empty())
+		{
+			dKinFitUtils->Recycle_DKinFitChain(locKinFitChain); //original chain no longer needed: recycle
 			continue; //Nothing to fit!
+		}
 
 		//see if constraints (particles) are identical to a previous kinfit
 		map<set<DKinFitConstraint*>, DKinFitResults*>::iterator locResultIterator = dConstraintResultsMap.find(locConstraints);
@@ -119,6 +122,8 @@ jerror_t DKinFitResults_factory::evnt(JEventLoop* locEventLoop, uint64_t eventnu
 				locKinFitResults->Add_ParticleCombo(locParticleCombo, locOutputKinFitChain);
 			}
 			//else: the previous kinfit failed, so this one will too (don't save)
+
+			dKinFitUtils->Recycle_DKinFitChain(locKinFitChain); //original chain no longer needed: recycle
 			continue;
 		}
 
@@ -139,6 +144,10 @@ jerror_t DKinFitResults_factory::evnt(JEventLoop* locEventLoop, uint64_t eventnu
 			const DKinFitChain* locOutputKinFitChain = dKinFitUtils->Build_OutputKinFitChain(locKinFitChain, locOutputKinFitParticles);
 			locKinFitResults = Build_KinFitResults(locParticleCombo, locOutputKinFitChain);
 		}
+		else //failed fit
+			dKinFitter->Recycle_LastFitMemory(); //RESET MEMORY FROM LAST KINFIT!! //results no longer needed
+
+		dKinFitUtils->Recycle_DKinFitChain(locKinFitChain); //original chain no longer needed: recycle
 		dConstraintResultsMap[locConstraints] = locKinFitResults;
 	}
 

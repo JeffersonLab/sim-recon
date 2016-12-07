@@ -55,4 +55,3 @@ class DKinFitResults_factory : public jana::JFactory<DKinFitResults>
 };
 
 #endif // _DKinFitResults_factory_
-

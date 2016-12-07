@@ -66,6 +66,15 @@
 #include "ANALYSIS/DKinFitResults_factory.h"
 #include "ANALYSIS/DParticleCombo_factory.h"
 
+#include "ANALYSIS/DParticleComboBlueprint_factory.h"
+#include "ANALYSIS/DTrackTimeBased_factory_Combo.h"
+#include "ANALYSIS/DEventRFBunch_factory_Combo.h"
+#include "ANALYSIS/DChargedTrackHypothesis_factory_Combo.h"
+#include "ANALYSIS/DNeutralParticleHypothesis_factory_Combo.h"
+#include "ANALYSIS/DBeamPhoton_factory_KinFit.h"
+#include "ANALYSIS/DChargedTrackHypothesis_factory_KinFit.h"
+#include "ANALYSIS/DNeutralParticleHypothesis_factory_KinFit.h"
+
 #include "ANALYSIS/DCutActions.h"
 
 using namespace std;
@@ -104,6 +113,8 @@ class DHistogramAction_ObjectMemory : public DAnalysisAction
 
 		void Initialize(JEventLoop* locEventLoop);
 
+		void Read_MemoryUsage(double& vm_usage, double& resident_set);
+
 		unsigned int dMaxNumEvents;
 
 	private:
@@ -116,13 +127,15 @@ class DHistogramAction_ObjectMemory : public DAnalysisAction
 		map<pair<string, string>, int> dFactoryPairBinMap;
 		map<string, int> dFactoryPoolBinMap;
 
-		map<int, TH1I*> dHistMap_NumObjects; //int is 2d bin
-		map<int, TH1I*> dHistMap_Memory; //int is 2d bin
+		map<int, TH1D*> dHistMap_NumObjects; //int is 2d bin
+		map<int, TH1D*> dHistMap_Memory; //int is 2d bin
 
-		TH2I* dHist_NumObjects;
-		TH2I* dHist_Memory;
+		TH2D* dHist_NumObjects;
+		TH2D* dHist_Memory;
 
-		TH1I* dHist_TotalMemory;
+		TH1D* dVirtualMemoryVsEventNumber;
+		TH1D* dResidentMemoryVsEventNumber;
+		TH1D* dHist_TotalMemory;
 };
 
 class DHistogramAction_Reconstruction : public DAnalysisAction

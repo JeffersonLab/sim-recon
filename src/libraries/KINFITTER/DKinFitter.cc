@@ -78,7 +78,7 @@ void DKinFitter::Reset_NewFit(void)
 {
 	dKinFitUtils->Reset_NewFit();
 
-	dKinFitStatus = d_KinFitSuccessful;
+	dKinFitStatus = d_KinFitNotPerformed;
 
 	dKinFitConstraints.clear();
 	dKinFitParticles.clear();
@@ -93,6 +93,13 @@ void DKinFitter::Reset_NewFit(void)
 	dNDF = 0;
 	dConfidenceLevel = 0.0;
 	dPulls.clear();
+}
+
+void DKinFitter::Recycle_LastFitMemory(void)
+{
+	//Cannot be inlined: DKinFitUtils is a forward-declared class
+	if(dKinFitStatus != d_KinFitNotPerformed)
+		dKinFitUtils->Recycle_LastFitMemory(dKinFitConstraints);
 }
 
 /********************************************************************** UTILITIES **********************************************************************/

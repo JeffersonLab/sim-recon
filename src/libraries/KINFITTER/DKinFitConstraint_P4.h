@@ -22,7 +22,7 @@ class DKinFitConstraint_P4 : public DKinFitConstraint
 		TVector3 Get_InitP3Guess(void) const{return dInitP3Guess;};
 		void Set_InitP3Guess(const TVector3& locInitP3Guess){dInitP3Guess = locInitP3Guess;};
 
-		int Get_FIndex(void) const{return dFIndex;}
+		char Get_FIndex(void) const{return dFIndex;}
 		set<DKinFitParticle*> Get_InitialParticles(void) const{return dInitialParticles;};
 		set<DKinFitParticle*> Get_FinalParticles(void) const{return dFinalParticles;};
 
@@ -40,12 +40,12 @@ class DKinFitConstraint_P4 : public DKinFitConstraint
 		~DKinFitConstraint_P4(void){}
 
 		void Reset(void);
-		void Set_FIndex(int locFIndex){dFIndex = locFIndex;}
+		void Set_FIndex(char locFIndex){dFIndex = locFIndex;}
 
 		void Set_InitialParticles(const set<DKinFitParticle*>& locInitialParticles){dInitialParticles = locInitialParticles;}
 		void Set_FinalParticles(const set<DKinFitParticle*>& locFinalParticles){dFinalParticles = locFinalParticles;}
 
-		int dFIndex; //starting row index of the equation(s) corresponding to these constraints in the dF matrix term
+		char dFIndex; //starting row index of the equation(s) corresponding to these constraints in the dF matrix term
 		set<DKinFitParticle*> dInitialParticles;
 		set<DKinFitParticle*> dFinalParticles;
 

@@ -48,6 +48,7 @@ class DApplication:public JApplication{
 		size_t Get_NumCovarianceMatrices(void);
 		TMatrixFSym* Get_CovarianceMatrixResource(unsigned int locNumMatrixRows);
 		TMatrixFSym* Get_CovarianceMatrixResource(unsigned int locNumMatrixRows, uint64_t locEventNumber);
+		void Recycle_CovarianceMatrices(const deque<const TMatrixFSym*>& locMatrices);
 
 	protected:
 	
@@ -63,7 +64,7 @@ class DApplication:public JApplication{
 		
 		size_t dTargetMaxNumAvailableMatrices;
 		map<pthread_t, uint64_t> dEventNumberMap;
-		map<pthread_t, deque<TMatrixFSym*> > dUsedMatrixMap;
+		map<pthread_t, set<TMatrixFSym*> > dUsedMatrixMap;
 		deque<TMatrixFSym*> dAvailableMatrices;
 };
 
