@@ -78,7 +78,7 @@ class DParticleComboBlueprintStep
 
 struct DParticleComboBlueprintStep_Comparator
 {
-	bool operator() (const DParticleComboBlueprintStep*& lhs, const DParticleComboBlueprintStep*& rhs) const
+	bool operator() (DParticleComboBlueprintStep* const& lhs, DParticleComboBlueprintStep* const& rhs) const
 	{
 		return (*lhs) < (*rhs);
 	}
