@@ -468,4 +468,33 @@ void SortDirectories(){
    japp->RootUnLock();
 }
 
+TObject* GetHistPointer(const char * plugin, const char * directoryName, const char * name){
+
+   // This method does not take into account thread safety and should only be called from the fini() method!!!!
+   char fullNameChar[500];
+   sprintf(fullNameChar, "%s/%s/%s", plugin, directoryName, name);
+   TString fullName = TString(fullNameChar);
+
+   auto iter1I = Get1DMap().find(fullName);
+   if(iter1I != Get1DMap().end()) return (TObject*) (*iter1I).second.first;
+
+   auto iter1D = Get1DWeightedMap().find(fullName);
+   if(iter1D != Get1DWeightedMap().end()) return (TObject*) (*iter1D).second.first;
+
+   auto iter1P = Get1DProfileMap().find(fullName);
+   if(iter1P != Get1DProfileMap().end()) return (TObject*) (*iter1P).second.first;
+
+   auto iter2I = Get2DMap().find(fullName);
+   if(iter2I != Get2DMap().end()) return (TObject*) (*iter2I).second.first;
+
+   auto iter2D = Get2DWeightedMap().find(fullName);
+   if(iter2D != Get2DWeightedMap().end()) return (TObject*) (*iter2D).second.first;
+
+   auto iter2P = Get2DProfileMap().find(fullName);
+   if(iter2P != Get2DProfileMap().end()) return (TObject*) (*iter2P).second.first;
+
+   jout << "Unable to find histogram " << fullName.Data() << endl;
+   return nullptr;
+
+}
 #endif
