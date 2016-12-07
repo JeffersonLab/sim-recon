@@ -166,6 +166,14 @@ class DKinFitUtils //purely virtual: cannot directly instantiate class, can only
 
 		TMatrixFSym* Clone_SymMatrix(const TMatrixFSym* locMatrix); //use sparingly in inherited class (if at all)!!
 
+		/************************************************************* RECYCLE RESOURCES ************************************************************/
+
+		// Do this if you are discarding the results from the previous fit (e.g. fit failed, or used to get a vertex guess)
+		// Functions are virtual in case the inheriting class wants to manage the memory differently
+		void Recycle_LastFitMemory(set<DKinFitConstraint*>& locKinFitConstraints);
+		virtual void Recycle_Matrices(deque<const TMatrixFSym*>& locMatrices);
+		virtual void Recycle_Matrices(deque<TMatrixFSym*>& locMatrices);
+
 		/************************************************************** PROTECTED MEMBERS ***********************************************************/
 
 		DKinFitter* dKinFitter; //is set by DKinFitter constructor!
@@ -187,14 +195,6 @@ class DKinFitUtils //purely virtual: cannot directly instantiate class, can only
 		DKinFitParticle* Clone_KinFitParticle(DKinFitParticle* locKinFitParticle);
 		set<DKinFitParticle*> Build_CloneParticleSet(const set<DKinFitParticle*>& locInputParticles, const map<DKinFitParticle*, DKinFitParticle*>& locCloneIOMap) const;
 		set<DKinFitConstraint*> Clone_ParticlesAndConstraints(const set<DKinFitConstraint*>& locInputConstraints);
-
-		/************************************************************* RECYCLE RESOURCES ************************************************************/
-
-		// Do this if you are discarding the results from the previous fit (e.g. fit failed, or used to get a vertex guess)
-		// Functions are virtual in case the inheriting class wants to manage the memory differently
-		void Recycle_LastFitMemory(set<DKinFitConstraint*>& locKinFitConstraints);
-		virtual void Recycle_Matrices(deque<const TMatrixFSym*>& locMatrices);
-		virtual void Recycle_Matrices(deque<TMatrixFSym*>& locMatrices);
 
 		/********************************************************** SETUP VERTEX CONSTRAINTS ********************************************************/
 

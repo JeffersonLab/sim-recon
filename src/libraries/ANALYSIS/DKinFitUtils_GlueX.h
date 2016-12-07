@@ -244,7 +244,7 @@ inline TMatrixFSym* DKinFitUtils_GlueX::Get_SymMatrixResource(unsigned int locNu
 	}
 
 	//now, retrieve one from the buffer pool
-	return DKinFitUtils::Get_SymMatrixResource();
+	return DKinFitUtils::Get_SymMatrixResource(locNumMatrixRows);
 }
 
 #endif // _DKinFitUtils_GlueX_
