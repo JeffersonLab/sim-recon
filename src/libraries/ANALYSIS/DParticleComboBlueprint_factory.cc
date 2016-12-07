@@ -556,7 +556,7 @@ bool DParticleComboBlueprint_factory::Handle_EndOfReactionStep(const DReaction* 
 		cout << "save combo" << endl;
 	_data.push_back(locParticleComboBlueprint);
 
-	//register steps so they won't accidentally be recycled later, and so that they can be 
+	//register steps so they won't accidentally be recycled later
 	for(size_t loc_i = 0; loc_i < locParticleComboBlueprint->Get_NumParticleComboBlueprintSteps(); ++loc_i)
 	{
 		const DParticleComboBlueprintStep* locParticleComboBlueprintStep = locParticleComboBlueprint->Get_ParticleComboBlueprintStep(loc_i);

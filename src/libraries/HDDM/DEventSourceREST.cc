@@ -504,7 +504,8 @@ jerror_t DEventSourceREST::Extract_DBeamPhoton(hddm_r::HDDM *record,
    }
 
 	//get the matrices
-	deque<TMatrixFSym*> locMatrices = dApplication->Get_CovarianceMatrixResources(7, locNumMatrices, locEventNumber);
+	DApplication* locApplication = dynamic_cast<DApplication*>(japp);
+	deque<TMatrixFSym*> locMatrices = locApplication->Get_CovarianceMatrixResources(7, locNumMatrices, locEventNumber);
 
 	//now get the objects
    for(locTAGMiter = locTagmBeamPhotonList.begin(); locTAGMiter != locTagmBeamPhotonList.end(); ++locTAGMiter)
@@ -937,15 +938,16 @@ jerror_t DEventSourceREST::Extract_DTrackTimeBased(hddm_r::HDDM *record,
 	size_t locNumMatrices = 0;
    const hddm_r::ChargedTrackList &tracks = record->getChargedTracks();
    hddm_r::ChargedTrackList::iterator iter;
-   for (iter = tracks.begin(); iter != tracks.end(); ++iter) {
+   for (iter = tracks.begin(); iter != tracks.end(); ++iter)
    {
       if(iter->getJtag() == tag)
          ++locNumMatrices;
    }
 
 	//get the matrices
-	deque<TMatrixFSym*> loc7x7Matrices = dApplication->Get_CovarianceMatrixResources(7, locNumMatrices, locEventNumber);
-	deque<TMatrixFSym*> loc5x5Matrices = dApplication->Get_CovarianceMatrixResources(5, locNumMatrices, locEventNumber);
+	DApplication* locApplication = dynamic_cast<DApplication*>(japp);
+	deque<TMatrixFSym*> loc7x7Matrices = locApplication->Get_CovarianceMatrixResources(7, locNumMatrices, locEventNumber);
+	deque<TMatrixFSym*> loc5x5Matrices = locApplication->Get_CovarianceMatrixResources(5, locNumMatrices, locEventNumber);
 
    // loop over chargedTrack records
    for (iter = tracks.begin(); iter != tracks.end(); ++iter) {
