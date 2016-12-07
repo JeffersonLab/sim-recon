@@ -431,7 +431,6 @@ uint64_t DApplication::Get_EventNumber_CurrentThread(void)
 	pthread_t locThreadID = pthread_self();
 	vector<JEventLoop*> locEventLoops = GetJEventLoops(); //This locks internally
 
-	uint64_t locEventNumber = 0;
 	for(auto& locEventLoop : locEventLoops)
 	{
 		if(locEventLoop->GetPThreadID() == locThreadID)
@@ -487,7 +486,7 @@ deque<TMatrixFSym*> DApplication::Get_CovarianceMatrixResources(unsigned int loc
 	}
 	else //Move the desired range
 	{
-		auto locMoveEdgeIterator = std::next(dAvailableMatrices.rbegin(), locNumRequestedMatrices);
+		deque<TMatrixFSym*>::const_reverse_iterator locMoveEdgeIterator = std::next(dAvailableMatrices.rbegin(), locNumRequestedMatrices);
 		std::move(dAvailableMatrices.rbegin(), locMoveEdgeIterator, std::back_inserter(locAcquiredMatrices));
 		dAvailableMatrices.erase(dAvailableMatrices.rbegin(), locMoveEdgeIterator);
 	}
