@@ -535,27 +535,37 @@ size_t DApplication::Get_NumCovarianceMatrices(void)
 	return locNumMatrices;
 }
 
-void DApplication::Recycle_Matrices(const deque<const TMatrixFSym*>& locMatrices)
+void DApplication::Recycle_Matrices(deque<const TMatrixFSym*>& locMatrices)
 {
-	pthread_t locThreadID = pthread_self();
-
 	//first, cast away const-ness
 	deque<TMatrixFSym*> locNonConstMatrices;
 	for(auto& locMatrix : locMatrices)
 		locNonConstMatrices.push_back(const_cast<TMatrixFSym*>(locMatrix));
 
+	Recycle_Matrices(locNonConstMatrices);
+	locMatrices.clear();
+}
+
+void DApplication::Recycle_Matrices(deque<TMatrixFSym*>& locMatrices)
+{
+	pthread_t locThreadID = pthread_self();
+
 	//LOCK
 	pthread_mutex_lock(&matrix_mutex);
 
-	//the matrices are no longer used
+	//get the used list
 	set<TMatrixFSym*>& locUsedMatrices = dUsedMatrixMap[locThreadID];
-	for(auto& locMatrix : locNonConstMatrices)
-		locUsedMatrices.erase(locMatrix);
 
 	//make the matrices available
-	std::move(locNonConstMatrices.begin(), locNonConstMatrices.end(), std::back_inserter(dAvailableMatrices));
+	std::move(locMatrices.begin(), locMatrices.end(), std::back_inserter(dAvailableMatrices));
 
 	//UNLOCK
 	pthread_mutex_unlock(&matrix_mutex);
+
+	//remove from the used list (outside of lock: only this thread has access to locUsedMatrices)
+	for(auto& locMatrix : locMatrices)
+		locUsedMatrices.erase(locMatrix);
+
+	locMatrices.clear();
 }
 
