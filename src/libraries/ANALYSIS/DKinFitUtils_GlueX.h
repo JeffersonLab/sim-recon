@@ -245,7 +245,7 @@ inline TMatrixFSym* DKinFitUtils_GlueX::Get_SymMatrixResource(unsigned int locNu
 		DKinFitUtils::Recycle_Matrices(locMatrices); //Then store them to the buffer by "recycling" them
 	}
 */
-	return dApplication->Get_CovarianceMatrixResources(locNumMatrixRows, dEventNumber);
+	return dApplication->Get_CovarianceMatrixResource(locNumMatrixRows, dEventNumber);
 
 	//now, retrieve one from the buffer pool
 //	return DKinFitUtils::Get_SymMatrixResource(locNumMatrixRows);
