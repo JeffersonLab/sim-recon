@@ -26,7 +26,9 @@ DKinFitUtils_GlueX::DKinFitUtils_GlueX(JEventLoop* locEventLoop)
 
 	gPARMS->SetDefaultParameter("KINFIT:LINKVERTICES", dLinkVerticesFlag);
 	dWillBeamHaveErrorsFlag = false; //Until fixed!
+
 	dEventNumber = locEventLoop->GetJEvent().GetEventNumber();
+	dNumFillBufferMatrices = 10; //the larger the number, the more memory it takes. the smaller, the more locking is needed
 }
 
 void DKinFitUtils_GlueX::Set_MaxPoolSizes(size_t locNumReactions, size_t locExpectedNumCombos)

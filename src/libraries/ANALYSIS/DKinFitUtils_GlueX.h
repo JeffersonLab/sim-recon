@@ -237,18 +237,20 @@ inline bool DKinFitUtils_GlueX::DDecayingParticleInfo::operator<(const DKinFitUt
 
 inline TMatrixFSym* DKinFitUtils_GlueX::Get_SymMatrixResource(unsigned int locNumMatrixRows)
 {
-/*
 	//if kinfit pool (buffer) is empty, use DApplication global pool to retrieve a new batch of matrices
 	if(Get_SymMatrixPoolSize() == 0)
 	{
 		deque<TMatrixFSym*> locMatrices = dApplication->Get_CovarianceMatrixResources(locNumMatrixRows, dNumFillBufferMatrices, dEventNumber);
-		DKinFitUtils::Recycle_Matrices(locMatrices); //Then store them to the buffer by "recycling" them
+
+		//Then store them to the buffer by "recycling" them
+			//these only live in the "available" pool, and aren't set in the "all" pool
+			//when the pools are reset for a new event, the buffer is cleared and the utils forget all about them
+			//thus, the memory is managed by the DApplication, and only by the DApplication
+		DKinFitUtils::Recycle_Matrices(locMatrices); 
 	}
-*/
-	return dApplication->Get_CovarianceMatrixResource(locNumMatrixRows, dEventNumber);
 
 	//now, retrieve one from the buffer pool
-//	return DKinFitUtils::Get_SymMatrixResource(locNumMatrixRows);
+	return DKinFitUtils::Get_SymMatrixResource(locNumMatrixRows);
 }
 
 #endif // _DKinFitUtils_GlueX_
