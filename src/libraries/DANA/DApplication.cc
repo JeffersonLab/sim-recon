@@ -480,7 +480,7 @@ deque<TMatrixFSym*> DApplication::Get_CovarianceMatrixResources(unsigned int loc
 	//Get matrix resources if available
 	if(dAvailableMatrices.size() <= locNumRequestedMatrices)
 	{
-		//Move the whole matrix
+		//Move the whole deque
 		std::move(dAvailableMatrices.begin(), dAvailableMatrices.end(), std::back_inserter(locAcquiredMatrices));
 		dAvailableMatrices.clear();
 	}
@@ -503,12 +503,14 @@ deque<TMatrixFSym*> DApplication::Get_CovarianceMatrixResources(unsigned int loc
 	while(locAcquiredMatrices.size() < locNumRequestedMatrices)
 		locAcquiredMatrices.push_back(new TMatrixFSym(locNumMatrixRows));
 
-	//Reset used matrices, deleting if necessary
+	//delete unused matrices if necessary
 	if(locDeleteAllUsedMatricesFlag)
 	{
 		for(auto& locMatrix : locUsedMatrices)
 			delete locMatrix;
 	}
+
+	//reset used if new event
 	if(locNewEventFlag)
 		locUsedMatrices.clear();
 

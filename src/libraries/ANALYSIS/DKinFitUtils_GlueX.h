@@ -187,9 +187,6 @@ class DKinFitUtils_GlueX : public DKinFitUtils
 
 		 //use DANA global resource pool instead
 		TMatrixFSym* Get_SymMatrixResource(unsigned int locNumMatrixRows);
-		void Recycle_Matrices(deque<const TMatrixFSym*>& locMatrices){dApplication->Recycle_Matrices(locMatrices);}
-		void Recycle_Matrices(deque<TMatrixFSym*>& locMatrices){dApplication->Recycle_Matrices(locMatrices);}
-
 		void Recycle_DetectedDecayingParticles(map<DKinFitParticle*, DKinFitParticle*>& locDecayingToDetectedParticleMap);
 
 		/************************************************************** MISCELLANEOUS ***************************************************************/
@@ -246,7 +243,7 @@ inline TMatrixFSym* DKinFitUtils_GlueX::Get_SymMatrixResource(unsigned int locNu
 			//these only live in the "available" pool, and aren't set in the "all" pool
 			//when the pools are reset for a new event, the buffer is cleared and the utils forget all about them
 			//thus, the memory is managed by the DApplication, and only by the DApplication
-		DKinFitUtils::Recycle_Matrices(locMatrices); 
+		Recycle_Matrices(locMatrices); 
 	}
 
 	//now, retrieve one from the buffer pool

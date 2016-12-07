@@ -9,8 +9,6 @@
 //------------------
 jerror_t DParticleComboBlueprint_factory::init(void)
 {
-	MAX_DParticleComboBlueprintStepPoolSize = 100;
-
 	dDebugLevel = 0;
 
 	//BEWARE: IF THIS IS CHANGED, CHANGE IN THE ANALYSIS UTILITIES AND THE EVENT WRITER ALSO!!
@@ -47,6 +45,13 @@ jerror_t DParticleComboBlueprint_factory::init(void)
 	SplitString(HYPOTHESES, hypotheses, ",");
 	for(size_t loc_i = 0; loc_i < hypotheses.size(); ++loc_i)
 		dAvailablePIDs.insert(Particle_t(hypotheses[loc_i]));
+
+	//Setting this flag makes it so that JANA does not delete the objects in _data.  This factory will manage this memory. 
+	SetFactoryFlag(NOT_OBJECT_OWNER);
+	dTargetMaxNumAvailableCombos = 10000;
+	dTargetMaxNumAvailableComboSteps = 50000;
+	dNumFillBufferCombos = 10;
+	dNumFillBufferSteps = 20;
 
 	return NOERROR;
 }
@@ -147,7 +152,7 @@ jerror_t DParticleComboBlueprint_factory::evnt(JEventLoop *locEventLoop, uint64_
 	if(!locTrigger->Get_IsPhysicsEvent())
 		return NOERROR;
 
-	Reset_Pools();
+	Reset_Memory();
 
 	dBlueprintStepSet.clear();
 	dSavedBlueprintSteps.clear();
@@ -395,7 +400,7 @@ void DParticleComboBlueprint_factory::Find_Combos(const DReaction* locReaction, 
 #ifdef VTRACE
 	VT_TRACER("DParticleComboBlueprint_factory::Find_Combos()");
 #endif
-	DParticleComboBlueprint* locParticleComboBlueprint = new DParticleComboBlueprint();
+	DParticleComboBlueprint* locParticleComboBlueprint = Get_ParticleComboBlueprintResource();
 	locParticleComboBlueprint->Set_Reaction(locReaction);
 
 	int locStepIndex = locReaction->Get_NumReactionSteps() - 1;
@@ -486,7 +491,6 @@ void DParticleComboBlueprint_factory::Find_Combos(const DReaction* locReaction, 
 		++locParticleIndex;
 	}
 	while(true);
-	delete locParticleComboBlueprint; //delete the last, extra one
 }
 
 bool DParticleComboBlueprint_factory::Handle_EndOfReactionStep(const DReaction* locReaction, DParticleComboBlueprint*& locParticleComboBlueprint, DParticleComboBlueprintStep*& locParticleComboBlueprintStep, int& locStepIndex, int& locParticleIndex, deque<deque<int> >& locResumeAtIndexDeque, const deque<deque<int> >& locNumPossibilitiesDeque, map<int, int>& locInitialParticleStepFromIndexMap)
@@ -565,7 +569,10 @@ bool DParticleComboBlueprint_factory::Handle_EndOfReactionStep(const DReaction* 
 		dBlueprintStepSet.insert(const_cast<DParticleComboBlueprintStep*>(locParticleComboBlueprintStep));
 	}
 
-	locParticleComboBlueprint = new DParticleComboBlueprint(*locParticleComboBlueprint); //clone so don't alter saved object
+	//clone object so that don't change the saved one
+	DParticleComboBlueprint* locNewParticleComboBlueprint = Get_ParticleComboBlueprintResource();
+	*locNewParticleComboBlueprint = *locParticleComboBlueprint;
+	locParticleComboBlueprint = locNewParticleComboBlueprint;
 	locParticleComboBlueprintStep = NULL;
 
 	//if true, once one is found: bail on search
@@ -912,34 +919,6 @@ const DChargedTrackHypothesis* DParticleComboBlueprint_factory::Get_ChargedHypot
 	return locChargedTrack->Get_BestFOM();
 }
 
-DParticleComboBlueprintStep* DParticleComboBlueprint_factory::Get_ParticleComboBlueprintStepResource(void)
-{
-	DParticleComboBlueprintStep* locParticleComboBlueprintStep;
-	if(dParticleComboBlueprintStepPool_Available.empty())
-	{
-		locParticleComboBlueprintStep = new DParticleComboBlueprintStep;
-		dParticleComboBlueprintStepPool_All.push_back(locParticleComboBlueprintStep);
-	}
-	else
-	{
-		locParticleComboBlueprintStep = dParticleComboBlueprintStepPool_Available.back();
-		locParticleComboBlueprintStep->Reset();
-		dParticleComboBlueprintStepPool_Available.pop_back();
-	}
-	return locParticleComboBlueprintStep;
-}
-
-void DParticleComboBlueprint_factory::Reset_Pools(void)
-{
-	// delete pool sizes if too large, preventing memory-leakage-like behavor.
-	if(dParticleComboBlueprintStepPool_All.size() > MAX_DParticleComboBlueprintStepPoolSize){
-		for(size_t loc_i = MAX_DParticleComboBlueprintStepPoolSize; loc_i < dParticleComboBlueprintStepPool_All.size(); ++loc_i)
-			delete dParticleComboBlueprintStepPool_All[loc_i];
-		dParticleComboBlueprintStepPool_All.resize(MAX_DParticleComboBlueprintStepPoolSize);
-	}
-	dParticleComboBlueprintStepPool_Available = dParticleComboBlueprintStepPool_All;
-}
-
 bool DParticleComboBlueprint_factory::Calc_FinalStateP4(size_t locTotalNumSteps, const DParticleComboBlueprint* locParticleComboBlueprint, const DParticleComboBlueprintStep* locNewParticleComboBlueprintStep, int locStepIndexToGrab, DLorentzVector& locFinalStateP4) const
 {
 	//The input locParticleComboBlueprint is under construction: it does not have all of the steps yet
@@ -1006,22 +985,203 @@ bool DParticleComboBlueprint_factory::Calc_FinalStateP4(size_t locTotalNumSteps,
 	return true;
 }
 
-//------------------
-// erun
-//------------------
-jerror_t DParticleComboBlueprint_factory::erun(void)
+/****************************************************************** MANAGE MEMORY ******************************************************************/
+
+deque<DParticleComboBlueprint*>& DParticleComboBlueprint_factory::Get_AvailableComboDeque(void) const
 {
-	return NOERROR;
+	//static: shared amongst all threads
+	//Must call this function within a lock!!
+	static deque<DParticleComboBlueprint*> locAvailableCombos;
+	return locAvailableCombos;
 }
 
-//------------------
-// fini
-//------------------
-jerror_t DParticleComboBlueprint_factory::fini(void)
+deque<DParticleComboBlueprintStep*>& DParticleComboBlueprint_factory::Get_AvailableStepDeque(void) const
 {
-	for(size_t loc_i = 0; loc_i < dParticleComboBlueprintStepPool_All.size(); ++loc_i)
-		delete dParticleComboBlueprintStepPool_All[loc_i];
+	//static: shared amongst all threads
+	//Must call this function within a lock!!
+	static deque<DParticleComboBlueprintStep*> locAvailableSteps;
+	return locAvailableSteps;
+}
 
-	return NOERROR;
+DParticleComboBlueprint* DParticleComboBlueprint_factory::Get_ParticleComboBlueprintResource(void)
+{
+	if(dParticleComboBlueprintPool_Available.empty())
+		Acquire_Combos(dNumFillBufferCombos);
+
+	DParticleComboBlueprint* locParticleComboBlueprint = dParticleComboBlueprintPool_Available.back();
+	dParticleComboBlueprintPool_Available.pop_back();
+
+	locParticleComboBlueprint->Reset();
+	return locParticleComboBlueprint;
+}
+
+DParticleComboBlueprintStep* DParticleComboBlueprint_factory::Get_ParticleComboBlueprintStepResource(void)
+{
+	if(dParticleComboBlueprintStepPool_Available.empty())
+		Acquire_Steps(dNumFillBufferSteps);
+
+	DParticleComboBlueprintStep* locParticleComboBlueprintStep = dParticleComboBlueprintStepPool_Available.back();
+	dParticleComboBlueprintStepPool_Available.pop_back();
+
+	locParticleComboBlueprintStep->Reset();
+	return locParticleComboBlueprintStep;
+}
+
+void DParticleComboBlueprint_factory::Reset_Memory(void)
+{
+	//Access combo resource pool
+	bool locDeleteCombosFlag = false;
+	japp->WriteLock("DParticleComboBlueprint_Memory"); //LOCK
+	{
+		deque<DParticleComboBlueprint*>& locAvailableCombos = Get_AvailableComboDeque();
+
+		//Memory fragmentation seems to be a very big problem, and these objects use the most memory
+		//So, don't delete them. To delete them, just uncomment the below lines.
+
+		//if available > max, wipe all used
+		locDeleteCombosFlag = (locAvailableCombos.size() >= dTargetMaxNumAvailableCombos);
+		if(!locDeleteCombosFlag)
+			std::move(dParticleComboBlueprintPool_Acquired.begin(), dParticleComboBlueprintPool_Acquired.end(), std::back_inserter(locAvailableCombos));
+	}
+	japp->Unlock("DParticleComboBlueprint_Memory"); //UNLOCK
+
+	//delete combos if necessary
+	if(locDeleteCombosFlag)
+	{
+		for(auto& locCombo : dParticleComboBlueprintPool_Acquired)
+			delete locCombo;
+	}
+
+	//Access step resource pool
+	bool locDeleteStepsFlag = false;
+	japp->WriteLock("DParticleComboBlueprintStep_Memory"); //LOCK
+	{
+		deque<DParticleComboBlueprintStep*>& locAvailableSteps = Get_AvailableStepDeque();
+
+		//Memory fragmentation seems to be a very big problem, and these objects use the most memory
+		//So, don't delete them. To delete them, just uncomment the below lines.
+
+		//if available > max, wipe all used
+		locDeleteStepsFlag = (locAvailableSteps.size() >= dTargetMaxNumAvailableComboSteps);
+		if(!locDeleteStepsFlag)
+			std::move(dParticleComboBlueprintStepPool_Acquired.begin(), dParticleComboBlueprintStepPool_Acquired.end(), std::back_inserter(locAvailableSteps));
+	}
+	japp->Unlock("DParticleComboBlueprintStep_Memory"); //UNLOCK
+
+	//delete steps if necessary
+	if(locDeleteStepsFlag)
+	{
+		for(auto& locStep : dParticleComboBlueprintStepPool_Acquired)
+			delete locStep;
+	}
+
+	//clear thread-local pools
+	dParticleComboBlueprintStepPool_Acquired.clear();
+	dParticleComboBlueprintStepPool_Available.clear();
+	dParticleComboBlueprintPool_Acquired.clear();
+	dParticleComboBlueprintPool_Available.clear();
+
+	//clear _data
+	_data.clear();
+}
+
+void DParticleComboBlueprint_factory::Acquire_Combos(size_t locNumRequestedCombos)
+{
+	//We must have the correct event number, so that we know when it's safe to recycle the memory for the next event.
+	deque<DParticleComboBlueprint*> locAcquiredCombos;
+
+	//Access resource pool
+	japp->WriteLock("DParticleComboBlueprint_Memory"); //LOCK
+	{
+		deque<DParticleComboBlueprint*>& locAvailableCombos = Get_AvailableComboDeque();
+
+		//Get resources if available
+		if(locAvailableCombos.size() <= locNumRequestedCombos)
+		{
+			//Move the whole deque
+			std::move(locAvailableCombos.begin(), locAvailableCombos.end(), std::back_inserter(locAcquiredCombos));
+			locAvailableCombos.clear();
+		}
+		else //Move the desired range
+		{
+			size_t locNewSize = locAvailableCombos.size() - locNumRequestedCombos;
+			auto locMoveEdgeIterator = std::next(locAvailableCombos.rbegin(), locNumRequestedCombos);
+			std::move(locAvailableCombos.rbegin(), locMoveEdgeIterator, std::back_inserter(locAcquiredCombos));
+			locAvailableCombos.resize(locNewSize);
+		}
+	}
+	japp->Unlock("DParticleComboBlueprint_Memory"); //UNLOCK
+
+	//make new combos if necessary
+	while(locAcquiredCombos.size() < locNumRequestedCombos)
+		locAcquiredCombos.push_back(new DParticleComboBlueprint());
+
+	//register as acquired-by and available-to this thread
+	dParticleComboBlueprintPool_Available.insert(dParticleComboBlueprintPool_Available.end(), locAcquiredCombos.begin(), locAcquiredCombos.end());
+	std::move(locAcquiredCombos.begin(), locAcquiredCombos.end(), std::back_inserter(dParticleComboBlueprintPool_Acquired));
+}
+
+void DParticleComboBlueprint_factory::Acquire_Steps(size_t locNumRequestedSteps)
+{
+	//We must have the correct event number, so that we know when it's safe to recycle the memory for the next event.
+	deque<DParticleComboBlueprint*> locAcquiredSteps;
+
+	//Access resource pool
+	japp->WriteLock("DParticleComboBlueprintStep_Memory"); //LOCK
+	{
+		deque<DParticleComboBlueprintStep*>& locAvailableSteps = Get_AvailableStepDeque();
+
+		//Get resources if available
+		if(locAvailableSteps.size() <= locNumRequestedSteps)
+		{
+			//Move the whole deque
+			std::move(locAvailableSteps.begin(), locAvailableSteps.end(), std::back_inserter(locAcquiredSteps));
+			locAvailableSteps.clear();
+		}
+		else //Move the desired range
+		{
+			size_t locNewSize = locAvailableSteps.size() - locNumRequestedSteps;
+			auto locMoveEdgeIterator = std::next(locAvailableSteps.rbegin(), locNumRequestedSteps);
+			std::move(locAvailableSteps.rbegin(), locMoveEdgeIterator, std::back_inserter(locAcquiredSteps));
+			locAvailableSteps.resize(locNewSize);
+		}
+	}
+	japp->Unlock("DParticleComboBlueprintStep_Memory"); //UNLOCK
+
+	//make new combos if necessary
+	while(locAcquiredSteps.size() < locNumRequestedSteps)
+		locAcquiredSteps.push_back(new DParticleComboBlueprintStep());
+
+	//register as acquired-by and available-to this thread
+	dParticleComboBlueprintStepPool_Available.insert(dParticleComboBlueprintStepPool_Available.end(), locAcquiredSteps.begin(), locAcquiredSteps.end());
+	std::move(locAcquiredSteps.begin(), locAcquiredSteps.end(), std::back_inserter(dParticleComboBlueprintStepPool_Acquired));
+}
+
+size_t DParticleComboBlueprint_factory::Get_ParticleComboBlueprintPoolSize_Shared(void) const
+{
+	size_t locNumCombos = 0;
+	
+	//Access resource pool
+	japp->WriteLock("DParticleComboBlueprint_Memory"); //LOCK
+	{
+		locNumCombos = Get_AvailableComboDeque().size();
+	}
+	japp->Unlock("DParticleComboBlueprint_Memory"); //UNLOCK
+
+	return locNumCombos;
+}
+
+size_t DParticleComboBlueprint_factory::Get_ParticleComboBlueprintStepPoolSize_Shared(void) const
+{
+	size_t locNumSteps = 0;
+	
+	//Access resource pool
+	japp->WriteLock("DParticleComboBlueprintStep_Memory"); //LOCK
+	{
+		locNumSteps = Get_AvailableStepDeque().size();
+	}
+	japp->Unlock("DParticleComboBlueprintStep_Memory"); //UNLOCK
+
+	return locNumSteps;
 }
 
