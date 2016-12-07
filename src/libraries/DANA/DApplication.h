@@ -80,7 +80,7 @@ class DApplication:public JApplication{
 inline TMatrixFSym* DApplication::Get_CovarianceMatrixResource(unsigned int locNumMatrixRows)
 {
 	//We must have the correct event number, so that we know when it's safe to recycle the memory for the next event.
-	return Get_CovarianceMatrixResource(locNumMatrixRows, 1, Get_EventNumber_CurrentThread()).bac();
+	return Get_CovarianceMatrixResources(locNumMatrixRows, 1, Get_EventNumber_CurrentThread()).back();
 }
 
 inline deque<TMatrixFSym*> DApplication::Get_CovarianceMatrixResources(unsigned int locNumMatrixRows, size_t locNumRequestedMatrices)

@@ -487,7 +487,7 @@ deque<TMatrixFSym*> DApplication::Get_CovarianceMatrixResources(unsigned int loc
 	}
 	else //Move the desired range
 	{
-		auto locMoveEdgeIterator = std::next(dAvailableMatrices.rbegin(), locNumMatrices);
+		auto locMoveEdgeIterator = std::next(dAvailableMatrices.rbegin(), locNumRequestedMatrices);
 		std::move(dAvailableMatrices.rbegin(), locMoveEdgeIterator, std::back_inserter(locAcquiredMatrices));
 		dAvailableMatrices.erase(dAvailableMatrices.rbegin(), locMoveEdgeIterator);
 	}
@@ -513,9 +513,9 @@ deque<TMatrixFSym*> DApplication::Get_CovarianceMatrixResources(unsigned int loc
 		locUsedMatrices.clear();
 
 	//register as used
-	locUsedMatrices.insert(locUsedMatrices.begin(), locAcquiredMatrices.begin(), locAcquiredMatrices.end());
+	locUsedMatrices.insert(locAcquiredMatrices.begin(), locAcquiredMatrices.end());
 
-	return locUsedMatrices;
+	return locAcquiredMatrices;
 }
 
 size_t DApplication::Get_NumCovarianceMatrices(void)
