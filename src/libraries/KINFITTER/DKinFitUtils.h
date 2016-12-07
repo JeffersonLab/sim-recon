@@ -112,6 +112,7 @@ class DKinFitUtils //purely virtual: cannot directly instantiate class, can only
 		size_t Get_KinFitChainPoolSize(void) const{return dKinFitChainPool_All.size();};
 		size_t Get_KinFitChainStepPoolSize(void) const{return dKinFitChainStepPool_All.size();};
 		size_t Get_SymMatrixPoolSize(void) const{return dSymMatrixPool_All.size();};
+		size_t Get_SymMatrixPoolAvailableSize(void) const{return dSymMatrixPool_Available.size();};
 
 		//GET MAX POOL SIZES
 		size_t Get_MaxKinFitParticlePoolSize(void) const{return dMaxKinFitParticlePoolSize;}
