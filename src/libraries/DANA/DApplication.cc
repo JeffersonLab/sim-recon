@@ -486,9 +486,10 @@ deque<TMatrixFSym*> DApplication::Get_CovarianceMatrixResources(unsigned int loc
 	}
 	else //Move the desired range
 	{
-		deque<TMatrixFSym*>::const_reverse_iterator locMoveEdgeIterator = std::next(dAvailableMatrices.rbegin(), locNumRequestedMatrices);
+		size_t locNewSize = dAvailableMatrices.size() - locNumRequestedMatrices;
+		auto locMoveEdgeIterator = std::next(dAvailableMatrices.rbegin(), locNumRequestedMatrices);
 		std::move(dAvailableMatrices.rbegin(), locMoveEdgeIterator, std::back_inserter(locAcquiredMatrices));
-		dAvailableMatrices.erase(dAvailableMatrices.rbegin(), locMoveEdgeIterator);
+		dAvailableMatrices.resize(locNewSize);
 	}
 
 	//UNLOCK
