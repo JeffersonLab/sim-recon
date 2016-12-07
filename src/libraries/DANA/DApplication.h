@@ -54,7 +54,7 @@ class DApplication:public JApplication{
 
 		uint64_t Get_EventNumber_CurrentThread(void);
 		size_t Get_NumCovarianceMatrices(void);
-		void Recycle_CovarianceMatrices(const deque<const TMatrixFSym*>& locMatrices);
+		void Recycle_Matrices(const deque<const TMatrixFSym*>& locMatrices);
 
 	protected:
 	
@@ -75,7 +75,7 @@ class DApplication:public JApplication{
 };
 
 //---------------------------------
-// Get_CovarianceMatrixResource
+// Get_CovarianceMatrixResource(s)
 //---------------------------------
 inline TMatrixFSym* DApplication::Get_CovarianceMatrixResource(unsigned int locNumMatrixRows)
 {

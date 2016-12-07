@@ -919,7 +919,7 @@ void DKinFitUtils::Recycle_Particles(set<DKinFitParticle*>& locParticles)
 	}
 	locParticles.clear();
 
-	Recycle_CovarianceMatrices(locMatricesToRecycle);
+	Recycle_Matrices(locMatricesToRecycle);
 }
 
 void DKinFitUtils::Recycle_DKinFitChain(const DKinFitChain* locKinFitChain)

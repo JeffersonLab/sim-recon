@@ -191,8 +191,10 @@ class DKinFitUtils //purely virtual: cannot directly instantiate class, can only
 		/************************************************************* RECYCLE RESOURCES ************************************************************/
 
 		// Do this if you are discarding the results from the previous fit (e.g. fit failed, or used to get a vertex guess)
+		// Functions are virtual in case the inheriting class wants to manage the memory differently
 		void Recycle_LastFitMemory(set<DKinFitConstraint*>& locKinFitConstraints);
-		virtual void Recycle_CovarianceMatrices(const deque<const TMatrixFSym*>& locMatrices);
+		virtual void Recycle_Matrices(deque<const TMatrixFSym*>& locMatrices);
+		virtual void Recycle_Matrices(deque<TMatrixFSym*>& locMatrices);
 
 		/********************************************************** SETUP VERTEX CONSTRAINTS ********************************************************/
 
@@ -301,10 +303,18 @@ inline bool DKinFitUtils::DSpacetimeParticles::operator<(const DKinFitUtils::DSp
 	return (dNoConstrainParticles < locSpacetimeParticles.dNoConstrainParticles);
 }
 
-inline void DKinFitUtils::Recycle_CovarianceMatrices(const deque<const TMatrixFSym*>& locMatrices)
+inline void DKinFitUtils::Recycle_Matrices(deque<const TMatrixFSym*>& locMatrices)
 {
 	for(size_t loc_i = 0; loc_i < locMatrices.size(); ++loc_i)
 		dSymMatrixPool_Available.push_back(const_cast<TMatrixFSym*>(locMatrices[loc_i]));
+
+	locMatrices.clear();
+}
+
+inline void DKinFitUtils::Recycle_Matrices(deque<TMatrixFSym*>& locMatrices)
+{
+	std::move(locMatrices.begin(), locMatrices.end(), std::back_inserter(dSymMatrixPool_Available));
+	locMatrices.clear();
 }
 
 #endif // _DKinFitUtils_

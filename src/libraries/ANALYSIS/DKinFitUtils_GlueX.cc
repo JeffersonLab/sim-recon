@@ -9,10 +9,12 @@
 DKinFitUtils_GlueX::DKinFitUtils_GlueX(const DMagneticFieldMap* locMagneticFieldMap, const DAnalysisUtilities* locAnalysisUtilities) : 
 dMagneticFieldMap(locMagneticFieldMap), dAnalysisUtilities(locAnalysisUtilities)
 {
+	dWillBeamHaveErrorsFlag = false; //Until fixed!
 	dEventNumber = 0;
+	dNumFillBufferMatrices = 10; //the larger the number, the more memory it takes. the smaller, the more locking is needed
+
 	dApplication = dynamic_cast<DApplication*>(japp);
 	gPARMS->SetDefaultParameter("KINFIT:LINKVERTICES", dLinkVerticesFlag);
-	dWillBeamHaveErrorsFlag = false; //Until fixed!
 }
 
 DKinFitUtils_GlueX::DKinFitUtils_GlueX(JEventLoop* locEventLoop)
@@ -40,7 +42,7 @@ void DKinFitUtils_GlueX::Set_MaxPoolSizes(size_t locNumReactions, size_t locExpe
 	Set_MaxKinFitChainPoolSize(locNumReactions*locExpectedNumCombos);
 	Set_MaxKinFitChainStepPoolSize(3*locNumReactions*locExpectedNumCombos);
 
-	Set_MaxSymMatrixPoolSize(10*locNumReactions*locExpectedNumCombos*2*5); //extra x5: to be safe
+	Set_MaxSymMatrixPoolSize(10*locNumReactions*locExpectedNumCombos*2);
 }
 
 /*********************************************************** OVERRIDE BASE CLASS FUNCTIONS *********************************************************/

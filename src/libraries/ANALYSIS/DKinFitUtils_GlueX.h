@@ -187,7 +187,7 @@ class DKinFitUtils_GlueX : public DKinFitUtils
 
 		 //use DANA global resource pool instead
 		TMatrixFSym* Get_SymMatrixResource(unsigned int locNumMatrixRows);
-		void Recycle_CovarianceMatrices(const deque<const TMatrixFSym*>& locMatrices){dApplication->Recycle_CovarianceMatrices(locMatrices);}
+		void Recycle_Matrices(const deque<const TMatrixFSym*>& locMatrices){dApplication->Recycle_Matrices(locMatrices);}
 
 		void Recycle_DetectedDecayingParticles(map<DKinFitParticle*, DKinFitParticle*>& locDecayingToDetectedParticleMap);
 
@@ -196,6 +196,7 @@ class DKinFitUtils_GlueX : public DKinFitUtils
 		DApplication* dApplication;
 		bool dWillBeamHaveErrorsFlag;
 		uint64_t dEventNumber;
+		size_t dNumFillBufferMatrices; //when no matrix resources at hand, the number of matrices to request from DApplication
 };
 
 inline TVector3 DKinFitUtils_GlueX::Make_TVector3(DVector3 locDVector3) const
@@ -235,8 +236,16 @@ inline bool DKinFitUtils_GlueX::DDecayingParticleInfo::operator<(const DKinFitUt
 
 inline TMatrixFSym* DKinFitUtils_GlueX::Get_SymMatrixResource(unsigned int locNumMatrixRows)
 {
-	//use DANA global resource pool instead
-	return dApplication->Get_CovarianceMatrixResource(locNumMatrixRows, dEventNumber);
+	//if kinfit pool (buffer) is empty, use DApplication global pool to retrieve a new batch of matrices
+	if(Get_SymMatrixPoolSize() == 0)
+	{
+		deque<TMatrixFSym*> locMatrices = dApplication->Get_CovarianceMatrixResources(locNumMatrixRows, dNumFillBufferMatrices, dEventNumber);
+		DKinFitUtils::Recycle_Matrices(locMatrices); //Then store them to the buffer by "recycling" them
+	}
+
+	//now, retrieve one from the buffer pool
+	return DKinFitUtils::Get_SymMatrixResource();
 }
 
 #endif // _DKinFitUtils_GlueX_
+

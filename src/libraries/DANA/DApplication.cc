@@ -535,7 +535,7 @@ size_t DApplication::Get_NumCovarianceMatrices(void)
 	return locNumMatrices;
 }
 
-void DApplication::Recycle_CovarianceMatrices(const deque<const TMatrixFSym*>& locMatrices)
+void DApplication::Recycle_Matrices(const deque<const TMatrixFSym*>& locMatrices)
 {
 	pthread_t locThreadID = pthread_self();
 
