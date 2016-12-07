@@ -423,42 +423,37 @@ DRootGeom* DApplication::GetRootGeom(unsigned int run_number)
 }
 
 //---------------------------------
-// Get_CovarianceMatrixResource
+// Get_EventNumber
 //---------------------------------
-TMatrixFSym* DApplication::Get_CovarianceMatrixResource(unsigned int locNumMatrixRows)
+uint64_t DApplication::Get_EventNumber_CurrentThread(void)
 {
-	//Well, this is unfortunate.
-	//We must have the correct event number, so that we know when it's safe to recycle the memory for the next event.
-	//So, let's get the event number: find the JEventLoop corresponding to this thread, and then get it's event number.
-
+	//Find the JEventLoop corresponding to this thread, and then get it's event number.
 	pthread_t locThreadID = pthread_self();
-	vector<JEventLoop*> locEventLoops = GetJEventLoops();
+	vector<JEventLoop*> locEventLoops = GetJEventLoops(); //This locks internally
 
 	uint64_t locEventNumber = 0;
 	for(auto& locEventLoop : locEventLoops)
 	{
-		if(locEventLoop->GetPThreadID() != locThreadID)
-			continue;
-		locEventNumber = locEventLoop->GetJEvent().GetEventNumber();
-		break;
+		if(locEventLoop->GetPThreadID() == locThreadID)
+			return locEventLoop->GetJEvent().GetEventNumber();
 	}
 
-	return Get_CovarianceMatrixResource(locNumMatrixRows, locEventNumber);
+	return 0;
 }
 
 //---------------------------------
-// Get_CovarianceMatrixResource
+// Get_CovarianceMatrixResources
 //---------------------------------
-TMatrixFSym* DApplication::Get_CovarianceMatrixResource(unsigned int locNumMatrixRows, uint64_t locEventNumber)
+deque<TMatrixFSym*> DApplication::Get_CovarianceMatrixResources(unsigned int locNumMatrixRows, size_t locNumRequestedMatrices, uint64_t locEventNumber)
 {
-	TMatrixFSym* locMatrixFSym = nullptr;
+	//We must have the correct event number, so that we know when it's safe to recycle the memory for the next event.
+	deque<TMatrixFSym*> locAcquiredMatrices;
 	pthread_t locThreadID = pthread_self();
 
 	//flags for what to do once back outside the lock
 	//Once acquired, can operate on locUsedMatrices outside of lock because only the current thread has access
 	bool locDeleteAllUsedMatricesFlag = false;
 	bool locNewEventFlag = false;
-	bool locMakeNewMatrixFlag = false;
 
 	//LOCK
 	pthread_mutex_lock(&matrix_mutex);
@@ -479,26 +474,34 @@ TMatrixFSym* DApplication::Get_CovarianceMatrixResource(unsigned int locNumMatri
 		//if available > max, wipe all used
 //		locDeleteAllUsedMatricesFlag = (dAvailableMatrices.size() >= dTargetMaxNumAvailableMatrices);
 //		if(!locDeleteAllUsedMatricesFlag)
-			std::copy(locUsedMatrices.begin(), locUsedMatrices.end(), std::back_inserter(dAvailableMatrices));
+			std::move(locUsedMatrices.begin(), locUsedMatrices.end(), std::back_inserter(dAvailableMatrices));
+		//if moved, locUsedMatrices now invalid: will clear outside of lock
 	}
 
-	//Get matrix resource if available
-	if(dAvailableMatrices.empty())
-		locMakeNewMatrixFlag = true;
-	else
+	//Get matrix resources if available
+	if(dAvailableMatrices.size() <= locNumRequestedMatrices)
 	{
-		locMatrixFSym = dAvailableMatrices.back();
-		dAvailableMatrices.pop_back();
+		//Move the whole matrix
+		std::move(dAvailableMatrices.begin(), dAvailableMatrices.end(), std::back_inserter(locAcquiredMatrices));
+		dAvailableMatrices.clear();
+	}
+	else //Move the desired range
+	{
+		auto locMoveEdgeIterator = std::next(dAvailableMatrices.rbegin(), locNumMatrices);
+		std::move(dAvailableMatrices.rbegin(), locMoveEdgeIterator, std::back_inserter(locAcquiredMatrices));
+		dAvailableMatrices.erase(dAvailableMatrices.rbegin(), locMoveEdgeIterator);
 	}
 
 	//UNLOCK
 	pthread_mutex_unlock(&matrix_mutex);
 
-	//create or resize matrix
-	if(locMakeNewMatrixFlag)
-		locMatrixFSym = new TMatrixFSym(locNumMatrixRows);
-	else
-		locMatrixFSym->ResizeTo(locNumMatrixRows, locNumMatrixRows);
+	//resize acquired matrices
+	for(auto& locMatrix : locAcquiredMatrices)
+		locMatrix->ResizeTo(locNumMatrixRows, locNumMatrixRows);
+
+	//make new matrices if necessary
+	while(locAcquiredMatrices.size() < locNumRequestedMatrices)
+		locAcquiredMatrices.push_back(new TMatrixFSym(locNumMatrixRows));
 
 	//Reset used matrices, deleting if necessary
 	if(locDeleteAllUsedMatricesFlag)
@@ -510,9 +513,9 @@ TMatrixFSym* DApplication::Get_CovarianceMatrixResource(unsigned int locNumMatri
 		locUsedMatrices.clear();
 
 	//register as used
-	locUsedMatrices.insert(locMatrixFSym);
+	locUsedMatrices.insert(locUsedMatrices.begin(), locAcquiredMatrices.begin(), locAcquiredMatrices.end());
 
-	return locMatrixFSym;
+	return locUsedMatrices;
 }
 
 size_t DApplication::Get_NumCovarianceMatrices(void)
@@ -549,8 +552,8 @@ void DApplication::Recycle_CovarianceMatrices(const deque<const TMatrixFSym*>& l
 	for(auto& locMatrix : locNonConstMatrices)
 		locUsedMatrices.erase(locMatrix);
 
-	//the matrices are now available
-	dAvailableMatrices.insert(dAvailableMatrices.end(), locNonConstMatrices.begin(), locNonConstMatrices.end());
+	//make the matrices available
+	std::move(locNonConstMatrices.begin(), locNonConstMatrices.end(), std::back_inserter(dAvailableMatrices));
 
 	//UNLOCK
 	pthread_mutex_unlock(&matrix_mutex);

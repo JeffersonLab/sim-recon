@@ -45,9 +45,13 @@ class DApplication:public JApplication{
 		DGeometry* GetDGeometry(unsigned int run_number);
 		DRootGeom *GetRootGeom(unsigned int run_number);
 
-		size_t Get_NumCovarianceMatrices(void);
+		deque<TMatrixFSym*> Get_CovarianceMatrixResources(unsigned int locNumMatrixRows);
+		deque<TMatrixFSym*> Get_CovarianceMatrixResources(unsigned int locNumMatrixRows, uint64_t locEventNumber);
 		TMatrixFSym* Get_CovarianceMatrixResource(unsigned int locNumMatrixRows);
 		TMatrixFSym* Get_CovarianceMatrixResource(unsigned int locNumMatrixRows, uint64_t locEventNumber);
+
+		uint64_t Get_EventNumber_CurrentThread(void);
+		size_t Get_NumCovarianceMatrices(void);
 		void Recycle_CovarianceMatrices(const deque<const TMatrixFSym*>& locMatrices);
 
 	protected:
@@ -68,4 +72,25 @@ class DApplication:public JApplication{
 		deque<TMatrixFSym*> dAvailableMatrices;
 };
 
+//---------------------------------
+// Get_CovarianceMatrixResource
+//---------------------------------
+inline TMatrixFSym* DApplication::Get_CovarianceMatrixResource(unsigned int locNumMatrixRows)
+{
+	//We must have the correct event number, so that we know when it's safe to recycle the memory for the next event.
+	return Get_CovarianceMatrixResource(locNumMatrixRows, 1, Get_EventNumber_CurrentThread()).bac();
+}
+
+inline deque<TMatrixFSym*> DApplication::Get_CovarianceMatrixResources(unsigned int locNumMatrixRows, size_t locNumRequestedMatrices)
+{
+	//We must have the correct event number, so that we know when it's safe to recycle the memory for the next event.
+	return Get_CovarianceMatrixResources(locNumMatrixRows, locNumRequestedMatrices, Get_EventNumber_CurrentThread());
+}
+
+inline TMatrixFSym* DApplication::Get_CovarianceMatrixResource(unsigned int locNumMatrixRows, uint64_t locEventNumber)
+{
+	return Get_CovarianceMatrixResources(locNumMatrixRows, 1, locEventNumber).back();
+}
+
 #endif // _DApplication_
+
