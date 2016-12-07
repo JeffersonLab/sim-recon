@@ -86,40 +86,27 @@ void DHistogramAction_ObjectMemory::Initialize(JEventLoop* locEventLoop)
 	{
 		CreateAndChangeTo_ActionDirectory();
 
-        dVirtualMemoryVsEventNumber = new TH1D("VirtualMemoryVsEventNumber", ";Event Counter;Virtual Memory (MB)", dMaxNumEvents, 0.5, (double)dMaxNumEvents + 0.5);
-    	dResidentMemoryVsEventNumber = new TH1D("ResidentMemoryVsEventNumber", ";Event Counter;Resident Memory (MB)", dMaxNumEvents, 0.5, (double)dMaxNumEvents + 0.5);
+		dVirtualMemoryVsEventNumber = new TH1F("VirtualMemoryVsEventNumber", ";Event Counter;Virtual Memory (MB)", dMaxNumEvents, 0.5, (double)dMaxNumEvents + 0.5);
+		dResidentMemoryVsEventNumber = new TH1F("ResidentMemoryVsEventNumber", ";Event Counter;Resident Memory (MB)", dMaxNumEvents, 0.5, (double)dMaxNumEvents + 0.5);
 
 		// Total Memory
 		locHistName = "TotalMemory";
 		locHistTitle = ";Event Counter;Total Memory (MB)";
-		dHist_TotalMemory = GetOrCreate_Histogram<TH1D>(locHistName, locHistTitle, dMaxNumEvents, 0.5, float(dMaxNumEvents) + 0.5);
+		dHist_TotalMemory = GetOrCreate_Histogram<TH1F>(locHistName, locHistTitle, dMaxNumEvents, 0.5, float(dMaxNumEvents) + 0.5);
 
 		// # Objects
 		locHistName = "NumObjects2D";
 		locHistTitle = "# Objects;Event Counter";
-		dHist_NumObjects = GetOrCreate_Histogram<TH2D>(locHistName, locHistTitle, dMaxNumEvents, 0.5, float(dMaxNumEvents) + 0.5, locBinLabels.size(), 0.5, float(locBinLabels.size()) + 0.5);
+		dHist_NumObjects = GetOrCreate_Histogram<TH2I>(locHistName, locHistTitle, dMaxNumEvents, 0.5, float(dMaxNumEvents) + 0.5, locBinLabels.size(), 0.5, float(locBinLabels.size()) + 0.5);
 		for(size_t loc_i = 0; loc_i < locBinLabels.size(); ++loc_i)
 			dHist_NumObjects->GetYaxis()->SetBinLabel(1 + loc_i, locBinLabels[loc_i].c_str());
 
 		// Object Memory
 		locHistName = "Memory2D";
-		locHistTitle = "Memory (Bytes);Event Counter";
-		dHist_Memory = GetOrCreate_Histogram<TH2D>(locHistName, locHistTitle, dMaxNumEvents, 0.5, float(dMaxNumEvents) + 0.5, locBinLabels.size(), 0.5, float(locBinLabels.size()) + 0.5);
+		locHistTitle = "Memory (MB);Event Counter";
+		dHist_Memory = GetOrCreate_Histogram<TH2F>(locHistName, locHistTitle, dMaxNumEvents, 0.5, float(dMaxNumEvents) + 0.5, locBinLabels.size(), 0.5, float(locBinLabels.size()) + 0.5);
 		for(size_t loc_i = 0; loc_i < locBinLabels.size(); ++loc_i)
 			dHist_Memory->GetYaxis()->SetBinLabel(1 + loc_i, locBinLabels[loc_i].c_str());
-
-		for(size_t loc_i = 0; loc_i < locBinLabels.size(); ++loc_i)
-		{
-			// # Objects
-			locHistName = string("NumObjects_") + locBinLabels[loc_i];
-			locHistTitle = locBinLabels[loc_i] + string(";Event Counter;# Objects");
-			dHistMap_NumObjects[loc_i + 1] = GetOrCreate_Histogram<TH1D>(locHistName, locHistTitle, dMaxNumEvents, 0.5, float(dMaxNumEvents) + 0.5);
-
-			// # Objects
-			locHistName = string("Memory_") + locBinLabels[loc_i];
-			locHistTitle = locBinLabels[loc_i] + string(";Event Counter;Memory (Bytes)");
-			dHistMap_Memory[loc_i + 1] = GetOrCreate_Histogram<TH1D>(locHistName, locHistTitle, dMaxNumEvents, 0.5, float(dMaxNumEvents) + 0.5);
-		}
 
 		//Return to the base directory
 		ChangeTo_BaseDirectory();
@@ -149,21 +136,21 @@ bool DHistogramAction_ObjectMemory::Perform_Action(JEventLoop* locEventLoop, con
 	//FACTORIES
 	//call get-n-rows first outside of lock, just to make sure 
 	map<int, size_t> locNumObjectsMap; //int is bin
-	map<int, unsigned long long> locMemoryMap; //int is bin
+	map<int, double> locMemoryMap; //int is bin
 	double locTotalMemory = 0.0;
 	for(size_t loc_i = 0; loc_i < dFactoryPairsToTrack.size(); ++loc_i)
 	{
 		string locClassName = dFactoryPairsToTrack[loc_i].first;
 		string locTag = dFactoryPairsToTrack[loc_i].second;
 		JFactory_base* locFactory = locEventLoop->GetFactory(locClassName.c_str(), locTag.c_str());
-		unsigned long long locNumObjects = locFactory->GetNrows();
+		size_t locNumObjects = locFactory->GetNrows();
 		unsigned long long locDataClassSize = locFactory->GetDataClassSize();
 
-		unsigned long long locMemory = locDataClassSize*locNumObjects;
+		double locMemory = locDataClassSize*locNumObjects;
 		int locBin = dFactoryPairBinMap[dFactoryPairsToTrack[loc_i]];
 		locNumObjectsMap[locBin] = locNumObjects;
 		locMemoryMap[locBin] = locMemory;
-		locTotalMemory += double(locMemory);
+		locTotalMemory += locMemory;
 	}
 
 	//RESOURCE POOLS
@@ -179,7 +166,7 @@ bool DHistogramAction_ObjectMemory::Perform_Action(JEventLoop* locEventLoop, con
 		locNumObjectsMap[locBin] = locParticleComboBlueprintFactory->Get_ParticleComboBlueprintStepPoolSize();
 		locMemory = sizeof(DParticleComboBlueprintStep)*locNumObjectsMap[locBin];
 		locMemoryMap[locBin] = locMemory;
-		locTotalMemory += double(locMemory);
+		locTotalMemory += locMemory;
 
 		//DParticleComboStep_PreKinFit
 		locBin = dFactoryPoolBinMap["DParticleComboStep_PreKinFit"];
@@ -188,14 +175,14 @@ bool DHistogramAction_ObjectMemory::Perform_Action(JEventLoop* locEventLoop, con
 		locNumObjectsMap[locBin] = locParticleComboFactory_PreKinFit->Get_ParticleComboStepPoolSize();
 		locMemory = sizeof(DParticleComboStep)*locNumObjectsMap[locBin];
 		locMemoryMap[locBin] = locMemory;
-		locTotalMemory += double(locMemory);
+		locTotalMemory += locMemory;
 
 		//DKinematicData_ComboPreKinFit
 		locBin = dFactoryPoolBinMap["DKinematicData_ComboPreKinFit"];
 		locNumObjectsMap[locBin] = locParticleComboFactory_PreKinFit->Get_KinematicDataPoolSize();
 		locMemory = sizeof(DKinematicData)*locNumObjectsMap[locBin];
 		locMemoryMap[locBin] = locMemory;
-		locTotalMemory += double(locMemory);
+		locTotalMemory += locMemory;
 
 		//DKinFitParticle
 		locBin = dFactoryPoolBinMap["DKinFitParticle"];
@@ -204,21 +191,21 @@ bool DHistogramAction_ObjectMemory::Perform_Action(JEventLoop* locEventLoop, con
 		locNumObjectsMap[locBin] = locKinFitResultsFactory->Get_KinFitParticlePoolSize();
 		locMemory = sizeof(DKinFitParticle)*locNumObjectsMap[locBin];
 		locMemoryMap[locBin] = locMemory;
-		locTotalMemory += double(locMemory);
+		locTotalMemory += locMemory;
 
 		//DKinFitChainStep
 		locBin = dFactoryPoolBinMap["DKinFitChainStep"];
 		locNumObjectsMap[locBin] = locKinFitResultsFactory->Get_KinFitChainStepPoolSize();
 		locMemory = sizeof(DKinFitChainStep)*locNumObjectsMap[locBin];
 		locMemoryMap[locBin] = locMemory;
-		locTotalMemory += double(locMemory);
+		locTotalMemory += locMemory;
 
 		//DKinFitChain
 		locBin = dFactoryPoolBinMap["DKinFitChain"];
 		locNumObjectsMap[locBin] = locKinFitResultsFactory->Get_KinFitChainPoolSize();
 		locMemory = sizeof(DKinFitChain)*locNumObjectsMap[locBin];
 		locMemoryMap[locBin] = locMemory;
-		locTotalMemory += double(locMemory);
+		locTotalMemory += locMemory;
 
 		//DKinFitConstraints
 		locBin = dFactoryPoolBinMap["DKinFitConstraints"];
@@ -236,14 +223,14 @@ bool DHistogramAction_ObjectMemory::Perform_Action(JEventLoop* locEventLoop, con
 		locMemory += sizeof(DKinFitConstraint_Mass)*locKinFitResultsFactory->Get_KinFitConstraintMassPoolSize();
 		//save
 		locMemoryMap[locBin] = locMemory;
-		locTotalMemory += double(locMemory);
+		locTotalMemory += locMemory;
 
 		//TMatrixFSym
 		locBin = dFactoryPoolBinMap["TMatrixFSym"];
 		locNumObjectsMap[locBin] = (dynamic_cast<DApplication*>(japp))->Get_NumCovarianceMatrices();
 		locMemory = ((unsigned long long)(sizeof(TMatrixDSym) + 7*7*4))*locNumObjectsMap[locBin]; //assume 7x7 matrix of floats (4)
 		locMemoryMap[locBin] = locMemory;
-		locTotalMemory += double(locMemory);
+		locTotalMemory += locMemory;
 
 		//DParticleComboStep
 		locBin = dFactoryPoolBinMap["DParticleComboStep"];
@@ -252,18 +239,20 @@ bool DHistogramAction_ObjectMemory::Perform_Action(JEventLoop* locEventLoop, con
 		locNumObjectsMap[locBin] = locParticleComboFactory->Get_ParticleComboStepPoolSize();
 		locMemory = sizeof(DParticleComboStep)*locNumObjectsMap[locBin];
 		locMemoryMap[locBin] = locMemory;
-		locTotalMemory += double(locMemory);
+		locTotalMemory += locMemory;
 
 		//DKinematicData_Combo
 		locBin = dFactoryPoolBinMap["DKinematicData_Combo"];
 		locNumObjectsMap[locBin] = locParticleComboFactory->Get_KinematicDataPoolSize();
 		locMemory = sizeof(DKinematicData)*locNumObjectsMap[locBin];
 		locMemoryMap[locBin] = locMemory;
-		locTotalMemory += double(locMemory);
+		locTotalMemory += locMemory;
 	}
-	locTotalMemory /= (1024.0*1024.0); //convert to MB
 
-	map<int, size_t>::iterator locIterator = locNumObjectsMap.begin();
+	//Convert to MB
+	for(auto& locMemoryPair : locMemoryMap)
+		locMemoryPair.second /= (1024.0*1024.0);
+	locTotalMemory /= (1024.0*1024.0); //convert to MB
 
 	//FILL HISTOGRAMS
 	//Since we are filling histograms local to this action, it will not interfere with other ROOT operations: can use action-wide ROOT lock
@@ -273,14 +262,10 @@ bool DHistogramAction_ObjectMemory::Perform_Action(JEventLoop* locEventLoop, con
 		++dEventCounter;
 		if(dEventCounter <= dMaxNumEvents)
 		{
-			for(; locIterator != locNumObjectsMap.end(); ++locIterator)
+			for(auto& locNumObjectsPair : locNumObjectsMap)
 			{
-				int locObjectBin = locIterator->first;
-
-				dHistMap_NumObjects[locObjectBin]->SetBinContent(dEventCounter, locNumObjectsMap[locObjectBin]);
+				int locObjectBin = locNumObjectsPair.first;
 				dHist_NumObjects->SetBinContent(dEventCounter, locObjectBin, locNumObjectsMap[locObjectBin]);
-
-				dHistMap_Memory[locObjectBin]->SetBinContent(dEventCounter, locMemoryMap[locObjectBin]);
 				dHist_Memory->SetBinContent(dEventCounter, locObjectBin, locMemoryMap[locObjectBin]);
 			}
 			dHist_TotalMemory->SetBinContent(dEventCounter, locTotalMemory);
@@ -298,10 +283,6 @@ bool DHistogramAction_ObjectMemory::Perform_Action(JEventLoop* locEventLoop, con
 
 void DHistogramAction_ObjectMemory::Read_MemoryUsage(double& vm_usage, double& resident_set)
 {
-	using std::ios_base;
-	using std::ifstream;
-	using std::string;
-
 	vm_usage     = 0.0;
 	resident_set = 0.0;
 

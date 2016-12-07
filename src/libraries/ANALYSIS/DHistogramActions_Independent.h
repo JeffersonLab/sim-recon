@@ -127,15 +127,12 @@ class DHistogramAction_ObjectMemory : public DAnalysisAction
 		map<pair<string, string>, int> dFactoryPairBinMap;
 		map<string, int> dFactoryPoolBinMap;
 
-		map<int, TH1D*> dHistMap_NumObjects; //int is 2d bin
-		map<int, TH1D*> dHistMap_Memory; //int is 2d bin
+		TH2I* dHist_NumObjects;
+		TH2F* dHist_Memory;
 
-		TH2D* dHist_NumObjects;
-		TH2D* dHist_Memory;
-
-		TH1D* dVirtualMemoryVsEventNumber;
-		TH1D* dResidentMemoryVsEventNumber;
-		TH1D* dHist_TotalMemory;
+		TH1F* dVirtualMemoryVsEventNumber;
+		TH1F* dResidentMemoryVsEventNumber;
+		TH1F* dHist_TotalMemory;
 };
 
 class DHistogramAction_Reconstruction : public DAnalysisAction
