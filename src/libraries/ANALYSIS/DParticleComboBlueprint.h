@@ -21,6 +21,7 @@ class DParticleComboBlueprint : public JObject
 		JOBJECT_PUBLIC(DParticleComboBlueprint);
 
 		DParticleComboBlueprint(void) : dReaction(NULL) {}
+		void Reset(void);
 
 		const DParticleComboBlueprintStep* Get_ParticleComboBlueprintStep(size_t locStepIndex) const;
 		const DParticleComboBlueprintStep* Pop_ParticleComboBlueprintStep(void);
@@ -38,6 +39,12 @@ class DParticleComboBlueprint : public JObject
 		const DReaction* dReaction;
 		deque<const DParticleComboBlueprintStep*> dParticleComboBlueprintSteps; //must be in order you want to evaluate them
 };
+
+inline void DParticleComboBlueprint::Reset(void)
+{
+	dReaction = NULL;
+	dParticleComboBlueprintSteps.clear();
+}
 
 inline const DParticleComboBlueprintStep* DParticleComboBlueprint::Get_ParticleComboBlueprintStep(size_t locStepIndex) const
 {

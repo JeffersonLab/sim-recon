@@ -83,7 +83,8 @@ jerror_t DParticleComboBlueprint_factory::brun(jana::JEventLoop* locEventLoop, i
 
 	vector<const DReaction*> locReactions;
 	Get_Reactions(locEventLoop, locReactions);
-	MAX_DParticleComboBlueprintStepPoolSize = 100*locReactions.size();
+	dTargetMaxNumAvailableComboSteps = 1000*locReactions.size();
+	dTargetMaxNumAvailableCombos = 500*locReactions.size();
 
 	return NOERROR;
 }
@@ -1039,8 +1040,8 @@ void DParticleComboBlueprint_factory::Reset_Memory(void)
 		//So, don't delete them. To delete them, just uncomment the below lines.
 
 		//if available > max, wipe all used
-		locDeleteCombosFlag = (locAvailableCombos.size() >= dTargetMaxNumAvailableCombos);
-		if(!locDeleteCombosFlag)
+//		locDeleteCombosFlag = (locAvailableCombos.size() >= dTargetMaxNumAvailableCombos);
+//		if(!locDeleteCombosFlag)
 			std::move(dParticleComboBlueprintPool_Acquired.begin(), dParticleComboBlueprintPool_Acquired.end(), std::back_inserter(locAvailableCombos));
 	}
 	japp->Unlock("DParticleComboBlueprint_Memory"); //UNLOCK
@@ -1062,8 +1063,8 @@ void DParticleComboBlueprint_factory::Reset_Memory(void)
 		//So, don't delete them. To delete them, just uncomment the below lines.
 
 		//if available > max, wipe all used
-		locDeleteStepsFlag = (locAvailableSteps.size() >= dTargetMaxNumAvailableComboSteps);
-		if(!locDeleteStepsFlag)
+//		locDeleteStepsFlag = (locAvailableSteps.size() >= dTargetMaxNumAvailableComboSteps);
+//		if(!locDeleteStepsFlag)
 			std::move(dParticleComboBlueprintStepPool_Acquired.begin(), dParticleComboBlueprintStepPool_Acquired.end(), std::back_inserter(locAvailableSteps));
 	}
 	japp->Unlock("DParticleComboBlueprintStep_Memory"); //UNLOCK
@@ -1124,7 +1125,7 @@ void DParticleComboBlueprint_factory::Acquire_Combos(size_t locNumRequestedCombo
 void DParticleComboBlueprint_factory::Acquire_Steps(size_t locNumRequestedSteps)
 {
 	//We must have the correct event number, so that we know when it's safe to recycle the memory for the next event.
-	deque<DParticleComboBlueprint*> locAcquiredSteps;
+	deque<DParticleComboBlueprintStep*> locAcquiredSteps;
 
 	//Access resource pool
 	japp->WriteLock("DParticleComboBlueprintStep_Memory"); //LOCK

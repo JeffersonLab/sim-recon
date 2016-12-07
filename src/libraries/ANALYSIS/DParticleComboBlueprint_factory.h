@@ -101,7 +101,7 @@ class DParticleComboBlueprint_factory : public jana::JFactory<DParticleComboBlue
 
 		//Return static variables by reference
 		deque<DParticleComboBlueprint*>& Get_AvailableComboDeque(void) const;
-		deque<DParticleComboBlueprintStep*>& Get_AvailableComboSteps(void) const;
+		deque<DParticleComboBlueprintStep*>& Get_AvailableStepDeque(void) const;
 
 		//Acquire resources from the shared pool
 		void Acquire_Combos(size_t locNumRequestedCombos);
