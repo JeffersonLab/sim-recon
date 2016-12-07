@@ -96,8 +96,8 @@ class DParticleComboBlueprint_factory : public jana::JFactory<DParticleComboBlue
 		set<Particle_t> dAvailablePIDs;
 
 		//used to see if can resuse memory with an identical, previously-created step
-			//a map is used instead of a loop over previous combos because map access is significantly faster if #combos is very large
-		map<DParticleComboBlueprintStep, DParticleComboBlueprintStep*> dBlueprintStepMap;
+			//uses a custom comparator to sort/find by step == operator, rather than pointer
+		set<DParticleComboBlueprintStep*, DParticleComboBlueprintStep_Comparator> dBlueprintStepSet;
 
 		DTrackTimeBased_factory_Combo* dTrackTimeBasedFactory_Combo;
 

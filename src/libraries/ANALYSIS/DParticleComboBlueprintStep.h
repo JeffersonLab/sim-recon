@@ -76,6 +76,14 @@ class DParticleComboBlueprintStep
 		deque<signed char> dDecayStepIndices; //one for each final particle: -2 if detected, -1 if missing, >= 0 if decaying, where the # is the step representing the particle decay
 };
 
+struct DParticleComboBlueprintStep_Comparator
+{
+	bool operator() (const DParticleComboBlueprintStep*& lhs, const DParticleComboBlueprintStep*& rhs) const
+	{
+		return (*lhs) < (*rhs);
+	}
+};
+
 inline void DParticleComboBlueprintStep::Reset(void)
 {
 	dReactionStep = NULL;

@@ -149,7 +149,7 @@ jerror_t DParticleComboBlueprint_factory::evnt(JEventLoop *locEventLoop, uint64_
 
 	Reset_Pools();
 
-	dBlueprintStepMap.clear();
+	dBlueprintStepSet.clear();
 	dSavedBlueprintSteps.clear();
 	dChargedTracks.clear();
 	dNeutralShowers.clear();
@@ -209,7 +209,6 @@ jerror_t DParticleComboBlueprint_factory::evnt(JEventLoop *locEventLoop, uint64_
 		Build_ParticleComboBlueprints(locReactions[loc_i]);
 	}
 
-	dBlueprintStepMap.clear();
 	return NOERROR;
 }
 
@@ -529,12 +528,12 @@ bool DParticleComboBlueprint_factory::Handle_EndOfReactionStep(const DReaction* 
 	//step is good: advance to next step
 
 	//first check to see if identical to a previous saved step; if so, just save the old step and recycle the current one
-	map<DParticleComboBlueprintStep, DParticleComboBlueprintStep*>::iterator locStepIterator = dBlueprintStepMap.find(*locParticleComboBlueprintStep);
-	if(locStepIterator != dBlueprintStepMap.end())
+	auto locStepIterator = dBlueprintStepSet.find(locParticleComboBlueprintStep);
+	if(locStepIterator != dBlueprintStepSet.end())
 	{
 		//identical step found, recycle current one
 		Recycle_ParticleComboBlueprintStep(locParticleComboBlueprintStep);
-		locParticleComboBlueprintStep = locStepIterator->second;
+		locParticleComboBlueprintStep = *locStepIterator;
 	}
 	locParticleComboBlueprint->Prepend_ParticleComboBlueprintStep(locParticleComboBlueprintStep);
 
@@ -563,7 +562,7 @@ bool DParticleComboBlueprint_factory::Handle_EndOfReactionStep(const DReaction* 
 		if(dSavedBlueprintSteps.find(locParticleComboBlueprintStep) != dSavedBlueprintSteps.end())
 			continue;
 		dSavedBlueprintSteps.insert(locParticleComboBlueprintStep);
-		dBlueprintStepMap[*locParticleComboBlueprintStep] = const_cast<DParticleComboBlueprintStep*>(locParticleComboBlueprintStep);
+		dBlueprintStepSet.insert(const_cast<DParticleComboBlueprintStep*>(locParticleComboBlueprintStep));
 	}
 
 	locParticleComboBlueprint = new DParticleComboBlueprint(*locParticleComboBlueprint); //clone so don't alter saved object
