@@ -435,7 +435,7 @@ TMatrixFSym* DApplication::Get_CovarianceMatrixResource(unsigned int locNumMatri
 	vector<JEventLoop*> locEventLoops = GetJEventLoops();
 
 	uint64_t locEventNumber = 0;
-	for(auto locEventLoop : locEventLoops)
+	for(auto& locEventLoop : locEventLoops)
 	{
 		if(locEventLoop->GetPThreadID() != locThreadID)
 			continue;
@@ -503,7 +503,7 @@ TMatrixFSym* DApplication::Get_CovarianceMatrixResource(unsigned int locNumMatri
 	//Reset used matrices, deleting if necessary
 	if(locDeleteAllUsedMatricesFlag)
 	{
-		for(auto locMatrix : locUsedMatrices)
+		for(auto& locMatrix : locUsedMatrices)
 			delete locMatrix;
 	}
 	if(locNewEventFlag)
@@ -523,7 +523,7 @@ size_t DApplication::Get_NumCovarianceMatrices(void)
 	pthread_mutex_lock(&matrix_mutex);
 
 	locNumMatrices += dAvailableMatrices.size();
-	for(auto locUsedMatrixPair : dUsedMatrixMap)
+	for(auto& locUsedMatrixPair : dUsedMatrixMap)
 		locNumMatrices += locUsedMatrixPair.second.size();
 
 	//UNLOCK
@@ -538,7 +538,7 @@ void DApplication::Recycle_CovarianceMatrices(const deque<const TMatrixFSym*>& l
 
 	//first, cast away const-ness
 	deque<TMatrixFSym*> locNonConstMatrices;
-	for(auto locMatrix : locMatrices)
+	for(auto& locMatrix : locMatrices)
 		locNonConstMatrices.push_back(const_cast<TMatrixFSym*>(locMatrix));
 
 	//LOCK
@@ -546,7 +546,7 @@ void DApplication::Recycle_CovarianceMatrices(const deque<const TMatrixFSym*>& l
 
 	//the matrices are no longer used
 	set<TMatrixFSym*>& locUsedMatrices = dUsedMatrixMap[locThreadID];
-	for(auto locMatrix : locNonConstMatrices)
+	for(auto& locMatrix : locNonConstMatrices)
 		locUsedMatrices.erase(locMatrix);
 
 	//the matrices are now available
@@ -555,3 +555,4 @@ void DApplication::Recycle_CovarianceMatrices(const deque<const TMatrixFSym*>& l
 	//UNLOCK
 	pthread_mutex_unlock(&matrix_mutex);
 }
+

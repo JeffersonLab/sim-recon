@@ -241,7 +241,7 @@ const DParticleCombo* DParticleCombo_factory::Check_IsDuplicateCombo(const map<c
 	//if is duplicate, returns the newly-created combo from the matching previous particle combo
 	//otherwise, returns NULL
 	const DReaction* locReaction = locParticleCombo->Get_Reaction();
-	for(auto locNewComboPair : locNewParticleComboMap)
+	for(auto& locNewComboPair : locNewParticleComboMap)
 	{
 		const DParticleCombo* locPreviousParticleCombo = locNewComboPair.first;
 		if(locReaction == locPreviousParticleCombo->Get_Reaction()) //probably shouldn't be possible

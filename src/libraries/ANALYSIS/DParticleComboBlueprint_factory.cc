@@ -112,7 +112,7 @@ void DParticleComboBlueprint_factory::Check_ReactionNames(vector<const DReaction
 {
 	set<string> locReactionNames;
 	set<string> locDuplicateReactionNames;
-	for(auto locReaction : locReactions)
+	for(auto& locReaction : locReactions)
 	{
 		string locReactionName = locReaction->Get_ReactionName();
 		if(locReactionNames.find(locReactionName) == locReactionNames.end())
@@ -125,7 +125,7 @@ void DParticleComboBlueprint_factory::Check_ReactionNames(vector<const DReaction
 		return;
 
 	cout << "ERROR: MULTIPLE DREACTIONS WITH THE SAME NAME(S): " << endl;
-	for(auto locReactionName : locDuplicateReactionNames)
+	for(auto& locReactionName : locDuplicateReactionNames)
 		cout << locReactionName << ", ";
 	cout << endl;
 	cout << "ABORTING" << endl;

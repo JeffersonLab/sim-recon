@@ -708,7 +708,7 @@ void DKinFitUtils_GlueX::Set_SpacetimeGuesses(const deque<DKinFitConstraint_Vert
 void DKinFitUtils_GlueX::Recycle_DetectedDecayingParticles(map<DKinFitParticle*, DKinFitParticle*>& locDecayingToDetectedParticleMap)
 {
 	set<DKinFitParticle*> locParticlesToRecycle;
-	for(auto locParticlePair : locDecayingToDetectedParticleMap)
+	for(auto& locParticlePair : locDecayingToDetectedParticleMap)
 		locParticlesToRecycle.insert(locParticlePair.second);
 
 	Recycle_Particles(locParticlesToRecycle);

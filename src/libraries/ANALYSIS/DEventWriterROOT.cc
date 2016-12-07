@@ -1147,9 +1147,9 @@ vector<const DChargedTrackHypothesis*> DEventWriterROOT::Get_ChargedHypotheses(J
 	//Find which PIDs were used for basic recon, and register their hypotheses
 	map<const DChargedTrack*, map<Particle_t, const DChargedTrackHypothesis*> > locChargedHypothesesMap;
 	set<Particle_t> locReconPIDs; 
-	for(auto locChargedTrack : locChargedTracks)
+	for(auto& locChargedTrack : locChargedTracks)
 	{
-		for(auto locChargedHypo : locChargedTrack->dChargedTrackHypotheses)
+		for(auto& locChargedHypo : locChargedTrack->dChargedTrackHypotheses)
 		{
 			Particle_t locPID = locChargedHypo->PID();
 			locReconPIDs.insert(locPID);
@@ -1158,7 +1158,7 @@ vector<const DChargedTrackHypothesis*> DEventWriterROOT::Get_ChargedHypotheses(J
 	}
 
 	//comb through combo hypos for the ones we actually need: non-recon'd PIDs (with the right RF bunch)
-	for(auto locChargedHypo : locComboChargedTrackHypotheses)
+	for(auto& locChargedHypo : locComboChargedTrackHypotheses)
 	{
 		Particle_t locPID = locChargedHypo->PID();
 		if((locReconPIDs.find(locPID) == locReconPIDs.end()) && (locReactionPIDs.find(locPID) == locReactionPIDs.end()))
@@ -1183,9 +1183,9 @@ vector<const DChargedTrackHypothesis*> DEventWriterROOT::Get_ChargedHypotheses(J
 
 	//Build vector of combo-independent charged hypotheses to save
 	vector<const DChargedTrackHypothesis*> locChargedHyposToSave;
-	for(auto locChargedTrackPairs : locChargedHypothesesMap)
+	for(auto& locChargedTrackPairs : locChargedHypothesesMap)
 	{
-		for(auto locPIDPair : locChargedTrackPairs.second)
+		for(auto& locPIDPair : locChargedTrackPairs.second)
 			locChargedHyposToSave.push_back(locPIDPair.second);
 	}
 
@@ -1199,12 +1199,12 @@ vector<const DChargedTrackHypothesis*> DEventWriterROOT::Get_ChargedHypotheses_U
 
 	//get used time-based tracks
 	set<const DTrackTimeBased*> locUsedTimeBasedTracks;
-	for(auto locCombo : locParticleCombos)
+	for(auto& locCombo : locParticleCombos)
 	{
 		deque<const DKinematicData*> locChargedParticles;
 		locCombo->Get_DetectedFinalChargedParticles_Measured(locChargedParticles);
 
-		for(auto locParticle : locChargedParticles)
+		for(auto& locParticle : locChargedParticles)
 		{
 			const DTrackTimeBased* locTrackTimeBased = NULL;
 			locParticle->GetSingle(locTrackTimeBased);
@@ -1245,9 +1245,9 @@ vector<const DNeutralParticleHypothesis*> DEventWriterROOT::Get_NeutralHypothese
 	//Find which PIDs were used for basic recon, and register their hypotheses
 	map<const DNeutralParticle*, map<Particle_t, const DNeutralParticleHypothesis*> > locNeutralHypothesesMap;
 	set<Particle_t> locReconPIDs; 
-	for(auto locNeutralParticle : locNeutralParticles)
+	for(auto& locNeutralParticle : locNeutralParticles)
 	{
-		for(auto locNeutralHypo : locNeutralParticle->dNeutralParticleHypotheses)
+		for(auto& locNeutralHypo : locNeutralParticle->dNeutralParticleHypotheses)
 		{
 			Particle_t locPID = locNeutralHypo->PID();
 			locReconPIDs.insert(locPID);
@@ -1256,7 +1256,7 @@ vector<const DNeutralParticleHypothesis*> DEventWriterROOT::Get_NeutralHypothese
 	}
 
 	//comb through combo hypos for the ones we actually need: non-recon PIDs (with the right RF bunch)
-	for(auto locNeutralHypo : locComboNeutralParticleHypotheses)
+	for(auto& locNeutralHypo : locComboNeutralParticleHypotheses)
 	{
 		Particle_t locPID = locNeutralHypo->PID();
 		if((locReconPIDs.find(locPID) == locReconPIDs.end()) && (locReactionPIDs.find(locPID) == locReactionPIDs.end()))
@@ -1281,9 +1281,9 @@ vector<const DNeutralParticleHypothesis*> DEventWriterROOT::Get_NeutralHypothese
 
 	//Build vector of combo-independent neutral hypotheses to save
 	vector<const DNeutralParticleHypothesis*> locNeutralHyposToSave;
-	for(auto locNeutralParticlePairs : locNeutralHypothesesMap)
+	for(auto& locNeutralParticlePairs : locNeutralHypothesesMap)
 	{
-		for(auto locPIDPair : locNeutralParticlePairs.second)
+		for(auto& locPIDPair : locNeutralParticlePairs.second)
 			locNeutralHyposToSave.push_back(locPIDPair.second);
 	}
 
@@ -1297,12 +1297,12 @@ vector<const DNeutralParticleHypothesis*> DEventWriterROOT::Get_NeutralHypothese
 
 	//get used showers
 	set<pair<const DNeutralShower*, Particle_t> > locUsedNeutralShowers;
-	for(auto locCombo : locParticleCombos)
+	for(auto& locCombo : locParticleCombos)
 	{
 		deque<const DKinematicData*> locNeutralParticles;
 		locCombo->Get_DetectedFinalNeutralParticles_Measured(locNeutralParticles);
 
-		for(auto locParticle : locNeutralParticles)
+		for(auto& locParticle : locNeutralParticles)
 		{
 			const DNeutralShower* locNeutralShower = NULL;
 			locParticle->GetSingle(locNeutralShower);
