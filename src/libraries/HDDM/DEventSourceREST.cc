@@ -452,8 +452,6 @@ jerror_t DEventSourceREST::Extract_DBeamPhoton(hddm_r::HDDM *record,
       return OBJECT_NOT_AVAILABLE;
    const DTAGMGeometry* tagmGeom = tagmGeomVect[0];
 
-   uint64_t locEventNumber = eventLoop->GetJEvent().GetEventNumber();
-
    if(tag == "MCGEN")
 	{
 		vector<const DMCReaction*> dmcreactions;
@@ -504,6 +502,7 @@ jerror_t DEventSourceREST::Extract_DBeamPhoton(hddm_r::HDDM *record,
    }
 
 	//get the matrices
+   uint64_t locEventNumber = eventLoop->GetJEvent().GetEventNumber();
 	DApplication* locApplication = dynamic_cast<DApplication*>(japp);
 	deque<TMatrixFSym*> locMatrices = locApplication->Get_CovarianceMatrixResources(7, locNumMatrices, locEventNumber);
 
@@ -929,7 +928,6 @@ jerror_t DEventSourceREST::Extract_DTrackTimeBased(hddm_r::HDDM *record,
       return OBJECT_NOT_AVAILABLE;
    }
    string tag = (factory->Tag())? factory->Tag() : "";
-   uint64_t locEventNumber = locEventLoop->GetJEvent().GetEventNumber();
 
    vector<DTrackTimeBased*> data;
 
@@ -945,6 +943,7 @@ jerror_t DEventSourceREST::Extract_DTrackTimeBased(hddm_r::HDDM *record,
    }
 
 	//get the matrices
+   uint64_t locEventNumber = locEventLoop->GetJEvent().GetEventNumber();
 	DApplication* locApplication = dynamic_cast<DApplication*>(japp);
 	deque<TMatrixFSym*> loc7x7Matrices = locApplication->Get_CovarianceMatrixResources(7, locNumMatrices, locEventNumber);
 	deque<TMatrixFSym*> loc5x5Matrices = locApplication->Get_CovarianceMatrixResources(5, locNumMatrices, locEventNumber);
