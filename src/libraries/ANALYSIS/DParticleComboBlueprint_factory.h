@@ -31,8 +31,8 @@ class DParticleComboBlueprint_factory : public jana::JFactory<DParticleComboBlue
 		DParticleComboBlueprint_factory(){};
 		~DParticleComboBlueprint_factory(){};
 
-		size_t Get_ParticleComboBlueprintPoolSize(void) const{return dParticleComboBlueprintPool_Acquired.size();};
-		size_t Get_ParticleComboBlueprintStepPoolSize(void const{return dParticleComboBlueprintStepPool_Acquired.size();};
+		size_t Get_ParticleComboBlueprintPoolSize(void) const{return dParticleComboBlueprintPool_Acquired.size();}
+		size_t Get_ParticleComboBlueprintStepPoolSize(void) const{return dParticleComboBlueprintStepPool_Acquired.size();}
 		size_t Get_ParticleComboBlueprintPoolSize_Shared(void) const;
 		size_t Get_ParticleComboBlueprintStepPoolSize_Shared(void) const;
 
