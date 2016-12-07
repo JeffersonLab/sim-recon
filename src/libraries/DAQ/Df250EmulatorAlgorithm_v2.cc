@@ -132,7 +132,7 @@ void Df250EmulatorAlgorithm_v2::EmulateFirmware(const Df250WindowRawData* rawDat
             TC[npulses] = i+1;
             // check that we have more than NSAT samples over threshold
             // unless the first sample is over threshold - we always start then
-            if( (NSAT>1) && (i>1) ){
+            if( (NSAT>1) && (i>0) ){
                 int samples_over_threshold = 1;
                 for(unsigned int j=1; j < NSAT; j++) {
                     if ((samples[i+j] & 0xfff) > THR) {
