@@ -10,6 +10,8 @@
 
 #include <deque>
 #include <map>
+#include <set>
+#include <algorithm>
 
 #include "TMatrixFSym.h"
 
@@ -45,10 +47,10 @@ class DApplication:public JApplication{
 		DGeometry* GetDGeometry(unsigned int run_number);
 		DRootGeom *GetRootGeom(unsigned int run_number);
 
-		deque<TMatrixFSym*> Get_CovarianceMatrixResources(unsigned int locNumMatrixRows);
-		deque<TMatrixFSym*> Get_CovarianceMatrixResources(unsigned int locNumMatrixRows, uint64_t locEventNumber);
 		TMatrixFSym* Get_CovarianceMatrixResource(unsigned int locNumMatrixRows);
+		deque<TMatrixFSym*> Get_CovarianceMatrixResources(unsigned int locNumMatrixRows, size_t locNumRequestedMatrices);
 		TMatrixFSym* Get_CovarianceMatrixResource(unsigned int locNumMatrixRows, uint64_t locEventNumber);
+		deque<TMatrixFSym*> Get_CovarianceMatrixResources(unsigned int locNumMatrixRows, size_t locNumRequestedMatrices, uint64_t locEventNumber);
 
 		uint64_t Get_EventNumber_CurrentThread(void);
 		size_t Get_NumCovarianceMatrices(void);
