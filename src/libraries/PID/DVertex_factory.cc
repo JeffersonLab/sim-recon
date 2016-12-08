@@ -25,6 +25,7 @@ jerror_t DVertex_factory::brun(jana::JEventLoop* locEventLoop, int32_t runnumber
 {
 	dKinFitUtils = new DKinFitUtils_GlueX(locEventLoop);
 	dKinFitter = new DKinFitter(dKinFitUtils);
+	dKinFitUtils->Set_UpdateCovarianceMatricesFlag(false);
 
 	// Get Target parameters from XML
 	dTargetZCenter = 65.0;

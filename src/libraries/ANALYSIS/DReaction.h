@@ -36,10 +36,13 @@ class DReaction : public JObject
 		virtual ~DReaction(void);
 
 		// SET OBJECT DATA:
-		void Set_KinFitType(DKinFitType locKinFitType){dKinFitType = locKinFitType;}
 		void Add_ReactionStep(const DReactionStep* locReactionStep){dReactionSteps.push_back(locReactionStep);}
 		void Clear_ReactionSteps(void){dReactionSteps.clear();}
 		void Add_AnalysisAction(DAnalysisAction* locAnalysisAction){dAnalysisActions.push_back(locAnalysisAction);}
+
+		// SET KINFIT CONTROL
+		void Set_KinFitType(DKinFitType locKinFitType){dKinFitType = locKinFitType;}
+		void Set_KinFitUpdateCovarianceMatricesFlag(bool locKinFitUpdateCovarianceMatricesFlag){dKinFitUpdateCovarianceMatricesFlag = locKinFitUpdateCovarianceMatricesFlag;}
 
 		// SET PRE-DPARTICLECOMBO CUT VALUES //Command-line values will override these values
 		void Set_MinChargedPIDFOM(double locMinChargedPIDFOM){dMinChargedPIDFOM = pair<bool, double>(true, locMinChargedPIDFOM);}
@@ -60,11 +63,14 @@ class DReaction : public JObject
 
 		// GET CONTROL INFO:
 		string Get_ReactionName(void) const{return dReactionName;}
-		DKinFitType Get_KinFitType(void) const{return dKinFitType;}
 		int Get_DecayStepIndex(int locStepIndex, int locParticleIndex) const;
 		pair<int, int> Get_InitialParticleDecayFromIndices(int locStepIndex) const; //1st is step index, 2nd is particle index
 		int Get_DefinedParticleStepIndex(void) const; //-1 if none //defined: missing or open-ended-decaying
 		bool Get_IsInclusiveChannelFlag(void) const;
+
+		// GET KINFIT CONTROL
+		DKinFitType Get_KinFitType(void) const{return dKinFitType;}
+		bool Get_KinFitUpdateCovarianceMatricesFlag(void) const{return dKinFitUpdateCovarianceMatricesFlag;}
 
 		// GET REACTION STEPS:
 		size_t Get_NumReactionSteps(void) const{return dReactionSteps.size();}
@@ -131,6 +137,7 @@ class DReaction : public JObject
 		// CONTROL MEMBERS:
 		string dReactionName; //must be unique
 		DKinFitType dKinFitType; //defined in ANALYSIS/DKinFitResults.h
+		bool dKinFitUpdateCovarianceMatricesFlag; //true to create new error matrices post-kinfit, false to keep the old ones
 
 		// ROOT TTREE OUTPUT:
 		bool dEnableTTreeOutputFlag; //default is false

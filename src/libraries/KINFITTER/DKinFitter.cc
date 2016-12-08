@@ -170,6 +170,8 @@ void DKinFitter::Prepare_ConstraintsAndParticles(void)
 	}
 
 	//clone constraints & particles
+		//This way the fitter doesn't modify the original, input objects: they can be reused in more fits
+		//Different objects will have to be retrieved to get the output
 	dKinFitConstraints = dKinFitUtils->Clone_ParticlesAndConstraints(dKinFitConstraints);
 
 	//Print cloned constraint info
@@ -2533,8 +2535,72 @@ void DKinFitter::Calc_Pulls(void)
 void DKinFitter::Set_FinalTrackInfo(void)
 {
 	// first update the covariance matrices of each particle with the fit results (prior to any propagation)
-		//correlations between fit and unfit measured parameters: 
-			//assume that the correlations remain unchanged: the changes in the parameters and their uncertainties should be small wrst their values
+	if(dKinFitUtils->Get_UpdateCovarianceMatricesFlag())
+		Update_CovarianceMatrices();
+
+	// propagate the track parameters
+	set<DKinFitParticle*>::iterator locParticleIterator = dKinFitParticles.begin();
+	for(; locParticleIterator != dKinFitParticles.end(); ++locParticleIterator)
+	{
+		DKinFitParticle* locKinFitParticle = *locParticleIterator;
+		DKinFitParticleType locKinFitParticleType = locKinFitParticle->Get_KinFitParticleType();
+		if((locKinFitParticleType == d_TargetParticle) || (locKinFitParticleType == d_MissingParticle) || (locKinFitParticleType == d_DecayingParticle))
+			continue; // particle properties already defined at the fit vertex
+
+		if(!locKinFitParticle->Get_FitCommonVertexFlag())
+			continue; // no distance over which to propagate
+
+		//updating the covariance matrix: a unique cov matrix object was cloned on fit start, so can safely update it directly
+		TMatrixFSym* locCovarianceMatrix = const_cast<TMatrixFSym*>(locKinFitParticle->Get_CovarianceMatrix());
+
+		TVector3 locMomentum;
+		TLorentzVector locSpacetimeVertex;
+		pair<double, double> locPathLengthPair;
+		if(!dKinFitUtils->Propagate_TrackInfoToCommonVertex(locKinFitParticle, &dVXi, locMomentum, locSpacetimeVertex, locPathLengthPair, locCovarianceMatrix))
+			continue; // info not propagated
+
+		if(dDebugLevel >= 50)
+		{
+			cout << "PROPAGATED FINAL TRACK INFO: PID = " << locKinFitParticle->Get_PID() << endl;
+			cout << "p_xyz, v_xyzt = " << locMomentum.Px() << ", " << locMomentum.Py() << ", " << locMomentum.Pz() << ", " << locSpacetimeVertex.X() << ", " << locSpacetimeVertex.Y() << ", " << locSpacetimeVertex.Z() << ", " << locSpacetimeVertex.T() << endl;
+			cout << "common v_xyzt = " << locKinFitParticle->Get_CommonVertex().X() << ", " << locKinFitParticle->Get_CommonVertex().Y() << ", " << locKinFitParticle->Get_CommonVertex().Z() << ", " << locKinFitParticle->Get_CommonTime() << endl;
+			cout << "path length & uncert = " << locPathLengthPair.first << ", " << locPathLengthPair.second << endl;
+			cout << "sizes = " << locCovarianceMatrix->GetNrows() << ", " << locCovarianceMatrix->GetNcols() << endl;
+		}
+
+		//no need to set the covariance matrix: already updated
+		locKinFitParticle->Set_Momentum(locMomentum);
+		if(locKinFitParticle->Get_IsNeutralShowerFlag())
+			locKinFitParticle->Set_CommonSpacetimeVertex(locSpacetimeVertex);
+		else
+			locKinFitParticle->Set_SpacetimeVertex(locSpacetimeVertex);
+		locKinFitParticle->Set_PathLength(locPathLengthPair.first);
+		locKinFitParticle->Set_PathLengthUncertainty(locPathLengthPair.second);
+	}
+
+	//calculate the path length of decaying particles involved in 2 vertex fits
+	for(locParticleIterator = dKinFitParticles.begin(); locParticleIterator != dKinFitParticles.end(); ++locParticleIterator)
+	{
+		DKinFitParticle* locKinFitParticle = *locParticleIterator;
+		DKinFitParticleType locKinFitParticleType = locKinFitParticle->Get_KinFitParticleType();
+
+		if((locKinFitParticleType != d_DecayingParticle) || !locKinFitParticle->Get_FitCommonVertexFlag())
+			continue;
+
+		pair<double, double> locPathLengthPair;
+		const TMatrixFSym* locCovarianceMatrix = locKinFitParticle->Get_CovarianceMatrix();
+		if(dKinFitUtils->Calc_PathLength(locKinFitParticle, &dVXi, locCovarianceMatrix, locPathLengthPair))
+		{
+			locKinFitParticle->Set_PathLength(locPathLengthPair.first);
+			locKinFitParticle->Set_PathLengthUncertainty(locPathLengthPair.second);
+		}
+	}
+}
+
+void DKinFitter::Update_CovarianceMatrices(void)
+{
+	//correlations between fit and unfit measured parameters:
+		//assume that the correlations remain unchanged: the changes in the parameters and their uncertainties should be small wrst their values
 	set<DKinFitParticle*>::iterator locParticleIterator = dKinFitParticles.begin();
 	for(; locParticleIterator != dKinFitParticles.end(); ++locParticleIterator)
 	{
@@ -2583,7 +2649,7 @@ void DKinFitter::Set_FinalTrackInfo(void)
 
 			set<DKinFitParticle*> locDerivedFromParticles = locKinFitParticle->Get_FromAllParticles();
 			set<DKinFitParticle*>::iterator locFromIterator = locDerivedFromParticles.begin();
-			map<DKinFitParticle*, int> locAdditionalPxParamIndices;
+			map<const DKinFitParticle*, int> locAdditionalPxParamIndices;
 			for(; locFromIterator != locDerivedFromParticles.end(); ++locFromIterator)
 			{
 				DKinFitParticleType locKinFitParticleType = (*locFromIterator)->Get_KinFitParticleType();
@@ -2631,7 +2697,7 @@ void DKinFitter::Set_FinalTrackInfo(void)
 				locTempCovarianceMatrix.SetSub(0, dV); //insert dV
 
 				//insert p3 covariance matrices of additional particles
-				map<DKinFitParticle*, int>::iterator locPxParamIterator = locAdditionalPxParamIndices.begin();
+				map<const DKinFitParticle*, int>::iterator locPxParamIterator = locAdditionalPxParamIndices.begin();
 				for(; locPxParamIterator != locAdditionalPxParamIndices.end(); ++locPxParamIterator)
 				{
 					int locPxParamIndex = locPxParamIterator->second;
@@ -2845,61 +2911,4 @@ void DKinFitter::Set_FinalTrackInfo(void)
 			Print_Matrix(locCovarianceMatrix);
 		}
 	} //end set cov matrix loop
-
-	// propagate the track parameters
-	for(locParticleIterator = dKinFitParticles.begin(); locParticleIterator != dKinFitParticles.end(); ++locParticleIterator)
-	{
-		DKinFitParticle* locKinFitParticle = *locParticleIterator;
-		DKinFitParticleType locKinFitParticleType = locKinFitParticle->Get_KinFitParticleType();
-		if((locKinFitParticleType == d_TargetParticle) || (locKinFitParticleType == d_MissingParticle) || (locKinFitParticleType == d_DecayingParticle))
-			continue; // particle properties already defined at the fit vertex
-
-		if(!locKinFitParticle->Get_FitCommonVertexFlag())
-			continue; // no distance over which to propagate
-
-		pair<double, double> locPathLengthPair;
-		//updating the covariance matrix: a unique cov matrix object was cloned on fit start, so can safely update it directly
-		TMatrixFSym* locCovarianceMatrix = const_cast<TMatrixFSym*>(locKinFitParticle->Get_CovarianceMatrix());
-
-		TVector3 locMomentum;
-		TLorentzVector locSpacetimeVertex;
-		if(!dKinFitUtils->Propagate_TrackInfoToCommonVertex(locKinFitParticle, &dVXi, locMomentum, locSpacetimeVertex, locPathLengthPair, locCovarianceMatrix))
-			continue; // info not propagated
-
-		if(dDebugLevel >= 50)
-		{
-			cout << "PROPAGATED FINAL TRACK INFO: PID = " << locKinFitParticle->Get_PID() << endl;
-			cout << "p_xyz, v_xyzt = " << locMomentum.Px() << ", " << locMomentum.Py() << ", " << locMomentum.Pz() << ", " << locSpacetimeVertex.X() << ", " << locSpacetimeVertex.Y() << ", " << locSpacetimeVertex.Z() << ", " << locSpacetimeVertex.T() << endl;
-			cout << "common v_xyzt = " << locKinFitParticle->Get_CommonVertex().X() << ", " << locKinFitParticle->Get_CommonVertex().Y() << ", " << locKinFitParticle->Get_CommonVertex().Z() << ", " << locKinFitParticle->Get_CommonTime() << endl;
-			cout << "path length & uncert = " << locPathLengthPair.first << ", " << locPathLengthPair.second << endl;
-			cout << "sizes = " << locCovarianceMatrix->GetNrows() << ", " << locCovarianceMatrix->GetNcols() << endl;
-		}
-
-		//no need to set the covariance matrix: already updated
-		locKinFitParticle->Set_Momentum(locMomentum);
-		if(locKinFitParticle->Get_IsNeutralShowerFlag())
-			locKinFitParticle->Set_CommonSpacetimeVertex(locSpacetimeVertex);
-		else
-			locKinFitParticle->Set_SpacetimeVertex(locSpacetimeVertex);
-		locKinFitParticle->Set_PathLength(locPathLengthPair.first);
-		locKinFitParticle->Set_PathLengthUncertainty(locPathLengthPair.second);
-	}
-
-	//calculate the path length of decaying particles involved in 2 vertex fits
-	for(locParticleIterator = dKinFitParticles.begin(); locParticleIterator != dKinFitParticles.end(); ++locParticleIterator)
-	{
-		DKinFitParticle* locKinFitParticle = *locParticleIterator;
-		DKinFitParticleType locKinFitParticleType = locKinFitParticle->Get_KinFitParticleType();
-
-		if((locKinFitParticleType != d_DecayingParticle) || !locKinFitParticle->Get_FitCommonVertexFlag())
-			continue;
-
-		pair<double, double> locPathLengthPair;
-		const TMatrixFSym* locCovarianceMatrix = locKinFitParticle->Get_CovarianceMatrix();
-		if(dKinFitUtils->Calc_PathLength(locKinFitParticle, &dVXi, locCovarianceMatrix, locPathLengthPair))
-		{
-			locKinFitParticle->Set_PathLength(locPathLengthPair.first);
-			locKinFitParticle->Set_PathLengthUncertainty(locPathLengthPair.second);
-		}
-	}
 }

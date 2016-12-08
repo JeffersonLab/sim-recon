@@ -714,6 +714,10 @@ set<DKinFitConstraint*> DKinFitUtils_GlueX::Create_Constraints(const DParticleCo
 
 void DKinFitUtils_GlueX::Set_SpacetimeGuesses(const deque<DKinFitConstraint_Vertex*>& locSortedVertexConstraints, bool locIsP4FitFlag)
 {
+	//need to compute the error matrices to make accurate vertex guesses using decaying particles
+		//one vertex fit at a time: in between, the reconstructed decaying particles are turned into "detected" particles for the next fit
+	Set_UpdateCovarianceMatricesFlag(true);
+
 	//loop through vertices, determining initial guesses
 	map<DKinFitParticle*, DKinFitParticle*> locDecayingToDetectedParticleMap; //input decaying particle -> new detected particle
 	for(size_t loc_i = 0; loc_i < locSortedVertexConstraints.size(); ++loc_i)
@@ -888,7 +892,14 @@ DKinFitConstraint_Vertex* DKinFitUtils_GlueX::Build_NewConstraint(DKinFitConstra
 			continue; //try to see if can fit without this particle
 		}
 		DKinFitParticle* locDetectedDecayingParticle = locDecayIterator->second;
-		if((*(locDetectedDecayingParticle->Get_CovarianceMatrix()))(0, 0) < 0.0)
+		if(locDetectedDecayingParticle->Get_CovarianceMatrix() == NULL)
+		{
+			if(locSkipBadDecayingFlag)
+				continue; //try to see if can fit without this particle
+			else
+				locAttemptFitFlag = false; //cannot fit. however, still get initial guess
+		}
+		else if((*(locDetectedDecayingParticle->Get_CovarianceMatrix()))(0, 0) < 0.0)
 		{
 			if(locSkipBadDecayingFlag)
 				continue; //try to see if can fit without this particle

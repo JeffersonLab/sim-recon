@@ -4,6 +4,7 @@
 DReaction::DReaction(string locReactionName) : dReactionName(locReactionName)
 {
 	dKinFitType = d_NoFit;
+	dKinFitUpdateCovarianceMatricesFlag = false;
 
 	dMinProtonMomentum = pair<bool, double>(true, 0.25);
 	dMinChargedPIDFOM = pair<bool, double>(false, 5.73303E-7);

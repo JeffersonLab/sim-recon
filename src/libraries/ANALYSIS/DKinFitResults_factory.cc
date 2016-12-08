@@ -131,6 +131,11 @@ jerror_t DKinFitResults_factory::evnt(JEventLoop* locEventLoop, uint64_t eventnu
 		if(!locSortedVertexConstraints.empty())
 			dKinFitUtils->Set_SpacetimeGuesses(locSortedVertexConstraints, locP4IsFitFlag);
 
+		//Set covariance matrix control flag
+		const DReaction* locReaction = locParticleCombo->Get_Reaction();
+		bool locKinFitUpdateCovarianceMatricesFlag = locReaction->Get_KinFitUpdateCovarianceMatricesFlag();
+		dKinFitUtils->Set_UpdateCovarianceMatricesFlag(locKinFitUpdateCovarianceMatricesFlag);
+
 		//Add constraints & perform fit
 		dKinFitter->Reset_NewFit();
 		dKinFitter->Add_Constraints(locConstraints);

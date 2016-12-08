@@ -156,6 +156,7 @@ class DKinFitter //purely virtual: cannot directly instantiate class, can only i
 		void Update_ParticleParams(void);
 		void Calc_Pulls(void);
 		void Set_FinalTrackInfo(void);
+		void Update_CovarianceMatrices(void);
 
 		/***************************************************** FIT CONTROL AND UTILITY VARIABLES ****************************************************/
 

@@ -7,6 +7,7 @@ DKinFitUtils::DKinFitUtils(void)
 	dKinFitter = NULL; //Is set by DKinFitter constructor
 	dLinkVerticesFlag = true;
 	dDebugLevel = 0;
+	dUpdateCovarianceMatricesFlag = true;
 
 	size_t locNumFitsPerEventGuess = 20;
 
@@ -688,7 +689,7 @@ DKinFitParticle* DKinFitUtils::Clone_KinFitParticle(DKinFitParticle* locKinFitPa
 
 	//clone covariance matrix
 	const TMatrixFSym* locCovarianceMatrix = locClonedKinFitParticle->Get_CovarianceMatrix();
-	if(locCovarianceMatrix != NULL)
+	if((locCovarianceMatrix != NULL) && dUpdateCovarianceMatricesFlag)
 		locClonedKinFitParticle->Set_CovarianceMatrix(Clone_SymMatrix(locCovarianceMatrix));
 
 	return locClonedKinFitParticle;
@@ -943,7 +944,7 @@ bool DKinFitUtils::Validate_Constraints(const set<DKinFitConstraint*>& locKinFit
 
 /*************************************************************** CALCULATION ROUTINES **************************************************************/
 
-TLorentzVector DKinFitUtils::Calc_DecayingP4_ByPosition(DKinFitParticle* locKinFitParticle, bool locAtPositionFlag, bool locDontPropagateAtAllFlag) const
+TLorentzVector DKinFitUtils::Calc_DecayingP4_ByPosition(const DKinFitParticle* locKinFitParticle, bool locAtPositionFlag, bool locDontPropagateAtAllFlag) const
 {
 	//if input flag is true: return the value of the p4 at spot defined by locKinFitParticle->Get_Position() //else at the common vertex
 		//useful for setting the momentum: locKinFitParticle->Set_Momentum()
@@ -956,7 +957,7 @@ TLorentzVector DKinFitUtils::Calc_DecayingP4_ByPosition(DKinFitParticle* locKinF
 	return Calc_DecayingP4(locKinFitParticle, locDontPropagateDecayingP3Flag, 1.0, locDontPropagateAtAllFlag);
 }
 
-TLorentzVector DKinFitUtils::Calc_DecayingP4_ByP3Derived(DKinFitParticle* locKinFitParticle, bool locAtP3DerivedFlag, bool locDontPropagateAtAllFlag) const
+TLorentzVector DKinFitUtils::Calc_DecayingP4_ByP3Derived(const DKinFitParticle* locKinFitParticle, bool locAtP3DerivedFlag, bool locDontPropagateAtAllFlag) const
 {
 	//if input flag is true: return the value of the p4 at the vertex where the p3-deriving particles are at
 		//useful for doing mass constraints
@@ -967,7 +968,7 @@ TLorentzVector DKinFitUtils::Calc_DecayingP4_ByP3Derived(DKinFitParticle* locKin
 	return Calc_DecayingP4(locKinFitParticle, locDontPropagateDecayingP3Flag, 1.0, locDontPropagateAtAllFlag);
 }
 
-TLorentzVector DKinFitUtils::Calc_DecayingP4_ByVertex(DKinFitParticle* locKinFitParticle, bool locAtProductionVertexFlag, bool locDontPropagateAtAllFlag) const
+TLorentzVector DKinFitUtils::Calc_DecayingP4_ByVertex(const DKinFitParticle* locKinFitParticle, bool locAtProductionVertexFlag, bool locDontPropagateAtAllFlag) const
 {
 	//if input flag is true: return the value of the p4 at the production vertex
 		//else return it at the decay vertex
@@ -980,7 +981,7 @@ TLorentzVector DKinFitUtils::Calc_DecayingP4_ByVertex(DKinFitParticle* locKinFit
 }
 
 //Don't call this directly! Well you can, but it's a little confusing. Better to call the wrapper functions. 
-TLorentzVector DKinFitUtils::Calc_DecayingP4(DKinFitParticle* locKinFitParticle, bool locDontPropagateDecayingP3Flag, double locStateSignMultiplier, bool locDontPropagateAtAllFlag) const
+TLorentzVector DKinFitUtils::Calc_DecayingP4(const DKinFitParticle* locKinFitParticle, bool locDontPropagateDecayingP3Flag, double locStateSignMultiplier, bool locDontPropagateAtAllFlag) const
 {
 	//locDontPropagateDecayingP3Flag: if true: don't propagate first decaying particle p3 from defined vertex to the other vertex
 	//E, px, py, pz
@@ -1071,7 +1072,7 @@ TLorentzVector DKinFitUtils::Calc_DecayingP4(DKinFitParticle* locKinFitParticle,
 	return locP4Sum;
 }
 
-bool DKinFitUtils::Propagate_TrackInfoToCommonVertex(DKinFitParticle* locKinFitParticle, const TMatrixDSym* locVXi, TVector3& locMomentum, TLorentzVector& locSpacetimeVertex, pair<double, double>& locPathLengthPair, TMatrixFSym* locCovarianceMatrix) const
+bool DKinFitUtils::Propagate_TrackInfoToCommonVertex(const DKinFitParticle* locKinFitParticle, const TMatrixDSym* locVXi, TVector3& locMomentum, TLorentzVector& locSpacetimeVertex, pair<double, double>& locPathLengthPair, TMatrixFSym* locCovarianceMatrix) const
 {
 	// propagates the track info to the fit common vertex
 		//returns false if nothing changed (info not propagated: e.g. missing particle), else returns true
@@ -1101,12 +1102,15 @@ bool DKinFitUtils::Propagate_TrackInfoToCommonVertex(DKinFitParticle* locKinFitP
 		return false; // particle properties already defined at the fit vertex
 
 	const TMatrixFSym* locFitCovMatrix = locKinFitParticle->Get_CovarianceMatrix();
-	if(locFitCovMatrix != NULL)
-		*locCovarianceMatrix = *locFitCovMatrix;
-	else
-		locCovarianceMatrix->Zero();
-	bool locNeutralShowerFlag = locKinFitParticle->Get_IsNeutralShowerFlag();
+	if(dUpdateCovarianceMatricesFlag)
+	{
+		if(locFitCovMatrix != NULL)
+			*locCovarianceMatrix = *locFitCovMatrix;
+		else
+			locCovarianceMatrix->Zero();
+	}
 
+	bool locNeutralShowerFlag = locKinFitParticle->Get_IsNeutralShowerFlag();
 	int locCharge = locKinFitParticle->Get_Charge();
 	TVector3 locCommonVertex = locKinFitParticle->Get_CommonVertex();
 
@@ -1122,10 +1126,46 @@ bool DKinFitUtils::Propagate_TrackInfoToCommonVertex(DKinFitParticle* locKinFitP
 	int locCovMatrixPxParamIndex = locKinFitParticle->Get_CovMatrixPxParamIndex();
 	int locCovMatrixVxParamIndex = locKinFitParticle->Get_CovMatrixVxParamIndex();
 	int locCovMatrixTParamIndex = locKinFitParticle->Get_CovMatrixTParamIndex();
-	int locCommonVxParamIndex_TempMatrix, locCommonTParamIndex_TempMatrix;
 
 	int locCommonVxParamIndex = locKinFitParticle->Get_CommonVxParamIndex();
 	int locCommonTParamIndex = locKinFitParticle->Get_CommonTParamIndex();
+
+	//FIRST, DO EVERYTHING BUT THE COVARIANCE MATRIX
+
+	//common v3
+	locSpacetimeVertex.SetVect(locCommonVertex);
+
+	//common time
+	double locCommonTime = 0.0;
+	if(locKinFitParticle->Get_FitCommonTimeFlag()) //spacetime was fit
+		locCommonTime = locKinFitParticle->Get_CommonTime();
+	else if((locCharge != 0) && Get_IsBFieldNearBeamline()) //in b-field & charged
+	{
+		double locDeltaXDotH = locDeltaX.Dot(locH);
+		double locPDotH = locP4.Vect().Dot(locH);
+		locCommonTime = locKinFitParticle->Get_Time() + locDeltaXDotH*locP4.E()/(29.9792458*locPDotH);
+	}
+	else if(!locNeutralShowerFlag) //non-accelerating, non-shower
+	{
+		double locDeltaXDotP = locDeltaX.Dot(locP4.Vect());
+		locCommonTime = locKinFitParticle->Get_Time() + locDeltaXDotP*locP4.E()/(29.9792458*locP4.Vect().Mag2());
+	}
+	else //neutral shower
+		locCommonTime = locKinFitParticle->Get_Time() - locDeltaX.Mag()*locP4.E()/(29.9792458*locP4.P());
+	locSpacetimeVertex.SetT(locCommonTime);
+
+	//p3
+	if((locCharge != 0) && Get_IsBFieldNearBeamline()) //charged & in b-field
+		locMomentum = locP4.Vect() - locDeltaX.Cross(locA*locH);
+	else //constant: either neutral or no b-field
+		locMomentum = locP4.Vect();
+
+	//if not updating the covariance matrix, skip to the path length and return
+	if(!dUpdateCovarianceMatricesFlag)
+		return Calc_PathLength(locKinFitParticle, locVXi, locCovarianceMatrix, locPathLengthPair);
+
+	//UPDATE THE COVARIANCE MATRIX
+	int locCommonVxParamIndex_TempMatrix, locCommonTParamIndex_TempMatrix;
 
 	//add common v3 to matrix: 10x10 or 8x8 (neutral shower)
 	locCommonVxParamIndex_TempMatrix = locCovarianceMatrix->GetNcols();
@@ -1136,16 +1176,13 @@ bool DKinFitUtils::Propagate_TrackInfoToCommonVertex(DKinFitParticle* locKinFitP
 			(*locCovarianceMatrix)(loc_i + locCommonVxParamIndex_TempMatrix, loc_j + locCommonVxParamIndex_TempMatrix) = (*locVXi)(locCommonVxParamIndex + loc_i, locCommonVxParamIndex + loc_j);
 	}
 	// done: no correlations between common vertex and measured params!!!
-	locSpacetimeVertex.SetVect(locCommonVertex);
 
 	//add common time to matrix: 11x11 or 9x9 (neutral shower): if kinfit just add in (no correlations to meas, corr to common v3), else transform
 		//note that if the common time is not kinfit, then the true uncertainty is overestimated: 
 			//cannot be obtained without a kinematic fit (3 equations (xyz), one unknown (time))
-	double locCommonTime = 0.0;
 	locCommonTParamIndex_TempMatrix = locCovarianceMatrix->GetNcols();
 	if(locKinFitParticle->Get_FitCommonTimeFlag()) //spacetime was fit
 	{
-		locCommonTime = locKinFitParticle->Get_CommonTime();
 		locCovarianceMatrix->ResizeTo(locCovarianceMatrix->GetNcols() + 1, locCovarianceMatrix->GetNcols() + 1);
 		(*locCovarianceMatrix)(locCommonTParamIndex_TempMatrix, locCommonTParamIndex_TempMatrix) = (*locVXi)(locCommonTParamIndex, locCommonTParamIndex);
 		for(size_t loc_i = 0; loc_i < 3; ++loc_i) //correlations to common v3
@@ -1158,7 +1195,6 @@ bool DKinFitUtils::Propagate_TrackInfoToCommonVertex(DKinFitParticle* locKinFitP
 	{
 		double locDeltaXDotH = locDeltaX.Dot(locH);
 		double locPDotH = locP4.Vect().Dot(locH);
-		locCommonTime = locKinFitParticle->Get_Time() + locDeltaXDotH*locP4.E()/(29.9792458*locPDotH);
 
 		TMatrixD locTransformationMatrix_CommonTime(locCovarianceMatrix->GetNcols() + 1, locCovarianceMatrix->GetNcols());
 		for(unsigned int loc_i = 0; int(loc_i) < locCovarianceMatrix->GetNcols(); ++loc_i)
@@ -1187,7 +1223,6 @@ bool DKinFitUtils::Propagate_TrackInfoToCommonVertex(DKinFitParticle* locKinFitP
 	else if(!locNeutralShowerFlag) //non-accelerating, non-shower
 	{
 		double locDeltaXDotP = locDeltaX.Dot(locP4.Vect());
-		locCommonTime = locKinFitParticle->Get_Time() + locDeltaXDotP*locP4.E()/(29.9792458*locP4.Vect().Mag2());
 
 		TMatrixD locTransformationMatrix_CommonTime(locCovarianceMatrix->GetNcols() + 1, locCovarianceMatrix->GetNcols());
 		for(unsigned int loc_i = 0; int(loc_i) < locCovarianceMatrix->GetNcols(); ++loc_i)
@@ -1215,8 +1250,6 @@ bool DKinFitUtils::Propagate_TrackInfoToCommonVertex(DKinFitParticle* locKinFitP
 	}
 	else //neutral shower
 	{
-		locCommonTime = locKinFitParticle->Get_Time() - locDeltaX.Mag()*locP4.E()/(29.9792458*locP4.P());
-
 		TMatrixD locTransformationMatrix_CommonTime(locCovarianceMatrix->GetNcols() + 1, locCovarianceMatrix->GetNcols());
 		for(unsigned int loc_i = 0; int(loc_i) < locCovarianceMatrix->GetNcols(); ++loc_i)
 			locTransformationMatrix_CommonTime(loc_i, loc_i) = 1.0; //other params are unchanged
@@ -1239,15 +1272,12 @@ bool DKinFitUtils::Propagate_TrackInfoToCommonVertex(DKinFitParticle* locKinFitP
 
 		locCovarianceMatrix->Similarity(locTransformationMatrix_CommonTime);
 	}
-	locSpacetimeVertex.SetT(locCommonTime);
 
 	//transform to 7x7: common v3 & common t are just copied to the measured spots; p is propagated if in bfield, else is copied
 	TMatrixD locTransformationMatrix_Propagation(7, locCovarianceMatrix->GetNcols());
 	//p3
 	if((locCharge != 0) && Get_IsBFieldNearBeamline()) //charged & in b-field
 	{
-		locMomentum = locP4.Vect() - locDeltaX.Cross(locA*locH);
-
 		locTransformationMatrix_Propagation(0, locCovMatrixPxParamIndex) = 1.0;
 		locTransformationMatrix_Propagation(1, locCovMatrixPxParamIndex + 1) = 1.0;
 		locTransformationMatrix_Propagation(2, locCovMatrixPxParamIndex + 2) = 1.0;
@@ -1272,7 +1302,6 @@ bool DKinFitUtils::Propagate_TrackInfoToCommonVertex(DKinFitParticle* locKinFitP
 	}
 	else //constant: either neutral or no b-field
 	{
-		locMomentum = locP4.Vect();
 		for(unsigned int loc_i = 0; loc_i < 3; ++loc_i)
 			locTransformationMatrix_Propagation(loc_i, locCovMatrixPxParamIndex + loc_i) = 1.0;
 	}
@@ -1287,10 +1316,11 @@ bool DKinFitUtils::Propagate_TrackInfoToCommonVertex(DKinFitParticle* locKinFitP
 	//transform!!
 	locCovarianceMatrix->Similarity(locTransformationMatrix_Propagation); //FINALLY!!!
 
+	//now calculate the path length
 	return Calc_PathLength(locKinFitParticle, locVXi, locCovarianceMatrix, locPathLengthPair);
 }
 
-bool DKinFitUtils::Calc_PathLength(DKinFitParticle* locKinFitParticle, const TMatrixDSym* locVXi, const TMatrixFSym* locCovarianceMatrix, pair<double, double>& locPathLengthPair) const
+bool DKinFitUtils::Calc_PathLength(const DKinFitParticle* locKinFitParticle, const TMatrixDSym* locVXi, const TMatrixFSym* locCovarianceMatrix, pair<double, double>& locPathLengthPair) const
 {
 	//locPathLengthPair: value, uncertainty
 	DKinFitParticleType locKinFitParticleType = locKinFitParticle->Get_KinFitParticleType();
@@ -1313,8 +1343,28 @@ bool DKinFitUtils::Calc_PathLength(DKinFitParticle* locKinFitParticle, const TMa
 	TVector3 locBField = Get_IsBFieldNearBeamline() ? Get_BField(locPosition) : TVector3(0.0, 0.0, 0.0);
 	TVector3 locH = locBField.Unit();
 
+	//First, compute the path length
+	if((locCharge != 0) && Get_IsBFieldNearBeamline()) //in b-field & charged
+	{
+		double locDeltaXDotH = locDeltaX.Dot(locH);
+		double locPDotH = locMomentum.Dot(locH);
+		double locPMag = locMomentum.Mag();
+		locPathLengthPair.first = locDeltaXDotH*locPMag/locPDotH; //cos(theta_helix) = p.dot(h)/|p| = x.dot(h)/l (l = path length)
+	}
+	else // non-accelerating
+		locPathLengthPair.first = locDeltaX.Mag();
+
+	//if not updating the errors, set the error to zero
+	if((locCovarianceMatrix == NULL) || !dUpdateCovarianceMatricesFlag)
+	{
+		locPathLengthPair.second = 0.0;
+		return true;
+	}
+
+	//now compute the uncertainty
 	//add common v3 to matrix: 10x10 or 8x8 (neutral shower)
 	TMatrixFSym locTempMatrix(*locCovarianceMatrix);
+
 	int locCommonVxParamIndex_TempMatrix = locTempMatrix.GetNcols();
 	locTempMatrix.ResizeTo(locCommonVxParamIndex_TempMatrix + 3, locCommonVxParamIndex_TempMatrix + 3);
 	for(size_t loc_i = 0; loc_i < 3; ++loc_i)
@@ -1329,7 +1379,6 @@ bool DKinFitUtils::Calc_PathLength(DKinFitParticle* locKinFitParticle, const TMa
 		double locDeltaXDotH = locDeltaX.Dot(locH);
 		double locPDotH = locMomentum.Dot(locH);
 		double locPMag = locMomentum.Mag();
-		locPathLengthPair.first = locDeltaXDotH*locPMag/locPDotH; //cos(theta_helix) = p.dot(h)/|p| = x.dot(h)/l (l = path length)
 
 		TMatrixD locTransformationMatrix_PathLength(1, locTempMatrix.GetNcols());
 
@@ -1350,12 +1399,9 @@ bool DKinFitUtils::Calc_PathLength(DKinFitParticle* locKinFitParticle, const TMa
 		locTransformationMatrix_PathLength(0, locCommonVxParamIndex_TempMatrix + 2) = locDPathDCommon.Z();
 
 		locTempMatrix.Similarity(locTransformationMatrix_PathLength);
-		locPathLengthPair.second = sqrt(locTempMatrix(0, 0));
 	}
 	else // non-accelerating
 	{
-		locPathLengthPair.first = locDeltaX.Mag();
-
 		TMatrixD locTransformationMatrix_PathLength(1, locTempMatrix.GetNcols());
 
 		TVector3 locDPathDCommon = locDeltaX.Unit();
@@ -1370,13 +1416,13 @@ bool DKinFitUtils::Calc_PathLength(DKinFitParticle* locKinFitParticle, const TMa
 		locTransformationMatrix_PathLength(0, locCommonVxParamIndex_TempMatrix + 2) = locDPathDCommon.Z();
 
 		locTempMatrix.Similarity(locTransformationMatrix_PathLength);
-		locPathLengthPair.second = sqrt(locTempMatrix(0, 0));
 	}
+	locPathLengthPair.second = sqrt(locTempMatrix(0, 0));
 
 	return true;
 }
 
-void DKinFitUtils::Calc_DecayingParticleJacobian(DKinFitParticle* locKinFitParticle, bool locDontPropagateDecayingP3Flag, double locStateSignMultiplier, int locNumEta, const map<DKinFitParticle*, int>& locAdditionalPxParamIndices, TMatrixD& locJacobian) const
+void DKinFitUtils::Calc_DecayingParticleJacobian(const DKinFitParticle* locKinFitParticle, bool locDontPropagateDecayingP3Flag, double locStateSignMultiplier, int locNumEta, const map<const DKinFitParticle*, int>& locAdditionalPxParamIndices, TMatrixD& locJacobian) const
 {
 	//locJacobian: matrix used to convert dV to the decaying particle covariance matrix: indices are px, py, pz, x, y, z, t
 		//dimensions are: 7, (dNumXi + locNumEta);
@@ -1426,7 +1472,7 @@ void DKinFitUtils::Calc_DecayingParticleJacobian(DKinFitParticle* locKinFitParti
 	if(locPxParamIndex < 0)
 	{
 		//for particles not included in the fit matrices
-		map<DKinFitParticle*, int>::const_iterator locPxParamIterator = locAdditionalPxParamIndices.find(locKinFitParticle);
+		map<const DKinFitParticle*, int>::const_iterator locPxParamIterator = locAdditionalPxParamIndices.find(locKinFitParticle);
 		if(locPxParamIterator != locAdditionalPxParamIndices.end())
 			locPxParamIndex = locPxParamIterator->second;
 	}

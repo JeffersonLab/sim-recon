@@ -1144,6 +1144,7 @@ void DCutAction_OneVertexKinFit::Initialize(JEventLoop* locEventLoop)
 {
 	dKinFitUtils = new DKinFitUtils_GlueX(locEventLoop);
 	dKinFitter = new DKinFitter(dKinFitUtils);
+	dKinFitUtils->Set_UpdateCovarianceMatricesFlag(false);
 
 	// Optional: Useful utility functions.
 	locEventLoop->GetSingle(dAnalysisUtilities);
