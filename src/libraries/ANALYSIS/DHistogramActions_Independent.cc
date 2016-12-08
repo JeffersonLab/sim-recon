@@ -48,42 +48,45 @@ void DHistogramAction_ObjectMemory::Initialize(JEventLoop* locEventLoop)
 	dFactoryPoolBinMap["DKinFitParticle"] = 12;
 	locBinLabels.push_back("DKinFitParticle");
 
-	dFactoryPoolBinMap["DKinFitChainStep"] = 13;
+	dFactoryPoolBinMap["DKinFitParticle_Shared"] = 13;
+	locBinLabels.push_back("DKinFitParticle_Shared");
+
+	dFactoryPoolBinMap["DKinFitChainStep"] = 14;
 	locBinLabels.push_back("DKinFitChainStep");
 
-	dFactoryPoolBinMap["DKinFitChain"] = 14;
+	dFactoryPoolBinMap["DKinFitChain"] = 15;
 	locBinLabels.push_back("DKinFitChain");
 
-	dFactoryPoolBinMap["DKinFitConstraints"] = 15;
+	dFactoryPoolBinMap["DKinFitConstraints"] = 16;
 	locBinLabels.push_back("DKinFitConstraints");
 
-	dFactoryPoolBinMap["TMatrixFSym"] = 16;
+	dFactoryPoolBinMap["TMatrixFSym"] = 17;
 	locBinLabels.push_back("TMatrixFSym");
 
 	dFactoryPairsToTrack.push_back(pair<string, string>("DKinFitResults", ""));
-	dFactoryPairBinMap[dFactoryPairsToTrack.back()] = 17;
+	dFactoryPairBinMap[dFactoryPairsToTrack.back()] = 18;
 	locBinLabels.push_back("DKinFitResults");
 
 	dFactoryPairsToTrack.push_back(pair<string, string>("DBeamPhoton", "KinFit"));
-	dFactoryPairBinMap[dFactoryPairsToTrack.back()] = 18;
+	dFactoryPairBinMap[dFactoryPairsToTrack.back()] = 19;
 	locBinLabels.push_back("BeamPhoton_KinFit");
 
 	dFactoryPairsToTrack.push_back(pair<string, string>("DChargedTrackHypothesis", "KinFit"));
-	dFactoryPairBinMap[dFactoryPairsToTrack.back()] = 19;
+	dFactoryPairBinMap[dFactoryPairsToTrack.back()] = 20;
 	locBinLabels.push_back("ChargedHypo_KinFit");
 
 	dFactoryPairsToTrack.push_back(pair<string, string>("DNeutralParticleHypothesis", "KinFit"));
-	dFactoryPairBinMap[dFactoryPairsToTrack.back()] = 20;
+	dFactoryPairBinMap[dFactoryPairsToTrack.back()] = 21;
 	locBinLabels.push_back("NeutralHypo_KinFit");
 
-	dFactoryPoolBinMap["DKinematicData_Combo"] = 21;
+	dFactoryPoolBinMap["DKinematicData_Combo"] = 22;
 	locBinLabels.push_back("DKinData_Combo");
 
-	dFactoryPoolBinMap["DParticleComboStep"] = 22;
+	dFactoryPoolBinMap["DParticleComboStep"] = 23;
 	locBinLabels.push_back("DParticleComboStep");
 
 	dFactoryPairsToTrack.push_back(pair<string, string>("DParticleCombo", ""));
-	dFactoryPairBinMap[dFactoryPairsToTrack.back()] = 23;
+	dFactoryPairBinMap[dFactoryPairsToTrack.back()] = 24;
 	locBinLabels.push_back("DParticleCombo");
 
 	//CREATE THE HISTOGRAMS
@@ -209,6 +212,13 @@ bool DHistogramAction_ObjectMemory::Perform_Action(JEventLoop* locEventLoop, con
 		locBaseFactory = locEventLoop->GetFactory("DKinFitResults", "");
 		DKinFitResults_factory* locKinFitResultsFactory = static_cast<DKinFitResults_factory*>(locBaseFactory);
 		locNumObjectsMap[locBin] = locKinFitResultsFactory->Get_KinFitParticlePoolSize();
+		locMemory = sizeof(DKinFitParticle)*locNumObjectsMap[locBin];
+		locMemoryMap[locBin] = locMemory;
+		locTotalMemory += locMemory;
+
+		//DKinFitParticle_Shared
+		locBin = dFactoryPoolBinMap["DKinFitParticle_Shared"];
+		locNumObjectsMap[locBin] = locKinFitResultsFactory->Get_KinFitParticlePoolSize_Shared();
 		locMemory = sizeof(DKinFitParticle)*locNumObjectsMap[locBin];
 		locMemoryMap[locBin] = locMemory;
 		locTotalMemory += locMemory;

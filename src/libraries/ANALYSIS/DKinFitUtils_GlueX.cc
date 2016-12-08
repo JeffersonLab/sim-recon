@@ -11,7 +11,11 @@ dMagneticFieldMap(locMagneticFieldMap), dAnalysisUtilities(locAnalysisUtilities)
 {
 	dWillBeamHaveErrorsFlag = false; //Until fixed!
 	dEventNumber = 0;
-	dNumFillBufferMatrices = 10; //the larger the number, the more memory it takes. the smaller, the more locking is needed
+
+	//fill buffer: the larger the number, the more memory it takes. the smaller, the more locking is needed
+	dNumFillBufferMatrices = 10;
+	dNumFillBufferParticles = 10;
+	dTargetMaxNumAvailableParticles = 250000;
 
 	dApplication = dynamic_cast<DApplication*>(japp);
 	gPARMS->SetDefaultParameter("KINFIT:LINKVERTICES", dLinkVerticesFlag);
@@ -28,7 +32,11 @@ DKinFitUtils_GlueX::DKinFitUtils_GlueX(JEventLoop* locEventLoop)
 	dWillBeamHaveErrorsFlag = false; //Until fixed!
 
 	dEventNumber = locEventLoop->GetJEvent().GetEventNumber();
-	dNumFillBufferMatrices = 10; //the larger the number, the more memory it takes. the smaller, the more locking is needed
+
+	//fill buffer: the larger the number, the more memory it takes. the smaller, the more locking is needed
+	dNumFillBufferMatrices = 10;
+	dNumFillBufferParticles = 10;
+	dTargetMaxNumAvailableParticles = 250000;
 }
 
 void DKinFitUtils_GlueX::Set_MaxPoolSizes(size_t locNumReactions, size_t locExpectedNumCombos)
@@ -45,6 +53,7 @@ void DKinFitUtils_GlueX::Set_MaxPoolSizes(size_t locNumReactions, size_t locExpe
 	Set_MaxKinFitChainStepPoolSize(3*locNumReactions*locExpectedNumCombos);
 
 	Set_MaxSymMatrixPoolSize(10*locNumReactions*locExpectedNumCombos*2);
+	dTargetMaxNumAvailableParticles = 5000*locNumReactions;
 }
 
 /*********************************************************** OVERRIDE BASE CLASS FUNCTIONS *********************************************************/
@@ -67,6 +76,7 @@ void DKinFitUtils_GlueX::Reset_NewEvent(void)
 	dParticleMap_InputToSource_JObject.clear();
 	dParticleMap_InputToSource_Decaying.clear();
 
+	Reset_ParticleMemory();
 	DKinFitUtils::Reset_NewEvent();
 }
 
@@ -96,6 +106,125 @@ TVector3 DKinFitUtils_GlueX::Get_BField(const TVector3& locPosition) const
 	double locBx, locBy, locBz;
 	dMagneticFieldMap->GetField(locPosition.X(), locPosition.Y(), locPosition.Z(), locBx, locBy, locBz);
 	return (TVector3(locBx, locBy, locBz));
+}
+
+/****************************************************************** MANAGE MEMORY ******************************************************************/
+
+deque<DKinFitParticle*>& DKinFitUtils_GlueX::Get_AvailableParticleDeque(void) const
+{
+	//static: shared amongst all threads
+	//Must call this function within a lock!!
+	static deque<DKinFitParticle*> locAvailableParticles;
+	return locAvailableParticles;
+}
+
+DKinFitParticle* DKinFitUtils_GlueX::Get_KinFitParticleResource(void)
+{
+	//if kinfit pool (buffer) is empty, use shared pool to retrieve a new batch of particles
+	if(Get_KinFitParticlePoolAvailableSize() == 0)
+		Acquire_Particles(dNumFillBufferParticles);
+
+	return DKinFitUtils::Get_KinFitParticleResource();
+}
+
+void DKinFitUtils_GlueX::Reset_ParticleMemory(void)
+{
+	//Access combo resource pool
+	bool locDeleteParticlesFlag = false;
+	japp->WriteLock("DKinFitParticle_Memory"); //LOCK
+	{
+		deque<DKinFitParticle*>& locAvailableParticles = Get_AvailableParticleDeque();
+
+		//Memory fragmentation seems to be a very big problem, and these objects use the most memory
+		//So, don't delete them. To delete them, just uncomment the below lines.
+
+		//if available > max, wipe all used
+//		locDeleteParticlesFlag = (locAvailableParticles.size() >= dTargetMaxNumAvailableParticles);
+//		if(!locDeleteParticlesFlag)
+			std::move(dKinFitParticlePool_Acquired.begin(), dKinFitParticlePool_Acquired.end(), std::back_inserter(locAvailableParticles));
+	}
+	japp->Unlock("DKinFitParticle_Memory"); //UNLOCK
+
+	//delete combos if necessary
+	if(locDeleteParticlesFlag)
+	{
+		for(auto& locParticle : dKinFitParticlePool_Acquired)
+			delete locParticle;
+	}
+
+	//clear thread-local pool
+	dKinFitParticlePool_Acquired.clear();
+}
+
+void DKinFitUtils_GlueX::Acquire_Particles(size_t locNumRequestedParticles)
+{
+	//We must have the correct event number, so that we know when it's safe to recycle the memory for the next event.
+	deque<DKinFitParticle*> locAcquiredParticles;
+
+	//Access resource pool
+	japp->WriteLock("DKinFitParticle_Memory"); //LOCK
+	{
+		deque<DKinFitParticle*>& locAvailableParticles = Get_AvailableParticleDeque();
+
+		//Get resources if available
+		if(locAvailableParticles.size() <= locNumRequestedParticles)
+		{
+			//Move the whole deque
+			std::move(locAvailableParticles.begin(), locAvailableParticles.end(), std::back_inserter(locAcquiredParticles));
+			locAvailableParticles.clear();
+		}
+		else //Move the desired range
+		{
+			size_t locNewSize = locAvailableParticles.size() - locNumRequestedParticles;
+			auto locMoveEdgeIterator = std::next(locAvailableParticles.rbegin(), locNumRequestedParticles);
+			std::move(locAvailableParticles.rbegin(), locMoveEdgeIterator, std::back_inserter(locAcquiredParticles));
+			locAvailableParticles.resize(locNewSize);
+		}
+	}
+	japp->Unlock("DKinFitParticle_Memory"); //UNLOCK
+
+	//set matrix pointer as null (necessary before "recycling" below)
+		//Recycle_Particles() also recycles matrix memory, want to avoid that, so null them first
+	for(auto& locParticle : locAcquiredParticles)
+		locParticle->Set_CovarianceMatrix(nullptr);
+
+	//make new particles if necessary
+	while(locAcquiredParticles.size() < locNumRequestedParticles)
+		locAcquiredParticles.push_back(new DKinFitParticle());
+
+	//Store the acquired particles to the dKinFitParticlePool_Available buffer by "recycling" them
+		//these only live in the "available" pool, and aren't set in the "all" pool
+		//when the pools are reset for a new event, the buffer is cleared and the utils forget all about them
+		//thus, the memory is managed by DKinFitUtils_GlueX, and not by DKinFitUtils
+	set<DKinFitParticle*> locParticlesToRecycle(locAcquiredParticles.begin(), locAcquiredParticles.end());
+	Recycle_Particles(locParticlesToRecycle);
+
+	//Register as acquired-by this thread
+	std::move(locAcquiredParticles.begin(), locAcquiredParticles.end(), std::back_inserter(dKinFitParticlePool_Acquired));
+}
+
+size_t DKinFitUtils_GlueX::Get_KinFitParticlePoolSize_Shared(void) const
+{
+	size_t locNumParticles = 0;
+	
+	//Access resource pool
+	japp->WriteLock("DKinFitParticle_Memory"); //LOCK
+	{
+		locNumParticles = Get_AvailableParticleDeque().size();
+	}
+	japp->Unlock("DKinFitParticle_Memory"); //UNLOCK
+
+	return locNumParticles;
+}
+
+void DKinFitUtils_GlueX::Recycle_DetectedDecayingParticles(map<DKinFitParticle*, DKinFitParticle*>& locDecayingToDetectedParticleMap)
+{
+	set<DKinFitParticle*> locParticlesToRecycle;
+	for(auto& locParticlePair : locDecayingToDetectedParticleMap)
+		locParticlesToRecycle.insert(locParticlePair.second);
+
+	Recycle_Particles(locParticlesToRecycle);
+	locDecayingToDetectedParticleMap.clear();
 }
 
 /****************************************************************** MAKE PARTICLES *****************************************************************/
@@ -707,16 +836,6 @@ void DKinFitUtils_GlueX::Set_SpacetimeGuesses(const deque<DKinFitConstraint_Vert
 
 	//RECYCLE CREATED DETECTED DECAYING PARTICLES
 	Recycle_DetectedDecayingParticles(locDecayingToDetectedParticleMap);
-}
-
-void DKinFitUtils_GlueX::Recycle_DetectedDecayingParticles(map<DKinFitParticle*, DKinFitParticle*>& locDecayingToDetectedParticleMap)
-{
-	set<DKinFitParticle*> locParticlesToRecycle;
-	for(auto& locParticlePair : locDecayingToDetectedParticleMap)
-		locParticlesToRecycle.insert(locParticlePair.second);
-
-	Recycle_Particles(locParticlesToRecycle);
-	locDecayingToDetectedParticleMap.clear();
 }
 
 void DKinFitUtils_GlueX::Construct_DetectedDecayingParticle_NoFit(DKinFitConstraint_Vertex* locOrigVertexConstraint, map<DKinFitParticle*, DKinFitParticle*>& locDecayingToDetectedParticleMap, TLorentzVector locSpacetimeVertexGuess)
