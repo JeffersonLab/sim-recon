@@ -70,7 +70,7 @@ inline const DParticleComboBlueprintStep* DParticleComboBlueprint::Pop_ParticleC
 	if(dParticleComboBlueprintSteps.empty())
 		return NULL;
 	const DParticleComboBlueprintStep* locParticleComboBlueprintStep = dParticleComboBlueprintSteps.front();
-	dParticleComboBlueprintSteps.erase(dParticleComboBlueprintSteps.begin(););
+	dParticleComboBlueprintSteps.erase(dParticleComboBlueprintSteps.begin());
 	return locParticleComboBlueprintStep;
 }
 
