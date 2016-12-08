@@ -66,6 +66,7 @@ jerror_t DParticleCombo_factory::evnt(JEventLoop* locEventLoop, uint64_t eventnu
 
 	Reset_Data();
 	Reset_Pools();
+	dKinFitUtils->Reset_NewEvent(eventnumber);
 
  	vector<const DAnalysisResults*> locAnalysisResultsVector;
 	locEventLoop->Get(locAnalysisResultsVector, "PreKinFit");
@@ -240,7 +241,7 @@ const DParticleCombo* DParticleCombo_factory::Check_IsDuplicateCombo(const map<c
 	//if is duplicate, returns the newly-created combo from the matching previous particle combo
 	//otherwise, returns NULL
 	const DReaction* locReaction = locParticleCombo->Get_Reaction();
-	for(auto locNewComboPair : locNewParticleComboMap)
+	for(auto& locNewComboPair : locNewParticleComboMap)
 	{
 		const DParticleCombo* locPreviousParticleCombo = locNewComboPair.first;
 		if(locReaction == locPreviousParticleCombo->Get_Reaction()) //probably shouldn't be possible
@@ -269,8 +270,11 @@ void DParticleCombo_factory::Set_DecayingParticles(const DParticleCombo* locNewP
 	}
 
 	Particle_t locPID = PDGtoPType(locKinFitParticle->Get_PID());
-	DKinematicData* locKinematicData_Position = Build_KinematicData(locPID, locKinFitParticle);
+        int locFromStepIndex = locNewParticleComboStep->Get_InitialParticleDecayFromStepIndex();
+
 	DKinematicData* locKinematicData_Common = Build_KinematicData(locPID, locKinFitParticle);
+	bool locCreate2ndObjectFlag = (IsDetachedVertex(locPID) && (locStepIndex != 0) && (locFromStepIndex >= 0));
+	DKinematicData* locKinematicData_Position = locCreate2ndObjectFlag ? Build_KinematicData(locPID, locKinFitParticle) : locKinematicData_Common;
 	if(locKinFitParticle->Get_CommonVxParamIndex() >= 0)
 		dKinFitUtils->Propagate_TrackInfoToCommonVertex(locKinematicData_Common, locKinFitParticle, &locKinFitResults->Get_VXi());
 
@@ -281,7 +285,6 @@ void DParticleCombo_factory::Set_DecayingParticles(const DParticleCombo* locNewP
 	locNewParticleComboStep->Set_InitialParticle(locKinematicData_InitState);
 
 	//now, back-set the particle at the other vertex
-	int locFromStepIndex = locNewParticleComboStep->Get_InitialParticleDecayFromStepIndex();
 	if((locStepIndex == 0) || (locFromStepIndex < 0))
 		return; //no other place to set it
 
@@ -460,7 +463,7 @@ DKinematicData* DParticleCombo_factory::Build_KinematicData(Particle_t locPID, D
 	locKinematicData->setPosition(DVector3(locKinFitParticle->Get_Position().X(),locKinFitParticle->Get_Position().Y(),locKinFitParticle->Get_Position().Z()));
 	locKinematicData->setTime(locKinFitParticle->Get_Time());
 	if(locKinFitParticle->Get_CovarianceMatrix() != NULL)
-		locKinematicData->setErrorMatrix(*(locKinFitParticle->Get_CovarianceMatrix()));
+		locKinematicData->setErrorMatrix(locKinFitParticle->Get_CovarianceMatrix());
 	locKinematicData->setPathLength(locKinFitParticle->Get_PathLength(), locKinFitParticle->Get_PathLengthUncertainty());
 
 	return locKinematicData;

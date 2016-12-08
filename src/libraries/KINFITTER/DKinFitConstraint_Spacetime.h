@@ -27,7 +27,7 @@ class DKinFitConstraint_Spacetime : public DKinFitConstraint_Vertex
 		TLorentzVector Get_CommonSpacetime(void) const;
 		double Get_CommonTime(void) const;
 
-		int Get_CommonTParamIndex(void) const;
+		char Get_CommonTParamIndex(void) const;
 
 		set<DKinFitParticle*> Get_OnlyConstrainTimeParticles(void) const{return dOnlyConstrainTimeParticles;}
 		set<DKinFitParticle*> Get_AllConstrainingParticles(void) const;
@@ -45,7 +45,7 @@ class DKinFitConstraint_Spacetime : public DKinFitConstraint_Vertex
 		void Set_CommonVertex(const TVector3& locVertex);
 		void Set_CommonSpacetime(TLorentzVector& locSpacetime);
 
-		void Set_CommonTParamIndex(int locCommonTParamIndex);
+		void Set_CommonTParamIndex(char locCommonTParamIndex);
 		void Set_OnlyConstrainTimeParticles(const set<DKinFitParticle*>& locOnlyConstrainTimeParticles){dOnlyConstrainTimeParticles = locOnlyConstrainTimeParticles;}
 
 		set<DKinFitParticle*> dOnlyConstrainTimeParticles; //neutral showers //not used to constrain vertex, but fit vertex is used for time constraint
@@ -125,7 +125,7 @@ inline void DKinFitConstraint_Spacetime::Set_CommonSpacetime(TLorentzVector& loc
 	Set_CommonTime(locSpacetime.T());
 }
 
-inline void DKinFitConstraint_Spacetime::Set_CommonTParamIndex(int locCommonTParamIndex)
+inline void DKinFitConstraint_Spacetime::Set_CommonTParamIndex(char locCommonTParamIndex)
 {
 	set<DKinFitParticle*>::iterator locIterator = dFullConstrainParticles.begin();
 	for(; locIterator != dFullConstrainParticles.end(); ++locIterator)
@@ -142,7 +142,7 @@ inline void DKinFitConstraint_Spacetime::Set_CommonTParamIndex(int locCommonTPar
 	}
 }
 
-inline int DKinFitConstraint_Spacetime::Get_CommonTParamIndex(void) const
+inline char DKinFitConstraint_Spacetime::Get_CommonTParamIndex(void) const
 {
 	if(dFullConstrainParticles.empty())
 		return -1;
@@ -160,4 +160,3 @@ inline void DKinFitConstraint_Spacetime::Print_ConstraintInfo(void) const
 }
 
 #endif // _DKinFitConstraint_Spacetime_
-

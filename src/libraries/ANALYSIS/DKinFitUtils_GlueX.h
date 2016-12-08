@@ -7,10 +7,12 @@
 #include <set>
 
 #include "TVector3.h"
+#include "TMatrixFSym.h"
 #include "TLorentzVector.h"
 
 #include "particleType.h"
 
+#include "DANA/DApplication.h"
 #include "HDGEOMETRY/DMagneticFieldMap.h"
 #include "HDGEOMETRY/DMagneticFieldMapNoField.h"
 #include "PID/DBeamPhoton.h"
@@ -42,6 +44,7 @@ class DKinFitUtils_GlueX : public DKinFitUtils
 		//useful for manually using a different field:
 		DKinFitUtils_GlueX(const DMagneticFieldMap* locMagneticFieldMap, const DAnalysisUtilities* locAnalysisUtilities);
 
+		void Reset_NewEvent(uint64_t locEventNumber);
 		void Reset_NewEvent(void);
 		void Set_MaxPoolSizes(size_t locNumReactions, size_t locExpectedNumCombos);
 
@@ -55,13 +58,15 @@ class DKinFitUtils_GlueX : public DKinFitUtils
 		DKinFitParticle* Make_BeamParticle(const DBeamPhoton* locBeamPhoton);
 		DKinFitParticle* Make_BeamParticle(const DBeamPhoton* locBeamPhoton, const DEventRFBunch* locEventRFBunch); //sets rf time for photon
 		DKinFitParticle* Make_DetectedParticle(const DKinematicData* locKinematicData);
-		DKinFitParticle* Make_DetectedParticle(DKinFitParticle* locDecayingKinFitParticle);
 		using DKinFitUtils::Make_DetectedParticle; //this is necessary because the above declaration hides the base class function, which is needed by DKinFitResults_factory
 
 		DKinFitParticle* Make_DetectedShower(const DNeutralShower* locNeutralShower, Particle_t locPID); //DO NOT call this unless the neutral is also in a vertex fit!
 		DKinFitParticle* Make_TargetParticle(Particle_t locPID);
 		DKinFitParticle* Make_DecayingParticle(Particle_t locPID, const set<DKinFitParticle*>& locFromInitialState, const set<DKinFitParticle*>& locFromFinalState);
 		DKinFitParticle* Make_MissingParticle(Particle_t locPID);
+
+		size_t Get_KinFitParticlePoolSize_Shared(void) const;
+		size_t Get_KinFitParticlePoolSize(void) const{return dKinFitParticlePool_Acquired.size();};
 
 		/************************************************************** RETURN MAPPING **************************************************************/
 
@@ -109,6 +114,13 @@ class DKinFitUtils_GlueX : public DKinFitUtils
 
 		//PRIVATE DEFAULT CONSTRUCTOR
 		DKinFitUtils_GlueX(void){} //Cannot use default constructor. Must construct with DMagneticFieldMap as argument
+
+		/************************************************************** CREATE PARTICLES ************************************************************/
+
+		//This method is only designed to be used when forming the vertex guesses.
+		//It creates a new particle from an existing particle, cloning the covariance matrix
+		//To recycle this memory between fits, the caller is responsible for doing so (between events is done automatically)
+		DKinFitParticle* Make_DetectedParticle(DKinFitParticle* locDecayingKinFitParticle);
 
 		/************************************************************ CREATE DKINFITCHAIN ***********************************************************/
 
@@ -163,7 +175,6 @@ class DKinFitUtils_GlueX : public DKinFitUtils
 			//Needed internally for cloning
 		map<pair<const DBeamPhoton*, const DEventRFBunch*>, DKinFitParticle*> dParticleMap_SourceToInput_Beam;
 		map<const DKinematicData*, DKinFitParticle*> dParticleMap_SourceToInput_DetectedParticle;
-		map<DKinFitParticle*, DKinFitParticle*> dParticleMap_SourceToInput_DetectedParticleFromDecay;
 		map<pair<const DNeutralShower*, Particle_t>, DKinFitParticle*> dParticleMap_SourceToInput_Shower;
 		map<Particle_t, DKinFitParticle*> dParticleMap_SourceToInput_Target;
 		map<DDecayingParticleInfo, DKinFitParticle*> dParticleMap_SourceToInput_Decaying;
@@ -175,9 +186,29 @@ class DKinFitUtils_GlueX : public DKinFitUtils
 		map<DKinFitParticle*, const JObject*> dParticleMap_InputToSource_JObject;
 		map<DKinFitParticle*, DDecayingParticleInfo> dParticleMap_InputToSource_Decaying;
 
+		/************************************************************ MEMORY RESOURCES **************************************************************/
+
+		 //use DANA global resource pool instead
+		TMatrixFSym* Get_SymMatrixResource(unsigned int locNumMatrixRows);
+		void Recycle_DetectedDecayingParticles(map<DKinFitParticle*, DKinFitParticle*>& locDecayingToDetectedParticleMap);
+
+		deque<DKinFitParticle*>& Get_AvailableParticleDeque(void) const; //returns reference to static (shared-amongst-threads) deque
+		DKinFitParticle* Get_KinFitParticleResource(void);
+		void Reset_ParticleMemory(void);
+		void Acquire_Particles(size_t locNumRequestedParticles);
+
+		//acquired from the shared pool for this event
+		deque<DKinFitParticle*> dKinFitParticlePool_Acquired;
+
+		size_t dTargetMaxNumAvailableParticles;
+		size_t dNumFillBufferParticles;
+
 		/************************************************************** MISCELLANEOUS ***************************************************************/
 
+		DApplication* dApplication;
 		bool dWillBeamHaveErrorsFlag;
+		uint64_t dEventNumber;
+		size_t dNumFillBufferMatrices; //when no matrix resources at hand, the number of matrices to request from DApplication
 };
 
 inline TVector3 DKinFitUtils_GlueX::Make_TVector3(DVector3 locDVector3) const
@@ -215,4 +246,23 @@ inline bool DKinFitUtils_GlueX::DDecayingParticleInfo::operator<(const DKinFitUt
 	return (dFromFinalState < locDecayingParticleInfo.dFromFinalState);
 }
 
+inline TMatrixFSym* DKinFitUtils_GlueX::Get_SymMatrixResource(unsigned int locNumMatrixRows)
+{
+	//if kinfit pool (buffer) is empty, use DApplication global pool to retrieve a new batch of matrices
+	if(Get_SymMatrixPoolAvailableSize() == 0)
+	{
+		deque<TMatrixFSym*> locMatrices = dApplication->Get_CovarianceMatrixResources(locNumMatrixRows, dNumFillBufferMatrices, dEventNumber);
+
+		//Then store them to the buffer by "recycling" them
+			//these only live in the "available" pool, and aren't set in the "all" pool
+			//when the pools are reset for a new event, the buffer is cleared and the utils forget all about them
+			//thus, the memory is managed by the DApplication, and only by the DApplication
+		Recycle_Matrices(locMatrices); 
+	}
+
+	//now, retrieve one from the buffer pool
+	return DKinFitUtils::Get_SymMatrixResource(locNumMatrixRows);
+}
+
 #endif // _DKinFitUtils_GlueX_
+

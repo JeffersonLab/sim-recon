@@ -12,6 +12,7 @@
 #include "TVector3.h"
 #include "TMatrixD.h"
 #include "TMatrixDSym.h"
+#include "TMatrixFSym.h"
 #include "TLorentzVector.h"
 #include "TMath.h"
 #include "TDecompLU.h"
@@ -30,7 +31,8 @@ enum DKinFitStatus
 	d_KinFitSuccessful = 0,
 	d_KinFitFailedSetup,
 	d_KinFitFailedInversion,
-	d_KinFitTooManyIterations
+	d_KinFitTooManyIterations,
+	d_KinFitNotPerformed
 };
 
 class DKinFitUtils; //forward declaration
@@ -54,6 +56,9 @@ class DKinFitter //purely virtual: cannot directly instantiate class, can only i
 
 		//FIT!
 		bool Fit_Reaction(void); //IF YOU OVERRIDE THIS METHOD IN THE DERIVED CLASS, MAKE SURE YOU CALL THIS BASE CLASS METHOD!!
+
+		//RECYCLE MEMORY //only call if you are discarding the results from the previous fit
+		void Recycle_LastFitMemory(void); //e.g. fit failed, or used to get a vertex guess
 
 		/**************************************************************** FIT CONTROL ***************************************************************/
 
@@ -104,6 +109,7 @@ class DKinFitter //purely virtual: cannot directly instantiate class, can only i
 		/************************************************************ UTILITY FUNCTIONS *************************************************************/
 
 		void Print_Matrix(const TMatrixD& locMatrix) const;
+		void Print_Matrix(const TMatrixF& locMatrix) const;
 
 		template <typename DType> set<DType*> Get_Constraints(void) const;
 		template <typename DType> set<DType*> Get_Constraints(const set<DKinFitConstraint*>& locConstraints) const;
@@ -150,6 +156,7 @@ class DKinFitter //purely virtual: cannot directly instantiate class, can only i
 		void Update_ParticleParams(void);
 		void Calc_Pulls(void);
 		void Set_FinalTrackInfo(void);
+		void Update_CovarianceMatrices(void);
 
 		/***************************************************** FIT CONTROL AND UTILITY VARIABLES ****************************************************/
 

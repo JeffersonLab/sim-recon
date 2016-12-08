@@ -16,7 +16,7 @@
 
 #include "GlueX.h"
 #include "DLorentzVector.h"
-#include "DMatrixDSym.h"
+#include "TMatrixFSym.h"
 
 using namespace std;
 
@@ -30,7 +30,7 @@ class DNeutralShower : public jana::JObject
 
 		DLorentzVector dSpacetimeVertex;
 		double dEnergy;
-		DMatrixDSym dCovarianceMatrix; //E, x, y, z, t
+		TMatrixFSym dCovarianceMatrix; //E, x, y, z, t
 
 		const JObject* dBCALFCALShower; //is either DBCALShower or DFCALShower: dynamic_cast as appropriate (based on dDetectorSystem)
 

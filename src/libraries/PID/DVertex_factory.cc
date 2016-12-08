@@ -25,6 +25,7 @@ jerror_t DVertex_factory::brun(jana::JEventLoop* locEventLoop, int32_t runnumber
 {
 	dKinFitUtils = new DKinFitUtils_GlueX(locEventLoop);
 	dKinFitter = new DKinFitter(dKinFitUtils);
+	dKinFitUtils->Set_UpdateCovarianceMatricesFlag(false);
 
 	// Get Target parameters from XML
 	dTargetZCenter = 65.0;
@@ -102,6 +103,7 @@ jerror_t DVertex_factory::evnt(JEventLoop* locEventLoop, uint64_t eventnumber)
 		return Create_Vertex_Rough(locRoughPosition, locEventRFBunch);
 
 	//prepare for kinematic fit
+	dKinFitUtils->Reset_NewEvent(locEventLoop->GetJEvent().GetEventNumber());
 	dKinFitter->Reset_NewEvent();
 	TVector3 locTRoughPosition(locRoughPosition.X(), locRoughPosition.Y(), locRoughPosition.Z());
 
@@ -153,7 +155,7 @@ jerror_t DVertex_factory::Create_Vertex_OneTrack(const DTrackTimeBased* locTrack
 	locVertex->dKinFitChiSq = 0.0;
 
 	//error matrix
-    const DMatrixDSym& locTrackErrorMatrix = locTrackTimeBased->errorMatrix();
+    const TMatrixFSym& locTrackErrorMatrix = *(locTrackTimeBased->errorMatrix());
 	locVertex->dCovarianceMatrix.ResizeTo(4, 4);
 	locVertex->dCovarianceMatrix.Zero();
 	for(size_t loc_i = 0; loc_i < 3; ++loc_i)

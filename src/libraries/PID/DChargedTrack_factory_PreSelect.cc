@@ -50,7 +50,7 @@ jerror_t DChargedTrack_factory_PreSelect::evnt(jana::JEventLoop *locEventLoop, u
 	//cut on min-tracking-FOM and has-detector-match
 	for(size_t loc_i = 0; loc_i < locChargedTracks.size(); ++loc_i)
 	{
-		for(auto locChargedHypo : locChargedTracks[loc_i]->dChargedTrackHypotheses)
+		for(auto& locChargedHypo : locChargedTracks[loc_i]->dChargedTrackHypotheses)
 		{
 			if(!Cut_TrackingFOM(locChargedHypo))
 				continue;
@@ -93,6 +93,6 @@ jerror_t DChargedTrack_factory_PreSelect::erun(void)
 //------------------
 jerror_t DChargedTrack_factory_PreSelect::fini(void)
 {
-
 	return NOERROR;
 }
+

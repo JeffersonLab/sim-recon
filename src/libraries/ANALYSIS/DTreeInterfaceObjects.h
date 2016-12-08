@@ -210,7 +210,7 @@ inline DTreeFillData::~DTreeFillData(void)
 {
 	//delete all memory (void*'s)
 	//loop over branches
-	for(auto locBranchIterator : dFillData)
+	for(auto& locBranchIterator : dFillData)
 	{
 		string locBranchName = locBranchIterator.first;
 		type_index& locTypeIndex = locBranchIterator.second.first;

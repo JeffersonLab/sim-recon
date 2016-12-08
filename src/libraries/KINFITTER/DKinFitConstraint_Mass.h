@@ -21,7 +21,7 @@ class DKinFitConstraint_Mass : public DKinFitConstraint
 		DKinFitParticle* Get_DecayingParticle(void) const{return dDecayingParticle;}
 		set<DKinFitParticle*> Get_AllParticles(void) const;
 
-		int Get_FIndex(void) const{return dFIndex;}
+		char Get_FIndex(void) const{return dFIndex;}
 		void Print_ConstraintInfo(void) const;
 
 	private:
@@ -30,11 +30,11 @@ class DKinFitConstraint_Mass : public DKinFitConstraint
 		~DKinFitConstraint_Mass(void){}
 
 		void Reset(void);
-		void Set_FIndex(int locFIndex){dFIndex = locFIndex;}
+		void Set_FIndex(char locFIndex){dFIndex = locFIndex;}
 		void Set_DecayingParticle(DKinFitParticle* locDecayingParticle){dDecayingParticle = locDecayingParticle;}
 
 		DKinFitParticle* dDecayingParticle;
-		int dFIndex; //starting row index of the equation(s) corresponding to these constraints in the dF matrix term
+		char dFIndex; //starting row index of the equation(s) corresponding to these constraints in the dF matrix term
 };
 
 inline DKinFitConstraint_Mass::DKinFitConstraint_Mass(void)

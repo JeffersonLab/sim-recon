@@ -9,19 +9,34 @@
 DKinFitUtils_GlueX::DKinFitUtils_GlueX(const DMagneticFieldMap* locMagneticFieldMap, const DAnalysisUtilities* locAnalysisUtilities) : 
 dMagneticFieldMap(locMagneticFieldMap), dAnalysisUtilities(locAnalysisUtilities)
 {
-	gPARMS->SetDefaultParameter("KINFIT:LINKVERTICES", dLinkVerticesFlag);
 	dWillBeamHaveErrorsFlag = false; //Until fixed!
+	dEventNumber = 0;
+
+	//fill buffer: the larger the number, the more memory it takes. the smaller, the more locking is needed
+	dNumFillBufferMatrices = 10;
+	dNumFillBufferParticles = 10;
+	dTargetMaxNumAvailableParticles = 250000;
+
+	dApplication = dynamic_cast<DApplication*>(japp);
+	gPARMS->SetDefaultParameter("KINFIT:LINKVERTICES", dLinkVerticesFlag);
 }
 
 DKinFitUtils_GlueX::DKinFitUtils_GlueX(JEventLoop* locEventLoop)
 {
 	locEventLoop->GetSingle(dAnalysisUtilities);
 
-	DApplication* locApplication = dynamic_cast<DApplication*>(locEventLoop->GetJApplication());
-	dMagneticFieldMap = locApplication->GetBfield(locEventLoop->GetJEvent().GetRunNumber());
+	dApplication = dynamic_cast<DApplication*>(locEventLoop->GetJApplication());
+	dMagneticFieldMap = dApplication->GetBfield(locEventLoop->GetJEvent().GetRunNumber());
 
 	gPARMS->SetDefaultParameter("KINFIT:LINKVERTICES", dLinkVerticesFlag);
 	dWillBeamHaveErrorsFlag = false; //Until fixed!
+
+	dEventNumber = locEventLoop->GetJEvent().GetEventNumber();
+
+	//fill buffer: the larger the number, the more memory it takes. the smaller, the more locking is needed
+	dNumFillBufferMatrices = 10;
+	dNumFillBufferParticles = 10;
+	dTargetMaxNumAvailableParticles = 250000;
 }
 
 void DKinFitUtils_GlueX::Set_MaxPoolSizes(size_t locNumReactions, size_t locExpectedNumCombos)
@@ -37,16 +52,22 @@ void DKinFitUtils_GlueX::Set_MaxPoolSizes(size_t locNumReactions, size_t locExpe
 	Set_MaxKinFitChainPoolSize(locNumReactions*locExpectedNumCombos);
 	Set_MaxKinFitChainStepPoolSize(3*locNumReactions*locExpectedNumCombos);
 
-	Set_MaxMatrixDSymPoolSize(10*locNumReactions*locExpectedNumCombos*2*5); //extra x5: to be safe
+	Set_MaxSymMatrixPoolSize(10*locNumReactions*locExpectedNumCombos*2);
+	dTargetMaxNumAvailableParticles = 5000*locNumReactions;
 }
 
 /*********************************************************** OVERRIDE BASE CLASS FUNCTIONS *********************************************************/
+
+void DKinFitUtils_GlueX::Reset_NewEvent(uint64_t locEventNumber)
+{
+	dEventNumber = locEventNumber;
+	Reset_NewEvent();
+}
 
 void DKinFitUtils_GlueX::Reset_NewEvent(void)
 {
 	dParticleMap_SourceToInput_Beam.clear();
 	dParticleMap_SourceToInput_DetectedParticle.clear();
-	dParticleMap_SourceToInput_DetectedParticleFromDecay.clear();
 	dParticleMap_SourceToInput_Shower.clear();
 	dParticleMap_SourceToInput_Target.clear();
 	dParticleMap_SourceToInput_Decaying.clear();
@@ -55,6 +76,7 @@ void DKinFitUtils_GlueX::Reset_NewEvent(void)
 	dParticleMap_InputToSource_JObject.clear();
 	dParticleMap_InputToSource_Decaying.clear();
 
+	Reset_ParticleMemory();
 	DKinFitUtils::Reset_NewEvent();
 }
 
@@ -86,6 +108,125 @@ TVector3 DKinFitUtils_GlueX::Get_BField(const TVector3& locPosition) const
 	return (TVector3(locBx, locBy, locBz));
 }
 
+/****************************************************************** MANAGE MEMORY ******************************************************************/
+
+deque<DKinFitParticle*>& DKinFitUtils_GlueX::Get_AvailableParticleDeque(void) const
+{
+	//static: shared amongst all threads
+	//Must call this function within a lock!!
+	static deque<DKinFitParticle*> locAvailableParticles;
+	return locAvailableParticles;
+}
+
+DKinFitParticle* DKinFitUtils_GlueX::Get_KinFitParticleResource(void)
+{
+	//if kinfit pool (buffer) is empty, use shared pool to retrieve a new batch of particles
+	if(Get_KinFitParticlePoolAvailableSize() == 0)
+		Acquire_Particles(dNumFillBufferParticles);
+
+	return DKinFitUtils::Get_KinFitParticleResource();
+}
+
+void DKinFitUtils_GlueX::Reset_ParticleMemory(void)
+{
+	//Access combo resource pool
+	bool locDeleteParticlesFlag = false;
+	japp->WriteLock("DKinFitParticle_Memory"); //LOCK
+	{
+		deque<DKinFitParticle*>& locAvailableParticles = Get_AvailableParticleDeque();
+
+		//Memory fragmentation seems to be a very big problem, and these objects use the most memory
+		//So, don't delete them. To delete them, just uncomment the below lines.
+
+		//if available > max, wipe all used
+//		locDeleteParticlesFlag = (locAvailableParticles.size() >= dTargetMaxNumAvailableParticles);
+//		if(!locDeleteParticlesFlag)
+			std::move(dKinFitParticlePool_Acquired.begin(), dKinFitParticlePool_Acquired.end(), std::back_inserter(locAvailableParticles));
+	}
+	japp->Unlock("DKinFitParticle_Memory"); //UNLOCK
+
+	//delete combos if necessary
+	if(locDeleteParticlesFlag)
+	{
+		for(auto& locParticle : dKinFitParticlePool_Acquired)
+			delete locParticle;
+	}
+
+	//clear thread-local pool
+	dKinFitParticlePool_Acquired.clear();
+}
+
+void DKinFitUtils_GlueX::Acquire_Particles(size_t locNumRequestedParticles)
+{
+	//We must have the correct event number, so that we know when it's safe to recycle the memory for the next event.
+	deque<DKinFitParticle*> locAcquiredParticles;
+
+	//Access resource pool
+	japp->WriteLock("DKinFitParticle_Memory"); //LOCK
+	{
+		deque<DKinFitParticle*>& locAvailableParticles = Get_AvailableParticleDeque();
+
+		//Get resources if available
+		if(locAvailableParticles.size() <= locNumRequestedParticles)
+		{
+			//Move the whole deque
+			std::move(locAvailableParticles.begin(), locAvailableParticles.end(), std::back_inserter(locAcquiredParticles));
+			locAvailableParticles.clear();
+		}
+		else //Move the desired range
+		{
+			size_t locNewSize = locAvailableParticles.size() - locNumRequestedParticles;
+			auto locMoveEdgeIterator = std::next(locAvailableParticles.rbegin(), locNumRequestedParticles);
+			std::move(locAvailableParticles.rbegin(), locMoveEdgeIterator, std::back_inserter(locAcquiredParticles));
+			locAvailableParticles.resize(locNewSize);
+		}
+	}
+	japp->Unlock("DKinFitParticle_Memory"); //UNLOCK
+
+	//set matrix pointer as null (necessary before "recycling" below)
+		//Recycle_Particles() also recycles matrix memory, want to avoid that, so null them first
+	for(auto& locParticle : locAcquiredParticles)
+		locParticle->Set_CovarianceMatrix(nullptr);
+
+	//make new particles if necessary
+	while(locAcquiredParticles.size() < locNumRequestedParticles)
+		locAcquiredParticles.push_back(new DKinFitParticle());
+
+	//Store the acquired particles to the dKinFitParticlePool_Available buffer by "recycling" them
+		//these only live in the "available" pool, and aren't set in the "all" pool
+		//when the pools are reset for a new event, the buffer is cleared and the utils forget all about them
+		//thus, the memory is managed by DKinFitUtils_GlueX, and not by DKinFitUtils
+	set<DKinFitParticle*> locParticlesToRecycle(locAcquiredParticles.begin(), locAcquiredParticles.end());
+	Recycle_Particles(locParticlesToRecycle);
+
+	//Register as acquired-by this thread
+	std::move(locAcquiredParticles.begin(), locAcquiredParticles.end(), std::back_inserter(dKinFitParticlePool_Acquired));
+}
+
+size_t DKinFitUtils_GlueX::Get_KinFitParticlePoolSize_Shared(void) const
+{
+	size_t locNumParticles = 0;
+	
+	//Access resource pool
+	japp->WriteLock("DKinFitParticle_Memory"); //LOCK
+	{
+		locNumParticles = Get_AvailableParticleDeque().size();
+	}
+	japp->Unlock("DKinFitParticle_Memory"); //UNLOCK
+
+	return locNumParticles;
+}
+
+void DKinFitUtils_GlueX::Recycle_DetectedDecayingParticles(map<DKinFitParticle*, DKinFitParticle*>& locDecayingToDetectedParticleMap)
+{
+	set<DKinFitParticle*> locParticlesToRecycle;
+	for(auto& locParticlePair : locDecayingToDetectedParticleMap)
+		locParticlesToRecycle.insert(locParticlePair.second);
+
+	Recycle_Particles(locParticlesToRecycle);
+	locDecayingToDetectedParticleMap.clear();
+}
+
 /****************************************************************** MAKE PARTICLES *****************************************************************/
 
 DKinFitParticle* DKinFitUtils_GlueX::Make_BeamParticle(const DBeamPhoton* locBeamPhoton)
@@ -99,7 +240,7 @@ DKinFitParticle* DKinFitUtils_GlueX::Make_BeamParticle(const DBeamPhoton* locBea
 	Particle_t locPID = locBeamPhoton->PID();
 
 	DKinFitParticle* locKinFitParticle = DKinFitUtils::Make_BeamParticle(PDGtype(locPID), ParticleCharge(locPID), ParticleMass(locPID), 
-		locSpacetimeVertex, locMomentum, &(locBeamPhoton->errorMatrix()));
+		locSpacetimeVertex, locMomentum, locBeamPhoton->errorMatrix());
 	dParticleMap_SourceToInput_Beam[locSourcePair] = locKinFitParticle;
 	dParticleMap_InputToSource_JObject[locKinFitParticle] = locBeamPhoton;
 	return locKinFitParticle;
@@ -117,17 +258,18 @@ DKinFitParticle* DKinFitUtils_GlueX::Make_BeamParticle(const DBeamPhoton* locBea
 	Particle_t locPID = locBeamPhoton->PID();
 
 	//set rf time variance in covariance matrix
-	TMatrixDSym locCovarianceMatrix = locBeamPhoton->errorMatrix();
-	locCovarianceMatrix(6, 6) = locEventRFBunch->dTimeVariance;
+	TMatrixFSym* locCovarianceMatrix = Get_SymMatrixResource(7);
+	*locCovarianceMatrix = *(locBeamPhoton->errorMatrix());
+	(*locCovarianceMatrix)(6, 6) = locEventRFBunch->dTimeVariance;
 	//zero the correlation terms
 	for(int loc_i = 0; loc_i < 6; ++loc_i)
 	{
-		locCovarianceMatrix(6, loc_i) = 0.0;
-		locCovarianceMatrix(loc_i, 6) = 0.0;
+		(*locCovarianceMatrix)(6, loc_i) = 0.0;
+		(*locCovarianceMatrix)(loc_i, 6) = 0.0;
 	}
 
 	DKinFitParticle* locKinFitParticle = DKinFitUtils::Make_BeamParticle(PDGtype(locPID), ParticleCharge(locPID), ParticleMass(locPID), 
-		locSpacetimeVertex, locMomentum, &locCovarianceMatrix);
+		locSpacetimeVertex, locMomentum, locCovarianceMatrix);
 	dParticleMap_SourceToInput_Beam[locSourcePair] = locKinFitParticle;
 	dParticleMap_InputToSource_JObject[locKinFitParticle] = locBeamPhoton;
 	return locKinFitParticle;
@@ -143,7 +285,7 @@ DKinFitParticle* DKinFitUtils_GlueX::Make_DetectedParticle(const DKinematicData*
 	Particle_t locPID = locKinematicData->PID();
 
 	DKinFitParticle* locKinFitParticle = DKinFitUtils::Make_DetectedParticle(PDGtype(locPID), ParticleCharge(locPID), ParticleMass(locPID), 
-		locSpacetimeVertex, locMomentum, &(locKinematicData->errorMatrix()));
+		locSpacetimeVertex, locMomentum, locKinematicData->errorMatrix());
 	dParticleMap_SourceToInput_DetectedParticle[locKinematicData] = locKinFitParticle;
 	dParticleMap_InputToSource_JObject[locKinFitParticle] = locKinematicData;
 	return locKinFitParticle;
@@ -157,14 +299,10 @@ DKinFitParticle* DKinFitUtils_GlueX::Make_DetectedParticle(DKinFitParticle* locD
 		return NULL;
 	}
 
-	if(dParticleMap_SourceToInput_DetectedParticleFromDecay.find(locDecayingKinFitParticle) != dParticleMap_SourceToInput_DetectedParticleFromDecay.end())
-		return dParticleMap_SourceToInput_DetectedParticleFromDecay[locDecayingKinFitParticle]; //not unique, return existing
-
 	DKinFitParticle* locDetectedKinFitParticle = DKinFitUtils::Make_DetectedParticle(locDecayingKinFitParticle->Get_PID(), 
 		locDecayingKinFitParticle->Get_Charge(), locDecayingKinFitParticle->Get_Mass(), locDecayingKinFitParticle->Get_SpacetimeVertex(), 
-		locDecayingKinFitParticle->Get_Momentum(), locDecayingKinFitParticle->Get_CovarianceMatrix());
+		locDecayingKinFitParticle->Get_Momentum(), Clone_SymMatrix(locDecayingKinFitParticle->Get_CovarianceMatrix()));
 
-	dParticleMap_SourceToInput_DetectedParticleFromDecay[locDecayingKinFitParticle] = locDetectedKinFitParticle;
 	return locDetectedKinFitParticle;
 }
 
@@ -177,7 +315,7 @@ DKinFitParticle* DKinFitUtils_GlueX::Make_DetectedShower(const DNeutralShower* l
 	//use DNeutralShower object (doesn't make assumption about vertex!)
 	TLorentzVector locShowerSpacetime = Make_TLorentzVector(locNeutralShower->dSpacetimeVertex);
 	DKinFitParticle* locKinFitParticle = DKinFitUtils::Make_DetectedShower(PDGtype(locPID), ParticleMass(locPID), locShowerSpacetime, 
-		locNeutralShower->dEnergy, &(locNeutralShower->dCovarianceMatrix));
+		locNeutralShower->dEnergy, &locNeutralShower->dCovarianceMatrix);
 
 	dParticleMap_SourceToInput_Shower[locSourcePair] = locKinFitParticle;
 	dParticleMap_InputToSource_JObject[locKinFitParticle] = locNeutralShower;
@@ -576,6 +714,10 @@ set<DKinFitConstraint*> DKinFitUtils_GlueX::Create_Constraints(const DParticleCo
 
 void DKinFitUtils_GlueX::Set_SpacetimeGuesses(const deque<DKinFitConstraint_Vertex*>& locSortedVertexConstraints, bool locIsP4FitFlag)
 {
+	//need to compute the error matrices to make accurate vertex guesses using decaying particles
+		//one vertex fit at a time: in between, the reconstructed decaying particles are turned into "detected" particles for the next fit
+	Set_UpdateCovarianceMatricesFlag(true);
+
 	//loop through vertices, determining initial guesses
 	map<DKinFitParticle*, DKinFitParticle*> locDecayingToDetectedParticleMap; //input decaying particle -> new detected particle
 	for(size_t loc_i = 0; loc_i < locSortedVertexConstraints.size(); ++loc_i)
@@ -670,17 +812,17 @@ void DKinFitUtils_GlueX::Set_SpacetimeGuesses(const deque<DKinFitConstraint_Vert
 				locOrigSpacetimeConstraint->Set_InitTimeGuess(locNewSpacetimeConstraint->Get_CommonTime());
 			}
 
-			//create detected particles out of reconstructed decaying particles in this constraint
-			set<DKinFitParticle*> locOutputKinFitParticles = dKinFitter->Get_KinFitParticles();
-			set<DKinFitParticle*>::iterator locResultIterator = locOutputKinFitParticles.begin();
-			for(; locResultIterator != locOutputKinFitParticles.end(); ++locResultIterator)
+			//create detected particles out of reconstructed, detached decaying no-constrain particles in this constraint
+			set<DKinFitParticle*> locNoConstrainParticles = locNewVertexConstraint->Get_NoConstrainParticles();
+			set<DKinFitParticle*>::iterator locResultIterator = locNoConstrainParticles.begin();
+			for(; locResultIterator != locNoConstrainParticles.end(); ++locResultIterator)
 			{
 				if((*locResultIterator)->Get_KinFitParticleType() != d_DecayingParticle)
 					continue;
 
-				set<DKinFitParticle*> locAllVertexParticles = locNewVertexConstraint->Get_AllParticles();
-				if(locAllVertexParticles.find(*locResultIterator) == locAllVertexParticles.end())
-					continue; //not used in this constraint: vertex not yet defined
+				Particle_t locPID = PDGtoPType((*locResultIterator)->Get_PID());
+				if(!IsDetachedVertex(locPID))
+					continue; //won't be used as a constraining particle in a vertex constraint
 
 				DKinFitParticle* locInputKinFitParticle = Get_InputKinFitParticle(*locResultIterator);
 				locDecayingToDetectedParticleMap[locInputKinFitParticle] = Make_DetectedParticle(*locResultIterator);
@@ -691,7 +833,13 @@ void DKinFitUtils_GlueX::Set_SpacetimeGuesses(const deque<DKinFitConstraint_Vert
 			TLorentzVector locSpacetimeVertex(locVertexGuess, locTimeGuess);
 			Construct_DetectedDecayingParticle_NoFit(locOrigVertexConstraint, locDecayingToDetectedParticleMap, locSpacetimeVertex);
 		}
+
+		//RESET MEMORY FROM LAST KINFIT!!
+		dKinFitter->Recycle_LastFitMemory(); //results no longer needed
 	}
+
+	//RECYCLE CREATED DETECTED DECAYING PARTICLES
+	Recycle_DetectedDecayingParticles(locDecayingToDetectedParticleMap);
 }
 
 void DKinFitUtils_GlueX::Construct_DetectedDecayingParticle_NoFit(DKinFitConstraint_Vertex* locOrigVertexConstraint, map<DKinFitParticle*, DKinFitParticle*>& locDecayingToDetectedParticleMap, TLorentzVector locSpacetimeVertexGuess)
@@ -707,10 +855,10 @@ void DKinFitUtils_GlueX::Construct_DetectedDecayingParticle_NoFit(DKinFitConstra
 
 		//create a new one
 		TLorentzVector locP4 = Calc_DecayingP4_ByP3Derived(locInputKinFitParticle, true, true);
-		TMatrixDSym locCovarianceMatrix(7);
-		locCovarianceMatrix(0, 0) = -1.0; //signal that you shouldn't do fits that need this particle
+		TMatrixFSym* locCovarianceMatrix = Get_SymMatrixResource(7);
+		(*locCovarianceMatrix)(0, 0) = -1.0; //signal that you shouldn't do fits that need this particle
 		DKinFitParticle* locDetectedKinFitParticle = Make_DetectedParticle(locInputKinFitParticle->Get_PID(), 
-			locInputKinFitParticle->Get_Charge(), locInputKinFitParticle->Get_Mass(), locSpacetimeVertexGuess, locP4.Vect(), &locCovarianceMatrix);
+			locInputKinFitParticle->Get_Charge(), locInputKinFitParticle->Get_Mass(), locSpacetimeVertexGuess, locP4.Vect(), locCovarianceMatrix);
 
 		//register it
 		locDecayingToDetectedParticleMap[locInputKinFitParticle] = locDetectedKinFitParticle;
@@ -744,7 +892,14 @@ DKinFitConstraint_Vertex* DKinFitUtils_GlueX::Build_NewConstraint(DKinFitConstra
 			continue; //try to see if can fit without this particle
 		}
 		DKinFitParticle* locDetectedDecayingParticle = locDecayIterator->second;
-		if((*(locDetectedDecayingParticle->Get_CovarianceMatrix()))(0, 0) < 0.0)
+		if(locDetectedDecayingParticle->Get_CovarianceMatrix() == NULL)
+		{
+			if(locSkipBadDecayingFlag)
+				continue; //try to see if can fit without this particle
+			else
+				locAttemptFitFlag = false; //cannot fit. however, still get initial guess
+		}
+		else if((*(locDetectedDecayingParticle->Get_CovarianceMatrix()))(0, 0) < 0.0)
 		{
 			if(locSkipBadDecayingFlag)
 				continue; //try to see if can fit without this particle
@@ -1256,14 +1411,14 @@ bool DKinFitUtils_GlueX::Propagate_TrackInfoToCommonVertex(DKinematicData* locKi
 	TVector3 locMomentum;
 	TLorentzVector locSpacetimeVertex;
 	pair<double, double> locPathLengthPair;
-	TMatrixDSym* locCovarianceMatrix = Get_MatrixDSymResource(7);
-	if(!DKinFitUtils::Propagate_TrackInfoToCommonVertex(locKinFitParticle, locVXi, locMomentum, locSpacetimeVertex, locPathLengthPair, *locCovarianceMatrix))
+	TMatrixFSym* locCovarianceMatrix = Get_SymMatrixResource(7);
+	if(!DKinFitUtils::Propagate_TrackInfoToCommonVertex(locKinFitParticle, locVXi, locMomentum, locSpacetimeVertex, locPathLengthPair, locCovarianceMatrix))
 		return false;
 
 	locKinematicData->setMomentum(DVector3(locMomentum.X(),locMomentum.Y(),locMomentum.Z()));
 	locKinematicData->setPosition(DVector3(locSpacetimeVertex.Vect().X(),locSpacetimeVertex.Vect().Y(),locSpacetimeVertex.Vect().Z()));
 	locKinematicData->setTime(locSpacetimeVertex.T());
-	locKinematicData->setErrorMatrix(*locCovarianceMatrix);
+	locKinematicData->setErrorMatrix(locCovarianceMatrix);
 	locKinematicData->setPathLength(locPathLengthPair.first, locPathLengthPair.second);
 	return true;
 }

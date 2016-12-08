@@ -11,6 +11,8 @@
 #include <vector>
 using std::vector;
 
+#include <TMatrixFSym.h>
+
 #include <HDGEOMETRY/DGeometry.h>
 #include <DVector3.h>
 #include <DVector2.h>
@@ -97,7 +99,7 @@ class DReferenceTrajectory{
 		swim_step_t* FindClosestSwimStep(const DCoordinateSystem *wire, int *istep_ptr=NULL) const;
 		swim_step_t* FindClosestSwimStep(const DVector3 &origin, DVector3 norm, int *istep_ptr=NULL) const;
 		swim_step_t* FindPlaneCrossing(const DVector3 &origin, DVector3 norm,int first_i=0, DetectorSystem_t detector=SYS_NULL) const;
-		void Swim(const DVector3 &pos, const DVector3 &mom, double q=-1000.0,const DMatrixDSym *cov=NULL, double smax=2000.0, const DCoordinateSystem *wire=NULL);
+		void Swim(const DVector3 &pos, const DVector3 &mom, double q=-1000.0,const TMatrixFSym *cov=NULL, double smax=2000.0, const DCoordinateSystem *wire=NULL);
 		void FastSwim(const DVector3 &pos, const DVector3 &mom, double q,double smax=2000.0, double zmin=-100.,double zmax=1000.0);
 
 
@@ -165,7 +167,7 @@ class DReferenceTrajectory{
 		jerror_t PropagateCovariance(double ds,double q,
 					     double mass_sq,const DVector3 &mom,
 					     const DVector3 &pos,const DVector3 &B,
-					     DMatrixDSym &C) const;
+					     TMatrixFSym &C) const;
 		
 		jerror_t BrentsAlgorithm(DVector3 &pos1,DVector3 &mom1,
 					 DVector3 &pos2,DVector3 &mom2,
