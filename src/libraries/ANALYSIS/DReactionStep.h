@@ -21,21 +21,21 @@ class DReactionStep
 
 		// SET OBJECT DATA:
 		void Set_InitialParticleID(Particle_t locPID, bool locIsMissingFlag = false); //TRUE IS NOT SUPPORTED YET!
-		inline void Set_TargetParticleID(Particle_t locPID){dTargetParticleID = locPID;}
+		void Set_TargetParticleID(Particle_t locPID){dTargetParticleID = locPID;}
 		void Add_FinalParticleID(Particle_t locPID, bool locIsMissingFlag = false);
-		inline void Set_KinFitConstrainInitMassFlag(bool locFlag){dKinFitConstrainInitMassFlag = locFlag;}
+		void Set_KinFitConstrainInitMassFlag(bool locFlag){dKinFitConstrainInitMassFlag = locFlag;}
 		void Reset(void);
 
 		// GET INITIAL, TARGET, AND MISSING DATA:
-		inline Particle_t Get_InitialParticleID(void) const{return dInitialParticleID;}
-		inline Particle_t Get_TargetParticleID(void) const{return dTargetParticleID;}
-		inline int Get_MissingParticleIndex(void) const{return dMissingParticleIndex;}
-		inline bool Get_KinFitConstrainInitMassFlag(void) const{return dKinFitConstrainInitMassFlag;}
+		Particle_t Get_InitialParticleID(void) const{return dInitialParticleID;}
+		Particle_t Get_TargetParticleID(void) const{return dTargetParticleID;}
+		int Get_MissingParticleIndex(void) const{return dMissingParticleIndex;}
+		bool Get_KinFitConstrainInitMassFlag(void) const{return dKinFitConstrainInitMassFlag;}
 
 		// GET FINAL PARTICLE PIDs:
 		Particle_t Get_FinalParticleID(size_t locFinalParticleIndex) const;
-		inline size_t Get_NumFinalParticleIDs(void) const{return dFinalParticleIDs.size();}
-		inline void Get_FinalParticleIDs(deque<Particle_t>& locPIDs) const{locPIDs = dFinalParticleIDs;}
+		size_t Get_NumFinalParticleIDs(void) const{return dFinalParticleIDs.size();}
+		void Get_FinalParticleIDs(deque<Particle_t>& locPIDs) const;
 
 		// GET PARTICLE NAME STRINGS:
 		string Get_StepName(void) const; //e.g. Lambda_->_Pi-_(Proton)
@@ -236,6 +236,12 @@ inline bool DReactionStep::Get_MissingPID(Particle_t& locPID) const
 		return false;
 	locPID = dFinalParticleIDs[dMissingParticleIndex];
 	return true;
+}
+
+inline void DReactionStep::Get_FinalParticleIDs(deque<Particle_t>& locPIDs) const
+{
+	locPIDs.clear();
+	locPIDs.insert(locPIDs.end(), dFinalParticleIDs.begin(), dFinalParticleIDs.end());
 }
 
 #endif // _DReactionStep_
