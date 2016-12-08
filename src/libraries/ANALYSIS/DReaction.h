@@ -2,6 +2,7 @@
 #define _DReaction_
 
 #include <deque>
+#include <vector>
 #include <string>
 #include <iostream>
 
@@ -137,8 +138,8 @@ class DReaction : public JObject
 		string dTTreeOutputFileName;
 
 		// REACTION AND ANALYSIS MEMBERS:
-		deque<const DReactionStep*> dReactionSteps;
-		deque<DAnalysisAction*> dAnalysisActions;
+		vector<const DReactionStep*> dReactionSteps;
+		vector<DAnalysisAction*> dAnalysisActions;
 
 		// PRE-DPARTICLECOMBO CONTROL-CUT VALUES
 			//bool = true/false for cut enabled/disabled, double = cut value
@@ -156,7 +157,7 @@ class DReaction : public JObject
 		map<Particle_t, pair<double, double> > dInvariantMassCuts;
 
 		// COMBO PRE-SELECTION CUTS
-		deque<DAnalysisAction*> dComboPreSelectionActions;
+		vector<DAnalysisAction*> dComboPreSelectionActions;
 
 		// EVENT STORE QUERY
 		string dEventStoreSkims; // First is skim name (default = "all"), second is additional query (default = "")

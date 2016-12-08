@@ -66,6 +66,7 @@ class DKinFitUtils_GlueX : public DKinFitUtils
 		DKinFitParticle* Make_MissingParticle(Particle_t locPID);
 
 		size_t Get_KinFitParticlePoolSize_Shared(void) const;
+		size_t Get_KinFitParticlePoolSize(void) const{return dKinFitParticlePool_Acquired.size();};
 
 		/************************************************************** RETURN MAPPING **************************************************************/
 

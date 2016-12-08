@@ -2,6 +2,7 @@
 #define _DParticleComboBlueprint_
 
 #include <deque>
+#include <vector>
 
 #include "JANA/JObject.h"
 #include "ANALYSIS/DReaction.h"
@@ -37,7 +38,7 @@ class DParticleComboBlueprint : public JObject
 
 	private:
 		const DReaction* dReaction;
-		deque<const DParticleComboBlueprintStep*> dParticleComboBlueprintSteps; //must be in order you want to evaluate them
+		vector<const DParticleComboBlueprintStep*> dParticleComboBlueprintSteps; //must be in order you want to evaluate them
 };
 
 inline void DParticleComboBlueprint::Reset(void)

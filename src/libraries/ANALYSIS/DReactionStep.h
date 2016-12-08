@@ -2,6 +2,7 @@
 #define _DReactionStep_
 
 #include <deque>
+#include <vector>
 #include <string>
 #include <iostream>
 #include <stdlib.h>
@@ -54,7 +55,7 @@ class DReactionStep
 		// PID MEMBERS:
 		Particle_t dInitialParticleID; //e.g. lambda, gamma
 		Particle_t dTargetParticleID; //Unknown for no target (default)
-		deque<Particle_t> dFinalParticleIDs;
+		vector<Particle_t> dFinalParticleIDs;
 
 		// CONTROL MEMBERS:
 		int dMissingParticleIndex; //-1 for no missing particles, -2 for missing init (beam) particle (not yet supported!), else final state particle at this index is missing (0 -> x)

@@ -104,7 +104,7 @@ class DKinFitUtils //purely virtual: cannot directly instantiate class, can only
 		/************************************************************ RESOURCE POOL SIZES ***********************************************************/
 
 		//GET CURRENT POOL SIZES
-		size_t Get_KinFitParticlePoolSize(void) const{return dKinFitParticlePool_All.size();};
+		virtual size_t Get_KinFitParticlePoolSize(void) const{return dKinFitParticlePool_All.size();};
 		size_t Get_KinFitParticlePoolAvailableSize(void) const{return dKinFitParticlePool_Available.size();};
 		size_t Get_KinFitConstraintVertexPoolSize(void) const{return dKinFitConstraintVertexPool_All.size();};
 		size_t Get_KinFitConstraintSpacetimePoolSize(void) const{return dKinFitConstraintSpacetimePool_All.size();};
