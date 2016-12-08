@@ -155,6 +155,7 @@ class DKinFitUtils //purely virtual: cannot directly instantiate class, can only
 		DKinFitChain* Get_KinFitChainResource(void);
 		DKinFitChainStep* Get_KinFitChainStepResource(void);
 		virtual TMatrixFSym* Get_SymMatrixResource(unsigned int locNumMatrixRows);
+		virtual DKinFitParticle* Get_KinFitParticleResource(void);
 
 		void Recycle_Particles(set<DKinFitParticle*>& locParticles);
 
@@ -186,7 +187,6 @@ class DKinFitUtils //purely virtual: cannot directly instantiate class, can only
 
 		/*************************************************************** GET RESOURCES **************************************************************/
 
-		virtual DKinFitParticle* Get_KinFitParticleResource(void);
 		DKinFitConstraint_Vertex* Get_KinFitConstraintVertexResource(void);
 		DKinFitConstraint_Spacetime* Get_KinFitConstraintSpacetimeResource(void);
 		DKinFitConstraint_P4* Get_KinFitConstraintP4Resource(void);

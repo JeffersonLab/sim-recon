@@ -192,7 +192,7 @@ class DKinFitUtils_GlueX : public DKinFitUtils
 		void Recycle_DetectedDecayingParticles(map<DKinFitParticle*, DKinFitParticle*>& locDecayingToDetectedParticleMap);
 
 		deque<DKinFitParticle*>& Get_AvailableParticleDeque(void) const; //returns reference to static (shared-amongst-threads) deque
-		DKinFitParticle* Get_KinFitParticleResource(void); //private virtual in base class!
+		DKinFitParticle* Get_KinFitParticleResource(void);
 		void Reset_ParticleMemory(void);
 		void Acquire_Particles(size_t locNumRequestedParticles);
 
