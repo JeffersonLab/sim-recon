@@ -65,6 +65,8 @@ class DKinFitUtils_GlueX : public DKinFitUtils
 		DKinFitParticle* Make_DecayingParticle(Particle_t locPID, const set<DKinFitParticle*>& locFromInitialState, const set<DKinFitParticle*>& locFromFinalState);
 		DKinFitParticle* Make_MissingParticle(Particle_t locPID);
 
+		size_t Get_KinFitParticlePoolSize_Shared(void) const;
+
 		/************************************************************** RETURN MAPPING **************************************************************/
 
 		const JObject* Get_SourceJObject(DKinFitParticle* locInputKinFitParticle) const;
@@ -193,7 +195,6 @@ class DKinFitUtils_GlueX : public DKinFitUtils
 		DKinFitParticle* Get_KinFitParticleResource(void); //private virtual in base class!
 		void Reset_ParticleMemory(void);
 		void Acquire_Particles(size_t locNumRequestedParticles);
-		size_t Get_KinFitParticlePoolSize_Shared(void) const;
 
 		//acquired from the shared pool for this event
 		deque<DKinFitParticle*> dKinFitParticlePool_Acquired;

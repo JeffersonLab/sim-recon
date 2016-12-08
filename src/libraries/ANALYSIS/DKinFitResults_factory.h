@@ -27,6 +27,7 @@ class DKinFitResults_factory : public jana::JFactory<DKinFitResults>
 		~DKinFitResults_factory(){};
 
 		size_t Get_KinFitParticlePoolSize(void) const{return dKinFitUtils->Get_KinFitParticlePoolSize();};
+		size_t Get_KinFitParticlePoolSize_Shared(void) const{return dKinFitUtils->Get_KinFitParticlePoolSize_Shared();};
 		size_t Get_KinFitConstraintVertexPoolSize(void) const{return dKinFitUtils->Get_KinFitConstraintVertexPoolSize();};
 		size_t Get_KinFitConstraintSpacetimePoolSize(void) const{return dKinFitUtils->Get_KinFitConstraintSpacetimePoolSize();};
 		size_t Get_KinFitConstraintP4PoolSize(void) const{return dKinFitUtils->Get_KinFitConstraintP4PoolSize();};
