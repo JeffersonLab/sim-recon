@@ -189,7 +189,7 @@ class DKinFitUtils_GlueX : public DKinFitUtils
 		TMatrixFSym* Get_SymMatrixResource(unsigned int locNumMatrixRows);
 		void Recycle_DetectedDecayingParticles(map<DKinFitParticle*, DKinFitParticle*>& locDecayingToDetectedParticleMap);
 
-		deque<DKinFitParticle*>& Get_AvailableParticleDeque(void) const;
+		deque<DKinFitParticle*>& Get_AvailableParticleDeque(void) const; //returns reference to static (shared-amongst-threads) deque
 		DKinFitParticle* Get_KinFitParticleResource(void); //private virtual in base class!
 		void Reset_ParticleMemory(void);
 		void Acquire_Particles(size_t locNumRequestedParticles);
@@ -260,10 +260,6 @@ inline TMatrixFSym* DKinFitUtils_GlueX::Get_SymMatrixResource(unsigned int locNu
 
 	//now, retrieve one from the buffer pool
 	return DKinFitUtils::Get_SymMatrixResource(locNumMatrixRows);
-}
-
-DKinFitParticle* DKinFitUtils_GlueX::Get_KinFitParticleResource(void)
-{
 }
 
 #endif // _DKinFitUtils_GlueX_
