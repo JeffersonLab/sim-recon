@@ -2,7 +2,6 @@
 #define _DKinFitResults_
 
 #include <string>
-#include <deque>
 
 #include "TMatrixDSym.h"
 
