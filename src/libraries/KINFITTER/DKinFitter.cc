@@ -2551,6 +2551,7 @@ void DKinFitter::Set_FinalTrackInfo(void)
 			continue; // no distance over which to propagate
 
 		//updating the covariance matrix: a unique cov matrix object was cloned on fit start, so can safely update it directly
+			//unless DKinFitUtils::Get_UpdateCovarianceMatricesFlag() is false. In which case, this matrix is not propagated (is unchanged)
 		TMatrixFSym* locCovarianceMatrix = const_cast<TMatrixFSym*>(locKinFitParticle->Get_CovarianceMatrix());
 
 		TVector3 locMomentum;

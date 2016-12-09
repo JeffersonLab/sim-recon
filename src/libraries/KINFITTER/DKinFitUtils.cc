@@ -909,7 +909,7 @@ void DKinFitUtils::Recycle_Particles(set<DKinFitParticle*>& locParticles)
 	for(; locParticleIterator != locParticles.end(); ++locParticleIterator)
 	{
 		const TMatrixFSym* locCovMatrix = (*locParticleIterator)->Get_CovarianceMatrix();
-		if(locCovMatrix != NULL)
+		if((locCovMatrix != NULL) && dUpdateCovarianceMatricesFlag)
 			locMatricesToRecycle.push_back(locCovMatrix);
 
 		map<DKinFitParticle*, DKinFitParticle*>::iterator locOIIterator = dParticleMap_OutputToInput.find(*locParticleIterator);
