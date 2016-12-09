@@ -102,31 +102,33 @@ jerror_t JEventProcessor_FCALpulsepeak::brun(JEventLoop *eventLoop, int32_t runn
 jerror_t JEventProcessor_FCALpulsepeak::evnt(JEventLoop *eventLoop, uint64_t eventnumber)
 {
 
-vector< const DFCALDigiHit*  > digiHits;
-   eventLoop->Get( digiHits );
-   vector< const DFCALGeometry* > geomVec;
+    vector< const DFCALDigiHit*  > digiHits;
+    eventLoop->Get( digiHits );
+    vector< const DFCALGeometry* > geomVec;
     eventLoop->Get( geomVec );
-  
-  const DFCALGeometry& fcalGeom = *(geomVec[0]);
-   
-for( vector< const DFCALDigiHit* >::const_iterator dHitItr = digiHits.begin();
-       dHitItr != digiHits.end(); ++dHitItr ){
-const DFCALDigiHit& dHit = (**dHitItr);
-	int m_chan = fcalGeom.channel( dHit.row, dHit.column );
-     //uint32_t m_time = dHit.pulse_time;
-     uint32_t m_peak = dHit.pulse_peak;
-     uint32_t m_pedestal = dHit.pedestal;
-     //uint32_t m_integral = dHit.pulse_integral;
-     
-      japp->RootFillLock(this);
-     if (m_peak > 0 && m_pedestal > 95){
-     
-      pulsepeak[m_chan]->Fill(m_peak); 
-      
-      }
+    
+    const DFCALGeometry& fcalGeom = *(geomVec[0]);
+    
+    japp->RootFillLock(this);
 
-	japp->RootFillUnLock(this);
-}
+    for( vector< const DFCALDigiHit* >::const_iterator dHitItr = digiHits.begin();
+         dHitItr != digiHits.end(); ++dHitItr ){
+        const DFCALDigiHit& dHit = (**dHitItr);
+        int m_chan = fcalGeom.channel( dHit.row, dHit.column );
+        //uint32_t m_time = dHit.pulse_time;
+        uint32_t m_peak = dHit.pulse_peak;
+        uint32_t m_pedestal = dHit.pedestal;
+        //uint32_t m_integral = dHit.pulse_integral;
+        
+        if (m_peak > 0 && m_pedestal > 95){
+            
+            pulsepeak[m_chan]->Fill(m_peak); 
+            
+        }
+    }
+
+    japp->RootFillUnLock(this);
+    
 
 
 /*
@@ -141,7 +143,6 @@ const DFCALDigiHit& dHit = (**dHitItr);
   const DFCALGeometry& fcalGeom = *(geomVec[0]);
  
 
-map< const DFCALDigiHit*, const Df250PulseData* > pd_cache;
 
   for( vector< const DFCALDigiHit* >::const_iterator dHitItr = digiHits.begin();
        dHitItr != digiHits.end(); ++dHitItr ){
