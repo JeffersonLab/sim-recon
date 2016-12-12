@@ -275,6 +275,7 @@ jerror_t DFDCHit_factory::evnt(JEventLoop *loop, uint64_t eventnumber)
         hit->t = t;
         hit->pulse_height=a_gains[plane_index][strip_index]
             *double(pulse_peak - scaled_ped);
+        hit->pulse_height_raw = double(pulse_peak - scaled_ped);
 	hit->q=a_scale*hit->pulse_height;
 
         //cerr << "FDC hitL  plane = " << hit->gPlane << "  element = " << hit->element << endl;

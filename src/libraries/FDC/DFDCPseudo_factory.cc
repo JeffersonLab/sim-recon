@@ -380,19 +380,23 @@ void DFDCPseudo_factory::makePseudo(vector<const DFDCHit*>& x,
          if (FindCentroid(u[i]->members,strip,upeaks)==NOERROR){
             // Some values needed for cathode alignment
             unsigned int index=2*((*strip)->gLayer-1)+(*strip)->plane/2;
-            DMatrix3x1 XTemp,NTemp,indexTemp; 
+            DMatrix3x1 XTemp,NTemp,NTempRaw,indexTemp; 
             XTemp(0) = fdccathodes[index][(*(strip-1))->element-1]->u;
             XTemp(1) = fdccathodes[index][(*(strip))->element-1]->u;
             XTemp(2) = fdccathodes[index][(*(strip+1))->element-1]->u;
             NTemp(0) = double ((*(strip-1))->pulse_height);
             NTemp(1) = double ((*(strip))->pulse_height);
             NTemp(2) = double ((*(strip+1))->pulse_height);
+            NTempRaw(0) = double ((*(strip-1))->pulse_height_raw);
+            NTempRaw(1) = double ((*(strip))->pulse_height_raw);
+            NTempRaw(2) = double ((*(strip+1))->pulse_height_raw);
             indexTemp(0) = (*(strip-1))->element;
             indexTemp(1) = (*(strip))->element;
             indexTemp(2) = (*(strip+1))->element;
             upeaks[upeaks.size()-1].cluster=i;
             upeaks[upeaks.size()-1].X = XTemp;
             upeaks[upeaks.size()-1].N = NTemp;
+            upeaks[upeaks.size()-1].NRaw = NTempRaw;
             upeaks[upeaks.size()-1].index = indexTemp;
          }
          else if (u[i]->members.size()==3){
@@ -420,19 +424,23 @@ void DFDCPseudo_factory::makePseudo(vector<const DFDCHit*>& x,
            if (FindCentroid(v[i]->members,strip,vpeaks)==NOERROR){
               // Some values needed for cathode alignment
               unsigned int index=2*((*strip)->gLayer-1)+(*strip)->plane/2;
-              DMatrix3x1 XTemp,NTemp,indexTemp;
+              DMatrix3x1 XTemp,NTemp,NTempRaw,indexTemp;
               XTemp(0) = fdccathodes[index][(*(strip-1))->element-1]->u;
               XTemp(1) = fdccathodes[index][(*(strip))->element-1]->u;
               XTemp(2) = fdccathodes[index][(*(strip+1))->element-1]->u;
               NTemp(0) = double ((*(strip-1))->pulse_height);
               NTemp(1) = double ((*(strip))->pulse_height);
               NTemp(2) = double ((*(strip+1))->pulse_height);
+              NTempRaw(0) = double ((*(strip-1))->pulse_height_raw);
+              NTempRaw(1) = double ((*(strip))->pulse_height_raw);
+              NTempRaw(2) = double ((*(strip+1))->pulse_height_raw);
               indexTemp(0) = (*(strip-1))->element;
               indexTemp(1) = (*(strip))->element;
               indexTemp(2) = (*(strip+1))->element;
               vpeaks[vpeaks.size()-1].cluster=i;
               vpeaks[vpeaks.size()-1].X = XTemp;
               vpeaks[vpeaks.size()-1].N = NTemp;
+              vpeaks[vpeaks.size()-1].NRaw = NTempRaw;
               vpeaks[vpeaks.size()-1].index = indexTemp;
            }
            else if (v[i]->members.size()==3){

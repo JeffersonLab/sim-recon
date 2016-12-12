@@ -27,7 +27,7 @@ typedef struct {
    double t; // mean time of strips in peak
    double t_rms; // rms of strips in peak
    unsigned int cluster; // index for cluster from which this centroid was generated
-   DMatrix3x1 X,N,index;
+   DMatrix3x1 X,N,NRaw,index;
 }centroid_t;
 
 ///
@@ -47,7 +47,7 @@ class DFDCPseudo : public JObject {
       double u,v; ///< centroid positions in the two cathode views
       double t_u,t_v; ///< time of the two cathode clusters
       double phi_u,phi_v; ///< rotation angles for cathode planes
-      centroid_t cluster_u, cluster_v; ///< Pointers to the cathode clusters, Useful for gain/strip pitch calibration.
+      centroid_t cluster_u, cluster_v; ///< Cathode cluster centroids, Useful for gain/strip pitch calibration.
       double w,dw; ///< local coordinate of pseudopoint in the direction perpendicular to the wires and its uncertainty
       double w_c; /// < wire position computed from cathode data, assuming the avalanche occurs at the wire
       double s,ds; ///< local coordinate of pseudopoint in the direction along the wire and its uncertainty
@@ -131,13 +131,46 @@ class DFDCPseudo : public JObject {
       const vector<double> GetFDCStripGainDerivatives() {
          // Numerically calculate the derivatives of the cathode position wrt the strip gains
          // Numerical calculation necessary since it comes from the solution of a nonlinear set of equations
-         vector<double> derivatives(6); // u and v
+         vector<double> derivatives; // u and v
 
          // Loop over the cluster and find the three hit section used
-         double position;
-         FindCentroid(cluster_u.N, cluster_u.X, position);
+         double positionNominal, positionShifted;
+         FindCentroid(cluster_u.N, cluster_u.X, positionNominal);
 
-         // Get the three hits used in the cluster
+         double delta = 0.05;
+
+         DMatrix3x1 deltaVectU0(delta*cluster_u.NRaw(0), 0.0, 0.0);
+         DMatrix3x1 deltaVectU1(0.0,delta*cluster_u.NRaw(1), 0.0);
+         DMatrix3x1 deltaVectU2(0.0,0.0,delta*cluster_u.NRaw(2));
+
+         DMatrix3x1 deltaVectV0(delta*cluster_v.NRaw(0), 0.0, 0.0);
+         DMatrix3x1 deltaVectV1(0.0,delta*cluster_v.NRaw(1), 0.0);
+         DMatrix3x1 deltaVectV2(0.0,0.0,delta*cluster_v.NRaw(2));
+
+         FindCentroid(cluster_u.N+deltaVectU0, cluster_u.X, positionShifted);
+         derivatives.push_back((positionShifted-positionNominal)/delta);
+
+         FindCentroid(cluster_u.N+deltaVectU1, cluster_u.X, positionShifted);
+         derivatives.push_back((positionShifted-positionNominal)/delta);
+
+         FindCentroid(cluster_u.N+deltaVectU2, cluster_u.X, positionShifted);
+         derivatives.push_back((positionShifted-positionNominal)/delta);
+
+         FindCentroid(cluster_v.N, cluster_v.X, positionNominal);
+
+         FindCentroid(cluster_v.N+deltaVectV0, cluster_v.X, positionShifted);
+         derivatives.push_back((positionShifted-positionNominal)/delta);
+
+         FindCentroid(cluster_v.N+deltaVectV1, cluster_v.X, positionShifted);
+         derivatives.push_back((positionShifted-positionNominal)/delta);
+
+         FindCentroid(cluster_v.N+deltaVectV2, cluster_v.X, positionShifted);
+         derivatives.push_back((positionShifted-positionNominal)/delta);
+
+         //jout << " New Hit" << endl;
+         //for (size_t i=0 ; i < derivatives.size(); i++){
+         //   jout << "i " << i << " der " << derivatives[i] << endl;
+         //}
 
          return derivatives;
       }
