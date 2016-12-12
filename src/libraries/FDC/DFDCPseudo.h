@@ -19,6 +19,16 @@ using namespace jana;
 #include <DMatrix.h>
 #include <DMatrixSIMD.h>
 
+typedef struct {
+   double pos;
+   double q;
+   double q_from_pulse_height;
+   int numstrips;
+   double t; // mean time of strips in peak
+   double t_rms; // rms of strips in peak
+   unsigned int cluster; // index for cluster from which this centroid was generated
+   DMatrix3x1 X,N,index;
+}centroid_t;
 
 ///
 /// class DFDCPseudo: definition for a reconstructed point in the FDC
@@ -37,7 +47,7 @@ class DFDCPseudo : public JObject {
       double u,v; ///< centroid positions in the two cathode views
       double t_u,t_v; ///< time of the two cathode clusters
       double phi_u,phi_v; ///< rotation angles for cathode planes
-      const DFDCCathodeCluster *cluster_u, *cluster_v; ///< Pointers to the cathode clusters, Useful for gain/strip pitch calibration.
+      centroid_t cluster_u, cluster_v; ///< Pointers to the cathode clusters, Useful for gain/strip pitch calibration.
       double w,dw; ///< local coordinate of pseudopoint in the direction perpendicular to the wires and its uncertainty
       double w_c; /// < wire position computed from cathode data, assuming the avalanche occurs at the wire
       double s,ds; ///< local coordinate of pseudopoint in the direction along the wire and its uncertainty
@@ -118,18 +128,125 @@ class DFDCPseudo : public JObject {
 
       }
 
-      vector<double> GetFDCStripGainDerivatives(){
+      const vector<double> GetFDCStripGainDerivatives() {
          // Numerically calculate the derivatives of the cathode position wrt the strip gains
          // Numerical calculation necessary since it comes from the solution of a nonlinear set of equations
-         vector<double> derivatives(3);
+         vector<double> derivatives(6); // u and v
+
+         // Loop over the cluster and find the three hit section used
+         double position;
+         FindCentroid(cluster_u.N, cluster_u.X, position);
+
+         // Get the three hits used in the cluster
 
          return derivatives;
       }
 
-      vector<double> GetFDCStripPitchDerivatives(){
+      const vector<double> GetFDCStripPitchDerivatives(){
          // Numerically calculate the derivatives of the cathode position wrt the strip gains
          // Numerical calculation necessary since it comes from the solution of a nonlinear set of equations
-         vector<double> derivatives(5);
+         vector<double> derivatives; // u and v
+
+         double positionNominal, positionShifted;
+         FindCentroid(cluster_u.N, cluster_u.X, positionNominal);
+
+         double delta = 0.005;
+         DMatrix3x1 deltaVect(0.0, 0.0, 0.0);
+         // delta_U_SP_1
+         for (int i=0 ; i < 3; i++){
+            if(cluster_u.index(i) < 48) deltaVect(i) = (cluster_u.index(i)-47.)*delta;
+            else deltaVect(i) = 0.0;
+         }  
+
+         FindCentroid(cluster_u.N, cluster_u.X + deltaVect, positionShifted);
+         derivatives.push_back((positionShifted-positionNominal)/delta);
+
+         // delta_U_G_1
+         for (int i=0 ; i < 3; i++){
+            if(cluster_u.index(i) < 48) deltaVect(i) = -delta;
+            else deltaVect(i) = 0.0;
+         }
+
+         FindCentroid(cluster_u.N, cluster_u.X + deltaVect, positionShifted);
+         derivatives.push_back((positionShifted-positionNominal)/delta);
+
+         // delta_U_SP_2
+         for (int i=0 ; i < 3; i++){
+            if(cluster_u.index(i) < 48) deltaVect(i) = -47.5*delta;
+            else if (cluster_u.index(i) < 144) deltaVect(i) = (cluster_u.index(i)-95.5)*delta;
+            else deltaVect(i) = 47.5*delta;
+         }
+
+         FindCentroid(cluster_u.N, cluster_u.X + deltaVect, positionShifted);
+         derivatives.push_back((positionShifted-positionNominal)/delta);
+
+         // delta_U_G_2
+         for (int i=0 ; i < 3; i++){
+            if(cluster_u.index(i) >= 144) deltaVect(i) = delta;
+            else deltaVect(i) = 0.0;
+         }
+
+         FindCentroid(cluster_u.N, cluster_u.X + deltaVect, positionShifted);
+         derivatives.push_back((positionShifted-positionNominal)/delta);
+
+         // delta_U_SP_3
+         for (int i=0 ; i < 3; i++){
+            if(cluster_u.index(i) >= 144) deltaVect(i) = (cluster_u.index(i)-144.)*delta;
+            else deltaVect(i) = 0.0;
+         }
+
+         FindCentroid(cluster_u.N, cluster_u.X + deltaVect, positionShifted);
+         derivatives.push_back((positionShifted-positionNominal)/delta);
+
+         //==========
+         // Get the nominal V shift
+         FindCentroid(cluster_v.N, cluster_v.X, positionNominal);
+
+         // delta_V_SP_1
+         for (int i=0 ; i < 3; i++){
+            if(cluster_v.index(i) < 48) deltaVect(i) = (cluster_v.index(i)-47.)*delta;
+            else deltaVect(i) = 0.0;
+         }
+
+         FindCentroid(cluster_v.N, cluster_v.X + deltaVect, positionShifted);
+         derivatives.push_back((positionShifted-positionNominal)/delta);
+
+         // delta_V_G_1
+         for (int i=0 ; i < 3; i++){
+            if(cluster_v.index(i) < 48) deltaVect(i) = -delta;
+            else deltaVect(i) = 0.0;
+         }
+
+         FindCentroid(cluster_v.N, cluster_v.X + deltaVect, positionShifted);
+         derivatives.push_back((positionShifted-positionNominal)/delta);
+
+         // delta_V_SP_2
+         for (int i=0 ; i < 3; i++){
+            if(cluster_v.index(i) < 48) deltaVect(i) = -47.5*delta;
+            else if (cluster_v.index(i) < 144) deltaVect(i) = (cluster_v.index(i)-95.5)*delta;
+            else deltaVect(i) = 47.5*delta;
+         }
+
+         FindCentroid(cluster_v.N, cluster_v.X + deltaVect, positionShifted);
+         derivatives.push_back((positionShifted-positionNominal)/delta);
+
+         // delta_V_G_2
+         for (int i=0 ; i < 3; i++){
+            if(cluster_v.index(i) >= 144) deltaVect(i) = delta;
+            else deltaVect(i) = 0.0;
+         }
+
+         FindCentroid(cluster_v.N, cluster_v.X + deltaVect, positionShifted);
+         derivatives.push_back((positionShifted-positionNominal)/delta);
+
+         // delta_V_SP_3
+         for (int i=0 ; i < 3; i++){
+            if(cluster_v.index(i) >= 144) deltaVect(i) = (cluster_v.index(i)-144.)*delta;
+            else deltaVect(i) = 0.0;
+         }
+
+         FindCentroid(cluster_v.N, cluster_v.X + deltaVect, positionShifted);
+         derivatives.push_back((positionShifted-positionNominal)/delta);
 
          return derivatives;
 

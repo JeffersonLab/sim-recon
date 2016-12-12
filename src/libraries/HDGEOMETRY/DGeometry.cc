@@ -995,13 +995,19 @@ bool DGeometry::GetFDCCathodes(vector<vector<DFDCCathode *> >&fdccathodes) const
     double angle=(i%2)?(M_PI-CATHODE_ROT_ANGLE):(CATHODE_ROT_ANGLE);
 
     angle+=fdc_cathode_offsets[i].dphi;
+    double SP1 = fdc_cathode_pitches[i];
+    double SP2 = SP1, SP3 = SP1, SG1 = SP1, SG2 = SP1;
+
     vector<DFDCCathode *>temp;
     for (int j=0; j<STRIPS_PER_PLANE; j++){
       DFDCCathode *c = new DFDCCathode;
       c->layer = i+1;
       c->strip = j+1;
       c->angle = angle;
-      c->u=fdc_cathode_pitches[i]*((float)j+STRIP_ZERO_OFFSET)+fdc_cathode_offsets[i].du;
+      if (j<48) c->u=(-47.5*SP2 - SG1 + (j-47)*SP1) + fdc_cathode_offsets[i].du;
+      else if (j<144) c->u=(double(j)-95.5)*SP2 + fdc_cathode_offsets[i].du;
+      else c->u=(47.5*SP2 + SG2 + (j-144)*SP3) + fdc_cathode_offsets[i].du;
+
       temp.push_back(c);
     }
     fdccathodes.push_back(temp);

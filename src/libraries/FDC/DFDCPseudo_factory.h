@@ -31,16 +31,6 @@ using namespace jana;
 #include <map>
 #include <cmath>
 
-typedef struct {
-  double pos;
-  double q;
-  double q_from_pulse_height;
-  int numstrips;
-  double t; // mean time of strips in peak
-  double t_rms; // rms of strips in peak
-  unsigned int cluster; // index for cluster from which this centroid was generated
-}centroid_t;
-
 ///
 /// class DFDCPseudo_factory: definition for a JFactory that
 /// produces pseudopoints from anode hits and DFDCCathodeClusters.
