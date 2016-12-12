@@ -288,7 +288,7 @@ jerror_t JEventProcessor_BCAL_LED::evnt(JEventLoop *loop, uint64_t eventnumber) 
 	currenteventnum = eventnumber;
 	if (currenteventnum != previouseventnum)
 	{
-	int chcounter[1536] = { NULL } ;
+	int chcounter[1536] = {  } ;
 	  
 	
 	vector<const DBCALDigiHit*> bcaldigihits;
@@ -346,10 +346,10 @@ jerror_t JEventProcessor_BCAL_LED::evnt(JEventLoop *loop, uint64_t eventnumber) 
 		
 		     int apedsubpeak[1536] = { 0 };
 		     
-		     double time[1536] = {0. };
+		     // double time[1536] = {0. };
 		     
-		     int cellmodule[1536] =  { 0 };
-     		     int celllayer[1536] =  { 0 };
+		     // int cellmodule[1536] =  { 0 };
+     		     // int celllayer[1536] =  { 0 };
 		     int cellsector[1536] =  { 0 };
 		     int cellend[1536] =  { 0 };
 
@@ -377,9 +377,9 @@ jerror_t JEventProcessor_BCAL_LED::evnt(JEventLoop *loop, uint64_t eventnumber) 
 				}
 				
 				apedsubpeak[cell_id] = bcaldigihit->pulse_peak - (int) bcaldigihit->pedestal / bcaldigihit->nsamples_pedestal;
-				time[cell_id] = bcalhit->t;
-				cellmodule[cell_id] = bcalhit->module;
-				celllayer[cell_id] = bcalhit->layer;
+				// time[cell_id] = bcalhit->t;
+				// cellmodule[cell_id] = bcalhit->module;
+				// celllayer[cell_id] = bcalhit->layer;
 				cellsector[cell_id] = bcalhit->sector;
 				cellend[cell_id] = bcalhit->end;
 				chcounter[cell_id]++;
