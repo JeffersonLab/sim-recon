@@ -18,7 +18,7 @@ c instructs HDGeant to open ./phi-1680.hddm, skip the first 25 events and then
 c process the following 100 input events and stop.  If the end of the file is
 c reached before the event count specified in card TRIG is exhausted then the
 c processing will stop at the end of file.
-c INFILE 'bggen_another_1M.hddm'
+c INFILE 'bggen.hddm'
 TRIG 50000
 
 RUNG 10000
@@ -43,7 +43,7 @@ c Omitting the final parameter Emin results in the default value being used.
 cBEAM 10. 9.999 0.0012 76.00 0.005 10.e-9 20.e-6
 
 c Commenting out the following line will disable simulated hits output.
-OUTFILE '50k_piplus.hddm'
+OUTFILE '50k_muon_minus_1p5GeV.hddm'
 
 c The following are used to automatically invoke the mcsmear program
 c to do the final stage digitization of hits after the simulation
@@ -87,7 +87,7 @@ c PLOG 1
 c TLOG 1
 c
 c   particle  momentum  theta  phi  delta_momentum delta_theta delta_phi
-KINE   108      1.5       25.   0.      1.              10.        360.
+KINE   106     1.5       20.   0.          0.          0.        360.
 
 c The SCAP card determines the vertex position for the particle gun.  It
 c supports the following three arguments, all of which default to 0.

@@ -20,7 +20,8 @@ using namespace jana;
 
 //#include "TTree.h"
 //#include "TFile.h"
-//#include "TF1.h"
+#include "TF1.h"
+#include "TH2F.h"
 
 class DBCALCluster_factory : public JFactory< DBCALCluster > {
   
@@ -54,7 +55,7 @@ private:
                 const DBCALPoint* point ) const;
  
   bool overlap_charged( const DBCALCluster& clust, 
-			const DBCALPoint* point ) const;
+			const DBCALPoint* point, DVector3 track_pos ) const;
  
   bool overlap( const DBCALCluster& clust, 
                 const DBCALUnifiedHit* hit ) const; 
@@ -67,6 +68,9 @@ private:
   double m_z_target_center;
   vector<double> effective_velocities;
   vector< vector<double > > attenuation_parameters;
+  TH2F* charged_dist;
+  TF1* charged_fit;
+
   /*
   TF1* sep_inclusion_curve;
   TF1* dtheta_inclusion_curve;
