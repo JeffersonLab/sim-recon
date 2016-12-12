@@ -538,6 +538,8 @@ void DFDCPseudo_factory::makePseudo(vector<const DFDCHit*>& x,
 	      newPseu->v = vpeaks[j].pos;
 	      newPseu->t_u = upeaks[i].t;
 	      newPseu->t_v = vpeaks[j].t;
+         newPseu->cluster_u = u[upeaks[i].cluster];
+         newPseu->cluster_v = v[vpeaks[j].cluster];
 	      newPseu->w      = x_from_wire+xshifts[ilay];
 	      newPseu->dw     = 0.; // place holder
 	      newPseu->w_c    = x_from_strips+xshifts[ilay];
