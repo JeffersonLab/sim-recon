@@ -401,11 +401,11 @@ jerror_t JEventProcessor_L1_online::evnt(JEventLoop *loop, uint64_t eventnumber)
 
       for(unsigned int kk = 0; kk < tagh_hits.size(); kk++){
 	const DTAGHDigiHit *tagh_hit = tagh_hits[kk];   
-	const Df250PulseIntegral *pulseintegral;
+	//const Df250PulseIntegral *pulseintegral;
         
-	tagh_hit->GetSingle(pulseintegral);
-	const Df250WindowRawData *windorawdata;
-	pulseintegral->GetSingle(windorawdata);
+	//tagh_hit->GetSingle(pulseintegral);
+	//const Df250WindowRawData *windorawdata;
+	//pulseintegral->GetSingle(windorawdata);
         
 	int counter_id = tagh_hit->counter_id;
 	
