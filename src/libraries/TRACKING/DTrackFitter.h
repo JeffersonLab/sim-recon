@@ -102,6 +102,8 @@ class DTrackFitter:public jana::JObject{
 		    double tcorr; // drift time with correction for B
 		    double resic; // residual for FDC cathode measuremtns
 		    double errc;
+          vector<double> derivatives;
+          inline void AddAlignmentDerivatives(vector<double> d){ derivatives = d;}
 		};
 		
 		// Constructor and destructor

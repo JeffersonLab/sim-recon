@@ -1190,7 +1190,7 @@ DTrackCandidate_factory_StraightLine::KalmanFilter(DMatrix4x1 &S,DMatrix4x4 &C,
             double doca=du*cosalpha;
 
             // Predicted avalanche position along the wire
-            double vpred=vpred_wire_plane-tv*sinalpha*doca;
+            double vpred=vpred_wire_plane;
 
             // Measured position of hit along wire
             double v=hits[my_id]->s; 
@@ -1380,8 +1380,10 @@ DTrackCandidate_factory_StraightLine::Smooth(deque<trajectory_t>&trajectory,
             //V-=dC.SandwichMultiply(H_T);
             V=V-H*dC*H_T;
          }
+         
+         // Implement derivatives wrt track parameters needed for millepede alignment
 
-         cand->pulls.push_back(DTrackFitter::pull_t(resi_a,sqrt(V(0,0)),
+         DTrackFitter::pull_t thisPull(resi_a,sqrt(V(0,0)),
                   trajectory[m].t*SPEED_OF_LIGHT,
                   fdc_updates[id].tdrift,
                   fdc_updates[id].d,
@@ -1390,7 +1392,31 @@ DTrackCandidate_factory_StraightLine::Smooth(deque<trajectory_t>&trajectory,
                   trajectory[m].z, 
                   0.0, //tcorr
                   resi_c, sqrt(V(1,1))
-                  ));
+                  );
+
+         if (hits[id]->wire->layer!=PLANE_TO_SKIP){
+            vector<double> derivatives;
+            //dDocaW/dx
+            derivatives.push_back(cosa/sqrt(1.+tu*tu));
+            //dDocaW/dy
+            derivatives.push_back(-sina/sqrt(1.+tu*tu));
+            //dDocaW/dtx
+            derivatives.push_back(cosa*tu*(u-upred)/pow(1.+tu*tu,1.5));
+            //dDocaW/dty
+            derivatives.push_back(-sina*tu*(u-upred)/pow(1.+tu*tu,1.5));
+            //dDocaS/dx
+            derivatives.push_back(sina);
+            //dDocaS/dy
+            derivatives.push_back(cosa);
+            //dDocaS/dtx
+            derivatives.push_back(0.0);
+            //dDocaS/dty
+            derivatives.push_back(0.0);
+
+            thisPull.AddAlignmentDerivatives(derivatives);
+         }
+
+         cand->pulls.push_back(thisPull);
 
       }
       else{
