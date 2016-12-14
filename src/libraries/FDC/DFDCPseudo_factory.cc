@@ -376,10 +376,10 @@ void DFDCPseudo_factory::makePseudo(vector<const DFDCHit*>& x,
     if (DEBUG_HISTS) u_cl_size->Fill(u[i]->members.size());
     if (u[i]->members.size()>2){
       for (vector<const DFDCHit*>::const_iterator strip=u[i]->members.begin()+1;strip+1!=u[i]->members.end();strip++){  
-	//printf("  %d %f %f\n",(*strip)->element,(*strip)->pulse_height,(*strip)->t);
+	      //printf("  %d %f %f\n",(*strip)->element,(*strip)->pulse_height,(*strip)->t);
          if (FindCentroid(u[i]->members,strip,upeaks)==NOERROR){
             // Some values needed for cathode alignment
-            unsigned int index=2*((*strip)->gLayer-1)+(*strip)->plane/2;
+            unsigned int index=2*((*strip)->gLayer-1)+(1-(*strip)->plane/2);
             DMatrix3x1 XTemp,NTemp,NTempRaw,indexTemp; 
             XTemp(0) = fdccathodes[index][(*(strip-1))->element-1]->u;
             XTemp(1) = fdccathodes[index][(*(strip))->element-1]->u;
@@ -423,7 +423,7 @@ void DFDCPseudo_factory::makePseudo(vector<const DFDCHit*>& x,
            //printf("  %d %f %f\n",(*strip)->element,(*strip)->pulse_height,(*strip)->t);
            if (FindCentroid(v[i]->members,strip,vpeaks)==NOERROR){
               // Some values needed for cathode alignment
-              unsigned int index=2*((*strip)->gLayer-1)+(*strip)->plane/2;
+              unsigned int index=2*((*strip)->gLayer-1)+(1-(*strip)->plane/2);
               DMatrix3x1 XTemp,NTemp,NTempRaw,indexTemp;
               XTemp(0) = fdccathodes[index][(*(strip-1))->element-1]->u;
               XTemp(1) = fdccathodes[index][(*(strip))->element-1]->u;
@@ -716,7 +716,7 @@ jerror_t DFDCPseudo_factory::FindCentroid(const vector<const DFDCHit*>& H,
       double sum=0.;
 
       // Initialize the matrices to some suitable starting values
-      unsigned int index=2*((*peak)->gLayer-1)+(*peak)->plane/2;
+      unsigned int index=2*((*peak)->gLayer-1)+(1-(*peak)->plane/2);
       par(K2)=1.;
       for (vector<const DFDCHit*>::const_iterator j=peak-1;j<=peak+1;j++){
          X(i)=fdccathodes[index][(*j)->element-1]->u;
@@ -916,8 +916,8 @@ jerror_t DFDCPseudo_factory::TwoStripCluster(const vector<const DFDCHit*>& H,
       return VALUE_OUT_OF_RANGE;
    }
 
-   unsigned int index1=2*((*peak)->gLayer-1)+(*peak)->plane/2;
-   unsigned int index2=2*((*(peak+1))->gLayer-1)+(*(peak+1))->plane/2;
+   unsigned int index1=2*((*peak)->gLayer-1)+(1-(*peak)->plane/2);
+   unsigned int index2=2*((*(peak+1))->gLayer-1)+(1-(*(peak+1))->plane/2);
 
    // this should never happen
    if (index1 != index2) return VALUE_OUT_OF_RANGE;
@@ -979,7 +979,7 @@ jerror_t DFDCPseudo_factory::ThreeStripCluster(const vector<const DFDCHit*>& H,
    int i_corr=-2;
    double q_from_pulse_height = 0;
    for (vector<const DFDCHit*>::const_iterator j=peak-1;j<=peak+1;j++){
-      unsigned int index=2*((*j)->gLayer-1)+(*j)->plane/2;
+      unsigned int index=2*((*j)->gLayer-1)+(1-(*j)->plane/2);
 
       double pos=fdccathodes[index][(*j)->element-1]->u;
       double amp=double((*j)->pulse_height);
