@@ -40,7 +40,9 @@ class HDET{
 		virtual ~HDET();
 
 		    bool read(uint32_t* &buff, uint32_t &buff_len, bool allow_swap);
+			 void PrintEVIOBlockHeader(uint32_t *buff);
 		    void PrintStats(void);
+			 void DumpBinary(const uint32_t *iptr, const uint32_t *iend, uint32_t MaxWords=0, const uint32_t *imark=NULL);
 
 
 		string       source_name;
@@ -73,6 +75,40 @@ class HDET{
 		void ClearErrorMessage(void){ err_mess.str(""); err_mess.clear();}
 		void SetErrorMessage(string mess){ ClearErrorMessage(); err_mess<<mess;}
 
+	public:
+
+		//------------------------
+		// HexStr
+		//------------------------
+		inline string HexStr(uint32_t v)
+		{
+			char str[256];
+			sprintf(str, "0x%08x", v);
+			
+			return string(str);
+		}
+
+		//------------------------
+		// HexStr
+		//------------------------
+		inline string HexStr(uint16_t v)
+		{
+			char str[256];
+			sprintf(str, "0x%04x", v);
+			
+			return string(str);
+		}
+
+		//------------------------
+		// HexStr
+		//------------------------
+		inline string HexStr(uint8_t v)
+		{
+			char str[256];
+			sprintf(str, "0x%02x", v);
+			
+			return string(str);
+		}
 };
 
 #endif // _HDET_

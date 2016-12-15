@@ -189,6 +189,7 @@ class JEventSource_EVIOpp: public jana::JEventSource{
 		bool     LOOP_FOREVER;
 		uint32_t USER_RUN_NUMBER;
 		int      VERBOSE;
+		int      VERBOSE_ET;
 		float    TIMEOUT;
 		uint32_t NTHREADS;
 		bool     PRINT_STATS;
