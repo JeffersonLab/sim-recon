@@ -160,6 +160,9 @@ jerror_t JEventProcessor_TrackingPulls::evnt(JEventLoop *loop, uint64_t eventnum
             Fill2DHistogram("TrackingPulls", "FDCPulls","All Wire Residuals Vs. Plane",
                   fdc_hit->wire->layer, resi,
                   ";plane ;Residual", 24, 0.5, 24.5, 100, -0.1, 0.1);
+            Fill2DHistogram("TrackingPulls", "FDCPulls","All Cathode Residuals Vs. Plane",
+                  fdc_hit->wire->layer, resic,
+                  ";plane ;Residual", 24, 0.5, 24.5, 100, -0.1, 0.1);
             Fill2DHistogram("TrackingPulls", "FDCPulls","All Wire Pulls Vs. Plane",
                   fdc_hit->wire->layer, resi/err,
                   ";plane ;Residual/Error", 24, 0.5, 24.5, 100, -5.0, 5.0);
@@ -378,7 +381,7 @@ jerror_t JEventProcessor_TrackingPulls::evnt(JEventLoop *loop, uint64_t eventnum
                      ";z;#phi", 200, 0.0, 200.0,  180, -180.0, 180.0);
                Fill2DProfile("TrackingPulls", ringName, "Residual Vs PhiIntersect-z",
                      z, phiIntersect, resi,
-                     ";z;#phi Intersect", 200, 0.0, 200.0, 180, -180.0, 180.0);
+                     ";z;#phi Intersect", 200, 0.0, 200.0, nStraw, -180.0, 180.0);
                Fill2DProfile("TrackingPulls", ringName, "Residual Vs P-Theta",
                      theta, pmag, resi,
                      ";#theta;|P|", 70, 0.0, 140.0, 50, 0.0, 10.0);
