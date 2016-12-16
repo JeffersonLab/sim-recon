@@ -175,6 +175,15 @@
 	      <trackID minOccurs="0" itrack="int"/>
 	    </pscTruthPoint>
       </pairSpectrometerCoarse>
+      <tripletPolarimeter minOccurs="0">
+        <tpolSector maxOccurs="unbounded" minOccurs="0" ring="int" sector="int">
+          <tpolHit dE="float" t="float" maxOccurs="unbounded"/>
+          <tpolTruthHit dE="float" t="float" maxOccurs="unbounded" itrack="int" ptype="int"/>
+        </tpolSector>
+	    <tpolTruthPoint E="float" dEdx="float" maxOccurs="unbounded" minOccurs="0" phi="float" primary="boolean" ptype="int" px="float" py="float" pz="float" module="int" t="float" arm="int" track="int" x="float" y="float" z="float">
+	      <trackID minOccurs="0" itrack="int"/>
+	    </tpolTruthPoint>
+      </tripletPolarimeter>
       <mcTrajectory minOccurs="0">
         <mcTrajectoryPoint E="float" dE="float" maxOccurs="unbounded" mech="int" minOccurs="0" part="int" primary_track="int" px="float" py="float" pz="float" radlen="float" step="float" t="float" track="int" x="float" y="float" z="float"/>
       </mcTrajectory>
