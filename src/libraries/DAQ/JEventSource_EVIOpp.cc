@@ -94,6 +94,7 @@ JEventSource_EVIOpp::JEventSource_EVIOpp(const char* source_name):JEventSource(s
 	F125_EMULATION_MODE = kEmulationAuto;
     F250_EMULATION_VERSION = 2;
 	RECORD_CALL_STACK = false;
+	TREAT_TRUNCATED_AS_ERROR = false;
     
 
 	gPARMS->SetDefaultParameter("EVIO:VERBOSE", VERBOSE, "Set verbosity level for processing and debugging statements while parsing. 0=no debugging messages. 10=all messages");
@@ -125,6 +126,7 @@ JEventSource_EVIOpp::JEventSource_EVIOpp(const char* source_name):JEventSource(s
 	gPARMS->SetDefaultParameter("EVIO:PARSE_EVENTTAG", PARSE_EVENTTAG, "Set this to 0 to disable parsing of event tag data in the data stream (for benchmarking/debugging)");
 	gPARMS->SetDefaultParameter("EVIO:PARSE_TRIGGER", PARSE_TRIGGER, "Set this to 0 to disable parsing of the built trigger bank from CODA (for benchmarking/debugging)");
 	gPARMS->SetDefaultParameter("EVIO:IGNORE_EMPTY_BOR", IGNORE_EMPTY_BOR, "Set to non-zero to continue processing data even if an empty BOR event is encountered.");
+	gPARMS->SetDefaultParameter("EVIO:TREAT_TRUNCATED_AS_ERROR", TREAT_TRUNCATED_AS_ERROR, "Set to non-zero to have a truncated EVIO file the JANA return code to non-zero indicating the program errored.");
 
 	gPARMS->SetDefaultParameter("EVIO:F250_EMULATION_MODE", F250_EMULATION_MODE, "Set f250 emulation mode. 0=no emulation, 1=always, 2=auto. Default is 2 (auto).");
 	gPARMS->SetDefaultParameter("EVIO:F125_EMULATION_MODE", F125_EMULATION_MODE, "Set f125 emulation mode. 0=no emulation, 1=always, 2=auto. Default is 2 (auto).");
@@ -347,7 +349,11 @@ void JEventSource_EVIOpp::Dispatcher(void)
 					}
 				}else{
 					cout << hdevio->err_mess.str() << endl;
-					if(hdevio->err_code != HDEVIO::HDEVIO_EOF) japp->SetExitCode(hdevio->err_code);
+					if(hdevio->err_code != HDEVIO::HDEVIO_EOF){
+						bool ignore_error = false;
+						if( (!TREAT_TRUNCATED_AS_ERROR) && (hdevio->err_code == HDEVIO::HDEVIO_FILE_TRUNCATED) ) ignore_error = true;
+						if(!ignore_error) japp->SetExitCode(hdevio->err_code);
+					}
 				}
 				break;
 			}else{
