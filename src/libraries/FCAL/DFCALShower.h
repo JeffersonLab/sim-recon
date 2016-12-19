@@ -12,7 +12,7 @@
 #include <DVector3.h>
 #include <DLorentzVector.h>
 #include <DMatrix.h>
-#include <DMatrixDSym.h>
+#include <TMatrixFSym.h>
 #include "DFCALCluster.h"
 using namespace std;
 
@@ -40,7 +40,7 @@ class DFCALShower:public JObject{
 			void setEnergy(const double energy);  
 			void setTime(const double time);  
 
-			DMatrixDSym ExyztCovariance;
+			TMatrixFSym ExyztCovariance;
 
 			float const EErr() const { return sqrt(ExyztCovariance(0,0)); }
 			float const xErr() const { return sqrt(ExyztCovariance(1,1)); }

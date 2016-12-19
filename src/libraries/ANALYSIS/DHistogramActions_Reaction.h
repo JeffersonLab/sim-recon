@@ -94,6 +94,7 @@ class DHistogramAction_PID : public DAnalysisAction
 		}
 
 		void Initialize(JEventLoop* locEventLoop);
+		void Reset_NewEvent(void){dPreviouslyHistogrammedParticles.clear();}
 
 		unsigned int dNum2DPBins, dNum2DdEdxBins, dNum2DBetaBins, dNum2DBCALThetaBins, dNum2DFCALThetaBins, dNum2DThetaBins, dNumBetaBins;
 		unsigned int dNum2DEOverPBins, dNum2DDeltaBetaBins, dNum2DDeltadEdxBins, dNum2DDeltaTBins, dNum2DPullBins, dNumFOMBins, dNum2DFOMBins;
@@ -178,9 +179,9 @@ class DHistogramAction_ParticleComboKinematics : public DAnalysisAction
 	public:
 		DHistogramAction_ParticleComboKinematics(const DReaction* locReaction, bool locUseKinFitResultsFlag, string locActionUniqueString = "") : 
 		DAnalysisAction(locReaction, "Hist_ParticleComboKinematics", locUseKinFitResultsFlag, locActionUniqueString), 
-		dNumPBins(500), dNumThetaBins(560), dNumPhiBins(360), dNumVertexZBins(600), dNumTBins(200), dNumVertexXYBins(200), dNumBetaBins(400), dNumDeltaBetaBins(400),
+		dNumPBins(500), dNumThetaBins(560), dNumPhiBins(360), dNumVertexZBins(600), dNumVertexXYBins(200), dNumBetaBins(400), dNumDeltaBetaBins(400),
 		dNum2DPBins(250), dNum2DThetaBins(140), dNum2DPhiBins(180), dNumDeltaTRFBins(500), dNumPathLengthBins(750), dNumLifetimeBins(500),
-		dMinT(-5.0), dMaxT(5.0), dMinP(0.0), dMaxP(10.0), dMinTheta(0.0), dMaxTheta(140.0), dMinPhi(-180.0), dMaxPhi(180.0), dMinVertexZ(0.0), dMaxVertexZ(200.0),
+		dMinP(0.0), dMaxP(10.0), dMinTheta(0.0), dMaxTheta(140.0), dMinPhi(-180.0), dMaxPhi(180.0), dMinVertexZ(0.0), dMaxVertexZ(200.0),
 		dMinVertexXY(-5.0), dMaxVertexXY(5.0), dMinBeta(-0.2), dMaxBeta(1.2), dMinDeltaBeta(-1.0), dMaxDeltaBeta(1.0), dMinDeltaTRF(-10.0), dMaxDeltaTRF(10.0),
 		dMaxPathLength(15), dMaxLifetime(5.0)
 		{
@@ -188,12 +189,17 @@ class DHistogramAction_ParticleComboKinematics : public DAnalysisAction
 			dAnalysisUtilities = NULL;
 		}
 
-		unsigned int dNumPBins, dNumThetaBins, dNumPhiBins, dNumVertexZBins, dNumTBins, dNumVertexXYBins, dNumBetaBins, dNumDeltaBetaBins;
+		unsigned int dNumPBins, dNumThetaBins, dNumPhiBins, dNumVertexZBins, dNumVertexXYBins, dNumBetaBins, dNumDeltaBetaBins;
 		unsigned int dNum2DPBins, dNum2DThetaBins, dNum2DPhiBins, dNumDeltaTRFBins, dNumPathLengthBins, dNumLifetimeBins;
-		double dMinT, dMaxT, dMinP, dMaxP, dMinTheta, dMaxTheta, dMinPhi, dMaxPhi, dMinVertexZ, dMaxVertexZ, dMinVertexXY, dMaxVertexXY;
+		double dMinP, dMaxP, dMinTheta, dMaxTheta, dMinPhi, dMaxPhi, dMinVertexZ, dMaxVertexZ, dMinVertexXY, dMaxVertexXY;
 		double dMinBeta, dMaxBeta, dMinDeltaBeta, dMaxDeltaBeta, dMinDeltaTRF, dMaxDeltaTRF, dMaxPathLength, dMaxLifetime;
 
 		void Initialize(JEventLoop* locEventLoop);
+		void Reset_NewEvent(void)
+		{
+			dPreviouslyHistogrammedBeamParticles.clear();
+			dPreviouslyHistogrammedParticles.clear();
+		}
 
 	private:
 		bool Perform_Action(JEventLoop* locEventLoop, const DParticleCombo* locParticleCombo);
@@ -211,7 +217,6 @@ class DHistogramAction_ParticleComboKinematics : public DAnalysisAction
 		TH1I* dBeamParticleHist_Theta;
 		TH1I* dBeamParticleHist_Phi;
 		TH1I* dBeamParticleHist_VertexZ;
-		TH1I* dBeamParticleHist_VertexT;
 		TH2I* dBeamParticleHist_VertexYVsX;
 		TH1I* dBeamParticleHist_DeltaTRF;
 		TH2I* dBeamParticleHist_DeltaTRFVsBeamE;
@@ -224,7 +229,6 @@ class DHistogramAction_ParticleComboKinematics : public DAnalysisAction
 		deque<map<Particle_t, TH1I*> > dHistDeque_Theta;
 		deque<map<Particle_t, TH1I*> > dHistDeque_Phi;
 		deque<map<Particle_t, TH1I*> > dHistDeque_VertexZ;
-		deque<map<Particle_t, TH1I*> > dHistDeque_VertexT;
 		deque<map<Particle_t, TH2I*> > dHistDeque_VertexYVsX;
 
 		deque<TH1I*> dHistDeque_MaxTrackDeltaZ;
@@ -237,7 +241,6 @@ class DHistogramAction_ParticleComboKinematics : public DAnalysisAction
 		//other than first, skipped if not detached vertex
 		map<size_t, TH1I*> dHistMap_StepVertexZ;
 		map<size_t, TH2I*> dHistMap_StepVertexYVsX;
-		map<size_t, TH1I*> dHistMap_StepVertexT;
 
 		//size_t is step index where the detached-vertex particle decays
 		map<size_t, TH1I*> dHistMap_DetachedPathLength; //distance between this vertex and the previous one (if detached)
@@ -261,6 +264,7 @@ class DHistogramAction_InvariantMass : public DAnalysisAction
 		dNumMassBins(locNumMassBins), dMinMass(locMinMass), dMaxMass(locMaxMass), dAnalysisUtilities(NULL) {}
 
 		void Initialize(JEventLoop* locEventLoop);
+		void Reset_NewEvent(void){dPreviousSourceObjects.clear();}
 
 	private:
 		bool Perform_Action(JEventLoop* locEventLoop, const DParticleCombo* locParticleCombo);
@@ -322,6 +326,7 @@ class DHistogramAction_MissingMass : public DAnalysisAction
 		}
 
 		void Initialize(JEventLoop* locEventLoop);
+		void Reset_NewEvent(void){dPreviousSourceObjects.clear();}
 
 	private:
 		bool Perform_Action(JEventLoop* locEventLoop, const DParticleCombo* locParticleCombo);
@@ -388,6 +393,7 @@ class DHistogramAction_MissingMassSquared : public DAnalysisAction
 		}
 
 		void Initialize(JEventLoop* locEventLoop);
+		void Reset_NewEvent(void){dPreviousSourceObjects.clear();}
 
 	private:
 		bool Perform_Action(JEventLoop* locEventLoop, const DParticleCombo* locParticleCombo);
@@ -419,6 +425,7 @@ class DHistogramAction_2DInvariantMass : public DAnalysisAction
 		dMinX(locMinX), dMaxX(locMaxX), dMinY(locMinY), dMaxY(locMaxY), dAnalysisUtilities(NULL) {}
 
 		void Initialize(JEventLoop* locEventLoop);
+		void Reset_NewEvent(void){dPreviousSourceObjects.clear();}
 
 	private:
 		bool Perform_Action(JEventLoop* locEventLoop, const DParticleCombo* locParticleCombo);
@@ -444,6 +451,7 @@ class DHistogramAction_Dalitz : public DAnalysisAction
 		dMinX(locMinX), dMaxX(locMaxX), dMinY(locMinY), dMaxY(locMaxY), dAnalysisUtilities(NULL) {}
 
 		void Initialize(JEventLoop* locEventLoop);
+		void Reset_NewEvent(void){dPreviousSourceObjects.clear();}
 
 	private:
 		bool Perform_Action(JEventLoop* locEventLoop, const DParticleCombo* locParticleCombo);
@@ -463,11 +471,21 @@ class DHistogramAction_KinFitResults : public DAnalysisAction
 {
 	public:
 		DHistogramAction_KinFitResults(const DReaction* locReaction, double locPullHistConfidenceLevelCut, string locActionUniqueString = "") :
-		DAnalysisAction(locReaction, "Hist_KinFitResults", true, locActionUniqueString), 
-		dNumConfidenceLevelBins(400), dNumPullBins(200), dNum2DPBins(200), dNum2DThetaBins(140), dNum2DPhiBins(180), dNum2DPullBins(100),
+		DAnalysisAction(locReaction, "Hist_KinFitResults", true, locActionUniqueString),
+		dHistDependenceFlag(false), dNumConfidenceLevelBins(400), dNumPullBins(200), dNum2DPBins(200), dNum2DThetaBins(140), dNum2DPhiBins(180), dNum2DPullBins(100),
 		dNum2DConfidenceLevelBins(100), dNum2DBeamEBins(240), dMinPull(-4.0), dMaxPull(4.0), dMinP(0.0), dMaxP(10.0), dMinTheta(0.0), dMaxTheta(140.0),
 		dMinPhi(-180.0), dMaxPhi(180.0), dMinBeamE(0.0), dMaxBeamE(12.0), dPullHistConfidenceLevelCut(locPullHistConfidenceLevelCut), dAnalysisUtilities(NULL) {}
 
+		DHistogramAction_KinFitResults(const DReaction* locReaction, double locPullHistConfidenceLevelCut, bool locHistDependenceFlag, string locActionUniqueString = "") :
+		DAnalysisAction(locReaction, "Hist_KinFitResults", true, locActionUniqueString), 
+		dHistDependenceFlag(locHistDependenceFlag), dNumConfidenceLevelBins(400), dNumPullBins(200), dNum2DPBins(200), dNum2DThetaBins(140), dNum2DPhiBins(180), dNum2DPullBins(100),
+		dNum2DConfidenceLevelBins(100), dNum2DBeamEBins(240), dMinPull(-4.0), dMaxPull(4.0), dMinP(0.0), dMaxP(10.0), dMinTheta(0.0), dMaxTheta(140.0),
+		dMinPhi(-180.0), dMaxPhi(180.0), dMinBeamE(0.0), dMaxBeamE(12.0), dPullHistConfidenceLevelCut(locPullHistConfidenceLevelCut), dAnalysisUtilities(NULL) {}
+
+	private:
+		bool dHistDependenceFlag;
+
+	public:
 		unsigned int dNumConfidenceLevelBins, dNumPullBins, dNum2DPBins, dNum2DThetaBins, dNum2DPhiBins, dNum2DPullBins, dNum2DConfidenceLevelBins, dNum2DBeamEBins;
 		double dMinPull, dMaxPull, dMinP, dMaxP, dMinTheta, dMaxTheta, dMinPhi, dMaxPhi, dMinBeamE, dMaxBeamE;
 
@@ -505,6 +523,7 @@ class DHistogramAction_MissingTransverseMomentum : public DAnalysisAction
 		}
 
 		void Initialize(JEventLoop* locEventLoop);
+		void Reset_NewEvent(void){dPreviousSourceObjects.clear();}
 
 	private:
 		bool Perform_Action(JEventLoop* locEventLoop, const DParticleCombo* locParticleCombo);
@@ -518,4 +537,3 @@ class DHistogramAction_MissingTransverseMomentum : public DAnalysisAction
 };
 
 #endif // _DHistogramActions_Reaction_
-

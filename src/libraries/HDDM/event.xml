@@ -96,13 +96,13 @@
         </cereTruthPoint>
       </Cerenkov>
       <RICH minOccurs="0">
-        <richHit maxOccurs="unbounded" minOccurs="0" t="float" x="float" y="float" z="float"/>
+        <richTruthHit maxOccurs="unbounded" minOccurs="0" t="float" x="float" y="float" z="float"/>
         <richTruthPoint E="float" maxOccurs="unbounded" minOccurs="0" primary="boolean" ptype="int" px="float" py="float" pz="float" t="float" track="int" x="float" y="float" z="float">
           <trackID minOccurs="0" itrack="int"/>
         </richTruthPoint>
       </RICH>
       <DIRC minOccurs="0">
-        <dircHit maxOccurs="unbounded" minOccurs="0" t="float" x="float" y="float" z="float" E="float"/>
+        <dircTruthHit maxOccurs="unbounded" minOccurs="0" t="float" x="float" y="float" z="float" E="float"/>
         <dircTruthPoint E="float" maxOccurs="unbounded" minOccurs="0" primary="boolean" ptype="int" px="float" py="float" pz="float" t="float" track="int" x="float" y="float" z="float">
           <trackID minOccurs="0" itrack="int"/>
         </dircTruthPoint>
@@ -162,19 +162,28 @@
           <psHit dE="float" t="float" maxOccurs="unbounded"/>
           <psTruthHit dE="float" t="float" maxOccurs="unbounded" itrack="int" ptype="int"/>
         </psTile>
-	<psTruthPoint E="float" dEdx="float" maxOccurs="unbounded" minOccurs="0" phi="float" primary="boolean" ptype="int" px="float" py="float" pz="float" column="int" arm="int" t="float" track="int" x="float" y="float" z="float">
-	  <trackID minOccurs="0" itrack="int"/>
-	</psTruthPoint>
+	    <psTruthPoint E="float" dEdx="float" maxOccurs="unbounded" minOccurs="0" phi="float" primary="boolean" ptype="int" px="float" py="float" pz="float" column="int" arm="int" t="float" track="int" x="float" y="float" z="float">
+	      <trackID minOccurs="0" itrack="int"/>
+	    </psTruthPoint>
       </pairSpectrometerFine>
       <pairSpectrometerCoarse minOccurs="0">
         <pscPaddle maxOccurs="unbounded" minOccurs="0" module="int" arm="int">
           <pscHit dE="float" t="float" maxOccurs="unbounded"/>
           <pscTruthHit dE="float" t="float" maxOccurs="unbounded" itrack="int" ptype="int"/>
         </pscPaddle>
-	<pscTruthPoint E="float" dEdx="float" maxOccurs="unbounded" minOccurs="0" phi="float" primary="boolean" ptype="int" px="float" py="float" pz="float" module="int" t="float" arm="int" track="int" x="float" y="float" z="float">
-	  <trackID minOccurs="0" itrack="int"/>
-	</pscTruthPoint>
+	    <pscTruthPoint E="float" dEdx="float" maxOccurs="unbounded" minOccurs="0" phi="float" primary="boolean" ptype="int" px="float" py="float" pz="float" module="int" t="float" arm="int" track="int" x="float" y="float" z="float">
+	      <trackID minOccurs="0" itrack="int"/>
+	    </pscTruthPoint>
       </pairSpectrometerCoarse>
+      <tripletPolarimeter minOccurs="0">
+        <tpolSector maxOccurs="unbounded" minOccurs="0" ring="int" sector="int">
+          <tpolHit dE="float" t="float" maxOccurs="unbounded"/>
+          <tpolTruthHit dE="float" t="float" maxOccurs="unbounded" itrack="int" ptype="int"/>
+        </tpolSector>
+	    <tpolTruthPoint E="float" dEdx="float" maxOccurs="unbounded" minOccurs="0" phi="float" primary="boolean" ptype="int" px="float" py="float" pz="float" module="int" t="float" arm="int" track="int" x="float" y="float" z="float">
+	      <trackID minOccurs="0" itrack="int"/>
+	    </tpolTruthPoint>
+      </tripletPolarimeter>
       <mcTrajectory minOccurs="0">
         <mcTrajectoryPoint E="float" dE="float" maxOccurs="unbounded" mech="int" minOccurs="0" part="int" primary_track="int" px="float" py="float" pz="float" radlen="float" step="float" t="float" track="int" x="float" y="float" z="float"/>
       </mcTrajectory>
@@ -185,6 +194,9 @@
 		  <fmwpcTruthHit dE="float" dx="float" maxOccurs="unbounded" t="float"/>
 	      <fmwpcHit dE="float" maxOccurs="unbounded" t="float"/>
         </fmwpcChamber>
+        <fmwpcTruthPoint E="float" maxOccurs="unbounded" minOccurs="0" primary="boolean" ptype="int" px="float" py="float" pz="float" t="float" track="int" x="float" y="float" z="float">
+          <trackID minOccurs="0" itrack="int"/>
+        </fmwpcTruthPoint>
 	  </forwardMWPC>
 
     </hitView>

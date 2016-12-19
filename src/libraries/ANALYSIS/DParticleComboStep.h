@@ -2,6 +2,7 @@
 #define _DParticleComboStep_
 
 #include <deque>
+#include <vector>
 #include <iostream>
 
 #include "JANA/JObject.h"
@@ -130,7 +131,7 @@ class DParticleComboStep
 		const DKinematicData* dTargetParticle; //NULL for no target
 
 		// FINAL PARTICLES:
-		deque<const DKinematicData*> dFinalParticles; //if particle is null: missing or decaying! //these are DChargedTrackHypothesis or DNeutralParticleHypothesis objects if detected
+		vector<const DKinematicData*> dFinalParticles; //if particle is null: missing or decaying! //these are DChargedTrackHypothesis or DNeutralParticleHypothesis objects if detected
 
 		// PRODUCTION/DECAY SPACETIME VERTEX:
 		DLorentzVector dSpacetimeVertex;

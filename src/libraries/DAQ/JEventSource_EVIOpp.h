@@ -189,6 +189,7 @@ class JEventSource_EVIOpp: public jana::JEventSource{
 		bool     LOOP_FOREVER;
 		uint32_t USER_RUN_NUMBER;
 		int      VERBOSE;
+		int      VERBOSE_ET;
 		float    TIMEOUT;
 		uint32_t NTHREADS;
 		bool     PRINT_STATS;
@@ -198,6 +199,7 @@ class JEventSource_EVIOpp: public jana::JEventSource{
 		bool     LINK_BORCONFIG;
 		bool     LINK_CONFIG;
 		bool     IGNORE_EMPTY_BOR;
+		bool     TREAT_TRUNCATED_AS_ERROR;
 		
 		uint32_t jobtype;
 };

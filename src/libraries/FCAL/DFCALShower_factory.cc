@@ -320,7 +320,10 @@ DFCALShower_factory::FillCovarianceMatrix(DFCALShower *shower){
 
 	if (VERBOSE>3) {printf("(E,r,phi,z,t)  "); ErphiztCovariance.Print(); }
 	DMatrixDSym &D = ErphiztCovariance.Similarity(rotationmatrix);
-	shower->ExyztCovariance = D;
+	for (int i=0; i<5; i++) {
+		for (int j=0; j<5; j++)
+			shower->ExyztCovariance(i, j) = D(i, j);
+	}
 	if (VERBOSE>2) {printf("(E,x,y,z,t)    "); shower->ExyztCovariance.Print(); }
 
 	return NOERROR;

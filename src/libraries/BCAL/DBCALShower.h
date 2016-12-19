@@ -5,7 +5,7 @@
 #include <JANA/JFactory.h>
 #include <math.h>
 #include <DMatrix.h>
-#include <DMatrixDSym.h>
+#include <TMatrixFSym.h>
 using namespace jana;
 
 class DBCALShower:public JObject{
@@ -22,7 +22,7 @@ class DBCALShower:public JObject{
     float z;
     float t;
     int N_cell;
-	DMatrixDSym ExyztCovariance;
+	TMatrixFSym ExyztCovariance;
 
     float const EErr() const { return sqrt(ExyztCovariance(0,0)); }
     float const xErr() const { return sqrt(ExyztCovariance(1,1)); }

@@ -7,6 +7,8 @@
 
 #include <cmath>
 #include <vector>
+#include <iomanip>
+using namespace std;
 
 #include <JANA/JException.h>
 using namespace jana;
@@ -240,6 +242,9 @@ bool  HDET::read(uint32_t* &buff, uint32_t &buff_len, bool allow_swap)
 	// so no lock is needed for manipulating pool objects.
 	
 	if( et_buffs.empty() ){
+	
+		if(VERBOSE>3) cout << "HDET: et_buffs empty. Will read new ET event ..." << endl;
+	
 		// No event buffers ready, read in another ET event
 		int TIMEOUT = 2;
 		struct timespec timeout;
@@ -255,6 +260,8 @@ bool  HDET::read(uint32_t* &buff, uint32_t &buff_len, bool allow_swap)
 		size_t et_len=0;
 		et_event_getdata(pe, (void**)&et_buff);
 		et_event_getlength(pe, &et_len);
+		
+		if(VERBOSE>3) cout << "HDET: read ET event with total length of " << et_len << " bytes (" << et_len/4 << " words)" << endl;
 		
 		// A single ET event may have multiple EVIO blocks in it
 		// Each block may have several EVIO events in it.
@@ -272,8 +279,10 @@ bool  HDET::read(uint32_t* &buff, uint32_t &buff_len, bool allow_swap)
 		while(et_idx < et_len/4){
 			
 			// Pointer to start of EVIO block header
-			if(VERBOSE>3)cout << " Looking for EVIO block header at et_idx=" << et_idx << endl;
+			if(VERBOSE>3)cout << "HDET: Looking for EVIO block header at et_idx=" << et_idx << endl;
 			uint32_t *evio_block = &et_buff[et_idx];
+			
+			if(VERBOSE>5) PrintEVIOBlockHeader(evio_block);
 
 			// Check byte order of event by looking at magic #
 			swap_needed = false;
@@ -282,19 +291,19 @@ bool  HDET::read(uint32_t* &buff, uint32_t &buff_len, bool allow_swap)
 				case 0xc0da0100:  swap_needed = false;  break;
 				case 0x0001dac0:  swap_needed = true;   break;
 				default:
-					cout << "EVIO magic word not present!" << endl;
+					cout << "HDET: EVIO magic word not present!" << endl;
 					return (err_code=HDET_ERROR);
 			}
 			Nevio_blocks++;
 			uint32_t len = evio_block[0];
 			if(swap_needed) len = swap32(len);
 			if(VERBOSE>3){
-				cout << "Swapping is " << (swap_needed ? "":"not ") << "needed" << endl;
-				cout << " Num. words in EVIO buffer: "<<len<<endl;
+				cout << "HDET: Swapping is " << (swap_needed ? "":"not ") << "needed" << endl;
+				cout << "HDET:  Num. words in EVIO buffer: "<<len<<endl;
 			}
 				
 			bool is_last_evio_block = (evio_block[5]>>(9+8))&0x1;
-			if(VERBOSE>3)cout << " Is last EVIO block?: " << is_last_evio_block << endl;
+			if(VERBOSE>3)cout << "HDET: Is last EVIO block?: " << is_last_evio_block << endl;
 
 			// Loop over all evio events in ET event
 			uint32_t idx = 8; // point to first EVIO event in block
@@ -302,6 +311,8 @@ bool  HDET::read(uint32_t* &buff, uint32_t &buff_len, bool allow_swap)
 
 				// Size of events in bytes
 				uint32_t mylen = swap_needed ? swap32(evio_block[idx]):evio_block[idx];
+				
+				if(VERBOSE>3)cout << "HDET: Looking for EVIO event at idx="<<idx<<" (mylen="<<mylen<<" words)" << endl;
 
 				// Check that EVIO event length doesn't claim to
 				// extend past ET buffer.
@@ -320,11 +331,13 @@ bool  HDET::read(uint32_t* &buff, uint32_t &buff_len, bool allow_swap)
 				uint32_t *mybuff = NULL;
 				uint32_t mybuff_len = 0;
 				if(!et_buff_pool.empty()){
+					if(VERBOSE>3)cout << "HDET: Getting buffer from pool" << endl;
 					auto b = et_buff_pool.front();
 					et_buff_pool.pop_front();
 					mybuff = b.first;
 					mybuff_len = b.second;
 					if(mybuff_len < (mylen+1)){ // +1 for length word
+						if(VERBOSE>3)cout << "HDET: buffer too small ("<<mybuff_len<<" < "<<(mylen+1)<<") discarding so new one will be allocated ..." << endl;
 						delete[] mybuff;
 						mybuff = NULL;
 					}
@@ -334,9 +347,10 @@ bool  HDET::read(uint32_t* &buff, uint32_t &buff_len, bool allow_swap)
 				// we got from it was too small. Allocate a buffer of the correct size.
 				if(mybuff==NULL){
 					mybuff_len = mylen+1;
+					if(VERBOSE>3)cout << "HDET: Allocating buffer of length: " << mybuff_len << " words" <<endl;
 					mybuff = new uint32_t[mybuff_len];
 					if(mybuff==NULL){
-						err_mess << "Failed to allocate buffer of length " << mybuff_len << " words";
+						err_mess << "HDET: Failed to allocate buffer of length " << mybuff_len << " words";
 						return (err_code=HDET_ALLOC_FAILED);
 					}
 				}
@@ -344,9 +358,12 @@ bool  HDET::read(uint32_t* &buff, uint32_t &buff_len, bool allow_swap)
 				// Copy event into "buff", byte swapping if needed.
 				// If no swapping is needed, we just copy it all over
 				// in one go.
+				if(VERBOSE>3 && swap_needed && !allow_swap) cout << "HDET: Swapping is needed, but user does not allow." << endl;
 				if( swap_needed && allow_swap ){
+					if(VERBOSE>3)cout << "HDET: swapping EVIO buffer ... " <<endl;
 					swap_bank(mybuff, &evio_block[idx], mylen+1);
 				}else{
+					if(VERBOSE>3)cout << "HDET: copying EVIO buffer without swapping ... " <<endl;
 					memcpy(mybuff, &evio_block[idx], (mylen+1)*4);
 				}
 
@@ -359,19 +376,22 @@ bool  HDET::read(uint32_t* &buff, uint32_t &buff_len, bool allow_swap)
 			
 			// bump index to next EVIO block
 			et_idx += idx;
-			if(VERBOSE>3)cout << " EVIO events found so far: " << et_buffs.size() << endl;
+			if(VERBOSE>3)cout << "HDET: EVIO events found so far: " << et_buffs.size() << endl;
 			if(is_last_evio_block){
-				if(VERBOSE>3) cout << " Block flagged as last in ET event. Ignoring last " << (et_len/4 - et_idx) << " words" <<endl;
+				if(VERBOSE>3) cout << "HDET: Block flagged as last in ET event. Ignoring last " << (et_len/4 - et_idx) << " words" <<endl;
 				break;
 			}
 		}
 
 		// Put ET event back since we're done with it
+		if(VERBOSE>5)cout << "HDET: returning ET event to system" << endl;
 		et_event_put(sys_id, att_id, pe);
 
-		if(VERBOSE>3) cout << "        Found " << et_buffs.size() << " events in the ET event stack." << endl;
+		if(VERBOSE>3) cout << "HDET:        Found " << et_buffs.size() << " events in the ET event stack." << endl;
 
 	} // if( et_buffs.empty() )
+	
+	if(VERBOSE>3) cout << "HDET: number of et event buffers: " << et_buffs.size() << endl;
 	
 	// If we still have no events then something has gone wrong!
 	if( et_buffs.empty() ) return (err_code=HDET_ERROR);
@@ -384,9 +404,48 @@ bool  HDET::read(uint32_t* &buff, uint32_t &buff_len, bool allow_swap)
 	et_buffs.pop_front();
 	buff     = p.first;
 	buff_len = p.second;
+	
+	if(VERBOSE>9) DumpBinary(buff, &buff[buff_len], 256);
 
 	return (err_code=HDET_OK);
 #endif  // HAVE_ET
+}
+
+//------------------------
+// PrintEVIOBlockHeader
+//------------------------
+void HDET::PrintEVIOBlockHeader(uint32_t *inbuff)
+{
+	string swap_str = "(unknown, swapping bypassed)";
+	uint32_t magic = inbuff[7];
+	bool swap_needed = false;
+	switch(magic){
+		case 0xc0da0100:  swap_str = "(without swapping)";
+			break;
+		case 0x0001dac0:  swap_str = "(after swapping)";
+			swap_needed = true;
+			break;
+	}
+	
+	uint32_t buff[8];
+	if(swap_needed){
+		for(int i=0; i<8; i++) buff[i] = swap32(inbuff[i]);
+	}else{
+		for(int i=0; i<8; i++) buff[i] =inbuff[i];
+	}
+
+	cout << endl;
+	cout << "EVIO Block Header: " << swap_str << endl;
+	cout << "------------------------" << endl;
+	cout << " Block Length: " << HexStr(buff[0]) << " (" << buff[0] << " words = " << (buff[0]>>(10-2)) << " kB)" << endl;
+	cout << " Block Number: " << HexStr(buff[1]) << endl;
+	cout << "Header Length: " << HexStr(buff[2]) << " (should be 0x00000008)" << endl;
+	cout << "  Event Count: " << HexStr(buff[3]) << endl;
+	cout << "   Reserved 1: " << HexStr(buff[4]) << endl;
+	cout << "     Bit Info: " << HexStr(buff[5]>>8) << endl;
+	cout << "      Version: " << HexStr(buff[5]&0xFF) << endl;
+	cout << "   Reserved 3: " << HexStr(buff[6]) << endl;
+	cout << "   Magic word: " << HexStr(buff[7]) << endl;
 }
 
 //----------------
@@ -404,4 +463,53 @@ void HDET::PrintStats(void)
 	cout << endl;
 }
 
+//----------------
+// DumpBinary
+//----------------
+void HDET::DumpBinary(const uint32_t *iptr, const uint32_t *iend, uint32_t MaxWords, const uint32_t *imark)
+{
+    /// This is used for debugging. It will print to the screen the words
+    /// starting at the address given by iptr and ending just before iend
+    /// or for MaxWords words, whichever comes first. If iend is NULL,
+    /// then MaxWords will be printed. If MaxWords is zero then it is ignored
+    /// and only iend is checked. If both iend==NULL and MaxWords==0, then
+    /// only the word at iptr is printed.
+
+    cout << "HDET: Dumping binary: istart=" << hex << iptr << " iend=" << iend << " MaxWords=" << dec << MaxWords << endl;
+
+    if(iend==NULL && MaxWords==0) MaxWords=1;
+    if(MaxWords==0) MaxWords = (uint32_t)0xffffffff;
+
+    uint32_t Nwords=0;
+    while(iptr!=iend && Nwords<MaxWords){
+
+        // line1 is hex and line2 is decimal
+        stringstream line1, line2;
+
+        // print words in columns 8 words wide. First part is
+        // reserved for word number
+        uint32_t Ncols = 8;
+        line1 << setw(5) << Nwords;
+        line2 << string(5, ' ');
+
+        // Loop over columns
+        for(uint32_t i=0; i<Ncols; i++, iptr++, Nwords++){
+
+            if(iptr == iend) break;
+            if(Nwords>=MaxWords) break;
+
+            stringstream iptr_hex;
+            iptr_hex << hex << "0x" << *iptr;
+
+            string mark = (iptr==imark ? "*":" ");
+
+            line1 << setw(12) << iptr_hex.str() << mark;
+            line2 << setw(12) << *iptr << mark;
+        }
+
+        cout << line1.str() << endl;
+        cout << line2.str() << endl;
+        cout << endl;
+    }
+}
 
