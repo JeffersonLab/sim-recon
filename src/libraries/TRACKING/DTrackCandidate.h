@@ -34,7 +34,7 @@ class DTrackCandidate:public DKinematicData{
 	public:
 		JOBJECT_PUBLIC(DTrackCandidate);
 		
-		DTrackCandidate():chisq(0),Ndof(0),rt(0){}
+		DTrackCandidate():chisq(0),Ndof(0),rt(0),IsSmoothed(0){}
 
 		float chisq;			///< Chi-squared for the track (not chisq/dof!)
 		int Ndof;				///< Number of degrees of freedom in the fit
@@ -53,6 +53,8 @@ class DTrackCandidate:public DKinematicData{
 		// use the DParticleID Get_CDCRings & Get_FDCPlanes functions to extract the information from these
 		unsigned int dCDCRings; //CDC rings where the track has an associated DCDCTrackHit //rings correspond to bits (1 -> 28)
 		unsigned int dFDCPlanes; //FDC planes where the track has an associated DFDCPseudoHit //planes correspond to bits (1 -> 24)
+
+      bool IsSmoothed; // Boolean value to indicate whether the smoother was run succesfully over this track.
 
 		void toStrings(vector<pair<string,string> > &items)const{
 			DKinematicData::toStrings(items);

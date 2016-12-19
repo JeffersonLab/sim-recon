@@ -272,6 +272,7 @@ jerror_t DTrackTimeBased_factory::evnt(JEventLoop *loop, uint64_t eventnumber)
       timebased_track->pulls = track->pulls;
       timebased_track->trackid = track->id;
       timebased_track->candidateid=track->candidateid;
+      timebased_track->IsSmoothed = track->IsSmoothed;
       
       // Lists of hits used in the previous pass
       vector<const DCDCTrackHit *>cdchits;
@@ -955,6 +956,7 @@ bool DTrackTimeBased_factory::DoFit(const DTrackWireBased *track,
       timebased_track->chisq = fitter->GetChisq();
       timebased_track->Ndof = fitter->GetNdof();
       timebased_track->pulls = fitter->GetPulls();
+      timebased_track->IsSmoothed = fitter->GetIsSmoothed();
       timebased_track->trackid = track->id;
       timebased_track->candidateid=track->candidateid;
       

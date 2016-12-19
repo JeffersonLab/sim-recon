@@ -969,8 +969,8 @@ DTrackCandidate_factory_StraightLine::DoFilter(double t0,double start_z,
       finder->FindDoca(z,Sbest,dir,origin,&pos);
       cand->setPosition(pos);
 
-      // Run the smoother
-      Smooth(trajectory,updates,hits,cand);
+      // Run the smoother 
+      if (Smooth(trajectory,updates,hits,cand) == NOERROR) cand->IsSmoothed=true;
 
       for (unsigned int k=0;k<used_fdc_hits_best_fit.size();k++){
          if (used_fdc_hits_best_fit[k]==1){

@@ -129,6 +129,7 @@ class DTrackFitter:public jana::JObject{
 		int GetNdof(void) const {return Ndof;}
 		unsigned int GetNumPotentialFDCHits(void) const {return potential_fdc_hits_on_track;}
 		unsigned int GetNumPotentialCDCHits(void) const {return potential_cdc_hits_on_track;}
+      bool GetIsSmoothed(void) const {return IsSmoothed;}
 		
 		vector<pull_t>& GetPulls(void){return pulls;}
 		fit_type_t GetFitType(void) const {return fit_type;}
@@ -188,6 +189,7 @@ class DTrackFitter:public jana::JObject{
 		fit_status_t fit_status;									//< Status of values in fit_params (kFitSuccess, kFitFailed, ...)
 		vector<const DCDCTrackHit*> cdchits_used_in_fit;	//< The CDC hits actually used in the fit
 		vector<const DFDCPseudo*> fdchits_used_in_fit;		//< The FDC hits actually used in the fit
+      bool IsSmoothed;                                   //< Indicates if the smoother routine finished successfully
 
 		unsigned int potential_fdc_hits_on_track;
 		unsigned int potential_cdc_hits_on_track;

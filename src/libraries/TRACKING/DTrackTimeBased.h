@@ -37,6 +37,8 @@ class DTrackTimeBased:public DKinematicData{
 
 		const DReferenceTrajectory *rt; ///< pointer to reference trjectory representing this track
 
+      bool IsSmoothed; // Boolean value to indicate whether the smoother was run succesfully over this track.
+
 		typedef struct{
 		  double t0,t0_sigma;
 		  DetectorSystem_t system;

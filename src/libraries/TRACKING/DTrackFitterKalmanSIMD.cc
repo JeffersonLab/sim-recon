@@ -7119,7 +7119,7 @@ kalman_error_t DTrackFitterKalmanSIMD::ForwardFit(const DMatrix5x1 &S0,const DMa
 
    // Fill pull vector using smoothed filter results
    pulls.clear();
-   SmoothForward();
+   if(SmoothForward() == NOERROR) IsSmoothed = true;
 
    // output lists of hits used in the fit and fill pull vector
    cdchits_used_in_fit.clear();
@@ -7378,7 +7378,7 @@ kalman_error_t DTrackFitterKalmanSIMD::ForwardCDCFit(const DMatrix5x1 &S0,const 
 
    // Run smoother and fill pulls vector
    pulls.clear();
-   SmoothForwardCDC();
+   if(SmoothForwardCDC() == NOERROR) IsSmoothed = true;
 
    // output lists of hits used in the fit and fill the pull vector
    cdchits_used_in_fit.clear();
@@ -7611,7 +7611,7 @@ kalman_error_t DTrackFitterKalmanSIMD::CentralFit(const DVector2 &startpos,
 
    // Run smoother and fill pulls vector
    pulls.clear();
-   SmoothCentral();
+   if(SmoothCentral() == NOERROR) IsSmoothed = true;
 
    // output lists of hits used in the fit 
    cdchits_used_in_fit.clear();

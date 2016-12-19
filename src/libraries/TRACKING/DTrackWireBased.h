@@ -28,6 +28,8 @@ class DTrackWireBased:public DKinematicData{
 
 		const DReferenceTrajectory *rt; ///< pointer to reference trjectory representing this track
 
+      bool IsSmoothed; // Boolean value to indicate whether the smoother was run succesfully over this track.
+
 		// Hit CDC Rings & FDC Planes
 		// use the DParticleID Get_CDCRings & Get_FDCPlanes functions to extract the information from these
 		unsigned int dCDCRings; //CDC rings where the track has an associated DCDCTrackHit //rings correspond to bits (1 -> 28)
