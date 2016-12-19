@@ -107,6 +107,10 @@ void ExtractTimeOffsets(int run = 2931, TString filename = "hd_root.root", TStri
     }
 
     if(residualHist != NULL && priorOffsetHist != NULL){
+        // scale prior CCDB values by the number of files
+        double NumberOfFiles = priorOffsetHist->GetBinContent(769);
+        if (NumberOfFiles!=1) priorOffsetHist->Scale(1/NumberOfFiles);
+
         int nBinsX = residualHist->GetNbinsX();
         int nBinsY = residualHist->GetNbinsY();
 

@@ -78,36 +78,36 @@ jerror_t JEventProcessor_BCAL_TDC_Timing::brun(JEventLoop *loop, int32_t runnumb
     DGeometry* geom = app->GetDGeometry(runnumber);
     geom->GetTargetZ(Z_TARGET);
 
-    //////
-    // THIS NEEDS TO CHANGE IF THERE IS A NEW TABLE
-    //////
-    //get timewalk corrections from CCDB
-    JCalibration *jcalib = loop->GetJCalibration();
-    //these tables hold: module layer sector end c0 c1 c2 c3
-    vector<vector<float> > tdc_timewalk_table;
-    jcalib->Get("BCAL/timewalk_tdc",tdc_timewalk_table);
+    // //////
+    // // THIS NEEDS TO CHANGE IF THERE IS A NEW TABLE
+    // //////
+    // //get timewalk corrections from CCDB
+    // JCalibration *jcalib = loop->GetJCalibration();
+    // //these tables hold: module layer sector end c0 c1 c2 c3
+    // vector<vector<float> > tdc_timewalk_table;
+    // jcalib->Get("BCAL/timewalk_tdc",tdc_timewalk_table);
 
-    for (vector<vector<float> >::const_iterator iter = tdc_timewalk_table.begin();
-          iter != tdc_timewalk_table.end();
-          ++iter) {
-       if (iter->size() != 8) {
-          cout << "DBCALUnifiedHit_factory: Wrong number of values in timewalk_tdc table (should be 8)" << endl;
-          continue;
-       }
-       //be really careful about float->int conversions
-       int module = (int)((*iter)[0]+0.5);
-       int layer  = (int)((*iter)[1]+0.5);
-       int sector = (int)((*iter)[2]+0.5);
-       int endi   = (int)((*iter)[3]+0.5);
-       DBCALGeometry::End end = (endi==0) ? DBCALGeometry::kUpstream : DBCALGeometry::kDownstream;
-       float c0 = (*iter)[4];
-       float c1 = (*iter)[5];
-       float c2 = (*iter)[6];
-       float a_thresh = (*iter)[7];
-       int cellId = DBCALGeometry::cellId(module, layer, sector);
-       readout_channel channel(cellId,end);
-       tdc_timewalk_map[channel] = timewalk_coefficients(c0,c1,c2,a_thresh);
-    }
+    // for (vector<vector<float> >::const_iterator iter = tdc_timewalk_table.begin();
+    //       iter != tdc_timewalk_table.end();
+    //       ++iter) {
+    //    if (iter->size() != 8) {
+    //       cout << "DBCALUnifiedHit_factory: Wrong number of values in timewalk_tdc table (should be 8)" << endl;
+    //       continue;
+    //    }
+    //    //be really careful about float->int conversions
+    //    int module = (int)((*iter)[0]+0.5);
+    //    int layer  = (int)((*iter)[1]+0.5);
+    //    int sector = (int)((*iter)[2]+0.5);
+    //    int endi   = (int)((*iter)[3]+0.5);
+    //    DBCALGeometry::End end = (endi==0) ? DBCALGeometry::kUpstream : DBCALGeometry::kDownstream;
+    //    float c0 = (*iter)[4];
+    //    float c1 = (*iter)[5];
+    //    float c2 = (*iter)[6];
+    //    float a_thresh = (*iter)[7];
+    //    int cellId = DBCALGeometry::cellId(module, layer, sector);
+    //    readout_channel channel(cellId,end);
+    //    tdc_timewalk_map[channel] = timewalk_coefficients(c0,c1,c2,a_thresh);
+    // }
 
     /// Read in initial calibration constants and write to root file for use in later calibration
     vector<double> raw_channel_global_offset;
@@ -118,12 +118,16 @@ jerror_t JEventProcessor_BCAL_TDC_Timing::brun(JEventLoop *loop, int32_t runnumb
     japp->RootFillLock(this);
     //TH1D *CCDB_raw_channel_global_offset = new TH1D("CCDB_raw_channel_global_offset","Offsets at time of running;channel;offset",768,0.5,768.5);
     int counter = 1;
+    Fill1DWeightedHistogram("BCAL_Global_Offsets", "Target Time", "CCDB_raw_channel_global_offset",
+                            769, 1,
+                            "Offsets at time of running;CCDB Index;CCDB timing offset [ns]",
+                            769, 0.5, 769.5);
     for (vector<double>::iterator iter = raw_channel_global_offset.begin(); iter != raw_channel_global_offset.end(); ++iter) {
         //CCDB_raw_channel_global_offset->SetBinContent(counter,*iter);
         Fill1DWeightedHistogram("BCAL_Global_Offsets", "Target Time", "CCDB_raw_channel_global_offset",
                                 counter, *iter,
                                 "Offsets at time of running;CCDB Index;CCDB timing offset [ns]",
-                                768, 0.5, 768.5);
+                                769, 0.5, 769.5);
         counter++;
     }
     japp->RootFillUnLock(this);
@@ -224,13 +228,13 @@ jerror_t JEventProcessor_BCAL_TDC_Timing::evnt(JEventLoop *loop, uint64_t eventn
       // Next look directly at the DBCALUnifiedHit to get the corrected times and plot those seperately
       if (bcalUnifiedHitVector[i]->has_TDC_hit){
          double correctedTDCTime = bcalUnifiedHitVector[i]->t_TDC;
-         if (bcalUnifiedHitVector[i]->t_TDC != bcalUnifiedHitVector[i]->t){ // Time walk correction has not been applied
-            // Apply the timewalk correction
-            readout_channel channel(cellId,bcalUnifiedHitVector[i]->end);
-            timewalk_coefficients tdc_coeff = tdc_timewalk_map[channel];
-            // HERE IS THE TIMEWALK CORRECTION
-            correctedTDCTime -= tdc_coeff.c0 + tdc_coeff.c1/pow(pulse_peak/tdc_coeff.a_thresh, tdc_coeff.c2);
-         }
+         // if (bcalUnifiedHitVector[i]->t_TDC != bcalUnifiedHitVector[i]->t){ // Time walk correction has not been applied
+         //    // Apply the timewalk correction
+         //    readout_channel channel(cellId,bcalUnifiedHitVector[i]->end);
+         //    timewalk_coefficients tdc_coeff = tdc_timewalk_map[channel];
+         //    // HERE IS THE TIMEWALK CORRECTION
+         //    correctedTDCTime -= tdc_coeff.c0 + tdc_coeff.c1/pow(pulse_peak/tdc_coeff.a_thresh, tdc_coeff.c2);
+         // }
          char name[200];
          sprintf(name, "Module %.2i Layer %.2i Sector %.2i", bcalUnifiedHitVector[i]->module, bcalUnifiedHitVector[i]->layer, bcalUnifiedHitVector[i]->sector);
          if (bcalUnifiedHitVector[i]->end == 0){
@@ -282,10 +286,11 @@ jerror_t JEventProcessor_BCAL_TDC_Timing::evnt(JEventLoop *loop, uint64_t eventn
    vector <const DChargedTrack *> chargedTrackVector;
    loop->Get(chargedTrackVector);
 
+   Fill1DHistogram("BCAL_Global_Offsets", "Debug", "Success", 1, "Success profile;Step", 16, -0.5, 15.5);
    for (unsigned int iTrack = 0; iTrack < chargedTrackVector.size(); iTrack++){
       // Pick out the best charged track hypothesis for this charged track based only on the Tracking FOM
       // const DChargedTrackHypothesis* bestHypothesis = chargedTrackVector[iTrack]->Get_BestTrackingFOM();
-
+      Fill1DHistogram("BCAL_Global_Offsets", "Debug", "Success", 2, "Success profile;Step", 16, -0.5, 15.5);
       // get charge and choose pion hypothesis as most likely
       int charge = chargedTrackVector[iTrack]->Get_Charge();
       char q[2];
@@ -298,6 +303,7 @@ jerror_t JEventProcessor_BCAL_TDC_Timing::evnt(JEventLoop *loop, uint64_t eventn
           sprintf(q,"-");
       }
       if (bestHypothesis == NULL) continue;
+      Fill1DHistogram("BCAL_Global_Offsets", "Debug", "Success", 3, "Success profile;Step", 16, -0.5, 15.5);
 
       // Now from this hypothesis we can get the detector matches to the BCAL
       const DBCALShowerMatchParams* bcalMatch = bestHypothesis->Get_BCALShowerMatchParams();
@@ -307,10 +313,14 @@ jerror_t JEventProcessor_BCAL_TDC_Timing::evnt(JEventLoop *loop, uint64_t eventn
       //float Z_track = position.z();
       //float_track = momentum.Mag();
       if (bcalMatch == NULL) continue; 
+      Fill1DHistogram("BCAL_Global_Offsets", "Debug", "Success", 4, "Success profile;Step", 16, -0.5, 15.5);
+      if (scMatch == NULL) continue;
+      Fill1DHistogram("BCAL_Global_Offsets", "Debug", "Success", 5, "Success profile;Step", 16, -0.5, 15.5);
 
       // We also need the reference trajectory, which is buried deep in there
       const DTrackTimeBased *timeBasedTrack = (const DTrackTimeBased *) bcalMatch->dTrack;
       if (timeBasedTrack->FOM < 0.0027) continue; // 3-sigma cut on tracking FOM
+      Fill1DHistogram("BCAL_Global_Offsets", "Debug", "Success", 6, "Success profile;Step", 16, -0.5, 15.5);
       const DReferenceTrajectory *rt = timeBasedTrack->rt;
 
       // Use CDC dEdx to help reject protons
@@ -346,7 +356,9 @@ jerror_t JEventProcessor_BCAL_TDC_Timing::evnt(JEventLoop *loop, uint64_t eventn
       //int res2 = rt->GetIntersectionWithRadius(DBCALGeometry::GetBCAL_inner_rad(),proj_pos, &innerpathLength, &innerflightTime);
       //if (res1==NOERROR && res2==NOERROR) {
       if (rt->GetIntersectionWithRadius(r_shower,proj_pos, &pathLength, &flightTime)==NOERROR){
-          if (thisRFBunch->dNumParticleVotes >= 2 && scMatch != NULL){ // Require good RF bunch and this track match the SC
+          Fill1DHistogram("BCAL_Global_Offsets", "Debug", "Success", 7, "Success profile;Step", 16, -0.5, 15.5);
+          if (thisRFBunch->dNumParticleVotes >= 2){ // Require good RF bunch and this track match the SC
+              Fill1DHistogram("BCAL_Global_Offsets", "Debug", "Success", 8, "Success profile;Step", 16, -0.5, 15.5);
               // We have the flight time to our BCAL point, so we can get the target time
               double targetCenterTime = t_shower - flightTime - ((timeBasedTrack->position()).Z() - Z_TARGET) / SPEED_OF_LIGHT;
               sprintf(name, "AllShowers_q%s", q);
@@ -375,6 +387,7 @@ jerror_t JEventProcessor_BCAL_TDC_Timing::evnt(JEventLoop *loop, uint64_t eventn
                               P_track, E_shower/P_track, title,
                               200, 0.0, 5.0, 200, 0, 2);
               if (dEdx_pion) {
+                  Fill1DHistogram("BCAL_Global_Offsets", "Debug", "Success", 9, "Success profile;Step", 16, -0.5, 15.5);
                   sprintf(name, "PionShowers_q%s", q);
                   sprintf(title, "Pion showers; E_{shower} [GeV]; t_{Target} - t_{RF} [ns]");
                   Fill2DHistogram("BCAL_Global_Offsets", "Showers", name,
@@ -407,14 +420,13 @@ jerror_t JEventProcessor_BCAL_TDC_Timing::evnt(JEventLoop *loop, uint64_t eventn
                       E_shower, N_points, title,
                       500, 0.0, 5.0, 50, 0, 50);
 
-
       // Loop over the points within the cluster
       for (unsigned int iPoint = 0; iPoint < pointVector.size(); iPoint++){
          const DBCALPoint *thisPoint = pointVector[iPoint];
          //if (thisPoint->E() < 0.05) continue; // The timing is known not to be great for very low energy, so only use our best info 
          double rpoint = thisPoint->r();
          float E_point = thisPoint->E();
-        if (rt->GetIntersectionWithRadius(rpoint,proj_pos, &pathLength, &flightTime)==NOERROR){
+         if (rt->GetIntersectionWithRadius(rpoint,proj_pos, &pathLength, &flightTime)==NOERROR){
             // Now proj_pos contains the projected position of the track at this particular point within the BCAL
             // We can plot the difference of the projected position and the BCAL position as a function of the channel
             sprintf(name , "Module%.2iLayer%.2iSector%.2i", thisPoint->module(), thisPoint->layer(), thisPoint->sector());
@@ -563,7 +575,9 @@ jerror_t JEventProcessor_BCAL_TDC_Timing::evnt(JEventLoop *loop, uint64_t eventn
    // double t_shower = shower_t;
    // double E_shower = shower_E;
    char name[200], title[200];
+   Fill1DHistogram("BCAL_Global_Offsets", "Debug", "Success", 10, "Success profile;Step", 16, -0.5, 15.5);
    if (thisRFBunch->dNumParticleVotes >= 2){ // Require good RF bunch
+       Fill1DHistogram("BCAL_Global_Offsets", "Debug", "Success", 11, "Success profile;Step", 16, -0.5, 15.5);
        vector<const DVertex*> locVertex;
        loop->Get(locVertex);       
        // *** get unmatched BCAL showers from neutral showers
@@ -580,6 +594,7 @@ jerror_t JEventProcessor_BCAL_TDC_Timing::evnt(JEventLoop *loop, uint64_t eventn
        vector<const DTrackTimeBased*> locTrackTimeBased;
        loop->Get(locTrackTimeBased);
        for (unsigned int ibcalshower = 0; ibcalshower < locBCALShowers.size(); ibcalshower++){
+           Fill1DHistogram("BCAL_Global_Offsets", "Debug", "Success", 12, "Success profile;Step", 16, -0.5, 15.5);
            const DBCALShower *bcalshower = locBCALShowers[ibcalshower];
            double x = bcalshower->x;
            double y = bcalshower->y;
@@ -602,6 +617,7 @@ jerror_t JEventProcessor_BCAL_TDC_Timing::evnt(JEventLoop *loop, uint64_t eventn
                if (TMath::Abs(dZ < 40.0) && TMath::Abs(dPhi) < 15) matched=1;
            }
            if (matched) continue;
+           Fill1DHistogram("BCAL_Global_Offsets", "Debug", "Success", 13, "Success profile;Step", 16, -0.5, 15.5);
 
            float vertexX = locVertex[0]->dSpacetimeVertex.X();
            float vertexY = locVertex[0]->dSpacetimeVertex.Y();
