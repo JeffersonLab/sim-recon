@@ -9,15 +9,18 @@
     <reaction maxOccurs="unbounded" minOccurs="0" type="int" weight="float">
       <beam minOccurs="0" type="Particle_t">
         <momentum E="float" px="float" py="float" pz="float"/>
+        <polarization minOccurs="0" Px="float" Py="float" Pz="float"/>
         <properties charge="int" mass="float"/>
       </beam>
       <target minOccurs="0" type="Particle_t">
         <momentum E="float" px="float" py="float" pz="float"/>
+        <polarization minOccurs="0" Px="float" Py="float" Pz="float"/>
         <properties charge="int" mass="float"/>
       </target>
       <vertex maxOccurs="unbounded">
         <product decayVertex="int" id="int" maxOccurs="unbounded" mech="int" parentid="int" pdgtype="int" type="Particle_t">
           <momentum E="float" px="float" py="float" pz="float"/>
+          <polarization minOccurs="0" Px="float" Py="float" Pz="float"/>
           <properties minOccurs="0" charge="int" mass="float"/>
         </product>
         <origin t="float" vx="float" vy="float" vz="float"/>
