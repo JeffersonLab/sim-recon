@@ -50,15 +50,6 @@ jerror_t DEventRFBunch_factory_Combo::brun(jana::JEventLoop *locEventLoop, int32
 	vector<const DEventRFBunch*> locEventRFBunches;
 	locEventLoop->Get(locEventRFBunches);
 
-	//Make sure that brun() is called (to get rf period) before using.
-	//Cannot call JEventLoop->Get() because object may be in datastream (REST), bypassing factory brun() call.
-	dRFTimeFactory = static_cast<DRFTime_factory*>(locEventLoop->GetFactory("DRFTime"));
-	if(!dRFTimeFactory->brun_was_called())
-	{
-		dRFTimeFactory->brun(locEventLoop, locEventLoop->GetJEvent().GetRunNumber());
-		dRFTimeFactory->Set_brun_called();
-	}
-
 	// Get DReactions:
 	// Get list of factories and find all the ones producing
 	// DReaction objects. (A simpler way to do this would be to
