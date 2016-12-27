@@ -379,7 +379,7 @@ c
         det = 6
       elseif (cnames(nlevel).eq.'DET7') then
         det = 7
-      elseif (cnames(nlevel).eq.'CONV') then
+      elseif (cnames(nlevel).eq.'PTAR') then
         det = 8
       elseif (cnames(nlevel).eq.'LIH2') then
         det = 9

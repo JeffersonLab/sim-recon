@@ -356,6 +356,7 @@ MACRO dxcut
   cut=$sigma([cutval]+([wcoriginx]*wcnx)+([wcoriginy]*wcny)+([wcoriginz]*wcnz))
   satt * lsty 7
   next
+  message dxcut [1] [cutthe] [cutphi] [cut] [theta] [phi] [u] [v] [su] [sv]
   dxcut [1] [cutthe] [cutphi] [cut] [theta] [phi] [u] [v] [su] [sv]
   exec setview [theta] [phi] 0 [u0] [v0] [su] [sv]
   exec setcutplane [cutthe] [cutphi] [cutval]
@@ -572,4 +573,9 @@ MACRO setangles theta phi psio
   global/create wctheta [theta] 'euler theta of view in wc frame'
   global/create wcphi [phi] 'euler phi of view in wc frame'
   global/create wcpsio [psio] 'euler psi offset of view in wc frame'
+RETURN
+
+MACRO show
+  global/import wc*
+  message 'wc origin in cm: ' [wcoriginx] [wcoriginy] [wcoriginz]
 RETURN
