@@ -381,7 +381,7 @@ c        endif
       endif
       if (beamE0 .gt. 0) then
         call cobrems(beamE0,beamEpeak,beamEmit,radThick,
-     +               radColDist,colDiam,0)
+     +               radColDist,colDiam,1)
       elseif (infile(1) .eq. 0) then
         continue    ! single-particle gun (mode 1), ignore background gen.
       elseif (bgrate .gt. 0) then
