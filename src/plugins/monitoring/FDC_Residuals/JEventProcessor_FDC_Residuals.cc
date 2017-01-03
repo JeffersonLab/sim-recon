@@ -10,7 +10,7 @@ using namespace jana;
 #include "HDGEOMETRY/DMagneticFieldMapNoField.h"
 #include "HistogramTools.h"
 
-// extracted from run11553
+// extracted from run 11553
 const double deflect[24]={0.256449, 0.257153, 0.259054, 0.257982, 0.257663, 0.252944,
 			  0.260737, 0.265413, 0.262766, 0.263953, 0.265173, 0.264403,
 			  0.260384, 0.268576, 0.2578, 0.262166, 0.264653, 0.256705,
@@ -356,7 +356,7 @@ jerror_t JEventProcessor_FDC_Residuals::evnt(JEventLoop *loop, uint64_t eventnum
     for (unsigned int i = 0; i < cells; i++)
       packageHit[(cellsHit[i] - 1) / 6]++;
     
-    unsigned int minCells = 4; //At least 4 cells hit in any package for relatively "unbiased" efficiencies
+    unsigned int minCells = 5; //At least 4 cells hit in any package for relatively "unbiased" efficiencies
     if (packageHit[0] < minCells && packageHit[1] < minCells && packageHit[2] < minCells && packageHit[3] < minCells) continue;
     
     // Fill Histograms for accepted Tracks

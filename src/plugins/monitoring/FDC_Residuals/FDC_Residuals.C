@@ -217,10 +217,8 @@ void FDC_Residuals(bool save = 0){
   cUncertain->Divide(2);
   cUncertain->cd(1);
   
-  TH2 *hPseudoResSvsQ = (TH2*) (gDirectory->Get("hPseudoResSvsQ"));
+  TH2 *hPseudoResSvsQ = (TH2*) (gDirectory->Get("hPseudoResSvsQ_6"));
   hPseudoResSvsQ->Draw("colz");
-
-  cUncertain->cd(2);
 
   nslices = 150;
   TH1D *ResS[nslices];
@@ -228,6 +226,7 @@ void FDC_Residuals(bool save = 0){
   double q_err[nslices];
   double sigma[nslices];
   double sigma_err[nslices];
+
   char hname[256];
   for (int i=0; i < nslices; i++) {
     q[i] = 2*i/10. + 1./10.  ;
@@ -246,15 +245,40 @@ void FDC_Residuals(bool save = 0){
     //ResS[i]->Draw();
     
     if (ResS[i]->GetEntries() > 1000){
-      TF1 *fgaus = new TF1("fgaus", "gaus", -0.05, 0.05);
+      TF1 *fgaus = new TF1("fgaus", "gaus(0) + gaus(3)", -0.1, 0.1);
       fgaus->SetLineColor(2);
       fgaus->SetNpx(360);
+      fgaus->FixParameter(2,0.01);
+      fgaus->FixParameter(5,0.05);
       ResS[i]->Fit("fgaus", "QR0");
 
+      fgaus->ReleaseParameter(2);
+      fgaus->ReleaseParameter(5);
 
-      sigma[i] = fgaus->GetParameter(2);
-      sigma_err[i] = fgaus->GetParError(2);
+      ResS[i]->SetMinimum(0);
+      ResS[i]->Fit("fgaus", "QR");
 
+      double sigma1 = fgaus->GetParameter(2);
+      double sigma2 = fgaus->GetParameter(5);
+
+      double dsigma1 = fgaus->GetParError(2);
+      double dsigma2 = fgaus->GetParError(5);
+      
+      double amp1 = fgaus->GetParameter(0);
+      double amp2 = fgaus->GetParameter(3);
+      
+      sigma[i] = sigma1;
+      //sigma[i] = sqrt((amp1*sigma1*sigma1 + amp2*sigma2*sigma2)/(amp1 + amp2));
+      
+      double delta1 = 2*amp1*amp1*sigma1*sigma1*sigma1 + amp1*amp2*sigma2*(3*sigma1*sigma1 - sigma2*sigma2);
+      delta1 /= (amp1*sigma1 + amp2*sigma2)*(amp1*sigma1 + amp2*sigma2);
+
+      double delta2 = 2*amp2*amp2*sigma2*sigma2*sigma2 + amp2*amp1*sigma1*(3*sigma2*sigma2 - sigma1*sigma1);
+      delta2 /= (amp1*sigma1 + amp2*sigma2)*(amp1*sigma1 + amp2*sigma2);
+
+      sigma_err[i] = dsigma1;
+      //sigma_err[i] = 1./2./sigma[i] * sqrt(delta1*delta1*dsigma1*dsigma1 + delta2*delta2*dsigma2*dsigma2);
+      
     }
     else {
       sigma[i] = 0;
@@ -262,6 +286,8 @@ void FDC_Residuals(bool save = 0){
     }
   }
 
+  cUncertain->cd(2);
+  
   TH1D *hsigma = new TH1D("hsigma", "", nslices, 0, 30);
   hsigma->GetYaxis()->SetRangeUser(0,0.2);
   hsigma->GetYaxis()->SetTitleFont(132);
@@ -282,8 +308,9 @@ void FDC_Residuals(bool save = 0){
   funct->SetLineColor(2);
   funct->Draw("same");
 
-  TF1 *fit=new TF1("fit", "[0]/x + [1]", 0.4 , 3.5);
+  TF1 *fit=new TF1("fit", "[0]/x + [1] + [2]*x", 0.5 , 30.5);
   fit->SetLineColor(4);
+  //fit->FixParameter(2,0);
   gsigma->Fit("fit","R");
  
   TF1 *fit_full=new TF1("fit_full", "[0]/x + [1]", 0 , 50);
@@ -291,7 +318,10 @@ void FDC_Residuals(bool save = 0){
   fit_full->SetLineStyle(2);
   fit_full->SetParameter(0, fit->GetParameter(0));
   fit_full->SetParameter(1, fit->GetParameter(1));
+  //fit_full->SetParameter(2, fit->GetParameter(2));
   fit_full->Draw("same");
+
+  gStyle->SetOptFit(1);
 
 
     
