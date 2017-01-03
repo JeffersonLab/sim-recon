@@ -201,9 +201,7 @@ jerror_t JEventProcessor_TOF_calib::evnt(JEventLoop *loop, uint64_t eventnumber)
     if (hit->pedestal){
       TOFPedestal->Fill(indx, (float)hit->pedestal);
       TOFEnergy->Fill(indx, (float)hit->pulse_integral);
-      const Df250PulsePedestal* phit;
-      hit->GetSingle(phit);
-      TOFPeak->Fill(indx, (float)phit->pulse_peak);
+      TOFPeak->Fill(indx, (float)hit->pulse_peak);
     }
 
     if (th[plane][bar-1][end]){ // only take first hit
@@ -216,10 +214,11 @@ jerror_t JEventProcessor_TOF_calib::evnt(JEventLoop *loop, uint64_t eventnumber)
       // test for overflow if raw data available
       vector <const Df250PulseIntegral*> PulseIntegral;
       hit->Get(PulseIntegral);
-      vector <const Df250WindowRawData*> WRawData;
-      PulseIntegral[0]->Get(WRawData);
+      //vector <const Df250WindowRawData*> WRawData;
+      //PulseIntegral[0]->Get(WRawData);
       int overflow = 0;
-      if ( WRawData.size() > 0) {
+      /*
+ if ( WRawData.size() > 0) {
 	for (int n=0;n<100;n++){
 	  if (WRawData[0]->samples[n] & 0x1000){
 	    overflow++;
@@ -228,7 +227,7 @@ jerror_t JEventProcessor_TOF_calib::evnt(JEventLoop *loop, uint64_t eventnumber)
       } else {
 	//overflow = PulseIntegral[0]->quality_factor;
       }
-
+*/
       if (end){
 	ADCHitsRight[plane].push_back(hit);
 	ADCRightOverFlow[plane].push_back(overflow);
@@ -287,9 +286,7 @@ jerror_t JEventProcessor_TOF_calib::evnt(JEventLoop *loop, uint64_t eventnumber)
 	newsingle.adc = (float)hitR->pulse_integral -
 	  (float)hitR->pedestal/(float)hitR->nsamples_pedestal*(float)hitR->nsamples_integral;
 
-	const Df250PulsePedestal* phit;
-	hitR->GetSingle(phit);
-	newsingle.Peak = phit->pulse_peak;
+	newsingle.Peak = hitR->pulse_peak;
 
 	newsingle.OverFlow = ADCRightOverFlow[plane][i];
 	TOFADCSingles[plane].push_back(newsingle);
@@ -310,9 +307,7 @@ jerror_t JEventProcessor_TOF_calib::evnt(JEventLoop *loop, uint64_t eventnumber)
 	newsingle.adc = (float)hit->pulse_integral -
 	  (float)hit->pedestal/(float)hit->nsamples_pedestal*(float)hit->nsamples_integral;
 
-	const Df250PulsePedestal* phit;
-	hit->GetSingle(phit);
-	newsingle.Peak = phit->pulse_peak;
+	newsingle.Peak = hit->pulse_peak;
 
 	newsingle.time = (float)hit->pulse_time*BINADC_2_TIME ;
 	newsingle.OverFlow = ADCLeftOverFlow[plane][j];
@@ -334,12 +329,9 @@ jerror_t JEventProcessor_TOF_calib::evnt(JEventLoop *loop, uint64_t eventnumber)
 	    newpaddle.adcR = (float)hitR->pulse_integral -
 	      (float)hitR->pedestal/(float)hitR->nsamples_pedestal*(float)hitR->nsamples_integral;
 
-	    const Df250PulsePedestal* phit;
-	    hitR->GetSingle(phit);
-	    newpaddle.PeakR = phit->pulse_peak;
+	    newpaddle.PeakR = hitR->pulse_peak;
 
-	    hit->GetSingle(phit);
-	    newpaddle.PeakL = phit->pulse_peak;
+	    newpaddle.PeakL = hit->pulse_peak;
 
 	    newpaddle.OverFlowL =  ADCLeftOverFlow[plane][j];
 	    newpaddle.OverFlowR =  ADCRightOverFlow[plane][i];
