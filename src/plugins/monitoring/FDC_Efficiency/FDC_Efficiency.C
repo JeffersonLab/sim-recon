@@ -56,7 +56,7 @@ void FDC_Efficiency(bool save = 0){
   trings_acc->SetLineColor(2);
   trings_acc->Draw("same");
 
-  Float_t minScale = 0.8;
+  Float_t minScale = 0.;
   Float_t maxScale = 1.0;    
 
   gDirectory->cd("../FDC_View");
@@ -112,6 +112,8 @@ void FDC_Efficiency(bool save = 0){
       h3->SetMaximum(maxScale);
       h3->GetXaxis()->SetTitle("X Position (cm)");
       h3->GetYaxis()->SetTitle("Y Position (cm)");
+      // h3->GetXaxis()->SetRangeUser(-2,2);
+      // h3->GetYaxis()->SetRangeUser(-10,10);
       h3->SetStats(0);
       h3->Draw("colz");
 

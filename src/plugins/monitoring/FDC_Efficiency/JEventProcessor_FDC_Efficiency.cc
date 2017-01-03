@@ -16,6 +16,8 @@ static TH1D *fdc_wire_expected_cell[25]; // Contains total number of expected hi
 static TH2D *fdc_pseudo_measured_cell[25]; //Filled with total actually detected before division at end
 static TH2D *fdc_pseudo_expected_cell[25]; // Contains total number of expected hits by DOCA
 
+static TH1D *fdc_pseudo_phi_cell[25];
+
 //For extraction of magnetic field slope, split the detectors into bins in radius
 const unsigned int rad = 1; // 1, 5 or 9
 
@@ -100,6 +102,9 @@ jerror_t JEventProcessor_FDC_Efficiency::init(void)
     sprintf(hname_expected, "fdc_pseudo_expected_cell[%d]", icell+1);
     fdc_pseudo_measured_cell[icell+1] = new TH2D(hname_measured, "", 100, -50, 50, 100, -50, 50);
     fdc_pseudo_expected_cell[icell+1] = new TH2D(hname_expected, "", 100, -50, 50, 100, -50, 50);
+
+    sprintf(hname_expected, "fdc_pseudo_phi_cell[%d]", icell+1);
+    fdc_pseudo_phi_cell[icell+1] = new TH1D(hname_expected, "", 360, -180, 180);
 
   }	
 
@@ -474,11 +479,14 @@ jerror_t JEventProcessor_FDC_Efficiency::evnt(JEventLoop *loop, uint64_t eventnu
       
 	///////////// START PSEUDO ANALYSIS /////////////////////////////////////////
       
+      Fill1DHistogram("FDC_Efficiency", "Pseudo", "Expected Hits Vs theta", interPosition.Theta()*TMath::RadToDeg(), "Expected Hits", 300, 0, 30);
+      Fill1DHistogram("FDC_Efficiency", "Pseudo", "Expected Hits Vs phi", interPosition.Phi()*TMath::RadToDeg(), "Expected Hits", 360, -180, 180);
       
       if(fdc_pseudo_expected_cell[cellNum] != NULL && cellNum < 25){
 	// FILL HISTOGRAMS
 	japp->RootFillLock(this); //ACQUIRE ROOT FILL LOCK
 	fdc_pseudo_expected_cell[cellNum]->Fill(interPosition.X(), interPosition.Y());
+	fdc_pseudo_phi_cell[cellNum]->Fill(interPosition.Phi()*TMath::RadToDeg());
 	japp->RootFillUnLock(this); //RELEASE ROOT FILL LOCK
       }
 
@@ -524,6 +532,9 @@ jerror_t JEventProcessor_FDC_Efficiency::evnt(JEventLoop *loop, uint64_t eventnu
 	    if (residualR < 2){ // = to account for non-gaussian tails and tracking/extrapolation errors
 	      foundPseudo = true;
 	      
+	      Fill1DHistogram("FDC_Efficiency", "Pseudo", "Measured Hits Vs theta", interPosition.Theta()*TMath::RadToDeg(), "Measured Hits", 300, 0, 30);
+	      Fill1DHistogram("FDC_Efficiency", "Pseudo", "Measured Hits Vs phi", interPosition.Phi()*TMath::RadToDeg(), "Measured Hits", 360, -180, 180);
+
 	      if(fdc_pseudo_measured_cell[cellNum] != NULL && cellNum < 25){
 		// fill histogramms with the predicted, not with the measured position
 		japp->RootFillLock(this); //ACQUIRE ROOT FILL LOCK
