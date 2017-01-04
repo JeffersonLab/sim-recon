@@ -33,16 +33,23 @@ void DCustomAction_TrackingEfficiency::Initialize(JEventLoop* locEventLoop)
 	TMap* locMiscInfoMap = new TMap(); //collection of pairs
 	locMiscInfoMap->SetName("MiscInfoMap");
 	locUserInfo->Add(locMiscInfoMap);
+	//set reaction name
+	locMiscInfoMap->Add(new TObjString("ReactionName"), new TObjString(locReaction->Get_ReactionName().c_str()));
 	//set pid
-	ostringstream locPIDStream;
-	locPIDStream << PDGtype(dMissingPID);
-	locMiscInfoMap->Add(new TObjString("MissingPID_PDG"), new TObjString(locPIDStream.str().c_str()));
+	ostringstream locOStream;
+	locOStream << PDGtype(dMissingPID);
+	locMiscInfoMap->Add(new TObjString("MissingPID_PDG"), new TObjString(locOStream.str().c_str()));
+	//set run#
+	locOStream.str("");
+	locOStream << locEventLoop->GetJEvent().GetRunNumber();
+	locMiscInfoMap->Add(new TObjString("RunNumber"), new TObjString(locOStream.str().c_str()));
 
 	//CHANNEL INFO
 	locBranchRegister.Register_Single<Float_t>("BeamEnergy");
 	locBranchRegister.Register_Single<Float_t>("BeamRFDeltaT");
 	locBranchRegister.Register_Single<Float_t>("ComboVertexZ");
 	locBranchRegister.Register_Single<UChar_t>("NumExtraTracks");
+	locBranchRegister.Register_Single<Float_t>("MissingMassSquared"); //is measured
 	locBranchRegister.Register_Single<Float_t>("KinFitChiSq"); //is -1 if no kinfit or failed to converge
 	locBranchRegister.Register_Single<UInt_t>("KinFitNDF"); //is 0 if no kinfit or failed to converged 
 	locBranchRegister.Register_Single<TVector3>("MissingP3"); //is kinfit if kinfit (& converged)
@@ -163,6 +170,7 @@ bool DCustomAction_TrackingEfficiency::Perform_Action(JEventLoop* locEventLoop, 
 	dTreeFillData.Fill_Single<Float_t>("BeamEnergy", locBeamParticle->energy());
 	dTreeFillData.Fill_Single<Float_t>("BeamRFDeltaT", locBeamRFDeltaT);
 	dTreeFillData.Fill_Single<UChar_t>("NumExtraTracks", (UChar_t)locNumExtraTracks);
+	dTreeFillData.Fill_Single<Float_t>("MissingMassSquared", locMeasuredMissingP4.M2());
 	dTreeFillData.Fill_Single<Float_t>("ComboVertexZ", locVertexZ);
 	if(locKinFitResults == NULL) //is true if no kinfit or failed to converged
 	{
