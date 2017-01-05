@@ -41,52 +41,474 @@
 using namespace xercesc;
 
 int explicit_repeat_count = 1;
+int write_xml_output_to_stdout = 0;
 
 void usage()
 {
    std::cerr
         << "\nUsage:\n"
-        << "    hddm-root [-o <filename>] [HDDM file]\n\n"
+        << "    hddm-root [-x] [-n <count>] [-o <filename>] [HDDM file]\n\n"
         << "Options:\n"
-        <<  "    -o <filename>    write to <filename>.root"
+        <<  "    -o <filename>  write to output root file <filename>\n"
+        <<  "    -n <count>     limit output to <count> rows\n"
+        <<  "    -x             write xml to stdout"
+        << " (in addition to root file output)\n"
         << std::endl;
 }
 
-struct attribute_t {
-   XString type;
-   union payload {
-      int i;
-      float f;
-      double d;
-      long int l;
-      Particle_t p;
-      char s[32];
-   };
-   payload datum;
+typedef xstream::xdr::istream ixstream;
 
-   attribute_t() {}
-   attribute_t(XString varname)
-    : type("") { datum.l = 0; }
-   attribute_t(XString varname, XString vartype) 
-    : type(vartype) { datum.l = 0; }
-   attribute_t(const attribute_t &src)
-    : type(src.type)
-   {
-      if (src.type == "string") {
-         strncpy(datum.s, src.datum.s, 30);
-      }
-      else {
-         datum.l = src.datum.l;
-      }
-   }
-   attribute_t operator=(const attribute_t &src) {
-      attribute_t copy(src);
-      return copy;
-   }
-   ~attribute_t() {}
+class attribute_t {
+ protected:
+   attribute_t() : fName(""), fType("") {}
+   attribute_t(XString name) : fName(name), fType("") {}
+   attribute_t(XString name, XString type) : fName(name), fType(type) {}
+   virtual ~attribute_t() {}
+
+ public:
+   virtual void reset() = 0;
+   virtual void *address() = 0;
+   virtual std::string toString() = 0;
+   virtual int read(ixstream *ifx) = 0;
+   virtual XString get_name() { return fName; }
+   virtual XString get_type() { return fType; }
+
+ private:
+   attribute_t(const attribute_t &src);
+   attribute_t &operator=(const attribute_t &src);
+
+ protected:
+   XString fName;
+   XString fType;
 };
 
-typedef std::map<XString,attribute_t> attribute_table;
+class int_attribute_t : public attribute_t {
+ public:
+   int_attribute_t() : attribute_t("", "int"), value(0) {}
+   int_attribute_t(XString name) : attribute_t(name, "int"), value(0) {}
+   virtual ~int_attribute_t() {}
+
+   int_attribute_t &operator=(const int_attribute_t &src) {
+      fName = src.fName;
+      value = src.value;
+      return *this;
+   }
+
+   virtual void reset() {
+      value = 0;
+   }
+   virtual void set(int val) {
+      value = val;
+   }
+   virtual void *address() {
+      return &value;
+   }
+   virtual std::string toString() {
+      std::stringstream str;
+      str << value;
+      return str.str();
+   }
+   virtual int read(ixstream *ifx) {
+      *ifx >> value;
+      return 4;
+   }
+
+   int value;
+};
+
+class boolean_attribute_t : public attribute_t {
+ public:
+   boolean_attribute_t() : attribute_t("", "boolean"), value(0) {}
+   boolean_attribute_t(XString name) : attribute_t(name, "boolean"), value(0) {}
+   virtual ~boolean_attribute_t() {}
+
+   boolean_attribute_t &operator=(const boolean_attribute_t &src) {
+      fName = src.fName;
+      value = src.value;
+      return *this;
+   }
+
+   virtual void reset() {
+      value = 0;
+   }
+   virtual void set(int val) {
+      value = val;
+   }
+   virtual void *address() {
+      return &value;
+   }
+   virtual std::string toString() {
+      std::stringstream str;
+      str << value;
+      return str.str();
+   }
+   virtual int read(ixstream *ifx) {
+      *ifx >> value;
+      return 4;
+   }
+
+   int value;
+};
+
+class Particle_attribute_t : public attribute_t {
+ public:
+   Particle_attribute_t() : attribute_t("", "Particle_t"), value(Unknown) {}
+   Particle_attribute_t(XString name) : attribute_t(name, "Particle_t"), 
+                                        value(Unknown) {}
+   virtual ~Particle_attribute_t() {}
+
+   Particle_attribute_t &operator=(const Particle_attribute_t &src) {
+      fName = src.fName;
+      value = src.value;
+      return *this;
+   }
+
+   virtual void reset() {
+      value = Unknown;
+   }
+   virtual void set(Particle_t val) {
+      value = val;
+   }
+   virtual void *address() {
+      return &value;
+   }
+   virtual std::string toString() {
+      std::stringstream str;
+      str << ParticleType(value);
+      return str.str();
+   }
+   virtual int read(ixstream *ifx) {
+      int val;
+      *ifx >> val;
+      value = (Particle_t)val;
+      return 4;
+   }
+
+   Particle_t value;
+};
+
+class long_attribute_t : public attribute_t {
+ public:
+   long_attribute_t() : attribute_t("", "long"), value(0) {}
+   long_attribute_t(XString name) : attribute_t(name, "long"), value(0) {}
+   virtual ~long_attribute_t() {}
+
+   long_attribute_t &operator=(const long_attribute_t &src) {
+      fName = src.fName;
+      value = src.value;
+      return *this;
+   }
+
+   virtual void reset() {
+      value = 0;
+   }
+   virtual void set(long int val) {
+      value = val;
+   }
+   virtual void *address() {
+      return &value;
+   }
+   virtual std::string toString() {
+      std::stringstream str;
+      str << value;
+      return str.str();
+   }
+   virtual int read(ixstream *ifx) {
+      *ifx >> value;
+      return 8;
+   }
+
+   long int value;
+};
+
+class float_attribute_t : public attribute_t {
+ public:
+   float_attribute_t() : attribute_t("", "float"), value(0) {}
+   float_attribute_t(XString name) : attribute_t(name, "float"), value(0) {}
+   virtual ~float_attribute_t() {}
+
+   float_attribute_t &operator=(const float_attribute_t &src) {
+      fName = src.fName;
+      value = src.value;
+      return *this;
+   }
+
+   virtual void reset() {
+      value = 0;
+   }
+   virtual void set(float val) {
+      value = val;
+   }
+   virtual void *address() {
+      return &value;
+   }
+   virtual std::string toString() {
+      std::stringstream str;
+      str << value;
+      return str.str();
+   }
+   virtual int read(ixstream *ifx) {
+      *ifx >> value;
+      return 4;
+   }
+
+   float value;
+};
+
+class double_attribute_t : public attribute_t {
+ public:
+   double_attribute_t() : attribute_t("", "double"), value(0) {}
+   double_attribute_t(XString name) : attribute_t(name, "double"), value(0) {}
+   ~double_attribute_t() {}
+
+   double_attribute_t &operator=(const double_attribute_t &src) {
+      fName = src.fName;
+      value = src.value;
+      return *this;
+   }
+
+   virtual void reset() {
+      value = 0;
+   }
+   virtual void set(double val) {
+      value = val;
+   }
+   virtual void *address() {
+      return &value;
+   }
+   virtual std::string toString() {
+      std::stringstream str;
+      str << value;
+      return str.str();
+   }
+   virtual int read(ixstream *ifx) {
+      *ifx >> value;
+      return 8;
+   }
+
+   double value;
+};
+
+class string_attribute_t : public attribute_t {
+ public:
+   string_attribute_t() : attribute_t("", "string") { reset(); }
+   string_attribute_t(XString name) : attribute_t(name, "string") { reset(); }
+   ~string_attribute_t() {}
+
+   string_attribute_t &operator=(const string_attribute_t &src) {
+      fName = src.fName;
+      strncpy(value, src.value, 80);
+      return *this;
+   }
+
+   virtual void reset() {
+      strncpy(value, "", 80);
+   }
+   virtual void set(char *val) {
+      strncpy(value, val, 80);
+   }
+   virtual void *address() {
+      return &value;
+   }
+   virtual std::string toString() {
+      return std::string(value);
+   }
+   virtual int read(ixstream *ifx) {
+      std::string val;
+      *ifx >> val;
+      strncpy(value, val.c_str(), 80);
+      return (val.size() + 7) / 4 * 4;
+   }
+
+   char value[80];
+};
+
+class anyURI_attribute_t : public attribute_t {
+ public:
+   anyURI_attribute_t() : attribute_t("", "anyURI") { reset(); }
+   anyURI_attribute_t(XString name) : attribute_t(name, "anyURI") { reset(); }
+   ~anyURI_attribute_t() {}
+
+   anyURI_attribute_t &operator=(const anyURI_attribute_t &src) {
+      fName = src.fName;
+      strncpy(value, src.value, 80);
+      return *this;
+   }
+
+   virtual void reset() {
+      strncpy(value, "", 80);
+   }
+   virtual void set(char *val) {
+      strncpy(value, val, 80);
+   }
+   virtual void *address() {
+      return &value;
+   }
+   virtual std::string toString() {
+      return std::string(value);
+   }
+   virtual int read(ixstream *ifx) {
+      std::string val;
+      *ifx >> val;
+      strncpy(value, val.c_str(), 80);
+      return (val.size() + 7) / 4 * 4;
+   }
+
+   char value[80];
+};
+
+class constant_attribute_t : public attribute_t {
+ public:
+   constant_attribute_t() : attribute_t("", "constant"), value(0)
+   { reset(); }
+   constant_attribute_t(XString name) : attribute_t(name, "constant"), value(0)
+   { reset(); }
+   ~constant_attribute_t() {}
+
+   void reset() {
+      if (value)
+         delete value;
+      value = new char[4];
+      strncpy(value, "", 4);
+   }
+   void set(const char *str) {
+      if (value)
+         delete value;
+      int size = (strlen(str) + 7) / 4 * 4;
+      value = new char[size];
+      strncpy(value, str, size);
+   }
+
+   constant_attribute_t &operator=(const constant_attribute_t &src) {
+      fName = src.fName;
+      set(src.value);
+      return *this;
+   }
+
+   virtual void *address() {
+      return value;
+   }
+   virtual std::string toString() {
+      return std::string(value);
+   }
+   virtual int read(ixstream *ifx) {
+      return 0;
+   }
+
+   char *value;
+};
+
+class element_t {
+ public:
+   element_t(TTree *tree)
+    : fKey(0), fTree(tree), fRepeats(0) {}
+   element_t(TTree *tree, XString name)
+    : fKey(0), fTree(tree), fName(name), fRepeats(0) {}
+   ~element_t() {}
+
+   void add_attribute(attribute_t *attr) {
+      fAttributes.push_back(attr);
+   }
+   void add_element(element_t *elem) {
+      fElements.push_back(elem);
+   }
+   void add_key(int_attribute_t *attr) {
+      fKey = attr;
+   }
+   void set_repeating() {
+      fRepeats = 1;
+   }
+
+   int read(ixstream *ifx) {
+      int size;
+      *ifx >> size;
+      if (size == 0)
+         return 4;
+      int seen;
+      int reps;
+      if (fRepeats) {
+         *ifx >> reps;
+         seen = 4;
+      }
+      else {
+         seen = 0;
+      }
+
+      static int indent = 0;
+      if (write_xml_output_to_stdout) {
+         if (indent == 0) {
+            std::cout << "<?xml version=\"1.0\" encoding=\"UTF-8\"?>"
+                      << std::endl
+                      << "<HDDM class=\"s\" version=\"1.0\" "
+                      << "xmlns=\"http://www.gluex.org/hddm\">"
+                      << std::endl;
+            ++indent;
+         }
+      }
+      while (seen < size) {
+         if (write_xml_output_to_stdout) {
+            for (int i=0; i < indent; ++i)
+               std::cout << "  ";
+            std::cout << "<" << fName;
+         }
+         std::list<attribute_t*>::iterator ater;
+         for (ater = fAttributes.begin(); ater != fAttributes.end(); ++ater) {
+            seen += (*ater)->read(ifx);
+            if (write_xml_output_to_stdout) {
+               std::cout << " " << (*ater)->get_name() << "=\"" 
+                         << (*ater)->toString() << "\"";
+            }
+         }
+         if (fElements.size() == 0) {
+            if (write_xml_output_to_stdout) {
+               std::cout << " />" << std::endl;
+            }
+            if (fTree)
+               fTree->Fill();
+            if (fKey)
+               ++fKey->value;
+         }
+         else {
+            if (write_xml_output_to_stdout) {
+               std::cout << ">" << std::endl;
+               ++indent;
+            }
+            std::list<element_t*>::iterator eter;
+            for (eter = fElements.begin(); eter != fElements.end(); ++eter) {
+               seen += (*eter)->read(ifx);
+            }
+            if (write_xml_output_to_stdout) {
+               --indent;
+               for (int i=0; i < indent; ++i) {
+                  std::cout << "  ";
+               }
+               std::cout << "</" << fName << ">" << std::endl;
+            }
+            if (fTree)
+               fTree->Fill();
+         }
+         --reps;
+      }
+      assert (seen == size);
+      if (fRepeats)
+         assert (reps == 0);
+      return size + 4;
+   }
+
+   std::list<attribute_t*> fAttributes;
+   std::list<element_t*> fElements;
+   int_attribute_t *fKey;
+   TTree *fTree;
+   XString fName;
+   int fRepeats;
+
+ private:
+   element_t(const element_t &src);
+   element_t &operator=(const element_t &src);
+};
+
+typedef std::map<XString,XString> attribute_list;
+typedef std::map<XString,attribute_t*> attribute_table;
 
 class TreeMaker
 {
@@ -95,14 +517,13 @@ class TreeMaker
       fRootFile = new TFile(S(filename), "recreate");
    }
    ~TreeMaker() {
-      std::map<XString,TTree*>::iterator iter;
-      for (iter = fTrees.begin(); iter != fTrees.end(); ++iter)
-         iter->second->Write();
       delete fRootFile;
    }
 
-   void build(const DOMElement* elem);
-   void filltrees(xstream::xdr::istream *ifx, DOMElement* el, int size);
+   void build(const DOMElement* elem, element_t *parent_element,
+                                      attribute_list columns);
+   int filltrees(ixstream *ifx, element_t *parent_element);
+   int savetrees(element_t *parent_element);
 
  private:
    TreeMaker(const TreeMaker &src) {}
@@ -113,7 +534,7 @@ class TreeMaker
 
  protected:
    TFile *fRootFile;
-   std::map<XString,TTree*> fTrees;
+   element_t *fTopElement;
    attribute_table fColumns;
 };
 
@@ -172,6 +593,10 @@ int main(int argC, char* argV[])
       {
          break;
       }
+      else if (strcmp(argV[argInd],"-x") == 0)
+      {
+         write_xml_output_to_stdout = 1;
+      }
       else if (strcmp(argV[argInd],"-o") == 0)
       {
          rootFilename = argV[++argInd];
@@ -213,6 +638,7 @@ int main(int argC, char* argV[])
            << "hddm-root: Error opening input stream " << hddmFile << std::endl;
       exit(1);
    }
+   std::ostringstream doc;
    std::ostringstream tmpFileStr;
    tmpFileStr << "tmp" << getpid();
    std::ofstream ofs(tmpFileStr.str().c_str());
@@ -224,6 +650,7 @@ int main(int argC, char* argV[])
    }
 
    ofs << "<?xml version=\"1.0\" encoding=\"UTF-8\"?>";
+   doc << std::endl;
    XString xmlHeader;
    XString line;
    if (getline(*ifs,line))
@@ -240,7 +667,8 @@ int main(int argC, char* argV[])
       else if (line.substr(0,5) == "<HDDM")
       {
          xmlHeader = line + "\n";
-         ofs << line;
+         ofs << line << std::endl;
+         doc << line << std::endl;
       }
       else
       {
@@ -259,7 +687,8 @@ int main(int argC, char* argV[])
    }
    while (getline(*ifs,line))
    {
-      ofs << line;
+      ofs << line << std::endl;
+      doc << line << std::endl;
       if (line == "</HDDM>")
       {
          break;
@@ -294,18 +723,18 @@ int main(int argC, char* argV[])
 
    // open root file for output and initialize the trees for writing
    TreeMaker builder(rootFilename);
-   builder.build(rootEl);
+   attribute_list columns;
+   element_t root_element(0);
+   builder.build(rootEl, &root_element, columns);
   
    int event_buffer_size;
    char *event_buffer = new char[event_buffer_size = 1000000];
    istreambuffer *isbuf = new istreambuffer(event_buffer,event_buffer_size);
-   xstream::xdr::istream *ifx = new xstream::xdr::istream(isbuf);
+   ixstream *ifx = new ixstream(isbuf);
    int integrity_check_mode = 0;
    int compression_mode = 0;
    while (reqcount && ifs->good())
    {
-      DOMNodeList* contList = rootEl->getChildNodes();
-      int contLength = contList->getLength();
       int tsize;
       ifs->read(event_buffer,4);
       if (ifs->eof()) {
@@ -397,7 +826,7 @@ int main(int argC, char* argV[])
          delete isbuf;
          char *new_buffer = new char[event_buffer_size = tsize+1000];
          isbuf = new istreambuffer(new_buffer,event_buffer_size);
-         ifx = new xstream::xdr::istream(isbuf);
+         ifx = new ixstream(isbuf);
          memcpy(new_buffer,event_buffer,4);
          *ifx >> tsize;
          delete[] event_buffer;
@@ -409,7 +838,7 @@ int main(int argC, char* argV[])
       if (integrity_check_mode == 1) {
          char crcbuf[10];
          istreambuffer sbuf(crcbuf,10);
-         xstream::xdr::istream xstr(&sbuf);
+         ixstream xstr(&sbuf);
          unsigned int recorded_crc;
          ifs->read(crcbuf,4);
          xstr >> recorded_crc;
@@ -439,45 +868,14 @@ int main(int argC, char* argV[])
 #endif
          }
       }
-
-      for (int c = 0; c < contLength; c++)
-      {
-         DOMNode* cont = contList->item(c);
-         short type = cont->getNodeType();
-         if (type == DOMNode::ELEMENT_NODE)
-         {
-            DOMElement* contEl = (DOMElement*) cont;
-            int size;
-            *ifx >> size;
-#ifdef VERBOSE_HDDM_LOGGING
-            XString cnameS(contEl->getTagName());
-            std::cerr << "hddm-root : top-level tag " << S(cnameS)
-                      << " found with size " << size
-                      << std::endl;
-#endif
-            if (size > 0)
-            {
-               builder.filltrees(ifx,contEl,size);
-            }
-            else {
-               XString repS(contEl->getAttribute(X("minOccurs")));
-               int rep = (repS == "")? 1 : atoi(S(repS));
-               if (rep != 0) {
-                  XString conameS(contEl->getTagName());
-                  std::cerr << "hddm-root warning: top-level tag " << S(conameS)
-                            << " found with zero size "
-                            << "inside an event with size " << tsize
-                            << " continue? [y/n] ";
-                  std::string ans;
-                  std::cin >> ans;
-                  if (ans[0] != 'y' && ans[0] != 'Y') {
-                     exit(5);
-                  }
-               }
-            }
-         }
-      }
+      builder.filltrees(ifx, &root_element);
    }
+   if (write_xml_output_to_stdout) {
+      std::cout << "</HDDM>" << std::endl;
+   }
+   builder.savetrees(&root_element);
+   TNamed docString("document_metadata_XML", doc.str().c_str());
+   docString.Write();
 
    if (ifs != &std::cin)
    {
@@ -488,60 +886,116 @@ int main(int argC, char* argV[])
    return 0;
 }
 
-void TreeMaker::build(const DOMElement* elem)
+void TreeMaker::build(const DOMElement* elem, element_t *parent_element,
+                                              attribute_list columns)
 {
    // Recursively create TTree objects to hold the contents of the hddm model
    // in the form of a row/column table, like a relational database model.
 
    XString elemS(elem->getTagName());
-   if (elemS != "HDDM") {
-      TTree *tree = new TTree(S(elemS), S(XString(elemS + " tree")));
-      attribute_table::iterator iter;
-      for (iter = fColumns.begin(); iter != fColumns.end(); ++iter) {
-         XString nameS = iter->first;
-         XString typeS = iter->second.type;
-         if (typeS == "int" || typeS == "boolean" || typeS == "Particle_t")
-            tree->Branch(S(nameS), (void*)&fColumns[nameS].datum.i,
-                                                 S(XString(nameS + "/I")));
-         else if (typeS == "long")
-            tree->Branch(S(nameS), (void*)&fColumns[nameS].datum.l,
-                                                 S(XString(nameS + "/L")));
-         else if (typeS == "float")
-            tree->Branch(S(nameS), (void*)&fColumns[nameS].datum.f,
-                                                 S(XString(nameS + "/F")));
-         else if (typeS == "double")
-            tree->Branch(S(nameS), (void*)&fColumns[nameS].datum.d,
-                                                 S(XString(nameS + "/D")));
-         else if (typeS == "string" || typeS == "anyURI")
-            tree->Branch(S(nameS), (void*)&fColumns[nameS].datum.s,
-                                                 S(XString(nameS + "/C")));
-      }
-      DOMNamedNodeMap* attrList = elem->getAttributes();
-      int attrListLength = attrList->getLength();
-      for (int a = 0; a < attrListLength; a++) {
-         DOMNode* node = attrList->item(a);
-         XString nameS(node->getNodeName());
-         XString typeS(node->getNodeValue());
-         XString colnameS(elemS + "_" + nameS);
-         fColumns[colnameS] = attribute_t(typeS);
-         if (typeS == "int" || typeS == "boolean" || typeS == "Particle_t")
-            tree->Branch(S(nameS), (void*)&fColumns[colnameS].datum.i,
-                                                   S(XString(nameS + "/I")));
-         else if (typeS == "long")
-            tree->Branch(S(nameS), (void*)&fColumns[colnameS].datum.l,
-                                                   S(XString(nameS + "/L")));
-         else if (typeS == "float")
-            tree->Branch(S(nameS), (void*)&fColumns[colnameS].datum.f,
-                                                   S(XString(nameS + "/F")));
-         else if (typeS == "double")
-            tree->Branch(S(nameS), (void*)&fColumns[colnameS].datum.d,
-                                                   S(XString(nameS + "/D")));
-         else if (typeS == "string" || typeS == "anyURI")
-            tree->Branch(S(nameS), (void*)&fColumns[colnameS].datum.s,
-                                                   S(XString(nameS + "/C")));
-      }
-      fTrees[elemS] = tree;
+   TTree *tree = new TTree(S(elemS), S(XString(elemS + " tree")));
+   element_t *this_element = new element_t(tree, elemS);
+   XString keyS("HDDM_MASTER_ORDERING_KEY");
+   if (fColumns.find(keyS) == fColumns.end()) {
+      int_attribute_t *key = new int_attribute_t("key");
+      fColumns[keyS] = key;
    }
+   tree->Branch("key", fColumns[keyS]->address(), "key/I");
+   this_element->add_key((int_attribute_t*)fColumns[keyS]);
+   XString repS(elem->getAttribute(X("maxOccurs")));
+   int rep = (repS == "unbounded")? INT_MAX :
+             (repS == "")? 1 :
+             atoi(S(repS));
+   if (explicit_repeat_count && rep > 1)
+      this_element->set_repeating();
+   attribute_list::iterator iter;
+   for (iter = columns.begin(); iter != columns.end(); ++iter) {
+      XString colS = iter->first;
+      XString nameS = iter->second;
+      XString typeS = fColumns[colS]->get_type();
+      if (typeS == "int" || typeS == "boolean" || typeS == "Particle_t")
+         tree->Branch(S(nameS), fColumns[colS]->address(),
+                                              S(XString(nameS + "/I")));
+      else if (typeS == "long")
+         tree->Branch(S(nameS), fColumns[colS]->address(),
+                                              S(XString(nameS + "/L")));
+      else if (typeS == "float")
+         tree->Branch(S(nameS), fColumns[colS]->address(),
+                                              S(XString(nameS + "/F")));
+      else if (typeS == "double")
+         tree->Branch(S(nameS), fColumns[colS]->address(),
+                                              S(XString(nameS + "/D")));
+      else if (typeS == "string" || typeS == "anyURI")
+         tree->Branch(S(nameS), fColumns[colS]->address(),
+                                              S(XString(nameS + "/C")));
+      else {
+         tree->Branch(S(nameS), fColumns[colS]->address(),
+                                              S(XString(nameS + "/C")));
+      }
+   }
+    
+   DOMNamedNodeMap* attrList = elem->getAttributes();
+   int attrListLength = attrList->getLength();
+   for (int a = 0; a < attrListLength; a++) {
+      DOMNode* node = attrList->item(a);
+      XString nameS(node->getNodeName());
+      XString typeS(node->getNodeValue());
+      XString colS(elemS + "_" + nameS);
+      if (columns.find(nameS) != columns.end())
+         nameS = colS;
+      if (typeS == "int") {
+         fColumns[colS] = new int_attribute_t(nameS);
+         tree->Branch(S(nameS), fColumns[colS]->address(),
+                                                S(XString(nameS + "/I")));
+      }
+      else if (typeS == "boolean") {
+         fColumns[colS] = new boolean_attribute_t(nameS);
+         tree->Branch(S(nameS), fColumns[colS]->address(),
+                                                S(XString(nameS + "/I")));
+      }
+      else if (typeS == "Particle_t") {
+         fColumns[colS] = new Particle_attribute_t(nameS);
+         tree->Branch(S(nameS), fColumns[colS]->address(),
+                                                S(XString(nameS + "/I")));
+      }
+      else if (typeS == "long") {
+         fColumns[colS] = new long_attribute_t(nameS);
+         tree->Branch(S(nameS), fColumns[colS]->address(),
+                                                S(XString(nameS + "/L")));
+      }
+      else if (typeS == "float") {
+         fColumns[colS] = new float_attribute_t(nameS);
+         tree->Branch(S(nameS), fColumns[colS]->address(),
+                                                S(XString(nameS + "/F")));
+      }
+      else if (typeS == "double") {
+         fColumns[colS] = new double_attribute_t(nameS);
+         tree->Branch(S(nameS), fColumns[colS]->address(),
+                                                S(XString(nameS + "/D")));
+      }
+      else if (typeS == "string") {
+         fColumns[colS] = new string_attribute_t(nameS);
+         tree->Branch(S(nameS), fColumns[colS]->address(),
+                                                S(XString(nameS + "/C")));
+      }
+      else if (typeS == "anyURI") {
+         fColumns[colS] = new anyURI_attribute_t(nameS);
+         tree->Branch(S(nameS), fColumns[colS]->address(),
+                                                S(XString(nameS + "/C")));
+      }
+      else if (nameS == "minOccurs" || nameS == "maxOccurs") {
+         continue;
+      }
+      else {
+         fColumns[colS] = new constant_attribute_t(nameS);
+         tree->Branch(S(nameS), fColumns[colS]->address(),
+                                                S(XString(nameS + "/C")));
+         ((constant_attribute_t*)fColumns[colS])->set(S(typeS));
+      }
+      columns[colS] = nameS;
+      this_element->add_attribute(fColumns[colS]);
+   }
+   parent_element->add_element(this_element);
 
    DOMNodeList* contList = elem->getChildNodes();
    int contLength = contList->getLength();
@@ -550,115 +1004,44 @@ void TreeMaker::build(const DOMElement* elem)
       short type = cont->getNodeType();
       if (type == DOMNode::ELEMENT_NODE) {
          DOMElement* contEl = (DOMElement*) cont;
-         build(contEl);
+         build(contEl, this_element, columns);
       }
    }
 }
 
-void TreeMaker::filltrees(xstream::xdr::istream *ifx, DOMElement* el, int size)
+int TreeMaker::filltrees(ixstream *ifx, element_t *parent_element)
 {
-   XString tagS(el->getTagName());
-   XString repS(el->getAttribute(X("maxOccurs")));
-   int rep = (repS == "unbounded")? INT_MAX :
-             (repS == "")? 1 :
-             atoi(S(repS));
-   if (explicit_repeat_count && rep > 1) {
-      *ifx >> rep;
-      size -= 4;
-   }
-
-   int r;
-   for (r = 0; r < rep && size > 0; r++) {
-      DOMNamedNodeMap* attrList = el->getAttributes();
-      int listLength = attrList->getLength();
-      for (int a = 0; a < listLength; a++)
-      {
-         XString nameS(attrList->item(a)->getNodeName());
-         XString typeS(attrList->item(a)->getNodeValue());
-         XString colnameS(tagS + "_" + nameS);
-         if (typeS == "int" || typeS == "boolean" || typeS == "Particle_t")
-         {
-            *ifx >> fColumns[colnameS].datum.i;
-            size -= 4;
-         }
-         else if (typeS == "long")
-         {
-            *ifx >> fColumns[colnameS].datum.l;
-            size -= 8;
-         }
-         else if (typeS == "float")
-         {
-            *ifx >> fColumns[colnameS].datum.f;
-            size -= 4;
-         }
-         else if (typeS == "double")
-         {
-            *ifx >> fColumns[colnameS].datum.d;
-            size -= 8;
-         }
-         else if (typeS == "string" || typeS == "anyURI")
-         {
-            std::string value;
-            *ifx >> value;
-            strncpy(fColumns[colnameS].datum.s, value.c_str(), 30);
-            int strsize = value.size();
-            size -= strsize + 4 + ((strsize % 4)? 4-(strsize % 4) : 0);
-         }
-      }
-      fTrees[tagS]->Fill();
-
-      DOMNodeList* contList = el->getChildNodes();
-      int contLength = contList->getLength();
-      for (int c = 0; c < contLength; c++)
-      {
-         DOMNode* cont = contList->item(c);
-         short type = cont->getNodeType();
-         if (type == DOMNode::ELEMENT_NODE)
-         {
-            DOMElement* contEl = (DOMElement*) cont;
-            int csize;
-            *ifx >> csize;
-            size -= 4;
+   element_t *HDDMelement = *parent_element->fElements.begin();
+   std::list<element_t*>::iterator iter;
+   int size = 0;
+   for (iter = HDDMelement->fElements.begin();
+        iter != HDDMelement->fElements.end();
+        ++iter)
+   {
+      size += (*iter)->read(ifx);
 #ifdef VERBOSE_HDDM_LOGGING
-            XString cnameS(contEl->getTagName());
-            std::cerr << "hddm-root : tag " << S(cnameS)
-                      << " found with size " << csize
-                      << std::endl;
+      XString cnameS((*iter)->fName);
+      std::cerr << "hddm-root : top-level tag " << S(cnameS)
+                << " found with size " << size
+                << std::endl;
 #endif
-            if (csize > 0) {
-               filltrees(ifx,contEl,csize);
-               size -= csize;
-            }
-#ifdef VERBOSE_HDDM_LOGGING
-            else {
-               XString irepS(contEl->getAttribute(X("minOccurs")));
-               int irep = (irepS == "")? 1 : atoi(S(irepS));
-               if (irep != 0) {
-                  XString conameS(contEl->getTagName());
-                  std::cerr << "hddm-root warning: tag " << S(conameS)
-                            << " found with zero size, "
-                            << "continue? [y/n] ";
-                  std::string ans;
-                  std::cin >> ans;
-                  if (ans[0] != 'y' && ans[0] != 'Y') {
-                     exit(5);
-                  }
-               }
-            }
-#endif
-         }
+   }
+   return size;
+}
+
+int TreeMaker::savetrees(element_t *parent_element)
+{
+   int count = 0;
+   std::list<element_t*>::iterator iter;
+   for (iter = parent_element->fElements.begin();
+        iter != parent_element->fElements.end();
+        ++iter)
+   {
+      if ((*iter)->fTree) {
+         (*iter)->fTree->Write();
+         ++count;
       }
+      count += savetrees(*iter);
    }
-   if (size != 0) {
-      std::cerr << "hddm-root : size mismatch in tag " << S(tagS)
-                << ", remainder is " << size
-                << ", cannot continue." << std::endl;
-      exit(5);
-   }
-   else if (explicit_repeat_count && r != rep) {
-      std::cerr << "hddm-root : repeat count mismatch in tag " << S(tagS)
-                << ", expected " << rep << " but saw " << r
-                << ", cannot continue." << std::endl;
-      exit(5);
-   }
+   return count;
 }
