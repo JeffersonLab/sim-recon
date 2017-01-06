@@ -1621,6 +1621,8 @@ double TensorCrossSection(TLorentzVector &q /* beam */,
 
   // dot products 
   double dp_sq=dp.Dot(dp);
+  double p1_dot_dp=p1.Dot(dp);
+  double p2_dot_dp=p2.Dot(dp);
   double p1_dot_p2=p1.Dot(p2);
   double p1_dot_dk=p1.Dot(dk);
   double p2_dot_dk=p2.Dot(dk);
@@ -1709,7 +1711,7 @@ double TensorCrossSection(TLorentzVector &q /* beam */,
   double N2_11=4.*q_dot_dp*q_dot_dp
     *(dksq_minus_dk_k_term*(p1dk_p2dk_term-2.*(k_dot_dk/k_sq)*p1p2_kdk_mixed)
       +p1k_p2k_term*(one_third_two_third_fac*one_third_two_third_fac*k_sq
-		     +(4./3.)*k_dot_dk*k_dot_dk/k_sq/k_sq*dksq_mius_dk_k_term));
+		     +(4./3.)*k_dot_dk*k_dot_dk/k_sq/k_sq*dksq_minus_dk_k_term));
   double temp=q_dot_dk*dp_dot_dk+one_third_two_third_fac*q_dot_k*dp_dot_k
     -k_dot_dk/k_sq*(q_dot_k*dp_dot_dk+q_dot_dk*dp_dot_k);
   double N2_22=8.*(2.*m_p_sq-p1_dot_p2)*temp*temp;
@@ -1736,7 +1738,7 @@ double TensorCrossSection(TLorentzVector &q /* beam */,
   double N2_13=-4.*q_dot_dp
     *(qp1p2k_qp2p1k_term*(one_third_two_third_fac*dp_dot_k
 			  *((1./3.)*dk_sq-(4./3.)*k_dot_dk*k_dot_dk/k_sq)
-			  +dk_dq*dp_dot_k*k_dot_dk*k_dot_dk/k_sq/k_sq
+			  +dk_sq*dp_dot_k*k_dot_dk*k_dot_dk/k_sq/k_sq
 			  +dp_dot_dk*(k_dot_dk/k_sq)*dksq_minus_dk_k_term)
       -qp1p2dk_qp2p1dk_term*dksq_minus_dk_k_term*(dp_dot_k*k_dot_dk/k_sq
 						  -dp_dot_dk));
@@ -1748,72 +1750,38 @@ double TensorCrossSection(TLorentzVector &q /* beam */,
       *(one_third_two_third_fac*q_dot_k*dp_dot_k
 	-k_dot_dk/k_sq*(dp_dot_dk*q_dot_k+dp_dot_k*q_dot_dk))
       +p1p2_kdk_mixed
-      *((1./3.)*dk_dq/k_sq+(8./3.)*k_dot_dk*k_dot_dk/k_sq/k_sq
+      *((1./3.)*dk_sq/k_sq+(8./3.)*k_dot_dk*k_dot_dk/k_sq/k_sq
 	*(dp_dot_dk*q_dot_k+dp_dot_k*q_dot_dk)
 	-2.*k_dot_dk/k_sq*(one_third_two_third_fac*q_dot_k*dp_dot_k
 			   +dp_dot_dk*q_dot_dk)));
       
-  double N2_15=-(8./3.)*q_dot_dp*dk_sq_minus_dk_k_term
+  double N2_15=-(8./3.)*q_dot_dp*dksq_minus_dk_k_term
       *(q_dot_dp*(p1dk_p2dk_term+one_third_two_third_fac*p1k_p2k_term
 		  -2.*k_dot_dk/k_sq*p1p2_kdk_mixed)
 	+qp1p2dk_qp2p1dk_term*(dp_dot_k*k_dot_dk/k_sq-dp_dot_dk)
 	+qp1p2k_qp2p1k_term*(dp_dot_dk*k_dot_dk/k_sq
 			     -dp_dot_k*one_third_two_third_fac));
   
-  double N2_23
-    =-4.*(q_dot_dk*dp_dot_dk+one_third_two_third_fac*q_dot_k*dp_dot_k
-	  -k_dot_dk/k_sq*(q_dot_k*dp_dot_dk+q_dot_dk*dp_dot_k))
-    *(
-      
-  double N2_24
-    =-4.*(q_dot_dk*dp_dot_dk-k_dot_dk/k_sq*(q_dot_k*dp_dot_dk+q_dot_dk*dp_dot_k)
-	  +one_third_two_third_fac*q_dot_k*dp_dot_k)
-    *(p2.Px()*((p2.Px()*p1_dot_dk+dk.Px()*(m_p_sq-p1_dot_p2))
-	       *(q_dot_dk-q_dot_k*k_dot_dk/k_sq)
-	       +(p2.Px()*p1_dot_k+k.Px()*(m_p_sq-p1_dot_p2))
-	       *(one_third_two_third_fac*q_dot_k-q_dot_dk*k_dot_dk/k_sq))
-      +p2.Py()*((p2.Py()*p1_dot_dk+dk.Py()*(m_p_sq-p1_dot_p2))
-	       *(q_dot_dk-q_dot_k*k_dot_dk/k_sq)
-	       +(p2.Py()*p1_dot_k+k.Py()*(m_p_sq-p1_dot_p2))
-	       *(one_third_two_third_fac*q_dot_k-q_dot_dk*k_dot_dk/k_sq))
-      );
-  double N2_25=2.*q_dot_p1*(q_dot_dk*dp_dot_dk
-			    -k_dot_dk*(q_dot_dk*dp_dot_k+q_dot_k*dp_dot_dk)
-			    +one_third_two_third_fac*q_dot_k*dp_dot_k)
-    *(dk_sq-2.*k_dot_dk*k_dot_dk/k_sq+k_sq*one_third_two_third_fac)
-    *(2.*(m_p_sq-p1_dot_p2)+p2.Perp2());
-  double N2_34=-4.*((q_dot_p2*p1_dot_dk+q_dot_p1*p2_dot_dk
-		    +q_dot_dk*(m_p_sq-p1_dot_p2))
-		   *(q_dot_dk-k_dot_dk/k_sq*q_dot_k)
-		   +(q_dot_p2*p1_dot_k+q_dot_p1*p2_dot_k
-		     +q_dot_k*(m_p_sq-p1_dot_p2))
-		   *(one_third_two_third_fac*q_dot_k-k_dot_dk/k_sq*q_dot_dk))
-    *(p2.Px()*(dp_dot_dk*k.Px()-k_dot_dk/k_sq*(dp_dot_dk*k.Px()+dp_dot_dk*dk.Px())
-	       +one_third_two_third_fac*dp_dot_k*k.Px())
-      +p2.Py()*(dp_dot_dk*k.Py()-k_dot_dk/k_sq*(dp_dot_dk*k.Py()+dp_dot_dk*dk.Py())
-		+one_third_two_third_fac*dp_dot_k*k.Py())
-      );
-  double N2_35=(8./3.)*(q_dot_p1*q_dot_p1+q_dot_p2*q_dot_p2)
-    *(dk_sq-k_dot_dk*k_dot_dk/k_sq)
-    *(p2.Px()*(dp_dot_dk*dk.Px()-k_dot_dk/k_sq*(dp_dot_dk*k.Px()+dp_dot_k*dk.Px())
-	       +one_third_two_third_fac*dp_dot_k*k.Px())
-      +p2.Py()*(dp_dot_dk*dk.Py()-k_dot_dk/k_sq*(dp_dot_dk*k.Py()+dp_dot_k*dk.Py())
-	       +one_third_two_third_fac*dp_dot_k*k.Py())
-      );
-  double N2_45=-(8./3.)*(dk_sq-k_dot_dk*k_dot_dk/k_sq)
-    *(p2.Px()*(p2.Px()*(q_dot_dp*p1_dot_dk+q_dot_p1*p2_dot_dk+q_dot_p2*p1_dot_dk
-			+(m_p_sq-p1_dot_p2)*(q_dot_dp*dk.Px()+q_dot_dk*p2.Px()))
-	       *(q_dot_dk-q_dot_k*k_dot_dk/k_sq)
-	       +p2.Px()*(q_dot_dp*p1_dot_k+q_dot_p1*p2_dot_k+q_dot_p2*p1_dot_k
-			+(m_p_sq-p1_dot_p2)*(q_dot_dp*k.Px()+q_dot_k*p2.Px()))
-	       *(one_third_two_third_fac*q_dot_k-q_dot_dk*k_dot_dk/k_sq))
-      +p2.Py()*(p2.Py()*(q_dot_dp*p1_dot_dk+q_dot_p1*p2_dot_dk+q_dot_p2*p1_dot_dk
-			 +(m_p_sq-p1_dot_p2)*(q_dot_dp*dk.Py()+q_dot_dk*p2.Py()))
-		*(q_dot_dk-q_dot_k*k_dot_dk/k_sq)
-		+p2.Py()*(q_dot_dp*p1_dot_k+q_dot_p1*p2_dot_k+q_dot_p2*p1_dot_k
-			  +(m_p_sq-p1_dot_p2)*(q_dot_dp*k.Py()+q_dot_k*p2.Py()))
-		*(one_third_two_third_fac*q_dot_k-q_dot_dk*k_dot_dk/k_sq))	
-      );
+  double N2_23=-4.*temp*(qp1p2dk_qp2p1dk_term*temp1+qp1p2k_qp2p1k_term*temp2);
+  double N2_24=-4.*temp*(p1dk_p2dk_term*temp3+p1k_p2k_term*temp4);      
+  double N2_25=-(16./3.)*q_dot_dp*(2.*m_p_sq-p1_dot_p2)*dksq_minus_dk_k_term
+    *(q_dot_dk*dp_dot_dk+one_third_two_third_fac*q_dot_k*dp_dot_k
+      -k_dot_dk/k_sq*(q_dot_k*dp_dot_dk+q_dot_dk*dp_dot_k));
+
+  double N2_34=4.*(one_third_two_third_fac*dp_dot_k*dp_dot_k
+		   +dp_dot_dk*dp_dot_dk-2.*k_dot_dk/k_sq*dp_dot_k*dp_dot_dk)
+    *(qp1p2dk_qp2p1dk_term*temp3+qp1p2k_qp2p1k_term*temp3);
+  double N2_35=(8./3.)*dksq_minus_dk_k_term*q_dot_dp
+    *(qp1p2dk_qp2p1dk_term*temp1+qp1p2k_qp2p1k_term*temp2);
+    
+  double N2_45=-(8./3.)*dksq_minus_dk_k_term
+    *((p1_dot_dk*(q_dot_dp*p2_dot_dp-q_dot_p2*dp_sq)
+       +p2_dot_dk*(q_dot_dp*p1_dot_dp-q_dot_p1*dp_sq)
+       +(m_p_sq-p1_dot_p2)*(q_dot_dp*dp_dot_dk-q_dot_dk*dp_sq))*temp3
+      +(p1_dot_k*(q_dot_dp*p2_dot_dp-q_dot_p2*dp_sq)
+	+p2_dot_k*(q_dot_dp*p1_dot_dp-q_dot_p1*dp_sq)
+	+(m_p_sq-p1_dot_p2)*(q_dot_dp*dp_dot_k-q_dot_k*dp_sq))*temp4);
+  
   double N2sq=N2_11+N2_22+N2_33+N2_44+N2_55
     +2.*(N2_12+N2_13+N2_14+N2_15+N2_23+N2_24+N2_25+N2_34+N2_35+N2_45);
   
