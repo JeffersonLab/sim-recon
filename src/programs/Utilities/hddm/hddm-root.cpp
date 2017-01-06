@@ -534,7 +534,7 @@ class TreeMaker
 
  protected:
    TFile *fRootFile;
-   element_t *fTopElement;
+   std::list<element_t*> fElements;
    attribute_table fColumns;
 };
 
@@ -893,8 +893,27 @@ void TreeMaker::build(const DOMElement* elem, element_t *parent_element,
    // in the form of a row/column table, like a relational database model.
 
    XString elemS(elem->getTagName());
+   std::list<element_t*>::iterator eter;
+   for (eter = fElements.begin(); eter != fElements.end(); ++eter) {
+      if (elemS == (*eter)->fName) {
+         elemS = parent_element->fName + "_" + elemS;
+      }
+   }
    TTree *tree = new TTree(S(elemS), S(XString(elemS + " tree")));
    element_t *this_element = new element_t(tree, elemS);
+   fElements.push_back(this_element);
+
+   XString repS(elem->getAttribute(X("maxOccurs")));
+   int rep = (repS == "unbounded")? INT_MAX :
+             (repS == "")? 1 :
+             atoi(S(repS));
+   if (explicit_repeat_count && rep > 1)
+      this_element->set_repeating();
+
+   // Create a new column called "key" to hold synchronization
+   // information between rows in different trees, similar to
+   // the way keys are used in relational databases (eg. JOIN).
+
    XString keyS("HDDM_MASTER_ORDERING_KEY");
    if (fColumns.find(keyS) == fColumns.end()) {
       int_attribute_t *key = new int_attribute_t("key");
@@ -902,12 +921,9 @@ void TreeMaker::build(const DOMElement* elem, element_t *parent_element,
    }
    tree->Branch("key", fColumns[keyS]->address(), "key/I");
    this_element->add_key((int_attribute_t*)fColumns[keyS]);
-   XString repS(elem->getAttribute(X("maxOccurs")));
-   int rep = (repS == "unbounded")? INT_MAX :
-             (repS == "")? 1 :
-             atoi(S(repS));
-   if (explicit_repeat_count && rep > 1)
-      this_element->set_repeating();
+
+   // Add branches for attributes inherited from parent elements
+
    attribute_list::iterator iter;
    for (iter = columns.begin(); iter != columns.end(); ++iter) {
       XString colS = iter->first;
@@ -934,6 +950,8 @@ void TreeMaker::build(const DOMElement* elem, element_t *parent_element,
       }
    }
     
+   // Add branches for the element's own attributes
+
    DOMNamedNodeMap* attrList = elem->getAttributes();
    int attrListLength = attrList->getLength();
    for (int a = 0; a < attrListLength; a++) {
@@ -995,7 +1013,10 @@ void TreeMaker::build(const DOMElement* elem, element_t *parent_element,
       columns[colS] = nameS;
       this_element->add_attribute(fColumns[colS]);
    }
+
    parent_element->add_element(this_element);
+
+   // Recursively build any elements contained within this one
 
    DOMNodeList* contList = elem->getChildNodes();
    int contLength = contList->getLength();
