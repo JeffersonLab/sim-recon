@@ -166,9 +166,9 @@ jerror_t JEventProcessor_BCAL_LED::init(void) {
 	adccount2 = 1400;
 	adccount3 = 1800;
 	
-	maxnumberofevents=300000000.0;//Based on beam run with 30KHz trigger and 1Hz LED trigger
+	maxnumberofevents=700000000.0;//Assuming 1Hz LED trigger, 300M for a beam run with 30KHz trigger and 700M for 70KHz
 	//maxnumberofevents=10000.0;//using LED event conter
-	nbins=10002;//Based on beam run with 30KHz trigger and 1Hz LED trigger
+	nbins=24002;//Assuming 1Hz LED trigger, 10K for a beam run with 30KHz trigger and 24K for 70KHz
 	//nbins=375002;//Based on cosmic run with 800Hz trigger and 1Hz LED trigger
 	//nbins=3750002;//Based on cosmic run with 800Hz trigger and 10Hz LED trigger
 
