@@ -20,7 +20,6 @@
 #include <JANA/JFactory.h>
 
 #include <DVector3.h>
-#include <DMatrixDSym.h>
 #include <DMatrix.h>
 
 #include <PID/DDetectorMatches.h>

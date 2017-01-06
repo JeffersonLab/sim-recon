@@ -2,6 +2,7 @@
 #define _DParticleComboBlueprintStep_
 
 #include <deque>
+#include <vector>
 
 #include "JANA/JObject.h"
 #include "particleType.h"
@@ -71,9 +72,17 @@ class DParticleComboBlueprintStep
 	private:
 		const DReactionStep* dReactionStep;
 
-		deque<const JObject*> dFinalParticleSourceObjects; //NULL if decaying or missing
+		vector<const JObject*> dFinalParticleSourceObjects; //NULL if decaying or missing
 		signed char dInitialParticleDecayFromStepIndex; //-1 if photon, else index points to step index it is produced at
-		deque<signed char> dDecayStepIndices; //one for each final particle: -2 if detected, -1 if missing, >= 0 if decaying, where the # is the step representing the particle decay
+		vector<signed char> dDecayStepIndices; //one for each final particle: -2 if detected, -1 if missing, >= 0 if decaying, where the # is the step representing the particle decay
+};
+
+struct DParticleComboBlueprintStep_Comparator
+{
+	bool operator() (DParticleComboBlueprintStep* const& lhs, DParticleComboBlueprintStep* const& rhs) const
+	{
+		return (*lhs) < (*rhs);
+	}
 };
 
 inline void DParticleComboBlueprintStep::Reset(void)

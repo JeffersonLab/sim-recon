@@ -39,7 +39,7 @@ jerror_t DTAGHHit_factory_Calib::init(void)
     gPARMS->SetDefaultParameter("TAGHHit:ADC_THRESHOLD",ADC_THRESHOLD,
     "pedestal-subtracted pulse integral threshold");
 
-    CHECK_FADC_ERRORS = false;
+    CHECK_FADC_ERRORS = true;
     gPARMS->SetDefaultParameter("TAGHHit:CHECK_FADC_ERRORS", CHECK_FADC_ERRORS, "Set to 1 to reject hits with fADC250 errors, ser to 0 to keep these hits");
 
     // initialize calibration constants

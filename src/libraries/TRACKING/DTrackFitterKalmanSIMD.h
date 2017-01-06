@@ -16,6 +16,7 @@
 #include <TH3.h>
 #include <TH2.h>
 #include <TH1.h>
+#include <TMatrixFSym.h>
 
 #ifndef M_TWO_PI
 #define M_TWO_PI 6.28318530717958647692
@@ -37,7 +38,7 @@
 #define R2_MAX 4225.0
 #define R_MAX_FORWARD 65.0
 #ifndef SPEED_OF_LIGHT
-#define SPEED_OF_LIGHT 29.98
+#define SPEED_OF_LIGHT 29.9792458
 #endif
 // The next constant is 1/c and is intended to avoid too many unnecessary 
 // divisions by the speed of light
@@ -332,8 +333,8 @@ class DTrackFitterKalmanSIMD: public DTrackFitter{
 			    double &var_t_factor,
 			    DMatrix5x1 &Sc,bool &stepped_to_boundary);
 
-  DMatrixDSym Get7x7ErrorMatrix(DMatrixDSym C); 
-  DMatrixDSym Get7x7ErrorMatrixForward(DMatrixDSym C);
+  TMatrixFSym* Get7x7ErrorMatrix(DMatrixDSym C);
+  TMatrixFSym* Get7x7ErrorMatrixForward(DMatrixDSym C);
 
   kalman_error_t ForwardFit(const DMatrix5x1 &S,const DMatrix5x5 &C0); 
   kalman_error_t ForwardCDCFit(const DMatrix5x1 &S,const DMatrix5x5 &C0);  

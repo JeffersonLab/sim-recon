@@ -88,7 +88,7 @@ DBeamPhoton* DBeamPhoton_factory_KinFit::Build_BeamPhoton(const DBeamPhoton* loc
 	locNewBeamPhoton->setMomentum(DVector3(locKinFitParticle->Get_Momentum().X(),locKinFitParticle->Get_Momentum().Y(),locKinFitParticle->Get_Momentum().Z()));
 	locNewBeamPhoton->setPosition(DVector3(locKinFitParticle->Get_Position().X(),locKinFitParticle->Get_Position().Y(),locKinFitParticle->Get_Position().Z()));
 	locNewBeamPhoton->setTime(locKinFitParticle->Get_Time());
-	locNewBeamPhoton->setErrorMatrix(*locKinFitParticle->Get_CovarianceMatrix());
+	locNewBeamPhoton->setErrorMatrix(locKinFitParticle->Get_CovarianceMatrix());
 	double locPathLength = locBeamPhoton->pathLength() - locKinFitParticle->Get_PathLength(); //locKinFitParticle->Get_PathLength() = (X_common - X_track).Dot(UnitP)
 	double locPathLengthUncertainty_Orig = locBeamPhoton->pathLength_err();
 	double locPathLengthUncertainty_KinFit = locKinFitParticle->Get_PathLengthUncertainty();

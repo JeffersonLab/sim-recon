@@ -114,6 +114,7 @@ class Df250PulseData:public DDAQAddress{
         uint32_t course_time_emulated;        ///< Value calculated from raw data (if available) - debug
         uint32_t fine_time_emulated;        ///< Value calculated from raw data (if available) - debug
         uint32_t pulse_peak_emulated;  ///< Value calculated from raw data (if available)
+        uint32_t QF_emulated;
 
 		// This method is used primarily for pretty printing
 		// the second argument to AddString is printf style format
@@ -134,16 +135,16 @@ class Df250PulseData:public DDAQAddress{
 			if( pedestal_emulated ) emulated_all |= (1<<2);
 		
 			DDAQAddress::toStrings(items);
-			AddString(items, "event_within_block"      , "%d", event_within_block      );
+			//AddString(items, "event_within_block"      , "%d", event_within_block      );
 			AddString(items, "integral"                , "%d", integral                );
 			AddString(items, "pedestal"                , "%d", pedestal                );
 			AddString(items, "course_time"             , "%d", course_time             );
 			AddString(items, "fine_time"               , "%d", fine_time               );
 			AddString(items, "pulse_peak"              , "%d", pulse_peak              );
 			AddString(items, "pulse_number"            , "%d", pulse_number            );
-			AddString(items, "nsamples_integral"       , "%d", nsamples_integral       );
-			AddString(items, "nsamples_pedestal"       , "%d", nsamples_pedestal       );
-			AddString(items, "nsamples_over_threshold" , "%d", nsamples_over_threshold );
+			//AddString(items, "nsamples_integral"       , "%d", nsamples_integral       );
+			//AddString(items, "nsamples_pedestal"       , "%d", nsamples_pedestal       );
+			//AddString(items, "nsamples_over_threshold" , "%d", nsamples_over_threshold );
 			AddString(items, "QF"                      , "%x", QF                      );
 			AddString(items, "emulated"                , "%x", emulated_all            );
 
@@ -152,6 +153,7 @@ class Df250PulseData:public DDAQAddress{
 			AddString(items, "course_time_emulated"           , "%d", course_time_emulated           );
 			AddString(items, "fine_time_emulated"           , "%d", fine_time_emulated           );
 			AddString(items, "pulse_peak_emulated"     , "%d", pulse_peak_emulated     );
+			AddString(items, "QF_emulated"     , "%x", QF_emulated     ); 
 		}
 };
 

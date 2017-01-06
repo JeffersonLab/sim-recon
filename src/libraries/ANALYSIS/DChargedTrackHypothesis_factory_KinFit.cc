@@ -37,7 +37,7 @@ jerror_t DChargedTrackHypothesis_factory_KinFit::evnt(jana::JEventLoop* locEvent
 	VT_TRACER("DChargedTrackHypothesis_factory_KinFit::evnt()");
 #endif
 
- 	vector<const DKinFitResults*> locKinFitResultsVector;
+	vector<const DKinFitResults*> locKinFitResultsVector;
 	locEventLoop->Get(locKinFitResultsVector);
 
 	map<DKinFitParticle*, DChargedTrackHypothesis*> locNewObjectMap;
@@ -95,18 +95,27 @@ jerror_t DChargedTrackHypothesis_factory_KinFit::evnt(jana::JEventLoop* locEvent
 DChargedTrackHypothesis* DChargedTrackHypothesis_factory_KinFit::Build_ChargedTrackHypothesis(const DChargedTrackHypothesis* locChargedTrackHypothesis, DKinFitParticle* locKinFitParticle, const DChargedTrack* locChargedTrack, const DParticleCombo* locParticleCombo)
 {
 	DChargedTrackHypothesis* locNewChargedTrackHypothesis = new DChargedTrackHypothesis(*locChargedTrackHypothesis);
-	locNewChargedTrackHypothesis->AddAssociatedObject(locChargedTrackHypothesis);
-	locNewChargedTrackHypothesis->AddAssociatedObject(locChargedTrack);
 
+	//remove associated objects of type DChargedTrackHypothesis //won't be able to keep track of which is which!
  	vector<const JObject*> locObjects;
 	locChargedTrackHypothesis->GetT(locObjects);
 	for(size_t loc_i = 0; loc_i < locObjects.size(); ++loc_i)
-		locNewChargedTrackHypothesis->AddAssociatedObject(locObjects[loc_i]);
+	{
+		if(dynamic_cast<const DChargedTrackHypothesis*>(locObjects[loc_i]) != NULL)
+			locNewChargedTrackHypothesis->RemoveAssociatedObject(locObjects[loc_i]);
+	}
+	locNewChargedTrackHypothesis->AddAssociatedObject(locChargedTrackHypothesis);
+	locNewChargedTrackHypothesis->AddAssociatedObject(locChargedTrack);
 
-	locNewChargedTrackHypothesis->setMomentum(DVector3(locKinFitParticle->Get_Momentum().X(),locKinFitParticle->Get_Momentum().Y(),locKinFitParticle->Get_Momentum().Z()));
-	locNewChargedTrackHypothesis->setPosition(DVector3(locKinFitParticle->Get_Position().X(),locKinFitParticle->Get_Position().Y(),locKinFitParticle->Get_Position().Z()));
+	//p3 & v3
+	TVector3 locFitMomentum = locKinFitParticle->Get_Momentum();
+	TVector3 locFitVertex = locKinFitParticle->Get_Position();
+	locNewChargedTrackHypothesis->setMomentum(DVector3(locFitMomentum.X(), locFitMomentum.Y(), locFitMomentum.Z()));
+	locNewChargedTrackHypothesis->setPosition(DVector3(locFitVertex.X(), locFitVertex.Y(), locFitVertex.Z()));
+
+	//t & error matrix
 	locNewChargedTrackHypothesis->setTime(locKinFitParticle->Get_Time());
-	locNewChargedTrackHypothesis->setErrorMatrix(*locKinFitParticle->Get_CovarianceMatrix());
+	locNewChargedTrackHypothesis->setErrorMatrix(locKinFitParticle->Get_CovarianceMatrix());
 
 	double locPathLength = locNewChargedTrackHypothesis->pathLength() - locKinFitParticle->Get_PathLength();
 	double locPathLengthUncertainty_Orig = locNewChargedTrackHypothesis->pathLength_err();
@@ -114,6 +123,7 @@ DChargedTrackHypothesis* DChargedTrackHypothesis_factory_KinFit::Build_ChargedTr
 	double locPathLengthUncertainty = sqrt(locPathLengthUncertainty_Orig*locPathLengthUncertainty_Orig + locPathLengthUncertainty_KinFit*locPathLengthUncertainty_KinFit);
 	locNewChargedTrackHypothesis->setPathLength(locPathLength, locPathLengthUncertainty);
 
+	//for this calc: if rf time part of timing constraint, don't use locKinFitParticle->Get_Time() for chisq calc!!!
 	dPIDAlgorithm->Calc_ChargedPIDFOM(locNewChargedTrackHypothesis, locParticleCombo->Get_EventRFBunch());
 
 	return locNewChargedTrackHypothesis;
@@ -134,5 +144,3 @@ jerror_t DChargedTrackHypothesis_factory_KinFit::fini(void)
 {
 	return NOERROR;
 }
-
-

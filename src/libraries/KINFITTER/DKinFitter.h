@@ -12,6 +12,7 @@
 #include "TVector3.h"
 #include "TMatrixD.h"
 #include "TMatrixDSym.h"
+#include "TMatrixFSym.h"
 #include "TLorentzVector.h"
 #include "TMath.h"
 #include "TDecompLU.h"
@@ -30,7 +31,8 @@ enum DKinFitStatus
 	d_KinFitSuccessful = 0,
 	d_KinFitFailedSetup,
 	d_KinFitFailedInversion,
-	d_KinFitTooManyIterations
+	d_KinFitTooManyIterations,
+	d_KinFitNotPerformed
 };
 
 class DKinFitUtils; //forward declaration
@@ -54,6 +56,9 @@ class DKinFitter //purely virtual: cannot directly instantiate class, can only i
 
 		//FIT!
 		bool Fit_Reaction(void); //IF YOU OVERRIDE THIS METHOD IN THE DERIVED CLASS, MAKE SURE YOU CALL THIS BASE CLASS METHOD!!
+
+		//RECYCLE MEMORY //only call if you are discarding the results from the previous fit
+		void Recycle_LastFitMemory(void); //e.g. fit failed, or used to get a vertex guess
 
 		/**************************************************************** FIT CONTROL ***************************************************************/
 
@@ -86,9 +91,9 @@ class DKinFitter //purely virtual: cannot directly instantiate class, can only i
 		void Get_Pulls(map<DKinFitParticle*, map<DKinFitPullType, double> >& locPulls) const{locPulls = dPulls;} //key is particle, 2nd key is param type
 
 		//GET UNCERTAINTIES
-		const TMatrixDSym* Get_VEta(void) {return dVEta;}
-		const TMatrixDSym* Get_VXi(void) {return dVXi;}
-		const TMatrixDSym* Get_V(void) {return dV;}
+		const TMatrixDSym& Get_VEta(void) {return dVEta;}
+		const TMatrixDSym& Get_VXi(void) {return dVXi;}
+		const TMatrixDSym& Get_V(void) {return dV;}
 
 		//GET OUTPUT PARTICLES & CONSTRAINTS
 		set<DKinFitConstraint*> Get_KinFitConstraints(void) const{return dKinFitConstraints;}
@@ -104,6 +109,7 @@ class DKinFitter //purely virtual: cannot directly instantiate class, can only i
 		/************************************************************ UTILITY FUNCTIONS *************************************************************/
 
 		void Print_Matrix(const TMatrixD& locMatrix) const;
+		void Print_Matrix(const TMatrixF& locMatrix) const;
 
 		template <typename DType> set<DType*> Get_Constraints(void) const;
 		template <typename DType> set<DType*> Get_Constraints(const set<DKinFitConstraint*>& locConstraints) const;
@@ -114,7 +120,7 @@ class DKinFitter //purely virtual: cannot directly instantiate class, can only i
 		template <typename DType> bool Get_IsInConstraint(DKinFitParticle* locKinFitParticle, bool locOnlyDirectFlag = false) const;
 		template <typename DType> bool Get_IsIndirectlyInConstraint(DKinFitParticle* locKinFitParticle) const;
 
-		bool Get_IsVertexConstrained(DKinFitParticle* locKinFitParticle) const;
+		bool Get_IsConstrainingVertex(DKinFitParticle* locKinFitParticle) const;
 		bool Get_IsTimeConstrained(DKinFitParticle* locKinFitParticle) const;
 
 		/*********************************************************** FIT INITIALIZATION *************************************************************/
@@ -150,6 +156,7 @@ class DKinFitter //purely virtual: cannot directly instantiate class, can only i
 		void Update_ParticleParams(void);
 		void Calc_Pulls(void);
 		void Set_FinalTrackInfo(void);
+		void Update_CovarianceMatrices(void);
 
 		/***************************************************** FIT CONTROL AND UTILITY VARIABLES ****************************************************/
 
@@ -197,9 +204,9 @@ class DKinFitter //purely virtual: cannot directly instantiate class, can only i
 		TMatrixD dF_dXi; //partial derivative of constraint equations wrst the unmeasurable unknowns
 		TMatrixD dF_dXi_T;
 
-		TMatrixDSym* dVXi; //covariance matrix of dXi
-		TMatrixDSym* dVEta; //covariance matrix of dEta
-		TMatrixDSym* dV; //full covariance matrix: dVEta at top-left and dVXi at bottom-right (+ the eta, xi covariance)
+		TMatrixDSym dVXi; //covariance matrix of dXi
+		TMatrixDSym dVEta; //covariance matrix of dEta
+		TMatrixDSym dV; //full covariance matrix: dVEta at top-left and dVXi at bottom-right (+ the eta, xi covariance)
 
 		/*************************************************************** FIT RESULTS ****************************************************************/
 

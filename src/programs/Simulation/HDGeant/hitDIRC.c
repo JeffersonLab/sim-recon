@@ -66,8 +66,8 @@ void hitDIRC(float xin[4], float xout[4], float pin[5], float pout[5],
 		void** twig = getTwig(&dircTree, mark);
 		if (*twig == 0) {
 			s_DIRC_t* dirc = *twig = make_s_DIRC();
-			s_DircHits_t* dircHits = make_s_DircHits(1);
-			dirc->dircHits = dircHits;
+			s_DircTruthHits_t* dircHits = make_s_DircTruthHits(1);
+			dirc->dircTruthHits = dircHits;
 			dircHits->in[0].x = xin[0];
 			dircHits->in[0].y = xin[1];
 			dircHits->in[0].z = xin[2];
@@ -98,17 +98,17 @@ s_DIRC_t* pickDirc() {
 
 	box = make_s_DIRC();
 	// create DIRC hits
-	box->dircHits = make_s_DircHits(dircCount);
+	box->dircTruthHits = make_s_DircTruthHits(dircCount);
 	box->dircTruthPoints = make_s_DircTruthPoints(dircpointCount);
 
 	while ((item = pickTwig(&dircTree))) {
 
 		// pack DIRC hits
-		s_DircHits_t* dirchits = item->dircHits;
+		s_DircTruthHits_t* dirchits = item->dircTruthHits;
 		int dirchit;
 		for (dirchit = 0; dirchit < dirchits->mult; ++dirchit) {
-			int m = box->dircHits->mult++;
-			box->dircHits->in[m] = dirchits->in[dirchit];
+			int m = box->dircTruthHits->mult++;
+			box->dircTruthHits->in[m] = dirchits->in[dirchit];
 		}
 		if (dirchits != HDDM_NULL) {
 			FREE(dirchits);
@@ -128,16 +128,16 @@ s_DIRC_t* pickDirc() {
 
 	// clear DIRC hits and truth
 	dircCount = dircpointCount = 0;
-	if ((box->dircHits != HDDM_NULL ) && (box->dircHits->mult == 0)) {
-		FREE(box->dircHits);
-		box->dircHits = HDDM_NULL;
+	if ((box->dircTruthHits != HDDM_NULL ) && (box->dircTruthHits->mult == 0)) {
+		FREE(box->dircTruthHits);
+		box->dircTruthHits = HDDM_NULL;
 	}
 	if ((box->dircTruthPoints != HDDM_NULL )
 			&& (box->dircTruthPoints->mult == 0)) {
 		FREE(box->dircTruthPoints);
 		box->dircTruthPoints = HDDM_NULL;
 	}
-	if ((box->dircHits->mult == 0) && (box->dircTruthPoints->mult == 0)) {
+	if ((box->dircTruthHits->mult == 0) && (box->dircTruthPoints->mult == 0)) {
 		FREE(box);
 		box = HDDM_NULL;
 	}

@@ -10,6 +10,10 @@
 
 #include <deque>
 #include <map>
+#include <set>
+#include <algorithm>
+
+#include "TMatrixFSym.h"
 
 #include <JANA/jerror.h>
 #include <JANA/JApplication.h>
@@ -43,6 +47,16 @@ class DApplication:public JApplication{
 		DGeometry* GetDGeometry(unsigned int run_number);
 		DRootGeom *GetRootGeom(unsigned int run_number);
 
+		TMatrixFSym* Get_CovarianceMatrixResource(unsigned int locNumMatrixRows);
+		deque<TMatrixFSym*> Get_CovarianceMatrixResources(unsigned int locNumMatrixRows, size_t locNumRequestedMatrices);
+		TMatrixFSym* Get_CovarianceMatrixResource(unsigned int locNumMatrixRows, uint64_t locEventNumber);
+		deque<TMatrixFSym*> Get_CovarianceMatrixResources(unsigned int locNumMatrixRows, size_t locNumRequestedMatrices, uint64_t locEventNumber);
+
+		uint64_t Get_EventNumber_CurrentThread(void);
+		size_t Get_NumCovarianceMatrices(void);
+		void Recycle_Matrices(deque<TMatrixFSym*>& locMatrices);
+		void Recycle_Matrices(deque<const TMatrixFSym*>& locMatrices);
+
 	protected:
 	
 		DMagneticFieldMap *bfield;
@@ -53,10 +67,33 @@ class DApplication:public JApplication{
 		vector<DGeometry*> geometries;
 
 		pthread_mutex_t mutex;
+		pthread_mutex_t matrix_mutex;
 		
-	private:
-
+		size_t dTargetMaxNumAvailableMatrices;
+		map<pthread_t, uint64_t> dEventNumberMap;
+		map<pthread_t, set<TMatrixFSym*> > dUsedMatrixMap;
+		deque<TMatrixFSym*> dAvailableMatrices;
 };
+
+//---------------------------------
+// Get_CovarianceMatrixResource(s)
+//---------------------------------
+inline TMatrixFSym* DApplication::Get_CovarianceMatrixResource(unsigned int locNumMatrixRows)
+{
+	//We must have the correct event number, so that we know when it's safe to recycle the memory for the next event.
+	return Get_CovarianceMatrixResources(locNumMatrixRows, 1, Get_EventNumber_CurrentThread()).back();
+}
+
+inline deque<TMatrixFSym*> DApplication::Get_CovarianceMatrixResources(unsigned int locNumMatrixRows, size_t locNumRequestedMatrices)
+{
+	//We must have the correct event number, so that we know when it's safe to recycle the memory for the next event.
+	return Get_CovarianceMatrixResources(locNumMatrixRows, locNumRequestedMatrices, Get_EventNumber_CurrentThread());
+}
+
+inline TMatrixFSym* DApplication::Get_CovarianceMatrixResource(unsigned int locNumMatrixRows, uint64_t locEventNumber)
+{
+	return Get_CovarianceMatrixResources(locNumMatrixRows, 1, locEventNumber).back();
+}
 
 #endif // _DApplication_
 

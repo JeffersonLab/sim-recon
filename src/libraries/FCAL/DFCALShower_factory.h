@@ -14,6 +14,8 @@
 #include <FCAL/DFCALCluster.h>
 #include <DANA/DApplication.h>
 
+#include <DMatrixDSym.h>
+
 #include <TH2F.h>
 
 class DFCALShower_factory:public JFactory<DFCALShower>{

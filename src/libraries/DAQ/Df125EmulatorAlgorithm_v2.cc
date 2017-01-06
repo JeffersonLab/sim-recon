@@ -194,7 +194,7 @@ void Df125EmulatorAlgorithm_v2::EmulateFirmware(const Df125WindowRawData *rawDat
     // Now try to get the configuration form the BOR record, if this does not exist,
     // or is forced, use the default values.
     const Df125BORConfig *BORConfig = NULL;
-    rawData->GetSingle(BORConfig);
+    //rawData->GetSingle(BORConfig);  // DEBUG
 
     if(BORConfig != NULL){
         if (VERBOSE > 0) jout << "--Found BORConfig" << endl; 
