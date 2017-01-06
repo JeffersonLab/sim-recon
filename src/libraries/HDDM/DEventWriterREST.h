@@ -12,7 +12,6 @@
 #include <JANA/JApplication.h>
 
 #include <DVector3.h>
-#include <DMatrixDSym.h>
 #include <DMatrix.h>
 
 #include "PID/DMCReaction.h"

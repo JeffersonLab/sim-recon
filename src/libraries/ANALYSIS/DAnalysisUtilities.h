@@ -99,8 +99,8 @@ class DAnalysisUtilities : public JObject
 		DLorentzVector Calc_FinalStateP4(const DParticleCombo* locParticleCombo, size_t locStepIndex, set<size_t> locToIncludeIndices, set<pair<const JObject*, unsigned int> >& locSourceObjects, bool locUseKinFitDataFlag) const;
 
 		// These routines use the MEAURED particle data.  For the kinfit-data result, just use the error matrix from the missing particle
-		DMatrixDSym Calc_MissingP3Covariance(const DParticleCombo* locParticleCombo) const;
-		DMatrixDSym Calc_MissingP3Covariance(const DParticleCombo* locParticleCombo, size_t locStepIndex, int locUpToStepIndex, set<size_t> locUpThroughIndices) const;
+		TMatrixFSym Calc_MissingP3Covariance(const DParticleCombo* locParticleCombo) const;
+		TMatrixFSym Calc_MissingP3Covariance(const DParticleCombo* locParticleCombo, size_t locStepIndex, int locUpToStepIndex, set<size_t> locUpThroughIndices) const;
 
 		double Calc_CrudeTime(const deque<const DKinematicData*>& locParticles, const DVector3& locCommonVertex) const;
 		double Calc_CrudeTime(const deque<DKinFitParticle*>& locParticles, const DVector3& locCommonVertex) const;
@@ -122,5 +122,3 @@ class DAnalysisUtilities : public JObject
 };
 
 #endif // _DAnalysisUtilities_
-
-

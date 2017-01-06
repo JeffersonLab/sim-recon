@@ -343,7 +343,7 @@ jerror_t DParticleID::CalcDCdEdx(const DTrackTimeBased *locTrackTimeBased, doubl
 }
 
 jerror_t DParticleID::CalcDCdEdx(const DTrackTimeBased *locTrackTimeBased, const vector<dedx_t>& locdEdxHits_CDC, const vector<dedx_t>& locdEdxHits_FDC, double& locdEdx_FDC, double& locdx_FDC, double& locdEdx_CDC, double& locdx_CDC, unsigned int& locNumHitsUsedFordEdx_FDC, unsigned int& locNumHitsUsedFordEdx_CDC) const
-	{
+{
 	locdx_CDC = 0.0;
 	locdEdx_CDC = 0.0;
 	locNumHitsUsedFordEdx_CDC = locdEdxHits_CDC.size()/2;
@@ -1847,7 +1847,7 @@ double DParticleID::Calc_TimingChiSq(const DKinematicData* locKinematicData, uns
 	}
 
 	double locStartTimeError = locKinematicData->t0_err();
-	double locTimeDifferenceVariance = (locKinematicData->errorMatrix())(6, 6) + locStartTimeError*locStartTimeError;
+	double locTimeDifferenceVariance = (*locKinematicData->errorMatrix())(6, 6) + locStartTimeError*locStartTimeError;
 	locPull = (locKinematicData->t0() - locKinematicData->time())/sqrt(locTimeDifferenceVariance);
 	locNDF = 1;
 	return locPull*locPull;

@@ -2,6 +2,7 @@
 #define _DParticleComboBlueprint_
 
 #include <deque>
+#include <vector>
 
 #include "JANA/JObject.h"
 #include "ANALYSIS/DReaction.h"
@@ -21,23 +22,30 @@ class DParticleComboBlueprint : public JObject
 		JOBJECT_PUBLIC(DParticleComboBlueprint);
 
 		DParticleComboBlueprint(void) : dReaction(NULL) {}
+		void Reset(void);
 
 		const DParticleComboBlueprintStep* Get_ParticleComboBlueprintStep(size_t locStepIndex) const;
 		const DParticleComboBlueprintStep* Pop_ParticleComboBlueprintStep(void);
-		inline void Prepend_ParticleComboBlueprintStep(const DParticleComboBlueprintStep* locParticleComboBlueprintStep){dParticleComboBlueprintSteps.push_front(locParticleComboBlueprintStep);}
-		inline size_t Get_NumParticleComboBlueprintSteps(void) const{return dParticleComboBlueprintSteps.size();}
+		void Prepend_ParticleComboBlueprintStep(const DParticleComboBlueprintStep* locParticleComboBlueprintStep);
+		size_t Get_NumParticleComboBlueprintSteps(void) const{return dParticleComboBlueprintSteps.size();}
 		void Set_ParticleComboBlueprintStep(const DParticleComboBlueprintStep* locParticleComboBlueprintStep, size_t locStepIndex);
 
 		void Get_DetectedNeutralShowerSourceObjects(deque<pair<const DNeutralShower*, Particle_t> >& locNeutralShowers) const;
 		void Get_DetectedChargedTrackSourceObjects(deque<pair<const DChargedTrack*, Particle_t> >& locChargedTracks) const;
 
-		inline const DReaction* Get_Reaction(void) const{return dReaction;}
-		inline void Set_Reaction(const DReaction* locReaction){dReaction = locReaction;}
+		const DReaction* Get_Reaction(void) const{return dReaction;}
+		void Set_Reaction(const DReaction* locReaction){dReaction = locReaction;}
 
 	private:
 		const DReaction* dReaction;
-		deque<const DParticleComboBlueprintStep*> dParticleComboBlueprintSteps; //must be in order you want to evaluate them
+		vector<const DParticleComboBlueprintStep*> dParticleComboBlueprintSteps; //must be in order you want to evaluate them
 };
+
+inline void DParticleComboBlueprint::Reset(void)
+{
+	dReaction = NULL;
+	dParticleComboBlueprintSteps.clear();
+}
 
 inline const DParticleComboBlueprintStep* DParticleComboBlueprint::Get_ParticleComboBlueprintStep(size_t locStepIndex) const
 {
@@ -52,12 +60,17 @@ inline void DParticleComboBlueprint::Set_ParticleComboBlueprintStep(const DParti
 		dParticleComboBlueprintSteps[locStepIndex] = locParticleComboBlueprintStep;
 }
 
+inline void DParticleComboBlueprint::Prepend_ParticleComboBlueprintStep(const DParticleComboBlueprintStep* locParticleComboBlueprintStep)
+{
+	dParticleComboBlueprintSteps.insert(dParticleComboBlueprintSteps.begin(), locParticleComboBlueprintStep);
+}
+
 inline const DParticleComboBlueprintStep* DParticleComboBlueprint::Pop_ParticleComboBlueprintStep(void)
 {
 	if(dParticleComboBlueprintSteps.empty())
 		return NULL;
 	const DParticleComboBlueprintStep* locParticleComboBlueprintStep = dParticleComboBlueprintSteps.front();
-	dParticleComboBlueprintSteps.pop_front();
+	dParticleComboBlueprintSteps.erase(dParticleComboBlueprintSteps.begin());
 	return locParticleComboBlueprintStep;
 }
 

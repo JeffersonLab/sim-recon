@@ -2,7 +2,8 @@
 #define _DKinFitResults_
 
 #include <string>
-#include <deque>
+
+#include "TMatrixDSym.h"
 
 #include "PID/DKinematicData.h"
 #include "KINFITTER/DKinFitChain.h"

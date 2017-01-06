@@ -1144,6 +1144,7 @@ void DCutAction_OneVertexKinFit::Initialize(JEventLoop* locEventLoop)
 {
 	dKinFitUtils = new DKinFitUtils_GlueX(locEventLoop);
 	dKinFitter = new DKinFitter(dKinFitUtils);
+	dKinFitUtils->Set_UpdateCovarianceMatricesFlag(false);
 
 	// Optional: Useful utility functions.
 	locEventLoop->GetSingle(dAnalysisUtilities);
@@ -1168,6 +1169,7 @@ bool DCutAction_OneVertexKinFit::Perform_Action(JEventLoop* locEventLoop, const 
 	//need to call prior to use in each event (cleans up memory allocated from last event)
 		//this call invalidates memory from previous fits (but that's OK, we aren't saving them anywhere)
 	dKinFitter->Reset_NewEvent();
+	dKinFitUtils->Reset_NewEvent();
 
 	//Get particles for fit (all detected q+)
 	deque<const DKinematicData*> locDetectedParticles;
@@ -1194,12 +1196,18 @@ bool DCutAction_OneVertexKinFit::Perform_Action(JEventLoop* locEventLoop, const 
 
 	// PERFORM THE KINEMATIC FIT
 	if(!dKinFitter->Fit_Reaction())
+	{
+		dKinFitter->Recycle_LastFitMemory(); //RESET MEMORY FROM LAST KINFIT!! //results no longer needed
 		return (dMinKinFitCL < 0.0); //fit failed to converge, return false if converge required
+	}
 
 	// GET THE FIT RESULTS
 	double locConfidenceLevel = dKinFitter->Get_ConfidenceLevel();
 	DKinFitConstraint_Vertex* locResultVertexConstraint = dynamic_cast<DKinFitConstraint_Vertex*>(*dKinFitter->Get_KinFitConstraints().begin());
 	TVector3 locFitVertex = locResultVertexConstraint->Get_CommonVertex();
+
+	//RESET MEMORY FROM LAST KINFIT!!
+	dKinFitter->Recycle_LastFitMemory(); //results no longer needed
 
 	//FILL HISTOGRAMS
 	//Since we are filling histograms local to this action, it will not interfere with other ROOT operations: can use action-wide ROOT lock

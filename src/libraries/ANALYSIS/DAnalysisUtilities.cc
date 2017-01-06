@@ -828,13 +828,13 @@ DLorentzVector DAnalysisUtilities::Calc_MissingP4(const DParticleCombo* locParti
 	return locMissingP4;
 }
 
-DMatrixDSym DAnalysisUtilities::Calc_MissingP3Covariance(const DParticleCombo* locParticleCombo) const
+TMatrixFSym DAnalysisUtilities::Calc_MissingP3Covariance(const DParticleCombo* locParticleCombo) const
 {
 	//uses measured data!
 	return Calc_MissingP3Covariance(locParticleCombo, 0, -1, set<size_t>());
 }
 
-DMatrixDSym DAnalysisUtilities::Calc_MissingP3Covariance(const DParticleCombo* locParticleCombo, size_t locStepIndex, int locUpToStepIndex, set<size_t> locUpThroughIndices) const
+TMatrixFSym DAnalysisUtilities::Calc_MissingP3Covariance(const DParticleCombo* locParticleCombo, size_t locStepIndex, int locUpToStepIndex, set<size_t> locUpThroughIndices) const
 {
 	//uses measured data!
 
@@ -844,7 +844,7 @@ DMatrixDSym DAnalysisUtilities::Calc_MissingP3Covariance(const DParticleCombo* l
 	//missing covariance is just sum of covariance matrices of all particles used in the calculation
 		//because errors are uncorrelated: this doesn't work on kinfit data: just use kinfit matrix from missing particle then
 	const DParticleComboStep* locParticleComboStep = locParticleCombo->Get_ParticleComboStep(locStepIndex);
-	DMatrixDSym locMissingCovarianceMatrix(3);
+	TMatrixFSym locMissingCovarianceMatrix(3);
 	locMissingCovarianceMatrix.Zero();
 
 	const DKinematicData* locKinematicData = NULL;
@@ -852,7 +852,7 @@ DMatrixDSym DAnalysisUtilities::Calc_MissingP3Covariance(const DParticleCombo* l
 	{
 		//initial particle
 		locKinematicData = locParticleComboStep->Get_InitialParticle_Measured();
-		DMatrixDSym locParticleCovarianceMatrix = locKinematicData->errorMatrix();
+		TMatrixFSym locParticleCovarianceMatrix = *(locKinematicData->errorMatrix());
 		locParticleCovarianceMatrix.ResizeTo(3, 3);
 		locMissingCovarianceMatrix += locParticleCovarianceMatrix;
 	}
@@ -872,7 +872,7 @@ DMatrixDSym DAnalysisUtilities::Calc_MissingP3Covariance(const DParticleCombo* l
 
 		if(locDecayStepIndex == -2) //detected
 		{
-			DMatrixDSym locParticleCovarianceMatrix = locParticles[loc_j]->errorMatrix();
+			TMatrixFSym locParticleCovarianceMatrix = *(locParticles[loc_j]->errorMatrix());
 			locParticleCovarianceMatrix.ResizeTo(3, 3);
 			locMissingCovarianceMatrix += locParticleCovarianceMatrix;
 		}

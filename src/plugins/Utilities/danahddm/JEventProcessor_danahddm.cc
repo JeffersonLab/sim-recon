@@ -238,7 +238,7 @@ void JEventProcessor_danahddm::Add_DTrackTimeBased(JEventLoop *loop,
       torig().setVy(pos.y());
       torig().setVz(pos.z());
       
-      string vals = DMatrixDSymToString(tbt_dana->errorMatrix());
+      string vals = DMatrixDSymToString(*(tbt_dana->errorMatrix()));
       terrs().setNcols(7);
       terrs().setNrows(7);
       terrs().setType("DMatrixDSym");
@@ -247,7 +247,7 @@ void JEventProcessor_danahddm::Add_DTrackTimeBased(JEventLoop *loop,
       tters().setNcols(5);
       tters().setNrows(5);
       tters().setType("DMatrixDSym");
-      tters().setVals(DMatrixDSymToString(tbt_dana->TrackingErrorMatrix()));
+      tters().setVals(DMatrixDSymToString(*(tbt_dana->TrackingErrorMatrix())));
    }
 }
 

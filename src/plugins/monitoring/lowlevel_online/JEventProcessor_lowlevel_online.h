@@ -28,13 +28,15 @@ class JEventProcessor_lowlevel_online:public jana::JEventProcessor{
 		~JEventProcessor_lowlevel_online();
 		const char* className(void){return "JEventProcessor_lowlevel_online";}
 
+		bool MORE_PLOTS;
         bool INDIVIDUAL_CHANNEL_DATA;
         bool CHECK_EMULATED_DATA;
         bool ANALYZE_F125_DATA;
         bool ANALYZE_F250_DATA;
         vector<int> Nstraws_integrated;
 
-	int F250_THRESHOLD;
+        uint32_t F125_THRESHOLD;
+        uint32_t F250_THRESHOLD;
 
 		//------------------------ BCAL -----------------------
         TH1I *bcal_adc_multi;
@@ -48,6 +50,8 @@ class JEventProcessor_lowlevel_online:public jana::JEventProcessor{
         TH1I *bcal_adc_time;
         TH1I *bcal_adc_pedestal;
         TH1I *bcal_adc_quality;
+        TH1I *bcal_tdc_time;
+
         TH2I *bcal_adc_integral_chan;
         TH2I *bcal_adc_integral_pedsub_chan;
         TH2I *bcal_adc_peak_chan;
@@ -121,6 +125,8 @@ class JEventProcessor_lowlevel_online:public jana::JEventProcessor{
         TH1I *fdc_adc_time;
         TH1I *fdc_adc_pedestal;
         TH1I *fdc_adc_quality;
+        TH1I *fdc_tdc_time;
+
         TH2I *fdc_adc_integral_chan;
         TH2I *fdc_adc_integral_pedsub_chan;
         TH2I *fdc_adc_peak_chan;
@@ -141,6 +147,8 @@ class JEventProcessor_lowlevel_online:public jana::JEventProcessor{
         TH1I *psc_adc_time;
         TH1I *psc_adc_pedestal;
         TH1I *psc_adc_quality;
+        TH1I *psc_tdc_time;
+
         TH2I *psc_adc_integral_chan;
         TH2I *psc_adc_integral_pedsub_chan;
         TH2I *psc_adc_peak_chan;
@@ -194,6 +202,8 @@ class JEventProcessor_lowlevel_online:public jana::JEventProcessor{
         TH1I *st_adc_time;
         TH1I *st_adc_pedestal;
         TH1I *st_adc_quality;
+        TH1I *st_tdc_time;
+
         TH2I *st_adc_integral_chan;
         TH2I *st_adc_integral_pedsub_chan;
         TH2I *st_adc_peak_chan;
@@ -222,6 +232,8 @@ class JEventProcessor_lowlevel_online:public jana::JEventProcessor{
         TH1I *tagh_adc_time;
         TH1I *tagh_adc_pedestal;
         TH1I *tagh_adc_quality;
+        TH1I *tagh_tdc_time;
+
         TH2I *tagh_adc_integral_chan;
         TH2I *tagh_adc_integral_pedsub_chan;
         TH2I *tagh_adc_peak_chan;
@@ -248,6 +260,8 @@ class JEventProcessor_lowlevel_online:public jana::JEventProcessor{
         TH1I *tagm_adc_time;
         TH1I *tagm_adc_pedestal;
         TH1I *tagm_adc_quality;
+        TH1I *tagm_tdc_time;
+
         TH2I *tagm_adc_integral_chan;
         TH2I *tagm_adc_integral_pedsub_chan;
         TH2I *tagm_adc_peak_chan;
@@ -275,6 +289,8 @@ class JEventProcessor_lowlevel_online:public jana::JEventProcessor{
         TH1I *tof_adc_time;
         TH1I *tof_adc_pedestal;
         TH1I *tof_adc_quality;
+        TH1I *tof_tdc_time;
+
         TH2I *tof_adc_integral_chan;
         TH2I *tof_adc_integral_pedsub_chan;
         TH2I *tof_adc_peak_chan;
