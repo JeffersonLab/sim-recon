@@ -166,6 +166,12 @@ jerror_t JEventProcessor_BCAL_LED::init(void) {
 	adccount2 = 1400;
 	adccount3 = 1800;
 	
+	maxnumberofevents=700000000.0;//Assuming 1Hz LED trigger, 300M for a beam run with 30KHz trigger and 700M for 70KHz
+	//maxnumberofevents=10000.0;//using LED event conter
+	nbins=24002;//Assuming 1Hz LED trigger, 10K for a beam run with 30KHz trigger and 24K for 70KHz
+	//nbins=375002;//Based on cosmic run with 800Hz trigger and 1Hz LED trigger
+	//nbins=3750002;//Based on cosmic run with 800Hz trigger and 10Hz LED trigger
+
 	
 	//overflow=0; underflow=0; negatives=0; zeros=0;
 
@@ -176,61 +182,61 @@ jerror_t JEventProcessor_BCAL_LED::init(void) {
 
 
 	
-	bcal_peak_vevent = new TProfile("bcal_peak_vevent","Avg BCAL peak vs event;event num;peak (all chan avg)",10000,0.0,9998.0);
+	bcal_peak_vevent = new TProfile("bcal_peak_vevent","Avg BCAL peak vs event;event num;peak (all chan avg)",nbins,0.0,maxnumberofevents);
 	
-	up_peak_vevent = new TProfile("up_peak_vevent","Avg BCAL peak vs event;event num;peak (all upstream chan avg)",10000,0.0,9998.0);
-	down_peak_vevent = new TProfile("down_peak_vevent","Avg BCAL peak vs event;event num;peak (all downstream chan avg)",10000,0.0,9998.0);
+	up_peak_vevent = new TProfile("up_peak_vevent","Avg BCAL peak vs event;event num;peak (all upstream chan avg)",nbins,0.0,maxnumberofevents);
+	down_peak_vevent = new TProfile("down_peak_vevent","Avg BCAL peak vs event;event num;peak (all downstream chan avg)",nbins,0.0,maxnumberofevents);
 	
-	column1_peak_vevent = new TProfile("column1_peak_vevent","Avg BCAL peak vs event;event num;peak (all column 1 chan avg)",10000,0.0,9998.0);
-	column2_peak_vevent = new TProfile("column2_peak_vevent","Avg BCAL peak vs event;event num;peak (all column 2 chan avg)",10000,0.0,9998.0);
-	column3_peak_vevent = new TProfile("column3_peak_vevent","Avg BCAL peak vs event;event num;peak (all column 3 chan avg)",10000,0.0,9998.0);
-	column4_peak_vevent = new TProfile("column4_peak_vevent","Avg BCAL peak vs event;event num;peak (all column 4 chan avg)",10000,0.0,9998.0);
+	column1_peak_vevent = new TProfile("column1_peak_vevent","Avg BCAL peak vs event;event num;peak (all column 1 chan avg)",nbins,0.0,maxnumberofevents);
+	column2_peak_vevent = new TProfile("column2_peak_vevent","Avg BCAL peak vs event;event num;peak (all column 2 chan avg)",nbins,0.0,maxnumberofevents);
+	column3_peak_vevent = new TProfile("column3_peak_vevent","Avg BCAL peak vs event;event num;peak (all column 3 chan avg)",nbins,0.0,maxnumberofevents);
+	column4_peak_vevent = new TProfile("column4_peak_vevent","Avg BCAL peak vs event;event num;peak (all column 4 chan avg)",nbins,0.0,maxnumberofevents);
 	
-	column1_up_peak_vevent = new TProfile("column1_up_peak_vevent","Avg BCAL peak vs event;event num;peak (all column 1 up chan avg)",10000,0.0,9998.0);
-	column2_up_peak_vevent = new TProfile("column2_up_peak_vevent","Avg BCAL peak vs event;event num;peak (all column 2 up chan avg)",10000,0.0,9998.0);
-	column3_up_peak_vevent = new TProfile("column3_up_peak_vevent","Avg BCAL peak vs event;event num;peak (all column 3 up chan avg)",10000,0.0,9998.0);
-	column4_up_peak_vevent = new TProfile("column4_up_peak_vevent","Avg BCAL peak vs event;event num;peak (all column 4 up chan avg)",10000,0.0,9998.0);
-	column1_down_peak_vevent = new TProfile("column1_down_peak_vevent","Avg BCAL peak vs event;event num;peak (all column 1 down chan avg)",10000,0.0,9998.0);
-	column2_down_peak_vevent = new TProfile("column2_down_peak_vevent","Avg BCAL peak vs event;event num;peak (all column 2 down chan avg)",10000,0.0,9998.0);
-	column3_down_peak_vevent = new TProfile("column3_down_peak_vevent","Avg BCAL peak vs event;event num;peak (all column 3 down chan avg)",10000,0.0,9998.0);
-	column4_down_peak_vevent = new TProfile("column4_down_peak_vevent","Avg BCAL peak vs event;event num;peak (all column 4 down chan avg)",10000,0.0,9998.0);
+	column1_up_peak_vevent = new TProfile("column1_up_peak_vevent","Avg BCAL peak vs event;event num;peak (all column 1 up chan avg)",nbins,0.0,maxnumberofevents);
+	column2_up_peak_vevent = new TProfile("column2_up_peak_vevent","Avg BCAL peak vs event;event num;peak (all column 2 up chan avg)",nbins,0.0,maxnumberofevents);
+	column3_up_peak_vevent = new TProfile("column3_up_peak_vevent","Avg BCAL peak vs event;event num;peak (all column 3 up chan avg)",nbins,0.0,maxnumberofevents);
+	column4_up_peak_vevent = new TProfile("column4_up_peak_vevent","Avg BCAL peak vs event;event num;peak (all column 4 up chan avg)",nbins,0.0,maxnumberofevents);
+	column1_down_peak_vevent = new TProfile("column1_down_peak_vevent","Avg BCAL peak vs event;event num;peak (all column 1 down chan avg)",nbins,0.0,maxnumberofevents);
+	column2_down_peak_vevent = new TProfile("column2_down_peak_vevent","Avg BCAL peak vs event;event num;peak (all column 2 down chan avg)",nbins,0.0,maxnumberofevents);
+	column3_down_peak_vevent = new TProfile("column3_down_peak_vevent","Avg BCAL peak vs event;event num;peak (all column 3 down chan avg)",nbins,0.0,maxnumberofevents);
+	column4_down_peak_vevent = new TProfile("column4_down_peak_vevent","Avg BCAL peak vs event;event num;peak (all column 4 down chan avg)",nbins,0.0,maxnumberofevents);
 
 	
-	column1_up_peak_vevent1 = new TProfile("column1_up_peak_vevent1","Avg BCAL peak vs event;event num;peak (all column 1 up chan avg)",10000,0.0,9998.0);
-	column1_down_peak_vevent1 = new TProfile("column1_down_peak_vevent1","Avg BCAL peak vs event;event num;peak (all column 1 down chan avg)",10000,0.0,9998.0);
-	column1_up_peak_vevent2 = new TProfile("column1_up_peak_vevent2","Avg BCAL peak vs event;event num;peak (all column 1 up chan avg)",10000,0.0,9998.0);
-	column1_down_peak_vevent2 = new TProfile("column1_down_peak_vevent2","Avg BCAL peak vs event;event num;peak (all column 1 up chan avg)",10000,0.0,9998.0);
-	column1_up_peak_vevent3 = new TProfile("column1_up_peak_vevent3","Avg BCAL peak vs event;event num;peak (all column 1 up chan avg)",10000,0.0,9998.0);
-	column1_down_peak_vevent3 = new TProfile("column1_down_peak_vevent3","Avg BCAL peak vs event;event num;peak (all column 1 up chan avg)",10000,0.0,9998.0);
-	column1_up_peak_vevent4 = new TProfile("column1_up_peak_vevent4","Avg BCAL peak vs event;event num;peak (all column 1 up chan avg)",10000,0.0,9998.0);
-	column1_down_peak_vevent4 = new TProfile("column1_down_peak_vevent4","Avg BCAL peak vs event;event num;peak (all column 1 up chan avg)",10000,0.0,9998.0);
+	column1_up_peak_vevent1 = new TProfile("column1_up_peak_vevent1","Avg BCAL peak vs event;event num;peak (all column 1 up chan avg)",nbins,0.0,maxnumberofevents);
+	column1_down_peak_vevent1 = new TProfile("column1_down_peak_vevent1","Avg BCAL peak vs event;event num;peak (all column 1 down chan avg)",nbins,0.0,maxnumberofevents);
+	column1_up_peak_vevent2 = new TProfile("column1_up_peak_vevent2","Avg BCAL peak vs event;event num;peak (all column 1 up chan avg)",nbins,0.0,maxnumberofevents);
+	column1_down_peak_vevent2 = new TProfile("column1_down_peak_vevent2","Avg BCAL peak vs event;event num;peak (all column 1 up chan avg)",nbins,0.0,maxnumberofevents);
+	column1_up_peak_vevent3 = new TProfile("column1_up_peak_vevent3","Avg BCAL peak vs event;event num;peak (all column 1 up chan avg)",nbins,0.0,maxnumberofevents);
+	column1_down_peak_vevent3 = new TProfile("column1_down_peak_vevent3","Avg BCAL peak vs event;event num;peak (all column 1 up chan avg)",nbins,0.0,maxnumberofevents);
+	column1_up_peak_vevent4 = new TProfile("column1_up_peak_vevent4","Avg BCAL peak vs event;event num;peak (all column 1 up chan avg)",nbins,0.0,maxnumberofevents);
+	column1_down_peak_vevent4 = new TProfile("column1_down_peak_vevent4","Avg BCAL peak vs event;event num;peak (all column 1 up chan avg)",nbins,0.0,maxnumberofevents);
 
-	column2_up_peak_vevent1 = new TProfile("column2_up_peak_vevent1","Avg BCAL peak vs event;event num;peak (all column 2 up chan avg)",10000,0.0,9998.0);
-	column2_down_peak_vevent1 = new TProfile("column2_down_peak_vevent1","Avg BCAL peak vs event;event num;peak (all column 2 down chan avg)",10000,0.0,9998.0);
-	column2_up_peak_vevent2 = new TProfile("column2_up_peak_vevent2","Avg BCAL peak vs event;event num;peak (all column 2 up chan avg)",10000,0.0,9998.0);
-	column2_down_peak_vevent2 = new TProfile("column2_down_peak_vevent2","Avg BCAL peak vs event;event num;peak (all column 2 up chan avg)",10000,0.0,9998.0);
-	column2_up_peak_vevent3 = new TProfile("column2_up_peak_vevent3","Avg BCAL peak vs event;event num;peak (all column 2 up chan avg)",10000,0.0,9998.0);
-	column2_down_peak_vevent3 = new TProfile("column2_down_peak_vevent3","Avg BCAL peak vs event;event num;peak (all column 2 up chan avg)",10000,0.0,9998.0);
-	column2_up_peak_vevent4 = new TProfile("column2_up_peak_vevent4","Avg BCAL peak vs event;event num;peak (all column 2 up chan avg)",10000,0.0,9998.0);
-	column2_down_peak_vevent4 = new TProfile("column2_down_peak_vevent4","Avg BCAL peak vs event;event num;peak (all column 2 up chan avg)",10000,0.0,9998.0);
+	column2_up_peak_vevent1 = new TProfile("column2_up_peak_vevent1","Avg BCAL peak vs event;event num;peak (all column 2 up chan avg)",nbins,0.0,maxnumberofevents);
+	column2_down_peak_vevent1 = new TProfile("column2_down_peak_vevent1","Avg BCAL peak vs event;event num;peak (all column 2 down chan avg)",nbins,0.0,maxnumberofevents);
+	column2_up_peak_vevent2 = new TProfile("column2_up_peak_vevent2","Avg BCAL peak vs event;event num;peak (all column 2 up chan avg)",nbins,0.0,maxnumberofevents);
+	column2_down_peak_vevent2 = new TProfile("column2_down_peak_vevent2","Avg BCAL peak vs event;event num;peak (all column 2 up chan avg)",nbins,0.0,maxnumberofevents);
+	column2_up_peak_vevent3 = new TProfile("column2_up_peak_vevent3","Avg BCAL peak vs event;event num;peak (all column 2 up chan avg)",nbins,0.0,maxnumberofevents);
+	column2_down_peak_vevent3 = new TProfile("column2_down_peak_vevent3","Avg BCAL peak vs event;event num;peak (all column 2 up chan avg)",nbins,0.0,maxnumberofevents);
+	column2_up_peak_vevent4 = new TProfile("column2_up_peak_vevent4","Avg BCAL peak vs event;event num;peak (all column 2 up chan avg)",nbins,0.0,maxnumberofevents);
+	column2_down_peak_vevent4 = new TProfile("column2_down_peak_vevent4","Avg BCAL peak vs event;event num;peak (all column 2 up chan avg)",nbins,0.0,maxnumberofevents);
 
-	column3_up_peak_vevent1 = new TProfile("column3_up_peak_vevent1","Avg BCAL peak vs event;event num;peak (all column 3 up chan avg)",10000,0.0,9998.0);
-	column3_down_peak_vevent1 = new TProfile("column3_down_peak_vevent1","Avg BCAL peak vs event;event num;peak (all column 3 down chan avg)",10000,0.0,9998.0);
-	column3_up_peak_vevent2 = new TProfile("column3_up_peak_vevent2","Avg BCAL peak vs event;event num;peak (all column 3 up chan avg)",10000,0.0,9998.0);
-	column3_down_peak_vevent2 = new TProfile("column3_down_peak_vevent2","Avg BCAL peak vs event;event num;peak (all column 3 up chan avg)",10000,0.0,9998.0);
-	column3_up_peak_vevent3 = new TProfile("column3_up_peak_vevent3","Avg BCAL peak vs event;event num;peak (all column 3 up chan avg)",10000,0.0,9998.0);
-	column3_down_peak_vevent3 = new TProfile("column3_down_peak_vevent3","Avg BCAL peak vs event;event num;peak (all column 3 up chan avg)",10000,0.0,9998.0);
-	column3_up_peak_vevent4 = new TProfile("column3_up_peak_vevent4","Avg BCAL peak vs event;event num;peak (all column 3 up chan avg)",10000,0.0,9998.0);
-	column3_down_peak_vevent4 = new TProfile("column3_down_peak_vevent4","Avg BCAL peak vs event;event num;peak (all column 3 up chan avg)",10000,0.0,9998.0);
+	column3_up_peak_vevent1 = new TProfile("column3_up_peak_vevent1","Avg BCAL peak vs event;event num;peak (all column 3 up chan avg)",nbins,0.0,maxnumberofevents);
+	column3_down_peak_vevent1 = new TProfile("column3_down_peak_vevent1","Avg BCAL peak vs event;event num;peak (all column 3 down chan avg)",nbins,0.0,maxnumberofevents);
+	column3_up_peak_vevent2 = new TProfile("column3_up_peak_vevent2","Avg BCAL peak vs event;event num;peak (all column 3 up chan avg)",nbins,0.0,maxnumberofevents);
+	column3_down_peak_vevent2 = new TProfile("column3_down_peak_vevent2","Avg BCAL peak vs event;event num;peak (all column 3 up chan avg)",nbins,0.0,maxnumberofevents);
+	column3_up_peak_vevent3 = new TProfile("column3_up_peak_vevent3","Avg BCAL peak vs event;event num;peak (all column 3 up chan avg)",nbins,0.0,maxnumberofevents);
+	column3_down_peak_vevent3 = new TProfile("column3_down_peak_vevent3","Avg BCAL peak vs event;event num;peak (all column 3 up chan avg)",nbins,0.0,maxnumberofevents);
+	column3_up_peak_vevent4 = new TProfile("column3_up_peak_vevent4","Avg BCAL peak vs event;event num;peak (all column 3 up chan avg)",nbins,0.0,maxnumberofevents);
+	column3_down_peak_vevent4 = new TProfile("column3_down_peak_vevent4","Avg BCAL peak vs event;event num;peak (all column 3 up chan avg)",nbins,0.0,maxnumberofevents);
 
-	column4_up_peak_vevent1 = new TProfile("column4_up_peak_vevent1","Avg BCAL peak vs event;event num;peak (all column 4 up chan avg)",10000,0.0,9998.0);
-	column4_down_peak_vevent1 = new TProfile("column4_down_peak_vevent1","Avg BCAL peak vs event;event num;peak (all column 4 down chan avg)",10000,0.0,9998.0);
-	column4_up_peak_vevent2 = new TProfile("column4_up_peak_vevent2","Avg BCAL peak vs event;event num;peak (all column 4 up chan avg)",10000,0.0,9998.0);
-	column4_down_peak_vevent2 = new TProfile("column4_down_peak_vevent2","Avg BCAL peak vs event;event num;peak (all column 4 up chan avg)",10000,0.0,9998.0);
-	column4_up_peak_vevent3 = new TProfile("column4_up_peak_vevent3","Avg BCAL peak vs event;event num;peak (all column 4 up chan avg)",10000,0.0,9998.0);
-	column4_down_peak_vevent3 = new TProfile("column4_down_peak_vevent3","Avg BCAL peak vs event;event num;peak (all column 4 up chan avg)",10000,0.0,9998.0);
-	column4_up_peak_vevent4 = new TProfile("column4_up_peak_vevent4","Avg BCAL peak vs event;event num;peak (all column 4 up chan avg)",10000,0.0,9998.0);
-	column4_down_peak_vevent4 = new TProfile("column4_down_peak_vevent4","Avg BCAL peak vs event;event num;peak (all column 4 up chan avg)",10000,0.0,9998.0);
+	column4_up_peak_vevent1 = new TProfile("column4_up_peak_vevent1","Avg BCAL peak vs event;event num;peak (all column 4 up chan avg)",nbins,0.0,maxnumberofevents);
+	column4_down_peak_vevent1 = new TProfile("column4_down_peak_vevent1","Avg BCAL peak vs event;event num;peak (all column 4 down chan avg)",nbins,0.0,maxnumberofevents);
+	column4_up_peak_vevent2 = new TProfile("column4_up_peak_vevent2","Avg BCAL peak vs event;event num;peak (all column 4 up chan avg)",nbins,0.0,maxnumberofevents);
+	column4_down_peak_vevent2 = new TProfile("column4_down_peak_vevent2","Avg BCAL peak vs event;event num;peak (all column 4 up chan avg)",nbins,0.0,maxnumberofevents);
+	column4_up_peak_vevent3 = new TProfile("column4_up_peak_vevent3","Avg BCAL peak vs event;event num;peak (all column 4 up chan avg)",nbins,0.0,maxnumberofevents);
+	column4_down_peak_vevent3 = new TProfile("column4_down_peak_vevent3","Avg BCAL peak vs event;event num;peak (all column 4 up chan avg)",nbins,0.0,maxnumberofevents);
+	column4_up_peak_vevent4 = new TProfile("column4_up_peak_vevent4","Avg BCAL peak vs event;event num;peak (all column 4 up chan avg)",nbins,0.0,maxnumberofevents);
+	column4_down_peak_vevent4 = new TProfile("column4_down_peak_vevent4","Avg BCAL peak vs event;event num;peak (all column 4 up chan avg)",nbins,0.0,maxnumberofevents);
 
 	
 	
@@ -254,6 +260,51 @@ jerror_t JEventProcessor_BCAL_LED::init(void) {
 	high_down_3 = new TProfile("high_bias_down_column_3_peak_vchannel","Avg BCAL peak vs channel;channel ID;peak",386,-2,1538);
 	high_down_4 = new TProfile("high_bias_down_column_4_peak_vchannel","Avg BCAL peak vs channel;channel ID;peak",386,-1,1539);	
 
+#if ROOT_VERSION_CODE >= ROOT_VERSION(6,0,0)
+
+	bcal_peak_vevent->SetCanExtend(TH1::kXaxis);
+	
+	up_peak_vevent->SetCanExtend(TH1::kXaxis);
+	down_peak_vevent->SetCanExtend(TH1::kXaxis);
+	
+	column1_peak_vevent->SetCanExtend(TH1::kXaxis);
+	column2_peak_vevent->SetCanExtend(TH1::kXaxis);
+	column3_peak_vevent->SetCanExtend(TH1::kXaxis);
+	column4_peak_vevent->SetCanExtend(TH1::kXaxis);
+
+	column1_up_peak_vevent->SetCanExtend(TH1::kXaxis);
+	column2_up_peak_vevent->SetCanExtend(TH1::kXaxis);
+	column3_up_peak_vevent->SetCanExtend(TH1::kXaxis);
+	column4_up_peak_vevent->SetCanExtend(TH1::kXaxis);
+	column1_down_peak_vevent->SetCanExtend(TH1::kXaxis);
+	column2_down_peak_vevent->SetCanExtend(TH1::kXaxis);
+	column3_down_peak_vevent->SetCanExtend(TH1::kXaxis);
+	column4_down_peak_vevent->SetCanExtend(TH1::kXaxis);
+	
+	//////////////////////////////////////////////////////////////////////
+#else
+	bcal_peak_vevent->SetBit(TH1::kCanRebin);
+	
+	up_peak_vevent->SetBit(TH1::kCanRebin);
+	down_peak_vevent->SetBit(TH1::kCanRebin);
+	
+	column1_peak_vevent->SetBit(TH1::kCanRebin);
+	column2_peak_vevent->SetBit(TH1::kCanRebin);
+	column3_peak_vevent->SetBit(TH1::kCanRebin);
+	column4_peak_vevent->SetBit(TH1::kCanRebin);
+
+	column1_up_peak_vevent->SetBit(TH1::kCanRebin);
+	column2_up_peak_vevent->SetBit(TH1::kCanRebin);
+	column3_up_peak_vevent->SetBit(TH1::kCanRebin);
+	column4_up_peak_vevent->SetBit(TH1::kCanRebin);
+	column1_down_peak_vevent->SetBit(TH1::kCanRebin);
+	column2_down_peak_vevent->SetBit(TH1::kCanRebin);
+	column3_down_peak_vevent->SetBit(TH1::kCanRebin);
+	column4_down_peak_vevent->SetBit(TH1::kCanRebin);
+	
+	/////////////////////////////////////////////////////////
+#endif
+
 	// back to main dir
 	main->cd();
 	
@@ -270,7 +321,6 @@ jerror_t JEventProcessor_BCAL_LED::init(void) {
 
 jerror_t JEventProcessor_BCAL_LED::brun(JEventLoop *eventLoop, int32_t runnumber) {
 	// This is called whenever the run number changes
-	eventcounter = 0;
 	return NOERROR;
 }
 
@@ -285,10 +335,7 @@ jerror_t JEventProcessor_BCAL_LED::evnt(JEventLoop *loop, uint64_t eventnumber) 
 	// reconstruction algorithm) should be done outside of any mutex lock
 	// since multiple threads may call this method at the same time.
 	
-	currenteventnum = eventnumber;
-	if (currenteventnum != previouseventnum)
-	{
-	int chcounter[1536] = {  } ;
+	int chcounter[1536] = { NULL } ;
 	  
 	
 	vector<const DBCALDigiHit*> bcaldigihits;
@@ -339,19 +386,11 @@ jerror_t JEventProcessor_BCAL_LED::evnt(JEventLoop *loop, uint64_t eventnumber) 
 	
 	if (LED_US || LED_DS) {
 		
-		eventcounter++;
 
 		loop->Get(dbcalhits);
 		loop->Get(bcaldigihits);
 		
 		     int apedsubpeak[1536] = { 0 };
-		     
-		     // double time[1536] = {0. };
-		     
-		     // int cellmodule[1536] =  { 0 };
-     		     // int celllayer[1536] =  { 0 };
-		     int cellsector[1536] =  { 0 };
-		     int cellend[1536] =  { 0 };
 
 		     
 		for( unsigned int i=0; i<dbcalhits.size(); i++) {
@@ -362,7 +401,7 @@ jerror_t JEventProcessor_BCAL_LED::evnt(JEventLoop *loop, uint64_t eventnumber) 
 			int module = bcalhit->module;
 			int layer = bcalhit->layer;
 			int sector = bcalhit->sector;
-		       
+		        int end = bcalhit->end;
 			int cell_id = -1;
 				
 				
@@ -377,11 +416,6 @@ jerror_t JEventProcessor_BCAL_LED::evnt(JEventLoop *loop, uint64_t eventnumber) 
 				}
 				
 				apedsubpeak[cell_id] = bcaldigihit->pulse_peak - (int) bcaldigihit->pedestal / bcaldigihit->nsamples_pedestal;
-				// time[cell_id] = bcalhit->t;
-				// cellmodule[cell_id] = bcalhit->module;
-				// celllayer[cell_id] = bcalhit->layer;
-				cellsector[cell_id] = bcalhit->sector;
-				cellend[cell_id] = bcalhit->end;
 				chcounter[cell_id]++;
 				
         }//loop over bcalhits
@@ -392,39 +426,39 @@ jerror_t JEventProcessor_BCAL_LED::evnt(JEventLoop *loop, uint64_t eventnumber) 
 	for (int chid = 0; chid < 1536; chid++)
 	    {
 	      if (chcounter[chid] > 1) continue;
-	      bcal_peak_vevent->Fill(eventcounter,apedsubpeak[chid]);
-				if (cellend[chid] == DBCALGeometry::kUpstream)
-				   {up_peak_vevent->Fill(eventcounter,apedsubpeak[chid]);
-				    if (chid%4 == 0) {column1_up_peak_vevent->Fill(eventcounter,apedsubpeak[chid]);}
-				    else if (chid%4 == 1) {column2_up_peak_vevent->Fill(eventcounter,apedsubpeak[chid]);}
-				    else if (chid%4 == 2) {column3_up_peak_vevent->Fill(eventcounter,apedsubpeak[chid]);}
-				    else if (chid%4 == 3) {column4_up_peak_vevent->Fill(eventcounter,apedsubpeak[chid]);}
+	      bcal_peak_vevent->Fill(eventnumber,apedsubpeak[chid]);
+				if (end == DBCALGeometry::kUpstream)
+				   {up_peak_vevent->Fill(eventnumber,apedsubpeak[chid]);
+				    if (chid%4 == 0) {column1_up_peak_vevent->Fill(eventnumber,apedsubpeak[chid]);}
+				    else if (chid%4 == 1) {column2_up_peak_vevent->Fill(eventnumber,apedsubpeak[chid]);}
+				    else if (chid%4 == 2) {column3_up_peak_vevent->Fill(eventnumber,apedsubpeak[chid]);}
+				    else if (chid%4 == 3) {column4_up_peak_vevent->Fill(eventnumber,apedsubpeak[chid]);}
 				   }
 				    
-				else if (cellend[chid] == DBCALGeometry::kDownstream) 
-				    {down_peak_vevent->Fill(eventcounter,apedsubpeak[chid]);
-				    if (chid%4 == 0) {column1_down_peak_vevent->Fill(eventcounter,apedsubpeak[chid]);}
-				    else if (chid%4 == 1) {column2_down_peak_vevent->Fill(eventcounter,apedsubpeak[chid]);}
-				    else if (chid%4 == 2) {column3_down_peak_vevent->Fill(eventcounter,apedsubpeak[chid]);}
-				    else if (chid%4 == 3) {column4_down_peak_vevent->Fill(eventcounter,apedsubpeak[chid]);}
+				else if (end == DBCALGeometry::kDownstream) 
+				    {down_peak_vevent->Fill(eventnumber,apedsubpeak[chid]);
+				    if (chid%4 == 0) {column1_down_peak_vevent->Fill(eventnumber,apedsubpeak[chid]);}
+				    else if (chid%4 == 1) {column2_down_peak_vevent->Fill(eventnumber,apedsubpeak[chid]);}
+				    else if (chid%4 == 2) {column3_down_peak_vevent->Fill(eventnumber,apedsubpeak[chid]);}
+				    else if (chid%4 == 3) {column4_down_peak_vevent->Fill(eventnumber,apedsubpeak[chid]);}
 				    }
 				    
-				if (cellsector[chid] == 1) {column1_peak_vevent->Fill(eventcounter,apedsubpeak[chid]);}
-				else if (cellsector[chid] == 2) {column2_peak_vevent->Fill(eventcounter,apedsubpeak[chid]);}
-				else if (cellsector[chid] == 3) {column3_peak_vevent->Fill(eventcounter,apedsubpeak[chid]);}
-				else if (cellsector[chid] == 4) {column4_peak_vevent->Fill(eventcounter,apedsubpeak[chid]);}
+				if (sector == 1) {column1_peak_vevent->Fill(eventnumber,apedsubpeak[chid]);}
+				else if (sector == 2) {column2_peak_vevent->Fill(eventnumber,apedsubpeak[chid]);}
+				else if (sector == 3) {column3_peak_vevent->Fill(eventnumber,apedsubpeak[chid]);}
+				else if (sector == 4) {column4_peak_vevent->Fill(eventnumber,apedsubpeak[chid]);}
 		}//loop over bcalhits
 
 		   //Deduce LED pulsing configuration based on average pulse peak in BCAL, each side & each column then fill correponding profile.
-		 double column1up = column1_up_peak_vevent->GetBinContent(column1_up_peak_vevent->FindBin(eventcounter));
- 		 double column2up = column2_up_peak_vevent->GetBinContent(column2_up_peak_vevent->FindBin(eventcounter));
-		 double column3up = column3_up_peak_vevent->GetBinContent(column3_up_peak_vevent->FindBin(eventcounter));
-		 double column4up = column4_up_peak_vevent->GetBinContent(column4_up_peak_vevent->FindBin(eventcounter));
+		 double column1up = column1_up_peak_vevent->GetBinContent(column1_up_peak_vevent->FindBin(eventnumber));
+ 		 double column2up = column2_up_peak_vevent->GetBinContent(column2_up_peak_vevent->FindBin(eventnumber));
+		 double column3up = column3_up_peak_vevent->GetBinContent(column3_up_peak_vevent->FindBin(eventnumber));
+		 double column4up = column4_up_peak_vevent->GetBinContent(column4_up_peak_vevent->FindBin(eventnumber));
 
-		 double column1down = column1_down_peak_vevent->GetBinContent(column1_down_peak_vevent->FindBin(eventcounter));
-		 double column2down = column2_down_peak_vevent->GetBinContent(column2_down_peak_vevent->FindBin(eventcounter));
- 		 double column3down = column3_down_peak_vevent->GetBinContent(column3_down_peak_vevent->FindBin(eventcounter));
-		 double column4down = column4_down_peak_vevent->GetBinContent(column4_down_peak_vevent->FindBin(eventcounter));
+		 double column1down = column1_down_peak_vevent->GetBinContent(column1_down_peak_vevent->FindBin(eventnumber));
+		 double column2down = column2_down_peak_vevent->GetBinContent(column2_down_peak_vevent->FindBin(eventnumber));
+ 		 double column3down = column3_down_peak_vevent->GetBinContent(column3_down_peak_vevent->FindBin(eventnumber));
+		 double column4down = column4_down_peak_vevent->GetBinContent(column4_down_peak_vevent->FindBin(eventnumber));
 		 
 			if      (adccount1 < column1up && column1up < adccount2 && column1up > column1down && column1up > column2up && column1down > column2down && column1up > column3up && column1down > column3down && column1up > column4up && column1down > column4down)
 			    {
@@ -433,9 +467,9 @@ jerror_t JEventProcessor_BCAL_LED::evnt(JEventLoop *loop, uint64_t eventnumber) 
 			    {
 			      if (chcounter[k] > 1) continue;
 			      if (k%4 == 0 && apedsubpeak[k] > 0) {low_down_1->Fill(k, apedsubpeak[k]);
-					    if (k < 768) {column1_down_peak_vevent1->Fill(eventcounter,apedsubpeak[k]);
+					    if (k < 768) {column1_down_peak_vevent1->Fill(eventnumber,apedsubpeak[k]);
 							  }
-					    else if  (k > 767) {column1_up_peak_vevent1->Fill(eventcounter,apedsubpeak[k]);
+					    else if  (k > 767) {column1_up_peak_vevent1->Fill(eventnumber,apedsubpeak[k]);
 								}
 					    }
 			    }
@@ -445,9 +479,9 @@ jerror_t JEventProcessor_BCAL_LED::evnt(JEventLoop *loop, uint64_t eventnumber) 
 			    {//column = 2;
 			    for(int k=0 ;k < 1536;k++) 
 			    {if (k%4 == 1 && apedsubpeak[k] > 0) {low_down_2->Fill(k, apedsubpeak[k]);
-					    if (k < 768) {column2_down_peak_vevent1->Fill(eventcounter,apedsubpeak[k]);
+					    if (k < 768) {column2_down_peak_vevent1->Fill(eventnumber,apedsubpeak[k]);
 							  }
-					    else if  (k > 767) {column2_up_peak_vevent1->Fill(eventcounter,apedsubpeak[k]);
+					    else if  (k > 767) {column2_up_peak_vevent1->Fill(eventnumber,apedsubpeak[k]);
 								}
 					    }
 			    }
@@ -457,9 +491,9 @@ jerror_t JEventProcessor_BCAL_LED::evnt(JEventLoop *loop, uint64_t eventnumber) 
 			    {//column = 3;
 			    for(int k=0 ;k < 1536;k++) 
 			    {if (k%4 == 2 && apedsubpeak[k] > 0) {low_down_3->Fill(k, apedsubpeak[k]);
-					    if (k < 768) {column3_down_peak_vevent1->Fill(eventcounter,apedsubpeak[k]);
+					    if (k < 768) {column3_down_peak_vevent1->Fill(eventnumber,apedsubpeak[k]);
 							  }
-					    else if  (k > 767) {column3_up_peak_vevent1->Fill(eventcounter,apedsubpeak[k]);
+					    else if  (k > 767) {column3_up_peak_vevent1->Fill(eventnumber,apedsubpeak[k]);
 								}
 					    }
 			    }
@@ -469,9 +503,9 @@ jerror_t JEventProcessor_BCAL_LED::evnt(JEventLoop *loop, uint64_t eventnumber) 
 			    {//column = 4;
 			    for(int k=0 ;k < 1536;k++) 
 			    {if (k%4 == 3 && apedsubpeak[k] > 0) {low_down_4->Fill(k, apedsubpeak[k]);
-					    if (k < 768) {column4_down_peak_vevent1->Fill(eventcounter,apedsubpeak[k]);
+					    if (k < 768) {column4_down_peak_vevent1->Fill(eventnumber,apedsubpeak[k]);
 							  }
-					    else if  (k > 767) {column4_up_peak_vevent1->Fill(eventcounter,apedsubpeak[k]);
+					    else if  (k > 767) {column4_up_peak_vevent1->Fill(eventnumber,apedsubpeak[k]);
 								}
 					    }
 			    }
@@ -483,9 +517,9 @@ jerror_t JEventProcessor_BCAL_LED::evnt(JEventLoop *loop, uint64_t eventnumber) 
 			    {//column = 1;
 			    for(int k=0 ;k < 1536;k++) 
 			    {if (k%4 == 0 && apedsubpeak[k] > 0) {low_up_1->Fill(k, apedsubpeak[k]);
-					    if (k < 768) {column1_down_peak_vevent2->Fill(eventcounter,apedsubpeak[k]);
+					    if (k < 768) {column1_down_peak_vevent2->Fill(eventnumber,apedsubpeak[k]);
 							  }
-					    else if  (k > 767) {column1_up_peak_vevent2->Fill(eventcounter,apedsubpeak[k]);
+					    else if  (k > 767) {column1_up_peak_vevent2->Fill(eventnumber,apedsubpeak[k]);
 								}
 					    }
 			    }
@@ -496,9 +530,9 @@ jerror_t JEventProcessor_BCAL_LED::evnt(JEventLoop *loop, uint64_t eventnumber) 
 			    {//column = 2;
 			    for(int k=0 ;k < 1536;k++) 
 			    {if (k%4 == 1 && apedsubpeak[k] > 0) {low_up_2->Fill(k, apedsubpeak[k]);
-					    if (k < 768) {column2_down_peak_vevent2->Fill(eventcounter,apedsubpeak[k]);
+					    if (k < 768) {column2_down_peak_vevent2->Fill(eventnumber,apedsubpeak[k]);
 							  }
-					    else if  (k > 767) {column2_up_peak_vevent2->Fill(eventcounter,apedsubpeak[k]);
+					    else if  (k > 767) {column2_up_peak_vevent2->Fill(eventnumber,apedsubpeak[k]);
 								}
 					    }
 			    }
@@ -508,9 +542,9 @@ jerror_t JEventProcessor_BCAL_LED::evnt(JEventLoop *loop, uint64_t eventnumber) 
 			    {//column = 3;
 			    for(int k=0 ;k < 1536;k++) 
 			    {if (k%4 == 2 && apedsubpeak[k] > 0) {low_up_3->Fill(k, apedsubpeak[k]);
-					    if (k < 768) {column3_down_peak_vevent2->Fill(eventcounter,apedsubpeak[k]);
+					    if (k < 768) {column3_down_peak_vevent2->Fill(eventnumber,apedsubpeak[k]);
 							  }
-					    else if  (k > 767) {column3_up_peak_vevent2->Fill(eventcounter,apedsubpeak[k]);
+					    else if  (k > 767) {column3_up_peak_vevent2->Fill(eventnumber,apedsubpeak[k]);
 								}
 					    }
 			    }
@@ -520,9 +554,9 @@ jerror_t JEventProcessor_BCAL_LED::evnt(JEventLoop *loop, uint64_t eventnumber) 
 			    {//column = 4;
 			    for(int k=0 ;k < 1536;k++) 
 			    {if (k%4 == 3 && apedsubpeak[k] > 0) {low_up_4->Fill(k, apedsubpeak[k]);
-					    if (k < 768) {column4_down_peak_vevent2->Fill(eventcounter,apedsubpeak[k]);
+					    if (k < 768) {column4_down_peak_vevent2->Fill(eventnumber,apedsubpeak[k]);
 							  }
-					    else if  (k > 767) {column4_up_peak_vevent2->Fill(eventcounter,apedsubpeak[k]);
+					    else if  (k > 767) {column4_up_peak_vevent2->Fill(eventnumber,apedsubpeak[k]);
 								}
 					    }
 			    }
@@ -535,9 +569,9 @@ jerror_t JEventProcessor_BCAL_LED::evnt(JEventLoop *loop, uint64_t eventnumber) 
 			    {//column = 1;
 			    for(int k=0 ;k < 1536;k++) 
 			    {if (k%4 == 0 && apedsubpeak[k] > 0) {high_down_1->Fill(k, apedsubpeak[k]);
-    					    if (k < 768) {column1_down_peak_vevent3->Fill(eventcounter,apedsubpeak[k]);
+    					    if (k < 768) {column1_down_peak_vevent3->Fill(eventnumber,apedsubpeak[k]);
 							  }
-					    else if  (k > 767) {column1_up_peak_vevent3->Fill(eventcounter,apedsubpeak[k]);
+					    else if  (k > 767) {column1_up_peak_vevent3->Fill(eventnumber,apedsubpeak[k]);
 								}
 					    }
 			    }
@@ -547,9 +581,9 @@ jerror_t JEventProcessor_BCAL_LED::evnt(JEventLoop *loop, uint64_t eventnumber) 
 			    {//column = 2;
 			    for(int k=0 ;k < 1536;k++) 
 			    {if (k%4 == 1 && apedsubpeak[k] > 0) {high_down_2->Fill(k, apedsubpeak[k]);
-    					    if (k < 768) {column2_down_peak_vevent3->Fill(eventcounter,apedsubpeak[k]);
+    					    if (k < 768) {column2_down_peak_vevent3->Fill(eventnumber,apedsubpeak[k]);
 							  }
-					    else if  (k > 767) {column2_up_peak_vevent3->Fill(eventcounter,apedsubpeak[k]);
+					    else if  (k > 767) {column2_up_peak_vevent3->Fill(eventnumber,apedsubpeak[k]);
 								}
 					    }
 			    }
@@ -559,9 +593,9 @@ jerror_t JEventProcessor_BCAL_LED::evnt(JEventLoop *loop, uint64_t eventnumber) 
 			    {//column = 3;
 			    for(int k=0 ;k < 1536;k++) 
 			    {if (k%4 == 2 && apedsubpeak[k] > 0) {high_down_3->Fill(k, apedsubpeak[k]);
-    					    if (k < 768) {column3_down_peak_vevent3->Fill(eventcounter,apedsubpeak[k]);
+    					    if (k < 768) {column3_down_peak_vevent3->Fill(eventnumber,apedsubpeak[k]);
 							  }
-					    else if  (k > 767) {column3_up_peak_vevent3->Fill(eventcounter,apedsubpeak[k]);
+					    else if  (k > 767) {column3_up_peak_vevent3->Fill(eventnumber,apedsubpeak[k]);
 								}
 					    }
 			    }
@@ -571,9 +605,9 @@ jerror_t JEventProcessor_BCAL_LED::evnt(JEventLoop *loop, uint64_t eventnumber) 
 			    {//column = 4;
 			    for(int k=0 ;k < 1536;k++) 
 			    {if (k%4 == 3 && apedsubpeak[k] > 0) {high_down_4->Fill(k, apedsubpeak[k]);
-    					    if (k < 768) {column4_down_peak_vevent3->Fill(eventcounter,apedsubpeak[k]);
+    					    if (k < 768) {column4_down_peak_vevent3->Fill(eventnumber,apedsubpeak[k]);
 							  }
-					    else if  (k > 767) {column4_up_peak_vevent3->Fill(eventcounter,apedsubpeak[k]);
+					    else if  (k > 767) {column4_up_peak_vevent3->Fill(eventnumber,apedsubpeak[k]);
 								}
 					    }
 			    }
@@ -585,9 +619,9 @@ jerror_t JEventProcessor_BCAL_LED::evnt(JEventLoop *loop, uint64_t eventnumber) 
 			    {//column = 1;
 			    for(int k=0 ;k < 1536;k++) 
 			    {if (k%4 == 0 && apedsubpeak[k] > 0) {high_up_1->Fill(k, apedsubpeak[k]);
-    					    if (k < 768) {column1_down_peak_vevent4->Fill(eventcounter,apedsubpeak[k]);
+    					    if (k < 768) {column1_down_peak_vevent4->Fill(eventnumber,apedsubpeak[k]);
 							  }
-					    else if  (k > 767) {column1_up_peak_vevent4->Fill(eventcounter,apedsubpeak[k]);
+					    else if  (k > 767) {column1_up_peak_vevent4->Fill(eventnumber,apedsubpeak[k]);
 								}
 					   }
 			    }
@@ -597,9 +631,9 @@ jerror_t JEventProcessor_BCAL_LED::evnt(JEventLoop *loop, uint64_t eventnumber) 
 			    {//column = 2;
 			    for(int k=0 ;k < 1536;k++) 
 			    {if (k%4 == 1 && apedsubpeak[k] > 0) {high_up_2->Fill(k, apedsubpeak[k]);
-    					    if (k < 768) {column2_down_peak_vevent4->Fill(eventcounter,apedsubpeak[k]);
+    					    if (k < 768) {column2_down_peak_vevent4->Fill(eventnumber,apedsubpeak[k]);
 							  }
-					    else if  (k > 767) {column2_up_peak_vevent4->Fill(eventcounter,apedsubpeak[k]);
+					    else if  (k > 767) {column2_up_peak_vevent4->Fill(eventnumber,apedsubpeak[k]);
 								}
 					   }
 			    }
@@ -609,9 +643,9 @@ jerror_t JEventProcessor_BCAL_LED::evnt(JEventLoop *loop, uint64_t eventnumber) 
 			    {//column = 3;
 			    for(int k=0 ;k < 1536;k++) 
 			    {if (k%4 == 2 && apedsubpeak[k] > 0) {high_up_3->Fill(k, apedsubpeak[k]);
-    					    if (k < 768) {column3_down_peak_vevent4->Fill(eventcounter,apedsubpeak[k]);
+    					    if (k < 768) {column3_down_peak_vevent4->Fill(eventnumber,apedsubpeak[k]);
 							  }
-					    else if  (k > 767) {column3_up_peak_vevent4->Fill(eventcounter,apedsubpeak[k]);
+					    else if  (k > 767) {column3_up_peak_vevent4->Fill(eventnumber,apedsubpeak[k]);
 								}
 					   }
 			    }
@@ -621,9 +655,9 @@ jerror_t JEventProcessor_BCAL_LED::evnt(JEventLoop *loop, uint64_t eventnumber) 
 			    {//column = 4;
 			    for(int k=0 ;k < 1536;k++) 
 			    {if (k%4 == 3 && apedsubpeak[k] > 0) {high_up_4->Fill(k, apedsubpeak[k]);
-    					    if (k < 768) {column4_down_peak_vevent4->Fill(eventcounter,apedsubpeak[k]);
+    					    if (k < 768) {column4_down_peak_vevent4->Fill(eventnumber,apedsubpeak[k]);
 							  }
-					    else if  (k > 767) {column4_up_peak_vevent4->Fill(eventcounter,apedsubpeak[k]);
+					    else if  (k > 767) {column4_up_peak_vevent4->Fill(eventnumber,apedsubpeak[k]);
 								}
 					   }
 			    }
@@ -634,8 +668,6 @@ jerror_t JEventProcessor_BCAL_LED::evnt(JEventLoop *loop, uint64_t eventnumber) 
 		japp->RootUnLock();
 	}//if LEDUP || LEDDOWN
 	
-    }//current previous event number
-    previouseventnum = eventnumber;
 
     return NOERROR;
 }
@@ -659,9 +691,6 @@ jerror_t JEventProcessor_BCAL_LED::erun(void) {
 	printf("%20s: %10i\n","US LED",trigUS);
 	printf("%20s: %10i\n","DS LED",trigDS);
 	printf("%20s: %10i\n","BCAL",trigCosmic);
-// 	printf("%20s: %10i\n","overflow",overflow);
-// 	printf("%20s: %10i\n","underflow",underflow);
-// 	printf("%20s: %10i\n","negatives",negatives);
 	ledcounter = low_down_1_counter + low_down_2_counter + low_down_3_counter + low_down_4_counter + low_up_1_counter + low_up_2_counter + low_up_3_counter + low_up_4_counter + high_down_1_counter + high_down_2_counter + high_down_3_counter + high_down_4_counter + high_up_1_counter + high_up_2_counter + high_up_3_counter + high_up_4_counter + unidentified;
 	printf("%20s: %10i\n","low_down_1_counter",low_down_1_counter);
 	printf("%20s: %10i\n","low_down_2_counter",low_down_2_counter);
