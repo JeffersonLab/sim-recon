@@ -21,10 +21,7 @@ class JEventProcessor_BCAL_LED:public jana::JEventProcessor{
   int adccount1, adccount2, adccount3;
   double maxnumberofevents;
   int run_number;
-  uint64_t previouseventnum, currenteventnum;
-  int eventcounter;
   
-  //overflow, underflow, negatives, zeros;
 
  private:
   jerror_t init(void);						///< Called once at program start.
