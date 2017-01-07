@@ -41,6 +41,8 @@
 
 #include "calibDB.h"
 
+extern s_HDDM_t* thisInputEvent;
+
 // plastic scintillator specific constants
 static float ATTEN_LENGTH =   150;
 static float C_EFFECTIVE  =   15.0;
@@ -214,7 +216,8 @@ void hitForwardTOF (float xin[4], float xout[4],
       s_ForwardTOF_t* tof = *twig = make_s_ForwardTOF();
       s_FtofTruthPoints_t* points = make_s_FtofTruthPoints(1);
       tof->ftofTruthPoints = points;
-      points->in[0].primary = (stack == 0);
+      int a = thisInputEvent->physicsEvents->in[0].reactions->in[0].vertices->in[0].products->mult;
+      points->in[0].primary = (track <= a && stack == 0);
       points->in[0].track = track;
       points->in[0].x = x[0];
       points->in[0].y = x[1];

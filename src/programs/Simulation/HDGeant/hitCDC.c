@@ -355,6 +355,7 @@ void hitCentralDC (float xin[4], float xout[4],
   trackdir[2] =-xinlocal[2] + xoutlocal[2];
   alpha=-(xinlocal[0]*trackdir[0]+xinlocal[1]*trackdir[1])
     /(trackdir[0]*trackdir[0]+trackdir[1]*trackdir[1]);
+  alpha = (alpha < 0)? 0 : (alpha > 1)? 1 : alpha;
   xlocal[0]=xinlocal[0]+trackdir[0]*alpha;  
   xlocal[1]=xinlocal[1]+trackdir[1]*alpha;
   xlocal[2]=xinlocal[2]+trackdir[2]*alpha;  
@@ -446,8 +447,8 @@ void hitCentralDC (float xin[4], float xout[4],
       {
          s_CentralDC_t* cdc = *twig = make_s_CentralDC();
          s_CdcTruthPoints_t* points = make_s_CdcTruthPoints(1);
-        int a = thisInputEvent->physicsEvents->in[0].reactions->in[0].vertices->in[0].products->mult;
-         points->in[0].primary = (stack <= a);
+         int a = thisInputEvent->physicsEvents->in[0].reactions->in[0].vertices->in[0].products->mult;
+         points->in[0].primary = (track <= a && stack == 0);
          points->in[0].track = track;
          points->in[0].t = t;
          points->in[0].z = x[2];
