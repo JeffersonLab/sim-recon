@@ -100,8 +100,8 @@ void hitUpstreamEMveto (float xin[4], float xout[4],
     if (*twig == 0) {
       s_UpstreamEMveto_t* upv = *twig = make_s_UpstreamEMveto();
       s_UpvTruthShowers_t* showers = make_s_UpvTruthShowers(1);
-        int a = thisInputEvent->physicsEvents->in[0].reactions->in[0].vertices->in[0].products->mult;
-      showers->in[0].primary = (stack <= a);
+      int a = thisInputEvent->physicsEvents->in[0].reactions->in[0].vertices->in[0].products->mult;
+      showers->in[0].primary = (track <= a && stack == 0);
       showers->in[0].track = track;
       showers->in[0].x = xin[0];
       showers->in[0].y = xin[1];
