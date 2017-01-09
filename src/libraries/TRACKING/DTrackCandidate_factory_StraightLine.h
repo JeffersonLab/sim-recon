@@ -50,8 +50,10 @@ class DTrackCandidate_factory_StraightLine:public jana::JFactory<DTrackCandidate
       };
 
       typedef struct{
-         double resi,err,d,tdrift,s;
-      }update_t;
+         double resi,err,d,tdrift,ddrift,s;
+         DMatrix4x1 S;
+         DMatrix4x4 C;
+      }cdc_update_t;
 
       typedef struct{
          double d,tdrift,s;
@@ -91,8 +93,12 @@ class DTrackCandidate_factory_StraightLine:public jana::JFactory<DTrackCandidate
             vector<const DCDCTrackHit *>&hits,
             vector<int>&used_hits,
             deque<trajectory_t>&trajectory,
-            vector<update_t>&pulls,
+            vector<cdc_update_t>&pulls,
             double &chi2,unsigned int &ndof,bool timebased=false);
+      jerror_t Smooth(deque<trajectory_t>&trajectory,
+            vector<cdc_update_t>&cdc_updates,
+            vector<const DCDCTrackHit *>&hits,
+            DTrackCandidate *cand);
       jerror_t Smooth(deque<trajectory_t>&trajectory,
             vector<fdc_update_t>&updates,
             vector<const DFDCPseudo *>&hits,
