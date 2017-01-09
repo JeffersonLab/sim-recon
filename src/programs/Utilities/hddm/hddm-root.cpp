@@ -218,7 +218,11 @@ class long_attribute_t : public attribute_t {
       return 8;
    }
 
+#if __APPLE__
+   int64_t value;
+#else
    long int value;
+#endif
 };
 
 class float_attribute_t : public attribute_t {
