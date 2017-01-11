@@ -194,10 +194,19 @@ s_Cerenkov_t* pickCerenkov ()
          FREE(sections);
       }
 
+      int last_track = -1;
+      double last_t = 1e9;
       for (point=0; point < points->mult; ++point)
       {
-         int m = box->cereTruthPoints->mult++;
-         box->cereTruthPoints->in[m] = points->in[point];
+         if (points->in[point].trackID->itrack > 0 &&
+            (points->in[point].track != last_track ||
+             fabs(points->in[point].t - last_t) > 0.1))
+         {
+            int m = box->cereTruthPoints->mult++;
+            box->cereTruthPoints->in[m] = points->in[point];
+            last_track = points->in[point].track;
+            last_t = points->in[point].t;
+         }
       }
       if (points != HDDM_NULL)
       {

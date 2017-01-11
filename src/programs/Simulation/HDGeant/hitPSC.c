@@ -234,10 +234,19 @@ s_PairSpectrometerCoarse_t* pickPsc ()
          FREE(paddles);
       }
 
+      int last_track = -1;
+      double last_t = 1e9;
       for (point=0; point < points->mult; ++point)
       {
-         int m = box->pscTruthPoints->mult++;
-         box->pscTruthPoints->in[m] = item->pscTruthPoints->in[point];
+         if (points->in[point].trackID->itrack > 0 &&
+            (points->in[point].track != last_track ||
+             fabs(points->in[point].t - last_t) > 0.1))
+         {
+            int m = box->pscTruthPoints->mult++;
+            box->pscTruthPoints->in[m] = item->pscTruthPoints->in[point];
+            last_track = points->in[point].track;
+            last_t = points->in[point].t;
+         }
       }
       if (points != HDDM_NULL)
       {

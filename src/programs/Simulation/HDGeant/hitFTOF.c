@@ -51,7 +51,7 @@ static float BAR_LENGTH   =   252.0; // length of the bar
 // kinematic constants
 static float TWO_HIT_RESOL =  25.;// separation time between two different hits
 
-static float THRESH_MEV    =  0.;  // do not through away any hits, one can do that later
+static float THRESH_MEV    =  0.;  // do not throw away any hits, one can do that later
 
 // maximum particle tracks per counter
 static int TOF_MAX_HITS    = 25;  // was 100 changed to 25
@@ -194,7 +194,7 @@ void hitForwardTOF (float xin[4], float xout[4],
   /* post the hit to the truth tree */
   // in other words: store the GENERATED track information
   
-  if ((history == 0) && (plane == 0)) { 
+  if ((history == 0) && (plane == 0)) {
     
     // save all tracks from particles that hit the first plane of FTOF
     // save the generated "true" values
@@ -542,9 +542,18 @@ s_ForwardTOF_t* pickForwardTOF ()
     }
     
     // keep also the MC generated primary track particles
+    int last_track = -1;
+    double last_t = 1e9;
     for (point=0; point < points->mult; ++point) {
-      int m = box->ftofTruthPoints->mult++;
-      box->ftofTruthPoints->in[m] = points->in[point];
+       if (points->in[point].trackID->itrack > 0 &&
+          (points->in[point].track != last_track ||
+           fabs(points->in[point].t - last_t) > 0.1))
+       {
+          int m = box->ftofTruthPoints->mult++;
+          box->ftofTruthPoints->in[m] = points->in[point];
+          last_track = points->in[point].track;
+          last_t = points->in[point].t;
+       }
     }
     if (points != HDDM_NULL) {
       FREE(points);

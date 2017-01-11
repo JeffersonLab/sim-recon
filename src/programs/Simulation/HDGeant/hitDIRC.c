@@ -114,11 +114,20 @@ s_DIRC_t* pickDirc() {
 		}
 		// pack DIRC Truth points
 		s_DircTruthPoints_t* dircpoints = item->dircTruthPoints;
+        int last_track = -1;
+        double last_t = 1e9;
 		int dircpoint;
 		for (dircpoint = 0; dircpoint < dircpoints->mult; ++dircpoint) {
-			int m = box->dircTruthPoints->mult++;
-			box->dircTruthPoints->in[m] = dircpoints->in[dircpoint];
-		}
+            if (dircpoints->in[dircpoint].trackID->itrack > 0 &&
+               (dircpoints->in[dircpoint].track != last_track ||
+                fabs(dircpoints->in[dircpoint].t - last_t) > 0.1))
+            {
+               int m = box->dircTruthPoints->mult++;
+               box->dircTruthPoints->in[m] = dircpoints->in[dircpoint];
+               last_track = dircpoints->in[dircpoint].track;
+               last_t = dircpoints->in[dircpoint].t;
+            }
+        }
 		if (dircpoints != HDDM_NULL) {
 			FREE(dircpoints);
 		}
