@@ -612,7 +612,7 @@ s_CentralDC_t* pickCentralDC ()
             float q=0.; 
             int FADC_BIN_SIZE=1;
             for (i=0; i<num_samples; i+=FADC_BIN_SIZE) {
-               if (samples[i] >= THRESH_MV) {
+               if (samples[i] > THRESH_MV) {
                   if (returned_to_baseline == 0) {
                      hits->in[iok].itrack = hits->in[0].itrack;
                      hits->in[iok].ptype = hits->in[0].ptype;

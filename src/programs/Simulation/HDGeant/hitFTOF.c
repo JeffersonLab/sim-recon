@@ -175,22 +175,6 @@ void hitForwardTOF (float xin[4], float xout[4],
   transformCoord(x,"global",xlocal,"FTOF");
   transformCoord(zeroHat,"local",xftof,"FTOF");
   
-  // track vector of this step
-  //dx[0] = xin[0] - xout[0];
-  //dx[1] = xin[1] - xout[1];
-  //dx[2] = xin[2] - xout[2];
-  // length of the track of this step
-  //dr = sqrt(dx[0]*dx[0] + dx[1]*dx[1] + dx[2]*dx[2]);
-  // calculate dEdx only if track length is >0.001 cm
-  
-  // The following commented out to avoid compiler warnings 4/26/2015 DL
-//   if (dr > 1e-3) {
-//     dEdx = dEsum/dr;
-//   }
-//   else {
-//     dEdx = 0;
-//   }
-
   /* post the hit to the truth tree */
   // in other words: store the GENERATED track information
   
@@ -273,24 +257,24 @@ void hitForwardTOF (float xin[4], float xout[4],
     float dEnorth = dEsum * exp(-dxnorth/ATTEN_LENGTH);
     float dEsouth = dEsum * exp(-dxsouth/ATTEN_LENGTH);
 
-    if (plane==0){
-      if (column==1){
-	tnorth=0.;
-	dEnorth=0.;
+    if (plane==0) {
+      if (column==1) {
+        tnorth=0.;
+        dEnorth=0.;
       }
-      else if (column==2){	
-	tsouth=0.;
-	dEsouth=0.;
+      else if (column==2) {    
+        tsouth=0.;
+        dEsouth=0.;
       }
     }
-    else{
-      if (column==2){
-	tnorth=0.;
-	dEnorth=0.;
+    else {
+      if (column==2) {
+        tnorth=0.;
+        dEnorth=0.;
       }
-      else if (column==1){
-	tsouth=0.;
-	dEsouth=0.;
+      else if (column==1) {
+        tsouth=0.;
+        dEsouth=0.;
       }
     }
 
@@ -334,7 +318,7 @@ void hitForwardTOF (float xin[4], float xout[4],
       hits = tof->ftofCounters->in[0].ftofTruthHits;
     }
     
-    if (hits != HDDM_NULL) {
+    if (hits != HDDM_NULL && column != 2) {
       
       // loop over hits in this PM to find correct time slot, north end
       
@@ -351,10 +335,10 @@ void hitForwardTOF (float xin[4], float xout[4],
       // combine the times of this weighted by the energy of the hit
       
       if (nhit < hits->mult) {         /* merge with former hit */
-	float dEnew=hits->in[nhit].dE + dEnorth;
+        float dEnew=hits->in[nhit].dE + dEnorth;
         hits->in[nhit].t = 
           (hits->in[nhit].t * hits->in[nhit].dE + tnorth * dEnorth) /dEnew;
-	hits->in[nhit].dE=dEnew;
+        hits->in[nhit].dE=dEnew;
                 
         // now add MC tracking information 
         // first get MC pointer of this paddle
@@ -375,7 +359,7 @@ void hitForwardTOF (float xin[4], float xout[4],
           extras->mult++;
         }
         
-      }  else if (nhit < MAX_HITS){  // hit in new time window
+      }  else if (nhit < MAX_HITS) {  // hit in new time window
         hits->in[nhit].t = tnorth;
         hits->in[nhit].dE = dEnorth;
         hits->in[nhit].end = 0;
@@ -401,7 +385,10 @@ void hitForwardTOF (float xin[4], float xout[4],
         fprintf(stderr,"HDGeant error in hitForwardTOF (file hitFTOF.c): ");
         fprintf(stderr,"max hit count %d exceeded, truncating!\n",MAX_HITS);
       }
+    }
       
+    if (hits != HDDM_NULL && column != 1) {
+
       // loop over hits in this PM to find correct time slot, south end
       
       for (nhit = 0; nhit < hits->mult; nhit++)
@@ -417,10 +404,10 @@ void hitForwardTOF (float xin[4], float xout[4],
       // combine the times of this weighted by the energy of the hit
       
       if (nhit < hits->mult) {         /* merge with former hit */
-	float dEnew=hits->in[nhit].dE + dEsouth;
+        float dEnew=hits->in[nhit].dE + dEsouth;
         hits->in[nhit].t = 
           (hits->in[nhit].t * hits->in[nhit].dE + tsouth * dEsouth) / dEnew;
-	hits->in[nhit].dE=dEnew;
+        hits->in[nhit].dE=dEnew;
         extras = hits->in[nhit].ftofTruthExtras;
 
         // now add MC tracking information 
@@ -513,7 +500,7 @@ s_ForwardTOF_t* pickForwardTOF ()
       for (iok=i=0; i < hits->mult; i++) {
         
         // check threshold
-        if (hits->in[i].dE >= THRESH_MEV/1e3) {
+        if (hits->in[i].dE > THRESH_MEV/1e3) {
           
           if (iok < i) {
             hits->in[iok] = hits->in[i];

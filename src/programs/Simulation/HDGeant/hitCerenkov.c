@@ -169,7 +169,7 @@ s_Cerenkov_t* pickCerenkov ()
          int iok,i;
          for (iok=i=0; i < hits->mult; i++)
          {
-           if (hits->in[i].pe >= THRESH_PE)
+           if (hits->in[i].pe > THRESH_PE)
            {
              if (iok < i)
              {

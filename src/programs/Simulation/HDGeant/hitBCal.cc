@@ -620,7 +620,7 @@ s_BarrelEMcal_t* pickBarrelEMcal ()
          int i,iok;
          for (iok=i=0; i < (int)hits->mult; i++)
          {
-            if (hits->in[i].E >= THRESH_MEV/1e3)
+            if (hits->in[i].E > THRESH_MEV/1e3)
             {
 #if TESTING_CAL_CONTAINMENT
                Etotal += hits->in[i].E;

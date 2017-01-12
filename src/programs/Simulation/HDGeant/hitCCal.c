@@ -193,7 +193,7 @@ s_ComptonEMcal_t* pickComptonEMcal ()
             int i,iok;
             for (iok=i=0; i < hits->mult; i++)
             {
-               if (hits->in[i].E >= THRESH_MEV/1e3)
+               if (hits->in[i].E > THRESH_MEV/1e3)
                {
                   if (iok < i)
                   {

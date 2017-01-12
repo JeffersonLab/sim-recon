@@ -935,7 +935,7 @@ s_ForwardDC_t* pickForwardDC ()
 	 if (controlparams_.driftclusters==0){
 	   for (iok=i=0; i < ahits->mult; i++)
 	     {
-	       if (ahits->in[i].dE >= THRESH_KEV/1e6)
+	       if (ahits->in[i].dE > THRESH_KEV/1e6)
 		 {
                if (iok < i)
 		 {
@@ -962,7 +962,7 @@ s_ForwardDC_t* pickForwardDC ()
 	   int returned_to_baseline=0;
 	   float q=0;
 	   for (i=0;i<num_samples;i++){
-	     if (samples[i]>=THRESH_ANODE){
+	     if (samples[i] > THRESH_ANODE){
 	       if (returned_to_baseline==0){
 		 ahits->in[iok].itrack = ahits->in[0].itrack;
 		 ahits->in[iok].ptype = ahits->in[0].ptype;
@@ -983,7 +983,7 @@ s_ForwardDC_t* pickForwardDC ()
 	       q+=samples[i];
 	     }
 	     if (returned_to_baseline 
-		 && (samples[i]<THRESH_ANODE)){
+		 && (samples[i] <= THRESH_ANODE)){
 	       returned_to_baseline=0;   
 	     }
 	   }
@@ -1046,7 +1046,7 @@ s_ForwardDC_t* pickForwardDC ()
 	    int istart=0;
 	    int FADC_BIN_SIZE=1;
 	    for (i=0;i<num_samples;i+=FADC_BIN_SIZE){
-	      if (samples[i]>=THRESH_STRIPS){
+	      if (samples[i] > THRESH_STRIPS){
 		if (threshold_toggle==0){
 		  chits->in[iok].itrack = chits->in[0].itrack;
 		  chits->in[iok].ptype = chits->in[0].ptype;
@@ -1059,7 +1059,7 @@ s_ForwardDC_t* pickForwardDC ()
 		}
 	      }
 	      if (threshold_toggle && 
-		  (samples[i]<THRESH_STRIPS)){
+		  (samples[i] <= THRESH_STRIPS)){
 		int j;
 		// Find the first peak
 		for (j=istart+1;j<i-1;j++){
@@ -1075,7 +1075,7 @@ s_ForwardDC_t* pickForwardDC ()
 	      }
 	    }
 	    i=num_samples-1;
-	    if (samples[i]>=THRESH_STRIPS&&threshold_toggle){
+	    if (samples[i] > THRESH_STRIPS&&threshold_toggle){
 	      int j;
 	      for (j=istart+1;j<i-1;j++){
 		if (samples[j]>samples[j-1] && samples[j]>samples[j+1]){
