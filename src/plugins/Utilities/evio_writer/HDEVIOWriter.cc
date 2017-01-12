@@ -107,7 +107,6 @@ HDEVIOWriter::HDEVIOWriter(string sink_name)
 //---------------------------------
 HDEVIOWriter::~HDEVIOWriter()
 {
-    jerr << "DESTRUCTOR" << endl;
 /*
     // Write out any events that are still enqueued
 	if( !output_deque.empty() ){
@@ -586,7 +585,6 @@ void HDEVIOWriter::AddBufferToOutput(vector<uint32_t> *buff)
 //---------------------------------
 void HDEVIOWriter::Quit(void)
 {
-    jerr << "QUITTING" << endl;
 	quit=true;
 }
 
