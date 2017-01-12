@@ -318,7 +318,7 @@ void hitForwardTOF (float xin[4], float xout[4],
       hits = tof->ftofCounters->in[0].ftofTruthHits;
     }
     
-    if (hits != HDDM_NULL && column != 2) {
+    if (hits != HDDM_NULL && dEnorth > 0) {
       
       // loop over hits in this PM to find correct time slot, north end
       
@@ -387,7 +387,7 @@ void hitForwardTOF (float xin[4], float xout[4],
       }
     }
       
-    if (hits != HDDM_NULL && column != 1) {
+    if (hits != HDDM_NULL && dEsouth > 0) {
 
       // loop over hits in this PM to find correct time slot, south end
       
