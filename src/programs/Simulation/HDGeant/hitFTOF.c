@@ -359,9 +359,6 @@ void hitForwardTOF (float xin[4], float xout[4],
           extras->in[nMChit].itrack = itrack;
           extras->in[nMChit].dist = dist;
           extras->mult++;
-if (itrack > 0 && stack > 0) {
-printf("bang from the north %d,%f!\n", ipart, pin[3]);
-}
         }
         
       }  else if (nhit < MAX_HITS) {  // hit in new time window
@@ -385,9 +382,6 @@ printf("bang from the north %d,%f!\n", ipart, pin[3]);
         extras->in[0].itrack = itrack;
         extras->in[0].dist = dist;
         extras->mult = 1;
-if (itrack > 0 && stack > 0) {
-printf("boom from the north %d,%f!\n", ipart, pin[3]);
-}
       } else {
         fprintf(stderr,"HDGeant error in hitForwardTOF (file hitFTOF.c): ");
         fprintf(stderr,"max hit count %d exceeded, truncating!\n",MAX_HITS);
@@ -431,9 +425,6 @@ printf("boom from the north %d,%f!\n", ipart, pin[3]);
           extras->in[nMChit].itrack = itrack;
           extras->in[nMChit].dist = dist;
           extras->mult++;
-if (itrack > 0 && stack > 0) {
-printf("bang from the south %d,%f!\n", ipart, pin[3]);
-}
         }
         
       }  else if (nhit < MAX_HITS) {  // hit in new time window
@@ -456,9 +447,6 @@ printf("bang from the south %d,%f!\n", ipart, pin[3]);
         extras->in[0].itrack = itrack;
         extras->in[0].dist = dist;
         extras->mult = 1;
-if (itrack > 0 && stack > 0) {
-printf("boom from the south %d,%f!\n", ipart, pin[3]);
-}
       } else {
         fprintf(stderr,"HDGeant error in hitForwardTOF (file hitFTOF.c): ");
         fprintf(stderr,"max hit count %d exceeded, truncating!\n",MAX_HITS);
