@@ -465,7 +465,7 @@ void hitBarrelEMcal (float xin[4], float xout[4],
          *twig = bcal;
          bcal->bcalTruthShowers = showers = make_s_BcalTruthShowers(1);
          int a = thisInputEvent->physicsEvents->in[0].reactions->in[0].vertices->in[0].products->mult;
-         showers->in[0].primary = (track <= a);
+         showers->in[0].primary = (track <= a && stack == 0);
          showers->in[0].track = track;
          showers->in[0].z = xin[2];
          showers->in[0].r = r;

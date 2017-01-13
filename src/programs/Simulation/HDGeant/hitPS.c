@@ -1,10 +1,10 @@
 /*
  * hitPS - registers hits for Pair Spectrometer
  *
- *	This is a part of the hits package for the
- *	HDGeant simulation program for Hall D.
+ *        This is a part of the hits package for the
+ *        HDGeant simulation program for Hall D.
  *
- *	version 1.0 	-Simon Taylor, Oct 16, 2014
+ *        version 1.0         -Simon Taylor, Oct 16, 2014
  *
  */
 
@@ -44,7 +44,7 @@ static int initialized = 0;
 /* register hits during tracking (from gustep) */
 
 void hitPS(float xin[4], float xout[4],float pin[5], float pout[5], float dEsum,
-	   int track, int stack, int history, int ipart)
+           int track, int stack, int history, int ipart)
 {
    float x[3], t;
    float dx[3], dr;
@@ -85,28 +85,25 @@ void hitPS(float xin[4], float xout[4],float pin[5], float pout[5], float dEsum,
          s_PsTruthPoints_t* points = make_s_PsTruthPoints(1);
          ps->psTruthPoints = points;
          int a = thisInputEvent->physicsEvents->in[0].reactions->in[0].vertices->in[0].products->mult;
-         points->in[0].primary = (stack <= a);
+         points->in[0].primary = (track <= a && stack == 0);
          points->in[0].track = track;
          points->in[0].t = t;
          points->in[0].z = x[2];
          points->in[0].x = x[0];
-	 points->in[0].y = x[1];
-         points->in[0].phi = atan2(x[1],x[0]);
+         points->in[0].y = x[1];
          points->in[0].px = pin[0]*pin[4];
          points->in[0].py = pin[1]*pin[4];
          points->in[0].pz = pin[2]*pin[4];
          points->in[0].E = pin[3];
          points->in[0].dEdx = dEdx;
          points->in[0].ptype = ipart;
-	 // the fine PS has two arms: North/South (0/1)
+         // the fine PS has two arms: North/South (0/1)
          points->in[0].arm = getcolumn_wrapper_() / NUM_COLUMN_PER_ARM;
          points->in[0].column = getcolumn_wrapper_() % NUM_COLUMN_PER_ARM;
-	 points->in[0].trackID = make_s_TrackID();
-	 points->in[0].trackID->itrack = gidGetId(track);
-	 points->mult = 1;
+         points->in[0].trackID = make_s_TrackID();
+         points->in[0].trackID->itrack = gidGetId(track);
+         points->mult = 1;
          pointCount++;
-
-
       }
    }
 
@@ -123,7 +120,7 @@ void hitPS(float xin[4], float xout[4],float pin[5], float pout[5], float dEsum,
          s_PairSpectrometerFine_t* ps = *twig = make_s_PairSpectrometerFine();
          s_PsTiles_t* tiles = make_s_PsTiles(1);
          tiles->mult = 1;
-	 // the fine PS has two arms: North/South (0/1)
+         // the fine PS has two arms: North/South (0/1)
          tiles->in[0].arm = column / NUM_COLUMN_PER_ARM;
          tiles->in[0].column = column % NUM_COLUMN_PER_ARM;
          tiles->in[0].psTruthHits = hits = make_s_PsTruthHits(MAX_HITS);
@@ -143,7 +140,7 @@ void hitPS(float xin[4], float xout[4],float pin[5], float pout[5], float dEsum,
             break;
          }
       }
-      if (nhit < hits->mult)		/* merge with former hit */
+      if (nhit < hits->mult)                /* merge with former hit */
       {
          if (t < hits->in[nhit].t)
          {
@@ -153,9 +150,9 @@ void hitPS(float xin[4], float xout[4],float pin[5], float pout[5], float dEsum,
          hits->in[nhit].t = 
                  (hits->in[nhit].t * hits->in[nhit].dE + t * dEsum) /
                  (hits->in[nhit].dE + dEsum);
-			hits->in[nhit].dE += dEsum;
+                        hits->in[nhit].dE += dEsum;
       }
-      else if (nhit < MAX_HITS)		/* create new hit */
+      else if (nhit < MAX_HITS)                /* create new hit */
       {
          hits->in[nhit].t = t;
          hits->in[nhit].dE = dEsum;

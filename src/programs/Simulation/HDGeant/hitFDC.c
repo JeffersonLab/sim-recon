@@ -691,8 +691,8 @@ void hitForwardDC (float xin[4], float xout[4],
       u[1] = xinlocal[0]-xwire;
       dradius = fabs(u[1]*cosalpha-u[0]*sinalpha);
       points->mult = 1;
-        int a = thisInputEvent->physicsEvents->in[0].reactions->in[0].vertices->in[0].products->mult;
-      points->in[0].primary = (stack <= a);
+      int a = thisInputEvent->physicsEvents->in[0].reactions->in[0].vertices->in[0].products->mult;
+      points->in[0].primary = (track <= a && stack == 0);
       points->in[0].track = track;
       points->in[0].x = x[0];
       points->in[0].y = x[1];
