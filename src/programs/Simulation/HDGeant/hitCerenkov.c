@@ -48,6 +48,8 @@ void hitCerenkov (float xin[4], float xout[4],
 
    /* post the hit to the truth tree */
 
+   int itrack = (stack == 0)? gidGetId(track) : -1;
+
    if ((history == 0) && (dEsum > 0))
    {
       int mark = (1<<30) + pointCount;
@@ -70,7 +72,7 @@ void hitCerenkov (float xin[4], float xout[4],
          points->in[0].E = pin[3];
          points->in[0].ptype = ipart;
          points->in[0].trackID = make_s_TrackID();
-         points->in[0].trackID->itrack = gidGetId(track);
+         points->in[0].trackID->itrack = itrack;
          points->mult = 1;
          pointCount++;
       }

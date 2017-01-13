@@ -25,12 +25,8 @@ static int dircpointCount = 0;
 /* register truth points during tracking (from gustep) */
 void hitDIRC(float xin[4], float xout[4], float pin[5], float pout[5],
 		float dEsum, int track, int stack, int history, int ipart) {
-	//float x[3], t;
 
-	//x[0] = (xin[0] + xout[0]) / 2;
-	//x[1] = (xin[1] + xout[1]) / 2;
-	//x[2] = (xin[2] + xout[2]) / 2;
-	//t = (xin[3] + xout[3]) / 2 * 1e9;
+    int itrack = (stack == 0)? gidGetId(track) : -1;
 
 	// post to truth tree
 	if ((history == 0) && (dEsum > 0)) {
@@ -53,7 +49,7 @@ void hitDIRC(float xin[4], float xout[4], float pin[5], float pout[5],
 			points->in[0].E = pin[3];
 			points->in[0].ptype = ipart;
 			points->in[0].trackID = make_s_TrackID();
-			points->in[0].trackID->itrack = gidGetId(track);
+			points->in[0].trackID->itrack = itrack;
 			points->mult = 1;
 			dircpointCount++;
 		}

@@ -229,6 +229,8 @@ void hitStartCntr (float xin[4], float xout[4],
 
    /* post the hit to the truth tree */
 
+   int itrack = (stack == 0)? gidGetId(track) : -1;
+
    if (history == 0)
    {
       int mark = (1<<30) + pointCount;
@@ -253,7 +255,7 @@ void hitStartCntr (float xin[4], float xout[4],
          points->in[0].ptype = ipart;
          points->in[0].sector = getsector_wrapper_();
          points->in[0].trackID = make_s_TrackID();
-         points->in[0].trackID->itrack = gidGetId(track);
+         points->in[0].trackID->itrack = itrack;
          points->mult = 1;
          pointCount++;
       }
@@ -362,7 +364,7 @@ void hitStartCntr (float xin[4], float xout[4],
          if (tcorr < hits->in[nhit].t)
          {
             hits->in[nhit].ptype = ipart;
-            hits->in[nhit].itrack = gidGetId(track);
+            hits->in[nhit].itrack = itrack;
          }
          hits->in[nhit].t = 
                  (hits->in[nhit].t * hits->in[nhit].dE + tcorr * dEcorr) /
@@ -374,7 +376,7 @@ void hitStartCntr (float xin[4], float xout[4],
          hits->in[nhit].t = tcorr ;
          hits->in[nhit].dE = dEcorr;
          hits->in[nhit].ptype = ipart;
-         hits->in[nhit].itrack = gidGetId(track);
+         hits->in[nhit].itrack = itrack;
          hits->mult++;
       }
       else

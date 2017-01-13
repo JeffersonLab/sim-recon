@@ -75,6 +75,8 @@ void hitPSC(float xin[4], float xout[4],float pin[5], float pout[5], float dEsum
       dEdx = 0;
    }
 
+   int itrack = (stack == 0)? gidGetId(track) : -1;
+
    if (history == 0)
    {
       int mark = (1<<30) + pointCount;
@@ -100,7 +102,7 @@ void hitPSC(float xin[4], float xout[4],float pin[5], float pout[5], float dEsum
          points->in[0].arm = getmodule_wrapper_() / NUM_MODULES_PER_ARM;
          points->in[0].module = getmodule_wrapper_() % NUM_MODULES_PER_ARM;
          points->in[0].trackID = make_s_TrackID();
-         points->in[0].trackID->itrack = gidGetId(track);
+         points->in[0].trackID->itrack = itrack;
          points->mult = 1;
          pointCount++;
       }
@@ -143,7 +145,7 @@ void hitPSC(float xin[4], float xout[4],float pin[5], float pout[5], float dEsum
          if (t < hits->in[nhit].t)
          {
             hits->in[nhit].ptype = ipart;
-            hits->in[nhit].itrack = gidGetId(track);
+            hits->in[nhit].itrack = itrack;
          }
          hits->in[nhit].t = 
                  (hits->in[nhit].t * hits->in[nhit].dE + t * dEsum) /
@@ -155,7 +157,7 @@ void hitPSC(float xin[4], float xout[4],float pin[5], float pout[5], float dEsum
          hits->in[nhit].t = t;
          hits->in[nhit].dE = dEsum;
          hits->in[nhit].ptype = ipart;
-         hits->in[nhit].itrack = gidGetId(track);
+         hits->in[nhit].itrack = itrack;
          hits->mult++;
       }
       else

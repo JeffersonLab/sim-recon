@@ -147,6 +147,8 @@ void hitForwardTOF (float xin[4], float xout[4],
 
   }
 
+  int itrack = (stack == 0)? gidGetId(track) : -1;
+  
 
 
   // getplane is coded in
@@ -168,7 +170,7 @@ void hitForwardTOF (float xin[4], float xout[4],
   x[1] = (xin[1] + xout[1])/2;
   x[2] = (xin[2] + xout[2])/2;
   t    = (xin[3] + xout[3])/2 * 1e9;
-  
+
   // tranform the the global x coordinate into the local coordinate of the top_volume FTOF
   // defined in the geometry file src/programs/Simulation/hdds/ForwardTOF_HDDS.xml
   // the function transform Coord is defined in src/programs/Simulation/HDGeant/hitutil/hitutil.F
@@ -213,7 +215,7 @@ void hitForwardTOF (float xin[4], float xout[4],
       points->in[0].E = pin[3];
       points->in[0].ptype = ipart;
       points->in[0].trackID = make_s_TrackID();
-      points->in[0].trackID->itrack = gidGetId(track);
+      points->in[0].trackID->itrack = itrack;
       points->mult = 1;
       pointCount++;
     }
@@ -354,9 +356,12 @@ void hitForwardTOF (float xin[4], float xout[4],
           extras->in[nMChit].py = pin[1]*pin[4];
           extras->in[nMChit].pz = pin[2]*pin[4];
           extras->in[nMChit].ptype = ipart;
-          extras->in[nMChit].itrack = gidGetId(track);
+          extras->in[nMChit].itrack = itrack;
           extras->in[nMChit].dist = dist;
           extras->mult++;
+if (itrack > 0 && stack > 0) {
+printf("bang from the north %d,%f!\n", ipart, pin[3]);
+}
         }
         
       }  else if (nhit < MAX_HITS) {  // hit in new time window
@@ -377,10 +382,12 @@ void hitForwardTOF (float xin[4], float xout[4],
         extras->in[0].py = pin[1]*pin[4];
         extras->in[0].pz = pin[2]*pin[4];
         extras->in[0].ptype = ipart;
-        extras->in[0].itrack = gidGetId(track);
+        extras->in[0].itrack = itrack;
         extras->in[0].dist = dist;
         extras->mult = 1;
-        
+if (itrack > 0 && stack > 0) {
+printf("boom from the north %d,%f!\n", ipart, pin[3]);
+}
       } else {
         fprintf(stderr,"HDGeant error in hitForwardTOF (file hitFTOF.c): ");
         fprintf(stderr,"max hit count %d exceeded, truncating!\n",MAX_HITS);
@@ -421,9 +428,12 @@ void hitForwardTOF (float xin[4], float xout[4],
           extras->in[nMChit].py = pin[1]*pin[4];
           extras->in[nMChit].pz = pin[2]*pin[4];
           extras->in[nMChit].ptype = ipart;
-          extras->in[nMChit].itrack = gidGetId(track);
+          extras->in[nMChit].itrack = itrack;
           extras->in[nMChit].dist = dist;
           extras->mult++;
+if (itrack > 0 && stack > 0) {
+printf("bang from the south %d,%f!\n", ipart, pin[3]);
+}
         }
         
       }  else if (nhit < MAX_HITS) {  // hit in new time window
@@ -443,10 +453,12 @@ void hitForwardTOF (float xin[4], float xout[4],
         extras->in[0].py = pin[1]*pin[4];
         extras->in[0].pz = pin[2]*pin[4];
         extras->in[0].ptype = ipart;
-        extras->in[0].itrack = gidGetId(track);
+        extras->in[0].itrack = itrack;
         extras->in[0].dist = dist;
         extras->mult = 1;
-        
+if (itrack > 0 && stack > 0) {
+printf("boom from the south %d,%f!\n", ipart, pin[3]);
+}
       } else {
         fprintf(stderr,"HDGeant error in hitForwardTOF (file hitFTOF.c): ");
         fprintf(stderr,"max hit count %d exceeded, truncating!\n",MAX_HITS);
