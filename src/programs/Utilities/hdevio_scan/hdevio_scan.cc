@@ -27,6 +27,7 @@ void MapEVIOWords(void);
 vector<string> filenames;
 bool   PRINT_SUMMARY = true;
 bool   MAP_WORDS     = false;
+bool   GENERATE_ERROR_REPORT = false;
 string ROOT_FILENAME = "hdevio_scan.root";
 uint64_t MAX_EVIO_EVENTS = 20000;
 uint32_t BLOCK_SIZE = 20; // used for daq_block_size histogram
@@ -63,6 +64,7 @@ void Usage(string mess="")
 	cout << "                 (implies -w)" << endl;
 	cout << "   -m max_events Max. EVIO events (not physics events) to process." << endl;
 	cout << "   -b block_size EVIO events to add for daq_block_size histo." << endl;
+	cout << "   -e            Write details of bad event tag location to file" << endl;
 	cout << endl;
 
 	if(mess != "") cout << endl << mess << endl << endl;
@@ -87,6 +89,7 @@ void ParseCommandLineArguments(int narg, char *argv[])
 		else if(arg == "-r"){ MAP_WORDS = true; PRINT_SUMMARY = false; ROOT_FILENAME = next; i++;}
 		else if(arg == "-m"){ MAX_EVIO_EVENTS = atoi(next.c_str()); i++;}
 		else if(arg == "-b"){ BLOCK_SIZE = atoi(next.c_str()); i++;}
+		else if(arg == "-e"){ GENERATE_ERROR_REPORT = true; }
 		else if(arg[0] == '-') {cout << "Unknown option \""<<arg<<"\" !" << endl; exit(-1);}
 		else filenames.push_back(arg);
 	}
@@ -111,6 +114,60 @@ void PrintSummary(void)
 		time_t start_time = time(NULL);
 		hdevio->PrintFileSummary();
 		time_t end_time = time(NULL);
+		
+		if(GENERATE_ERROR_REPORT){
+			ofstream ofs("hdevio_scan.err");
+			ofs << "#";
+			ofs << "# hdevio_scan report for " << filename << endl;
+			ofs << "#";
+			ofs << "# The following list is for each EVIO event that contained an" << endl;
+			ofs << "# unknown top-level bank tag. Since any corruption may have" << endl;
+			ofs << "# started in the previous event, locations for that are also" << endl;
+			ofs << "# provided (when available)." <<endl;
+			ofs << "# columns are:" << endl;
+			ofs << "#     block number in file (starting from 0)" << endl;
+			ofs << "#     block offset in file (hex)" <<endl;
+			ofs << "#     block number of previous event" << endl;
+			ofs << "#     block offset of previous event" <<endl;
+			ofs << "#     event number in block (starting from 0)" << endl;
+			ofs << "#     number of events in block" << endl;
+			ofs << "#     event offset in file (hex)" <<endl;
+			ofs << "#     event number of previous event" << endl;
+			ofs << "#     event offset of previous event" <<endl;
+
+			vector<HDEVIO::EVIOBlockRecord> brs = hdevio->GetEVIOBlockRecords();
+			
+			HDEVIO::EVIOBlockRecord *br_prev = NULL;
+			int32_t ibr = 0;
+			for(HDEVIO::EVIOBlockRecord &br : brs){
+				HDEVIO::EVIOEventRecord *er_prev = NULL;
+				int32_t ier = 0;
+				for(HDEVIO::EVIOEventRecord &er : br.evio_events){
+					if(er.event_type == HDEVIO::kBT_UNKNOWN){
+						char str[512];
+						sprintf(str, "%04d %08x %04d %08x %03d / %03d %08x %03d %08x"
+							, ibr
+							, (unsigned int)br.pos
+							, ibr-1
+							, br_prev!=NULL ? (unsigned int)br_prev->pos:0
+							, ier
+							, (unsigned int)br.evio_events.size()
+							, (unsigned int)er.pos
+							, ier-1
+							, er_prev!=NULL ? (unsigned int)er_prev->pos:0);
+						ofs << str << endl;							
+					}
+					
+					er_prev = &er;
+					ier++;
+				}
+				
+				br_prev = &br;
+				ibr++;
+			}
+			
+			ofs.close();
+		}
 		
 		delete hdevio;
 
@@ -156,7 +213,7 @@ void MapEVIOWords(void)
 					break;
 				case HDEVIO::HDEVIO_USER_BUFFER_TOO_SMALL:
 					buff_len = hdevio->last_event_len;
-					delete buff;
+					delete[] buff;
 					buff = new uint32_t[buff_len];
 					break;
 				case HDEVIO::HDEVIO_EOF:
