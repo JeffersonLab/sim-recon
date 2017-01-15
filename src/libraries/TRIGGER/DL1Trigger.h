@@ -8,11 +8,10 @@ class DL1Trigger:public jana::JObject{
  public:
   JOBJECT_PUBLIC(DL1Trigger);
   
-  //  DL1Trigger():timestamp(0),trig_mask(0),fp_trig_mask(0),livetime(0),busytime(0),sync_evt(0){}
+  DL1Trigger():event_type(0),timestamp(0),trig_mask(0),fp_trig_mask(0),nsync(0),trig_number(0),live(0),busy(0),live_inst(0),unix_time(0){}
 
   
-  int event_type;  /* 1 - trigger
-		      2 - SYNC and trig */
+  int event_type;  // 0 - unknown , 1 - trigger   2 - SYNC and trig
   
   
   uint64_t timestamp; 
@@ -51,8 +50,8 @@ class DL1Trigger:public jana::JObject{
   void toStrings(vector<pair<string,string> > &items)const{
     AddString(items,  "timestamp",     "%ld",  timestamp );     
     AddString(items,  "event_type",    "%d",   event_type );
-    AddString(items,  "trig_mask",     "%d",   trig_mask );
-    AddString(items,  "fp_trig_mask",  "%d",   fp_trig_mask );    
+    AddString(items,  "trig_mask",     "0x%08x",   trig_mask );
+    AddString(items,  "fp_trig_mask",  "0x%08x",   fp_trig_mask );    
 
     AddString(items,  "nsync"       , "%d" , nsync); 
     AddString(items,  "trig_number" , "%d" , trig_number); 
