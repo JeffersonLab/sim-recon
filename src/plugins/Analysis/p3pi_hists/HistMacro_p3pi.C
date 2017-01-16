@@ -1,6 +1,19 @@
-// hnamepath: /p2pi_preco/Hist_MissingMassSquared/MissingMassSquared
-{
-	TDirectory *locInitDirectory = gDirectory;
+// hnamepath: /p3pi_preco_2FCAL/Hist_InvariantMass_Pi0/InvariantMass
+// hnamepath: /p3pi_preco_2FCAL/Hist_InvariantMass_Omega_PostKinFitCut/InvariantMass
+// hnamepath: /p3pi_preco_2BCAL/Hist_InvariantMass_Pi0/InvariantMass
+// hnamepath: /p3pi_preco_2BCAL/Hist_InvariantMass_Omega_PostKinFitCut/InvariantMass
+// hnamepath: /p3pi_preco_FCAL-BCAL/Hist_InvariantMass_Pi0/InvariantMass
+// hnamepath: /p3pi_preco_FCAL-BCAL/Hist_InvariantMass_Omega_PostKinFitCut/InvariantMass
+// hnamepath: /p3pi_preco_any_kinfit/Hist_MissingMassSquared/MissingMassSquared
+// hnamepath: /p3pi_preco_any_kinfit/Hist_MissingMassSquared_PostKinFitCut/MissingMassSquared
+// hnamepath: /p3pi_preco_any_kinfit/Hist_InvariantMass_Pi0/InvariantMass
+// hnamepath: /p3pi_preco_any_kinfit/Hist_InvariantMass_Pi0_PostKinFitCut/InvariantMass
+// hnamepath: /p3pi_preco_any_kinfit/Hist_KinFitResults/ConfidenceLevel
+// hnamepath: /p3pi_preco_any_kinfit/Hist_InvariantMass_Omega_PostKinFitCut/InvariantMass
+// hnamepath: /p3pi_preco_any_kinfit/Hist_InvariantMass_Omega_KinFit_PostKinFitCut/InvariantMass
+
+
+{	TDirectory *locInitDirectory = gDirectory;
 	TDirectory *locReactionDirectory_2FCAL = (TDirectory*)locInitDirectory->FindObjectAny("p3pi_preco_2FCAL");
 	TDirectory *locReactionDirectory_2BCAL = (TDirectory*)locInitDirectory->FindObjectAny("p3pi_preco_2BCAL");
 	TDirectory *locReactionDirectory_Both = (TDirectory*)locInitDirectory->FindObjectAny("p3pi_preco_FCAL-BCAL");

@@ -1163,6 +1163,8 @@ void HDEVIO::PrintFileSummary(void)
 	uint32_t Nepics    = 0;
 	uint32_t Nbor      = 0;
 	uint32_t Nphysics  = 0;
+	uint32_t Nunknown  = 0;
+	uint32_t Nblockunknown = 0;
 
 	uint64_t first_event = 0;
 	uint64_t last_event  = 0;
@@ -1178,11 +1180,13 @@ void HDEVIO::PrintFileSummary(void)
 		events_in_block.insert(br.evio_events.size());
 		map_size += br.evio_events.size()*sizeof(EVIOEventRecord);
 
+		uint32_t Nunknown_prev = Nunknown;
 		for(uint32_t j=0; j<br.evio_events.size(); j++){
 			EVIOEventRecord &er = br.evio_events[j];
 			
 			uint32_t block_level;
 			switch(er.event_type){
+				case kBT_UNKNOWN:    Nunknown++;     break;
 				case kBT_SYNC:       Nsync++;        break;
 				case kBT_PRESTART:   Nprestart++;    break;
 				case kBT_GO:         Ngo++;          break;
@@ -1203,6 +1207,8 @@ void HDEVIO::PrintFileSummary(void)
 			
 			//_DBG_ << "Block " << i << "  event " << j << "  " << er.last_event <<" - " << er.first_event << " = " << block_level << endl;
 		}
+		
+		if( (Nunknown-Nunknown_prev) > 0 ) Nblockunknown++;
 	}
 	
 	// form succint string of block levels
@@ -1236,24 +1242,25 @@ void HDEVIO::PrintFileSummary(void)
 	string sevents_in_block = ss.str();
 	
 	// Print results
-	cout << endl;
+	PrintStats();
 	cout << "EVIO file size: " << (total_size_bytes>>20) << " MB" <<endl;
 	cout << "EVIO block map size: " << (map_size>>10) << " kB" <<endl;
 	cout << "first event: " << first_event << endl;
 	cout << "last event: " << last_event << endl;
 
 	cout << endl;
-	cout << "         Nblocks = " << evio_blocks.size() << endl;
-	cout << "    block levels = " << sblock_levels << endl;
-	cout << "events per block = " << sevents_in_block << endl;
-	cout << "           Nsync = " << Nsync << endl;
-	cout << "       Nprestart = " << Nprestart << endl;
-	cout << "             Ngo = " << Ngo << endl;
-	cout << "          Npause = " << Npause << endl;
-	cout << "            Nend = " << Nend << endl;
-	cout << "          Nepics = " << Nepics << endl;
-	cout << "            Nbor = " << Nbor << endl;
-	cout << "        Nphysics = " << Nphysics << endl;
+	cout << "             block levels = " << sblock_levels << endl;
+	cout << "         events per block = " << sevents_in_block << endl;
+	cout << "                    Nsync = " << Nsync << endl;
+	cout << "                Nprestart = " << Nprestart << endl;
+	cout << "                      Ngo = " << Ngo << endl;
+	cout << "                   Npause = " << Npause << endl;
+	cout << "                     Nend = " << Nend << endl;
+	cout << "                   Nepics = " << Nepics << endl;
+	cout << "                     Nbor = " << Nbor << endl;
+	cout << "                 Nphysics = " << Nphysics << endl;
+	cout << "                 Nunknown = " << Nunknown << endl;
+	cout << " blocks with unknown tags = " << Nblockunknown << endl;
 	cout << endl;
 }
 

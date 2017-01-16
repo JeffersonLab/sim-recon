@@ -35,7 +35,6 @@
 #include "PID/DNeutralShower.h"
 #include "PID/DDetectorMatches.h"
 #include "PID/DEventRFBunch_factory.h"
-#include "RF/DRFTime_factory.h"
 
 #include "ANALYSIS/DMCThrownMatching.h"
 #include "ANALYSIS/DParticleComboBlueprint.h"
@@ -66,7 +65,6 @@ class DEventRFBunch_factory_Combo:public jana::JFactory<DEventRFBunch>
 		void Unlock_Factory(void);
 
 		DEventRFBunch_factory* dEventRFBunchFactory;
-		DRFTime_factory* dRFTimeFactory;
 
 		const DParticleID* dParticleID;
 

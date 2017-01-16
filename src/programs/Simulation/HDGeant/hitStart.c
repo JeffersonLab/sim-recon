@@ -1,10 +1,10 @@
 /*
  * hitStart - registers hits for Start counter
  *
- *	This is a part of the hits package for the
- *	HDGeant simulation program for Hall D.
+ *    This is a part of the hits package for the
+ *    HDGeant simulation program for Hall D.
  *
- *	version 1.0 	-Richard Jones July 16, 2001
+ *    version 1.0     -Richard Jones July 16, 2001
  *
  * changes: Wed Jun 20 13:19:56 EDT 2007 B. Zihlmann 
  *          add ipart to the function hitStartCntr
@@ -79,7 +79,7 @@ static int initialized = 0;
 
 void hitStartCntr (float xin[4], float xout[4],
                    float pin[5], float pout[5], float dEsum,
-                    int track, int stack, int history, int ipart)
+                   int track, int stack, int history, int ipart)
 {     
    float x[3], t;
    float dx[3], dr;
@@ -221,13 +221,15 @@ void hitStartCntr (float xin[4], float xout[4],
 
 
    //   printf("x_gl, z_gl, x_l, z_l %f %f %f\n",
-   //  	  xin[0],xin[1],xin[2]);
+   //        xin[0],xin[1],xin[2]);
 
    //   printf("x_gl, z_gl, x_l, z_l %f %f %f %f %f %f %f\n",
-   //  	  x[0],x[1],x[2], xlocal[0],xlocal[1],xlocal[2],dpath);
+   //        x[0],x[1],x[2], xlocal[0],xlocal[1],xlocal[2],dpath);
 
 
    /* post the hit to the truth tree */
+
+   int itrack = (stack == 0)? gidGetId(track) : -1;
 
    if (history == 0)
    {
@@ -238,8 +240,8 @@ void hitStartCntr (float xin[4], float xout[4],
          s_StartCntr_t* stc = *twig = make_s_StartCntr();
          s_StcTruthPoints_t* points = make_s_StcTruthPoints(1);
          stc->stcTruthPoints = points;
-	 int a = thisInputEvent->physicsEvents->in[0].reactions->in[0].vertices->in[0].products->mult;
-         points->in[0].primary = (stack <= a);
+         int a = thisInputEvent->physicsEvents->in[0].reactions->in[0].vertices->in[0].products->mult;
+         points->in[0].primary = (track <= a && stack == 0);
          points->in[0].track = track;
          points->in[0].t = t;
          points->in[0].z = x[2];
@@ -249,11 +251,11 @@ void hitStartCntr (float xin[4], float xout[4],
          points->in[0].py = pin[1]*pin[4];
          points->in[0].pz = pin[2]*pin[4];
          points->in[0].E = pin[3];
-	 points->in[0].dEdx = dEdx;
-	 points->in[0].ptype = ipart;
+         points->in[0].dEdx = dEdx;
+         points->in[0].ptype = ipart;
          points->in[0].sector = getsector_wrapper_();
          points->in[0].trackID = make_s_TrackID();
-         points->in[0].trackID->itrack = gidGetId(track);
+         points->in[0].trackID->itrack = itrack;
          points->mult = 1;
          pointCount++;
       }
@@ -263,7 +265,7 @@ void hitStartCntr (float xin[4], float xout[4],
 
    //   if( (ipart==8) && (x[2]<90.)){
    //     printf("x_gl, z_gl, x_l, z_l %f %f %f %f %f %f\n",
-   //	    x[0],x[1],x[2], xlocal[0],xlocal[1],xlocal[2]);
+   //        x[0],x[1],x[2], xlocal[0],xlocal[1],xlocal[2]);
    //   }
 
 
@@ -279,52 +281,52 @@ void hitStartCntr (float xin[4], float xout[4],
       float dbent  = 0.0;
       float dpath  = 0.0;
       if(xlocal[2] >= BENT_REGION){
-      	dbent = ( xlocal[2] - BENT_REGION )*ANGLE_COR;
-      	dpath = BENT_REGION + dbent;
+          dbent = ( xlocal[2] - BENT_REGION )*ANGLE_COR;
+          dpath = BENT_REGION + dbent;
       } else {
-      	dpath  = xlocal[2];
+          dpath  = xlocal[2];
       }
 
       /* float dEcorr = dEsum * exp(-dpath/ATTEN_LENGTH); */
       /* float tcorr  = t + dpath/C_EFFECTIVE; */
 
       /* printf("\n Sector %d Fired \n t = %.5f \n dEsum = %.5f \n dpath = %.5f \n",  */
-      /* 	     sector, t, dEsum, dpath); */
+      /*          sector, t, dEsum, dpath); */
 
       int sector_index = sector - 1;
       float dEcorr = 9.9E+9;
       float tcorr  = 9.9E+9;
       
       if (xlocal[2] <= STRAIGHT_LENGTH)
-	{
-	  dEcorr = dEsum * exp(dpath*SC_STRAIGHT_ATTENUATION_B[sector_index]);
-	  tcorr  = t + dpath * SC_STRAIGHT_PROPAGATION_B[sector_index] + SC_STRAIGHT_PROPAGATION_A[sector_index];
+    {
+      dEcorr = dEsum * exp(dpath*SC_STRAIGHT_ATTENUATION_B[sector_index]);
+      tcorr  = t + dpath * SC_STRAIGHT_PROPAGATION_B[sector_index] + SC_STRAIGHT_PROPAGATION_A[sector_index];
 
-	  /* printf("HIT OCCURED IN STRAIGHT SECTION \n"); */
-	  /* printf("Attenuation Corrections: A = %.5f, B = %.5f, C = %.5f \n", SC_STRAIGHT_ATTENUATION_A[sector_index], SC_STRAIGHT_ATTENUATION_B[sector_index], SC_STRAIGHT_ATTENUATION_C[sector_index]); */
-	  /* printf("Time Corrections: B = %.5f, A = %.5f \n", SC_STRAIGHT_PROPAGATION_B[sector_index], SC_STRAIGHT_PROPAGATION_A[sector_index]);  */
-	}
+      /* printf("HIT OCCURED IN STRAIGHT SECTION \n"); */
+      /* printf("Attenuation Corrections: A = %.5f, B = %.5f, C = %.5f \n", SC_STRAIGHT_ATTENUATION_A[sector_index], SC_STRAIGHT_ATTENUATION_B[sector_index], SC_STRAIGHT_ATTENUATION_C[sector_index]); */
+      /* printf("Time Corrections: B = %.5f, A = %.5f \n", SC_STRAIGHT_PROPAGATION_B[sector_index], SC_STRAIGHT_PROPAGATION_A[sector_index]);  */
+    }
       else if (xlocal[2] > STRAIGHT_LENGTH && xlocal[2] <= (STRAIGHT_LENGTH + BEND_LENGTH))
-	{
-	  dEcorr = dEsum * ((SC_BENDNOSE_ATTENUATION_A[sector_index] * exp(dpath*SC_BENDNOSE_ATTENUATION_B[sector_index]) + SC_BENDNOSE_ATTENUATION_C[sector_index]) / 
-				  SC_STRAIGHT_ATTENUATION_A[sector_index]);
-	  tcorr  = t + dpath * SC_BEND_PROPAGATION_B[sector_index] + SC_BEND_PROPAGATION_A[sector_index];
+    {
+      dEcorr = dEsum * ((SC_BENDNOSE_ATTENUATION_A[sector_index] * exp(dpath*SC_BENDNOSE_ATTENUATION_B[sector_index]) + SC_BENDNOSE_ATTENUATION_C[sector_index]) / 
+                  SC_STRAIGHT_ATTENUATION_A[sector_index]);
+      tcorr  = t + dpath * SC_BEND_PROPAGATION_B[sector_index] + SC_BEND_PROPAGATION_A[sector_index];
 
-	  /* printf("HIT OCCURED IN BEND SECTION \n"); */
-	  /* printf("Attenuation Corrections: A = %.5f, B = %.5f, C = %.5f \n", SC_BENDNOSE_ATTENUATION_A[sector_index], SC_BENDNOSE_ATTENUATION_B[sector_index], SC_BENDNOSE_ATTENUATION_C[sector_index]); */
-	  /* printf("Time Corrections: B = %.5f,  A = %.5f \n", SC_BEND_PROPAGATION_B[sector_index], SC_BEND_PROPAGATION_A[sector_index]);  */
-	}
+      /* printf("HIT OCCURED IN BEND SECTION \n"); */
+      /* printf("Attenuation Corrections: A = %.5f, B = %.5f, C = %.5f \n", SC_BENDNOSE_ATTENUATION_A[sector_index], SC_BENDNOSE_ATTENUATION_B[sector_index], SC_BENDNOSE_ATTENUATION_C[sector_index]); */
+      /* printf("Time Corrections: B = %.5f,  A = %.5f \n", SC_BEND_PROPAGATION_B[sector_index], SC_BEND_PROPAGATION_A[sector_index]);  */
+    }
       else if (xlocal[2] > (STRAIGHT_LENGTH + BEND_LENGTH) && xlocal[2] <= (STRAIGHT_LENGTH + BEND_LENGTH + NOSE_LENGTH))
-	{
-	  dEcorr = dEsum * ((SC_BENDNOSE_ATTENUATION_A[sector_index] * exp(dpath*SC_BENDNOSE_ATTENUATION_B[sector_index]) + SC_BENDNOSE_ATTENUATION_C[sector_index]) / 
-				  SC_STRAIGHT_ATTENUATION_A[sector_index]);
-	  
-	  tcorr  = t + dpath * SC_NOSE_PROPAGATION_B[sector_index] + SC_NOSE_PROPAGATION_A[sector_index];
+    {
+      dEcorr = dEsum * ((SC_BENDNOSE_ATTENUATION_A[sector_index] * exp(dpath*SC_BENDNOSE_ATTENUATION_B[sector_index]) + SC_BENDNOSE_ATTENUATION_C[sector_index]) / 
+                  SC_STRAIGHT_ATTENUATION_A[sector_index]);
+      
+      tcorr  = t + dpath * SC_NOSE_PROPAGATION_B[sector_index] + SC_NOSE_PROPAGATION_A[sector_index];
 
-	  /* printf("HIT OCCURED IN NOSE SECTION \n"); */
-	  /* printf("Attenuation Corrections: A = %.5f, B = %.5f, C = %.5f \n", SC_BENDNOSE_ATTENUATION_A[sector_index], SC_BENDNOSE_ATTENUATION_B[sector_index], SC_BENDNOSE_ATTENUATION_C[sector_index]); */
-	  /* printf("Time Corrections: B = %.5f,  A = %.5f \n", SC_NOSE_PROPAGATION_B[sector_index], SC_NOSE_PROPAGATION_A[sector_index]); */ 
-	}
+      /* printf("HIT OCCURED IN NOSE SECTION \n"); */
+      /* printf("Attenuation Corrections: A = %.5f, B = %.5f, C = %.5f \n", SC_BENDNOSE_ATTENUATION_A[sector_index], SC_BENDNOSE_ATTENUATION_B[sector_index], SC_BENDNOSE_ATTENUATION_C[sector_index]); */
+      /* printf("Time Corrections: B = %.5f,  A = %.5f \n", SC_NOSE_PROPAGATION_B[sector_index], SC_NOSE_PROPAGATION_A[sector_index]); */ 
+    }
       else return;
 
       /* printf("tcorr = %.5f \n dEcorr = %.5f \n", tcorr, dEcorr); */
@@ -357,24 +359,24 @@ void hitStartCntr (float xin[4], float xout[4],
             break;
          }
       }
-      if (nhit < hits->mult)		/* merge with former hit */
+      if (nhit < hits->mult)        /* merge with former hit */
       {
          if (tcorr < hits->in[nhit].t)
          {
             hits->in[nhit].ptype = ipart;
-            hits->in[nhit].itrack = gidGetId(track);
+            hits->in[nhit].itrack = itrack;
          }
          hits->in[nhit].t = 
                  (hits->in[nhit].t * hits->in[nhit].dE + tcorr * dEcorr) /
                  (hits->in[nhit].dE + dEcorr);
-			hits->in[nhit].dE += dEcorr;
+            hits->in[nhit].dE += dEcorr;
       }
-      else if (nhit < MAX_HITS)		/* create new hit */
+      else if (nhit < MAX_HITS)        /* create new hit */
       {
          hits->in[nhit].t = tcorr ;
          hits->in[nhit].dE = dEcorr;
          hits->in[nhit].ptype = ipart;
-         hits->in[nhit].itrack = gidGetId(track);
+         hits->in[nhit].itrack = itrack;
          hits->mult++;
       }
       else
@@ -428,7 +430,7 @@ s_StartCntr_t* pickStartCntr ()
          int i,iok;
          for (iok=i=0; i < hits->mult; i++)
          {
-            if (hits->in[i].dE >= THRESH_MEV/1e3)
+            if (hits->in[i].dE > THRESH_MEV/1e3)
             {
                if (iok < i)
                {
@@ -453,10 +455,19 @@ s_StartCntr_t* pickStartCntr ()
          FREE(paddles);
       }
 
+      int last_track = -1;
+      double last_t = 1e9;
       for (point=0; point < points->mult; ++point)
       {
-         int m = box->stcTruthPoints->mult++;
-         box->stcTruthPoints->in[m] = item->stcTruthPoints->in[point];
+         if (points->in[point].trackID->itrack > 0 &&
+            (points->in[point].track != last_track ||
+             fabs(points->in[point].t - last_t) > 0.1))
+         {
+            int m = box->stcTruthPoints->mult++;
+            box->stcTruthPoints->in[m] = item->stcTruthPoints->in[point];
+            last_track = points->in[point].track;
+            last_t = points->in[point].t;
+         }
       }
       if (points != HDDM_NULL)
       {
