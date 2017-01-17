@@ -1,3 +1,6 @@
+
+#include <unistd.h>
+
 #include "ANALYSIS/DHistogramActions.h"
 
 void DHistogramAction_ObjectMemory::Initialize(JEventLoop* locEventLoop)

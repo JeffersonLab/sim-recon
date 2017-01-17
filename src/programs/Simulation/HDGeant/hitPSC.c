@@ -84,8 +84,8 @@ void hitPSC(float xin[4], float xout[4],float pin[5], float pout[5], float dEsum
          s_PairSpectrometerCoarse_t* psc = *twig = make_s_PairSpectrometerCoarse();
          s_PscTruthPoints_t* points = make_s_PscTruthPoints(1);
          psc->pscTruthPoints = points;
-        int a = thisInputEvent->physicsEvents->in[0].reactions->in[0].vertices->in[0].products->mult;
-         points->in[0].primary = (stack <= a);
+         int a = thisInputEvent->physicsEvents->in[0].reactions->in[0].vertices->in[0].products->mult;
+         points->in[0].primary = (track <= a && stack == 0);
          points->in[0].track = track;
          points->in[0].t = t;
          points->in[0].z = x[2];

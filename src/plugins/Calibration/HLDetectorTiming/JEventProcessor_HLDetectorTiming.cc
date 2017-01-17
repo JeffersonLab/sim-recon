@@ -90,7 +90,7 @@ jerror_t JEventProcessor_HLDetectorTiming::init(void)
 
     if (DO_TRACK_BASED){
         NBINS_TAGGER_TIME = 1600; MIN_TAGGER_TIME = -200; MAX_TAGGER_TIME = 400;
-        NBINS_MATCHING = 500; MIN_MATCHING_T = -100; MAX_MATCHING_T = 400;
+        NBINS_MATCHING = 1000; MIN_MATCHING_T = -100; MAX_MATCHING_T = 400;
     }
     else{
         NBINS_TAGGER_TIME = 100; MIN_TAGGER_TIME = -50; MAX_TAGGER_TIME = 50;
@@ -664,7 +664,7 @@ jerror_t JEventProcessor_HLDetectorTiming::evnt(JEventLoop *loop, uint64_t event
            Fill1DHistogram("HLDetectorTiming", "TRACKING", "Earliest CDC Time Minus Matched SC Time",
                  earliestTime - locSCHitMatchParams->dHitTime,
                  "Earliest CDC Time Minus Matched SC Time; t_{CDC} - t_{SC} [ns];",
-                 200, -50, 150);
+                 400, -50, 150);
         }
 
         // Loop over TAGM hits

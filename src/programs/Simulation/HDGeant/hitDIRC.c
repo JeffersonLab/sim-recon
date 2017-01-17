@@ -40,9 +40,8 @@ void hitDIRC(float xin[4], float xout[4], float pin[5], float pout[5],
 			s_DIRC_t* dirc = *twig = make_s_DIRC();
 			s_DircTruthPoints_t* points = make_s_DircTruthPoints(1);
 			dirc->dircTruthPoints = points;
-			int a =
-					thisInputEvent->physicsEvents->in[0].reactions->in[0].vertices->in[0].products->mult;
-			points->in[0].primary = (stack <= a);
+			int a = thisInputEvent->physicsEvents->in[0].reactions->in[0].vertices->in[0].products->mult;
+			points->in[0].primary = (track <= a && stack == 0);
 			points->in[0].track = track;
 			points->in[0].x = xin[0];
 			points->in[0].y = xin[1];

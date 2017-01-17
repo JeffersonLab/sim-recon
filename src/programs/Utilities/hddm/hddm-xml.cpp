@@ -153,9 +153,10 @@ void usage()
 {
    std::cerr
         << "\nUsage:\n"
-        << "    hddm-xml [-n count] [-o <filename>] [HDDM file]\n\n"
+        << "    hddm-xml [-n <count>] [-o <filename>] [HDDM file]\n\n"
         << "Options:\n"
-        <<  "    -o <filename>	write to <filename>.xml"
+        <<  "    -o <filename>  write to <filename>.xml"
+        <<  "    -n <count>	    limit output to <count> records"
         << std::endl;
 }
 
