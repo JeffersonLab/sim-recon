@@ -1,10 +1,10 @@
 /*
- * hitPSC - registers hits for Pair Spectrometer Coarse paddles
+ * hitTPOL - registers hits for triplet polarimeter silicon detector
  *
  *        This is a part of the hits package for the
  *        HDGeant simulation program for Hall D.
  *
- *        version 1.0         -Simon Taylor, Oct 16, 2014
+ *        version 1.0         -Richard Jones, Jan 14, 2017
  *
  */
 
@@ -17,15 +17,11 @@
 #include <bintree.h>
 #include <gid_map.h>
 #include "calibDB.h"
+
 extern s_HDDM_t* thisInputEvent;
 
-//static float ATTEN_LENGTH    = 150.;
-//static float C_EFFECTIVE     = 15.;
-static float TWO_HIT_RESOL   = 25.;
+static float TWO_HIT_RESOL   = 1000.;
 static float THRESH_MEV      = 0.010;
-
-// the coarse PS has two arms (north/south) of 8 modules each
-#define NUM_MODULES_PER_ARM 8 
 
 // Comment by RTJ:
 // When I introduced the convenience constant MAX_HITS,
@@ -35,15 +31,15 @@ static float THRESH_MEV      = 0.010;
 // the hit list, do it in mcsmear.
 #define MAX_HITS 100
  
-binTree_t* pscTree = 0;
-static int paddleCount = 0;
+binTree_t* tpolTree = 0;
+static int sectorCount = 0;
 static int pointCount = 0;
 static int initialized = 0;
 
 
 /* register hits during tracking (from gustep) */
 
-void hitPSC(float xin[4], float xout[4],float pin[5], float pout[5], float dEsum,
+void hitTPOL(float xin[4], float xout[4],float pin[5], float pout[5], float dEsum,
            int track, int stack, int history, int ipart)
 {
    float x[3], t;
@@ -80,28 +76,24 @@ void hitPSC(float xin[4], float xout[4],float pin[5], float pout[5], float dEsum
    if (history == 0)
    {
       int mark = (1<<30) + pointCount;
-      void** twig = getTwig(&pscTree, mark);
+      void** twig = getTwig(&tpolTree, mark);
       if (*twig == 0)
       {
-         s_PairSpectrometerCoarse_t* psc = *twig = make_s_PairSpectrometerCoarse();
-         s_PscTruthPoints_t* points = make_s_PscTruthPoints(1);
-         psc->pscTruthPoints = points;
-         int module = getmodule_wrapper_();
+         s_TripletPolarimeter_t* tpol = *twig = make_s_TripletPolarimeter();
+         s_TpolTruthPoints_t* points = make_s_TpolTruthPoints(1);
+         tpol->tpolTruthPoints = points;
          int a = thisInputEvent->physicsEvents->in[0].reactions->in[0].vertices->in[0].products->mult;
          points->in[0].primary = (track <= a && stack == 0);
          points->in[0].track = track;
          points->in[0].t = t;
-         points->in[0].z = x[2];
-         points->in[0].x = x[0];
-         points->in[0].y = x[1];
+         points->in[0].r = sqrt(x[0]*x[0] + x[1]*x[1]);
+         points->in[0].phi = atan2(x[1], x[0]);
          points->in[0].px = pin[0]*pin[4];
          points->in[0].py = pin[1]*pin[4];
          points->in[0].pz = pin[2]*pin[4];
          points->in[0].E = pin[3];
          points->in[0].dEdx = dEdx;
          points->in[0].ptype = ipart;
-         points->in[0].arm = (module - 1) / NUM_MODULES_PER_ARM;
-         points->in[0].module = (module - 1) % NUM_MODULES_PER_ARM + 1;
          points->in[0].trackID = make_s_TrackID();
          points->in[0].trackID->itrack = itrack;
          points->mult = 1;
@@ -113,25 +105,26 @@ void hitPSC(float xin[4], float xout[4],float pin[5], float pout[5], float dEsum
    if (dEsum > 0)
    {
       int nhit;
-      s_PscTruthHits_t* hits;
-      int module = getmodule_wrapper_();
-      int mark = module;
-      void** twig = getTwig(&pscTree, mark);
+      s_TpolTruthHits_t* hits;
+      int ringno = 0; //getring_wrapper_();
+      int sectno = getsector_wrapper_();
+      int mark = sectno;
+      void** twig = getTwig(&tpolTree, mark);
       if (*twig == 0)
       {
-         s_PairSpectrometerCoarse_t* psc = *twig = make_s_PairSpectrometerCoarse();
-         s_PscPaddles_t* paddles = make_s_PscPaddles(1);
-         paddles->mult = 1;
-         paddles->in[0].arm = (module - 1) / NUM_MODULES_PER_ARM;
-         paddles->in[0].module = (module - 1) % NUM_MODULES_PER_ARM + 1;
-         paddles->in[0].pscTruthHits = hits = make_s_PscTruthHits(MAX_HITS);
-         psc->pscPaddles = paddles;
-         paddleCount++;
+         s_TripletPolarimeter_t* tpol = *twig = make_s_TripletPolarimeter();
+         s_TpolSectors_t* sectors = make_s_TpolSectors(1);
+         sectors->mult = 1;
+         sectors->in[0].ring = ringno;
+         sectors->in[0].sector = sectno;
+         sectors->in[0].tpolTruthHits = hits = make_s_TpolTruthHits(MAX_HITS);
+         tpol->tpolSectors = sectors;
+         sectorCount++;
       }
       else
       {
-         s_PairSpectrometerCoarse_t* psc = *twig;
-         hits = psc->pscPaddles->in[0].pscTruthHits;
+         s_TripletPolarimeter_t* tpol = *twig;
+         hits = tpol->tpolSectors->in[0].tpolTruthHits;
       }
 
       for (nhit = 0; nhit < hits->mult; nhit++)
@@ -143,10 +136,15 @@ void hitPSC(float xin[4], float xout[4],float pin[5], float pout[5], float dEsum
       }
       if (nhit < hits->mult)                /* merge with former hit */
       {
+         if (t < hits->in[nhit].t)
+         {
+            hits->in[nhit].ptype = ipart;
+            hits->in[nhit].itrack = itrack;
+         }
          hits->in[nhit].t = 
                  (hits->in[nhit].t * hits->in[nhit].dE + t * dEsum) /
                  (hits->in[nhit].dE + dEsum);
-         hits->in[nhit].dE += dEsum;
+                        hits->in[nhit].dE += dEsum;
       }
       else if (nhit < MAX_HITS)                /* create new hit */
       {
@@ -158,7 +156,7 @@ void hitPSC(float xin[4], float xout[4],float pin[5], float pout[5], float dEsum
       }
       else
       {
-         fprintf(stderr,"HDGeant error in hitPSC: ");
+         fprintf(stderr,"HDGeant error in hitTPOL: ");
          fprintf(stderr,"max hit count %d exceeded, truncating!\n",MAX_HITS);
          exit(2);
       }
@@ -167,41 +165,41 @@ void hitPSC(float xin[4], float xout[4],float pin[5], float pout[5], float dEsum
 
 /* entry point from fortran */
 
-void hitpsc_(float* xin, float* xout,
+void hittpol_(float* xin, float* xout,
                    float* pin, float* pout, float* dEsum,
                    int* track, int* stack, int* history, int* ipart)
 {
-   hitPSC(xin,xout,pin,pout,*dEsum,*track,*stack,*history,*ipart);
+   hitTPOL(xin,xout,pin,pout,*dEsum,*track,*stack,*history,*ipart);
 }
 
 
 /* pick and package the hits for shipping */
 
-s_PairSpectrometerCoarse_t* pickPsc ()
+s_TripletPolarimeter_t* pickTpol ()
 {
-   s_PairSpectrometerCoarse_t* box;
-   s_PairSpectrometerCoarse_t* item;
+   s_TripletPolarimeter_t* box;
+   s_TripletPolarimeter_t* item;
 
-   if ((paddleCount == 0) && (pointCount == 0))
+   if ((sectorCount == 0) && (pointCount == 0))
    {
       return HDDM_NULL;
    }
 
-   box = make_s_PairSpectrometerCoarse();
-   box->pscPaddles = make_s_PscPaddles(paddleCount);
-   box->pscTruthPoints = make_s_PscTruthPoints(pointCount);
-   while ((item = (s_PairSpectrometerCoarse_t*) pickTwig(&pscTree)))
+   box = make_s_TripletPolarimeter();
+   box->tpolSectors = make_s_TpolSectors(sectorCount);
+   box->tpolTruthPoints = make_s_TpolTruthPoints(pointCount);
+   while ((item = (s_TripletPolarimeter_t*) pickTwig(&tpolTree)))
    {
-      s_PscPaddles_t* paddles = item->pscPaddles;
-      int paddle;
-      s_PscTruthPoints_t* points = item->pscTruthPoints;
+      s_TpolSectors_t* sectors = item->tpolSectors;
+      int sector;
+      s_TpolTruthPoints_t* points = item->tpolTruthPoints;
       int point;
 
-      for (paddle=0; paddle < paddles->mult; ++paddle)
+      for (sector=0; sector < sectors->mult; ++sector)
       {
-         int m = box->pscPaddles->mult;
+         int m = box->tpolSectors->mult;
 
-         s_PscTruthHits_t* hits = paddles->in[paddle].pscTruthHits;
+         s_TpolTruthHits_t* hits = sectors->in[sector].tpolTruthHits;
 
          /* compress out the hits below threshold */
          int i,iok;
@@ -219,32 +217,32 @@ s_PairSpectrometerCoarse_t* pickPsc ()
          if (iok)
          {
             hits->mult = iok;
-            box->pscPaddles->in[m] = paddles->in[paddle];
-            box->pscPaddles->mult++;
+            box->tpolSectors->in[m] = sectors->in[sector];
+            box->tpolSectors->mult++;
          }
          else if (hits != HDDM_NULL)
          {
             FREE(hits);
          }
       }
-      if (paddles != HDDM_NULL)
+      if (sectors != HDDM_NULL)
       {
-         FREE(paddles);
+         FREE(sectors);
       }
 
       for (point=0; point < points->mult; ++point)
       {
          int track = points->in[point].track;
          double t = points->in[point].t;
-         int m = box->pscTruthPoints->mult;
+         int m = box->tpolTruthPoints->mult;
          if (points->in[point].trackID->itrack < 0 ||
-            (m > 0 &&  box->pscTruthPoints->in[m-1].track == track &&
-             fabs(box->pscTruthPoints->in[m-1].t - t) < 0.5))
+            (m > 0 &&  box->tpolTruthPoints->in[m-1].track == track &&
+             fabs(box->tpolTruthPoints->in[m-1].t - t) < 0.5))
          {
             continue;
          }
-         box->pscTruthPoints->in[m] = item->pscTruthPoints->in[point];
-         box->pscTruthPoints->mult++;
+         box->tpolTruthPoints->in[m] = item->tpolTruthPoints->in[point];
+         box->tpolTruthPoints->mult++;
       }
       if (points != HDDM_NULL)
       {
@@ -253,22 +251,22 @@ s_PairSpectrometerCoarse_t* pickPsc ()
       FREE(item);
    }
 
-   paddleCount = pointCount = 0;
+   sectorCount = pointCount = 0;
 
-   if ((box->pscPaddles != HDDM_NULL) &&
-       (box->pscPaddles->mult == 0))
+   if ((box->tpolSectors != HDDM_NULL) &&
+       (box->tpolSectors->mult == 0))
    {
-      FREE(box->pscPaddles);
-      box->pscPaddles = HDDM_NULL;
+      FREE(box->tpolSectors);
+      box->tpolSectors = HDDM_NULL;
    }
-   if ((box->pscTruthPoints != HDDM_NULL) &&
-       (box->pscTruthPoints->mult == 0))
+   if ((box->tpolTruthPoints != HDDM_NULL) &&
+       (box->tpolTruthPoints->mult == 0))
    {
-      FREE(box->pscTruthPoints);
-      box->pscTruthPoints = HDDM_NULL;
+      FREE(box->tpolTruthPoints);
+      box->tpolTruthPoints = HDDM_NULL;
    }
-   if ((box->pscPaddles->mult == 0) &&
-       (box->pscTruthPoints->mult == 0))
+   if ((box->tpolSectors->mult == 0) &&
+       (box->tpolTruthPoints->mult == 0))
    {
       FREE(box);
       box = HDDM_NULL;

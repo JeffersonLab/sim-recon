@@ -145,6 +145,9 @@ int loadOutput (int runNo)
    if ((hitView->pairSpectrometerCoarse = pickPsc()) != HDDM_NULL) {
      ++packages_hit;
    }
+   if ((hitView->tripletPolarimeter = pickTpol()) != HDDM_NULL) {
+     ++packages_hit;
+   }
    if ((hitView->mcTrajectory = pickMCTrajectory()) != HDDM_NULL) {
       ++packages_hit;
    }

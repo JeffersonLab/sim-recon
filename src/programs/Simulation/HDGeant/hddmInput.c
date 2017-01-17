@@ -157,7 +157,7 @@ int loadInput (int override_run_number, int myInputRunNo)
       s_Beam_t* beam = react->beam;
       s_Target_t* target = react->target;
 
-      if (beam)
+      if (beam != NULL && beam != (s_Beam_t*)&hddm_s_nullTarget)
       {
          beam_momentum[0] = beam->momentum->E;
          beam_momentum[1] = beam->momentum->px;

@@ -1140,19 +1140,21 @@ s_ForwardDC_t* pickForwardDC ()
         {
            FREE(wires);
         }
-        int last_track = -1;
-        double last_t = 1e9;
         for (point=0; point < points->mult; ++point)
         {
-            if (points->in[point].trackID->itrack > 0 &&
-               (points->in[point].track != last_track ||
-               fabs(points->in[point].t - last_t) > 0.05))
+           int track = points->in[point].track;
+           double t = points->in[point].t;
+           int mm = box->fdcChambers->in[m].fdcTruthPoints->mult;
+           if (points->in[point].trackID->itrack < 0 ||
+              (m > 0 &&  box->fdcChambers->in[m].fdcTruthPoints
+                                         ->in[mm-1].track == track &&
+               fabs(box->fdcChambers->in[m].fdcTruthPoints
+                                    ->in[mm-1].t - t) < 0.5))
            {
-              int mm = box->fdcChambers->in[m].fdcTruthPoints->mult++;
-              box->fdcChambers->in[m].fdcTruthPoints->in[mm] = points->in[point];
-              last_track = points->in[point].track;
-              last_t = points->in[point].t;
+              continue;
            }
+           box->fdcChambers->in[m].fdcTruthPoints->in[mm] = points->in[point];
+           box->fdcChambers->in[m].fdcTruthPoints->mult++;
         }
         if (points != HDDM_NULL)
         {
