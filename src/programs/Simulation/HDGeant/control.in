@@ -40,6 +40,31 @@ c      radthick - dimaond radiator thickneess in m
 c Omitting the final parameter Emin results in the default value being used.
 cBEAM 10. 9.999 0.0012 76.00 0.005 10.e-9 20.e-6
 
+c The GENBEAM card configures the simulation program to act purely as a
+c Monte Carlo event generator, and not to actually track any of the particles
+c that it generates. The events are written to the output file with only the
+c MC section filled out (reactions tag). This file can be fed back later to
+c HDGeant using the INFILE card above to carry out the actual simulation.
+c This provides access to the built-in photon beam generator of HDGeant to
+c someone who wants to study the properties of the beam apart from its
+c interactions in the target. Three keywords are currently supported.
+c    'precol'   - single-photon events starting upstream of the primary
+c                 collimator, with correlated spatial and momentum 
+c                 distributions for the well-tuned GlueX beamline.
+c    'postcol'  - single-photon events starting downstream of the secondary
+c                 collimator. Beam photons have been tracked through the 
+c                 system of collimators and sweep magnets but then stopped
+c                 before entry into the pair spectrometer.
+c    'postconv' - e+e- pair and e+e-/e-recoil events generated in the
+c                 TPOL target. Beam photons have been tracked through
+c                 the system of collimators and then pair-converted in
+c                 the TPOL coverter using a custom polarization-sensitive
+c                 pair/triplet production generator. They are saved as
+c                 a single vertex within the PTAR target.
+c The first two modes are supported by both HDGeant and HDGeant4, while
+c postconv is only supported at present by HDGeant4.
+cGENBEAM 'postconv'
+
 c Commenting out the following line will disable simulated hits output.
 OUTFILE 'bgtest.hddm'
 

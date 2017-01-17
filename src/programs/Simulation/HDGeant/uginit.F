@@ -198,6 +198,11 @@ c The following parameters are declared in controlparams.inc above.
       data trigger_time_sigma_ns/10./
       data event_count/0/
       data override_run_number/0/
+      data genbeam_precol/0/
+      data genbeam_postcol/0/
+      data genbeam_mode/20*0/
+      character*10 genbeam_modes
+      equivalence (genbeam_mode(1), genbeam_modes)
 
 C  Use this parameter to set up a minimum photon energy 
 C  for the coherent bremsstrahlung beam generator - see beamgen.F
@@ -263,6 +268,7 @@ C..geant..
       call ffkey('mcsmearopts',mcsmearopts,64,'MIXED')
       call ffkey('deleteunsmeared',deleteunsmeared,1,'INTEGER')
       call ffkey('beam',beamE0,7,'REAL')
+      call ffkey('genbeam',genbeam_mode,20,'MIXED')
       call ffkey('bfieldmap', bfield_map,20,'MIXED')
       call ffkey('bfieldtype', bfield_type,20,'MIXED')
       call ffkey('psbfieldmap', PS_bfield_map,20,'MIXED')
@@ -344,6 +350,22 @@ c        endif
      +        ' beamEmin is larger than a default value of 0.12 GeV,',
      +        ' cannot continue.'
          stop
+      endif
+
+      if (genbeam_mode(1) .ne. 0) then
+         call CUTOL(genbeam_modes)
+         if (genbeam_modes(1:6).eq.'precol') then
+            genbeam_precol = 1
+         elseif (genbeam_modes(1:7).eq.'postcol') then
+            genbeam_postcol = 1
+         else
+            print *, 'uginit.F: GENBEAM option ', genbeam_modes,
+     +               ' is not supported in this release of hdgeant,',
+     +               ' cannot continue.'
+            stop
+         endif
+
+
       endif
 
       if(showersincol.ne.0) then

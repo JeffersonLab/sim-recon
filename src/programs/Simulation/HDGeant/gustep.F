@@ -353,6 +353,21 @@ c
       integer enterbcal
       save enterbcal
 
+      if (genbeam_precol.ne.0) then
+         call storeBeam(vect, tofg)
+         writenohits = 1
+         ISTOP = 99
+         return
+      else if (genbeam_postcol.ne.0) then
+         if (vect(3).gt.-1520) then
+            call storeBeam(vect, tofg)
+            writenohits = 1
+            ISTOP = 99
+         else
+            writenohits = 0
+         endif
+      endif
+
 #ifdef BACKGROUND_PROFILING
 ********************************************************************************
 *   The following defines an ntuple containing information on particle type  
