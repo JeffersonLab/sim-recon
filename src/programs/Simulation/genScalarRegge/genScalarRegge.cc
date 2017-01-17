@@ -1624,20 +1624,6 @@ double TensorCrossSection(TLorentzVector &q /* beam */,
   double p1_dot_dp=p1.Dot(dp);
   double p2_dot_dp=p2.Dot(dp);
   double p1_dot_p2=p1.Dot(p2);
-  double p1_dot_dk=p1.Dot(dk);
-  double p2_dot_dk=p2.Dot(dk);
-  double p1_dot_k=p1.Dot(k);
-  double p2_dot_k=p2.Dot(k);
-  double q_dot_p1=q.Dot(p1);
-  double q_dot_p2=q.Dot(p2);
-  double q_dot_dp=q.Dot(dp);
-  double q_dot_k=q.Dot(k);
-  double dp_dot_k=dp.Dot(k);
-  double q_dot_dk=q.Dot(dk);
-  double dp_dot_dk=dp.Dot(dk);
-  double k_dot_dk=k.Dot(dk);
-  double k_sq=k.Dot(k);
-  double dk_sq=dk.Dot(dk);
 
   // momentum transfer compenents
   double dpx=dp.X();
@@ -1645,33 +1631,37 @@ double TensorCrossSection(TLorentzVector &q /* beam */,
   double dpx2_plus_dpy2=dpx*dpx+dpy*dpy;
 
   // Form factors
+  /*
   double GD_term=1.-t/0.71;
   double F_1=(1.-0.25*t/m_p_sq*2.7928)/(GD_term*GD_term*(1.-0.25*t/m_p_sq));
   double F_M=0.5/(0.5-t);
   double Lambda_T=2.;
   double F_Tpipi=exp(-(k_sq-M_sq_R)/(Lambda_T*Lambda_T));
   double F_Tpipi_sq=F_Tpipi*F_Tpipi;
+  */
 
-  // other factors
-  double gamma_rho=sqrt(0.496/(4.*M_PI));
-  double gamma_omega=sqrt(0.042/(4.*M_PI));
+  // other constants
   double m_rho=0.775; // GeV
   double m_rho_sq=m_rho*m_rho;
  
   // Coupling constants 
-  double f=5.;  // scale factor to account for normalization of regge factor 
+  double f=1.;  // scale factor to account for normalization of regge factor 
   // to data??
   double gT_sq=f*(2./3.)*150; // GeV^2
+  if (two_particles==(7+17)){
+    gT_sq=183.675;  // GeV^2
+  }
 
   // s scale for regge trajectories
   double s0=1.;
 
   // Regge trajectory for omega
+  /*
   double a_omega=0.44+0.9*t;
   double a_omega_prime=0.9;
   double regge_omega=10.*pow(s/s0,a_omega-1.)*M_PI*a_omega_prime/(sin(M_PI*a_omega)*TMath::Gamma(a_omega)); // excluding phase factor
   double regge_omega_sq=regge_omega*regge_omega; 
-
+  */
 
   // Regge trajectory for rho
   double a_rho=0.55+0.8*t;
@@ -1679,13 +1669,10 @@ double TensorCrossSection(TLorentzVector &q /* beam */,
   double regge_rho=pow(s/s0,a_rho-1.)*M_PI*a_rho_prime/(sin(M_PI*a_rho)*TMath::Gamma(a_rho)); // excluding phase factor
   double regge_rho_sq=regge_rho*regge_rho;
 
-  // "Odderon" trajectory;
-  double a_O=1.+0.25*t;
-  double a_O_prime=0.25;
-  double odderon=pow(s/s0,a_O-1.)*M_PI*a_O_prime/(sin(M_PI*a_O)*TMath::Gamma(a_O));// excluding phase factor
-  double odderon_sq=odderon*odderon;
-
+  // coupling constant for tensor interaction at rhoNN vertex
   double Kappa_rho=6.1;
+
+  // Amplitude^2
   double one_minus_dpx_over_m_rho=1.-dpx/m_rho;
   double one_minus_dpy_over_m_rho=1.-dpy/m_rho;
   double T=(38./9)*gT_sq/m_p_sq*(M_PI/8.)*(1./137.)*regge_rho_sq*(2.*dpx2_plus_dpy2/m_rho_sq*p1_dot_dp*(p2_dot_dp/m_rho_sq-1.)
@@ -1693,16 +1680,10 @@ double TensorCrossSection(TLorentzVector &q /* beam */,
 		    *(2.*t-dpx2_plus_dpy2)*(-Kappa_rho+0.25*Kappa_rho*Kappa_rho*(1.+p1_dot_p2/m_p_sq)));
 	      
   // Compute cross section
-  double m1=particles[0].M();
-  double m2=particles[1].M();
-  double m1_plus_m2=m1+m2;
-  double m1_minus_m2=m1-m2;
-  double kappa=sqrt((k_sq-m1_plus_m2*m1_plus_m2)*(k_sq-m1_minus_m2*m1_minus_m2))
-    /(2.*sqrt(k_sq));
   double mp_sq_minus_s=m_p_sq-s;
   double mp_sq_minus_s_sq=mp_sq_minus_s*mp_sq_minus_s;
   double hbarc_sq=389.; // Convert to micro-barns
-  double xsec=hbarc_sq*kappa*(gR*gR/(ReB*ReB+ImB*ImB))*T/(256.*M_PI*M_PI*M_PI*M_PI*mp_sq_minus_s_sq);
+  double xsec=hbarc_sq*(gR*gR/(ReB*ReB+ImB*ImB))*T/(256.*M_PI*M_PI*M_PI*M_PI*mp_sq_minus_s_sq);
 
   return(xsec);
 			
@@ -2031,7 +2012,7 @@ int main(int narg, char *argv[])
     TLorentzVector beam;
 
     // Maximum value for cross section 
-    double xsec_max=0.1;
+    double xsec_max=0.025;
     double xsec=0.,xsec_test=0.;
 
     // Polar angle in center of mass frame
@@ -2149,13 +2130,13 @@ int main(int narg, char *argv[])
       if (generate[1]){
 	GetResonanceParameters(m1,m2,M_sq,ReB,ImB);
 	if (got_pipi){ // f0(980)
-	  gR=1.705/(2.*M_PI);
+	  gR=1.705/(2.*M_PI)*0.9783*sqrt(2./M_PI);
 	  M_sq_R=0.9783*0.9783;
 	  gsq_rho_S_gamma=0.239; // GeV^-2
 	  gsq_omega_S_gamma=0.02656;
 	}
 	else{ // a0(980)
-	  gR=2.82/(2.*M_PI);
+	  gR=2.82/(2.*M_PI)*0.9825*sqrt(2./M_PI);
 	  M_sq_R=0.9825*0.9825;	 
 	  gsq_rho_S_gamma=0.02537;
 	  gsq_omega_S_gamma=0.2283;
@@ -2171,16 +2152,27 @@ int main(int narg, char *argv[])
 	}
       }
       if (generate[3]){ // Tensor background
-	double m_f2=1.275;
-	M_sq_R=m_f2*m_f2; 
+	double m_tensor=1.275;	
 	width=0.185;
+	if (!got_pipi){
+	  width=0.107;
+	  m_tensor=1.3183;
+	}
+	M_sq_R=m_tensor*m_tensor; 
 	ReB=M_sq_R-M_sq;
-	ImB=width*sqrt(M_sq);
-	gR=1.; // change this!
-	//ReB=1.;
-	//ImB=0.;
-	gR=sqrt(16.*M_PI*(0.848*width/3.)/sqrt((1.-(m1+m2)*(m1+m2)/M_sq)*(1-(m1-m2)*(m1-m2)/M_sq)));
-
+	double Msq_minus_m1sq_m2sq=M_sq-m1*m1-m2*m2;
+	double MRsq_minus_m1sq_m2sq=M_sq_R-m1*m1-m2*m2;
+	double q_over_qR_5
+	  =pow(m_tensor/M*sqrt((Msq_minus_m1sq_m2sq*Msq_minus_m1sq_m2sq-4.*m1*m1*m2*m2)
+			   /(MRsq_minus_m1sq_m2sq*MRsq_minus_m1sq_m2sq-4.*m1*m1*m2*m2)),5);
+	if (got_pipi){ // f2(1270)
+	  gR=M*sqrt((2./M_PI)*0.85*(1./3.)*width*M_sq_R*q_over_qR_5);
+	  ImB=M*width*(0.85*q_over_qR_5*M_sq_R/M_sq+0.15);
+	}
+	else { // a2(1320)
+	  gR=M*sqrt((2./M_PI)*0.155*M_sq_R*q_over_qR_5);
+	  ImB=M*width*(0.145*q_over_qR_5*M_sq_R/M_sq+0.855);
+	}
 	xsec+=TensorCrossSection(beam,particle_types,particle_vectors,
 				 gR,ReB,ImB);
 	
@@ -2193,8 +2185,6 @@ int main(int narg, char *argv[])
       xsec_test=myrand->Uniform(xsec_max);
     }
     while (xsec_test>xsec);
-
-    cout << mymax << endl;
 
     // Other diagnostic histograms
     thrown_t->Fill(t);
@@ -2221,8 +2211,7 @@ int main(int narg, char *argv[])
   cout<<endl<<"Closed HDDM file"<<endl;
   cout<<" "<<Nevents<<" event written to "<<output_file_name<<endl;
 
-  // Cleanup
-  delete []decay_masses;
+    cout << mymax << endl;
 
   return 0;
 }
