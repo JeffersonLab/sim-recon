@@ -239,6 +239,7 @@ s_TripletPolarimeter_t* pickTpol ()
             (m > 0 &&  box->tpolTruthPoints->in[m-1].track == track &&
              fabs(box->tpolTruthPoints->in[m-1].t - t) < 0.5))
          {
+            FREE(points->in[point].trackID);
             continue;
          }
          box->tpolTruthPoints->in[m] = item->tpolTruthPoints->in[point];

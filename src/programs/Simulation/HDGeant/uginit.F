@@ -352,7 +352,7 @@ c        endif
          stop
       endif
 
-      if (genbeam_mode(1) .ne. 0) then
+      if (genbeam_mode(1).ne.0.and.beamE0.gt.0.and.infile(1).eq.0) then
          call CUTOL(genbeam_modes)
          if (genbeam_modes(1:6).eq.'precol') then
             genbeam_precol = 1
