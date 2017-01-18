@@ -153,7 +153,7 @@ int loadOutput (int runNo)
    }
    if (packages_hit == 0) {
       thisOutputEvent->physicsEvents->in[0].hitView = HDDM_NULL;
-      free(hitView);
+      FREE(hitView);
    }
    return packages_hit;
 }
