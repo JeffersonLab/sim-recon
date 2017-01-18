@@ -666,6 +666,7 @@ s_CentralDC_t* pickCentralDC ()
             (m > 0 &&  box->cdcTruthPoints->in[m-1].track == track &&
              fabs(box->cdcTruthPoints->in[m-1].t - t) < 0.5))
          {
+            FREE(points->in[point].trackID);
             continue;
          }
          box->cdcTruthPoints->in[m] = points->in[point];

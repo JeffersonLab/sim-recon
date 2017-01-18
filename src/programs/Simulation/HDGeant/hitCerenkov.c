@@ -205,6 +205,7 @@ s_Cerenkov_t* pickCerenkov ()
             (m > 0 &&  box->cereTruthPoints->in[m-1].track == track &&
              fabs(box->cereTruthPoints->in[m-1].t - t) < 0.5))
          {
+            FREE(points->in[point].trackID);
             continue;
          }
          box->cereTruthPoints->in[m] = points->in[point];

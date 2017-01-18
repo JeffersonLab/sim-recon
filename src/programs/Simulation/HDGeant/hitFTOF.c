@@ -537,6 +537,7 @@ s_ForwardTOF_t* pickForwardTOF ()
          (m > 0 &&  box->ftofTruthPoints->in[m-1].track == track &&
           fabs(box->ftofTruthPoints->in[m-1].t - t) < 0.5))
       {
+         FREE(points->in[point].trackID);
          continue;
       }
       box->ftofTruthPoints->in[m] = points->in[point];

@@ -1151,6 +1151,7 @@ s_ForwardDC_t* pickForwardDC ()
                fabs(box->fdcChambers->in[m].fdcTruthPoints
                                     ->in[mm-1].t - t) < 0.5))
            {
+              FREE(points->in[point].trackID);
               continue;
            }
            box->fdcChambers->in[m].fdcTruthPoints->in[mm] = points->in[point];
