@@ -49,6 +49,7 @@ TH1D *thrown_dalitzZ;
 TH1D *thrown_Egamma;
 TH2D *thrown_dalitzXY;  
 TH2D *thrown_theta_vs_p;
+TH2D *thrown_mass_vs_E;
 TH1D *cobrems_vs_E;
 
 char input_file_name[50]="scalar.in";
@@ -1620,7 +1621,6 @@ double TensorCrossSection(TLorentzVector &q /* beam */,
   double t=(p1-p2).M2();
 
   // dot products 
-  double dp_sq=dp.Dot(dp);
   double p1_dot_dp=p1.Dot(dp);
   double p2_dot_dp=p2.Dot(dp);
   double p1_dot_p2=p1.Dot(p2);
@@ -1645,8 +1645,8 @@ double TensorCrossSection(TLorentzVector &q /* beam */,
   double m_rho_sq=m_rho*m_rho;
  
   // Coupling constants 
-  double f=1.;  // scale factor to account for normalization of regge factor 
-  // to data??
+  double f=1.43*1.43;  // scale factor to account for normalization of regge factor 
+  // to data?? from Xie and Oset (2015)
   double gT_sq=f*(2./3.)*150; // GeV^2
   if (two_particles==(7+17)){
     gT_sq=183.675;  // GeV^2
@@ -1656,13 +1656,11 @@ double TensorCrossSection(TLorentzVector &q /* beam */,
   double s0=1.;
 
   // Regge trajectory for omega
-  /*
   double a_omega=0.44+0.9*t;
   double a_omega_prime=0.9;
   double regge_omega=10.*pow(s/s0,a_omega-1.)*M_PI*a_omega_prime/(sin(M_PI*a_omega)*TMath::Gamma(a_omega)); // excluding phase factor
   double regge_omega_sq=regge_omega*regge_omega; 
-  */
-
+ 
   // Regge trajectory for rho
   double a_rho=0.55+0.8*t;
   double a_rho_prime=0.8;
@@ -1672,19 +1670,25 @@ double TensorCrossSection(TLorentzVector &q /* beam */,
   // coupling constant for tensor interaction at rhoNN vertex
   double Kappa_rho=6.1;
 
-  // Amplitude^2
+  // Amplitude
   double one_minus_dpx_over_m_rho=1.-dpx/m_rho;
   double one_minus_dpy_over_m_rho=1.-dpy/m_rho;
-  double T=(38./9)*gT_sq/m_p_sq*(M_PI/8.)*(1./137.)*regge_rho_sq*(2.*dpx2_plus_dpy2/m_rho_sq*p1_dot_dp*(p2_dot_dp/m_rho_sq-1.)
-		    +(m_p_sq-p1_dot_p2)*(one_minus_dpx_over_m_rho*one_minus_dpx_over_m_rho+one_minus_dpy_over_m_rho*one_minus_dpy_over_m_rho)
-		    *(2.*t-dpx2_plus_dpy2)*(-Kappa_rho+0.25*Kappa_rho*Kappa_rho*(1.+p1_dot_p2/m_p_sq)));
+  double common_fac=(38./9)/m_p_sq*(M_PI/8.)*(1./137.);
+  double vector_coupling
+    =2.*dpx2_plus_dpy2/m_rho_sq*p1_dot_dp*(p2_dot_dp/m_rho_sq-1.)
+    +(m_p_sq-p1_dot_p2)*(one_minus_dpx_over_m_rho*one_minus_dpx_over_m_rho
+			 +one_minus_dpy_over_m_rho*one_minus_dpy_over_m_rho);
+  double tensor_coupling
+    =(2.*t-dpx2_plus_dpy2)*(-Kappa_rho
+			    +0.25*Kappa_rho*Kappa_rho*(1.+p1_dot_p2/m_p_sq));
+  double T=common_fac*(gT_sq*(vector_coupling+tensor_coupling)*regge_rho_sq);
 	      
   // Compute cross section
   double mp_sq_minus_s=m_p_sq-s;
   double mp_sq_minus_s_sq=mp_sq_minus_s*mp_sq_minus_s;
   double hbarc_sq=389.; // Convert to micro-barns
-  double xsec=hbarc_sq*(gR*gR/(ReB*ReB+ImB*ImB))*T/(256.*M_PI*M_PI*M_PI*M_PI*mp_sq_minus_s_sq);
-
+  double xsec=-hbarc_sq*(gR*gR/(ReB*ReB+ImB*ImB))*T/(256.*M_PI*M_PI*M_PI*M_PI*mp_sq_minus_s_sq);
+  
   return(xsec);
 			
 }
@@ -1771,6 +1775,10 @@ void CreateHistograms(){
 		       1000,0,4.);
   thrown_mass->SetXTitle("mass [GeV]");
   thrown_dalitzXY=new TH2D("thrown_dalitzXY","Dalitz distribution Y vs X",100,-1.,1.,100,-1.,1);
+  thrown_mass_vs_E=new TH2D("thrown_mass_vs_E","M(4#gamma) vs Ebeam",
+			    18,3,12,450,0,4.5);
+  thrown_mass_vs_E->SetYTitle("M(4#gamma) [GeV]");
+  thrown_mass_vs_E->SetXTitle("E(beam) [GeV]");
   
   thrown_theta_vs_p=new TH2D("thrown_theta_vs_p","Proton #theta_{LAB} vs. p",
 			       200,0,2.,180,0.,90.);
@@ -2031,6 +2039,9 @@ int main(int narg, char *argv[])
     float vert[4]={0.,0.,0.,0.};
 
     // masses of decay particles
+    double m1sq=m1*m1;
+    double m2sq=m2*m2;
+    double m1sq_plus_m2sq=m1sq+m2sq;
 
     // use the rejection method to produce S's based on the cross section
     do{
@@ -2107,6 +2118,7 @@ int main(int narg, char *argv[])
 
       //Resonance parameters 
       double ReB=0.,ImB=0,gR=0.;
+      double gR_T=0., ImB_T=0., ReB_T=0.;
 
       // Cross section
       xsec=0.;
@@ -2152,29 +2164,30 @@ int main(int narg, char *argv[])
 	}
       }
       if (generate[3]){ // Tensor background
-	double m_tensor=1.275;	
-	width=0.185;
+	double m_T=1.275;	
+	double Gamma_T=0.185;
 	if (!got_pipi){
-	  width=0.107;
-	  m_tensor=1.3183;
+	  Gamma_T=0.107;
+	  m_T=1.3183;
 	}
-	M_sq_R=m_tensor*m_tensor; 
-	ReB=M_sq_R-M_sq;
-	double Msq_minus_m1sq_m2sq=M_sq-m1*m1-m2*m2;
-	double MRsq_minus_m1sq_m2sq=M_sq_R-m1*m1-m2*m2;
+	double M_sq_R_T=m_T*m_T; 
+	ReB_T=M_sq_R_T-M_sq;
+	double Msq_minus_m1sq_m2sq=M_sq-m1sq_plus_m2sq;
+	double MRsq_minus_m1sq_m2sq=M_sq_R_T-m1sq_plus_m2sq;
+	double temp=4.*m1sq*m2sq;
 	double q_over_qR_5
-	  =pow(m_tensor/M*sqrt((Msq_minus_m1sq_m2sq*Msq_minus_m1sq_m2sq-4.*m1*m1*m2*m2)
-			   /(MRsq_minus_m1sq_m2sq*MRsq_minus_m1sq_m2sq-4.*m1*m1*m2*m2)),5);
+	  =pow(m_T/M*sqrt((Msq_minus_m1sq_m2sq*Msq_minus_m1sq_m2sq-temp)
+			  /(MRsq_minus_m1sq_m2sq*MRsq_minus_m1sq_m2sq-temp)),5);
 	if (got_pipi){ // f2(1270)
-	  gR=M*sqrt((2./M_PI)*0.85*(1./3.)*width*M_sq_R*q_over_qR_5);
-	  ImB=M*width*(0.85*q_over_qR_5*M_sq_R/M_sq+0.15);
+	  gR_T=sqrt((2./M_PI)*0.85*(1./3.)*Gamma_T*M_sq_R_T*q_over_qR_5);
+	  ImB_T=M*Gamma_T*(0.85*q_over_qR_5*M_sq_R_T/M_sq+0.15);
 	}
 	else { // a2(1320)
-	  gR=M*sqrt((2./M_PI)*0.155*M_sq_R*q_over_qR_5);
-	  ImB=M*width*(0.145*q_over_qR_5*M_sq_R/M_sq+0.855);
+	  gR_T=sqrt((2./M_PI)*0.155*M_sq_R_T*q_over_qR_5);
+	  ImB_T=M*Gamma_T*(0.145*q_over_qR_5*M_sq_R_T/M_sq+0.855);
 	}
 	xsec+=TensorCrossSection(beam,particle_types,particle_vectors,
-				 gR,ReB,ImB);
+				 gR_T,ReB_T,ImB_T);
 	
       }
      if (xsec>mymax ) mymax=xsec;
@@ -2191,8 +2204,9 @@ int main(int narg, char *argv[])
     thrown_Egamma->Fill(Egamma);
     thrown_theta_vs_p->Fill(particle_vectors[last_index].P(),
 			    180./M_PI*particle_vectors[last_index].Theta());
-    thrown_mass->Fill((particle_vectors[0]+particle_vectors[1]).M());
-    
+    thrown_mass->Fill((particle_vectors[0]+particle_vectors[1]).M());  
+    thrown_mass_vs_E->Fill(Egamma,(particle_vectors[0]+particle_vectors[1]).M());
+   
      // Randomly generate z position in target
     vert[2]=zmin+myrand->Uniform(zmax-zmin);
 
