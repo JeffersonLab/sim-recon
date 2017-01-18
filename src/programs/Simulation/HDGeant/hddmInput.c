@@ -386,8 +386,7 @@ int storeBeam (float vect[7], float t0)
    int nvtx, ntbeam, nttarg, itra, nubuf;
    float vert[3], plab[3], tofg, ubuf[10];
    Particle_t kind;
-   int ntracks = 1;
-   int i;
+   int ilast;
 
    pes = thisInputEvent->physicsEvents;
    if (pes == 0 || pes == HDDM_NULL || pes->mult == 0)
@@ -395,50 +394,55 @@ int storeBeam (float vect[7], float t0)
    rs = pes->in[0].reactions;
    if (rs == 0 || rs == HDDM_NULL || rs->mult == 0)
       return 0;
-   bs = rs->in[0].beam;
    vs = rs->in[0].vertices;
    if (vs == 0 || vs == HDDM_NULL || vs->mult == 0)
       return 0;
    ps = vs->in[0].products;
    if (ps == 0 || ps == HDDM_NULL || ps->mult == 0)
       return 0;
-   for (i=0; i < ps->mult; ++i) {
-      if (bs == HDDM_NULL) {
-         bs = make_s_Beam();
-      }
-      bs->type = ps->in[i].type;
-      bs->momentum = ps->in[i].momentum;
-      bs->polarization = ps->in[i].polarization;
-      bs->properties = ps->in[i].properties;
-      rs->in[0].beam = bs;
-   }
-   or = vs->in[0].origin;
-   for (itra = 1; itra <= ntracks; itra++)
-   {
+   bs = rs->in[0].beam;
+   if (bs == HDDM_NULL)
+      bs = make_s_Beam();
+   ilast = ps->mult - 1;
+   bs->type = ps->in[ilast].type;
+   if (bs->momentum != HDDM_NULL)
+      FREE(bs->momentum);
+   bs->momentum = ps->in[ilast].momentum;
+   ps->in[ilast].momentum = HDDM_NULL;
+   if (bs->polarization != HDDM_NULL)
+      FREE(bs->polarization);
+   bs->polarization = ps->in[ilast].polarization;
+   ps->in[ilast].polarization = HDDM_NULL;
+   if (bs->properties != HDDM_NULL)
+      FREE(bs->properties);
+   bs->properties = ps->in[ilast].properties;
+   ps->in[ilast].properties = HDDM_NULL;
+   rs->in[0].beam = bs;
+   for (itra = 1; itra <= 1; itra++) {
       char chnpar[99];
       int itrtyp;
       float amass,charge,tlife;
       gfkine_(&itra,vert,plab,&kind,&nvtx,ubuf,&nubuf);
       gfpart_(&kind,chnpar,&itrtyp,&amass,&charge,&tlife,ubuf,&nubuf);
       gfvert_(&nvtx,vert,&ntbeam,&nttarg,&tofg,ubuf,&nubuf);
+      or = vs->in[0].origin;
       if (or == HDDM_NULL) {
-         or = make_s_Origin();
+         vs->in[0].origin = or = make_s_Origin();
       }
-      vs->in[0].origin = or;
       or->vx = vect[0];
       or->vy = vect[1];
       or->vz = vect[2];
       or->t = t0 * 1e9;
-      ps->in[0].type = kind;
-      ps->in[0].pdgtype = 22;	/* assume a beam photon */
-      ps->in[0].id = itra;
-      ps->in[0].parentid = 0;
-      ps->in[0].mech = 0;
-      ps->in[0].momentum = make_s_Momentum();
-      ps->in[0].momentum->px = vect[6] * vect[3];
-      ps->in[0].momentum->py = vect[6] * vect[4];
-      ps->in[0].momentum->pz = vect[6] * vect[5];
-      ps->in[0].momentum->E  = vect[6];
+      ps->in[ilast].type = kind;
+      ps->in[ilast].pdgtype = 22;	/* assume a beam photon */
+      ps->in[ilast].id = itra;
+      ps->in[ilast].parentid = 0;
+      ps->in[ilast].mech = 0;
+      ps->in[ilast].momentum = make_s_Momentum();
+      ps->in[ilast].momentum->px = vect[6] * vect[3];
+      ps->in[ilast].momentum->py = vect[6] * vect[4];
+      ps->in[ilast].momentum->pz = vect[6] * vect[5];
+      ps->in[ilast].momentum->E  = vect[6];
    }
    return 1;
 }
