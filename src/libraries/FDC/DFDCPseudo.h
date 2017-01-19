@@ -30,6 +30,21 @@ typedef struct {
    DMatrix3x1 X,N,NRaw,index;
 }centroid_t;
 
+enum FDCPseudoD {
+   dWcddeltaU=0,
+   dWcddeltaV,
+   dWcddeltaPhiU,
+   dWcddeltaPhiV,
+   dSddeltaU,
+   dSddeltaV,
+   dSddeltaPhiU,
+   dSddeltaPhiV,
+   dWdX,
+   dSdX,
+   dWddeltaPhiWz,
+   dWddeltaPhiWy
+};
+
 ///
 /// class DFDCPseudo: definition for a reconstructed point in the FDC
 /// 
@@ -83,22 +98,9 @@ class DFDCPseudo : public JObject {
       // These routines calculate the derivatives of the "s" and "w" variables wrt the alignment parameters
       // Currently implemented alignment parameters are dU, dV, dPhiU, dPhiV, dX (Acts in direction w), dY (acts in direction s)
 
-      enum FDCPseudoD {
-         dWcddeltaU=0,
-         dWcddeltaV,
-         dWcddeltaPhiU,
-         dWcddeltaPhiV,
-         dSddeltaU,
-         dSddeltaV,
-         dSddeltaPhiU,
-         dSddeltaPhiV,
-         dWdX,
-         dSdX,
-      };
-
       vector<double> GetFDCPseudoAlignmentDerivatives(){
          // Create the storage vector for each of the derivatives
-         size_t nDerivatives = 10;
+         size_t nDerivatives = 12;
          vector<double> derivatives(nDerivatives);
 
          // Useful numbers...
@@ -119,16 +121,19 @@ class DFDCPseudo : public JObject {
          derivatives[dSddeltaU] = -cosPhiV/sinPhiUmPhiV;
          derivatives[dSddeltaV] = cosPhiU/sinPhiUmPhiV;
          derivatives[dSddeltaPhiU] = -(v-u*cosPhiUmPhiV)*cosPhiV/sinPhiUmPhiV2;
-         derivatives[dSddeltaPhiU] = -(u-v*cosPhiUmPhiV)*cosPhiU/sinPhiUmPhiV2;
+         derivatives[dSddeltaPhiV] = -(u-v*cosPhiUmPhiV)*cosPhiU/sinPhiUmPhiV2;
 
          derivatives[dWdX]=1.0;
          derivatives[dSdX]=1.0;
+
+         derivatives[dWddeltaPhiWz]=-s; // For small angles. Rotations of the wire plane about the z axis
+         derivatives[dWddeltaPhiWy]=-w; // Rotations about the wire axis
 
          return derivatives;
 
       }
 
-      const vector<double> GetFDCStripGainDerivatives() {
+      vector<double> GetFDCStripGainDerivatives() {
          // Numerically calculate the derivatives of the cathode position wrt the strip gains
          // Numerical calculation necessary since it comes from the solution of a nonlinear set of equations
          vector<double> derivatives; // u and v

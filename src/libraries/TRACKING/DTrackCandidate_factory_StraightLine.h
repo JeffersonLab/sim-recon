@@ -50,7 +50,7 @@ class DTrackCandidate_factory_StraightLine:public jana::JFactory<DTrackCandidate
       };
 
       typedef struct{
-         double resi,err,d,tdrift,ddrift,s;
+         double resi,err,d,tdrift,ddrift,s,V;
          DMatrix4x1 S;
          DMatrix4x4 C;
       }cdc_update_t;
@@ -72,7 +72,8 @@ class DTrackCandidate_factory_StraightLine:public jana::JFactory<DTrackCandidate
 
       double fdc_drift_distance(double time);
       jerror_t DoFilter(double t0,double start_z,DMatrix4x1 &S,
-            vector<const DFDCPseudo *>&hits);
+            vector<const DFDCPseudo *>&hits,vector<const DCDCTrackHit *>&cdc_hits,
+            set<unsigned int> &used_cdc_hits);
       jerror_t DoFilter(double t0,double OuterZ,DMatrix4x1 &S,
             vector<const DCDCTrackHit *>&hits,double dzsign);
 
@@ -86,8 +87,10 @@ class DTrackCandidate_factory_StraightLine:public jana::JFactory<DTrackCandidate
       jerror_t KalmanFilter(DMatrix4x1 &S,DMatrix4x4 &C,
             vector<const DFDCPseudo *>&hits,
             vector<int>&used_fdc_hits,
+            vector<const DCDCTrackHit *>&cdc_hits,
             deque<trajectory_t>&trajectory,
             vector<fdc_update_t>&pulls,
+            vector<cdc_update_t>&cdc_pulls,
             double &chi2,unsigned int &ndof);
       jerror_t KalmanFilter(DMatrix4x1 &S,DMatrix4x4 &C,
             vector<const DCDCTrackHit *>&hits,
@@ -102,6 +105,8 @@ class DTrackCandidate_factory_StraightLine:public jana::JFactory<DTrackCandidate
       jerror_t Smooth(deque<trajectory_t>&trajectory,
             vector<fdc_update_t>&updates,
             vector<const DFDCPseudo *>&hits,
+            vector<cdc_update_t>&cdc_pulls,
+            vector<const DCDCTrackHit *>&cdc_hits,
             DTrackCandidate *cand); 
 
       double CDCDriftDistance(double t);
@@ -127,12 +132,16 @@ class DTrackCandidate_factory_StraightLine:public jana::JFactory<DTrackCandidate
       // Parameters for drift resolution
       double DRIFT_RES_PARMS[3];
       double DRIFT_FUNC_PARMS[4];
+      double CDC_MATCH_DOCA;
+      int VERBOSE;
 
       // variables to deal with CDC straw sag
       vector<vector<double> >max_sag;
       vector<vector<double> >sag_phi_offset;
       double long_drift_func[3][3];
       double short_drift_func[3][3];
+
+      double cdc_endplate_z, cdc_endplate_rmin, cdc_endplate_rmax;
 
       // Diagnostic histograms
       TH2F *Hvres;
