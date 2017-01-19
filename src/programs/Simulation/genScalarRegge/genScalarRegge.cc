@@ -1654,12 +1654,6 @@ double TensorCrossSection(TLorentzVector &q /* beam */,
 
   // s scale for regge trajectories
   double s0=1.;
-
-  // Regge trajectory for omega
-  double a_omega=0.44+0.9*t;
-  double a_omega_prime=0.9;
-  double regge_omega=10.*pow(s/s0,a_omega-1.)*M_PI*a_omega_prime/(sin(M_PI*a_omega)*TMath::Gamma(a_omega)); // excluding phase factor
-  double regge_omega_sq=regge_omega*regge_omega; 
  
   // Regge trajectory for rho
   double a_rho=0.55+0.8*t;
@@ -1667,6 +1661,13 @@ double TensorCrossSection(TLorentzVector &q /* beam */,
   double regge_rho=pow(s/s0,a_rho-1.)*M_PI*a_rho_prime/(sin(M_PI*a_rho)*TMath::Gamma(a_rho)); // excluding phase factor
   double regge_rho_sq=regge_rho*regge_rho;
 
+  // Regge trajectory for odderon
+  double a_odderon=1.+0.25*t;
+  double a_odderon_prime=0.25;
+  double regge_odderon=pow(s/s0,a_odderon-1.)*M_PI*a_odderon_prime
+    /(sin(M_PI*a_odderon)*TMath::Gamma(a_odderon)); // excluding phase factor
+  double regge_odderon_sq=regge_odderon*regge_odderon; 
+ 
   // coupling constant for tensor interaction at rhoNN vertex
   double Kappa_rho=6.1;
 
@@ -1681,7 +1682,15 @@ double TensorCrossSection(TLorentzVector &q /* beam */,
   double tensor_coupling
     =(2.*t-dpx2_plus_dpy2)*(-Kappa_rho
 			    +0.25*Kappa_rho*Kappa_rho*(1.+p1_dot_p2/m_p_sq));
-  double T=common_fac*(gT_sq*(vector_coupling+tensor_coupling)*regge_rho_sq);
+  double amp_sum=gT_sq*(vector_coupling+tensor_coupling)*regge_rho_sq;
+  double gT_odderon=5.; // need better guess;
+  if (two_particles==(7+17)){
+    gT_odderon=5.; // need better guess
+  }
+  amp_sum+=gT_odderon*gT_odderon*vector_coupling*regge_odderon_sq;
+  amp_sum-=2.*cos(M_PI*(a_odderon-a_rho))*sqrt(gT_sq)*gT_odderon
+    *regge_rho*regge_odderon*(vector_coupling-(2.*t-dpx2_plus_dpy2)*Kappa_rho);
+  double T=common_fac*amp_sum;
 	      
   // Compute cross section
   double mp_sq_minus_s=m_p_sq-s;
@@ -2020,7 +2029,7 @@ int main(int narg, char *argv[])
     TLorentzVector beam;
 
     // Maximum value for cross section 
-    double xsec_max=0.025;
+    double xsec_max=0.1;
     double xsec=0.,xsec_test=0.;
 
     // Polar angle in center of mass frame
