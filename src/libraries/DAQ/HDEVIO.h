@@ -135,6 +135,7 @@ class HDEVIO{
 			public:
 				streampos pos;
 				uint32_t event_len;
+				uint32_t event_header;
 				uint64_t first_event;
 				uint64_t last_event;
 				BLOCKTYPE event_type;

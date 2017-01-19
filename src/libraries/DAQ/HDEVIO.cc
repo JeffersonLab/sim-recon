@@ -844,6 +844,7 @@ void HDEVIO::MapEvents(BLOCKHEADER_t &bh, EVIOBlockRecord &br)
 		EVIOEventRecord er;
 		er.pos = pos;
 		er.event_len   = eh->event_len + 1; // +1 to include length word
+		er.event_header= eh->header;
 		er.event_type  = kBT_UNKNOWN;
 		er.first_event = 0;
 		er.last_event  = 0;
@@ -881,6 +882,7 @@ void HDEVIO::MapEvents(BLOCKHEADER_t &bh, EVIOBlockRecord &br)
 		pos += (streampos)((eh->event_len+1)<<2);
 	}
 
+	ifs.clear();
 	ifs.seekg(start_pos, ios_base::beg);
 }
 

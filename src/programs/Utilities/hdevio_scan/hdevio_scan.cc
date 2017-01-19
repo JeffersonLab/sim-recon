@@ -125,36 +125,47 @@ void PrintSummary(void)
 			ofs << "# started in the previous event, locations for that are also" << endl;
 			ofs << "# provided (when available)." <<endl;
 			ofs << "# columns are:" << endl;
-			ofs << "#     block number in file (starting from 0)" << endl;
-			ofs << "#     block offset in file (hex)" <<endl;
-			ofs << "#     block number of previous event" << endl;
-			ofs << "#     block offset of previous event" <<endl;
-			ofs << "#     event number in block (starting from 0)" << endl;
-			ofs << "#     number of events in block" << endl;
-			ofs << "#     event offset in file (hex)" <<endl;
-			ofs << "#     event number of previous event" << endl;
-			ofs << "#     event offset of previous event" <<endl;
+			ofs << "#  1    block number in file (starting from 0)" << endl;
+			ofs << "#  2    block offset in file (hex)" <<endl;
+			ofs << "#  3    block number of previous event" << endl;
+			ofs << "#  4    block offset of previous event" <<endl;
+			ofs << "#  5    event number in block (starting from 1)" << endl;
+			ofs << "#  6    number of events in block" << endl;
+			ofs << "#  7    event offset in file (hex)" <<endl;
+			ofs << "#  8    event length (inclusive)" <<endl;
+			ofs << "#  9    event header (hex) <-- This value is what indicates a corrupt event" <<endl;			
+			ofs << "# 10    event number of previous event" << endl;
+			ofs << "# 11    event offset of previous event" <<endl;
+			ofs << "# 12    event length of previous event" <<endl;
+			ofs << "# 13    event header of previous event" <<endl;
+			ofs << "#" << endl;
+			ofs << "# 1      2        3      4        5   6      7          8          9      10     11         12       13" <<endl;
 
 			vector<HDEVIO::EVIOBlockRecord> brs = hdevio->GetEVIOBlockRecords();
 			
 			HDEVIO::EVIOBlockRecord *br_prev = NULL;
+			HDEVIO::EVIOEventRecord *er_prev = NULL;
 			int32_t ibr = 0;
 			for(HDEVIO::EVIOBlockRecord &br : brs){
-				HDEVIO::EVIOEventRecord *er_prev = NULL;
-				int32_t ier = 0;
+				int32_t ier = 1;
 				for(HDEVIO::EVIOEventRecord &er : br.evio_events){
 					if(er.event_type == HDEVIO::kBT_UNKNOWN){
 						char str[512];
-						sprintf(str, "%04d %08x %04d %08x %03d / %03d %08x %03d %08x"
-							, ibr
-							, (unsigned int)br.pos
-							, ibr-1
-							, br_prev!=NULL ? (unsigned int)br_prev->pos:0
-							, ier
-							, (unsigned int)br.evio_events.size()
-							, (unsigned int)er.pos
-							, ier-1
-							, er_prev!=NULL ? (unsigned int)er_prev->pos:0);
+						//              1    2      3    4     5   6    7     8    9     10    11    12   13
+						sprintf(str, "%04u 0x%08x %04d 0x%08x %3u/%3u 0x%08x %10u 0x%08x %03d 0x%08x %10u 0x%08x"
+							/*  1 */ , ibr
+							/*  2 */ , (unsigned int)br.pos
+							/*  3 */ , ibr-1
+							/*  4 */ , br_prev!=NULL ? (unsigned int)br_prev->pos:0
+							/*  5 */ , ier
+							/*  6 */ , (unsigned int)br.evio_events.size()
+							/*  7 */ , (unsigned int)er.pos
+							/*  8 */ , (unsigned int)er.event_len
+							/*  9 */ , (unsigned int)er.event_header
+							/* 10 */ , ier-1
+							/* 11 */ , er_prev!=NULL ? (unsigned int)er_prev->pos:0
+							/* 12 */ , er_prev!=NULL ? (unsigned int)er_prev->event_len:0
+							/* 13 */ , er_prev!=NULL ? (unsigned int)er_prev->event_header:0);
 						ofs << str << endl;							
 					}
 					
