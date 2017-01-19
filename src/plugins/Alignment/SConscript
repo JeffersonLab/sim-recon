@@ -1,0 +1,10 @@
+import sbms
+Import('*')
+
+subdirs = [
+'FDC_InternalAlignment',
+'FDC_MilleFieldOff',
+'CDC_MilleFieldOff'
+]
+
+SConscript(dirs=subdirs, exports='env osname', duplicate=0)
