@@ -112,7 +112,8 @@ jerror_t JEventProcessor_CDC_TimeToDistance::evnt(JEventLoop *loop, uint64_t eve
         // Cut very loosely on the track quality
         const DTrackTimeBased *thisTimeBasedTrack;
         bestHypothesis->GetSingle(thisTimeBasedTrack);
-        if (thisTimeBasedTrack->FOM < 1E-5) return NOERROR;
+        if(!thisTimeBasedTrack->IsSmoothed) continue;
+        if (thisTimeBasedTrack->FOM < 1E-10) continue;
         vector<DTrackFitter::pull_t> pulls = thisTimeBasedTrack->pulls;
         // Loop over the pulls to get the appropriate information for our ring
         for (unsigned int i = 0; i < pulls.size(); i++){
@@ -123,7 +124,7 @@ jerror_t JEventProcessor_CDC_TimeToDistance::evnt(JEventLoop *loop, uint64_t eve
             double docaphi = thisPull.docaphi;
             if (docaphi > TMath::Pi()) docaphi -= 2 * TMath::Pi();
             double docaz = thisPull.z;
-            if (docaz < 70.0 || docaz > 110.0) continue; // Only focus on the center of the chamber
+            //if (docaz < 70.0 || docaz > 110.0) continue; // Only focus on the center of the chamber
             //if (docaz < 140.0) continue; // Only focus on downstream end of chamber
             double predictedDistance = thisPull.d; // This is the DOCA of the track
             //double distance = residual + predictedDistance; // This is the distance from the T-D lookup
