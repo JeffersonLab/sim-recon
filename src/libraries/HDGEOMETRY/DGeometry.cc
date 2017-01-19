@@ -602,82 +602,74 @@ bool DGeometry::GetCDCStereoWires(unsigned int ring,unsigned int ncopy,
   phi0*=deg2rad;
 
   // Extract data from close-packed straws
-  bool close_packed=false;
-  double rotX=0.,rotY=0.,stereo=0.,stereo_sign=1.;
-  vector<double>delta_xyz;
+  double stereo=0.,stereo_sign=1.;
   stereo=deg2rad*rot[0];
   if (stereo<0.) stereo_sign=-1.;
 
   // Loop over the number of straws
   for (unsigned int i=0;i<ncopy;i++){
-    DCDCWire *w=new DCDCWire;
-    double phi=phi0+double(i)*dphi;
-    w->ring=ring;
-    w->straw=i+1;
+     DCDCWire *w=new DCDCWire;
+     double phi=phi0+double(i)*dphi;
+     w->ring=ring;
+     w->straw=i+1;
 
-    // Find the nominal wire position and direction from the XML
-    DVector3 origin,udir;
-    if (close_packed){
-      origin.SetX(delta_xyz[0]);
-      origin.SetY(delta_xyz[1]);
-      origin.RotateZ(phi);
-    }
-    else{
-      origin.SetX(r_z[0]*cos(phi)+dx);
-      origin.SetY(r_z[0]*sin(phi)+dy);    
-    }
-    origin.SetZ(zcenter);
-    
-    // Here, we need to define a coordinate system for the wire
-    // in which the wire runs along one axis. We call the directions
-    // of the axes in this coordinate system s,t, and u with
-    // the wire running in the "u" direction. The "s" direction
-    // will be defined by the direction pointing from the beamline
-    // to the midpoint of the wire.
-    udir.SetXYZ(0.0, 0.0,1.0);	
-    if (close_packed){
-      udir.RotateX(rotX);
-      udir.RotateY(rotY);   
-      udir.RotateZ(phi);
-      //stereo = (rotX<0?-1.:1.)*w->udir.Angle(DVector3(0,0,1));
-    }
-    else{
-      udir.RotateX(stereo);	
-      udir.RotateZ(phi);     
-    }
-    
-    // Apply offsets in x and y
-    double half_dz=0.5*dz;
-    double x0=origin.x(),y0=origin.y();
-    double ux=udir.x()/udir.z();
-    double uy=udir.y()/udir.z();
-    unsigned int ringid=ring-1;
-    DVector3 downstream(x0+half_dz*ux+cdc_offsets[ringid][i].dx_d,
-			y0+half_dz*uy+cdc_offsets[ringid][i].dy_d,
-			zcenter+half_dz);
-    DVector3 upstream(x0-half_dz*ux+cdc_offsets[ringid][i].dx_u,
-		      y0-half_dz*uy+cdc_offsets[ringid][i].dy_u,
-		      zcenter-half_dz);
-    w->origin=0.5*(upstream+downstream);
-    w->origin.RotateX(rot_angles[0]);
-    w->origin.RotateY(rot_angles[1]);
-    w->origin.RotateZ(rot_angles[2]);
-    
-    w->phi=w->origin.Phi();
-    
-    // Wire direction
-    w->udir=downstream-upstream;
-    w->udir.RotateX(rot_angles[0]);
-    w->udir.RotateY(rot_angles[1]);
-    w->udir.RotateZ(rot_angles[2]);
-    w->udir.SetMag(1.);
-    w->stereo=stereo_sign*w->udir.Angle(DVector3(0.,0.,1.));
-    // other directions for our wire coordinate system
-    w->sdir=w->origin;
-    w->sdir.SetMag(1.);
-    w->tdir = w->udir.Cross(w->sdir);
+     // Find the nominal wire position and direction from the XML
+     DVector3 origin,udir;
+     origin.SetX(r_z[0]*cos(phi)+dx);
+     origin.SetY(r_z[0]*sin(phi)+dy);    
+     origin.SetZ(zcenter);
 
-    stereowires.push_back(w);
+     // Here, we need to define a coordinate system for the wire
+     // in which the wire runs along one axis. We call the directions
+     // of the axes in this coordinate system s,t, and u with
+     // the wire running in the "u" direction. The "s" direction
+     // will be defined by the direction pointing from the beamline
+     // to the midpoint of the wire.
+     udir.SetXYZ(0.0, 0.0,1.0);	
+     udir.RotateX(stereo);	
+     udir.RotateZ(phi);     
+
+     // Apply offsets in x and y
+     double half_dz=0.5*dz;
+     double x0=origin.x(),y0=origin.y();
+     double ux=udir.x()/udir.z();
+     double uy=udir.y()/udir.z();
+     unsigned int ringid=ring-1;
+     DVector3 downstream(x0+half_dz*ux+cdc_offsets[ringid][i].dx_d,
+           y0+half_dz*uy+cdc_offsets[ringid][i].dy_d,
+           zcenter+half_dz);
+     DVector3 upstream(x0-half_dz*ux+cdc_offsets[ringid][i].dx_u,
+           y0-half_dz*uy+cdc_offsets[ringid][i].dy_u,
+           zcenter-half_dz);
+     w->origin=0.5*(upstream+downstream);
+     w->origin.RotateX(rot_angles[0]);
+     w->origin.RotateY(rot_angles[1]);
+     w->origin.RotateZ(rot_angles[2]);
+
+     w->phi=w->origin.Phi();
+
+     // Wire direction
+     w->udir=downstream-upstream;
+     w->udir.RotateX(rot_angles[0]);
+     w->udir.RotateY(rot_angles[1]);
+     w->udir.RotateZ(rot_angles[2]);
+
+     // For derivatives
+     w->udir_mag=udir.Mag();
+
+     w->udir.SetMag(1.);
+     w->stereo=stereo_sign*w->udir.Angle(DVector3(0.,0.,1.));
+     // other directions for our wire coordinate system
+     w->sdir=w->origin;
+     w->sdir.SetMag(1.);
+     w->tdir = w->udir.Cross(w->sdir);
+
+     // Some values needed for alignment derivatives
+     w->x0=dx; w->y0=dy; w->z0=zcenter;
+     w->phiX=rot_angles[0]; w->phiY=rot_angles[1]; w->phiZ=rot_angles[2];
+     w->r0=r_z[0]; w->phiStraw=phi; w->stereo_raw=stereo; w->stereo_sign=stereo_sign;
+
+     stereowires.push_back(w);
   }
 
   return true;
@@ -688,256 +680,289 @@ bool DGeometry::GetCDCStereoWires(unsigned int ring,unsigned int ncopy,
 //---------------------------------
 /// Extract the axial wire data from the XML
 bool DGeometry::GetCDCAxialWires(unsigned int ring,unsigned int ncopy,
-				 double zcenter,double dz,
-				 vector<vector<cdc_offset_t> >&cdc_offsets,
-				 vector<DCDCWire*> &axialwires,
-				 vector<double>&rot_angles,double dx,
-				 double dy) const{
-  stringstream phi0_s,r_z_s;
+      double zcenter,double dz,
+      vector<vector<cdc_offset_t> >&cdc_offsets,
+      vector<DCDCWire*> &axialwires,
+      vector<double>&rot_angles,double dx,
+      double dy) const{
+   stringstream phi0_s,r_z_s;
 
-  // Create search strings for the number of straws and the straw geometrical properties 
-  phi0_s << "//mposPhi[@volume='CDCstrawShort']/@Phi0/ring[@value='" << ring << "']";
-  r_z_s << "//mposPhi[@volume='CDCstrawShort']/@R_Z/ring[@value='" << ring << "']";
+   // Create search strings for the number of straws and the straw geometrical properties 
+   phi0_s << "//mposPhi[@volume='CDCstrawShort']/@Phi0/ring[@value='" << ring << "']";
+   r_z_s << "//mposPhi[@volume='CDCstrawShort']/@R_Z/ring[@value='" << ring << "']";
 
-  double phi0;
-  vector<double>r_z;
+   double phi0;
+   vector<double>r_z;
 
-  // Extract the data from the XML
-  if(!Get(phi0_s.str(), phi0)) return false; 
-  if(!Get(r_z_s.str(), r_z)) return false;
+   // Extract the data from the XML
+   if(!Get(phi0_s.str(), phi0)) return false; 
+   if(!Get(r_z_s.str(), r_z)) return false;
 
-  // Angular quantities
-  double dphi=2*M_PI/double(ncopy);
-  phi0*=M_PI/180.;
- 
-  // Loop over the number of straws
-  for (unsigned int i=0;i<ncopy;i++){
-    DCDCWire *w=new DCDCWire;
-    double phi=phi0+double(i)*dphi;
-    w->ring=ring;
-    w->straw=i+1;
+   // Angular quantities
+   double dphi=2*M_PI/double(ncopy);
+   phi0*=M_PI/180.;
 
-    // Find the nominal wire position from the XML
-    double x0=r_z[0]*cos(phi)+dx;
-    double y0=r_z[0]*sin(phi)+dy;
+   // Loop over the number of straws
+   for (unsigned int i=0;i<ncopy;i++){
+      DCDCWire *w=new DCDCWire;
+      double phi=phi0+double(i)*dphi;
+      w->ring=ring;
+      w->straw=i+1;
 
-    // Apply offsets in x and y
-    double half_dz=0.5*dz;
-    unsigned int ringid=ring-1;
-    DVector3 downstream(x0+cdc_offsets[ringid][i].dx_d,
-			y0+cdc_offsets[ringid][i].dy_d,
-			zcenter+half_dz);
-    DVector3 upstream(x0+cdc_offsets[ringid][i].dx_u,
-		      y0+cdc_offsets[ringid][i].dy_u,
-		      zcenter-half_dz);
-    w->origin=0.5*(upstream+downstream);
-    w->origin.RotateX(rot_angles[0]);
-    w->origin.RotateY(rot_angles[1]);
-    w->origin.RotateZ(rot_angles[2]);
-    w->phi=w->origin.Phi();
+      // Find the nominal wire position from the XML
+      double x0=r_z[0]*cos(phi)+dx;
+      double y0=r_z[0]*sin(phi)+dy;
 
-    // Here, we need to define a coordinate system for the wire
-    // in which the wire runs along one axis. We call the directions
-    // of the axes in this coordinate system s,t, and u with
-    // the wire running in the "u" direction. The "s" direction
-    // will be defined by the direction pointing from the beamline
-    // to the midpoint of the wire.
-    w->udir=downstream-upstream;
-    w->udir.SetMag(1.);
-    w->udir.RotateX(rot_angles[0]);
-    w->udir.RotateY(rot_angles[1]);
-    w->udir.RotateZ(rot_angles[2]);
-    w->stereo=w->udir.Angle(DVector3(0.,0.,1.));
-    // other directions for our wire coordinate system
-    w->sdir=w->origin;
-    w->sdir.SetMag(1.);
-    w->tdir = w->udir.Cross(w->sdir);
+      // Apply offsets in x and y
+      double half_dz=0.5*dz;
+      unsigned int ringid=ring-1;
+      DVector3 downstream(x0+cdc_offsets[ringid][i].dx_d,
+            y0+cdc_offsets[ringid][i].dy_d,
+            zcenter+half_dz);
+      DVector3 upstream(x0+cdc_offsets[ringid][i].dx_u,
+            y0+cdc_offsets[ringid][i].dy_u,
+            zcenter-half_dz);
+      w->origin=0.5*(upstream+downstream);
+      w->origin.RotateX(rot_angles[0]);
+      w->origin.RotateY(rot_angles[1]);
+      w->origin.RotateZ(rot_angles[2]);
+      w->phi=w->origin.Phi();
 
-    axialwires.push_back(w);
-  }
+      // Here, we need to define a coordinate system for the wire
+      // in which the wire runs along one axis. We call the directions
+      // of the axes in this coordinate system s,t, and u with
+      // the wire running in the "u" direction. The "s" direction
+      // will be defined by the direction pointing from the beamline
+      // to the midpoint of the wire.
+      w->udir=downstream-upstream;
+      w->udir.RotateX(rot_angles[0]);
+      w->udir.RotateY(rot_angles[1]);
+      w->udir.RotateZ(rot_angles[2]);
 
-  return true;
+      // For derivatives
+      w->udir_mag=w->udir.Mag();
+
+      w->udir.SetMag(1.);
+
+      w->stereo=w->udir.Angle(DVector3(0.,0.,1.));
+      // other directions for our wire coordinate system
+      w->sdir=w->origin;
+      w->sdir.SetMag(1.);
+      w->tdir = w->udir.Cross(w->sdir);
+
+      // Some values needed for alignment derivatives
+      w->x0=dx; w->y0=dy; w->z0=zcenter;
+      w->phiX=rot_angles[0]; w->phiY=rot_angles[1]; w->phiZ=rot_angles[2];
+      w->r0=r_z[0]; w->phiStraw=phi; w->stereo_raw=0.0; w->stereo_sign=1.0;
+
+      axialwires.push_back(w);
+   }
+
+   return true;
 }
 
 //---------------------------------
 // GetCDCWires
 //---------------------------------
 bool DGeometry::GetCDCWires(vector<vector<DCDCWire *> >&cdcwires) const{
-  // Get nominal geometry from XML
-  vector<double>cdc_origin;
-  vector<double>cdc_length;
-  Get("//posXYZ[@volume='CentralDC']/@X_Y_Z",cdc_origin);
-  Get("//tubs[@name='STRW']/@Rio_Z",cdc_length);
-  
-  // Get CDC rotation angles
-  vector<double>rot_angles;
-  Get("//posXYZ[@volume='CentralDC']/@rot", rot_angles);
-  rot_angles[0]*=M_PI/180.;
-  rot_angles[1]*=M_PI/180.;
-  rot_angles[2]*=M_PI/180.; 
+   // Get nominal geometry from XML
+   vector<double>cdc_origin;
+   vector<double>cdc_length;
+   Get("//posXYZ[@volume='CentralDC']/@X_Y_Z",cdc_origin);
+   Get("//tubs[@name='STRW']/@Rio_Z",cdc_length);
+
+   // Get CDC rotation angles
+   vector<double>rot_angles;
+   Get("//posXYZ[@volume='CentralDC']/@rot", rot_angles);
+   rot_angles[0]*=M_PI/180.;
+   rot_angles[1]*=M_PI/180.;
+   rot_angles[2]*=M_PI/180.; 
+
+   double dX=0.0, dY=0.0, dZ=0.0;
+   double dPhiX=0.0,dPhiY=0.0,dPhiZ=0.0;
+
+   JCalibration * jcalib = dapp->GetJCalibration(runnumber);
+   vector<map<string,double> >vals;
+   if (jcalib->Get("CDC/global_alignment",vals)==false){
+      map<string,double> &row = vals[0];
+      dX=row["dX"];
+      dY=row["dY"];
+      dZ=row["dZ"];
+      dPhiX=row["dPhiX"];
+      dPhiY=row["dPhiY"];
+      dPhiZ=row["dPhiZ"];
+   }
 
 
-  double zmin=cdc_origin[2];
-  double zmax=zmin+cdc_length[2];
-  double zcenter=0.5*(zmin+zmax);
-  double L=zmax-zmin;
+   // Shift the CDC origin according to alignment
+   cdc_origin[0]+=dX;
+   cdc_origin[1]+=dY;
+   cdc_origin[2]+=dZ;
 
-  // Get number of straws for each layer from the XML
-  unsigned int numstraws[28];  
-  stringstream ncopy_s;
+   // Shift the CDC rotation according to the alignment
+   rot_angles[0]+=dPhiX;
+   rot_angles[1]+=dPhiY;
+   rot_angles[2]+=dPhiZ;
 
-  // Get number of straws for each ring
-  for (unsigned int ring=1;ring<=28;ring++){
-    // Create search string for the number of straws 
-    ncopy_s << "//CentralDC_s/section/composition/mposPhi/@ncopy/ring[@value='" << ring << "']";
-    Get(ncopy_s.str(),numstraws[ring-1]);
-    ncopy_s.str("");
-    ncopy_s.clear();
-  }
+   double zmin=cdc_origin[2];
+   double zmax=zmin+cdc_length[2];
+   double zcenter=0.5*(zmin+zmax);
+   double L=zmax-zmin;
 
-  // Get offsets tweaking nominal geometry from calibration database
-  JCalibration * jcalib = dapp->GetJCalibration(runnumber);
-  vector<map<string,double> >vals;
-  vector<cdc_offset_t>tempvec;
-  vector<vector<cdc_offset_t> >cdc_offsets;
+   // Get number of straws for each layer from the XML
+   unsigned int numstraws[28];  
+   stringstream ncopy_s;
 
-  if (jcalib->Get("CDC/wire_alignment",vals)==false){
-    unsigned int straw_count=0,ring_count=0;
-    for(unsigned int i=0; i<vals.size(); i++){
-      map<string,double> &row = vals[i];
+   // Get number of straws for each ring
+   for (unsigned int ring=1;ring<=28;ring++){
+      // Create search string for the number of straws 
+      ncopy_s << "//CentralDC_s/section/composition/mposPhi/@ncopy/ring[@value='" << ring << "']";
+      Get(ncopy_s.str(),numstraws[ring-1]);
+      ncopy_s.str("");
+      ncopy_s.clear();
+   }
 
-      // put the vector of offsets for the current ring into the offsets vector
-      if (straw_count==numstraws[ring_count]){
-	straw_count=0;
-	ring_count++;
-	
-	cdc_offsets.push_back(tempvec);
+   // Get straw-by-straw offsets from calibration database
+   vector<cdc_offset_t>tempvec;
+   vector<vector<cdc_offset_t> >cdc_offsets;
 
-	tempvec.clear();
+   if (jcalib->Get("CDC/wire_alignment",vals)==false){
+      unsigned int straw_count=0,ring_count=0;
+      for(unsigned int i=0; i<vals.size(); i++){
+         map<string,double> &row = vals[i];
+
+         // put the vector of offsets for the current ring into the offsets vector
+         if (straw_count==numstraws[ring_count]){
+            straw_count=0;
+            ring_count++;
+
+            cdc_offsets.push_back(tempvec);
+
+            tempvec.clear();
+         }
+
+         // Get the offsets from the calibration database 
+         cdc_offset_t temp;
+         temp.dx_u=row["dxu"];
+         //temp.dx_u=0.;
+
+         temp.dy_u=row["dyu"];
+         //temp.dy_u=0.;
+
+         temp.dx_d=row["dxd"];
+         //temp.dx_d=0.;
+
+         temp.dy_d=row["dyd"];
+         //temp.dy_d=0.;
+
+         tempvec.push_back(temp);
+
+         straw_count++;
       }
-      
-      // Get the offsets from the calibration database 
-      cdc_offset_t temp;
-      temp.dx_u=row["dxu"];
-      //temp.dx_u=0.;
+      cdc_offsets.push_back(tempvec);
+   }
+   else{
+      jerr<< "CDC wire alignment table not available... bailing... " <<endl;
+      exit(0);
+   }
 
-      temp.dy_u=row["dyu"];
-      //temp.dy_u=0.;
-      
-      temp.dx_d=row["dxd"];
-      //temp.dx_d=0.;
+   // First axial layer
+   for (unsigned int ring=1;ring<5;ring++){ 
+      vector<DCDCWire*>straws;
+      if (!GetCDCAxialWires(ring,numstraws[ring-1],zcenter,L,cdc_offsets,straws,
+               rot_angles,cdc_origin[0],cdc_origin[1])) return false;    
+      cdcwires.push_back(straws);
+   }  
 
-      temp.dy_d=row["dyd"];
-      //temp.dy_d=0.;
+   // First set of stereo layers
+   for (unsigned int i=0;i<8;i++){
+      vector<DCDCWire*>straws;
+      if (!GetCDCStereoWires(i+5,numstraws[i+4],zcenter,L,cdc_offsets,straws,
+               rot_angles,cdc_origin[0],cdc_origin[1])) return false;
+      cdcwires.push_back(straws);
+   }
 
-      tempvec.push_back(temp);
-     
-      straw_count++;
-    }
-    cdc_offsets.push_back(tempvec);
-  }
-  else{
-    jerr<< "CDC wire alignment table not available... bailing... " <<endl;
-    exit(0);
-  }
+   // Second axial layer
+   for (unsigned int ring=13;ring<17;ring++){ 
+      vector<DCDCWire*>straws;
+      if (!GetCDCAxialWires(ring,numstraws[ring-1],zcenter,L,cdc_offsets,straws,
+               rot_angles,cdc_origin[0],cdc_origin[1])) return false;    
+      cdcwires.push_back(straws);
+   }
 
-  // First axial layer
-  for (unsigned int ring=1;ring<5;ring++){ 
-    vector<DCDCWire*>straws;
-    if (!GetCDCAxialWires(ring,numstraws[ring-1],zcenter,L,cdc_offsets,straws,
-			  rot_angles,cdc_origin[0],cdc_origin[1])) return false;    
-    cdcwires.push_back(straws);
-  }  
-  
-  // First set of stereo layers
-  for (unsigned int i=0;i<8;i++){
-    vector<DCDCWire*>straws;
-    if (!GetCDCStereoWires(i+5,numstraws[i+4],zcenter,L,cdc_offsets,straws,
-			   rot_angles,cdc_origin[0],cdc_origin[1])) return false;
-    cdcwires.push_back(straws);
-  }
+   // Second set of stereo layers
+   for (unsigned int i=8;i<16;i++){
+      vector<DCDCWire*>straws;
+      if (!GetCDCStereoWires(i+9,numstraws[i+8],zcenter,L,cdc_offsets,straws,
+               rot_angles,cdc_origin[0],cdc_origin[1])) return false;
+      cdcwires.push_back(straws);
+   }
 
-  // Second axial layer
-  for (unsigned int ring=13;ring<17;ring++){ 
-    vector<DCDCWire*>straws;
-    if (!GetCDCAxialWires(ring,numstraws[ring-1],zcenter,L,cdc_offsets,straws,
-			  rot_angles,cdc_origin[0],cdc_origin[1])) return false;    
-    cdcwires.push_back(straws);
-  }
-  
-  // Second set of stereo layers
-  for (unsigned int i=8;i<16;i++){
-    vector<DCDCWire*>straws;
-    if (!GetCDCStereoWires(i+9,numstraws[i+8],zcenter,L,cdc_offsets,straws,
-			   rot_angles,cdc_origin[0],cdc_origin[1])) return false;
-    cdcwires.push_back(straws);
-  }
+   // Third axial layer
+   for (unsigned int ring=25;ring<29;ring++){ 
+      vector<DCDCWire*>straws;
+      if (!GetCDCAxialWires(ring,numstraws[ring-1],zcenter,L,cdc_offsets,straws,
+               rot_angles,cdc_origin[0],cdc_origin[1])) return false;    
+      cdcwires.push_back(straws);
+   }
 
-  // Third axial layer
-  for (unsigned int ring=25;ring<29;ring++){ 
-    vector<DCDCWire*>straws;
-    if (!GetCDCAxialWires(ring,numstraws[ring-1],zcenter,L,cdc_offsets,straws,
-			  rot_angles,cdc_origin[0],cdc_origin[1])) return false;    
-    cdcwires.push_back(straws);
-  }
+   // Calculate wire lengths and compute "s" and "t" direction vectors (orthogonal to "u")
+   for (unsigned int i=0;i<cdcwires.size();i++){ 
+      for (unsigned int j=0;j<cdcwires[i].size();j++){
+         DCDCWire *w=cdcwires[i][j];
+         w->L=L/cos(w->stereo);
 
-  // Calculate wire lengths and compute "s" and "t" direction vectors (orthogonal to "u")
-  for (unsigned int i=0;i<cdcwires.size();i++){ 
-    for (unsigned int j=0;j<cdcwires[i].size();j++){
-      DCDCWire *w=cdcwires[i][j];
-      w->L=L/cos(w->stereo);
-  
-      // With the addition of close-packed stereo wires, the vector connecting
-      // the center of the wire to the beamline ("s" direction) is not necessarily
-      // perpendicular to the beamline. By definition, we want the "s" direction
-      // to be perpendicular to the wire direction "u" and pointing at the beamline.
-      // 
-      // NOTE: This extensive comment is here because the result, when implmented
-      // below caused a WORSE residual distribution in the close-packed stereo
-      // layers. Owing to lack of time currently to track the issue down (most
-      // likely in DReferenceTrajectory) I'm commenting out the "correct" calculation
-      // of s, but leaving this comment so the issue can be revisited later. This
-      // error leads to around 100 micron errors in the C.P.S. wires, but they
-      // are completely washed out when the position smearing of 150 microns is applied
-      // making the error unnoticable except when position smearing is not applied.
-      //
-      // April 2, 2009  D.L.
-      //
-      // Here is how this is calculated -- We define a vector equation with 2 unknowns
-      // Z and S:
-      //
-      //    Zz + Ss = W
-      //
-      // where:  z = unit vector in z direction
-      //         s = unit vector in "s" direction
-      //         W = vector pointing to center of wire in lab coordinates
-      //
-      //  Rearranging, we get:
-      //
-      //     s = (W - Zz)/S
-      //
-      //  Since s must be perpendicular to u, we take a dot product of s and u
-      // and set it equal to zero to determine Z:
-      //
-      //    u.s = 0 = u.(W - Zz)/S  =>  u.W = Zu.z
-      //
-      //   or
-      //
-      //     Z = u.W/u.z
-      //
-      //  Thus, the s direction is just given by (W - (u.W/u.z)z)
-      //
-      
-      //w->sdir=w->origin-DVector3(0,0,w->origin.Z());
-      w->sdir = w->origin - DVector3(0.0, 0.0, w->udir.Dot(w->origin)/w->udir.Z());  // see above comments
-      w->sdir.SetMag(1.0);
-      
-      w->tdir = w->udir.Cross(w->sdir);
-      w->tdir.SetMag(1.0); // This isn't really needed
-    }
-  }  
-  
-  return true;
+         // With the addition of close-packed stereo wires, the vector connecting
+         // the center of the wire to the beamline ("s" direction) is not necessarily
+         // perpendicular to the beamline. By definition, we want the "s" direction
+         // to be perpendicular to the wire direction "u" and pointing at the beamline.
+         // 
+         // NOTE: This extensive comment is here because the result, when implmented
+         // below caused a WORSE residual distribution in the close-packed stereo
+         // layers. Owing to lack of time currently to track the issue down (most
+         // likely in DReferenceTrajectory) I'm commenting out the "correct" calculation
+         // of s, but leaving this comment so the issue can be revisited later. This
+         // error leads to around 100 micron errors in the C.P.S. wires, but they
+         // are completely washed out when the position smearing of 150 microns is applied
+         // making the error unnoticable except when position smearing is not applied.
+         //
+         // April 2, 2009  D.L.
+         //
+         // Here is how this is calculated -- We define a vector equation with 2 unknowns
+         // Z and S:
+         //
+         //    Zz + Ss = W
+         //
+         // where:  z = unit vector in z direction
+         //         s = unit vector in "s" direction
+         //         W = vector pointing to center of wire in lab coordinates
+         //
+         //  Rearranging, we get:
+         //
+         //     s = (W - Zz)/S
+         //
+         //  Since s must be perpendicular to u, we take a dot product of s and u
+         // and set it equal to zero to determine Z:
+         //
+         //    u.s = 0 = u.(W - Zz)/S  =>  u.W = Zu.z
+         //
+         //   or
+         //
+         //     Z = u.W/u.z
+         //
+         //  Thus, the s direction is just given by (W - (u.W/u.z)z)
+         //
+
+         //w->sdir=w->origin-DVector3(0,0,w->origin.Z());
+         w->sdir = w->origin - DVector3(0.0, 0.0, w->udir.Dot(w->origin)/w->udir.Z());  // see above comments
+         w->sdir.SetMag(1.0);
+
+         w->tdir = w->udir.Cross(w->sdir);
+         w->tdir.SetMag(1.0); // This isn't really needed
+      }
+   }  
+
+   return true;
 }
 
 
@@ -945,198 +970,220 @@ bool DGeometry::GetCDCWires(vector<vector<DCDCWire *> >&cdcwires) const{
 // GetFDCCathodes
 //---------------------------------
 bool DGeometry::GetFDCCathodes(vector<vector<DFDCCathode *> >&fdccathodes) const{
-  // Get offsets tweaking nominal geometry from calibration database
-  JCalibration * jcalib = dapp->GetJCalibration(runnumber);
-  vector<map<string,double> >vals;
-  vector<fdc_cathode_offset_t>fdc_cathode_offsets;
-  if (jcalib->Get("FDC/cathode_alignment",vals)==false){
-    for(unsigned int i=0; i<vals.size(); i++){
-      map<string,double> &row = vals[i];
+   // Get offsets tweaking nominal geometry from calibration database
+   JCalibration * jcalib = dapp->GetJCalibration(runnumber);
+   vector<map<string,double> >vals;
+   vector<fdc_cathode_offset_t>fdc_cathode_offsets;
+   if (jcalib->Get("FDC/cathode_alignment",vals)==false){
+      for(unsigned int i=0; i<vals.size(); i++){
+         map<string,double> &row = vals[i];
 
-      // Get the offsets from the calibration database 
-      fdc_cathode_offset_t temp;
-      temp.du=row["dU"];
-      //temp.du=0.;
-      
-      temp.dphi=row["dPhiU"];
-      //temp.dphi=0.;
-     
-      fdc_cathode_offsets.push_back(temp);
+         // Get the offsets from the calibration database 
+         fdc_cathode_offset_t temp;
+         temp.du=row["dU"];
+         //temp.du=0.;
 
-      temp.du=row["dV"];
-      //temp.du=0.;
-      
-      temp.dphi=row["dPhiV"];
-      //temp.dphi=0.;
-     
-      fdc_cathode_offsets.push_back(temp);
-    }
-  }
-  vector<double>fdc_cathode_pitches;
-  if (jcalib->Get("FDC/strip_pitches",vals)==false){
-    for(unsigned int i=0; i<vals.size(); i++){
-      map<string,double> &row = vals[i];
+         temp.dphi=row["dPhiU"];
+         //temp.dphi=0.;
 
-      // Get the offsets from the calibration database 
-      fdc_cathode_pitches.push_back(row["strip_pitch_u"]);
-      fdc_cathode_pitches.push_back(row["strip_pitch_d"]);
-    }
-  }
-  else{
-    jerr << "Strip pitch calibration unavailable -- setting default..." <<endl;
-    // set some sensible default
-    for (unsigned int i=0;i<2*FDC_NUM_LAYERS;i++){
-      fdc_cathode_pitches.push_back(STRIP_SPACING);
-    }
-  }
+         fdc_cathode_offsets.push_back(temp);
 
-  // Generate the vector of cathode plane parameters
-  for (int i=0;i<2*FDC_NUM_LAYERS; i++){
-    double angle=(i%2)?(M_PI-CATHODE_ROT_ANGLE):(CATHODE_ROT_ANGLE);
+         temp.du=row["dV"];
+         //temp.du=0.;
 
-    angle+=fdc_cathode_offsets[i].dphi;
-    double SP1 = fdc_cathode_pitches[i];
-    double SP2 = SP1, SP3 = SP1, SG1 = SP1, SG2 = SP1;
+         temp.dphi=row["dPhiV"];
+         //temp.dphi=0.;
 
-    vector<DFDCCathode *>temp;
-    for (int j=0; j<STRIPS_PER_PLANE; j++){
-      DFDCCathode *c = new DFDCCathode;
-      c->layer = i+1;
-      c->strip = j+1;
-      c->angle = angle;
-      if (j<48) c->u=(-47.5*SP2 - SG1 + (j-47)*SP1) + fdc_cathode_offsets[i].du;
-      else if (j<144) c->u=(double(j)-95.5)*SP2 + fdc_cathode_offsets[i].du;
-      else c->u=(47.5*SP2 + SG2 + (j-144)*SP3) + fdc_cathode_offsets[i].du;
+         fdc_cathode_offsets.push_back(temp);
+      }
+   }
+   vector< vector<double> >fdc_cathode_pitches;
+   if (jcalib->Get("FDC/strip_pitches_v2",vals)==false){
+      for(unsigned int i=0; i<vals.size(); i++){
+         map<string,double> &row = vals[i];
 
-      temp.push_back(c);
-    }
-    fdccathodes.push_back(temp);
-  }
+         vector<double> uvals;
+         // Get the offsets from the calibration database 
+         uvals.push_back(row["U_SP_1"]);
+         uvals.push_back(row["U_G_1"]);
+         uvals.push_back(row["U_SP_2"]);
+         uvals.push_back(row["U_G_2"]);
+         uvals.push_back(row["U_SP_3"]);
 
-  return true;
+         fdc_cathode_pitches.push_back(uvals);
+
+         vector<double> vvals;
+         // Get the offsets from the calibration database
+         vvals.push_back(row["V_SP_1"]);
+         vvals.push_back(row["V_G_1"]);
+         vvals.push_back(row["V_SP_2"]);
+         vvals.push_back(row["V_G_2"]);
+         vvals.push_back(row["V_SP_3"]);
+
+         fdc_cathode_pitches.push_back(vvals);
+      }
+   }
+   else{
+      jerr << "Strip pitch calibration unavailable -- setting default..." <<endl;
+      // set some sensible default
+      for (unsigned int i=0;i<2*FDC_NUM_LAYERS;i++){
+
+         vector<double> val;
+         for (int j = 0; j < 5; j++){
+            val.push_back(STRIP_SPACING);
+         }
+
+         fdc_cathode_pitches.push_back(val);
+      }
+   }
+
+   // Generate the vector of cathode plane parameters
+   for (int i=0;i<2*FDC_NUM_LAYERS; i++){
+      double angle=(i%2)?(M_PI-CATHODE_ROT_ANGLE):(CATHODE_ROT_ANGLE);
+
+      angle+=fdc_cathode_offsets[i].dphi;
+      double SP1 = fdc_cathode_pitches[i][0];
+      double SG1 = fdc_cathode_pitches[i][1];
+      double SP2 = fdc_cathode_pitches[i][2];
+      double SG2 = fdc_cathode_pitches[i][3];
+      double SP3 = fdc_cathode_pitches[i][4];
+
+      vector<DFDCCathode *>temp;
+      for (int j=0; j<STRIPS_PER_PLANE; j++){
+         DFDCCathode *c = new DFDCCathode;
+         c->layer = i+1;
+         c->strip = j+1;
+         c->angle = angle;
+         if (j<48) c->u=(-47.5*SP2 - SG1 + (j-47)*SP1) + fdc_cathode_offsets[i].du;
+         else if (j<144) c->u=(double(j)-95.5)*SP2 + fdc_cathode_offsets[i].du;
+         else c->u=(47.5*SP2 + SG2 + (j-144)*SP3) + fdc_cathode_offsets[i].du;
+
+         temp.push_back(c);
+      }
+      fdccathodes.push_back(temp);
+   }
+
+   return true;
 }
 
 //---------------------------------
 // GetFDCWires
 //---------------------------------
 bool DGeometry::GetFDCWires(vector<vector<DFDCWire *> >&fdcwires) const{
-  // Get geometrical information from database
-  vector<double>z_wires;
-  vector<double>stereo_angles;
+   // Get geometrical information from database
+   vector<double>z_wires;
+   vector<double>stereo_angles;
 
-  if(!GetFDCZ(z_wires)) return false;
-  if(!GetFDCStereo(stereo_angles)) return false;
+   if(!GetFDCZ(z_wires)) return false;
+   if(!GetFDCStereo(stereo_angles)) return false;
 
-  // Get package rotation angles
-  double ThetaX[4],ThetaY[4],ThetaZ[4];
-  vector<double>rot_angles;
-  Get("//posXYZ[@volume='forwardDC_package_1']/@rot", rot_angles);
-  ThetaX[0]=rot_angles[0]*M_PI/180.;
-  ThetaY[0]=rot_angles[1]*M_PI/180.;
-  ThetaZ[0]=rot_angles[2]*M_PI/180.; 
-  Get("//posXYZ[@volume='forwardDC_package_2']/@rot", rot_angles);
-  ThetaX[1]=rot_angles[0]*M_PI/180.;
-  ThetaY[1]=rot_angles[1]*M_PI/180.;
-  ThetaZ[1]=rot_angles[2]*M_PI/180.;  
-  Get("//posXYZ[@volume='forwardDC_package_3']/@rot", rot_angles);
-  ThetaX[2]=rot_angles[0]*M_PI/180.;
-  ThetaY[2]=rot_angles[1]*M_PI/180.;
-  ThetaZ[2]=rot_angles[2]*M_PI/180.; 
-  Get("//posXYZ[@volume='forwardDC_package_4']/@rot", rot_angles);
-  ThetaX[3]=rot_angles[0]*M_PI/180.;
-  ThetaY[3]=rot_angles[1]*M_PI/180.;
-  ThetaZ[3]=rot_angles[2]*M_PI/180.;
-  // Get package offsets
-  double dX[4],dY[4];
-  vector<double>offsets;
-  Get("//posXYZ[@volume='forwardDC_package_1']/@X_Y_Z",offsets);
-  dX[0]=offsets[0];
-  dY[0]=offsets[1];
-  Get("//posXYZ[@volume='forwardDC_package_2']/@X_Y_Z",offsets);
-  dX[1]=offsets[0];
-  dY[1]=offsets[1]; 
-  Get("//posXYZ[@volume='forwardDC_package_3']/@X_Y_Z",offsets);
-  dX[2]=offsets[0];
-  dY[2]=offsets[1];
-  Get("//posXYZ[@volume='forwardDC_package_4']/@X_Y_Z",offsets);
-  dX[3]=offsets[0];
-  dY[3]=offsets[1];
+   // Get package rotation angles
+   double ThetaX[4],ThetaY[4],ThetaZ[4];
+   vector<double>rot_angles;
+   Get("//posXYZ[@volume='forwardDC_package_1']/@rot", rot_angles);
+   ThetaX[0]=rot_angles[0]*M_PI/180.;
+   ThetaY[0]=rot_angles[1]*M_PI/180.;
+   ThetaZ[0]=rot_angles[2]*M_PI/180.; 
+   Get("//posXYZ[@volume='forwardDC_package_2']/@rot", rot_angles);
+   ThetaX[1]=rot_angles[0]*M_PI/180.;
+   ThetaY[1]=rot_angles[1]*M_PI/180.;
+   ThetaZ[1]=rot_angles[2]*M_PI/180.;  
+   Get("//posXYZ[@volume='forwardDC_package_3']/@rot", rot_angles);
+   ThetaX[2]=rot_angles[0]*M_PI/180.;
+   ThetaY[2]=rot_angles[1]*M_PI/180.;
+   ThetaZ[2]=rot_angles[2]*M_PI/180.; 
+   Get("//posXYZ[@volume='forwardDC_package_4']/@rot", rot_angles);
+   ThetaX[3]=rot_angles[0]*M_PI/180.;
+   ThetaY[3]=rot_angles[1]*M_PI/180.;
+   ThetaZ[3]=rot_angles[2]*M_PI/180.;
+   // Get package offsets
+   double dX[4],dY[4];
+   vector<double>offsets;
+   Get("//posXYZ[@volume='forwardDC_package_1']/@X_Y_Z",offsets);
+   dX[0]=offsets[0];
+   dY[0]=offsets[1];
+   Get("//posXYZ[@volume='forwardDC_package_2']/@X_Y_Z",offsets);
+   dX[1]=offsets[0];
+   dY[1]=offsets[1]; 
+   Get("//posXYZ[@volume='forwardDC_package_3']/@X_Y_Z",offsets);
+   dX[2]=offsets[0];
+   dY[2]=offsets[1];
+   Get("//posXYZ[@volume='forwardDC_package_4']/@X_Y_Z",offsets);
+   dX[3]=offsets[0];
+   dY[3]=offsets[1];
 
-  // Get offsets tweaking nominal geometry from calibration database
-  JCalibration * jcalib = dapp->GetJCalibration(runnumber);
-  vector<map<string,double> >vals;
-  vector<fdc_wire_offset_t>fdc_wire_offsets;
-  if (jcalib->Get("FDC/wire_alignment",vals)==false){
-    for(unsigned int i=0; i<vals.size(); i++){
-      map<string,double> &row = vals[i];
+   // Get offsets tweaking nominal geometry from calibration database
+   JCalibration * jcalib = dapp->GetJCalibration(runnumber);
+   vector<map<string,double> >vals;
+   vector<fdc_wire_offset_t>fdc_wire_offsets;
+   if (jcalib->Get("FDC/wire_alignment",vals)==false){
+      for(unsigned int i=0; i<vals.size(); i++){
+         map<string,double> &row = vals[i];
 
-      // Get the offsets from the calibration database 
-      fdc_wire_offset_t temp;
-      temp.du=row["dU"];
-      //temp.du=0.;
-      
-      temp.dphi=row["dPhi"];
-      //temp.dphi=0.;
-      
-      temp.dz=row["dZ"];
-      //  temp.dz=0.;
+         // Get the offsets from the calibration database 
+         fdc_wire_offset_t temp;
+         temp.du=row["dU"];
+         //temp.du=0.;
 
-      fdc_wire_offsets.push_back(temp);
-    }
-  }
-   
-  // Generate the vector of wire plane parameters
-  for(int i=0; i<FDC_NUM_LAYERS; i++){
-    double angle=-stereo_angles[i]*M_PI/180.+fdc_wire_offsets[i].dphi;
+         temp.dphi=row["dPhi"];
+         //temp.dphi=0.;
 
-    //if (i%6==2) angle+=M_PI;
-    //if ((i+1)%6==5) angle+=M_PI;
+         temp.dz=row["dZ"];
+         //  temp.dz=0.;
 
-    vector<DFDCWire *>temp;
-    for(int j=0; j<WIRES_PER_PLANE; j++){
-      unsigned int pack_id=i/6;
+         fdc_wire_offsets.push_back(temp);
+      }
+   }
 
-      DFDCWire *w = new DFDCWire;
-      w->layer = i+1;
-      w->wire = j+1;
-      w->angle = angle;
+   // Generate the vector of wire plane parameters
+   for(int i=0; i<FDC_NUM_LAYERS; i++){
+      double angle=-stereo_angles[i]*M_PI/180.+fdc_wire_offsets[i].dphi;
 
-      // find coordinates of center of wire in rotated system
-      float u = U_OF_WIRE_ZERO + WIRE_SPACING*(float)(j);
-      w->u=u+fdc_wire_offsets[i].du;
+      vector<DFDCWire *>temp;
+      for(int j=0; j<WIRES_PER_PLANE; j++){
+         unsigned int pack_id=i/6;
 
-      // Rotate coordinates into lab system and set the wire's origin
-      // Note that the FDC measures "angle" such that angle=0
-      // corresponds to the anode wire in the vertical direction
-      // (i.e. at phi=90 degrees).
-      float x = u*sin(angle + M_PI/2.0);
-      float y = u*cos(angle + M_PI/2.0);
-      w->origin.SetXYZ(x+dX[pack_id],y+dY[pack_id],z_wires[i]);
-    
-      // Length of wire is set by active radius
-      w->L = 2.0*sqrt(pow(FDC_ACTIVE_RADIUS,2.0) - u*u);
-			
-      // Set directions of wire's coordinate system with "udir"
-      // along wire.
-      w->udir.SetXYZ(sin(angle),cos(angle),0.0);
-      w->udir.RotateX(ThetaX[pack_id]);
-      w->udir.RotateY(ThetaY[pack_id]);
-      w->udir.RotateZ(ThetaZ[pack_id]);
-      w->u+=dX[pack_id]*w->udir.y()-dY[pack_id]*w->udir.x();
+         DFDCWire *w = new DFDCWire;
+         w->layer = i+1;
+         w->wire = j+1;
+         w->angle = angle;
 
-      // "s" points in direction from beamline to midpoint of
-      // wire. This happens to be the same direction as "origin"
-      w->sdir = w->origin;
-      w->sdir.SetMag(1.0);
-      
-      w->tdir = w->udir.Cross(w->sdir);
-      w->tdir.SetMag(1.0); // This isn't really needed
-      temp.push_back(w);
-    }
-    fdcwires.push_back(temp);
-  }
+         // find coordinates of center of wire in rotated system
+         float u = U_OF_WIRE_ZERO + WIRE_SPACING*(float)(j);
+         w->u=u+fdc_wire_offsets[i].du;
 
-  return true;
+         // Rotate coordinates into lab system and set the wire's origin
+         // Note that the FDC measures "angle" such that angle=0
+         // corresponds to the anode wire in the vertical direction
+         // (i.e. at phi=90 degrees).
+         float x = u*sin(angle + M_PI/2.0);
+         float y = u*cos(angle + M_PI/2.0);
+         w->origin.SetXYZ(x+dX[pack_id],y+dY[pack_id],z_wires[i]);
+
+         // Length of wire is set by active radius
+         w->L = 2.0*sqrt(pow(FDC_ACTIVE_RADIUS,2.0) - u*u);
+
+         // Set directions of wire's coordinate system with "udir"
+         // along wire.
+         w->udir.SetXYZ(sin(angle),cos(angle),0.0);
+         w->udir.RotateX(ThetaX[pack_id]);
+         w->udir.RotateY(ThetaY[pack_id]);
+         w->udir.RotateZ(ThetaZ[pack_id]);
+         w->u+=dX[pack_id]*w->udir.y()-dY[pack_id]*w->udir.x();
+
+         // "s" points in direction from beamline to midpoint of
+         // wire. This happens to be the same direction as "origin"
+         w->sdir = w->origin;
+         w->sdir.SetMag(1.0);
+
+         w->tdir = w->udir.Cross(w->sdir);
+         w->tdir.SetMag(1.0); // This isn't really needed
+         temp.push_back(w);
+      }
+      fdcwires.push_back(temp);
+   }
+
+   return true;
 }
 
 //---------------------------------
@@ -1144,77 +1191,77 @@ bool DGeometry::GetFDCWires(vector<vector<DFDCWire *> >&fdcwires) const{
 //---------------------------------
 bool DGeometry::GetFDCZ(vector<double> &z_wires) const
 {
-	// The FDC geometry is defined as 4 packages, each containing 2
-	// "module"s and each of those containing 3 "chambers". The modules
-	// are placed as multiple copies in Z using mposZ, but none of the
-	// others are (???).
-	//
-	// This method is currently hardwired to assume 4 packages and
-	// 3 chambers. (The number of modules is discovered via the
-	// "ncopy" attribute of mposZ.)
+   // The FDC geometry is defined as 4 packages, each containing 2
+   // "module"s and each of those containing 3 "chambers". The modules
+   // are placed as multiple copies in Z using mposZ, but none of the
+   // others are (???).
+   //
+   // This method is currently hardwired to assume 4 packages and
+   // 3 chambers. (The number of modules is discovered via the
+   // "ncopy" attribute of mposZ.)
 
-	vector<double> ForwardDC;
-	vector<double> forwardDC;
-	vector<double> forwardDC_package[4];
-	vector<double> forwardDC_module[4];
-	vector<double> forwardDC_chamber[4][6];
-	
-	if(!Get("//section/composition/posXYZ[@volume='ForwardDC']/@X_Y_Z", ForwardDC)) return false;
-	if(!Get("//composition[@name='ForwardDC']/posXYZ[@volume='forwardDC']/@X_Y_Z", forwardDC)) return false;
-	if(!Get("//posXYZ[@volume='forwardDC_package_1']/@X_Y_Z", forwardDC_package[0])) return false;
-	if(!Get("//posXYZ[@volume='forwardDC_package_2']/@X_Y_Z", forwardDC_package[1])) return false;
-	if(!Get("//posXYZ[@volume='forwardDC_package_3']/@X_Y_Z", forwardDC_package[2])) return false;
-	if(!Get("//posXYZ[@volume='forwardDC_package_4']/@X_Y_Z", forwardDC_package[3])) return false;
-	if(!Get("//posXYZ[@volume='forwardDC_module_1']/@X_Y_Z", forwardDC_module[0])) return false;
-	if(!Get("//posXYZ[@volume='forwardDC_module_2']/@X_Y_Z", forwardDC_module[1])) return false;
-	if(!Get("//posXYZ[@volume='forwardDC_module_3']/@X_Y_Z", forwardDC_module[2])) return false;
-	if(!Get("//posXYZ[@volume='forwardDC_module_4']/@X_Y_Z", forwardDC_module[3])) return false;
-	if(!Get("//posXYZ[@volume='forwardDC_chamber_1']/@X_Y_Z/layer[@value='1']", forwardDC_chamber[0][0])) return false;
-	if(!Get("//posXYZ[@volume='forwardDC_chamber_1']/@X_Y_Z/layer[@value='2']", forwardDC_chamber[0][1])) return false;
-	if(!Get("//posXYZ[@volume='forwardDC_chamber_1']/@X_Y_Z/layer[@value='3']", forwardDC_chamber[0][2])) return false;
-	if(!Get("//posXYZ[@volume='forwardDC_chamber_1']/@X_Y_Z/layer[@value='4']", forwardDC_chamber[0][3])) return false;
-	if(!Get("//posXYZ[@volume='forwardDC_chamber_1']/@X_Y_Z/layer[@value='5']", forwardDC_chamber[0][4])) return false;
-	if(!Get("//posXYZ[@volume='forwardDC_chamber_1']/@X_Y_Z/layer[@value='6']", forwardDC_chamber[0][5])) return false;
-	if(!Get("//posXYZ[@volume='forwardDC_chamber_2']/@X_Y_Z/layer[@value='1']", forwardDC_chamber[1][0])) return false;
-	if(!Get("//posXYZ[@volume='forwardDC_chamber_2']/@X_Y_Z/layer[@value='2']", forwardDC_chamber[1][1])) return false;
-	if(!Get("//posXYZ[@volume='forwardDC_chamber_2']/@X_Y_Z/layer[@value='3']", forwardDC_chamber[1][2])) return false;
-	if(!Get("//posXYZ[@volume='forwardDC_chamber_2']/@X_Y_Z/layer[@value='4']", forwardDC_chamber[1][3])) return false;
-	if(!Get("//posXYZ[@volume='forwardDC_chamber_2']/@X_Y_Z/layer[@value='5']", forwardDC_chamber[1][4])) return false;
-	if(!Get("//posXYZ[@volume='forwardDC_chamber_2']/@X_Y_Z/layer[@value='6']", forwardDC_chamber[1][5])) return false;
-	if(!Get("//posXYZ[@volume='forwardDC_chamber_3']/@X_Y_Z/layer[@value='1']", forwardDC_chamber[2][0])) return false;
-	if(!Get("//posXYZ[@volume='forwardDC_chamber_3']/@X_Y_Z/layer[@value='2']", forwardDC_chamber[2][1])) return false;
-	if(!Get("//posXYZ[@volume='forwardDC_chamber_3']/@X_Y_Z/layer[@value='3']", forwardDC_chamber[2][2])) return false;
-	if(!Get("//posXYZ[@volume='forwardDC_chamber_3']/@X_Y_Z/layer[@value='4']", forwardDC_chamber[2][3])) return false;
-	if(!Get("//posXYZ[@volume='forwardDC_chamber_3']/@X_Y_Z/layer[@value='5']", forwardDC_chamber[2][4])) return false;
-	if(!Get("//posXYZ[@volume='forwardDC_chamber_3']/@X_Y_Z/layer[@value='6']", forwardDC_chamber[2][5])) return false;
-	if(!Get("//posXYZ[@volume='forwardDC_chamber_4']/@X_Y_Z/layer[@value='1']", forwardDC_chamber[3][0])) return false;
-	if(!Get("//posXYZ[@volume='forwardDC_chamber_4']/@X_Y_Z/layer[@value='2']", forwardDC_chamber[3][1])) return false;
-	if(!Get("//posXYZ[@volume='forwardDC_chamber_4']/@X_Y_Z/layer[@value='3']", forwardDC_chamber[3][2])) return false;
-	if(!Get("//posXYZ[@volume='forwardDC_chamber_4']/@X_Y_Z/layer[@value='4']", forwardDC_chamber[3][3])) return false;
-	if(!Get("//posXYZ[@volume='forwardDC_chamber_4']/@X_Y_Z/layer[@value='5']", forwardDC_chamber[3][4])) return false;
-	if(!Get("//posXYZ[@volume='forwardDC_chamber_4']/@X_Y_Z/layer[@value='6']", forwardDC_chamber[3][5])) return false;
-		
-	// Offset due to global FDC envelopes
-	double zfdc = ForwardDC[2] + forwardDC[2];
-	
-	// Loop over packages
-	for(int package=1; package<=4; package++){
-		double z_package = forwardDC_package[package-1][2];
-		
-		// Each "package" has 1 "module" which is currently positioned at 0,0,0 but
-		// that could in principle change so we add the module z-offset
-		double z_module = forwardDC_module[package-1][2];
+   vector<double> ForwardDC;
+   vector<double> forwardDC;
+   vector<double> forwardDC_package[4];
+   vector<double> forwardDC_module[4];
+   vector<double> forwardDC_chamber[4][6];
 
-		// Loop over chambers in this module
-		for(int chamber=1; chamber<=6; chamber++){
-			double z_chamber = forwardDC_chamber[package-1][chamber-1][2];
-			
-			double z = zfdc + z_package + z_module + z_chamber;				
-			z_wires.push_back(z);
-		}
-	}
-	
-	return true;
+   if(!Get("//section/composition/posXYZ[@volume='ForwardDC']/@X_Y_Z", ForwardDC)) return false;
+   if(!Get("//composition[@name='ForwardDC']/posXYZ[@volume='forwardDC']/@X_Y_Z", forwardDC)) return false;
+   if(!Get("//posXYZ[@volume='forwardDC_package_1']/@X_Y_Z", forwardDC_package[0])) return false;
+   if(!Get("//posXYZ[@volume='forwardDC_package_2']/@X_Y_Z", forwardDC_package[1])) return false;
+   if(!Get("//posXYZ[@volume='forwardDC_package_3']/@X_Y_Z", forwardDC_package[2])) return false;
+   if(!Get("//posXYZ[@volume='forwardDC_package_4']/@X_Y_Z", forwardDC_package[3])) return false;
+   if(!Get("//posXYZ[@volume='forwardDC_module_1']/@X_Y_Z", forwardDC_module[0])) return false;
+   if(!Get("//posXYZ[@volume='forwardDC_module_2']/@X_Y_Z", forwardDC_module[1])) return false;
+   if(!Get("//posXYZ[@volume='forwardDC_module_3']/@X_Y_Z", forwardDC_module[2])) return false;
+   if(!Get("//posXYZ[@volume='forwardDC_module_4']/@X_Y_Z", forwardDC_module[3])) return false;
+   if(!Get("//posXYZ[@volume='forwardDC_chamber_1']/@X_Y_Z/layer[@value='1']", forwardDC_chamber[0][0])) return false;
+   if(!Get("//posXYZ[@volume='forwardDC_chamber_1']/@X_Y_Z/layer[@value='2']", forwardDC_chamber[0][1])) return false;
+   if(!Get("//posXYZ[@volume='forwardDC_chamber_1']/@X_Y_Z/layer[@value='3']", forwardDC_chamber[0][2])) return false;
+   if(!Get("//posXYZ[@volume='forwardDC_chamber_1']/@X_Y_Z/layer[@value='4']", forwardDC_chamber[0][3])) return false;
+   if(!Get("//posXYZ[@volume='forwardDC_chamber_1']/@X_Y_Z/layer[@value='5']", forwardDC_chamber[0][4])) return false;
+   if(!Get("//posXYZ[@volume='forwardDC_chamber_1']/@X_Y_Z/layer[@value='6']", forwardDC_chamber[0][5])) return false;
+   if(!Get("//posXYZ[@volume='forwardDC_chamber_2']/@X_Y_Z/layer[@value='1']", forwardDC_chamber[1][0])) return false;
+   if(!Get("//posXYZ[@volume='forwardDC_chamber_2']/@X_Y_Z/layer[@value='2']", forwardDC_chamber[1][1])) return false;
+   if(!Get("//posXYZ[@volume='forwardDC_chamber_2']/@X_Y_Z/layer[@value='3']", forwardDC_chamber[1][2])) return false;
+   if(!Get("//posXYZ[@volume='forwardDC_chamber_2']/@X_Y_Z/layer[@value='4']", forwardDC_chamber[1][3])) return false;
+   if(!Get("//posXYZ[@volume='forwardDC_chamber_2']/@X_Y_Z/layer[@value='5']", forwardDC_chamber[1][4])) return false;
+   if(!Get("//posXYZ[@volume='forwardDC_chamber_2']/@X_Y_Z/layer[@value='6']", forwardDC_chamber[1][5])) return false;
+   if(!Get("//posXYZ[@volume='forwardDC_chamber_3']/@X_Y_Z/layer[@value='1']", forwardDC_chamber[2][0])) return false;
+   if(!Get("//posXYZ[@volume='forwardDC_chamber_3']/@X_Y_Z/layer[@value='2']", forwardDC_chamber[2][1])) return false;
+   if(!Get("//posXYZ[@volume='forwardDC_chamber_3']/@X_Y_Z/layer[@value='3']", forwardDC_chamber[2][2])) return false;
+   if(!Get("//posXYZ[@volume='forwardDC_chamber_3']/@X_Y_Z/layer[@value='4']", forwardDC_chamber[2][3])) return false;
+   if(!Get("//posXYZ[@volume='forwardDC_chamber_3']/@X_Y_Z/layer[@value='5']", forwardDC_chamber[2][4])) return false;
+   if(!Get("//posXYZ[@volume='forwardDC_chamber_3']/@X_Y_Z/layer[@value='6']", forwardDC_chamber[2][5])) return false;
+   if(!Get("//posXYZ[@volume='forwardDC_chamber_4']/@X_Y_Z/layer[@value='1']", forwardDC_chamber[3][0])) return false;
+   if(!Get("//posXYZ[@volume='forwardDC_chamber_4']/@X_Y_Z/layer[@value='2']", forwardDC_chamber[3][1])) return false;
+   if(!Get("//posXYZ[@volume='forwardDC_chamber_4']/@X_Y_Z/layer[@value='3']", forwardDC_chamber[3][2])) return false;
+   if(!Get("//posXYZ[@volume='forwardDC_chamber_4']/@X_Y_Z/layer[@value='4']", forwardDC_chamber[3][3])) return false;
+   if(!Get("//posXYZ[@volume='forwardDC_chamber_4']/@X_Y_Z/layer[@value='5']", forwardDC_chamber[3][4])) return false;
+   if(!Get("//posXYZ[@volume='forwardDC_chamber_4']/@X_Y_Z/layer[@value='6']", forwardDC_chamber[3][5])) return false;
+
+   // Offset due to global FDC envelopes
+   double zfdc = ForwardDC[2] + forwardDC[2];
+
+   // Loop over packages
+   for(int package=1; package<=4; package++){
+      double z_package = forwardDC_package[package-1][2];
+
+      // Each "package" has 1 "module" which is currently positioned at 0,0,0 but
+      // that could in principle change so we add the module z-offset
+      double z_module = forwardDC_module[package-1][2];
+
+      // Loop over chambers in this module
+      for(int chamber=1; chamber<=6; chamber++){
+         double z_chamber = forwardDC_chamber[package-1][chamber-1][2];
+
+         double z = zfdc + z_package + z_module + z_chamber;				
+         z_wires.push_back(z);
+      }
+   }
+
+   return true;
 }
 
 //---------------------------------
@@ -1222,61 +1269,61 @@ bool DGeometry::GetFDCZ(vector<double> &z_wires) const
 //---------------------------------
 bool DGeometry::GetFDCStereo(vector<double> &stereo_angles) const
 {
-	// The FDC geometry is defined as 4 packages, each containing 2
-	// "module"s and each of those containing 3 "chambers". The modules
-	// are placed as multiple copies in Z using mposZ, but none of the
-	// others are (???).
-	//
-	// This method is currently hardwired to assume 4 packages and
-	// 3 chambers. (The number of modules is discovered via the
-	// "ncopy" attribute of mposZ.)
-	//
-	// Stereo angles are assumed to be rotated purely about the z-axis
-	// and the units are not specified, but the XML currently uses degrees.
+   // The FDC geometry is defined as 4 packages, each containing 2
+   // "module"s and each of those containing 3 "chambers". The modules
+   // are placed as multiple copies in Z using mposZ, but none of the
+   // others are (???).
+   //
+   // This method is currently hardwired to assume 4 packages and
+   // 3 chambers. (The number of modules is discovered via the
+   // "ncopy" attribute of mposZ.)
+   //
+   // Stereo angles are assumed to be rotated purely about the z-axis
+   // and the units are not specified, but the XML currently uses degrees.
 
-	vector<double> forwardDC_module[4];
-	vector<double> forwardDC_chamber[4][6];
-	
-	if(!Get("//posXYZ[@volume='forwardDC_module_1']/@X_Y_Z", forwardDC_module[0])) return false;
-	if(!Get("//posXYZ[@volume='forwardDC_module_2']/@X_Y_Z", forwardDC_module[1])) return false;
-	if(!Get("//posXYZ[@volume='forwardDC_module_3']/@X_Y_Z", forwardDC_module[2])) return false;
-	if(!Get("//posXYZ[@volume='forwardDC_module_4']/@X_Y_Z", forwardDC_module[3])) return false;
-	if(!Get("//posXYZ[@volume='forwardDC_chamber_1']/@rot/layer[@value='1']", forwardDC_chamber[0][0])) return false;
-	if(!Get("//posXYZ[@volume='forwardDC_chamber_1']/@rot/layer[@value='2']", forwardDC_chamber[0][1])) return false;
-	if(!Get("//posXYZ[@volume='forwardDC_chamber_1']/@rot/layer[@value='3']", forwardDC_chamber[0][2])) return false;
-	if(!Get("//posXYZ[@volume='forwardDC_chamber_1']/@rot/layer[@value='4']", forwardDC_chamber[0][3])) return false;
-	if(!Get("//posXYZ[@volume='forwardDC_chamber_1']/@rot/layer[@value='5']", forwardDC_chamber[0][4])) return false;
-	if(!Get("//posXYZ[@volume='forwardDC_chamber_1']/@rot/layer[@value='6']", forwardDC_chamber[0][5])) return false;
-	if(!Get("//posXYZ[@volume='forwardDC_chamber_2']/@rot/layer[@value='1']", forwardDC_chamber[1][0])) return false;
-	if(!Get("//posXYZ[@volume='forwardDC_chamber_2']/@rot/layer[@value='2']", forwardDC_chamber[1][1])) return false;
-	if(!Get("//posXYZ[@volume='forwardDC_chamber_2']/@rot/layer[@value='3']", forwardDC_chamber[1][2])) return false;
-	if(!Get("//posXYZ[@volume='forwardDC_chamber_2']/@rot/layer[@value='4']", forwardDC_chamber[1][3])) return false;
-	if(!Get("//posXYZ[@volume='forwardDC_chamber_2']/@rot/layer[@value='5']", forwardDC_chamber[1][4])) return false;
-	if(!Get("//posXYZ[@volume='forwardDC_chamber_2']/@rot/layer[@value='6']", forwardDC_chamber[1][5])) return false;
-	if(!Get("//posXYZ[@volume='forwardDC_chamber_3']/@rot/layer[@value='1']", forwardDC_chamber[2][0])) return false;
-	if(!Get("//posXYZ[@volume='forwardDC_chamber_3']/@rot/layer[@value='2']", forwardDC_chamber[2][1])) return false;
-	if(!Get("//posXYZ[@volume='forwardDC_chamber_3']/@rot/layer[@value='3']", forwardDC_chamber[2][2])) return false;
-	if(!Get("//posXYZ[@volume='forwardDC_chamber_3']/@rot/layer[@value='4']", forwardDC_chamber[2][3])) return false;
-	if(!Get("//posXYZ[@volume='forwardDC_chamber_3']/@rot/layer[@value='5']", forwardDC_chamber[2][4])) return false;
-	if(!Get("//posXYZ[@volume='forwardDC_chamber_3']/@rot/layer[@value='6']", forwardDC_chamber[2][5])) return false;
-	if(!Get("//posXYZ[@volume='forwardDC_chamber_4']/@rot/layer[@value='1']", forwardDC_chamber[3][0])) return false;
-	if(!Get("//posXYZ[@volume='forwardDC_chamber_4']/@rot/layer[@value='2']", forwardDC_chamber[3][1])) return false;
-	if(!Get("//posXYZ[@volume='forwardDC_chamber_4']/@rot/layer[@value='3']", forwardDC_chamber[3][2])) return false;
-	if(!Get("//posXYZ[@volume='forwardDC_chamber_4']/@rot/layer[@value='4']", forwardDC_chamber[3][3])) return false;
-	if(!Get("//posXYZ[@volume='forwardDC_chamber_4']/@rot/layer[@value='5']", forwardDC_chamber[3][4])) return false;
-	if(!Get("//posXYZ[@volume='forwardDC_chamber_4']/@rot/layer[@value='6']", forwardDC_chamber[3][5])) return false;
-	
-	// Loop over packages
-	for(int package=1; package<=4; package++){
-		
-		// Loop over chambers
-		for(int chamber=1; chamber<=6; chamber++){
-		  // if (chamber==4) forwardDC_chamber[package-1][chamber-1][2]+=15.0;
-			stereo_angles.push_back(forwardDC_chamber[package-1][chamber-1][2]);
-		}
-	}
+   vector<double> forwardDC_module[4];
+   vector<double> forwardDC_chamber[4][6];
 
-	return true;
+   if(!Get("//posXYZ[@volume='forwardDC_module_1']/@X_Y_Z", forwardDC_module[0])) return false;
+   if(!Get("//posXYZ[@volume='forwardDC_module_2']/@X_Y_Z", forwardDC_module[1])) return false;
+   if(!Get("//posXYZ[@volume='forwardDC_module_3']/@X_Y_Z", forwardDC_module[2])) return false;
+   if(!Get("//posXYZ[@volume='forwardDC_module_4']/@X_Y_Z", forwardDC_module[3])) return false;
+   if(!Get("//posXYZ[@volume='forwardDC_chamber_1']/@rot/layer[@value='1']", forwardDC_chamber[0][0])) return false;
+   if(!Get("//posXYZ[@volume='forwardDC_chamber_1']/@rot/layer[@value='2']", forwardDC_chamber[0][1])) return false;
+   if(!Get("//posXYZ[@volume='forwardDC_chamber_1']/@rot/layer[@value='3']", forwardDC_chamber[0][2])) return false;
+   if(!Get("//posXYZ[@volume='forwardDC_chamber_1']/@rot/layer[@value='4']", forwardDC_chamber[0][3])) return false;
+   if(!Get("//posXYZ[@volume='forwardDC_chamber_1']/@rot/layer[@value='5']", forwardDC_chamber[0][4])) return false;
+   if(!Get("//posXYZ[@volume='forwardDC_chamber_1']/@rot/layer[@value='6']", forwardDC_chamber[0][5])) return false;
+   if(!Get("//posXYZ[@volume='forwardDC_chamber_2']/@rot/layer[@value='1']", forwardDC_chamber[1][0])) return false;
+   if(!Get("//posXYZ[@volume='forwardDC_chamber_2']/@rot/layer[@value='2']", forwardDC_chamber[1][1])) return false;
+   if(!Get("//posXYZ[@volume='forwardDC_chamber_2']/@rot/layer[@value='3']", forwardDC_chamber[1][2])) return false;
+   if(!Get("//posXYZ[@volume='forwardDC_chamber_2']/@rot/layer[@value='4']", forwardDC_chamber[1][3])) return false;
+   if(!Get("//posXYZ[@volume='forwardDC_chamber_2']/@rot/layer[@value='5']", forwardDC_chamber[1][4])) return false;
+   if(!Get("//posXYZ[@volume='forwardDC_chamber_2']/@rot/layer[@value='6']", forwardDC_chamber[1][5])) return false;
+   if(!Get("//posXYZ[@volume='forwardDC_chamber_3']/@rot/layer[@value='1']", forwardDC_chamber[2][0])) return false;
+   if(!Get("//posXYZ[@volume='forwardDC_chamber_3']/@rot/layer[@value='2']", forwardDC_chamber[2][1])) return false;
+   if(!Get("//posXYZ[@volume='forwardDC_chamber_3']/@rot/layer[@value='3']", forwardDC_chamber[2][2])) return false;
+   if(!Get("//posXYZ[@volume='forwardDC_chamber_3']/@rot/layer[@value='4']", forwardDC_chamber[2][3])) return false;
+   if(!Get("//posXYZ[@volume='forwardDC_chamber_3']/@rot/layer[@value='5']", forwardDC_chamber[2][4])) return false;
+   if(!Get("//posXYZ[@volume='forwardDC_chamber_3']/@rot/layer[@value='6']", forwardDC_chamber[2][5])) return false;
+   if(!Get("//posXYZ[@volume='forwardDC_chamber_4']/@rot/layer[@value='1']", forwardDC_chamber[3][0])) return false;
+   if(!Get("//posXYZ[@volume='forwardDC_chamber_4']/@rot/layer[@value='2']", forwardDC_chamber[3][1])) return false;
+   if(!Get("//posXYZ[@volume='forwardDC_chamber_4']/@rot/layer[@value='3']", forwardDC_chamber[3][2])) return false;
+   if(!Get("//posXYZ[@volume='forwardDC_chamber_4']/@rot/layer[@value='4']", forwardDC_chamber[3][3])) return false;
+   if(!Get("//posXYZ[@volume='forwardDC_chamber_4']/@rot/layer[@value='5']", forwardDC_chamber[3][4])) return false;
+   if(!Get("//posXYZ[@volume='forwardDC_chamber_4']/@rot/layer[@value='6']", forwardDC_chamber[3][5])) return false;
+
+   // Loop over packages
+   for(int package=1; package<=4; package++){
+
+      // Loop over chambers
+      for(int chamber=1; chamber<=6; chamber++){
+         // if (chamber==4) forwardDC_chamber[package-1][chamber-1][2]+=15.0;
+         stereo_angles.push_back(forwardDC_chamber[package-1][chamber-1][2]);
+      }
+   }
+
+   return true;
 }
 
 //---------------------------------
@@ -1284,19 +1331,19 @@ bool DGeometry::GetFDCStereo(vector<double> &stereo_angles) const
 //---------------------------------
 bool DGeometry::GetFDCRmin(vector<double> &rmin_packages) const
 {
-	vector<double> FDA[4];
-	
-	if(!Get("//section[@name='ForwardDC']/tubs[@name='FDA1']/@Rio_Z", FDA[0])) return false;
-	if(!Get("//section[@name='ForwardDC']/tubs[@name='FDA2']/@Rio_Z", FDA[1])) return false;
-	if(!Get("//section[@name='ForwardDC']/tubs[@name='FDA3']/@Rio_Z", FDA[2])) return false;
-	if(!Get("//section[@name='ForwardDC']/tubs[@name='FDA4']/@Rio_Z", FDA[3])) return false;
+   vector<double> FDA[4];
 
-	rmin_packages.push_back(FDA[0][0]);
-	rmin_packages.push_back(FDA[1][0]);
-	rmin_packages.push_back(FDA[2][0]);
-	rmin_packages.push_back(FDA[3][0]);
+   if(!Get("//section[@name='ForwardDC']/tubs[@name='FDA1']/@Rio_Z", FDA[0])) return false;
+   if(!Get("//section[@name='ForwardDC']/tubs[@name='FDA2']/@Rio_Z", FDA[1])) return false;
+   if(!Get("//section[@name='ForwardDC']/tubs[@name='FDA3']/@Rio_Z", FDA[2])) return false;
+   if(!Get("//section[@name='ForwardDC']/tubs[@name='FDA4']/@Rio_Z", FDA[3])) return false;
 
-	return true;
+   rmin_packages.push_back(FDA[0][0]);
+   rmin_packages.push_back(FDA[1][0]);
+   rmin_packages.push_back(FDA[2][0]);
+   rmin_packages.push_back(FDA[3][0]);
+
+   return true;
 }
 
 //---------------------------------
@@ -1304,20 +1351,20 @@ bool DGeometry::GetFDCRmin(vector<double> &rmin_packages) const
 //---------------------------------
 bool DGeometry::GetFDCRmax(double &rmax_active_fdc) const
 {
-	// We assume that all packages have the same outer radius of the
-	// active area.
-	vector<double> FDA1;
+   // We assume that all packages have the same outer radius of the
+   // active area.
+   vector<double> FDA1;
 
-	bool good = Get("//section[@name='ForwardDC']/tubs[@name='FDA1']/@Rio_Z", FDA1);
-	
-	if(!good){
-		_DBG_<<"Unable to retrieve FDC Rmax values."<<endl;
-		return good;
-	}
+   bool good = Get("//section[@name='ForwardDC']/tubs[@name='FDA1']/@Rio_Z", FDA1);
 
-	rmax_active_fdc = FDA1[1];
+   if(!good){
+      _DBG_<<"Unable to retrieve FDC Rmax values."<<endl;
+      return good;
+   }
 
-	return good;
+   rmax_active_fdc = FDA1[1];
+
+   return good;
 }
 
 //---------------------------------
@@ -1325,13 +1372,13 @@ bool DGeometry::GetFDCRmax(double &rmax_active_fdc) const
 //---------------------------------
 bool DGeometry::GetCDCOption(string &cdc_option) const
 {
-	bool good = Get("//CentralDC_s/section/composition/posXYZ/@volume", cdc_option);
-	
-	if(!good){
-		_DBG_<<"Unable to retrieve CDC option string."<<endl;
-	}
+   bool good = Get("//CentralDC_s/section/composition/posXYZ/@volume", cdc_option);
 
-	return good;
+   if(!good){
+      _DBG_<<"Unable to retrieve CDC option string."<<endl;
+   }
+
+   return good;
 }
 
 //---------------------------------
@@ -1340,7 +1387,7 @@ bool DGeometry::GetCDCOption(string &cdc_option) const
 bool DGeometry::GetCDCCenterZ(double &cdc_center_z) const
 {
 
-	return false;
+   return false;
 }
 
 //---------------------------------
@@ -1348,15 +1395,15 @@ bool DGeometry::GetCDCCenterZ(double &cdc_center_z) const
 //---------------------------------
 bool DGeometry::GetCDCAxialLength(double &cdc_axial_length) const
 {
-	vector<double> Rio_Z;
-	bool good = Get("//section[@name='CentralDC']/tubs[@name='STRW']/@Rio_Z", Rio_Z);
-	cdc_axial_length = Rio_Z[2];
+   vector<double> Rio_Z;
+   bool good = Get("//section[@name='CentralDC']/tubs[@name='STRW']/@Rio_Z", Rio_Z);
+   cdc_axial_length = Rio_Z[2];
 
-	if(!good){
-		_DBG_<<"Unable to retrieve CDC axial wire length"<<endl;
-	}
+   if(!good){
+      _DBG_<<"Unable to retrieve CDC axial wire length"<<endl;
+   }
 
-	return false;
+   return false;
 }
 
 //---------------------------------
@@ -1365,7 +1412,7 @@ bool DGeometry::GetCDCAxialLength(double &cdc_axial_length) const
 bool DGeometry::GetCDCStereo(vector<double> &cdc_stereo) const
 {
 
-	return false;
+   return false;
 }
 
 //---------------------------------
@@ -1374,7 +1421,7 @@ bool DGeometry::GetCDCStereo(vector<double> &cdc_stereo) const
 bool DGeometry::GetCDCRmid(vector<double> &cdc_rmid) const
 {
 
-	return false;
+   return false;
 }
 
 //---------------------------------
@@ -1383,7 +1430,7 @@ bool DGeometry::GetCDCRmid(vector<double> &cdc_rmid) const
 bool DGeometry::GetCDCNwires(vector<int> &cdc_nwires) const
 {
 
-	return false;
+   return false;
 }
 
 
@@ -1391,70 +1438,70 @@ bool DGeometry::GetCDCNwires(vector<int> &cdc_nwires) const
 // GetCDCEndplate
 //---------------------------------
 bool DGeometry::GetCDCEndplate(double &z,double &dz,double &rmin,double &rmax)
-  const{
+   const{
 
-  vector<double>cdc_origin;
-  vector<double>cdc_center;
-  vector<double>cdc_layers_offset;
-  vector<double>cdc_endplate_pos;
-  vector<double>cdc_endplate_dim;
-  
-  if(!Get("//posXYZ[@volume='CentralDC'/@X_Y_Z",cdc_origin)) return false;
-  if(!Get("//posXYZ[@volume='centralDC']/@X_Y_Z",cdc_center)) return false;
-  if(!Get("//posXYZ[@volume='CDPD']/@X_Y_Z",cdc_endplate_pos)) return false;
-  if(!Get("//tubs[@name='CDPD']/@Rio_Z",cdc_endplate_dim)) return false;
-  if(!Get("//posXYZ[@volume='CDClayers']/@X_Y_Z",cdc_layers_offset)) return false;
+      vector<double>cdc_origin;
+      vector<double>cdc_center;
+      vector<double>cdc_layers_offset;
+      vector<double>cdc_endplate_pos;
+      vector<double>cdc_endplate_dim;
 
-	if(cdc_origin.size()<3){
-  		_DBG_<<"cdc_origin.size()<3 !"<<endl;
-		return false;
-	}
-	if(cdc_center.size()<3){
-  		_DBG_<<"cdc_center.size()<3 !"<<endl;
-		return false;
-	}
-	if(cdc_endplate_pos.size()<3){
-  		_DBG_<<"cdc_endplate_pos.size()<3 !"<<endl;
-		return false;
-	}
-	if(cdc_endplate_dim.size()<3){
-  		_DBG_<<"cdc_endplate_dim.size()<3 !"<<endl;
-		return false;
-	}
-	if (cdc_layers_offset.size()<3){
-	  _DBG_<<"cdc_layers_offset.size()<3 !"<<endl;
-	  return false;
-	}
-  
-	z=cdc_origin[2]+cdc_center[2]+cdc_endplate_pos[2]+cdc_layers_offset[2];
-  dz=cdc_endplate_dim[2];
-  rmin=cdc_endplate_dim[0];
-  rmax=cdc_endplate_dim[1];
+      if(!Get("//posXYZ[@volume='CentralDC'/@X_Y_Z",cdc_origin)) return false;
+      if(!Get("//posXYZ[@volume='centralDC']/@X_Y_Z",cdc_center)) return false;
+      if(!Get("//posXYZ[@volume='CDPD']/@X_Y_Z",cdc_endplate_pos)) return false;
+      if(!Get("//tubs[@name='CDPD']/@Rio_Z",cdc_endplate_dim)) return false;
+      if(!Get("//posXYZ[@volume='CDClayers']/@X_Y_Z",cdc_layers_offset)) return false;
 
-  return true;
-}
+      if(cdc_origin.size()<3){
+         _DBG_<<"cdc_origin.size()<3 !"<<endl;
+         return false;
+      }
+      if(cdc_center.size()<3){
+         _DBG_<<"cdc_center.size()<3 !"<<endl;
+         return false;
+      }
+      if(cdc_endplate_pos.size()<3){
+         _DBG_<<"cdc_endplate_pos.size()<3 !"<<endl;
+         return false;
+      }
+      if(cdc_endplate_dim.size()<3){
+         _DBG_<<"cdc_endplate_dim.size()<3 !"<<endl;
+         return false;
+      }
+      if (cdc_layers_offset.size()<3){
+         _DBG_<<"cdc_layers_offset.size()<3 !"<<endl;
+         return false;
+      }
+
+      z=cdc_origin[2]+cdc_center[2]+cdc_endplate_pos[2]+cdc_layers_offset[2];
+      dz=cdc_endplate_dim[2];
+      rmin=cdc_endplate_dim[0];
+      rmax=cdc_endplate_dim[1];
+
+      return true;
+   }
 //---------------------------------
 // GetBCALRmin
 //---------------------------------
 // Including the support plate
 bool DGeometry::GetBCALRmin(float &bcal_rmin) const
 {
-	vector<float> bcal_mother_Rio_Z;
-	bool good = Get("//BarrelEMcal_s/section/tubs[@name='BCAL']/@Rio_Z", bcal_mother_Rio_Z);
-	if(!good){
-		_DBG_<<"Unable to retrieve BCAL mother RioZ info."<<endl;
-		bcal_rmin = 0.0;
-		return false;
-	}
-	if(bcal_mother_Rio_Z.size() == 3){
-		bcal_rmin = bcal_mother_Rio_Z[0];
-		return true;
-	}
-	else{
-		_DBG_<<"Wrong vector size for BCAL mother RioZ!!!"<<endl;
-		bcal_rmin = 0.0;
-		return false;
-	}
+   vector<float> bcal_mother_Rio_Z;
+   bool good = Get("//BarrelEMcal_s/section/tubs[@name='BCAL']/@Rio_Z", bcal_mother_Rio_Z);
+   if(!good){
+      _DBG_<<"Unable to retrieve BCAL mother RioZ info."<<endl;
+      bcal_rmin = 0.0;
+      return false;
+   }
+   if(bcal_mother_Rio_Z.size() == 3){
+      bcal_rmin = bcal_mother_Rio_Z[0];
+      return true;
+   }
+   else{
+      _DBG_<<"Wrong vector size for BCAL mother RioZ!!!"<<endl;
+      bcal_rmin = 0.0;
+      return false;
+   }
 }
 
 //---------------------------------
@@ -1484,21 +1531,21 @@ bool DGeometry::GetBCALfADCRadii(vector<float> &fADC_radii) const
 //---------------------------------
 bool DGeometry::GetBCALNmodules(unsigned int &bcal_nmodules) const
 {
-	vector<unsigned int> ncopy;
-	bool good = Get("//BarrelEMcal_s/section/composition/mposPhi/@ncopy", ncopy);
-	if(!good){
-		_DBG_<<"Unable to retrieve BCAL barrelModule ncopy info."<<endl;
-		bcal_nmodules = 0;
-		return false;
-	}
-	if(ncopy.size() == 1){
-		bcal_nmodules = ncopy[0];
-		return true;
-	}else{
-		_DBG_<<"Wrong vector size for BCAL barrelModule ncopy!!!"<<endl;
-		bcal_nmodules = 0;
-		return false;
-	}
+   vector<unsigned int> ncopy;
+   bool good = Get("//BarrelEMcal_s/section/composition/mposPhi/@ncopy", ncopy);
+   if(!good){
+      _DBG_<<"Unable to retrieve BCAL barrelModule ncopy info."<<endl;
+      bcal_nmodules = 0;
+      return false;
+   }
+   if(ncopy.size() == 1){
+      bcal_nmodules = ncopy[0];
+      return true;
+   }else{
+      _DBG_<<"Wrong vector size for BCAL barrelModule ncopy!!!"<<endl;
+      bcal_nmodules = 0;
+      return false;
+   }
 }
 
 //---------------------------------
@@ -1506,21 +1553,21 @@ bool DGeometry::GetBCALNmodules(unsigned int &bcal_nmodules) const
 //---------------------------------
 bool DGeometry::GetBCALCenterZ(float &bcal_center_z) const
 {
-	vector<float> z0;
-	bool good = Get("//BarrelEMcal_s/section/parameters/real[@name='z0']/@value", z0);
-	if(!good){
-		_DBG_<<"Unable to retrieve BCAL parameters z0 info."<<endl;
-		bcal_center_z = 0.0;
-		return false;
-	}
-	if(z0.size() == 1){
-		bcal_center_z = z0[0];
-		return true;
-	}else{
-		_DBG_<<"Wrong vector size for BCAL parameters z0!!!"<<endl;
-		bcal_center_z = 0.0;
-		return false;
-	}
+   vector<float> z0;
+   bool good = Get("//BarrelEMcal_s/section/parameters/real[@name='z0']/@value", z0);
+   if(!good){
+      _DBG_<<"Unable to retrieve BCAL parameters z0 info."<<endl;
+      bcal_center_z = 0.0;
+      return false;
+   }
+   if(z0.size() == 1){
+      bcal_center_z = z0[0];
+      return true;
+   }else{
+      _DBG_<<"Wrong vector size for BCAL parameters z0!!!"<<endl;
+      bcal_center_z = 0.0;
+      return false;
+   }
 
 }
 
@@ -1530,22 +1577,22 @@ bool DGeometry::GetBCALCenterZ(float &bcal_center_z) const
 // The lightguides are not included
 bool DGeometry::GetBCALLength(float &bcal_length) const
 {
-	vector<float> module_length;
-	bool good = Get("//BarrelEMcal_s/section/tubs[@name='BM01']/@Rio_Z", module_length);
-	if(!good){
-		_DBG_<<"Unable to retrieve BCAL submodule RioZ info."<<endl;
-		bcal_length = 0.0;
-		return false;
-	}
-	if(module_length.size() == 3){
-		bcal_length = module_length[2];
-		return true;
-	}
-	else{
-		_DBG_<<"Wrong vector size for BCAL submodule RioZ!!!"<<endl;
-		bcal_length = 0.0;
-		return false;
-	}
+   vector<float> module_length;
+   bool good = Get("//BarrelEMcal_s/section/tubs[@name='BM01']/@Rio_Z", module_length);
+   if(!good){
+      _DBG_<<"Unable to retrieve BCAL submodule RioZ info."<<endl;
+      bcal_length = 0.0;
+      return false;
+   }
+   if(module_length.size() == 3){
+      bcal_length = module_length[2];
+      return true;
+   }
+   else{
+      _DBG_<<"Wrong vector size for BCAL submodule RioZ!!!"<<endl;
+      bcal_length = 0.0;
+      return false;
+   }
 }
 
 //---------------------------------
@@ -1554,22 +1601,22 @@ bool DGeometry::GetBCALLength(float &bcal_length) const
 // Including the support plate and the support bar
 bool DGeometry::GetBCALDepth(float &bcal_depth) const
 {
-	vector<float> bcal_moth_Rio_Z;
-	bool good = Get("//BarrelEMcal_s/section/tubs[@name='BCAL']/@Rio_Z", bcal_moth_Rio_Z);
-	if(!good){
-		_DBG_<<"Unable to retrieve BCAL mother RioZ info."<<endl;
-		bcal_depth = 0.0;
-		return false;
-	}
-	if(bcal_moth_Rio_Z.size() == 3){
-		bcal_depth = bcal_moth_Rio_Z[1] - bcal_moth_Rio_Z[0];
-		return true;
-	}
-	else{
-		_DBG_<<"Wrong vector size for BCAL mother RioZ!!!"<<endl;
-		bcal_depth = 0.0;
-		return false;
-	}
+   vector<float> bcal_moth_Rio_Z;
+   bool good = Get("//BarrelEMcal_s/section/tubs[@name='BCAL']/@Rio_Z", bcal_moth_Rio_Z);
+   if(!good){
+      _DBG_<<"Unable to retrieve BCAL mother RioZ info."<<endl;
+      bcal_depth = 0.0;
+      return false;
+   }
+   if(bcal_moth_Rio_Z.size() == 3){
+      bcal_depth = bcal_moth_Rio_Z[1] - bcal_moth_Rio_Z[0];
+      return true;
+   }
+   else{
+      _DBG_<<"Wrong vector size for BCAL mother RioZ!!!"<<endl;
+      bcal_depth = 0.0;
+      return false;
+   }
 
 }
 
@@ -1578,16 +1625,16 @@ bool DGeometry::GetBCALDepth(float &bcal_depth) const
 //---------------------------------
 bool DGeometry::GetBCALPhiShift(float &bcal_phi_shift) const
 {
-	vector<float> Phi0;
-	bool good = Get("//BarrelEMcal_s/section/composition/mposPhi/@Phi0", Phi0);
-	if(!good) return false;
-	if(Phi0.size() == 1){
-		bcal_phi_shift = Phi0[0];
-		return true;
-	}else{
-		bcal_phi_shift = 0.0;
-		return false;
-	}
+   vector<float> Phi0;
+   bool good = Get("//BarrelEMcal_s/section/composition/mposPhi/@Phi0", Phi0);
+   if(!good) return false;
+   if(Phi0.size() == 1){
+      bcal_phi_shift = Phi0[0];
+      return true;
+   }else{
+      bcal_phi_shift = 0.0;
+      return false;
+   }
 }
 
 //---------------------------------
@@ -1595,17 +1642,17 @@ bool DGeometry::GetBCALPhiShift(float &bcal_phi_shift) const
 //---------------------------------
 bool DGeometry::GetFCALZ(double &z_fcal) const
 {
-	vector<double> ForwardEMcalpos;
-	bool good = Get("//section/composition/posXYZ[@volume='ForwardEMcal']/@X_Y_Z", ForwardEMcalpos);
-	
-	if(!good){
-		_DBG_<<"Unable to retrieve ForwardEMcal position."<<endl;
-		z_fcal=0.0;
-		return false;
-	}else{
-		z_fcal = ForwardEMcalpos[2];
-		return true;
-	}
+   vector<double> ForwardEMcalpos;
+   bool good = Get("//section/composition/posXYZ[@volume='ForwardEMcal']/@X_Y_Z", ForwardEMcalpos);
+
+   if(!good){
+      _DBG_<<"Unable to retrieve ForwardEMcal position."<<endl;
+      z_fcal=0.0;
+      return false;
+   }else{
+      z_fcal = ForwardEMcalpos[2];
+      return true;
+   }
 }
 
 //---------------------------------
@@ -1613,19 +1660,19 @@ bool DGeometry::GetFCALZ(double &z_fcal) const
 //---------------------------------
 bool DGeometry::GetTOFZ(vector<double> &z_tof) const
 {
-	vector<double> ForwardTOF;
-	vector<double> forwardTOF[2];
-	vector<double> FTOC;
-       
-	if(!Get("//section/composition/posXYZ[@volume='ForwardTOF']/@X_Y_Z", ForwardTOF)) return false;
-	if(!Get("//composition[@name='ForwardTOF']/posXYZ[@volume='forwardTOF']/@X_Y_Z/plane[@value='0']", forwardTOF[0])) return false;
-	if(!Get("//composition[@name='ForwardTOF']/posXYZ[@volume='forwardTOF']/@X_Y_Z/plane[@value='1']", forwardTOF[1])) return false;
-	if(!Get("//box[@name='FTOC' and sensitive='true']/@X_Y_Z", FTOC)) return false;
-	
-	z_tof.push_back(ForwardTOF[2] + forwardTOF[0][2] - FTOC[2]/2.0);
-	z_tof.push_back(ForwardTOF[2] + forwardTOF[1][2] - FTOC[2]/2.0);
+   vector<double> ForwardTOF;
+   vector<double> forwardTOF[2];
+   vector<double> FTOC;
 
-	return true;
+   if(!Get("//section/composition/posXYZ[@volume='ForwardTOF']/@X_Y_Z", ForwardTOF)) return false;
+   if(!Get("//composition[@name='ForwardTOF']/posXYZ[@volume='forwardTOF']/@X_Y_Z/plane[@value='0']", forwardTOF[0])) return false;
+   if(!Get("//composition[@name='ForwardTOF']/posXYZ[@volume='forwardTOF']/@X_Y_Z/plane[@value='1']", forwardTOF[1])) return false;
+   if(!Get("//box[@name='FTOC' and sensitive='true']/@X_Y_Z", FTOC)) return false;
+
+   z_tof.push_back(ForwardTOF[2] + forwardTOF[0][2] - FTOC[2]/2.0);
+   z_tof.push_back(ForwardTOF[2] + forwardTOF[1][2] - FTOC[2]/2.0);
+
+   return true;
 }
 
 //---------------------------------
@@ -1633,21 +1680,21 @@ bool DGeometry::GetTOFZ(vector<double> &z_tof) const
 //---------------------------------
 bool DGeometry::GetTargetZ(double &z_target) const
 {
-	vector<double> xyz_vessel;
-	vector<double> xyz_target;
-	vector<double> xyz_detector;
-       
-	z_target=65.;
+   vector<double> xyz_vessel;
+   vector<double> xyz_target;
+   vector<double> xyz_detector;
 
-	if(!Get("//composition[@name='targetVessel']/posXYZ[@volume='targetTube']/@X_Y_Z", xyz_vessel)) return false;
-	if(!Get("//composition[@name='Target']/posXYZ[@volume='targetVessel']/@X_Y_Z", xyz_target)) return false;
-	if(!Get("//posXYZ[@volume='Target']/@X_Y_Z", xyz_detector)) return false;
+   z_target=65.;
 
-	z_target = xyz_vessel[2] + xyz_target[2] + xyz_detector[2];
+   if(!Get("//composition[@name='targetVessel']/posXYZ[@volume='targetTube']/@X_Y_Z", xyz_vessel)) return false;
+   if(!Get("//composition[@name='Target']/posXYZ[@volume='targetVessel']/@X_Y_Z", xyz_target)) return false;
+   if(!Get("//posXYZ[@volume='Target']/@X_Y_Z", xyz_detector)) return false;
 
-	//_DBG_ << "Target z position: " << z_target <<endl;
+   z_target = xyz_vessel[2] + xyz_target[2] + xyz_detector[2];
 
-	return true;
+   //_DBG_ << "Target z position: " << z_target <<endl;
+
+   return true;
 }
 
 //---------------------------------
@@ -1655,103 +1702,103 @@ bool DGeometry::GetTargetZ(double &z_target) const
 //---------------------------------
 bool DGeometry::GetTargetLength(double &target_length) const
 {
- 	vector<double> zLength;
-	bool good = Get("//section[@name='Target']/pcon[@name='LIH2']/real[@name='length']/[@value]", zLength);
+   vector<double> zLength;
+   bool good = Get("//section[@name='Target']/pcon[@name='LIH2']/real[@name='length']/[@value]", zLength);
 
-	target_length = good ? zLength[0]:0.0;
- 
-	return good;
+   target_length = good ? zLength[0]:0.0;
+
+   return good;
 }
 
 // Get vectors of positions and norm vectors for start counter from XML
 bool DGeometry::GetStartCounterGeom(vector<vector<DVector3> >&pos,
-				    vector<vector<DVector3> >&norm
-				    ) const{
+      vector<vector<DVector3> >&norm
+      ) const{
 
-  // Check if Start Counter geometry is present
-  vector<double> sc_origin;
-  bool got_sc = Get("//posXYZ[@volume='StartCntr']/@X_Y_Z", sc_origin);
-  if(got_sc){
-    // Offset from beam center
-    vector<double>sc_origin_delta;
-    Get("//posXYZ[@volume='startCntr']/@X_Y_Z", sc_origin_delta);
-    double dx=sc_origin_delta[0];
-    double dy=sc_origin_delta[1];
+   // Check if Start Counter geometry is present
+   vector<double> sc_origin;
+   bool got_sc = Get("//posXYZ[@volume='StartCntr']/@X_Y_Z", sc_origin);
+   if(got_sc){
+      // Offset from beam center
+      vector<double>sc_origin_delta;
+      Get("//posXYZ[@volume='startCntr']/@X_Y_Z", sc_origin_delta);
+      double dx=sc_origin_delta[0];
+      double dy=sc_origin_delta[1];
 
-    // z-position at upstream face of scintillators.
-    double z0=sc_origin[2];
-    
-    // Get rotation angles
-    vector<double>sc_rot_angles;
-    Get("//posXYZ[@volume='startCntr']/@rot", sc_rot_angles);
-    double ThetaX=sc_rot_angles[0]*M_PI/180.;
-    double ThetaY=sc_rot_angles[1]*M_PI/180.;
-    Get("//posXYZ[@volume='StartCntr']/@rot", sc_rot_angles);
-    //double ThetaX=sc_rot_angles[0]*M_PI/180.;
-    //double ThetaY=sc_rot_angles[1]*M_PI/180.;
-    double ThetaZ=sc_rot_angles[2]*M_PI/180.;
+      // z-position at upstream face of scintillators.
+      double z0=sc_origin[2];
 
-    double num_paddles;
-    Get("//mposPhi[@volume='STRC']/@ncopy",num_paddles); 
-    double dSCdphi = M_TWO_PI/num_paddles;
-		
-    double Phi0;
-    Get("///mposPhi[@volume='STRC']/@Phi0",Phi0);
-    double dSCphi0 =Phi0*M_PI/180.;
-    
-    vector<vector<double> > sc_rioz;
-    GetMultiple("//pgon[@name='STRC']/polyplane/@Rio_Z", sc_rioz);
-    
-    // Create vectors of positions and normal vectors for each paddle
-    for (unsigned int i=0;i<30;i++){
-      double phi=dSCphi0+dSCdphi*double(i);
-      double sinphi=sin(phi);
-      double cosphi=cos(phi);
-      double r=0.5*(sc_rioz[0][0]+sc_rioz[0][1]);
-      DVector3 oldray;
-      // Rotate by phi and take into account the tilt
-      double x=r*cosphi+dx;
-      double y=r*sinphi+dy;
-      DVector3 ray(x,y,sc_rioz[0][2]);
-      ray.RotateX(ThetaX);
-      ray.RotateY(ThetaY);
-      ray.RotateZ(ThetaZ);
+      // Get rotation angles
+      vector<double>sc_rot_angles;
+      Get("//posXYZ[@volume='startCntr']/@rot", sc_rot_angles);
+      double ThetaX=sc_rot_angles[0]*M_PI/180.;
+      double ThetaY=sc_rot_angles[1]*M_PI/180.;
+      Get("//posXYZ[@volume='StartCntr']/@rot", sc_rot_angles);
+      //double ThetaX=sc_rot_angles[0]*M_PI/180.;
+      //double ThetaY=sc_rot_angles[1]*M_PI/180.;
+      double ThetaZ=sc_rot_angles[2]*M_PI/180.;
 
-      // Create stl-vectors to store positions and norm vectors
-      vector<DVector3>posvec;
-      vector<DVector3>dirvec;
-      // Loop over radial/z positions describing start counter geometry from xml
-      for(unsigned int k = 1; k < sc_rioz.size(); ++k){
-	oldray=ray;
-	r=0.5*(sc_rioz[k][0]+sc_rioz[k][1]);
-	// Point in midplane of scintillator
-	x=r*cosphi+dx;
-	y=r*sinphi+dy;
-	ray.SetXYZ(x,y,sc_rioz[k][2]);
-	// Second point in the plane of the scintillator
-	DVector3 ray2(x-10.0*sinphi,y+10.0*cosphi,sc_rioz[k][2]);
-	// Take into account tilt
-	ray.RotateX(ThetaX);
-	ray.RotateY(ThetaY);
-	ray.RotateZ(ThetaZ);
-	ray2.RotateX(ThetaX);
-	ray2.RotateY(ThetaY);
-	ray2.RotateZ(ThetaZ);
-	// Store one position on current plane
-	posvec.push_back(DVector3(oldray.X(),oldray.Y(),oldray.Z()+z0));
-	// Compute normal vector to plane
-	DVector3 dir=(ray-oldray).Cross(ray2-oldray);
-	dir.SetMag(1.);
-	dirvec.push_back(dir);		
+      double num_paddles;
+      Get("//mposPhi[@volume='STRC']/@ncopy",num_paddles); 
+      double dSCdphi = M_TWO_PI/num_paddles;
+
+      double Phi0;
+      Get("///mposPhi[@volume='STRC']/@Phi0",Phi0);
+      double dSCphi0 =Phi0*M_PI/180.;
+
+      vector<vector<double> > sc_rioz;
+      GetMultiple("//pgon[@name='STRC']/polyplane/@Rio_Z", sc_rioz);
+
+      // Create vectors of positions and normal vectors for each paddle
+      for (unsigned int i=0;i<30;i++){
+         double phi=dSCphi0+dSCdphi*double(i);
+         double sinphi=sin(phi);
+         double cosphi=cos(phi);
+         double r=0.5*(sc_rioz[0][0]+sc_rioz[0][1]);
+         DVector3 oldray;
+         // Rotate by phi and take into account the tilt
+         double x=r*cosphi+dx;
+         double y=r*sinphi+dy;
+         DVector3 ray(x,y,sc_rioz[0][2]);
+         ray.RotateX(ThetaX);
+         ray.RotateY(ThetaY);
+         ray.RotateZ(ThetaZ);
+
+         // Create stl-vectors to store positions and norm vectors
+         vector<DVector3>posvec;
+         vector<DVector3>dirvec;
+         // Loop over radial/z positions describing start counter geometry from xml
+         for(unsigned int k = 1; k < sc_rioz.size(); ++k){
+            oldray=ray;
+            r=0.5*(sc_rioz[k][0]+sc_rioz[k][1]);
+            // Point in midplane of scintillator
+            x=r*cosphi+dx;
+            y=r*sinphi+dy;
+            ray.SetXYZ(x,y,sc_rioz[k][2]);
+            // Second point in the plane of the scintillator
+            DVector3 ray2(x-10.0*sinphi,y+10.0*cosphi,sc_rioz[k][2]);
+            // Take into account tilt
+            ray.RotateX(ThetaX);
+            ray.RotateY(ThetaY);
+            ray.RotateZ(ThetaZ);
+            ray2.RotateX(ThetaX);
+            ray2.RotateY(ThetaY);
+            ray2.RotateZ(ThetaZ);
+            // Store one position on current plane
+            posvec.push_back(DVector3(oldray.X(),oldray.Y(),oldray.Z()+z0));
+            // Compute normal vector to plane
+            DVector3 dir=(ray-oldray).Cross(ray2-oldray);
+            dir.SetMag(1.);
+            dirvec.push_back(dir);		
+         }
+         pos.push_back(posvec);
+         norm.push_back(dirvec);
+
+         posvec.clear();
+         dirvec.clear();
       }
-      pos.push_back(posvec);
-      norm.push_back(dirvec);
-		  
-      posvec.clear();
-      dirvec.clear();
-    }
-    
-  }
-  return got_sc;
+
+   }
+   return got_sc;
 }
 
