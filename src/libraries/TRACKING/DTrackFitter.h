@@ -22,6 +22,7 @@
 #include <CDC/DCDCTrackHit.h>
 #include <FDC/DFDCPseudo.h>
 #include <TRACKING/DReferenceTrajectory.h>
+
 using namespace std;
 
 #define NaN std::numeric_limits<double>::quiet_NaN()
@@ -102,8 +103,12 @@ class DTrackFitter:public jana::JObject{
 		    double tcorr; // drift time with correction for B
 		    double resic; // residual for FDC cathode measuremtns
 		    double errc;
-          vector<double> derivatives;
-          inline void AddAlignmentDerivatives(vector<double> d){ derivatives = d;}
+          vector<double> trackDerivatives;
+          vector<double> stateVector;
+          inline void AddTrackDerivatives(vector<double> d){ trackDerivatives = d;}
+          inline void AddStateVector4x1(DMatrix4x1 &d){ for (int i=0; i < 4; i++) stateVector.push_back(d(i));}
+          inline void AddStateVector5x1(DMatrix5x1 &d){ for (int i=0; i < 5; i++) stateVector.push_back(d(i));} 
+             
 		};
 		
 		// Constructor and destructor
