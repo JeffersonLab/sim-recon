@@ -26,12 +26,9 @@ extern "C"{
 // Masses
 const double m_p=0.93827; // GeV
 const double m_p_sq=m_p*m_p;
-double M_sq_R=0.98*0.98;
 // Width
 double width=0.;
-// Coupling constants 
-double gsq_rho_S_gamma=0.02537;
-double gsq_omega_S_gamma=0.2283;
+// Coupling constant 
 double g0_sq=8.8;
 // Regge cut parameters
 double regge_cuts[5]; // dc c_P_omega c_f2_omega c_P_rho c_f2_rho 
@@ -435,7 +432,9 @@ double BackgroundCrossSection(TLorentzVector &q /* beam */,
 double InterferenceCrossSection(TLorentzVector &q /* beam */,
 				vector<Particle_t>&particle_types,
 				vector<TLorentzVector>&particles,
-				double gR,double ReB, double ImB,double phase){ 
+				double gR,double ReB, double ImB,
+				double gsq_rho_S,double gsq_omega_S,
+				double phase){ 
   int two_particles=particle_types[0]+particle_types[1];
   
   // Four vectors
@@ -483,8 +482,8 @@ double InterferenceCrossSection(TLorentzVector &q /* beam */,
   double gsq_rho_T=g_rho_T*g_rho_T;
   double g_rho_V_and_T=g_rho_V+2.*m_p*g_rho_T;
   double gsq_rho_V_and_T=g_rho_V_and_T*g_rho_V_and_T;
-  double g_rho_S_gamma=sqrt(gsq_rho_S_gamma);
-  double g_omega_S_gamma=sqrt(gsq_omega_S_gamma);
+  double g_rho_S=sqrt(gsq_rho_S);
+  double g_omega_S=sqrt(gsq_omega_S);
 
   // Rho propagator for top exchange for double-exchange diagrams
   double m_rho=0.7685;
@@ -599,13 +598,13 @@ double InterferenceCrossSection(TLorentzVector &q /* beam */,
     zeta=1./sqrt(2.);
    
     double Re_a1_aS_rho_V_and_T_sq
-      =2.*gsq_rho_V_and_T*g_rho_S_gamma*regge_rho_sq*Pi_omega_1_sq
+      =2.*gsq_rho_V_and_T*g_rho_S*regge_rho_sq*Pi_omega_1_sq
       *Re_B_and_omega_1;
     double Im_a1_aS_rho_V_and_T_sq
-      =2.*gsq_rho_V_and_T*g_rho_S_gamma*regge_rho_sq*Pi_omega_1_sq
+      =2.*gsq_rho_V_and_T*g_rho_S*regge_rho_sq*Pi_omega_1_sq
       *Im_B_and_omega_1;
     double Re_a1_aS_rho_V_and_T_rho_cuts
-      =g_rho_S_gamma*g_rho_V_and_T*g_rho_V*regge_rho*Pi_omega_1_sq
+      =g_rho_S*g_rho_V_and_T*g_rho_V*regge_rho*Pi_omega_1_sq
       *(C_rho_P_cut*regge_rho_P_cut
 	*(cos_rho_rho_P_dif*Re_B_and_omega_1
 	  +sin_rho_rho_P_sum*Im_B_and_omega_1)
@@ -613,7 +612,7 @@ double InterferenceCrossSection(TLorentzVector &q /* beam */,
 	*(cos_rho_rho_f2_dif*Re_B_and_omega_1
 	  +sin_rho_rho_f2_sum*Im_B_and_omega_1)); 
     double Im_a1_aS_rho_V_and_T_rho_cuts
-      =g_rho_S_gamma*g_rho_V_and_T*g_rho_V*regge_rho*Pi_omega_1_sq
+      =g_rho_S*g_rho_V_and_T*g_rho_V*regge_rho*Pi_omega_1_sq
       *(C_rho_P_cut*regge_rho_P_cut
 	*(cos_rho_rho_P_dif*Im_B_and_omega_1
 	  -sin_rho_rho_P_sum*Re_B_and_omega_1)
@@ -621,15 +620,15 @@ double InterferenceCrossSection(TLorentzVector &q /* beam */,
 	*(cos_rho_rho_f2_dif*Im_B_and_omega_1
 	  -sin_rho_rho_f2_sum*Re_B_and_omega_1));
     double Re_a1_aS_omega_V_rho_V_and_T
-      =0.5*g_omega_S_gamma*g_rho_V_and_T*g_omega_V*Pi_omega_1_sq
+      =0.5*g_omega_S*g_rho_V_and_T*g_omega_V*Pi_omega_1_sq
       *regge_rho*regge_omega*(cos_rho_omega_sum*Re_B_and_omega_1
 			      +sin_rho_omega_sum*Im_B_and_omega_1);  
     double Im_a1_aS_omega_V_rho_V_and_T
-      =0.5*g_omega_S_gamma*g_rho_V_and_T*g_omega_V*Pi_omega_1_sq
+      =0.5*g_omega_S*g_rho_V_and_T*g_omega_V*Pi_omega_1_sq
       *regge_rho*regge_omega*(cos_rho_omega_sum*Im_B_and_omega_1
 			      -sin_rho_omega_sum*Re_B_and_omega_1);   
     double Re_a1_aS_rho_V_and_T_omega_cuts
-      =g_omega_S_gamma*g_rho_V_and_T*g_omega_V*regge_rho*Pi_omega_1_sq
+      =g_omega_S*g_rho_V_and_T*g_omega_V*regge_rho*Pi_omega_1_sq
       *(C_omega_P_cut*regge_omega_P_cut
 	*(cos_rho_omega_P_dif*Re_B_and_omega_1
 	  +sin_rho_omega_P_sum*Im_B_and_omega_1)
@@ -637,7 +636,7 @@ double InterferenceCrossSection(TLorentzVector &q /* beam */,
 	*(cos_rho_omega_f2_dif*Re_B_and_omega_1
 	  +sin_rho_omega_f2_sum*Im_B_and_omega_1)); 
     double Im_a1_aS_rho_V_and_T_omega_cuts
-      =g_omega_S_gamma*g_rho_V_and_T*g_omega_V*regge_rho*Pi_omega_1_sq
+      =g_omega_S*g_rho_V_and_T*g_omega_V*regge_rho*Pi_omega_1_sq
       *(C_omega_P_cut*regge_omega_P_cut
 	*(cos_rho_omega_P_dif*Im_B_and_omega_1
 	  -sin_rho_omega_P_sum*Re_B_and_omega_1)
@@ -645,15 +644,15 @@ double InterferenceCrossSection(TLorentzVector &q /* beam */,
 	*(cos_rho_omega_f2_dif*Im_B_and_omega_1
 	  -sin_rho_omega_f2_sum*Re_B_and_omega_1));
     double Re_a1_aS_omega_V_rho_V_and_T_rho_propagator
-      =0.5*g_rho_S_gamma*g_rho_V_and_T*g_omega_V*Pi_rho_1_sq
+      =0.5*g_rho_S*g_rho_V_and_T*g_omega_V*Pi_rho_1_sq
       *regge_rho*regge_omega*(cos_rho_omega_sum*Re_B_and_rho_1
 			      +sin_rho_omega_sum*Im_B_and_rho_1);  
     double Im_a1_aS_omega_V_rho_V_and_T_rho_propagator
-      =0.5*g_rho_S_gamma*g_rho_V_and_T*g_omega_V*Pi_rho_1_sq
+      =0.5*g_rho_S*g_rho_V_and_T*g_omega_V*Pi_rho_1_sq
       *regge_rho*regge_omega*(cos_rho_omega_sum*Im_B_and_rho_1
 			      -sin_rho_omega_sum*Re_B_and_rho_1);   
     double Re_a1_aS_omega_V_rho_V_rho_cuts_rho_propagator
-      =g_omega_V*g_rho_V*g_rho_S_gamma*Pi_rho_1_sq*regge_omega
+      =g_omega_V*g_rho_V*g_rho_S*Pi_rho_1_sq*regge_omega
       *(C_rho_P_cut*regge_rho_P_cut
 	*(cos_omega_rho_P_dif*Re_B_and_rho_1
 	  +sin_omega_rho_P_sum*Im_B_and_rho_1)
@@ -661,7 +660,7 @@ double InterferenceCrossSection(TLorentzVector &q /* beam */,
 	*(cos_omega_rho_f2_dif*Re_B_and_rho_1
 	  +sin_omega_rho_f2_sum*Im_B_and_rho_1)); 
     double Im_a1_aS_omega_V_rho_V_rho_cuts_rho_propagator
-      =g_omega_V*g_rho_V*g_rho_S_gamma*Pi_rho_1_sq*regge_omega
+      =g_omega_V*g_rho_V*g_rho_S*Pi_rho_1_sq*regge_omega
       *(C_rho_P_cut*regge_rho_P_cut
 	*(cos_omega_rho_P_dif*Im_B_and_rho_1
 	  -sin_omega_rho_P_sum*Re_B_and_rho_1)
@@ -669,13 +668,13 @@ double InterferenceCrossSection(TLorentzVector &q /* beam */,
 	*(cos_omega_rho_f2_dif*Im_B_and_rho_1
 	  -sin_omega_rho_f2_sum*Re_B_and_rho_1));
     double Re_a1_aS_omega_V_sq
-      =2.*g_omega_V*g_omega_V*g_omega_S_gamma*Pi_rho_1_sq*regge_omega_sq
+      =2.*g_omega_V*g_omega_V*g_omega_S*Pi_rho_1_sq*regge_omega_sq
       *Re_B_and_rho_1;
     double Im_a1_aS_omega_V_sq
-      =2.*g_omega_V*g_omega_V*g_omega_S_gamma*Pi_rho_1_sq*regge_omega_sq
+      =2.*g_omega_V*g_omega_V*g_omega_S*Pi_rho_1_sq*regge_omega_sq
       *Im_B_and_rho_1; 
     double Re_a1_aS_omega_V_sq_omega_cuts
-      =g_omega_V*g_omega_V*g_omega_S_gamma*Pi_rho_1_sq*regge_omega
+      =g_omega_V*g_omega_V*g_omega_S*Pi_rho_1_sq*regge_omega
       *(C_omega_P_cut*regge_omega_P_cut
 	*(cos_omega_omega_P_dif*Re_B_and_rho_1
 	  +sin_omega_omega_P_sum*Im_B_and_rho_1)
@@ -683,7 +682,7 @@ double InterferenceCrossSection(TLorentzVector &q /* beam */,
 	*(cos_omega_omega_f2_dif*Re_B_and_rho_1
 	  +sin_omega_omega_f2_sum*Im_B_and_rho_1));
     double Im_a1_aS_omega_V_sq_omega_cuts
-      =g_omega_V*g_omega_V*g_omega_S_gamma*Pi_rho_1_sq*regge_omega
+      =g_omega_V*g_omega_V*g_omega_S*Pi_rho_1_sq*regge_omega
       *(C_omega_P_cut*regge_omega_P_cut
 	*(cos_omega_omega_P_dif*Im_B_and_rho_1
 	  -sin_omega_omega_P_sum*Re_B_and_rho_1)
@@ -692,13 +691,13 @@ double InterferenceCrossSection(TLorentzVector &q /* beam */,
 	  -sin_omega_omega_f2_sum*Re_B_and_rho_1));
  
     double Re_a2_aS_rho_V_and_T_sq
-      =2.*gsq_rho_V_and_T*g_rho_S_gamma*regge_rho_sq*Pi_omega_2_sq
+      =2.*gsq_rho_V_and_T*g_rho_S*regge_rho_sq*Pi_omega_2_sq
       *Re_B_and_omega_2;
     double Im_a2_aS_rho_V_and_T_sq
-      =2.*gsq_rho_V_and_T*g_rho_S_gamma*regge_rho_sq*Pi_omega_2_sq
+      =2.*gsq_rho_V_and_T*g_rho_S*regge_rho_sq*Pi_omega_2_sq
       *Im_B_and_omega_2;
     double Re_a2_aS_rho_V_and_T_rho_cuts
-      =g_rho_S_gamma*g_rho_V_and_T*g_rho_V*regge_rho*Pi_omega_2_sq
+      =g_rho_S*g_rho_V_and_T*g_rho_V*regge_rho*Pi_omega_2_sq
       *(C_rho_P_cut*regge_omega_P_cut
 	*(cos_rho_rho_P_dif*Re_B_and_omega_2
 	  +sin_rho_rho_P_sum*Im_B_and_omega_2)
@@ -706,7 +705,7 @@ double InterferenceCrossSection(TLorentzVector &q /* beam */,
 	*(cos_rho_rho_f2_dif*Re_B_and_omega_2
 	  +sin_rho_rho_f2_sum*Im_B_and_omega_2)); 
     double Im_a2_aS_rho_V_and_T_rho_cuts
-      =g_rho_S_gamma*g_rho_V_and_T*g_rho_V*regge_rho*Pi_omega_2_sq
+      =g_rho_S*g_rho_V_and_T*g_rho_V*regge_rho*Pi_omega_2_sq
       *(C_rho_P_cut*regge_omega_P_cut
 	*(cos_rho_rho_P_dif*Im_B_and_omega_2
 	  -sin_rho_rho_P_sum*Re_B_and_omega_2)
@@ -714,15 +713,15 @@ double InterferenceCrossSection(TLorentzVector &q /* beam */,
 	*(cos_rho_rho_f2_dif*Im_B_and_omega_2
 	  -sin_rho_rho_f2_sum*Re_B_and_omega_2));
     double Re_a2_aS_omega_V_rho_V_and_T
-      =0.5*g_omega_S_gamma*g_rho_V_and_T*g_omega_V*Pi_omega_2_sq
+      =0.5*g_omega_S*g_rho_V_and_T*g_omega_V*Pi_omega_2_sq
       *regge_rho*regge_omega*(cos_rho_omega_sum*Re_B_and_omega_2
 			      +sin_rho_omega_sum*Im_B_and_omega_2);  
     double Im_a2_aS_omega_V_rho_V_and_T
-      =0.5*g_omega_S_gamma*g_rho_V_and_T*g_omega_V*Pi_omega_2_sq
+      =0.5*g_omega_S*g_rho_V_and_T*g_omega_V*Pi_omega_2_sq
       *regge_rho*regge_omega*(cos_rho_omega_sum*Im_B_and_omega_2
 			      -sin_rho_omega_sum*Re_B_and_omega_2);   
     double Re_a2_aS_rho_V_and_T_omega_cuts
-      =g_omega_S_gamma*g_rho_V_and_T*g_omega_V*regge_rho*Pi_omega_2_sq
+      =g_omega_S*g_rho_V_and_T*g_omega_V*regge_rho*Pi_omega_2_sq
       *(C_omega_P_cut*regge_omega_P_cut
 	*(cos_rho_omega_P_dif*Re_B_and_omega_2
 	  +sin_rho_omega_P_sum*Im_B_and_omega_2)
@@ -730,7 +729,7 @@ double InterferenceCrossSection(TLorentzVector &q /* beam */,
 	*(cos_rho_omega_f2_dif*Re_B_and_omega_2
 	  +sin_rho_omega_f2_sum*Im_B_and_omega_2)); 
     double Im_a2_aS_rho_V_and_T_omega_cuts
-      =g_omega_S_gamma*g_rho_V_and_T*g_omega_V*regge_rho*Pi_omega_2_sq
+      =g_omega_S*g_rho_V_and_T*g_omega_V*regge_rho*Pi_omega_2_sq
       *(C_omega_P_cut*regge_omega_P_cut
 	*(cos_rho_omega_P_dif*Im_B_and_omega_2
 	  -sin_rho_omega_P_sum*Re_B_and_omega_2)
@@ -738,15 +737,15 @@ double InterferenceCrossSection(TLorentzVector &q /* beam */,
 	*(cos_rho_omega_f2_dif*Im_B_and_omega_2
 	  -sin_rho_omega_f2_sum*Re_B_and_omega_2));
     double Re_a2_aS_omega_V_rho_V_and_T_rho_propagator
-      =0.5*g_rho_S_gamma*g_rho_V_and_T*g_omega_V*Pi_rho_2_sq
+      =0.5*g_rho_S*g_rho_V_and_T*g_omega_V*Pi_rho_2_sq
       *regge_rho*regge_omega*(cos_rho_omega_sum*Re_B_and_rho_2
 			      +sin_rho_omega_sum*Im_B_and_rho_2);  
     double Im_a2_aS_omega_V_rho_V_and_T_rho_propagator
-      =0.5*g_rho_S_gamma*g_rho_V_and_T*g_omega_V*Pi_rho_2_sq
+      =0.5*g_rho_S*g_rho_V_and_T*g_omega_V*Pi_rho_2_sq
       *regge_rho*regge_omega*(cos_rho_omega_sum*Im_B_and_rho_2
 			      -sin_rho_omega_sum*Re_B_and_rho_2); 
     double Re_a2_aS_omega_V_rho_V_rho_cuts_rho_propagator
-      =g_omega_V*g_rho_V*g_rho_S_gamma*Pi_rho_2_sq*regge_omega
+      =g_omega_V*g_rho_V*g_rho_S*Pi_rho_2_sq*regge_omega
       *(C_rho_P_cut*regge_rho_P_cut
 	*(cos_omega_rho_P_dif*Re_B_and_rho_2
 	  +sin_omega_rho_P_sum*Im_B_and_rho_2)
@@ -754,7 +753,7 @@ double InterferenceCrossSection(TLorentzVector &q /* beam */,
 	*(cos_omega_rho_f2_dif*Re_B_and_rho_2
 	  +sin_omega_rho_f2_sum*Im_B_and_rho_2)); 
     double Im_a2_aS_omega_V_rho_V_rho_cuts_rho_propagator
-      =g_omega_V*g_rho_V*g_rho_S_gamma*Pi_rho_2_sq*regge_omega
+      =g_omega_V*g_rho_V*g_rho_S*Pi_rho_2_sq*regge_omega
       *(C_rho_P_cut*regge_rho_P_cut
 	*(cos_omega_rho_P_dif*Im_B_and_rho_2
 	  -sin_omega_rho_P_sum*Re_B_and_rho_2)
@@ -762,11 +761,11 @@ double InterferenceCrossSection(TLorentzVector &q /* beam */,
 	*(cos_omega_rho_f2_dif*Im_B_and_rho_2
 	  -sin_omega_rho_f2_sum*Re_B_and_rho_2));
     double Re_a2_aS_omega_V_sq
-      =2.*gsq_omega_V*g_omega_S_gamma*Pi_rho_2_sq*regge_omega_sq*Re_B_and_rho_2;
+      =2.*gsq_omega_V*g_omega_S*Pi_rho_2_sq*regge_omega_sq*Re_B_and_rho_2;
     double Im_a2_aS_omega_V_sq
-      =2.*gsq_omega_V*g_omega_S_gamma*Pi_rho_2_sq*regge_omega_sq*Im_B_and_rho_2; 
+      =2.*gsq_omega_V*g_omega_S*Pi_rho_2_sq*regge_omega_sq*Im_B_and_rho_2; 
     double Re_a2_aS_omega_V_sq_omega_cuts
-      =gsq_omega_V*g_omega_S_gamma*Pi_rho_2_sq*regge_omega
+      =gsq_omega_V*g_omega_S*Pi_rho_2_sq*regge_omega
       *(C_omega_P_cut*regge_omega_P_cut
 	*(cos_omega_omega_P_dif*Re_B_and_rho_2
 	  +sin_omega_omega_P_sum*Im_B_and_rho_2)
@@ -774,7 +773,7 @@ double InterferenceCrossSection(TLorentzVector &q /* beam */,
 	*(cos_omega_omega_f2_dif*Re_B_and_rho_2
 	  +sin_omega_omega_f2_sum*Im_B_and_rho_2));
     double Im_a2_aS_omega_V_sq_omega_cuts
-      =gsq_omega_V*g_omega_S_gamma*Pi_rho_2_sq*regge_omega
+      =gsq_omega_V*g_omega_S*Pi_rho_2_sq*regge_omega
       *(C_omega_P_cut*regge_omega_P_cut
 	*(cos_omega_omega_P_dif*Im_B_and_rho_2
 	  -sin_omega_omega_P_sum*Re_B_and_rho_2)
@@ -783,19 +782,19 @@ double InterferenceCrossSection(TLorentzVector &q /* beam */,
 	  -sin_omega_omega_f2_sum*Re_B_and_rho_2));
 
     double Re_b1_aS_rho_V_and_T
-      =-4.*g_rho_S_gamma*g_rho_T*g_rho_V_and_T*regge_rho_sq*Pi_omega_1_sq
+      =-4.*g_rho_S*g_rho_T*g_rho_V_and_T*regge_rho_sq*Pi_omega_1_sq
       *Re_B_and_omega_1;   
     double Im_b1_aS_rho_V_and_T
-      =-4.*g_rho_S_gamma*g_rho_T*g_rho_V_and_T*regge_rho_sq*Pi_omega_1_sq
+      =-4.*g_rho_S*g_rho_T*g_rho_V_and_T*regge_rho_sq*Pi_omega_1_sq
       *Im_B_and_omega_1; 
-    double Re_b1_aS_omega_V=-g_omega_S_gamma*g_rho_V*g_rho_T*Pi_omega_1_sq
+    double Re_b1_aS_omega_V=-g_omega_S*g_rho_V*g_rho_T*Pi_omega_1_sq
       *regge_rho*regge_omega*(cos_rho_omega_sum*Re_B_and_omega_1
 			      +sin_rho_omega_sum*Im_B_and_omega_1);
-    double Im_b1_aS_omega_V=-g_omega_S_gamma*g_rho_V*g_rho_T*Pi_omega_1_sq
+    double Im_b1_aS_omega_V=-g_omega_S*g_rho_V*g_rho_T*Pi_omega_1_sq
       *regge_rho*regge_omega*(cos_rho_omega_sum*Im_B_and_omega_1
 			      -sin_rho_omega_sum*Re_B_and_omega_1);
     double Re_b1_aS_rho_cuts
-      =-2.*g_rho_V*g_rho_S_gamma*g_rho_T*Pi_omega_1_sq*regge_rho   
+      =-2.*g_rho_V*g_rho_S*g_rho_T*Pi_omega_1_sq*regge_rho   
       *(C_rho_P_cut*regge_rho_P_cut
 	*(cos_rho_rho_P_dif*Re_B_and_omega_1
 	  +sin_rho_rho_P_sum*Im_B_and_omega_1)
@@ -803,7 +802,7 @@ double InterferenceCrossSection(TLorentzVector &q /* beam */,
 	*(cos_rho_rho_f2_dif*Re_B_and_omega_1
 	  +sin_rho_rho_f2_sum*Im_B_and_omega_1));   
     double Im_b1_aS_rho_cuts
-      =-2.*g_rho_V*g_rho_S_gamma*g_rho_T*Pi_omega_1_sq*regge_rho   
+      =-2.*g_rho_V*g_rho_S*g_rho_T*Pi_omega_1_sq*regge_rho   
       *(C_rho_P_cut*regge_rho_P_cut
 	*(cos_rho_rho_P_dif*Im_B_and_omega_1
 	  -sin_rho_rho_P_sum*Re_B_and_omega_1)
@@ -811,7 +810,7 @@ double InterferenceCrossSection(TLorentzVector &q /* beam */,
 	*(cos_rho_rho_f2_dif*Im_B_and_omega_1
 	  -sin_rho_rho_f2_sum*Re_B_and_omega_1));  
     double Re_b1_aS_omega_cuts
-      =-2.*g_omega_V*g_omega_S_gamma*g_rho_T*Pi_omega_1_sq*regge_rho   
+      =-2.*g_omega_V*g_omega_S*g_rho_T*Pi_omega_1_sq*regge_rho   
       *(C_rho_P_cut*regge_omega_P_cut
 	*(cos_rho_omega_P_dif*Re_B_and_omega_1
 	  +sin_rho_omega_P_sum*Im_B_and_omega_1)
@@ -819,7 +818,7 @@ double InterferenceCrossSection(TLorentzVector &q /* beam */,
 	*(cos_rho_omega_f2_dif*Re_B_and_omega_1
 	  +sin_rho_omega_f2_sum*Im_B_and_omega_1));   
     double Im_b1_aS_omega_cuts
-      =-2.*g_rho_V*g_rho_S_gamma*g_rho_T*Pi_omega_1_sq*regge_rho   
+      =-2.*g_rho_V*g_rho_S*g_rho_T*Pi_omega_1_sq*regge_rho   
       *(C_rho_P_cut*regge_omega_P_cut
 	*(cos_rho_omega_P_dif*Im_B_and_omega_1
 	  -sin_rho_omega_P_sum*Re_B_and_omega_1)
@@ -828,32 +827,32 @@ double InterferenceCrossSection(TLorentzVector &q /* beam */,
 	  -sin_rho_omega_f2_sum*Re_B_and_omega_1)); 
     
     double Re_a1_bS_rho_V_and_T
-      =-4.*g_rho_T*g_rho_V_and_T*g_rho_S_gamma*regge_rho_sq*Pi_omega_1_sq
+      =-4.*g_rho_T*g_rho_V_and_T*g_rho_S*regge_rho_sq*Pi_omega_1_sq
       *Re_B_and_omega_1;
     double Im_a1_bS_rho_V_and_T
-      =-4.*g_rho_T*g_rho_V_and_T*g_rho_S_gamma*regge_rho_sq*Pi_omega_1_sq
+      =-4.*g_rho_T*g_rho_V_and_T*g_rho_S*regge_rho_sq*Pi_omega_1_sq
       *Im_B_and_omega_1;
     double Re_a1_bS_omega_V
-      =-g_rho_S_gamma*g_rho_V*g_rho_T*regge_rho*regge_omega*Pi_rho_1_sq
+      =-g_rho_S*g_rho_V*g_rho_T*regge_rho*regge_omega*Pi_rho_1_sq
       *(cos_rho_omega_sum*Re_B_and_rho_1+sin_rho_omega_sum*Im_B_and_rho_1);  
     double Im_a1_bS_omega_V
-      =-g_rho_S_gamma*g_rho_V*g_rho_T*regge_rho*regge_omega*Pi_rho_1_sq
+      =-g_rho_S*g_rho_V*g_rho_T*regge_rho*regge_omega*Pi_rho_1_sq
       *(cos_rho_omega_sum*Im_B_and_rho_1-sin_rho_omega_sum*Re_B_and_rho_1);
 
     double Re_b2_aS_rho_V_and_T
-      =-4.*g_rho_S_gamma*g_rho_T*g_rho_V_and_T*regge_rho_sq*Pi_omega_2_sq
+      =-4.*g_rho_S*g_rho_T*g_rho_V_and_T*regge_rho_sq*Pi_omega_2_sq
       *Re_B_and_omega_2;   
     double Im_b2_aS_rho_V_and_T
-      =-4.*g_rho_S_gamma*g_rho_T*g_rho_V_and_T*regge_rho_sq*Pi_omega_2_sq
+      =-4.*g_rho_S*g_rho_T*g_rho_V_and_T*regge_rho_sq*Pi_omega_2_sq
       *Im_B_and_omega_2; 
-    double Re_b2_aS_omega_V=-g_omega_S_gamma*g_rho_V*g_rho_T*Pi_omega_2_sq
+    double Re_b2_aS_omega_V=-g_omega_S*g_rho_V*g_rho_T*Pi_omega_2_sq
       *regge_rho*regge_omega*(cos_rho_omega_sum*Re_B_and_omega_2
 			      +sin_rho_omega_sum*Im_B_and_omega_2);
-    double Im_b2_aS_omega_V=-g_omega_S_gamma*g_rho_V*g_rho_T*Pi_omega_2_sq
+    double Im_b2_aS_omega_V=-g_omega_S*g_rho_V*g_rho_T*Pi_omega_2_sq
       *regge_rho*regge_omega*(cos_rho_omega_sum*Im_B_and_omega_2
 			      -sin_rho_omega_sum*Re_B_and_omega_2);  
     double Re_b2_aS_rho_cuts
-      =-2.*g_rho_V*g_rho_S_gamma*g_rho_T*Pi_omega_2_sq*regge_rho   
+      =-2.*g_rho_V*g_rho_S*g_rho_T*Pi_omega_2_sq*regge_rho   
       *(C_rho_P_cut*regge_rho_P_cut
 	*(cos_rho_rho_P_dif*Re_B_and_omega_2
 	  +sin_rho_rho_P_sum*Im_B_and_omega_2)
@@ -861,7 +860,7 @@ double InterferenceCrossSection(TLorentzVector &q /* beam */,
 	*(cos_rho_rho_f2_dif*Re_B_and_omega_2
 	  +sin_rho_rho_f2_sum*Im_B_and_omega_2));   
     double Im_b2_aS_rho_cuts
-      =-2.*g_rho_V*g_rho_S_gamma*g_rho_T*Pi_omega_2_sq*regge_rho   
+      =-2.*g_rho_V*g_rho_S*g_rho_T*Pi_omega_2_sq*regge_rho   
       *(C_rho_P_cut*regge_rho_P_cut
 	*(cos_rho_rho_P_dif*Im_B_and_omega_2
 	  -sin_rho_rho_P_sum*Re_B_and_omega_2)
@@ -869,7 +868,7 @@ double InterferenceCrossSection(TLorentzVector &q /* beam */,
 	*(cos_rho_rho_f2_dif*Im_B_and_omega_2
 	  -sin_rho_rho_f2_sum*Re_B_and_omega_2)); 
     double Re_b2_aS_omega_cuts
-      =-2.*g_omega_V*g_omega_S_gamma*g_rho_T*Pi_omega_2_sq*regge_rho   
+      =-2.*g_omega_V*g_omega_S*g_rho_T*Pi_omega_2_sq*regge_rho   
       *(C_rho_P_cut*regge_omega_P_cut
 	*(cos_rho_omega_P_dif*Re_B_and_omega_2
 	  +sin_rho_omega_P_sum*Im_B_and_omega_2)
@@ -877,7 +876,7 @@ double InterferenceCrossSection(TLorentzVector &q /* beam */,
 	*(cos_rho_omega_f2_dif*Re_B_and_omega_2
 	  +sin_rho_omega_f2_sum*Im_B_and_omega_2));   
     double Im_b2_aS_omega_cuts
-      =-2.*g_rho_V*g_rho_S_gamma*g_rho_T*Pi_omega_2_sq*regge_rho   
+      =-2.*g_rho_V*g_rho_S*g_rho_T*Pi_omega_2_sq*regge_rho   
       *(C_rho_P_cut*regge_omega_P_cut
 	*(cos_rho_omega_P_dif*Im_B_and_omega_2
 	  -sin_rho_omega_P_sum*Re_B_and_omega_2)
@@ -886,25 +885,25 @@ double InterferenceCrossSection(TLorentzVector &q /* beam */,
 	  -sin_rho_omega_f2_sum*Re_B_and_omega_2)); 
 
     double Re_a2_bS_rho_V_and_T
-      =-4.*g_rho_T*g_rho_V_and_T*g_rho_S_gamma*regge_rho_sq*Pi_omega_2_sq
+      =-4.*g_rho_T*g_rho_V_and_T*g_rho_S*regge_rho_sq*Pi_omega_2_sq
       *Re_B_and_omega_2;
     double Im_a2_bS_rho_V_and_T
-      =-4.*g_rho_T*g_rho_V_and_T*g_rho_S_gamma*regge_rho_sq*Pi_omega_2_sq
+      =-4.*g_rho_T*g_rho_V_and_T*g_rho_S*regge_rho_sq*Pi_omega_2_sq
       *Im_B_and_omega_2;
     double Re_a2_bS_omega_V
-      =-g_rho_S_gamma*g_rho_V*g_rho_T*regge_rho*regge_omega*Pi_rho_2_sq
+      =-g_rho_S*g_rho_V*g_rho_T*regge_rho*regge_omega*Pi_rho_2_sq
       *(cos_rho_omega_sum*Re_B_and_rho_2+sin_rho_omega_sum*Im_B_and_rho_2);  
     double Im_a2_bS_omega_V
-      =-g_rho_S_gamma*g_rho_V*g_rho_T*regge_rho*regge_omega*Pi_rho_2_sq
+      =-g_rho_S*g_rho_V*g_rho_T*regge_rho*regge_omega*Pi_rho_2_sq
       *(cos_rho_omega_sum*Im_B_and_rho_2-sin_rho_omega_sum*Re_B_and_rho_2);
  
-    Re_b1_bS=8.*C*gR*gsq_rho_T*g_rho_S_gamma*regge_rho_sq*Pi_omega_1_sq
+    Re_b1_bS=8.*C*gR*gsq_rho_T*g_rho_S*regge_rho_sq*Pi_omega_1_sq
       *Re_B_and_omega_1;
-    Im_b1_bS=8.*C*gR*gsq_rho_T*g_rho_S_gamma*regge_rho_sq*Pi_omega_1_sq
+    Im_b1_bS=8.*C*gR*gsq_rho_T*g_rho_S*regge_rho_sq*Pi_omega_1_sq
       *Im_B_and_omega_1;   
-    Re_b2_bS=8.*C*gR*gsq_rho_T*g_rho_S_gamma*regge_rho_sq*Pi_omega_2_sq
+    Re_b2_bS=8.*C*gR*gsq_rho_T*g_rho_S*regge_rho_sq*Pi_omega_2_sq
       *Re_B_and_omega_2;
-    Im_b2_bS=8.*C*gR*gsq_rho_T*g_rho_S_gamma*regge_rho_sq*Pi_omega_2_sq
+    Im_b2_bS=8.*C*gR*gsq_rho_T*g_rho_S*regge_rho_sq*Pi_omega_2_sq
       *Im_B_and_omega_2;
 
     Re_b2_aS=C*gR*(Re_b2_aS_rho_V_and_T + Re_b2_aS_rho_cuts
@@ -967,13 +966,13 @@ double InterferenceCrossSection(TLorentzVector &q /* beam */,
     C=sqrt(2./3.);
 
     double Re_a1_aS_rho_V_and_T_sq
-      =2.*gsq_rho_V_and_T*g_rho_S_gamma*regge_rho_sq*Pi_rho_1_sq
+      =2.*gsq_rho_V_and_T*g_rho_S*regge_rho_sq*Pi_rho_1_sq
       *Re_B_and_rho_1;
     double Im_a1_aS_rho_V_and_T_sq
-      =2.*gsq_rho_V_and_T*g_rho_S_gamma*regge_rho_sq*Pi_rho_1_sq
+      =2.*gsq_rho_V_and_T*g_rho_S*regge_rho_sq*Pi_rho_1_sq
       *Im_B_and_rho_1; 
     double Re_a1_aS_rho_V_and_T_rho_cuts
-      =g_rho_S_gamma*g_rho_V_and_T*g_rho_V*regge_rho*Pi_rho_1_sq
+      =g_rho_S*g_rho_V_and_T*g_rho_V*regge_rho*Pi_rho_1_sq
       *(C_rho_P_cut*regge_rho_P_cut
 	*(cos_rho_rho_P_dif*Re_B_and_rho_1
 	  +sin_rho_rho_P_sum*Im_B_and_rho_1)
@@ -981,7 +980,7 @@ double InterferenceCrossSection(TLorentzVector &q /* beam */,
 	*(cos_rho_rho_f2_dif*Re_B_and_rho_1
 	  +sin_rho_rho_f2_sum*Im_B_and_rho_1)); 
     double Im_a1_aS_rho_V_and_T_rho_cuts
-      =g_rho_S_gamma*g_rho_V_and_T*g_rho_V*regge_rho*Pi_rho_1_sq
+      =g_rho_S*g_rho_V_and_T*g_rho_V*regge_rho*Pi_rho_1_sq
       *(C_rho_P_cut*regge_rho_P_cut
 	*(cos_rho_rho_P_dif*Im_B_and_rho_1
 	  -sin_rho_rho_P_sum*Re_B_and_rho_1)
@@ -989,15 +988,15 @@ double InterferenceCrossSection(TLorentzVector &q /* beam */,
 	*(cos_rho_rho_f2_dif*Im_B_and_rho_1
 	  -sin_rho_rho_f2_sum*Re_B_and_rho_1)); 
     double Re_a1_aS_omega_V_rho_V_and_T
-      =0.5*g_omega_S_gamma*g_rho_V_and_T*g_omega_V*Pi_rho_1_sq
+      =0.5*g_omega_S*g_rho_V_and_T*g_omega_V*Pi_rho_1_sq
       *regge_rho*regge_omega*(cos_rho_omega_sum*Re_B_and_rho_1
 			      +sin_rho_omega_sum*Im_B_and_rho_1);  
     double Im_a1_aS_omega_V_rho_V_and_T
-      =0.5*g_omega_S_gamma*g_rho_V_and_T*g_omega_V*Pi_rho_1_sq
+      =0.5*g_omega_S*g_rho_V_and_T*g_omega_V*Pi_rho_1_sq
       *regge_rho*regge_omega*(cos_rho_omega_sum*Im_B_and_rho_1
 			      -sin_rho_omega_sum*Re_B_and_rho_1);   
     double Re_a1_aS_rho_V_and_T_omega_cuts
-      =g_omega_S_gamma*g_rho_V_and_T*g_omega_V*regge_rho*Pi_rho_1_sq
+      =g_omega_S*g_rho_V_and_T*g_omega_V*regge_rho*Pi_rho_1_sq
       *(C_omega_P_cut*regge_omega_P_cut
 	*(cos_rho_omega_P_dif*Re_B_and_rho_1
 	  +sin_rho_omega_P_sum*Im_B_and_rho_1)
@@ -1005,7 +1004,7 @@ double InterferenceCrossSection(TLorentzVector &q /* beam */,
 	*(cos_rho_omega_f2_dif*Re_B_and_rho_1
 	  +sin_rho_omega_f2_sum*Im_B_and_rho_1)); 
     double Im_a1_aS_rho_V_and_T_omega_cuts
-      =g_omega_S_gamma*g_rho_V_and_T*g_omega_V*regge_rho*Pi_rho_1_sq
+      =g_omega_S*g_rho_V_and_T*g_omega_V*regge_rho*Pi_rho_1_sq
       *(C_omega_P_cut*regge_omega_P_cut
 	*(cos_rho_omega_P_dif*Im_B_and_rho_1
 	  -sin_rho_omega_P_sum*Re_B_and_rho_1)
@@ -1013,15 +1012,15 @@ double InterferenceCrossSection(TLorentzVector &q /* beam */,
 	*(cos_rho_omega_f2_dif*Im_B_and_rho_1
 	  -sin_rho_omega_f2_sum*Re_B_and_rho_1));   
     double Re_a1_aS_omega_V_rho_V_and_T_omega_propagator
-      =0.5*g_rho_S_gamma*g_rho_V_and_T*g_omega_V*Pi_omega_1_sq
+      =0.5*g_rho_S*g_rho_V_and_T*g_omega_V*Pi_omega_1_sq
       *regge_rho*regge_omega*(cos_rho_omega_sum*Re_B_and_omega_1
 			      +sin_rho_omega_sum*Im_B_and_omega_1);  
     double Im_a1_aS_omega_V_rho_V_and_T_omega_propagator
-      =0.5*g_rho_S_gamma*g_rho_V_and_T*g_omega_V*Pi_omega_1_sq
+      =0.5*g_rho_S*g_rho_V_and_T*g_omega_V*Pi_omega_1_sq
       *regge_rho*regge_omega*(cos_rho_omega_sum*Im_B_and_omega_1
 			      -sin_rho_omega_sum*Re_B_and_omega_1);  
     double Re_a1_aS_omega_V_rho_V_rho_cuts_omega_propagator
-      =g_omega_V*g_rho_V*g_rho_S_gamma*Pi_omega_1_sq*regge_omega
+      =g_omega_V*g_rho_V*g_rho_S*Pi_omega_1_sq*regge_omega
       *(C_rho_P_cut*regge_rho_P_cut
 	*(cos_omega_rho_P_dif*Re_B_and_omega_1
 	  +sin_omega_rho_P_sum*Im_B_and_omega_1)
@@ -1029,7 +1028,7 @@ double InterferenceCrossSection(TLorentzVector &q /* beam */,
 	*(cos_omega_rho_f2_dif*Re_B_and_omega_1
 	  +sin_omega_rho_f2_sum*Im_B_and_omega_1)); 
     double Im_a1_aS_omega_V_rho_V_rho_cuts_omega_propagator
-      =g_omega_V*g_rho_V*g_rho_S_gamma*Pi_omega_1_sq*regge_omega
+      =g_omega_V*g_rho_V*g_rho_S*Pi_omega_1_sq*regge_omega
       *(C_rho_P_cut*regge_rho_P_cut
 	*(cos_omega_rho_P_dif*Im_B_and_omega_1
 	  -sin_omega_rho_P_sum*Re_B_and_omega_1)
@@ -1037,13 +1036,13 @@ double InterferenceCrossSection(TLorentzVector &q /* beam */,
 	*(cos_omega_rho_f2_dif*Im_B_and_omega_1
 	  -sin_omega_rho_f2_sum*Re_B_and_omega_1));   
     double Re_a1_aS_omega_V_sq
-      =2.*g_omega_V*g_omega_V*g_omega_S_gamma*Pi_omega_1_sq*regge_omega_sq
+      =2.*g_omega_V*g_omega_V*g_omega_S*Pi_omega_1_sq*regge_omega_sq
       *Re_B_and_omega_1;
     double Im_a1_aS_omega_V_sq
-      =2.*g_omega_V*g_omega_V*g_omega_S_gamma*Pi_omega_1_sq*regge_omega_sq
+      =2.*g_omega_V*g_omega_V*g_omega_S*Pi_omega_1_sq*regge_omega_sq
       *Im_B_and_omega_1; 
     double Re_a1_aS_omega_V_sq_omega_cuts
-      =g_omega_V*g_omega_V*g_omega_S_gamma*Pi_omega_1_sq*regge_omega
+      =g_omega_V*g_omega_V*g_omega_S*Pi_omega_1_sq*regge_omega
       *(C_omega_P_cut*regge_omega_P_cut
 	*(cos_omega_omega_P_dif*Re_B_and_omega_1
 	  +sin_omega_omega_P_sum*Im_B_and_omega_1)
@@ -1051,7 +1050,7 @@ double InterferenceCrossSection(TLorentzVector &q /* beam */,
 	*(cos_omega_omega_f2_dif*Re_B_and_omega_1
 	  +sin_omega_omega_f2_sum*Im_B_and_omega_1));
     double Im_a1_aS_omega_V_sq_omega_cuts
-      =g_omega_V*g_omega_V*g_omega_S_gamma*Pi_omega_1_sq*regge_omega
+      =g_omega_V*g_omega_V*g_omega_S*Pi_omega_1_sq*regge_omega
       *(C_omega_P_cut*regge_omega_P_cut
 	*(cos_omega_omega_P_dif*Im_B_and_omega_1
 	  -sin_omega_omega_P_sum*Re_B_and_omega_1)
@@ -1060,13 +1059,13 @@ double InterferenceCrossSection(TLorentzVector &q /* beam */,
 	  -sin_omega_omega_f2_sum*Re_B_and_omega_1));
 
     double Re_a2_aS_rho_V_and_T_sq
-      =2.*gsq_rho_V_and_T*g_rho_S_gamma*regge_rho_sq*Pi_omega_2_sq
+      =2.*gsq_rho_V_and_T*g_rho_S*regge_rho_sq*Pi_omega_2_sq
       *Re_B_and_omega_2;
     double Im_a2_aS_rho_V_and_T_sq
-      =2.*gsq_rho_V_and_T*g_rho_S_gamma*regge_rho_sq*Pi_omega_2_sq
+      =2.*gsq_rho_V_and_T*g_rho_S*regge_rho_sq*Pi_omega_2_sq
       *Im_B_and_omega_2; 
     double Re_a2_aS_rho_V_and_T_rho_cuts
-      =g_rho_S_gamma*g_rho_V_and_T*g_rho_V*regge_rho*Pi_omega_2_sq
+      =g_rho_S*g_rho_V_and_T*g_rho_V*regge_rho*Pi_omega_2_sq
       *(C_rho_P_cut*regge_rho_P_cut
 	*(cos_rho_rho_P_dif*Re_B_and_omega_2
 	  +sin_rho_rho_P_sum*Im_B_and_omega_2)
@@ -1074,7 +1073,7 @@ double InterferenceCrossSection(TLorentzVector &q /* beam */,
 	*(cos_rho_rho_f2_dif*Re_B_and_omega_2
 	  +sin_rho_rho_f2_sum*Im_B_and_omega_2)); 
     double Im_a2_aS_rho_V_and_T_rho_cuts
-      =g_rho_S_gamma*g_rho_V_and_T*g_rho_V*regge_rho*Pi_omega_2_sq
+      =g_rho_S*g_rho_V_and_T*g_rho_V*regge_rho*Pi_omega_2_sq
       *(C_rho_P_cut*regge_rho_P_cut
 	*(cos_rho_rho_P_dif*Im_B_and_omega_2
 	  -sin_rho_rho_P_sum*Re_B_and_omega_2)
@@ -1082,15 +1081,15 @@ double InterferenceCrossSection(TLorentzVector &q /* beam */,
 	*(cos_rho_rho_f2_dif*Im_B_and_omega_2
 	  -sin_rho_rho_f2_sum*Re_B_and_omega_2)); 
     double Re_a2_aS_omega_V_rho_V_and_T
-      =0.5*g_omega_S_gamma*g_rho_V_and_T*g_omega_V*Pi_omega_2_sq
+      =0.5*g_omega_S*g_rho_V_and_T*g_omega_V*Pi_omega_2_sq
       *regge_rho*regge_omega*(cos_rho_omega_sum*Re_B_and_omega_2
 			      +sin_rho_omega_sum*Im_B_and_omega_2);  
     double Im_a2_aS_omega_V_rho_V_and_T
-      =0.5*g_omega_S_gamma*g_rho_V_and_T*g_omega_V*Pi_omega_2_sq
+      =0.5*g_omega_S*g_rho_V_and_T*g_omega_V*Pi_omega_2_sq
       *regge_rho*regge_omega*(cos_rho_omega_sum*Im_B_and_omega_2
 			      -sin_rho_omega_sum*Re_B_and_omega_2);   
     double Re_a2_aS_rho_V_and_T_omega_cuts
-      =g_omega_S_gamma*g_rho_V_and_T*g_omega_V*regge_rho*Pi_omega_2_sq
+      =g_omega_S*g_rho_V_and_T*g_omega_V*regge_rho*Pi_omega_2_sq
       *(C_omega_P_cut*regge_omega_P_cut
 	*(cos_rho_omega_P_dif*Re_B_and_omega_2
 	  +sin_rho_omega_P_sum*Im_B_and_omega_2)
@@ -1098,7 +1097,7 @@ double InterferenceCrossSection(TLorentzVector &q /* beam */,
 	*(cos_rho_omega_f2_dif*Re_B_and_omega_2
 	  +sin_rho_omega_f2_sum*Im_B_and_omega_2)); 
     double Im_a2_aS_rho_V_and_T_omega_cuts
-      =g_omega_S_gamma*g_rho_V_and_T*g_omega_V*regge_rho*Pi_omega_2_sq
+      =g_omega_S*g_rho_V_and_T*g_omega_V*regge_rho*Pi_omega_2_sq
       *(C_omega_P_cut*regge_omega_P_cut
 	*(cos_rho_omega_P_dif*Im_B_and_omega_2
 	  -sin_rho_omega_P_sum*Re_B_and_omega_2)
@@ -1106,15 +1105,15 @@ double InterferenceCrossSection(TLorentzVector &q /* beam */,
 	*(cos_rho_omega_f2_dif*Im_B_and_omega_2
 	  -sin_rho_omega_f2_sum*Re_B_and_omega_2));   
     double Re_a2_aS_omega_V_rho_V_and_T_rho_propagator
-      =0.5*g_rho_S_gamma*g_rho_V_and_T*g_omega_V*Pi_rho_2_sq
+      =0.5*g_rho_S*g_rho_V_and_T*g_omega_V*Pi_rho_2_sq
       *regge_rho*regge_omega*(cos_rho_omega_sum*Re_B_and_rho_2
 			      +sin_rho_omega_sum*Im_B_and_rho_2);  
     double Im_a2_aS_omega_V_rho_V_and_T_rho_propagator
-      =0.5*g_rho_S_gamma*g_rho_V_and_T*g_omega_V*Pi_rho_2_sq
+      =0.5*g_rho_S*g_rho_V_and_T*g_omega_V*Pi_rho_2_sq
       *regge_rho*regge_omega*(cos_rho_omega_sum*Im_B_and_rho_2
 			      -sin_rho_omega_sum*Re_B_and_rho_2);  
     double Re_a2_aS_omega_V_rho_V_rho_cuts_rho_propagator
-      =g_omega_V*g_rho_V*g_rho_S_gamma*Pi_rho_2_sq*regge_omega
+      =g_omega_V*g_rho_V*g_rho_S*Pi_rho_2_sq*regge_omega
       *(C_rho_P_cut*regge_rho_P_cut
 	*(cos_omega_rho_P_dif*Re_B_and_rho_2
 	  +sin_omega_rho_P_sum*Im_B_and_rho_2)
@@ -1122,7 +1121,7 @@ double InterferenceCrossSection(TLorentzVector &q /* beam */,
 	*(cos_omega_rho_f2_dif*Re_B_and_rho_2
 	  +sin_omega_rho_f2_sum*Im_B_and_rho_2)); 
     double Im_a2_aS_omega_V_rho_V_rho_cuts_rho_propagator
-      =g_omega_V*g_rho_V*g_rho_S_gamma*Pi_rho_2_sq*regge_omega
+      =g_omega_V*g_rho_V*g_rho_S*Pi_rho_2_sq*regge_omega
       *(C_rho_P_cut*regge_rho_P_cut
 	*(cos_omega_rho_P_dif*Im_B_and_rho_2
 	  -sin_omega_rho_P_sum*Re_B_and_rho_2)
@@ -1130,13 +1129,13 @@ double InterferenceCrossSection(TLorentzVector &q /* beam */,
 	*(cos_omega_rho_f2_dif*Im_B_and_rho_2
 	  -sin_omega_rho_f2_sum*Re_B_and_rho_2));   
     double Re_a2_aS_omega_V_sq
-      =2.*g_omega_V*g_omega_V*g_omega_S_gamma*Pi_rho_2_sq*regge_omega_sq
+      =2.*g_omega_V*g_omega_V*g_omega_S*Pi_rho_2_sq*regge_omega_sq
       *Re_B_and_rho_2;
     double Im_a2_aS_omega_V_sq
-      =2.*g_omega_V*g_omega_V*g_omega_S_gamma*Pi_rho_2_sq*regge_omega_sq
+      =2.*g_omega_V*g_omega_V*g_omega_S*Pi_rho_2_sq*regge_omega_sq
       *Im_B_and_rho_2; 
     double Re_a2_aS_omega_V_sq_omega_cuts
-      =g_omega_V*g_omega_V*g_omega_S_gamma*Pi_rho_2_sq*regge_omega
+      =g_omega_V*g_omega_V*g_omega_S*Pi_rho_2_sq*regge_omega
       *(C_omega_P_cut*regge_omega_P_cut
 	*(cos_omega_omega_P_dif*Re_B_and_rho_2
 	  +sin_omega_omega_P_sum*Im_B_and_rho_2)
@@ -1144,7 +1143,7 @@ double InterferenceCrossSection(TLorentzVector &q /* beam */,
 	*(cos_omega_omega_f2_dif*Re_B_and_rho_2
 	  +sin_omega_omega_f2_sum*Im_B_and_rho_2));
     double Im_a2_aS_omega_V_sq_omega_cuts
-      =g_omega_V*g_omega_V*g_omega_S_gamma*Pi_rho_2_sq*regge_omega
+      =g_omega_V*g_omega_V*g_omega_S*Pi_rho_2_sq*regge_omega
       *(C_omega_P_cut*regge_omega_P_cut
 	*(cos_omega_omega_P_dif*Im_B_and_rho_2
 	  -sin_omega_omega_P_sum*Re_B_and_rho_2)
@@ -1153,19 +1152,19 @@ double InterferenceCrossSection(TLorentzVector &q /* beam */,
 	  -sin_omega_omega_f2_sum*Re_B_and_rho_2));
 
     double Re_b1_aS_rho_V_and_T
-      =-4.*g_rho_S_gamma*g_rho_T*g_rho_V_and_T*regge_rho_sq*Pi_rho_1_sq
+      =-4.*g_rho_S*g_rho_T*g_rho_V_and_T*regge_rho_sq*Pi_rho_1_sq
       *Re_B_and_rho_1;   
     double Im_b1_aS_rho_V_and_T
-      =-4.*g_rho_S_gamma*g_rho_T*g_rho_V_and_T*regge_rho_sq*Pi_rho_1_sq
+      =-4.*g_rho_S*g_rho_T*g_rho_V_and_T*regge_rho_sq*Pi_rho_1_sq
       *Im_B_and_rho_1; 
-    double Re_b1_aS_omega_V=-g_omega_S_gamma*g_rho_V*g_rho_T*Pi_rho_1_sq
+    double Re_b1_aS_omega_V=-g_omega_S*g_rho_V*g_rho_T*Pi_rho_1_sq
       *regge_rho*regge_omega*(cos_rho_omega_sum*Re_B_and_rho_1
 			      +sin_rho_omega_sum*Im_B_and_rho_1);
-    double Im_b1_aS_omega_V=-g_omega_S_gamma*g_rho_V*g_rho_T*Pi_rho_1_sq
+    double Im_b1_aS_omega_V=-g_omega_S*g_rho_V*g_rho_T*Pi_rho_1_sq
       *regge_rho*regge_omega*(cos_rho_omega_sum*Im_B_and_rho_1
 			      -sin_rho_omega_sum*Re_B_and_rho_1);
     double Re_b1_aS_rho_cuts
-      =-2.*g_rho_V*g_rho_S_gamma*g_rho_T*Pi_rho_1_sq*regge_rho   
+      =-2.*g_rho_V*g_rho_S*g_rho_T*Pi_rho_1_sq*regge_rho   
       *(C_rho_P_cut*regge_rho_P_cut
 	*(cos_rho_rho_P_dif*Re_B_and_rho_1
 	  +sin_rho_rho_P_sum*Im_B_and_rho_1)
@@ -1173,7 +1172,7 @@ double InterferenceCrossSection(TLorentzVector &q /* beam */,
 	*(cos_rho_rho_f2_dif*Re_B_and_rho_1
 	  +sin_rho_rho_f2_sum*Im_B_and_rho_1));   
     double Im_b1_aS_rho_cuts
-      =-2.*g_rho_V*g_rho_S_gamma*g_rho_T*Pi_rho_1_sq*regge_rho   
+      =-2.*g_rho_V*g_rho_S*g_rho_T*Pi_rho_1_sq*regge_rho   
       *(C_rho_P_cut*regge_rho_P_cut
 	*(cos_rho_rho_P_dif*Im_B_and_rho_1
 	  -sin_rho_rho_P_sum*Re_B_and_rho_1)
@@ -1181,7 +1180,7 @@ double InterferenceCrossSection(TLorentzVector &q /* beam */,
 	*(cos_rho_rho_f2_dif*Im_B_and_rho_1
 	  -sin_rho_rho_f2_sum*Re_B_and_rho_1));  
     double Re_b1_aS_omega_cuts
-      =-2.*g_omega_V*g_omega_S_gamma*g_rho_T*Pi_rho_1_sq*regge_rho   
+      =-2.*g_omega_V*g_omega_S*g_rho_T*Pi_rho_1_sq*regge_rho   
       *(C_rho_P_cut*regge_omega_P_cut
 	*(cos_rho_omega_P_dif*Re_B_and_rho_1
 	  +sin_rho_omega_P_sum*Im_B_and_rho_1)
@@ -1189,7 +1188,7 @@ double InterferenceCrossSection(TLorentzVector &q /* beam */,
 	*(cos_rho_omega_f2_dif*Re_B_and_rho_1
 	  +sin_rho_omega_f2_sum*Im_B_and_rho_1));   
     double Im_b1_aS_omega_cuts
-      =-2.*g_rho_V*g_rho_S_gamma*g_rho_T*Pi_rho_1_sq*regge_rho   
+      =-2.*g_rho_V*g_rho_S*g_rho_T*Pi_rho_1_sq*regge_rho   
       *(C_rho_P_cut*regge_omega_P_cut
 	*(cos_rho_omega_P_dif*Im_B_and_rho_1
 	  -sin_rho_omega_P_sum*Re_B_and_rho_1)
@@ -1197,19 +1196,19 @@ double InterferenceCrossSection(TLorentzVector &q /* beam */,
 	*(cos_rho_omega_f2_dif*Im_B_and_rho_1
 	  -sin_rho_omega_f2_sum*Re_B_and_rho_1));  
     double Re_b2_aS_rho_V_and_T
-      =-4.*g_rho_S_gamma*g_rho_T*g_rho_V_and_T*regge_rho_sq*Pi_omega_2_sq
+      =-4.*g_rho_S*g_rho_T*g_rho_V_and_T*regge_rho_sq*Pi_omega_2_sq
       *Re_B_and_omega_2;   
     double Im_b2_aS_rho_V_and_T
-      =-4.*g_rho_S_gamma*g_rho_T*g_rho_V_and_T*regge_rho_sq*Pi_omega_2_sq
+      =-4.*g_rho_S*g_rho_T*g_rho_V_and_T*regge_rho_sq*Pi_omega_2_sq
       *Im_B_and_omega_2; 
-    double Re_b2_aS_omega_V=-g_omega_S_gamma*g_rho_V*g_rho_T*Pi_omega_2_sq
+    double Re_b2_aS_omega_V=-g_omega_S*g_rho_V*g_rho_T*Pi_omega_2_sq
       *regge_rho*regge_omega*(cos_rho_omega_sum*Re_B_and_omega_2
 			      +sin_rho_omega_sum*Im_B_and_omega_2);
-    double Im_b2_aS_omega_V=-g_omega_S_gamma*g_rho_V*g_rho_T*Pi_omega_2_sq
+    double Im_b2_aS_omega_V=-g_omega_S*g_rho_V*g_rho_T*Pi_omega_2_sq
       *regge_rho*regge_omega*(cos_rho_omega_sum*Im_B_and_omega_2
 			      -sin_rho_omega_sum*Re_B_and_omega_2);
     double Re_b2_aS_rho_cuts
-      =-2.*g_rho_V*g_rho_S_gamma*g_rho_T*Pi_omega_2_sq*regge_rho   
+      =-2.*g_rho_V*g_rho_S*g_rho_T*Pi_omega_2_sq*regge_rho   
       *(C_rho_P_cut*regge_rho_P_cut
 	*(cos_rho_rho_P_dif*Re_B_and_omega_2
 	  +sin_rho_rho_P_sum*Im_B_and_omega_2)
@@ -1217,7 +1216,7 @@ double InterferenceCrossSection(TLorentzVector &q /* beam */,
 	*(cos_rho_rho_f2_dif*Re_B_and_omega_2
 	  +sin_rho_rho_f2_sum*Im_B_and_omega_2));   
     double Im_b2_aS_rho_cuts
-      =-2.*g_rho_V*g_rho_S_gamma*g_rho_T*Pi_omega_2_sq*regge_rho   
+      =-2.*g_rho_V*g_rho_S*g_rho_T*Pi_omega_2_sq*regge_rho   
       *(C_rho_P_cut*regge_rho_P_cut
 	*(cos_rho_rho_P_dif*Im_B_and_omega_2
 	  -sin_rho_rho_P_sum*Re_B_and_omega_2)
@@ -1225,7 +1224,7 @@ double InterferenceCrossSection(TLorentzVector &q /* beam */,
 	*(cos_rho_rho_f2_dif*Im_B_and_omega_2
 	  -sin_rho_rho_f2_sum*Re_B_and_omega_2));  
     double Re_b2_aS_omega_cuts
-      =-2.*g_omega_V*g_omega_S_gamma*g_rho_T*Pi_omega_2_sq*regge_rho   
+      =-2.*g_omega_V*g_omega_S*g_rho_T*Pi_omega_2_sq*regge_rho   
       *(C_rho_P_cut*regge_omega_P_cut
 	*(cos_rho_omega_P_dif*Re_B_and_omega_2
 	  +sin_rho_omega_P_sum*Im_B_and_omega_2)
@@ -1233,7 +1232,7 @@ double InterferenceCrossSection(TLorentzVector &q /* beam */,
 	*(cos_rho_omega_f2_dif*Re_B_and_omega_2
 	  +sin_rho_omega_f2_sum*Im_B_and_omega_2));   
     double Im_b2_aS_omega_cuts
-      =-2.*g_rho_V*g_rho_S_gamma*g_rho_T*Pi_omega_2_sq*regge_rho   
+      =-2.*g_rho_V*g_rho_S*g_rho_T*Pi_omega_2_sq*regge_rho   
       *(C_rho_P_cut*regge_omega_P_cut
 	*(cos_rho_omega_P_dif*Im_B_and_omega_2
 	  -sin_rho_omega_P_sum*Re_B_and_omega_2)
@@ -1242,39 +1241,39 @@ double InterferenceCrossSection(TLorentzVector &q /* beam */,
 	  -sin_rho_omega_f2_sum*Re_B_and_omega_2)); 
 
     double Re_a1_bS_rho_V_and_T
-      =-4.*g_rho_T*g_rho_V_and_T*g_rho_S_gamma*regge_rho_sq*Pi_rho_1_sq
+      =-4.*g_rho_T*g_rho_V_and_T*g_rho_S*regge_rho_sq*Pi_rho_1_sq
       *Re_B_and_rho_1;
     double Im_a1_bS_rho_V_and_T
-      =-4.*g_rho_T*g_rho_V_and_T*g_rho_S_gamma*regge_rho_sq*Pi_rho_1_sq
+      =-4.*g_rho_T*g_rho_V_and_T*g_rho_S*regge_rho_sq*Pi_rho_1_sq
       *Im_B_and_rho_1;
     double Re_a1_bS_omega_V
-      =-g_rho_S_gamma*g_rho_V*g_rho_T*regge_rho*regge_omega*Pi_omega_1_sq
+      =-g_rho_S*g_rho_V*g_rho_T*regge_rho*regge_omega*Pi_omega_1_sq
       *(cos_rho_omega_sum*Re_B_and_omega_1+sin_rho_omega_sum*Im_B_and_omega_1); 
     double Im_a1_bS_omega_V
-      =-g_rho_S_gamma*g_rho_V*g_rho_T*regge_rho*regge_omega*Pi_omega_1_sq
+      =-g_rho_S*g_rho_V*g_rho_T*regge_rho*regge_omega*Pi_omega_1_sq
       *(cos_rho_omega_sum*Im_B_and_omega_1-sin_rho_omega_sum*Re_B_and_omega_1);
 
     double Re_a2_bS_rho_V_and_T
-      =-4.*g_rho_T*g_rho_V_and_T*g_rho_S_gamma*regge_rho_sq*Pi_omega_2_sq
+      =-4.*g_rho_T*g_rho_V_and_T*g_rho_S*regge_rho_sq*Pi_omega_2_sq
       *Re_B_and_omega_2;
     double Im_a2_bS_rho_V_and_T
-      =-4.*g_rho_T*g_rho_V_and_T*g_rho_S_gamma*regge_rho_sq*Pi_omega_2_sq
+      =-4.*g_rho_T*g_rho_V_and_T*g_rho_S*regge_rho_sq*Pi_omega_2_sq
       *Im_B_and_omega_2;
     double Re_a2_bS_omega_V
-      =-g_rho_S_gamma*g_rho_V*g_rho_T*regge_rho*regge_omega*Pi_rho_2_sq
+      =-g_rho_S*g_rho_V*g_rho_T*regge_rho*regge_omega*Pi_rho_2_sq
       *(cos_rho_omega_sum*Re_B_and_rho_2+sin_rho_omega_sum*Im_B_and_rho_2);  
     double Im_a2_bS_omega_V
-      =-g_rho_S_gamma*g_rho_V*g_rho_T*regge_rho*regge_omega*Pi_rho_2_sq
+      =-g_rho_S*g_rho_V*g_rho_T*regge_rho*regge_omega*Pi_rho_2_sq
       *(cos_rho_omega_sum*Im_B_and_rho_2-sin_rho_omega_sum*Re_B_and_rho_2);
 
 
-    Re_b1_bS=(8./3.)*C*gR*gsq_rho_T*g_rho_S_gamma*regge_rho_sq*Pi_rho_1_sq
+    Re_b1_bS=(8./3.)*C*gR*gsq_rho_T*g_rho_S*regge_rho_sq*Pi_rho_1_sq
       *Re_B_and_rho_1;
-    Im_b1_bS=(8./3.)*C*gR*gsq_rho_T*g_rho_S_gamma*regge_rho_sq*Pi_rho_1_sq
+    Im_b1_bS=(8./3.)*C*gR*gsq_rho_T*g_rho_S*regge_rho_sq*Pi_rho_1_sq
       *Im_B_and_rho_1;   
-    Re_b2_bS=(8./3.)*C*gR*gsq_rho_T*g_rho_S_gamma*regge_rho_sq*Pi_omega_2_sq
+    Re_b2_bS=(8./3.)*C*gR*gsq_rho_T*g_rho_S*regge_rho_sq*Pi_omega_2_sq
       *Re_B_and_omega_2;
-    Im_b2_bS=(8./3.)*C*gR*gsq_rho_T*g_rho_S_gamma*regge_rho_sq*Pi_omega_2_sq
+    Im_b2_bS=(8./3.)*C*gR*gsq_rho_T*g_rho_S*regge_rho_sq*Pi_omega_2_sq
       *Im_B_and_omega_2;
 
     Re_b2_aS=(1./3.)*C*gR*(Re_b2_aS_rho_V_and_T + Re_b2_aS_rho_cuts
@@ -1363,9 +1362,9 @@ double InterferenceCrossSection(TLorentzVector &q /* beam */,
 }
 
 
-// Get parameters for Breit-Wigner distribution for resonance shape
-void GetResonanceParameters(double m1,double m2, double M_sq,double &ReB,
-			    double &ImB){
+// Get parameters for Breit-Wigner distribution for a0(980)/f0(980) resonance shape
+void GetResonanceParameters(double m1,double m2, double M_sq,double M_sq_R,
+			    double &ReB,double &ImB){
   double m1_plus_m2=m1+m2;
   double m1_minus_m2=m1-m2;  
   bool got_pipi=(fabs(m1_minus_m2)>0.01)?false:true;
@@ -1412,7 +1411,8 @@ void GetResonanceParameters(double m1,double m2, double M_sq,double &ReB,
 
 // Cross section dsigma/(dt/dM/dOmega) from Donnachie and Kalashnikova
 double CrossSection(double m1,double m2, double ms_sq, double s, double t,
-		    double gR,double ReB,double ImB){
+		    double gR,double ReB,double ImB,double gsq_rho_S,
+		    double gsq_omega_S){
   // Kinematic factors
   double mp_sq_minus_s=m_p_sq-s;
   double mp_sq_plus_s=m_p_sq+s;
@@ -1436,8 +1436,8 @@ double CrossSection(double m1,double m2, double ms_sq, double s, double t,
   double g_rho_T=11.0; // GeV^-1
   double g_rho_V_and_T=g_rho_V+2.*m_p*g_rho_T;
   double gsq_rho_V_and_T=g_rho_V_and_T*g_rho_V_and_T;
-  double g_rho_S_gamma=sqrt(gsq_rho_S_gamma);
-  double g_omega_S_gamma=sqrt(gsq_omega_S_gamma);
+  double g_rho_S=sqrt(gsq_rho_S);
+  double g_omega_S=sqrt(gsq_omega_S);
   double gRsq=gR*gR;
 
   // s scale for regge trajectories
@@ -1519,8 +1519,8 @@ double CrossSection(double m1,double m2, double ms_sq, double s, double t,
   // Compute contributions to square of amplitude
   double Pi_R_sq=gRsq/(ReB*ReB+ImB*ImB);
   double aS_aS_rho_V_and_T_sq
-    =Pi_R_sq*gsq_rho_S_gamma*gsq_rho_V_and_T*regge_rho_sq;
-  double aS_aS_omega_V_sq=Pi_R_sq*gsq_omega_V*gsq_omega_S_gamma
+    =Pi_R_sq*gsq_rho_S*gsq_rho_V_and_T*regge_rho_sq;
+  double aS_aS_omega_V_sq=Pi_R_sq*gsq_omega_V*gsq_omega_S
     *(regge_omega_sq 
       + C_omega_P_cut*regge_omega_omega_P_cut
       + C_omega_f2_cut*regge_omega_omega_f2_cut
@@ -1529,56 +1529,56 @@ double CrossSection(double m1,double m2, double ms_sq, double s, double t,
       + 2.*C_omega_f2_C_omega_P*regge_omega_f2_omega_P_cuts);
       
   double aS_aS_omega_V_rho_V_and_T
-    =Pi_R_sq*g_rho_S_gamma*g_omega_S_gamma*g_rho_V_and_T*g_omega_V
+    =Pi_R_sq*g_rho_S*g_omega_S*g_rho_V_and_T*g_omega_V
     *(0.5*regge_omega*regge_rho*cos_rho_omega_sum
       + C_omega_P_cut*regge_rho_omega_P_cut
       + C_omega_f2_cut*regge_rho_omega_f2_cut
       );
-  double aS_aS_rho_V_rho_V_and_T=Pi_R_sq*gsq_rho_S_gamma*g_rho_V*g_rho_V_and_T
+  double aS_aS_rho_V_rho_V_and_T=Pi_R_sq*gsq_rho_S*g_rho_V*g_rho_V_and_T
     *(C_rho_P_cut*regge_rho_rho_P_cut
       + C_rho_f2_cut*regge_rho_rho_f2_cut);
   double aS_aS_rho_V_omega_V
-    =Pi_R_sq*g_rho_S_gamma*g_omega_S_gamma*g_rho_V*g_omega_V
+    =Pi_R_sq*g_rho_S*g_omega_S*g_rho_V*g_omega_V
     *(C_rho_P_cut*regge_omega_rho_P_cut
       + C_rho_f2_cut*regge_omega_rho_f2_cut
       + 2.*C_rho_P_cut*C_omega_P_cut*regge_rho_P_omega_P_cuts
       + 2.*C_rho_P_cut*C_omega_f2_cut*regge_rho_P_omega_f2_cuts
       + 2.*C_rho_f2_cut*C_omega_P_cut*regge_rho_f2_omega_P_cuts
       + 2.*C_rho_f2_cut*C_omega_f2_cut*regge_rho_f2_omega_f2_cuts);
-  double aS_aS_rho_cut_sq=Pi_R_sq*gsq_rho_S_gamma*gsq_rho_V
+  double aS_aS_rho_cut_sq=Pi_R_sq*gsq_rho_S*gsq_rho_V
     *(Csq_rho_P_cut*regge_rho_P_cut_sq
       + Csq_rho_f2_cut*regge_rho_f2_cut_sq
       + 2.*C_rho_P_cut*C_rho_f2_cut*regge_rho_f2_rho_P_cuts);
   double aS_aS=aS_aS_rho_V_and_T_sq + aS_aS_omega_V_sq + aS_aS_rho_V_rho_V_and_T
     + aS_aS_omega_V_rho_V_and_T+aS_aS_rho_V_omega_V + aS_aS_rho_cut_sq;
 
-  double bS_bS=4*Pi_R_sq*gsq_rho_S_gamma*g_rho_T*g_rho_T*regge_rho_sq;
+  double bS_bS=4*Pi_R_sq*gsq_rho_S*g_rho_T*g_rho_T*regge_rho_sq;
 
   double aS_bS_rho_T_rho_V_and_T
-    =-4.*Pi_R_sq*gsq_rho_S_gamma*g_rho_T*g_rho_V_and_T*regge_rho_sq;
-  double aS_bS_rho_cuts=-4.*Pi_R_sq*gsq_rho_S_gamma*g_rho_T*g_rho_V
+    =-4.*Pi_R_sq*gsq_rho_S*g_rho_T*g_rho_V_and_T*regge_rho_sq;
+  double aS_bS_rho_cuts=-4.*Pi_R_sq*gsq_rho_S*g_rho_T*g_rho_V
     *(C_rho_P_cut*regge_rho_rho_P_cut
       + C_rho_f2_cut*regge_rho_rho_f2_cut);
   double aS_bS_omega_cuts
-    =-4.*Pi_R_sq*g_rho_S_gamma*g_omega_S_gamma*g_rho_T*g_omega_V
+    =-4.*Pi_R_sq*g_rho_S*g_omega_S*g_rho_T*g_omega_V
     *(C_omega_P_cut*regge_rho_omega_P_cut
       + C_omega_f2_cut*regge_rho_omega_f2_cut);
-  double aS_bS_omega_V=-Pi_R_sq*g_rho_S_gamma*g_omega_S_gamma*g_rho_T*g_omega_V
+  double aS_bS_omega_V=-Pi_R_sq*g_rho_S*g_omega_S*g_rho_T*g_omega_V
     *regge_rho*regge_omega*cos_rho_omega_sum;
   double aS_bS=aS_bS_rho_T_rho_V_and_T+aS_bS_rho_cuts+aS_bS_omega_cuts+aS_bS_omega_V;
 
 
   // Cut contribution from b1 exchange.  We ignore the pole term.
   double Tb1=-0.5*t*kin1*Pi_R_sq
-    *(gsq_omega_S_gamma*gsq_omega_V*(Csq_omega_P_cut*regge_omega_P_cut_sq
+    *(gsq_omega_S*gsq_omega_V*(Csq_omega_P_cut*regge_omega_P_cut_sq
 				     + Csq_omega_f2_cut*regge_omega_f2_cut_sq
 				     + 2.*C_omega_P_cut*C_omega_f2_cut
 				     *regge_omega_f2_omega_P_cuts)
-      +gsq_rho_S_gamma*gsq_rho_V*(Csq_rho_P_cut*regge_rho_P_cut_sq
+      +gsq_rho_S*gsq_rho_V*(Csq_rho_P_cut*regge_rho_P_cut_sq
 				  + Csq_rho_f2_cut*regge_rho_f2_cut_sq
 				  + 2.*C_rho_P_cut*C_rho_f2_cut
 				  *regge_rho_f2_rho_P_cuts)
-      +g_rho_V*g_omega_V*g_rho_S_gamma*g_omega_S_gamma
+      +g_rho_V*g_omega_V*g_rho_S*g_omega_S
       *(2.*C_rho_P_cut*C_omega_P_cut*regge_rho_P_omega_P_cuts
 	+ 2.*C_rho_f2_cut*C_omega_f2_cut*regge_rho_f2_omega_f2_cuts 
 	+ 2.*C_rho_P_cut*C_omega_f2_cut*regge_rho_P_omega_f2_cuts
@@ -1613,7 +1613,6 @@ double TensorCrossSection(TLorentzVector &q /* beam */,
   TLorentzVector dp=p2-p1;
   TLorentzVector k1=particles[0];
   TLorentzVector k2=particles[1];
-  TLorentzVector dk=k1-k2;
   TLorentzVector k=k1+k2;
   
   // Mandelstam variables
@@ -1624,6 +1623,13 @@ double TensorCrossSection(TLorentzVector &q /* beam */,
   double p1_dot_dp=p1.Dot(dp);
   double p2_dot_dp=p2.Dot(dp);
   double p1_dot_p2=p1.Dot(p2);
+  double dp_dot_k1=dp.Dot(k1);
+  double dp_dot_k2=dp.Dot(k2);
+  double k_dot_k1=k.Dot(k1);
+  double k_dot_k2=k.Dot(k2);
+  double dp_dot_k=dp.Dot(k);
+  double k_sq=k.Dot(k);
+  double k1_dot_k2=k1.Dot(k2);
 
   // momentum transfer compenents
   double dpx=dp.X();
@@ -1645,8 +1651,8 @@ double TensorCrossSection(TLorentzVector &q /* beam */,
   double m_rho_sq=m_rho*m_rho;
  
   // Coupling constants 
-  double f=1.43*1.43;  // scale factor to account for normalization of regge factor 
-  // to data?? from Xie and Oset (2015)
+  double f=5.;  // scale factor to account for normalization of regge factor 
+  // to data?? 
   double gT_sq=f*(2./3.)*150; // GeV^2
   if (two_particles==(7+17)){
     gT_sq=183.675;  // GeV^2
@@ -1683,14 +1689,15 @@ double TensorCrossSection(TLorentzVector &q /* beam */,
     =(2.*t-dpx2_plus_dpy2)*(-Kappa_rho
 			    +0.25*Kappa_rho*Kappa_rho*(1.+p1_dot_p2/m_p_sq));
   double amp_sum=gT_sq*(vector_coupling+tensor_coupling)*regge_rho_sq;
-  double gT_odderon=5.; // need better guess;
+  double gT_odderon=5.*f; // need better guess
   if (two_particles==(7+17)){
     gT_odderon=5.; // need better guess
   }
   amp_sum+=gT_odderon*gT_odderon*vector_coupling*regge_odderon_sq;
   amp_sum-=2.*cos(M_PI*(a_odderon-a_rho))*sqrt(gT_sq)*gT_odderon
     *regge_rho*regge_odderon*(vector_coupling-(2.*t-dpx2_plus_dpy2)*Kappa_rho);
-  double T=common_fac*amp_sum;
+  double decay_weight=1.; // take care of angular distribution of decay
+  double T=common_fac*amp_sum*decay_weight;
 	      
   // Compute cross section
   double mp_sq_minus_s=m_p_sq-s;
@@ -1810,16 +1817,11 @@ void GraphCrossSection(double m1,double m2){
   // CM energy
   double s=m_p*(m_p+2.*Egamma);
   double Ecm=sqrt(s);
-
-  // Momenta of incoming photon and outgoing S and proton in cm frame
-  double p_gamma=(s-m_p_sq)/(2.*Ecm);
-  double E_S=(s+M_sq_R-m_p_sq)/(2.*Ecm);
-  double p_S=sqrt(E_S*E_S-M_sq_R);
-  
-  // Momentum transfer t
-  double p_diff=p_gamma-p_S;
-  double t0=M_sq_R*M_sq_R/(4.*s)-p_diff*p_diff;
  
+  // Coupling constants
+  double gsq_rho_S_gamma=0.02537;
+  double gsq_omega_S_gamma=0.2283;
+  
   // Parameters for integration over line shape	  
   double m1_plus_m2=m1+m2;
   double m_max=m_p*(sqrt(1.+2.*Egamma/m_p)-1.);
@@ -1827,6 +1829,7 @@ void GraphCrossSection(double m1,double m2){
   double dm=dmrange/1000.;
   double gR=0.,ImB=0,ReB=0; // resonance parameters
   bool got_pipi=(fabs(m1-m2)>0.01)?false:true;
+  double M_sq_R=0.;
   if (got_pipi){ // f0(980)
     gR=1.705/(2.*M_PI);
     M_sq_R=0.9783*0.9783;
@@ -1843,9 +1846,19 @@ void GraphCrossSection(double m1,double m2){
   double k=sqrt((M_sq_R-m1_plus_m2*m1_plus_m2)*(M_sq_R-m1_minus_m2*m1_minus_m2))
     /(2.*sqrt(M_sq_R));
 
-  GetResonanceParameters(m1,m2,M_sq_R,ReB,ImB);
+  GetResonanceParameters(m1,m2,M_sq_R,M_sq_R,ReB,ImB);
   // factor to (eventually ) get to dsigma/dt from dsigma/dt/dM/dOmega
   double scale_factor=16.*M_PI*M_PI*M_PI*(ReB*ReB+ImB*ImB)/(gR*gR*k);
+
+  // Momenta of incoming photon and outgoing S and proton in cm frame
+  double p_gamma=(s-m_p_sq)/(2.*Ecm);
+  double E_S=(s+M_sq_R-m_p_sq)/(2.*Ecm);
+  double p_S=sqrt(E_S*E_S-M_sq_R);
+  
+  // Momentum transfer t
+  double p_diff=p_gamma-p_S;
+  double t0=M_sq_R*M_sq_R/(4.*s)-p_diff*p_diff;
+
   // Integral over Breit-Wigner
   double bw=0;
   for (unsigned int n=0;n<1000;n++){
@@ -1853,7 +1866,7 @@ void GraphCrossSection(double m1,double m2){
     double M_sq=mass*mass;
     double rho_m1m2=sqrt((1.-m1_plus_m2*m1_plus_m2/M_sq)*(1-m1_minus_m2*m1_minus_m2/M_sq));
 
-    GetResonanceParameters(m1,m2,M_sq,ReB,ImB);
+    GetResonanceParameters(m1,m2,M_sq,M_sq_R,ReB,ImB);
     bw+=gR*gR*rho_m1m2/(ReB*ReB+ImB*ImB)*dm;
   }
   
@@ -1866,7 +1879,8 @@ void GraphCrossSection(double m1,double m2){
     double theta_cm=M_PI*double(k)/1000.;
     double sin_theta_over_2=sin(0.5*theta_cm);
     double t=t0-4.*p_gamma*p_S*sin_theta_over_2*sin_theta_over_2;
-    double xsec=scale_factor*bw*CrossSection(m1,m2,M_sq_R,s,t,gR,ReB,ImB);
+    double xsec=scale_factor*bw*CrossSection(m1,m2,M_sq_R,s,t,gR,ReB,ImB,
+					     gsq_rho_S_gamma,gsq_omega_S_gamma);
 
     t_array[k]=-t;
     xsec_array[k]=xsec;
@@ -2029,7 +2043,7 @@ int main(int narg, char *argv[])
     TLorentzVector beam;
 
     // Maximum value for cross section 
-    double xsec_max=0.1;
+    double xsec_max=0.5;
     double xsec=0.,xsec_test=0.;
 
     // Polar angle in center of mass frame
@@ -2039,7 +2053,7 @@ int main(int narg, char *argv[])
     double p_S=0.;
 
     // Mass squared of resonance
-    double M_sq=M_sq_R;
+    double M_sq=0.;
 
     // Transfer 4-momentum;
     double t=0.;
@@ -2051,6 +2065,14 @@ int main(int narg, char *argv[])
     double m1sq=m1*m1;
     double m2sq=m2*m2;
     double m1sq_plus_m2sq=m1sq+m2sq;
+
+    // Coupling constants 
+    double gsq_rho_S_gamma=0.02537;
+    double gsq_omega_S_gamma=0.2283;
+    double gsq_rho_f500_gamma=1.;
+    double gsq_omega_f500_gamma=0.1;
+    double gsq_rho_f1370_gamma=1.;
+    double gsq_omega_f1370_gamma=0.1;
 
     // use the rejection method to produce S's based on the cross section
     do{
@@ -2128,48 +2150,76 @@ int main(int narg, char *argv[])
       //Resonance parameters 
       double ReB=0.,ImB=0,gR=0.;
       double gR_T=0., ImB_T=0., ReB_T=0.;
+      double gRf500=0.,ImBf500=0.,ReBf500=0.; 
+      double gRf1370=0.,ImBf1370=0.,ReBf1370=0.;
 
       // Cross section
       xsec=0.;
       
       // f0(600)
       if (got_pipi && generate[0]){
-	/*
- 	double m_Sigma=0.5;
-	M_sq_R=m_Sigma*m_Sigma; 
-	gsq_rho_S_gamma=0.01*pow(0.7685*0.785-M_sq_R,-3); // GeV^-2
-	gsq_omega_S_gamma=8.97e-4*pow(0.78265*0.78265-M_sq_R,-3);
-	width=0.3;
-	ReB=M_sq_R-M_sq;
-	ImB=width*sqrt(M_sq);
-	gR=sqrt(16.*M_PI*(width/3.)/sqrt((1.-(m1+m2)*(m1+m2)/M_sq)*(1-(m1-m2)*(m1-m2)/M_sq)));
-	cout << gR << " " << gsq_rho_S_gamma << " " << gsq_omega_S_gamma << endl;
-	xsec+=CrossSection(m1,m2,M_sq,s,t,gR,ReB,ImB);
-	*/
+ 	double m_Sigma=0.7;
+	double M_sq_R=m_Sigma*m_Sigma; 
+	width=0.35;
+	ReBf500=M_sq_R-M_sq;
+	double Msq_minus_m1sq_m2sq=M_sq-m1sq_plus_m2sq;
+	double MRsq_minus_m1sq_m2sq=M_sq_R-m1sq_plus_m2sq;
+	double temp=4.*m1sq*m2sq;
+	double qR=sqrt((MRsq_minus_m1sq_m2sq*MRsq_minus_m1sq_m2sq-temp)
+		       /(4.*M_sq_R));
+	double q=sqrt((Msq_minus_m1sq_m2sq*MRsq_minus_m1sq_m2sq-temp)
+		       /(4.*M_sq));
+	gRf500=sqrt(2./M_PI*(width/3.)*M_sq_R/qR);
+	ImBf500=width*sqrt(M_sq)*((1./3.)*q/qR*M_sq_R/M_sq+(2./3.));
+
+	xsec+=CrossSection(m1,m2,M_sq,s,t,gRf500,ReBf500,ImBf500,
+			   gsq_rho_f500_gamma,gsq_omega_f500_gamma);
+       
+      }
+      if (got_pipi && generate[2]){
+ 	double m_f1370=1.2;
+	double M_sq_R=m_f1370*m_f1370; 
+	width=0.5;
+	ReBf1370=M_sq_R-M_sq;
+	double Msq_minus_m1sq_m2sq=M_sq-m1sq_plus_m2sq;
+	double MRsq_minus_m1sq_m2sq=M_sq_R-m1sq_plus_m2sq;
+	double temp=4.*m1sq*m2sq;
+	double qR=sqrt((MRsq_minus_m1sq_m2sq*MRsq_minus_m1sq_m2sq-temp)
+		       /(4.*M_sq_R));
+	double q=sqrt((Msq_minus_m1sq_m2sq*MRsq_minus_m1sq_m2sq-temp)
+		       /(4.*M_sq));
+	gRf1370=sqrt(2./M_PI*(0.26*width/3.)*M_sq_R/qR); // fraction from Bugg(96)
+	ImBf1370=width*sqrt(M_sq)*(0.26*(1./3.)*q/qR*M_sq_R/M_sq+0.913);
+
+	xsec+=CrossSection(m1,m2,M_sq,s,t,gRf1370,ReBf1370,ImBf1370,
+			   gsq_rho_f1370_gamma,gsq_omega_f1370_gamma);;
+       
       }
       // f0(980)/a0(980)
       if (generate[1]){
-	GetResonanceParameters(m1,m2,M_sq,ReB,ImB);
+	double my_msq_R=0.9783*0.9783;
 	if (got_pipi){ // f0(980)
 	  gR=1.705/(2.*M_PI)*0.9783*sqrt(2./M_PI);
-	  M_sq_R=0.9783*0.9783;
 	  gsq_rho_S_gamma=0.239; // GeV^-2
 	  gsq_omega_S_gamma=0.02656;
 	}
 	else{ // a0(980)
 	  gR=2.82/(2.*M_PI)*0.9825*sqrt(2./M_PI);
-	  M_sq_R=0.9825*0.9825;	 
+	  my_msq_R=0.9825*0.9825;	 
 	  gsq_rho_S_gamma=0.02537;
 	  gsq_omega_S_gamma=0.2283;
 	} 
-	xsec+=CrossSection(m1,m2,M_sq,s,t,gR,ReB,ImB);
+	GetResonanceParameters(m1,m2,M_sq,my_msq_R,ReB,ImB);
+	xsec+=CrossSection(m1,m2,M_sq,s,t,gR,ReB,ImB,gsq_rho_S_gamma,
+			   gsq_omega_S_gamma);
       }
       if (generate[4]){ // non-resonant background
 	xsec+=BackgroundCrossSection(beam,particle_types,particle_vectors);
 
 	if (generate[1]){ // interference with resonant signal
 	  xsec+=InterferenceCrossSection(beam,particle_types,particle_vectors,
-	  				 gR,ReB,ImB,phase[1]);
+	  				 gR,ReB,ImB,gsq_rho_S_gamma,
+					 gsq_omega_S_gamma,phase[1]);
 	}
       }
       if (generate[3]){ // Tensor background
