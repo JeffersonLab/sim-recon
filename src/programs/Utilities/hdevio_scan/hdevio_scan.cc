@@ -31,6 +31,7 @@ bool   GENERATE_ERROR_REPORT = false;
 string ROOT_FILENAME = "hdevio_scan.root";
 uint64_t MAX_EVIO_EVENTS = 20000;
 uint32_t BLOCK_SIZE = 20; // used for daq_block_size histogram
+uint32_t MAX_HISTORY_BUFF_SIZE = 400;
 
 //----------------
 // main
@@ -65,6 +66,8 @@ void Usage(string mess="")
 	cout << "   -m max_events Max. EVIO events (not physics events) to process." << endl;
 	cout << "   -b block_size EVIO events to add for daq_block_size histo." << endl;
 	cout << "   -e            Write details of bad event tag location to file" << endl;
+	cout << "   -n max_buff   Max. events to keep timing info for (only valid)" << endl;
+	cout << "                 with -w option)" << endl;
 	cout << endl;
 
 	if(mess != "") cout << endl << mess << endl << endl;
@@ -90,6 +93,7 @@ void ParseCommandLineArguments(int narg, char *argv[])
 		else if(arg == "-m"){ MAX_EVIO_EVENTS = atoi(next.c_str()); i++;}
 		else if(arg == "-b"){ BLOCK_SIZE = atoi(next.c_str()); i++;}
 		else if(arg == "-e"){ GENERATE_ERROR_REPORT = true; }
+		else if(arg == "-n"){ MAX_HISTORY_BUFF_SIZE = atoi(next.c_str()); i++;}		
 		else if(arg[0] == '-') {cout << "Unknown option \""<<arg<<"\" !" << endl; exit(-1);}
 		else filenames.push_back(arg);
 	}
@@ -198,6 +202,7 @@ void MapEVIOWords(void)
 	TFile *rootfile = new TFile(ROOT_FILENAME.c_str(), "RECREATE");
 
 	DMapEVIOWords mapevio;
+	mapevio.max_history_buff_size = MAX_HISTORY_BUFF_SIZE;
 
 	// Loop over input files
 	uint64_t Nevents = 0;

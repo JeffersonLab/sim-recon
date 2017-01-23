@@ -44,6 +44,8 @@ static TH1D *daq_words_by_type;
 //------------------
 DMapEVIOWords::DMapEVIOWords()
 {
+	max_history_buff_size = 400;
+
 	char daq_block_size_title[256];
 	sprintf(daq_block_size_title, "Block size (%d EVIO events) in kB", BLOCK_SIZE);
 
@@ -270,12 +272,12 @@ void DMapEVIOWords::ParseEvent(uint32_t *buff)
 	uint64_t thi = istart[2+6];  
 	uint64_t timestamp = (thi<<32) + (tlo<<0);
 	ts_history.insert(timestamp);
-	if(ts_history.size()>400){
+	if( ts_history.size() > max_history_buff_size ){
 		auto it1 = ts_history.begin();
 		auto it2 = it1;
 		uint64_t t1 = *(it1);
 		uint64_t t2 = *(++it2);
-		ts_history.erase(it1, ++it2);
+		ts_history.erase(it1, it2);
 		double tdiff_ns = (double)(t2 - t1)*4.0;
 		double tdiff_ms = tdiff_ns/1.0E6;
 		daq_event_tdiff->Fill(tdiff_ms);
