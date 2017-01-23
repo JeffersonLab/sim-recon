@@ -1412,7 +1412,10 @@ void GetResonanceParameters(double m1,double m2, double M_sq,double M_sq_R,
 // Cross section dsigma/(dt/dM/dOmega) from Donnachie and Kalashnikova
 double CrossSection(double m1,double m2, double ms_sq, double s, double t,
 		    double gR,double ReB,double ImB,double gsq_rho_S,
-		    double gsq_omega_S){
+		    double gsq_omega_S, bool interfere=false,
+		    double gR2=0.,double ReB2=0.,double ImB2=0.,
+		    double gsq_rho_S2=0.,
+		    double gsq_omega_S2=0.){
   // Kinematic factors
   double mp_sq_minus_s=m_p_sq-s;
   double mp_sq_plus_s=m_p_sq+s;
@@ -1584,8 +1587,53 @@ double CrossSection(double m1,double m2, double ms_sq, double s, double t,
 	+ 2.*C_rho_P_cut*C_omega_f2_cut*regge_rho_P_omega_f2_cuts
 	+ 2.*C_rho_f2_cut*C_omega_P_cut*regge_rho_f2_omega_P_cuts));
   	
-  double T=aS_aS*kin_aS_aS+aS_bS*kin_aS_bS+bS_bS*kin_bS_bS + Tb1;
+  double T=0.;
+  if (interfere==false){
+    T=aS_aS*kin_aS_aS+aS_bS*kin_aS_bS+bS_bS*kin_bS_bS + Tb1;
+  }
+  else{
+    double bw1=gR/(ReB*ReB+ImB*ImB);
+    double bw2=gR2/(ReB2*ReB2+ImB2*ImB2); 
+    double ReBWfac=ReB*ReB2+ImB*ImB2;
+    double ImBWfac=ImB*ReB2-ReB*ImB2;
+    double g1rho=sqrt(gsq_rho_S);
+    double g1omega=sqrt(gsq_omega_S);
+    double g2rho=sqrt(gsq_rho_S2);
+    double g2omega=sqrt(gsq_omega_S2);
 
+    double ReTint
+      =kin_aS_aS*(g1rho*g2rho*gsq_rho_V_and_T*2.*regge_rho_sq*ReBWfac
+		  +g1omega*g2omega*gsq_omega_V*ReBWfac
+		  *(2.*regge_omega_sq 
+		    +2.*(Csq_omega_P_cut*regge_omega_P_cut*regge_omega_P_cut
+			 +2.*C_omega_P_cut*C_omega_f2_cut*regge_omega_f2_omega_P_cuts
+			 +Csq_omega_f2_cut*regge_omega_f2_cut*regge_omega_f2_cut
+			 )
+		    +2.*C_omega_f2_cut*regge_omega_omega_f2_cut
+		    +2.*C_omega_P_cut*regge_omega_omega_P_cut
+		    )
+		  +2.*g1rho*g2rho*gsq_rho_V*ReBWfac
+		  *(Csq_rho_P_cut*regge_rho_P_cut*regge_rho_P_cut
+		    +2.*C_rho_P_cut*C_rho_f2_cut*regge_rho_f2_rho_P_cuts
+		    +Csq_rho_f2_cut*regge_rho_f2_cut*regge_rho_f2_cut
+		    )
+		  +2.*g1rho*g2rho*g_rho_V*g_rho_V_and_T*regge_rho
+		  *(C_rho_P_cut*regge_rho_P_cut
+		    *(ReBWfac*(cos(M_PI*(a_rho-0.5*a_rho_P))-cos(M_PI_2*a_rho_P))
+		      -ImBWfac*(sin(M_PI*(a_rho-0.5*a_rho_P))+sin(M_PI_2*a_rho_P))
+		      )
+		    +C_rho_f2_cut*regge_rho_f2_cut
+		    *(ReBWfac*(cos(M_PI*(a_rho-0.5*a_rho_f2))-cos(M_PI_2*a_rho_f2))
+		      -ImBWfac*(sin(M_PI*(a_rho-0.5*a_rho_f2))+sin(M_PI_2*a_rho_f2))
+		      )
+		    
+		    
+		    )
+		  )
+      +kin_bS_bS*8.*g1rho*g2rho*g_rho_T*g_rho_T*regge_rho_sq*ReBWfac;
+
+    T=bw1*bw2;
+  }
   //  printf("kin %f %f %f \n",kin_aS_aS,kin_aS_bS,kin_bS_bS);
 
   // Compute cross section
@@ -2071,8 +2119,8 @@ int main(int narg, char *argv[])
     double gsq_omega_S_gamma=0.2283;
     double gsq_rho_f500_gamma=1.;
     double gsq_omega_f500_gamma=0.1;
-    double gsq_rho_f1370_gamma=1.;
-    double gsq_omega_f1370_gamma=0.1;
+    double gsq_rho_f1370_gamma=2.;
+    double gsq_omega_f1370_gamma=0.2;
 
     // use the rejection method to produce S's based on the cross section
     do{
@@ -2158,9 +2206,9 @@ int main(int narg, char *argv[])
       
       // f0(600)
       if (got_pipi && generate[0]){
- 	double m_Sigma=0.7;
+ 	double m_Sigma=0.8;
 	double M_sq_R=m_Sigma*m_Sigma; 
-	width=0.35;
+	width=0.5;
 	ReBf500=M_sq_R-M_sq;
 	double Msq_minus_m1sq_m2sq=M_sq-m1sq_plus_m2sq;
 	double MRsq_minus_m1sq_m2sq=M_sq_R-m1sq_plus_m2sq;
