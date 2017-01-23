@@ -693,6 +693,10 @@ void HDEVIO::MapBlocks(bool print_ticker)
 			if(bh.magic!=0xc0da0100){
 				err_mess.str("Bad magic word");
 				err_code = HDEVIO_BAD_BLOCK_HEADER;
+				EVIOBlockRecord br;
+				br.pos = ifs.tellg() - (streampos)sizeof(bh);
+				br.block_type = kBT_UNKNOWN;
+				evio_blocks.push_back(br);
 				break;
 			}
 		}
@@ -731,6 +735,7 @@ void HDEVIO::MapBlocks(bool print_ticker)
 				br.last_event   = br.first_event + (uint64_t)M - 1;
 				break;
 			default:
+				br.block_type   = kBT_UNKNOWN;
 				_DBG_ << "Uknown tag: " << hex << tag << dec << endl;
 		}
 		
@@ -844,6 +849,7 @@ void HDEVIO::MapEvents(BLOCKHEADER_t &bh, EVIOBlockRecord &br)
 		EVIOEventRecord er;
 		er.pos = pos;
 		er.event_len   = eh->event_len + 1; // +1 to include length word
+		er.event_header= eh->header;
 		er.event_type  = kBT_UNKNOWN;
 		er.first_event = 0;
 		er.last_event  = 0;
@@ -881,6 +887,7 @@ void HDEVIO::MapEvents(BLOCKHEADER_t &bh, EVIOBlockRecord &br)
 		pos += (streampos)((eh->event_len+1)<<2);
 	}
 
+	ifs.clear();
 	ifs.seekg(start_pos, ios_base::beg);
 }
 
@@ -1137,6 +1144,15 @@ void HDEVIO::PrintEVIOBlockHeader(void)
 //------------------------
 void HDEVIO::PrintStats(void)
 {
+	uint64_t Nblocks = this->Nblocks;
+	uint64_t Nevents = this->Nevents;
+	
+	if(is_mapped){
+		Nblocks = evio_blocks.size();
+		Nevents = 0;
+		for(auto b : evio_blocks) Nevents += b.evio_events.size();
+	}
+
 	cout << endl;
 	cout << "EVIO Statistics for " << filename << " :" << endl;
 	cout << "------------------------" << endl;
