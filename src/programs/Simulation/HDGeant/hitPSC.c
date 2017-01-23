@@ -75,6 +75,8 @@ void hitPSC(float xin[4], float xout[4],float pin[5], float pout[5], float dEsum
       dEdx = 0;
    }
 
+   int itrack = (stack == 0)? gidGetId(track) : -1;
+
    if (history == 0)
    {
       int mark = (1<<30) + pointCount;
@@ -84,6 +86,7 @@ void hitPSC(float xin[4], float xout[4],float pin[5], float pout[5], float dEsum
          s_PairSpectrometerCoarse_t* psc = *twig = make_s_PairSpectrometerCoarse();
          s_PscTruthPoints_t* points = make_s_PscTruthPoints(1);
          psc->pscTruthPoints = points;
+         int module = getmodule_wrapper_();
          int a = thisInputEvent->physicsEvents->in[0].reactions->in[0].vertices->in[0].products->mult;
          points->in[0].primary = (track <= a && stack == 0);
          points->in[0].track = track;
@@ -97,10 +100,10 @@ void hitPSC(float xin[4], float xout[4],float pin[5], float pout[5], float dEsum
          points->in[0].E = pin[3];
          points->in[0].dEdx = dEdx;
          points->in[0].ptype = ipart;
-         points->in[0].arm = getmodule_wrapper_() / NUM_MODULES_PER_ARM;
-         points->in[0].module = getmodule_wrapper_() % NUM_MODULES_PER_ARM;
+         points->in[0].arm = (module - 1) / NUM_MODULES_PER_ARM;
+         points->in[0].module = (module - 1) % NUM_MODULES_PER_ARM + 1;
          points->in[0].trackID = make_s_TrackID();
-         points->in[0].trackID->itrack = gidGetId(track);
+         points->in[0].trackID->itrack = itrack;
          points->mult = 1;
          pointCount++;
       }
@@ -119,8 +122,8 @@ void hitPSC(float xin[4], float xout[4],float pin[5], float pout[5], float dEsum
          s_PairSpectrometerCoarse_t* psc = *twig = make_s_PairSpectrometerCoarse();
          s_PscPaddles_t* paddles = make_s_PscPaddles(1);
          paddles->mult = 1;
-         paddles->in[0].arm = module / NUM_MODULES_PER_ARM;
-         paddles->in[0].module = module % NUM_MODULES_PER_ARM;
+         paddles->in[0].arm = (module - 1) / NUM_MODULES_PER_ARM;
+         paddles->in[0].module = (module - 1) % NUM_MODULES_PER_ARM + 1;
          paddles->in[0].pscTruthHits = hits = make_s_PscTruthHits(MAX_HITS);
          psc->pscPaddles = paddles;
          paddleCount++;
@@ -140,22 +143,17 @@ void hitPSC(float xin[4], float xout[4],float pin[5], float pout[5], float dEsum
       }
       if (nhit < hits->mult)                /* merge with former hit */
       {
-         if (t < hits->in[nhit].t)
-         {
-            hits->in[nhit].ptype = ipart;
-            hits->in[nhit].itrack = gidGetId(track);
-         }
          hits->in[nhit].t = 
                  (hits->in[nhit].t * hits->in[nhit].dE + t * dEsum) /
                  (hits->in[nhit].dE + dEsum);
-                        hits->in[nhit].dE += dEsum;
+         hits->in[nhit].dE += dEsum;
       }
       else if (nhit < MAX_HITS)                /* create new hit */
       {
          hits->in[nhit].t = t;
          hits->in[nhit].dE = dEsum;
          hits->in[nhit].ptype = ipart;
-         hits->in[nhit].itrack = gidGetId(track);
+         hits->in[nhit].itrack = itrack;
          hits->mult++;
       }
       else
@@ -209,7 +207,7 @@ s_PairSpectrometerCoarse_t* pickPsc ()
          int i,iok;
          for (iok=i=0; i < hits->mult; i++)
          {
-            if (hits->in[i].dE >= THRESH_MEV/1e3)
+            if (hits->in[i].dE > THRESH_MEV/1e3)
             {
                if (iok < i)
                {
@@ -236,8 +234,18 @@ s_PairSpectrometerCoarse_t* pickPsc ()
 
       for (point=0; point < points->mult; ++point)
       {
-         int m = box->pscTruthPoints->mult++;
+         int track = points->in[point].track;
+         double t = points->in[point].t;
+         int m = box->pscTruthPoints->mult;
+         if (points->in[point].trackID->itrack < 0 ||
+            (m > 0 &&  box->pscTruthPoints->in[m-1].track == track &&
+             fabs(box->pscTruthPoints->in[m-1].t - t) < 0.5))
+         {
+            FREE(points->in[point].trackID);
+            continue;
+         }
          box->pscTruthPoints->in[m] = item->pscTruthPoints->in[point];
+         box->pscTruthPoints->mult++;
       }
       if (points != HDDM_NULL)
       {

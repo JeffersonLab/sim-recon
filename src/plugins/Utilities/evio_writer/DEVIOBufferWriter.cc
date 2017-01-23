@@ -872,7 +872,9 @@ void DEVIOBufferWriter::Writef250Data(vector<uint32_t> &buff,
 
 				if(pulse->emulated == PREFER_EMULATED){
                     // Word 1: Pulse Pedestal
-					buff.push_back(0xC8000000 + (pulse->event_within_block<<19) + (pulse->channel<<15) 
+					//buff.push_back(0xC8000000 + (pulse->event_within_block<<19) + (pulse->channel<<15) 
+                    // first field is the "event_within_block", which is always 1 for reformatted events
+					buff.push_back(0xC8000000 + (0x01<<19) + (pulse->channel<<15) 
                                    + (pulse->QF_pedestal<<14) + (pulse->pedestal&0x3FFF) );
 				
                     // Word 2: Pulse Integral
