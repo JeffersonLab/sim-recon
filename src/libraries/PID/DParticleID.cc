@@ -550,88 +550,28 @@ bool DParticleID::MatchToBCAL(const DReferenceTrajectory* rt, const vector<const
 
 bool DParticleID::MatchToBCAL(const DKinematicData* locTrack, const DReferenceTrajectory* rt, const DBCALShower* locBCALShower, double locInputStartTime, DBCALShowerMatchParams& locShowerMatchParams) const
 {
-	// NOTE: locTrack is NULL if calling from track reconstruction!!!
-	// Get the BCAL cluster position and normal
-	DVector3 bcal_pos(locBCALShower->x, locBCALShower->y, locBCALShower->z); 
+  // NOTE: locTrack is NULL if calling from track reconstruction!!!
 
-	double locFlightTime = 9.9E9, locPathLength = 9.9E9;
-	double locFlightTimeVariance=9.9E9;
-	double d = rt->DistToRTwithTime(bcal_pos, &locPathLength,
-					&locFlightTime, &locFlightTimeVariance,
-					SYS_BCAL);
+  double locFlightTime = 9.9E9, locPathLength = 9.9E9;
+  double locFlightTimeVariance=9.9E9,locProjectedZ=0.;
+  double locDeltaPhi=999.,locDeltaZ=999.,locDistance=999.;
+  if (Distance_ToTrack(locBCALShower,rt,locInputStartTime,locDistance,
+		       locDeltaPhi,locDeltaZ,locProjectedZ,locFlightTime,
+		       locFlightTimeVariance,locPathLength)){
 
-	if(!isfinite(d))
-		return false;
+    if (fabs(locDeltaPhi)>0.26) //0.13 radians = 7.5 degrees = one bcal module
+      return false;
 
-	// Check that the hit is not out of time with respect to the track
-	if(fabs(locBCALShower->t - locFlightTime - locInputStartTime) > OUT_OF_TIME_CUT)
-		return false;
-	
-	DVector3 proj_pos = rt->GetLastDOCAPoint();
-	//if(proj_pos.Perp() < 64.0)
-	//  return false;  // not inside BCAL!
+    if (fabs(locDeltaZ)>BCAL_Z_CUT)
+      return false; 
 
-	// Rough phi cut
-	double dphi=bcal_pos.Phi()-proj_pos.Phi();
-	while(dphi > M_PI)
-	  dphi -= M_TWO_PI;
-	while(dphi < -M_PI)
-	  dphi += M_TWO_PI;
-	
-	if (fabs(dphi)>0.26) //0.13 radians = 7.5 degrees = one bcal module
-	  return false;
-	
-	// rough z cut
-	double dz=proj_pos.z()-locBCALShower->z;
-	if (fabs(dz)>BCAL_Z_CUT)
-	  return false; 
-
-	// Get clusters associated with this shower
-	vector<const DBCALCluster*>clusters;
-	locBCALShower->Get(clusters);
-
-    // make list of points associated with the shower
-    vector<const DBCALPoint*> points;
-    if(clusters.size() > 0) {
-        // classic BCAL shower objects are built from the output of the clusterizer
-        // so the points need to be accessed as shower -> cluster -> points
-        for (unsigned int k=0;k<clusters.size();k++){
-            vector<const DBCALPoint*> cluster_points=clusters[k]->points();
-            points.insert(points.end(), cluster_points.begin(), cluster_points.end());
-        }
-    } else {
-        // other BCAL shower objects directly keep a list of the points associated with the shower
-        // (e.g. "CURVATURE" showers)
-        locBCALShower->Get(points);
-    }
-
-    // loop over points associated with this shower, finding 
-    // the closest match between a point and the track
-    double dphi_min=1000.;
-    double z_for_dphi_min=1000.;
-    for (unsigned int m=0;m<points.size();m++){
-      double rpoint=points[m]->r();
-      if (rt->GetIntersectionWithRadius(rpoint,proj_pos)==NOERROR){
-        dphi=points[m]->phi()-proj_pos.Phi();
-        while(dphi > M_PI)
-	  dphi -= M_TWO_PI;
-	    while(dphi < -M_PI)
-		  dphi += M_TWO_PI;
-	    if (fabs(dphi)<fabs(dphi_min)){
-	      dphi_min=dphi;
-		  z_for_dphi_min=proj_pos.z();
-	    }
-      }
-    }
-
-	double p = rt->swim_steps[0].mom.Mag();
-	double phi_cut = (BCAL_PHI_CUT_PAR1 + BCAL_PHI_CUT_PAR2/(p*p))
-	*(1.+BCAL_PHI_CUT_PAR3*pow(450.-z_for_dphi_min,-2));
-	// Look for a match in phi 
-	if (fabs(dphi_min) >= phi_cut)
-	  return false; //not close enough
-
-//	if (locPathLength<0.) _DBG_ << " s " << locPathLength << " t " << locFlightTime <<endl;
+    // cut on shower phi
+    double p = rt->swim_steps[0].mom.Mag();
+    double phi_cut = (BCAL_PHI_CUT_PAR1 + BCAL_PHI_CUT_PAR2/(p*p))*(1.+BCAL_PHI_CUT_PAR3*pow(450.-locProjectedZ,-2));
+    if (fabs(locDeltaPhi)>phi_cut) return false;
+     
+  }
+  else return false;
 
 	//successful match
 	locShowerMatchParams.dTrack = locTrack;
@@ -640,8 +580,8 @@ bool DParticleID::MatchToBCAL(const DKinematicData* locTrack, const DReferenceTr
 	locShowerMatchParams.dFlightTime = locFlightTime;
 	locShowerMatchParams.dFlightTimeVariance = locFlightTimeVariance;
 	locShowerMatchParams.dPathLength = locPathLength;
-	locShowerMatchParams.dDeltaPhiToShower = dphi_min;
-	locShowerMatchParams.dDeltaZToShower = dz;
+	locShowerMatchParams.dDeltaPhiToShower = locDeltaPhi;
+	locShowerMatchParams.dDeltaZToShower = locDeltaZ;
 
 	return true;
 }
@@ -1310,16 +1250,29 @@ unsigned int DParticleID::PredictSCSector(const DReferenceTrajectory* rt, const 
 
 //------------------
 // Distance_ToTrack
+//-----------------
+bool DParticleID::Distance_ToTrack(const DBCALShower* locBCALShower, const DReferenceTrajectory* rt, double locInputStartTime, double& locDistance, double& locDeltaPhi, double& locDeltaZ) const
+{
+  double locFlightTime=0.,locFlightTimeVariance=0.,locProjectedZ=0.;
+  double locPathLength=0.;
+  return Distance_ToTrack(locBCALShower,rt,locInputStartTime,locDistance,
+			  locDeltaPhi,locDeltaZ,locProjectedZ,locFlightTime,
+			  locFlightTimeVariance,locPathLength);
+}
+
+//------------------
+// Distance_ToTrack
 //------------------
 // NOTE: an initial guess for start time is expected as input so that out-of-time 
 // tracks can be skipped
-bool DParticleID::Distance_ToTrack(const DBCALShower* locBCALShower, const DReferenceTrajectory* rt, double locInputStartTime, double& locDistance, double& locDeltaPhi, double& locDeltaZ) const
+    bool DParticleID::Distance_ToTrack(const DBCALShower* locBCALShower, const DReferenceTrajectory* rt, double locInputStartTime, double& locDistance, double& locDeltaPhi, double& locDeltaZ, double& locProjectedZ, double& locFlightTime, double& locFlightTimeVariance, double &locPathLength) const
 {
 	// Get the BCAL cluster position and normal
 	DVector3 bcal_pos(locBCALShower->x, locBCALShower->y, locBCALShower->z); 
 
-	double locFlightTime = 9.9E9, locPathLength = 9.9E9;
-	locDistance = rt->DistToRTwithTime(bcal_pos, &locPathLength, &locFlightTime,NULL,SYS_BCAL);
+	locFlightTime = 9.9E9, locPathLength = 9.9E9;
+	locFlightTimeVariance = 9.9E9;
+	locDistance = rt->DistToRTwithTime(bcal_pos, &locPathLength, &locFlightTime,&locFlightTimeVariance,SYS_BCAL);
 	if(!isfinite(locDistance))
 		return false;
 
@@ -1329,8 +1282,8 @@ bool DParticleID::Distance_ToTrack(const DBCALShower* locBCALShower, const DRefe
 		return false;
 
 	DVector3 proj_pos = rt->GetLastDOCAPoint();
-	if(proj_pos.Perp() < 65.0)
-		return false;  // not inside BCAL!
+	//if(proj_pos.Perp() < 65.0)
+	//return false;  // not inside BCAL!
 
 	locDeltaZ = bcal_pos.z() - proj_pos.z();
 	locDeltaPhi = bcal_pos.Phi() - proj_pos.Phi();
@@ -1338,6 +1291,48 @@ bool DParticleID::Distance_ToTrack(const DBCALShower* locBCALShower, const DRefe
 		locDeltaPhi -= M_TWO_PI;
 	while(locDeltaPhi < -M_PI)
 		locDeltaPhi += M_TWO_PI;
+
+	// The next part of the code tries to take into account curvature
+	// of shower cluster distribution
+
+	// Get clusters associated with this shower
+	vector<const DBCALCluster*>clusters;
+	locBCALShower->Get(clusters);
+	
+	// make list of points associated with the shower
+	vector<const DBCALPoint*> points;
+	if(clusters.size() > 0) {
+	  // classic BCAL shower objects are built from the output of the clusterizer
+	  // so the points need to be accessed as shower -> cluster -> points
+	  for (unsigned int k=0;k<clusters.size();k++){
+	    vector<const DBCALPoint*> cluster_points=clusters[k]->points();
+	    points.insert(points.end(), cluster_points.begin(), cluster_points.end());
+	    }
+	} else {
+	  // other BCAL shower objects directly keep a list of the points associated with the shower
+	  // (e.g. "CURVATURE" showers)
+	  locBCALShower->Get(points);
+	}
+	
+	// loop over points associated with this shower, finding 
+	// the closest match between a point and the track
+	double locDeltaPhiMin = locDeltaPhi;
+	locProjectedZ=proj_pos.z();
+	for (unsigned int m=0;m<points.size();m++){
+	  double rpoint=points[m]->r();
+	  if (rt->GetIntersectionWithRadius(rpoint,proj_pos)==NOERROR){
+	    double mydphi=points[m]->phi()-proj_pos.Phi();
+	    while(mydphi > M_PI)
+	      mydphi -= M_TWO_PI;
+	    while(mydphi < -M_PI)
+		mydphi += M_TWO_PI;
+	    if (fabs(mydphi)<fabs(locDeltaPhiMin)){
+	      locDeltaPhiMin=mydphi;
+	      locProjectedZ=proj_pos.z();
+	    }
+	  }
+	}
+	locDeltaPhi=locDeltaPhiMin;
 
 	return true;
 }
