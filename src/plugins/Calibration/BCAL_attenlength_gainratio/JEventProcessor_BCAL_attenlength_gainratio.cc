@@ -54,6 +54,13 @@ JEventProcessor_BCAL_attenlength_gainratio::~JEventProcessor_BCAL_attenlength_ga
 //------------------
 jerror_t JEventProcessor_BCAL_attenlength_gainratio::init(void)
 {
+
+	japp->RootFillLock(this); //ACQUIRE ROOT FILL LOCK
+
+	if (logintratiovsZ_all != NULL){
+		return NOERROR;
+	}
+
 	// Set style
 	gStyle->SetTitleOffset(1, "Y");
 	gStyle->SetTitleOffset(1.3, "z");
@@ -70,7 +77,9 @@ jerror_t JEventProcessor_BCAL_attenlength_gainratio::init(void)
 
 	// create root folder for bcal and cd to it, store main dir
 	TDirectory *main = gDirectory;  // save current directory
-	gDirectory->mkdir("bcalgainratio")->cd();
+	TDirectory *bcalgainratio = main->mkdir("bcalgainratio");
+    bcalgainratio->cd();
+
 	char histname[255], modtitle[255], histtitle[255];
 
 	sprintf(histtitle,"All channels;Z Position (cm);log of integral ratio US/DS");
@@ -110,12 +119,15 @@ jerror_t JEventProcessor_BCAL_attenlength_gainratio::init(void)
 	EvsZ_layer[2] = new TH2I("EvsZ_layer3","E vs Z (layer 3);Z Position (cm);Energy",100,-250.0,250.0,200,0,0.2);
 	EvsZ_layer[3] = new TH2I("EvsZ_layer4","E vs Z (layer 4);Z Position (cm);Energy",100,-250.0,250.0,200,0,0.2);
 
-
 	gStyle->SetOptFit(0);
 	gStyle->SetOptStat(0);
- 
-	gDirectory->mkdir("channels")->cd();
+
+	TDirectory *dirlogpeakratiovsZ = bcalgainratio->mkdir("logpeakratiovsZ");
+	TDirectory *dirlogintratiovsZ = bcalgainratio->mkdir("logintratiovsZ");
+	TDirectory *dirEvsZ = bcalgainratio->mkdir("EvsZ");
+
 	// Create histograms
+    dirlogpeakratiovsZ->cd();
 	for (int module=0; module<nummodule; module++) {
 		for (int layer=0; layer<numlayer; layer++) {
 			for (int sector=0; sector<numsector; sector++) {
@@ -123,10 +135,24 @@ jerror_t JEventProcessor_BCAL_attenlength_gainratio::init(void)
 				sprintf(modtitle,"Channel (M%i,L%i,S%i)",module+1,layer+1,sector+1);
 				sprintf(histtitle,"%s;Z Position (cm);log of pulse height ratio US/DS",modtitle);
 				logpeakratiovsZ[module][layer][sector] = new TH2I(histname,histtitle,500,-225.0,225.0,500,-3,3);
+			}
+		}
+	}
+    dirlogintratiovsZ->cd();
+	for (int module=0; module<nummodule; module++) {
+		for (int layer=0; layer<numlayer; layer++) {
+			for (int sector=0; sector<numsector; sector++) {
 				sprintf(histname,"logintratiovsZ_%02i%i%i",module+1,layer+1,sector+1);
 				sprintf(modtitle,"Channel (M%i,L%i,S%i)",module+1,layer+1,sector+1);
 				sprintf(histtitle,"%s;Z Position (cm);log of integral ratio US/DS",modtitle);
 				logintratiovsZ[module][layer][sector] = new TH2I(histname,histtitle,500,-250.0,250.0,500,-3,3);
+			}
+		}
+	}
+    dirEvsZ->cd();
+	for (int module=0; module<nummodule; module++) {
+		for (int layer=0; layer<numlayer; layer++) {
+			for (int sector=0; sector<numsector; sector++) {
 				sprintf(histname,"EvsZ_%02i%i%i",module+1,layer+1,sector+1);
 				sprintf(modtitle,"Channel (M%i,L%i,S%i)",module+1,layer+1,sector+1);
 				sprintf(histtitle,"%s;Z Position (cm);Energy",modtitle);
@@ -135,10 +161,10 @@ jerror_t JEventProcessor_BCAL_attenlength_gainratio::init(void)
 		}
 	}
 
-
-
 	// back to main dir
 	main->cd();
+
+	japp->RootFillUnLock(this); //RELEASE ROOT FILL LOCK
 
 	return NOERROR;
 }
