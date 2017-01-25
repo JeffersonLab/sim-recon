@@ -86,6 +86,13 @@ void Df250EmulatorAlgorithm_v2::EmulateFirmware(const Df250WindowRawData* rawDat
     // Note that in principle we could get this information from the Df250Config objects as well, but generally only NPED and the value of NSA+NSB are saved
     // not the individual NSA and NSB values
 
+
+    // TEST
+    if( (rawData->rocid >= 31) || (rawData->rocid <= 46) ) {
+      NSA = NSA_DEF;
+      NSB = NSB_DEF;
+    }
+
     // quality bits
     bool bad_pedestal = false;
     bool bad_timing_pedestal = false;
@@ -131,8 +138,9 @@ void Df250EmulatorAlgorithm_v2::EmulateFirmware(const Df250WindowRawData* rawDat
             }
             TC[npulses] = i+1;
             // check that we have more than NSAT samples over threshold
-            // unless the first sample is over threshold - we always start then
-            if( (NSAT>1) && (i>0) ){
+            // unless the first sample is over threshold - we always start then (Fall 2016 only)
+            //if( (NSAT>1) && (i>0) ){
+            if( (NSAT>1) ){
                 int samples_over_threshold = 1;
                 for(unsigned int j=1; j < NSAT; j++) {
                     if ((samples[i+j] & 0xfff) > THR) {
@@ -417,6 +425,11 @@ void Df250EmulatorAlgorithm_v2::EmulateFirmware(const Df250WindowRawData* rawDat
             f250PulseData->pulse_peak  = f250PulseData->pulse_peak_emulated;
             f250PulseData->course_time = f250PulseData->course_time_emulated;
             f250PulseData->fine_time   = f250PulseData->fine_time_emulated;
+
+	    if( (rawData->rocid >= 31) || (rawData->rocid <= 46) ) {
+	      f250PulseData->nsamples_integral = NSA + NSB;
+	    }
+
         }
 
     }
