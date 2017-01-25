@@ -115,7 +115,7 @@ DParticleID::DParticleID(JEventLoop *loop)
 	TOF_CUT_PAR3 = 6.15;
 	gPARMS->SetDefaultParameter("TOF:CUT_PAR3",TOF_CUT_PAR3);
 
-	BCAL_Z_CUT=50.;
+	BCAL_Z_CUT=500.;
 	gPARMS->SetDefaultParameter("BCAL:Z_CUT",BCAL_Z_CUT);
 
 	BCAL_PHI_CUT_PAR1=0.021;
