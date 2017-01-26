@@ -36,6 +36,7 @@
                 tzcorr="float" Ezcorr="float"
                 lunit="cm" tunit="ns" Eunit="GeV">
       <preshower minOccurs="0" maxOccurs="1" preshowerE="float"/>
+      <width minOccurs="0" maxOccurs="1" sigRho="float" sigTheta="float" sigPhi="float"/>
 	   <bcalCluster maxOccurs="1" minOccurs="0" ncell="int"/>
 	   <bcalCorrelations maxOccurs="1" minOccurs="0" Excorr="float" Eycorr="float" Etcorr="float" txcorr="float" tycorr="float"/>
     </bcalShower>

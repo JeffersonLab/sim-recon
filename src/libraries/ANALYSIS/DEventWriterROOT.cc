@@ -638,6 +638,9 @@ void DEventWriterROOT::Create_Branches_NeutralHypotheses(DTreeBranchRegister& lo
 	locBranchRegister.Register_ClonesArray<TLorentzVector>(Build_BranchName(locParticleBranchName, "X4_Shower"), dInitNumNeutralArraySize);
 	locBranchRegister.Register_FundamentalArray<Float_t>(Build_BranchName(locParticleBranchName, "Energy_BCAL"), locArraySizeString, dInitNumNeutralArraySize);
 	locBranchRegister.Register_FundamentalArray<Float_t>(Build_BranchName(locParticleBranchName, "Energy_BCALPreshower"), locArraySizeString, dInitNumNeutralArraySize);
+	locBranchRegister.Register_FundamentalArray<Float_t>(Build_BranchName(locParticleBranchName, "SigRho_BCAL"), locArraySizeString, dInitNumNeutralArraySize);
+	locBranchRegister.Register_FundamentalArray<Float_t>(Build_BranchName(locParticleBranchName, "SigTheta_BCAL"), locArraySizeString, dInitNumNeutralArraySize);
+	locBranchRegister.Register_FundamentalArray<Float_t>(Build_BranchName(locParticleBranchName, "SigPhi_BCAL"), locArraySizeString, dInitNumNeutralArraySize);
 	locBranchRegister.Register_FundamentalArray<Float_t>(Build_BranchName(locParticleBranchName, "Energy_FCAL"), locArraySizeString, dInitNumNeutralArraySize);
 
 	//NEARBY TRACKS
@@ -1645,6 +1648,14 @@ void DEventWriterROOT::Fill_NeutralHypo(DTreeFillData* locTreeFillData, unsigned
 	DLorentzVector locHitDX4 = locNeutralShower->dSpacetimeVertex;
 	TLorentzVector locTX4_Shower(locHitDX4.X(), locHitDX4.Y(), locHitDX4.Z(), locHitDX4.T());
 	locTreeFillData->Fill_Array<TLorentzVector>(Build_BranchName(locParticleBranchName, "X4_Shower"), locTX4_Shower, locArrayIndex);
+
+	//SHOWER WIDTH
+	double locSigRhoBCAL = (locDetector == SYS_BCAL) ? static_cast<const DBCALShower*>(locNeutralShower->dBCALFCALShower)->sigRho : 0.0;
+	double locSigThetaBCAL = (locDetector == SYS_BCAL) ? static_cast<const DBCALShower*>(locNeutralShower->dBCALFCALShower)->sigTheta : 0.0;
+	double locSigPhiBCAL = (locDetector == SYS_BCAL) ? static_cast<const DBCALShower*>(locNeutralShower->dBCALFCALShower)->sigPhi : 0.0;
+	locTreeFillData->Fill_Array<Float_t>(Build_BranchName(locParticleBranchName, "SigRho_BCAL"), locSigRhoBCAL, locArrayIndex);
+	locTreeFillData->Fill_Array<Float_t>(Build_BranchName(locParticleBranchName, "SigTheta_BCAL"), locSigThetaBCAL, locArrayIndex);
+	locTreeFillData->Fill_Array<Float_t>(Build_BranchName(locParticleBranchName, "SigPhi_BCAL"), locSigPhiBCAL, locArrayIndex);
 
 	//Track DOCA to Shower - BCAL
 	double locNearestTrackBCALDeltaPhi = 999.0, locNearestTrackBCALDeltaZ = 999.0;

@@ -18,7 +18,6 @@ using namespace std;
 #include <TTAB/DTTabUtilities.h>
 using namespace jana;
 
-
 //------------------
 // init
 //------------------
@@ -29,6 +28,12 @@ jerror_t DBCALHit_factory::init(void)
 
   CHECK_FADC_ERRORS = true;
   gPARMS->SetDefaultParameter("BCAL:CHECK_FADC_ERRORS", CHECK_FADC_ERRORS, "Set to 1 to reject hits with fADC250 errors, ser to 0 to keep these hits");
+  CORRECT_FADC_SATURATION = true;
+  gPARMS->SetDefaultParameter("BCAL:CORRECT_FADC_SATURATION", CORRECT_FADC_SATURATION, "Set to 1 to correct pulse integral for fADC saturation, set to 0 to not correct pulse integral. (default = 1)");
+
+  fADC_MinIntegral_Saturation = 55784.;
+  fADC_Saturation_Linear = -5.87e-6;
+  fADC_Saturation_Quadratic = -8.28e-11;  
 
    return NOERROR;
 }
@@ -196,7 +201,17 @@ jerror_t DBCALHit_factory::evnt(JEventLoop *loop, uint64_t eventnumber)
 
       double gain              = GetConstant(gains,digihit);
       double hit_E = 0;
-      if ( integral > 0 ) hit_E = gain * (integral - totalpedestal);
+      if ( integral > 0 ) { 
+	double integral_pedsub = integral - totalpedestal;
+	if(CORRECT_FADC_SATURATION && integral_pedsub > fADC_MinIntegral_Saturation) {
+		if(digihit->pulse_peak > 4094 || (digihit->pedestal == 1 && digihit->QF == 1)) { // check if fADC is saturated or is MC event
+			double locSaturatedIntegral = integral_pedsub - fADC_MinIntegral_Saturation;
+			double locScaleFactor = 1. + fADC_Saturation_Linear*locSaturatedIntegral + fADC_Saturation_Quadratic*locSaturatedIntegral*locSaturatedIntegral;
+	    		integral_pedsub *= 1./locScaleFactor;
+		}
+	}
+	hit_E = gain * integral_pedsub;
+      }
       if ( hit_E < 0 ) continue;  // Throw away negative energy hits  
 
       int pulse_peak_pedsub = digihit->pulse_peak - (int)single_sample_ped;

@@ -895,6 +895,23 @@ jerror_t DEventSourceREST::Extract_DBCALShower(hddm_r::HDDM *record,
 				shower->E_preshower = locPreShowerIterator->getPreshowerE();
 		}
 
+		// width
+		const hddm_r::WidthList& locWidthList = iter->getWidths();
+		hddm_r::WidthList::iterator locWidthIterator = locWidthList.begin();
+		if(locWidthIterator == locWidthList.end()) {
+			shower->sigRho = -1.;
+			shower->sigTheta = -1.;
+			shower->sigPhi = -1.;
+		}
+		else //should only be 1
+		{
+			for(; locWidthIterator != locWidthList.end(); ++locWidthIterator) {
+				shower->sigRho = locWidthIterator->getSigRho();
+				shower->sigTheta = locWidthIterator->getSigTheta();
+				shower->sigPhi = locWidthIterator->getSigPhi();
+			}
+		}
+
 		const hddm_r::BcalClusterList& locBcalClusterList = iter->getBcalClusters();
 		hddm_r::BcalClusterList::iterator locBcalClusterIterator = locBcalClusterList.begin();
 		if(locBcalClusterIterator == locBcalClusterList.end())

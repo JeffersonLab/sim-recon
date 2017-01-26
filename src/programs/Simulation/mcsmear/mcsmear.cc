@@ -96,6 +96,7 @@ void ParseCommandLineArguments(int narg, char* argv[], mcsmear_config_t *config)
       case 'K': config->BCAL_NO_SAMPLING_FLUCTUATIONS = true;           break;
       case 'L': config->BCAL_NO_SAMPLING_FLOOR_TERM = true;             break;
       case 'M': config->BCAL_NO_POISSON_STATISTICS = true;              break;
+      case 'S': config->BCAL_NO_FADC_SATURATION = true;                 break;    
       }
     }
     else {
@@ -169,6 +170,7 @@ void Usage(void)
    cout << "    -K       Don't apply BCAL sampling fluctuations (def. apply)" << endl;
    cout << "    -L       Don't apply BCAL sampling floor term (def. apply)" << endl;
    cout << "    -M       Don't apply BCAL Poisson statistics (def. apply)" << endl;
+   cout << "    -S       Don't apply BCAL fADC saturation (def. apply)" << endl;
  //  cout << "    -f#      TOF sigma in psec (def: " <<  TOF_SIGMA/k_psec << ")" << endl;
    cout << "    -h       Print this usage statement." << endl;
    cout << endl;
