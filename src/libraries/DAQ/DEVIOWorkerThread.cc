@@ -227,6 +227,7 @@ void DEVIOWorkerThread::MakeEvents(void)
 	for(auto pe : current_parsed_events){
 	
 		pe->Clear(); // return previous event's objects to pools and clear vectors
+		pe->buff_len     = buff_len;
 		pe->istreamorder = istreamorder;
 		pe->run_number   = run_number_seed;
 		pe->event_number = event_num++;

@@ -33,16 +33,23 @@ void DCustomAction_TrackingEfficiency::Initialize(JEventLoop* locEventLoop)
 	TMap* locMiscInfoMap = new TMap(); //collection of pairs
 	locMiscInfoMap->SetName("MiscInfoMap");
 	locUserInfo->Add(locMiscInfoMap);
+	//set reaction name
+	locMiscInfoMap->Add(new TObjString("ReactionName"), new TObjString(locReaction->Get_ReactionName().c_str()));
 	//set pid
-	ostringstream locPIDStream;
-	locPIDStream << PDGtype(dMissingPID);
-	locMiscInfoMap->Add(new TObjString("MissingPID_PDG"), new TObjString(locPIDStream.str().c_str()));
+	ostringstream locOStream;
+	locOStream << PDGtype(dMissingPID);
+	locMiscInfoMap->Add(new TObjString("MissingPID_PDG"), new TObjString(locOStream.str().c_str()));
+	//set run#
+	locOStream.str("");
+	locOStream << locEventLoop->GetJEvent().GetRunNumber();
+	locMiscInfoMap->Add(new TObjString("RunNumber"), new TObjString(locOStream.str().c_str()));
 
 	//CHANNEL INFO
 	locBranchRegister.Register_Single<Float_t>("BeamEnergy");
 	locBranchRegister.Register_Single<Float_t>("BeamRFDeltaT");
 	locBranchRegister.Register_Single<Float_t>("ComboVertexZ");
 	locBranchRegister.Register_Single<UChar_t>("NumExtraTracks");
+	locBranchRegister.Register_Single<Float_t>("MissingMassSquared"); //is measured
 	locBranchRegister.Register_Single<Float_t>("KinFitChiSq"); //is -1 if no kinfit or failed to converge
 	locBranchRegister.Register_Single<UInt_t>("KinFitNDF"); //is 0 if no kinfit or failed to converged 
 	locBranchRegister.Register_Single<TVector3>("MissingP3"); //is kinfit if kinfit (& converged)
@@ -163,6 +170,7 @@ bool DCustomAction_TrackingEfficiency::Perform_Action(JEventLoop* locEventLoop, 
 	dTreeFillData.Fill_Single<Float_t>("BeamEnergy", locBeamParticle->energy());
 	dTreeFillData.Fill_Single<Float_t>("BeamRFDeltaT", locBeamRFDeltaT);
 	dTreeFillData.Fill_Single<UChar_t>("NumExtraTracks", (UChar_t)locNumExtraTracks);
+	dTreeFillData.Fill_Single<Float_t>("MissingMassSquared", locMeasuredMissingP4.M2());
 	dTreeFillData.Fill_Single<Float_t>("ComboVertexZ", locVertexZ);
 	if(locKinFitResults == NULL) //is true if no kinfit or failed to converged
 	{
@@ -187,57 +195,66 @@ bool DCustomAction_TrackingEfficiency::Perform_Action(JEventLoop* locEventLoop, 
 
 	/************************************************* WIRE-BASED TRACKS *************************************************/
 
-	//Get unused tracks
-	vector<const DTrackWireBased*> locUnusedWireBasedTracks;
-	dAnalysisUtilities->Get_UnusedWireBasedTracks(locEventLoop, locParticleCombo, locUnusedWireBasedTracks);
-
-	//find the best-matching Wire-based track corresponding to the missing particle
-	double locBestWireBasedMatchFOM = -1.0;
-	const DTrackWireBased* locBestTrackWireBased = NULL;
-	for(size_t loc_i = 0; loc_i < locUnusedWireBasedTracks.size(); ++loc_i)
+	if(!locEventLoop->GetJEvent().GetStatusBit(kSTATUS_REST))
 	{
-		if(locUnusedWireBasedTracks[loc_i]->PID() != dMissingPID)
-			continue; //only use tracking results with correct PID
+		//Get unused tracks
+		vector<const DTrackWireBased*> locUnusedWireBasedTracks;
+		dAnalysisUtilities->Get_UnusedWireBasedTracks(locEventLoop, locParticleCombo, locUnusedWireBasedTracks);
 
-		const TMatrixFSym& locCovarianceMatrix = *(locUnusedWireBasedTracks[loc_i]->errorMatrix());
-		TMatrixDSym locDCovarianceMatrix(3);
-		for(unsigned int loc_j = 0; loc_j < 3; ++loc_j)
+		//find the best-matching Wire-based track corresponding to the missing particle
+		double locBestWireBasedMatchFOM = -1.0;
+		const DTrackWireBased* locBestTrackWireBased = NULL;
+		for(size_t loc_i = 0; loc_i < locUnusedWireBasedTracks.size(); ++loc_i)
 		{
-			for(unsigned int loc_k = 0; loc_k < 3; ++loc_k)
-				locDCovarianceMatrix(loc_j, loc_k) = locCovarianceMatrix(loc_j, loc_k);
+			if(locUnusedWireBasedTracks[loc_i]->PID() != dMissingPID)
+				continue; //only use tracking results with correct PID
+
+			const TMatrixFSym& locCovarianceMatrix = *(locUnusedWireBasedTracks[loc_i]->errorMatrix());
+			TMatrixDSym locDCovarianceMatrix(3);
+			for(unsigned int loc_j = 0; loc_j < 3; ++loc_j)
+			{
+				for(unsigned int loc_k = 0; loc_k < 3; ++loc_k)
+					locDCovarianceMatrix(loc_j, loc_k) = locCovarianceMatrix(loc_j, loc_k);
+			}
+			locDCovarianceMatrix += locMissingCovarianceMatrix;
+
+			//invert matrix
+			TDecompLU locDecompLU(locDCovarianceMatrix);
+			//check to make sure that the matrix is decomposable and has a non-zero determinant
+			if((!locDecompLU.Decompose()) || (fabs(locDCovarianceMatrix.Determinant()) < 1.0E-300))
+				continue; // matrix is not invertible
+			locDCovarianceMatrix.Invert();
+
+			DVector3 locDeltaP3 = locUnusedWireBasedTracks[loc_i]->momentum() - locMissingP3;
+			double locMatchFOM = Calc_MatchFOM(locDeltaP3, locDCovarianceMatrix);
+
+			if(locMatchFOM > locBestWireBasedMatchFOM)
+			{
+				locBestWireBasedMatchFOM = locMatchFOM;
+				locBestTrackWireBased = locUnusedWireBasedTracks[loc_i];
+			}
 		}
-		locDCovarianceMatrix += locMissingCovarianceMatrix;
 
-		//invert matrix
-		TDecompLU locDecompLU(locDCovarianceMatrix);
-		//check to make sure that the matrix is decomposable and has a non-zero determinant
-		if((!locDecompLU.Decompose()) || (fabs(locDCovarianceMatrix.Determinant()) < 1.0E-300))
-			continue; // matrix is not invertible
-		locDCovarianceMatrix.Invert();
-
-		DVector3 locDeltaP3 = locUnusedWireBasedTracks[loc_i]->momentum() - locMissingP3;
-		double locMatchFOM = Calc_MatchFOM(locDeltaP3, locDCovarianceMatrix);
-
-		if(locMatchFOM > locBestWireBasedMatchFOM)
+		//FILL WIRE-BASED TRACKING INFO:
+		dTreeFillData.Fill_Single<Float_t>("ReconMatchFOM_WireBased", locBestWireBasedMatchFOM); //FOM < 0 if nothing, no-match
+		if(locBestTrackWireBased == nullptr)
 		{
-			locBestWireBasedMatchFOM = locMatchFOM;
-			locBestTrackWireBased = locUnusedWireBasedTracks[loc_i];
+			dTreeFillData.Fill_Single<Float_t>("ReconTrackingFOM_WireBased", -1.0);
+			dTreeFillData.Fill_Single<TVector3>("ReconP3_WireBased", TVector3());
+		}
+		else
+		{
+			dTreeFillData.Fill_Single<Float_t>("ReconTrackingFOM_WireBased", locBestTrackWireBased->FOM);
+			DVector3 locWireBasedDP3 = locBestTrackWireBased->momentum();
+			TVector3 locWireBasedP3(locWireBasedDP3.X(), locWireBasedDP3.Y(), locWireBasedDP3.Z());
+			dTreeFillData.Fill_Single<TVector3>("ReconP3_WireBased", locWireBasedP3);
 		}
 	}
-
-	//FILL WIRE-BASED TRACKING INFO:
-	dTreeFillData.Fill_Single<Float_t>("ReconMatchFOM_WireBased", locBestWireBasedMatchFOM); //FOM < 0 if nothing, no-match
-	if(locBestTrackWireBased == nullptr)
+	else //is a REST event, no wire-based tracks
 	{
+		dTreeFillData.Fill_Single<Float_t>("ReconMatchFOM_WireBased", -1.0);
 		dTreeFillData.Fill_Single<Float_t>("ReconTrackingFOM_WireBased", -1.0);
 		dTreeFillData.Fill_Single<TVector3>("ReconP3_WireBased", TVector3());
-	}
-	else
-	{
-		dTreeFillData.Fill_Single<Float_t>("ReconTrackingFOM_WireBased", locBestTrackWireBased->FOM);
-		DVector3 locWireBasedDP3 = locBestTrackWireBased->momentum();
-		TVector3 locWireBasedP3(locWireBasedDP3.X(), locWireBasedDP3.Y(), locWireBasedDP3.Z());
-		dTreeFillData.Fill_Single<TVector3>("ReconP3_WireBased", locWireBasedP3);
 	}
 
 	/************************************************* TIME-BASED TRACKS *************************************************/

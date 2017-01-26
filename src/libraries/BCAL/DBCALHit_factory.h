@@ -25,13 +25,16 @@ class DBCALHit_factory:public jana::JFactory<DBCALHit>{
 	public:
 		DBCALHit_factory(){
 		  PRINTCALIBRATION = false;
+		  VERBOSE = 1;
 		  if(gPARMS){
 		    gPARMS->SetDefaultParameter("BCALHIT:PRINTCALIBRATION", PRINTCALIBRATION, "Print the calibration parameters.");
+		    gPARMS->SetDefaultParameter("BCAL:VERBOSE", VERBOSE, "Set verbosity level. 0=none, 1=default");
 		  }
 		};
 		~DBCALHit_factory(){};
 
 		bool PRINTCALIBRATION;
+		int VERBOSE;
 
 		// shortcut geometry factors
 		// these should really be taken from
