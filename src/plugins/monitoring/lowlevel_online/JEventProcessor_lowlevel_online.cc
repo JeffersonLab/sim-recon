@@ -169,7 +169,7 @@ jerror_t JEventProcessor_lowlevel_online::init(void)
         
         const int Nstraws_total = Nstraws_integrated[27];
 
-        cdc_adc_multi = new TH1I("cdc_adc_multi", "CDC ADC Multiplicity", 250, 0, 250);
+        cdc_adc_multi = new TH1I("cdc_adc_multi", "CDC ADC Multiplicity", 500, 0, 500);
 
         cdc_adc_integral = new TH1I("cdc_adc_integral", "CDC fADC125 Pulse Integral;Integral (fADC counts)", 1000, 0, 20000);
         cdc_adc_time = new TH1I("cdc_adc_time", "CDC fADC125 Pulse Time;Time (ns)", 500, 0, 2000);
@@ -239,15 +239,15 @@ jerror_t JEventProcessor_lowlevel_online::init(void)
         maindir->cd();
         gDirectory->mkdir("FDC")->cd();
         
-        fdc_adc_multi = new TH1I("fdc_adc_multi", "FDC ADC Multiplicity", 250, 0, 500);
-        fdc_tdc_multi = new TH1I("fdc_tdc_multi", "FDC TDC Multiplicity", 250, 0, 500);
+        fdc_adc_multi = new TH1I("fdc_adc_multi", "FDC ADC Multiplicity", 500, 0, 1000);
+        fdc_tdc_multi = new TH1I("fdc_tdc_multi", "FDC TDC Multiplicity", 500, 0, 1000);
 
         fdc_adc_integral = new TH1I("fdc_adc_integral", "FDC fADC125 Pulse Integral;Integral (fADC counts)", 1000, 0, 40000);
         fdc_adc_time = new TH1I("fdc_adc_time", "FDC fADC125 Pulse Time;Time (ns)", 500, 0, 3000);
         fdc_adc_pedestal = new TH1I("fdc_adc_pedestal", "FDC fADC125 Summed Pedestal;Pedestal Sum (fADC counts)", 110, 0, 2200);
 
         //fdc_tdc_time = new TH1I("fdc_tdc_time", "FDC TDC Pulse Time;Time (ns)", 1000, -1000, 3000);
-        fdc_tdc_time = new TH1I("fdc_tdc_time", "FDC TDC Pulse Time;Time (ns)", 1000, 3000, 5000);
+        fdc_tdc_time = new TH1I("fdc_tdc_time", "FDC TDC Pulse Time;Time (ns)", 1000, -500, 9500);
 
 	if(MORE_PLOTS) {
 		fdc_adc_integral_pedsub = new TH1I("fdc_adc_integral_pedsub", "FDC fADC125 Pulse Integral (Pedestal Subtracted);Integral (fADC counts)", 1000, 0, 40000);
@@ -363,7 +363,7 @@ jerror_t JEventProcessor_lowlevel_online::init(void)
         st_adc_time = new TH1I("st_adc_time", "ST fADC250 Pulse Time;Time (ns)", 500, 0, 5000);
         st_adc_pedestal = new TH1I("st_adc_pedestal", "ST fADC250 Summed Pedestal;Pedestal Sum (fADC counts)", 164, 0, 8200);
 
-        st_tdc_time = new TH1I("st_tdc_time", "ST TDC Pulse Time;Time (ns)", 1000, -1000, 3000);
+        st_tdc_time = new TH1I("st_tdc_time", "ST TDC Pulse Time;Time (ns)", 1000, -1000, 4000);
 
 	if(MORE_PLOTS) {
 		st_adc_integral_pedsub = new TH1I("st_adc_integral_pedsub", "ST fADC250 Pulse Integral (Pedestal Subtracted);Integral (fADC counts)", 1000, 0, 40000);
@@ -399,8 +399,8 @@ jerror_t JEventProcessor_lowlevel_online::init(void)
         maindir->cd();
         gDirectory->mkdir("TAGH")->cd();
 
-        tagh_adc_multi = new TH1I("tagh_adc_multi", "TAGH ADC Multiplicity", 350, 0, 350);
-        tagh_tdc_multi = new TH1I("tagh_tdc_multi", "TAGH TDC Multiplicity", 350, 0, 350);
+        tagh_adc_multi = new TH1I("tagh_adc_multi", "TAGH ADC Multiplicity", 750, 0, 750);
+        tagh_tdc_multi = new TH1I("tagh_tdc_multi", "TAGH TDC Multiplicity", 750, 0, 750);
 
         tagh_adc_integral = new TH1I("tagh_adc_integral", "TAGH fADC250 Pulse Integral;Integral (fADC counts)", 1000, 0, 25000);
         tagh_adc_peak = new TH1I("tagh_adc_peak", "TAGH fADC250 Pulse Peak;Peak (fADC counts)", 500, 0, 5000);
@@ -452,7 +452,7 @@ jerror_t JEventProcessor_lowlevel_online::init(void)
         tagm_adc_time = new TH1I("tagm_adc_time", "TAGM fADC250 Pulse Time;Time (ns)", 500, 0, 5000);
         tagm_adc_pedestal = new TH1I("tagm_adc_pedestal", "TAGM fADC250 Summed Pedestal;Pedestal Sum (fADC counts)", 164, 0, 8200);
 
-        tagm_tdc_time = new TH1I("tagm_tdc_time", "TAGM TDC Pulse Time;Time (ns)", 1000, -1000, 3000);
+        tagm_tdc_time = new TH1I("tagm_tdc_time", "TAGM TDC Pulse Time;Time (ns)", 1000, -1000, 5000);
 
 	if(MORE_PLOTS) {
 		tagm_adc_integral_pedsub = new TH1I("tagm_adc_integral_pedsub", "TAGM fADC250 Pulse Integral (Pedestal Subtracted);Integral (fADC counts)", 1000, 0, 25000);
@@ -486,8 +486,8 @@ jerror_t JEventProcessor_lowlevel_online::init(void)
         maindir->cd();
         gDirectory->mkdir("TOF")->cd();
 
-        tof_adc_multi = new TH1I("tof_adc_multi", "TOF ADC Multiplicity", 150, 0, 150);
-        tof_tdc_multi = new TH1I("tof_tdc_multi", "TOF TDC Multiplicity", 150, 0, 150);
+        tof_adc_multi = new TH1I("tof_adc_multi", "TOF ADC Multiplicity", 250, 0, 250);
+        tof_tdc_multi = new TH1I("tof_tdc_multi", "TOF TDC Multiplicity", 250, 0, 250);
 
         tof_adc_integral = new TH1I("tof_adc_integral", "TOF fADC250 Pulse Integral;Integral (fADC counts)", 1000, 0, 40000);
         tof_adc_peak = new TH1I("tof_adc_peak", "TOF fADC250 Pulse Peak;Peak (fADC counts)", 500, 0, 1500);
