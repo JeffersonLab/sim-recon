@@ -128,6 +128,12 @@ DTranslationTable::DTranslationTable(JEventLoop *loop)
 			"plugin, but otherwise, it will just give a slight performance"
 			"hit.");
 
+	// Here we create a bunch of config. parameters to allow us to overwrite
+	// the nsamples_integral and nsamples_pedestal fields of each type of
+	// fADC digihit class. This is done using some special macros in
+	// DTranslationTable.h
+	InitNsamplesOverride();
+
 	// Initialize dedicated JStreamLog used for debugging messages
 	ttout.SetTag("--- TT ---: ");
 	ttout.SetTimestampFlag();
@@ -615,6 +621,10 @@ void DTranslationTable::ApplyTranslationTable(JEventLoop *loop) const
              break;
       }
    }
+	
+	// Optionally overwrite nsamples_integral and/or nsamples_pedestal if 
+	// user specified via config. parameters.
+	OverwriteNsamples();
 
 	// Sort object order (this makes it easier to browse with hd_dump)
 	sort(vDBCALDigiHit.begin(), vDBCALDigiHit.end(), SortBCALDigiHit);
