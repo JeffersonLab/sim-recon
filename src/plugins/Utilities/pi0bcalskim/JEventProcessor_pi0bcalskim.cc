@@ -24,6 +24,9 @@
 #include "JANA/JApplication.h"
 #include "JANA/JFactory.h"
 #include "BCAL/DBCALShower.h"
+#include "RF/DRFTime.h"
+#include "PID/DEventRFBunch.h"
+
 #include "DLorentzVector.h"
 #include "TTree.h"
 #include "units.h"
@@ -156,6 +159,12 @@ jerror_t JEventProcessor_pi0bcalskim::evnt(JEventLoop *loop, uint64_t eventnumbe
 
 	//japp->RootWriteLock();
 	
+    vector<const DEventRFBunch*> locEventRFBunches;
+    loop->Get(locEventRFBunches);
+    if(locEventRFBunches.size() > 0) {
+        locObjectsToSave.push_back(static_cast<const JObject *>(locEventRFBunches[0]));
+    }
+
 	for (unsigned int i = 0 ; i < kinfitVertex.size(); i++)
 	{
         // if the vertex information exists, save it as well

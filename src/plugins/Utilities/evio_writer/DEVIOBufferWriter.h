@@ -36,6 +36,8 @@
 #include <TTAB/DTranslationTable.h>
 
 #include <PID/DVertex.h>
+#include <PID/DEventRFBunch.h>
+
 
 using namespace std;
 using namespace jana;
@@ -122,6 +124,10 @@ class DEVIOBufferWriter
         void WriteDVertexData(JEventLoop *loop,
                               vector<uint32_t> &buff,
                               const DVertex *vertex) const;
+
+        void WriteDEventRFBunchData(JEventLoop *loop, 
+                                    vector<uint32_t> &buff, 
+                                    const DEventRFBunch *rftime) const;
 
         bool write_out_all_rocs;
         set<uint32_t> rocs_to_write_out;
