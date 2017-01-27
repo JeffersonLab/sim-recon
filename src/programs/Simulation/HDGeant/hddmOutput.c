@@ -151,6 +151,10 @@ int loadOutput (int runNo)
    if ((hitView->mcTrajectory = pickMCTrajectory()) != HDDM_NULL) {
       ++packages_hit;
    }
+   if (packages_hit == 0) {
+      thisOutputEvent->physicsEvents->in[0].hitView = HDDM_NULL;
+      FREE(hitView);
+   }
    return packages_hit;
 }
 

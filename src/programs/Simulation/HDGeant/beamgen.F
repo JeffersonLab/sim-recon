@@ -20,6 +20,7 @@
 #include "geant321/gcscan.inc"
 #include "geant321/gcomis.inc"
 #include "geant321/gctrak.inc"
+#include "controlparams.inc"
 #include "cobrems.inc"
  
       real vertex(4),plab(5),pbeam
@@ -212,5 +213,7 @@ c  freq > freqMaximum is generated; a few ppm of these is no problem.
       call GSVERT(vertex,0,0,ubuf,nubuf,nvert)
       call GSKINE(plab,1,nvert,0,0,nt) ! push the beam photon on the stack
       vertex(4) = TOFG
-      call hitTagger(vertex,vertex,plab,plab,0.,1,0,0)
+      if (genbeam_mode(1).eq.0) then
+         call hitTagger(vertex,vertex,plab,plab,0.,1,0,0)
+      endif
       end

@@ -464,6 +464,7 @@ s_StartCntr_t* pickStartCntr ()
             (m > 0 &&  box->stcTruthPoints->in[m-1].track == track &&
              fabs(box->stcTruthPoints->in[m-1].t - t) < 0.5))
          {
+            FREE(points->in[point].trackID);
             continue;
          }
          box->stcTruthPoints->in[m] = item->stcTruthPoints->in[point];

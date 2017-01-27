@@ -243,6 +243,7 @@ s_PairSpectrometerFine_t* pickPs ()
             (m > 0 &&  box->psTruthPoints->in[m-1].track == track &&
              fabs(box->psTruthPoints->in[m-1].t - t) < 0.5))
          {
+            FREE(points->in[point].trackID);
             continue;
          }
          box->psTruthPoints->in[m] = item->psTruthPoints->in[point];

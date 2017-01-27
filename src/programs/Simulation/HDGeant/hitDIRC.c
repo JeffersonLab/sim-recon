@@ -119,6 +119,7 @@ s_DIRC_t* pickDirc() {
                 (m > 0 &&  box->dircTruthPoints->in[m-1].track == track &&
                  fabs(box->dircTruthPoints->in[m-1].t - t) < 0.5))
             {
+                FREE(dircpoints->in[dircpoint].trackID);
                 continue;
             }
             box->dircTruthPoints->in[m] = dircpoints->in[dircpoint];

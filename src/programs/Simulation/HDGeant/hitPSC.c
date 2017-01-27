@@ -241,6 +241,7 @@ s_PairSpectrometerCoarse_t* pickPsc ()
             (m > 0 &&  box->pscTruthPoints->in[m-1].track == track &&
              fabs(box->pscTruthPoints->in[m-1].t - t) < 0.5))
          {
+            FREE(points->in[point].trackID);
             continue;
          }
          box->pscTruthPoints->in[m] = item->pscTruthPoints->in[point];
