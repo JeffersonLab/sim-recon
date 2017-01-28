@@ -1,15 +1,15 @@
 #Emin Emax (photon energy range)
-3. 11.7
+3.0 11.7
 #Electron beam energy [GeV], coherent peak [GeV] and collimator diameter [m]
 12.0 9.0 0.0034
 #GEANT ids of decay particles (1=gamma,7=pi0, 8=pi+, 9=pi-, 17=eta).
 7 7
 #Regge cut parameters: dc c_P_omega c_f2_omega c_P_rho c_f2_rho 
 1.69 0.3 1. -2 -4.
-#Processes to simulate: f0(600) f0(980) f0(1500) f0(1710) background
-1 1 0 0 1
-# phases between resonant and background waves
-0. 1.5708 0. 0.
+#Processes to simulate: f0(600) f0(980) f0(1370) f2(1270) background
+1 1 1 1 1
+# phases between background waves and f0(980): f0(600) f0(1370) f2(1270) bkgrd
+2.35 1.57 0. 3.14
 
 
    
