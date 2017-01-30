@@ -53,9 +53,9 @@ OS         = "centos65"        # Specify CentOS65 machines
 
 
 # OUTPUT DATA LOCATION
-DATA_OUTPUT_BASE_DIR    = "/lustre/expphy/work/halld/home/tbritton/Data/Testsm"#your desired output location (only needed for SWIF jobs
+DATA_OUTPUT_BASE_DIR    = ""#your desired output location (only needed for SWIF jobs
 #environment file location
-ENVFILE           = "/w/halld-scifs1a/home/tbritton/master_env_setup"#change this to your own environment file
+ENVFILE           = "master_env_setup"#change this to your own environment location/file
 
 def add_job(WORKFLOW,CHANNEL, RUNNO, FILENO,SCRIPT,COMMAND):
 
