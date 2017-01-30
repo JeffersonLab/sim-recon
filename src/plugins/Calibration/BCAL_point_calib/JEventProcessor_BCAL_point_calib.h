@@ -28,10 +28,6 @@ class JEventProcessor_BCAL_point_calib:public jana::JEventProcessor{
 		~JEventProcessor_BCAL_point_calib();
 		const char* className(void){return "JEventProcessor_BCAL_point_calib";}
 
-		uint32_t BCALShowers_per_event  ;
-
-		int Run_Number;
-
 	private:
 //		const DAnalysisUtilities* dAnalysisUtilities;
 		jerror_t init(void);						///< Called once at program start.
@@ -39,6 +35,13 @@ class JEventProcessor_BCAL_point_calib:public jana::JEventProcessor{
 		jerror_t evnt(jana::JEventLoop *eventLoop, uint64_t eventnumber);	///< Called every event.
 		jerror_t erun(void);						///< Called everytime run number changes, provided brun has been called.
 		jerror_t fini(void);						///< Called after last event of last event source has been processed.
+
+
+		uint32_t BCALShowers_per_event;
+		int Run_Number;
+
+		bool DEBUG;    // control the creation of extra histograms
+		bool VERBOSE;  // verbose output
 };
 
 #endif // _JEventProcessor_BCAL_point_calib_

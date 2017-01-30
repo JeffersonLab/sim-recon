@@ -136,156 +136,165 @@ jerror_t JEventProcessor_BCAL_point_calib::init(void)
 	// already not NULL, assume all histograms are defined and return now
 	
 	// japp->RootFillLock(this); 
-
- 	// lock all root operations
- 	japp->RootWriteLock();
+        DEBUG=false;
+	VERBOSE=false;
+        gPARMS->SetDefaultParameter("BCALPOINTCALIB:DEBUG", DEBUG, "Control the creation of extra histograms");
+        gPARMS->SetDefaultParameter("BCALPOINTCALIB:DEBUG", VERBOSE, "Control verbose output");
 
 	if(h1_Num_matched_showers != NULL){
- 		// unlock
- 	  	japp->RootUnLock();
-	//	japp->RootFillUnLock(this); //RELEASE ROOT FILL LOCK
 		return NOERROR;
 	}
 	
+ 	// lock all root operations
+ 	japp->RootWriteLock();
+
 	 //	TDirectory *dir = new TDirectoryFile("BCAL","BCAL");
 	 //	dir->cd();
 	// create root folder for bcal and cd to it, store main dir
 	TDirectory *main = gDirectory;
 	gDirectory->mkdir("bcal_point_calibs")->cd();
 
+
         int nbins = 100;
 	int nbins2 = 500;
+
 
 	h1_Num_matched_showers = new TH1I("h1_Num_matched_showers", "Number of matched showers per event", 20,0,20);
 	h1_Num_matched_showers->SetXTitle("Number of showers");
 	h1_Num_matched_showers->SetYTitle("counts");
-
-	// shower info
-	h1_E = new TH1I("h1_E", "Matched energy per shower",nbins,0,2);
-	h1_E->SetXTitle("Energy per shower (GeV)");
-	h1_E->SetYTitle("counts");
-	h1_E_raw = new TH1I("h1_E_raw", "Matched raw energy per shower",nbins,0,2);
-	h1_E_raw->SetXTitle("Raw Energy per shower (GeV)");
-	h1_E_raw->SetYTitle("counts");
-	h1_x = new TH1I("h1_x", "x pos of shower",nbins2,-100,100);
-	h1_x->SetXTitle("x (cm)");
-	h1_x->SetYTitle("counts");
-	h1_y = new TH1I("h1_y", "y pos of shower",nbins2,-100,100);
-	h1_y->SetXTitle("y (cm)");
-	h1_y->SetYTitle("counts");
-	h1_z = new TH1I("h1_z", "z pos of shower",nbins2,0,500);
-	h1_z->SetXTitle("z (cm)");
-	h1_z->SetYTitle("counts");
-	h1_t = new TH1I("h1_t", "time of shower",nbins2,-100,100);
-	h1_t->SetXTitle("time of shower (ns)");
-	h1_t->SetYTitle("counts");
-	h1_N_cell = new TH1I("h1_N_cell", "N_cell of shower",20,0,20);
-	h1_N_cell->SetXTitle("N_cell");
-	h1_N_cell->SetYTitle("counts");
-
-	// track info
+	  
 	h1trk_Num_matched_tracks = new TH1I("h1trk_Num_matched_tracks", "Number of matched tracks per event", 20,0,20);
 	h1trk_Num_matched_tracks->SetXTitle("Number of tracks");
 	h1trk_Num_matched_tracks->SetYTitle("counts");
-	h1trk_FOM = new TH1I("h1trk_FOM", "FOM for matched tracks", nbins,0,1);
-	h1trk_FOM->SetXTitle("FOM");
-	h1trk_FOM->SetYTitle("counts");
-	h1trk_pmag = new TH1I("h1trk_mag", "pmag for matched tracks", nbins,0,4);
-	h1trk_pmag->SetXTitle("pmag (GeV)");
-	h1trk_pmag->SetYTitle("counts");
-	h1trk_px = new TH1I("h1trk_px", "px for matched tracks", nbins,0,2);
-	h1trk_px->SetXTitle("px (GeV)");
-	h1trk_px->SetYTitle("counts");
-	h1trk_py = new TH1I("h1trk_py", "py for matched tracks", nbins,0,2);
-	h1trk_py->SetXTitle("Number of tracks");
-	h1trk_py->SetYTitle("counts");
-	h1trk_pz = new TH1I("h1trk_pz", "pz for matched tracks", nbins,0,4);
-	h1trk_pz->SetXTitle("pz (GeV)");
-	h1trk_pz->SetYTitle("counts");
-        h1trk_x = new TH1I("h1trk_x", "x for matched tracks", nbins2,-30,30);
-	h1trk_x->SetXTitle("x (cm)");
-	h1trk_x->SetYTitle("counts");
-	h1trk_y = new TH1I("h1trk_y", "y for matched tracks", nbins2,-30,30);
-	h1trk_y->SetXTitle("y (cm)");
-	h1trk_y->SetYTitle("counts");
-	h1trk_z = new TH1I("h1trk_z", "z for matched tracks", nbins2,-50,250);
-	h1trk_z->SetXTitle("z (cm)");
-	h1trk_z->SetYTitle("counts");
-	h1trk_energy = new TH1I("h1trk_energy", "energy for matched tracks", nbins,0,4);
-	h1trk_energy->SetXTitle("energy (GeV)");
-	h1trk_energy->SetYTitle("counts");
 
-	h2_Evsenergy = new TH2I("h2_Evsenergy", "E vs energy matched tracks", nbins,0,4,nbins,0,4);
-	h2_Evsenergy->SetXTitle("track energy (GeV)");
-	h2_Evsenergy->SetYTitle("Eshower (GeV)");
-	h2_pmagvsenergy = new TH2I("h2_pmagvsenergy", "pmag vs energy matched tracks", nbins,0,4,nbins,0,4);
-	h2_pmagvsenergy->SetXTitle("track energy (GeV)");
-	h2_pmagvsenergy->SetYTitle("track pmag (GeV)");
-
-	// point info
-	h1pt_Num_points = new TH1I("h1pt_Num_points", "pt points per shower",20,0,20);
-	h1pt_Num_points->SetXTitle("Points per Shower");
-	h1pt_Num_points->SetYTitle("counts");
-	h1pt_module = new TH1I("h1pt_module", "pt module number",50,0,50);
-	h1pt_module->SetXTitle("Module");
-	h1pt_module->SetYTitle("counts");
-	h1pt_layer = new TH1I("h1pt_layer", "pt layer number",5,0,5);
-	h1pt_layer->SetXTitle("Layer");
-	h1pt_layer->SetYTitle("counts");
-	h1pt_sector = new TH1I("h1pt_sector", "pt sector number",5,0,5);
-	h1pt_sector->SetXTitle("Sector");
-	h1pt_sector->SetYTitle("counts");
-	h1pt_cell_id = new TH1I("h1pt_cell_id", "pt cell id number",800,0,800);
-	h1pt_cell_id->SetXTitle("Cell ID");
-	h1pt_cell_id->SetYTitle("counts");
-	h1pt_energy = new TH1I("h1pt_energy", "pt energy",nbins,0,1);
-	h1pt_energy->SetXTitle("Point Energy");
-	h1pt_energy->SetYTitle("counts");
-	h1pt_energy_US = new TH1I("h1pt_energy_US", "pt energy US",nbins,0,1);
-	h1pt_energy_US->SetXTitle("Point Energy US");
-	h1pt_energy_US->SetYTitle("counts");
-	h1pt_energy_DS = new TH1I("h1pt_energy_DS", "pt energy DS",nbins,0,1);
-	h1pt_energy_DS->SetXTitle("Point Energy DS");
-	h1pt_energy_DS->SetYTitle("counts");
-	h1pt_z = new TH1I("h1pt_z", "z for point",nbins2,0,500);
-	h1pt_z->SetXTitle("z (cm)");
-	h1pt_z->SetYTitle("counts");
-	h1pt_r = new TH1I("h1pt_r", "r for point",nbins,60,90);
-	h1pt_r->SetXTitle("r (cm)");
-	h1pt_r->SetYTitle("counts");
-	h1pt_r_size = new TH1I("h1pt_r_size", "r size of point", 20, 0, 20);
-	h1pt_r_size->SetXTitle("r size (cm)");
-	h1pt_r_size->SetYTitle("counts");
-	h1pt_phi = new TH1I("h1pt_phi", "phi of point", 700, 0, 7);
-	h1pt_phi->SetXTitle("phi (rad)");
-	h1pt_phi->SetYTitle("counts");
-	h1pt_t = new TH1I("h1pt_t", "t for point",nbins2,-100,100);
-	h1pt_t->SetXTitle("t");
-	h1pt_t->SetYTitle("counts");
-
-	// z_track and z_point correlation
-	h1_ztrack_minus_zpoint = new TH1I("h1_ztrack_minus_zpoint", "z_track - z_point", 400, -200, 200);
-	h1_ztrack_minus_zpoint->SetXTitle("z_track - z_point (cm)");
-	h1_ztrack_minus_zpoint->SetYTitle("counts");
-
-	h1_abs_ztrack_minus_zpoint = new TH1I("h1_abs_ztrack_minus_zpoint", "|z_track - z_point|", 400, 0, 400);
-	h1_abs_ztrack_minus_zpoint->SetXTitle("|z_track - z_point| (cm)");
-	h1_abs_ztrack_minus_zpoint->SetYTitle("counts");
-	h2_ztrack_minus_zpoint_vs_ztrack = new TH2I("h2_ztrack_minus_zpoint_vs_ztrack", "z_track - z_point, vs z_track", 500, -100, 400, 400, -200, 200); 
-	h2_ztrack_minus_zpoint_vs_ztrack->SetXTitle("z_track (cm)");
-	h2_ztrack_minus_zpoint_vs_ztrack->SetYTitle("z_track - z_point (cm)");
-	h2_zpoint_vs_ztrack = new TH2I("h2_zpoint_vs_ztrack", "z point vs z track for the BCAL",1000,0,500,1000,0,500);
-	h2_zpoint_vs_ztrack->SetXTitle("z of track (cm)");
-	h2_zpoint_vs_ztrack->SetYTitle("z of point (cm)"); 
-	h2_zpoint_vs_ztrack_thrown = new TH2I("h2_zpoint_vs_ztrack_thrown", "thrown z point vs z track for the BCAL",1000,0,500,1000,0,500);
-	h2_zpoint_vs_ztrack_thrown->SetXTitle("z of track (cm)");
-	h2_zpoint_vs_ztrack_thrown->SetYTitle("z of point (cm)"); 
-	
 	// thrown points per channel (if cuts are applied)
 	h1_thrown_per_channel = new TH1D("h1_thrown_per_channel","Percentage of thrown points per Channel",800,0,800);
 	h1_thrown_per_channel->SetXTitle("Channel #");
 	h1_thrown_per_channel->SetYTitle("Percentage (%)");
 	h1_thrown_per_channel->SetMarkerStyle(20);
+
+	h1pt_Num_points = new TH1I("h1pt_Num_points", "pt points per shower",20,0,20);
+	h1pt_Num_points->SetXTitle("Points per Shower");
+	h1pt_Num_points->SetYTitle("counts");
+
+	if(DEBUG) {
+	  
+	  // shower info
+	  h1_E = new TH1I("h1_E", "Matched energy per shower",nbins,0,2);
+	  h1_E->SetXTitle("Energy per shower (GeV)");
+	  h1_E->SetYTitle("counts");
+	  h1_E_raw = new TH1I("h1_E_raw", "Matched raw energy per shower",nbins,0,2);
+	  h1_E_raw->SetXTitle("Raw Energy per shower (GeV)");
+	  h1_E_raw->SetYTitle("counts");
+	  h1_x = new TH1I("h1_x", "x pos of shower",nbins2,-100,100);
+	  h1_x->SetXTitle("x (cm)");
+	  h1_x->SetYTitle("counts");
+	  h1_y = new TH1I("h1_y", "y pos of shower",nbins2,-100,100);
+	  h1_y->SetXTitle("y (cm)");
+	  h1_y->SetYTitle("counts");
+	  h1_z = new TH1I("h1_z", "z pos of shower",nbins2,0,500);
+	  h1_z->SetXTitle("z (cm)");
+	  h1_z->SetYTitle("counts");
+	  h1_t = new TH1I("h1_t", "time of shower",nbins2,-100,100);
+	  h1_t->SetXTitle("time of shower (ns)");
+	  h1_t->SetYTitle("counts");
+	  h1_N_cell = new TH1I("h1_N_cell", "N_cell of shower",20,0,20);
+	  h1_N_cell->SetXTitle("N_cell");
+	  h1_N_cell->SetYTitle("counts");
+
+	  // track info
+	  h1trk_FOM = new TH1I("h1trk_FOM", "FOM for matched tracks", nbins,0,1);
+	  h1trk_FOM->SetXTitle("FOM");
+	  h1trk_FOM->SetYTitle("counts");
+	  h1trk_pmag = new TH1I("h1trk_mag", "pmag for matched tracks", nbins,0,4);
+	  h1trk_pmag->SetXTitle("pmag (GeV)");
+	  h1trk_pmag->SetYTitle("counts");
+	  h1trk_px = new TH1I("h1trk_px", "px for matched tracks", nbins,0,2);
+	  h1trk_px->SetXTitle("px (GeV)");
+	  h1trk_px->SetYTitle("counts");
+	  h1trk_py = new TH1I("h1trk_py", "py for matched tracks", nbins,0,2);
+	  h1trk_py->SetXTitle("Number of tracks");
+	  h1trk_py->SetYTitle("counts");
+	  h1trk_pz = new TH1I("h1trk_pz", "pz for matched tracks", nbins,0,4);
+	  h1trk_pz->SetXTitle("pz (GeV)");
+	  h1trk_pz->SetYTitle("counts");
+	  h1trk_x = new TH1I("h1trk_x", "x for matched tracks", nbins2,-30,30);
+	  h1trk_x->SetXTitle("x (cm)");
+	  h1trk_x->SetYTitle("counts");
+	  h1trk_y = new TH1I("h1trk_y", "y for matched tracks", nbins2,-30,30);
+	  h1trk_y->SetXTitle("y (cm)");
+	  h1trk_y->SetYTitle("counts");
+	  h1trk_z = new TH1I("h1trk_z", "z for matched tracks", nbins2,-50,250);
+	  h1trk_z->SetXTitle("z (cm)");
+	  h1trk_z->SetYTitle("counts");
+	  h1trk_energy = new TH1I("h1trk_energy", "energy for matched tracks", nbins,0,4);
+	  h1trk_energy->SetXTitle("energy (GeV)");
+	  h1trk_energy->SetYTitle("counts");
+	  
+	  h2_Evsenergy = new TH2I("h2_Evsenergy", "E vs energy matched tracks", nbins,0,4,nbins,0,4);
+	  h2_Evsenergy->SetXTitle("track energy (GeV)");
+	  h2_Evsenergy->SetYTitle("Eshower (GeV)");
+	  h2_pmagvsenergy = new TH2I("h2_pmagvsenergy", "pmag vs energy matched tracks", nbins,0,4,nbins,0,4);
+	  h2_pmagvsenergy->SetXTitle("track energy (GeV)");
+	  h2_pmagvsenergy->SetYTitle("track pmag (GeV)");
+	  
+	  // point info
+	  h1pt_module = new TH1I("h1pt_module", "pt module number",50,0,50);
+	  h1pt_module->SetXTitle("Module");
+	  h1pt_module->SetYTitle("counts");
+	  h1pt_layer = new TH1I("h1pt_layer", "pt layer number",5,0,5);
+	  h1pt_layer->SetXTitle("Layer");
+	  h1pt_layer->SetYTitle("counts");
+	  h1pt_sector = new TH1I("h1pt_sector", "pt sector number",5,0,5);
+	  h1pt_sector->SetXTitle("Sector");
+	  h1pt_sector->SetYTitle("counts");
+	  h1pt_cell_id = new TH1I("h1pt_cell_id", "pt cell id number",800,0,800);
+	  h1pt_cell_id->SetXTitle("Cell ID");
+	  h1pt_cell_id->SetYTitle("counts");
+	  h1pt_energy = new TH1I("h1pt_energy", "pt energy",nbins,0,1);
+	  h1pt_energy->SetXTitle("Point Energy");
+	  h1pt_energy->SetYTitle("counts");
+	  h1pt_energy_US = new TH1I("h1pt_energy_US", "pt energy US",nbins,0,1);
+	  h1pt_energy_US->SetXTitle("Point Energy US");
+	  h1pt_energy_US->SetYTitle("counts");
+	  h1pt_energy_DS = new TH1I("h1pt_energy_DS", "pt energy DS",nbins,0,1);
+	  h1pt_energy_DS->SetXTitle("Point Energy DS");
+	  h1pt_energy_DS->SetYTitle("counts");
+	  h1pt_z = new TH1I("h1pt_z", "z for point",nbins2,0,500);
+	  h1pt_z->SetXTitle("z (cm)");
+	  h1pt_z->SetYTitle("counts");
+	  h1pt_r = new TH1I("h1pt_r", "r for point",nbins,60,90);
+	  h1pt_r->SetXTitle("r (cm)");
+	  h1pt_r->SetYTitle("counts");
+	  h1pt_r_size = new TH1I("h1pt_r_size", "r size of point", 20, 0, 20);
+	  h1pt_r_size->SetXTitle("r size (cm)");
+	  h1pt_r_size->SetYTitle("counts");
+	  h1pt_phi = new TH1I("h1pt_phi", "phi of point", 700, 0, 7);
+	  h1pt_phi->SetXTitle("phi (rad)");
+	  h1pt_phi->SetYTitle("counts");
+	  h1pt_t = new TH1I("h1pt_t", "t for point",nbins2,-100,100);
+	  h1pt_t->SetXTitle("t");
+	  h1pt_t->SetYTitle("counts");
+	  
+	  // z_track and z_point correlation
+	  h1_ztrack_minus_zpoint = new TH1I("h1_ztrack_minus_zpoint", "z_track - z_point", 400, -200, 200);
+	  h1_ztrack_minus_zpoint->SetXTitle("z_track - z_point (cm)");
+	  h1_ztrack_minus_zpoint->SetYTitle("counts");
+
+	  h1_abs_ztrack_minus_zpoint = new TH1I("h1_abs_ztrack_minus_zpoint", "|z_track - z_point|", 400, 0, 400);
+	  h1_abs_ztrack_minus_zpoint->SetXTitle("|z_track - z_point| (cm)");
+	  h1_abs_ztrack_minus_zpoint->SetYTitle("counts");
+	  h2_ztrack_minus_zpoint_vs_ztrack = new TH2I("h2_ztrack_minus_zpoint_vs_ztrack", "z_track - z_point, vs z_track", 500, -100, 400, 400, -200, 200); 
+	  h2_ztrack_minus_zpoint_vs_ztrack->SetXTitle("z_track (cm)");
+	  h2_ztrack_minus_zpoint_vs_ztrack->SetYTitle("z_track - z_point (cm)");
+	  h2_zpoint_vs_ztrack = new TH2I("h2_zpoint_vs_ztrack", "z point vs z track for the BCAL",1000,0,500,1000,0,500);
+	  h2_zpoint_vs_ztrack->SetXTitle("z of track (cm)");
+	  h2_zpoint_vs_ztrack->SetYTitle("z of point (cm)"); 
+	  h2_zpoint_vs_ztrack_thrown = new TH2I("h2_zpoint_vs_ztrack_thrown", "thrown z point vs z track for the BCAL",1000,0,500,1000,0,500);
+	  h2_zpoint_vs_ztrack_thrown->SetXTitle("z of track (cm)");
+	  h2_zpoint_vs_ztrack_thrown->SetYTitle("z of point (cm)"); 
+	  
+	}
 
 	// back to main dir
 	main->cd();
@@ -362,6 +371,8 @@ jerror_t JEventProcessor_BCAL_point_calib::evnt(JEventLoop *loop, uint64_t event
 	vector <const DTrackTimeBased* > matchedTracks;
 	DVector3 mypos(0.0,0.0,0.0);
 
+	map< const DBCALShower*, vector<const DBCALPoint*> > matchedShowerPoints_cache;
+
 	// the following two loops loop through a) the showers in each event and b) the tracks in each event and determine the z and phi of both. If the quantities dZ and dPhi are "small" enough, the relevant track and shower are appended to the end of the matchedTracks and matchedShowers vectors respectively
 
 	for (unsigned int i=0; i < locTrackTimeBased.size() ; ++i){
@@ -385,15 +396,14 @@ jerror_t JEventProcessor_BCAL_point_calib::evnt(JEventLoop *loop, uint64_t event
 			matchedShowers.push_back(locBCALShowers[j]);
 			matchedTracks.push_back(locTrackTimeBased[i]);
 		}
+
 	  } // end of shower loop
 	} // end of track loop
 
-	// FILL HISTOGRAMS
-	// Since we are filling histograms local to this plugin, it will not interfere with other ROOT operations: can use plugin-wide ROOT fill lock
-	japp->RootFillLock(this); //ACQUIRE ROOT FILL LOCK
+
 
 	event_count++;
-	if (event_count%100 == 0) printf ("Event count=%d, EventNumber=%lu\n",event_count,eventnumber);
+	if (VERBOSE && (event_count%100 == 0)) printf ("Event count=%d, EventNumber=%lu\n",event_count,eventnumber);
 
 	// vectors to store the intersection of the matched tracks with the middle of each BCAL layer
 	DVector3 mypos_1(0.0,0.0,0.0); // middle of Layer 1
@@ -413,52 +423,66 @@ jerror_t JEventProcessor_BCAL_point_calib::evnt(JEventLoop *loop, uint64_t event
 
         // loop over matched showers
         Int_t numshowers_per_event = matchedShowers.size();
-	if (numshowers_per_event > 0) h1_Num_matched_showers->Fill(numshowers_per_event);
+	if (numshowers_per_event > 0) 
+	  h1_Num_matched_showers->Fill(numshowers_per_event);
         Int_t numtracks_per_event = matchedTracks.size();
-        if (numtracks_per_event > 0) h1trk_Num_matched_tracks->Fill(numtracks_per_event);
+        if (numtracks_per_event > 0) 
+	  h1trk_Num_matched_tracks->Fill(numtracks_per_event);
+
+	// cache points for each matched points to speed up the locked loop below
+	for(int i=0; i<numshowers_per_event; i++)  {
+		vector<const DBCALPoint*> points;
+		matchedShowers[i]->Get(points);
+		matchedShowerPoints_cache[ matchedShowers[i] ] = points;
+	}
+
+	// FILL HISTOGRAMS
+	// Since we are filling histograms local to this plugin, it will not interfere with other ROOT operations: can use plugin-wide ROOT fill lock
+	japp->RootFillLock(this); //ACQUIRE ROOT FILL LOCK
 
 	for(int i=0; i<numshowers_per_event; i++){
+	        if(DEBUG) {
+		  // fill histogram information for matched showers
+		  Float_t E = matchedShowers[i]->E;
+		  Float_t E_raw = matchedShowers[i]->E_raw;
+		  Float_t x = matchedShowers[i]->x;
+		  Float_t y = matchedShowers[i]->y;
+		  Float_t z = matchedShowers[i]->z;
+		  Float_t t = matchedShowers[i]->t;
+		  Int_t N_cell = matchedShowers[i]->N_cell;
+		  
+		  h1_E->Fill(E);
+		  h1_E_raw->Fill(E_raw);
+		  h1_x->Fill(x);
+		  h1_y->Fill(y);
+		  h1_z->Fill(z);
+		  h1_t->Fill(t);   
+		  h1_N_cell->Fill(N_cell);
 
-		// fill histogram information for matched showers
-		Float_t E = matchedShowers[i]->E;
-		Float_t E_raw = matchedShowers[i]->E_raw;
-		Float_t x = matchedShowers[i]->x;
-		Float_t y = matchedShowers[i]->y;
-		Float_t z = matchedShowers[i]->z;
-		Float_t t = matchedShowers[i]->t;
-		Int_t N_cell = matchedShowers[i]->N_cell;
+		  // fill histograms related to matched track
+		  double FOM = matchedTracks[i]->FOM;
+		  double pmag = matchedTracks[i]->pmag();
+		  double px = matchedTracks[i]->px();
+		  double py = matchedTracks[i]->py();
+		  double pz = matchedTracks[i]->pz();
+		  double x_track = matchedTracks[i]->x();
+		  double y_track = matchedTracks[i]->y();
+		  double z_track = matchedTracks[i]->z();
 
-		h1_E->Fill(E);
-		h1_E_raw->Fill(E_raw);
-		h1_x->Fill(x);
-		h1_y->Fill(y);
-		h1_z->Fill(z);
-		h1_t->Fill(t);   
-		h1_N_cell->Fill(N_cell);
+		  double energy = matchedTracks[i]->energy();
+		  h1trk_FOM->Fill(FOM);
+		  h1trk_pmag->Fill(pmag);
+		  h1trk_px->Fill(px);
+		  h1trk_py->Fill(py);
+		  h1trk_pz->Fill(pz);
+		  h1trk_x->Fill(x_track);
+		  h1trk_y->Fill(y_track);
+		  h1trk_z->Fill(z_track);
+		  h1trk_energy->Fill(energy);
 
-		// fill histograms related to matched track
-		double FOM = matchedTracks[i]->FOM;
-		double pmag = matchedTracks[i]->pmag();
-		double px = matchedTracks[i]->px();
-		double py = matchedTracks[i]->py();
-		double pz = matchedTracks[i]->pz();
-		double x_track = matchedTracks[i]->x();
-		double y_track = matchedTracks[i]->y();
-		double z_track = matchedTracks[i]->z();
-
-		double energy = matchedTracks[i]->energy();
-		h1trk_FOM->Fill(FOM);
-		h1trk_pmag->Fill(pmag);
-		h1trk_px->Fill(px);
-		h1trk_py->Fill(py);
-		h1trk_pz->Fill(pz);
-		h1trk_x->Fill(x_track);
-		h1trk_y->Fill(y_track);
-		h1trk_z->Fill(z_track);
-		h1trk_energy->Fill(energy);
-
-		h2_Evsenergy->Fill(energy,E);
-		h2_pmagvsenergy->Fill(energy,pmag);
+		  h2_Evsenergy->Fill(energy,E);
+		  h2_pmagvsenergy->Fill(energy,pmag);
+		}
 
 		// get mypos for given radius R
 		matchedTracks[i]->rt->GetIntersectionWithRadius(R1, mypos_1); // middle of layer 1
@@ -477,8 +501,9 @@ jerror_t JEventProcessor_BCAL_point_calib::evnt(JEventLoop *loop, uint64_t event
 
 		// get associated information in the shower
 
-		vector<const DBCALPoint*> points;
-		matchedShowers[i]->Get(points);
+		//vector<const DBCALPoint*> points;
+		//matchedShowers[i]->Get(points);
+		vector<const DBCALPoint*> &points = matchedShowerPoints_cache[ matchedShowers[i] ];
 
 		// loop over points in shower 
 		Int_t numpoints_per_shower = points.size();
@@ -498,27 +523,32 @@ jerror_t JEventProcessor_BCAL_point_calib::evnt(JEventLoop *loop, uint64_t event
 			double phi_point = points[jj]->phi();
 			double t_point = points[jj]->t();
 
-			// fill histograms with point information
-			h1pt_module->Fill(module);
-			h1pt_layer->Fill(layer);
-			h1pt_sector->Fill(sector);
-			h1pt_cell_id->Fill(cell_id);
-			h1pt_energy->Fill(energy);
-			h1pt_energy_US->Fill(energy_US);
-			h1pt_energy_DS->Fill(energy_DS);
-			h1pt_z->Fill(z_point);  
-			h1pt_r->Fill(r_point);
-			h1pt_phi->Fill(phi_point);
-			h1pt_t->Fill(t_point);
+
+			if(DEBUG) { 
+			  // fill histograms with point information
+			  h1pt_module->Fill(module);
+			  h1pt_layer->Fill(layer);
+			  h1pt_sector->Fill(sector);
+			  h1pt_cell_id->Fill(cell_id);
+			  h1pt_energy->Fill(energy);
+			  h1pt_energy_US->Fill(energy_US);
+			  h1pt_energy_DS->Fill(energy_DS);
+			  h1pt_z->Fill(z_point);  
+			  h1pt_r->Fill(r_point);
+			  h1pt_phi->Fill(phi_point);
+			  h1pt_t->Fill(t_point);
+			}
 
 			// accept only positive z-coordinates
 			if(mypos_z_array[layer-1] > 0 && z_point > 0){
-				// fill histograms for z_track and z_point correlation
-				h1_ztrack_minus_zpoint->Fill(mypos_z_array[layer-1] - z_point);
-				h1_abs_ztrack_minus_zpoint->Fill(TMath::Abs(mypos_z_array[layer-1] - z_point));
-				h2_ztrack_minus_zpoint_vs_ztrack->Fill(mypos_z_array[layer-1], mypos_z_array[layer-1] - z_point);
-
-				h2_zpoint_vs_ztrack->Fill(mypos_z_array[layer-1],z_point);
+      			        if(DEBUG) { 
+				  // fill histograms for z_track and z_point correlation
+				  h1_ztrack_minus_zpoint->Fill(mypos_z_array[layer-1] - z_point);
+				  h1_abs_ztrack_minus_zpoint->Fill(TMath::Abs(mypos_z_array[layer-1] - z_point));
+				  h2_ztrack_minus_zpoint_vs_ztrack->Fill(mypos_z_array[layer-1], mypos_z_array[layer-1] - z_point);
+				  
+				  h2_zpoint_vs_ztrack->Fill(mypos_z_array[layer-1],z_point);
+				}
 
 				// introduce |z_track - z_point| cuts  here, if needed
 				if(TMath::Abs(mypos_z_array[layer-1] - z_point) < 400.0){
