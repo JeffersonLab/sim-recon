@@ -85,13 +85,14 @@ void Df250EmulatorAlgorithm_v2::EmulateFirmware(const Df250WindowRawData* rawDat
 
     // Note that in principle we could get this information from the Df250Config objects as well, but generally only NPED and the value of NSA+NSB are saved
     // not the individual NSA and NSB values
-
-
+    
+    /*
     // TEST
     if( (rawData->rocid >= 31) || (rawData->rocid <= 46) ) {
       NSA = NSA_DEF;
       NSB = NSB_DEF;
     }
+    */
 
     // quality bits
     bool bad_pedestal = false;
@@ -446,10 +447,12 @@ void Df250EmulatorAlgorithm_v2::EmulateFirmware(const Df250WindowRawData* rawDat
             f250PulseData->pulse_peak  = f250PulseData->pulse_peak_emulated;
             f250PulseData->course_time = f250PulseData->course_time_emulated;
             f250PulseData->fine_time   = f250PulseData->fine_time_emulated;
-
+	    
+	    /*
 	    if( (rawData->rocid >= 31) || (rawData->rocid <= 46) ) {
 	      f250PulseData->nsamples_integral = NSA + NSB;
 	    }
+	    */
 
         }
 
