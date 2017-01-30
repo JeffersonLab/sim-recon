@@ -72,7 +72,7 @@ void c_eff_pol2(TString fileName = "hd_root.root", int runNumber = 22016, TStrin
 	// loop over the channels, apply a linear fit for each one and calculate the effective velocities
         for(int m = 0; m < channels; ++m){
 
-                sprintf(string,"h2_tgraph[%d]", m+1);
+                sprintf(string,"bcal_point_calibs/h2_tgraph[%d]", m+1);
 
                 h2_tgraph = (TGraph*)in->Get(string);
 

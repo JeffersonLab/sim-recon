@@ -602,6 +602,12 @@ jerror_t JEventProcessor_BCAL_point_calib::fini(void)
 	// lock all root operations
 	// japp->RootWriteLock();
 
+	TDirectory *main = gDirectory;
+	TDirectory *locDirectory = (TDirectory*)gDirectory->FindObjectAny("bcal_point_calibs");
+
+	if(locDirectory)
+	  locDirectory->cd();
+	
 	int channels = 768;
 
 	// array to store the percentage of thrown points per channel
@@ -641,6 +647,8 @@ jerror_t JEventProcessor_BCAL_point_calib::fini(void)
 			h1_thrown_per_channel->Fill(m+1, percent[m]);
 		}
 	} 
+
+	main->cd();
 
 	japp->RootFillUnLock(this); //RELEASE ROOT FILL LOCK
 	
