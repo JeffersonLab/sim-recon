@@ -130,31 +130,41 @@ void Df250EmulatorAlgorithm_v2::EmulateFirmware(const Df250WindowRawData* rawDat
         }
     }
 
+   
     // look for the threhold crossings and compute the integrals
-    for (unsigned int i=0; i < (NW-NSAT); i++) {
+    //unsigned int MAX_SAMPLE = (NSB>0) ? (NW-NSAT) : (NW-NSAT+NSB-1)); // check this
+    unsigned int MAX_SAMPLE = NW-NSAT;
+    for (unsigned int i=0; i < MAX_SAMPLE; i++) {
         if ((samples[i] & 0xfff) > THR) {
             if (VERBOSE > 1) {
                 jout << "threshold crossing at " << i << endl;
             }
-            TC[npulses] = i+1;
             // check that we have more than NSAT samples over threshold
-            // unless the first sample is over threshold - we always start then (Fall 2016 only)
+            // unless the first sample is over threshold - we always start then  (only in Fall 2016 firmware)
             //if( (NSAT>1) && (i>0) ){
-            if( (NSAT>1) ){
+            if( (NSAT>1) ) {
                 int samples_over_threshold = 1;
-                for(unsigned int j=1; j < NSAT; j++) {
-                    if ((samples[i+j] & 0xfff) > THR) {
+                //for(unsigned int j=1; j < NSAT; j++) {
+                // the algorithm only terminates if we dip below threshold ?!?
+                for(unsigned int j=i+1; ((samples[j]&0xfff)>=THR) && (j<MAX_SAMPLE); j++) {
+                    // only count samples actually above threshold
+                    if ((samples[j] & 0xfff) > THR) 
                         samples_over_threshold++;
-                        if( samples_over_threshold == NSAT )
-                            break;
-                    } else {
+                    
+                    if( samples_over_threshold == NSAT )
                         break;
-                    }
                 }
 
                 if( samples_over_threshold != NSAT )
                     continue;
             }
+
+            
+
+            // save threshold crossing
+            TC[npulses] = i+1;
+
+            // calculate integral
             unsigned int ibegin;
             if(NSB > 0)
                 ibegin = i > uint32_t(NSB) ? (i - NSB) : 0; // Set to beginning of window if too early
@@ -217,7 +227,8 @@ void Df250EmulatorAlgorithm_v2::EmulateFirmware(const Df250WindowRawData* rawDat
 
     // error conditions for timing algorithm
     bool pedestal_underflow = false;
-    for (unsigned int i=0; i < 5; i++) {
+    //for (unsigned int i=0; i < 5; i++) {
+    for (unsigned int i=0; i < 4; i++) {
         // We set the "Time Quality bit 0" to 1 if any of the first 5 samples is greated than MaxPed or TET...
         if ( ((samples[i] & 0xfff) > MAXPED) || ((samples[i] & 0xfff) > THR) ) {
             bad_timing_pedestal = true;
@@ -226,6 +237,11 @@ void Df250EmulatorAlgorithm_v2::EmulateFirmware(const Df250WindowRawData* rawDat
         if ( (samples[i] == 0x1000) || (samples[i] == 0x1fff) ) {
             bad_timing_pedestal = true;
         }
+        //}
+
+        // TEST 
+        //for (unsigned int i=0; i < 4; i++) {
+
         // "If any of the first 5 samples is greater than TET the TDC will NOT proceed..."
         // Waiit for iiit...
         if( (samples[i] & 0xfff) > THR ) {
@@ -259,10 +275,11 @@ void Df250EmulatorAlgorithm_v2::EmulateFirmware(const Df250WindowRawData* rawDat
             // }
 
             // search for the peak of the pulse
-            // has to be after the threshold crossing (NO)
+            // has to be after the threshold crossing (NO?)
             // has to be before the last sample
             unsigned int ipeak;
             for (ipeak = TC[p]; ipeak < NW-1; ++ipeak) {
+            //for (ipeak = TC[p]+1; ipeak < NW-1; ++ipeak) {
                 if ((samples[ipeak] & 0xfff) < (samples[ipeak-1] & 0xfff)) {
                     VPEAK[p] = (samples[ipeak-1] & 0xfff);
                     TPEAK[p] = ipeak-1;
@@ -342,6 +359,10 @@ void Df250EmulatorAlgorithm_v2::EmulateFirmware(const Df250WindowRawData* rawDat
             jout << " pulse " << p << ": VMID: " << VMID[p] << " TMID: " << TMID[p] 
                  << " TFINE: " << TFINE[p] << " time: " << pulse_time[p]
                  << " integral: " << pulse_integral[p] << endl;
+            if (VERBOSE > 2) {
+                jout << "   TMIN = " << TMIN[p] << "  TMID  = " << TMID[p] << "  TPEAK = " << TPEAK[p] << endl;
+                    //<< "   VMID = " << VMID[p] << "  Vnext = " << Vnext   << "  Vlast = " << Vlast    << endl;
+            }
         }
 
         // algorithm is finished, fill the information

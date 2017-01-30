@@ -58,6 +58,7 @@ using namespace jana;
 #include <DAQ/DCAEN1290TDCBORConfig.h>
 #include <DAQ/DBORptrs.h>
 #include <PID/DVertex.h>
+#include <PID/DEventRFBunch.h>
 
 // Here is some C++ macro script-fu. For each type of class the DParsedEvent
 // can hold, we want to have a vector of pointers to that type of object. 
@@ -102,7 +103,8 @@ using namespace jana;
 // (e.g. calibration skims) and could be provided by standard analysis factories
 // Therefore, we deliver these data types ONLY IF they exist in the file
 #define MyDerivedTypes(X) \
-		X(DVertex)
+		X(DVertex) \
+		X(DEventRFBunch)
 
 // It turns out that since we use object pools and in-place constructors, a
 // memory leak occurs for things like the samples vector in the Window Raw

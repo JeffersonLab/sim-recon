@@ -806,6 +806,9 @@ void DEVIOWorkerThread::ParseDataBank(uint32_t* &iptr, uint32_t *iend)
             case 0xD01:
                 ParseDVertexBank(iptr, iend);
                 break;
+            case 0xD02:
+                ParseDEventRFBunchBank(iptr, iend);
+                break;
 
 			case 5:
 				// old ROL Beni used had this but I don't think its
@@ -1825,12 +1828,45 @@ void DEVIOWorkerThread::ParseF1TDCBank(uint32_t rocid, uint32_t* &iptr, uint32_t
 }
 
 //----------------
+// ParseDEventRFBunchBank
+//----------------
+void DEVIOWorkerThread::ParseDEventRFBunchBank(uint32_t* &iptr, uint32_t *iend)
+{
+    uint32_t Nwords = ((uint64_t)iend - (uint64_t)iptr)/sizeof(uint32_t);
+    uint32_t Nwords_expected = 6; 
+    if(Nwords != Nwords_expected){
+        _DBG_ << "RFTime size does not match expected!!" << endl;
+        _DBG_ << "Found " << Nwords << " words. Expected " << Nwords_expected << endl;
+    }else{
+		DParsedEvent *pe = current_parsed_events.back();
+		DEventRFBunch *the_rftime = pe->NEW_DEventRFBunch();
+
+        the_rftime->dTimeSource = static_cast<DetectorSystem_t>(*iptr++);
+        the_rftime->dNumParticleVotes = *iptr++;
+
+        uint64_t in_word = *iptr++;    // 1st word, lo word;  2nd word, hi word
+        uint64_t in_word_hi = *iptr++;
+        in_word |= in_word_hi<<32;
+        double rftime;
+        memcpy(&rftime, &in_word, sizeof(double));
+        in_word = *iptr++;   in_word_hi = *iptr++;
+        in_word |= in_word_hi<<32;
+        double rftime_var;
+        memcpy(&rftime_var, &in_word, sizeof(double));
+
+        the_rftime->dTime = rftime;
+        the_rftime->dTimeVariance = rftime_var;
+    }
+}
+
+
+//----------------
 // ParseDVertexBank
 //----------------
 void DEVIOWorkerThread::ParseDVertexBank(uint32_t* &iptr, uint32_t *iend)
 {
     uint32_t Nwords = ((uint64_t)iend - (uint64_t)iptr)/sizeof(uint32_t);
-    uint32_t Nwords_expected = 11;  // ?
+    uint32_t Nwords_expected = 11; 
     if(Nwords != Nwords_expected){
         _DBG_ << "DVertex size does not match expected!!" << endl;
         _DBG_ << "Found " << Nwords << " words. Expected " << Nwords_expected << endl;
