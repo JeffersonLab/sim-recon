@@ -834,8 +834,14 @@ c
 
 * Optionally store particle trajectory
       if (storetraj.ne.0) then
-        call addtrajectorypoint(VECT,TOFG,DESTEP,GEKIN,ITRA,ISTAK
-     +         ,IPART, RADL, STEP, NMEC, LMEC, storetraj)
+        if (storetraj.eq.1.or.storetraj.eq.2.or.
+     +     (storetraj.eq.4.and.ISTAK.ne.0)) then
+          call addtrajectorypoint(VECT,TOFG,DESTEP,GEKIN,ITRA,ISTAK
+     +           ,IPART, RADL, SLENG, NMEC, LMEC, storetraj)
+        else
+          call addtrajectorypoint(VECT,TOFG,DESTEP,GEKIN,ITRA,ISTAK
+     +           ,IPART, RADL, STEP, NMEC, LMEC, storetraj)
+        endif
       endif
      
 
