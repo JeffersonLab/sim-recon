@@ -29,7 +29,7 @@ const double m_p_sq=m_p*m_p;
 // Width
 double width=0.;
 // Coupling constant 
-double g0_sq=8.8;
+double g0_sq=110.5; // GeV^-2
 // Regge cut parameters
 double regge_cuts[5]; // dc c_P_omega c_f2_omega c_P_rho c_f2_rho 
 
@@ -1336,7 +1336,7 @@ double InterferenceCrossSection(TLorentzVector &q /* beam */,
     +(m_p_sq+p1_dot_p2)*(Im_b1_bS*N_N1+Im_b2_bS*N_N2);
   
   double Msq=(particles[0]+particles[1]).M2();
-  double g0=sqrt(8.8); 
+  double g0=sqrt(g0_sq); 
   double s_minus_mp_sq=s-m_p_sq;
   double m1=ParticleMass(particle_types[0]);
   double m2=ParticleMass(particle_types[1]);
@@ -2271,7 +2271,7 @@ int main(int narg, char *argv[])
     TLorentzVector beam;
 
     // Maximum value for cross section 
-    double xsec_max=0.5;
+    double xsec_max=(got_pipi)?11.:1.5;
     double xsec=0.,xsec_test=0.;
 
     // Polar angle in center of mass frame
@@ -2391,7 +2391,7 @@ int main(int narg, char *argv[])
       
       // f0(600)
       if (got_pipi && generate[0]){
- 	double m_Sigma=0.8;
+ 	double m_Sigma=0.6;
 	double M_sq_R=m_Sigma*m_Sigma; 
 	width=0.5;
 	ReBf500=M_sq_R-M_sq;
@@ -2402,7 +2402,8 @@ int main(int narg, char *argv[])
 		       /(4.*M_sq_R));
 	double q=sqrt((Msq_minus_m1sq_m2sq*MRsq_minus_m1sq_m2sq-temp)
 		       /(4.*M_sq));
-	gRf500=sqrt(2./M_PI*(width/3.)*M_sq_R/qR);
+	double partial_width=(width/3.)*(q/qR)*M_sq_R/M_sq;
+	gRf500=sqrt(8.*M_PI*M_sq_R*partial_width/qR);
 	ImBf500=width*sqrt(M_sq)*((1./3.)*q/qR*M_sq_R/M_sq+(2./3.));
 
 	xsec+=CrossSection(m1,m2,M_sq,s,t,gRf500,ReBf500,ImBf500,
@@ -2422,7 +2423,8 @@ int main(int narg, char *argv[])
 		       /(4.*M_sq_R));
 	double q=sqrt((Msq_minus_m1sq_m2sq*MRsq_minus_m1sq_m2sq-temp)
 		       /(4.*M_sq));
-	gRf1370=sqrt(2./M_PI*(0.26*width/3.)*M_sq_R/qR); // fraction from Bugg(96)
+	double partial_width=(0.26*width/3.)*(q/qR)*M_sq_R/M_sq;// fraction from Bugg(96)
+	gRf1370=sqrt(8.*M_PI*M_sq_R*partial_width/qR);
 	ImBf1370=width*sqrt(M_sq)*(0.26*(1./3.)*q/qR*M_sq_R/M_sq+0.913);
 
 	xsec+=CrossSection(m1,m2,M_sq,s,t,gRf1370,ReBf1370,ImBf1370,
@@ -2441,8 +2443,9 @@ int main(int narg, char *argv[])
 	double qR=sqrt((MRsq_minus_m1sq_m2sq*MRsq_minus_m1sq_m2sq-temp)
 		       /(4.*M_sq_R));
 	double q=sqrt((Msq_minus_m1sq_m2sq*MRsq_minus_m1sq_m2sq-temp)
-		       /(4.*M_sq));
-	gRa1450=sqrt(2./M_PI*(0.02)*M_sq_R/qR); // estimate using pdg
+		       /(4.*M_sq));	
+	double partial_width=(0.02*width)*(q/qR)*M_sq_R/M_sq;// estimate using pdg(2016)
+	gRa1450=sqrt(8.*M_PI*M_sq_R*partial_width/qR);
 	ImBa1450=width*sqrt(M_sq)*(0.02*q/qR*M_sq_R/M_sq+0.98);
 
 	xsec+=CrossSection(m1,m2,M_sq,s,t,gRa1450,ReBa1450,ImBa1450,
@@ -2506,15 +2509,18 @@ int main(int narg, char *argv[])
 	double Msq_minus_m1sq_m2sq=M_sq-m1sq_plus_m2sq;
 	double MRsq_minus_m1sq_m2sq=M_sq_R_T-m1sq_plus_m2sq;
 	double temp=4.*m1sq*m2sq;
-	double q_over_qR_5
-	  =pow(m_T/M*sqrt((Msq_minus_m1sq_m2sq*Msq_minus_m1sq_m2sq-temp)
-			  /(MRsq_minus_m1sq_m2sq*MRsq_minus_m1sq_m2sq-temp)),5);
-	if (got_pipi){ // f2(1270)
-	  gR_T=sqrt((2./M_PI)*0.85*(1./3.)*Gamma_T*M_sq_R_T*q_over_qR_5);
+	double q_over_qR
+	  =m_T/M*sqrt((Msq_minus_m1sq_m2sq*Msq_minus_m1sq_m2sq-temp)
+		      /(MRsq_minus_m1sq_m2sq*MRsq_minus_m1sq_m2sq-temp));
+	double q_over_qR_5=pow(q_over_qR,5);
+	if (got_pipi){ // f2(1270)  
+	  double partial_width=0.85*(1./3.)*M_sq_R_T*q_over_qR_5/M_sq;
+	  gR_T=sqrt(8.*M_PI*M_sq_R_T*partial_width*q_over_qR);
 	  ImB_T=M*Gamma_T*(0.85*q_over_qR_5*M_sq_R_T/M_sq+0.15);
 	}
 	else { // a2(1320)
-	  gR_T=sqrt((2./M_PI)*0.155*M_sq_R_T*q_over_qR_5);
+	  double partial_width=0.155*M_sq_R_T*q_over_qR_5/M_sq;
+	  gR_T=sqrt(8.*M_PI*M_sq_R_T*partial_width*q_over_qR);
 	  ImB_T=M*Gamma_T*(0.145*q_over_qR_5*M_sq_R_T/M_sq+0.855);
 	}
 	xsec+=TensorCrossSection(beam,particle_types,particle_vectors,
