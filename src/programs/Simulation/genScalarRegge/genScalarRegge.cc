@@ -2271,7 +2271,7 @@ int main(int narg, char *argv[])
     TLorentzVector beam;
 
     // Maximum value for cross section 
-    double xsec_max=(got_pipi)?11.:1.5;
+    double xsec_max=(got_pipi)?12.:1.5;
     double xsec=0.,xsec_test=0.;
 
     // Polar angle in center of mass frame
@@ -2294,10 +2294,9 @@ int main(int narg, char *argv[])
     double m2sq=m2*m2;
     double m1sq_plus_m2sq=m1sq+m2sq;
 
-    // Coupling constants from assuming (omega,rho)->pi0pi0gamma goes through
-    // f0(500) gamma
-    double gsq_rho_f500_gamma=2.45;
-    double gsq_omega_f500_gamma=0.167;
+    // Coupling constants for f0(500)
+    double gsq_rho_f500_gamma=0.1;
+    double gsq_omega_f500_gamma=(1./9)*gsq_rho_f500_gamma;
     // Coupling constants: Donnachie and Kalashnikova (2008) scenario IV
     double gsq_rho_S_gamma=0.02537;
     double gsq_omega_S_gamma=0.2283;
@@ -2391,7 +2390,7 @@ int main(int narg, char *argv[])
       
       // f0(600)
       if (got_pipi && generate[0]){
- 	double m_Sigma=0.6;
+ 	double m_Sigma=0.8;
 	double M_sq_R=m_Sigma*m_Sigma; 
 	width=0.5;
 	ReBf500=M_sq_R-M_sq;
@@ -2431,6 +2430,15 @@ int main(int narg, char *argv[])
 			   gsq_rho_f1370_gamma,gsq_omega_f1370_gamma);
        
       }  
+      // Interference between f0(500) and f0(1370)
+      if (got_pipi && generate[0] && generate[2]){
+	xsec+=CrossSection(m1,m2,M_sq,s,t,gRf1370,ReBf1370,ImBf1370,
+			   gsq_rho_f1370_gamma,
+			   gsq_omega_f1370_gamma,true,gRf500,ReBf500,ImBf500,
+			   gsq_rho_f500_gamma,gsq_omega_f500_gamma,
+			   0.);
+      }	
+
       // a0(1450)
       if (got_pipi==false && generate[2]){
  	double m_a1450=1.474;
@@ -2455,32 +2463,45 @@ int main(int narg, char *argv[])
       // f0(980)/a0(980)
       if (generate[1]){
 	double my_msq_R=0.9783*0.9783;
-	if (got_pipi){ // f0(980)
-	  gR=1.705/(2.*M_PI)*0.9783*sqrt(2./M_PI);
+	if (got_pipi){ // f0(980)	
+	  double MRsq_minus_m1sq_m2sq=my_msq_R-m1sq_plus_m2sq;	
+	  double temp=4.*m1sq*m2sq;
+	  double qR=sqrt((MRsq_minus_m1sq_m2sq*MRsq_minus_m1sq_m2sq-temp)
+			 /(4.*my_msq_R));
+	  double partial_width=0.05; //?? // guess from note in pdg
+	  gR=sqrt(8.*M_PI*my_msq_R*partial_width/qR);
 	  gsq_rho_S_gamma=0.239; // GeV^-2
 	  gsq_omega_S_gamma=0.02656;
 	}
-	else{ // a0(980)
-	  gR=2.82/(2.*M_PI)*0.9825*sqrt(2./M_PI);
-	  my_msq_R=0.9825*0.9825;	 
+	else{ // a0(980)  
+	  my_msq_R=0.9825*0.9825;	
+	  double MRsq_minus_m1sq_m2sq=my_msq_R-m1sq_plus_m2sq;	
+	  double temp=4.*m1sq*m2sq;
+	  double qR=sqrt((MRsq_minus_m1sq_m2sq*MRsq_minus_m1sq_m2sq-temp)
+			 /(4.*my_msq_R));
+	  double partial_width=0.06; //?? guess from note in pdg
+	  gR=sqrt(8.*M_PI*my_msq_R*partial_width/qR);
 	  gsq_rho_S_gamma=0.02537;
 	  gsq_omega_S_gamma=0.2283;
 	} 
 	GetResonanceParameters(m1,m2,M_sq,my_msq_R,ReB,ImB);
 	xsec+=CrossSection(m1,m2,M_sq,s,t,gR,ReB,ImB,gsq_rho_S_gamma,
 			   gsq_omega_S_gamma);
+	// Interference between f0(1370) and f0(980)
 	if (got_pipi && generate[2]){
 	  xsec+=CrossSection(m1,m2,M_sq,s,t,gR,ReB,ImB,gsq_rho_S_gamma,
 			     gsq_omega_S_gamma,true,gRf1370,ReBf1370,ImBf1370,
 			     gsq_rho_f1370_gamma,gsq_omega_f1370_gamma,
 			     phase[1]);
 	}	
+	// Interference between f0(500) and f0(980)
 	if (got_pipi && generate[0]){
 	  xsec+=CrossSection(m1,m2,M_sq,s,t,gR,ReB,ImB,gsq_rho_S_gamma,
 			     gsq_omega_S_gamma,true,gRf500,ReBf500,ImBf500,
 			     gsq_rho_f500_gamma,gsq_omega_f500_gamma,
 			     phase[0]);
 	}	
+	// Interference between a0(1450) and a0(980)
 	if (got_pipi==false && generate[2]){
 	  xsec+=CrossSection(m1,m2,M_sq,s,t,gR,ReB,ImB,gsq_rho_S_gamma,
 			     gsq_omega_S_gamma,true,gRa1450,ReBa1450,ImBa1450,
@@ -2495,6 +2516,29 @@ int main(int narg, char *argv[])
 	  xsec+=InterferenceCrossSection(beam,particle_types,particle_vectors,
 	  				 gR,ReB,ImB,gsq_rho_S_gamma,
 					 gsq_omega_S_gamma,phase[3]);
+	}
+	if (got_pipi){
+	  if (generate[0]){ // interference with f0(500)
+	    xsec+=InterferenceCrossSection(beam,particle_types,particle_vectors,
+					   gRf500,ReBf500,ImBf500,
+					   gsq_rho_f500_gamma,
+					   gsq_omega_f500_gamma,0.);
+	  }  
+	  if (generate[2]){ // interference with f0(1370)
+	    xsec+=InterferenceCrossSection(beam,particle_types,particle_vectors,
+					   gRf1370,ReBf1370,ImBf1370,
+					   gsq_rho_f1370_gamma,
+					   gsq_omega_f1370_gamma,0.);
+	  }
+	}
+	else{ 
+	  if (generate[2]){ // interference with a0(1450)
+	    xsec+=InterferenceCrossSection(beam,particle_types,particle_vectors,
+					   gRa1450,ReBa1450,ImBa1450,
+					   gsq_rho_a1450_gamma,
+					   gsq_omega_a1450_gamma,0.);
+	  }
+	  
 	}
       }
       if (generate[3]){ // Tensor background
