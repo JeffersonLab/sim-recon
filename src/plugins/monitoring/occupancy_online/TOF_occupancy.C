@@ -11,6 +11,8 @@
 // hnamepath: /occupancy/tof_tdc_N_occ
 // hnamepath: /occupancy/tof_tdc_U_occ
 // hnamepath: /occupancy/tof_tdc_D_occ
+//
+// e-mail: davidl@jlab.org
 
 {
 	// RootSpy saves the current directory and style before

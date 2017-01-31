@@ -32,6 +32,8 @@
 // hnamepath: /occupancy/cdc_occ_ring_25
 // hnamepath: /occupancy/cdc_occ_ring_26
 // hnamepath: /occupancy/cdc_occ_ring_27
+//
+// e-mail: davidl@jlab.org
 
 
 

@@ -5,6 +5,8 @@
 // hnamepath: /occupancy/fdc_num_events
 // hnamepath: /occupancy/fdc_cathode_occ
 // hnamepath: /occupancy/fdc_wire_occ
+//
+// e-mail: davidl@jlab.org
 
 {
 	// RootSpy saves the current directory and style before
