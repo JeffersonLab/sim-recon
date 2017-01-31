@@ -2052,6 +2052,9 @@ void GraphCrossSection(double m1,double m2){
   
   // Parameters for integration over line shape	  
   double m1_plus_m2=m1+m2;
+  double m1sq=m1*m1;
+  double m2sq=m2*m2;
+  double m1sq_plus_m2sq=m1sq+m2sq;
   double m_max=m_p*(sqrt(1.+2.*Egamma/m_p)-1.);
   double dmrange=m_max-m1_plus_m2;
   double dm=dmrange/1000.;
@@ -2059,24 +2062,28 @@ void GraphCrossSection(double m1,double m2){
   bool got_pipi=(fabs(m1-m2)>0.01)?false:true;
   double M_sq_R=0.;
   if (got_pipi){ // f0(980)
-    gR=1.705/(2.*M_PI);
     M_sq_R=0.9783*0.9783;
+    double MRsq_minus_m1sq_m2sq=M_sq_R-m1sq_plus_m2sq;	
+    double temp=4.*m1sq*m2sq;
+    double qR=sqrt((MRsq_minus_m1sq_m2sq*MRsq_minus_m1sq_m2sq-temp)
+		   /(4.*M_sq_R));
+    double partial_width=0.05; //?? // guess from note in pdg
+    gR=sqrt(8.*M_PI*M_sq_R*partial_width/qR);
+
     gsq_rho_S_gamma=0.239; // GeV^-2
     gsq_omega_S_gamma=0.02656;
   }
   else{ // a0(980)
-    gR=2.82/(2.*M_PI);
-    M_sq_R=0.9825*0.9825;	 
+    M_sq_R=0.9825*0.9825;
+    double MRsq_minus_m1sq_m2sq=M_sq_R-m1sq_plus_m2sq;	
+    double temp=4.*m1sq*m2sq;
+    double qR=sqrt((MRsq_minus_m1sq_m2sq*MRsq_minus_m1sq_m2sq-temp)
+		   /(4.*M_sq_R));
+    double partial_width=0.06; //?? // guess from note in pdg
+    gR=sqrt(8.*M_PI*M_sq_R*partial_width/qR);
     gsq_rho_S_gamma=0.02537;
     gsq_omega_S_gamma=0.2283;
   } 
-  double m1_minus_m2=m1-m2;
-  double k=sqrt((M_sq_R-m1_plus_m2*m1_plus_m2)*(M_sq_R-m1_minus_m2*m1_minus_m2))
-    /(2.*sqrt(M_sq_R));
-
-  GetResonanceParameters(m1,m2,M_sq_R,M_sq_R,ReB,ImB);
-  // factor to (eventually ) get to dsigma/dt from dsigma/dt/dM/dOmega
-  double scale_factor=16.*M_PI*M_PI*M_PI*(ReB*ReB+ImB*ImB)/(gR*gR*k);
 
   // Momenta of incoming photon and outgoing S and proton in cm frame
   double p_gamma=(s-m_p_sq)/(2.*Ecm);
@@ -2086,17 +2093,6 @@ void GraphCrossSection(double m1,double m2){
   // Momentum transfer t
   double p_diff=p_gamma-p_S;
   double t0=M_sq_R*M_sq_R/(4.*s)-p_diff*p_diff;
-
-  // Integral over Breit-Wigner
-  double bw=0;
-  for (unsigned int n=0;n<1000;n++){
-    double mass=m1_plus_m2+dm*double(n);
-    double M_sq=mass*mass;
-    double rho_m1m2=sqrt((1.-m1_plus_m2*m1_plus_m2/M_sq)*(1-m1_minus_m2*m1_minus_m2/M_sq));
-
-    GetResonanceParameters(m1,m2,M_sq,M_sq_R,ReB,ImB);
-    bw+=gR*gR*rho_m1m2/(ReB*ReB+ImB*ImB)*dm;
-  }
   
   // differential cross section
   double sum=0.;
@@ -2107,20 +2103,49 @@ void GraphCrossSection(double m1,double m2){
     double theta_cm=M_PI*double(k)/1000.;
     double sin_theta_over_2=sin(0.5*theta_cm);
     double t=t0-4.*p_gamma*p_S*sin_theta_over_2*sin_theta_over_2;
-    double xsec=scale_factor*bw*CrossSection(m1,m2,M_sq_R,s,t,gR,ReB,ImB,
-					     gsq_rho_S_gamma,gsq_omega_S_gamma);
-
+    double xsec=0.;
+    for (unsigned int j=0;j<1000;j++){
+      double mass=m1_plus_m2+dm*double(j);
+      double M_sq=mass*mass;
+      GetResonanceParameters(m1,m2,M_sq,M_sq_R,ReB,ImB);
+      xsec+=dm*CrossSection(m1,m2,M_sq_R,s,t,gR,ReB,ImB,gsq_rho_S_gamma,gsq_omega_S_gamma);
+    }
     t_array[k]=-t;
-    xsec_array[k]=xsec;
+    xsec_array[k]=4.*M_PI*1000.*xsec;
 
-    sum-=xsec*(t-t_old);
+    sum-=4.*M_PI*1000.*xsec*(t-t_old);
     t_old=t;
+  }  
+  
+  double m_array[1000];
+  double xsec_array2[1000];
+  for (unsigned int j=0;j<1000;j++){
+    double mass=m1_plus_m2+dm*double(j);
+    m_array[j]=mass;
+    double M_sq=mass*mass;
+    GetResonanceParameters(m1,m2,M_sq,M_sq_R,ReB,ImB);
+    t_old=t0;
+    double xsec=0.;
+    for (unsigned int k=0;k<1000;k++){
+      double theta_cm=M_PI*double(k)/1000.;
+      double sin_theta_over_2=sin(0.5*theta_cm);
+      double t=t0-4.*p_gamma*p_S*sin_theta_over_2*sin_theta_over_2;
+      xsec+=(t_old-t)*CrossSection(m1,m2,M_sq_R,s,t,gR,ReB,ImB,gsq_rho_S_gamma,gsq_omega_S_gamma);
+      t_old=t;
+    }
+    xsec_array2[j]=4.*M_PI*1000.*xsec;
   }
   TGraph *Gxsec=new TGraph(1000,t_array,xsec_array);
-  Gxsec->Write("Cross section");
+  Gxsec->GetXaxis()->SetTitle("-t [GeV^{2}]");
+  Gxsec->GetYaxis()->SetTitle("d#sigma/dt [nb/GeV^{2}]");
+  Gxsec->Write("Cross section d#sigma/dt");
+  TGraph *Gxsec2=new TGraph(1000,m_array,xsec_array2);
+  Gxsec2->GetXaxis()->SetTitle("M [GeV]");
+  Gxsec2->GetYaxis()->SetTitle("d#sigma/dM [nb/GeV]");
+  Gxsec2->Write("Cross section d#sigma/dM");
  
   cout << "Total cross section at " << Egamma << " GeV = "<< sum 
-       << " micro-barns"<<endl;
+       << " nano-barns"<<endl;
 }
 
 
