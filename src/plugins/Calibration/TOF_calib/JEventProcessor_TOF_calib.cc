@@ -57,8 +57,8 @@ jerror_t JEventProcessor_TOF_calib::init(void)
   BINTDC_2_TIME = 0.0234375;
   BINADC_2_TIME = 0.0625; // is 4ns/64
 
-  TDCTLOC = 419.;
-  ADCTLOC = 190.;
+  TDCTLOC = 385.;
+  ADCTLOC = 115.;
 
   ADCTimeCut = 50.;
   TDCTimeCut = 60.;
@@ -596,7 +596,7 @@ jerror_t JEventProcessor_TOF_calib::MakeHistograms(void){
     TOFEnergy = new TH2F("TOFEnergy","TOF Energy Integral (no ped subraction)",
 			 176, 0., 176., 100, 0., 20000.);
     TOFPeak = new TH2F("TOFPeak","TOF Peak Amplitude",176, 0., 176., 100, 0., 4100.);
-    TOFPedestal = new TH2F("TOFPedestal","TOF Pedestal",176, 0., 176., 100, 0., 200.);
+    TOFPedestal = new TH2F("TOFPedestal","TOF Pedestal",176, 0., 176., 300, 0., 600.);
 
 
     t3 = new TTree("t3","TOF Hits");
