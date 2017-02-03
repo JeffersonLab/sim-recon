@@ -2007,8 +2007,6 @@ double TensorBackgroundInterference(TLorentzVector &q /* beam */,
   double Pi_rho_2_sq=1./(m_rhosq_minus_v2sq*m_rhosq_minus_v2sq
 			 +m_rho*m_rho*Gamma_rho*Gamma_rho);
   
-  
-
   // s scale for regge trajectories
   double s0=1.;
  
@@ -2025,6 +2023,27 @@ double TensorBackgroundInterference(TLorentzVector &q /* beam */,
     /(sin(M_PI*a_odderon)*TMath::Gamma(a_odderon)); // excluding phase factor
   double regge_odderon_sq=regge_odderon*regge_odderon; 
  
+    // omega propagator for top exchange
+  double m_omega=0.78265;
+  double Gamma_omega=0.00849;
+  double m_omegasq_minus_v1sq=m_omega*m_omega-v1sq;
+  double Pi_omega_1_sq=1./(m_omegasq_minus_v1sq*m_omegasq_minus_v1sq
+			   +m_omega*m_omega*Gamma_omega*Gamma_omega);
+  double m_omegasq_minus_v2sq=m_omega*m_omega-v2sq;
+  double Pi_omega_2_sq=1./(m_omegasq_minus_v2sq*m_omegasq_minus_v2sq
+			   +m_omega*m_omega*Gamma_omega*Gamma_omega);
+
+  // Regge trajectory for omega
+  double a_omega=0.44+0.9*t;
+  double a_omega_prime=0.9; 
+  double cos_omega=cos(M_PI*a_omega);
+  double sin_omega=sin(M_PI*a_omega);
+  double regge_omega=pow(s/s0,a_omega-1.)*M_PI*a_omega_prime/(sin_omega*TMath::Gamma(a_omega)); // excluding phase factor
+  double regge_omega_sq=regge_omega*regge_omega;
+  // interference between rho and omega;
+  double cos_rho_omega=cos(M_PI*(a_rho-a_omega));
+  double sin_rho_omega=sin(M_PI*(a_rho-a_omega));
+
   // coupling constant for tensor interaction at rhoNN vertex
   double Kappa_rho=6.1;
 
@@ -2032,6 +2051,19 @@ double TensorBackgroundInterference(TLorentzVector &q /* beam */,
   if (two_particles==(7+17)){
     //gT_odderon=5.; // need better guess
   }
+
+  // terms for interference between resonance shape and propagator in top
+  // part of background diagrams
+  double Re_B_and_omega_1=m_omegasq_minus_v1sq*ReB+m_omega*Gamma_omega*ImB;
+  double Im_B_and_omega_1=m_omega*Gamma_omega*ReB-m_omegasq_minus_v1sq*ImB;
+  double Re_B_and_omega_2=m_omegasq_minus_v2sq*ReB+m_omega*Gamma_omega*ImB;
+  double Im_B_and_omega_2=m_omega*Gamma_omega*ReB-m_omegasq_minus_v2sq*ImB;
+  double Re_B_and_rho_1=m_rhosq_minus_v1sq*ReB+m_rho*Gamma_rho*ImB;
+  double Im_B_and_rho_1=m_rho*Gamma_rho*ReB-m_rhosq_minus_v1sq*ImB;
+  double Re_B_and_rho_2=m_rhosq_minus_v2sq*ReB+m_rho*Gamma_rho*ImB;
+  double Im_B_and_rho_2=m_rho*Gamma_rho*ReB-m_rhosq_minus_v2sq*ImB;
+  
+
   double ReT=0.,ImT=0.;
   // Kinematic factors
   double temp1_1=(v1x_plus_v1y*c1_dot_p1-d1_dot_p1*dpx_plus_dpy)*dpx_plus_dpy;
@@ -2064,6 +2096,29 @@ double TensorBackgroundInterference(TLorentzVector &q /* beam */,
   double zeta=1., C=1;
   if (two_particles==(7+7)){ // pi0 pi0
     zeta=1./sqrt(2.);	     
+
+    ReT=(kin1_1-0.25*Kappa_rho*kin4_1)
+      *(2.*g_rho_V_and_T*regge_rho_sq*Pi_omega_1_sq*Re_B_and_omega_1
+	+(2./3.)*g_omega_V*regge_rho*regge_omega*Pi_rho_1_sq
+	*(Re_B_and_rho_1*cos_rho_omega-Im_B_and_rho_1*sin_rho_omega)
+	)
+      +(kin1_2-0.25*Kappa_rho*kin4_2)
+      *(2.*g_rho_V_and_T*regge_rho_sq*Pi_omega_2_sq*Re_B_and_omega_2
+	+(2./3.)*g_omega_V*regge_rho*regge_omega*Pi_rho_2_sq
+	*(Re_B_and_rho_2*cos_rho_omega-Im_B_and_rho_2*sin_rho_omega)
+	)
+      ;
+    ImT=(kin1_1-0.25*Kappa_rho*kin4_1)
+      *(2.*g_rho_V_and_T*regge_rho_sq*Pi_omega_1_sq*Im_B_and_omega_1
+	+(2./3.)*g_omega_V*regge_rho*regge_omega*Pi_rho_1_sq
+	*(Re_B_and_rho_1*sin_rho_omega+Im_B_and_rho_1*cos_rho_omega)
+	)
+      +(kin1_2-0.25*Kappa_rho*kin4_2)
+      *(2.*g_rho_V_and_T*regge_rho_sq*Pi_omega_2_sq*Im_B_and_omega_2
+	+(2./3.)*g_omega_V*regge_rho*regge_omega*Pi_rho_2_sq
+	*(Re_B_and_rho_2*sin_rho_omega+Im_B_and_rho_2*cos_rho_omega)
+	)
+      ;
   }
   if (two_particles==(7+17)){ // pi0 eta
     C=sqrt(2./3.);
