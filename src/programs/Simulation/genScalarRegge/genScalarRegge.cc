@@ -580,7 +580,7 @@ double InterferenceCrossSection(TLorentzVector &q /* beam */,
   double Re_a1_bS=0, Im_a1_bS=0., Re_b2_bS=0., Im_b2_bS=0.;
   double Re_a2_bS=0, Im_a2_bS=0., Re_b1_bS=0., Im_b1_bS=0.;
 
-  // Compute square of amplitude    
+  // Compute imaginary and real contributions    
   double zeta=1., C=1;
   if (two_particles==(7+7)){ // pi0 pi0
     zeta=1./sqrt(2.);
@@ -815,7 +815,6 @@ double InterferenceCrossSection(TLorentzVector &q /* beam */,
 	+ C_rho_f2_cut*regge_omega_f2_cut
 	*(cos_rho_omega_f2*Im_B_and_omega_1
 	  -sin_rho_omega_f2*Re_B_and_omega_1)); 
-    // ceck
     double Re_a1_bS_rho_V_and_T
       =-2.*g_rho_T*g_rho_V_and_T*g_rho_S*regge_rho_sq*Pi_omega_1_sq
       *(Re_B_and_omega_1*one_minus_cos_rho-Im_B_and_omega_1*sin_rho);
@@ -1846,9 +1845,6 @@ double TensorCrossSection(TLorentzVector &q /* beam */,
   TLorentzVector p1(0,0,0.,ParticleMass(Proton));
   TLorentzVector p2=particles[2];
   TLorentzVector dp=p2-p1;
-  TLorentzVector k1=particles[0];
-  TLorentzVector k2=particles[1];
-  TLorentzVector k=k1+k2;
   
   // Mandelstam variables
   double s=(q+p1).M2();
@@ -1864,26 +1860,17 @@ double TensorCrossSection(TLorentzVector &q /* beam */,
   double dpy=dp.Y();
   double dpx2_plus_dpy2=dpx*dpx+dpy*dpy;
 
-  // Form factors
-  /*
-  double GD_term=1.-t/0.71;
-  double F_1=(1.-0.25*t/m_p_sq*2.7928)/(GD_term*GD_term*(1.-0.25*t/m_p_sq));
-  double F_M=0.5/(0.5-t);
-  double Lambda_T=2.;
-  double F_Tpipi=exp(-(k_sq-M_sq_R)/(Lambda_T*Lambda_T));
-  double F_Tpipi_sq=F_Tpipi*F_Tpipi;
-  */
-
   // other constants
   double m_rho=0.775; // GeV
   double m_rho_sq=m_rho*m_rho;
  
   // Coupling constants 
-  double f=5.;  // scale factor to account for normalization of regge factor 
+  double f=10.;  // scale factor to account for normalization of regge factor 
   // to data?? 
-  double gT_sq=f*(2./3.)*150; // GeV^2
+  double gT_sq=f*(2./3.)*150.; // GeV^2
   if (two_particles==(7+17)){
-    gT_sq=183.675;  // GeV^2
+    f=1.; // guess
+    gT_sq=f*183.675;  // GeV^2
   }
 
   // s scale for regge trajectories
@@ -1908,7 +1895,7 @@ double TensorCrossSection(TLorentzVector &q /* beam */,
   // Amplitude
   double one_minus_dpx_over_m_rho=1.-dpx/m_rho;
   double one_minus_dpy_over_m_rho=1.-dpy/m_rho;
-  double common_fac=(38./9)/m_p_sq*(M_PI/8.)*(1./137.);
+  double common_fac=(38./9.)*(M_PI/2.)*(1./137.);
   double vector_coupling
     =2.*dpx2_plus_dpy2/m_rho_sq*p1_dot_dp*(p2_dot_dp/m_rho_sq-1.)
     +(m_p_sq-p1_dot_p2)*(one_minus_dpx_over_m_rho*one_minus_dpx_over_m_rho
@@ -1917,9 +1904,9 @@ double TensorCrossSection(TLorentzVector &q /* beam */,
     =(2.*t-dpx2_plus_dpy2)*(-Kappa_rho
 			    +0.25*Kappa_rho*Kappa_rho*(1.+p1_dot_p2/m_p_sq));
   double amp_sum=gT_sq*(vector_coupling+tensor_coupling)*regge_rho_sq;
-  double gT_odderon=5.*f; // need better guess
+  double gT_odderon=0.;//5.*f; // need better guess
   if (two_particles==(7+17)){
-    gT_odderon=5.; // need better guess
+    //gT_odderon=5.; // need better guess
   }
   amp_sum+=gT_odderon*gT_odderon*vector_coupling*regge_odderon_sq;
   amp_sum-=2.*cos(M_PI*(a_odderon-a_rho))*sqrt(gT_sq)*gT_odderon
@@ -1932,6 +1919,172 @@ double TensorCrossSection(TLorentzVector &q /* beam */,
   double mp_sq_minus_s_sq=mp_sq_minus_s*mp_sq_minus_s;
   double hbarc_sq=389.; // Convert to micro-barns
   double xsec=-hbarc_sq*(gR*gR/(ReB*ReB+ImB*ImB))*T/(256.*M_PI*M_PI*M_PI*M_PI*mp_sq_minus_s_sq);
+  
+  return(xsec);
+			
+}
+
+double TensorBackgroundInterference(TLorentzVector &q /* beam */,
+				    vector<Particle_t>&particle_types,
+				    vector<TLorentzVector>&particles,
+				    double gR,double ReB, double ImB,
+				    double phase){
+  int two_particles=particle_types[0]+particle_types[1];
+  
+  // Four vectors
+  TLorentzVector p1(0,0,0.,ParticleMass(Proton));
+  TLorentzVector p2=particles[2];
+  TLorentzVector dp=p2-p1;
+  TLorentzVector v1=particles[0]-q;
+  TLorentzVector v2=particles[1]-q;  
+  double q_dot_dp=q.Dot(dp);
+  double q_dot_v1=q.Dot(v1);
+  double dp_dot_v1=dp.Dot(v1);
+  double q_dot_v2=q.Dot(v2);
+  double dp_dot_v2=dp.Dot(v2);
+  double v1sq=v1.M2();
+  double v2sq=v2.M2();
+  double b1=-q_dot_dp*v1sq+q_dot_v1*dp_dot_v1;
+  double b2=-q_dot_dp*v2sq+q_dot_v2*dp_dot_v2;
+  TLorentzVector c1=-dp_dot_v1*q+q_dot_dp*v1;
+  TLorentzVector c2=-dp_dot_v2*q-q_dot_dp*v2;
+  TLorentzVector d1=q_dot_v1*v1-v1sq*q;
+  TLorentzVector d2=q_dot_v2*v2-v2sq*q;
+  double d1x_plus_d1y=d1.Vect().x()+d1.Vect().y(); 
+  double d2x_plus_d2y=d2.Vect().x()+d2.Vect().y(); 
+  double c1x_plus_c1y=c1.Vect().x()+c1.Vect().y(); 
+  double c2x_plus_c2y=c2.Vect().x()+c2.Vect().y();
+  
+  // Mandelstam variables
+  double s=(q+p1).M2();
+  double t=(p1-p2).M2();
+
+  // dot products 
+  double p1_dot_dp=p1.Dot(dp);
+  double p2_dot_dp=p2.Dot(dp);
+  double p1_dot_p2=p1.Dot(p2);
+  double c1_dot_p1=c1.Dot(p1);
+  double c2_dot_p1=c2.Dot(p1);
+  double c1_dot_p2=c1.Dot(p2);
+  double c2_dot_p2=c2.Dot(p2); 
+  double d1_dot_p1=d1.Dot(p1);
+  double d2_dot_p1=d2.Dot(p1);
+  double d1_dot_dp=d1.Dot(dp);
+  double d2_dot_dp=d2.Dot(dp);
+  double c1_dot_dp=c1.Dot(dp);
+  double c2_dot_dp=c2.Dot(dp);
+
+  // momentum transfer compenents
+  double dpx=dp.X();
+  double dpy=dp.Y();
+  double dpx_plus_dpy=dpx+dpy;
+  // other momentum components
+  double v1x_plus_v1y=v1.Vect().x()+v1.Vect().y();
+  double v2x_plus_v2y=v2.Vect().x()+v2.Vect().y();
+  
+  // Coupling constants 
+  double f=10.;  // scale factor to account for normalization of regge factor 
+  // to data?? 
+  double gT_sq=f*(2./3.)*150.; // GeV^2
+  if (two_particles==(7+17)){
+    f=1.; // guess
+    gT_sq=f*183.675;  // GeV^2
+  } 
+  double g_omega_V=15.;
+  double g_rho_V=3.4;
+  double g_rho_T=11.0; // GeV^-1
+  double gsq_rho_T=g_rho_T*g_rho_T;
+  double g_rho_V_and_T=g_rho_V+2.*m_p*g_rho_T;
+
+  // Rho propagator for top exchange for double-exchange diagrams
+  double m_rho=0.7685;
+  double m_rho_sq=m_rho*m_rho;
+  double Gamma_rho=0.1462;
+  double m_rhosq_minus_v1sq=m_rho*m_rho-v1sq;
+  double Pi_rho_1_sq=1./(m_rhosq_minus_v1sq*m_rhosq_minus_v1sq
+			 +m_rho*m_rho*Gamma_rho*Gamma_rho);
+  double m_rhosq_minus_v2sq=m_rho*m_rho-v2sq;
+  double Pi_rho_2_sq=1./(m_rhosq_minus_v2sq*m_rhosq_minus_v2sq
+			 +m_rho*m_rho*Gamma_rho*Gamma_rho);
+  
+  
+
+  // s scale for regge trajectories
+  double s0=1.;
+ 
+  // Regge trajectory for rho
+  double a_rho=0.55+0.8*t;
+  double a_rho_prime=0.8;
+  double regge_rho=pow(s/s0,a_rho-1.)*M_PI*a_rho_prime/(sin(M_PI*a_rho)*TMath::Gamma(a_rho)); // excluding phase factor
+  double regge_rho_sq=regge_rho*regge_rho;
+
+  // Regge trajectory for odderon
+  double a_odderon=1.+0.25*t;
+  double a_odderon_prime=0.25;
+  double regge_odderon=pow(s/s0,a_odderon-1.)*M_PI*a_odderon_prime
+    /(sin(M_PI*a_odderon)*TMath::Gamma(a_odderon)); // excluding phase factor
+  double regge_odderon_sq=regge_odderon*regge_odderon; 
+ 
+  // coupling constant for tensor interaction at rhoNN vertex
+  double Kappa_rho=6.1;
+
+  double gT_odderon=0.;//5.*f; // need better guess
+  if (two_particles==(7+17)){
+    //gT_odderon=5.; // need better guess
+  }
+  double ReT=0.,ImT=0.;
+  // Kinematic factors
+  double temp1_1=(v1x_plus_v1y*c1_dot_p1-d1_dot_p1*dpx_plus_dpy)*dpx_plus_dpy;
+  double temp2_1=(v2x_plus_v2y*c2_dot_p1-d2_dot_p1*dpx_plus_dpy)*dpx_plus_dpy;
+  double temp1_2=(v1x_plus_v1y*c1_dot_p2+(b1-d1_dot_p1)*dpx_plus_dpy)*dpx_plus_dpy;
+  double temp2_2=(v2x_plus_v2y*c2_dot_p2+(b2-d2_dot_p1)*dpx_plus_dpy)*dpx_plus_dpy;
+  double temp3_1=((b1-d1_dot_dp)*dpx_plus_dpy+v1x_plus_v1y*c1.Dot(dp))*dpx_plus_dpy; 
+  double temp3_2=((b2-d2_dot_dp)*dpx_plus_dpy+v2x_plus_v2y*c2.Dot(dp))*dpx_plus_dpy;
+  
+  double kin1_1=temp1_1*(p2_dot_dp/m_rho_sq-1.)+temp2_1*p1_dot_dp/m_rho_sq
+    +(m_p_sq-p1_dot_p2)*(temp3_1/m_rho_sq-2.*b1-v1x_plus_v1y*c1x_plus_c1y
+			 +dpx_plus_dpy*d1x_plus_d1y);
+  double kin2_1=m_p*temp1_1*((p1_dot_dp+p2_dot_dp)/m_rho_sq-1.);
+  double kin3_1=temp1_1*p1_dot_dp;
+  double kin4_1=temp3_1*(t/m_rho_sq-1.)
+    +t*((b1-d1_dot_dp)*dpx_plus_dpy*dpx_plus_dpy/m_rho_sq-2.*b1
+	+dpx_plus_dpy*d1x_plus_d1y
+	+v1x_plus_v1y*(dpx_plus_dpy*c1_dot_dp/m_rho_sq-c1x_plus_c1y)); 
+  double kin1_2=temp1_2*(p2_dot_dp/m_rho_sq-1.)+temp2_2*p1_dot_dp/m_rho_sq
+    +(m_p_sq-p1_dot_p2)*(temp3_2/m_rho_sq-2.*b2-v2x_plus_v2y*c2x_plus_c2y
+			 +dpx_plus_dpy*d2x_plus_d2y);
+  double kin2_2=m_p*temp1_2*((p1_dot_dp+p2_dot_dp)/m_rho_sq-1.);
+  double kin3_2=temp1_2*p1_dot_dp;
+  double kin4_2=temp3_2*(t/m_rho_sq-1.)
+    +t*((b2-d2_dot_dp)*dpx_plus_dpy*dpx_plus_dpy/m_rho_sq-2.*b2
+	+dpx_plus_dpy*d2x_plus_d2y
+	+v2x_plus_v2y*(dpx_plus_dpy*c2_dot_dp/m_rho_sq-c2x_plus_c2y));
+
+  // Compute imaginary and real contributions    
+  double zeta=1., C=1;
+  if (two_particles==(7+7)){ // pi0 pi0
+    zeta=1./sqrt(2.);	     
+  }
+  if (two_particles==(7+17)){ // pi0 eta
+    C=sqrt(2./3.);
+  }
+  double m1=ParticleMass(particle_types[0]);
+  double m2=ParticleMass(particle_types[1]);
+  double m1_plus_m2=m1+m2;
+  double m1_minus_m2=m1-m2;
+  double Msq=(particles[0]+particles[1]).M2();
+  double k=sqrt((Msq-m1_plus_m2*m1_plus_m2)*(Msq-m1_minus_m2*m1_minus_m2))
+    /(2.*sqrt(Msq));
+  double common_fac=(5./3.)*k*zeta*C*sqrt(M_PI/137.*gT_sq*g0_sq)*gR/(ReB*ReB+ImB*ImB);
+  
+
+  double T=common_fac*(ReT*cos(phase)+ImT*sin(phase));
+	      
+  // Compute cross section
+  double mp_sq_minus_s=m_p_sq-s;
+  double mp_sq_minus_s_sq=mp_sq_minus_s*mp_sq_minus_s;
+  double hbarc_sq=389.; // Convert to micro-barns
+  double xsec=-hbarc_sq*T/(256.*M_PI*M_PI*M_PI*M_PI*mp_sq_minus_s_sq);
   
   return(xsec);
 			
@@ -2020,7 +2173,7 @@ void CreateHistograms(){
   thrown_mass->SetXTitle("mass [GeV]");
   thrown_dalitzXY=new TH2D("thrown_dalitzXY","Dalitz distribution Y vs X",100,-1.,1.,100,-1.,1);
   thrown_mass_vs_E=new TH2D("thrown_mass_vs_E","M(4#gamma) vs Ebeam",
-			    18,3,12,450,0,4.5);
+			    48,2.8,12.4,450,0,4.5);
   thrown_mass_vs_E->SetYTitle("M(4#gamma) [GeV]");
   thrown_mass_vs_E->SetXTitle("E(beam) [GeV]");
   
@@ -2118,7 +2271,7 @@ void GraphCrossSection(double m1,double m2){
   }  
   
   double m_array[1000];
-  double xsec_array2[1000];
+  double xsec_array2[1000];  
   for (unsigned int j=0;j<1000;j++){
     double mass=m1_plus_m2+dm*double(j);
     m_array[j]=mass;
@@ -2135,6 +2288,93 @@ void GraphCrossSection(double m1,double m2){
     }
     xsec_array2[j]=4.*M_PI*1000.*xsec;
   }
+  double xsec_array3[1000];
+  if (got_pipi==true){
+    gsq_rho_S_gamma=0.094;
+    gsq_omega_S_gamma=(1./9.)*gsq_rho_S_gamma;
+  }
+  else{
+    gsq_rho_S_gamma=0.0054;
+    gsq_omega_S_gamma=9.*gsq_rho_S_gamma;
+  }
+  for (unsigned int j=0;j<1000;j++){
+    double mass=m1_plus_m2+dm*double(j);
+    m_array[j]=mass;
+    double M_sq=mass*mass;
+    if (got_pipi==false){ // a0(1450)
+      double m_a1450=1.474;
+      M_sq_R=m_a1450*m_a1450; 
+      width=0.265;
+      ReB=M_sq_R-M_sq;
+      double MRsq_minus_m1sq_m2sq=M_sq_R-m1sq_plus_m2sq;
+      double temp=4.*m1sq*m2sq;
+      double qR=sqrt((MRsq_minus_m1sq_m2sq*MRsq_minus_m1sq_m2sq-temp)
+		     /(4.*M_sq_R));
+      double partial_width=0.02*width;// estimate using pdg(2016)
+      gR=sqrt(8.*M_PI*M_sq_R*partial_width/qR);	
+      ImB=width*sqrt(M_sq);
+    }
+    else{ // f0(1370)
+      double m_f1370=1.37 ;
+      M_sq_R=m_f1370*m_f1370; 
+      width=0.5;
+      ReB=M_sq_R-M_sq;
+      double MRsq_minus_m1sq_m2sq=M_sq_R-m1sq_plus_m2sq;
+      double temp=4.*m1sq*m2sq;
+      double qR=sqrt((MRsq_minus_m1sq_m2sq*MRsq_minus_m1sq_m2sq-temp)
+		     /(4.*M_sq_R));
+      double partial_width=0.26/3.*width;// estimate using pdg(2016)
+      gR=sqrt(8.*M_PI*M_sq_R*partial_width/qR);	
+      ImB=width*sqrt(M_sq);
+    }
+    t_old=t0;
+    double xsec=0.;
+    for (unsigned int k=0;k<1000;k++){
+      double theta_cm=M_PI*double(k)/1000.;
+      double sin_theta_over_2=sin(0.5*theta_cm);
+      double t=t0-4.*p_gamma*p_S*sin_theta_over_2*sin_theta_over_2;
+      xsec+=(t_old-t)*CrossSection(m1,m2,M_sq_R,s,t,gR,ReB,ImB,gsq_rho_S_gamma,gsq_omega_S_gamma);
+      t_old=t;
+    }
+    xsec_array3[j]=4.*M_PI*1000.*xsec;
+  }
+  if (got_pipi){
+    // f0(500)
+    gsq_rho_S_gamma=0.1;
+    gsq_omega_S_gamma=(1./9)*gsq_rho_S_gamma;
+    double xsec_array4[1000];
+    for (unsigned int j=0;j<1000;j++){
+      double mass=m1_plus_m2+dm*double(j);
+      m_array[j]=mass;
+      double M_sq=mass*mass;
+      double mf500=0.8;
+      M_sq_R=mf500*mf500; 
+      width=0.5;
+      ReB=M_sq_R-M_sq;
+      double MRsq_minus_m1sq_m2sq=M_sq_R-m1sq_plus_m2sq;
+      double temp=4.*m1sq*m2sq;
+      double qR=sqrt((MRsq_minus_m1sq_m2sq*MRsq_minus_m1sq_m2sq-temp)
+		     /(4.*M_sq_R));
+      double partial_width=width/3.;
+      gR=sqrt(8.*M_PI*M_sq_R*partial_width/qR);	
+      ImB=width*sqrt(M_sq);
+      t_old=t0;
+      double xsec=0.;
+      for (unsigned int k=0;k<1000;k++){
+	double theta_cm=M_PI*double(k)/1000.;
+	double sin_theta_over_2=sin(0.5*theta_cm);
+	double t=t0-4.*p_gamma*p_S*sin_theta_over_2*sin_theta_over_2;
+	xsec+=(t_old-t)*CrossSection(m1,m2,M_sq_R,s,t,gR,ReB,ImB,gsq_rho_S_gamma,gsq_omega_S_gamma);
+	t_old=t;
+      }
+      xsec_array4[j]=4.*M_PI*1000.*xsec;
+    }
+    TGraph *Gxsec4=new TGraph(1000,m_array,xsec_array4);
+    Gxsec4->GetXaxis()->SetTitle("M [GeV]");
+    Gxsec4->GetYaxis()->SetTitle("d#sigma/dM [nb/GeV]");
+    Gxsec4->Write("Cross section d#sigma/dM");
+  }
+
   TGraph *Gxsec=new TGraph(1000,t_array,xsec_array);
   Gxsec->GetXaxis()->SetTitle("-t [GeV^{2}]");
   Gxsec->GetYaxis()->SetTitle("d#sigma/dt [nb/GeV^{2}]");
@@ -2142,9 +2382,13 @@ void GraphCrossSection(double m1,double m2){
   TGraph *Gxsec2=new TGraph(1000,m_array,xsec_array2);
   Gxsec2->GetXaxis()->SetTitle("M [GeV]");
   Gxsec2->GetYaxis()->SetTitle("d#sigma/dM [nb/GeV]");
-  Gxsec2->Write("Cross section d#sigma/dM");
+  Gxsec2->Write("Cross section d#sigma/dM"); 
+  TGraph *Gxsec3=new TGraph(1000,m_array,xsec_array3);
+  Gxsec3->GetXaxis()->SetTitle("M [GeV]");
+  Gxsec3->GetYaxis()->SetTitle("d#sigma/dM [nb/GeV]");
+  Gxsec3->Write("Cross section d#sigma/dM");
  
-  cout << "Total cross section at " << Egamma << " GeV = "<< sum 
+  cout << "Total a0(980) or f0(980) cross section at " << Egamma << " GeV = "<< sum 
        << " nano-barns"<<endl;
 }
 
@@ -2296,7 +2540,7 @@ int main(int narg, char *argv[])
     TLorentzVector beam;
 
     // Maximum value for cross section 
-    double xsec_max=(got_pipi)?12.:1.5;
+    double xsec_max=(got_pipi)?12.:3.5;
     double xsec=0.,xsec_test=0.;
 
     // Polar angle in center of mass frame
@@ -2415,20 +2659,17 @@ int main(int narg, char *argv[])
       
       // f0(600)
       if (got_pipi && generate[0]){
- 	double m_Sigma=0.8;
+ 	double m_Sigma=0.7;
 	double M_sq_R=m_Sigma*m_Sigma; 
 	width=0.5;
 	ReBf500=M_sq_R-M_sq;
-	double Msq_minus_m1sq_m2sq=M_sq-m1sq_plus_m2sq;
 	double MRsq_minus_m1sq_m2sq=M_sq_R-m1sq_plus_m2sq;
 	double temp=4.*m1sq*m2sq;
 	double qR=sqrt((MRsq_minus_m1sq_m2sq*MRsq_minus_m1sq_m2sq-temp)
 		       /(4.*M_sq_R));
-	double q=sqrt((Msq_minus_m1sq_m2sq*MRsq_minus_m1sq_m2sq-temp)
-		       /(4.*M_sq));
-	double partial_width=(width/3.)*(q/qR)*M_sq_R/M_sq;
+	double partial_width=width/3.;
 	gRf500=sqrt(8.*M_PI*M_sq_R*partial_width/qR);
-	ImBf500=width*sqrt(M_sq)*((1./3.)*q/qR*M_sq_R/M_sq+(2./3.));
+	ImBf500=width*sqrt(M_sq);
 
 	xsec+=CrossSection(m1,m2,M_sq,s,t,gRf500,ReBf500,ImBf500,
 			   gsq_rho_f500_gamma,gsq_omega_f500_gamma);
@@ -2440,16 +2681,13 @@ int main(int narg, char *argv[])
 	double M_sq_R=m_f1370*m_f1370; 
 	width=0.5;
 	ReBf1370=M_sq_R-M_sq;
-	double Msq_minus_m1sq_m2sq=M_sq-m1sq_plus_m2sq;
 	double MRsq_minus_m1sq_m2sq=M_sq_R-m1sq_plus_m2sq;
 	double temp=4.*m1sq*m2sq;
 	double qR=sqrt((MRsq_minus_m1sq_m2sq*MRsq_minus_m1sq_m2sq-temp)
 		       /(4.*M_sq_R));
-	double q=sqrt((Msq_minus_m1sq_m2sq*MRsq_minus_m1sq_m2sq-temp)
-		       /(4.*M_sq));
-	double partial_width=(0.26*width/3.)*(q/qR)*M_sq_R/M_sq;// fraction from Bugg(96)
+	double partial_width=0.26*width/3.;// fraction from Bugg(96)
 	gRf1370=sqrt(8.*M_PI*M_sq_R*partial_width/qR);
-	ImBf1370=width*sqrt(M_sq)*(0.26*(1./3.)*q/qR*M_sq_R/M_sq+0.913);
+	ImBf1370=width*sqrt(M_sq);
 
 	xsec+=CrossSection(m1,m2,M_sq,s,t,gRf1370,ReBf1370,ImBf1370,
 			   gsq_rho_f1370_gamma,gsq_omega_f1370_gamma);
@@ -2470,16 +2708,13 @@ int main(int narg, char *argv[])
 	double M_sq_R=m_a1450*m_a1450; 
 	width=0.265;
 	ReBa1450=M_sq_R-M_sq;
-	double Msq_minus_m1sq_m2sq=M_sq-m1sq_plus_m2sq;
 	double MRsq_minus_m1sq_m2sq=M_sq_R-m1sq_plus_m2sq;
 	double temp=4.*m1sq*m2sq;
 	double qR=sqrt((MRsq_minus_m1sq_m2sq*MRsq_minus_m1sq_m2sq-temp)
-		       /(4.*M_sq_R));
-	double q=sqrt((Msq_minus_m1sq_m2sq*MRsq_minus_m1sq_m2sq-temp)
-		       /(4.*M_sq));	
-	double partial_width=(0.02*width)*(q/qR)*M_sq_R/M_sq;// estimate using pdg(2016)
+		       /(4.*M_sq_R));	
+	double partial_width=0.02*width;// estimate using pdg(2016)
 	gRa1450=sqrt(8.*M_PI*M_sq_R*partial_width/qR);
-	ImBa1450=width*sqrt(M_sq)*(0.02*q/qR*M_sq_R/M_sq+0.98);
+	ImBa1450=width*sqrt(M_sq);
 
 	xsec+=CrossSection(m1,m2,M_sq,s,t,gRa1450,ReBa1450,ImBa1450,
 			   gsq_rho_a1450_gamma,gsq_omega_a1450_gamma);
@@ -2594,6 +2829,11 @@ int main(int narg, char *argv[])
 	}
 	xsec+=TensorCrossSection(beam,particle_types,particle_vectors,
 				 gR_T,ReB_T,ImB_T);
+	if (generate[4]){
+	  xsec+=TensorBackgroundInterference(beam,particle_types,
+					     particle_vectors,
+					     gR_T,ReB_T,ImB_T,0.);
+	}
 	
       }
      if (xsec>mymax ) mymax=xsec;
