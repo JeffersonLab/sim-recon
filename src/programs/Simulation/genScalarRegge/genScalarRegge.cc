@@ -2086,7 +2086,7 @@ double TensorBackgroundInterference(TLorentzVector &q /* beam */,
     +(m_p_sq-p1_dot_p2)*(temp3_2/m_rho_sq-2.*b2-v2x_plus_v2y*c2x_plus_c2y
 			 +dpx_plus_dpy*d2x_plus_d2y);
   double kin2_2=m_p*temp1_2*((p1_dot_dp+p2_dot_dp)/m_rho_sq-1.);
-  double kin3_2=temp1_2*p1_dot_dp;
+  double kin3_2=temp1_2*p1_dot_dp/m_p;
   double kin4_2=temp3_2*(t/m_rho_sq-1.)
     +t*((b2-d2_dot_dp)*dpx_plus_dpy*dpx_plus_dpy/m_rho_sq-2.*b2
 	+dpx_plus_dpy*d2x_plus_d2y
@@ -2107,7 +2107,10 @@ double TensorBackgroundInterference(TLorentzVector &q /* beam */,
 	+(2./3.)*g_omega_V*regge_rho*regge_omega*Pi_rho_2_sq
 	*(Re_B_and_rho_2*cos_rho_omega-Im_B_and_rho_2*sin_rho_omega)
 	)
-      ;
+      -4.*(kin2_1-Kappa_rho*kin3_1)*regge_rho_sq*g_rho_T*Pi_omega_1_sq
+      *Re_B_and_omega_1 
+      -4.*(kin2_2-Kappa_rho*kin3_2)*regge_rho_sq*g_rho_T*Pi_omega_2_sq
+      *Re_B_and_omega_2;
     ImT=(kin1_1-0.25*Kappa_rho*kin4_1)
       *(2.*g_rho_V_and_T*regge_rho_sq*Pi_omega_1_sq*Im_B_and_omega_1
 	+(2./3.)*g_omega_V*regge_rho*regge_omega*Pi_rho_1_sq
@@ -2118,10 +2121,42 @@ double TensorBackgroundInterference(TLorentzVector &q /* beam */,
 	+(2./3.)*g_omega_V*regge_rho*regge_omega*Pi_rho_2_sq
 	*(Re_B_and_rho_2*sin_rho_omega+Im_B_and_rho_2*cos_rho_omega)
 	)
-      ;
+      -4.*(kin2_1-Kappa_rho*kin3_1)*regge_rho_sq*g_rho_T*Pi_omega_1_sq
+      *Im_B_and_omega_1 
+      -4.*(kin2_2-Kappa_rho*kin3_2)*regge_rho_sq*g_rho_T*Pi_omega_2_sq
+      *Im_B_and_omega_2;
   }
   if (two_particles==(7+17)){ // pi0 eta
     C=sqrt(2./3.);
+
+    ReT=(kin1_1-0.25*Kappa_rho*kin4_1)
+      *((2./3.)*g_rho_V_and_T*regge_rho_sq*Pi_rho_1_sq*Re_B_and_rho_1
+	+2.*g_omega_V*regge_rho*regge_omega*Pi_omega_1_sq
+	*(Re_B_and_omega_1*cos_rho_omega-Im_B_and_omega_1*sin_rho_omega)
+	)
+      +(kin1_2-0.25*Kappa_rho*kin4_2)
+      *((2./3.)*g_rho_V_and_T*regge_rho_sq*Pi_omega_2_sq*Re_B_and_omega_2
+	+2.*g_omega_V*regge_rho*regge_omega*Pi_rho_2_sq
+	*(Re_B_and_rho_2*cos_rho_omega-Im_B_and_rho_2*sin_rho_omega)
+	)
+      -4./3.*(kin2_1-Kappa_rho*kin3_1)*regge_rho_sq*g_rho_T*Pi_rho_1_sq
+      *Re_B_and_rho_1 
+      -4./3.*(kin2_2-Kappa_rho*kin3_2)*regge_rho_sq*g_rho_T*Pi_omega_2_sq
+      *Re_B_and_omega_2;
+    ImT=(kin1_1-0.25*Kappa_rho*kin4_1)
+      *(2./3.*g_rho_V_and_T*regge_rho_sq*Pi_rho_1_sq*Im_B_and_rho_1
+	+(2.)*g_omega_V*regge_rho*regge_omega*Pi_omega_1_sq
+	*(Re_B_and_omega_1*sin_rho_omega+Im_B_and_omega_1*cos_rho_omega)
+	)
+      +(kin1_2-0.25*Kappa_rho*kin4_2)
+      *(2./3.*g_rho_V_and_T*regge_rho_sq*Pi_omega_2_sq*Im_B_and_omega_2
+	+(2.)*g_omega_V*regge_rho*regge_omega*Pi_rho_2_sq
+	*(Re_B_and_rho_2*sin_rho_omega+Im_B_and_rho_2*cos_rho_omega)
+	)
+      -4./3.*(kin2_1-Kappa_rho*kin3_1)*regge_rho_sq*g_rho_T*Pi_rho_1_sq
+      *Im_B_and_rho_1 
+      -4./3.*(kin2_2-Kappa_rho*kin3_2)*regge_rho_sq*g_rho_T*Pi_omega_2_sq
+      *Im_B_and_omega_2;
   }
   double m1=ParticleMass(particle_types[0]);
   double m2=ParticleMass(particle_types[1]);
@@ -2140,7 +2175,7 @@ double TensorBackgroundInterference(TLorentzVector &q /* beam */,
   double mp_sq_minus_s_sq=mp_sq_minus_s*mp_sq_minus_s;
   double hbarc_sq=389.; // Convert to micro-barns
   double xsec=-hbarc_sq*T/(256.*M_PI*M_PI*M_PI*M_PI*mp_sq_minus_s_sq);
-  
+ 
   return(xsec);
 			
 }
@@ -2545,9 +2580,9 @@ int main(int narg, char *argv[])
 
   // Parameters for regge cuts
   getline(infile,comment_line);
-  double phase[4];
+  double phase[5];
   cout << " Interference phases =";
-  for (int k=0;k<4;k++){
+  for (int k=0;k<5;k++){
     infile >> phase[k];
     cout << " " << phase[k]; 
   }
@@ -2887,7 +2922,7 @@ int main(int narg, char *argv[])
 	if (generate[4]){
 	  xsec+=TensorBackgroundInterference(beam,particle_types,
 					     particle_vectors,
-					     gR_T,ReB_T,ImB_T,0.);
+					     gR_T,ReB_T,ImB_T,phase[4]);
 	}
 	
       }
