@@ -35,9 +35,9 @@ jerror_t DTAGHHit_factory_Calib::init(void)
     gPARMS->SetDefaultParameter("TAGHHit:DELTA_T_ADC_TDC_MAX", DELTA_T_ADC_TDC_MAX,
     "Maximum difference in ns between a (calibrated) fADC time and"
     " F1TDC time for them to be matched in a single hit");
-    ADC_THRESHOLD = 1000.0; // ADC integral counts
+    ADC_THRESHOLD = 200.0; // ADC counts
     gPARMS->SetDefaultParameter("TAGHHit:ADC_THRESHOLD",ADC_THRESHOLD,
-    "pedestal-subtracted pulse integral threshold");
+    "pulse height threshold");
 
     CHECK_FADC_ERRORS = true;
     gPARMS->SetDefaultParameter("TAGHHit:CHECK_FADC_ERRORS", CHECK_FADC_ERRORS, "Set to 1 to reject hits with fADC250 errors, ser to 0 to keep these hits");
@@ -178,8 +178,8 @@ jerror_t DTAGHHit_factory_Calib::evnt(JEventLoop *loop, uint64_t eventnumber)
         double A = digihit->pulse_integral;
         A -= pedestal*nsamples_integral;
 
-        // Throw away hits with small pedestal-subtracted integrals
-        if (A < ADC_THRESHOLD) continue;
+        // Pulse height cut
+        if (pulse_peak < ADC_THRESHOLD) continue;
 
         DTAGHHit *hit = new DTAGHHit;
         hit->counter_id = counter;
