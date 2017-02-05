@@ -11,6 +11,8 @@
 // hnamepath: /occupancy/ps_right_occ
 //
 // e-mail: davidl@jlab.org
+// e-mail: somov@jlab.org
+//
 
 {
 	// RootSpy saves the current directory and style before

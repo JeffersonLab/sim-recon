@@ -7,6 +7,9 @@
 // hnamepath: /occupancy/fdc_wire_occ
 //
 // e-mail: davidl@jlab.org
+// e-mail: pentchev@jlab.org
+// e-mail: staylor@jlab.org
+//
 
 {
 	// RootSpy saves the current directory and style before

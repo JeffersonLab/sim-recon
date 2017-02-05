@@ -1,4 +1,10 @@
 // hnamepath: /highlevel/NumHighLevelObjects
+//
+// e-mail: davidl@jlab.org
+// e-mail: pmatt@jlab.org
+// e-mail: staylor@jlab.org
+// e-mail: sdobbs@jlab.org
+//
 
 {
 	TDirectory* locCurrentDir = gDirectory;

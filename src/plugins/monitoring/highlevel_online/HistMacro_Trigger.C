@@ -1,6 +1,12 @@
 // hnamepath: /highlevel/L1GTPRate
 // hnamepath: /highlevel/BCALVsFCAL_TrigBit1
 // hnamepath: /highlevel/BCALVsFCAL_TrigBit6
+//
+// e-mail: davidl@jlab.org
+// e-mail: pmatt@jlab.org
+// e-mail: staylor@jlab.org
+// e-mail: sdobbs@jlab.org
+//
 
 {
 	TDirectory *locTopDirectory = gDirectory;

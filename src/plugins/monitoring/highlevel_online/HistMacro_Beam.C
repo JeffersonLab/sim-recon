@@ -1,6 +1,12 @@
 // hnamepath: /highlevel/RFBeamBunchPeriod
 // hnamepath: /highlevel/RFBeamBunchPeriod_DFT
 // hnamepath: /highlevel/BeamEnergy
+//
+// e-mail: davidl@jlab.org
+// e-mail: pmatt@jlab.org
+// e-mail: staylor@jlab.org
+// e-mail: sdobbs@jlab.org
+//
 
 {
 	TDirectory *locTopDirectory = gDirectory;
