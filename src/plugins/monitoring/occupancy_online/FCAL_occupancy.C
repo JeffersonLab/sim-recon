@@ -4,6 +4,11 @@
 //
 // hnamepath: /occupancy/fcal_occ
 // hnamepath: /occupancy/fcal_num_events
+//
+// e-mail: davidl@jlab.org
+// e-mail: adesh@jlab.org
+// e-mail: jzarling@jlab.org
+//
 
 {
 	// RootSpy saves the current directory and style before

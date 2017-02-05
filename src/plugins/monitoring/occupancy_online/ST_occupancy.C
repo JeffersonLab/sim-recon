@@ -5,6 +5,10 @@
 // hnamepath: /occupancy/st_num_events
 // hnamepath: /occupancy/st_adc_occ
 // hnamepath: /occupancy/st_tdc_occ
+//
+// e-mail: davidl@jlab.org
+// e-mail: marki@jlab.org
+//
 
 {
 	// RootSpy saves the current directory and style before
