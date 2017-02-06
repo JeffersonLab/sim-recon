@@ -54,8 +54,6 @@ jerror_t JEventProcessor_highlevel_online::init(void)
 
 	/*************************************************************** TRIGGER **************************************************************/
 
-	dHist_L1GTPRate = new TH2F("L1GTPRate","L1 GTP Rate by bit;Trigger Bit;L1 GTP Rate (kHz)", 8, 0.5, 8.5, 1000, 0.0, 100.0);
-
 	dHist_BCALVsFCAL_TrigBit1 = new TH2I("BCALVsFCAL_TrigBit1","TRIG BIT 1;E (FCAL) (count);E (BCAL) (count)", 200, 0., 10000, 200, 0., 50000);
 	
 	dHist_L1bits_gtp = new TH1I("L1bits_gtp", "L1 trig bits from GTP;Trig. bit (1-32)", 32, 0.5, 32.5);
@@ -332,13 +330,6 @@ jerror_t JEventProcessor_highlevel_online::evnt(JEventLoop *locEventLoop, uint64
 		for(int bit=1; bit<=32; bit++){
 			if(locgtpTrigBits[bit-1]) dHist_L1bits_gtp->Fill(bit);
 			if(locfpTrigBits[bit-1] ) dHist_L1bits_fp->Fill(bit);
-		}
-
-		// Sync Events
-		if(!locL1Trigger->gtp_rate.empty())
-		{
-			for(unsigned int ii = 0; ii < 8; ++ii)
-				dHist_L1GTPRate->Fill(ii + 1, Float_t(locL1Trigger->gtp_rate[ii])/1000.0);
 		}
 	}
 

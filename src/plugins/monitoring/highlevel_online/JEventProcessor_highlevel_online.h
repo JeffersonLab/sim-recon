@@ -39,8 +39,6 @@ class JEventProcessor_highlevel_online:public jana::JEventProcessor
 		TH1I* dHist_BeamBunchPeriod;
 		TH1F* dHist_BeamBunchPeriod_DFT;
 
-		TH2F* dHist_L1GTPRate;
-
 		TH2I* dHist_BCALVsFCAL_TrigBit1;
 		TH1I* dHist_L1bits_gtp;
 		TH1I* dHist_L1bits_fp;
