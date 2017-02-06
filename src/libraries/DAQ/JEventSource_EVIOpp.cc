@@ -182,7 +182,7 @@ JEventSource_EVIOpp::JEventSource_EVIOpp(const char* source_name):JEventSource(s
 
 	// Create worker threads
 	for(uint32_t i=0; i<NTHREADS; i++){
-		DEVIOWorkerThread *w = new DEVIOWorkerThread(this, parsed_events, MAX_PARSED_EVENTS, PARSED_EVENTS_MUTEX, PARSED_EVENTS_CV);
+		DEVIOWorkerThread *w = new DEVIOWorkerThread(this, parsed_events, MAX_PARSED_EVENTS, PARSED_EVENTS_MUTEX, PARSED_EVENTS_CV, ROCIDS_TO_PARSE);
 		w->MAX_EVENT_RECYCLES  = MAX_EVENT_RECYCLES;
 		w->MAX_OBJECT_RECYCLES = MAX_OBJECT_RECYCLES;
 		w->PARSE_F250          = PARSE_F250;

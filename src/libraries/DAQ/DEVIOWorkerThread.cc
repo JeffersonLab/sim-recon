@@ -27,12 +27,14 @@ DEVIOWorkerThread::DEVIOWorkerThread(
 	 ,uint32_t            &MAX_PARSED_EVENTS
 	 ,mutex               &PARSED_EVENTS_MUTEX
 	 ,condition_variable  &PARSED_EVENTS_CV
+	 ,set<uint32_t>       &ROCIDS_TO_PARSE
 	 ):
 	 event_source(event_source)
 	,parsed_events(parsed_events)
 	,MAX_PARSED_EVENTS(MAX_PARSED_EVENTS)
 	,PARSED_EVENTS_MUTEX(PARSED_EVENTS_MUTEX)
 	,PARSED_EVENTS_CV(PARSED_EVENTS_CV)
+	,ROCIDS_TO_PARSE(ROCIDS_TO_PARSE)
 	,done(false)
 	,thd(&DEVIOWorkerThread::Run,this)
 {
@@ -750,6 +752,10 @@ void DEVIOWorkerThread::ParseDataBank(uint32_t* &iptr, uint32_t *iend)
 	iptr++; // advance past data bank length word
 	uint32_t rocid = ((*iptr)>>16) & 0xFFF;
 	iptr++;
+	
+	if(!ROCIDS_TO_PARSE.empty()){
+		if(ROCIDS_TO_PARSE.find(rocid) == ROCIDS_TO_PARSE.end()) return;
+	}
 	
 	// Loop over Data Block Banks
 	while(iptr < iend){
