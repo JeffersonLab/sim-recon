@@ -59,6 +59,9 @@ class JEventProcessor_occupancy_online:public jana::JEventProcessor{
 		TH1I *rf_num_events;
 		TH1D* rf_occ; //TH1D ON PURPOSE!
 		map<DetectorSystem_t, double> dRFBinValueMap;
+		
+		//------------------------ Trigger -------------------------
+		TH2F *L1GTPRate;  // n.b. plotted in highlevel_online/HistMacro_Trigger.C  !!
 
 		//------------------------ ST -------------------------
 		TH1I *st_num_events;

@@ -1,4 +1,11 @@
-// hnamepath: /highlevel/L1GTPRate
+//
+// NOTE: The L1GTPRate histo now comes from the 
+// occupancy_online plugin since it should see many
+// more sync events.
+//
+//
+//
+// hnamepath: /occupancy/L1GTPRate
 // hnamepath: /highlevel/BCALVsFCAL_TrigBit1
 // hnamepath: /highlevel/L1bits_gtp
 // hnamepath: /highlevel/L1bits_fp
