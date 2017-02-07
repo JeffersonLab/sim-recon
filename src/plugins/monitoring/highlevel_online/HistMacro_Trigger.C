@@ -6,6 +6,7 @@
 //
 //
 // hnamepath: /occupancy/L1GTPRate
+// hnamepath: /occupancy/L1livetime
 // hnamepath: /highlevel/BCALVsFCAL_TrigBit1
 // hnamepath: /highlevel/L1bits_gtp
 // hnamepath: /highlevel/L1bits_fp
@@ -19,16 +20,25 @@
 {
 	TDirectory *locTopDirectory = gDirectory;
 
-	//Goto Beam Path
+
+	// Grab remaining histos from highlevel directory
 	TDirectory *locDirectory = (TDirectory*)gDirectory->FindObjectAny("highlevel");
 	if(!locDirectory)
 		return;
 	locDirectory->cd();
 
-	TH2* locHist_L1GTPRate = (TH2*)gDirectory->Get("L1GTPRate");
 	TH2* locHist_BCALVsFCAL_TrigBit1 = (TH2*)gDirectory->Get("BCALVsFCAL_TrigBit1");
 	TH1* locHist_L1bits_gtp = (TH1*)gDirectory->Get("L1bits_gtp");
 	TH1* locHist_L1bits_fp = (TH1*)gDirectory->Get("L1bits_fp");
+
+	// Grab a couple of histos from occupancy directory
+	locDirectory = (TDirectory*)locTopDirectory->FindObjectAny("occupancy");
+	TH2* locHist_L1GTPRate  = NULL;
+	TH1* locHist_L1livetime = NULL;
+	if(locDirectory){
+		locHist_L1GTPRate = (TH2*)locDirectory->Get("L1GTPRate");
+		locHist_L1livetime = (TH1*)locDirectory->Get("L1livetime");
+	}
 
 	//Get/Make Canvas
 	TCanvas *locCanvas = NULL;
@@ -124,6 +134,25 @@
 		legend_gtp->Draw();
 		legend_fp->Draw();
 
+		gPad->SetLogy();
+		gPad->Update();
+	}
+
+	locCanvas->cd(0);
+	TPad *trigpad2 = (TPad*)gDirectory->FindObjectAny("trigpad2");
+	if(!trigpad2) trigpad2 = new TPad("trigpad2", "", 0.66, 0.0, 1.0, 0.5);
+	trigpad2->SetTicks();
+	trigpad2->Draw();
+	trigpad2->cd();
+
+	gPad->SetTicks();
+	gPad->SetGrid();
+	if(locHist_L1livetime!=NULL)
+	{
+		locHist_L1livetime->SetLineColor(kGreen-3);
+		locHist_L1livetime->SetFillColor(kGreen);
+		locHist_L1livetime->SetFillStyle(3001);
+		locHist_L1livetime->Draw();
 		gPad->SetLogy();
 		gPad->Update();
 	}
