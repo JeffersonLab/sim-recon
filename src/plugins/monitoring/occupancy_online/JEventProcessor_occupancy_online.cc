@@ -366,10 +366,12 @@ jerror_t JEventProcessor_occupancy_online::evnt(JEventLoop *loop, uint64_t event
 	}
 
 	//------------------------ Trigger -------------------------
-	if(!l1trigger->gtp_rate.empty())
-	{
-		// Sync Events
-		for(unsigned int ii = 0; ii < 8; ++ii) L1GTPRate->Fill(ii + 1, Float_t(l1trigger->gtp_rate[ii])/1000.0);
+	if(l1trigger){
+		if(!l1trigger->gtp_rate.empty())
+		{
+			// Sync Events
+			for(unsigned int ii = 0; ii < 8; ++ii) L1GTPRate->Fill(ii + 1, Float_t(l1trigger->gtp_rate[ii])/1000.0);
+		}
 	}
 
 	//------------------------ ST -------------------------
