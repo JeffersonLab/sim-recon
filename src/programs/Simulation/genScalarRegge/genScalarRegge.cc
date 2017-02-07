@@ -1915,10 +1915,17 @@ double TensorCrossSection(TLorentzVector &q /* beam */,
   double T=common_fac*amp_sum*decay_weight;
 	      
   // Compute cross section
+  double m1=ParticleMass(particle_types[0]);
+  double m2=ParticleMass(particle_types[1]);
+  double m1_plus_m2=m1+m2;
+  double m1_minus_m2=m1-m2;
+  double m_sq=(particles[0]+particles[1]).M2();
+  double k=sqrt((m_sq-m1_plus_m2*m1_plus_m2)*(m_sq-m1_minus_m2*m1_minus_m2))
+    /(2.*sqrt(m_sq));
   double mp_sq_minus_s=m_p_sq-s;
   double mp_sq_minus_s_sq=mp_sq_minus_s*mp_sq_minus_s;
   double hbarc_sq=389.; // Convert to micro-barns
-  double xsec=-hbarc_sq*(gR*gR/(ReB*ReB+ImB*ImB))*T/(256.*M_PI*M_PI*M_PI*M_PI*mp_sq_minus_s_sq);
+  double xsec=-hbarc_sq*(gR*gR/(ReB*ReB+ImB*ImB))*T*k/(256.*M_PI*M_PI*M_PI*M_PI*mp_sq_minus_s_sq);
   
   return(xsec);
 			
@@ -1993,7 +2000,6 @@ double TensorBackgroundInterference(TLorentzVector &q /* beam */,
   double g_omega_V=15.;
   double g_rho_V=3.4;
   double g_rho_T=11.0; // GeV^-1
-  double gsq_rho_T=g_rho_T*g_rho_T;
   double g_rho_V_and_T=g_rho_V+2.*m_p*g_rho_T;
 
   // Rho propagator for top exchange for double-exchange diagrams
@@ -2017,12 +2023,14 @@ double TensorBackgroundInterference(TLorentzVector &q /* beam */,
   double regge_rho_sq=regge_rho*regge_rho;
 
   // Regge trajectory for odderon
+  /*
   double a_odderon=1.+0.25*t;
   double a_odderon_prime=0.25;
   double regge_odderon=pow(s/s0,a_odderon-1.)*M_PI*a_odderon_prime
     /(sin(M_PI*a_odderon)*TMath::Gamma(a_odderon)); // excluding phase factor
   double regge_odderon_sq=regge_odderon*regge_odderon; 
- 
+  */
+
     // omega propagator for top exchange
   double m_omega=0.78265;
   double Gamma_omega=0.00849;
@@ -2036,21 +2044,22 @@ double TensorBackgroundInterference(TLorentzVector &q /* beam */,
   // Regge trajectory for omega
   double a_omega=0.44+0.9*t;
   double a_omega_prime=0.9; 
-  double cos_omega=cos(M_PI*a_omega);
+  //  double cos_omega=cos(M_PI*a_omega);
   double sin_omega=sin(M_PI*a_omega);
   double regge_omega=pow(s/s0,a_omega-1.)*M_PI*a_omega_prime/(sin_omega*TMath::Gamma(a_omega)); // excluding phase factor
-  double regge_omega_sq=regge_omega*regge_omega;
   // interference between rho and omega;
   double cos_rho_omega=cos(M_PI*(a_rho-a_omega));
   double sin_rho_omega=sin(M_PI*(a_rho-a_omega));
 
   // coupling constant for tensor interaction at rhoNN vertex
   double Kappa_rho=6.1;
-
+  
+  /*
   double gT_odderon=0.;//5.*f; // need better guess
   if (two_particles==(7+17)){
     //gT_odderon=5.; // need better guess
   }
+  */
 
   // terms for interference between resonance shape and propagator in top
   // part of background diagrams
@@ -2180,6 +2189,193 @@ double TensorBackgroundInterference(TLorentzVector &q /* beam */,
 			
 }
 
+double TensorScalarInterference(TLorentzVector &q /* beam */,
+				vector<Particle_t>&particle_types,
+				vector<TLorentzVector>&particles,
+				double gR,double ReB, double ImB,
+				double gR_S,double ReB_S,double ImB_S,
+				double g_omega_S,double g_rho_S,
+				double phase){
+  int two_particles=particle_types[0]+particle_types[1];
+  double m_rho=0.7685;
+  double m_rho_sq=m_rho*m_rho;
+
+  // Four vectors
+  TLorentzVector p1(0,0,0.,ParticleMass(Proton));
+  TLorentzVector p2=particles[2];
+  TLorentzVector dp=p2-p1;
+  
+  // Mandelstam variables
+  double s=(q+p1).M2();
+  double t=(p1-p2).M2();
+  double q_dot_dp=q.Dot(dp);
+  double q_dot_p1=q.Dot(p1);
+
+  // dot products 
+  double p1_dot_dp=p1.Dot(dp);
+  double p2_dot_dp=p2.Dot(dp);
+  double p1_dot_p2=p1.Dot(p2);
+  
+
+  // momentum transfer compenents
+  double dpx=dp.X();
+  double dpy=dp.Y();
+  double dpx_plus_dpy=dpx+dpy;
+
+  // Coupling constants 
+  double f=10.;  // scale factor to account for normalization of regge factor 
+  // to data?? 
+  double gT_sq=f*(2./3.)*150.; // GeV^2
+  if (two_particles==(7+17)){
+    f=1.; // guess
+    gT_sq=f*183.675;  // GeV^2
+  } 
+  double g_omega_V=15.;
+  double g_rho_V=3.4;
+  double g_rho_T=11.0; // GeV^-1
+  double g_rho_V_and_T=g_rho_V+2.*m_p*g_rho_T;
+
+  // s scale for regge trajectories
+  double s0=1.;
+ 
+  // Regge trajectory for rho
+  double a_rho=0.55+0.8*t;
+  double a_rho_prime=0.8;
+  double cos_rho=cos(M_PI*a_rho);
+  double sin_rho=sin(M_PI*a_rho);
+  double regge_rho=pow(s/s0,a_rho-1.)*M_PI*a_rho_prime/(sin(M_PI*a_rho)*TMath::Gamma(a_rho)); // excluding phase factor
+  double regge_rho_sq=regge_rho*regge_rho;
+
+  /*
+  // Regge trajectory for odderon
+  double a_odderon=1.+0.25*t;
+  double a_odderon_prime=0.25;
+  double regge_odderon=pow(s/s0,a_odderon-1.)*M_PI*a_odderon_prime
+    /(sin(M_PI*a_odderon)*TMath::Gamma(a_odderon)); // excluding phase factor
+  double regge_odderon_sq=regge_odderon*regge_odderon; 
+  */
+
+  // Regge trajectory for omega
+  double a_omega=0.44+0.9*t;
+  double a_omega_prime=0.9; 
+  //double cos_omega=cos(M_PI*a_omega);
+  double sin_omega=sin(M_PI*a_omega);
+  double regge_omega=pow(s/s0,a_omega-1.)*M_PI*a_omega_prime/(sin_omega*TMath::Gamma(a_omega)); // excluding phase factor
+  //double regge_omega_sq=regge_omega*regge_omega;
+  // interference between rho and omega;
+  double cos_rho_omega=cos(M_PI*(a_rho-a_omega));
+  double sin_rho_omega=sin(M_PI*(a_rho-a_omega));
+
+   // Regge cuts for rho
+  double dc=regge_cuts[0];
+  double a_rho_P=0.64+0.16*t; // Pomeron
+  double a_rho_f2=0.222+0.404*t;
+  double regge_rho_P_cut=exp(dc*t)*pow(s/s0,a_rho_P-1.);
+  double regge_rho_f2_cut=exp(dc*t)*pow(s/s0,a_rho_f2-1.);
+  double C_rho_P_cut=regge_cuts[3];
+  double C_rho_f2_cut=regge_cuts[4];
+
+  // Regge cuts for omega
+  double a_omega_P=0.52+0.196*t; // Pomeron
+  double a_omega_f2=0.112+0.428*t; 
+  double regge_omega_P_cut=exp(dc*t)*pow(s/s0,a_omega_P-1.);
+  double regge_omega_f2_cut=exp(dc*t)*pow(s/s0,a_omega_f2-1.);
+  double C_omega_P_cut=regge_cuts[1];
+  double C_omega_f2_cut=regge_cuts[2];
+  
+  // cut interference factors
+  double cos_rho_rho_P=cos(M_PI*(a_rho-0.5*a_rho_P)); 
+  double cos_rho_rho_f2=cos(M_PI*(a_rho-0.5*a_rho_f2));
+  double sin_rho_rho_P=sin(M_PI*(a_rho-0.5*a_rho_P));
+  double sin_rho_rho_f2=sin(M_PI*(a_rho-0.5*a_rho_f2));
+  double cos_rho_omega_P=cos(M_PI*(a_rho-0.5*a_omega_P)); 
+  double cos_rho_omega_f2=cos(M_PI*(a_rho-0.5*a_omega_f2));
+  double sin_rho_omega_P=sin(M_PI*(a_rho-0.5*a_omega_P));
+  double sin_rho_omega_f2=sin(M_PI*(a_rho-0.5*a_omega_f2));
+ 
+  // coupling constant for tensor interaction at rhoNN vertex
+  double Kappa_rho=6.1;
+
+  /*
+  double gT_odderon=0.;//5.*f; // need better guess
+  if (two_particles==(7+17)){
+    //gT_odderon=5.; // need better guess
+  }
+  */
+
+  // terms for interference between resonances
+  double Re_B_S_and_T=ReB*ReB_S+ImB*ImB_S;
+  double Im_B_S_and_T=ReB*ImB_S-ReB_S*ImB;
+
+  double ReT=0.,ImT=0.;
+  // Kinematic factors
+  double kin_aS=(4./3.)*(m_p_sq-p1_dot_p2+0.5*Kappa_rho*t)*q_dot_dp
+    +(5./3.)*dpx_plus_dpy*dpx_plus_dpy
+    *q_dot_p1*((p1_dot_dp+p2_dot_dp)/m_rho_sq-1.);
+  double kin_bS=(5./3.)*dpx_plus_dpy*dpx_plus_dpy*q_dot_p1
+    *(m_p*((p1_dot_dp+p2_dot_dp)/m_rho_sq-1.)
+      -Kappa_rho/(2.*m_p)*p1_dot_dp*(2.*p2_dot_dp/m_rho_sq-1.));
+  double common_fac=gR*gR_S*sqrt(gT_sq*M_PI/137.)
+    /(ReB*ReB+ImB*ImB)/(ReB_S*ReB_S+ImB_S*ImB_S);
+ 
+  ReT=kin_aS*(g_rho_V_and_T*g_rho_S*regge_rho_sq
+	      *(Re_B_S_and_T*(1.-cos_rho)+Im_B_S_and_T*sin_rho)
+	      +2.*g_rho_V*g_rho_S*regge_rho
+	      *(C_rho_P_cut*regge_rho_P_cut*(Re_B_S_and_T*cos_rho_rho_P
+					     -Im_B_S_and_T*sin_rho_rho_P)
+		+C_rho_f2_cut*regge_rho_f2_cut*(Re_B_S_and_T*cos_rho_rho_f2
+					     -Im_B_S_and_T*sin_rho_rho_f2)
+		)
+	      +g_omega_V*g_omega_S*regge_rho
+	      *(regge_omega*(Re_B_S_and_T*(cos_rho_omega-cos_rho)
+			     -Im_B_S_and_T*(sin_rho_omega+sin_rho))
+		+2.*C_omega_P_cut*regge_omega_P_cut
+		*(Re_B_S_and_T*cos_rho_omega_P-Im_B_S_and_T*sin_rho_omega_P)
+		+2.*C_omega_f2_cut*regge_omega_f2_cut
+		*(Re_B_S_and_T*cos_rho_omega_f2-Im_B_S_and_T*sin_rho_omega_f2)
+		)
+	      )
+    +kin_bS*(-2.*g_rho_S*g_rho_T*regge_rho_sq)
+    *(Re_B_S_and_T*(1.-cos_rho)+Im_B_S_and_T*sin_rho);
+  
+  ImT=kin_aS*(g_rho_V_and_T*g_rho_S*regge_rho_sq
+	      *(Re_B_S_and_T*sin_rho-Im_B_S_and_T*(1.-cos_rho))
+	      +2.*g_rho_V*g_rho_S*regge_rho
+	      *(C_rho_P_cut*regge_rho_P_cut*(Re_B_S_and_T*sin_rho_rho_P
+					     +Im_B_S_and_T*cos_rho_rho_P)
+		+C_rho_f2_cut*regge_rho_f2_cut*(Re_B_S_and_T*sin_rho_rho_f2
+					     +Im_B_S_and_T*cos_rho_rho_f2)
+		)
+	      +g_omega_V*g_omega_S*regge_rho
+	      *(regge_omega*(Re_B_S_and_T*(sin_rho_omega+sin_rho)
+			     +Im_B_S_and_T*(cos_rho_omega-cos_rho))
+		+2.*C_omega_P_cut*regge_omega_P_cut
+		*(Re_B_S_and_T*sin_rho_omega_P+Im_B_S_and_T*cos_rho_omega_P)
+		+2.*C_omega_f2_cut*regge_omega_f2_cut
+		*(Re_B_S_and_T*sin_rho_omega_f2+Im_B_S_and_T*cos_rho_omega_f2)
+		)
+	      )
+    +kin_bS*(-2.*g_rho_S*g_rho_T*regge_rho_sq)
+    *(Re_B_S_and_T*sin_rho-Im_B_S_and_T*(1.-cos_rho));
+
+  // Sqaure of amplitudes
+  double T=common_fac*(ReT*cos(phase)+ImT*sin(phase));
+	      
+  // Compute cross section
+  double m1=ParticleMass(particle_types[0]);
+  double m2=ParticleMass(particle_types[1]);
+  double m1_plus_m2=m1+m2;
+  double m1_minus_m2=m1-m2;
+  double m_sq=(particles[0]+particles[1]).M2();
+  double k=sqrt((m_sq-m1_plus_m2*m1_plus_m2)*(m_sq-m1_minus_m2*m1_minus_m2))
+    /(2.*sqrt(m_sq));
+  double mp_sq_minus_s=m_p_sq-s;
+  double mp_sq_minus_s_sq=mp_sq_minus_s*mp_sq_minus_s;
+  double hbarc_sq=389.; // Convert to micro-barns
+  double xsec=-hbarc_sq*T*k/(256.*M_PI*M_PI*M_PI*M_PI*mp_sq_minus_s_sq);
+  
+  return xsec;
+}
 
 
 // Put particle data into hddm format and output to file
@@ -2580,9 +2776,9 @@ int main(int narg, char *argv[])
 
   // Parameters for regge cuts
   getline(infile,comment_line);
-  double phase[5];
+  double phase[7];
   cout << " Interference phases =";
-  for (int k=0;k<5;k++){
+  for (int k=0;k<7;k++){
     infile >> phase[k];
     cout << " " << phase[k]; 
   }
@@ -2820,8 +3016,8 @@ int main(int narg, char *argv[])
 			 /(4.*my_msq_R));
 	  double partial_width=0.05; //?? // guess from note in pdg
 	  gR=sqrt(8.*M_PI*my_msq_R*partial_width/qR);
-	  gsq_rho_S_gamma=0.239; // GeV^-2
-	  gsq_omega_S_gamma=0.02656;
+	  gsq_rho_S_gamma=0.159; // GeV^-2
+	  gsq_omega_S_gamma=(1./9.)*gsq_rho_S_gamma;
 	}
 	else{ // a0(980)  
 	  my_msq_R=0.9825*0.9825;	
@@ -2832,7 +3028,7 @@ int main(int narg, char *argv[])
 	  double partial_width=0.06; //?? guess from note in pdg
 	  gR=sqrt(8.*M_PI*my_msq_R*partial_width/qR);
 	  gsq_rho_S_gamma=0.02537;
-	  gsq_omega_S_gamma=0.2283;
+	  gsq_omega_S_gamma=9.*gsq_rho_S_gamma;
 	} 
 	GetResonanceParameters(m1,m2,M_sq,my_msq_R,ReB,ImB);
 	xsec+=CrossSection(m1,m2,M_sq,s,t,gR,ReB,ImB,gsq_rho_S_gamma,
@@ -2919,7 +3115,38 @@ int main(int narg, char *argv[])
 	}
 	xsec+=TensorCrossSection(beam,particle_types,particle_vectors,
 				 gR_T,ReB_T,ImB_T);
-	if (generate[4]){
+	if (generate[1]){ // interference with a0(980)/f0(980)
+	  xsec+=TensorScalarInterference(beam,particle_types,particle_vectors,
+					 gR_T,ReB_T,ImB_T,gR,ReB,ImB,
+					 sqrt(gsq_omega_S_gamma),
+					 sqrt(gsq_rho_S_gamma),phase[2]);
+	}
+	// interference with f0(600)
+	if (got_pipi && generate[0]){
+	  xsec+=TensorScalarInterference(beam,particle_types,particle_vectors,
+					 gR_T,ReB_T,ImB_T,gRf500,ReBf500,
+					 ImBf500,
+					 sqrt(gsq_omega_f500_gamma),
+					 sqrt(gsq_rho_f500_gamma),phase[5]);
+	}
+	// interference with f0(1370)
+	if (got_pipi && generate[2]){
+	  xsec+=TensorScalarInterference(beam,particle_types,particle_vectors,
+					 gR_T,ReB_T,ImB_T,gRf1370,ReBf1370,
+					 ImBf1370,
+					 sqrt(gsq_omega_f1370_gamma),
+					 sqrt(gsq_rho_f1370_gamma),phase[6]);
+	}	
+	// interference with a0(1450)
+	if (got_pipi==false && generate[2]){
+	  xsec+=TensorScalarInterference(beam,particle_types,particle_vectors,
+					 gR_T,ReB_T,ImB_T,gRa1450,ReBa1450,
+					 ImBa1450,
+					 sqrt(gsq_omega_a1450_gamma),
+					 sqrt(gsq_rho_a1450_gamma),phase[6]);
+	}
+	
+	if (generate[4]){ //interference with background wave
 	  xsec+=TensorBackgroundInterference(beam,particle_types,
 					     particle_vectors,
 					     gR_T,ReB_T,ImB_T,phase[4]);
