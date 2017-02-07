@@ -30,8 +30,8 @@ def main():
 
 	# If the histogram is empty use the summed output hist instead
 	indCol = [9,27,81,99]
-	base = "h_dt_vs_pp_"
-	for i in range(1,101):
+	base = "TAGM_TW/tdc-rf/h_dt_vs_pp_tdc_"
+	for i in range(1,103):
 		# Summed outputs
 		h = rootfile.Get(base+str(i))
 		h.Write()
@@ -50,10 +50,10 @@ def main():
                                 p.Write()
 			
 	# Include defaults for columns 101 and 102
-	file1 = open('tw-corr.txt','a')
-	for i in range(2):
-		file1.write('0   ' + str(101 + i) + '   ' + '1   ' + '-1   ' +
-                    	    '0   ' + '8   ' + '0\n')
+	#file1 = open('tw-corr.txt','a')
+	#for i in range(2):
+	#	file1.write('0   ' + str(101 + i) + '   ' + '1   ' + '-1   ' +
+        #            	    '0   ' + '8   ' + '0\n')
 	outfile.Close()
 
 def tw_corr(h,row,col,newV):
