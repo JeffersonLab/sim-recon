@@ -173,6 +173,7 @@ jerror_t JEventProcessor_occupancy_online::init(void)
 	
 	//------------------------ Trigger -------------------------
 	L1GTPRate = new TH2F("L1GTPRate","L1 GTP Rate by bit;Trigger Bit;L1 GTP Rate (kHz)", 8, 0.5, 8.5, 1000, 0.0, 100.0);
+	L1livetime = new TH1F("L1livetime","L1 instantaneous livetime from TS scalers", 200, 0.0, 100.0);
 
 	//------------------------ ST -------------------------
 	st_adc_occ    = new TH1I("st_adc_occ", "ST fADC250 DigiHit Occupancy; Channel Number; fADC250 Counts", 30, 0.5, 30 + 0.5);
@@ -371,6 +372,7 @@ jerror_t JEventProcessor_occupancy_online::evnt(JEventLoop *loop, uint64_t event
 		{
 			// Sync Events
 			for(unsigned int ii = 0; ii < 8; ++ii) L1GTPRate->Fill(ii + 1, Float_t(l1trigger->gtp_rate[ii])/1000.0);
+			L1livetime->Fill((double)l1trigger->live_inst/10.0);
 		}
 	}
 
