@@ -7,8 +7,8 @@
 
 #include "DTrackFinder.h"
 
-#define CDC_MATCH_RADIUS 5.0
-#define CDC_STEREO_MATCH_CUT 10.0
+#define CDC_MATCH_RADIUS 4.0
+#define CDC_MATCH_PHI 0.04
 
 
 bool DTrackFinder_cdc_hit_cosmics_cmp(const DCDCTrackHit *a,const DCDCTrackHit *b){
@@ -163,19 +163,26 @@ bool DTrackFinder::FindAxialSegments(void){
 
          // Take Average direction from hits
          DVector3 dir(0.,0.,0.);
-         unsigned int iHit = 1;
-         DVector3 origin=neighbors[0]->wire->origin;
-         while (iHit < neighbors.size() && neighbors[iHit]->wire->ring == neighbors[0]->wire->ring){
-            origin+=neighbors[iHit]->wire->origin;
-            iHit++;
+         DVector3 origin;
+         if(COSMICS){
+            unsigned int iHit = 1;
+            origin=neighbors[0]->wire->origin;
+            while (iHit < neighbors.size() && neighbors[iHit]->wire->ring == neighbors[0]->wire->ring){
+               origin+=neighbors[iHit]->wire->origin;
+               iHit++;
+            }
+            origin = (1./iHit)*origin;
+            for (iHit = 1; iHit < neighbors.size(); iHit++){
+               DVector3 temp=neighbors[iHit]->wire->origin
+                  -origin;
+               if(neighbors[iHit]->wire->ring != neighbors[0]->wire->ring) dir += temp;
+            }
+            if(dir.Mag() != 0.) dir.SetMag(1.);
          }
-         origin = (1./iHit)*origin;
-         for (iHit = 1; iHit < neighbors.size(); iHit++){
-            DVector3 temp=neighbors[iHit]->wire->origin
-               -origin;
-            if(neighbors[iHit]->wire->ring != neighbors[0]->wire->ring) dir += temp;
+         else{
+            for (unsigned int iHit = 0; iHit < neighbors.size(); iHit++) dir += neighbors[iHit]->wire->origin;
+            if(dir.Mag() != 0.) dir.SetMag(1.);
          }
-         if(dir.Mag() != 0.) dir.SetMag(1.);
 
          if (VERBOSE){
             jout << " Axial Segment Formed: " << endl;
@@ -209,40 +216,50 @@ bool DTrackFinder::LinkCDCSegments(void){
 
          for (unsigned int j=i+1;j<num_axial;j++){
             if (axial_segments[j].matched==false){
-               DVector3 pos1=axial_segments[j].hits[0]->wire->origin;
-               DVector3 dir1=axial_segments[j].hits[0]->wire->udir;
-               DVector3 diff=pos1-pos0;
-               double s=diff.Dot(vhat);
-               if (s<0) continue;
-               double d=(diff-s*vhat).Mag();
-               if(DEBUG_HISTS) hCDCMatch_Axial->Fill(d); 
-               if (d<CDC_MATCH_RADIUS){
-                  axial_segments[j].matched=true;	   
-                  mytrack.axial_hits.insert(mytrack.axial_hits.end(),
-                        axial_segments[j].hits.begin(),
-                        axial_segments[j].hits.end());
-                  if (COSMICS){
-                     sort(mytrack.axial_hits.begin(),mytrack.axial_hits.end(),
-                           DTrackFinder_cdc_hit_cosmics_cmp);
-                  }
-                  else{
+               if (!COSMICS){
+                  double dphi = axial_segments[j].dir.Phi() - axial_segments[i].dir.Phi();
+                  while (dphi>M_PI) dphi-=2*M_PI;
+                  while (dphi<-M_PI) dphi+=2*M_PI;
+                  if ( fabs(dphi) < CDC_MATCH_PHI){
+                     axial_segments[j].matched=true;
+                     mytrack.axial_hits.insert(mytrack.axial_hits.end(),
+                           axial_segments[j].hits.begin(),
+                           axial_segments[j].hits.end());
                      sort(mytrack.axial_hits.begin(),mytrack.axial_hits.end(),
                            DTrackFinder_cdc_hit_cmp);
                   }
-                  vhat.SetXYZ(0.,0.,0.);;
-                  for (unsigned int iHit = 1; iHit < mytrack.axial_hits.size(); iHit++){        
-                     DVector3 temp=mytrack.axial_hits[iHit]->wire->origin
-                        -mytrack.axial_hits[0]->wire->origin;
-                     if(mytrack.axial_hits[iHit]->wire->ring != mytrack.axial_hits[0]->wire->ring) vhat += temp;
+               }
+               else{ 
+                  DVector3 pos1=axial_segments[j].hits[0]->wire->origin;
+                  DVector3 dir1=axial_segments[j].hits[0]->wire->udir;
+                  DVector3 diff=pos1-pos0;
+                  double s=diff.Dot(vhat);
+                  if (s<0) continue;
+                  double d=(diff-s*vhat).Mag();
+                  if(DEBUG_HISTS) hCDCMatch_Axial->Fill(d); 
+                  if (d<CDC_MATCH_RADIUS){
+                     axial_segments[j].matched=true;	   
+                     mytrack.axial_hits.insert(mytrack.axial_hits.end(),
+                           axial_segments[j].hits.begin(),
+                           axial_segments[j].hits.end());
+                     sort(mytrack.axial_hits.begin(),mytrack.axial_hits.end(),
+                           DTrackFinder_cdc_hit_cosmics_cmp);
+                     vhat.SetXYZ(0.,0.,0.);
+                     for (unsigned int iHit = 1; iHit < mytrack.axial_hits.size(); iHit++){        
+                        DVector3 temp=mytrack.axial_hits[iHit]->wire->origin
+                           -mytrack.axial_hits[0]->wire->origin;
+                        if(mytrack.axial_hits[iHit]->wire->ring != mytrack.axial_hits[0]->wire->ring) vhat += temp;
+                     }
                   }
-                  vhat.SetMag(1.);
                }
             }
          }
          //  Position of the first axial wire in the track  
          pos0=mytrack.axial_hits[0]->wire->origin;
+         vhat.SetMag(1.);
          if (VERBOSE){
-            jout << " Axial track Formed: " << endl;
+            jout << " Axial track Formed: pos vhat" << endl;
+            pos0.Print(); vhat.Print();
             for(unsigned int jj = 0; jj<mytrack.axial_hits.size(); jj++){
                jout << "  R" << mytrack.axial_hits[jj]->wire->ring << " S" << mytrack.axial_hits[jj]->wire->straw << endl;
             }
@@ -273,9 +290,9 @@ bool DTrackFinder::LinkCDCSegments(void){
 
             vhat.SetXYZ(0., 0., 0.);
             for (unsigned int iHit = 1; iHit < mytrack.axial_hits.size(); iHit++){
-            DVector3 temp =mytrack.axial_hits[iHit]->wire->origin
-               -mytrack.axial_hits[0]->wire->origin;
-            if(mytrack.axial_hits[iHit]->wire->ring != mytrack.axial_hits[0]->wire->ring) vhat += temp;
+               DVector3 temp =mytrack.axial_hits[iHit]->wire->origin
+                  -mytrack.axial_hits[0]->wire->origin;
+               if(mytrack.axial_hits[iHit]->wire->ring != mytrack.axial_hits[0]->wire->ring) vhat += temp;
             }
             vhat.SetMag(1.);   
             pos0=mytrack.axial_hits[0]->wire->origin;
@@ -285,8 +302,8 @@ bool DTrackFinder::LinkCDCSegments(void){
          // Now try to associate stereo hits with this track
          for (unsigned int j=0;j<stereo_hits.size();j++){
             if (stereo_hits[j].used==false){
-               if (MatchCDCHit(vhat,pos0,stereo_hits[j].hit,CDC_STEREO_MATCH_CUT)){
-                  stereo_hits[j].used=true;
+               if (MatchCDCStereoHit(vhat,pos0,stereo_hits[j].hit)){
+                  //stereo_hits[j].used=true;
                   mytrack.stereo_hits.push_back(stereo_hits[j].hit);
                   if (VERBOSE) jout << "Added stereo hit R" << stereo_hits[j].hit->wire->ring << " S" << stereo_hits[j].hit->wire->straw << endl;
                }
@@ -319,9 +336,25 @@ bool DTrackFinder::MatchCDCHit(const DVector3 &vhat,const DVector3 &pos0,
    double t=scale*(diff.Dot(vhat)-vhat_dot_uhat*diff.Dot(uhat));
    if (t<0) return false;
    double d=(diff+s*uhat-t*vhat).Mag();
-   if(DEBUG_HISTS && cut==CDC_STEREO_MATCH_CUT) hCDCMatch_Stereo->Fill(d);
 
    if (d<cut) return true;
+
+   return false;
+}
+
+// Match a CDC hit with a line starting at pos0 going in the vhat direction
+bool DTrackFinder::MatchCDCStereoHit(const DVector3 &tdir,const DVector3 &t0,
+      const DCDCTrackHit *hit){
+   DVector3 w0=hit->wire->origin;
+   DVector3 wdir=hit->wire->udir;
+   DVector3 diff = t0-w0;
+   double diffCrosstdir=diff.X()*tdir.Y()-diff.Y()*tdir.X();
+   double diffCrosswdir=diff.X()*wdir.Y()-diff.Y()*wdir.X();
+   double wdirCrosstdir=wdir.X()*tdir.Y()-wdir.Y()*tdir.X();
+   double w=diffCrosstdir/wdirCrosstdir;
+   double t=diffCrosswdir/wdirCrosstdir;
+   if(t<0.) return false;
+   if(fabs(w)<hit->wire->L/2.) return true;
 
    return false;
 }
