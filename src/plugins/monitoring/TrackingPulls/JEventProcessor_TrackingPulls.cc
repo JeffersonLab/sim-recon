@@ -66,6 +66,8 @@ jerror_t JEventProcessor_TrackingPulls::evnt(JEventLoop *loop, uint64_t eventnum
    unsigned int numstraws[28]={42,42,54,54,66,66,80,80,93,93,106,106,123,123,
       135,135,146,146,158,158,170,170,182,182,197,197,
       209,209};
+   static uint32_t evntCount=0;
+   evntCount++;
    // Loop over the tracks, get the tracking pulls, and fill some histograms. Easy peasy
 
    vector<const DChargedTrack *> chargedTrackVector;
@@ -344,7 +346,7 @@ jerror_t JEventProcessor_TrackingPulls::evnt(JEventLoop *loop, uint64_t eventnum
          }
 
          // Once we are done with the FDC, move on to the CDC.
-         if (cdc_hit != nullptr && cdc_hit->wire->ring <= nextRing && nextPlane == 25){
+         if (cdc_hit != nullptr && cdc_hit->wire->ring <= nextRing && (nextPlane == 25 || evntCount > 1000)){
             if(cdc_hit->wire->ring == nextRing) nextRing++;
 
             Fill1DHistogram("TrackingPulls", "CDCPulls","All Residuals",
