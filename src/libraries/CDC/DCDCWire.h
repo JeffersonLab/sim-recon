@@ -86,17 +86,31 @@ class DCDCWire:public DCoordinateSystem{
       double x0, y0, z0;
       double udir_mag;
       double stereo_raw;
-      double stereo_sign;
       double r0;
       double phiStraw;
 
       vector<double> derivatives;
+      void PrintDerivatives(){
+         jout << "Printing Derivatives for Ring " << ring << " Straw " << straw << std::endl;
+         for (size_t i=0; i< derivatives.size(); i++){
+            jout << derivatives[i] << std::endl;
+         }
+      }
 
       vector<double> GetCDCWireDerivatives(){
+         if(false){
+            if(ring == 1 && straw == 1) {
+               PrintDerivatives();
+               jout << " phi x,y,z " << phiX << " " << phiY << " " << phiZ << std::endl;
+               jout << " phiStraw " << phiStraw << " stereo_raw " << stereo_raw << std::endl;
+               jout << "sin " << sin(phiZ) << " cos " << cos(phiZ) << std::endl;
+               jout << "udir_mag " << udir_mag << std::endl;
+            }
+         }
          // Only need to calculate this once
          if (derivatives.size() != 0) return derivatives;
          derivatives.resize(60);
-         
+
          double sinPhiX=sin(phiX); double cosPhiX=cos(phiX);
          double sinPhiY=sin(phiY); double cosPhiY=cos(phiY);
          double sinPhiZ=sin(phiZ); double cosPhiZ=cos(phiZ);
@@ -145,39 +159,39 @@ class DCDCWire:public DCoordinateSystem{
          derivatives[CDCWireD::dDirXddeltaX]=0.0;
          derivatives[CDCWireD::dDirXddeltaY]=0.0;
          derivatives[CDCWireD::dDirXddeltaZ]=0.0;
-         derivatives[CDCWireD::dDirXddeltaPhiX]=-L*(cosPhiZ*sinPhiY*(sinPhiX+cosPhiStraw*cosPhiX*tanStereo)
+         derivatives[CDCWireD::dDirXddeltaPhiX]=-L*(1./udir_mag)*(cosPhiZ*sinPhiY*(sinPhiX+cosPhiStraw*cosPhiX*tanStereo)
                +sinPhiZ*(cosPhiStraw*sinPhiX*tanStereo-cosPhiX));
-         derivatives[CDCWireD::dDirXddeltaPhiY]=L*cosPhiZ*(cosPhiX*cosPhiY-(cosPhiStraw*cosPhiY*sinPhiX+sinPhiStraw*sinPhiY)*tanStereo);
-         derivatives[CDCWireD::dDirXddeltaPhiZ]=L*(cosPhiZ*(sinPhiX+cosPhiStraw*cosPhiX*tanStereo)
+         derivatives[CDCWireD::dDirXddeltaPhiY]=L*(1./udir_mag)*cosPhiZ*(cosPhiX*cosPhiY-(cosPhiStraw*cosPhiY*sinPhiX+sinPhiStraw*sinPhiY)*tanStereo);
+         derivatives[CDCWireD::dDirXddeltaPhiZ]=L*(1./udir_mag)*(cosPhiZ*(sinPhiX+cosPhiStraw*cosPhiX*tanStereo)
                -sinPhiZ*(cosPhiX*sinPhiY
                   +(cosPhiY*sinPhiStraw-cosPhiStraw*sinPhiX*sinPhiY)*tanStereo));
-         derivatives[CDCWireD::dDirXddeltaXu]=-cosPhiY*cosPhiZ;
-         derivatives[CDCWireD::dDirXddeltaYu]=-cosPhiZ*sinPhiX*sinPhiY+cosPhiX*sinPhiZ;
+         derivatives[CDCWireD::dDirXddeltaXu]=(-1./udir_mag)*cosPhiY*cosPhiZ;
+         derivatives[CDCWireD::dDirXddeltaYu]=(-1./udir_mag)*(cosPhiZ*sinPhiX*sinPhiY+cosPhiX*sinPhiZ);
          derivatives[CDCWireD::dDirXddeltaXd]=-derivatives[CDCWireD::dDirXddeltaXu];
          derivatives[CDCWireD::dDirXddeltaYd]=-derivatives[CDCWireD::dDirXddeltaYu];
          derivatives[CDCWireD::dDirYddeltaX]=0.0;
          derivatives[CDCWireD::dDirYddeltaY]=0.0;
          derivatives[CDCWireD::dDirYddeltaZ]=0.0;
-         derivatives[CDCWireD::dDirYddeltaPhiX]=-L*(sinPhiX*(sinPhiY*sinPhiZ-cosPhiStraw*cosPhiZ*tanStereo)
+         derivatives[CDCWireD::dDirYddeltaPhiX]=-L*(1./udir_mag)*(sinPhiX*(sinPhiY*sinPhiZ-cosPhiStraw*cosPhiZ*tanStereo)
                +cosPhiX*(cosPhiZ+cosPhiStraw*sinPhiY*sinPhiZ*tanStereo));
-         derivatives[CDCWireD::dDirYddeltaPhiY]=L*sinPhiZ*(cosPhiX*cosPhiY
+         derivatives[CDCWireD::dDirYddeltaPhiY]=L*(1./udir_mag)*sinPhiZ*(cosPhiX*cosPhiY
                -(cosPhiStraw*cosPhiY*sinPhiX+sinPhiStraw*sinPhiY)*tanStereo);
-         derivatives[CDCWireD::dDirYddeltaPhiZ]=L*(cosPhiY*cosPhiZ*sinPhiStraw*tanStereo
+         derivatives[CDCWireD::dDirYddeltaPhiZ]=L*(1./udir_mag)*(cosPhiY*cosPhiZ*sinPhiStraw*tanStereo
                +sinPhiX*(sinPhiZ-cosPhiStraw*cosPhiZ*sinPhiY*tanStereo)
                +cosPhiX*(cosPhiZ*sinPhiY+cosPhiStraw*sinPhiZ*tanStereo));
-         derivatives[CDCWireD::dDirYddeltaXu]=-cosPhiY*sinPhiZ;
-         derivatives[CDCWireD::dDirYddeltaYu]=-cosPhiX*cosPhiZ-sinPhiX*sinPhiY*sinPhiZ;
+         derivatives[CDCWireD::dDirYddeltaXu]=(-1./udir_mag)*cosPhiY*sinPhiZ;
+         derivatives[CDCWireD::dDirYddeltaYu]=(-1./udir_mag)*(cosPhiX*cosPhiZ-sinPhiX*sinPhiY*sinPhiZ);
          derivatives[CDCWireD::dDirYddeltaXd]=-derivatives[CDCWireD::dDirYddeltaXu];
          derivatives[CDCWireD::dDirYddeltaYd]=-derivatives[CDCWireD::dDirYddeltaYu];
          derivatives[CDCWireD::dDirZddeltaX]=0.0;
          derivatives[CDCWireD::dDirZddeltaY]=0.0;
          derivatives[CDCWireD::dDirZddeltaZ]=0.0;
-         derivatives[CDCWireD::dDirZddeltaPhiX]=-L*cosPhiY*(sinPhiX+cosPhiStraw*cosPhiX*tanStereo);
-         derivatives[CDCWireD::dDirZddeltaPhiY]=-L*(cosPhiX*sinPhiY
+         derivatives[CDCWireD::dDirZddeltaPhiX]=-L*(1./udir_mag)*cosPhiY*(sinPhiX+cosPhiStraw*cosPhiX*tanStereo);
+         derivatives[CDCWireD::dDirZddeltaPhiY]=-L*(1./udir_mag)*(cosPhiX*sinPhiY
                +(cosPhiY*sinPhiStraw-cosPhiStraw*sinPhiX*sinPhiY)*tanStereo);
          derivatives[CDCWireD::dDirZddeltaPhiZ]=0.0;
-         derivatives[CDCWireD::dDirZddeltaXu]=sinPhiY;
-         derivatives[CDCWireD::dDirZddeltaYu]=-cosPhiY*sinPhiX;
+         derivatives[CDCWireD::dDirZddeltaXu]=(1./udir_mag)*sinPhiY;
+         derivatives[CDCWireD::dDirZddeltaYu]=(-1./udir_mag)*cosPhiY*sinPhiX;
          derivatives[CDCWireD::dDirZddeltaXd]=-derivatives[CDCWireD::dDirZddeltaXu];
          derivatives[CDCWireD::dDirZddeltaYd]=-derivatives[CDCWireD::dDirZddeltaYu];
 
