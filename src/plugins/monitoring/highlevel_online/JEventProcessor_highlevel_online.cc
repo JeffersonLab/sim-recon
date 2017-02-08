@@ -333,6 +333,13 @@ jerror_t JEventProcessor_highlevel_online::evnt(JEventLoop *locEventLoop, uint64
 		}
 	}
 
+    // DON'T DO HIGHER LEVEL PROCESSING FOR FRONT PANEL TRIGGER EVENTS
+    if( locL1Trigger && (locL1Trigger->fp_trig_mask>0) ) {
+        japp->RootFillUnLock(this); //RELEASE ROOT FILL LOCK
+        return NOERROR;
+    }
+
+
 	/****************************************************** NUM RECONSTRUCTED OBJECTS *****************************************************/
 
 	//# High-Level Objects
