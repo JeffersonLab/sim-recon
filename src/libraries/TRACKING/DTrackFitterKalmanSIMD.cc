@@ -820,24 +820,15 @@ DTrackFitter::fit_status_t DTrackFitterKalmanSIMD::FitTrack(void)
    this->chisq = GetChiSq();
    this->Ndof = GetNDF();
    fit_status = kFitSuccess;
-   >>>>>>> master
 
-      // Compute and fill the error matrix needed for kinematic fitting
-      fit_params.setErrorMatrix(Get7x7ErrorMatrix(errMatrix));
-}
-fit_params.setTrackingErrorMatrix(errMatrix);
-this->chisq = GetChiSq();
-this->Ndof = GetNDF();
-fit_status = kFitSuccess;
-
-// Check that the momentum is above some minimal amount. If
-// not, return that the fit failed.
-if(fit_params.momentum().Mag() < MIN_FIT_P)fit_status = kFitFailed;
+   // Check that the momentum is above some minimal amount. If
+   // not, return that the fit failed.
+   if(fit_params.momentum().Mag() < MIN_FIT_P)fit_status = kFitFailed;
 
 
-//_DBG_  << "========= done!" << endl;
+   //_DBG_  << "========= done!" << endl;
 
-return fit_status;
+   return fit_status;
 }
 
 //-----------------
