@@ -125,6 +125,12 @@
       real pmin, pmax, thetamin, thetamax
       real vertex_r, vertex_phi
 
+      real beam_period_ns
+      data beam_period_ns/0/
+      if (beam_period_ns.eq.0) then
+         beam_period_ns = get_beam_period()
+      endif
+
 *
 *     -----------------------------------------------------------------
 *
@@ -225,6 +231,7 @@
             do j=1,100
               tgen=tgen-log(unif01(j))/bgrate
               if (tgen.gt.bggate(2)) goto 10
+              tgen=beam_period_ns*floor(tgen/beam_period_ns+0.5)
               call beamgen(tgen)
               ngen=ngen+1
             enddo

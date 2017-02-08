@@ -29,7 +29,7 @@ jerror_t DNeutralShower_factory_PreSelect::init(void)
 jerror_t DNeutralShower_factory_PreSelect::brun(jana::JEventLoop *locEventLoop, int32_t runnumber)
 {
 	gPARMS->SetDefaultParameter("PRESELECT:MIN_FCAL_E", dMinFCALE);
-        gPARMS->SetDefaultParameter("PRESELECT:MIN_BCAL_E", dMinBCALE);
+	gPARMS->SetDefaultParameter("PRESELECT:MIN_BCAL_E", dMinBCALE);
 	gPARMS->SetDefaultParameter("PRESELECT:MIN_BCAL_NCELL", dMinBCALNcell);
 
 	return NOERROR;
@@ -47,19 +47,24 @@ jerror_t DNeutralShower_factory_PreSelect::evnt(jana::JEventLoop *locEventLoop, 
 	vector<const DNeutralShower*> locNeutralShowers;
 	locEventLoop->Get(locNeutralShowers);
 
-	//Just pass-through for now
-	for(size_t loc_i = 0; loc_i < locNeutralShowers.size(); ++loc_i) {
-		if(locNeutralShowers[loc_i]->dDetectorSystem == SYS_FCAL) {
+	//Cut on shower energy, BCAL cells
+	for(size_t loc_i = 0; loc_i < locNeutralShowers.size(); ++loc_i)
+	{
+		if(locNeutralShowers[loc_i]->dDetectorSystem == SYS_FCAL)
+		{
 			if(locNeutralShowers[loc_i]->dEnergy < dMinFCALE) 
 				continue;
 		}
-		else if(locNeutralShowers[loc_i]->dDetectorSystem == SYS_BCAL) {
-                        if(locNeutralShowers[loc_i]->dEnergy < dMinBCALE)
-                                continue;
+		else if(locNeutralShowers[loc_i]->dDetectorSystem == SYS_BCAL)
+		{
+			if(locNeutralShowers[loc_i]->dEnergy < dMinBCALE)
+				continue;
+
 			const DBCALShower* locBCALShower = NULL;
 			locNeutralShowers[loc_i]->GetSingleT(locBCALShower);
-			if(locBCALShower->N_cell < dMinBCALNcell) continue; 
-               }
+			if(locBCALShower->N_cell < dMinBCALNcell)
+				continue;
+		}
 
 		_data.push_back(const_cast<DNeutralShower*>(locNeutralShowers[loc_i]));
 	}
@@ -82,4 +87,3 @@ jerror_t DNeutralShower_factory_PreSelect::fini(void)
 {
 	return NOERROR;
 }
-

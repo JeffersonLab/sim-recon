@@ -990,6 +990,68 @@ bool DCutAction_TrackFCALShowerEOverP::Perform_Action(JEventLoop* locEventLoop, 
 	return true;
 }
 
+string DCutAction_TrackShowerEOverP::Get_ActionName(void) const
+{
+	ostringstream locStream;
+	locStream << DAnalysisAction::Get_ActionName() << "_" << dDetector << "_" << dPID << "_" << dShowerEOverPCut;
+	return locStream.str();
+}
+
+bool DCutAction_TrackShowerEOverP::Perform_Action(JEventLoop* locEventLoop, const DParticleCombo* locParticleCombo)
+{
+	// For all charged tracks except e+/e-, cuts those with E/p > input value
+	// For e+/e-, cuts those with E/p < input value
+	// Does not cut tracks without a matching FCAL shower
+
+	deque<const DKinematicData*> locParticles;
+	if(Get_UseKinFitResultsFlag())
+		locParticleCombo->Get_DetectedFinalChargedParticles(locParticles);
+	else
+		locParticleCombo->Get_DetectedFinalChargedParticles_Measured(locParticles);
+
+	for(size_t loc_i = 0; loc_i < locParticles.size(); ++loc_i)
+	{
+		const DChargedTrackHypothesis* locChargedTrackHypothesis = static_cast<const DChargedTrackHypothesis*>(locParticles[loc_i]);
+
+		Particle_t locPID = locChargedTrackHypothesis->PID();
+		if(locPID != dPID)
+			continue;
+
+		double locP = locChargedTrackHypothesis->momentum().Mag();
+		double locShowerEOverP = 0.0;
+		if(dDetector == SYS_FCAL)
+		{
+			const DFCALShowerMatchParams* locFCALShowerMatchParams = locChargedTrackHypothesis->Get_FCALShowerMatchParams();
+			if(locFCALShowerMatchParams == NULL)
+				continue;
+
+			const DFCALShower* locFCALShower = locFCALShowerMatchParams->dFCALShower;
+			locShowerEOverP = locFCALShower->getEnergy()/locP;
+		}
+		else if(dDetector == SYS_BCAL)
+		{
+			const DBCALShowerMatchParams* locBCALShowerMatchParams = locChargedTrackHypothesis->Get_BCALShowerMatchParams();
+			if(locBCALShowerMatchParams == NULL)
+				continue;
+
+			const DBCALShower* locBCALShower = locBCALShowerMatchParams->dBCALShower;
+			locShowerEOverP = locBCALShower->E/locP;
+		}
+		else
+			continue; //what??
+
+		if((locPID == Electron) || (locPID == Positron))
+		{
+			if(locShowerEOverP < dShowerEOverPCut)
+				return false;
+		}
+		else if(locShowerEOverP > dShowerEOverPCut)
+			return false;
+	}
+
+	return true;
+}
+
 string DCutAction_PIDDeltaT::Get_ActionName(void) const
 {
 	ostringstream locStream;
@@ -1082,6 +1144,7 @@ void DCutAction_OneVertexKinFit::Initialize(JEventLoop* locEventLoop)
 {
 	dKinFitUtils = new DKinFitUtils_GlueX(locEventLoop);
 	dKinFitter = new DKinFitter(dKinFitUtils);
+	dKinFitUtils->Set_UpdateCovarianceMatricesFlag(false);
 
 	// Optional: Useful utility functions.
 	locEventLoop->GetSingle(dAnalysisUtilities);
@@ -1106,6 +1169,7 @@ bool DCutAction_OneVertexKinFit::Perform_Action(JEventLoop* locEventLoop, const 
 	//need to call prior to use in each event (cleans up memory allocated from last event)
 		//this call invalidates memory from previous fits (but that's OK, we aren't saving them anywhere)
 	dKinFitter->Reset_NewEvent();
+	dKinFitUtils->Reset_NewEvent();
 
 	//Get particles for fit (all detected q+)
 	deque<const DKinematicData*> locDetectedParticles;
@@ -1132,12 +1196,18 @@ bool DCutAction_OneVertexKinFit::Perform_Action(JEventLoop* locEventLoop, const 
 
 	// PERFORM THE KINEMATIC FIT
 	if(!dKinFitter->Fit_Reaction())
+	{
+		dKinFitter->Recycle_LastFitMemory(); //RESET MEMORY FROM LAST KINFIT!! //results no longer needed
 		return (dMinKinFitCL < 0.0); //fit failed to converge, return false if converge required
+	}
 
 	// GET THE FIT RESULTS
 	double locConfidenceLevel = dKinFitter->Get_ConfidenceLevel();
 	DKinFitConstraint_Vertex* locResultVertexConstraint = dynamic_cast<DKinFitConstraint_Vertex*>(*dKinFitter->Get_KinFitConstraints().begin());
 	TVector3 locFitVertex = locResultVertexConstraint->Get_CommonVertex();
+
+	//RESET MEMORY FROM LAST KINFIT!!
+	dKinFitter->Recycle_LastFitMemory(); //results no longer needed
 
 	//FILL HISTOGRAMS
 	//Since we are filling histograms local to this action, it will not interfere with other ROOT operations: can use action-wide ROOT lock

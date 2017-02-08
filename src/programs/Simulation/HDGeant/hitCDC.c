@@ -1,10 +1,10 @@
 /*
  * hitCDC - registers hits for Central Drift Chamber
  *
- *	This is a part of the hits package for the
- *	HDGeant simulation program for Hall D.
+ *    This is a part of the hits package for the
+ *    HDGeant simulation program for Hall D.
  *
- *	version 1.0 	-Richard Jones July 16, 2001
+ *    version 1.0     -Richard Jones July 16, 2001
  *
  * changes: Wed Jun 20 13:19:56 EDT 2007 B. Zihlmann 
  *          add ipart to the function call hitCentralDC
@@ -33,15 +33,15 @@ extern controlparams_t controlparams_;
 void gpoiss_(float*,int*,const int*); // avoid solaris compiler warnings
 
 // Drift speed 2.2cm/us is appropriate for a 90/10 Argon/Methane mixture
-static float DRIFT_SPEED     =   0.0055;
+static float DRIFT_SPEED     = 0.0055;
 static float TWO_HIT_RESOL   = 25.;
-static int   MAX_HITS 	     = 1000;
-static float THRESH_KEV	     =   1.;
-static float THRESH_MV = 1.;
-static float STRAW_RADIUS    =   0.776;
+static int   MAX_HITS        = 1000;
+static float THRESH_KEV      = 1.;
+static float THRESH_MV       = 1.;
+static float STRAW_RADIUS    = 0.776;
 static float CDC_TIME_WINDOW = 1000.0; //time window for accepting CDC hits, ns
-static float ELECTRON_CHARGE =1.6022e-4; /* fC */
-static float GAS_GAIN = 1e5;
+static float ELECTRON_CHARGE = 1.6022e-4; /* fC */
+static float GAS_GAIN        = 1e5;
 
 binTree_t* centralDCTree = 0;
 static int strawCount = 0;
@@ -52,6 +52,8 @@ static float cdc_drift_time[78];
 static float cdc_drift_distance[78];
 static float BSCALE_PAR1=0.;
 static float BSCALE_PAR2=0.;
+
+int itrack;
 
 /* void GetDOCA(int ipart, float x[3], float p[5], float doca[3]);  disabled 6/24/2009 */
 
@@ -74,7 +76,7 @@ int cdc_cluster_sort(const void *a,const void *b) {
 double asic_response(double t) {
   double func=0;
   double par[11]={-0.01986,0.01802,-0.001097,10.3,11.72,-0.03701,35.84,
-		  15.93,0.006141,80.95,24.77};
+          15.93,0.006141,80.95,24.77};
   if (t < par[3]) {
     func=par[0]*t+par[1]*t*t+par[2]*t*t*t;
   }
@@ -102,11 +104,11 @@ double cdc_wire_signal(double t,s_CdcStrawTruthHits_t* chits) {
 }
 
 void AddCDCCluster(s_CdcStrawTruthHits_t* hits, int ipart, int track, int n_p,
-		   float t, float xyzcluster[3])
+           float t, float xyzcluster[3])
 {
   // measured charge 
   float q=0.;
-  
+
   // drift radius 
   float dradius=sqrt(xyzcluster[0]*xyzcluster[0]+xyzcluster[1]*xyzcluster[1]);
 
@@ -133,7 +135,7 @@ void AddCDCCluster(s_CdcStrawTruthHits_t* hits, int ipart, int track, int n_p,
     // Interpolate over the drift table to find an approximation for the drift 
     // time
     polint(&cdc_drift_distance[index],&cdc_drift_time[index],4,dradius,&my_t,
-	   &my_t_err);
+       &my_t_err);
   }
   float tdrift=my_t/(1.-BSCALE_PAR1-BSCALE_PAR2*Bmag);
 
@@ -197,7 +199,7 @@ void AddCDCCluster(s_CdcStrawTruthHits_t* hits, int ipart, int track, int n_p,
     if (hits->in[nhit].t > total_time) {
       hits->in[nhit].t = total_time;
       hits->in[nhit].d = dradius;
-      hits->in[nhit].itrack = gidGetId(track);
+      hits->in[nhit].itrack = itrack;
       hits->in[nhit].ptype = ipart;
     }
 
@@ -210,7 +212,7 @@ void AddCDCCluster(s_CdcStrawTruthHits_t* hits, int ipart, int track, int n_p,
     hits->in[nhit].t = total_time;
     hits->in[nhit].q = q;
     hits->in[nhit].d = dradius;
-    hits->in[nhit].itrack = gidGetId(track);
+    hits->in[nhit].itrack = itrack;
     hits->in[nhit].ptype = ipart;
 
     hits->mult++;
@@ -247,31 +249,31 @@ void hitCentralDC (float xin[4], float xout[4],
       int ncounter = 0;
       int i;
       for ( i=0;i<(int)nvalues;i++) {
-	//printf("%d %s \n",i,strings[i].str);
-	if (!strcmp(strings[i].str,"CDC_DRIFT_SPEED")) {
-	  DRIFT_SPEED  = values[i];
-	  ncounter++;
-	}
-	if (!strcmp(strings[i].str,"CDC_TWO_HIT_RESOL")) {
-	  TWO_HIT_RESOL  = values[i];
-	  ncounter++;
-	}
-	if (!strcmp(strings[i].str,"CDC_MAX_HITS")) {
-	  MAX_HITS  = (int)values[i];
-	  ncounter++;
-	}
-	if (!strcmp(strings[i].str,"CDC_THRESH_KEV")) {
-	  THRESH_KEV  = values[i];
-	  ncounter++;
-	}
+    //printf("%d %s \n",i,strings[i].str);
+    if (!strcmp(strings[i].str,"CDC_DRIFT_SPEED")) {
+      DRIFT_SPEED  = values[i];
+      ncounter++;
+    }
+    if (!strcmp(strings[i].str,"CDC_TWO_HIT_RESOL")) {
+      TWO_HIT_RESOL  = values[i];
+      ncounter++;
+    }
+    if (!strcmp(strings[i].str,"CDC_MAX_HITS")) {
+      MAX_HITS  = (int)values[i];
+      ncounter++;
+    }
+    if (!strcmp(strings[i].str,"CDC_THRESH_KEV")) {
+      THRESH_KEV  = values[i];
+      ncounter++;
+    }
       }
       if (ncounter==4) {
-	printf("CDC: ALL parameters loaded from Data Base\n");
+    printf("CDC: ALL parameters loaded from Data Base\n");
       } else if (ncounter<5) {
-	printf("CDC: NOT ALL necessary parameters found in Data Base %d out of 5\n",ncounter);
+    printf("CDC: NOT ALL necessary parameters found in Data Base %d out of 5\n",ncounter);
       } else {
-	printf("CDC: SOME parameters found more than once in Data Base\n");
-      } 	
+    printf("CDC: SOME parameters found more than once in Data Base\n");
+      }     
     }
     //
     // Get drift table and scale factors from the database
@@ -284,38 +286,38 @@ void hitCentralDC (float xin[4], float xout[4],
       nvalues=78;
       status=GetColumn("CDC/cdc_drift_table",&nvalues,cdc_drift_time,"t");
       if (status != 0) {
-	printf("CDC: cdc_drift_time table corrupted in database!\n");
+    printf("CDC: cdc_drift_time table corrupted in database!\n");
       }
       int k;
       for (k=0;k<nvalues;k++){
-	cdc_drift_time[k]*=1000.; // Scale fron micro-secons to ns
-	cdc_drift_distance[k]=0.01*(float)k; // 100 micron increments;
+    cdc_drift_time[k]*=1000.; // Scale fron micro-secons to ns
+    cdc_drift_distance[k]=0.01*(float)k; // 100 micron increments;
       }
     
       nvalues=2;
       status = GetConstants("CDC/cdc_drift_parms", &nvalues, values, strings);
       if (status != 0) {
-	printf("CDC: cdc_drift_parms table corrupted in database!\n");
+    printf("CDC: cdc_drift_parms table corrupted in database!\n");
       }
       for ( k=0;k<(int)nvalues;k++) {
-	if (!strcmp(strings[k].str,"bscale_par1")) {
-	  BSCALE_PAR1 = values[k];
-	}
-	if (!strcmp(strings[k].str,"bscale_par2")) {
-	  BSCALE_PAR2 = values[k];
-	}
+    if (!strcmp(strings[k].str,"bscale_par1")) {
+      BSCALE_PAR1 = values[k];
+    }
+    if (!strcmp(strings[k].str,"bscale_par2")) {
+      BSCALE_PAR2 = values[k];
+    }
       }
     }
     else{
       nvalues=78;
       status=GetColumn("CDC/cdc_drift_table::NoBField",&nvalues,cdc_drift_time,"t");
       if (status != 0) {
-	printf("CDC: cdc_drift_table::NoBField corrupted in database!\n");
+    printf("CDC: cdc_drift_table::NoBField corrupted in database!\n");
       }
       int k;
       for (k=0;k<nvalues;k++){
-	cdc_drift_time[k]*=1000.; // Scale fron micro-secons to ns
-	cdc_drift_distance[k]=0.01*(float)k; // 100 micron increments;
+    cdc_drift_time[k]*=1000.; // Scale fron micro-secons to ns
+    cdc_drift_distance[k]=0.01*(float)k; // 100 micron increments;
       }
     }
 
@@ -346,7 +348,7 @@ void hitCentralDC (float xin[4], float xout[4],
    */
   if (xout[3] > 1.0)
     t = xin[3] * 1e9;
-	 
+     
   drin = sqrt(xinlocal[0]*xinlocal[0] + xinlocal[1]*xinlocal[1]);
   drout = sqrt(xoutlocal[0]*xoutlocal[0] + xoutlocal[1]*xoutlocal[1]);
   
@@ -355,6 +357,7 @@ void hitCentralDC (float xin[4], float xout[4],
   trackdir[2] =-xinlocal[2] + xoutlocal[2];
   alpha=-(xinlocal[0]*trackdir[0]+xinlocal[1]*trackdir[1])
     /(trackdir[0]*trackdir[0]+trackdir[1]*trackdir[1]);
+  alpha = (alpha < 0)? 0 : (alpha > 1)? 1 : alpha;
   xlocal[0]=xinlocal[0]+trackdir[0]*alpha;  
   xlocal[1]=xinlocal[1]+trackdir[1]*alpha;
   xlocal[2]=xinlocal[2]+trackdir[2]*alpha;  
@@ -388,12 +391,12 @@ void hitCentralDC (float xin[4], float xout[4],
    * it is because it is emerging from the wire volume and
    * automatically ignore those hits by returning immediately.
    */
-  if (drin < 0.0050)
-    return; /* entering straw within 50 microns of wire. ignore */
+   if (drin < 0.0050)
+      return; /* entering straw within 50 microns of wire. ignore */
  
-  if ((drin > (STRAW_RADIUS-0.0200) && drout<0.0050) ||
-      (drin < 0.274 && drin > 0.234 && drout<0.0050))
-  {
+   if ((drin > (STRAW_RADIUS-0.0200) && drout<0.0050) ||
+       (drin < 0.274 && drin > 0.234 && drout<0.0050))
+   {
     /* Either we entered within 200 microns of the straw tube and left
      * within 50 microns of the wire or we entered the stub region near the 
      * donuts at either end of the straw (the inner radius of the feedthrough 
@@ -401,28 +404,28 @@ void hitCentralDC (float xin[4], float xout[4],
      * through the wire volume.
      */
    
-    x[0] = xout[0];
-    x[1] = xout[1];
-    x[2] = xout[2];
-    t = xout[3] * 1e9;
-    xlocal[0] = xoutlocal[0];
-    xlocal[1] = xoutlocal[1];
-    xlocal[2] = xoutlocal[2];
-    
+      x[0] = xout[0];
+      x[1] = xout[1];
+      x[2] = xout[2];
+      t = xout[3] * 1e9;
+      xlocal[0] = xoutlocal[0];
+      xlocal[1] = xoutlocal[1];
+      xlocal[2] = xoutlocal[2];
+
     /* For dx, we will just assume it is twice the distance from
      * the straw to wire.
      */
-    dx[0] *= 2.0;
-    dx[1] *= 2.0;
-    dx[2] *= 2.0;
+      dx[0] *= 2.0;
+      dx[1] *= 2.0;
+      dx[2] *= 2.0;
 
     /* We will approximate the energy loss in the straw to be twice the 
        energy loss in the first half of the straw */
-    dEsum *= 2.0;
-  }
+      dEsum *= 2.0;
+   }
   
   /* Distance of hit from center of wire */
-  dradius = sqrt(xlocal[0]*xlocal[0] + xlocal[1]*xlocal[1]);
+   dradius = sqrt(xlocal[0]*xlocal[0] + xlocal[1]*xlocal[1]);
 
   /* Calculate dE/dx */
 
@@ -438,6 +441,8 @@ void hitCentralDC (float xin[4], float xout[4],
 
    /* post the hit to the truth tree */
 
+   itrack = (stack == 0)? gidGetId(track) : -1;
+
    if (history == 0)
    {
       int mark = (1<<30) + pointCount;
@@ -446,8 +451,8 @@ void hitCentralDC (float xin[4], float xout[4],
       {
          s_CentralDC_t* cdc = *twig = make_s_CentralDC();
          s_CdcTruthPoints_t* points = make_s_CdcTruthPoints(1);
-        int a = thisInputEvent->physicsEvents->in[0].reactions->in[0].vertices->in[0].products->mult;
-         points->in[0].primary = (stack <= a);
+         int a = thisInputEvent->physicsEvents->in[0].reactions->in[0].vertices->in[0].products->mult;
+         points->in[0].primary = (track <= a && stack == 0);
          points->in[0].track = track;
          points->in[0].t = t;
          points->in[0].z = x[2];
@@ -460,7 +465,7 @@ void hitCentralDC (float xin[4], float xout[4],
          points->in[0].dEdx = dEdx;
          points->in[0].ptype = ipart;
          points->in[0].trackID = make_s_TrackID();
-         points->in[0].trackID->itrack = gidGetId(track);
+         points->in[0].trackID->itrack = itrack;
          points->mult = 1;
          cdc->cdcTruthPoints = points;
          pointCount++;
@@ -471,70 +476,69 @@ void hitCentralDC (float xin[4], float xout[4],
 
    if (dEsum > 0)
    {  
-     s_CdcStrawTruthHits_t* hits;
+      s_CdcStrawTruthHits_t* hits;
 
       int layer = getlayer_wrapper_();
       int ring = getring_wrapper_();
       int sector = getsector_wrapper_();
 
-      if (layer == 0)		/* in a straw */
-      {	
-	int mark = (ring<<20) + sector;
-	void** twig = getTwig(&centralDCTree, mark);
-	
-	if (*twig == 0)
-	  {
-	    s_CentralDC_t* cdc = *twig = make_s_CentralDC();
-	    s_CdcStraws_t* straws = make_s_CdcStraws(1);
-	    straws->mult = 1;
-	    straws->in[0].ring = ring;
-	    straws->in[0].straw = sector;
-	    straws->in[0].cdcStrawTruthHits = hits = make_s_CdcStrawTruthHits(MAX_HITS);
-	    cdc->cdcStraws = straws;
-	    strawCount++;
-	  }
-	else
-	  {
-	    s_CentralDC_t* cdc = (s_CentralDC_t*) *twig;
-	    hits = cdc->cdcStraws->in[0].cdcStrawTruthHits;
-	  }
-	
-	
-	/* Simulate number of primary ion pairs*/
-	/* The total number of ion pairs depends on the energy deposition 
-	   and the effective average energy to produce a pair, w_eff.
-	   On average for each primary ion pair produced there are n_s_per_p 
-	   secondary ion pairs produced. 
-	*/
-	int one=1;
-	// Average number of secondary ion pairs for 50/50 Ar/CO2 mixture
-	float n_s_per_p=1.94; 
-	//Average energy needed to produce an ion pair for 50/50 mixture
-	float w_eff=29.5e-9; // GeV
-	// Average number of primary ion pairs
-	float n_p_mean = dEsum/w_eff/(1.+n_s_per_p);
-	int n_p; // number of primary ion pairs
-	gpoiss_(&n_p_mean,&n_p,&one);
-	
-	if (controlparams_.driftclusters==0) {	  
-	  AddCDCCluster(hits,ipart,track,n_p,t,xlocal);
-	}
-	else{
-	  // Loop over the number of primary ion pairs
-	  int n;
-	  for (n=0; n < n_p; n++) {
-	    // Generate a cluster at a random position along the path within the 
-	    // straw
-	    int one=2;
-	    float rndno[1];
-	    grndm_(rndno,&one);
-	    xlocal[0]=xinlocal[0]+trackdir[0]*rndno[0];
-	    xlocal[1]=xinlocal[1]+trackdir[1]*rndno[0];
-	    xlocal[2]=xinlocal[2]+trackdir[2]*rndno[0];
-	    
-	    AddCDCCluster(hits,ipart,track,n_p,t,xlocal);
-	  }
-	}
+      if (layer == 0)        /* in a straw */
+      {    
+         int mark = (ring<<20) + sector;
+         void** twig = getTwig(&centralDCTree, mark);
+
+         if (*twig == 0)
+         {
+            s_CentralDC_t* cdc = *twig = make_s_CentralDC();
+            s_CdcStraws_t* straws = make_s_CdcStraws(1);
+            straws->mult = 1;
+            straws->in[0].ring = ring;
+            straws->in[0].straw = sector;
+            straws->in[0].cdcStrawTruthHits = hits = make_s_CdcStrawTruthHits(MAX_HITS);
+            cdc->cdcStraws = straws;
+            strawCount++;
+         }
+         else
+         {
+            s_CentralDC_t* cdc = (s_CentralDC_t*) *twig;
+            hits = cdc->cdcStraws->in[0].cdcStrawTruthHits;
+         }
+         
+         
+         /* Simulate number of primary ion pairs*/
+         /* The total number of ion pairs depends on the energy deposition 
+            and the effective average energy to produce a pair, w_eff.
+            On average for each primary ion pair produced there are n_s_per_p 
+            secondary ion pairs produced. 
+         */
+         int one=1;
+         // Average number of secondary ion pairs for 50/50 Ar/CO2 mixture
+         float n_s_per_p=1.94; 
+         //Average energy needed to produce an ion pair for 50/50 mixture
+         float w_eff=29.5e-9; // GeV
+         // Average number of primary ion pairs
+         float n_p_mean = dEsum/w_eff/(1.+n_s_per_p);
+         int n_p; // number of primary ion pairs
+         gpoiss_(&n_p_mean,&n_p,&one);
+         
+         if (controlparams_.driftclusters==0) {      
+            AddCDCCluster(hits,ipart,track,n_p,t,xlocal);
+         }
+         else {
+            // Loop over the number of primary ion pairs
+            int n;
+            for (n=0; n < n_p; n++) {
+               // Generate a cluster at a random position along the path within
+               // the straw
+               int one=2;
+               float rndno[1];
+               grndm_(rndno,&one);
+               xlocal[0]=xinlocal[0]+trackdir[0]*rndno[0];
+               xlocal[1]=xinlocal[1]+trackdir[1]*rndno[0];
+               xlocal[2]=xinlocal[2]+trackdir[2]*rndno[0];
+               AddCDCCluster(hits,ipart,track,n_p,t,xlocal);
+            }
+         }
       }
    }
 }
@@ -567,75 +571,76 @@ s_CentralDC_t* pickCentralDC ()
 
    while ((item = (s_CentralDC_t*) pickTwig(&centralDCTree)))
    {
-     s_CdcStraws_t* straws = item->cdcStraws;
-     int straw;
+      s_CdcStraws_t* straws = item->cdcStraws;
+      int straw;
 
-      s_CdcTruthPoints_t* points = item->cdcTruthPoints;
-      int point;
-      for (straw=0; straw < straws->mult; ++straw)
-	{
-	  int m = box->cdcStraws->mult;
-	  
-	  s_CdcStrawTruthHits_t* hits = straws->in[straw].cdcStrawTruthHits;
-	
-	  // Sort the clusters by time
-	  qsort(hits->in,hits->mult,sizeof(s_CdcStrawTruthHit_t),(compfn)cdc_cluster_sort);
-  
-	  /* compress out the hits below threshold */
-	  int i,iok=0;
-	  
-	  if (controlparams_.driftclusters == 0) {
-	    for (iok=i=0; i < hits->mult; i++)
-	      {
-	       if (hits->in[i].q >0.)
-		 {
-		   if (iok < i)
-		     {
-		       hits->in[iok] = hits->in[i];
-		     }
-		   ++iok;
-		 }
-	      }
-	  }
-	  else{
-  	    
-	    // Temporary histogram in 1 ns bins to store waveform data
-	    int num_samples=(int)CDC_TIME_WINDOW;
-	    float *samples=(float *)malloc(num_samples*sizeof(float));
-	    for (i=0;i<num_samples;i++) {
-	      samples[i]=cdc_wire_signal((float)i,hits);
-	      //printf("%f %f\n",(float)i,samples[i]);
-	    }
-	   
-	    int returned_to_baseline=0;
-	    float q=0.; 
-	    int FADC_BIN_SIZE=1;
-	    for (i=0; i<num_samples; i+=FADC_BIN_SIZE) {
-	      if (samples[i] >= THRESH_MV) {
-		if (returned_to_baseline == 0) {
-		  hits->in[iok].itrack = hits->in[0].itrack;
-		  hits->in[iok].ptype = hits->in[0].ptype;
-		  hits->in[iok].t=(float) i;
-		  returned_to_baseline = 1;
-		  iok++;
-		}
-		q += (float)FADC_BIN_SIZE*samples[i];
-	      }
-	      if (returned_to_baseline && (samples[i] < THRESH_MV)) {
-		returned_to_baseline = 0;   
-		if (iok > 0 && q > 0.) {
-		  hits->in[iok-1].q=q;
-		  q=0.;
-		}
-	     //break;
-	      }
-	    }
-	   if (q > 0) {
-	     hits->in[iok-1].q = q;
-	   }
-	   free(samples);
-	  }
-	 
+       s_CdcTruthPoints_t* points = item->cdcTruthPoints;
+       int point;
+       for (straw=0; straw < straws->mult; ++straw)
+       {
+          int m = box->cdcStraws->mult;
+
+          s_CdcStrawTruthHits_t* hits = straws->in[straw].cdcStrawTruthHits;
+
+         // Sort the clusters by time
+         qsort(hits->in,hits->mult,sizeof(s_CdcStrawTruthHit_t),(compfn)cdc_cluster_sort);
+
+         /* compress out the hits below threshold */
+         int i,iok=0;
+
+         if (controlparams_.driftclusters == 0)
+         {
+            for (iok=i=0; i < hits->mult; i++)
+            {
+               if (hits->in[i].q >0.)
+               {
+                  if (iok < i)
+                  {
+                     hits->in[iok] = hits->in[i];
+                  }
+                  ++iok;
+               }
+            }
+         }
+         else {
+           
+            // Temporary histogram in 1 ns bins to store waveform data
+            int num_samples=(int)CDC_TIME_WINDOW;
+            float *samples=(float *)malloc(num_samples*sizeof(float));
+            for (i=0;i<num_samples;i++) {
+               samples[i]=cdc_wire_signal((float)i,hits);
+               //printf("%f %f\n",(float)i,samples[i]);
+            }
+
+            int returned_to_baseline=0;
+            float q=0.; 
+            int FADC_BIN_SIZE=1;
+            for (i=0; i<num_samples; i+=FADC_BIN_SIZE) {
+               if (samples[i] > THRESH_MV) {
+                  if (returned_to_baseline == 0) {
+                     hits->in[iok].itrack = hits->in[0].itrack;
+                     hits->in[iok].ptype = hits->in[0].ptype;
+                     hits->in[iok].t=(float) i;
+                     returned_to_baseline = 1;
+                     iok++;
+                  }
+                  q += (float)FADC_BIN_SIZE*samples[i];
+               }
+               if (returned_to_baseline && (samples[i] < THRESH_MV)) {
+                  returned_to_baseline = 0;   
+                  if (iok > 0 && q > 0.) {
+                     hits->in[iok-1].q=q;
+                     q=0.;
+                  }
+                  //break;
+               }
+            }
+            if (q > 0) {
+               hits->in[iok-1].q = q;
+            }
+            free(samples);
+         }
+     
          if (iok)
          {
             hits->mult = iok;
@@ -654,8 +659,18 @@ s_CentralDC_t* pickCentralDC ()
 
       for (point=0; point < points->mult; ++point)
       {
-         int m = box->cdcTruthPoints->mult++;
+         int track = points->in[point].track;
+         double t = points->in[point].t;
+         int m = box->cdcTruthPoints->mult;
+         if (points->in[point].trackID->itrack < 0 ||
+            (m > 0 &&  box->cdcTruthPoints->in[m-1].track == track &&
+             fabs(box->cdcTruthPoints->in[m-1].t - t) < 0.5))
+         {
+            FREE(points->in[point].trackID);
+            continue;
+         }
          box->cdcTruthPoints->in[m] = points->in[point];
+         box->cdcTruthPoints->mult++;
       }
       if (points != HDDM_NULL)
       {

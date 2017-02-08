@@ -18,8 +18,9 @@ c instructs HDGeant to open ./phi-1680.hddm, skip the first 25 events and then
 c process the following 100 input events and stop.  If the end of the file is
 c reached before the event count specified in card TRIG is exhausted then the
 c processing will stop at the end of file.
-cINFILE 'bggen.hddm'
-TRIG 10000
+INFILE 'bggen.hddm'
+TRIG 1000000
+RUNG 9001
 
 c The BEAM card configures the built-in coherent bremsstralung photon
 c beam generator in HDGeant.  If the INFILE card is not present and BEAM
@@ -39,6 +40,31 @@ c      Eemit  - electron beam emittance in m.rad
 c      radthick - dimaond radiator thickneess in m
 c Omitting the final parameter Emin results in the default value being used.
 cBEAM 10. 9.999 0.0012 76.00 0.005 10.e-9 20.e-6
+
+c The GENBEAM card configures the simulation program to act purely as a
+c Monte Carlo event generator, and not to actually track any of the particles
+c that it generates. The events are written to the output file with only the
+c MC section filled out (reactions tag). This file can be fed back later to
+c HDGeant using the INFILE card above to carry out the actual simulation.
+c This provides access to the built-in photon beam generator of HDGeant to
+c someone who wants to study the properties of the beam apart from its
+c interactions in the target. Three keywords are currently supported.
+c    'precol'   - single-photon events starting upstream of the primary
+c                 collimator, with correlated spatial and momentum 
+c                 distributions for the well-tuned GlueX beamline.
+c    'postcol'  - single-photon events starting downstream of the secondary
+c                 collimator. Beam photons have been tracked through the 
+c                 system of collimators and sweep magnets but then stopped
+c                 before entry into the pair spectrometer.
+c    'postconv' - e+e- pair and e+e-/e-recoil events generated in the
+c                 TPOL target. Beam photons have been tracked through
+c                 the system of collimators and then pair-converted in
+c                 the TPOL coverter using a custom polarization-sensitive
+c                 pair/triplet production generator. They are saved as
+c                 a single vertex within the PTAR target.
+c The first two modes are supported by both HDGeant and HDGeant4, while
+c postconv is only supported at present by HDGeant4.
+cGENBEAM 'postconv'
 
 c Commenting out the following line will disable simulated hits output.
 OUTFILE 'bgtest.hddm'
@@ -191,7 +217,33 @@ c  - dcutm  = Cut for muon delta-rays. (10 TeV)
 c  - ppcutm = Cut for e+e- pairs by muons. (0.01 GeV)
 c  - tofmax = Time of flight cut (1.E+10 sec)
 c  - gcuts  = 5 user words (0.)
+c Only the first 5 fields (the ones that start with 'cut')
+c are supported by hdgeant4.
 CUTS 1e-4 1e-4 1e-3 1e-3 1e-4
+
+c Geant4 introduced the concept of ?a unique cut in range? which allows the user
+c to specify the threshold for secondaries production in terms of the range that
+c the secondary would have in the medium in which it is generated, rather than
+c in terms of a threshold energy. The RANGECUT card below supports the same
+c sequence as the first 5 arguments of the CUTS card above, except that the
+c values are interpreted as threshold ranges (cm) instead of kinetic energies.
+c This card is supported by hdgeant4 only. It is complementary to the CUTS card
+c in that CUTS are applied to the corresponding particles when they are being
+c tracked, whereas RANGECUTS are used to decide whether they should be
+c generated (as secondaries) in the first place.
+
+RANGECUTS 0.1 0.1 1.0 1.0 0.1
+
+c Geant4 physics models are more comprehensive than the ones provided in G3,
+c and one consequence of this is that some particles (eg. neutrons) seem to go
+c on and on in Geant4 for lifetimes of many seconds in some cases. The following
+c card tells the simulation to stop tracks that are still being followed after 
+c this much time (seconds) has gone by. This card is only supported by hdgeant4.
+c There is an equivalent feature in hdgeant3 (see field 12 of CUTS card above)
+c but normally it is not needed to get efficient operation, so it is almost
+c never needed.
+
+TOFMAX 1e-5
 
 c The following line controls a set of generic flags that are used to
 c control aspects of the simulation generally related to debugging.
@@ -204,10 +256,12 @@ c          = 4 turns on step-by-step plotting during tracking
 c  SWIT(3) = 1 stores track trajectories for plotting after tracking is done
 c  SWIT(4) = 0 trace trajectories of all particle types
 c          = 3 trace only charged particle trajectories
+c This card is only supported by hdgeant3.
 SWIT 0 0 0 0 0 0 0 0 0 0
 
 c The following card enables the GelHad package (from BaBar)
 c   on/off  ecut   scale   mode   thresh
+c This card is only supported by hdgeant3.
 GELH  1     0.2     1.0     4     0.160
 
 c The following card selects the hadronic physics package
@@ -241,6 +295,7 @@ c behaviour is normal in most cases, but in the case of Cerenkov light
 c generation it leads to an underestimate for the yields.
 c   ABAN 1	abandon stopping tracks (default)
 c   ABAN 0	do not abandon stopping tracks
+c This card is only supported by hdgeant3.
 ABAN 0
 
 c The following card sets up the simulation to perform debugging on
@@ -281,6 +336,7 @@ c the user code in the GSTMED() call.  Users who know what they are doing can
 c force Geant to instead use the values passed in the arguments to GSTMED()
 c by removing the comment in front of the following card.  Any parameters with
 c zero values are still assigned automatic values even when AUTO is turned off.
+c This card is only supported by hdgeant3.
 cAUTO 0
 
 c The magnetic field map is accessed through the HDGEOMETRY library

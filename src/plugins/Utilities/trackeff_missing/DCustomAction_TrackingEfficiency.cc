@@ -33,16 +33,23 @@ void DCustomAction_TrackingEfficiency::Initialize(JEventLoop* locEventLoop)
 	TMap* locMiscInfoMap = new TMap(); //collection of pairs
 	locMiscInfoMap->SetName("MiscInfoMap");
 	locUserInfo->Add(locMiscInfoMap);
+	//set reaction name
+	locMiscInfoMap->Add(new TObjString("ReactionName"), new TObjString(locReaction->Get_ReactionName().c_str()));
 	//set pid
-	ostringstream locPIDStream;
-	locPIDStream << PDGtype(dMissingPID);
-	locMiscInfoMap->Add(new TObjString("MissingPID_PDG"), new TObjString(locPIDStream.str().c_str()));
+	ostringstream locOStream;
+	locOStream << PDGtype(dMissingPID);
+	locMiscInfoMap->Add(new TObjString("MissingPID_PDG"), new TObjString(locOStream.str().c_str()));
+	//set run#
+	locOStream.str("");
+	locOStream << locEventLoop->GetJEvent().GetRunNumber();
+	locMiscInfoMap->Add(new TObjString("RunNumber"), new TObjString(locOStream.str().c_str()));
 
 	//CHANNEL INFO
 	locBranchRegister.Register_Single<Float_t>("BeamEnergy");
 	locBranchRegister.Register_Single<Float_t>("BeamRFDeltaT");
 	locBranchRegister.Register_Single<Float_t>("ComboVertexZ");
 	locBranchRegister.Register_Single<UChar_t>("NumExtraTracks");
+	locBranchRegister.Register_Single<Float_t>("MissingMassSquared"); //is measured
 	locBranchRegister.Register_Single<Float_t>("KinFitChiSq"); //is -1 if no kinfit or failed to converge
 	locBranchRegister.Register_Single<UInt_t>("KinFitNDF"); //is 0 if no kinfit or failed to converged 
 	locBranchRegister.Register_Single<TVector3>("MissingP3"); //is kinfit if kinfit (& converged)
@@ -120,19 +127,27 @@ bool DCustomAction_TrackingEfficiency::Perform_Action(JEventLoop* locEventLoop, 
 	// Get missing particle p4 & covariance
 	DLorentzVector locMeasuredMissingP4 = dAnalysisUtilities->Calc_MissingP4(locParticleCombo, false);
 	DVector3 locMissingP3 = locMeasuredMissingP4.Vect();
-	DMatrixDSym locMissingCovarianceMatrix(3);
+	TMatrixDSym locMissingCovarianceMatrix(3);
 	const DKinematicData* locBeamParticle = NULL;
 	if(locKinFitResults == NULL) //no kinfit (yet?), or kinfit failed
 	{
-		locMissingCovarianceMatrix = dAnalysisUtilities->Calc_MissingP3Covariance(locParticleCombo);
+		TMatrixFSym locFMissingCovarianceMatrix = dAnalysisUtilities->Calc_MissingP3Covariance(locParticleCombo);
+		for(unsigned int loc_q = 0; loc_q < 3; ++loc_q)
+		{
+			for(unsigned int loc_r = 0; loc_r < 3; ++loc_r)
+				locMissingCovarianceMatrix(loc_q, loc_r) = locFMissingCovarianceMatrix(loc_q, loc_r);
+		}
 		locBeamParticle = locParticleComboStep->Get_InitialParticle_Measured();
 	}
 	else //kinfit succeeded
 	{
 		locMissingP3 = locMissingParticle->momentum();
-		DMatrixDSym locKinFitCovarianceMatrix = locMissingParticle->errorMatrix();
-		locKinFitCovarianceMatrix.ResizeTo(3, 3);
-		locMissingCovarianceMatrix = locKinFitCovarianceMatrix;
+		const TMatrixFSym& locKinFitCovarianceMatrix = *(locMissingParticle->errorMatrix());
+		for(unsigned int loc_q = 0; loc_q < 3; ++loc_q)
+		{
+			for(unsigned int loc_r = 0; loc_r < 3; ++loc_r)
+				locMissingCovarianceMatrix(loc_q, loc_r) = locKinFitCovarianceMatrix(loc_q, loc_r);
+		}
 		locBeamParticle = locParticleComboStep->Get_InitialParticle();
 	}
 	
@@ -155,6 +170,7 @@ bool DCustomAction_TrackingEfficiency::Perform_Action(JEventLoop* locEventLoop, 
 	dTreeFillData.Fill_Single<Float_t>("BeamEnergy", locBeamParticle->energy());
 	dTreeFillData.Fill_Single<Float_t>("BeamRFDeltaT", locBeamRFDeltaT);
 	dTreeFillData.Fill_Single<UChar_t>("NumExtraTracks", (UChar_t)locNumExtraTracks);
+	dTreeFillData.Fill_Single<Float_t>("MissingMassSquared", locMeasuredMissingP4.M2());
 	dTreeFillData.Fill_Single<Float_t>("ComboVertexZ", locVertexZ);
 	if(locKinFitResults == NULL) //is true if no kinfit or failed to converged
 	{
@@ -179,52 +195,66 @@ bool DCustomAction_TrackingEfficiency::Perform_Action(JEventLoop* locEventLoop, 
 
 	/************************************************* WIRE-BASED TRACKS *************************************************/
 
-	//Get unused tracks
-	vector<const DTrackWireBased*> locUnusedWireBasedTracks;
-	dAnalysisUtilities->Get_UnusedWireBasedTracks(locEventLoop, locParticleCombo, locUnusedWireBasedTracks);
-
-	//find the best-matching Wire-based track corresponding to the missing particle
-	double locBestWireBasedMatchFOM = -1.0;
-	const DTrackWireBased* locBestTrackWireBased = NULL;
-	for(size_t loc_i = 0; loc_i < locUnusedWireBasedTracks.size(); ++loc_i)
+	if(!locEventLoop->GetJEvent().GetStatusBit(kSTATUS_REST))
 	{
-		if(locUnusedWireBasedTracks[loc_i]->PID() != dMissingPID)
-			continue; //only use tracking results with correct PID
+		//Get unused tracks
+		vector<const DTrackWireBased*> locUnusedWireBasedTracks;
+		dAnalysisUtilities->Get_UnusedWireBasedTracks(locEventLoop, locParticleCombo, locUnusedWireBasedTracks);
 
-		DMatrixDSym locCovarianceMatrix = locUnusedWireBasedTracks[loc_i]->errorMatrix();
-		locCovarianceMatrix.ResizeTo(3, 3);
-		locCovarianceMatrix += locMissingCovarianceMatrix;
-
-		//invert matrix
-		TDecompLU locDecompLU(locCovarianceMatrix);
-		//check to make sure that the matrix is decomposable and has a non-zero determinant
-		if((!locDecompLU.Decompose()) || (fabs(locCovarianceMatrix.Determinant()) < 1.0E-300))
-			continue; // matrix is not invertible
-		locCovarianceMatrix.Invert();
-
-		DVector3 locDeltaP3 = locUnusedWireBasedTracks[loc_i]->momentum() - locMissingP3;
-		double locMatchFOM = Calc_MatchFOM(locDeltaP3, locCovarianceMatrix);
-
-		if(locMatchFOM > locBestWireBasedMatchFOM)
+		//find the best-matching Wire-based track corresponding to the missing particle
+		double locBestWireBasedMatchFOM = -1.0;
+		const DTrackWireBased* locBestTrackWireBased = NULL;
+		for(size_t loc_i = 0; loc_i < locUnusedWireBasedTracks.size(); ++loc_i)
 		{
-			locBestWireBasedMatchFOM = locMatchFOM;
-			locBestTrackWireBased = locUnusedWireBasedTracks[loc_i];
+			if(locUnusedWireBasedTracks[loc_i]->PID() != dMissingPID)
+				continue; //only use tracking results with correct PID
+
+			const TMatrixFSym& locCovarianceMatrix = *(locUnusedWireBasedTracks[loc_i]->errorMatrix());
+			TMatrixDSym locDCovarianceMatrix(3);
+			for(unsigned int loc_j = 0; loc_j < 3; ++loc_j)
+			{
+				for(unsigned int loc_k = 0; loc_k < 3; ++loc_k)
+					locDCovarianceMatrix(loc_j, loc_k) = locCovarianceMatrix(loc_j, loc_k);
+			}
+			locDCovarianceMatrix += locMissingCovarianceMatrix;
+
+			//invert matrix
+			TDecompLU locDecompLU(locDCovarianceMatrix);
+			//check to make sure that the matrix is decomposable and has a non-zero determinant
+			if((!locDecompLU.Decompose()) || (fabs(locDCovarianceMatrix.Determinant()) < 1.0E-300))
+				continue; // matrix is not invertible
+			locDCovarianceMatrix.Invert();
+
+			DVector3 locDeltaP3 = locUnusedWireBasedTracks[loc_i]->momentum() - locMissingP3;
+			double locMatchFOM = Calc_MatchFOM(locDeltaP3, locDCovarianceMatrix);
+
+			if(locMatchFOM > locBestWireBasedMatchFOM)
+			{
+				locBestWireBasedMatchFOM = locMatchFOM;
+				locBestTrackWireBased = locUnusedWireBasedTracks[loc_i];
+			}
+		}
+
+		//FILL WIRE-BASED TRACKING INFO:
+		dTreeFillData.Fill_Single<Float_t>("ReconMatchFOM_WireBased", locBestWireBasedMatchFOM); //FOM < 0 if nothing, no-match
+		if(locBestTrackWireBased == nullptr)
+		{
+			dTreeFillData.Fill_Single<Float_t>("ReconTrackingFOM_WireBased", -1.0);
+			dTreeFillData.Fill_Single<TVector3>("ReconP3_WireBased", TVector3());
+		}
+		else
+		{
+			dTreeFillData.Fill_Single<Float_t>("ReconTrackingFOM_WireBased", locBestTrackWireBased->FOM);
+			DVector3 locWireBasedDP3 = locBestTrackWireBased->momentum();
+			TVector3 locWireBasedP3(locWireBasedDP3.X(), locWireBasedDP3.Y(), locWireBasedDP3.Z());
+			dTreeFillData.Fill_Single<TVector3>("ReconP3_WireBased", locWireBasedP3);
 		}
 	}
-
-	//FILL WIRE-BASED TRACKING INFO:
-	dTreeFillData.Fill_Single<Float_t>("ReconMatchFOM_WireBased", locBestWireBasedMatchFOM); //FOM < 0 if nothing, no-match
-	if(locBestTrackWireBased == nullptr)
+	else //is a REST event, no wire-based tracks
 	{
+		dTreeFillData.Fill_Single<Float_t>("ReconMatchFOM_WireBased", -1.0);
 		dTreeFillData.Fill_Single<Float_t>("ReconTrackingFOM_WireBased", -1.0);
 		dTreeFillData.Fill_Single<TVector3>("ReconP3_WireBased", TVector3());
-	}
-	else
-	{
-		dTreeFillData.Fill_Single<Float_t>("ReconTrackingFOM_WireBased", locBestTrackWireBased->FOM);
-		DVector3 locWireBasedDP3 = locBestTrackWireBased->momentum();
-		TVector3 locWireBasedP3(locWireBasedDP3.X(), locWireBasedDP3.Y(), locWireBasedDP3.Z());
-		dTreeFillData.Fill_Single<TVector3>("ReconP3_WireBased", locWireBasedP3);
 	}
 
 	/************************************************* TIME-BASED TRACKS *************************************************/
@@ -241,19 +271,24 @@ bool DCustomAction_TrackingEfficiency::Perform_Action(JEventLoop* locEventLoop, 
 		if(locUnusedTimeBasedTracks[loc_i]->PID() != dMissingPID)
 			continue; //only use tracking results with correct PID
 
-		DMatrixDSym locCovarianceMatrix = locUnusedTimeBasedTracks[loc_i]->errorMatrix();
-		locCovarianceMatrix.ResizeTo(3, 3);
-		locCovarianceMatrix += locMissingCovarianceMatrix;
+		const TMatrixFSym& locCovarianceMatrix = *(locUnusedTimeBasedTracks[loc_i]->errorMatrix());
+		TMatrixDSym locDCovarianceMatrix(3);
+		for(unsigned int loc_j = 0; loc_j < 3; ++loc_j)
+		{
+			for(unsigned int loc_k = 0; loc_k < 3; ++loc_k)
+				locDCovarianceMatrix(loc_j, loc_k) = locCovarianceMatrix(loc_j, loc_k);
+		}
+		locDCovarianceMatrix += locMissingCovarianceMatrix;
 
 		//invert matrix
-		TDecompLU locDecompLU(locCovarianceMatrix);
+		TDecompLU locDecompLU(locDCovarianceMatrix);
 		//check to make sure that the matrix is decomposable and has a non-zero determinant
-		if((!locDecompLU.Decompose()) || (fabs(locCovarianceMatrix.Determinant()) < 1.0E-300))
+		if((!locDecompLU.Decompose()) || (fabs(locDCovarianceMatrix.Determinant()) < 1.0E-300))
 			continue; // matrix is not invertible
-		locCovarianceMatrix.Invert();
+		locDCovarianceMatrix.Invert();
 
 		DVector3 locDeltaP3 = locUnusedTimeBasedTracks[loc_i]->momentum() - locMissingP3;
-		double locMatchFOM = Calc_MatchFOM(locDeltaP3, locCovarianceMatrix);
+		double locMatchFOM = Calc_MatchFOM(locDeltaP3, locDCovarianceMatrix);
 
 		if(locMatchFOM > locBestTimeBasedMatchFOM)
 		{
@@ -307,7 +342,7 @@ bool DCustomAction_TrackingEfficiency::Perform_Action(JEventLoop* locEventLoop, 
 	dTreeFillData.Fill_Single<UInt_t>("TrackFDCPlanes", locBestTrackTimeBased->dFDCPlanes);
 
 	//RECON P3 ERROR MATRIX
-	DMatrixDSym locCovarianceMatrix = locBestTrackTimeBased->errorMatrix();
+	const TMatrixFSym& locCovarianceMatrix = *(locBestTrackTimeBased->errorMatrix());
 	dTreeFillData.Fill_Single<Float_t>("ReconP3_CovPxPx", locCovarianceMatrix(0, 0));
 	dTreeFillData.Fill_Single<Float_t>("ReconP3_CovPxPy", locCovarianceMatrix(0, 1));
 	dTreeFillData.Fill_Single<Float_t>("ReconP3_CovPxPz", locCovarianceMatrix(0, 2));
@@ -380,7 +415,7 @@ bool DCustomAction_TrackingEfficiency::Perform_Action(JEventLoop* locEventLoop, 
 	return true;
 }
 
-double DCustomAction_TrackingEfficiency::Calc_MatchFOM(const DVector3& locDeltaP3, DMatrixDSym locInverse3x3Matrix) const
+double DCustomAction_TrackingEfficiency::Calc_MatchFOM(const DVector3& locDeltaP3, TMatrixDSym locInverse3x3Matrix) const
 {
 	DMatrix locDeltas(3, 1);
 	locDeltas(0, 0) = locDeltaP3.Px();
@@ -390,4 +425,3 @@ double DCustomAction_TrackingEfficiency::Calc_MatchFOM(const DVector3& locDeltaP
 	double locChiSq = (locInverse3x3Matrix.SimilarityT(locDeltas))(0, 0);
 	return TMath::Prob(locChiSq, 3);
 }
-

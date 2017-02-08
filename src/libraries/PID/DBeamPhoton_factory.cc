@@ -44,7 +44,7 @@ jerror_t DBeamPhoton_factory::brun(jana::JEventLoop *locEventLoop, int32_t runnu
 //------------------
 // evnt
 //------------------
-jerror_t DBeamPhoton_factory::evnt(jana::JEventLoop *locEventLoop, uint64_t eventnumber)
+jerror_t DBeamPhoton_factory::evnt(jana::JEventLoop *locEventLoop, uint64_t locEventNumber)
 {
     vector<const DTAGMHit*> tagm_hits;
     locEventLoop->Get(tagm_hits);
@@ -54,7 +54,7 @@ jerror_t DBeamPhoton_factory::evnt(jana::JEventLoop *locEventLoop, uint64_t even
         if (!tagm_hits[ih]->has_fADC) continue; // Skip TDC-only hits (i.e. hits with no ADC info.)
         if (tagm_hits[ih]->row > 0) continue; // Skip individual fiber readouts
         DBeamPhoton *gamma = new DBeamPhoton;
-        Set_BeamPhoton(gamma, tagm_hits[ih]);
+        Set_BeamPhoton(gamma, tagm_hits[ih], locEventNumber);
         _data.push_back(gamma);
     }
 
@@ -74,14 +74,14 @@ jerror_t DBeamPhoton_factory::evnt(jana::JEventLoop *locEventLoop, uint64_t even
                 if (_data[jh]->momentum().Mag() < tagh_hits[ih]->E)
                 {
                     gamma->Reset();
-                    Set_BeamPhoton(gamma, tagh_hits[ih]);
+                    Set_BeamPhoton(gamma, tagh_hits[ih], locEventNumber);
                 }
             }
         }
         if (gamma == nullptr)
         {
             gamma = new DBeamPhoton;
-            Set_BeamPhoton(gamma, tagh_hits[ih]);
+            Set_BeamPhoton(gamma, tagh_hits[ih], locEventNumber);
             _data.push_back(gamma);
         }
     }
@@ -89,7 +89,7 @@ jerror_t DBeamPhoton_factory::evnt(jana::JEventLoop *locEventLoop, uint64_t even
     return NOERROR;
 }
 
-void DBeamPhoton_factory::Set_BeamPhoton(DBeamPhoton* gamma, const DTAGMHit* hit)
+void DBeamPhoton_factory::Set_BeamPhoton(DBeamPhoton* gamma, const DTAGMHit* hit, uint64_t locEventNumber)
 {
     DVector3 pos(0.0, 0.0, dTargetCenterZ);
     DVector3 mom(0.0, 0.0, hit->E);
@@ -102,9 +102,13 @@ void DBeamPhoton_factory::Set_BeamPhoton(DBeamPhoton* gamma, const DTAGMHit* hit
     gamma->setT0(hit->t, 0.200, SYS_TAGM);
     gamma->dCounter = hit->column;
     gamma->AddAssociatedObject(hit);
+
+	TMatrixFSym* locCovarianceMatrix = (dynamic_cast<DApplication*>(japp))->Get_CovarianceMatrixResource(7, locEventNumber);
+	locCovarianceMatrix->Zero();
+	gamma->setErrorMatrix(locCovarianceMatrix);
 }
 
-void DBeamPhoton_factory::Set_BeamPhoton(DBeamPhoton* gamma, const DTAGHHit* hit)
+void DBeamPhoton_factory::Set_BeamPhoton(DBeamPhoton* gamma, const DTAGHHit* hit, uint64_t locEventNumber)
 {
     DVector3 pos(0.0, 0.0, dTargetCenterZ);
     DVector3 mom(0.0, 0.0, hit->E);
@@ -117,6 +121,10 @@ void DBeamPhoton_factory::Set_BeamPhoton(DBeamPhoton* gamma, const DTAGHHit* hit
     gamma->setT0(hit->t, 0.350, SYS_TAGH);
     gamma->dCounter = hit->counter_id;
     gamma->AddAssociatedObject(hit);
+
+	TMatrixFSym* locCovarianceMatrix = (dynamic_cast<DApplication*>(japp))->Get_CovarianceMatrixResource(7, locEventNumber);
+	locCovarianceMatrix->Zero();
+	gamma->setErrorMatrix(locCovarianceMatrix);
 }
 
 //------------------

@@ -26,11 +26,8 @@ jerror_t DKinFitResults_factory::brun(jana::JEventLoop* locEventLoop, int32_t ru
 	dKinFitter->Set_DebugLevel(dKinFitDebugLevel);
 
 	//set pool sizes
-	size_t locExpectedNumCombos = 50;
+	size_t locExpectedNumCombos = 100; //hopefully not often more than this
 	dKinFitUtils->Set_MaxPoolSizes(Get_NumKinFitReactions(locEventLoop), locExpectedNumCombos);
-
-	//pre-allocate matrix memory
-	dKinFitUtils->Preallocate_MatrixMemory();
 
 	return NOERROR;
 }
@@ -89,6 +86,7 @@ jerror_t DKinFitResults_factory::evnt(JEventLoop* locEventLoop, uint64_t eventnu
 		locParticleCombos.insert(locParticleCombos.end(), locSurvivedParticleCombos.begin(), locSurvivedParticleCombos.end());
 	}
 
+	dKinFitUtils->Reset_NewEvent(locEventLoop->GetJEvent().GetEventNumber());
 	dKinFitter->Reset_NewEvent();
 	for(size_t loc_i = 0; loc_i < locParticleCombos.size(); ++loc_i)
 	{
@@ -105,7 +103,10 @@ jerror_t DKinFitResults_factory::evnt(JEventLoop* locEventLoop, uint64_t eventnu
 		deque<DKinFitConstraint_Vertex*> locSortedVertexConstraints;
 		set<DKinFitConstraint*> locConstraints = dKinFitUtils->Create_Constraints(locParticleCombo, locKinFitChain, locKinFitType, locSortedVertexConstraints);
 		if(locConstraints.empty())
+		{
+			dKinFitUtils->Recycle_DKinFitChain(locKinFitChain); //original chain no longer needed: recycle
 			continue; //Nothing to fit!
+		}
 
 		//see if constraints (particles) are identical to a previous kinfit
 		map<set<DKinFitConstraint*>, DKinFitResults*>::iterator locResultIterator = dConstraintResultsMap.find(locConstraints);
@@ -121,12 +122,19 @@ jerror_t DKinFitResults_factory::evnt(JEventLoop* locEventLoop, uint64_t eventnu
 				locKinFitResults->Add_ParticleCombo(locParticleCombo, locOutputKinFitChain);
 			}
 			//else: the previous kinfit failed, so this one will too (don't save)
+
+			dKinFitUtils->Recycle_DKinFitChain(locKinFitChain); //original chain no longer needed: recycle
 			continue;
 		}
 
 		//Set Constraint Initial Guesses //vertices, times, and missing p3's
 		if(!locSortedVertexConstraints.empty())
 			dKinFitUtils->Set_SpacetimeGuesses(locSortedVertexConstraints, locP4IsFitFlag);
+
+		//Set covariance matrix control flag
+		const DReaction* locReaction = locParticleCombo->Get_Reaction();
+		bool locKinFitUpdateCovarianceMatricesFlag = locReaction->Get_KinFitUpdateCovarianceMatricesFlag();
+		dKinFitUtils->Set_UpdateCovarianceMatricesFlag(locKinFitUpdateCovarianceMatricesFlag);
 
 		//Add constraints & perform fit
 		dKinFitter->Reset_NewFit();
@@ -141,6 +149,10 @@ jerror_t DKinFitResults_factory::evnt(JEventLoop* locEventLoop, uint64_t eventnu
 			const DKinFitChain* locOutputKinFitChain = dKinFitUtils->Build_OutputKinFitChain(locKinFitChain, locOutputKinFitParticles);
 			locKinFitResults = Build_KinFitResults(locParticleCombo, locOutputKinFitChain);
 		}
+		else //failed fit
+			dKinFitter->Recycle_LastFitMemory(); //RESET MEMORY FROM LAST KINFIT!! //results no longer needed
+
+		dKinFitUtils->Recycle_DKinFitChain(locKinFitChain); //original chain no longer needed: recycle
 		dConstraintResultsMap[locConstraints] = locKinFitResults;
 	}
 
@@ -159,9 +171,9 @@ DKinFitResults* DKinFitResults_factory::Build_KinFitResults(const DParticleCombo
 	locKinFitResults->Set_ChiSq(dKinFitter->Get_ChiSq());
 	locKinFitResults->Set_NDF(dKinFitter->Get_NDF());
 
-	locKinFitResults->Set_VEta(dKinFitter->Get_VEta());
+	//locKinFitResults->Set_VEta(dKinFitter->Get_VEta());
 	locKinFitResults->Set_VXi(dKinFitter->Get_VXi());
-	locKinFitResults->Set_V(dKinFitter->Get_V());
+	//locKinFitResults->Set_V(dKinFitter->Get_V());
 
 	locKinFitResults->Set_NumConstraints(dKinFitter->Get_NumConstraintEquations());
 	locKinFitResults->Set_NumUnknowns(dKinFitter->Get_NumUnknowns());

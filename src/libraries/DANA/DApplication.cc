@@ -39,9 +39,10 @@ using std::string;
 DApplication::DApplication(int narg, char* argv[]):JApplication(narg, argv)
 {
 	pthread_mutex_init(&mutex, NULL);
+	pthread_mutex_init(&matrix_mutex, NULL);
 	
 	//disable inherently (and horrorifically)-unsafe registration of EVERY TObject with the global TObjectTable //multithreading!!
-    //simply setting/checking a bool is not thread-safe due to cache non-coherence and operation re-shuffling by the compiler
+	//simply setting/checking a bool is not thread-safe due to cache non-coherence and operation re-shuffling by the compiler
 	TObject::SetObjectStat(kFALSE);
 
 	// Add plugin paths to Hall-D specific binary directories
@@ -95,6 +96,9 @@ DApplication::DApplication(int narg, char* argv[]):JApplication(narg, argv)
 	}
 	factory_generator = new DFactoryGenerator();
 	AddFactoryGenerator(factory_generator);
+
+	//target max size of available matrix resource pool
+	dTargetMaxNumAvailableMatrices = 50000; //~10 MB (if 7x7 float matrices)
 
 	if(JVersion::minor<5)Init();
 
@@ -416,5 +420,154 @@ DRootGeom* DApplication::GetRootGeom(unsigned int run_number)
 	pthread_mutex_unlock(&mutex);
 	
 	return RootGeom;
+}
+
+//---------------------------------
+// Get_EventNumber
+//---------------------------------
+uint64_t DApplication::Get_EventNumber_CurrentThread(void)
+{
+	//Find the JEventLoop corresponding to this thread, and then get it's event number.
+	pthread_t locThreadID = pthread_self();
+	vector<JEventLoop*> locEventLoops = GetJEventLoops(); //This locks internally
+
+	for(auto& locEventLoop : locEventLoops)
+	{
+		if(locEventLoop->GetPThreadID() == locThreadID)
+			return locEventLoop->GetJEvent().GetEventNumber();
+	}
+
+	return 0;
+}
+
+//---------------------------------
+// Get_CovarianceMatrixResources
+//---------------------------------
+deque<TMatrixFSym*> DApplication::Get_CovarianceMatrixResources(unsigned int locNumMatrixRows, size_t locNumRequestedMatrices, uint64_t locEventNumber)
+{
+	//We must have the correct event number, so that we know when it's safe to recycle the memory for the next event.
+	deque<TMatrixFSym*> locAcquiredMatrices;
+	pthread_t locThreadID = pthread_self();
+
+	//flags for what to do once back outside the lock
+	//Once acquired, can operate on locUsedMatrices outside of lock because only the current thread has access
+	bool locDeleteAllUsedMatricesFlag = false;
+	bool locNewEventFlag = false;
+
+	//LOCK
+	pthread_mutex_lock(&matrix_mutex);
+
+	//Declare "used" matrices available if on new event for this thread
+	set<TMatrixFSym*>& locUsedMatrices = dUsedMatrixMap[locThreadID];
+	auto locEventIterator = dEventNumberMap.find(locThreadID);
+	if(locEventIterator == dEventNumberMap.end())
+		dEventNumberMap[locThreadID] = locEventNumber;
+	else if(locEventIterator->second != locEventNumber)
+	{
+		locNewEventFlag = true;
+		dEventNumberMap[locThreadID] = locEventNumber;
+
+		//Memory fragmentation seems to be a very big problem, and these objects use the most memory
+		//So, don't delete them. To delete them, just uncomment the below lines.
+
+		//if available > max, wipe all used
+//		locDeleteAllUsedMatricesFlag = (dAvailableMatrices.size() >= dTargetMaxNumAvailableMatrices);
+//		if(!locDeleteAllUsedMatricesFlag)
+			std::move(locUsedMatrices.begin(), locUsedMatrices.end(), std::back_inserter(dAvailableMatrices));
+		//if moved, locUsedMatrices now invalid: will clear outside of lock
+	}
+
+	//Get matrix resources if available
+	if(dAvailableMatrices.size() <= locNumRequestedMatrices)
+	{
+		//Move the whole deque
+		std::move(dAvailableMatrices.begin(), dAvailableMatrices.end(), std::back_inserter(locAcquiredMatrices));
+		dAvailableMatrices.clear();
+	}
+	else //Move the desired range
+	{
+		size_t locNewSize = dAvailableMatrices.size() - locNumRequestedMatrices;
+		auto locMoveEdgeIterator = std::next(dAvailableMatrices.rbegin(), locNumRequestedMatrices);
+		std::move(dAvailableMatrices.rbegin(), locMoveEdgeIterator, std::back_inserter(locAcquiredMatrices));
+		dAvailableMatrices.resize(locNewSize);
+	}
+
+	//UNLOCK
+	pthread_mutex_unlock(&matrix_mutex);
+
+	//resize acquired matrices
+	for(auto& locMatrix : locAcquiredMatrices)
+		locMatrix->ResizeTo(locNumMatrixRows, locNumMatrixRows);
+
+	//make new matrices if necessary
+	while(locAcquiredMatrices.size() < locNumRequestedMatrices)
+		locAcquiredMatrices.push_back(new TMatrixFSym(locNumMatrixRows));
+
+	//delete unused matrices if necessary
+	if(locDeleteAllUsedMatricesFlag)
+	{
+		for(auto& locMatrix : locUsedMatrices)
+			delete locMatrix;
+	}
+
+	//reset used if new event
+	if(locNewEventFlag)
+		locUsedMatrices.clear();
+
+	//register as used
+	locUsedMatrices.insert(locAcquiredMatrices.begin(), locAcquiredMatrices.end());
+
+	return locAcquiredMatrices;
+}
+
+size_t DApplication::Get_NumCovarianceMatrices(void)
+{
+	size_t locNumMatrices = 0;
+	
+	//LOCK
+	pthread_mutex_lock(&matrix_mutex);
+
+	locNumMatrices += dAvailableMatrices.size();
+	for(auto& locUsedMatrixPair : dUsedMatrixMap)
+		locNumMatrices += locUsedMatrixPair.second.size();
+
+	//UNLOCK
+	pthread_mutex_unlock(&matrix_mutex);
+
+	return locNumMatrices;
+}
+
+void DApplication::Recycle_Matrices(deque<const TMatrixFSym*>& locMatrices)
+{
+	//first, cast away const-ness
+	deque<TMatrixFSym*> locNonConstMatrices;
+	for(auto& locMatrix : locMatrices)
+		locNonConstMatrices.push_back(const_cast<TMatrixFSym*>(locMatrix));
+
+	Recycle_Matrices(locNonConstMatrices);
+	locMatrices.clear();
+}
+
+void DApplication::Recycle_Matrices(deque<TMatrixFSym*>& locMatrices)
+{
+	pthread_t locThreadID = pthread_self();
+
+	//LOCK
+	pthread_mutex_lock(&matrix_mutex);
+
+	//get the used list
+	set<TMatrixFSym*>& locUsedMatrices = dUsedMatrixMap[locThreadID];
+
+	//make the matrices available
+	std::move(locMatrices.begin(), locMatrices.end(), std::back_inserter(dAvailableMatrices));
+
+	//UNLOCK
+	pthread_mutex_unlock(&matrix_mutex);
+
+	//remove from the used list (outside of lock: only this thread has access to locUsedMatrices)
+	for(auto& locMatrix : locMatrices)
+		locUsedMatrices.erase(locMatrix);
+
+	locMatrices.clear();
 }
 

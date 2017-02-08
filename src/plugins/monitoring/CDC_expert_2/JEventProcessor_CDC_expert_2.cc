@@ -40,18 +40,18 @@ static TH2D *cdc_e_vs_n = NULL;
 static TH1D *cdc_t = NULL; 
 static TH2D *cdc_t_vs_n = NULL; 
 
-static TH1D *cdc_rt = NULL; 
-static TH2D *cdc_rt_vs_n = NULL; 
+static TH1I *cdc_rt = NULL; 
+static TH2I *cdc_rt_vs_n = NULL; 
 
-static TH1D *cdc_amp = NULL; 
-static TH2D *cdc_amp_vs_n = NULL; 
+static TH1I *cdc_amp = NULL; 
+static TH2I *cdc_amp_vs_n = NULL; 
 
-static TH1D *cdc_rt_qf0 = NULL;
+static TH1I *cdc_rt_qf0 = NULL;
 
-static TH1D *cdc_qf = NULL;
-static TH2D *cdc_qf_vs_n = NULL;
-static TH2D *cdc_qf_vs_a = NULL;
-static TH2D *cdc_qf_vs_rt = NULL;
+static TH1I *cdc_qf = NULL;
+static TH2I *cdc_qf_vs_n = NULL;
+static TH2I *cdc_qf_vs_a = NULL;
+static TH2I *cdc_qf_vs_rt = NULL;
 
 
 //static TH2D *cdc_e_ring[29];
@@ -94,7 +94,12 @@ static TH2I *cdc_ped_roc26;
 static TH2I *cdc_ped_roc27;  
 static TH2I *cdc_ped_roc28;  
 
+static TH2I *cdc_amp_roc25;  
+static TH2I *cdc_amp_roc26;  
+static TH2I *cdc_amp_roc27;  
+static TH2I *cdc_amp_roc28;  
 
+static TH2I *cdc_what_is_n;
 
 
 //----------------------------------------------------------------------------------
@@ -142,7 +147,7 @@ jerror_t JEventProcessor_CDC_expert_2::init(void) {
   const Int_t IMAX = 100000;   //max for raw integral
   const Int_t IPPMAX = 150000; //max for raw integral + pedestal
   const Int_t PMAX = 256;      //max for pedestal, fa125-format, 8 bits
-  const Int_t AMAX = 4096;      //max for amplitude, fa125-format, 9 bits  * scale factor
+  const Int_t AMAX = 4096;    //max for amplitude, fa125-format, 9 bits  * scale factor
   const Int_t RTMAX = 1800;    //max for raw time
   const Int_t RTMIN = 160;
   const Int_t RTBINS = 164;       //bins
@@ -193,13 +198,13 @@ jerror_t JEventProcessor_CDC_expert_2::init(void) {
   cdc_t_vs_n = new TH2D("cdc_t_vs_n",Form("CDC time (ns) vs straw number;straw %s;time (ns)",deadstraws),NSTRAWS,HALF,NSTRAWSPH,TBINS,TMIN,TMAX);
 
 
-  cdc_rt = new TH1D("cdc_rt","CDC raw time (0.8ns);raw time (0.8ns)",RTMAX-RTMIN,RTMIN,RTMAX);
-  cdc_rt_qf0 = new TH1D("cdc_rt_qf0","CDC raw time with qf=0 (0.8ns);raw time (0.8ns)",RTMAX-RTMIN,RTMIN,RTMAX);
-  cdc_rt_vs_n = new TH2D("cdc_rt_vs_n",Form("CDC raw time (0.8ns) vs straw number;straw %s;raw time (0.8ns)",deadstraws),NSTRAWS,HALF,NSTRAWSPH,RTBINS,RTMIN,RTMAX);
+  cdc_rt = new TH1I("cdc_rt","CDC raw time (0.8ns);raw time (0.8ns)",RTMAX-RTMIN,RTMIN,RTMAX);
+  cdc_rt_qf0 = new TH1I("cdc_rt_qf0","CDC raw time with qf=0 (0.8ns);raw time (0.8ns)",RTMAX-RTMIN,RTMIN,RTMAX);
+  cdc_rt_vs_n = new TH2I("cdc_rt_vs_n",Form("CDC raw time (0.8ns) vs straw number;straw %s;raw time (0.8ns)",deadstraws),NSTRAWS,HALF,NSTRAWSPH,RTBINS,RTMIN,RTMAX);
 
 
-  cdc_amp = new TH1D("cdc_amp","CDC amplitude;amplitude",256,0,AMAX);
-  cdc_amp_vs_n = new TH2D("cdc_amp_vs_n",Form("CDC amplitude vs straw number;straw %s;amplitude",deadstraws),NSTRAWS,HALF,NSTRAWSPH,256,0,AMAX);
+  cdc_amp = new TH1I("cdc_amp","CDC amplitude;amplitude",256,0,AMAX);
+  cdc_amp_vs_n = new TH2I("cdc_amp_vs_n",Form("CDC amplitude vs straw number;straw %s;amplitude",deadstraws),NSTRAWS,HALF,NSTRAWSPH,256,0,AMAX);
 
 
 
@@ -208,6 +213,8 @@ jerror_t JEventProcessor_CDC_expert_2::init(void) {
 
   cdc_int_vs_raw_t   = new TH2I("cdc_int_vs_raw_t",Form("CDC integral (ADC units), pedestal subtracted, vs raw time (0.8ns);raw time (0.8ns);integral, pedestal subtracted (ADC units)"),(Int_t)RTBINS,RTMIN,RTMAX,100,0,IMAX);
  
+  cdc_what_is_n = new TH2I("cdc_what_is_n","CDC slot*100 + channel vs straw number, bin content=(rocid-24);straw;slot*100 + channel",NSTRAWS,HALF,NSTRAWSPH,1600,200+HALF,1800+HALF);
+
 
   gDirectory->mkdir("pedestals_by_roc","CDC Pedestals for each ROC")->cd();
 
@@ -223,6 +230,15 @@ jerror_t JEventProcessor_CDC_expert_2::init(void) {
 
   xd->cd();
 
+  gDirectory->mkdir("amp_by_roc","CDC amplitudes for each ROC")->cd();
+
+  cdc_amp_roc25   = new TH2I("cdc_amp_roc25","CDC amplitude (ADC units) vs slot*100+channel, ROC 25;slot*100 + channel;amplitude",1600,200+HALF,1800+HALF,256,0,AMAX);
+  cdc_amp_roc26   = new TH2I("cdc_amp_roc26","CDC amplitude (ADC units) vs slot*100+channel, ROC 26;slot*100 + channel;amplitude",1600,200+HALF,1800+HALF,256,0,AMAX);
+  cdc_amp_roc27   = new TH2I("cdc_amp_roc27","CDC amplitude (ADC units) vs slot*100+channel, ROC 27;slot*100 + channel;amplitude",1600,200+HALF,1800+HALF,256,0,AMAX);
+  cdc_amp_roc28   = new TH2I("cdc_amp_roc28","CDC amplitude (ADC units) vs slot*100+channel, ROC 28;slot*100 + channel;amplitude",1600,200+HALF,1800+HALF,256,0,AMAX);
+
+  xd->cd();
+
 
   gDirectory->mkdir("bad_t","CDC Bad time flagged")->cd();
 
@@ -233,10 +249,10 @@ jerror_t JEventProcessor_CDC_expert_2::init(void) {
   //cdc_int_badt   = new TH1I("cdc_int_badt","CDC integral (ADC units), pedestal subtracted, events with bad time flagged;ADC units",100,0,IMAX);
   //cdc_intpp_badt   = new TH1I("cdc_intpp_badt","CDC integral (ADC units), including pedestal, events with bad time flagged;ADC units",128,0,IPPMAX);
 
-  cdc_qf = new TH1D("cdc_qf","CDC time quality factor;time quality factor (0:good, 1:zero, 2:hi ped, 3: below TH, 4:late TCL, 5: neg ups, 9:hi ups)",10,0,10);
-  cdc_qf_vs_n = new TH2D("cdc_qf_vs_n","CDC time quality factor vs straw number;straw;time quality factor",NSTRAWS,HALF,NSTRAWSPH,9,1,10);
-  cdc_qf_vs_a = new TH2D("cdc_qf_vs_a","CDC time quality factor vs amplitude;amplitude;time quality factor",128,0,AMAX,9,1,10);
-  cdc_qf_vs_rt = new TH2D("cdc_qf_vs_raw_t","CDC time quality factor vs raw time;time;time quality factor",RTBINS,RTMIN,RTMAX,9,1,10);
+  cdc_qf = new TH1I("cdc_qf","CDC time quality factor;time quality factor (0:good, 1:zero, 2:hi ped, 3: below TH, 4:late TCL, 5: neg ups, 9:hi ups)",10,0,10);
+  cdc_qf_vs_n = new TH2I("cdc_qf_vs_n","CDC time quality factor vs straw number;straw;time quality factor",NSTRAWS,HALF,NSTRAWSPH,10,0,10);
+  cdc_qf_vs_a = new TH2I("cdc_qf_vs_a","CDC time quality factor vs amplitude;amplitude;time quality factor",128,0,AMAX,10,0,10);
+  cdc_qf_vs_rt = new TH2I("cdc_qf_vs_raw_t","CDC time quality factor vs raw time;time;time quality factor",RTBINS,RTMIN,RTMAX,10,0,10);
 
   xd->cd();
 
@@ -312,7 +328,7 @@ jerror_t JEventProcessor_CDC_expert_2::init(void) {
 
   gDirectory->mkdir("rings_amp","CDC rings: amplitude")->cd();
   for (i=1; i<29; i++) {
-    cdc_amp_ring[i]   = new TH2I(Form("cdc_amp_ring[%i]",i),Form("CDC amplitude (ADC units), ring %i;straw",i),straws[i],HALF,straws[i]+HALF,256,0,AMAX);
+    cdc_amp_ring[i]   = new TH2I(Form("cdc_amp_ring[%i]",i),Form("CDC amplitude (ADC units), ring %i",i),straws[i],HALF,straws[i]+HALF,256,0,AMAX);
   }
   cdc_amp_ring[11]->GetXaxis()->SetTitle(Form("Straw number, %s",deadrow11));
   cdc_amp_ring[23]->GetXaxis()->SetTitle(Form("Straw number, %s",deadrow23));
@@ -334,7 +350,9 @@ jerror_t JEventProcessor_CDC_expert_2::init(void) {
   cdc_intpp_ring[23]->GetXaxis()->SetTitle(Form("Straw number, %s",deadrow23));
 
 
-  main->cd();    // back to main dir
+
+
+  main->cd();    // back to main 
 
   return NOERROR;
 
@@ -373,7 +391,7 @@ jerror_t JEventProcessor_CDC_expert_2::evnt(JEventLoop *eventLoop, uint64_t even
   uint16_t n;         // straw number, 1 to 3522
 
   uint32_t qf,ocount; // time quality factor and overflow count from new firmware
-  uint32_t rt,p,a; // dcdcdigihits raw quantities: time, pedestal, amplitude, quality factor, overflow count
+  uint32_t rt,p,a; // dcdcdigihits raw quantities: time, pedestal, amplitude
   uint32_t integral; // dcdcdigihits integral, includes pedestal
   uint32_t integ;    // dcdcdigihits integral minus pedestal
 
@@ -407,9 +425,8 @@ jerror_t JEventProcessor_CDC_expert_2::evnt(JEventLoop *eventLoop, uint64_t even
   eventLoop->Get(digihits);
 
 
-	// FILL HISTOGRAMS
-	// Since we are filling histograms local to this plugin, it will not interfere with other ROOT operations: can use plugin-wide ROOT fill lock
-	japp->RootFillLock(this); //ACQUIRE ROOT FILL LOCK
+  japp->RootFillLock(this); //ACQUIRE ROOT LOCK!!
+
 
 
   for (uint32_t i=0; i<hits.size(); i++) {
@@ -457,9 +474,7 @@ jerror_t JEventProcessor_CDC_expert_2::evnt(JEventLoop *eventLoop, uint64_t even
 
     n = straw_offset[ring] + straw;
   
-
     originalq = 0;
-
 
     //new firmware uses Df125CDCPulseData
 
@@ -556,6 +571,15 @@ jerror_t JEventProcessor_CDC_expert_2::evnt(JEventLoop *eventLoop, uint64_t even
     if (rocid == 28) cdc_ped_roc28->Fill(100*slot + channel,p);
 
 
+    if (rocid == 25) cdc_amp_roc25->Fill(100*slot + channel,a);
+    if (rocid == 26) cdc_amp_roc26->Fill(100*slot + channel,a);
+    if (rocid == 27) cdc_amp_roc27->Fill(100*slot + channel,a);
+    if (rocid == 28) cdc_amp_roc28->Fill(100*slot + channel,a);
+
+
+    cdc_what_is_n->SetBinContent(cdc_what_is_n->FindBin(n,100*slot + channel),rocid-24);
+
+
     // initial pedestals from window raw data samples if available
 
     wrd = NULL;
@@ -587,7 +611,7 @@ jerror_t JEventProcessor_CDC_expert_2::evnt(JEventLoop *eventLoop, uint64_t even
   } //end for each digihit
 
 
-	japp->RootFillUnLock(this); //RELEASE ROOT FILL LOCK
+  japp->RootFillUnLock(this); //RELEASE ROOT LOCK!!
 
 
   return NOERROR;

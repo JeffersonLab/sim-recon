@@ -124,6 +124,7 @@ class DParsedEvent{
 		uint64_t MAX_RECYCLES;
 		bool copied_to_factories;
 		
+		uint32_t buff_len; // original EVIO buffer that may contian many events
 		uint64_t istreamorder;
 		uint64_t run_number;
 		uint64_t event_number;

@@ -33,7 +33,7 @@ using namespace jana;
 #include <START_COUNTER/DSCTDCDigiHit.h>
 #include <TAGGER/DTAGMDigiHit.h>
 #include <TAGGER/DTAGMTDCDigiHit.h>
-
+#include <TRIGGER/DL1Trigger.h>
 
 // Routine used to create our JEventProcessor
 #include <JANA/JApplication.h>
@@ -170,6 +170,10 @@ jerror_t JEventProcessor_occupancy_online::init(void)
 	dRFBinValueMap[SYS_PSC]  = 2.0;
 	dRFBinValueMap[SYS_TAGH] = 3.0;
 	dRFBinValueMap[SYS_TOF]  = 4.0;
+	
+	//------------------------ Trigger -------------------------
+	L1GTPRate = new TH2F("L1GTPRate","L1 GTP Rate by bit;Trigger Bit;L1 GTP Rate (kHz)", 8, 0.5, 8.5, 1000, 0.0, 100.0);
+	L1livetime = new TH1F("L1livetime","L1 instantaneous livetime from TS scalers", 200, 0.0, 100.0);
 
 	//------------------------ ST -------------------------
 	st_adc_occ    = new TH1I("st_adc_occ", "ST fADC250 DigiHit Occupancy; Channel Number; fADC250 Counts", 30, 0.5, 30 + 0.5);
@@ -245,6 +249,7 @@ jerror_t JEventProcessor_occupancy_online::evnt(JEventLoop *loop, uint64_t event
 	vector<const DTAGHDigiHit*>        taghdigihits;
 	vector<const DTAGHTDCDigiHit*>     taghtdcdigihits;
 	vector<const DTPOLSectorDigiHit*>  tpoldigihits;
+	vector<const DL1Trigger*>          l1triggers;
 	loop->Get(bcaldigihits);
 	loop->Get(bcaltdcdigihits);
 	loop->Get(cdcdigihits);
@@ -264,6 +269,9 @@ jerror_t JEventProcessor_occupancy_online::evnt(JEventLoop *loop, uint64_t event
 	loop->Get(taghdigihits);
 	loop->Get(taghtdcdigihits);
 	loop->Get(tpoldigihits);
+	loop->Get(l1triggers);
+
+	const DL1Trigger* l1trigger = l1triggers.empty() ? NULL : l1triggers[0];
 
 	japp->RootFillLock(this); //ACQUIRE ROOT FILL LOCK
 
@@ -356,6 +364,16 @@ jerror_t JEventProcessor_occupancy_online::evnt(JEventLoop *loop, uint64_t event
 	for(size_t loc_i = 0; loc_i < rfdigihits.size(); ++loc_i){
 		DetectorSystem_t locSystem = rfdigihits[loc_i]->dSystem;
 		rf_occ->Fill(dRFBinValueMap[locSystem]);
+	}
+
+	//------------------------ Trigger -------------------------
+	if(l1trigger){
+		if(!l1trigger->gtp_rate.empty())
+		{
+			// Sync Events
+			for(unsigned int ii = 0; ii < 8; ++ii) L1GTPRate->Fill(ii + 1, Float_t(l1trigger->gtp_rate[ii])/1000.0);
+			L1livetime->Fill((double)l1trigger->live_inst/10.0);
+		}
 	}
 
 	//------------------------ ST -------------------------

@@ -14,6 +14,7 @@
 #include "JANA/JEventLoop.h"
 #include "JANA/JApplication.h"
 
+#include "DANA/DStatusBits.h"
 #include "BCAL/DBCALShower.h"
 #include "TRACKING/DTrackTimeBased.h"
 #include "PID/DParticleID.h"
@@ -49,7 +50,7 @@ class DCustomAction_TrackingEfficiency : public DAnalysisAction
 	private:
 
 		bool Perform_Action(JEventLoop* locEventLoop, const DParticleCombo* locParticleCombo);
-		double Calc_MatchFOM(const DVector3& locDeltaP3, DMatrixDSym locInverse3x3Matrix) const;
+		double Calc_MatchFOM(const DVector3& locDeltaP3, TMatrixDSym locInverse3x3Matrix) const;
 
 		Particle_t dMissingPID;
 

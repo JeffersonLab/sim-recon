@@ -54,10 +54,10 @@ jerror_t JEventProcessor_highlevel_online::init(void)
 
 	/*************************************************************** TRIGGER **************************************************************/
 
-	dHist_L1GTPRate = new TH2F("L1GTPRate","L1 GTP Rate by bit;Trigger Bit;L1 GTP Rate (kHz)", 8, 0.5, 8.5, 1000, 0.0, 100.0);
-
 	dHist_BCALVsFCAL_TrigBit1 = new TH2I("BCALVsFCAL_TrigBit1","TRIG BIT 1;E (FCAL) (count);E (BCAL) (count)", 200, 0., 10000, 200, 0., 50000);
-	dHist_BCALVsFCAL_TrigBit6 = new TH2I("BCALVsFCAL_TrigBit6","TRIG BIT 6;E (FCAL) (count);E (BCAL) (count)", 200, 0., 10000, 200, 0., 50000);
+	
+	dHist_L1bits_gtp = new TH1I("L1bits_gtp", "L1 trig bits from GTP;Trig. bit (1-32)", 32, 0.5, 32.5);
+	dHist_L1bits_fp  = new TH1I("L1bits_fp", "L1 trig bits from FP;Trig. bit (1-32)", 32, 0.5, 32.5);
 
 	/****************************************************** NUM RECONSTRUCTED OBJECTS *****************************************************/
 
@@ -256,66 +256,42 @@ jerror_t JEventProcessor_highlevel_online::evnt(JEventLoop *locEventLoop, uint64
 
 	/********************************************************* PREPARE TRIGGER INFO *******************************************************/
 
-	vector<unsigned int> locTrigBits(32, 0); //bit 1 -> 32 is index 0 -> 31
+	vector<unsigned int> locgtpTrigBits(32, 0); //bit 1 -> 32 is index 0 -> 31
+	vector<unsigned int> locfpTrigBits(32, 0); //bit 1 -> 32 is index 0 -> 31
 
 	if(locL1Trigger != NULL)
 	{
-		for(unsigned int bit = 0; bit < 32; ++bit)
-			locTrigBits[bit] = (locL1Trigger->trig_mask & (1 << bit)) ? 1 : 0;
+		for(unsigned int bit = 0; bit < 32; ++bit){
+			locgtpTrigBits[bit] = (locL1Trigger->trig_mask & (1 << bit)) ? 1 : 0;
+			locfpTrigBits[bit] = (locL1Trigger->fp_trig_mask & (1 << bit)) ? 1 : 0;
+		}
 	}
 
 	//Get total FCAL energy
 	int fcal_tot_en = 0;
-    for(unsigned int jj = 0; jj < locFCALDigiHits.size(); jj++)
-    {
-		const DFCALDigiHit *fcal_hit = locFCALDigiHits[jj];
-
+	for( auto fcal_hit : locFCALDigiHits){
 		int row = fcal_hit->row;
 		int col = fcal_hit->column;
-		if((row >= fcal_row_mask_min && row <= fcal_row_mask_max) && (col >= fcal_col_mask_min && col <= fcal_col_mask_max))
-			continue;
+		if( (row >= fcal_row_mask_min) && (row <= fcal_row_mask_max) ){
+			if( (col >= fcal_col_mask_min) && (col <= fcal_col_mask_max) ) continue;
+		}
 
-		uint32_t adc_time = (fcal_hit->pulse_time & 0x7FC0) >> 6;
-		if(!((adc_time > 20) && (adc_time < 70)))
-			continue;
+		if( ((int32_t)fcal_hit->pulse_peak-100) <= fcal_cell_thr) continue;
+
+		uint32_t adc_time = (fcal_hit->pulse_time >> 6) & 0x1FF; // consider only course time
+		if((adc_time < 15) || (adc_time > 50)) continue; // changed from 20 and 70 based on run 30284  2/5/2017 DL
 
 		Int_t pulse_int = fcal_hit->pulse_integral - fcal_hit->nsamples_integral*100;
-		if(pulse_int < 0)
-			continue;
-
-		const Df250PulsePedestal *pulsepedestal = NULL;
-		fcal_hit->GetSingle(pulsepedestal);
-		const Df250PulseData *pulsedata = NULL;
-		fcal_hit->GetSingle(pulsedata);
-
-		Int_t pulse_peak = -10;
-		if(pulsepedestal)   // pre-Fall 2016 firmware
-			pulse_peak = pulsepedestal->pulse_peak - 100;
-		if(pulsedata)       // post-Fall 2016 firmware
-			pulse_peak = pulsedata->pulse_peak - 100;
-
-		if(pulse_peak <= fcal_cell_thr)
-			continue;
-
+		if(pulse_int < 0) continue;
 		fcal_tot_en += pulse_int;
 	}
 
 	//Get total BCAL energy
 	int bcal_tot_en = 0;
-	for(unsigned int jj = 0; jj < locBCALDigiHits.size(); ++jj)
-	{
-		const DBCALDigiHit *bcal_hit = locBCALDigiHits[jj];
+	for(auto bcal_hit : locBCALDigiHits){
+		if( ((int32_t)bcal_hit->pulse_peak-100) <= bcal_cell_thr) continue;
 		Int_t pulse_int = bcal_hit->pulse_integral - bcal_hit->nsamples_integral*100;
-
-		const Df250PulsePedestal *pulsepedestal;
-		bcal_hit->GetSingle(pulsepedestal);
-
-		Int_t pulse_peak = -10;
-		if(pulsepedestal)
-			pulse_peak = pulsepedestal->pulse_peak - 100;
-		if(pulse_peak <= bcal_cell_thr)
-			continue;
-
+		if(pulse_int < 0) continue;
 		bcal_tot_en += pulse_int;
 	}
 	
@@ -347,16 +323,13 @@ jerror_t JEventProcessor_highlevel_online::evnt(JEventLoop *locEventLoop, uint64
 
 	if(locL1Trigger != NULL)
 	{
-		if(locTrigBits[0] == 1) //bit 1
+		if(locgtpTrigBits[0] == 1) //bit 1
 			dHist_BCALVsFCAL_TrigBit1->Fill(Float_t(fcal_tot_en), Float_t(bcal_tot_en));
-		if(locTrigBits[5] == 1) //bit 6
-			dHist_BCALVsFCAL_TrigBit6->Fill(Float_t(fcal_tot_en), Float_t(bcal_tot_en));
 
-		// Sync Events
-		if(!locL1Trigger->gtp_rate.empty())
-		{
-			for(unsigned int ii = 0; ii < 8; ++ii)
-				dHist_L1GTPRate->Fill(ii + 1, Float_t(locL1Trigger->gtp_rate[ii])/1000.0);
+		// trigger bits
+		for(int bit=1; bit<=32; bit++){
+			if(locgtpTrigBits[bit-1]) dHist_L1bits_gtp->Fill(bit);
+			if(locfpTrigBits[bit-1] ) dHist_L1bits_fp->Fill(bit);
 		}
 	}
 

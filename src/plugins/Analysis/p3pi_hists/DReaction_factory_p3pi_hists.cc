@@ -33,10 +33,6 @@ jerror_t DReaction_factory_p3pi_hists::evnt(JEventLoop* locEventLoop, uint64_t l
 	DReactionStep* locReactionStep = NULL;
 	DReaction* locReaction;
 
-	double minPi0FCAL = 0.115;
-	double maxPi0FCAL = 0.145;
-	double minPi0BCAL = 0.11;
-	double maxPi0BCAL = 0.16;
 	double minPi0FCAL_BCAL = 0.11;
 	double maxPi0FCAL_BCAL = 0.16;
 
@@ -123,7 +119,7 @@ jerror_t DReaction_factory_p3pi_hists::evnt(JEventLoop* locEventLoop, uint64_t l
 	locReaction->Add_AnalysisAction(new DHistogramAction_InvariantMass(locReaction, omega, true, 600, 0.5, 1.1, "Omega_KinFit"));
 
 	// Kinematic Fit Results
-	locReaction->Add_AnalysisAction(new DHistogramAction_KinFitResults(locReaction, 0.05)); //5% confidence level cut on pull histograms only
+	locReaction->Add_AnalysisAction(new DHistogramAction_KinFitResults(locReaction, 0.05, true)); //5% confidence level cut on pull histograms only
 	locReaction->Add_AnalysisAction(new DCutAction_KinFitFOM(locReaction, 5.73303E-7)); // confidence level cut //+/- 5 sigma
 
 	// MASSES, POST-KINFIT
@@ -195,7 +191,7 @@ jerror_t DReaction_factory_p3pi_hists::evnt(JEventLoop* locEventLoop, uint64_t l
 	locReaction->Add_AnalysisAction(new DHistogramAction_InvariantMass(locReaction, omega, true, 600, 0.5, 1.1, "Omega_KinFit"));
 
 	// Kinematic Fit Results
-	locReaction->Add_AnalysisAction(new DHistogramAction_KinFitResults(locReaction, 0.05)); //5% confidence level cut on pull histograms only
+	locReaction->Add_AnalysisAction(new DHistogramAction_KinFitResults(locReaction, 0.05, true)); //5% confidence level cut on pull histograms only
 	locReaction->Add_AnalysisAction(new DCutAction_KinFitFOM(locReaction, 5.73303E-7)); // confidence level cut //+/- 5 sigma
 
 	// MASSES, POST-KINFIT
@@ -267,7 +263,7 @@ jerror_t DReaction_factory_p3pi_hists::evnt(JEventLoop* locEventLoop, uint64_t l
 	locReaction->Add_AnalysisAction(new DHistogramAction_InvariantMass(locReaction, omega, true, 600, 0.5, 1.1, "Omega_KinFit"));
 
 	// Kinematic Fit Results
-	locReaction->Add_AnalysisAction(new DHistogramAction_KinFitResults(locReaction, 0.05)); //5% confidence level cut on pull histograms only
+	locReaction->Add_AnalysisAction(new DHistogramAction_KinFitResults(locReaction, 0.05, true)); //5% confidence level cut on pull histograms only
 	locReaction->Add_AnalysisAction(new DCutAction_KinFitFOM(locReaction, 5.73303E-7)); // confidence level cut //+/- 5 sigma
 
 	// MASSES, POST-KINFIT
@@ -405,7 +401,7 @@ jerror_t DReaction_factory_p3pi_hists::evnt(JEventLoop* locEventLoop, uint64_t l
 	locReaction->Add_AnalysisAction(new DHistogramAction_InvariantMass(locReaction, omega, true, 600, 0.5, 1.1, "Omega_KinFit"));
 
 	// Kinematic Fit Results
-	locReaction->Add_AnalysisAction(new DHistogramAction_KinFitResults(locReaction, 0.05)); //5% confidence level cut on pull histograms only
+	locReaction->Add_AnalysisAction(new DHistogramAction_KinFitResults(locReaction, 0.05, true)); //5% confidence level cut on pull histograms only
 	locReaction->Add_AnalysisAction(new DCutAction_KinFitFOM(locReaction, 5.73303E-7)); // confidence level cut //+/- 5 sigma
 
 	// MASSES, POST-KINFIT

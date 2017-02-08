@@ -42,6 +42,7 @@ class Df250EmulatorAlgorithm_v2:public Df250EmulatorAlgorithm{
         uint16_t THR_DEF;
         uint32_t NPED_DEF;
         uint32_t MAXPED_DEF;
+        uint16_t NSAT_DEF;
         // Set verbosity
         int VERBOSE;
 

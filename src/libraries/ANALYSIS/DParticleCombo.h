@@ -2,6 +2,7 @@
 #define _DParticleCombo_
 
 #include <deque>
+#include <vector>
 #include <set>
 
 #include "JANA/JObject.h"
@@ -76,7 +77,7 @@ class DParticleCombo : public JObject
 		const DReaction* dReaction;
 		const DKinFitResults* dKinFitResults;
 		const DEventRFBunch* dEventRFBunch;
-		deque<const DParticleComboStep*> dParticleComboSteps;
+		vector<const DParticleComboStep*> dParticleComboSteps;
 };
 
 inline void DParticleCombo::Reset(void)

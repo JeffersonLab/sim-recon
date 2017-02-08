@@ -64,6 +64,8 @@ jerror_t JEventProcessor_CDC_Efficiency::init(void)
     // Some information
 
     int Nstraws[28] = {42, 42, 54, 54, 66, 66, 80, 80, 93, 93, 106, 106, 123, 123, 135, 135, 146, 146, 158, 158, 170, 170, 182, 182, 197, 197, 209, 209};
+
+
     double radius[28] = {10.72134, 12.08024, 13.7795, 15.14602, 18.71726, 20.2438, 22.01672, 23.50008, 25.15616, 26.61158, 28.33624, 29.77388, 31.3817, 32.75838, 34.43478, 35.81146, 38.28542, 39.7002, 41.31564, 42.73042, 44.34078, 45.75302, 47.36084, 48.77054, 50.37582, 51.76012, 53.36286, 54.74716};
     double phi[28] = {0, 0.074707844, 0.038166294, 0.096247609, 0.05966371, 0.012001551, 0.040721951, 0.001334527, 0.014963808, 0.048683644, 0.002092645, 0.031681749, 0.040719354, 0.015197341, 0.006786058, 0.030005892, 0.019704045, -0.001782064, -0.001306618, 0.018592421, 0.003686784, 0.022132975, 0.019600866, 0.002343723, 0.021301449, 0.005348855, 0.005997358, 0.021018761};
 
@@ -301,6 +303,9 @@ jerror_t JEventProcessor_CDC_Efficiency::evnt(JEventLoop *loop, uint64_t eventnu
 
 void JEventProcessor_CDC_Efficiency::GitRDun(unsigned int ringNum, const DTrackTimeBased *thisTimeBasedTrack, map<int, map<int, set<const DCDCTrackHit*> > >& locSortedCDCTrackHits)
 {
+
+    int Nstraws_previous[28] = {0,42,84,138,192,258,324,404,484,577,670,776,882,1005,1128,1263,1398,1544,1690,1848,2006,2176,2346,2528,2710,2907,3104,3313};
+
 	vector< DCDCWire * > wireByNumber = cdcwires[ringNum - 1];
 	for (unsigned int wireIndex = 0; wireIndex < wireByNumber.size(); wireIndex++)
 	{
@@ -340,6 +345,8 @@ void JEventProcessor_CDC_Efficiency::GitRDun(unsigned int ringNum, const DTrackT
 		Fill1DHistogram("CDC_Efficiency", "Offline", "Expected Hits Vs p", thisTimeBasedTrack->pmag(), "Expected Hits", 100, 0 , 4.0);
 		Fill1DHistogram("CDC_Efficiency", "Offline", "Expected Hits Vs delta", delta, "Expected Hits", 100, -0.3 , 0.3);
 		Fill2DHistogram("CDC_Efficiency", "Offline", "Expected hits p Vs Theta", locTheta, thisTimeBasedTrack->pmag(), "Expected Hits", 100, 0, 180, 100, 0 , 4.0);
+                //expected hits by straw number
+		Fill1DHistogram("CDC_Efficiency", "Offline", "Expected Hits Vs N", Nstraws_previous[ringNum-1]+wireNum, "Expected Hits", 3522, 0.5, 3522.5);
 
 		// look for a CDC hit match
 		// We need a backwards map from ring/straw to flash channel. Unfortunately there is no easy way
@@ -370,6 +377,11 @@ void JEventProcessor_CDC_Efficiency::GitRDun(unsigned int ringNum, const DTrackT
 			Fill1DHistogram("CDC_Efficiency", "Offline", "Measured Hits Vs p", thisTimeBasedTrack->pmag(), "Measured Hits", 100, 0 , 4.0);
 			Fill1DHistogram("CDC_Efficiency", "Offline", "Measured Hits Vs delta", delta, "Measured Hits", 100, -0.3 , 0.3);
 			Fill2DHistogram("CDC_Efficiency", "Offline", "Measured hits p Vs Theta", locTheta, thisTimeBasedTrack->pmag(), "Measured Hits", 100, 0, 180, 100, 0 , 4.0);
+
+                        //expected hits by straw number
+ 	        	Fill1DHistogram("CDC_Efficiency", "Offline", "Measured Hits Vs N", Nstraws_previous[ringNum-1]+wireNum, "Measured Hits", 3522, 0.5 , 3522.5);
+
+
 		}
 
 		//FILL PROFILES: BASED ON FOUND OR NOT
@@ -379,6 +391,11 @@ void JEventProcessor_CDC_Efficiency::GitRDun(unsigned int ringNum, const DTrackT
 		Fill1DProfile("CDC_Efficiency", "Online", "Efficiency Vs theta", locTheta,foundHit, "Efficiency; Track #Theta [deg]; Efficiency", 100, 0, 180);
 		Fill1DProfile("CDC_Efficiency", "Online", "Efficiency Vs p", thisTimeBasedTrack->pmag(),foundHit, "Efficiency; Momentum [GeV]; Efficiency", 100, 0 , 4.0);
 		Fill1DProfile("CDC_Efficiency", "Online", "Efficiency Vs delta", delta,foundHit, "Efficiency; #delta [cm]; Efficiency", 100, -0.3 , 0.3);
+
+                //expected hits by straw number
+        	Fill1DProfile("CDC_Efficiency", "Online", "Efficiency Vs N", Nstraws_previous[ringNum-1]+wireNum, foundHit,"Efficiency; N; Efficiency", 3522, 0.5 , 3522.5);
+
+
 		if( ChannelFromRingStraw[ringNum - 1][wireNum - 1] != -1)
 		{
 			Fill1DProfile("CDC_Efficiency", "Online", "Efficiency Vs Channel Number", ChannelFromRingStraw[ringNum - 1][wireNum - 1],foundHit, "Efficiency; Channel Number; Efficiency", 73, -0.5 , 72.5);
@@ -443,8 +460,8 @@ void JEventProcessor_CDC_Efficiency::Fill_MeasuredHit(int ringNum, int wireNum, 
 			double dx = thisTimeBasedTrack->rt->Straw_dx(wire, 0.78);
 			ChargeVsTrackLength->Fill(dx, locHit->q);
 
-			Double_t w = cdc_expected_ring[ringNum]->GetBinContent(wireNum, 1) + 1.0;
-			cdc_measured_ring[ringNum]->SetBinContent(wireNum, 1, w);
+			// ?	Double_t w = cdc_expected_ring[ringNum]->GetBinContent(wireNum, 1) + 1.0;
+			// ?    cdc_measured_ring[ringNum]->SetBinContent(wireNum, 1, w);
 		}
 		japp->RootFillUnLock(this); //RELEASE ROOT FILL LOCK
 	}

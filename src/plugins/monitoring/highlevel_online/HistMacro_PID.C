@@ -2,6 +2,12 @@
 // hnamepath: /highlevel/PiPlusPiMinus
 // hnamepath: /highlevel/PiPlusPiMinusPiZero
 // hnamepath: /highlevel/BetaVsP
+//
+// e-mail: davidl@jlab.org
+// e-mail: pmatt@jlab.org
+// e-mail: staylor@jlab.org
+// e-mail: sdobbs@jlab.org
+//
 
 //TwoGammaMass
 //PiPlusPiMinus

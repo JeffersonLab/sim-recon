@@ -19,14 +19,15 @@ class JEventProcessor_TAGM_TW:public jana::JEventProcessor{
 		~JEventProcessor_TAGM_TW();
 		const char* className(void){return "JEventProcessor_TAGM_TW";}
 
-// For the timewalk
-double tw_c0[TAGM_MAX_ROW+1][TAGM_MAX_COLUMN+1];
-double tw_c1[TAGM_MAX_ROW+1][TAGM_MAX_COLUMN+1];
-double tw_c2[TAGM_MAX_ROW+1][TAGM_MAX_COLUMN+1];
-double thresh[TAGM_MAX_ROW+1][TAGM_MAX_COLUMN+1];
-double P_0[TAGM_MAX_ROW+1][TAGM_MAX_COLUMN+1];
 
 	private:
+		// For the timewalk
+		double tw_c0[TAGM_MAX_ROW+1][TAGM_MAX_COLUMN+1];
+		double tw_c1[TAGM_MAX_ROW+1][TAGM_MAX_COLUMN+1];
+		double tw_c2[TAGM_MAX_ROW+1][TAGM_MAX_COLUMN+1];
+		double thresh[TAGM_MAX_ROW+1][TAGM_MAX_COLUMN+1];
+		double P_0[TAGM_MAX_ROW+1][TAGM_MAX_COLUMN+1];
+
 		jerror_t init(void);						///< Called once at program start.
 		jerror_t brun(jana::JEventLoop *eventLoop, int32_t runnumber);	///< Called everytime a new run number is detected.
 		jerror_t evnt(jana::JEventLoop *eventLoop, uint64_t eventnumber);	///< Called every event.

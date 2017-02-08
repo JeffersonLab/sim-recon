@@ -118,7 +118,7 @@ class DCustomAction_${ActionName} : public DAnalysisAction
 	$content .=	"
 
 		void Initialize(JEventLoop* locEventLoop);
-
+		void Reset_NewEvent(void){}; //RESET HISTOGRAM DUPLICATE-CHECK TRACKING HERE!!
 	private:
 ";
 	if(${ActionType} == 0) # reaction-independent

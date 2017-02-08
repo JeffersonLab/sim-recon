@@ -26,6 +26,8 @@ class DEventProcessor_monitoring_hists : public JEventProcessor
 		~DEventProcessor_monitoring_hists(){};
 		const char* className(void){return "DEventProcessor_monitoring_hists";}
 
+		void Read_MemoryUsage(double& vm_usage, double& resident_set);
+
 	private:
 		jerror_t init(void);						///< Called once at program start.
 		jerror_t brun(JEventLoop *eventLoop, int32_t runnumber);	///< Called everytime a new run number is detected.
@@ -47,10 +49,11 @@ class DEventProcessor_monitoring_hists : public JEventProcessor
 		DHistogramAction_DetectorPID dHistogramAction_DetectorPID;
 		DHistogramAction_DetectorMatching dHistogramAction_DetectorMatching;
 		DHistogramAction_Reconstruction dHistogramAction_Reconstruction;
-//		DHistogramAction_ObjectMemory dHistogramAction_ObjectMemory;
+		DHistogramAction_ObjectMemory dHistogramAction_ObjectMemory;
 
 		TH1D* dHist_IsEvent; //counts events
+
+		unsigned int dNumMemoryMonitorEvents;
 };
 
 #endif // _DEventProcessor_monitoring_hists_
-

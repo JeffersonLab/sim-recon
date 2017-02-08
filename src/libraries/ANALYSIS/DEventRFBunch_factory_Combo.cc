@@ -39,13 +39,8 @@ jerror_t DEventRFBunch_factory_Combo::brun(jana::JEventLoop *locEventLoop, int32
 	locEventLoop->GetCalib("PHOTON_BEAM/RF/beam_period", locBeamPeriodVector);
 	dBeamBunchPeriod = locBeamPeriodVector[0];
 
-	DApplication *locApplication = dynamic_cast<DApplication*> (locEventLoop->GetJApplication());
-	if(locApplication == NULL)
-		exit(EX_UNAVAILABLE);
-
+	DApplication *locApplication = dynamic_cast<DApplication*>(locEventLoop->GetJApplication());
 	DGeometry *locGeometry = locApplication->GetDGeometry(runnumber);
-	if(locGeometry == NULL)
-		exit(EX_UNAVAILABLE);
 	locGeometry->GetTargetZ(dTargetCenterZ);
 
 	locEventLoop->GetSingle(dParticleID);
@@ -54,11 +49,6 @@ jerror_t DEventRFBunch_factory_Combo::brun(jana::JEventLoop *locEventLoop, int32
 	dEventRFBunchFactory = static_cast<DEventRFBunch_factory*>(locEventLoop->GetFactory("DEventRFBunch"));
 	vector<const DEventRFBunch*> locEventRFBunches;
 	locEventLoop->Get(locEventRFBunches);
-
-	//be sure that DRFTime_factory::init() and brun() are called
-	dRFTimeFactory = static_cast<DRFTime_factory*>(locEventLoop->GetFactory("DRFTime"));
-	vector<const DRFTime*> locRFTimes;
-	locEventLoop->Get(locRFTimes);
 
 	// Get DReactions:
 	// Get list of factories and find all the ones producing
@@ -132,7 +122,7 @@ jerror_t DEventRFBunch_factory_Combo::brun(jana::JEventLoop *locEventLoop, int32
 			loc1IHist = static_cast<TH1I*>(gDirectory->Get(locHistName.c_str()));
 			if(loc1IHist == NULL)
 			{
-				locHistTitle = locReactionName + string(";#Deltat_{RF - Particle} (ns)");
+				locHistTitle = locReactionName + string(";#Deltat_{Particle - RF} (ns)");
 				loc1IHist = new TH1I(locHistName.c_str(), locHistTitle.c_str(), 600, -3.0, 3.0);
 			}
 			dHistMap_RFParticleDeltaT[locReaction] = loc1IHist;
@@ -353,10 +343,7 @@ jerror_t DEventRFBunch_factory_Combo::evnt(jana::JEventLoop *locEventLoop, uint6
 		Lock_Factory();
 		{
 			for(size_t loc_j = 0; loc_j < locPropagatedTimes.size(); ++loc_j)
-			{
-				double locShiftedRFTime = dRFTimeFactory->Step_TimeToNearInputTime(locNewRFTime, locPropagatedTimes[loc_j]);
-				dHistMap_RFParticleDeltaT[locReaction]->Fill(locShiftedRFTime - locPropagatedTimes[loc_j]);
-			}
+				dHistMap_RFParticleDeltaT[locReaction]->Fill(locPropagatedTimes[loc_j] - locNewRFTime);
 
 			if(locThrownEventRFBunch != NULL)
 			{

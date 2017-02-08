@@ -32,6 +32,7 @@ typedef struct{
 
 extern controlparams_t controlparams_;
 
+int itrack;
 
 const float wire_dead_zone_radius[4]={3.0,3.0,3.9,3.9};
 const float strip_dead_zone_radius[4]={1.3,1.3,1.3,1.3};
@@ -48,7 +49,7 @@ static float WIRE_SPACING          =1.0;
 static float U_OF_WIRE_ZERO        =0;//(-((WIRES_PER_PLANE-1.)*WIRE_SPACING)/2)
 static float STRIPS_PER_PLANE      =192;
 static float STRIP_SPACING         =0.5;
-static float U_OF_STRIP_ZERO	   =0;//  (-((STRIPS_PER_PLANE-1.)*STRIP_SPACING)/2)
+static float U_OF_STRIP_ZERO       =0;//  (-((STRIPS_PER_PLANE-1.)*STRIP_SPACING)/2)
 static float STRIP_GAP             =0.1;
 static int   FDC_MAX_HITS          =1000;
 static float K2                  =1.15;
@@ -195,10 +196,10 @@ double cathode_signal(double t,s_FdcCathodeTruthHits_t* chits){
 
 // Generate hits in two cathode planes flanking the wire plane  
 void AddFDCCathodeHits(int PackNo,float xwire,float avalanche_y,float tdrift,
-		       int n_p,int track,int ipart,int chamber,int module,
-		       int layer, int global_wire_number){
+               int n_p,int track,int ipart,int chamber,int module,
+               int layer, int global_wire_number){
 
-  s_FdcCathodeTruthHits_t* chits;    	  
+  s_FdcCathodeTruthHits_t* chits;          
 
   // Anode charge
   float q_anode;
@@ -242,104 +243,97 @@ void AddFDCCathodeHits(int PackNo,float xwire,float avalanche_y,float tdrift,
 
 #if 0
     half_gap+=(plane==1)?+wire_dz_offset[global_wire_number]:
-	       -wire_dz_offset[global_wire_number];
+           -wire_dz_offset[global_wire_number];
 #endif
 
     for (node=-STRIP_NODES; node<=STRIP_NODES; node++){
       /* Induce charge on the strips according to the Mathieson 
-	 function tuned to results from FDC prototype
+     function tuned to results from FDC prototype
       */
       float lambda1=(((float)node-0.5)*STRIP_SPACING+STRIP_GAP/2.
-		     -delta)/half_gap;
+             -delta)/half_gap;
       float lambda2=(((float)node+0.5)*STRIP_SPACING-STRIP_GAP/2.
-		     -delta)/half_gap;
+             -delta)/half_gap;
       float factor=0.25*M_PI*K2;
       float q = 0.25*q_anode*(tanh(factor*lambda2)-tanh(factor*lambda1));
       
       int strip = strip1+node;
       /* Throw away hits on strips falling within a certain dead-zone
-	 radius */
+     radius */
       float strip_outer_u=cathode_u1
-	+(STRIP_SPACING+STRIP_GAP/2.)*(int)node;
+    +(STRIP_SPACING+STRIP_GAP/2.)*(int)node;
       float cathode_v=-xwire*sin(theta)+avalanche_y*cos(theta);
       float check_radius=sqrt(strip_outer_u*strip_outer_u
-			      +cathode_v*cathode_v);
+                  +cathode_v*cathode_v);
       
       if ((strip > 0) 
-	  && (check_radius>strip_dead_zone_radius[PackNo]) 
-	  && (strip <= STRIPS_PER_PLANE)){
-	int mark = (chamber<<20) + (plane<<10) + strip;
-	void** cathodeTwig = getTwig(&forwardDCTree, mark);
-	if (*cathodeTwig == 0){
-	  s_ForwardDC_t* fdc = *cathodeTwig = make_s_ForwardDC();
-	  s_FdcChambers_t* chambers = make_s_FdcChambers(1);
-	  s_FdcCathodeStrips_t* strips = make_s_FdcCathodeStrips(1);
-	  strips->mult = 1;
-	  strips->in[0].plane = plane;
-	  strips->in[0].strip = strip;
-	  strips->in[0].fdcCathodeTruthHits = chits
-	    = make_s_FdcCathodeTruthHits(MAX_HITS);
-	  chambers->mult = 1;
-	  chambers->in[0].module = module;
-	  chambers->in[0].layer = layer;
-	  chambers->in[0].fdcCathodeStrips = strips;
-	  fdc->fdcChambers = chambers;
-	  stripCount++;
-	}
-	else{
-	  s_ForwardDC_t* fdc = *cathodeTwig;
-	  chits = fdc->fdcChambers->in[0].fdcCathodeStrips
-	    ->in[0].fdcCathodeTruthHits;
-	}
-	
-	int nhit;
-	for (nhit = 0; nhit < chits->mult; nhit++){
-	  // To cut down on the number of output clusters, combine 
-	  // those that would be indistiguishable in time given the 
-	  // expected timing resolution
-	  if (fabs(chits->in[nhit].t - tdrift) <TWO_HIT_RESOL)
-	    {
-	      break;
-	    }
-	}
-	if (nhit < chits->mult)		/* merge with former hit */
-	  {
-	    /* Use the time from the earlier hit but add the charge */
-	    chits->in[nhit].q += q;
-	    if(chits->in[nhit].t>tdrift){
-	      chits->in[nhit].t = tdrift;
-	      chits->in[nhit].itrack = gidGetId(track);
-	      chits->in[nhit].ptype = ipart;
-	    }
-	  }
-	else if (nhit < MAX_HITS){        /* create new hit */
-	  chits->in[nhit].t = tdrift;
-	  chits->in[nhit].q = q;
-	  chits->in[nhit].itrack = gidGetId(track);
-	  chits->in[nhit].ptype = ipart;
-	  chits->mult++;
-	}
-	else{
-	  fprintf(stderr,"HDGeant error in hitForwardDC: ");
-	  fprintf(stderr,"max hit count %d exceeded, truncating!\n", MAX_HITS);
-	}
-	
+      && (check_radius>strip_dead_zone_radius[PackNo]) 
+      && (strip <= STRIPS_PER_PLANE)){
+    int mark = (chamber<<20) + (plane<<10) + strip;
+    void** cathodeTwig = getTwig(&forwardDCTree, mark);
+    if (*cathodeTwig == 0){
+      s_ForwardDC_t* fdc = *cathodeTwig = make_s_ForwardDC();
+      s_FdcChambers_t* chambers = make_s_FdcChambers(1);
+      s_FdcCathodeStrips_t* strips = make_s_FdcCathodeStrips(1);
+      strips->mult = 1;
+      strips->in[0].plane = plane;
+      strips->in[0].strip = strip;
+      strips->in[0].fdcCathodeTruthHits = chits
+        = make_s_FdcCathodeTruthHits(MAX_HITS);
+      chambers->mult = 1;
+      chambers->in[0].module = module;
+      chambers->in[0].layer = layer;
+      chambers->in[0].fdcCathodeStrips = strips;
+      fdc->fdcChambers = chambers;
+      stripCount++;
+    }
+    else{
+      s_ForwardDC_t* fdc = *cathodeTwig;
+      chits = fdc->fdcChambers->in[0].fdcCathodeStrips
+        ->in[0].fdcCathodeTruthHits;
+    }
+    
+    int nhit;
+    for (nhit = 0; nhit < chits->mult; nhit++){
+      // To cut down on the number of output clusters, combine 
+      // those that would be indistiguishable in time given the 
+      // expected timing resolution
+      if (fabs(chits->in[nhit].t - tdrift) <TWO_HIT_RESOL)
+        {
+          break;
+        }
+    }
+    if (nhit < chits->mult)        /* merge with former hit */
+      {
+        /* Use the time from the earlier hit but add the charge */
+        chits->in[nhit].q += q;
+        if(chits->in[nhit].t>tdrift){
+          chits->in[nhit].t = tdrift;
+          chits->in[nhit].itrack = itrack;
+          chits->in[nhit].ptype = ipart;
+        }
+      }
+    else if (nhit < MAX_HITS){        /* create new hit */
+      chits->in[nhit].t = tdrift;
+      chits->in[nhit].q = q;
+      chits->in[nhit].itrack = itrack;
+      chits->in[nhit].ptype = ipart;
+      chits->mult++;
+    }
+    else{
+      fprintf(stderr,"HDGeant error in hitForwardDC: ");
+      fprintf(stderr,"max hit count %d exceeded, truncating!\n", MAX_HITS);
+    }
+    
       }
     } // loop over cathode strips
   } // loop over cathode views
 }
 
 
-
-
-
-
-
-
-
 // Add wire information
 int AddFDCAnodeHit(s_FdcAnodeTruthHits_t* ahits,int layer,int ipart,int track,
-		   float xwire,float xyz[3],float dE,float t,float *tdrift){
+           float xwire,float xyz[3],float dE,float t,float *tdrift){
  
   // Generate 2 random numbers from a Gaussian distribution
   // 
@@ -348,7 +342,7 @@ int AddFDCAnodeHit(s_FdcAnodeTruthHits_t* ahits,int layer,int ipart,int track,
 
   // Only and always use the built-in Geant random generator,
   // otherwise debugging is a problem because sequences are not
-	  // reproducible from a given pair of random seeds. [rtj]
+      // reproducible from a given pair of random seeds. [rtj]
   
   /* rnorml_(rndno,&two); */ {
     float rho,phi1;
@@ -359,7 +353,7 @@ int AddFDCAnodeHit(s_FdcAnodeTruthHits_t* ahits,int layer,int ipart,int track,
     rndno[1] = rho*sin(phi1);
   }
 
-   // Get the magnetic field at this cluster position	    
+   // Get the magnetic field at this cluster position        
   float x[3],B[3];
   transformCoord(xyz,"local",x,"global");
   gufld_db_(x,B);
@@ -398,9 +392,9 @@ int AddFDCAnodeHit(s_FdcAnodeTruthHits_t* ahits,int layer,int ipart,int track,
     return 0;
 
   // Model the drift time and longitudinal diffusion as a function of 
-  // position of the cluster within the cell 	 	  
+  // position of the cluster within the cell            
   float tdrift_unsmeared=1086.0*(1.+0.039*Bmag)*dx2+( 1068.0 )*dz2
-    +dx4*(( -2.675 )/(dz2+0.001)+( 2.4e4 )*dz2);	
+    +dx4*(( -2.675 )/(dz2+0.001)+( 2.4e4 )*dz2);    
   float dt=(( 39.44   )*dx4/(0.5-dz2)+( 56.0  )*dz4/(0.5-dx2)
       +( 0.01566 )*dx4/(dz4+0.002)/(0.251-dx2))*rndno[1];
 
@@ -415,7 +409,7 @@ int AddFDCAnodeHit(s_FdcAnodeTruthHits_t* ahits,int layer,int ipart,int track,
 
   // Avalanche time
   *tdrift=t+tdrift_smeared;
-	  
+      
   // Skip cluster if the time would go beyond readout window
   if( *tdrift > FDC_TIME_WINDOW ) return 0;
 
@@ -425,21 +419,21 @@ int AddFDCAnodeHit(s_FdcAnodeTruthHits_t* ahits,int layer,int ipart,int track,
   for (nhit = 0; nhit < ahits->mult; nhit++)
     {
       if (fabs(ahits->in[nhit].t - *tdrift) < TWO_HIT_RESOL)
-	{
-	  break;
-	}
+    {
+      break;
+    }
     }
   if (nhit < ahits->mult)                 /* merge with former hit */
     {
       /* use the time from the earlier hit but add the energy */
       ahits->in[nhit].dE += dE;
       if(ahits->in[nhit].t>*tdrift){
-	ahits->in[nhit].t = *tdrift;
-	ahits->in[nhit].t_unsmeared=tdrift_unsmeared;
-	ahits->in[nhit].d = sqrt(dx2+dz2);
-	
-	ahits->in[nhit].itrack = gidGetId(track);
-	ahits->in[nhit].ptype = ipart;
+        ahits->in[nhit].t = *tdrift;
+        ahits->in[nhit].t_unsmeared=tdrift_unsmeared;
+        ahits->in[nhit].d = sqrt(dx2+dz2);
+
+        ahits->in[nhit].itrack = itrack;
+        ahits->in[nhit].ptype = ipart;
       }
     
 #ifdef FDC_AVERAGE_TIME_FOR_MERGED_HITS
@@ -448,8 +442,8 @@ int AddFDCAnodeHit(s_FdcAnodeTruthHits_t* ahits,int layer,int ipart,int track,
        * of just keeping the time of the first hit recorded.
        */
         ahits->in[nhit].t = 
-	(ahits->in[nhit].t * ahits->in[nhit].dE + tdrift * dE)
-	/ (ahits->in[nhit].dE += dE);
+            (ahits->in[nhit].t * ahits->in[nhit].dE + tdrift * dE)
+            / (ahits->in[nhit].dE += dE);
 #endif
 
     }
@@ -459,7 +453,7 @@ int AddFDCAnodeHit(s_FdcAnodeTruthHits_t* ahits,int layer,int ipart,int track,
       ahits->in[nhit].t_unsmeared=tdrift_unsmeared;
       ahits->in[nhit].dE = dE;
       ahits->in[nhit].d = sqrt(dx2+dz2);
-      ahits->in[nhit].itrack = gidGetId(track);
+      ahits->in[nhit].itrack = itrack;
       ahits->in[nhit].ptype = ipart;
       ahits->mult++;
     }
@@ -563,11 +557,11 @@ void hitForwardDC (float xin[4], float xout[4],
             DIFFUSION_COEFF  = values[i];
             ncounter++;
           }
-	}
-	U_OF_WIRE_ZERO     = (-((WIRES_PER_PLANE-1.)*WIRE_SPACING)/2);
-	U_OF_STRIP_ZERO	   = (-((STRIPS_PER_PLANE-1.)*STRIP_SPACING)/2);
+    }
+    U_OF_WIRE_ZERO     = (-((WIRES_PER_PLANE-1.)*WIRE_SPACING)/2);
+    U_OF_STRIP_ZERO       = (-((STRIPS_PER_PLANE-1.)*STRIP_SPACING)/2);
   
-	if (ncounter==16){
+    if (ncounter==16){
           printf("FDC: ALL parameters loaded from Data Base\n");
         } else if (ncounter<16){
           printf("FDC: NOT ALL necessary parameters found in Data Base %d out of 16\n",ncounter);
@@ -575,21 +569,21 @@ void hitForwardDC (float xin[4], float xout[4],
           printf("FDC: SOME parameters found more than once in Data Base\n");
         }       
 #if 0
-	{
-	  int num_values=2304*2;
-	  float my_values[2304*2]; 
-	  mystr_t my_strings[2304*2];
-	  status=GetArrayConstants("FDC/fdc_wire_offsets",&num_values,
-				   my_values,my_strings);
-	  if (!status){
-	    int i;
-	    for (i=0;i<num_values;i+=2){
-	      int j=i/2;
-	      wire_dx_offset[j]=my_values[i];
-	      wire_dz_offset[j]=my_values[i+1];
-	    }
-	  }
-	}
+    {
+      int num_values=2304*2;
+      float my_values[2304*2]; 
+      mystr_t my_strings[2304*2];
+      status=GetArrayConstants("FDC/fdc_wire_offsets",&num_values,
+                   my_values,my_strings);
+      if (!status){
+        int i;
+        for (i=0;i<num_values;i+=2){
+          int j=i/2;
+          wire_dx_offset[j]=my_values[i];
+          wire_dz_offset[j]=my_values[i+1];
+        }
+      }
+    }
 #endif
       }
       initializedx = 1 ;
@@ -675,6 +669,8 @@ void hitForwardDC (float xin[4], float xout[4],
   }
 
   /* post the hit to the truth tree */
+
+  int itrack = (stack == 0)? gidGetId(track) : -1;
  
   if (history == 0)
   {
@@ -691,8 +687,8 @@ void hitForwardDC (float xin[4], float xout[4],
       u[1] = xinlocal[0]-xwire;
       dradius = fabs(u[1]*cosalpha-u[0]*sinalpha);
       points->mult = 1;
-        int a = thisInputEvent->physicsEvents->in[0].reactions->in[0].vertices->in[0].products->mult;
-      points->in[0].primary = (stack <= a);
+      int a = thisInputEvent->physicsEvents->in[0].reactions->in[0].vertices->in[0].products->mult;
+      points->in[0].primary = (track <= a && stack == 0);
       points->in[0].track = track;
       points->in[0].x = x[0];
       points->in[0].y = x[1];
@@ -706,7 +702,7 @@ void hitForwardDC (float xin[4], float xout[4],
       points->in[0].dEdx = dEdx;
       points->in[0].ptype = ipart;
       points->in[0].trackID = make_s_TrackID();
-      points->in[0].trackID->itrack = gidGetId(track);
+      points->in[0].trackID->itrack = itrack;
       chambers->mult = 1;
       chambers->in[0].module = module;
       chambers->in[0].layer = layer;
@@ -734,147 +730,147 @@ void hitForwardDC (float xin[4], float xout[4],
 #endif     
 
       if (wire1==wire2){
-	dE=dEsum; 
-	x0[0] = xinlocal[0];
-	x0[1] = xinlocal[1];
-	x0[2] = xinlocal[2]; 
-	x1[0] = xoutlocal[0];
-	x1[1] = xoutlocal[1];
-	x1[2] = xoutlocal[2];
+    dE=dEsum; 
+    x0[0] = xinlocal[0];
+    x0[1] = xinlocal[1];
+    x0[2] = xinlocal[2]; 
+    x1[0] = xoutlocal[0];
+    x1[1] = xoutlocal[1];
+    x1[2] = xoutlocal[2];
       }
       else{
-	x0[0] = xwire-0.5*dwire*WIRE_SPACING;
-	x0[1] = xinlocal[1] + (x0[0]-xinlocal[0]+1e-20)*
-	  (xoutlocal[1]-xinlocal[1])/(xoutlocal[0]-xinlocal[0]+1e-20);
-	x0[2] = xinlocal[2] + (x0[0]-xinlocal[0]+1e-20)*
-	  (xoutlocal[2]-xinlocal[2])/(xoutlocal[0]-xinlocal[0]+1e-20);
-	if (fabs(x0[2]-xoutlocal[2]) > fabs(xinlocal[2]-xoutlocal[2]))
-	  {
-	    x0[0] = xinlocal[0];
-	    x0[1] = xinlocal[1];
-	    x0[2] = xinlocal[2];
-	  }
-	x1[0] = xwire+0.5*dwire*WIRE_SPACING;
-	x1[1] = xinlocal[1] + (x1[0]-xinlocal[0]+1e-20)*
-	  (xoutlocal[1]-xinlocal[1])/(xoutlocal[0]-xinlocal[0]+1e-20);
-	x1[2] = xinlocal[2] + (x1[0]-xinlocal[0]+1e-20)*
-	  (xoutlocal[2]-xinlocal[2])/(xoutlocal[0]-xinlocal[0]+1e-20);
-	if (fabs(x1[2]-xinlocal[2]) > fabs(xoutlocal[2]-xinlocal[2]))
-	  {
-	    x1[0] = xoutlocal[0];
-	    x1[1] = xoutlocal[1];
-	    x1[2] = xoutlocal[2];
-	  }
-	dE = dEsum*(x1[2]-x0[2])/(xoutlocal[2]-xinlocal[2]);
+    x0[0] = xwire-0.5*dwire*WIRE_SPACING;
+    x0[1] = xinlocal[1] + (x0[0]-xinlocal[0]+1e-20)*
+      (xoutlocal[1]-xinlocal[1])/(xoutlocal[0]-xinlocal[0]+1e-20);
+    x0[2] = xinlocal[2] + (x0[0]-xinlocal[0]+1e-20)*
+      (xoutlocal[2]-xinlocal[2])/(xoutlocal[0]-xinlocal[0]+1e-20);
+    if (fabs(x0[2]-xoutlocal[2]) > fabs(xinlocal[2]-xoutlocal[2]))
+      {
+        x0[0] = xinlocal[0];
+        x0[1] = xinlocal[1];
+        x0[2] = xinlocal[2];
+      }
+    x1[0] = xwire+0.5*dwire*WIRE_SPACING;
+    x1[1] = xinlocal[1] + (x1[0]-xinlocal[0]+1e-20)*
+      (xoutlocal[1]-xinlocal[1])/(xoutlocal[0]-xinlocal[0]+1e-20);
+    x1[2] = xinlocal[2] + (x1[0]-xinlocal[0]+1e-20)*
+      (xoutlocal[2]-xinlocal[2])/(xoutlocal[0]-xinlocal[0]+1e-20);
+    if (fabs(x1[2]-xinlocal[2]) > fabs(xoutlocal[2]-xinlocal[2]))
+      {
+        x1[0] = xoutlocal[0];
+        x1[1] = xoutlocal[1];
+        x1[2] = xoutlocal[2];
+      }
+    dE = dEsum*(x1[2]-x0[2])/(xoutlocal[2]-xinlocal[2]);
       }
 
       if (dE > 0){
-	s_FdcAnodeTruthHits_t* ahits;    
+    s_FdcAnodeTruthHits_t* ahits;    
 
-	// Create (or grab) an entry in the tree for the anode wire
-	int mark = (chamber<<20) + (2<<10) + wire;
-	void** twig = getTwig(&forwardDCTree, mark);
-       	
-	if (*twig == 0)
-	  {
-	    s_ForwardDC_t* fdc = *twig = make_s_ForwardDC();
-	    s_FdcChambers_t* chambers = make_s_FdcChambers(1);
-	    s_FdcAnodeWires_t* wires = make_s_FdcAnodeWires(1);
-	    wires->mult = 1;
-	    wires->in[0].wire = wire;
-	    wires->in[0].fdcAnodeTruthHits = ahits = make_s_FdcAnodeTruthHits(MAX_HITS);
-	    chambers->mult = 1;
-	    chambers->in[0].module = module;
-	    chambers->in[0].layer = layer;
-	    chambers->in[0].fdcAnodeWires = wires;
-	    fdc->fdcChambers = chambers;
-	    wireCount++;          
-	  }
-	else
-	  {
-	    s_ForwardDC_t* fdc = *twig;
-	    ahits = fdc->fdcChambers->in[0].fdcAnodeWires->in[0].fdcAnodeTruthHits;
-	  }
-	
-	int two=2;
+    // Create (or grab) an entry in the tree for the anode wire
+    int mark = (chamber<<20) + (2<<10) + wire;
+    void** twig = getTwig(&forwardDCTree, mark);
+           
+    if (*twig == 0)
+      {
+        s_ForwardDC_t* fdc = *twig = make_s_ForwardDC();
+        s_FdcChambers_t* chambers = make_s_FdcChambers(1);
+        s_FdcAnodeWires_t* wires = make_s_FdcAnodeWires(1);
+        wires->mult = 1;
+        wires->in[0].wire = wire;
+        wires->in[0].fdcAnodeTruthHits = ahits = make_s_FdcAnodeTruthHits(MAX_HITS);
+        chambers->mult = 1;
+        chambers->in[0].module = module;
+        chambers->in[0].layer = layer;
+        chambers->in[0].fdcAnodeWires = wires;
+        fdc->fdcChambers = chambers;
+        wireCount++;          
+      }
+    else
+      {
+        s_ForwardDC_t* fdc = *twig;
+        ahits = fdc->fdcChambers->in[0].fdcAnodeWires->in[0].fdcAnodeTruthHits;
+      }
+    
+    int two=2;
       
-	// Find the number of primary ion pairs:
-	/* The total number of ion pairs depends on the energy deposition 
-	   and the effective average energy to produce a pair, w_eff.
-	   On average for each primary ion pair produced there are n_s_per_p 
-	   secondary ion pairs produced. 
-	*/
-	int one=1;
-	// Average number of secondary ion pairs for 40/60 Ar/CO2 mixture
-	float n_s_per_p=1.89; 
-	//Average energy needed to produce an ion pair for 50/50 mixture
-	float w_eff=30.2e-9; // GeV
-	// Average number of primary ion pairs
-	float n_p_mean = dE/w_eff/(1.+n_s_per_p);
-	int n_p; // number of primary ion pairs
-	gpoiss_(&n_p_mean,&n_p,&one);
+    // Find the number of primary ion pairs:
+    /* The total number of ion pairs depends on the energy deposition 
+       and the effective average energy to produce a pair, w_eff.
+       On average for each primary ion pair produced there are n_s_per_p 
+       secondary ion pairs produced. 
+    */
+    int one=1;
+    // Average number of secondary ion pairs for 40/60 Ar/CO2 mixture
+    float n_s_per_p=1.89; 
+    //Average energy needed to produce an ion pair for 50/50 mixture
+    float w_eff=30.2e-9; // GeV
+    // Average number of primary ion pairs
+    float n_p_mean = dE/w_eff/(1.+n_s_per_p);
+    int n_p; // number of primary ion pairs
+    gpoiss_(&n_p_mean,&n_p,&one);
    
-	// Drift time
-	float tdrift=0;
+    // Drift time
+    float tdrift=0;
 
-	if (controlparams_.driftclusters==0){
-	  float zrange=x1[2]-x0[2];
-	  float tany=(x1[1]-x0[1])/zrange;
-	  float tanx=(x1[0]-x0[0])/zrange;
-	  float dz=ANODE_CATHODE_SPACING-dradius*sign*sinalpha;
-#if 0	  
-	  dz+=wire_dz_offset[global_wire_number];
+    if (controlparams_.driftclusters==0){
+      float zrange=x1[2]-x0[2];
+      float tany=(x1[1]-x0[1])/zrange;
+      float tanx=(x1[0]-x0[0])/zrange;
+      float dz=ANODE_CATHODE_SPACING-dradius*sign*sinalpha;
+#if 0      
+      dz+=wire_dz_offset[global_wire_number];
 #endif
-	  xlocal[0]=x0[0]+tanx*dz;
-	  if (fabs(xlocal[0]-xwire)>0.5){
-	    xlocal[0]=x1[0];
-	    xlocal[1]=x1[1];
-	    xlocal[2]=x1[2];
-	  }
-	  else{
-	    xlocal[1]=x0[1]+tany*dz;
-	    xlocal[2]=x0[2]+dz;
-	  }
-	  
-	  /* If the cluster position is within the wire-deadened region of the 
-	     detector, skip this cluster 
-	  */
-	  if (sqrt(xlocal[0]*xlocal[0]+xlocal[1]*xlocal[1])
-	      >=wire_dead_zone_radius[PackNo]){	 
-	    if (AddFDCAnodeHit(ahits,layer,ipart,track,xwire,xlocal,dE,t,
-			       &tdrift)){
-	      AddFDCCathodeHits(PackNo,xwire,xlocal[1],tdrift,n_p,track,ipart,
-				chamber,module,layer,global_wire_number);
-	    }
-	  
-	  }
-	}
-	else{
-	  // Loop over the number of primary ion pairs
-	  int n;
-	  for (n=0;n<n_p;n++){
-	    // Generate a cluster at a random position along the path with cell
-	    float rndno[2];
-	    grndm_(rndno,&two);
-	    float dzrand=(x1[2]-x0[2])*rndno[0];
-	    // Position of the cluster
-	    xlocal[0]=x0[0]+(x1[0]-x0[0])*rndno[0];
-	    xlocal[1]=x0[1]+(x1[1]-x0[1])*rndno[0];
-	    xlocal[2]=x0[2]+dzrand;
-	    /* If the cluster position is within the wire-deadened region of the 
-	       detector, skip this cluster 
-	    */
-	    if (sqrt(xlocal[0]*xlocal[0]+xlocal[1]*xlocal[1])
-		>=wire_dead_zone_radius[PackNo]){	   
-	      if (AddFDCAnodeHit(ahits,layer,ipart,track,xwire,xlocal,dE,t,
-				 &tdrift)){
-		AddFDCCathodeHits(PackNo,xwire,xlocal[1],tdrift,n_p,track,ipart,
-				  chamber,module,layer,global_wire_number);
-	      }
-	    }
+      xlocal[0]=x0[0]+tanx*dz;
+      if (fabs(xlocal[0]-xwire)>0.5){
+        xlocal[0]=x1[0];
+        xlocal[1]=x1[1];
+        xlocal[2]=x1[2];
+      }
+      else{
+        xlocal[1]=x0[1]+tany*dz;
+        xlocal[2]=x0[2]+dz;
+      }
+      
+      /* If the cluster position is within the wire-deadened region of the 
+         detector, skip this cluster 
+      */
+      if (sqrt(xlocal[0]*xlocal[0]+xlocal[1]*xlocal[1])
+          >=wire_dead_zone_radius[PackNo]){     
+        if (AddFDCAnodeHit(ahits,layer,ipart,track,xwire,xlocal,dE,t,
+                   &tdrift)){
+          AddFDCCathodeHits(PackNo,xwire,xlocal[1],tdrift,n_p,track,ipart,
+                chamber,module,layer,global_wire_number);
+        }
+      
+      }
+    }
+    else{
+      // Loop over the number of primary ion pairs
+      int n;
+      for (n=0;n<n_p;n++){
+        // Generate a cluster at a random position along the path with cell
+        float rndno[2];
+        grndm_(rndno,&two);
+        float dzrand=(x1[2]-x0[2])*rndno[0];
+        // Position of the cluster
+        xlocal[0]=x0[0]+(x1[0]-x0[0])*rndno[0];
+        xlocal[1]=x0[1]+(x1[1]-x0[1])*rndno[0];
+        xlocal[2]=x0[2]+dzrand;
+        /* If the cluster position is within the wire-deadened region of the 
+           detector, skip this cluster 
+        */
+        if (sqrt(xlocal[0]*xlocal[0]+xlocal[1]*xlocal[1])
+            >=wire_dead_zone_radius[PackNo]){       
+          if (AddFDCAnodeHit(ahits,layer,ipart,track,xwire,xlocal,dE,t,
+                 &tdrift)){
+        AddFDCCathodeHits(PackNo,xwire,xlocal[1],tdrift,n_p,track,ipart,
+                  chamber,module,layer,global_wire_number);
+          }
+        }
 
-	  } // loop over primary ion pairs 
-	}
+      } // loop over primary ion pairs 
+    }
       } // Check for non-zero energy
 
       sign*=-1; // for dealing with the y-position for tracks crossing two cells
@@ -925,193 +921,193 @@ s_ForwardDC_t* pickForwardDC ()
       for (wire=0; wire < wires->mult; wire++)
       {
          s_FdcAnodeTruthHits_t* ahits = wires->in[wire].fdcAnodeTruthHits;
-	   
-	 // Sort the clusters by time
-	 qsort(ahits->in,ahits->mult,sizeof(s_FdcAnodeTruthHit_t),
-	       (compfn)fdc_anode_cluster_sort);
-	 
-	 int i,iok=0;
+       
+     // Sort the clusters by time
+     qsort(ahits->in,ahits->mult,sizeof(s_FdcAnodeTruthHit_t),
+           (compfn)fdc_anode_cluster_sort);
+     
+     int i,iok=0;
 
-	 if (controlparams_.driftclusters==0){
-	   for (iok=i=0; i < ahits->mult; i++)
-	     {
-	       if (ahits->in[i].dE >= THRESH_KEV/1e6)
-		 {
+     if (controlparams_.driftclusters==0){
+       for (iok=i=0; i < ahits->mult; i++)
+         {
+           if (ahits->in[i].dE > THRESH_KEV/1e6)
+         {
                if (iok < i)
-		 {
-		   ahits->in[iok] = ahits->in[i];
-		 }
+         {
+           ahits->in[iok] = ahits->in[i];
+         }
                ++iok;
                ++mok;
-		 }
-	     }
-	 }
-	 else{  // Simulate clusters within the cell
-	
-	   // printf("-------------\n");
-	  
-	   
-	   // Temporary histogram in 1 ns bins to store waveform data
-	   int num_samples=(int)FDC_TIME_WINDOW;
-	   float *samples=(float *)malloc(num_samples*sizeof(float));
-	   for (i=0;i<num_samples;i++){
-	     samples[i]=wire_signal((float)i,ahits);
-	     //printf("%f %f\n",(float)i,samples[i]);
-	   }
-	   
-	   int returned_to_baseline=0;
-	   float q=0;
-	   for (i=0;i<num_samples;i++){
-	     if (samples[i]>=THRESH_ANODE){
-	       if (returned_to_baseline==0){
-		 ahits->in[iok].itrack = ahits->in[0].itrack;
-		 ahits->in[iok].ptype = ahits->in[0].ptype;
-		 
-		 // Do an interpolation to find the time at which the threshold
-		 // was crossed.
-		 float t_array[4];
-		 int k;
-		 float my_t,my_terr;
-		 for (k=0;k<4;k++) t_array[k]=i-1+k;
-		 polint(&samples[i-1],t_array,4,THRESH_ANODE,&my_t,&my_terr);
-		 ahits->in[iok].t=my_t;
-		 
-		 returned_to_baseline=1;
-		 iok++;
-		 mok++;
-	       }
-	       q+=samples[i];
-	     }
-	     if (returned_to_baseline 
-		 && (samples[i]<THRESH_ANODE)){
-	       returned_to_baseline=0;   
-	     }
-	   }
-	   free(samples);
-	 } // Simulation of clusters within cell
+         }
+         }
+     }
+     else{  // Simulate clusters within the cell
+    
+       // printf("-------------\n");
+      
+       
+       // Temporary histogram in 1 ns bins to store waveform data
+       int num_samples=(int)FDC_TIME_WINDOW;
+       float *samples=(float *)malloc(num_samples*sizeof(float));
+       for (i=0;i<num_samples;i++){
+         samples[i]=wire_signal((float)i,ahits);
+         //printf("%f %f\n",(float)i,samples[i]);
+       }
+       
+       int returned_to_baseline=0;
+       float q=0;
+       for (i=0;i<num_samples;i++){
+         if (samples[i] > THRESH_ANODE){
+           if (returned_to_baseline==0){
+         ahits->in[iok].itrack = ahits->in[0].itrack;
+         ahits->in[iok].ptype = ahits->in[0].ptype;
+         
+         // Do an interpolation to find the time at which the threshold
+         // was crossed.
+         float t_array[4];
+         int k;
+         float my_t,my_terr;
+         for (k=0;k<4;k++) t_array[k]=i-1+k;
+         polint(&samples[i-1],t_array,4,THRESH_ANODE,&my_t,&my_terr);
+         ahits->in[iok].t=my_t;
+         
+         returned_to_baseline=1;
+         iok++;
+         mok++;
+           }
+           q+=samples[i];
+         }
+         if (returned_to_baseline 
+         && (samples[i] <= THRESH_ANODE)){
+           returned_to_baseline=0;   
+         }
+       }
+       free(samples);
+     } // Simulation of clusters within cell
 
-	 if (iok)
-	   {
-	     ahits->mult = iok;
-	   }
-	 else if (ahits != HDDM_NULL)
-	   {
-	     FREE(ahits);
-	   }
+     if (iok)
+       {
+         ahits->mult = iok;
+       }
+     else if (ahits != HDDM_NULL)
+       {
+         FREE(ahits);
+       }
       } 
       if ((wires != HDDM_NULL) && (mok == 0))
-	{
-	  FREE(wires);
-	  wires = HDDM_NULL;
-	}
+    {
+      FREE(wires);
+      wires = HDDM_NULL;
+    }
       
       
       mok = 0;
       for (strip=0; strip < strips->mult; strip++)
-	{
-	  s_FdcCathodeTruthHits_t* chits = strips->in[strip].fdcCathodeTruthHits;
-	  
-	  // Sort the clusters by time
-	  qsort(chits->in,chits->mult,sizeof(s_FdcCathodeTruthHit_t),
-		  (compfn)fdc_cathode_cluster_sort);
-	  
-	  int i,iok=0;
-	  
-	  if (controlparams_.driftclusters==0){
-	    for (iok=i=0; i < chits->mult; i++)
-	      {
-		if (chits->in[i].q > 0.)
-		  {
-		    if (iok < i)
-		      {
-			chits->in[iok] = chits->in[i];
-		      }
-		    ++iok;
-		    ++mok;
-		  }
-	      }	    
-	    
-	  }
-	  else{
-	   
-	    // Temporary histogram in 1 ns bins to store waveform data
-	    int num_samples=(int)(FDC_TIME_WINDOW);
-	    float *samples=(float *)malloc(num_samples*sizeof(float));
-	    for (i=0;i<num_samples;i++){
-	      samples[i]=cathode_signal((float)i,chits);
-		 //printf("t %f V %f\n",(float)i,samples[i]);
-	    }	 
-	    
-	    int threshold_toggle=0;
-	    int istart=0;
-	    int FADC_BIN_SIZE=1;
-	    for (i=0;i<num_samples;i+=FADC_BIN_SIZE){
-	      if (samples[i]>=THRESH_STRIPS){
-		if (threshold_toggle==0){
-		  chits->in[iok].itrack = chits->in[0].itrack;
-		  chits->in[iok].ptype = chits->in[0].ptype;
-		  chits->in[iok].t=(float) i;
-		  //chits->in[iok].q=samples[i];
-		  istart=(i > 0)? i-1 : 0;
-		  threshold_toggle=1;
-		  //iok++;
-		  //mok++;
-		}
-	      }
-	      if (threshold_toggle && 
-		  (samples[i]<THRESH_STRIPS)){
-		int j;
-		// Find the first peak
-		for (j=istart+1;j<i-1;j++){
-		  if (samples[j]>samples[j-1] && samples[j]>samples[j+1]){
-		    chits->in[iok].q=samples[j];
-		    break;
-		  }
-		} 
-		threshold_toggle=0; 
-		iok++;
-		mok++;
-		//break;
-	      }
-	    }
-	    i=num_samples-1;
-	    if (samples[i]>=THRESH_STRIPS&&threshold_toggle){
-	      int j;
-	      for (j=istart+1;j<i-1;j++){
-		if (samples[j]>samples[j-1] && samples[j]>samples[j+1]){
-		  chits->in[iok].q=samples[j];
-		  break;
-		}
-	      }
-	    }
-	    
-	    free(samples);
-	  }// Simulate clusters within cell
-	
-	  if (iok)
-	    {
-	      chits->mult = iok;
-	      //chits->mult=1;
-	    }
-	  else if (chits != HDDM_NULL)
-	    {
-	      FREE(chits);
-	    }
-	  
-	}
+    {
+      s_FdcCathodeTruthHits_t* chits = strips->in[strip].fdcCathodeTruthHits;
+      
+      // Sort the clusters by time
+      qsort(chits->in,chits->mult,sizeof(s_FdcCathodeTruthHit_t),
+          (compfn)fdc_cathode_cluster_sort);
+      
+      int i,iok=0;
+      
+      if (controlparams_.driftclusters==0){
+        for (iok=i=0; i < chits->mult; i++)
+          {
+        if (chits->in[i].q > 0.)
+          {
+            if (iok < i)
+              {
+            chits->in[iok] = chits->in[i];
+              }
+            ++iok;
+            ++mok;
+          }
+          }        
+        
+      }
+      else{
+       
+        // Temporary histogram in 1 ns bins to store waveform data
+        int num_samples=(int)(FDC_TIME_WINDOW);
+        float *samples=(float *)malloc(num_samples*sizeof(float));
+        for (i=0;i<num_samples;i++){
+          samples[i]=cathode_signal((float)i,chits);
+         //printf("t %f V %f\n",(float)i,samples[i]);
+        }     
+        
+        int threshold_toggle=0;
+        int istart=0;
+        int FADC_BIN_SIZE=1;
+        for (i=0;i<num_samples;i+=FADC_BIN_SIZE){
+          if (samples[i] > THRESH_STRIPS){
+        if (threshold_toggle==0){
+          chits->in[iok].itrack = chits->in[0].itrack;
+          chits->in[iok].ptype = chits->in[0].ptype;
+          chits->in[iok].t=(float) i;
+          //chits->in[iok].q=samples[i];
+          istart=(i > 0)? i-1 : 0;
+          threshold_toggle=1;
+          //iok++;
+          //mok++;
+        }
+          }
+          if (threshold_toggle && 
+          (samples[i] <= THRESH_STRIPS)){
+        int j;
+        // Find the first peak
+        for (j=istart+1;j<i-1;j++){
+          if (samples[j]>samples[j-1] && samples[j]>samples[j+1]){
+            chits->in[iok].q=samples[j];
+            break;
+          }
+        } 
+        threshold_toggle=0; 
+        iok++;
+        mok++;
+        //break;
+          }
+        }
+        i=num_samples-1;
+        if (samples[i] > THRESH_STRIPS&&threshold_toggle){
+          int j;
+          for (j=istart+1;j<i-1;j++){
+        if (samples[j]>samples[j-1] && samples[j]>samples[j+1]){
+          chits->in[iok].q=samples[j];
+          break;
+        }
+          }
+        }
+        
+        free(samples);
+      }// Simulate clusters within cell
+    
+      if (iok)
+        {
+          chits->mult = iok;
+          //chits->mult=1;
+        }
+      else if (chits != HDDM_NULL)
+        {
+          FREE(chits);
+        }
+      
+    }
       if ((strips != HDDM_NULL) && (mok == 0))
-	{
-	  FREE(strips);
-	  strips = HDDM_NULL;
-	}
+    {
+      FREE(strips);
+      strips = HDDM_NULL;
+    }
       
       if ((wires != HDDM_NULL) || 
           (strips != HDDM_NULL) ||
           (points != HDDM_NULL))
-	{
-	  if ((m == 0) || (module > box->fdcChambers->in[m-1].module)
+    {
+      if ((m == 0) || (module > box->fdcChambers->in[m-1].module)
                      || (layer  > box->fdcChambers->in[m-1].layer))
-	    {
+        {
           box->fdcChambers->in[m] = chambers->in[0];
 
           box->fdcChambers->in[m].fdcCathodeStrips = 
@@ -1146,8 +1142,20 @@ s_ForwardDC_t* pickForwardDC ()
         }
         for (point=0; point < points->mult; ++point)
         {
-           int mm = box->fdcChambers->in[m].fdcTruthPoints->mult++;
+           int track = points->in[point].track;
+           double t = points->in[point].t;
+           int mm = box->fdcChambers->in[m].fdcTruthPoints->mult;
+           if (points->in[point].trackID->itrack < 0 ||
+              (m > 0 &&  box->fdcChambers->in[m].fdcTruthPoints
+                                         ->in[mm-1].track == track &&
+               fabs(box->fdcChambers->in[m].fdcTruthPoints
+                                    ->in[mm-1].t - t) < 0.5))
+           {
+              FREE(points->in[point].trackID);
+              continue;
+           }
            box->fdcChambers->in[m].fdcTruthPoints->in[mm] = points->in[point];
+           box->fdcChambers->in[m].fdcTruthPoints->mult++;
         }
         if (points != HDDM_NULL)
         {

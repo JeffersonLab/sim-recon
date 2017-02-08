@@ -26,6 +26,9 @@ extern "C"
 //------------------
 jerror_t DEventProcessor_monitoring_hists::init(void)
 {
+	dNumMemoryMonitorEvents = 0;
+	gPARMS->SetDefaultParameter("MONITOR:MEMORY_EVENTS", dNumMemoryMonitorEvents);
+
 	string locOutputFileName = "hd_root.root";
 	if(gPARMS->Exists("OUTPUT_FILENAME"))
 		gPARMS->GetParameter("OUTPUT_FILENAME", locOutputFileName);
@@ -46,6 +49,7 @@ jerror_t DEventProcessor_monitoring_hists::init(void)
 	dHist_IsEvent = new TH1D("IsEvent", "Is the event an event?", 2, -0.5, 1.5);
 	dHist_IsEvent->GetXaxis()->SetBinLabel(1, "False");
 	dHist_IsEvent->GetXaxis()->SetBinLabel(2, "True");
+
 	gDirectory->cd("..");
 
 	return NOERROR;
@@ -73,8 +77,11 @@ jerror_t DEventProcessor_monitoring_hists::brun(JEventLoop *locEventLoop, int32_
 	dHistogramAction_DetectedParticleKinematics.Initialize(locEventLoop);
 	dHistogramAction_TrackShowerErrors.Initialize(locEventLoop);
 
-//	dHistogramAction_ObjectMemory.dMaxNumEvents = 200000;
-//	dHistogramAction_ObjectMemory.Initialize(locEventLoop);
+	if(dNumMemoryMonitorEvents > 0)
+	{
+		dHistogramAction_ObjectMemory.dMaxNumEvents = dNumMemoryMonitorEvents;
+		dHistogramAction_ObjectMemory.Initialize(locEventLoop);
+	}
 
 	if(!locMCThrowns.empty())
 	{
@@ -122,7 +129,8 @@ jerror_t DEventProcessor_monitoring_hists::evnt(JEventLoop *locEventLoop, uint64
 	dHistogramAction_TrackMultiplicity(locEventLoop);
 	dHistogramAction_DetectedParticleKinematics(locEventLoop);
 	dHistogramAction_TrackShowerErrors(locEventLoop);
-	//	dHistogramAction_ObjectMemory(locEventLoop);
+	if(dNumMemoryMonitorEvents > 0)
+		dHistogramAction_ObjectMemory(locEventLoop);
 
 	if(!locMCThrowns.empty())
 	{
@@ -131,7 +139,7 @@ jerror_t DEventProcessor_monitoring_hists::evnt(JEventLoop *locEventLoop, uint64
 		dHistogramAction_GenReconTrackComparison(locEventLoop);
 	}
 
-  return NOERROR;
+	return NOERROR;
 }
 
 //------------------

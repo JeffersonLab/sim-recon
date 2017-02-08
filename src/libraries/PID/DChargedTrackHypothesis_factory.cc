@@ -85,25 +85,29 @@ jerror_t DChargedTrackHypothesis_factory::evnt(jana::JEventLoop* locEventLoop, u
 DChargedTrackHypothesis* DChargedTrackHypothesis_factory::Create_ChargedTrackHypothesis(JEventLoop* locEventLoop, const DTrackTimeBased* locTrackTimeBased, const DDetectorMatches* locDetectorMatches, const DEventRFBunch* locEventRFBunch) const
 {
 	DChargedTrackHypothesis* locChargedTrackHypothesis = new DChargedTrackHypothesis();
-	locChargedTrackHypothesis->AddAssociatedObject(locTrackTimeBased);
-	locChargedTrackHypothesis->candidateid = locTrackTimeBased->candidateid;
-
-	// Chi square and degree-of-freedom data from the track fit
-	locChargedTrackHypothesis->dChiSq_Track = locTrackTimeBased->chisq;
-	locChargedTrackHypothesis->dNDF_Track = locTrackTimeBased->Ndof;
 
 	//Set DKinematicData Members
 	DKinematicData *locKinematicData = locChargedTrackHypothesis;
 	*locKinematicData = *(static_cast<const DKinematicData*>(locTrackTimeBased));
 
-	DMatrixDSym locCovarianceMatrix = locChargedTrackHypothesis->errorMatrix();
+	// Add associated object
+	locChargedTrackHypothesis->AddAssociatedObject(locTrackTimeBased);
+
+	// Set tracking info
+	locChargedTrackHypothesis->candidateid = locTrackTimeBased->candidateid;
+	locChargedTrackHypothesis->dChiSq_Track = locTrackTimeBased->chisq;
+	locChargedTrackHypothesis->dNDF_Track = locTrackTimeBased->Ndof;
+
+	uint64_t locEventNumber = locEventLoop->GetJEvent().GetEventNumber();
+	TMatrixFSym* locCovarianceMatrix = (dynamic_cast<DApplication*>(japp))->Get_CovarianceMatrixResource(7, locEventNumber);
+	*locCovarianceMatrix = *(locChargedTrackHypothesis->errorMatrix());
 
 	// CDC/FDC: Default if no other timing info
 	locChargedTrackHypothesis->setTime(locTrackTimeBased->t0());
 	locChargedTrackHypothesis->setT0(numeric_limits<double>::quiet_NaN(), numeric_limits<double>::quiet_NaN(), SYS_NULL);
 	locChargedTrackHypothesis->setT1(numeric_limits<double>::quiet_NaN(), numeric_limits<double>::quiet_NaN(), SYS_NULL);
 	locChargedTrackHypothesis->setPathLength(numeric_limits<double>::quiet_NaN(), 0.0);
-	locCovarianceMatrix(6, 6) = locTrackTimeBased->t0_err()*locTrackTimeBased->t0_err();
+	(*locCovarianceMatrix)(6, 6) = locTrackTimeBased->t0_err()*locTrackTimeBased->t0_err();
 
 	// RF Time
 	if(locEventRFBunch->dTimeSource != SYS_NULL)
@@ -124,8 +128,8 @@ DChargedTrackHypothesis* DChargedTrackHypothesis_factory::Create_ChargedTrackHyp
 //		double locPropagatedTimeUncertainty = sqrt(locSCHitMatchParams.dHitTimeVariance + locSCHitMatchParams.dFlightTimeVariance);
 		double locPropagatedTimeUncertainty = 0.3;
 //		double locFlightTimePCorrelation = locDetectorMatches->Get_FlightTimePCorrelation(locTrackTimeBased, SYS_START); //uncomment when ready!!
-//		Add_TimeToTrackingMatrix(locChargedTrackHypothesis, locSCHitMatchParams.dFlightTimeVariance, locSCHitMatchParams.dHitTimeVariance, locFlightTimePCorrelation); //uncomment when ready!!
-		locCovarianceMatrix(6, 6) = 0.3*0.3+locSCHitMatchParams.dFlightTimeVariance;
+//		Add_TimeToTrackingMatrix(locChargedTrackHypothesis, locCovarianceMatrix, locSCHitMatchParams.dFlightTimeVariance, locSCHitMatchParams.dHitTimeVariance, locFlightTimePCorrelation); //uncomment when ready!!
+		(*locCovarianceMatrix)(6, 6) = 0.3*0.3+locSCHitMatchParams.dFlightTimeVariance;
 
 		if(locEventRFBunch->dTimeSource == SYS_NULL)
 			locChargedTrackHypothesis->setT0(locPropagatedTime, locPropagatedTimeUncertainty, SYS_START); //update when ready
@@ -147,10 +151,10 @@ DChargedTrackHypothesis* DChargedTrackHypothesis_factory::Create_ChargedTrackHyp
 		locChargedTrackHypothesis->setTime(locBCALShower->t - locBCALShowerMatchParams.dFlightTime);
 		locChargedTrackHypothesis->setPathLength(locBCALShowerMatchParams.dPathLength, 0.0);
 //		double locFlightTimePCorrelation = locDetectorMatches->Get_FlightTimePCorrelation(locTrackTimeBased, SYS_BCAL); //uncomment when ready!!
-//		Add_TimeToTrackingMatrix(locChargedTrackHypothesis, locBCALShowerMatchParams.dFlightTimeVariance, locBCALShower->tErr()*locBCALShower->tErr(), locFlightTimePCorrelation); //uncomment when ready!!
-		//locCovarianceMatrix(6, 6) = 0.00255*pow(locChargedTrackHypothesis->momentum().Mag(), -2.52) + 0.220; //delete when ready!!
-		//locCovarianceMatrix(6, 6) *= locCovarianceMatrix(6, 6); //delete when ready!!
-		locCovarianceMatrix(6,6)=0.3*0.3+locBCALShowerMatchParams.dFlightTimeVariance;
+//		Add_TimeToTrackingMatrix(locChargedTrackHypothesis, locCovarianceMatrix, locBCALShowerMatchParams.dFlightTimeVariance, locBCALShower->tErr()*locBCALShower->tErr(), locFlightTimePCorrelation); //uncomment when ready!!
+		//(*locCovarianceMatrix)(6, 6) = 0.00255*pow(locChargedTrackHypothesis->momentum().Mag(), -2.52) + 0.220; //delete when ready!!
+		//(*locCovarianceMatrix)(6, 6) *= locCovarianceMatrix(6, 6); //delete when ready!!
+		(*locCovarianceMatrix)(6 , 6) = 0.3*0.3+locBCALShowerMatchParams.dFlightTimeVariance;
 
 		//add associated objects
 		vector<DBCALShowerMatchParams> locShowerMatchParams;
@@ -171,8 +175,8 @@ DChargedTrackHypothesis* DChargedTrackHypothesis_factory::Create_ChargedTrackHyp
 
 			locChargedTrackHypothesis->setPathLength(locTOFHitMatchParams.dPathLength, 0.0);
 //			double locFlightTimePCorrelation = locDetectorMatches->Get_FlightTimePCorrelation(locTrackTimeBased, SYS_TOF); //uncomment when ready!!
-//			Add_TimeToTrackingMatrix(locChargedTrackHypothesis, locTOFHitMatchParams.dFlightTimeVariance, locTOFHitMatchParams.dHitTimeVariance, locFlightTimePCorrelation); //uncomment when ready!!
-			locCovarianceMatrix(6, 6) = 0.1*0.1+locTOFHitMatchParams.dFlightTimeVariance; 
+//			Add_TimeToTrackingMatrix(locChargedTrackHypothesis, locCovarianceMatrix, locTOFHitMatchParams.dFlightTimeVariance, locTOFHitMatchParams.dHitTimeVariance, locFlightTimePCorrelation); //uncomment when ready!!
+			(*locCovarianceMatrix)(6, 6) = 0.1*0.1+locTOFHitMatchParams.dFlightTimeVariance;
 		}
 
 		//add associated objects
@@ -195,8 +199,8 @@ DChargedTrackHypothesis* DChargedTrackHypothesis_factory::Create_ChargedTrackHyp
 			locChargedTrackHypothesis->setTime(locFCALShower->getTime() - locFCALShowerMatchParams.dFlightTime);
 			locChargedTrackHypothesis->setPathLength(locFCALShowerMatchParams.dPathLength, 0.0);
 //			double locFlightTimePCorrelation = locDetectorMatches->Get_FlightTimePCorrelation(locTrackTimeBased, SYS_FCAL); //uncomment when ready!!
-//			Add_TimeToTrackingMatrix(locChargedTrackHypothesis, locFCALShowerMatchParams.dFlightTimeVariance, locFCALShower->dCovarianceMatrix(4, 4), locFlightTimePCorrelation); //uncomment when ready!!
-			locCovarianceMatrix(6, 6) = 0.5*0.5+locFCALShowerMatchParams.dFlightTimeVariance;
+//			Add_TimeToTrackingMatrix(locChargedTrackHypothesis, locCovarianceMatrix, locFCALShowerMatchParams.dFlightTimeVariance, locFCALShower->dCovarianceMatrix(4, 4), locFlightTimePCorrelation); //uncomment when ready!!
+			(*locCovarianceMatrix)(6, 6) = 0.5*0.5+locFCALShowerMatchParams.dFlightTimeVariance;
 		}
 
 		//add associated objects
@@ -214,23 +218,22 @@ DChargedTrackHypothesis* DChargedTrackHypothesis_factory::Create_ChargedTrackHyp
 	return locChargedTrackHypothesis;
 }
 
-void DChargedTrackHypothesis_factory::Add_TimeToTrackingMatrix(DChargedTrackHypothesis* locChargedTrackHypothesis, double locFlightTimeVariance, double locHitTimeVariance, double locFlightTimePCorrelation) const
+void DChargedTrackHypothesis_factory::Add_TimeToTrackingMatrix(DChargedTrackHypothesis* locChargedTrackHypothesis, TMatrixFSym* locCovarianceMatrix, double locFlightTimeVariance, double locHitTimeVariance, double locFlightTimePCorrelation) const
 {
-	DMatrixDSym locCovarianceMatrix = locChargedTrackHypothesis->errorMatrix();
 	DVector3 locMomentum = locChargedTrackHypothesis->momentum();
 
 	//extract momentum 3x3 portion of covariance matrix
-	DMatrixDSym locCov_PxPyPz(3);
+	TMatrixFSym locCov_PxPyPz(3);
 	for(size_t loc_i = 0; loc_i < 3; ++loc_i)
 	{
 		for(size_t loc_j = 0; loc_j < 3; ++loc_j)
-			locCov_PxPyPz(loc_i, loc_j) = locCovarianceMatrix(loc_i, loc_j);
+			locCov_PxPyPz(loc_i, loc_j) = (*locCovarianceMatrix)(loc_i, loc_j);
 	}
 
 	//convert px/py/pz to p/theta/phi
 	double locPMag = locMomentum.Mag();
 	double locPPerpSq = locMomentum.Px()*locMomentum.Px() + locMomentum.Py()*locMomentum.Py();
-	DMatrix locJ_CartSpher(3, 3); //jacobian
+	TMatrix locJ_CartSpher(3, 3); //jacobian
 	locJ_CartSpher(0, 0) = locMomentum.Px()/locPMag;
 	locJ_CartSpher(0, 1) = locMomentum.Py()/locPMag;
 	locJ_CartSpher(0, 2) = locMomentum.Pz()/locPMag;
@@ -240,10 +243,10 @@ void DChargedTrackHypothesis_factory::Add_TimeToTrackingMatrix(DChargedTrackHypo
 	locJ_CartSpher(2, 0) = -1.0*locMomentum.Py()/locPPerpSq;
 	locJ_CartSpher(2, 1) = locMomentum.Px()/locPPerpSq;
 	locJ_CartSpher(2, 2) = 0.0;
-	DMatrixDSym locCov_PThetaPhi = locCov_PxPyPz.Similarity(locJ_CartSpher);
+	TMatrixFSym locCov_PThetaPhi = locCov_PxPyPz.Similarity(locJ_CartSpher);
 
 	//add flight time and hit time to p/theta/phi covariance matrix
-	DMatrixDSym locCov_PThetaPhiFTimeHTime(5);
+	TMatrixFSym locCov_PThetaPhiFTimeHTime(5);
 	double locSigmaPMag = locCov_PThetaPhi(0, 0);
 	for(size_t loc_i = 0; loc_i < 3; ++loc_i)
 	{
@@ -270,7 +273,7 @@ void DChargedTrackHypothesis_factory::Add_TimeToTrackingMatrix(DChargedTrackHypo
 	locCov_PThetaPhiFTimeHTime(4, 4) = locHitTimeVariance;
 
 	//convert p/theta/phi/flight-time/hit-time to px/py/pz/t
-	DMatrix locJ_SpherCart(4, 5); //jacobian
+	TMatrix locJ_SpherCart(4, 5); //jacobian
 	double locTheta = locMomentum.Theta();
 	locJ_SpherCart(0, 0) = locMomentum.Px()/locPMag;
 	locJ_SpherCart(0, 1) = locMomentum.Px()/tan(locTheta);
@@ -292,40 +295,20 @@ void DChargedTrackHypothesis_factory::Add_TimeToTrackingMatrix(DChargedTrackHypo
 	locJ_SpherCart(3, 2) = 0.0;
 	locJ_SpherCart(3, 3) = -1.0;
 	locJ_SpherCart(3, 4) = 1.0;
-	DMatrixDSym locCov_PxPyPzT = locCov_PThetaPhiFTimeHTime.Similarity(locJ_SpherCart);
+	TMatrixFSym locCov_PxPyPzT = locCov_PThetaPhiFTimeHTime.Similarity(locJ_SpherCart);
 
 	//add time terms to the orignal covariance matrix
-	locCovarianceMatrix(0, 6) = locCov_PxPyPzT(0, 3);
-	locCovarianceMatrix(1, 6) = locCov_PxPyPzT(1, 3);
-	locCovarianceMatrix(2, 6) = locCov_PxPyPzT(2, 3);
-	locCovarianceMatrix(3, 6) = 0.0;
-	locCovarianceMatrix(4, 6) = 0.0;
-	locCovarianceMatrix(5, 6) = 0.0;
-	locCovarianceMatrix(6, 0) = locCov_PxPyPzT(3, 0);
-	locCovarianceMatrix(6, 1) = locCov_PxPyPzT(3, 1);
-	locCovarianceMatrix(6, 2) = locCov_PxPyPzT(3, 2);
-	locCovarianceMatrix(6, 3) = 0.0;
-	locCovarianceMatrix(6, 4) = 0.0;
-	locCovarianceMatrix(6, 5) = 0.0;
-	locCovarianceMatrix(6, 6) = locCov_PxPyPzT(3, 3);
-
-	locChargedTrackHypothesis->setErrorMatrix(locCovarianceMatrix);
+	(*locCovarianceMatrix)(0, 6) = locCov_PxPyPzT(0, 3);
+	(*locCovarianceMatrix)(1, 6) = locCov_PxPyPzT(1, 3);
+	(*locCovarianceMatrix)(2, 6) = locCov_PxPyPzT(2, 3);
+	(*locCovarianceMatrix)(3, 6) = 0.0;
+	(*locCovarianceMatrix)(4, 6) = 0.0;
+	(*locCovarianceMatrix)(5, 6) = 0.0;
+	(*locCovarianceMatrix)(6, 0) = locCov_PxPyPzT(3, 0);
+	(*locCovarianceMatrix)(6, 1) = locCov_PxPyPzT(3, 1);
+	(*locCovarianceMatrix)(6, 2) = locCov_PxPyPzT(3, 2);
+	(*locCovarianceMatrix)(6, 3) = 0.0;
+	(*locCovarianceMatrix)(6, 4) = 0.0;
+	(*locCovarianceMatrix)(6, 5) = 0.0;
+	(*locCovarianceMatrix)(6, 6) = locCov_PxPyPzT(3, 3);
 }
-
-//------------------
-// erun
-//------------------
-jerror_t DChargedTrackHypothesis_factory::erun(void)
-{
-	return NOERROR;
-}
-
-//------------------
-// fini
-//------------------
-jerror_t DChargedTrackHypothesis_factory::fini(void)
-{
-	return NOERROR;
-}
-
-
