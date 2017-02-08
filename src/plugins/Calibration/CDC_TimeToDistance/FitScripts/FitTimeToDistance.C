@@ -6,7 +6,7 @@ vector<double> cdc_drift_table;
 double Bz_avg;
 
 // Set values for the region cut
-float deltaMin = -0.12, deltaMax = 0.12, tMin = 400, tMax = 1100;
+float deltaMin = -0.2, deltaMax = 0.2, tMin = 300, tMax = 1100;
 
 unsigned int Locate(vector<double>&xx, double x){
     int n=xx.size();
@@ -31,297 +31,311 @@ Double_t TimeToDistanceFieldOff( Double_t *x, Double_t *par)
     double d=0.;
     double delta = x[1]; // yAxis
     double t = x[0]; // xAxis 
+
+    // Cut out region in  fit.
+    if (delta > deltaMax || delta < deltaMin) return 0.0;
+    if (delta < (((deltaMax - deltaMin) / (tMax - tMin))*(t - tMin) + deltaMin)) return 0.0;
+
     if (t>0){ // For this fit it always will be, but just for completeness
-        double f_0=0.;
-        double f_delta=0.;
+       double f_0=0.;
+       double f_delta=0.;
 
-        if (delta > 0){
-            double a1=par[0];
-            double a2=par[1];
-            double a3=par[2];
-            double b1=par[3];
-            double b2=par[4];
-            double b3=par[5];
-            double c1=par[6];
-            double c2=par[7];
-            double c3=par[8];
+       if (delta > 0){
+          double a1=par[0];
+          double a2=par[1];
+          double a3=par[2];
+          double b1=par[3];
+          double b2=par[4];
+          double b3=par[5];
+          double c1=par[6];
+          double c2=par[7];
+          double c3=par[8];
 
-            // use "long side" functional form
-            double my_t=0.001*t;
-            double sqrt_t=sqrt(my_t);
-            double t3=my_t*my_t*my_t;
-            double delta_mag=fabs(delta);
-            f_delta=(a1+a2*delta_mag)*sqrt_t+(b1+b2*delta_mag)*my_t
-                +(c1+c2*delta_mag+c3*delta*delta)*t3;
-            f_0=a1*sqrt_t+b1*my_t+c1*t3;
-        }
-        else{
-            double my_t=0.001*t;
-            double sqrt_t=sqrt(my_t);
-            double delta_mag=fabs(delta);
+          // use "long side" functional form
+          double my_t=0.001*t;
+          double sqrt_t=sqrt(my_t);
+          double t3=my_t*my_t*my_t;
+          double delta_mag=fabs(delta);
+          f_delta=(a1+a2*delta_mag)*sqrt_t+(b1+b2*delta_mag)*my_t
+             +(c1+c2*delta_mag+c3*delta*delta)*t3;
+          f_0=a1*sqrt_t+b1*my_t+c1*t3;
+       }
+       else{
+          double my_t=0.001*t;
+          double sqrt_t=sqrt(my_t);
+          double delta_mag=fabs(delta);
 
-            // use "short side" functional form
-            double a1=par[9];
-            double a2=par[10];
-            double a3=par[11];
-            double b1=par[12];
-            double b2=par[13];
-            double b3=par[14];
-            double c1=par[15];
-            double c2=par[16];
-            double c3=par[17];
+          // use "short side" functional form
+          double a1=par[9];
+          double a2=par[10];
+          double a3=par[11];
+          double b1=par[12];
+          double b2=par[13];
+          double b3=par[14];
+          double c1=par[15];
+          double c2=par[16];
+          double c3=par[17];
 
-            double delta_sq=delta*delta;
-            f_delta= (a1+a2*delta_mag+a3*delta_sq)*sqrt_t
-                +(b1+b2*delta_mag+b3*delta_sq)*my_t;
-            f_0=a1*sqrt_t+b1*my_t;
-        }
+          double delta_sq=delta*delta;
+          f_delta= (a1+a2*delta_mag+a3*delta_sq)*sqrt_t
+             +(b1+b2*delta_mag+b3*delta_sq)*my_t;
+          f_0=a1*sqrt_t+b1*my_t;
+       }
 
-        unsigned int max_index=cdc_drift_table.size()-1;
-        if (t>cdc_drift_table[max_index]){
-            d=f_delta;
-            return d;
-        }
+       unsigned int max_index=cdc_drift_table.size()-1;
+       if (t>cdc_drift_table[max_index]){
+          d=f_delta;
+          return d;
+       }
 
-        // Drift time is within range of table -- interpolate...
-        unsigned int index=0;
-        index=Locate(cdc_drift_table,t);
-        double dt=cdc_drift_table[index+1]-cdc_drift_table[index];
-        double frac=(t-cdc_drift_table[index])/dt;
-        double d_0=0.01*(double(index)+frac); 
+       // Drift time is within range of table -- interpolate...
+       unsigned int index=0;
+       index=Locate(cdc_drift_table,t);
+       double dt=cdc_drift_table[index+1]-cdc_drift_table[index];
+       double frac=(t-cdc_drift_table[index])/dt;
+       double d_0=0.01*(double(index)+frac); 
 
-        double P=0.;
-        double tcut=250.0; // ns
-        if (t<tcut) {
-            P=(tcut-t)/tcut;
-        }
-        d=f_delta*(d_0/f_0*P+1.-P);
+       double P=0.;
+       double tcut=250.0; // ns
+       if (t<tcut) {
+          P=(tcut-t)/tcut;
+       }
+       d=f_delta*(d_0/f_0*P+1.-P);
     }
     return d;
 }
 
 Double_t TimeToDistanceFieldOn( Double_t *x, Double_t *par){
-    Double_t d=0.0;
-    double delta = x[1]; // yAxis
-    double t = x[0]; // xAxis
+   Double_t d=0.0;
+   double delta = x[1]; // yAxis
+   double t = x[0]; // xAxis
 
-    // Cut out region in  fit. 
-    if (delta > deltaMax || delta < deltaMin) return 0.0;
-    if (delta < (((deltaMax - deltaMin) / (tMax - tMin))*(t - tMin) + deltaMin)) return 0.0;
-    // Variables to store values for time-to-distance functions for delta=0
-    // and delta!=0
-    double f_0=0.;
-    double f_delta=0.;
-    // Scale factor to account for affect of B-field on maximum drift time
-    double Bscale=magnet_correction[0][0]+magnet_correction[0][1]*Bz_avg;
-    if (t > 0){
-        if (delta>0){
-            double a1=par[0];
-            double a2=par[1];
-            double a3=par[2];
-            double b1=par[3];
-            double b2=par[4];
-            double b3=par[5];
-            double c1=par[6];
-            double c2=par[7];
-            double c3=par[8];
-            // use "long side" functional form
-            double my_t=0.001*t;
-            double sqrt_t=sqrt(my_t);
-            double t3=my_t*my_t*my_t;
-            double delta_mag=fabs(delta);
-            double a=a1+a2*delta_mag;
-            double b=b1+b2*delta_mag;
-            double c=c1+c2*delta_mag+c3*delta*delta;
-            f_delta=a*sqrt_t+b*my_t+c*t3;
-            f_0=a1*sqrt_t+b1*my_t+c1*t3;
+   // Cut out region in  fit. 
+   if (delta > deltaMax || delta < deltaMin) return 0.0;
+   if (delta < (((deltaMax - deltaMin) / (tMax - tMin))*(t - tMin) + deltaMin)) return 0.0;
+   // Variables to store values for time-to-distance functions for delta=0
+   // and delta!=0
+   double f_0=0.;
+   double f_delta=0.;
+   // Scale factor to account for affect of B-field on maximum drift time
+   double Bscale=magnet_correction[0][0]+magnet_correction[0][1]*Bz_avg;
+   if (t > 0){
+      if (delta>0){
+         double a1=par[0];
+         double a2=par[1];
+         double a3=par[2];
+         double b1=par[3];
+         double b2=par[4];
+         double b3=par[5];
+         double c1=par[6];
+         double c2=par[7];
+         double c3=par[8];
+         // use "long side" functional form
+         double my_t=0.001*t;
+         double sqrt_t=sqrt(my_t);
+         double t3=my_t*my_t*my_t;
+         double delta_mag=fabs(delta);
+         double a=a1+a2*delta_mag;
+         double b=b1+b2*delta_mag;
+         double c=c1+c2*delta_mag+c3*delta*delta;
+         f_delta=a*sqrt_t+b*my_t+c*t3;
+         f_0=a1*sqrt_t+b1*my_t+c1*t3;
 
-        }
-        else{
-            double my_t=0.001*t;
-            double sqrt_t=sqrt(my_t);
-            double delta_mag=fabs(delta);
+      }
+      else{
+         double my_t=0.001*t;
+         double sqrt_t=sqrt(my_t);
+         double delta_mag=fabs(delta);
 
-            // use "short side" functional form
-            double a1=par[9];
-            double a2=par[10];
-            double a3=par[11];
-            double b1=par[12];
-            double b2=par[13];
-            double b3=par[14];
-            double c1=par[15];
-            double c2=par[16];
-            double c3=par[17];
-            double delta_sq=delta*delta;
-            double a=a1+a2*delta_mag+a3*delta_sq;
-            double b=b1+b2*delta_mag+b3*delta_sq;
-            f_delta=a*sqrt_t+b*my_t;
-            f_0=a1*sqrt_t+b1*my_t;
+         // use "short side" functional form
+         double a1=par[9];
+         double a2=par[10];
+         double a3=par[11];
+         double b1=par[12];
+         double b2=par[13];
+         double b3=par[14];
+         double c1=par[15];
+         double c2=par[16];
+         double c3=par[17];
+         double delta_sq=delta*delta;
+         double a=a1+a2*delta_mag+a3*delta_sq;
+         double b=b1+b2*delta_mag+b3*delta_sq;
+         f_delta=a*sqrt_t+b*my_t;
+         f_0=a1*sqrt_t+b1*my_t;
 
-        }
+      }
 
-        unsigned int max_index=cdc_drift_table.size()-1;
-        if (t>cdc_drift_table[max_index]){
-            d=f_delta*Bscale;
-            return d;
-        }
+      unsigned int max_index=cdc_drift_table.size()-1;
+      if (t>cdc_drift_table[max_index]){
+         d=f_delta*Bscale;
+         return d;
+      }
 
-        // Drift time is within range of table -- interpolate...
-        unsigned int index=0;
-        index=Locate(cdc_drift_table,t);
-        double dt=cdc_drift_table[index+1]-cdc_drift_table[index];
-        double frac=(t-cdc_drift_table[index])/dt;
-        double d_0=0.01*(double(index)+frac); 
+      // Drift time is within range of table -- interpolate...
+      unsigned int index=0;
+      index=Locate(cdc_drift_table,t);
+      double dt=cdc_drift_table[index+1]-cdc_drift_table[index];
+      double frac=(t-cdc_drift_table[index])/dt;
+      double d_0=0.01*(double(index)+frac); 
 
-        double P=0.;
-        double tcut=250.0; // ns
-        if (t<tcut) {
-            P=(tcut-t)/tcut;
-        }
-        d=f_delta*(d_0/f_0*P+1.-P)*Bscale;
-    }
-    return d;
+      double P=0.;
+      double tcut=250.0; // ns
+      if (t<tcut) {
+         P=(tcut-t)/tcut;
+      }
+      d=f_delta*(d_0/f_0*P+1.-P)*Bscale;
+   }
+   return d;
 }
 
 
 void FitTimeToDistance(TString inputROOTFile = "hd_root.root", int run = 3650)
 {
-    // Script for fitting the time to distance relation from data
-    TFile *thisFile = TFile::Open(inputROOTFile);
-    TH1I *Bz_hist = (TH1I *) thisFile->Get("/CDC_TimeToDistance/Bz");
-    TF2 *f1,*f2; const Int_t npar = 18;
-    bool isFieldOff = false;
-    if (Bz_hist == 0){
-        //f1 = new TF2("f1",TimeToDistanceFieldOff, 0, 1500, -0.3, 0.3, npar);
-        //f2 = new TF2("f2",TimeToDistanceFieldOff, 0, 1500, -0.3, 0.3, npar);
-        f1 = new TF2("f1",TimeToDistanceFieldOff, 0, 200, -0.18, 0.18, npar);
-        f2 = new TF2("f2",TimeToDistanceFieldOff, 0, 200, -0.18, 0.18, npar);
-        isFieldOff = true;
-    }
-    else{
-        f1 = new TF2("f1",TimeToDistanceFieldOn, 0, 1500, -0.18, 0.18, npar);
-        f2 = new TF2("f2",TimeToDistanceFieldOn, 0, 1500, -0.18, 0.18, npar);
-        //f1 = new TF2("f1",TimeToDistanceFieldOn, 0, 200, -0.18, 0.18, npar);
-        //f2 = new TF2("f2",TimeToDistanceFieldOn, 0, 200, -0.18, 0.18, npar);
-        Bz_avg = Bz_hist->GetMean();
-    }
+   // Script for fitting the time to distance relation from data
+   TFile *thisFile = TFile::Open(inputROOTFile);
+   TH1I *Bz_hist = (TH1I *) thisFile->Get("/CDC_TimeToDistance/Bz");
+   TF2 *f1,*f2; const Int_t npar = 18;
+   bool isFieldOff = false;
+   if (Bz_hist == 0){
+      f1 = new TF2("f1",TimeToDistanceFieldOff, 10, 1500, -0.3, 0.3, npar);
+      f2 = new TF2("f2",TimeToDistanceFieldOff, 10, 1500, -0.3, 0.3, npar);
+      //f1 = new TF2("f1",TimeToDistanceFieldOff, 0, 200, -0.18, 0.18, npar);
+      //f2 = new TF2("f2",TimeToDistanceFieldOff, 0, 200, -0.18, 0.18, npar);
+      isFieldOff = true;
+   }
+   else{
+      f1 = new TF2("f1",TimeToDistanceFieldOn, 0, 1500, -0.18, 0.18, npar);
+      f2 = new TF2("f2",TimeToDistanceFieldOn, 0, 1500, -0.18, 0.18, npar);
+      //f1 = new TF2("f1",TimeToDistanceFieldOn, 0, 200, -0.18, 0.18, npar);
+      //f2 = new TF2("f2",TimeToDistanceFieldOn, 0, 200, -0.18, 0.18, npar);
+      Bz_avg = Bz_hist->GetMean();
+   }
 
-    // We need the values from the database to serve as our starting point
+   // We need the values from the database to serve as our starting point
 
-    //Pipe the current constants into this macro
-    //NOTE: This dumps the "LATEST" values. If you need something else, modify this script.
-    char command[100];
-    if (isFieldOff) sprintf(command, "ccdb dump /CDC/drift_parameters:%i:NoBField", run);
-    else sprintf(command, "ccdb dump /CDC/drift_parameters:%i:default", run);
+   //Pipe the current constants into this macro
+   //NOTE: This dumps the "LATEST" values. If you need something else, modify this script.
+   char command[100];
+   if (isFieldOff) sprintf(command, "ccdb dump /CDC/drift_parameters:%i:NoBField", run);
+   else sprintf(command, "ccdb dump /CDC/drift_parameters:%i:default", run);
 
-    FILE* locInputFile = gSystem->OpenPipe(command, "r");
-    if(locInputFile == NULL)
-        return;
-    //get the first (comment) line
-    char buff[1024];
-    if(fgets(buff, sizeof(buff), locInputFile) == NULL)
-        return;
-    //get the remaining lines
-    double value;
-    bool is_long = true;
-    while(fgets(buff, sizeof(buff), locInputFile) != NULL){
-        istringstream locConstantsStream(buff);
-        if (is_long){
-            locConstantsStream >> long_drift_func[0][0] >> long_drift_func[0][1] >> long_drift_func[0][2];
-            locConstantsStream >> long_drift_func[1][0] >> long_drift_func[1][1] >> long_drift_func[1][2];
-            locConstantsStream >> long_drift_func[2][0] >> long_drift_func[2][1] >> long_drift_func[2][2];
-            locConstantsStream >> magnet_correction[0][0] >> magnet_correction[0][1]; // BField params
-            cout << "a1_Long = " << long_drift_func[0][0] << endl;
-            cout << "Magnet Correction : " << magnet_correction[0][0] << " " << magnet_correction[0][1] << endl;
-            is_long = false;
-        }
-        else{
-            locConstantsStream >> short_drift_func[0][0] >> short_drift_func[0][1] >> short_drift_func[0][2];
-            locConstantsStream >> short_drift_func[1][0] >> short_drift_func[1][1] >> short_drift_func[1][2];
-            locConstantsStream >> short_drift_func[2][0] >> short_drift_func[2][1] >> short_drift_func[2][2];
-            locConstantsStream >> magnet_correction[1][0] >> magnet_correction[1][1];
-            cout << "a1_Short = " << short_drift_func[0][0] << endl;
-        }
-    }
-    //Close the pipe
-    gSystem->ClosePipe(locInputFile);
+   FILE* locInputFile = gSystem->OpenPipe(command, "r");
+   if(locInputFile == NULL)
+      return;
+   //get the first (comment) line
+   char buff[1024];
+   if(fgets(buff, sizeof(buff), locInputFile) == NULL)
+      return;
+   //get the remaining lines
+   double value;
+   bool is_long = true;
+   while(fgets(buff, sizeof(buff), locInputFile) != NULL){
+      istringstream locConstantsStream(buff);
+      if (is_long){
+         locConstantsStream >> long_drift_func[0][0] >> long_drift_func[0][1] >> long_drift_func[0][2];
+         locConstantsStream >> long_drift_func[1][0] >> long_drift_func[1][1] >> long_drift_func[1][2];
+         locConstantsStream >> long_drift_func[2][0] >> long_drift_func[2][1] >> long_drift_func[2][2];
+         locConstantsStream >> magnet_correction[0][0] >> magnet_correction[0][1]; // BField params
+         cout << "a1_Long = " << long_drift_func[0][0] << endl;
+         cout << "Magnet Correction : " << magnet_correction[0][0] << " " << magnet_correction[0][1] << endl;
+         is_long = false;
+      }
+      else{
+         locConstantsStream >> short_drift_func[0][0] >> short_drift_func[0][1] >> short_drift_func[0][2];
+         locConstantsStream >> short_drift_func[1][0] >> short_drift_func[1][1] >> short_drift_func[1][2];
+         locConstantsStream >> short_drift_func[2][0] >> short_drift_func[2][1] >> short_drift_func[2][2];
+         locConstantsStream >> magnet_correction[1][0] >> magnet_correction[1][1];
+         cout << "a1_Short = " << short_drift_func[0][0] << endl;
+      }
+   }
+   //Close the pipe
+   gSystem->ClosePipe(locInputFile);
 
-    sprintf(command, "ccdb dump /CDC/cdc_drift_table:%i:NoBField", run);
-    locInputFile = gSystem->OpenPipe(command, "r");
-    if(locInputFile == NULL)
-        return;
-    //get the first (comment) line
-    if(fgets(buff, sizeof(buff), locInputFile) == NULL)
-        return;
-    //get the remaining lines
-    while(fgets(buff, sizeof(buff), locInputFile) != NULL){
-        istringstream locConstantsStream(buff);
-        while (locConstantsStream >> value){
-            cdc_drift_table.push_back(1000. * value);
-            cout << "Drift Table value = " << value << endl;
-        }
-    }
-    //Close the pipe
-    gSystem->ClosePipe(locInputFile);
-    // So now you have the input to your function
+   sprintf(command, "ccdb dump /CDC/cdc_drift_table:%i:NoBField", run);
+   locInputFile = gSystem->OpenPipe(command, "r");
+   if(locInputFile == NULL)
+      return;
+   //get the first (comment) line
+   if(fgets(buff, sizeof(buff), locInputFile) == NULL)
+      return;
+   //get the remaining lines
+   while(fgets(buff, sizeof(buff), locInputFile) != NULL){
+      istringstream locConstantsStream(buff);
+      while (locConstantsStream >> value){
+         cdc_drift_table.push_back(1000. * value);
+         cout << "Drift Table value = " << value << endl;
+      }
+   }
+   //Close the pipe
+   gSystem->ClosePipe(locInputFile);
+   // So now you have the input to your function
 
-    Double_t parameters[npar] =
-    {long_drift_func[0][0], long_drift_func[0][1], long_drift_func[0][2],
-        long_drift_func[1][0], long_drift_func[1][1], long_drift_func[1][2],
-        long_drift_func[2][0], long_drift_func[2][1], long_drift_func[2][2],
-        short_drift_func[0][0], short_drift_func[0][1], short_drift_func[0][2],
-        short_drift_func[1][0], short_drift_func[1][1], short_drift_func[1][2],
-        short_drift_func[2][0], short_drift_func[2][1], short_drift_func[2][2]};
+   Double_t parameters[npar] =
+   {long_drift_func[0][0], long_drift_func[0][1], long_drift_func[0][2],
+      long_drift_func[1][0], long_drift_func[1][1], long_drift_func[1][2],
+      long_drift_func[2][0], long_drift_func[2][1], long_drift_func[2][2],
+      short_drift_func[0][0], short_drift_func[0][1], short_drift_func[0][2],
+      short_drift_func[1][0], short_drift_func[1][1], short_drift_func[1][2],
+      short_drift_func[2][0], short_drift_func[2][1], short_drift_func[2][2]};
 
 
-    f1->SetParameters(parameters);
-    f2->SetParameters(parameters);
-    TProfile2D *profile = (TProfile2D *) thisFile->Get("/CDC_TimeToDistance/Predicted Drift Distance Vs Delta Vs t_drift");
+   f1->SetParameters(parameters);
+   f2->SetParameters(parameters);
 
-    //profile->Fit("f2");
-    gStyle->SetOptStat(0);
+   /*
+   double fractionalRange=0.15;
+   for(unsigned int i=0; i < npar; i++){
+      f1->SetParLimits(i,parameters[i]-fractionalRange*parameters[i],parameters[i]+fractionalRange*parameters[i]);
+      f2->SetParLimits(i,parameters[i]-fractionalRange*parameters[i],parameters[i]+fractionalRange*parameters[i]);
+   }
+   */
 
-    TCanvas *c1 = new TCanvas ("c1", "c1", 800, 600);
-    Double_t contours[21] = 
-    { 0.00, 0.05, 0.1, 0.15, 0.2, 0.25, 0.3, 0.35, 0.4, 0.45, 
-        0.5, 0.55, 0.6, 0.65, 0.7, 0.75, 0.8, 0.85, 0.9, 0.95, 1.0};
+   TProfile2D *profile = (TProfile2D *) thisFile->Get("/CDC_TimeToDistance/Predicted Drift Distance Vs Delta Vs t_drift");
 
-    profile->SetContour(21, contours);
-    profile->Draw("colz");
-    f1->SetContour(21, contours);
-    profile->Draw("cont2 list same");
-    f1->Draw("cont2 list same");
-    c1->Update();
-    c1->SaveAs(Form("Before_Run%i.png", run));
+   //profile->Fit("f2");
+   gStyle->SetOptStat(0);
 
-    TProfile2D *profileRebin = profile->Rebin2D(4,4, "Rebin");
-    TFitResultPtr fr = profileRebin->Fit("f2", "S");
-    TCanvas *c2 = new TCanvas ("c2", "c2", 800, 600);
-    c2->cd();
-    profile->Draw("colz");
-    f2->SetContour(21, contours);
-    profile->Draw("cont2 list same");
-    f2->Draw("cont2 list same");
-    c2->Update();
-    c2->SaveAs(Form("After_Run%i.png", run));
+   TCanvas *c1 = new TCanvas ("c1", "c1", 800, 600);
+   Double_t contours[21] = 
+   { 0.00, 0.05, 0.1, 0.15, 0.2, 0.25, 0.3, 0.35, 0.4, 0.45, 
+      0.5, 0.55, 0.6, 0.65, 0.7, 0.75, 0.8, 0.85, 0.9, 0.95, 1.0};
 
-    TCanvas *c3 = new TCanvas ("c3", "c3", 800, 600);
-    f1->Draw("cont2 list");
-    f1->SetLineColor(3);
-    f2->Draw("cont2 list same");
-    c3->Update();
+   profile->SetContour(21, contours);
+   profile->Draw("colz");
+   f1->SetContour(21, contours);
+   profile->Draw("cont2 list same");
+   f1->Draw("cont2 list same");
+   c1->Update();
+   c1->SaveAs(Form("Before_Run%i.png", run));
 
-    ofstream outputTextFile;
-    outputTextFile.open("ccdb_Format.txt"); 
-    outputTextFile << fr->Parameter(0) << " " << fr->Parameter(1) << " " << fr->Parameter(2) << " " ;
-    outputTextFile << fr->Parameter(3) << " " << fr->Parameter(4) << " " << fr->Parameter(5) << " " ;
-    outputTextFile << fr->Parameter(6) << " " << fr->Parameter(7) << " " << fr->Parameter(8) << " " ;
-    outputTextFile << magnet_correction[0][0] << " " << magnet_correction[0][1] << endl; 
-    outputTextFile << fr->Parameter(9) << " " << fr->Parameter(10) << " " << fr->Parameter(11) << " " ;
-    outputTextFile << fr->Parameter(12) << " " << fr->Parameter(13) << " " << fr->Parameter(14) << " " ;
-    outputTextFile << fr->Parameter(15) << " " << fr->Parameter(16) << " " << fr->Parameter(17) << " " ;
-    outputTextFile << magnet_correction[1][0] << " " << magnet_correction[1][1] << endl;
-    outputTextFile.close();
+   TProfile2D *profileRebin = profile->Rebin2D(4,4, "Rebin");
+   TFitResultPtr fr = profileRebin->Fit("f2", "S");
+   TCanvas *c2 = new TCanvas ("c2", "c2", 800, 600);
+   c2->cd();
+   profile->Draw("colz");
+   f2->SetContour(21, contours);
+   profile->Draw("cont2 list same");
+   f2->Draw("cont2 list same");
+   c2->Update();
+   c2->SaveAs(Form("After_Run%i.png", run));
 
-    return;
+   TCanvas *c3 = new TCanvas ("c3", "c3", 800, 600);
+   f1->Draw("cont2 list");
+   f1->SetLineColor(3);
+   f2->Draw("cont2 list same");
+   c3->Update();
+
+   ofstream outputTextFile;
+   outputTextFile.open("ccdb_Format.txt"); 
+   outputTextFile << fr->Parameter(0) << " " << fr->Parameter(1) << " " << fr->Parameter(2) << " " ;
+   outputTextFile << fr->Parameter(3) << " " << fr->Parameter(4) << " " << fr->Parameter(5) << " " ;
+   outputTextFile << fr->Parameter(6) << " " << fr->Parameter(7) << " " << fr->Parameter(8) << " " ;
+   outputTextFile << magnet_correction[0][0] << " " << magnet_correction[0][1] << endl; 
+   outputTextFile << fr->Parameter(9) << " " << fr->Parameter(10) << " " << fr->Parameter(11) << " " ;
+   outputTextFile << fr->Parameter(12) << " " << fr->Parameter(13) << " " << fr->Parameter(14) << " " ;
+   outputTextFile << fr->Parameter(15) << " " << fr->Parameter(16) << " " << fr->Parameter(17) << " " ;
+   outputTextFile << magnet_correction[1][0] << " " << magnet_correction[1][1] << endl;
+   outputTextFile.close();
+
+   return;
 }
