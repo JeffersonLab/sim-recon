@@ -30,6 +30,7 @@ class DFCALCluster_factory:public JFactory<DFCALCluster>{
 		unsigned int MIN_CLUSTER_BLOCK_COUNT;
 		float MIN_CLUSTER_SEED_ENERGY;
 		float TIME_CUT;
+		uint32_t MAX_HITS_FOR_CLUSTERING;
 
 		// this is the location of the front 
 		// of the FCAL in a coordinate system 
