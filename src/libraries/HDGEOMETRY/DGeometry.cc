@@ -655,7 +655,7 @@ bool DGeometry::GetCDCStereoWires(unsigned int ring,unsigned int ncopy,
      w->udir.RotateZ(rot_angles[2]);
 
      // For derivatives
-     w->udir_mag=udir.Mag();
+     w->udir_mag=w->udir.Mag();
 
      w->udir.SetMag(1.);
      w->stereo=stereo_sign*w->udir.Angle(DVector3(0.,0.,1.));
@@ -667,7 +667,7 @@ bool DGeometry::GetCDCStereoWires(unsigned int ring,unsigned int ncopy,
      // Some values needed for alignment derivatives
      w->x0=dx; w->y0=dy; w->z0=zcenter;
      w->phiX=rot_angles[0]; w->phiY=rot_angles[1]; w->phiZ=rot_angles[2];
-     w->r0=r_z[0]; w->phiStraw=phi; w->stereo_raw=stereo; w->stereo_sign=stereo_sign;
+     w->r0=r_z[0]; w->phiStraw=phi; w->stereo_raw=stereo;
 
      stereowires.push_back(w);
   }
@@ -753,7 +753,7 @@ bool DGeometry::GetCDCAxialWires(unsigned int ring,unsigned int ncopy,
       // Some values needed for alignment derivatives
       w->x0=dx; w->y0=dy; w->z0=zcenter;
       w->phiX=rot_angles[0]; w->phiY=rot_angles[1]; w->phiZ=rot_angles[2];
-      w->r0=r_z[0]; w->phiStraw=phi; w->stereo_raw=0.0; w->stereo_sign=1.0;
+      w->r0=r_z[0]; w->phiStraw=phi; w->stereo_raw=0.0;
 
       axialwires.push_back(w);
    }
