@@ -50,7 +50,7 @@ class DTrackCandidate_factory_StraightLine:public jana::JFactory<DTrackCandidate
       };
 
       typedef struct{
-         double resi,err,d,tdrift,ddrift,s,V;
+         double resi,err,d,delta,tdrift,ddrift,s,V;
          DMatrix4x1 S;
          DMatrix4x4 C;
       }cdc_update_t;
@@ -82,7 +82,7 @@ class DTrackCandidate_factory_StraightLine:public jana::JFactory<DTrackCandidate
             vector<const DFDCPseudo *>&pseudos);
       jerror_t SetReferenceTrajectory(double t0,double z,DMatrix4x1 &S,
             deque<trajectory_t>&trajectory,
-            const DCDCTrackHit *last_cdc,double dzsign); 
+            const DCDCTrackHit *last_cdc,double &dzsign); 
 
       jerror_t KalmanFilter(DMatrix4x1 &S,DMatrix4x4 &C,
             vector<const DFDCPseudo *>&hits,
@@ -97,7 +97,7 @@ class DTrackCandidate_factory_StraightLine:public jana::JFactory<DTrackCandidate
             vector<int>&used_hits,
             deque<trajectory_t>&trajectory,
             vector<cdc_update_t>&pulls,
-            double &chi2,unsigned int &ndof,bool timebased=false);
+            double &chi2,unsigned int &ndof,bool timebased, unsigned int iter);
       jerror_t Smooth(deque<trajectory_t>&trajectory,
             vector<cdc_update_t>&cdc_updates,
             vector<const DCDCTrackHit *>&hits,
@@ -115,7 +115,7 @@ class DTrackCandidate_factory_StraightLine:public jana::JFactory<DTrackCandidate
       double fdc_drift_variance(double);
       unsigned int Locate(vector<double>&xx,double x);
 
-      bool COSMICS,DEBUG_HISTS,USE_FDC_DRIFT_TIMES,SKIP_CDC;
+      bool COSMICS,DEBUG_HISTS,USE_FDC_DRIFT_TIMES,SKIP_CDC,SKIP_FDC;
       float CHI2CUT;
       int DO_PRUNING;
       int PLANE_TO_SKIP;
@@ -134,6 +134,7 @@ class DTrackCandidate_factory_StraightLine:public jana::JFactory<DTrackCandidate
       double DRIFT_FUNC_PARMS[4];
       double CDC_MATCH_DOCA;
       int VERBOSE;
+      bool isMC;
 
       // variables to deal with CDC straw sag
       vector<vector<double> >max_sag;
@@ -141,7 +142,7 @@ class DTrackCandidate_factory_StraightLine:public jana::JFactory<DTrackCandidate
       double long_drift_func[3][3];
       double short_drift_func[3][3];
 
-      double cdc_endplate_z, cdc_endplate_rmin, cdc_endplate_rmax;
+      double cdc_endplate_z, cdc_endplate_rmin, cdc_endplate_rmax,cdc_length;
 
       // Diagnostic histograms
       TH2F *Hvres;
