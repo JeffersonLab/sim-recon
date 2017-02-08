@@ -139,7 +139,7 @@ jerror_t JEventProcessor_occupancy_online::init(void)
 		cdc_occ_ring[iring] = new TH2F(hname, "", Nstraws[iring], phi_start, phi_end, 1, r_start, r_end);
 	}
 	cdc_num_events = new TH1I("cdc_num_events", "CDC number of events", 1, 0.0, 1.0);
-	new TH2D("cdc_axes", "CDC Occupancy", 100, -65.0, 65.0, 100, -65.0, 65.0);
+	new TH2D("cdc_axes", "CDC Occupancy", 100, -57.0*4.0/3.0, 57.0*4.0/3.0, 100, -57.0, 57.0);
     
 	//------------------------ FCAL -----------------------
 	fcal_occ = new TH2F("fcal_occ", "FCAL Occupancy; column; row", 61, -1.5, 59.5, 61, -1.5, 59.5);
