@@ -20,16 +20,12 @@ class DTAGHHit_factory: public jana::JFactory<DTAGHHit> {
         // config. parameters
         bool MERGE_DOUBLES;
         double DELTA_T_DOUBLES_MAX;
+        size_t DELTA_ID_DOUBLES_MAX;
         int ID_DOUBLES_MAX;
         bool USE_SIDEBAND_DOUBLES;
 
         double dBeamBunchPeriod;
-        vector<DTAGHHit*> dCreatedTAGHHits;
-
-        void Reset_Data(void);
         bool IsDoubleHit(double tdiff);
-        void EraseHit(vector<DTAGHHit*> &v, DTAGHHit* hit);
-        void MergeDoubles(map<int, vector<DTAGHHit*> > hitsById, map<int, vector<DTAGHHit*> > &doublesById);
 
         jerror_t init(void);                                          ///< Called once at program start
         jerror_t brun(jana::JEventLoop *eventLoop, int32_t runnumber);    ///< Called everytime a new run number is detected
