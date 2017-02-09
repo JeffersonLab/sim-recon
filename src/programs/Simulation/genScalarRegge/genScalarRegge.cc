@@ -1865,7 +1865,7 @@ double TensorCrossSection(TLorentzVector &q /* beam */,
   double m_rho_sq=m_rho*m_rho;
  
   // Coupling constants 
-  double f=10.;  // scale factor to account for normalization of regge factor 
+  double f=20.;  // scale factor to account for normalization of regge factor 
   // to data?? 
   double gT_sq=f*(2./3.)*150.; // GeV^2
   if (two_particles==(7+17)){
@@ -2776,9 +2776,9 @@ int main(int narg, char *argv[])
 
   // Parameters for regge cuts
   getline(infile,comment_line);
-  double phase[7];
+  double phase[10];
   cout << " Interference phases =";
-  for (int k=0;k<7;k++){
+  for (int k=0;k<9;k++){
     infile >> phase[k];
     cout << " " << phase[k]; 
   }
@@ -2826,7 +2826,7 @@ int main(int narg, char *argv[])
     TLorentzVector beam;
 
     // Maximum value for cross section 
-    double xsec_max=(got_pipi)?12.:3.5;
+    double xsec_max=(got_pipi)?10.0:3.5;
     double xsec=0.,xsec_test=0.;
 
     // Polar angle in center of mass frame
@@ -2850,7 +2850,7 @@ int main(int narg, char *argv[])
     double m1sq_plus_m2sq=m1sq+m2sq;
 
     // Coupling constants for f0(500)
-    double gsq_rho_f500_gamma=0.1;
+    double gsq_rho_f500_gamma=0.22;
     double gsq_omega_f500_gamma=(1./9)*gsq_rho_f500_gamma;
     // Coupling constants: Donnachie and Kalashnikova (2008) scenario IV
     double gsq_rho_S_gamma=0.02537;
@@ -2945,9 +2945,9 @@ int main(int narg, char *argv[])
       
       // f0(600)
       if (got_pipi && generate[0]){
- 	double m_Sigma=0.7;
+ 	double m_Sigma=0.8;
 	double M_sq_R=m_Sigma*m_Sigma; 
-	width=0.5;
+	width=0.8;
 	ReBf500=M_sq_R-M_sq;
 	double MRsq_minus_m1sq_m2sq=M_sq_R-m1sq_plus_m2sq;
 	double temp=4.*m1sq*m2sq;
@@ -2963,15 +2963,16 @@ int main(int narg, char *argv[])
       }
       // f0(1370)
       if (got_pipi && generate[2]){
- 	double m_f1370=1.37;
+ 	double m_f1370=1.309; // Bugg(2007)
 	double M_sq_R=m_f1370*m_f1370; 
-	width=0.5;
+	width=0.207; // Bugg(2007)
 	ReBf1370=M_sq_R-M_sq;
 	double MRsq_minus_m1sq_m2sq=M_sq_R-m1sq_plus_m2sq;
 	double temp=4.*m1sq*m2sq;
 	double qR=sqrt((MRsq_minus_m1sq_m2sq*MRsq_minus_m1sq_m2sq-temp)
 		       /(4.*M_sq_R));
-	double partial_width=0.26*width/3.;// fraction from Bugg(96)
+	// partial width from Bugg(2007):arxiv.org/pdf/0706.1341.pdf, table 2
+	double partial_width=0.325/3.;
 	gRf1370=sqrt(8.*M_PI*M_sq_R*partial_width/qR);
 	ImBf1370=width*sqrt(M_sq);
 
@@ -2985,7 +2986,7 @@ int main(int narg, char *argv[])
 			   gsq_rho_f1370_gamma,
 			   gsq_omega_f1370_gamma,true,gRf500,ReBf500,ImBf500,
 			   gsq_rho_f500_gamma,gsq_omega_f500_gamma,
-			   0.);
+			   phase[9]);
       }	
 
       // a0(1450)
@@ -3068,13 +3069,13 @@ int main(int narg, char *argv[])
 	    xsec+=InterferenceCrossSection(beam,particle_types,particle_vectors,
 					   gRf500,ReBf500,ImBf500,
 					   gsq_rho_f500_gamma,
-					   gsq_omega_f500_gamma,0.);
+					   gsq_omega_f500_gamma,phase[7]);
 	  }  
 	  if (generate[2]){ // interference with f0(1370)
 	    xsec+=InterferenceCrossSection(beam,particle_types,particle_vectors,
 					   gRf1370,ReBf1370,ImBf1370,
 					   gsq_rho_f1370_gamma,
-					   gsq_omega_f1370_gamma,0.);
+					   gsq_omega_f1370_gamma,phase[8]);
 	  }
 	}
 	else{ 
