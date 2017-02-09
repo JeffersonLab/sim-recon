@@ -110,6 +110,7 @@ void Df250EmulatorAlgorithm_v2::EmulateFirmware(const Df250WindowRawData* rawDat
     const int max_pulses = 3;
     uint32_t TC[max_pulses] = {};
     uint32_t TMIN[max_pulses] = {3};
+    //uint32_t TNSAT[max_pulses] = {};
     uint32_t pulse_integral[max_pulses] = {};
     bool has_overflow_samples[max_pulses] = {false};
     bool has_underflow_samples[max_pulses] = {false};
@@ -140,31 +141,46 @@ void Df250EmulatorAlgorithm_v2::EmulateFirmware(const Df250WindowRawData* rawDat
             if (VERBOSE > 1) {
                 jout << "threshold crossing at " << i << endl;
             }
-            // check that we have more than NSAT samples over threshold
-            // unless the first sample is over threshold - we always start then  (only in Fall 2016 firmware)
-            //if( (NSAT>1) && (i>0) ){
-            if( (NSAT>1) ) {
-                int samples_over_threshold = 1;
-                //for(unsigned int j=1; j < NSAT; j++) {
-                // the algorithm only terminates if we dip below threshold ?!?
-                for(unsigned int j=i+1; ((samples[j]&0xfff)>=THR) && (j<MAX_SAMPLE); j++) {
-                    // only count samples actually above threshold
-                    if ((samples[j] & 0xfff) > THR) 
-                        samples_over_threshold++;
-                    
-                    if( samples_over_threshold == NSAT )
-                        break;
-                }
 
-                if( samples_over_threshold != NSAT )
-                    continue;
-            }
-
-            
-
-            // save threshold crossing
+            // save threshold crossing - could be overwritten
             TC[npulses] = i+1;
 
+            // check that we have more than NSAT samples over threshold
+	    if( NSAT>1 ){
+                int samples_over_threshold = 1;
+
+		if(i==0) {
+		  // the algorithm only terminates if we dip below threshold...
+		  for(unsigned int j=i+1; ((samples[j]&0xfff)>=THR) && (j<MAX_SAMPLE+1); j++) {
+		    // only count samples actually above threshold
+		    if ((samples[j] & 0xfff) > THR) 
+		      samples_over_threshold++;
+		    
+		    if( samples_over_threshold == NSAT ) {
+		      //TC[npulses] = j+1;
+		      //i=j;
+		      break;
+		    }
+
+		  }
+		} else {
+		  for(unsigned int j=i+1; ((samples[j]&0xfff)>THR) && (j<MAX_SAMPLE+1); j++) {
+		    samples_over_threshold++;
+		    
+		    if( samples_over_threshold == NSAT ) 
+		      break;
+		  }		    
+		}
+		
+		// if we couldn't find NSAT samples above threshold, move on...
+		if( samples_over_threshold != NSAT )
+		  continue;
+            } 
+	    //else {
+	    //TNSAT[npulses] = TC[npulses];
+	    //}
+
+           
             // calculate integral
             unsigned int ibegin;
             if(NSB > 0)
@@ -250,7 +266,11 @@ void Df250EmulatorAlgorithm_v2::EmulateFirmware(const Df250WindowRawData* rawDat
         }
     }
 
+
     for (unsigned int p=0; p < npulses; ++p) {
+      // TEST
+      //TC[p] = TNSAT[p];
+
         // "If any of the first 5 samples is greater than TET or underflow the TDC will NOT proceed
         //   1. pulse time is set to TC
         //   2. pulse peak is set to zero
