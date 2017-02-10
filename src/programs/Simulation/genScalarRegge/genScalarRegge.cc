@@ -2991,15 +2991,15 @@ int main(int narg, char *argv[])
 
       // a0(1450)
       if (got_pipi==false && generate[2]){
- 	double m_a1450=1.474;
+ 	double m_a1450=1.448;// Bugg:arXiv:0808.2706v2,Table 2
 	double M_sq_R=m_a1450*m_a1450; 
-	width=0.265;
+	width=0.192; // Bugg:arXiv:0808.2706v2,Table 2
 	ReBa1450=M_sq_R-M_sq;
 	double MRsq_minus_m1sq_m2sq=M_sq_R-m1sq_plus_m2sq;
 	double temp=4.*m1sq*m2sq;
 	double qR=sqrt((MRsq_minus_m1sq_m2sq*MRsq_minus_m1sq_m2sq-temp)
 		       /(4.*M_sq_R));	
-	double partial_width=0.02*width;// estimate using pdg(2016)
+	double partial_width=0.0237;// Bugg:arXiv:0808.2706v2,Table 2
 	gRa1450=sqrt(8.*M_PI*M_sq_R*partial_width/qR);
 	ImBa1450=width*sqrt(M_sq);
 
