@@ -35,6 +35,7 @@ using namespace jana;
 
 #include <FCAL/DFCALGeometry.h>
 #include "TTAB/DTTabUtilities.h"
+#include "TRIGGER/DTrigger.h"
 
 #include <map>
 
@@ -575,6 +576,16 @@ jerror_t JEventProcessor_lowlevel_online::evnt(JEventLoop *loop, uint64_t eventn
 	vector<const DTAGHDigiHit*>        taghdigihits;
 	vector<const DTAGHTDCDigiHit*>     taghtdcdigihits;
 	vector<const DTPOLSectorDigiHit*>  tpoldigihits;
+
+
+	// ignore front panel triggers
+	const DTrigger* locTrigger = NULL; 
+	loop->GetSingle(locTrigger); 
+	if(locTrigger->Get_L1FrontPanelTriggerBits() != 0)
+	  return NOERROR;
+
+
+	// Get hit data
 	loop->Get(bcaldigihits);
 	loop->Get(bcaltdcdigihits);
 	loop->Get(cdcdigihits);

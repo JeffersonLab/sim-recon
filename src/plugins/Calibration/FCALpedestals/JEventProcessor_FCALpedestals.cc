@@ -12,6 +12,7 @@
 #include <TTree.h>
 #include "DVector3.h"
 #include "PID/DParticleID.h"
+#include "TRIGGER/DTrigger.h"
 #include "GlueX.h"
 #include <vector>
 #include <map>
@@ -126,6 +127,11 @@ jerror_t JEventProcessor_FCALpedestals::brun(JEventLoop *eventLoop,
 jerror_t JEventProcessor_FCALpedestals::evnt(JEventLoop *eventLoop, 
 					     uint64_t eventnumber)
 {
+  // select events with physics events, i.e., not LED and other front panel triggers
+  const DTrigger* locTrigger = NULL; 
+  eventLoop->GetSingle(locTrigger); 
+  if(locTrigger->Get_L1FrontPanelTriggerBits() != 0) 
+    return NOERROR;
   
  
   vector< const DFCALDigiHit*  > digiHits;

@@ -22,6 +22,8 @@
 #include "TRACKING/DMCThrown.h"
 #include "ANALYSIS/DAnalysisUtilities.h"
 #include "BCAL/DBCALGeometry.h"
+#include "TRIGGER/DTrigger.h"
+
 #include <vector>
 #include "TGraphErrors.h"
 #include <deque>
@@ -86,6 +88,8 @@ using namespace std;
 		static TGraph* h2_tgraph[768] = {NULL};
 		// graphs of thrown points for each channel (cell)
 		static TGraph* h2_tgraph_thrown[768] = {NULL};
+		// create a graph for each channel for the Delta t calibration (cell)
+		static TGraph* h2_tgraph_deltat[768] = {NULL};
 
 		// histogram for the percentage of thrown points per channel
 		static TH1D* h1_thrown_per_channel = NULL;
@@ -95,6 +99,7 @@ using namespace std;
 		// vectors for storing the z_track and z_point for each channel
 		vector< vector< double > > z_track_graph(768, vector< double >() );
 		vector< vector< double > > z_point_graph(768, vector< double >() );
+		vector< vector< double > > z_deltat_graph(768, vector< double >() );
 		// vectors for storing the thrown points for each channel (if cuts are applied)
 		vector< vector< double > > z_track_thrown(768, vector< double >() );
 		vector< vector< double > > z_point_thrown(768, vector< double >() );
@@ -353,6 +358,12 @@ jerror_t JEventProcessor_BCAL_point_calib::evnt(JEventLoop *loop, uint64_t event
 	// japp->RootFillLock(this);
 	//  ... fill historgrams or trees ...
 	// japp->RootFillUnLock(this);
+
+        // select events with physics events, i.e., not LED and other front panel triggers
+        const DTrigger* locTrigger = NULL; 
+	loop->GetSingle(locTrigger); 
+	if(locTrigger->Get_L1FrontPanelTriggerBits() != 0) 
+	  return NOERROR;
 	
 	vector<const DBCALShower*> locBCALShowers;
 	vector<const DBCALHit*> bcalhits;
@@ -372,6 +383,8 @@ jerror_t JEventProcessor_BCAL_point_calib::evnt(JEventLoop *loop, uint64_t event
 	DVector3 mypos(0.0,0.0,0.0);
 
 	map< const DBCALShower*, vector<const DBCALPoint*> > matchedShowerPoints_cache;
+	map< const DBCALPoint *, const DBCALUnifiedHit *> upstreamHit_cache;
+	map< const DBCALPoint *, const DBCALUnifiedHit *> downstreamHit_cache;
 
 	// the following two loops loop through a) the showers in each event and b) the tracks in each event and determine the z and phi of both. If the quantities dZ and dPhi are "small" enough, the relevant track and shower are appended to the end of the matchedTracks and matchedShowers vectors respectively
 
@@ -434,6 +447,22 @@ jerror_t JEventProcessor_BCAL_point_calib::evnt(JEventLoop *loop, uint64_t event
 		vector<const DBCALPoint*> points;
 		matchedShowers[i]->Get(points);
 		matchedShowerPoints_cache[ matchedShowers[i] ] = points;
+
+		vector<const DBCALUnifiedHit*> hits;
+		for(unsigned int k=0; k<points.size(); k++) {
+		  points[k]->Get(hits);
+
+		  if(hits.size() != 2)
+		    continue;
+		  
+		  if(hits[0]->end == DBCALGeometry::kUpstream) {
+		    upstreamHit_cache[ points[k] ] = hits[0];
+		    downstreamHit_cache[ points[k] ] = hits[1];
+		  } else {
+		    upstreamHit_cache[ points[k] ] = hits[1];
+		    downstreamHit_cache[ points[k] ] = hits[0];
+		  }
+		}
 	}
 
 	// FILL HISTOGRAMS
@@ -524,6 +553,11 @@ jerror_t JEventProcessor_BCAL_point_calib::evnt(JEventLoop *loop, uint64_t event
 			double t_point = points[jj]->t();
 
 
+			const DBCALUnifiedHit *up_hit = upstreamHit_cache[ points[jj] ];
+			const DBCALUnifiedHit *down_hit = downstreamHit_cache[ points[jj] ];
+			double deltat_point = up_hit->t_ADC - down_hit->t_ADC;
+			
+
 			if(DEBUG) { 
 			  // fill histograms with point information
 			  h1pt_module->Fill(module);
@@ -555,6 +589,7 @@ jerror_t JEventProcessor_BCAL_point_calib::evnt(JEventLoop *loop, uint64_t event
 					// fill z_track vs z_point graphs
 					z_track_graph[cell_id-1].push_back(mypos_z_array[layer-1]);
 					z_point_graph[cell_id-1].push_back(z_point);
+					z_deltat_graph[cell_id-1].push_back(deltat_point);
 				}
 				else
 				{
@@ -627,6 +662,17 @@ jerror_t JEventProcessor_BCAL_point_calib::fini(void)
 
 		h2_tgraph[m]->Draw("A");
 		h2_tgraph[m]->Write(Form("h2_tgraph[%i]", m+1));
+
+		h2_tgraph_deltat[m] = new TGraph(z_track_graph[m].size(), &(z_deltat_graph[m][0]), &(z_track_graph[m][0]));
+		h2_tgraph_deltat[m]->SetTitle(Form("Delta T of point vs z of track for channel %i", m+1));
+		h2_tgraph_deltat[m]->GetXaxis()->SetTitle("Delta T of point (cm)");
+		h2_tgraph_deltat[m]->GetYaxis()->SetTitle("z of track (cm)");
+		h2_tgraph_deltat[m]->GetXaxis()->SetLimits(-10.0, 10.0);
+		h2_tgraph_deltat[m]->GetYaxis()->SetRangeUser(0.0, 500.0);
+		h2_tgraph_deltat[m]->SetMarkerStyle(20);
+
+		h2_tgraph_deltat[m]->Draw("A");
+		h2_tgraph_deltat[m]->Write(Form("h2_tgraph_deltat[%i]", m+1));
 
 		// graphs of the thrown points, if cuts were applied
 		h2_tgraph_thrown[m] = new TGraph(z_track_thrown[m].size(), &(z_track_thrown[m][0]), &(z_point_thrown[m][0]));

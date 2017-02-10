@@ -23,6 +23,7 @@ using namespace jana;
 #include "CDC/DCDCDigiHit.h"
 #include "DAQ/Df125PulsePedestal.h"
 #include "DAQ/Df125PulseTime.h"
+#include "TRIGGER/DTrigger.h"
 
 #include <TDirectory.h>
 #include <TH2.h>
@@ -221,8 +222,11 @@ jerror_t JEventProcessor_CDC_drift::evnt(JEventLoop *eventLoop, uint64_t eventnu
 	Bool_t fillhisto;    // fill histo if true
 	Bool_t fithisto;     // fit histo if true
 
-
-
+        const DTrigger* locTrigger = NULL; 
+	eventLoop->GetSingle(locTrigger); 
+	if(locTrigger->Get_L1FrontPanelTriggerBits() != 0)
+	  return NOERROR;
+	
 	// get raw data for cdc
 	vector<const DCDCDigiHit*> digihits;
 	eventLoop->Get(digihits);

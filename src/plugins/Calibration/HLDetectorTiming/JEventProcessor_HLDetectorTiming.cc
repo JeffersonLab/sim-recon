@@ -18,6 +18,7 @@ using namespace jana;
 #include "TTAB/DTranslationTable.h"
 #include "FCAL/DFCALGeometry.h"
 #include "BCAL/DBCALGeometry.h"
+#include "TRIGGER/DTrigger.h"
 #include "HistogramTools.h"
 
 extern "C"{
@@ -139,6 +140,11 @@ jerror_t JEventProcessor_HLDetectorTiming::brun(JEventLoop *eventLoop, int32_t r
 //------------------
 jerror_t JEventProcessor_HLDetectorTiming::evnt(JEventLoop *loop, uint64_t eventnumber)
 {
+    // select events with physics events, i.e., not LED and other front panel triggers
+    const DTrigger* locTrigger = NULL; 
+    loop->GetSingle(locTrigger); 
+    if(locTrigger->Get_L1FrontPanelTriggerBits() != 0) 
+      return NOERROR;
 
     // Get the EPICs events and update beam current. Skip event if current too low (<10 nA).
     vector<const DEPICSvalue *> epicsValues;
