@@ -20,7 +20,6 @@
 #include "FCAL/DFCALCluster.h"
 #include "ANALYSIS/DAnalysisUtilities.h"
 #include "PID/DVertex.h"
-//#include "TRACKING/DTrackFinder.h"
 
 #include <vector>
 #include <deque>
@@ -174,6 +173,8 @@ jerror_t JEventProcessor_BCAL_inv_mass::evnt(jana::JEventLoop* locEventLoop, uin
 	locEventLoop->Get(locBCALShowers);
 	locEventLoop->Get(locFCALClusters);
 	locEventLoop->Get(kinfitVertex);
+
+	if(locBCALShowers.size() > 15) return NOERROR;
 
 	vector<const DTrackTimeBased*> locTrackTimeBased;
 	locEventLoop->Get(locTrackTimeBased);
