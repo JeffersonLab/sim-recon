@@ -1,5 +1,11 @@
 // hnamepath: /highlevel/PVsTheta_Tracks
 // hnamepath: /highlevel/PhiVsTheta_Tracks
+//
+// e-mail: davidl@jlab.org
+// e-mail: pmatt@jlab.org
+// e-mail: staylor@jlab.org
+// e-mail: sdobbs@jlab.org
+//
 
 {
 	TDirectory *locTopDirectory = gDirectory;

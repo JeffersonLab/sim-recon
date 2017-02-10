@@ -27,12 +27,14 @@ DEVIOWorkerThread::DEVIOWorkerThread(
 	 ,uint32_t            &MAX_PARSED_EVENTS
 	 ,mutex               &PARSED_EVENTS_MUTEX
 	 ,condition_variable  &PARSED_EVENTS_CV
+	 ,set<uint32_t>       &ROCIDS_TO_PARSE
 	 ):
 	 event_source(event_source)
 	,parsed_events(parsed_events)
 	,MAX_PARSED_EVENTS(MAX_PARSED_EVENTS)
 	,PARSED_EVENTS_MUTEX(PARSED_EVENTS_MUTEX)
 	,PARSED_EVENTS_CV(PARSED_EVENTS_CV)
+	,ROCIDS_TO_PARSE(ROCIDS_TO_PARSE)
 	,done(false)
 	,thd(&DEVIOWorkerThread::Run,this)
 {
@@ -751,6 +753,10 @@ void DEVIOWorkerThread::ParseDataBank(uint32_t* &iptr, uint32_t *iend)
 	uint32_t rocid = ((*iptr)>>16) & 0xFFF;
 	iptr++;
 	
+	if(!ROCIDS_TO_PARSE.empty()){
+		if(ROCIDS_TO_PARSE.find(rocid) == ROCIDS_TO_PARSE.end()) return;
+	}
+	
 	// Loop over Data Block Banks
 	while(iptr < iend){
 		
@@ -1174,35 +1180,36 @@ void DEVIOWorkerThread::Parsef250Bank(uint32_t rocid, uint32_t* &iptr, uint32_t 
         switch(data_type){
             case 0: // Block Header
                 slot = (*iptr>>22) & 0x1F;
-                if(VERBOSE>7) cout << "      FADC250 Block Header: slot="<<slot<<" ("<<hex<<*iptr<<dec<<")"<<endl;
+                if(VERBOSE>7) cout << "      FADC250 Block Header: slot="<<slot<<" (0x"<<hex<<*iptr<<dec<<")"<<endl;
                 break;
             case 1: // Block Trailer
                 pe_iter = current_parsed_events.begin();
 				pe = NULL;
-                if(VERBOSE>7) cout << "      FADC250 Block Trailer"<<" ("<<hex<<*iptr<<dec<<")"<<endl;
+                if(VERBOSE>7) cout << "      FADC250 Block Trailer"<<" (0x"<<hex<<*iptr<<dec<<")  iptr=0x"<<hex<<iptr<<dec<<endl;
                 break;
             case 2: // Event Header
                 itrigger = (*iptr>>0) & 0x3FFFFF;
 				pe = *pe_iter++;
-                if(VERBOSE>7) cout << "      FADC250 Event Header: itrigger="<<itrigger<<", rocid="<<rocid<<", slot="<<slot<<")" <<" ("<<hex<<*iptr<<dec<<")" <<endl;
+                if(VERBOSE>7) cout << "      FADC250 Event Header: itrigger="<<itrigger<<", rocid="<<rocid<<", slot="<<slot<<")" <<" (0x"<<hex<<*iptr<<dec<<")" <<endl;
                 break;
             case 3: // Trigger Time
 				{
 					uint64_t t = ((*iptr)&0xFFFFFF)<<0;
+					if(VERBOSE>7) cout << "      FADC250 Trigger time low word="<<(((*iptr)&0xFFFFFF))<<" (0x"<<hex<<*iptr<<dec<<")"<<endl;
 					iptr++;
 					if(((*iptr>>31) & 0x1) == 0){
 						t += ((*iptr)&0xFFFFFF)<<24; // from word on the street: second trigger time word is optional!!??
-						if(VERBOSE>7) cout << "       Trigger time high word="<<(((*iptr)&0xFFFFFF))<<" ("<<hex<<*iptr<<dec<<")"<<endl;
+						if(VERBOSE>7) cout << "      FADC250 Trigger time high word="<<(((*iptr)&0xFFFFFF))<<" (0x"<<hex<<*iptr<<dec<<")  iptr=0x"<<hex<<iptr<<dec<<endl;
 					}else{
 						iptr--;
 					}
-					if(VERBOSE>7) cout << "      FADC250 Trigger Time: t="<<t<<" ("<<hex<<*iptr<<dec<<")"<<endl;
+					if(VERBOSE>7) cout << "      FADC250 Trigger Time: t="<<t<<endl;
 					if(pe) pe->NEW_Df250TriggerTime(rocid, slot, itrigger, t);
 				}
                 break;
             case 4: // Window Raw Data
                 // iptr passed by reference and so will be updated automatically
-                if(VERBOSE>7) cout << "      FADC250 Window Raw Data"<<" ("<<hex<<*iptr<<dec<<")"<<endl;
+                if(VERBOSE>7) cout << "      FADC250 Window Raw Data"<<" (0x"<<hex<<*iptr<<dec<<")"<<endl;
                 if(pe) MakeDf250WindowRawData(pe, rocid, slot, itrigger, iptr);
                 break;
             case 5: // Window Sum
@@ -1210,13 +1217,13 @@ void DEVIOWorkerThread::Parsef250Bank(uint32_t rocid, uint32_t* &iptr, uint32_t 
 					uint32_t channel = (*iptr>>23) & 0x0F;
 					uint32_t sum = (*iptr>>0) & 0x3FFFFF;
 					uint32_t overflow = (*iptr>>22) & 0x1;
-					if(VERBOSE>7) cout << "      FADC250 Window Sum"<<" ("<<hex<<*iptr<<dec<<")"<<endl;
+					if(VERBOSE>7) cout << "      FADC250 Window Sum"<<" (0x"<<hex<<*iptr<<dec<<")"<<endl;
 					if(pe) pe->NEW_Df250WindowSum(rocid, slot, channel, itrigger, sum, overflow);
 				}
                 break;				
             case 6: // Pulse Raw Data
 //                MakeDf250PulseRawData(objs, rocid, slot, itrigger, iptr);
-                if(VERBOSE>7) cout << "      FADC250 Pulse Raw Data"<<" ("<<hex<<*iptr<<dec<<")"<<endl;
+                if(VERBOSE>7) cout << "      FADC250 Pulse Raw Data"<<" (0x"<<hex<<*iptr<<dec<<")"<<endl;
                 break;
             case 7: // Pulse Integral
 				{
@@ -1227,7 +1234,7 @@ void DEVIOWorkerThread::Parsef250Bank(uint32_t rocid, uint32_t* &iptr, uint32_t 
 					uint32_t nsamples_integral = 0;  // must be overwritten later in GetObjects with value from Df125Config value
 					uint32_t nsamples_pedestal = 1;  // The firmware returns an already divided pedestal
 					uint32_t pedestal = 0;  // This will be replaced by the one from Df250PulsePedestal in GetObjects
-					if(VERBOSE>7) cout << "      FADC250 Pulse Integral: chan="<<channel<<" pulse_number="<<pulse_number<<" sum="<<sum<<" ("<<hex<<*iptr<<dec<<")"<<endl;
+					if(VERBOSE>7) cout << "      FADC250 Pulse Integral: chan="<<channel<<" pulse_number="<<pulse_number<<" sum="<<sum<<" (0x"<<hex<<*iptr<<dec<<")"<<endl;
 					if(pe) pe->NEW_Df250PulseIntegral(rocid, slot, channel, itrigger, pulse_number, quality_factor, sum, pedestal, nsamples_integral, nsamples_pedestal);
 				}
                 break;
@@ -1237,17 +1244,18 @@ void DEVIOWorkerThread::Parsef250Bank(uint32_t rocid, uint32_t* &iptr, uint32_t 
 					uint32_t pulse_number = (*iptr>>21) & 0x03;
 					uint32_t quality_factor = (*iptr>>19) & 0x03;
 					uint32_t pulse_time = (*iptr>>0) & 0x7FFFF;
-					if(VERBOSE>7) cout << "      FADC250 Pulse Time: chan="<<channel<<" pulse_number="<<pulse_number<<" pulse_time="<<pulse_time<<" ("<<hex<<*iptr<<dec<<")"<<endl;
+					if(VERBOSE>7) cout << "      FADC250 Pulse Time: chan="<<channel<<" pulse_number="<<pulse_number<<" pulse_time="<<pulse_time<<" (0x"<<hex<<*iptr<<dec<<")"<<endl;
 					if(pe) pe->NEW_Df250PulseTime(rocid, slot, channel, itrigger, pulse_number, quality_factor, pulse_time);
 				}
 				break;
             case 9: // Pulse Data (firmware instroduce in Fall 2016)
 				{
-					// from word 1
+ 					// from word 1
 					uint32_t event_number_within_block = (*iptr>>19) & 0xFF;
 					uint32_t channel                   = (*iptr>>15) & 0x0F;
 					bool     QF_pedestal               = (*iptr>>14) & 0x01;
 					uint32_t pedestal                  = (*iptr>>0 ) & 0x3FFF;
+					if(VERBOSE>7) cout << "      FADC250 Pulse Data (0x"<<hex<<*iptr<<dec<<") channel=" << channel << " pedestal="<<pedestal << " event within block=" << event_number_within_block <<endl;
 					
 					// event_number_within_block=0 indicates error
 					if(event_number_within_block==0){
@@ -1267,17 +1275,18 @@ void DEVIOWorkerThread::Parsef250Bank(uint32_t rocid, uint32_t* &iptr, uint32_t 
 					while( (*++iptr>>31) == 0 ){
 					
 						if( (*iptr>>30) != 0x01) throw JException("Bad f250 Pulse Data!", __FILE__, __LINE__);
-
+ 
 						// from word 2
 						uint32_t integral                  = (*iptr>>12) & 0x3FFFF;
 						bool     QF_NSA_beyond_PTW         = (*iptr>>11) & 0x01;
 						bool     QF_overflow               = (*iptr>>10) & 0x01;
 						bool     QF_underflow              = (*iptr>>9 ) & 0x01;
 						uint32_t nsamples_over_threshold   = (*iptr>>0 ) & 0x1FF;
+						if(VERBOSE>7) cout << "      FADC250 Pulse Data word 2(0x"<<hex<<*iptr<<dec<<")  integral="<<integral<<endl;
 
 						iptr++;
 						if( (*iptr>>30) != 0x00) throw JException("Bad f250 Pulse Data!", __FILE__, __LINE__);
-
+ 
 						// from word 3
 						uint32_t course_time               = (*iptr>>21) & 0x1FF;//< 4 ns/count
 						uint32_t fine_time                 = (*iptr>>15) & 0x3F;//< 0.0625 ns/count
@@ -1285,6 +1294,7 @@ void DEVIOWorkerThread::Parsef250Bank(uint32_t rocid, uint32_t* &iptr, uint32_t 
 						bool     QF_vpeak_beyond_NSA       = (*iptr>>2 ) & 0x01;
 						bool     QF_vpeak_not_found        = (*iptr>>1 ) & 0x01;
 						bool     QF_bad_pedestal           = (*iptr>>0 ) & 0x01;
+						if(VERBOSE>7) cout << "      FADC250 Pulse Data word 3(0x"<<hex<<*iptr<<dec<<")  course_time="<<course_time<<" fine_time="<<fine_time<<" pulse_peak="<<pulse_peak<<endl;
 
 						if( pe ) {
 							pe->NEW_Df250PulseData(rocid, slot, channel, itrigger
@@ -1315,7 +1325,7 @@ void DEVIOWorkerThread::Parsef250Bank(uint32_t rocid, uint32_t* &iptr, uint32_t 
 					uint32_t pulse_number = (*iptr>>21) & 0x03;
 					uint32_t pedestal = (*iptr>>12) & 0x1FF;
 					uint32_t pulse_peak = (*iptr>>0) & 0xFFF;
-					if(VERBOSE>7) cout << "      FADC250 Pulse Pedestal chan="<<channel<<" pulse_number="<<pulse_number<<" pedestal="<<pedestal<<" pulse_peak="<<pulse_peak<<" ("<<hex<<*iptr<<dec<<")"<<endl;
+					if(VERBOSE>7) cout << "      FADC250 Pulse Pedestal chan="<<channel<<" pulse_number="<<pulse_number<<" pedestal="<<pedestal<<" pulse_peak="<<pulse_peak<<" (0x"<<hex<<*iptr<<dec<<")"<<endl;
 					if(pe) pe->NEW_Df250PulsePedestal(rocid, slot, channel, itrigger, pulse_number, pedestal, pulse_peak);
 				}
                 break;
@@ -1326,8 +1336,11 @@ void DEVIOWorkerThread::Parsef250Bank(uint32_t rocid, uint32_t* &iptr, uint32_t 
                 // different behavior for debug mode data as regular data.
             case 14: // Data not valid (empty module)
             case 15: // Filler (non-data) word
-                if(VERBOSE>7) cout << "      FADC250 Event Trailer, Data not Valid, or Filler word ("<<data_type<<")"<<" ("<<hex<<*iptr<<dec<<")"<<endl;
-                break;
+            	if(VERBOSE>7) cout << "      FADC250 Event Trailer, Data not Valid, or Filler word ("<<data_type<<")"<<" (0x"<<hex<<*iptr<<dec<<")"<<endl;
+					break;
+				default:
+ 					if(VERBOSE>7) cout << "      FADC250 unknown data type ("<<data_type<<")"<<" (0x"<<hex<<*iptr<<dec<<")"<<endl;
+					break;
         }
     }
 

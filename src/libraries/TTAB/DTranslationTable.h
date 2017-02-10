@@ -85,6 +85,19 @@ using namespace jana;
 		X(DPSCTDCDigiHit) \
 		X(DTPOLSectorDigiHit)
 
+#define MyfADCTypes(X) \
+		X(DBCALDigiHit) \
+		X(DCDCDigiHit) \
+		X(DFCALDigiHit) \
+		X(DFDCCathodeDigiHit) \
+		X(DSCDigiHit) \
+		X(DTOFDigiHit) \
+		X(DTAGMDigiHit) \
+		X(DTAGHDigiHit) \
+		X(DPSDigiHit) \
+		X(DPSCDigiHit) \
+		X(DTPOLSectorDigiHit)
+
 
 #include "GlueX.h"
 
@@ -348,6 +361,36 @@ class DTranslationTable:public jana::JObject{
 		// Method to print sizes of all vectors (for debugging)
 		#define printvectorsize(A) ttout << "     v" #A ".size() = " << v##A.size() << std::endl;
 		void PrintVectorSizes(void) const { MyTypes(printvectorsize) }
+		
+		
+		// -- Here are some to help with overriding the nsamples_X fields
+		// -- of all of the fADC types
+
+		// Create config. param. members for all fADC types
+		#define makefadcconfigparam1(A) uint32_t NSAMPLES_INTEGRAL_##A;
+		#define makefadcconfigparam2(A) uint32_t NSAMPLES_PEDESTAL_##A;
+		MyfADCTypes(makefadcconfigparam1)
+		MyfADCTypes(makefadcconfigparam2)
+		
+		// Method to initialize variables and create/get config. parameters
+		void InitNsamplesOverride(void){
+			#define setdefaultfadc(A) {\
+				NSAMPLES_INTEGRAL_##A = NSAMPLES_PEDESTAL_##A = 0; \
+				gPARMS->SetDefaultParameter("TT:NSAMPLES_INTEGRAL_" #A, NSAMPLES_INTEGRAL_##A, "Overwrite the nsamples_integral field of all " #A " objects with this"); \
+				gPARMS->SetDefaultParameter("TT:NSAMPLES_PEDESTAL_" #A, NSAMPLES_PEDESTAL_##A, "Overwrite the nsamples_pedestal field of all " #A " objects with this"); \
+			}
+			MyfADCTypes(setdefaultfadc)
+		}
+		
+		// Method to overwrite nsamples_X fields if config. param is set
+		void OverwriteNsamples(void) const {
+			#define overwritensamples(A) {\
+				if(NSAMPLES_INTEGRAL_##A > 0) for(auto h : v##A) h->nsamples_integral =  NSAMPLES_INTEGRAL_##A; \
+				if(NSAMPLES_PEDESTAL_##A > 0) for(auto h : v##A) h->nsamples_pedestal =  NSAMPLES_PEDESTAL_##A; \
+			}
+			MyfADCTypes(overwritensamples)
+		}
+		
 
 		//-----------------------------------------------------------------------
 
@@ -586,6 +629,7 @@ void DTranslationTable::CopyDCAEN1290TDCInfo(T *h, const DCAEN1290TDCHit *hit) c
 }
 
 #undef MyTypes
+#undef MyfADCTypes
 #undef makevector
 #undef makefactoryptr
 #undef copyfactoryptr
@@ -593,6 +637,10 @@ void DTranslationTable::CopyDCAEN1290TDCInfo(T *h, const DCAEN1290TDCHit *hit) c
 #undef copytofactory
 #undef checkclassname
 #undef printvectorsize
+#undef makefadcconfigparam1
+#undef makefadcconfigparam2
+#undef setdefaultfadc
+#undef overwritensamples
 
 #endif // _DTranslationTable_
 

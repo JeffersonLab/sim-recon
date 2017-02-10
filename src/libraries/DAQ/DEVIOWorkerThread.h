@@ -42,7 +42,8 @@ class DEVIOWorkerThread{
 	 		,list<DParsedEvent*> &parsed_events
 	 		,uint32_t            &MAX_PARSED_EVENTS
 	 		,mutex               &PARSED_EVENTS_MUTEX
-	 		,condition_variable  &PARSED_EVENTS_CV );
+	 		,condition_variable  &PARSED_EVENTS_CV
+			,set<uint32_t>       &ROCIDS_TO_PARSE );
 		virtual ~DEVIOWorkerThread();
 
 		// These are owned by JEventSource and
@@ -52,6 +53,7 @@ class DEVIOWorkerThread{
 		uint32_t            &MAX_PARSED_EVENTS;
 		mutex               &PARSED_EVENTS_MUTEX;
 		condition_variable  &PARSED_EVENTS_CV;
+		set<uint32_t>       &ROCIDS_TO_PARSE;
 		
 		// Pool of parsed events
 		vector<DParsedEvent*> parsed_event_pool;

@@ -58,7 +58,7 @@ jerror_t JEventProcessor_TOF_calib::init(void)
   BINADC_2_TIME = 0.0625; // is 4ns/64
 
   TDCTLOC = 385.;
-  ADCTLOC = 116.;
+  ADCTLOC = 115.;
 
   ADCTimeCut = 50.;
   TDCTimeCut = 60.;
@@ -286,7 +286,7 @@ jerror_t JEventProcessor_TOF_calib::evnt(JEventLoop *loop, uint64_t eventnumber)
 	newsingle.adc = (float)hitR->pulse_integral -
 	  (float)hitR->pedestal/(float)hitR->nsamples_pedestal*(float)hitR->nsamples_integral;
 
-	newsingle.Peak = hitR->pulse_peak;
+	newsingle.Peak = hitR->pulse_peak - (float)hitR->pedestal/(float)hitR->nsamples_pedestal;
 
 	newsingle.OverFlow = ADCRightOverFlow[plane][i];
 	TOFADCSingles[plane].push_back(newsingle);
@@ -307,7 +307,7 @@ jerror_t JEventProcessor_TOF_calib::evnt(JEventLoop *loop, uint64_t eventnumber)
 	newsingle.adc = (float)hit->pulse_integral -
 	  (float)hit->pedestal/(float)hit->nsamples_pedestal*(float)hit->nsamples_integral;
 
-	newsingle.Peak = hit->pulse_peak;
+	newsingle.Peak = hit->pulse_peak - (float)hit->pedestal/(float)hit->nsamples_pedestal;
 
 	newsingle.time = (float)hit->pulse_time*BINADC_2_TIME ;
 	newsingle.OverFlow = ADCLeftOverFlow[plane][j];
@@ -329,9 +329,9 @@ jerror_t JEventProcessor_TOF_calib::evnt(JEventLoop *loop, uint64_t eventnumber)
 	    newpaddle.adcR = (float)hitR->pulse_integral -
 	      (float)hitR->pedestal/(float)hitR->nsamples_pedestal*(float)hitR->nsamples_integral;
 
-	    newpaddle.PeakR = hitR->pulse_peak;
+	    newpaddle.PeakR = hitR->pulse_peak - (float)hitR->pedestal/(float)hitR->nsamples_pedestal;
 
-	    newpaddle.PeakL = hit->pulse_peak;
+	    newpaddle.PeakL = hit->pulse_peak - (float)hit->pedestal/(float)hit->nsamples_pedestal;
 
 	    newpaddle.OverFlowL =  ADCLeftOverFlow[plane][j];
 	    newpaddle.OverFlowR =  ADCRightOverFlow[plane][i];
@@ -596,7 +596,7 @@ jerror_t JEventProcessor_TOF_calib::MakeHistograms(void){
     TOFEnergy = new TH2F("TOFEnergy","TOF Energy Integral (no ped subraction)",
 			 176, 0., 176., 100, 0., 20000.);
     TOFPeak = new TH2F("TOFPeak","TOF Peak Amplitude",176, 0., 176., 100, 0., 4100.);
-    TOFPedestal = new TH2F("TOFPedestal","TOF Pedestal",176, 0., 176., 100, 0., 200.);
+    TOFPedestal = new TH2F("TOFPedestal","TOF Pedestal",176, 0., 176., 300, 0., 600.);
 
 
     t3 = new TTree("t3","TOF Hits");
