@@ -27,9 +27,9 @@ void GetCCDBConstants(TString path, Int_t run, TString variation, vector<double>
 
 
 // macro that gets TGraphs from the ROOT file generated from the BCAL_point_calibs plugin and returns the effective velocities for each channel, using a quadratic fit
-void c_eff_pol2(TString fileName = "hd_root.root", int runNumber = 22016, TString variation = "default")
+void c_eff_linear_fit(TString fileName = "hd_root.root", int runNumber = 22016, TString variation = "default")
 {
-        ofstream outfile;
+        ofstream outfile("c_eff_linear.out");
 
         //gROOT->Reset();
 
