@@ -6,6 +6,7 @@
 //
 
 #include "JEventProcessor_ST_online_Tresolution.h"
+#include "TRIGGER/DTrigger.h"
 using namespace jana;
 
 
@@ -142,6 +143,12 @@ jerror_t JEventProcessor_ST_online_Tresolution::evnt(JEventLoop *loop, uint64_t 
 	//  ... fill historgrams or trees ...
 	// japp->RootUnLock();
   double speed_light = 29.9792458;
+
+  const DTrigger* locTrigger = NULL; 
+  loop->GetSingle(locTrigger); 
+  if(locTrigger->Get_L1FrontPanelTriggerBits() != 0)
+    return NOERROR;
+
   // SC hits
   vector<const DSCHit *> scHitVector;
   loop->Get(scHitVector);

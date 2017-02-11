@@ -120,7 +120,8 @@ void ExtractTimeOffsetsAndCEff(int run = 2931, TString filename = "hd_root.root"
     TH1D * selectedBCALOffset = new TH1D("selectedBCALOffset", "Selected Global BCAL Offset; CCDB Index; Offset [ns]", 768, 0.5, 768 + 0.5);
     TH1I * BCALOffsetDistribution = new TH1I("BCALOffsetDistribution", "Global BCAL Offset; Global Offset [ns]; Entries", 100, -10, 10);
 
-    auto thisHist = ExtractTimeOffsetsAndCEffNS::Get2DHistogram("BCAL_Global_Offsets", "Target Time", "Target Time Minus RF Time Vs. Cell Number");
+    //auto thisHist = ExtractTimeOffsetsAndCEffNS::Get2DHistogram("BCAL_Global_Offsets", "Target Time", "Target Time Minus RF Time Vs. Cell Number");
+    auto thisHist = ExtractTimeOffsetsAndCEffNS::Get2DHistogram("BCAL_Global_Offsets", "Target Time", "deltaTVsCell");
     if(thisHist != NULL){
         int nBinsX = thisHist->GetNbinsX();
         int nBinsY = thisHist->GetNbinsY();
@@ -162,7 +163,9 @@ void ExtractTimeOffsetsAndCEff(int run = 2931, TString filename = "hd_root.root"
                 int the_tdc_cell = (iModule - 1) * 12 + (iLayer - 1) * 4 + iSector; // One less layer of TDCs
                 // Format the string to lookup the histogram by name
                 char name[200];
-                sprintf(name, "Module %.2i Layer %.2i Sector %.2i", iModule, iLayer, iSector);
+                //sprintf(name, "Module %.2i Layer %.2i Sector %.2i", iModule, iLayer, iSector);
+                sprintf(name, "Module%.2iLayer%.2iSector%.2i", iModule, iLayer, iSector);
+                cout << name <<endl;
 
                 // These histograms are created on the fly in the plugin, so there is a chance that they do not exist, in which case the pointer will be NULL
 

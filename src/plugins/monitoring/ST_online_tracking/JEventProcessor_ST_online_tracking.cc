@@ -29,6 +29,7 @@ using namespace std;
 #include "PID/DChargedTrack.h"
 // Tracking libraries
 #include "TRACKING/DTrackTimeBased.h"
+#include "TRIGGER/DTrigger.h"
 
 // Define some constants
 const double    RAD2DEG       = 57.29577951;      // Convert radians to degrees
@@ -145,6 +146,12 @@ jerror_t JEventProcessor_ST_online_tracking::evnt(JEventLoop *eventLoop, uint64_
   vector<const DSCDigiHit*>       st_adc_digi_hits;
   vector<const DParticleID*>      pid_algorithm;
   vector<const DSCHit*>           st_hits;
+
+  const DTrigger* locTrigger = NULL; 
+  eventLoop->GetSingle(locTrigger); 
+  if(locTrigger->Get_L1FrontPanelTriggerBits() != 0)
+    return NOERROR;
+
   eventLoop->Get(st_adc_digi_hits);
   eventLoop->Get(pid_algorithm);
   eventLoop->Get(st_hits);

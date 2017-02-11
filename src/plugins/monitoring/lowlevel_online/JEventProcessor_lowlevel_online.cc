@@ -35,6 +35,7 @@ using namespace jana;
 
 #include <FCAL/DFCALGeometry.h>
 #include "TTAB/DTTabUtilities.h"
+#include "TRIGGER/DTrigger.h"
 
 #include <map>
 
@@ -80,10 +81,13 @@ jerror_t JEventProcessor_lowlevel_online::init(void)
     F250_THRESHOLD = 0;
     F125_THRESHOLD = 0;
 
+    gPARMS->SetDefaultParameter("LOWLEVEL:MOREPLOTS", MORE_PLOTS, "Make more monitoring plots.");
+    gPARMS->SetDefaultParameter("LOWLEVEL:CHECKEMULATION", CHECK_EMULATED_DATA, "Make plots for checking emulation.");
     gPARMS->SetDefaultParameter("LOWLEVEL:INDIVIDUAL", INDIVIDUAL_CHANNEL_DATA, "Make histograms for individual channels.");
     gPARMS->SetDefaultParameter("LOWLEVEL:F250DATA", ANALYZE_F250_DATA, "Analyze f250ADC data");
     gPARMS->SetDefaultParameter("LOWLEVEL:F125DATA", ANALYZE_F125_DATA, "Analyze f125ADC data");
-    gPARMS->SetDefaultParameter("LOWLEVEL:F250THRESHOLD", ANALYZE_F125_DATA, "Analyze f125ADC data");
+    gPARMS->SetDefaultParameter("LOWLEVEL:F125THRESHOLD", F125_THRESHOLD, "Set threshold for accepting f125ADC hits (in ADC counts)");
+    gPARMS->SetDefaultParameter("LOWLEVEL:F250THRESHOLD", F250_THRESHOLD, "Set threshold for accepting f250ADC hits (in ADC counts)");
     
 	// Set a base directory
 	TDirectory *base = gDirectory;
@@ -572,6 +576,16 @@ jerror_t JEventProcessor_lowlevel_online::evnt(JEventLoop *loop, uint64_t eventn
 	vector<const DTAGHDigiHit*>        taghdigihits;
 	vector<const DTAGHTDCDigiHit*>     taghtdcdigihits;
 	vector<const DTPOLSectorDigiHit*>  tpoldigihits;
+
+
+	// ignore front panel triggers
+	const DTrigger* locTrigger = NULL; 
+	loop->GetSingle(locTrigger); 
+	if(locTrigger->Get_L1FrontPanelTriggerBits() != 0)
+	  return NOERROR;
+
+
+	// Get hit data
 	loop->Get(bcaldigihits);
 	loop->Get(bcaltdcdigihits);
 	loop->Get(cdcdigihits);
@@ -683,8 +697,9 @@ jerror_t JEventProcessor_lowlevel_online::evnt(JEventLoop *loop, uint64_t eventn
 	// F1TDC
 	for(unsigned int i = 0; i < bcaltdcdigihits.size(); i++){
 		const DBCALTDCDigiHit *digihit = bcaltdcdigihits[i];
-		double t_tdc = locTTabUtilities->Convert_DigiTimeToNs_F1TDC(digihit);
-		bcal_tdc_time->Fill(t_tdc);
+		//double t_tdc = locTTabUtilities->Convert_DigiTimeToNs_F1TDC(digihit);
+		//bcal_tdc_time->Fill(t_tdc);
+        bcal_tdc_time->Fill(digihit->time);
 	}
 
 	//------------------------ FCAL -----------------------

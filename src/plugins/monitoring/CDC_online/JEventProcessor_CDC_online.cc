@@ -26,6 +26,7 @@ using namespace jana;
 #include "DAQ/Df125WindowRawData.h"
 #include "DAQ/Df125CDCPulse.h"
 #include "DAQ/Df125Config.h"
+#include "TRIGGER/DTrigger.h"
 
 #include <TDirectory.h>
 #include <TH2.h>
@@ -262,6 +263,13 @@ jerror_t JEventProcessor_CDC_online::evnt(JEventLoop *eventLoop, uint64_t eventn
 
   //add extra 0 at front to use offset[1] for ring 1
   int straw_offset[29] = {0,0,42,84,138,192,258,324,404,484,577,670,776,882,1005,1128,1263,1398,1544,1690,1848,2006,2176,2346,2528,2710,2907,3104,3313};
+
+
+  const DTrigger* locTrigger = NULL; 
+  eventLoop->GetSingle(locTrigger); 
+  if(locTrigger->Get_L1FrontPanelTriggerBits() != 0)
+    return NOERROR;
+
 
   // get raw data for cdc
   vector<const DCDCDigiHit*> digihits;

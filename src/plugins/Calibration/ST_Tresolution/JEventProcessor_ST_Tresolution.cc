@@ -6,6 +6,7 @@
 //
 
 #include "JEventProcessor_ST_Tresolution.h"
+#include "TRIGGER/DTrigger.h"
 using namespace jana;
 
 
@@ -151,6 +152,14 @@ jerror_t JEventProcessor_ST_Tresolution::evnt(JEventLoop *loop, uint64_t eventnu
 	// japp->RootWriteLock();
 	//  ... fill historgrams or trees ...
 	// japp->RootUnLock();
+
+
+        // select events with physics events, i.e., not LED and other front panel triggers
+        const DTrigger* locTrigger = NULL; 
+	loop->GetSingle(locTrigger); 
+	if(locTrigger->Get_L1FrontPanelTriggerBits() != 0) 
+	  return NOERROR;
+
   double speed_light = 29.9792458;
   // SC hits
   vector<const DSCHit *> scHitVector;

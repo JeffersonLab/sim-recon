@@ -5,6 +5,7 @@
 // Creator: mkamel (on Linux ifarm1401 2.6.32-431.el6.x86_64 x86_64)
 //
 #include "JEventProcessor_ST_online_lowlevel.h"
+#include "TRIGGER/DTrigger.h"
 
 // Routine used to create our JEventProcessor
 #include <JANA/JApplication.h>
@@ -192,6 +193,12 @@ jerror_t JEventProcessor_ST_online_lowlevel::evnt(JEventLoop *loop, uint64_t eve
   vector<const DSCTDCDigiHit*> dsctdcdigihits;          // ST f1TDC DigiHits
   vector<const DSCHit*> dschits;                        // ST hits
   const DTTabUtilities*           TTabUtilities = NULL;
+
+  const DTrigger* locTrigger = NULL; 
+  loop->GetSingle(locTrigger); 
+  if(locTrigger->Get_L1FrontPanelTriggerBits() != 0)
+    return NOERROR;
+
   loop->Get(dscdigihits);
   loop->Get(dsctdcdigihits);
   loop->Get(dschits);

@@ -100,16 +100,17 @@ class DEVIOWorkerThread{
 		void PublishEvents(void);
 		void ParseBank(void);
 		
-		void     ParseEventTagBank(uint32_t* &iptr, uint32_t *iend);
-		void        ParseEPICSbank(uint32_t* &iptr, uint32_t *iend);
-		void          ParseBORbank(uint32_t* &iptr, uint32_t *iend);
-		void     ParseTSscalerBank(uint32_t* &iptr, uint32_t *iend);
-		void   Parsef250scalerBank(uint32_t* &iptr, uint32_t *iend);
-		void     ParseControlEvent(uint32_t* &iptr, uint32_t *iend);
-		void      ParsePhysicsBank(uint32_t* &iptr, uint32_t *iend);
-		void ParseBuiltTriggerBank(uint32_t* &iptr, uint32_t *iend);
-		void         ParseDataBank(uint32_t* &iptr, uint32_t *iend);
-        void      ParseDVertexBank(uint32_t* &iptr, uint32_t *iend);
+		void      ParseEventTagBank(uint32_t* &iptr, uint32_t *iend);
+		void         ParseEPICSbank(uint32_t* &iptr, uint32_t *iend);
+		void           ParseBORbank(uint32_t* &iptr, uint32_t *iend);
+		void      ParseTSscalerBank(uint32_t* &iptr, uint32_t *iend);
+		void    Parsef250scalerBank(uint32_t* &iptr, uint32_t *iend);
+		void      ParseControlEvent(uint32_t* &iptr, uint32_t *iend);
+		void       ParsePhysicsBank(uint32_t* &iptr, uint32_t *iend);
+		void  ParseBuiltTriggerBank(uint32_t* &iptr, uint32_t *iend);
+		void          ParseDataBank(uint32_t* &iptr, uint32_t *iend);
+        void       ParseDVertexBank(uint32_t* &iptr, uint32_t *iend);
+        void ParseDEventRFBunchBank(uint32_t* &iptr, uint32_t *iend);
 
 		void        ParseJLabModuleData(uint32_t rocid, uint32_t* &iptr, uint32_t *iend);
 		void                ParseTIBank(uint32_t rocid, uint32_t* &iptr, uint32_t *iend);
