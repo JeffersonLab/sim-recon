@@ -67,6 +67,7 @@
 	{
 		locHist_PiPlusPsi_t->SetTitle("#psi_{#pi^{+}} vs E_{#gamma}: Proton dE/dx > 2.2; E_{#gamma}; #psi_{#pi^{+}}");
 		TH1D *locHist_TimingCut_PiPlusPsi = (TH1D*)locHist_PiPlusPsi_t->ProjectionY();
+		locHist_TimingCut_PiPlusPsi->SetTitle("Coherent Edge");
 		locHist_TimingCut_PiPlusPsi->Rebin(4);
 		locHist_TimingCut_PiPlusPsi->SetMinimum(0);
 		locHist_TimingCut_PiPlusPsi->GetXaxis()->SetTitleSize(0.05);
@@ -198,12 +199,14 @@
 	tx.SetTextAlign(11);
 	tx.SetTextSize(0.07);
 	char text[100];
-	sprintf(text, "Post KinFit Cut");
+	sprintf(text, "E_{#gamma} > 7 GeV");
 	tx.DrawLatex(0.05, 0.6, text);
-	sprintf(text, "M(#rho) = %0.3f GeV/c^{2}", rho_mass);
+	sprintf(text, "Post KinFit Cut");
 	tx.DrawLatex(0.05, 0.5, text);
-	sprintf(text, "N(#rho) = %0.4f / Trigger", n_rho_kinfit/n_triggers);
+	sprintf(text, "M(#rho) = %0.3f GeV/c^{2}", rho_mass);
 	tx.DrawLatex(0.05, 0.4, text);
+	sprintf(text, "N(#rho) = %0.2f / 1k Trigger", n_rho_kinfit/n_triggers*1000);
+	tx.DrawLatex(0.05, 0.3, text);
 
 }
 
