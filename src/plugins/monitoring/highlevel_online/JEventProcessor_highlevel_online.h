@@ -25,6 +25,8 @@
 #include <BCAL/DBCALDigiHit.h>
 #include <FCAL/DFCALDigiHit.h>
 #include <DAQ/Df250PulsePedestal.h>
+#include <PAIR_SPECTROMETER/DPSPair.h>
+#include <PAIR_SPECTROMETER/DPSCPair.h>
 
 using namespace jana;
 using namespace std;
@@ -46,6 +48,7 @@ class JEventProcessor_highlevel_online:public jana::JEventProcessor
 		TH2I* dHist_NumHighLevelObjects;
 
 		TH1I* dHist_BeamEnergy;
+		TH1I* dHist_PSPairEnergy;
 
 		TH2I* dHist_PVsTheta_Tracks;
 		TH2I* dHist_PhiVsTheta_Tracks;
@@ -55,6 +58,7 @@ class JEventProcessor_highlevel_online:public jana::JEventProcessor
 
 		TH1I* d2gamma;
 		TH1I *dpip_pim;
+		TH1I *dKp_Km;
 		TH1I *dpip_pim_pi0;
 		TH2I *dbeta_vs_p;
 		TH1I *dptrans;

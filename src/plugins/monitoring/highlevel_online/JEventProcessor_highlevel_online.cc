@@ -78,8 +78,11 @@ jerror_t JEventProcessor_highlevel_online::init(void)
 
 	/************************************************************* KINEMATICS *************************************************************/
 
-	// Beam Energy
+	// Beam Energy from tagger
 	dHist_BeamEnergy = new TH1I("BeamEnergy", "Reconstructed Tagger Beam Energy;Beam Energy (GeV)", 240, 0.0, 12.0);
+
+	// Beam Energy from PS
+	dHist_PSPairEnergy = new TH1I("PSPairEnergy", "Reconstructed PS Beam Energy;Beam Energy (GeV)", 250, 7.0, 12.0);
 
 	// PVsTheta Time-Based Tracks
 	dHist_PVsTheta_Tracks = new TH2I("PVsTheta_Tracks", "P vs. #theta for time-based tracks;#theta#circ;p (GeV/c)", 280, 0.0, 140.0, 150, 0.0, 12.0);
@@ -101,6 +104,9 @@ jerror_t JEventProcessor_highlevel_online::init(void)
 
 	// pi+ pi-
 	dpip_pim = new TH1I("PiPlusPiMinus", "#pi^{+}#pi^{-} inv. mass w/ identified proton;#pi^{+}#pi^{-} inv. mass (GeV)", 400, 0.0, 2.0);
+
+	// K+ K-
+	dKp_Km = new TH1I("KPlusKMinus", "K^{+}K^{-} inv. mass w/ identified proton;K^{+}K^{-} inv. mass (GeV)", 400, 0.0, 2.0);
 
 	// pi+ pi- pi0
 	dpip_pim_pi0 = new TH1I("PiPlusPiMinusPiZero", "#pi^{+}#pi^{-}#pi^{o} inv. mass w/ identified proton;#pi^{+}#pi^{-}#pi^{o} inv. mass (GeV)", 200, 0.035, 2.0);
@@ -153,6 +159,12 @@ jerror_t JEventProcessor_highlevel_online::evnt(JEventLoop *locEventLoop, uint64
 
 	vector<const DBeamPhoton*> locBeamPhotons;
 	locEventLoop->Get(locBeamPhotons);
+
+	vector<const DPSPair*> locPSPairs;
+	locEventLoop->Get(locPSPairs);
+
+	vector<const DPSCPair*> locPSCPairs;
+	locEventLoop->Get(locPSCPairs);
 
 	vector<const DFCALShower*> locFCALShowers;
 	locEventLoop->Get(locFCALShowers);
@@ -304,6 +316,16 @@ jerror_t JEventProcessor_highlevel_online::evnt(JEventLoop *locEventLoop, uint64
 		if(fabs(locDeltaT) <= 0.5*dBeamBunchPeriod)
 			locBeamPhotons_InTime.push_back(locBeamPhoton);
 	}
+	
+	vector<double> Eps; // pair energy in PS
+	if(!locPSCPairs.empty()){
+		for(auto pspair : locPSPairs){
+			auto flhit = pspair->ee.first;
+			auto frhit = pspair->ee.second;
+			double E = flhit->E + frhit->E;
+			Eps.push_back(E);
+		}
+	}
 
 	/***************************************************************** RF *****************************************************************/
 
@@ -353,6 +375,8 @@ jerror_t JEventProcessor_highlevel_online::evnt(JEventLoop *locEventLoop, uint64
 
 	for(size_t loc_i = 0; loc_i < locBeamPhotons.size(); ++loc_i)
 		dHist_BeamEnergy->Fill(locBeamPhotons[loc_i]->energy());
+	
+	for(auto E : Eps) dHist_PSPairEnergy->Fill(E);
 
 	for(size_t loc_i = 0; loc_i < locChargedTracks.size(); ++loc_i)
 	{
@@ -486,6 +510,67 @@ jerror_t JEventProcessor_highlevel_online::evnt(JEventLoop *locEventLoop, uint64
 					double ptrans = locFinalStateP4.Perp();
 					dptrans->Fill(ptrans);
 					if(ptrans > 0.1) continue;
+				}
+			}
+		}		
+	}
+
+	/*************************************************************** K+ K- ***************************************************************/
+	for(auto t1 : locChargedTracks){
+		//look for K+
+		auto hypoth1 = t1->Get_Hypothesis(KPlus);
+		if(!hypoth1) continue;
+
+		//timing cut
+		auto dectector1 = hypoth1->t1_detector();
+		double locDeltaT = hypoth1->time() - hypoth1->t0();
+		if(fabs(locDeltaT) > dTimingCutMap[PiPlus][dectector1]) // use same timing cuts as pion
+			continue;
+
+		const DLorentzVector &Kpmom = hypoth1->lorentzMomentum();
+
+		for(auto t2 : locChargedTracks){
+			if(t2 == t1) continue;
+
+			//look for pi-
+			auto hypoth2 = t2->Get_Hypothesis(KMinus);
+			if(!hypoth2) continue;
+
+			//timing cut
+			auto dectector2 = hypoth2->t1_detector();
+			locDeltaT = hypoth2->time() - hypoth2->t0();
+			if(fabs(locDeltaT) > dTimingCutMap[PiMinus][dectector2]) // use same timing cuts as pion
+				continue;
+
+			const DLorentzVector &Kmmom = hypoth2->lorentzMomentum();
+
+			for(auto t3 : locChargedTracks){
+				if(t3 == t1) continue;
+				if(t3 == t2) continue;
+
+				//look for proton
+				auto hypoth3 = t3->Get_Hypothesis(Proton);
+				if(!hypoth3) continue;
+
+				//timing cut
+				auto dectector3 = hypoth3->t1_detector();
+				locDeltaT = hypoth3->time() - hypoth3->t0();
+				if(fabs(locDeltaT) > dTimingCutMap[Proton][dectector3])
+					continue;
+
+				const DLorentzVector &protonmom = hypoth3->lorentzMomentum();
+
+				// for phi: require at least one beam photon in time with missing mass squared near 0
+				DLorentzVector phimom(Kpmom + Kmmom);
+				DLorentzVector locFinalStateP4 = phimom + protonmom;
+				DLorentzVector locTargetP4(0.0, 0.0, 0.0, ParticleMass(Proton));
+				for(auto locBeamPhoton : locBeamPhotons_InTime)
+				{
+					DLorentzVector locMissingP4 = locBeamPhoton->lorentzMomentum() + locTargetP4 - locFinalStateP4;
+					if(fabs(locMissingP4.M2()) > 0.01)
+						continue;
+					dKp_Km->Fill(phimom.M());
+					break;
 				}
 			}
 		}		
