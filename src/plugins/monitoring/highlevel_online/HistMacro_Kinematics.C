@@ -102,6 +102,6 @@
 		double Epeak = locHist_PSPairEnergy->GetBinCenter(locHist_PSPairEnergy->GetMaximumBin());
 
 		sprintf(str, "Epeak: %3.2f GeV", Epeak);
-		latex.DrawLatex(3.0, locHist_PSPairEnergy->GetMaximum()*0.85, str);
+		latex.DrawLatex(10.0, locHist_PSPairEnergy->GetMaximum()*0.85, str);
 	}
 }
