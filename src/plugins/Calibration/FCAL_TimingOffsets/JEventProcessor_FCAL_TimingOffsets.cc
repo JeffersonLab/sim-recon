@@ -26,6 +26,8 @@
 #include <TH2F.h>
 #include <TProfile.h>
 #include "ANALYSIS/DTreeInterface.h"
+#include "TRIGGER/DTrigger.h"
+
 #include <thread>
 
 using namespace jana;
@@ -126,20 +128,27 @@ jerror_t JEventProcessor_FCAL_TimingOffsets::brun(JEventLoop *eventLoop,
 jerror_t JEventProcessor_FCAL_TimingOffsets::evnt(JEventLoop *eventLoop, 
 					     uint64_t eventnumber)
 {
-double FCAL_C_EFFECTIVE = 15.0;
-DApplication* locApplication = dynamic_cast<DApplication*>(eventLoop->GetJApplication());
-    DGeometry* locGeometry = locApplication->GetDGeometry(eventLoop->GetJEvent().GetRunNumber());
-    double locTargetZCenter = 0.0;
-    locTargetZCenter = locGeometry->GetTargetZ(locTargetZCenter);
-    dTargetCenter.SetXYZ(0.0, 0.0, locTargetZCenter);
- 
- vector< const DFCALGeometry* > geomVec;
+
+  // select events with physics events, i.e., not LED and other front panel triggers
+  const DTrigger* locTrigger = NULL; 
+  eventLoop->GetSingle(locTrigger); 
+  if(locTrigger->Get_L1FrontPanelTriggerBits() != 0) 
+    return NOERROR;
+
+  double FCAL_C_EFFECTIVE = 15.0;
+  DApplication* locApplication = dynamic_cast<DApplication*>(eventLoop->GetJApplication());
+  DGeometry* locGeometry = locApplication->GetDGeometry(eventLoop->GetJEvent().GetRunNumber());
+  double locTargetZCenter = 0.0;
+  locTargetZCenter = locGeometry->GetTargetZ(locTargetZCenter);
+  dTargetCenter.SetXYZ(0.0, 0.0, locTargetZCenter);
+  
+  vector< const DFCALGeometry* > geomVec;
   vector< const DFCALDigiHit*  > digiHits;
   vector< const DFCALHit*      > hits;
- vector<const DEventRFBunch*> locEventRFBunches;
- vector< const DVertex* > kinfitVertex;
- vector< const DTrackTimeBased* > locTrackTimeBased;
- vector < const DFCALShower * > matchedShowers;
+  vector<const DEventRFBunch*> locEventRFBunches;
+  vector< const DVertex* > kinfitVertex;
+  vector< const DTrackTimeBased* > locTrackTimeBased;
+  vector < const DFCALShower * > matchedShowers;
   
 
   eventLoop->Get( geomVec );

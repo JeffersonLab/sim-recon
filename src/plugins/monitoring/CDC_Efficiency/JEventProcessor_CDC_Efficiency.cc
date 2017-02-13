@@ -10,6 +10,7 @@ using namespace jana;
 #include "HDGEOMETRY/DMagneticFieldMapNoField.h"
 #include "CDC/DCDCDigiHit.h"
 #include "DAQ/Df125CDCPulse.h"
+#include "TRIGGER/DTrigger.h"
 #include "HistogramTools.h"
 
 
@@ -192,6 +193,11 @@ jerror_t JEventProcessor_CDC_Efficiency::brun(JEventLoop *eventLoop, int32_t run
 // evnt
 //------------------
 jerror_t JEventProcessor_CDC_Efficiency::evnt(JEventLoop *loop, uint64_t eventnumber){
+
+        const DTrigger* locTrigger = NULL; 
+	loop->GetSingle(locTrigger); 
+	if(locTrigger->Get_L1FrontPanelTriggerBits() != 0)
+	  return NOERROR;
 
 	//use CDC track hits: have drift time, can cut
     vector< const DCDCTrackHit *> locCDCTrackHits;
