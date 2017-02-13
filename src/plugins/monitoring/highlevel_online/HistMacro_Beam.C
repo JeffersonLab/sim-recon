@@ -121,13 +121,20 @@
 			locHist_BeamEnergy_norm->SetStats(0);
 		}
 		if(locHist_BeamEnergy_norm){
+			double min = 0.0; // zero suppress the y-axis
+			double max = 0.0;
 			for(int ibin=1; ibin<=locHist_BeamEnergy_norm->GetNbinsX(); ibin++){
 				Double_t norm = amorphous_data[ibin-1];
 				if( norm < 1000.0) continue;
 
 				Double_t v = (Double_t)locHist_BeamEnergy->GetBinContent(ibin);
 				locHist_BeamEnergy_norm->SetBinContent(ibin, v/norm);
+				
+				if(min==0.0 && v>0.0) min = v/norm;
+				if(v/norm > max ) max = v/norm;
 			}
+			if(min > 0.5*max) min = 0.0; // amorphous runs
+			locHist_BeamEnergy_norm->GetYaxis()->SetRangeUser(min, max*1.05);
 			locHist_BeamEnergy_norm->Draw();
 		}
 
