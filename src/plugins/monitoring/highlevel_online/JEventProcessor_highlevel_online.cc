@@ -381,6 +381,7 @@ jerror_t JEventProcessor_highlevel_online::evnt(JEventLoop *locEventLoop, uint64
 	for(size_t loc_i = 0; loc_i < locChargedTracks.size(); ++loc_i)
 	{
 		auto locChargedHypo = locChargedTracks[loc_i]->Get_BestTrackingFOM();
+		if(locChargedHypo->t1_detector() == SYS_NULL) continue; // skip tracks with artificial betas
 		double locP = locChargedHypo->momentum().Mag();
 		double locTheta = locChargedHypo->momentum().Theta()*180.0/TMath::Pi();
 		double locPhi = locChargedHypo->momentum().Phi()*180.0/TMath::Pi();
