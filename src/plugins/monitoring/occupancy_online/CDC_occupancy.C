@@ -72,7 +72,16 @@
 	cdc_axes->Fill(100,100); // without this, the color ramp is not drawn
 	cdc_axes->GetZaxis()->SetRangeUser(minScale, maxScale);
 	cdc_axes->Draw("colz");
+	
+	// Draw inner and outer circles so we can see if outer ring is missing
+	TEllipse *e = new TEllipse(0.0, 0.0, 56.0, 56.0);
+	e->SetLineWidth(3);
+	e->Draw();
+	e = new TEllipse(0.0, 0.0, 9.55, 9.55);
+	e->SetLineWidth(2);
+	e->Draw();
 
+	// Draw All rings
 	for(unsigned int iring=1; iring<=28; iring++){
 		char hname[256];
 		sprintf(hname, "cdc_occ_ring_%02d", iring);
@@ -88,10 +97,10 @@
 	}
 	
 	char str[256];
-	sprintf(str,"%0.0f events", Nevents);
+	sprintf(str,"%g events", Nevents);
 	TLatex lat;
 	lat.SetTextAlign(22);
 	lat.SetTextSize(0.035);
-	lat.DrawLatex(0.0, 68.0, str);
+	lat.DrawLatex(0.0, 61.0, str);
 
 }
