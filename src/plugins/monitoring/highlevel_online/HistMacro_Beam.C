@@ -12,6 +12,7 @@
 	// This taken from the bin contents of the BeamEnergy histogram from the
 	// online monitoring root file for run 30437, an amorphous target run.
 	// The macro used is in /gluonwork1/Users/davidl/2017.02.08.amorphous_norm
+	string amorphous_label = "Normalized to Amorphous run 30437";
 	Double_t amorphous_data[] = {
 		        0.0,         0.0,         0.0,         0.0,         0.0,         0.0,         0.0,         0.0,         0.0,         0.0, 
 		        0.0,         0.0,         0.0,         0.0,         0.0,         0.0,         0.0,         0.0,         0.0,         0.0, 
@@ -71,6 +72,7 @@
 	gPad->SetGrid();
 	if( (locHist_RFBeamBunchPeriod_DFT != NULL) && (locHist_RFBeamBunchPeriod != NULL))
 	{
+		double max = locHist_RFBeamBunchPeriod_DFT->GetMaximum()*2.0;
 		locHist_RFBeamBunchPeriod_DFT->GetXaxis()->SetTitleSize(0.05);
 		locHist_RFBeamBunchPeriod_DFT->GetXaxis()->SetLabelSize(0.05);
 		locHist_RFBeamBunchPeriod_DFT->GetYaxis()->SetLabelSize(0.03);
@@ -79,14 +81,15 @@
 		locHist_RFBeamBunchPeriod_DFT->SetLineColor(kGreen-2);
 		locHist_RFBeamBunchPeriod_DFT->SetLineWidth(2);
 		locHist_RFBeamBunchPeriod_DFT->SetStats(0);
+		locHist_RFBeamBunchPeriod_DFT->GetYaxis()->SetRangeUser(0.0, max);
 		locHist_RFBeamBunchPeriod_DFT->Draw();
 
-		sprintf(str, "%d entries", (uint32_t)locHist_RFBeamBunchPeriod->GetEntries());
-		latex.DrawLatex(300.0, 1.06*locHist_RFBeamBunchPeriod_DFT->GetMaximum(), str);
+		sprintf(str, "%g entries", (double)locHist_RFBeamBunchPeriod->GetEntries());
+		latex.DrawLatex(300.0, 1.02*max, str);
 		
 		// Plot RFBeamBunchPeriod as inset
 		TPad *p = (TPad*)gDirectory->FindObjectAny("RF_DFT");
-		if(!p) p = new TPad("RF_DFT", "insert", 0.1, 0.6, 0.5, 0.9);
+		if(!p) p = new TPad("RF_DFT", "insert", 0.16, 0.6, 0.89, 0.9);
 		p->Draw();
 		p->cd();
 
@@ -109,7 +112,7 @@
 		// Create normalized histogram
 		TH1D* locHist_BeamEnergy_norm = (TH1D*)gDirectory->Get("BeamEnergy_norm");
 		if(!locHist_BeamEnergy_norm){
-			locHist_BeamEnergy_norm = new TH1D("BeamEnergy_norm", "Reconstructed photon beam energy normalized to amorphous run 30437;Beam #gamma energy (GeV)", 240, 0.0, 12.0);
+			locHist_BeamEnergy_norm = new TH1D("BeamEnergy_norm", "Reconstructed Photon Beam Energy;Beam #gamma energy (GeV)", 240, 0.0, 12.0);
 
 			locHist_BeamEnergy_norm->GetXaxis()->SetTitleSize(0.05);
 			locHist_BeamEnergy_norm->GetXaxis()->SetLabelSize(0.05);
@@ -121,21 +124,49 @@
 			locHist_BeamEnergy_norm->SetStats(0);
 		}
 		if(locHist_BeamEnergy_norm){
-			double min = 0.0; // zero suppress the y-axis
-			double max = 0.0;
+		
+			// Find leftmost non-zero bin for scaling whole hist
+			double scale = 0.0;
+			for(int ibin=1; ibin<=locHist_BeamEnergy->GetNbinsX(); ibin++){
+				if( amorphous_data[ibin-1] < 1000.0) continue;
+				Double_t v = (Double_t)locHist_BeamEnergy->GetBinContent(ibin);
+				if(v>0.0){
+					scale = v/amorphous_data[ibin-1];
+					break;
+				}
+			}
+
+			// Normalize to amorphous baseline including scaling factor
+			// above so that leftmost non-zero bin is always 1
 			for(int ibin=1; ibin<=locHist_BeamEnergy_norm->GetNbinsX(); ibin++){
 				Double_t norm = amorphous_data[ibin-1];
 				if( norm < 1000.0) continue;
+				norm *= scale;
 
 				Double_t v = (Double_t)locHist_BeamEnergy->GetBinContent(ibin);
 				locHist_BeamEnergy_norm->SetBinContent(ibin, v/norm);
-				
-				if(min==0.0 && v>0.0) min = v/norm;
-				if(v/norm > max ) max = v/norm;
 			}
-			if(min > 0.5*max) min = 0.0; // amorphous runs
-			locHist_BeamEnergy_norm->GetYaxis()->SetRangeUser(min, max*1.05);
+			double max = (locHist_BeamEnergy_norm->GetMaximum()-0.75)*1.05 + 0.75;
+			if(max > 3.0) max = 3.0;
+			if(max < 1.4) max = 1.4;
+			locHist_BeamEnergy_norm->GetYaxis()->SetRangeUser(0.75, max);
 			locHist_BeamEnergy_norm->Draw();
+			
+			// If maximum is > 1.5 then assume this is not an amorphous run
+			// and draw a label of the peak energy
+			if(max > 1.5){
+				double Epeak = locHist_BeamEnergy_norm->GetBinCenter(locHist_BeamEnergy_norm->GetMaximumBin());
+				sprintf(str, "Epeak: %3.2f GeV", Epeak);
+				latex.SetTextAlign(12);
+				latex.DrawLatex(1.0, 0.5*(max-0.75)+0.75, str);
+			}
+
+			sprintf(str, "%g entries", (double)locHist_BeamEnergy->GetEntries());
+			latex.SetTextAlign(22);
+			latex.DrawLatex(6.0, 1.035*(max-0.75)+0.75, str);
+
+			latex.SetTextAngle(270);
+			latex.DrawLatex(12.5, 0.5*(max-0.75)+0.75, amorphous_label.c_str());
 		}
 
 		TPad *beamenergypad = (TPad*)gDirectory->FindObjectAny("beamenergypad");
@@ -154,9 +185,6 @@
 		locHist_BeamEnergy->SetLineWidth(2);
 		locHist_BeamEnergy->SetStats(0);
 		locHist_BeamEnergy->Draw();
-
-		sprintf(str, "%d entries", (uint32_t)locHist_BeamEnergy->GetEntries());
-		latex.DrawLatex(2.0, 1.06*locHist_BeamEnergy->GetMaximum(), str);
 	}
 }
 
