@@ -33,6 +33,14 @@ jerror_t JEventProcessor_highlevel_online::init(void)
 	dTimingCutMap[PiMinus][SYS_TOF] = 2.0;
 	dTimingCutMap[PiMinus][SYS_BCAL] = 2.5;
 	dTimingCutMap[PiMinus][SYS_FCAL] = 3.0;
+	dTimingCutMap[Electron][SYS_NULL] = -1.0;
+	dTimingCutMap[Electron][SYS_TOF] = 2.0;
+	dTimingCutMap[Electron][SYS_BCAL] = 2.5;
+	dTimingCutMap[Electron][SYS_FCAL] = 3.0;
+	dTimingCutMap[Positron][SYS_NULL] = -1.0;
+	dTimingCutMap[Positron][SYS_TOF] = 2.0;
+	dTimingCutMap[Positron][SYS_BCAL] = 2.5;
+	dTimingCutMap[Positron][SYS_FCAL] = 3.0;
 	map<Particle_t, map<DetectorSystem_t, double> > dTimingCutMap;
 
 	// All histograms go in the "highlevel" directory
@@ -53,6 +61,25 @@ jerror_t JEventProcessor_highlevel_online::init(void)
 	dHist_BeamBunchPeriod_DFT = new TH1F("RFBeamBunchPeriod_DFT", "Fourier Transform of RF Beam Bunch Period;Beam bunch frequency (MHz)", Ndft_bins, dft_min, dft_max);
 
 	/*************************************************************** TRIGGER **************************************************************/
+
+	dNumHadronicTriggers_CoherentPeak_RFSignal.assign(33, 0.0);
+	dNumHadronicTriggers_CoherentPeak_RFSideband.assign(33, 0.0);
+
+	dRFSidebandBunchRange = pair<int, int>(3, 5);
+	dShowerEOverPCut = 0.75;
+
+	dHist_NumTriggers = new TH2I("NumTriggers", ";Trigger Bit", 33, 0.5, 33.5, 4, 0.5, 4.5); //"bit" 33: Total
+	dHist_NumTriggers->GetYaxis()->SetBinLabel(1, "# Triggers");
+	dHist_NumTriggers->GetYaxis()->SetBinLabel(2, "# Front Panel Triggers");
+	dHist_NumTriggers->GetYaxis()->SetBinLabel(3, "# Hadronic Triggers");
+	dHist_NumTriggers->GetYaxis()->SetBinLabel(4, "# Hadronic Triggers, Coherent Peak");
+	for(int loc_i = 1; loc_i <= 32; ++loc_i)
+	{
+		ostringstream locBinStream;
+		locBinStream << loc_i;
+		dHist_NumTriggers->GetXaxis()->SetBinLabel(loc_i, locBinStream.str().c_str());
+	}
+	dHist_NumTriggers->GetXaxis()->SetBinLabel(33, "Total");
 
 	dHist_BCALVsFCAL_TrigBit1 = new TH2I("BCALVsFCAL_TrigBit1","TRIG BIT 1;E (FCAL) (count);E (BCAL) (count)", 200, 0., 10000, 200, 0., 50000);
 	
@@ -129,6 +156,11 @@ jerror_t JEventProcessor_highlevel_online::brun(JEventLoop *locEventLoop, int32_
 	vector<double> locBeamPeriodVector;
 	locEventLoop->GetCalib("PHOTON_BEAM/RF/beam_period", locBeamPeriodVector);
 	dBeamBunchPeriod = locBeamPeriodVector[0];
+
+	dCoherentPeakRange = pair<double, double>(8.4, 9.0);
+	map<string, double> photon_beam_param;
+	if(locEventLoop->GetCalib("/ANALYSIS/beam_asymmetry/coherent_energy", photon_beam_param) == false)
+		dCoherentPeakRange = pair<double, double>(photon_beam_param["cohmin_energy"], photon_beam_param["cohedge_energy"]);
 
 	fcal_cell_thr  =  64;
 	bcal_cell_thr  =  20;
@@ -327,6 +359,76 @@ jerror_t JEventProcessor_highlevel_online::evnt(JEventLoop *locEventLoop, uint64
 		}
 	}
 
+	/********************************************************* PREPARE HADRONIC TRIGGER *******************************************************/
+
+	bool locIsHadronicEventFlag = false;
+	for(auto locTrack : locChargedTracks)
+	{
+		//make sure at least one track isn't a lepton!! (read: e+/-. assume all muons come from pion decays)
+		auto locChargedHypo = locTrack->Get_BestTrackingFOM();
+
+		//timing cut: is it consistent with an e+/-??
+		auto locDetector = locChargedHypo->t1_detector();
+		double locDeltaT = locChargedHypo->time() - locChargedHypo->t0();
+		if(fabs(locDeltaT) > dTimingCutMap[Electron][locDetector])
+		{
+			locIsHadronicEventFlag = true; //not an electron!!
+			break;
+		}
+
+		//compute shower-E/p, cut
+		double locP = locChargedHypo->momentum().Mag();
+		double locShowerEOverP = 0.0;
+		const DFCALShowerMatchParams* locFCALShowerMatchParams = locChargedHypo->Get_FCALShowerMatchParams();
+		const DBCALShowerMatchParams* locBCALShowerMatchParams = locChargedHypo->Get_BCALShowerMatchParams();
+		if(locFCALShowerMatchParams != NULL)
+		{
+			const DFCALShower* locFCALShower = locFCALShowerMatchParams->dFCALShower;
+			locShowerEOverP = locFCALShower->getEnergy()/locP;
+		}
+		else if(locBCALShowerMatchParams != NULL)
+		{
+			const DBCALShower* locBCALShower = locBCALShowerMatchParams->dBCALShower;
+			locShowerEOverP = locBCALShower->E/locP;
+		}
+		else //not matched to a shower
+		{
+			locIsHadronicEventFlag = true; //assume not an electron!!
+			break;
+		}
+
+		if(locShowerEOverP < dShowerEOverPCut)
+		{
+			locIsHadronicEventFlag = true; //not an electron!!
+			break;
+		}
+	}
+
+	int locNumHadronicTriggers_CoherentPeak_RFSignal = 0;
+	int locNumHadronicTriggers_CoherentPeak_RFSideband = 0;
+	double locNumRFSidebandBunches = 2.0*double(dRFSidebandBunchRange.second - dRFSidebandBunchRange.first);
+	if(locIsHadronicEventFlag)
+	{
+		//see if is in coherent peak
+		for(auto& locBeamPhoton : locBeamPhotons)
+		{
+			if(std::isnan(locEventRFBunch->dTime))
+				break; //RF sideband background too high: ignore
+			if((locBeamPhoton->energy() < dCoherentPeakRange.first) || (locBeamPhoton->energy() > dCoherentPeakRange.second))
+				continue; //not in coherent peak
+
+			//delta-t sideband range
+			double locSidebandMinDeltaT = dBeamBunchPeriod*(double(dRFSidebandBunchRange.first) - 0.5);
+			double locSidebandMaxDeltaT = dBeamBunchPeriod*(double(dRFSidebandBunchRange.first) + 0.5);
+
+			double locBeamRFDeltaT = locBeamPhoton->time() - locEventRFBunch->dTime;
+			if(fabs(locBeamRFDeltaT) <= 0.5*dBeamBunchPeriod)
+				++locNumHadronicTriggers_CoherentPeak_RFSignal;
+			else if((fabs(locBeamRFDeltaT) >= locSidebandMinDeltaT) && (fabs(locBeamRFDeltaT) <= locSidebandMaxDeltaT))
+				++locNumHadronicTriggers_CoherentPeak_RFSideband;
+		}
+	}
+
 	/***************************************************************** RF *****************************************************************/
 
 	japp->RootFillLock(this); //ACQUIRE ROOT FILL LOCK
@@ -353,14 +455,67 @@ jerror_t JEventProcessor_highlevel_online::evnt(JEventLoop *locEventLoop, uint64
 			if(locgtpTrigBits[bit-1]) dHist_L1bits_gtp->Fill(bit);
 			if(locfpTrigBits[bit-1] ) dHist_L1bits_fp->Fill(bit);
 		}
+
+		// #triggers: total
+		if(locL1Trigger->trig_mask > 0)
+			dHist_NumTriggers->Fill(33, 1);
+		if(locL1Trigger->fp_trig_mask > 0)
+			dHist_NumTriggers->Fill(33, 2);
+
+		// #triggers: by bit
+		for(int locTriggerBit = 1; locTriggerBit <= 32; ++locTriggerBit)
+		{
+			if(locgtpTrigBits[locTriggerBit - 1]) //gtp (normal)
+				dHist_NumTriggers->Fill(locTriggerBit, 1);
+			if(locfpTrigBits[locTriggerBit - 1]) //front panel
+				dHist_NumTriggers->Fill(locTriggerBit, 2);
+		}
+
+		// #hadronic triggers
+		if(locIsHadronicEventFlag)
+		{
+			//total
+			if(locL1Trigger->trig_mask > 0)
+			{
+				dHist_NumTriggers->Fill(33, 3);
+
+				//coherent peak
+				dNumHadronicTriggers_CoherentPeak_RFSignal[32] += double(locNumHadronicTriggers_CoherentPeak_RFSignal);
+				dNumHadronicTriggers_CoherentPeak_RFSideband[32] += double(locNumHadronicTriggers_CoherentPeak_RFSideband);
+				int locNumHadronicTriggers_CoherentPeak = int(dNumHadronicTriggers_CoherentPeak_RFSignal[32] - dNumHadronicTriggers_CoherentPeak_RFSideband[32]/locNumRFSidebandBunches + 0.5); //+0.5: round
+				dHist_NumTriggers->SetBinContent(33, 4, locNumHadronicTriggers_CoherentPeak); //# hadronic triggers
+			}
+
+			//by bit
+			for(int locTriggerBit = 1; locTriggerBit <= 32; ++locTriggerBit)
+			{
+				if(!locgtpTrigBits[locTriggerBit - 1])
+					continue;
+
+				//all hadronic
+				dHist_NumTriggers->Fill(locTriggerBit, 3);
+
+				//coherent peak: must subtract RF sidebands to determine the actual beam energy
+				dNumHadronicTriggers_CoherentPeak_RFSignal[locTriggerBit - 1] += double(locNumHadronicTriggers_CoherentPeak_RFSignal);
+				dNumHadronicTriggers_CoherentPeak_RFSideband[locTriggerBit - 1] += double(locNumHadronicTriggers_CoherentPeak_RFSideband);
+				double locNumHadronicTriggers_CoherentPeak = dNumHadronicTriggers_CoherentPeak_RFSignal[locTriggerBit - 1] - dNumHadronicTriggers_CoherentPeak_RFSideband[locTriggerBit - 1]/locNumRFSidebandBunches;
+				dHist_NumTriggers->SetBinContent(locTriggerBit, 4, locNumHadronicTriggers_CoherentPeak); //# hadronic triggers
+			}
+
+			//coherent peak rate
+			double locHadronicCoherentPeakRate = dHist_NumTriggers->GetBinContent(33, 4)/dHist_NumTriggers->GetBinContent(33, 1);
+
+			ostringstream locHistTitle;
+			locHistTitle << "Total Hadronic Coherent Peak Rate = " << locHadronicCoherentPeakRate;
+			dHist_NumTriggers->SetTitle(locHistTitle.str().c_str());
+		}
 	}
 
-    // DON'T DO HIGHER LEVEL PROCESSING FOR FRONT PANEL TRIGGER EVENTS
-    if( locL1Trigger && (locL1Trigger->fp_trig_mask>0) ) {
+	// DON'T DO HIGHER LEVEL PROCESSING FOR FRONT PANEL TRIGGER EVENTS, OR NON-TRIGGER EVENTS
+    if(!locL1Trigger || (locL1Trigger && (locL1Trigger->fp_trig_mask>0))) {
         japp->RootFillUnLock(this); //RELEASE ROOT FILL LOCK
         return NOERROR;
     }
-
 
 	/****************************************************** NUM RECONSTRUCTED OBJECTS *****************************************************/
 
@@ -582,7 +737,6 @@ jerror_t JEventProcessor_highlevel_online::evnt(JEventLoop *locEventLoop, uint64
 			}
 		}		
 	}
-
 
 	japp->RootFillUnLock(this); //RELEASE ROOT FILL LOCK
 
