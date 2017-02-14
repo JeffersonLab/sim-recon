@@ -3,6 +3,15 @@ using namespace jana;
 
 #include <DAQ/Df250PulseData.h>
 
+#include <START_COUNTER/DSCHit.h>
+#include <TAGGER/DTAGMHit.h>
+#include <TAGGER/DTAGHHit.h>
+#include <TOF/DTOFHit.h>
+#include <BCAL/DBCALUnifiedHit.h>
+#include <RF/DRFTime.h>
+#include <DAQ/DF1TDCHit.h>
+
+
 // Routine used to create our JEventProcessor
 #include <JANA/JApplication.h>
 #include <JANA/JFactory.h>
@@ -12,6 +21,62 @@ extern "C"{
     app->AddProcessor(new JEventProcessor_highlevel_online());
   }
 } // "C"
+
+
+#define F1Types(X) \
+	X(DRFTime)  \
+	X(DSCHit)   \
+	X(DTAGHHit) \
+	X(DTAGMHit) \
+	X(DFDCHit)  \
+	X(DBCALUnifiedHit)
+
+//.......................................................
+// These templates are used by the FillF1Hist method below
+// to accomodate the different member names
+template<typename T> static bool   F1Check(const T* hit); // return true if all info (TDC and ADC) is present
+template<typename T> static double F1tdiff(const T* hit); // return time difference between TDC and ADC
+
+template<> bool   F1Check<DRFTime        >(const DRFTime*         hit){ return true;                          }
+template<> double F1tdiff<DRFTime        >(const DRFTime*         hit){ return hit->dTime;                    }
+
+template<> bool   F1Check<DSCHit         >(const DSCHit*          hit){ return hit->has_fADC && hit->has_TDC; }
+template<> double F1tdiff<DSCHit         >(const DSCHit*          hit){ return hit->t_TDC - hit->t_fADC;      }
+
+template<> bool   F1Check<DTAGHHit       >(const DTAGHHit*        hit){ return hit->has_fADC && hit->has_TDC; }
+template<> double F1tdiff<DTAGHHit       >(const DTAGHHit*        hit){ return hit->time_tdc - hit->time_fadc;}
+
+template<> bool   F1Check<DTAGMHit       >(const DTAGMHit*        hit){ return hit->has_fADC && hit->has_TDC; }
+template<> double F1tdiff<DTAGMHit       >(const DTAGMHit*        hit){ return hit->time_tdc - hit->time_fadc;}
+
+template<> bool   F1Check<DFDCHit        >(const DFDCHit*         hit){ return true;                          }
+template<> double F1tdiff<DFDCHit        >(const DFDCHit*         hit){ return hit->t/50.0;                   }
+
+template<> bool   F1Check<DBCALUnifiedHit>(const DBCALUnifiedHit* hit){ return hit->has_TDC_hit;              }
+template<> double F1tdiff<DBCALUnifiedHit>(const DBCALUnifiedHit* hit){ return hit->t_TDC - hit->t_ADC;       }
+//.......................................................
+
+
+//------------------
+// FillF1Hist
+//
+// Template routine used to fill dF1TDC_fADC_tdiff for all types in F1Types.
+//------------------
+template<typename T>
+void JEventProcessor_highlevel_online::FillF1Hist(vector<const T*> hits)
+{
+	for(auto hit : hits){
+		if( ! F1Check(hit) ) continue;
+		vector<const DF1TDCHit*> f1hits;
+		hit->Get(f1hits);
+		for(auto f1hit : f1hits){
+			pair<int,int> rocid_slot(f1hit->rocid, f1hit->slot);
+			double fbin = f1tdc_bin_map[rocid_slot];
+			double tdiff = F1tdiff(hit);
+			dF1TDC_fADC_tdiff->Fill(fbin, tdiff);
+		}
+	}
+}
 
 //------------------
 // init
@@ -141,6 +206,46 @@ jerror_t JEventProcessor_highlevel_online::init(void)
 	
 	dbeta_vs_p = new TH2I("BetaVsP", "#beta vs. p (best FOM all charged tracks);p (GeV);#beta", 200, 0.0, 2.0, 100, 0.0, 1.1);
 
+	/*************************************************************** F1 TDC - fADC time ***************************************************************/
+
+	// first, fill map of rocid/slot combos that have F1TDC's
+	map<int, set<int>> f1tdc_rocid_slot;
+	for(int slot=3; slot<=17; slot++){
+		if( slot==11 || slot==12) continue;
+		if( slot<=16 ) f1tdc_rocid_slot[75].insert(slot); // TAGMH
+		if( slot<=4  ) f1tdc_rocid_slot[95].insert(slot); // STPSC1
+		if( slot<=13 ) f1tdc_rocid_slot[36].insert(slot); // BCAL6
+		if( slot<=13 ) f1tdc_rocid_slot[33].insert(slot); // BCAL3
+		if( slot<=13 ) f1tdc_rocid_slot[39].insert(slot); // BCAL9
+		if( slot<=13 ) f1tdc_rocid_slot[42].insert(slot); // BCAL12
+		if( slot<=17 ) f1tdc_rocid_slot[51].insert(slot); // FDC1
+		if( slot<=16 ) f1tdc_rocid_slot[54].insert(slot); // FDC4
+		if( slot<=16 ) f1tdc_rocid_slot[63].insert(slot); // FDC13
+		if( slot<=16 ) f1tdc_rocid_slot[64].insert(slot); // FDC14
+	}
+	
+	// Create map that can be used to find the correct bin given the rocid,slot
+	for(auto p : f1tdc_rocid_slot){
+		int rocid = p.first;
+		for(int slot : p.second){
+			f1tdc_bin_map[ pair<int,int>(rocid,slot) ] = (double)f1tdc_bin_map.size();
+		}
+	}
+	
+	// Create histogram with bin labels
+	dF1TDC_fADC_tdiff = new TH2D("F1TDC_fADC_tdiff", "F1TDC - fADC Time diff", f1tdc_bin_map.size(), 0.5, 0.5+(double)f1tdc_bin_map.size(), 64, -64.0, 64.0);
+	dF1TDC_fADC_tdiff->SetStats(0);
+	dF1TDC_fADC_tdiff->SetYTitle("TDC - ADC in ns (or TDC/50 time for FDC)");
+	for(auto p : f1tdc_bin_map){
+		int rocid = p.first.first;
+		int slot  = p.first.second;
+		int jbin  = p.second;
+		char str[256];
+		sprintf(str, "rocid%d slot%d", rocid, slot);
+		dF1TDC_fADC_tdiff->GetXaxis()->SetBinLabel(jbin, str);
+	}
+	
+
 	// back to main dir
 	main->cd();
   
@@ -240,6 +345,14 @@ jerror_t JEventProcessor_highlevel_online::evnt(JEventLoop *locEventLoop, uint64
 
 	vector<const DChargedTrack*> locChargedTracks;
 	locEventLoop->Get(locChargedTracks, "PreSelect");
+	
+	// The following decalres containers for all types in F1Types
+	// (defined at top of this file) and fills them.
+	#define GetVect(A) \
+		vector<const A*> v##A; \
+		locEventLoop->Get(v##A);
+	F1Types(GetVect)		
+
 
 	/********************************************************* PREPARE RF ********************************************************/
 	
@@ -429,9 +542,17 @@ jerror_t JEventProcessor_highlevel_online::evnt(JEventLoop *locEventLoop, uint64
 		}
 	}
 
-	/***************************************************************** RF *****************************************************************/
 
+	/*************************************************************** F1 TDC - fADC time ***************************************************************/
 	japp->RootFillLock(this); //ACQUIRE ROOT FILL LOCK
+
+	// The following fills the dF1TDC_fADC_tdiff histo for
+	// all detectors that use F1TDC modules. See the templates
+	// at the top of this file for details.
+	#define F1Fill(A) FillF1Hist(v##A);
+	F1Types(F1Fill)		
+
+	/***************************************************************** RF *****************************************************************/
 
 	for(size_t loc_i = 0; loc_i < locTAGHDeltaTs.size(); ++loc_i)
 		dHist_BeamBunchPeriod->Fill(locTAGHDeltaTs[loc_i]);
@@ -543,6 +664,7 @@ jerror_t JEventProcessor_highlevel_online::evnt(JEventLoop *locEventLoop, uint64
 	for(size_t loc_i = 0; loc_i < locChargedTracks.size(); ++loc_i)
 	{
 		auto locChargedHypo = locChargedTracks[loc_i]->Get_BestTrackingFOM();
+		if(locChargedHypo->t1_detector() == SYS_NULL) continue; // skip tracks with artificial betas
 		double locP = locChargedHypo->momentum().Mag();
 		double locTheta = locChargedHypo->momentum().Theta()*180.0/TMath::Pi();
 		double locPhi = locChargedHypo->momentum().Phi()*180.0/TMath::Pi();
@@ -751,6 +873,7 @@ jerror_t JEventProcessor_highlevel_online::erun(void)
   // This is called whenever the run number changes, before it is
   // changed to give you a chance to clean up before processing
   // events from the next run number.
+
   return NOERROR;
 }
 

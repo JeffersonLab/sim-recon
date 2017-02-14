@@ -69,23 +69,6 @@
 		gPad->Update();
 	}
 
-	//------------ Phi vs. Theta --------------
-	locCanvas->cd(3);
-	gPad->SetTicks();
-	gPad->SetGrid();
-	if(locHist_PhiVsTheta_Tracks != NULL)
-	{
-		locHist_PhiVsTheta_Tracks->GetXaxis()->SetTitleSize(0.05);
-		locHist_PhiVsTheta_Tracks->GetYaxis()->SetTitleSize(0.04);
-		locHist_PhiVsTheta_Tracks->GetXaxis()->SetLabelSize(0.05);
-		locHist_PhiVsTheta_Tracks->GetYaxis()->SetLabelSize(0.05);
-		locHist_PhiVsTheta_Tracks->SetStats(0);
-		locHist_PhiVsTheta_Tracks->Draw("colz");
-
-		sprintf(str, "%d entries", (uint32_t)locHist_PhiVsTheta_Tracks->GetEntries());
-		latex.DrawLatex(10.0, 185.0, str);
-	}
-
 	//------------ PS energy --------------
 	locCanvas->cd(3);
 	gPad->SetTicks();
@@ -103,5 +86,22 @@
 
 		sprintf(str, "Epeak: %3.2f GeV", Epeak);
 		latex.DrawLatex(10.0, locHist_PSPairEnergy->GetMaximum()*0.85, str);
+	}
+
+	//------------ Phi vs. Theta --------------
+	locCanvas->cd(4);
+	gPad->SetTicks();
+	gPad->SetGrid();
+	if(locHist_PhiVsTheta_Tracks != NULL)
+	{
+		locHist_PhiVsTheta_Tracks->GetXaxis()->SetTitleSize(0.05);
+		locHist_PhiVsTheta_Tracks->GetYaxis()->SetTitleSize(0.04);
+		locHist_PhiVsTheta_Tracks->GetXaxis()->SetLabelSize(0.05);
+		locHist_PhiVsTheta_Tracks->GetYaxis()->SetLabelSize(0.05);
+		locHist_PhiVsTheta_Tracks->SetStats(0);
+		locHist_PhiVsTheta_Tracks->Draw("colz");
+
+		sprintf(str, "%d entries", (uint32_t)locHist_PhiVsTheta_Tracks->GetEntries());
+		latex.DrawLatex(10.0, 185.0, str);
 	}
 }
