@@ -41,6 +41,7 @@ class JEventProcessor_highlevel_online:public jana::JEventProcessor
 		TH1I* dHist_BeamBunchPeriod;
 		TH1F* dHist_BeamBunchPeriod_DFT;
 
+		TH2I* dHist_NumTriggers;
 		TH2I* dHist_BCALVsFCAL_TrigBit1;
 		TH1I* dHist_L1bits_gtp;
 		TH1I* dHist_L1bits_fp;
@@ -74,7 +75,13 @@ class JEventProcessor_highlevel_online:public jana::JEventProcessor
 		int bcal_cell_thr;
 		int fcal_row_mask_min, fcal_row_mask_max, fcal_col_mask_min, fcal_col_mask_max;
 
+		vector<double> dNumHadronicTriggers_CoherentPeak_RFSignal;
+		vector<double> dNumHadronicTriggers_CoherentPeak_RFSideband;
+
+		double dShowerEOverPCut;
 		double dBeamBunchPeriod;
+		pair<double, double> dCoherentPeakRange;
+		pair<int, int> dRFSidebandBunchRange;
 		map<Particle_t, map<DetectorSystem_t, double> > dTimingCutMap;
 };
 
