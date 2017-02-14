@@ -10,6 +10,7 @@
 // hnamepath: /highlevel/BCALVsFCAL_TrigBit1
 // hnamepath: /highlevel/L1bits_gtp
 // hnamepath: /highlevel/L1bits_fp
+// hnamepath: /highlevel/NumTriggers
 //
 // e-mail: davidl@jlab.org
 // e-mail: pmatt@jlab.org
@@ -28,8 +29,9 @@
 	locDirectory->cd();
 
 	TH2* locHist_BCALVsFCAL_TrigBit1 = (TH2*)gDirectory->Get("BCALVsFCAL_TrigBit1");
-	TH1* locHist_L1bits_gtp = (TH1*)gDirectory->Get("L1bits_gtp");
-	TH1* locHist_L1bits_fp = (TH1*)gDirectory->Get("L1bits_fp");
+	TH1* locHist_L1bits_gtp          = (TH1*)gDirectory->Get("L1bits_gtp");
+	TH1* locHist_L1bits_fp           = (TH1*)gDirectory->Get("L1bits_fp");
+	TH2* locHist_NumTriggers         = (TH2*)gDirectory->Get("NumTriggers");
 
 	// Grab a couple of histos from occupancy directory
 	locDirectory = (TDirectory*)locTopDirectory->FindObjectAny("occupancy");
@@ -43,7 +45,7 @@
 	//Get/Make Canvas
 	TCanvas *locCanvas = NULL;
 	if(TVirtualPad::Pad() == NULL)
-		locCanvas = new TCanvas("Kinematics", "Kinematics", 1200, 400); //for testing
+		locCanvas = new TCanvas("Kinematics", "Kinematics", 1200, 900); //for testing
 	else
 		locCanvas = gPad->GetCanvas();
 	locCanvas->Divide(3, 1);
@@ -52,7 +54,7 @@
 	latex.SetTextSize(0.04);
 	char str[256];
 
-	//Draw
+	// -------------- Left --------------
 	locCanvas->cd(1);
 	gPad->SetTicks();
 	gPad->SetGrid();
@@ -69,14 +71,118 @@
 		latex.DrawLatex(1.0, 101.0, str);
 	}
 
-	locCanvas->cd(2);
-	gPad->SetTicks();
-	gPad->SetGrid();
+	// -------------- Middle --------------
+	
+	// Hadronic trigger rate stats
+	locCanvas->cd(0);
+	if(locHist_NumTriggers){
+		TPad *pad = (TPad*)gDirectory->FindObjectAny("trigpad1");
+		if(!pad) pad = new TPad("trigpad1", "", 0.33, 0.45, 0.66, 0.95);
+		pad->Draw();
+		pad->cd();
+		
+		TLatex latex;
+		latex.SetTextSize(0.05);
+		latex.SetTextAlign(31);
+
+		latex.DrawLatex(0.5, 0.9, "trig 1");
+		latex.DrawLatex(0.7, 0.9, "trig 3");		
+		latex.DrawLatex(0.9, 0.9, "trig 4");
+
+		latex.DrawLatex(0.3, 0.70, "Triggers");
+
+		latex.DrawLatex(0.3, 0.50, "Hadronic");
+		latex.DrawLatex(0.3, 0.45, "triggers");
+
+		latex.DrawLatex(0.3, 0.30, "Hadronic");
+		latex.DrawLatex(0.3, 0.25, "triggers in");
+		latex.DrawLatex(0.3, 0.20, "coh. peak");
+		
+		TLine line;
+		line.SetLineWidth(3.0);
+		line.SetLineColor(kGray+2);
+		line.DrawLine(0.05, 0.40, 0.95, 0.40);
+		line.DrawLine(0.05, 0.60, 0.95, 0.60);
+		line.DrawLine(0.05, 0.80, 0.95, 0.80);
+		line.DrawLine(0.55, 0.15, 0.55, 0.95);
+		line.DrawLine(0.75, 0.15, 0.75, 0.95);
+		
+		latex.SetTextSize(0.04);
+		latex.SetTextAlign(21);
+		char str[256];
+		TH2* h = locHist_NumTriggers;
+
+		// trig 1
+		sprintf(str, "%4.3g", h->GetBinContent(1,1));
+		latex.DrawLatex(0.45, 0.725, str);
+		sprintf(str, "%4.3g", h->GetBinContent(3,1));
+		latex.DrawLatex(0.45, 0.500, str);
+		sprintf(str, "%4.3g", h->GetBinContent(4,1));
+		latex.DrawLatex(0.45, 0.275, str);
+
+		// trig 3
+		sprintf(str, "%4.3g", h->GetBinContent(1,3));
+		latex.DrawLatex(0.65, 0.725, str);
+		sprintf(str, "%4.3g", h->GetBinContent(3,3));
+		latex.DrawLatex(0.65, 0.500, str);
+		sprintf(str, "%4.3g", h->GetBinContent(4,3));
+		latex.DrawLatex(0.65, 0.275, str);
+
+		// trig 4
+		sprintf(str, "%4.3g", h->GetBinContent(1,4));
+		latex.DrawLatex(0.85, 0.725, str);
+		sprintf(str, "%4.3g", h->GetBinContent(3,4));
+		latex.DrawLatex(0.85, 0.500, str);
+		sprintf(str, "%4.3g", h->GetBinContent(4,4));
+		latex.DrawLatex(0.85, 0.275, str);
+		
+		latex.SetTextSize(0.05);
+		latex.SetTextColor(kRed);
+
+		// trig 1
+		sprintf(str, "(%4.1f%%)", h->GetBinContent(1,1)/h->GetBinContent(1,1)*100.0);
+		latex.DrawLatex(0.45, 0.675, str);
+		sprintf(str, "(%4.1f%%)", h->GetBinContent(3,1)/h->GetBinContent(1,1)*100.0);
+		latex.DrawLatex(0.45, 0.450, str);
+		sprintf(str, "(%4.1f%%)", h->GetBinContent(4,1)/h->GetBinContent(1,1)*100.0);
+		latex.DrawLatex(0.45, 0.225, str);
+
+		// trig 3
+		sprintf(str, "(%4.1f%%)", h->GetBinContent(1,3)/h->GetBinContent(1,3)*100.0);
+		latex.DrawLatex(0.65, 0.675, str);
+		sprintf(str, "(%4.1f%%)", h->GetBinContent(3,3)/h->GetBinContent(1,3)*100.0);
+		latex.DrawLatex(0.65, 0.450, str);
+		sprintf(str, "(%4.1f%%)", h->GetBinContent(4,3)/h->GetBinContent(1,3)*100.0);
+		latex.DrawLatex(0.65, 0.225, str);
+
+		// trig 4
+		sprintf(str, "(%4.1f%%)", h->GetBinContent(1,4)/h->GetBinContent(1,4)*100.0);
+		latex.DrawLatex(0.85, 0.675, str);
+		sprintf(str, "(%4.1f%%)", h->GetBinContent(3,4)/h->GetBinContent(1,4)*100.0);
+		latex.DrawLatex(0.85, 0.450, str);
+		sprintf(str, "(%4.1f%%)", h->GetBinContent(4,4)/h->GetBinContent(1,4)*100.0);
+		latex.DrawLatex(0.85, 0.225, str);
+		
+		
+	}
+	
+	// BCAL vs. FCAL for Trig bit 1
+	locCanvas->cd(0);
 	if(locHist_BCALVsFCAL_TrigBit1 != NULL)
 	{
+		TPad *pad = (TPad*)gDirectory->FindObjectAny("trigpad2");
+		if(!pad) pad = new TPad("trigpad2", "", 0.33, 0.0, 0.66, 0.5);
+		pad->Draw();
+		pad->cd();
+
+		gPad->SetTicks();
+		gPad->SetGrid();
+		gPad->SetLeftMargin(0.2);
+
 		locHist_BCALVsFCAL_TrigBit1->GetXaxis()->SetTitleSize(0.05);
 		locHist_BCALVsFCAL_TrigBit1->GetYaxis()->SetTitleSize(0.04);
 		locHist_BCALVsFCAL_TrigBit1->SetStats(0);
+		locHist_BCALVsFCAL_TrigBit1->GetYaxis()->SetTitleOffset(2.0);
 		locHist_BCALVsFCAL_TrigBit1->Draw("colz");
 
 		sprintf(str, "%d entries", (uint32_t)locHist_BCALVsFCAL_TrigBit1->GetEntries());
@@ -86,24 +192,18 @@
 		gPad->Update();
 	}
 
-	// We want to draw two plots in the right 1/3 of canvas. The
-	// Divide function will clear the canvas wiping out he above
-	// histos we just drew. Instead, explicitly make a TPad being
-	// sure to recycle any existing one to avoid memory leaks or
-	// error messages.
+	// -------------- Right --------------
 	locCanvas->cd(0);
-	TPad *trigpad1 = (TPad*)gDirectory->FindObjectAny("trigpad1");
-	if(!trigpad1) trigpad1 = new TPad("trigpad1", "", 0.66, 0.5, 1.0, 1.0);
-	trigpad1->SetTicks();
-	//trigpad1->SetLeftMargin(0.10);
-	//trigpad1->SetRightMargin(0.15);
-	trigpad1->Draw();
-	trigpad1->cd();
-
-	gPad->SetTicks();
-	gPad->SetGrid();
 	if(locHist_L1bits_gtp!=NULL && locHist_L1bits_fp!=NULL)
 	{
+		TPad *pad = (TPad*)gDirectory->FindObjectAny("trigpad3");
+		if(!pad) pad = new TPad("trigpad1", "", 0.66, 0.5, 1.0, 1.0);
+		pad->Draw();
+		pad->cd();
+
+		gPad->SetTicks();
+		gPad->SetGrid();
+
 		double max_gtp = locHist_L1bits_gtp->GetMaximum();
 		double max_fp  = locHist_L1bits_fp->GetMaximum();
 		double max = (max_gtp>max_fp) ? max_gtp:max_fp;
@@ -139,21 +239,31 @@
 	}
 
 	locCanvas->cd(0);
-	TPad *trigpad2 = (TPad*)gDirectory->FindObjectAny("trigpad2");
-	if(!trigpad2) trigpad2 = new TPad("trigpad2", "", 0.66, 0.0, 1.0, 0.5);
-	trigpad2->SetTicks();
-	trigpad2->Draw();
-	trigpad2->cd();
-
-	gPad->SetTicks();
-	gPad->SetGrid();
 	if(locHist_L1livetime!=NULL)
 	{
+		TPad *pad = (TPad*)gDirectory->FindObjectAny("trigpad4");
+		if(!pad) pad = new TPad("trigpad4", "", 0.66, 0.0, 1.0, 0.5);
+		pad->Draw();
+		pad->cd();
+
+		gPad->SetTicks();
+		gPad->SetGrid();
+
 		locHist_L1livetime->SetLineColor(kGreen-3);
 		locHist_L1livetime->SetFillColor(kGreen);
 		locHist_L1livetime->SetFillStyle(3001);
 		locHist_L1livetime->Draw();
 		gPad->SetLogy();
 		gPad->Update();
+		
+		// Move stats box
+		TPaveStats *ps = (TPaveStats*)locHist_L1livetime->FindObject("stats");
+		if(ps){
+			ps->SetX1NDC(0.15);
+			ps->SetX2NDC(0.45);
+			ps->SetY1NDC(0.65);
+			ps->SetY2NDC(0.85);
+			ps->Draw();
+		}
 	}
 }
