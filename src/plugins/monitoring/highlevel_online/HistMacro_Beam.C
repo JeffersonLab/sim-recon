@@ -138,6 +138,7 @@
 
 			// Normalize to amorphous baseline including scaling factor
 			// above so that leftmost non-zero bin is always 1
+			double max = 0.0;
 			for(int ibin=1; ibin<=locHist_BeamEnergy_norm->GetNbinsX(); ibin++){
 				Double_t norm = amorphous_data[ibin-1];
 				if( norm < 1000.0) continue;
@@ -145,8 +146,10 @@
 
 				Double_t v = (Double_t)locHist_BeamEnergy->GetBinContent(ibin);
 				locHist_BeamEnergy_norm->SetBinContent(ibin, v/norm);
+				
+				if(v/norm  > max) max = v/norm;
 			}
-			double max = (locHist_BeamEnergy_norm->GetMaximum()-0.75)*1.05 + 0.75;
+			max = (max-0.75)*1.05 + 0.75;
 			if(max > 3.0) max = 3.0;
 			if(max < 1.4) max = 1.4;
 			locHist_BeamEnergy_norm->GetYaxis()->SetRangeUser(0.75, max);
