@@ -1,4 +1,5 @@
 // hnamepath: /highlevel/NumHighLevelObjects
+// hnamepath: /highlevel/F1TDC_fADC_tdiff
 //
 // e-mail: davidl@jlab.org
 // e-mail: pmatt@jlab.org
@@ -16,24 +17,30 @@
 	locDirectory->cd();
 
 	//Get Histograms
-	TH2* locHist_NumHighLevel = (TH2*)gDirectory->Get("NumHighLevelObjects");
+	TH2* NumHighLevelObjects = (TH2*)gDirectory->Get("NumHighLevelObjects");
+	TH2* F1TDC_fADC_tdiff = (TH2*)gDirectory->Get("F1TDC_fADC_tdiff");
 
 	//Get/Make Canvas
-	TCanvas *locCanvas = NULL;
+	TCanvas *c1 = NULL;
 	if(TVirtualPad::Pad() == NULL)
-		locCanvas = new TCanvas("NumHighLevelObjects", "NumHighLevelObjects", 1200, 800); //for testing
+		c1 = new TCanvas("NumHighLevelObjects", "NumHighLevelObjects", 1200, 900); //for testing
 	else
-		locCanvas = gPad->GetCanvas();
+		c1 = gPad->GetCanvas();
 
-	//Draw
-	locCanvas->cd(1);
-	gPad->SetTicks();
-	gPad->SetGrid();
-	if(locHist_NumHighLevel != NULL)
-		locHist_NumHighLevel->Draw("COLZ");
-	gPad->SetLogz();
-	gPad->Update();
+	c1->Divide(1,2);
+	//c1->Draw();
+	
+	if(NumHighLevelObjects){
+		c1->cd(1);
+		gPad->SetTicks();
+		gPad->SetGrid();
+		gPad->SetLogz();
+		gPad->SetBottomMargin(0.2);
+		NumHighLevelObjects->GetXaxis()->SetLabelSize(0.05);
+		NumHighLevelObjects->SetStats(0);
+		NumHighLevelObjects->Draw("COLZ");
+		gPad->Update();
+	}
 
-	locCurrentDir->cd();
 }
 

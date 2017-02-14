@@ -63,6 +63,11 @@ class JEventProcessor_highlevel_online:public jana::JEventProcessor
 		TH1I *dpip_pim_pi0;
 		TH2I *dbeta_vs_p;
 		TH1I *dptrans;
+		
+		TH2D *dF1TDC_fADC_tdiff;
+		map<pair<int,int>, double> f1tdc_bin_map; // key=<rocid,slot> val=bin
+		
+		template<typename T> void FillF1Hist(vector<const T*> hits);
 
 	private:
 		jerror_t init(void);
