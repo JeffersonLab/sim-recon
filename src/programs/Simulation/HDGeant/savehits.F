@@ -279,7 +279,7 @@ c      write(6,*)cnames(NLEVEL)
      >          IPART)
           ISTORY = 1  ! this particle has entered the GCal (inherited trait)
         endif
-      elseif (cnames(NLEVEL).eq.'LGBL') then  ! forward calorimeter
+      elseif (cnames(NLEVEL).eq.'LGBL'.or.cnames(NLEVEL).eq.'LTBK') then  ! forward calorimeter
 #ifdef MAKE_HITS_WHEN_ILOSS_0
         if ((ILOSS.eq.0).and.(CHARGE.ne.0)) then
           dEsum = 1e-2   ! 10 MeV in the calorimeter block
