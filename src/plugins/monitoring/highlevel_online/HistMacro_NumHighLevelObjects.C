@@ -82,7 +82,7 @@
 		gPad->SetBottomMargin(0.25);
 		gPad->SetLeftMargin(0.04);
 		gPad->SetRightMargin(0.08);
-		F1TDC_fADC_tdiff->GetXaxis()->SetLabelSize(0.06);
+		F1TDC_fADC_tdiff->GetXaxis()->SetLabelSize(0.05);
 		F1TDC_fADC_tdiff->GetYaxis()->SetTitleOffset(0.6);
 		F1TDC_fADC_tdiff->SetStats(0);
 		F1TDC_fADC_tdiff->Draw("COLZ");
