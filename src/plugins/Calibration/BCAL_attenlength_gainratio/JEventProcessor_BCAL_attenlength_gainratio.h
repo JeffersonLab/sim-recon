@@ -21,29 +21,6 @@ class JEventProcessor_BCAL_attenlength_gainratio:public jana::JEventProcessor{
 		static const int numlayer=4;
 		static const int numsector=4;
 
-		// Summary histograms
-		TH1I *hist_attenlength;
-		TH1I *hist_gainratio;
-		TH1I *hist_attenlength_err;
-		TH1I *hist_gainratio_err;
-		TH1I *hist_attenlength_relerr;
-		TH1I *hist_gainratio_relerr;
-		TH2F *hist2D_peakattenlength;
-		TH2F *hist2D_peakgainratio;
-		TH2F *hist2D_intattenlength;
-		TH2F *hist2D_intgainratio;
-
-		// Channel by channel histograms
-		TH2I *logpeakratiovsZ_all;
-		TH2I *logintratiovsZ_all;
-		TH2I *logpeakratiovsZ[nummodule][numlayer][numsector];
-		TH2I *logintratiovsZ[nummodule][numlayer][numsector];
-		TH2I *EvsZ[nummodule][numlayer][numsector];
-
-		// Debug histograms to help understand data
-		TH2I *EvsZ_all;
-		TH2I *EvsZ_layer[4];
-
 		double z_target_center;
 
 	private:

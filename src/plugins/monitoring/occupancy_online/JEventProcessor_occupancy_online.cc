@@ -35,6 +35,28 @@ using namespace jana;
 #include <TAGGER/DTAGMTDCDigiHit.h>
 #include <TRIGGER/DL1Trigger.h>
 
+// Script-fu for handling digihit type enmasse
+#define DigiHitTypes(X) \
+	X(DBCALDigiHit) \
+	X(DBCALTDCDigiHit) \
+	X(DCDCDigiHit) \
+	X(DFDCCathodeDigiHit) \
+	X(DFDCWireDigiHit) \
+	X(DFCALDigiHit) \
+	X(DPSCDigiHit) \
+	X(DPSCTDCDigiHit) \
+	X(DPSDigiHit) \
+	X(DTOFDigiHit) \
+	X(DTOFTDCDigiHit) \
+	X(DSCDigiHit) \
+	X(DSCTDCDigiHit) \
+	X(DRFTDCDigiTime) \
+	X(DTAGMDigiHit) \
+	X(DTAGMTDCDigiHit) \
+	X(DTAGHDigiHit) \
+	X(DTAGHTDCDigiHit) \
+	X(DTPOLSectorDigiHit)
+
 // Routine used to create our JEventProcessor
 #include <JANA/JApplication.h>
 #include <JANA/JFactory.h>
@@ -139,7 +161,7 @@ jerror_t JEventProcessor_occupancy_online::init(void)
 		cdc_occ_ring[iring] = new TH2F(hname, "", Nstraws[iring], phi_start, phi_end, 1, r_start, r_end);
 	}
 	cdc_num_events = new TH1I("cdc_num_events", "CDC number of events", 1, 0.0, 1.0);
-	new TH2D("cdc_axes", "CDC Occupancy", 100, -65.0, 65.0, 100, -65.0, 65.0);
+	new TH2D("cdc_axes", "CDC Occupancy", 100, -57.0*4.0/3.0, 57.0*4.0/3.0, 100, -57.0, 57.0);
     
 	//------------------------ FCAL -----------------------
 	fcal_occ = new TH2F("fcal_occ", "FCAL Occupancy; column; row", 61, -1.5, 59.5, 61, -1.5, 59.5);
@@ -207,6 +229,32 @@ jerror_t JEventProcessor_occupancy_online::init(void)
 	tof_adc_U_occ = new TH1I("tof_adc_U_occ","TOF, fADC Occupancy",86,1,44);
 	tof_adc_D_occ = new TH1I("tof_adc_D_occ","TOF, fADC Occupancy",86,1,44);
 
+	//------------------------ DigiHits ------------------------
+	#define FillDigiHitMap(A) digihitbinmap[#A]=(double)(digihitbinmap.size());
+	DigiHitTypes(FillDigiHitMap) // Initialize digihitbinmap with values from DigiHitTypes
+
+	digihits_trig1 = new TH2I("digihits_trig1", "Digihits", digihitbinmap.size(), 0.5, 0.5+(double)digihitbinmap.size(), 151, 0.0,  151.0);
+	digihits_trig1->SetYTitle("Nhits/event");
+	digihits_scale_factors = new TH2I("digihits_scale_factors", "Digihits scale factors", digihitbinmap.size(), 0.5, 0.5+(double)digihitbinmap.size(), 25, 0.5,  25.5);
+	for(auto p : digihitbinmap){
+		digihits_trig1->GetXaxis()->SetBinLabel(p.second, p.first.c_str());
+		digihits_scale_factors->GetXaxis()->SetBinLabel(p.second, p.first.c_str());
+	}
+	digihits_trig3 = (TH2I*)digihits_trig1->Clone("digihits_trig3");
+	digihits_trig4 = (TH2I*)digihits_trig1->Clone("digihits_trig4");
+	
+	// Some detectors have a much higher rate so we scale the number of hits to fit them
+	// on the same histogram. In order to pass this info to the macro in RootSpy we must
+	// put it in a 2D histo. Keep in mind that RootSpy will sum histos from all servers
+	// so by putting it in a 2D histo we can take the mean of the summed histo and still
+	// get back the number. (Tricky eh?). To make this clean, these scale factors should
+	// all be integers.
+	digihitsclmap["DFDCCathodeDigiHit"] = 3000.0/150.0;
+	digihitsclmap["DFDCWireDigiHit"]    = 1500.0/150.0;
+	digihitsclmap["DCDCDigiHit"]        =  900.0/150.0;
+	digihitsclmap["DBCALDigiHit"]       =  450.0/150.0;
+	digihitsclmap["DBCALTDCDigiHit"]    =  450.0/150.0;
+	for(auto p : digihitsclmap) digihits_scale_factors->Fill(digihitbinmap[p.first], p.second);
 
 	// back to main dir
 	main->cd();
@@ -230,56 +278,30 @@ jerror_t JEventProcessor_occupancy_online::brun(JEventLoop *eventLoop, int32_t r
 //------------------
 jerror_t JEventProcessor_occupancy_online::evnt(JEventLoop *loop, uint64_t eventnumber)
 {
-	vector<const DBCALDigiHit*>        bcaldigihits;
-	vector<const DBCALTDCDigiHit*>     bcaltdcdigihits;
-	vector<const DCDCDigiHit*>         cdcdigihits;
-	vector<const DFDCCathodeDigiHit*>  fdccathodehits;
-	vector<const DFDCWireDigiHit*>     fdcwirehits;
-	vector<const DFCALDigiHit*>        fcaldigihits;
-	vector<const DPSCDigiHit*>         pscdigihits;
-	vector<const DPSCTDCDigiHit*>      psctdcdigihits;
-	vector<const DPSDigiHit*>          psdigihits;
-	vector<const DTOFDigiHit*>         tofdigihits;
-	vector<const DTOFTDCDigiHit*>      toftdcdigihits;
-	vector<const DSCDigiHit*>          scdigihits;
-	vector<const DRFTDCDigiTime*>      rfdigihits;
-	vector<const DSCTDCDigiHit*>       sctdcdigihits;
-	vector<const DTAGMDigiHit*>        tagmdigihits;
-	vector<const DTAGMTDCDigiHit*>     tagmtdcdigihits;
-	vector<const DTAGHDigiHit*>        taghdigihits;
-	vector<const DTAGHTDCDigiHit*>     taghtdcdigihits;
-	vector<const DTPOLSectorDigiHit*>  tpoldigihits;
+	// The following 2 lines will do the following for each DigiHitTypes type:
+	//   vector<const A*> vDBCALDigiHit;
+	//   loop->Get(vDBCALDigiHit);
+	#define GetDigihits(A) vector<const A*> v##A; loop->Get(v##A);
+	DigiHitTypes(GetDigihits)
+	
+	// L1 triggers
 	vector<const DL1Trigger*>          l1triggers;
-	loop->Get(bcaldigihits);
-	loop->Get(bcaltdcdigihits);
-	loop->Get(cdcdigihits);
-	loop->Get(fdccathodehits);
-	loop->Get(fdcwirehits);
-	loop->Get(fcaldigihits);
-	loop->Get(pscdigihits);
-	loop->Get(psctdcdigihits);
-	loop->Get(psdigihits);
-	loop->Get(tofdigihits);
-	loop->Get(toftdcdigihits);
-	loop->Get(scdigihits);
-	loop->Get(rfdigihits);
-	loop->Get(sctdcdigihits);
-	loop->Get(tagmdigihits);
-	loop->Get(tagmtdcdigihits);
-	loop->Get(taghdigihits);
-	loop->Get(taghtdcdigihits);
-	loop->Get(tpoldigihits);
 	loop->Get(l1triggers);
-
 	const DL1Trigger* l1trigger = l1triggers.empty() ? NULL : l1triggers[0];
+	
+	// trig[idx[  where idx=0-31 corresponds to "trig bit 1-32"
+	vector<bool> trig(32, 0);
+	if(l1trigger){
+		for(int itrig=0; itrig<32; itrig++) trig[itrig] = (l1trigger->trig_mask >> itrig)&0x01;
+	}
 
 	japp->RootFillLock(this); //ACQUIRE ROOT FILL LOCK
 
 	//------------------------ BCAL -----------------------
 	bcal_num_events->Fill(0.5);
 	//ADC
-	for(unsigned int i = 0; i < bcaldigihits.size(); i++){
-		const DBCALDigiHit *hit = bcaldigihits[i];
+	for(unsigned int i = 0; i < vDBCALDigiHit.size(); i++){
+		const DBCALDigiHit *hit = vDBCALDigiHit[i];
 
 		int ix = hit->module;
 		int iy = (hit->sector-1)*4 + hit->layer;
@@ -291,8 +313,8 @@ jerror_t JEventProcessor_occupancy_online::evnt(JEventLoop *loop, uint64_t event
 	}
 
 	//TDC
-	for(unsigned int i = 0; i < bcaltdcdigihits.size(); i++){
-		const DBCALTDCDigiHit *hit = bcaltdcdigihits[i];
+	for(unsigned int i = 0; i < vDBCALTDCDigiHit.size(); i++){
+		const DBCALTDCDigiHit *hit = vDBCALTDCDigiHit[i];
 
 		int ix = hit->module;
 		int iy = (hit->sector-1)*3 + hit->layer; // TDC has 3 layers per sector
@@ -305,9 +327,9 @@ jerror_t JEventProcessor_occupancy_online::evnt(JEventLoop *loop, uint64_t event
 
 	//------------------------ CDC ------------------------
 	cdc_num_events->Fill(0.5);
-	for(uint32_t i=0; i<cdcdigihits.size(); i++) {
+	for(uint32_t i=0; i<vDCDCDigiHit.size(); i++) {
 
-		const DCDCDigiHit *digihit = cdcdigihits[i];  
+		const DCDCDigiHit *digihit = vDCDCDigiHit[i];  
 		int ring     = digihit->ring-1; // start counting from zero! 
 		int straw    = digihit->straw;  // first bin is one
 
@@ -317,42 +339,42 @@ jerror_t JEventProcessor_occupancy_online::evnt(JEventLoop *loop, uint64_t event
 
 	//------------------------ FCAL -----------------------
 	fcal_num_events->Fill(0.5);
-	for(size_t loc_i = 0; loc_i < fcaldigihits.size(); ++loc_i){
-		fcal_occ->Fill(fcaldigihits[loc_i]->column, fcaldigihits[loc_i]->row);
+	for(size_t loc_i = 0; loc_i < vDFCALDigiHit.size(); ++loc_i){
+		fcal_occ->Fill(vDFCALDigiHit[loc_i]->column, vDFCALDigiHit[loc_i]->row);
 	}
 	
 	//------------------------ FDC ------------------------
 	fdc_num_events->Fill(0.5);
-	for(unsigned int i = 0; i < fdccathodehits.size(); i++){
-		uint32_t strip = fdccathodehits[i]->strip;
-		if(fdccathodehits[i]->strip_type == 3) strip += 9*12;
+	for(unsigned int i = 0; i < vDFDCCathodeDigiHit.size(); i++){
+		uint32_t strip = vDFDCCathodeDigiHit[i]->strip;
+		if(vDFDCCathodeDigiHit[i]->strip_type == 3) strip += 9*12;
 		int ud = -1;
-		if (fdccathodehits[i]->view == 3) ud = 0;
-		fdc_cathode_occ->Fill((fdccathodehits[i]->package - 1)*12 + fdccathodehits[i]->chamber*2 + ud, strip);
+		if (vDFDCCathodeDigiHit[i]->view == 3) ud = 0;
+		fdc_cathode_occ->Fill((vDFDCCathodeDigiHit[i]->package - 1)*12 + vDFDCCathodeDigiHit[i]->chamber*2 + ud, strip);
 	}
-	for(unsigned int i = 0; i < fdcwirehits.size(); i++){
-		fdc_wire_occ->Fill((fdcwirehits[i]->package - 1)*6 + fdcwirehits[i]->chamber, fdcwirehits[i]->wire);
+	for(unsigned int i = 0; i < vDFDCWireDigiHit.size(); i++){
+		fdc_wire_occ->Fill((vDFDCWireDigiHit[i]->package - 1)*6 + vDFDCWireDigiHit[i]->chamber, vDFDCWireDigiHit[i]->wire);
 	}
 
 	//------------------------ PS/PSC ---------------------
 	ps_num_events->Fill(0.5);
 	const int Nmods = 8; 
-	for(unsigned int i=0; i < pscdigihits.size(); i++) {
-		const DPSCDigiHit *hit = pscdigihits[i];
+	for(unsigned int i=0; i < vDPSCDigiHit.size(); i++) {
+		const DPSCDigiHit *hit = vDPSCDigiHit[i];
 		if( hit->counter_id <= Nmods )
 			psc_adc_left_occ->Fill(hit->counter_id);
 		else
 			psc_adc_right_occ->Fill(hit->counter_id - Nmods);
 	}
-	for(unsigned int i=0; i < psctdcdigihits.size(); i++) {
-		const DPSCTDCDigiHit *hit = psctdcdigihits[i];
+	for(unsigned int i=0; i < vDPSCTDCDigiHit.size(); i++) {
+		const DPSCTDCDigiHit *hit = vDPSCTDCDigiHit[i];
 		if( hit->counter_id <= Nmods )
 			psc_tdc_left_occ->Fill(hit->counter_id);
 		else
 			psc_tdc_right_occ->Fill(hit->counter_id - Nmods);
 	}
-	for(unsigned int i=0; i < psdigihits.size(); i++) {
-		const DPSDigiHit *hit = psdigihits[i];
+	for(unsigned int i=0; i < vDPSDigiHit.size(); i++) {
+		const DPSDigiHit *hit = vDPSDigiHit[i];
 		if( hit->arm == 0 )
 			ps_left_occ->Fill(hit->column);
 		else
@@ -361,8 +383,8 @@ jerror_t JEventProcessor_occupancy_online::evnt(JEventLoop *loop, uint64_t event
 
 	//------------------------ RF -------------------------
 	rf_num_events->Fill(0.5);
-	for(size_t loc_i = 0; loc_i < rfdigihits.size(); ++loc_i){
-		DetectorSystem_t locSystem = rfdigihits[loc_i]->dSystem;
+	for(size_t loc_i = 0; loc_i < vDRFTDCDigiTime.size(); ++loc_i){
+		DetectorSystem_t locSystem = vDRFTDCDigiTime[loc_i]->dSystem;
 		rf_occ->Fill(dRFBinValueMap[locSystem]);
 	}
 
@@ -378,33 +400,33 @@ jerror_t JEventProcessor_occupancy_online::evnt(JEventLoop *loop, uint64_t event
 
 	//------------------------ ST -------------------------
 	st_num_events->Fill(0.5);
-	for(uint32_t i = 0; i < scdigihits.size();    i++) st_adc_occ->Fill(scdigihits[i]->sector);
-	for(uint32_t i = 0; i < sctdcdigihits.size(); i++) st_tdc_occ->Fill(sctdcdigihits[i]->sector);
+	for(uint32_t i = 0; i < vDSCDigiHit.size();    i++) st_adc_occ->Fill(vDSCDigiHit[i]->sector);
+	for(uint32_t i = 0; i < vDSCTDCDigiHit.size(); i++) st_tdc_occ->Fill(vDSCTDCDigiHit[i]->sector);
 
 	//------------------------ TAGH -----------------------
  	tag_num_events->Fill(0.5);
-   for(unsigned int i=0; i < taghdigihits.size();    i++) tagh_adc_occ->Fill(taghdigihits[i]->counter_id);
-   for(unsigned int i=0; i < taghtdcdigihits.size(); i++) tagh_tdc_occ->Fill(taghtdcdigihits[i]->counter_id);
+   for(unsigned int i=0; i < vDTAGHDigiHit.size();    i++) tagh_adc_occ->Fill(vDTAGHDigiHit[i]->counter_id);
+   for(unsigned int i=0; i < vDTAGHTDCDigiHit.size(); i++) tagh_tdc_occ->Fill(vDTAGHTDCDigiHit[i]->counter_id);
 
 	//------------------------ TAGM -----------------------
-	for(uint32_t i=0; i< tagmdigihits.size(); i++) {
-		const DTAGMDigiHit *hit = tagmdigihits[i];
+	for(uint32_t i=0; i< vDTAGMDigiHit.size(); i++) {
+		const DTAGMDigiHit *hit = vDTAGMDigiHit[i];
 		if (hit->row == 0) tagm_adc_occ->Fill(hit->column);
 	}
-	for(uint32_t i=0; i< tagmtdcdigihits.size(); i++) {
-		const DTAGMTDCDigiHit *hit = tagmtdcdigihits[i];
+	for(uint32_t i=0; i< vDTAGMTDCDigiHit.size(); i++) {
+		const DTAGMTDCDigiHit *hit = vDTAGMTDCDigiHit[i];
 		if (hit->row == 0) tagm_tdc_occ->Fill(hit->column);
 	}
 
 	//------------------------ TPOL -----------------------
-	for(unsigned int i=0; i < tpoldigihits.size(); i++) tpol_occ->Fill(tpoldigihits[i]->sector);
+	for(unsigned int i=0; i < vDTPOLSectorDigiHit.size(); i++) tpol_occ->Fill(vDTPOLSectorDigiHit[i]->sector);
 
 	//------------------------ TOF ------------------------
 	tof_num_events->Fill(0.5);
 	// fADC Hits
-	for(uint32_t i=0; i<tofdigihits.size(); i++){
+	for(uint32_t i=0; i<vDTOFDigiHit.size(); i++){
 
-		const DTOFDigiHit *hit = tofdigihits[i];
+		const DTOFDigiHit *hit = vDTOFDigiHit[i];
 		int plane = hit->plane;
 		int bar   = hit->bar;
 		int end   = hit->end;
@@ -416,9 +438,9 @@ jerror_t JEventProcessor_occupancy_online::evnt(JEventLoop *loop, uint64_t event
 	}
 
 	// TDC Hits
-	for(uint32_t i=0; i<toftdcdigihits.size(); i++){
+	for(uint32_t i=0; i<vDTOFTDCDigiHit.size(); i++){
 
-		const DTOFTDCDigiHit *hit = toftdcdigihits[i];
+		const DTOFTDCDigiHit *hit = vDTOFTDCDigiHit[i];
 		int plane = hit->plane;
 		int bar   = hit->bar;
 		int end   = hit->end;
@@ -427,6 +449,26 @@ jerror_t JEventProcessor_occupancy_online::evnt(JEventLoop *loop, uint64_t event
 		if( plane==0 && end==1 ) tof_tdc_D_occ->Fill(bar);
 		if( plane==1 && end==0 ) tof_tdc_N_occ->Fill(bar);
 		if( plane==1 && end==1 ) tof_tdc_S_occ->Fill(bar);
+	}
+
+	//------------------------ DigiHits ------------------------
+	#define FillDigiHitHist(A) \
+		scale = digihitsclmap[#A]; \
+		if(scale==0.0) scale = digihitsclmap[#A] = 1.0; \
+		digihits_trigX->Fill(digihitbinmap[#A], v##A.size()/scale);
+		//digihits_hi_occ_trigX->Fill(digihitbinmap[#A], v##A.size());
+	double scale;
+	if(trig[0]){  // FCAL+BCAL
+		TH2I *digihits_trigX = digihits_trig1;
+		DigiHitTypes(FillDigiHitHist)
+	}
+	if(trig[2]){  // BCAL 
+		TH2I *digihits_trigX = digihits_trig3;
+		DigiHitTypes(FillDigiHitHist)
+	}
+	if(trig[3]){  // PS
+		TH2I *digihits_trigX = digihits_trig4;
+		DigiHitTypes(FillDigiHitHist)
 	}
 
 	japp->RootFillUnLock(this); //RELEASE ROOT FILL LOCK

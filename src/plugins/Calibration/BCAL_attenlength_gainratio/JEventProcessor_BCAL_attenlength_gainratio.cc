@@ -28,6 +28,30 @@ void InitPlugin(JApplication *app){
 } // "C"
 
 
+// Summary histograms
+static TH1I *hist_attenlength = nullptr;
+static TH1I *hist_gainratio = nullptr;
+static TH1I *hist_attenlength_err = nullptr;
+static TH1I *hist_gainratio_err = nullptr;
+static TH1I *hist_attenlength_relerr = nullptr;
+static TH1I *hist_gainratio_relerr = nullptr;
+static TH2F *hist2D_peakattenlength = nullptr;
+static TH2F *hist2D_peakgainratio = nullptr;
+static TH2F *hist2D_intattenlength = nullptr;
+static TH2F *hist2D_intgainratio = nullptr;
+
+// Channel by channel histograms
+static TH2I *logpeakratiovsZ_all = nullptr;
+static TH2I *logintratiovsZ_all = nullptr;
+static TH2I *logpeakratiovsZ[JEventProcessor_BCAL_attenlength_gainratio::nummodule][JEventProcessor_BCAL_attenlength_gainratio::numlayer][JEventProcessor_BCAL_attenlength_gainratio::numsector];
+static TH2I *logintratiovsZ[JEventProcessor_BCAL_attenlength_gainratio::nummodule][JEventProcessor_BCAL_attenlength_gainratio::numlayer][JEventProcessor_BCAL_attenlength_gainratio::numsector];
+static TH2I *EvsZ[JEventProcessor_BCAL_attenlength_gainratio::nummodule][JEventProcessor_BCAL_attenlength_gainratio::numlayer][JEventProcessor_BCAL_attenlength_gainratio::numsector];
+
+// Debug histograms to help understand data
+static TH2I *EvsZ_all = nullptr;
+static TH2I *EvsZ_layer[4] = { nullptr };
+
+
 //------------------
 // JEventProcessor_BCAL_attenlength_gainratio (Constructor)
 //------------------
@@ -54,6 +78,14 @@ JEventProcessor_BCAL_attenlength_gainratio::~JEventProcessor_BCAL_attenlength_ga
 //------------------
 jerror_t JEventProcessor_BCAL_attenlength_gainratio::init(void)
 {
+
+        japp->RootFillLock(this); //ACQUIRE ROOT FILL LOCK
+
+	if (logintratiovsZ_all != nullptr){
+	        japp->RootFillUnLock(this); //RELEASE ROOT FILL LOCK
+		return NOERROR;
+	}
+
 	// Set style
 	gStyle->SetTitleOffset(1, "Y");
 	gStyle->SetTitleOffset(1.3, "z");
@@ -70,7 +102,9 @@ jerror_t JEventProcessor_BCAL_attenlength_gainratio::init(void)
 
 	// create root folder for bcal and cd to it, store main dir
 	TDirectory *main = gDirectory;  // save current directory
-	gDirectory->mkdir("bcalgainratio")->cd();
+	TDirectory *bcalgainratio = main->mkdir("bcalgainratio");
+	bcalgainratio->cd();
+
 	char histname[255], modtitle[255], histtitle[255];
 
 	sprintf(histtitle,"All channels;Z Position (cm);log of integral ratio US/DS");
@@ -110,12 +144,15 @@ jerror_t JEventProcessor_BCAL_attenlength_gainratio::init(void)
 	EvsZ_layer[2] = new TH2I("EvsZ_layer3","E vs Z (layer 3);Z Position (cm);Energy",100,-250.0,250.0,200,0,0.2);
 	EvsZ_layer[3] = new TH2I("EvsZ_layer4","E vs Z (layer 4);Z Position (cm);Energy",100,-250.0,250.0,200,0,0.2);
 
-
 	gStyle->SetOptFit(0);
 	gStyle->SetOptStat(0);
- 
-	gDirectory->mkdir("channels")->cd();
+
+	TDirectory *dirlogpeakratiovsZ = bcalgainratio->mkdir("logpeakratiovsZ");
+	TDirectory *dirlogintratiovsZ = bcalgainratio->mkdir("logintratiovsZ");
+	TDirectory *dirEvsZ = bcalgainratio->mkdir("EvsZ");
+
 	// Create histograms
+	dirlogpeakratiovsZ->cd();
 	for (int module=0; module<nummodule; module++) {
 		for (int layer=0; layer<numlayer; layer++) {
 			for (int sector=0; sector<numsector; sector++) {
@@ -123,10 +160,24 @@ jerror_t JEventProcessor_BCAL_attenlength_gainratio::init(void)
 				sprintf(modtitle,"Channel (M%i,L%i,S%i)",module+1,layer+1,sector+1);
 				sprintf(histtitle,"%s;Z Position (cm);log of pulse height ratio US/DS",modtitle);
 				logpeakratiovsZ[module][layer][sector] = new TH2I(histname,histtitle,500,-225.0,225.0,500,-3,3);
+			}
+		}
+	}
+	dirlogintratiovsZ->cd();
+	for (int module=0; module<nummodule; module++) {
+		for (int layer=0; layer<numlayer; layer++) {
+			for (int sector=0; sector<numsector; sector++) {
 				sprintf(histname,"logintratiovsZ_%02i%i%i",module+1,layer+1,sector+1);
 				sprintf(modtitle,"Channel (M%i,L%i,S%i)",module+1,layer+1,sector+1);
 				sprintf(histtitle,"%s;Z Position (cm);log of integral ratio US/DS",modtitle);
 				logintratiovsZ[module][layer][sector] = new TH2I(histname,histtitle,500,-250.0,250.0,500,-3,3);
+			}
+		}
+	}
+	dirEvsZ->cd();
+	for (int module=0; module<nummodule; module++) {
+		for (int layer=0; layer<numlayer; layer++) {
+			for (int sector=0; sector<numsector; sector++) {
 				sprintf(histname,"EvsZ_%02i%i%i",module+1,layer+1,sector+1);
 				sprintf(modtitle,"Channel (M%i,L%i,S%i)",module+1,layer+1,sector+1);
 				sprintf(histtitle,"%s;Z Position (cm);Energy",modtitle);
@@ -135,10 +186,10 @@ jerror_t JEventProcessor_BCAL_attenlength_gainratio::init(void)
 		}
 	}
 
-
-
 	// back to main dir
 	main->cd();
+	
+	japp->RootFillUnLock(this); //RELEASE ROOT FILL LOCK
 
 	return NOERROR;
 }
@@ -167,15 +218,15 @@ jerror_t JEventProcessor_BCAL_attenlength_gainratio::evnt(JEventLoop *loop, uint
 	vector<const DBCALPoint*> dbcalpoints;
 	loop->Get(dbcalpoints);
 
-    // pull out the associated digihits
-    vector< vector<const DBCALDigiHit*> > digihits_vec;
+	// pull out the associated digihits
+	vector< vector<const DBCALDigiHit*> > digihits_vec;
 	for(unsigned int i=0; i<dbcalpoints.size(); i++) {
-        const DBCALPoint *point = dbcalpoints[i];
-        vector<const DBCALDigiHit*> digihits;
-        point->Get(digihits);
-        
-        digihits_vec.push_back(digihits);
-    }
+	  const DBCALPoint *point = dbcalpoints[i];
+	  vector<const DBCALDigiHit*> digihits;
+	  point->Get(digihits);
+	  
+	  digihits_vec.push_back(digihits);
+	}
 
 	// FILL HISTOGRAMS
 	// Since we are filling histograms local to this plugin, it will not interfere with other ROOT operations: can use plugin-wide ROOT fill lock
@@ -233,7 +284,8 @@ jerror_t JEventProcessor_BCAL_attenlength_gainratio::evnt(JEventLoop *loop, uint
 		float peakratio = (float)peakUS/(float)peakDS;
 		float logpeakratio = log(peakratio);
 		if (VERBOSE>4) printf("%5llu  %2i %i %i  %8.1f  %8.1f  %8.3f  %8.3f  %8.3f\n", 
-							  (long long unsigned int)eventnumber,module,layer,sector,integralUS,integralDS,intratio,logintratio,zpos);
+				      (long long unsigned int)eventnumber,module,layer,sector,integralUS,integralDS,intratio,logintratio,zpos);
+
 		if (Energy > 0.01) {  // 10 MeV cut to remove bias due to attenuation
 			logintratiovsZ[module-1][layer-1][sector-1]->Fill(zpos, logintratio);
 			logintratiovsZ_all->Fill(zpos, logintratio);

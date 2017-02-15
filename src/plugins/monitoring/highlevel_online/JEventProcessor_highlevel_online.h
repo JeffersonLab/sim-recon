@@ -25,6 +25,8 @@
 #include <BCAL/DBCALDigiHit.h>
 #include <FCAL/DFCALDigiHit.h>
 #include <DAQ/Df250PulsePedestal.h>
+#include <PAIR_SPECTROMETER/DPSPair.h>
+#include <PAIR_SPECTROMETER/DPSCPair.h>
 
 using namespace jana;
 using namespace std;
@@ -39,6 +41,7 @@ class JEventProcessor_highlevel_online:public jana::JEventProcessor
 		TH1I* dHist_BeamBunchPeriod;
 		TH1F* dHist_BeamBunchPeriod_DFT;
 
+		TH2I* dHist_NumTriggers;
 		TH2I* dHist_BCALVsFCAL_TrigBit1;
 		TH1I* dHist_L1bits_gtp;
 		TH1I* dHist_L1bits_fp;
@@ -46,6 +49,7 @@ class JEventProcessor_highlevel_online:public jana::JEventProcessor
 		TH2I* dHist_NumHighLevelObjects;
 
 		TH1I* dHist_BeamEnergy;
+		TH1I* dHist_PSPairEnergy;
 
 		TH2I* dHist_PVsTheta_Tracks;
 		TH2I* dHist_PhiVsTheta_Tracks;
@@ -55,9 +59,15 @@ class JEventProcessor_highlevel_online:public jana::JEventProcessor
 
 		TH1I* d2gamma;
 		TH1I *dpip_pim;
+		TH1I *dKp_Km;
 		TH1I *dpip_pim_pi0;
 		TH2I *dbeta_vs_p;
 		TH1I *dptrans;
+		
+		TH2D *dF1TDC_fADC_tdiff;
+		map<pair<int,int>, double> f1tdc_bin_map; // key=<rocid,slot> val=bin
+		
+		template<typename T> void FillF1Hist(vector<const T*> hits);
 
 	private:
 		jerror_t init(void);
@@ -70,7 +80,13 @@ class JEventProcessor_highlevel_online:public jana::JEventProcessor
 		int bcal_cell_thr;
 		int fcal_row_mask_min, fcal_row_mask_max, fcal_col_mask_min, fcal_col_mask_max;
 
+		vector<double> dNumHadronicTriggers_CoherentPeak_RFSignal;
+		vector<double> dNumHadronicTriggers_CoherentPeak_RFSideband;
+
+		double dShowerEOverPCut;
 		double dBeamBunchPeriod;
+		pair<double, double> dCoherentPeakRange;
+		pair<int, int> dRFSidebandBunchRange;
 		map<Particle_t, map<DetectorSystem_t, double> > dTimingCutMap;
 };
 

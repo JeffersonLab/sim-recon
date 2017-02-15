@@ -3,6 +3,15 @@ using namespace jana;
 
 #include <DAQ/Df250PulseData.h>
 
+#include <START_COUNTER/DSCHit.h>
+#include <TAGGER/DTAGMHit.h>
+#include <TAGGER/DTAGHHit.h>
+#include <TOF/DTOFHit.h>
+#include <BCAL/DBCALUnifiedHit.h>
+#include <RF/DRFTime.h>
+#include <DAQ/DF1TDCHit.h>
+
+
 // Routine used to create our JEventProcessor
 #include <JANA/JApplication.h>
 #include <JANA/JFactory.h>
@@ -12,6 +21,62 @@ extern "C"{
     app->AddProcessor(new JEventProcessor_highlevel_online());
   }
 } // "C"
+
+
+#define F1Types(X) \
+	X(DRFTime)  \
+	X(DSCHit)   \
+	X(DTAGHHit) \
+	X(DTAGMHit) \
+	X(DFDCHit)  \
+	X(DBCALUnifiedHit)
+
+//.......................................................
+// These templates are used by the FillF1Hist method below
+// to accomodate the different member names
+template<typename T> static bool   F1Check(const T* hit); // return true if all info (TDC and ADC) is present
+template<typename T> static double F1tdiff(const T* hit); // return time difference between TDC and ADC
+
+template<> bool   F1Check<DRFTime        >(const DRFTime*         hit){ return true;                          }
+template<> double F1tdiff<DRFTime        >(const DRFTime*         hit){ return hit->dTime;                    }
+
+template<> bool   F1Check<DSCHit         >(const DSCHit*          hit){ return hit->has_fADC && hit->has_TDC; }
+template<> double F1tdiff<DSCHit         >(const DSCHit*          hit){ return hit->t_TDC - hit->t_fADC;      }
+
+template<> bool   F1Check<DTAGHHit       >(const DTAGHHit*        hit){ return hit->has_fADC && hit->has_TDC; }
+template<> double F1tdiff<DTAGHHit       >(const DTAGHHit*        hit){ return hit->time_tdc - hit->time_fadc;}
+
+template<> bool   F1Check<DTAGMHit       >(const DTAGMHit*        hit){ return hit->has_fADC && hit->has_TDC; }
+template<> double F1tdiff<DTAGMHit       >(const DTAGMHit*        hit){ return hit->time_tdc - hit->time_fadc;}
+
+template<> bool   F1Check<DFDCHit        >(const DFDCHit*         hit){ return true;                          }
+template<> double F1tdiff<DFDCHit        >(const DFDCHit*         hit){ return hit->t/50.0;                   }
+
+template<> bool   F1Check<DBCALUnifiedHit>(const DBCALUnifiedHit* hit){ return hit->has_TDC_hit;              }
+template<> double F1tdiff<DBCALUnifiedHit>(const DBCALUnifiedHit* hit){ return hit->t_TDC - hit->t_ADC;       }
+//.......................................................
+
+
+//------------------
+// FillF1Hist
+//
+// Template routine used to fill dF1TDC_fADC_tdiff for all types in F1Types.
+//------------------
+template<typename T>
+void JEventProcessor_highlevel_online::FillF1Hist(vector<const T*> hits)
+{
+	for(auto hit : hits){
+		if( ! F1Check(hit) ) continue;
+		vector<const DF1TDCHit*> f1hits;
+		hit->Get(f1hits);
+		for(auto f1hit : f1hits){
+			pair<int,int> rocid_slot(f1hit->rocid, f1hit->slot);
+			double fbin = f1tdc_bin_map[rocid_slot];
+			double tdiff = F1tdiff(hit);
+			dF1TDC_fADC_tdiff->Fill(fbin, tdiff);
+		}
+	}
+}
 
 //------------------
 // init
@@ -33,6 +98,14 @@ jerror_t JEventProcessor_highlevel_online::init(void)
 	dTimingCutMap[PiMinus][SYS_TOF] = 2.0;
 	dTimingCutMap[PiMinus][SYS_BCAL] = 2.5;
 	dTimingCutMap[PiMinus][SYS_FCAL] = 3.0;
+	dTimingCutMap[Electron][SYS_NULL] = -1.0;
+	dTimingCutMap[Electron][SYS_TOF] = 2.0;
+	dTimingCutMap[Electron][SYS_BCAL] = 2.5;
+	dTimingCutMap[Electron][SYS_FCAL] = 3.0;
+	dTimingCutMap[Positron][SYS_NULL] = -1.0;
+	dTimingCutMap[Positron][SYS_TOF] = 2.0;
+	dTimingCutMap[Positron][SYS_BCAL] = 2.5;
+	dTimingCutMap[Positron][SYS_FCAL] = 3.0;
 	map<Particle_t, map<DetectorSystem_t, double> > dTimingCutMap;
 
 	// All histograms go in the "highlevel" directory
@@ -53,6 +126,25 @@ jerror_t JEventProcessor_highlevel_online::init(void)
 	dHist_BeamBunchPeriod_DFT = new TH1F("RFBeamBunchPeriod_DFT", "Fourier Transform of RF Beam Bunch Period;Beam bunch frequency (MHz)", Ndft_bins, dft_min, dft_max);
 
 	/*************************************************************** TRIGGER **************************************************************/
+
+	dNumHadronicTriggers_CoherentPeak_RFSignal.assign(33, 0.0);
+	dNumHadronicTriggers_CoherentPeak_RFSideband.assign(33, 0.0);
+
+	dRFSidebandBunchRange = pair<int, int>(3, 5);
+	dShowerEOverPCut = 0.75;
+
+	dHist_NumTriggers = new TH2I("NumTriggers", ";Trigger Bit", 33, 0.5, 33.5, 4, 0.5, 4.5); //"bit" 33: Total
+	dHist_NumTriggers->GetYaxis()->SetBinLabel(1, "# Triggers");
+	dHist_NumTriggers->GetYaxis()->SetBinLabel(2, "# Front Panel Triggers");
+	dHist_NumTriggers->GetYaxis()->SetBinLabel(3, "# Hadronic Triggers");
+	dHist_NumTriggers->GetYaxis()->SetBinLabel(4, "# Hadronic Triggers, Coherent Peak");
+	for(int loc_i = 1; loc_i <= 32; ++loc_i)
+	{
+		ostringstream locBinStream;
+		locBinStream << loc_i;
+		dHist_NumTriggers->GetXaxis()->SetBinLabel(loc_i, locBinStream.str().c_str());
+	}
+	dHist_NumTriggers->GetXaxis()->SetBinLabel(33, "Total");
 
 	dHist_BCALVsFCAL_TrigBit1 = new TH2I("BCALVsFCAL_TrigBit1","TRIG BIT 1;E (FCAL) (count);E (BCAL) (count)", 200, 0., 10000, 200, 0., 50000);
 	
@@ -78,8 +170,11 @@ jerror_t JEventProcessor_highlevel_online::init(void)
 
 	/************************************************************* KINEMATICS *************************************************************/
 
-	// Beam Energy
+	// Beam Energy from tagger
 	dHist_BeamEnergy = new TH1I("BeamEnergy", "Reconstructed Tagger Beam Energy;Beam Energy (GeV)", 240, 0.0, 12.0);
+
+	// Beam Energy from PS
+	dHist_PSPairEnergy = new TH1I("PSPairEnergy", "Reconstructed PS Beam Energy;Beam Energy (GeV)", 250, 7.0, 12.0);
 
 	// PVsTheta Time-Based Tracks
 	dHist_PVsTheta_Tracks = new TH2I("PVsTheta_Tracks", "P vs. #theta for time-based tracks;#theta#circ;p (GeV/c)", 280, 0.0, 140.0, 150, 0.0, 12.0);
@@ -102,11 +197,54 @@ jerror_t JEventProcessor_highlevel_online::init(void)
 	// pi+ pi-
 	dpip_pim = new TH1I("PiPlusPiMinus", "#pi^{+}#pi^{-} inv. mass w/ identified proton;#pi^{+}#pi^{-} inv. mass (GeV)", 400, 0.0, 2.0);
 
+	// K+ K-
+	dKp_Km = new TH1I("KPlusKMinus", "K^{+}K^{-} inv. mass w/ identified proton;K^{+}K^{-} inv. mass (GeV)", 400, 0.0, 2.0);
+
 	// pi+ pi- pi0
 	dpip_pim_pi0 = new TH1I("PiPlusPiMinusPiZero", "#pi^{+}#pi^{-}#pi^{o} inv. mass w/ identified proton;#pi^{+}#pi^{-}#pi^{o} inv. mass (GeV)", 200, 0.035, 2.0);
 	dptrans = new TH1I("PiPlusPiMinusPiZeroProton_t", ";#pi^{+}#pi^{-}#pi^{o}p transverse momentum(GeV)", 500, 0.0, 1.0);
 	
 	dbeta_vs_p = new TH2I("BetaVsP", "#beta vs. p (best FOM all charged tracks);p (GeV);#beta", 200, 0.0, 2.0, 100, 0.0, 1.1);
+
+	/*************************************************************** F1 TDC - fADC time ***************************************************************/
+
+	// first, fill map of rocid/slot combos that have F1TDC's
+	map<int, set<int>> f1tdc_rocid_slot;
+	for(int slot=3; slot<=17; slot++){
+		if( slot==11 || slot==12) continue;
+		if( slot<=16 ) f1tdc_rocid_slot[75].insert(slot); // TAGMH
+		if( slot<=4  ) f1tdc_rocid_slot[95].insert(slot); // STPSC1
+		if( slot<=13 ) f1tdc_rocid_slot[36].insert(slot); // BCAL6
+		if( slot<=13 ) f1tdc_rocid_slot[33].insert(slot); // BCAL3
+		if( slot<=13 ) f1tdc_rocid_slot[39].insert(slot); // BCAL9
+		if( slot<=13 ) f1tdc_rocid_slot[42].insert(slot); // BCAL12
+		if( slot<=17 ) f1tdc_rocid_slot[51].insert(slot); // FDC1
+		if( slot<=16 ) f1tdc_rocid_slot[54].insert(slot); // FDC4
+		if( slot<=16 ) f1tdc_rocid_slot[63].insert(slot); // FDC13
+		if( slot<=16 ) f1tdc_rocid_slot[64].insert(slot); // FDC14
+	}
+	
+	// Create map that can be used to find the correct bin given the rocid,slot
+	for(auto p : f1tdc_rocid_slot){
+		int rocid = p.first;
+		for(int slot : p.second){
+			f1tdc_bin_map[ pair<int,int>(rocid,slot) ] = (double)f1tdc_bin_map.size();
+		}
+	}
+	
+	// Create histogram with bin labels
+	dF1TDC_fADC_tdiff = new TH2D("F1TDC_fADC_tdiff", "F1TDC - fADC Time diff", f1tdc_bin_map.size(), 0.5, 0.5+(double)f1tdc_bin_map.size(), 64, -64.0, 64.0);
+	dF1TDC_fADC_tdiff->SetStats(0);
+	dF1TDC_fADC_tdiff->SetYTitle("TDC - ADC in ns (or TDC/50 time for FDC)");
+	for(auto p : f1tdc_bin_map){
+		int rocid = p.first.first;
+		int slot  = p.first.second;
+		int jbin  = p.second;
+		char str[256];
+		sprintf(str, "rocid%d slot%d", rocid, slot);
+		dF1TDC_fADC_tdiff->GetXaxis()->SetBinLabel(jbin, str);
+	}
+	
 
 	// back to main dir
 	main->cd();
@@ -123,6 +261,11 @@ jerror_t JEventProcessor_highlevel_online::brun(JEventLoop *locEventLoop, int32_
 	vector<double> locBeamPeriodVector;
 	locEventLoop->GetCalib("PHOTON_BEAM/RF/beam_period", locBeamPeriodVector);
 	dBeamBunchPeriod = locBeamPeriodVector[0];
+
+	dCoherentPeakRange = pair<double, double>(8.4, 9.0);
+	map<string, double> photon_beam_param;
+	if(locEventLoop->GetCalib("/ANALYSIS/beam_asymmetry/coherent_energy", photon_beam_param) == false)
+		dCoherentPeakRange = pair<double, double>(photon_beam_param["cohmin_energy"], photon_beam_param["cohedge_energy"]);
 
 	fcal_cell_thr  =  64;
 	bcal_cell_thr  =  20;
@@ -153,6 +296,12 @@ jerror_t JEventProcessor_highlevel_online::evnt(JEventLoop *locEventLoop, uint64
 
 	vector<const DBeamPhoton*> locBeamPhotons;
 	locEventLoop->Get(locBeamPhotons);
+
+	vector<const DPSPair*> locPSPairs;
+	locEventLoop->Get(locPSPairs);
+
+	vector<const DPSCPair*> locPSCPairs;
+	locEventLoop->Get(locPSCPairs);
 
 	vector<const DFCALShower*> locFCALShowers;
 	locEventLoop->Get(locFCALShowers);
@@ -196,6 +345,14 @@ jerror_t JEventProcessor_highlevel_online::evnt(JEventLoop *locEventLoop, uint64
 
 	vector<const DChargedTrack*> locChargedTracks;
 	locEventLoop->Get(locChargedTracks, "PreSelect");
+	
+	// The following decalres containers for all types in F1Types
+	// (defined at top of this file) and fills them.
+	#define GetVect(A) \
+		vector<const A*> v##A; \
+		locEventLoop->Get(v##A);
+	F1Types(GetVect)		
+
 
 	/********************************************************* PREPARE RF ********************************************************/
 	
@@ -304,10 +461,98 @@ jerror_t JEventProcessor_highlevel_online::evnt(JEventLoop *locEventLoop, uint64
 		if(fabs(locDeltaT) <= 0.5*dBeamBunchPeriod)
 			locBeamPhotons_InTime.push_back(locBeamPhoton);
 	}
+	
+	vector<double> Eps; // pair energy in PS
+	if(!locPSCPairs.empty()){
+		for(auto pspair : locPSPairs){
+			auto flhit = pspair->ee.first;
+			auto frhit = pspair->ee.second;
+			double E = flhit->E + frhit->E;
+			Eps.push_back(E);
+		}
+	}
+
+	/********************************************************* PREPARE HADRONIC TRIGGER *******************************************************/
+
+	bool locIsHadronicEventFlag = false;
+	for(auto locTrack : locChargedTracks)
+	{
+		//make sure at least one track isn't a lepton!! (read: e+/-. assume all muons come from pion decays)
+		auto locChargedHypo = locTrack->Get_BestTrackingFOM();
+
+		//timing cut: is it consistent with an e+/-??
+		auto locDetector = locChargedHypo->t1_detector();
+		double locDeltaT = locChargedHypo->time() - locChargedHypo->t0();
+		if(fabs(locDeltaT) > dTimingCutMap[Electron][locDetector])
+		{
+			locIsHadronicEventFlag = true; //not an electron!!
+			break;
+		}
+
+		//compute shower-E/p, cut
+		double locP = locChargedHypo->momentum().Mag();
+		double locShowerEOverP = 0.0;
+		const DFCALShowerMatchParams* locFCALShowerMatchParams = locChargedHypo->Get_FCALShowerMatchParams();
+		const DBCALShowerMatchParams* locBCALShowerMatchParams = locChargedHypo->Get_BCALShowerMatchParams();
+		if(locFCALShowerMatchParams != NULL)
+		{
+			const DFCALShower* locFCALShower = locFCALShowerMatchParams->dFCALShower;
+			locShowerEOverP = locFCALShower->getEnergy()/locP;
+		}
+		else if(locBCALShowerMatchParams != NULL)
+		{
+			const DBCALShower* locBCALShower = locBCALShowerMatchParams->dBCALShower;
+			locShowerEOverP = locBCALShower->E/locP;
+		}
+		else //not matched to a shower
+		{
+			locIsHadronicEventFlag = true; //assume not an electron!!
+			break;
+		}
+
+		if(locShowerEOverP < dShowerEOverPCut)
+		{
+			locIsHadronicEventFlag = true; //not an electron!!
+			break;
+		}
+	}
+
+	int locNumHadronicTriggers_CoherentPeak_RFSignal = 0;
+	int locNumHadronicTriggers_CoherentPeak_RFSideband = 0;
+	double locNumRFSidebandBunches = 2.0*double(dRFSidebandBunchRange.second - dRFSidebandBunchRange.first);
+	if(locIsHadronicEventFlag)
+	{
+		//see if is in coherent peak
+		for(auto& locBeamPhoton : locBeamPhotons)
+		{
+			if(std::isnan(locEventRFBunch->dTime))
+				break; //RF sideband background too high: ignore
+			if((locBeamPhoton->energy() < dCoherentPeakRange.first) || (locBeamPhoton->energy() > dCoherentPeakRange.second))
+				continue; //not in coherent peak
+
+			//delta-t sideband range
+			double locSidebandMinDeltaT = dBeamBunchPeriod*(double(dRFSidebandBunchRange.first) - 0.5);
+			double locSidebandMaxDeltaT = dBeamBunchPeriod*(double(dRFSidebandBunchRange.first) + 0.5);
+
+			double locBeamRFDeltaT = locBeamPhoton->time() - locEventRFBunch->dTime;
+			if(fabs(locBeamRFDeltaT) <= 0.5*dBeamBunchPeriod)
+				++locNumHadronicTriggers_CoherentPeak_RFSignal;
+			else if((fabs(locBeamRFDeltaT) >= locSidebandMinDeltaT) && (fabs(locBeamRFDeltaT) <= locSidebandMaxDeltaT))
+				++locNumHadronicTriggers_CoherentPeak_RFSideband;
+		}
+	}
+
+
+	/*************************************************************** F1 TDC - fADC time ***************************************************************/
+	japp->RootFillLock(this); //ACQUIRE ROOT FILL LOCK
+
+	// The following fills the dF1TDC_fADC_tdiff histo for
+	// all detectors that use F1TDC modules. See the templates
+	// at the top of this file for details.
+	#define F1Fill(A) FillF1Hist(v##A);
+	F1Types(F1Fill)		
 
 	/***************************************************************** RF *****************************************************************/
-
-	japp->RootFillLock(this); //ACQUIRE ROOT FILL LOCK
 
 	for(size_t loc_i = 0; loc_i < locTAGHDeltaTs.size(); ++loc_i)
 		dHist_BeamBunchPeriod->Fill(locTAGHDeltaTs[loc_i]);
@@ -331,14 +576,67 @@ jerror_t JEventProcessor_highlevel_online::evnt(JEventLoop *locEventLoop, uint64
 			if(locgtpTrigBits[bit-1]) dHist_L1bits_gtp->Fill(bit);
 			if(locfpTrigBits[bit-1] ) dHist_L1bits_fp->Fill(bit);
 		}
+
+		// #triggers: total
+		if(locL1Trigger->trig_mask > 0)
+			dHist_NumTriggers->Fill(33, 1);
+		if(locL1Trigger->fp_trig_mask > 0)
+			dHist_NumTriggers->Fill(33, 2);
+
+		// #triggers: by bit
+		for(int locTriggerBit = 1; locTriggerBit <= 32; ++locTriggerBit)
+		{
+			if(locgtpTrigBits[locTriggerBit - 1]) //gtp (normal)
+				dHist_NumTriggers->Fill(locTriggerBit, 1);
+			if(locfpTrigBits[locTriggerBit - 1]) //front panel
+				dHist_NumTriggers->Fill(locTriggerBit, 2);
+		}
+
+		// #hadronic triggers
+		if(locIsHadronicEventFlag)
+		{
+			//total
+			if(locL1Trigger->trig_mask > 0)
+			{
+				dHist_NumTriggers->Fill(33, 3);
+
+				//coherent peak
+				dNumHadronicTriggers_CoherentPeak_RFSignal[32] += double(locNumHadronicTriggers_CoherentPeak_RFSignal);
+				dNumHadronicTriggers_CoherentPeak_RFSideband[32] += double(locNumHadronicTriggers_CoherentPeak_RFSideband);
+				int locNumHadronicTriggers_CoherentPeak = int(dNumHadronicTriggers_CoherentPeak_RFSignal[32] - dNumHadronicTriggers_CoherentPeak_RFSideband[32]/locNumRFSidebandBunches + 0.5); //+0.5: round
+				dHist_NumTriggers->SetBinContent(33, 4, locNumHadronicTriggers_CoherentPeak); //# hadronic triggers
+			}
+
+			//by bit
+			for(int locTriggerBit = 1; locTriggerBit <= 32; ++locTriggerBit)
+			{
+				if(!locgtpTrigBits[locTriggerBit - 1])
+					continue;
+
+				//all hadronic
+				dHist_NumTriggers->Fill(locTriggerBit, 3);
+
+				//coherent peak: must subtract RF sidebands to determine the actual beam energy
+				dNumHadronicTriggers_CoherentPeak_RFSignal[locTriggerBit - 1] += double(locNumHadronicTriggers_CoherentPeak_RFSignal);
+				dNumHadronicTriggers_CoherentPeak_RFSideband[locTriggerBit - 1] += double(locNumHadronicTriggers_CoherentPeak_RFSideband);
+				double locNumHadronicTriggers_CoherentPeak = dNumHadronicTriggers_CoherentPeak_RFSignal[locTriggerBit - 1] - dNumHadronicTriggers_CoherentPeak_RFSideband[locTriggerBit - 1]/locNumRFSidebandBunches;
+				dHist_NumTriggers->SetBinContent(locTriggerBit, 4, locNumHadronicTriggers_CoherentPeak); //# hadronic triggers
+			}
+
+			//coherent peak rate
+			double locHadronicCoherentPeakRate = dHist_NumTriggers->GetBinContent(33, 4)/dHist_NumTriggers->GetBinContent(33, 1);
+
+			ostringstream locHistTitle;
+			locHistTitle << "Total Hadronic Coherent Peak Rate = " << locHadronicCoherentPeakRate;
+			dHist_NumTriggers->SetTitle(locHistTitle.str().c_str());
+		}
 	}
 
-    // DON'T DO HIGHER LEVEL PROCESSING FOR FRONT PANEL TRIGGER EVENTS
-    if( locL1Trigger && (locL1Trigger->fp_trig_mask>0) ) {
+	// DON'T DO HIGHER LEVEL PROCESSING FOR FRONT PANEL TRIGGER EVENTS, OR NON-TRIGGER EVENTS
+    if(!locL1Trigger || (locL1Trigger && (locL1Trigger->fp_trig_mask>0))) {
         japp->RootFillUnLock(this); //RELEASE ROOT FILL LOCK
         return NOERROR;
     }
-
 
 	/****************************************************** NUM RECONSTRUCTED OBJECTS *****************************************************/
 
@@ -360,10 +658,13 @@ jerror_t JEventProcessor_highlevel_online::evnt(JEventLoop *locEventLoop, uint64
 
 	for(size_t loc_i = 0; loc_i < locBeamPhotons.size(); ++loc_i)
 		dHist_BeamEnergy->Fill(locBeamPhotons[loc_i]->energy());
+	
+	for(auto E : Eps) dHist_PSPairEnergy->Fill(E);
 
 	for(size_t loc_i = 0; loc_i < locChargedTracks.size(); ++loc_i)
 	{
 		auto locChargedHypo = locChargedTracks[loc_i]->Get_BestTrackingFOM();
+		if(locChargedHypo->t1_detector() == SYS_NULL) continue; // skip tracks with artificial betas
 		double locP = locChargedHypo->momentum().Mag();
 		double locTheta = locChargedHypo->momentum().Theta()*180.0/TMath::Pi();
 		double locPhi = locChargedHypo->momentum().Phi()*180.0/TMath::Pi();
@@ -498,6 +799,66 @@ jerror_t JEventProcessor_highlevel_online::evnt(JEventLoop *locEventLoop, uint64
 		}		
 	}
 
+	/*************************************************************** K+ K- ***************************************************************/
+	for(auto t1 : locChargedTracks){
+		//look for K+
+		auto hypoth1 = t1->Get_Hypothesis(KPlus);
+		if(!hypoth1) continue;
+
+		//timing cut
+		auto dectector1 = hypoth1->t1_detector();
+		double locDeltaT = hypoth1->time() - hypoth1->t0();
+		if(fabs(locDeltaT) > dTimingCutMap[PiPlus][dectector1]) // use same timing cuts as pion
+			continue;
+
+		const DLorentzVector &Kpmom = hypoth1->lorentzMomentum();
+
+		for(auto t2 : locChargedTracks){
+			if(t2 == t1) continue;
+
+			//look for pi-
+			auto hypoth2 = t2->Get_Hypothesis(KMinus);
+			if(!hypoth2) continue;
+
+			//timing cut
+			auto dectector2 = hypoth2->t1_detector();
+			locDeltaT = hypoth2->time() - hypoth2->t0();
+			if(fabs(locDeltaT) > dTimingCutMap[PiMinus][dectector2]) // use same timing cuts as pion
+				continue;
+
+			const DLorentzVector &Kmmom = hypoth2->lorentzMomentum();
+
+			for(auto t3 : locChargedTracks){
+				if(t3 == t1) continue;
+				if(t3 == t2) continue;
+
+				//look for proton
+				auto hypoth3 = t3->Get_Hypothesis(Proton);
+				if(!hypoth3) continue;
+
+				//timing cut
+				auto dectector3 = hypoth3->t1_detector();
+				locDeltaT = hypoth3->time() - hypoth3->t0();
+				if(fabs(locDeltaT) > dTimingCutMap[Proton][dectector3])
+					continue;
+
+				const DLorentzVector &protonmom = hypoth3->lorentzMomentum();
+
+				// for phi: require at least one beam photon in time with missing mass squared near 0
+				DLorentzVector phimom(Kpmom + Kmmom);
+				DLorentzVector locFinalStateP4 = phimom + protonmom;
+				DLorentzVector locTargetP4(0.0, 0.0, 0.0, ParticleMass(Proton));
+				for(auto locBeamPhoton : locBeamPhotons_InTime)
+				{
+					DLorentzVector locMissingP4 = locBeamPhoton->lorentzMomentum() + locTargetP4 - locFinalStateP4;
+					if(fabs(locMissingP4.M2()) > 0.01)
+						continue;
+					dKp_Km->Fill(phimom.M());
+					break;
+				}
+			}
+		}		
+	}
 
 	japp->RootFillUnLock(this); //RELEASE ROOT FILL LOCK
 
@@ -512,6 +873,7 @@ jerror_t JEventProcessor_highlevel_online::erun(void)
   // This is called whenever the run number changes, before it is
   // changed to give you a chance to clean up before processing
   // events from the next run number.
+
   return NOERROR;
 }
 
