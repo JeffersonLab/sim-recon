@@ -249,7 +249,7 @@ bool DFCALCluster::update( const userhits_t* const hitList,
 
       for (int ih = 0; ih < hitList->nhits; ih++) {
 	shower_profile( hitList, ih,fEallowed[ih],fEexpected[ih],
-			fcalFaceZ+0.5*DFCALGeometry::blockLength());
+			DFCALGeometry::fcalMidplane());
       }
    }
 

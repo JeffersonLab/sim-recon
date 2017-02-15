@@ -25,14 +25,14 @@ using namespace jana;
 jerror_t DFCALHit_factory::init(void)
 {
     // initialize calibration tables
-    vector< vector<double > > new_gains(DFCALGeometry::kBlocksTall, 
-            vector<double>(DFCALGeometry::kBlocksWide));
-    vector< vector<double > > new_pedestals(DFCALGeometry::kBlocksTall, 
-            vector<double>(DFCALGeometry::kBlocksWide));
-    vector< vector<double > > new_t0s(DFCALGeometry::kBlocksTall, 
-            vector<double>(DFCALGeometry::kBlocksWide));
-    vector< vector<double > > new_qualities(DFCALGeometry::kBlocksTall, 
-            vector<double>(DFCALGeometry::kBlocksWide));
+    vector< vector<double > > new_gains(kBlocksTall, 
+            vector<double>(kBlocksWide));
+    vector< vector<double > > new_pedestals(kBlocksTall, 
+            vector<double>(kBlocksWide));
+    vector< vector<double > > new_t0s(kBlocksTall, 
+            vector<double>(kBlocksWide));
+    vector< vector<double > > new_qualities(kBlocksTall, 
+            vector<double>(kBlocksWide));
 
     gains = new_gains;
     pedestals = new_pedestals;
@@ -309,20 +309,20 @@ const double DFCALHit_factory::GetConstant(const fcal_digi_constants_t &the_tabl
         const int in_column) const
 {
     char str[256];
-
-    if ( (in_row <= 0) || (in_row > DFCALGeometry::kBlocksTall)) {
+    /*
+    if ( (in_row <= 0) || (in_row > kBlocksTall)) {
         sprintf(str, "Bad row # requested in DFCALHit_factory::GetConstant()!"
-                " requested=%d , should be %ud", in_row, DFCALGeometry::kBlocksTall);
+                " requested=%d , should be %ud", in_row, kBlocksTall);
         cerr << str << endl;
         throw JException(str);
     }
-    if ( (in_column <= 0) || (in_column > DFCALGeometry::kBlocksWide)) {
+    if ( (in_column <= 0) || (in_column > kBlocksWide)) {
         sprintf(str, "Bad column # requested in DFCALHit_factory::GetConstant()!"
-                " requested=%d , should be %ud", in_column, DFCALGeometry::kBlocksWide);
+                " requested=%d , should be %ud", in_column, kBlocksWide);
         cerr << str << endl;
         throw JException(str);
     }
-
+    */
     return the_table[in_row][in_column];
 }
 
@@ -330,22 +330,22 @@ const double DFCALHit_factory::GetConstant(const fcal_digi_constants_t &the_tabl
         const DFCALDigiHit *in_digihit) const
 {
     char str[256];
-
-    if ( (in_digihit->row <= 0) || (in_digihit->row > DFCALGeometry::kBlocksTall)) {
+    /*
+    if ( (in_digihit->row <= 0) || (in_digihit->row > kBlocksTall)) {
         sprintf(str, "Bad row # requested in DFCALHit_factory::GetConstant()!"
                 " requested=%d , should be %ud", 
-                in_digihit->row, DFCALGeometry::kBlocksTall);
+                in_digihit->row, kBlocksTall);
         cerr << str << endl;
         throw JException(str);
     }
-    if ( (in_digihit->column <= 0) || (in_digihit->column > DFCALGeometry::kBlocksWide)) {
+    if ( (in_digihit->column <= 0) || (in_digihit->column > kBlocksWide)) {
         sprintf(str, "Bad column # requested in DFCALHit_factory::GetConstant()!"
                 " requested=%d , should be %ud",
-                in_digihit->column, DFCALGeometry::kBlocksWide);
+                in_digihit->column, kBlocksWide);
         cerr << str << endl;
         throw JException(str);
     }
-
+    */
     return the_table[in_digihit->row][in_digihit->column];
 }
 
@@ -353,21 +353,21 @@ const double DFCALHit_factory::GetConstant(const fcal_digi_constants_t &the_tabl
         const DFCALHit *in_hit) const {
 
     char str[256];
-
-    if ( (in_hit->row <= 0) || (in_hit->row > DFCALGeometry::kBlocksTall)) {
+    /*
+    if ( (in_hit->row <= 0) || (in_hit->row > kBlocksTall)) {
         sprintf(str, "Bad row # requested in DFCALHit_factory::GetConstant()! "
-                "requested=%d , should be %ud", in_hit->row, DFCALGeometry::kBlocksTall);
+                "requested=%d , should be %ud", in_hit->row, kBlocksTall);
         cerr << str << endl;
         throw JException(str);
     }
-    if ( (in_hit->column <= 0) || (in_hit->column > DFCALGeometry::kBlocksWide)) {
+    if ( (in_hit->column <= 0) || (in_hit->column > kBlocksWide)) {
         sprintf(str, "Bad column # requested in DFCALHit_factory::GetConstant()!"
                 " requested=%d , should be %ud", 
-                in_hit->column, DFCALGeometry::kBlocksWide);
+                in_hit->column, kBlocksWide);
         cerr << str << endl;
         throw JException(str);
     }
-
+    */
     return the_table[in_hit->row][in_hit->column];
 }
 /*
@@ -383,18 +383,18 @@ const double DFCALHit_factory::GetConstant(const fcal_digi_constants_t &the_tabl
    DTranslationTable::DChannelInfo channel_info = ttab->GetDetectorIndex(daq_index);
 
    if ( (channel_info.fcal.row <= 0) 
-   || (channel_info.fcal.row > static_cast<unsigned int>(DFCALGeometry::kBlocksTall))) {
+   || (channel_info.fcal.row > static_cast<unsigned int>(kBlocksTall))) {
    sprintf(str, "Bad row # requested in DFCALHit_factory::GetConstant()!"
    " requested=%d , should be %ud", 
-   channel_info.fcal.row, DFCALGeometry::kBlocksTall);
+   channel_info.fcal.row, kBlocksTall);
    cerr << str << endl;
    throw JException(str);
    }
    if ( (channel_info.fcal.col <= 0) 
-   || (channel_info.fcal.col > static_cast<unsigned int>(DFCALGeometry::kBlocksWide))) {
+   || (channel_info.fcal.col > static_cast<unsigned int>(kBlocksWide))) {
    sprintf(str, "Bad column # requested in DFCALHit_factory::GetConstant()!"
    " requested=%d , should be %ud",
-   channel_info.fcal.row, DFCALGeometry::kBlocksWide);
+   channel_info.fcal.row, kBlocksWide);
    cerr << str << endl;
    throw JException(str);
    }
