@@ -10,8 +10,149 @@
 // e-mail: sdobbs@jlab.org
 //
 
-
 {
+
+// This is a trick to get ROOT to use a function for a TF1 without
+// defining it in global namespace. This is needed since ROOTSpy
+// requires all macros to be nameless. The start of the actual
+// macro starts after the class definition.
+class FitWrapper{
+	public:
+		//....................................................
+		// gauss_bg1
+		//
+		// Fit function that allows excluded range to be
+		// specified using last 2 parameters. Functional
+		// form provided by E. Chudakov.
+		//....................................................
+		static Double_t gauss_bg1(Double_t *xptr, Double_t *p)
+		{
+			Double_t x = xptr[0];
+			Double_t xexcl_min = p[7];
+			Double_t xexcl_max = p[8];
+			if( x>xexcl_min && x<xexcl_max ){
+				TF1::RejectPoint();
+				return 0;
+			}
+
+			Double_t signal = p[0]*TMath::Gaus(x, p[1],p[2]);
+			Double_t bkgnd  = p[3]*pow((x-p[4]),p[5])*exp(-x*p[6]);
+
+			return signal + bkgnd;
+		}
+
+		//-----------------------------------
+		// FitWithBackground
+		//-----------------------------------
+		static Double_t FitWithBackground(
+			TH1* h1,
+			Double_t peak_pos,
+			Double_t peak_width,
+			Double_t mass_thresh,
+			Double_t xmaxfit=0.0)
+		{
+
+			// If too few events then just plot histogram and return
+			if(h1->GetEntries()<100){
+				h1->Draw();
+				return 0.0;
+			}
+
+			// Make unique names for signal and background functions
+			// for each histogram fit so they can be displayed
+			// simultaneously.
+			char ftfname[256];
+			char fbgname[256];
+			sprintf(ftfname, "f%s_signal", h1->GetName());
+			sprintf(fbgname, "f%s_bkgrnd", h1->GetName());
+
+			// Define fit function
+			TF1 *ftf = (TF1 *)gROOT->FindObject(ftfname);
+			if(!ftf){
+				ftf = new TF1(ftfname, gauss_bg1, 0.0, 0.0, 9);
+				ftf->SetParName(0, "Gauss Amp");
+				ftf->SetParName(1, "Gauss mean");
+				ftf->SetParName(2, "Gauss sigma");
+				ftf->SetParName(3, "Bkgnd Amp");
+				ftf->SetParName(4, "Bkgnd offset");
+				ftf->SetParName(5, "Bkgnd exponent");
+				ftf->SetParName(6, "Bkgnd expo-rate");
+				ftf->SetParName(7, "xmin excluded region");
+				ftf->SetParName(8, "xmax excluded region");
+			}
+
+			// Threshold parameter is either mass thresh or histogram low edge
+			Double_t xmin = h1->GetXaxis()->GetXmin();
+
+			// Set starting parameters. We initially fix the peak parameters
+			// so we can fit the background first.
+			ftf->FixParameter(0, 0.5*h1->GetBinContent(h1->FindBin(peak_pos)));
+			ftf->FixParameter(1, peak_pos);
+			ftf->FixParameter(2, peak_width);
+			ftf->SetParameter(3, 1.0);
+			ftf->SetParameter(4, mass_thresh>xmin ? mass_thresh:xmin);
+			ftf->SetParameter(5, 2.0);
+			ftf->SetParameter(6, 4.0);
+
+			// Limits of signal region to exclude from initial fit
+			Double_t xexcl_1 = peak_pos - 3.0*peak_width;
+			Double_t xexcl_2 = peak_pos + 3.0*peak_width;
+			ftf->FixParameter(7, xexcl_1);  // Set excluded region min
+			ftf->FixParameter(8, xexcl_2);  // Set excluded region max
+
+			// Find limits of initial background fit and do it
+			Double_t xminfit = mass_thresh;
+			if(xmaxfit==0.0) xmaxfit = h1->GetXaxis()->GetXmax();
+			Double_t norm = h1->GetBinContent(h1->FindBin(xexcl_2))/ftf->Eval(xexcl_2);
+			ftf->SetParameter(3, norm); // scale background function to match histo at edge of excluded region
+			h1->Fit(ftf, "0", "", xminfit, xmaxfit);
+
+			// Release peak parameters and fit to full range
+			ftf->ReleaseParameter(0);
+			ftf->ReleaseParameter(1);
+			ftf->ReleaseParameter(2);
+			ftf->ReleaseParameter(9);
+			ftf->FixParameter(7, -1.0E6);  // disable excluded region
+			ftf->FixParameter(8, -1.0E6);  // disable excluded region
+			h1->Fit(ftf, "", "", xminfit, xmaxfit);
+
+			// Copy parameters into new function for plotting background
+			TF1 *fbg = (TF1 *)gROOT->FindObject(fbgname);
+			if(!fbg) fbg = new TF1(fbgname, gauss_bg1, xminfit, xmaxfit, ftf->GetNpar()); // For some reason Clone doesn't work right here!
+			fbg->SetParameters(ftf->GetParameters());
+			fbg->SetParameter(0, 0.0); // zero out peak	
+			fbg->SetLineStyle(2);
+			fbg->SetLineColor(kMagenta);
+			fbg->Draw("same");
+
+			// Draw line at nominal peak position
+			double max = 1.05*h1->GetMaximum();
+			TLine lin;
+			lin.SetLineColor(kMagenta);
+			lin.SetLineWidth(1);
+			lin.DrawLine(peak_pos, 0.0, peak_pos, max);
+
+			char str[256];
+			sprintf(str, "%d MeV", (int)(1000*peak_pos));
+
+			TLatex latex;
+			latex.SetTextAngle(90.0);
+			latex.SetTextSize(0.035);
+			latex.SetTextAlign(21);
+			latex.SetTextColor(kMagenta);
+			latex.DrawLatex(peak_pos - 0.005, max/2.0, str);
+
+			// Get number of signal particless
+			Double_t I = ftf->Integral(xminfit, xmaxfit) - fbg->Integral(xminfit, xmaxfit);
+			I /= h1->GetBinWidth(1);
+
+			return I;
+		}
+
+};
+
+	//------------------------- Macro starts here ------------------------
+
 	vector<bool> trig(6, true); // triggers to include 
 
 	TDirectory *locTopDirectory = gDirectory;
@@ -179,7 +320,7 @@
 			//fun->SetParameter(8, 0.0);
 
 			// Region of interest for fit
-			double lo = 0.95;
+			double lo = 0.98;
 			double hi = 1.07;
 
 			// Fit and Draw
@@ -247,78 +388,26 @@
 		PiPlusPiMinus->GetXaxis()->SetLabelSize(0.05);
 		PiPlusPiMinus->GetYaxis()->SetLabelSize(0.035);
 		PiPlusPiMinus->SetStats(0);
+
+		Double_t I = FitWrapper::FitWithBackground(PiPlusPiMinus, 0.770, 0.1, 0.3, 1.6);
 		
-		// Fit to rho0 peak
-		TF1 *fun = (TF1*)gDirectory->FindObjectAny("fun_rho0_fit");
-		if(!fun)fun = new TF1("fun_rho0_fit", "[0]*TMath::Voigt(x-[1], [2], [3]) + pol2(4)");
+		if(I>0.0){
+			char str[256];
+			sprintf(str, "num. #rho : %g", I);
 
-		// Fit once with fixed parameters to force finding of polynomial params
-		fun->FixParameter(0, PiPlusPiMinus->GetBinContent(PiPlusPiMinus->FindBin(0.770))*0.5);
-		fun->FixParameter(1, 0.770);
-		fun->FixParameter(2, 0.2);
-		fun->FixParameter(3, 0.1);
-		fun->SetParameter(4, 0.0);
-		fun->FixParameter(5, 0.0);
-		fun->SetParameter(6, 0.0);
-		fun->SetParameter(7, 0.0);
-		//fun->SetParameter(8, 0.0);
+			double max = 1.05*PiPlusPiMinus->GetMaximum();
+			latex.SetTextColor(kBlack);
+			latex.SetTextAngle(0.0);
+			latex.SetTextAlign(11);
+			latex.SetTextSize(0.075);
+			latex.DrawLatex(1.005, max*3.0/4.0, str);
 
-		// Region of interest for fit
-		double lo = 0.45;
-		double hi = 1.10;
-
-		// Fit and Draw
-		PiPlusPiMinus->Fit(fun, "", "", lo, hi);
-
-		// Release Voigt parameters and fit again
-		fun->ReleaseParameter(0);
-		fun->ReleaseParameter(1);
-		fun->ReleaseParameter(2);
-		fun->ReleaseParameter(3);
-
-		// Fit and Draw again (histogram and function)
-		PiPlusPiMinus->Fit(fun, "", "", lo, hi);
-
-		// Second function for drawing background
-		TF1 *fun2 = (TF1*)gDirectory->FindObjectAny("fun_rho0_fit2");
-		if(!fun2) fun2 = new TF1("fun_rho0_fit2", "pol3(0)" , lo, hi);
-		double pars[10];
-		fun->GetParameters(pars);
-		fun2->SetParameters(&pars[4]);
-		fun2->SetLineColor(kMagenta);
-		fun2->SetLineStyle(2);
-		fun2->Draw("same");
-
-		double max = 1.05*PiPlusPiMinus->GetMaximum();
-		TLine lin;
-		lin.SetLineColor(kMagenta);
-		lin.SetLineWidth(1);
-		lin.DrawLine(0.770, 0.0, 0.770, max);
-		
-		TLatex latex;
-		latex.SetTextAngle(90.0);
-		latex.SetTextSize(0.035);
-		latex.SetTextAlign(21);
-		latex.SetTextColor(kMagenta);
-		latex.DrawLatex(0.765, max/2.0, "770 MeV");
-
-		// Get number of rho's
-		double I = fun->Integral(lo, hi) - fun2->Integral(lo,hi);
-		I /= TwoGammaMass->GetBinWidth(1);
-		char str[256];
-		sprintf(str, "num. #rho : %g", I);
-
-		latex.SetTextColor(kBlack);
-		latex.SetTextAngle(0.0);
-		latex.SetTextAlign(11);
-		latex.SetTextSize(0.075);
-		latex.DrawLatex(1.005, max*3.0/4.0, str);
-		
-		// Print rate per trigger
-		if(Ntrig_tot>0.0){
-			sprintf(str, "%3.3f per 1k triggers", I/Ntrig_tot*1000.0);
-			latex.SetTextSize(0.06);
-			latex.DrawLatex(1.010, max*0.65, str);
+			// Print rate per trigger
+			if(Ntrig_tot>0.0){
+				sprintf(str, "%3.3f per 1k triggers", I/Ntrig_tot*1000.0);
+				latex.SetTextSize(0.06);
+				latex.DrawLatex(1.010, max*0.65, str);
+			}
 		}
 	}
 
@@ -334,65 +423,13 @@
 		PiPlusPiMinusPiZero->GetYaxis()->SetLabelSize(0.035);
 		PiPlusPiMinusPiZero->SetStats(0);
 	
-		// Only do fit if there are at least 30 entries in the bin at 782MeV
-		Int_t Npeak = PiPlusPiMinusPiZero->GetBinContent(PiPlusPiMinusPiZero->FindBin(0.782));
-		double max = 1.05*PiPlusPiMinusPiZero->GetMaximum();
-		if(Npeak < 30){
-			PiPlusPiMinusPiZero->Draw();
-		}else{
-
-			// Fit to rho0 peak
-			TF1 *fun = (TF1*)gDirectory->FindObjectAny("fun_omega_fit");
-			if(!fun)fun = new TF1("fun_omega_fit", "[0]*TMath::Voigt(x-[1], [2], [3]) + pol3(4)");
-
-			// Fit once with fixed parameters to force finding of polynomial params
-			fun->FixParameter(0, Npeak*0.5);
-			fun->FixParameter(1, 0.782);
-			fun->FixParameter(2, 0.2);
-			fun->FixParameter(3, 0.1);
-			fun->SetParameter(4, 0.0);
-			fun->FixParameter(5, 0.0);
-			fun->SetParameter(6, 0.0);
-			fun->SetParameter(7, 0.0);
-			//fun->SetParameter(8, 0.0);
-
-			// Region of interest for fit
-			double lo = 0.6;
-			double hi = 1.0;
-
-			// Fit and Draw
-			PiPlusPiMinusPiZero->Fit(fun, "", "", lo, hi);
-
-			// Release Voigt parameters and fit again
-			fun->ReleaseParameter(0);
-			fun->ReleaseParameter(1);
-			fun->ReleaseParameter(2);
-			fun->ReleaseParameter(3);
-
-			// Fit and Draw again (histogram and function)
-			PiPlusPiMinusPiZero->Fit(fun, "", "", lo, hi);
-
-			// Second function for drawing background
-			TF1 *fun2 = (TF1*)gDirectory->FindObjectAny("fun_omega_fit2");
-			if(!fun2) fun2 = new TF1("fun_omega_fit2", "pol3(0)" , lo, hi);
-			double pars[20];
-			fun->GetParameters(pars);
-			fun2->SetParameters(&pars[4]);
-			fun2->SetLineColor(kMagenta);
-			fun2->SetLineStyle(2);
-			fun2->Draw("same");
-
-			TLine lin;
-			lin.SetLineColor(kMagenta);
-			lin.SetLineWidth(1);
-			lin.DrawLine(0.782, 0.0, 0.782, max);
-
-			// Get number of omega's
-			double I = fun->Integral(lo, hi) - fun2->Integral(lo,hi);
-			I /= TwoGammaMass->GetBinWidth(1);
+		Double_t I = FitWrapper::FitWithBackground(PiPlusPiMinusPiZero, 0.782, 0.03, 0.42, 1.6);
+		
+		if(I>0.0){
 			char str[256];
 			sprintf(str, "num. #omega : %g", I);
 
+			double max = 1.05*PiPlusPiMinus->GetMaximum();
 			latex.SetTextColor(kBlack);
 			latex.SetTextAngle(0.0);
 			latex.SetTextAlign(11);
@@ -403,14 +440,9 @@
 			if(Ntrig_tot>0.0){
 				sprintf(str, "%3.3f per 1k triggers", I/Ntrig_tot*1000.0);
 				latex.SetTextSize(0.06);
-				latex.DrawLatex(1.010, max*0.72, str);
+				latex.DrawLatex(1.010, max*0.65, str);
 			}
 		}
 
-		latex.SetTextAngle(90.0);
-		latex.SetTextSize(0.035);
-		latex.SetTextAlign(21);
-		latex.SetTextColor(kMagenta);
-		latex.DrawLatex(0.777, max/2.0, "782 MeV");
 	}
 }
