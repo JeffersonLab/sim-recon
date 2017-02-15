@@ -1607,16 +1607,19 @@ void hdv_mainframe::DrawDetectorsXY(void)
 		// Set up 4 2-D vectors that point from the center of a block to its
 		// corners. This makes it easier to represent each corner as a vector
 		// in lab corrdinate whch we can extract r, phi from.
+	/*
 		double blocksize = fcalgeom->blockSize();
 		DVector2 shift[4];
 		shift[0].Set(-blocksize/2, -blocksize/2);  // these are ordered such that they
 		shift[1].Set(-blocksize/2, +blocksize/2);  // go in a clockwise manner. This
 		shift[2].Set(+blocksize/2, +blocksize/2);  // ensures the r/phi cooridinates also
 		shift[3].Set(+blocksize/2, -blocksize/2);  // define a single enclosed space
+	*/
 		fcalblocks.clear();
 
 		if(GetCheckButton("fcal")){
-		  for(int chan=0; chan<DFCALGeometry::kMaxChannels; chan++){
+		  for(int chan=0; chan<kMaxChannels; chan++){
+		    /*
 				int row = fcalgeom->row(chan);
 				int col = fcalgeom->column(chan);
 				if(!fcalgeom->isBlockActive(row, col))continue;
@@ -1633,6 +1636,32 @@ void hdv_mainframe::DrawDetectorsXY(void)
 				graphics_endB.push_back(poly);
 
 				fcalblocks[chan] = poly; // record so we can set the color later
+		    */  
+		    int row = fcalgeom->row(chan);
+		    int col = fcalgeom->column(chan);
+
+		    int calor=0;
+		    if (row>=4000|| col>=4000) calor=1;
+		    double blocksize = fcalgeom->blockSize(calor);
+		    DVector2 shift[4];
+		    shift[0].Set(-blocksize/2, -blocksize/2);  // these are ordered such that they
+		    shift[1].Set(-blocksize/2, +blocksize/2);  // go in a clockwise manner. This
+		    shift[2].Set(+blocksize/2, +blocksize/2);  // ensures the r/phi cooridinates also
+		    shift[3].Set(+blocksize/2, -blocksize/2);  // define a single enclosed space
+	 
+		    double x[4], y[4];
+		    for(int i=0; i<4; i++){
+		      DVector2 pos = shift[i] + fcalgeom->positionOnFace(chan);
+		      x[i] = pos.X();
+		      y[i] = pos.Y();
+		    }
+		    
+		    TPolyLine *poly = new TPolyLine(4, x, y);
+		    poly->SetFillColor(0);
+		    poly->SetLineColor(kBlack);
+		    graphics_endB.push_back(poly);
+		    
+		    fcalblocks[chan] = poly; // record so we can set the color later
 			}
 		}
 
@@ -1916,14 +1945,17 @@ void hdv_mainframe::DrawDetectorsRPhi(void)
 		// Set up 4 2-D vectors that point from the center of a block to its
 		// corners. This makes it easier to represent each corner as a vector
 		// in lab corrdinate whch we can extract r, phi from.
+	/*
 		double blocksize = fcalgeom->blockSize();
 		DVector2 shift[4];
 		shift[0].Set(-blocksize/2, -blocksize/2);  // these are ordered such that they
 		shift[1].Set(-blocksize/2, +blocksize/2);  // go in a clockwise manner. This
 		shift[2].Set(+blocksize/2, +blocksize/2);  // ensures the r/phi cooridinates also
 		shift[3].Set(+blocksize/2, -blocksize/2);  // define a single enclosed space
+	*/
 		fcalblocks.clear();
-		for(int chan=0; chan<DFCALGeometry::kMaxChannels; chan++){
+		for(int chan=0; chan<kMaxChannels; chan++){
+		  /*
 			int row = fcalgeom->row(chan);
 			int col = fcalgeom->column(chan);
 			if(!fcalgeom->isBlockActive(row, col))continue;
@@ -1940,6 +1972,35 @@ void hdv_mainframe::DrawDetectorsRPhi(void)
 			graphics_endB.push_back(poly);
 			
 			fcalblocks[chan] = poly; // record so we can set the color later
+		  */ 
+		  int row = fcalgeom->row(chan);
+	  int col = fcalgeom->column(chan);
+	  
+	  int calor=0;
+	  if (row>=4000|| col>=4000){
+	    calor=1;
+	  }
+	  double blocksize = fcalgeom->blockSize(calor);
+	  DVector2 shift[4];
+	  shift[0].Set(-blocksize/2, -blocksize/2);  // these are ordered such that they
+	  shift[1].Set(-blocksize/2, +blocksize/2);  // go in a clockwise manner. This
+	  shift[2].Set(+blocksize/2, +blocksize/2);  // ensures the r/phi cooridinates also
+	  shift[3].Set(+blocksize/2, -blocksize/2);  // define a single enclosed space
+	  
+	  double r[4], phi[4];
+	  for(int i=0; i<4; i++){
+	    DVector2 pos = shift[i] + fcalgeom->positionOnFace(chan);
+	    r[i] = pos.Mod();
+	    phi[i] = pos.Phi_0_2pi(pos.Phi());
+	  }
+	  
+	  TPolyLine *poly = new TPolyLine(4, phi, r);
+	  poly->SetFillColor(18);
+	  poly->SetLineColor(kBlack);
+	  graphics_endB.push_back(poly);
+	  
+	  fcalblocks[chan] = poly; // record so we can set the color later
+		  
 		}
 	}
 
@@ -2408,8 +2469,13 @@ TPolyLine* hdv_mainframe::GetFCALPolyLine(int channel)
 TPolyLine* hdv_mainframe::GetFCALPolyLine(float x, float y)
 {
 	if(!fcalgeom)return NULL;
-	int row = fcalgeom->row(y);
-	int column = fcalgeom->column(x);
+	int calor=0;
+ 	if (fabs(x)<61 && fabs(y)<61) calor=1;
+ 	int row = fcalgeom->row(y,calor);
+ 	int column = fcalgeom->column(x,calor);
+
+	//int row = fcalgeom->row(y);
+	//int column = fcalgeom->column(x);
 	return GetFCALPolyLine(fcalgeom->channel(row, column));
 }
 
