@@ -128,7 +128,8 @@ void FCALSmearer::SmearEvent(hddm_s::HDDM *record)
 
          // Get gain constant per block
 		 int channelnum = fcalGeom->channel(myrow, mycol); 
-         double FCAL_gain = fcal_config->FCAL_GAINS.at(channelnum);
+		 //double FCAL_gain = fcal_config->FCAL_GAINS.at(channelnum);
+	 double FCAL_gain = 1.;
 
          // Smear the energy and timing of the hit
          double sigma = fcal_config->FCAL_PHOT_STAT_COEF/sqrt(titer->getE());
