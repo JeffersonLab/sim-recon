@@ -767,8 +767,8 @@ bool DParticleID::PredictFCALHit(const DReferenceTrajectory *rt,
 
   double x=proj_pos.x();
   double y=proj_pos.y();
-  row=dFCALGeometry->row(float(y));
-  col=dFCALGeometry->column(float(x));
+  row=dFCALGeometry->row(float(y),0);
+  col=dFCALGeometry->column(float(x),0);
   return (dFCALGeometry->isBlockActive(row,col));
 }
 
