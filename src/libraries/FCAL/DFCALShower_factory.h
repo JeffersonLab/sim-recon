@@ -31,7 +31,7 @@ class DFCALShower_factory:public JFactory<DFCALShower>{
 
 		void GetCorrectedEnergyAndPosition(const DFCALCluster* cluster, double &Ecorrected, DVector3 &pos_corrected, double &errZ, const DVector3 *aVertex);
 
-                double m_zTarget,m_FCALfront;
+                double m_zTarget,m_FCALfront[2],m_FCALback[2];
 
 		double LOAD_CCDB_CONSTANTS;
 		double SHOWER_ENERGY_THRESHOLD;
@@ -43,10 +43,10 @@ class DFCALShower_factory:public JFactory<DFCALShower>{
 		double expfit_param3;
 
 
-		double FCAL_RADIATION_LENGTH;
-		double FCAL_CRITICAL_ENERGY;
-		double FCAL_SHOWER_OFFSET;
-		double FCAL_C_EFFECTIVE;
+		double FCAL_RADIATION_LENGTH[2];
+		double FCAL_CRITICAL_ENERGY[2];
+		double FCAL_SHOWER_OFFSET[2];
+		double FCAL_C_EFFECTIVE[2];
 
 		int VERBOSE;
 		string COVARIANCEFILENAME;

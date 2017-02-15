@@ -54,13 +54,20 @@ DFCALShower_factory::DFCALShower_factory()
 
   // Parameters to make shower-depth correction taken from Radphi, 
   // slightly modifed to match photon-polar angle
-  FCAL_RADIATION_LENGTH = 3.1;
-  FCAL_CRITICAL_ENERGY = 0.035;
-  FCAL_SHOWER_OFFSET = 1.0;
+  FCAL_RADIATION_LENGTH[0] = 3.1;
+  FCAL_CRITICAL_ENERGY[0] = 0.035;
+  FCAL_SHOWER_OFFSET[0] = 1.0;
+  
+  FCAL_RADIATION_LENGTH[1] = 0.89;
+  FCAL_CRITICAL_ENERGY[1] = 0.00964;
+  FCAL_SHOWER_OFFSET[1] = 1.0;
+
 	
+  /*
   gPARMS->SetDefaultParameter("FCAL:FCAL_RADIATION_LENGTH", FCAL_RADIATION_LENGTH);
   gPARMS->SetDefaultParameter("FCAL:FCAL_CRITICAL_ENERGY", FCAL_CRITICAL_ENERGY);
   gPARMS->SetDefaultParameter("FCAL:FCAL_SHOWER_OFFSET", FCAL_SHOWER_OFFSET);
+  */
 
   VERBOSE = 0;              ///< >0 once off info ; >2 event by event ; >3 everything
   COVARIANCEFILENAME = "";  ///<  Setting the filename will take precidence over the CCDB.  Files must end in ij.txt, where i and j are integers corresponding to the element of the matrix
@@ -75,11 +82,14 @@ DFCALShower_factory::DFCALShower_factory()
 jerror_t DFCALShower_factory::brun(JEventLoop *loop, int32_t runnumber)
 {
  
-    // Get calibration constants
+    // Get calibration constants 
+  FCAL_C_EFFECTIVE[0]=FCAL_C_EFFECTIVE[1]=15.;
     map<string, double> fcal_parms;
     loop->GetCalib("FCAL/fcal_parms", fcal_parms);
     if (fcal_parms.find("FCAL_C_EFFECTIVE")!=fcal_parms.end()){
-	FCAL_C_EFFECTIVE = fcal_parms["FCAL_C_EFFECTIVE"];
+      //FCAL_C_EFFECTIVE = fcal_parms["FCAL_C_EFFECTIVE"]; 
+      FCAL_C_EFFECTIVE[0] = fcal_parms["FCAL_C_EFFECTIVE"];
+      FCAL_C_EFFECTIVE[1] =  FCAL_C_EFFECTIVE[0];
 	if(debug_level>0)jout<<"FCAL_C_EFFECTIVE = "<<FCAL_C_EFFECTIVE<<endl;
     } else {
 	jerr<<"Unable to get FCAL_C_EFFECTIVE from FCAL/fcal_parms in Calib database!"<<endl;
@@ -90,8 +100,20 @@ jerror_t DFCALShower_factory::brun(JEventLoop *loop, int32_t runnumber)
     
     if (geom) {
 	geom->GetTargetZ(m_zTarget);
-	geom->GetFCALZ(m_FCALfront);
-    }
+	geom->GetFCALZ(m_FCALfront[0]);  
+
+	vector<double>block;
+	geom->Get("//box[@name='LGBL']/@X_Y_Z",block);
+	double back=m_FCALfront[0]+block[2];
+	m_FCALback[0]=back;
+
+    geom->Get("//box[@name='LTBK']/@X_Y_Z",block);
+    m_FCALfront[1]=0.5*(back+m_FCALfront[0]-block[2]);
+    m_FCALback[1]=m_FCALfront[1]+block[2];
+
+    printf("front %f  %f\n",m_FCALfront[0],m_FCALfront[1]);
+  }
+    
     else{
       
       cerr << "No geometry accessbile." << endl;
@@ -156,12 +178,17 @@ jerror_t DFCALShower_factory::evnt(JEventLoop *eventLoop, uint64_t eventnumber)
     GetCorrectedEnergyAndPosition( cluster , Ecorrected, pos_corrected, errZ, &vertex);
 
     if (Ecorrected>0.){		
+      double x=pos_corrected.X();
+      double y=pos_corrected.Y();
+      unsigned int index=0;
+      if (fabs(x)<60.5 && fabs(y)<60.5) index=1;
+
       //up to this point, all times have been times at which light reaches
       //the back of the detector. Here we correct for the time that it 
       //takes the Cherenkov light to reach the back of the detector
       //so that the t reported is roughly the time of the shower at the
       //position pos_corrected	
-      cTime -= ( m_FCALfront + DFCALGeometry::blockLength() - pos_corrected.Z() )/FCAL_C_EFFECTIVE;
+      cTime -= ( m_FCALback[index] - pos_corrected.Z() )/FCAL_C_EFFECTIVE[index];
 
       // Make the DFCALShower object
       DFCALShower* shower = new DFCALShower;
@@ -199,10 +226,14 @@ void DFCALShower_factory::GetCorrectedEnergyAndPosition(const DFCALCluster* clus
 {
   // Non-linear energy correction are done here
   //int MAXITER = 1000;
+  
 
   DVector3  posInCal = cluster->getCentroid();
   float x0 = posInCal.Px();
   float y0 = posInCal.Py();
+
+  unsigned int index=0;
+  if (fabs(x0)<60.5 && fabs(y0)<60.5) index=1;
 
   double Eclust = cluster->getEnergy();
   
@@ -240,9 +271,9 @@ void DFCALShower_factory::GetCorrectedEnergyAndPosition(const DFCALCluster* clus
     float dyV = y0-vertex->Y();
     float zV = vertex->Z();
    
-    double z0 = m_FCALfront - zV;
-    double zMax = FCAL_RADIATION_LENGTH*(FCAL_SHOWER_OFFSET 
-					 + log(Egamma/FCAL_CRITICAL_ENERGY));
+    double z0 = m_FCALfront[index] - zV;
+    double zMax = FCAL_RADIATION_LENGTH[index]*(FCAL_SHOWER_OFFSET[index] 
+					 + log(Egamma/FCAL_CRITICAL_ENERGY[index]));
     double zed = z0;
     double zed1 = z0 + zMax;
 
@@ -257,7 +288,8 @@ void DFCALShower_factory::GetCorrectedEnergyAndPosition(const DFCALCluster* clus
       }
       zed1 = zed;
     }
-    
+    _DBG_ << index << " " << zed << endl;
+
     posInCal.SetZ( zed + zV );
     errZ = zed - zed1;
   }
