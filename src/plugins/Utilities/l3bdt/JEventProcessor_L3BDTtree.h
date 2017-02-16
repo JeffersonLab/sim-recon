@@ -43,6 +43,7 @@ class JEventProcessor_L3BDTtree:public jana::JEventProcessor{
 		
 		TTree *l3tree;
 		bdt_params_t bdt;
+		double min_visible_GeV;
 
 	private:
 		jerror_t init(void);						///< Called once at program start.

@@ -77,6 +77,9 @@ jerror_t JEventProcessor_L3BDTtree::init(void)
 	l3tree->Branch("FCAL_rmax",         &bdt.FCAL_rmax,         "FCAL_rmax/F");
 	l3tree->Branch("FCAL_rmin",         &bdt.FCAL_rmin,         "FCAL_rmin/F");
 
+	min_visible_GeV = 4.0;
+	gPARMS->SetDefaultParameter("MIN_VISIBLE_ENERGY", min_visible_GeV, "Minimum visible needed to be considered reconstructable.");
+
 	return NOERROR;
 }
 
@@ -124,7 +127,8 @@ jerror_t JEventProcessor_L3BDTtree::evnt(JEventLoop *loop, uint64_t eventnumber)
 	// Visible energy
 	double Evisible = 0.0;
 	for(auto ct : cts){
-		const DChargedTrackHypothesis *cth = ct->Get_BestFOM();
+		auto cth = ct->Get_BestTrackingFOM();
+		//const DChargedTrackHypothesis *cth = ct->Get_BestFOM();
 		double confidence_level = TMath::Prob((double)cth->dChiSq, (double)cth->dNDF);
 		if(confidence_level > 0.0001){
 			Evisible += cth->energy();
@@ -169,7 +173,7 @@ jerror_t JEventProcessor_L3BDTtree::evnt(JEventLoop *loop, uint64_t eventnumber)
 		}
 	}
 
-	bool is_good = has_ps || ((Evisible>=4.0) && has_tagged_photon);
+	bool is_good = has_ps || ((Evisible>=min_visible_GeV) && has_tagged_photon);
 
 	japp->RootWriteLock();
 
