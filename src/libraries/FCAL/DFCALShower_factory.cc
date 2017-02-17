@@ -288,7 +288,6 @@ void DFCALShower_factory::GetCorrectedEnergyAndPosition(const DFCALCluster* clus
       }
       zed1 = zed;
     }
-    _DBG_ << index << " " << zed << endl;
 
     posInCal.SetZ( zed + zV );
     errZ = zed - zed1;
