@@ -103,8 +103,12 @@ class FitWrapper{
 			// Find limits of initial background fit and do it
 			Double_t xminfit = mass_thresh;
 			if(xmaxfit==0.0) xmaxfit = h1->GetXaxis()->GetXmax();
-			Double_t norm = h1->GetBinContent(h1->FindBin(xexcl_2))/ftf->Eval(xexcl_2);
-			ftf->SetParameter(3, norm); // scale background function to match histo at edge of excluded region
+			Int_t minbin_int = h1->FindBin(xexcl_2);
+			Int_t maxbin_int = minbin_int + 5; // Integrate 6 bins
+			Double_t xmin_int = h1->GetBinLowEdge(minbin_int);   // low edge of integration region
+			Double_t xmax_int = h1->GetBinLowEdge(maxbin_int+1); // high edge of integration region
+			Double_t norm = h1->GetBinContent(minbin_int, maxbin_int)/h1->GetBinWidth(minbin_int)/ftf->Integral(xmin_int, xmax_int);
+			ftf->SetParameter(3, norm); // scale background function to match histo integral near edge of excluded region
 			h1->Fit(ftf, "0", "", xminfit, xmaxfit);
 
 			// Release peak parameters and fit to full range
@@ -429,7 +433,7 @@ class FitWrapper{
 			char str[256];
 			sprintf(str, "num. #omega : %g", I);
 
-			double max = 1.05*PiPlusPiMinus->GetMaximum();
+			double max = 1.05*PiPlusPiMinusPiZero->GetMaximum();
 			latex.SetTextColor(kBlack);
 			latex.SetTextAngle(0.0);
 			latex.SetTextAlign(11);
