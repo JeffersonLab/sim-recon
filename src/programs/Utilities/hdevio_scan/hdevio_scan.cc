@@ -26,6 +26,7 @@ void MapEVIOWords(void);
 
 vector<string> filenames;
 bool   PRINT_SUMMARY = true;
+bool   SAVE_FILE_MAP = false;
 bool   MAP_WORDS     = false;
 bool   GENERATE_ERROR_REPORT = false;
 string ROOT_FILENAME = "hdevio_scan.root";
@@ -68,6 +69,7 @@ void Usage(string mess="")
 	cout << "   -e            Write details of bad event tag location to file" << endl;
 	cout << "   -n max_buff   Max. events to keep timing info for (only valid)" << endl;
 	cout << "                 with -w option)" << endl;
+	cout << "   -s            Save file block map" << endl;
 	cout << endl;
 
 	if(mess != "") cout << endl << mess << endl << endl;
@@ -94,6 +96,7 @@ void ParseCommandLineArguments(int narg, char *argv[])
 		else if(arg == "-b"){ BLOCK_SIZE = atoi(next.c_str()); i++;}
 		else if(arg == "-e"){ GENERATE_ERROR_REPORT = true; }
 		else if(arg == "-n"){ MAX_HISTORY_BUFF_SIZE = atoi(next.c_str()); i++;}		
+		else if(arg == "-s"){ SAVE_FILE_MAP = true;}		
 		else if(arg[0] == '-') {cout << "Unknown option \""<<arg<<"\" !" << endl; exit(-1);}
 		else filenames.push_back(arg);
 	}
@@ -183,6 +186,8 @@ void PrintSummary(void)
 			
 			ofs.close();
 		}
+		
+		if(SAVE_FILE_MAP) hdevio->SaveFileMap();
 		
 		delete hdevio;
 
