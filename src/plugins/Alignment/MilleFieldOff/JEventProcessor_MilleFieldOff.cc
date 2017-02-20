@@ -1,11 +1,11 @@
 // $Id$
 //
-//    File: JEventProcessor_All_MilleFieldOff.cc
+//    File: JEventProcessor_MilleFieldOff.cc
 // Created: Tue Jan 17 19:32:32 Local time zone must be set--see zic manual page 2017
 // Creator: mstaib (on Linux egbert 2.6.32-642.6.2.el6.x86_64 x86_64)
 //
 
-#include "JEventProcessor_All_MilleFieldOff.h"
+#include "JEventProcessor_MilleFieldOff.h"
 #include "HDGEOMETRY/DMagneticFieldMapNoField.h"
 #include "TRACKING/DTrackCandidate.h"
 #include "CDC/DCDCTrackHit.h"
@@ -20,23 +20,23 @@ using namespace jana;
 extern "C"{
 void InitPlugin(JApplication *app){
    InitJANAPlugin(app);
-   app->AddProcessor(new JEventProcessor_All_MilleFieldOff());
+   app->AddProcessor(new JEventProcessor_MilleFieldOff());
 }
 } // "C"
 
 
 //------------------
-// JEventProcessor_All_MilleFieldOff (Constructor)
+// JEventProcessor_MilleFieldOff (Constructor)
 //------------------
-JEventProcessor_All_MilleFieldOff::JEventProcessor_All_MilleFieldOff()
+JEventProcessor_MilleFieldOff::JEventProcessor_MilleFieldOff()
 {
 
 }
 
 //------------------
-// ~JEventProcessor_All_MilleFieldOff (Destructor)
+// ~JEventProcessor_MilleFieldOff (Destructor)
 //------------------
-JEventProcessor_All_MilleFieldOff::~JEventProcessor_All_MilleFieldOff()
+JEventProcessor_MilleFieldOff::~JEventProcessor_MilleFieldOff()
 {
 
 }
@@ -44,7 +44,7 @@ JEventProcessor_All_MilleFieldOff::~JEventProcessor_All_MilleFieldOff()
 //------------------
 // init
 //------------------
-jerror_t JEventProcessor_All_MilleFieldOff::init(void)
+jerror_t JEventProcessor_MilleFieldOff::init(void)
 {
    // This is called once at program startup.
    milleWriter = new Mille("nofield_mille_out.mil");
@@ -64,7 +64,7 @@ jerror_t JEventProcessor_All_MilleFieldOff::init(void)
 //------------------
 // brun
 //------------------
-jerror_t JEventProcessor_All_MilleFieldOff::brun(JEventLoop *eventLoop, int32_t runnumber)
+jerror_t JEventProcessor_MilleFieldOff::brun(JEventLoop *eventLoop, int32_t runnumber)
 {
    // Get the current set of constants and sve them in the histogram
    // This is called whenever the run number changes
@@ -223,7 +223,7 @@ jerror_t JEventProcessor_All_MilleFieldOff::brun(JEventLoop *eventLoop, int32_t 
 //------------------
 // evnt
 //------------------
-jerror_t JEventProcessor_All_MilleFieldOff::evnt(JEventLoop *loop, uint64_t eventnumber)
+jerror_t JEventProcessor_MilleFieldOff::evnt(JEventLoop *loop, uint64_t eventnumber)
 {
    int straw_offset[29] = {0,0,42,84,138,192,258,324,404,484,577,670,776,882,1005,1128,1263,1398,1544,1690,1848,2006,2176,2346,2528,2710,2907,3104,3313};
    // Loop over the tracks, get the tracking pulls, and fill some histograms. Easy peasy
@@ -514,7 +514,7 @@ jerror_t JEventProcessor_All_MilleFieldOff::evnt(JEventLoop *loop, uint64_t even
 //------------------
 // erun
 //------------------
-jerror_t JEventProcessor_All_MilleFieldOff::erun(void)
+jerror_t JEventProcessor_MilleFieldOff::erun(void)
 {
    // This is called whenever the run number changes, before it is
    // changed to give you a chance to clean up before processing
@@ -525,7 +525,7 @@ jerror_t JEventProcessor_All_MilleFieldOff::erun(void)
 //------------------
 // fini
 //------------------
-jerror_t JEventProcessor_All_MilleFieldOff::fini(void)
+jerror_t JEventProcessor_MilleFieldOff::fini(void)
 {
    // Called before program exit after event processing is finished.
    delete milleWriter;

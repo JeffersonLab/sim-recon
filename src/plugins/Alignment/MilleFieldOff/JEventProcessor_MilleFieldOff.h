@@ -1,22 +1,22 @@
 // $Id$
 //
-//    File: JEventProcessor_All_MilleFieldOff.h
+//    File: JEventProcessor_MilleFieldOff.h
 // Created: Tue Jan 17 19:32:32 Local time zone must be set--see zic manual page 2017
 // Creator: mstaib (on Linux egbert 2.6.32-642.6.2.el6.x86_64 x86_64)
 //
 
-#ifndef _JEventProcessor_All_MilleFieldOff_
-#define _JEventProcessor_All_MilleFieldOff_
+#ifndef _JEventProcessor_MilleFieldOff_
+#define _JEventProcessor_MilleFieldOff_
 
 #include <JANA/JEventProcessor.h>
 #include "TProfile.h"
 #include "Mille.h"
 
-class JEventProcessor_All_MilleFieldOff:public jana::JEventProcessor{
+class JEventProcessor_MilleFieldOff:public jana::JEventProcessor{
 	public:
-		JEventProcessor_All_MilleFieldOff();
-		~JEventProcessor_All_MilleFieldOff();
-		const char* className(void){return "JEventProcessor_All_MilleFieldOff";}
+		JEventProcessor_MilleFieldOff();
+		~JEventProcessor_MilleFieldOff();
+		const char* className(void){return "JEventProcessor_MilleFieldOff";}
 
 	private:
 		jerror_t init(void);						///< Called once at program start.
@@ -28,5 +28,5 @@ class JEventProcessor_All_MilleFieldOff:public jana::JEventProcessor{
       TProfile *HistCurrentConstantsCDC, *HistCurrentConstantsFDC;
 };
 
-#endif // _JEventProcessor_All_MilleFieldOff_
+#endif // _JEventProcessor_MilleFieldOff_
 
