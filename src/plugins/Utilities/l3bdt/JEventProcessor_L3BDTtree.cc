@@ -61,7 +61,7 @@ jerror_t JEventProcessor_L3BDTtree::init(void)
 
 	// Add branches for all sorted float types
 	#define AddFloattBranch(A) l3tree->Branch(#A, &bdt.A, #A "/F");
-	MyFloatBranchTypes(AddIntBranch)
+	MyFloatBranchTypes(AddFloattBranch)
 
 	return NOERROR;
 }
@@ -84,6 +84,15 @@ jerror_t JEventProcessor_L3BDTtree::evnt(JEventLoop *loop, uint64_t eventnumber)
 	// Get all JANA objects of interest
 	#define GetObjs(A) vector<const A*> v##A; loop->Get(v##A);
 	MyTypes(GetObjs)
+	
+	// Trigger
+	Int_t trig_mask = 0;
+	Int_t fp_trig_mask = 0;
+	if(!vDL1Trigger.empty()){
+		auto trig  = vDL1Trigger[0];
+		trig_mask    = trig->trig_mask;
+		fp_trig_mask = trig->fp_trig_mask;
+	}
 
 	// CDC hits by superlayer
 	Int_t NCDC_superlayer[5] = {0,0,0,0,0};
@@ -204,6 +213,10 @@ jerror_t JEventProcessor_L3BDTtree::evnt(JEventLoop *loop, uint64_t eventnumber)
 	// Copy all object counts
 	#define CopyNobjs(A) bdt.N##A = (Int_t)v##A.size();
 	MyTypes(CopyNobjs)
+	
+	// L1 trigger
+	bdt.trig_mask    = trig_mask;
+	bdt.fp_trig_mask = fp_trig_mask;
 
 	// CDC hits by superlayer
 	bdt.NCDC_superlayer1 = NCDC_superlayer[0];

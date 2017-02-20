@@ -49,6 +49,7 @@
 #include <TOF/DTOFPoint.h>
 #include <TPOL/DTPOLRingDigiHit.h>
 #include <TPOL/DTPOLSectorDigiHit.h>
+#include <TRIGGER/DL1Trigger.h>
 
 #include <BCAL/DBCALPoint.h>
 #include <BCAL/DBCALCluster.h>
@@ -75,6 +76,7 @@
 	X(DF1TDCTriggerTime) \
 	X(DCAEN1290TDCHit) \
 	X(DL1Info) \
+	X(DL1Trigger) \
 	X(DEventTag) \
 	X(DVertex) \
 	\
@@ -179,7 +181,7 @@ class JEventProcessor_L3BDTtree:public jana::JEventProcessor{
 				MyIntBranchTypes(Intobjs)
 
 				// Include sorted float types
-				#define Floatobjs(A) Int_t A;
+				#define Floatobjs(A) Float_t A;
 				MyFloatBranchTypes(Floatobjs)
 		};
 		
