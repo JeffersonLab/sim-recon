@@ -98,6 +98,7 @@ jerror_t DFDCPseudo_factory::init(void)
   STRIP_ANODE_TIME_CUT=25.;
   MIDDLE_STRIP_THRESHOLD=0.;
   CHARGE_THRESHOLD=0.3;
+  DELTA_X_CUT=0.5;
 
   r2_out=ROUT_FIDUCIAL*ROUT_FIDUCIAL;
   r2_in=RIN_FIDUCIAL*RIN_FIDUCIAL;
@@ -107,6 +108,7 @@ jerror_t DFDCPseudo_factory::init(void)
   gPARMS->SetDefaultParameter("FDC:MAX_ALLOWED_FDC_HITS",MAX_ALLOWED_FDC_HITS, "Max. number of FDC hits (includes both cathode strips and wires hits) to allow before considering event too busy to attempt FDC tracking");
   gPARMS->SetDefaultParameter("FDC:STRIP_ANODE_TIME_CUT",STRIP_ANODE_TIME_CUT, "maximum time difference between strips and wires (in ns)"); 
   gPARMS->SetDefaultParameter("FDC:CHARGE_THRESHOLD",CHARGE_THRESHOLD,"Minimum average charge on both cathode planes (in pC)");
+  gPARMS->SetDefaultParameter("FDC:DELTA_X_CUT",DELTA_X_CUT,"Maximum distance between reconstructed wire position and wire position");
 
   DEBUG_HISTS = false;
   gPARMS->SetDefaultParameter("FDC:DEBUG_HISTS",DEBUG_HISTS);
@@ -500,7 +502,7 @@ void DFDCPseudo_factory::makePseudo(vector<const DFDCHit*>& x,
                  // Match between this wire and cathodes below, skip all other hits
                  if (old_wire_num==(*xIt)->element) continue;
 
-                 if (fabs(delta_x)<0.5*WIRE_SPACING && r2test<r2_out
+                 if (fabs(delta_x)<DELTA_X_CUT && r2test<r2_out
                        && r2test>r2_in){
                     double dt1 = (*xIt)->t - upeaks[i].t;
                     double dt2 = (*xIt)->t - vpeaks[j].t;

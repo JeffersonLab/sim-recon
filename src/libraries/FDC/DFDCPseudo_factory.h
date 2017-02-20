@@ -131,6 +131,7 @@ class DFDCPseudo_factory : public JFactory<DFDCPseudo> {
 		double MIDDLE_STRIP_THRESHOLD;
 		double FDC_RES_PAR1,FDC_RES_PAR2;
 		double CHARGE_THRESHOLD;
+      double DELTA_X_CUT;
 
 		TH2F *qv_vs_qu, *dtv_vs_dtu;
 		TH2F *uv_dt_vs_u,*uv_dt_vs_v,*v_wire_dt_vs_wire;
