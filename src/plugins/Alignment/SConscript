@@ -3,9 +3,8 @@ Import('*')
 
 subdirs = [
 'FDC_InternalAlignment',
-'FDC_MilleFieldOff',
-'CDC_MilleFieldOff',
-'All_MilleFieldOff'
+'All_MilleFieldOff',
+'MilleFieldOn'
 ]
 
 SConscript(dirs=subdirs, exports='env osname', duplicate=0)
