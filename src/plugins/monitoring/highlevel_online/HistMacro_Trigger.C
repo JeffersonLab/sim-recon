@@ -3,7 +3,27 @@
 // occupancy_online plugin since it should see many
 // more sync events.
 //
+// Guidance: --------------------------------------------
 //
+// This page includes a mixture of low-level and high-level
+// information. Values in the table regarding numbers of
+// triggers can be highly sensitive to calibration. They 
+// also may be slightly different between Amporphous and
+// diamond radiators. If the values differ by more than
+// around 20% from the reference, try hitting the "Reset"
+// button to see if they improve with new statistics.
+//
+// If you have concerns about the values in the table or
+// any of the plots looking significantly different than
+// the reference, please contact one of:
+//
+//  Run Coordinator:  (757) 383-5542
+//
+//  David Lawrence:   x5567    (office)
+//                    746-6697 (cell)
+//                    595-1302 (home)
+//
+// End Guidance: ----------------------------------------
 //
 // hnamepath: /occupancy/L1GTPRate
 // hnamepath: /occupancy/L1livetime
