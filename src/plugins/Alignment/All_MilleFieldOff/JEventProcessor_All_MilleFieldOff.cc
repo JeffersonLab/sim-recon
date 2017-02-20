@@ -395,8 +395,8 @@ jerror_t JEventProcessor_All_MilleFieldOff::evnt(JEventLoop *loop, uint64_t even
             float globalDer[NGL];
             int label[NGL];
 
-            localDer[0]=trackDerivatives[CDCTrackD::dDOCAdx]; localDer[1]=trackDerivatives[CDCTrackD::dDOCAdy];
-            localDer[2]=trackDerivatives[CDCTrackD::dDOCAdtx]; localDer[3]=trackDerivatives[CDCTrackD::dDOCAdty];
+            localDer[0]=trackDerivatives[CDCTrackD::dDOCAdS0]; localDer[1]=trackDerivatives[CDCTrackD::dDOCAdS1];
+            localDer[2]=trackDerivatives[CDCTrackD::dDOCAdS2]; localDer[3]=trackDerivatives[CDCTrackD::dDOCAdS3];
 
             if (isCDCOnly){ // Global shifts will not affect residuals
                globalDer[0]=0.0; label[0]=1;

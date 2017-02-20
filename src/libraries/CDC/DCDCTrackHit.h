@@ -21,10 +21,11 @@ enum CDCTrackD {
    dDOCAdDirX,
    dDOCAdDirY,
    dDOCAdDirZ,
-   dDOCAdx,
-   dDOCAdy,
-   dDOCAdtx,
-   dDOCAdty
+   dDOCAdS0,
+   dDOCAdS1,
+   dDOCAdS2,
+   dDOCAdS3,
+   dDOCAdS4
 };
 
 class DCDCTrackHit:public JObject{
