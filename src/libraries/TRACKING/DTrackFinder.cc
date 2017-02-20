@@ -8,6 +8,8 @@
 #include "DTrackFinder.h"
 
 #define CDC_MATCH_RADIUS 4.0
+#define CDC_AXIAL_MATCH_RADIUS 10.0
+#define CDC_COSMIC_MATCH_PHI 0.35
 #define CDC_MATCH_PHI 0.04
 
 
@@ -216,19 +218,22 @@ bool DTrackFinder::LinkCDCSegments(void){
 
          for (unsigned int j=i+1;j<num_axial;j++){
             if (axial_segments[j].matched==false){
-               if (!COSMICS){
+//               if (!COSMICS){
                   double dphi = axial_segments[j].dir.Phi() - axial_segments[i].dir.Phi();
                   while (dphi>M_PI) dphi-=2*M_PI;
                   while (dphi<-M_PI) dphi+=2*M_PI;
-                  if ( fabs(dphi) < CDC_MATCH_PHI){
+                  double matchphi = CDC_MATCH_PHI;
+                  if (COSMICS) matchphi = CDC_COSMIC_MATCH_PHI;
+                  if ( fabs(dphi) < matchphi){
                      axial_segments[j].matched=true;
                      mytrack.axial_hits.insert(mytrack.axial_hits.end(),
                            axial_segments[j].hits.begin(),
                            axial_segments[j].hits.end());
-                     sort(mytrack.axial_hits.begin(),mytrack.axial_hits.end(),
-                           DTrackFinder_cdc_hit_cmp);
+                     if (COSMICS) sort(mytrack.axial_hits.begin(),mytrack.axial_hits.end(),DTrackFinder_cdc_hit_cosmics_cmp);
+                     else sort(mytrack.axial_hits.begin(),mytrack.axial_hits.end(),DTrackFinder_cdc_hit_cmp);
                   }
-               }
+//               }
+                  /*
                else{ 
                   DVector3 pos1=axial_segments[j].hits[0]->wire->origin;
                   DVector3 dir1=axial_segments[j].hits[0]->wire->udir;
@@ -237,7 +242,7 @@ bool DTrackFinder::LinkCDCSegments(void){
                   if (s<0) continue;
                   double d=(diff-s*vhat).Mag();
                   if(DEBUG_HISTS) hCDCMatch_Axial->Fill(d); 
-                  if (d<CDC_MATCH_RADIUS){
+                  if (d<CDC_AXIAL_MATCH_RADIUS){
                      axial_segments[j].matched=true;	   
                      mytrack.axial_hits.insert(mytrack.axial_hits.end(),
                            axial_segments[j].hits.begin(),
@@ -252,6 +257,7 @@ bool DTrackFinder::LinkCDCSegments(void){
                      }
                   }
                }
+               */
             }
          }
          //  Position of the first axial wire in the track  

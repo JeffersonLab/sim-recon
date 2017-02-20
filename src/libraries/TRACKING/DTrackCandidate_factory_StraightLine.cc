@@ -115,8 +115,7 @@ jerror_t DTrackCandidate_factory_StraightLine::brun(jana::JEventLoop *loop, int 
    }
 
    map<string, double> cdc_res_parms;
-   if (isMC) ccdbRequest="CDC/cdc_resolution_parms";
-   else ccdbRequest="CDC/cdc_resolution_parms::NoBField";
+   ccdbRequest="CDC/cdc_resolution_parms::NoBField"; // There is a difference between errors in Field on and off
    jcalib->Get(ccdbRequest, cdc_res_parms);
    CDC_RES_PAR1 = cdc_res_parms["res_par1"];
    CDC_RES_PAR2 = cdc_res_parms["res_par2"];
@@ -322,7 +321,7 @@ jerror_t DTrackCandidate_factory_StraightLine::evnt(JEventLoop *loop, uint64_t e
             // start z position and direction of propagation (default = +z direction)
             double z0=tracks[i].z,dzsign=1.;
             // Shift z0 towars target to limit LR ambiguity issues
-            z0 = z0 - (z0-65.0)/2;
+            if(!COSMICS) z0 = z0 - (z0-65.0)/2;
 
             // Initial guess for state vector
             DMatrix4x1 S(tracks[i].S);
@@ -333,9 +332,20 @@ jerror_t DTrackCandidate_factory_StraightLine::evnt(JEventLoop *loop, uint64_t e
                   tracks[i].stereo_hits.end());
 
             if (COSMICS){
-               if (S(state_ty)>0) dzsign=-1.;
+               // Step track to front plate.
+               if (VERBOSE) {
+                  jout<< " S before step. z = " << z0 << endl;
+                  S.Print();
+               }
+               S(state_x)-=(z0-(cdc_endplate_z-cdc_length))*S(state_tx);
+               S(state_y)-=(z0-(cdc_endplate_z-cdc_length))*S(state_ty);
+               z0=cdc_endplate_z-cdc_length;
+               if (VERBOSE){
+                  jout << " S after step z = " << z0 << endl;
+               }
 
-               sort(hits.begin(),hits.end(),DTrackCandidate_StraightLine_cdc_hit_cmp);
+               if (S(state_ty) > 0.) sort(hits.begin(),hits.end(),DTrackCandidate_StraightLine_cdc_hit_reverse_cmp);
+               else sort(hits.begin(),hits.end(),DTrackCandidate_StraightLine_cdc_hit_cmp);
             }
             else{	
                DVector3 pos,origin,dir(0,0,1.);
@@ -439,11 +449,13 @@ DTrackCandidate_factory_StraightLine::DoFilter(double t0,double OuterZ,
       chi2_old=chi2; 
       ndof_old=ndof;
 
-      DVector3 pos,origin,dir(0,0,1.);
-      finder->FindDoca(z0,S,dir,origin,&pos);
-      S(state_x)=pos.x();
-      S(state_y)=pos.y();
-      z0=pos.z();
+      if(!COSMICS){
+         DVector3 pos,origin,dir(0,0,1.);
+         finder->FindDoca(z0,S,dir,origin,&pos);
+         S(state_x)=pos.x();
+         S(state_y)=pos.y();
+         z0=pos.z();
+      }
 
       trajectory.clear();
       if (SetReferenceTrajectory(t0,z0,S,trajectory,hits[maxindex],dzsign)
@@ -469,13 +481,13 @@ DTrackCandidate_factory_StraightLine::DoFilter(double t0,double OuterZ,
          if (VERBOSE) jout << " Performing Time Based Pass iter " << iter << endl;
          chi2_old=chi2; 
          ndof_old=ndof;
-
-         DVector3 pos,origin,dir(0,0,1.);
-         finder->FindDoca(z0,S,dir,origin,&pos);
-         S(state_x)=pos.x();
-         S(state_y)=pos.y();
-         z0=pos.z();
-
+         if (!COSMICS){
+            DVector3 pos,origin,dir(0,0,1.);
+            finder->FindDoca(z0,S,dir,origin,&pos);
+            S(state_x)=pos.x();
+            S(state_y)=pos.y();
+            z0=pos.z();
+         }
          trajectory.clear();
          if (SetReferenceTrajectory(t0,z0,S,trajectory,hits[maxindex],dzsign)
                ==NOERROR){
@@ -574,24 +586,29 @@ jerror_t DTrackCandidate_factory_StraightLine
    double last_r2=last_cdc->wire->origin.Perp2();
    // Check that track points towards last wire, otherwise swap deltaz
    DVector3 dir(S(state_tx),S(state_ty),dzsign);
-   double dphi=dir.Phi()-last_cdc->wire->origin.Phi(); 
-   while (dphi>M_PI) dphi-=2*M_PI;
-   while (dphi<-M_PI) dphi+=2*M_PI;
-   if (fabs(dphi) > M_PI/2.) dzsign*=-1.;
-   if (fabs(dir.Theta() - M_PI/2.) < 0.2) ds = 0.05;
+   if (!COSMICS){
+      double dphi=dir.Phi()-last_cdc->wire->origin.Phi(); 
+      while (dphi>M_PI) dphi-=2*M_PI;
+      while (dphi<-M_PI) dphi+=2*M_PI;
+      if (fabs(dphi) > M_PI/2.) dzsign*=-1.;
+   }
+   if (fabs(dir.Theta() - M_PI/2.) < 0.2) ds = 0.1;
 
    //jout << "dPhi " << dphi << " theta " << dir.Theta() << endl;
    double dz=dzsign*ds/sqrt(1.+S(state_tx)*S(state_tx)+S(state_ty)*S(state_ty));
 
    if (VERBOSE) {
-      jout << " Swimming Reference Trajectory last CDC r2 " << last_r2 << " dz "<< dz << endl;
+      if (COSMICS) jout << " Swimming Reference Trajectory last CDC y " << last_y << " dz "<< dz << endl;
+      else jout << " Swimming Reference Trajectory last CDC r2 " << last_r2 << " dz "<< dz << endl;
       jout << " S" << endl; S.Print(); jout << "z= "<< z << endl;
       jout << "  Last CDC ring " << last_cdc->wire->ring << " straw " << last_cdc->wire->straw << endl;
    }
    unsigned int numsteps=0;
-   const unsigned int MAX_STEPS=1000;
+   const unsigned int MAX_STEPS=5000;
+   double upstreamEndplate = cdc_endplate_z - cdc_length;
    bool done=false;
    do{
+      numsteps++;
       z+=dz;
       J(state_x,state_tx)=-dz;
       J(state_y,state_ty)=-dz;
@@ -600,23 +617,32 @@ jerror_t DTrackCandidate_factory_StraightLine
       //propagate the state to the next z position
       S(state_x)+=S(state_tx)*dz;
       S(state_y)+=S(state_ty)*dz;
+      if (z > cdc_endplate_z && dz < 0) continue;
+      if (z < upstreamEndplate && dz > 0) continue;
       trajectory.push_front(trajectory_t(z,t,S,J,DMatrix4x1(),DMatrix4x4()));
 
-      if (COSMICS) done=(S(state_y)<last_y);
+      if (COSMICS) done=((z>cdc_endplate_z) | (z<cdc_endplate_z-cdc_length));
       else{
          double r2=S(state_x)*S(state_x)+S(state_y)*S(state_y);
          if (VERBOSE >= 5) jout << " r2=" << r2 << endl;
          done=(r2>last_r2) | (z>cdc_endplate_z) | (z<cdc_endplate_z-cdc_length); 
       }
-      numsteps++;
    }while (!done && numsteps<MAX_STEPS);
 
    if (VERBOSE)
    {
-      printf("Trajectory:\n");
-      for (unsigned int i=0;i<trajectory.size();i++){
-         printf(" x %f y %f z %f\n",trajectory[i].S(state_x),
-               trajectory[i].S(state_y),trajectory[i].z); 
+      if (VERBOSE > 10){
+         printf("Trajectory:\n");
+         for (unsigned int i=0;i<trajectory.size();i++){
+            printf(" x %f y %f z %f\n",trajectory[i].S(state_x),
+                  trajectory[i].S(state_y),trajectory[i].z); 
+         }
+      }
+      else{
+         printf("%i step trajectory Begin/End:\n", numsteps);
+         printf(" x %f y %f z %f\n",trajectory[0].S(state_x), trajectory[0].S(state_y), trajectory[0].z);
+         if (trajectory.size() > 1) printf(" x %f y %f z %f\n",trajectory[trajectory.size()-1].S(state_x),
+               trajectory[trajectory.size()-1].S(state_y),trajectory[trajectory.size()-1].z);
       }
    }
    if (trajectory.size()<2) return UNRECOVERABLE_ERROR;
@@ -747,7 +773,7 @@ DTrackCandidate_factory_StraightLine::KalmanFilter(DMatrix4x1 &S,DMatrix4x4 &C,
          if (VERBOSE>5) jout << " Residual " << res << endl;
 
          // Track projection
-      
+
          double one_over_d=1./d;
          double diffx=diff.x(),diffy=diff.y(),diffz=diff.z();
          double wx=wdir.x(),wy=wdir.y();
@@ -784,7 +810,7 @@ DTrackCandidate_factory_StraightLine::KalmanFilter(DMatrix4x1 &S,DMatrix4x4 &C,
          H(state_y)=H_T(state_y)
             =one_over_d*(diffx*(dsdy*tx-dtdy*wx)+diffy*(1.+dsdy*ty-dtdy*wy)
                   +diffz*(dsdy-dtdy));
-         
+
          /*
             DVector3 WirePosNew = wirepos+s*wdir;
             double dy = S(state_y)+S(state_ty)*s-WirePosNew.Y();
@@ -796,12 +822,12 @@ DTrackCandidate_factory_StraightLine::KalmanFilter(DMatrix4x1 &S,DMatrix4x4 &C,
             H(state_y)=H_T(state_y)=dy*cosstereo2_over_d;     
             H(state_tx)=H_T(state_tx)=s*H(state_x);
             H(state_ty)=H_T(state_ty)=s*H(state_y);
-           */ 
+            */ 
          double InvV=1./(V+H*C*H_T);
 
          // Check how far this hit is from the projection
          double chi2check=res*res*InvV;
-         if (chi2check < CHI2CUT || DO_PRUNING == 0){
+         if (chi2check < CHI2CUT || DO_PRUNING == 0 || (COSMICS && iter == 0)){
             if (VERBOSE>5) jout << "Hit Added to track " << endl;
             // Compute Kalman gain matrix
             K=InvV*(C*H_T);
@@ -950,7 +976,7 @@ DTrackCandidate_factory_StraightLine::Smooth(deque<trajectory_t>&trajectory,
          double ddrift = cdc_updates[id].ddrift;
 
          double resi = ddrift - d;
-        /* 
+         /* 
             DVector3 WirePosNew = wirepos+s*wdir;
             double dy = Ss(state_y)+Ss(state_ty)*s-WirePosNew.Y();
             double dx = Ss(state_x)+Ss(state_tx)*s-WirePosNew.X();
@@ -961,10 +987,10 @@ DTrackCandidate_factory_StraightLine::Smooth(deque<trajectory_t>&trajectory,
             H(state_y)=H_T(state_y)=dy*cosstereo2_over_d;
             H(state_tx)=H_T(state_tx)=s*H(state_x);
             H(state_ty)=H_T(state_ty)=s*H(state_y);
-          */  
+            */  
 
          // Track projection
-            
+
          {
             double one_over_d=1./d;
             double diffx=diff.x(),diffy=diff.y(),diffz=diff.z();
@@ -1035,7 +1061,7 @@ DTrackCandidate_factory_StraightLine::Smooth(deque<trajectory_t>&trajectory,
          double c3=ty*(-(wtz*wx) + wtx*wz + wtz*x - wtx*z);
          double dscale=0.5*(1./d);
 
-         vector<double> derivatives(10);
+         vector<double> derivatives(11);
 
          derivatives[CDCTrackD::dDOCAdOriginX]=dscale*(2*(wty - ty*wtz)*(c1 + c2 + c3))/denom;
 
@@ -1055,16 +1081,16 @@ DTrackCandidate_factory_StraightLine::Smooth(deque<trajectory_t>&trajectory,
                (-(tx*(ty*wty + wtz)*(wx - x)) + tx2*(wty*(wy - y) + wtz*(wz - z)) + (wty - ty*wtz)*(wy - y + ty*(-wz + z)) +
                 wtx*((1 + ty2)*wx - (1 + ty2)*x + tx*(-(ty*wy) - wz + ty*y + z))))/denom2;
 
-         derivatives[CDCTrackD::dDOCAdx]=-derivatives[CDCTrackD::dDOCAdOriginX];
+         derivatives[CDCTrackD::dDOCAdS0]=-derivatives[CDCTrackD::dDOCAdOriginX];
 
-         derivatives[CDCTrackD::dDOCAdy]=-derivatives[CDCTrackD::dDOCAdOriginY];
+         derivatives[CDCTrackD::dDOCAdS1]=-derivatives[CDCTrackD::dDOCAdOriginY];
 
-         derivatives[CDCTrackD::dDOCAdtx]=dscale*(2*(wty - ty*wtz)*(-c1 - c2 - c3)*
+         derivatives[CDCTrackD::dDOCAdS2]=dscale*(2*(wty - ty*wtz)*(-c1 - c2 - c3)*
                (-(wtx*wtz*wx) - wty*wtz*wy + wtx2*wz + wty2*wz + wtx*wtz*x + wty*wtz*y - wtx2*z - wty2*z +
                 tx*(wty2*(wx - x) + wtx*wty*(-wy + y) + wtz*(wtz*wx - wtx*wz - wtz*x + wtx*z)) +
                 ty*(wtx*wty*(-wx + x) + wtx2*(wy - y) + wtz*(wtz*wy - wty*wz - wtz*y + wty*z))))/denom2;
 
-         derivatives[CDCTrackD::dDOCAdty]=dscale*(2*(wtx - tx*wtz)*(c1 + c2 + c3)*
+         derivatives[CDCTrackD::dDOCAdS3]=dscale*(2*(wtx - tx*wtz)*(c1 + c2 + c3)*
                (-(wtx*wtz*wx) - wty*wtz*wy + wtx2*wz + wty2*wz + wtx*wtz*x + wty*wtz*y - wtx2*z - wty2*z +
                 tx*(wty2*(wx - x) + wtx*wty*(-wy + y) + wtz*(wtz*wx - wtx*wz - wtz*x + wtx*z)) +
                 ty*(wtx*wty*(-wx + x) + wtx2*(wy - y) + wtz*(wtz*wy - wty*wz - wtz*y + wty*z))))/denom2;
@@ -2159,7 +2185,7 @@ DTrackCandidate_factory_StraightLine::Smooth(deque<trajectory_t>&trajectory,
          double c3=ty*(-(wtz*wx) + wtx*wz + wtz*x - wtx*z);
          double dscale=0.5*(1/d);
 
-         vector<double> derivatives(10);
+         vector<double> derivatives(11);
 
          derivatives[CDCTrackD::dDOCAdOriginX]=dscale*(2*(wty - ty*wtz)*(c1 + c2 + c3))/denom;
 
@@ -2179,16 +2205,16 @@ DTrackCandidate_factory_StraightLine::Smooth(deque<trajectory_t>&trajectory,
                (-(tx*(ty*wty + wtz)*(wx - x)) + tx2*(wty*(wy - y) + wtz*(wz - z)) + (wty - ty*wtz)*(wy - y + ty*(-wz + z)) +
                 wtx*((1 + ty2)*wx - (1 + ty2)*x + tx*(-(ty*wy) - wz + ty*y + z))))/denom2;
 
-         derivatives[CDCTrackD::dDOCAdx]=-derivatives[CDCTrackD::dDOCAdOriginX];
+         derivatives[CDCTrackD::dDOCAdS0]=-derivatives[CDCTrackD::dDOCAdOriginX];
 
-         derivatives[CDCTrackD::dDOCAdy]=-derivatives[CDCTrackD::dDOCAdOriginY];
+         derivatives[CDCTrackD::dDOCAdS1]=-derivatives[CDCTrackD::dDOCAdOriginY];
 
-         derivatives[CDCTrackD::dDOCAdtx]=dscale*(2*(wty - ty*wtz)*(-c1 - c2 - c3)*
+         derivatives[CDCTrackD::dDOCAdS2]=dscale*(2*(wty - ty*wtz)*(-c1 - c2 - c3)*
                (-(wtx*wtz*wx) - wty*wtz*wy + wtx2*wz + wty2*wz + wtx*wtz*x + wty*wtz*y - wtx2*z - wty2*z +
                 tx*(wty2*(wx - x) + wtx*wty*(-wy + y) + wtz*(wtz*wx - wtx*wz - wtz*x + wtx*z)) +
                 ty*(wtx*wty*(-wx + x) + wtx2*(wy - y) + wtz*(wtz*wy - wty*wz - wtz*y + wty*z))))/denom2;
 
-         derivatives[CDCTrackD::dDOCAdty]=dscale*(2*(wtx - tx*wtz)*(c1 + c2 + c3)*
+         derivatives[CDCTrackD::dDOCAdS3]=dscale*(2*(wtx - tx*wtz)*(c1 + c2 + c3)*
                (-(wtx*wtz*wx) - wty*wtz*wy + wtx2*wz + wty2*wz + wtx*wtz*x + wty*wtz*y - wtx2*z - wty2*z +
                 tx*(wty2*(wx - x) + wtx*wty*(-wy + y) + wtz*(wtz*wx - wtx*wz - wtz*x + wtx*z)) +
                 ty*(wtx*wty*(-wx + x) + wtx2*(wy - y) + wtz*(wtz*wy - wty*wz - wtz*y + wty*z))))/denom2;
