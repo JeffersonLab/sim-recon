@@ -23,37 +23,79 @@ extern "C"{
 } // "C"
 
 
+// Hit types that include F1TDC information
 #define F1Types(X) \
 	X(DRFTime)  \
 	X(DSCHit)   \
-	X(DTAGHHit) \
-	X(DTAGMHit) \
 	X(DFDCHit)  \
 	X(DBCALUnifiedHit)
+
+// We need to access the tagger hits differently in order to get at
+// the "raw" (i.e. unmerged) hits. 
+#define F1TaggerTypes(X) \
+	X(DTAGHHit) \
+	X(DTAGMHit) \
 
 //.......................................................
 // These templates are used by the FillF1Hist method below
 // to accomodate the different member names
 template<typename T> static bool   F1Check(const T* hit); // return true if all info (TDC and ADC) is present
+template<typename T> static bool   F1CheckADCOnly(const T* hit); // return true if only ADC info is present
+template<typename T> static bool   F1CheckTDCOnly(const T* hit); // return true if only TDC info is present
 template<typename T> static double F1tdiff(const T* hit); // return time difference between TDC and ADC
+template<typename T> static double F1tdiff2(const T* hit,const T* hit2); // return time difference between TDC and ADC times stored in two different hits
+template<typename T> static bool   F1CheckSameChannel(const T* hit,const T* hit2); // return true if both hits are on the same channel
 
 template<> bool   F1Check<DRFTime        >(const DRFTime*         hit){ return true;                          }
+template<> bool   F1CheckADCOnly<DRFTime >(const DRFTime*         hit){ return false;                         }
+template<> bool   F1CheckTDCOnly<DRFTime >(const DRFTime*         hit){ return false;                         }
 template<> double F1tdiff<DRFTime        >(const DRFTime*         hit){ return hit->dTime;                    }
+template<> double F1tdiff2<DRFTime       >(const DRFTime* hit,const DRFTime* hit2) { return hit->dTime;  }  // dummy functions
+template<> bool   F1CheckSameChannel<DRFTime >(const DRFTime* hit,const DRFTime* hit2){ return true;    }
 
-template<> bool   F1Check<DSCHit         >(const DSCHit*          hit){ return hit->has_fADC && hit->has_TDC; }
-template<> double F1tdiff<DSCHit         >(const DSCHit*          hit){ return hit->t_TDC - hit->t_fADC;      }
+
+template<> bool   F1Check<DSCHit         >(const DSCHit*          hit){ return hit->has_fADC && hit->has_TDC;  }
+template<> bool   F1CheckADCOnly<DSCHit  >(const DSCHit*          hit){ return hit->has_fADC && !hit->has_TDC; }
+template<> bool   F1CheckTDCOnly<DSCHit  >(const DSCHit*          hit){ return !hit->has_fADC && hit->has_TDC; }
+template<> double F1tdiff<DSCHit         >(const DSCHit*          hit){ return hit->t_TDC - hit->t_fADC;       }
+template<> double F1tdiff2<DSCHit        >(const DSCHit* hit, const DSCHit* hit2){ return hit->t_TDC - hit2->t_fADC; }
+template<> bool   F1CheckSameChannel<DSCHit >(const DSCHit* hit,const DSCHit* hit2){ return hit->sector==hit2->sector;    }
 
 template<> bool   F1Check<DTAGHHit       >(const DTAGHHit*        hit){ return hit->has_fADC && hit->has_TDC; }
+template<> bool   F1CheckADCOnly<DTAGHHit>(const DTAGHHit*        hit){	return hit->has_fADC && !(hit->has_TDC); }
+template<> bool   F1CheckTDCOnly<DTAGHHit>(const DTAGHHit*        hit){	return !(hit->has_fADC) && hit->has_TDC; }
 template<> double F1tdiff<DTAGHHit       >(const DTAGHHit*        hit){ return hit->time_tdc - hit->time_fadc;}
+template<> double F1tdiff2<DTAGHHit      >(const DTAGHHit* hit, const DTAGHHit* hit2) { return hit->time_tdc - hit2->time_fadc; }
+template<> bool   F1CheckSameChannel<DTAGHHit >(const DTAGHHit* hit,const DTAGHHit* hit2){ return hit->counter_id==hit2->counter_id;  }
 
 template<> bool   F1Check<DTAGMHit       >(const DTAGMHit*        hit){ return hit->has_fADC && hit->has_TDC; }
+template<> bool   F1CheckADCOnly<DTAGMHit>(const DTAGMHit*        hit){ return hit->has_fADC && !(hit->has_TDC); }
+template<> bool   F1CheckTDCOnly<DTAGMHit>(const DTAGMHit*        hit){ return !(hit->has_fADC) && hit->has_TDC; }
 template<> double F1tdiff<DTAGMHit       >(const DTAGMHit*        hit){ return hit->time_tdc - hit->time_fadc;}
+template<> double F1tdiff2<DTAGMHit      >(const DTAGMHit* hit, const DTAGMHit* hit2){ return hit->time_tdc - hit2->time_fadc; }
+template<> bool   F1CheckSameChannel<DTAGMHit >(const DTAGMHit* hit,const DTAGMHit* hit2)
+                    { return (hit->row==hit2->row) && (hit->column==hit2->column);    }
 
 template<> bool   F1Check<DFDCHit        >(const DFDCHit*         hit){ return true;                          }
+template<> bool   F1CheckADCOnly<DFDCHit >(const DFDCHit*         hit){ return false;                         }
+template<> bool   F1CheckTDCOnly<DFDCHit >(const DFDCHit*         hit){ return false;                         }
 template<> double F1tdiff<DFDCHit        >(const DFDCHit*         hit){ return hit->t/50.0;                   }
+template<> double F1tdiff2<DFDCHit       >(const DFDCHit* hit, const DFDCHit* hit2){ return hit->t/50.0;  }  // dummy
+template<> bool   F1CheckSameChannel<DFDCHit >(const DFDCHit* hit, const DFDCHit* hit2)
+                    { return (hit->gPlane==hit2->gPlane) && (hit->element==hit2->element);    }
 
 template<> bool   F1Check<DBCALUnifiedHit>(const DBCALUnifiedHit* hit){ return hit->has_TDC_hit;              }
+// right now we don't use a window to restrict ADC/TDC hit matching like we do in other detectors
+// so if there are hits in the ADC and TDC for a given channel, they will always match
+// and we won't have to fall into the other loop
+template<> bool   F1CheckADCOnly<DBCALUnifiedHit >(const DBCALUnifiedHit*         hit){ return false;                         }
+template<> bool   F1CheckTDCOnly<DBCALUnifiedHit >(const DBCALUnifiedHit*         hit){ return false;                         }
 template<> double F1tdiff<DBCALUnifiedHit>(const DBCALUnifiedHit* hit){ return hit->t_TDC - hit->t_ADC;       }
+template<> double F1tdiff2<DBCALUnifiedHit>(const DBCALUnifiedHit* hit, const DBCALUnifiedHit* hit2)
+                                                     { return hit->t_TDC - hit2->t_ADC;       }
+template<> bool   F1CheckSameChannel<DBCALUnifiedHit >(const DBCALUnifiedHit* hit,const DBCALUnifiedHit* hit2)
+                    { return (hit->module==hit2->module) && (hit->layer==hit2->layer) 
+				    && (hit->sector==hit2->sector) && (hit->end==hit2->end);    }
 //.......................................................
 
 
@@ -66,14 +108,38 @@ template<typename T>
 void JEventProcessor_highlevel_online::FillF1Hist(vector<const T*> hits)
 {
 	for(auto hit : hits){
-		if( ! F1Check(hit) ) continue;
-		vector<const DF1TDCHit*> f1hits;
-		hit->Get(f1hits);
-		for(auto f1hit : f1hits){
-			pair<int,int> rocid_slot(f1hit->rocid, f1hit->slot);
-			double fbin = f1tdc_bin_map[rocid_slot];
-			double tdiff = F1tdiff(hit);
-			dF1TDC_fADC_tdiff->Fill(fbin, tdiff);
+		// Check hits where the ADC and TDC hits have been matched
+		if( F1Check(hit) ) {
+			vector<const DF1TDCHit*> f1hits;
+			hit->Get(f1hits);
+			for(auto f1hit : f1hits){
+				pair<int,int> rocid_slot(f1hit->rocid, f1hit->slot);
+				double fbin = f1tdc_bin_map[rocid_slot];
+				double tdiff = F1tdiff(hit);
+				dF1TDC_fADC_tdiff->Fill(fbin, tdiff);
+			}
+		}
+
+		// Check hits where the ADC and TDC hits were not matched
+		// We have to manually loop over these hits, since the calibrated hits
+		// only have matched ADC & TDC information within a certain window
+		// which is detector-specific but generally smaller than the 32 ns shifts
+		// (which are peculiar to the F1TDC) that we want to detect
+		if( F1CheckADCOnly(hit) ) {
+			for(auto hit2 : hits) {
+				if( F1CheckTDCOnly(hit2) ) {
+					if( F1CheckSameChannel(hit, hit2) ) {
+						vector<const DF1TDCHit*> f1hits;
+						hit2->Get(f1hits);
+						for(auto f1hit : f1hits){
+							pair<int,int> rocid_slot(f1hit->rocid, f1hit->slot);
+							double fbin = f1tdc_bin_map[rocid_slot];
+							double tdiff = F1tdiff2(hit2,hit);
+							dF1TDC_fADC_tdiff->Fill(fbin, tdiff);
+						}
+					}
+				}
+			}
 		}
 	}
 }
@@ -345,13 +411,17 @@ jerror_t JEventProcessor_highlevel_online::evnt(JEventLoop *locEventLoop, uint64
 
 	vector<const DChargedTrack*> locChargedTracks;
 	locEventLoop->Get(locChargedTracks, "PreSelect");
-	
+
 	// The following decalres containers for all types in F1Types
 	// (defined at top of this file) and fills them.
 	#define GetVect(A) \
 		vector<const A*> v##A; \
 		locEventLoop->Get(v##A);
+	#define GetTaggerVect(A) \
+		vector<const A*> v##A; \
+		locEventLoop->Get(v##A,"Calib");
 	F1Types(GetVect)		
+	F1TaggerTypes(GetTaggerVect)		
 
 
 	/********************************************************* PREPARE RF ********************************************************/
@@ -551,9 +621,10 @@ jerror_t JEventProcessor_highlevel_online::evnt(JEventLoop *locEventLoop, uint64
 	// at the top of this file for details.
 	#define F1Fill(A) FillF1Hist(v##A);
 	F1Types(F1Fill)		
+	F1TaggerTypes(F1Fill)		
 
 	/***************************************************************** RF *****************************************************************/
-
+		
 	for(size_t loc_i = 0; loc_i < locTAGHDeltaTs.size(); ++loc_i)
 		dHist_BeamBunchPeriod->Fill(locTAGHDeltaTs[loc_i]);
 	
@@ -563,7 +634,7 @@ jerror_t JEventProcessor_highlevel_online::evnt(JEventLoop *locEventLoop, uint64
 		}
 		delete[] rf_dft;
 	}
-
+		
 	/*************************************************************** TRIGGER **************************************************************/
 
 	if(locL1Trigger != NULL)
@@ -655,7 +726,7 @@ jerror_t JEventProcessor_highlevel_online::evnt(JEventLoop *locEventLoop, uint64
 	dHist_NumHighLevelObjects->Fill(12, (Double_t)locNeutralShowers.size());
 
 	/************************************************************* KINEMATICS *************************************************************/
-
+	
 	for(size_t loc_i = 0; loc_i < locBeamPhotons.size(); ++loc_i)
 		dHist_BeamEnergy->Fill(locBeamPhotons[loc_i]->energy());
 	
@@ -673,15 +744,15 @@ jerror_t JEventProcessor_highlevel_online::evnt(JEventLoop *locEventLoop, uint64
 		dHist_PhiVsTheta_Tracks->Fill(locTheta, locPhi);
 		dbeta_vs_p->Fill(locP, locBeta);
 	}
-
+	
 	/*************************************************************** VERTEX ***************************************************************/
-
+	
 	if(locChargedTracks.size() >= 2)
 	{
 		dEventVertexZ->Fill(locVertex->dSpacetimeVertex.Z());
 		dEventVertexYVsX->Fill(locVertex->dSpacetimeVertex.X(), locVertex->dSpacetimeVertex.Y());
 	}
-
+	
 	/*************************************************************** 2 gamma inv. mass ***************************************************************/
 
 	vector<DLorentzVector> pi0s;
@@ -719,6 +790,7 @@ jerror_t JEventProcessor_highlevel_online::evnt(JEventLoop *locEventLoop, uint64
 	}
 
 	/*************************************************************** pi+ pi- pi0 ***************************************************************/
+
 	for(auto t1 : locChargedTracks){
 		//look for pi+
 		auto hypoth1 = t1->Get_Hypothesis(PiPlus);
@@ -800,6 +872,7 @@ jerror_t JEventProcessor_highlevel_online::evnt(JEventLoop *locEventLoop, uint64
 	}
 
 	/*************************************************************** K+ K- ***************************************************************/
+
 	for(auto t1 : locChargedTracks){
 		//look for K+
 		auto hypoth1 = t1->Get_Hypothesis(KPlus);
@@ -859,6 +932,7 @@ jerror_t JEventProcessor_highlevel_online::evnt(JEventLoop *locEventLoop, uint64
 			}
 		}		
 	}
+
 
 	japp->RootFillUnLock(this); //RELEASE ROOT FILL LOCK
 
