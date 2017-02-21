@@ -162,16 +162,8 @@ jerror_t JEventProcessor_BCAL_LED::init(void) {
 	//unidentified = 0; ledcounter = 0;
 
 
-	adccount1 = 1100;
-	adccount2 = 1400;
-	adccount3 = 1800;
-	
-	maxnumberofevents=700000000.0;//Assuming 1Hz LED trigger, 300M for a beam run with 30KHz trigger and 700M for 70KHz
-	//maxnumberofevents=10000.0;//using LED event conter
-	nbins=24002;//Assuming 1Hz LED trigger, 10K for a beam run with 30KHz trigger and 24K for 70KHz
-	//nbins=375002;//Based on cosmic run with 800Hz trigger and 1Hz LED trigger
-	//nbins=3750002;//Based on cosmic run with 800Hz trigger and 10Hz LED trigger
-
+	maxnumberofevents=1000;
+	nbins=1002;//Extendable histograms with a single event per bin
 	
 	//overflow=0; underflow=0; negatives=0; zeros=0;
 
@@ -321,6 +313,19 @@ jerror_t JEventProcessor_BCAL_LED::init(void) {
 
 jerror_t JEventProcessor_BCAL_LED::brun(JEventLoop *eventLoop, int32_t runnumber) {
 	// This is called whenever the run number changes
+	
+	if(runnumber > 9999 && runnumber < 20000)//Spring 2016 run period
+	{
+	adccount1 = 1100;
+	adccount2 = 1400;
+	adccount3 = 1800;
+	}
+	else if (runnumber > 29999 && runnumber < 40000)//Spring 2017 run period
+	{
+        adccount1=600;
+        adccount2=900;
+        adccount3=1400;
+	}
 	return NOERROR;
 }
 
