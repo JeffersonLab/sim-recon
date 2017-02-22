@@ -1,4 +1,17 @@
-
+//
+// Guidance: --------------------------------------------
+//
+// Single channels may show low or no number of entries in occupancy plots
+// during normal operation. This could number anywhere from 0 to ~20
+// channels, with slow time dependency (0-3 channels/day). These channels are
+// expected to be randomly spread around the FCAL, and may or may not also
+// line up with yellow/red status on the FCAL HV GUI. Any behavior other than
+// what's described here should be reported to FCAL experts.
+//
+// End Guidance: ----------------------------------------
+//
+//
+//
 // The following are special comments used by RootSpy to know
 // which histograms to fetch for the macro.
 //

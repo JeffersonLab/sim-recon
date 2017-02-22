@@ -141,7 +141,7 @@
 			double max = 0.0;
 			for(int ibin=1; ibin<=locHist_BeamEnergy_norm->GetNbinsX(); ibin++){
 				Double_t norm = amorphous_data[ibin-1];
-				if( norm < 1000.0) continue;
+				if( norm < 100000.0) continue;
 				norm *= scale;
 
 				Double_t v = (Double_t)locHist_BeamEnergy->GetBinContent(ibin);
