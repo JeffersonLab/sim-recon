@@ -48,8 +48,10 @@ int main( int argc, char* argv[] ){
 	
 	double beamMaxE   = 12.0;
 	double beamPeakE  = 9.0;
-	double beamLowE   = 0.139*2;
-	double beamHighE  = 12.0;
+	//double beamLowE   = 0.139*2;
+	//double beamHighE  = 12.0;
+	double beamLowE   = 7.5;
+	double beamHighE  = 9.5;
 	
 	int runNum = 9001;
 	int seed = 0;
@@ -144,7 +146,7 @@ int main( int argc, char* argv[] ){
 	ProductionMechanism::Type type =
 		( genFlat ? ProductionMechanism::kFlat : ProductionMechanism::kResonant );
 	
-	// generate over a range of mass -- the daughters are two charged pions
+	// generate over a range of mass -- the daughters are two charged kaons
 	GammaPToXYP resProd( lowMass, highMass, 0.494, 0.494, beamMaxE, beamPeakE, beamLowE, beamHighE, type );
 	
 	// seed the distribution with a sum of noninterfering Breit-Wigners
