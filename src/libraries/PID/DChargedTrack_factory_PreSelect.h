@@ -33,8 +33,6 @@ class DChargedTrack_factory_PreSelect : public jana::JFactory<DChargedTrack>
 		bool Cut_HasDetectorMatch(const DChargedTrackHypothesis* locChargedTrackHypothesis, const DDetectorMatches* locDetectorMatches) const;
 		bool Cut_TrackingFOM(const DChargedTrackHypothesis* locChargedTrackHypothesis) const;
 
-		vector<const DChargedTrack*> dCreatedChargedTracks;
-
 		//Command-line values will override these
 		double dMinTrackingFOM; //PRESELECT:MIN_TRACKING_FOM 
 		bool dHasDetectorMatchFlag; //PRESELECT:HAS_DETECTOR_MATCH_FLAG: if true/false, do/don't require tracks to have a detector match

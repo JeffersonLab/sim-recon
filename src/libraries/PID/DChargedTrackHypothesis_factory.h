@@ -30,7 +30,7 @@ class DChargedTrackHypothesis_factory:public jana::JFactory<DChargedTrackHypothe
 		~DChargedTrackHypothesis_factory(){};
 
 		DChargedTrackHypothesis* Create_ChargedTrackHypothesis(JEventLoop* locEventLoop, const DTrackTimeBased* locTrackTimeBased, const DDetectorMatches* locDetectorMatches, const DEventRFBunch* locEventRFBunch) const;
-		void Add_TimeToTrackingMatrix(DChargedTrackHypothesis* locChargedTrackHypothesis, double locFlightTimeVariance, double locHitTimeVariance, double locFlightTimePCorrelation) const;
+		void Add_TimeToTrackingMatrix(DChargedTrackHypothesis* locChargedTrackHypothesis, TMatrixFSym* locCovarianceMatrix, double locFlightTimeVariance, double locHitTimeVariance, double locFlightTimePCorrelation) const;
 
 	private:
 		const DParticleID* dPIDAlgorithm;
@@ -38,8 +38,6 @@ class DChargedTrackHypothesis_factory:public jana::JFactory<DChargedTrackHypothe
 		jerror_t init(void);						///< Called once at program start.
 		jerror_t brun(jana::JEventLoop *locEventLoop, int32_t runnumber);	///< Called everytime a new run number is detected.
 		jerror_t evnt(jana::JEventLoop *locEventLoop, uint64_t eventnumber);	///< Called every event.
-		jerror_t erun(void);						///< Called everytime run number changes, provided brun has been called.
-		jerror_t fini(void);						///< Called after last event of last event source has been processed.
 };
 
 #endif // _DChargedTrackHypothesis_factory_

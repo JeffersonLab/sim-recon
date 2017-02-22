@@ -135,6 +135,8 @@ class JEventSource_EVIOpp: public jana::JEventSource{
 		               void AddToCallStack(DParsedEvent *pe, JEventLoop *loop);
 		               void AddSourceObjectsToCallStack(JEventLoop *loop, string className);
 		               void AddEmulatedObjectsToCallStack(JEventLoop *loop, string caller, string callee);
+		               void AddROCIDtoParseList(uint32_t rocid){ ROCIDS_TO_PARSE.insert(rocid); }
+		      set<uint32_t> GetROCIDParseList(uint32_t rocid){ return ROCIDS_TO_PARSE; }
 
 		
 		bool DONE;
@@ -171,6 +173,7 @@ class JEventSource_EVIOpp: public jana::JEventSource{
 		Df125EmulatorAlgorithm *f125Emulator;
 		
 		bool RECORD_CALL_STACK;
+		set<uint32_t> ROCIDS_TO_PARSE;
 
 		list<DBORptrs*> borptrs_list;
 
@@ -189,6 +192,7 @@ class JEventSource_EVIOpp: public jana::JEventSource{
 		bool     LOOP_FOREVER;
 		uint32_t USER_RUN_NUMBER;
 		int      VERBOSE;
+		int      VERBOSE_ET;
 		float    TIMEOUT;
 		uint32_t NTHREADS;
 		bool     PRINT_STATS;
@@ -198,6 +202,7 @@ class JEventSource_EVIOpp: public jana::JEventSource{
 		bool     LINK_BORCONFIG;
 		bool     LINK_CONFIG;
 		bool     IGNORE_EMPTY_BOR;
+		bool     TREAT_TRUNCATED_AS_ERROR;
 		
 		uint32_t jobtype;
 };

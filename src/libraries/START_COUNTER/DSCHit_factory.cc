@@ -65,7 +65,7 @@ jerror_t DSCHit_factory::init(void)
     t_base     = 0.;       // ns
     t_tdc_base = 0.;
 
-    CHECK_FADC_ERRORS = false;
+    CHECK_FADC_ERRORS = true;
     gPARMS->SetDefaultParameter("SC:CHECK_FADC_ERRORS", CHECK_FADC_ERRORS, "Set to 1 to reject hits with fADC250 errors, ser to 0 to keep these hits");
 
     return NOERROR;

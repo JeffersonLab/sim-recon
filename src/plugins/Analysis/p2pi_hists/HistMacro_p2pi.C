@@ -21,6 +21,12 @@
 		locCanvas = gPad->GetCanvas();
 	locCanvas->Divide(3, 2);
 
+	// Get overall normalization to number of triggers
+	TH1D* locHist_NumEvents = (TH1D*) locReactionDirectory_KinFit->Get("NumEventsSurvivedAction");
+	double n_triggers = locHist_NumEvents->GetBinContent(1);
+
+	double n_rho_kinfit = 0;
+	double rho_mass = 0;
 
 	TH1I* locHist_MM2 = (TH1I*)locReactionDirectory_KinFit->Get("Hist_MissingMassSquared/MissingMassSquared");
 	TH1I* locHist_MM2_KinFitCut = (TH1I*)locReactionDirectory_KinFit->Get("Hist_MissingMassSquared_PostKinFitCut/MissingMassSquared");
@@ -61,12 +67,14 @@
 	{
 		locHist_PiPlusPsi_t->SetTitle("#psi_{#pi^{+}} vs E_{#gamma}: Proton dE/dx > 2.2; E_{#gamma}; #psi_{#pi^{+}}");
 		TH1D *locHist_TimingCut_PiPlusPsi = (TH1D*)locHist_PiPlusPsi_t->ProjectionY();
+		locHist_TimingCut_PiPlusPsi->SetTitle("Coherent Edge");
 		locHist_TimingCut_PiPlusPsi->Rebin(4);
 		locHist_TimingCut_PiPlusPsi->SetMinimum(0);
 		locHist_TimingCut_PiPlusPsi->GetXaxis()->SetTitleSize(0.05);
 		locHist_TimingCut_PiPlusPsi->GetXaxis()->SetLabelSize(0.05);
+		locHist_TimingCut_PiPlusPsi->SetStats(0);
 		locHist_TimingCut_PiPlusPsi->Draw();
-
+		
 		// fit 1+cos(2*phi) distribution
 		TF1* fit = new TF1("psiFit","[0]*(1.0 + [1]*cos(2*(x + [2])/180.*3.14159))");
 		locHist_TimingCut_PiPlusPsi->Fit(fit, "Q", "");
@@ -169,11 +177,36 @@
 		locHist_KinFitRhoMass_KinFitCut->GetYaxis()->SetRangeUser(0.0, 1.05*locMaxHeight);
 		locHist_KinFitRhoMass_KinFitCut->Draw("SAME");
 
+		n_rho_kinfit = locHist_RhoMass_KinFitCut->Integral(200./locNumRebin, 700./locNumRebin);
+
+		TF1 *frho = new TF1("frho", "gaus", 0.6, 0.9);
+		frho->SetParameter(1,0.770);
+		frho->SetParameter(2,0.1);
+		locHist_RhoMass_KinFitCut->Fit("frho", "RQ0");
+		rho_mass = frho->GetParameter(1);
+
 		TLegend *locLegend = new TLegend(0.14, 0.74, 0.39, 0.86); //botleft x/y, topright x/y
 		locLegend->SetHeader("Legend");
 		locLegend->AddEntry(locHist_RhoMass_KinFitCut, "Measured", "F");
 		locLegend->AddEntry(locHist_KinFitRhoMass_KinFitCut, "KinFit", "F");
 		locLegend->Draw();
+
 	}
+
+	// Print the rho mass and the number of reconstructed rhos per trigger
+	locCanvas->cd(6);
+	TLatex tx;
+	tx.SetTextAlign(11);
+	tx.SetTextSize(0.07);
+	char text[100];
+	sprintf(text, "E_{#gamma} > 7 GeV");
+	tx.DrawLatex(0.05, 0.6, text);
+	sprintf(text, "Post KinFit Cut");
+	tx.DrawLatex(0.05, 0.5, text);
+	sprintf(text, "M(#rho) = %0.3f GeV/c^{2}", rho_mass);
+	tx.DrawLatex(0.05, 0.4, text);
+	sprintf(text, "N(#rho) = %0.2f / 1k Trigger", n_rho_kinfit/n_triggers*1000);
+	tx.DrawLatex(0.05, 0.3, text);
+
 }
 

@@ -20,7 +20,9 @@
 #include "FCAL/DFCALCluster.h"
 #include "ANALYSIS/DAnalysisUtilities.h"
 #include "PID/DVertex.h"
+
 //#include "TRACKING/DTrackFinder.h"
+#include "TRIGGER/DTrigger.h"
 
 #include <vector>
 #include <deque>
@@ -166,6 +168,11 @@ jerror_t JEventProcessor_BCAL_inv_mass::evnt(jana::JEventLoop* locEventLoop, uin
 	// DOCUMENTATION:
 	// ANALYSIS library: https://halldweb1.jlab.org/wiki/index.php/GlueX_Analysis_Software
 
+        const DTrigger* locTrigger = NULL; 
+	locEventLoop->GetSingle(locTrigger); 
+	if(locTrigger->Get_L1FrontPanelTriggerBits() != 0)
+	  return NOERROR;
+
 	vector<const DBCALShower*> locBCALShowers;
 	vector<const DFCALCluster*> locFCALClusters;
 	vector<const DVertex*> kinfitVertex;
@@ -174,6 +181,8 @@ jerror_t JEventProcessor_BCAL_inv_mass::evnt(jana::JEventLoop* locEventLoop, uin
 	locEventLoop->Get(locBCALShowers);
 	locEventLoop->Get(locFCALClusters);
 	locEventLoop->Get(kinfitVertex);
+
+	if(locBCALShowers.size() > 15) return NOERROR;
 
 	vector<const DTrackTimeBased*> locTrackTimeBased;
 	locEventLoop->Get(locTrackTimeBased);

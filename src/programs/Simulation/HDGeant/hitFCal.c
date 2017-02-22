@@ -134,6 +134,8 @@ void hitForwardEMcal (float xin[4], float xout[4],
 
    /* post the hit to the truth tree */
 
+   int itrack = (stack == 0)? gidGetId(track) : -1;
+
    if ((history == 0) && (pin[3] > THRESH_MEV/1e3))
    {
       s_FcalTruthShowers_t* showers;
@@ -143,8 +145,8 @@ void hitForwardEMcal (float xin[4], float xout[4],
       {
          s_ForwardEMcal_t* cal = *twig = make_s_ForwardEMcal();
          cal->fcalTruthShowers = showers = make_s_FcalTruthShowers(1);
-        int a = thisInputEvent->physicsEvents->in[0].reactions->in[0].vertices->in[0].products->mult;
-         showers->in[0].primary = (stack <= a);
+         int a = thisInputEvent->physicsEvents->in[0].reactions->in[0].vertices->in[0].products->mult;
+         showers->in[0].primary = (track <= a && stack == 0);
          showers->in[0].track = track;
          showers->in[0].t = xin[3]*1e9;
          showers->in[0].x = xin[0];
@@ -156,7 +158,7 @@ void hitForwardEMcal (float xin[4], float xout[4],
          showers->in[0].E = pin[3];
          showers->in[0].ptype = ipart;
          showers->in[0].trackID = make_s_TrackID();
-         showers->in[0].trackID->itrack = gidGetId(track);
+         showers->in[0].trackID->itrack = itrack;
          showers->mult = 1;
          showerCount++;
       }
@@ -278,7 +280,7 @@ s_ForwardEMcal_t* pickForwardEMcal ()
             int i,iok;
             for (iok=i=0; i < hits->mult; i++)
             {
-               if (hits->in[i].E >= THRESH_MEV/1e3)
+               if (hits->in[i].E > THRESH_MEV/1e3)
                {
 #if TESTING_CAL_CONTAINMENT
   Etotal += hits->in[i].E;

@@ -18,7 +18,9 @@ class DEventWriterROOT_factory : public jana::JFactory<DEventWriterROOT>
 			// Create single DEventWriterROOT object and marks the factory as persistent so it doesn't get deleted every event.
 			SetFactoryFlag(PERSISTANT);
 			ClearFactoryFlag(WRITE_TO_OUTPUT);
-			_data.push_back(new DEventWriterROOT(locEventLoop));
+
+			_data.push_back(new DEventWriterROOT());
+			_data.back()->Initialize(locEventLoop);
 			return NOERROR;
 		}
 
@@ -26,7 +28,7 @@ class DEventWriterROOT_factory : public jana::JFactory<DEventWriterROOT>
 		{
 			// Delete object: Must be "this" thread so that interfaces deleted properly
 			delete _data[0];
-			_data.resize(0);
+			_data.clear();
 			return NOERROR;
 		}
 };

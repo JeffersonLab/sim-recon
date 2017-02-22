@@ -14,7 +14,7 @@
 
 	//Get Histograms
     TH1I* CDC_Timing     = (TH1I*)gDirectory->Get("CDC/CDCHit time");
-    TH1I* FDC_Timing     = (TH1I*)gDirectory->Get("FDC/FDCHit time");
+    TH1I* FDC_Timing     = (TH1I*)gDirectory->Get("FDC/FDCHit Cathode time");
 	TH1I* CDC_SC_Timing  = (TH1I*)gDirectory->Get("TRACKING/Earliest CDC Time Minus Matched SC Time");
 	TH1I* FCAL_SC_Timing = (TH1I*)gDirectory->Get("TRACKING/FCAL - SC Target Time");
     TH1I* TOF_SC_Timing  = (TH1I*)gDirectory->Get("TRACKING/TOF - SC Target Time");
@@ -81,7 +81,7 @@
     }
     else{
         TPaveText *text = new TPaveText(0.1, 0.4, 0.9, 0.6);
-        text->AddText("No FDC Hit times");
+        text->AddText("No FDC Cathode Hit times");
         text->Draw();
     }
 

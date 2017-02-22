@@ -23,15 +23,13 @@ double GetBaseOffset(TString fname) {
 }
 void GetCCDBOffsetsBase(double &adc_offset_psc, double &tdc_offset_psc, double &adc_offset_ps) {
     ifstream fin("offsets/base_time_offset_ccdb.txt");
-    char sep;
-    fin >> sep;
+    fin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
     fin >> adc_offset_psc >> tdc_offset_psc >> adc_offset_ps;
     fin.close();
 }
 void GetPSCCCDBOffsetsTDC(double* tdc_offsets, const int N) {
     ifstream fin("offsets/tdc_timing_offsets_psc_ccdb.txt");
-    char sep; int n;
-    fin >> sep;
+    fin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
     for (int i = 0; i < N; i++) {
         fin >> tdc_offsets[i];
     }
@@ -39,8 +37,7 @@ void GetPSCCCDBOffsetsTDC(double* tdc_offsets, const int N) {
 }
 void GetPSCCCDBOffsetsADC(double* adc_offsets, const int N) {
     ifstream fin("offsets/adc_timing_offsets_psc_ccdb.txt");
-    char sep; int n;
-    fin >> sep;
+    fin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
     for (int i = 0; i < N; i++) {
         fin >> adc_offsets[i];
     }
@@ -48,8 +45,7 @@ void GetPSCCCDBOffsetsADC(double* adc_offsets, const int N) {
 }
 void GetPSCCDBOffsetsADC(double* adc_offsets_l, double* adc_offsets_r, const int N) {
     ifstream fin("offsets/adc_timing_offsets_ps_ccdb.txt");
-    char sep; int n;
-    fin >> sep;
+    fin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
     for (int i = 0; i < N; i++) {
         fin >> adc_offsets_l[i] >> adc_offsets_r[i];
     }

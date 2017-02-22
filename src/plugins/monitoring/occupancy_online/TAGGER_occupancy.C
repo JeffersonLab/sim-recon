@@ -1,4 +1,30 @@
-
+//
+// Guidance: --------------------------------------------
+//
+// This shows the tagger microscope (top) and hodoscope(bottom)
+// occupancies.
+//
+// Please note that for amorphous radiator running there will be
+// 3 channels in the upper plot of fADC values around colun 82
+// that are nearly twice as high as its neighbors. This effect
+// is not as pronounced for the diamond radiator which is shown
+// in the reference plot. This is expected and should be ignored.
+//
+// For all other issues contact:
+//
+//  Alex Barnes - microscope: <see white board>
+//
+//  Nathan Sparks - hodoscope: <see white board>
+//
+//  Run Coordinator:  (757) 383-5542
+//
+//  David Lawrence:   x5567    (office)
+//                    746-6697 (cell)
+//                    595-1302 (home)
+//
+// End Guidance: ----------------------------------------
+//
+//
 // The following are special comments used by RootSpy to know
 // which histograms to fetch for the macro.
 //
@@ -7,12 +33,17 @@
 // hnamepath: /occupancy/tagh_tdc_occ
 // hnamepath: /occupancy/tagm_adc_occ
 // hnamepath: /occupancy/tagm_tdc_occ
+//
+// e-mail: davidl@jlab.org
+// e-mail: aebarnes@jlab.org
+// e-mail: nsparks@jlab.org
+//
 
 {
 	// RootSpy saves the current directory and style before
 	// calling the macro and restores it after so it is OK to
 	// change them and not change them back.
-
+        TDirectory *savedir = gDirectory;
 	TDirectory *dir = (TDirectory*)gDirectory->FindObjectAny("occupancy");
 	if(dir) dir->cd();
 

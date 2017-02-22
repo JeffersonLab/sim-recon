@@ -29,37 +29,41 @@ static bool COSMIC_DATA = false;
 //------------------
 jerror_t DTOFHit_factory::init(void)
 {
+  USE_AMP_4WALKCORR = 0;
+  gPARMS->SetDefaultParameter("TOF:USE_AMP_4WALKCORR", USE_AMP_4WALKCORR,
+			      "Use Signal Amplitude for walk correction rather than Integral");
+  
   DELTA_T_ADC_TDC_MAX = 10.0; // ns
   //	DELTA_T_ADC_TDC_MAX = 30.0; // ns, value based on the studies from cosmic events
-	gPARMS->SetDefaultParameter("TOF:DELTA_T_ADC_TDC_MAX", DELTA_T_ADC_TDC_MAX, 
-				    "Maximum difference in ns between a (calibrated) fADC time and F1TDC time for them to be matched in a single hit");
-	
-	int analyze_cosmic_data = 0;
-	gPARMS->SetDefaultParameter("TOF:COSMIC_DATA", analyze_cosmic_data,
-				    "Special settings for analysing cosmic data");
-	if(analyze_cosmic_data > 0)
-		COSMIC_DATA = true;
-
-    CHECK_FADC_ERRORS = false;
-    gPARMS->SetDefaultParameter("TOF:CHECK_FADC_ERRORS", CHECK_FADC_ERRORS, "Set to 1 to reject hits with fADC250 errors, ser to 0 to keep these hits");
-
-
-	/// Set basic conversion constants
-	a_scale    = 0.2/5.2E5;
-	t_scale    = 0.0625;   // 62.5 ps/count
-        t_base     = 0.;       // ns
-	t_base_tdc = 0.; // ns
-
-	if(COSMIC_DATA)
-		// Hardcoding of 110 taken from cosmics events
-		tdc_adc_time_offset = 110.;
-	else 
-		tdc_adc_time_offset = 0.;
-
-	TOF_NUM_PLANES = 2;
-	TOF_NUM_BARS = 44;
-
-	return NOERROR;
+  gPARMS->SetDefaultParameter("TOF:DELTA_T_ADC_TDC_MAX", DELTA_T_ADC_TDC_MAX, 
+			      "Maximum difference in ns between a (calibrated) fADC time and F1TDC time for them to be matched in a single hit");
+  
+  int analyze_cosmic_data = 0;
+  gPARMS->SetDefaultParameter("TOF:COSMIC_DATA", analyze_cosmic_data,
+			      "Special settings for analysing cosmic data");
+  if(analyze_cosmic_data > 0)
+    COSMIC_DATA = true;
+  
+  CHECK_FADC_ERRORS = true;
+  gPARMS->SetDefaultParameter("TOF:CHECK_FADC_ERRORS", CHECK_FADC_ERRORS, "Set to 1 to reject hits with fADC250 errors, ser to 0 to keep these hits");
+  
+  
+  /// Set basic conversion constants
+  a_scale    = 0.2/5.2E5;
+  t_scale    = 0.0625;   // 62.5 ps/count
+  t_base     = 0.;       // ns
+  t_base_tdc = 0.; // ns
+  
+  if(COSMIC_DATA)
+    // Hardcoding of 110 taken from cosmics events
+    tdc_adc_time_offset = 110.;
+  else 
+    tdc_adc_time_offset = 0.;
+  
+  TOF_NUM_PLANES = 2;
+  TOF_NUM_BARS = 44;
+  
+  return NOERROR;
 }
 
 //------------------
@@ -134,6 +138,12 @@ jerror_t DTOFHit_factory::brun(jana::JEventLoop *eventLoop, int32_t runnumber)
     if(eventLoop->GetCalib("TOF/timewalk_parms", timewalk_parameters))
       jout << "Error loading /TOF/timewalk_parms !" << endl;
     
+
+    if (USE_AMP_4WALKCORR){
+      if(eventLoop->GetCalib("TOF/timewalk_parms_AMP", timewalk_parameters_AMP))
+	jout << "Error loading /TOF/timewalk_parms_AMP !" << endl;
+    }
+
     FillCalibTable(adc_pedestals, raw_adc_pedestals, tofGeom);
     FillCalibTable(adc_gains, raw_adc_gains, tofGeom);
     FillCalibTable(adc_time_offsets, raw_adc_offsets, tofGeom);
@@ -231,6 +241,7 @@ jerror_t DTOFHit_factory::evnt(JEventLoop *loop, uint64_t eventnumber)
         hit->bar   = digihit->bar;
         hit->end   = digihit->end;
         hit->dE=dA;  // this will be scaled to energy units later
+	hit->Amp = (float)digihit->pulse_peak - (float)digihit->pedestal/(float)nsamples_pedestal;
 
         if(COSMIC_DATA)
             hit->dE = (A - 55*pedestal); // value of 55 is taken from (NSB,NSA)=(10,45) in the confg file
@@ -285,6 +296,7 @@ jerror_t DTOFHit_factory::evnt(JEventLoop *loop, uint64_t eventnumber)
             hit->bar   = digihit->bar;
             hit->end   = digihit->end;
             hit->dE = 0.0;
+	    hit->Amp = 0.0;
             hit->t_fADC=numeric_limits<double>::quiet_NaN();
             hit->has_fADC=false;
 
@@ -296,12 +308,16 @@ jerror_t DTOFHit_factory::evnt(JEventLoop *loop, uint64_t eventnumber)
         if (hit->dE>0.){
             // time walk correction
             // The correction is the form t=t_tdc- C1 (A^C2 - A0^C2)
-            int id=88*hit->plane+44*hit->end+hit->bar-1;
-            double A=hit->dE;
-            double C1=timewalk_parameters[id][1];
-            double C2=timewalk_parameters[id][2];
-            double A0=timewalk_parameters[id][3];
-            T-=C1*(pow(A,C2)-pow(A0,C2));
+	  double tcorr = 0.;
+	  if (USE_AMP_4WALKCORR) {
+	    tcorr = CalcWalkCorrAmplitude(hit);
+	  } else {
+	    tcorr = CalcWalkCorrIntegral(hit);
+	  }
+
+	  //cout<<hit->Amp<<"  :"<<tcorr<<endl;
+
+	  T -= tcorr;
         }
         hit->t=T;
 
@@ -576,3 +592,45 @@ return the_table.at(the_cell).second;
 }
 }
 */
+double DTOFHit_factory::CalcWalkCorrIntegral(DTOFHit* hit){
+  int id=88*hit->plane+44*hit->end+hit->bar-1;
+  double A=hit->dE;
+  double C1=timewalk_parameters[id][1];
+  double C2=timewalk_parameters[id][2];
+  double A0=timewalk_parameters[id][3];
+
+  float corr = C1*(pow(A,C2)-pow(A0,C2));
+  
+  return corr;
+
+
+}
+
+
+double DTOFHit_factory::CalcWalkCorrAmplitude(DTOFHit* hit){
+
+  int id=88*hit->plane+44*hit->end+hit->bar-1;
+  double A  = hit->Amp;
+  double C0 = timewalk_parameters_AMP[id][0];
+  double C1 = timewalk_parameters_AMP[id][1];
+  double C2 = timewalk_parameters_AMP[id][2];
+  double C3 = timewalk_parameters_AMP[id][3];
+
+  double hookx = timewalk_parameters_AMP[id][4]; 
+  double refx = timewalk_parameters_AMP[id][5];
+  double val_at_ref = C0 + C1*pow(refx,C2); 
+  double val_at_hook = C0 + C1*pow(hookx,C2); 
+  double slope = (val_at_hook - C3)/hookx;
+  if (refx>hookx){
+    val_at_ref  = slope * refx + C3; 
+  }
+  double val_at_A = C0 + C1*pow(A,C2);
+  if (A>hookx){
+    val_at_A = slope * A + C3; 
+  }
+
+  float corr = val_at_A - val_at_ref;
+  
+  return corr;
+
+}

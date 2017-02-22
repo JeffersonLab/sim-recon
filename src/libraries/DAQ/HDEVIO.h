@@ -135,6 +135,7 @@ class HDEVIO{
 			public:
 				streampos pos;
 				uint32_t event_len;
+				uint32_t event_header;
 				uint64_t first_event;
 				uint64_t last_event;
 				BLOCKTYPE event_type;
@@ -198,6 +199,8 @@ class HDEVIO{
 		void PrintEVIOBlockHeader(void);
 		void PrintStats(void);
 		void PrintFileSummary(void);
+		void SaveFileMap(string fname="");
+		void ReadFileMap(string fname, bool warn_if_not_found=false);
 
 		uint32_t GetEventMask(void) { return event_type_mask; }
 		uint32_t SetEventMask(uint32_t mask);

@@ -8,17 +8,41 @@ using namespace jana;
 #include <JANA/JApplication.h>
 #include <JANA/JFactory.h>
 // ROOT header files
+#include <TH1.h>
 #include <TH2.h>
-// TAGM header files
+#include <TDirectory.h>
+// GlueX header files
 #include "TAGGER/DTAGMHit.h"
+#include "RF/DRFTime_factory.h"
 
 // Define constants
 const uint32_t NCOLUMNS = 102;
+const uint32_t NSINGLES = 20;
 const uint32_t NROWS = 5;
 
+const int32_t TMIN = -50;
+const int32_t TMAX = 50;
+const int32_t TBIN = (TMAX - TMIN)/0.1;
+
+const double TMIN_RF = -2.0;
+const double TMAX_RF = 2.0;
+const double TBIN_RF = (TMAX_RF - TMIN_RF)/0.1;
+
 // Define histograms
+//    timewalk
 static TH2I* h_dt_vs_pp[NCOLUMNS];
+static TH2I* h_dt_vs_pp_tdc[NCOLUMNS];
 static TH2I* h_dt_vs_pp_ind[NROWS][4];
+static TH2I* h_dt_vs_pp_tdc_ind[NROWS][4];
+//    tdc - adc
+static TH2I* h_t_adc_all;
+static TH2I* h_t_adc_all_ind;
+//    adc - rf
+static TH2I* h_adc_rf_all;
+static TH2I* h_adc_rf_all_ind;
+
+// Define RFTime_factory
+DRFTime_factory* dRFTimeFactory;
 
 extern "C"{
 void InitPlugin(JApplication *app){
@@ -49,12 +73,37 @@ JEventProcessor_TAGM_TW::~JEventProcessor_TAGM_TW()
 //------------------
 jerror_t JEventProcessor_TAGM_TW::init(void)
 {
-   // Name histograms 
+
+   TDirectory *tagmDir = gDirectory->mkdir("TAGM_TW");
+   tagmDir->cd();
+
+   gDirectory->mkdir("tdc-rf")->cd();
+   for (uint32_t i = 0; i < NCOLUMNS; ++i)
+   {
+      h_dt_vs_pp_tdc[i] = new TH2I(Form("h_dt_vs_pp_tdc_%i",i+1),
+                               Form("#delta t vs. pulse peak for TAGM column %i;\
+                               Pulse peak (adc counts);TDC - RF (ns)",i+1),\
+                               1000,0,2000,250,-10,15);
+   }
+   for (uint32_t i = 0; i < NROWS; ++i)
+   {
+      for (uint32_t j = 0; j < 4; ++j)
+      {
+         h_dt_vs_pp_tdc_ind[i][j] = new TH2I(Form("h_dt_vs_pp_tdc_ind_%i_%i",i+1,j+1),
+                                        Form("#delta t vs. pulse peak for TAGM ind. column %i, row %i;\
+                                        Pulse peak (adc counts);TDC - RF (ns)",j+1,i+1),
+                                        1000,0,2000,250,-10,15);
+
+      }
+   }
+   tagmDir->cd();
+
+   gDirectory->mkdir("t-rf")->cd();
    for (uint32_t i = 0; i < NCOLUMNS; ++i)
    {
       h_dt_vs_pp[i] = new TH2I(Form("h_dt_vs_pp_%i",i+1),
-                               Form("Time difference vs. pulse peak for TAGM column %i;\
-                               Pulse peak (adc counts);TDC - ADC (ns)",i+1),\
+                               Form("#delta t vs. pulse peak for TAGM column %i;\
+                               Pulse peak (adc counts);T - RF (ns)",i+1),\
                                1000,0,2000,250,-10,15);
    }
    for (uint32_t i = 0; i < NROWS; ++i)
@@ -62,12 +111,22 @@ jerror_t JEventProcessor_TAGM_TW::init(void)
       for (uint32_t j = 0; j < 4; ++j)
       {
          h_dt_vs_pp_ind[i][j] = new TH2I(Form("h_dt_vs_pp_ind_%i_%i",i+1,j+1),
-                                  Form("Time difference vs. pulse peak for TAGM ind. column %i, row %i;\
-                                  Pulse peak (adc counts);TDC - ADC (ns)",j+1,i+1),
-                                  1000,0,2000,250,-10,15);
+                                    Form("#delta t vs. pulse peak for TAGM ind. column %i, row %i;\
+                                    Pulse peak (adc counts);T - RF (ns)",j+1,i+1),
+                                    1000,0,2000,250,-10,15);
 
       }
    }
+   tagmDir->cd();
+
+   h_t_adc_all =      new TH2I("t_adc_all","Summed channels;TDC - ADC (ns);Column",
+                                TBIN,TMIN,TMAX,NCOLUMNS,1,NCOLUMNS+1);
+   h_t_adc_all_ind =  new TH2I("t_adc_all_ind","Individual channels;TDC - ADC (ns);Column",
+                                TBIN,TMIN,TMAX,NSINGLES,1,NSINGLES+1);
+   h_adc_rf_all =     new TH2I("adc_rf_all","Summed channels;ADC - RF (ns);Column",
+                                TBIN_RF,TMIN_RF,TMAX_RF,NCOLUMNS,1,NCOLUMNS+1);
+   h_adc_rf_all_ind = new TH2I("adc_rf_all_ind","Individual channels;ADC - RF (ns);Column",
+                                TBIN_RF,TMIN_RF,TMAX_RF,NSINGLES,1,NSINGLES+1);
 
    return NOERROR;
 	
@@ -78,6 +137,13 @@ jerror_t JEventProcessor_TAGM_TW::init(void)
 //------------------
 jerror_t JEventProcessor_TAGM_TW::brun(JEventLoop *eventLoop, int32_t runnumber)
 {
+   // Initialize RF time factory
+   dRFTimeFactory = static_cast<DRFTime_factory*>(eventLoop->GetFactory("DRFTime"));
+
+   // be sure that DRFTime_factory::init() and brun() are called
+   vector<const DRFTime*> locRFTimes;
+   eventLoop->Get(locRFTimes);
+
    return NOERROR;
 
 }
@@ -87,13 +153,22 @@ jerror_t JEventProcessor_TAGM_TW::brun(JEventLoop *eventLoop, int32_t runnumber)
 //------------------
 jerror_t JEventProcessor_TAGM_TW::evnt(JEventLoop *loop, uint64_t eventnumber)
 {
+   // FILL HISTOGRAMS
+   // Since we are filling histograms local to this plugin, it will not interfere
+   // with other ROOT operations: can use plugin-wide ROOT fill lock
 
    vector<const DTAGMHit*>      hits;
    loop->Get(hits, "Calib");
 
-   // FILL HISTOGRAMS
-   // Since we are filling histograms local to this plugin, it will not interfere
-   // with other ROOT operations: can use plugin-wide ROOT fill lock
+   vector<const DRFTime*>	locRFTimes;
+   loop->Get(locRFTimes, "TAGH");
+   const DRFTime* locRFTime = NULL;
+
+   if (locRFTimes.size() > 0)
+      locRFTime = locRFTimes[0];
+   else
+      return NOERROR;
+
    japp->RootFillLock(this); //ACQUIRE ROOT FILL LOCK
 
    for (uint32_t i = 0; i < hits.size(); ++i) {
@@ -103,21 +178,46 @@ jerror_t JEventProcessor_TAGM_TW::evnt(JEventLoop *loop, uint64_t eventnumber)
       double pp    = hits[i]->pulse_peak;
       double tm_t  = hits[i]->t;
       double adc_t = hits[i]->time_fadc;
-
-      double tdiff = tm_t - adc_t;
+      double tdc_t = hits[i]->time_tdc;
+      double rf_adc = dRFTimeFactory->Step_TimeToNearInputTime(locRFTime->dTime,adc_t);
 
       if (row == 0)
-         h_dt_vs_pp[col-1]->Fill(pp,tdiff);
+      {
+         h_dt_vs_pp[col-1]->Fill(pp, tm_t - rf_adc);
+         h_dt_vs_pp_tdc[col-1]->Fill(pp, tdc_t - rf_adc);
+         h_t_adc_all->Fill(tm_t - adc_t, col);
+         h_adc_rf_all->Fill(adc_t - rf_adc, col);
+      }
       else
       {
          if (col == 9)
-            h_dt_vs_pp_ind[row-1][0]->Fill(pp,tdiff);
+         {
+            h_dt_vs_pp_ind[row-1][0]->Fill(pp,tm_t - rf_adc);
+            h_dt_vs_pp_tdc_ind[row-1][0]->Fill(pp,tdc_t - rf_adc);
+            h_t_adc_all_ind->Fill(tm_t - adc_t, row);
+            h_adc_rf_all_ind->Fill(adc_t - rf_adc, row);
+         }
          else if (col == 27)
-            h_dt_vs_pp_ind[row-1][1]->Fill(pp,tdiff);
+         {
+            h_dt_vs_pp_ind[row-1][1]->Fill(pp,tm_t - rf_adc);
+            h_dt_vs_pp_tdc_ind[row-1][1]->Fill(pp,tdc_t - rf_adc);
+            h_t_adc_all_ind->Fill(tm_t - adc_t, row + 5);
+            h_adc_rf_all_ind->Fill(adc_t - rf_adc, row + 5);
+         }
          else if (col == 81)
-            h_dt_vs_pp_ind[row-1][2]->Fill(pp,tdiff);
+         {
+            h_dt_vs_pp_ind[row-1][2]->Fill(pp,tm_t - rf_adc);
+            h_dt_vs_pp_tdc_ind[row-1][2]->Fill(pp,tdc_t - rf_adc);
+            h_t_adc_all_ind->Fill(tm_t - adc_t, row + 10);
+            h_adc_rf_all_ind->Fill(adc_t - rf_adc, row + 10);
+         }
          else if (col == 99)
-            h_dt_vs_pp_ind[row-1][3]->Fill(pp,tdiff);
+         {
+            h_dt_vs_pp_ind[row-1][3]->Fill(pp,tm_t - rf_adc);
+            h_dt_vs_pp_tdc_ind[row-1][3]->Fill(pp,tdc_t - rf_adc);
+            h_t_adc_all_ind->Fill(tm_t - adc_t, row + 15);
+            h_adc_rf_all_ind->Fill(adc_t - rf_adc, row + 15);
+         }
       }
    }
 

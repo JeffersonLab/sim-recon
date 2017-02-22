@@ -44,8 +44,8 @@ class DEventWriterROOT : public JObject
 	public:
 		JOBJECT_PUBLIC(DEventWriterROOT);
 
-		DEventWriterROOT(JEventLoop* locEventLoop);
 		virtual ~DEventWriterROOT(void);
+		void Initialize(JEventLoop* locEventLoop);
 
 		void Create_ThrownTree(JEventLoop* locEventLoop, string locOutputFileName) const;
 
@@ -56,14 +56,10 @@ class DEventWriterROOT : public JObject
 	protected:
 
 		//CUSTOM FUNCTIONS: //Inherit from this class and write custom code in these functions
-			//DO: Use the inherited functions for creating/filling branches.  They will make your life MUCH easier: You don't need to manage the branch memory.
-			//DO NOT: Acquire/release the ROOT lock.  It is already acquired prior to entry into these functions
 			//DO NOT: Write any code that requires a lock of ANY KIND. No reading calibration constants, accessing gParams, etc. This can cause deadlock.
-				//Note that the JEventLoop is unavailable.  This is to prevent calls to other factories that may cause deadlock.
-			//DO NOT: Call TTree::Fill().  This will be called after calling the custom fill functions.
-		virtual void Create_CustomBranches_ThrownTree(DTreeBranchRegister& locTreeBranchRegister, JEventLoop* locEventLoop) const{};
+		virtual void Create_CustomBranches_ThrownTree(DTreeBranchRegister& locBranchRegister, JEventLoop* locEventLoop) const{};
 		virtual void Fill_CustomBranches_ThrownTree(DTreeFillData* locTreeFillData, JEventLoop* locEventLoop, const DMCReaction* locMCReaction, const vector<const DMCThrown*>& locMCThrowns) const{};
-		virtual void Create_CustomBranches_DataTree(DTreeBranchRegister& locTreeBranchRegister, JEventLoop* locEventLoop, const DReaction* locReaction, bool locIsMCDataFlag) const{};
+		virtual void Create_CustomBranches_DataTree(DTreeBranchRegister& locBranchRegister, JEventLoop* locEventLoop, const DReaction* locReaction, bool locIsMCDataFlag) const{};
 		virtual void Fill_CustomBranches_DataTree(DTreeFillData* locTreeFillData, JEventLoop* locEventLoop, const DMCReaction* locMCReaction, const vector<const DMCThrown*>& locMCThrowns,
 				const DMCThrownMatching* locMCThrownMatching, const DDetectorMatches* locDetectorMatches,
 				const vector<const DBeamPhoton*>& locBeamPhotons, const vector<const DChargedTrackHypothesis*>& locChargedHypos,
@@ -97,8 +93,6 @@ class DEventWriterROOT : public JObject
 		//add in future: let user execute custom actions (outside of lock): user adds and initializes actions in derived-writer constructor
 		//map<const DReaction*, map<string, map<const DParticleCombo*, bool> > > dCustomActionResultsMap; //string is action name
 
-		DEventWriterROOT(void){}; //don't allow default constructor
-
 		/****************************************************************************************************************************************/
 
 		//TREE INTERFACES, FILL OBJECTS
@@ -113,7 +107,7 @@ class DEventWriterROOT : public JObject
 
 		//TREE CREATION:
 		void Create_DataTree(const DReaction* locReaction, JEventLoop* locEventLoop, bool locIsMCDataFlag);
-		TMap* Create_UserInfoMaps(DTreeBranchRegister& locTreeBranchRegister, const DReaction* locReaction) const;
+		TMap* Create_UserInfoMaps(DTreeBranchRegister& locTreeBranchRegister, JEventLoop* locEventLoop, const DReaction* locReaction) const;
 		void Create_UserTargetInfo(DTreeBranchRegister& locTreeBranchRegister, Particle_t locTargetPID) const;
 		void Create_Branches_Thrown(DTreeBranchRegister& locTreeBranchRegister, bool locIsOnlyThrownFlag) const;
 
@@ -136,18 +130,17 @@ class DEventWriterROOT : public JObject
 		void Group_ThrownParticles(const vector<const DMCThrown*>& locMCThrowns_FinalState, const vector<const DMCThrown*>& locMCThrowns_Decaying,
 				vector<const DMCThrown*>& locMCThrownsToSave, map<const DMCThrown*, unsigned int>& locThrownIndexMap) const;
 		void Fill_ThrownInfo(DTreeFillData* locTreeFillData, const DMCReaction* locMCReaction, const vector<const DMCThrown*>& locMCThrowns,
-				const map<const DMCThrown*, unsigned int>& locThrownIndexMap, ULong64_t locNumPIDThrown_FinalState, ULong64_t locPIDThrown_Decaying) const;
-		void Fill_ThrownInfo(DTreeFillData* locTreeFillData, const DMCReaction* locMCReaction, const vector<const DMCThrown*>& locMCThrowns,
 				const map<const DMCThrown*, unsigned int>& locThrownIndexMap, ULong64_t locNumPIDThrown_FinalState, ULong64_t locPIDThrown_Decaying,
-				const DMCThrownMatching* locMCThrownMatching, const map<string, map<oid_t, int> >& locObjectToArrayIndexMap) const;
-		void Fill_ThrownParticleData(DTreeFillData* locTreeFillData, unsigned int locArrayIndex, const DMCThrown* locMCThrown, const map<const DMCThrown*, unsigned int>& locThrownIndexMap,
-				const DMCThrownMatching* locMCThrownMatching, const map<string, map<oid_t, int> >& locObjectToArrayIndexMap) const;
+				const DMCThrownMatching* locMCThrownMatching = NULL) const;
+		void Fill_ThrownParticleData(DTreeFillData* locTreeFillData, unsigned int locArrayIndex, const DMCThrown* locMCThrown, 
+				const map<const DMCThrown*, unsigned int>& locThrownIndexMap, const DMCThrownMatching* locMCThrownMatching) const;
 
-		//TREE FILLING: GET HYPOTHESES
-		vector<const DChargedTrackHypothesis*> Get_ChargedHypotheses(JEventLoop* locEventLoop, set<Particle_t> locReactionPIDs, map<oid_t, int>& locObjectToArrayIndexMap) const;
-		vector<const DChargedTrackHypothesis*> Get_ChargedHypotheses_Used(JEventLoop* locEventLoop, deque<const DParticleCombo*>& locParticleCombos, map<oid_t, int>& locObjectToArrayIndexMap) const;
-		vector<const DNeutralParticleHypothesis*> Get_NeutralHypotheses(JEventLoop* locEventLoop, set<Particle_t> locReactionPIDs, map<oid_t, int>& locObjectToArrayIndexMap) const;
-		vector<const DNeutralParticleHypothesis*> Get_NeutralHypotheses_Used(JEventLoop* locEventLoop, deque<const DParticleCombo*>& locParticleCombos, map<oid_t, int>& locObjectToArrayIndexMap) const;
+		//TREE FILLING: GET HYPOTHESES/BEAM
+		vector<const DBeamPhoton*> Get_BeamPhotons(const deque<const DParticleCombo*>& locParticleCombos) const;
+		vector<const DChargedTrackHypothesis*> Get_ChargedHypotheses(JEventLoop* locEventLoop, const set<Particle_t>& locReactionPIDs) const;
+		vector<const DChargedTrackHypothesis*> Get_ChargedHypotheses_Used(JEventLoop* locEventLoop, const set<Particle_t>& locReactionPIDs, const deque<const DParticleCombo*>& locParticleCombos) const;
+		vector<const DNeutralParticleHypothesis*> Get_NeutralHypotheses(JEventLoop* locEventLoop, const set<Particle_t>& locReactionPIDs) const;
+		vector<const DNeutralParticleHypothesis*> Get_NeutralHypotheses_Used(JEventLoop* locEventLoop, const set<Particle_t>& locReactionPIDs, const deque<const DParticleCombo*>& locParticleCombos) const;
 
 		//TREE FILLING: INDEPENDENT PARTICLES
 		void Fill_BeamData(DTreeFillData* locTreeFillData, unsigned int locArrayIndex, const DBeamPhoton* locBeamPhoton, const DVertex* locVertex, const DMCThrownMatching* locMCThrownMatching) const;
@@ -157,16 +150,16 @@ class DEventWriterROOT : public JObject
 				const map<const DMCThrown*, unsigned int>& locThrownIndexMap, const DDetectorMatches* locDetectorMatches) const;
 
 		//TREE FILLING: COMBO
-		void Fill_ComboData(DTreeFillData* locTreeFillData, const DParticleCombo* locParticleCombo, unsigned int locComboIndex, const map<string, map<oid_t, int> >& locObjectToArrayIndexMap) const;
+		void Fill_ComboData(DTreeFillData* locTreeFillData, const DParticleCombo* locParticleCombo, unsigned int locComboIndex, const map<pair<oid_t, Particle_t>, size_t>& locObjectToArrayIndexMap) const;
 		void Fill_ComboStepData(DTreeFillData* locTreeFillData, const DParticleCombo* locParticleCombo, unsigned int locStepIndex, unsigned int locComboIndex,
-				DKinFitType locKinFitType, const map<string, map<oid_t, int> >& locObjectToArrayIndexMap) const;
+				DKinFitType locKinFitType, const map<pair<oid_t, Particle_t>, size_t>& locObjectToArrayIndexMap) const;
 
 		//TREE FILLING: COMBO PARTICLES
-		void Fill_ComboBeamData(DTreeFillData* locTreeFillData, unsigned int locComboIndex, const DBeamPhoton* locBeamPhoton, unsigned int locBeamIndex, DKinFitType locKinFitType) const;
+		void Fill_ComboBeamData(DTreeFillData* locTreeFillData, unsigned int locComboIndex, const DBeamPhoton* locBeamPhoton, size_t locBeamIndex, DKinFitType locKinFitType) const;
 		void Fill_ComboChargedData(DTreeFillData* locTreeFillData, unsigned int locComboIndex, string locParticleBranchName, const DChargedTrackHypothesis* locMeasuredChargedHypo,
-				const DChargedTrackHypothesis* locChargedHypo, unsigned int locChargedIndex, DKinFitType locKinFitType) const;
+				const DChargedTrackHypothesis* locChargedHypo, size_t locChargedIndex, DKinFitType locKinFitType) const;
 		void Fill_ComboNeutralData(DTreeFillData* locTreeFillData, unsigned int locComboIndex, string locParticleBranchName, const DNeutralParticleHypothesis* locMeasuredNeutralHypo,
-				const DNeutralParticleHypothesis* locNeutralHypo, unsigned int locNeutralIndex, DKinFitType locKinFitType) const;
+				const DNeutralParticleHypothesis* locNeutralHypo, size_t locNeutralIndex, DKinFitType locKinFitType) const;
 };
 
 inline string DEventWriterROOT::Convert_ToBranchName(string locInputName) const

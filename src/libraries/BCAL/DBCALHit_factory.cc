@@ -27,7 +27,7 @@ jerror_t DBCALHit_factory::init(void)
    t_scale    = 0.0625;   // There are 62.5 ps/count from the fADC
    t_base     = 0.;
 
-  CHECK_FADC_ERRORS = false;
+  CHECK_FADC_ERRORS = true;
   gPARMS->SetDefaultParameter("BCAL:CHECK_FADC_ERRORS", CHECK_FADC_ERRORS, "Set to 1 to reject hits with fADC250 errors, ser to 0 to keep these hits");
 
    return NOERROR;
@@ -187,7 +187,7 @@ jerror_t DBCALHit_factory::evnt(JEventLoop *loop, uint64_t eventnumber)
       // nsamples_pedestal should always be positive for valid data - err on the side of caution for now
       if(nsamples_pedestal == 0) {
           //throw JException("DBCALDigiHit with nsamples_pedestal == 0 !");
-          jerr << "DBCALDigiHit with nsamples_pedestal == 0 !   Event = " << eventnumber << endl;
+          if(VERBOSE>0)jerr << "DBCALDigiHit with nsamples_pedestal == 0 !   Event = " << eventnumber << endl;
           continue;
       }
 

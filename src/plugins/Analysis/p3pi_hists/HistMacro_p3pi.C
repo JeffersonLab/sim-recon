@@ -1,6 +1,19 @@
-// hnamepath: /p2pi_preco/Hist_MissingMassSquared/MissingMassSquared
-{
-	TDirectory *locInitDirectory = gDirectory;
+// hnamepath: /p3pi_preco_2FCAL/Hist_InvariantMass_Pi0/InvariantMass
+// hnamepath: /p3pi_preco_2FCAL/Hist_InvariantMass_Omega_PostKinFitCut/InvariantMass
+// hnamepath: /p3pi_preco_2BCAL/Hist_InvariantMass_Pi0/InvariantMass
+// hnamepath: /p3pi_preco_2BCAL/Hist_InvariantMass_Omega_PostKinFitCut/InvariantMass
+// hnamepath: /p3pi_preco_FCAL-BCAL/Hist_InvariantMass_Pi0/InvariantMass
+// hnamepath: /p3pi_preco_FCAL-BCAL/Hist_InvariantMass_Omega_PostKinFitCut/InvariantMass
+// hnamepath: /p3pi_preco_any_kinfit/Hist_MissingMassSquared/MissingMassSquared
+// hnamepath: /p3pi_preco_any_kinfit/Hist_MissingMassSquared_PostKinFitCut/MissingMassSquared
+// hnamepath: /p3pi_preco_any_kinfit/Hist_InvariantMass_Pi0/InvariantMass
+// hnamepath: /p3pi_preco_any_kinfit/Hist_InvariantMass_Pi0_PostKinFitCut/InvariantMass
+// hnamepath: /p3pi_preco_any_kinfit/Hist_KinFitResults/ConfidenceLevel
+// hnamepath: /p3pi_preco_any_kinfit/Hist_InvariantMass_Omega_PostKinFitCut/InvariantMass
+// hnamepath: /p3pi_preco_any_kinfit/Hist_InvariantMass_Omega_KinFit_PostKinFitCut/InvariantMass
+
+
+{	TDirectory *locInitDirectory = gDirectory;
 	TDirectory *locReactionDirectory_2FCAL = (TDirectory*)locInitDirectory->FindObjectAny("p3pi_preco_2FCAL");
 	TDirectory *locReactionDirectory_2BCAL = (TDirectory*)locInitDirectory->FindObjectAny("p3pi_preco_2BCAL");
 	TDirectory *locReactionDirectory_Both = (TDirectory*)locInitDirectory->FindObjectAny("p3pi_preco_FCAL-BCAL");
@@ -19,14 +32,22 @@
 		locCanvas = gPad->GetCanvas();
 	locCanvas->Divide(3, 2);
 
+	// Get overall normalization to number of triggers
+	TH1D* locHist_NumEvents = (TH1D*) locReactionDirectory_KinFit->Get("NumEventsSurvivedAction");
+	double n_triggers = locHist_NumEvents->GetBinContent(1);
+
+	double n_omega_kinfit;
+	double omega_mass = 0;
+	double omega_width= 0;
+
 	TH1I* locHist_Pi0_2FCAL = (TH1I*)locReactionDirectory_2FCAL->Get("Hist_InvariantMass_Pi0/InvariantMass");
-	TH1I* locHist_Omega_2FCAL = (TH1I*)locReactionDirectory_2FCAL->Get("Hist_InvariantMass_Omega/InvariantMass");
+	TH1I* locHist_Omega_2FCAL = (TH1I*)locReactionDirectory_2FCAL->Get("Hist_InvariantMass_Omega_PostKinFitCut/InvariantMass");
 
 	TH1I* locHist_Pi0_2BCAL = (TH1I*)locReactionDirectory_2BCAL->Get("Hist_InvariantMass_Pi0/InvariantMass");
-	TH1I* locHist_Omega_2BCAL = (TH1I*)locReactionDirectory_2BCAL->Get("Hist_InvariantMass_Omega/InvariantMass");
+	TH1I* locHist_Omega_2BCAL = (TH1I*)locReactionDirectory_2BCAL->Get("Hist_InvariantMass_Omega_PostKinFitCut/InvariantMass");
 
 	TH1I* locHist_Pi0_Both = (TH1I*)locReactionDirectory_Both->Get("Hist_InvariantMass_Pi0/InvariantMass");
-	TH1I* locHist_Omega_Both = (TH1I*)locReactionDirectory_Both->Get("Hist_InvariantMass_Omega/InvariantMass");
+	TH1I* locHist_Omega_Both = (TH1I*)locReactionDirectory_Both->Get("Hist_InvariantMass_Omega_PostKinFitCut/InvariantMass");
 
 	TH1I* locHist_MM2 = (TH1I*)locReactionDirectory_KinFit->Get("Hist_MissingMassSquared/MissingMassSquared");
 	TH1I* locHist_MM2_KinFitCut = (TH1I*)locReactionDirectory_KinFit->Get("Hist_MissingMassSquared_PostKinFitCut/MissingMassSquared");
@@ -96,62 +117,8 @@
 		locLegend->Draw();
 	}
 
-	//measured omega for 3 cases (on top of each other)
-	locCanvas->cd(2);
-	gPad->SetTicks();
-	gPad->SetGrid();
-	if((locHist_Omega_2FCAL != NULL) && (locHist_Omega_2BCAL != NULL) && (locHist_Omega_Both != NULL))
-	{
-		locHist_Omega_2FCAL->Rebin(2*locNumRebin);
-		locHist_Omega_2BCAL->Rebin(2*locNumRebin);
-		locHist_Omega_Both->Rebin(2*locNumRebin);
-
-		double locMaxHeight = locHist_Omega_2FCAL->GetBinContent(locHist_Omega_2FCAL->GetMaximumBin());
-		double locOtherHeight = locHist_Omega_2BCAL->GetBinContent(locHist_Omega_2BCAL->GetMaximumBin());
-		if(locOtherHeight > locMaxHeight)
-			locMaxHeight = locOtherHeight;
-		locOtherHeight = locHist_Omega_Both->GetBinContent(locHist_Omega_Both->GetMaximumBin());
-		if(locOtherHeight > locMaxHeight)
-			locMaxHeight = locOtherHeight;
-
-		locHist_Omega_2FCAL->SetTitle("Measured");
-		locHist_Omega_2FCAL->GetXaxis()->SetTitleSize(0.05);
-		locHist_Omega_2FCAL->GetYaxis()->SetTitle("");
-		locHist_Omega_2FCAL->GetXaxis()->SetLabelSize(0.05);
-		locHist_Omega_2FCAL->GetYaxis()->SetLabelSize(0.05);
-		locHist_Omega_2FCAL->SetLineColor(kRed);
-		locHist_Omega_2FCAL->SetLineWidth(2);
-		locHist_Omega_2FCAL->GetYaxis()->SetRangeUser(0.0, 1.05*locMaxHeight);
-		locHist_Omega_2FCAL->Draw();
-
-		locHist_Omega_2BCAL->GetXaxis()->SetTitleSize(0.05);
-		locHist_Omega_2BCAL->GetYaxis()->SetTitle("");
-		locHist_Omega_2BCAL->GetXaxis()->SetLabelSize(0.05);
-		locHist_Omega_2BCAL->GetYaxis()->SetLabelSize(0.05);
-		locHist_Omega_2BCAL->SetLineColor(kBlue);
-		locHist_Omega_2BCAL->SetLineWidth(2);
-		locHist_Omega_2BCAL->GetYaxis()->SetRangeUser(0.0, 1.05*locMaxHeight);
-		locHist_Omega_2BCAL->Draw("SAME");
-
-		locHist_Omega_Both->GetXaxis()->SetTitleSize(0.05);
-		locHist_Omega_Both->GetYaxis()->SetTitle("");
-		locHist_Omega_Both->GetXaxis()->SetLabelSize(0.05);
-		locHist_Omega_Both->GetYaxis()->SetLabelSize(0.05);
-		locHist_Omega_Both->SetLineColor(kBlack);
-		locHist_Omega_Both->SetLineWidth(2);
-		locHist_Omega_Both->GetYaxis()->SetRangeUser(0.0, 1.05*locMaxHeight);
-		locHist_Omega_Both->Draw("SAME");
-
-		TLegend *locLegend = new TLegend(0.14, 0.70, 0.39, 0.86); //botleft x/y, topright x/y
-		locLegend->SetHeader("Legend");
-		locLegend->AddEntry(locHist_Omega_2FCAL, "2#gamma in FCAL", "F");
-		locLegend->AddEntry(locHist_Omega_2BCAL, "2#gamma in BCAL", "F");
-		locLegend->AddEntry(locHist_Omega_Both, "1 #gamma in Each", "F");
-		locLegend->Draw();
-	}
-
 	//con lev
-	locCanvas->cd(3);
+	locCanvas->cd(2);
 	gPad->SetTicks();
 	gPad->SetGrid();
 	if(locHist_KinFitConLev != NULL)
@@ -167,7 +134,7 @@
 	}
 
 	//mm2
-	locCanvas->cd(4);
+	locCanvas->cd(3);
 	gPad->SetTicks();
 	gPad->SetGrid();
 	if((locHist_MM2 != NULL) && (locHist_MM2_KinFitCut != NULL))
@@ -198,7 +165,7 @@
 	}
 
 	//pi0 before/after kinfit
-	locCanvas->cd(5);
+	locCanvas->cd(4);
 	gPad->SetTicks();
 	gPad->SetGrid();
 	if((locHist_Pi0 != NULL) && (locHist_Pi0_KinFitCut != NULL))
@@ -229,7 +196,7 @@
 	}
 
 	//compare omega kinfit / measured after kinfit cut
-	locCanvas->cd(6);
+	locCanvas->cd(5);
 	gPad->SetTicks();
 	gPad->SetGrid();
 	if((locHist_KinFitOmega_KinFitCut != NULL) && (locHist_Omega_KinFitCut != NULL))
@@ -266,6 +233,90 @@
 		locLegend->AddEntry(locHist_Omega_KinFitCut, "Measured", "F");
 		locLegend->AddEntry(locHist_KinFitOmega_KinFitCut, "KinFit", "F");
 		locLegend->Draw();
+
+		n_omega_kinfit = locHist_Omega_KinFitCut->Integral(100./locNumRebin, 400./locNumRebin);
+		
+		// Determine Mass and Width
+		TF1 *fomega = new TF1("fomega", "gaus", 0.6, 0.9);
+		fomega->SetParameter(1,0.782);
+		fomega->SetParameter(2,0.03);
+		locHist_KinFitOmega_KinFitCut->Fit("fomega", "RQ0");
+		omega_mass = fomega->GetParameter(1);
+		omega_width = fomega->GetParameter(2);
+
+	}
+
+	//measured omega for 3 cases (on top of each other)
+	locCanvas->cd(6);
+	gPad->SetTicks();
+	gPad->SetGrid();
+	if((locHist_Omega_2FCAL != NULL) && (locHist_Omega_2BCAL != NULL) && (locHist_Omega_Both != NULL))
+	{
+		locHist_Omega_2FCAL->Rebin(2*locNumRebin);
+		locHist_Omega_2BCAL->Rebin(2*locNumRebin);
+		locHist_Omega_Both->Rebin(2*locNumRebin);
+
+		double locMaxHeight = locHist_Omega_2FCAL->GetBinContent(locHist_Omega_2FCAL->GetMaximumBin());
+		double locOtherHeight = locHist_Omega_2BCAL->GetBinContent(locHist_Omega_2BCAL->GetMaximumBin());
+		if(locOtherHeight > locMaxHeight)
+			locMaxHeight = locOtherHeight;
+		locOtherHeight = locHist_Omega_Both->GetBinContent(locHist_Omega_Both->GetMaximumBin());
+		if(locOtherHeight > locMaxHeight)
+			locMaxHeight = locOtherHeight;
+
+		locHist_Omega_2FCAL->SetTitle("Post KinFit Cut");
+		locHist_Omega_2FCAL->GetXaxis()->SetTitleSize(0.05);
+		locHist_Omega_2FCAL->GetYaxis()->SetTitle("");
+		locHist_Omega_2FCAL->GetXaxis()->SetLabelSize(0.05);
+		locHist_Omega_2FCAL->GetYaxis()->SetLabelSize(0.05);
+		locHist_Omega_2FCAL->SetLineColor(kRed);
+		locHist_Omega_2FCAL->SetLineWidth(2);
+		locHist_Omega_2FCAL->GetYaxis()->SetRangeUser(0.0, 1.05*locMaxHeight);
+		locHist_Omega_2FCAL->Draw();
+
+		locHist_Omega_2BCAL->GetXaxis()->SetTitleSize(0.05);
+		locHist_Omega_2BCAL->GetYaxis()->SetTitle("");
+		locHist_Omega_2BCAL->GetXaxis()->SetLabelSize(0.05);
+		locHist_Omega_2BCAL->GetYaxis()->SetLabelSize(0.05);
+		locHist_Omega_2BCAL->SetLineColor(kBlue);
+		locHist_Omega_2BCAL->SetLineWidth(2);
+		locHist_Omega_2BCAL->GetYaxis()->SetRangeUser(0.0, 1.05*locMaxHeight);
+		locHist_Omega_2BCAL->Draw("SAME");
+
+		locHist_Omega_Both->GetXaxis()->SetTitleSize(0.05);
+		locHist_Omega_Both->GetYaxis()->SetTitle("");
+		locHist_Omega_Both->GetXaxis()->SetLabelSize(0.05);
+		locHist_Omega_Both->GetYaxis()->SetLabelSize(0.05);
+		locHist_Omega_Both->SetLineColor(kBlack);
+		locHist_Omega_Both->SetLineWidth(2);
+		locHist_Omega_Both->GetYaxis()->SetRangeUser(0.0, 1.05*locMaxHeight);
+		locHist_Omega_Both->Draw("SAME");
+
+		TLegend *locLegend = new TLegend(0.14, 0.70, 0.39, 0.86); //botleft x/y, topright x/y
+		locLegend->SetHeader("Legend");
+		locLegend->AddEntry(locHist_Omega_2FCAL, "2#gamma in FCAL", "F");
+		locLegend->AddEntry(locHist_Omega_2BCAL, "2#gamma in BCAL", "F");
+		locLegend->AddEntry(locHist_Omega_Both, "1 #gamma in Each", "F");
+		locLegend->Draw();
+	}
+
+	// Print the mass, width and number of reconstructed omegas per trigger (Fitted values)
+	locCanvas->cd(2);
+	if(locHist_KinFitConLev != NULL){
+	  TLatex tx;
+	  tx.SetTextAlign(11);
+	  tx.SetTextSize(0.06);
+	  char text[100];
+	  sprintf(text, "E_{#gamma} > 7 GeV");
+	  tx.DrawLatex(0.1, locHist_KinFitConLev->GetMaximum()/4., text);
+	  sprintf(text, "Post KinFit");
+	  tx.DrawLatex(0.1, locHist_KinFitConLev->GetMaximum()/16., text);
+	  sprintf(text, "M(#omega) = %0.3f GeV/c^{2}", omega_mass);
+	  tx.DrawLatex(0.1, locHist_KinFitConLev->GetMaximum()/64., text);
+	  sprintf(text, "#Gamma(#omega) = %0.3f GeV/c^{2}", omega_width);
+	  tx.DrawLatex(0.1, locHist_KinFitConLev->GetMaximum()/256., text);
+	  sprintf(text, "N(#omega) = %0.2f / 1k Trigger", n_omega_kinfit/n_triggers*1000);
+	  tx.DrawLatex(0.1,  locHist_KinFitConLev->GetMaximum()/1024., text);
 	}
 }
 

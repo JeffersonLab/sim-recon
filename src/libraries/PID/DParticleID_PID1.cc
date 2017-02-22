@@ -230,8 +230,6 @@ jerror_t DParticleID_PID1::CalcDCdEdxChiSq(DChargedTrackHypothesis *locChargedTr
 	const DTrackTimeBased *locTrackTimeBased = locTrackTimeBasedVector[0];
 	unsigned int locNumHitsUsedFordEdx_CDC = locTrackTimeBased->dNumHitsUsedFordEdx_CDC;
 	unsigned int locNumHitsUsedFordEdx_FDC = locTrackTimeBased->dNumHitsUsedFordEdx_FDC;
-	
-	
 
 	bool locUseCDCHitsFlag = (locNumHitsUsedFordEdx_CDC >= locMinimumNumberUsedHitsForConfidence) ? true : false;
 	bool locUseFDCHitsFlag = (locNumHitsUsedFordEdx_FDC >= locMinimumNumberUsedHitsForConfidence) ? true : false;

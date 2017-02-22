@@ -18,6 +18,7 @@ using namespace jana;
 #include "TTAB/DTranslationTable.h"
 #include "FCAL/DFCALGeometry.h"
 #include "BCAL/DBCALGeometry.h"
+#include "TRIGGER/DTrigger.h"
 #include "HistogramTools.h"
 
 extern "C"{
@@ -90,9 +91,11 @@ jerror_t JEventProcessor_HLDetectorTiming::init(void)
 
     if (DO_TRACK_BASED){
         NBINS_TAGGER_TIME = 1600; MIN_TAGGER_TIME = -200; MAX_TAGGER_TIME = 400;
-        NBINS_MATCHING = 500; MIN_MATCHING_T = -100; MAX_MATCHING_T = 400;
-    }
-    else{
+        NBINS_MATCHING = 1000; MIN_MATCHING_T = -100; MAX_MATCHING_T = 400;
+    } else if (DO_VERIFY){
+        NBINS_TAGGER_TIME = 200; MIN_TAGGER_TIME = -20; MAX_TAGGER_TIME = 20;
+        NBINS_MATCHING = 1000; MIN_MATCHING_T = -10; MAX_MATCHING_T = 10;
+    } else{
         NBINS_TAGGER_TIME = 100; MIN_TAGGER_TIME = -50; MAX_TAGGER_TIME = 50;
         NBINS_MATCHING = 100; MIN_MATCHING_T = -10; MAX_MATCHING_T = 10;
     }
@@ -137,6 +140,11 @@ jerror_t JEventProcessor_HLDetectorTiming::brun(JEventLoop *eventLoop, int32_t r
 //------------------
 jerror_t JEventProcessor_HLDetectorTiming::evnt(JEventLoop *loop, uint64_t eventnumber)
 {
+    // select events with physics events, i.e., not LED and other front panel triggers
+    const DTrigger* locTrigger = NULL; 
+    loop->GetSingle(locTrigger); 
+    if(locTrigger->Get_L1FrontPanelTriggerBits() != 0) 
+      return NOERROR;
 
     // Get the EPICs events and update beam current. Skip event if current too low (<10 nA).
     vector<const DEPICSvalue *> epicsValues;
@@ -664,7 +672,7 @@ jerror_t JEventProcessor_HLDetectorTiming::evnt(JEventLoop *loop, uint64_t event
            Fill1DHistogram("HLDetectorTiming", "TRACKING", "Earliest CDC Time Minus Matched SC Time",
                  earliestTime - locSCHitMatchParams->dHitTime,
                  "Earliest CDC Time Minus Matched SC Time; t_{CDC} - t_{SC} [ns];",
-                 200, -50, 150);
+                 400, -50, 150);
         }
 
         // Loop over TAGM hits

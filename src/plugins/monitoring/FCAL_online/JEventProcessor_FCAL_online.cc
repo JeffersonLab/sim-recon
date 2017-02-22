@@ -76,9 +76,7 @@ jerror_t JEventProcessor_FCAL_online::init(void) {
 
   m_digInt = new TH1I( "digHitE", "FCAL Raw Pulse Integral; Integral [2 V * 4 ns / 4096]; Pulses / ( 100 * 2 V * 4 ns / 4096 )", 300, 0, 30000 );
   m_digCoarseT = new TH1I( "digCoarseTime", "FCAL Raw Pulse Coarse Time; Time [4 ns]; Pulses / 4 ns", 100, 0, 100 );
-  
-  //m_multihit = new TProfile( "MultiHit", "Multiple Hits vs. Channel; Channel Index; Multi Hit Frequency", 2800,-0.5, 2799.5 );
-  
+    
   m_digCoarseTChan = new TProfile( "digCoarseTChan", "FCAL Coarse Time vs. Channel; Channel Index; Average Time [4 ns]",
 				   2800,-0.5, 2799.5 );
   m_digPreciseT = new TH1I( "digPreciseT", "FCAL Raw Pulse Precise Time; Time [62.5 ps]; Pulses / 62.5 ps", 64, -0.5, 63.5 );
@@ -282,7 +280,7 @@ jerror_t JEventProcessor_FCAL_online::evnt(JEventLoop *eventLoop, uint64_t event
 
 	// FILL HISTOGRAMS
 	// Since we are filling histograms local to this plugin, it will not interfere with other ROOT operations: can use plugin-wide ROOT fill lock
-	japp->RootFillLock(this); //ACQUIRE ROOT FILL LOCK
+    japp->RootFillLock(this); //ACQUIRE ROOT FILL LOCK
 
   if( digiHits.size() > 0 )
 	  fcal_num_events->Fill(1);
@@ -292,61 +290,13 @@ jerror_t JEventProcessor_FCAL_online::evnt(JEventLoop *eventLoop, uint64_t event
   
   //std::cout << "Number of blocks hit: " << digiHits.size() << endl;
   
-  /*
-  vector < pair<int,int> > block;
-  vector <int> repchan;
-  std::map <int, int> multiple;
-  
-if( digiHits.size() > 0 ){
-
- for( vector< const DFCALDigiHit* >::const_iterator dHitItr1 = digiHits.begin();
-       dHitItr1 != digiHits.end(); ++dHitItr1 ){
-
-    const DFCALDigiHit& hit1 = (**dHitItr1);
-    //cout << "EventNumber: " << eventnumber << " Row1: " << hit1.row << " Column1: " << hit1.column <<" Time: " << hit1.pulse_time <<endl;
-    
-    
-     int r1 = hit1.row;
-     int c1 = hit1.column;
-    int chan = fcalGeom.channel( hit1.row, hit1.column );
-    block.push_back(std::make_pair(r1,c1));
-    repchan.push_back(chan);
-   
-    }
-    
-    
-    //  std::cout << "Number of blocks hit: " << repchan.size() << endl;
-    
-   // if ( repchan.size() >0 ) {
-     for(  int i = 0; i < repchan.size(); ++i ){
-    int mycount = std::count (repchan.begin(), repchan.end(), repchan[i]);
-    if (mycount > 1) {
- // std::cout << repchan[i] << "\t" << mycount  << " times" << endl;
-  
-     multiple[repchan[i]] = mycount;
-      
-                }
- 					}
-  }
- // cout << "Size of map: " << multiple.size() << endl;
- 
-     if (multiple.size() > 0){
-  for ( map<int,int>::iterator ii=multiple.begin(); ii!=multiple.end(); ++ii){
- // cout << (*ii).first << (*ii).second << endl;
-  int mulchan = (*ii).first;
-  int freq = (*ii).second;
-  m_multihit->Fill( mulchan, freq );
-  }
-  }
-  */
   
   for( vector< const DFCALDigiHit* >::const_iterator dHitItr = digiHits.begin();
        dHitItr != digiHits.end(); ++dHitItr ){
 
     const DFCALDigiHit& dHit = (**dHitItr);
     
-  //  std::cout << "EventNumber: " << eventnumber << " Row: " << dHit.row << " Column: " << dHit.column << " Number of blocks hit: " << digiHits.size() << endl; 
-
+  
     int chan = fcalGeom.channel( dHit.row, dHit.column );
     
        m_digOcc2D->Fill( dHit.column, dHit.row );
@@ -379,7 +329,7 @@ if( digiHits.size() > 0 ){
             nsamples_pedestal = 1;
         }
 
-      double peakV = pulsePed->pulse_peak * 2.0 / 4096;
+        double peakV = pulse_peak * 2.0 / 4096;
       
       m_digPeakV->Fill( peakV );
       m_digPeakV2D->Fill( dHit.column, dHit.row, peakV );
@@ -397,8 +347,8 @@ if( digiHits.size() > 0 ){
 				    nsamples_integral/nsamples_pedestal ) );
       double peak = (double)( pulse_peak - pedestal/nsamples_pedestal );
 
-      if( pulsePed->pulse_peak > 300 )
-	m_digIntToPeak->Fill( integral / peak );
+      if( pulse_peak > 300 )
+          m_digIntToPeak->Fill( integral / peak );
     }
 
     // pulse_time is a 15-bit int - the lower six bits are

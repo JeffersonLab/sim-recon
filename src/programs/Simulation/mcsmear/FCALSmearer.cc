@@ -9,7 +9,7 @@ fcal_config_t::fcal_config_t(JEventLoop *loop, DFCALGeometry *fcalGeom)
 	FCAL_PHOT_STAT_COEF   = 0.0; //0.035;
 	FCAL_BLOCK_THRESHOLD  = 0.0; //20.0*k_MeV;
 	// FCAL_TSIGMA           = 0.0; // 200 ps
-	FCAL_TSIGMA           = 0.2; // 200 ps - FIX THIS!!
+	FCAL_TSIGMA           = 0.; // 400 ps 
 
 	// Get values from CCDB
 	cout << "Get FCAL/fcal_parms parameters from CCDB..." << endl;
@@ -33,14 +33,25 @@ fcal_config_t::fcal_config_t(JEventLoop *loop, DFCALGeometry *fcalGeom)
      
     cout<<"get FCAL/digi_scales parameters from calibDB"<<endl;
     map<string, double> fcaldigiscales;
-    loop->GetCalib("FCAL/digi_scales", fcaldigiscales);
-    FCAL_MC_ESCALE = fcaldigiscales["FCAL_ADC_ASCALE"];
+    if(loop->GetCalib("FCAL/digi_scales", fcaldigiscales)) {
+    	jerr << "Problem loading FCAL/digi_scales from CCDB!" << endl;
+    } else {
+        FCAL_MC_ESCALE = fcaldigiscales["FCAL_ADC_ASCALE"];
+    }
+
+    cout<<"get FCAL/mc_timing_smear parameters from calibDB"<<endl;
+    map<string, double> fcalmctimingsmear;
+    if(loop->GetCalib("FCAL/mc_timing_smear", fcalmctimingsmear)) {
+    	jerr << "Problem loading FCAL/mc_timing_smear from CCDB!" << endl;
+    } else {
+        FCAL_TSIGMA = fcalmctimingsmear["FCAL_TSIGMA"];
+    }
 
 	// initialize 2D matrix of efficiencies, indexed by (row,column)
 	vector< vector<double > > new_block_efficiencies(DFCALGeometry::kBlocksTall, 
             vector<double>(DFCALGeometry::kBlocksWide));
 	block_efficiencies = new_block_efficiencies;
-	
+
 	// load efficiencies from CCDB and fill 
 	vector<double> raw_table;
 	if(loop->GetCalib("FCAL/block_mc_efficiency", raw_table)) {

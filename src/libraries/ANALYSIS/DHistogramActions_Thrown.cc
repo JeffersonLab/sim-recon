@@ -343,12 +343,6 @@ bool DHistogramAction_ParticleComboGenReconComparison::Perform_Action(JEventLoop
 		return true; //no fit performed, but kinfit data requested!!
 	}
 
-	if(Get_NumPreviousParticleCombos() == 0)
-	{
-		dPreviouslyHistogrammedParticles.clear();
-		dPreviouslyHistogrammedBeamParticles.clear();
-	}
-
 	vector<const DMCThrown*> locMCThrowns;
 	locEventLoop->Get(locMCThrowns);
 	if(locMCThrowns.empty())
@@ -480,7 +474,7 @@ void DHistogramAction_ParticleComboGenReconComparison::Fill_ChargedHists(const D
 	double locDeltaPhi = locChargedTrackHypothesis->momentum().Phi()*180.0/TMath::Pi() - locMCThrown->momentum().Phi()*180.0/TMath::Pi();
 	double locDeltaT = locChargedTrackHypothesis->time() - locMCThrown->time(); //time comparison isn't fair if track comes from a detached vertex!!!
 	double locDeltaVertexZ = locChargedTrackHypothesis->position().Z() - locMCThrown->position().Z();
-	const TMatrixDSym& locCovarianceMatrix = locChargedTrackHypothesis->errorMatrix();
+	const TMatrixDSym& locCovarianceMatrix = *(locChargedTrackHypothesis->errorMatrix());
 
 	double locStartTime = locThrownEventRFBunch->dTime + (locMCThrown->z() - dTargetZCenter)/29.9792458;
 	double locTimePull = (locStartTime - locChargedTrackHypothesis->time())/sqrt(locCovarianceMatrix(6, 6));
@@ -585,7 +579,7 @@ void DHistogramAction_ParticleComboGenReconComparison::Fill_NeutralHists(const D
 	double locDeltaPhi = locNeutralP3.Phi()*180.0/TMath::Pi() - locMCThrown->momentum().Phi()*180.0/TMath::Pi();
 	double locDeltaT = locNeutralParticleHypothesis->time() - locMCThrown->time(); //time comparison isn't fair if track comes from a detached vertex!!!
 	double locDeltaVertexZ = locNeutralParticleHypothesis->position().Z() - locMCThrown->position().Z();
-	const TMatrixDSym& locCovarianceMatrix = locNeutralParticleHypothesis->errorMatrix();
+	const TMatrixDSym& locCovarianceMatrix = *(locNeutralParticleHypothesis->errorMatrix());
 
 	double locStartTime = locThrownEventRFBunch->dTime + (locMCThrown->z() - dTargetZCenter)/29.9792458;
 	double locTimePull = (locStartTime - locNeutralParticleHypothesis->time())/sqrt(locCovarianceMatrix(6, 6));
@@ -1313,7 +1307,7 @@ bool DHistogramAction_GenReconTrackComparison::Perform_Action(JEventLoop* locEve
 		locDeltaPhi = locChargedTrackHypothesis->momentum().Phi()*180.0/TMath::Pi() - locMCThrown->momentum().Phi()*180.0/TMath::Pi();
 		locDeltaT = locChargedTrackHypothesis->time() - locMCThrown->time(); //time comparison isn't fair if track comes from a detached vertex!!!
 		locDeltaVertexZ = locChargedTrackHypothesis->position().Z() - locMCThrown->position().Z();
-		const TMatrixDSym& locCovarianceMatrix = locChargedTrackHypothesis->errorMatrix();
+		const TMatrixDSym& locCovarianceMatrix = *(locChargedTrackHypothesis->errorMatrix());
 
 		vector<const DTrackTimeBased*> locTrackTimeBasedVector;
 		locChargedTrackHypothesis->Get(locTrackTimeBasedVector);
@@ -1435,7 +1429,7 @@ bool DHistogramAction_GenReconTrackComparison::Perform_Action(JEventLoop* locEve
 		locDeltaPhi = locNeutralParticleHypothesis->momentum().Phi()*180.0/TMath::Pi() - locMCThrown->momentum().Phi()*180.0/TMath::Pi();
 		locDeltaT = locNeutralParticleHypothesis->time() - locMCThrown->time(); //time comparison isn't fair if track comes from a detached vertex!!!
 		locDeltaVertexZ = locNeutralParticleHypothesis->position().Z() - locMCThrown->position().Z();
-		const TMatrixDSym& locCovarianceMatrix = locNeutralParticleHypothesis->errorMatrix();
+		const TMatrixDSym& locCovarianceMatrix = *(locNeutralParticleHypothesis->errorMatrix());
 
 		double locStartTime = locThrownEventRFBunch->dTime + (locMCThrown->z() - dTargetZCenter)/29.9792458;
 		double locTimePull = (locStartTime - locNeutralParticleHypothesis->time())/sqrt(locCovarianceMatrix(6, 6));
@@ -1728,9 +1722,6 @@ bool DHistogramAction_TruePID::Perform_Action(JEventLoop* locEventLoop, const DP
 	double locP, locTheta;
 	const DMCThrown* locMCThrown;
 	Particle_t locPID;
-
-	if(Get_NumPreviousParticleCombos() == 0)
-		dPreviouslyHistogrammedParticles.clear();
 
 	deque<const DKinematicData*> locParticles;
 	int locComboTruePIDStatus = 1;
