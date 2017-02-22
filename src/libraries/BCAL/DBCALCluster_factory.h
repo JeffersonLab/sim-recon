@@ -26,9 +26,12 @@ using namespace jana;
 class DBCALCluster_factory : public JFactory< DBCALCluster > {
   
 public:
-  
+ 
   DBCALCluster_factory();
   ~DBCALCluster_factory(){}
+  
+  //double slope;
+  //double y_intercept;
   
 private:
 
@@ -55,7 +58,7 @@ private:
                 const DBCALPoint* point ) const;
  
   bool overlap_charged( const DBCALCluster& clust, 
-			const DBCALPoint* point, DVector3 track_pos ) const;
+			const DBCALPoint* point, DVector3 track_pos, float slope, float y_intercept, float tracked_phi ) const;
  
   bool overlap( const DBCALCluster& clust, 
                 const DBCALUnifiedHit* hit ) const; 
