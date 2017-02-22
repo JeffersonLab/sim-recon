@@ -41,7 +41,6 @@ class DBeamCurrent_factory:public jana::JFactory<DBeamCurrent>{
 		// Return the total integrated time of the run.
 		double IntegratedTime(void);
 		
-	private:
 		jerror_t init(void);						///< Called once at program start.
 		jerror_t brun(jana::JEventLoop *eventLoop,  int32_t runnumber);	///< Called everytime a new run number is detected.
 		jerror_t evnt(jana::JEventLoop *eventLoop, uint64_t eventnumber);	///< Called every event.

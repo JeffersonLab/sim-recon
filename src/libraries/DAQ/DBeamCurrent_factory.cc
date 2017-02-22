@@ -196,26 +196,17 @@ double DBeamCurrent_factory::IntegratedFiducialTime(double t_start, double t_end
 	///
 	
 	
-	// Max time of run
-	double t_max = IntegratedTime();
-
 	// Loop over start of "recover" regions
 	double t_fiducial = 0.0; // total fiducial time so far
 	double t = t_start;      // point we have already integrated to
 	for(double t1 : recover){
 	
 		// check if next recovery region starts after where we are
-		if(t1 > t){
-			t = t1;
-			continue;
-		}
+		if(t1 > t)t = t1;
 	
 		// find start of next "tripped" region
-		auto it = upper_bound(trip.begin(), trip.end(), t1);
-		double t2 = it == trip.end() ? t_max:*it;
-		
-		// check if next trip is before our current position
-		if(t2 < t) continue;
+		double t2 = t_end;
+		for(double tt : trip)if(tt>t || tt>t_end){t2 = tt; break;}
 		
 		// At this point t is between t1 and t2 (possibly at t1)
 		// which is a beam "ON" region. Calculate time in this
