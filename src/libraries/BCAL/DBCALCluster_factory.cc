@@ -690,12 +690,14 @@ DBCALCluster_factory::overlap_charged( const DBCALCluster& clust,
 	cout << " slope2 = " << slope2 << " y int 2 = " << y_intercept2 << " point r = " << point->r() << " r sum = " << summed_r << " phhi sum = " << summed_phi << " summed rsq = " << summed_r_sq << " summed rphi = " << summed_rphi << " assoc point size = " << assoc_points.size() <<  endl;
 
 	float fit_phi = 0.;
+	float fit_phi2 = 0.;
 
 	fit_phi = slope*point->r() + y_intercept;
 
 //	fit_phi = charged_fit->Eval(point->r());
 
 //	fit_phi = slope2*point->r() + y_intercept2;
+	fit_phi2 = slope2*point->r() + y_intercept2;
 //	else fit_phi = charged_fit->Eval(point->r());
 
 //	cout << " fit phi eval = " << charged_fit->Eval(point->r()) << " fit phi = " << fit_phi << " point phi = " << point->phi() << endl;
@@ -731,7 +733,7 @@ DBCALCluster_factory::overlap_charged( const DBCALCluster& clust,
 	float sep_term1 = rho*deltaTheta;
 	float sep_term2 = rho*sin(theta)*deltaPhi;
 
-	cout << " fit phi = " << fit_phi*TMath::RadToDeg() << " clut phi = " << clust.phi()*TMath::RadToDeg() << " delta phi = " << deltaPhi << " sep2 = " << sep_term2 << endl;
+	cout << " fit phi = " << fit_phi*TMath::RadToDeg() << " fit phi 2 = " << fit_phi2*TMath::RadToDeg() <<  " clut phi = " << clust.phi()*TMath::RadToDeg() << " delta phi = " << deltaPhi << " sep2 = " << sep_term2 << endl;
 
 	//very loose cuts to make sure the two hits are in time
 	bool time_match = fabs(clust.t() - point->t()) < m_timeCut;
