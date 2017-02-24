@@ -57,7 +57,7 @@ jerror_t DBeamCurrent_factory::brun(jana::JEventLoop *loop, int32_t runnumber)
 	// method in JEventLoop, it will try parsing the string and 
 	// return more than a 1 element map.
 	map<string,string> mstr;
-	loop->GetJCalibration()->GetCalib("/PHOTON_BEAM/electron_beam_current", mstr);
+	loop->GetJCalibration()->GetCalib("/ELECTRON_BEAM/current_map_epics", mstr);
 	if(mstr.empty()) return NOERROR;
 
 	string &electron_beam_current = mstr.begin()->second;
