@@ -603,6 +603,9 @@ void DEVIOWorkerThread::ParseControlEvent(uint32_t* &iptr, uint32_t *iend)
 {
 	for(auto pe : current_parsed_events) pe->event_status_bits |= (1<<kSTATUS_CONTROL_EVENT);
 
+	time_t t = (time_t)iptr[2];
+_DBG_<<"Control event type: " << (iptr[1]>>16) << "  " << ctime(&t) <<endl;
+
 	iptr = &iptr[(*iptr) + 1];
 }
 
