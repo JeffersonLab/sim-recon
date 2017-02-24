@@ -23,6 +23,7 @@ bool PRINT_FIDUCIAL = false;
 bool PRINT_TOTAL = false;
 bool PRINT_TRIP_TIME = false;
 bool PRINT_NTRIPS = false;
+bool PRINT_TRIPS = false;
 double BEAM_TRIP_MIN_T = 3.0; // seconds
 double BEAM_ON_MIN_nA = 10.0; // nA
 double T_MIN = 0.0;
@@ -102,6 +103,14 @@ int main(int narg, char *argv[])
 	cout << "           Ntrips: " << Ntrips << endl;
 	cout << "         trips/hr: "  << (float)Ntrips/(float)(T_MAX - T_MIN)*3600.0 << endl;
 	cout << "    avg. Ibeam ON: " << Ibeam_avg << " nA" << endl;
+
+	if(PRINT_TRIPS){
+		cout << endl;
+		cout << "Trip times relative to start of run in seconds:" << endl;
+		for(auto t : fac->trip) cout << t << endl;
+		cout << endl;
+	}
+
 	cout << "--------------------------------------------" << endl;
 	cout << endl;
 
@@ -123,6 +132,7 @@ void Usage(void)
 // 	cout<<"    -ttotal       Report the total time (sec)"<<endl;
 // 	cout<<"    -ttrips       Report the total tripped time (sec)"<<endl;
 // 	cout<<"    -Ntrips       Report the total number of beam trips" << endl;
+ 	cout<<"    -trips        Report times of all identified trips" << endl;
 	cout<<"    -tbuffer   #  Set the buffer time to exclude near trips (sec)"<<endl;
 	cout<<"    -tmin      #  Set the minimum of the time range (sec)"<<endl;
 	cout<<"    -tmax      #  Set the maximum of the time range (sec)"<<endl;
@@ -169,10 +179,11 @@ void ParseCommandLineArgs(int narg, char* argv[])
 		float argf = atof(next.c_str());
 		bool used_next = false; // keep track if "next" is used so we can have a single error check below
 
-		if(arg=="-tfiducial"){PRINT_FIDUCIAL=true;  QUIET=true;}
-		if(arg=="-ttotal"   ){PRINT_TOTAL=true;     QUIET=true;}
-		if(arg=="-ttrips"   ){PRINT_TRIP_TIME=true; QUIET=true;;}
-		if(arg=="-Ntrips"   ){PRINT_NTRIPS=true;    QUIET=true;}
+// 		if(arg=="-tfiducial"){PRINT_FIDUCIAL=true;  QUIET=true;}
+// 		if(arg=="-ttotal"   ){PRINT_TOTAL=true;     QUIET=true;}
+// 		if(arg=="-ttrips"   ){PRINT_TRIP_TIME=true; QUIET=true;;}
+// 		if(arg=="-Ntrips"   ){PRINT_NTRIPS=true;    QUIET=true;}
+ 		if(arg=="-trips"    ){PRINT_TRIPS=true;    QUIET=true;}
 		if(arg=="-tbuffer"  ){used_next=true; BEAM_TRIP_MIN_T = argf;}
 		if(arg=="-tmin"     ){used_next=true; T_MIN = argf;}
 		if(arg=="-tmax"     ){used_next=true; T_MAX = argf;}
