@@ -107,7 +107,7 @@ bool DCustomAction_CutNoDetectorHit::Perform_Action(JEventLoop* locEventLoop, co
 	DReferenceTrajectory rt(dMagneticFieldMap);
 	rt.SetMass(ParticleMass(dMissingPID));
 	rt.q = ParticleCharge(dMissingPID);
-	rt.FastSwim(locMissingParticle->position(), locMissingParticle->momentum(), rt.q);
+	rt.Swim(locMissingParticle->position(), locMissingParticle->momentum(), rt.q);
 
 	vector<const DBCALShower*> locBCALShowers;
 	locEventLoop->Get(locBCALShowers);
