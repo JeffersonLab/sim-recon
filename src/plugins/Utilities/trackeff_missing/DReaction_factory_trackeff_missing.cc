@@ -500,7 +500,7 @@ void DReaction_factory_trackeff_missing::Add_MassCuts(DReaction* locReaction, bo
 		if(locCutPair.first >= 0.0)
 			locMassCut = new DCutAction_MissingMass(locReaction, locDecayFromStep, locMissingMassOffOfPIDs, locKinFitFlag, locCutPair.first, locCutPair.second);
 		else
-			locMassCut = new DCutAction_MissingMassSquared(locReaction, locDecayFromStep, locMissingMassOffOfPIDs, locKinFitFlag, locCutPair.first, locCutPair.second));
+			locMassCut = new DCutAction_MissingMassSquared(locReaction, locDecayFromStep, locMissingMassOffOfPIDs, locKinFitFlag, locCutPair.first, locCutPair.second);
 
 		//add the cut
 		if(locKinFitFlag)
