@@ -590,8 +590,8 @@ void DReaction_factory_trackeff_missing::Add_MassHistograms(DReaction* locReacti
 
 		//add the cut
 		if(locCutPair.first >= 0.0)
-			locReaction->Add_AnalysisAction(new DHistogramAction_MissingMass(locReaction, locDecayFromStep, locMissingMassOffOfPIDs, locKinFitFlag, locNumBins, locCutPair.first, locCutPair.second));
+			locReaction->Add_AnalysisAction(new DHistogramAction_MissingMass(locReaction, locDecayFromStep, locMissingMassOffOfPIDs, locKinFitFlag, locNumBins, locCutPair.first, locCutPair.second, locActionUniqueName));
 		else
-			locReaction->Add_AnalysisAction(new DHistogramAction_MissingMassSquared(locReaction, locDecayFromStep, locMissingMassOffOfPIDs, locKinFitFlag, locNumBins, locCutPair.first, locCutPair.second));
+			locReaction->Add_AnalysisAction(new DHistogramAction_MissingMassSquared(locReaction, locDecayFromStep, locMissingMassOffOfPIDs, locKinFitFlag, locNumBins, locCutPair.first, locCutPair.second, locActionUniqueName));
 	}
 }
