@@ -130,7 +130,6 @@ bool DCustomAction_CutNoDetectorHit::Perform_Action(JEventLoop* locEventLoop, co
 	double locBCALProjectedZ = locProjPos.Z();
 	double locBCALDeltaPhi = locBestBCALMatchParams.dDeltaPhiToShower*180.0/TMath::Pi();
 
-
 	// MATCHING: FCAL
 	DFCALShowerMatchParams locBestFCALMatchParams;
 	locStartTime = locParticleCombo->Get_ParticleComboStep(0)->Get_SpacetimeVertex().T();
@@ -143,7 +142,6 @@ bool DCustomAction_CutNoDetectorHit::Perform_Action(JEventLoop* locEventLoop, co
 	double locSCProjectedZ = locProjPos.Z();
 	double locSCDeltaPhi = locBestSCMatchParams.dDeltaPhiToHit*180.0/TMath::Pi();
 
-
 	// MATCHING: TOF
 	DTOFHitMatchParams locBestTOFMatchParams;
 	locStartTime = locParticleCombo->Get_ParticleComboStep(0)->Get_SpacetimeVertex().T();
@@ -151,7 +149,6 @@ bool DCustomAction_CutNoDetectorHit::Perform_Action(JEventLoop* locEventLoop, co
 	double locDeltaX = locBestTOFMatchParams.dDeltaXToHit;
 	double locDeltaY = locBestTOFMatchParams.dDeltaYToHit;
 	double locTOFDistance = sqrt(locDeltaX*locDeltaX + locDeltaY*locDeltaY);
-
 
 	//FILL HISTOGRAMS
 	//Since we are filling histograms local to this action, it will not interfere with other ROOT operations: can use action-wide ROOT lock

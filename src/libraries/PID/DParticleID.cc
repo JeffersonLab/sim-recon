@@ -956,7 +956,7 @@ bool DParticleID::ProjectTo_SC(const DReferenceTrajectory* rt, unsigned int locS
 
 		// Check to see if the projections changed their mind, and put the hit in the straight section after all
 		if(locProjPos.Z() < sc_pos_eoss) // Assume hit at end of straight section
-			locProjPos.SetZ(sc_pos_eoss);
+			locProjPos.SetZ(sc_pos_eoss + 0.0001); //some tolerance
 	}
 
 	while(locDeltaPhi > TMath::Pi())
