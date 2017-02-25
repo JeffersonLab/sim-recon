@@ -33,7 +33,6 @@ jerror_t JEventProcessor_SC_Eff::init(void)
 	//action initialize not necessary: is empty
 	dMaxPIDDeltaTMap[SYS_BCAL] = 1.0;
 	dMaxPIDDeltaTMap[SYS_TOF] = 1.0;
-	dLooseSCDeltaPhiCut = 99999.9; //intentionally wide: accept and save all: for sideband subtraction
 
 	TDirectory* locOriginalDir = gDirectory;
 	gDirectory->mkdir("SC_Eff")->cd();
@@ -186,7 +185,7 @@ jerror_t JEventProcessor_SC_Eff::evnt(jana::JEventLoop* locEventLoop, uint64_t l
 		//Predict ST Surface Hit Location
 		DVector3 locPredictedSurfacePosition;
 		bool locProjBarrelRegion = false;
-		unsigned int locPredictedSCSector = locParticleID->PredictSCSector(locTrackTimeBased->rt, 999.0, &locPredictedSurfacePosition, &locProjBarrelRegion);
+		unsigned int locPredictedSCSector = locParticleID->PredictSCSector(locTrackTimeBased->rt, &locPredictedSurfacePosition, &locProjBarrelRegion);
 
 		//Save for hist if is matched
 		pair<int, double> locHitPair(locPredictedSCSector, locPredictedSurfacePosition.Z());
@@ -223,7 +222,7 @@ jerror_t JEventProcessor_SC_Eff::evnt(jana::JEventLoop* locEventLoop, uint64_t l
 			const DSCHit* locSCHit = locSCHits[loc_i];
 
 			DSCHitMatchParams locSCHitMatchParams;
-			if(!locParticleID->MatchToSC(locTrackTimeBased, locTrackTimeBased->rt, locSCHit, locTrackTimeBased->t0(), locSCHitMatchParams, true, &dLooseSCDeltaPhiCut))
+			if(!locParticleID->Distance_ToTrack(locTrackTimeBased->rt, locSCHit, locTrackTimeBased->t0(), locSCHitMatchParams))
 				continue;
 
 			double locDeltaT = locSCHitMatchParams.dHitTime - locSCHitMatchParams.dFlightTime - locChargedTrackHypothesis->time();

@@ -467,9 +467,9 @@ void DReferenceTrajectory::FastSwim(const DVector3 &pos, const DVector3 &mom, do
     // Exit loop if we leave the tracking volume
     if (z>zmax){Nswim_steps++; break;} 
     if(Rsq>Rsqmax_exterior && z<407.0){Nswim_steps++; break;} // ran into BCAL
-    if (fabs(swim_step->origin.X())>129.  
-	|| fabs(swim_step->origin.Y())>129.)
-      {Nswim_steps++; break;} // left extent of TOF 
+    if (fabs(swim_step->origin.X())>160.0
+	|| fabs(swim_step->origin.Y())>160.0)
+      {Nswim_steps++; break;} // left extent of TOF + 31cm Buffer
     if(z>670.0){Nswim_steps++; break;} // ran into FCAL
     if(z<zmin){Nswim_steps++; break;} // exit upstream
     
@@ -746,9 +746,9 @@ void DReferenceTrajectory::Swim(const DVector3 &pos, const DVector3 &mom, double
 		
 		// Exit loop if we leave the tracking volume
 		if(Rsq>Rsqmax_exterior && z<407.0){Nswim_steps++; break;} // ran into BCAL
-		if (fabs(swim_step->origin.X())>129.  
-		    || fabs(swim_step->origin.Y())>129.)
-		  {Nswim_steps++; break;} // left extent of TOF 
+		if (fabs(swim_step->origin.X())>160.0
+		    || fabs(swim_step->origin.Y())>160.0)
+		  {Nswim_steps++; break;} // left extent of TOF + 31cm Buffer
 		if(z>zmax_track_boundary){Nswim_steps++; break;} // ran into FCAL
 		if(z<zmin_track_boundary){Nswim_steps++; break;} // exit upstream
 		if(wire && Nswim_steps>0){ // optionally check if we passed a wire we're supposed to be swimming to

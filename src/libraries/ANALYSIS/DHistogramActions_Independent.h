@@ -243,7 +243,7 @@ class DHistogramAction_DetectorMatching : public DAnalysisAction
 		DHistogramAction_DetectorMatching(const DReaction* locReaction, string locActionUniqueString = "") :
 		DAnalysisAction(locReaction, "Hist_DetectorMatching", false, locActionUniqueString),
 		dNum2DThetaBins(280), dNum2DPBins(250), dNum2DPhiBins(360), dNum2DDeltaPhiBins(300), dNum2DDeltaZBins(300), dNum2DTrackDOCABins(200),
-		dNumTrackDOCABins(400), dNumFCALTOFXYBins(260), dNum2DBCALZBins(450), dMinP(0.0), dMaxP(10.0), dMinTheta(0.0), dMaxTheta(140.0),
+		dNumTrackDOCABins(400), dNumFCALTOFXYBins(260), dNum2DBCALZBins(450), dNum2DSCZBins(240), dMinP(0.0), dMaxP(10.0), dMinTheta(0.0), dMaxTheta(140.0),
 		dMinPhi(-180.0), dMaxPhi(180.0), dSCMatchMinDeltaPhi(-60.0), dSCMatchMaxDeltaPhi(60.0), dMinTrackDOCA(0.0), dMaxTrackMatchDOCA(20.0),
 		dMinDeltaPhi(-30.0), dMaxDeltaPhi(30.0), dMinDeltaZ(-30.0), dMaxDeltaZ(30.0),
 		dMinTrackingFOM(0.0027), dMinTOFPaddleMatchDistance(9.0), dMinHitRingsPerCDCSuperlayer(2), dMinHitPlanesPerFDCPackage(4) {}
@@ -251,7 +251,7 @@ class DHistogramAction_DetectorMatching : public DAnalysisAction
 		DHistogramAction_DetectorMatching(string locActionUniqueString) :
 		DAnalysisAction(NULL, "Hist_DetectorMatching", false, locActionUniqueString),
 		dNum2DThetaBins(280), dNum2DPBins(250), dNum2DPhiBins(360), dNum2DDeltaPhiBins(300), dNum2DDeltaZBins(300), dNum2DTrackDOCABins(200),
-		dNumTrackDOCABins(400), dNumFCALTOFXYBins(260), dNum2DBCALZBins(450), dMinP(0.0), dMaxP(10.0), dMinTheta(0.0), dMaxTheta(140.0),
+		dNumTrackDOCABins(400), dNumFCALTOFXYBins(260), dNum2DBCALZBins(450), dNum2DSCZBins(240), dMinP(0.0), dMaxP(10.0), dMinTheta(0.0), dMaxTheta(140.0),
 		dMinPhi(-180.0), dMaxPhi(180.0), dSCMatchMinDeltaPhi(-60.0), dSCMatchMaxDeltaPhi(60.0), dMinTrackDOCA(0.0), dMaxTrackMatchDOCA(20.0),
 		dMinDeltaPhi(-30.0), dMaxDeltaPhi(30.0), dMinDeltaZ(-30.0), dMaxDeltaZ(30.0),
 		dMinTrackingFOM(0.0027), dMinTOFPaddleMatchDistance(9.0), dMinHitRingsPerCDCSuperlayer(2), dMinHitPlanesPerFDCPackage(4) {}
@@ -259,7 +259,7 @@ class DHistogramAction_DetectorMatching : public DAnalysisAction
 		DHistogramAction_DetectorMatching(void) :
 		DAnalysisAction(NULL, "Hist_DetectorMatching", false, ""),
 		dNum2DThetaBins(280), dNum2DPBins(250), dNum2DPhiBins(360), dNum2DDeltaPhiBins(300), dNum2DDeltaZBins(300), dNum2DTrackDOCABins(200),
-		dNumTrackDOCABins(400), dNumFCALTOFXYBins(260), dNum2DBCALZBins(450), dMinP(0.0), dMaxP(10.0), dMinTheta(0.0), dMaxTheta(140.0),
+		dNumTrackDOCABins(400), dNumFCALTOFXYBins(260), dNum2DBCALZBins(450), dNum2DSCZBins(240), dMinP(0.0), dMaxP(10.0), dMinTheta(0.0), dMaxTheta(140.0),
 		dMinPhi(-180.0), dMaxPhi(180.0), dSCMatchMinDeltaPhi(-60.0), dSCMatchMaxDeltaPhi(60.0), dMinTrackDOCA(0.0), dMaxTrackMatchDOCA(20.0),
 		dMinDeltaPhi(-30.0), dMaxDeltaPhi(30.0), dMinDeltaZ(-30.0), dMaxDeltaZ(30.0),
 		dMinTrackingFOM(0.0027), dMinTOFPaddleMatchDistance(9.0), dMinHitRingsPerCDCSuperlayer(2), dMinHitPlanesPerFDCPackage(4) {}
@@ -267,7 +267,7 @@ class DHistogramAction_DetectorMatching : public DAnalysisAction
 		void Initialize(JEventLoop* locEventLoop);
 
 		unsigned int dNum2DThetaBins, dNum2DPBins, dNum2DPhiBins, dNum2DDeltaPhiBins, dNum2DDeltaZBins;
-		unsigned int dNum2DTrackDOCABins, dNumTrackDOCABins, dNumFCALTOFXYBins, dNum2DBCALZBins;
+		unsigned int dNum2DTrackDOCABins, dNumTrackDOCABins, dNumFCALTOFXYBins, dNum2DBCALZBins, dNum2DSCZBins;
 		double dMinP, dMaxP, dMinTheta, dMaxTheta, dMinPhi, dMaxPhi, dSCMatchMinDeltaPhi, dSCMatchMaxDeltaPhi, dMinTrackDOCA, dMaxTrackMatchDOCA;
 		double dMinDeltaPhi, dMaxDeltaPhi, dMinDeltaZ, dMaxDeltaZ;
 
@@ -277,6 +277,15 @@ class DHistogramAction_DetectorMatching : public DAnalysisAction
 	private:
 		bool Perform_Action(JEventLoop* locEventLoop, const DParticleCombo* locParticleCombo = NULL);
 		void Fill_MatchingHists(JEventLoop* locEventLoop, bool locIsTimeBased);
+
+		const DReferenceTrajectory* Get_ReferenceTrajectory(const DKinematicData* locTrack) const
+		{
+			const DTrackTimeBased* locTrackTimeBased = dynamic_cast<const DTrackTimeBased*>(locTrack);
+			const DTrackWireBased* locTrackWireBased = dynamic_cast<const DTrackWireBased*>(locTrack);
+			if((locTrackTimeBased == NULL) && (locTrackWireBased == NULL))
+				return NULL;
+			return (locTrackTimeBased != NULL) ? locTrackTimeBased->rt : locTrackWireBased->rt;
+		}
 
 		//bool is time/wire-based for true/false
 		map<DetectorSystem_t, map<bool, TH2I*> > dHistMap_PVsTheta_HasHit;
@@ -309,11 +318,14 @@ class DHistogramAction_DetectorMatching : public DAnalysisAction
 		map<bool, TH2I*> dHistMap_TrackPVsTheta_NoHitMatch;
 		map<bool, TH2I*> dHistMap_TrackPVsTheta_HitMatch;
 		map<bool, TH2I*> dHistMap_SCTrackDeltaPhiVsP;
+		map<bool, TH2I*> dHistMap_SCTrackDeltaPhiVsZ;
 		map<bool, TH2I*> dHistMap_SCTrackDeltaPhiVsTheta;
 		map<bool, TH2I*> dHistMap_FCALTrackDistanceVsP;
 		map<bool, TH2I*> dHistMap_FCALTrackDistanceVsTheta;
 		map<bool, TH2I*> dHistMap_BCALDeltaPhiVsP;
+		map<bool, TH2I*> dHistMap_BCALDeltaPhiVsZ;
 		map<bool, TH2I*> dHistMap_BCALDeltaZVsTheta;
+		map<bool, TH2I*> dHistMap_BCALDeltaZVsZ;
 
 		//DTOFPaddle Matching
 		map<bool, TH1I*> dHistMap_TOFPaddleTrackDeltaX;

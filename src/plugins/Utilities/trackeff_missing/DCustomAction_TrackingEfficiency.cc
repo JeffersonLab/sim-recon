@@ -363,12 +363,12 @@ bool DCustomAction_TrackingEfficiency::Perform_Action(JEventLoop* locEventLoop, 
 	dTreeFillData.Fill_Single<Float_t>("ProjectedBCALHitPhi", locPredictedSurfacePosition.Phi()*180.0/TMath::Pi());
 	dTreeFillData.Fill_Single<Float_t>("ProjectedBCALHitZ", locPredictedSurfacePosition.Z());
 
-	//Get closest BCAL shower
-	double locBestMatchDeltaPhi = 999.9, locBestMatchDeltaZ = 999.9;
-	const DBCALShower* locBestBCALShower = dParticleID->Get_ClosestToTrack_BCAL(locBestTrackTimeBased, locBCALShowers, locBestMatchDeltaPhi, locBestMatchDeltaZ);
+	DBCALShowerMatchParams locBestBCALMatchParams;
+	double locStartTime = locBestTrackTimeBased->t0();
+	bool locBCALHitFoundFlag = dParticleID->Get_ClosestToTrack(locBestTrackTimeBased->rt, locBCALShowers, false, locStartTime, locBestBCALMatchParams);
 
 	//If none, fill and return
-	if(locBestBCALShower == NULL)
+	if(!locBCALHitFoundFlag)
 	{
 		//HADRONIC BCAL SHOWER EFFICIENCY
 		dTreeFillData.Fill_Single<Float_t>("NearestShowerEnergy", -1.0);
@@ -384,13 +384,13 @@ bool DCustomAction_TrackingEfficiency::Perform_Action(JEventLoop* locEventLoop, 
 	}
 
 	//HADRONIC BCAL SHOWER EFFICIENCY
-	dTreeFillData.Fill_Single<Float_t>("NearestShowerEnergy", locBestBCALShower->E);
-	dTreeFillData.Fill_Single<Float_t>("TrackDeltaPhiToShower", locBestMatchDeltaPhi*180.0/TMath::Pi());
-	dTreeFillData.Fill_Single<Float_t>("TrackDeltaZToShower", locBestMatchDeltaZ);
+	dTreeFillData.Fill_Single<Float_t>("NearestShowerEnergy", locBestBCALMatchParams.dBCALShower->E);
+	dTreeFillData.Fill_Single<Float_t>("TrackDeltaPhiToShower", locBestBCALMatchParams.dDeltaPhiToShower*180.0/TMath::Pi());
+	dTreeFillData.Fill_Single<Float_t>("TrackDeltaZToShower", locBestBCALMatchParams.dDeltaZToShower);
 
 	//See if shower is matched
-	DBCALShowerMatchParams locBCALShowerMatchParams;
-	if(!dParticleID->Get_BestBCALMatchParams(locBestTrackTimeBased, locDetectorMatches, locBCALShowerMatchParams))
+	locStartTime = locBestTrackTimeBased->t0();
+	if(!dParticleID->Cut_MatchDistance(locBestTrackTimeBased->rt, locBestBCALMatchParams.dBCALShower, locStartTime, locBestBCALMatchParams))
 	{
 		//SHOWER NOT MATCHED
 		dTreeFillData.Fill_Single<Bool_t>("IsMatchedToBCALShower", false);
@@ -402,8 +402,8 @@ bool DCustomAction_TrackingEfficiency::Perform_Action(JEventLoop* locEventLoop, 
 		return true;
 	}
 
-	double locStartTime = dParticleID->Calc_PropagatedRFTime(locBestTrackTimeBased, locEventRFBunch);
-	double locDeltaT = locBestBCALShower->t - locBCALShowerMatchParams.dFlightTime - locStartTime;
+	locStartTime = dParticleID->Calc_PropagatedRFTime(locBestTrackTimeBased, locEventRFBunch);
+	double locDeltaT = locBestBCALMatchParams.dBCALShower->t - locBestBCALMatchParams.dFlightTime - locStartTime;
 
 	//FILL SHOWER MATCHED
 	dTreeFillData.Fill_Single<Bool_t>("IsMatchedToBCALShower", true);

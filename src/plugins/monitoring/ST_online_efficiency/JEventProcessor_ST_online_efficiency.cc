@@ -176,7 +176,7 @@ jerror_t JEventProcessor_ST_online_efficiency::evnt(JEventLoop *eventLoop, uint6
       // applied vertex cut
       if (!z_vertex_cut) continue;
       if (!r_vertex_cut) continue;
-      int st_pred_id = pid_algorithm[0]->PredictSCSector(timeBasedTrack->rt,0.05235,&locProjPos,&Barrel);
+      int st_pred_id = pid_algorithm[0]->PredictSCSector(timeBasedTrack->rt,&locProjPos,&Barrel);
       int st_pred_id_index = st_pred_id - 1;
       // Z intersection of charged track and SC 
       locSCzIntersection = locProjPos.z();

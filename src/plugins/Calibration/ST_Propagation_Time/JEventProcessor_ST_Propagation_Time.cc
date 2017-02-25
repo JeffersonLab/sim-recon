@@ -296,15 +296,8 @@ jerror_t JEventProcessor_ST_Propagation_Time::evnt(JEventLoop *loop, uint64_t ev
           bool sc_match = locDetectorMatches->Get_SCMatchParams(timeBasedTrack, st_params); 
           // If st_match = true, there is a match between this track and the ST
           if (!sc_match) continue;
-          DVector3 IntersectionPoint;
-          DVector3 IntersectionDir;
-          bool sc_match_pid = dParticleID->MatchToSC(timeBasedTrack, 
-                                                timeBasedTrack->rt, 
-                                                st_params[0].dSCHit, 
-                                                st_params[0].dSCHit->t, 
-                                                locSCHitMatchParams, 
-                                                true, NULL,
-                                                &IntersectionPoint, &IntersectionDir);      
+          DVector3 IntersectionPoint, IntersectionMomentum;
+          bool sc_match_pid = dParticleID->Cut_MatchDistance(timeBasedTrack->rt, st_params[0].dSCHit, st_params[0].dSCHit->t, locSCHitMatchParams, true, &IntersectionPoint, &IntersectionMomentum);
           if(!sc_match_pid) continue;
           // For each paddle calculate the hit time, flight time, intersection point (z), and t0 from TOF
           // For each hit we want to calculate thit - tflight - t0 from TOF

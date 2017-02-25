@@ -279,18 +279,9 @@ void DReaction_factory_ReactionFilter::Define_LooseCuts(void)
 	dPIDTimingCuts[Electron][SYS_BCAL] = 1.0;
 	dPIDTimingCuts[Electron][SYS_FCAL] = 2.5;
 	dPIDTimingCuts[Electron][SYS_TOF] = 2.5;
-
-	dPIDTimingCuts[Positron][SYS_BCAL] = 1.0;
-	dPIDTimingCuts[Positron][SYS_FCAL] = 2.5;
-	dPIDTimingCuts[Positron][SYS_TOF] = 2.5;
-
-	dPIDTimingCuts[MuonMinus][SYS_BCAL] = 1.0;
-	dPIDTimingCuts[MuonMinus][SYS_FCAL] = 2.5;
-	dPIDTimingCuts[MuonMinus][SYS_TOF] = 2.5;
-
-	dPIDTimingCuts[MuonPlus][SYS_BCAL] = 1.0;
-	dPIDTimingCuts[MuonPlus][SYS_FCAL] = 2.5;
-	dPIDTimingCuts[MuonPlus][SYS_TOF] = 2.5;
+	dPIDTimingCuts[Positron] = dPIDTimingCuts[Electron];
+	dPIDTimingCuts[MuonMinus] = dPIDTimingCuts[Electron];
+	dPIDTimingCuts[MuonPlus] = dPIDTimingCuts[Electron];
 
 	// Timing Cuts: Mesons
 	dPIDTimingCuts[PiPlus][SYS_BCAL] = 2.0;
@@ -304,19 +295,14 @@ void DReaction_factory_ReactionFilter::Define_LooseCuts(void)
 	dPIDTimingCuts[KPlus][SYS_BCAL] = 0.75;
 	dPIDTimingCuts[KPlus][SYS_FCAL] = 2.5;
 	dPIDTimingCuts[KPlus][SYS_TOF] = 2.0;
-
-	dPIDTimingCuts[KMinus][SYS_BCAL] = 0.75;
-	dPIDTimingCuts[KMinus][SYS_FCAL] = 2.5;
-	dPIDTimingCuts[KMinus][SYS_TOF] = 2.0;
+	dPIDTimingCuts[KMinus] = dPIDTimingCuts[KPlus];
 
 	// Timing Cuts: Baryons
 	dPIDTimingCuts[Proton][SYS_BCAL] = 2.5;
 	dPIDTimingCuts[Proton][SYS_FCAL] = 2.5;
 	dPIDTimingCuts[Proton][SYS_TOF] = 2.5;
 
-	dPIDTimingCuts[AntiProton][SYS_BCAL] = 2.5;
-	dPIDTimingCuts[AntiProton][SYS_FCAL] = 2.5;
-	dPIDTimingCuts[AntiProton][SYS_TOF] = 2.5;
+	dPIDTimingCuts[AntiProton] = dPIDTimingCuts[Proton];
 }
 
 void DReaction_factory_ReactionFilter::Add_PreComboCuts(DReaction* locReaction, FSInfo* locFSInfo)
