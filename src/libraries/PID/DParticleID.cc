@@ -130,9 +130,6 @@ DParticleID::DParticleID(JEventLoop *loop)
 	BCAL_PHI_CUT_PAR3=1.0;
 	gPARMS->SetDefaultParameter("BCAL:PHI_CUT_PAR3",BCAL_PHI_CUT_PAR3);
 
-	SC_DPHI_CUT=0.125;
-	gPARMS->SetDefaultParameter("SC:DPHI_CUT",SC_DPHI_CUT);
-
 	double locSCCutPar = 7.0;
 	gPARMS->SetDefaultParameter("SC:SC_CUT_PAR1",locSCCutPar);
 	dSCCutPars_TimeBased.push_back(locSCCutPar);
@@ -1064,7 +1061,7 @@ bool DParticleID::Cut_MatchDistance(const DReferenceTrajectory* rt, const DSCHit
 
 	// Look for a match in phi
 	auto& locSCCutPars = locIsTimeBased ? dSCCutPars_TimeBased : dSCCutPars_WireBased;
-	double sc_dphi_cut = locSCCutPars[0] + locSCCutPars[1]*exp(locSCCutPars[2]*(locProjPos.Z() - locSCCutPars[3]))
+	double sc_dphi_cut = locSCCutPars[0] + locSCCutPars[1]*exp(locSCCutPars[2]*(locProjPos.Z() - locSCCutPars[3]));
 	double locDeltaPhi = 180.0*locSCHitMatchParams.dDeltaPhiToHit/TMath::Pi();
 	return (fabs(locDeltaPhi) <= sc_dphi_cut);
 }
@@ -1086,10 +1083,7 @@ bool DParticleID::Cut_MatchDistance(const DReferenceTrajectory* rt, const DFCALS
 
 	double p=locProjMom.Mag();
 	double cut=FCAL_CUT_PAR1+FCAL_CUT_PAR2/p;
-	if(locShowerMatchParams.dDOCAToShower >= cut)
-		return false;
-
-	return true;
+	return (locShowerMatchParams.dDOCAToShower < cut);
 }
 
 /********************************************************** GET BEST MATCH **********************************************************/
@@ -1112,7 +1106,7 @@ DBCALShowerMatchParams DParticleID::Get_BestBCALMatchParams(DVector3 locMomentum
 	DBCALShowerMatchParams locBestMatchParams;
 	for(size_t loc_i = 0; loc_i < locShowerMatchParams.size(); ++loc_i)
 	{
-		double locPhiCut = BCAL_PHI_CUT_PAR1 + BCAL_PHI_CUT_PAR2*exp(-1.0*BCAL_PHI_CUT_PAR3*locP);
+		double locDeltaPhiCut = BCAL_PHI_CUT_PAR1 + BCAL_PHI_CUT_PAR2*exp(-1.0*BCAL_PHI_CUT_PAR3*locP);
 		double locDeltaPhiError = locDeltaPhiCut/3.0; //Cut is "3 sigma"
 		double locDeltaPhi = 180.0*locShowerMatchParams[loc_i].dDeltaPhiToShower/TMath::Pi();
 		double locMatchChiSq = locDeltaPhi*locDeltaPhi/(locDeltaPhiError*locDeltaPhiError);
