@@ -537,33 +537,44 @@ void DReaction_factory_trackeff_missing::Add_PIDActions(DReaction* locReaction)
 	locReaction->Add_ComboPreSelectionAction(new DCustomAction_dEdxCut_trackeff(locReaction, false)); //false: focus on keeping signal
 }
 
-void DReaction_factory_trackeff_missing::Add_MassHistograms(DReaction* locReaction, bool locUseKinFitResultsFlag, string locBaseUniqueName)
+void DReaction_factory_trackeff_missing::Add_MassHistograms(DReaction* locReaction, bool locKinFitFlag, string locBaseUniqueName)
 {
 	//invariant mass
-	map<Particle_t, pair<double, double> > locInvariantMassPIDs = Get_InvariantMassPIDs(locReaction);
-	for(auto& locMapPair : locInvariantMassPIDs)
+	set<Particle_t> locInvariantMassPIDs = Get_InvariantMassPIDs(locReaction);
+	for(auto& locPID : locInvariantMassPIDs)
 	{
+		auto& locCutMap = locKinFitFlag ? dInvariantMassCuts_KinFit : dInvariantMassCuts;
+		auto locPIDIterator = locCutMap.find(locPID);
+		if(locPIDIterator == locCutMap.end())
+			continue;
+		auto locCutPair = locPIDIterator->second;
+
 		//determine #bins
-		int locNumBins = int((locMapPair.second.second - locMapPair.second.first)*1000.0 + 0.001);
+		int locNumBins = int((locCutPair.second - locCutPair.first)*1000.0 + 0.001);
 		if(locNumBins < 200)
 			locNumBins *= 5; //get close to 1000 bins
 		if(locNumBins < 500)
 			locNumBins *= 2; //get close to 1000 bins
 
 		//build name string
-		Particle_t locPID = locMapPair.first;
 		string locActionUniqueName = string(ParticleType(locPID)) + string("_") + locBaseUniqueName;
 
 		//add histogram action
-		locReaction->Add_AnalysisAction(new DHistogramAction_InvariantMass(locReaction, locPID, locUseKinFitResultsFlag,
-			locNumBins, locMapPair.second.first, locMapPair.second.second, locActionUniqueName));
+		locReaction->Add_AnalysisAction(new DHistogramAction_InvariantMass(locReaction, locPID, locKinFitFlag,
+			locNumBins, locCutPair.first, locCutPair.second, locActionUniqueName));
 	}
 
 	//missing mass
 	map<Particle_t, pair<int, deque<Particle_t> > > locDecayingPIDs_Missing = Get_MissingMassPIDs(locReaction);
 	for(auto& locMapPair : locDecayingPIDs_Missing)
 	{
-		auto locCutPair = dMissingMassCuts[locMapPair.first];
+		auto& locCutMap = locKinFitFlag ? dMissingMassCuts_KinFit : dMissingMassCuts;
+		Particle_t locPID = locMapPair.first;
+		auto locPIDIterator = locCutMap.find(locPID);
+		if(locPIDIterator == locCutMap.end())
+			continue;
+		auto locCutPair = locPIDIterator->second;
+
 		int locDecayFromStep = locMapPair.second.first;
 		auto locMissingMassOffOfPIDs = locMapPair.second.second;
 
@@ -575,13 +586,12 @@ void DReaction_factory_trackeff_missing::Add_MassHistograms(DReaction* locReacti
 			locNumBins *= 2; //get close to 1000 bins
 
 		//build name string
-		Particle_t locPID = locMapPair.first;
 		string locActionUniqueName = string(ParticleType(locPID)) + string("_") + locBaseUniqueName;
 
 		//add the cut
 		if(locCutPair.first >= 0.0)
-			locReaction->Add_AnalysisAction(new DHistogramAction_MissingMass(locReaction, locDecayFromStep, locMissingMassOffOfPIDs, locUseKinFitResultsFlag, locNumBins, locCutPair.first, locCutPair.second));
+			locReaction->Add_AnalysisAction(new DHistogramAction_MissingMass(locReaction, locDecayFromStep, locMissingMassOffOfPIDs, locKinFitFlag, locNumBins, locCutPair.first, locCutPair.second));
 		else
-			locReaction->Add_AnalysisAction(new DHistogramAction_MissingMassSquared(locReaction, locDecayFromStep, locMissingMassOffOfPIDs, locUseKinFitResultsFlag, locNumBins, locCutPair.first, locCutPair.second));
+			locReaction->Add_AnalysisAction(new DHistogramAction_MissingMassSquared(locReaction, locDecayFromStep, locMissingMassOffOfPIDs, locKinFitFlag, locNumBins, locCutPair.first, locCutPair.second));
 	}
 }

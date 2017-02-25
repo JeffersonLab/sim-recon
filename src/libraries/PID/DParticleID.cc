@@ -118,26 +118,52 @@ DParticleID::DParticleID(JEventLoop *loop)
 	TOF_CUT_PAR3 = 6.15;
 	gPARMS->SetDefaultParameter("TOF:CUT_PAR3",TOF_CUT_PAR3);
 
-	BCAL_Z_CUT=500.;
+	BCAL_Z_CUT=10.0;
 	gPARMS->SetDefaultParameter("BCAL:Z_CUT",BCAL_Z_CUT);
 
-	BCAL_PHI_CUT_PAR1=0.021;
+	BCAL_PHI_CUT_PAR1=1.0;
 	gPARMS->SetDefaultParameter("BCAL:PHI_CUT_PAR1",BCAL_PHI_CUT_PAR1);
 
-	BCAL_PHI_CUT_PAR2=0.01;
+	BCAL_PHI_CUT_PAR2=4.0;
 	gPARMS->SetDefaultParameter("BCAL:PHI_CUT_PAR2",BCAL_PHI_CUT_PAR2);
 
-	BCAL_PHI_CUT_PAR3=1280.;
+	BCAL_PHI_CUT_PAR3=1.0;
 	gPARMS->SetDefaultParameter("BCAL:PHI_CUT_PAR3",BCAL_PHI_CUT_PAR3);
 
 	SC_DPHI_CUT=0.125;
 	gPARMS->SetDefaultParameter("SC:DPHI_CUT",SC_DPHI_CUT);
-	
-	SC_DPHI_CUT_SLOPE=0.004;
-	gPARMS->SetDefaultParameter("SC:DPHI_CUT_SLOPE",SC_DPHI_CUT_SLOPE);
 
-	SC_DPHI_CUT_WB=0.21;
-	gPARMS->SetDefaultParameter("SC:DPHI_CUT_WB",SC_DPHI_CUT_WB);
+	double locSCCutPar = 7.0;
+	gPARMS->SetDefaultParameter("SC:SC_CUT_PAR1",locSCCutPar);
+	dSCCutPars_TimeBased.push_back(locSCCutPar);
+
+	locSCCutPar = 0.1;
+	gPARMS->SetDefaultParameter("SC:SC_CUT_PAR2",locSCCutPar);
+	dSCCutPars_TimeBased.push_back(locSCCutPar);
+
+	locSCCutPar = 0.28;
+	gPARMS->SetDefaultParameter("SC:SC_CUT_PAR3",locSCCutPar);
+	dSCCutPars_TimeBased.push_back(locSCCutPar);
+
+	locSCCutPar = 78.0;
+	gPARMS->SetDefaultParameter("SC:SC_CUT_PAR4",locSCCutPar);
+	dSCCutPars_TimeBased.push_back(locSCCutPar);
+
+	locSCCutPar = 10.0;
+	gPARMS->SetDefaultParameter("SC:SC_CUT_PAR1_WB",locSCCutPar);
+	dSCCutPars_WireBased.push_back(locSCCutPar);
+
+	locSCCutPar = 0.1;
+	gPARMS->SetDefaultParameter("SC:SC_CUT_PAR2_WB",locSCCutPar);
+	dSCCutPars_WireBased.push_back(locSCCutPar);
+
+	locSCCutPar = 0.13;
+	gPARMS->SetDefaultParameter("SC:SC_CUT_PAR3_WB",locSCCutPar);
+	dSCCutPars_WireBased.push_back(locSCCutPar);
+
+	locSCCutPar = 60.0;
+	gPARMS->SetDefaultParameter("SC:SC_CUT_PAR4_WB",locSCCutPar);
+	dSCCutPars_WireBased.push_back(locSCCutPar);
 
 	dTargetZCenter = 0.0;
 	locGeometry->GetTargetZ(dTargetZCenter);
@@ -958,17 +984,15 @@ bool DParticleID::Cut_MatchDistance(const DReferenceTrajectory* rt, const DBCALS
 		*locOutputProjMom = locProjMom;
 	}
 
-	double locDeltaPhi = locShowerMatchParams.dDeltaPhiToShower;
-	if(fabs(locDeltaPhi) > 0.26) //0.13 radians = 7.5 degrees = one bcal module
-		return false;
-
+	// cut on shower delta-z
 	if(fabs(locShowerMatchParams.dDeltaZToShower) > BCAL_Z_CUT)
 		return false;
 
-	// cut on shower phi
-	double p = locProjMom.Mag();
-	double phi_cut = (BCAL_PHI_CUT_PAR1 + BCAL_PHI_CUT_PAR2/(p*p))*(1.+BCAL_PHI_CUT_PAR3*pow(450.-1.0*locProjPos.Z(),-2));
-	if(fabs(locDeltaPhi) > phi_cut)
+	// cut on shower delta-phi
+	double locP = locProjMom.Mag();
+	double locDeltaPhi = 180.0*locShowerMatchParams.dDeltaPhiToShower/TMath::Pi();
+	double locPhiCut = BCAL_PHI_CUT_PAR1 + BCAL_PHI_CUT_PAR2*exp(-1.0*BCAL_PHI_CUT_PAR3*locP);
+	if(fabs(locDeltaPhi) > locPhiCut)
 		return false;
 
 	//successful match
@@ -1039,17 +1063,10 @@ bool DParticleID::Cut_MatchDistance(const DReferenceTrajectory* rt, const DSCHit
 	}
 
 	// Look for a match in phi
-	double sc_dphi_cut = (locIsTimeBased) ? SC_DPHI_CUT : SC_DPHI_CUT_WB;
-
-	// Open up the phi cut in the nose region
-	double sc_pos_eoss = sc_pos[locSCHit->sector - 1][1].z();   // End of straight section
-	if(locProjPos.Z() > sc_pos_eoss)
-		sc_dphi_cut += SC_DPHI_CUT_SLOPE*(locProjPos.Z() - sc_pos_eoss);
-
-	if (fabs(locSCHitMatchParams.dDeltaPhiToHit) > sc_dphi_cut)
-		return false;
-
-	return true;
+	auto& locSCCutPars = locIsTimeBased ? dSCCutPars_TimeBased : dSCCutPars_WireBased;
+	double sc_dphi_cut = locSCCutPars[0] + locSCCutPars[1]*exp(locSCCutPars[2]*(locProjPos.Z() - locSCCutPars[3]))
+	double locDeltaPhi = 180.0*locSCHitMatchParams.dDeltaPhiToHit/TMath::Pi();
+	return (fabs(locDeltaPhi) <= sc_dphi_cut);
 }
 
 bool DParticleID::Cut_MatchDistance(const DReferenceTrajectory* rt, const DFCALShower* locFCALShower, double locInputStartTime, DFCALShowerMatchParams& locShowerMatchParams, DVector3 *locOutputProjPos, DVector3 *locOutputProjMom) const
@@ -1095,9 +1112,10 @@ DBCALShowerMatchParams DParticleID::Get_BestBCALMatchParams(DVector3 locMomentum
 	DBCALShowerMatchParams locBestMatchParams;
 	for(size_t loc_i = 0; loc_i < locShowerMatchParams.size(); ++loc_i)
 	{
-		double locDeltaPhiCut = BCAL_PHI_CUT_PAR1 + BCAL_PHI_CUT_PAR2/(locP*locP);
+		double locPhiCut = BCAL_PHI_CUT_PAR1 + BCAL_PHI_CUT_PAR2*exp(-1.0*BCAL_PHI_CUT_PAR3*locP);
 		double locDeltaPhiError = locDeltaPhiCut/3.0; //Cut is "3 sigma"
-		double locMatchChiSq = locShowerMatchParams[loc_i].dDeltaPhiToShower*locShowerMatchParams[loc_i].dDeltaPhiToShower/(locDeltaPhiError*locDeltaPhiError);
+		double locDeltaPhi = 180.0*locShowerMatchParams[loc_i].dDeltaPhiToShower/TMath::Pi();
+		double locMatchChiSq = locDeltaPhi*locDeltaPhi/(locDeltaPhiError*locDeltaPhiError);
 
 		double locDeltaZError = BCAL_Z_CUT/3.0; //Cut is "3 sigma"
 		locMatchChiSq += locShowerMatchParams[loc_i].dDeltaZToShower*locShowerMatchParams[loc_i].dDeltaZToShower/(locDeltaZError*locDeltaZError);
