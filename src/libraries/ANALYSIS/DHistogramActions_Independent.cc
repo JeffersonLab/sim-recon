@@ -830,7 +830,7 @@ void DHistogramAction_DetectorMatching::Initialize(JEventLoop* locEventLoop)
 	bool locIsRESTEvent = locEventLoop->GetJEvent().GetStatusBit(kSTATUS_REST);
 
 	map<string, double> tofparms;
- 	loop->GetCalib("TOF/tof_parms", tofparms);
+	locEventLoop->GetCalib("TOF/tof_parms", tofparms);
 
 	//CREATE THE HISTOGRAMS
 	//Since we are creating histograms, the contents of gDirectory will be modified: must use JANA-wide ROOT lock
