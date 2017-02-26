@@ -28,6 +28,9 @@ jerror_t DBeamCurrent_factory::init(void)
 	gPARMS->SetDefaultParameter("BEAM_ON_MIN_nA", BEAM_ON_MIN_nA, "Minimum current in nA to consider the beam \"on\" by DBeamCurrent");
 	gPARMS->SetDefaultParameter("BEAM_TRIP_MIN_T", BEAM_TRIP_MIN_T, "Minimum amount of time in seconds that event is away from beam trips to be considered fiducial");
 
+	ticks_per_sec      = 250.011E6; // 250MHz clock (may be overwritten with calib constant in brun)
+	rcdb_start_time    = 0;       // unix time of when 250MHz clock was reset. (overwritten below)
+	rcdb_250MHz_offset_tics = 0;  // offset between 250MHz clock zero and RCDB recorded start time of event (overwritten below)
 
 	return NOERROR;
 }
@@ -59,8 +62,16 @@ jerror_t DBeamCurrent_factory::brun(jana::JEventLoop *loop, int32_t runnumber)
 	map<string,string> mstr;
 	loop->GetJCalibration()->GetCalib("/ELECTRON_BEAM/current_map_epics", mstr);
 	if(mstr.empty()) return NOERROR;
-
 	string &electron_beam_current = mstr.begin()->second;
+	
+	map<string,string> mcalib;
+	loop->GetJCalibration()->GetCalib("/ELECTRON_BEAM/timestamp_to_unix", mcalib);
+	if(mcalib.size() == 3){
+		//ticks_per_sec           = atof(mcalib["tics_per_sec"].c_str());
+		rcdb_250MHz_offset_tics = atoi(mcalib["rcdb_250MHz_offset_tics"].c_str());
+		rcdb_start_time         = atoi(mcalib["rcdb_start_time"].c_str());
+	}
+
 	
 	// Parse text to create Boundary objects and maps of trip/recovery points
 	istringstream ss(electron_beam_current);
@@ -132,8 +143,10 @@ jerror_t DBeamCurrent_factory::evnt(JEventLoop *loop, uint64_t eventnumber)
 	loop->Get(codainfos);
 	if(codainfos.empty()) return NOERROR;
 	const DCODAEventInfo *codainfo = codainfos[0];
-	
-	double t = codainfo->avg_timestamp/250.0E6; // 250MHz clock
+
+	// Get tme relative to RCDB recorded start time of event
+	// (all times in trip map are recorded relative to this as well)	
+	double t = (codainfo->avg_timestamp - (double)rcdb_250MHz_offset_tics)/ticks_per_sec;
 
 	// Find closest entry given current time
 	auto it = boundaries.begin();
