@@ -302,9 +302,13 @@ jerror_t DReaction_factory_trackeff_missing::evnt(JEventLoop* locEventLoop, uint
 			Add_MassHistograms(locReaction, false, "KinFitMassCut");
 
 		// DETECTOR HIT MATCHING MISSING TRACK TRAJECTORY
-		locReaction->Add_AnalysisAction(new DCustomAction_CutNoDetectorHit(locReaction));
-		Add_MassHistograms(locReaction, false, "HasDetectorHit");
-		Add_MassHistograms(locReaction, true, "HasDetectorHit_KinFit");
+		string locReactionName = locReaction->Get_ReactionName();
+		if((locReactionName != "TrackEff_MissingPiMinus_3pi") && (locReactionName != "TrackEff_MissingPiPlus_3pi"))
+		{
+			locReaction->Add_AnalysisAction(new DCustomAction_CutNoDetectorHit(locReaction));
+			Add_MassHistograms(locReaction, false, "HasDetectorHit");
+			Add_MassHistograms(locReaction, true, "HasDetectorHit_KinFit");
+		}
 
 		// KINEMATICS
 		locReaction->Add_AnalysisAction(new DHistogramAction_ParticleComboKinematics(locReaction, true)); //true: fill histograms with kinematic-fit particle data

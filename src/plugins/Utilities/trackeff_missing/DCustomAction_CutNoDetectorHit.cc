@@ -200,11 +200,13 @@ bool DCustomAction_CutNoDetectorHit::Perform_Action(JEventLoop* locEventLoop, co
 	//REQUIRE: ST hit
 	if(!locSCHitFoundFlag)
 		return false;
-	if((locSCProjectedZ < 76.5) && (fabs(locSCDeltaPhi) > 10.0))
+	if(fabs(locSCDeltaPhi) > 30.0)
+		return false;
+/*	if((locSCProjectedZ < 76.5) && (fabs(locSCDeltaPhi) > 10.0))
 		return false; //HARD-CODED: BAD!
 	if((locSCProjectedZ >= 76.5) && (fabs(locSCDeltaPhi) > (10.0 + locSCProjectedZ - 76.5)))
 		return false;
-
+*/
 	//Check for slow protons stopping in the drift chambers: don't expect any further hits
 	if((locP < 0.4) && locMassiveParticleFlag)
 		return true;
@@ -213,14 +215,18 @@ bool DCustomAction_CutNoDetectorHit::Perform_Action(JEventLoop* locEventLoop, co
 
 	//BCAL Hit
 	if(locBCALHitFoundFlag)
-		return ((fabs(locBestBCALMatchParams.dDeltaZToShower) < 7.0) && (fabs(locBCALDeltaPhi) < 10.0));
+		return ((fabs(locBestBCALMatchParams.dDeltaZToShower) < 20.0) && (fabs(locBCALDeltaPhi) < 20.0));
 
-/*
+	//MUST HAVE FCAL & TOF
+	if(!locTOFHitFoundFlag || !locFCALHitFoundFlag)
+		return false;
+
+	/*
 	//MUST HAVE FCAL & TOF
 	if(!locTOFHitFoundFlag || !locFCALHitFoundFlag)
 		return false;
 	return ((locTOFDistance < 10.0) && (locBestFCALMatchParams.dDOCAToShower < 10.0));
 */
-	//extrapolation to FCAL/TOF is too poor to work
+	//extrapolation to FCAL/TOF is too poor to cut on
 	return (locTheta < 20.0);
 }
