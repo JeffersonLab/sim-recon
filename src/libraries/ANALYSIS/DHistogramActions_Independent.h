@@ -287,6 +287,8 @@ class DHistogramAction_DetectorMatching : public DAnalysisAction
 			return (locTrackTimeBased != NULL) ? locTrackTimeBased->rt : locTrackWireBased->rt;
 		}
 
+		double TOF_E_THRESHOLD;
+
 		//bool is time/wire-based for true/false
 		map<DetectorSystem_t, map<bool, TH2I*> > dHistMap_PVsTheta_HasHit;
 		map<DetectorSystem_t, map<bool, TH2I*> > dHistMap_PVsTheta_NoHit;

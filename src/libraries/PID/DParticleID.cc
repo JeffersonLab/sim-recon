@@ -118,7 +118,7 @@ DParticleID::DParticleID(JEventLoop *loop)
 	TOF_CUT_PAR3 = 6.15;
 	gPARMS->SetDefaultParameter("TOF:CUT_PAR3",TOF_CUT_PAR3);
 
-	BCAL_Z_CUT=10.0;
+	BCAL_Z_CUT=20.0;
 	gPARMS->SetDefaultParameter("BCAL:Z_CUT",BCAL_Z_CUT);
 
 	BCAL_PHI_CUT_PAR1=1.0;
@@ -952,7 +952,7 @@ bool DParticleID::ProjectTo_SC(const DReferenceTrajectory* rt, unsigned int locS
 		}
 
 		// Check to see if the projections changed their mind, and put the hit in the straight section after all
-		if(locProjPos.Z() < sc_pos_eoss) // Assume hit at end of straight section
+		if(locProjPos.Z() < sc_pos_eoss) // Assume hit just past the end of straight section
 		{
 			locProjPos.SetZ(sc_pos_eoss + 0.0001); //some tolerance
 			DVector3 sc_pos_at_projz = sc_pos[sc_index][0] + (locProjPos.Z() - sc_pos_soss)*sc_dir[sc_index][0];

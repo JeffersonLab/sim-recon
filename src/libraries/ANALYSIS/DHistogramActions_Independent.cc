@@ -829,10 +829,15 @@ void DHistogramAction_DetectorMatching::Initialize(JEventLoop* locEventLoop)
 
 	bool locIsRESTEvent = locEventLoop->GetJEvent().GetStatusBit(kSTATUS_REST);
 
+	map<string, double> tofparms;
+ 	loop->GetCalib("TOF/tof_parms", tofparms);
+
 	//CREATE THE HISTOGRAMS
 	//Since we are creating histograms, the contents of gDirectory will be modified: must use JANA-wide ROOT lock
 	japp->RootWriteLock(); //ACQUIRE ROOT LOCK!!
 	{
+		TOF_E_THRESHOLD = tofparms["TOF_E_THRESHOLD"];
+
 		//Required: Create a folder in the ROOT output file that will contain all of the output ROOT objects (if any) for this action.
 			//If another thread has already created the folder, it just changes to it. 
 		CreateAndChangeTo_ActionDirectory();
@@ -1476,7 +1481,10 @@ void DHistogramAction_DetectorMatching::Fill_MatchingHists(JEventLoop* locEventL
 					//Horizontal
 					if(locHorizontalTOFPaddleTrackDistanceMap.find(locTrack) != locHorizontalTOFPaddleTrackDistanceMap.end())
 					{
-						double locDistance = locHorizontalTOFPaddleTrackDistanceMap[locTrack].second.second;
+						auto& locMatch = locHorizontalTOFPaddleTrackDistanceMap[locTrack];
+						const DTOFPaddleHit* locTOFPaddleHit = locMatch.first;
+						bool locDoubleEndedHitFlag = ((locTOFPaddleHit->E_north > TOF_E_THRESHOLD) && (locTOFPaddleHit->E_south > TOF_E_THRESHOLD));
+						double locDistance = locDoubleEndedHitFlag ? locMatch.second.second : locMatch.second.first;
 						if(locDistance <= dMinTOFPaddleMatchDistance) //match
 							dHistMap_TOFPaddleHorizontalPaddleVsTrackX_HasHit[locIsTimeBased]->Fill(locPositionPair.first, locPaddlePair.second);
 						else //no match
@@ -1488,7 +1496,10 @@ void DHistogramAction_DetectorMatching::Fill_MatchingHists(JEventLoop* locEventL
 					//Vertical
 					if(locVerticalTOFPaddleTrackDistanceMap.find(locTrack) != locVerticalTOFPaddleTrackDistanceMap.end())
 					{
-						double locDistance = locVerticalTOFPaddleTrackDistanceMap[locTrack].second.second;
+						auto& locMatch = locVerticalTOFPaddleTrackDistanceMap[locTrack];
+						const DTOFPaddleHit* locTOFPaddleHit = locMatch.first;
+						bool locDoubleEndedHitFlag = ((locTOFPaddleHit->E_north > TOF_E_THRESHOLD) && (locTOFPaddleHit->E_south > TOF_E_THRESHOLD));
+						double locDistance = locDoubleEndedHitFlag ? locMatch.second.second : locMatch.second.first;
 						if(locDistance <= dMinTOFPaddleMatchDistance) //match
 							dHistMap_TOFPaddleTrackYVsVerticalPaddle_HasHit[locIsTimeBased]->Fill(locPaddlePair.first, locPositionPair.second);
 						else //no match
