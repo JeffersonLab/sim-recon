@@ -38,7 +38,7 @@ class DReaction_factory_trackeff_missing : public jana::JFactory<DReaction>
 		// Actions & cuts
 		void Define_LooseCuts(void);
 		void Add_PIDActions(DReaction* locReaction);
-		void Add_MassCuts(DReaction* locReaction, bool locKinFitFlag = false);
+		bool Add_MassCuts(DReaction* locReaction, bool locKinFitFlag = false); //returns false if no cuts placed
 		void Add_MassHistograms(DReaction* locReaction, bool locKinFitFlag, string locBaseUniqueName = "");
 
 		// Utilities

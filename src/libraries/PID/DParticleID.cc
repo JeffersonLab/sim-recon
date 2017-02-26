@@ -922,7 +922,7 @@ bool DParticleID::ProjectTo_SC(const DReferenceTrajectory* rt, unsigned int locS
 	{
 		// Apply a user-specified matching cut in the leg region
 		DVector3 sc_pos_at_projz = sc_pos[sc_index][0] + (locProjPos.Z() - sc_pos_soss)*sc_dir[sc_index][0];
-		locDeltaPhi = sc_pos_at_projz.Phi() - locProjPos.Phi(); //phi could be 0 degrees & proj_phi could be 359 degrees
+		locDeltaPhi = sc_pos_at_projz.Phi() - locProjPos.Phi();
 	}
 	else //bend or nose
 	{
@@ -953,7 +953,11 @@ bool DParticleID::ProjectTo_SC(const DReferenceTrajectory* rt, unsigned int locS
 
 		// Check to see if the projections changed their mind, and put the hit in the straight section after all
 		if(locProjPos.Z() < sc_pos_eoss) // Assume hit at end of straight section
+		{
 			locProjPos.SetZ(sc_pos_eoss + 0.0001); //some tolerance
+			DVector3 sc_pos_at_projz = sc_pos[sc_index][0] + (locProjPos.Z() - sc_pos_soss)*sc_dir[sc_index][0];
+			locDeltaPhi = sc_pos_at_projz.Phi() - locProjPos.Phi();
+		}
 	}
 
 	while(locDeltaPhi > TMath::Pi())

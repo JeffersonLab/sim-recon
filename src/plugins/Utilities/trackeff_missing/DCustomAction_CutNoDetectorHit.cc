@@ -190,7 +190,14 @@ bool DCustomAction_CutNoDetectorHit::Perform_Action(JEventLoop* locEventLoop, co
 	}
 	Unlock_Action(); //RELEASE ROOT LOCK!!
 
-	//REQUIRE: ST hit + EITHER BCAL hit OR TOF && FCAL hits
+	//Check for slow protons stopping in target: don't expect any hits
+	bool locMassiveParticleFlag = (ParticleMass(dMissingPID) + 0.001 > ParticleMass(Proton));
+	if((locP < 0.3) && locMassiveParticleFlag)
+		return true;
+	if((locP < 0.4) && (locTheta < 30.0) && locMassiveParticleFlag)
+		return true;
+
+	//REQUIRE: ST hit
 	if(!locSCHitFoundFlag)
 		return false;
 	if((locSCProjectedZ < 76.5) && (fabs(locSCDeltaPhi) > 10.0))
@@ -198,12 +205,22 @@ bool DCustomAction_CutNoDetectorHit::Perform_Action(JEventLoop* locEventLoop, co
 	if((locSCProjectedZ >= 76.5) && (fabs(locSCDeltaPhi) > (10.0 + locSCProjectedZ - 76.5)))
 		return false;
 
+	//Check for slow protons stopping in the drift chambers: don't expect any further hits
+	if((locP < 0.4) && locMassiveParticleFlag)
+		return true;
+
+	//REQUIRE EITHER BCAL hit OR TOF && FCAL hits
+
 	//BCAL Hit
 	if(locBCALHitFoundFlag)
 		return ((fabs(locBestBCALMatchParams.dDeltaZToShower) < 7.0) && (fabs(locBCALDeltaPhi) < 10.0));
 
+/*
 	//MUST HAVE FCAL & TOF
 	if(!locTOFHitFoundFlag || !locFCALHitFoundFlag)
 		return false;
 	return ((locTOFDistance < 10.0) && (locBestFCALMatchParams.dDOCAToShower < 10.0));
+*/
+	//extrapolation to FCAL/TOF is too poor to work
+	return (locTheta < 20.0);
 }

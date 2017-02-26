@@ -297,8 +297,9 @@ jerror_t DReaction_factory_trackeff_missing::evnt(JEventLoop* locEventLoop, uint
 
 		// KINFIT MASS CUTS
 		Add_MassHistograms(locReaction, true, "KinFit");
-		Add_MassCuts(locReaction, true); //true: kinfit
-		Add_MassHistograms(locReaction, false, "KinFitMassCut");
+		bool locCutsPlacedFlag = Add_MassCuts(locReaction, true); //true: kinfit
+		if(locCutsPlacedFlag)
+			Add_MassHistograms(locReaction, false, "KinFitMassCut");
 
 		// DETECTOR HIT MATCHING MISSING TRACK TRAJECTORY
 		locReaction->Add_AnalysisAction(new DCustomAction_CutNoDetectorHit(locReaction));
@@ -470,10 +471,11 @@ map<Particle_t, pair<int, deque<Particle_t> > > DReaction_factory_trackeff_missi
 	return locMissingPIDs;
 }
 
-void DReaction_factory_trackeff_missing::Add_MassCuts(DReaction* locReaction, bool locKinFitFlag)
+bool DReaction_factory_trackeff_missing::Add_MassCuts(DReaction* locReaction, bool locKinFitFlag)
 {
 	// Highly Recommended: decaying particle mass cuts
 	set<Particle_t> locDecayingPIDs = Get_InvariantMassPIDs(locReaction, locKinFitFlag);
+	bool locCutsPlacedFlag = false;
 	for(auto& locPID : locDecayingPIDs)
 	{
 		auto& locCutMap = locKinFitFlag ? dInvariantMassCuts_KinFit : dInvariantMassCuts;
@@ -481,6 +483,7 @@ void DReaction_factory_trackeff_missing::Add_MassCuts(DReaction* locReaction, bo
 		if(locPIDIterator == locCutMap.end())
 			continue;
 		auto locCutPair = locPIDIterator->second;
+		locCutsPlacedFlag = true;
 		if(locKinFitFlag)
 			locReaction->Add_AnalysisAction(new DCutAction_InvariantMass(locReaction, locPID, true, locCutPair.first, locCutPair.second));
 		else
@@ -494,6 +497,7 @@ void DReaction_factory_trackeff_missing::Add_MassCuts(DReaction* locReaction, bo
 		auto locCutPair = locCutMap[locMapPair.first];
 		int locDecayFromStep = locMapPair.second.first;
 		auto locMissingMassOffOfPIDs = locMapPair.second.second;
+		locCutsPlacedFlag = true;
 
 		//create the cut
 		DAnalysisAction* locMassCut = nullptr;
@@ -508,6 +512,8 @@ void DReaction_factory_trackeff_missing::Add_MassCuts(DReaction* locReaction, bo
 		else
 			locReaction->Add_ComboPreSelectionAction(locMassCut);
 	}
+
+	return locCutsPlacedFlag;
 }
 
 void DReaction_factory_trackeff_missing::Add_PIDActions(DReaction* locReaction)
