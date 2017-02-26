@@ -29,6 +29,10 @@ class DBeamCurrent_factory:public jana::JFactory<DBeamCurrent>{
 		vector<Boundary> boundaries; // key=time  val=Ibeam
 		vector<double> trip;
 		vector<double> recover;
+		
+		double   ticks_per_sec;
+		uint64_t rcdb_250MHz_offset_tics;
+		uint32_t rcdb_start_time;
 
 		
 		// This returns the integrated fiducial time between the

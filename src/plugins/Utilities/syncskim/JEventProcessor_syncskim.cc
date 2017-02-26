@@ -5,6 +5,9 @@
 // Creator: davidl (on Linux gluon48.jlab.org 2.6.32-431.20.3.el6.x86_64 x86_64)
 //
 
+#include <limits>
+using namespace std;
+
 #include "JEventProcessor_syncskim.h"
 using namespace jana;
 
@@ -175,7 +178,10 @@ jerror_t JEventProcessor_syncskim::fini(void)
 	b += 13.0E8;
 	double one_over_m = 250.0E6/m;
 	
-	cout << endl << "timestamp to unix time conversion: 1/m=" << one_over_m << " b=" << (uint64_t)b << endl << endl;
+	typedef std::numeric_limits< double > dbl;
+	cout.precision(dbl::max_digits10);
+	
+	cout << endl << "timestamp to unix time conversion: tics_per_sec=" << one_over_m << " unix_start_time=" << b << endl << endl;
 
 	return NOERROR;
 }
