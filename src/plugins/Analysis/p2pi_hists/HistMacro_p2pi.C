@@ -179,7 +179,8 @@
 
 		n_rho_kinfit = locHist_RhoMass_KinFitCut->Integral(200./locNumRebin, 700./locNumRebin);
 
-		TF1 *frho = new TF1("frho", "gaus", 0.6, 0.9);
+		TF1 *frho = new TF1("frho", "[0] / ((x*x - [1]*[1])*(x*x- [1]*[1]) + x*x*x*x*[2]*[2]/[1]/[1])", 0.6, 0.9);
+		frho->SetParameter(0,10);
 		frho->SetParameter(1,0.770);
 		frho->SetParameter(2,0.1);
 		locHist_RhoMass_KinFitCut->Fit("frho", "RQ0");
