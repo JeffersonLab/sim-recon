@@ -12,7 +12,7 @@
 	// This taken from the bin contents of the BeamEnergy histogram from the
 	// online monitoring root file for run 30618, an amorphous target run.
 	// The macro used is in /gluonwork1/Users/davidl/2017.02.08.amorphous_norm
-	string amorphous_label = "Normalized to Amorphous run 30808";
+	string amorphous_label = "Normalized to Amorphous run 30839";
 
 	Double_t amorphous_data[] = {
 		        0.0,         0.0,         0.0,         0.0,         0.0,         0.0,         0.0,         0.0,         0.0,         0.0, 
@@ -24,20 +24,20 @@
 		        0.0,         0.0,         0.0,         0.0,         0.0,         0.0,         0.0,         0.0,         0.0,         0.0, 
 		        0.0,         0.0,         0.0,         0.0,         0.0,         0.0,         0.0,         0.0,         0.0,         0.0, 
 		        0.0,         0.0,         0.0,         0.0,         0.0,         0.0,         0.0,         0.0,         0.0,         0.0, 
-		        0.0,         0.0,    100768.0,     95650.0,     94150.0,         0.0,     88692.0,     91703.0,     87631.0,     87937.0, 
-		    85061.0,     80428.0,     81562.0,     80657.0,     83799.0,     78764.0,     76626.0,   8792911.0,   8317217.0,   8201228.0, 
-		   114649.0,   7752784.0,   7966827.0,     85925.0,   7663143.0,   7597263.0,   7428433.0,   7023925.0,   7109020.0,   7076531.0, 
-		  7326945.0,         0.0,   6887713.0,   6676535.0,   6503579.0,   8375514.0,   7963187.0,   9935152.0,     71453.0,   7623876.0, 
-		  9708973.0,   7463279.0,   7672715.0,   8967789.0,   9131950.0,    170299.0,   8756174.0,   8471753.0,   8354280.0,   8227098.0, 
-		  6875793.0,    132330.0,   6863070.0,   6888314.0,   6677740.0,   5104907.0,   9164354.0,   6343633.0,    111025.0,   6405366.0, 
-		  6143878.0,   5709977.0,   5982726.0,  13606937.0,  12944968.0,  11738335.0,  12914732.0,  14409128.0,   8140100.0,   7934019.0, 
-		  8156563.0,  10123315.0,  10118132.0,   9535642.0,   7301814.0,   9500738.0,   9435191.0,   9403256.0,   8835431.0,   8683418.0, 
-		  8557447.0,   8067092.0,   8032815.0,   9529378.0,   6536625.0,   7713771.0,   8542687.0,   7204053.0,  12720393.0,   9492931.0, 
-		  7792337.0,  11883632.0,   8746341.0,  10808774.0,   7226866.0,  11542299.0,  11531197.0,  11096566.0,   7476257.0,  11142268.0, 
-		 11046503.0,  10421249.0,  10418394.0,   9934460.0,   9869122.0,   8247500.0,   9784511.0,   9562820.0,  13904267.0,   8830215.0, 
-		  8777431.0,   8462338.0,  12066954.0,   9954624.0,   8677448.0,   9264007.0,   8969777.0,   8645879.0,   8267051.0,   8164448.0, 
-		 11791013.0,   7482360.0,  10661033.0,   6834552.0,  10380241.0,   9840795.0,   9335792.0,   8281151.0,   7994163.0,  11674755.0, 
-		  7133660.0,   9775747.0,   6873756.0,  10611020.0,   6247860.0,   8085751.0,   9124534.0,   7335488.0,   6031261.0,         0.0, 
+		        0.0,         0.0,     59002.0,     55554.0,     54664.0,         0.0,     51564.0,     52808.0,     51092.0,     50718.0, 
+		    49471.0,     46579.0,     46933.0,     46995.0,     48366.0,     45802.0,     44626.0,   8788738.0,   8304443.0,   8180075.0, 
+		    66517.0,   7739883.0,   7943276.0,     49450.0,   7646915.0,   7580332.0,   7405749.0,   7008976.0,   7095583.0,   7051528.0, 
+		  7307102.0,         0.0,   6872107.0,   6660319.0,   6489457.0,   8375291.0,   7964083.0,   9935822.0,     42136.0,   7615902.0, 
+		  9715414.0,   7460525.0,   7654250.0,   8942988.0,   9108202.0,     99239.0,   8697543.0,   8482876.0,   8328684.0,   8214948.0, 
+		  6854912.0,     76483.0,   6842285.0,   6852213.0,   6654311.0,   5067410.0,   9154980.0,   6318726.0,     64752.0,   6385929.0, 
+		  6116479.0,   5690496.0,   5969774.0,  13616461.0,  12930485.0,  11712460.0,  12890584.0,  14397880.0,   8436157.0,   7935417.0, 
+		  8128062.0,  10089952.0,  10093994.0,   9516037.0,   7281862.0,   9468792.0,   9400915.0,   9379595.0,   8798702.0,   8645830.0, 
+		  8546285.0,   8052767.0,   7998508.0,   9574554.0,   6495475.0,   7683286.0,   8535819.0,   7198713.0,  12682343.0,   9512809.0, 
+		  7752982.0,  11895880.0,   8727576.0,  10791075.0,   7178164.0,  11520077.0,  11521476.0,  11085626.0,   7463967.0,  11118820.0, 
+		 11022009.0,  10392706.0,  10417068.0,   9915180.0,   9846869.0,   8214725.0,   9768965.0,   9471939.0,  13930227.0,   8850982.0, 
+		  8798099.0,   8486296.0,  12094598.0,   9984665.0,   8702569.0,   9285678.0,   8991655.0,   8663223.0,   8286451.0,   8188784.0, 
+		 11802725.0,   7493393.0,  10670477.0,   6835822.0,  10394698.0,   9840321.0,   9334801.0,   8278408.0,   7967535.0,  11610292.0, 
+		  7072116.0,   9654340.0,   6766942.0,  10398622.0,   6094841.0,   7851124.0,   8808280.0,   7058197.0,   5778494.0,         0.0, 
 		        0.0,         0.0,         0.0,         0.0,         0.0,         0.0,         0.0,         0.0,         0.0,         0.0, 
 	0.0};
 
@@ -125,51 +125,58 @@
 		}
 		if(locHist_BeamEnergy_norm){
 		
-			// Find leftmost non-zero bin for scaling whole hist
-			double scale = 0.0;
-			for(int ibin=1; ibin<=locHist_BeamEnergy->GetNbinsX(); ibin++){
-				if( amorphous_data[ibin-1] < 1000.0) continue;
-				Double_t v = (Double_t)locHist_BeamEnergy->GetBinContent(ibin);
-				if(v>0.0){
-					scale = v/amorphous_data[ibin-1];
-					break;
-				}
-			}
 
-			// Normalize to amorphous baseline including scaling factor
-			// above so that leftmost non-zero bin is always 1
-			double max = 0.0;
+			// Normalize to amorphous baseline 
 			for(int ibin=1; ibin<=locHist_BeamEnergy_norm->GetNbinsX(); ibin++){
 				Double_t norm = amorphous_data[ibin-1];
 				if( norm < 100000.0) continue;
-				norm *= scale;
 
 				Double_t v = (Double_t)locHist_BeamEnergy->GetBinContent(ibin);
 				locHist_BeamEnergy_norm->SetBinContent(ibin, v/norm);
-				
-				if(v/norm  > max) max = v/norm;
 			}
-			max = (max-0.75)*1.05 + 0.75;
-			if(max > 3.0) max = 3.0;
-			if(max < 1.4) max = 1.4;
-			locHist_BeamEnergy_norm->GetYaxis()->SetRangeUser(0.75, max);
+
+			// Find maximum and scale histogram so peak is at 1
+			double scale = (Double_t)locHist_BeamEnergy_norm->GetMaximum();
+			locHist_BeamEnergy_norm->Scale(1.0/scale);		
+
+			// Find leftmost non-zero bin 
+			double left_scale = 0.0;
+			for(int ibin=1; ibin<=locHist_BeamEnergy_norm->GetNbinsX(); ibin++){
+				if( amorphous_data[ibin-1] < 1000.0) continue;
+				Double_t v = (Double_t)locHist_BeamEnergy_norm->GetBinContent(ibin);
+				if(v>0.0){
+					left_scale = v;
+					break;
+				}
+			}
+			
+			// Set min and max of plot to show range
+			double diff = scale - left_scale;
+			double min = left_scale - diff*0.1;
+			double max = left_scale + diff*1.2;
+			if( fabs(max-min) < 0.4 ){
+				min = 0.5;
+				max =1.5;
+			}
+			
+			locHist_BeamEnergy_norm->GetYaxis()->SetRangeUser(min, max);
 			locHist_BeamEnergy_norm->Draw();
 			
-			// If maximum is > 1.5 then assume this is not an amorphous run
+			// If diff is > 0.3 then assume this is not an amorphous run
 			// and draw a label of the peak energy
-			if(max > 1.5){
+			if(diff > 0.3){
 				double Epeak = locHist_BeamEnergy_norm->GetBinCenter(locHist_BeamEnergy_norm->GetMaximumBin());
 				sprintf(str, "Epeak: %3.2f GeV", Epeak);
 				latex.SetTextAlign(12);
-				latex.DrawLatex(1.0, 0.5*(max-0.75)+0.75, str);
+				latex.DrawLatex(1.0, (min+max)/2.0, str);
 			}
 
 			sprintf(str, "%g entries", (double)locHist_BeamEnergy->GetEntries());
 			latex.SetTextAlign(22);
-			latex.DrawLatex(6.0, 1.035*(max-0.75)+0.75, str);
+			latex.DrawLatex(6.0, 1.035*(max-min)+min, str);
 
 			latex.SetTextAngle(270);
-			latex.DrawLatex(12.5, 0.5*(max-0.75)+0.75, amorphous_label.c_str());
+			latex.DrawLatex(12.5, (min+max)/2.0, amorphous_label.c_str());
 		}
 
 		TPad *beamenergypad = (TPad*)gDirectory->FindObjectAny("beamenergypad");
