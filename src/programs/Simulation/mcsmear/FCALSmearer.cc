@@ -48,6 +48,7 @@ fcal_config_t::fcal_config_t(JEventLoop *loop, DFCALGeometry *fcalGeom)
     }
 
 	// initialize 2D matrix of efficiencies, indexed by (row,column)
+    /*
 	vector< vector<double > > new_block_efficiencies(kBlocksTall, 
             vector<double>(kBlocksWide));
 	block_efficiencies = new_block_efficiencies;
@@ -79,6 +80,7 @@ fcal_config_t::fcal_config_t(JEventLoop *loop, DFCALGeometry *fcalGeom)
 		block_efficiencies[row][col]=1.;
     	}
     }
+    */
 
 }
 	
