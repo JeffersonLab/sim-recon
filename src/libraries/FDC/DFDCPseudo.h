@@ -30,6 +30,22 @@ typedef struct {
    DMatrix3x1 X,N,NRaw,index;
 }centroid_t;
 
+enum FDCTrackD {
+   dDOCAW_dDeltaX=0,
+   dDOCAW_dDeltaPhiX,
+   dW_dt0,
+   dDOCAW_dx,
+   dDOCAW_dy,
+   dDOCAW_dtx,
+   dDOCAW_dty,
+   dDOCAC_dDeltaX,
+   dDOCAC_dDeltaPhiX,
+   dDOCAC_dx,
+   dDOCAC_dy,
+   dDOCAC_dtx,
+   dDOCAC_dty
+};
+
 enum FDCPseudoD {
    dWcddeltaU=0,
    dWcddeltaV,

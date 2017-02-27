@@ -201,6 +201,56 @@ jerror_t JEventProcessor_MilleFieldOn::brun(JEventLoop *eventLoop, int32_t runnu
       }
    }
 
+   if (jcalib->Get("FDC/package1/wire_timing_offsets",vals)==false){
+      for(unsigned int i=0; i<vals.size(); i++){
+         map<string,double> &row = vals[i];
+         // Get the offsets from the calibration database
+         char name[32];
+         for (unsigned int j=1; j<= 96; j++)
+         {
+            sprintf(name,"wire%i", j);
+            HistCurrentConstantsFDC->Fill((i+1)*1000+900+j,row[name]);
+         }
+      }
+   }
+   if (jcalib->Get("FDC/package2/wire_timing_offsets",vals)==false){
+      for(unsigned int i=0; i<vals.size(); i++){
+         map<string,double> &row = vals[i];
+         // Get the offsets from the calibration database
+         char name[32];
+         for (unsigned int j=1; j<= 96; j++)
+         {
+            sprintf(name,"wire%i", j);
+            HistCurrentConstantsFDC->Fill((i+7)*1000+900+j,row[name]);
+         }
+      }
+   }
+   if (jcalib->Get("FDC/package3/wire_timing_offsets",vals)==false){
+      for(unsigned int i=0; i<vals.size(); i++){
+         map<string,double> &row = vals[i];
+         // Get the offsets from the calibration database
+         char name[32];
+         for (unsigned int j=1; j<= 96; j++)
+         {
+            sprintf(name,"wire%i", j);
+            HistCurrentConstantsFDC->Fill((i+13)*1000+900+j,row[name]);
+         }
+      }
+   }
+   if (jcalib->Get("FDC/package4/wire_timing_offsets",vals)==false){
+      for(unsigned int i=0; i<vals.size(); i++){
+         map<string,double> &row = vals[i];
+         // Get the offsets from the calibration database
+         char name[32];
+         for (unsigned int j=1; j<= 96; j++)
+         {
+            sprintf(name,"wire%i", j);
+            HistCurrentConstantsFDC->Fill((i+19)*1000+900+j,row[name]);
+         }
+      }
+   }
+
+
    if (jcalib->Get("FDC/strip_pitches_v2",vals)==false){
       for(unsigned int i=0; i<vals.size(); i++){
          map<string,double> &row = vals[i];
@@ -241,18 +291,7 @@ jerror_t JEventProcessor_MilleFieldOn::evnt(JEventLoop *loop, uint64_t eventnumb
       // Some quality cuts for the tracks we will use
       // Keep this minimal for now and investigate later
       float trackingFOMCut = 0.001;
-      unsigned int trackingNDFCut = 5;
-
       if(trackingFOM < trackingFOMCut) continue;
-      if( bestHypothesis->dNDF_Track < trackingNDFCut) continue;
-
-      /*
-      double phi = bestHypothesis->momentum().Phi()*TMath::RadToDeg();
-      double theta = bestHypothesis->momentum().Theta()*TMath::RadToDeg();
-      double pmag = bestHypothesis->momentum().Mag();
-
-      if (pmag < 0.5) continue;
-      */
 
       // Get the pulls vector from the track
       const DTrackTimeBased *thisTimeBasedTrack;
@@ -264,21 +303,33 @@ jerror_t JEventProcessor_MilleFieldOn::evnt(JEventLoop *loop, uint64_t eventnumb
       // Determine TrackType and check for nan
       bool isCDCOnly=true; //bool isFDCOnly=true;
       bool anyNaN=false;
+      int nCDC=0, nFDC=0;
+      unsigned int pullsNDF=0;
       for (size_t iPull = 0; iPull < pulls.size(); iPull++){
          const DCDCTrackHit *cdc_hit = pulls[iPull].cdc_hit;
          //const DFDCPseudo *fdc_hit   = pulls[iPull].fdc_hit;
          double err = pulls[iPull].err;
          double errc = pulls[iPull].errc;
-         if (cdc_hit == NULL) isCDCOnly=false;
+         if (cdc_hit == NULL) {pullsNDF+=2;nFDC++;isCDCOnly=false;}
+         else {pullsNDF++;nCDC++;}
          if ( err != err || errc != errc) anyNaN=true;
          //if (fdc_hit == NULL) isFDCOnly=false;
       }
-      if (anyNaN) continue;
+      pullsNDF-=5;
+      if (anyNaN)  continue;
+      if(pullsNDF != bestHypothesis->dNDF_Track) continue;
 
-      if(pulls.size() != (bestHypothesis->dNDF_Track+5)) continue;
+      unsigned int trackingNDFCut = 22;
+      if (isCDCOnly) trackingNDFCut = 10;
 
-      if (isCDCOnly && bestHypothesis->dNDF_Track < 12) continue;
-      if (!isCDCOnly) continue;
+       if( bestHypothesis->dNDF_Track < trackingNDFCut) continue;
+      /*
+         double phi = bestHypothesis->momentum().Phi()*TMath::RadToDeg();
+         double theta = bestHypothesis->momentum().Theta()*TMath::RadToDeg();
+         double pmag = bestHypothesis->momentum().Mag();
+
+         if (pmag < 0.5) continue;
+         */
 
       japp->RootWriteLock(); // Just use the root lock as a temporary
       for (size_t iPull = 0; iPull < pulls.size(); iPull++){
@@ -298,7 +349,7 @@ jerror_t JEventProcessor_MilleFieldOn::evnt(JEventLoop *loop, uint64_t eventnumb
          double errc                 = pulls[iPull].errc;
 
          vector<double> trackDerivatives = pulls[iPull].trackDerivatives;
-         vector<double> stateVector = pulls[iPull].stateVector;
+         if (trackDerivatives.size()==0) continue;
 
          if (fdc_hit != NULL && fdc_hit->status == 6) {
             // Add fdc hit
@@ -312,59 +363,50 @@ jerror_t JEventProcessor_MilleFieldOn::evnt(JEventLoop *loop, uint64_t eventnumb
 
             //Now we need to fill the Mille structure once for our wire measurment and once for our cathode measurement
             const int NLC = 4; // Number of local parameters
-            const int NGL_W = 2; // Number of global parameters for wire alignment
+            const int NGL_W = 3; // Number of global parameters for wire alignment
             float localDerW[NLC];
             float globalDerW[NGL_W];
             int labelW[NGL_W];
 
-            localDerW[0]=trackDerivatives[0]; localDerW[1]=trackDerivatives[1];
-            localDerW[2]=trackDerivatives[2]; localDerW[3]=trackDerivatives[3];
+            localDerW[0]=trackDerivatives[FDCTrackD::dDOCAW_dx]; localDerW[1]=trackDerivatives[FDCTrackD::dDOCAW_dy];
+            localDerW[2]=trackDerivatives[FDCTrackD::dDOCAW_dtx]; localDerW[3]=trackDerivatives[FDCTrackD::dDOCAW_dty];
 
-            // need some things from the state vector
-            double x = stateVector[0]; double y = stateVector[1];
-            double tx = stateVector[2]; double ty = stateVector[3];
-            double cosa=thisHit->wire->udir.y();
-            double sina=thisHit->wire->udir.x();
-            double w=thisHit->w;
-            double wpred=x*cosa-y*sina;
-            double tu=tx*cosa-ty*sina;
-            double alpha=atan(tu);
-            double cosalpha=cos(alpha);
-
-            globalDerW[0] = -cosalpha; labelW[0] = layerOffset + 1;
-            globalDerW[1] = -cosalpha*(y*cosa+x*sina)+(ty*cosa+tx*sina)*(w-wpred)/(1+tu*tu); labelW[1] = layerOffset + 2;
+            globalDerW[0] = trackDerivatives[FDCTrackD::dDOCAW_dDeltaX]; labelW[0] = layerOffset + 1;
+            globalDerW[1] = trackDerivatives[FDCTrackD::dDOCAW_dDeltaPhiX]; labelW[1] = layerOffset + 2;
+            globalDerW[2] = -trackDerivatives[FDCTrackD::dW_dt0]; labelW[2] = layerOffset + 900 + fdc_hit->wire->wire;
 
             milleWriter->mille(NLC, localDerW, NGL_W, globalDerW, labelW, resi, err);
 
             // Now for the cathode measurement, there are more alignment parameters.
-            const int NGL_C = 21; // Number of global parameters for wire alignment
+            const int NGL_C = 23; // Number of global parameters for wire alignment
             float localDerC[NLC];
             float globalDerC[NGL_C];
             int labelC[NGL_C];
 
-            localDerC[0]=trackDerivatives[4]; localDerC[1]=trackDerivatives[5];
-            localDerC[2]=trackDerivatives[6]; localDerC[3]=trackDerivatives[7];
+            localDerC[0]=trackDerivatives[FDCTrackD::dDOCAC_dx]; localDerC[1]=trackDerivatives[FDCTrackD::dDOCAC_dy];
+            localDerC[2]=trackDerivatives[FDCTrackD::dDOCAC_dtx]; localDerC[3]=trackDerivatives[FDCTrackD::dDOCAC_dty];
 
-            globalDerC[0] = -1.0;
-            labelC[0] = layerOffset + 100; // delta_y
+            globalDerC[0] = -1.0;                                                labelC[0] = layerOffset + 100;
+            globalDerC[1] = trackDerivatives[FDCTrackD::dDOCAC_dDeltaX];         labelC[1] = layerOffset + 1;
+            globalDerC[2] = trackDerivatives[FDCTrackD::dDOCAC_dDeltaPhiX];      labelC[2] = layerOffset + 2;
 
             // Cathode U and V offsets
-            globalDerC[1] = -pseudoAlignmentDerivatives[FDCPseudoD::dSddeltaU];    labelC[1] = layerOffset + 101;
-            globalDerC[2] = -pseudoAlignmentDerivatives[FDCPseudoD::dSddeltaV];    labelC[2] = layerOffset + 102;
-            globalDerC[3] = -pseudoAlignmentDerivatives[FDCPseudoD::dSddeltaPhiU]; labelC[3] = layerOffset + 103;
-            globalDerC[4] = -pseudoAlignmentDerivatives[FDCPseudoD::dSddeltaPhiV]; labelC[4] = layerOffset + 104;
+            globalDerC[3] = -pseudoAlignmentDerivatives[FDCPseudoD::dSddeltaU];    labelC[3] = layerOffset + 101;
+            globalDerC[4] = -pseudoAlignmentDerivatives[FDCPseudoD::dSddeltaV];    labelC[4] = layerOffset + 102;
+            globalDerC[5] = -pseudoAlignmentDerivatives[FDCPseudoD::dSddeltaPhiU]; labelC[5] = layerOffset + 103;
+            globalDerC[6] = -pseudoAlignmentDerivatives[FDCPseudoD::dSddeltaPhiV]; labelC[6] = layerOffset + 104;
 
             // Strip Pitch Calibration
-            globalDerC[5] = -pseudoAlignmentDerivatives[FDCPseudoD::dSddeltaU]*fdcStripPitchDerivatives[0]; labelC[5] = layerOffset + 200;
-            globalDerC[6] = -pseudoAlignmentDerivatives[FDCPseudoD::dSddeltaU]*fdcStripPitchDerivatives[1]; labelC[6] = layerOffset + 201;
-            globalDerC[7] = -pseudoAlignmentDerivatives[FDCPseudoD::dSddeltaU]*fdcStripPitchDerivatives[2]; labelC[7] = layerOffset + 202;
-            globalDerC[8] = -pseudoAlignmentDerivatives[FDCPseudoD::dSddeltaU]*fdcStripPitchDerivatives[3]; labelC[8] = layerOffset + 203;
-            globalDerC[9] = -pseudoAlignmentDerivatives[FDCPseudoD::dSddeltaU]*fdcStripPitchDerivatives[4]; labelC[9] = layerOffset + 204;
-            globalDerC[10] = -pseudoAlignmentDerivatives[FDCPseudoD::dSddeltaV]*fdcStripPitchDerivatives[5]; labelC[10] = layerOffset + 205;
-            globalDerC[11] = -pseudoAlignmentDerivatives[FDCPseudoD::dSddeltaV]*fdcStripPitchDerivatives[6]; labelC[11] = layerOffset + 206;
-            globalDerC[12] = -pseudoAlignmentDerivatives[FDCPseudoD::dSddeltaV]*fdcStripPitchDerivatives[7]; labelC[12] = layerOffset + 207;
-            globalDerC[13] = -pseudoAlignmentDerivatives[FDCPseudoD::dSddeltaV]*fdcStripPitchDerivatives[8]; labelC[13] = layerOffset + 208;
-            globalDerC[14] = -pseudoAlignmentDerivatives[FDCPseudoD::dSddeltaV]*fdcStripPitchDerivatives[9]; labelC[14] = layerOffset + 209;
+            globalDerC[7] = -pseudoAlignmentDerivatives[FDCPseudoD::dSddeltaU]*fdcStripPitchDerivatives[0]; labelC[7] = layerOffset + 200;
+            globalDerC[8] = -pseudoAlignmentDerivatives[FDCPseudoD::dSddeltaU]*fdcStripPitchDerivatives[1]; labelC[8] = layerOffset + 201;
+            globalDerC[9] = -pseudoAlignmentDerivatives[FDCPseudoD::dSddeltaU]*fdcStripPitchDerivatives[2]; labelC[9] = layerOffset + 202;
+            globalDerC[10] = -pseudoAlignmentDerivatives[FDCPseudoD::dSddeltaU]*fdcStripPitchDerivatives[3]; labelC[10] = layerOffset + 203;
+            globalDerC[11] = -pseudoAlignmentDerivatives[FDCPseudoD::dSddeltaU]*fdcStripPitchDerivatives[4]; labelC[11] = layerOffset + 204;
+            globalDerC[12] = -pseudoAlignmentDerivatives[FDCPseudoD::dSddeltaV]*fdcStripPitchDerivatives[5]; labelC[12] = layerOffset + 205;
+            globalDerC[13] = -pseudoAlignmentDerivatives[FDCPseudoD::dSddeltaV]*fdcStripPitchDerivatives[6]; labelC[13] = layerOffset + 206;
+            globalDerC[14] = -pseudoAlignmentDerivatives[FDCPseudoD::dSddeltaV]*fdcStripPitchDerivatives[7]; labelC[14] = layerOffset + 207;
+            globalDerC[15] = -pseudoAlignmentDerivatives[FDCPseudoD::dSddeltaV]*fdcStripPitchDerivatives[8]; labelC[15] = layerOffset + 208;
+            globalDerC[16] = -pseudoAlignmentDerivatives[FDCPseudoD::dSddeltaV]*fdcStripPitchDerivatives[9]; labelC[16] = layerOffset + 209;
 
             // Strip Gain Calibration
             vector<const DFDCCathodeCluster *> cathodeClusters;
@@ -391,12 +433,12 @@ jerror_t JEventProcessor_MilleFieldOn::evnt(JEventLoop *loop, uint64_t eventnumb
                }
             }
 
-            globalDerC[15] = -pseudoAlignmentDerivatives[FDCPseudoD::dSddeltaU]*fdcStripGainDerivatives[0]; labelC[15] = layerOffset + 300 + gainLabels[0];
-            globalDerC[16] = -pseudoAlignmentDerivatives[FDCPseudoD::dSddeltaU]*fdcStripGainDerivatives[1]; labelC[16] = layerOffset + 300 + gainLabels[1];
-            globalDerC[17] = -pseudoAlignmentDerivatives[FDCPseudoD::dSddeltaU]*fdcStripGainDerivatives[2]; labelC[17] = layerOffset + 300 + gainLabels[2];
-            globalDerC[18] = -pseudoAlignmentDerivatives[FDCPseudoD::dSddeltaV]*fdcStripGainDerivatives[3]; labelC[18] = layerOffset + 600 + gainLabels[3];
-            globalDerC[19] = -pseudoAlignmentDerivatives[FDCPseudoD::dSddeltaV]*fdcStripGainDerivatives[4]; labelC[19] = layerOffset + 600 + gainLabels[4];
-            globalDerC[20] = -pseudoAlignmentDerivatives[FDCPseudoD::dSddeltaV]*fdcStripGainDerivatives[5]; labelC[20] = layerOffset + 600 + gainLabels[5];
+            globalDerC[17] = -pseudoAlignmentDerivatives[FDCPseudoD::dSddeltaU]*fdcStripGainDerivatives[0]; labelC[17] = layerOffset + 300 + gainLabels[0];
+            globalDerC[18] = -pseudoAlignmentDerivatives[FDCPseudoD::dSddeltaU]*fdcStripGainDerivatives[1]; labelC[18] = layerOffset + 300 + gainLabels[1];
+            globalDerC[19] = -pseudoAlignmentDerivatives[FDCPseudoD::dSddeltaU]*fdcStripGainDerivatives[2]; labelC[19] = layerOffset + 300 + gainLabels[2];
+            globalDerC[20] = -pseudoAlignmentDerivatives[FDCPseudoD::dSddeltaV]*fdcStripGainDerivatives[3]; labelC[20] = layerOffset + 600 + gainLabels[3];
+            globalDerC[21] = -pseudoAlignmentDerivatives[FDCPseudoD::dSddeltaV]*fdcStripGainDerivatives[4]; labelC[21] = layerOffset + 600 + gainLabels[4];
+            globalDerC[22] = -pseudoAlignmentDerivatives[FDCPseudoD::dSddeltaV]*fdcStripGainDerivatives[5]; labelC[22] = layerOffset + 600 + gainLabels[5];
 
             milleWriter->mille(NLC, localDerC, NGL_C, globalDerC, labelC, resic, errc);
          }
