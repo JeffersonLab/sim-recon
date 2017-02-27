@@ -104,10 +104,7 @@ class DTrackFitter:public jana::JObject{
 		    double resic; // residual for FDC cathode measuremtns
 		    double errc;
           vector<double> trackDerivatives;
-          vector<double> stateVector;
           inline void AddTrackDerivatives(vector<double> d){ trackDerivatives = d;}
-          inline void AddStateVector4x1(DMatrix4x1 &d){ for (int i=0; i < 4; i++) stateVector.push_back(d(i));}
-          inline void AddStateVector5x1(DMatrix5x1 &d){ for (int i=0; i < 5; i++) stateVector.push_back(d(i));} 
              
 		};
 		
