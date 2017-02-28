@@ -300,7 +300,8 @@ jerror_t JEventProcessor_BCAL_TDC_Timing::evnt(JEventLoop *loop, uint64_t eventn
       if (bcalMatch == NULL) continue; 
 
       // We also need the reference trajectory, which is buried deep in there
-      const DTrackTimeBased *timeBasedTrack = (const DTrackTimeBased *) bcalMatch->dTrack;
+      const DTrackTimeBased *timeBasedTrack = nullptr;
+      bestHypothesis->GetSingle(timeBasedTrack);
       const DReferenceTrajectory *rt = timeBasedTrack->rt;
 
 	  // Use CDC dEdx to help reject protons

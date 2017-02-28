@@ -67,22 +67,22 @@ class DChargedTrackHypothesis : public DKinematicData
 //THESE RETURN NULL IF NO MATCH TO THAT SYSTEM
 inline const DSCHitMatchParams* DChargedTrackHypothesis::Get_SCHitMatchParams(void) const
 {
-	return ((dSCHitMatchParams.dTrack == NULL) ? NULL : &dSCHitMatchParams);
+	return ((dSCHitMatchParams.dSCHit == NULL) ? NULL : &dSCHitMatchParams);
 }
 
 inline const DTOFHitMatchParams* DChargedTrackHypothesis::Get_TOFHitMatchParams(void) const
 {
-	return ((dTOFHitMatchParams.dTrack == NULL) ? NULL : &dTOFHitMatchParams);
+	return ((dTOFHitMatchParams.dTOFPoint == NULL) ? NULL : &dTOFHitMatchParams);
 }
 
 inline const DBCALShowerMatchParams* DChargedTrackHypothesis::Get_BCALShowerMatchParams(void) const
 {
-	return ((dBCALShowerMatchParams.dTrack == NULL) ? NULL : &dBCALShowerMatchParams);
+	return ((dBCALShowerMatchParams.dBCALShower == NULL) ? NULL : &dBCALShowerMatchParams);
 }
 
 inline const DFCALShowerMatchParams* DChargedTrackHypothesis::Get_FCALShowerMatchParams(void) const
 {
-	return ((dFCALShowerMatchParams.dTrack == NULL) ? NULL : &dFCALShowerMatchParams);
+	return ((dFCALShowerMatchParams.dFCALShower == NULL) ? NULL : &dFCALShowerMatchParams);
 }
 
 inline void DChargedTrackHypothesis::Set_SCHitMatchParams(const DSCHitMatchParams& locSCHitMatchParams)

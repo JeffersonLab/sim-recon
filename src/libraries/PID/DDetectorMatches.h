@@ -24,11 +24,9 @@ using namespace std;
 class DBCALShowerMatchParams
 {
 	public:
-		DBCALShowerMatchParams(void) : dTrack(NULL), dBCALShower(NULL),
+		DBCALShowerMatchParams(void) : dBCALShower(NULL),
 		dx(0.0), dFlightTime(0.0), dFlightTimeVariance(0.0), dPathLength(0.0), dDeltaPhiToShower(0.0), dDeltaZToShower(0.0){}
 
-		//dTrack is EITHER NULL (no match), DTrackTimeBased (default DDetectorMatches tag) or DTrackWireBased (DDetectorMatches tag = "WireBased")
-		const DKinematicData* dTrack;
 		const DBCALShower* dBCALShower;
 
 		double dx; //the distance the track traveled through the detector system up to the shower position
@@ -43,16 +41,24 @@ class DBCALShowerMatchParams
 			double locRSq = dBCALShower->x*dBCALShower->x + dBCALShower->y*dBCALShower->y;
 			return sqrt(dDeltaZToShower*dDeltaZToShower + dDeltaPhiToShower*dDeltaPhiToShower*locRSq);
 		}
+
+		bool operator != (const DBCALShowerMatchParams& locParams) const{return (!((*this) == locParams));}
+		bool operator == (const DBCALShowerMatchParams& locParams) const
+		{
+			if((dBCALShower != locParams.dBCALShower) || (dx != locParams.dx) || (dFlightTime != locParams.dFlightTime) || (dPathLength != locParams.dPathLength))
+				return false;
+			if((dFlightTimeVariance != locParams.dFlightTimeVariance) || (dDeltaZToShower != locParams.dDeltaZToShower) || (dDeltaPhiToShower != locParams.dDeltaPhiToShower))
+				return false;
+			return true;
+		}
 };
 
 class DFCALShowerMatchParams
 {
 	public:
-		DFCALShowerMatchParams(void) : dTrack(NULL), dFCALShower(NULL),
+		DFCALShowerMatchParams(void) : dFCALShower(NULL),
 		dx(0.0), dFlightTime(0.0), dFlightTimeVariance(0.0), dPathLength(0.0), dDOCAToShower(0.0){}
 
-		//dTrack is EITHER NULL (no match), DTrackTimeBased (default DDetectorMatches tag) or DTrackWireBased (DDetectorMatches tag = "WireBased")
-		const DKinematicData* dTrack;
 		const DFCALShower* dFCALShower;
 
 		double dx; //the distance the track traveled through the detector system up to the shower position
@@ -60,17 +66,25 @@ class DFCALShowerMatchParams
 		double dFlightTimeVariance;
 		double dPathLength; //path length from DKinematicData::position() to the shower
 		double dDOCAToShower; //DOCA of track to shower
+
+		bool operator != (const DFCALShowerMatchParams& locParams) const{return (!((*this) == locParams));}
+		bool operator == (const DFCALShowerMatchParams& locParams) const
+		{
+			if((dFCALShower != locParams.dFCALShower) || (dx != locParams.dx) || (dFlightTime != locParams.dFlightTime) || (dPathLength != locParams.dPathLength))
+				return false;
+			if((dFlightTimeVariance != locParams.dFlightTimeVariance) || (dDOCAToShower != locParams.dDOCAToShower))
+				return false;
+			return true;
+		}
 };
 
 class DTOFHitMatchParams
 {
 	public:
-		DTOFHitMatchParams(void) : dTrack(NULL), dTOFPoint(NULL),
+		DTOFHitMatchParams(void) : dTOFPoint(NULL),
 		dHitTime(0.0), dHitTimeVariance(0.0), dHitEnergy(0.0), dEdx(0.0), dFlightTime(0.0), dFlightTimeVariance(0.0), 
 		dPathLength(0.0), dDeltaXToHit(0.0), dDeltaYToHit(0.0){}
 
-		//dTrack is EITHER NULL (no match), DTrackTimeBased (default DDetectorMatches tag) or DTrackWireBased (DDetectorMatches tag = "WireBased")
-		const DKinematicData* dTrack;
 		const DTOFPoint* dTOFPoint;
 
 		double dHitTime; //This can be different from DTOFPoint::t, if the DTOFPoint was (e.g.) an unmatched, single-ended paddle
@@ -88,16 +102,26 @@ class DTOFHitMatchParams
 		{
 			return sqrt(dDeltaXToHit*dDeltaXToHit + dDeltaYToHit*dDeltaYToHit);
 		}
+
+		bool operator != (const DTOFHitMatchParams& locParams) const{return (!((*this) == locParams));}
+		bool operator == (const DTOFHitMatchParams& locParams) const
+		{
+			if((dTOFPoint != locParams.dTOFPoint) || (dHitTime != locParams.dHitTime) || (dHitTimeVariance != locParams.dHitTimeVariance))
+				return false;
+			if((dHitEnergy != locParams.dHitEnergy) || (dEdx != locParams.dEdx) || (dFlightTime != locParams.dFlightTime) || (dFlightTimeVariance != locParams.dFlightTimeVariance))
+				return false;
+			if((dPathLength != locParams.dPathLength) || (dDeltaXToHit != locParams.dDeltaXToHit) || (dDeltaYToHit != locParams.dDeltaYToHit))
+				return false;
+			return true;
+		}
 };
 
 class DSCHitMatchParams
 {
 	public:
-		DSCHitMatchParams(void) : dTrack(NULL), dSCHit(NULL), dHitTime(0.0), dHitTimeVariance(0.0),
+		DSCHitMatchParams(void) : dSCHit(NULL), dHitTime(0.0), dHitTimeVariance(0.0),
 		dHitEnergy(0.0), dEdx(0.0), dFlightTime(0.0), dFlightTimeVariance(0.0), dPathLength(0.0), dDeltaPhiToHit(0.0){}
 
-		//dTrack is EITHER NULL (no match), DTrackTimeBased (default DDetectorMatches tag) or DTrackWireBased (DDetectorMatches tag = "WireBased")
-		const DKinematicData* dTrack;
 		const DSCHit* dSCHit;
 
 		double dHitTime; //not the same as DSCHit time: corrected for propagation along scintillator
@@ -108,7 +132,19 @@ class DSCHitMatchParams
 		double dFlightTime; //flight time from DKinematicData::position() to the hit
 		double dFlightTimeVariance;
 		double dPathLength; //path length from DKinematicData::position() to the hit
-		double dDeltaPhiToHit; //difference in phi between track and hit
+		double dDeltaPhiToHit; //difference in phi between track and hit //units in radians
+
+		bool operator != (const DSCHitMatchParams& locParams) const{return (!((*this) == locParams));}
+		bool operator == (const DSCHitMatchParams& locParams) const
+		{
+			if((dSCHit != locParams.dSCHit) || (dHitTime != locParams.dHitTime) || (dHitTimeVariance != locParams.dHitTimeVariance))
+				return false;
+			if((dHitEnergy != locParams.dHitEnergy) || (dEdx != locParams.dEdx) || (dFlightTime != locParams.dFlightTime))
+				return false;
+			if((dPathLength != locParams.dPathLength) || (dDeltaPhiToHit != locParams.dDeltaPhiToHit) || (dFlightTimeVariance != locParams.dFlightTimeVariance))
+				return false;
+			return true;
+		}
 };
 
 class DDetectorMatches : public JObject
