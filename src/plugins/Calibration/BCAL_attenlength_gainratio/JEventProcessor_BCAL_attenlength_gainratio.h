@@ -43,6 +43,7 @@ class JEventProcessor_BCAL_attenlength_gainratio:public jana::JEventProcessor{
 		// Debug histograms to help understand data
 		TH2I *EvsZ_all;
 		TH2I *EvsZ_layer[4];
+		TH2F *hist2D_aveZ;
 
 		double z_target_center;
 

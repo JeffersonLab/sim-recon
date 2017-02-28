@@ -112,6 +112,8 @@ jerror_t JEventProcessor_BCAL_attenlength_gainratio::init(void)
 	sprintf(histtitle,"Gain ratio from peak;Module;Layer and Sector;G_{U}/G_{D}");
 	hist2D_peakgainratio = new TH2F("hist2D_peakgainratio",histtitle,48,0.5,48.5,16,0.5,16.5);
 
+	sprintf(histtitle,"Average Z pos;Module;Layer and Sector;Z  (cm)");
+	hist2D_aveZ = new TH2F("hist2D_aveZ",histtitle,48,0.5,48.5,16,0.5,16.5);
 
 	EvsZ_all = new TH2I("EvsZ_all","E vs Z;Z Position (cm);Energy",100,-250.0,250.0,200,0,0.2);
 	EvsZ_layer[0] = new TH2I("EvsZ_layer1","E vs Z (layer 1);Z Position (cm);Energy",100,-250.0,250.0,200,0,0.2);
@@ -236,19 +238,19 @@ jerror_t JEventProcessor_BCAL_attenlength_gainratio::evnt(JEventLoop *loop, uint
 		float integralUS, integralDS;
 		// end 0=upstream, 1=downstream
 		if (digihits[0]->end==0) {
-			integralUS = digihits[0]->pulse_integral - ((float)digihits[0]->nsamples_integral*digihits[0]->pedestal)/
-				digihits[0]->nsamples_pedestal;
-			integralDS = digihits[1]->pulse_integral - ((float)digihits[1]->nsamples_integral*digihits[1]->pedestal)/
-				digihits[1]->nsamples_pedestal;
-			peakUS = digihits[0]->pulse_peak - digihits[0]->pedestal;
-			peakDS = digihits[1]->pulse_peak - digihits[1]->pedestal;
+			integralUS = digihits[0]->pulse_integral - ((float)digihits[0]->nsamples_integral*(float)digihits[0]->pedestal)/
+				(float)digihits[0]->nsamples_pedestal;
+			integralDS = digihits[1]->pulse_integral - ((float)digihits[1]->nsamples_integral*(float)digihits[1]->pedestal)/
+				(float)digihits[1]->nsamples_pedestal;
+			peakUS = digihits[0]->pulse_peak - (float)digihits[0]->pedestal/(float)digihits[0]->nsamples_pedestal;
+			peakDS = digihits[1]->pulse_peak - (float)digihits[1]->pedestal/(float)digihits[1]->nsamples_pedestal;
 		} else { 
-			integralDS = digihits[0]->pulse_integral - ((float)digihits[0]->nsamples_integral*digihits[0]->pedestal)/
-				digihits[0]->nsamples_pedestal;
-			integralUS = digihits[1]->pulse_integral - ((float)digihits[1]->nsamples_integral*digihits[1]->pedestal)/
-				digihits[1]->nsamples_pedestal;
-			peakDS = digihits[0]->pulse_peak - digihits[0]->pedestal;
-			peakUS = digihits[1]->pulse_peak - digihits[1]->pedestal;
+			integralDS = digihits[0]->pulse_integral - ((float)digihits[0]->nsamples_integral*(float)digihits[0]->pedestal)/
+				(float)digihits[0]->nsamples_pedestal;
+			integralUS = digihits[1]->pulse_integral - ((float)digihits[1]->nsamples_integral*(float)digihits[1]->pedestal)/
+				(float)digihits[1]->nsamples_pedestal;
+			peakDS = digihits[0]->pulse_peak - (float)digihits[0]->pedestal/(float)digihits[0]->nsamples_pedestal;
+			peakUS = digihits[1]->pulse_peak - (float)digihits[1]->pedestal/(float)digihits[1]->nsamples_pedestal;
 		}
 
 		//float timediff = t_ADCus_vec[0]-t_ADCds_vec[0];
@@ -356,6 +358,10 @@ jerror_t JEventProcessor_BCAL_attenlength_gainratio::fini(void)
 					hist2D_peakgainratio->SetBinContent(module+1,layersect,gainratio);
 					hist2D_peakgainratio->SetBinError(module+1,layersect,gainratioerr);
 
+                    float aveZ = EvsZ[module][layer][sector]->GetMean(1);
+                    float aveZerr = EvsZ[module][layer][sector]->GetMeanError(1);
+					hist2D_aveZ->SetBinContent(module+1,layersect,aveZ);
+					hist2D_aveZ->SetBinError(module+1,layersect,aveZerr);
 				}
 			}
 		}
