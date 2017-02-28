@@ -135,6 +135,8 @@ class JEventSource_EVIOpp: public jana::JEventSource{
 		               void AddToCallStack(DParsedEvent *pe, JEventLoop *loop);
 		               void AddSourceObjectsToCallStack(JEventLoop *loop, string className);
 		               void AddEmulatedObjectsToCallStack(JEventLoop *loop, string caller, string callee);
+		               void AddROCIDtoParseList(uint32_t rocid){ ROCIDS_TO_PARSE.insert(rocid); }
+		      set<uint32_t> GetROCIDParseList(uint32_t rocid){ return ROCIDS_TO_PARSE; }
 
 		
 		bool DONE;
@@ -171,6 +173,7 @@ class JEventSource_EVIOpp: public jana::JEventSource{
 		Df125EmulatorAlgorithm *f125Emulator;
 		
 		bool RECORD_CALL_STACK;
+		set<uint32_t> ROCIDS_TO_PARSE;
 
 		list<DBORptrs*> borptrs_list;
 
@@ -184,6 +187,7 @@ class JEventSource_EVIOpp: public jana::JEventSource{
 		bool     PARSE_EPICS;
 		bool     PARSE_EVENTTAG;
 		bool     PARSE_TRIGGER;
+		bool     APPLY_TRANSLATION_TABLE;
 		int      ET_STATION_NEVENTS;
 		bool     ET_STATION_CREATE_BLOCKING;
 		bool     LOOP_FOREVER;

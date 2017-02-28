@@ -657,19 +657,20 @@ s_CentralDC_t* pickCentralDC ()
          FREE(straws);
       }
 
-      int last_track = -1;
-      double last_t = 1e9;
       for (point=0; point < points->mult; ++point)
       {
-         if (points->in[point].trackID->itrack > 0 &&
-            (points->in[point].track != last_track ||
-             fabs(points->in[point].t - last_t) > 0.05))
+         int track = points->in[point].track;
+         double t = points->in[point].t;
+         int m = box->cdcTruthPoints->mult;
+         if (points->in[point].trackID->itrack < 0 ||
+            (m > 0 &&  box->cdcTruthPoints->in[m-1].track == track &&
+             fabs(box->cdcTruthPoints->in[m-1].t - t) < 0.5))
          {
-            int m = box->cdcTruthPoints->mult++;
-            box->cdcTruthPoints->in[m] = points->in[point];
-            last_track = points->in[point].track;
-            last_t = points->in[point].t;
+            FREE(points->in[point].trackID);
+            continue;
          }
+         box->cdcTruthPoints->in[m] = points->in[point];
+         box->cdcTruthPoints->mult++;
       }
       if (points != HDDM_NULL)
       {

@@ -10,6 +10,7 @@
 #define _DCODAEventInfo_
 
 #include <JANA/JObject.h>
+using namespace jana;
 
 class DCODAEventInfo:public JObject{
 	public:

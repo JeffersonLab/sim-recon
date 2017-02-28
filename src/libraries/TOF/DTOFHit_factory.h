@@ -47,16 +47,19 @@ class DTOFHit_factory:public jana::JFactory<DTOFHit>{
 
   // ADC to Energy conversion for individual PMT channels
   double adc2E[176]; // 4*44 channels
-  
+
+  // PARAMETERS:
   double DELTA_T_ADC_TDC_MAX;
-  
+  int USE_AMP_4WALKCORR;
+
   tof_digi_constants_t adc_pedestals;
   tof_digi_constants_t adc_gains;
   tof_digi_constants_t adc_time_offsets;
   tof_digi_constants_t tdc_time_offsets;
   
   vector<vector<double> >timewalk_parameters;
-  
+  vector<vector<double> >timewalk_parameters_AMP;
+
   
   DTOFHit* FindMatch(int plane, int bar, int end, double T);
   
@@ -75,14 +78,18 @@ class DTOFHit_factory:public jana::JFactory<DTOFHit>{
   
   
  private:
-  jerror_t init(void);						///< Called once at program start.
-  jerror_t brun(jana::JEventLoop *eventLoop, int32_t runnumber);	///< Called everytime a new run number is detected.
-  jerror_t evnt(jana::JEventLoop *eventLoop, uint64_t eventnumber);	///< Called every event.
-  jerror_t erun(void);						///< Called everytime run number changes, provided brun has been called.
-  jerror_t fini(void);						///< Called after last event of last event source has been processed.
+  jerror_t init(void);
+  jerror_t brun(jana::JEventLoop *eventLoop, int32_t runnumber);
+  jerror_t evnt(jana::JEventLoop *eventLoop, uint64_t eventnumber);
+  jerror_t erun(void);
+  jerror_t fini(void);
   
   void FillCalibTable(tof_digi_constants_t &table, vector<double> &raw_table,
 		      const DTOFGeometry &tofGeom);
+
+  double CalcWalkCorrIntegral(DTOFHit* hit);
+  double CalcWalkCorrAmplitude(DTOFHit* hit);
+
 
   bool CHECK_FADC_ERRORS;
 };

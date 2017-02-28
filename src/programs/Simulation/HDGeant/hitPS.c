@@ -86,6 +86,7 @@ void hitPS(float xin[4], float xout[4],float pin[5], float pout[5], float dEsum,
          s_PairSpectrometerFine_t* ps = *twig = make_s_PairSpectrometerFine();
          s_PsTruthPoints_t* points = make_s_PsTruthPoints(1);
          ps->psTruthPoints = points;
+         int column = getcolumn_wrapper_();
          int a = thisInputEvent->physicsEvents->in[0].reactions->in[0].vertices->in[0].products->mult;
          points->in[0].primary = (track <= a && stack == 0);
          points->in[0].track = track;
@@ -100,8 +101,8 @@ void hitPS(float xin[4], float xout[4],float pin[5], float pout[5], float dEsum,
          points->in[0].dEdx = dEdx;
          points->in[0].ptype = ipart;
          // the fine PS has two arms: North/South (0/1)
-         points->in[0].arm = getcolumn_wrapper_() / NUM_COLUMN_PER_ARM;
-         points->in[0].column = getcolumn_wrapper_() % NUM_COLUMN_PER_ARM;
+         points->in[0].arm = (column - 1) / NUM_COLUMN_PER_ARM;
+         points->in[0].column = (column - 1) % NUM_COLUMN_PER_ARM + 1;
          points->in[0].trackID = make_s_TrackID();
          points->in[0].trackID->itrack = itrack;
          points->mult = 1;
@@ -123,8 +124,8 @@ void hitPS(float xin[4], float xout[4],float pin[5], float pout[5], float dEsum,
          s_PsTiles_t* tiles = make_s_PsTiles(1);
          tiles->mult = 1;
          // the fine PS has two arms: North/South (0/1)
-         tiles->in[0].arm = column / NUM_COLUMN_PER_ARM;
-         tiles->in[0].column = column % NUM_COLUMN_PER_ARM;
+         tiles->in[0].arm = (column - 1) / NUM_COLUMN_PER_ARM;
+         tiles->in[0].column = (column - 1) % NUM_COLUMN_PER_ARM + 1;
          tiles->in[0].psTruthHits = hits = make_s_PsTruthHits(MAX_HITS);
          ps->psTiles = tiles;
          tileCount++;
@@ -144,15 +145,10 @@ void hitPS(float xin[4], float xout[4],float pin[5], float pout[5], float dEsum,
       }
       if (nhit < hits->mult)                /* merge with former hit */
       {
-         if (t < hits->in[nhit].t)
-         {
-            hits->in[nhit].ptype = ipart;
-            hits->in[nhit].itrack = itrack;
-         }
          hits->in[nhit].t = 
                  (hits->in[nhit].t * hits->in[nhit].dE + t * dEsum) /
                  (hits->in[nhit].dE + dEsum);
-                        hits->in[nhit].dE += dEsum;
+         hits->in[nhit].dE += dEsum;
       }
       else if (nhit < MAX_HITS)                /* create new hit */
       {
@@ -238,19 +234,20 @@ s_PairSpectrometerFine_t* pickPs ()
          FREE(tiles);
       }
 
-      int last_track = -1;
-      double last_t = 1e9;
       for (point=0; point < points->mult; ++point)
       {
-         if (points->in[point].trackID->itrack > 0 &&
-            (points->in[point].track != last_track ||
-             fabs(points->in[point].t - last_t) > 0.1))
+         int track = points->in[point].track;
+         double t = points->in[point].t;
+         int m = box->psTruthPoints->mult;
+         if (points->in[point].trackID->itrack < 0 ||
+            (m > 0 &&  box->psTruthPoints->in[m-1].track == track &&
+             fabs(box->psTruthPoints->in[m-1].t - t) < 0.5))
          {
-            int m = box->psTruthPoints->mult++;
-            box->psTruthPoints->in[m] = item->psTruthPoints->in[point];
-            last_track = points->in[point].track;
-            last_t = points->in[point].t;
+            FREE(points->in[point].trackID);
+            continue;
          }
+         box->psTruthPoints->in[m] = item->psTruthPoints->in[point];
+         box->psTruthPoints->mult++;
       }
       if (points != HDDM_NULL)
       {

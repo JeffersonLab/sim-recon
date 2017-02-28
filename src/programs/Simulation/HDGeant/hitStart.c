@@ -455,19 +455,20 @@ s_StartCntr_t* pickStartCntr ()
          FREE(paddles);
       }
 
-      int last_track = -1;
-      double last_t = 1e9;
       for (point=0; point < points->mult; ++point)
       {
-         if (points->in[point].trackID->itrack > 0 &&
-            (points->in[point].track != last_track ||
-             fabs(points->in[point].t - last_t) > 0.1))
+         int track = points->in[point].track;
+         double t = points->in[point].t;
+         int m = box->stcTruthPoints->mult;
+         if (points->in[point].trackID->itrack < 0 ||
+            (m > 0 &&  box->stcTruthPoints->in[m-1].track == track &&
+             fabs(box->stcTruthPoints->in[m-1].t - t) < 0.5))
          {
-            int m = box->stcTruthPoints->mult++;
-            box->stcTruthPoints->in[m] = item->stcTruthPoints->in[point];
-            last_track = points->in[point].track;
-            last_t = points->in[point].t;
+            FREE(points->in[point].trackID);
+            continue;
          }
+         box->stcTruthPoints->in[m] = item->stcTruthPoints->in[point];
+         box->stcTruthPoints->mult++;
       }
       if (points != HDDM_NULL)
       {

@@ -89,10 +89,11 @@ JEventSource_EVIOpp::JEventSource_EVIOpp(const char* source_name):JEventSource(s
 	PARSE_EPICS = true;
 	PARSE_EVENTTAG = true;
 	PARSE_TRIGGER = true;
+	APPLY_TRANSLATION_TABLE = true;
 	IGNORE_EMPTY_BOR = false;
 	F250_EMULATION_MODE = kEmulationAuto;
 	F125_EMULATION_MODE = kEmulationAuto;
-    F250_EMULATION_VERSION = 2;
+	F250_EMULATION_VERSION = 2;
 	RECORD_CALL_STACK = false;
 	TREAT_TRUNCATED_AS_ERROR = false;
     
@@ -125,6 +126,7 @@ JEventSource_EVIOpp::JEventSource_EVIOpp(const char* source_name):JEventSource(s
 	gPARMS->SetDefaultParameter("EVIO:PARSE_EPICS", PARSE_EPICS, "Set this to 0 to disable parsing of EPICS events from the data stream (for benchmarking/debugging)");
 	gPARMS->SetDefaultParameter("EVIO:PARSE_EVENTTAG", PARSE_EVENTTAG, "Set this to 0 to disable parsing of event tag data in the data stream (for benchmarking/debugging)");
 	gPARMS->SetDefaultParameter("EVIO:PARSE_TRIGGER", PARSE_TRIGGER, "Set this to 0 to disable parsing of the built trigger bank from CODA (for benchmarking/debugging)");
+	gPARMS->SetDefaultParameter("EVIO:APPLY_TRANSLATION_TABLE", APPLY_TRANSLATION_TABLE, "Apply the translation table to create DigiHits (you almost always want this on)");
 	gPARMS->SetDefaultParameter("EVIO:IGNORE_EMPTY_BOR", IGNORE_EMPTY_BOR, "Set to non-zero to continue processing data even if an empty BOR event is encountered.");
 	gPARMS->SetDefaultParameter("EVIO:TREAT_TRUNCATED_AS_ERROR", TREAT_TRUNCATED_AS_ERROR, "Set to non-zero to have a truncated EVIO file the JANA return code to non-zero indicating the program errored.");
 
@@ -182,7 +184,8 @@ JEventSource_EVIOpp::JEventSource_EVIOpp(const char* source_name):JEventSource(s
 
 	// Create worker threads
 	for(uint32_t i=0; i<NTHREADS; i++){
-		DEVIOWorkerThread *w = new DEVIOWorkerThread(this, parsed_events, MAX_PARSED_EVENTS, PARSED_EVENTS_MUTEX, PARSED_EVENTS_CV);
+		DEVIOWorkerThread *w = new DEVIOWorkerThread(this, parsed_events, MAX_PARSED_EVENTS, PARSED_EVENTS_MUTEX, PARSED_EVENTS_CV, ROCIDS_TO_PARSE);
+		w->VERBOSE             = VERBOSE;
 		w->MAX_EVENT_RECYCLES  = MAX_EVENT_RECYCLES;
 		w->MAX_OBJECT_RECYCLES = MAX_OBJECT_RECYCLES;
 		w->PARSE_F250          = PARSE_F250;
@@ -506,8 +509,10 @@ jerror_t JEventSource_EVIOpp::GetObjects(JEvent &event, JFactory_base *factory)
 	// Get any translation tables we'll need to apply
 	JEventLoop *loop = event.GetJEventLoop();
 	vector<const DTranslationTable*> translationTables;
-	DTranslationTable_factory *ttfac = static_cast<DTranslationTable_factory*>(loop->GetFactory("DTranslationTable"));
-	if(ttfac) ttfac->Get(translationTables);
+	if(APPLY_TRANSLATION_TABLE){
+		DTranslationTable_factory *ttfac = static_cast<DTranslationTable_factory*>(loop->GetFactory("DTranslationTable"));
+		if(ttfac) ttfac->Get(translationTables);
+	}
   
 	// Copy pointers to all hits to appropriate factories.
 	// Link BORconfig objects and apply translation tables if appropriate.

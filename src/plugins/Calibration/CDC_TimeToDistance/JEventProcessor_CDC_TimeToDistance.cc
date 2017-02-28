@@ -15,6 +15,7 @@ using namespace jana;
 #include "HistogramTools.h"
 #include "PID/DChargedTrack.h"
 #include "TRACKING/DTrackTimeBased.h"
+#include "TRIGGER/DTrigger.h"
 
 extern "C"{
 void InitPlugin(JApplication *app){
@@ -98,6 +99,12 @@ jerror_t JEventProcessor_CDC_TimeToDistance::brun(JEventLoop *eventLoop, int32_t
 //------------------
 jerror_t JEventProcessor_CDC_TimeToDistance::evnt(JEventLoop *loop, uint64_t eventnumber)
 {
+    // select events with physics events, i.e., not LED and other front panel triggers
+    const DTrigger* locTrigger = NULL; 
+    loop->GetSingle(locTrigger); 
+    if(locTrigger->Get_L1FrontPanelTriggerBits() != 0) 
+      return NOERROR;
+
     // Getting the charged tracks will allow us to use the field on data
     vector <const DChargedTrack *> chargedTrackVector;
     loop->Get(chargedTrackVector);

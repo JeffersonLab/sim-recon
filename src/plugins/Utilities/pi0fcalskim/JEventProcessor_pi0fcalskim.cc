@@ -21,6 +21,8 @@ using namespace jana;
 #include "FCAL/DFCALHit.h"
 #include "ANALYSIS/DAnalysisUtilities.h"
 #include "PID/DVertex.h"
+#include "PID/DEventRFBunch.h"
+
 #include "GlueX.h"
 #include <vector>
 #include <deque>
@@ -167,6 +169,12 @@ jerror_t JEventProcessor_pi0fcalskim::evnt(JEventLoop *loop, uint64_t eventnumbe
       kinfitVertexX = kinfitVertex[i]->dSpacetimeVertex.X();
       kinfitVertexY = kinfitVertex[i]->dSpacetimeVertex.Y();
       kinfitVertexZ = kinfitVertex[i]->dSpacetimeVertex.Z();
+    }
+
+    vector<const DEventRFBunch*> locEventRFBunches;
+    loop->Get(locEventRFBunches);
+    if(locEventRFBunches.size() > 0) {
+        locObjectsToSave.push_back(static_cast<const JObject *>(locEventRFBunches[0]));
     }
 
   DVector3 norm(0.0,0.0,-1);

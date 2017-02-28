@@ -30,7 +30,7 @@
 	if(locHist_ADCmulti != NULL)
 	{
 		locHist_ADCmulti->SetTitle("CDC ADC Multiplicity");
-		locHist_ADCmulti->Rebin(2);
+		//locHist_ADCmulti->Rebin(2);
 		//locHist_ADCmulti->GetYaxis()->SetRangeUser(0.0, 1.05*locHist_ADCmulti->GetBinContent(locHist_ADCmulti->GetMaximumBin()));
 		locHist_ADCmulti->GetXaxis()->SetTitleSize(0.05);
 		locHist_ADCmulti->GetXaxis()->SetTitle("# ADC Hits");
@@ -85,7 +85,7 @@
 	if(locHist_ADCtime != NULL)
 	{
 		locHist_ADCtime->SetTitle("CDC ADC Time");
-		locHist_ADCtime->Rebin(5);
+		//locHist_ADCtime->Rebin(5);
 		locHist_ADCtime->GetXaxis()->SetRangeUser(0, 1800);
 		locHist_ADCtime->GetXaxis()->SetTitleSize(0.05);
 		//locHist_ADCtime->GetYaxis()->SetTitle("");
@@ -94,5 +94,4 @@
 		locHist_ADCtime->SetFillColor(kYellow);
 		locHist_ADCtime->Draw("");
 	}
-
 }

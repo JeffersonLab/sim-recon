@@ -6,6 +6,7 @@
 //
 
 #include "JEventProcessor_ST_online_efficiency.h"
+#include "TRIGGER/DTrigger.h"
 using namespace jana;
 using namespace std;
 
@@ -130,6 +131,12 @@ jerror_t JEventProcessor_ST_online_efficiency::evnt(JEventLoop *eventLoop, uint6
 	// japp->RootWriteLock();
 	//  ... fill historgrams or trees ...
 	// japp->RootUnLock();
+
+  const DTrigger* locTrigger = NULL; 
+  eventLoop->GetSingle(locTrigger); 
+  if(locTrigger->Get_L1FrontPanelTriggerBits() != 0)
+    return NOERROR;
+
   vector<const DSCDigiHit*>       st_adc_digi_hits;
   vector<const DParticleID*>      pid_algorithm;
   vector<const DSCHit*>           st_hits;

@@ -37,14 +37,8 @@
       c1 = gPad->GetCanvas();
   }
 
-  TCanvas *c2 = new TCanvas( "c2", "BCAL_inv_mass_dependencies", 800, 800 );
-  c2->cd(0);
-  c2->Draw();
-  c2->Update();
-
   if( !gPad ) return;
   c1->Divide(2,2);
-  c2->Divide(2,2);
 
   if( bcal_diphoton_mass_300 ){
 
@@ -164,20 +158,5 @@
     pt_900->AddText(Form("#sigma/M = %.3f %%",(par_900[2]/par_900[1])*100));
     pt_900->Draw();
   }
-
-   if( bcal_diphoton_mass_v_E ){
-    c2->cd(1)->SetLogz(1);
-    bcal_diphoton_mass_v_E->Draw("colz");
-   }
-	
-   if( bcal_diphoton_mass_v_z_lowE ){
-    c2->cd(2)->SetLogz(1);
-    bcal_diphoton_mass_v_z_lowE->Draw("colz");
-   }
-
-   if( bcal_diphoton_mass_v_z_highE ){
-    c2->cd(3)->SetLogz(1);
-    bcal_diphoton_mass_v_z_highE->Draw("colz");
-   }
 
 }

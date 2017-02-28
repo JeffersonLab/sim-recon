@@ -7,6 +7,8 @@
 
 #include <stdlib.h>
 #include <string.h>
+#include <cinttypes>
+using namespace std;
 
 #include "HDEVIO.h"
 
@@ -693,6 +695,10 @@ void HDEVIO::MapBlocks(bool print_ticker)
 			if(bh.magic!=0xc0da0100){
 				err_mess.str("Bad magic word");
 				err_code = HDEVIO_BAD_BLOCK_HEADER;
+				EVIOBlockRecord br;
+				br.pos = ifs.tellg() - (streampos)sizeof(bh);
+				br.block_type = kBT_UNKNOWN;
+				evio_blocks.push_back(br);
 				break;
 			}
 		}
@@ -731,6 +737,7 @@ void HDEVIO::MapBlocks(bool print_ticker)
 				br.last_event   = br.first_event + (uint64_t)M - 1;
 				break;
 			default:
+				br.block_type   = kBT_UNKNOWN;
 				_DBG_ << "Uknown tag: " << hex << tag << dec << endl;
 		}
 		
@@ -844,6 +851,7 @@ void HDEVIO::MapEvents(BLOCKHEADER_t &bh, EVIOBlockRecord &br)
 		EVIOEventRecord er;
 		er.pos = pos;
 		er.event_len   = eh->event_len + 1; // +1 to include length word
+		er.event_header= eh->header;
 		er.event_type  = kBT_UNKNOWN;
 		er.first_event = 0;
 		er.last_event  = 0;
@@ -881,6 +889,7 @@ void HDEVIO::MapEvents(BLOCKHEADER_t &bh, EVIOBlockRecord &br)
 		pos += (streampos)((eh->event_len+1)<<2);
 	}
 
+	ifs.clear();
 	ifs.seekg(start_pos, ios_base::beg);
 }
 
@@ -1137,6 +1146,15 @@ void HDEVIO::PrintEVIOBlockHeader(void)
 //------------------------
 void HDEVIO::PrintStats(void)
 {
+	uint64_t Nblocks = this->Nblocks;
+	uint64_t Nevents = this->Nevents;
+	
+	if(is_mapped){
+		Nblocks = evio_blocks.size();
+		Nevents = 0;
+		for(auto b : evio_blocks) Nevents += b.evio_events.size();
+	}
+
 	cout << endl;
 	cout << "EVIO Statistics for " << filename << " :" << endl;
 	cout << "------------------------" << endl;
@@ -1264,4 +1282,117 @@ void HDEVIO::PrintFileSummary(void)
 	cout << endl;
 }
 
+//------------------------
+// SaveFileMap
+//------------------------
+void HDEVIO::SaveFileMap(string fname)
+{
+	// Make sure file has been mapped
+	if(!is_mapped) MapBlocks();
+	
+	// Open output file
+	if(fname=="") fname = filename + ".map";
+	ofstream ofs(fname.c_str());
+	if(!ofs.is_open()){
+		cerr << "Unable to open \""<<fname<<"\" for writing!" << endl;
+		return;
+	}
+	
+	cout << "Writing EVIO file map to: " << fname << endl;
+	
+	char str[256];
+	time_t t = time(NULL);
+	struct tm *tmp = localtime(&t);
+	strftime(str, 255, "%c", tmp);
+	
+	ofs << "#" << endl;
+	ofs << "# HDEVIO block map for " << filename << endl;
+	ofs << "#" << endl;
+	ofs << "# generated " << str << endl;
+	ofs << "#" << endl;
+	ofs << "# " << endl;
+	ofs << "swap_needed: " << swap_needed << endl;
+	ofs << "--------- Start of block data --------" << endl;
+	ofs << "#  pos    block_len  first_evt last_evt block_type" << endl;
+	ofs << "#    +pos    evt_len  evt_header first_evt last_evt" << endl;
+
+	for(auto br : evio_blocks){
+		char line[512];
+		sprintf(line, "0x%08x 0x%06x  %8" PRIu64 "  %8" PRIu64 "     %d", (uint32_t)br.pos, br.block_len, br.first_event, br.last_event, br.block_type);
+		ofs << line << endl;
+		
+		for(auto er : br.evio_events){
+			sprintf(line, "+ 0x%08x 0x%06x 0x%08x %8" PRIu64 " %8" PRIu64, (uint32_t)er.pos, er.event_len, er.event_header, er.first_event, er.last_event);
+			ofs << line << endl;
+		}
+	}
+	ofs << "# --- End of map ---" << endl;
+	// Close output file	
+	ofs.close();
+	
+	cout << "Done" << endl;
+}
+
+//------------------------
+// ReadFileMap
+//------------------------
+void HDEVIO::ReadFileMap(string fname, bool warn_if_not_found)
+{
+#if 0
+	// Open input file
+	if(fname=="") fname = filename + ".map";
+	ifstream ifs(fname.c_str());
+	if(!ifs.is_open()){
+		if(warn_if_not_found) cerr << "Unable to open \""<<fname<<"\" for reading!" << endl;
+		return;
+	}
+
+	// Check if file was closed cleanly
+	string eof_string("# --- End of map ---");
+	ifs.seekg(eof_string.length()*2, ifs.end); // not guaranteed how many char's endl is
+
+	string line;
+	while(getline(ifs,line)); // read until we've read the last line
+	if(string(line).find(eof_string)==string::npos){
+		cerr << "Found map file \"" << fname << "\" but it wasn't closed cleanly. Ignoring." << endl;
+		ifs.close();
+		return;
+	}
+	
+	ifs.clear();
+	ifs.seekg(0);
+	
+	// Loop over header
+	while(getline(ifs, line)){
+		
+		if(line.length() < 5   ) continue;
+		if(line.find("#") == 0 ) continue;
+		if(line.find("Start of block data") != string::npos) break;
+	}
+	
+	// Loop over body
+	EVIOBlockRecord bh;
+	bool first_block_found = false;
+	stringstream ss;
+	while(getline(ifs, ss)){
+		if(ss.str().find("#") == 0 ) break; // assume "#" marks end of file trailer
+		
+		if(ss.str().find("+") == 0 ){
+			// EVIO Event Record
+		}else{
+			// EVIO Block Record
+			if(first_block_found){
+				evio_blocks.push_back(bh);
+			}else{
+				first_block_found = true;
+			}
+			bh.evio_events.clear();
+			
+			
+		}
+	}
+	
+	cout << "Read EVIO file map from: " << fname << endl;
+#endif
+}
 

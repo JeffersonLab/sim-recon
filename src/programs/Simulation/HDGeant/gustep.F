@@ -353,6 +353,21 @@ c
       integer enterbcal
       save enterbcal
 
+      if (genbeam_precol.ne.0) then
+         call storeBeam(vect, tofg)
+         writenohits = 1
+         ISTOP = 99
+         return
+      else if (genbeam_postcol.ne.0) then
+         if (vect(3).gt.-1520) then
+            call storeBeam(vect, tofg)
+            writenohits = 1
+            ISTOP = 99
+         else
+            writenohits = 0
+         endif
+      endif
+
 #ifdef BACKGROUND_PROFILING
 ********************************************************************************
 *   The following defines an ntuple containing information on particle type  
@@ -819,8 +834,14 @@ c
 
 * Optionally store particle trajectory
       if (storetraj.ne.0) then
-        call addtrajectorypoint(VECT,TOFG,DESTEP,GETOT,ITRA,ISTAK
-     +         ,IPART, RADL, STEP, NMEC, LMEC, storetraj)
+        if (storetraj.eq.1.or.storetraj.eq.2.or.
+     +     (storetraj.eq.4.and.ISTAK.ne.0)) then
+          call addtrajectorypoint(VECT,TOFG,DESTEP,GEKIN,ITRA,ISTAK
+     +           ,IPART, RADL, SLENG, NMEC, LMEC, storetraj)
+        else
+          call addtrajectorypoint(VECT,TOFG,DESTEP,GEKIN,ITRA,ISTAK
+     +           ,IPART, RADL, STEP, NMEC, LMEC, storetraj)
+        endif
       endif
      
 
