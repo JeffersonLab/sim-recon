@@ -73,6 +73,10 @@ void DCustomAction_CutNoDetectorHit::Initialize(JEventLoop* locEventLoop)
 		locHistTitle = locTrackString + string(";Projected BCAL Hit-Z (cm);BCAL / Track #Delta#phi#circ");
 		dHistMap_BCALDeltaPhiVsZ = GetOrCreate_Histogram<TH2I>(locHistName, locHistTitle, dNum2DBCALZBins, 0.0, 450.0, dNum2DDeltaPhiBins, dMinDeltaPhi, dMaxDeltaPhi);
 
+		locHistName = "BCALDeltaPhiVsTheta";
+		locHistTitle = locTrackString + string(";#theta#circ;BCAL / Track #Delta#phi#circ");
+		dHistMap_BCALDeltaPhiVsTheta = GetOrCreate_Histogram<TH2I>(locHistName, locHistTitle, dNum2DThetaBins, dMinTheta, dMaxTheta, dNum2DDeltaPhiBins, dMinDeltaPhi, dMaxDeltaPhi);
+
 		locHistName = "BCALDeltaZVsTheta";
 		locHistTitle = locTrackString + string(";#theta#circ;BCAL / Track #Deltaz (cm)");
 		dHist_BCALDeltaZVsTheta = GetOrCreate_Histogram<TH2I>(locHistName, locHistTitle, dNum2DThetaBins, dMinTheta, dMaxTheta, dNum2DDeltaZBins, dMinDeltaZ, dMaxDeltaZ);
@@ -146,9 +150,16 @@ bool DCustomAction_CutNoDetectorHit::Perform_Action(JEventLoop* locEventLoop, co
 	DTOFHitMatchParams locBestTOFMatchParams;
 	locStartTime = locParticleCombo->Get_ParticleComboStep(0)->Get_SpacetimeVertex().T();
 	bool locTOFHitFoundFlag = dParticleID->Get_ClosestToTrack(&rt, locTOFPoints, false, locStartTime, locBestTOFMatchParams);
-	double locDeltaX = locBestTOFMatchParams.dDeltaXToHit;
-	double locDeltaY = locBestTOFMatchParams.dDeltaYToHit;
-	double locTOFDistance = sqrt(locDeltaX*locDeltaX + locDeltaY*locDeltaY);
+	double locTOFDistance = 999.9;
+	if(locTOFHitFoundFlag)
+	{
+		double locDeltaX = locBestTOFMatchParams.dDeltaXToHit;
+		double locDeltaY = locBestTOFMatchParams.dDeltaYToHit;
+		if(locBestTOFMatchParams.dTOFPoint->Is_XPositionWellDefined() == locBestTOFMatchParams.dTOFPoint->Is_YPositionWellDefined())
+			locTOFDistance = sqrt(locDeltaX*locDeltaX + locDeltaY*locDeltaY);
+		else
+			locTOFDistance = locBestTOFMatchParams.dTOFPoint->Is_XPositionWellDefined() ? locDeltaX : locDeltaY;
+	}
 
 	//FILL HISTOGRAMS
 	//Since we are filling histograms local to this action, it will not interfere with other ROOT operations: can use action-wide ROOT lock
@@ -161,8 +172,9 @@ bool DCustomAction_CutNoDetectorHit::Perform_Action(JEventLoop* locEventLoop, co
 		if(locBCALHitFoundFlag)
 		{
 			dHist_BCALDeltaPhiVsP->Fill(locP, locBCALDeltaPhi);
-			dHist_BCALDeltaZVsTheta->Fill(locTheta, locBestBCALMatchParams.dDeltaZToShower);
 			dHistMap_BCALDeltaPhiVsZ->Fill(locBCALProjectedZ, locBCALDeltaPhi);
+			dHistMap_BCALDeltaPhiVsTheta->Fill(locTheta, locBCALDeltaPhi);
+			dHist_BCALDeltaZVsTheta->Fill(locTheta, locBestBCALMatchParams.dDeltaZToShower);
 			dHistMap_BCALDeltaZVsZ->Fill(locBCALProjectedZ, locBestBCALMatchParams.dDeltaZToShower);
 		}
 
@@ -200,13 +212,10 @@ bool DCustomAction_CutNoDetectorHit::Perform_Action(JEventLoop* locEventLoop, co
 	//REQUIRE: ST hit
 	if(!locSCHitFoundFlag)
 		return false;
-	if(fabs(locSCDeltaPhi) > 30.0)
-		return false;
-/*	if((locSCProjectedZ < 76.5) && (fabs(locSCDeltaPhi) > 10.0))
-		return false; //HARD-CODED: BAD!
-	if((locSCProjectedZ >= 76.5) && (fabs(locSCDeltaPhi) > (10.0 + locSCProjectedZ - 76.5)))
-		return false;
-*/
+	double locSCDeltaPhiCut = 25.0 + 0.12*exp(0.13*(locSCProjectedZ - 50.0));
+	if(fabs(locSCDeltaPhi) > locSCDeltaPhiCut)
+		return false; //could expand, would only effect 2pi missing pi forward-z
+
 	//Check for slow protons stopping in the drift chambers: don't expect any further hits
 	if((locP < 0.4) && locMassiveParticleFlag)
 		return true;
@@ -215,18 +224,10 @@ bool DCustomAction_CutNoDetectorHit::Perform_Action(JEventLoop* locEventLoop, co
 
 	//BCAL Hit
 	if(locBCALHitFoundFlag)
-		return ((fabs(locBestBCALMatchParams.dDeltaZToShower) < 20.0) && (fabs(locBCALDeltaPhi) < 20.0));
+		return ((fabs(locBCALDeltaPhi) < 10.0) && (fabs(locBestBCALMatchParams.dDeltaZToShower) < 15.0));
 
-	//MUST HAVE FCAL & TOF
+	//MUST HAVE FCAL & TOF //extrapolation is poor: wide cuts
 	if(!locTOFHitFoundFlag || !locFCALHitFoundFlag)
 		return false;
-
-	/*
-	//MUST HAVE FCAL & TOF
-	if(!locTOFHitFoundFlag || !locFCALHitFoundFlag)
-		return false;
-	return ((locTOFDistance < 10.0) && (locBestFCALMatchParams.dDOCAToShower < 10.0));
-*/
-	//extrapolation to FCAL/TOF is too poor to cut on
-	return (locTheta < 20.0);
+	return ((locTOFDistance < 50.0) && (locBestFCALMatchParams.dDOCAToShower < 50.0));
 }

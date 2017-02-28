@@ -118,7 +118,7 @@ DParticleID::DParticleID(JEventLoop *loop)
 	TOF_CUT_PAR3 = 6.15;
 	gPARMS->SetDefaultParameter("TOF:CUT_PAR3",TOF_CUT_PAR3);
 
-	BCAL_Z_CUT=20.0;
+	BCAL_Z_CUT = 20.0;
 	gPARMS->SetDefaultParameter("BCAL:Z_CUT",BCAL_Z_CUT);
 
 	BCAL_PHI_CUT_PAR1=1.0;
@@ -624,12 +624,6 @@ bool DParticleID::Distance_ToTrack(const DReferenceTrajectory* rt, const DBCALSh
 	if(fabs(locDeltaT) > OUT_OF_TIME_CUT)
 		return false;
 
-	// Find intersection of track with inner radius of BCAL to get dx
-	DVector3 proj_pos_surface;
-	double locDx = 0.0;
-	if (rt->GetIntersectionWithRadius(65.0, proj_pos_surface) != NOERROR) //HARD-CODED RADIUS!!!
-		locDx = (bcal_pos - proj_pos_surface).Mag();
-
 	DVector3 locProjPos = rt->GetLastDOCAPoint();
 	DVector3 locProjMom = rt->swim_steps[0].mom;
 	if(locOutputProjMom != nullptr)
@@ -644,6 +638,12 @@ bool DParticleID::Distance_ToTrack(const DReferenceTrajectory* rt, const DBCALSh
 		locDeltaPhiMin -= M_TWO_PI;
 	while(locDeltaPhiMin < -M_PI)
 		locDeltaPhiMin += M_TWO_PI;
+
+	// Find intersection of track with inner radius of BCAL to get dx
+	DVector3 proj_pos_surface;
+	double locDx = 0.0;
+	if (rt->GetIntersectionWithRadius(65.0, proj_pos_surface) == NOERROR) //HARD-CODED RADIUS!!!
+		locDx = (locProjPos - proj_pos_surface).Mag();
 
 	// The next part of the code tries to take into account curvature
 	// of shower cluster distribution
@@ -1145,9 +1145,9 @@ DSCHitMatchParams DParticleID::Get_BestSCMatchParams(vector<DSCHitMatchParams>& 
 	DSCHitMatchParams locBestMatchParams;
 	for(size_t loc_i = 0; loc_i < locSCHitMatchParams.size(); ++loc_i)
 	{
-		if(locSCHitMatchParams[loc_i].dDeltaPhiToHit >= locMinDeltaPhi)
+		if(fabs(locSCHitMatchParams[loc_i].dDeltaPhiToHit) >= locMinDeltaPhi)
 			continue;
-		locMinDeltaPhi = locSCHitMatchParams[loc_i].dDeltaPhiToHit;
+		locMinDeltaPhi = fabs(locSCHitMatchParams[loc_i].dDeltaPhiToHit);
 		locBestMatchParams = locSCHitMatchParams[loc_i];
 	}
 	return locBestMatchParams;

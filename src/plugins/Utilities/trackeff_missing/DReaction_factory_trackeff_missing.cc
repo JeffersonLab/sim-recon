@@ -152,39 +152,9 @@ jerror_t DReaction_factory_trackeff_missing::evnt(JEventLoop* locEventLoop, uint
 	dReactionStepPool.push_back(locReactionStep); //register so will be deleted later: prevent memory leak
 	locReactions.push_back(locReaction);
 
-	/**************************************************** TrackEff_MissingProton_3pi Reaction Steps ****************************************************/
-
-	locReaction = new DReaction("TrackEff_MissingProton_3pi"); //needs to be a unique name for each DReaction object, CANNOT (!) be "Thrown"
-
-	//g, p -> omega, (p)
-	locReactionStep = new DReactionStep();
-	locReactionStep->Set_InitialParticleID(Gamma);
-	locReactionStep->Set_TargetParticleID(Proton);
-	locReactionStep->Add_FinalParticleID(omega);
-	locReactionStep->Add_FinalParticleID(Proton, true); //true: proton missing
-	locReaction->Add_ReactionStep(locReactionStep);
-	dReactionStepPool.push_back(locReactionStep); //register so will be deleted later: prevent memory leak
-
-	//omega -> pi+, pi-, pi0
-	locReactionStep = new DReactionStep();
-	locReactionStep->Set_InitialParticleID(omega);
-	locReactionStep->Add_FinalParticleID(PiPlus);
-	locReactionStep->Add_FinalParticleID(PiMinus);
-	locReactionStep->Add_FinalParticleID(Pi0);
-	locReaction->Add_ReactionStep(locReactionStep);
-	dReactionStepPool.push_back(locReactionStep); //register so will be deleted later: prevent memory leak
-
-	//pi0 -> g, g
-	locReactionStep = new DReactionStep();
-	locReactionStep->Set_InitialParticleID(Pi0);
-	locReactionStep->Add_FinalParticleID(Gamma);
-	locReactionStep->Add_FinalParticleID(Gamma);
-	locReaction->Add_ReactionStep(locReactionStep);
-	dReactionStepPool.push_back(locReactionStep); //register so will be deleted later: prevent memory leak
-	locReactions.push_back(locReaction);
-
 	/**************************************************** TrackEff_MissingPiMinus_3pi Reaction Steps ****************************************************/
 
+	//FYI: omega (3pi) with missing proton is hopeless
 	locReaction = new DReaction("TrackEff_MissingPiMinus_3pi"); //needs to be a unique name for each DReaction object, CANNOT (!) be "Thrown"
 
 	//g, p -> omega, p
@@ -257,7 +227,7 @@ jerror_t DReaction_factory_trackeff_missing::evnt(JEventLoop* locEventLoop, uint
 			//fit types are of type DKinFitType, an enum defined in sim-recon/src/libraries/ANALYSIS/DReaction.h
 			//Options: d_NoFit (default), d_P4Fit, d_VertexFit, d_P4AndVertexFit
 			//P4 fits automatically constrain decaying particle masses, unless they are manually disabled
-		locReaction->Set_KinFitType(d_P4Fit); //d_P4AndVertexFit //No vertex: can't cut on kinfit conlev anyway, but could distort if alignment is bad
+		locReaction->Set_KinFitType(d_P4AndVertexFit); //d_P4AndVertexFit //No vertex: can't cut on kinfit conlev anyway, but could distort if alignment is bad
 		locReaction->Set_KinFitUpdateCovarianceMatricesFlag(true);
 
 		// Highly Recommended: When generating particle combinations, reject all beam photons that match to a different RF bunch
@@ -283,11 +253,11 @@ jerror_t DReaction_factory_trackeff_missing::evnt(JEventLoop* locEventLoop, uint
 		locReaction->Add_AnalysisAction(new DCutAction_EachPIDFOM(locReaction, -9.9E9, true)); //cut particles with PID FOM = 0
 
 		// SHOWER BACKGROUND
-		locReaction->Add_AnalysisAction(new DCustomAction_CutExtraPi0(locReaction, 0.0775209, 0.188047));
+		locReaction->Add_AnalysisAction(new DCustomAction_CutExtraPi0(locReaction, 0.11, 0.16));
 		locReaction->Add_AnalysisAction(new DCustomAction_CutExtraShowers(locReaction, 0.5));
 
 		//TRACK PURITY
-		locReaction->Add_AnalysisAction(new DCutAction_MinTrackHits(locReaction, 10));
+		locReaction->Add_AnalysisAction(new DCutAction_MinTrackHits(locReaction, 12));
 
 		// HISTOGRAM MASSES //false/true: measured/kinfit data
 		Add_MassHistograms(locReaction, false, "PreKinFit");
@@ -301,9 +271,12 @@ jerror_t DReaction_factory_trackeff_missing::evnt(JEventLoop* locEventLoop, uint
 		if(locCutsPlacedFlag)
 			Add_MassHistograms(locReaction, false, "KinFitMassCut");
 
+		// KINEMATICS
+		locReaction->Add_AnalysisAction(new DHistogramAction_ParticleComboKinematics(locReaction, true, "PreDetectorHitCut")); //true: fill histograms with kinematic-fit particle data
+
 		// DETECTOR HIT MATCHING MISSING TRACK TRAJECTORY
 		string locReactionName = locReaction->Get_ReactionName();
-		if((locReactionName != "TrackEff_MissingPiMinus_3pi") && (locReactionName != "TrackEff_MissingPiPlus_3pi"))
+//		if((locReactionName != "TrackEff_MissingPiMinus_3pi") && (locReactionName != "TrackEff_MissingPiPlus_3pi"))
 		{
 			locReaction->Add_AnalysisAction(new DCustomAction_CutNoDetectorHit(locReaction));
 			Add_MassHistograms(locReaction, false, "HasDetectorHit");
@@ -379,13 +352,13 @@ void DReaction_factory_trackeff_missing::Define_LooseCuts(void)
 	dPIDTimingCuts[MuonPlus] = dPIDTimingCuts[Electron];
 
 	// Timing Cuts: Mesons
-	dPIDTimingCuts[PiPlus][SYS_BCAL] = 0.6;
+	dPIDTimingCuts[PiPlus][SYS_BCAL] = 0.4;
 	dPIDTimingCuts[PiPlus][SYS_FCAL] = 1.4;
-	dPIDTimingCuts[PiPlus][SYS_TOF] = 0.3;
+	dPIDTimingCuts[PiPlus][SYS_TOF] = 0.2;
 
-	dPIDTimingCuts[PiMinus][SYS_BCAL] = 0.6;
+	dPIDTimingCuts[PiMinus][SYS_BCAL] = 0.4;
 	dPIDTimingCuts[PiMinus][SYS_FCAL] = 1.4;
-	dPIDTimingCuts[PiMinus][SYS_TOF] = 0.3;
+	dPIDTimingCuts[PiMinus][SYS_TOF] = 0.2;
 
 	dPIDTimingCuts[KPlus][SYS_BCAL] = 0.4;
 	dPIDTimingCuts[KPlus][SYS_FCAL] = 0.5;

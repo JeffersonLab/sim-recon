@@ -204,7 +204,7 @@ class DHistogramAction_ParticleComboKinematics : public DAnalysisAction
 	private:
 		bool Perform_Action(JEventLoop* locEventLoop, const DParticleCombo* locParticleCombo);
 
-		void Fill_Hists(JEventLoop* locEventLoop, const DKinematicData* locKinematicData, const DEventRFBunch* locEventRFBunch, size_t locStepIndex);
+		void Fill_Hists(JEventLoop* locEventLoop, const DKinematicData* locKinematicData, bool locIsMissingFlag, const DEventRFBunch* locEventRFBunch, size_t locStepIndex);
 		void Fill_BeamHists(const DKinematicData* locKinematicData, const DEventRFBunch* locEventRFBunch);
 
 		const DParticleID* dParticleID;
@@ -221,15 +221,16 @@ class DHistogramAction_ParticleComboKinematics : public DAnalysisAction
 		TH1I* dBeamParticleHist_DeltaTRF;
 		TH2I* dBeamParticleHist_DeltaTRFVsBeamE;
 
-		deque<map<Particle_t, TH2I*> > dHistDeque_PVsTheta;
-		deque<map<Particle_t, TH2I*> > dHistDeque_BetaVsP;
-		deque<map<Particle_t, TH2I*> > dHistDeque_DeltaBetaVsP;
-		deque<map<Particle_t, TH2I*> > dHistDeque_PhiVsTheta;
-		deque<map<Particle_t, TH1I*> > dHistDeque_P;
-		deque<map<Particle_t, TH1I*> > dHistDeque_Theta;
-		deque<map<Particle_t, TH1I*> > dHistDeque_Phi;
-		deque<map<Particle_t, TH1I*> > dHistDeque_VertexZ;
-		deque<map<Particle_t, TH2I*> > dHistDeque_VertexYVsX;
+		//bool: true/false for missing/non-missing
+		deque<map<Particle_t, map<bool, TH2I*> > > dHistDeque_PVsTheta;
+		deque<map<Particle_t, map<bool, TH2I*> > > dHistDeque_BetaVsP;
+		deque<map<Particle_t, map<bool, TH2I*> > > dHistDeque_DeltaBetaVsP;
+		deque<map<Particle_t, map<bool, TH2I*> > > dHistDeque_PhiVsTheta;
+		deque<map<Particle_t, map<bool, TH1I*> > > dHistDeque_P;
+		deque<map<Particle_t, map<bool, TH1I*> > > dHistDeque_Theta;
+		deque<map<Particle_t, map<bool, TH1I*> > > dHistDeque_Phi;
+		deque<map<Particle_t, map<bool, TH1I*> > > dHistDeque_VertexZ;
+		deque<map<Particle_t, map<bool, TH2I*> > > dHistDeque_VertexYVsX;
 
 		deque<TH1I*> dHistDeque_MaxTrackDeltaZ;
 		deque<TH1I*> dHistDeque_MaxTrackDeltaT;
