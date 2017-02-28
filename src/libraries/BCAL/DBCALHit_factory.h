@@ -25,13 +25,18 @@ class DBCALHit_factory:public jana::JFactory<DBCALHit>{
 	public:
 		DBCALHit_factory(){
 		  PRINTCALIBRATION = false;
+		  VERBOSE = 0;
+		  CHECK_FADC_ERRORS = false;
 		  if(gPARMS){
 		    gPARMS->SetDefaultParameter("BCALHIT:PRINTCALIBRATION", PRINTCALIBRATION, "Print the calibration parameters.");
+			gPARMS->SetDefaultParameter("BCALHIT:VERBOSE", VERBOSE, "Set level of verbosity.");
+			gPARMS->SetDefaultParameter("BCAL:CHECK_FADC_ERRORS", CHECK_FADC_ERRORS, "Set to 1 to reject hits with fADC250 errors, ser to 0 to keep these hits");
 		  }
 		};
 		~DBCALHit_factory(){};
 
 		bool PRINTCALIBRATION;
+		int VERBOSE;
 
 		// shortcut geometry factors
 		// these should really be taken from
