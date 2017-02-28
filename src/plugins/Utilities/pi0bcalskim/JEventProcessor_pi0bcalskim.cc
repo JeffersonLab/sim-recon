@@ -199,8 +199,8 @@ jerror_t JEventProcessor_pi0bcalskim::evnt(JEventLoop *loop, uint64_t eventnumbe
 		TLorentzVector sh2_p(sh2_E*sh2_x/sh2_R,sh2_E*sh2_y/sh2_R,sh2_E*sh2_z/sh2_R,sh2_E);
 		TLorentzVector ptot = sh1_p+sh2_p;
 		inv_mass = ptot.M();
-		Candidate |= ( (sh2_E>0.67) && (inv_mass<0.30) );
-        if((sh2_E>0.67) && (inv_mass<0.30)) {
+		Candidate |= ( (sh2_E>0.4) && (inv_mass<0.25) && (inv_mass>0.05));
+        if((sh2_E>0.4) && (inv_mass<0.25) && (inv_mass>0.05)) {
             if(find(locObjectsToSave.begin(), locObjectsToSave.end(), locBCALShowers[i]) == locObjectsToSave.end())
                 locObjectsToSave.push_back(static_cast<const JObject *>(locBCALShowers[i]));
             if(find(locObjectsToSave.begin(), locObjectsToSave.end(), locBCALShowers[j]) == locObjectsToSave.end())
