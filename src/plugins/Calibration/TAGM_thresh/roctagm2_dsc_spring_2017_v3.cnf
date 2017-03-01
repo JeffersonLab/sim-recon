@@ -1,0 +1,68 @@
+#  DSC2 thresholds for each individual channel (for the TDC output) 
+#                 can be set in this file 
+#
+#  Thresholds will overwrite values defined in the the global config file 
+#            (set using the DSC2_THRESHOLD card).
+#  
+#   Syntax:
+#   DSC2_ALLCH_THR   CH0  ...  CH15
+#
+#
+#  if DSC2_ALLCH_THR is NOT set for the particular slot DSC2_SLOTS, 
+#  threshold values will not be overwritten, i.e., values from the global 
+#  config file (set using DSC2_THRESHOLD ) will be used for this slot
+#
+#
+
+
+CRATE  roctagm2
+
+
+############################ 
+DSC2_SLOTS   4 
+######################### 
+
+DSC2_ALLCH_THR   62   51   61   78   76   72   60   59   57   59   57   69   59   49   47   44
+
+############################ 
+DSC2_SLOTS   5 
+######################### 
+
+DSC2_ALLCH_THR   49   45   65   58   63   55   46   37   39   31   60   85   44   11   10   12
+
+############################ 
+DSC2_SLOTS   6 
+######################### 
+
+DSC2_ALLCH_THR   10   13   16   23   27   14   21   30   25   20   18   18   19   14   32   32
+
+############################ 
+DSC2_SLOTS   7 
+######################### 
+
+DSC2_ALLCH_THR   24   20   17   15   117   121   74   86   137   111   121   109   84   106   147   126
+
+############################ 
+DSC2_SLOTS   8 
+######################### 
+
+DSC2_ALLCH_THR   143   137   106   133   102   104   97   153   103   104   168   108   125   145   123   136
+
+############################ 
+DSC2_SLOTS   9 
+######################### 
+
+DSC2_ALLCH_THR   23   104   117   149   70   146   151   126   121   110   92   116   122   121   135   86
+
+############################ 
+DSC2_SLOTS   10 
+######################### 
+
+DSC2_ALLCH_THR   164   117   95   112   147   138   153   158   154   135   138   122   113   126   134   124
+
+############################ 
+DSC2_SLOTS   11 
+######################### 
+
+DSC2_ALLCH_THR   117   103   114   121   134   140   79   139   74   27   200   200   200   200   200   200
+
