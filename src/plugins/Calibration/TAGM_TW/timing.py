@@ -30,44 +30,44 @@ provider.connect(sqlite_connect_str)
 print 'CCDB is connected? ' + str(getattr(provider,"is_connected"))
 ## Provide a username for CCDB updates
 provider.authentication.current_user_name = "anonymous"	
-## Set the CCDB variation
-variation = 'calib'
+## Set the default CCDB variation
+global variation; variation = 'calib'
 
 # Define TAGM constants
-NCOLUMNS = 102
-NROWS = 5
+global NCOLUMNS; NCOLUMNS = 102
+global NROWS; NROWS = 5
 
 def main():
-	if (len(sys.argv) != 5):
-		print "\nUsage: python timing.py -b <root file> <run number> <calibration type>"
+	if (len(sys.argv) < 5):
+		print "\nUsage: python timing.py -b <root file> <run number> <calibration type> <CCDB variation>"
 		print "The calibration type can be: self, rf, res, or validate,"
 		print "where self refers to TDC-ADC and res gives the resolution\n"
-		print "Be sure to edit the variation in the script if not using default\n"
+		print "Example CCDB variations are: default, calib\n"
 		return
 
 	outroot = TFile.Open('resolution.root','RECREATE')
 	rootfile = TFile.Open(str(sys.argv[2]))
 	run = sys.argv[3]
 	calib_type = str(sys.argv[4])
+	if (len(sys.argv) > 5):
+		globals()['variation'] = str(sys.argv[5])
+	print 'Variation to be used: ' + variation
 	adcfile = open('adc_offsets-' + str(run) + '.txt','w')
 	tdcfile = open('tdc_offsets-' + str(run) + '.txt','w')
 	errorfile = open('problem-channels.txt','w')
 
 	baseDir = 'TAGM_TW/'
 
-	#beamPeriod_assignment = provider.get_assignment("/PHOTON_BEAM/RF/beam_period",run,"default")
 	beamPeriod_assignment = provider.get_assignment("/PHOTON_BEAM/RF/beam_period",run,variation)
 	beamPeriod = float(beamPeriod_assignment.constant_set.data_table[0][0])
 	print "The beam period is: " + str(beamPeriod)
-	#fadc_assignment = provider.get_assignment("/PHOTON_BEAM/microscope/fadc_time_offsets",run,"default")
-	#tdc_assignment = provider.get_assignment("/PHOTON_BEAM/microscope/tdc_time_offsets",run,"default")
 	fadc_assignment = provider.get_assignment("/PHOTON_BEAM/microscope/fadc_time_offsets",run,variation)
 	tdc_assignment = provider.get_assignment("/PHOTON_BEAM/microscope/tdc_time_offsets",run,variation)
 
 	ind_cols = [9, 27, 81, 99]
 	channel = 0
-	res_hist = TProfile("res_hist","Timing resolution (FWHM) of each TAGM channel;Channel;Resolution [ns]",122,1,123)
-	res_hist2 = TProfile("res_hist2","Timing resolution (1 sigma) of each TAGM channel;Channel;Resolution [ns]",122,1,123)
+	res_hist = TProfile("FWHM","Timing resolution (FWHM) of each TAGM channel;Channel;Resolution [ns]",122,1,123)
+	res_hist2 = TProfile("1sig","Timing resolution (1 sigma) of each TAGM channel;Channel;Resolution [ns]",122,1,123)
 	for i in range(1,NCOLUMNS+1):
 		# Get summed channels
 		if (calib_type == 'self'):
