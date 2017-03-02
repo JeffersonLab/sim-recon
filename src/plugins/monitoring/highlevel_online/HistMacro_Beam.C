@@ -144,14 +144,14 @@
 			for(int ibin=1; ibin<=locHist_BeamEnergy_norm->GetNbinsX(); ibin++){
 				if( amorphous_data[ibin-1] < 1000.0) continue;
 				Double_t v = (Double_t)locHist_BeamEnergy_norm->GetBinContent(ibin);
-				if(v>0.0){
+				if(v>0.1){
 					left_scale = v;
 					break;
 				}
 			}
 			
 			// Set min and max of plot to show range
-			double diff = scale - left_scale;
+			double diff = 1.0 - left_scale;
 			double min = left_scale - diff*0.1;
 			double max = left_scale + diff*1.2;
 			if( fabs(max-min) < 0.4 ){
