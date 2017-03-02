@@ -162,6 +162,7 @@ jerror_t DBeamCurrent_factory::evnt(JEventLoop *loop, uint64_t eventnumber)
 
 		DBeamCurrent *bc = new DBeamCurrent;
 		bc->Ibeam  = b.Ibeam;
+		bc->t      = t;
 		bc->t_prev = b.t_trip_prev + t_rel;
 		bc->t_next = b.t_trip_next - t_rel;
 		bc->is_fiducial = false;

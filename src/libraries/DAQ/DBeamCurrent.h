@@ -35,6 +35,7 @@ class DBeamCurrent:public jana::JObject{
 		// some minumum (default is 5nA).
 	
 		double Ibeam;  // electron beam current in nA
+		double t;      // time relative to start of run in seconds
 		double t_prev; // time since last trip in sec
 		double t_next; // time to next trip in sec
 		bool   is_fiducial; // true if this event is in fiducial region of time
@@ -44,6 +45,7 @@ class DBeamCurrent:public jana::JObject{
 		// the second argument to AddString is printf style format
 		void toStrings(vector<pair<string,string> > &items)const{
 			AddString(items, "Ibeam", "%5.1f", Ibeam);
+			AddString(items, "t",      "%f", t);
 			AddString(items, "t_prev", "%f", t_prev);
 			AddString(items, "t_next", "%f", t_next);
 			AddString(items, "is_fiducial", "%d", is_fiducial ? 1:0);
