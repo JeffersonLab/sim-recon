@@ -58,7 +58,7 @@ private:
                 const DBCALPoint* point ) const;
  
   bool overlap_charged( const DBCALCluster& clust, 
-			const DBCALPoint* point, DVector3 track_pos, float slope, float y_intercept, float tracked_phi ) const;
+			const DBCALPoint* point, DVector3 track_pos, float slope, float y_intercept, float tracked_phi, int counter ) const;
  
   bool overlap( const DBCALCluster& clust, 
                 const DBCALUnifiedHit* hit ) const; 
