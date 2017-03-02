@@ -115,9 +115,12 @@
 	X(DTrackWireBased) \
 	X(DTrackTimeBased)
 
-#define MyIntBranchTypes(X) \
+#define MyDerivedTypes(X) \
 	X(trig_mask) \
 	X(fp_trig_mask) \
+	X(trig1) \
+	X(trig3) \
+	X(trig4) \
 	\
 	X(NCDC_superlayer1) \
 	X(NCDC_superlayer2) \
@@ -144,9 +147,8 @@
 	X(Nbeam_photons_8_9) \
 	X(Nbeam_photons_9_10) \
 	X(Nbeam_photons_10_11) \
-	X(Nbeam_photons_11_12)
-
-#define MyFloatBranchTypes(X) \
+	X(Nbeam_photons_11_12) \
+	\
 	X(Esc_tot) \
 	X(Etof_tot) \
 	X(Ebcal_points) \
@@ -173,16 +175,12 @@ class JEventProcessor_L3BDTtree:public jana::JEventProcessor{
 		class bdt_params_t{
 			public:
 				// Include number of objects for all JANA types
-				#define Nobjs(A) Int_t N##A;
+				#define Nobjs(A) Float_t N##A;
 				MyTypes(Nobjs)
 
-				// Include sorted int types
-				#define Intobjs(A) Int_t A;
-				MyIntBranchTypes(Intobjs)
-
-				// Include sorted float types
+				// Include derived types
 				#define Floatobjs(A) Float_t A;
-				MyFloatBranchTypes(Floatobjs)
+				MyDerivedTypes(Floatobjs)
 		};
 		
 		TTree *l3tree;

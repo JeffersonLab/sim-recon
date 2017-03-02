@@ -52,16 +52,12 @@ jerror_t JEventProcessor_L3BDTtree::init(void)
 	l3tree = new TTree("l3tree", "L3 tree for BDT");
 
 	// Add branches for all JANA object counts
-	#define AddNBranch(A) l3tree->Branch("N" #A, &bdt.N##A, #A "/I");
+	#define AddNBranch(A) l3tree->Branch("N" #A, &bdt.N##A, #A "/F");
 	MyTypes(AddNBranch)
 
-	// Add branches for all sorted int types
-	#define AddIntBranch(A) l3tree->Branch(#A, &bdt.A, #A "/I");
-	MyIntBranchTypes(AddIntBranch)
-
 	// Add branches for all sorted float types
-	#define AddFloattBranch(A) l3tree->Branch(#A, &bdt.A, #A "/F");
-	MyFloatBranchTypes(AddFloattBranch)
+	#define AddBranch(A) l3tree->Branch(#A, &bdt.A, #A "/F");
+	MyDerivedTypes(AddBranch)
 
 	return NOERROR;
 }
@@ -86,12 +82,18 @@ jerror_t JEventProcessor_L3BDTtree::evnt(JEventLoop *loop, uint64_t eventnumber)
 	MyTypes(GetObjs)
 	
 	// Trigger
-	Int_t trig_mask = 0;
-	Int_t fp_trig_mask = 0;
+	Int_t   trig_mask = 0;
+	Int_t   fp_trig_mask = 0;
+	Float_t trig1 = 0.0;
+	Float_t trig3 = 0.0;
+	Float_t trig4 = 0.0;
 	if(!vDL1Trigger.empty()){
 		auto trig  = vDL1Trigger[0];
 		trig_mask    = trig->trig_mask;
 		fp_trig_mask = trig->fp_trig_mask;
+		if(trig_mask&0x01) trig1 = 1.0;
+		if(trig_mask&0x04) trig3 = 1.0;
+		if(trig_mask&0x08) trig4 = 1.0;
 	}
 
 	// CDC hits by superlayer
@@ -211,35 +213,38 @@ jerror_t JEventProcessor_L3BDTtree::evnt(JEventLoop *loop, uint64_t eventnumber)
 	japp->RootWriteLock();
 	
 	// Copy all object counts
-	#define CopyNobjs(A) bdt.N##A = (Int_t)v##A.size();
+	#define CopyNobjs(A) bdt.N##A = (Float_t)v##A.size();
 	MyTypes(CopyNobjs)
 	
 	// L1 trigger
-	bdt.trig_mask    = trig_mask;
-	bdt.fp_trig_mask = fp_trig_mask;
+	bdt.trig_mask    = (Float_t)trig_mask;
+	bdt.fp_trig_mask = (Float_t)fp_trig_mask;
+	bdt.trig1        = trig1;
+	bdt.trig3        = trig3;
+	bdt.trig4        = trig4;
 
 	// CDC hits by superlayer
-	bdt.NCDC_superlayer1 = NCDC_superlayer[0];
-	bdt.NCDC_superlayer2 = NCDC_superlayer[1];
-	bdt.NCDC_superlayer3 = NCDC_superlayer[2];
-	bdt.NCDC_superlayer4 = NCDC_superlayer[3];
-	bdt.NCDC_superlayer5 = NCDC_superlayer[4];
+	bdt.NCDC_superlayer1 = (Float_t)NCDC_superlayer[0];
+	bdt.NCDC_superlayer2 = (Float_t)NCDC_superlayer[1];
+	bdt.NCDC_superlayer3 = (Float_t)NCDC_superlayer[2];
+	bdt.NCDC_superlayer4 = (Float_t)NCDC_superlayer[3];
+	bdt.NCDC_superlayer5 = (Float_t)NCDC_superlayer[4];
 
 	// FDC wire hits by package
-	bdt.NFDCwires_package1 = NFDCWire_package[0];
-	bdt.NFDCwires_package2 = NFDCWire_package[1];
-	bdt.NFDCwires_package3 = NFDCWire_package[2];
-	bdt.NFDCwires_package4 = NFDCWire_package[3];
+	bdt.NFDCwires_package1 = (Float_t)NFDCWire_package[0];
+	bdt.NFDCwires_package2 = (Float_t)NFDCWire_package[1];
+	bdt.NFDCwires_package3 = (Float_t)NFDCWire_package[2];
+	bdt.NFDCwires_package4 = (Float_t)NFDCWire_package[3];
 
 	// FDC cathode hits by package
-	bdt.NFDCCathodes_package1 = NFDCCathodes_package[0];
-	bdt.NFDCCathodes_package2 = NFDCCathodes_package[1];
-	bdt.NFDCCathodes_package3 = NFDCCathodes_package[2];
-	bdt.NFDCCathodes_package4 = NFDCCathodes_package[3];
+	bdt.NFDCCathodes_package1 = (Float_t)NFDCCathodes_package[0];
+	bdt.NFDCCathodes_package2 = (Float_t)NFDCCathodes_package[1];
+	bdt.NFDCCathodes_package3 = (Float_t)NFDCCathodes_package[2];
+	bdt.NFDCCathodes_package4 = (Float_t)NFDCCathodes_package[3];
 	
 	// TOF half-length, half-width bars
-	bdt.NTOF_half_length = NTOF_half_length;
-	bdt.NTOF_half_width  = NTOF_half_width;
+	bdt.NTOF_half_length = (Float_t)NTOF_half_length;
+	bdt.NTOF_half_width  = (Float_t)NTOF_half_width;
 
 	// Various total energies
 	bdt.Esc_tot        = Esc_tot;
@@ -254,15 +259,15 @@ jerror_t JEventProcessor_L3BDTtree::evnt(JEventLoop *loop, uint64_t eventnumber)
 
 	// Beam photons
 	bdt.Nbeam_photons_coherent = Nbeam_photons_coherent;
-	bdt.Nbeam_photons_3_4   = Nbeam_photons[ 3];
-	bdt.Nbeam_photons_4_5   = Nbeam_photons[ 4];
-	bdt.Nbeam_photons_5_6   = Nbeam_photons[ 5];
-	bdt.Nbeam_photons_6_7   = Nbeam_photons[ 6];
-	bdt.Nbeam_photons_7_8   = Nbeam_photons[ 7];
-	bdt.Nbeam_photons_8_9   = Nbeam_photons[ 8];
-	bdt.Nbeam_photons_9_10  = Nbeam_photons[ 9];
-	bdt.Nbeam_photons_10_11 = Nbeam_photons[10];
-	bdt.Nbeam_photons_11_12 = Nbeam_photons[11];
+	bdt.Nbeam_photons_3_4   = (Float_t)Nbeam_photons[ 3];
+	bdt.Nbeam_photons_4_5   = (Float_t)Nbeam_photons[ 4];
+	bdt.Nbeam_photons_5_6   = (Float_t)Nbeam_photons[ 5];
+	bdt.Nbeam_photons_6_7   = (Float_t)Nbeam_photons[ 6];
+	bdt.Nbeam_photons_7_8   = (Float_t)Nbeam_photons[ 7];
+	bdt.Nbeam_photons_8_9   = (Float_t)Nbeam_photons[ 8];
+	bdt.Nbeam_photons_9_10  = (Float_t)Nbeam_photons[ 9];
+	bdt.Nbeam_photons_10_11 = (Float_t)Nbeam_photons[10];
+	bdt.Nbeam_photons_11_12 = (Float_t)Nbeam_photons[11];
 
 	// Ptot for candidates
 	bdt.Ptot_candidates = Ptot_candidates;
