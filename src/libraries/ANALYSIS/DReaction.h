@@ -64,6 +64,7 @@ class DReaction : public JObject
 		// GET CONTROL INFO:
 		string Get_ReactionName(void) const{return dReactionName;}
 		int Get_DecayStepIndex(int locStepIndex, int locParticleIndex) const;
+		bool Check_IfMissingDecayProduct(size_t locStepIndex) const;
 		pair<int, int> Get_InitialParticleDecayFromIndices(int locStepIndex) const; //1st is step index, 2nd is particle index
 		int Get_DefinedParticleStepIndex(void) const; //-1 if none //defined: missing or open-ended-decaying
 		bool Get_IsInclusiveChannelFlag(void) const;
@@ -282,6 +283,23 @@ inline bool DReaction::Get_InvariantMassCut(Particle_t locStepInitialPID, double
 	locMinInvariantMass = locIterator->second.first;
 	locMaxInvariantMass = locIterator->second.second;
 	return true;
+}
+
+inline bool DReaction::Check_IfMissingDecayProduct(size_t locStepIndex) const
+{
+	const DReactionStep* locReactionStep = Get_ReactionStep(locStepIndex);
+	Particle_t locMissingPID;
+	if(locReactionStep->Get_MissingPID(locMissingPID))
+		return true;
+	for(size_t loc_j = 0; loc_j < locReactionStep->Get_NumFinalParticleIDs(); ++loc_j)
+	{
+		int locDecayStepIndex = Get_DecayStepIndex(locStepIndex, loc_j);
+		if(locDecayStepIndex <= 0)
+			continue; //doesn't decay
+		if(Check_IfMissingDecayProduct(locDecayStepIndex))
+			return true;
+	}
+	return false;
 }
 
 #endif // _DReaction_
