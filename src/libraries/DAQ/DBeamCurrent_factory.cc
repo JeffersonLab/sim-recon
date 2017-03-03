@@ -68,8 +68,8 @@ jerror_t DBeamCurrent_factory::brun(jana::JEventLoop *loop, int32_t runnumber)
 	loop->GetJCalibration()->GetCalib("/ELECTRON_BEAM/timestamp_to_unix", mcalib);
 	if(mcalib.size() == 3){
 		//ticks_per_sec           = atof(mcalib["tics_per_sec"].c_str());
-		rcdb_250MHz_offset_tics = atoi(mcalib["rcdb_250MHz_offset_tics"].c_str());
-		rcdb_start_time         = atoi(mcalib["rcdb_start_time"].c_str());
+		rcdb_250MHz_offset_tics = stoull(mcalib["rcdb_250MHz_offset_tics"].c_str());
+		rcdb_start_time         = stoull(mcalib["rcdb_start_time"].c_str());
 	}
 
 	
