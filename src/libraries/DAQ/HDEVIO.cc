@@ -1314,7 +1314,7 @@ void HDEVIO::SaveFileMap(string fname)
 	ofs << "swap_needed: " << swap_needed << endl;
 	ofs << "--------- Start of block data --------" << endl;
 	ofs << "#  pos    block_len  first_evt last_evt block_type" << endl;
-	ofs << "#    +pos    evt_len  evt_header first_evt last_evt" << endl;
+	ofs << "#  + pos    evt_len  evt_header first_evt last_evt event_type" << endl;
 
 	for(auto br : evio_blocks){
 		char line[512];
@@ -1322,7 +1322,7 @@ void HDEVIO::SaveFileMap(string fname)
 		ofs << line << endl;
 		
 		for(auto er : br.evio_events){
-			sprintf(line, "+ 0x%08x 0x%06x 0x%08x %8" PRIu64 " %8" PRIu64, (uint32_t)er.pos, er.event_len, er.event_header, er.first_event, er.last_event);
+			sprintf(line, "+ 0x%08x 0x%06x 0x%08x %8" PRIu64 " %8" PRIu64 " %d", (uint32_t)er.pos, er.event_len, er.event_header, er.first_event, er.last_event, er.event_type);
 			ofs << line << endl;
 		}
 	}
@@ -1338,7 +1338,6 @@ void HDEVIO::SaveFileMap(string fname)
 //------------------------
 void HDEVIO::ReadFileMap(string fname, bool warn_if_not_found)
 {
-#if 0
 	// Open input file
 	if(fname=="") fname = filename + ".map";
 	ifstream ifs(fname.c_str());
@@ -1350,7 +1349,6 @@ void HDEVIO::ReadFileMap(string fname, bool warn_if_not_found)
 	// Check if file was closed cleanly
 	string eof_string("# --- End of map ---");
 	ifs.seekg(eof_string.length()*2, ifs.end); // not guaranteed how many char's endl is
-
 	string line;
 	while(getline(ifs,line)); // read until we've read the last line
 	if(string(line).find(eof_string)==string::npos){
@@ -1359,6 +1357,7 @@ void HDEVIO::ReadFileMap(string fname, bool warn_if_not_found)
 		return;
 	}
 	
+	// Reset file pointers to start of file
 	ifs.clear();
 	ifs.seekg(0);
 	
@@ -1371,28 +1370,37 @@ void HDEVIO::ReadFileMap(string fname, bool warn_if_not_found)
 	}
 	
 	// Loop over body
-	EVIOBlockRecord bh;
+	EVIOBlockRecord br;
 	bool first_block_found = false;
-	stringstream ss;
-	while(getline(ifs, ss)){
-		if(ss.str().find("#") == 0 ) break; // assume "#" marks end of file trailer
+	string s;
+	while(getline(ifs, s)){
+		stringstream ss(s);
+		if(ss.str().find(eof_string) != string::npos ) break; // end of map trailer
+		if(ss.str().find("#") == 0 ) continue; // ignore all other comment lines
 		
 		if(ss.str().find("+") == 0 ){
 			// EVIO Event Record
+			string tmp;
+			EVIOEventRecord er;
+			ss >> tmp; // '+"
+			ss >> er.pos;
+			ss >> er.event_len >> er.event_header >> er.first_event >> er.last_event >> er.event_type;
+			br.evio_events.push_back(er);
 		}else{
 			// EVIO Block Record
 			if(first_block_found){
-				evio_blocks.push_back(bh);
+				evio_blocks.push_back(br);
 			}else{
 				first_block_found = true;
 			}
-			bh.evio_events.clear();
+			br.evio_events.clear();
 			
-			
+			ss >> br.pos;
+			ss >> br.block_len >> br.first_event >> br.last_event >> br.block_type;
 		}
 	}
+	if(!br.evio_events.empty()) evio_blocks.push_back(br);
 	
 	cout << "Read EVIO file map from: " << fname << endl;
-#endif
 }
 
