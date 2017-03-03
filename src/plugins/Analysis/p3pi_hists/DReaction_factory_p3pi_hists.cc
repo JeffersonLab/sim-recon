@@ -12,7 +12,7 @@
 #include "DCustomAction_CutExtraPi0.h"
 #include "DCustomAction_CutExtraTrackPID.h"
 
-void PIDCuts(DReaction* locReaction)
+void DReaction_factory_p3pi_hists::PIDCuts(DReaction* locReaction)
 {
 	locReaction->Add_AnalysisAction(new DHistogramAction_PID(locReaction));
 	locReaction->Add_AnalysisAction(new DCutAction_PIDDeltaT(locReaction, false, 2.0, Proton, SYS_TOF));
