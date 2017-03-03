@@ -401,6 +401,10 @@ jerror_t JEventProcessor_CDC_expert::evnt(JEventLoop *eventLoop, uint64_t eventn
   if(locTrigger->Get_L1FrontPanelTriggerBits() != 0)
     return NOERROR;
 
+  if (!locTrigger->Get_IsPhysicsEvent()){ // do not look at PS triggers
+    return NOERROR;
+  }
+
   //first set of histograms is for dcdchits, these are t and q after calibration
   //second set is for dcdcdigihits, these are the raw quantities
 
