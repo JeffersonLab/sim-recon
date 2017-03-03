@@ -39,6 +39,8 @@ class DReaction_factory_p3pi_hists : public jana::JFactory<DReaction>
 
 		double dBeamBunchPeriod;
 		deque<DReactionStep*> dReactionStepPool; //to prevent memory leaks
+
+		void PIDCuts(DReaction* locReaction);
 };
 
 #endif // _DReaction_factory_p3pi_hists_
