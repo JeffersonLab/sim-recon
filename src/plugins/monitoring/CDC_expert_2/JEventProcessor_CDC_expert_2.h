@@ -9,6 +9,23 @@
 #define _JEventProcessor_CDC_expert_2_
 
 #include <JANA/JEventProcessor.h>
+#include <JANA/JApplication.h>
+
+
+using namespace std;
+using namespace jana;
+
+
+#include "CDC/DCDCHit.h"
+#include "CDC/DCDCDigiHit.h"
+#include "DAQ/Df125WindowRawData.h"
+#include "DAQ/Df125CDCPulse.h"
+#include "DAQ/Df125Config.h"
+#include "TRIGGER/DTrigger.h"
+
+#include <TDirectory.h>
+#include <TH2.h>
+#include <TH1.h>
 
 
 class JEventProcessor_CDC_expert_2:public jana::JEventProcessor{
@@ -16,8 +33,8 @@ class JEventProcessor_CDC_expert_2:public jana::JEventProcessor{
   JEventProcessor_CDC_expert_2();
   ~JEventProcessor_CDC_expert_2();
   const char* className(void){return "JEventProcessor_CDC_expert_2";}
-
-
+  
+  
  private:
   jerror_t init(void);						///< Called once at program start.
   jerror_t brun(jana::JEventLoop *eventLoop, int32_t runnumber);	///< Called everytime a new run number is detected.
