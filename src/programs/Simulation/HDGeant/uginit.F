@@ -204,6 +204,11 @@ c The following parameters are declared in controlparams.inc above.
       character*10 genbeam_modes
       equivalence (genbeam_mode(1), genbeam_modes)
 
+c The following parameters are declared in backgrounds.inc above.
+      data bgrate/0/
+      data bggate/0,0/
+      data bgtagonly/0/
+
 C  Use this parameter to set up a minimum photon energy 
 C  for the coherent bremsstrahlung beam generator - see beamgen.F
       real    xMinimum,freqMaximum,beamStartZ,Theta02
