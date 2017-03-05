@@ -116,7 +116,7 @@
       DIMENSION VERTEX(4),PLAB(5)
       DIMENSION RNDM(20)
 
-      real tgen
+      real tgen, tgend
       real unif01(100)
       integer i,j
       character*20 pname
@@ -231,8 +231,8 @@
             do j=1,100
               tgen=tgen-log(unif01(j))/bgrate
               if (tgen.gt.bggate(2)) goto 10
-              tgen=beam_period_ns*floor(tgen/beam_period_ns+0.5)
-              call beamgen(tgen)
+              tgend=beam_period_ns*floor(tgen/beam_period_ns+0.5)
+              call beamgen(tgend)
               ngen=ngen+1
             enddo
           enddo
