@@ -9,6 +9,7 @@
 #include <iostream>
 #include <iomanip>
 #include <algorithm>
+#include <cmath>
 using namespace std;
 
 #include <DAQ/DCODAEventInfo.h>
@@ -68,8 +69,8 @@ jerror_t DBeamCurrent_factory::brun(jana::JEventLoop *loop, int32_t runnumber)
 	loop->GetJCalibration()->GetCalib("/ELECTRON_BEAM/timestamp_to_unix", mcalib);
 	if(mcalib.size() == 3){
 		//ticks_per_sec           = atof(mcalib["tics_per_sec"].c_str());
-		rcdb_250MHz_offset_tics = atoi(mcalib["rcdb_250MHz_offset_tics"].c_str());
-		rcdb_start_time         = atoi(mcalib["rcdb_start_time"].c_str());
+		rcdb_250MHz_offset_tics = stoull(mcalib["rcdb_250MHz_offset_tics"].c_str());
+		rcdb_start_time         = stoull(mcalib["rcdb_start_time"].c_str());
 	}
 
 	
@@ -162,6 +163,7 @@ jerror_t DBeamCurrent_factory::evnt(JEventLoop *loop, uint64_t eventnumber)
 
 		DBeamCurrent *bc = new DBeamCurrent;
 		bc->Ibeam  = b.Ibeam;
+		bc->t      = t;
 		bc->t_prev = b.t_trip_prev + t_rel;
 		bc->t_next = b.t_trip_next - t_rel;
 		bc->is_fiducial = false;

@@ -183,7 +183,7 @@ inline string DReactionStep::Get_StepName(void) const
 	string locStepName = ParticleType(dInitialParticleID);
 	if(dTargetParticleID != Unknown)
 		locStepName += string("_") + ParticleType(dTargetParticleID);
-	locStepName += "_->";
+	locStepName += "__";
 	for(size_t loc_i = 0; loc_i < dFinalParticleIDs.size(); ++loc_i)
 	{
 		if(int(loc_i) == dMissingParticleIndex)

@@ -318,10 +318,11 @@ jerror_t JEventProcessor_BCAL_TDC_Timing::evnt(JEventLoop *loop, uint64_t eventn
       Fill1DHistogram("BCAL_Global_Offsets", "Debug", "Success", 5, "Success profile;Step", 16, -0.5, 15.5);
 
       // We also need the reference trajectory, which is buried deep in there
-      const DTrackTimeBased *timeBasedTrack = (const DTrackTimeBased *) bcalMatch->dTrack;
-      if (timeBasedTrack->FOM < 0.0027) continue; // 3-sigma cut on tracking FOM
-      Fill1DHistogram("BCAL_Global_Offsets", "Debug", "Success", 6, "Success profile;Step", 16, -0.5, 15.5);
+      const DTrackTimeBased *timeBasedTrack = nullptr;
+      bestHypothesis->GetSingle(timeBasedTrack);
       const DReferenceTrajectory *rt = timeBasedTrack->rt;
+      //if (timeBasedTrack->FOM < 0.0027) continue; // 3-sigma cut on tracking FOM
+      Fill1DHistogram("BCAL_Global_Offsets", "Debug", "Success", 6, "Success profile;Step", 16, -0.5, 15.5);
 
       // Use CDC dEdx to help reject protons
       double dEdx=1e6*timeBasedTrack->ddEdx_CDC;

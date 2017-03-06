@@ -35,6 +35,8 @@ static TH2I* h_dt_vs_pp_tdc[NCOLUMNS];
 static TH2I* h_dt_vs_pp_ind[NROWS][4];
 static TH2I* h_dt_vs_pp_tdc_ind[NROWS][4];
 //    tdc - adc
+static TH2I* h_tdc_adc_all;
+static TH2I* h_tdc_adc_all_ind;
 static TH2I* h_t_adc_all;
 static TH2I* h_t_adc_all_ind;
 //    adc - rf
@@ -119,6 +121,10 @@ jerror_t JEventProcessor_TAGM_TW::init(void)
    }
    tagmDir->cd();
 
+   h_tdc_adc_all =      new TH2I("tdc_adc_all","Summed channels;TDC - ADC (ns);Column",
+                                  TBIN,TMIN,TMAX,NCOLUMNS,1,NCOLUMNS+1);
+   h_tdc_adc_all_ind =  new TH2I("tdc_adc_all_ind","Individual channels;TDC - ADC (ns);Column",
+                                  TBIN,TMIN,TMAX,NSINGLES,1,NSINGLES+1);
    h_t_adc_all =      new TH2I("t_adc_all","Summed channels;TDC - ADC (ns);Column",
                                 TBIN,TMIN,TMAX,NCOLUMNS,1,NCOLUMNS+1);
    h_t_adc_all_ind =  new TH2I("t_adc_all_ind","Individual channels;TDC - ADC (ns);Column",
@@ -185,6 +191,7 @@ jerror_t JEventProcessor_TAGM_TW::evnt(JEventLoop *loop, uint64_t eventnumber)
       {
          h_dt_vs_pp[col-1]->Fill(pp, tm_t - rf_adc);
          h_dt_vs_pp_tdc[col-1]->Fill(pp, tdc_t - rf_adc);
+         h_tdc_adc_all->Fill(tdc_t - adc_t, col);
          h_t_adc_all->Fill(tm_t - adc_t, col);
          h_adc_rf_all->Fill(adc_t - rf_adc, col);
       }
@@ -194,6 +201,7 @@ jerror_t JEventProcessor_TAGM_TW::evnt(JEventLoop *loop, uint64_t eventnumber)
          {
             h_dt_vs_pp_ind[row-1][0]->Fill(pp,tm_t - rf_adc);
             h_dt_vs_pp_tdc_ind[row-1][0]->Fill(pp,tdc_t - rf_adc);
+            h_tdc_adc_all_ind->Fill(tdc_t - adc_t, row);
             h_t_adc_all_ind->Fill(tm_t - adc_t, row);
             h_adc_rf_all_ind->Fill(adc_t - rf_adc, row);
          }
@@ -201,6 +209,7 @@ jerror_t JEventProcessor_TAGM_TW::evnt(JEventLoop *loop, uint64_t eventnumber)
          {
             h_dt_vs_pp_ind[row-1][1]->Fill(pp,tm_t - rf_adc);
             h_dt_vs_pp_tdc_ind[row-1][1]->Fill(pp,tdc_t - rf_adc);
+            h_tdc_adc_all_ind->Fill(tdc_t - adc_t, row + 5);
             h_t_adc_all_ind->Fill(tm_t - adc_t, row + 5);
             h_adc_rf_all_ind->Fill(adc_t - rf_adc, row + 5);
          }
@@ -208,6 +217,7 @@ jerror_t JEventProcessor_TAGM_TW::evnt(JEventLoop *loop, uint64_t eventnumber)
          {
             h_dt_vs_pp_ind[row-1][2]->Fill(pp,tm_t - rf_adc);
             h_dt_vs_pp_tdc_ind[row-1][2]->Fill(pp,tdc_t - rf_adc);
+            h_tdc_adc_all_ind->Fill(tdc_t - adc_t, row + 10);
             h_t_adc_all_ind->Fill(tm_t - adc_t, row + 10);
             h_adc_rf_all_ind->Fill(adc_t - rf_adc, row + 10);
          }
@@ -215,6 +225,7 @@ jerror_t JEventProcessor_TAGM_TW::evnt(JEventLoop *loop, uint64_t eventnumber)
          {
             h_dt_vs_pp_ind[row-1][3]->Fill(pp,tm_t - rf_adc);
             h_dt_vs_pp_tdc_ind[row-1][3]->Fill(pp,tdc_t - rf_adc);
+            h_tdc_adc_all_ind->Fill(tdc_t - adc_t, row + 15);
             h_t_adc_all_ind->Fill(tm_t - adc_t, row + 15);
             h_adc_rf_all_ind->Fill(adc_t - rf_adc, row + 15);
          }
