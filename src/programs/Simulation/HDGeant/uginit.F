@@ -204,6 +204,11 @@ c The following parameters are declared in controlparams.inc above.
       character*10 genbeam_modes
       equivalence (genbeam_mode(1), genbeam_modes)
 
+c The following parameters are declared in backgrounds.inc above.
+      data bgrate/0/
+      data bggate/0,0/
+      data bgtagonly/0/
+
 C  Use this parameter to set up a minimum photon energy 
 C  for the coherent bremsstrahlung beam generator - see beamgen.F
       real    xMinimum,freqMaximum,beamStartZ,Theta02
@@ -279,6 +284,7 @@ C..geant..
       call ffkey('tlog', tlog_particle_gun,1,'INTEGER')
       CALL FFKEY('bgrate',bgrate,1,'REAL')
       CALL FFKEY('bggate',bggate,2,'REAL')
+      CALL FFKEY('bgtagonly',bgtagonly,1,'INTEGER')
       CALL FFKEY('savehits',writenohits,1,'INTEGER')
       CALL FFKEY('showersincol',showersincol,1,'INTEGER')
       call FFKEY('driftclusters',driftclusters,1,'INTEGER')
@@ -344,12 +350,6 @@ c        endif
      +        ' beamEmin is specified with negative value,',
      +        ' cannot continue.'
          stop
-      elseif (beamEmin.gt.0.12) then
-         print *
-         print *, 'Error in uginit:',
-     +        ' beamEmin is larger than a default value of 0.12 GeV,',
-     +        ' cannot continue.'
-         stop
       endif
 
       if (genbeam_mode(1).ne.0.and.beamE0.gt.0.and.infile(1).eq.0) then
@@ -380,13 +380,27 @@ c        endif
             
 *     Scale BG rate according to the threshold set on energy of bremsstrahlung
 *     photons. bgrate corresponds to  Rate(E_brem = 0.12 GeV).
+*     
+*     Note added by RTJ, March 4, 2017
+*     I am disabling this ad-hoc formula for automatically adjusting BGRATE
+*     according to the beamEmin value, because it assumes too much:
+*      (1) that the collimator is 3.4mm -- generally NOT true, and
+*      (2) that the value of Emin is low enough that BGRATE is insensitive
+*          to the diamond orientation. 
+*     All of this relies too much on the user understanding the limits
+*     of the approximations involved, and I think in the end users are
+*     being fooled into thinking the simulation is valid for a given set
+*     of collimators and energy cuts when it isn't. In its place, I am
+*     adding an explanation in control.in that whenever you enable the
+*     BGRATE card, you need to do a quick calculation to get the right
+*     number to give for the rate that matches with the value of beamEmin
+*     that is set in the BEAM card.
 
       if (beamEmin.gt.0) then
-         bgrate   = bgrate*(0.12*9.1625*LOG(0.12/beamEmin)/4.936 + 1.0)
+*        bgrate   = bgrate*(0.12*9.1625*LOG(0.12/beamEmin)/4.936 + 1.0)
          xMinimum = beamEmin/beamE0
          print *,'uginit.F:  BGRATE rate is ',bgrate
       endif
-
 
       if (bgrate .lt. 0) then
         print *
