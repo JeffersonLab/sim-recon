@@ -232,7 +232,7 @@
               tgen=tgen-log(unif01(j))/bgrate
               if (tgen.gt.bggate(2)) goto 10
               tgend=beam_period_ns*floor(tgen/beam_period_ns+0.5)
-              call beamgen(tgend)
+              call beamgen(tgend + 1e-3)
               ngen=ngen+1
             enddo
           enddo
