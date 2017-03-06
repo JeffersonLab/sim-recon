@@ -7,7 +7,7 @@ Import('*')
 subdirs = ['analysis', 'bfield2root', 'root_merge', 'root2email']
 subdirs.extend( ['hddm', 'hddm_cull_events', 'hddm_merge_events', 'hddm_merge_files'])
 subdirs.extend( ['mkplugin', 'mkfactory_plugin'] )
-subdirs.extend( ['hdevio_scan', 'hdbeam_current'] )
+subdirs.extend( ['hdevio_scan', 'hdbeam_current', 'hdevio_sample'] )
 
 SConscript(dirs=subdirs, exports='env osname', duplicate=0)
 

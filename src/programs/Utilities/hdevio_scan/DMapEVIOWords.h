@@ -112,8 +112,12 @@ class DMapEVIOWords{
 
 			kEPICSheader,
 			kEPICSdata,
-			
+
 			kSpacer8,
+
+			kTSsync,
+			
+			kSpacer9,
 
 			kF800FAFA,
 			kD00DD00D,
@@ -139,6 +143,7 @@ class DMapEVIOWords{
 		void ParseF1v3TDCBank(uint32_t rocid, uint32_t *&iptr, uint32_t *iend, uint32_t *word_stats);
 		void ParseCAEN1190(uint32_t rocid, uint32_t *&iptr, uint32_t *iend, uint32_t *word_stats);
 		void ParseModuleConfiguration(uint32_t rocid, uint32_t *&iptr, uint32_t *iend, uint32_t *word_stats);
+		void ParseTSscalerBank(uint32_t *&iptr, uint32_t *iend, uint32_t *word_stats);
 
 		set<uint64_t> ts_history;
 		uint32_t max_history_buff_size;

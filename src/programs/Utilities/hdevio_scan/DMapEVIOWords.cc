@@ -141,6 +141,8 @@ DMapEVIOWords::DMapEVIOWords()
 	daq_words_by_type->GetXaxis()->SetBinLabel(1 + kEPICSheader, "EPICS header");
 	daq_words_by_type->GetXaxis()->SetBinLabel(1 + kEPICSdata, "EPICS data");
 
+	daq_words_by_type->GetXaxis()->SetBinLabel(1 + kTSsync, "TS sync event data");
+
 	daq_words_by_type->GetXaxis()->SetBinLabel(1 + kF800FAFA, "0xf800fafa");
 	daq_words_by_type->GetXaxis()->SetBinLabel(1 + kD00DD00D, "0xd00dd00d");
 
@@ -418,6 +420,10 @@ void DMapEVIOWords::DataWordStats(uint32_t *iptr, uint32_t *iend, uint32_t *word
 				ParseModuleConfiguration(rocid, iptr, iendbank, word_stats);
 				break;
 
+			case 0xE02:
+				ParseTSscalerBank(iptr, iendbank, word_stats);
+				break;
+
 			default:
 				break;
 		}
@@ -640,3 +646,12 @@ void DMapEVIOWords::ParseModuleConfiguration(uint32_t rocid, uint32_t *&iptr, ui
 	}
 }
 
+//------------------
+// ParseTSscalerBank
+//------------------
+void DMapEVIOWords::ParseTSscalerBank(uint32_t *&iptr, uint32_t *iend, uint32_t *word_stats)
+{
+	word_stats[kTSsync] += (uint32_t)( (uint64_t)iend - (uint64_t)iptr) ;
+
+	iptr = iend;
+}
