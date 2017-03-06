@@ -15,7 +15,7 @@ using namespace std;
 //---------------------------------
 // HDEVIO    (Constructor)
 //---------------------------------
-HDEVIO::HDEVIO(string filename):filename(filename)
+HDEVIO::HDEVIO(string filename, bool read_map_file):filename(filename)
 {
 	// These must be initialized in case we return early
 	// so they aren't deleted in the destructor if they
@@ -57,6 +57,8 @@ HDEVIO::HDEVIO(string filename):filename(filename)
 	is_mapped = false;
 	
 	NB_next_pos = 0;
+	
+	if(read_map_file) ReadFileMap(); // check if a map file exists and read it if it does
 	
 	IGNORE_EMPTY_BOR = false;
 	
@@ -1348,10 +1350,13 @@ void HDEVIO::ReadFileMap(string fname, bool warn_if_not_found)
 
 	// Check if file was closed cleanly
 	string eof_string("# --- End of map ---");
-	ifs.seekg(eof_string.length()*2, ifs.end); // not guaranteed how many char's endl is
+	ifs.seekg(-eof_string.length()*2, ifs.end); // not guaranteed how many char's endl is
+	bool closed_cleanly = false;
 	string line;
-	while(getline(ifs,line)); // read until we've read the last line
-	if(string(line).find(eof_string)==string::npos){
+	while(getline(ifs,line)){
+		if(string(line).find(eof_string)!=string::npos) closed_cleanly = true;
+	}
+	if(!closed_cleanly){
 		cerr << "Found map file \"" << fname << "\" but it wasn't closed cleanly. Ignoring." << endl;
 		ifs.close();
 		return;
@@ -1381,10 +1386,17 @@ void HDEVIO::ReadFileMap(string fname, bool warn_if_not_found)
 		if(ss.str().find("+") == 0 ){
 			// EVIO Event Record
 			string tmp;
+			uint64_t tmp64;
 			EVIOEventRecord er;
 			ss >> tmp; // '+"
-			ss >> er.pos;
-			ss >> er.event_len >> er.event_header >> er.first_event >> er.last_event >> er.event_type;
+			ss << hex;
+			ss >> tmp64; er.pos = tmp64; // operator>> won't stream directly to streampos
+			ss >> er.event_len;
+			ss >> er.event_header;
+			ss << dec;
+			ss >> er.first_event;
+			ss >> er.last_event;
+			ss >> tmp64; er.event_type = (BLOCKTYPE)tmp64; // operator>> won't stream directly to BLOCKTYPE
 			br.evio_events.push_back(er);
 		}else{
 			// EVIO Block Record
@@ -1394,13 +1406,19 @@ void HDEVIO::ReadFileMap(string fname, bool warn_if_not_found)
 				first_block_found = true;
 			}
 			br.evio_events.clear();
-			
-			ss >> br.pos;
-			ss >> br.block_len >> br.first_event >> br.last_event >> br.block_type;
+			uint64_t tmp64;
+			ss << hex;
+			ss >> tmp64; br.pos = tmp64; // operator>> won't stream directly to streampos
+			ss >> br.block_len;
+			ss << dec;
+			ss >> br.first_event;
+			ss >> br.last_event;
+			ss >> tmp64; br.block_type = (BLOCKTYPE)tmp64; // operator>> won't stream directly to BLOCKTYPE
 		}
 	}
 	if(!br.evio_events.empty()) evio_blocks.push_back(br);
 	
+	is_mapped = true;
 	cout << "Read EVIO file map from: " << fname << endl;
 }
 

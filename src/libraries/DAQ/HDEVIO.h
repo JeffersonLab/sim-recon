@@ -44,7 +44,7 @@ using namespace std;
 
 class HDEVIO{
 	public:
-		HDEVIO(string filename);
+		HDEVIO(string filename, bool read_map_file=true);
 		virtual ~HDEVIO();
 		
 		enum{
@@ -200,7 +200,7 @@ class HDEVIO{
 		void PrintStats(void);
 		void PrintFileSummary(void);
 		void SaveFileMap(string fname="");
-		void ReadFileMap(string fname, bool warn_if_not_found=false);
+		void ReadFileMap(string fname="", bool warn_if_not_found=false);
 
 		uint32_t GetEventMask(void) { return event_type_mask; }
 		uint32_t SetEventMask(uint32_t mask);
