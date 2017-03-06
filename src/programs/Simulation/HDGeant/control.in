@@ -146,26 +146,51 @@ HALO  5e-5
 
 c The following lines control the rate (GHz) of background beam photons
 c that are overlayed on each event in the simulation, in addition to the
-c particles produced by the standard generation mechanism.  A value of
-c 1.10 corresponds to nominal GlueX running conditions at an intensity of
-c 10^7 tagged photons on target per second.  To disable the generation of
-c random beam background, comment this line out or set the value of BGRATE
-c to zero.  Background beam photons are generated during the time interval
-c given by the BGGATE card, whose two arguments specify the earliest and
-c latest times (ns relative to the time of the original photon that caused
-c the event) that a random beam photon could produce background hits
-c somewhere in the detector.  Note that for this to work, the BEAM card
-c must be present (see above).  This means that background generation is
-c disabled when the simulation operates in particle gun mode.
-c If Emin is set in the BEAM card (see above), the rate of background photons
-c is automatically rescaled as follows:
-c       Rate(E_gamma > Thr)  =  Rate(E_gamma > 0.12 GeV) * K,
-c where K is a scale factor calculated inside uginit.F:
-c       K = 1 for Thr = 0.12 GeV,
-c       K > 1 for Thr < 0.12 GeV. 
-c Note, K is calculated assuming the beam energies Emax = 12, Epeak = 9. 
-cBGRATE 1.10
+c particles produced by the standard generation mechanism. BGGATE expects
+c two values in ns, which define the window around the trigger time that
+c background beam photons are overlaid on the simulation. The value you
+c should enter for BGRATE depends on many details of the photon beam: the
+c endpoint energy, the low-energy cutoff to be used in generating beam
+c photons, the location of coherent edge, the electron beam spot size and
+c emittance at the primary collimator, the electron beam current, etc. To
+c find the setting that is right for you, follow these steps in order.
+c  1) Check the BEAM card above that it has correct values for the electron
+c     beam energy (field 1) and the low-energy cutoff that you want to use
+c     in your simulation (field 3). Remember these values.
+c  2) Open a new tab in a web browser and enter the following URL,
+c     http://zeus.phys.uconn.edu/halld/cobrems/ratetool.cgi which displays
+c     a form containing many fields describing the electron beam and the
+c     photon beamline. Enter the correct values in all fields in the
+c     left-most column of parameters. The right column of parameters 
+c     defines the windows over which the tool will compute integrals of
+c     the beam rate. Set the "end-point" window to span the full range
+c     from your beamEmin (see step 1 above) to the electron beam endpoint,
+c     Then click the Plot Spectrum button. After a few seconds, the form will
+c     respond with a few plots and rate numbers in bold text. Record the
+c     value given for the "end-point rate". This is your BGRATE value.
+c  3) Enter your BGRATE value found in step 2 after BGRATE in the line
+c     below, and remove any characters before the BGRATE keyword. You are
+c     now ready to go. If you ever change anything in the beamline geometry
+c     eg. the collimator diameter, the coherent edge position, or the value
+c     of beamEmin, do not forget to come back and change your BGRATE.
 cBGGATE -200. 200.
+cBGRATE 4.80
+
+c The above cards BGRATE, BGGATE normally cause the simulation to add
+c accidental tagger hits to the simulated output record, in addition to
+c adding these beam photons to the list of particles to be tracked through
+c the detector. If you want the accidental tagger hits to be added to the
+c simulated output record but you do not want to track the background
+c beam photons, remove the comment in front of BGTAGONLY below.
+c NOTICE: If you turn on BGTAGONLY then you might as well raise the
+c minimum energy of beam photons being generated to the lower bound of
+c the tagger energy range you are interested in, which might be 3 GeV for
+c low-intensity running, 7 GeV for high-intensity running, or even 8 GeV
+c if you are only interested in the region of the coherent peak. This
+c minimum is the third field of the BEAM card above. Remember that if
+c you change beamEmin, you also need to change BGRATE to match, as 
+c described above.
+cBGTAGONLY 1
 
 c The following line controls the uncertainty of the event time reference
 c relative to the RF structure of the beam. The event time reference is
