@@ -9,6 +9,7 @@
 #include <iostream>
 #include <iomanip>
 #include <algorithm>
+#include <cmath>
 using namespace std;
 
 #include <DAQ/DCODAEventInfo.h>

@@ -655,7 +655,7 @@ uint64_t JEventSource_EVIOpp::SearchFileForRunNumber(void)
 
 	uint32_t buff_len = 4000000;
 	uint32_t *buff = new uint32_t[buff_len];
-	HDEVIO *hdevio = new HDEVIO(source_name);
+	HDEVIO *hdevio = new HDEVIO(source_name, false);
 	while(hdevio->read(buff, buff_len)){
 
 		// Assume first word is number of words in bank
