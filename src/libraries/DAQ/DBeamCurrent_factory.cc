@@ -209,15 +209,43 @@ double DBeamCurrent_factory::IntegratedFiducialTime(double t_start, double t_end
 	///    IntegratedFiducialTime()/IntegratedTime()
 	///
 	
-	
+	// Find recovery before and after times
+	double t_recover_pre = 0.;
+	double t_recover_post = 0.;
+	for(double ttemp : recover){
+		if(ttemp < t_start) 
+			t_recover_pre = ttemp;
+		else {
+			t_recover_post = ttemp;
+			break;
+		}
+	}
+	double t_trip_pre = 0.;
+	for(double ttemp : trip){
+		if(ttemp < t_start) 
+			t_trip_pre = ttemp;
+		else
+			break;
+	}
+
 	// Loop over start of "recover" regions
 	double t_fiducial = 0.0; // total fiducial time so far
 	double t = t_start;      // point we have already integrated to
 	for(double t1 : recover){
 	
+		// if start in middle of run skip previous recoveries
+		if(t_trip_pre > t_recover_pre) { // start with "beam on"
+			if(t1 < t_recover_post)
+				continue;
+		}
+		else { // start with "beam off"
+			if(t1 < t_recover_pre)
+				continue;
+		}
+
 		// check if next recovery region starts after where we are
-		if(t1 > t)t = t1;
-	
+		//if(t1 > t)t = t1;
+
 		// find start of next "tripped" region
 		double t2 = t_end;
 		for(double tt : trip)if(tt>t || tt>t_end){t2 = tt; break;}
@@ -234,7 +262,7 @@ double DBeamCurrent_factory::IntegratedFiducialTime(double t_start, double t_end
 		// of next trip.
 		double t3 = t2 - BEAM_TRIP_MIN_T;
 		if(t3>t_end) t3 = t_end;
-		
+
 		// Calculate how much fiducial time in this region is
 		// within our integration window and if it is positive,
 		// then add it.
