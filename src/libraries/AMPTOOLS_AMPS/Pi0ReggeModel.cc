@@ -41,11 +41,12 @@ double Pi0PhotCS_S(double E, double theta, double &BeamSigma){
   res[3] = Pi0PhotAmpS(pa, pb, pc, hel);
   
   sig = pow(abs(res[0]),2) + pow(abs(res[1]),2) + pow(abs(res[2]),2) + pow(abs(res[3]),2);
-  sig = sig/32/M_PI/(E*E-MP*MP)/(E*E-MP*MP) * 389.3;
-  
+  sig = sig/32 * 389.3;
+  //sig = sig/32/M_PI/(E*E-MP*MP)/(E*E-MP*MP) * 389.3; 
+ 
   // Sigma beam asymmetry from equation B3b from paper
   BeamSigma = real(res[0]*conj(res[2]) - res[1]*conj(res[3]));
-  BeamSigma = BeamSigma/16/M_PI/(E*E-MP*MP)/(E*E-MP*MP) * 389.3;
+  BeamSigma = BeamSigma/16 * 389.3;
   BeamSigma = BeamSigma/sig;
   
   return sig;
