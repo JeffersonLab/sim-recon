@@ -160,13 +160,13 @@ bool DEventWriterREST::Write_RESTEvent(JEventLoop* locEventLoop, string locOutpu
 	// push any DBeamPhoton objects to the output record
 	for(size_t loc_i = 0; loc_i < locBeamPhotons.size(); ++loc_i)
 	{
-		if(locBeamPhotons[loc_i]->t0_detector() == SYS_TAGM)
+		if(locBeamPhotons[loc_i]->dSystem == SYS_TAGM)
 		{
 			hddm_r::TagmBeamPhotonList locTagmBeamPhotonList = res().addTagmBeamPhotons(1);
 			locTagmBeamPhotonList().setT(locBeamPhotons[loc_i]->time());
 			locTagmBeamPhotonList().setE(locBeamPhotons[loc_i]->energy());
 		}
-		else if(locBeamPhotons[loc_i]->t0_detector() == SYS_TAGH)
+		else if(locBeamPhotons[loc_i]->dSystem == SYS_TAGH)
 		{
 			hddm_r::TaghBeamPhotonList locTaghBeamPhotonList = res().addTaghBeamPhotons(1);
 			locTaghBeamPhotonList().setT(locBeamPhotons[loc_i]->time());
@@ -283,9 +283,9 @@ bool DEventWriterREST::Write_RESTEvent(JEventLoop* locEventLoop, string locOutpu
 		fit().setPx(tracks[i]->px());
 		fit().setPy(tracks[i]->py());
 		fit().setPz(tracks[i]->pz());
-		fit().setT0(tracks[i]->t0());
-		fit().setT0err(tracks[i]->t0_err());
-		fit().setT0det(tracks[i]->t0_detector());
+		fit().setT0(tracks[i]->time());
+		fit().setT0err(0.0);
+		fit().setT0det(SYS_CDC);
 
 		const TMatrixFSym& errors = *(tracks[i]->TrackingErrorMatrix());
 		fit().setE11(errors(0,0));

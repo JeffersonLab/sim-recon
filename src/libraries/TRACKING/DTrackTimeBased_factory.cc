@@ -361,7 +361,6 @@ jerror_t DTrackTimeBased_factory::evnt(JEventLoop *loop, uint64_t eventnumber)
 	  DKinematicData *track_kd = timebased_track;
 	  *track_kd = *track;
 	  
-	  timebased_track->setTime(timebased_track->t0());
 	  timebased_track->rt = track->rt;
 	  timebased_track->chisq = track->chisq;
 	  timebased_track->Ndof = track->Ndof;
@@ -751,56 +750,52 @@ void DTrackTimeBased_factory
 			vector<DTrackTimeBased::DStartTime_t>&start_times){
   // Add the t0 estimate from the tracking
   DTrackTimeBased::DStartTime_t start_time;
-  start_time.t0=track->t0();
+  start_time.t0=track->time();
   start_time.t0_sigma=5.;
-  start_time.system=track->t0_detector();
+  start_time.system=SYS_CDC;
   start_times.push_back(start_time);
 
   // Match to the start counter and the outer detectors
-  double locStartTimeVariance = 0.0, locStartTime = track->t0();  // initial guess from tracking
-  DSCHitMatchParams locSCBestMatchParams;
+  double locStartTimeVariance = 0.0, locStartTime = track->time();  // initial guess from tracking
+  shared_ptr<DSCHitMatchParams> locSCBestMatchParams;
   if(pid_algorithm->Get_ClosestToTrack(track->rt, sc_hits, false, true, locStartTime, locSCBestMatchParams, &locStartTimeVariance))
   {
     // Fill in the start time vector
     start_time.t0=locStartTime;
-//    start_time.t0_sigma=sqrt(locTimeVariance); //uncomment when ready
     start_time.t0_sigma=sqrt(locStartTimeVariance);
     start_time.system=SYS_START;
     start_times.push_back(start_time); 
   }
 
-  locStartTime = track->t0();
-  DTOFHitMatchParams locTOFBestMatchParams;
+  locStartTime = track->time();
+  shared_ptr<DTOFHitMatchParams> locTOFBestMatchParams;
   if(pid_algorithm->Get_ClosestToTrack(track->rt, tof_points, true, locStartTime, locTOFBestMatchParams, &locStartTimeVariance))
   {
     // Fill in the start time vector
     start_time.t0=locStartTime;
     start_time.t0_sigma=sqrt(locStartTimeVariance);
-//    start_time.t0_sigma=sqrt(locTimeVariance); //uncomment when ready
     start_time.system=SYS_TOF;
     start_times.push_back(start_time); 
   }
 
-  locStartTime = track->t0();
-  DBCALShowerMatchParams locBCALBestMatchParams;
+  locStartTime = track->time();
+  shared_ptr<DBCALShowerMatchParams> locBCALBestMatchParams;
   if(pid_algorithm->Get_ClosestToTrack(track->rt, bcal_showers, true, locStartTime, locBCALBestMatchParams, &locStartTimeVariance))
   {
     // Fill in the start time vector
     start_time.t0=locStartTime;
     start_time.t0_sigma=sqrt(locStartTimeVariance);
-//    start_time.t0_sigma=sqrt(locTimeVariance); //uncomment when ready
     start_time.system=SYS_BCAL;
     start_times.push_back(start_time);
   }
 
-  locStartTime = track->t0();
-  DFCALShowerMatchParams locFCALBestMatchParams;
+  locStartTime = track->time();
+  shared_ptr<DFCALShowerMatchParams> locFCALBestMatchParams;
   if(pid_algorithm->Get_ClosestToTrack(track->rt, fcal_showers, true, locStartTime, locFCALBestMatchParams, &locStartTimeVariance))
   {
     // Fill in the start time vector
     start_time.t0=locStartTime;
     start_time.t0_sigma=sqrt(locStartTimeVariance);
-//    start_time.t0_sigma=sqrt(locTimeVariance); //uncomment when ready
     start_time.system=SYS_FCAL;
     start_times.push_back(start_time);
   }
@@ -955,7 +950,6 @@ bool DTrackTimeBased_factory::DoFit(const DTrackWireBased *track,
          return false;
       }
 
-      timebased_track->setPID(pid_algorithm->IDTrack(timebased_track->charge(), timebased_track->mass()));
       timebased_track->setTime(mStartTime);
       timebased_track->rt = rt;
       timebased_track->chisq = fitter->GetChisq();
@@ -965,8 +959,6 @@ bool DTrackTimeBased_factory::DoFit(const DTrackWireBased *track,
       timebased_track->candidateid=track->candidateid;
       
       // Set the start time and add the list of start times
-      timebased_track->setT0(mStartTime,start_times[0].t0_sigma, 
-			     mStartDetector);
       timebased_track->start_times.assign(start_times.begin(),
 					      start_times.end());
 	  
@@ -1059,15 +1051,13 @@ void DTrackTimeBased_factory::AddMissingTrackHypothesis(vector<DTrackTimeBased*>
   // Copy over DKinematicData part from the result of a successful fit
   DKinematicData *track_kd = timebased_track;
   *track_kd = *src_track;
-  timebased_track->setMass(my_mass);
-  timebased_track->setCharge(q);
+  timebased_track->setPID(pid_algorithm->IDTrack(q, my_mass));
   timebased_track->chisq = src_track->chisq;
   timebased_track->Ndof = src_track->Ndof;
   timebased_track->pulls = src_track->pulls;
   timebased_track->trackid = src_track->id;
   timebased_track->candidateid=src_track->candidateid;
   timebased_track->FOM=src_track->FOM;
-  timebased_track->setPID(pid_algorithm->IDTrack(timebased_track->charge(), timebased_track->mass()));
   timebased_track->cdc_hit_usage=src_track->cdc_hit_usage;
   timebased_track->fdc_hit_usage=src_track->fdc_hit_usage;
   

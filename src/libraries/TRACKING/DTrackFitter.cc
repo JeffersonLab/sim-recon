@@ -35,6 +35,8 @@ DTrackFitter::DTrackFitter(JEventLoop *loop)
 	unsigned int run_number = (loop->GetJEvent()).GetRunNumber();
 	DEBUG_LEVEL=0;
 
+	loop->GetSingle(dParticleID);
+
 	CORRECT_FOR_ELOSS=true;
 	gPARMS->SetDefaultParameter("TRKFIT:CORRECT_FOR_ELOSS",CORRECT_FOR_ELOSS);
 
@@ -139,9 +141,8 @@ DTrackFitter::fit_status_t DTrackFitter::FitTrack(const DVector3 &pos, const DVe
 
 	input_params.setPosition(pos);
 	input_params.setMomentum(mom);
-	input_params.setCharge(q);
-	input_params.setMass(mass);
-	input_params.setT0(t0,0.,t0_det);
+	input_params.setPID(dParticleID->IDTrack(q, mass));
+	input_params.setTime(t0);
 
 	DTrackFitter::fit_status_t status = FitTrack();
 
@@ -267,8 +268,7 @@ DTrackFitter::FindHitsAndFitTrack(const DKinematicData &starting_params,
 	
 
 	// In case the subclass doesn't actually set the mass ....
-	//fit_params.setMass(starting_params.mass());
-	fit_params.setMass(mass);
+	fit_params.setPID(dParticleID->IDTrack(q, mass));
 
 #ifdef PROFILE_TRK_TIMES
 	start_time.TimeDiffNow(prof_times, "Find Hits");

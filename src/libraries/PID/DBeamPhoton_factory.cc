@@ -114,11 +114,9 @@ void DBeamPhoton_factory::Set_BeamPhoton(DBeamPhoton* gamma, const DTAGMHit* hit
     gamma->setPID(Gamma);
     gamma->setMomentum(mom);
     gamma->setPosition(pos);
-    gamma->setCharge(0);
-    gamma->setMass(0);
     gamma->setTime(hit->t);
-    gamma->setT0(hit->t, 0.200, SYS_TAGM);
     gamma->dCounter = hit->column;
+    gamma->dSystem = SYS_TAGM;
     gamma->AddAssociatedObject(hit);
 
 	TMatrixFSym* locCovarianceMatrix = (dynamic_cast<DApplication*>(japp))->Get_CovarianceMatrixResource(7, locEventNumber);
@@ -133,31 +131,12 @@ void DBeamPhoton_factory::Set_BeamPhoton(DBeamPhoton* gamma, const DTAGHHit* hit
     gamma->setPID(Gamma);
     gamma->setMomentum(mom);
     gamma->setPosition(pos);
-    gamma->setCharge(0);
-    gamma->setMass(0);
     gamma->setTime(hit->t);
-    gamma->setT0(hit->t, 0.350, SYS_TAGH);
     gamma->dCounter = hit->counter_id;
+    gamma->dSystem = SYS_TAGH;
     gamma->AddAssociatedObject(hit);
 
 	TMatrixFSym* locCovarianceMatrix = (dynamic_cast<DApplication*>(japp))->Get_CovarianceMatrixResource(7, locEventNumber);
 	locCovarianceMatrix->Zero();
 	gamma->setErrorMatrix(locCovarianceMatrix);
 }
-
-//------------------
-// erun
-//------------------
-jerror_t DBeamPhoton_factory::erun(void)
-{
-    return NOERROR;
-}
-
-//------------------
-// fini
-//------------------
-jerror_t DBeamPhoton_factory::fini(void)
-{
-    return NOERROR;
-}
-

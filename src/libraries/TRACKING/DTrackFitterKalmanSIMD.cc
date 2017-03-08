@@ -735,9 +735,8 @@ DTrackFitter::fit_status_t DTrackFitterKalmanSIMD::FitTrack(void)
     double charge = GetCharge();
     fit_params.setPosition(pos);
     fit_params.setMomentum(mom);
-    fit_params.setCharge(charge);
-    fit_params.setMass(MASS);
-    fit_params.setT0(mT0MinimumDriftTime,4.,mT0Detector);
+	fit_params.setPID(dParticleID->IDTrack(charge, MASS));
+    fit_params.setTime(mT0MinimumDriftTime);
 
     if (DEBUG_LEVEL>0){
         _DBG_ << "----- Pass: " 

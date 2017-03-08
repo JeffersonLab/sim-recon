@@ -421,8 +421,7 @@ DTrackFitter::fit_status_t DTrackFitterALT1::FitTrack(void)
 	// members are copied in during the ChiSq() method call in LeastSquaresB().
 	fit_params.setPosition(vertex_pos);
 	fit_params.setMomentum(vertex_mom);
-	fit_params.setCharge(rt->q);
-	fit_params.setMass(input_params.mass());
+	fit_params.setPID(dParticleID->IDTrack(rt->q, input_params.mass()));
 	cdchits_used_in_fit = cdchits;
 	fdchits_used_in_fit = fdchits;
 

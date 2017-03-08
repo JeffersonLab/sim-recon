@@ -631,8 +631,6 @@ jerror_t DTrackCandidate_factory_CDCCOSMIC::evnt(JEventLoop *loop, uint64_t even
             DTrackCandidate *can = new DTrackCandidate();
             can->setMomentum(mom);
             can->setPosition(pos);
-            can->setCharge(1.0); // make track draw as stright line
-            can->setMass(0.139);
             can->setPID(PiPlus);
             can->chisq=min->MinValue();
             //can->Ndof=nAfterHits - 4;

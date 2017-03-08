@@ -177,6 +177,7 @@ class DTrackFitter:public jana::JObject{
 		const DGeometry *geom;						//< DGeometry pointer used to access materials through calibDB maps for eloss
 		const DRootGeom *RootGeom;					//< ROOT geometry used for accessing material for MULS, energy loss
 		JEventLoop *loop;								//< Pointer to JEventLoop object handling the current event
+		const DParticleID* dParticleID;
 
 		// The following should be set as outputs by FitTrack(void)
 		DKinematicData fit_params;									//< Results of last fit

@@ -1091,8 +1091,6 @@ jerror_t DEventSourceHDDM::Extract_DMCReaction(hddm_s::HDDM *record,
          mcreaction->beam.setPosition(locPosition);
          mcreaction->beam.setMomentum(mom);
          mcreaction->beam.setPID(Gamma);
-         mcreaction->beam.setMass(beam.getProperties().getMass());
-         mcreaction->beam.setCharge(beam.getProperties().getCharge());
          mcreaction->target.setPID(IDTrack(mcreaction->beam.charge(),
                                            mcreaction->beam.mass()));
          mcreaction->beam.setTime(torig - (zorig - locTargetCenterZ)/29.9792458);
@@ -1112,10 +1110,8 @@ jerror_t DEventSourceHDDM::Extract_DMCReaction(hddm_s::HDDM *record,
                       target.getMomentum().getPz());
          mcreaction->target.setPosition(locPosition);
          mcreaction->target.setMomentum(mom);
-         mcreaction->target.setMass(target.getProperties().getMass());
-         mcreaction->target.setCharge(target.getProperties().getCharge());
-         mcreaction->target.setPID(IDTrack(mcreaction->target.charge(),
-                                           mcreaction->target.mass()));
+         mcreaction->target.setPID(IDTrack(target.getProperties().getCharge(),
+        		 target.getProperties().getMass()));
          mcreaction->target.setTime(torig - (zorig - locTargetCenterZ)/29.9792458);
       }
       else {
@@ -1226,11 +1222,9 @@ jerror_t DEventSourceHDDM::Extract_DMCThrown(hddm_s::HDDM *record,
          mcthrown->mech     = piter->getMech();
          mcthrown->pdgtype  = piter->getPdgtype();
          mcthrown->setPID((Particle_t)mcthrown->type);
-         mcthrown->setMass(mass);
          mcthrown->setMomentum(DVector3(px, py, pz));
          mcthrown->setPosition(DVector3(vertex[1], vertex[2], vertex[3]));
          mcthrown->setTime(vertex[0]);
-         mcthrown->setCharge(ParticleCharge(piter->getType()));
          data.push_back(mcthrown);
       }
    }
@@ -2185,10 +2179,8 @@ jerror_t DEventSourceHDDM::Extract_DTrackTimeBased(hddm_s::HDDM *record,
       DTrackTimeBased *track = new DTrackTimeBased();
       track->setMomentum(mom);
       track->setPosition(pos);
-      track->setCharge(iter->getProperties().getCharge());
-      track->setMass(iter->getProperties().getMass());
       track->setPID(IDTrack(iter->getProperties().getCharge(),
-                            iter->getProperties().getMass()));
+    		  iter->getProperties().getMass()));
       track->chisq = iter->getChisq();
       track->Ndof = iter->getNdof();
       track->FOM = iter->getFOM();

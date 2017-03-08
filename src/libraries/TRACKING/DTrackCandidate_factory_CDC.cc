@@ -4533,8 +4533,8 @@ void DTrackCandidate_factory_CDC::Create_TrackCandidiate(DCDCTrackCircle* locCDC
 	locTrackCandidate->rc=locCDCTrackCircle->fit->r0;
 	locTrackCandidate->xc=locCDCTrackCircle->fit->x0;
 	locTrackCandidate->yc=locCDCTrackCircle->fit->y0;
-	locTrackCandidate->setCharge(locCDCTrackCircle->fit->h*dFactorForSenseOfRotation);
-
+	Particle_t locPID = (locCDCTrackCircle->fit->h*dFactorForSenseOfRotation > 0.0) ? PiPlus : PiMinus;
+	locTrackCandidate->setPID(locPID);
 	locTrackCandidate->chisq = locCDCTrackCircle->fit->chisq;
 	locTrackCandidate->Ndof = locCDCTrackCircle->fit->ndof;
 	locTrackCandidate->setPosition(pos);

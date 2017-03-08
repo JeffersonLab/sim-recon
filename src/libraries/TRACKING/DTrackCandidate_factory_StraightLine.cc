@@ -474,9 +474,7 @@ DTrackCandidate_factory_StraightLine::DoFilter(double t0,double OuterZ,
 
          cand->Ndof=ndof_old;
          cand->chisq=chi2_old;
-         cand->setCharge(1.0);
-         cand->setPID(Unknown);
-         cand->setT0(t0,10.0,SYS_CDC);
+         cand->setPID(PiPlus);
 
          // Add hits used in the fit as associated objects and add best pull 
          // vector to the candidate
@@ -1006,9 +1004,7 @@ DTrackCandidate_factory_StraightLine::DoFilter(double t0,double start_z,
 
       cand->Ndof=ndof_old;
       cand->chisq=chi2_old;
-      cand->setCharge(-1.0);
-      cand->setPID(Unknown);
-      cand->setT0(t0,10.0,SYS_FDC);
+      cand->setPID(PiMinus);
 
       _data.push_back(cand);
 

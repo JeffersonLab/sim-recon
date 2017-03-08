@@ -327,8 +327,6 @@ jerror_t DEventSourceREST::Extract_DMCReaction(hddm_r::HDDM *record,
       mcreaction->target.setPosition(locPosition);
       Particle_t ttype = iter->getTargetType();
       mcreaction->target.setPID((Particle_t)ttype);
-      mcreaction->target.setMass(ParticleMass(ttype));
-      mcreaction->target.setCharge(ParticleCharge(ttype));
       mcreaction->target.setTime(torig - (zorig - locTargetCenterZ)/29.9792458);
    }
    
@@ -518,10 +516,7 @@ jerror_t DEventSourceREST::Extract_DBeamPhoton(hddm_r::HDDM *record,
 		gamma->setPID(Gamma);
 		gamma->setMomentum(mom);
 		gamma->setPosition(pos);
-		gamma->setCharge(0);
-		gamma->setMass(0);
 		gamma->setTime(locTAGMiter->getT());
-		gamma->setT0(locTAGMiter->getT(), 0.200, SYS_TAGM);
 
 		TMatrixFSym* loc7x7ErrorMatrix = locMatrices.back();
 		locMatrices.pop_back();
@@ -544,10 +539,7 @@ jerror_t DEventSourceREST::Extract_DBeamPhoton(hddm_r::HDDM *record,
 		gamma->setPID(Gamma);
 		gamma->setMomentum(mom);
 		gamma->setPosition(pos);
-		gamma->setCharge(0);
-		gamma->setMass(0);
 		gamma->setTime(locTAGHiter->getT());
-		gamma->setT0(locTAGHiter->getT(), 0.350, SYS_TAGH);
 
 		TMatrixFSym* loc7x7ErrorMatrix = locMatrices.back();
 		locMatrices.pop_back();
@@ -614,11 +606,8 @@ jerror_t DEventSourceREST::Extract_DMCThrown(hddm_r::HDDM *record,
          mcthrown->parentid = piter->getParentId();
          mcthrown->mech = 0;
          mcthrown->setPID(ptype);
-         mcthrown->setMass(mass);
          mcthrown->setMomentum(DVector3(px, py, pz));
          mcthrown->setPosition(DVector3(vx, vy, vz));
-         mcthrown->setCharge(ParticleCharge(ptype));
-         mcthrown->setT0(vt,0,SYS_NULL);
          mcthrown->setTime(vt);
          data.push_back(mcthrown);
       }
@@ -957,15 +946,12 @@ jerror_t DEventSourceREST::Extract_DTrackTimeBased(hddm_r::HDDM *record,
       tra->trackid = 0;
       tra->candidateid = iter->getCandidateId();
       Particle_t ptype = iter->getPtype();
-      tra->setMass(ParticleMass(ptype));
-      tra->setCharge(ParticleCharge(ptype));
       tra->setPID(ptype);
 
       const hddm_r::TrackFit &fit = iter->getTrackFit();
       tra->Ndof = fit.getNdof();
       tra->chisq = fit.getChisq();
       tra->FOM = TMath::Prob(tra->chisq, tra->Ndof);
-      tra->setT0(fit.getT0(),fit.getT0err(),(DetectorSystem_t)fit.getT0det());
       tra->setTime(fit.getT0());
       DVector3 track_pos(fit.getX0(),fit.getY0(),fit.getZ0());
       DVector3 track_mom(fit.getPx(),fit.getPy(),fit.getPz());
@@ -1010,6 +996,7 @@ jerror_t DEventSourceREST::Extract_DTrackTimeBased(hddm_r::HDDM *record,
 		loc7x7Matrices.pop_back();
 	   Get7x7ErrorMatrix(tra->mass(), vect, loc5x5ErrorMatrix, loc7x7ErrorMatrix);
       tra->setErrorMatrix(loc7x7ErrorMatrix);
+      (*loc7x7ErrorMatrix)(6, 6) = fit.getT0err()*fit.getT0err();
 
 		// Hit layers
       const hddm_r::HitlayersList& locHitlayersList = iter->getHitlayerses();

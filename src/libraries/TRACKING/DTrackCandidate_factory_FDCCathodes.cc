@@ -347,7 +347,7 @@ jerror_t DTrackCandidate_factory_FDCCathodes::evnt(JEventLoop *loop, uint64_t ev
     
     track->chisq=fit.chisq;
     track->Ndof=fit.ndof;
-    track->setCharge(q);
+    track->setPID((q > 0.0) ? PiPlus : PiMinus);
     track->setPosition(pos);
     track->setMomentum(mom);
     
@@ -390,8 +390,8 @@ jerror_t DTrackCandidate_factory_FDCCathodes::evnt(JEventLoop *loop, uint64_t ev
 	track->yc=segment->yc;
 	
 	track->setPosition(pos);
-	track->setMomentum(mom);    
-	track->setCharge(segment->q);
+	track->setMomentum(mom);
+	track->setPID((segment->q > 0.0) ? PiPlus : PiMinus);
 	track->Ndof=segment->Ndof;
 	track->chisq=segment->chisq;
       
@@ -741,7 +741,7 @@ bool DTrackCandidate_factory_FDCCathodes::LinkStraySegment(const DFDCSegment *se
 	  
 	  _data[i]->chisq=fit.chisq;
 	  _data[i]->Ndof=fit.ndof;
-	  _data[i]->setCharge(q);
+	  _data[i]->setPID((q > 0.0) ? PiPlus : PiMinus);
 	  _data[i]->setPosition(pos);
 	  _data[i]->setMomentum(mom); 
 	}

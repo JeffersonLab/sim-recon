@@ -8,6 +8,8 @@
 #ifndef _DTrackTimeBased_factory_
 #define _DTrackTimeBased_factory_
 
+#include <memory>
+
 #include <TH2.h>
 
 #include <JANA/JFactory.h>

@@ -514,8 +514,6 @@ void DTrackWireBased_factory::DoFit(unsigned int c_id,
       // Copy over DKinematicData part
       DKinematicData *track_kd = track;
       *track_kd = fitter->GetFitParameters();
-      track_kd->setPID(dPIDAlgorithm->IDTrack(track_kd->charge(), track_kd->mass()));
-      track_kd->setTime(track_kd->t0());
 
       // Fill reference trajectory
       rt->q = candidate->charge();
