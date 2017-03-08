@@ -218,8 +218,7 @@ jerror_t DParticleID_PID1::GetdEdxSigma_FDC(double locBeta, unsigned int locNumH
 
 jerror_t DParticleID_PID1::CalcDCdEdxChiSq(DChargedTrackHypothesis *locChargedTrackHypothesis) const
 {
-	locChargedTrackHypothesis->dNDF_DCdEdx = 0;
-	locChargedTrackHypothesis->dChiSq_DCdEdx = 0.0;
+	locChargedTrackHypothesis->Set_ChiSq_Tracking(0.0, 0);
 	unsigned int locMinimumNumberUsedHitsForConfidence = 3; //dE/dx is landau-distributed, so to approximate Gaussian must remove hits with largest dE/dx //3 means 6 or more hits originally
 	Particle_t locPID = locChargedTrackHypothesis->PID();
 	double locChiSq=0.;
@@ -246,27 +245,30 @@ jerror_t DParticleID_PID1::CalcDCdEdxChiSq(DChargedTrackHypothesis *locChargedTr
 
 	double locBeta = locChargedTrackHypothesis->momentum().Mag()/locChargedTrackHypothesis->energy();
 	
-	if(locUseCDCHitsFlag && GetdEdxMean_CDC(locBeta, locNumHitsUsedFordEdx_CDC, locMeandEdx_CDC, locPID) == NOERROR){
-	  if(GetdEdxSigma_CDC(locBeta, locNumHitsUsedFordEdx_CDC, locSigmadEdx_CDC, locPID) == NOERROR){
-	    locDeltadEdx_CDC = locDCdEdx_CDC - locMeandEdx_CDC;
-	    double locNormalizedDifference = locDeltadEdx_CDC/locSigmadEdx_CDC;
-	    locChiSq += locNormalizedDifference*locNormalizedDifference;
-	    locNDF++;
-	  }
+	if(locUseCDCHitsFlag && GetdEdxMean_CDC(locBeta, locNumHitsUsedFordEdx_CDC, locMeandEdx_CDC, locPID) == NOERROR)
+	{
+		if(GetdEdxSigma_CDC(locBeta, locNumHitsUsedFordEdx_CDC, locSigmadEdx_CDC, locPID) == NOERROR)
+		{
+			locDeltadEdx_CDC = locDCdEdx_CDC - locMeandEdx_CDC;
+			double locNormalizedDifference = locDeltadEdx_CDC/locSigmadEdx_CDC;
+			locChiSq += locNormalizedDifference*locNormalizedDifference;
+			locNDF++;
+		}
 	}
-	if(locUseFDCHitsFlag && GetdEdxMean_FDC(locBeta, locNumHitsUsedFordEdx_FDC, locMeandEdx_FDC, locPID) == NOERROR){
-	  if(GetdEdxSigma_FDC(locBeta, locNumHitsUsedFordEdx_FDC, locSigmadEdx_FDC, locPID) == NOERROR){
-	    locDeltadEdx_FDC = locDCdEdx_FDC - locMeandEdx_FDC;
-	    double locNormalizedDifference = locDeltadEdx_FDC/locSigmadEdx_FDC;
-	    locChiSq += locNormalizedDifference*locNormalizedDifference;
-	    locNDF++;
-	  }	  
+
+	if(locUseFDCHitsFlag && GetdEdxMean_FDC(locBeta, locNumHitsUsedFordEdx_FDC, locMeandEdx_FDC, locPID) == NOERROR)
+	{
+		if(GetdEdxSigma_FDC(locBeta, locNumHitsUsedFordEdx_FDC, locSigmadEdx_FDC, locPID) == NOERROR)
+		{
+			locDeltadEdx_FDC = locDCdEdx_FDC - locMeandEdx_FDC;
+			double locNormalizedDifference = locDeltadEdx_FDC/locSigmadEdx_FDC;
+			locChiSq += locNormalizedDifference*locNormalizedDifference;
+			locNDF++;
+		}
 	}
-	if (locNDF>0){
-	  locChargedTrackHypothesis->dChiSq_DCdEdx = locChiSq;
-	  locChargedTrackHypothesis->dNDF_DCdEdx=locNDF;
-	  return NOERROR;
-	}
+
+	if (locNDF>0)
+		locChargedTrackHypothesis->Set_ChiSq_Tracking(locChiSq, locNDF);
 
 	return NOERROR;
 }

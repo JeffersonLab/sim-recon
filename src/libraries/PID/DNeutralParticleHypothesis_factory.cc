@@ -118,18 +118,12 @@ DNeutralParticleHypothesis* DNeutralParticleHypothesis_factory::Create_DNeutralP
 
 	// Build DNeutralParticleHypothesis // dEdx not set
 	DNeutralParticleHypothesis* locNeutralParticleHypothesis = new DNeutralParticleHypothesis;
-	locNeutralParticleHypothesis->AddAssociatedObject(locNeutralShower);
-
-	locNeutralParticleHypothesis->dNeutralShowerID = locNeutralShower->dShowerID;
+	locNeutralParticleHypothesis->Set_NeutralShower(locNeutralShower->dShowerID);
 	locNeutralParticleHypothesis->setPID(locPID);
-	locNeutralParticleHypothesis->setMass(locMass);
-	locNeutralParticleHypothesis->setCharge(0.0);
 	locNeutralParticleHypothesis->setMomentum(locMomentum);
 	locNeutralParticleHypothesis->setPosition(locVertexGuess);
-	locNeutralParticleHypothesis->setT0(locStartTime, locVertex->dCovarianceMatrix(3, 3), locEventRFBunch->dTimeSource);
 	locNeutralParticleHypothesis->setTime(locProjectedTime);
-	locNeutralParticleHypothesis->setT1(locNeutralShower->dSpacetimeVertex.T(), sqrt(locNeutralShower->dCovarianceMatrix(4, 4)), locNeutralShower->dDetectorSystem);
-	locNeutralParticleHypothesis->setPathLength(locPathLength, 0.0); //zero uncertainty (for now)
+	locNeutralParticleHypothesis->setT0(locStartTime, locVertex->dCovarianceMatrix(3, 3), locEventRFBunch->dTimeSource);
 	locNeutralParticleHypothesis->setErrorMatrix(locParticleCovariance);
 
 	// Calculate DNeutralParticleHypothesis FOM

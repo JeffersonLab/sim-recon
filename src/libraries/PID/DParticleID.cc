@@ -1746,9 +1746,9 @@ double DParticleID::Calc_PropagatedRFTime(const DKinematicData* locKinematicData
 	return locEventRFBunch->dTime + (locKinematicData->z() - dTargetZCenter)/SPEED_OF_LIGHT;
 }
 
-double DParticleID::Calc_TimingChiSq(const DKinematicData* locKinematicData, unsigned int &locNDF, double& locPull) const
+double DParticleID::Calc_TimingChiSq(const DChargedTrackHypothesis* locChargedHypo, unsigned int &locNDF, double& locTimingPull) const
 {
-	if((locKinematicData->t0_detector() == SYS_NULL) || (locKinematicData->t1_detector() == SYS_NULL))
+	if((locChargedHypo->t0_detector() == SYS_NULL) || (locChargedHypo->t1_detector() == SYS_NULL))
 	{
 		// not matched to any hits
 		locNDF = 0;
@@ -1756,9 +1756,26 @@ double DParticleID::Calc_TimingChiSq(const DKinematicData* locKinematicData, uns
 		return 0.0;
 	}
 
-	double locStartTimeError = locKinematicData->t0_err();
-	double locTimeDifferenceVariance = (*locKinematicData->errorMatrix())(6, 6) + locStartTimeError*locStartTimeError;
-	locPull = (locKinematicData->t0() - locKinematicData->time())/sqrt(locTimeDifferenceVariance);
+	double locStartTimeError = locChargedHypo->t0_err();
+	double locTimeDifferenceVariance = (*locChargedHypo->errorMatrix())(6, 6) + locStartTimeError*locStartTimeError;
+	locPull = (locChargedHypo->t0() - locChargedHypo->time())/sqrt(locTimeDifferenceVariance);
+	locNDF = 1;
+	return locPull*locPull;
+}
+
+double DParticleID::Calc_TimingChiSq(const DNeutralParticleHypothesis* locNeutralHypo, unsigned int &locNDF, double& locTimingPull) const;
+{
+	if((locNeutralHypo->t0_detector() == SYS_NULL) || (locNeutralHypo->t1_detector() == SYS_NULL))
+	{
+		// not matched to any hits
+		locNDF = 0;
+		locPull = 0.0;
+		return 0.0;
+	}
+
+	double locStartTimeError = locNeutralHypo->t0_err();
+	double locTimeDifferenceVariance = (*locNeutralHypo->errorMatrix())(6, 6) + locStartTimeError*locStartTimeError;
+	locPull = (locNeutralHypo->t0() - locNeutralHypo->time())/sqrt(locTimeDifferenceVariance);
 	locNDF = 1;
 	return locPull*locPull;
 }
@@ -1770,15 +1787,12 @@ void DParticleID::Calc_ChargedPIDFOM(DChargedTrackHypothesis* locChargedTrackHyp
 	unsigned int locTimingNDF = 0;
 	double locTimingPull = 0.0;
 	double locTimingChiSq = Calc_TimingChiSq(locChargedTrackHypothesis, locTimingNDF, locTimingPull);
-	locChargedTrackHypothesis->dChiSq_Timing = locTimingChiSq;
-	locChargedTrackHypothesis->dNDF_Timing = locTimingNDF;
+	locChargedTrackHypothesis->Set_ChiSq_Timing(locTimingChiSq, locTimingNDF);
 
 	unsigned int locNDF_Total = locChargedTrackHypothesis->dNDF_Timing + locChargedTrackHypothesis->dNDF_DCdEdx;
 	double locChiSq_Total = locChargedTrackHypothesis->dChiSq_Timing + locChargedTrackHypothesis->dChiSq_DCdEdx;
-
-	locChargedTrackHypothesis->dChiSq = locChiSq_Total;
-	locChargedTrackHypothesis->dNDF = locNDF_Total;
-	locChargedTrackHypothesis->dFOM = (locNDF_Total > 0) ? TMath::Prob(locChiSq_Total, locNDF_Total) : numeric_limits<double>::quiet_NaN();
+	double locFOM = (locNDF_Total > 0) ? TMath::Prob(locChiSq_Total, locNDF_Total) : numeric_limits<double>::quiet_NaN();
+	locChargedTrackHypothesis->Set_ChiSq_Overall(locChiSq_Total, locNDF_Total, locFOM);
 }
 
 unsigned int DParticleID::Get_CDCRingBitPattern(vector<const DCDCTrackHit*>& locCDCTrackHits) const

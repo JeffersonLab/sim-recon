@@ -215,12 +215,8 @@ jerror_t DTrackWireBased_factory::evnt(JEventLoop *loop, uint64_t eventnumber)
       const DTrackCandidate *cand=candidates[i];
 
        // Make a new wire-based track
-      DTrackWireBased *track = new DTrackWireBased;
+      DTrackWireBased *track = new DTrackWireBased(*static_cast<DKinematicData*>(cand), true, true); //share the memory: isn't changed below
       
-      // Copy over DKinematicData part
-      DKinematicData *track_kd = track;
-      *track_kd=*cand;
-
       // Attach a reference trajectory --  make sure there are enough DReferenceTrajectory objects
       unsigned int locNumInitialReferenceTrajectories = rtv.size();
       while(rtv.size()<=num_used_rts){
@@ -509,12 +505,8 @@ void DTrackWireBased_factory::DoFit(unsigned int c_id,
       if(!isfinite(fitter->GetFitParameters().position().X())) break;
     {    
       // Make a new wire-based track
-      DTrackWireBased *track = new DTrackWireBased;
+      DTrackWireBased *track = new DTrackWireBased(fitter->GetFitParameters()); //don't share underlying data: next fit will overwrite
       
-      // Copy over DKinematicData part
-      DKinematicData *track_kd = track;
-      *track_kd = fitter->GetFitParameters();
-
       // Fill reference trajectory
       rt->q = candidate->charge();
       rt->SetMass(track_kd->mass());

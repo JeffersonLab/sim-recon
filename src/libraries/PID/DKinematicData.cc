@@ -7,13 +7,12 @@ void DKinematicData::Reset(void)
 	setPosition(DVector3());
 	setTime(0.0);
 
-	setPathLength(0.0, 0.0);
 	setForwardParmFlag(false);
 	setTrackingStateVector(0.0, 0.0, 0.0, 0.0, 0.0);
 
 	//Other classes are responsible for managing the error matrix memory!
-	m_errorMatrix = nullptr;
-	dNonKinFitInfo->m_TrackingErrorMatrix = nullptr;
+	dKinematics->m_errorMatrix = nullptr;
+	dNonKinematics->m_TrackingErrorMatrix = nullptr;
 
 	ClearAssociatedObjects();
 }

@@ -177,20 +177,20 @@ bool DEventRFBunch_factory::Find_TrackTimes_SCTOF(const DDetectorMatches* locDet
 			//max PID delta-t = 762ps (assuming 499 MHz and no buffer)
 			//for pion-proton: delta-t is ~750ps at ~170 MeV/c or lower: cannot have proton this slow anyway
 			//for pion-kaon delta-t is ~750ps at ~80 MeV/c or lower: won't reconstruct these anyway, and not likely to be forward-going anyway
-		DTOFHitMatchParams locTOFHitMatchParams;
+		shared_ptr<const DTOFHitMatchParams> locTOFHitMatchParams;
 		if((locP > 0.5) && dParticleID->Get_BestTOFMatchParams(locTrackTimeBased, locDetectorMatches, locTOFHitMatchParams))
 		{
-			double locPropagatedTime = locTOFHitMatchParams.dHitTime - locTOFHitMatchParams.dFlightTime + (dTargetCenter.Z() - locTrackTimeBased->z())/29.9792458;
+			double locPropagatedTime = locTOFHitMatchParams->dHitTime - locTOFHitMatchParams->dFlightTime + (dTargetCenter.Z() - locTrackTimeBased->z())/29.9792458;
 			locTimes.push_back(pair<double, const JObject*>(locPropagatedTime, locTrackTimeBased));
 			continue;
 		}
 
 		//Prefer TOF over SC in nose region because hard to tell which SC counter should have been hit
-		DSCHitMatchParams locSCHitMatchParams;
+		shared_ptr<const DSCHitMatchParams> locSCHitMatchParams;
 		if(!dParticleID->Get_BestSCMatchParams(locTrackTimeBased, locDetectorMatches, locSCHitMatchParams))
 			continue;
 
-		double locPropagatedTime = locSCHitMatchParams.dHitTime - locSCHitMatchParams.dFlightTime + (dTargetCenter.Z() - locTrackTimeBased->z())/29.9792458;
+		double locPropagatedTime = locSCHitMatchParams->dHitTime - locSCHitMatchParams->dFlightTime + (dTargetCenter.Z() - locTrackTimeBased->z())/29.9792458;
 		locTimes.push_back(pair<double, const JObject*>(locPropagatedTime, locTrackTimeBased));
 	}
 
@@ -212,19 +212,19 @@ bool DEventRFBunch_factory::Find_TrackTimes_All(const DDetectorMatches* locDetec
 			//max PID delta-t = 762ps (assuming 499 MHz and no buffer)
 			//for pion-proton: delta-t is ~750ps at ~170 MeV/c or lower: cannot have proton this slow anyway
 			//for pion-kaon delta-t is ~750ps at ~80 MeV/c or lower: won't reconstruct these anyway, and not likely to be forward-going anyway
-		DTOFHitMatchParams locTOFHitMatchParams;
+		shared_ptr<const DTOFHitMatchParams> locTOFHitMatchParams;
 		if(dParticleID->Get_BestTOFMatchParams(locTrackTimeBased, locDetectorMatches, locTOFHitMatchParams))
 		{
-			double locPropagatedTime = locTOFHitMatchParams.dHitTime - locTOFHitMatchParams.dFlightTime + (dTargetCenter.Z() - locTrackTimeBased->z())/29.9792458;
+			double locPropagatedTime = locTOFHitMatchParams->dHitTime - locTOFHitMatchParams->dFlightTime + (dTargetCenter.Z() - locTrackTimeBased->z())/29.9792458;
 			locTimes.push_back(pair<double, const JObject*>(locPropagatedTime, locTrackTimeBased));
 			continue;
 		}
 
 		//Prefer TOF over SC in nose region because hard to tell which SC counter should have been hit
-		DSCHitMatchParams locSCHitMatchParams;
+		shared_ptr<const DSCHitMatchParams> locSCHitMatchParams;
 		if(dParticleID->Get_BestSCMatchParams(locTrackTimeBased, locDetectorMatches, locSCHitMatchParams))
 		{
-			double locPropagatedTime = locSCHitMatchParams.dHitTime - locSCHitMatchParams.dFlightTime + (dTargetCenter.Z() - locTrackTimeBased->z())/29.9792458;
+			double locPropagatedTime = locSCHitMatchParams->dHitTime - locSCHitMatchParams->dFlightTime + (dTargetCenter.Z() - locTrackTimeBased->z())/29.9792458;
 			locTimes.push_back(pair<double, const JObject*>(locPropagatedTime, locTrackTimeBased));
 			continue;
 
@@ -237,11 +237,11 @@ bool DEventRFBunch_factory::Find_TrackTimes_All(const DDetectorMatches* locDetec
 		if((locP < 0.25) && (dBeamBunchPeriod < 2.005))
 			continue; //too slow for the BCAL to distinguish RF bunch
 
-		DBCALShowerMatchParams locBCALShowerMatchParams;
+		shared_ptr<const DBCALShowerMatchParams> locBCALShowerMatchParams;
 		if(dParticleID->Get_BestBCALMatchParams(locTrackTimeBased, locDetectorMatches, locBCALShowerMatchParams))
 		{
-			const DBCALShower* locBCALShower = locBCALShowerMatchParams.dBCALShower;
-			double locPropagatedTime = locBCALShower->t - locBCALShowerMatchParams.dFlightTime + (dTargetCenter.Z() - locTrackTimeBased->z())/29.9792458;
+			const DBCALShower* locBCALShower = locBCALShowerMatchParams->dBCALShower;
+			double locPropagatedTime = locBCALShower->t - locBCALShowerMatchParams->dFlightTime + (dTargetCenter.Z() - locTrackTimeBased->z())/29.9792458;
 			locTimes.push_back(pair<double, const JObject*>(locPropagatedTime, locTrackTimeBased));
 			continue;
 		}

@@ -258,11 +258,7 @@ jerror_t DTrackTimeBased_factory::evnt(JEventLoop *loop, uint64_t eventnumber)
       const DTrackWireBased *track = tracks[i];
 
       // Copy over the results of the wire-based fit to DTrackTimeBased
-      DTrackTimeBased *timebased_track = new DTrackTimeBased;
-      
-      // Copy over DKinematicData part
-      DKinematicData *track_kd = timebased_track;
-      *track_kd = *track;
+      DTrackTimeBased *timebased_track = new DTrackTimeBased(*static_cast<DKinematicData*>(track), true, true); //share the memory (isn't changed below)
       
       timebased_track->rt = track->rt;
       timebased_track->chisq = track->chisq;
@@ -355,11 +351,7 @@ jerror_t DTrackTimeBased_factory::evnt(JEventLoop *loop, uint64_t eventnumber)
 	if (fdchits.size()>0
 	    && cdchits.size()<MIN_CDC_HITS_FOR_TB_FORWARD_TRACKING){
 	  // Copy over the results of the wire-based fit to DTrackTimeBased
-	  DTrackTimeBased *timebased_track = new DTrackTimeBased;
-	  
-	  // Copy over DKinematicData part
-	  DKinematicData *track_kd = timebased_track;
-	  *track_kd = *track;
+	  DTrackTimeBased *timebased_track = new DTrackTimeBased(*static_cast<DKinematicData*>(track), true, true); //share the memory (isn't changed below)
 	  
 	  timebased_track->rt = track->rt;
 	  timebased_track->chisq = track->chisq;
@@ -876,11 +868,7 @@ bool DTrackTimeBased_factory::DoFit(const DTrackWireBased *track,
   case DTrackFitter::kFitNoImprovement:
     {
       // Create a new time-based track object
-      DTrackTimeBased *timebased_track = new DTrackTimeBased;
-
-      // Copy over DKinematicData part
-      DKinematicData *track_kd = timebased_track;
-      *track_kd = *track;
+      DTrackTimeBased *timebased_track = new DTrackTimeBased(*static_cast<DKinematicData*>(track), true, true); //share the memory (isn't changed below)
 
       timebased_track->chisq = track->chisq;
       timebased_track->Ndof = track->Ndof;
@@ -910,7 +898,6 @@ bool DTrackTimeBased_factory::DoFit(const DTrackWireBased *track,
       timebased_track->ddEdx_CDC = locdEdx_CDC;
       timebased_track->ddx_CDC = locdx_CDC;
       timebased_track->dNumHitsUsedFordEdx_CDC = locNumHitsUsedFordEdx_CDC;
-      timebased_track->setdEdx((locNumHitsUsedFordEdx_CDC >= locNumHitsUsedFordEdx_FDC) ? locdEdx_CDC : locdEdx_FDC);
       
       timebased_track->AddAssociatedObject(track);
       _data.push_back(timebased_track);
@@ -933,11 +920,9 @@ bool DTrackTimeBased_factory::DoFit(const DTrackWireBased *track,
         rt->Reset();
 
       // Create a new time-based track object
-      DTrackTimeBased *timebased_track = new DTrackTimeBased;
+      DTrackTimeBased *timebased_track = new DTrackTimeBased(fitter->GetFitParameters()); //don't share underlying data: next fit will overwrite
       
       // Copy over DKinematicData part
-      DKinematicData *track_kd = timebased_track;
-      *track_kd = fitter->GetFitParameters();
       rt->SetMass(mass);
       rt->SetDGeometry(geom);
       rt->q = timebased_track->charge();
@@ -1017,7 +1002,6 @@ bool DTrackTimeBased_factory::DoFit(const DTrackWireBased *track,
       timebased_track->ddEdx_CDC = locdEdx_CDC;
       timebased_track->ddx_CDC = locdx_CDC;
       timebased_track->dNumHitsUsedFordEdx_CDC = locNumHitsUsedFordEdx_CDC;
-      timebased_track->setdEdx((locNumHitsUsedFordEdx_CDC >= locNumHitsUsedFordEdx_FDC) ? locdEdx_CDC : locdEdx_FDC);
       
       // Add DTrack object as associate object
       timebased_track->AddAssociatedObject(track);
@@ -1046,11 +1030,9 @@ void DTrackTimeBased_factory::AddMissingTrackHypothesis(vector<DTrackTimeBased*>
 							double my_mass,
 							double q){
   // Create a new time-based track object
-  DTrackTimeBased *timebased_track = new DTrackTimeBased;
+  DTrackTimeBased *timebased_track = new DTrackTimeBased(*static_cast<DKinematicData*>(src_track), false, true); //share some of the memory (PID changed below)
 	  
   // Copy over DKinematicData part from the result of a successful fit
-  DKinematicData *track_kd = timebased_track;
-  *track_kd = *src_track;
   timebased_track->setPID(pid_algorithm->IDTrack(q, my_mass));
   timebased_track->chisq = src_track->chisq;
   timebased_track->Ndof = src_track->Ndof;
@@ -1103,8 +1085,6 @@ void DTrackTimeBased_factory::AddMissingTrackHypothesis(vector<DTrackTimeBased*>
   timebased_track->ddEdx_CDC = locdEdx_CDC;
   timebased_track->ddx_CDC = locdx_CDC;
   timebased_track->dNumHitsUsedFordEdx_CDC = locNumHitsUsedFordEdx_CDC;
-  timebased_track->setdEdx((locNumHitsUsedFordEdx_CDC >= locNumHitsUsedFordEdx_FDC) ? locdEdx_CDC : locdEdx_FDC);
-  
    
   tracks_to_add.push_back(timebased_track);
 }
