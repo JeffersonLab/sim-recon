@@ -95,6 +95,9 @@ bool DEventWriterHDDM::Write_HDDMEvent(JEventLoop* locEventLoop, string locOutpu
 	pe->addHitViews();
 	hddm_s::HitView* hitv = &pe->getHitView();
 
+	
+	//Because HDDM groups hits by sub-unit of each detector we loop through the hits in each sub-dector and need to see if a sub-unit exists
+	//in hddm so as to avoid duplication of sub-units in HDDM
 	//====================================TPOL================================================
 	for(uint i=0;i<TPOLHits.size();++i)
 	{

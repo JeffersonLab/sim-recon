@@ -16,7 +16,7 @@ class DEventWriterHDDM_factory : public jana::JFactory<DEventWriterHDDM>
 		jerror_t init(void)
 		{
 			dOutputFileBaseName = "converted";
-		   gPARMS->SetDefaultParameter("hddm:FILENAME", dOutputFileBaseName);
+			gPARMS->SetDefaultParameter("HDDMOUT:FILENAME", dOutputFileBaseName);
 			return NOERROR;
 		}
 
