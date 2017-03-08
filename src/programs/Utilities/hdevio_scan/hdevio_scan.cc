@@ -27,6 +27,7 @@ void MapEVIOWords(void);
 vector<string> filenames;
 bool   PRINT_SUMMARY = true;
 bool   SAVE_FILE_MAP = false;
+bool   SKIP_EVENT_MAPPING = false;
 bool   MAP_WORDS     = false;
 bool   GENERATE_ERROR_REPORT = false;
 string ROOT_FILENAME = "hdevio_scan.root";
@@ -70,6 +71,7 @@ void Usage(string mess="")
 	cout << "   -n max_buff   Max. events to keep timing info for (only valid)" << endl;
 	cout << "                 with -w option)" << endl;
 	cout << "   -s            Save file block map" << endl;
+	cout << "   -blocksonly   Save only block map (not events). Only use with -s" << endl;
 	cout << endl;
 
 	if(mess != "") cout << endl << mess << endl << endl;
@@ -96,7 +98,8 @@ void ParseCommandLineArguments(int narg, char *argv[])
 		else if(arg == "-b"){ BLOCK_SIZE = atoi(next.c_str()); i++;}
 		else if(arg == "-e"){ GENERATE_ERROR_REPORT = true; }
 		else if(arg == "-n"){ MAX_HISTORY_BUFF_SIZE = atoi(next.c_str()); i++;}		
-		else if(arg == "-s"){ SAVE_FILE_MAP = true;}		
+		else if(arg == "-s"){ SAVE_FILE_MAP = true;}
+		else if(arg == "-blocksonly") { SKIP_EVENT_MAPPING = true;}
 		else if(arg[0] == '-') {cout << "Unknown option \""<<arg<<"\" !" << endl; exit(-1);}
 		else filenames.push_back(arg);
 	}
@@ -117,6 +120,8 @@ void PrintSummary(void)
 			cout << hdevio->err_mess.str() << endl;
 			continue;
 		}
+		
+		if(SKIP_EVENT_MAPPING) hdevio->SKIP_EVENT_MAPPING = true;
 		
 		time_t start_time = time(NULL);
 		hdevio->PrintFileSummary();
