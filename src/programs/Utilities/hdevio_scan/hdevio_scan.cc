@@ -31,6 +31,7 @@ bool   SKIP_EVENT_MAPPING = false;
 bool   MAP_WORDS     = false;
 bool   GENERATE_ERROR_REPORT = false;
 string ROOT_FILENAME = "hdevio_scan.root";
+string MAP_FILENAME = "";
 uint64_t MAX_EVIO_EVENTS = 20000;
 uint32_t BLOCK_SIZE = 20; // used for daq_block_size histogram
 uint32_t MAX_HISTORY_BUFF_SIZE = 400;
@@ -70,8 +71,10 @@ void Usage(string mess="")
 	cout << "   -e            Write details of bad event tag location to file" << endl;
 	cout << "   -n max_buff   Max. events to keep timing info for (only valid)" << endl;
 	cout << "                 with -w option)" << endl;
-	cout << "   -s            Save file block map" << endl;
-	cout << "   -blocksonly   Save only block map (not events). Only use with -s" << endl;
+	cout << "   -s            Save file block/event map" << endl;
+	cout << "   -blocksonly   Save only block map not events. (Only use with -s)" << endl;
+	cout << "   -f file.map   Set name of file to save block/event to. " << endl;
+	cout << "                 (implies -s)" << endl;
 	cout << endl;
 
 	if(mess != "") cout << endl << mess << endl << endl;
@@ -99,6 +102,7 @@ void ParseCommandLineArguments(int narg, char *argv[])
 		else if(arg == "-e"){ GENERATE_ERROR_REPORT = true; }
 		else if(arg == "-n"){ MAX_HISTORY_BUFF_SIZE = atoi(next.c_str()); i++;}		
 		else if(arg == "-s"){ SAVE_FILE_MAP = true;}
+		else if(arg == "-f"){ SAVE_FILE_MAP = true; MAP_FILENAME = next; i++;}
 		else if(arg == "-blocksonly") { SKIP_EVENT_MAPPING = true;}
 		else if(arg[0] == '-') {cout << "Unknown option \""<<arg<<"\" !" << endl; exit(-1);}
 		else filenames.push_back(arg);
@@ -192,7 +196,7 @@ void PrintSummary(void)
 			ofs.close();
 		}
 		
-		if(SAVE_FILE_MAP) hdevio->SaveFileMap();
+		if(SAVE_FILE_MAP) hdevio->SaveFileMap(MAP_FILENAME);
 		
 		delete hdevio;
 

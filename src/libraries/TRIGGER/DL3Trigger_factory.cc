@@ -144,8 +144,8 @@ jerror_t DL3Trigger_factory::evnt(JEventLoop *loop, uint64_t eventnumber)
 		Ntrack_candidates = trackcandidates.size();
 		Ptot_candidates   = Ptot_candidates;
 
-		double v = mvareader->EvaluateMVA("MVA");
-		if( v < MVA_CUT ) l3trig->L3_decision = DL3Trigger::kDISCARD_EVENT;
+		l3trig->mva_response = mvareader->EvaluateMVA("MVA");
+		if( l3trig->mva_response < MVA_CUT ) l3trig->L3_decision = DL3Trigger::kDISCARD_EVENT;
 	}
 #endif
 

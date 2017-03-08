@@ -337,7 +337,28 @@ void DEVIOWorkerThread::ParseBank(void)
 //---------------------------------
 void DEVIOWorkerThread::ParseEventTagBank(uint32_t* &iptr, uint32_t *iend)
 {
-	iptr = &iptr[(*iptr) + 1];
+	// skip the bank header
+	// EventTag is stored in a bank of banks with only 1 data bank
+	// so just skip the data bank header for now.
+
+	iptr++; // data bank length
+	iptr++; // data bank header
+
+	uint64_t evt_status_lo     = *iptr++;
+	uint64_t evt_status_hi     = *iptr++;
+	uint64_t l3_status_lo      = *iptr++;
+	uint64_t l3_status_hi      = *iptr++;
+	auto l3_decision           = (DL3Trigger::L3_decision_t)*iptr++;
+	uint32_t l3_algorithm      = *iptr++;
+	uint32_t mva_encoded       = *iptr++;
+	
+	uint64_t evt_status = evt_status_lo + (evt_status_hi<<32);
+	uint64_t l3_status  = l3_status_lo  + ( l3_status_hi<<32);
+
+	DParsedEvent *pe = current_parsed_events.front();
+	pe->NEW_DEventTag(evt_status, l3_decision, l3_status, l3_algorithm, mva_encoded);
+	
+	iptr = iend;
 }
 
 //---------------------------------
