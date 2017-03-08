@@ -3,7 +3,7 @@
 //    File: JEventProcessor_eventWriterHDDM.cc
 // Created: Mon Mar  6 14:11:50 EST 2017
 // Creator: tbritton (on Linux halld03.jlab.org 3.10.0-514.6.1.el7.x86_64 x86_64)
-//
+
 
 #include "JEventProcessor_eventWriterHDDM.h"
 using namespace jana;
