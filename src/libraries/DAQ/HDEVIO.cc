@@ -61,6 +61,7 @@ HDEVIO::HDEVIO(string filename, bool read_map_file):filename(filename)
 	if(read_map_file) ReadFileMap(); // check if a map file exists and read it if it does
 	
 	IGNORE_EMPTY_BOR = false;
+	SKIP_EVENT_MAPPING = false;
 	
 	ifs.seekg(0, ios_base::end);
 	total_size_bytes = ifs.tellg();
@@ -744,7 +745,7 @@ void HDEVIO::MapBlocks(bool print_ticker)
 		}
 		
 		// Scan through and map all events within this block
-		MapEvents(bh, br);
+		if( !SKIP_EVENT_MAPPING ) MapEvents(bh, br);
 
 		// Add block to list
 		evio_blocks.push_back(br);
