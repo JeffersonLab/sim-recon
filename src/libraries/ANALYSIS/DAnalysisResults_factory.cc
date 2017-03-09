@@ -246,98 +246,23 @@ jerror_t DAnalysisResults_factory::evnt(JEventLoop* locEventLoop, uint64_t event
 	if(dDebugLevel > 0)
 		cout << "# DReactions: " << locReactions.size() << endl;
 
-	for(size_t loc_i = 0; loc_i < locReactions.size(); ++loc_i)
-	{
-		const DReaction* locReaction = locReactions[loc_i];
-		DAnalysisResults* locAnalysisResults = new DAnalysisResults();
-		locAnalysisResults->Set_Reaction(locReaction);
+	//Post-combo
+		//Post-kinfit analysis actions: Need kinfit
+		//Kinfit: Need combo
+		//Other pre-kinfit analysis actions: Need combo
+		//Missing mass analysis actions: Need combo
 
-		if(dCombosByReaction.find(locReaction) == dCombosByReaction.end())
-		{
-			LockState();
-			{
-				dHistMap_NumEventsSurvivedAction_All[locReaction]->Fill(0); //initial: a new event
-			}
-			UnlockState();
-			_data.push_back(locAnalysisResults);
-			continue;
-		}
+		//Combo: Need beam, final state, PID cuts, inv mass cuts
 
-		set<const DParticleCombo*>& locSurvivingParticleCombos = dCombosByReaction[locReaction];
+	//Combo contents:
+		//Beam + RF Delta-t Cut: Need RF bunch
+		//PID cuts (put in DReaction directly): Need RF bunch & vertex
+		//RF bunch: Need vertex
 
-		//find the true particle combo
-		const DParticleCombo* locTrueParticleCombo = NULL;
-		if(dTrueComboCuts.find(locReaction) != dTrueComboCuts.end())
-		{
-			set<const DParticleCombo*>::iterator locIterator = locSurvivingParticleCombos.begin();
-			for(; locIterator != locSurvivingParticleCombos.end(); ++locIterator)
-			{
-				if(!(*dTrueComboCuts[locReaction])(locEventLoop, *locIterator))
-					continue;
-				locTrueParticleCombo = *locIterator;
-				break;
-			}
-		}
-		int locLastActionTrueComboSurvives = (locTrueParticleCombo != NULL) ? -1 : -2; //-1/-2: combo does/does-not exist
-
-		if(dDebugLevel > 0)
-			cout << "Evaluating DReaction: " << locReaction->Get_ReactionName() << endl;
-
-		//execute the actions
-		size_t locNumAnalysisActions = locReaction->Get_NumAnalysisActions();
-		deque<size_t> locNumParticleCombosSurvivedActions(1, locSurvivingParticleCombos.size()); //first cut is "is there a combo"
-
-		for(size_t loc_j = 0; loc_j < locNumAnalysisActions; ++loc_j)
-		{
-			if(locSurvivingParticleCombos.empty())
-				break;
-
-			DAnalysisAction* locAnalysisAction = locReaction->Get_AnalysisAction(loc_j);
-			if(locAnalysisAction->Get_UseKinFitResultsFlag())
-				break; //need to kinfit first!!!
-
-			locAnalysisAction->Reset_NewEvent(); //reset for new event
-			size_t locNumPreActionParticleCombos = locSurvivingParticleCombos.size();
-			if(dDebugLevel > 0)
-				cout << "Execute Action # " << loc_j + 1 << ": " << locAnalysisAction->Get_ActionName() << " on " << locSurvivingParticleCombos.size() << " surviving DParticleCombos." << endl;
-			(*locAnalysisAction)(locEventLoop, locSurvivingParticleCombos); //EXECUTE!
-			locNumParticleCombosSurvivedActions.push_back(locSurvivingParticleCombos.size());
-			if(locSurvivingParticleCombos.find(locTrueParticleCombo) != locSurvivingParticleCombos.end())
-				locLastActionTrueComboSurvives = loc_j;
-
-			if(dDebugLevel > 0)
-				cout << locNumPreActionParticleCombos - locNumParticleCombosSurvivedActions.back() << " combos failed the action." << endl;
-		}
-
-		set<const DParticleCombo*>::iterator locIterator = locSurvivingParticleCombos.begin();
-		for(; locIterator != locSurvivingParticleCombos.end(); ++locIterator)
-			locAnalysisResults->Add_PassedParticleCombo(*locIterator);
-
-		//fill histograms
-		LockState();
-		{
-			dHistMap_NumEventsSurvivedAction_All[locReaction]->Fill(0); //initial: a new event
-			if(locNumParticleCombosSurvivedActions[0] > 0)
-				dHistMap_NumParticleCombos[locReaction]->Fill(locNumParticleCombosSurvivedActions[0]);
-			for(size_t loc_j = 0; loc_j < locNumParticleCombosSurvivedActions.size(); ++loc_j)
-			{
-				if(locNumParticleCombosSurvivedActions[loc_j] > 0)
-				{
-					dHistMap_NumEventsSurvivedAction_All[locReaction]->Fill(loc_j + 1); //+1 because 0 is initial (no cuts at all)
-					dHistMap_NumCombosSurvivedAction[locReaction]->Fill(loc_j, locNumParticleCombosSurvivedActions[loc_j]);
-				}
-				for(size_t loc_k = 0; loc_k < locNumParticleCombosSurvivedActions[loc_j]; ++loc_k)
-					dHistMap_NumCombosSurvivedAction1D[locReaction]->Fill(loc_j);
-			}
-			for(size_t loc_j = locNumParticleCombosSurvivedActions.size(); loc_j < (locNumAnalysisActions + 1); ++loc_j)
-				dHistMap_NumCombosSurvivedAction[locReaction]->Fill(loc_j, 0);
-			for(int loc_j = -1; loc_j <= locLastActionTrueComboSurvives; ++loc_j) //-1/-2: combo does/does-not exist
-				dHistMap_NumEventsWhereTrueComboSurvivedAction[locReaction]->Fill(loc_j + 1);
-		}
-		UnlockState();
-
-		_data.push_back(locAnalysisResults);
-	}
+		//Inv mass cuts:
+			//Charged: Need final state
+			//Neutral: Need vertex & RF bunch
+		//Vertex: Need charged final state particles
 
 	return NOERROR;
 }
