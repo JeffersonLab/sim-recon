@@ -118,16 +118,20 @@ DTranslationTable::DTranslationTable(JEventLoop *loop)
            "Optional rocid to rocid conversion map for use with files"
            " generated with the non-standard rocid's");
 
-	gPARMS->SetDefaultParameter("TT:SYSTEMS_TO_PARSE", SYSTEMS_TO_PARSE,
-			"Comma separated list of systems to parse EVIO data for. "
-			"Default is empty string which means to parse all. System "
-			"names should be what is returned by DTranslationTable::DetectorName() .");
+	gPARMS->SetDefaultParameter("TT:SYSTEMS_TO_PARSE", SYSTEMS_TO_PARSE,"This is deprecated. Please use EVIO:SYSTEMS_TO_PARSE instead.");
 
 	gPARMS->SetDefaultParameter("TT:CALL_STACK", CALL_STACK,
 			"Set this to one to try and force correct recording of the"
 			"JANA call stack. You will want this if using the janadot"
 			"plugin, but otherwise, it will just give a slight performance"
 			"hit.");
+
+	if(SYSTEMS_TO_PARSE != ""){
+		jerr << "You have set the TT:SYSTEMS_TO_PARSE config. parameter." << endl;
+		jerr << "This is now deprecated. Please use EVIO:SYSTEMS_TO_PARSE" << endl;
+		jerr << "instead. Quitting now to make sure you see this message." << endl;
+		exit(-1);
+	}
 
 	// Here we create a bunch of config. parameters to allow us to overwrite
 	// the nsamples_integral and nsamples_pedestal fields of each type of
@@ -236,6 +240,7 @@ void DTranslationTable::SetSystemsToParse(string systems, JEventSource *eventsou
 	/// to restrict which banks to parse.
 	
 	if(systems == "") return; // nothing to do for empty strings
+	jout << "Setting systems to parse to: " << systems << endl;
 
 	// Make sure this is a JEventSource_EVIO object pointer
 	JEventSource_EVIO   *eviosource   = dynamic_cast<JEventSource_EVIO*  >(eventsource);
@@ -245,18 +250,37 @@ void DTranslationTable::SetSystemsToParse(string systems, JEventSource *eventsou
 		return;
 	}
 
-#ifndef HAVE_EVIO
-
-    // If we don't have EVIO, then the JEventSource_EVIO objects is crippled
-    // to the point where it can't be used. If this is the case, don't try
-    // doing anything else.
-
-#else // HAVE_EVIO
-
     // Make map of system type id by name
 	map<string, Detector_t> name_to_id;
 	for(uint32_t dettype=UNKNOWN_DETECTOR; dettype<NUM_DETECTOR_TYPES; dettype++){
 		name_to_id[DetectorName((Detector_t)dettype)] = (Detector_t)dettype;
+	}
+	
+	// There is a chicken-egg problem of reading the ROCID assignments
+	// from the CCDB which requires a run number. The run number is
+	// not actually available though until parsing of the first event.
+	// If the current map of ROCID_By_System is empty, we hold our nose
+	// and fill it with the known map. Note that this map will be
+	// overwritten later when the XML from the CCDB is parsed. This
+	// potentially could lead to inconsistencies. The primary use for
+	// this is mostly expcted for parsing only certain systems which
+	// is a specialized operation.
+	auto &rocid_map = Get_ROCID_By_System();
+	if(rocid_map.empty()){
+		rocid_map[name_to_id[     "UNKNOWN"]] = {14, 78};
+		rocid_map[name_to_id[        "BCAL"]] = {31, 32, 33, 34, 35 ,36, 37, 38, 39, 40, 41, 42};
+		rocid_map[name_to_id[         "CDC"]] = {25, 26, 27, 28};
+		rocid_map[name_to_id[        "FCAL"]] = {11, 12, 13, 14 ,15, 16, 17, 18, 19, 20, 21, 22};
+		rocid_map[name_to_id["FDC_CATHODES"]] = {52, 53, 55, 56, 57, 58, 59, 60, 61, 62};
+		rocid_map[name_to_id[   "FDC_WIRES"]] = {51, 54, 63, 64};
+		rocid_map[name_to_id[          "PS"]] = {83, 84};
+		rocid_map[name_to_id[         "PSC"]] = {84, 95};
+		rocid_map[name_to_id[          "RF"]] = {51, 73, 75, 78, 94, 95};
+		rocid_map[name_to_id[          "SC"]] = {94, 95};
+		rocid_map[name_to_id[        "TAGH"]] = {73, 75};
+		rocid_map[name_to_id[        "TAGM"]] = {71, 75};
+		rocid_map[name_to_id[         "TOF"]] = {77, 78};
+		rocid_map[name_to_id[        "TPOL"]] = {84};
 	}
 	
 	// Parse string of system names
@@ -265,19 +289,19 @@ void DTranslationTable::SetSystemsToParse(string systems, JEventSource *eventsou
 	while(std::getline(ss, token, ',')) {
 		
 		// Get initial list of rocids based on token
-		set<uint32_t> rocids = Get_ROCID_By_System()[name_to_id[token]];
+		set<uint32_t> rocids = rocid_map[name_to_id[token]];
 		
 		// Let "FDC" be an alias for both cathode strips and wires
 		if(token == "FDC"){
-			set<uint32_t> rocids1 = Get_ROCID_By_System()[name_to_id["FDC_CATHODES"]];
-			set<uint32_t> rocids2 = Get_ROCID_By_System()[name_to_id["FDC_WIRES"]];
+			set<uint32_t> rocids1 = rocid_map[name_to_id["FDC_CATHODES"]];
+			set<uint32_t> rocids2 = rocid_map[name_to_id["FDC_WIRES"]];
 			rocids.insert(rocids1.begin(), rocids1.end());
 			rocids.insert(rocids2.begin(), rocids2.end());
 		}
 
 		// More likely than not, someone specifying "PS" will also want "PSC" 
 		if(token == "PS"){
-			set<uint32_t> rocids1 = Get_ROCID_By_System()[name_to_id["PSC"]];
+			set<uint32_t> rocids1 = rocid_map[name_to_id["PSC"]];
 			rocids.insert(rocids1.begin(), rocids1.end());
 		}
 
@@ -288,11 +312,10 @@ void DTranslationTable::SetSystemsToParse(string systems, JEventSource *eventsou
 			uint32_t rocid = *it;
 			if(eviosource  ) eviosource->AddROCIDtoParseList(rocid);	
 			if(evioppsource) evioppsource->AddROCIDtoParseList(rocid);	
-			if(VERBOSE>0) ttout << "Added rocid " << rocid << " for system " << token << " to parse list" << endl;
+			jout << "Added rocid " << rocid << " for system " << token << " to parse list" << endl;
 		}
 	}
 
-#endif //HAVE_EVIO
 }
 
 //---------------------------------
@@ -1615,6 +1638,15 @@ void DTranslationTable::ReadTranslationTable(JCalibration *jcalib)
       // Copy from stringstream to tt
       tt_xml = ss.str();
    }
+	
+	// If a ROCID by system map exists it probably means the user 
+	// specified particular systems to parse and the default map
+	// has to be installed above in SetSystemsToParse. Make a copy
+	// and clear the map so that it can be filled while parsing.
+	// After, we can compare the two and warn the user if there's
+	// a descrepancy.
+	auto save_rocid_map = Get_ROCID_By_System();
+	Get_ROCID_By_System().clear();
    
    // create parser and specify element handlers
    XML_Parser xmlParser = XML_ParserCreate(NULL);
@@ -1632,6 +1664,28 @@ void DTranslationTable::ReadTranslationTable(JCalibration *jcalib)
       jerr << XML_ErrorString(XML_GetErrorCode(xmlParser)) << std::endl;
    }
    
+	// Check if there was a rocid map prior to parsing and
+	// if so, compare the 2.
+	if( !save_rocid_map.empty() ){
+		if( save_rocid_map != Get_ROCID_By_System() ){
+			jerr << "The rocid by system map read from the translation table in" << endl;
+			jerr << "the CCDB differs from the default. This may happen if you" << endl;
+			jerr << "specified EVIO:SYSTEMS_TO_PARSE and the hardcoded table is" << endl;
+			jerr << "out of date. If this is the case, you'll need to modify" << endl;
+			jerr << "DTranslationTable.cc or just run without specifying which" << endl;
+			jerr << "systems to parse." << endl;
+			for(auto it : Get_ROCID_By_System()){
+				cerr << " " << DetectorName((Detector_t)it.first) << ": CCDB rocids=" << Get_ROCID_By_System()[it.first].size() << "  hardcoded rocids=" << save_rocid_map[it.first].size() << endl;
+				cerr << "       CCDB={";
+				for(auto a : Get_ROCID_By_System()[it.first]) cerr << a <<", ";
+				cerr << "}  hardcoded={";
+				for(auto a : save_rocid_map[it.first]) cerr << a <<", ";
+				cerr << "}" << endl;
+			}
+			exit(-1);
+		}
+	}
+	
    jout << Get_TT().size() << " channels defined in translation table" << std::endl;
    XML_ParserFree(xmlParser);
 
