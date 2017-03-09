@@ -72,11 +72,12 @@ class DL3Trigger:public jana::JObject{
 		};
 		
 		DL3Trigger(L3_decision_t L3_decision=kNO_DECISION, uint64_t status=0L, uint32_t algorithm=0)
-			:L3_decision(L3_decision),status(status),algorithm(algorithm){}
+			:L3_decision(L3_decision),status(status),algorithm(algorithm),mva_response(-1E6){}
 		
 		L3_decision_t L3_decision;  // keep event or not?
 		uint64_t status;            // algorithm specific status bits
 		uint32_t algorithm;         // unique identifier for this algorithm
+		double mva_response;        // response of MVA algorithm
 		
 		
 		// This method is used primarily for pretty printing

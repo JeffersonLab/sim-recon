@@ -7,6 +7,8 @@
 
 #include <stdlib.h>
 #include <string.h>
+#include <libgen.h>
+#include <unistd.h>
 #include <cinttypes>
 using namespace std;
 
@@ -60,7 +62,7 @@ HDEVIO::HDEVIO(string filename, bool read_map_file):filename(filename)
 	
 	if(read_map_file) ReadFileMap(); // check if a map file exists and read it if it does
 	
-	IGNORE_EMPTY_BOR = false;
+	IGNORE_EMPTY_BOR   = false;
 	SKIP_EVENT_MAPPING = false;
 	
 	ifs.seekg(0, ios_base::end);
@@ -1342,7 +1344,31 @@ void HDEVIO::SaveFileMap(string fname)
 void HDEVIO::ReadFileMap(string fname, bool warn_if_not_found)
 {
 	// Open input file
-	if(fname=="") fname = filename + ".map";
+	if(fname=="") {
+		
+		// No map file name given. Form a list of potential ones
+		// in the order they should be checked.
+		string bname = basename((char*)filename.c_str());
+		string dname = dirname((char*)filename.c_str());
+		vector<string> fnames;
+		fnames.push_back(filename + ".map");
+		fnames.push_back(dname + "/filemaps/" + bname + ".map");
+		fnames.push_back(bname + ".map");
+		fnames.push_back(filename + ".bmap");
+		fnames.push_back(dname + "/filemaps/" + bname + ".bmap");
+		fnames.push_back(bname + ".bmap");
+		
+		// Loop over possible names until we find one that is readable
+		for(string f : fnames){
+			if( access(f.c_str(), R_OK) != 0 ) continue;
+			fname = f;
+			break;
+		}		
+	}
+	
+	if(fname=="") return;
+	
+	// Open map file
 	ifstream ifs(fname.c_str());
 	if(!ifs.is_open()){
 		if(warn_if_not_found) cerr << "Unable to open \""<<fname<<"\" for reading!" << endl;
