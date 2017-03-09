@@ -41,7 +41,8 @@ DTreeInterface* DTreeInterface::Create_DTreeInterface(string locTreeName, string
 }
 
 //Constructor
-DTreeInterface::DTreeInterface(string locTreeName, string locFileName) : dFileName(locFileName)
+DTreeInterface::DTreeInterface(string locTreeName, string locFileName) : dFileName(locFileName),
+dTreeIndex_MajorBranchName("0"), dTreeIndex_MinorBranchName("0")
 {
 	japp->RootWriteLock();
 	{
@@ -69,7 +70,11 @@ DTreeInterface::~DTreeInterface(void)
 			return;
 		}
 
-		//see if root file exists already
+		//Build index if requested
+		if(dTreeIndex_MajorBranchName != "0")
+			dTree->BuildIndex(dTreeIndex_MajorBranchName.c_str(), dTreeIndex_MinorBranchName.c_str());
+
+		//Save to output
 		TFile* locOutputFile = (TFile*)gROOT->GetListOfFiles()->FindObject(dFileName.c_str());
 		locOutputFile->Write(0, TObject::kOverwrite);
 		locOutputFile->Close();

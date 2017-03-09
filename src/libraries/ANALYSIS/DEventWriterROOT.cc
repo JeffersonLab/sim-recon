@@ -101,6 +101,7 @@ void DEventWriterROOT::Create_ThrownTree(JEventLoop* locEventLoop, string locOut
 
 	//CREATE BRANCHES
 	dThrownTreeInterface->Create_Branches(locBranchRegister);
+	dThrownTreeInterface->Set_TreeIndexBranchNames("RunNumber", "EventNumber");
 }
 
 void DEventWriterROOT::Create_DataTree(const DReaction* locReaction, JEventLoop* locEventLoop, bool locIsMCDataFlag)
@@ -157,6 +158,7 @@ void DEventWriterROOT::Create_DataTree(const DReaction* locReaction, JEventLoop*
 
 	//Create branches
 	locTreeInterface->Create_Branches(locBranchRegister);
+	locTreeInterface->Set_TreeIndexBranchNames("RunNumber", "EventNumber");
 }
 
 TMap* DEventWriterROOT::Create_UserInfoMaps(DTreeBranchRegister& locBranchRegister, JEventLoop* locEventLoop, const DReaction* locReaction) const

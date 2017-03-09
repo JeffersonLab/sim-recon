@@ -57,6 +57,8 @@ class DTreeInterface
 
 		bool Create_Branches(const DTreeBranchRegister& locTreeBranchRegister);
 
+		void Set_TreeIndexBranchNames(string locTreeIndex_MajorBranchName, string locTreeIndex_MinorBranchName = "0");
+
 		//Check/read info
 		bool Get_BranchesCreatedFlag(void) const;
 		const TList* Get_UserInfo(void) const;
@@ -140,6 +142,8 @@ class DTreeInterface
 
 		TTree* dTree;
 		string dFileName;
+		string dTreeIndex_MajorBranchName;
+		string dTreeIndex_MinorBranchName;
 
 		/******************************************************** BRANCH MEMORY AND TYPE MAPPING ****************************************************/
 
@@ -245,6 +249,12 @@ template<> struct DTreeInterface::DROOTTypeString<ULong64_t> { static const char
 template<> struct DTreeInterface::DROOTTypeString<Bool_t> { static const char* GetTypeString() {return "O";} };
 
 /******************************************************************* MISCELLANEOUS ********************************************************************/
+
+inline void DTreeInterface::Set_TreeIndexBranchNames(string locTreeIndex_MajorBranchName, string locTreeIndex_MinorBranchName)
+{
+	dTreeIndex_MajorBranchName = locTreeIndex_MajorBranchName;
+	dTreeIndex_MinorBranchName = locTreeIndex_MinorBranchName;
+}
 
 //INCREASE ARRAY SIZE
 template <typename DType> inline void DTreeInterface::Increase_ArraySize(string locBranchName, int locNewArraySize)
