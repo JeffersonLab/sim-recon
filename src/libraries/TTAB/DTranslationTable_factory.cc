@@ -29,6 +29,15 @@ jerror_t DTranslationTable_factory::init(void)
 //------------------
 jerror_t DTranslationTable_factory::brun(jana::JEventLoop *loop, int32_t runnumber)
 {
+	if(!_data.empty()){
+		jout << "WARNING: Translation table for run " << runnumber << " requested but" << endl;
+		jout << "         translation table already exists. Ignoring request and using" << endl;
+		jout << "         table already loaded." << endl;
+		tt->SetSystemsToParse(loop->GetJEvent().GetJEventSource());
+		return NOERROR;
+	}
+	jout << "Creating DTranslationTable for run " << runnumber << endl;
+
 	// Grab run-dependent translation table from CCDB
 	tt = new DTranslationTable(loop);
 	
