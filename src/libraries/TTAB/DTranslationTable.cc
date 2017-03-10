@@ -312,7 +312,7 @@ void DTranslationTable::SetSystemsToParse(string systems, JEventSource *eventsou
 			uint32_t rocid = *it;
 			if(eviosource  ) eviosource->AddROCIDtoParseList(rocid);	
 			if(evioppsource) evioppsource->AddROCIDtoParseList(rocid);	
-			jout << "Added rocid " << rocid << " for system " << token << " to parse list" << endl;
+			jout << "   Added rocid " << rocid << " for system " << token << " to parse list" << endl;
 		}
 	}
 
@@ -1675,6 +1675,15 @@ void DTranslationTable::ReadTranslationTable(JCalibration *jcalib)
 			jerr << "DTranslationTable.cc or just run without specifying which" << endl;
 			jerr << "systems to parse." << endl;
 			for(auto it : Get_ROCID_By_System()){
+				cerr << " " << DetectorName((Detector_t)it.first) << ": CCDB rocids=" << Get_ROCID_By_System()[it.first].size() << "  hardcoded rocids=" << save_rocid_map[it.first].size() << endl;
+				cerr << "       CCDB={";
+				for(auto a : Get_ROCID_By_System()[it.first]) cerr << a <<", ";
+				cerr << "}  hardcoded={";
+				for(auto a : save_rocid_map[it.first]) cerr << a <<", ";
+				cerr << "}" << endl;
+			}
+			for(auto it : save_rocid_map){
+				if(Get_ROCID_By_System().find(it.first) != Get_ROCID_By_System().end()) continue;
 				cerr << " " << DetectorName((Detector_t)it.first) << ": CCDB rocids=" << Get_ROCID_By_System()[it.first].size() << "  hardcoded rocids=" << save_rocid_map[it.first].size() << endl;
 				cerr << "       CCDB={";
 				for(auto a : Get_ROCID_By_System()[it.first]) cerr << a <<", ";
