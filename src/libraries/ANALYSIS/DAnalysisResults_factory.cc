@@ -246,23 +246,97 @@ jerror_t DAnalysisResults_factory::evnt(JEventLoop* locEventLoop, uint64_t event
 	if(dDebugLevel > 0)
 		cout << "# DReactions: " << locReactions.size() << endl;
 
-	//Post-combo
+	//ORDER OF EXECUTION/DEPENDENCIES:
+
+	//With combos:
 		//Post-kinfit analysis actions: Need kinfit
-		//Kinfit: Need combo
-		//Other pre-kinfit analysis actions: Need combo
-		//Missing mass analysis actions: Need combo
+		//Kinfit
+		//Other pre-kinfit analysis actions
+		//Missing mass analysis actions
 
-		//Combo: Need beam, final state, PID cuts, inv mass cuts
-
-	//Combo contents:
+	//Combo:
+		//Combo: Need beam, final state, rf bunch, PID cuts, inv mass cuts
 		//Beam + RF Delta-t Cut: Need RF bunch
-		//PID cuts (put in DReaction directly): Need RF bunch & vertex
-		//RF bunch: Need vertex
 
-		//Inv mass cuts:
-			//Charged: Need final state
-			//Neutral: Need vertex & RF bunch
-		//Vertex: Need charged final state particles
+	//Final-State Timing
+		//Invariant mass cuts with massive neutrals: Need hypo "combo" objects
+		//PID cuts (put in DReaction directly): Need hypo "combo" objects
+		//Neutral & Charged hypo "Combo" objects: Need RF bunch & vertices
+		//RF bunch: Need production vertex
 
+	//Final-State Particles:
+		//Inv mass cuts: Charged & gamma: Need final state & vertices (for accurate gamma p4)
+		//Production & Detached (for combo objects & in case no kinfit) vertices: Need charged final state particles
+		//Charged final-state particles: See below
+
+
+	//BUILDING FINAL-STATE COMBINATIONS
+
+
+	//ASSUME: The photoproduction vertex will not be much different than the DVertex
+		//Such that the p4 calculated from the DVertex is about the same as it would be for each combo, wrst the loose mass cuts //NOT TRUE
+	//ASSUME: The gamma came from the production vertex (i.e. ignore detached vertices)
+		//ASSUME: That the time difference due to detached vertex is negligible with regards to loose timing cuts //NOT TRUE
+
+
+//what if K+ Sigma0, or K+ Lambda, or those with missing K+????
+
+	//BIGGEST PROBLEM: So MANY photons: Cut down on neutrals
+	//say 20 photons: 20*19 = 380 pi0 pairs. Not so bad
+	//If 4 pi0s, then ~380^4 = ~20 billion combos (yikes!)
+	//Also, some jackass could do eta -> 6g instead of eta -> 3pi0, so the problems may even be at the step-formation level (rather than combine-steps level)
+	//So, prioritize PID cuts first to reduce pools
+
+	//Race for PID cuts:
+	//All combos: Decompose into vertices, group vertices by common final-state charged tracks
+	//For each reaction:
+		//Combos of charged particles
+		//Find vertices //could do in common for: vertices with 2+ charged tracks, or production vertex has 1 charged track
+			//suggests a temporary vertex_tracks class
+		//delta-t cuts between charged track pairs (all pairs at a given vertex)
+		//Charged inv-mass cuts
+
+		//PICK RF_BUNCH / NEUTRALS FOR EACH PHOTOPRODUCTION VERTEX
+			//for each photon, do PID cuts with all possible RF bunch choices: save N_shifts of those that pass cuts
+			//histogram N_shifts
+			//if X photons needed, then only the bins in the histogram with at least that many entries are possible
+			//for each of these N_shifts: do charged pid cuts against these
+			//for each remaining N_shifts (and the photons for them): neutral inv mass cuts
+
+	map<const DNeutralParticle*, set<const DNeutralParticle*> > locCompatiblePhotons; //key is first photon, set contains matching photons (but only store once for each pair)
+			Find_CompatiblePairs(pair<const DNeutralParticle*, const DNeutralParticle*>& locMyPair)
+			{
+					if(locCompatiblePhotons.find(locMyPair.first()) != locPair.end())
+						continue;
+					if(locPair.find(*(locMyPair.begin() + 1)) != locPair.end())
+						continue;
+
+					for()
+				}
+			}
+			//compatible pairs: 1) do not have either photon, 2) have photons that are in pairs with the first photon
+		//for each photoproduction vertex, use photons + tracks to select rf bunch
+			//for photons: if 1 needed, loop over all
+			//if 2 needed: loop over pairs
+			//if 4 needed:
+		//find combos of neutrals that match each channel
+			//In terms of N-gammas
+
+	//First, for all steps with a final-state neutral: find all possible combos of neutrals (ignoring decaying and missing particles)
+
+	//rf_delta_t = shower_prop_time - rf_prop_time
+		//shower_prop_time = shower_time - flight_time
+		//flight_time = (x3_shower - x3_vertex).Mag()/c
+		//rf_prop_time = (rf_time + (z_vertex - z_targ_center)/c)
+
+	//2_photon_delta_t = shower_prop_time_1 - shower_prop_time_2
+	//2_photon_delta_t = (rf_delta_t_1 + rf_prop_time) - (rf_delta_t_2 + rf_prop_time)
+	//2_photon_delta_t = rf_delta_t_1 - rf_delta_t_2
+	//2_photon_delta_t = (shower_time_1 - flight_time_1) - (shower_time_2 - flight_time_2)
+	//2_photon_delta_t = (shower_time_1 - (x3_shower_1 - x3_vertex).Mag()/c) - (shower_time_2 - (x3_shower_2 - x3_vertex).Mag()/c)
+	//if cut on rf_delta_t is "x", then values can range between +/- x. the max of the above is then (x - (-x)) = 2x
 	return NOERROR;
 }
+
+
+
