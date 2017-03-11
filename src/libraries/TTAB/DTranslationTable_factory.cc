@@ -8,6 +8,7 @@
 
 #include <iostream>
 #include <iomanip>
+#include <mutex>
 using namespace std;
 
 #include "DTranslationTable_factory.h"
@@ -36,7 +37,9 @@ jerror_t DTranslationTable_factory::brun(jana::JEventLoop *loop, int32_t runnumb
 		tt->SetSystemsToParse(loop->GetJEvent().GetJEventSource());
 		return NOERROR;
 	}
-	jout << "Creating DTranslationTable for run " << runnumber << endl;
+	
+	static once_flag flag;
+	call_once(flag, [runnumber]{jout << "Creating DTranslationTable for run " << runnumber << endl;});
 
 	// Grab run-dependent translation table from CCDB
 	tt = new DTranslationTable(loop);

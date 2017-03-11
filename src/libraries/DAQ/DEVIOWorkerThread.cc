@@ -625,7 +625,19 @@ void DEVIOWorkerThread::ParseControlEvent(uint32_t* &iptr, uint32_t *iend)
 	for(auto pe : current_parsed_events) pe->event_status_bits |= (1<<kSTATUS_CONTROL_EVENT);
 
 	time_t t = (time_t)iptr[2];
-_DBG_<<"Control event type: " << (iptr[1]>>16) << "  " << ctime(&t) <<endl;
+	string tstr = ctime(&t);
+	if(tstr.size()>1) tstr.erase(tstr.size()-1);
+	
+	string type = "Control";
+	switch(iptr[1]>>16){
+		case 0XFFD0: type = "Sync";     break;
+		case 0XFFD1: type = "Prestart"; break;
+		case 0XFFD2: type = "Go";       break;
+		case 0XFFD3: type = "Pause";    break;
+		case 0XFFD4: type = "End";      break;
+	}
+	
+	jout << "Control event: " << type << " - " << tstr << endl;
 
 	iptr = &iptr[(*iptr) + 1];
 }
