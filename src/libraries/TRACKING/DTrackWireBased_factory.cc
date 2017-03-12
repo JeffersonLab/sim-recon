@@ -222,6 +222,7 @@ jerror_t DTrackWireBased_factory::evnt(JEventLoop *loop, uint64_t eventnumber)
       *track_kd=*cand;
 
       // Attach a reference trajectory --  make sure there are enough DReferenceTrajectory objects
+      /*
       unsigned int locNumInitialReferenceTrajectories = rtv.size();
       while(rtv.size()<=num_used_rts){
 	//printf("Adding %d %d\n",rtv.size(),_data.size());
@@ -232,8 +233,9 @@ jerror_t DTrackWireBased_factory::evnt(JEventLoop *loop, uint64_t eventnumber)
 	     rt->Reset();
       rt->SetDGeometry(geom);
       rt->FastSwim(track->position(),track->momentum(),track->charge());
-      track->rt=rt;
-      
+      //track->rt=rt;
+      */
+
       // candidate id
       track->candidateid=i+1;
 
@@ -535,6 +537,8 @@ void DTrackWireBased_factory::DoFit(unsigned int c_id,
       track->Ndof = fitter->GetNdof();
       track->FOM = TMath::Prob(track->chisq, track->Ndof);
       track->pulls = fitter->GetPulls();
+      vector<DTrackFitter::Extrapolation_t> extrapolations=fitter->GetExtrapolations();
+      track->extrapolations.assign(extrapolations.begin(),extrapolations.end());
       track->candidateid = c_id+1;
       
       // Add hits used as associated objects

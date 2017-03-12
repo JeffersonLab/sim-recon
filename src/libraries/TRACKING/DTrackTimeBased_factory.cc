@@ -758,7 +758,27 @@ void DTrackTimeBased_factory
 
   // Match to the start counter and the outer detectors
   double locStartTimeVariance = 0.0, locStartTime = track->t0();  // initial guess from tracking
-  DSCHitMatchParams locSCBestMatchParams;
+  DSCHitMatchParams locSCBestMatchParams; 
+  for (unsigned int k=0;k<track->extrapolations.size();k++){
+    DTrackFitter::Extrapolation_t myextrapolation=track->extrapolations[k];
+    locStartTime=track->t0(); 
+    switch(myextrapolation.detector){
+    case SYS_START:
+      if (pid_algorithm->Get_StartTime(myextrapolation,sc_hits,locStartTime)){
+
+	_DBG_ << locStartTime << endl;
+      }
+      break; 
+    case SYS_TOF:
+      if (pid_algorithm->Get_StartTime(myextrapolation,tof_points,locStartTime)){
+
+	_DBG_ << locStartTime << endl;
+      }
+      break;
+    default:
+      break;
+    }
+  }
   if(pid_algorithm->Get_ClosestToTrack(track->rt, sc_hits, false, true, locStartTime, locSCBestMatchParams, &locStartTimeVariance))
   {
     // Fill in the start time vector
@@ -842,9 +862,11 @@ bool DTrackTimeBased_factory::DoFit(const DTrackWireBased *track,
 			    track->charge(),mass,mStartTime,mStartDetector);
   }   
   else{
-    fitter->SetFitType(DTrackFitter::kTimeBased);	
-    status = fitter->FindHitsAndFitTrack(*track, track->rt,loop, mass,track->Ndof+5,mStartTime,
-					 mStartDetector);
+    fitter->SetFitType(DTrackFitter::kTimeBased);    
+    status = fitter->FindHitsAndFitTrack(*track, track->extrapolations,loop, 
+					 mass,track->Ndof+5,mStartTime,
+    					 mStartDetector);
+    
     // If the status is kFitNotDone, then not enough hits were attached to this
     // track using the hit-gathering algorithm.  In this case get the hits 
     // from the wire-based track

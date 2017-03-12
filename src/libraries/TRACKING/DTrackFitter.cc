@@ -170,7 +170,71 @@ DTrackFitter::fit_status_t DTrackFitter::FitTrack(const DKinematicData &starting
 
 	return status;
 }
+//-------------------
+// FindHitsAndFitTrack
+//-------------------
+DTrackFitter::fit_status_t 
+DTrackFitter::FindHitsAndFitTrack(const DKinematicData &starting_params, 
+				  const vector<DTrackFitter::Extrapolation_t>&extrapolations,
+				  JEventLoop *loop, 
+				  double mass,int N,double t0,
+				  DetectorSystem_t t0_det){
+  // Reset fitter saving the type of fit we're doing
+  fit_type_t save_type = fit_type;
+  Reset();
+  fit_type = save_type;
+	
+  // If a mass<0 is passed in, get it from starting_params instead
+  if(mass<0.0)mass = starting_params.mass();
+  // charge of the track
+  double q=starting_params.charge();
 
+  // Get pointer to DTrackHitSelector object
+  vector<const DTrackHitSelector *> hitselectors;
+  loop->Get(hitselectors);
+  if(hitselectors.size()<1){
+    _DBG_<<"Unable to get a DTrackHitSelector object! NO Charged track fitting will be done!"<<endl;
+    return fit_status = kFitNotDone;
+  }
+  const DTrackHitSelector * hitselector = hitselectors[0];
+
+  // Get hits to be used for the fit
+  vector<const DCDCTrackHit*> cdctrackhits;
+  vector<const DFDCPseudo*> fdcpseudos;
+  loop->Get(cdctrackhits);
+  loop->Get(fdcpseudos);
+
+  // Get Bfield at the position at the middle of the extrapolations, i.e. the 
+  // region where we actually have measurements...
+  if (extrapolations.size()>0){
+    DVector3 mypos=extrapolations[extrapolations.size()/2].position;
+    double Bz=GetDMagneticFieldMap()->GetBz(mypos.x(),mypos.y(),mypos.z());
+    hitselector->GetCDCHits(Bz,q,extrapolations,cdctrackhits,this,N);
+    hitselector->GetFDCHits(Bz,q,extrapolations,fdcpseudos,this,N);	
+  }
+  else{
+    _DBG_ << "No extraplations?" <<endl;
+  }
+
+  // In case the subclass doesn't actually set the mass ....
+  //fit_params.setMass(starting_params.mass());
+  fit_params.setMass(mass);
+  
+#ifdef PROFILE_TRK_TIMES
+  start_time.TimeDiffNow(prof_times, "Find Hits");
+#endif
+  
+  // Do the fit 
+  DVector3 pos = starting_params.position();
+  DVector3 mom = starting_params.momentum();
+  fit_status = FitTrack(pos, mom,q, mass,t0,t0_det);
+  
+#ifdef PROFILE_TRK_TIMES
+  start_time.TimeDiffNow(prof_times, "Find Hits and Fit Track");
+#endif
+  
+  return fit_status;
+}
 //-------------------
 // FindHitsAndFitTrack
 //-------------------

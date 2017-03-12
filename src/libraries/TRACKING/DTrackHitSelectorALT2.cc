@@ -131,6 +131,212 @@ DTrackHitSelectorALT2::~DTrackHitSelectorALT2()
 //---------------------------------
 // GetCDCHits
 //---------------------------------
+void DTrackHitSelectorALT2::GetCDCHits(double Bz,double q,
+				       const vector<DTrackFitter::Extrapolation_t> &extrapolations, const vector<const DCDCTrackHit*> &cdchits_in, vector<const DCDCTrackHit*> &cdchits_out, int N) const
+{
+  // Vector of pairs storing the hit with the probability it is on the track
+  vector<pair<double,const DCDCTrackHit*> >cdchits_tmp;
+
+  // Sort so innermost ring is first and outermost is last
+  vector<const DCDCTrackHit*> cdchits_in_sorted = cdchits_in;
+  sort(cdchits_in_sorted.begin(),cdchits_in_sorted.end(),DTrackHitSelector_cdchit_in_cmp);
+  
+  // The variance on the residual due to measurement error.
+  double var=0.6084*ONE_OVER_12;
+   
+  // To estimate the impact of errors in the track momentum on the variance 
+  // of the residual, use a helical approximation.
+  double a=-0.003*Bz*q;
+  DVector3 mom=extrapolations[extrapolations.size()/2].momentum;
+  double p=mom.Mag();
+  double p_over_a=p/a;
+  double a_over_p=1./p_over_a;
+  double lambda=M_PI_2-mom.Theta();
+  double tanl=tan(lambda);
+  double tanl2=tanl*tanl;
+  double sinl=sin(lambda);
+  double cosl=cos(lambda);
+  double cosl2=cosl*cosl;
+  double sinl2=sinl*sinl;
+  double pt_over_a=cosl*p_over_a;
+
+  // variances
+  double var_lambda_res=0.;
+  double var_x0=0.01,var_y0=0.01;
+  double var_pt_over_pt_sq=0.;
+
+  // Loop over all the CDC hits looking for matches with the track
+  bool outermost_hit=true;
+  vector<const DCDCTrackHit*>::const_reverse_iterator iter;
+  for(iter=cdchits_in_sorted.rbegin(); iter!=cdchits_in_sorted.rend(); iter++){
+    const DCDCTrackHit *hit = *iter;
+    DVector3 origin=hit->wire->origin;
+    DVector3 dir=hit->wire->udir;
+    double ux=dir.x();
+    double uy=dir.y();
+    double uz=dir.z();
+    double z0=origin.z();
+    double d2=0.,d2_old=1.e6;
+    double s=0.;
+    DVector3 old_trackpos;
+    for (unsigned int i=0;i<extrapolations.size();i++){
+      if (extrapolations[i].detector==SYS_FDC) break;
+      if (extrapolations[i].detector==SYS_START) continue;
+      DVector3 trackpos=extrapolations[i].position;
+      double dz=trackpos.z()-z0;  
+      DVector3 wirepos=origin+dz/uz*dir;      
+      d2=(trackpos-wirepos).Perp2();
+      if (d2>d2_old){
+	if (d2<4){ // has to be reasonably close to the wire in question
+	  double phi=extrapolations[i].momentum.Phi();
+	  double sinphi=sin(phi);
+	  double cosphi=cos(phi);
+	  // Variables relating wire direction and track direction
+	  double my_ux=ux*sinl-cosl*cosphi;
+	  double my_uy=uy*sinl-cosl*sinphi;
+	  double denom=my_ux*my_ux+my_uy*my_uy;
+	  // For simplicity make a linear approximation for the path increment
+	  double ds=((old_trackpos.x()-origin.x()-ux*dz)*my_ux
+		     +(old_trackpos.y()-origin.y()-uy*dz)*my_uy)/denom;
+	  wirepos+=ds*dir;
+	  double dx=old_trackpos.x()+mom.X()/mom.Mag()*ds-wirepos.x();
+	  double dy=old_trackpos.y()+mom.Y()/mom.Mag()*ds-wirepos.y();
+	  d2_old=d2;
+	  d2=dx*dx+dy*dy;
+	  if (d2>d2_old){
+	    // linear approximation did not work...
+	    d2=d2_old;
+	  }
+	  // Variance in dip angle due to multiple scattering
+	  double var_lambda = extrapolations[i].theta2ms_sum;
+	
+	  if (outermost_hit){
+	    // Fractional variance in the curvature k due to resolution
+	    double s_sq=s*s;
+	    double var_k_over_k_sq_res=var*p_over_a*p_over_a*0.0720/double(N+4)/(s_sq*s_sq*sinl2)/cosl2;
+	    double sum_s_theta_ms=extrapolations[i].s_theta_ms_sum;
+	    double var_k_over_k_sq_ms
+	      =pt_over_a*pt_over_a*sum_s_theta_ms*sum_s_theta_ms/(s_sq*s_sq);
+	    
+	    // Fractional variance in pt
+	    var_pt_over_pt_sq=var_k_over_k_sq_res+var_k_over_k_sq_ms; 
+
+	    // Variance in dip angle due to measurement error
+	    var_lambda_res=12.0*var*double(N-1)/double(N*(N+1))*cosl2*cosl2/s_sq;
+
+	    outermost_hit=false;
+	  } 
+	  // Include error in lambda due to measurements
+	  var_lambda+=var_lambda_res;
+	  double var_phi=var_lambda*(1.+tanl2);
+
+	  // Include uncertainty in phi due to uncertainty in the center of 
+	  // the circle
+	  var_phi+=0.09/(pt_over_a*pt_over_a);
+
+	  // Variance in position due to multiple scattering
+	  double var_pos_ms=extrapolations[i].theta2ms_sum/48.;
+
+	  // Hit doca and residual
+	  double doca=sqrt(d2);
+	  double dist=0.39;
+	  double resi=dist-doca;
+
+	  // Variances in x and y due to uncertainty in track parameters
+	  double as_over_p=s*a_over_p;
+	  double sin_as_over_p=sin(as_over_p);
+	  double cos_as_over_p=cos(as_over_p);
+	  double one_minus_cos_as_over_p=1-cos_as_over_p;
+	  double diff1=sin_as_over_p-as_over_p*cos_as_over_p;
+	  double diff2=one_minus_cos_as_over_p-as_over_p*sin_as_over_p;
+	  double pdx_dp=pt_over_a*(cosphi*diff1-sinphi*diff2);
+	  double dx_dcosl=p_over_a*(cosphi*sin_as_over_p-sinphi*one_minus_cos_as_over_p);
+	  double dx_dphi=-pt_over_a*(sinphi*sin_as_over_p+cosphi*one_minus_cos_as_over_p);
+	  double var_x=var_x0+pdx_dp*pdx_dp*var_pt_over_pt_sq+var_pos_ms
+	    +dx_dcosl*dx_dcosl*sinl*sinl*var_lambda+dx_dphi*dx_dphi*var_phi;
+    
+	  double pdy_dp=pt_over_a*(sinphi*diff1+cosphi*diff2);
+	  double dy_dcosl=p_over_a*(sinphi*sin_as_over_p+cosphi*one_minus_cos_as_over_p);
+	  double dy_dphi=pt_over_a*(cosphi*sin_as_over_p-sinphi*one_minus_cos_as_over_p);
+	  double var_y=var_y0+pdy_dp*pdy_dp*var_pt_over_pt_sq+var_pos_ms
+	    +dy_dcosl*dy_dcosl*sinl*sinl*var_lambda+dy_dphi*dy_dphi*var_phi;
+	  
+	  double dd_dx=dx/doca;
+	  double dd_dy=dy/doca;
+	  double var_d=dd_dx*dd_dx*var_x+dd_dy*dd_dy*var_y;
+	  double chisq=resi*resi/(var+var_d);
+    
+	  // Use chi-sq probability function with Ndof=1 to calculate probability
+	  double probability = TMath::Prob(chisq, 1);
+	  if(probability>=MIN_HIT_PROB_CDC){
+	    pair<double,const DCDCTrackHit*>myhit;
+	    myhit.first=probability;
+	    myhit.second=hit;
+	    cdchits_tmp.push_back(myhit);
+	  }
+
+	  // Optionally fill debug tree
+	  if(cdchitsel){
+	    cdchitdbg.fit_type = kWireBased;
+	    cdchitdbg.p = p;
+	    cdchitdbg.theta = extrapolations[i].momentum.Theta();
+	    //cdchitdbg.mass = mass;
+	    cdchitdbg.sigma = sqrt(var);
+	    cdchitdbg.x = old_trackpos.X();
+	    cdchitdbg.y = old_trackpos.Y();
+	    cdchitdbg.z = old_trackpos.Z();
+	    cdchitdbg.s = s;
+	    cdchitdbg.itheta02 = extrapolations[i].theta2ms_sum;
+	    //cdchitdbg.itheta02s = last_step->itheta02s;
+	    //cdchitdbg.itheta02s2 = last_step->itheta02s2;
+	    cdchitdbg.dist = dist;
+	    cdchitdbg.doca = doca;
+	    cdchitdbg.resi = resi;
+	    cdchitdbg.chisq = chisq;
+	    cdchitdbg.prob = probability;
+	    cdchitdbg.sig_phi=sqrt(var_phi);
+	    cdchitdbg.sig_lambda=sqrt(var_lambda);
+	    cdchitdbg.sig_pt=sqrt(var_pt_over_pt_sq);	
+	    
+	    cdchitsel->Fill();
+	  }
+    
+	  if(HS_DEBUG_LEVEL>10){
+	    _DBG_;
+	    if (probability>=MIN_HIT_PROB_CDC) jerr<<"---> ";
+	    jerr<<"s="<<s<<" t=" <<hit->tdrift   << " doca="<<doca<<" dist="<<dist<<" resi="<<resi<<" sigma="/*<<sigma_total*/<<" prob="<<probability<<endl;
+	  }
+	}
+	break;
+      }
+      d2_old=d2;
+      old_trackpos=trackpos;
+      s=extrapolations[i].s;
+    }
+  
+  }
+
+   // Order according to ring number and probability, then put the hits in the 
+  // output list with the following algorithm:  hits with the highest 
+  // probability in a given ring are automatically put in the output list, 
+  // but if there is more than one hit in a given ring, only those hits 
+  // that are within +/-1 of the straw # of the most probable hit are added 
+  // to the list.
+  sort(cdchits_tmp.begin(),cdchits_tmp.end(),DTrackHitSelector_cdchit_cmp);
+  unsigned int old_straw=1000,old_ring=1000;
+  for (unsigned int i=0;i<cdchits_tmp.size();i++){
+    if (cdchits_tmp[i].second->wire->ring!=old_ring || 
+	abs(cdchits_tmp[i].second->wire->straw-old_straw)==1){
+      cdchits_out.push_back(cdchits_tmp[i].second);   
+    }
+    old_straw=cdchits_tmp[i].second->wire->straw;
+    old_ring=cdchits_tmp[i].second->wire->ring;
+  }
+}
+
+//---------------------------------
+// GetCDCHits
+//---------------------------------
 void DTrackHitSelectorALT2::GetCDCHits(fit_type_t fit_type, const DReferenceTrajectory *rt, const vector<const DCDCTrackHit*> &cdchits_in, vector<const DCDCTrackHit*> &cdchits_out, int N) const
 {
   // Vector of pairs storing the hit with the probability it is on the track
@@ -614,5 +820,218 @@ void DTrackHitSelectorALT2::GetFDCHits(fit_type_t fit_type, const DReferenceTraj
     }
     old_wire=fdchits_tmp[i].second->wire->wire;
     old_layer=fdchits_tmp[i].second->wire->layer;
+  }
+}
+void DTrackHitSelectorALT2::GetFDCHits(double Bz,double q,
+				       const vector<DTrackFitter::Extrapolation_t> &extrapolations, const vector<const DFDCPseudo*> &fdchits_in, vector<const DFDCPseudo*> &fdchits_out,int N) const
+{
+  // Vector of pairs storing the hit with the probability it is on the track
+  vector<pair<double,const DFDCPseudo*> >fdchits_tmp;
+  
+  /// Determine the probability that for each FDC hit that it came from the 
+  /// track with the given trajectory.  The probability is based on
+  /// the residual between the distance of closest approach
+  /// of the trajectory to the wire and the drift distance
+  /// and the distance along the wire.
+
+  // Sort so innermost ring is first and outermost is last
+  vector<const DFDCPseudo*> fdchits_in_sorted = fdchits_in;
+  sort(fdchits_in_sorted.begin(),fdchits_in_sorted.end(),DTrackHitSelector_fdchit_in_cmp);
+
+  // The variance on the residual due to measurement error.
+  double var_anode = 0.25*ONE_OVER_12; // scale factor reflects field-sense wire separation
+  const double VAR_CATHODE_STRIPS=0.000225;  
+  // Cathode variance due to Lorentz deflection
+  double max_deflection=0.1458*Bz*0.5;
+  double var_cathode=VAR_CATHODE_STRIPS+max_deflection*max_deflection/3.;
+  double var_tot=var_anode+var_cathode;
+
+  // To estimate the impact of errors in the track momentum on the variance of the residual,
+  // use a helical approximation. 
+  double a=-0.003*Bz*q;
+  DVector3 mom=extrapolations[extrapolations.size()/2].momentum;
+  double p=mom.Mag();
+  double p_over_a=p/a;
+  double a_over_p=1./p_over_a;
+  double lambda=M_PI_2-mom.Theta();
+  double tanl=tan(lambda);
+  double tanl2=tanl*tanl;
+  double sinl=sin(lambda);
+  double cosl=cos(lambda);  
+  double cosl2=cosl*cosl;
+  double sinl2=sinl*sinl;
+  double pt_over_a=cosl*p_over_a;
+  double z0=extrapolations[0].position.z();
+  // variances
+  double var_lambda=0.,var_phi=0.,var_lambda_res=0.;
+  double var_x0=0.01,var_y0=0.01; 
+  double var_pt_over_pt_sq=0.;
+
+  // Loop over hits
+  bool most_downstream_hit=true;
+  int last_extrapolation_index=extrapolations.size()-1;
+  vector<const DFDCPseudo*>::const_reverse_iterator iter;
+  for(iter=fdchits_in_sorted.rbegin(); iter!=fdchits_in_sorted.rend(); iter++){
+    const DFDCPseudo *hit = *iter;
+    for (int k=last_extrapolation_index;k>=0;k--){
+      // Position along trajectory
+      DVector3 pos=extrapolations[k].position;
+      double dz=pos.z()-z0;
+      double s=extrapolations[k].s;
+      if (fabs(pos.z()-hit->wire->origin.z())<0.1){ 	
+	// Variance in dip angle due to multiple scattering
+	var_lambda = extrapolations[k].theta2ms_sum;
+
+	// azimuthal angle
+	double phi=extrapolations[k].momentum.Phi();
+	double sinphi=sin(phi);
+	double cosphi=cos(phi);
+	  
+	if (most_downstream_hit){
+	  // Fractional variance in the curvature k due to resolution and multiple scattering
+	  double s_sq=s*s;
+	  double var_k_over_k_sq_res=var_tot*p_over_a*p_over_a
+	    *0.0720/double(N+4)/(s_sq*s_sq)/cosl2;
+	  double sum_s_theta_ms=extrapolations[k].s_theta_ms_sum;
+	  double var_k_over_k_sq_ms
+	    =pt_over_a*pt_over_a*sum_s_theta_ms*sum_s_theta_ms/(s_sq*s_sq);
+
+	  // Fractional variance in pt
+	  var_pt_over_pt_sq=var_k_over_k_sq_ms+var_k_over_k_sq_res;
+	  
+	  // Variance in dip angle due to measurement error
+	  var_lambda_res=12.0*var_tot*double(N-1)/double(N*(N+1))
+	    *sinl2*sinl2/s_sq;
+	  
+	  most_downstream_hit=false;
+	}
+	// Include error in lambda due to measurements
+	var_lambda+=var_lambda_res;	
+	var_phi=var_lambda*(1.+tanl2); 
+
+	// Variance in position due to multiple scattering
+	double var_pos_ms=extrapolations[k].theta2ms_sum/48.;
+	
+	// doca to wire
+	double x=pos.x();
+	double y=pos.y();
+	double dx=hit->xy.X()-x;
+	double dy=hit->xy.Y()-y;
+	double doca=sqrt(dx*dx+dy*dy);
+	
+	// Direction variables for wire
+	double cosa=hit->wire->udir.y();
+	double sina=hit->wire->udir.x();
+	
+	// Cathode Residual
+	double u=x*sina+y*cosa;
+	double u_cathodes = hit->s;
+	double resic = u - u_cathodes;
+
+	// Get "measured" distance to wire.
+	// For matching purposes this is assumed to be half a cell size
+	double dist=0.25;
+	
+	// Take into account non-normal incidence to FDC plane
+	double pz=extrapolations[k].momentum.z();
+	double tx=extrapolations[k].momentum.x()/pz;
+	double ty=extrapolations[k].momentum.y()/pz;
+	double tu=tx*cosa-ty*sina;
+	double alpha=atan(tu);
+	double cosalpha=cos(alpha);
+
+	// Anode Residual
+	double resi = dist - doca/cosalpha;
+	
+	// Initialize some probability-related variables needed later
+	double probability=0.,chisq=0.;  
+
+	// Variances in x and y due to uncertainty in track parameters
+	double as_over_p=s*a_over_p;
+	double sin_as_over_p=sin(as_over_p);
+	double cos_as_over_p=cos(as_over_p);
+	double one_minus_cos_as_over_p=1-cos_as_over_p;
+	double diff1=sin_as_over_p-as_over_p*cos_as_over_p;
+	double diff2=one_minus_cos_as_over_p-as_over_p*sin_as_over_p;
+	double pdx_dp=pt_over_a*(cosphi*diff1-sinphi*diff2);
+	double dx_ds=cosl*(cosphi*cos_as_over_p-sinphi*sin_as_over_p);
+	double ds_dcosl=dz*cosl/(sinl*sinl2);
+	double dx_dcosl
+	  =p_over_a*(cosphi*sin_as_over_p-sinphi*one_minus_cos_as_over_p)
+	  +dx_ds*ds_dcosl;
+	double dx_dphi=-pt_over_a*(sinphi*sin_as_over_p+cosphi*one_minus_cos_as_over_p);  
+	double var_z0=2.*tanl2*(var_tot)*double(2*N-1)/double(N*(N+1));
+   
+	double var_x=var_x0+pdx_dp*pdx_dp*var_pt_over_pt_sq+var_pos_ms
+	  +dx_dcosl*dx_dcosl*sinl2*var_lambda+dx_dphi*dx_dphi*var_phi
+	  +dx_ds*dx_ds*var_z0/sinl2;
+    
+	double pdy_dp=pt_over_a*(sinphi*diff1+cosphi*diff2);
+	double dy_ds=cosl*(sinphi*cos_as_over_p+cosphi*sin_as_over_p);
+	double dy_dcosl
+	  =p_over_a*(sinphi*sin_as_over_p+cosphi*one_minus_cos_as_over_p)
+	  +dy_ds*ds_dcosl;
+	double dy_dphi=pt_over_a*(cosphi*sin_as_over_p-sinphi*one_minus_cos_as_over_p);
+	double var_y=var_y0+pdy_dp*pdy_dp*var_pt_over_pt_sq+var_pos_ms
+	  +dy_dcosl*dy_dcosl*sinl2*var_lambda+dy_dphi*dy_dphi*var_phi
+	  +dy_ds*dy_ds*var_z0/sinl2;
+
+	// Rotate from global coordinate system into FDC local system
+	double cos2a=cosa*cosa;
+	double sin2a=sina*sina;
+	double var_d=(cos2a*var_x+sin2a*var_y)/(cosalpha*cosalpha);
+	double var_u=cos2a*var_y+sin2a*var_x;    
+
+	// Calculate chisq
+	chisq = resi*resi/(var_d+var_anode)+resic*resic/(var_u+var_cathode);
+    
+	// Probability of this hit being on the track
+	probability = TMath::Prob(chisq,2);
+  
+	if(probability>=MIN_HIT_PROB_FDC){
+	  pair<double,const DFDCPseudo*>myhit;
+	  myhit.first=probability;
+	  myhit.second=hit;
+	  fdchits_tmp.push_back(myhit);
+	}  
+	// Optionally fill debug tree
+	if(fdchitsel){
+	  fdchitdbg.fit_type = kWireBased;
+	  fdchitdbg.p = p;
+	  fdchitdbg.theta = extrapolations[k].momentum.Theta();
+	  //fdchitdbg.mass = mass;
+	  fdchitdbg.sigma_anode = sqrt(var_anode);
+	  fdchitdbg.sigma_cathode = sqrt(var_cathode);
+	  fdchitdbg.x = pos.X();
+	  fdchitdbg.y = pos.Y();
+	  fdchitdbg.z = pos.Z();
+	  fdchitdbg.s = s;
+	  fdchitdbg.itheta02 = extrapolations[k].theta2ms_sum;
+	  //fdchitdbg.itheta02s = last_step->itheta02s;
+	  //fdchitdbg.itheta02s2 = last_step->itheta02s2;
+	  fdchitdbg.dist = dist;
+	  fdchitdbg.doca = doca;
+	  fdchitdbg.resi = resi;
+	  fdchitdbg.u = u;
+	  fdchitdbg.u_cathodes = u_cathodes;
+	  fdchitdbg.resic = resic;
+	  fdchitdbg.chisq = chisq;
+	  fdchitdbg.prob = probability;
+	  fdchitdbg.sig_phi=sqrt(var_phi);
+	  fdchitdbg.sig_lambda=sqrt(var_lambda);
+	  fdchitdbg.sig_pt=sqrt(var_pt_over_pt_sq);
+      
+	  fdchitsel->Fill();
+	}
+    
+	if(HS_DEBUG_LEVEL>10){
+	  _DBG_;
+	  if(probability>=MIN_HIT_PROB_FDC)jerr<<"----> ";
+	  jerr<<"s="<<s<<" doca="<<doca<<" dist="<<dist<<" resi="<<resi<<" resic="<<resic<<" chisq="<<chisq<<" prob="<<probability<<endl;
+	}
+	
+      }
+    }
+
   }
 }
