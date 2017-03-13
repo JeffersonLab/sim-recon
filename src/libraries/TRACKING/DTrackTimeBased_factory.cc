@@ -749,13 +749,8 @@ void DTrackTimeBased_factory
 			vector<const DBCALShower*>&bcal_showers,	
 			vector<const DFCALShower*>&fcal_showers,
 			vector<DTrackTimeBased::DStartTime_t>&start_times){
-  // Add the t0 estimate from the tracking
   DTrackTimeBased::DStartTime_t start_time;
-  start_time.t0=track->t0();
-  start_time.t0_sigma=5.;
-  start_time.system=track->t0_detector();
-  start_times.push_back(start_time);
-
+  
   // Match to the start counter and the outer detectors
   double locStartTimeVariance = 0.0, locStartTime = track->t0();  // initial guess from tracking
   DSCHitMatchParams locSCBestMatchParams; 
@@ -765,20 +760,38 @@ void DTrackTimeBased_factory
     switch(myextrapolation.detector){
     case SYS_START:
       if (pid_algorithm->Get_StartTime(myextrapolation,sc_hits,locStartTime)){
-
-	_DBG_ << locStartTime << endl;
+	start_time.t0=locStartTime;
+	//    start_time.t0_sigma=sqrt(locTimeVariance); //uncomment when ready
+	start_time.t0_sigma=sqrt(locStartTimeVariance);
+	start_time.system=SYS_START;
+	start_times.push_back(start_time); 
       }
       break; 
     case SYS_TOF:
       if (pid_algorithm->Get_StartTime(myextrapolation,tof_points,locStartTime)){
-
-	_DBG_ << locStartTime << endl;
+	// Fill in the start time vector
+	start_time.t0=locStartTime;
+	start_time.t0_sigma=sqrt(locStartTimeVariance);
+	//    start_time.t0_sigma=sqrt(locTimeVariance); //uncomment when ready
+	start_time.system=SYS_TOF;
+	start_times.push_back(start_time); 
+      }
+      break; 
+    case SYS_FCAL:
+      if (pid_algorithm->Get_StartTime(myextrapolation,fcal_showers,locStartTime)){
+	// Fill in the start time vector
+	start_time.t0=locStartTime;
+	start_time.t0_sigma=sqrt(locStartTimeVariance);
+	//    start_time.t0_sigma=sqrt(locTimeVariance); //uncomment when ready
+	start_time.system=SYS_FCAL;
+	start_times.push_back(start_time); 
       }
       break;
     default:
       break;
     }
   }
+  /*
   if(pid_algorithm->Get_ClosestToTrack(track->rt, sc_hits, false, true, locStartTime, locSCBestMatchParams, &locStartTimeVariance))
   {
     // Fill in the start time vector
@@ -812,7 +825,7 @@ void DTrackTimeBased_factory
     start_time.system=SYS_BCAL;
     start_times.push_back(start_time);
   }
-
+  
   locStartTime = track->t0();
   DFCALShowerMatchParams locFCALBestMatchParams;
   if(pid_algorithm->Get_ClosestToTrack(track->rt, fcal_showers, true, locStartTime, locFCALBestMatchParams, &locStartTimeVariance))
@@ -824,16 +837,23 @@ void DTrackTimeBased_factory
     start_time.system=SYS_FCAL;
     start_times.push_back(start_time);
   }
+  */
 
+  // Add the t0 estimate from the tracking 
+  start_time.t0=track->t0();
+  start_time.t0_sigma=5.;
+  start_time.system=track->t0_detector();
+  start_times.push_back(start_time);
+  
   // Sort the list of start times according to uncertainty and set 
   // t0 for the fit to the first entry
-  sort(start_times.begin(),start_times.end(),DTrackTimeBased_T0_cmp);
+  //sort(start_times.begin(),start_times.end(),DTrackTimeBased_T0_cmp);
   mStartTime=start_times[0].t0;
   mStartDetector=start_times[0].system;
 
-  //    for (unsigned int i=0;i<start_times.size();i++){
-  //  printf("%d t0 %f sys %d\n",i,start_times[i].t0,start_times[i].system);
-  // }
+  for (unsigned int i=0;i<start_times.size();i++){
+    printf("%d t0 %f sys %d\n",i,start_times[i].t0,start_times[i].system);
+  }
   
 }
 
@@ -916,7 +936,7 @@ bool DTrackTimeBased_factory::DoFit(const DTrackWireBased *track,
       timebased_track->candidateid=track->candidateid;
       timebased_track->FOM=track->FOM;
       timebased_track->rt=track->rt;
-      
+   
       // add the list of start times
       timebased_track->start_times.assign(start_times.begin(),
 					  start_times.end());
