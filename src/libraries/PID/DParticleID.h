@@ -78,7 +78,32 @@ class DParticleID:public jana::JObject
 		double GetMostProbabledEdx_DC(double p,double mass,double dx, bool locIsCDCFlag) const; //bool is false for FDC
 		double GetdEdxSigma_DC(double num_hits,double p,double mass, double mean_path_length, bool locIsCDCFlag) const; //bool is false for FDC
 
+		/*********** Routines to get start time for time-based tracking ***************/
+		bool Get_StartTime(const DTrackFitter::Extrapolation_t &extrapolation,
+				   const vector<const DSCHit*>& SCHits, 
+				   double& StartTime) const;	
+		bool Get_StartTime(const DTrackFitter::Extrapolation_t &extrapolation,
+				   const vector<const DTOFPoint*>& TOFPoints, 
+				   double& StartTime) const;
+		bool Get_StartTime(const DTrackFitter::Extrapolation_t &extrapolation,
+				   const vector<const DFCALShower*>& FCALShowers,
+				   double& StartTime) const;
+
+		/***************** Routines to correct hits using track info **************/
+		double Get_CorrectedHitTime(const DSCHit* locSCHit,
+					      const DVector3 &locProjPos) const;
+		double Get_CorrectedHitEnergy(const DSCHit* locSCHit,
+					      const DVector3 &locProjPos) const;
+		double Get_CorrectedHitTime(const DTOFPoint* locTOFPoint,
+					      const DVector3 &locProjPos) const;
+		double Get_CorrectedHitEnergy(const DTOFPoint* locTOFPoint,
+					      const DVector3 &locProjPos) const;
+
+
 		/****************************************************** DISTANCE TO TRACK ******************************************************/
+
+		double Distance_ToTrack(const DFCALShower *locFCALShower,
+					const DVector3 &locProjPos) const;
 
 		// NOTE: For these functions, an initial guess for start time is expected as input so that out-of-time tracks can be skipped
 		bool Distance_ToTrack(const DReferenceTrajectory* rt, const DFCALShower* locFCALShower, double locInputStartTime, DFCALShowerMatchParams& locShowerMatchParams, DVector3* locOutputProjPos = nullptr, DVector3* locOutputProjMom = nullptr) const;

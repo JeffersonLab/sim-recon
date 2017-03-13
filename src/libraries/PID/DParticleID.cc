@@ -543,6 +543,34 @@ double DParticleID::GetdEdxSigma_DC(double num_hits,double p,double mass,
 
 /****************************************************** DISTANCE TO TRACK ******************************************************/
 
+// routine to find the distance to a cluster within an FCAL shower that is 
+// closest to a projected track position
+double DParticleID::Distance_ToTrack(const DFCALShower *locFCALShower,
+				     const DVector3 &locProjPos) const{
+  const DVector3 fcal_pos=locFCALShower->getPosition();
+  // Find minimum distance between track projection and each of the hits
+  // associated with the shower.
+  double d2min=(fcal_pos - locProjPos).Mag();
+  double xproj=locProjPos.x();
+  double yproj=locProjPos.y();
+  vector<const DFCALCluster*>clusters;
+  locFCALShower->Get(clusters);
+  
+  for (unsigned int k=0;k<clusters.size();k++)
+    {
+      vector<DFCALCluster::DFCALClusterHit_t>hits=clusters[k]->GetHits();
+      for (unsigned int m=0;m<hits.size();m++)
+	{
+	  double dx=hits[m].x-xproj;
+	  double dy=hits[m].y-yproj;
+	  double d2=dx*dx+dy*dy;
+	  if (d2<d2min)
+	    d2min=d2;
+	}
+    }
+  return sqrt(d2min);
+}
+
 // NOTE: For these functions, an initial guess for start time is expected as input so that out-of-time tracks can be skipped
 
 bool DParticleID::Distance_ToTrack(const DReferenceTrajectory* rt, const DFCALShower* locFCALShower, double locInputStartTime, DFCALShowerMatchParams& locShowerMatchParams, DVector3* locOutputProjPos, DVector3* locOutputProjMom) const
@@ -592,7 +620,7 @@ bool DParticleID::Distance_ToTrack(const DReferenceTrajectory* rt, const DFCALSh
 		*locOutputProjMom = locProjMom;
 	}
 
-	double d = sqrt(d2min);
+	double d = Distance_ToTrack(locFCALShower,locProjPos);
 	double p=locProjMom.Mag();
 
 	//SET MATCHING INFORMATION
@@ -726,59 +754,9 @@ bool DParticleID::Distance_ToTrack(const DReferenceTrajectory* rt, const DTOFPoi
 
 	//If position was not well-defined, correct deposited energy due to attenuation, and time due to propagation along paddle
 		//These values were reported at the midpoint of the paddle
-	float locHitEnergy = locTOFPoint->dE;
-	double locHitTime = locTOFPoint->t;
+	float locHitEnergy = Get_CorrectedHitEnergy(locTOFPoint,locProjPos);
+	double locHitTime = Get_CorrectedHitTime(locTOFPoint,locProjPos);
 	double locHitTimeVariance = locTOFPoint->tErr*locTOFPoint->tErr;
-	if(!locTOFPoint->Is_XPositionWellDefined())
-	{
-		//Is unmatched horizontal paddle with only one hit above threshold
-		bool locNorthIsGoodHit = (locTOFPoint->dHorizontalBarStatus == 1); //+x
-		int locBar = locTOFPoint->dHorizontalBar;
-		bool locIsDoubleEndedBar = ((locBar < dTOFGeometry->FirstShortBar) || (locBar > dTOFGeometry->LastShortBar));
-
-		//Paddle midpoint
-		double locPaddleMidPoint = 0.0; //is 0 except when is single-ended bar (22 & 23)
-		if(!locIsDoubleEndedBar)
-			locPaddleMidPoint = locNorthIsGoodHit ? ONESIDED_PADDLE_MIDPOINT_MAG : -1.0*ONESIDED_PADDLE_MIDPOINT_MAG;
-
-		//delta_x = delta_x_actual - delta_x_mid
-			//if end.x > 0: delta_x = (end.x - track.x) - (end.x - mid.x) = mid.x - track.x //if track.x > mid.x, delta_x < 0: decrease energy & increase time
-			//if end.x < 0: delta_x = (track.x - end.x) - (mid.x - end.x) = track.x - mid.x //if track.x > mid.x, delta_x > 0: increase energy & decrease time
-		double locDistanceToMidPoint = locNorthIsGoodHit ? locPaddleMidPoint - locProjPos.X() : locProjPos.X() - locPaddleMidPoint;
-
-		//Energy
-		locHitEnergy *= exp(locDistanceToMidPoint/TOF_ATTEN_LENGTH);
-
-		//Time
-		int id = 44 + locBar - 1;
-		locHitTime -= locDistanceToMidPoint/propagation_speed[id];
-		//locHitTimeVariance = //UPDATE ME!!!
-	}
-	else if(!locTOFPoint->Is_YPositionWellDefined())
-	{
-		//Is unmatched vertical paddle with only one hit above threshold
-		bool locNorthIsGoodHit = (locTOFPoint->dVerticalBarStatus == 1); //+y
-		int locBar = locTOFPoint->dVerticalBar;
-		bool locIsDoubleEndedBar = ((locBar < dTOFGeometry->FirstShortBar) || (locBar > dTOFGeometry->LastShortBar));
-
-		//Paddle midpoint
-		double locPaddleMidPoint = 0.0; //is 0 except when is single-ended bar (22 & 23)
-		if(!locIsDoubleEndedBar)
-			locPaddleMidPoint = locNorthIsGoodHit ? ONESIDED_PADDLE_MIDPOINT_MAG : -1.0*ONESIDED_PADDLE_MIDPOINT_MAG;
-
-		//delta_x = delta_x_actual - delta_x_mid
-			//if end.x > 0: delta_x = (end.x - track.x) - (end.x - mid.x) = mid.x - track.x //if track.x > mid.x, delta_x < 0: decrease energy & increase time
-			//if end.x < 0: delta_x = (track.x - end.x) - (mid.x - end.x) = track.x - mid.x //if track.x > mid.x, delta_x > 0: increase energy & decrease time
-		double locDistanceToMidPoint = locNorthIsGoodHit ? locPaddleMidPoint - locProjPos.Y() : locProjPos.Y() - locPaddleMidPoint;
-
-		//Energy
-		locHitEnergy *= exp(locDistanceToMidPoint/TOF_ATTEN_LENGTH);
-
-		//Time
-		int id = locBar - 1;
-		locHitTime -= locDistanceToMidPoint/propagation_speed[id];
-		//locHitTimeVariance = //UPDATE ME!!!
-	}
 
 	// Check that the hit is not out of time with respect to the track
 	double locDeltaT = locHitTime - locFlightTime - locInputStartTime;
@@ -812,6 +790,7 @@ bool DParticleID::Distance_ToTrack(const DReferenceTrajectory* rt, const DTOFPoi
 	return true;
 }
 
+
 bool DParticleID::Distance_ToTrack(const DReferenceTrajectory* rt, const DSCHit* locSCHit, double locInputStartTime, DSCHitMatchParams& locSCHitMatchParams, DVector3* locOutputProjPos, DVector3* locOutputProjMom) const
 {
 	if(rt == nullptr)
@@ -827,46 +806,9 @@ bool DParticleID::Distance_ToTrack(const DReferenceTrajectory* rt, const DSCHit*
 	if(fabs(locSCHit->t - locFlightTime - locInputStartTime) > OUT_OF_TIME_CUT)
 		return false;
 
-	// Start Counter geometry in hall coordinates, obtained from xml file
-	unsigned int sc_index = locSCHit->sector - 1;
-	double sc_pos_soss = sc_pos[sc_index][0].z();   // Start of straight section
-	double sc_pos_eoss = sc_pos[sc_index][1].z();   // End of straight section
-	double sc_pos_eobs = sc_pos[sc_index][sc_pos[sc_index].size() - 2].z();  // End of bend section
-
-	// Grab the time-walk corrected start counter hit time, and the pulse integral
-	double locCorrectedHitTime   = locSCHit->t;
-	double locCorrectedHitEnergy = locSCHit->dE;
-
-	// Check to see if hit occured in the straight section
-	if (locProjPos.Z() <= sc_pos_eoss)
-	{
-		// Calculate hit distance along scintillator relative to upstream end
-		double L = locProjPos.Z() - sc_pos_soss;
-		// Apply propagation time correction
-		locCorrectedHitTime -= L*sc_pt_slope[SC_STRAIGHT][sc_index] + sc_pt_yint[SC_STRAIGHT][sc_index];
-		// Apply attenuation correction
-		locCorrectedHitEnergy *= 1.0/(exp(sc_attn_B[SC_STRAIGHT_ATTN][sc_index]*L));
-	}
-	else if(locProjPos.Z() > sc_pos_eoss && locProjPos.Z() <= sc_pos_eobs) //check if in bend section: if so, apply corrections
-	{
-		// Calculate the hit position relative to the upstream end
-		double L = (locProjPos.Z() - sc_pos_eoss)*sc_angle_cor + (sc_pos_eoss - sc_pos_soss);
-		// Apply propagation time correction
-		locCorrectedHitTime -= L*sc_pt_slope[SC_BEND][sc_index] + sc_pt_yint[SC_BEND][sc_index];
-		// Apply attenuation correction
-		locCorrectedHitEnergy *= (sc_attn_A[SC_STRAIGHT_ATTN][sc_index] / ((sc_attn_A[SC_BENDNOSE_ATTN][sc_index]*
-				exp(sc_attn_B[SC_BENDNOSE_ATTN][sc_index]*L)) + sc_attn_C[SC_BENDNOSE_ATTN][sc_index]));
-	}
-	else // nose section: apply corrections
-	{
-		// Calculate the hit position relative to the upstream end
-		double L = (locProjPos.Z() - sc_pos_eoss)*sc_angle_cor + (sc_pos_eoss - sc_pos_soss);
-		// Apply propagation time correction
-		locCorrectedHitTime -= L*sc_pt_slope[SC_NOSE][sc_index] + sc_pt_yint[SC_NOSE][sc_index];
-		// Apply attenuation correction
-		locCorrectedHitEnergy *= (sc_attn_A[SC_STRAIGHT_ATTN][sc_index] / ((sc_attn_A[SC_BENDNOSE_ATTN][sc_index]*
-				exp(sc_attn_B[SC_BENDNOSE_ATTN][sc_index]*L)) + sc_attn_C[SC_BENDNOSE_ATTN][sc_index]));
-	}
+	// Get corrected start counter time and energy deposition
+	double locCorrectedHitEnergy=Get_CorrectedHitEnergy(locSCHit,locProjPos);
+	double locCorrectedHitTime=Get_CorrectedHitTime(locSCHit,locProjPos);
 
 	if(locOutputProjMom != nullptr)
 	{
@@ -879,6 +821,7 @@ bool DParticleID::Distance_ToTrack(const DReferenceTrajectory* rt, const DSCHit*
 	double ds = 0.3*locProjMom.Mag()/fabs(locProjMom.Dot(locPaddleNorm));
 
 	//SET MATCHING INFORMATION
+	unsigned int sc_index=locSCHit->sector-1;
 	locSCHitMatchParams.dSCHit = locSCHit;
 	locSCHitMatchParams.dHitEnergy = locCorrectedHitEnergy;
 	locSCHitMatchParams.dEdx = locSCHitMatchParams.dHitEnergy/ds;
@@ -1891,4 +1834,372 @@ Particle_t DParticleID::IDTrack(float locCharge, float locMass) const
 		if (fabs(locMass - ParticleMass(Neutron)) < locMassTolerance) return Neutron;
 	}
 	return Unknown;
+}
+
+
+
+/**** Routines to make corrections to energy deposition and time using track
+      information ********/
+
+double DParticleID::Get_CorrectedHitTime(const DTOFPoint* locTOFPoint,
+					 const DVector3 &locProjPos) const {
+  //If position was not well-defined, correct time due to propagation along paddle
+  //This value was reported at the midpoint of the paddle
+  double locHitTime = locTOFPoint->t;
+  if(!locTOFPoint->Is_XPositionWellDefined())
+    {
+      //Is unmatched horizontal paddle with only one hit above threshold
+      bool locNorthIsGoodHit = (locTOFPoint->dHorizontalBarStatus == 1); //+x
+      int locBar = locTOFPoint->dHorizontalBar;
+      bool locIsDoubleEndedBar = ((locBar < dTOFGeometry->FirstShortBar) || (locBar > dTOFGeometry->LastShortBar));
+
+      //Paddle midpoint
+      double locPaddleMidPoint = 0.0; //is 0 except when is single-ended bar (22 & 23)
+      if(!locIsDoubleEndedBar)
+	locPaddleMidPoint = locNorthIsGoodHit ? ONESIDED_PADDLE_MIDPOINT_MAG : -1.0*ONESIDED_PADDLE_MIDPOINT_MAG;
+      
+      //delta_x = delta_x_actual - delta_x_mid
+      //if end.x > 0: delta_x = (end.x - track.x) - (end.x - mid.x) = mid.x - track.x //if track.x > mid.x, delta_x < 0: decrease energy & increase time
+      //if end.x < 0: delta_x = (track.x - end.x) - (mid.x - end.x) = track.x - mid.x //if track.x > mid.x, delta_x > 0: increase energy & decrease time
+      double locDistanceToMidPoint = locNorthIsGoodHit ? locPaddleMidPoint - locProjPos.X() : locProjPos.X() - locPaddleMidPoint;
+      
+      //Time
+      int id = 44 + locBar - 1;
+      locHitTime -= locDistanceToMidPoint/propagation_speed[id];
+      //locHitTimeVariance = //UPDATE ME!!!
+    }
+  else if(!locTOFPoint->Is_YPositionWellDefined())
+    {
+      //Is unmatched vertical paddle with only one hit above threshold
+      bool locNorthIsGoodHit = (locTOFPoint->dVerticalBarStatus == 1); //+y
+      int locBar = locTOFPoint->dVerticalBar;
+      bool locIsDoubleEndedBar = ((locBar < dTOFGeometry->FirstShortBar) || (locBar > dTOFGeometry->LastShortBar));
+      
+      //Paddle midpoint
+      double locPaddleMidPoint = 0.0; //is 0 except when is single-ended bar (22 & 23)
+      if(!locIsDoubleEndedBar)
+	locPaddleMidPoint = locNorthIsGoodHit ? ONESIDED_PADDLE_MIDPOINT_MAG : -1.0*ONESIDED_PADDLE_MIDPOINT_MAG;
+      
+      //delta_x = delta_x_actual - delta_x_mid
+      //if end.x > 0: delta_x = (end.x - track.x) - (end.x - mid.x) = mid.x - track.x //if track.x > mid.x, delta_x < 0: decrease energy & increase time
+      //if end.x < 0: delta_x = (track.x - end.x) - (mid.x - end.x) = track.x - mid.x //if track.x > mid.x, delta_x > 0: increase energy & decrease time
+      double locDistanceToMidPoint = locNorthIsGoodHit ? locPaddleMidPoint - locProjPos.Y() : locProjPos.Y() - locPaddleMidPoint;
+
+      //Time
+      int id = locBar - 1;
+      locHitTime -= locDistanceToMidPoint/propagation_speed[id];
+      //locHitTimeVariance = //UPDATE ME!!!
+    }
+  return locHitTime;
+}
+
+double DParticleID::Get_CorrectedHitEnergy(const DTOFPoint* locTOFPoint,
+					   const DVector3 &locProjPos) const{
+  double locHitEnergy = locTOFPoint->dE;
+  //If position was not well-defined, correct deposited energy due to attenuation.
+  //This value was reported at the midpoint of the paddle
+
+  if(!locTOFPoint->Is_XPositionWellDefined())
+    {
+      //Is unmatched horizontal paddle with only one hit above threshold
+      bool locNorthIsGoodHit = (locTOFPoint->dHorizontalBarStatus == 1); //+x
+      int locBar = locTOFPoint->dHorizontalBar;
+      bool locIsDoubleEndedBar = ((locBar < dTOFGeometry->FirstShortBar) || (locBar > dTOFGeometry->LastShortBar));
+      
+      //Paddle midpoint
+      double locPaddleMidPoint = 0.0; //is 0 except when is single-ended bar (22 & 23)
+      if(!locIsDoubleEndedBar)
+	locPaddleMidPoint = locNorthIsGoodHit ? ONESIDED_PADDLE_MIDPOINT_MAG : -1.0*ONESIDED_PADDLE_MIDPOINT_MAG;
+      
+      //delta_x = delta_x_actual - delta_x_mid
+      //if end.x > 0: delta_x = (end.x - track.x) - (end.x - mid.x) = mid.x - track.x //if track.x > mid.x, delta_x < 0: decrease energy & increase time
+      //if end.x < 0: delta_x = (track.x - end.x) - (mid.x - end.x) = track.x - mid.x //if track.x > mid.x, delta_x > 0: increase energy & decrease time
+      double locDistanceToMidPoint = locNorthIsGoodHit ? locPaddleMidPoint - locProjPos.X() : locProjPos.X() - locPaddleMidPoint;
+
+      //Energy
+      locHitEnergy *= exp(locDistanceToMidPoint/TOF_ATTEN_LENGTH);
+    }
+  else if(!locTOFPoint->Is_YPositionWellDefined())
+    {
+      //Is unmatched vertical paddle with only one hit above threshold
+      bool locNorthIsGoodHit = (locTOFPoint->dVerticalBarStatus == 1); //+y
+      int locBar = locTOFPoint->dVerticalBar;
+      bool locIsDoubleEndedBar = ((locBar < dTOFGeometry->FirstShortBar) || (locBar > dTOFGeometry->LastShortBar));
+      
+      //Paddle midpoint
+      double locPaddleMidPoint = 0.0; //is 0 except when is single-ended bar (22 & 23)
+      if(!locIsDoubleEndedBar)
+	locPaddleMidPoint = locNorthIsGoodHit ? ONESIDED_PADDLE_MIDPOINT_MAG : -1.0*ONESIDED_PADDLE_MIDPOINT_MAG;
+      
+      //delta_x = delta_x_actual - delta_x_mid
+      //if end.x > 0: delta_x = (end.x - track.x) - (end.x - mid.x) = mid.x - track.x //if track.x > mid.x, delta_x < 0: decrease energy & increase time
+      //if end.x < 0: delta_x = (track.x - end.x) - (mid.x - end.x) = track.x - mid.x //if track.x > mid.x, delta_x > 0: increase energy & decrease time
+      double locDistanceToMidPoint = locNorthIsGoodHit ? locPaddleMidPoint - locProjPos.Y() : locProjPos.Y() - locPaddleMidPoint;
+
+      //Energy
+      locHitEnergy *= exp(locDistanceToMidPoint/TOF_ATTEN_LENGTH);
+    }
+
+  return locHitEnergy;
+}
+
+// Correct the hit energy in the start counter paddle for attenuation using 
+// the projected track position in the start counter volume
+double DParticleID::Get_CorrectedHitEnergy(const DSCHit* locSCHit,
+					     const DVector3 &locProjPos) const {
+  // Start Counter geometry in hall coordinates, obtained from xml file
+  unsigned int sc_index = locSCHit->sector - 1;
+  double sc_pos_soss = sc_pos[sc_index][0].z();   // Start of straight section
+  double sc_pos_eoss = sc_pos[sc_index][1].z();   // End of straight section
+  double sc_pos_eobs = sc_pos[sc_index][sc_pos[sc_index].size() - 2].z();  // End of bend section
+
+  // Grab the pulse integral
+  double locCorrectedHitEnergy = locSCHit->dE;
+
+  // Check to see if hit occured in the straight section
+  if (locProjPos.Z() <= sc_pos_eoss)
+    {
+      // Calculate hit distance along scintillator relative to upstream end
+      double L = locProjPos.Z() - sc_pos_soss;
+
+      // Apply attenuation correction
+      locCorrectedHitEnergy *= 1.0/(exp(sc_attn_B[SC_STRAIGHT_ATTN][sc_index]*L));
+    }
+  else if(locProjPos.Z() > sc_pos_eoss && locProjPos.Z() <= sc_pos_eobs) //check if in bend section: if so, apply corrections
+    {
+      // Calculate the hit position relative to the upstream end
+      double L = (locProjPos.Z() - sc_pos_eoss)*sc_angle_cor + (sc_pos_eoss - sc_pos_soss);
+
+      // Apply attenuation correction
+      locCorrectedHitEnergy *= (sc_attn_A[SC_STRAIGHT_ATTN][sc_index] / 
+				((sc_attn_A[SC_BENDNOSE_ATTN][sc_index]*
+				  exp(sc_attn_B[SC_BENDNOSE_ATTN][sc_index]*L))
+				 + sc_attn_C[SC_BENDNOSE_ATTN][sc_index]));
+    }
+  else // nose section: apply corrections
+    {
+      // Calculate the hit position relative to the upstream end
+      double L = (locProjPos.Z() - sc_pos_eoss)*sc_angle_cor + (sc_pos_eoss - sc_pos_soss);
+      
+      // Apply attenuation correction
+      locCorrectedHitEnergy *= (sc_attn_A[SC_STRAIGHT_ATTN][sc_index] / 
+				((sc_attn_A[SC_BENDNOSE_ATTN][sc_index]*
+				  exp(sc_attn_B[SC_BENDNOSE_ATTN][sc_index]*L))
+				 + sc_attn_C[SC_BENDNOSE_ATTN][sc_index]));
+    }
+  return locCorrectedHitEnergy;
+}
+  
+// Apply propagation time correction to the start counter hit using the 
+// projected track position
+double DParticleID::Get_CorrectedHitTime(const DSCHit* locSCHit,
+					   const DVector3 &locProjPos) const {
+  // Start Counter geometry in hall coordinates, obtained from xml file
+  unsigned int sc_index = locSCHit->sector - 1;
+  double sc_pos_soss = sc_pos[sc_index][0].z();   // Start of straight section
+  double sc_pos_eoss = sc_pos[sc_index][1].z();   // End of straight section
+  double sc_pos_eobs = sc_pos[sc_index][sc_pos[sc_index].size() - 2].z();  // End of bend section
+  
+  // Grab the time-walk corrected start counter hit time
+  double locCorrectedHitTime   = locSCHit->t;
+
+  // Check to see if hit occured in the straight section
+  if (locProjPos.Z() <= sc_pos_eoss)
+    {
+      // Calculate hit distance along scintillator relative to upstream end
+      double L = locProjPos.Z() - sc_pos_soss;
+      // Apply propagation time correction
+      locCorrectedHitTime -= L*sc_pt_slope[SC_STRAIGHT][sc_index] + sc_pt_yint[SC_STRAIGHT][sc_index];
+    }
+  else if(locProjPos.Z() > sc_pos_eoss && locProjPos.Z() <= sc_pos_eobs) //check if in bend section: if so, apply corrections
+    {
+      // Calculate the hit position relative to the upstream end
+      double L = (locProjPos.Z() - sc_pos_eoss)*sc_angle_cor + (sc_pos_eoss - sc_pos_soss);
+      // Apply propagation time correction
+      locCorrectedHitTime -= L*sc_pt_slope[SC_BEND][sc_index] + sc_pt_yint[SC_BEND][sc_index];
+    }
+  else // nose section: apply corrections
+    {
+      // Calculate the hit position relative to the upstream end
+      double L = (locProjPos.Z() - sc_pos_eoss)*sc_angle_cor + (sc_pos_eoss - sc_pos_soss);
+      // Apply propagation time correction
+      locCorrectedHitTime -= L*sc_pt_slope[SC_NOSE][sc_index] + sc_pt_yint[SC_NOSE][sc_index];
+    }
+  return locCorrectedHitTime;
+}
+
+
+/************* Routines to get the start time for the track ************/
+
+bool DParticleID::Get_StartTime(const DTrackFitter::Extrapolation_t &extrapolation,
+				const vector<const DFCALShower*>& FCALShowers,
+				double& StartTime) const{
+  if (FCALShowers.size()==0) return false;
+  double StartTimeGuess=StartTime;
+  DVector3 trackpos=extrapolation.position;
+  double d_min=1e6;
+  unsigned int best_fcal_match=0;
+  for (unsigned int i=0;i<FCALShowers.size();i++){
+    const DFCALShower *fcal_shower=FCALShowers[i];
+    double d=Distance_ToTrack(fcal_shower,trackpos);
+    if (d<d_min){
+      d_min=d;
+      best_fcal_match=i;
+    }
+  }
+  StartTime=FCALShowers[best_fcal_match]->getTime()-extrapolation.t;
+  if (fabs(StartTime-StartTimeGuess)>OUT_OF_TIME_CUT) return false;
+
+  double p=extrapolation.momentum.Mag();
+  double cut=FCAL_CUT_PAR1+FCAL_CUT_PAR2/p;
+  if (d_min<cut) return true;
+
+  return false;
+}  
+
+bool DParticleID::Get_StartTime(const DTrackFitter::Extrapolation_t &extrapolation,
+			    const vector<const DSCHit*>& SCHits, 
+			    double& StartTime) const{
+  if (SCHits.size()==0) return false;
+  double StartTimeGuess=StartTime;
+  DVector3 trackpos=extrapolation.position;
+  double z=trackpos.z();
+  double dphi_min=1000.;
+  unsigned int best_sc_match=0;
+  for (unsigned int i=0;i<SCHits.size();i++){
+    unsigned int sc_index=SCHits[i]->sector - 1;
+    for (unsigned int j=0;j<sc_pos[sc_index].size();j++){
+      if (z>sc_pos[sc_index][j].z()) continue;
+      double dphi=trackpos.Phi()-sc_pos[sc_index][j].Phi();
+      if (dphi<-M_PI) dphi+=2.*M_PI;
+      if (dphi>M_PI) dphi-=2*M_PI;
+
+      if (fabs(dphi)<dphi_min){
+	dphi_min=dphi;
+	best_sc_match=i;
+      }
+    }
+  }	   
+  double sc_corrected_time=Get_CorrectedHitTime(SCHits[best_sc_match],trackpos);
+  StartTime=sc_corrected_time-extrapolation.t;
+  if (fabs(StartTime-StartTimeGuess)>OUT_OF_TIME_CUT) return false;
+
+  double sc_dphi_cut = dSCCutPars_WireBased[0] + dSCCutPars_WireBased[1]*exp(dSCCutPars_WireBased[2]*(trackpos.Z() - dSCCutPars_WireBased[3]));
+  if (fabs(180.*dphi_min/M_PI) <= sc_dphi_cut) return true;
+  
+  return false;
+} 
+
+bool DParticleID::Get_StartTime(const DTrackFitter::Extrapolation_t &extrapolation,
+			    const vector<const DTOFPoint*>& TOFPoints, 
+			    double& StartTime) const{
+  if (TOFPoints.size()==0) return false;
+  double StartTimeGuess=StartTime;
+  DVector3 trackpos=extrapolation.position;
+  // Set up cuts
+  double locMatchCut_2D = exp(-1.0*TOF_CUT_PAR1*extrapolation.momentum.Mag() + TOF_CUT_PAR2) + TOF_CUT_PAR3;
+  double locMatchCut_1D = locMatchCut_2D;
+  
+  // loop over TOF points, looking for closest match to track position
+  double dx_min=1.0e6,dy_min=1.0e6;
+  unsigned int best_tof_match_x=0;
+  unsigned int best_tof_match_y=0;
+  for (unsigned int i=0;i<TOFPoints.size();i++){
+    const DTOFPoint *locTOFPoint = TOFPoints[i];
+    double dx=locTOFPoint->pos.x()-trackpos.x();
+    double dy=locTOFPoint->pos.y()-trackpos.y();
+    if (fabs(dx)<dx_min){
+      dx_min=fabs(dx);
+      best_tof_match_x=i;
+    }
+    if (fabs(dy)<dy_min){
+      dy_min=fabs(dy);
+      best_tof_match_y=i;
+    }
+  }
+  // If the projections in x and y point to the same bar, apply the match 
+  // criterion.
+  if (best_tof_match_x==best_tof_match_y){ 
+    StartTime=Get_CorrectedHitTime(TOFPoints[best_tof_match_x],trackpos)
+      -extrapolation.t;
+    if (fabs(StartTime-StartTimeGuess)>OUT_OF_TIME_CUT) return false;
+    if (TOFPoints[best_tof_match_x]->Is_XPositionWellDefined()==false){
+      if (dy_min<locMatchCut_1D){
+	return true;
+      }
+    }
+    else if (TOFPoints[best_tof_match_x]->Is_YPositionWellDefined()==false){ 
+      if (dx_min<locMatchCut_1D){
+	return true;
+      }
+    }
+    else{
+      double d=sqrt(dx_min*dx_min+dy_min*dy_min);
+      if (d<locMatchCut_2D){
+	return true;
+      }
+    }
+  }
+  else{  // otherwise we need to do something more sophisticated...
+    TOFPoints[best_tof_match_x]->pos.Print();
+    TOFPoints[best_tof_match_y]->pos.Print();
+    double StartTime_TOF1
+      =Get_CorrectedHitTime(TOFPoints[best_tof_match_x],trackpos)
+      -extrapolation.t;
+    double StartTime_TOF2
+      =Get_CorrectedHitTime(TOFPoints[best_tof_match_y],trackpos)
+      -extrapolation.t;
+    bool TimeCheck1=fabs(StartTime_TOF1-StartTimeGuess)<=OUT_OF_TIME_CUT;
+    bool TimeCheck2=fabs(StartTime_TOF1-StartTimeGuess)<=OUT_OF_TIME_CUT;
+    if (TimeCheck1==false && TimeCheck2==false) return false;
+
+    bool GoodPoint1=TOFPoints[best_tof_match_x]->Is_XPositionWellDefined()
+      && TOFPoints[best_tof_match_x]->Is_YPositionWellDefined(); 
+    bool GoodPoint2=TOFPoints[best_tof_match_y]->Is_XPositionWellDefined()
+      && TOFPoints[best_tof_match_y]->Is_YPositionWellDefined();
+    
+    // Differences with respect to the track for other coordinates for the 
+    // two possible paddle matches
+    double dx2=TOFPoints[best_tof_match_y]->pos.x()-trackpos.x();
+    double dy2=TOFPoints[best_tof_match_x]->pos.y()-trackpos.y();
+    double dr1=sqrt(dx_min*dx_min+dy2*dy2);
+    double dr2=sqrt(dx2*dx2+dy_min*dy_min);
+
+    if (TimeCheck1==true && TimeCheck2==false){
+      printf(".>>>>>>>. Got here\n");
+    }
+    else if (TimeCheck2==true && TimeCheck1==false){
+      printf(">>>>>>>>>>>>> Got here2\n");
+    }
+    else {
+      printf("Got here 3!! %d %d\n",GoodPoint1,GoodPoint2);
+      if (GoodPoint1 && GoodPoint2){
+	if (dr1<dr2 && dr1<locMatchCut_2D){
+	  StartTime=StartTime_TOF1;
+	  return true;
+	}
+	else if (dr2<dr1 && dr2<locMatchCut_2D){
+	  StartTime=StartTime_TOF2;
+	  return true;
+	}
+      }
+      else if (GoodPoint1){
+	if (dr1<locMatchCut_2D){
+	  StartTime=StartTime_TOF1;
+	  return true;
+	}
+      }
+      else{
+	if (dr2<locMatchCut_2D){
+	  StartTime=StartTime_TOF2;
+	  return true;
+	}
+
+      }
+    }
+    double dt_tof=fabs(StartTime_TOF1-StartTime_TOF2);
+	   
+  }
+
+  return false;
 }
