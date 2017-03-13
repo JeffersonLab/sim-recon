@@ -36,7 +36,7 @@ class DEventTag:public jana::JObject{
 			AddString(items, "L3_decision" , "%d"     , L3_decision);
 			AddString(items, "L3_status"   , "0x%016x" , L3_status);
 			AddString(items, "L3_algorithm", "0x%08x"  , L3_algorithm);
-			AddString(items, "L3_mva_response", "0x%5.3f"  , mva_response);
+			AddString(items, "L3_mva_response", "%5.3f"  , mva_response);
 		}
 
 };

@@ -10,6 +10,7 @@
 #include <iomanip>
 #include <algorithm>
 #include <cmath>
+#include <mutex>
 using namespace std;
 
 #include <DAQ/DCODAEventInfo.h>
@@ -125,7 +126,14 @@ jerror_t DBeamCurrent_factory::brun(jana::JEventLoop *loop, int32_t runnumber)
 		b.t_trip_next = t_next - b.t;
 	}
 	
-	jout << "Electron beam current trip map loaded with " << boundaries.size() << " boundaries (" << trip.size() << " trips over " << t_max << " sec)" << endl;
+	// Print message only once per run number
+	static mutex mtx;
+	lock_guard<mutex> lck(mtx);
+	static set<int32_t> runs_loaded;
+	if(runs_loaded.find(runnumber) == runs_loaded.end()){
+		jout << "Electron beam current trip map for run " << runnumber << " loaded with " << boundaries.size() << " boundaries (" << trip.size() << " trips over " << t_max << " sec)" << endl;
+		runs_loaded.insert(runnumber);
+	}
 
 	return NOERROR;
 }

@@ -17,7 +17,7 @@ using namespace std;
 //---------------------------------
 // HDEVIO    (Constructor)
 //---------------------------------
-HDEVIO::HDEVIO(string filename, bool read_map_file):filename(filename)
+HDEVIO::HDEVIO(string filename, bool read_map_file, int verbose):filename(filename),VERBOSE(verbose)
 {
 	// These must be initialized in case we return early
 	// so they aren't deleted in the destructor if they
@@ -1344,12 +1344,19 @@ void HDEVIO::SaveFileMap(string fname)
 void HDEVIO::ReadFileMap(string fname, bool warn_if_not_found)
 {
 	// Open input file
+	if(VERBOSE>4) cout << " Attempting to read EVIO map file \"" << fname << "\" for \"" << filename << "\"" << endl;
 	if(fname=="") {
 		
 		// No map file name given. Form a list of potential ones
 		// in the order they should be checked.
-		string bname = basename((char*)filename.c_str());
-		string dname = dirname((char*)filename.c_str());
+		string dname = ".";
+		string bname = filename;
+		auto pos = filename.find_last_of("/");
+		if(pos != string::npos){
+			dname = filename.substr(0, pos);
+			bname = filename.substr(pos+1, filename.size()-pos);
+		}
+
 		vector<string> fnames;
 		fnames.push_back(filename + ".map");
 		fnames.push_back(dname + "/filemaps/" + bname + ".map");
@@ -1360,7 +1367,12 @@ void HDEVIO::ReadFileMap(string fname, bool warn_if_not_found)
 		
 		// Loop over possible names until we find one that is readable
 		for(string f : fnames){
-			if( access(f.c_str(), R_OK) != 0 ) continue;
+			if(VERBOSE>2) cout << "Checking for EVIO map file: " << f << " ...";
+			if( access(f.c_str(), R_OK) != 0 ) {
+				if(VERBOSE>2) cout << "no" << endl;
+				continue;
+			}
+			if(VERBOSE>2)cout << "yes" << endl;
 			fname = f;
 			break;
 		}		

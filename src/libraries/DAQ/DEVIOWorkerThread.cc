@@ -625,7 +625,19 @@ void DEVIOWorkerThread::ParseControlEvent(uint32_t* &iptr, uint32_t *iend)
 	for(auto pe : current_parsed_events) pe->event_status_bits |= (1<<kSTATUS_CONTROL_EVENT);
 
 	time_t t = (time_t)iptr[2];
-_DBG_<<"Control event type: " << (iptr[1]>>16) << "  " << ctime(&t) <<endl;
+	string tstr = ctime(&t);
+	if(tstr.size()>1) tstr.erase(tstr.size()-1);
+	
+	string type = "Control";
+	switch(iptr[1]>>16){
+		case 0XFFD0: type = "Sync";     break;
+		case 0XFFD1: type = "Prestart"; break;
+		case 0XFFD2: type = "Go";       break;
+		case 0XFFD3: type = "Pause";    break;
+		case 0XFFD4: type = "End";      break;
+	}
+	
+	jout << "Control event: " << type << " - " << tstr << endl;
 
 	iptr = &iptr[(*iptr) + 1];
 }
@@ -1964,7 +1976,7 @@ void DEVIOWorkerThread::LinkAllAssociations(void)
 		if(pe->vDf250PulseIntegral.size()>1) sort(pe->vDf250PulseIntegral.begin(), pe->vDf250PulseIntegral.end(), SortByPulseNumber<Df250PulseIntegral> );
 		if(pe->vDf250PulseTime.size()>1    ) sort(pe->vDf250PulseTime.begin(),     pe->vDf250PulseTime.end(),     SortByPulseNumber<Df250PulseTime>     );
 		if(pe->vDf250PulsePedestal.size()>1) sort(pe->vDf250PulsePedestal.begin(), pe->vDf250PulsePedestal.end(), SortByPulseNumber<Df250PulsePedestal> );
-        if(pe->vDf250WindowRawData.size()>1) sort(pe->vDf250WindowRawData.begin(), pe->vDf250WindowRawData.end(), SortByChannel<Df250WindowRawData>     );
+		if(pe->vDf250WindowRawData.size()>1) sort(pe->vDf250WindowRawData.begin(), pe->vDf250WindowRawData.end(), SortByChannel<Df250WindowRawData>     );
 
 		// fADC125
 		if(pe->vDf125PulseIntegral.size()>1) sort(pe->vDf125PulseIntegral.begin(), pe->vDf125PulseIntegral.end(), SortByPulseNumber<Df125PulseIntegral> );
@@ -1972,7 +1984,7 @@ void DEVIOWorkerThread::LinkAllAssociations(void)
 		if(pe->vDf125FDCPulse.size()>1     ) sort(pe->vDf125FDCPulse.begin(),      pe->vDf125FDCPulse.end(),      SortByChannel<Df125FDCPulse>          );
 		if(pe->vDf125PulseTime.size()>1    ) sort(pe->vDf125PulseTime.begin(),     pe->vDf125PulseTime.end(),     SortByPulseNumber<Df125PulseTime>     );
 		if(pe->vDf125PulsePedestal.size()>1) sort(pe->vDf125PulsePedestal.begin(), pe->vDf125PulsePedestal.end(), SortByPulseNumber<Df125PulsePedestal> );
-        if(pe->vDf125WindowRawData.size()>1) sort(pe->vDf125WindowRawData.begin(), pe->vDf125WindowRawData.end(), SortByChannel<Df125WindowRawData>     );
+		if(pe->vDf125WindowRawData.size()>1) sort(pe->vDf125WindowRawData.begin(), pe->vDf125WindowRawData.end(), SortByChannel<Df125WindowRawData>     );
 
 		// F1TDC
 		if(pe->vDF1TDCHit.size()>1         ) sort(pe->vDF1TDCHit.begin(),          pe->vDF1TDCHit.end(),          SortByModule<DF1TDCHit>               );
