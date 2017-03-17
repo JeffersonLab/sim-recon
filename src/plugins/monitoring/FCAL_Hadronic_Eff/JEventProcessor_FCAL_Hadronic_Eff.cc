@@ -207,8 +207,11 @@ jerror_t JEventProcessor_FCAL_Hadronic_Eff::evnt(jana::JEventLoop* locEventLoop,
 		}
 
 		//Find closest FCAL Shower
-		double locBestDistance = 999.0;
-		const DFCALShower* locFCALShower = locParticleID->Get_ClosestToTrack_FCAL(locTrackTimeBased, locFCALShowers, locBestDistance);
+		const DFCALShower* locFCALShower = nullptr;
+		DFCALShowerMatchParams locClosestMatchParams;
+		double locStartTime = locTrackTimeBased->t0();
+		if(locParticleID->Get_ClosestToTrack(locTrackTimeBased->rt, locFCALShowers, false, locStartTime, locClosestMatchParams))
+			locFCALShower = locClosestMatchParams.dFCALShower;
 
 		//Is match to FCAL shower?
 		const DFCALShowerMatchParams* locFCALShowerMatchParams = locChargedTrackHypothesis->Get_FCALShowerMatchParams();

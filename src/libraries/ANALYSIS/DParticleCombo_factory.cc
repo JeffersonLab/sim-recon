@@ -123,6 +123,8 @@ jerror_t DParticleCombo_factory::evnt(JEventLoop* locEventLoop, uint64_t eventnu
 		{
 			const DParticleCombo* locParticleCombo = locComboIterator->first;
 			const DKinFitChain* locKinFitChain = locComboIterator->second;
+			DKinFitType locKinFitType = locParticleCombo->Get_Reaction()->Get_KinFitType();
+			DVector3 locEventVertex = locParticleCombo->Get_ParticleComboStep(0)->Get_SpacetimeVertex().Vect();
 
 			locParticleCombos_FailedKinFit.erase(locParticleCombo); //kinfit successful, don't copy pointer later
 
@@ -186,7 +188,7 @@ jerror_t DParticleCombo_factory::evnt(JEventLoop* locEventLoop, uint64_t eventnu
 					set<DKinFitParticle*> locTargetParticles = locKinFitResultsVector[loc_i]->Get_OutputKinFitParticles(d_TargetParticle);
 					if(!locTargetParticles.empty())
 					{
-						DKinematicData* locNewKinematicData = Build_KinematicData(locTargetPID, *locTargetParticles.begin());
+						DKinematicData* locNewKinematicData = Build_KinematicData(locTargetPID, *locTargetParticles.begin(), d_P4AndVertexFit, DVector3());
 						locNewParticleComboStep->Set_TargetParticle(locNewKinematicData);
 					}
 					else //not used in kinfit, re-set the original
@@ -205,7 +207,7 @@ jerror_t DParticleCombo_factory::evnt(JEventLoop* locEventLoop, uint64_t eventnu
 						set<DKinFitParticle*> locMissingParticles = locKinFitResultsVector[loc_i]->Get_OutputKinFitParticles(d_MissingParticle);
 						if(!locMissingParticles.empty())
 						{
-							DKinematicData* locNewKinematicData = Build_KinematicData(locPID, *locMissingParticles.begin());
+							DKinematicData* locNewKinematicData = Build_KinematicData(locPID, *locMissingParticles.begin(), locKinFitType, locEventVertex);
 							locNewParticleComboStep->Add_FinalParticle(locNewKinematicData);
 						}
 						else //not used in kinfit: do not create: NULL
@@ -269,12 +271,14 @@ void DParticleCombo_factory::Set_DecayingParticles(const DParticleCombo* locNewP
 		return; //no need to back-set NULL: was set to NULL by default
 	}
 
+	DKinFitType locKinFitType = locOldParticleCombo->Get_Reaction()->Get_KinFitType();
+	DVector3 locEventVertex = locOldParticleCombo->Get_ParticleComboStep(0)->Get_SpacetimeVertex().Vect();
 	Particle_t locPID = PDGtoPType(locKinFitParticle->Get_PID());
-        int locFromStepIndex = locNewParticleComboStep->Get_InitialParticleDecayFromStepIndex();
+	int locFromStepIndex = locNewParticleComboStep->Get_InitialParticleDecayFromStepIndex();
 
-	DKinematicData* locKinematicData_Common = Build_KinematicData(locPID, locKinFitParticle);
+	DKinematicData* locKinematicData_Common = Build_KinematicData(locPID, locKinFitParticle, locKinFitType, locEventVertex);
 	bool locCreate2ndObjectFlag = (IsDetachedVertex(locPID) && (locStepIndex != 0) && (locFromStepIndex >= 0));
-	DKinematicData* locKinematicData_Position = locCreate2ndObjectFlag ? Build_KinematicData(locPID, locKinFitParticle) : locKinematicData_Common;
+	DKinematicData* locKinematicData_Position = locCreate2ndObjectFlag ? Build_KinematicData(locPID, locKinFitParticle, locKinFitType, locEventVertex) : locKinematicData_Common;
 	if(locKinFitParticle->Get_CommonVxParamIndex() >= 0)
 		dKinFitUtils->Propagate_TrackInfoToCommonVertex(locKinematicData_Common, locKinFitParticle, &locKinFitResults->Get_VXi());
 
@@ -450,7 +454,7 @@ void DParticleCombo_factory::Reset_Data(void)
 	dCreatedParticleCombos.clear();
 }
 
-DKinematicData* DParticleCombo_factory::Build_KinematicData(Particle_t locPID, DKinFitParticle* locKinFitParticle)
+DKinematicData* DParticleCombo_factory::Build_KinematicData(Particle_t locPID, DKinFitParticle* locKinFitParticle, DKinFitType locKinFitType, DVector3 locEventVertex)
 {
 	DKinematicData* locKinematicData = Get_KinematicDataResource();
 	locKinematicData->setPID(locPID);
@@ -460,7 +464,10 @@ DKinematicData* DParticleCombo_factory::Build_KinematicData(Particle_t locPID, D
 	else
 		locKinematicData->setMass(locKinFitParticle->Get_Mass());
 	locKinematicData->setMomentum(DVector3(locKinFitParticle->Get_Momentum().X(),locKinFitParticle->Get_Momentum().Y(),locKinFitParticle->Get_Momentum().Z()));
-	locKinematicData->setPosition(DVector3(locKinFitParticle->Get_Position().X(),locKinFitParticle->Get_Position().Y(),locKinFitParticle->Get_Position().Z()));
+	if((locKinFitType == d_P4Fit) || (locKinFitType == d_NoFit))
+		locKinematicData->setPosition(locEventVertex);
+	else
+		locKinematicData->setPosition(DVector3(locKinFitParticle->Get_Position().X(),locKinFitParticle->Get_Position().Y(),locKinFitParticle->Get_Position().Z()));
 	locKinematicData->setTime(locKinFitParticle->Get_Time());
 	if(locKinFitParticle->Get_CovarianceMatrix() != NULL)
 		locKinematicData->setErrorMatrix(locKinFitParticle->Get_CovarianceMatrix());

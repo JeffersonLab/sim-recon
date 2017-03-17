@@ -141,7 +141,7 @@ class DTranslationTable:public jana::JObject{
 			NUM_DETECTOR_TYPES
 		};
 
-		string DetectorName(Detector_t type) const {
+		static string DetectorName(Detector_t type) {
 			switch(type){
 				case BCAL: return "BCAL";
 				case CDC: return "CDC";
@@ -448,7 +448,7 @@ class DTranslationTable:public jana::JObject{
 		void AddToCallStack(JEventLoop *loop, string caller, string callee) const;
 
 		void ReadOptionalROCidTranslation(void);
-		void SetSystemsToParse(string systems, JEventSource *eventsource);
+		static void SetSystemsToParse(string systems, JEventSource *eventsource);
 		void SetSystemsToParse(JEventSource *eventsource){SetSystemsToParse(SYSTEMS_TO_PARSE, eventsource);}
 		void ReadTranslationTable(JCalibration *jcalib=NULL);
 		

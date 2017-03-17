@@ -138,9 +138,12 @@ jerror_t DTOFHit_factory::brun(jana::JEventLoop *eventLoop, int32_t runnumber)
     if(eventLoop->GetCalib("TOF/timewalk_parms", timewalk_parameters))
       jout << "Error loading /TOF/timewalk_parms !" << endl;
     
-    if(eventLoop->GetCalib("TOF/timewalk_parms_AMP", timewalk_parameters_AMP))
-      jout << "Error loading /TOF/timewalk_parms_AMP !" << endl;
-    
+
+    if (USE_AMP_4WALKCORR){
+      if(eventLoop->GetCalib("TOF/timewalk_parms_AMP", timewalk_parameters_AMP))
+	jout << "Error loading /TOF/timewalk_parms_AMP !" << endl;
+    }
+
     FillCalibTable(adc_pedestals, raw_adc_pedestals, tofGeom);
     FillCalibTable(adc_gains, raw_adc_gains, tofGeom);
     FillCalibTable(adc_time_offsets, raw_adc_offsets, tofGeom);

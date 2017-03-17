@@ -198,6 +198,9 @@ jerror_t JEventProcessor_CDC_Efficiency::evnt(JEventLoop *loop, uint64_t eventnu
 	loop->GetSingle(locTrigger); 
 	if(locTrigger->Get_L1FrontPanelTriggerBits() != 0)
 	  return NOERROR;
+	if (!locTrigger->Get_IsPhysicsEvent()){ // do not look at PS triggers
+	  return NOERROR;
+	}
 
 	//use CDC track hits: have drift time, can cut
     vector< const DCDCTrackHit *> locCDCTrackHits;

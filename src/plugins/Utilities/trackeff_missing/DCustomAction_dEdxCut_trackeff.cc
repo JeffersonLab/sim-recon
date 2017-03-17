@@ -19,11 +19,11 @@ void DCustomAction_dEdxCut_trackeff::Initialize(JEventLoop* locEventLoop)
 	{
 		string locFuncName = "df_dEdxCut_SelectHeavy"; //e.g. proton
 		dFunc_dEdxCut_SelectHeavy = new TF1(locFuncName.c_str(), "exp(-1.0*[0]*x + [1]) + [2]", 0.0, 12.0);
-		dFunc_dEdxCut_SelectHeavy->SetParameters(3.93024, 3.0, 1.0);
+		dFunc_dEdxCut_SelectHeavy->SetParameters(2.0, 2.0, 1.0);
 
 		locFuncName = "df_dEdxCut_SelectLight"; //e.g. pions, kaons
 		dFunc_dEdxCut_SelectLight = new TF1(locFuncName.c_str(), "exp(-1.0*[0]*x + [1]) + [2]", 0.0, 12.0);
-		dFunc_dEdxCut_SelectLight->SetParameters(6.0, 2.80149, 2.55);
+		dFunc_dEdxCut_SelectLight->SetParameters(2.0, 0.8, 3.0);
 	}
 	japp->RootUnLock(); //RELEASE ROOT LOCK!!
 }

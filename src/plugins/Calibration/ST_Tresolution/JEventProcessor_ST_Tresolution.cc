@@ -216,15 +216,8 @@ jerror_t JEventProcessor_ST_Tresolution::evnt(JEventLoop *loop, uint64_t eventnu
       // If st_match = true, there is a match between this track and the ST
       if (!st_match) continue;
 
-      DVector3 IntersectionPoint;
-      DVector3 IntersectionDir;
-      bool sc_match_pid = dParticleID->MatchToSC(timeBasedTrack, 
-                                                 timeBasedTrack->rt, 
-                                                 st_params[0].dSCHit, 
-                                                 st_params[0].dSCHit->t, 
-                                                 locSCHitMatchParams, 
-                                                 true, NULL,
-                                                 &IntersectionPoint, &IntersectionDir); 
+      DVector3 IntersectionPoint, IntersectionMomentum;
+      bool sc_match_pid = dParticleID->Cut_MatchDistance(timeBasedTrack->rt, st_params[0].dSCHit, st_params[0].dSCHit->t, locSCHitMatchParams, true, &IntersectionPoint, &IntersectionMomentum);
       if(!sc_match_pid) continue; 
       // Cut on the number of particle votes to find the best RF time
       if (thisRFBunch->dNumParticleVotes < 2) continue;

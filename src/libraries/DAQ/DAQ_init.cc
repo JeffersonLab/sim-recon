@@ -3,6 +3,7 @@
 #include <JANA/JEventLoop.h>
 using namespace jana;
 
+#include "DBeamCurrent_factory.h"
 #include "Df250Config.h"
 #include "Df250PulseIntegral.h"
 #include "Df250StreamingRawData.h"
@@ -47,6 +48,7 @@ using namespace jana;
 jerror_t DAQ_init(JEventLoop *loop)
 {
 	/// Create and register DTranslationTable factory
+	loop->AddFactory(new DBeamCurrent_factory());
 	loop->AddFactory(new JFactory<Df250Config>());
 	loop->AddFactory(new JFactory<Df250PulseIntegral>());
 	loop->AddFactory(new JFactory<Df250StreamingRawData>());

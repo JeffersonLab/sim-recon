@@ -1738,6 +1738,7 @@ bool DGeometry::GetStartCounterGeom(vector<vector<DVector3> >&pos,
 	dir.SetMag(1.);
 	dirvec.push_back(dir);		
       }
+      posvec.push_back(DVector3(ray.X(),ray.Y(),ray.Z()+z0)); //SAVE THE ENDPOINT OF THE LAST PLANE
       pos.push_back(posvec);
       norm.push_back(dirvec);
 		  

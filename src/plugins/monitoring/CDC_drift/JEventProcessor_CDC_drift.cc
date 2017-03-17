@@ -226,6 +226,9 @@ jerror_t JEventProcessor_CDC_drift::evnt(JEventLoop *eventLoop, uint64_t eventnu
 	eventLoop->GetSingle(locTrigger); 
 	if(locTrigger->Get_L1FrontPanelTriggerBits() != 0)
 	  return NOERROR;
+	if (!locTrigger->Get_IsPhysicsEvent()){ // do not look at PS triggers
+	  return NOERROR;
+	}
 	
 	// get raw data for cdc
 	vector<const DCDCDigiHit*> digihits;

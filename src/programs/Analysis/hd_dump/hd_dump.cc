@@ -55,7 +55,7 @@ int main(int narg, char *argv[])
 	// turn on sparsified reading unless user specifically requests
 	// that we don't.
 	if(toprint.size()==1 && ALLOW_SPARSIFIED_EVIO){
-		if( (toprint[0]=="DEPICSvalue") || (toprint[0]=="EPICSvalue")){
+		if( toprint.find("EPICSvalue") != toprint.end() ){
 			cout << endl;
 			cout << "-- Only DEPICSvalue objects requested" << endl;
 			cout << "-- * Enabling EVIO file mapping and sparse readout" << endl;
@@ -132,19 +132,23 @@ void ParseCommandLineArguments(int &narg, char *argv[])
 				Usage();
 				break;
 			case 'D':
-				toprint.push_back(&argv[i][2]);
+				toprint.insert(&argv[i][2]);
 				break;
 			case 'p':
-				PAUSE_BETWEEN_EVENTS = 0;
+				PAUSE_BETWEEN_EVENTS = false;
 				break;
 			case 's':
-				SKIP_BORING_EVENTS = 1;
+				SKIP_BORING_EVENTS = true;
 				break;
 			case 'A':
-				PRINT_ALL = 1;
+				PRINT_ALL = true;
+				break;
+			case 'c':
+				PRINT_CORE = true;
+				PRINT_SUMMARY_HEADER = true;
 				break;
 			case 'L':
-				LIST_FACTORIES = 1;
+				LIST_FACTORIES = true;
 				break;
 			case 'a':
 				LIST_ASSOCIATED_OBJECTS = true;
@@ -152,11 +156,12 @@ void ParseCommandLineArguments(int &narg, char *argv[])
 			case 'S':
 				SPARSIFY_SUMMARY = false;
 				break;
-			case 't':
-				ACTIVATE_TAGGED_FOR_SUMMARY = true;
-				break;
 			case 'f':
-				PRINT_SUMMARY_HEADER = false;
+				cout << "WARNING: -f option is deprecated as it is now the default" << endl;
+				break;
+			case 'V':
+				PRINT_SUMMARY_ALL    = true;
+				PRINT_SUMMARY_HEADER = true;
 				break;
 			case 'b':
 				PRINT_STATUS_BITS = true;
@@ -165,6 +170,11 @@ void ParseCommandLineArguments(int &narg, char *argv[])
 				ALLOW_SPARSIFIED_EVIO = false;
 				break;
 		}
+	}
+	
+	if(toprint.empty() && !PRINT_ALL ){
+		PRINT_CORE = true;
+		PRINT_SUMMARY_HEADER = true;
 	}
 }
 
@@ -191,9 +201,9 @@ void Usage(void)
 	cout<<"   -s        Skip events which don't have any of the specified data types"<<endl;
 	cout<<"   -a        List types and number of associated objects"<<endl;
 	cout<<"   -S        Don't supress printing of factories with no objects in summary"<<endl;
-	cout<<"   -t        Activate factories with non-empty tags when printing summary"<<endl;
-	cout<<"   -f        Skip printing summary header lisiting all factories"<<endl;
-	cout<<"             (This disables auto-activating every single factory)"<<endl;
+	cout<<"   -c        Print summary header lisiting for select factories."<<endl;
+	cout<<"   -V        Print summary header lisiting for all factories."<<endl;
+	cout<<"             (warning: this activates every single factory!)"<<endl;
 	cout<<"   -b        Print event status bits"<<endl;
 	cout<<"   -e        Don't allow automatic EVIO sparse readout for EPICS data"<<endl;
 	cout<<endl;

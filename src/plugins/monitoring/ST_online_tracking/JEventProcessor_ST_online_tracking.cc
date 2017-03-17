@@ -207,22 +207,16 @@ jerror_t JEventProcessor_ST_online_tracking::evnt(JEventLoop *eventLoop, uint64_
       // Declare a vector which quantizes the point of the intersection of a charged particle 
       //   with a plane in the middle of the scintillator 
       DVector3 IntersectionPoint;
-      // Declare a vector which quantizes the unit vector of the charged particle track traversing
+      // Declare a vector which quantizes the momentum of the charged particle track traversing
       //   through the scintillator with its origin at the intersection point
-      DVector3 IntersectionDir;
+      DVector3 IntersectionMomentum;
       // Grab the paramteres associated to a track matched to the ST
       vector<DSCHitMatchParams> st_params;
       bool st_match = locDetectorMatches->Get_SCMatchParams(timeBasedTrack, st_params); 
       // If st_match = true, there is a match between this track and the ST
       if (!st_match) continue;
 
-      bool st_match_pid = dParticleID->MatchToSC(timeBasedTrack, 
-						 timeBasedTrack->rt, 
-						 st_params[0].dSCHit, 
-						 st_params[0].dSCHit->t, 
-						 locSCHitMatchParams, 
-						 true, NULL,
-						 &IntersectionPoint, &IntersectionDir);      
+      bool st_match_pid = dParticleID->Cut_MatchDistance(timeBasedTrack->rt, st_params[0].dSCHit, st_params[0].dSCHit->t, locSCHitMatchParams, true, &IntersectionPoint, &IntersectionMomentum);
       if(!st_match_pid) continue;  
 
       DVector3 momentum_vec;

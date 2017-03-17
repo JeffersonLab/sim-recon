@@ -774,9 +774,20 @@ def AddROOT(env):
 	if "ROOT_CFLAGS" not in AddROOT.__dict__:
 		AddROOT.ROOT_CFLAGS    = subprocess.Popen(["%s/bin/root-config" % rootsys, "--cflags"], stdout=subprocess.PIPE).communicate()[0]
 		AddROOT.ROOT_LINKFLAGS = subprocess.Popen(["%s/bin/root-config" % rootsys, "--glibs" ], stdout=subprocess.PIPE).communicate()[0]
+		has_tmva = subprocess.Popen(["%s/bin/root-config" % rootsys, "--has-tmva" ], stdout=subprocess.PIPE).communicate()[0]
+		if 'yes' in has_tmva:
+			AddROOT.ROOT_CFLAGS    += ' -DHAVE_TMVA=1'
+			AddROOT.ROOT_LINKFLAGS += ' -lTMVA'
 
 	AddCompileFlags(env, AddROOT.ROOT_CFLAGS)
 	AddLinkFlags(env, AddROOT.ROOT_LINKFLAGS)
+
+	if env['OSNAME'].startswith("Darwin_macosx"):
+		if "llvm" in env['OSNAME']:
+			AddLinkFlags(env, '-rpath '+rootsys+'/lib')
+		else:
+			AddLinkFlags(env, '-Wl,-rpath,'+rootsys+'/lib')
+
 	env.AppendUnique(LIBS = "Geom")
 	if os.getenv('LD_LIBRARY_PATH'  ) != None : env.Append(LD_LIBRARY_PATH   = os.environ['LD_LIBRARY_PATH'  ])
 	if os.getenv('DYLD_LIBRARY_PATH') != None : env.Append(DYLD_LIBRARY_PATH = os.environ['DYLD_LIBRARY_PATH'])
@@ -900,6 +911,7 @@ def AddROOTSpyMacros(env):
 		if(int(env['SHOWBUILD'])>1) : print "       ROOTSpy Macro for %s" % f
 
 	os.chdir(curpath)
+
 
 ##################################
 # SWIG
