@@ -266,7 +266,7 @@ def plugin(env, pluginname=''):
 	# Strip out libs that don't need to be linked in plugin
 	if 'OPTIONAL_PLUGIN_LIBS' in env.Dictionary().keys() :
 		REDUCED_LIBS = [s for s in env['LIBS'] if s not in env['OPTIONAL_PLUGIN_LIBS'] ]
-		#env.Replace(LIBS=REDUCED_LIBS)
+		env.Replace(LIBS=REDUCED_LIBS)
 
 	# Build static library from all source
 	myobjs = env.SharedObject(sources)
