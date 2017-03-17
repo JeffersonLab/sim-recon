@@ -117,6 +117,7 @@ void FCALSmearer::SmearEvent(hddm_s::HDDM *record)
 
 	 int myrow=iter->getRow();
 	 int mycol=iter->getColumn();
+	 //printf("col %d row %d\n",mycol,myrow);
          if (!fcalGeom->isBlockActive(myrow, mycol))
             continue;
             
@@ -129,15 +130,19 @@ void FCALSmearer::SmearEvent(hddm_s::HDDM *record)
 	 */
 
          // Get gain constant per block
-		 int channelnum = fcalGeom->channel(myrow, mycol); 
+	 //	 int channelnum = fcalGeom->channel(myrow, mycol); 
 		 //double FCAL_gain = fcal_config->FCAL_GAINS.at(channelnum);
 	 double FCAL_gain = 1.;
 
          // Smear the energy and timing of the hit
          double sigma = fcal_config->FCAL_PHOT_STAT_COEF/sqrt(titer->getE());
               
+	 if (mycol>=4000 || myrow>=4000){
+	   sigma=0.025/sqrt(titer->getE());
+	 }
+
          // Apply constant scale factor to MC eneregy. 06/22/2016 A. Subedi
-         double E = fcal_config->FCAL_MC_ESCALE * titer->getE() * (1.0 + gDRandom.SampleGaussian(sigma)); 
+         double E = ((mycol>=4000 || myrow>=4000)?1.:fcal_config->FCAL_MC_ESCALE )* titer->getE() * (1.0 + gDRandom.SampleGaussian(sigma)); 
          
          
          // Smear the time by 200 ps (fixed for now) 7/2/2009 DL

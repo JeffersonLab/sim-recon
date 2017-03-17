@@ -210,6 +210,23 @@ jerror_t DFCALShower_factory::evnt(JEventLoop *eventLoop, uint64_t eventnumber)
 	  }
       shower->AddAssociatedObject(cluster);
 
+      if (index==1){
+	double sigx=0.1016/sqrt(Ecorrected)+0.2219;
+	shower->ExyztCovariance(1,1)=sigx*sigx;
+	shower->ExyztCovariance(2,2)=sigx*sigx;
+	shower->ExyztCovariance(0,0)=Ecorrected*Ecorrected*(0.01586/Ecorrected
+						    +0.0002342/(Ecorrected*Ecorrected)
+						    +1.695e-6);
+	for (unsigned int i=0;i<5;i++){
+	  for(unsigned int j=0;j<5;j++){
+	    if (i!=j) shower->ExyztCovariance(i,j)=0.;
+	  }
+	  
+	}
+	//shower->ExyztCovariance.Print();
+      }
+	
+
       _data.push_back(shower);
     }
   }
@@ -249,17 +266,31 @@ void DFCALShower_factory::GetCorrectedEnergyAndPosition(const DFCALCluster* clus
   
   // 06/02/2016 Shower Non-linearity Correction by Adesh. 
   
-  if ( Eclust <= Ecutoff ) { 
+  if (index==0){
+    if ( Eclust <= Ecutoff ) { 
+      
+      Egamma = Eclust/(A*Eclust + B); // Linear part
+      
+    }
+    
+    if ( Eclust > Ecutoff ) { 
   
-  Egamma = Eclust/(A*Eclust + B); // Linear part
-  
+      Egamma = Eclust/(C - exp(-D*Eclust+ E)); // Non-linear part
+      
+    }
   }
-  
-  if ( Eclust > Ecutoff ) { 
-  
-  Egamma = Eclust/(C - exp(-D*Eclust+ E)); // Non-linear part
-  
+  else{
+    A=0.01575;
+    B=0.768557;
+    if (Eclust<2.)
+      Egamma = Eclust/(A*Eclust + B); // Linear part
+    else{
+      C=A*2.+B;
+      Egamma = Eclust/(C - 0.0485129*(exp(-(Eclust-2.))-1.)); // Non-linear part
+    } 
+    //Egamma = Eclust;
   }
+
   
   // End Correction  
   
