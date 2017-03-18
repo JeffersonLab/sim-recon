@@ -1,5 +1,6 @@
 // ROOT fitting macro for the PSC time-walk corrections
 // Created 8/18/2015
+// Updated 9/26/2016
 // Alex Barnes
 // University of Connecticut
 //
@@ -10,9 +11,7 @@
 //	   or global fits, respectively
 //
 // Example usage:
-// 	> root -l
-// 	root> .L tw_fit-rf.C
-// 	root> tw_corr()
+// 	> root -l -b -q 'tw_corr.C("hd_root.root")'
 //
 // Functions:
 //    tw_plot(): This function takes the original root file branches and fills
@@ -62,7 +61,7 @@ const Int_t PROF_MAX = 1000;		// maximum TProfile axis value
 // Declare variables
 Double_t dtMeanL[NMODULES] = {0};	// used to center the time dist. for the left modules
 Double_t dtMeanR[NMODULES] = {0};	// used to center the time dist. for the right modules
-Double_t mpv[2][NMODULES] = { {0},{0} };	// used to find the most probable value for the pulse peaks
+Double_t mpv[2][NMODULES] = { {0},{0} };// used to find the most probable value for the pulse peaks
 
 // Individual time walk fit parameters
 Double_t c0[2][NMODULES] = { {0},{0} };	// constant paramter for each module
@@ -77,13 +76,19 @@ TH1D *h_dt_r_corr[NMODULES];		// timing dist for each right module against the R
 TH1D *h_pp_l[NMODULES];			// pulse peak distribution for the left modules
 TH1D *h_pp_r[NMODULES];			// pulse peak distribution for the right modules
 
+// Declare calibration check histograms
+TH1D* h_means_b;			// means of each counter before corrections
+TH1D* h_sigmas_b;			// sigmas of each counter before corrections
+TH1D* h_means_a;			// means of each counter after corrections
+TH1D* h_sigmas_a;			// sigmas of each counter after corrections
+
 // Declare 2D histograms
 TH2F *h_dt_vs_pp_l[NMODULES];		// dt vs pp for each left module
 TH2F *h_dt_vs_pp_r[NMODULES];		// dt vs pp for each right module
 TH2F *h_dt_vs_pp_l_corr[NMODULES];	// dt vs pp for each left module after corrections
 TH2F *h_dt_vs_pp_r_corr[NMODULES];	// dt vs pp for each right module after corrections
 
-//TGraphErrors *g_dt_vs_pp;		
+//TProfile *g_dt_vs_pp;		
 TProfile *g_dt_vs_pp_l[NMODULES];	// dt vs pp plot converted into TProfile
 TProfile *g_dt_vs_pp_r[NMODULES];	// dt vs pp plot converted into TProfile
 
@@ -97,7 +102,6 @@ Double_t fitf(Double_t *x, Double_t *par) {
 // Individual tw_fit()
 void tw_fit(TProfile *h_tw, int arm, int module) {
 
-   // fitf defined at the bottom of the file
    TF1 *ftw = new TF1("ftw",fitf,100.,1000.,3);
 #if DEBUG
    std::cout << "Defined time-walk fit function" << std::endl;
@@ -192,6 +196,38 @@ void tw_plot(char const *inputFile) {
       g_dt_vs_pp_r[i]->SetMinimum(DT_MIN);
       g_dt_vs_pp_r[i]->SetMaximum(DT_MAX);
    }
+   h_means_b = new TH1D("means_dt_b",
+                        "Mean time difference for each PSC counter before corrections;\
+                         Counter (1-8 left, 9-16 right);\
+                         #Deltat (PSC - RF) [ns]",
+                        2*NMODULES,1.0,2*NMODULES+1.0);
+   h_means_b->SetMinimum(-1.0);
+   h_means_b->SetMaximum(1.0);
+   h_means_b->GetYaxis()->SetTitleOffset(1.2);
+   h_sigmas_b = new TH1D("sigmas_dt_b",
+                         "Sigmas for time difference for each PSC counter before corrections;\
+                          Counter (1-8 left, 9-16);\
+                          Sigma [ns]",
+                         2*NMODULES,1.0,2*NMODULES+1.0);
+   h_sigmas_b->SetMinimum(0.08);
+   h_sigmas_b->SetMaximum(0.22);
+   h_sigmas_b->GetYaxis()->SetTitleOffset(1.2);
+   h_means_a = new TH1D("means_dt_a",
+                        "Mean time difference for each PSC counter after corrections;\
+                         Counter (1-8 left, 9-16 right);\
+                         #Deltat (PSC - RF) [ns]",
+                        2*NMODULES,1.0,2*NMODULES+1.0);
+   h_means_a->SetMinimum(-1.0);
+   h_means_a->SetMaximum(1.0);
+   h_means_a->GetYaxis()->SetTitleOffset(1.2);
+   h_sigmas_a = new TH1D("sigmas_dt_a",
+                         "Sigmas for time difference for each PSC counter after corrections;\
+                          Counter (1-8 left, 9-16);\
+                          Sigma [ns]",
+                         2*NMODULES,1.0,2*NMODULES+1.0);
+   h_sigmas_a->SetMinimum(0.08);
+   h_sigmas_a->SetMaximum(0.22);
+   h_sigmas_a->GetYaxis()->SetTitleOffset(1.2);
 
 #if DEBUG
    std::cout << "Fitting initial timing distributions" << std::endl;
@@ -206,6 +242,10 @@ void tw_plot(char const *inputFile) {
       // fit a second time using the mean and sigma of the initial fit
       TFitResultPtr resultpL = h_dt_l[i]->Fit("gaus","sq","",meanL-2*sigmaL,meanL+2*sigmaL);
       dtMeanL[i] = resultpL->Parameter(1);
+      h_means_b->Fill(i+1,dtMeanL[i]);
+      h_means_b->SetBinError(i+1,resultpL->ParError(1));
+      h_sigmas_b->Fill(i+1,resultpL->Parameter(2));
+      h_sigmas_b->SetBinError(i+1,resultpL->ParError(2));
 #if OUTPUT 
       std::cout << "Sigma for left module " << i+1 << " is " << 1000*resultpL->Parameter(2) << std::endl;
 #endif
@@ -221,12 +261,19 @@ void tw_plot(char const *inputFile) {
       // fit a second time using the mean and sigma of the initial fit
       TFitResultPtr resultpR = h_dt_r[i]->Fit("gaus","sq","",meanR-2*sigmaR,meanR+2*sigmaR);
       dtMeanR[i] = resultpR->Parameter(1);
+      h_means_b->Fill(i+NMODULES+1,dtMeanR[i]);
+      h_means_b->SetBinError(i+NMODULES+1,resultpR->ParError(1));
+      h_sigmas_b->Fill(i+NMODULES+1,resultpR->Parameter(2));
+      h_sigmas_b->SetBinError(i+NMODULES+1,resultpR->ParError(2));
 #if OUTPUT
       std::cout << "Sigma for right module " << i+1 << " is " << 1000*resultpR->Parameter(2) << std::endl;
 #endif
 
       h_dt_r[i]->Reset();
    }
+   outfile->cd();
+   h_means_b->Write();
+   h_sigmas_b->Write();
 
 #if DEBUG
    std::cout << "Making TProfile" << std::endl;
@@ -296,6 +343,8 @@ void tw_plot(char const *inputFile) {
 
       outfile->cd("dt_vs_pp_profile/dt_vs_pp_profile_L");
       g_dt_vs_pp_l[i]->Write();
+
+      outfile->cd();
    }
 
    for (int j = 0; j < NMODULES; ++j) {
@@ -345,8 +394,7 @@ void tw_corr(char const *inputFile) {
             if (content_l > 0 && t_shift_l > 2)
                t_shift_l -= 4;
             else if (content_l > 0 && t_shift_l < -2)
-                //t_shift_r += 4;
-                t_shift_l += 4;   // CHECK THAT THIS FIX IS CORRECT - sdobbs 8/9/2016
+                t_shift_l += 4;
             t_shift_l -= c1[0][i]*pow((j/THRESHOLD),c2[0][i]) - c1[0][i]*pow(mpv[0][i]/THRESHOLD,c2[0][i]);
             h_dt_vs_pp_l_corr[i]->Fill(j,t_shift_l,content_l);
 
@@ -385,23 +433,86 @@ void tw_corr(char const *inputFile) {
       // left module
       h_dt_l_corr[i] = h_dt_vs_pp_l_corr[i]->ProjectionY();
       TFitResultPtr ptrL = h_dt_l_corr[i]->Fit("gaus","sq");
+      double mean = ptrL->Parameter(1);
+      double sigma = ptrL->Parameter(2);
+      ptrL = h_dt_l_corr[i]->Fit("gaus","sq","",mean-2*sigma,mean+2*sigma);
+      mean = ptrL->Parameter(1);
+      sigma = ptrL->Parameter(2);
+      h_means_a->Fill(i+1,mean);
+      h_means_a->SetBinError(i+1,ptrL->ParError(1));
+      h_sigmas_a->Fill(i+1,sigma);
+      h_sigmas_a->SetBinError(i+1,ptrL->ParError(2));
 #if OUTPUT
-      std::cout << "Sigma for left module " << i+1 << ": " << (ptrL->Parameter(2))*1000 << std::endl;
+      std::cout << "Sigma for left module " << i+1 << ": " << sigma*1000 << std::endl;
 #endif
-      avgL += (ptrL->Parameter(2))*1000;
-      flogsig << "0\t" << i+1 << "\t" << (ptrL->Parameter(2))*1000 << std::endl;
+      avgL += sigma*1000;
+      avg += sigma*1000;
+      flogsig << "0\t" << i+1 << "\t" << sigma*1000 << std::endl;
 
       // right module
       h_dt_r_corr[i] = h_dt_vs_pp_r_corr[i]->ProjectionY();
       TFitResultPtr ptrR = h_dt_r_corr[i]->Fit("gaus","sq");
+      mean = ptrR->Parameter(1);
+      sigma = ptrR->Parameter(2);
+      ptrR = h_dt_r_corr[i]->Fit("gaus","sq","",mean-2*sigma,mean+2*sigma);
+      mean = ptrR->Parameter(1);
+      sigma = ptrR->Parameter(2);
+      h_means_a->Fill(i+NMODULES+1,mean);
+      h_means_a->SetBinError(i+NMODULES+1,ptrR->ParError(1));
+      h_sigmas_a->Fill(i+NMODULES+1,sigma);
+      h_sigmas_a->SetBinError(i+NMODULES+1,ptrR->ParError(2));
 #if OUTPUT
-      std::cout << "Sigma for right module " << i+1 << ": " << (ptrR->Parameter(2))*1000 << std::endl;
+      std::cout << "Sigma for right module " << i+1 << ": " << sigma*1000 << std::endl;
 #endif
-      avgR += (ptrR->Parameter(2))*1000;
-      flogsig << "1\t" << i+1 << "\t" << (ptrR->Parameter(2))*1000 << std::endl;
-
-      avg += (ptrL->Parameter(2) + ptrR->Parameter(2))*1000;
+      avgR += sigma*1000;
+      avg += sigma*1000;
+      flogsig << "1\t" << i+1 << "\t" << sigma*1000 << std::endl;
    }
+   outfile->cd();
+   h_means_a->Write();
+   h_sigmas_a->Write();
+
+   // Make canvas
+   TCanvas *c = NULL;
+      if (TVirtualPad::Pad() == NULL)
+         c = new TCanvas("PSC_TW","PSC_TW",1200,600);
+      else
+         c = gPad->GetCanvas();
+
+   TCanvas *c = (TCanvas*)gROOT->FindObject("c");
+   if (c == 0) {
+      c = new TCanvas("c","c",0,20,1200,800);
+   }
+   c->Clear();
+   c->Divide(2,2);
+   gStyle->SetOptStat(0);
+
+   c->cd(1);
+   TPad* pad = (TPad*)c->GetPad(1);
+   pad->SetLeftMargin(0.15);
+   if (h_means_b != NULL)
+      h_means_b->Draw("E");
+
+   c->cd(2);
+   pad = (TPad*)c->GetPad(2);
+   pad->SetLeftMargin(0.15);
+   if (h_means_a != NULL)
+      h_means_a->Draw("E");
+
+   c->cd(3);
+   pad = (TPad*)c->GetPad(3);
+   pad->SetLeftMargin(0.15);
+   if (h_sigmas_b != NULL)
+      h_sigmas_b->Draw("E");
+
+   c->cd(4);
+   pad = (TPad*)c->GetPad(4);
+   pad->SetLeftMargin(0.15);
+   if (h_sigmas_a != NULL)
+      h_sigmas_a->Draw("E");
+
+   c->Print("CalibCheck.pdf","pdf");
+   
    avgL /= 8;
    avgR /= 8;
    avg  /= 16;
