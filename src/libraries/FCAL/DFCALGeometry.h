@@ -19,10 +19,13 @@ class DFCALGeometry : public JObject {
 
 #define kBlocksWide 59
 #define kBlocksTall 59
+#define kInnerBlocksWide 51
+#define kInnerBlocksTall 51
 #define kMaxChannels kBlocksWide * kBlocksTall * 2
 // Do not forget to adjust below formula if number of blocks chage in any direction:
 //   this is now used to convert from row/col to coordiantes y/x and back - MK
-#define kMidBlock (kBlocksWide-1)/2 			
+#define kMidBlock (kBlocksWide-1)/2
+#define kInnerMidBlock (kInnerBlocksWide-1)/2 			
 #define kBeamHoleSize 3
 
 public:
@@ -38,7 +41,7 @@ public:
   ~DFCALGeometry(){}
   
   static double blockSize(int calor)  
-  { if (calor==1) return 2.05*k_cm;
+  { if (calor==1) return 2.075*k_cm;
     return 4*k_cm; }
   static double radius()  { return 1.2*k_m; }
   static double blockLength(int calor)  {

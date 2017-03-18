@@ -23,37 +23,63 @@ DFCALGeometry::DFCALGeometry()
   // inflate the innner radius by 1% to for "safe" comparison
   // innerRadius *= 1.01;
   //double innerRadius=5.7;
-  
-  for (int calor=0;calor<2;calor++){
-    for( int row = 0; row < kBlocksTall; row++ ){
-      for( int col = 0; col < kBlocksWide; col++ ){
-
-	// transform to beam axis
-	m_positionOnFace[row][col][calor] = 
-	  DVector2(  ( col - kMidBlock ) * blockSize(calor),
-		     ( row - kMidBlock ) * blockSize(calor) );
-	// Carve out a hole for the insert
-	float x=m_positionOnFace[row][col][calor].X();
-	float y=m_positionOnFace[row][col][calor].Y();
-	if (calor==1 && fabs(x)<6.0 && fabs(y)<6.0) continue;
-	if (calor==0 && fabs(x)<61.0 && fabs(y)<61.0) continue;
+  int calor=0;
+  for( int row = 0; row < kBlocksTall; row++ ){
+    for( int col = 0; col < kBlocksWide; col++ ){
+      // transform to beam axis
+      m_positionOnFace[row][col][calor] = 
+	DVector2(  ( col - kMidBlock ) * blockSize(calor),
+		   ( row - kMidBlock ) * blockSize(calor) );
+      float x=m_positionOnFace[row][col][calor].X();
+      float y=m_positionOnFace[row][col][calor].Y();
+      if (fabs(x)<53.0 && fabs(y)<53.0) continue;
 	
-	double thisRadius = m_positionOnFace[row][col][calor].Mod();
+      double thisRadius = m_positionOnFace[row][col][calor].Mod();
+      
+      if(thisRadius < radius()){
+	m_activeBlock[row][col][calor] = true;
+	
+	// build the "channel map"
+	m_channelNumber[row][col][calor] = m_numActiveBlocks;
+	m_row[m_numActiveBlocks] = ((calor==1)?4000:0)+row;
+	m_column[m_numActiveBlocks] =((calor==1)?4000:0)+col;
+	
+	m_numActiveBlocks++;
+      }
+      else{
+	
+	m_activeBlock[row][col][calor] = false;
+      }
+    }
+  }
+  calor=1;
+  for( int row = 0; row < kInnerBlocksTall; row++ ){
+    for( int col = 0; col < kInnerBlocksWide; col++ ){
+      
+      // transform to beam axis
+      m_positionOnFace[row][col][calor] = 
+	DVector2(  ( col - kInnerMidBlock ) * blockSize(calor),
+		   ( row - kInnerMidBlock ) * blockSize(calor) );
+      // Carve out a hole for the insert
+      float x=m_positionOnFace[row][col][calor].X();
+      float y=m_positionOnFace[row][col][calor].Y();
+      if (fabs(x)<5.0 && fabs(y)<5.0) continue;
+	
+      double thisRadius = m_positionOnFace[row][col][calor].Mod();
 
-	if(thisRadius < radius()){
-	  m_activeBlock[row][col][calor] = true;
-				
-	  // build the "channel map"
-	  m_channelNumber[row][col][calor] = m_numActiveBlocks;
-	  m_row[m_numActiveBlocks] = ((calor==1)?4000:0)+row;
-	  m_column[m_numActiveBlocks] =((calor==1)?4000:0)+col;
+      if(thisRadius < radius()){
+	m_activeBlock[row][col][calor] = true;
+	
+	// build the "channel map"
+	m_channelNumber[row][col][calor] = m_numActiveBlocks;
+	m_row[m_numActiveBlocks] = ((calor==1)?4000:0)+row;
+	m_column[m_numActiveBlocks] =((calor==1)?4000:0)+col;
 
-	  m_numActiveBlocks++;
-	}
-	else{
-	  
-	  m_activeBlock[row][col][calor] = false;
-	}
+	m_numActiveBlocks++;
+      }
+      else{
+	
+	m_activeBlock[row][col][calor] = false;
       }
     }
   }
