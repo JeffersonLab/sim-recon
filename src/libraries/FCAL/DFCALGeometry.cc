@@ -32,17 +32,16 @@ DFCALGeometry::DFCALGeometry()
 		   ( row - kMidBlock ) * blockSize(calor) );
       float x=m_positionOnFace[row][col][calor].X();
       float y=m_positionOnFace[row][col][calor].Y();
-      if (fabs(x)<53.0 && fabs(y)<53.0) continue;
-	
+ 	
       double thisRadius = m_positionOnFace[row][col][calor].Mod();
       
-      if(thisRadius < radius()){
+      if(thisRadius < radius() && (fabs(x)>53. || fabs(y)>53.)){
 	m_activeBlock[row][col][calor] = true;
 	
 	// build the "channel map"
 	m_channelNumber[row][col][calor] = m_numActiveBlocks;
-	m_row[m_numActiveBlocks] = ((calor==1)?4000:0)+row;
-	m_column[m_numActiveBlocks] =((calor==1)?4000:0)+col;
+	m_row[m_numActiveBlocks] = row;
+	m_column[m_numActiveBlocks] =col;
 	
 	m_numActiveBlocks++;
       }
@@ -63,18 +62,17 @@ DFCALGeometry::DFCALGeometry()
       // Carve out a hole for the insert
       float x=m_positionOnFace[row][col][calor].X();
       float y=m_positionOnFace[row][col][calor].Y();
-      if (fabs(x)<5.0 && fabs(y)<5.0) continue;
-	
-      double thisRadius = m_positionOnFace[row][col][calor].Mod();
+      
+      printf("r %d c %d x %f y %f\n",row,col,x,y);
 
-      if(thisRadius < radius()){
+      if (fabs(x)>5.0 || fabs(y)>5.0){
 	m_activeBlock[row][col][calor] = true;
 	
 	// build the "channel map"
 	m_channelNumber[row][col][calor] = m_numActiveBlocks;
-	m_row[m_numActiveBlocks] = ((calor==1)?4000:0)+row;
-	m_column[m_numActiveBlocks] =((calor==1)?4000:0)+col;
-
+	m_row[m_numActiveBlocks] = 4000+row;
+	m_column[m_numActiveBlocks] =4000+col;
+	
 	m_numActiveBlocks++;
       }
       else{
@@ -106,22 +104,30 @@ DFCALGeometry::isBlockActive( int row, int column) const
 	  column-=4000;
 	  calor=1;
 	}
-	if( row < 0 ||  row >= kBlocksTall )return false;
-	if( column < 0 ||  column >= kBlocksWide )return false;
+	if (calor==0){
+	  if( row < 0 ||  row >= kBlocksTall )return false;
+	  if( column < 0 ||  column >= kBlocksWide )return false;
+	}
+	else{
+	  if( row < 0 ||  row >= kInnerBlocksTall )return false;
+	  if( column < 0 ||  column >= kInnerBlocksWide )return false;
+	}
 
 	return m_activeBlock[row][column][calor];	
 }
 
 int
 DFCALGeometry::row( float y, int calor ) const 
-{	
-  return (calor?4000:0)+static_cast<int>( y / blockSize(calor) + kMidBlock + 0.5);
+{
+  if (calor==0) return static_cast<int>( y / blockSize(0) + kMidBlock + 0.5);
+  return (4000+static_cast<int>( y / blockSize(1) + kInnerMidBlock + 0.5));
 }
 
 int
 DFCALGeometry::column( float x, int calor ) const 
 {	
-  return (calor?4000:0)+static_cast<int>( x / blockSize(calor) + kMidBlock + 0.5);
+  if (calor==0) return static_cast<int>( x / blockSize(0) + kMidBlock + 0.5);
+  return (4000+static_cast<int>( x / blockSize(1) + kInnerMidBlock + 0.5));
 }
 
 DVector2

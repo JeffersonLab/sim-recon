@@ -181,7 +181,7 @@ jerror_t DFCALShower_factory::evnt(JEventLoop *eventLoop, uint64_t eventnumber)
       double x=pos_corrected.X();
       double y=pos_corrected.Y();
       unsigned int index=0;
-      if (fabs(x)<60.5 && fabs(y)<60.5) index=1;
+      if (fabs(x)<53. && fabs(y)<53.) index=1;
 
       //up to this point, all times have been times at which light reaches
       //the back of the detector. Here we correct for the time that it 
@@ -250,7 +250,7 @@ void DFCALShower_factory::GetCorrectedEnergyAndPosition(const DFCALCluster* clus
   float y0 = posInCal.Py();
 
   unsigned int index=0;
-  if (fabs(x0)<60.5 && fabs(y0)<60.5) index=1;
+  if (fabs(x0)<53. && fabs(y0)<53.) index=1;
 
   double Eclust = cluster->getEnergy();
   
