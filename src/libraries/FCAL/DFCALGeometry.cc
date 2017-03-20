@@ -70,8 +70,8 @@ DFCALGeometry::DFCALGeometry()
 	
 	// build the "channel map"
 	m_channelNumber[row][col][calor] = m_numActiveBlocks;
-	m_row[m_numActiveBlocks] = 4000+row;
-	m_column[m_numActiveBlocks] =4000+col;
+	m_row[m_numActiveBlocks] = 100+row;
+	m_column[m_numActiveBlocks] =100+col;
 	
 	m_numActiveBlocks++;
       }
@@ -99,9 +99,9 @@ DFCALGeometry::isBlockActive( int row, int column) const
 	// assert( column >= 0 && column < kBlocksWide );
 	
 	int calor=0;
-	if (row>=4000 && column>=4000){
-	  row-=4000;
-	  column-=4000;
+	if (row>=100 && column>=100){
+	  row-=100;
+	  column-=100;
 	  calor=1;
 	}
 	if (calor==0){
@@ -120,14 +120,14 @@ int
 DFCALGeometry::row( float y, int calor ) const 
 {
   if (calor==0) return static_cast<int>( y / blockSize(0) + kMidBlock + 0.5);
-  return (4000+static_cast<int>( y / blockSize(1) + kInnerMidBlock + 0.5));
+  return (100+static_cast<int>( y / blockSize(1) + kInnerMidBlock + 0.5));
 }
 
 int
 DFCALGeometry::column( float x, int calor ) const 
 {	
   if (calor==0) return static_cast<int>( x / blockSize(0) + kMidBlock + 0.5);
-  return (4000+static_cast<int>( x / blockSize(1) + kInnerMidBlock + 0.5));
+  return (100+static_cast<int>( x / blockSize(1) + kInnerMidBlock + 0.5));
 }
 
 DVector2
@@ -136,9 +136,9 @@ DFCALGeometry::positionOnFace( int row, int column) const
   //	assert(    row >= 0 &&    row < kBlocksTall );
   //	assert( column >= 0 && column < kBlocksWide );
   int calor=0;
-  if (row>=4000 && column>=4000){
-    row-=4000;
-    column-=4000;
+  if (row>=100 && column>=100){
+    row-=100;
+    column-=100;
     calor=1;
   }
 
@@ -149,10 +149,10 @@ DVector2 DFCALGeometry::positionOnFace(int channel) const{
   int r=row(channel);
   int c=column(channel);
   int calor=0;
-  if (r>=4000 && c>=4000){
+  if (r>=100 && c>=100){
     calor=1;
-    r-=4000;
-    c-=4000;
+    r-=100;
+    c-=100;
   }
   return m_positionOnFace[r][c][calor];
 }
@@ -163,10 +163,10 @@ DFCALGeometry::channel( int row, int column) const
 {
   if( isBlockActive( row, column) ){
     int calor=0;
-    if (row>=4000 && row>=4000){
+    if (row>=100 && row>=100){
       calor=1;
-      row-=4000;
-      column-=4000;
+      row-=100;
+      column-=100;
     }
     return m_channelNumber[row][column][calor]; 
   }
