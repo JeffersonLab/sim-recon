@@ -96,7 +96,7 @@ JEventSource_EVIOpp::JEventSource_EVIOpp(const char* source_name):JEventSource(s
 	F250_EMULATION_VERSION = 2;
 	RECORD_CALL_STACK = false;
 	TREAT_TRUNCATED_AS_ERROR = false;
-    
+	SYSTEMS_TO_PARSE = "";
 
 	gPARMS->SetDefaultParameter("EVIO:VERBOSE", VERBOSE, "Set verbosity level for processing and debugging statements while parsing. 0=no debugging messages. 10=all messages");
 	gPARMS->SetDefaultParameter("ET:VERBOSE", VERBOSE_ET, "Set verbosity level for processing and debugging statements while reading from ET. 0=no debugging messages. 10=all messages");
@@ -133,7 +133,16 @@ JEventSource_EVIOpp::JEventSource_EVIOpp(const char* source_name):JEventSource(s
 	gPARMS->SetDefaultParameter("EVIO:F250_EMULATION_MODE", F250_EMULATION_MODE, "Set f250 emulation mode. 0=no emulation, 1=always, 2=auto. Default is 2 (auto).");
 	gPARMS->SetDefaultParameter("EVIO:F125_EMULATION_MODE", F125_EMULATION_MODE, "Set f125 emulation mode. 0=no emulation, 1=always, 2=auto. Default is 2 (auto).");
 
+	gPARMS->SetDefaultParameter("EVIO:SYSTEMS_TO_PARSE", SYSTEMS_TO_PARSE,
+			"Comma separated list of systems to parse EVIO data for. "
+			"Default is empty string which means to parse all. System "
+			"names should be what is returned by DTranslationTable::DetectorName() .");
+
+
 	if(gPARMS->Exists("RECORD_CALL_STACK")) gPARMS->GetParameter("RECORD_CALL_STACK", RECORD_CALL_STACK);
+
+	// Set rocids of all systems to parse (if specified)
+	DTranslationTable::SetSystemsToParse(SYSTEMS_TO_PARSE, this);
 
 	jobtype = DEVIOWorkerThread::JOB_NONE;
 	if( PARSE ) jobtype |= DEVIOWorkerThread::JOB_FULL_PARSE;
@@ -166,7 +175,7 @@ JEventSource_EVIOpp::JEventSource_EVIOpp(const char* source_name):JEventSource(s
 		// Try to open the file.
 		if(VERBOSE>0) evioout << "Attempting to open \""<<this->source_name<<"\" as EVIO file..." <<endl;
 
-		hdevio = new HDEVIO(this->source_name);
+		hdevio = new HDEVIO(this->source_name, true, VERBOSE);
 		if( ! hdevio->is_open ){
 			cerr << hdevio->err_mess.str() << endl;
 			throw JException("Failed to open EVIO file: " + this->source_name, __FILE__, __LINE__); // throw exception indicating error
@@ -651,17 +660,18 @@ uint64_t JEventSource_EVIOpp::SearchFileForRunNumber(void)
 	/// number, then that will be reported to JANA in lieu of
 	/// the one in DParsedEvent.
 
-    if(VERBOSE>2) evioout << "     In JEventSource_EVIOpp::SearchFileForRunNumber() ..." << endl;
+	if(VERBOSE>2) evioout << "     In JEventSource_EVIOpp::SearchFileForRunNumber() source_name=" << source_name << " ..." << endl;
 
 	uint32_t buff_len = 4000000;
 	uint32_t *buff = new uint32_t[buff_len];
-	HDEVIO *hdevio = new HDEVIO(source_name);
-	while(hdevio->read(buff, buff_len)){
+	HDEVIO *hdevio = new HDEVIO(source_name, false, VERBOSE);
+	while(hdevio->readNoFileBuff(buff, buff_len)){
 
 		// Assume first word is number of words in bank
 		uint32_t *iptr = buff;
 		uint32_t *iend = &iptr[*iptr - 1];
-		if(*iptr > 2048) iend = &iptr[2048];
+		if(VERBOSE>2) evioout << "Checking event with header= 0x" << hex << iptr[1] << dec << endl;
+		if(*iptr > 2048) iend = &iptr[2048]; // only search the first 2kB of each event
 		bool has_timestamps = false;
 		while(iptr<iend){
 			iptr++;
@@ -675,69 +685,77 @@ uint64_t JEventSource_EVIOpp::SearchFileForRunNumber(void)
 				while(cptr<cend){
 					if(VERBOSE>4) evioout << "       \""<<cptr<<"\"" << endl;
 					if(!strncmp(cptr, needle, strlen(needle))){
-					if(VERBOSE>2) evioout << "     Found it!" << endl;
-					uint64_t run_number_seed = atoi(&cptr[strlen(needle)]);
-					if(hdevio) delete hdevio;
-					if(buff) delete[] buff;
-					return run_number_seed;
+						if(VERBOSE>2) evioout << "     Found it!" << endl;
+						uint64_t run_number_seed = atoi(&cptr[strlen(needle)]);
+						if(hdevio) delete hdevio;
+						if(buff) delete[] buff;
+						return run_number_seed;
+					}
+					cptr+=4; // should only start on 4-byte boundary!
 				}
-				cptr+=4; // should only start on 4-byte boundary!
 			}
+
+			// BOR event
+			if( (*iptr & 0xffffffff) ==  0x00700E01) continue;
+
+			// PHYSICS event
+			bool not_in_this_buffer = false;
+			switch((*iptr)>>16){
+				case 0xFF10:
+				case 0xFF11:
+				case 0xFF20:
+				case 0xFF21:
+				case 0xFF24:
+				case 0xFF25:
+				case 0xFF30:
+					not_in_this_buffer = true;
+					break;
+				case 0xFF23:
+				case 0xFF27:
+					has_timestamps = true;
+				case 0xFF22:
+				case 0xFF26:
+					break;
+				default:
+					continue;
+			}
+
+			if(not_in_this_buffer) break; // go to next EVIO buffer
+
+			iptr++;
+			if( ((*iptr)&0x00FF0000) != 0x000A0000) { iptr--; continue; }
+			uint32_t M = iptr[-3] & 0x000000FF; // Number of events from Physics Event header
+			if(VERBOSE>2) evioout << "       ...(epic quest) Trigger bank " << (has_timestamps ? "does":"doesn't") << " have timestamps. Nevents in block M=" << M <<endl;
+			iptr++;
+			uint64_t *iptr64 = (uint64_t*)iptr;
+
+			uint64_t event_num = *iptr64;
+			if(VERBOSE>3) evioout << "       ....(epic quest) Event num: " << event_num <<endl;
+			iptr64++;
+			if(has_timestamps) iptr64 = &iptr64[M]; // advance past timestamps
+
+			uint64_t run_number_seed = (*iptr64)>>32;
+			if(VERBOSE>1) evioout << "       .. (epic quest) Found run number: " << run_number_seed <<endl;
+
+			if(hdevio) delete hdevio;
+			if(buff) delete[] buff;
+			return run_number_seed;
+
+		} // while(iptr<iend)
+
+		if(hdevio->Nevents > 500){
+			if(VERBOSE>2) evioout << "       more than 500 events checked and no run number seen! abondoning search" << endl;
+			break;
 		}
 
-		// BOR event
-		if( (*iptr & 0xffffffff) ==  0x00700E01) continue;
-
-		// PHYSICS event
-		bool not_in_this_buffer = false;
-		switch((*iptr)>>16){
-			case 0xFF10:
-			case 0xFF11:
-			case 0xFF20:
-			case 0xFF21:
-			case 0xFF24:
-			case 0xFF25:
-			case 0xFF30:
-				not_in_this_buffer = true;
-				break;
-			case 0xFF23:
-			case 0xFF27:
-				has_timestamps = true;
-			case 0xFF22:
-			case 0xFF26:
-				break;
-			default:
-				continue;
-		}
-
-		if(not_in_this_buffer) break; // go to next EVIO buffer
-
-		iptr++;
-		if( ((*iptr)&0x00FF0000) != 0x000A0000) { iptr--; continue; }
-		uint32_t M = iptr[-3] & 0x000000FF; // Number of events from Physics Event header
-		if(VERBOSE>2) evioout << " ...(epic quest) Trigger bank " << (has_timestamps ? "does":"doesn't") << " have timestamps. Nevents in block M=" << M <<endl;
-		iptr++;
-		uint64_t *iptr64 = (uint64_t*)iptr;
-
-		uint64_t event_num = *iptr64;
-		if(VERBOSE>3) evioout << " ....(epic quest) Event num: " << event_num <<endl;
-		iptr64++;
-		if(has_timestamps) iptr64 = &iptr64[M]; // advance past timestamps
-
-		uint64_t run_number_seed = (*iptr64)>>32;
-		if(VERBOSE>1) evioout << " .. (epic quest) Found run number: " << run_number_seed <<endl;
-
-		if(hdevio) delete hdevio;
-		if(buff) delete[] buff;
-		return run_number_seed;
-
-	} // while(iptr<iend)
-
-	if(hdevio->Nevents > 500) break;
 	} // while(hdevio->read(buff, buff_len))
+	
+	if(hdevio->err_code != HDEVIO::HDEVIO_OK) evioout << hdevio->err_mess.str() << endl;
 
 	if(hdevio) delete hdevio;
 	if(buff) delete[] buff;
+
+	if(VERBOSE>2) evioout << "     failed to find run number. Returning 0" << endl;
 
 	return 0;
 }

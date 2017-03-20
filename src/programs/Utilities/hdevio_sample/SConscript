@@ -6,8 +6,10 @@ import sbms
 Import('*')
 env = env.Clone()
 
+env.AppendUnique(LIBS=['expat','dl','pthread'])
+
+sbms.AddEVIO(env)
 sbms.AddDANA(env)
-sbms.AddROOT(env)
 sbms.executable(env)
 
 

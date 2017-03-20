@@ -781,6 +781,13 @@ def AddROOT(env):
 
 	AddCompileFlags(env, AddROOT.ROOT_CFLAGS)
 	AddLinkFlags(env, AddROOT.ROOT_LINKFLAGS)
+
+	if env['OSNAME'].startswith("Darwin_macosx"):
+		if "llvm" in env['OSNAME']:
+			AddLinkFlags(env, '-rpath '+rootsys+'/lib')
+		else:
+			AddLinkFlags(env, '-Wl,-rpath,'+rootsys+'/lib')
+
 	env.AppendUnique(LIBS = "Geom")
 	if os.getenv('LD_LIBRARY_PATH'  ) != None : env.Append(LD_LIBRARY_PATH   = os.environ['LD_LIBRARY_PATH'  ])
 	if os.getenv('DYLD_LIBRARY_PATH') != None : env.Append(DYLD_LIBRARY_PATH = os.environ['DYLD_LIBRARY_PATH'])
