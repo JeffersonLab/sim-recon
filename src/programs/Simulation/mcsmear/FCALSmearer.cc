@@ -137,12 +137,12 @@ void FCALSmearer::SmearEvent(hddm_s::HDDM *record)
          // Smear the energy and timing of the hit
          double sigma = fcal_config->FCAL_PHOT_STAT_COEF/sqrt(titer->getE());
               
-	 if (mycol>=4000 || myrow>=4000){
+	 if (mycol>=100 || myrow>=100){
 	   sigma=0.025/sqrt(titer->getE());
 	 }
 
          // Apply constant scale factor to MC eneregy. 06/22/2016 A. Subedi
-         double E = ((mycol>=4000 || myrow>=4000)?1.:fcal_config->FCAL_MC_ESCALE )* titer->getE() * (1.0 + gDRandom.SampleGaussian(sigma)); 
+         double E = ((mycol>=100 || myrow>=100)?1.:fcal_config->FCAL_MC_ESCALE )* titer->getE() * (1.0 + gDRandom.SampleGaussian(sigma)); 
          
          
          // Smear the time by 200 ps (fixed for now) 7/2/2009 DL
