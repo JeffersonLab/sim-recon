@@ -1,10 +1,3 @@
-// $Id$
-//
-//    File: DChargedTrackHypothesis_factory.h
-// Created: Tue Aug  9 14:29:24 EST 2011
-// Creator: pmatt (on Linux ifarml6 2.6.18-128.el5 x86_64)
-//
-
 #ifndef _DChargedTrackHypothesis_
 #define _DChargedTrackHypothesis_
 
@@ -25,7 +18,7 @@ class DChargedTrackHypothesis : public DKinematicData
 		//CONSTRUCTORS & OPERATORS
 		DChargedTrackHypothesis(void);
 		DChargedTrackHypothesis(const DChargedTrackHypothesis& locSourceData, bool locShareTrackingFlag = false,
-				bool locShareTimingFlag = false, bool locShareNonKinematicsFlag = false, bool locShareKinematicsFlag = false);
+				bool locShareTimingFlag = false, bool locShareKinematicsFlag = false);
 		DChargedTrackHypothesis(const DTrackTimeBased* locSourceData);
 		DChargedTrackHypothesis& operator= (const DChargedTrackHypothesis& locSourceData);
 
@@ -129,8 +122,7 @@ dTimingInfo(make_shared<DTimingInfo>()), dTrackingInfo(make_shared<DTrackingInfo
 {}
 
 inline DChargedTrackHypothesis::DChargedTrackHypothesis(const DChargedTrackHypothesis& locSourceData, bool locShareTrackingFlag,
-		bool locShareTimingFlag, bool locShareNonKinematicsFlag, bool locShareKinematicsFlag) :
-		DKinematicData(locSourceData, locShareNonKinematicsFlag, locShareKinematicsFlag)
+		bool locShareTimingFlag, bool locShareKinematicsFlag) : DKinematicData(locSourceData, locShareKinematicsFlag)
 {
 	//Default is NOT to share: create a new, independent copy of the input data (tracked separately from input so it can be modified)
 	dTrackingInfo = locShareTrackingFlag ? locSourceData->dTrackingInfo : make_shared<DTrackingInfo>(*(locSourceData->dTrackingInfo));
@@ -151,6 +143,7 @@ inline DChargedTrackHypothesis& DChargedTrackHypothesis::operator=(const DCharge
 	//Replace current data with a new, independent copy of the input data: tracked separately from input so it can be modified
 	dTimingInfo = make_shared<DTimingInfo>(*(locSourceData->dTimingInfo));
 	dTrackingInfo = make_shared<DTrackingInfo>(*(locSourceData->dTrackingInfo));
+	return *this;
 }
 
 inline DChargedTrackHypothesis::DTimingInfo::DTimingInfo(void) :

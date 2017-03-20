@@ -103,6 +103,31 @@ void DAnalysisResults_factory::Get_Reactions(JEventLoop* locEventLoop, vector<co
 		locFactory->Get(locReactionsSubset);
 		locReactions.insert(locReactions.end(), locReactionsSubset.begin(), locReactionsSubset.end());
 	}
+	Check_ReactionNames(locReactions);
+}
+
+void DAnalysisResults_factory::Check_ReactionNames(vector<const DReaction*>& locReactions) const
+{
+	set<string> locReactionNames;
+	set<string> locDuplicateReactionNames;
+	for(auto& locReaction : locReactions)
+	{
+		string locReactionName = locReaction->Get_ReactionName();
+		if(locReactionNames.find(locReactionName) == locReactionNames.end())
+			locReactionNames.insert(locReactionName);
+		else
+			locDuplicateReactionNames.insert(locReactionName);
+	}
+
+	if(locDuplicateReactionNames.empty())
+		return;
+
+	cout << "ERROR: MULTIPLE DREACTIONS WITH THE SAME NAME(S): " << endl;
+	for(auto& locReactionName : locDuplicateReactionNames)
+		cout << locReactionName << ", ";
+	cout << endl;
+	cout << "ABORTING" << endl;
+	abort();
 }
 
 void DAnalysisResults_factory::Make_ControlHistograms(vector<const DReaction*>& locReactions)
@@ -240,6 +265,12 @@ jerror_t DAnalysisResults_factory::evnt(JEventLoop* locEventLoop, uint64_t event
 	VT_TRACER("DAnalysisResults_factory::evnt()");
 #endif
 
+	//CHECK TRIGGER TYPE
+	const DTrigger* locTrigger = NULL;
+	locEventLoop->GetSingle(locTrigger);
+	if(!locTrigger->Get_IsPhysicsEvent())
+		return NOERROR;
+
 	vector<const DReaction*> locReactions;
 	Get_Reactions(locEventLoop, locReactions);
 
@@ -270,59 +301,28 @@ jerror_t DAnalysisResults_factory::evnt(JEventLoop* locEventLoop, uint64_t event
 		//Charged final-state particles: See below
 
 
-	//BUILDING FINAL-STATE COMBINATIONS
 
 
-	//ASSUME: The photoproduction vertex will not be much different than the DVertex
-		//Such that the p4 calculated from the DVertex is about the same as it would be for each combo, wrst the loose mass cuts //NOT TRUE
-	//ASSUME: The gamma came from the production vertex (i.e. ignore detached vertices)
-		//ASSUME: That the time difference due to detached vertex is negligible with regards to loose timing cuts //NOT TRUE
+/************************************************************** BUILDING FINAL-STATE COMBINATIONS **************************************************************/
+
+	//FOR THE PURPOSE OF: Calculating neutral p4 (mass cuts) & charged/neutral times (PID cuts)
+	//WE CANNOT ASSUME THAT: The DVertex is an approximately accurate representation of the photoproduction vertex
+		//Why not?: E.g. user wants 1 charged track, 2 are reconstructed (1 junk), and the extra throws the DVertex way off
+	//WE CANNOT ASSUME THAT: The photoproduction vertex is accurate enough for particles coming from detached vertices
+		//Why not?: Particles could have come from a low-theta, long-lived K0 (e.g.), yielding a significant delta-z from the true RF time
 
 
-//what if K+ Sigma0, or K+ Lambda, or those with missing K+????
-
-	//BIGGEST PROBLEM: So MANY photons: Cut down on neutrals
+	//BIGGEST PROBLEM: So MANY photons
 	//say 20 photons: 20*19 = 380 pi0 pairs. Not so bad
 	//If 4 pi0s, then ~380^4 = ~20 billion combos (yikes!)
-	//Also, some jackass could do eta -> 6g instead of eta -> 3pi0, so the problems may even be at the step-formation level (rather than combine-steps level)
-	//So, prioritize PID cuts first to reduce pools
+	//Also, someone could do eta -> 6g instead of eta -> 3pi0, so the problems may even be at the step-formation level (rather than combine-steps level)
+	//So, prioritize PID cuts first to reduce neutrals, then mass cuts
 
-	//Race for PID cuts:
-	//All combos: Decompose into vertices, group vertices by common final-state charged tracks
-	//For each reaction:
-		//Combos of charged particles
-		//Find vertices //could do in common for: vertices with 2+ charged tracks, or production vertex has 1 charged track
-			//suggests a temporary vertex_tracks class
-		//delta-t cuts between charged track pairs (all pairs at a given vertex)
-		//Charged inv-mass cuts
+//See DVertexCreator comments for HERE
 
-		//PICK RF_BUNCH / NEUTRALS FOR EACH PHOTOPRODUCTION VERTEX
-			//for each photon, do PID cuts with all possible RF bunch choices: save N_shifts of those that pass cuts
-			//histogram N_shifts
-			//if X photons needed, then only the bins in the histogram with at least that many entries are possible
-			//for each of these N_shifts: do charged pid cuts against these
-			//for each remaining N_shifts (and the photons for them): neutral inv mass cuts
 
 	map<const DNeutralParticle*, set<const DNeutralParticle*> > locCompatiblePhotons; //key is first photon, set contains matching photons (but only store once for each pair)
-			Find_CompatiblePairs(pair<const DNeutralParticle*, const DNeutralParticle*>& locMyPair)
-			{
-					if(locCompatiblePhotons.find(locMyPair.first()) != locPair.end())
-						continue;
-					if(locPair.find(*(locMyPair.begin() + 1)) != locPair.end())
-						continue;
 
-					for()
-				}
-			}
-			//compatible pairs: 1) do not have either photon, 2) have photons that are in pairs with the first photon
-		//for each photoproduction vertex, use photons + tracks to select rf bunch
-			//for photons: if 1 needed, loop over all
-			//if 2 needed: loop over pairs
-			//if 4 needed:
-		//find combos of neutrals that match each channel
-			//In terms of N-gammas
-
-	//First, for all steps with a final-state neutral: find all possible combos of neutrals (ignoring decaying and missing particles)
 
 	//rf_delta_t = shower_prop_time - rf_prop_time
 		//shower_prop_time = shower_time - flight_time
@@ -337,6 +337,10 @@ jerror_t DAnalysisResults_factory::evnt(JEventLoop* locEventLoop, uint64_t event
 	//if cut on rf_delta_t is "x", then values can range between +/- x. the max of the above is then (x - (-x)) = 2x
 	return NOERROR;
 }
+
+
+//MISCELLANEOUS TO DO:
+//MAKE A DChargedTrack_Combo factory. It takes new DTrackTimeBased, makes hypos, combines them with existing hypos (from preselect factory), and makes new charged tracks
 
 
 

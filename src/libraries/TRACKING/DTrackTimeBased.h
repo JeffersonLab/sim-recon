@@ -10,16 +10,20 @@
 
 #include <JANA/JObject.h>
 #include <JANA/JFactory.h>
-#include <PID/DKinematicData.h>
+#include <TRACKING/DTrackingData.h>
 #include <TRACKING/DTrackFitter.h>
 
 class DReferenceTrajectory;
 
 
-class DTrackTimeBased:public DKinematicData{
+class DTrackTimeBased:public DTrackingData{
 	public:
 		JOBJECT_PUBLIC(DTrackTimeBased);
 		
+		//CONSTRUCTORS
+		DTrackTimeBased(const DTrackTimeBased& locSourceData, bool locShareTrackingFlag = false, bool locShareKinematicsFlag = false);
+		DTrackTimeBased(const DTrackingData& locSourceData, bool locShareTrackingFlag = false, bool locShareKinematicsFlag = false);
+
 		typedef struct{
 		  unsigned int inner_layer;
 		  unsigned int outer_layer;
@@ -72,6 +76,12 @@ class DTrackTimeBased:public DKinematicData{
 			AddString(items, "#HitsMCMatched", "%d",dNumHitsMatchedToThrown);
 		}
 };
+
+inline DTrackTimeBased::DTrackTimeBased(const DTrackTimeBased& locSourceData, bool locShareTrackingFlag,
+bool locShareKinematicsFlag) : DTrackingData(locSourceData, locShareTrackingFlag, locShareKinematicsFlag){}
+
+inline DTrackTimeBased::DTrackTimeBased(const DTrackingData& locSourceData, bool locShareTrackingFlag,
+bool locShareKinematicsFlag) : DTrackingData(locSourceData, locShareTrackingFlag, locShareKinematicsFlag){}
 
 #endif // _DTrackTimeBased_
 

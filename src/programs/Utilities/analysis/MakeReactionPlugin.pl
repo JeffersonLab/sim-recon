@@ -234,7 +234,7 @@ jerror_t DReaction_factory_${ReactionFactoryTag}::evnt(JEventLoop* locEventLoop,
 	// locReaction->Set_KinFitType(d_P4AndVertexFit);
 
 	// Highly Recommended: When generating particle combinations, reject all beam photons that match to a different RF bunch
-	locReaction->Set_MaxPhotonRFDeltaT(0.5*dBeamBunchPeriod); //should be minimum cut value
+	locReaction->Set_MaxPhotonRFDeltaT(1.5*dBeamBunchPeriod); //1.5: +/-1 sideband
 
 	// Optional: When generating particle combinations, reject all photon candidates with a PID confidence level < 5.73303E-7 (+/- 5-sigma)
 	// Make sure PID errors are calculated correctly before using. 

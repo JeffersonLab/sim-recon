@@ -17,6 +17,7 @@
 jerror_t DTrackTimeBased_factory_Combo::init(void)
 {
 	dMinProtonMomentum = pair<bool, double>(false, -1.0);
+	//BEWARE: IF THIS IS CHANGED, CHANGE IN THE ANALYSIS UTILITIES AND THE EVENT WRITER ALSO!!
 	dTrackSelectionTag = "PreSelect";
 
 	//remember, charge sign could have flipped during track reconstruction

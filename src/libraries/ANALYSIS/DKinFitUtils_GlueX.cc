@@ -9,6 +9,7 @@
 DKinFitUtils_GlueX::DKinFitUtils_GlueX(const DMagneticFieldMap* locMagneticFieldMap, const DAnalysisUtilities* locAnalysisUtilities) : 
 dMagneticFieldMap(locMagneticFieldMap), dAnalysisUtilities(locAnalysisUtilities)
 {
+	dIncludeBeamlineInVertexFitFlag = false;
 	dWillBeamHaveErrorsFlag = false; //Until fixed!
 	dEventNumber = 0;
 
@@ -30,6 +31,7 @@ DKinFitUtils_GlueX::DKinFitUtils_GlueX(JEventLoop* locEventLoop)
 
 	gPARMS->SetDefaultParameter("KINFIT:LINKVERTICES", dLinkVerticesFlag);
 	dWillBeamHaveErrorsFlag = false; //Until fixed!
+	dIncludeBeamlineInVertexFitFlag = false;
 
 	dEventNumber = locEventLoop->GetJEvent().GetEventNumber();
 
@@ -82,7 +84,7 @@ void DKinFitUtils_GlueX::Reset_NewEvent(void)
 
 bool DKinFitUtils_GlueX::Get_IncludeBeamlineInVertexFitFlag(void) const
 {
-	return false; //at least until covariance matrix is set for beam photons
+	return dIncludeBeamlineInVertexFitFlag; //at least until covariance matrix is set for beam photons
 }
 
 bool DKinFitUtils_GlueX::Get_IsDetachedVertex(int locPDG_PID) const

@@ -47,6 +47,7 @@ class DKinFitUtils_GlueX : public DKinFitUtils
 		void Reset_NewEvent(uint64_t locEventNumber);
 		void Reset_NewEvent(void);
 		void Set_MaxPoolSizes(size_t locNumReactions, size_t locExpectedNumCombos);
+		void Set_IncludeBeamlineInVertexFitFlag(bool locIncludeBeamlineInVertexFitFlag){dIncludeBeamlineInVertexFitFlag = locIncludeBeamlineInVertexFitFlag;}
 
 		/************************************************************** CREATE PARTICLES ************************************************************/
 
@@ -205,6 +206,7 @@ class DKinFitUtils_GlueX : public DKinFitUtils
 
 		/************************************************************** MISCELLANEOUS ***************************************************************/
 
+		bool dIncludeBeamlineInVertexFitFlag;
 		DApplication* dApplication;
 		bool dWillBeamHaveErrorsFlag;
 		uint64_t dEventNumber;

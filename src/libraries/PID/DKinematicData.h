@@ -25,7 +25,7 @@ class DKinematicData : public JObject
 
 		// constructors and destructor
 		DKinematicData(void);
-		DKinematicData(const DKinematicData& locSourceData, bool locShareNonKinematicsFlag = false, bool locShareKinematicsFlag = false);
+		DKinematicData(const DKinematicData& locSourceData, bool locShareKinematicsFlag = false);
 		virtual ~DKinematicData(void) {};
 
 		//Assignment operator
@@ -35,46 +35,36 @@ class DKinematicData : public JObject
 		virtual void Reset(void);
 
 		//GETTERS
-		Particle_t PID(void) const{return dNonKinematics->m_pid;}
-		double mass(void) const{return ParticleMass(dNonKinematics->m_pid);}
-		double charge(void) const{return ParticleCharge(dNonKinematics->m_pid);}
-		const DVector3& momentum(void) const{return dKinematics->m_momentum;}
-		const DVector3& position(void) const{return dKinematics->m_position;}
-		double time(void) const{return dKinematics->m_time;}
+		Particle_t PID(void) const{return dKinematicInfo->m_pid;}
+		double mass(void) const{return ParticleMass(dKinematicInfo->m_pid);}
+		double charge(void) const{return ParticleCharge(dKinematicInfo->m_pid);}
+		const DVector3& momentum(void) const{return dKinematicInfo->m_momentum;}
+		const DVector3& position(void) const{return dKinematicInfo->m_position;}
+		double time(void) const{return dKinematicInfo->m_time;}
+		const TMatrixFSym* errorMatrix(void) const{return dKinematicInfo->m_errorMatrix;}
 
 		//components
-		double px(void) const{return dKinematics->m_momentum.Px();}
-		double py(void) const{return dKinematics->m_momentum.Py();}
-		double pz(void) const{return dKinematics->m_momentum.Pz();}
-		double x(void) const{return dKinematics->m_position.X();}
-		double y(void) const{return dKinematics->m_position.Y();}
-		double z(void) const{return dKinematics->m_position.Z();}
+		double px(void) const{return dKinematicInfo->m_momentum.Px();}
+		double py(void) const{return dKinematicInfo->m_momentum.Py();}
+		double pz(void) const{return dKinematicInfo->m_momentum.Pz();}
+		double x(void) const{return dKinematicInfo->m_position.X();}
+		double y(void) const{return dKinematicInfo->m_position.Y();}
+		double z(void) const{return dKinematicInfo->m_position.Z();}
 
 		//derived quantities
 		double energy(void) const{return sqrt(mass()*mass() + pmag2());}
 		double pperp(void) const{return sqrt(px()*px() + py()*py());}
 		double pperp2(void) const{return px()*px() + py()*py();}
-		double pmag(void) const{return dKinematics->m_momentum.Mag();}
-		double pmag2(void) const{return dKinematics->m_momentum.Mag2();}
+		double pmag(void) const{return dKinematicInfo->m_momentum.Mag();}
+		double pmag2(void) const{return dKinematicInfo->m_momentum.Mag2();}
 		DLorentzVector lorentzMomentum(void) const{return DLorentzVector(momentum(), energy());}
 
-		//matrices, tracking
-		const TMatrixFSym* errorMatrix(void) const{return dKinematics->m_errorMatrix;}
-		const TMatrixFSym* TrackingErrorMatrix(void) const{return dNonKinematics->m_TrackingErrorMatrix;}
-		bool forwardParmFlag(void) const{return dNonKinematics->m_use_forward_parameters;}
-		void TrackingStateVector(double aVec[5]) const;
-
 		//SETTERS
-		void setPID(Particle_t locPID){dNonKinematics->m_pid = locPID;}
-		void setMomentum(const DVector3& aMomentum){dKinematics->m_momentum = aMomentum;}
-		void setPosition(const DVector3& aPosition){dKinematics->m_position = aPosition;}
-		void setTime(double locTime){dKinematics->m_time = locTime;}
-
-		//Tracking
-		void setForwardParmFlag(bool aFlag){dNonKinematics->m_use_forward_parameters = aFlag;}
-		void setErrorMatrix(const TMatrixFSym* aMatrix){dKinematics->m_errorMatrix = aMatrix;}
-		void setTrackingErrorMatrix(const TMatrixFSym* aMatrix){dNonKinematics->m_TrackingErrorMatrix = aMatrix;}
-		void setTrackingStateVector(double a1, double a2, double a3, double a4, double a5);
+		void setPID(Particle_t locPID){dKinematicInfo->m_pid = locPID;}
+		void setMomentum(const DVector3& aMomentum){dKinematicInfo->m_momentum = aMomentum;}
+		void setPosition(const DVector3& aPosition){dKinematicInfo->m_position = aPosition;}
+		void setTime(double locTime){dKinematicInfo->m_time = locTime;}
+		void setErrorMatrix(const TMatrixFSym* aMatrix){dKinematicInfo->m_errorMatrix = aMatrix;}
 
 		void toStrings(vector<pair<string,string> > &items) const
 		{
@@ -93,10 +83,11 @@ class DKinematicData : public JObject
 
 	private:
 
-		struct DKinematics
+		struct DKinematicInfo
 		{
-			DKinematics(void);
+			DKinematicInfo(void);
 
+			Particle_t m_pid;
 			DVector3 m_momentum;
 			DVector3 m_position;
 			double m_time; // Time of the track propagated at m_position
@@ -105,69 +96,38 @@ class DKinematicData : public JObject
 			const TMatrixFSym* m_errorMatrix;   // Order is (px, py, pz, x, y, z, t)
 		};
 
-		struct DNonKinematics
-		{
-			// NONE OF THIS DEPENDS ON THE KINEMATIC FIT
-			// so, this can be stored as a pointer & shared between multiple objects instead of stored separately for each
-			DNonKinematics(void);
-
-			Particle_t m_pid;
-
-			const TMatrixFSym *m_TrackingErrorMatrix;  // order is q/pt,phi,tanl,D,z
-			bool m_use_forward_parameters; // Flag indicating the use of the forward parameterization (x,y,tx,ty,q/p)
-			double m_TrackingStateVector[5]; // order is q/pt,phi,tanl,D,z
-		};
-
 		//memory of object in shared_ptr is managed automatically: deleted automatically when no references are left
-		shared_ptr<DKinematics> dKinematics;
-		shared_ptr<DNonKinematics> dNonKinematics;
+		//This is done because sometimes a new object is needed (e.g. DChargedTrackHypothesis) for which this info hasn't changed (from DTrackTimeBased)
+		//Thus, just share this between the two objects, instead of doubling the memory usage
+		shared_ptr<DKinematicInfo> dKinematicInfo;
 };
 
 /************************************************************** CONSTRUCTORS & OPERATORS ***************************************************************/
 
-inline DKinematicData::DKinematicData(void) :
-dKinematics(make_shared<DKinematics>()), dNonKinematics(make_shared<DNonKinematics>())
-{}
+inline DKinematicData::DKinematicData(void) : dKinematicInfo(make_shared<DKinematicInfo>()) {}
 
-inline DKinematicData::DKinematicData(const DKinematicData& locSourceData, bool locShareNonKinematicsFlag, bool locShareKinematicsFlag)
+inline DKinematicData::DKinematicData(const DKinematicData& locSourceData, bool locShareKinematicsFlag)
 {
 	//Default is NOT to share: create a new, independent copy of the input data (tracked separately from input so it can be modified)
-	dKinematics = locShareKinematicsFlag ? locSourceData->dKinematics : make_shared<DKinematics>(*(locSourceData->dKinematics));
-	dNonKinematics = locShareNonKinematicsFlag ? locSourceData->dNonKinematics : make_shared<DNonKinematics>(*(locSourceData->dNonKinematics));
+	dKinematicInfo = locShareKinematicsFlag ? locSourceData.dKinematicInfo : make_shared<DKinematicInfo>(*(locSourceData.dKinematicInfo));
 }
 
 inline DKinematicData& DKinematicData::operator=(const DKinematicData& locSourceData)
 {
 	//Replace current data with a new, independent copy of the input data: tracked separately from input so it can be modified
-	dKinematics = make_shared<DKinematics>(*(locSourceData->dKinematics));
-	dNonKinematics = make_shared<DNonKinematics>(*(locSourceData->dNonKinematics));
+	dKinematicInfo = make_shared<DKinematicInfo>(*(locSourceData.dKinematicInfo));
+	return *this;
 }
 
-inline DKinematicData::DKinematics::DKinematics(void) :
-m_momentum(DVector3()), m_position(DVector3()), m_time(0.0), m_errorMatrix(nullptr)
-{}
+inline DKinematicData::DKinematicInfo::DKinematicInfo(void) :
+m_pid(Unknown), m_momentum(DVector3()), m_position(DVector3()), m_time(0.0), m_errorMatrix(nullptr) {}
 
-inline DKinematicData::DNonKinematics::DNonKinematics(void) :
-m_pid(Unknown), m_TrackingErrorMatrix(nullptr), m_use_forward_parameters(false), m_TrackingStateVector{0.0, 0.0, 0.0, 0.0, 0.0}
-{}
+/*********************************************************************** RESET *************************************************************************/
 
-/********************************************************************** GETTERS ************************************************************************/
-
-inline void DKinematicData::TrackingStateVector(double aVec[5]) const
+inline void DKinematicData::Reset(void)
 {
-	for (unsigned int i = 0; i < 5; ++i)
-		aVec[i] = dNonKinematics->m_TrackingStateVector[i];
-}
-
-/********************************************************************** SETTERS ************************************************************************/
-
-inline void DKinematicData::setTrackingStateVector(double a1, double a2, double a3, double a4, double a5)
-{
-	dNonKinematics->m_TrackingStateVector[0]=a1;
-	dNonKinematics->m_TrackingStateVector[1]=a2;
-	dNonKinematics->m_TrackingStateVector[2]=a3;
-	dNonKinematics->m_TrackingStateVector[3]=a4;
-	dNonKinematics->m_TrackingStateVector[4]=a5;
+	dKinematicInfo = make_shared<DKinematicInfo>(); //not safe to reset individually, since you don't know what it's shared with
+	ClearAssociatedObjects();
 }
 
 #endif /* _DKINEMATICDATA_ */

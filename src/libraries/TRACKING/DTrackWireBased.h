@@ -10,16 +10,21 @@
 
 #include <JANA/JObject.h>
 #include <JANA/JFactory.h>
-#include <PID/DKinematicData.h>
+#include <TRACKING/DTrackingData.h>
 #include <TRACKING/DTrackFitter.h>
 
 class DReferenceTrajectory;
 
 
-class DTrackWireBased:public DKinematicData{
+class DTrackWireBased:public DTrackingData{
 	public:
 		JOBJECT_PUBLIC(DTrackWireBased);
 		
+		//CONSTRUCTORS
+		DTrackWireBased(const DTrackWireBased& locSourceData, bool locShareTrackingFlag = false, bool locShareKinematicsFlag = false);
+		DTrackWireBased(const DTrackingData& locSourceData, bool locShareTrackingFlag = false, bool locShareKinematicsFlag = false);
+		DTrackWireBased(const DKinematicData& locSourceData, bool locShareKinematicsFlag = false);
+
 		oid_t candidateid;	///< which DTrackCandidate this came from
 		float chisq;			///< Chi-squared for the track (not chisq/dof!)
 		int Ndof;				///< Number of degrees of freedom in the fit
@@ -40,6 +45,15 @@ class DTrackWireBased:public DKinematicData{
 			AddString(items, "Ndof", "%d", Ndof);
 		}
 };
+
+inline DTrackWireBased::DTrackWireBased(const DTrackWireBased& locSourceData, bool locShareTrackingFlag,
+bool locShareKinematicsFlag) : DTrackingData(locSourceData, locShareTrackingFlag, locShareKinematicsFlag){}
+
+inline DTrackWireBased::DTrackWireBased(const DTrackingData& locSourceData, bool locShareTrackingFlag,
+bool locShareKinematicsFlag) : DTrackingData(locSourceData, locShareTrackingFlag, locShareKinematicsFlag){}
+
+inline DTrackWireBased::DTrackWireBased(const DKinematicData& locSourceData, bool locShareKinematicsFlag) :
+DTrackingData(locSourceData, false, locShareKinematicsFlag){}
 
 #endif // _DTrackWireBased_
 

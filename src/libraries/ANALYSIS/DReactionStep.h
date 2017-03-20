@@ -5,6 +5,7 @@
 #include <vector>
 #include <string>
 #include <iostream>
+#include <algorithm>
 #include <stdlib.h>
 
 #include "particleType.h"
@@ -50,6 +51,7 @@ class DReactionStep
 		void Get_NonMissingFinalNeutralPIDs(deque<Particle_t>& locPIDs) const;
 		void Get_NonMissingFinalPIDs(deque<Particle_t>& locPIDs) const;
 		bool Get_MissingPID(Particle_t& locPID) const; //false if none missing
+		size_t Get_NumDetectedPIDs(Particle_t locPID) const;
 
 	private:
 		// PID MEMBERS:
@@ -242,6 +244,12 @@ inline void DReactionStep::Get_FinalParticleIDs(deque<Particle_t>& locPIDs) cons
 {
 	locPIDs.clear();
 	locPIDs.insert(locPIDs.end(), dFinalParticleIDs.begin(), dFinalParticleIDs.end());
+}
+
+inline size_t DReactionStep::Get_NumDetectedPIDs(Particle_t locInputPID) const
+{
+	auto locComparator = [](Particle_t locPID) -> size_t {return (locPID == locInputPID) ? 1 : 0;};
+	return std::accumulate(dFinalParticleIDs.begin(), dFinalParticleIDs.end(), size_t(0), locComparator);
 }
 
 #endif // _DReactionStep_

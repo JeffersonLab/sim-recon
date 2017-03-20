@@ -63,6 +63,7 @@ class DReaction : public JObject
 
 		// GET CONTROL INFO:
 		string Get_ReactionName(void) const{return dReactionName;}
+		bool Get_IsFirstStepBeam(void) const;
 		int Get_DecayStepIndex(int locStepIndex, int locParticleIndex) const;
 		bool Check_IfMissingDecayProduct(size_t locStepIndex) const;
 		pair<int, int> Get_InitialParticleDecayFromIndices(int locStepIndex) const; //1st is step index, 2nd is particle index
@@ -175,6 +176,12 @@ class DReaction : public JObject
 		bool dAnyBlueprintFlag; //If true, don't need to bother changing dAnyComboFlag
 		bool dAnyComboFlag;
 };
+
+inline bool DReaction::Get_IsFirstStepBeam(void) const
+{
+	//impossible for first step to be rescattering: makes no sense: if has target, treat as beam. else treat as decaying & don't care about production mechanism
+	return (dReactionSteps[0]->Get_TargetParticleID() != Unknown);
+}
 
 inline void DReaction::Set_InvariantMassCut(Particle_t locStepInitialPID, double locMinInvariantMass, double locMaxInvariantMass)
 {

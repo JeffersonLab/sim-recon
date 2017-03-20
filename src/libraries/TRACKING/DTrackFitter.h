@@ -16,7 +16,7 @@
 #include <prof_time.h>
 #endif
 #include <DANA/DApplication.h>
-#include <PID/DKinematicData.h>
+#include <TRACKING/DTrackingData.h>
 #include <HDGEOMETRY/DMagneticFieldMap.h>
 #include "HDGEOMETRY/DLorentzMapCalibDB.h"
 #include <CDC/DCDCTrackHit.h>
@@ -122,7 +122,7 @@ class DTrackFitter:public jana::JObject{
 		
 		// Fit parameter accessor methods
 		const DKinematicData& GetInputParameters(void) const {return input_params;}
-		const DKinematicData& GetFitParameters(void) const {return fit_params;}
+		const DTrackingData& GetFitParameters(void) const {return fit_params;}
 		double GetChisq(void) const {return chisq;}
 		int GetNdof(void) const {return Ndof;}
 		unsigned int GetNumPotentialFDCHits(void) const {return potential_fdc_hits_on_track;}
@@ -180,7 +180,7 @@ class DTrackFitter:public jana::JObject{
 		const DParticleID* dParticleID;
 
 		// The following should be set as outputs by FitTrack(void)
-		DKinematicData fit_params;									//< Results of last fit
+		DTrackingData fit_params;									//< Results of last fit
 		double chisq;													//< Chi-sq of final track fit (not the chisq/dof!)
 		int Ndof;														//< Number of degrees of freedom for final track
 		vector<pull_t> pulls;										//< pull_t objects for each contribution to chisq (assuming no correlations)

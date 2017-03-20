@@ -25,8 +25,7 @@ class DNeutralParticleHypothesis : public DKinematicData
 
 		//CONSTRUCTORS & OPERATORS
 		DNeutralParticleHypothesis(void);
-		DNeutralParticleHypothesis(const DNeutralParticleHypothesis& locSourceData, bool locShareTimingFlag = false,
-				bool locShareNonKinematicsFlag = false, bool locShareKinematicsFlag = false);
+		DNeutralParticleHypothesis(const DNeutralParticleHypothesis& locSourceData, bool locShareTimingFlag = false, bool locShareKinematicsFlag = false);
 		DNeutralParticleHypothesis& operator= (const DNeutralParticleHypothesis& locSourceData);
 
 		//GETTERS
@@ -83,8 +82,8 @@ dTimingInfo(make_shared<DTimingInfo>()), dTrackingInfo(make_shared<DTrackingInfo
 {}
 
 inline DNeutralParticleHypothesis::DNeutralParticleHypothesis(const DNeutralParticleHypothesis& locSourceData,
-		bool locShareTimingFlag, bool locShareNonKinematicsFlag, bool locShareKinematicsFlag) :
-		DKinematicData(locSourceData, locShareNonKinematicsFlag, locShareKinematicsFlag)
+		bool locShareTimingFlag, bool locShareKinematicsFlag) :
+		DKinematicData(locSourceData, locShareKinematicsFlag)
 {
 	//Default is NOT to share: create a new, independent copy of the input data (tracked separately from input so it can be modified)
 	dTimingInfo = locShareTimingFlag ? locSourceData->dTimingInfo : make_shared<DTimingInfo>(*(locSourceData->dTimingInfo));
