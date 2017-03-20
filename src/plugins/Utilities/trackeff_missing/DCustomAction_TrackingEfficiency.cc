@@ -45,6 +45,7 @@ void DCustomAction_TrackingEfficiency::Initialize(JEventLoop* locEventLoop)
 	locMiscInfoMap->Add(new TObjString("RunNumber"), new TObjString(locOStream.str().c_str()));
 
 	//CHANNEL INFO
+	locBranchRegister.Register_Single<ULong64_t>("EventNumber"); //for debugging
 	locBranchRegister.Register_Single<Float_t>("BeamEnergy");
 	locBranchRegister.Register_Single<Float_t>("BeamRFDeltaT");
 	locBranchRegister.Register_Single<Float_t>("ComboVertexZ");
@@ -62,24 +63,26 @@ void DCustomAction_TrackingEfficiency::Initialize(JEventLoop* locEventLoop)
 	locBranchRegister.Register_Single<Float_t>("MissingP3_CovPyPz");
 	locBranchRegister.Register_Single<Float_t>("MissingP3_CovPzPz");
 
-	//TRACKING INFO: //"Recon:" Time-based track
-	locBranchRegister.Register_Single<Float_t>("ReconMatchFOM_WireBased"); //FOM < 0 if nothing, no-match
-	locBranchRegister.Register_Single<Float_t>("ReconTrackingFOM_WireBased"); //FOM < 0 if nothing, no-match
-	locBranchRegister.Register_Single<TVector3>("ReconP3_WireBased"); //wire-based
-	locBranchRegister.Register_Single<Float_t>("ReconMatchFOM"); //FOM < 0 if nothing, no-match (time-based)
-	locBranchRegister.Register_Single<Float_t>("ReconTrackingFOM"); //FOM < 0 if nothing, no-match (time-based)
-	locBranchRegister.Register_Single<TVector3>("ReconP3"); //time-based (time-based)
-	locBranchRegister.Register_Single<Float_t>("MeasuredMissingE"); //includes recon time-based track if found, else is -999.0
-	locBranchRegister.Register_Single<UInt_t>("TrackCDCRings"); //rings correspond to bits (1 -> 28)
-	locBranchRegister.Register_Single<UInt_t>("TrackFDCPlanes"); //planes correspond to bits (1 -> 24)
+	//TRACKING INFO:
+	locBranchRegister.Register_Single<UInt_t>("NumUnusedWireBased");
+        locBranchRegister.Register_Single<UInt_t>("NumUnusedTimeBased");
+	locBranchRegister.Register_FundamentalArray<Float_t>("ReconMatchFOM_WireBased", "NumUnusedWireBased"); //FOM < 0 if nothing, no-match
+	locBranchRegister.Register_FundamentalArray<Float_t>("ReconTrackingFOM_WireBased", "NumUnusedWireBased"); //FOM < 0 if nothing, no-match
+	locBranchRegister.Register_ClonesArray<TVector3>("ReconP3_WireBased"); //wire-based
+	locBranchRegister.Register_FundamentalArray<Float_t>("ReconMatchFOM", "NumUnusedTimeBased"); //FOM < 0 if nothing, no-match (time-based)
+	locBranchRegister.Register_FundamentalArray<Float_t>("ReconTrackingFOM", "NumUnusedTimeBased"); //FOM < 0 if nothing, no-match (time-based)
+	locBranchRegister.Register_ClonesArray<TVector3>("ReconP3"); //time-based (time-based)
+	locBranchRegister.Register_FundamentalArray<Float_t>("MeasuredMissingE", "NumUnusedTimeBased"); //includes recon time-based track if found, else is -999.0
+	locBranchRegister.Register_FundamentalArray<UInt_t>("TrackCDCRings", "NumUnusedTimeBased"); //rings correspond to bits (1 -> 28)
+	locBranchRegister.Register_FundamentalArray<UInt_t>("TrackFDCPlanes", "NumUnusedTimeBased"); //planes correspond to bits (1 -> 24)
 
 	//RECON P3 ERROR MATRIX
-	locBranchRegister.Register_Single<Float_t>("ReconP3_CovPxPx");
-	locBranchRegister.Register_Single<Float_t>("ReconP3_CovPxPy");
-	locBranchRegister.Register_Single<Float_t>("ReconP3_CovPxPz");
-	locBranchRegister.Register_Single<Float_t>("ReconP3_CovPyPy");
-	locBranchRegister.Register_Single<Float_t>("ReconP3_CovPyPz");
-	locBranchRegister.Register_Single<Float_t>("ReconP3_CovPzPz");
+	locBranchRegister.Register_FundamentalArray<Float_t>("ReconP3_CovPxPx", "NumUnusedTimeBased");
+	locBranchRegister.Register_FundamentalArray<Float_t>("ReconP3_CovPxPy", "NumUnusedTimeBased");
+	locBranchRegister.Register_FundamentalArray<Float_t>("ReconP3_CovPxPz", "NumUnusedTimeBased");
+	locBranchRegister.Register_FundamentalArray<Float_t>("ReconP3_CovPyPy", "NumUnusedTimeBased");
+	locBranchRegister.Register_FundamentalArray<Float_t>("ReconP3_CovPyPz", "NumUnusedTimeBased");
+	locBranchRegister.Register_FundamentalArray<Float_t>("ReconP3_CovPzPz", "NumUnusedTimeBased");
 
 	//HADRONIC BCAL SHOWER EFFICIENCY: TIMING, MATCHING //cannot get accurate PID without missing-track study
 	locBranchRegister.Register_Single<UChar_t>("ProjectedBCALSector"); //4*(module - 1) + sector: 1 -> 192 //0 if proj to miss
@@ -167,6 +170,7 @@ bool DCustomAction_TrackingEfficiency::Perform_Action(JEventLoop* locEventLoop, 
 	//kinfit results are unique for each DParticleCombo: no need to check for duplicates
 
 	//FILL CHANNEL INFO
+	dTreeFillData.Fill_Single<ULong64_t>("BeamEnergy", locEventLoop->GetJEvent().GetEventNumber());
 	dTreeFillData.Fill_Single<Float_t>("BeamEnergy", locBeamParticle->energy());
 	dTreeFillData.Fill_Single<Float_t>("BeamRFDeltaT", locBeamRFDeltaT);
 	dTreeFillData.Fill_Single<UChar_t>("NumExtraTracks", (UChar_t)locNumExtraTracks);
@@ -201,7 +205,6 @@ bool DCustomAction_TrackingEfficiency::Perform_Action(JEventLoop* locEventLoop, 
 		vector<const DTrackWireBased*> locUnusedWireBasedTracks;
 		dAnalysisUtilities->Get_UnusedWireBasedTracks(locEventLoop, locParticleCombo, locUnusedWireBasedTracks);
 
-		//find the best-matching Wire-based track corresponding to the missing particle
 		double locBestWireBasedMatchFOM = -1.0;
 		const DTrackWireBased* locBestTrackWireBased = NULL;
 		for(size_t loc_i = 0; loc_i < locUnusedWireBasedTracks.size(); ++loc_i)
