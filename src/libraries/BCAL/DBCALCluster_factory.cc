@@ -240,18 +240,21 @@ DBCALCluster_factory::clusterize( vector< const DBCALPoint* > points , vector< c
 				for(vector< const DBCALPoint* >::iterator pt_o = points.begin();
                                 	pt_o != points.end();
                                 	++pt_o ){
-					if( overlap_charged( **clust,*pt_o, track_inner_rad, slope, y_intercept, tracked_phi, counter) ){
-						usedPoints.push_back( *pt_o );
-						(**clust).addPoint( *pt_o );
-						point_reg.push_back(make_pair( (**pt_o).r(), (**pt_o).phi() ) );
-						points.erase( pt_o );
-//						cout << " clust E = " << (**clust).E() << " point E = " << (**pt_o).E() << " point M L S = " << (**pt_o).module() << "," << (**pt_o).layer() << "," << (**pt_o).sector() << endl;
-						usedPoint = true;
-					}
+					if((**clust).Q()==1){
+						if(overlap_charged( **clust,*pt_o, track_inner_rad, slope, y_intercept, tracked_phi, counter) ){
+							usedPoints.push_back( *pt_o );
+							(**clust).addPoint( *pt_o );
+							point_reg.push_back(make_pair( (**pt_o).r(), (**pt_o).phi() ) );
+							points.erase( pt_o );
+							cout << " charged success " << endl; 
+//							cout << " clust E = " << (**clust).E() << " point E = " << (**pt_o).E() << " point M L S = " << (**pt_o).module() << "," << (**pt_o).layer() << "," << (**pt_o).sector() << endl;
+							usedPoint = true;
+						}
+						if( usedPoint ) break;
+					}			
+				}
 				if( usedPoint ) break;
-				}			
-
-	/*			else if( overlap( **clust, *pt ) ){
+				if( overlap( **clust, *pt ) ){
 					if(BCALCLUSTERVERBOSE>0) cout << " overlap success " << endl;            
 					usedPoints.push_back( *pt );  
 					(**clust).addPoint( *pt );
@@ -259,7 +262,7 @@ DBCALCluster_factory::clusterize( vector< const DBCALPoint* > points , vector< c
 					points.erase( pt );
 					usedPoint = true;
 				}
-*/
+
 				// once we erase a point the iterator is no longer useful
 				// and we start the loop over, so that a point doesn't get added to
 				// multiple clusters. We will recycle through points later to 
