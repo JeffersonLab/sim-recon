@@ -1,6 +1,6 @@
 #! /usr/bin/python
 
-# Python script to fit the timewalk curve for the TAGM
+# Python script to fit the timewalk curve for the PSC
 # Usage: python tw.py -b <filename> <run number>
 # Created 5/3/16 barnes
 
@@ -52,6 +52,32 @@ def tw_corr(h,side,module):
 	except:
 		MPV = 0
 
+	# Use TH2 to create a cleaner TH2 for timewalk corrections
+	# by fitting pulse peak slices to get the average time and
+	# associated error.
+	hist = h.ProjectionX().Clone()
+	hist.Reset()
+	try:
+		nbinsX = h.GetNbinsX()
+		for slice in range(100):
+			peak = (2*10*slice + 10)
+			p = h.ProjectionY("_py",10*slice,10*slice+10)
+			maxbin = p.GetMaximumBin()
+			if maxbin == 1 or p.GetEntries() < 20:
+				continue
+			maxval = p.GetBinCenter(maxbin)
+			fitResult = p.Fit("gaus", "sq", "", maxval-0.5, maxval+0.5)
+			mean = fitResult.Parameters()[1]
+			sig = fitResult.Parameters()[2]
+			hist.Fill(peak, mean)
+			bin = hist.FindBin(peak)
+			hist.SetBinError(bin,sig)
+	except:
+		if side == 0:
+			print 'Histogram empty for left module ' + str(module)
+		else:
+			print 'Histogram empty for right module ' + str(module)
+
 	# Make timewalk fit function and apply to hist
 	# New voltage scheme has larger pulse height, adjust the range if needed
 	try:
@@ -63,8 +89,7 @@ def tw_corr(h,side,module):
 		f1.SetParName(1,"c1")
 		f1.SetParName(2,"c2")
 
-		p = h.ProfileX()
-		fitResult = p.Fit("f1","sRWq")
+		fitResult = hist.Fit("f1","sRWq")
 
 		c0 = fitResult.Parameters()[0]
 		c1 = fitResult.Parameters()[1]
@@ -80,7 +105,7 @@ def tw_corr(h,side,module):
                     str(c2) + '   ' + str(16) + '   ' + str(MPV) + '\n')
 	file1.close()
 
-	return p
+	return hist
 
 
 if __name__ == "__main__":

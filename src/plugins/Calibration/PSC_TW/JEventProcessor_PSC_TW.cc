@@ -47,8 +47,8 @@ Double_t tdc_l;
 Double_t tdc_r;
 Double_t t_l;
 Double_t t_r;
-double rf_l;
-double rf_r;
+Double_t rf_l;
+Double_t rf_r;
 
 // Define RFTime_factory
 DRFTime_factory* dRFTimeFactory;
