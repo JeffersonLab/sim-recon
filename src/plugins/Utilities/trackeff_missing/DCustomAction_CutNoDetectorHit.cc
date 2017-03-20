@@ -204,6 +204,8 @@ bool DCustomAction_CutNoDetectorHit::Perform_Action(JEventLoop* locEventLoop, co
 
 	//Check for slow protons stopping in target: don't expect any hits
 	bool locMassiveParticleFlag = (ParticleMass(dMissingPID) + 0.001 > ParticleMass(Proton));
+	if((locP < 0.2) && locMassiveParticleFlag)
+		return false; //don't even bother to try
 	if((locP < 0.3) && locMassiveParticleFlag)
 		return true;
 	if((locP < 0.4) && (locTheta < 30.0) && locMassiveParticleFlag)

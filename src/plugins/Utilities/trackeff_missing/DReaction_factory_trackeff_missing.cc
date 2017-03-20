@@ -218,7 +218,7 @@ jerror_t DReaction_factory_trackeff_missing::evnt(JEventLoop* locEventLoop, uint
 
 
 
-
+	//Loop over reactions and do setup
 	for(auto& locReaction : locReactions)
 	{
 		/**************************************************** Control Settings ****************************************************/
