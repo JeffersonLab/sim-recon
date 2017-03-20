@@ -47,6 +47,7 @@ class DFCALShower_factory:public JFactory<DFCALShower>{
 		double FCAL_CRITICAL_ENERGY[2];
 		double FCAL_SHOWER_OFFSET[2];
 		double FCAL_C_EFFECTIVE[2];
+		double INSERT_PAR1,INSERT_PAR2,INSERT_PAR3,INSERT_PAR4;
 
 		int VERBOSE;
 		string COVARIANCEFILENAME;

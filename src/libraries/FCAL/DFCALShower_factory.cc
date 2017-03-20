@@ -62,6 +62,15 @@ DFCALShower_factory::DFCALShower_factory()
   FCAL_CRITICAL_ENERGY[1] = 0.00964;
   FCAL_SHOWER_OFFSET[1] = 1.0;
 
+
+  INSERT_PAR1=1.274;
+  INSERT_PAR2=-0.021;
+  INSERT_PAR3=0.001;
+  INSERT_PAR4=2.;
+  gPARMS->SetDefaultParameter("FCAL:INSERT_PAR1",INSERT_PAR1);
+  gPARMS->SetDefaultParameter("FCAL:INSERT_PAR2",INSERT_PAR2);
+  gPARMS->SetDefaultParameter("FCAL:INSERT_PAR3",INSERT_PAR3);
+  gPARMS->SetDefaultParameter("FCAL:INSERT_PAR4",INSERT_PAR4);
 	
   /*
   gPARMS->SetDefaultParameter("FCAL:FCAL_RADIATION_LENGTH", FCAL_RADIATION_LENGTH);
@@ -280,15 +289,10 @@ void DFCALShower_factory::GetCorrectedEnergyAndPosition(const DFCALCluster* clus
     }
   }
   else{
-    A=0.01575;
-    B=0.768557;
-    if (Eclust<2.)
-      Egamma = Eclust/(A*Eclust + B); // Linear part
-    else{
-      C=A*2.+B;
-      Egamma = Eclust/(C - 0.0485129*(exp(-(Eclust-2.))-1.)); // Non-linear part
-    } 
-    //Egamma = Eclust;
+    A=INSERT_PAR1;
+    B=INSERT_PAR2;
+    C=INSERT_PAR3;
+    Egamma=A*Eclust+B*Eclust*Eclust+C*Eclust*Eclust*Eclust;
   }
 
   
