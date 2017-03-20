@@ -49,6 +49,7 @@ DBCALCluster_factory::DBCALCluster_factory() :
 jerror_t
 DBCALCluster_factory::init(void){
 
+	m_BCALGeom = NULL;
 	return NOERROR;
 
 }
@@ -63,6 +64,13 @@ jerror_t DBCALCluster_factory::brun(JEventLoop *loop, int32_t runnumber) {
 	DApplication* app = dynamic_cast<DApplication*>(loop->GetJApplication());
 	DGeometry* geom = app->GetDGeometry(runnumber);
 	geom->GetTargetZ(m_z_target_center);
+
+	// load BCAL geometry
+	vector<const DBCALGeometry *> BCALGeomVec;
+	loop->Get(BCALGeomVec);
+	if(BCALGeomVec.size() == 0)
+		throw JException("Could not load DBCALGeometry object!");
+	m_BCALGeom = BCALGeomVec[0];
 
 	loop->GetCalib("/BCAL/effective_velocities", effective_velocities);
 
@@ -97,7 +105,7 @@ DBCALCluster_factory::evnt( JEventLoop *loop, uint64_t eventnumber ){
 
 		const DBCALUnifiedHit& hit = (**hitPtr);
 
-		int id = DBCALGeometry::cellId( hit.module, hit.layer, hit.sector );
+		int id = m_BCALGeom->cellId( hit.module, hit.layer, hit.sector );
 
 		if( cellHitMap.find( id ) == cellHitMap.end() ){
 
@@ -206,7 +214,7 @@ DBCALCluster_factory::clusterize( vector< const DBCALPoint* > points , vector< c
 			// see if it can become a new seed
 			if( (**pt).E() > seedThresh && ((**pt).layer() != 4 || (**pt).E() > layer4_minSeed) ){
 
-				clusters.push_back(new DBCALCluster( *pt, m_z_target_center ) );
+				clusters.push_back(new DBCALCluster( *pt, m_z_target_center, m_BCALGeom ) );
 				points.erase( pt );
 				usedPoint = true;
 			}
@@ -244,7 +252,7 @@ DBCALCluster_factory::clusterize( vector< const DBCALPoint* > points , vector< c
 				// for z with respect to target at this radius
 
 				double z = (**clust).rho()*cos((**clust).theta()) + m_z_target_center;
-				double d = ( ((**ht).end == 0) ? (z  - DBCALGeometry::GetBCAL_center() + DBCALGeometry::GetBCAL_length()/2.0) : (DBCALGeometry::GetBCAL_center() + DBCALGeometry::GetBCAL_length()/2.0 - z));  // d gives the distance to upstream or downstream end of BCAL depending on where the hit was with respect to the cluster z position.
+				double d = ( ((**ht).end == 0) ? (z  - m_BCALGeom->GetBCAL_center() + m_BCALGeom->GetBCAL_length()/2.0) : (m_BCALGeom->GetBCAL_center() + m_BCALGeom->GetBCAL_length()/2.0 - z));  // d gives the distance to upstream or downstream end of BCAL depending on where the hit was with respect to the cluster z position.
 				double lambda = attenuation_parameters[channel_calib][0];
 				double hit_E = (**ht).E;
 				double hit_E_unattenuated = hit_E/exp(-d/lambda);  // hit energy unattenuated wrt the cluster z position
@@ -290,8 +298,8 @@ DBCALCluster_factory::recycle_points( vector<const DBCALPoint*> usedPoints, vect
 				float deltaTheta = fabs( (**clust).theta() - (*usedpt)->theta() );
 				float deltaPhi = (**clust).phi() - (*usedpt)->phi();
         			float deltaPhiAlt = ( (**clust).phi() > (*usedpt)->phi() ?
-                        	(**clust).phi() - (*usedpt)->phi() - 2*PI :
-                        	(*usedpt)->phi() - (**clust).phi() - 2*PI );
+                        	(**clust).phi() - (*usedpt)->phi() - 2*M_PI :
+                        	(*usedpt)->phi() - (**clust).phi() - 2*M_PI );
 
         			deltaPhi = min( fabs( deltaPhi ), fabs( deltaPhiAlt ) );
 					
@@ -324,8 +332,8 @@ DBCALCluster_factory::recycle_points( vector<const DBCALPoint*> usedPoints, vect
 			float deltaTheta = fabs( (**clust).theta() - (*usedpt)->theta() );
 			float deltaPhi = (**clust).phi() - (*usedpt)->phi();
 			float deltaPhiAlt = ( (**clust).phi() > (*usedpt)->phi() ?
-			(**clust).phi() - (*usedpt)->phi() - 2*PI :
-			(*usedpt)->phi() - (**clust).phi() - 2*PI );
+			(**clust).phi() - (*usedpt)->phi() - 2*M_PI :
+			(*usedpt)->phi() - (**clust).phi() - 2*M_PI );
 
 			deltaPhi = min( fabs( deltaPhi ), fabs( deltaPhiAlt ) );
 
@@ -418,8 +426,8 @@ DBCALCluster_factory::overlap( const DBCALCluster& highEClust,
 
 	float deltaPhi = highEClust.phi() - lowEClust.phi();
 	float deltaPhiAlt = ( highEClust.phi() > lowEClust.phi() ? 
-			highEClust.phi() - lowEClust.phi() - 2*PI :
-			lowEClust.phi() - highEClust.phi() - 2*PI );
+			highEClust.phi() - lowEClust.phi() - 2*M_PI :
+			lowEClust.phi() - highEClust.phi() - 2*M_PI );
 
 	deltaPhi = min( fabs( deltaPhi ), fabs( deltaPhiAlt ) );
 
@@ -448,8 +456,8 @@ DBCALCluster_factory::overlap( const DBCALCluster& highEClust,
 	const double delta_z_force_merge_low_E = 40.0*k_cm;
 	const double low_E = .04*k_GeV;
 
-	double z1 = DBCALGeometry::GetBCAL_inner_rad()/tan(highEClust.theta());
-	double z2 = DBCALGeometry::GetBCAL_inner_rad()/tan(lowEClust.theta());
+	double z1 = m_BCALGeom->GetBCAL_inner_rad()/tan(highEClust.theta());
+	double z2 = m_BCALGeom->GetBCAL_inner_rad()/tan(lowEClust.theta());
 	double delta_z = fabs(z1-z2);
 
 	bool theta_match = (sigTheta < m_mergeSig) || (delta_z < delta_z_force_merge) || (delta_z < delta_z_force_merge_low_E && lowEClust.E() < low_E);
@@ -481,8 +489,8 @@ DBCALCluster_factory::overlap( const DBCALCluster& clust,
 
 	float deltaPhi = clust.phi() - point->phi();
 	float deltaPhiAlt = ( clust.phi() > point->phi() ? 
-			clust.phi() - point->phi() - 2*PI :
-			point->phi() - clust.phi() - 2*PI );
+			clust.phi() - point->phi() - 2*M_PI :
+			point->phi() - clust.phi() - 2*M_PI );
 
 	deltaPhi = min( fabs( deltaPhi ), fabs( deltaPhiAlt ) );
 
@@ -545,17 +553,17 @@ bool
 DBCALCluster_factory::overlap( const DBCALCluster& clust,
 		const DBCALUnifiedHit* hit ) const {
 
-	int cellId = DBCALGeometry::cellId( hit->module, hit->layer, hit->sector );
+	int cellId = m_BCALGeom->cellId( hit->module, hit->layer, hit->sector );
 
-	float cellPhi = DBCALGeometry::phi( cellId );
-	float cellSigPhi = DBCALGeometry::phiSize( cellId );
+	float cellPhi = m_BCALGeom->phi( cellId );
+	float cellSigPhi = m_BCALGeom->phiSize( cellId );
 
 	// annoying +- 2pi business to try to find the best delta phi
 
 	float deltaPhi = clust.phi() - cellPhi;
 	float deltaPhiAlt = ( clust.phi() > cellPhi ? 
-			clust.phi() - cellPhi - 2*PI :
-			cellPhi - clust.phi() - 2*PI );
+			clust.phi() - cellPhi - 2*M_PI :
+			cellPhi - clust.phi() - 2*M_PI );
 	deltaPhi = min( fabs( deltaPhi ), fabs( deltaPhiAlt ) );  
 
 	float sigPhi = deltaPhi / 
@@ -565,7 +573,7 @@ DBCALCluster_factory::overlap( const DBCALCluster& clust,
 	// given the location of the cluster, we need the best guess
 	// for z with respect to target at this radius
 	double z = clust.rho()*cos(clust.theta()) + m_z_target_center;        
-	double d = ( (hit->end == 0) ? (z - DBCALGeometry::GetBCAL_center() + DBCALGeometry::GetBCAL_length()/2.0) : (DBCALGeometry::GetBCAL_center() + DBCALGeometry::GetBCAL_length()/2.0 - z));  // d gives the distance to upstream or downstream end of BCAL depending on where the hit was with respect to the cluster z position.
+	double d = ( (hit->end == 0) ? (z - m_BCALGeom->GetBCAL_center() + m_BCALGeom->GetBCAL_length()/2.0) : (m_BCALGeom->GetBCAL_center() + m_BCALGeom->GetBCAL_length()/2.0 - z));  // d gives the distance to upstream or downstream end of BCAL depending on where the hit was with respect to the cluster z position.
 	double time_corr = hit->t - d/effective_velocities[channel_calib];  // hit time corrected to the interaction point in the bar.        
 	double time_diff = TMath::Abs(clust.t() - time_corr); // time cut between cluster time and hit time - 20 ns is a very loose time cut.
 

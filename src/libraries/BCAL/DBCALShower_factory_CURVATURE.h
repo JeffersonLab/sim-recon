@@ -10,6 +10,7 @@
 
 #include <JANA/JFactory.h>
 #include "DBCALShower.h"
+#include "BCAL/DBCALGeometry.h"
 
 class DBCALShower_factory_CURVATURE:public jana::JFactory<DBCALShower>{
 	public:
@@ -44,6 +45,8 @@ class DBCALShower_factory_CURVATURE:public jana::JFactory<DBCALShower>{
   vector<double> recon_showers_theta;
   vector<double> recon_showers_E;
   vector<double> recon_showers_t;
+
+  const DBCALGeometry *dBCALGeom;
 
 };
 

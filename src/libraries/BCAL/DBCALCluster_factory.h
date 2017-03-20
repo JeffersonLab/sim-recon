@@ -16,6 +16,7 @@ using namespace jana;
 #include "BCAL/DBCALHit.h"
 #include "BCAL/DBCALCluster.h"
 #include "BCAL/DBCALUnifiedHit.h"
+#include "BCAL/DBCALGeometry.h"
 
 //#include "TTree.h"
 //#include "TFile.h"
@@ -61,6 +62,9 @@ private:
   float m_clust_hit_timecut;
   float m_timeCut;
   double m_z_target_center;
+  
+  const DBCALGeometry *m_BCALGeom;
+  
   vector<double> effective_velocities;
   vector< vector<double > > attenuation_parameters;
   /*
