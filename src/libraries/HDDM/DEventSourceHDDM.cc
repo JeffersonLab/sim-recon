@@ -213,8 +213,14 @@ jerror_t DEventSourceHDDM::GetObjects(JEvent &event, JFactory_base *factory)
                uscale[i]=row["qru"];
                vscale[i]=row["qrv"];
             }
-         }
+         }     
       }
+      // load BCAL geometry
+  	  vector<const DBCALGeometry *> BCALGeomVec;
+  	  loop->Get(BCALGeomVec);
+  	  if(BCALGeomVec.size() == 0)
+		  throw JException("Could not load DBCALGeometry object!");
+	  dBCALGeom = BCALGeomVec[0];
    }
 
    // Warning: This class is not completely thread-safe and can fail if running
@@ -825,9 +831,9 @@ jerror_t DEventSourceHDDM::Extract_DBCALSiPMHit(hddm_s::HDDM *record,
       response->E      = uiter->getE();
       response->t      = uiter->getT();
       response->end    = DBCALGeometry::kUpstream;
-      response->cellId = DBCALGeometry::cellId(uiter->getModule(),
-                                               uiter->getLayer(), 
-                                               uiter->getSector());
+      response->cellId = dBCALGeom->cellId(uiter->getModule(),
+                                           uiter->getLayer(), 
+                                           uiter->getSector());
       data.push_back(response);
    }
          
@@ -841,9 +847,9 @@ jerror_t DEventSourceHDDM::Extract_DBCALSiPMHit(hddm_s::HDDM *record,
       response->E      = diter->getE();
       response->t      = diter->getT();
       response->end    = DBCALGeometry::kDownstream;
-      response->cellId = DBCALGeometry::cellId(diter->getModule(),
-                                               diter->getLayer(), 
-                                               diter->getSector());
+      response->cellId = dBCALGeom->cellId(diter->getModule(),
+                                           diter->getLayer(), 
+                                           diter->getSector());
       data.push_back(response);
    }
    

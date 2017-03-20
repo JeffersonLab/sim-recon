@@ -266,6 +266,13 @@ class BCALSmearer : public Smearer
 			bcal_config->NO_SAMPLING_FLUCTUATIONS = in_config->BCAL_NO_SAMPLING_FLUCTUATIONS;
 			bcal_config->NO_SAMPLING_FLOOR_TERM = in_config->BCAL_NO_SAMPLING_FLOOR_TERM;
 			bcal_config->NO_POISSON_STATISTICS = in_config->BCAL_NO_POISSON_STATISTICS;
+			
+			// load BCAL geometry
+  			vector<const DBCALGeometry *> BCALGeomVec;
+  			loop->Get(BCALGeomVec);
+  			if(BCALGeomVec.size() == 0)
+				throw JException("Could not load DBCALGeometry object!");
+			dBCALGeom = BCALGeomVec[0];
 		}
 		~BCALSmearer() {
 			delete bcal_config;
@@ -275,6 +282,7 @@ class BCALSmearer : public Smearer
 
 	protected:
 		bcal_config_t *bcal_config;
+        const DBCALGeometry *dBCALGeom;
 		
 		int inline GetCalibIndex(int module, int layer, int sector);
 
