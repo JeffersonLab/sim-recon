@@ -9,6 +9,7 @@
 
 
 #include <cmath>
+#include <TMath.h>
 #include "DBCALGeometry.h"
 
 #include <HDGEOMETRY/DGeometry.h>

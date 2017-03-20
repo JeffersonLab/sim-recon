@@ -76,8 +76,6 @@ class bcal_config_t
 	bool NO_SAMPLING_FLOOR_TERM;
 	bool NO_POISSON_STATISTICS;
 
-    const DBCALGeometry *dBCALGeom;
-
 	vector<vector<double> > attenuation_parameters; // Avg. of 525 (from calibDB BCAL/attenuation_parameters)
 	// Assume constant effective velocity instead of channel-dependent one
 	//vector<double> effective_velocities; // 16.75 (from calibDB BCAL/effective_velocities)
@@ -284,6 +282,7 @@ class BCALSmearer : public Smearer
 
 	protected:
 		bcal_config_t *bcal_config;
+        const DBCALGeometry *dBCALGeom;
 		
 		int inline GetCalibIndex(int module, int layer, int sector);
 
