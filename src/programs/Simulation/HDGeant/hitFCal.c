@@ -174,7 +174,7 @@ void hitForwardEMcal (float xin[4], float xout[4],
       int column = getcolumn_wrapper_();
 
       LENGTH_OF_BLOCK=45.0;
-      if (row>=4000 || column>=4000) LENGTH_OF_BLOCK=18.0;
+      if (row>=100 || column>=100) LENGTH_OF_BLOCK=18.0;
 
       float dist = 0.5*LENGTH_OF_BLOCK-xfcal[2];
       float dEcorr = dEsum * exp(-dist/ATTEN_LENGTH);
@@ -268,9 +268,9 @@ s_ForwardEMcal_t* pickForwardEMcal ()
          int column = blocks->in[block].column;
 
 	 WIDTH_OF_BLOCK=4.;
-	 if (row>=4000 || column>=4000){
-	   row-=4000;
-	   column-=4000;
+	 if (row>=100 || column>=100){
+	   row-=100;
+	   column-=100;
 	   WIDTH_OF_BLOCK=2.05;
 	 }
 
