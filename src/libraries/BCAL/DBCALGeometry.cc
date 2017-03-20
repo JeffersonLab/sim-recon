@@ -13,68 +13,6 @@
 
 #include <HDGEOMETRY/DGeometry.h>
 
-// On each module there is a 10x4 (r/phi) array of SiPMs
-
-#ifdef BCAL_SUM_CELL
-
-// The configuration below has 3x1 (r/phi) summed cells in the inner
-// and 2x2 summed cells in the outer region
-//int DBCALGeometry::NSUMSECSIN = 1;
-//int DBCALGeometry::NSUMSECSOUT = 2;
-//int DBCALGeometry::NSUMLAYSIN[] = {3,3};
-//int DBCALGeometry::NSUMLAYSOUT[] = {2,2};
-
-// 1.2.3.4 summing configuration
-int DBCALGeometry::NSUMSECSIN = 1;
-int DBCALGeometry::NSUMSECSOUT = 1;
-int DBCALGeometry::NSUMLAYSIN[] = {1,2,3};
-int DBCALGeometry::NSUMLAYSOUT[] = {4};
-
-// end of summing configuration
-
-#else
-
-// The configuration below has no summing of SiPMs
-int DBCALGeometry::NSUMSECSIN = 1;
-int DBCALGeometry::NSUMSECSOUT = 1;
-int DBCALGeometry::NSUMLAYSIN[] = {1,1,1,1,1,1};
-int DBCALGeometry::NSUMLAYSOUT[] = {1,1,1,1};
-// end of no summing configuration
-
-#endif
-
-int DBCALGeometry::NBCALSECSIN = 4/DBCALGeometry::NSUMSECSIN;
-int DBCALGeometry::NBCALSECSOUT = 4/DBCALGeometry::NSUMSECSOUT;
-float DBCALGeometry::BCAL_PHI_SHIFT = 0.0; // will be overwritten in constructor
-
-bool DBCALGeometry::initialized = false;
-float DBCALGeometry::BCALINNERRAD = 0.0;
-float DBCALGeometry::BCALOUTERRAD = 86.17;
-float DBCALGeometry::BCALFIBERLENGTH = 0.0;
-float DBCALGeometry::GLOBAL_CENTER = 0.0;
-  
-float DBCALGeometry::ATTEN_LENGTH = 520.;
-float DBCALGeometry::C_EFFECTIVE  = 16.75;
-
-float DBCALGeometry::m_radius[] = { 64.3, 
-				  66.3,
-				  68.3,
-				  70.3,
-				  72.3,
-				  74.3,
-				  76.3,
-				  78.77,
-				  81.24,
-				  83.70,
-				  86.17};
-
-float DBCALGeometry::fADC_radius[] = { 0,
-				  0,
-				  0,
-				  0,
-				  0};
-
-float DBCALGeometry::BCALMIDRAD = DBCALGeometry::m_radius[DBCALGeometry::BCALMID-1];
 
 DBCALGeometry::DBCALGeometry(int runnumber)  
 {
@@ -107,7 +45,7 @@ DBCALGeometry::DBCALGeometry(int runnumber)
   }
 
   // Initialize DBCALGeometry variables
-  if(!initialized) Initialize(runnumber);
+  Initialize(runnumber);
 
 }
 
@@ -148,38 +86,32 @@ DBCALGeometry::Initialize(int runnumber) {
   // Get overall phi shift of BCAL
   float my_BCAL_PHI_SHIFT;
   dgeom->GetBCALPhiShift(my_BCAL_PHI_SHIFT);
-  BCAL_PHI_SHIFT = my_BCAL_PHI_SHIFT*M_PI/180.0;  // convert to radians
-
-  initialized = true;
+  BCAL_PHI_SHIFT = my_BCAL_PHI_SHIFT*TMath::Pi()/180.0;  // convert to radians
 }
 
 float
-DBCALGeometry::GetBCAL_inner_rad() {
-	if(!initialized) Initialize();
+DBCALGeometry::GetBCAL_inner_rad() const {
 	return BCALINNERRAD;
 }
 
-float*
-DBCALGeometry::GetBCAL_radii() {
-	if(!initialized) Initialize();
+const float*
+DBCALGeometry::GetBCAL_radii() const {
 	return fADC_radius;
+	//return &(fADC_radius[0]);
 }
 
 float
-DBCALGeometry::GetBCAL_center() {
-	if(!initialized) Initialize();
+DBCALGeometry::GetBCAL_center() const {
 	return GLOBAL_CENTER;
 }
 
 float
-DBCALGeometry::GetBCAL_length() {
-	if(!initialized) Initialize();
+DBCALGeometry::GetBCAL_length() const {
 	return BCALFIBERLENGTH;
 }
 
 float
-DBCALGeometry::GetBCAL_phi_shift() {
-	if(!initialized) Initialize();
+DBCALGeometry::GetBCAL_phi_shift() const {
 	return BCAL_PHI_SHIFT;
 }
 
@@ -187,7 +119,7 @@ DBCALGeometry::GetBCAL_phi_shift() {
 // module
 //--------------
 int
-DBCALGeometry::module( int cellId ) {
+DBCALGeometry::module( int cellId ) const {
   
   return ( cellId & MODULE_MASK ) >> MODULE_SHIFT;
 }
@@ -196,7 +128,7 @@ DBCALGeometry::module( int cellId ) {
 // layer
 //--------------
 int
-DBCALGeometry::layer( int cellId ) {
+DBCALGeometry::layer( int cellId ) const {
   
   return ( cellId & LAYER_MASK ) >> LAYER_SHIFT;
 }
@@ -205,7 +137,7 @@ DBCALGeometry::layer( int cellId ) {
 // sector
 //--------------
 int
-DBCALGeometry::sector( int cellId ) {
+DBCALGeometry::sector( int cellId ) const {
   
   return ( cellId & SECTOR_MASK ) >> SECTOR_SHIFT;
 }
@@ -214,7 +146,7 @@ DBCALGeometry::sector( int cellId ) {
 // cellId
 //--------------
 int
-DBCALGeometry::cellId( int module, int layer, int sector ) {
+DBCALGeometry::cellId( int module, int layer, int sector ) const {
   
   return ( ( module << MODULE_SHIFT ) | 
            ( layer << LAYER_SHIFT   ) | 
@@ -225,7 +157,7 @@ DBCALGeometry::cellId( int module, int layer, int sector ) {
 // fADC_layer
 //--------------
 int
-DBCALGeometry::fADC_layer( int SiPM_cellId ) {
+DBCALGeometry::fADC_layer( int SiPM_cellId ) const {
   
   int cell_layer = DBCALGeometry::layer( SiPM_cellId );
   int fADC_layer = 0;
@@ -255,7 +187,7 @@ DBCALGeometry::fADC_layer( int SiPM_cellId ) {
 // fADC_sector
 //--------------
 int
-DBCALGeometry::fADC_sector( int SiPM_cellId ) {
+DBCALGeometry::fADC_sector( int SiPM_cellId ) const {
 
   int cell_layer = DBCALGeometry::layer( SiPM_cellId );
   int cell_sector = DBCALGeometry::sector( SiPM_cellId );
@@ -274,7 +206,7 @@ DBCALGeometry::fADC_sector( int SiPM_cellId ) {
 // fADCId
 //--------------
 int
-DBCALGeometry::fADCId( int module, int SiPM_layer, int SiPM_sector ) {
+DBCALGeometry::fADCId( int module, int SiPM_layer, int SiPM_sector ) const {
   // This is used to return the readout channel ID which may
   // differ from the cellID if summing is implemented.
   //
@@ -292,7 +224,7 @@ DBCALGeometry::fADCId( int module, int SiPM_layer, int SiPM_sector ) {
 // NSiPMs
 //--------------
 int
-DBCALGeometry::NSiPMs(int fADCId)
+DBCALGeometry::NSiPMs(int fADCId) const
 {
 	/// Return the number of SiPMs summed for the given fADCId
 	int fadc_lay = layer(fADCId);
@@ -312,7 +244,7 @@ DBCALGeometry::NSiPMs(int fADCId)
 // r
 //--------------
 float
-DBCALGeometry::r( int fADC_cell ) {
+DBCALGeometry::r( int fADC_cell ) const {
 
   int fADC_lay = layer( fADC_cell );
 
@@ -346,7 +278,7 @@ DBCALGeometry::r( int fADC_cell ) {
 // rSize
 //--------------
 float
-DBCALGeometry::rSize( int fADC_cell ) {
+DBCALGeometry::rSize( int fADC_cell ) const {
 
   int fADC_lay = layer( fADC_cell );
 
@@ -380,7 +312,7 @@ DBCALGeometry::rSize( int fADC_cell ) {
 // phi
 //--------------
 float
-DBCALGeometry::phi( int fADC_cell ) {
+DBCALGeometry::phi( int fADC_cell ) const {
 
   // int fADC_lay = layer( fADC_cell );
   // int fADC_sect = sector( fADC_cell );
@@ -395,16 +327,16 @@ DBCALGeometry::phi( int fADC_cell ) {
   // }
 
   // fADC_sect += nSects * ( module( fADC_cell ) - 1 );
-  // sectSize = 2 * PI / (NBCALMODS*nSects);
+  // sectSize = 2 * M_PI / (NBCALMODS*nSects);
   
   // float my_phi = sectSize * ( (float)fADC_sect - 0.5 );
   // my_phi += BCAL_PHI_SHIFT - 2.0*sectSize; // adjust for center of module and overall BCAL shift
   
   float globsect = getglobalsector(module(fADC_cell), sector(fADC_cell));
-  float sectSize = 2. * PI / 48. / 4;
+  float sectSize = 2. * M_PI / 48. / 4;
   // The first 2 sectors (half of mudule 1) have negative phi
   float my_phi = sectSize * (globsect-2.5);
-  if (my_phi < 0) my_phi += 2 * PI;
+  if (my_phi < 0) my_phi += 2 * M_PI;
   return my_phi;
 
 }
@@ -413,7 +345,7 @@ DBCALGeometry::phi( int fADC_cell ) {
 // phiSize
 //--------------
 float
-DBCALGeometry::phiSize( int fADC_cell ) {
+DBCALGeometry::phiSize( int fADC_cell ) const {
 
   // int fADC_lay = layer( fADC_cell );
 
@@ -424,9 +356,9 @@ DBCALGeometry::phiSize( int fADC_cell ) {
   //   nSects = 4/NSUMSECSOUT;
   // }
 
-  // float sectSize = 2 * PI / ( NBCALMODS * nSects );
+  // float sectSize = 2 * M_PI / ( NBCALMODS * nSects );
   
-  float sectSize = 2 * PI / 48 / 4;
+  float sectSize = 2 * M_PI / 48 / 4;
 
   return sectSize;
 }
@@ -436,18 +368,18 @@ DBCALGeometry::phiSize( int fADC_cell ) {
 //--------------
 /// Method to get the fADC cell ID from an (R, phi) combination.  R in cm and phi in radians.
 int
-DBCALGeometry::fADCcellId_rphi( float r, float phi ) {
+DBCALGeometry::fADCcellId_rphi( float r, float phi ) const {
   int fADC_cellId = 0;
   int SiPM_layer = 0;
 
   if (r < BCALINNERRAD) return 0;
   else if (r > BCALOUTERRAD) return 0;
 
-  float modulephiSize = (2 * PI) / 48;
+  float modulephiSize = (2 * M_PI) / 48;
   float sectorphiSize = modulephiSize / 4;
   float phi_nooffset = (phi + 2.0*sectorphiSize);
   if (phi_nooffset < 0) return 0;
-  else if (phi_nooffset > 2 * PI) return 0;
+  else if (phi_nooffset > 2 * M_PI) return 0;
 
   if (r < m_radius[1]) SiPM_layer = 1; 
   else if (r < m_radius[2]) SiPM_layer = 2; 
@@ -469,25 +401,29 @@ DBCALGeometry::fADCcellId_rphi( float r, float phi ) {
   return fADC_cellId;
 }
 
-int  DBCALGeometry::getglobalchannelnumber(int module, int layer, int sector, int end) {
+int  DBCALGeometry::getglobalchannelnumber(int module, int layer, int sector, int end) const {
   if (module<=0 || layer<=0 || sector<=0) return 0;
   else return (module-1)*32 + (layer-1)*8 + (sector-1)*2 + end + 1;
 }
-int DBCALGeometry::getendchannelnumber(int module, int layer, int sector) {
+
+int DBCALGeometry::getendchannelnumber(int module, int layer, int sector) const {
   if (module<=0 || layer<=0 || sector<=0) return 0;
   else return (module-1)*16 + (layer-1)*4 + sector;
 } 
-int DBCALGeometry::getglobalsector(int module, int sector) {
+
+int DBCALGeometry::getglobalsector(int module, int sector) const {
   if (module<=0 || sector<=0) return 0;
   else return (module-1)*4 + sector;
 }
-int DBCALGeometry::getsector(int globalsector) {
+
+int DBCALGeometry::getsector(int globalsector) const {
   if (globalsector<=0) return 0;
   int sector = globalsector%4;
   if (sector==0) sector=4;
   return sector;
 }
-int DBCALGeometry::getmodule(int globalsector) {
+
+int DBCALGeometry::getmodule(int globalsector) const {
   if (globalsector<=0) return 0;
   else return (globalsector-1)/4+1;
 }

@@ -322,20 +322,13 @@ jerror_t JEventProcessor_BCAL_point_calib::brun(JEventLoop *eventLoop, int32_t r
 	Run_Number = runnumber;
 	//BCAL_Neutrals->Fill();
 	//cout << " run number = " << RunNumber << endl;
-	/*
-	//Optional: Retrieve REST writer for writing out skims
-	eventLoop->GetSingle(dEventWriterREST);
-	*/
 
-	//vector<const DTrackFinder *> finders;
-	//eventLoop->Get(finders);
-	//finder = const_cast<DTrackFinder*>(finders[0]);
-
-	/*
-	//Recommeded: Create output ROOT TTrees (nothing is done if already created)
-	eventLoop->GetSingle(dEventWriterROOT);
-	dEventWriterROOT->Create_DataTrees(eventLoop);
-	*/
+	// load BCAL geometry
+  	vector<const DBCALGeometry *> BCALGeomVec;
+  	eventLoop->Get(BCALGeomVec);
+  	if(BCALGeomVec.size() == 0)
+		throw JException("Could not load DBCALGeometry object!");
+	dBCALGeom = BCALGeomVec[0];
 
 	return NOERROR;
 }
@@ -425,8 +418,7 @@ jerror_t JEventProcessor_BCAL_point_calib::evnt(JEventLoop *loop, uint64_t event
 	DVector3 mypos_4(0.0,0.0,0.0); // middle of Layer 4
 	
 	// get the inner radius of each layer (and the outer radius of layer 4)
-	float* bcal_radii;
-	bcal_radii = DBCALGeometry::GetBCAL_radii();
+	const float*bcal_radii = dBCALGeom->GetBCAL_radii();
 	
 	// the radii at the middle of each layer
 	double R1 = 0.5*(bcal_radii[0] + bcal_radii[1]); 

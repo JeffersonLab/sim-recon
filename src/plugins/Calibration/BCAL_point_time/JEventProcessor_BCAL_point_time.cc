@@ -279,6 +279,14 @@ jerror_t JEventProcessor_BCAL_point_time::init(void)
 jerror_t JEventProcessor_BCAL_point_time::brun(JEventLoop *eventLoop, int32_t runnumber)
 {
 	// This is called whenever the run number changes
+	// load BCAL geometry
+  	vector<const DBCALGeometry *> BCALGeomVec;
+  	eventLoop->Get(BCALGeomVec);
+  	if(BCALGeomVec.size() == 0)
+		throw JException("Could not load DBCALGeometry object!");
+	dBCALGeom = BCALGeomVec[0];
+
+
 	return NOERROR;
 }
 
@@ -308,7 +316,7 @@ jerror_t JEventProcessor_BCAL_point_time::evnt(JEventLoop *loop, uint64_t eventn
 	if (numthrown==1) {
 		float pz = thrown[0]->pz();
 		float pt = sqrt(thrown[0]->px()*thrown[0]->px() + thrown[0]->py()*thrown[0]->py());
-		float z_p = pz/pt * DBCALGeometry::m_radius[0];
+		float z_p = pz/pt * dBCALGeom->m_radius[0];
 		theta_thrown = degperrad*atan2(pt,pz);
 		//float z_targ = thrown[0]->z();
 		z_coord = z_p;
