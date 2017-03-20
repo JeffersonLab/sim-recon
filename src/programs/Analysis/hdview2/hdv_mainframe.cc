@@ -1641,7 +1641,7 @@ void hdv_mainframe::DrawDetectorsXY(void)
 		    int col = fcalgeom->column(chan);
 
 		    int calor=0;
-		    if (row>=4000|| col>=4000) calor=1;
+		    if (row>=100|| col>=100) calor=1;
 		    double blocksize = fcalgeom->blockSize(calor);
 		    DVector2 shift[4];
 		    shift[0].Set(-blocksize/2, -blocksize/2);  // these are ordered such that they
@@ -1977,7 +1977,7 @@ void hdv_mainframe::DrawDetectorsRPhi(void)
 	  int col = fcalgeom->column(chan);
 	  
 	  int calor=0;
-	  if (row>=4000|| col>=4000){
+	  if (row>=100|| col>=100){
 	    calor=1;
 	  }
 	  double blocksize = fcalgeom->blockSize(calor);
