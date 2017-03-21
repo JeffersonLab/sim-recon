@@ -63,7 +63,7 @@ DFCALGeometry::DFCALGeometry()
       float x=m_positionOnFace[row][col][calor].X();
       float y=m_positionOnFace[row][col][calor].Y();
       
-      printf("r %d c %d x %f y %f\n",row,col,x,y);
+      //printf("r %d c %d x %f y %f\n",row,col,x,y);
 
       if (fabs(x)>5.0 || fabs(y)>5.0){
 	m_activeBlock[row][col][calor] = true;
