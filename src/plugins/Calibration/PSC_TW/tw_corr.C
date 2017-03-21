@@ -169,7 +169,7 @@ void tw_plot(char const *inputFile) {
       h_pp_l[i] = new TH1D(Form("pp_l_%i",i+1),
                            Form("Pulse peak;PSC_L_%i pulse peak (adc counts)",i+1),
                            BINS_PP,PP_MIN,PP_MAX);
-      h_dt_vs_pp_l[i] = (TH2F*)infile->Get(Form("h_dt_vs_pp_l_%i",i+1));
+      h_dt_vs_pp_l[i] = (TH2F*)infile->Get(Form("PSC_TW/tdc-rf/h_dt_vs_pp_tdc_l_%i",i+1));
       h_dt_vs_pp_l_corr[i] = new TH2F(Form("h_dt_vs_pp_L_corr_%i",i+1),
                                       Form("Time difference vs pulse peak for PSC_L_%i",i+1),
                                       BINS_PP,PP_MIN,PP_MAX,BINS_DT,DT_MIN,DT_MAX);
@@ -186,7 +186,7 @@ void tw_plot(char const *inputFile) {
       h_pp_r[i] = new TH1D(Form("pp_r_%i",i+1),
                            Form("Pulse peak;PSC_R_%i pulse peak (adc counts)",i+1),
                            BINS_PP,PP_MIN,PP_MAX);
-      h_dt_vs_pp_r[i] = (TH2F*)infile->Get(Form("h_dt_vs_pp_r_%i",i+1));
+      h_dt_vs_pp_r[i] = (TH2F*)infile->Get(Form("PSC_TW/tdc-rf/h_dt_vs_pp_tdc_r_%i",i+1));
       h_dt_vs_pp_r_corr[i] = new TH2F(Form("h_dt_vs_pp_R_corr_%i",i+1),
                                       Form("Time difference vs pulse peak for PSC_R_%i",i+1),
                                       BINS_PP,PP_MIN,PP_MAX,BINS_DT,DT_MIN,DT_MAX);
@@ -479,10 +479,6 @@ void tw_corr(char const *inputFile) {
       else
          c = gPad->GetCanvas();
 
-   TCanvas *c = (TCanvas*)gROOT->FindObject("c");
-   if (c == 0) {
-      c = new TCanvas("c","c",0,20,1200,800);
-   }
    c->Clear();
    c->Divide(2,2);
    gStyle->SetOptStat(0);
