@@ -15,6 +15,7 @@
 using namespace jana;
 
 #include "BCAL/DBCALShower.h"
+#include "BCAL/DBCALGeometry.h"
 
 #include "TH2F.h"
 #include <DMatrixDSym.h>
@@ -49,6 +50,8 @@ private:
   double exponential_param2;
 
   double m_zTarget;
+
+  const DBCALGeometry *dBCALGeom;
 
 };
 
