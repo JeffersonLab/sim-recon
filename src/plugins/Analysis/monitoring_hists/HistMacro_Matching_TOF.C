@@ -20,6 +20,18 @@
 	TH2I* locHist_TrackDeltaYVsVerticalPaddle = (TH2I*)gDirectory->Get("TOFTrackDeltaYVsVerticalPaddle");
 	TH2I* locHist_TrackDeltaYVsHorizontalPaddle = (TH2I*)gDirectory->Get("TOFTrackDeltaYVsHorizontalPaddle");
 
+	//Get original pad margins
+	double locLeftPadMargin = gStyle->GetPadLeftMargin();
+	double locRightPadMargin = gStyle->GetPadRightMargin();
+	double locTopPadMargin = gStyle->GetPadTopMargin();
+	double locBottomPadMargin = gStyle->GetPadBottomMargin();
+
+	//Set new pad margins
+	gStyle->SetPadLeftMargin(0.15);
+	gStyle->SetPadRightMargin(0.15);
+//	gStyle->SetPadTopMargin(locTopPadMargin);
+//	gStyle->SetPadBottomMargin(locBottomPadMargin);
+
 	//Get/Make Canvas
 	TCanvas *locCanvas = NULL;
 	if(TVirtualPad::Pad() == NULL)
@@ -39,6 +51,7 @@
 		locHist_TrackDeltaXVsVerticalPaddle->GetXaxis()->SetLabelSize(0.05);
 		locHist_TrackDeltaXVsVerticalPaddle->GetYaxis()->SetLabelSize(0.05);
 		locHist_TrackDeltaXVsVerticalPaddle->Draw("COLZ");
+		locHist_TrackDeltaXVsVerticalPaddle->GetYaxis()->SetTitleOffset(1.3);
 	}
 
 	locCanvas->cd(4);
@@ -51,6 +64,7 @@
 		locHist_TrackDeltaYVsHorizontalPaddle->GetXaxis()->SetLabelSize(0.05);
 		locHist_TrackDeltaYVsHorizontalPaddle->GetYaxis()->SetLabelSize(0.05);
 		locHist_TrackDeltaYVsHorizontalPaddle->Draw("COLZ");
+		locHist_TrackDeltaYVsHorizontalPaddle->GetYaxis()->SetTitleOffset(1.3);
 	}
 
 	//PADS 2 & 5: VS KINEMATICS
@@ -64,6 +78,10 @@
 		locHist_TOFTrackDistanceVsP->GetXaxis()->SetLabelSize(0.05);
 		locHist_TOFTrackDistanceVsP->GetYaxis()->SetLabelSize(0.05);
 		locHist_TOFTrackDistanceVsP->Draw("COLZ");
+		locHist_TOFTrackDistanceVsP->GetYaxis()->SetTitleOffset(1.3);
+		TF1* locFunc = new TF1("TOF_DCut", "exp(-1.0*[0]*x + [1]) + [2]", 0.0, 10.0);
+		locFunc->SetParameters(1.1, 1.5, 6.15);
+		locFunc->Draw("SAME");
 	}
 
 	locCanvas->cd(5);
@@ -76,6 +94,7 @@
 		locHist_TOFTrackDistanceVsTheta->GetXaxis()->SetLabelSize(0.05);
 		locHist_TOFTrackDistanceVsTheta->GetYaxis()->SetLabelSize(0.05);
 		locHist_TOFTrackDistanceVsTheta->Draw("COLZ");
+		locHist_TOFTrackDistanceVsTheta->GetYaxis()->SetTitleOffset(1.3);
 	}
 
 	//PADS 3 & 6: IS THE CALIBRATION OK?
@@ -89,6 +108,7 @@
 		locHist_TrackDeltaXVsHorizontalPaddle->GetXaxis()->SetLabelSize(0.05);
 		locHist_TrackDeltaXVsHorizontalPaddle->GetYaxis()->SetLabelSize(0.05);
 		locHist_TrackDeltaXVsHorizontalPaddle->Draw("COLZ");
+		locHist_TrackDeltaXVsHorizontalPaddle->GetYaxis()->SetTitleOffset(1.3);
 	}
 
 	locCanvas->cd(6);
@@ -101,5 +121,12 @@
 		locHist_TrackDeltaYVsVerticalPaddle->GetXaxis()->SetLabelSize(0.05);
 		locHist_TrackDeltaYVsVerticalPaddle->GetYaxis()->SetLabelSize(0.05);
 		locHist_TrackDeltaYVsVerticalPaddle->Draw("COLZ");
+		locHist_TrackDeltaYVsVerticalPaddle->GetYaxis()->SetTitleOffset(1.3);
 	}
+
+	//Reset original pad margins
+	gStyle->SetPadLeftMargin(locLeftPadMargin);
+	gStyle->SetPadRightMargin(locRightPadMargin);
+	gStyle->SetPadTopMargin(locTopPadMargin);
+	gStyle->SetPadBottomMargin(locBottomPadMargin);
 }
