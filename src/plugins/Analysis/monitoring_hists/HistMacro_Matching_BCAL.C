@@ -23,6 +23,18 @@
 	TH2I* locHist_TrackBCALModuleVsZ_HasHit_BCAL = (TH2I*)gDirectory->Get("TrackBCALModuleVsZ_HasHit");
 	TH2I* locHist_TrackBCALModuleVsZ_NoHit_BCAL = (TH2I*)gDirectory->Get("TrackBCALModuleVsZ_NoHit");
 
+	//Get original pad margins
+	double locLeftPadMargin = gStyle->GetPadLeftMargin();
+	double locRightPadMargin = gStyle->GetPadRightMargin();
+	double locTopPadMargin = gStyle->GetPadTopMargin();
+	double locBottomPadMargin = gStyle->GetPadBottomMargin();
+
+	//Set new pad margins
+	gStyle->SetPadLeftMargin(0.15);
+	gStyle->SetPadRightMargin(0.12);
+//	gStyle->SetPadTopMargin(locTopPadMargin);
+//	gStyle->SetPadBottomMargin(locBottomPadMargin);
+
 	//Get/Make Canvas
 	TCanvas *locCanvas = NULL;
 	if(TVirtualPad::Pad() == NULL)
@@ -38,11 +50,18 @@
 	if(locHist_BCAL_DeltaPhiVsP != NULL)
 	{
 		locHist_BCAL_DeltaPhiVsP->Rebin2D(2, 2);
+		locHist_BCAL_DeltaPhiVsP->GetYaxis()->SetTitleOffset(1.3);
 		locHist_BCAL_DeltaPhiVsP->GetXaxis()->SetTitleSize(0.05);
 		locHist_BCAL_DeltaPhiVsP->GetYaxis()->SetTitleSize(0.05);
 		locHist_BCAL_DeltaPhiVsP->GetXaxis()->SetLabelSize(0.05);
 		locHist_BCAL_DeltaPhiVsP->GetYaxis()->SetLabelSize(0.05);
 		locHist_BCAL_DeltaPhiVsP->Draw("COLZ");
+		TF1* locFunc_High = new TF1("BCAL_PhiCut_High", "[0] + [1]*exp(-1.0*[2]*x)", 0.0, 4.0);
+		locFunc_High->SetParameters(3.0, 12.0, 0.8);
+		locFunc_High->Draw("SAME");
+		TF1* locFunc_Low = new TF1("BCAL_PhiCut_Low", "-1.0*([0] + [1]*exp(-1.0*[2]*x))", 0.0, 4.0);
+		locFunc_Low->SetParameters(3.0, 12.0, 0.8);
+		locFunc_Low->Draw("SAME");
 		gPad->SetLogz();
 	}
 
@@ -52,11 +71,16 @@
 	if(locHist_BCAL_DeltaZVsZ != NULL)
 	{
 		locHist_BCAL_DeltaZVsZ->Rebin2D(2, 2);
+		locHist_BCAL_DeltaZVsZ->GetYaxis()->SetTitleOffset(1.3);
 		locHist_BCAL_DeltaZVsZ->GetXaxis()->SetTitleSize(0.05);
 		locHist_BCAL_DeltaZVsZ->GetYaxis()->SetTitleSize(0.05);
 		locHist_BCAL_DeltaZVsZ->GetXaxis()->SetLabelSize(0.05);
 		locHist_BCAL_DeltaZVsZ->GetYaxis()->SetLabelSize(0.05);
 		locHist_BCAL_DeltaZVsZ->Draw("COLZ");
+		TF1* locFunc_High = new TF1("BCAL_ZCut_High", "30.0", 0.0, 450.0);
+		locFunc_High->Draw("SAME");
+		TF1* locFunc_Low = new TF1("BCAL_ZCut_Low", "-30.0", 0.0, 450.0);
+		locFunc_Low->Draw("SAME");
 		gPad->SetLogz();
 	}
 
@@ -99,7 +123,7 @@
 		}
 		locAcceptanceHist->SetEntries(locMissingHist->GetEntries() + locFoundHist->GetEntries());
 		locAcceptanceHist->SetStats(kFALSE);
-
+		locAcceptanceHist->GetYaxis()->SetTitleOffset(1.3);
 		locAcceptanceHist->GetXaxis()->SetTitleSize(0.05);
 		locAcceptanceHist->GetYaxis()->SetTitleSize(0.05);
 		locAcceptanceHist->GetXaxis()->SetLabelSize(0.05);
@@ -146,7 +170,7 @@
 		}
 		locAcceptanceHist->SetEntries(locMissingHist->GetEntries() + locFoundHist->GetEntries());
 		locAcceptanceHist->SetStats(kFALSE);
-
+		locAcceptanceHist->GetYaxis()->SetTitleOffset(1.3);
 		locAcceptanceHist->GetXaxis()->SetTitleSize(0.05);
 		locAcceptanceHist->GetYaxis()->SetTitleSize(0.05);
 		locAcceptanceHist->GetXaxis()->SetLabelSize(0.05);
@@ -234,12 +258,17 @@
 		}
 		locAcceptanceHist->SetEntries(locMissingHist->GetEntries() + locFoundHist->GetEntries());
 		locAcceptanceHist->SetStats(kFALSE);
-
 		locAcceptanceHist->GetXaxis()->SetTitleSize(0.05);
 		locAcceptanceHist->GetYaxis()->SetTitleSize(0.05);
 		locAcceptanceHist->GetXaxis()->SetLabelSize(0.05);
 		locAcceptanceHist->GetYaxis()->SetLabelSize(0.05);
 		locAcceptanceHist->Draw("E1");
 	}
+
+	//Reset original pad margins
+	gStyle->SetPadLeftMargin(locLeftPadMargin);
+	gStyle->SetPadRightMargin(locRightPadMargin);
+	gStyle->SetPadTopMargin(locTopPadMargin);
+	gStyle->SetPadBottomMargin(locBottomPadMargin);
 }
 

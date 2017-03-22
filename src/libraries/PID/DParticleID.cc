@@ -103,6 +103,10 @@ DParticleID::DParticleID(JEventLoop *loop)
 		cout << "DParticleID: Error loading values from PID data base" <<endl;
 		DELTA_R_FCAL = 15.0;
 	}
+
+	//IF YOU CHANGE THESE, PLEASE (!!) UPDATE THE CUT LINES DRAWN FOR THE MONITORING IN:
+	// src/plugins/Analysis/monitoring_hists/HistMacro_Matching_*.C
+
 	FCAL_CUT_PAR1=4.5;
 	gPARMS->SetDefaultParameter("FCAL:CUT_PAR1",FCAL_CUT_PAR1);
 
@@ -121,10 +125,10 @@ DParticleID::DParticleID(JEventLoop *loop)
 	BCAL_Z_CUT = 30.0;
 	gPARMS->SetDefaultParameter("BCAL:Z_CUT",BCAL_Z_CUT);
 
-	BCAL_PHI_CUT_PAR1 = 2.0;
+	BCAL_PHI_CUT_PAR1 = 3.0;
 	gPARMS->SetDefaultParameter("BCAL:PHI_CUT_PAR1",BCAL_PHI_CUT_PAR1);
 
-	BCAL_PHI_CUT_PAR2 = 10.0;
+	BCAL_PHI_CUT_PAR2 = 12.0;
 	gPARMS->SetDefaultParameter("BCAL:PHI_CUT_PAR2",BCAL_PHI_CUT_PAR2);
 
 	BCAL_PHI_CUT_PAR3 = 0.8;

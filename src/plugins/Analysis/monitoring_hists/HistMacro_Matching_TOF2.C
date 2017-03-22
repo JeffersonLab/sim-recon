@@ -36,10 +36,22 @@
 	TH1I* locHist_TrackTOFR_HasHit_TOF = (TH1I*)gDirectory->Get("TrackTOFR_HasHit");
 	TH1I* locHist_TrackTOFR_NoHit_TOF = (TH1I*)gDirectory->Get("TrackTOFR_NoHit");
 
+	//Get original pad margins
+	double locLeftPadMargin = gStyle->GetPadLeftMargin();
+	double locRightPadMargin = gStyle->GetPadRightMargin();
+	double locTopPadMargin = gStyle->GetPadTopMargin();
+	double locBottomPadMargin = gStyle->GetPadBottomMargin();
+
+	//Set new pad margins
+	gStyle->SetPadLeftMargin(0.15);
+	gStyle->SetPadRightMargin(0.15);
+//	gStyle->SetPadTopMargin(locTopPadMargin);
+//	gStyle->SetPadBottomMargin(locBottomPadMargin);
+
 	//Get/Make Canvas
 	TCanvas *locCanvas = NULL;
 	if(TVirtualPad::Pad() == NULL)
-		locCanvas = new TCanvas("Matching_TOF", "Matching_TOF", 1200, 800);
+		locCanvas = new TCanvas("Matching_TOF2", "Matching_TOF2", 1200, 800);
 	else
 		locCanvas = gPad->GetCanvas();
 	locCanvas->Divide(3, 2);
@@ -56,7 +68,7 @@
 		TH2I* locFoundHist = locHist_TrackYVsVerticalPaddle_HasHit;
 		TH2I* locMissingHist = locHist_TrackYVsVerticalPaddle_NoHit;
 		string locHistName = string(locFoundHist->GetName()) + string("_Acceptance");
-		string locHistTitle = string("Track / TOF Paddle Match Rate;") + string(locFoundHist->GetXaxis()->GetTitle()) + string(";") + string(locFoundHist->GetYaxis()->GetTitle());
+		string locHistTitle = string("TOF Paddle Match Rate (p > 1 GeV/c);") + string(locFoundHist->GetXaxis()->GetTitle()) + string(";") + string(locFoundHist->GetYaxis()->GetTitle());
 
 		TH2D* locAcceptanceHist = new TH2D(locHistName.c_str(), locHistTitle.c_str(), locFoundHist->GetNbinsX(), locFoundHist->GetXaxis()->GetXmin(), locFoundHist->GetXaxis()->GetXmax(), locFoundHist->GetNbinsY(), locFoundHist->GetYaxis()->GetXmin(), locFoundHist->GetYaxis()->GetXmax());
 		for(Int_t loc_m = 1; loc_m <= locFoundHist->GetNbinsX(); ++loc_m)
@@ -86,6 +98,7 @@
 		locAcceptanceHist->SetEntries(locMissingHist->GetEntries() + locFoundHist->GetEntries());
 		locAcceptanceHist->SetStats(kFALSE);
 
+		locAcceptanceHist->GetYaxis()->SetTitleOffset(1.5);
 		locAcceptanceHist->GetXaxis()->SetTitleSize(0.05);
 		locAcceptanceHist->GetYaxis()->SetTitleSize(0.05);
 		locAcceptanceHist->GetXaxis()->SetLabelSize(0.05);
@@ -105,7 +118,7 @@
 		TH2I* locFoundHist = locHist_HorizontalPaddleVsTrackX_HasHit;
 		TH2I* locMissingHist = locHist_HorizontalPaddleVsTrackX_NoHit;
 		string locHistName = string(locFoundHist->GetName()) + string("_Acceptance");
-		string locHistTitle = string("Track / TOF Paddle Match Rate;") + string(locFoundHist->GetXaxis()->GetTitle()) + string(";") + string(locFoundHist->GetYaxis()->GetTitle());
+		string locHistTitle = string("TOF Paddle Match Rate (p > 1 GeV/c);") + string(locFoundHist->GetXaxis()->GetTitle()) + string(";") + string(locFoundHist->GetYaxis()->GetTitle());
 
 		TH2D* locAcceptanceHist = new TH2D(locHistName.c_str(), locHistTitle.c_str(), locFoundHist->GetNbinsX(), locFoundHist->GetXaxis()->GetXmin(), locFoundHist->GetXaxis()->GetXmax(), locFoundHist->GetNbinsY(), locFoundHist->GetYaxis()->GetXmin(), locFoundHist->GetYaxis()->GetXmax());
 		for(Int_t loc_m = 1; loc_m <= locFoundHist->GetNbinsX(); ++loc_m)
@@ -135,6 +148,7 @@
 		locAcceptanceHist->SetEntries(locMissingHist->GetEntries() + locFoundHist->GetEntries());
 		locAcceptanceHist->SetStats(kFALSE);
 
+		locAcceptanceHist->GetYaxis()->SetTitleOffset(1.2);
 		locAcceptanceHist->GetXaxis()->SetTitleSize(0.05);
 		locAcceptanceHist->GetYaxis()->SetTitleSize(0.05);
 		locAcceptanceHist->GetXaxis()->SetLabelSize(0.05);
@@ -154,7 +168,7 @@
 		TH2I* locFoundHist = locHist_PVsTheta_HasHit;
 		TH2I* locMissingHist = locHist_PVsTheta_NoHit;
 		string locHistName = string(locFoundHist->GetName()) + string("_Acceptance");
-		string locHistTitle = string("Track / TOF Point Match Rate;") + string(locFoundHist->GetXaxis()->GetTitle()) + string(";") + string(locFoundHist->GetYaxis()->GetTitle());
+		string locHistTitle = string("TOF Point Match Rate;") + string(locFoundHist->GetXaxis()->GetTitle()) + string(";") + string(locFoundHist->GetYaxis()->GetTitle());
 
 		TH2D* locAcceptanceHist = new TH2D(locHistName.c_str(), locHistTitle.c_str(), locFoundHist->GetNbinsX(), locFoundHist->GetXaxis()->GetXmin(), locFoundHist->GetXaxis()->GetXmax(), locFoundHist->GetNbinsY(), locFoundHist->GetYaxis()->GetXmin(), locFoundHist->GetYaxis()->GetXmax());
 		for(Int_t loc_m = 1; loc_m <= locFoundHist->GetNbinsX(); ++loc_m)
@@ -184,6 +198,7 @@
 		locAcceptanceHist->SetEntries(locMissingHist->GetEntries() + locFoundHist->GetEntries());
 		locAcceptanceHist->SetStats(kFALSE);
 
+		locAcceptanceHist->GetYaxis()->SetTitleOffset(1.2);
 		locAcceptanceHist->GetXaxis()->SetTitleSize(0.05);
 		locAcceptanceHist->GetYaxis()->SetTitleSize(0.05);
 		locAcceptanceHist->GetXaxis()->SetLabelSize(0.05);
@@ -200,7 +215,7 @@
 		TH2I* locFoundHist = locHist_TrackTOF2DPaddles_HasHit;
 		TH2I* locMissingHist = locHist_TrackTOF2DPaddles_NoHit;
 		string locHistName = string(locFoundHist->GetName()) + string("_Acceptance");
-		string locHistTitle = string("Track / TOF Point Match Rate;") + string(locFoundHist->GetXaxis()->GetTitle()) + string(";") + string(locFoundHist->GetYaxis()->GetTitle());
+		string locHistTitle = string("TOF Point Match Rate (p > 1 GeV/c);") + string(locFoundHist->GetXaxis()->GetTitle()) + string(";") + string(locFoundHist->GetYaxis()->GetTitle());
 
 		TH2D* locAcceptanceHist = new TH2D(locHistName.c_str(), locHistTitle.c_str(), locFoundHist->GetNbinsX(), locFoundHist->GetXaxis()->GetXmin(), locFoundHist->GetXaxis()->GetXmax(), locFoundHist->GetNbinsY(), locFoundHist->GetYaxis()->GetXmin(), locFoundHist->GetYaxis()->GetXmax());
 		for(Int_t loc_m = 1; loc_m <= locFoundHist->GetNbinsX(); ++loc_m)
@@ -230,6 +245,7 @@
 		locAcceptanceHist->SetEntries(locMissingHist->GetEntries() + locFoundHist->GetEntries());
 		locAcceptanceHist->SetStats(kFALSE);
 
+		locAcceptanceHist->GetYaxis()->SetTitleOffset(1.2);
 		locAcceptanceHist->GetXaxis()->SetTitleSize(0.05);
 		locAcceptanceHist->GetYaxis()->SetTitleSize(0.05);
 		locAcceptanceHist->GetXaxis()->SetLabelSize(0.05);
@@ -249,7 +265,7 @@
 		locMissingHist->Rebin(10);
 
 		string locHistName = string(locFoundHist->GetName()) + string("_Acceptance");
-		string locHistTitle = string("Track / TOF Match Rate;") + string(locFoundHist->GetXaxis()->GetTitle());
+		string locHistTitle = string("TOF Match Rate;") + string(locFoundHist->GetXaxis()->GetTitle());
 		TH1D* locAcceptanceHist = new TH1D(locHistName.c_str(), locHistTitle.c_str(), locFoundHist->GetNbinsX(), locFoundHist->GetXaxis()->GetXmin(), locFoundHist->GetXaxis()->GetXmax());
 		for(Int_t loc_m = 1; loc_m <= locFoundHist->GetNbinsX(); ++loc_m)
 		{
@@ -291,7 +307,7 @@
 		locMissingHist->Rebin(4);
 
 		string locHistName = string(locFoundHist->GetName()) + string("_Acceptance");
-		string locHistTitle = string("Track / TOF Match Rate (p > 1 GeV/c);") + string(locFoundHist->GetXaxis()->GetTitle());
+		string locHistTitle = string("TOF Match Rate (p > 1 GeV/c);") + string(locFoundHist->GetXaxis()->GetTitle());
 		TH1D* locAcceptanceHist = new TH1D(locHistName.c_str(), locHistTitle.c_str(), locFoundHist->GetNbinsX(), locFoundHist->GetXaxis()->GetXmin(), locFoundHist->GetXaxis()->GetXmax());
 		for(Int_t loc_m = 1; loc_m <= locFoundHist->GetNbinsX(); ++loc_m)
 		{
@@ -322,4 +338,11 @@
 		locAcceptanceHist->GetYaxis()->SetLabelSize(0.05);
 		locAcceptanceHist->Draw("E1");
 	}
+
+	//Reset original pad margins
+	gStyle->SetPadLeftMargin(locLeftPadMargin);
+	gStyle->SetPadRightMargin(locRightPadMargin);
+	gStyle->SetPadTopMargin(locTopPadMargin);
+	gStyle->SetPadBottomMargin(locBottomPadMargin);
 }
+
