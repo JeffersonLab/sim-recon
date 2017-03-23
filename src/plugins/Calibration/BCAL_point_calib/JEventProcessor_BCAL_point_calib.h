@@ -14,6 +14,7 @@
 #include <ANALYSIS/DHistogramActions.h>
 #include "ANALYSIS/DAnalysisUtilities.h"
 //#include "TRACKING/DTrackFinder.h"
+#include <BCAL/DBCALGeometry.h>
 
 #include "DLorentzVector.h"
 #include "TMatrixD.h"
@@ -39,6 +40,7 @@ class JEventProcessor_BCAL_point_calib:public jana::JEventProcessor{
 
 		uint32_t BCALShowers_per_event;
 		int Run_Number;
+		const DBCALGeometry *dBCALGeom;
 
 		bool DEBUG;    // control the creation of extra histograms
 		bool VERBOSE;  // verbose output

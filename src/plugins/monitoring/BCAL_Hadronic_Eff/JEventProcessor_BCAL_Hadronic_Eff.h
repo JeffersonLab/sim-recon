@@ -85,6 +85,9 @@ class JEventProcessor_BCAL_Hadronic_Eff : public jana::JEventProcessor
 
 		//EFFECTIVE VELOCITIES
 		vector<double> effective_velocities;
+		
+		const DBCALGeometry *dBCALGeom;
+
 };
 
 template <typename DType> inline DType JEventProcessor_BCAL_Hadronic_Eff::Calc_DeltaSector(DType locHitSector, DType locProjectedSector) const

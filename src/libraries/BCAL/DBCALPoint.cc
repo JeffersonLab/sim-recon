@@ -15,7 +15,9 @@ using namespace std;
 
 #include "units.h"
 
-DBCALPoint::DBCALPoint(const DBCALUnifiedHit& hit1, const DBCALUnifiedHit& hit2, double z_target_center, double attenuation_length, double c_effective, double track_p0, double track_p1, double track_p2)
+DBCALPoint::DBCALPoint(const DBCALUnifiedHit& hit1, const DBCALUnifiedHit& hit2, double z_target_center, 
+		double attenuation_length, double c_effective, double track_p0, double track_p1, 
+		double track_p2, const DBCALGeometry *locGeom) : m_BCALGeom(locGeom)
 {
   
   // this is a problem -- both hits are on the same end...
@@ -25,21 +27,21 @@ DBCALPoint::DBCALPoint(const DBCALUnifiedHit& hit1, const DBCALUnifiedHit& hit2,
 
   // check to be sure both hits are in the same cell
   
-  int cellId = DBCALGeometry::cellId( hit1.module, hit1.layer, hit1.sector );
+  int cellId = m_BCALGeom->cellId( hit1.module, hit1.layer, hit1.sector );
   assert( cellId == 
-             DBCALGeometry::cellId( hit2.module, hit2.layer, hit2.sector ) );
+             m_BCALGeom->cellId( hit2.module, hit2.layer, hit2.sector ) );
 
   // save typing
   
-  float fibLen = DBCALGeometry::GetBCAL_length();
+  float fibLen = m_BCALGeom->GetBCAL_length();
 
   // figure out which hit is upstream and which is downstream
   // (downstream means farthest from the target)
 
   const DBCALUnifiedHit& upHit = 
-     ( hit1.end == DBCALGeometry::kUpstream ? hit1 : hit2 );
+     ( hit1.end == m_BCALGeom->kUpstream ? hit1 : hit2 );
   const DBCALUnifiedHit& downHit = 
-     ( hit1.end == DBCALGeometry::kDownstream ? hit1 : hit2 );
+     ( hit1.end == m_BCALGeom->kDownstream ? hit1 : hit2 );
   
   double tUp = upHit.t;
   double tDown = downHit.t;
@@ -52,7 +54,7 @@ DBCALPoint::DBCALPoint(const DBCALUnifiedHit& hit1, const DBCALUnifiedHit& hit2,
   
   // get the position with respect to the center of the module -- positive
   // z in the downstream direction
-  m_zLocal = m_zGlobal - DBCALGeometry::GetBCAL_center(); 
+  m_zLocal = m_zGlobal - m_BCALGeom->GetBCAL_center(); 
 
   // set the z position relative to the center of the target
   m_z = m_zGlobal - z_target_center;
@@ -64,7 +66,7 @@ DBCALPoint::DBCALPoint(const DBCALUnifiedHit& hit1, const DBCALUnifiedHit& hit2,
   m_zLocal = 0.5 * c_effective * ( tUp - tDown ); 
 
   // set the z position relative to the center of the target
-  m_z = m_zLocal + DBCALGeometry::GetBCAL_center() - z_target_center;
+  m_z = m_zLocal + m_BCALGeom->GetBCAL_center() - z_target_center;
 */
 
   //At this point m_z may be unphysical, i.e. it may be outside the BCAL.
@@ -98,12 +100,12 @@ DBCALPoint::DBCALPoint(const DBCALUnifiedHit& hit1, const DBCALUnifiedHit& hit2,
   m_E_DS =  ( downHit.E / attDown );
   m_E =  ( m_E_US + m_E_DS ) / 2;
   
-  m_r = DBCALGeometry::r( cellId );
+  m_r = m_BCALGeom->r( cellId );
   //for a uniform distribution of width a, the RMS is a/sqrt(12)
-  m_sig_r = DBCALGeometry::rSize( cellId )/sqrt(12.0);
+  m_sig_r = m_BCALGeom->rSize( cellId )/sqrt(12.0);
   
-  m_phi = DBCALGeometry::phi( cellId );
-  m_sig_phi = DBCALGeometry::phiSize( cellId )/sqrt(12.0);
+  m_phi = m_BCALGeom->phi( cellId );
+  m_sig_phi = m_BCALGeom->phiSize( cellId )/sqrt(12.0);
   
   //make a rough guess of sigma_z for now
   //if we have TDC info
@@ -135,7 +137,7 @@ DBCALPoint::tInnerRadius() const {
  
   // the path length in the module
   
-  float modulePath = m_rho - DBCALGeometry::GetBCAL_inner_rad() / sin( m_theta );
+  float modulePath = m_rho - m_BCALGeom->GetBCAL_inner_rad() / sin( m_theta );
   
   // retard the time by that distance divided by the speed of light
 
@@ -171,11 +173,11 @@ DBCALPoint::convertCylindricalToSpherical(){
 void
 DBCALPoint::add2Pi() const {
 
-  const_cast< DBCALPoint* >( this )->m_phi += 2*PI;
+  const_cast< DBCALPoint* >( this )->m_phi += 2*M_PI;
 }
 
 void
 DBCALPoint::sub2Pi() const {
   
-  const_cast< DBCALPoint* >( this )->m_phi -= 2*PI;
+  const_cast< DBCALPoint* >( this )->m_phi -= 2*M_PI;
 }
