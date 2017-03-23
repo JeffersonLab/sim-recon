@@ -204,12 +204,15 @@ DBCALCluster_factory::clusterize( vector< const DBCALPoint* > points , vector< c
 					track_pos = temp_track_pos;
 					closest_dPhi = dPhi;
 				}
-				cout << " dPhi = " << dPhi << " point phi = " << (**pt).phi() << " track phi = " << track_phi << endl;
+//				cout << " dPhi = " << dPhi << " point phi = " << (**pt).phi() << " track phi = " << track_phi << " track phi func = " << track_inner_rad.Phi() << endl;
 				double dTheta = fabs(point_theta_global - track_pos.Theta());
-				if(dPhi < .175 && dTheta < .087) q = 1;
+				if(dPhi < .175 && dTheta < .087){
+					 q = 1;
+					 tracked_phi = track_phi_inner_r;
+				}
 			}
 
-			cout << " track phi = " << track_phi_inner_r << " track r = " <<  track_inner_rad.Perp() << " tracks size = " << tracks.size() << " track phi func = " << track_inner_rad.Phi() << " point phi = " << (**pt).phi() <<  endl;
+//			cout << " track phi = " << track_phi_inner_r << " track r = " <<  track_inner_rad.Perp() << " tracks size = " << tracks.size() << " track phi func = " << track_inner_rad.Phi() << " point phi = " << (**pt).phi() <<  endl;
 
 			for( vector<DBCALCluster*>::iterator clust = clusters.begin();
 					clust != clusters.end();
@@ -254,7 +257,7 @@ DBCALCluster_factory::clusterize( vector< const DBCALPoint* > points , vector< c
 			// see if it can become a new seed
 			if( (**pt).E() > seedThresh && ((**pt).layer() != 4 || (**pt).E() > layer4_minSeed) ){
 				clusters.push_back(new DBCALCluster( *pt, m_z_target_center, q ) );
-				tracked_phi = track_phi_inner_r;			
+//				tracked_phi = track_phi_inner_r;			
 				points.erase( pt );
 				usedPoint = true;
 			}
@@ -629,7 +632,7 @@ DBCALCluster_factory::overlap_charged( const DBCALCluster& clust,
                         -assoc_points[i]->phi() + tracked_phi - 2*PI );
 		if(del_phiAlt < 0) signAlt = -1;
 		if(del_phiAlt > 0) signAlt = 1;
-		cout << " del phi = " << del_phi << " del phi alt = " << del_phiAlt << endl;
+//		cout << " del phi = " << del_phi << " del phi alt = " << del_phiAlt << endl;
 		del_phi = min( fabs(del_phi), fabs(del_phiAlt) );
 		if( del_phi == fabs(del_phi) && sign == 1) p_phi = del_phi + tracked_phi;
 		if( del_phi == fabs(del_phi) && sign == -1) p_phi = -del_phi + tracked_phi;
@@ -643,7 +646,7 @@ DBCALCluster_factory::overlap_charged( const DBCALCluster& clust,
 	if(assoc_points.size()<2){
 		slope = (tracked_phi - summed_phi)/(64.3 - summed_r);
                 y_intercept = tracked_phi - slope*64.3;
-		cout << " tracked phi = " << tracked_phi << " point phi = " << point->phi() << " point r = " << point->r() << " slope = 2 " << slope << " y int = " << y_intercept << endl;
+//		cout << " tracked phi = " << tracked_phi << " point phi = " << point->phi() << " point r = " << point->r() << " slope = 2 " << slope << " y int = " << y_intercept << endl;
 
 	}
 
@@ -652,7 +655,7 @@ DBCALCluster_factory::overlap_charged( const DBCALCluster& clust,
         	y_intercept = (summed_rphi*summed_r - summed_phi*summed_r_sq)/(summed_r*summed_r - assoc_points.size()*summed_r_sq);
 	}
 
-	cout << " slope = " << slope << " y int 2 = " << y_intercept << " point r = " << point->r() << " assoc point size = " << assoc_points.size() <<  endl;
+//	cout << " slope = " << slope << " y int 2 = " << y_intercept << " point r = " << point->r() << " assoc point size = " << assoc_points.size() <<  endl;
 
 	float fit_phi = 0.;
 
