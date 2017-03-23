@@ -112,7 +112,11 @@ jerror_t DTrackCandidate_factory_FDCCathodes::brun(JEventLoop* eventLoop,
 //------------------
 jerror_t DTrackCandidate_factory_FDCCathodes::erun(void)
 {
-  if (stepper) delete stepper;
+  if (stepper) {
+    delete stepper;
+    stepper = nullptr;
+  }
+
   return NOERROR;
 }
 //------------------
@@ -120,8 +124,11 @@ jerror_t DTrackCandidate_factory_FDCCathodes::erun(void)
 //------------------
 jerror_t DTrackCandidate_factory_FDCCathodes::fini(void)
 {
-  
-  if (stepper) delete stepper;
+  if (stepper) {
+    delete stepper;
+    stepper = nullptr;
+  }  
+
   return NOERROR;
 }
 

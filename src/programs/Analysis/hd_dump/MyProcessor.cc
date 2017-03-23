@@ -16,16 +16,19 @@ using namespace std;
 #include "MyProcessor.h"
 
 
-int PAUSE_BETWEEN_EVENTS = 1;
-int SKIP_BORING_EVENTS = 0;
-int PRINT_ALL=0;
+bool PAUSE_BETWEEN_EVENTS = true;
+bool SKIP_BORING_EVENTS = false;
+bool PRINT_ALL = false;
+bool PRINT_CORE = false;
 bool LIST_ASSOCIATED_OBJECTS = false;
-bool PRINT_SUMMARY_HEADER = true;
+bool PRINT_SUMMARY_ALL = false;
+bool PRINT_SUMMARY_HEADER = false;
 bool PRINT_STATUS_BITS = false;
 bool ACTIVATE_TAGGED_FOR_SUMMARY = false;
 extern bool SPARSIFY_SUMMARY;
 
-vector<string> toprint;
+set<string> toprint;
+set<string> tosummarize;
 
 #define ansi_escape		((char)0x1b)
 #define ansi_bold 		ansi_escape<<"[1m"
@@ -52,48 +55,67 @@ jerror_t MyProcessor::brun(JEventLoop *eventLoop, int32_t runnumber)
 
 	// If int PRINT_ALL is set then add EVERYTHING.
 	if(PRINT_ALL){
-		toprint = factory_names;
+		for(auto fac_name : factory_names) toprint.insert(fac_name);
 		SKIP_BORING_EVENTS = 0; // with PRINT_ALL, nothing is boring!
+	}else if(PRINT_SUMMARY_ALL){
+		for(auto fac_name : factory_names) tosummarize.insert(fac_name);
+		SKIP_BORING_EVENTS = 0; // with PRINT_ALL, nothing is boring!
+	}else if(PRINT_CORE){
+		
+		// Make list of "core" factories. n.b. these high level
+		// objects will automatically activate lower level ones
+		set<string> core_factories;
+
+		tosummarize.insert("DChargedTrack");
+		tosummarize.insert("DNeutralShower");
+
+		tosummarize.insert("DMCTrackHit");
+		tosummarize.insert("DMCThrown");
+		tosummarize.insert("DMCTrajectoryPoint");
+		tosummarize.insert("DMCReaction");
+		
 	}else{
 		// make sure factories exist for all requested data types
 		// If a factory isn't found, but one with a "D" prefixed
 		// is, go ahead and correct the name.
-		vector<string> really_toprint;
-		for(unsigned int i=0; i<toprint.size();i++){
-			int found = 0;
-			int dfound = 0;
+		set<string> really_toprint;
+		for(auto fac_name : toprint){
+			bool found  = false;
+			bool dfound = false;
 			for(unsigned int j=0;j<factory_names.size();j++){
-				if(factory_names[j] == toprint[i])found = 1;
-				if(factory_names[j] == "D" + toprint[i])dfound = 1;
+				if(factory_names[j] == fac_name)found = true;
+				if(factory_names[j] == "D" + fac_name)dfound = true;
 			}
 			if(found)
-				really_toprint.push_back(toprint[i]);
+				really_toprint.insert(fac_name);
 			else if(dfound)
-				really_toprint.push_back("D" + toprint[i]);
+				really_toprint.insert("D" + fac_name);
 			else
 				cout<<ansi_red<<"WARNING:"<<ansi_normal
-					<<" Couldn't find factory for \""
-					<<ansi_bold<<toprint[i]<<ansi_normal
-					<<"\"!"<<endl;
+					<< " Couldn't find factory for \""
+					<< ansi_bold << fac_name << ansi_normal
+					<< "\"!"<<endl;
 		}
 		
 		toprint = really_toprint;
 	}
+
+	// Make sure all factories to print are also included in summary
+	tosummarize.insert(toprint.begin(), toprint.end());
 	
 	// At this point, toprint should contain a list of all factories
 	// in dataClassName:tag format, that both exist and were requested.
 	// Seperate the tag from the name and fill the fac_info vector.
 	fac_info.clear();
-	for(unsigned int i=0;i<toprint.size();i++){
-		string name = toprint[i];
+	for(auto fac_name : toprint){
 		string tag = "";
-		unsigned int pos = name.rfind(":",name.size()-1);
+		unsigned int pos = fac_name.rfind(":",fac_name.size()-1);
 		if(pos != (unsigned int)string::npos){
-			tag = name.substr(pos+1,name.size());
-			name.erase(pos);
+			tag = fac_name.substr(pos+1,fac_name.size());
+			fac_name.erase(pos);
 		}
 		factory_info_t f;
-		f.dataClassName = name;
+		f.dataClassName = fac_name;
 		f.tag = tag;
 		f.fac = eventLoop->GetFactory(f.dataClassName, f.tag.c_str());
 		fac_info.push_back(f);
@@ -145,12 +167,11 @@ jerror_t MyProcessor::evnt(JEventLoop *eventLoop, uint64_t eventnumber)
 	// printed during brun are printed first, call the GetNrows() method of all factories
 	// ourself first.
 	if(PRINT_SUMMARY_HEADER){
-		vector<JFactory_base*> myfacs = eventLoop->GetFactories();
-		for(unsigned int i=0; i<myfacs.size(); i++){
-			string tag = myfacs[i]->Tag()==NULL ? "":myfacs[i]->Tag();
-			if(tag=="" || ACTIVATE_TAGGED_FOR_SUMMARY){
-				myfacs[i]->GetNrows();
-			}
+		for( auto fac : eventLoop->GetFactories() ){
+			string name = fac->GetDataClassName();
+			string tag  = fac->Tag()==NULL ? "":fac->Tag();
+			if(tag.size()>0)name = name + ":" + tag;
+			if( tosummarize.count(name) ) fac->GetNrows();
 		}
 	}
 	

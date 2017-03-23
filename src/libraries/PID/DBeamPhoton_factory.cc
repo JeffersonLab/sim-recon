@@ -7,10 +7,26 @@
 
 #include <iostream>
 #include <iomanip>
+#include <cmath>
 using namespace std;
 
 #include "DBeamPhoton_factory.h"
 using namespace jana;
+
+inline bool DBeamPhoton_SortByTime(const DBeamPhoton* locBeamPhoton1, const DBeamPhoton* locBeamPhoton2)
+{
+	// pseudo-randomly sort beam photons by time, using only sub-picosecond digits
+	// do this by converting to picoseconds, then stripping all digits above the decimal place
+
+	//guard against NaN
+	if(std::isnan(locBeamPhoton1->time()))
+		return false;
+	if(std::isnan(locBeamPhoton2->time()))
+		return true;
+	double locT1_Picoseconds_Stripped = 1000.0*locBeamPhoton1->time() - floor(1000.0*locBeamPhoton1->time());
+	double locT2_Picoseconds_Stripped = 1000.0*locBeamPhoton2->time() - floor(1000.0*locBeamPhoton2->time());
+	return (locT1_Picoseconds_Stripped < locT2_Picoseconds_Stripped);
+}
 
 //------------------
 // init
@@ -85,6 +101,8 @@ jerror_t DBeamPhoton_factory::evnt(jana::JEventLoop *locEventLoop, uint64_t locE
             _data.push_back(gamma);
         }
     }
+
+	sort(_data.begin(), _data.end(), DBeamPhoton_SortByTime);
 
     return NOERROR;
 }

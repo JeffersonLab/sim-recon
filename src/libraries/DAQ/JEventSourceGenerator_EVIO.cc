@@ -38,7 +38,7 @@ double JEventSourceGenerator_EVIO::CheckOpenable(string source)
 
 	if(source.find("ET:")==0) return 0.5;
 
-	HDEVIO *hdevio = new HDEVIO(source);
+	HDEVIO *hdevio = new HDEVIO(source, false);
 	bool is_good_evio = false;
 	bool opened = hdevio->is_open;
 	if(opened){

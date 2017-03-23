@@ -44,6 +44,8 @@ static TH1D *daq_words_by_type;
 //------------------
 DMapEVIOWords::DMapEVIOWords()
 {
+	max_history_buff_size = 400;
+
 	char daq_block_size_title[256];
 	sprintf(daq_block_size_title, "Block size (%d EVIO events) in kB", BLOCK_SIZE);
 
@@ -138,6 +140,8 @@ DMapEVIOWords::DMapEVIOWords()
 
 	daq_words_by_type->GetXaxis()->SetBinLabel(1 + kEPICSheader, "EPICS header");
 	daq_words_by_type->GetXaxis()->SetBinLabel(1 + kEPICSdata, "EPICS data");
+
+	daq_words_by_type->GetXaxis()->SetBinLabel(1 + kTSsync, "TS sync event data");
 
 	daq_words_by_type->GetXaxis()->SetBinLabel(1 + kF800FAFA, "0xf800fafa");
 	daq_words_by_type->GetXaxis()->SetBinLabel(1 + kD00DD00D, "0xd00dd00d");
@@ -270,12 +274,12 @@ void DMapEVIOWords::ParseEvent(uint32_t *buff)
 	uint64_t thi = istart[2+6];  
 	uint64_t timestamp = (thi<<32) + (tlo<<0);
 	ts_history.insert(timestamp);
-	if(ts_history.size()>400){
+	if( ts_history.size() > max_history_buff_size ){
 		auto it1 = ts_history.begin();
 		auto it2 = it1;
 		uint64_t t1 = *(it1);
 		uint64_t t2 = *(++it2);
-		ts_history.erase(it1, ++it2);
+		ts_history.erase(it1, it2);
 		double tdiff_ns = (double)(t2 - t1)*4.0;
 		double tdiff_ms = tdiff_ns/1.0E6;
 		daq_event_tdiff->Fill(tdiff_ms);
@@ -414,6 +418,10 @@ void DMapEVIOWords::DataWordStats(uint32_t *iptr, uint32_t *iend, uint32_t *word
 
 			case 0x55:
 				ParseModuleConfiguration(rocid, iptr, iendbank, word_stats);
+				break;
+
+			case 0xE02:
+				ParseTSscalerBank(iptr, iendbank, word_stats);
 				break;
 
 			default:
@@ -638,3 +646,12 @@ void DMapEVIOWords::ParseModuleConfiguration(uint32_t rocid, uint32_t *&iptr, ui
 	}
 }
 
+//------------------
+// ParseTSscalerBank
+//------------------
+void DMapEVIOWords::ParseTSscalerBank(uint32_t *&iptr, uint32_t *iend, uint32_t *word_stats)
+{
+	word_stats[kTSsync] += (uint32_t)( (uint64_t)iend - (uint64_t)iptr) ;
+
+	iptr = iend;
+}

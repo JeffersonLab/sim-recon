@@ -6,6 +6,8 @@
 //
 
 #include "JEventProcessor_ST_online_multi.h"
+#include "TRIGGER/DTrigger.h"
+
 using namespace jana;
 //***************** Declare Two Dimensional Histograms*************
 static TH2I *h2_st_adc_tdc_multi;
@@ -140,6 +142,11 @@ jerror_t JEventProcessor_ST_online_multi::evnt(JEventLoop *loop, uint64_t eventn
   vector<const DSCTDCDigiHit*> TDC_Digi_Hits;   // ST f1TDC DigiHits
   vector<const DSCHit*> Factory_Hits;           // ST hits
   
+  const DTrigger* locTrigger = NULL; 
+  loop->GetSingle(locTrigger); 
+  if(locTrigger->Get_L1FrontPanelTriggerBits() != 0)
+    return NOERROR;
+
   loop->Get(ADC_Digi_Hits);
   loop->Get(TDC_Digi_Hits);
   loop->Get(Factory_Hits);

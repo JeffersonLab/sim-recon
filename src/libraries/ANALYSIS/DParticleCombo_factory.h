@@ -58,7 +58,7 @@ class DParticleCombo_factory : public jana::JFactory<DParticleCombo>
 		void Set_SpacetimeVertex(const DParticleCombo* locNewParticleCombo, DParticleComboStep* locNewParticleComboStep, size_t locStepIndex, const DKinFitResults* locKinFitResults, const DKinFitChain* locKinFitChain) const;
 		void Reset_Data(void);
 
-		DKinematicData* Build_KinematicData(Particle_t locPID, DKinFitParticle* locKinFitParticle);
+		DKinematicData* Build_KinematicData(Particle_t locPID, DKinFitParticle* locKinFitParticle, DKinFitType locKinFitType, DVector3 locEventVertex);
 
 		DKinematicData* Get_KinematicDataResource(void);
 		DParticleComboStep* Get_ParticleComboStepResource(void);

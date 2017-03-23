@@ -757,43 +757,49 @@ void DTrackTimeBased_factory
   start_times.push_back(start_time);
 
   // Match to the start counter and the outer detectors
-  double locTimeVariance = 0.0, locStartTime = track->t0();  // initial guess from tracking
-  if(pid_algorithm->MatchToSC(track->rt, sc_hits, locStartTime, locTimeVariance))
+  double locStartTimeVariance = 0.0, locStartTime = track->t0();  // initial guess from tracking
+  DSCHitMatchParams locSCBestMatchParams;
+  if(pid_algorithm->Get_ClosestToTrack(track->rt, sc_hits, false, true, locStartTime, locSCBestMatchParams, &locStartTimeVariance))
   {
     // Fill in the start time vector
     start_time.t0=locStartTime;
 //    start_time.t0_sigma=sqrt(locTimeVariance); //uncomment when ready
-    start_time.t0_sigma=0.3;
+    start_time.t0_sigma=sqrt(locStartTimeVariance);
     start_time.system=SYS_START;
     start_times.push_back(start_time); 
   }
 
   locStartTime = track->t0();
-  if (pid_algorithm->MatchToTOF(track->rt, tof_points, locStartTime, locTimeVariance))
+  DTOFHitMatchParams locTOFBestMatchParams;
+  if(pid_algorithm->Get_ClosestToTrack(track->rt, tof_points, true, locStartTime, locTOFBestMatchParams, &locStartTimeVariance))
   {
     // Fill in the start time vector
     start_time.t0=locStartTime;
-    start_time.t0_sigma=0.1;
+    start_time.t0_sigma=sqrt(locStartTimeVariance);
 //    start_time.t0_sigma=sqrt(locTimeVariance); //uncomment when ready
     start_time.system=SYS_TOF;
     start_times.push_back(start_time); 
   }
+
   locStartTime = track->t0();
-  if (pid_algorithm->MatchToBCAL(track->rt, bcal_showers, locStartTime, locTimeVariance))
+  DBCALShowerMatchParams locBCALBestMatchParams;
+  if(pid_algorithm->Get_ClosestToTrack(track->rt, bcal_showers, true, locStartTime, locBCALBestMatchParams, &locStartTimeVariance))
   {
     // Fill in the start time vector
     start_time.t0=locStartTime;
-    start_time.t0_sigma=0.5;
+    start_time.t0_sigma=sqrt(locStartTimeVariance);
 //    start_time.t0_sigma=sqrt(locTimeVariance); //uncomment when ready
     start_time.system=SYS_BCAL;
     start_times.push_back(start_time);
   }
+
   locStartTime = track->t0();
-  if (pid_algorithm->MatchToFCAL(track->rt, fcal_showers, locStartTime, locTimeVariance))
+  DFCALShowerMatchParams locFCALBestMatchParams;
+  if(pid_algorithm->Get_ClosestToTrack(track->rt, fcal_showers, true, locStartTime, locFCALBestMatchParams, &locStartTimeVariance))
   {
     // Fill in the start time vector
     start_time.t0=locStartTime;
-    start_time.t0_sigma=0.5;
+    start_time.t0_sigma=sqrt(locStartTimeVariance);
 //    start_time.t0_sigma=sqrt(locTimeVariance); //uncomment when ready
     start_time.system=SYS_FCAL;
     start_times.push_back(start_time);

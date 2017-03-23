@@ -53,6 +53,7 @@ jerror_t DBCALShower_factory_KLOE::init()
   gPARMS->SetDefaultParameter( "BCALRECON:MERGE_THRESH_XYDIST", MERGE_THRESH_XYDIST );
   gPARMS->SetDefaultParameter( "BCALRECON:BREAK_THRESH_TRMS", BREAK_THRESH_TRMS );
   
+  /*  this is unused code
   if( !DBCALGeometry::summingOn() ){
 
     // these are energy calibration parameters -- no summing of cells
@@ -69,20 +70,21 @@ jerror_t DBCALShower_factory_KLOE::init()
   
   }
   else{
-    
-    // these are energy calibration parameters -- 1.2.3.4 summing
+    */
+
+  // these are energy calibration parameters -- 1.2.3.4 summing
   
-    //last updated for svn revision 9233
-    m_scaleZ_p0 = 0.99798;
-    m_scaleZ_p1 = 0.000361096;
-    m_scaleZ_p2 = -2.17338e-06;
-    m_scaleZ_p3 = 1.32201e-09;
+  //last updated for svn revision 9233
+  m_scaleZ_p0 = 0.99798;
+  m_scaleZ_p1 = 0.000361096;
+  m_scaleZ_p2 = -2.17338e-06;
+  m_scaleZ_p3 = 1.32201e-09;
   
-    m_nonlinZ_p0 = -0.0201272;
-    m_nonlinZ_p1 = 0.000103649;
-    m_nonlinZ_p2 = 0;
-    m_nonlinZ_p3 = 0;
-  }
+  m_nonlinZ_p0 = -0.0201272;
+  m_nonlinZ_p1 = 0.000103649;
+  m_nonlinZ_p2 = 0;
+  m_nonlinZ_p3 = 0;
+  //}
   
   return NOERROR;
 }
@@ -99,42 +101,42 @@ jerror_t DBCALShower_factory_KLOE::brun(JEventLoop *loop, int32_t runnumber)
     
     vector<const DBCALGeometry*> bcalGeomVect;
     loop->Get( bcalGeomVect );
-    const DBCALGeometry& bcalGeom = *(bcalGeomVect[0]);
+    bcalGeom = bcalGeomVect[0];
     
     //////////////////////////////////////////////////////////////////
     // Calculate Cell Position
     //////////////////////////////////////////////////////////////////
     
-    ATTEN_LENGTH = bcalGeom.ATTEN_LENGTH;
-    C_EFFECTIVE = bcalGeom.C_EFFECTIVE;
+    ATTEN_LENGTH = bcalGeom->ATTEN_LENGTH;
+    C_EFFECTIVE = bcalGeom->C_EFFECTIVE;
     
-    fiberLength = bcalGeom.GetBCAL_length(); // fiber length in cm
-    zOffset = bcalGeom.GetBCAL_center();
+    fiberLength = bcalGeom->GetBCAL_length(); // fiber length in cm
+    zOffset = bcalGeom->GetBCAL_center();
 
     //the following uses some sad notation in which modmin=0 and modmax=48, when in fact there are 48 modules labelled either 0-47 or 1-48 depending on one's whim, although if we are using the methods from DBCALGeometry (e.g. cellId()), we must start counting from 1 and if we are accessing arrays we must of course start from 0
     int   modmin = 0;
-    int   modmax = bcalGeom.NBCALMODS;
+    int   modmax = bcalGeom->NBCALMODS;
     int   rowmin1=0;
-    int   rowmax1= bcalGeom.NBCALLAYSIN;
+    int   rowmax1= bcalGeom->NBCALLAYSIN;
     int   rowmin2= rowmax1;
-    int   rowmax2= bcalGeom.NBCALLAYSOUT+rowmin2; 
+    int   rowmax2= bcalGeom->NBCALLAYSOUT+rowmin2; 
     int   colmin1=0;
-    int   colmax1=bcalGeom.NBCALSECSIN;
+    int   colmax1=bcalGeom->NBCALSECSIN;
     int   colmin2=0;
-    int   colmax2=bcalGeom.NBCALSECSOUT;
+    int   colmax2=bcalGeom->NBCALSECSOUT;
     
-    float r_inner= bcalGeom.GetBCAL_inner_rad();
+    float r_inner= bcalGeom->GetBCAL_inner_rad();
     
     for (int i = (rowmin1+1); i < (rowmax1+1); i++){
         //this loop starts from 1, so we can use i in cellId with no adjustment
-        int cellId = bcalGeom.cellId(1,i,1); //this gives us a cellId that we can use to get the radius. the module and sector numbers are irrelevant
+        int cellId = bcalGeom->cellId(1,i,1); //this gives us a cellId that we can use to get the radius. the module and sector numbers are irrelevant
         //rt is radius of center of layer - BCAL inner radius
-        rt[i]=bcalGeom.r(cellId)-r_inner;
+        rt[i]=bcalGeom->r(cellId)-r_inner;
     }
     
     for (int i = (rowmin2+1); i < (rowmax2+1); i++){
-        int cellId = bcalGeom.cellId(1,i,1);
-        rt[i]=bcalGeom.r(cellId)-r_inner;
+        int cellId = bcalGeom->cellId(1,i,1);
+        rt[i]=bcalGeom->r(cellId)-r_inner;
     }
     
     //these are r and phi positions of readout cells
@@ -147,9 +149,9 @@ jerror_t DBCALShower_factory_KLOE::brun(JEventLoop *loop, int32_t runnumber)
             for (int j = colmin1; j < colmax1; j++){
                 //in this case the loops start at 0, so we have to add 1 to the indices when calling cellId(). hooray!
                 //use DBCALGeometry to get r/phi position of each cell
-                int cellId = bcalGeom.cellId(k+1,i+1,j+1);
-                r[k][i][j]=bcalGeom.r(cellId);
-                phi[k][i][j]=bcalGeom.phi(cellId);
+                int cellId = bcalGeom->cellId(k+1,i+1,j+1);
+                r[k][i][j]=bcalGeom->r(cellId);
+                phi[k][i][j]=bcalGeom->phi(cellId);
                 //set x and y positions
                 xx[k][i][j]=r[k][i][j]*cos(phi[k][i][j]);
                 yy[k][i][j]=r[k][i][j]*sin(phi[k][i][j]);          
@@ -158,9 +160,9 @@ jerror_t DBCALShower_factory_KLOE::brun(JEventLoop *loop, int32_t runnumber)
         
         for (int i = rowmin2; i < rowmax2; i++){
             for (int j = colmin2; j < colmax2; j++){
-                int cellId = bcalGeom.cellId(k+1,i+1,j+1);
-                r[k][i][j]=bcalGeom.r(cellId);
-                phi[k][i][j]=bcalGeom.phi(cellId);
+                int cellId = bcalGeom->cellId(k+1,i+1,j+1);
+                r[k][i][j]=bcalGeom->r(cellId);
+                phi[k][i][j]=bcalGeom->phi(cellId);
 
                 xx[k][i][j]=r[k][i][j]*cos(phi[k][i][j]);
                 yy[k][i][j]=r[k][i][j]*sin(phi[k][i][j]);          
@@ -304,7 +306,7 @@ jerror_t DBCALShower_factory_KLOE::evnt(JEventLoop *loop, uint64_t eventnumber)
   
         float r = sqrt( shower->x * shower->x + shower->y * shower->y );
       
-        float zEntry = ( shower->z - m_z_target_center ) * ( DBCALGeometry::GetBCAL_inner_rad() / r );
+        float zEntry = ( shower->z - m_z_target_center ) * ( bcalGeom->GetBCAL_inner_rad() / r );
       
         float scale = m_scaleZ_p0  + m_scaleZ_p1*zEntry + 
             m_scaleZ_p2*(zEntry*zEntry) + m_scaleZ_p3*(zEntry*zEntry*zEntry);
@@ -570,32 +572,32 @@ void DBCALShower_factory_KLOE::PreCluster(JEventLoop *loop)
   int k=1;     // NUMBER OF NEARBY ROWS &/OR TO LOOK FOR MAX E CELL
     
   // extract the BCAL Geometry
-  vector<const DBCALGeometry*> bcalGeomVect;
-  loop->Get( bcalGeomVect );
-  const DBCALGeometry& bcalGeom = *(bcalGeomVect[0]);
+  //vector<const DBCALGeometry*> bcalGeomVect;
+  //loop->Get( bcalGeomVect );
+  //const DBCALGeometry& bcalGeom = *(bcalGeomVect[0]);
     
   // calculate cell position
     
   int   modmin = 0;
-  int   modmax = bcalGeom.NBCALMODS;
+  int   modmax = bcalGeom->NBCALMODS;
 
 
   //these values make sense as actually minima/maxima if it is implied that rowmin1=1,colmin1=1,colmin2=1
-  int   rowmax1= bcalGeom.NBCALLAYSIN;
+  int   rowmax1= bcalGeom->NBCALLAYSIN;
   int   rowmin2= rowmax1+1;
-  //int   rowmax2= bcalGeom.NBCALLAYSOUT+rowmin2-1;
-  int   colmax1=bcalGeom.NBCALSECSIN;
-  int   colmax2=bcalGeom.NBCALSECSOUT;
+  //int   rowmax2= bcalGeom->NBCALLAYSOUT+rowmin2-1;
+  int   colmax1=bcalGeom->NBCALSECSIN;
+  int   colmax2=bcalGeom->NBCALSECSOUT;
 
-  float r_middle= bcalGeom.BCALMIDRAD;
+  float r_middle= bcalGeom->GetBCAL_middle_rad();
 
   //radial size of the outermost inner layer
-  float thick_inner=bcalGeom.rSize(bcalGeom.cellId(1,bcalGeom.NBCALLAYSIN,1));
+  float thick_inner=bcalGeom->rSize(bcalGeom->cellId(1,bcalGeom->NBCALLAYSIN,1));
   //radial size of the innermost outer layer
-  float thick_outer=bcalGeom.rSize(bcalGeom.cellId(1,bcalGeom.NBCALLAYSIN+1,1));
+  float thick_outer=bcalGeom->rSize(bcalGeom->cellId(1,bcalGeom->NBCALLAYSIN+1,1));
 
   // this is the radial distance between the center of the innermost outer layer and the outermost inner layer
-  float dis_in_out=bcalGeom.r(bcalGeom.cellId(1,bcalGeom.NBCALLAYSIN+1,1))-bcalGeom.r(bcalGeom.cellId(1,bcalGeom.NBCALLAYSIN,1));
+  float dis_in_out=bcalGeom->r(bcalGeom->cellId(1,bcalGeom->NBCALLAYSIN+1,1))-bcalGeom->r(bcalGeom->cellId(1,bcalGeom->NBCALLAYSIN,1));
     
   float degree_permodule=360.0/(modmax-modmin);
   float half_degree_permodule=degree_permodule/2.0;

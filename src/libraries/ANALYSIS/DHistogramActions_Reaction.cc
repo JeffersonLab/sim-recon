@@ -844,7 +844,6 @@ void DHistogramAction_ParticleComboKinematics::Initialize(JEventLoop* locEventLo
 		}
 
 		//Steps
-		deque<Particle_t> locPIDs;
 		for(size_t loc_i = 0; loc_i < locNumSteps; ++loc_i)
 		{
 			const DReactionStep* locReactionStep = Get_Reaction()->Get_ReactionStep(loc_i);
@@ -855,23 +854,42 @@ void DHistogramAction_ParticleComboKinematics::Initialize(JEventLoop* locEventLo
 			Particle_t locInitialPID = locReactionStep->Get_InitialParticleID();
 
 			//get PIDs
+			deque<Particle_t> locPIDs;
+			bool locLastPIDMissingFlag = false;
 			if(!Get_UseKinFitResultsFlag()) //measured, ignore missing & decaying particles (ignore target anyway)
 				locPIDs = locDetectedFinalPIDs[loc_i];
 			else //kinematic fit: decaying & missing particles are reconstructed
 			{
-				locReactionStep->Get_FinalParticleIDs(locPIDs);
+				locReactionStep->Get_NonMissingFinalPIDs(locPIDs);
 				if((!locBeamParticleUsed) || (loc_i != 0)) //add decaying parent particle //skip if on beam particle!
 					locPIDs.insert(locPIDs.begin(), locInitialPID);
+
+				Particle_t locMissingPID;
+				if(locReactionStep->Get_MissingPID(locMissingPID))
+				{
+					locPIDs.push_back(locMissingPID);
+					locLastPIDMissingFlag = true;
+				}
 			}
 
 			bool locDirectoryCreatedFlag = false;
 			for(size_t loc_j = 0; loc_j < locPIDs.size(); ++loc_j)
 			{
 				locPID = locPIDs[loc_j];
-				locParticleName = ParticleType(locPID);
-				locParticleROOTName = ParticleName_ROOT(locPID);
-				if(dHistDeque_P[loc_i].find(locPID) != dHistDeque_P[loc_i].end())
-					continue; //pid already done
+				bool locIsMissingFlag = false;
+				if((loc_j == locPIDs.size() - 1) && locLastPIDMissingFlag)
+				{
+					locParticleName = string("(") + ParticleType(locPID) + string(")");
+					locParticleROOTName = string("(") + ParticleName_ROOT(locPID) + string(")");
+					locIsMissingFlag = true;
+				}
+				else
+				{
+					locParticleName = ParticleType(locPID);
+					locParticleROOTName = ParticleName_ROOT(locPID);
+					if(dHistDeque_P[loc_i].find(locPID) != dHistDeque_P[loc_i].end())
+						continue; //pid already done
+				}
 
 				if(!locDirectoryCreatedFlag)
 				{
@@ -884,47 +902,47 @@ void DHistogramAction_ParticleComboKinematics::Initialize(JEventLoop* locEventLo
 				// Momentum
 				locHistName = "Momentum";
 				locHistTitle = locParticleROOTName + string(", ") + locStepROOTName + string(";p (GeV/c)");
-				dHistDeque_P[loc_i][locPID] = GetOrCreate_Histogram<TH1I>(locHistName, locHistTitle, dNumPBins, dMinP, dMaxP);
+				dHistDeque_P[loc_i][locPID][locIsMissingFlag] = GetOrCreate_Histogram<TH1I>(locHistName, locHistTitle, dNumPBins, dMinP, dMaxP);
 
 				// Theta
 				locHistName = "Theta";
 				locHistTitle = locParticleROOTName + string(", ") + locStepROOTName + string(";#theta#circ");
-				dHistDeque_Theta[loc_i][locPID] = GetOrCreate_Histogram<TH1I>(locHistName, locHistTitle, dNumThetaBins, dMinTheta, dMaxTheta);
+				dHistDeque_Theta[loc_i][locPID][locIsMissingFlag] = GetOrCreate_Histogram<TH1I>(locHistName, locHistTitle, dNumThetaBins, dMinTheta, dMaxTheta);
 
 				// Phi
 				locHistName = "Phi";
 				locHistTitle = locParticleROOTName + string(", ") + locStepROOTName + string(";#phi#circ");
-				dHistDeque_Phi[loc_i][locPID] = GetOrCreate_Histogram<TH1I>(locHistName, locHistTitle, dNumPhiBins, dMinPhi, dMaxPhi);
+				dHistDeque_Phi[loc_i][locPID][locIsMissingFlag] = GetOrCreate_Histogram<TH1I>(locHistName, locHistTitle, dNumPhiBins, dMinPhi, dMaxPhi);
 
 				// P Vs Theta
 				locHistName = "PVsTheta";
 				locHistTitle = locParticleROOTName + string(", ") + locStepROOTName + string(";#theta#circ;p (GeV/c)");
-				dHistDeque_PVsTheta[loc_i][locPID] = GetOrCreate_Histogram<TH2I>(locHistName, locHistTitle, dNum2DThetaBins, dMinTheta, dMaxTheta, dNum2DPBins, dMinP, dMaxP);
+				dHistDeque_PVsTheta[loc_i][locPID][locIsMissingFlag] = GetOrCreate_Histogram<TH2I>(locHistName, locHistTitle, dNum2DThetaBins, dMinTheta, dMaxTheta, dNum2DPBins, dMinP, dMaxP);
 
 				// Phi Vs Theta
 				locHistName = "PhiVsTheta";
 				locHistTitle = locParticleROOTName + string(", ") + locStepROOTName + string(";#theta#circ;#phi#circ");
-				dHistDeque_PhiVsTheta[loc_i][locPID] = GetOrCreate_Histogram<TH2I>(locHistName, locHistTitle, dNum2DThetaBins, dMinTheta, dMaxTheta, dNum2DPhiBins, dMinPhi, dMaxPhi);
+				dHistDeque_PhiVsTheta[loc_i][locPID][locIsMissingFlag] = GetOrCreate_Histogram<TH2I>(locHistName, locHistTitle, dNum2DThetaBins, dMinTheta, dMaxTheta, dNum2DPhiBins, dMinPhi, dMaxPhi);
 
 				//beta vs p
 				locHistName = "BetaVsP";
 				locHistTitle = locParticleROOTName + string(";p (GeV/c);#beta");
-				dHistDeque_BetaVsP[loc_i][locPID] = GetOrCreate_Histogram<TH2I>(locHistName, locHistTitle, dNum2DPBins, dMinP, dMaxP, dNumBetaBins, dMinBeta, dMaxBeta);
+				dHistDeque_BetaVsP[loc_i][locPID][locIsMissingFlag] = GetOrCreate_Histogram<TH2I>(locHistName, locHistTitle, dNum2DPBins, dMinP, dMaxP, dNumBetaBins, dMinBeta, dMaxBeta);
 
 				//delta-beta vs p
 				locHistName = "DeltaBetaVsP";
 				locHistTitle = locParticleROOTName + string(";p (GeV/c);#Delta#beta");
-				dHistDeque_DeltaBetaVsP[loc_i][locPID] = GetOrCreate_Histogram<TH2I>(locHistName, locHistTitle, dNum2DPBins, dMinP, dMaxP, dNumDeltaBetaBins, dMinDeltaBeta, dMaxDeltaBeta);
+				dHistDeque_DeltaBetaVsP[loc_i][locPID][locIsMissingFlag] = GetOrCreate_Histogram<TH2I>(locHistName, locHistTitle, dNum2DPBins, dMinP, dMaxP, dNumDeltaBetaBins, dMinDeltaBeta, dMaxDeltaBeta);
 
 				// Vertex-Z
 				locHistName = "VertexZ";
 				locHistTitle = locParticleROOTName + string(", ") + locStepROOTName + string(";Vertex-Z (cm)");
-				dHistDeque_VertexZ[loc_i][locPID] = GetOrCreate_Histogram<TH1I>(locHistName, locHistTitle, dNumVertexZBins, dMinVertexZ, dMaxVertexZ);
+				dHistDeque_VertexZ[loc_i][locPID][locIsMissingFlag] = GetOrCreate_Histogram<TH1I>(locHistName, locHistTitle, dNumVertexZBins, dMinVertexZ, dMaxVertexZ);
 
 				// Vertex-Y Vs Vertex-X
 				locHistName = "VertexYVsX";
 				locHistTitle = locParticleROOTName + string(", ") + locStepROOTName + string(";Vertex-X (cm);Vertex-Y (cm)");
-				dHistDeque_VertexYVsX[loc_i][locPID] = GetOrCreate_Histogram<TH2I>(locHistName, locHistTitle, dNumVertexXYBins, dMinVertexXY, dMaxVertexXY, dNumVertexXYBins, dMinVertexXY, dMaxVertexXY);
+				dHistDeque_VertexYVsX[loc_i][locPID][locIsMissingFlag] = GetOrCreate_Histogram<TH2I>(locHistName, locHistTitle, dNumVertexXYBins, dMinVertexXY, dMaxVertexXY, dNumVertexXYBins, dMinVertexXY, dMaxVertexXY);
 
 				gDirectory->cd("..");
 			} //end of particle loop
@@ -1021,7 +1039,7 @@ bool DHistogramAction_ParticleComboKinematics::Perform_Action(JEventLoop* locEve
 				}
 			}
 			else if(Get_UseKinFitResultsFlag()) //decaying particle, but kinfit so can hist
-				Fill_Hists(locEventLoop, locKinematicData, locEventRFBunch, loc_i); //has many source object, and is unique to this combo: no dupes to check against: let it ride
+				Fill_Hists(locEventLoop, locKinematicData, false, locEventRFBunch, loc_i); //has many source object, and is unique to this combo: no dupes to check against: let it ride
 		}
 
 		//VERTEX INFORMATION
@@ -1082,13 +1100,14 @@ bool DHistogramAction_ParticleComboKinematics::Perform_Action(JEventLoop* locEve
 				dPreviouslyHistogrammedParticles.insert(locHistInfo);
 			}
 
-			Fill_Hists(locEventLoop, locKinematicData, locEventRFBunch, loc_i);
+			bool locIsMissingFlag = (Get_Reaction()->Get_ReactionStep(loc_i)->Get_MissingParticleIndex() == int(loc_j));
+			Fill_Hists(locEventLoop, locKinematicData, locIsMissingFlag, locEventRFBunch, loc_i);
 		} //end of particle loop
 	} //end of step loop
 	return true;
 }
 
-void DHistogramAction_ParticleComboKinematics::Fill_Hists(JEventLoop* locEventLoop, const DKinematicData* locKinematicData, const DEventRFBunch* locEventRFBunch, size_t locStepIndex)
+void DHistogramAction_ParticleComboKinematics::Fill_Hists(JEventLoop* locEventLoop, const DKinematicData* locKinematicData, bool locIsMissingFlag, const DEventRFBunch* locEventRFBunch, size_t locStepIndex)
 {
 	Particle_t locPID = locKinematicData->PID();
 	DVector3 locMomentum = locKinematicData->momentum();
@@ -1106,15 +1125,15 @@ void DHistogramAction_ParticleComboKinematics::Fill_Hists(JEventLoop* locEventLo
 	//Note, the mutex is unique to this DReaction + action_string combo: actions of same class with different hists will have a different mutex
 	Lock_Action();
 	{
-		dHistDeque_P[locStepIndex][locPID]->Fill(locP);
-		dHistDeque_Phi[locStepIndex][locPID]->Fill(locPhi);
-		dHistDeque_Theta[locStepIndex][locPID]->Fill(locTheta);
-		dHistDeque_PVsTheta[locStepIndex][locPID]->Fill(locTheta, locP);
-		dHistDeque_PhiVsTheta[locStepIndex][locPID]->Fill(locTheta, locPhi);
-		dHistDeque_BetaVsP[locStepIndex][locPID]->Fill(locP, locBeta_Timing);
-		dHistDeque_DeltaBetaVsP[locStepIndex][locPID]->Fill(locP, locDeltaBeta);
-		dHistDeque_VertexZ[locStepIndex][locPID]->Fill(locKinematicData->position().Z());
-		dHistDeque_VertexYVsX[locStepIndex][locPID]->Fill(locKinematicData->position().X(), locKinematicData->position().Y());
+		dHistDeque_P[locStepIndex][locPID][locIsMissingFlag]->Fill(locP);
+		dHistDeque_Phi[locStepIndex][locPID][locIsMissingFlag]->Fill(locPhi);
+		dHistDeque_Theta[locStepIndex][locPID][locIsMissingFlag]->Fill(locTheta);
+		dHistDeque_PVsTheta[locStepIndex][locPID][locIsMissingFlag]->Fill(locTheta, locP);
+		dHistDeque_PhiVsTheta[locStepIndex][locPID][locIsMissingFlag]->Fill(locTheta, locPhi);
+		dHistDeque_BetaVsP[locStepIndex][locPID][locIsMissingFlag]->Fill(locP, locBeta_Timing);
+		dHistDeque_DeltaBetaVsP[locStepIndex][locPID][locIsMissingFlag]->Fill(locP, locDeltaBeta);
+		dHistDeque_VertexZ[locStepIndex][locPID][locIsMissingFlag]->Fill(locKinematicData->position().Z());
+		dHistDeque_VertexYVsX[locStepIndex][locPID][locIsMissingFlag]->Fill(locKinematicData->position().X(), locKinematicData->position().Y());
 	}
 	Unlock_Action();
 }

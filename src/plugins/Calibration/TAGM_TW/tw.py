@@ -18,7 +18,7 @@ def main():
 	run = int(sys.argv[3])
 
 	# Check if the run used the old or new bias voltage scheme
-	if (run < 11572):
+	if (run < 11572) or (run > 30299):
 		newV = False
 	else:
 		newV = True
@@ -30,8 +30,8 @@ def main():
 
 	# If the histogram is empty use the summed output hist instead
 	indCol = [9,27,81,99]
-	base = "h_dt_vs_pp_"
-	for i in range(1,101):
+	base = "TAGM_TW/tdc-rf/h_dt_vs_pp_tdc_"
+	for i in range(1,103):
 		# Summed outputs
 		h = rootfile.Get(base+str(i))
 		h.Write()
@@ -50,10 +50,10 @@ def main():
                                 p.Write()
 			
 	# Include defaults for columns 101 and 102
-	file1 = open('tw-corr.txt','a')
-	for i in range(2):
-		file1.write('0   ' + str(101 + i) + '   ' + '1   ' + '-1   ' +
-                    	    '0   ' + '8   ' + '0\n')
+	#file1 = open('tw-corr.txt','a')
+	#for i in range(2):
+	#	file1.write('0   ' + str(101 + i) + '   ' + '1   ' + '-1   ' +
+        #            	    '0   ' + '8   ' + '0\n')
 	outfile.Close()
 
 def tw_corr(h,row,col,newV):
@@ -70,26 +70,35 @@ def tw_corr(h,row,col,newV):
 	
 	# Make timewalk fit function and apply to hist
 	# New voltage scheme has larger pulse height, adjust the range if needed
-	if (newV):
-		f1 = TF1("f1","[0]+[1]*(1/(x+[3]) )**[2]",400,2000)
-	else:
-		f1 = TF1("f1","[0]+[1]*(1/(x+[3]) )**[2]",125,2000)
-	f1.SetParameter(0,-1)
-	f1.SetParameter(1,100)
-	f1.SetParameter(2,0.7)
-	f1.SetParameter(3,-90)
-	f1.SetParName(0,"c0")
-	f1.SetParName(1,"c1")
-	f1.SetParName(2,"c2")
-	f1.SetParName(3,"c3")
+	try:
+		if (newV):
+			f1 = TF1("f1","[0]+[1]*(1/(x+[3]) )**[2]",400,2000)
+		else:
+			#f1 = TF1("f1","[0]+[1]*(1/(x+[3]) )**[2]",125,2000) # runs before 30000
+			f1 = TF1("f1","[0]+[1]*(1/(x+[3]) )**[2]",100,2000)
+		f1.SetParameter(0,-1)
+		f1.SetParameter(1,100)
+		f1.SetParameter(2,0.7)
+		f1.SetParameter(3,-90)
+		f1.SetParName(0,"c0")
+		f1.SetParName(1,"c1")
+		f1.SetParName(2,"c2")
+		f1.SetParName(3,"c3")
 
-	p = h.ProfileX()
-	fitResult = p.Fit("f1","sRWq")
+		p = h.ProfileX()
+		fitResult = p.Fit("f1","sRWq")
 
-	c0 = fitResult.Parameters()[0]
-	c1 = fitResult.Parameters()[1]
-	c2 = fitResult.Parameters()[2]
-	c3 = fitResult.Parameters()[3]
+		c0 = fitResult.Parameters()[0]
+		c1 = fitResult.Parameters()[1]
+		c2 = fitResult.Parameters()[2]
+		c3 = fitResult.Parameters()[3]
+
+	except:
+		c0 = 1
+		c1 = -1
+		c2 = 0
+		c3 = 0
+		dtmean = 0
 
 	# Write constants to file
 	file1.write(str(row) + '   ' + str(col) + '   ' + str(c0) + '   ' + str(c1) + '   ' +

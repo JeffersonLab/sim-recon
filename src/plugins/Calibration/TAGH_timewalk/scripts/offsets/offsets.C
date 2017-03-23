@@ -14,15 +14,14 @@ void GetData(TString fname, double *y, const int N) {
 }
 void GetCCDBOffsetsBase(double &adc_offset, double &tdc_offset) {
     ifstream fin("offsets/base_time_offset_ccdb.txt");
-    char sep;
-    fin >> sep;
+    fin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
     fin >> adc_offset >> tdc_offset;
     fin.close();
 }
 void GetCCDBOffsetsTDC(double* tdc_offsets, const int N) {
     ifstream fin("offsets/tdc_time_offsets_ccdb.txt");
-    char sep; int n;
-    fin >> sep;
+    fin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
+    int n;
     for (int i = 0; i < N; i++) {
         fin >> n >> tdc_offsets[i];
     }
@@ -30,8 +29,8 @@ void GetCCDBOffsetsTDC(double* tdc_offsets, const int N) {
 }
 void GetCCDBOffsetsADC(double* adc_offsets, const int N) {
     ifstream fin("offsets/fadc_time_offsets_ccdb.txt");
-    char sep; int n;
-    fin >> sep;
+    fin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
+    int n;
     for (int i = 0; i < N; i++) {
         fin >> n >> adc_offsets[i];
     }

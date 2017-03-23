@@ -1158,6 +1158,116 @@ inline static int Is_FinalStateParticle(Particle_t locPID)
 	}
 }
 
+inline static char* Get_ShortName(Particle_t locPID)
+{
+	switch (locPID) {
+	case Gamma:
+		return (char*)"g";
+	case Positron:
+		return (char*)"ep";
+	case Electron:
+		return (char*)"em";
+	case Neutrino:
+		return (char*)"neut";
+	case MuonPlus:
+		return (char*)"mup";
+	case MuonMinus:
+		return (char*)"mum";
+	case Pi0:
+		return (char*)"pi0";
+	case PiPlus:
+		return (char*)"pip";
+	case PiMinus:
+		return (char*)"pim";
+	case KLong:
+		return (char*)"kl";
+	case KPlus:
+		return (char*)"kp";
+	case KMinus:
+		return (char*)"km";
+	case Neutron:
+		return (char*)"n";
+	case Proton:
+		return (char*)"p";
+	case AntiProton:
+		return (char*)"pbar";
+	case KShort:
+		return (char*)"ks";
+	case Eta:
+		return (char*)"eta";
+
+	case Lambda:
+		return (char*)"lamb";
+	case SigmaPlus:
+		return (char*)"sigp";
+	case Sigma0:
+		return (char*)"sig0";
+	case SigmaMinus:
+		return (char*)"sigm";
+	case Xi0:
+		return (char*)"xi0";
+	case XiMinus:
+		return (char*)"xim";
+	case OmegaMinus:
+		return (char*)"omgm";
+
+	case AntiNeutron:
+		return (char*)"nbar";
+	case AntiLambda:
+		return (char*)"lbar";
+	case AntiSigmaMinus:
+		return (char*)"sigmbar";
+	case AntiSigma0:
+		return (char*)"sig0bar";
+	case AntiSigmaPlus:
+		return (char*)"sigpbar";
+	case AntiXi0:
+		return (char*)"xi0bar";
+	case AntiXiPlus:
+		return (char*)"xipbar";
+	case AntiOmegaPlus:
+		return (char*)"omgpbar";
+
+	case omega:
+		return (char*)"omg";
+	case EtaPrime:
+		return (char*)"etap";
+	case phiMeson:
+		return (char*)"phi";
+
+	case Deuteron:
+		return (char*)"d";
+	case Helium:
+		return (char*)"he";
+	case Triton:
+		return (char*)"tri";
+	case Pb208:
+		return (char*)"pb";
+
+	case Jpsi:
+		return (char*)"jpsi";
+	case Eta_c:
+		return (char*)"etac";
+	case Chi_c0:
+		return (char*)"chic0";
+	case Chi_c1:
+		return (char*)"chic1";
+	case Chi_c2:
+		return (char*)"chic2";
+	case Psi2s:
+		return (char*)"psi2S";
+	case D0:
+		return (char*)"d0";
+	case DPlus:
+		return (char*)"dp";
+	case Lambda_c:
+		return (char*)"lambc";
+
+	default:
+		return (char*)"Unknown";
+	}
+}
+
 inline static int ParticleMultiplexPower(Particle_t locPID)
 {
    locPID = RemapParticleID(locPID);

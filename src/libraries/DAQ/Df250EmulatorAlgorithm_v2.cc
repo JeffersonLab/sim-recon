@@ -85,6 +85,14 @@ void Df250EmulatorAlgorithm_v2::EmulateFirmware(const Df250WindowRawData* rawDat
 
     // Note that in principle we could get this information from the Df250Config objects as well, but generally only NPED and the value of NSA+NSB are saved
     // not the individual NSA and NSB values
+    
+    /*
+    // TEST
+    if( (rawData->rocid >= 31) || (rawData->rocid <= 46) ) {
+      NSA = NSA_DEF;
+      NSB = NSB_DEF;
+    }
+    */
 
     // quality bits
     bool bad_pedestal = false;
@@ -102,6 +110,7 @@ void Df250EmulatorAlgorithm_v2::EmulateFirmware(const Df250WindowRawData* rawDat
     const int max_pulses = 3;
     uint32_t TC[max_pulses] = {};
     uint32_t TMIN[max_pulses] = {3};
+    //uint32_t TNSAT[max_pulses] = {};
     uint32_t pulse_integral[max_pulses] = {};
     bool has_overflow_samples[max_pulses] = {false};
     bool has_underflow_samples[max_pulses] = {false};
@@ -123,30 +132,56 @@ void Df250EmulatorAlgorithm_v2::EmulateFirmware(const Df250WindowRawData* rawDat
         }
     }
 
+   
     // look for the threhold crossings and compute the integrals
-    for (unsigned int i=0; i < (NW-NSAT); i++) {
+    //unsigned int MAX_SAMPLE = (NSB>0) ? (NW-NSAT) : (NW-NSAT+NSB-1)); // check this
+    unsigned int MAX_SAMPLE = NW-NSAT;
+    for (unsigned int i=0; i < MAX_SAMPLE; i++) {
         if ((samples[i] & 0xfff) > THR) {
             if (VERBOSE > 1) {
                 jout << "threshold crossing at " << i << endl;
             }
-            TC[npulses] = i+1;
-            // check that we have more than NSAT samples over threshold
-            // unless the first sample is over threshold - we always start then
-            if( (NSAT>1) && (i>0) ){
-                int samples_over_threshold = 1;
-                for(unsigned int j=1; j < NSAT; j++) {
-                    if ((samples[i+j] & 0xfff) > THR) {
-                        samples_over_threshold++;
-                        if( samples_over_threshold == NSAT )
-                            break;
-                    } else {
-                        break;
-                    }
-                }
 
-                if( samples_over_threshold != NSAT )
-                    continue;
-            }
+            // save threshold crossing - could be overwritten
+            TC[npulses] = i+1;
+
+            // check that we have more than NSAT samples over threshold
+	    if( NSAT>1 ){
+                int samples_over_threshold = 1;
+
+		if(i==0) {
+		  // the algorithm only terminates if we dip below threshold...
+		  for(unsigned int j=i+1; ((samples[j]&0xfff)>=THR) && (j<MAX_SAMPLE+1); j++) {
+		    // only count samples actually above threshold
+		    if ((samples[j] & 0xfff) > THR) 
+		      samples_over_threshold++;
+		    
+		    if( samples_over_threshold == NSAT ) {
+		      //TC[npulses] = j+1;
+		      //i=j;
+		      break;
+		    }
+
+		  }
+		} else {
+		  for(unsigned int j=i+1; ((samples[j]&0xfff)>THR) && (j<MAX_SAMPLE+1); j++) {
+		    samples_over_threshold++;
+		    
+		    if( samples_over_threshold == NSAT ) 
+		      break;
+		  }		    
+		}
+		
+		// if we couldn't find NSAT samples above threshold, move on...
+		if( samples_over_threshold != NSAT )
+		  continue;
+            } 
+	    //else {
+	    //TNSAT[npulses] = TC[npulses];
+	    //}
+
+           
+            // calculate integral
             unsigned int ibegin;
             if(NSB > 0)
                 ibegin = i > uint32_t(NSB) ? (i - NSB) : 0; // Set to beginning of window if too early
@@ -209,7 +244,8 @@ void Df250EmulatorAlgorithm_v2::EmulateFirmware(const Df250WindowRawData* rawDat
 
     // error conditions for timing algorithm
     bool pedestal_underflow = false;
-    for (unsigned int i=0; i < 5; i++) {
+    //for (unsigned int i=0; i < 5; i++) {
+    for (unsigned int i=0; i < 4; i++) {
         // We set the "Time Quality bit 0" to 1 if any of the first 5 samples is greated than MaxPed or TET...
         if ( ((samples[i] & 0xfff) > MAXPED) || ((samples[i] & 0xfff) > THR) ) {
             bad_timing_pedestal = true;
@@ -218,6 +254,11 @@ void Df250EmulatorAlgorithm_v2::EmulateFirmware(const Df250WindowRawData* rawDat
         if ( (samples[i] == 0x1000) || (samples[i] == 0x1fff) ) {
             bad_timing_pedestal = true;
         }
+        //}
+
+        // TEST 
+        //for (unsigned int i=0; i < 4; i++) {
+
         // "If any of the first 5 samples is greater than TET the TDC will NOT proceed..."
         // Waiit for iiit...
         if( (samples[i] & 0xfff) > THR ) {
@@ -225,7 +266,11 @@ void Df250EmulatorAlgorithm_v2::EmulateFirmware(const Df250WindowRawData* rawDat
         }
     }
 
+
     for (unsigned int p=0; p < npulses; ++p) {
+      // TEST
+      //TC[p] = TNSAT[p];
+
         // "If any of the first 5 samples is greater than TET or underflow the TDC will NOT proceed
         //   1. pulse time is set to TC
         //   2. pulse peak is set to zero
@@ -251,10 +296,11 @@ void Df250EmulatorAlgorithm_v2::EmulateFirmware(const Df250WindowRawData* rawDat
             // }
 
             // search for the peak of the pulse
-            // has to be after the threshold crossing (NO)
+            // has to be after the threshold crossing (NO?)
             // has to be before the last sample
             unsigned int ipeak;
             for (ipeak = TC[p]; ipeak < NW-1; ++ipeak) {
+            //for (ipeak = TC[p]+1; ipeak < NW-1; ++ipeak) {
                 if ((samples[ipeak] & 0xfff) < (samples[ipeak-1] & 0xfff)) {
                     VPEAK[p] = (samples[ipeak-1] & 0xfff);
                     TPEAK[p] = ipeak-1;
@@ -334,6 +380,10 @@ void Df250EmulatorAlgorithm_v2::EmulateFirmware(const Df250WindowRawData* rawDat
             jout << " pulse " << p << ": VMID: " << VMID[p] << " TMID: " << TMID[p] 
                  << " TFINE: " << TFINE[p] << " time: " << pulse_time[p]
                  << " integral: " << pulse_integral[p] << endl;
+            if (VERBOSE > 2) {
+                jout << "   TMIN = " << TMIN[p] << "  TMID  = " << TMID[p] << "  TPEAK = " << TPEAK[p] << endl;
+                    //<< "   VMID = " << VMID[p] << "  Vnext = " << Vnext   << "  Vlast = " << Vlast    << endl;
+            }
         }
 
         // algorithm is finished, fill the information
@@ -417,6 +467,13 @@ void Df250EmulatorAlgorithm_v2::EmulateFirmware(const Df250WindowRawData* rawDat
             f250PulseData->pulse_peak  = f250PulseData->pulse_peak_emulated;
             f250PulseData->course_time = f250PulseData->course_time_emulated;
             f250PulseData->fine_time   = f250PulseData->fine_time_emulated;
+	    
+	    /*
+	    if( (rawData->rocid >= 31) || (rawData->rocid <= 46) ) {
+	      f250PulseData->nsamples_integral = NSA + NSB;
+	    }
+	    */
+
         }
 
     }

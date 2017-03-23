@@ -207,8 +207,12 @@ jerror_t DTrackCandidate_factory::brun(JEventLoop* eventLoop,int32_t runnumber){
 //------------------
 jerror_t DTrackCandidate_factory::erun(void)
 {
-  if (stepper) delete stepper;
-        return NOERROR;
+  if (stepper) {
+    delete stepper;
+    stepper = nullptr;
+  }
+
+  return NOERROR;
 }
 
 //------------------
@@ -216,9 +220,12 @@ jerror_t DTrackCandidate_factory::erun(void)
 //------------------
 jerror_t DTrackCandidate_factory::fini(void)
 {
- 
-  if (stepper) delete stepper;
-        return NOERROR;
+  if (stepper) {
+    delete stepper;
+    stepper = nullptr;
+  }
+
+  return NOERROR;
 }
 
 

@@ -28,8 +28,8 @@ void trainBDT(void)
 	TMVA::Factory *fac = new TMVA::Factory("L3",outfile,"");
 
 	// Specify input tree that contains both signal and background 
-	TCut signalCut("is_good==1");
-	TCut backgroundCut("is_good==0");
+	TCut signalCut("Evisible>=4.0 && ((Npshits+Npschits)<=1)");
+	TCut backgroundCut("Evisible<4.0 && ((Npshits+Npschits)<=1)");
 	fac->SetInputTrees(l3tree, signalCut, backgroundCut);
 
 	// Add variables

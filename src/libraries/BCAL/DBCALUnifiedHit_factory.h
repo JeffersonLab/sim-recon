@@ -9,6 +9,7 @@ using namespace jana;
 #include "BCAL/DBCALUnifiedHit.h"
 #include "BCAL/DBCALTDCHit.h"
 #include "BCAL/DBCALHit.h"
+#include "BCAL/DBCALGeometry.h"
 
 #include <TTree.h>
 
@@ -79,6 +80,8 @@ class DBCALUnifiedHit_factory : public JFactory<DBCALUnifiedHit> {
   };
 
   map<readout_channel,timewalk_coefficients> tdc_timewalk_map;
+
+  const DBCALGeometry *dBCALGeom;
 
   //write out tree with hit info?
   static const int enable_debug_output = 0;
