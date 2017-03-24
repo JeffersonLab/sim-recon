@@ -187,7 +187,7 @@ jerror_t DBCALHit_factory::evnt(JEventLoop *loop, uint64_t eventnumber)
       // nsamples_pedestal should always be positive for valid data - err on the side of caution for now
       if(nsamples_pedestal == 0) {
           //throw JException("DBCALDigiHit with nsamples_pedestal == 0 !");
-          jerr << "DBCALDigiHit with nsamples_pedestal == 0 !   Event = " << eventnumber << endl;
+          if(VERBOSE>0)jerr << "DBCALDigiHit with nsamples_pedestal == 0 !   Event = " << eventnumber << endl;
           continue;
       }
 

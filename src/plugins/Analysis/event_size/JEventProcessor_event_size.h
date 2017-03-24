@@ -86,6 +86,7 @@ class JEventProcessor_event_size:public jana::JEventProcessor{
 		double tmin_sc, tmax_sc;
 		double tmin_tagger, tmax_tagger;
 
+		int dBCALMid;
 };
 
 #endif // _JEventProcessor_event_size_

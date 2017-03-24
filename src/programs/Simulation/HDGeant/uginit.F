@@ -198,6 +198,16 @@ c The following parameters are declared in controlparams.inc above.
       data trigger_time_sigma_ns/10./
       data event_count/0/
       data override_run_number/0/
+      data genbeam_precol/0/
+      data genbeam_postcol/0/
+      data genbeam_mode/20*0/
+      character*10 genbeam_modes
+      equivalence (genbeam_mode(1), genbeam_modes)
+
+c The following parameters are declared in backgrounds.inc above.
+      data bgrate/0/
+      data bggate/0,0/
+      data bgtagonly/0/
 
 C  Use this parameter to set up a minimum photon energy 
 C  for the coherent bremsstrahlung beam generator - see beamgen.F
@@ -263,6 +273,7 @@ C..geant..
       call ffkey('mcsmearopts',mcsmearopts,64,'MIXED')
       call ffkey('deleteunsmeared',deleteunsmeared,1,'INTEGER')
       call ffkey('beam',beamE0,7,'REAL')
+      call ffkey('genbeam',genbeam_mode,20,'MIXED')
       call ffkey('bfieldmap', bfield_map,20,'MIXED')
       call ffkey('bfieldtype', bfield_type,20,'MIXED')
       call ffkey('psbfieldmap', PS_bfield_map,20,'MIXED')
@@ -273,6 +284,7 @@ C..geant..
       call ffkey('tlog', tlog_particle_gun,1,'INTEGER')
       CALL FFKEY('bgrate',bgrate,1,'REAL')
       CALL FFKEY('bggate',bggate,2,'REAL')
+      CALL FFKEY('bgtagonly',bgtagonly,1,'INTEGER')
       CALL FFKEY('savehits',writenohits,1,'INTEGER')
       CALL FFKEY('showersincol',showersincol,1,'INTEGER')
       call FFKEY('driftclusters',driftclusters,1,'INTEGER')
@@ -338,12 +350,22 @@ c        endif
      +        ' beamEmin is specified with negative value,',
      +        ' cannot continue.'
          stop
-      elseif (beamEmin.gt.0.12) then
-         print *
-         print *, 'Error in uginit:',
-     +        ' beamEmin is larger than a default value of 0.12 GeV,',
-     +        ' cannot continue.'
-         stop
+      endif
+
+      if (genbeam_mode(1).ne.0.and.beamE0.gt.0.and.infile(1).eq.0) then
+         call CUTOL(genbeam_modes)
+         if (genbeam_modes(1:6).eq.'precol') then
+            genbeam_precol = 1
+         elseif (genbeam_modes(1:7).eq.'postcol') then
+            genbeam_postcol = 1
+         else
+            print *, 'uginit.F: GENBEAM option ', genbeam_modes,
+     +               ' is not supported in this release of hdgeant,',
+     +               ' cannot continue.'
+            stop
+         endif
+
+
       endif
 
       if(showersincol.ne.0) then
@@ -358,13 +380,27 @@ c        endif
             
 *     Scale BG rate according to the threshold set on energy of bremsstrahlung
 *     photons. bgrate corresponds to  Rate(E_brem = 0.12 GeV).
+*     
+*     Note added by RTJ, March 4, 2017
+*     I am disabling this ad-hoc formula for automatically adjusting BGRATE
+*     according to the beamEmin value, because it assumes too much:
+*      (1) that the collimator is 3.4mm -- generally NOT true, and
+*      (2) that the value of Emin is low enough that BGRATE is insensitive
+*          to the diamond orientation. 
+*     All of this relies too much on the user understanding the limits
+*     of the approximations involved, and I think in the end users are
+*     being fooled into thinking the simulation is valid for a given set
+*     of collimators and energy cuts when it isn't. In its place, I am
+*     adding an explanation in control.in that whenever you enable the
+*     BGRATE card, you need to do a quick calculation to get the right
+*     number to give for the rate that matches with the value of beamEmin
+*     that is set in the BEAM card.
 
       if (beamEmin.gt.0) then
-         bgrate   = bgrate*(0.12*9.1625*LOG(0.12/beamEmin)/4.936 + 1.0)
+*        bgrate   = bgrate*(0.12*9.1625*LOG(0.12/beamEmin)/4.936 + 1.0)
          xMinimum = beamEmin/beamE0
          print *,'uginit.F:  BGRATE rate is ',bgrate
       endif
-
 
       if (bgrate .lt. 0) then
         print *

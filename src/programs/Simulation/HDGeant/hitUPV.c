@@ -93,6 +93,8 @@ void hitUpstreamEMveto (float xin[4], float xout[4],
 
   /* post the hit to the truth tree */
 
+  int itrack = (stack == 0)? gidGetId(track) : -1;
+
   if ((history == 0) && (pin[3] > THRESH_MEV/1e3))
   {
     int mark = (1<<30) + showerCount;
@@ -113,7 +115,7 @@ void hitUpstreamEMveto (float xin[4], float xout[4],
       showers->in[0].E = pin[3];
       showers->in[0].ptype = ipart;
       showers->in[0].trackID = make_s_TrackID();
-      showers->in[0].trackID->itrack = gidGetId(track);
+      showers->in[0].trackID->itrack = itrack;
       showers->mult = 1;
       upv->upvTruthShowers = showers;
       showerCount++;
@@ -253,7 +255,7 @@ s_UpstreamEMveto_t* pickUpstreamEMveto ()
          int i,iok;
          for (iok=i=0; i < hits->mult; i++)
          {
-            if (hits->in[i].E >= THRESH_MEV/1e3)
+            if (hits->in[i].E > THRESH_MEV/1e3)
             {
                if (iok < i)
                {

@@ -354,9 +354,11 @@ int main(int argC, char* argV[])
          << "#if defined MALLOC_FREE_WITH_MEMCHECK"             << std::endl
          << "#  include <memcheck.h>"                           << std::endl
          << "#  define MALLOC(N,S) (checkin(malloc(N),S))"      << std::endl
+         << "#  define CHECK(P,S) (checkin(P,S))"               << std::endl
          << "#  define FREE(P) (checkout(P),free(P))"           << std::endl
          << "#else"                                             << std::endl
          << "#  define MALLOC(N,S) malloc(N)"                   << std::endl
+         << "#  define CHECK(P,S) assert(1 == 1)"               << std::endl
          << "#  define FREE(P) free(P)"                         << std::endl
          << "#endif"                                            << std::endl;
 
@@ -366,6 +368,7 @@ int main(int argC, char* argV[])
                                                                 << std::endl
                                                                 << std::endl
          << "#include \"" << hname << "\""                      << std::endl
+         << "#include <assert.h>"                               << std::endl
                                                                 << std::endl
          << "int hddm_" + classPrefix + "_buffersize = 1000000;"
                                                                 << std::endl
@@ -1159,6 +1162,8 @@ void CodeBuilder::constructUnpackers()
                   << nameStr << ", hddm_" + classPrefix
                   << "_stringsize))"                            << std::endl
                   << "            XDRerror();"                  << std::endl;
+            cFile << "      CHECK(this1->" << nameStr << ","
+                  << "\"string_t\");"                           << std::endl;
          }
          else if (typeS == "anyURI")
          {
@@ -1167,6 +1172,8 @@ void CodeBuilder::constructUnpackers()
                   << nameStr << ", hddm_" + classPrefix
                   << "_stringsize))"                            << std::endl
                   << "            XDRerror();"                  << std::endl;
+            cFile << "      CHECK(this1->" << nameStr << ","
+                  << "\"string_t\");"                           << std::endl;
          }
          else
          {

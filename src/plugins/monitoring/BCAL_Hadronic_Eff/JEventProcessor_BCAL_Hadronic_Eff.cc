@@ -138,8 +138,12 @@ jerror_t JEventProcessor_BCAL_Hadronic_Eff::brun(jana::JEventLoop* locEventLoop,
 	//Effective velocities
 	locEventLoop->GetCalib("/BCAL/effective_velocities", effective_velocities);
 
-	//THE WORST THING EVER.  FIX THIS GEOMETRY CLASS.  NOTHING IN IT SHOULD BE STATIC.
-	DBCALGeometry::Initialize(locRunNumber);
+	// load BCAL geometry
+  	vector<const DBCALGeometry *> BCALGeomVec;
+  	locEventLoop->Get(BCALGeomVec);
+  	if(BCALGeomVec.size() == 0)
+		throw JException("Could not load DBCALGeometry object!");
+	dBCALGeom = BCALGeomVec[0];
 
 	return NOERROR;
 }
@@ -728,11 +732,11 @@ const DBCALUnifiedHit* JEventProcessor_BCAL_Hadronic_Eff::Find_ClosestTimeHit(co
 		double locClusterZ = locBCALCluster->rho()*cos(locBCALCluster->theta()) + dTargetCenterZ;
 
 		// calc the distance to upstream or downstream end of BCAL depending on where the hit was with respect to the cluster z position.
-		double locDistance = DBCALGeometry::GetBCAL_length()/2.0;
+		double locDistance = dBCALGeom->GetBCAL_length()/2.0;
 		if(locHit->end == 0)
-			locDistance += locClusterZ - DBCALGeometry::GetBCAL_center();
+			locDistance += locClusterZ - dBCALGeom->GetBCAL_center();
 		else
-			locDistance += DBCALGeometry::GetBCAL_center() - locClusterZ;
+			locDistance += dBCALGeom->GetBCAL_center() - locClusterZ;
 
 		//correct time, calc delta-t
 		int channel_calib = 16*(locHit->module - 1) + 4*(locHit->layer - 1) + locHit->sector - 1; //for CCDB

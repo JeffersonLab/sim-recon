@@ -67,7 +67,7 @@
 	if(locHist_ADCintegral != NULL)
 	{
 		locHist_ADCintegral->SetTitle("PSC ADC Integral");
-		locHist_ADCintegral->Rebin(2);
+		//locHist_ADCintegral->Rebin(2);
 		locHist_ADCintegral->GetXaxis()->SetRangeUser(1000.0, 3000.);
 		locHist_ADCintegral->GetXaxis()->SetTitleSize(0.05);
 		//locHist_ADCintegral->GetYaxis()->SetTitle("");
@@ -85,7 +85,7 @@
 	{
 		locHist_TDCtime->SetTitle("PSC TDC Time");
 		//locHist_TDCtime->Rebin(2);
-		locHist_TDCtime->GetXaxis()->SetRangeUser(200, 800);
+		locHist_TDCtime->GetXaxis()->SetRangeUser(0, 3000);
 		//locHist_TDCtime->GetXaxis()->SetRangeUser(0, 1500);
 		locHist_TDCtime->GetXaxis()->SetTitleSize(0.05);
 		//locHist_TDCtime->GetYaxis()->SetTitle("");
@@ -94,5 +94,4 @@
 		locHist_TDCtime->SetFillColor(kYellow);
 		locHist_TDCtime->Draw("");
 	}
-
 }

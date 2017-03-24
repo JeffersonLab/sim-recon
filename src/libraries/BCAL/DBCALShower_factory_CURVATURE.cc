@@ -43,23 +43,6 @@ using namespace jana;
 //------------------
 jerror_t DBCALShower_factory_CURVATURE::init(void)
 {
-  if( ! DBCALGeometry::summingOn() ) {
-    // in libraries/PID/DNeutralShowerCandidate.h, there are some constants used to calculate the energy uncertainty. If you are updating these constants, you might want to update that also...
-
-    // these are energy calibration parameters -- no summing of cells
-    
-    m_scaleZ_p0 =  0.950774;
-    m_scaleZ_p1 =  0.000483979;
-    m_scaleZ_p2 =  -2.08086e-06;
-    m_scaleZ_p3 =  8.08534e-10;
-    
-    m_nonlinZ_p0 =  0.0152548;
-    m_nonlinZ_p1 =  0;
-    m_nonlinZ_p2 =  0;    
-    m_nonlinZ_p3 =  0;
-  }
-  else{
-    
     // these are energy calibration parameters -- 1.2.3.4 summing
     
     //last updated for svn revision 9233 
@@ -73,7 +56,6 @@ jerror_t DBCALShower_factory_CURVATURE::init(void)
     m_nonlinZ_p2 =  0;    
     m_nonlinZ_p3 =  0;
 
-  }
 	return NOERROR;
 }
 
@@ -115,6 +97,13 @@ jerror_t DBCALShower_factory_CURVATURE::brun(jana::JEventLoop *loop, int32_t run
     }
     curvature_parameters.clear();
   }
+  
+  // load BCAL geometry
+  vector<const DBCALGeometry *> BCALGeomVec;
+  loop->Get(BCALGeomVec);
+  if(BCALGeomVec.size() == 0)
+	throw JException("Could not load DBCALGeometry object!");
+  dBCALGeom = BCALGeomVec[0];
 
   // Thresholds for merging showers and including points.
   PHITHRESHOLD = 4*0.06544792; // 4*2 column widths, in radians.
@@ -122,7 +111,7 @@ jerror_t DBCALShower_factory_CURVATURE::brun(jana::JEventLoop *loop, int32_t run
   TTHRESHOLD = 8.0*k_nsec; // Loose time range, in ns.
   ETHRESHOLD = 1.0*k_keV; // Points minimal energy, in keV.
 
-	return NOERROR;
+  return NOERROR;
 }
 
 //------------------
@@ -382,8 +371,8 @@ jerror_t DBCALShower_factory_CURVATURE::evnt(JEventLoop *loop, uint64_t eventnum
     sig_t = sqrt(sig_t - t*t)/sqrt(n_eff);
 
     // Force showers to be inside the BCal's z-coordinate range.
-    double bcal_down = DBCALGeometry::GetBCAL_center() + DBCALGeometry::GetBCAL_length()/2.0 - m_zTarget;
-    double bcal_up = DBCALGeometry::GetBCAL_center() - DBCALGeometry::GetBCAL_length()/2.0 - m_zTarget;
+    double bcal_down = dBCALGeom->GetBCAL_center() + dBCALGeom->GetBCAL_length()/2.0 - m_zTarget;
+    double bcal_up = dBCALGeom->GetBCAL_center() - dBCALGeom->GetBCAL_length()/2.0 - m_zTarget;
     if (z > bcal_down) z = bcal_down;
     if (z < bcal_up) z = bcal_up;
 
@@ -404,7 +393,7 @@ jerror_t DBCALShower_factory_CURVATURE::evnt(JEventLoop *loop, uint64_t eventnum
     // for slices of z.  These fit parameters (scale and nonlin) are then plotted 
     // as a function of z and fit.
     float r = sqrt( shower->x * shower->x + shower->y * shower->y );
-    float zEntry = ( shower->z - m_zTarget ) * ( DBCALGeometry::GetBCAL_inner_rad() / r );
+    float zEntry = ( shower->z - m_zTarget ) * ( dBCALGeom->GetBCAL_inner_rad() / r );
     float scale = m_scaleZ_p0  + m_scaleZ_p1*zEntry + m_scaleZ_p2*(zEntry*zEntry) + m_scaleZ_p3*(zEntry*zEntry*zEntry);
     float nonlin = m_nonlinZ_p0  + m_nonlinZ_p1*zEntry + m_nonlinZ_p2*(zEntry*zEntry) + m_nonlinZ_p3*(zEntry*zEntry*zEntry);
 

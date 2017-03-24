@@ -1,0 +1,14 @@
+import os
+import sbms
+
+# get env object and clone it
+Import('*')
+env = env.Clone()
+
+# Add directory above this to source so DAQ will be included
+env.AppendUnique(CPPPATH=['%s/..' % env.Dir('.').srcnode().abspath])
+
+sbms.AddJANA(env)
+sbms.AddDANA(env)
+sbms.plugin(env)
+

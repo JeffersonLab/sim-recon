@@ -18,6 +18,7 @@ subdirs = [
 'pedestal_online',
 'PS_online',
 'PSPair_online',
+'PS_flux',
 'ST_online_lowlevel',
 'ST_online_tracking',
 'ST_online_Tresolution',

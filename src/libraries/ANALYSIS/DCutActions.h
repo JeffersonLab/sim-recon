@@ -72,15 +72,16 @@ class DCutAction_MinTrackHits : public DAnalysisAction
 	public:
 		DCutAction_MinTrackHits(const DReaction* locReaction, unsigned int locMinTrackHits, string locActionUniqueString = "") :
 		DAnalysisAction(locReaction, "Cut_MinTrackHits", false, locActionUniqueString),
-		dMinTrackHits(locMinTrackHits){}
+		dMinTrackHits(locMinTrackHits), dParticleID(nullptr){}
 
 		string Get_ActionName(void) const;
-		void Initialize(JEventLoop* locEventLoop){}
+		void Initialize(JEventLoop* locEventLoop);
 
 	private:
 		bool Perform_Action(JEventLoop* locEventLoop, const DParticleCombo* locParticleCombo);
 
 		unsigned int dMinTrackHits;
+		const DParticleID* dParticleID;
 };
 
 class DCutAction_ThrownTopology : public DAnalysisAction

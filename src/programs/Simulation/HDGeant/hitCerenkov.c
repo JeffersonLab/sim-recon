@@ -48,6 +48,8 @@ void hitCerenkov (float xin[4], float xout[4],
 
    /* post the hit to the truth tree */
 
+   int itrack = (stack == 0)? gidGetId(track) : -1;
+
    if ((history == 0) && (dEsum > 0))
    {
       int mark = (1<<30) + pointCount;
@@ -70,7 +72,7 @@ void hitCerenkov (float xin[4], float xout[4],
          points->in[0].E = pin[3];
          points->in[0].ptype = ipart;
          points->in[0].trackID = make_s_TrackID();
-         points->in[0].trackID->itrack = gidGetId(track);
+         points->in[0].trackID->itrack = itrack;
          points->mult = 1;
          pointCount++;
       }
@@ -169,7 +171,7 @@ s_Cerenkov_t* pickCerenkov ()
          int iok,i;
          for (iok=i=0; i < hits->mult; i++)
          {
-           if (hits->in[i].pe >= THRESH_PE)
+           if (hits->in[i].pe > THRESH_PE)
            {
              if (iok < i)
              {
@@ -196,8 +198,18 @@ s_Cerenkov_t* pickCerenkov ()
 
       for (point=0; point < points->mult; ++point)
       {
-         int m = box->cereTruthPoints->mult++;
+         int track = points->in[point].track;
+         double t = points->in[point].t;
+         int m = box->cereTruthPoints->mult;
+         if (points->in[point].trackID->itrack < 0 ||
+            (m > 0 &&  box->cereTruthPoints->in[m-1].track == track &&
+             fabs(box->cereTruthPoints->in[m-1].t - t) < 0.5))
+         {
+            FREE(points->in[point].trackID);
+            continue;
+         }
          box->cereTruthPoints->in[m] = points->in[point];
+         box->cereTruthPoints->mult++;
       }
       if (points != HDDM_NULL)
       {

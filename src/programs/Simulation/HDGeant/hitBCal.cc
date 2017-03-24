@@ -429,7 +429,7 @@ void hitBarrelEMcal (float xin[4], float xout[4],
    float xlocal[3];
    float xbcal[3];
    float xHat[] = {1,0,0};
-  
+
    if (!initialized)
       initializeBarrelEMcal();
   
@@ -451,6 +451,8 @@ void hitBarrelEMcal (float xin[4], float xout[4],
      t = xin[3] * 1e9;
    }
   
+   int itrack = (stack == 0)? gidGetId(track) : -1;
+
    /* post the hit to the truth tree */
 
    if ((history == 0) && (pin[3] > THRESH_MEV/1e3)) {
@@ -476,8 +478,8 @@ void hitBarrelEMcal (float xin[4], float xout[4],
          showers->in[0].pz = pin[2]*pin[4];
          showers->in[0].E = pin[3];
          showers->in[0].ptype = ipart;
-	 showers->in[0].trackID = make_s_TrackID();
-	 showers->in[0].trackID->itrack = gidGetId(track);
+         showers->in[0].trackID = make_s_TrackID();
+         showers->in[0].trackID->itrack = itrack;
          showers->mult = 1;
          showerCount++;
       }
@@ -620,7 +622,7 @@ s_BarrelEMcal_t* pickBarrelEMcal ()
          int i,iok;
          for (iok=i=0; i < (int)hits->mult; i++)
          {
-            if (hits->in[i].E >= THRESH_MEV/1e3)
+            if (hits->in[i].E > THRESH_MEV/1e3)
             {
 #if TESTING_CAL_CONTAINMENT
                Etotal += hits->in[i].E;

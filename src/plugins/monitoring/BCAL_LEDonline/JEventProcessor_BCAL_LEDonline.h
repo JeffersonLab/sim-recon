@@ -7,7 +7,7 @@
 #define _JEventProcessor_BCAL_LEDonline_
 
 #include <JANA/JEventProcessor.h>
-
+#include <BCAL/DBCALGeometry.h>
 
 class JEventProcessor_BCAL_LEDonline:public jana::JEventProcessor{
  public:
@@ -23,6 +23,8 @@ class JEventProcessor_BCAL_LEDonline:public jana::JEventProcessor{
   jerror_t evnt(jana::JEventLoop *eventLoop, uint64_t eventnumber);	///< Called every event.
   jerror_t erun(void);						///< Called everytime run number changes, provided brun has been called.
   jerror_t fini(void);						///< Called after last event of last event source has been processed.
+
+  const DBCALGeometry *dBCALGeom;
 };
 
 #endif // _JEventProcessor_BCAL_LEDonline_

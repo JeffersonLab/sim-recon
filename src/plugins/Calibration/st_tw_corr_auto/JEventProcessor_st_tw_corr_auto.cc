@@ -5,6 +5,7 @@
 // Creator: mkamel (on Linux ifarm1401 2.6.32-431.el6.x86_64 x86_64)
 //
 #include "JEventProcessor_st_tw_corr_auto.h"
+#include "TRIGGER/DTrigger.h"
 
 // Routine used to create our JEventProcessor
 #include <JANA/JApplication.h>
@@ -111,6 +112,13 @@ jerror_t JEventProcessor_st_tw_corr_auto::evnt(JEventLoop *loop, uint64_t eventn
 	// japp->RootWriteLock();
 	//  ... fill historgrams or trees ...
 	// japp->RootUnLock();
+
+        // select events with physics events, i.e., not LED and other front panel triggers
+        const DTrigger* locTrigger = NULL; 
+	loop->GetSingle(locTrigger); 
+	if(locTrigger->Get_L1FrontPanelTriggerBits() != 0) 
+	  return NOERROR;
+
   vector<const DSCHit*>      st_hits; 
   loop->Get(st_hits); 
   

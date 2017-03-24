@@ -30,7 +30,7 @@
 	if(locHist_ADCmulti != NULL)
 	{
 		locHist_ADCmulti->SetTitle("FDC ADC Multiplicity");
-		locHist_ADCmulti->Rebin(2);
+		//locHist_ADCmulti->Rebin(2);
 		//locHist_ADCmulti->GetYaxis()->SetRangeUser(0.0, 1.05*locHist_ADCmulti->GetBinContent(locHist_ADCmulti->GetMaximumBin()));
 		locHist_ADCmulti->GetXaxis()->SetTitleSize(0.05);
 		locHist_ADCmulti->GetXaxis()->SetTitle("# ADC Hits");
@@ -48,7 +48,7 @@
 	if(locHist_TDCmulti != NULL)
 	{
 		locHist_TDCmulti->SetTitle("FDC TDC Multiplicity");
-		locHist_TDCmulti->Rebin(2);
+		//locHist_TDCmulti->Rebin(2);
 		//locHist_TDCmulti->GetYaxis()->SetRangeUser(0.0, 1.05*locHist_TDCmulti->GetBinContent(locHist_TDCmulti->GetMaximumBin()));
 		locHist_TDCmulti->GetXaxis()->SetTitleSize(0.05);
 		locHist_TDCmulti->GetXaxis()->SetTitle("# TDC Hits");
@@ -83,8 +83,8 @@
 	if(locHist_TDCtime != NULL)
 	{
 		locHist_TDCtime->SetTitle("FDC TDC Time");
-		locHist_TDCtime->Rebin(2);
-		locHist_TDCtime->GetXaxis()->SetRangeUser(4000, 4800);
+		//locHist_TDCtime->Rebin(2);
+		locHist_TDCtime->GetXaxis()->SetRangeUser(-500, 8000);
 		locHist_TDCtime->GetXaxis()->SetTitleSize(0.05);
 		//locHist_TDCtime->GetYaxis()->SetTitle("");
 		locHist_TDCtime->GetXaxis()->SetLabelSize(0.05);
@@ -92,5 +92,4 @@
 		locHist_TDCtime->SetFillColor(kYellow);
 		locHist_TDCtime->Draw("");
 	}
-
 }

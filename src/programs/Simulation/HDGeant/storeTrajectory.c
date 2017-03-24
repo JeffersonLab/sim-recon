@@ -35,7 +35,7 @@ void cleartrajectories_(void)
 // addtrajectorypoint_
 //--------------------*/
 void addtrajectorypoint_(float *VECT, float *TOFG, float *DESTEP
-									,float *GETOT, int *ITRA, int *ISTAK, int *IPART
+									,float *GEKIN, int *ITRA, int *ISTAK, int *IPART
 									,float *RADL, float *STEP, int *NMEC, int* LMEC, int *storetraj)
 {
 	static int warned = 0;
@@ -119,7 +119,7 @@ void addtrajectorypoint_(float *VECT, float *TOFG, float *DESTEP
 	/* Finally, fill in the new trajectory point info */
 	s_McTrajectoryPoint_t *p = &traj_points[Npoints++];
 	
-	p->E = *GETOT;
+	p->E = *GEKIN;
 	p->dE = *DESTEP;
 	p->part = *IPART;
 	p->x = VECT[0];

@@ -28,6 +28,8 @@ using namespace jana;
 #include "DVector3.h"
 #include "HDGEOMETRY/DGeometry.h"
 #include "DANA/DApplication.h"
+#include "TRIGGER/DTrigger.h"
+
 #include <iostream>
 #include <algorithm>
 #include <stdio.h>
@@ -101,6 +103,12 @@ jerror_t JEventProcessor_FCALpulsepeak::brun(JEventLoop *eventLoop, int32_t runn
 //------------------
 jerror_t JEventProcessor_FCALpulsepeak::evnt(JEventLoop *eventLoop, uint64_t eventnumber)
 {
+
+    // select events with physics events, i.e., not LED and other front panel triggers
+    const DTrigger* locTrigger = NULL; 
+    eventLoop->GetSingle(locTrigger); 
+    if(locTrigger->Get_L1FrontPanelTriggerBits() != 0) 
+      return NOERROR;
 
     vector< const DFCALDigiHit*  > digiHits;
     eventLoop->Get( digiHits );

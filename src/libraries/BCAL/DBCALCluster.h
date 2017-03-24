@@ -25,8 +25,8 @@ public:
   
   JOBJECT_PUBLIC( DBCALCluster );
   
-  DBCALCluster(double z_target_center);
-  DBCALCluster(const DBCALPoint* point, double z_target_center);
+  DBCALCluster(double z_target_center, const DBCALGeometry *locGeom);
+  DBCALCluster(const DBCALPoint* point, double z_target_center, const DBCALGeometry *locGeom);
 
   vector< const DBCALPoint* > points() const { return m_points; }
   // Returns a vector of the single-ended hits used in the cluster.
@@ -95,6 +95,8 @@ private:
   float m_sig_phi;
 
   float m_z_target_center;
+  
+  const DBCALGeometry *m_BCALGeom;
   
 };
 
