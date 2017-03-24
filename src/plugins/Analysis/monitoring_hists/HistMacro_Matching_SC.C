@@ -32,6 +32,18 @@
 	TH1I* locHist_SCPaddle_NoseRegion_HasHit = (TH1I*)gDirectory->Get("SCPaddle_NoseRegion_HasHit");
 	TH1I* locHist_SCPaddle_NoseRegion_NoHit = (TH1I*)gDirectory->Get("SCPaddle_NoseRegion_NoHit");
 
+	//Get original pad margins
+	double locLeftPadMargin = gStyle->GetPadLeftMargin();
+	double locRightPadMargin = gStyle->GetPadRightMargin();
+	double locTopPadMargin = gStyle->GetPadTopMargin();
+	double locBottomPadMargin = gStyle->GetPadBottomMargin();
+
+	//Set new pad margins
+	gStyle->SetPadLeftMargin(0.15);
+	gStyle->SetPadRightMargin(0.15);
+//	gStyle->SetPadTopMargin(locTopPadMargin);
+//	gStyle->SetPadBottomMargin(locBottomPadMargin);
+
 	//Get/Make Canvas
 	TCanvas *locCanvas = NULL;
 	if(TVirtualPad::Pad() == NULL)
@@ -46,12 +58,19 @@
 	gPad->SetGrid();
 	if(locHist_SC_TrackDeltaPhiVsZ_WireBased != NULL)
 	{
+		locHist_SC_TrackDeltaPhiVsZ_WireBased->GetYaxis()->SetTitleOffset(1.3);
 		locHist_SC_TrackDeltaPhiVsZ_WireBased->GetXaxis()->SetRangeUser(35.0, 105.0);
 		locHist_SC_TrackDeltaPhiVsZ_WireBased->GetXaxis()->SetTitleSize(0.05);
 		locHist_SC_TrackDeltaPhiVsZ_WireBased->GetYaxis()->SetTitleSize(0.05);
 		locHist_SC_TrackDeltaPhiVsZ_WireBased->GetXaxis()->SetLabelSize(0.05);
 		locHist_SC_TrackDeltaPhiVsZ_WireBased->GetYaxis()->SetLabelSize(0.05);
 		locHist_SC_TrackDeltaPhiVsZ_WireBased->Draw("COLZ");
+		TF1* locFunc_High = new TF1("SC_PhiCut_High_WB", "[0] + [1]*exp([2]*(x - [3]))", 30.0, 110.0);
+		locFunc_High->SetParameters(10.0, 0.1, 0.13, 60.0);
+		locFunc_High->Draw("SAME");
+		TF1* locFunc_Low = new TF1("SC_PhiCut_Low_WB", "-1.0*([0] + [1]*exp([2]*(x - [3])))", 30.0, 110.0);
+		locFunc_Low->SetParameters(10.0, 0.1, 0.13, 60.0);
+		locFunc_Low->Draw("SAME");
 	}
 
 	locCanvas->cd(2);
@@ -59,12 +78,19 @@
 	gPad->SetGrid();
 	if(locHist_SC_TrackDeltaPhiVsZ_TimeBased != NULL)
 	{
+		locHist_SC_TrackDeltaPhiVsZ_TimeBased->GetYaxis()->SetTitleOffset(1.3);
 		locHist_SC_TrackDeltaPhiVsZ_TimeBased->GetXaxis()->SetRangeUser(35.0, 105.0);
 		locHist_SC_TrackDeltaPhiVsZ_TimeBased->GetXaxis()->SetTitleSize(0.05);
 		locHist_SC_TrackDeltaPhiVsZ_TimeBased->GetYaxis()->SetTitleSize(0.05);
 		locHist_SC_TrackDeltaPhiVsZ_TimeBased->GetXaxis()->SetLabelSize(0.05);
 		locHist_SC_TrackDeltaPhiVsZ_TimeBased->GetYaxis()->SetLabelSize(0.05);
 		locHist_SC_TrackDeltaPhiVsZ_TimeBased->Draw("COLZ");
+		TF1* locFunc_High = new TF1("SC_PhiCut_High_TB", "[0] + [1]*exp([2]*(x - [3]))", 30.0, 110.0);
+		locFunc_High->SetParameters(7.0, 0.1, 0.28, 78.0);
+		locFunc_High->Draw("SAME");
+		TF1* locFunc_Low = new TF1("SC_PhiCut_Low_TB", "-1.0*([0] + [1]*exp([2]*(x - [3])))", 30.0, 110.0);
+		locFunc_Low->SetParameters(7.0, 0.1, 0.28, 78.0);
+		locFunc_Low->Draw("SAME");
 	}
 
 	locCanvas->cd(3);
@@ -107,7 +133,7 @@
 		}
 		locAcceptanceHist->SetEntries(locMissingHist->GetEntries() + locFoundHist->GetEntries());
 		locAcceptanceHist->SetStats(kFALSE);
-
+		locAcceptanceHist->GetYaxis()->SetTitleOffset(1.3);
 		locAcceptanceHist->GetXaxis()->SetTitleSize(0.05);
 		locAcceptanceHist->GetYaxis()->SetTitleSize(0.05);
 		locAcceptanceHist->GetXaxis()->SetLabelSize(0.05);
@@ -155,7 +181,7 @@
 		}
 		locAcceptanceHist->SetEntries(locMissingHist->GetEntries() + locFoundHist->GetEntries());
 		locAcceptanceHist->SetStats(kFALSE);
-
+		locAcceptanceHist->GetYaxis()->SetTitleOffset(1.3);
 		locAcceptanceHist->GetXaxis()->SetRangeUser(35.0, 105.0);
 		locAcceptanceHist->GetXaxis()->SetTitleSize(0.05);
 		locAcceptanceHist->GetYaxis()->SetTitleSize(0.05);
@@ -317,5 +343,11 @@
 		locAcceptanceHist->GetYaxis()->SetLabelSize(0.05);
 		locAcceptanceHist->Draw("E1");
 	}
+
+	//Reset original pad margins
+	gStyle->SetPadLeftMargin(locLeftPadMargin);
+	gStyle->SetPadRightMargin(locRightPadMargin);
+	gStyle->SetPadTopMargin(locTopPadMargin);
+	gStyle->SetPadBottomMargin(locBottomPadMargin);
 }
 
