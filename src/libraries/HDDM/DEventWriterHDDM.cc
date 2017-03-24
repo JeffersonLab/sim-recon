@@ -152,11 +152,6 @@ bool DEventWriterHDDM::Write_HDDMEvent(JEventLoop* locEventLoop, string locOutpu
 	//hodoscope
 	for(uint i=0; i<TAGHHits.size(); ++i)
 	{
-		if(i==0)//if the hodoscope has at least one hit then on the first one make the set of hodoscope channels
-		{
-			hitv->getTagger().addHodoChannels();
-		}
-
 		bool found=false;
 		//look to see if the same sub-unit of the sub-detector is hit again
 		hddm_s::HodoChannelList* TAGH_ChannelList = &hitv->getTagger().getHodoChannels();
@@ -195,10 +190,6 @@ bool DEventWriterHDDM::Write_HDDMEvent(JEventLoop* locEventLoop, string locOutpu
 	//microscope
 	for(uint i=0;i<TAGMHits.size();++i)
 	{
-		if(i==0)
-		{
-			hitv->getTagger().addMicroChannels();
-		}
 		bool found=false;
 
 		//look to see if the same sub-unit of the sub-detector is hit again
@@ -216,8 +207,11 @@ bool DEventWriterHDDM::Write_HDDMEvent(JEventLoop* locEventLoop, string locOutpu
 
 		if(found == false)
 		{
-
 			hitv->getTagger().addMicroChannels();
+			if(TAGMHits[i]->column == 0 && TAGMHits[i]->row == 0)
+			  {
+			    std::cout<<"I found one in the TAGM!"<<std::endl;
+			  }
 			TAGM_ChannelIterator = TAGM_ChannelList->end()-1;
 			TAGM_ChannelIterator->setColumn(TAGMHits[i]->column);
 			TAGM_ChannelIterator->setRow(TAGMHits[i]->row);
@@ -300,6 +294,7 @@ bool DEventWriterHDDM::Write_HDDMEvent(JEventLoop* locEventLoop, string locOutpu
 			hddm_s::FdcAnodeHitList* FDC_AnodeWireHitList = &FDC_AnodeWireIterator->getFdcAnodeHits();
 			hddm_s::FdcAnodeHitList::iterator FDC_AnodeWireHitIterator = FDC_AnodeWireHitList->end()-1;
 			FDC_AnodeWireHitIterator->setT(FDCHits[i]->t);
+			FDC_AnodeWireHitIterator->setDE(0);//FDC does not have fADCs on the anodes
 
 		}
 		else//this is a cathode hit.  Agnostic about being half length or not
