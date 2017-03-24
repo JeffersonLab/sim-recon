@@ -53,10 +53,10 @@ char input_file_name[50]="scalar.in";
 char output_file_name[50]="scalar_gen.hddm";
 
 void Usage(void){
-  printf("genEtaRegge: generator for eta production based on Regge trajectory formalism.\n");
-  printf(" Usage:  genEtaRegge <options>\n");
+  printf("genScalarRegge: generator for eta production based on Regge trajectory formalism.\n");
+  printf(" Usage:  genScalarRegge <options>\n");
   printf("   Options:  -N<number of events> (number of events to generate)\n");
-  printf("             -O<output.hddm>   (default: eta_gen.hddm)\n");
+  printf("             -O<output.hddm>   (default: scalar_gen.hddm)\n");
   printf("             -I<input.in>      (default: scalar.in)\n");
   printf("             -R<run number>    (default: 10001)\n");
   printf("             -h                (Print this message and exit.)\n");
@@ -2832,7 +2832,7 @@ int main(int narg, char *argv[])
     // Polar angle in center of mass frame
     double theta_cm=0.;
 
-    // Eta momentum in cm
+    // Scalar momentum in cm
     double p_S=0.;
 
     // Mass squared of resonance
@@ -3176,7 +3176,7 @@ int main(int narg, char *argv[])
 
     WriteEvent(i,beam,vert,particle_types,particle_vectors,file);
     
-    if ((i%1000)==0) cout << 100.*double(i)/double(Nevents) << "\% done" << endl;
+    if ((i%(Nevents/10))==0) cout << 100.*double(i)/double(Nevents) << "\% done" << endl;
   }
 
 
