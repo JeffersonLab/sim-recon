@@ -65,6 +65,7 @@ class JEventProcessor_HLDetectorTiming:public jana::JEventProcessor{
         double BEAM_CURRENT;
         double Z_TARGET;
         int DO_ROUGH_TIMING, DO_TDC_ADC_ALIGN, DO_TRACK_BASED, DO_VERIFY, REQUIRE_BEAM, BEAM_EVENTS_TO_KEEP, DO_CDC_TIMING, DO_OPTIONAL, DO_FITS, DO_REACTION, USE_RF_BUNCH;
+	int DO_HIGH_RESOLUTION;
         int fBeamEventCounter;
         // The final setup requires some shifts relative to the previous values, need to store them
 
