@@ -63,6 +63,8 @@ jerror_t JEventProcessor_HLDetectorTiming::init(void)
     DO_VERIFY = 1;
     DO_OPTIONAL = 0;
     DO_REACTION = 0;
+    DO_HIGH_RESOLUTION = 0;
+
     USE_RF_BUNCH = 1;
 
     if(gPARMS){
@@ -70,6 +72,7 @@ jerror_t JEventProcessor_HLDetectorTiming::init(void)
         gPARMS->SetDefaultParameter("HLDETECTORTIMING:DO_CDC_TIMING", DO_CDC_TIMING, "Set to > 0 to do CDC Per channel Alignment");
         gPARMS->SetDefaultParameter("HLDETECTORTIMING:DO_TDC_ADC_ALIGN", DO_TDC_ADC_ALIGN, "Set to > 0 to do TDC/ADC alignment of SC,TOF,TAGM,TAGH");
         gPARMS->SetDefaultParameter("HLDETECTORTIMING:DO_TRACK_BASED", DO_TRACK_BASED, "Set to > 0 to do Track Based timing corrections");
+        gPARMS->SetDefaultParameter("HLDETECTORTIMING:DO_HIGH_RESOLUTION", DO_HIGH_RESOLUTION, "Set to > 0 to increase the resolution of the track Based timing corrections");
         gPARMS->SetDefaultParameter("HLDETECTORTIMING:DO_VERIFY", DO_VERIFY, "Set to > 0 to verify timing with current constants");
         gPARMS->SetDefaultParameter("HLDETECTORTIMING:REQUIRE_BEAM", REQUIRE_BEAM, "Set to 0 to skip beam current check");
         gPARMS->SetDefaultParameter("HLDETECTORTIMING:BEAM_EVENTS_TO_KEEP", BEAM_EVENTS_TO_KEEP, "Set to the number of beam on events to use");
@@ -90,8 +93,13 @@ jerror_t JEventProcessor_HLDetectorTiming::init(void)
     }
 
     if (DO_TRACK_BASED){
-        NBINS_TAGGER_TIME = 1600; MIN_TAGGER_TIME = -200; MAX_TAGGER_TIME = 400;
-        NBINS_MATCHING = 1000; MIN_MATCHING_T = -100; MAX_MATCHING_T = 400;
+        if (DO_HIGH_RESOLUTION) {
+	    NBINS_TAGGER_TIME = 400; MIN_TAGGER_TIME = -20; MAX_TAGGER_TIME = 20;
+	    NBINS_MATCHING = 1000; MIN_MATCHING_T = -10; MAX_MATCHING_T = 10;
+	} else {
+	    NBINS_TAGGER_TIME = 1600; MIN_TAGGER_TIME = -200; MAX_TAGGER_TIME = 400;
+	    NBINS_MATCHING = 1000; MIN_MATCHING_T = -100; MAX_MATCHING_T = 400;
+	}
     } else if (DO_VERIFY){
         NBINS_TAGGER_TIME = 200; MIN_TAGGER_TIME = -20; MAX_TAGGER_TIME = 20;
         NBINS_MATCHING = 1000; MIN_MATCHING_T = -10; MAX_MATCHING_T = 10;
@@ -389,7 +397,8 @@ jerror_t JEventProcessor_HLDetectorTiming::evnt(JEventLoop *loop, uint64_t event
                 if ((*hit)->has_TDC && !(*hit)->has_fADC){
                     if (GetCCDBIndexTAGM(tagmHitVector[i]) == GetCCDBIndexTAGM(*hit)){
                         Fill2DHistogram("HLDetectorTiming", "TAGM", "TAGMHit TDC_ADC Difference",
-                                GetCCDBIndexTAGM(tagmHitVector[i]), (*hit)->time_tdc - tagmHitVector[i]->time_fadc,
+                                GetCCDBIndexTAGM(tagmHitVector[i]), (*hit)->t - tagmHitVector[i]->time_fadc,
+					//GetCCDBIndexTAGM(tagmHitVector[i]), (*hit)->time_tdc - tagmHitVector[i]->time_fadc,
                                 "TAGM #Deltat TDC-ADC; Column ;t_{TDC} - t_{ADC} [ns]", nTAGMCounters, 0.5, nTAGMCounters + 0.5, NBINS_TDIFF, MIN_TDIFF, MAX_TDIFF);
                     }
                 }
@@ -404,15 +413,15 @@ jerror_t JEventProcessor_HLDetectorTiming::evnt(JEventLoop *loop, uint64_t event
                     "TAGMHit Matched ADC/TDC time;t [ns];", nBins, xMin, xMax);
             Fill1DHistogram ("HLDetectorTiming", "TAGM", "TAGMHit ADC time", tagmHitVector[i]->time_fadc,
                     "TAGMHit ADC only time;t [ns];", nBins, xMin, xMax);
-            Fill1DHistogram ("HLDetectorTiming", "TAGM", "TAGMHit TDC time", tagmHitVector[i]->time_tdc,
+            Fill1DHistogram ("HLDetectorTiming", "TAGM", "TAGMHit TDC time", tagmHitVector[i]->t,
                     "TAGMHit TDC only time;t [ns];", nBins, xMin, xMax);
 
             Fill2DHistogram("HLDetectorTiming", "TAGM", "TAGMHit TDC_ADC Difference",
-                    GetCCDBIndexTAGM(tagmHitVector[i]), tagmHitVector[i]->time_tdc - tagmHitVector[i]->time_fadc,
+                    GetCCDBIndexTAGM(tagmHitVector[i]), tagmHitVector[i]->t - tagmHitVector[i]->time_fadc,
                     "TAGM #Deltat TDC-ADC; Column ;t_{TDC} - t_{ADC} [ns]", nTAGMCounters, 0.5, nTAGMCounters + 0.5, NBINS_TDIFF, MIN_TDIFF, MAX_TDIFF);
             if (DO_OPTIONAL){
                 Fill2DHistogram("HLDetectorTiming", "TAGM", "TAGM Per Channel TDC Time",
-                        GetCCDBIndexTAGM(tagmHitVector[i]), tagmHitVector[i]->time_tdc,
+                        GetCCDBIndexTAGM(tagmHitVector[i]), tagmHitVector[i]->t,
                         "TAGM Per Channel TDC time; Column ;t_{TDC} [ns]", nTAGMCounters, 0.5, nTAGMCounters + 0.5, 100, -50, 50);
             }
 
@@ -525,9 +534,9 @@ jerror_t JEventProcessor_HLDetectorTiming::evnt(JEventLoop *loop, uint64_t event
             char title[500];
             sprintf(name, "Column %.3i Row %.1i", tagmHitVector[j]->column, tagmHitVector[j]->row);
             sprintf(title, "TAGM Column %i t_{TDC} - t_{RF}; t_{TDC} - t_{RF} [ns]; Entries", tagmHitVector[j]->column);
-            double locShiftedTime = dRFTimeFactory->Step_TimeToNearInputTime(thisRFBunch->dTime, tagmHitVector[j]->time_tdc);
+            double locShiftedTime = dRFTimeFactory->Step_TimeToNearInputTime(thisRFBunch->dTime, tagmHitVector[j]->t);
             Fill1DHistogram("HLDetectorTiming", "TAGM_TDC_RF_Compare", name,
-                    tagmHitVector[j]->time_tdc - locShiftedTime,
+                    tagmHitVector[j]->t - locShiftedTime,
                     title,
                     NBINS_RF_COMPARE, MIN_RF_COMPARE, MAX_RF_COMPARE);
         }
@@ -543,12 +552,14 @@ jerror_t JEventProcessor_HLDetectorTiming::evnt(JEventLoop *loop, uint64_t event
         Fill1DHistogram("HLDetectorTiming", "TRACKING", "Tagger - RFBunch 1D Time",
                 tagmHitVector[j]->t - thisRFBunch->dTime,
                 "Tagger - RFBunch Time; #Deltat_{Tagger - RFBunch} [ns]; Entries",
-                160, -20, 20);
+			//160, -20, 20);
+                    800, -50, 50);
         if (tagmHitVector[j]->row == 0){
             Fill1DHistogram("HLDetectorTiming", "TRACKING", "TAGM - RFBunch 1D Time",
                     tagmHitVector[j]->t - thisRFBunch->dTime,
                     "TAGM - RFBunch Time; #Deltat_{TAGM - RFBunch} [ns]; Entries",
-                    160, -20, 20);
+			    //480, -30, 30);
+                    800, -50, 50);
         }
     }
 
@@ -592,7 +603,7 @@ jerror_t JEventProcessor_HLDetectorTiming::evnt(JEventLoop *loop, uint64_t event
         Fill1DHistogram("HLDetectorTiming", "TRACKING", "Tagger - RFBunch 1D Time",
                 taghHitVector[j]->t - thisRFBunch->dTime,
                 "Tagger - RFBunch Time; #Deltat_{Tagger - RFBunch} [ns]; Entries",
-                160, -20, 20);
+                480, -30, 30);
     }
 
 
