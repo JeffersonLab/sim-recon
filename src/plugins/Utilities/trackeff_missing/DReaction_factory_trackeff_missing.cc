@@ -218,7 +218,7 @@ jerror_t DReaction_factory_trackeff_missing::evnt(JEventLoop* locEventLoop, uint
 
 
 
-
+	//Loop over reactions and do setup
 	for(auto& locReaction : locReactions)
 	{
 		/**************************************************** Control Settings ****************************************************/
@@ -253,8 +253,9 @@ jerror_t DReaction_factory_trackeff_missing::evnt(JEventLoop* locEventLoop, uint
 		locReaction->Add_AnalysisAction(new DCutAction_EachPIDFOM(locReaction, -9.9E9, true)); //cut particles with PID FOM = 0
 
 		// SHOWER BACKGROUND
-		locReaction->Add_AnalysisAction(new DCustomAction_CutExtraPi0(locReaction, 0.11, 0.16));
-		locReaction->Add_AnalysisAction(new DCustomAction_CutExtraShowers(locReaction, 0.5));
+		// IT's TOO DANGEROUS TO CUT ON EXTRA SHOWERS:
+		// IF THE TRACK WAS NOT RECONSTRUCTED, IT'S SHOWER IS "EXTRA"!!!! MAY BIAS EFFICIENCY
+//		locReaction->Add_AnalysisAction(new DCustomAction_CutExtraShowers(locReaction, 0.5));
 
 		//TRACK PURITY
 		locReaction->Add_AnalysisAction(new DCutAction_MinTrackHits(locReaction, 12));

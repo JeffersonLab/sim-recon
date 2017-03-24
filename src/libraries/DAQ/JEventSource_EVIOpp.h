@@ -204,6 +204,7 @@ class JEventSource_EVIOpp: public jana::JEventSource{
 		bool     LINK_CONFIG;
 		bool     IGNORE_EMPTY_BOR;
 		bool     TREAT_TRUNCATED_AS_ERROR;
+		string   SYSTEMS_TO_PARSE;
 		
 		uint32_t jobtype;
 };

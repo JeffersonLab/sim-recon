@@ -25,6 +25,7 @@ class JEventProcessor_BCAL_TDC_Timing:public jana::JEventProcessor{
 		jerror_t fini(void);						///< Called after last event of last event source has been processed.
 
       double Z_TARGET;
+	  const DBCALGeometry *dBCALGeom;
 
       //Used as a key for maps
       class readout_channel {

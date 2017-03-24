@@ -15,6 +15,7 @@ using namespace jana;
 
 #include <BCAL/DBCALShower.h>
 #include <BCAL/DBCALPoint.h>
+#include <BCAL/DBCALGeometry.h>
 
 /// Form fully reconstructed showers from BCAL data based on the KLOE algorithm.
 /// The showers produced by this do have calibration applied to correct the
@@ -64,6 +65,8 @@ private:
     void Gser(float &gamser,float a,float x);
     void Gcf(float &gammcf,float a,float x);
     float Gammln(float xx_gln);
+
+	const DBCALGeometry *bcalGeom;
 
 #undef layermax_bcal
 
