@@ -158,8 +158,7 @@ bool DTrackFinder::FindAxialSegments(void){
          }
          if (COSMICS){
             sort(neighbors.begin(),neighbors.end(),DTrackFinder_cdc_hit_cosmics_cmp);
-         }
-         else{
+         } else{
             sort(neighbors.begin(),neighbors.end(),DTrackFinder_cdc_hit_cmp);
          }
 
@@ -169,15 +168,8 @@ bool DTrackFinder::FindAxialSegments(void){
          if(COSMICS){
             unsigned int iHit = 1;
             origin=neighbors[0]->wire->origin;
-            while (iHit < neighbors.size() && neighbors[iHit]->wire->ring == neighbors[0]->wire->ring){
-               origin+=neighbors[iHit]->wire->origin;
-               iHit++;
-            }
-            origin = (1./iHit)*origin;
             for (iHit = 1; iHit < neighbors.size(); iHit++){
-               DVector3 temp=neighbors[iHit]->wire->origin
-                  -origin;
-               if(neighbors[iHit]->wire->ring != neighbors[0]->wire->ring) dir += temp;
+               dir+=neighbors[iHit]->wire->origin-origin;
             }
             if(dir.Mag() != 0.) dir.SetMag(1.);
          }
@@ -218,46 +210,19 @@ bool DTrackFinder::LinkCDCSegments(void){
 
          for (unsigned int j=i+1;j<num_axial;j++){
             if (axial_segments[j].matched==false){
-//               if (!COSMICS){
-                  double dphi = axial_segments[j].dir.Phi() - axial_segments[i].dir.Phi();
-                  while (dphi>M_PI) dphi-=2*M_PI;
-                  while (dphi<-M_PI) dphi+=2*M_PI;
-                  double matchphi = CDC_MATCH_PHI;
-                  if (COSMICS) matchphi = CDC_COSMIC_MATCH_PHI;
-                  if ( fabs(dphi) < matchphi){
-                     axial_segments[j].matched=true;
-                     mytrack.axial_hits.insert(mytrack.axial_hits.end(),
-                           axial_segments[j].hits.begin(),
-                           axial_segments[j].hits.end());
-                     if (COSMICS) sort(mytrack.axial_hits.begin(),mytrack.axial_hits.end(),DTrackFinder_cdc_hit_cosmics_cmp);
-                     else sort(mytrack.axial_hits.begin(),mytrack.axial_hits.end(),DTrackFinder_cdc_hit_cmp);
-                  }
-//               }
-                  /*
-               else{ 
-                  DVector3 pos1=axial_segments[j].hits[0]->wire->origin;
-                  DVector3 dir1=axial_segments[j].hits[0]->wire->udir;
-                  DVector3 diff=pos1-pos0;
-                  double s=diff.Dot(vhat);
-                  if (s<0) continue;
-                  double d=(diff-s*vhat).Mag();
-                  if(DEBUG_HISTS) hCDCMatch_Axial->Fill(d); 
-                  if (d<CDC_AXIAL_MATCH_RADIUS){
-                     axial_segments[j].matched=true;	   
-                     mytrack.axial_hits.insert(mytrack.axial_hits.end(),
-                           axial_segments[j].hits.begin(),
-                           axial_segments[j].hits.end());
-                     sort(mytrack.axial_hits.begin(),mytrack.axial_hits.end(),
-                           DTrackFinder_cdc_hit_cosmics_cmp);
-                     vhat.SetXYZ(0.,0.,0.);
-                     for (unsigned int iHit = 1; iHit < mytrack.axial_hits.size(); iHit++){        
-                        DVector3 temp=mytrack.axial_hits[iHit]->wire->origin
-                           -mytrack.axial_hits[0]->wire->origin;
-                        if(mytrack.axial_hits[iHit]->wire->ring != mytrack.axial_hits[0]->wire->ring) vhat += temp;
-                     }
-                  }
+               double dphi = axial_segments[j].dir.Phi() - axial_segments[i].dir.Phi();
+               while (dphi>M_PI) dphi-=2*M_PI;
+               while (dphi<-M_PI) dphi+=2*M_PI;
+               double matchphi = CDC_MATCH_PHI;
+               if (COSMICS) matchphi = CDC_COSMIC_MATCH_PHI;
+               if ( fabs(dphi) < matchphi){
+                  axial_segments[j].matched=true;
+                  mytrack.axial_hits.insert(mytrack.axial_hits.end(),
+                        axial_segments[j].hits.begin(),
+                        axial_segments[j].hits.end());
+                  if (COSMICS) sort(mytrack.axial_hits.begin(),mytrack.axial_hits.end(),DTrackFinder_cdc_hit_cosmics_cmp);
+                  else sort(mytrack.axial_hits.begin(),mytrack.axial_hits.end(),DTrackFinder_cdc_hit_cmp);
                }
-               */
             }
          }
          //  Position of the first axial wire in the track  
