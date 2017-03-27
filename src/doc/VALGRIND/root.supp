@@ -1,0 +1,246 @@
+
+#------- Cond -----------
+{
+	<ROOT_lib>
+   Memcheck:Cond
+	...
+   obj:*/lib/libCore.so
+	...
+}
+{
+  <ROOT_lib>
+  Memcheck:Cond
+	...
+   obj:*/lib/libMathCore.so
+	...
+}
+{
+   <ROOT_lib>
+   Memcheck:Cond
+	...
+   obj:*/lib/libGui.so
+	...
+}
+{
+   <ROOT_lib>
+   Memcheck:Cond
+	...
+   obj:*/lib/libPhysics.so
+	...
+}
+{
+   <ROOT_lib>
+   Memcheck:Cond
+	...
+   obj:*/lib/libPostscript.so
+	...
+}
+{
+   <ROOT_lib>
+   Memcheck:Cond
+	...
+   obj:*/lib/libGeom.so
+	...
+}
+{
+   <ROOT_lib>
+   Memcheck:Cond
+	...
+   obj:*/lib/libTMVA.so
+	...
+}
+{
+   <ROOT_lib>
+   Memcheck:Cond
+	...
+   obj:*/lib/libRIO.so
+	...
+}
+{
+   <ROOT_lib>
+   Memcheck:Cond
+	...
+   obj:*/lib/libThread.so
+	...
+}
+{
+   <ROOT_lib>
+   Memcheck:Cond
+	...
+   obj:*/lib/libMatrix.so
+	...
+}
+{
+   <ROOT_lib>
+   Memcheck:Cond
+	...
+   obj:*/lib/libHist.so
+	...
+}
+{
+   <ROOT_lib>
+   Memcheck:Cond
+	...
+   obj:*/lib/libTreePlayer.so
+	...
+}
+{
+   <ROOT_lib>
+   Memcheck:Cond
+	...
+   obj:*/lib/libTree.so
+	...
+}
+{
+   <ROOT_lib>
+   Memcheck:Cond
+	...
+   obj:*/lib/libCling.so
+	...
+}
+{
+   <ROOT_lib>
+   Memcheck:Cond
+	...
+   obj:*/lib/libThread.so
+	...
+}
+{
+   <ROOT_lib>
+   Memcheck:Cond
+	...
+   obj:*/lib/libGraf.so
+	...
+}
+{
+   <ROOT_lib>
+   Memcheck:Cond
+	...
+   obj:*/lib/libGraf3D.so
+	...
+}
+
+
+#------- Leak -----------
+
+{
+	<ROOT_lib>
+   Memcheck:Leak
+	...
+   obj:*/lib/libCore.so
+	...
+}
+{
+  <ROOT_lib>
+  Memcheck:Leak
+	...
+   obj:*/lib/libMathCore.so
+	...
+}
+{
+   <ROOT_lib>
+   Memcheck:Leak
+	...
+   obj:*/lib/libGui.so
+	...
+}
+{
+   <ROOT_lib>
+   Memcheck:Leak
+	...
+   obj:*/lib/libPhysics.so
+	...
+}
+{
+   <ROOT_lib>
+   Memcheck:Leak
+	...
+   obj:*/lib/libPostscript.so
+	...
+}
+{
+   <ROOT_lib>
+   Memcheck:Leak
+	...
+   obj:*/lib/libGeom.so
+	...
+}
+{
+   <ROOT_lib>
+   Memcheck:Leak
+	...
+   obj:*/lib/libTMVA.so
+	...
+}
+{
+   <ROOT_lib>
+   Memcheck:Leak
+	...
+   obj:*/lib/libRIO.so
+	...
+}
+{
+   <ROOT_lib>
+   Memcheck:Leak
+	...
+   obj:*/lib/libThread.so
+	...
+}
+{
+   <ROOT_lib>
+   Memcheck:Leak
+	...
+   obj:*/lib/libMatrix.so
+	...
+}
+{
+   <ROOT_lib>
+   Memcheck:Leak
+	...
+   obj:*/lib/libHist.so
+	...
+}
+{
+   <ROOT_lib>
+   Memcheck:Leak
+	...
+   obj:*/lib/libTreePlayer.so
+	...
+}
+{
+   <ROOT_lib>
+   Memcheck:Leak
+	...
+   obj:*/lib/libTree.so
+	...
+}
+{
+   <ROOT_lib>
+   Memcheck:Leak
+	...
+   obj:*/lib/libCling.so
+	...
+}
+{
+   <ROOT_lib>
+   Memcheck:Leak
+	...
+   obj:*/lib/libThread.so
+	...
+}
+{
+   <ROOT_lib>
+   Memcheck:Leak
+	...
+   obj:*/lib/libGraf.so
+	...
+}
+{
+   <ROOT_lib>
+   Memcheck:Leak
+	...
+   obj:*/lib/libGraf3D.so
+	...
+}
+
+
