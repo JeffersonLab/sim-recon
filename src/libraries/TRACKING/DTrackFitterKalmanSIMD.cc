@@ -11,6 +11,7 @@
 #include <JANA/JCalibration.h>
 
 #include <TH2F.h>
+#include <TH1I.h>
 #include <TROOT.h>
 #include <TMath.h>
 #include <DMatrix.h>
@@ -122,6 +123,7 @@ void DTrackFitterKalmanSIMD::ComputeCDCDrift(double dphi,double delta,double t,
       double dd_dt=0;
       // Scale factor to account for affect of B-field on maximum drift time
       double Bscale=long_drift_Bscale_par1+long_drift_Bscale_par2*B;
+      tcorr=t*Bscale;
 
       //	if (delta>0)
       if (delta>-EPS2){
@@ -171,8 +173,8 @@ void DTrackFitterKalmanSIMD::ComputeCDCDrift(double dphi,double delta,double t,
       unsigned int max_index=cdc_drift_table.size()-1;
       if (tcorr>cdc_drift_table[max_index]){
          //_DBG_ << "t: " << tcorr <<" d " << f_delta <<endl;
-         d=f_delta*Bscale;
-         V=sigma*sigma+mVarT0*dd_dt*dd_dt*Bscale*Bscale;
+         d=f_delta;
+         V=sigma*sigma+mVarT0*dd_dt*dd_dt;
 
          return;
       }
@@ -184,13 +186,19 @@ void DTrackFitterKalmanSIMD::ComputeCDCDrift(double dphi,double delta,double t,
       double frac=(tcorr-cdc_drift_table[index])/dt;
       double d_0=0.01*(double(index)+frac); 
 
-      double P=0.;
-      double tcut=250.0; // ns
-      if (tcorr<tcut) {
-         P=(tcut-tcorr)/tcut;
+      if (fabs(delta) < EPS2){
+         d=d_0;
+         V=sigma*sigma+mVarT0*dd_dt*dd_dt;
       }
-      d=f_delta*(d_0/f_0*P+1.-P)*Bscale;
-      V=sigma*sigma+mVarT0*dd_dt*dd_dt*Bscale*Bscale;
+      else{
+         double P=0.;
+         double tcut=250.0; // ns
+         if (tcorr<tcut) {
+            P=(tcut-tcorr)/tcut;
+         }
+         d=f_delta*(d_0/f_0*P+1.-P);
+         V=sigma*sigma+mVarT0*dd_dt*dd_dt;
+      }
    }
    else { // Time is negative, or exactly zero, choose position at wire, with error of t=0 hit
       d=0.;
@@ -289,6 +297,18 @@ DTrackFitterKalmanSIMD::DTrackFitterKalmanSIMD(JEventLoop *loop):DTrackFitter(lo
    gPARMS->SetDefaultParameter("TRKFIT:USE_FDC_HITS",USE_FDC_HITS);
    USE_CDC_HITS=true;
    gPARMS->SetDefaultParameter("TRKFIT:USE_CDC_HITS",USE_CDC_HITS);
+
+   // Flag to enable calculation of alignment derivatives
+   ALIGNMENT=false;
+   gPARMS->SetDefaultParameter("TRKFIT:ALIGNMENT",ALIGNMENT);
+
+   ALIGNMENT_FORWARD=false;
+   gPARMS->SetDefaultParameter("TRKFIT:ALIGNMENT_FORWARD",ALIGNMENT_FORWARD);
+
+   ALIGNMENT_CENTRAL=false;
+   gPARMS->SetDefaultParameter("TRKFIT:ALIGNMENT_CENTRAL",ALIGNMENT_CENTRAL);
+
+   if(ALIGNMENT){ALIGNMENT_FORWARD=true;ALIGNMENT_CENTRAL=true;}
 
    DEBUG_HISTS=false; 
    gPARMS->SetDefaultParameter("KALMAN:DEBUG_HISTS", DEBUG_HISTS);
@@ -503,6 +523,17 @@ DTrackFitterKalmanSIMD::DTrackFitterKalmanSIMD(JEventLoop *loop):DTrackFitter(lo
       jout << ss.str();
    } // config_printed
 
+  if(DEBUG_HISTS){ 
+   for (auto i=0; i < 46; i++){
+      double min = -10., max=10.;
+      if(i%23<12) {min=-5; max=5;}
+      if(i<23)alignDerivHists[i]=new TH1I(Form("CentralDeriv%i",i),Form("CentralDeriv%i",i),200, min, max);
+      else alignDerivHists[i]=new TH1I(Form("ForwardDeriv%i",i%23),Form("ForwardDeriv%i",i%23),200, min, max);
+   }
+   brentCheckHists[0]=new TH2I("ForwardBrentCheck","DOCA vs ds", 100, -5., 5., 100, 0.0, 1.5);
+   brentCheckHists[1]=new TH2I("CentralBrentCheck","DOCA vs ds", 100, -5., 5., 100, 0.0, 1.5);
+  }
+   
 
 }
 
@@ -548,12 +579,12 @@ void DTrackFitterKalmanSIMD::ResetKalmanSIMD(void)
    mStepSizeS=2.0;
    mStepSizeZ=2.0;
    //mStepSizeZ=0.5;
-   
-      if (fit_type==kTimeBased){
+
+   if (fit_type==kTimeBased){
       mStepSizeS=0.5;
       mStepSizeZ=0.5;
-      }
-      
+   }
+
 
    mT0=0.,mT0MinimumDriftTime=1e6;
    mMinDriftTime=1e6;
@@ -3884,94 +3915,8 @@ kalman_error_t DTrackFitterKalmanSIMD::KalmanCentral(double anneal_factor,
                         central_traj[k].rho_Z_over_A,
                         central_traj[k].LnI,central_traj[k].Z);
                }
-               if (BrentsAlgorithm(-mStepSizeS,-mStepSizeS,dedx,xy,z0w,
-                        origin,dir,Sc,ds2)!=NOERROR){
-                  return MOMENTUM_OUT_OF_RANGE;
-               } 
-               if (fabs(ds2)<EPS3){
-                  // whoops, looks like we didn't actually bracket the minimum 
-                  // after all.  Swim to make sure we pass the minimum doca.
-                  double my_ds=ds2;
 
-                  // doca
-                  old_doca2=doca2;
-
-                  // Bail if the transverse momentum has dropped below some minimum
-                  if (fabs(Sc(state_q_over_pt))>Q_OVER_PT_MAX){
-                     if (DEBUG_LEVEL>2)
-                     {
-                        _DBG_ << "Bailing: PT = " << 1./fabs(Sc(state_q_over_pt))
-                           << " at step " << k 
-                           << endl;
-                     }
-                     return MOMENTUM_OUT_OF_RANGE;
-                  }
-
-                  // Step through the field
-                  Step(xy,mStepSizeS,Sc,dedx);
-
-                  wirexy=origin;
-                  wirexy+=(Sc(state_z)-z0w)*dir;
-                  doca2=(xy-wirexy).Mod2();
-
-                  ds2=my_ds+mStepSizeS;
-                  if (doca2>old_doca2){
-                     // Swim to the "true" doca
-                     double ds3=0.;
-                     if (BrentsAlgorithm(mStepSizeS,mStepSizeS,dedx,xy,z0w,
-                              origin,dir,Sc,ds3)!=NOERROR){
-                        return MOMENTUM_OUT_OF_RANGE;
-                     }
-                     ds2+=ds3;
-                  }
-
-               }
-               else if (fabs(ds2)>2.*mStepSizeS-EPS3){
-                  // whoops, looks like we didn't actually bracket the minimum 
-                  // after all.  Swim to make sure we pass the minimum doca.
-                  double my_ds=ds2;
-
-                  // new wire position
-                  wirexy=origin;
-                  wirexy+=(Sc(state_z)-z0w)*dir;
-
-                  // doca
-                  old_doca2=doca2;
-                  doca2=(xy-wirexy).Mod2();
-
-                  while(doca2<old_doca2){
-                     old_doca2=doca2;
-
-                     // Bail if the transverse momentum has dropped below some minimum
-                     if (fabs(Sc(state_q_over_pt))>Q_OVER_PT_MAX){
-                        if (DEBUG_LEVEL>2)
-                        {
-                           _DBG_ << "Bailing: PT = " << 1./fabs(Sc(state_q_over_pt))
-                              << " at step " << k 
-                              << endl;
-                        } 
-                        return MOMENTUM_OUT_OF_RANGE;
-                     }
-
-                     // Step through the field
-                     Step(xy,mStepSizeS,Sc,dedx);
-
-                     // Find the new distance to the wire
-                     wirexy=origin;
-                     wirexy+=(Sc(state_z)-z0w)*dir;
-                     doca2=(xy-wirexy).Mod2();
-
-                     my_ds+=mStepSizeS;
-                  }
-                  // Swim to the "true" doca
-                  double ds3=0.;
-                  if (BrentsAlgorithm(mStepSizeS,mStepSizeS,dedx,xy,z0w,
-                           origin,dir,Sc,ds3)!=NOERROR){
-                     return MOMENTUM_OUT_OF_RANGE;
-                  }
-                  ds2=my_ds+ds3;
-               }
-
+               if (BrentCentral(dedx,xy,z0w,origin,dir,Sc,ds2)!=NOERROR) return MOMENTUM_OUT_OF_RANGE;
 
                //Step along the reference trajectory and compute the new covariance matrix
                StepStateAndCovariance(xy0,ds2,dedx,S0,J,Cc);
@@ -4002,7 +3947,7 @@ kalman_error_t DTrackFitterKalmanSIMD::KalmanCentral(double anneal_factor,
             double prediction=doca*cosstereo;
 
             // Measurement
-            double measurement=0.39,tdrift=0.,tcorr=0.;
+            double measurement=0.39,tdrift=0.,tcorr=0.,dDdt0=0.;
             if (fit_type==kTimeBased || USE_PASS1_TIME_MODE){	
                // Find offset of wire with respect to the center of the
                // straw at this z position
@@ -4023,6 +3968,14 @@ kalman_error_t DTrackFitterKalmanSIMD::KalmanCentral(double anneal_factor,
                   -central_traj[k_minus_1].t*TIME_UNIT_CONVERSION;
                double B=central_traj[k_minus_1].B;
                ComputeCDCDrift(dphi,delta,tdrift,B,measurement,V,tcorr);
+               if (ALIGNMENT_CENTRAL){
+                  double myV=0.;
+                  double mytcorr=0.;
+                  double d_shifted;
+                  double dt=2.0;
+                  ComputeCDCDrift(dphi,delta,tdrift+dt,B,d_shifted,myV,mytcorr);
+                  dDdt0=(d_shifted-measurement)/dt;
+               }
 
                //_DBG_ << tcorr << " " << dphi << " " << dm << endl;
 
@@ -4122,6 +4075,7 @@ kalman_error_t DTrackFitterKalmanSIMD::KalmanCentral(double anneal_factor,
                cdc_updates[cdc_index].tdrift=tdrift;
                cdc_updates[cdc_index].doca=measurement;
                cdc_updates[cdc_index].variance=V;
+               cdc_updates[cdc_index].dDdt0=dDdt0;
                cdc_used_in_fit[cdc_index]=true;
                if (!(tdrift >= CDC_T_DRIFT_MIN)) cdc_used_in_fit[cdc_index]=false;
 
@@ -4487,7 +4441,7 @@ kalman_error_t DTrackFitterKalmanSIMD::KalmanForward(double fdc_anneal_factor,
             H=Transpose(H_T);
 
             // Check to see if we have multiple hits in the same plane
-            if (forward_traj[k].num_hits>1){ 
+            if (!ALIGNMENT_FORWARD && forward_traj[k].num_hits>1){ 
                // If we do have multiple hits, then all of the hits within some
                // validation region are included with weights determined by how
                // close the hits are to the track projection of the state to the
@@ -4810,55 +4764,9 @@ kalman_error_t DTrackFitterKalmanSIMD::KalmanForward(double fdc_anneal_factor,
                   }
 
                   // We have bracketed the minimum doca:  use Brent's agorithm
-                  if (BrentsAlgorithm(z,-mStepSizeZ,dedx,z0w,origin,dir,S,dz)!=NOERROR){
+                  if (BrentForward(z,dedx,z0w,origin,dir,S,dz)!=NOERROR){
                      break_point_fdc_index=(3*num_fdc)/4;
                      return MOMENTUM_OUT_OF_RANGE;
-                  }
-                  newz=z+dz;
-
-                  if (fabs(dz)>2.*mStepSizeZ-EPS3){    
-                     // whoops, looks like we didn't actually bracket the minimum 
-                     // after all.  Swim to make sure we pass the minimum doca.
-                     double ztemp=newz;
-
-                     // new wire position
-                     wirepos=origin;
-                     wirepos+=(ztemp-z0w)*dir;
-
-                     // doca
-                     old_doca2=doca2;
-
-                     dx=S(state_x)-wirepos.X();
-                     dy=S(state_y)-wirepos.Y();
-                     doca2=dx*dx+dy*dy;
-
-                     while(doca2<old_doca2){
-                        newz=ztemp+mStepSizeZ;
-                        old_doca2=doca2;
-
-                        // Step to the new z position
-                        Step(ztemp,newz,dedx,S);
-
-                        // find the new distance to the wire
-                        wirepos=origin;
-                        wirepos+=(newz-z0w)*dir;
-
-                        dx=S(state_x)-wirepos.X();
-                        dy=S(state_y)-wirepos.Y();
-                        doca2=dx*dx+dy*dy;
-
-                        ztemp=newz;
-                     }
-                     // Find the true doca
-                     double dz2=0.;
-                     if (BrentsAlgorithm(newz,mStepSizeZ,dedx,z0w,origin,dir,S,dz2)!=NOERROR){
-                        break_point_fdc_index=(3*num_fdc)/4;
-                        return MOMENTUM_OUT_OF_RANGE;
-                     }
-                     newz=ztemp+dz2;
-
-                     // Change in z relative to where we started for this wire
-                     dz=newz-z;
                   }
 
                   // Step the state and covariance through the field
@@ -4958,7 +4866,7 @@ kalman_error_t DTrackFitterKalmanSIMD::KalmanForward(double fdc_anneal_factor,
                //H.Print();
 
                // The next measurement
-               double dm=0.39,tdrift=0.,tcorr=0.;
+               double dm=0.39,tdrift=0.,tcorr=0.,dDdt0=0.;
                if (fit_type==kTimeBased)
                {
                   // Find offset of wire with respect to the center of the
@@ -4980,6 +4888,16 @@ kalman_error_t DTrackFitterKalmanSIMD::KalmanForward(double fdc_anneal_factor,
                      -forward_traj[k_minus_1].t*TIME_UNIT_CONVERSION;
                   double B=forward_traj[k_minus_1].B;
                   ComputeCDCDrift(dphi,delta,tdrift,B,dm,Vc,tcorr);
+                  if (ALIGNMENT_FORWARD){
+                     double myV=0.;
+                     double mytcorr=0.;
+                     double d_shifted;
+                     double dt=5.0;
+                     // Dont compute this for very low drift times
+                     if (tdrift < 50.) d_shifted = dm;
+                     else ComputeCDCDrift(dphi,delta,tdrift+dt,B,d_shifted,myV,mytcorr);
+                     dDdt0=(d_shifted-dm)/dt;
+                  }
 
                   Vc*=CDC_VAR_SCALE_FACTOR;  //de-weight CDC hits 
 
@@ -5040,6 +4958,7 @@ kalman_error_t DTrackFitterKalmanSIMD::KalmanForward(double fdc_anneal_factor,
                   cdc_updates[cdc_index].tcorr=tcorr;
                   cdc_updates[cdc_index].variance=Vc;
                   cdc_updates[cdc_index].doca=dm;
+                  cdc_updates[cdc_index].dDdt0=dDdt0;
                   cdc_used_in_fit[cdc_index]=true;
                   if(tdrift < CDC_T_DRIFT_MIN){
                      //_DBG_ << tdrift << endl;
@@ -5511,57 +5430,9 @@ kalman_error_t DTrackFitterKalmanSIMD::KalmanForwardCDC(double anneal,DMatrix5x1
                }
 
                // We have bracketed the minimum doca:  use Brent's agorithm
-               if (BrentsAlgorithm(z,-mStepSizeZ,dedx,z0w,origin,dir,S,dz)
+               if (BrentForward(z,dedx,z0w,origin,dir,S,dz)
                      !=NOERROR){
                   return MOMENTUM_OUT_OF_RANGE;
-               }
-               newz=z+dz;
-
-               if (fabs(dz)>2.*mStepSizeZ-EPS3){
-                  // whoops, looks like we didn't actually bracket the minimum after
-                  // all.  Swim to make sure we pass the minimum doca.
-                  double ztemp=newz;
-
-                  // doca
-                  old_doca2=doca2;
-
-                  // new wire position
-                  wirepos=origin;
-                  wirepos+=(newz-z0w)*dir;
-
-                  // new distance to the wire	    
-                  dx=S(state_x)-wirepos.X();
-                  dy=S(state_y)-wirepos.Y();
-                  doca2=dx*dx+dy*dy;
-
-                  while(doca2<old_doca2){
-                     newz=ztemp+mStepSizeZ;
-                     old_doca2=doca2;
-
-                     // step to the next z position
-                     Step(ztemp,newz,dedx,S);
-
-                     // new wire position
-                     wirepos=origin;
-                     wirepos+=(newz-z0w)*dir;
-
-                     //New distance to the wire
-
-                     dx=S(state_x)-wirepos.X();
-                     dy=S(state_y)-wirepos.Y();
-                     doca2=dx*dx+dy*dy;
-
-                     ztemp=newz;
-                  }
-                  // Find the true doca
-                  double dz2=0.;
-                  if (BrentsAlgorithm(newz,mStepSizeZ,dedx,z0w,origin,dir,S,dz2)!=NOERROR){
-                     return MOMENTUM_OUT_OF_RANGE;
-                  }
-                  newz=ztemp+dz2;
-
-                  // Change in z relative to where we started for this wire
-                  dz=newz-z;
                }
 
                // Step the state and covariance through the field	  
@@ -5663,7 +5534,7 @@ kalman_error_t DTrackFitterKalmanSIMD::KalmanForwardCDC(double anneal,DMatrix5x1
             //H.Print();
 
             // The next measurement
-            double dm=0.39,tdrift=0.,tcorr=0.;
+            double dm=0.39,tdrift=0.,tcorr=0.,dDdt0=0.;
             if (fit_type==kTimeBased || USE_PASS1_TIME_MODE){
                // Find offset of wire with respect to the center of the
                // straw at this z position
@@ -5684,6 +5555,15 @@ kalman_error_t DTrackFitterKalmanSIMD::KalmanForwardCDC(double anneal,DMatrix5x1
                   -forward_traj[k_minus_1].t*TIME_UNIT_CONVERSION;
                double B=forward_traj[k_minus_1].B;
                ComputeCDCDrift(dphi,delta,tdrift,B,dm,V,tcorr);
+               if (ALIGNMENT_FORWARD){
+                  double myV=0.;
+                  double mytcorr=0.;
+                  double d_shifted;
+                  double dt=2.0;
+                  if (tdrift < 50.) d_shifted = dm;
+                  else ComputeCDCDrift(dphi,delta,tdrift+dt,B,d_shifted,myV,mytcorr);
+                  dDdt0=(d_shifted-dm)/dt;
+               }
                //_DBG_ << tcorr << " " << dphi << " " << dm << endl;
 
             }
@@ -5748,6 +5628,7 @@ kalman_error_t DTrackFitterKalmanSIMD::KalmanForwardCDC(double anneal,DMatrix5x1
                cdc_updates[cdc_index].tdrift=tdrift;
                cdc_updates[cdc_index].doca=dm;
                cdc_updates[cdc_index].variance=V;
+               cdc_updates[cdc_index].dDdt0=dDdt0;
                cdc_used_in_fit[cdc_index]=true;
                if(tdrift < CDC_T_DRIFT_MIN) cdc_used_in_fit[cdc_index]=false;
 
@@ -5841,11 +5722,6 @@ kalman_error_t DTrackFitterKalmanSIMD::KalmanForwardCDC(double anneal,DMatrix5x1
       }
       old_doca2=doca2;
 
-      // Save the current state and covariance matrix in the deque
-      //if (fit_type==kTimeBased){
-      //   forward_traj[k].Skk=S;
-      //   forward_traj[k].Ckk=C;
-      //}
    }
 
    // Check that there were enough hits to make this a valid fit
@@ -6675,6 +6551,7 @@ kalman_error_t DTrackFitterKalmanSIMD::RecoverBrokenTracks(double anneal_factor,
       }
 
       // Now refit with the truncated trajectory and list of hits
+      //C1=C0;
       C1=4.0*C0;
       //C1=10.0*C0;
       S1=central_traj[break_point_step_index].S;
@@ -6891,6 +6768,13 @@ DTrackFitterKalmanSIMD::RecoverBrokenForwardTracks(double fdc_anneal,
       double z=forward_traj[k].z;
       if (z<zhit) break;
    }
+   for (unsigned int j=0;j<=break_point_fdc_index;j++){
+      my_fdchits[j]->status=good_hit;
+   }
+   for (unsigned int j=break_point_fdc_index+1;j<num_fdchits;j++){
+      my_fdchits[j]->status=bad_hit;
+   }
+
    if (k==forward_traj.size()) return FIT_NOT_DONE;
 
    break_point_step_index=k;
@@ -6906,10 +6790,31 @@ DTrackFitterKalmanSIMD::RecoverBrokenForwardTracks(double fdc_anneal,
          && refit_iter<10){
       refit_iter++;
 
-      // Reset status work for cdc hits
-      for (unsigned int j=0;j<num_cdchits;j++){
-         if (my_cdchits[j]->status!=late_hit)my_cdchits[j]->status=good_hit;
+      // Mark the hits as bad if they are not included
+      if (break_id >= 0){
+         for (unsigned int j=0;j<num_cdchits;j++){
+            if (my_cdchits[j]->status!=late_hit)my_cdchits[j]->status=good_hit;
+         }
+         for (unsigned int j=0;j<=break_id;j++){
+            my_fdchits[j]->status=good_hit;
+         }
+         for (unsigned int j=break_id+1;j<num_fdchits;j++){
+            my_fdchits[j]->status=bad_hit;
+         }
       }
+      else{
+         // BreakID should always be 0 or positive, so this should never happen, but could be investigated in the future.
+         for (unsigned int j=0;j<num_cdchits+break_id;j++){
+            if (my_cdchits[j]->status!=late_hit) my_cdchits[j]->status=good_hit;
+         }
+         for (unsigned int j=num_cdchits+break_id;j<num_cdchits;j++){
+            my_cdchits[j]->status=bad_hit;
+         }
+         for (unsigned int j=0;j<num_fdchits;j++){
+            my_fdchits[j]->status=bad_hit;
+         }
+      }
+
       // Re-initialize the state vector, covariance, chisq and number of degrees of freedom    
       //C1=4.0*C0;
       C1=10.0*C0;
@@ -7101,6 +7006,10 @@ kalman_error_t DTrackFitterKalmanSIMD::ForwardFit(const DMatrix5x1 &S0,const DMa
          Clast=C;	 
          last_z=z_;
 
+         pulls.clear();
+         if(fit_type==kTimeBased &&  SmoothForward() == NOERROR) IsSmoothed = true;
+         else  IsSmoothed = false;
+
          if (fdc_updates.size()>0){      
             last_fdc_updates.assign(fdc_updates.begin(),fdc_updates.end());
          }
@@ -7122,10 +7031,6 @@ kalman_error_t DTrackFitterKalmanSIMD::ForwardFit(const DMatrix5x1 &S0,const DMa
 
    // Source for t0 guess
    mT0Detector=SYS_CDC;
-
-   // Fill pull vector using smoothed filter results
-   pulls.clear();
-   if(SmoothForward() == NOERROR) IsSmoothed = true;
 
    // output lists of hits used in the fit and fill pull vector
    cdchits_used_in_fit.clear();
@@ -7358,7 +7263,10 @@ kalman_error_t DTrackFitterKalmanSIMD::ForwardCDCFit(const DMatrix5x1 &S0,const 
          if (new_reduced_chisq>old_reduced_chisq 
                || fabs(new_reduced_chisq-old_reduced_chisq)<0.1) break;
 
-
+         // Run the smoother
+         pulls.clear();
+         if(fit_type==kTimeBased && SmoothForwardCDC() == NOERROR) IsSmoothed = true;
+         else IsSmoothed = false;
 
          chisq_forward=chisq;
          Slast=S;
@@ -7381,10 +7289,6 @@ kalman_error_t DTrackFitterKalmanSIMD::ForwardCDCFit(const DMatrix5x1 &S0,const 
 
    // source for t0 guess
    mT0Detector=SYS_CDC;
-
-   // Run smoother and fill pulls vector
-   pulls.clear();
-   if(SmoothForwardCDC() == NOERROR) IsSmoothed = true;
 
    // output lists of hits used in the fit and fill the pull vector
    cdchits_used_in_fit.clear();
@@ -7555,6 +7459,7 @@ kalman_error_t DTrackFitterKalmanSIMD::CentralFit(const DVector2 &startpos,
                   my_ndf=temp_ndf;
                   chisq=temp_chi2;
                   pos=temp_pos;
+                  if (DEBUG_LEVEL > 1) _DBG_ << " Refit did not succeed, but restoring old values" << endl;
 
                   error=FIT_SUCCEEDED;
                }
@@ -7599,6 +7504,11 @@ kalman_error_t DTrackFitterKalmanSIMD::CentralFit(const DVector2 &startpos,
          chisq_iter=chisq;
          last_ndf=my_ndf;
 
+         // Run smoother and fill pulls vector
+         pulls.clear();
+         if(fit_type==kTimeBased && SmoothCentral() == NOERROR) IsSmoothed = true;
+         else IsSmoothed = false;
+
          last_cdc_updates.assign(cdc_updates.begin(),cdc_updates.end());
          last_cdc_used_in_fit=cdc_used_in_fit;
       }
@@ -7614,10 +7524,6 @@ kalman_error_t DTrackFitterKalmanSIMD::CentralFit(const DVector2 &startpos,
 
    // source for t0 guess
    mT0Detector=SYS_CDC;
-
-   // Run smoother and fill pulls vector
-   pulls.clear();
-   if(SmoothCentral() == NOERROR) IsSmoothed = true;
 
    // output lists of hits used in the fit 
    cdchits_used_in_fit.clear();
@@ -7698,18 +7604,20 @@ jerror_t DTrackFitterKalmanSIMD::SmoothForward(void){
       if (forward_traj[m].h_id>0){
          if (forward_traj[m].h_id<1000){
             unsigned int id=forward_traj[m].h_id-1;
-            if (fdc_used_in_fit[id]){
+            if (DEBUG_LEVEL>1) _DBG_ << " Smoothing FDC ID " << id << endl;
+            if (fdc_used_in_fit[id] && my_fdchits[id]->status==good_hit){
+               if (DEBUG_LEVEL>1) _DBG_ << " Used in fit " << endl;
                A=fdc_updates[id].C*JT*C.InvertSym();
                Ss=fdc_updates[id].S+A*(Ss-S);
 
                if (!Ss.IsFinite()){ 
-                  if (DEBUG_LEVEL>5) _DBG_ << "Invalid values for smoothed parameters..." << endl;
+                  if (DEBUG_LEVEL>1) _DBG_ << "Invalid values for smoothed parameters..." << endl;
                   return VALUE_OUT_OF_RANGE;
                }
                dC=A*(Cs-C)*A.Transpose();
                Cs=fdc_updates[id].C+dC;
                if (!Cs.IsPosDef()){
-                  if (DEBUG_LEVEL>5)
+                  if (DEBUG_LEVEL>1)
                      _DBG_ << "Covariance Matrix not PosDef..." << endl;
                   return VALUE_OUT_OF_RANGE;
                }
@@ -7733,6 +7641,7 @@ jerror_t DTrackFitterKalmanSIMD::SmoothForward(void){
 
                // Direction tangent in the u-z plane
                double tu=tx*cosa-ty*sina;
+               double one_plus_tu2=1.+tu*tu;
                double alpha=atan(tu);
                double cosalpha=cos(alpha);
                //double cosalpha2=cosalpha*cosalpha;
@@ -7756,6 +7665,66 @@ jerror_t DTrackFitterKalmanSIMD::SmoothForward(void){
                double drift=(du>0.0?1.:-1.)*fdc_drift_distance(drift_time,forward_traj[m].B);
 
                double resi_a=drift-doca;
+
+               vector<double> alignmentDerivatives;
+               if (ALIGNMENT_FORWARD){
+                  alignmentDerivatives.resize(13);
+                  // Let's get the alignment derivatives
+                  // Things are assumed to be linear near the wire, derivatives can be determined analytically.
+                  // First for the wires
+
+                  //dDOCAW/ddeltax
+                  alignmentDerivatives[FDCTrackD::dDOCAW_dDeltaX] = (-1.)/sqrt(one_plus_tu2);
+
+                  //dDOCAW/ddeltaPhiX
+                  double cos2a = cos(2.*my_fdchits[id]->hit->wire->angle);
+                  double sin2a = sin(2.*my_fdchits[id]->hit->wire->angle);
+                  double tx2 = tx*tx;
+                  double ty2 = ty*ty;
+                  alignmentDerivatives[FDCTrackD::dDOCAW_dDeltaPhiX] = (-1.)*(tx*ty*u*cos2a+(x+ty2*x-tx*ty*y)*sina+(y+tx2*y-tx*ty*x+(tx2-ty2)*u*sina)*cosa)/sqrt(one_plus_tu2)/one_plus_tu2;
+
+                  // dDOCAW/dt0
+                  double t0shift=4.;//ns
+                  double drift_shift;
+                  if (drift_time < 25.) drift_shift = drift;
+                  else drift_shift = (du>0.0?1.:-1.)*fdc_drift_distance(drift_time+t0shift,forward_traj[m].B);
+                  alignmentDerivatives[FDCTrackD::dW_dt0]= (drift_shift-drift)/t0shift;
+
+                  // dDOCAW/dx
+                  alignmentDerivatives[FDCTrackD::dDOCAW_dx] = cosa/sqrt(one_plus_tu2);
+
+                  // dDOCAW/dy
+                  alignmentDerivatives[FDCTrackD::dDOCAW_dy] = (-1.)*sina/sqrt(one_plus_tu2);
+
+                  // dDOCAW/dtx
+                  alignmentDerivatives[FDCTrackD::dDOCAW_dtx] = (-1.)*cosa*tu*(upred-u)/sqrt(one_plus_tu2)/one_plus_tu2;
+
+                  // dDOCAW/dty
+                  alignmentDerivatives[FDCTrackD::dDOCAW_dty] = sina*tu*(upred-u)/sqrt(one_plus_tu2)/one_plus_tu2;
+
+                  // Then for the cathodes. The magnetic field correction now correlates the alignment constants for the wires and cathodes.
+
+                  double vfactor=1 + tx2*cosa*cosa + ty2*sina*sina - tx*ty*sin2a;
+                  //dDOCAC/ddeltax
+                  alignmentDerivatives[FDCTrackD::dDOCAC_dDeltaX] = -((nr + (nz - tv)*tu))/vfactor;
+
+                  //dDOCAC/ddeltaPhiX
+                  alignmentDerivatives[FDCTrackD::dDOCAC_dDeltaPhiX] = upred+(-((nz - tv)*tv*(upred-u)*one_plus_tu2) - vpred_uncorrected*(nr + (nz - tv)*tu)*one_plus_tu2 + 
+                        (u - upred)*(nr + (nz - tv)*tu)*(-2*tx*ty*cos2a + (-tx2 + ty2)*sin2a))/one_plus_tu2/one_plus_tu2;
+
+                  //dDOCAC/dx
+                  alignmentDerivatives[FDCTrackD::dDOCAC_dx] = sina+(cosa*(nr + (nz - tv)*tu))/vfactor;
+
+                  //dDOCAC/dy
+                  alignmentDerivatives[FDCTrackD::dDOCAC_dy] = cosa-(sina*(nr + (nz - tv)*tu))/vfactor;
+
+                  //dDOCAC/dtx
+                  alignmentDerivatives[FDCTrackD::dDOCAC_dtx] = -(cosa*(upred-u)*(2*nr*tx*cosa + (nz - tv)*tx2*cosa*cosa - 2*nr*ty*sina + (nz - tv)*ty2*sina*sina - (nz - tv)*(1 + tx*ty*sin2a)))/vfactor/vfactor;
+
+                  //dDOCAC/dty
+                  alignmentDerivatives[FDCTrackD::dDOCAC_dty] = (sina*(upred-u)*(2*nr*tx*cosa + (nz - tv)*tx2*cosa*cosa - 2*nr*ty*sina + (nz - tv)*ty2*sina*sina - (nz - tv)*(1 + tx*ty*sin2a)))/vfactor/vfactor;
+
+               }
 
                if (DEBUG_LEVEL>19){
                   jout << "Layer " << my_fdchits[id]->hit->wire->layer
@@ -7788,7 +7757,6 @@ jerror_t DTrackFitterKalmanSIMD::SmoothForward(void){
 
                H_T(state_x,0)=cosa*cosalpha;
                H_T(state_y,0)=-sina*cosalpha;
-               double one_plus_tu2=1.+tu*tu;
                double factor=du*tu/sqrt(one_plus_tu2)/one_plus_tu2;
                H_T(state_ty,0)=sina*factor;
                H_T(state_tx,0)=-cosa*factor;
@@ -7805,13 +7773,15 @@ jerror_t DTrackFitterKalmanSIMD::SmoothForward(void){
                   V=V-H*dC*H_T;
                }
 
-               pulls.push_back(pull_t(resi_a,sqrt(V(0,0)),
-                        forward_traj[m].s,
-                        fdc_updates[id].tdrift,
-                        fdc_updates[id].doca,
-                        NULL,my_fdchits[id]->hit,0.,
-                        forward_traj[m].z,0.,
-                        resi,sqrt(V(1,1))));
+               DTrackFitter::pull_t thisPull = pull_t(resi_a,sqrt(V(0,0)),
+                     forward_traj[m].s,
+                     fdc_updates[id].tdrift,
+                     fdc_updates[id].doca,
+                     NULL,my_fdchits[id]->hit,0.,
+                     forward_traj[m].z,0.,
+                     resi,sqrt(V(1,1)));
+               thisPull.AddTrackDerivatives(alignmentDerivatives);
+               pulls.push_back(thisPull);
             }
             else{
                A=forward_traj[m].Ckk*JT*C.InvertSym();
@@ -7822,7 +7792,9 @@ jerror_t DTrackFitterKalmanSIMD::SmoothForward(void){
          }
          else{
             unsigned int id=forward_traj[m].h_id-1000;
-            if (cdc_used_in_fit[id]){
+            if (DEBUG_LEVEL>1) _DBG_ << " Smoothing CDC ID " << id << endl;
+            if (cdc_used_in_fit[id]&&my_cdchits[id]->status==good_hit){
+               if (DEBUG_LEVEL>1) _DBG_ << " Used in fit " << endl;
                A=cdc_updates[id].C*JT*C.InvertSym();
                Ss=cdc_updates[id].S+A*(Ss-S);
                Cs=cdc_updates[id].C+A*(Cs-C)*A.Transpose();
@@ -7837,8 +7809,8 @@ jerror_t DTrackFitterKalmanSIMD::SmoothForward(void){
                }
 
                // Fill in pulls information for cdc hits
-               FillPullsVectorEntry(Ss,Cs,forward_traj[m],my_cdchits[id],
-                     cdc_updates[id]);
+               if(FillPullsVectorEntry(Ss,Cs,forward_traj[m],my_cdchits[id],
+                        cdc_updates[id]) != NOERROR) return VALUE_OUT_OF_RANGE;
             }
             else{
                A=forward_traj[m].Ckk*JT*C.InvertSym();
@@ -7866,7 +7838,7 @@ jerror_t DTrackFitterKalmanSIMD::SmoothForward(void){
 jerror_t DTrackFitterKalmanSIMD::SmoothCentral(void){ 
    if (central_traj.size()<2) return RESOURCE_UNAVAILABLE;
 
-   unsigned int max=central_traj.size()-1;
+   unsigned int max = central_traj.size()-1;
    DMatrix5x1 S=(central_traj[max].Skk);
    DMatrix5x5 C=(central_traj[max].Ckk);
    DMatrix5x5 JT=central_traj[max].J.Transpose();
@@ -7874,11 +7846,19 @@ jerror_t DTrackFitterKalmanSIMD::SmoothCentral(void){
    DMatrix5x5 Cs=C;
    DMatrix5x5 A,AT,dC;
 
+   if (DEBUG_LEVEL>1) {
+      _DBG_ << " S C JT at start of smoothing " << endl;
+      S.Print(); C.Print(); JT.Print();
+   }
+
+   bool firstHit=false;
    for (unsigned int m=max-1;m>0;m--){
       if (central_traj[m].h_id>0){
          unsigned int id=central_traj[m].h_id-1;
-         if (cdc_used_in_fit[id]){
-            if (DEBUG_LEVEL>5) _DBG_ << " SmoothCentral CDC Hit ID " << id << endl;
+         if (DEBUG_LEVEL>1) _DBG_ << " Encountered Hit ID " << id << " At trajectory position " << m << "/" << max << endl;
+         if (cdc_used_in_fit[id] && my_cdchits[id]->status == good_hit){
+            firstHit=true;
+            if (DEBUG_LEVEL>1) _DBG_ << " SmoothCentral CDC Hit ID " << id << " used in fit " << endl;
 
             A=cdc_updates[id].C*JT*C.InvertSym();
             AT=A.Transpose();
@@ -7915,12 +7895,284 @@ jerror_t DTrackFitterKalmanSIMD::SmoothCentral(void){
             DVector2 origin=my_cdchits[id]->origin;
             DVector2 dir=my_cdchits[id]->dir;
             double z0wire=my_cdchits[id]->z0wire;
-            BrentsAlgorithm(-mStepSizeS,-mStepSizeS,dEdx,xy,z0wire,origin,dir,myS,myds);
+            //BrentsAlgorithm(-mStepSizeS,-mStepSizeS,dEdx,xy,z0wire,origin,dir,myS,myds);
+            if(BrentCentral(dEdx,xy,z0wire,origin,dir,myS,myds)!=NOERROR) return VALUE_OUT_OF_RANGE;
+            if(DEBUG_HISTS) alignDerivHists[0]->Fill(myds);
             DVector2 wirepos=origin+(myS(state_z)-z0wire)*dir;
             double cosstereo=my_cdchits[id]->cosstereo;
             DVector2 diff=xy-wirepos;
-            double d=cosstereo*diff.Mod()+EPS; 
             // here we add a small number to avoid division by zero errors
+            double d=cosstereo*diff.Mod()+EPS; 
+
+            // If we are doing the alignment, we need to numerically calculate the derivatives
+            // wrt the wire origin, direction, and the track parameters.
+            vector<double> alignmentDerivatives;
+            if (ALIGNMENT_CENTRAL){
+               double dscut_min=0., dscut_max=1.;
+               DVector3 wireDir = my_cdchits[id]->hit->wire->udir;
+               double cosstereo_shifted;
+               DMatrix5x1 alignS=Ss; // We will mess with this one
+               double alignds;
+               alignmentDerivatives.resize(12);
+               alignmentDerivatives[CDCTrackD::dDdt0]=cdc_updates[id].dDdt0;
+               // Wire position shift
+               double wposShift=0.025; 
+               double wdirShift=0.00005;  
+
+               // Shift each track parameter value 
+               double shiftFraction=0.01;
+               double shift_q_over_pt=shiftFraction*Ss(state_q_over_pt);
+               double shift_phi=0.0001;
+               double shift_tanl=shiftFraction*Ss(state_tanl);
+               double shift_D=0.01;
+               double shift_z=0.01;
+
+               // Some data containers we don't need multiples of
+               double z0_shifted;
+               DVector2 shift, origin_shifted, dir_shifted, wirepos_shifted, diff_shifted, xy_shifted;
+
+               // The DOCA for the shifted states == f(x+h)
+               double d_dOriginX=0., d_dOriginY=0., d_dOriginZ=0.;
+               double d_dDirX=0., d_dDirY=0., d_dDirZ=0.;
+               double d_dS0=0., d_dS1=0., d_dS2=0., d_dS3=0., d_dS4=0.;
+               // Let's do the wire shifts first
+
+               //dOriginX
+               alignS=Ss;
+               alignds=0.;
+               shift.Set(wposShift, 0.);
+               origin_shifted=origin+shift;
+               dir_shifted=dir;
+               z0_shifted=z0wire;
+               xy_shifted.Set(central_traj[m].xy.X()-alignS(state_D)*sin(alignS(state_phi)),
+                     central_traj[m].xy.Y()+alignS(state_D)*cos(alignS(state_phi)));
+               if (BrentCentral(dEdx,xy_shifted,z0_shifted,origin_shifted,
+                        dir_shifted,alignS,alignds)!=NOERROR) return VALUE_OUT_OF_RANGE;
+               if (alignds < dscut_min || alignds > dscut_max) return VALUE_OUT_OF_RANGE;
+               //if (BrentsAlgorithm(-mStepSizeS,-mStepSizeS,dEdx,xy_shifted,z0_shifted,origin_shifted,
+               //         dir_shifted,alignS,alignds)!=NOERROR) return VALUE_OUT_OF_RANGE;
+               wirepos_shifted=origin_shifted+(alignS(state_z)-z0_shifted)*dir_shifted;
+               diff_shifted=xy_shifted-wirepos_shifted;
+               d_dOriginX=cosstereo*diff_shifted.Mod()+EPS;
+               alignmentDerivatives[CDCTrackD::dDOCAdOriginX] = (d_dOriginX - d)/wposShift;
+               if(DEBUG_HISTS){
+                  alignDerivHists[12]->Fill(alignmentDerivatives[CDCTrackD::dDOCAdOriginX]);
+                  alignDerivHists[1]->Fill(alignds);
+                  brentCheckHists[1]->Fill(alignds,d_dOriginX);
+               }
+
+               //dOriginY
+               alignS=Ss;
+               alignds=0.;
+               shift.Set(0.,wposShift);
+               origin_shifted=origin+shift;
+               dir_shifted=dir;
+               z0_shifted=z0wire;
+               xy_shifted.Set(central_traj[m].xy.X()-alignS(state_D)*sin(alignS(state_phi)),
+                     central_traj[m].xy.Y()+alignS(state_D)*cos(alignS(state_phi)));
+               if (BrentCentral(dEdx,xy_shifted,z0_shifted,origin_shifted,
+                        dir_shifted,alignS,alignds)!=NOERROR) return VALUE_OUT_OF_RANGE;
+               if (alignds < dscut_min || alignds > dscut_max) return VALUE_OUT_OF_RANGE;
+               //if(BrentsAlgorithm(-mStepSizeS,-mStepSizeS,dEdx,xy_shifted,z0_shifted,origin_shifted,
+               //         dir_shifted,alignS,alignds) != NOERROR) return VALUE_OUT_OF_RANGE;
+               wirepos_shifted=origin_shifted+(alignS(state_z)-z0_shifted)*dir_shifted;
+               diff_shifted=xy_shifted-wirepos_shifted;
+               d_dOriginY=cosstereo*diff_shifted.Mod()+EPS;
+               alignmentDerivatives[CDCTrackD::dDOCAdOriginY] = (d_dOriginY - d)/wposShift;
+               if(DEBUG_HISTS){
+                  alignDerivHists[13]->Fill(alignmentDerivatives[CDCTrackD::dDOCAdOriginY]);
+                  alignDerivHists[2]->Fill(alignds);
+                  brentCheckHists[1]->Fill(alignds,d_dOriginY);
+               }
+
+               //dOriginZ
+               alignS=Ss;
+               alignds=0.;
+               origin_shifted=origin;
+               dir_shifted=dir;
+               z0_shifted=z0wire+wposShift;
+               xy_shifted.Set(central_traj[m].xy.X()-alignS(state_D)*sin(alignS(state_phi)),
+                     central_traj[m].xy.Y()+alignS(state_D)*cos(alignS(state_phi)));
+               if (BrentCentral(dEdx,xy_shifted,z0_shifted,origin_shifted,
+                        dir_shifted,alignS,alignds)!=NOERROR) return VALUE_OUT_OF_RANGE;
+               if (alignds < dscut_min || alignds > dscut_max) return VALUE_OUT_OF_RANGE;
+               //if(BrentsAlgorithm(-mStepSizeS,-mStepSizeS,dEdx,xy_shifted,z0_shifted,origin_shifted,
+               //         dir_shifted,alignS,alignds) != NOERROR) return VALUE_OUT_OF_RANGE;
+               wirepos_shifted=origin_shifted+(alignS(state_z)-z0_shifted)*dir_shifted;
+               diff_shifted=xy_shifted-wirepos_shifted;
+               d_dOriginZ=cosstereo*diff_shifted.Mod()+EPS;
+               alignmentDerivatives[CDCTrackD::dDOCAdOriginZ] = (d_dOriginZ - d)/wposShift;
+               if(DEBUG_HISTS){
+                  alignDerivHists[14]->Fill(alignmentDerivatives[CDCTrackD::dDOCAdOriginZ]);
+                  alignDerivHists[3]->Fill(alignds);
+                  brentCheckHists[1]->Fill(alignds,d_dOriginZ);
+               }
+
+               //dDirX
+               alignS=Ss;
+               alignds=0.;
+               shift.Set(wdirShift,0.);
+               origin_shifted=origin;
+               z0_shifted=z0wire;
+               xy_shifted.Set(central_traj[m].xy.X()-alignS(state_D)*sin(alignS(state_phi)),
+                     central_traj[m].xy.Y()+alignS(state_D)*cos(alignS(state_phi)));
+               dir_shifted=dir+shift;
+               cosstereo_shifted = cos((wireDir+DVector3(wdirShift,0.,0.)).Angle(DVector3(0.,0.,1.)));
+               if (BrentCentral(dEdx,xy_shifted,z0_shifted,origin_shifted,
+                        dir_shifted,alignS,alignds)!=NOERROR) return VALUE_OUT_OF_RANGE;
+               if (alignds < dscut_min || alignds > dscut_max) return VALUE_OUT_OF_RANGE;
+               //if(BrentsAlgorithm(-mStepSizeS,-mStepSizeS,dEdx,xy_shifted,z0_shifted,origin_shifted,
+               //         dir_shifted,alignS,alignds) != NOERROR) return VALUE_OUT_OF_RANGE;
+               wirepos_shifted=origin_shifted+(alignS(state_z)-z0_shifted)*dir_shifted;
+               diff_shifted=xy_shifted-wirepos_shifted;
+               d_dDirX=cosstereo_shifted*diff_shifted.Mod()+EPS;
+               alignmentDerivatives[CDCTrackD::dDOCAdDirX] = (d_dDirX - d)/wdirShift;
+               if(DEBUG_HISTS){
+                  alignDerivHists[15]->Fill(alignmentDerivatives[CDCTrackD::dDOCAdDirX]);
+                  alignDerivHists[4]->Fill(alignds);
+               }
+
+               //dDirY
+               alignS=Ss;
+               alignds=0.;
+               shift.Set(0.,wdirShift);
+               origin_shifted=origin;
+               z0_shifted=z0wire;
+               xy_shifted.Set(central_traj[m].xy.X()-alignS(state_D)*sin(alignS(state_phi)),
+                     central_traj[m].xy.Y()+alignS(state_D)*cos(alignS(state_phi)));
+               dir_shifted=dir+shift;
+               cosstereo_shifted = cos((wireDir+DVector3(0.,wdirShift,0.)).Angle(DVector3(0.,0.,1.)));
+               if (BrentCentral(dEdx,xy_shifted,z0_shifted,origin_shifted,
+                        dir_shifted,alignS,alignds)!=NOERROR) return VALUE_OUT_OF_RANGE;
+               if (alignds < dscut_min || alignds > dscut_max) return VALUE_OUT_OF_RANGE;
+               //if(BrentsAlgorithm(-mStepSizeS,-mStepSizeS,dEdx,xy_shifted,z0_shifted,origin_shifted,
+               //         dir_shifted,alignS,alignds) != NOERROR) return VALUE_OUT_OF_RANGE;
+               wirepos_shifted=origin_shifted+(alignS(state_z)-z0_shifted)*dir_shifted;
+               diff_shifted=xy_shifted-wirepos_shifted;
+               d_dDirY=cosstereo_shifted*diff_shifted.Mod()+EPS;
+               alignmentDerivatives[CDCTrackD::dDOCAdDirY] = (d_dDirY - d)/wdirShift;
+               if(DEBUG_HISTS){
+                  alignDerivHists[16]->Fill(alignmentDerivatives[CDCTrackD::dDOCAdDirY]);
+                  alignDerivHists[5]->Fill(alignds);
+               }
+
+               //dDirZ
+               alignS=Ss;
+               alignds=0.;
+               origin_shifted=origin;
+               dir_shifted.Set(wireDir.X()/(wireDir.Z()+wdirShift), wireDir.Y()/(wireDir.Z()+wdirShift));
+               z0_shifted=z0wire;
+               xy_shifted.Set(central_traj[m].xy.X()-alignS(state_D)*sin(alignS(state_phi)),
+                     central_traj[m].xy.Y()+alignS(state_D)*cos(alignS(state_phi)));
+               cosstereo_shifted = cos((wireDir+DVector3(0.,0.,wdirShift)).Angle(DVector3(0.,0.,1.)));
+               if (BrentCentral(dEdx,xy_shifted,z0_shifted,origin_shifted,
+                        dir_shifted,alignS,alignds)!=NOERROR) return VALUE_OUT_OF_RANGE;
+               if (alignds < dscut_min || alignds > dscut_max) return VALUE_OUT_OF_RANGE;
+               //if(BrentsAlgorithm(-mStepSizeS,-mStepSizeS,dEdx,xy_shifted,z0_shifted,origin_shifted,
+               //         dir_shifted,alignS,alignds)!=NOERROR) return VALUE_OUT_OF_RANGE;
+               wirepos_shifted=origin_shifted+(alignS(state_z)-z0_shifted)*dir_shifted;
+               diff_shifted=xy_shifted-wirepos_shifted;
+               d_dDirZ=cosstereo_shifted*diff_shifted.Mod()+EPS;
+               alignmentDerivatives[CDCTrackD::dDOCAdDirZ] = (d_dDirZ - d)/wdirShift;
+               if(DEBUG_HISTS){
+                  alignDerivHists[17]->Fill(alignmentDerivatives[CDCTrackD::dDOCAdDirZ]);
+                  alignDerivHists[6]->Fill(alignds);
+               }
+
+               // And now the derivatives wrt the track parameters
+               //DMatrix5x1 trackShift(shift_q_over_pt, shift_phi, shift_tanl, shift_D, shift_z);
+
+               DMatrix5x1 trackShiftS0(shift_q_over_pt, 0., 0., 0., 0.);
+               DMatrix5x1 trackShiftS1(0., shift_phi, 0., 0., 0.);
+               DMatrix5x1 trackShiftS2(0., 0., shift_tanl, 0., 0.);
+               DMatrix5x1 trackShiftS3(0., 0., 0., shift_D, 0.);
+               DMatrix5x1 trackShiftS4(0., 0., 0., 0., shift_z);
+
+               // dS0
+               alignS=Ss+trackShiftS0;
+               alignds=0.;
+               xy_shifted.Set(central_traj[m].xy.X()-alignS(state_D)*sin(alignS(state_phi)),
+                     central_traj[m].xy.Y()+alignS(state_D)*cos(alignS(state_phi)));
+               if(BrentCentral(dEdx,xy_shifted,z0wire,origin,dir,alignS,alignds) != NOERROR) return VALUE_OUT_OF_RANGE;
+               if (alignds < dscut_min || alignds > dscut_max) return VALUE_OUT_OF_RANGE;
+               //if(BrentsAlgorithm(-mStepSizeS,-mStepSizeS,dEdx,xy_shifted,z0wire,origin,dir,alignS,alignds) != NOERROR) return VALUE_OUT_OF_RANGE;
+               wirepos_shifted=origin+(alignS(state_z)-z0wire)*dir;
+               diff_shifted=xy_shifted-wirepos_shifted;
+               d_dS0=cosstereo*diff_shifted.Mod()+EPS;
+               alignmentDerivatives[CDCTrackD::dDOCAdS0] = (d_dS0 - d)/shift_q_over_pt;
+               if(DEBUG_HISTS){
+                  alignDerivHists[18]->Fill(alignmentDerivatives[CDCTrackD::dDOCAdS0]);
+                  alignDerivHists[7]->Fill(alignds);
+               }
+
+               // dS1
+               alignS=Ss+trackShiftS1;
+               alignds=0.;
+               xy_shifted.Set(central_traj[m].xy.X()-alignS(state_D)*sin(alignS(state_phi)),
+                     central_traj[m].xy.Y()+alignS(state_D)*cos(alignS(state_phi)));
+               if(BrentCentral(dEdx,xy_shifted,z0wire,origin,dir,alignS,alignds) != NOERROR) return VALUE_OUT_OF_RANGE;
+               if (alignds < dscut_min || alignds > dscut_max) return VALUE_OUT_OF_RANGE;
+               //if(BrentsAlgorithm(-mStepSizeS,-mStepSizeS,dEdx,xy_shifted,z0wire,origin,dir,alignS,alignds) != NOERROR) return VALUE_OUT_OF_RANGE;
+               wirepos_shifted=origin+(alignS(state_z)-z0wire)*dir;
+               diff_shifted=xy_shifted-wirepos_shifted;
+               d_dS1=cosstereo*diff_shifted.Mod()+EPS;
+               alignmentDerivatives[CDCTrackD::dDOCAdS1] = (d_dS1 - d)/shift_phi;
+               if(DEBUG_HISTS){
+                  alignDerivHists[19]->Fill(alignmentDerivatives[CDCTrackD::dDOCAdS1]);
+                  alignDerivHists[8]->Fill(alignds);
+               }
+
+               // dS2
+               alignS=Ss+trackShiftS2;
+               alignds=0.;
+               xy_shifted.Set(central_traj[m].xy.X()-alignS(state_D)*sin(alignS(state_phi)),
+                     central_traj[m].xy.Y()+alignS(state_D)*cos(alignS(state_phi)));
+               if(BrentCentral(dEdx,xy_shifted,z0wire,origin,dir,alignS,alignds) != NOERROR) return VALUE_OUT_OF_RANGE;
+               if (alignds < dscut_min || alignds > dscut_max) return VALUE_OUT_OF_RANGE;
+               //if(BrentsAlgorithm(-mStepSizeS,-mStepSizeS,dEdx,xy_shifted,z0wire,origin,dir,alignS,alignds) != NOERROR) return VALUE_OUT_OF_RANGE;
+               wirepos_shifted=origin+(alignS(state_z)-z0wire)*dir;
+               diff_shifted=xy_shifted-wirepos_shifted;
+               d_dS2=cosstereo*diff_shifted.Mod()+EPS;
+               alignmentDerivatives[CDCTrackD::dDOCAdS2] = (d_dS2 - d)/shift_tanl;
+               if(DEBUG_HISTS){
+                  alignDerivHists[20]->Fill(alignmentDerivatives[CDCTrackD::dDOCAdS2]);
+                  alignDerivHists[9]->Fill(alignds);
+               }
+
+               // dS3
+               alignS=Ss+trackShiftS3;
+               alignds=0.;
+               xy_shifted.Set(central_traj[m].xy.X()-alignS(state_D)*sin(alignS(state_phi)),
+                     central_traj[m].xy.Y()+alignS(state_D)*cos(alignS(state_phi)));
+               if(BrentCentral(dEdx,xy_shifted,z0wire,origin,dir,alignS,alignds) != NOERROR) return VALUE_OUT_OF_RANGE;
+               if (alignds < dscut_min || alignds > dscut_max) return VALUE_OUT_OF_RANGE;
+               //if(BrentsAlgorithm(-mStepSizeS,-mStepSizeS,dEdx,xy_shifted,z0wire,origin,dir,alignS,alignds) != NOERROR) return VALUE_OUT_OF_RANGE;
+               wirepos_shifted=origin+(alignS(state_z)-z0wire)*dir;
+               diff_shifted=xy_shifted-wirepos_shifted;
+               d_dS3=cosstereo*diff_shifted.Mod()+EPS;
+               alignmentDerivatives[CDCTrackD::dDOCAdS3] = (d_dS3 - d)/shift_D;
+               if(DEBUG_HISTS){
+                  alignDerivHists[21]->Fill(alignmentDerivatives[CDCTrackD::dDOCAdS3]);
+                  alignDerivHists[10]->Fill(alignds);
+               }
+
+               // dS4
+               alignS=Ss+trackShiftS4;
+               alignds=0.;
+               xy_shifted.Set(central_traj[m].xy.X()-alignS(state_D)*sin(alignS(state_phi)),
+                     central_traj[m].xy.Y()+alignS(state_D)*cos(alignS(state_phi)));
+               if(BrentCentral(dEdx,xy_shifted,z0wire,origin,dir,alignS,alignds) != NOERROR) return VALUE_OUT_OF_RANGE;
+               if (alignds < dscut_min || alignds > dscut_max) return VALUE_OUT_OF_RANGE;
+               //if(BrentsAlgorithm(-mStepSizeS,-mStepSizeS,dEdx,xy_shifted,z0wire,origin,dir,alignS,alignds) != NOERROR) return VALUE_OUT_OF_RANGE;
+               wirepos_shifted=origin+(alignS(state_z)-z0wire)*dir;
+               diff_shifted=xy_shifted-wirepos_shifted;
+               d_dS4=cosstereo*diff_shifted.Mod()+EPS;
+               alignmentDerivatives[CDCTrackD::dDOCAdS4] = (d_dS4 - d)/shift_z;
+               if(DEBUG_HISTS){
+                  alignDerivHists[22]->Fill(alignmentDerivatives[CDCTrackD::dDOCAdS4]);
+                  alignDerivHists[11]->Fill(alignds);
+               }
+            }
 
             // Compute the Jacobian matrix
             // Find the field and gradient at (old_x,old_y,old_z)
@@ -7951,22 +8203,27 @@ jerror_t DTrackFitterKalmanSIMD::SmoothCentral(void){
             if (skip_ring) VRes = Vhit + Vtrack;
             else VRes = Vhit - Vtrack;
 
-            if (DEBUG_LEVEL>1 && (!isfinite(VRes) || VRes < 0.0) ) _DBG_ << " Problem: VRes is " << VRes << " = " << Vhit << " - " << Vtrack << endl;
+            if (DEBUG_LEVEL>1 && (!isfinite(VRes) || VRes < 0.0) ) _DBG_ << " SmoothCentral Problem: VRes is " << VRes << " = " << Vhit << " - " << Vtrack << endl;
 
-            pulls.push_back(pull_t(cdc_updates[id].doca-d,sqrt(VRes),
-                     central_traj[m].s,cdc_updates[id].tdrift,
-                     d,my_cdchits[id]->hit,NULL,
-                     diff.Phi(),myS(state_z),
-                     cdc_updates[id].tcorr));
+            pull_t thisPull(cdc_updates[id].doca-d,sqrt(VRes),
+                  central_traj[m].s,cdc_updates[id].tdrift,
+                  d,my_cdchits[id]->hit,NULL,
+                  diff.Phi(),myS(state_z),
+                  cdc_updates[id].tcorr);
+
+            thisPull.AddTrackDerivatives(alignmentDerivatives);
+            pulls.push_back(thisPull);
          }
          else{
-            A=central_traj[m].Ckk*JT*C.InvertSym();
+            if (firstHit) A=central_traj[m].Ckk*JT*C.InvertSym();
+            else A=JT;
             Ss=central_traj[m].Skk+A*(Ss-S);
             Cs=central_traj[m].Ckk+A*(Cs-C)*A.Transpose();      
          }
       }
       else{
-         A=central_traj[m].Ckk*JT*C.InvertSym();
+         if (firstHit) A=central_traj[m].Ckk*JT*C.InvertSym();
+         else A=JT;
          Ss=central_traj[m].Skk+A*(Ss-S);
          Cs=central_traj[m].Ckk+A*(Cs-C)*A.Transpose();      
       }
@@ -8000,7 +8257,7 @@ jerror_t DTrackFitterKalmanSIMD::SmoothForwardCDC(void){
    for (unsigned int m=max-1;m>0;m--){
       if (forward_traj[m].h_id>0){ 
          unsigned int cdc_index=forward_traj[m].h_id-1; 	
-         if(cdc_used_in_fit[cdc_index]){
+         if(cdc_used_in_fit[cdc_index] && my_cdchits[cdc_index]->status == good_hit){
             if (DEBUG_LEVEL > 5)  {
                _DBG_ << " Smoothing CDC index " << cdc_index << " ring " << my_cdchits[cdc_index]->hit->wire->ring
                   << " straw " << my_cdchits[cdc_index]->hit->wire->straw << endl;
@@ -8027,8 +8284,8 @@ jerror_t DTrackFitterKalmanSIMD::SmoothForwardCDC(void){
                }
                return VALUE_OUT_OF_RANGE;
             }
-            FillPullsVectorEntry(Ss,Cs,forward_traj[m],my_cdchits[cdc_index],
-                  cdc_updates[cdc_index]);
+            if(FillPullsVectorEntry(Ss,Cs,forward_traj[m],my_cdchits[cdc_index],
+                     cdc_updates[cdc_index]) != NOERROR) return VALUE_OUT_OF_RANGE;
 
          }
          else{
@@ -8048,17 +8305,13 @@ jerror_t DTrackFitterKalmanSIMD::SmoothForwardCDC(void){
       JT=forward_traj[m].J.Transpose();
    }
 
-   A=forward_traj[0].Ckk*JT*C.InvertSym();
-   Ss=forward_traj[0].Skk+A*(Ss-S);
-   Cs=forward_traj[0].Ckk+A*(Cs-C)*A.Transpose();
-
    return NOERROR;
 }
 
 // Fill the pulls vector with the best residual information using the smoothed
 // filter results.  Uses Brent's algorithm to find the distance of closest 
 // approach to the wire hit.
-void DTrackFitterKalmanSIMD::FillPullsVectorEntry(const DMatrix5x1 &Ss,
+jerror_t DTrackFitterKalmanSIMD::FillPullsVectorEntry(const DMatrix5x1 &Ss,
       const DMatrix5x5 &Cs,
       const DKalmanForwardTrajectory_t &traj,const DKalmanSIMDCDCHit_t *hit,const DKalmanUpdate_t &update){
 
@@ -8075,7 +8328,8 @@ void DTrackFitterKalmanSIMD::FillPullsVectorEntry(const DMatrix5x1 &Ss,
    DVector2 origin=hit->origin;
    DVector2 dir=hit->dir;
    double z0wire=hit->z0wire;
-   BrentsAlgorithm(z,-mStepSizeZ,dEdx,z0wire,origin,dir,myS,mydz);
+   if(BrentForward(z,dEdx,z0wire,origin,dir,myS,mydz) != NOERROR) return VALUE_OUT_OF_RANGE;
+   if(DEBUG_HISTS)alignDerivHists[23]->Fill(mydz);
    double new_z=z+mydz;
    DVector2 wirepos=origin+(new_z-z0wire)*dir;
    double cosstereo=hit->cosstereo;
@@ -8083,6 +8337,266 @@ void DTrackFitterKalmanSIMD::FillPullsVectorEntry(const DMatrix5x1 &Ss,
 
    DVector2 diff=xy-wirepos;
    double d=cosstereo*diff.Mod();
+
+   // If we are doing the alignment, we need to numerically calculate the derivatives
+   // wrt the wire origin, direction, and the track parameters.
+   vector<double> alignmentDerivatives;
+   if (ALIGNMENT_FORWARD){
+      double dzcut_min=0., dzcut_max=1.;
+      DMatrix5x1 alignS=Ss; // We will mess with this one
+      DVector3 wireDir = hit->hit->wire->udir;
+      double cosstereo_shifted;
+      double aligndz;
+      alignmentDerivatives.resize(12);
+
+      // Set t0 derivative
+      alignmentDerivatives[CDCTrackD::dDdt0]=update.dDdt0;
+
+      // Wire position shift
+      double wposShift=0.025; 
+      double wdirShift=0.00005; 
+
+      // Shift each track parameter
+      double shiftFraction=0.01;
+      double shift_x=0.01;
+      double shift_y=0.01;
+      double shift_tx=shiftFraction*Ss(state_tx);
+      double shift_ty=shiftFraction*Ss(state_ty);;
+      double shift_q_over_p=shiftFraction*Ss(state_q_over_p);
+
+      // Some data containers we don't need multiples of
+      double z0_shifted, new_z_shifted;
+      DVector2 shift, origin_shifted, dir_shifted, wirepos_shifted, diff_shifted, xy_shifted;
+
+      // The DOCA for the shifted states == f(x+h)
+      double d_dOriginX=0., d_dOriginY=0., d_dOriginZ=0.;
+      double d_dDirX=0., d_dDirY=0., d_dDirZ=0.;
+      double d_dS0=0., d_dS1=0., d_dS2=0., d_dS3=0., d_dS4=0.;
+      // Let's do the wire shifts first
+
+      //dOriginX
+      alignS=Ss;
+      aligndz=0.;
+      shift.Set(wposShift, 0.);
+      origin_shifted=origin+shift;
+      dir_shifted=dir;
+      z0_shifted=z0wire;
+      if(BrentForward(z,dEdx,z0_shifted,origin_shifted,dir_shifted,alignS,aligndz) != NOERROR) return VALUE_OUT_OF_RANGE;
+      if(aligndz < dzcut_min || aligndz > dzcut_max) return VALUE_OUT_OF_RANGE; 
+      //if(BrentsAlgorithm(z,-mStepSizeZ,dEdx,z0_shifted,origin_shifted,dir_shifted,alignS,aligndz) != NOERROR) return VALUE_OUT_OF_RANGE;
+      new_z_shifted=z+aligndz;
+      wirepos_shifted=origin_shifted+(new_z_shifted-z0_shifted)*dir_shifted;
+      xy_shifted.Set(alignS(state_x),alignS(state_y));
+      diff_shifted=xy_shifted-wirepos_shifted;
+      d_dOriginX=cosstereo*diff_shifted.Mod()+EPS;
+      alignmentDerivatives[CDCTrackD::dDOCAdOriginX] = (d_dOriginX - d)/wposShift;
+      if(DEBUG_HISTS){
+         alignDerivHists[24]->Fill(aligndz);
+         alignDerivHists[35]->Fill(alignmentDerivatives[CDCTrackD::dDOCAdOriginX]);
+         brentCheckHists[0]->Fill(aligndz,d_dOriginX);
+      }
+
+      //dOriginY
+      alignS=Ss;
+      aligndz=0.;
+      shift.Set(0.,wposShift);
+      origin_shifted=origin+shift;
+      dir_shifted=dir;
+      z0_shifted=z0wire;
+      if(BrentForward(z,dEdx,z0_shifted,origin_shifted,dir_shifted,alignS,aligndz) != NOERROR) return VALUE_OUT_OF_RANGE;
+      if(aligndz < dzcut_min || aligndz > dzcut_max) return VALUE_OUT_OF_RANGE;
+      //if(BrentsAlgorithm(z,-mStepSizeZ,dEdx,z0_shifted,origin_shifted,dir_shifted,alignS,aligndz) != NOERROR) return VALUE_OUT_OF_RANGE;
+      new_z_shifted=z+aligndz;
+      wirepos_shifted=origin_shifted+(new_z_shifted-z0_shifted)*dir_shifted;
+      xy_shifted.Set(alignS(state_x),alignS(state_y));
+      diff_shifted=xy_shifted-wirepos_shifted;
+      d_dOriginY=cosstereo*diff_shifted.Mod()+EPS;
+      alignmentDerivatives[CDCTrackD::dDOCAdOriginY] = (d_dOriginY - d)/wposShift;
+      if(DEBUG_HISTS){
+         alignDerivHists[25]->Fill(aligndz);
+         alignDerivHists[36]->Fill(alignmentDerivatives[CDCTrackD::dDOCAdOriginY]);
+         brentCheckHists[0]->Fill(aligndz,d_dOriginY);
+      }
+
+      //dOriginZ
+      alignS=Ss;
+      aligndz=0.;
+      origin_shifted=origin;
+      dir_shifted=dir;
+      z0_shifted=z0wire+wposShift;
+      if(BrentForward(z,dEdx,z0_shifted,origin_shifted,dir_shifted,alignS,aligndz) != NOERROR) return VALUE_OUT_OF_RANGE;
+      if(aligndz < dzcut_min || aligndz > dzcut_max) return VALUE_OUT_OF_RANGE;
+      //if(BrentsAlgorithm(z,-mStepSizeZ,dEdx,z0_shifted,origin_shifted,dir_shifted,alignS,aligndz) != NOERROR) return VALUE_OUT_OF_RANGE;
+      new_z_shifted=z+aligndz;
+      wirepos_shifted=origin_shifted+(new_z_shifted-z0_shifted)*dir_shifted;
+      xy_shifted.Set(alignS(state_x),alignS(state_y));
+      diff_shifted=xy_shifted-wirepos_shifted;
+      d_dOriginZ=cosstereo*diff_shifted.Mod()+EPS;
+      alignmentDerivatives[CDCTrackD::dDOCAdOriginZ] = (d_dOriginZ - d)/wposShift;
+      if(DEBUG_HISTS){
+         alignDerivHists[26]->Fill(aligndz);
+         alignDerivHists[37]->Fill(alignmentDerivatives[CDCTrackD::dDOCAdOriginZ]);
+         brentCheckHists[0]->Fill(aligndz,d_dOriginZ);
+      }
+
+      //dDirX
+      alignS=Ss;
+      aligndz=0.;
+      shift.Set(wdirShift,0.);
+      origin_shifted=origin;
+      z0_shifted=z0wire;
+      dir_shifted=dir+shift;
+      cosstereo_shifted = cos((wireDir+DVector3(wdirShift,0.,0.)).Angle(DVector3(0.,0.,1.)));
+      if(BrentForward(z,dEdx,z0_shifted,origin_shifted,dir_shifted,alignS,aligndz) != NOERROR) return VALUE_OUT_OF_RANGE;
+      if(aligndz < dzcut_min || aligndz > dzcut_max) return VALUE_OUT_OF_RANGE;
+      //if(BrentsAlgorithm(z,-mStepSizeZ,dEdx,z0_shifted,origin_shifted,dir_shifted,alignS,aligndz) != NOERROR) return VALUE_OUT_OF_RANGE;
+      new_z_shifted=z+aligndz;
+      wirepos_shifted=origin_shifted+(new_z_shifted-z0_shifted)*dir_shifted;
+      xy_shifted.Set(alignS(state_x),alignS(state_y));
+      diff_shifted=xy_shifted-wirepos_shifted;
+      d_dDirX=cosstereo_shifted*diff_shifted.Mod()+EPS;
+      alignmentDerivatives[CDCTrackD::dDOCAdDirX] = (d_dDirX - d)/wdirShift;
+      if(DEBUG_HISTS){
+         alignDerivHists[27]->Fill(aligndz);
+         alignDerivHists[38]->Fill(alignmentDerivatives[CDCTrackD::dDOCAdDirX]);
+      }
+
+      //dDirY
+      alignS=Ss;
+      aligndz=0.;
+      shift.Set(0.,wdirShift);
+      origin_shifted=origin;
+      z0_shifted=z0wire;
+      dir_shifted=dir+shift;
+      cosstereo_shifted = cos((wireDir+DVector3(0.,wdirShift,0.)).Angle(DVector3(0.,0.,1.)));
+      if(BrentForward(z,dEdx,z0_shifted,origin_shifted,dir_shifted,alignS,aligndz) != NOERROR) return VALUE_OUT_OF_RANGE;
+      if(aligndz < dzcut_min || aligndz > dzcut_max) return VALUE_OUT_OF_RANGE;
+      //if(BrentsAlgorithm(z,-mStepSizeZ,dEdx,z0_shifted,origin_shifted,dir_shifted,alignS,aligndz) != NOERROR) return VALUE_OUT_OF_RANGE;
+      new_z_shifted=z+aligndz;
+      wirepos_shifted=origin_shifted+(new_z_shifted-z0_shifted)*dir_shifted;
+      xy_shifted.Set(alignS(state_x),alignS(state_y));
+      diff_shifted=xy_shifted-wirepos_shifted;
+      d_dDirY=cosstereo_shifted*diff_shifted.Mod()+EPS;
+      alignmentDerivatives[CDCTrackD::dDOCAdDirY] = (d_dDirY - d)/wdirShift;
+      if(DEBUG_HISTS){
+         alignDerivHists[28]->Fill(aligndz);
+         alignDerivHists[39]->Fill(alignmentDerivatives[CDCTrackD::dDOCAdDirY]);
+      }
+
+      //dDirZ - This is divided out in this code
+      alignS=Ss;
+      aligndz=0.;
+      origin_shifted=origin;
+      dir_shifted.Set(wireDir.X()/(wireDir.Z()+wdirShift), wireDir.Y()/(wireDir.Z()+wdirShift));
+      z0_shifted=z0wire;
+      cosstereo_shifted = cos((wireDir+DVector3(0.,0.,wdirShift)).Angle(DVector3(0.,0.,1.)));
+      if(BrentForward(z,dEdx,z0_shifted,origin_shifted,dir_shifted,alignS,aligndz) != NOERROR) return VALUE_OUT_OF_RANGE;
+      if(aligndz < dzcut_min || aligndz > dzcut_max) return VALUE_OUT_OF_RANGE;
+      //if(BrentsAlgorithm(z,-mStepSizeZ,dEdx,z0_shifted,origin_shifted,dir_shifted,alignS,aligndz) != NOERROR) return VALUE_OUT_OF_RANGE;
+      new_z_shifted=z+aligndz;
+      wirepos_shifted=origin_shifted+(new_z_shifted-z0_shifted)*dir_shifted;
+      xy_shifted.Set(alignS(state_x),alignS(state_y));
+      diff_shifted=xy_shifted-wirepos_shifted;
+      d_dDirZ=cosstereo_shifted*diff_shifted.Mod()+EPS;
+      alignmentDerivatives[CDCTrackD::dDOCAdDirZ] = (d_dDirZ - d)/wdirShift;
+      if(DEBUG_HISTS){
+         alignDerivHists[29]->Fill(aligndz);
+         alignDerivHists[40]->Fill(alignmentDerivatives[CDCTrackD::dDOCAdDirZ]);
+      }
+
+      // And now the derivatives wrt the track parameters
+
+      DMatrix5x1 trackShiftS0(shift_x, 0., 0., 0., 0.);
+      DMatrix5x1 trackShiftS1(0., shift_y, 0., 0., 0.);
+      DMatrix5x1 trackShiftS2(0., 0., shift_tx, 0., 0.);
+      DMatrix5x1 trackShiftS3(0., 0., 0., shift_ty, 0.);
+      DMatrix5x1 trackShiftS4(0., 0., 0., 0., shift_q_over_p);
+
+      // dS0
+      alignS=Ss+trackShiftS0;
+      aligndz=0.;
+      if(BrentForward(z,dEdx,z0wire,origin,dir,alignS,aligndz) != NOERROR) return VALUE_OUT_OF_RANGE;
+      if(aligndz < dzcut_min || aligndz > dzcut_max) return VALUE_OUT_OF_RANGE;
+      //if(BrentsAlgorithm(z,-mStepSizeZ,dEdx,z0wire,origin,dir,alignS,aligndz) != NOERROR) return VALUE_OUT_OF_RANGE;
+      new_z_shifted=z+aligndz;
+      wirepos_shifted=origin+(new_z_shifted-z0wire)*dir;
+      xy_shifted.Set(alignS(state_x),alignS(state_y));
+      diff_shifted=xy_shifted-wirepos_shifted;
+      d_dS0=cosstereo*diff_shifted.Mod()+EPS;
+      alignmentDerivatives[CDCTrackD::dDOCAdS0] = (d_dS0 - d)/shift_x;
+      if(DEBUG_HISTS){
+         alignDerivHists[30]->Fill(aligndz);
+         alignDerivHists[41]->Fill(alignmentDerivatives[CDCTrackD::dDOCAdS0]);
+      }
+
+      // dS1
+      alignS=Ss+trackShiftS1;
+      aligndz=0.;
+      if(BrentForward(z,dEdx,z0wire,origin,dir,alignS,aligndz) != NOERROR) return VALUE_OUT_OF_RANGE;
+      if(aligndz < dzcut_min || aligndz > dzcut_max) return VALUE_OUT_OF_RANGE;
+      //if(BrentsAlgorithm(z,-mStepSizeZ,dEdx,z0wire,origin,dir,alignS,aligndz) != NOERROR) return VALUE_OUT_OF_RANGE;
+      new_z_shifted=z+aligndz;
+      wirepos_shifted=origin+(new_z_shifted-z0wire)*dir;
+      xy_shifted.Set(alignS(state_x),alignS(state_y));
+      diff_shifted=xy_shifted-wirepos_shifted;
+      d_dS1=cosstereo*diff_shifted.Mod()+EPS;
+      alignmentDerivatives[CDCTrackD::dDOCAdS1] = (d_dS1 - d)/shift_y;
+      if(DEBUG_HISTS){
+         alignDerivHists[31]->Fill(aligndz);
+         alignDerivHists[42]->Fill(alignmentDerivatives[CDCTrackD::dDOCAdS1]);
+      }
+
+      // dS2
+      alignS=Ss+trackShiftS2;
+      aligndz=0.;
+      if(BrentForward(z,dEdx,z0wire,origin,dir,alignS,aligndz) != NOERROR) return VALUE_OUT_OF_RANGE;
+      if(aligndz < dzcut_min || aligndz > dzcut_max) return VALUE_OUT_OF_RANGE;
+      //if(BrentsAlgorithm(z,-mStepSizeZ,dEdx,z0wire,origin,dir,alignS,aligndz) != NOERROR) return VALUE_OUT_OF_RANGE;
+      new_z_shifted=z+aligndz;
+      wirepos_shifted=origin+(new_z_shifted-z0wire)*dir;
+      xy_shifted.Set(alignS(state_x),alignS(state_y));
+      diff_shifted=xy_shifted-wirepos_shifted;
+      d_dS2=cosstereo*diff_shifted.Mod()+EPS;
+      alignmentDerivatives[CDCTrackD::dDOCAdS2] = (d_dS2 - d)/shift_tx;
+      if(DEBUG_HISTS){
+         alignDerivHists[32]->Fill(aligndz);
+         alignDerivHists[43]->Fill(alignmentDerivatives[CDCTrackD::dDOCAdS2]);
+      }
+
+      // dS3
+      alignS=Ss+trackShiftS3;
+      aligndz=0.;
+      if(BrentForward(z,dEdx,z0wire,origin,dir,alignS,aligndz) != NOERROR) return VALUE_OUT_OF_RANGE;
+      if(aligndz < dzcut_min || aligndz > dzcut_max) return VALUE_OUT_OF_RANGE;
+      //if(BrentsAlgorithm(z,-mStepSizeZ,dEdx,z0wire,origin,dir,alignS,aligndz) != NOERROR) return VALUE_OUT_OF_RANGE;
+      new_z_shifted=z+aligndz;
+      wirepos_shifted=origin+(new_z_shifted-z0wire)*dir;
+      xy_shifted.Set(alignS(state_x),alignS(state_y));
+      diff_shifted=xy_shifted-wirepos_shifted;
+      d_dS3=cosstereo*diff_shifted.Mod()+EPS;
+      alignmentDerivatives[CDCTrackD::dDOCAdS3] = (d_dS3 - d)/shift_ty;
+      if(DEBUG_HISTS){
+         alignDerivHists[33]->Fill(aligndz);
+         alignDerivHists[44]->Fill(alignmentDerivatives[CDCTrackD::dDOCAdS3]);
+      }
+
+      // dS4
+      alignS=Ss+trackShiftS4;
+      aligndz=0.;
+      if(BrentForward(z,dEdx,z0wire,origin,dir,alignS,aligndz) != NOERROR) return VALUE_OUT_OF_RANGE;
+      if(aligndz < dzcut_min || aligndz > dzcut_max) return VALUE_OUT_OF_RANGE;
+      //if(BrentsAlgorithm(z,-mStepSizeZ,dEdx,z0wire,origin,dir,alignS,aligndz) != NOERROR) return VALUE_OUT_OF_RANGE;
+      new_z_shifted=z+aligndz;
+      wirepos_shifted=origin+(new_z_shifted-z0wire)*dir;
+      xy_shifted.Set(alignS(state_x),alignS(state_y));
+      diff_shifted=xy_shifted-wirepos_shifted;
+      d_dS4=cosstereo*diff_shifted.Mod()+EPS;
+      alignmentDerivatives[CDCTrackD::dDOCAdS4] = (d_dS4 - d)/shift_q_over_p;
+      if(DEBUG_HISTS){
+         alignDerivHists[34]->Fill(aligndz);
+         alignDerivHists[45]->Fill(alignmentDerivatives[CDCTrackD::dDOCAdS4]);
+      }
+   }
 
    // Find the field and gradient at (old_x,old_y,old_z) and compute the 
    // Jacobian matrix for transforming from S to myS
@@ -8108,8 +8622,11 @@ void DTrackFitterKalmanSIMD::FillPullsVectorEntry(const DMatrix5x1 &Ss,
 
    if (DEBUG_LEVEL>1 && (!isfinite(V) || V < 0.0) ) _DBG_ << " Problem: V is " << V << endl;
 
-   pulls.push_back(pull_t(update.doca-d,sqrt(V),traj.s,update.tdrift,d,hit->hit,
-            NULL,diff.Phi(),new_z,update.tcorr));
+   pull_t thisPull(update.doca-d,sqrt(V),traj.s,update.tdrift,d,hit->hit,
+         NULL,diff.Phi(),new_z,update.tcorr);
+   thisPull.AddTrackDerivatives(alignmentDerivatives);
+   pulls.push_back(thisPull);
+   return NOERROR;
 }
 
 // Transform the 5x5 covariance matrix from the forward parametrization to the 
@@ -8139,6 +8656,206 @@ void DTrackFitterKalmanSIMD::TransformCovariance(DMatrix5x5 &C){
 
    C=J*C*J.Transpose();      
 
+}
+
+jerror_t DTrackFitterKalmanSIMD::BrentForward(double z, double dedx, const double z0w,
+      const DVector2 &origin, const DVector2 &dir, DMatrix5x1 &S, double &dz){
+
+   DVector2 wirepos=origin;
+   wirepos+=(z-z0w)*dir;
+   double dx=S(state_x)-wirepos.X();
+   double dy=S(state_y)-wirepos.Y();
+   double doca2 = dx*dx+dy*dy;
+
+   if (BrentsAlgorithm(z,-mStepSizeZ,dedx,z0w,origin,dir,S,dz)!=NOERROR){
+      return VALUE_OUT_OF_RANGE;
+   }
+
+   double newz = z+dz;
+   unsigned int maxSteps=5;
+   unsigned int stepCounter=0;
+   if (fabs(dz)<EPS3){
+      // doca
+      double old_doca2=doca2;
+
+      double ztemp=newz;
+      newz=ztemp-mStepSizeZ;
+      Step(ztemp,newz,dedx,S);
+      // new wire position
+      wirepos=origin;
+      wirepos+=(newz-z0w)*dir;
+
+      dx=S(state_x)-wirepos.X();
+      dy=S(state_y)-wirepos.Y();
+      doca2=dx*dx+dy*dy;
+      ztemp=newz;
+
+      while(doca2<old_doca2 && stepCounter<maxSteps){
+         newz=ztemp-mStepSizeZ;
+         old_doca2=doca2;
+
+         // Step to the new z position
+         Step(ztemp,newz,dedx,S);
+         stepCounter++;
+
+         // find the new distance to the wire
+         wirepos=origin;
+         wirepos+=(newz-z0w)*dir;
+
+         dx=S(state_x)-wirepos.X();
+         dy=S(state_y)-wirepos.Y();
+         doca2=dx*dx+dy*dy;
+
+         ztemp=newz;
+      }
+
+      // Find the true doca
+      double dz2=0.;
+      if (BrentsAlgorithm(newz,-mStepSizeZ,dedx,z0w,origin,dir,S,dz2)!=NOERROR){
+         return VALUE_OUT_OF_RANGE;
+      }
+      newz=ztemp+dz2;
+
+      // Change in z relative to where we started for this wire
+      dz=newz-z;
+   }
+   else if (fabs(dz)>2.*mStepSizeZ-EPS3){    
+      // whoops, looks like we didn't actually bracket the minimum 
+      // after all.  Swim to make sure we pass the minimum doca.
+
+      double ztemp=newz;
+      // new wire position
+      wirepos=origin;
+      wirepos+=(ztemp-z0w)*dir;
+
+      // doca
+      double old_doca2=doca2;
+
+      dx=S(state_x)-wirepos.X();
+      dy=S(state_y)-wirepos.Y();
+      doca2=dx*dx+dy*dy;
+
+      while(doca2<old_doca2 && stepCounter<10*maxSteps){
+         newz=ztemp+mStepSizeZ;
+         old_doca2=doca2;
+
+         // Step to the new z position
+         Step(ztemp,newz,dedx,S);
+         stepCounter++;
+
+         // find the new distance to the wire
+         wirepos=origin;
+         wirepos+=(newz-z0w)*dir;
+
+         dx=S(state_x)-wirepos.X();
+         dy=S(state_y)-wirepos.Y();
+         doca2=dx*dx+dy*dy;
+
+         ztemp=newz;
+      }
+
+      // Find the true doca
+      double dz2=0.;
+      if (BrentsAlgorithm(newz,mStepSizeZ,dedx,z0w,origin,dir,S,dz2)!=NOERROR){
+         return VALUE_OUT_OF_RANGE;
+      }
+      newz=ztemp+dz2;
+
+      // Change in z relative to where we started for this wire
+      dz=newz-z;
+   }
+   return NOERROR;
+}
+
+jerror_t DTrackFitterKalmanSIMD::BrentCentral(double dedx, DVector2 &xy, const double z0w, const DVector2 &origin, const DVector2 &dir, DMatrix5x1 &Sc, double &ds){
+
+   DVector2 wirexy=origin;
+   wirexy+=(Sc(state_z)-z0w)*dir;
+
+   // new doca
+   double doca2=(xy-wirexy).Mod2();
+   double old_doca2=doca2;
+
+   if (BrentsAlgorithm(-mStepSizeS,-mStepSizeS,dedx,xy,z0w,
+            origin,dir,Sc,ds)!=NOERROR){
+      return VALUE_OUT_OF_RANGE;
+   }
+
+   unsigned int maxSteps=3;
+   unsigned int stepCounter=0;
+
+   if (fabs(ds)<EPS3){
+      double my_ds=ds;
+      old_doca2=doca2;
+      Step(xy,-mStepSizeS,Sc,dedx);
+      my_ds-=mStepSizeS;
+      wirexy=origin;
+      wirexy+=(Sc(state_z)-z0w)*dir;
+      doca2=(xy-wirexy).Mod2();
+      while(doca2<old_doca2 && stepCounter<maxSteps){
+         old_doca2=doca2;
+         // Bail if the transverse momentum has dropped below some minimum
+         if (fabs(Sc(state_q_over_pt))>Q_OVER_PT_MAX){
+            return VALUE_OUT_OF_RANGE;
+         }
+
+         // Step through the field
+         Step(xy,-mStepSizeS,Sc,dedx);
+         stepCounter++;
+
+         wirexy=origin;
+         wirexy+=(Sc(state_z)-z0w)*dir;
+         doca2=(xy-wirexy).Mod2();
+
+         my_ds-=mStepSizeS;
+      }
+      // Swim to the "true" doca
+      double ds2=0.;
+      if (BrentsAlgorithm(-mStepSizeS,-mStepSizeS,dedx,xy,z0w,
+               origin,dir,Sc,ds2)!=NOERROR){
+         return VALUE_OUT_OF_RANGE;
+      }
+      ds=my_ds+ds2;
+   }
+   else if (fabs(ds)>2*mStepSizeS-EPS3){
+      double my_ds=ds;
+
+      // new wire position
+      wirexy=origin;
+      wirexy+=(Sc(state_z)-z0w)*dir;
+
+      // doca
+      old_doca2=doca2;
+      doca2=(xy-wirexy).Mod2();
+
+      while(doca2<old_doca2 && stepCounter<maxSteps){
+         old_doca2=doca2;
+
+         // Bail if the transverse momentum has dropped below some minimum
+         if (fabs(Sc(state_q_over_pt))>Q_OVER_PT_MAX){
+            return VALUE_OUT_OF_RANGE;
+         }
+
+         // Step through the field
+         Step(xy,mStepSizeS,Sc,dedx);
+         stepCounter++;
+
+         // Find the new distance to the wire
+         wirexy=origin;
+         wirexy+=(Sc(state_z)-z0w)*dir;
+         doca2=(xy-wirexy).Mod2();
+
+         my_ds+=mStepSizeS;
+      }
+      // Swim to the "true" doca
+      double ds2=0.;
+      if (BrentsAlgorithm(mStepSizeS,mStepSizeS,dedx,xy,z0w,
+               origin,dir,Sc,ds2)!=NOERROR){
+         return VALUE_OUT_OF_RANGE;
+      }
+      ds=my_ds+ds2;
+   }
+   return NOERROR;
 }
 
 /*---------------------------------------------------------------------------*/
