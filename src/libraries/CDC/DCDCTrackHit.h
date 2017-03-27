@@ -25,7 +25,9 @@ enum CDCTrackD {
    dDOCAdS1,
    dDOCAdS2,
    dDOCAdS3,
-   dDOCAdS4
+   dDOCAdS4,
+   dDdt0
+
 };
 
 class DCDCTrackHit:public JObject{
