@@ -54,7 +54,7 @@ jerror_t JEventProcessor_MilleFieldOn::init(void)
    gDirectory->cd("AlignmentConstants");
    // We need the constants used for this iteration
    // Use a TProfile to avoid problems adding together multiple root files...
-   HistCurrentConstantsCDC = new TProfile("CDCAlignmentConstants", "Constants Used for CDC Alignment (In MILLEPEDE Order)", 16000 ,0.5, 16000.5);
+   HistCurrentConstantsCDC = new TProfile("CDCAlignmentConstants", "Constants Used for CDC Alignment (In MILLEPEDE Order)", 20000 ,0.5, 20000.5);
    HistCurrentConstantsFDC = new TProfile("FDCAlignmentConstants", "Constants Used for FDC Alignment (In MILLEPEDE Order)", 26000 ,0.5, 26000.5);
 
    gDirectory->cd("..");
@@ -101,6 +101,14 @@ jerror_t JEventProcessor_MilleFieldOn::brun(JEventLoop *eventLoop, int32_t runnu
          HistCurrentConstantsCDC->Fill(1000+(i*4+2),row["dyu"]);
          HistCurrentConstantsCDC->Fill(1000+(i*4+3),row["dxd"]);
          HistCurrentConstantsCDC->Fill(1000+(i*4+4),row["dyd"]);
+      }
+   }
+
+   if (jcalib->Get("CDC/timing_offsets",vals)==false){
+      for(unsigned int i=0; i<vals.size(); i++){
+         map<string,double> &row = vals[i];
+         // Get the offsets from the calibration database
+         HistCurrentConstantsCDC->Fill(16000+(i+1),row["t0"]);
       }
    }
 
@@ -308,8 +316,8 @@ jerror_t JEventProcessor_MilleFieldOn::evnt(JEventLoop *loop, uint64_t eventnumb
       for (size_t iPull = 0; iPull < pulls.size(); iPull++){
          const DCDCTrackHit *cdc_hit = pulls[iPull].cdc_hit;
          //const DFDCPseudo *fdc_hit   = pulls[iPull].fdc_hit;
-         double err = pulls[iPull].err;
-         double errc = pulls[iPull].errc;
+         float err = pulls[iPull].err;
+         float errc = pulls[iPull].errc;
          if (cdc_hit == NULL) {pullsNDF+=2;nFDC++;isCDCOnly=false;}
          else {pullsNDF++;nCDC++;}
          if ( err != err || errc != errc) anyNaN=true;
@@ -322,7 +330,7 @@ jerror_t JEventProcessor_MilleFieldOn::evnt(JEventLoop *loop, uint64_t eventnumb
       unsigned int trackingNDFCut = 22;
       if (isCDCOnly) trackingNDFCut = 10;
 
-       if( bestHypothesis->dNDF_Track < trackingNDFCut) continue;
+      if( bestHypothesis->dNDF_Track < trackingNDFCut) continue;
       /*
          double phi = bestHypothesis->momentum().Phi()*TMath::RadToDeg();
          double theta = bestHypothesis->momentum().Theta()*TMath::RadToDeg();
@@ -335,8 +343,8 @@ jerror_t JEventProcessor_MilleFieldOn::evnt(JEventLoop *loop, uint64_t eventnumb
       for (size_t iPull = 0; iPull < pulls.size(); iPull++){
          // Here is all of the information currently stored in the pulls from the fit
          // From TRACKING/DTrackFitter.h
-         double resi                 = pulls[iPull].resi;   // residual of measurement
-         double err                  = pulls[iPull].err;      // estimated error of measurement
+         float resi                 = pulls[iPull].resi;   // residual of measurement
+         float err                  = pulls[iPull].err;      // estimated error of measurement
          //double s                    = pulls[iPull].s;
          //double tdrift               = pulls[iPull].tdrift;      // drift time of this measurement
          //double d                    = pulls[iPull].d;  // doca to wire
@@ -345,8 +353,8 @@ jerror_t JEventProcessor_MilleFieldOn::evnt(JEventLoop *loop, uint64_t eventnumb
          //double docaphi              = pulls[iPull].docaphi; // phi of doca in CDC straws
          //double z                    = pulls[iPull].z;// z position at doca
          //double tcorr                = pulls[iPull].tcorr; // drift time with correction for B
-         double resic                = pulls[iPull].resic; // residual for FDC cathode measuremtns
-         double errc                 = pulls[iPull].errc;
+         float resic                = pulls[iPull].resic; // residual for FDC cathode measuremtns
+         float errc                 = pulls[iPull].errc;
 
          vector<double> trackDerivatives = pulls[iPull].trackDerivatives;
          if (trackDerivatives.size()==0) continue;
@@ -452,7 +460,7 @@ jerror_t JEventProcessor_MilleFieldOn::evnt(JEventLoop *loop, uint64_t eventnumb
 
             //Now we need to fill the Mille structure once for our wire measurment and once for our cathode measurement
             const int NLC = 5; // Number of local parameters
-            const int NGL = 10; // Number of global parameters for wire alignment
+            const int NGL = 11; // Number of global parameters for wire alignment
             float localDer[NLC];
             float globalDer[NGL];
             int label[NGL];
@@ -560,6 +568,9 @@ jerror_t JEventProcessor_MilleFieldOn::evnt(JEventLoop *loop, uint64_t eventnumb
                +trackDerivatives[CDCTrackD::dDOCAdDirY]*wireDerivatives[CDCWireD::dDirYddeltaYd]
                +trackDerivatives[CDCTrackD::dDOCAdDirZ]*wireDerivatives[CDCWireD::dDirZddeltaYd];
             label[9]=1000 + (straw_offset[thisWire->ring]+(thisWire->straw-1))*4 + 4;
+
+            globalDer[10]=-trackDerivatives[CDCTrackD::dDdt0];
+            label[10]=16000+straw_offset[thisWire->ring]+thisWire->straw;
 
             milleWriter->mille(NLC, localDer, NGL, globalDer, label, resi, err);
          }

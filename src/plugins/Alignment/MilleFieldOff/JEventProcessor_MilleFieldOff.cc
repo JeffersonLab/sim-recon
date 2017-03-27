@@ -238,7 +238,7 @@ jerror_t JEventProcessor_MilleFieldOff::evnt(JEventLoop *loop, uint64_t eventnum
       // Some quality cuts for the tracks we will use
       // Keep this minimal for now and investigate later
       double trackingFOMCut = 0.001;
-      int trackingNDFCut = 8;
+      int trackingNDFCut = 18;
 
       if(trackingFOM < trackingFOMCut) continue;
       if(track->Ndof < trackingNDFCut) continue;
@@ -249,23 +249,38 @@ jerror_t JEventProcessor_MilleFieldOff::evnt(JEventLoop *loop, uint64_t eventnum
       if (!track->IsSmoothed) continue;
 
       vector<DTrackFitter::pull_t> pulls = track->pulls;
+      if (pulls.size() > 75) continue; // We don't want reallly long tracks
+
       // Determine TrackType
       bool isCDCOnly=true; //bool isFDCOnly=true;
+      bool anyNaN = false;
       for (size_t iPull = 0; iPull < pulls.size(); iPull++){
          const DCDCTrackHit *cdc_hit = pulls[iPull].cdc_hit;
          //const DFDCPseudo *fdc_hit   = pulls[iPull].fdc_hit;
+         float resi                 = pulls[iPull].resi;   // residual of measurement
+         float err                  = pulls[iPull].err;
+         float resic                = pulls[iPull].resic; // residual for FDC cathode measuremtns
+         float errc                 = pulls[iPull].errc;
          if (cdc_hit == NULL) isCDCOnly=false;
+         if (resi != resi || err != err || resic != resic || errc != errc || !isfinite(resi) || !isfinite(resic)) anyNaN=true;
+         // If any residual or error is truely huge, we dont really want this event. Cut at 10 cm.
+         if (fabs(resi)>10. || err > 10. || fabs(resic) > 10. || errc > 10.) anyNaN=true;
          //if (fdc_hit == NULL) isFDCOnly=false;
       }
 
-      if (isCDCOnly && track->Ndof < 16) continue;
+      if (anyNaN) continue;
+
+      // Need at least as many degrees of freedon as alignment parameters
+      if (!isCDCOnly) {
+         if(track->Ndof < 26) continue;
+      }
 
       japp->RootWriteLock(); // Just use the root lock as a temporary
       for (size_t iPull = 0; iPull < pulls.size(); iPull++){
          // Here is all of the information currently stored in the pulls from the fit
          // From TRACKING/DTrackFitter.h
-         double resi                 = pulls[iPull].resi;   // residual of measurement
-         double err                  = pulls[iPull].err;      // estimated error of measurement
+         float resi                 = pulls[iPull].resi;   // residual of measurement
+         float err                  = pulls[iPull].err;      // estimated error of measurement
          //double s                    = pulls[iPull].s;
          //double tdrift               = pulls[iPull].tdrift;      // drift time of this measurement
          //double d                    = pulls[iPull].d;  // doca to wire
@@ -274,10 +289,11 @@ jerror_t JEventProcessor_MilleFieldOff::evnt(JEventLoop *loop, uint64_t eventnum
          //double docaphi              = pulls[iPull].docaphi; // phi of doca in CDC straws
          //double z                    = pulls[iPull].z;// z position at doca
          //double tcorr                = pulls[iPull].tcorr; // drift time with correction for B
-         double resic                = pulls[iPull].resic; // residual for FDC cathode measuremtns
-         double errc                 = pulls[iPull].errc;
+         float resic                = pulls[iPull].resic; // residual for FDC cathode measuremtns
+         float errc                 = pulls[iPull].errc;
 
          vector<double> trackDerivatives = pulls[iPull].trackDerivatives;
+         if (trackDerivatives.size()==0) jerr << "Track derivative size == 0 ???" << endl;
 
          if (fdc_hit != NULL && fdc_hit->status == 6) {
             // Add fdc hit
@@ -387,7 +403,8 @@ jerror_t JEventProcessor_MilleFieldOff::evnt(JEventLoop *loop, uint64_t eventnum
             localDer[0]=trackDerivatives[CDCTrackD::dDOCAdS0]; localDer[1]=trackDerivatives[CDCTrackD::dDOCAdS1];
             localDer[2]=trackDerivatives[CDCTrackD::dDOCAdS2]; localDer[3]=trackDerivatives[CDCTrackD::dDOCAdS3];
 
-            if (isCDCOnly){ // Global shifts will not affect residuals
+            //if (isCDCOnly){ // Global shifts will not affect residuals
+            if (false) { // test
                globalDer[0]=0.0; label[0]=1;
                globalDer[1]=0.0; label[0]=2;
                globalDer[2]=0.0; label[0]=3;
@@ -419,6 +436,16 @@ jerror_t JEventProcessor_MilleFieldOff::evnt(JEventLoop *loop, uint64_t eventnum
                   +trackDerivatives[CDCTrackD::dDOCAdDirY]*wireDerivatives[CDCWireD::dDirYddeltaZ]
                   +trackDerivatives[CDCTrackD::dDOCAdDirZ]*wireDerivatives[CDCWireD::dDirZddeltaZ];
                label[2]=3;
+               if (false){
+                  jout << " Dumping deltaZ derivatives============ Wire " << thisWire->ring << " Straw " << thisWire->straw << endl;
+                  jout << " Total = " << globalDer[2] << endl;
+                  jout << "trackDerivatives[CDCTrackD::dDOCAdOriginX] " << trackDerivatives[CDCTrackD::dDOCAdOriginX] << " wireDerivatives[CDCWireD::dOriginXddeltaZ] " << wireDerivatives[CDCWireD::dOriginXddeltaZ] << endl;
+                  jout << "trackDerivatives[CDCTrackD::dDOCAdOriginY] " << trackDerivatives[CDCTrackD::dDOCAdOriginY] << " wireDerivatives[CDCWireD::dOriginYddeltaZ] " << wireDerivatives[CDCWireD::dOriginYddeltaZ] << endl;
+                  jout << "trackDerivatives[CDCTrackD::dDOCAdOriginZ] " << trackDerivatives[CDCTrackD::dDOCAdOriginZ] << " wireDerivatives[CDCWireD::dOriginZddeltaZ] " << wireDerivatives[CDCWireD::dOriginZddeltaZ] << endl;
+                  jout << "trackDerivatives[CDCTrackD::dDOCAdDirX] " << trackDerivatives[CDCTrackD::dDOCAdDirX] << " wireDerivatives[CDCWireD::dDirXddeltaZ] " << wireDerivatives[CDCWireD::dDirXddeltaZ] << endl;
+                  jout << "trackDerivatives[CDCTrackD::dDOCAdDirY] " << trackDerivatives[CDCTrackD::dDOCAdDirY] << " wireDerivatives[CDCWireD::dDirYddeltaZ] " << wireDerivatives[CDCWireD::dDirYddeltaZ] << endl;
+                  jout << "trackDerivatives[CDCTrackD::dDOCAdDirZ] " << trackDerivatives[CDCTrackD::dDOCAdDirZ] << " wireDerivatives[CDCWireD::dDirZddeltaZ] " << wireDerivatives[CDCWireD::dDirZddeltaZ] << endl;
+               }
 
                globalDer[3]=trackDerivatives[CDCTrackD::dDOCAdOriginX]*wireDerivatives[CDCWireD::dOriginXddeltaPhiX]
                   +trackDerivatives[CDCTrackD::dDOCAdOriginY]*wireDerivatives[CDCWireD::dOriginYddeltaPhiX]
@@ -443,6 +470,16 @@ jerror_t JEventProcessor_MilleFieldOff::evnt(JEventLoop *loop, uint64_t eventnum
                   +trackDerivatives[CDCTrackD::dDOCAdDirY]*wireDerivatives[CDCWireD::dDirYddeltaPhiZ]
                   +trackDerivatives[CDCTrackD::dDOCAdDirZ]*wireDerivatives[CDCWireD::dDirZddeltaPhiZ];
                label[5]=6;
+               if (false){
+                  jout << " Dumping deltaPhiZ derivatives============ Ring " << thisWire->ring << " Straw " << thisWire->straw << endl;
+                  jout << " Total = " << globalDer[5] << endl;
+                  jout << "trackDerivatives[CDCTrackD::dDOCAdOriginX] " << trackDerivatives[CDCTrackD::dDOCAdOriginX] << " wireDerivatives[CDCWireD::dOriginXddeltaPhiZ] " << wireDerivatives[CDCWireD::dOriginXddeltaPhiZ] << endl;
+                  jout << "trackDerivatives[CDCTrackD::dDOCAdOriginY] " << trackDerivatives[CDCTrackD::dDOCAdOriginY] << " wireDerivatives[CDCWireD::dOriginYddeltaPhiZ] " << wireDerivatives[CDCWireD::dOriginYddeltaPhiZ] << endl;
+                  jout << "trackDerivatives[CDCTrackD::dDOCAdOriginZ] " << trackDerivatives[CDCTrackD::dDOCAdOriginZ] << " wireDerivatives[CDCWireD::dOriginZddeltaPhiZ] " << wireDerivatives[CDCWireD::dOriginZddeltaPhiZ] << endl;
+                  jout << "trackDerivatives[CDCTrackD::dDOCAdDirX] " << trackDerivatives[CDCTrackD::dDOCAdDirX] << " wireDerivatives[CDCWireD::dDirXddeltaPhiZ] " << wireDerivatives[CDCWireD::dDirXddeltaPhiZ] << endl;
+                  jout << "trackDerivatives[CDCTrackD::dDOCAdDirY] " << trackDerivatives[CDCTrackD::dDOCAdDirY] << " wireDerivatives[CDCWireD::dDirYddeltaPhiZ] " << wireDerivatives[CDCWireD::dDirYddeltaPhiZ] << endl;
+                  jout << "trackDerivatives[CDCTrackD::dDOCAdDirZ] " << trackDerivatives[CDCTrackD::dDOCAdDirZ] << " wireDerivatives[CDCWireD::dDirZddeltaPHiZ] " << wireDerivatives[CDCWireD::dDirZddeltaPhiZ] << endl;
+               }
             }
             globalDer[6]=trackDerivatives[CDCTrackD::dDOCAdOriginX]*wireDerivatives[CDCWireD::dOriginXddeltaXu]
                +trackDerivatives[CDCTrackD::dDOCAdOriginY]*wireDerivatives[CDCWireD::dOriginYddeltaXu]
