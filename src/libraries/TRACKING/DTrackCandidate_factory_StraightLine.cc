@@ -287,16 +287,14 @@ jerror_t DTrackCandidate_factory_StraightLine::evnt(JEventLoop *loop, uint64_t e
 
             // Use earliest fdc time to estimate t0
             double t0=1e6;
-            if (isMC) t0=0.0;
-            else{
-               double dsdz=sqrt(1.+S(state_tx)*S(state_tx)+S(state_ty)*S(state_ty));
-               for (unsigned int m=0;m<hits.size();m++){
-                  if (hits[m]->time<t0){
-                     double L=(hits[m]->wire->origin.z()-my_z)*dsdz;
-                     t0=hits[m]->time-L/29.98; // assume moving at speed of light
-                  }
+            double dsdz=sqrt(1.+S(state_tx)*S(state_tx)+S(state_ty)*S(state_ty));
+            for (unsigned int m=0;m<hits.size();m++){
+               if (hits[m]->time<t0){
+                  double L=(hits[m]->wire->origin.z()-my_z)*dsdz;
+                  t0=hits[m]->time-L/29.98; // assume moving at speed of light
                }
             }
+
 
             //Run the Kalman Filter algorithm
             DoFilter(t0,my_z,S,hits,cdcs,used_cdc);
@@ -361,13 +359,10 @@ jerror_t DTrackCandidate_factory_StraightLine::evnt(JEventLoop *loop, uint64_t e
 
             // Use earliest cdc time to estimate t0
             double t0=1e6;
-            if (isMC) t0=0.0;
-            else{
-               for (unsigned int j=0;j<hits.size();j++){
-                  double L=(hits[0]->wire->origin-hits[j]->wire->origin).Perp();
-                  double t_test=hits[j]->tdrift-L/29.98;
-                  if (t_test<t0) t0=t_test;
-               }
+            for (unsigned int j=0;j<hits.size();j++){
+               double L=(hits[0]->wire->origin-hits[j]->wire->origin).Perp();
+               double t_test=hits[j]->tdrift-L/29.98;
+               if (t_test<t0) t0=t_test;
             }
 
             // Run the Kalman Filter algorithm
