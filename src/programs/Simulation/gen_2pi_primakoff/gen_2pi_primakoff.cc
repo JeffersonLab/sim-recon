@@ -14,7 +14,7 @@
 #include "AMPTOOLS_DATAIO/ROOTDataWriter.h"
 #include "AMPTOOLS_DATAIO/HDDMDataWriter.h"
 
-#include "AMPTOOLS_AMPS/TwoPiAngles_amp.h"
+#include "AMPTOOLS_AMPS/TwoPiAngles_primakoff.h"
 #include "AMPTOOLS_AMPS/BreitWigner.h"
 
 #include "AMPTOOLS_MCGEN/ProductionMechanism.h"
@@ -137,7 +137,7 @@ int main( int argc, char* argv[] ){
 	gRandom->SetSeed(seed);
 
 	// setup AmpToolsInterface
-	AmpToolsInterface::registerAmplitude( TwoPiAngles_amp() );
+	AmpToolsInterface::registerAmplitude( TwoPiAngles_primakoff() );
 	AmpToolsInterface::registerAmplitude( BreitWigner() );
 	AmpToolsInterface ati( cfgInfo, AmpToolsInterface::kMCGeneration );
 	
