@@ -61,10 +61,10 @@ TwoPiAngles_primakoff::calcAmplitude( GDouble** pKin ) const {
                          (p1_res.Vect()).Dot(y),
                          (p1_res.Vect()).Dot(z) );
 
-        GDouble cosTheta = angles.CosTheta();
+        // GDouble cosTheta = angles.CosTheta();
         // GDouble sinSqTheta = sin(angles.Theta())*sin(angles.Theta());
         // GDouble sin2Theta = sin(2.*angles.Theta());
-        GDouble phi = angles.Phi();
+        // GDouble phi = angles.Phi();
 
 	// TVector3 zlab(0.,0.,1.0);     // z axis in lab
         TVector3 eps(cos(phipol), sin(phipol), 0.0); // beam polarization vector in lab
@@ -78,52 +78,13 @@ TwoPiAngles_primakoff::calcAmplitude( GDouble** pKin ) const {
 	complex< GDouble > i( 0, 1 );
 	complex< GDouble > prefactor( 0, 0 );
 	complex< GDouble > Amp( 0, 0 );
-	Int_t Mrho=0;
-
-	switch (PhaseFactor) {
-        case 0:
-	  prefactor = 0.5*sqrt(1-polFrac)*(cos(Phi) - i*sin(Phi));
-	  Mrho = m_rho;
-	  break;
-        case 1:
-	  prefactor = 0.5*sqrt(1+polFrac)*(cos(Phi) - i*sin(Phi));
-	  Mrho = m_rho;
-	  break;
-        case 2:
-	  prefactor = 0.5*sqrt(1-polFrac)*(cos(Phi) + i*sin(Phi));
-	  Mrho = m_rho;
-	  break;
-        case 3:
-	  prefactor = -0.5*sqrt(1+polFrac)*(cos(Phi) + i*sin(Phi));
-	  Mrho = m_rho;
-          break;
-        case 4:
-	  prefactor = 0.5*sqrt(1-polFrac)*(cos(Phi) - i*sin(Phi));
-	  prefactor *= pow(-1,m_rho);
-	  Mrho = -m_rho;
-	  break;
-        case 5:
-	  prefactor = 0.5*sqrt(1+polFrac)*(cos(Phi) - i*sin(Phi));
-	  prefactor *= pow(-1,m_rho);
-	  Mrho = -m_rho;
-	  break;
-        case 6:
-	  prefactor = 0.5*sqrt(1-polFrac)*(cos(Phi) + i*sin(Phi));
-	  prefactor *= pow(-1,m_rho);
-	  Mrho = -m_rho;
-	  break;
-        case 7:
-	  prefactor = -0.5*sqrt(1+polFrac)*(cos(Phi) + i*sin(Phi));
-	  prefactor *= pow(-1,m_rho);
-	  Mrho = -m_rho;
-          break;
-	}
+	Int_t eta_c=1;
 	
 	if (flat == 1) {
 	  Amp = 1;
 	}
 	else {
-	  Amp =  prefactor * Y( 1, Mrho, cosTheta, phi);
+	  Amp =  1 + eta_c*polFrac*cos(2*Phi);
 	}
 
 	// cout << " m_rho=" << m_rho << " cosTheta=" << cosTheta << " phi=" << phi << " prefactor=" << prefactor << " Amp=" << Amp << endl;
