@@ -213,7 +213,9 @@ C  Use this parameter to set up a minimum photon energy
 C  for the coherent bremsstrahlung beam generator - see beamgen.F
       real    xMinimum,freqMaximum,beamStartZ,Theta02
       common /coherentGen/xMinimum,freqMaximum,beamStartZ,Theta02
-
+*
+      real pzdcbr(6)
+      integer pzdcmd(6)
 *
 *     -----------------------------------------------------------------
 *
@@ -472,5 +474,23 @@ C..geant..
       if (IHADR.eq.4) call GMORIN
 
       call gidClear()
+***************
+* pi0 dalitz decay
+c      print *, "pi0 decay modes"
+c      call gppart(7)
+      pzdcbr(1) = 100.
+      pzdcbr(2) = 0.
+      pzdcbr(3) = 0.
+      pzdcbr(4) = 0.
+      pzdcbr(5) = 0.
+      pzdcbr(6) = 0.
+      pzdcmd(6) = 0
+      pzdcmd(1) = 1 + 100*2 + 10000*3
+      pzdcmd(2) = 0
+      pzdcmd(3) = 0
+      pzdcmd(4) = 0
+      pzdcmd(5) = 0
+      pzdcmd(6) = 0
 
+**************
       END
