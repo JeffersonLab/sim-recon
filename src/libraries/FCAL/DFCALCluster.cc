@@ -278,6 +278,11 @@ void DFCALCluster::shower_profile( const userhits_t* const hitList,
    double u = x*cos(phi) + y*sin(phi);
    double v =-x*sin(phi) + y*cos(phi);
    double vVar = SQR(MOLIERE_RADIUS);
+   double min_dist=4.;
+   if (fabs(x)<53.0&&fabs(y)<53.0){
+     vVar=SQR(2.2);
+     min_dist=2.075;
+   }
    double uVar = vVar+SQR(SQR(8*theta));
    double vTail = 4.5+0.9*log(fEnergy+0.05);
    double uTail = vTail+SQR(10*theta);
@@ -286,7 +291,7 @@ void DFCALCluster::shower_profile( const userhits_t* const hitList,
    Eexpected = fEnergy*core;
    Eallowed = 2*fEmax*core + (0.2+0.5*log(fEmax+1.))*tail;
 
-   if ((dist <= 4.) && (Eallowed < fEmax) ) {
+   if ((dist <= min_dist) && (Eallowed < fEmax) ) {
       std::cerr << "Warning: FCAL cluster Eallowed value out of range!\n";
       Eallowed = fEmax;
    }
