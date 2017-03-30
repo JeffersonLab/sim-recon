@@ -1,0 +1,37 @@
+
+# ------ CCDB -------
+
+{
+   <CCDB>
+   Memcheck:Leak
+   ...
+   fun:*CCDBGlobalMutex*Instance*
+	...
+}
+{
+   <CCDB>
+   Memcheck:Leak
+   fun:malloc
+   fun:*ccdb*StringUtils*
+   ...
+}
+
+# ------ MySQL -------
+
+{
+   <MYSQL>
+   Memcheck:Leak
+   ...
+   fun:mysql_init
+   ...
+}
+{
+   <MYSQL>
+   Memcheck:Leak
+   fun:malloc
+   ...
+   fun:mysql_real_connect
+	...
+}
+
+

@@ -109,6 +109,7 @@ void Usage(void)
                 " the output hddm stream" << std::endl;
    std::cout << "    -C            Enable data compression on"
                 " the output hddm stream" << std::endl;
+   std::cout << "    -r            Input file is in REST format" << std::endl;
    std::cout << std::endl;
    std::cout << " This will merge 1 or more HDDM files "
                 "into a single HDDM file." << std::endl;

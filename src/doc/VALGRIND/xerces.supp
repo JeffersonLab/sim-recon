@@ -1,0 +1,10 @@
+{
+   <XERCES>
+   Memcheck:Leak
+   ...
+   fun:*xercesc*
+}
+
+
+
+
