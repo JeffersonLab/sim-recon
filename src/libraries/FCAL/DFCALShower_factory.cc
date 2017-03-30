@@ -63,9 +63,9 @@ DFCALShower_factory::DFCALShower_factory()
   FCAL_SHOWER_OFFSET[1] = 1.0;
 
 
-  INSERT_PAR1=1.274;
-  INSERT_PAR2=-0.021;
-  INSERT_PAR3=0.001;
+  INSERT_PAR1=1.345;
+  INSERT_PAR2=0.04;
+  INSERT_PAR3=1.16;
   INSERT_PAR4=2.;
   gPARMS->SetDefaultParameter("FCAL:INSERT_PAR1",INSERT_PAR1);
   gPARMS->SetDefaultParameter("FCAL:INSERT_PAR2",INSERT_PAR2);
@@ -292,7 +292,11 @@ void DFCALShower_factory::GetCorrectedEnergyAndPosition(const DFCALCluster* clus
     A=INSERT_PAR1;
     B=INSERT_PAR2;
     C=INSERT_PAR3;
-    Egamma=A*Eclust+B*Eclust*Eclust+C*Eclust*Eclust*Eclust;
+    D=INSERT_PAR4;
+    if (Eclust<D){
+      Egamma=A*Eclust/(1.+B*Eclust);
+    }
+    else Egamma=A*D/(1.+D*B)+C*(Eclust-D);
   }
 
   
