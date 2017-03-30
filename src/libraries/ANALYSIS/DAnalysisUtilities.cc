@@ -6,19 +6,16 @@
 
 DAnalysisUtilities::DAnalysisUtilities(JEventLoop* locEventLoop)
 {
-  // Get the particle ID algorithms
-	vector<const DParticleID*> locPIDAlgorithms;
-	locEventLoop->Get(locPIDAlgorithms);
-	if(locPIDAlgorithms.size() < 1)
-		_DBG_<<"Unable to get a DParticleID object! NO PID will be done!"<<endl;
-	dPIDAlgorithm = locPIDAlgorithms[0];
+	locEventLoop->GetSingle(dPIDAlgorithm);
 
 	dTargetZCenter = 65.0;
 	// Get Target parameters from XML
 	DApplication *locApplication = dynamic_cast<DApplication*> (locEventLoop->GetJApplication());
 	DGeometry *locGeometry = locApplication ? locApplication->GetDGeometry(locEventLoop->GetJEvent().GetRunNumber()) : NULL;
-	if(locGeometry != NULL)
-		locGeometry->GetTargetZ(dTargetZCenter);
+	locGeometry->GetTargetZ(dTargetZCenter);
+
+	//Get magnetic field map
+	dMagneticFieldMap = locApplication->GetBfield(locEventLoop->GetJEvent().GetRunNumber());
 
 	//For "Unused" tracks/showers
 	//BEWARE: IF THIS IS CHANGED, CHANGE IN THE BLUEPRINT FACTORY AND THE EVENT WRITER ALSO!!
@@ -1349,3 +1346,221 @@ bool DAnalysisUtilities::Handle_Decursion(int& locParticleIndex, deque<size_t>& 
 	return true;
 }
 
+//The POCA cannot technically be solved analytically, but we can approximate it pretty accurately
+	//First, propagate the track to somewhere very close to the true POCA
+	//Then, the equation can be solved by substituting cos(x) = 1, sin(x) = x
+
+bool DAnalysisUtilities::Get_IsBFieldNearBeamline(void) const
+{
+	if(dMagneticFieldMap == NULL)
+		return false;
+
+	return (dynamic_cast<const DMagneticFieldMapNoField*>(dMagneticFieldMap) == NULL);
+}
+
+TVector3 DAnalysisUtilities::Get_BField(const TVector3& locPosition) const
+{
+	if(!Get_IsBFieldNearBeamline())
+		return TVector3(0.0, 0.0, 0.0);
+
+	double locBx, locBy, locBz;
+	dMagneticFieldMap->GetField(locPosition.X(), locPosition.Y(), locPosition.Z(), locBx, locBy, locBz);
+	return (TVector3(locBx, locBy, locBz));
+}
+
+void DAnalysisUtilities::Propagate_Track(int locCharge, TVector3 locPropagateToPoint, TLorentzVector& locMeasuredX4, TLorentzVector& locMeasuredP4, TMatrixDSym* locCovarianceMatrix) const
+{
+	//ASSUMES THAT THE B-FIELD IS IN THE +Z DIRECTION!!!!!!!!!!!!!!!
+	if(!Get_IsBFieldNearBeamline() || (locCharge == 0))
+		return; //nothing to do
+
+	//propagate the track to the same z as the vertex (if pz != 0)
+	double locTotalDeltaPathLength = 0.0;
+	TLorentzVector locTempPropagatedPosition = locMeasuredX4;
+	TLorentzVector locTempPropagatedMomentum = locMeasuredP4;
+	if(fabs(locMeasuredP4.Pz()) > 0.0)
+	{
+		locTotalDeltaPathLength += (locPropagateToPoint.Z() - locMeasuredX4.Z())*locMeasuredP4.P()/locMeasuredP4.Pz(); //s = (z - z0)*p/p0z
+		Propagate_Track(locTotalDeltaPathLength, locCharge, locTempPropagatedPosition, locTempPropagatedMomentum, NULL);
+	}
+
+	//now, step along the track until we get close to the POCA
+	locTotalDeltaPathLength += Calc_PathLength_Step(locCharge, locPropagateToPoint, locTempPropagatedPosition, locTempPropagatedMomentum);
+
+	//now, the path length is very close to accurate. get the rest of the way there
+	locTotalDeltaPathLength += Calc_PathLength_FineGrained(locCharge, locPropagateToPoint, locTempPropagatedPosition.Vect(), locTempPropagatedMomentum.Vect());
+
+	//Finally, propagate the track the given distance and return
+//cout << "FINAL: xyz, distance = " << locMeasuredX4.X() << ", " << locMeasuredX4.Y() << ", " << locMeasuredX4.Z() << ", " << locTotalDeltaPathLength << endl;
+	Propagate_Track(locTotalDeltaPathLength, locCharge, locMeasuredX4, locMeasuredP4, locCovarianceMatrix);
+}
+
+double DAnalysisUtilities::Calc_PathLength_Step(int locCharge, TVector3 locPropagateToPoint, TLorentzVector& locMeasuredX4, TLorentzVector& locMeasuredP4) const
+{
+	//now, step slowly along the track (in path length), trying to get closer to the POCA
+		//for the final calculation to work, rho*s must be small: cos(rho*s) -> 1
+	TVector3 locBField = Get_BField(locPropagateToPoint);
+	double locA = -0.00299792458*(double(locCharge))*locBField.Mag();
+
+	double locPMag = locMeasuredP4.P();
+	double locPathLengthOneRotation = 2.0*TMath::Pi()*locPMag/locA;
+	double locStepDistance = locPathLengthOneRotation/12.0; //30 degrees //e.g. for 90 degree tracks
+
+	//guard against long steps in z (e.g. for 2 degree tracks)
+	double locStepDeltaZ = locMeasuredP4.Pz()*locStepDistance/locPMag;
+	double locTargetDeltaZ = 1.0;
+	if(fabs(locStepDeltaZ) > 5.0)
+		locStepDistance = locTargetDeltaZ*locPMag/locMeasuredP4.Pz();
+
+	//First, try stepping in +pvec direction
+	double locStepDirection = 1.0;
+	double locTotalDeltaPathLength = 0.0;
+	double locDeltaX3 = (locMeasuredX4.Vect() - locPropagateToPoint).Mag();
+	double locRhoS = locStepDistance*locA/locPMag;
+	double locRhoSCutOff = 0.1;
+	while(locRhoS > locRhoSCutOff) //at this point, cos(rho*s) = 0.995: close enough
+	{
+		double locDeltaPathLength = locStepDirection*locStepDistance;
+		locTotalDeltaPathLength += locDeltaPathLength;
+//cout << "STEP LOOP: xyz, distance = " << locMeasuredX4.X() << ", " << locMeasuredX4.Y() << ", " << locMeasuredX4.Z() << ", " << locDeltaPathLength << endl;
+		Propagate_Track(locDeltaPathLength, locCharge, locMeasuredX4, locMeasuredP4, NULL);
+
+		double locNewDeltaX3 = (locMeasuredX4.Vect() - locPropagateToPoint).Mag();
+		bool locGettingCloserFlag = (locNewDeltaX3 < locDeltaX3);
+		locDeltaX3 = locNewDeltaX3;
+
+		if(locGettingCloserFlag)
+			continue; //stepping in correct direction, can still try to get closer
+
+		//are now farther away than before: reverse direction, decrease step size
+		locStepDirection *= -1.0;
+		locStepDistance /= 2.0;
+		locRhoS = locStepDistance*locA/locPMag;
+
+		//if about to break, revert to older, better position
+		if(locRhoS < locRhoSCutOff)
+		{
+			locTotalDeltaPathLength -= locDeltaPathLength;
+			Propagate_Track(-1.0*locDeltaPathLength, locCharge, locMeasuredX4, locMeasuredP4, NULL);
+		}
+	}
+
+	return locTotalDeltaPathLength;
+}
+
+double DAnalysisUtilities::Calc_PathLength_FineGrained(int locCharge, TVector3 locPropagateToPoint, TVector3 locMeasuredPosition, TVector3 locMeasuredMomentum) const
+{
+	//ASSUMES B-FIELD IS IN +Z DIRECTION!!
+
+	//distance = sqrt((delta-x)^2 + (delta-y)^2 + (delta-z)^2)
+	//find the delta-path-length s that minimizes the distance equation
+	//take derivative of the distance equation, set = 0
+
+	//Mathematica yields: F*(B*s + C) + D*cos(rho*s) + E*sin(rho*s) = 0
+	//(where BCDEF are various, non-s-dependent terms)
+	//This is unsolvable analytically. However, we know that s is small, since we're almost there
+
+	//So, substitute cos(x) = 1, sin(x) = x:
+	//F*(B*s + C) + D + E*rho*s = 0
+	//Solving gives: s = - (F*C + D) / (F*B + E*rho)
+	//Note that B = F
+
+	TVector3 locBField = Get_BField(locMeasuredPosition);
+	double locA = -0.00299792458*(double(locCharge))*locBField.Mag();
+	double locPMag = locMeasuredMomentum.Mag();
+	double locRho = locA/locPMag;
+
+	TVector3 locDeltaX3 = locMeasuredPosition - locPropagateToPoint;
+	double locF = locMeasuredMomentum.Pz()/locPMag;
+	double locC = locDeltaX3.Z();
+	double locD = locRho*(locMeasuredMomentum.Px()*locDeltaX3.X() + locMeasuredMomentum.Py()*locDeltaX3.Y())/locA;
+	double locPerpPSq = locMeasuredMomentum.Px()*locMeasuredMomentum.Px() + locMeasuredMomentum.Py()*locMeasuredMomentum.Py();
+	double locE = locRho*(locPerpPSq/locA - locMeasuredMomentum.Py()*locDeltaX3.X() + locMeasuredMomentum.Px()*locDeltaX3.Y())/locA;
+	return -1.0*(locF*locC + locD)/(locF*locF + locE*locRho);
+}
+
+void DAnalysisUtilities::Propagate_Track(double locDeltaPathLength, int locCharge, TLorentzVector& locX4, TLorentzVector& locP4, TMatrixFSym* locCovarianceMatrix) const
+{
+	//ASSUMES THAT THE B-FIELD IS IN THE +Z DIRECTION!!!!!!!!!!!!!!!
+
+	TVector3 locBField = Get_BField(locX4.Vect());
+	if(!(locBField.Mag() > 0.0))
+		return;
+	TVector3 locH = locBField.Unit();
+	double locA = -0.00299792458*(double(locCharge))*locBField.Mag();
+
+	double locPMag = locP4.P();
+	double locRhoS = locDeltaPathLength*locA/locPMag;
+
+	double locSpeedOfLight = 29.9792458;
+	TLorentzVector locDeltaX4; //x - x0
+	locDeltaX4.SetX(locP4.Px()*sin(locRhoS)/locA - locP4.Py()*(1.0 - cos(locRhoS))/locA);
+	locDeltaX4.SetY(locP4.Py()*sin(locRhoS)/locA + locP4.Px()*(1.0 - cos(locRhoS))/locA);
+	locDeltaX4.SetZ(locP4.Pz()*locDeltaPathLength/locPMag);
+	locDeltaX4.SetT(locDeltaPathLength/(locP4.Beta()*locSpeedOfLight)); //v = s/t, t = s/v = s/(beta*c) = s*E/(p*c) =
+	locX4 += locDeltaX4;
+
+	if(locCovarianceMatrix == NULL)
+	{
+		locP4.SetVect(locP4.Vect() - locDeltaX4.Vect().Cross(locA*locH));
+		return; //don't update error matrix
+	}
+
+	//transform(i, j) = di/dj, i = new, j = old //pxyz, xyz, t
+	TMatrixF locTransformMatrix(7, 7);
+	locTransformMatrix.Zero();
+
+	double locPCubed = locPMag*locPMag*locPMag;
+	double locSOverP3 = locDeltaPathLength/locPCubed;
+
+	double locSOverP3_PxPx = locSOverP3*locP4.Px()*locP4.Px();
+	double locSOverP3_PxPy = locSOverP3*locP4.Px()*locP4.Py();
+	double locSOverP3_PxPz = locSOverP3*locP4.Px()*locP4.Pz();
+
+	double locSOverP3_PyPy = locSOverP3*locP4.Py()*locP4.Py();
+	double locSOverP3_PyPz = locSOverP3*locP4.Py()*locP4.Pz();
+	double locSOverP3_PzPz = locSOverP3*locP4.Pz()*locP4.Pz();
+
+	//dpx
+	locTransformMatrix(0, 0) = (1.0 + locA*locSOverP3_PxPy)*cos(locRhoS) + locA*locSOverP3_PxPx*sin(locRhoS);
+	locTransformMatrix(0, 1) = (-1.0 + locA*locSOverP3_PxPy)*sin(locRhoS) + locA*locSOverP3_PyPy*cos(locRhoS);
+	locTransformMatrix(0, 2) = locA*locSOverP3_PyPz*cos(locRhoS) + locA*locSOverP3_PxPz*sin(locRhoS);
+
+	//dpy
+	locTransformMatrix(1, 0) = -1.0*locA*locSOverP3_PxPx*cos(locRhoS) + (1.0 + locA*locSOverP3_PxPy)*sin(locRhoS);
+	locTransformMatrix(1, 1) = (1.0 - locA*locSOverP3_PxPy)*cos(locRhoS) + locA*locSOverP3_PyPy*sin(locRhoS);
+	locTransformMatrix(1, 2) = locA*locSOverP3_PyPz*sin(locRhoS) - locA*locSOverP3_PxPz*cos(locRhoS);
+
+	//dpz
+	locTransformMatrix(2, 2) = 1.0;
+
+	//dx
+	locTransformMatrix(3, 0) = (1.0/locA + locSOverP3_PxPy)*sin(locRhoS) - locSOverP3_PxPx*cos(locRhoS);
+	locTransformMatrix(3, 1) = -1.0/locA + (1.0/locA - locSOverP3_PxPy)*cos(locRhoS) + locSOverP3_PyPy*sin(locRhoS);
+	locTransformMatrix(3, 2) = locSOverP3_PyPz*sin(locRhoS) - locSOverP3_PxPz*cos(locRhoS);
+	locTransformMatrix(3, 3) = 1.0;
+
+	//dy
+	locTransformMatrix(4, 0) = 1.0/locA - (1.0/locA + locSOverP3_PxPy)*cos(locRhoS) + locSOverP3_PxPx*sin(locRhoS);
+	locTransformMatrix(4, 1) = (1.0/locA - locSOverP3_PxPy)*sin(locRhoS) - locSOverP3_PyPy*cos(locRhoS);
+	locTransformMatrix(4, 2) = -1.0*locSOverP3_PyPz*cos(locRhoS) - locSOverP3_PxPz*sin(locRhoS);
+	locTransformMatrix(4, 4) = 1.0;
+
+	//dz
+	locTransformMatrix(5, 0) = -1.0*locSOverP3_PxPz;
+	locTransformMatrix(5, 1) = -1.0*locSOverP3_PyPz;
+	locTransformMatrix(5, 2) = locDeltaPathLength/locPMag - locSOverP3_PzPz;
+	locTransformMatrix(5, 5) = 1.0;
+
+	//dt
+	locTransformMatrix(6, 0) = -1.0*locP4.M2()*locSOverP3*locP4.Px()/(locSpeedOfLight*locP4.E());
+	locTransformMatrix(6, 1) = -1.0*locP4.M2()*locSOverP3*locP4.Py()/(locSpeedOfLight*locP4.E());
+	locTransformMatrix(6, 2) = -1.0*locP4.M2()*locSOverP3*locP4.Pz()/(locSpeedOfLight*locP4.E());
+	locTransformMatrix(6, 6) = 1.0;
+
+	//transform!!
+	locCovarianceMatrix->Similarity(locTransformMatrix);
+
+	//update p3 //must do at the end!!
+	locP4.SetVect(locP4.Vect() - locDeltaX4.Vect().Cross(locA*locH));
+}

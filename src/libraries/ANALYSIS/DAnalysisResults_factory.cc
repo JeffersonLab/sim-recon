@@ -305,36 +305,12 @@ jerror_t DAnalysisResults_factory::evnt(JEventLoop* locEventLoop, uint64_t event
 
 /************************************************************** BUILDING FINAL-STATE COMBINATIONS **************************************************************/
 
-	//FOR THE PURPOSE OF: Calculating neutral p4 (mass cuts) & charged/neutral times (PID cuts)
-	//WE CANNOT ASSUME THAT: The DVertex is an approximately accurate representation of the photoproduction vertex
-		//Why not?: E.g. user wants 1 charged track, 2 are reconstructed (1 junk), and the extra throws the DVertex way off
-	//WE CANNOT ASSUME THAT: The photoproduction vertex is accurate enough for particles coming from detached vertices
-		//Why not?: Particles could have come from a low-theta, long-lived K0 (e.g.), yielding a significant delta-z from the true RF time
-
-
-	//BIGGEST PROBLEM: So MANY photons
-	//say 20 photons: 20*19 = 380 pi0 pairs. Not so bad
-	//If 4 pi0s, then ~380^4 = ~20 billion combos (yikes!)
-	//Also, someone could do eta -> 6g instead of eta -> 3pi0, so the problems may even be at the step-formation level (rather than combine-steps level)
-	//So, prioritize PID cuts first to reduce neutrals, then mass cuts
-
-//See DVertexCreator comments for HERE
+	//See DVertexCreator comments for HERE
 
 
 	map<const DNeutralParticle*, set<const DNeutralParticle*> > locCompatiblePhotons; //key is first photon, set contains matching photons (but only store once for each pair)
 
 
-	//rf_delta_t = shower_prop_time - rf_prop_time
-		//shower_prop_time = shower_time - flight_time
-		//flight_time = (x3_shower - x3_vertex).Mag()/c
-		//rf_prop_time = (rf_time + (z_vertex - z_targ_center)/c)
-
-	//2_photon_delta_t = shower_prop_time_1 - shower_prop_time_2
-	//2_photon_delta_t = (rf_delta_t_1 + rf_prop_time) - (rf_delta_t_2 + rf_prop_time)
-	//2_photon_delta_t = rf_delta_t_1 - rf_delta_t_2
-	//2_photon_delta_t = (shower_time_1 - flight_time_1) - (shower_time_2 - flight_time_2)
-	//2_photon_delta_t = (shower_time_1 - (x3_shower_1 - x3_vertex).Mag()/c) - (shower_time_2 - (x3_shower_2 - x3_vertex).Mag()/c)
-	//if cut on rf_delta_t is "x", then values can range between +/- x. the max of the above is then (x - (-x)) = 2x
 	return NOERROR;
 }
 
@@ -342,5 +318,7 @@ jerror_t DAnalysisResults_factory::evnt(JEventLoop* locEventLoop, uint64_t event
 //MISCELLANEOUS TO DO:
 //MAKE A DChargedTrack_Combo factory. It takes new DTrackTimeBased, makes hypos, combines them with existing hypos (from preselect factory), and makes new charged tracks
 
+//NEED a track POCA to point routine that takes into account the track is curving
 
-
+//When saving ROOT TTree, don't save p4 of decaying particles if mass is not constrained in kinfit!
+	//And make sure it's not grabbed in DSelector by default

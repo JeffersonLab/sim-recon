@@ -1,12 +1,13 @@
-#include <ANALYSIS/DVertexCreator.h>
+#include "ANALYSIS/DVertexCreator.h"
+
+namespace DAnalysis
+{
 
 DVertexCreator::DVertexCreator(JEventLoop* locEventLoop)
 {
+	//INITIALIZE KINFITUTILS
 	dKinFitUtils = new DKinFitUtils_GlueX(locEventLoop);
 	dKinFitUtils->Set_IncludeBeamlineInVertexFitFlag(true);
-
-	dESSkimData = nullptr;
-	dEventRFBunch = nullptr;
 
 	//CONTROL
 	dUseSigmaForRFSelectionFlag = false;
@@ -15,9 +16,19 @@ DVertexCreator::DVertexCreator(JEventLoop* locEventLoop)
 	dShowerSelectionTag = "PreSelect";
 	gPARMS->SetDefaultParameter("COMBO:SHOWER_SELECT_TAG", dShowerSelectionTag);
 
-	//EXPERIMENT INFORMATION
-	dTargetCenterZ = ;
-	dBeamBunchPeriod = ;
+	//GET THE GEOMETRY
+	DApplication* locApplication = dynamic_cast<DApplication*>(locEventLoop->GetJApplication());
+	DGeometry* locGeometry = locApplication->GetDGeometry(locEventLoop->GetJEvent().GetRunNumber());
+
+	//TARGET INFORMATION
+	locGeometry->GetTargetZ(dTargetCenterZ);
+	double locTargetLength = 30.0;
+	locGeometry->GetTargetLength(locTargetLength);
+
+	//BEAM BUNCH PERIOD
+	vector<double> locBeamPeriodVector;
+	locEventLoop->GetCalib("PHOTON_BEAM/RF/beam_period", locBeamPeriodVector);
+	dBeamBunchPeriod = locBeamPeriodVector[0];
 
 	//GET TRACKING HYPOTHESES
 	vector<int> locHypotheses = {PiPlus, KPlus, Proton, PiMinus, KMinus};
@@ -37,34 +48,186 @@ DVertexCreator::DVertexCreator(JEventLoop* locEventLoop)
 	for(size_t loc_i = 0; loc_i < locHypotheses.size(); ++loc_i)
 		dTrackingPIDs.push_back(Particle_t(locHypotheses[loc_i]));
 	std::sort(dTrackingPIDs.begin(), dTrackingPIDs.end()); //so that can search later
+
+	//INITIALIZE PHOTON VERTEX-Z EVALUATION BINNING
+	dPhotonVertexZBinWidth = 10.0;
+	dPhotonVertexZRangeLow = dTargetCenterZ - locTargetLength/2.0 - dPhotonVertexZBinWidth;
+	dNumPhotonVertexZBins = int(round(locTargetLength/dPhotonVertexZBinWidth)) + 4; //+4: 1 before target, 3 after
+
+	//INITIALIZE MISCELLANEOUS MEMBERS
+	dESSkimData = nullptr;
+	dEventRFBunch = nullptr;
 }
 
 void DVertexCreator::Do_All(JEventLoop* locEventLoop, const vector<const DReaction*>& locReactions)
 {
-	//Race for neutral PID cuts:
-		//All combos: Decompose into vertices, group vertices by common final-state charged tracks
-		//That way, the following exercises (for charged tracks) are not repeated for combos that have similar vertices but different #gammas
+	/****************************************************** DESIGN MOTIVATION ******************************************************
+	*
+	* Creating all possible combos can be very time- and memory-intensive if not done properly.
+	* For example, consider a 4pi0 analysis and 20 (N) reconstructed showers (it happens).
+	* If you make all possible pairs of photons (for pi0's), you get 19 + 18 + 17 + ... 1 = (N - 1)*N/2 = 190 pi0 combos.
+	* Now, consider that you have 4 pi0s: On the order of 190^4: On the order of a billion combos (although less once you guard against duplicates)
+	*
+	* So, we must do everything we can to reduce the # of possible combos in ADVANCE of actually attempting to make them.
+	* And, we have to make sure we don't do anything twice (e.g. two different users have 4pi0s in their channel).
+	* Therefore, to optimize the time and memory usage, we must do the following:
+	*
+	* 1) Re-use comboing results between DReactions.
+	*    If working on each DReaction individually, it is difficult (takes time & memory) to figure out what has already been done, and what to share
+	*    So instead, first break down the DReactions to their combo-building components, and share those components.
+	*    Then build combos out of the components, and distribute the results for each DReaction.
+	*
+	* 2) Reduce the time spent trying combos that we can know in advance won't work.
+	*    We can do this by placing cuts IMMEDIATELY on:
+	*    a) Time difference between charged tracks
+	*    b) Time difference between photons and possible RF bunches (discussed more below).
+	*    c) Invariant mass cuts for various decaying particles (e.g. pi0, eta, omega, phi, lambda, etc.)
+	*    Also, when building combos of charged tracks, we could only loop over PIDs of the right type, rather than all hypotheses
+	*
+	* 3) The only way to do both 1) and 2) is to make the loose time & mass cuts reaction-independent.
+	*    Users can always specify reaction-dependent tighter cuts later, but they cannot specify looser ones.
+	*    However, these cuts should be tweakable on the command line in case someone wants to change them.
+	*
+	*******************************************************************************************************************************/
+
+	//Make initial delta-t cuts to select RF bunches for every neutral shower
+	//Still need to place tighter cuts, calculate chisq on vert-by-vert basis
+
+
+	//Building combos:
+	//All combos: Decompose into vertices, group vertices by common final-state charged tracks
+	//That way, the following exercises (for charged tracks) are not repeated for combos that have similar vertices but different #gammas
 
 	//Setup:
-		//Pre-compute delta-t cuts between charged tracks (doesn't depend on vertex position)
-		//Delta-t cut width is sum of PID cut widths of the two tracks
+	//Pre-compute delta-t cuts between charged tracks (doesn't depend on vertex position)
+	//Delta-t cut width is sum of PID cut widths of the two tracks
 
 	//For each production vertex:
-		//Make all combos of charged particles that are in time
-		//Calculate vertex positions
-		//Charged tracks vote on RF bunch: keep tally of votes/delta-t's, if they don't all match with at least one, cut
+	//Make all combos of charged particles that are in time
+	//Calculate vertex positions
+	//Charged tracks vote on RF bunch: keep tally of votes/delta-t's, if they don't all match with at least one, cut
 
 	//PICK RF_BUNCH / NEUTRALS FOR EACH PHOTOPRODUCTION VERTEX
-		//For each photon at the production vertex, compute delta-t's, do PID cuts with all possible RF bunch choices: save N_shifts/delta-t's of those that pass cuts
-		//Split each vertex: in terms of Nphotons at vertex
-			//for each split: choose rf bunch, do PID cuts
+	//For each photon at the production vertex, compute delta-t's, do PID cuts with all possible RF bunch choices: save N_shifts/delta-t's of those that pass cuts
+	//Split each vertex: in terms of Nphotons at vertex
+		//for each split: choose rf bunch, do PID cuts
 
 	//So, for each production vertex, must keep track of:
-		//possible-Nphots at vertex (when building)
+	//possible-Nphots at vertex (when building)
 
 	//Channel-dependent:
-		//Fully-charged inv-mass cuts at that vertex
-		//for each remaining N_shifts (and the photons for them): neutral inv mass cuts
+	//Fully-charged inv-mass cuts at that vertex
+	//for each remaining N_shifts (and the photons for them): neutral inv mass cuts
+
+	/*************************************************** CHARGED TRACK TIMING CUTS *************************************************
+	*
+	* Charged time cuts are dependent on combo vertex, especially for low-theta tracks.
+	* Wherever the combo vertex is, the track won't pass through it until after the kinfit, so do final PID cuts at the end
+	*
+	* Once we have a vertex for the combo, compute POCA to the vertex and do time cuts there.
+	* This will be pretty accurate, except for slow-single-track channels at low-theta, for which there's nothing you can do anyway.
+	*
+	* We don't want to wait until we have a combo vertex to do some PID timing cuts.
+	* Since computing neutral timing every 10cm, we can try to do the same for charged tracks as well, but this doesn't work.
+	*
+	* The maximum error associated with this is:
+	*
+	* delta_t = t_prop_track - t_beam
+	* delta_delta_t = delta_t_actual - delta_t_guess
+	* delta_delta_t = (t_prop_track_actual - t_beam_actual) - (t_prop_track_guess - t_beam_guess)
+	* delta_delta_t = (t_prop_track_actual - t_prop_track_guess) - (t_beam_actual - t_beam_guess)
+	*
+	* t_prop_track = t_track - path_track/(beta_track*c)
+	* delta_delta_t = ((t_track - path_track_actual/(beta_track*c)) - (t_track - path_track_guess/(beta_track*c))) - (t_beam_actual - t_beam_guess)
+	* delta_delta_t = (path_track_guess - path_track_actual)/(beta_track*c) - (t_beam_actual - t_beam_guess)
+	*
+	* t_beam = t_RF_targcenter + (vertz - targz)/c
+	* delta_delta_t = (path_track_guess - path_track_actual)/(beta_track*c) - ((t_RF_targcenter + (vertz_actual - targz)/c) - (t_RF_targcenter + (vertz_guess - targz)/c))
+	* delta_delta_t = (path_track_guess - path_track_actual)/(beta_track*c) + (vertz_guess - vertz_actual)/c
+	*
+	* define z_error = vertz_actual - vertz_guess
+	* delta_delta_t = (path_track_guess - path_track_actual)/(beta_track*c) - z_error/c
+	*
+	* From here, assume track is straight over the distance z_error/2:
+	*
+	* FCAL:
+	* path_track_guess = path_z_guess/cos(theta)
+	* path_track_actual = path_z_actual/cos(theta), path_z_actual = path_z_guess - z_error
+	* path_track_guess - path_track_actual = path_z_guess/cos(theta) - (path_z_guess - z_error)/cos(theta) = z_error/cos(theta)
+	* delta_delta_t = z_error/(cos(theta)*beta_track*c) - z_error/c
+	* delta_delta_t = (z_error/c) * [1/(cos(theta)*beta_track) - 1]
+	*
+	* BCAL:
+	* path_track_guess = path_r/sin(theta)
+	* path_track_actual = sqrt(path_z_actual*path_z_actual + path_r*path_r)
+	* path_z_actual = path_z_guess - z_error
+	* path_z_guess = path_r/tan(theta)
+	* path_z_actual = path_r/tan(theta) - z_error
+	* path_track_actual = sqrt((path_r/tan(theta) - z_error)^2 + path_r*path_r)
+	* path_track_actual = path_r*sqrt((1/tan(theta) - z_error/path_r)^2 + 1)
+	* delta_delta_t = path_r*(1/sin(theta) - sqrt((1/tan(theta) - z_error/path_r)^2 + 1))/(beta_track*c) - z_error/c
+	*
+	* These errors are too large:
+	* For slow tracks the errors are huge, and for fast tracks the errors are small.
+	* However, for fast tracks the timing isn't good enough to tell one PID from another anyway.
+	* So this does not gain much.
+	*
+	* Instead, charged track timing cuts cannot be placed until the vertex position is found.
+	*
+	*******************************************************************************************************************************/
+
+	/**************************************************** COMBOING CHARGED TRACKS **************************************************
+	*
+	*******************************************************************************************************************************/
+
+	/************************************************** CALCULATING VERTEX POSITIONS ***********************************************
+	*
+	* Production vertex:
+	* 1) If there is at least one charged track at the production vertex with a theta > 30 degrees:
+	*    The production vertex is the POCA to the beamline of the track with the largest theta.
+	* 2) If not, then for each detached vertex:
+	*    a) If there are any neutral or missing particles, or there are < 2 detected charged tracks at the detached vertex: ignore it
+	*    b) Otherwise:
+	*       i) The detached vertex is at the center of the lines between the POCAs of the two closest tracks.
+	*       ii) Calculate the p3 of the decaying particles at this point and then find the POCA of the decaying particle to the beamline.
+	* 3) Now, the production vertex is the POCA to the beamline of the track/decaying-particle with the largest theta.
+	* 4) Otherwise, the production vertex is the center of the target.
+	*
+	* Detached vertices:
+	* 1) If at least 2 decay products have defined trajectories (detected & charged or decaying & reconstructed):
+	*    The detached vertex is at the center of the lines between the POCAs of the two closest particles.
+	* 2) If one decay product is detected & charged, and the decaying particle production vertex was well defined (i.e. not forced to be center of target):
+	*    a) Determine the decaying particle trajectory from the missing mass of the system (must be done after beam photon selection!!)
+	*    b) The detached vertex is at the POCA of the charged decay product and the decaying particle
+	* 3) Otherwise use the decaying particle production vertex for its position.
+	*
+	*******************************************************************************************************************************/
+
+	/* Update vertex infos:
+	 * Add all decaying particles
+	 */
+
+	/*
+	 * Photon comboing:
+	 * FCAL: All together
+	 * BCAL: In bins of vertex-z
+	 * 1) Photon loose RF bunch selection (time cuts)
+	 * 2) For each RF bunch at this vertex-z: Do all fully-neutral combos
+	 *    Loop through all DReactions, figuring out what is needed, then build for all in order of dependency
+	 *    Dependency: 4pi0 depends on 3pi0!!!
+	 *    Do FCAL independent of vertex-z, BCAL dependent, and then mix the two.
+	 *
+	 * 1) Production vertex charged track comboing
+	 * 2) Production vertex calculation
+	 * 3) Production vertex charged hypo RF bunch selection (time cuts)
+	 * 4) On-demand, vertex-z binned photon comboing (discussed below)
+	 * 5) Production vertex neutral RF bunch selection (time cuts)
+	 * 6) Final RF bunch vote
+	 * 7) Split up amongst DReactions
+	 * 8) Mass cuts involving charged tracks
+	 *
+	 * Doing charged Mass cuts early not worth the effort / coding overhead (only for Lambda, K0, phi).  Only do once splitting up results amongst DReactions.
+	 */
 
 
 	/**************************************************************** DETACHED VERTICES ***************************************************************/
@@ -153,6 +316,7 @@ void DVertexCreator::Do_All(JEventLoop* locEventLoop, const vector<const DReacti
 	Build_VertexInfos(locEventLoop, locReactions);
 	Find_VertexCombos();
 }
+
 
 void DVertexCreator::Build_VertexInfos(JEventLoop* locEventLoop, const vector<const DReaction*>& locReactions)
 {
@@ -287,12 +451,17 @@ void DVertexCreator::Build_VertexInfos(const DReaction* locReaction)
 		//extract the decaying+detached & detected PIDs
 		vector<Particle_t> locDetectedPIDs;
 		vector<pair<Particle_t, shared_ptr<DVertexInfo> > > locDetachedDecayingPIDs;
-		set<const DReactionStep*> locReactionSteps;
+		vector<const DReactionStep*> locReactionSteps;
+		vector<int> locReactionStepIndices;
 		for(auto& locParticlePair : locVertexSet)
 		{
 			int locReactionStepIndex = locParticlePair.first;
 			auto* locReactionStep = locReaction->Get_ReactionStep(locReactionStepIndex);
-			locReactionSteps.insert(locReactionStep);
+			if(locReactionSteps.back() != locReactionStep)
+			{
+				locReactionSteps.push_back(locReactionStep);
+				locReactionStepIndices.push_back(locReactionStepIndex);
+			}
 			if((locReactionStepIndex == 0) && locReaction->Get_IsFirstStepBeam())
 				locBeamAtVertexFlag = true;
 			if(locParticlePair.second < 0)
@@ -347,22 +516,23 @@ void DVertexCreator::Build_VertexInfos(const DReaction* locReaction)
 			dAllVertexInfos_Set.insert(locVertexInfo);
 			dAllVertexInfos_Vector.push_back(locVertexInfo); //save dependency order
 			if(locBeamAtVertexFlag)
+			{
 				dProductionVertexInfos[locVertexInfo].push_back(locReaction);
+				Register_ProductionPhotons(locReaction, locReactionStepIndices);
+			}
 		}
 
 		//register for this reaction
 		locReactionVertexInfos.push_back(locVertexInfo);
 
 		//figure out which reaction steps match this vertex, and register those
-		dReactionVertexMap[locVertexInfo].emplace(locReaction, vector<const DReactionStep*>(locReactionSteps.begin(), locReactionSteps.end()));
+		dReactionVertexMap[locVertexInfo].emplace(locReaction, locReactionSteps);
 	}
 
 	//what about particles that are not part of a constrainable vertex?
 	//they should not be used to pick an RF bunch (unless there are no vertices at all (above return statement)
 	//however, you still have to do PID cuts on these: will just choose the photoproduction vertex
 }
-
-
 
 void DVertexCreator::Find_VertexCombos(void)
 {
@@ -711,8 +881,8 @@ void DVertexCreator::Combo_ProductionPhotons(void)
 		{
 			auto& locReactionSteps = locReactionPair.second;
 
-			auto locComparator = [](const DReactionStep* locReactionStep) -> size_t {return locReactionStep->Get_NumDetectedPIDs(Gamma);};
-			size_t locNumVertexPhotons = std::accumulate(locReactionSteps.begin(), locReactionSteps.end(), size_t(0), locComparator);
+			auto locRetriever = [](const DReactionStep* locReactionStep) -> size_t {return locReactionStep->Get_NumDetectedPIDs(Gamma);};
+			size_t locNumVertexPhotons = std::accumulate(locReactionSteps.begin(), locReactionSteps.end(), size_t(0), locRetriever);
 
 			locNumPhotonsMap[locNumVertexPhotons].emplace_back(locReactionPair.first);
 		}
@@ -787,7 +957,7 @@ void DVertexCreator::Combo_ProductionPhotons(void)
 				if(std::binary_search(locPossibleNShifts.begin(), locPossibleNShifts.end(), locRFIterator->first))
 					++locRFIterator;
 				else
-					locRFIterator = locRFMap.erase(locRFIterator);
+					locRFIterator = locNeutralsByRFBunch.erase(locRFIterator);
 			}
 
 			//ok, now for the tricky part: determine all possible photon combinations without taking too much time or memory
@@ -813,6 +983,7 @@ void DVertexCreator::Combo_ProductionPhotons(void)
 	}
 }
 
+
 vector<pair<vector<const DNeutralShower*>, double> > DVertexCreator::Make_NeutralCombos(size_t locNumNeededPhotons, const unordered_map<const DNeutralShower*, double>& locNeutralChiSqMap)
 {
 	//input/output doubles: chisq/total-chisq
@@ -826,12 +997,10 @@ vector<pair<vector<const DNeutralShower*>, double> > DVertexCreator::Make_Neutra
 	vector<pair<vector<const DNeutralShower*>, double> > locShowerCombos; //all //double = total chisq
 
 	//do combo loop
+	auto& locNeutralIterator = locNeutralIterators.back();
 	while(true)
 	{
 		/************************************************************* THIS COMBO SLOT *************************************************************/
-
-		//get vertex iterator
-		auto& locNeutralIterator = locNeutralIterators.back();
 
 		//check if not enough photons left for remaining slots
 		if((locNumNeededPhotons - locComboShowers.size()) > std::distance(locNeutralIterator, locNeutralChiSqMap.end()))
@@ -848,6 +1017,7 @@ vector<pair<vector<const DNeutralShower*>, double> > DVertexCreator::Make_Neutra
 			locTotalChiSq -= std::prev(locNeutralIterators.back())->second;
 
 			//resume search for the previous shower slot
+			locNeutralIterator = locNeutralIterators.back();
 			continue;
 		}
 
@@ -878,6 +1048,104 @@ vector<pair<vector<const DNeutralShower*>, double> > DVertexCreator::Make_Neutra
 		locNeutralIterators.push_back(locNeutralIterator); //must begin search on next slot to avoid duplicates
 	}
 }
+
+void DVertexCreator::Get_RequiredNeutralCombos(const vector<const DReaction*>& locReactions)
+{
+	vector<const DReactionStep*> locAllNeutralSteps;
+	vector<int> locNumSinglePhotons; //photons that aren't part of an invariant mass cut //sort after filling!!!
+	for(auto& locReaction : locReactions)
+	{
+		for(size_t loc_i = 0; loc_i < locReaction->Get_NumReactionSteps(); ++loc_i)
+		{
+			auto locReactionStep = locReaction->Get_ReactionStep(loc_i);
+			if()
+		}
+	}
+	const DReactionStep*
+}
+
+void DVertexCreator::Evaluate_PhotonShowers(void)
+{
+	//for each vertex-z bin, calculate the photon p4 & time at the beamline
+	//then, do RF delta-t cuts to determine the possible RF bunches available
+	//then, for each possible RF bunch, come up with the possible pi0, eta, etc. pairs and place invariant mass cuts on them
+		//first only do directly-all-g mass-combos as requested by users (exclude things like omega -> pi0, g)
+	//then, if at least one reaction with > 1 pi0, for pi0s, figure out which combos of pi0s can go together
+		//then, find what further N-pi0's are needed (3pi0, 4pi0, etc.), and make all possible combos of those
+	//finally, do remaining neutral combos as needed by the various channels (e.g. omega -> pi0, g;  eta -> 3pi0, etc.)
+
+	//loop over photon vertex-z bins
+	for(int locVertZBin = 0; locVertZBin < dNumPhotonVertexZBins; ++locVertZBin)
+	{
+		//build center vertex for this bin
+		float locBinCenterVertexZ = dPhotonVertexZRangeLow + (float(locVertZBin) + 0.5)*dPhotonVertexZBinWidth;
+		DVector3 locVertex(0.0, 0.0, locBinCenterVertexZ);
+
+		//propagate RF time to vertex position
+		double locPropagatedRFTime = dEventRFBunch->dTime + (locVertex.Z() - dTargetCenterZ)/29.9792458;
+
+		//loop over neutral showers, calculating p3 & time and creating DKinematicData's
+		unordered_map<const DNeutralShower*, shared_ptr<const DKinematicData*> > locPhotonP4TimeMap;
+		for(auto& locNeutralShower : dNeutralShowers)
+		{
+			double locVertexTime = 0.0;
+			DVector3 locMomentum = Calc_PhotonP3Time(locNeutralShower, locVertex, locVertexTime);
+			locPhotonP4TimeMap.emplace(locNeutralShower, make_shared<DKinematicData>(Gamma, locMomentum, locVertex, locVertexTime));
+		}
+
+		//loop over neutral showers, grouping by potential RF bunch shift
+		unordered_map<const DNeutralShower*, vector<int> > locNeutralRFDeltaTMap;
+		for(auto& locNeutralShower : dNeutralShowers)
+			locNeutralRFDeltaTMap.emplace(locNeutralShower, Calc_PhotonBeamBunchShifts(locNeutralShower, locPhotonP4TimeMap[locNeutralShower], locPropagatedRFTime));
+
+		//re-organize in terms of #-rf-bunch shifts
+		unordered_map<int, vector<const DNeutralShower*> > locNeutralsByRFBunch;
+		for(auto& locShowerPair : locNeutralRFDeltaTMap)
+		{
+			auto& locRFBunchShifts = locShowerPair.second;
+			for(auto& locRFBunchShift : locRFBunchShifts)
+				locNeutralsByRFBunch[locRFBunchShift].emplace_back(locShowerPair.first);
+		}
+
+		//loop over possible rf bunches,
+	}
+
+}
+
+vector<int> DVertexCreator::Calc_PhotonBeamBunchShifts(const DNeutralShower* locNeutralShower, shared_ptr<const DKinematicData*>& locKinematicData, double locRFTime) const
+{
+	//calc vertex time, get delta-t cut
+	DetectorSystem_t locSystem = locNeutralShower->dDetectorSystem;
+	double locDeltaTCut = dPIDTimeCutMap[Gamma][locSystem] + Calc_DeltaTError(locNeutralShower, locKinematicData);
+
+	//loop over possible #-RF-shifts, computing delta-t's
+	vector<int> locBeamBunches;
+
+	//start with best-shift, then loop up in n-shifts
+	double locVertexTime = locKinematicData->time();
+	int locOrigNumShifts = Calc_RFBunchShift(locRFTime, locVertexTime);
+	int locNumShifts = locOrigNumShifts;
+	double locDeltaT = locVertexTime - (locRFTime + locNumShifts*dBeamBunchPeriod);
+	while(fabs(locDeltaT) < locDeltaTCut)
+	{
+		locBeamBunches.emplace_back(locNumShifts);
+		++locNumShifts;
+		locDeltaT = locVertexTime - (locRFTime + locNumShifts*dBeamBunchPeriod);
+	}
+
+	//now loop down in n-shifts
+	int locNumShifts = locOrigNumShifts - 1;
+	double locDeltaT = locVertexTime - (locRFTime + locNumShifts*dBeamBunchPeriod);
+	while(fabs(locDeltaT) < locDeltaTCut)
+	{
+		locBeamBunches.emplace_back(locNumShifts);
+		--locNumShifts;
+		locDeltaT = locVertexTime - (locRFTime + locNumShifts*dBeamBunchPeriod);
+	}
+
+	return locBeamBunches;
+}
+
 
 unordered_map<int, double> DVertexCreator::Calc_NeutralRFDeltaTs(const DNeutralShower* locNeutralShower, const TVector3& locVertex, double locRFTime) const
 {
@@ -915,6 +1183,10 @@ unordered_map<int, double> DVertexCreator::Calc_NeutralRFDeltaTs(const DNeutralS
 
 	return locRFDeltaTMap;
 }
+
+
+
+
 
 
 /********************************************************* MAKE INITIAL SPACETIME GUESSES **********************************************************/
@@ -1091,4 +1363,6 @@ double DKinFitUtils_GlueX::Calc_TimeGuess(const DKinFitConstraint_Spacetime* loc
 
 	return dAnalysisUtilities->Calc_CrudeTime(locTimeFindParticleVector, locVertexGuess);
 }
+
+} //end DAnalysis namespace
 

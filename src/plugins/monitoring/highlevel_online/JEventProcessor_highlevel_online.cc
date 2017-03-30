@@ -172,7 +172,6 @@ jerror_t JEventProcessor_highlevel_online::init(void)
 	dTimingCutMap[Positron][SYS_TOF] = 2.0;
 	dTimingCutMap[Positron][SYS_BCAL] = 2.5;
 	dTimingCutMap[Positron][SYS_FCAL] = 3.0;
-	map<Particle_t, map<DetectorSystem_t, double> > dTimingCutMap;
 
 	// All histograms go in the "highlevel" directory
 	TDirectory *main = gDirectory;

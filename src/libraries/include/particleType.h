@@ -121,7 +121,6 @@ typedef enum {
 
 } Particle_t;
 
-
 static inline Particle_t RemapParticleID(Particle_t p)
 {
   // bggen defines these in pythia-geant.dat. However,
@@ -131,6 +130,37 @@ static inline Particle_t RemapParticleID(Particle_t p)
   if(p==80) return Rho0;
   if(p==81) return omega;
   return p;
+}
+
+enum Charge_t
+{
+	d_Neutral = 0,
+	d_Positive,
+	d_Negative,
+	d_Charged,
+	d_AllCharges
+};
+
+bool Is_CorrectCharge(Particle_t locPID, Charge_t locCharge)
+{
+	if(locPID == Unknown)
+		return (locCharge == d_AllCharges);
+	int locIntCharge = ParticleCharge(locPID);
+	switch(locCharge)
+	{
+		case d_Neutral:
+			return (locIntCharge == 0);
+		case d_Positive:
+			return (locIntCharge > 0);
+		case d_Negative:
+			return (locIntCharge < 0);
+		case d_Charged:
+			return (locIntCharge != 0);
+		case d_AllCharges:
+			return true;
+		default:
+			return false;
+	}
 }
 
 inline static char* ParticleType(Particle_t p)

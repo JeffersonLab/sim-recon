@@ -1,3 +1,6 @@
+#ifndef DVertexCreator_h
+#define DVertexCreator_h
+
 #include <deque>
 #include <set>
 #include <unordered_map>
@@ -7,6 +10,7 @@
 #include <algorithm>
 #include <iostream>
 #include <sstream>
+#include <cmath>
 
 #include <JANA/JEventLoop.h>
 
@@ -19,6 +23,8 @@
 
 using namespace std;
 
+namespace DAnalysis
+{
 
 class DVertexInfo
 {
@@ -131,7 +137,6 @@ class DVertexCreator
 		unordered_map<Particle_t, unordered_map<vector<const DChargedTrackHypothesis*>, vector<const DChargedTrackHypothesis*> > > dTrackSearchVectors;
 
 
-
 		//UTILITY FUNCTIONS
 		int Calc_RFBunchShift(double locTimeToStep, double locTimeToStepTo) const; //returns integer shift
 		unordered_map<int, double> Calc_NeutralRFDeltaTs(const DNeutralShower* locNeutralShower, const TVector3& locVertex, double locRFTime) const;
@@ -172,3 +177,7 @@ inline bool DVertexInfo::operator<(const DVertexInfo& locOtherInfo) const
 
 	return false; //either greater than or equivalent: not less-than
 }
+
+} //end DAnalysis namespace
+
+#endif // DVertexCreator_h

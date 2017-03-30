@@ -16,6 +16,8 @@
 
 #include "DANA/DApplication.h"
 #include "HDGEOMETRY/DGeometry.h"
+#include "HDGEOMETRY/DMagneticFieldMap.h"
+#include "HDGEOMETRY/DMagneticFieldMapNoField.h"
 
 #include "DLorentzVector.h"
 
@@ -111,14 +113,24 @@ class DAnalysisUtilities : public JObject
 
 		set<set<size_t> > Build_IndexCombos(const DReactionStep* locReactionStep, deque<Particle_t> locToIncludePIDs) const;
 
+		//For handling helical tracks
+		bool Get_IsBFieldNearBeamline(void) const;
+		TVector3 Get_BField(const TVector3& locPosition) const;
+		void Propagate_Track(int locCharge, TVector3 locPropagateToPoint, TLorentzVector& locMeasuredX4, TLorentzVector& locMeasuredP4, TMatrixDSym* locCovarianceMatrix) const;
+		double Calc_PathLength_Step(int locCharge, TVector3 locPropagateToPoint, TLorentzVector& locMeasuredX4, TLorentzVector& locMeasuredP4) const;
+		double Calc_PathLength_FineGrained(int locCharge, TVector3 locPropagateToPoint, TVector3 locMeasuredPosition, TVector3 locMeasuredMomentum) const;
+		void Propagate_Track(double locDeltaPathLength, int locCharge, TLorentzVector& locX4, TLorentzVector& locP4, TMatrixFSym* locCovarianceMatrix) const;
+
 	private:
 
 		bool Handle_Decursion(int& locParticleIndex, deque<size_t>& locComboDeque, deque<int>& locResumeAtIndices, deque<deque<size_t> >& locPossibilities) const;
 
-		double dTargetZCenter;
-		const DParticleID* dPIDAlgorithm;
 		string dTrackSelectionTag;
 		string dShowerSelectionTag;
+		double dTargetZCenter;
+
+		const DParticleID* dPIDAlgorithm;
+		const DMagneticFieldMap* dMagneticFieldMap;
 };
 
 #endif // _DAnalysisUtilities_
