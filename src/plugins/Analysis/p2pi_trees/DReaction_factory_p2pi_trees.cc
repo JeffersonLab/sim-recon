@@ -60,6 +60,8 @@ jerror_t DReaction_factory_p2pi_trees::evnt(JEventLoop* locEventLoop, uint64_t l
 
 	// Kinematic Fit
 	//locReaction->Set_KinFitType(d_NoFit); //simultaneously constrain apply four-momentum conservation, invariant masses, and common-vertex constraints
+	// locReaction->Set_KinFitType(d_P4AndVertexFit); //simultaneously constrain apply four-momentum conservation, invariant masses, and common-vertex constraints
+	locReaction->Set_KinFitType(d_P4Fit); //simultaneously constrain apply four-momentum conservation, invariant masses, NO vertex
 
 	// Highly Recommended: When generating particle combinations, reject all beam photons that match to a different RF bunch
 	locReaction->Set_MaxPhotonRFDeltaT(0.5*dBeamBunchPeriod); //should be minimum cut value
@@ -99,12 +101,28 @@ jerror_t DReaction_factory_p2pi_trees::evnt(JEventLoop* locEventLoop, uint64_t l
 	locReaction->Add_AnalysisAction(new DHistogramAction_PID(locReaction, "PostPIDCuts"));
 
 	// Custom histograms for p2pi
-	locReaction->Add_AnalysisAction(new DCustomAction_p2pi_hists(locReaction, false));
+	locReaction->Add_AnalysisAction(new DCustomAction_p2pi_hists(locReaction, false, "TimingCut_Measured"));
 
 	//MISSING MASS
 	locReaction->Add_AnalysisAction(new DHistogramAction_MissingMassSquared(locReaction, false, 1000, -0.1, 0.1, "PreKinFit"));
 	locReaction->Add_AnalysisAction(new DCutAction_MissingMassSquared(locReaction, false, -0.01, 0.005, "PreKinFit"));
 
+	// Require KinFit converges
+	locReaction->Add_AnalysisAction(new DCutAction_KinFitFOM(locReaction, 0.0)); //require kinematic fit converges
+
+	if(unused) {
+	  // Custom cuts (can be applied in TSelector)
+	  locReaction->Add_AnalysisAction(new DCutAction_ProtonPiPlusdEdx(locReaction, 2.2, true)); //select p/pi+ above/below 2.2, //true/false: cut all/no proton candidates above p = 1 GeV/c
+	  locReaction->Add_AnalysisAction(new DCutAction_MissingMassSquared(locReaction, false, -0.006, 0.004));
+	  locReaction->Add_AnalysisAction(new DCustomAction_p2pi_cuts(locReaction, false));
+
+	  // Diagnostics for unused tracks and showers with final selection (only useful when analyzing EVIO data)
+	  // locReaction->Add_AnalysisAction(new DCustomAction_p2pi_unusedHists(locReaction, false, "KinCut_Measured"));
+	}
+
+
+	// Custom histograms (after kinematic cuts)
+	locReaction->Add_AnalysisAction(new DCustomAction_p2pi_hists(locReaction, false, "KinCut_Measured"));
 
 	// RHO
 	deque<Particle_t> locRhoPIDs;  locRhoPIDs.push_back(PiPlus);  locRhoPIDs.push_back(PiMinus);
