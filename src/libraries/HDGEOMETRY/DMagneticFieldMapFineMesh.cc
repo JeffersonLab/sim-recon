@@ -15,6 +15,9 @@ using namespace evio;
 
 #include "JANA/JException.h"
 
+#include <DAQ/HDEVIO.h>
+
+
 //---------------------------------
 // DMagneticFieldMapFineMesh    (Constructor)
 //---------------------------------
@@ -846,7 +849,6 @@ double DMagneticFieldMapFineMesh::GetBz(double x, double y, double z) const{
 
 // Read a fine-mesh B-field map from an evio file
 void DMagneticFieldMapFineMesh::GetFineMeshMap(string namepath,int32_t runnumber){ 
-#ifdef HAVE_EVIO
     // The solenoid field map files are stored in CCDB as /Magnets/Solenoid/BFIELD_MAP_NAME
     // The fine-mesh files are now stored as /Magnets/Solenoid/finemeshes/BFIELD_MAP_NAME
     size_t ipos = namepath.rfind("/");
@@ -875,14 +877,14 @@ void DMagneticFieldMapFineMesh::GetFineMeshMap(string namepath,int32_t runnumber
     if(evioFileName != "") {
         ReadEvioFile(evioFileName);
     } else{
-#endif  
     cout << "Fine-mesh evio file does not exist." <<endl;
     cout << "Constructing the fine-mesh B-field map..." << endl;    
     GenerateFineMesh();
 #ifdef HAVE_EVIO
     WriteEvioFile(evioFileNameToWrite);
-  }
 #endif
+    }
+
   cout << " rmin: " << rminFine << " rmax: " << rmaxFine 
        << " dr: " << drFine << " zmin: " << zminFine << " zmax: "
        << zmaxFine << " dz: " << dzFine <<endl;  
@@ -961,10 +963,93 @@ void DMagneticFieldMapFineMesh::WriteEvioFile(string evioFileName){
   chan.write(tree);
   chan.close();
 }
+#endif  // HAVE_EVIO
 
 // Read the B-field data from the evio file
 void DMagneticFieldMapFineMesh::ReadEvioFile(string evioFileName){
-  cout << "Reading fine-mesh B-field data from "<< evioFileName << endl;
+	cout << "Reading fine-mesh B-field data from "<< evioFileName << endl;
+
+	// Open EVIO file
+	HDEVIO hdevio(evioFileName, false);
+	if(!hdevio.is_open){
+		jerr << " Unable to open fine-mesh B-field file!" << endl;
+		return;
+	}
+
+	// Allocate a small buffer and attempt to read in event.
+	// This will fail due to the small buffer, but will leave
+	// the size needed in hdevio.last_event_len so we can reallocate.
+	uint32_t buff_size=10; // initially allocate small buffer
+	uint32_t *buff = new uint32_t[buff_size];
+	hdevio.readNoFileBuff(buff, buff_size);
+	if(hdevio.err_code == HDEVIO::HDEVIO_USER_BUFFER_TOO_SMALL){
+		delete[] buff;
+		buff_size = hdevio.last_event_len;
+		buff = new uint32_t[buff_size];
+		hdevio.readNoFileBuff(buff, buff_size);
+	}
+	if(hdevio.err_code != HDEVIO::HDEVIO_OK){
+		jerr << " Problem reading fine-mesh B-field" << endl;
+		jerr << hdevio.err_mess.str() << endl;
+		delete[] buff;
+		return;
+	}
+	
+	// Top-level bank of banks has tag=1, num=0
+	uint32_t *iptr = buff;
+	uint32_t *iend = &iptr[*iptr +1];
+	iptr = &iptr[2];
+
+	// First bank has tag=2, num=0 and length 6 data words
+	if(iptr[0] != 6+1){
+		jerr << " Bad length for minmaxdelta bank!" <<endl;
+		_exit(-1);
+	}
+	float *minmaxdelta = (float*)&iptr[2];
+	rminFine = minmaxdelta[0];       
+	rmaxFine = minmaxdelta[1]; 
+	drFine   = minmaxdelta[2];	
+	zminFine = minmaxdelta[3];
+	zmaxFine = minmaxdelta[4];	
+	dzFine   = minmaxdelta[5];
+	iptr = &iptr[*iptr + 1];
+
+	zscale=1./dzFine;
+	rscale=1./drFine;
+
+	NrFine=(unsigned int)floor((rmaxFine-rminFine)/drFine+0.5);
+	NzFine=(unsigned int)floor((zmaxFine-zminFine)/dzFine+0.5);
+	mBfine.resize(NrFine);
+	for(auto &m : mBfine) m.resize(NzFine);
+
+	// Next 6 banks have tag==3 and num=0-5 and hold
+	// the actual table data
+	for(int num=0; num<=5; num++){
+		float *fptr = (float*)&iptr[2];
+		uint32_t N = iptr[0] - 1;
+		iptr = &iptr[N+2];
+		if(iptr > iend){
+			jerr << " Bad format of fine mesh B-field file!" << endl;
+			_exit(-1);
+		}
+		
+		for(uint32_t k=0; k<N; k++){
+			uint32_t indr=k/NzFine;
+			uint32_t indz=k%NzFine;
+			switch( iptr[1]&0xFF ){
+				case 0: mBfine[indr][indz].Br    = *fptr++;  break;  // Br
+				case 1: mBfine[indr][indz].Bz    = *fptr++;  break;  // Bz
+				case 2: mBfine[indr][indz].dBrdr = *fptr++;  break;  // dBrdr
+				case 3: mBfine[indr][indz].dBrdz = *fptr++;  break;  // dBrdz
+				case 4: mBfine[indr][indz].dBzdr = *fptr++;  break;  // dBzdr
+				case 5: mBfine[indr][indz].dBzdz = *fptr++;  break;  // dBzdz
+			}
+		}
+	}
+	
+	delete[] buff;
+
+#if 0
   evioFileChannel *chan= new evioFileChannel(evioFileName,"r",100000000);
   chan->open();
   while (chan->read()){
@@ -1058,5 +1143,5 @@ void DMagneticFieldMapFineMesh::ReadEvioFile(string evioFileName){
   }
   chan->close(); 
   delete chan;
-}
 #endif
+}
