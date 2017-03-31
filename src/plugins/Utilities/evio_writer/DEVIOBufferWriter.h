@@ -12,8 +12,6 @@
 
 #include <JANA/JEventLoop.h>
 
-#include <DAQ/JEventSource_EVIO.h>
-
 #include <DAQ/Df250PulseData.h>
 #include <DAQ/Df250PulseIntegral.h>
 #include <DAQ/Df250TriggerTime.h>
@@ -31,6 +29,19 @@
 #include <DAQ/DCAEN1290TDCHit.h>
 #include <DAQ/DEPICSvalue.h>
 #include <DAQ/DEventTag.h>
+#include <DAQ/DCODAROCInfo.h>
+#include <DAQ/DCODAEventInfo.h>
+#include <DAQ/DL1Info.h>
+#include <DAQ/daq_param_type.h>
+#include <DAQ/DCAEN1290TDCBORConfig.h>
+#include <DAQ/Df125BORConfig.h>
+#include <DAQ/DF1TDCConfig.h>
+#include <DAQ/DCAEN1290TDCConfig.h>
+#include <DAQ/Df125Config.h>
+#include <DAQ/Df250BORConfig.h>
+#include <DAQ/DDAQConfig.h>
+#include <DAQ/DF1TDCBORConfig.h>
+#include <DAQ/Df250Config.h>
 
 #include <DANA/DStatusBits.h>
 #include <TTAB/DTranslationTable.h>
