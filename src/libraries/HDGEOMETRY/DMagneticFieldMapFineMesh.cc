@@ -939,30 +939,29 @@ void DMagneticFieldMapFineMesh::WriteEvioFile(string evioFileName){
       dBzdz_.push_back(mBfine[i][j].dBzdz);
     }
   }
-  
+
   // Calculate total buffer size needed (in 32bit words)
   // and allocate buffer
   uint32_t buff_size = 8; // EVIO block header
-  buff_size += 2;    // outer bank length and header
-  buff_size += 2+6;  // minmaxdelta length, header words plus 6 payload words
+  buff_size += 2;         // outer bank length and header
+  buff_size += 2+6;       // minmaxdelta length, header words plus 6 payload words
   buff_size += 6*(2+NrFine*NzFine); // 6 banks, each with length,header words and NrFine*NzFine payload
-  uint32_t *buff = new uint32_t[buff_size];
+  uint32_t *buff = new uint32_t[buff_size+8]; // +8 for EVIO block trailer
   
   // EVIO block header
   uint32_t *iptr = buff;
-  uint32_t bitinfo = (1<<9) + (1<<10); // (1<<9)=Last event in ET stack, (1<<10)="Physics" payload
-  *iptr++ = buff_size; // Number of 32 bit words in evio block
-  *iptr++ = 1;                  // Block number
-  *iptr++ = 8;                  // Length of block header (words)
-  *iptr++ = 1;                  // Event Count
-  *iptr++ = 0;                  // Reserved 1
-  *iptr++ = (bitinfo<<8) + 0x4; // 0x4=EVIO version 4
-  *iptr++ = 0;                  // Reserved 2
-  *iptr++ = 0xc0da0100;         // Magic number
+  *iptr++ = buff_size;  // Number of 32 bit words in evio block
+  *iptr++ = 1;          // Block number
+  *iptr++ = 8;          // Length of block header (words)
+  *iptr++ = 1;          // Event Count
+  *iptr++ = 0;          // Reserved 1
+  *iptr++ = 0x4;        // 0x4=EVIO version 4
+  *iptr++ = 0;          // Reserved 2
+  *iptr++ = 0xc0da0100; // Magic number
   
   // Outermost bank
-  *iptr++ = buff_size - 1;
-  *iptr++ = (0x1<<16) + (0x10<<8) + (0);
+  *iptr++ = buff_size - 1 - 8; // -1 for length word. -8 for evio block header
+  *iptr++ = (0x1<<16) + (0x0E<<8) + (0);
   
   // Table dimensions bank
   *iptr++ = 2+6 - 1;
@@ -987,12 +986,24 @@ void DMagneticFieldMapFineMesh::WriteEvioFile(string evioFileName){
 	 }
     *iptr++ = 2+NrFine*NzFine - 1;
     *iptr++ = (0x3<<16) + (0x02<<8) + (i);
-	 for(uint32_t j=0; j<NrFine*NzFine; j++) *(float*)iptr++ = d->at(j);
+	 for(float f : *d) *(float*)iptr++ = f;
+	 //for(uint32_t j=0; j<NrFine*NzFine; j++) *(float*)iptr++ = d->at(j);
   }
+  
+  // EVIO block trailer
+  *iptr++ = 8;             // Number of 32 bit words in evio block
+  *iptr++ = 2;             // Block number
+  *iptr++ = 8;             // Length of block header (words)
+  *iptr++ = 0;             // Event Count
+  *iptr++ = 0;             // Reserved 1
+  *iptr++ = (1<<9) + 0x4;  // (1<<9) last event in stack 0x4=EVIO version 4
+  *iptr++ = 0;             // Reserved 2
+  *iptr++ = 0xc0da0100;    // Magic number
+
   
   // Write the actual file
   ofstream ofs(evioFileName);
-  ofs.write((char*)buff, buff_size*4);
+  ofs.write((char*)buff, (buff_size+8)*4);
   ofs.close();
   
   delete[] buff;
@@ -1079,9 +1090,10 @@ void DMagneticFieldMapFineMesh::ReadEvioFile(string evioFileName){
 	mBfine.resize(NrFine);
 	for(auto &m : mBfine) m.resize(NzFine);
 
-	// Next 6 banks have tag==3 and num=0-5 and hold
+	// Next 6 banks have tag=3 and num=0-5 and hold
 	// the actual table data
 	for(int num=0; num<=5; num++){
+		uint32_t mynum = iptr[1] & 0xFF;
 		float *fptr = (float*)&iptr[2];
 		uint32_t N = iptr[0] - 1;
 		iptr = &iptr[N+2];
@@ -1093,7 +1105,7 @@ void DMagneticFieldMapFineMesh::ReadEvioFile(string evioFileName){
 		for(uint32_t k=0; k<N; k++){
 			uint32_t indr=k/NzFine;
 			uint32_t indz=k%NzFine;
-			switch( iptr[1]&0xFF ){
+			switch( mynum ){
 				case 0: mBfine[indr][indz].Br    = *fptr++;  break;  // Br
 				case 1: mBfine[indr][indz].Bz    = *fptr++;  break;  // Bz
 				case 2: mBfine[indr][indz].dBrdr = *fptr++;  break;  // dBrdr
