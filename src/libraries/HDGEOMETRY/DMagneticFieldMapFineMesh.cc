@@ -919,7 +919,6 @@ void DMagneticFieldMapFineMesh::GenerateFineMesh(void){
   }
 }
 
-#ifdef HAVE_EVIO
 void DMagneticFieldMapFineMesh::WriteEvioFile(string evioFileName){
   cout << "Writing fine-mesh B-field data to " << evioFileName << "..." <<endl;
 
@@ -940,7 +939,65 @@ void DMagneticFieldMapFineMesh::WriteEvioFile(string evioFileName){
       dBzdz_.push_back(mBfine[i][j].dBzdz);
     }
   }
+  
+  // Calculate total buffer size needed (in 32bit words)
+  // and allocate buffer
+  uint32_t buff_size = 8; // EVIO block header
+  buff_size += 2;    // outer bank length and header
+  buff_size += 2+6;  // minmaxdelta length, header words plus 6 payload words
+  buff_size += 6*(2+NrFine*NzFine); // 6 banks, each with length,header words and NrFine*NzFine payload
+  uint32_t *buff = new uint32_t[buff_size];
+  
+  // EVIO block header
+  uint32_t *iptr = buff;
+  uint32_t bitinfo = (1<<9) + (1<<10); // (1<<9)=Last event in ET stack, (1<<10)="Physics" payload
+  *iptr++ = buff_size; // Number of 32 bit words in evio block
+  *iptr++ = 1;                  // Block number
+  *iptr++ = 8;                  // Length of block header (words)
+  *iptr++ = 1;                  // Event Count
+  *iptr++ = 0;                  // Reserved 1
+  *iptr++ = (bitinfo<<8) + 0x4; // 0x4=EVIO version 4
+  *iptr++ = 0;                  // Reserved 2
+  *iptr++ = 0xc0da0100;         // Magic number
+  
+  // Outermost bank
+  *iptr++ = buff_size - 1;
+  *iptr++ = (0x1<<16) + (0x10<<8) + (0);
+  
+  // Table dimensions bank
+  *iptr++ = 2+6 - 1;
+  *iptr++ = (0x2<<16) + (0x02<<8) + (0);
+  *(float*)iptr++ = (float)rminFine;
+  *(float*)iptr++ = (float)rmaxFine;
+  *(float*)iptr++ = (float)drFine;
+  *(float*)iptr++ = (float)zminFine;
+  *(float*)iptr++ = (float)zmaxFine;
+  *(float*)iptr++ = (float)dzFine;
+  
+  // Table values banks
+  for(uint32_t i=0; i<6; i++){
+    vector<float> *d = NULL;
+	 switch(i){
+	   case 0: d = &Br_;     break;
+	   case 1: d = &Bz_;     break;
+	   case 2: d = &dBrdr_;  break;
+	   case 3: d = &dBrdz_;  break;
+	   case 4: d = &dBzdr_;  break;
+	   case 5: d = &dBzdz_;  break;
+	 }
+    *iptr++ = 2+NrFine*NzFine - 1;
+    *iptr++ = (0x3<<16) + (0x02<<8) + (i);
+	 for(uint32_t j=0; j<NrFine*NzFine; j++) *(float*)iptr++ = d->at(j);
+  }
+  
+  // Write the actual file
+  ofstream ofs(evioFileName);
+  ofs.write((char*)buff, buff_size*4);
+  ofs.close();
+  
+  delete[] buff;
 
+#ifdef HAVE_EVIO
   // Open the evio file channel
   unsigned long bufsize=NrFine*NzFine*6*sizeof(float)+6;
   evioFileChannel chan(evioFileName,"w",bufsize);
@@ -962,8 +1019,8 @@ void DMagneticFieldMapFineMesh::WriteEvioFile(string evioFileName){
 
   chan.write(tree);
   chan.close();
-}
 #endif  // HAVE_EVIO
+}
 
 // Read the B-field data from the evio file
 void DMagneticFieldMapFineMesh::ReadEvioFile(string evioFileName){
@@ -1048,100 +1105,4 @@ void DMagneticFieldMapFineMesh::ReadEvioFile(string evioFileName){
 	}
 	
 	delete[] buff;
-
-#if 0
-  evioFileChannel *chan= new evioFileChannel(evioFileName,"r",100000000);
-  chan->open();
-  while (chan->read()){
-    // create event tree from channel contents
-    evioDOMTree tree(chan);
-    
-    // Loop over the nodes in the evio file
-    evioDOMNodeListP fullList     = tree.getNodeList(typeIs<float>());
-    evioDOMNodeList::const_iterator iter;
-    for(iter=fullList->begin(); iter!=fullList->end(); iter++) {
-      const evioDOMNodeP np = *iter;
-      const vector<float> *vec = NULL;
-      vec=np->getVector<float>();
-      if (vec!=NULL){
-	if (np->tag==2){
-	  rminFine=(*vec)[0];       
-	  rmaxFine=(*vec)[1]; 
-	  drFine=(*vec)[2];	
-	  zminFine=(*vec)[3];
-	  zmaxFine=(*vec)[4];	
-	  dzFine=(*vec)[5];
-	  
-	  zscale=1./dzFine;
-	  rscale=1./drFine;
-
-	  NrFine=(unsigned int)floor((rmaxFine-rminFine)/drFine+0.5);
-	  NzFine=(unsigned int)floor((zmaxFine-zminFine)/dzFine+0.5);
-	  
-	  vector<DBfieldCylindrical_t> temp(NzFine);
-	  
-	  for (unsigned int m=0;m<NrFine;m++){
-	    mBfine.push_back(temp);
-	  }
-	}
-	else if (np->tag==3){// actual B-field data
-	  switch(np->num){
-	  case 0: // Br
-	    for (unsigned int k=0;k<vec->size();k++){
-	      unsigned int indr=k/NzFine;
-	      unsigned int indz=k%NzFine;
-	      
-	      mBfine[indr][indz].Br=(*vec)[k];
-	    }
-	    break;
-	  case 1: // Bz
-	    for (unsigned int k=0;k<vec->size();k++){
-	      unsigned int indr=k/NzFine;
-	      unsigned int indz=k%NzFine;
-	      
-	      mBfine[indr][indz].Bz=(*vec)[k];
-	    }
-	    break;
-	  case 2: // dBrdr
-	    for (unsigned int k=0;k<vec->size();k++){
-	      unsigned int indr=k/NzFine;
-	      unsigned int indz=k%NzFine;
-	      
-	      mBfine[indr][indz].dBrdr=(*vec)[k];
-	    }
-	    break;
-	  case 3: // dBrdz
-	    for (unsigned int k=0;k<vec->size();k++){
-	      unsigned int indr=k/NzFine;
-	      unsigned int indz=k%NzFine;
-	      
-	      mBfine[indr][indz].dBrdz=(*vec)[k];
-	    }
-	    break;	  
-	  case 4: // dBzdr
-	    for (unsigned int k=0;k<vec->size();k++){
-	      unsigned int indr=k/NzFine;
-	      unsigned int indz=k%NzFine;
-	      
-	      mBfine[indr][indz].dBzdr=(*vec)[k];
-	    }
-	    break;
-	  case 5: // dBzdz
-	    for (unsigned int k=0;k<vec->size();k++){
-	      unsigned int indr=k/NzFine;
-		unsigned int indz=k%NzFine;
-		
-		mBfine[indr][indz].dBzdz=(*vec)[k];
-	    }
-	    break;
-	  default:
-	    break;	  
-	  } 
-	}
-      }
-    }
-  }
-  chan->close(); 
-  delete chan;
-#endif
 }
