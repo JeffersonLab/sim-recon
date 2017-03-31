@@ -1,12 +1,12 @@
 // $Id$
 //
-//    File: DEventProcessor_ppi0gamma_hists.h
-// Created: Fri May 15 14:19:50 EDT 2015
-// Creator: jrsteven (on Linux ifarm1401 2.6.32-431.el6.x86_64 x86_64)
+//    File: DEventProcessor_ppi0g_hists.h
+// Created: Wed Mar 11 20:34:22 EDT 2015
+// Creator: jrsteven (on Linux halldw1.jlab.org 2.6.32-504.8.1.el6.x86_64 x86_64)
 //
 
-#ifndef _DEventProcessor_ppi0gamma_hists_
-#define _DEventProcessor_ppi0gamma_hists_
+#ifndef _DEventProcessor_ppi0g_hists_
+#define _DEventProcessor_ppi0g_hists_
 
 #include <JANA/JEventProcessor.h>
 #include <JANA/JApplication.h>
@@ -15,15 +15,15 @@
 #include <HDDM/DEventWriterREST.h>
 #include <ANALYSIS/DHistogramActions.h>
 
-#include "DFactoryGenerator_ppi0gamma_hists.h"
+#include "DFactoryGenerator_ppi0g_hists.h"
 
 using namespace jana;
 using namespace std;
 
-class DEventProcessor_ppi0gamma_hists : public jana::JEventProcessor
+class DEventProcessor_ppi0g_hists : public jana::JEventProcessor
 {
 	public:
-		const char* className(void){return "DEventProcessor_ppi0gamma_hists";}
+		const char* className(void){return "DEventProcessor_ppi0g_hists";}
 
 	private:
 		jerror_t init(void);						///< Called once at program start.
@@ -35,5 +35,5 @@ class DEventProcessor_ppi0gamma_hists : public jana::JEventProcessor
 		//For non-custom reaction-independent histograms, it is recommended that you simultaneously run the monitoring_hists plugin instead of defining them here
 };
 
-#endif // _DEventProcessor_ppi0gamma_hists_
+#endif // _DEventProcessor_ppi0g_hists_
 
