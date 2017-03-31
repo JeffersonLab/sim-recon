@@ -1,24 +1,24 @@
-// hnamepath: /ppi0g_preco_2FCAL/Hist_InvariantMass_Pi0/InvariantMass
-// hnamepath: /ppi0g_preco_2FCAL/Hist_InvariantMass_Omega_PostKinFitCut/InvariantMass
-// hnamepath: /ppi0g_preco_2BCAL/Hist_InvariantMass_Pi0/InvariantMass
-// hnamepath: /ppi0g_preco_2BCAL/Hist_InvariantMass_Omega_PostKinFitCut/InvariantMass
-// hnamepath: /ppi0g_preco_FCAL-BCAL/Hist_InvariantMass_Pi0/InvariantMass
-// hnamepath: /ppi0g_preco_FCAL-BCAL/Hist_InvariantMass_Omega_PostKinFitCut/InvariantMass
-// hnamepath: /ppi0g_preco_any_kinfit/Hist_MissingMassSquared/MissingMassSquared
-// hnamepath: /ppi0g_preco_any_kinfit/Hist_MissingMassSquared_PostKinFitCut/MissingMassSquared
-// hnamepath: /ppi0g_preco_any_kinfit/Hist_InvariantMass_Pi0/InvariantMass
-// hnamepath: /ppi0g_preco_any_kinfit/Hist_InvariantMass_Pi0_PostKinFitCut/InvariantMass
-// hnamepath: /ppi0g_preco_any_kinfit/Hist_KinFitResults/ConfidenceLevel
-// hnamepath: /ppi0g_preco_any_kinfit/Hist_InvariantMass_Omega_PostKinFitCut/InvariantMass
-// hnamepath: /ppi0g_preco_any_kinfit/Hist_InvariantMass_Omega_KinFit_PostKinFitCut/InvariantMass
+// hnamepath: /ppi0gamma_preco_2FCAL/Hist_InvariantMass_Pi0/InvariantMass
+// hnamepath: /ppi0gamma_preco_2FCAL/Hist_InvariantMass_Omega_PostKinFitCut/InvariantMass
+// hnamepath: /ppi0gamma_preco_2BCAL/Hist_InvariantMass_Pi0/InvariantMass
+// hnamepath: /ppi0gamma_preco_2BCAL/Hist_InvariantMass_Omega_PostKinFitCut/InvariantMass
+// hnamepath: /ppi0gamma_preco_FCAL-BCAL/Hist_InvariantMass_Pi0/InvariantMass
+// hnamepath: /ppi0gamma_preco_FCAL-BCAL/Hist_InvariantMass_Omega_PostKinFitCut/InvariantMass
+// hnamepath: /ppi0gamma_preco_any_kinfit/Hist_MissingMassSquared/MissingMassSquared
+// hnamepath: /ppi0gamma_preco_any_kinfit/Hist_MissingMassSquared_PostKinFitCut/MissingMassSquared
+// hnamepath: /ppi0gamma_preco_any_kinfit/Hist_InvariantMass_Pi0/InvariantMass
+// hnamepath: /ppi0gamma_preco_any_kinfit/Hist_InvariantMass_Pi0_PostKinFitCut/InvariantMass
+// hnamepath: /ppi0gamma_preco_any_kinfit/Hist_KinFitResults/ConfidenceLevel
+// hnamepath: /ppi0gamma_preco_any_kinfit/Hist_InvariantMass_Omega_PostKinFitCut/InvariantMass
+// hnamepath: /ppi0gamma_preco_any_kinfit/Hist_InvariantMass_Omega_KinFit_PostKinFitCut/InvariantMass
 
 
 {	TDirectory *locInitDirectory = gDirectory;
-	TDirectory *locReactionDirectory_2FCAL = (TDirectory*)locInitDirectory->FindObjectAny("ppi0g_preco_2FCAL");
-	TDirectory *locReactionDirectory_2BCAL = (TDirectory*)locInitDirectory->FindObjectAny("ppi0g_preco_2BCAL");
-	TDirectory *locReactionDirectory_Both = (TDirectory*)locInitDirectory->FindObjectAny("ppi0g_preco_FCAL-BCAL");
-	TDirectory *locReactionDirectory_Any = (TDirectory*)locInitDirectory->FindObjectAny("ppi0g_preco_any");
-	TDirectory *locReactionDirectory_KinFit = (TDirectory*)locInitDirectory->FindObjectAny("ppi0g_preco_any_kinfit");
+	TDirectory *locReactionDirectory_2FCAL = (TDirectory*)locInitDirectory->FindObjectAny("ppi0gamma_preco_2FCAL");
+	TDirectory *locReactionDirectory_2BCAL = (TDirectory*)locInitDirectory->FindObjectAny("ppi0gamma_preco_2BCAL");
+	TDirectory *locReactionDirectory_Both = (TDirectory*)locInitDirectory->FindObjectAny("ppi0gamma_preco_FCAL-BCAL");
+	TDirectory *locReactionDirectory_Any = (TDirectory*)locInitDirectory->FindObjectAny("ppi0gamma_preco_any");
+	TDirectory *locReactionDirectory_KinFit = (TDirectory*)locInitDirectory->FindObjectAny("ppi0gamma_preco_any_kinfit");
 	if((locReactionDirectory_2FCAL == NULL) || (locReactionDirectory_2BCAL == NULL) || (locReactionDirectory_Both == NULL))
 		return;
 	if((locReactionDirectory_Any == NULL) || (locReactionDirectory_KinFit == NULL))
@@ -27,7 +27,7 @@
 	//Get/Make Canvas
 	TCanvas *locCanvas = NULL;
 	if(TVirtualPad::Pad() == NULL)
-		locCanvas = new TCanvas("ppi0g", "ppi0g", 1200, 800); //for testing
+		locCanvas = new TCanvas("ppi0gamma", "ppi0gamma", 1200, 800); //for testing
 	else
 		locCanvas = gPad->GetCanvas();
 	locCanvas->Divide(3, 2);

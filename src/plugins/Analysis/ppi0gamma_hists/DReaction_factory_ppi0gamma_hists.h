@@ -1,12 +1,12 @@
 // $Id$
 //
-//    File: DReaction_factory_ppi0g_hists.h
+//    File: DReaction_factory_ppi0gamma_hists.h
 // Created: Wed Mar 11 20:34:22 EDT 2015
 // Creator: jrsteven (on Linux halldw1.jlab.org 2.6.32-504.8.1.el6.x86_64 x86_64)
 //
 
-#ifndef _DReaction_factory_ppi0g_hists_
-#define _DReaction_factory_ppi0g_hists_
+#ifndef _DReaction_factory_ppi0gamma_hists_
+#define _DReaction_factory_ppi0gamma_hists_
 
 #include <iostream>
 #include <iomanip>
@@ -16,21 +16,21 @@
 #include <ANALYSIS/DHistogramActions.h>
 #include <ANALYSIS/DCutActions.h>
 
-#include "DCustomAction_ppi0g_Pi0Cuts.h"
-#include "DCustomAction_ppi0g_hists.h"
+#include "DCustomAction_ppi0gamma_Pi0Cuts.h"
+#include "DCustomAction_ppi0gamma_hists.h"
 
 using namespace std;
 using namespace jana;
 
-class DReaction_factory_ppi0g_hists : public jana::JFactory<DReaction>
+class DReaction_factory_ppi0gamma_hists : public jana::JFactory<DReaction>
 {
 	public:
-		DReaction_factory_ppi0g_hists()
+		DReaction_factory_ppi0gamma_hists()
 		{
 			// This is so that the created DReaction objects persist throughout the life of the program instead of being cleared each event. 
 			SetFactoryFlag(PERSISTANT);
 		}
-		const char* Tag(void){return "ppi0g_hists";}
+		const char* Tag(void){return "ppi0gamma_hists";}
 
 	private:
 		jerror_t brun(JEventLoop* locEventLoop, int32_t locRunNumber);
@@ -43,5 +43,5 @@ class DReaction_factory_ppi0g_hists : public jana::JFactory<DReaction>
 		void PIDCuts(DReaction* locReaction);
 };
 
-#endif // _DReaction_factory_ppi0g_hists_
+#endif // _DReaction_factory_ppi0gamma_hists_
 

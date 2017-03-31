@@ -1,18 +1,18 @@
 // $Id$
 //
-//    File: DCustomAction_ppi0g_Pi0Cuts.cc
+//    File: DCustomAction_ppi0gamma_Pi0Cuts.cc
 // Created: Thu Jan 22 11:19:47 EST 2015
 // Creator: jrsteven (on Linux ifarm1401 2.6.32-431.el6.x86_64 x86_64)
 //
 
-#include "DCustomAction_ppi0g_Pi0Cuts.h"
+#include "DCustomAction_ppi0gamma_Pi0Cuts.h"
 
-void DCustomAction_ppi0g_Pi0Cuts::Initialize(JEventLoop* locEventLoop)
+void DCustomAction_ppi0gamma_Pi0Cuts::Initialize(JEventLoop* locEventLoop)
 {
 	
 }
 
-bool DCustomAction_ppi0g_Pi0Cuts::Perform_Action(JEventLoop* locEventLoop, const DParticleCombo* locParticleCombo)
+bool DCustomAction_ppi0gamma_Pi0Cuts::Perform_Action(JEventLoop* locEventLoop, const DParticleCombo* locParticleCombo)
 {
 	const DParticleComboStep* locParticleComboStep = locParticleCombo->Get_ParticleComboStep(2);
         if(locParticleComboStep->Get_InitialParticleID() != Pi0)

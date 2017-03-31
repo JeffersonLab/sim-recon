@@ -1,13 +1,13 @@
 // $Id$
 //
-//    File: DCustomAction_ppi0g_hists.cc
+//    File: DCustomAction_ppi0gamma_hists.cc
 // Created: Wed Jan 21 16:53:41 EST 2015
 // Creator: jrsteven (on Linux ifarm1401 2.6.32-431.el6.x86_64 x86_64)
 //
 
-#include "DCustomAction_ppi0g_hists.h"
+#include "DCustomAction_ppi0gamma_hists.h"
 
-void DCustomAction_ppi0g_hists::Initialize(JEventLoop* locEventLoop)
+void DCustomAction_ppi0gamma_hists::Initialize(JEventLoop* locEventLoop)
 {
 	//CREATE THE HISTOGRAMS
 	//Since we are creating histograms, the contents of gDirectory will be modified: must use JANA-wide ROOT lock
@@ -41,7 +41,7 @@ void DCustomAction_ppi0g_hists::Initialize(JEventLoop* locEventLoop)
 	japp->RootUnLock(); //RELEASE ROOT LOCK!!
 }
 
-bool DCustomAction_ppi0g_hists::Perform_Action(JEventLoop* locEventLoop, const DParticleCombo* locParticleCombo)
+bool DCustomAction_ppi0gamma_hists::Perform_Action(JEventLoop* locEventLoop, const DParticleCombo* locParticleCombo)
 {
 	const DParticleComboStep* locParticleComboStep = locParticleCombo->Get_ParticleComboStep(0);
 

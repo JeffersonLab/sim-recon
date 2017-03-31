@@ -1,11 +1,11 @@
 // $Id$
 //
-//    File: DEventProcessor_ppi0g_hists.cc
+//    File: DEventProcessor_ppi0gamma_hists.cc
 // Created: Wed Mar 11 20:34:22 EDT 2015
 // Creator: jrsteven (on Linux halldw1.jlab.org 2.6.32-504.8.1.el6.x86_64 x86_64)
 //
 
-#include "DEventProcessor_ppi0g_hists.h"
+#include "DEventProcessor_ppi0gamma_hists.h"
 
 // Routine used to create our DEventProcessor
 
@@ -14,15 +14,15 @@ extern "C"
 	void InitPlugin(JApplication *locApplication)
 	{
 		InitJANAPlugin(locApplication);
-		locApplication->AddProcessor(new DEventProcessor_ppi0g_hists()); //register this plugin
-		locApplication->AddFactoryGenerator(new DFactoryGenerator_ppi0g_hists()); //register the factory generator
+		locApplication->AddProcessor(new DEventProcessor_ppi0gamma_hists()); //register this plugin
+		locApplication->AddFactoryGenerator(new DFactoryGenerator_ppi0gamma_hists()); //register the factory generator
 	}
 } // "C"
 
 //------------------
 // init
 //------------------
-jerror_t DEventProcessor_ppi0g_hists::init(void)
+jerror_t DEventProcessor_ppi0gamma_hists::init(void)
 {
 	// This is called once at program startup. If you are creating
 	// and filling historgrams in this plugin, you should lock the
@@ -39,7 +39,7 @@ jerror_t DEventProcessor_ppi0g_hists::init(void)
 //------------------
 // brun
 //------------------
-jerror_t DEventProcessor_ppi0g_hists::brun(jana::JEventLoop* locEventLoop, int locRunNumber)
+jerror_t DEventProcessor_ppi0gamma_hists::brun(jana::JEventLoop* locEventLoop, int locRunNumber)
 {
 	// This is called whenever the run number changes
 
@@ -49,7 +49,7 @@ jerror_t DEventProcessor_ppi0g_hists::brun(jana::JEventLoop* locEventLoop, int l
 //------------------
 // evnt
 //------------------
-jerror_t DEventProcessor_ppi0g_hists::evnt(jana::JEventLoop* locEventLoop, uint64_t locEventNumber)
+jerror_t DEventProcessor_ppi0gamma_hists::evnt(jana::JEventLoop* locEventLoop, uint64_t locEventNumber)
 {
 	// This is called for every event. Use of common resources like writing
 	// to a file or filling a histogram should be mutex protected. Using
@@ -81,7 +81,7 @@ jerror_t DEventProcessor_ppi0g_hists::evnt(jana::JEventLoop* locEventLoop, uint6
 	// string is DReaction factory tag: will fill trees for all DReactions that are defined in the specified factory
 	const DEventWriterROOT* locEventWriterROOT = NULL;
 	locEventLoop->GetSingle(locEventWriterROOT);
-	//locEventWriterROOT->Fill_DataTrees(locEventLoop, "ppi0g_hists");
+	//locEventWriterROOT->Fill_DataTrees(locEventLoop, "ppi0gamma_hists");
 
 	return NOERROR;
 }
@@ -89,7 +89,7 @@ jerror_t DEventProcessor_ppi0g_hists::evnt(jana::JEventLoop* locEventLoop, uint6
 //------------------
 // erun
 //------------------
-jerror_t DEventProcessor_ppi0g_hists::erun(void)
+jerror_t DEventProcessor_ppi0gamma_hists::erun(void)
 {
 	// This is called whenever the run number changes, before it is
 	// changed to give you a chance to clean up before processing
@@ -100,7 +100,7 @@ jerror_t DEventProcessor_ppi0g_hists::erun(void)
 //------------------
 // fini
 //------------------
-jerror_t DEventProcessor_ppi0g_hists::fini(void)
+jerror_t DEventProcessor_ppi0gamma_hists::fini(void)
 {
 	// Called before program exit after event processing is finished.
 	return NOERROR;

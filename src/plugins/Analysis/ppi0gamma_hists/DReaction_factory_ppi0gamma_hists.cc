@@ -1,18 +1,18 @@
 // $Id$
 //
-//    File: DReaction_factory_ppi0g_hists.cc
+//    File: DReaction_factory_ppi0gamma_hists.cc
 // Created: Wed Mar 11 20:34:22 EDT 2015
 // Creator: jrsteven (on Linux halldw1.jlab.org 2.6.32-504.8.1.el6.x86_64 x86_64)
 //
 
 
-#include "DReaction_factory_ppi0g_hists.h"
+#include "DReaction_factory_ppi0gamma_hists.h"
 #include "DCustomAction_HistOmegaVsMissProton.h"
-#include "DCustomAction_dEdxCut_ppi0g.h"
+#include "DCustomAction_dEdxCut_ppi0gamma.h"
 #include "DCustomAction_CutExtraPi0.h"
 #include "DCustomAction_CutExtraTrackPID.h"
 
-void DReaction_factory_ppi0g_hists::PIDCuts(DReaction* locReaction)
+void DReaction_factory_ppi0gamma_hists::PIDCuts(DReaction* locReaction)
 {
 	locReaction->Add_AnalysisAction(new DHistogramAction_PID(locReaction));
 	locReaction->Add_AnalysisAction(new DCutAction_PIDDeltaT(locReaction, false, 2.0, Proton, SYS_TOF));
@@ -26,7 +26,7 @@ void DReaction_factory_ppi0g_hists::PIDCuts(DReaction* locReaction)
 	locReaction->Add_AnalysisAction(new DCutAction_PIDDeltaT(locReaction, false, 3.0, PiMinus, SYS_FCAL));
 	locReaction->Add_AnalysisAction(new DCutAction_PIDDeltaT(locReaction, false, 2.0, Gamma, SYS_BCAL)); //false: measured data
 	locReaction->Add_AnalysisAction(new DCutAction_PIDDeltaT(locReaction, false, 3.0, Gamma, SYS_FCAL)); //false: measured data
-	locReaction->Add_AnalysisAction(new DCustomAction_dEdxCut_ppi0g(locReaction, false)); //false: focus on keeping signal
+	locReaction->Add_AnalysisAction(new DCustomAction_dEdxCut_ppi0gamma(locReaction, false)); //false: focus on keeping signal
 	locReaction->Add_AnalysisAction(new DHistogramAction_PID(locReaction, "PostPIDCuts"));
 
 	// Cut low beam energy as tagger settings change during 2017-01
@@ -38,7 +38,7 @@ void DReaction_factory_ppi0g_hists::PIDCuts(DReaction* locReaction)
 //------------------
 // brun
 //------------------
-jerror_t DReaction_factory_ppi0g_hists::brun(JEventLoop* locEventLoop, int32_t locRunNumber)
+jerror_t DReaction_factory_ppi0gamma_hists::brun(JEventLoop* locEventLoop, int32_t locRunNumber)
 {
 	vector<double> locBeamPeriodVector;
 	locEventLoop->GetCalib("PHOTON_BEAM/RF/beam_period", locBeamPeriodVector);
@@ -50,7 +50,7 @@ jerror_t DReaction_factory_ppi0g_hists::brun(JEventLoop* locEventLoop, int32_t l
 //------------------
 // init
 //------------------
-jerror_t DReaction_factory_ppi0g_hists::evnt(JEventLoop* locEventLoop, uint64_t locEventNumber)
+jerror_t DReaction_factory_ppi0gamma_hists::evnt(JEventLoop* locEventLoop, uint64_t locEventNumber)
 {
 	// Make as many DReaction objects as desired
 	DReactionStep* locReactionStep = NULL;
@@ -63,9 +63,9 @@ jerror_t DReaction_factory_ppi0g_hists::evnt(JEventLoop* locEventLoop, uint64_t 
 	// ANALYSIS library: https://halldweb1.jlab.org/wiki/index.php/GlueX_Analysis_Software
 	// DReaction factory: https://halldweb1.jlab.org/wiki/index.php/Analysis_DReaction
 
-	/**************************************************** ppi0g_preco_2FCAL Reaction Steps ****************************************************/
+	/**************************************************** ppi0gamma_preco_2FCAL Reaction Steps ****************************************************/
 
-	locReaction = new DReaction("ppi0g_preco_2FCAL"); //needs to be a unique name for each DReaction object, CANNOT (!) be "Thrown"
+	locReaction = new DReaction("ppi0gamma_preco_2FCAL"); //needs to be a unique name for each DReaction object, CANNOT (!) be "Thrown"
 
 	// g, p -> omega, p
 	locReactionStep = new DReactionStep();
@@ -92,7 +92,7 @@ jerror_t DReaction_factory_ppi0g_hists::evnt(JEventLoop* locEventLoop, uint64_t 
 	locReaction->Add_ReactionStep(locReactionStep);
 	dReactionStepPool.push_back(locReactionStep); //register so will be deleted later: prevent memory leak
 
-	/**************************************************** ppi0g_preco_2FCAL Control Settings ****************************************************/
+	/**************************************************** ppi0gamma_preco_2FCAL Control Settings ****************************************************/
 
 	// Event Store
 	locReaction->Set_EventStoreSkims("2q+,q-,pi0"); // boolean-AND of skims
@@ -103,7 +103,7 @@ jerror_t DReaction_factory_ppi0g_hists::evnt(JEventLoop* locEventLoop, uint64_t 
 	// Highly Recommended: When generating particle combinations, reject all beam photons that match to a different RF bunch
 	locReaction->Set_MaxPhotonRFDeltaT(0.5*dBeamBunchPeriod);
 
-	/************************************************** ppi0g_preco_2FCAL Pre-Combo Custom Cuts *************************************************/
+	/************************************************** ppi0gamma_preco_2FCAL Pre-Combo Custom Cuts *************************************************/
 
 	// Highly Recommended: Very loose invariant mass cuts, applied during DParticleComboBlueprint construction
 	locReaction->Set_InvariantMassCut(Pi0, 0.05, 0.22);
@@ -113,10 +113,10 @@ jerror_t DReaction_factory_ppi0g_hists::evnt(JEventLoop* locEventLoop, uint64_t 
 	// Example: Missing mass squared of proton
 	locReaction->Add_ComboPreSelectionAction(new DCutAction_MissingMassSquared(locReaction, false, -0.1, 0.1));
 
-	/**************************************************** ppi0g_preco_2FCAL Analysis Actions ****************************************************/
+	/**************************************************** ppi0gamma_preco_2FCAL Analysis Actions ****************************************************/
 
 	// Require 2 photons in FCAL
-	locReaction->Add_AnalysisAction(new DCustomAction_ppi0g_Pi0Cuts(locReaction, false, 2));
+	locReaction->Add_AnalysisAction(new DCustomAction_ppi0gamma_Pi0Cuts(locReaction, false, 2));
 
 	// PID
 	PIDCuts(locReaction);
@@ -144,14 +144,14 @@ jerror_t DReaction_factory_ppi0g_hists::evnt(JEventLoop* locEventLoop, uint64_t 
 
 
 
-	/**************************************************** ppi0g_preco_FCAL-BCAL Reaction Steps ****************************************************/
+	/**************************************************** ppi0gamma_preco_FCAL-BCAL Reaction Steps ****************************************************/
 
-	locReaction = new DReaction("ppi0g_preco_FCAL-BCAL"); //needs to be a unique name for each DReaction object, CANNOT (!) be "Thrown"
+	locReaction = new DReaction("ppi0gamma_preco_FCAL-BCAL"); //needs to be a unique name for each DReaction object, CANNOT (!) be "Thrown"
 	locReaction->Add_ReactionStep(dReactionStepPool[0]);
 	locReaction->Add_ReactionStep(dReactionStepPool[1]);
 	locReaction->Add_ReactionStep(dReactionStepPool[2]);
 
-	/**************************************************** ppi0g_preco_FCAL-BCAL Control Settings ****************************************************/
+	/**************************************************** ppi0gamma_preco_FCAL-BCAL Control Settings ****************************************************/
 
 	// Event Store
 	locReaction->Set_EventStoreSkims("2q+,q-,pi0"); // boolean-AND of skims
@@ -162,7 +162,7 @@ jerror_t DReaction_factory_ppi0g_hists::evnt(JEventLoop* locEventLoop, uint64_t 
 	// Highly Recommended: When generating particle combinations, reject all beam photons that match to a different RF bunch
 	locReaction->Set_MaxPhotonRFDeltaT(0.5*dBeamBunchPeriod);
 
-	/************************************************** ppi0g_preco_FCAL-BCAL Pre-Combo Custom Cuts *************************************************/
+	/************************************************** ppi0gamma_preco_FCAL-BCAL Pre-Combo Custom Cuts *************************************************/
 
 	// Highly Recommended: Very loose invariant mass cuts, applied during DParticleComboBlueprint construction
 	locReaction->Set_InvariantMassCut(Pi0, 0.05, 0.22);
@@ -172,10 +172,10 @@ jerror_t DReaction_factory_ppi0g_hists::evnt(JEventLoop* locEventLoop, uint64_t 
 	// Example: Missing mass squared of proton
 	locReaction->Add_ComboPreSelectionAction(new DCutAction_MissingMassSquared(locReaction, false, -0.1, 0.1));
 
-	/**************************************************** ppi0g_preco FCAL-BCAL Analysis Actions ****************************************************/
+	/**************************************************** ppi0gamma_preco FCAL-BCAL Analysis Actions ****************************************************/
 
 	// Require 1 photon in FCAL and 1 photon in BCAL
-	locReaction->Add_AnalysisAction(new DCustomAction_ppi0g_Pi0Cuts(locReaction, false, 1));
+	locReaction->Add_AnalysisAction(new DCustomAction_ppi0gamma_Pi0Cuts(locReaction, false, 1));
 
 	// PID
 	PIDCuts(locReaction);
@@ -203,14 +203,14 @@ jerror_t DReaction_factory_ppi0g_hists::evnt(JEventLoop* locEventLoop, uint64_t 
 
 
 
-	/**************************************************** ppi0g_preco_2BCAL Reaction Steps ****************************************************/
+	/**************************************************** ppi0gamma_preco_2BCAL Reaction Steps ****************************************************/
 
-	locReaction = new DReaction("ppi0g_preco_2BCAL"); //needs to be a unique name for each DReaction object, CANNOT (!) be "Thrown"
+	locReaction = new DReaction("ppi0gamma_preco_2BCAL"); //needs to be a unique name for each DReaction object, CANNOT (!) be "Thrown"
 	locReaction->Add_ReactionStep(dReactionStepPool[0]);
 	locReaction->Add_ReactionStep(dReactionStepPool[1]);
 	locReaction->Add_ReactionStep(dReactionStepPool[2]);
 
-	/**************************************************** ppi0g_preco_2BCAL Control Settings ****************************************************/
+	/**************************************************** ppi0gamma_preco_2BCAL Control Settings ****************************************************/
 
 	// Event Store
 	locReaction->Set_EventStoreSkims("2q+,q-,pi0"); // boolean-AND of skims
@@ -221,7 +221,7 @@ jerror_t DReaction_factory_ppi0g_hists::evnt(JEventLoop* locEventLoop, uint64_t 
 	// Highly Recommended: When generating particle combinations, reject all beam photons that match to a different RF bunch
 	locReaction->Set_MaxPhotonRFDeltaT(0.5*dBeamBunchPeriod);
 
-	/************************************************** ppi0g_preco_2BCAL Pre-Combo Custom Cuts *************************************************/
+	/************************************************** ppi0gamma_preco_2BCAL Pre-Combo Custom Cuts *************************************************/
 
 	// Highly Recommended: Very loose invariant mass cuts, applied during DParticleComboBlueprint construction
 	locReaction->Set_InvariantMassCut(Pi0, 0.05, 0.22);
@@ -231,10 +231,10 @@ jerror_t DReaction_factory_ppi0g_hists::evnt(JEventLoop* locEventLoop, uint64_t 
 	// Example: Missing mass squared of proton
 	locReaction->Add_ComboPreSelectionAction(new DCutAction_MissingMassSquared(locReaction, false, -0.1, 0.1));
 
-	/**************************************************** ppi0g_preco_2BCAL Analysis Actions ****************************************************/
+	/**************************************************** ppi0gamma_preco_2BCAL Analysis Actions ****************************************************/
 
 	// Require 1 photon in FCAL and 1 photon in BCAL
-	locReaction->Add_AnalysisAction(new DCustomAction_ppi0g_Pi0Cuts(locReaction, false, 0));
+	locReaction->Add_AnalysisAction(new DCustomAction_ppi0gamma_Pi0Cuts(locReaction, false, 0));
 
 	// PID
 	PIDCuts(locReaction);
@@ -262,14 +262,14 @@ jerror_t DReaction_factory_ppi0g_hists::evnt(JEventLoop* locEventLoop, uint64_t 
 
 
 
-	/**************************************************** ppi0g_preco_any Reaction Steps ****************************************************/
+	/**************************************************** ppi0gamma_preco_any Reaction Steps ****************************************************/
 
-	locReaction = new DReaction("ppi0g_preco_any"); //needs to be a unique name for each DReaction object, CANNOT (!) be "Thrown"
+	locReaction = new DReaction("ppi0gamma_preco_any"); //needs to be a unique name for each DReaction object, CANNOT (!) be "Thrown"
 	locReaction->Add_ReactionStep(dReactionStepPool[0]);
 	locReaction->Add_ReactionStep(dReactionStepPool[1]);
 	locReaction->Add_ReactionStep(dReactionStepPool[2]);
 
-	/**************************************************** ppi0g_preco_any Control Settings ****************************************************/
+	/**************************************************** ppi0gamma_preco_any Control Settings ****************************************************/
 
 	// Event Store
 	locReaction->Set_EventStoreSkims("2q+,q-,pi0"); // boolean-AND of skims
@@ -280,7 +280,7 @@ jerror_t DReaction_factory_ppi0g_hists::evnt(JEventLoop* locEventLoop, uint64_t 
 	// Highly Recommended: When generating particle combinations, reject all beam photons that match to a different RF bunch
 	locReaction->Set_MaxPhotonRFDeltaT(0.5*dBeamBunchPeriod);
 
-	/*********************************************** ppi0g_preco_any Pre-Combo Custom Cuts ***********************************************/
+	/*********************************************** ppi0gamma_preco_any Pre-Combo Custom Cuts ***********************************************/
 
 	// Loose Pi0 Cut, Applied during Blueprint Construction
 	locReaction->Set_InvariantMassCut(Pi0, 0.05, 0.22);
@@ -291,7 +291,7 @@ jerror_t DReaction_factory_ppi0g_hists::evnt(JEventLoop* locEventLoop, uint64_t 
 	// Loose missing mass squared cut, applied just after creating the combination (before saving it)
 	locReaction->Add_ComboPreSelectionAction(new DCutAction_MissingMassSquared(locReaction, false, -0.1, 0.1));
 
-	/**************************************************** ppi0g_preco_any Analysis Actions ****************************************************/
+	/**************************************************** ppi0gamma_preco_any Analysis Actions ****************************************************/
 
 	// PID
 	PIDCuts(locReaction);
@@ -300,8 +300,8 @@ jerror_t DReaction_factory_ppi0g_hists::evnt(JEventLoop* locEventLoop, uint64_t 
 	locReaction->Add_AnalysisAction(new DHistogramAction_InvariantMass(locReaction, Pi0, false, 850, 0.05, 0.22, "Pi0"));
 	locReaction->Add_AnalysisAction(new DCutAction_InvariantMass(locReaction, Pi0, false, minPi0FCAL_BCAL, maxPi0FCAL_BCAL));
 
-	// Custom histograms for ppi0g
-	locReaction->Add_AnalysisAction(new DCustomAction_ppi0g_hists(locReaction, false));
+	// Custom histograms for ppi0gamma
+	locReaction->Add_AnalysisAction(new DCustomAction_ppi0gamma_hists(locReaction, false));
 
 	// MISSING MASS
 	locReaction->Add_AnalysisAction(new DHistogramAction_MissingMassSquared(locReaction, false, 1000, -0.1, 0.1));
@@ -317,14 +317,14 @@ jerror_t DReaction_factory_ppi0g_hists::evnt(JEventLoop* locEventLoop, uint64_t 
 
 
 
-	/**************************************************** ppi0g_preco_any_kinfit Reaction Steps ****************************************************/
+	/**************************************************** ppi0gamma_preco_any_kinfit Reaction Steps ****************************************************/
 
-	locReaction = new DReaction("ppi0g_preco_any_kinfit"); //needs to be a unique name for each DReaction object, CANNOT (!) be "Thrown"
+	locReaction = new DReaction("ppi0gamma_preco_any_kinfit"); //needs to be a unique name for each DReaction object, CANNOT (!) be "Thrown"
 	locReaction->Add_ReactionStep(dReactionStepPool[0]);
 	locReaction->Add_ReactionStep(dReactionStepPool[1]);
 	locReaction->Add_ReactionStep(dReactionStepPool[2]);
 
-	/**************************************************** ppi0g_preco_any_kinfit Control Settings ****************************************************/
+	/**************************************************** ppi0gamma_preco_any_kinfit Control Settings ****************************************************/
 
 	// Event Store
 	locReaction->Set_EventStoreSkims("2q+,q-,pi0"); // boolean-AND of skims
@@ -335,7 +335,7 @@ jerror_t DReaction_factory_ppi0g_hists::evnt(JEventLoop* locEventLoop, uint64_t 
 	// Highly Recommended: When generating particle combinations, reject all beam photons that match to a different RF bunch
 	locReaction->Set_MaxPhotonRFDeltaT(0.5*dBeamBunchPeriod);
 
-	/*********************************************** ppi0g_preco_any_kinfit Pre-Combo Custom Cuts ***********************************************/
+	/*********************************************** ppi0gamma_preco_any_kinfit Pre-Combo Custom Cuts ***********************************************/
 
 	// Loose Pi0 Cut, Applied during Blueprint Construction
 	locReaction->Set_InvariantMassCut(Pi0, 0.05, 0.22);
@@ -346,7 +346,7 @@ jerror_t DReaction_factory_ppi0g_hists::evnt(JEventLoop* locEventLoop, uint64_t 
 	// Loose missing mass squared cut, applied just after creating the combination (before saving it)
 	locReaction->Add_ComboPreSelectionAction(new DCutAction_MissingMassSquared(locReaction, false, -0.1, 0.1));
 
-	/**************************************************** ppi0g_preco_any_kinfit Analysis Actions ****************************************************/
+	/**************************************************** ppi0gamma_preco_any_kinfit Analysis Actions ****************************************************/
 
 	// PID
 	PIDCuts(locReaction);
@@ -378,7 +378,7 @@ jerror_t DReaction_factory_ppi0g_hists::evnt(JEventLoop* locEventLoop, uint64_t 
 //------------------
 // fini
 //------------------
-jerror_t DReaction_factory_ppi0g_hists::fini(void)
+jerror_t DReaction_factory_ppi0gamma_hists::fini(void)
 {
 	for(size_t loc_i = 0; loc_i < dReactionStepPool.size(); ++loc_i)
 		delete dReactionStepPool[loc_i]; //cleanup memory

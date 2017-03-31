@@ -15,7 +15,7 @@ void DCustomAction_CutExtraTrackPID::Initialize(JEventLoop* locEventLoop)
 	dPIDCuts[SYS_BCAL] = 1.0;
 	dPIDCuts[SYS_FCAL] = 2.0;
 
-	ddEdxCutAction = new DCustomAction_dEdxCut_ppi0g(Get_Reaction(), false); //false: focus on keeping signal
+	ddEdxCutAction = new DCustomAction_dEdxCut_ppi0gamma(Get_Reaction(), false); //false: focus on keeping signal
 	ddEdxCutAction->Initialize(locEventLoop);
 }
 

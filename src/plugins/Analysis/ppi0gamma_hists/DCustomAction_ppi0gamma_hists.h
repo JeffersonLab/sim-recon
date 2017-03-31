@@ -1,12 +1,12 @@
 // $Id$
 //
-//    File: DCustomAction_ppi0g_hists.h
+//    File: DCustomAction_ppi0gamma_hists.h
 // Created: Wed Jan 21 16:53:41 EST 2015
 // Creator: jrsteven (on Linux ifarm1401 2.6.32-431.el6.x86_64 x86_64)
 //
 
-#ifndef _DCustomAction_ppi0g_hists_
-#define _DCustomAction_ppi0g_hists_
+#ifndef _DCustomAction_ppi0gamma_hists_
+#define _DCustomAction_ppi0gamma_hists_
 
 #include <string>
 #include <iostream>
@@ -29,12 +29,12 @@ using namespace std;
 using namespace jana;
 using namespace ROOT::Math;
 
-class DCustomAction_ppi0g_hists : public DAnalysisAction
+class DCustomAction_ppi0gamma_hists : public DAnalysisAction
 {
 	public:
 
-		DCustomAction_ppi0g_hists(const DReaction* locReaction, bool locUseKinFitResultsFlag, string locActionUniqueString = "") : 
-		DAnalysisAction(locReaction, "Custom_ppi0g_hists", locUseKinFitResultsFlag, locActionUniqueString) {}
+		DCustomAction_ppi0gamma_hists(const DReaction* locReaction, bool locUseKinFitResultsFlag, string locActionUniqueString = "") : 
+		DAnalysisAction(locReaction, "Custom_ppi0gamma_hists", locUseKinFitResultsFlag, locActionUniqueString) {}
 
 		void Initialize(JEventLoop* locEventLoop);
 
@@ -56,5 +56,5 @@ class DCustomAction_ppi0g_hists : public DAnalysisAction
 
 };
 
-#endif // _DCustomAction_ppi0g_hists_
+#endif // _DCustomAction_ppi0gamma_hists_
 
