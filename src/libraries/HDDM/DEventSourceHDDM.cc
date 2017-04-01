@@ -1280,7 +1280,7 @@ jerror_t DEventSourceHDDM::Extract_DCDCHit(JEventLoop* locEventLoop, hddm_s::HDD
          hit->d      = 0.; // initialize to zero to avoid any NaN
          hit->itrack = 0;  // track information is in TRUTH tag
          hit->ptype  = 0;  // ditto
-         if(!locTruthHits.empty())
+         if(locTruthHits.size() == hits.size())
            hit->AddAssociatedObject(locTruthHits[locIndex]); //guaranteed to be in order
          data.push_back(hit);
          ++locIndex;

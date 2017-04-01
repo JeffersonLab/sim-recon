@@ -12,6 +12,10 @@
 #include <iostream>
 
 #include "TH1.h"
+#include "TMath.h"
+#include "Math/Point3D.h"
+#include "Math/Vector3D.h"
+#include "Math/Plane3D.h"
 
 #include "JANA/JEventLoop.h"
 #include "JANA/JApplication.h"
@@ -23,6 +27,7 @@
 
 using namespace std;
 using namespace jana;
+using namespace ROOT::Math;
 
 class DCustomAction_ppi0gamma_hists : public DAnalysisAction
 {
@@ -42,14 +47,13 @@ class DCustomAction_ppi0gamma_hists : public DAnalysisAction
 
 		//Store any histograms as member variables here
 		TH1I *dEgamma;
+		TH2I *dMM2_M3pi, *dProton_dEdx_P, *dProton_P_Theta;
+		TH2I *dDeltaE_M3pi;
+		TH2I *dMM2_M3pi_ProtonTag, *dDeltaE_M3pi_ProtonTag, *dMM2_DeltaE_ProtonTag;
+                TH2I *dMM2_M3pi_CoplanarTag, *dDeltaE_M3pi_CoplanarTag, *dMM2_DeltaE_CoplanarTag;
+                TH2I *dDeltaPhi_M3pi, *dPhi3pi_PhiP;
+		TH2I *dEgamma_M3pi_ProtonTag;
 
-		TH2I *dMM2_MPi0, *dMM2_MOmega;
-		TH2I *dDeltaPhi_MOmega, *dPhiOmega_PhiP;
-		TH2I *dMM2_MOmegaCoplanarTag, *dDeltaE_MOmegaCoplanarTag, *dMM2_DeltaE_CoplanarTag;
-		TH2I *dMM2_MOmegaProtonTag, *dDeltaE_MOmegaProtonTag, *dMM2_DeltaE_ProtonTag, *dEgamma_MOmegaProtonTag, *dEgamma_MOmegaKinTag;
-		TH2I *dProton_dEdx_P, *dProton_P_Theta;
-		TH2I *dDeltaE_MOmega;
-		
 };
 
 #endif // _DCustomAction_ppi0gamma_hists_
