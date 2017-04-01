@@ -49,6 +49,7 @@ bool sortf250pulsenumbers(const Df250PulseData *a, const Df250PulseData *b) {
 JEventSource_EVIOpp::JEventSource_EVIOpp(const char* source_name):JEventSource(source_name)
 {
 	DONE = false;
+	DISPATCHER_END = false;
 	NEVENTS_PROCESSED = 0;
 	NDISPATCHER_STALLED  = 0;
 	NEVENTBUFF_STALLED   = 0;
@@ -242,6 +243,7 @@ JEventSource_EVIOpp::~JEventSource_EVIOpp()
 	
 	// Wait for dispatcher to complete
 	if(dispatcher_thread){
+		DISPATCHER_END = true;
 		dispatcher_thread->join();
 		delete dispatcher_thread;
 	}
@@ -438,6 +440,7 @@ void JEventSource_EVIOpp::Dispatcher(void)
 			bool in_use = false;
 			for( auto pe : w->parsed_event_pool ) in_use |= pe->in_use;
 			if( !in_use ) break;
+			if( DISPATCHER_END ) break;
 			this_thread::sleep_for(milliseconds(10));
 		}
 		

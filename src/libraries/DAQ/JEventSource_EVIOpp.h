@@ -140,6 +140,7 @@ class JEventSource_EVIOpp: public jana::JEventSource{
 
 		
 		bool DONE;
+		bool DISPATCHER_END;
 		std::chrono::high_resolution_clock::time_point tstart;
 		std::chrono::high_resolution_clock::time_point tend;
 
