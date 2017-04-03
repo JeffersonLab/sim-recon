@@ -4209,7 +4209,7 @@ kalman_error_t DTrackFitterKalmanSIMD::KalmanForward(double fdc_anneal_factor,
    DMatrix5x5 Q;  // Process noise covariance matrix
    DMatrix5x2 K;  // Kalman gain matrix
    DMatrix5x1 Kc;  // Kalman gain matrix for cdc hits
-   DMatrix2x2 V(0.12,0.,0.,FDC_CATHODE_VARIANCE);  // Measurement covariance matrix
+   DMatrix2x2 V(0.0833,0.,0.,FDC_CATHODE_VARIANCE);  // Measurement covariance matrix
    DMatrix2x1 R;  // Filtered residual
    DMatrix2x2 RC;  // Covariance of filtered residual
    DMatrix5x1 S0,S0_; //State vector 
@@ -7662,7 +7662,10 @@ jerror_t DTrackFitterKalmanSIMD::SmoothForward(void){
                         -tv*sinalpha));	
                double drift_time=my_fdchits[id]->t-mT0
                   -forward_traj[m].t*TIME_UNIT_CONVERSION;
-               double drift=(du>0.0?1.:-1.)*fdc_drift_distance(drift_time,forward_traj[m].B);
+               double drift = 0.0;
+               if (USE_FDC_DRIFT_TIMES){
+                  drift=(du>0.0?1.:-1.)*fdc_drift_distance(drift_time,forward_traj[m].B);
+               }
 
                double resi_a=drift-doca;
 
@@ -7685,9 +7688,11 @@ jerror_t DTrackFitterKalmanSIMD::SmoothForward(void){
 
                   // dDOCAW/dt0
                   double t0shift=4.;//ns
-                  double drift_shift;
-                  if (drift_time < 25.) drift_shift = drift;
-                  else drift_shift = (du>0.0?1.:-1.)*fdc_drift_distance(drift_time+t0shift,forward_traj[m].B);
+                  double drift_shift = 0.0;
+                  if(USE_FDC_DRIFT_TIMES){
+                     if (drift_time < 25.) drift_shift = drift;
+                     else drift_shift = (du>0.0?1.:-1.)*fdc_drift_distance(drift_time+t0shift,forward_traj[m].B);
+                  }
                   alignmentDerivatives[FDCTrackD::dW_dt0]= (drift_shift-drift)/t0shift;
 
                   // dDOCAW/dx
