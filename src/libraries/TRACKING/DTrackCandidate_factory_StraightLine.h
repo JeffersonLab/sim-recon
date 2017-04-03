@@ -18,6 +18,7 @@
 #include <deque>
 #include <TROOT.h>
 #include <TH2F.h>
+#include <TH1I.h>
 #include "PID/DParticleID.h"
 
 class DParticleID;
@@ -146,7 +147,7 @@ class DTrackCandidate_factory_StraightLine:public jana::JFactory<DTrackCandidate
 
       // Diagnostic histograms
       TH2F *Hvres;
-
+      TH1I *hFDCOccTrkFind, *hFDCOccTrkFit, *hFDCOccTrkSmooth;
 };
 
 #endif // _DTrackCandidate_factory_StraightLine_

@@ -238,10 +238,11 @@ jerror_t DTrackCandidate_factory_StraightLine::brun(jana::JEventLoop *loop, int 
    finder = const_cast<DTrackFinder*>(finders[0]);
 
    if (DEBUG_HISTS){
-      dapp->Lock();
-
       Hvres=(TH2F *)gROOT->FindObject("Hvres");
       if (!Hvres) Hvres=new TH2F("Hvres","Residual along wire",100,-0.25,0.25,24,0.5,24.5);
+      hFDCOccTrkFind=new TH1I("Occ form track finding", "Occ per plane", 24,0.5,24.5);
+      hFDCOccTrkFit=new TH1I("Occ form track fitting", "Occ per plane", 24,0.5,24.5);
+      hFDCOccTrkSmooth=new TH1I("Occ form track smoothing", "Occ per plane", 24,0.5,24.5);
    }
 
    return NOERROR;
@@ -275,6 +276,11 @@ jerror_t DTrackCandidate_factory_StraightLine::evnt(JEventLoop *loop, uint64_t e
          for (size_t i=0;i<tracks.size();i++){
             // list of FDC hits
             vector<const DFDCPseudo *>hits=tracks[i].hits;
+            if(DEBUG_HISTS){
+               for (size_t j=0; j< hits.size(); j++){
+                  hFDCOccTrkFind->Fill(hits[j]->wire->layer);
+               }
+            }
             sort(hits.begin(),hits.end(),DTrackCandidate_StraightLine_fdc_hit_cmp);
 
             // Initial guess for state vector
@@ -1685,6 +1691,9 @@ DTrackCandidate_factory_StraightLine::KalmanFilter(DMatrix4x1 &S,DMatrix4x4 &C,
             K=(C*H_T)*InvV;
 
             if (hits[my_id]->wire->layer!=PLANE_TO_SKIP){        	
+               if(DEBUG_HISTS){
+                  hFDCOccTrkFit->Fill(hits[my_id]->wire->layer);
+               }
                // Update the state vector 
                S+=K*Mdiff;
                if(VERBOSE) S.Print();
@@ -1960,8 +1969,11 @@ DTrackCandidate_factory_StraightLine::Smooth(deque<trajectory_t>&trajectory,
          double resi_c=v-vpred;
 
          // Difference between measurement and projection perpendicular to the wire
-         double drift_time=fdc_updates[id].tdrift;
-         double drift=(du>0.0?1.:-1.)*fdc_drift_distance(drift_time);
+         double drift=0.; // assume hit at wire position
+         if (USE_FDC_DRIFT_TIMES){
+            double drift_time=fdc_updates[id].tdrift;
+            drift=(du>0.0?1.:-1.)*fdc_drift_distance(drift_time);
+         }
          double resi_a=drift-doca;
 
          // Variance from filter step
@@ -2002,6 +2014,10 @@ DTrackCandidate_factory_StraightLine::Smooth(deque<trajectory_t>&trajectory,
          else{
             //V-=dC.SandwichMultiply(H_T);
             V=V-H*dC*H_T;
+         }
+
+         if(DEBUG_HISTS){
+            hFDCOccTrkSmooth->Fill(hits[id]->wire->layer);
          }
 
          // Implement derivatives wrt track parameters needed for millepede alignment
