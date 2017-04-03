@@ -144,6 +144,30 @@ jerror_t JEventProcessor_TrackingPulls::evnt(JEventLoop *loop, uint64_t eventnum
       }
 
       vector<DTrackFitter::pull_t> pulls = thisTimeBasedTrack->pulls;
+
+      // Check for NaNs
+      bool anyNaN=false;
+      for (size_t iPull = 0; iPull < pulls.size(); iPull++){
+         double err = pulls[iPull].err;
+         double errc = pulls[iPull].errc;
+         if ( err != err || errc != errc) anyNaN=true;
+      }
+      if(anyNaN){
+         Fill1DHistogram("TrackingPulls", "TrackInfo_SmoothSuccess_NaN", "Tracking FOM",
+               trackingFOM,
+               "Tracking FOM", 200, 0.0, 1.0);
+         Fill2DHistogram("TrackingPulls", "TrackInfo_SmoothSuccess_NaN", "P Vs. Theta",
+               theta,  pmag,
+               "P Vs. #theta; #theta [deg.]; |P| [GeV/c]", 70, 0.0, 140.0, 50, 0.0, 10.0);
+         Fill2DHistogram("TrackingPulls", "TrackInfo_SmoothSuccess_NaN", "Phi Vs. Theta",
+               theta,  phi,
+               "#phi Vs. #theta; #theta [deg.];  #phi [deg.]", 70, 0.0, 140.0, 180, -180.0, 180.0);
+         Fill2DHistogram("TrackingPulls", "TrackInfo_SmoothSuccess_NaN", "P Vs. Phi",
+               phi,  pmag,
+               "P Vs. #phi; #phi [deg.]; |P| [GeV/c]", 180, -180, 180.0, 50, 0.0, 10.0);
+         continue;
+      }
+
       for (size_t iPull = 0; iPull < pulls.size(); iPull++){
          // Here is all of the information currently stored in the pulls from the fit
          // From TRACKING/DTrackFitter.h
@@ -172,6 +196,12 @@ jerror_t JEventProcessor_TrackingPulls::evnt(JEventLoop *loop, uint64_t eventnum
          Fill2DHistogram("TrackingPulls", "TrackPulls","All Pulls Vs. Theta",
                theta, resi/err,
                ";#theta ;Residual/Error", 140, 0.0, 140.0, 100, -5.0, 5.0);
+         Fill2DHistogram("TrackingPulls", "TrackPulls","All Pulls Vs. NDF",
+               bestHypothesis->dNDF_Track, resi/err,
+               ";Track NDF ;Residual/Error", 140, 0.0, 140.0, 100, -5.0, 5.0);
+         Fill2DHistogram("TrackingPulls", "TrackPulls","All Pulls Vs. Tracking FOM",
+               trackingFOM, resi/err,
+               ";Track FOM ;Residual/Error", 140, 0.0, 140.0, 100, -5.0, 5.0);
 
          // Fill some detector specific info
          // Fill them in order = super-hacked
@@ -246,6 +276,18 @@ jerror_t JEventProcessor_TrackingPulls::evnt(JEventLoop *loop, uint64_t eventnum
             Fill2DHistogram("TrackingPulls", "FDCPulls","All Cathode Residuals Vs. Theta",
                   theta, resic,
                   ";#theta ;Residual/Error", 50, 0.0, 25.0, 100, -0.1, 0.1);
+            Fill2DHistogram("TrackingPulls", "FDCPulls","All Wire Pulls Vs. NDF",
+                  bestHypothesis->dNDF_Track, resi/err,
+                  ";Track NDF ;Residual/Error", 50, 0.5, 50.5, 100, -5.0, 5.0);
+            Fill2DHistogram("TrackingPulls", "FDCPulls","All Wire Pulls Vs. Tracking FOM",
+                  trackingFOM, resi/err,
+                  ";Track FOM ;Residual/Error", 100, 0.0, 1.0, 100, -5.0, 5.0);
+            Fill2DHistogram("TrackingPulls", "FDCPulls","All Cathode Pulls Vs. NDF",
+                  bestHypothesis->dNDF_Track, resic/errc,
+                  ";Track NDF ;Residual/Error", 50, 0.5, 50.5, 100, -5.0, 5.0);
+            Fill2DHistogram("TrackingPulls", "FDCPulls","All Cathode Pulls Vs. Tracking FOM",
+                  trackingFOM, resic/errc,
+                  ";Track FOM ;Residual/Error", 100, 0.0, 1.0, 100, -5.0, 5.0);
 
             // Make the Per-Plane Histograms
             char planeName[256];
@@ -385,6 +427,12 @@ jerror_t JEventProcessor_TrackingPulls::evnt(JEventLoop *loop, uint64_t eventnum
             Fill2DHistogram("TrackingPulls", "CDCPulls","All Residuals Vs. Theta",
                   theta, resi,
                   ";#theta ;Residual", 140, 0.0, 140.0, 100, -0.1, 0.1);
+            Fill2DHistogram("TrackingPulls", "CDCPulls","All Pulls Vs. NDF",
+                  bestHypothesis->dNDF_Track, resi/err,
+                  ";Track NDF ;Residual/Error", 50, 0.5, 50.5, 100, -5.0, 5.0);
+            Fill2DHistogram("TrackingPulls", "CDCPulls","All Pulls Vs. Tracking FOM",
+                  trackingFOM, resi/err,
+                  ";Track FOM ;Residual/Error", 100, 0.0, 1.0, 100, -5.0, 5.0);
 
             // Make the Per-Ring Histograms
             char ringName[256];
