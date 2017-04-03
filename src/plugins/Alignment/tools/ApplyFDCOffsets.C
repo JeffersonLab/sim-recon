@@ -54,7 +54,7 @@ void ApplyFDCOffsets(TString rootFile = "hd_root.root", TString pedeOutFile = "m
       outFile << resultMap[pedeIndex + 103] + hFDCConstants->GetBinContent(histIndex+103) << " " ;//dPhiU
       outFile << resultMap[pedeIndex + 101] + hFDCConstants->GetBinContent(histIndex+101) << " " ;//dU
       outFile << resultMap[pedeIndex + 104] + hFDCConstants->GetBinContent(histIndex+104) << " " ;//dPhiV
-      outFile << resultMap[pedeIndex + 100] + hFDCConstants->GetBinContent(histIndex+102) << endl ;//dV
+      outFile << resultMap[pedeIndex + 102] + hFDCConstants->GetBinContent(histIndex+102) << endl ;//dV
    }
    outFile.close();
 
@@ -87,4 +87,35 @@ void ApplyFDCOffsets(TString rootFile = "hd_root.root", TString pedeOutFile = "m
    }
    outFile.close();
 
+   for (unsigned int i = 1; i<=4; i++){
+      outFile.open(Form("t0_package%i.txt",i));
+      for (unsigned int j=1; j<=6;j++){
+         for (unsigned int k = 1; k<= 96; k++){
+            int histIndex = ((i-1)*4+j)*1000 + 900;
+            int pedeIndex = 100000 + histIndex;
+            outFile << hFDCConstants->GetBinContent(histIndex+k) - resultMap[pedeIndex + k]<< " " ;
+         }
+         outFile << endl;
+      }
+      outFile.close();
+   }
+   //gains
+   for (unsigned int i = 1; i<=4; i++){
+      outFile.open(Form("gains_package%i.txt",i));
+      for (unsigned int j=1; j<=6;j++){
+         for (unsigned int k = 1; k<= 216; k++){
+            int histIndex = ((i-1)*4+j)*1000 + 300;
+            int pedeIndex = 100000 + histIndex;
+            outFile << resultMap[pedeIndex + k] + hFDCConstants->GetBinContent(histIndex+k) << " " ;
+         }
+         outFile << endl;
+         for (unsigned int k = 1; k<= 216; k++){
+            int histIndex = ((i-1)*4+j)*1000 + 600;
+            int pedeIndex = 100000 + histIndex;
+            outFile << resultMap[pedeIndex + k] + hFDCConstants->GetBinContent(histIndex+k) << " " ;
+         }
+         outFile << endl;
+      }
+      outFile.close();
+   }
 }

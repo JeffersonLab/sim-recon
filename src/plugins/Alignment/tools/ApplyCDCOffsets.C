@@ -39,7 +39,7 @@ void ApplyCDCOffsets(TString rootFile = "hd_root.root", TString pedeOutFile = "m
    for (unsigned int i = 1; i<=6; i++){
       int histIndex = i;
       int pedeIndex = i;
-      outFile << -resultMap[pedeIndex] + hCDCConstants->GetBinContent(histIndex) << " " ;
+      outFile << resultMap[pedeIndex] + hCDCConstants->GetBinContent(histIndex) << " " ;
    }
    outFile.close();
 
@@ -48,8 +48,17 @@ void ApplyCDCOffsets(TString rootFile = "hd_root.root", TString pedeOutFile = "m
    for (unsigned int i = 1001; i<=15088; i++){
       int histIndex = i;
       int pedeIndex = i;
-      outFile << -resultMap[pedeIndex] + hCDCConstants->GetBinContent(histIndex) << " " ;
+      outFile << resultMap[pedeIndex] + hCDCConstants->GetBinContent(histIndex) << " " ;
       if (i%4 == 0) outFile << endl;
+   }
+   outFile.close();
+   
+   // t0 alignment 
+   outFile.open("cdc_t0_alignment.txt");
+   for (unsigned int i = 16001; i<=19522; i++){
+      int histIndex = i;
+      int pedeIndex = i;
+      outFile << resultMap[pedeIndex] + hCDCConstants->GetBinContent(histIndex) << endl;
    }
    outFile.close();
 
