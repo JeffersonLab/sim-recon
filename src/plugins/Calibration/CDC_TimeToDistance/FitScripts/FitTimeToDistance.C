@@ -6,7 +6,7 @@ vector<double> cdc_drift_table;
 double Bz_avg;
 
 // Set values for the region cut
-float deltaMin = -0.2, deltaMax = 0.2, tMin = 300, tMax = 1100;
+float deltaMin = -0.175, deltaMax = 0.175, tMin = 300, tMax = 1200;
 
 unsigned int Locate(vector<double>&xx, double x){
     int n=xx.size();
@@ -26,86 +26,7 @@ unsigned int Locate(vector<double>&xx, double x){
     return jl;
 }
 
-Double_t TimeToDistanceFieldOff( Double_t *x, Double_t *par)
-{
-    double d=0.;
-    double delta = x[1]; // yAxis
-    double t = x[0]; // xAxis 
-
-    // Cut out region in  fit.
-    if (delta > deltaMax || delta < deltaMin) return 0.0;
-    if (delta < (((deltaMax - deltaMin) / (tMax - tMin))*(t - tMin) + deltaMin)) return 0.0;
-
-    if (t>0){ // For this fit it always will be, but just for completeness
-       double f_0=0.;
-       double f_delta=0.;
-
-       if (delta > 0){
-          double a1=par[0];
-          double a2=par[1];
-          double a3=par[2];
-          double b1=par[3];
-          double b2=par[4];
-          double b3=par[5];
-          double c1=par[6];
-          double c2=par[7];
-          double c3=par[8];
-
-          // use "long side" functional form
-          double my_t=0.001*t;
-          double sqrt_t=sqrt(my_t);
-          double t3=my_t*my_t*my_t;
-          double delta_mag=fabs(delta);
-          f_delta=(a1+a2*delta_mag)*sqrt_t+(b1+b2*delta_mag)*my_t
-             +(c1+c2*delta_mag+c3*delta*delta)*t3;
-          f_0=a1*sqrt_t+b1*my_t+c1*t3;
-       }
-       else{
-          double my_t=0.001*t;
-          double sqrt_t=sqrt(my_t);
-          double delta_mag=fabs(delta);
-
-          // use "short side" functional form
-          double a1=par[9];
-          double a2=par[10];
-          double a3=par[11];
-          double b1=par[12];
-          double b2=par[13];
-          double b3=par[14];
-          double c1=par[15];
-          double c2=par[16];
-          double c3=par[17];
-
-          double delta_sq=delta*delta;
-          f_delta= (a1+a2*delta_mag+a3*delta_sq)*sqrt_t
-             +(b1+b2*delta_mag+b3*delta_sq)*my_t;
-          f_0=a1*sqrt_t+b1*my_t;
-       }
-
-       unsigned int max_index=cdc_drift_table.size()-1;
-       if (t>cdc_drift_table[max_index]){
-          d=f_delta;
-          return d;
-       }
-
-       // Drift time is within range of table -- interpolate...
-       unsigned int index=0;
-       index=Locate(cdc_drift_table,t);
-       double dt=cdc_drift_table[index+1]-cdc_drift_table[index];
-       double frac=(t-cdc_drift_table[index])/dt;
-       double d_0=0.01*(double(index)+frac); 
-
-       double P=0.;
-       double tcut=250.0; // ns
-       if (t<tcut) {
-          P=(tcut-t)/tcut;
-       }
-       d=f_delta*(d_0/f_0*P+1.-P);
-    }
-    return d;
-}
-
-Double_t TimeToDistanceFieldOn( Double_t *x, Double_t *par){
+Double_t TimeToDistance( Double_t *x, Double_t *par){
    Double_t d=0.0;
    double delta = x[1]; // yAxis
    double t = x[0]; // xAxis
@@ -117,8 +38,6 @@ Double_t TimeToDistanceFieldOn( Double_t *x, Double_t *par){
    // and delta!=0
    double f_0=0.;
    double f_delta=0.;
-   // Scale factor to account for affect of B-field on maximum drift time
-   double Bscale=magnet_correction[0][0]+magnet_correction[0][1]*Bz_avg;
    if (t > 0){
       if (delta>0){
          double a1=par[0];
@@ -167,7 +86,7 @@ Double_t TimeToDistanceFieldOn( Double_t *x, Double_t *par){
 
       unsigned int max_index=cdc_drift_table.size()-1;
       if (t>cdc_drift_table[max_index]){
-         d=f_delta*Bscale;
+         d=f_delta;
          return d;
       }
 
@@ -183,33 +102,24 @@ Double_t TimeToDistanceFieldOn( Double_t *x, Double_t *par){
       if (t<tcut) {
          P=(tcut-t)/tcut;
       }
-      d=f_delta*(d_0/f_0*P+1.-P)*Bscale;
+      d=f_delta*(d_0/f_0*P+1.-P);
    }
    return d;
 }
 
 
-void FitTimeToDistance(TString inputROOTFile = "hd_root.root", int run = 3650)
+void FitTimeToDistance(TString inputROOTFile = "hd_root.root", int run = 11000)
 {
    // Script for fitting the time to distance relation from data
    TFile *thisFile = TFile::Open(inputROOTFile);
    TH1I *Bz_hist = (TH1I *) thisFile->Get("/CDC_TimeToDistance/Bz");
    TF2 *f1,*f2; const Int_t npar = 18;
    bool isFieldOff = false;
-   if (Bz_hist == 0){
-      f1 = new TF2("f1",TimeToDistanceFieldOff, 10, 1500, -0.3, 0.3, npar);
-      f2 = new TF2("f2",TimeToDistanceFieldOff, 10, 1500, -0.3, 0.3, npar);
-      //f1 = new TF2("f1",TimeToDistanceFieldOff, 0, 200, -0.18, 0.18, npar);
-      //f2 = new TF2("f2",TimeToDistanceFieldOff, 0, 200, -0.18, 0.18, npar);
-      isFieldOff = true;
-   }
-   else{
-      f1 = new TF2("f1",TimeToDistanceFieldOn, 0, 1500, -0.18, 0.18, npar);
-      f2 = new TF2("f2",TimeToDistanceFieldOn, 0, 1500, -0.18, 0.18, npar);
-      //f1 = new TF2("f1",TimeToDistanceFieldOn, 0, 200, -0.18, 0.18, npar);
-      //f2 = new TF2("f2",TimeToDistanceFieldOn, 0, 200, -0.18, 0.18, npar);
-      Bz_avg = Bz_hist->GetMean();
-   }
+   if (Bz_hist == 0) isFieldOff = true;
+   f1 = new TF2("f1",TimeToDistance, 10, 1500, -0.3, 0.3, npar);
+   f2 = new TF2("f2",TimeToDistance, 10, 1500, -0.3, 0.3, npar);
+   //f1 = new TF2("f1",TimeToDistanceFieldOff, 0, 200, -0.18, 0.18, npar);
+   //f2 = new TF2("f2",TimeToDistanceFieldOff, 0, 200, -0.18, 0.18, npar);
 
    // We need the values from the database to serve as our starting point
 
@@ -251,7 +161,8 @@ void FitTimeToDistance(TString inputROOTFile = "hd_root.root", int run = 3650)
    //Close the pipe
    gSystem->ClosePipe(locInputFile);
 
-   sprintf(command, "ccdb dump /CDC/cdc_drift_table:%i:NoBField", run);
+   if (isFieldOff) sprintf(command, "ccdb dump /CDC/cdc_drift_table:%i:NoBField", run);
+   else sprintf(command, "ccdb dump /CDC/cdc_drift_table:%i:default", run); 
    locInputFile = gSystem->OpenPipe(command, "r");
    if(locInputFile == NULL)
       return;
@@ -283,12 +194,12 @@ void FitTimeToDistance(TString inputROOTFile = "hd_root.root", int run = 3650)
    f2->SetParameters(parameters);
 
    /*
-   double fractionalRange=0.15;
-   for(unsigned int i=0; i < npar; i++){
+      double fractionalRange=0.15;
+      for(unsigned int i=0; i < npar; i++){
       f1->SetParLimits(i,parameters[i]-fractionalRange*parameters[i],parameters[i]+fractionalRange*parameters[i]);
       f2->SetParLimits(i,parameters[i]-fractionalRange*parameters[i],parameters[i]+fractionalRange*parameters[i]);
-   }
-   */
+      }
+      */
 
    TProfile2D *profile = (TProfile2D *) thisFile->Get("/CDC_TimeToDistance/Predicted Drift Distance Vs Delta Vs t_drift");
 
