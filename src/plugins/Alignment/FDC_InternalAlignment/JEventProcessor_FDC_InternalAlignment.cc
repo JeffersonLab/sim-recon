@@ -55,7 +55,7 @@ jerror_t JEventProcessor_FDC_InternalAlignment::init(void)
    }
    // We need the constants used for this iteration
    // Use a TProfile to avoid problems adding together multiple root files...
-   HistCurrentConstants = new TProfile("CathodeAlignmentConstants", "Constants Used for Cathode Alignment (In CCDB Order)", 96,0.5,96.5);
+   HistCurrentConstants = new TProfile("CathodeAlignmentConstants", "Constants Used for Cathode Alignment (In CCDB Order)", 450,0.5,450.5);
 
    gDirectory->cd("..");
 
@@ -83,6 +83,32 @@ jerror_t JEventProcessor_FDC_InternalAlignment::brun(JEventLoop *eventLoop, int3
       }
    }
 
+   if (jcalib->Get("FDC/strip_pitches_v2",vals)==false){
+      for(unsigned int i=0; i<vals.size(); i++){
+         map<string,double> &row = vals[i];
+         // Get the offsets from the calibration database
+         HistCurrentConstants->Fill(i*10+101,row["U_SP_1"]);
+         HistCurrentConstants->Fill(i*10+102,row["U_G_1"]);
+         HistCurrentConstants->Fill(i*10+103,row["U_SP_2"]);
+         HistCurrentConstants->Fill(i*10+104,row["U_G_2"]);
+         HistCurrentConstants->Fill(i*10+105,row["U_SP_3"]);
+         HistCurrentConstants->Fill(i*10+106,row["V_SP_1"]);
+         HistCurrentConstants->Fill(i*10+107,row["V_G_1"]);
+         HistCurrentConstants->Fill(i*10+108,row["V_SP_2"]);
+         HistCurrentConstants->Fill(i*10+109,row["V_G_2"]);
+         HistCurrentConstants->Fill(i*10+110,row["V_SP_3"]);
+      }
+   }
+
+   if (jcalib->Get("FDC/cell_offsets",vals)==false){
+      for(unsigned int i=0; i<vals.size(); i++){
+         map<string,double> &row = vals[i];
+         // Get the offsets from the calibration database
+         HistCurrentConstants->Fill(i*2+401,row["xshift"]);
+         HistCurrentConstants->Fill(i*2+402,row["yshift"]);
+      }
+   }
+
    return NOERROR;
 }
 
@@ -102,12 +128,72 @@ jerror_t JEventProcessor_FDC_InternalAlignment::evnt(JEventLoop *loop, uint64_t 
       Hist3D[thisPseudo->wire->layer - 1]->Fill(thisPseudo->w, thisPseudo->s, thisPseudo->w_c - thisPseudo->w);
       japp->RootUnLock();
 
+      // Plot the wire times
       char thisName[256];
+      sprintf(thisName, "Plane %.2i Wire t Vs Wire Number", thisPseudo->wire->layer);
+      Fill2DHistogram("FDC_InternalAlignment","Wire t0",thisName,
+            thisPseudo->wire->wire, thisPseudo->time,
+            thisName,
+            96, 0.5, 96.5, 250, -50.0, 200.0);
+
       sprintf(thisName, "Plane %.2i Wire Position Vs XY", thisPseudo->wire->layer);
       Fill2DProfile("FDC_InternalAlignment", "Profile2D", thisName,
             thisPseudo->w, thisPseudo->s, thisPseudo->w_c - thisPseudo->w,
             thisName,
             100, -50.,50., 100,-50., 50.);
+
+      // Calculate the projection of u,w onto v
+      double sinphiu = sin(thisPseudo->phi_u), sinphiv = sin(thisPseudo->phi_v);
+      double sinphiumphiv = sin(thisPseudo->phi_u-thisPseudo->phi_v);
+      double deltaX = HistCurrentConstants->GetBinContent((thisPseudo->wire->layer-1)*2+401);
+      double deltaU = HistCurrentConstants->GetBinContent((thisPseudo->wire->layer-1)*4+2);
+      double deltaV = HistCurrentConstants->GetBinContent((thisPseudo->wire->layer-1)*4+4);
+      double upred = ((thisPseudo->w-deltaX)*sinphiumphiv + thisPseudo->v*sinphiu)/sinphiv;
+      double vpred = -((thisPseudo->w-deltaX)*sinphiumphiv-thisPseudo->u*sinphiv)/sinphiu;
+
+      sprintf(thisName, "Plane %.2i u_res vs u", thisPseudo->wire->layer);
+      Fill2DHistogram("FDC_InternalAlignment","Cathode Projections", thisName,
+            thisPseudo->u - deltaU, thisPseudo->u - upred,
+            "u_res Vs. u;u_{local};u-upred",
+            192,-47.5,47.5,200, -0.2,0.2);
+
+      sprintf(thisName, "Plane %.2i v_res vs v", thisPseudo->wire->layer);
+      Fill2DHistogram("FDC_InternalAlignment","Cathode Projections", thisName,
+            thisPseudo->v - deltaV, thisPseudo->v - vpred,
+            "v_res Vs. v;v_{local};v-vpred",
+            192,-47.5,47.5,200, -0.2,0.2);
+
+      // For the gains we need to break up the two halves of the cathode planes
+      if((thisPseudo->w-deltaX)<0.){
+         sprintf(thisName, "Plane %.2i u_res vs u", thisPseudo->wire->layer);
+         Fill2DHistogram("FDC_InternalAlignment","Cathode Projections Negative", thisName,
+               thisPseudo->u - deltaU, thisPseudo->u - upred,
+               "u_res Vs. u;u_{local};u-upred",
+               192,-47.5,47.5,200, -0.2,0.2);
+
+         sprintf(thisName, "Plane %.2i v_res vs v", thisPseudo->wire->layer);
+         Fill2DHistogram("FDC_InternalAlignment","Cathode Projections Negative", thisName,
+               thisPseudo->v - deltaV, thisPseudo->v - vpred,
+               "v_res Vs. v;v_{local};v-vpred",
+               192,-47.5,47.5,200, -0.2,0.2);
+      }
+      else{
+         sprintf(thisName, "Plane %.2i u_res vs u", thisPseudo->wire->layer);
+         Fill2DHistogram("FDC_InternalAlignment","Cathode Projections Positive", thisName,
+               thisPseudo->u - deltaU, thisPseudo->u - upred,
+               "u_res Vs. u;u_{local};u-upred",
+               192,-47.5,47.5,200, -0.2,0.2);
+
+         sprintf(thisName, "Plane %.2i v_res vs v", thisPseudo->wire->layer);
+         Fill2DHistogram("FDC_InternalAlignment","Cathode Projections Positive", thisName,
+               thisPseudo->v - deltaV, thisPseudo->v - vpred,
+               "v_res Vs. v;v_{local};v-vpred",
+               192,-47.5,47.5,200, -0.2,0.2);
+      }
+
+      //jout << "==upred " << upred << " u " << thisPseudo->u << endl;
+      //jout << "vpred " << vpred << " v " << thisPseudo->v << endl;
+
    }
 
 
@@ -151,43 +237,43 @@ jerror_t JEventProcessor_FDC_InternalAlignment::evnt(JEventLoop *loop, uint64_t 
 
       int layer=lpseudo;
 
-   // get constants for this layer
+// get constants for this layer
 
-   float pxwl=wpseudo;
-   float pycl=-spseudo;
-   double u0 = constants[(layer-1)*8+0];
-   double d0 = constants[(layer-1)*8+1];
-   double udel = constants[(layer-1)*8+2];
-   double ddel = constants[(layer-1)*8+3];
-   double strip_pitch_u = constants[(layer-1)*8+4];
-   double strip_pitch_d = constants[(layer-1)*8+5];
-   double xshift = constants[(layer-1)*8+6];
-   double yshift = constants[(layer-1)*8+7];
+float pxwl=wpseudo;
+float pycl=-spseudo;
+double u0 = constants[(layer-1)*8+0];
+double d0 = constants[(layer-1)*8+1];
+double udel = constants[(layer-1)*8+2];
+double ddel = constants[(layer-1)*8+3];
+double strip_pitch_u = constants[(layer-1)*8+4];
+double strip_pitch_d = constants[(layer-1)*8+5];
+double xshift = constants[(layer-1)*8+6];
+double yshift = constants[(layer-1)*8+7];
 
-   float v=vpseudo*strip_pitch_u/5.005-u0;
-   float u=upseudo*strip_pitch_d/5.005-d0;
-   float myangle=15.*M_PI/180.;
-   float strip_angle=75.*M_PI/180.;
-   float phi_u=strip_angle+ddel;
-   float phi_v=M_PI-strip_angle+udel;
-   float cosPhiU=cos(phi_u);
-   float cosPhiV=cos(phi_v);
-   float sinPhiU=sin(phi_u);
-   float sinPhiV=sin(phi_v);
-   float pxcl=(u*sinPhiV-v*sinPhiU)/(cosPhiV*sinPhiU-cosPhiU*sinPhiV);//-xshift;
-   pycl=(u*cosPhiV-v*cosPhiU)/(cosPhiU*sinPhiV-cosPhiV*sinPhiU);//+yshift;
+float v=vpseudo*strip_pitch_u/5.005-u0;
+float u=upseudo*strip_pitch_d/5.005-d0;
+float myangle=15.*M_PI/180.;
+float strip_angle=75.*M_PI/180.;
+float phi_u=strip_angle+ddel;
+float phi_v=M_PI-strip_angle+udel;
+float cosPhiU=cos(phi_u);
+float cosPhiV=cos(phi_v);
+float sinPhiU=sin(phi_u);
+float sinPhiV=sin(phi_v);
+float pxcl=(u*sinPhiV-v*sinPhiU)/(cosPhiV*sinPhiU-cosPhiU*sinPhiV);//-xshift;
+pycl=(u*cosPhiV-v*cosPhiU)/(cosPhiU*sinPhiV-cosPhiV*sinPhiU);//+yshift;
 
-   // The wire position projected from the wire
-   japp->RootWriteLock();
-   Hist3D[layer-1]->Fill(pxwl/10.,pycl/10.,(pxwl-pxcl)/10.); 
-   japp->RootUnLock();
+// The wire position projected from the wire
+japp->RootWriteLock();
+Hist3D[layer-1]->Fill(pxwl/10.,pycl/10.,(pxwl-pxcl)/10.); 
+japp->RootUnLock();
 
-   char thisName[256];
-   sprintf(thisName, "Plane %.2i Wire Position Vs XY", layer);
-   Fill2DProfile("FDC_InternalAlignment", "Profile2D", thisName,
-         pxwl/10., pycl/10., (pxwl-pxcl)/10.,
-         thisName,
-         100, -50.,50., 100,-50., 50.);
+char thisName[256];
+sprintf(thisName, "Plane %.2i Wire Position Vs XY", layer);
+Fill2DProfile("FDC_InternalAlignment", "Profile2D", thisName,
+      pxwl/10., pycl/10., (pxwl-pxcl)/10.,
+      thisName,
+      100, -50.,50., 100,-50., 50.);
 }
 */
 return NOERROR;
