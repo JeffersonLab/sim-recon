@@ -46,6 +46,9 @@ DTrackFinder::DTrackFinder(JEventLoop *loop)
       hCDCMatch_PairD = new TH1F("CDC Pair distance", "CDC Pair distance", 100, 0.0, 20.0);
       hCDCMatch_Axial = new TH1F("CDC Match Axial", "CDC Match Axial", 100, 0.0, 20.0);
       hCDCMatch_Stereo = new TH1F("CDC Match Stereo", "CDC Match Stereo", 100, 0.0, 20.0);
+      hFDCLayerRaw = new TH1I("FDC Layer Raw", "Layer of FDC hit before track finding", 24, 0.5 , 24.5);
+      hFDCLayer = new TH1I("FDC Layer", "Layer of FDC hit after segment finding", 24, 0.5 , 24.5);
+      hFDCLayerFirst = new TH1I("First FDC Layer", "First Layer of FDC segment finding", 24, 0.5 , 24.5);
    }
 }
 
@@ -463,14 +466,17 @@ bool DTrackFinder::FindFDCSegments(void){
 
    // Put indices for the first point in each plane before the most downstream
    // plane in the vector x_list.
-   double old_z=fdc_hits[0].hit->wire->origin.z();
+   int old_layer=fdc_hits[0].hit->wire->layer;
    vector<unsigned int>x_list;
    x_list.push_back(0);
    for (unsigned int i=0;i<num_hits;i++){
-      if (fdc_hits[i].hit->wire->origin.z()!=old_z){
+      if(DEBUG_HISTS){
+         hFDCLayerRaw->Fill(fdc_hits[i].hit->wire->layer);
+      }
+      if (fdc_hits[i].hit->wire->layer!=old_layer){
          x_list.push_back(i);
       }
-      old_z=fdc_hits[i].hit->wire->origin.z();
+      old_layer=fdc_hits[i].hit->wire->layer;
    }
    x_list.push_back(num_hits); 
 
@@ -481,6 +487,9 @@ bool DTrackFinder::FindFDCSegments(void){
       for (unsigned int i=x_list[start];i<x_list[start+1];i++){
          if (fdc_hits[i].used==false){
             fdc_hits[i].used=true;
+            if(DEBUG_HISTS){
+               hFDCLayerFirst->Fill(fdc_hits[i].hit->wire->layer);
+            }
 
             // Point in the current plane in the package 
             DVector2 XY=fdc_hits[i].hit->xy;
@@ -494,15 +503,21 @@ bool DTrackFinder::FindFDCSegments(void){
             for (unsigned int k=0;k<x_list.size()-1;k++){
                delta_min=1000.;
                match=0;
+               bool hasMatch=false;
                for (unsigned int m=x_list[k];m<x_list[k+1];m++){
-                  delta=(XY-fdc_hits[m].hit->xy).Mod();
-                  double delta_z=fabs(z-fdc_hits[m].hit->wire->origin.z());
-                  if (delta<delta_min){
-                     delta_min=delta;
-                     if (delta<MATCH_RADIUS && delta_z<10.0) match=m;
+                  if(fdc_hits[m].used==false){
+                     delta=(XY-fdc_hits[m].hit->xy).Mod();
+                     double delta_z=fabs(z-fdc_hits[m].hit->wire->origin.z());
+                     if (delta<delta_min){
+                        delta_min=delta;
+                        if (delta<MATCH_RADIUS && delta_z<11.0) {
+                           match=m;
+                           hasMatch = true;
+                        }
+                     }
                   }
                }
-               if (fdc_hits[match].used==false){
+               if (hasMatch){
                   XY=fdc_hits[match].hit->xy;
                   fdc_hits[match].used=true;
                   neighbors.push_back(fdc_hits[match].hit);	  
@@ -528,6 +543,11 @@ bool DTrackFinder::FindFDCSegments(void){
 
             if (neighbors.size()>3){
                unsigned int packNum=(neighbors[0]->wire->layer-1)/6;
+               if (DEBUG_HISTS){
+                  for (size_t iN = 0; iN < neighbors.size(); iN++){
+                     hFDCLayer->Fill(neighbors[iN]->wire->layer);
+                  }
+               }
                fdc_segments[packNum].push_back(fdc_segment_t(neighbors));
             }
          }

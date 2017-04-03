@@ -11,6 +11,7 @@
 #include <JANA/jerror.h>
 #include "DVector3.h"
 #include "TH1F.h"
+#include "TH1I.h"
 #include "FDC/DFDCPseudo.h"
 #include "CDC/DCDCTrackHit.h"
 #include "CDC/DCDCWire.h"
@@ -139,6 +140,7 @@ class DTrackFinder:public jana::JObject{
       DTrackFinder();
 
       TH1F *hCDCMatch_Axial, *hCDCMatch_Stereo, *hCDCMatch_PairD;
+      TH1I *hFDCLayer, *hFDCLayerRaw, *hFDCLayerFirst;
       vector<cdc_hit_t>axial_hits;
       vector<cdc_hit_t>stereo_hits;
       vector<cdc_segment_t>axial_segments;
