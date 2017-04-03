@@ -37,19 +37,24 @@ void FitCathodeAlignment(TString inputFile = "hd_root.root"){
       TF1 *g = new TF1("g", "gaus", -0.5, 0.5);
       TH2D *result = new TH2D(Form("Plane %.2i residual", i), "residual", 100, -50., 50., 100, -50., 50.);
       resultHists[i-1]=result;
-      for (int iX=1; iX <= h->GetNbinsX(); iX++){
-         for (int iY=1; iY <= h->GetNbinsY(); iY++){
+      for (int iX=2; iX <= h->GetNbinsX(); iX++){
+         for (int iY=2; iY <= h->GetNbinsY(); iY++){
+            // Cut region near beamline since there is some bad behavior
+            if (iX > 45 && iX < 55 && iY > 42 && iY < 58) {
+               result->SetBinContent(iX,iY, -1./0.0);
+               continue;
+            }
             TString name;
-           if(iY==25 && iX%5 ==0) name = Form("Proj bin (%i,%i)",iY,iX);
-           else name = "_z"; 
-            TH1D * zProj = h->ProjectionZ(name,iX, iX, iY, iY);
+            if(iY==25 && iX%5 ==0) name = Form("Proj bin (%i,%i)",iY,iX);
+            else name = "_z"; 
+            TH1D * zProj = h->ProjectionZ(name,iX-1, iX, iY-1, iY);
             if (zProj->GetEntries() < 5) {
                result->SetBinContent(iX,iY, -1./0.0);
                continue;
             }
             double max = zProj->GetBinCenter(zProj->GetMaximumBin());
             g->SetParameter(1, max);
-            TFitResultPtr r = zProj->Fit("g", "Q", "", max - 0.1, max + 0.1 );
+            TFitResultPtr r = zProj->Fit("g", "Q", "", max - 0.02, max + 0.02 );
             if ((Int_t) r == 0){
                double mean = g->GetParameter(1);
                double err = g->GetParError(1);
@@ -60,8 +65,8 @@ void FitCathodeAlignment(TString inputFile = "hd_root.root"){
          }
       }
 
-      // Use robust fitting to reject up to 25% outliers.
-      result->Fit("plane", "+rob=0.75");
+      // Use robust fitting to reject up to 10% outliers.
+      result->Fit("plane", "M+rob=0.90");
 
       double c0 = f->GetParameter(0);
       double c1 = f->GetParameter(1);
@@ -78,13 +83,12 @@ void FitCathodeAlignment(TString inputFile = "hd_root.root"){
       double deltaPhiU = (c1/b-c2/d)/(a/b-c/d);
       double deltaPhiV = (c1/a-c2/c)/(b/a-d/c);
 
-      // Corrections are opposite direction for u and y as delta phi? Implies some sign swapping somewhere...
       cout << " Current Iteration shift plane " << i <<  " deltaU " << -deltaU << " deltaPhiU " << -deltaPhiU << " deltaPhiV " << -deltaPhiV << endl;
       constantsFile << i_deltaPhiU - deltaPhiU << " " << i_deltaU - deltaU << " " << i_deltaPhiV - deltaPhiV << " " << i_deltaV << endl;
    }
 
    // Draw the results
-   TCanvas *cResult = new TCanvas("cResult","cResult",800,600);
+   TCanvas *cResult = new TCanvas("cResult","cResult",1200,900);
    cResult->Divide(6,4);
 
    for (int i=0; i<24; i++){

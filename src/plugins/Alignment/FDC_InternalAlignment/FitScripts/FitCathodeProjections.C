@@ -55,19 +55,27 @@ void FitCathodeProjections(TString inputFile = "All.root"){
 
       double deltaU=0., deltaV=0.;
 
-      for (unsigned int iPlane=1; iPlane<=2; iPlane++){ 
-         int offset = (iPlane == 1) ? 0 : 5;
-         double i_SP1 = constantsHist->GetBinContent((i-1)*10+101+offset);
-         double i_G1  = constantsHist->GetBinContent((i-1)*10+102+offset);
-         double i_SP2 = constantsHist->GetBinContent((i-1)*10+103+offset);
-         double i_G2  = constantsHist->GetBinContent((i-1)*10+104+offset);
-         double i_SP3 = constantsHist->GetBinContent((i-1)*10+105+offset);
+      double slopeU, slopeV;
+      double i_SP1_U = constantsHist->GetBinContent((i-1)*10+101);
+      double i_G1_U  = constantsHist->GetBinContent((i-1)*10+102);
+      double i_SP2_U = constantsHist->GetBinContent((i-1)*10+103);
+      double i_G2_U  = constantsHist->GetBinContent((i-1)*10+104);
+      double i_SP3_U = constantsHist->GetBinContent((i-1)*10+105);
+      double i_SP1_V = constantsHist->GetBinContent((i-1)*10+106);
+      double i_G1_V  = constantsHist->GetBinContent((i-1)*10+107);
+      double i_SP2_V = constantsHist->GetBinContent((i-1)*10+108);
+      double i_G2_V  = constantsHist->GetBinContent((i-1)*10+109);
+      double i_SP3_V = constantsHist->GetBinContent((i-1)*10+110);
 
+      double deltaSP1U,deltaG1U=0.,deltaSP2U,deltaG2U=0.,deltaSP3U;
+      double deltaSP1V,deltaG1V=0.,deltaSP2V,deltaG2V=0.,deltaSP3V;
+
+      for (unsigned int iPlane=1; iPlane<=2; iPlane++){ 
 
          char name[100];
          if(iPlane == 1 ) sprintf(name,"FDC_InternalAlignment/Cathode Projections/Plane %.2i u_res vs u",i);
          else sprintf(name,"FDC_InternalAlignment/Cathode Projections/Plane %.2i v_res vs v",i);
-         
+
          TH2I *h = (TH2I *)file->Get(name);
          if(iPlane == 1) hists2DU[i-1]=h;
          else hists2DV[i-1]=h;
@@ -99,8 +107,6 @@ void FitCathodeProjections(TString inputFile = "All.root"){
             //else result->SetBinContent(iX, 0.0);
          }
 
-         // Use robust fitting to reject up to 10% outliers.
-
          TString f_name = Form("f%.2i",i);
          TString fLeft_name = Form("fLeft%.2i",i);
          TString fMiddle_name = Form("fMiddle%.2i",i);
@@ -116,19 +122,24 @@ void FitCathodeProjections(TString inputFile = "All.root"){
          TF1 *fMiddle = new TF1(fMiddle_name,"[0]+[1]*x", -21.,21.);
          TF1 *fRight = new TF1(fRight_name,"[0]+[1]*(x-23.75)", 25.,46.);
 
-         result->Fit(f_name, "+rob=0.80");
+         result->Fit(f_name, "Q+rob=0.80");
          if (iPlane ==1) deltaU = f->GetParameter(0);
          else deltaV = f->GetParameter(0);
          double slope = f->GetParameter(1);
+         if (iPlane == 1) slopeU = f->GetParameter(1);
+         else slopeV = f->GetParameter(1);
 
-         result->Fit(fLeft_name, "MR+rob=0.8");
-         double deltaSP1=0.5*(fLeft->GetParameter(1)-slope);
+         result->Fit(fLeft_name, "QMR+rob=0.8");
+         if (iPlane == 1) deltaSP1U=0.5*(fLeft->GetParameter(1)-slope);
+         else deltaSP1V=0.5*(fLeft->GetParameter(1)-slope);
 
-         result->Fit(fMiddle_name, "MR+rob=0.85");
-         double deltaSP2=0.5*(fMiddle->GetParameter(1)-slope);
+         result->Fit(fMiddle_name, "QMR+rob=0.85");
+         if (iPlane == 1) deltaSP2U=0.5*(fMiddle->GetParameter(1)-slope);
+         else deltaSP2V=0.5*(fMiddle->GetParameter(1)-slope);
 
-         result->Fit(fRight_name, "MR+rob=0.8");
-         double deltaSP3=0.5*(fRight->GetParameter(1)-slope);
+         result->Fit(fRight_name, "QMR+rob=0.8");
+         if (iPlane == 1) deltaSP3U=0.5*(fRight->GetParameter(1)-slope);
+         else deltaSP3V=0.5*(fRight->GetParameter(1)-slope);
 
          if (iPlane ==1) {
             fLeftU[i-1]=fLeft;
@@ -141,9 +152,8 @@ void FitCathodeProjections(TString inputFile = "All.root"){
             fRightV[i-1]=fRight;
          }
 
-         double deltaG1 = 0, deltaG2=0.;
-         
          if (shiftGap){
+            /*
             int nBins = h->GetNbinsX();
             TH1D * yProj1 = h->ProjectionY("projFoil1",1, nBins/4);
             TH1D * yProj2 = h->ProjectionY("projFoil2",nBins/4 , 3*nBins/4);
@@ -164,27 +174,50 @@ void FitCathodeProjections(TString inputFile = "All.root"){
             g->SetParameter(1, max);
             r = yProj3->Fit("g", "Q", "", max - 0.01, max + 0.01 );
             if ((Int_t) r == 0) mean3 = g->GetParameter(1);
-
-            deltaG1 = mean1 - mean2;
-            deltaG2 = mean2 - mean3;
+            */
+            double mean1 =fLeft->GetParameter(0);
+            double mean2L = fMiddle->GetParameter(0)-23.75*fMiddle->GetParameter(1);
+            double mean2R = fMiddle->GetParameter(0)+23.75*fMiddle->GetParameter(1);
+            double mean3 =fRight->GetParameter(0);
+           
+           // Only adjust the gap is the sections are flat. 
+            if (fabs(fLeft->GetParameter(1)-fMiddle->GetParameter(1)) < 5E-4) { 
+               if (iPlane == 1){
+                  deltaG1U = mean1 - mean2L;
+               }
+               else{
+                  deltaG1V = mean1 - mean2L;
+               }
+            }
+            if (fabs(fMiddle->GetParameter(1)-fRight->GetParameter(1)) < 5E-4) {
+               if (iPlane == 1){
+                  deltaG2U = mean2R - mean3;
+               }
+               else{
+                  deltaG2V = mean2R - mean3;
+               }
+            }
          }
-
-         // Calculate the new offsets from the fit parameters
-         if (iPlane ==1 )cout << " Current Iteration shift plane " << i <<  " deltaU " << deltaU << endl;
-         else cout << " shift plane " << i <<  " deltaV " << deltaV << endl;
-         cout << "dSP1 " << deltaSP1 << " dG1 " << deltaG1 << " dSP2 " << deltaSP2 << " dG2 " << deltaG2 << " dSP3 " << deltaSP3 << endl;
-
-         pitchFile << (shiftPitch ? (i_SP1 - deltaSP1/2.):i_SP1) << " "; 
-         pitchFile << (shiftGap   ? (i_G1 + deltaG1)  :i_G1)  << " ";
-         pitchFile << (shiftPitch ? (i_SP2 - deltaSP2/2.):i_SP2) << " ";
-         pitchFile << (shiftGap   ? (i_G2 + deltaG2)  :i_G2)  << " ";
-         pitchFile << (shiftPitch ? (i_SP3 - deltaSP3/2.):i_SP3) << " ";
-
-         // delete f; delete fLeft; delete fMiddle; delete fRight; delete g;
-
       }
 
-      pitchFile << endl;
+      // Calculate the new offsets from the fit parameters
+      // Need to account for avg pitch from the overall slopes
+      double avgCorrection = 0.5*(slopeU+slopeV); // Should be zero when all that is left are rotations of the plane
+      cout << " shift plane " << i <<  " slopeU " << slopeU << " slopeV " << slopeV << " avgCorrection " << avgCorrection << endl;
+      cout << "dSP1U " << -deltaSP1U << " dG1U " << deltaG1U << " dSP2U " << -deltaSP2U << " dG2U " << deltaG2U << " dSP3U " << -deltaSP3U << endl;
+      cout << "dSP1V " << -deltaSP1V << " dG1V " << deltaG1V << " dSP2V " << -deltaSP2V << " dG2V " << deltaG2V << " dSP3V " << -deltaSP3V << endl;
+
+      pitchFile << (shiftPitch ? (i_SP1_U - deltaSP1U - avgCorrection):i_SP1_U) << " "; 
+      pitchFile << (shiftGap   ? (i_G1_U + deltaG1U)  :i_G1_U)  << " ";
+      pitchFile << (shiftPitch ? (i_SP2_U - deltaSP2U - avgCorrection):i_SP2_U) << " ";
+      pitchFile << (shiftGap   ? (i_G2_U + deltaG2U)  :i_G2_U)  << " ";
+      pitchFile << (shiftPitch ? (i_SP3_U - deltaSP3U - avgCorrection):i_SP3_U) << " ";
+      pitchFile << (shiftPitch ? (i_SP1_V - deltaSP1V - avgCorrection):i_SP1_V) << " ";
+      pitchFile << (shiftGap   ? (i_G1_V + deltaG1V)  :i_G1_V)  << " ";
+      pitchFile << (shiftPitch ? (i_SP2_V - deltaSP2V - avgCorrection):i_SP2_V) << " ";
+      pitchFile << (shiftGap   ? (i_G2_V + deltaG2V)  :i_G2_V)  << " ";
+      pitchFile << (shiftPitch ? (i_SP3_V - deltaSP3V - avgCorrection):i_SP3_V) << endl;
+
       double avgMag = (fabs(deltaU) + fabs(deltaV))/2.;
       double halfAvg = avgMag/2.;
 
