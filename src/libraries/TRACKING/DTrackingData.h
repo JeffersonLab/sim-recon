@@ -38,11 +38,9 @@ class DTrackingData : public DKinematicData
 		{
 			// NONE OF THIS DEPENDS ON THE KINEMATIC FIT
 			// so, this can be stored as a pointer & shared between multiple objects instead of stored separately for each
-			DTrackingInfo(void);
-
-			const TMatrixFSym *m_TrackingErrorMatrix;  // order is q/pt,phi,tanl,D,z
-			bool m_use_forward_parameters; // Flag indicating the use of the forward parameterization (x,y,tx,ty,q/p)
-			double m_TrackingStateVector[5]; // order is q/pt,phi,tanl,D,z
+			const TMatrixFSym *m_TrackingErrorMatrix = nullptr;  // order is q/pt,phi,tanl,D,z
+			bool m_use_forward_parameters = false; // Flag indicating the use of the forward parameterization (x,y,tx,ty,q/p)
+			double m_TrackingStateVector[5] = {0.0, 0.0, 0.0, 0.0, 0.0}; // order is q/pt,phi,tanl,D,z
 		};
 
 		//memory of object in shared_ptr is managed automatically: deleted automatically when no references are left
@@ -69,10 +67,6 @@ inline DTrackingData& DTrackingData::operator=(const DTrackingData& locSourceDat
 	dTrackingInfo = make_shared<DTrackingInfo>(*(locSourceData.dTrackingInfo));
 	return *this;
 }
-
-inline DTrackingData::DTrackingInfo::DTrackingInfo(void) :
-m_TrackingErrorMatrix(nullptr), m_use_forward_parameters(false), m_TrackingStateVector{0.0, 0.0, 0.0, 0.0, 0.0}
-{}
 
 /********************************************************************** GETTERS ************************************************************************/
 

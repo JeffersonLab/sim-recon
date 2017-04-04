@@ -1117,286 +1117,87 @@ string DKinFitUtils_GlueX::Get_ConstraintInfo(const DReaction* locReaction, DKin
 	return locAllConstraintsString;
 }
 
-deque<set<pair<int, int> > > DKinFitUtils_GlueX::Setup_VertexPredictions(const DReaction* locReaction) const
+pair<size_t, string> DKinFitUtils_GlueX::Predict_VertexConstraints(const vector<shared_ptr<DReactionStepVertexInfo>>& locVertexInfos, bool locSpacetimeFitFlag) const
 {
-	//create decay maps
-	map<pair<int, int>, int> locDecayMap_ParticleToDecayStep;
-	for(size_t loc_i = 0; loc_i < locReaction->Get_NumReactionSteps(); ++loc_i)
+	//returned: #constraints, constraint string
+	size_t locNumConstraints = 0;
+	string locAllConstraintString;
+
+	for(auto& locVertexInfo : locVertexInfos)
 	{
-		const DReactionStep* locReactionStep = locReaction->Get_ReactionStep(loc_i);
-		for(size_t loc_j = 0; loc_j < locReactionStep->Get_NumFinalParticleIDs(); ++loc_j)
-		{
-			int locDecayStepIndex = locReaction->Get_DecayStepIndex(loc_i, loc_j);
-			if(locDecayStepIndex < 0)
-				continue;
-			locDecayMap_ParticleToDecayStep[pair<int, int>(loc_i, loc_j)] = locDecayStepIndex; //store step where this particle decays
-		}
-	}
-
-	//no choice but to repeat what's been done, but without DKinFitChain:
-	deque<set<pair<int, int> > > locAllVertices; //one pair for each vertex: particles, constraint string
-	set<size_t> locIncludedStepIndices;
-
-	for(size_t loc_i = 0; loc_i < locReaction->Get_NumReactionSteps(); ++loc_i)
-	{
-		if(locIncludedStepIndices.find(loc_i) != locIncludedStepIndices.end())
-			continue; //already did this step
-
-		//Start a new vertex, and save when done
-		set<pair<int, int> > locVertexParticles;
-		Setup_VertexPrediction(locReaction, loc_i, locVertexParticles, locDecayMap_ParticleToDecayStep, locIncludedStepIndices);
-		locAllVertices.push_back(locVertexParticles);
-	}
-
-	return locAllVertices;
-}
-
-void DKinFitUtils_GlueX::Setup_VertexPrediction(const DReaction* locReaction, size_t locStepIndex, set<pair<int, int> >& locVertexParticles, const map<pair<int, int>, int>& locDecayMap_ParticleToDecayStep, set<size_t>& locIncludedStepIndices) const
-{
-	bool locStartNewVertexFlag = locVertexParticles.empty();
-	locIncludedStepIndices.insert(locStepIndex);
-
-	//get the step
-	const DReactionStep* locReactionStep = locReaction->Get_ReactionStep(locStepIndex);
-
-	//if new constraint: loop over the initial particles: add to constraint string
-	if(locStartNewVertexFlag)
-	{
-		locVertexParticles.insert(pair<int, int>(locStepIndex, -2)); //beam/decaying particle
-		if(locReactionStep->Get_TargetParticleID() != Unknown)
-			locVertexParticles.insert(pair<int, int>(locStepIndex, -1)); //target
-	}
-
-	//loop over final particles: add to the vertex constraint, dive through decaying particles that decay in-place
-		//if decaying in-place: don't add (would add to constraint, but not here (purely internal))
-	for(size_t loc_i = 0; loc_i < locReactionStep->Get_NumFinalParticleIDs(); ++loc_i)
-	{
-		pair<int, int> locParticlePair(locStepIndex, loc_i);
-		Particle_t locPID = locReactionStep->Get_FinalParticleID(loc_i);
-
-		//check if particle decays, and if so, if in-place
-		map<pair<int, int>, int>::const_iterator locDecayIterator = locDecayMap_ParticleToDecayStep.find(locParticlePair);
-		int locDecayStepIndex = (locDecayIterator == locDecayMap_ParticleToDecayStep.end()) ? -1 : locDecayIterator->second;
-		if((locDecayStepIndex >= 0) && !IsDetachedVertex(locPID))
-		{
-			//yes: combine with the decay products
-			Setup_VertexPrediction(locReaction, locDecayStepIndex, locVertexParticles, locDecayMap_ParticleToDecayStep, locIncludedStepIndices);
+		if(locVertexInfo->Get_DanglingVertexFlag())
 			continue;
-		}
-		else //does not decay, or at least, not in-place
-			locVertexParticles.insert(locParticlePair);
-	}
-}
 
-deque<set<pair<int, int> > > DKinFitUtils_GlueX::Predict_VertexConstraints(const DReaction* locReaction, deque<set<pair<int, int> > > locAllVertices, bool locSpacetimeFitFlag, size_t& locNumConstraints, string& locAllConstraintString) const
-{
-	if(dDebugLevel > 10)
-		cout << "DKinFitUtils_GlueX: Create vertex constraints." << endl;
-
-	locNumConstraints = 0;
-
-	//resolve links between vertex & time fits (decaying particles), create constraints, sort them, and return them
-		//sort: the order in which they are defined (as required by the decaying particles they're using)
-	deque<set<pair<int, int> > > locAllVertexParticles;
-
-	//initialize particle groupings
-	deque<set<pair<int, int> > > locAllFullConstrainParticles, locAllDecayingParticles, locAllOnlyConstrainTimeParticles, locAllNoConstrainParticles;
-	for(size_t loc_i = 0; loc_i < locAllVertices.size(); ++loc_i)
-	{
-		set<pair<int, int> > locFullConstrainParticles, locDecayingParticles, locOnlyConstrainTimeParticles, locNoConstrainParticles;
-		Group_VertexParticles(locReaction, locSpacetimeFitFlag, locAllVertices[loc_i], locFullConstrainParticles, locDecayingParticles, locOnlyConstrainTimeParticles, locNoConstrainParticles);
-		locAllFullConstrainParticles.push_back(locFullConstrainParticles);
-		locAllDecayingParticles.push_back(locDecayingParticles);
-		locAllOnlyConstrainTimeParticles.push_back(locOnlyConstrainTimeParticles);
-		locAllNoConstrainParticles.push_back(locNoConstrainParticles);
-	}
-
-	//loop over vertex-constraints-to-sort:
-		//find which constraints decaying particles should be defined-by/constrained-to
-		//find order in which constraints need to be constrained
-	size_t locConstraintIndex = 0;
-	bool locProgessMadeFlag = false;
-	set<pair<int, int> > locDefinedDecayingParticles;
-	while(!locAllFullConstrainParticles.empty())
-	{
-		if(locConstraintIndex == locAllFullConstrainParticles.size())
-		{
-			//made a full loop through
-			if(!locProgessMadeFlag)
-				break; //no progress made: cannot constrain remaining vertices
-			//reset for next pass through
-			locConstraintIndex = 0;
-			locProgessMadeFlag = false;
-			continue;
-		}
-
-		//find which decaying particles at this vertex have been previously defined
-		set<pair<int, int> > locVertexDecayingParticles_Defined;
-		if(dLinkVerticesFlag)
-			set_intersection(locAllDecayingParticles[locConstraintIndex].begin(), locAllDecayingParticles[locConstraintIndex].end(),
-				locDefinedDecayingParticles.begin(), locDefinedDecayingParticles.end(),
-				inserter(locVertexDecayingParticles_Defined, locVertexDecayingParticles_Defined.begin()));
-
-		//see if enough defined particles to constrain vertex
-		if(locVertexDecayingParticles_Defined.size() + locAllFullConstrainParticles[locConstraintIndex].size() < 2)
-		{
-			++locConstraintIndex;
-			continue; //nope
-		}
-
-		//find which decaying particles at this vertex have NOT been previously defined
-		set<pair<int, int> > locVertexDecayingParticles_NotDefined;
-		set_difference(locAllDecayingParticles[locConstraintIndex].begin(), locAllDecayingParticles[locConstraintIndex].end(),
-			locDefinedDecayingParticles.begin(), locDefinedDecayingParticles.end(),
-			inserter(locVertexDecayingParticles_NotDefined, locVertexDecayingParticles_NotDefined.begin()));
-
-		//Add decaying particles to appropriate sets
-		locAllFullConstrainParticles[locConstraintIndex].insert(locVertexDecayingParticles_Defined.begin(), locVertexDecayingParticles_Defined.end());
-		locAllNoConstrainParticles[locConstraintIndex].insert(locVertexDecayingParticles_NotDefined.begin(), locVertexDecayingParticles_NotDefined.end());
-
-		//Create vertex/spacetime constraint, with decaying particles as no-constrain particles
-		set<pair<int, int> > locVertexParticles;
+		auto locFullConstrainParticles = locVertexInfo->Get_FullConstrainParticles();
 		if(locSpacetimeFitFlag)
 		{
-			locVertexParticles.insert(locAllOnlyConstrainTimeParticles[locConstraintIndex].begin(), locAllOnlyConstrainTimeParticles[locConstraintIndex].end());
-			locNumConstraints += 3*locAllFullConstrainParticles[locConstraintIndex].size();
-			locNumConstraints += locAllOnlyConstrainTimeParticles[locConstraintIndex].size();
+			locNumConstraints += 3*locFullConstrainParticles.size();
+			locNumConstraints += locVertexInfo->Get_OnlyConstrainTimeParticles().size();
 		}
 		else //vertex only
-			locNumConstraints += 2*locAllFullConstrainParticles[locConstraintIndex].size();
+			locNumConstraints += 2*locFullConstrainParticles.size();
 
-		locVertexParticles.insert(locAllFullConstrainParticles[locConstraintIndex].begin(), locAllFullConstrainParticles[locConstraintIndex].end());
-		locVertexParticles.insert(locAllNoConstrainParticles[locConstraintIndex].begin(), locAllNoConstrainParticles[locConstraintIndex].end());
-		locAllVertexParticles.push_back(locVertexParticles);
-
-		//The positions of these decaying particles are now defined: Can use to constrain vertices in later constraints
-		if(dLinkVerticesFlag)
-		{
-			//since we need to match with particles in other constraints, save the OTHER index for the particle
-				//if was in initial state, save final-state pair. and vice versa
-			set<pair<int, int> >::iterator locDecayIterator = locVertexDecayingParticles_NotDefined.begin();
-			for(; locDecayIterator != locVertexDecayingParticles_NotDefined.end(); ++locDecayIterator)
-			{
-				pair<int, int> locParticlePair = *locDecayIterator;
-				if(locParticlePair.second < 0) //was in initial state: save final state
-				{
-					locParticlePair = locReaction->Get_InitialParticleDecayFromIndices(locParticlePair.first);
-					locDefinedDecayingParticles.insert(locParticlePair);
-				}
-				else //was in final state: save final state
-				{
-					int locDecayStepIndex = locReaction->Get_DecayStepIndex(locParticlePair.first, locParticlePair.second);
-					locDefinedDecayingParticles.insert(pair<int, int>(locDecayStepIndex, -2));
-				}
-			}
-		}
+		//adjust if beamline not included in vertex fit
+		if(!Get_IncludeBeamlineInVertexFitFlag() && locVertexInfo->Get_ProductionVertexFlag())
+			locNumConstraints -= 2*locVertexInfo->Get_FullConstrainParticles(d_InitialState).size();
 
 		//add to the full constraint string
 		if(locAllConstraintString != "")
 			locAllConstraintString += ", ";
-		locAllConstraintString += Build_VertexConstraintString(locReaction, locAllVertices[locConstraintIndex], locAllFullConstrainParticles[locConstraintIndex], locAllOnlyConstrainTimeParticles[locConstraintIndex], locAllNoConstrainParticles[locConstraintIndex], locSpacetimeFitFlag);
-
-		//Erase this vertex from future consideration
-		locAllVertices.erase(locAllVertices.begin() + locConstraintIndex);
-		locAllFullConstrainParticles.erase(locAllFullConstrainParticles.begin() + locConstraintIndex);
-		locAllDecayingParticles.erase(locAllDecayingParticles.begin() + locConstraintIndex);
-		locAllOnlyConstrainTimeParticles.erase(locAllOnlyConstrainTimeParticles.begin() + locConstraintIndex);
-		locAllNoConstrainParticles.erase(locAllNoConstrainParticles.begin() + locConstraintIndex);
-
-		locProgessMadeFlag = true;
+		locAllConstraintString += Build_VertexConstraintString(locVertexInfo, locSpacetimeFitFlag);
 	}
 
-	return locAllVertexParticles;
+	return make_pair(locNumConstraints, locAllConstraintString);
 }
 
-void DKinFitUtils_GlueX::Group_VertexParticles(const DReaction* locReaction, bool locSpacetimeFitFlag, const set<pair<int, int> >& locVertexParticles, set<pair<int, int> >& locFullConstrainParticles, set<pair<int, int> >& locDecayingParticles, set<pair<int, int> >& locOnlyConstrainTimeParticles, set<pair<int, int> >& locNoConstrainParticles) const
+string DKinFitUtils_GlueX::Build_VertexConstraintString(const DReactionStepVertexInfo* locVertexInfo, bool locSpacetimeFitFlag)
 {
-	//Decaying: Only those that can conceivably be used to constrain: All unless dLinkVerticesFlag disabled (then none)
-	locFullConstrainParticles.clear();
-	locDecayingParticles.clear();
-	locOnlyConstrainTimeParticles.clear();
-	locNoConstrainParticles.clear();
+	auto locReaction = locVertexInfo->Get_Reaction();
+	string locConstraintString = locSpacetimeFitFlag ? "#it{x}^{4}_{" : "#it{x}^{3}_{";
 
-	set<pair<int, int> >::const_iterator locIterator = locVertexParticles.begin();
-	for(; locIterator != locVertexParticles.end(); ++locIterator)
+	//initial state
+	auto locParticles = locVertexInfo->Get_Particles(d_InitialState);
+	auto locFullConstrainParticles = locVertexInfo->Get_FullConstrainParticles(d_InitialState);
+	for(auto locIndices : locParticles)
 	{
-		int locStepIndex = (*locIterator).first;
-		int locParticleIndex = (*locIterator).second;
-
-		const DReactionStep* locReactionStep = locReaction->Get_ReactionStep(locStepIndex);
-		Particle_t locInitPID = locReactionStep->Get_InitialParticleID();
-		int locDecayStepIndex = locReaction->Get_DecayStepIndex(locStepIndex, locParticleIndex);
-
-		if(locParticleIndex == -1) //target
-			locNoConstrainParticles.insert(*locIterator);
-		else if((locParticleIndex == -2) && (locInitPID == Gamma)) //beam //ASSUMES BEAM TYPE
-		{
-			if(Get_IncludeBeamlineInVertexFitFlag())
-				locFullConstrainParticles.insert(*locIterator);
-			else
-				locNoConstrainParticles.insert(*locIterator);
-		}
-		else if((locParticleIndex == -2) || (locDecayStepIndex >= 0)) //decaying
-		{
-			if(dLinkVerticesFlag)
-				locDecayingParticles.insert(*locIterator);
-			else
-				locNoConstrainParticles.insert(*locIterator);
-		}
-		else if(locParticleIndex == locReactionStep->Get_MissingParticleIndex()) //missing
-			locNoConstrainParticles.insert(*locIterator);
-		else if(ParticleCharge(locReactionStep->Get_FinalParticleID(locParticleIndex)) == 0) //detected neutral
-		{
-			if(locSpacetimeFitFlag)
-				locOnlyConstrainTimeParticles.insert(*locIterator);
-			else
-				locNoConstrainParticles.insert(*locIterator);
-		}
-		else //detected charged
-			locFullConstrainParticles.insert(*locIterator);
-	}
-}
-
-string DKinFitUtils_GlueX::Build_VertexConstraintString(const DReaction* locReaction, const set<pair<int, int> >& locAllVertexParticles, set<pair<int, int> >& locFullConstrainParticles, set<pair<int, int> >& locOnlyConstrainTimeParticles, set<pair<int, int> >& locNoConstrainParticles, bool locSpacetimeFitFlag) const
-{
-	string locConstraintString;
-	if(locSpacetimeFitFlag)
-		locConstraintString += "#it{x}^{4}_{";
-	else
-		locConstraintString += "#it{x}^{3}_{";
-
-	//initial particles
-	bool locInitialStateFlag = true;
-	set<pair<int, int> >::iterator locAllIterator = locAllVertexParticles.begin();
-	for(; locAllIterator != locAllVertexParticles.end(); ++locAllIterator)
-	{
-		pair<int, int> locParticlePair = *locAllIterator;
-		if(locInitialStateFlag && (locParticlePair.second >= 0))
-		{
-			//now on final state particles
-			locInitialStateFlag = false;
-			locConstraintString += "#rightarrow";
-		}
-
-		const DReactionStep* locReactionStep = locReaction->Get_ReactionStep(locParticlePair.first);
-		Particle_t locPID = Unknown;
-		if(locParticlePair.second == -2) //initial particle
-			locPID = locReactionStep->Get_InitialParticleID();
-		else if(locParticlePair.second == -1) //target particle
-			locPID = locReactionStep->Get_TargetParticleID();
-		else //final state
-			locPID = locReactionStep->Get_FinalParticleID(locParticlePair.second);
-
+		auto locStep = locReaction->Get_ReactionStep(locIndices.first);
+		Particle_t locPID = locStep->Get_PID(locIndices.second);
 		string locParticleString = ParticleName_ROOT(locPID);
-		if((locParticlePair.second == locReactionStep->Get_MissingParticleIndex()) && (locParticlePair.second != -1)) //-1 = target
+		if(locIndices.second == locStep->Get_MissingParticleIndex())
 			locConstraintString += string("(") + locParticleString + string(")"); //missing
-		else if(locFullConstrainParticles.find(locParticlePair) != locFullConstrainParticles.end()) //constraining
+		else if(std::binary_search(locFullConstrainParticles.begin(), locFullConstrainParticles.end(), locIndices)) //constraining
+		{
+			//adjust if beamline not included in vertex fit
+			if(!Get_IncludeBeamlineInVertexFitFlag() && locVertexInfo->Get_ProductionVertexFlag())
+				locConstraintString += locParticleString; //no-constrain
+			else //constrain
+				locConstraintString += string("#color[4]{") + locParticleString + string("}"); //blue
+		}
+		else //no-constrain
+			locConstraintString += locParticleString; //plain
+	}
+
+	//final state
+	locConstraintString += "#rightarrow";
+	locParticles = locVertexInfo->Get_Particles(d_FinalState);
+	locFullConstrainParticles = locVertexInfo->Get_FullConstrainParticles(d_FinalState);
+	auto locOnlyConstrainTimeParticles = locVertexInfo->Get_OnlyConstrainTimeParticles();
+	for(auto locIndices : locParticles)
+	{
+		auto locStep = locReaction->Get_ReactionStep(locIndices.first);
+		Particle_t locPID = locStep->Get_PID(locIndices.second);
+		string locParticleString = ParticleName_ROOT(locPID);
+
+		if(locIndices.second == locStep->Get_MissingParticleIndex())
+			locConstraintString += string("(") + locParticleString + string(")"); //missing
+		else if(std::binary_search(locFullConstrainParticles.begin(), locFullConstrainParticles.end(), locIndices)) //constraining
 			locConstraintString += string("#color[4]{") + locParticleString + string("}"); //blue
-		else if(locOnlyConstrainTimeParticles.find(locParticlePair) != locOnlyConstrainTimeParticles.end()) //time-only
+		else if(locSpacetimeFitFlag && std::binary_search(locOnlyConstrainTimeParticles.begin(), locOnlyConstrainTimeParticles.end(), locIndices)) //time-only
 			locConstraintString += string("#color[3]{") + locParticleString + string("}"); //green
 		else //no-constrain
 			locConstraintString += locParticleString; //plain
 	}
+
 	locConstraintString += string("}"); //end of constraint
 
 	return locConstraintString;

@@ -6,22 +6,31 @@ namespace DAnalysis
 
 /************************************************************** DREACTION FUNCTIONS ***************************************************************/
 
-vector<Particle_t> DReaction::Get_FinalPIDs(bool locIncludeMissingFlag, bool locIncludeDecayingFlag, Charge_t locCharge, bool locIncludeDuplicatesFlag) const
+vector<Particle_t> DReaction::Get_FinalPIDs(int locStepIndex, bool locIncludeMissingFlag, bool locIncludeDecayingFlag, Charge_t locCharge, bool locIncludeDuplicatesFlag) const
 {
+	//define the PID loop
 	vector<Particle_t> locFinalPIDs;
-	for(size_t loc_i = 0; loc_i < dReactionSteps.size(); ++loc_i)
+	auto locPIDLoop = [&](const DReactionStep* locStep, size_t locLoopStepIndex) -> void
 	{
-		const DReactionStep* locStep = dReactionSteps[loc_i];
-		for(size_t loc_j = 0; loc_j < locStep->Get_NumFinalPIDs(); ++loc_j)
+		for(size_t locPIDIndex = 0; locPIDIndex < locStep->Get_NumFinalPIDs(); ++locPIDIndex)
 		{
-			if(!locIncludeDecayingFlag && (Get_DecayStepIndex(this, loc_i, loc_j) >= 0))
+			if(!locIncludeDecayingFlag && (Get_DecayStepIndex(this, locLoopStepIndex, locPIDIndex) >= 0))
 				continue;
-			if(!locIncludeMissingFlag && (loc_j == locStep->Get_MissingParticleIndex()))
+			if(!locIncludeMissingFlag && (locPIDIndex == locStep->Get_MissingParticleIndex()))
 				continue;
-			Particle_t locPID = locStep->Get_FinalPID(loc_j);
+			Particle_t locPID = locStep->Get_FinalPID(locPIDIndex);
 			if(Is_CorrectCharge(locPID, locCharge))
 				locFinalPIDs.push_back(locPID);
 		}
+	};
+
+	//execute the loop
+	if(locStepIndex != -1)
+		locPIDLoop(Get_ReactionStep(locStepIndex), locStepIndex);
+	else
+	{
+		for(size_t loc_i = 0; loc_i < dReactionSteps.size(); ++loc_i)
+			locPIDLoop(Get_ReactionStep(locStepIndex), loc_i);
 	}
 
 	if(!locIncludeDuplicatesFlag)
@@ -37,66 +46,82 @@ vector<Particle_t> DReaction::Get_FinalPIDs(bool locIncludeMissingFlag, bool loc
 pair<int, int> Get_InitialParticleDecayFromIndices(const DReaction* locReaction, int locStepIndex)
 {
 	//check to see how many initial-state particles with this PID type there are before now
-	Particle_t locDecayingPID = locReaction->Get_ReactionStep(locStepIndex)->Get_InitialParticleID();
-	size_t locPreviousPIDCount = 0;
-	for(int loc_i = 0; loc_i < locStepIndex; ++loc_i)
-	{
-		if(locReaction->Get_ReactionStep(loc_i)->Get_InitialParticleID() == locDecayingPID)
-			++locPreviousPIDCount;
-	}
+	Particle_t locDecayingPID = locReaction->Get_ReactionStep(locStepIndex)->Get_InitialPID();
+
+	auto locSteps = locReaction->Get_ReactionSteps();
+	auto locPIDCounter = [=](const DReactionStep* locStep) -> bool {return (locStep->Get_InitialPID() == locDecayingPID);};
+	size_t locPreviousPIDCount = std::count_if(locSteps.begin(), locSteps.begin() + locStepIndex, locPIDCounter);
 
 	//now, search through final-state PIDs until finding the (locPreviousPIDCount + 1)'th instance of this PID
 	size_t locSearchPIDCount = 0;
-	for(int loc_i = 0; loc_i < locStepIndex; ++loc_i)
+	for(size_t loc_i = 0; loc_i < locStepIndex; ++loc_i)
 	{
-		const DReactionStep* locReactionStep = locReaction->Get_ReactionStep(loc_i);
-		for(size_t loc_j = 0; loc_j < locReactionStep->Get_NumFinalParticleIDs(); ++loc_j)
-		{
-			if(locReactionStep->Get_FinalParticleID(loc_j) != locDecayingPID)
-				continue;
-			++locSearchPIDCount;
-			if(locSearchPIDCount <= locPreviousPIDCount)
-				continue;
-			return pair<int, int>(loc_i, loc_j);
-		}
+		auto locFinalPIDs = locSteps[loc_i]->Get_FinalPIDs(false);
+
+		auto locPIDCounter = [&](Particle_t locPID) -> bool
+			{return (locPID != locDecayingPID) ? false : (++locSearchPIDCount > locPreviousPIDCount);};
+
+		auto locIterator = std::find_if(locFinalPIDs.begin(), locFinalPIDs.end(), locPIDCounter);
+		if(locIterator != locFinalPIDs.end())
+			return pair<int, int>(loc_i, std::distance(locFinalPIDs.begin(), locIterator));
 	}
-	return pair<int, int>(-1, -1);
+	return make_pair(-1, -1);
 }
 
 int Get_DecayStepIndex(const DReaction* locReaction, size_t locStepIndex, size_t locParticleIndex)
 {
 	//check if the input particle decays later in the reaction
-	Particle_t locDecayingPID = locReaction->Get_ReactionStep(locStepIndex)->Get_FinalPID(locParticleIndex);
+	auto locSteps = locReaction->Get_ReactionSteps();
+	Particle_t locDecayingPID = locSteps[locStepIndex]->Get_FinalPID(locParticleIndex);
 
 	//check to see how many final state particles with this pid type there are before now
 	size_t locPreviousPIDCount = 0;
 	for(size_t loc_i = 0; loc_i <= locStepIndex; ++loc_i)
 	{
-		const DReactionStep* locReactionStep = locReaction->Get_ReactionStep(loc_i);
-		for(size_t loc_j = 0; loc_j < locReactionStep->Get_NumFinalParticleIDs(); ++loc_j)
-		{
-			if((loc_i == locStepIndex) && (loc_j == locParticleIndex))
-				break; //at the current particle: of the search
-			if(locReactionStep->Get_FinalParticleID(loc_j) == locDecayingPID)
-				++locPreviousPIDCount;
-		}
+		const DReactionStep* locStep = locSteps[loc_i];
+		auto locFinalPIDs = locStep->Get_FinalPIDs();
+		auto locEndIterator = (loc_i++ == locStepIndex) ? locFinalPIDs.begin() + locParticleIndex : locFinalPIDs.end();
+		locPreviousPIDCount += std::count(locFinalPIDs.begin(), locEndIterator, locDecayingPID);
 	}
 
 	//now, find the (locPreviousPIDCount + 1)'th time where this pid is a decay parent
 	size_t locStepPIDCount = 0;
-	for(size_t loc_i = 0; loc_i < locReaction->Get_NumReactionSteps(); ++loc_i)
-	{
-		if(locReaction->Get_ReactionStep(loc_i)->Get_InitialParticleID() != locDecayingPID)
-			continue;
-		++locStepPIDCount;
-		if(locStepPIDCount <= locPreviousPIDCount)
-			continue;
-		//decays later in the reaction, at step index loc_i
-		return loc_i;
-	}
+	auto locStepCounter = [&](const DReactionStep* locStep) -> bool
+		{return (locStep->Get_InitialPID() != locDecayingPID) ? false : (++locStepPIDCount > locPreviousPIDCount);};
 
-	// does not decay later in the reaction
-	return -1;
+	auto locIterator = std::find_if(locSteps.begin(), locSteps.end(), locStepCounter);
+	return (locIterator == locSteps.end()) ? -1 : std::distance(locSteps.begin(), locIterator);
+}
+
+vector<Particle_t> Get_ChainPIDs(const DReaction* locReaction, size_t locStepIndex, int locUpToStepIndex, vector<Particle_t> locUpThroughPIDs, bool locExpandDecayingFlag)
+{
+	//if locKinFitResultsFlag = true: don't expand decaying particles (through decay chain) that were included in the kinfit (still expand resonances)
+	vector<Particle_t> locChainPIDs;
+	auto locPIDs = locReaction->Get_ReactionStep(locStepIndex)->Get_FinalPIDs();
+	for(size_t loc_j = 0; loc_j < locPIDs.size(); ++loc_j)
+	{
+		Particle_t locPID = locPIDs[loc_j];
+		if(!locUpThroughPIDs.empty() && (int(locStepIndex) == locUpToStepIndex))
+		{
+			auto locIterator = std::find(locUpThroughPIDs.begin(), locUpThroughPIDs.end(), locPID);
+			if(locIterator != locUpThroughPIDs.end())
+				locUpThroughPIDs.erase(locIterator); //found, include it
+			else
+				continue; //skip it: don't want to include it
+		}
+
+		//see if decaying, and if so where, if decay expansion is requested (or mass isn't fixed)
+		int locDecayingStepIndex = (!IsFixedMass(locPID) || locExpandDecayingFlag) ? Get_DecayStepIndex(locReaction, locStepIndex, loc_j) : -1;
+
+		if(locDecayingStepIndex == -1)
+			locChainPIDs.push_back(locPID);
+		else
+		{
+			auto locDecayPIDs = Get_ChainPIDs(locDecayingStepIndex, locUpToStepIndex, locUpThroughPIDs, locExpandDecayingFlag);
+			locChainPIDs.insert(locChainPIDs.end(), locDecayPIDs.begin(), locDecayPIDs.end());
+		}
+	}
+	return locChainPIDs;
 }
 
 //CHANGE ME???

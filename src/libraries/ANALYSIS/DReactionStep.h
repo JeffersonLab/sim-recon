@@ -27,7 +27,7 @@ class DReactionStep
 				bool locInclusiveFlag = false, bool locBeamMissingFlag = false);
 		//if 2 beams: collider experiment
 		DReactionStep(pair<Particle_t, Particle_t> locBeamPIDs, vector<Particle_t> locNonMissingFinalPIDs, Particle_t locMissingFinalPID = Unknown,
-				bool locInclusiveFlag = false, bool locFirstBeamMissingFlag = false);
+				bool locInclusiveFlag = false, bool locFirstBeamMissingFlag = false, bool locSecondBeamMissingFlag = false);
 		//decaying particle
 		DReactionStep(Particle_t locDecayingPID, vector<Particle_t> locNonMissingFinalPIDs, Particle_t locMissingFinalPID = Unknown, bool locInclusiveFlag = false);
 		// default
@@ -50,42 +50,46 @@ class DReactionStep
 
 		// GET FINAL PARTICLE PIDs:
 		Particle_t Get_FinalPID(size_t locIndex) const{return dReactionStepInfo->dFinalPIDs.at(locIndex);}
+		Particle_t Get_PID(int locParticlceIndex) const;
 		size_t Get_NumFinalPIDs(void) const{return dReactionStepInfo->dFinalPIDs.size();}
 		vector<Particle_t> Get_FinalPIDs(bool locIncludeMissingFlag = true, Charge_t locCharge = d_AllCharges, bool locIncludeDuplicatesFlag = true) const;
 
 		//GET CONTROL FLAGS
 		int Get_MissingParticleIndex(void) const{return dReactionStepInfo->dMissingParticleIndex;}
-		bool Get_IsInclusiveFlag(void) const{return (dReactionStepInfo->dMissingParticleIndex == DReactionStepInfo::Get_MissingIndex_Inclusive());}
-		bool Get_IsMissingBeamFlag(void) const{return (dReactionStepInfo->dMissingParticleIndex == DReactionStepInfo::Get_MissingIndex_Beam());}
+		bool Get_IsInclusiveFlag(void) const{return (dReactionStepInfo->dMissingParticleIndex == DReactionStep::Get_ParticleIndex_Inclusive());}
+		bool Get_IsBeamMissingFlag(void) const{return (dReactionStepInfo->dMissingParticleIndex == DReactionStep::Get_ParticleIndex_Initial());}
+		bool Get_IsSecondBeamMissingFlag(void) const{return (dReactionStepInfo->dMissingParticleIndex == DReactionStep::Get_ParticleIndex_SecondBeam());}
 		bool Get_KinFitConstrainInitMassFlag(void) const{return dReactionStepInfo->dKinFitConstrainInitMassFlag;}
+
+		//definitions of negative values for any particle index //in order such that operator< returns order expected for string (e.g. gp->...)
+		static int Get_ParticleIndex_None(void){return -5;}
+		static int Get_ParticleIndex_Inclusive(void){return -4;}
+		static int Get_ParticleIndex_Initial(void){return -3;}
+		static int Get_ParticleIndex_SecondBeam(void){return -2;}
+		static int Get_ParticleIndex_Target(void){return -1;}
 
 	private:
 
-		int Prepare_InfoArguments(vector<Particle_t>& locFinalPIDs, Particle_t locMissingFinalPID, bool locInclusiveFlag, bool locBeamMissingFlag) const;
+		int Prepare_InfoArguments(vector<Particle_t>& locFinalPIDs, Particle_t locMissingFinalPID, bool locInclusiveFlag, bool locBeamMissingFlag, bool locSecondBeamMissingFlag) const;
 		static void Check_IsResonance(Particle_t locPID);
 
 		struct DReactionStepInfo
 		{
 			//CONSTRUCTORS
-			DReactionStepInfo(void);
 			DReactionStepInfo(Particle_t locInitialPID, Particle_t locSecondBeamPID, Particle_t locTargetPID, vector<Particle_t> locFinalPIDs,
 					int locMissingParticleIndex = -1);
 
 			// QUERY MISSING PARTICLE INDEX
 
 			// PID MEMBERS:
-			Particle_t dInitialPID; //e.g. lambda, gamma
-			Particle_t dSecondBeamPID; //second beam, Unknown if not present
-			Particle_t dTargetPID; //unknown if none
+			Particle_t dInitialPID = Unknown; //e.g. lambda, gamma
+			Particle_t dSecondBeamPID = Unknown; //second beam, Unknown if not present
+			Particle_t dTargetPID = Unknown; //unknown if none
 			vector<Particle_t> dFinalPIDs; //if inclusive, PID is not here!! minutes are.
 
 			// CONTROL MEMBERS:
-			int dMissingParticleIndex; //final state particle at this index is missing //negative values defined by static functions below
-			bool dKinFitConstrainInitMassFlag; //default true, is ignored when not applicable (e.g. init is non-decaying (beam) particle)
-
-			static int Get_MissingIndex_None(void){return -3;}
-			static int Get_MissingIndex_Inclusive(void){return -2;}
-			static int Get_MissingIndex_Beam(void){return -1;}
+			int dMissingParticleIndex = DReactionStep::Get_ParticleIndex_None(); //final state particle at this index is missing
+			bool dKinFitConstrainInitMassFlag = true; //default true, is ignored when not applicable (e.g. init is non-decaying (beam) particle)
 		};
 
 		//memory of object in shared_ptr is managed automatically: deleted automatically when no references are left
@@ -108,15 +112,16 @@ inline DReactionStep::DReactionStep(Particle_t locScatteringPID, Particle_t locT
 		bool locInclusiveFlag, bool locBeamMissingFlag)
 {
 	//Prepare arguments
-	int locMissingParticleIndex = Prepare_InfoArguments(locNonMissingFinalPIDs, locMissingFinalPID, locInclusiveFlag, locBeamMissingFlag);
+	int locMissingParticleIndex = Prepare_InfoArguments(locNonMissingFinalPIDs, locMissingFinalPID, locInclusiveFlag, locBeamMissingFlag, false);
 	dReactionStepInfo = std::make_shared<DReactionStepInfo>(locScatteringPID, Unknown, locTargetPID, locNonMissingFinalPIDs, locMissingParticleIndex);
 }
 
 //if 2 beams: collider experiment
-inline DReactionStep::DReactionStep(pair<Particle_t, Particle_t> locBeamPIDs, vector<Particle_t> locNonMissingFinalPIDs, Particle_t locMissingFinalPID, bool locInclusiveFlag, bool locFirstBeamMissingFlag)
+inline DReactionStep::DReactionStep(pair<Particle_t, Particle_t> locBeamPIDs, vector<Particle_t> locNonMissingFinalPIDs, Particle_t locMissingFinalPID,
+		bool locInclusiveFlag, bool locFirstBeamMissingFlag, bool locSecondBeamMissingFlag)
 {
 	//Prepare arguments
-	int locMissingParticleIndex = Prepare_InfoArguments(locNonMissingFinalPIDs, locMissingFinalPID, locInclusiveFlag, locFirstBeamMissingFlag);
+	int locMissingParticleIndex = Prepare_InfoArguments(locNonMissingFinalPIDs, locMissingFinalPID, locInclusiveFlag, locFirstBeamMissingFlag, locSecondBeamMissingFlag);
 	dReactionStepInfo = std::make_shared<DReactionStepInfo>(locBeamPIDs.first, locBeamPIDs.second, Unknown, locNonMissingFinalPIDs, locMissingParticleIndex);
 }
 
@@ -124,7 +129,7 @@ inline DReactionStep::DReactionStep(pair<Particle_t, Particle_t> locBeamPIDs, ve
 inline DReactionStep::DReactionStep(Particle_t locDecayingPID, vector<Particle_t> locNonMissingFinalPIDs, Particle_t locMissingFinalPID, bool locInclusiveFlag)
 {
 	//Prepare arguments
-	int locMissingParticleIndex = Prepare_InfoArguments(locNonMissingFinalPIDs, locMissingFinalPID, locInclusiveFlag, false);
+	int locMissingParticleIndex = Prepare_InfoArguments(locNonMissingFinalPIDs, locMissingFinalPID, locInclusiveFlag, false, false);
 	dReactionStepInfo = std::make_shared<DReactionStepInfo>(locDecayingPID, Unknown, Unknown, locNonMissingFinalPIDs, locMissingParticleIndex);
 }
 
@@ -141,14 +146,10 @@ inline DReactionStep& DReactionStep::operator=(const DReactionStep& locSourceDat
 
 /************************************************************** DREACTIONSTEPINFO CONSTRUCTORS ***************************************************************/
 
-inline DReactionStep::DReactionStepInfo::DReactionStepInfo(void) :
-		dInitialPID(Unknown), dSecondBeamPID(Unknown), dTargetPID(Unknown), dFinalPIDs({}),
-		dMissingParticleIndex(DReactionStepInfo::Get_MissingIndex_None()), dKinFitConstrainInitMassFlag(true) {}
-
 inline DReactionStep::DReactionStepInfo::DReactionStepInfo(Particle_t locInitialPID, Particle_t locSecondBeamPID, Particle_t locTargetPID,
 		vector<Particle_t> locFinalPIDs, int locMissingParticleIndex) :
 		dInitialPID(locInitialPID), dSecondBeamPID(locSecondBeamPID), dTargetPID(locTargetPID), dFinalPIDs(locFinalPIDs),
-		dMissingParticleIndex(locMissingParticleIndex), dKinFitConstrainInitMassFlag(true)
+		dMissingParticleIndex(locMissingParticleIndex)
 {
 	Check_IsResonance(dInitialPID);
 	Check_IsResonance(dSecondBeamPID);
@@ -173,7 +174,7 @@ inline void DReactionStep::Set_InitialParticleID(Particle_t locPID, bool locIsMi
 	Check_IsResonance(locPID);
 	dReactionStepInfo->dInitialPID = locPID;
 	if(locIsMissingFlag)
-		dReactionStepInfo->dMissingParticleIndex = DReactionStepInfo::Get_MissingIndex_Beam();
+		dReactionStepInfo->dMissingParticleIndex = DReactionStep::Get_ParticleIndex_Initial();
 }
 
 inline Particle_t DReactionStep::Get_MissingPID(void) const
@@ -181,21 +182,18 @@ inline Particle_t DReactionStep::Get_MissingPID(void) const
 	return (dReactionStepInfo->dMissingParticleIndex < 0) ? Unknown : dReactionStepInfo->dFinalPIDs[dReactionStepInfo->dMissingParticleIndex];
 }
 
-inline vector<Particle_t> DReactionStep::Get_FinalPIDs(bool locIncludeMissingFlag, Charge_t locCharge, bool locIncludeDuplicatesFlag) const
+inline Particle_t DReactionStep::Get_PID(int locParticlceIndex) const
 {
-	vector<Particle_t> locFinalPIDs = dReactionStepInfo->dFinalPIDs;
-	if(!locIncludeMissingFlag && (dReactionStepInfo->dMissingParticleIndex >= 0))
-		locFinalPIDs.erase(locFinalPIDs.begin() + dReactionStepInfo->dMissingParticleIndex);
+	if(locParticlceIndex >= 0)
+		return Get_FinalPID(locParticlceIndex);
 
-	auto locComparator = [&](Particle_t& locPID) -> bool {return !Is_CorrectCharge(locPID, locCharge);};
-	locFinalPIDs.erase(std::remove_if(locFinalPIDs.begin(), locFinalPIDs.end(), locComparator), locFinalPIDs.end());
-
-	if(!locIncludeDuplicatesFlag)
+	switch (locParticlceIndex)
 	{
-		std::sort(locFinalPIDs.begin(), locFinalPIDs.end());
-		locFinalPIDs.erase(std::unique(locFinalPIDs.begin(), locFinalPIDs.end()), locFinalPIDs.end());
+		case Get_ParticleIndex_Initial(): return dReactionStepInfo->dInitialPID;
+		case Get_ParticleIndex_SecondBeam(): return dReactionStepInfo->dSecondBeamPID;
+		case Get_ParticleIndex_Target(): return dReactionStepInfo->dTargetPID;
+		default: return Unknown;
 	}
-	return locFinalPIDs;
 }
 
 /****************************************************** NAMESPACE-SCOPE INLINE FUNCTIONS *******************************************************/

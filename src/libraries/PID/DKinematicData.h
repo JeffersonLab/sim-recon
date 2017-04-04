@@ -25,7 +25,7 @@ class DKinematicData : public JObject
 
 		// constructors and destructor
 		DKinematicData(void);
-		DKinematicData(Particle_t locPID, DVector3 locMomentum, DVector3 locPosition(DVector3()), double locTime = 0.0, const TMatrixFSym* locErrorMatrix = nullptr);
+		DKinematicData(Particle_t locPID, DVector3 locMomentum, DVector3 locPosition = DVector3(), double locTime = 0.0, const TMatrixFSym* locErrorMatrix = nullptr);
 		DKinematicData(const DKinematicData& locSourceData, bool locShareKinematicsFlag = false);
 		virtual ~DKinematicData(void) {};
 
@@ -87,17 +87,16 @@ class DKinematicData : public JObject
 		struct DKinematicInfo
 		{
 			//CONSTRUCTORS
-			DKinematicInfo(void);
-			DKinematicInfo(Particle_t locPID, DVector3 locMomentum, DVector3 locPosition(DVector3()), double locTime = 0.0, const TMatrixFSym* locErrorMatrix = nullptr);
+			DKinematicInfo(Particle_t locPID, DVector3 locMomentum, DVector3 locPosition = DVector3(), double locTime = 0.0, const TMatrixFSym* locErrorMatrix = nullptr);
 
 			//MEMBERS
-			Particle_t dPID;
+			Particle_t dPID = Unknown;
 			DVector3 dMomentum;
 			DVector3 dPosition;
-			double dTime; // Time of the track propagated at dPosition
+			double dTime = 0.0; // Time of the track propagated at dPosition
 
 			// Tracking information //The setter's are responsible for managing the matrix memory!  These are NEVER the owners.
-			const TMatrixFSym* dErrorMatrix;   // Order is (px, py, pz, x, y, z, t)
+			const TMatrixFSym* dErrorMatrix = nullptr;   // Order is (px, py, pz, x, y, z, t)
 		};
 
 		//memory of object in shared_ptr is managed automatically: deleted automatically when no references are left
@@ -126,9 +125,6 @@ inline DKinematicData& DKinematicData::operator=(const DKinematicData& locSource
 	dKinematicInfo = std::make_shared<DKinematicInfo>(*(locSourceData.dKinematicInfo));
 	return *this;
 }
-
-inline DKinematicData::DKinematicInfo::DKinematicInfo(void) :
-dPID(Unknown), dMomentum(DVector3()), dPosition(DVector3()), dTime(0.0), dErrorMatrix(nullptr) {}
 
 inline DKinematicData::DKinematicInfo::DKinematicInfo(Particle_t locPID, DVector3 locMomentum, DVector3 locPosition, double locTime, const TMatrixFSym* locErrorMatrix) :
 dPID(locPID), dMomentum(locMomentum), dPosition(locPosition), dTime(locTime), dErrorMatrix(locErrorMatrix) {}

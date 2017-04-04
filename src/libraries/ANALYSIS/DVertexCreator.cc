@@ -12,10 +12,6 @@ DVertexCreator::DVertexCreator(JEventLoop* locEventLoop)
 	//CONTROL
 	dUseSigmaForRFSelectionFlag = false;
 
-	//BEWARE: IF THIS IS CHANGED, CHANGE IN THE ANALYSIS UTILITIES AND THE EVENT WRITER ALSO!!
-	dShowerSelectionTag = "PreSelect";
-	gPARMS->SetDefaultParameter("COMBO:SHOWER_SELECT_TAG", dShowerSelectionTag);
-
 	//GET THE GEOMETRY
 	DApplication* locApplication = dynamic_cast<DApplication*>(locEventLoop->GetJApplication());
 	DGeometry* locGeometry = locApplication->GetDGeometry(locEventLoop->GetJEvent().GetRunNumber());
@@ -49,14 +45,15 @@ DVertexCreator::DVertexCreator(JEventLoop* locEventLoop)
 		dTrackingPIDs.push_back(Particle_t(locHypotheses[loc_i]));
 	std::sort(dTrackingPIDs.begin(), dTrackingPIDs.end()); //so that can search later
 
-	//INITIALIZE PHOTON VERTEX-Z EVALUATION BINNING
-	dPhotonVertexZBinWidth = 10.0;
-	dPhotonVertexZRangeLow = dTargetCenterZ - locTargetLength/2.0 - dPhotonVertexZBinWidth;
-	dNumPhotonVertexZBins = int(round(locTargetLength/dPhotonVertexZBinWidth)) + 4; //+4: 1 before target, 3 after
-
 	//INITIALIZE MISCELLANEOUS MEMBERS
 	dESSkimData = nullptr;
 	dEventRFBunch = nullptr;
+
+	//SETUP dReactionVertexInfoMap
+	vector<const DReactionVertexInfo*> locVertexInfos;
+	locEventLoop->Get(locVertexInfos);
+	for(auto locVertexInfo : locVertexInfos)
+		dReactionVertexInfoMap.emplace(locVertexInfo->Get_Reaction(), locVertexInfo);
 }
 
 void DVertexCreator::Do_All(JEventLoop* locEventLoop, const vector<const DReaction*>& locReactions)
@@ -428,10 +425,6 @@ void DVertexCreator::Build_VertexInfos(const DReaction* locReaction)
 {
 	//pairs: step index, particle index (is -2 for beam/decaying particle, -1 for target)
 	deque<set<pair<int, int> > > locVertices = dKinFitUtils->Setup_VertexPredictions(locReaction);
-
-	string locVertexConstraintString;
-	size_t locNumVertexConstraints = 0;
-	locVertices = dKinFitUtils->Predict_VertexConstraints(locReaction, locVertices, false, locNumVertexConstraints, locVertexConstraintString);
 
 	if(locVertices.empty())
 	{
@@ -1064,87 +1057,6 @@ void DVertexCreator::Get_RequiredNeutralCombos(const vector<const DReaction*>& l
 	const DReactionStep*
 }
 
-void DVertexCreator::Evaluate_PhotonShowers(void)
-{
-	//for each vertex-z bin, calculate the photon p4 & time at the beamline
-	//then, do RF delta-t cuts to determine the possible RF bunches available
-	//then, for each possible RF bunch, come up with the possible pi0, eta, etc. pairs and place invariant mass cuts on them
-		//first only do directly-all-g mass-combos as requested by users (exclude things like omega -> pi0, g)
-	//then, if at least one reaction with > 1 pi0, for pi0s, figure out which combos of pi0s can go together
-		//then, find what further N-pi0's are needed (3pi0, 4pi0, etc.), and make all possible combos of those
-	//finally, do remaining neutral combos as needed by the various channels (e.g. omega -> pi0, g;  eta -> 3pi0, etc.)
-
-	//loop over photon vertex-z bins
-	for(int locVertZBin = 0; locVertZBin < dNumPhotonVertexZBins; ++locVertZBin)
-	{
-		//build center vertex for this bin
-		float locBinCenterVertexZ = dPhotonVertexZRangeLow + (float(locVertZBin) + 0.5)*dPhotonVertexZBinWidth;
-		DVector3 locVertex(0.0, 0.0, locBinCenterVertexZ);
-
-		//propagate RF time to vertex position
-		double locPropagatedRFTime = dEventRFBunch->dTime + (locVertex.Z() - dTargetCenterZ)/29.9792458;
-
-		//loop over neutral showers, calculating p3 & time and creating DKinematicData's
-		unordered_map<const DNeutralShower*, shared_ptr<const DKinematicData*> > locPhotonP4TimeMap;
-		for(auto& locNeutralShower : dNeutralShowers)
-		{
-			double locVertexTime = 0.0;
-			DVector3 locMomentum = Calc_PhotonP3Time(locNeutralShower, locVertex, locVertexTime);
-			locPhotonP4TimeMap.emplace(locNeutralShower, make_shared<DKinematicData>(Gamma, locMomentum, locVertex, locVertexTime));
-		}
-
-		//loop over neutral showers, grouping by potential RF bunch shift
-		unordered_map<const DNeutralShower*, vector<int> > locNeutralRFDeltaTMap;
-		for(auto& locNeutralShower : dNeutralShowers)
-			locNeutralRFDeltaTMap.emplace(locNeutralShower, Calc_PhotonBeamBunchShifts(locNeutralShower, locPhotonP4TimeMap[locNeutralShower], locPropagatedRFTime));
-
-		//re-organize in terms of #-rf-bunch shifts
-		unordered_map<int, vector<const DNeutralShower*> > locNeutralsByRFBunch;
-		for(auto& locShowerPair : locNeutralRFDeltaTMap)
-		{
-			auto& locRFBunchShifts = locShowerPair.second;
-			for(auto& locRFBunchShift : locRFBunchShifts)
-				locNeutralsByRFBunch[locRFBunchShift].emplace_back(locShowerPair.first);
-		}
-
-		//loop over possible rf bunches,
-	}
-
-}
-
-vector<int> DVertexCreator::Calc_PhotonBeamBunchShifts(const DNeutralShower* locNeutralShower, shared_ptr<const DKinematicData*>& locKinematicData, double locRFTime) const
-{
-	//calc vertex time, get delta-t cut
-	DetectorSystem_t locSystem = locNeutralShower->dDetectorSystem;
-	double locDeltaTCut = dPIDTimeCutMap[Gamma][locSystem] + Calc_DeltaTError(locNeutralShower, locKinematicData);
-
-	//loop over possible #-RF-shifts, computing delta-t's
-	vector<int> locBeamBunches;
-
-	//start with best-shift, then loop up in n-shifts
-	double locVertexTime = locKinematicData->time();
-	int locOrigNumShifts = Calc_RFBunchShift(locRFTime, locVertexTime);
-	int locNumShifts = locOrigNumShifts;
-	double locDeltaT = locVertexTime - (locRFTime + locNumShifts*dBeamBunchPeriod);
-	while(fabs(locDeltaT) < locDeltaTCut)
-	{
-		locBeamBunches.emplace_back(locNumShifts);
-		++locNumShifts;
-		locDeltaT = locVertexTime - (locRFTime + locNumShifts*dBeamBunchPeriod);
-	}
-
-	//now loop down in n-shifts
-	int locNumShifts = locOrigNumShifts - 1;
-	double locDeltaT = locVertexTime - (locRFTime + locNumShifts*dBeamBunchPeriod);
-	while(fabs(locDeltaT) < locDeltaTCut)
-	{
-		locBeamBunches.emplace_back(locNumShifts);
-		--locNumShifts;
-		locDeltaT = locVertexTime - (locRFTime + locNumShifts*dBeamBunchPeriod);
-	}
-
-	return locBeamBunches;
-}
 
 
 unordered_map<int, double> DVertexCreator::Calc_NeutralRFDeltaTs(const DNeutralShower* locNeutralShower, const TVector3& locVertex, double locRFTime) const

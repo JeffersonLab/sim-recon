@@ -78,6 +78,7 @@ class DReaction : public DReactionBase
 		JOBJECT_PUBLIC(DReaction);
 
 		// CONSTRUCTOR: //User must specify a unique reaction name upon construction
+		DReaction(void) = delete;
 		DReaction(string locReactionName, vector<const DReactionStep*> locSteps = {}, DKinFitType locKinFitType = d_NoFit, string locTreeFileName = "");
 
 		// DESTRUCTOR:
@@ -113,8 +114,9 @@ class DReaction : public DReactionBase
 		const DReactionStep* Get_ReactionStep(size_t locStepIndex) const{return dReactionSteps.at(locStepIndex);}
 		vector<const DReactionStep*> Get_ReactionSteps(void) const{return dReactionSteps;}
 
-		// GET PIDS
-		vector<Particle_t> Get_FinalPIDs(bool locIncludeMissingFlag = true, bool locIncludeDecayingFlag = true, Charge_t locCharge = d_AllCharges, bool locIncludeDuplicatesFlag = true) const;
+		// GET PIDS //step index of -1: All steps
+		vector<Particle_t> Get_FinalPIDs(int locStepIndex = -1, bool locIncludeMissingFlag = true, bool locIncludeDecayingFlag = true,
+				Charge_t locCharge = d_AllCharges, bool locIncludeDuplicatesFlag = true) const;
 
 		// GET ANALYSIS ACTIONS:
 		size_t Get_NumAnalysisActions(void) const{return dAnalysisActions.size();}
@@ -141,17 +143,16 @@ class DReaction : public DReactionBase
 
 	private:
 		// PRIVATE METHODS:
-		DReaction(void); //make default constructor private. MUST set a name upon construction (and must be unique!)
 
 		// CONTROL MEMBERS:
 		string dReactionName; //must be unique
-		DKinFitType dKinFitType; //defined in ANALYSIS/DKinFitResults.h
-		bool dKinFitUpdateCovarianceMatricesFlag; //true to create new error matrices post-kinfit, false to keep the old ones
+		DKinFitType dKinFitType = d_NoFit; //defined in ANALYSIS/DKinFitResults.h
+		bool dKinFitUpdateCovarianceMatricesFlag = false; //true to create new error matrices post-kinfit, false to keep the old ones
 
 		// ROOT TTREE OUTPUT:
-		bool dEnableTTreeOutputFlag; //default is false
-		bool dSaveUnusedFlag; //default is false
-		string dTTreeOutputFileName;
+		bool dEnableTTreeOutputFlag = false;
+		bool dSaveUnusedFlag = false;
+		string dTTreeOutputFileName = "";
 
 		// REACTION AND ANALYSIS MEMBERS:
 		vector<const DReactionStep*> dReactionSteps;
@@ -160,24 +161,29 @@ class DReaction : public DReactionBase
 		// PRE-DPARTICLECOMBO CONTROL-CUT VALUES
 			//bool = true/false for cut enabled/disabled, double = cut value
 			//Command-line values (variable names are below in all-caps) will override these values
-		pair<bool, double> dMaxPhotonRFDeltaT; //COMBO:MAX_PHOTON_RF_DELTAT - the maximum photon-rf time difference: used for photon selection
-		pair<bool, size_t> dMaxExtraGoodTracks; //COMBO:MAX_EXTRA_GOOD_TRACKS - "good" defined by PreSelect factory
-		pair<bool, int> dMaxNumBeamPhotonsInBunch; //COMBO:MAX_NUM_BEAM_PHOTONS cut out combos with more than this # of beam photons surviving the RF delta-t cut
+		pair<bool, double> dMaxPhotonRFDeltaT = make_pair(false, 0.0); //COMBO:MAX_PHOTON_RF_DELTAT - the maximum photon-rf time difference: used for photon selection
+		pair<bool, size_t> dMaxExtraGoodTracks = make_pair(false, size_t(0)); //COMBO:MAX_EXTRA_GOOD_TRACKS - "good" defined by PreSelect factory
+		pair<bool, int> dMaxNumBeamPhotonsInBunch = make_pair(false, 0); //COMBO:MAX_NUM_BEAM_PHOTONS cut out combos with more than this # of beam photons surviving the RF delta-t cut
 
 		// EVENT STORE QUERY
-		string dEventStoreSkims; // First is skim name (default = "all"), second is additional query (default = "")
+		string dEventStoreSkims = ""; // First is skim name (default = "all"), second is additional query (default = "")
 
 		// BUILD ANY FLAGS
 		//Default false. If true: Once one is built, don't bother making others. 
-		bool dAnyComboFlag;
+		bool dAnyComboFlag = false;
 };
+
+/****************************************************** NAMESPACE-SCOPE NON-INLINE FUNCTION DECLARATIONS *******************************************************/
+
+int Get_DecayStepIndex(const DReaction* locReaction, size_t locStepIndex, size_t locParticleIndex);
+pair<int, int> Get_InitialParticleDecayFromIndices(const DReaction* locReaction, int locStepIndex);
+vector<Particle_t> Get_ChainPIDs(const DReaction* locReaction, size_t locStepIndex, int locUpToStepIndex, vector<Particle_t> locUpThroughPIDs, bool locExpandDecayingFlag);
 
 /****************************************************** CONSTRUCTORS AND DESTRUCTORS *******************************************************/
 
 DReaction::DReaction(string locReactionName, vector<const DReactionStep*> locSteps, DKinFitType locKinFitType, string locTreeFileName) :
 dReactionName(locReactionName), dKinFitType(locKinFitType), dKinFitUpdateCovarianceMatricesFlag(false), dEnableTTreeOutputFlag(locTreeFileName != ""),
-dSaveUnusedFlag(false), dTTreeOutputFileName(locTreeFileName), dReactionSteps(locSteps), dAnalysisActions{}, dMaxPhotonRFDeltaT(false, 0.0),
-dMaxExtraGoodTracks(false, 0), dMaxNumBeamPhotonsInBunch(false, 0), dEventStoreSkims(""), dAnyComboFlag(false) {}
+dSaveUnusedFlag(false), dTTreeOutputFileName(locTreeFileName), dReactionSteps(locSteps) {}
 
 DReaction::~DReaction(void)
 {
@@ -187,13 +193,7 @@ DReaction::~DReaction(void)
 }
 
 
-/****************************************************** NAMESPACE-SCOPE NON-INLINE FUNCTION DECLARATIONS *******************************************************/
-
-int Get_DecayStepIndex(const DReaction* locReaction, size_t locStepIndex, size_t locParticleIndex);
-pair<int, int> Get_InitialParticleDecayFromIndices(const DReaction* locReaction, int locStepIndex);
-
 /************************************************************** DREACTION INLINE FUNCTIONS ***************************************************************/
-
 
 inline bool DReaction::Get_IsInclusiveFlag(void) const
 {
@@ -210,22 +210,22 @@ inline void DReaction::Enable_TTreeOutput(string locTTreeOutputFileName, bool lo
 
 /****************************************************** NAMESPACE-SCOPE INLINE FUNCTIONS: MISC *******************************************************/
 
-
-inline bool DReaction::Get_IsFirstStepBeam(void) const
+inline bool Get_IsFirstStepBeam(const DReaction* locReaction) const
 {
 	//impossible for first step to be rescattering: makes no sense: if has target, treat as beam. else treat as decaying & don't care about production mechanism
-	return (dReactionSteps[0]->Get_TargetPID() != Unknown);
+	auto locFirstStep = locReaction->Get_ReactionStep(0);
+	return ((locFirstStep->Get_TargetPID() != Unknown) || (locFirstStep->Get_SecondBeamPID() != Unknown));
 }
 
-/****************************************************** NAMESPACE-SCOPE INLINE FUNCTIONS: NAMES *******************************************************/
+/****************************************************** NAMESPACE-SCOPE INLINE FUNCTIONS: PIDS *******************************************************/
 
-inline string Get_DecayChainFinalParticlesROOTNames(const DReaction* locReaction, Particle_t locInitialPID, bool locKinFitResultsFlag)
+inline vector<Particle_t> Get_ChainPIDs(const DReaction* locReaction, Particle_t locInitialPID, bool locExpandDecayingFlag)
 {
 	//if multiple decay steps have locInitialPID as the parent, only the first listed is used
-	return Get_DecayChainFinalParticlesROOTNames(locReaction, locInitialPID, -1, vector<Particle_t>(), locKinFitResultsFlag);
+	return Get_ChainPIDs(locReaction, locInitialPID, -1, vector<Particle_t>(), locExpandDecayingFlag);
 }
 
-inline string Get_DecayChainFinalParticlesROOTNames(const DReaction* locReaction, Particle_t locInitialPID, int locUpToStepIndex, vector<Particle_t> locUpThroughPIDs, bool locKinFitResultsFlag)
+inline vector<Particle_t> Get_ChainPIDs(const DReaction* locReaction, Particle_t locInitialPID, int locUpToStepIndex, vector<Particle_t> locUpThroughPIDs, bool locExpandDecayingFlag)
 {
 	//if multiple decay steps have locInitialPID as the parent, only the first listed is used
 	auto locReactionSteps = locReaction->Get_ReactionSteps();
@@ -235,90 +235,32 @@ inline string Get_DecayChainFinalParticlesROOTNames(const DReaction* locReaction
 		return string("");
 
 	size_t locStepIndex = std::distance(locReactionSteps.begin(), locStepIterator);
-	return Get_DecayChainFinalParticlesROOTNames(locReaction, locStepIndex, locUpToStepIndex, locUpThroughPIDs, locKinFitResultsFlag, false);
+	return Get_ChainPIDs(locReaction, locStepIndex, locUpToStepIndex, locUpThroughPIDs, locExpandDecayingFlag);
 }
 
-string Get_DecayChainFinalParticlesROOTNames(const DReaction* locReaction, size_t locStepIndex, int locUpToStepIndex, vector<Particle_t> locUpThroughPIDs, bool locKinFitResultsFlag, bool locExpandDecayingParticlesFlag)
+inline string Convert_PIDsToROOTName(const vector<Particle_t>& locPIDs)
 {
-	//excludes missing!!!
-	//if locKinFitResultsFlag = true: don't expand decaying particles (through decay chain) that were included in the kinfit (still expand resonances)
-	string locName = "";
-	auto locPIDs = locReaction->Get_ReactionStep(locStepIndex)->Get_FinalPIDs();
-	int locMissingParticleIndex = dReactionSteps[locStepIndex]->Get_MissingParticleIndex();
-	bool locSearchPIDsFlag = !locUpThroughPIDs.empty();
-	for(size_t loc_j = 0; loc_j < locPIDs.size(); ++loc_j)
-	{
-		if(int(loc_j) == locMissingParticleIndex)
-			continue; //exclude missing!
-
-		if(locSearchPIDsFlag && (int(locStepIndex) == locUpToStepIndex))
-		{
-			bool locPIDFoundFlag = false;
-			for(vector<Particle_t>::iterator locIterator = locUpThroughPIDs.begin(); locIterator != locUpThroughPIDs.end(); ++locIterator)
-			{
-				if((*locIterator) != locPIDs[loc_j])
-					continue;
-				locUpThroughPIDs.erase(locIterator);
-				locPIDFoundFlag = true;
-				break;
-			}
-			if(!locPIDFoundFlag)
-				continue; //skip it: don't want to include it
-		}
-
-		//find all future steps in which this pid is a parent
-		int locDecayingStepIndex = -1;
-		//expand if: not-kinfitting, or not a fixed mass
-		if((!locKinFitResultsFlag) || (!IsFixedMass(locPIDs[loc_j])) || locExpandDecayingParticlesFlag)
-			locDecayingStepIndex = Get_DecayStepIndex(locReaction, locStepIndex, loc_j);
-
-		if(locDecayingStepIndex == -1)
-			locName += ParticleName_ROOT(locPIDs[loc_j]);
-		else
-			locName += Get_DecayChainFinalParticlesROOTNames(locDecayingStepIndex, locUpToStepIndex, locUpThroughPIDs, locKinFitResultsFlag, locExpandDecayingParticlesFlag);
-	}
-	return locName;
+	auto locPIDTransformer = [](Particle_t& locPID) -> string {return ParticleName_ROOT(locPID);};
+	vector<string> locParticleNames;
+	std::transform(locPIDs.begin(), locPIDs.end(), std::back_inserter(locParticleNames), locPIDTransformer);
+	return std::accumulate(locParticleNames.begin(), locParticleNames.end(), string(""));
 }
 
-inline bool DReaction::Check_IfMissingDecayProduct(size_t locStepIndex) const
+inline bool Check_IfMissingDecayProduct(const DReaction* locReaction, size_t locStepIndex) const
 {
-	const DReactionStep* locReactionStep = Get_ReactionStep(locStepIndex);
-	Particle_t locMissingPID;
-	if(locReactionStep->Get_MissingPID(locMissingPID))
+	const DReactionStep* locReactionStep = locReaction->Get_ReactionStep(locStepIndex);
+	if(locReactionStep->Get_IsInclusiveFlag())
 		return true;
-	for(size_t loc_j = 0; loc_j < locReactionStep->Get_NumFinalParticleIDs(); ++loc_j)
+	if(locReactionStep->Get_MissingPID() != Unknown)
+		return true;
+
+	for(size_t loc_i = 0; loc_i < locReactionStep->Get_NumFinalPIDs(); ++loc_i)
 	{
-		int locDecayStepIndex = Get_DecayStepIndex(locStepIndex, loc_j);
-		if(locDecayStepIndex <= 0)
-			continue; //doesn't decay
-		if(Check_IfMissingDecayProduct(locDecayStepIndex))
+		int locDecayStepIndex = Get_DecayStepIndex(locReaction, locStepIndex, loc_i);
+		if((locDecayStepIndex > 0) && Check_IfMissingDecayProduct(locReaction, locDecayStepIndex))
 			return true;
 	}
 	return false;
-}
-
-string DReaction::Get_DetectedParticlesROOTName(void) const
-{
-	string locDetectedParticlesROOTName;
-
-	Particle_t locPID;
-	for(size_t loc_i = 0; loc_i < dReactionSteps.size(); ++loc_i)
-	{
-		for(size_t loc_j = 0; loc_j < dReactionSteps[loc_i]->Get_NumFinalParticleIDs(); ++loc_j)
-		{
-			locPID = dReactionSteps[loc_i]->Get_FinalParticleID(loc_j);
-			if(dReactionSteps[loc_i]->Get_MissingParticleIndex() == int(loc_j))
-				continue; //missing particle
-
-			//see if this pid is a parent in a future step
-			int locDecayStepIndex = Get_DecayStepIndex(loc_i, loc_j);
-			if(locDecayStepIndex >= 0)
-				continue;
-
-			locDetectedParticlesROOTName += ParticleName_ROOT(locPID);
-		}
-	}
-	return locDetectedParticlesROOTName;
 }
 
 } //end DAnalysis namespace

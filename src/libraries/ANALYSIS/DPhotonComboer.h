@@ -3,51 +3,136 @@
 
 #include <map>
 #include <set>
+#include <vector>
+#include <memory>
+#include <unordered_map>
+#include <cmath>
+#include <algorithm>
+
+#include "TF1.h"
+
+#include "JANA/JObject.h"
+#include "JANA/JEventLoop.h"
 
 #include "particleType.h"
+#include "DANA/DApplication.h"
+#include "HDGEOMETRY/DGeometry.h"
+
 #include "PID/DNeutralShower.h"
+#include "PID/DKinematicData.h"
+#include "PID/DEventRFBunch.h"
+
+#include "ANALYSIS/DReaction.h"
+#include "ANALYSIS/DPhotonCombo.h"
+#include "ANALYSIS/DReactionStepVertexInfo.h"
+#include "ANALYSIS/DReactionVertexInfo.h"
 
 using namespace std;
+using namespace jana;
 
 namespace DAnalysis
 {
 
-class DPhotonComboer
+/****************************************************** DEFINE LAMBDAS, USING STATEMENTS *******************************************************/
+
+//CONSIDER POINTER TO VECTOR!!! //OR RETURN BY CONST REFERENCE??
+using DPhotonCombosByBeamBunch = unordered_map<int, vector<shared_ptr<const DPhotonCombo>>>; //int: RF bunch shift from primary
+auto Compare_PhotonComboInfos = [](const shared_ptr<const DPhotonComboInfo>& lhs, const shared_ptr<const DPhotonComboInfo>& rhs) -> bool{return *lhs < *rhs;};
+
+/************************************************************** DEFINE CLASSES ***************************************************************/
+
+class DPhotonComboer : public JObject
 {
+	public:
 
-private:
+		DPhotonComboer(void) = delete;
+		DPhotonComboer(JEventLoop* locEventLoop);
 
-	//VERTEX-DEPENDENT PHOTON INFORMATION
-	//For every 10cm in vertex-z, calculate the photon p4 & time for placing mass & delta-t cuts
-	//The z-range extends from the upstream end of the target - 5cm to the downstream end + 15cm
-	//so for a 30-cm-long target, it's a range of 50cm: 5bins, evaluated at the center of each bin
-	float dPhotonVertexZBinWidth;
-	float dPhotonVertexZRangeLow;
-	int dNumPhotonVertexZBins;
+		DPhotonCombosByBeamBunch Request_PhotonCombos(JEventLoop* locEventLoop, const DReactionStepVertexInfo* locReactionStepVertexInfo,
+				DVector3 locVertex, const set<int>& locBeamBunchesToDo); //if set is empty, return for all possible bunches
 
-	//num fully-photon decays needed at production vertex
-	//first PID is decay PID, second is product PID, int is # of that product PID
-	using DParticleDecay = pair<Particle_t, map<Particle_t, int> >; //if first PID is unknown then is direct #photons (not a decay)
+	private:
 
-	//int below is # of that decaying particle
-	auto DParticleDecayComparer = [](const pair<DParticleDecay, int>& lhs, const pair<DParticleDecay, int>& rhs) -> bool
-	{
-		//check if decay is the same
-		if(lhs.first == rhs.first)
-			return lhs.second < rhs.second; //yes, sort by #of type
+		/********************************************************** DEFINE USING STATEMENTS ***********************************************************/
 
-		//check if decaying PID is the same
-		if(lhs.first.first == rhs.first.first)
-			return lhs.first.second < rhs.first.second; //yes, sort by decay products (order doesn't really matter)
+		//DEFINE USING STATEMENTS
+		using DPhotonShowersByBeamBunch = unordered_map<int, vector<const DNeutralShower*>>; //int: beam bunch n-shifts from nominal
+		using DPhotonCombosByUse = unordered_map<DPhotonComboUse, vector<shared_ptr<const DPhotonCombo>>>;
+		using DPhotonCombosByBeamBunchByUse = unordered_map<int, DPhotonCombosByUse>; //int: beam bunch n-shifts from nominal
 
-		//decaying PID different: sort by mass //will automatically get the decaying dependence correct!!
-		return (ParticleMass(lhs.first.first) < ParticleMass(rhs.first.first));
-	};
-	auto dProductionVertexNeutralsSet = set<pair<DParticleDecay, int> >(DParticleDecayComparer);
+		/********************************************************** DECLARE MEMBER FUNCTIONS ***********************************************************/
+
+		void Reset_NewEvent(JEventLoop* locEventLoop);
+		void Setup_NeutralShowers(JEventLoop* locEventLoop);
+
+		//Create photon combo infos
+		void Create_PhotonComboInfos(const DReactionVertexInfo* locReactionVertexInfo);
+		map<size_t, DPhotonComboUse> Create_PhotonComboInfos(const shared_ptr<const DReactionStepVertexInfo>& locReactionStepVertexInfo);
+		shared_ptr<const DPhotonComboInfo> Register_PhotonComboInfo(size_t locNumPhotons, const DPhotonComboUseMap& locFurtherDecays);
+		void Calc_PhotonBeamBunchShifts(const DNeutralShower* locNeutralShower, shared_ptr<const DKinematicData>& locKinematicData, double locRFTime,
+				DPhotonShowersByBeamBunch& locShowersByBeamBunch) const;
+		double Calc_MaxDeltaTError(const DNeutralShower* locNeutralShower, const shared_ptr<const DKinematicData>& locKinematicData) const;
+
+		//CREATE COMBOS METHODS
+		DPhotonCombosByBeamBunch DPhotonComboer::Create_PhotonCombos(const DPhotonComboUse& locPhotonComboUse, const DPhotonShowersByBeamBunch& locShowersByBeamBunch,
+				set<int> locBeamBunchesToDo, DPhotonCombosByBeamBunchByUse& locPhotonCombosByBeamBunchByInfo);
+		DPhotonCombosByBeamBunch DPhotonComboer::Create_PhotonCombos(const DPhotonComboUse& locPhotonComboUse, const vector<DNeutralShower*>& locShowers,
+				DPhotonCombosByInfo& locPhotonCombosByInfoSoFar);
+
+		//UTILITY FUNCTIONS
+		size_t Get_PhotonVertexZBin(double locVertexZ) const;
+		double Get_PhotonVertexZBinCenter(size_t locVertexZBin) const;
+		shared_ptr<const DKinematicData> Create_KinematicData(const DNeutralShower* locNeutralShower, const DVector3& locVertex) const;
+		int Calc_RFBunchShift(double locTimeToStep, double locTimeToStepTo) const; //returns integer shift
+
+		/************************************************************** DEFINE MEMBERS ***************************************************************/
+
+		uint64_t dEventNumber = 0; //re-setup on new events
+		string dShowerSelectionTag = "PreSelect";
+
+		//EXPERIMENT INFORMATION
+		DVector3 dTargetCenter;
+		double dTargetLength = 30.0;
+		double dBeamBunchPeriod = 1000.0/249.5;
+
+		//VERTEX-DEPENDENT PHOTON INFORMATION
+		//For every 10cm in vertex-z, calculate the photon p4 & time for placing mass & delta-t cuts
+		//The z-range extends from the upstream end of the target - 5cm to the downstream end + 15cm
+		//so for a 30-cm-long target, it's a range of 50cm: 5bins, evaluated at the center of each bin
+		float dPhotonVertexZBinWidth = 10.0;
+		float dPhotonVertexZRangeLow = 45.0;
+		size_t dNumPhotonVertexZBins = 5;
+
+		//NEUTRAL SHOWER DATA
+		vector<const DNeutralShower*> dFCALShowers;
+		vector<const DNeutralShower*> dBCALShowers;
+		unordered_map<const DNeutralShower*, shared_ptr<const DKinematicData>> dFCALKinematics; //FCAL shower data at center of target
+		vector<unordered_map<const DNeutralShower*, shared_ptr<const DKinematicData>>> dBCALKinematics; //BCAL shower data in vertex-z bins
+
+		//SHOWERS SORTED BY RF BUNCH
+		const DEventRFBunch* dInitialEventRFBunch;
+		DPhotonShowersByBeamBunch dFCALShowersByBeamBunch;
+		vector<DPhotonShowersByBeamBunch> dBCALShowersByBeamBunch; //vector: vertex-z bins
+
+		//CUTS
+		unordered_map<DetectorSystem_t, TF1*> dPhotonTimeCutMap; //function of shower energy (p)
+		unordered_map<Particle_t, pair<double, double>> dInvariantMassCuts;
+
+		//PHOTON COMBO INFOS: CREATED ONCE DURING DPHOTONCOMBOER OBJECT CONSTRUCTION
+		auto dPhotonComboInfos = set<shared_ptr<const DPhotonComboInfo>, decltype(Compare_PhotonComboInfos)>(Compare_PhotonComboInfos);
+		unordered_map<shared_ptr<const DReactionStepVertexInfo>, DPhotonComboUse> dPhotonComboUseReactionMap; //primary combo info (nullptr if none)
+		unordered_map<pair<shared_ptr<const DReactionStepVertexInfo>, DPhotonComboUse>, size_t> dPhotonComboInfoStepMap; //size_t: step index
+
+		//PHOTON COMBOS //vector: z-bin //if attempted and all failed, DPhotonCombosByBeamBunch vector will be empty
+		DPhotonCombosByBeamBunchByUse dPhotonCombos_FCAL;
+		vector<DPhotonCombosByBeamBunchByUse> dPhotonCombos_BCAL;
+		vector<DPhotonCombosByBeamBunchByUse> dPhotonCombos_Both;
 
 };
 
-inline int DVertexCreator::Get_PhotonVertexZBin(double locVertexZ) const
+/*********************************************************** INLINE MEMBER FUNCTION DEFINITIONS ************************************************************/
+
+inline size_t DPhotonComboer::Get_PhotonVertexZBin(double locVertexZ) const
 {
 	//given some vertex-z, what bin am I in?
 	int locPhotonVertexZBin = int((locVertexZ - dPhotonVertexZRangeLow)/dPhotonVertexZBinWidth);
@@ -58,21 +143,24 @@ inline int DVertexCreator::Get_PhotonVertexZBin(double locVertexZ) const
 	return locPhotonVertexZBin;
 }
 
-inline DVector3 DVertexCreator::Calc_PhotonP3Time(const DNeutralShower* locNeutralShower, const TVector3& locVertex, double& locVertexTime) const
+inline double DPhotonComboer::Get_PhotonVertexZBinCenter(size_t locVertexZBin) const
+{
+	return dPhotonVertexZRangeLow + (double(locVertexZBin) + 0.5)*dPhotonVertexZBinWidth;
+}
+
+inline int DPhotonComboer::Calc_RFBunchShift(double locTimeToStep, double locTimeToStepTo) const
+{
+	double locDeltaT = locTimeToStepTo - locTimeToStep;
+	return (locDeltaT > 0.0) ? int(locDeltaT/dBeamBunchPeriod + 0.5) : int(locDeltaT/dBeamBunchPeriod - 0.5);
+}
+
+inline shared_ptr<const DKinematicData> DPhotonComboer::Create_KinematicData(const DNeutralShower* locNeutralShower, const DVector3& locVertex) const
 {
 	DVector3 locPath = locNeutralShower->dSpacetimeVertex.Vect() - locVertex;
 	double locPathLength = locPath.Mag();
-	locVertexTime = locNeutralShower->dSpacetimeVertex.T() - locPathLength/29.9792458;
-	return locNeutralShower->dEnergy*locPath.Unit();
-}
-
-inline double DVertexCreator::Calc_DeltaTError(const DNeutralShower* locNeutralShower, const shared_ptr<const DKinematicData*>& locKinematicData) const
-{
-	float& locZError = dPhotonVertexZBinWidth/2.0; //evaluated at center of bin
-	double locTheta = locKinematicData->momentum().Theta();
-	double locR = locNeutralShower->dSpacetimeVertex.Vect().Perp();
-	double locPathError = locR*(1.0/sin(locTheta) - sqrt(1.0 + pow(1.0/tan(locTheta) - locZError/locR, 2))) - locZError;
-	return locPathError/SPEED_OF_LIGHT;
+	double locVertexTime = locNeutralShower->dSpacetimeVertex.T() - locPathLength/29.9792458;
+	DVector3 locMomentum = locNeutralShower->dEnergy*locPath.Unit();
+	return std::make_shared<const DKinematicData>(Gamma, locMomentum, locVertex, locVertexTime);
 }
 
 } //end DAnalysis namespace

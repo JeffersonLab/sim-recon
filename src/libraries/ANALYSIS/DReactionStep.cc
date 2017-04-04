@@ -3,9 +3,9 @@
 namespace DAnalysis
 {
 
-/************************************************************** DREACTIONSTEP FUNCTIONS ***************************************************************/
+/************************************************************** MEMBER FUNCTIONS ***************************************************************/
 
-int DReactionStep::Prepare_InfoArguments(vector<Particle_t>& locFinalPIDs, Particle_t locMissingFinalPID, bool locInclusiveFlag, bool locBeamMissingFlag) const
+int DReactionStep::Prepare_InfoArguments(vector<Particle_t>& locFinalPIDs, Particle_t locMissingFinalPID, bool locInclusiveFlag, bool locBeamMissingFlag, bool locSecondBeamMissingFlag) const
 {
 	if((locInclusiveFlag || locBeamMissingFlag) && (locMissingFinalPID != Unknown))
 	{
@@ -19,11 +19,13 @@ int DReactionStep::Prepare_InfoArguments(vector<Particle_t>& locFinalPIDs, Parti
 		return locFinalPIDs.size() - 1;
 	}
 	else if(locInclusiveFlag)
-		return DReactionStepInfo::Get_MissingIndex_Inclusive();
+		return DReactionStep::Get_ParticleIndex_Inclusive();
 	else if(locBeamMissingFlag)
-		return DReactionStepInfo::Get_MissingIndex_Beam();
+		return DReactionStep::Get_ParticleIndex_Initial();
+	else if(locSecondBeamMissingFlag)
+		return DReactionStep::Get_ParticleIndex_SecondBeam();
 	else
-		return DReactionStepInfo::Get_MissingIndex_None();
+		return DReactionStep::Get_ParticleIndex_None();
 }
 
 void DReactionStep::Add_FinalParticleID(Particle_t locPID, bool locIsMissingFlag)
@@ -42,7 +44,7 @@ void DReactionStep::Add_FinalParticleID(Particle_t locPID, bool locIsMissingFlag
 	}
 
 	//now is missing, check to make sure none others are missing
-	if(dReactionStepInfo->dMissingParticleIndex != DReactionStepInfo::Get_MissingIndex_None())
+	if(dReactionStepInfo->dMissingParticleIndex != DReactionStep::Get_ParticleIndex_None())
 	{
 		cout << "ERROR: CANNOT SET MORE THAN ONE MISSING PARTICLE IN A STEP. ABORTING." << endl;
 		abort();
@@ -50,12 +52,29 @@ void DReactionStep::Add_FinalParticleID(Particle_t locPID, bool locIsMissingFlag
 
 	//if unknown, instead set as inclusive
 	if(locPID == Unknown)
-		dReactionStepInfo->dMissingParticleIndex = DReactionStepInfo::Get_MissingIndex_Inclusive();
+		dReactionStepInfo->dMissingParticleIndex = DReactionStep::Get_ParticleIndex_Inclusive();
 	else
 	{
 		dReactionStepInfo->dMissingParticleIndex = dReactionStepInfo->dFinalPIDs.size();
 		dReactionStepInfo->dFinalPIDs.push_back(locPID);
 	}
+}
+
+vector<Particle_t> DReactionStep::Get_FinalPIDs(bool locIncludeMissingFlag, Charge_t locCharge, bool locIncludeDuplicatesFlag) const
+{
+	vector<Particle_t> locFinalPIDs = dReactionStepInfo->dFinalPIDs;
+	if(!locIncludeMissingFlag && (dReactionStepInfo->dMissingParticleIndex >= 0))
+		locFinalPIDs.erase(locFinalPIDs.begin() + dReactionStepInfo->dMissingParticleIndex);
+
+	auto locComparator = [&](Particle_t& locPID) -> bool {return !Is_CorrectCharge(locPID, locCharge);};
+	locFinalPIDs.erase(std::remove_if(locFinalPIDs.begin(), locFinalPIDs.end(), locComparator), locFinalPIDs.end());
+
+	if(!locIncludeDuplicatesFlag)
+	{
+		std::sort(locFinalPIDs.begin(), locFinalPIDs.end());
+		locFinalPIDs.erase(std::unique(locFinalPIDs.begin(), locFinalPIDs.end()), locFinalPIDs.end());
+	}
+	return locFinalPIDs;
 }
 
 /************************************************************** NAMESPACE-SCOPE FUNCTIONS ***************************************************************/
@@ -85,8 +104,8 @@ vector<string> Get_FinalParticleNames(const DReactionStep* locStep, bool locIncl
     std::function<char*(Particle_t)> locGetNameFunc = locTLatexFlag ? ParticleName_ROOT : ParticleType;
 
 	vector<Particle_t> locFinalPIDs = locStep->Get_FinalPIDs(false);
-	auto locTransformer = [](Particle_t& locPID) -> string {return locGetNameFunc(locPID);};
-	std::transform(locFinalPIDs.begin(), locFinalPIDs.end(), std::back_inserter(locParticleNames), locTransformer);
+	auto locPIDTransformer = [](Particle_t& locPID) -> string {return locGetNameFunc(locPID);};
+	std::transform(locFinalPIDs.begin(), locFinalPIDs.end(), std::back_inserter(locParticleNames), locPIDTransformer);
 
 	if(!locIncludeMissingFlag)
 		return locParticleNames;
@@ -112,38 +131,16 @@ bool Are_ParticlesIdentical(const DReactionStep* locStep1, const DReactionStep* 
 		return false;
 	if(locStep1->Get_TargetPID() != locStep2->Get_TargetPID())
 		return false;
+	if(locStep1->Get_MissingPID() != locStep2->Get_MissingPID())
+		return false;
 
-	//FiX THIS
-	int locSizeChange = 0;
-	if(locExceptMissingUnknownInInputFlag)
-	{
-		Particle_t locMissingPID = Unknown;
-		bool locIsMissingPID = locReactionStep->Get_MissingPID(locMissingPID);
-		if(locIsMissingPID && (locMissingPID == Unknown))
-			locSizeChange = 1;
-	}
-
-	if(dFinalParticleIDs.size() != (locReactionStep->dFinalParticleIDs.size() - locSizeChange))
+	auto locFinalPIDs1 = locStep1->Get_FinalPIDs();
+	auto locFinalPIDs2 = locStep2->Get_FinalPIDs();
+	if(locFinalPIDs1.size() != locFinalPIDs2.size())
 		return false;
 
 	//note order can be re-arranged!
-	vector<Particle_t> locFinalParticleIDsCopy = locReactionStep->dFinalParticleIDs;
-	for(size_t loc_i = 0; loc_i < dFinalParticleIDs.size(); ++loc_i)
-	{
-		bool locMatchFoundFlag = false;
-		vector<Particle_t>::iterator locIterator = locFinalParticleIDsCopy.begin();
-		for(; locIterator != locFinalParticleIDsCopy.end(); ++locIterator)
-		{
-			if(dFinalParticleIDs[loc_i] != (*locIterator))
-				continue;
-			locMatchFoundFlag = true;
-			locFinalParticleIDsCopy.erase(locIterator);
-			break;
-		}
-		if(!locMatchFoundFlag)
-			return false;
-	}
-	return true;
+	return std::is_permutation(locFinalPIDs1.begin(), locFinalPIDs1.end(), locFinalPIDs2.begin());
 }
 
 } //end DAnalysis namespace

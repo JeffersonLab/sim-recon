@@ -10,7 +10,6 @@
 #include <algorithm>
 #include <iostream>
 #include <sstream>
-#include <cmath>
 
 #include <JANA/JEventLoop.h>
 
@@ -68,7 +67,7 @@ class DComboVertex
 		void Add_DecayingPIDVertex(Particle_t locDecayingPID, shared_ptr<DComboVertex*>& locComboVertex)
 		{
 			dDecayingPIDVertices.emplace_back(locDecayingPID, locComboVertex);
-			//is this still necessary
+			//is this still necessary??
 			std::sort(dDecayingPIDVertices.begin(), dDecayingPIDVertices.end());  //so that < operator works!
 		}
 
@@ -89,6 +88,7 @@ class DComboVertex
 
 
 
+auto Compare_VertexInfos = [](const DVertexInfo*& lhs, const DVertexInfo*& rhs) -> bool {return *lhs < *rhs;};
 
 
 class DVertexCreator
@@ -98,6 +98,9 @@ class DVertexCreator
 	private:
 		DKinFitUtils_GlueX* dKinFitUtils;
 		vector<Particle_t> dTrackingPIDs;
+
+		//REACTION INFORMATION
+		unordered_map<const DReaction*, const DReactionVertexInfo*> dReactionVertexInfoMap; //setup on construction
 
 		//CONTROL INFORMATION
 		bool dUseSigmaForRFSelectionFlag; //if false, all votes created equal
@@ -111,8 +114,7 @@ class DVertexCreator
 		map<pair<Particle_t, DetectorSystem_t>, double> dPIDTimeCutMap;
 
 		//Store DVertexInfos
-		auto DVertexInfoComparer = [](const DVertexInfo*& lhs, const DVertexInfo*& rhs) -> bool {return *lhs < *rhs;};
-		auto dAllVertexInfos_Set = set<shared_ptr<DVertexInfo> >(DVertexInfoComparer); //for finding duplicate vertices
+		auto dAllVertexInfos_Set = set<shared_ptr<DVertexInfo>, decltype(Compare_VertexInfos)>(Compare_VertexInfos); //for finding duplicate vertices
 		vector<shared_ptr<DVertexInfo> > dAllVertexInfos_Vector; //for creation (stored in dependency order)
 		vector<pair<shared_ptr<DVertexInfo>, vector<const DReaction*> > > dProductionVertexInfos;
 		unordered_map<shared_ptr<DVertexInfo>, unordered_map<const DReaction*, vector<const DReactionStep*> > > dReactionVertexMap;
