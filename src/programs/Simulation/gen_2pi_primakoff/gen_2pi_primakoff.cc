@@ -123,7 +123,7 @@ int main( int argc, char* argv[] ){
 	}
 	
 	if( configfile.size() == 0 || outname.size() == 0 ){
-		cout << "No config file or output specificed:  run gen_2pi -h for help" << endl;
+		cout << "No config file or output specificed:  run gen_2pi_primakoff -h for help" << endl;
 		exit(1);
 	}
 	
@@ -170,7 +170,7 @@ int main( int argc, char* argv[] ){
 	if( hddmname.size() != 0 ) hddmOut = new HDDMDataWriter( hddmname, runNum );
 	ROOTDataWriter rootOut( outname );
 	
-	TFile* diagOut = new TFile( "gen_2pi_diagnostic.root", "recreate" );
+	TFile* diagOut = new TFile( "gen_2pi_primakoff_diagnostic.root", "recreate" );
 	
 	TH1F* mass = new TH1F( "M", "Resonance Mass", 180, lowMass, highMass );
 	TH1F* massW = new TH1F( "M_W", "Weighted Resonance Mass", 180, lowMass, highMass );
