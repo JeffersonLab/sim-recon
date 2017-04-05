@@ -68,7 +68,7 @@ class DPhotonComboer : public JObject
 		//Create photon combo infos
 		void Create_PhotonComboInfos(const DReactionVertexInfo* locReactionVertexInfo);
 		map<size_t, DPhotonComboUse> Create_PhotonComboInfos(const shared_ptr<const DReactionStepVertexInfo>& locReactionStepVertexInfo);
-		shared_ptr<const DPhotonComboInfo> Register_PhotonComboInfo(size_t locNumPhotons, const DPhotonComboUseMap& locFurtherDecays);
+		shared_ptr<const DPhotonComboInfo> Make_PhotonComboInfo(size_t locNumPhotons, const DPhotonComboUseMap& locFurtherDecays = {});
 		void Calc_PhotonBeamBunchShifts(const DNeutralShower* locNeutralShower, shared_ptr<const DKinematicData>& locKinematicData, double locRFTime,
 				DPhotonShowersByBeamBunch& locShowersByBeamBunch) const;
 		double Calc_MaxDeltaTError(const DNeutralShower* locNeutralShower, const shared_ptr<const DKinematicData>& locKinematicData) const;

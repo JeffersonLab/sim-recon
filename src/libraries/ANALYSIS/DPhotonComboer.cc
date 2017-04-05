@@ -310,7 +310,7 @@ map<size_t, DPhotonComboUse> DPhotonComboer::Create_PhotonComboInfos(const share
 		//either create combo info or save for direct grouping
 		if(locIncludeParentFlag)
 		{
-			auto locComboInfo = Register_PhotonComboInfo(locNumPhotons, locFurtherDecays);
+			auto locComboInfo = Make_PhotonComboInfo(locNumPhotons, locFurtherDecays);
 			locComboUseMap.emplace(locStepIndex, {locStep->Get_InitialPID(), locComboInfo});
 		}
 		else //save for direct grouping
@@ -330,19 +330,28 @@ map<size_t, DPhotonComboUse> DPhotonComboer::Create_PhotonComboInfos(const share
 	//Create & register direct grouping if any
 	if((locDirectNumPhotons != 0) || !locDirectDecays.empty())
 	{
-		auto locComboInfo = Register_PhotonComboInfo(locDirectNumPhotons, locDirectDecays);
+		auto locComboInfo = Make_PhotonComboInfo(locDirectNumPhotons, locDirectDecays);
 		locComboUseMap.emplace(locStepIndices.at(0), {Unknown, locComboInfo});
 	}
 
 	return locComboUseMap;
 }
 
-shared_ptr<const DPhotonComboInfo> DPhotonComboer::Register_PhotonComboInfo(size_t locNumPhotons, const DPhotonComboUseMap& locFurtherDecays)
+shared_ptr<const DPhotonComboInfo> DPhotonComboer::Make_PhotonComboInfo(size_t locNumPhotons, const DPhotonComboUseMap& locFurtherDecays)
 {
+	//create it
 	auto locComboInfo = make_shared<const DPhotonComboInfo>(locNumPhotons, locFurtherDecays);
+
+	//we lookup the comboing results in maps with shared_ptr<const DPhotonComboInfo> as part of the key
+	//therefore, we need to make sure that for a given combo info there is only one object
+	//thus, we store the shared_ptr<const DPhotonComboInfo>'s in a set with a custom comparator
+
+	//so, search this set for a shared_ptr<const DPhotonComboInfo> that is identical to the one we just created, but with a different pointer
+	//if we find one, use it instead (the other will go out of scope and be deleted)
+	//otherwise, register this one in the set so that we can use it next time
 	auto locInfoIterator = dPhotonComboInfos.find(locComboInfo);
 	if(locInfoIterator == dPhotonComboInfos.end())
-		locComboInfo = *locInfoIterator; //one just like it already created: reuse it
+		locComboInfo = *locInfoIterator; //one just like it already created: reuse it instead
 	else
 		dPhotonComboInfos.insert(locComboInfo); //unique: save it
 	return locComboInfo;
@@ -619,13 +628,12 @@ vector<shared_ptr<const DPhotonCombo>> DPhotonComboer::Create_PhotonCombos(const
 	size_t locNumPhotonsNeeded = locPhotonComboInfo->Get_NumPhotons();
 	auto locFurtherDecays = locPhotonComboInfo->Get_FurtherDecays();
 
-	//build all possible combos for all NEEDED GROUPINGS for each of the NEEDED FURTHER DECAYS (if not done already)
+	//build all possible combos for all NEEDED GROUPINGS for each of the FURTHER DECAYS (if not done already)
 	//this becomes a series of recursive calls
 	//e.g. if need 3 pi0s, call for 2pi0s, which calls for 1pi0, which calls for 2g
 		//then do the actual pi0 groupings on the return
 
 	//for each further decay map entry (e.g. pi0, 3), this is a collection of the uses representing those groupings //e.g. Unknown -> 3pi0
-	DPhotonComboUse
 	for(const auto& locFurtherDecayPair : locFurtherDecays)
 	{
 		auto& locPhotonComboDecayUse = locFurtherDecayPair.first; //e.g. pi0 decay
@@ -642,23 +650,23 @@ vector<shared_ptr<const DPhotonCombo>> DPhotonComboer::Create_PhotonCombos(const
 		}
 
 		//OK, so we need a grouping of N > 1 decays (e.g. pi0s)
-		//first create a use of Unknown -> Npi0s (e.g.)
-		DPhotonComboUseMap locNeededGroupingUseMap(locPhotonComboDecayUse, locNumDecaysNeeded); // N pi0s (e.g.)
-		auto locNeededGroupingInfo = std::make_shared<const DPhotonComboInfo>(0, locNeededGroupingUseMap); // 0 photons + N pi0s (e.g.)
-		DPhotonComboUse locNeededGroupingUse(Unknown, locNeededGroupingInfo); // Unknown -> Npi0s (e.g.)
+		//so, let's create a use of Unknown -> Npi0s (e.g.)
+		//if we can build it with the input combo-info, then we will. if not, we'll make a new one
+		bool locCreateNewInfoFlag = ((locFurtherDecays.size() > 1) || (locNumPhotonsNeeded > 0));
+		auto locGroupingComboInfo = locCreateNewInfoFlag ? Make_PhotonComboInfo(0, {locPhotonComboDecayUse, locNumDecaysNeeded}) : locPhotonComboInfo; // -> N pi0s (e.g.)
+		DPhotonComboUse locNeededGroupingUse(Unknown, locGroupingComboInfo); // Unknown -> Npi0s (e.g.)
 
-		// ... and make sure it hasn't already been done
+		// Now, see whether the combos for this grouping have already been done
 		if(locPhotonCombosByUseSoFar.find(locNeededGroupingUse) != locPhotonCombosByUseSoFar.end())
-			continue; //is already done!!
+			continue; //it's already done!!
 
-		//darn it, it's not already done.
+		//it's not already done.  darn it.
 		//build an info and a use for a grouping of Needed - 1 decays //e.g. 2pi0s
-		DPhotonComboUseMap locDecayGroupingUse(locPhotonComboDecayUse, locNumDecaysNeeded - 1); // N - 1 pi0s (e.g.)
-		auto locInfoDependency = std::make_shared<const DPhotonComboInfo>(0, locDecayGroupingUse); // 0 photons + N - 1 pi0s (e.g.)
-		DPhotonComboUse locUseDependency(Unknown, locInfoDependency); // Unknown -> Npi0s (e.g.)
+		auto locInfoDependency = Make_PhotonComboInfo(0, {locPhotonComboDecayUse, locNumDecaysNeeded - 1}); // 0 photons + N - 1 pi0s (e.g.)
+		DPhotonComboUse locUseDependency(Unknown, locInfoDependency); // Unknown -> N - 1 pi0s (e.g.)
 
-		//create the combos for this dependency use (which recursively creates them for 1 to N - 1)
-		if(locPhotonCombosByUseSoFar.find(locUseDependency) != locPhotonCombosByUseSoFar.end()) //if not done already!
+		// Now, see whether the combos for the N - 1 grouping have already been done.  If not, create them
+		if(locPhotonCombosByUseSoFar.find(locUseDependency) != locPhotonCombosByUseSoFar.end())
 			Create_PhotonCombos(locUseDependency, locShowers, locPhotonCombosByUseSoFar);
 
 		//ok, we're near the end, we can finally actually DO the grouping
@@ -668,6 +676,23 @@ vector<shared_ptr<const DPhotonCombo>> DPhotonComboer::Create_PhotonCombos(const
 
 
 	//Now combo the photons that we need with each other
+	if(locNumPhotonsNeeded > 1)
+	{
+		//OK, so we need a grouping of N > 1 photons
+		//so, let's create a use of Unknown -> N photons
+		//if we can build it with the input combo-info, then we will. if not, we'll make a new one
+		auto locGroupingComboInfo = locFurtherDecays.empty() ? locPhotonComboInfo : Make_PhotonComboInfo(locNumPhotonsNeeded); // -> N photons
+		DPhotonComboUse locNeededGroupingUse(Unknown, locGroupingComboInfo); // Unknown -> N photons
+
+		// Now, see whether the combos for this grouping have already been done
+		if(locPhotonCombosByUseSoFar.find(locNeededGroupingUse) != locPhotonCombosByUseSoFar.end())
+//SOME KIND OF RETURN STATEMENT HERE
+			continue; //it's already done!!
+	}
+	else if(locNumPhotonsNeeded == 1)
+	{
+
+	}
 	//if we need 2+ photons, create an info for them (with no further decays), and see if it's already been done
 //THIS ALSO BECOMES VERY RECURSIVE
 

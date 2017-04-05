@@ -37,11 +37,8 @@ auto Compare_PhotonComboUses = [](const DPhotonComboUse& lhs, const DPhotonCombo
 };
 
 //DPhotonComboUseMap
+//consider removing DPhotonComboInfo::dNumPhotons and instead storing in below with key = Gamma, nullptr
 using DPhotonComboUseMap = map<DPhotonComboUse, size_t, decltype(Compare_PhotonComboUses)>; //size_t: # of (e.g.) pi0s, etc.
-//MAYBE INSTEAD:
-//key pair: pi0 -> 2g, 3pi0s
-//value: use representing Unknown -> 3pi0 (if circular uses *this) //UGHHHH
-//using DPhotonComboUseMap = map<pair<DPhotonComboUse, size_t>, DPhotonComboUse, decltype(Compare_PhotonComboUses)>; //size_t: # of (e.g.) pi0s, etc.
 
 /************************************************************** DEFINE CLASSES ***************************************************************/
 
