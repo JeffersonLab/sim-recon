@@ -23,6 +23,7 @@ namespace DAnalysis
 //DPhotonComboUse
 //what the combo is USED for (the decay of Particle_t (if Unknown then is just a grouping)
 class DPhotonComboInfo;
+class DPhotonCombo;
 using DPhotonComboUse = pair<Particle_t, shared_ptr<const DPhotonComboInfo>>;
 
 //DEFINE LAMBDAS
@@ -37,7 +38,10 @@ auto Compare_PhotonComboUses = [](const DPhotonComboUse& lhs, const DPhotonCombo
 
 //DPhotonComboUseMap
 using DPhotonComboUseMap = map<DPhotonComboUse, size_t, decltype(Compare_PhotonComboUses)>; //size_t: # of (e.g.) pi0s, etc.
-
+//MAYBE INSTEAD:
+//key pair: pi0 -> 2g, 3pi0s
+//value: use representing Unknown -> 3pi0 (if circular uses *this) //UGHHHH
+//using DPhotonComboUseMap = map<pair<DPhotonComboUse, size_t>, DPhotonComboUse, decltype(Compare_PhotonComboUses)>; //size_t: # of (e.g.) pi0s, etc.
 
 /************************************************************** DEFINE CLASSES ***************************************************************/
 

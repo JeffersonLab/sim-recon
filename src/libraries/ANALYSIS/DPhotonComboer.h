@@ -35,7 +35,7 @@ namespace DAnalysis
 
 /****************************************************** DEFINE LAMBDAS, USING STATEMENTS *******************************************************/
 
-//CONSIDER POINTER TO VECTOR!!! //OR RETURN BY CONST REFERENCE??
+//CONSIDER POINTER TO VECTOR!!!
 using DPhotonCombosByBeamBunch = unordered_map<int, vector<shared_ptr<const DPhotonCombo>>>; //int: RF bunch shift from primary
 auto Compare_PhotonComboInfos = [](const shared_ptr<const DPhotonComboInfo>& lhs, const shared_ptr<const DPhotonComboInfo>& rhs) -> bool{return *lhs < *rhs;};
 
@@ -58,7 +58,7 @@ class DPhotonComboer : public JObject
 		//DEFINE USING STATEMENTS
 		using DPhotonShowersByBeamBunch = unordered_map<int, vector<const DNeutralShower*>>; //int: beam bunch n-shifts from nominal
 		using DPhotonCombosByUse = unordered_map<DPhotonComboUse, vector<shared_ptr<const DPhotonCombo>>>;
-		using DPhotonCombosByBeamBunchByUse = unordered_map<int, DPhotonCombosByUse>; //int: beam bunch n-shifts from nominal
+		using DPhotonCombosByUseByBeamBunch = unordered_map<int, DPhotonCombosByUse>; //int: beam bunch n-shifts from nominal
 
 		/********************************************************** DECLARE MEMBER FUNCTIONS ***********************************************************/
 
@@ -74,16 +74,21 @@ class DPhotonComboer : public JObject
 		double Calc_MaxDeltaTError(const DNeutralShower* locNeutralShower, const shared_ptr<const DKinematicData>& locKinematicData) const;
 
 		//CREATE COMBOS METHODS
-		DPhotonCombosByBeamBunch DPhotonComboer::Create_PhotonCombos(const DPhotonComboUse& locPhotonComboUse, const DPhotonShowersByBeamBunch& locShowersByBeamBunch,
-				set<int> locBeamBunchesToDo, DPhotonCombosByBeamBunchByUse& locPhotonCombosByBeamBunchByInfo);
-		DPhotonCombosByBeamBunch DPhotonComboer::Create_PhotonCombos(const DPhotonComboUse& locPhotonComboUse, const vector<DNeutralShower*>& locShowers,
-				DPhotonCombosByInfo& locPhotonCombosByInfoSoFar);
+		DPhotonCombosByBeamBunch DPhotonComboer::Create_PhotonCombos(const DPhotonComboUse& locPhotonComboUse,
+				const DPhotonShowersByBeamBunch& locShowersByBeamBunch, set<int> locBeamBunchesToDo, DPhotonCombosByUseByBeamBunch& locPhotonCombosByUseByBeamBunch);
+		vector<shared_ptr<const DPhotonCombo>> DPhotonComboer::Create_PhotonCombos(const DPhotonComboUse& locPhotonComboUse,
+				const vector<const DNeutralShower*>& locShowers, DPhotonCombosByUse& locPhotonCombosByUseSoFar);
+		vector<shared_ptr<const DPhotonCombo>> DPhotonComboer::Create_PhotonCombos(const shared_ptr<const DPhotonComboInfo>& locPhotonComboInfo,
+				const vector<const DNeutralShower*>& locShowers, DPhotonCombosByUse& locPhotonCombosByUseSoFar);
 
 		//UTILITY FUNCTIONS
 		size_t Get_PhotonVertexZBin(double locVertexZ) const;
 		double Get_PhotonVertexZBinCenter(size_t locVertexZBin) const;
 		shared_ptr<const DKinematicData> Create_KinematicData(const DNeutralShower* locNeutralShower, const DVector3& locVertex) const;
 		int Calc_RFBunchShift(double locTimeToStep, double locTimeToStepTo) const; //returns integer shift
+
+		void Cut_InvariantMass(vector<shared_ptr<const DPhotonCombo>>& locPhotonCombos, Particle_t locDecayPID);
+		double Calc_InvariantMass(const shared_ptr<const DPhotonCombo>>& locPhotonCombo);
 
 		/************************************************************** DEFINE MEMBERS ***************************************************************/
 
@@ -124,9 +129,9 @@ class DPhotonComboer : public JObject
 		unordered_map<pair<shared_ptr<const DReactionStepVertexInfo>, DPhotonComboUse>, size_t> dPhotonComboInfoStepMap; //size_t: step index
 
 		//PHOTON COMBOS //vector: z-bin //if attempted and all failed, DPhotonCombosByBeamBunch vector will be empty
-		DPhotonCombosByBeamBunchByUse dPhotonCombos_FCAL;
-		vector<DPhotonCombosByBeamBunchByUse> dPhotonCombos_BCAL;
-		vector<DPhotonCombosByBeamBunchByUse> dPhotonCombos_Both;
+		DPhotonCombosByUseByBeamBunch dPhotonCombos_FCAL;
+		vector<DPhotonCombosByUseByBeamBunch> dPhotonCombos_BCAL;
+		vector<DPhotonCombosByUseByBeamBunch> dPhotonCombos_Both;
 
 };
 
@@ -161,6 +166,26 @@ inline shared_ptr<const DKinematicData> DPhotonComboer::Create_KinematicData(con
 	double locVertexTime = locNeutralShower->dSpacetimeVertex.T() - locPathLength/29.9792458;
 	DVector3 locMomentum = locNeutralShower->dEnergy*locPath.Unit();
 	return std::make_shared<const DKinematicData>(Gamma, locMomentum, locVertex, locVertexTime);
+}
+
+inline void DPhotonComboer::Cut_InvariantMass(vector<shared_ptr<const DPhotonCombo>>& locPhotonCombos, Particle_t locDecayPID)
+{
+	auto locCutIterator = dInvariantMassCuts.find(locDecayPID);
+	if(locCutIterator == dInvariantMassCuts.end())
+		return; //no cut to place!!
+
+	auto& locMassCuts = locCutIterator->second;
+	auto locMassCutter = [&locDecayPID, &dInvariantMassCuts](const shared_ptr<const DPhotonCombo>& locPhotonCombo) -> bool
+	{
+		auto locInvariantMass = Calc_InvariantMass(locPhotonCombo);
+		return ((locInvariantMass >= locMassCuts.first) && (locInvariantMass <= locMassCuts.second));
+	};
+	locPhotonCombos.erase(std::remove_if(locPhotonCombos.begin(), locPhotonCombos.end(), locMassCutter), locPhotonCombos.end());
+}
+
+inline double DPhotonComboer::Calc_InvariantMass(const shared_ptr<const DPhotonCombo>>& locPhotonCombo)
+{
+	return 0.0;
 }
 
 } //end DAnalysis namespace
