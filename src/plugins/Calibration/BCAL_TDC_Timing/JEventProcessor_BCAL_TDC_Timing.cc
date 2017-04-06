@@ -111,6 +111,7 @@ jerror_t JEventProcessor_BCAL_TDC_Timing::brun(JEventLoop *loop, int32_t runnumb
 
     /// Read in initial calibration constants and write to root file for use in later calibration
     vector<double> raw_channel_global_offset;
+
     //if(print_messages) jout << "In BCAL_TDC_Timing, loading constants..." << endl;
     if(loop->GetCalib("/BCAL/channel_global_offset", raw_channel_global_offset))
         jout << "Error loading /BCAL/channel_global_offset !" << endl;
@@ -181,7 +182,7 @@ jerror_t JEventProcessor_BCAL_TDC_Timing::evnt(JEventLoop *loop, uint64_t eventn
       //int the_cell = (bcalUnifiedHitVector[i]->module - 1) * 16 + (bcalUnifiedHitVector[i]->layer - 1) * 4 + bcalUnifiedHitVector[i]->sector;
       // There is one less layer of TDCs so the numbering relects this
       int the_tdc_cell = (bcalUnifiedHitVector[i]->module - 1) * 12 + (bcalUnifiedHitVector[i]->layer - 1) * 4 + bcalUnifiedHitVector[i]->sector;
-      int cellId = DBCALGeometry::cellId(bcalUnifiedHitVector[i]->module, bcalUnifiedHitVector[i]->layer, bcalUnifiedHitVector[i]->sector);
+      int cellId = dBCALGeom->cellId(bcalUnifiedHitVector[i]->module, bcalUnifiedHitVector[i]->layer, bcalUnifiedHitVector[i]->sector);
       // Get the underlying associated objects
       const DBCALHit * thisADCHit;
       const DBCALTDCHit * thisTDCHit;
@@ -432,12 +433,21 @@ jerror_t JEventProcessor_BCAL_TDC_Timing::evnt(JEventLoop *loop, uint64_t eventn
             // We can plot the difference of the projected position and the BCAL position as a function of the channel
             sprintf(name , "Module%.2iLayer%.2iSector%.2i", thisPoint->module(), thisPoint->layer(), thisPoint->sector());
             // These results are in slightly different coordinate systems. We want one where the center of the BCAL is z=0
+<<<<<<< HEAD
             double localTrackHitZ = proj_pos.z() - DBCALGeometry::GetBCAL_center();
             double localBCALHitZ = thisPoint->z() - DBCALGeometry::GetBCAL_center() + Z_TARGET;
             Fill2DHistogram ("BCAL_TDC_Offsets", "Z Position", "AllPoints",
                              localTrackHitZ, localBCALHitZ,
                              "Z_{point} Vs. Z_{Track}; Z_{Track} [cm]; Z_{Point} [cm]",
                              500, -250, 250, 500, -250, 250); 
+=======
+            double localTrackHitZ = proj_pos.z() - dBCALGeom->GetBCAL_center();
+            double localBCALHitZ = thisPoint->z() - dBCALGeom->GetBCAL_center() + Z_TARGET;
+			Fill2DHistogram ("BCAL_TDC_Offsets", "Z Position", "AllPoints",
+							 localTrackHitZ, localBCALHitZ,
+							 "Z_{point} Vs. Z_{Track}; Z_{Track} [cm]; Z_{Point} [cm]",
+							 500, -250, 250, 500, -250, 250); 
+>>>>>>> refs/remotes/origin/master
             Fill2DHistogram ("BCAL_TDC_Offsets", "Z Position", name,
                   localTrackHitZ, localBCALHitZ,
                   "Z_{point} Vs. Z_{Track}; Z_{Track} [cm]; Z_{Point} [cm]",

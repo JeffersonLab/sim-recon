@@ -44,7 +44,7 @@ using namespace std;
 
 class HDEVIO{
 	public:
-		HDEVIO(string filename, bool read_map_file=true);
+		HDEVIO(string filename, bool read_map_file=true, int verbose=1);
 		virtual ~HDEVIO();
 		
 		enum{
@@ -175,7 +175,9 @@ class HDEVIO{
 		uint32_t last_event_len;  // used to hold last event length in words if user buffer was
 		                          // too small, this is how big is should be allocated
 		
+		int  VERBOSE;
 		bool IGNORE_EMPTY_BOR;
+		bool SKIP_EVENT_MAPPING;
 		
 		stringstream err_mess;  // last error message
 		uint32_t err_code;    // last error code

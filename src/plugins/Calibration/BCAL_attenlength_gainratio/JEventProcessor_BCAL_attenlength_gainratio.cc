@@ -209,6 +209,14 @@ jerror_t JEventProcessor_BCAL_attenlength_gainratio::brun(JEventLoop *eventLoop,
 	DApplication* app = dynamic_cast<DApplication*>(eventLoop->GetJApplication());
 	DGeometry* geom = app->GetDGeometry(runnumber);
 	geom->GetTargetZ(z_target_center);
+	
+	// load BCAL geometry
+  	vector<const DBCALGeometry *> BCALGeomVec;
+  	eventLoop->Get(BCALGeomVec);
+  	if(BCALGeomVec.size() == 0)
+		throw JException("Could not load DBCALGeometry object!");
+	dBCALGeom = BCALGeomVec[0];
+
 
 	return NOERROR;
 }
@@ -283,7 +291,7 @@ jerror_t JEventProcessor_BCAL_attenlength_gainratio::evnt(JEventLoop *loop, uint
 
 		//float timediff = t_ADCus_vec[0]-t_ADCds_vec[0];
 		//float zpos = (timediff)*17./2;
-		float zpos = point->z() - DBCALGeometry::GetBCAL_center() + z_target_center;
+		float zpos = point->z() - dBCALGeom->GetBCAL_center() + z_target_center;
 		float intratio = (float)integralUS/(float)integralDS;
 		float logintratio = log(intratio);
 		float peakratio = (float)peakUS/(float)peakDS;
