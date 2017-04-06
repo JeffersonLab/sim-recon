@@ -227,10 +227,10 @@ DBCALCluster::makeFromPoints(){
   m_sig_t /= sqrt(n_eff2);
   
   m_theta /= sum_wt2;
-  m_sig_theta /= sum_wt2;
+  /*m_sig_theta /= sum_wt2;
   m_sig_theta -= ( m_theta * m_theta );
   m_sig_theta = sqrt( fabs( m_sig_theta ) );
-  m_sig_theta /= sqrt(n_eff2);
+  m_sig_theta /= sqrt(n_eff2);*/
 
   // The method below for determining sig_theta works better than the one
   // above. parameters of sigma_z are determined using errors when reconstructing MC data.

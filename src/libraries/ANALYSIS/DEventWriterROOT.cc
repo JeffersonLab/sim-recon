@@ -605,6 +605,9 @@ void DEventWriterROOT::Create_Branches_ChargedHypotheses(DTreeBranchRegister& lo
 	locBranchRegister.Register_FundamentalArray<Float_t>(Build_BranchName(locParticleBranchName, "dEdx_ST"), locArraySizeString, dInitNumTrackArraySize);
 	locBranchRegister.Register_FundamentalArray<Float_t>(Build_BranchName(locParticleBranchName, "Energy_BCAL"), locArraySizeString, dInitNumTrackArraySize);
 	locBranchRegister.Register_FundamentalArray<Float_t>(Build_BranchName(locParticleBranchName, "Energy_BCALPreshower"), locArraySizeString, dInitNumTrackArraySize);
+	locBranchRegister.Register_FundamentalArray<Float_t>(Build_BranchName(locParticleBranchName, "SigRho_BCAL"), locArraySizeString, dInitNumTrackArraySize);
+        locBranchRegister.Register_FundamentalArray<Float_t>(Build_BranchName(locParticleBranchName, "SigTheta_BCAL"), locArraySizeString, dInitNumTrackArraySize);
+        locBranchRegister.Register_FundamentalArray<Float_t>(Build_BranchName(locParticleBranchName, "SigPhi_BCAL"), locArraySizeString, dInitNumTrackArraySize);
 	locBranchRegister.Register_FundamentalArray<Float_t>(Build_BranchName(locParticleBranchName, "Energy_FCAL"), locArraySizeString, dInitNumTrackArraySize);
 
 	//SHOWER MATCHING:
@@ -1564,6 +1567,14 @@ void DEventWriterROOT::Fill_ChargedHypo(DTreeFillData* locTreeFillData, unsigned
 
 	double locFCALEnergy = (locFCALShower != NULL) ? locFCALShower->getEnergy() : 0.0;
 	locTreeFillData->Fill_Array<Float_t>(Build_BranchName(locParticleBranchName, "Energy_FCAL"), locFCALEnergy, locArrayIndex);
+
+	//HIT SHOWER WIDTH
+        double locSigRhoBCAL = (locBCALShower != NULL) ? locBCALShower->sigRho : 0.0;
+        double locSigThetaBCAL = (locBCALShower != NULL) ? locBCALShower->sigTheta : 0.0;
+        double locSigPhiBCAL = (locBCALShower != NULL) ? locBCALShower->sigPhi : 0.0;
+        locTreeFillData->Fill_Array<Float_t>(Build_BranchName(locParticleBranchName, "SigRho_BCAL"), locSigRhoBCAL, locArrayIndex);
+        locTreeFillData->Fill_Array<Float_t>(Build_BranchName(locParticleBranchName, "SigTheta_BCAL"), locSigThetaBCAL, locArrayIndex);
+        locTreeFillData->Fill_Array<Float_t>(Build_BranchName(locParticleBranchName, "SigPhi_BCAL"), locSigPhiBCAL, locArrayIndex);
 
 	//TIMING INFO
 	locTreeFillData->Fill_Array<Float_t>(Build_BranchName(locParticleBranchName, "HitTime"), locChargedTrackHypothesis->t1(), locArrayIndex);
