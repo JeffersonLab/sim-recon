@@ -137,7 +137,7 @@ void AddCDCCluster(s_CdcStrawTruthHits_t* hits, int ipart, int track, int n_p,
       polint(&cdc_drift_distance[index],&cdc_drift_time[index],4,dradius,&my_t,
             &my_t_err);
    }
-   float tdrift=my_t/(1.-BSCALE_PAR1-BSCALE_PAR2*Bmag);
+   float tdrift=my_t/(BSCALE_PAR1+BSCALE_PAR2*Bmag);
 
    //Longitudinal diffusion 
    int two=2;
