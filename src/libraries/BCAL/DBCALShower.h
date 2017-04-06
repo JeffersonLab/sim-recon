@@ -21,8 +21,8 @@ class DBCALShower:public JObject{
     float y;
     float z;
     float t;
-    float sigRho;
-    float sigPhi;
+    float sigLong;
+    float sigTrans;
     float sigTheta;
     int N_cell;
 	TMatrixFSym ExyztCovariance;
@@ -98,9 +98,9 @@ class DBCALShower:public JObject{
 			AddString(items, "YZcorr", "%5.3f", YZcorr());
 			AddString(items, "YTcorr", "%5.3f", YTcorr());
 			AddString(items, "ZTcorr", "%5.3f", ZTcorr());
-			AddString(items, "sigRho", "%5.3f", sigRho);
+			AddString(items, "sigLong", "%5.3f", sigLong);
+			AddString(items, "sigTrans", "%5.3f", sigTrans);
 			AddString(items, "sigTheta", "%5.3f", sigTheta);
-			AddString(items, "sigPhi", "%5.3f", sigPhi);
 	}
 };
 

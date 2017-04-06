@@ -130,9 +130,9 @@ DBCALShower_factory_IU::evnt( JEventLoop *loop, uint64_t eventnumber ){
     shower->t = t;
 
     // shower widths for further selection in REST
-    shower->sigRho = (**clItr).sigRho();
+    shower->sigLong = (**clItr).sigRho();
+    shower->sigTrans = (**clItr).sigPhi();
     shower->sigTheta = (**clItr).sigTheta();
-    shower->sigPhi = (**clItr).sigPhi();
 
     shower->N_cell = (**clItr).nCells();
     

@@ -237,9 +237,9 @@ bool DEventWriterREST::Write_RESTEvent(JEventLoop* locEventLoop, string locOutpu
 		locPreShowerList().setPreshowerE(bcalshowers[i]->E_preshower);
 
 		hddm_r::WidthList locWidthList = bcal().addWidths(1);
-		locWidthList().setSigRho(bcalshowers[i]->sigRho);
+		locWidthList().setSigLong(bcalshowers[i]->sigLong);
+		locWidthList().setSigTrans(bcalshowers[i]->sigTrans);
 		locWidthList().setSigTheta(bcalshowers[i]->sigTheta);
-		locWidthList().setSigPhi(bcalshowers[i]->sigPhi);
 
 		//N_cell
 		hddm_r::BcalClusterList bcalcluster = bcal().addBcalClusters(1);
