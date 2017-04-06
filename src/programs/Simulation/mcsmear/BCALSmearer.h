@@ -88,7 +88,6 @@ class bcal_config_t
 		else 
 			return channel_efficiencies.at(index).second;
 	}
-
 };
 
 
@@ -308,7 +307,7 @@ class BCALSmearer : public Smearer
 		void CopyBCALHitsToHDDM(map<int, fADCHitList> &fADCHits,
                         		map<int, TDCHitList> &TDCHits,
                         		hddm_s::HDDM *record);
-		
+
 };
 
 

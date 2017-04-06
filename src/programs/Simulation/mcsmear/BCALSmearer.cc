@@ -665,8 +665,7 @@ void BCALSmearer::CopyBCALHitsToHDDM(map<int, fADCHitList> &fADCHits,
       	if (integer_time >= 0){
             hddm_s::BcalfADCDigiHitList fadcs = iter->addBcalfADCDigiHits();
             fadcs().setEnd(bcal_index::kUp);
-            
-	    fadcs().setPulse_integral(round(hitlist.uphits[i].E/bcal_config->BCAL_MEV_PER_ADC_COUNT));
+            fadcs().setPulse_integral(round(hitlist.uphits[i].E/bcal_config->BCAL_MEV_PER_ADC_COUNT));
             fadcs().setPulse_time(integer_time);
         }
       }
@@ -675,7 +674,6 @@ void BCALSmearer::CopyBCALHitsToHDDM(map<int, fADCHitList> &fADCHits,
       	if (integer_time >= 0){
             hddm_s::BcalfADCDigiHitList fadcs = iter->addBcalfADCDigiHits();
             fadcs().setEnd(bcal_index::kDown);
-	    
             fadcs().setPulse_integral(round(hitlist.dnhits[i].E/bcal_config->BCAL_MEV_PER_ADC_COUNT));
             fadcs().setPulse_time(integer_time);
         } 
@@ -835,6 +833,7 @@ bcal_config_t::bcal_config_t(JEventLoop *loop)
         }
         
     }
+
 
 }
 

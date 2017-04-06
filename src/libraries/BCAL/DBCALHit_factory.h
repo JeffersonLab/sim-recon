@@ -83,7 +83,7 @@ class DBCALHit_factory:public jana::JFactory<DBCALHit>{
         void FillCalibTableShort( bcal_digi_constants_t &table,
                     const vector<double> &raw_table);
 
-	bool CHECK_FADC_ERRORS;
+        bool CHECK_FADC_ERRORS;
 };
 
 #endif // _DBCALHit_factory_
