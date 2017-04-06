@@ -30,12 +30,30 @@ class DReaction_factory_trackeff_missing : public jana::JFactory<DReaction>
 		const char* Tag(void){return "trackeff_missing";}
 
 	private:
+		jerror_t init(void);
 		jerror_t brun(JEventLoop* locEventLoop, int32_t locRunNumber);
 		jerror_t evnt(JEventLoop* locEventLoop, uint64_t locEventNumber);
 		jerror_t fini(void);						///< Called after last event of last event source has been processed.
 
+		// Actions & cuts
+		void Define_LooseCuts(void);
+		void Add_PIDActions(DReaction* locReaction);
+		bool Add_MassCuts(DReaction* locReaction, bool locKinFitFlag = false); //returns false if no cuts placed
+		void Add_MassHistograms(DReaction* locReaction, bool locKinFitFlag, string locBaseUniqueName = "");
+
+		// Utilities
+		set<Particle_t> Get_InvariantMassPIDs(DReaction* locReaction, bool locKinFitFlag = false);
+		map<Particle_t, pair<int, deque<Particle_t> > > Get_MissingMassPIDs(DReaction* locReaction, bool locKinFitFlag = false);
+
 		double dBeamBunchPeriod;
 		deque<DReactionStep*> dReactionStepPool; //to prevent memory leaks
+
+		// Cuts
+		map<Particle_t, pair<double, double> > dMissingMassCuts; //Unknown = none missing //if negative, uses missing mass squared instead
+		map<Particle_t, pair<double, double> > dInvariantMassCuts;
+		map<Particle_t, pair<double, double> > dMissingMassCuts_KinFit; //Unknown = none missing //if negative, uses missing mass squared instead
+		map<Particle_t, pair<double, double> > dInvariantMassCuts_KinFit;
+		map<Particle_t, map<DetectorSystem_t, double> > dPIDTimingCuts;
 };
 
 #endif // _DReaction_factory_trackeff_missing_

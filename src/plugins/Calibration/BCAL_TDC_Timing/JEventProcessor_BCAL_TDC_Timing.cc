@@ -76,6 +76,13 @@ jerror_t JEventProcessor_BCAL_TDC_Timing::brun(JEventLoop *loop, int32_t runnumb
     DGeometry* geom = app->GetDGeometry(runnumber);
     geom->GetTargetZ(Z_TARGET);
 
+	// load BCAL geometry
+  	vector<const DBCALGeometry *> BCALGeomVec;
+  	loop->Get(BCALGeomVec);
+  	if(BCALGeomVec.size() == 0)
+		throw JException("Could not load DBCALGeometry object!");
+	dBCALGeom = BCALGeomVec[0];
+
     //////
     // THIS NEEDS TO CHANGE IF THERE IS A NEW TABLE
     //////
@@ -102,7 +109,7 @@ jerror_t JEventProcessor_BCAL_TDC_Timing::brun(JEventLoop *loop, int32_t runnumb
        float c1 = (*iter)[5];
        float c2 = (*iter)[6];
        float a_thresh = (*iter)[7];
-       int cellId = DBCALGeometry::cellId(module, layer, sector);
+       int cellId = dBCALGeom->cellId(module, layer, sector);
        readout_channel channel(cellId,end);
        tdc_timewalk_map[channel] = timewalk_coefficients(c0,c1,c2,a_thresh);
     }
@@ -172,7 +179,7 @@ jerror_t JEventProcessor_BCAL_TDC_Timing::evnt(JEventLoop *loop, uint64_t eventn
       //int the_cell = (bcalUnifiedHitVector[i]->module - 1) * 16 + (bcalUnifiedHitVector[i]->layer - 1) * 4 + bcalUnifiedHitVector[i]->sector;
       // There is one less layer of TDCs so the numbering relects this
       int the_tdc_cell = (bcalUnifiedHitVector[i]->module - 1) * 12 + (bcalUnifiedHitVector[i]->layer - 1) * 4 + bcalUnifiedHitVector[i]->sector;
-      int cellId = DBCALGeometry::cellId(bcalUnifiedHitVector[i]->module, bcalUnifiedHitVector[i]->layer, bcalUnifiedHitVector[i]->sector);
+      int cellId = dBCALGeom->cellId(bcalUnifiedHitVector[i]->module, bcalUnifiedHitVector[i]->layer, bcalUnifiedHitVector[i]->sector);
       // Get the underlying associated objects
       const DBCALHit * thisADCHit;
       const DBCALTDCHit * thisTDCHit;
@@ -300,7 +307,8 @@ jerror_t JEventProcessor_BCAL_TDC_Timing::evnt(JEventLoop *loop, uint64_t eventn
       if (bcalMatch == NULL) continue; 
 
       // We also need the reference trajectory, which is buried deep in there
-      const DTrackTimeBased *timeBasedTrack = (const DTrackTimeBased *) bcalMatch->dTrack;
+      const DTrackTimeBased *timeBasedTrack = nullptr;
+      bestHypothesis->GetSingle(timeBasedTrack);
       const DReferenceTrajectory *rt = timeBasedTrack->rt;
 
 	  // Use CDC dEdx to help reject protons
@@ -368,8 +376,8 @@ jerror_t JEventProcessor_BCAL_TDC_Timing::evnt(JEventLoop *loop, uint64_t eventn
             // We can plot the difference of the projected position and the BCAL position as a function of the channel
             sprintf(name , "Module%.2iLayer%.2iSector%.2i", thisPoint->module(), thisPoint->layer(), thisPoint->sector());
             // These results are in slightly different coordinate systems. We want one where the center of the BCAL is z=0
-            double localTrackHitZ = proj_pos.z() - DBCALGeometry::GetBCAL_center();
-            double localBCALHitZ = thisPoint->z() - DBCALGeometry::GetBCAL_center() + Z_TARGET;
+            double localTrackHitZ = proj_pos.z() - dBCALGeom->GetBCAL_center();
+            double localBCALHitZ = thisPoint->z() - dBCALGeom->GetBCAL_center() + Z_TARGET;
 			Fill2DHistogram ("BCAL_TDC_Offsets", "Z Position", "AllPoints",
 							 localTrackHitZ, localBCALHitZ,
 							 "Z_{point} Vs. Z_{Track}; Z_{Track} [cm]; Z_{Point} [cm]",

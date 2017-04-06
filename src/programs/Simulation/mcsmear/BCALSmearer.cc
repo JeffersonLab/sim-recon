@@ -353,7 +353,7 @@ void BCALSmearer::SortSiPMHits(map<bcal_index, CellHits> &SiPMHits, map<int, Sum
       
       // Get reference to SumHits object
       const bcal_index &idx = iter->first;
-      int fADCId = DBCALGeometry::fADCId( idx.module, idx.layer, idx.sector);
+      int fADCId = dBCALGeom->fADCId( idx.module, idx.layer, idx.sector);
       SumHits &sumhits = bcalfADC[fADCId];
       
       // Add CellHits object to list in SumHits
@@ -434,9 +434,9 @@ void BCALSmearer::SimpleDarkHitsSmear(map<int, SumHits> &bcalfADC)
    double sigma4 = bcal_config->BCAL_LAYER4_SIGMA_SCALE*bcal_config->BCAL_MEV_PER_ADC_COUNT; 
 
    // Loop over all fADC readout cells
-   for(int imodule=1; imodule<=DBCALGeometry::NBCALMODS; imodule++){
+   for(int imodule=1; imodule<=dBCALGeom->NBCALMODS; imodule++){
 
-      int n_layers = DBCALGeometry::NBCALLAYSIN + DBCALGeometry::NBCALLAYSOUT;
+      int n_layers = dBCALGeom->NBCALLAYSIN + dBCALGeom->NBCALLAYSOUT;
       for(int fADC_lay=1; fADC_lay<=n_layers; fADC_lay++){
          if(fADC_lay == 1) 
          	sigma = sigma1;
@@ -447,12 +447,12 @@ void BCALSmearer::SimpleDarkHitsSmear(map<int, SumHits> &bcalfADC)
          else if(fADC_lay == 4) 
          	sigma = sigma4;
 
-         int n_sectors = (fADC_lay <= DBCALGeometry::NBCALLAYSIN)? DBCALGeometry::NBCALSECSIN : DBCALGeometry::NBCALSECSOUT;
+         int n_sectors = (fADC_lay <= dBCALGeom->NBCALLAYSIN)? dBCALGeom->NBCALSECSIN : dBCALGeom->NBCALSECSOUT;
          for(int fADC_sec=1; fADC_sec<=n_sectors; fADC_sec++){
 
             // Use cellId(...) to convert fADC layer and sector into fADCId
-            // (see DBCALGeometry::fADCId)
-            int fADCId = DBCALGeometry::cellId(imodule, fADC_lay, fADC_sec);
+            // (see dBCALGeom->fADCId)
+            int fADCId = dBCALGeom->cellId(imodule, fADC_lay, fADC_sec);
             
             // Get SumHits object if it already exists or create new one 
             // if it doesn't.
@@ -538,14 +538,14 @@ void BCALSmearer::FindHits(double thresh_MeV, map<int, SumHits> &bcalfADC, map<i
       double preamp_gain_tdc = 5.0;
       double thresh_MeV_TDC = thresh_MeV/preamp_gain_tdc;
 	  //the outermost layer of the detector is not equipped with TDCs, so don't generate any TDC hits
-	  int layer = DBCALGeometry::layer(fADCId);
+	  int layer = dBCALGeom->layer(fADCId);
 
       for(int ii = 0; ii < (int)sumhits.EUP.size(); ii++){
         // correct simulation efficiencies 
 		if (config->APPLY_EFFICIENCY_CORRECTIONS
-		 		&& !gDRandom.DecideToAcceptHit(bcal_config->GetEfficiencyCorrectionFactor(GetCalibIndex(DBCALGeometry::module(fADCId),
-		 																				  DBCALGeometry::layer(fADCId),
-		 																				  DBCALGeometry::sector(fADCId)),
+		 		&& !gDRandom.DecideToAcceptHit(bcal_config->GetEfficiencyCorrectionFactor(GetCalibIndex(dBCALGeom->module(fADCId),
+		 																				  dBCALGeom->layer(fADCId),
+		 																				  dBCALGeom->sector(fADCId)),
 		 																				  DBCALGeometry::End::kUpstream)))
 		 			continue;
 		 			
@@ -555,9 +555,9 @@ void BCALSmearer::FindHits(double thresh_MeV, map<int, SumHits> &bcalfADC, map<i
       for(int ii = 0; ii < (int)sumhits.EDN.size(); ii++){                                                                     // they are not layer 4 hits and cross threshold.
         // correct simulation efficiencies 
 		if (config->APPLY_EFFICIENCY_CORRECTIONS
-		 		&& !gDRandom.DecideToAcceptHit(bcal_config->GetEfficiencyCorrectionFactor(GetCalibIndex(DBCALGeometry::module(fADCId),
-		 																				  DBCALGeometry::layer(fADCId),
-		 																				  DBCALGeometry::sector(fADCId)),
+		 		&& !gDRandom.DecideToAcceptHit(bcal_config->GetEfficiencyCorrectionFactor(GetCalibIndex(dBCALGeom->module(fADCId),
+		 																				  dBCALGeom->layer(fADCId),
+		 																				  dBCALGeom->sector(fADCId)),
 		 																				  DBCALGeometry::End::kDownstream)))
 		 			continue;
 
@@ -572,9 +572,9 @@ void BCALSmearer::FindHits(double thresh_MeV, map<int, SumHits> &bcalfADC, map<i
          // The module, fADC layer, and fADC sector are encoded in fADCId
          // (n.b. yes, these are the same methods used for extracting 
          // similar quantities from the cellId.)
-         hitlist.module = DBCALGeometry::module(fADCId);
-         hitlist.sumlayer = DBCALGeometry::layer(fADCId);
-         hitlist.sumsector = DBCALGeometry::sector(fADCId);
+         hitlist.module = dBCALGeom->module(fADCId);
+         hitlist.sumlayer = dBCALGeom->layer(fADCId);
+         hitlist.sumsector = dBCALGeom->sector(fADCId);
          
          hitlist.uphits = uphits;
          hitlist.dnhits = dnhits;
@@ -587,9 +587,9 @@ void BCALSmearer::FindHits(double thresh_MeV, map<int, SumHits> &bcalfADC, map<i
          // The module, fADC layer, and fADC sector are encoded in fADCId
          // (n.b. yes, these are the same methods used for extracting 
          // similar quantities from the cellId.)
-         hitlistTDC.module = DBCALGeometry::module(fADCId);
-         hitlistTDC.sumlayer = DBCALGeometry::layer(fADCId);
-         hitlistTDC.sumsector = DBCALGeometry::sector(fADCId);
+         hitlistTDC.module = dBCALGeom->module(fADCId);
+         hitlistTDC.sumlayer = dBCALGeom->layer(fADCId);
+         hitlistTDC.sumsector = dBCALGeom->sector(fADCId);
          
          hitlistTDC.uphits = uphitsTDC;
          hitlistTDC.dnhits = dnhitsTDC;

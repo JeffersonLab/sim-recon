@@ -43,7 +43,7 @@ int main( int argc, char* argv[] ){
 	
 	double beamMaxE   = 12.0;
 	double beamPeakE  = 9.0;
-	double beamLowE   = 0.135;
+	double beamLowE   = 0.5;
 	double beamHighE  = 12.0;
 	
 	int runNum = 9001;

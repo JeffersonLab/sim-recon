@@ -13,13 +13,7 @@ using namespace jana;
 #include <JANA/JFactory.h>
 // ROOT header fiels
 #include <TH2.h>
-// C++ header files
-#include <sstream>
-#include <stdio.h>
-#include <iostream>
-#include <cmath>
-#include <limits>
-#include <vector>
+#include <TDirectory.h>
 // RF header files
 #include <RF/DRFTime_factory.h>
 // PSC header files
@@ -28,21 +22,33 @@ using namespace jana;
 // Define constants
 const uint32_t NMODULES = 8;
 
+const double TMIN = -5;
+const double TMAX = 5;
+const double TBINS = (TMAX - TMIN)/0.1;
+
+const double PMIN = 0;
+const double PMAX = 2000;
+const double PBINS = (PMAX - PMIN)/2;
+
 // Define histograms
-static TH2F* h_dt_vs_pp_l[NMODULES];
-static TH2F* h_dt_vs_pp_r[NMODULES];
+static TH2F* h_dt_vs_pp_tdc_l[NMODULES];
+static TH2F* h_dt_vs_pp_tdc_r[NMODULES];
+static TH2F* h_dt_vs_pp_t_l[NMODULES];
+static TH2F* h_dt_vs_pp_t_r[NMODULES];
 
 // Define variables
 Int_t psc_mod_l;
 Int_t psc_mod_r;
 Double_t pp_l;
 Double_t pp_r;
+Double_t adc_l;
+Double_t adc_r;
 Double_t tdc_l;
 Double_t tdc_r;
-//Double_t rf_l;
-double rf_l;
-//Double_t rf_r;
-double rf_r;
+Double_t t_l;
+Double_t t_r;
+Double_t rf_l;
+Double_t rf_r;
 
 // Define RFTime_factory
 DRFTime_factory* dRFTimeFactory;
@@ -84,11 +90,36 @@ jerror_t JEventProcessor_PSC_TW::init(void)
 	// japp->RootUnLock();
 	//
 
-   // Name histograms
-   for (uint32_t i = 0; i < NMODULES; ++i) {
-      h_dt_vs_pp_l[i] = new TH2F(Form("h_dt_vs_pp_l_%i",i+1),Form("Time difference vs. pulse peak for left PSC module %i",i+1),1000,0,1000,100,-5,5);
-      h_dt_vs_pp_r[i] = new TH2F(Form("h_dt_vs_pp_r_%i",i+1),Form("Time difference vs. pulse peak for right PSC module %i",i+1),1000,0,1000,100,-5,5);
+   TDirectory *pscDir = gDirectory->mkdir("PSC_TW");
+   pscDir->cd();
+
+   gDirectory->mkdir("tdc-rf")->cd();
+   for (uint32_t i = 0; i < NMODULES; ++i)
+   {
+      h_dt_vs_pp_tdc_l[i] = new TH2F(Form("h_dt_vs_pp_tdc_l_%i",i+1),
+                                     Form("#Delta t vs. pulse peak, raw TDC, left PSC %i;\
+                                           Pulse peak; #Delta t (raw TDC - RF)",i+1),
+                                     PBINS, PMIN, PMAX, TBINS, TMIN, TMAX);
+      h_dt_vs_pp_tdc_r[i] = new TH2F(Form("h_dt_vs_pp_tdc_r_%i",i+1),
+                                     Form("#Delta t vs. pulse peak, raw TDC, left PSC %i;\
+                                           Pulse peak; #Delta t (raw TDC - RF)",i+1),
+                                     PBINS, PMIN, PMAX, TBINS, TMIN, TMAX);
    }
+   pscDir->cd();
+
+   gDirectory->mkdir("t-rf")->cd();
+   for (uint32_t i = 0; i < NMODULES; ++i)
+   {
+      h_dt_vs_pp_t_l[i] = new TH2F(Form("h_dt_vs_pp_t_l_%i",i+1),
+                                   Form("#Delta t vs. pulse peak, corrected TDC, left PSC %i;\
+                                         Pulse Peak; #Delta t (raw TDC - RF)",i+1),
+                                   PBINS, PMIN, PMAX, TBINS, TMIN, TMAX);
+      h_dt_vs_pp_t_r[i] = new TH2F(Form("h_dt_vs_pp_t_r_%i",i+1),
+                                   Form("#Delta t vs. pulse peak, corrected TDC, left PSC %i;\
+                                         Pulse peak; #Delta t (raw TDC - RF)",i+1),
+                                   PBINS, PMIN, PMAX, TBINS, TMIN, TMAX);
+   }
+   pscDir->cd();
 
 	return NOERROR;
 }
@@ -146,25 +177,37 @@ jerror_t JEventProcessor_PSC_TW::evnt(JEventLoop *loop, uint64_t eventnumber)
    else
       return NOERROR;
 
-	// FILL HISTOGRAMS
-	// Since we are filling histograms local to this plugin, it will not interfere with other ROOT operations: can use plugin-wide ROOT fill lock
-	japp->RootFillLock(this); //ACQUIRE ROOT FILL LOCK
+   // Since we are filling histograms local to this plugin, 
+   // it will not interfere with other ROOT operations:
+   // can use plugin-wide ROOT fill lock
+   japp->RootFillLock(this); //ACQUIRE ROOT FILL LOCK
 
-   if (pairs.size() > 0) {
-      psc_mod_l = pairs[0]->ee.first->module;
-      pp_l = pairs[0]->ee.first->pulse_peak;
-      tdc_l = pairs[0]->ee.first->t;
-      rf_l = dRFTimeFactory->Step_TimeToNearInputTime(locRFTime->dTime, tdc_l);
-      h_dt_vs_pp_l[psc_mod_l - 1]->Fill(pp_l,tdc_l - rf_l);
+   for (uint32_t i = 0; i < pairs.size(); ++i)
+   {
+      // Left modules
+      psc_mod_l = pairs[i]->ee.first->module;
+      pp_l = pairs[i]->ee.first->pulse_peak;
+      adc_l = pairs[i]->ee.first->time_fadc;
+      tdc_l = pairs[i]->ee.first->time_tdc;
+      t_l = pairs[i]->ee.first->t;
+      // Right modules
+      psc_mod_r = pairs[i]->ee.second->module;
+      pp_r = pairs[i]->ee.second->pulse_peak;
+      adc_r = pairs[i]->ee.second->time_fadc;
+      tdc_r = pairs[i]->ee.second->time_tdc;
+      t_r = pairs[i]->ee.second->t;
 
-      psc_mod_r = pairs[0]->ee.second->module;
-      pp_r = pairs[0]->ee.second->pulse_peak;
-      tdc_r = pairs[0]->ee.second->t;
-      rf_r = dRFTimeFactory->Step_TimeToNearInputTime(locRFTime->dTime, tdc_r);
-      h_dt_vs_pp_r[psc_mod_r - 1]->Fill(pp_r,tdc_r - rf_r);
+      // Use the ADC time to find the closest RF time.
+      rf_l = dRFTimeFactory->Step_TimeToNearInputTime(locRFTime->dTime,adc_l);
+      rf_r = dRFTimeFactory->Step_TimeToNearInputTime(locRFTime->dTime,adc_r);
+
+      h_dt_vs_pp_tdc_l[psc_mod_l - 1]->Fill(pp_l, tdc_l - rf_l);
+      h_dt_vs_pp_t_l[psc_mod_l - 1]->Fill(pp_l, t_l - rf_l);
+      h_dt_vs_pp_tdc_r[psc_mod_r - 1]->Fill(pp_r, tdc_r - rf_r);
+      h_dt_vs_pp_t_r[psc_mod_r - 1]->Fill(pp_r, t_r - rf_r);
    }
 
-	japp->RootFillUnLock(this); //RELEASE ROOT FILL LOCK
+   japp->RootFillUnLock(this); //RELEASE ROOT FILL LOCK
 
    return NOERROR;
 }

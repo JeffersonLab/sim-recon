@@ -118,6 +118,13 @@ jerror_t JEventProcessor_bcal_calib_cosmic_cdc::init(void)
 jerror_t JEventProcessor_bcal_calib_cosmic_cdc::brun(JEventLoop *eventLoop, int32_t runnumber)
 {
 	// This is called whenever the run number changes
+	// load BCAL geometry
+  	vector<const DBCALGeometry *> BCALGeomVec;
+  	loop->Get(BCALGeomVec);
+  	if(BCALGeomVec.size() == 0)
+		throw JException("Could not load DBCALGeometry object!");
+	dBCALGeom = BCALGeomVec[0];
+	
 	return NOERROR;
 }
 
@@ -167,12 +174,12 @@ jerror_t JEventProcessor_bcal_calib_cosmic_cdc::evnt(JEventLoop *loop, uint64_t 
 		/// Store the parameters for both track intersections with the 5 layers
 		float r[5], phi[2][5], x[2][5], y[2][5];
 		float* bcal_radii;
-		bcal_radii = DBCALGeometry::GetBCAL_radii();
+		bcal_radii = dBCALGeom->GetBCAL_radii();
 		/// For each layer boundary, calculate the intersection of the DTrackCandidate
 		/// with the circle and store the r and phi value for both intersections.
 		for (int laybound=0; laybound<=4; laybound++) {
 
-			r[laybound] =  DBCALGeometry::bcal_radii[laybound];
+			r[laybound] =  dBCALGeom->bcal_radii[laybound];
 			
 			float A = 1 + track_m*track_m;
 			float B = 2 * track_m * track_c;
@@ -191,21 +198,21 @@ jerror_t JEventProcessor_bcal_calib_cosmic_cdc::evnt(JEventLoop *loop, uint64_t 
 			}
 			if (VERBOSE>=2)  {
 				for (int track=0; track<=1; track++) {
-					int fADC_cellId = DBCALGeometry::fADCcellId_rphi( r[laybound], phi[track][laybound]);
-					int module = DBCALGeometry::module( fADC_cellId );
-					int layer = DBCALGeometry::layer( fADC_cellId );
-					int sector = DBCALGeometry::sector( fADC_cellId );
-					int glosector = DBCALGeometry::getglobalsector(module,sector);
+					int fADC_cellId = dBCALGeom->fADCcellId_rphi( r[laybound], phi[track][laybound]);
+					int module = dBCALGeom->module( fADC_cellId );
+					int layer = dBCALGeom->layer( fADC_cellId );
+					int sector = dBCALGeom->sector( fADC_cellId );
+					int glosector = dBCALGeom->getglobalsector(module,sector);
 					printf("BCCC >>  intersection: boundary=%i (x,y)=(%6.2f,%6.2f)  (r,phi)=(%6.2f,%6.3f)  cellId 0x%4x  (mod,lay,sec,glosec) = (%2i,%2i,%2i,%3i)\n",
 						   laybound, x[track][laybound], y[track][laybound], r[laybound], phi[track][laybound], 
 						   fADC_cellId, module, layer, sector, glosector);
 				}
 			}
-			// fADC_cellId = DBCALGeometry::fADCcellId_rphi( r[laybound], phi[1][laybound]);
-			// module = DBCALGeometry::module( fADC_cellId );
-			// layer = DBCALGeometry::layer( fADC_cellId );
-			// sector = DBCALGeometry::sector( fADC_cellId );
-			// glosector = DBCALGeometry::getglobalsector(module,sector);
+			// fADC_cellId = dBCALGeom->fADCcellId_rphi( r[laybound], phi[1][laybound]);
+			// module = dBCALGeom->module( fADC_cellId );
+			// layer = dBCALGeom->layer( fADC_cellId );
+			// sector = dBCALGeom->sector( fADC_cellId );
+			// glosector = dBCALGeom->getglobalsector(module,sector);
 			// if (VERBOSE>=2)  {				
 			// 	printf("BCCC >>  intersection: boundary=%i (x,y)=(%6.2f,%6.2f)  (r,phi)=(%6.2f,%6.3f)  cellId 0x%4x  (mod,lay,sec,glosec) = (%2i,%2i,%2i,%3i)\n",
 			// 		   laybound, x[1][laybound], y[1][laybound], r[laybound], phi[1][laybound], fADC_cellId, module, layer, sector, glosector);
@@ -218,14 +225,14 @@ jerror_t JEventProcessor_bcal_calib_cosmic_cdc::evnt(JEventLoop *loop, uint64_t 
 			for (int layer=0; layer<=3; layer++) {
 				/// IN refers to inner radial boundary, OUT refers to outer radial boundary
 				/// Find the global sector number for the entrance and exit sectors in this layer
-				int fADC_cellIdIN = DBCALGeometry::fADCcellId_rphi( r[layer], phi[track][layer]);
-				int moduleIN = DBCALGeometry::module( fADC_cellIdIN );
-				int sectorIN = DBCALGeometry::sector( fADC_cellIdIN );
-				int globalsectorIN = DBCALGeometry::getglobalsector(moduleIN,sectorIN);
-				int fADC_cellIdOUT = DBCALGeometry::fADCcellId_rphi( r[layer+1], phi[track][layer+1]);
-				int moduleOUT = DBCALGeometry::module( fADC_cellIdOUT );
-				int sectorOUT = DBCALGeometry::sector( fADC_cellIdOUT );
-				int globalsectorOUT = DBCALGeometry::getglobalsector(moduleOUT,sectorOUT);
+				int fADC_cellIdIN = dBCALGeom->fADCcellId_rphi( r[layer], phi[track][layer]);
+				int moduleIN = dBCALGeom->module( fADC_cellIdIN );
+				int sectorIN = dBCALGeom->sector( fADC_cellIdIN );
+				int globalsectorIN = dBCALGeom->getglobalsector(moduleIN,sectorIN);
+				int fADC_cellIdOUT = dBCALGeom->fADCcellId_rphi( r[layer+1], phi[track][layer+1]);
+				int moduleOUT = dBCALGeom->module( fADC_cellIdOUT );
+				int sectorOUT = dBCALGeom->sector( fADC_cellIdOUT );
+				int globalsectorOUT = dBCALGeom->getglobalsector(moduleOUT,sectorOUT);
 				int globalsectormin, globalsectormax; // These are the ordered edge sectors, smallest and largets
 				/// Check that the cells are valid
 				if (fADC_cellIdIN<=0 || fADC_cellIdOUT<=0) {
@@ -263,11 +270,11 @@ jerror_t JEventProcessor_bcal_calib_cosmic_cdc::evnt(JEventLoop *loop, uint64_t 
 
 						for (int glosect=globalsectormin; glosect<=globalsectormax; glosect++) {
 							float dist = 0;
-							int sector = DBCALGeometry::getsector(glosect);
-							int module = DBCALGeometry::getmodule(glosect);
-							int fADCId = DBCALGeometry::cellId(module,layer+1,sector); // layers are 1 to 4
-							float phi = DBCALGeometry::phi(fADCId);
-							float phihalfSize = DBCALGeometry::phiSize(fADCId)/2.;
+							int sector = dBCALGeom->getsector(glosect);
+							int module = dBCALGeom->getmodule(glosect);
+							int fADCId = dBCALGeom->cellId(module,layer+1,sector); // layers are 1 to 4
+							float phi = dBCALGeom->phi(fADCId);
+							float phihalfSize = dBCALGeom->phiSize(fADCId)/2.;
 							float philess=phi-phihalfSize, phimore=phi+phihalfSize;
 							float mless, xless, yless, mmore, xmore, ymore;
 							/// For each sector, get line boundary on each side and find the (x,y) point
@@ -333,8 +340,8 @@ jerror_t JEventProcessor_bcal_calib_cosmic_cdc::evnt(JEventLoop *loop, uint64_t 
 	/// Loop over all DBCALHit objects in this event
 	for(unsigned int c_chan=0; c_chan<num_BCALHit; c_chan++){
 		const DBCALHit *BCALHit = BCALHit_vec[c_chan];
-		//int fADCId = DBCALGeometry::fADCId_fADC( BCALHit->module, BCALHit->layer, BCALHit->sector );
-		int fADCId = DBCALGeometry::cellId( BCALHit->module, BCALHit->layer, BCALHit->sector );
+		//int fADCId = dBCALGeom->fADCId_fADC( BCALHit->module, BCALHit->layer, BCALHit->sector );
+		int fADCId = dBCALGeom->cellId( BCALHit->module, BCALHit->layer, BCALHit->sector );
 		if (VERBOSE>=4) 
 			printf("BCCC >>    Hit: (module, layer, sector) = (%2i,%2i,%2i)  fADCId 0x%x\n",\
 				   BCALHit->module, BCALHit->layer, BCALHit->sector, fADCId);
@@ -362,10 +369,10 @@ jerror_t JEventProcessor_bcal_calib_cosmic_cdc::evnt(JEventLoop *loop, uint64_t 
 		for (unsigned int cellnum=0; cellnum<num_CellId; cellnum++) {
 			cell = CellId_vec[cellnum];
 			tdist = distance_vec[cellnum];
-			tmodule = DBCALGeometry::module( cell );
-			tlayer = DBCALGeometry::layer( cell );
-			tsector = DBCALGeometry::sector( cell );
-			tglobalsect = DBCALGeometry::getglobalsector(tmodule,tsector);
+			tmodule = dBCALGeom->module( cell );
+			tlayer = dBCALGeom->layer( cell );
+			tsector = dBCALGeom->sector( cell );
+			tglobalsect = dBCALGeom->getglobalsector(tmodule,tsector);
 			numcells = num_CellId;
 			use=0; 
 			dse=0;

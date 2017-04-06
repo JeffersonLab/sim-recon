@@ -12,27 +12,9 @@
 
 
 #include "JEventProcessor_CDC_expert_2.h"
-#include <JANA/JApplication.h>
-
-
-using namespace std;
-using namespace jana;
-
-
-#include "CDC/DCDCHit.h"
-#include "CDC/DCDCDigiHit.h"
-#include "DAQ/Df125WindowRawData.h"
-#include "DAQ/Df125CDCPulse.h"
-#include "DAQ/Df125Config.h"
-
-#include <TDirectory.h>
-#include <TH2.h>
-#include <TH1.h>
 
 
 // root hist pointers
-
-
 
 static TH1D *cdc_e = NULL; 
 static TH2D *cdc_e_vs_n = NULL; 
@@ -412,6 +394,14 @@ jerror_t JEventProcessor_CDC_expert_2::evnt(JEventLoop *eventLoop, uint64_t even
   //add extra 0 at front to use offset[1] for ring 1
   int straw_offset[29] = {0,0,42,84,138,192,258,324,404,484,577,670,776,882,1005,1128,1263,1398,1544,1690,1848,2006,2176,2346,2528,2710,2907,3104,3313};
 
+  const DTrigger* locTrigger = NULL; 
+  eventLoop->GetSingle(locTrigger); 
+  if(locTrigger->Get_L1FrontPanelTriggerBits() != 0)
+    return NOERROR;
+
+  if (!locTrigger->Get_IsPhysicsEvent()){ // do not look at PS triggers
+    return NOERROR;
+  }
 
   //first set of histograms is for dcdchits, these are t and q after calibration
   //second set is for dcdcdigihits, these are the raw quantities

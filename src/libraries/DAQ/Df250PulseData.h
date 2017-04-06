@@ -142,9 +142,9 @@ class Df250PulseData:public DDAQAddress{
 			AddString(items, "fine_time"               , "%d", fine_time               );
 			AddString(items, "pulse_peak"              , "%d", pulse_peak              );
 			AddString(items, "pulse_number"            , "%d", pulse_number            );
-			//AddString(items, "nsamples_integral"       , "%d", nsamples_integral       );
-			//AddString(items, "nsamples_pedestal"       , "%d", nsamples_pedestal       );
-			//AddString(items, "nsamples_over_threshold" , "%d", nsamples_over_threshold );
+			AddString(items, "nsamples_integral"       , "%d", nsamples_integral       );
+			AddString(items, "nsamples_pedestal"       , "%d", nsamples_pedestal       );
+			AddString(items, "nsamples_over_threshold" , "%d", nsamples_over_threshold );
 			AddString(items, "QF"                      , "%x", QF                      );
 			AddString(items, "emulated"                , "%x", emulated_all            );
 

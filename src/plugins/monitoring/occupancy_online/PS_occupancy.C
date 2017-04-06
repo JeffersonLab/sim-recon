@@ -9,12 +9,16 @@
 // hnamepath: /occupancy/psc_tdc_right_occ
 // hnamepath: /occupancy/ps_left_occ
 // hnamepath: /occupancy/ps_right_occ
+//
+// e-mail: davidl@jlab.org
+// e-mail: somov@jlab.org
+//
 
 {
 	// RootSpy saves the current directory and style before
 	// calling the macro and restores it after so it is OK to
 	// change them and not change them back.
-
+        TDirectory *savedir = gDirectory;
 	TDirectory *dir = (TDirectory*)gDirectory->FindObjectAny("occupancy");
 	if(dir) dir->cd();
 

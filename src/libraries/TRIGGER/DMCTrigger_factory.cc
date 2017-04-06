@@ -37,9 +37,16 @@ jerror_t DMCTrigger_factory::init(void)
 //------------------
 jerror_t DMCTrigger_factory::brun(jana::JEventLoop *eventLoop, int32_t runnumber)
 {
+    // load BCAL geometry
+  	vector<const DBCALGeometry *> BCALGeomVec;
+  	eventLoop->Get(BCALGeomVec);
+  	if(BCALGeomVec.size() == 0)
+	  throw JException("Could not load DBCALGeometry object!");
+	const DBCALGeometry *dBCALGeom = BCALGeomVec[0];
+
 	// Get attenuation parameters
-	double L_over_2 = DBCALGeometry::GetBCAL_length()/2.0;
-	double Xo = DBCALGeometry::ATTEN_LENGTH;
+	double L_over_2 = dBCALGeom->GetBCAL_length()/2.0;
+	double Xo = dBCALGeom->ATTEN_LENGTH;
 	unattenuate_to_center = exp(+L_over_2/Xo);
 
     USE_OLD_BCAL_HITS = 0;

@@ -4,6 +4,10 @@
 
 #include <iostream>
 #include <iomanip>
+#include <string>
+#include <vector>
+#include <map>
+
 using namespace std;
 
 #include <TF1.h>
@@ -31,6 +35,9 @@ extern void SetSeeds(const char *vals);
 char *INFILENAME = NULL;
 char *OUTFILENAME = NULL;
 int QUIT = 0;
+
+std::map<hddm_s::istream*,double> files2merge;
+std::map<hddm_s::istream*,hddm_s::streamposition> start2merge;
 
 using namespace jana;
 
@@ -75,35 +82,51 @@ int main(int narg,char* argv[])
 void ParseCommandLineArguments(int narg, char* argv[], mcsmear_config_t *config)
 {
 
-  for (int i=1; i<narg; i++) {
-    char *ptr = argv[i];
+   for (int i=1; i<narg; i++) {
+      char *ptr = argv[i];
     
-    if (ptr[0] == '-') {
-      switch(ptr[1]) {
-      case 'h': Usage();                                     break;
-      case 'o': OUTFILENAME = strdup(&ptr[2]);               break;
-      case 'N': config->ADD_NOISE=true;                      break;
-      case 's': config->SMEAR_HITS=false;                    break;
-      case 'i': config->IGNORE_SEEDS=true;                   break;
-      case 'r': config->SetSeeds(&ptr[2]);                   break;
-      case 'd': config->DROP_TRUTH_HITS=true;                break;
-      case 'D': config->DUMP_RCDB_CONFIG=true;               break;
-      case 'e': config->APPLY_EFFICIENCY_CORRECTIONS=false;  break;
+      if (ptr[0] == '-') {
+         switch(ptr[1]) {
+          case 'h': Usage();                                     break;
+          case 'o': OUTFILENAME = strdup(&ptr[2]);               break;
+          case 'N': config->ADD_NOISE=true;                      break;
+          case 's': config->SMEAR_HITS=false;                    break;
+          case 'i': config->IGNORE_SEEDS=true;                   break;
+          case 'r': config->SetSeeds(&ptr[2]);                   break;
+          case 'd': config->DROP_TRUTH_HITS=true;                break;
+          case 'D': config->DUMP_RCDB_CONFIG=true;               break;
+          case 'e': config->APPLY_EFFICIENCY_CORRECTIONS=false;  break;
 
-	  // BCAL parameters
-      case 'G': config->BCAL_NO_T_SMEAR = true;                         break;
-      case 'H': config->BCAL_NO_DARK_PULSES = true;                     break;
-      case 'K': config->BCAL_NO_SAMPLING_FLUCTUATIONS = true;           break;
-      case 'L': config->BCAL_NO_SAMPLING_FLOOR_TERM = true;             break;
-      case 'M': config->BCAL_NO_POISSON_STATISTICS = true;              break;
-      case 'S': config->BCAL_NO_FADC_SATURATION = true;                 break;    
+	      // BCAL parameters
+          case 'G': config->BCAL_NO_T_SMEAR = true;              break;
+          case 'H': config->BCAL_NO_DARK_PULSES = true;          break;
+          case 'K': config->BCAL_NO_SAMPLING_FLUCTUATIONS = true; break;
+          case 'L': config->BCAL_NO_SAMPLING_FLOOR_TERM = true;  break;
+          case 'M': config->BCAL_NO_POISSON_STATISTICS = true;   break;
+	  case 'S': config->BCAL_NO_FADC_SATURATION = true;      break;
+         }
       }
-    }
-    else {
-      INFILENAME = argv[i];
-    }
-  }
-
+      else {
+         std::string filename(ptr);
+         size_t colon = filename.find_first_of(":");
+         if (colon != filename.npos) {
+            std::ifstream *ifs = new std::ifstream(filename.substr(0, colon));
+            double wgt = std::stod(filename.substr(colon + 1));
+            size_t decimal = filename.substr(colon + 1).find_first_of(".");
+            if (decimal != filename.npos) // distinguish float from int
+               wgt += 1e-10;
+            hddm_s::istream *istr = new hddm_s::istream(*ifs);
+            files2merge[istr] = wgt;
+            hddm_s::HDDM record;
+            *istr >> record;
+            start2merge[istr] = istr->getPosition();
+            std::fill(ptr, ptr + strlen(ptr), '-');
+            continue;
+         }
+         INFILENAME = argv[i];
+      }
+   }
+ 
    if (!INFILENAME){
       cout << endl << "You must enter a filename!" << endl << endl;
       Usage();
@@ -191,4 +214,3 @@ void Usage(void)
 
    exit(0);
 }
-

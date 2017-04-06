@@ -23,24 +23,6 @@ using namespace jana;
 #define SECTOR_SHIFT 0
 #define SECTOR_MASK 0X000F
 
-#define PI 3.14159265358
-
-// with this set one will utilize the default summing -- see DBCALGeometry.cc
-// for a description of summed geometry.
-//
-// Author's note:  this is seen as a temporary feature to study effects of
-// two different summing schemes.  A preprocessor macro is not the best way
-// to change the functionality of code, but mcsmear doesn't use factories to
-// provide objects so its parameters aren't helpful.
-
-#define BCAL_SUM_CELL
-
-//THIS WHOLE CLASS NEEDS TO BE ENTIRELY REFACTORED.
-//THIS IS ALL HORRIBLY DANGEROUS
-//THIS IS NOT EVEN !!!REMOTELY!!! THREAD-SAFE.
-//NOTHING HERE SHOULD BE STATIC
-//INITIALIZE WITH NO RUN NUMBER SHOULD NOT BE SUPPORTED.
-
 class DBCALGeometry : public JObject {
   
 public:
@@ -51,91 +33,102 @@ public:
   
   enum End { kUpstream, kDownstream };
   
-  static const int NBCALMODS=48;         ///< number of modules
+  // =============================== CONSTANTS ================================
+  // PUBLIC ACCESS TO THESE IS DEPRECATED, PLEASE USE THE ACCESSOR FUNCTIONS
+  const int NBCALMODS=48;         ///< number of modules
+  // need accessors for as-built geometry (modules/layers/sectors)
 
   //the distinction between inner layers and outer layers is important, since only the inner layers have TDC readout
-#ifdef BCAL_SUM_CELL
-  static const int NBCALLAYSIN=3;        ///< number of readout layers in inner BCAL (first 6 SiPM layers)
-  static const int NBCALLAYSOUT=1;       ///< number of readout layers in outer BCAL (outer 4 SiPM layers)
-#else
-  static const int NBCALLAYSIN=6;
-  static const int NBCALLAYSOUT=4;
-#endif
-  static int NSUMLAYSIN[NBCALLAYSIN];          ///< number of radial SiPM layers summed for digitization in each inner readout layer
-  static int NSUMLAYSOUT[NBCALLAYSOUT];        ///< number of radial SiPM layers summed for digitization in each outer readout layer
-  static int NSUMSECSIN;         ///< for the inner layers, the number of SiPM that will be summed in the azimuthal direction
-  static int NSUMSECSOUT;        ///< for the outer layer(s), the number of SiPM that will be summed in the azimuthal direction
-  static int NBCALSECSIN;        ///<number of sectors in inner region
-  static int NBCALSECSOUT;       ///<number of sectors in outer region
+  const int NBCALLAYSIN=3;        ///< number of readout layers in inner BCAL (first 6 SiPM layers)
+  const int NBCALLAYSOUT=1;       ///< number of readout layers in outer BCAL (outer 4 SiPM layers)
 
-  // Enter the index of the SiPM that designates the first
-  // (counting radially outward) of the outer cells (default 7)
-  static const int BCALMID=7;         ///< first outer layer (default 7)
+  // On each module there is a 10x4 (r/phi) array of SiPMs
+  // 1.2.3.4 summing configuration - This is used in the BCAL as built
+  vector<int> NSUMLAYSIN  = {1,2,3};    ///< number of radial SiPM layers summed for digitization in each inner readout layer
+  vector<int> NSUMLAYSOUT = {4};   ///< number of radial SiPM layers summed for digitization in each outer readout layer
+  const int NSUMSECSIN=1;         ///< for the inner layers, the number of SiPM that will be summed in the azimuthal direction
+  const int NSUMSECSOUT=1;        ///< for the outer layer(s), the number of SiPM that will be summed in the azimuthal direction
+  const int NBCALSECSIN=4/NSUMSECSIN;        ///<number of sectors in inner region
+  const int NBCALSECSOUT=4/NSUMSECSOUT;      ///<number of sectors in outer region
 
-  static float m_radius[11];
-  static float BCALMIDRAD;       ///< mid radius of BCAL in cm (boundary between inner and outer layers)
-  static float BCALOUTERRAD;     ///< outer radius of BCAL in cm
+  float m_radius[11] = { 64.3, 
+				  66.3,
+				  68.3,
+				  70.3,
+				  72.3,
+				  74.3,
+				  76.3,
+				  78.77,
+				  81.24,
+				  83.70,
+				  86.17};
   
-  static float ATTEN_LENGTH;     ///< attenuation length
-  static float C_EFFECTIVE;      ///< speed of light in fibers 
+  float ATTEN_LENGTH=520.;     ///< attenuation length
+  float C_EFFECTIVE=16.75;      ///< speed of light in fibers 
+
+  // ==========================================================================
 
   // Methods to access and initialize the private variables
-  static bool initialized;
+  void Initialize(int runnumber); 
 
-  static void Initialize(int runnumber=11000); //This is TERRIBLE.  //Just AWFUL
-
-  static float GetBCAL_inner_rad();
-
-  static float* GetBCAL_radii();
-
-  static float GetBCAL_center();
-
-  static float GetBCAL_length();
-
-  static float GetBCAL_phi_shift();
+  float GetBCAL_inner_rad() const;
+  const float* GetBCAL_radii() const;
+  float GetBCAL_center() const;
+  float GetBCAL_length() const;
+  float GetBCAL_phi_shift() const;
   
-  static bool summingOn() {
+  float GetBCAL_outer_rad() const { return BCALOUTERRAD; }
+  float GetBCAL_middle_rad() const { return BCALMIDRAD; }
+  float GetBCAL_middle_cell() const { return BCALMID; }
+  float *GetBCAL_cell_radii() { return &(m_radius[0]); }
   
-#ifdef BCAL_SUM_CELL
-    return true;
-#else
-    return false;
-#endif
-  }
+  // nominal effective velocity
+  float GetBCAL_c_effective() const { return C_EFFECTIVE; }
+
+  // nominal attenuation length
+  float GetBCAL_attenutation_length() const { return ATTEN_LENGTH; }
 
   ///these functions are about encoding/decoding module/layer/sector info in a cellId
-  static int cellId( int module, int layer, int sector );  ///< This object can be used for the SiPM ID or for the fADC ID since they are defined in the same way (4 bits for sector then 4 bits for layer then 8 bits for module.)
-  static int module( int cellId );  ///< This method can be used for the SiPM ID or for the fADC ID since they are defined in the same way
-  static int layer( int cellId );   ///< This method can be used for the SiPM ID or for the fADC ID since they are defined in the same way
-  static int sector( int cellId );  ///< This method can be used for the SiPM ID or for the fADC ID since they are defined in the same way
+  int cellId( int module, int layer, int sector ) const;  ///< This object can be used for the SiPM ID or for the fADC ID since they are defined in the same way (4 bits for sector then 4 bits for layer then 8 bits for module.)
+  int module( int cellId ) const;  ///< This method can be used for the SiPM ID or for the fADC ID since they are defined in the same way
+  int layer( int cellId ) const;   ///< This method can be used for the SiPM ID or for the fADC ID since they are defined in the same way
+  int sector( int cellId ) const;  ///< This method can be used for the SiPM ID or for the fADC ID since they are defined in the same way
 
   ///these functions are about finding which readout cell contains a specific SiPM cell
-  static int fADC_layer( int SiPM_cellId );
-  static int fADC_sector( int SiPM_cellId );
-  static int fADCId( int module, int SiPM_layer, int SiPM_sector );
-  static int NSiPMs(int fADCId);
+  int fADC_layer( int SiPM_cellId ) const;
+  int fADC_sector( int SiPM_cellId ) const;
+  int fADCId( int module, int SiPM_layer, int SiPM_sector ) const;
+  int NSiPMs(int fADCId) const;
 
   ///these functions are about the physical location and dimensions of a readout cell
-  static float phi( int fADC_cellId );
-  static float phiSize( int fADC_cellId );  
-  static float r( int fADC_cellId );
-  static float rSize( int fADC_cellId );
+  float phi( int fADC_cellId ) const;
+  float phiSize( int fADC_cellId ) const;  
+  float r( int fADC_cellId ) const;
+  float rSize( int fADC_cellId ) const;
 
   ///these are missing functions that fill in some previous gaps.
-  static int fADCcellId_rphi( float r, float phi );    ///< Method to get the fADC cell ID from an (R, phi) combination.\n  R in cm and phi in radians.
-  static int getglobalchannelnumber(int module, int layer, int sector, int end);  ///< Return a BCAL channel number, in order of significance (module, layer, sector, end).
-  static int getendchannelnumber(int module, int layer, int sector);  ///< Return a channel number for either end, in order of significance (module, layer, sector).
-  static int getglobalsector(int module, int sector);
-  static int getsector(int globalsector);
-  static int getmodule(int globalsector);
+  int fADCcellId_rphi( float r, float phi ) const;    ///< Method to get the fADC cell ID from an (R, phi) combination.\n  R in cm and phi in radians.
+  int getglobalchannelnumber(int module, int layer, int sector, int end) const;  ///< Return a BCAL channel number, in order of significance (module, layer, sector, end).
+  int getendchannelnumber(int module, int layer, int sector) const;  ///< Return a channel number for either end, in order of significance (module, layer, sector).
+  int getglobalsector(int module, int sector) const;
+  int getsector(int globalsector) const;
+  int getmodule(int globalsector) const;
 
 private:
 
-  static float BCALINNERRAD;     ///< innner radius of BCAL in cm
-  static float fADC_radius[5];   ///< BCAL layer radii (4 layers total)
-  static float GLOBAL_CENTER;    ///< center of BCAL in gloobal coordinate system
-  static float BCALFIBERLENGTH;  ///< BCAL Scintilator fiber lenth in cm
-  static float BCAL_PHI_SHIFT;     ///< overall phi roation of BCAL in radians
+  DBCALGeometry();       // forbid the default constructor
+
+  float BCALINNERRAD=0.;       ///< innner radius of BCAL in cm
+  float fADC_radius[5] = {};   ///< BCAL layer radii (4 layers total)
+  float GLOBAL_CENTER=0.;      ///< center of BCAL in gloobal coordinate system
+  float BCALFIBERLENGTH=0.;    ///< BCAL Scintilator fiber lenth in cm
+  float BCAL_PHI_SHIFT=0.;     ///< overall phi roation of BCAL in radians
+
+  // Enter the index of the SiPM that designates the first
+  // (counting radially outward) of the outer cells (default 7)
+  const int BCALMID=7;         ///< first outer layer (default 7)
+  float BCALMIDRAD = m_radius[BCALMID-1];    ///< mid radius of BCAL in cm (boundary between inner and outer layers)
+  float BCALOUTERRAD=86.17;     ///< outer radius of BCAL in cm
 
 };
 

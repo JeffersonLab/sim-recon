@@ -59,6 +59,10 @@ class JEventProcessor_occupancy_online:public jana::JEventProcessor{
 		TH1I *rf_num_events;
 		TH1D* rf_occ; //TH1D ON PURPOSE!
 		map<DetectorSystem_t, double> dRFBinValueMap;
+		
+		//------------------------ Trigger -------------------------
+		TH2F *L1GTPRate;  // n.b. plotted in highlevel_online/HistMacro_Trigger.C  !!
+		TH1F *L1livetime; // n.b. plotted in highlevel_online/HistMacro_Trigger.C  !!
 
 		//------------------------ ST -------------------------
 		TH1I *st_num_events;
@@ -88,6 +92,14 @@ class JEventProcessor_occupancy_online:public jana::JEventProcessor{
 		TH1I *tof_adc_N_occ;
 		TH1I *tof_adc_U_occ;
 		TH1I *tof_adc_D_occ;
+
+		//------------------------ DigiHits ------------------------
+		map<string,double> digihitbinmap; // bin number
+		map<string,double> digihitsclmap; // Scale number of hits by this (0 means don't scale)
+		TH2I *digihits_trig1;
+		TH2I *digihits_trig3;
+		TH2I *digihits_trig4;
+		TH2I *digihits_scale_factors;
 
 
 	private:

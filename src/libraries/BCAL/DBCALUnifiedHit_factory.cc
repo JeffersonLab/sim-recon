@@ -49,6 +49,13 @@ jerror_t DBCALUnifiedHit_factory::init(void)
 
 jerror_t DBCALUnifiedHit_factory::brun(jana::JEventLoop *eventLoop, int32_t runnumber) {
 
+	// load BCAL geometry
+  	vector<const DBCALGeometry *> BCALGeomVec;
+  	eventLoop->Get(BCALGeomVec);
+  	if(BCALGeomVec.size() == 0)
+		throw JException("Could not load DBCALGeometry object!");
+	dBCALGeom = BCALGeomVec[0];
+
     if (USE_TDC){
         //get timewalk corrections from CCDB
         JCalibration *jcalib = eventLoop->GetJCalibration();
@@ -73,16 +80,16 @@ jerror_t DBCALUnifiedHit_factory::brun(jana::JEventLoop *eventLoop, int32_t runn
             float c1 = (*iter)[5];
             float c2 = (*iter)[6];
             float a_thresh = (*iter)[7];
-            int cellId = DBCALGeometry::cellId(module, layer, sector);
+            int cellId = dBCALGeom->cellId(module, layer, sector);
             readout_channel channel(cellId,end);
             tdc_timewalk_map[channel] = timewalk_coefficients(c0,c1,c2,a_thresh);
         }
 
-        for (int module=1; module<=DBCALGeometry::NBCALMODS; module++) {
+        for (int module=1; module<=dBCALGeom->NBCALMODS; module++) {
             //shouldn't be hardcoded
             for (int sector=1; sector<=4; sector++) {
-                for (int layer=1; layer<=DBCALGeometry::NBCALLAYSIN; layer++) {
-                    int id = DBCALGeometry::cellId(module, layer, sector);
+                for (int layer=1; layer<=dBCALGeom->NBCALLAYSIN; layer++) {
+                    int id = dBCALGeom->cellId(module, layer, sector);
                     if (tdc_timewalk_map.count(readout_channel(id,DBCALGeometry::kUpstream)) != 1) {
                         cout << "DBCALUnifiedHit_factory: Channel missing in timewalk_tdc_table: "
                             << endl << " module " << module << " layer " << layer << " sector " << sector << " upstream" << endl;
@@ -117,7 +124,7 @@ jerror_t DBCALUnifiedHit_factory::evnt(JEventLoop *loop, uint64_t eventnumber) {
 
         const DBCALHit& hit = (**hitPtr);
 
-        int id = DBCALGeometry::cellId( hit.module, hit.layer, hit.sector );
+        int id = dBCALGeom->cellId( hit.module, hit.layer, hit.sector );
         readout_channel chan(id, hit.end);
 
         //this will create cellHitMap[chan] if it doesn't already exist
@@ -131,7 +138,7 @@ jerror_t DBCALUnifiedHit_factory::evnt(JEventLoop *loop, uint64_t eventnumber) {
 
         const DBCALTDCHit& hit = (**hitPtr);
 
-        int id = DBCALGeometry::cellId (hit.module, hit.layer, hit.sector );
+        int id = dBCALGeom->cellId (hit.module, hit.layer, hit.sector );
         readout_channel chan(id, hit.end);
 
         if( cellHitMap.find(chan) == cellHitMap.end() ){
@@ -148,9 +155,9 @@ jerror_t DBCALUnifiedHit_factory::evnt(JEventLoop *loop, uint64_t eventnumber) {
 
         readout_channel chan = mapItr->first;
         int cellId = chan.cellId;
-        int module = DBCALGeometry::module(cellId);
-        int layer = DBCALGeometry::layer(cellId);
-        int sector = DBCALGeometry::sector(cellId);
+        int module = dBCALGeom->module(cellId);
+        int layer = dBCALGeom->layer(cellId);
+        int sector = dBCALGeom->sector(cellId);
 
         const vector<const DBCALHit*> &hits = mapItr->second.hits;
         const vector<const DBCALTDCHit*> &tdc_hits = mapItr->second.tdc_hits;

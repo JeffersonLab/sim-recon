@@ -7,25 +7,27 @@
 
 #include "BCAL/DBCALCluster.h"
 #include "BCAL/DBCALPoint.h"
+#include "BCAL/DBCALGeometry.h"
 #include "units.h"
 
 #include <math.h>
 
-DBCALCluster::DBCALCluster( const DBCALPoint* point, double z_target_center )
-  : m_points ( 0 ),  m_hit_E_unattenuated_sum(0.0),  m_z_target_center(z_target_center) {
+DBCALCluster::DBCALCluster( const DBCALPoint* point, double z_target_center, const DBCALGeometry *locGeom )
+  : m_points ( 0 ),  m_hit_E_unattenuated_sum(0.0),  m_z_target_center(z_target_center), m_BCALGeom(locGeom) {
 
   m_points.push_back( point );
   makeFromPoints();
 }
 
-DBCALCluster::DBCALCluster(double z_target_center) : m_z_target_center(z_target_center) {
+DBCALCluster::DBCALCluster(double z_target_center, const DBCALGeometry *locGeom) 
+  : m_z_target_center(z_target_center), m_BCALGeom(locGeom) {
   clear(); //initialize all values to zero
 }
 
 float
 DBCALCluster::t0() const {
   
-  float path = DBCALGeometry::GetBCAL_inner_rad() / sin( m_theta );
+  float path = m_BCALGeom->GetBCAL_inner_rad() / sin( m_theta );
   
   return m_t - ( path / ( 30 * k_cm / k_nsec ) );
 }
@@ -36,11 +38,11 @@ DBCALCluster::addPoint( const DBCALPoint* point ){
   // offset phi of the point by +- 2PI to match the cluster
   if( phi() > point->phi() ){
     
-    if( fabs( phi() - point->phi() - 2*PI ) < PI ) point->add2Pi();
+    if( fabs( phi() - point->phi() - 2*M_PI ) < M_PI ) point->add2Pi();
   }
   else{
     
-    if( fabs( point->phi() - phi() - 2*PI ) < PI ) point->sub2Pi();
+    if( fabs( point->phi() - phi() - 2*M_PI ) < M_PI ) point->sub2Pi();
   }
   
   m_points.push_back( point );
@@ -53,11 +55,11 @@ DBCALCluster::removePoint( const DBCALPoint* point){
 
 if( phi() > point->phi() ){
 
-    if( fabs( phi() - point->phi() - 2*PI ) < PI ) point->add2Pi();
+    if( fabs( phi() - point->phi() - 2*M_PI ) < M_PI ) point->add2Pi();
   }
   else{
 
-    if( fabs( point->phi() - phi() - 2*PI ) < PI ) point->sub2Pi();
+    if( fabs( point->phi() - phi() - 2*M_PI ) < M_PI ) point->sub2Pi();
   }
 
   if(find(m_points.begin(),m_points.end(),point) != m_points.end()) m_points.erase( find(m_points.begin(),m_points.end(),point ));
@@ -90,11 +92,11 @@ DBCALCluster::mergeClust( const DBCALCluster& clust ){
     // offset phi of the point by +- 2PI to match the cluster if needed
     if( phi() > (**pt).phi() ){
       
-      if( fabs( phi() - (**pt).phi() - 2*PI ) < PI ) (**pt).add2Pi();
+      if( fabs( phi() - (**pt).phi() - 2*M_PI ) < M_PI ) (**pt).add2Pi();
     }
     else{
       
-      if( fabs( (**pt).phi() - phi() - 2*PI ) < PI ) (**pt).sub2Pi();
+      if( fabs( (**pt).phi() - phi() - 2*M_PI ) < M_PI ) (**pt).sub2Pi();
     }
     
     m_points.push_back( *pt );
@@ -234,11 +236,11 @@ DBCALCluster::makeFromPoints(){
   // above. parameters of sigma_z are determined using errors when reconstructing MC data.
   // Using m_E_points because the cluster z position only depends on the point z positions
   // and point energies.
-  //double sigma_z = sqrt(1.394*1.394/m_E_points + 0.859*0.859);
-  //m_sig_theta = sigma_z*sin(m_theta)*sin(m_theta)/DBCALGeometry::GetBCAL_inner_rad();
+  double sigma_z = sqrt(1.394*1.394/m_E_points + 0.859*0.859);
+  m_sig_theta = sigma_z*sin(m_theta)*sin(m_theta)/m_BCALGeom->GetBCAL_inner_rad();
   
   m_phi = atan2(sum_sin_phi,sum_cos_phi);
-  if( m_phi < 0 ) m_phi += 2*PI;
+  if( m_phi < 0 ) m_phi += 2*M_PI;
   // calculate the RMS of phi
   m_sig_phi=0;
   for( vector< const DBCALPoint* >::const_iterator pt = m_points.begin();
@@ -256,8 +258,8 @@ DBCALCluster::makeFromPoints(){
 
     double deltaPhi = (**pt).phi() - m_phi;
     double deltaPhiAlt = ( (**pt).phi() > m_phi ?
-			   (**pt).phi() - m_phi - 2*PI :
-			   m_phi - (**pt).phi() - 2*PI );
+			   (**pt).phi() - m_phi - 2*M_PI :
+			   m_phi - (**pt).phi() - 2*M_PI );
     deltaPhi = min( fabs( deltaPhi ), fabs( deltaPhiAlt ) );
     m_sig_phi += deltaPhi * deltaPhi * wt1;
 
@@ -284,13 +286,13 @@ DBCALCluster::makeFromPoints(){
   double z = m_rho*cos(m_theta) + m_z_target_center;
   double r = m_rho*sin(m_theta); 
 
-  double bcal_down = DBCALGeometry::GetBCAL_center() + DBCALGeometry::GetBCAL_length()/2.0;
-  double bcal_up = DBCALGeometry::GetBCAL_center() - DBCALGeometry::GetBCAL_length()/2.0;
+  double bcal_down = m_BCALGeom->GetBCAL_center() + m_BCALGeom->GetBCAL_length()/2.0;
+  double bcal_up = m_BCALGeom->GetBCAL_center() - m_BCALGeom->GetBCAL_length()/2.0;
   if (z > bcal_down) z = bcal_down;
   if (z < bcal_up) z = bcal_up;
 
-  double r_min = DBCALGeometry::r(DBCALGeometry::cellId(1,1,1)); //This is the center of the first layer of the BCAL. This is the minimum value of r that a DBCALPoint will report.
-  double r_max = DBCALGeometry::r(DBCALGeometry::cellId(1,4,1)); //Maximum r that a DBCALPoint will report
+  double r_min = m_BCALGeom->r(m_BCALGeom->cellId(1,1,1)); //This is the center of the first layer of the BCAL. This is the minimum value of r that a DBCALPoint will report.
+  double r_max = m_BCALGeom->r(m_BCALGeom->cellId(1,4,1)); //Maximum r that a DBCALPoint will report
   if (r > r_max) r = r_max;
   if (r < r_min) r = r_min;
 
@@ -321,8 +323,8 @@ DBCALCluster::makeFromPoints(){
   if( m_sig_theta < 1E-6 ) m_sig_theta = m_points.at(0)->sigPhi()/sqrt(n_avg);
   
   // correct phi of the cluster if we've drifted outside of 0 - 2PI
-  if( m_phi > 2*PI ) m_phi -= 2*PI;
-  if( m_phi < 0 ) m_phi += 2*PI;
+  if( m_phi > 2*M_PI ) m_phi -= 2*M_PI;
+  if( m_phi < 0 ) m_phi += 2*M_PI;
 }
 
 void 

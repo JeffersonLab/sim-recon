@@ -15,6 +15,7 @@ using namespace jana;
 #include <BCAL/DBCALTDCDigiHit.h>
 #include <DAQ/Df250PulseIntegral.h>
 #include <DAQ/Df250WindowRawData.h>
+#include <DAQ/Df250PulseData.h>
 #include <DAQ/DF1TDCHit.h>
 
 
@@ -126,10 +127,24 @@ jerror_t JEventProcessor_DAQTreeBCAL::evnt(JEventLoop *loop, uint64_t eventnumbe
 		// is thrown (and caught) and the hit is ignored.
 		try {
 			const DBCALDigiHit *bcaldigihit = bcaldigihits[i];
-			const Df250PulseIntegral *pulseintegral;
-			const Df250WindowRawData *windorawdata;
-			bcaldigihit->GetSingle(pulseintegral);
-			pulseintegral->GetSingle(windorawdata);
+			const Df250WindowRawData *windorawdata = NULL;
+			
+			const Df250PulseData *pulsedata = NULL;
+			bcaldigihit->GetSingle(pulsedata);
+			if(pulsedata){
+				pulsedata->GetSingle(windorawdata);
+			}else{
+				const Df250PulseIntegral *pulseintegral = NULL;
+				bcaldigihit->GetSingle(pulseintegral);
+				pulseintegral->GetSingle(windorawdata);
+			}
+			
+			if(!windorawdata){
+				jerr << "No Df250WindowRawData objects associate with DBCALDigiHit!" << endl;
+				continue;
+			}
+
+			pulsedata->GetSingle(windorawdata);
 			
 			waveform.clear();
 			channelnum = i;

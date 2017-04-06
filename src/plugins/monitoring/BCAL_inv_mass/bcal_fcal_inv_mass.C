@@ -36,7 +36,7 @@
   if( bcal_fcal_diphoton_mass_300 ){
 
     bcal_fcal_diphoton_mass_300->SetStats(0);
-    double max_300 = bcal_diphoton_mass_300->GetMaximum();
+    double max_300 = bcal_fcal_diphoton_mass_300->GetMaximum();
     c1->cd(1);
     bcal_fcal_diphoton_mass_300->Draw();
     bcal_fcal_diphoton_mass_300->SetLineWidth(2);

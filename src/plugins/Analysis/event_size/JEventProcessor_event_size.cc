@@ -142,6 +142,14 @@ jerror_t JEventProcessor_event_size::init(void)
 //------------------
 jerror_t JEventProcessor_event_size::brun(JEventLoop *eventLoop, int32_t runnumber)
 {
+	// load BCAL geometry
+  	vector<const DBCALGeometry *> BCALGeomVec;
+  	loop->Get(BCALGeomVec);
+  	if(BCALGeomVec.size() == 0)
+		throw JException("Could not load DBCALGeometry object!");
+	const DBCALGeometry *dBCALGeom = BCALGeomVec[0];
+
+	dBCALMid = dBCALGeom->GetBCAL_middle_cell();  // THIS IS PROBABLY WRONG!!!
 	// This is called whenever the run number changes
 	return NOERROR;
 }
@@ -191,7 +199,7 @@ jerror_t JEventProcessor_event_size::evnt(JEventLoop *loop, uint64_t eventnumber
 		if(bcalhits[i]->t < tmin_bcal)continue;
 		if(bcalhits[i]->t > tmax_bcal)continue;
 		
-		if(bcalhits[i]->layer < DBCALGeometry::BCALMID){
+		if(bcalhits[i]->layer < dBCALMid){
 			Nbcalhits_inner++;
 		}else{
 			Nbcalhits_outer++;
