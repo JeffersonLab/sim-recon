@@ -75,7 +75,6 @@ class bcal_config_t
 	bool NO_SAMPLING_FLUCTUATIONS;
 	bool NO_SAMPLING_FLOOR_TERM;
 	bool NO_POISSON_STATISTICS;
-	bool NO_FADC_SATURATION;
 
 	vector<vector<double> > attenuation_parameters; // Avg. of 525 (from calibDB BCAL/attenuation_parameters)
 	// Assume constant effective velocity instead of channel-dependent one
@@ -90,7 +89,6 @@ class bcal_config_t
 			return channel_efficiencies.at(index).second;
 	}
 
-	double fADC_MinIntegral_Saturation, fADC_Saturation_Linear, fADC_Saturation_Quadratic;
 };
 
 
@@ -269,7 +267,6 @@ class BCALSmearer : public Smearer
 			bcal_config->NO_SAMPLING_FLUCTUATIONS = in_config->BCAL_NO_SAMPLING_FLUCTUATIONS;
 			bcal_config->NO_SAMPLING_FLOOR_TERM = in_config->BCAL_NO_SAMPLING_FLOOR_TERM;
 			bcal_config->NO_POISSON_STATISTICS = in_config->BCAL_NO_POISSON_STATISTICS;
-			bcal_config->NO_FADC_SATURATION = in_config->BCAL_NO_FADC_SATURATION;
 			
 			// load BCAL geometry
   			vector<const DBCALGeometry *> BCALGeomVec;

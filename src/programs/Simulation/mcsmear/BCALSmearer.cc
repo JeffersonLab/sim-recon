@@ -665,16 +665,8 @@ void BCALSmearer::CopyBCALHitsToHDDM(map<int, fADCHitList> &fADCHits,
       	if (integer_time >= 0){
             hddm_s::BcalfADCDigiHitList fadcs = iter->addBcalfADCDigiHits();
             fadcs().setEnd(bcal_index::kUp);
-	    double integral = round(hitlist.uphits[i].E/bcal_config->BCAL_MEV_PER_ADC_COUNT);
-	    
-	    // fADC saturation based on waveforms from data
-	    if(!bcal_config->NO_FADC_SATURATION) { 
-		    if(integral > bcal_config->fADC_MinIntegral_Saturation) {
-			    double saturatedIntegral = integral - bcal_config->fADC_MinIntegral_Saturation;
-			    integral *= (1. + bcal_config->fADC_Saturation_Linear*saturatedIntegral + bcal_config->fADC_Saturation_Quadratic*saturatedIntegral*saturatedIntegral); 
-		    }
-	    }
-            fadcs().setPulse_integral(integral);
+            
+	    fadcs().setPulse_integral(round(hitlist.uphits[i].E/bcal_config->BCAL_MEV_PER_ADC_COUNT));
             fadcs().setPulse_time(integer_time);
         }
       }
@@ -683,17 +675,8 @@ void BCALSmearer::CopyBCALHitsToHDDM(map<int, fADCHitList> &fADCHits,
       	if (integer_time >= 0){
             hddm_s::BcalfADCDigiHitList fadcs = iter->addBcalfADCDigiHits();
             fadcs().setEnd(bcal_index::kDown);
-	    double integral = round(hitlist.dnhits[i].E/bcal_config->BCAL_MEV_PER_ADC_COUNT);
 	    
-	    // fADC saturation based on waveforms from data
-	    if(!bcal_config->NO_FADC_SATURATION) { 
-		    if(integral > bcal_config->fADC_MinIntegral_Saturation) {
-                            double saturatedIntegral = integral - bcal_config->fADC_MinIntegral_Saturation;
-                            integral *= (1. + bcal_config->fADC_Saturation_Linear*saturatedIntegral + bcal_config->fADC_Saturation_Quadratic*saturatedIntegral*saturatedIntegral);
-                    }
-
-	    }
-            fadcs().setPulse_integral(integral);
+            fadcs().setPulse_integral(round(hitlist.dnhits[i].E/bcal_config->BCAL_MEV_PER_ADC_COUNT));
             fadcs().setPulse_time(integer_time);
         } 
       }
@@ -781,7 +764,6 @@ bcal_config_t::bcal_config_t(JEventLoop *loop)
  	NO_SAMPLING_FLUCTUATIONS = false;
  	NO_SAMPLING_FLOOR_TERM = false;
  	NO_POISSON_STATISTICS = false;
-	NO_FADC_SATURATION = false;
 		
 	// Load parameters from CCDB
     cout << "get BCAL/bcal_smear_parms parameters from CCDB..." << endl;
@@ -854,10 +836,5 @@ bcal_config_t::bcal_config_t(JEventLoop *loop)
         
     }
 
-    
-    // set saturation parameters
-    fADC_MinIntegral_Saturation = 56400.;
-    fADC_Saturation_Linear = -4.77e-6;
-    fADC_Saturation_Quadratic = 1.03e-11;
 }
 
