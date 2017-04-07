@@ -35,6 +35,7 @@ private:
   
   jerror_t evnt(JEventLoop *loop, uint64_t eventnumber);
   jerror_t brun(JEventLoop *loop, int32_t runnumber);
+  jerror_t erun(void);
   //jerror_t CreateCovarianceMatrix();
 
   int VERBOSE;
