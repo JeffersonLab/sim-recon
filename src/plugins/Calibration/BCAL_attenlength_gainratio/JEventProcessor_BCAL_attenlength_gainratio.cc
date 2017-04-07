@@ -50,7 +50,7 @@ static TH2I *EvsZ[JEventProcessor_BCAL_attenlength_gainratio::nummodule][JEventP
 // Debug histograms to help understand data
 static TH2I *EvsZ_all = nullptr;
 static TH2I *EvsZ_layer[4] = { nullptr };
-
+static TH2F *hist2D_aveZ = nullptr;
 
 //------------------
 // JEventProcessor_BCAL_attenlength_gainratio (Constructor)
@@ -58,9 +58,11 @@ static TH2I *EvsZ_layer[4] = { nullptr };
 JEventProcessor_BCAL_attenlength_gainratio::JEventProcessor_BCAL_attenlength_gainratio()
 {
 	VERBOSE = 0;
+	VERBOSEHISTOGRAMS = 0;
 
 	if(gPARMS){
 		gPARMS->SetDefaultParameter("BCAL_ALGR:VERBOSE", VERBOSE, "Verbosity level");
+		gPARMS->SetDefaultParameter("BCAL_ALGR:VERBOSEHISTOGRAMS", VERBOSEHISTOGRAMS, "Create more histograms (default 0 for monitoring)");
 	}
 
 }
@@ -133,10 +135,12 @@ jerror_t JEventProcessor_BCAL_attenlength_gainratio::init(void)
 	sprintf(histtitle,"Gain ratio from integ.;Module;Layer and Sector;G_{U}/G_{D}");
 	hist2D_intgainratio = new TH2F("hist2D_intgainratio",histtitle,48,0.5,48.5,16,0.5,16.5);
 
-	sprintf(histtitle,"Atten. length from peak;Module;Layer and Sector");
-	hist2D_peakattenlength = new TH2F("hist2D_peakattenlength",histtitle,48,0.5,48.5,16,0.5,16.5);
-	sprintf(histtitle,"Gain ratio from peak;Module;Layer and Sector;G_{U}/G_{D}");
-	hist2D_peakgainratio = new TH2F("hist2D_peakgainratio",histtitle,48,0.5,48.5,16,0.5,16.5);
+    if (VERBOSEHISTOGRAMS) {
+        sprintf(histtitle,"Atten. length from peak;Module;Layer and Sector");
+        hist2D_peakattenlength = new TH2F("hist2D_peakattenlength",histtitle,48,0.5,48.5,16,0.5,16.5);
+        sprintf(histtitle,"Gain ratio from peak;Module;Layer and Sector;G_{U}/G_{D}");
+        hist2D_peakgainratio = new TH2F("hist2D_peakgainratio",histtitle,48,0.5,48.5,16,0.5,16.5);
+    }
 
 	sprintf(histtitle,"Average Z pos;Module;Layer and Sector;Z  (cm)");
 	hist2D_aveZ = new TH2F("hist2D_aveZ",histtitle,48,0.5,48.5,16,0.5,16.5);
@@ -155,17 +159,19 @@ jerror_t JEventProcessor_BCAL_attenlength_gainratio::init(void)
 	TDirectory *dirEvsZ = bcalgainratio->mkdir("EvsZ");
 
 	// Create histograms
-	dirlogpeakratiovsZ->cd();
-	for (int module=0; module<nummodule; module++) {
-		for (int layer=0; layer<numlayer; layer++) {
-			for (int sector=0; sector<numsector; sector++) {
-				sprintf(histname,"logpeakratiovsZ_%02i%i%i",module+1,layer+1,sector+1);
-				sprintf(modtitle,"Channel (M%i,L%i,S%i)",module+1,layer+1,sector+1);
-				sprintf(histtitle,"%s;Z Position (cm);log of pulse height ratio US/DS",modtitle);
-				logpeakratiovsZ[module][layer][sector] = new TH2I(histname,histtitle,500,-225.0,225.0,500,-3,3);
-			}
-		}
-	}
+    if (VERBOSEHISTOGRAMS) {
+        dirlogpeakratiovsZ->cd();
+        for (int module=0; module<nummodule; module++) {
+            for (int layer=0; layer<numlayer; layer++) {
+                for (int sector=0; sector<numsector; sector++) {
+                    sprintf(histname,"logpeakratiovsZ_%02i%i%i",module+1,layer+1,sector+1);
+                    sprintf(modtitle,"Channel (M%i,L%i,S%i)",module+1,layer+1,sector+1);
+                    sprintf(histtitle,"%s;Z Position (cm);log of pulse height ratio US/DS",modtitle);
+                    logpeakratiovsZ[module][layer][sector] = new TH2I(histname,histtitle,500,-225.0,225.0,500,-3,3);
+                }
+            }
+        }
+    }
 	dirlogintratiovsZ->cd();
 	for (int module=0; module<nummodule; module++) {
 		for (int layer=0; layer<numlayer; layer++) {
@@ -177,23 +183,23 @@ jerror_t JEventProcessor_BCAL_attenlength_gainratio::init(void)
 			}
 		}
 	}
-	dirEvsZ->cd();
-	for (int module=0; module<nummodule; module++) {
-		for (int layer=0; layer<numlayer; layer++) {
-			for (int sector=0; sector<numsector; sector++) {
-				sprintf(histname,"EvsZ_%02i%i%i",module+1,layer+1,sector+1);
-				sprintf(modtitle,"Channel (M%i,L%i,S%i)",module+1,layer+1,sector+1);
-				sprintf(histtitle,"%s;Z Position (cm);Energy",modtitle);
-				EvsZ[module][layer][sector] = new TH2I(histname,histtitle,100,-250.0,250.0,200,0,0.2);
-			}
-		}
-	}
+    if (VERBOSEHISTOGRAMS) {
+        dirEvsZ->cd();
+        for (int module=0; module<nummodule; module++) {
+            for (int layer=0; layer<numlayer; layer++) {
+                for (int sector=0; sector<numsector; sector++) {
+                    sprintf(histname,"EvsZ_%02i%i%i",module+1,layer+1,sector+1);
+                    sprintf(modtitle,"Channel (M%i,L%i,S%i)",module+1,layer+1,sector+1);
+                    sprintf(histtitle,"%s;Z Position (cm);Energy",modtitle);
+                    EvsZ[module][layer][sector] = new TH2I(histname,histtitle,100,-250.0,250.0,200,0,0.2);
+                }
+            }
+        }
+    }
 
 	// back to main dir
 	main->cd();
 	
-	japp->RootFillUnLock(this); //RELEASE ROOT FILL LOCK
-
 	japp->RootFillUnLock(this); //RELEASE ROOT FILL LOCK
 
 	return NOERROR;
@@ -302,10 +308,12 @@ jerror_t JEventProcessor_BCAL_attenlength_gainratio::evnt(JEventLoop *loop, uint
 		if (Energy > 0.01) {  // 10 MeV cut to remove bias due to attenuation
 			logintratiovsZ[module-1][layer-1][sector-1]->Fill(zpos, logintratio);
 			logintratiovsZ_all->Fill(zpos, logintratio);
-			logpeakratiovsZ[module-1][layer-1][sector-1]->Fill(zpos, logpeakratio);
-			logpeakratiovsZ_all->Fill(zpos, logpeakratio);
-		} 
-		EvsZ[module-1][layer-1][sector-1]->Fill(zpos, Energy);
+            if (VERBOSEHISTOGRAMS) {
+                logpeakratiovsZ[module-1][layer-1][sector-1]->Fill(zpos, logpeakratio);
+                logpeakratiovsZ_all->Fill(zpos, logpeakratio);
+            }
+		}
+        if (VERBOSEHISTOGRAMS) EvsZ[module-1][layer-1][sector-1]->Fill(zpos, Energy);
 		EvsZ_all->Fill(zpos, Energy);
 		EvsZ_layer[layer-1]->Fill(zpos, Energy);
 	}
