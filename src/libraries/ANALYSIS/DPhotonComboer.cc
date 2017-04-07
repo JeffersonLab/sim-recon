@@ -213,14 +213,9 @@ DPhotonComboer::DPhotonComboer(JEventLoop* locEventLoop)
 	dPhotonVertexZBinWidth = 10.0;
 	dPhotonVertexZRangeLow = dTargetCenter.Z() - dTargetLength/2.0 - 5.0;
 	dNumPhotonVertexZBins = round((dTargetLength + 20.0)/dPhotonVertexZBinWidth);
-	dPhotonCombos.resize(dNumPhotonVertexZBins);
 	dBCALKinematics.resize(dNumPhotonVertexZBins);
-
-	//Create photon combo infos
-	vector<const DReactionVertexInfo*> locVertexInfos;
-	locEventLoop->Get(locVertexInfos);
-	for(auto locVertexInfo : locVertexInfos)
-		Create_PhotonComboInfos(locVertexInfo);
+	dPhotonCombos_BCAL.resize(dNumPhotonVertexZBins);
+	dPhotonCombos_Both.resize(dNumPhotonVertexZBins);
 
 	//Create photon/RF delta-t cuts
 	dPhotonTimeCutMap.emplace(SYS_BCAL, new TF1("df_BCALShowerRFTimeComboingCut", "[0]", 0.0, 12.0));
@@ -235,6 +230,17 @@ DPhotonComboer::DPhotonComboer(JEventLoop* locEventLoop)
 	dInvariantMassCuts.emplace(omega, std::make_pair(0.4, 1.2));
 	dInvariantMassCuts.emplace(EtaPrime, std::make_pair(0.6, 1.3));
 	dInvariantMassCuts.emplace(phiMeson, std::make_pair(0.8, 1.2));
+
+	//CREATE DPHOTONCOMBOINFO'S
+	vector<const DReactionVertexInfo*> locVertexInfos;
+	locEventLoop->Get(locVertexInfos);
+	for(auto locVertexInfo : locVertexInfos)
+		Create_PhotonComboInfos(locVertexInfo);
+
+	//TRANSFER INFOS FROM SET TO VECTOR
+	dPhotonComboInfos.reserve(dPhotonComboInfoSet.size());
+	std::copy(dPhotonComboInfoSet.begin(), dPhotonComboInfoSet.end(), std::back_inserter(dPhotonComboInfos));
+	dPhotonComboInfoSet.clear(); //free up the memory
 }
 
 /****************************************************************** CREATE DPHOTONCOMBOINFO'S *******************************************************************/
@@ -247,7 +253,7 @@ void DPhotonComboer::Create_PhotonComboInfos(const DReactionVertexInfo* locReact
 		auto locPrimaryComboUse = (!locPhotonUsesByStepMap.empty()) ? locPhotonUsesByStepMap.begin()->second : nullptr;
 		dPhotonComboUseReactionMap.emplace(locReactionVertexStepInfo, locPrimaryComboUse);
 		for(const auto& locUseStepPair : locPhotonUsesByStepMap)
-			dPhotonComboInfoStepMap.emplace(std::make_pair(locReactionVertexStepInfo, locInfoStepPair.second), locInfoStepPair.first);
+			dPhotonComboInfoStepMap.emplace(std::make_pair(locReactionVertexStepInfo, locUseStepPair.second), locUseStepPair.first);
 	}
 }
 
@@ -257,8 +263,8 @@ map<size_t, DPhotonComboUse> DPhotonComboer::Create_PhotonComboInfos(const share
 	map<size_t, DPhotonComboUse> locComboUseMap; //size_t = step index
 
 	//keep track for final grouping at the end
-	size_t locDirectNumPhotons = 0;
-	DPhotonComboUseMap locDirectDecays;
+	unsigned char locDirectNumPhotons = 0;
+	map<DPhotonComboUse, unsigned char> locDirectDecays; //use a map to do the sorting, then convert to vector before saving
 
 	//loop over steps
 	auto locReaction = locReactionStepVertexInfo->Get_Reaction();
@@ -272,7 +278,7 @@ map<size_t, DPhotonComboUse> DPhotonComboer::Create_PhotonComboInfos(const share
 		//get combo infos for final-state decaying particles
 		//if not present, ignore parent
 		auto locIncludeParentFlag = true; //unless changed below
-		DPhotonComboUseMap locFurtherDecays;
+		map<DPhotonComboUse, unsigned char> locFurtherDecays;
 		for(size_t loc_i = 0; loc_i < locStep->Get_NumFinalPIDs(); ++loc_i)
 		{
 			int locDecayStepIndex = DAnalysis::Get_DecayStepIndex(locReaction, locStepIndex, loc_i);
@@ -310,7 +316,13 @@ map<size_t, DPhotonComboUse> DPhotonComboer::Create_PhotonComboInfos(const share
 		//either create combo info or save for direct grouping
 		if(locIncludeParentFlag)
 		{
-			auto locComboInfo = Make_PhotonComboInfo(locNumPhotons, locFurtherDecays);
+			//convert locFurtherDecays map to a vector
+			vector<pair<DPhotonComboUse, unsigned char>> locDecayVector;
+			locDecayVector.reserve(locFurtherDecays.size());
+			std::copy(locFurtherDecays.begin(), locFurtherDecays.end(), std::back_inserter(locDecayVector));
+
+			//make or get the combo info
+			auto locComboInfo = MakeOrGet_PhotonComboInfo(locNumPhotons, locDecayVector);
 			locComboUseMap.emplace(locStepIndex, {locStep->Get_InitialPID(), locComboInfo});
 		}
 		else //save for direct grouping
@@ -318,11 +330,11 @@ map<size_t, DPhotonComboUse> DPhotonComboer::Create_PhotonComboInfos(const share
 			locDirectNumPhotons += locNumPhotons;
 			for(auto& locDecayPair : locFurtherDecays)
 			{
-				auto locDecayIterator = locDirectDecays.find(locDecayPair->first);
+				auto locDecayIterator = locDirectDecays.find(locDecayPair.first);
 				if(locDecayIterator == locFurtherDecays.end())
 					locDirectDecays.emplace(*locDecayIterator);
 				else
-					locDecayIterator->second += locDecayPair->second;
+					locDecayIterator->second += locDecayPair.second;
 			}
 		}
 	}
@@ -330,30 +342,50 @@ map<size_t, DPhotonComboUse> DPhotonComboer::Create_PhotonComboInfos(const share
 	//Create & register direct grouping if any
 	if((locDirectNumPhotons != 0) || !locDirectDecays.empty())
 	{
-		auto locComboInfo = Make_PhotonComboInfo(locDirectNumPhotons, locDirectDecays);
+		//convert locFurtherDecays map to a vector
+		vector<pair<DPhotonComboUse, unsigned char>> locDecayVector;
+		locDecayVector.reserve(locDirectDecays.size());
+		std::copy(locDirectDecays.begin(), locDirectDecays.end(), std::back_inserter(locDecayVector));
+
+		//make or get the combo info
+		auto locComboInfo = MakeOrGet_PhotonComboInfo(locDirectNumPhotons, locDecayVector);
 		locComboUseMap.emplace(locStepIndices.at(0), {Unknown, locComboInfo});
 	}
 
 	return locComboUseMap;
 }
 
-shared_ptr<const DPhotonComboInfo> DPhotonComboer::Make_PhotonComboInfo(size_t locNumPhotons, const DPhotonComboUseMap& locFurtherDecays)
+const DPhotonComboInfo* DPhotonComboer::MakeOrGet_PhotonComboInfo(size_t locNumPhotons, const vector<pair<DPhotonComboUse, unsigned char>>& locFurtherDecays)
 {
-	//create it
-	auto locComboInfo = make_shared<const DPhotonComboInfo>(locNumPhotons, locFurtherDecays);
+	//to be called (indirectly) by constructor: during the stage when primarily making
+	//create the object on the stack
+	DPhotonComboInfo locSearchForInfo(locNumPhotons, locFurtherDecays);
 
-	//we lookup the comboing results in maps with shared_ptr<const DPhotonComboInfo> as part of the key
-	//therefore, we need to make sure that for a given combo info there is only one object
-	//thus, we store the shared_ptr<const DPhotonComboInfo>'s in a set with a custom comparator
+	//then search through the set to retrieve the pointer to the corresponding object if it already exists
+	auto locInfoIterator = dPhotonComboInfoSet.find(&locSearchForInfo);
+	if(locInfoIterator != dPhotonComboInfoSet.end())
+		return *locInfoIterator; //it exists: return it
 
-	//so, search this set for a shared_ptr<const DPhotonComboInfo> that is identical to the one we just created, but with a different pointer
-	//if we find one, use it instead (the other will go out of scope and be deleted)
-	//otherwise, register this one in the set so that we can use it next time
-	auto locInfoIterator = dPhotonComboInfos.find(locComboInfo);
-	if(locInfoIterator == dPhotonComboInfos.end())
-		locComboInfo = *locInfoIterator; //one just like it already created: reuse it instead
-	else
-		dPhotonComboInfos.insert(locComboInfo); //unique: save it
+	//doesn't exist, make it and insert it into the sorted vector in the correct spot
+	auto locComboInfo = new DPhotonComboInfo(locNumPhotons, locFurtherDecays);
+	dPhotonComboInfoSet.insert(locComboInfo);
+	return locComboInfo;
+}
+
+const DPhotonComboInfo* DPhotonComboer::GetOrMake_PhotonComboInfo(size_t locNumPhotons, const vector<pair<DPhotonComboUse, unsigned char>>& locFurtherDecays)
+{
+	//to be called when making combos: during the stage when primarily getting
+	//create the object on the stack
+	DPhotonComboInfo locSearchForInfo(locNumPhotons, locFurtherDecays);
+
+	//then search through the vector to retrieve the pointer to the corresponding object if it already exists
+	auto locIteratorPair = std::equal_range(dPhotonComboInfos.begin(), dPhotonComboInfos.end(), locSearchForInfo, DCompare_PhotonComboInfos());
+	if(locIteratorPair.first != locIteratorPair.second)
+		return *(locIteratorPair.first); //it exists: return it
+
+	//doesn't exist, make it and insert it into the sorted vector in the correct spot
+	auto locComboInfo = new DPhotonComboInfo(locNumPhotons, locFurtherDecays);
+	dPhotonComboInfos.emplace(locIteratorPair.first, locComboInfo);
 	return locComboInfo;
 }
 
@@ -376,6 +408,8 @@ void DPhotonComboer::Reset_NewEvent(JEventLoop* locEventLoop)
 
 	//SETUP NEUTRAL SHOWERS
 	Setup_NeutralShowers(locEventLoop);
+
+	//RECYCLE COMBO POINTERS
 }
 
 void DPhotonComboer::Setup_NeutralShowers(JEventLoop* locEventLoop)
@@ -496,7 +530,10 @@ DPhotonCombosByBeamBunch DPhotonComboer::Request_PhotonCombos(JEventLoop* locEve
 	* First this will build all combos for 1 pi0, then all combos for 2 pi0s, then 3.  Placing mass cuts along the way.
 	* The results after each of these steps is saved.  That way, if someone then requests 2 pi0s, we merely have to return the results from the previous work.
 	* Also, if someone later requests 4pi0s, then we just take the 3pi0 results and expand them by 1 pi0.
+	*
 	* Ultimately, this results in a clusterfuck of recursive calls.
+	* Also, because of how the combo-info classes are structured (decaying PID NOT a member), you have be extremely careful not to get into an infinite loop.
+	* So, modify this code at your own peril. Just try not to take the rest of the collaboration down with you.
 	*
 	* Now, technically, when we construct combos for a (e.g.) pi0, we are saving 2 different results:
 	*    The combos of 2 photons, and which of those combos survive the pi0 mass cut.
@@ -517,15 +554,15 @@ DPhotonCombosByBeamBunch DPhotonComboer::Request_PhotonCombos(JEventLoop* locEve
 	size_t locVertexZBin = Get_PhotonVertexZBin(locVertex.Z());
 	auto locPhotonComboUse = dPhotonComboUseReactionMap[locReactionStepVertexInfo];
 
-	//vector<unordered_map<shared_ptr<const DPhotonComboInfo>, DPhotonCombosByBeamBunch>> dPhotonCombos;
+	//vector<unordered_map<const DPhotonComboInfo*, DPhotonCombosByBeamBunch>> dPhotonCombos;
 
 
 	//FCAL: Create if not done so already
-	auto locOutputPhotonCombosByBeamBunch_FCAL = Create_PhotonCombos(locPhotonComboUse, dFCALShowersByBeamBunch, locBeamBunchesToDo, dPhotonCombos_FCAL);
+	DPhotonCombosByBeamBunch locOutputPhotonCombosByBeamBunch_FCAL = Create_PhotonCombos(locPhotonComboUse, dFCALShowersByBeamBunch, locBeamBunchesToDo, dPhotonCombos_FCAL);
 	//BCAL: Create if not done so already
-	auto locOutputPhotonCombosByBeamBunch_BCAL = Create_PhotonCombos(locPhotonComboUse, dBCALShowersByBeamBunch[locVertexZBin], locBeamBunchesToDo, dPhotonCombos_BCAL[locVertexZBin]);
+	DPhotonCombosByBeamBunch locOutputPhotonCombosByBeamBunch_BCAL = Create_PhotonCombos(locPhotonComboUse, dBCALShowersByBeamBunch[locVertexZBin], locBeamBunchesToDo, dPhotonCombos_BCAL[locVertexZBin]);
 	//both: Create if not done so already
-	auto locOutputPhotonCombosByBeamBunch_Both = Create_PhotonCombos(locPhotonComboUse, locOutputPhotonCombosByBeamBunch_FCAL, locOutputPhotonCombosByBeamBunch_BCAL, dPhotonCombos_Both[locVertexZBin]);
+	DPhotonCombosByBeamBunch locOutputPhotonCombosByBeamBunch_Both = Create_PhotonCombos(locPhotonComboUse, locOutputPhotonCombosByBeamBunch_FCAL, locOutputPhotonCombosByBeamBunch_BCAL, dPhotonCombos_Both[locVertexZBin]);
 
 	//combine results //insert FCAL & BCAL into both
 	for(auto locResultPair : locOutputPhotonCombosByBeamBunch_FCAL)
@@ -600,9 +637,8 @@ DPhotonCombosByBeamBunch DPhotonComboer::Create_PhotonCombos(const DPhotonComboU
 	return locOutputPhotonCombosByBeamBunch;
 }
 
-
-vector<shared_ptr<const DPhotonCombo>> DPhotonComboer::Create_PhotonCombos(const DPhotonComboUse& locPhotonComboUse,
-		const vector<const DNeutralShower*>& locShowers, DPhotonCombosByUse& locPhotonCombosByUseSoFar)
+vector<const DPhotonCombo*>* DPhotonComboer::Create_PhotonCombos(const DPhotonComboUse& locPhotonComboUse,
+		const vector<const DNeutralShower*>& locShowers, DPhotonCombosByUse_Large& locPhotonCombosByUseSoFar)
 {
 	const auto& locPhotonComboInfo = locPhotonComboUse.second;
 	const auto& locDecayPID = locPhotonComboUse.first;
@@ -614,21 +650,37 @@ vector<shared_ptr<const DPhotonCombo>> DPhotonComboer::Create_PhotonCombos(const
 	{
 		//make the combos, then place an invariant mass cut, then return
 		auto locPhotonCombos = Create_PhotonCombos(locPhotonComboInfo, locShowers, locPhotonCombosByUseSoFar);
-		Cut_InvariantMass(locPhotonCombos, locDecayPID);
-		locPhotonCombosByUseSoFar.emplace(locPhotonComboUse, locPhotonCombos); //register results
+		auto locCutPhotonCombos = Cut_InvariantMass(locPhotonCombos, locDecayPID);
+		locPhotonCombosByUseSoFar.emplace(locPhotonComboUse, locCutPhotonCombos); //register results
 		return locPhotonCombos;
 	}
 }
 
-
-vector<shared_ptr<const DPhotonCombo>> DPhotonComboer::Create_PhotonCombos(const shared_ptr<const DPhotonComboInfo>& locPhotonComboInfo,
-		const vector<const DNeutralShower*>& locShowers, DPhotonCombosByUse& locPhotonCombosByUseSoFar)
+vector<const DPhotonCombo*>* DPhotonComboer::Create_PhotonCombos(const DPhotonComboInfo* locPhotonComboInfo,
+		const vector<const DNeutralShower*>& locShowers, DPhotonCombosByUse_Large& locPhotonCombosByUseSoFar)
 {
 	//get combo info contents
-	size_t locNumPhotonsNeeded = locPhotonComboInfo->Get_NumPhotons();
+	unsigned char locNumPhotonsNeeded = locPhotonComboInfo->Get_NumPhotons();
 	auto locFurtherDecays = locPhotonComboInfo->Get_FurtherDecays();
 
-	//build all possible combos for all NEEDED GROUPINGS for each of the FURTHER DECAYS (if not done already)
+	//we will create these combos for an "Unknown" decay (i.e. no decay, just a direct grouping)
+	//then, when we return from this function, we can cut on the invariant mass of the system for any decay we might need it for
+	DPhotonComboUse locComboUseToCreate(Unknown, locPhotonComboInfo);
+	locPhotonCombosByUseSoFar.emplace(locComboUseToCreate, new vector<const DPhotonCombo*>());
+	locPhotonCombosByUseSoFar[locComboUseToCreate]->reserve(dInitialComboVectorCapacity);
+
+	//First combo VERTICALLY, and then HORIZONTALLY
+	//What does this mean?
+	//Vertically: Make combos of size N of each PID needed (e.g. 3 pi0s)
+	//Horizontally: Make combos of different PIDs (e.g. 2pi0, pi+, pi-, p)
+
+	//Why start with vertical comboing?
+	//because the thing that takes the most time is when someone decides to analyze (e.g.) 2pi0, 3pi0, then 3pi0 eta, 3pi0 something else, 4pi0, etc.
+	//we want to make the Npi0 combos as needed, then reuse the Npi0s when making combos of other types
+	//thus we want to build vertically (pi0s together, then etas together), and THEN horizontally (combine pi0s & etas, etc)
+	//plus, when building vertically, it's easier to keep track of things since the PID / decay-parent is the same
+
+	//Build all possible combos for all NEEDED GROUPINGS for each of the FURTHER DECAYS (if not done already)
 	//this becomes a series of recursive calls
 	//e.g. if need 3 pi0s, call for 2pi0s, which calls for 1pi0, which calls for 2g
 		//then do the actual pi0 groupings on the return
@@ -636,8 +688,8 @@ vector<shared_ptr<const DPhotonCombo>> DPhotonComboer::Create_PhotonCombos(const
 	//for each further decay map entry (e.g. pi0, 3), this is a collection of the uses representing those groupings //e.g. Unknown -> 3pi0
 	for(const auto& locFurtherDecayPair : locFurtherDecays)
 	{
-		auto& locPhotonComboDecayUse = locFurtherDecayPair.first; //e.g. pi0 decay
-		auto& locNumDecaysNeeded = locFurtherDecayPair.second; //e.g. 3 (pi0s)
+		auto& locPhotonComboDecayUse = locFurtherDecayPair.first; //e.g. pi0, -> 2g
+		auto& locNumDecaysNeeded = locFurtherDecayPair.second; //N of the above decay (e.g. pi0s)
 
 		if(locNumDecaysNeeded == 1)
 		{
@@ -650,137 +702,198 @@ vector<shared_ptr<const DPhotonCombo>> DPhotonComboer::Create_PhotonCombos(const
 		}
 
 		//OK, so we need a grouping of N > 1 decays (e.g. pi0s)
-		//so, let's create a use of Unknown -> Npi0s (e.g.)
-		//if we can build it with the input combo-info, then we will. if not, we'll make a new one
-		bool locCreateNewInfoFlag = ((locFurtherDecays.size() > 1) || (locNumPhotonsNeeded > 0));
-		auto locGroupingComboInfo = locCreateNewInfoFlag ? Make_PhotonComboInfo(0, {locPhotonComboDecayUse, locNumDecaysNeeded}) : locPhotonComboInfo; // -> N pi0s (e.g.)
-		DPhotonComboUse locNeededGroupingUse(Unknown, locGroupingComboInfo); // Unknown -> Npi0s (e.g.)
+		//so, let's create a use of Unknown -> N pi0s (e.g.)
+		//if we can just utilize the use from the input combo-info, then we will. if not, we'll make a new one
+		DPhotonComboUse locNeededGroupingUse = locComboUseToCreate;
+		if((locFurtherDecays.size() > 1) || (locNumPhotonsNeeded > 0))
+		{
+			auto locGroupingComboInfo = GetOrMake_PhotonComboInfo(0, {locPhotonComboDecayUse, locNumDecaysNeeded}); // -> N pi0s (e.g.)
+			locNeededGroupingUse = (Unknown, locGroupingComboInfo); // Unknown -> Npi0s (e.g.)
+		}
 
 		// Now, see whether the combos for this grouping have already been done
 		if(locPhotonCombosByUseSoFar.find(locNeededGroupingUse) != locPhotonCombosByUseSoFar.end())
 			continue; //it's already done!!
 
 		//it's not already done.  darn it.
-		//build an info and a use for a grouping of Needed - 1 decays //e.g. 2pi0s
-		auto locInfoDependency = Make_PhotonComboInfo(0, {locPhotonComboDecayUse, locNumDecaysNeeded - 1}); // 0 photons + N - 1 pi0s (e.g.)
-		DPhotonComboUse locUseDependency(Unknown, locInfoDependency); // Unknown -> N - 1 pi0s (e.g.)
+		//build an info and a use for a grouping of N - 1 decays //e.g. 2pi0s
+		auto locNMinus1Info = GetOrMake_PhotonComboInfo(0, {locPhotonComboDecayUse, locNumDecaysNeeded - 1}); // 0 photons, N - 1 pi0s (e.g.)
+		DPhotonComboUse locNMinus1ComboUse(Unknown, locNMinus1Info); // Unknown -> N - 1 pi0s (e.g.)
 
 		// Now, see whether the combos for the N - 1 grouping have already been done.  If not, create them
-		if(locPhotonCombosByUseSoFar.find(locUseDependency) != locPhotonCombosByUseSoFar.end())
-			Create_PhotonCombos(locUseDependency, locShowers, locPhotonCombosByUseSoFar);
+		if(locPhotonCombosByUseSoFar.find(locNMinus1ComboUse) != locPhotonCombosByUseSoFar.end())
+			Create_PhotonCombos(locNMinus1ComboUse, locShowers, locPhotonCombosByUseSoFar);
 
-		//ok, we're near the end, we can finally actually DO the grouping
-//INSERT CODE HERE!!!
+		//Finally, we can actually DO the grouping
+		Combo_Vertically(locNeededGroupingUse, locNMinus1ComboUse, locPhotonComboDecayUse, locPhotonCombosByUseSoFar);
+		if((locFurtherDecays.size() == 1) && (locNumPhotonsNeeded == 0))
+			return locPhotonCombosByUseSoFar[locComboUseToCreate]; //we're entirely done!  no need for further grouping, just return the results
 	}
 
 
 
-	//Now combo the photons that we need with each other
-	if(locNumPhotonsNeeded > 1)
+	//OK, now build horizontally!!
+	//Need to come up with all possible groupings of the needed decays
+
+	//see if there is another combo that already exists that is a subset of what we requested
+	//e.g. if we need 2pi0s, one omega, and 1g: search for:
+		//2pi0s, one omega: if exists, just combo that with 1g
+		//2pi0s, one photon: if exists, just combo with one omega
+		//etc.
+
+	//save in case need to create these
+	DPhotonComboUse locComboUse_WithoutHeaviest, locComboUse_Heaviest;
+
+	//for each further decay map entry (e.g. pi0, 3), this is a collection of the uses representing those groupings //e.g. Unknown -> 3pi0
+	//loop in reverse order: from heaviest-mass to least (most likely to be missing)
+	for(auto& locDecayIterator = locFurtherDecays.rbegin(); locDecayIterator != locFurtherDecays.rend(); ++locDecayIterator)
 	{
-		//OK, so we need a grouping of N > 1 photons
-		//so, let's create a use of Unknown -> N photons
-		//if we can build it with the input combo-info, then we will. if not, we'll make a new one
-		auto locGroupingComboInfo = locFurtherDecays.empty() ? locPhotonComboInfo : Make_PhotonComboInfo(locNumPhotonsNeeded); // -> N photons
-		DPhotonComboUse locNeededGroupingUse(Unknown, locGroupingComboInfo); // Unknown -> N photons
+		//build a DPhotonComboUse with everything EXCEPT this set of decays, and see if it already exists
+		auto locFurtherDecaysToSearchFor = locFurtherDecays;
+		const auto& locPhotonComboUse_ThisDecay = locDecayIterator->first;
+		locFurtherDecaysToSearchFor.erase(std::remove_if(locFurtherDecaysToSearchFor.begin(), locFurtherDecaysToSearchFor.end(), locPhotonComboUse_ThisDecay), locFurtherDecaysToSearchFor.end()); //everything BUT this decay
+		auto locGroupingComboInfo = GetOrMake_PhotonComboInfo(0, locFurtherDecaysToSearchFor); // IGNORE N-PHOTONS FOR NOW
+		DPhotonComboUse locAllBut1ComboUse(Unknown, locGroupingComboInfo); // Unknown -> everything but this decay
+
+		//if on the first one (heaviest mass), save these in case we need to create this combo (if nothing else already done)
+		if(locDecayIterator == locFurtherDecays.rbegin())
+		{
+			locComboUse_WithoutHeaviest = locAllBut1ComboUse;
+			locComboUse_Heaviest = locPhotonComboUse_ThisDecay;
+		}
 
 		// Now, see whether the combos for this grouping have already been done
-		if(locPhotonCombosByUseSoFar.find(locNeededGroupingUse) != locPhotonCombosByUseSoFar.end())
-//SOME KIND OF RETURN STATEMENT HERE
-			continue; //it's already done!!
+		if(locPhotonCombosByUseSoFar.find(locAllBut1ComboUse) == locPhotonCombosByUseSoFar.end())
+			continue; //not yet.  try the next mass
+
+		//yes, it's already been done!
+		//just combo the All-but-1 with the combos from "this decay," and return the results
+		Combo_Horizontally(locComboUseToCreate, locAllBut1ComboUse, locPhotonComboUse_ThisDecay, locPhotonCombosByUseSoFar);
+		return locPhotonCombosByUseSoFar[locComboUseToCreate];
 	}
-	else if(locNumPhotonsNeeded == 1)
+
+	//none of the possible immediate subsets have been created
+	//therefore, create one of them (the one without the heaviest particle), and then do the remaining combo
+	Create_PhotonCombos(locComboUse_WithoutHeaviest, locShowers, locPhotonCombosByUseSoFar);
+
+	//now, combo horizontally: these combos with the remaining one
+	Combo_Horizontally(locComboUseToCreate, locComboUse_WithoutHeaviest, locComboUse_Heaviest, locPhotonCombosByUseSoFar);
+	return locPhotonCombosByUseSoFar[locComboUseToCreate];
+}
+
+void DPhotonComboer::Combo_Horizontally(const DPhotonComboUse& locNeededGroupingUse, const DPhotonComboUse& locAllBut1ComboUse, const DPhotonComboUse& locPhotonComboUseToAdd, DPhotonCombosByUse_Large& locPhotonCombosByUseSoFar)
+{
+	//e.g. we are grouping N pi0s with M etas to make combos
+	//so, let's get the combos for these groupings
+	const vector<const DPhotonCombo*>& locDecayCombos_AllBut1 = *(locPhotonCombosByUseSoFar[locAllBut1ComboUse]); //Combos are a vector of (e.g.): -> N pi0s
+	const vector<const DPhotonCombo*>& locDecayCombos_ToAdd = *(locPhotonCombosByUseSoFar[locPhotonComboUseToAdd]); //combos are a vector of (e.g.): -> 2g that pass the eta mass cut
+
+	//now, for each combo of all-but-1-PIDs, see which of the to-add combos we can group to it
+	//valid grouping: Don't re-use a shower we've already used
+	for(auto locDecayCombo_AllBut1 : locDecayCombos_AllBut1)
 	{
+		//before we loop, first get all of the showers used to make the all-but-1 grouping, and sort it so that we can quickly search it
+		auto locUsedShowers_AllBut1 = locDecayCombo_AllBut1->Get_PhotonShowers(true); //true: entire chain
+		std::sort(locUsedShowers_AllBut1.begin(), locUsedShowers_AllBut1.end()); //IS THIS NECESSARY??
 
+		//loop over potential combos to add to the group, creating a new combo for each valid (non-duplicate) grouping
+		for(const auto& locDecayCombo_ToAdd : locDecayCombos_ToAdd)
+		{
+			//search the all-but-1 shower vector to see if any of the showers in this combo are duplicated
+			auto locUsedShowers_ToAdd = locDecayCombo_ToAdd->Get_PhotonShowers(true); //true: entire chain
+
+			//this function will do our validity test
+			auto Search_Duplicates = [&locUsedShowers_AllBut1](const DNeutralShower* locShower) -> bool
+				{return std::binary_search(locUsedShowers_AllBut1.begin(), locUsedShowers_AllBut1.end(), locShower);};
+
+			//conduct search
+			if(std::any_of(locUsedShowers_ToAdd.begin(), locUsedShowers_ToAdd.end(), Search_Duplicates))
+				continue; //at least one photon was a duplicate, this combo won't work
+
+			//no duplicates: this combo is unique.  build a new combo (first building the further-decays for it)
+			DPhotonCombosByUse_Small locFurtherDecayCombos = locDecayCombo_AllBut1->Get_FurtherDecayCombos(); //the all-but-1 combo contents by use
+			DPhotonCombosByUse_Small locFurtherDecayCombos_ToAdd = locDecayCombo_ToAdd->Get_FurtherDecayCombos(); //the all-but-1 combo contents by use
+			locFurtherDecayCombos.emplace(locPhotonComboUseToAdd, locFurtherDecayCombos_ToAdd[locPhotonComboUseToAdd]); //add to it the new PID
+			auto locNeededGroupingCombo = new DPhotonCombo(0, locFurtherDecayCombos); // create combo with all PIDs
+
+			//save it! //in creation order!
+			locPhotonCombosByUseSoFar[locNeededGroupingUse]->push_back(locNeededGroupingCombo);
+		}
 	}
-	//if we need 2+ photons, create an info for them (with no further decays), and see if it's already been done
-//THIS ALSO BECOMES VERY RECURSIVE
+}
 
+void DPhotonComboer::Combo_Vertically(const DPhotonComboUse& locNeededGroupingUse, const DPhotonComboUse& locNMinus1ComboUse, const DPhotonComboUse& locPhotonComboDecayUse, DPhotonCombosByUse_Large& locPhotonCombosByUseSoFar)
+{
+	//e.g. we are grouping 1 pi0 with N - 1 pi0s to make a combo of N pi0s
+	//so, let's get the combos for (e.g.) 1 pi0 and for N - 1 pi0s
+	const vector<const DPhotonCombo*>& locDecayCombos_NMinus1 = *(locPhotonCombosByUseSoFar[locNMinus1ComboUse]); //Combos are a vector of (e.g.): -> N - 1 pi0s
+	const vector<const DPhotonCombo*>& locDecayCombos_1 = *(locPhotonCombosByUseSoFar[locPhotonComboDecayUse]); //combos are a vector of (e.g.): -> 2g that pass the mass cut
 
-
-	//ok, for each further decay, we've now created combos for all of their individual groupings that we needed
-	//we've also comboed together the photons that we needed
-	//Combo those all together and we're finally done
-
-
-	//And FINALLY, combo together the photons we got with the further decays that we got
-
-	//ok, now need to come up with all possible groupings of the needed decays
-
-	//if decaypid is Unknown, see if there is another combo that already exists that is a subset of what we requested
-	//will end up recursively building and saving all subsets needed until we have what we want
-	//that way, if a slightly different combo needs the same subset, the previous comboing results can just be reused
-	if(locDecayPID == Unknown)
+	//now, for each combo of N - 1 (e.g.) pi0s, see which of the single-decay combos are a valid grouping
+	//valid grouping:
+		//TEST 1: If (e.g.) pi0s have names "A", "B", "C", don't include the grouping "ABA", and don't include "ACB" if we already have "ABC"
+		//TEST 2: Also, don't re-use a shower we've already used (e.g. if A & C each contain the same photon, don't group them together)
+		//Technically, if we pass Test 2 we automatically passs Test 1.
+		//However, validating for Test 1 is much faster, as discussed below.
+	for(auto locDecayCombo_NMinus1 : locDecayCombos_NMinus1)
 	{
-		//build DPhotonComboInfo to search for
-		shared_ptr<const DPhotonComboInfo> locSubsetPhotonComboInfoToBuild;
-		shared_ptr<const DPhotonComboInfo> locToSearchComboInfo_OneLessPhoton(nullptr); //save in case need to create this
-		//search first for identical combo but one less photon
-		if(locNumPhotonsNeeded > 0)
-		{
-			locToSearchComboInfo_OneLessPhoton = make_shared<const DPhotonComboInfo>(Unknown, locNumPhotonsNeeded - 1, locFurtherDecays);
-			auto locPreBuiltIterator = locPhotonCombosByUseSoFar.find(locToSearchComboInfo);
-			if(locPreBuiltIterator != locPhotonCombosByUseSoFar.end())
-			{
-				//take the previous combos and add a photon
-				auto locSubsetCombos = *locPreBuiltIterator;
-				break; //or some kind of exit
-			}
-		}
+		//before we loop, first get all of the showers used to make the N - 1 grouping, and sort it so that we can quickly search it
+		auto locUsedShowers_NMinus1 = locDecayCombo_NMinus1->Get_PhotonShowers(true); //true: entire chain
+		std::sort(locUsedShowers_NMinus1.begin(), locUsedShowers_NMinus1.end()); //IS THIS NECESSARY??
 
-		//ok, loop over decays in order from heaviest-mass to least (most likely)
-		//search for identical combo but one less particle of this type
-		shared_ptr<const DPhotonComboInfo> locFirstDecayToSearchFor(nullptr); //save in case need to create this
-		for(auto& locDecayIterator = locFurtherDecays.rbegin(); locDecayIterator != locFurtherDecays.rend(); ++locDecayIterator)
-		{
-			//look for combo with one less of this decay
-			auto locDecaysToSearchFor = locFurtherDecays;
-			if(locDecayIterator->second == 1)
-				locDecaysToSearchFor.erase(locDecayIterator->first);
-			else
-				--locDecayIterator->second;
-			auto locToSearchComboInfo = make_shared<const DPhotonComboInfo>(Unknown, locNumPhotonsNeeded, locDecaysToSearchFor);
-			auto locPreBuiltIterator = locPhotonCombosByUseSoFar.find(locToSearchComboInfo);
-			if(locPreBuiltIterator != locPhotonCombosByUseSoFar.end())
-			{
-				//take the previous combos and add a further combo of this type
-				auto locSubsetCombos = *locPreBuiltIterator;
-				break; //or some kind of exit
-			}
-			if(locDecayIterator == locFurtherDecays.rbegin())
-				locFirstDecayToSearchFor = locToSearchComboInfo;
-		}
+		//loop over potential combos to add to the group, creating a new combo for each valid (non-duplicate) grouping
+		//however, we don't have to loop over all of the combos!!
+		//all of the (e.g. -> 2 photon) combos are stored in locPhotonCombosByUseSoFar in the order in which they were created (e.g. A, B, C, D)
+		//so (e.g.), groupings of 2 will be created and saved in the order: AB, AC, AD, BC, BD, CD
+		//above, on the B-loop, we start the search at "C," not at A, because this was already tested on an earlier pass
+		//therefore, start the search one AFTER the LAST (e.g. -> 2 photon) combo of the N - 1 group
+		//this will guarantee we pass "TEST 1" without ever checking
 
-		//none of the possible immediate subsets have been created
-		//therefore, create one of them, and do the remaining combo:
-		//do one less loose photon, else choose the subset with one less of the heaviest particle
-		if(locNumPhotonsNeeded > 0)
-		{
-			auto locSubsetCombos = Create_PhotonCombos(locToSearchComboInfo_OneLessPhoton, locShowers, locPhotonCombosByUseSoFar);
-			//combo remaining photon
-		}
-		else
-		{
-			auto locSubsetCombos = Create_PhotonCombos(locFirstDecayToSearchFor, locShowers, locPhotonCombosByUseSoFar);
-			//combo remaining decaying particle
+		//actually, we already saved the iterator to the first (e.g.) pi0 to test when we saved the N - 1 combo, so just retrieve it
+		auto locComboSearchIterator = dResumeSearchIteratorMap[locDecayCombo_NMinus1];
+		if(locComboSearchIterator == std::end(locDecayCombos_1))
+			continue; //e.g. this combo is "AD" and there are only 4 reconstructed combos (ABCD): no potential matches! move on to the next N - 1 combo
 
+		//now loop over the potential combos
+		for(; locComboSearchIterator != locDecayCombos_1.end(); ++locComboSearchIterator)
+		{
+			//search the N - 1 shower vector to see if any of the showers in this combo are duplicated
+			const auto locDecayCombo_1  = *locComboSearchIterator;
+			auto locUsedShowers_1 = locDecayCombo_1->Get_PhotonShowers(true); //true: entire chain
+
+			//this function will do our "TEST 2"
+			auto Search_Duplicates = [&locUsedShowers_NMinus1](const DNeutralShower* locShower) -> bool
+				{return std::binary_search(locUsedShowers_NMinus1.begin(), locUsedShowers_NMinus1.end(), locShower);};
+
+			//conduct "TEST 2" search
+			if(std::any_of(locUsedShowers_1.begin(), locUsedShowers_1.end(), Search_Duplicates))
+				continue; //at least one photon was a duplicate, this combo won't work
+
+			//no duplicates: this combo is unique.  build a new combo!
+
+			//take the vector of N - 1 (e.g. -> 2g) combos and add the new one
+			auto locAllDecayCombos = locDecayCombo_NMinus1->Get_FurtherDecayCombos()[locPhotonComboDecayUse];
+			locAllDecayCombos.push_back(locDecayCombo_1);
+
+			//then create the new combo
+			DPhotonCombosByUse_Small locFurtherDecayCombos(locPhotonComboDecayUse, locAllDecayCombos); //arguments (e.g.): (pi0, -> 2g), N combos of: -> 2g
+			auto locNeededGroupingCombo = new DPhotonCombo(0, locFurtherDecayCombos); // 1 combo of N (e.g.) pi0s
+
+			//save it! //in creation order!
+			locPhotonCombosByUseSoFar[locNeededGroupingUse]->push_back(locNeededGroupingCombo);
+
+			//finally, in case we add more (e.g.) pi0s later (N + 1), save locComboSearchIterator + 1
+			//so that we will start the search for the next (e.g.) pi0 there
+			dResumeSearchIteratorMap[locNeededGroupingCombo] = std::next(locComboSearchIterator);
 		}
 	}
+}
 
+//DPhotonCombosByBeamBunch locOutputPhotonCombosByBeamBunch_Both = Create_PhotonCombos(locPhotonComboUse, locOutputPhotonCombosByBeamBunch_FCAL, locOutputPhotonCombosByBeamBunch_BCAL, dPhotonCombos_Both[locVertexZBin]);
 
-	//then build combos OF the further decays
-	//finally, build new combos of remaining photons
-
-	//if: 1pi0
-	//just use what I have
-
-	//if: 1pi0, 1eta
-
-	//finally, build combo of remaining photons
-
-	//register results for unknown (direct) case (since no mass cut placed (yet)) and return
-	locPhotonCombosByUseSoFar.emplace({Unknown, locPhotonComboInfo}, locPhotonCombos);
-	return locPhotonCombos;
+vector<shared_ptr<DPhotonCombo>> DPhotonComboer::Combo_BCALFCAL(const vector<shared_ptr<DPhotonCombo>>& locCombos_BCAL, const vector<shared_ptr<DPhotonCombo>>& locCombos_FCAL)
+{
+	//for each valid BCAL combo, replace photons with FCAL photons and see if still valid
 }
 
 } //end DAnalysis namespace
