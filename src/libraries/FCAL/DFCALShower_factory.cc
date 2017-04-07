@@ -127,6 +127,18 @@ jerror_t DFCALShower_factory::brun(JEventLoop *loop, int32_t runnumber)
 }
 
 
+jerror_t DFCALShower_factory::erun(void) {
+    // delete lookup tables to prevent memory leak
+	for (int i=0; i<5; i++) {
+		for (int j=0; j<=i; j++) {
+            delete CovarianceLookupTable[i][j];
+            CovarianceLookupTable[i][j] = nullptr;
+        }
+    }
+    return NOERROR;
+}
+
+
 //------------------
 // evnt
 //------------------

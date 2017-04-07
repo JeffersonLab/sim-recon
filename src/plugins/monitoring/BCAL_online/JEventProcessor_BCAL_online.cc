@@ -207,8 +207,8 @@ jerror_t JEventProcessor_BCAL_online::init(void) {
 	bcal_num_events = new TH1I("bcal_num_events","BCAL Number of events",1, 0.5, 1.5);
 
 	bcal_fadc_digi_integral = new TH1I("bcal_fadc_digi_integral","BCAL Integral (DBCALDigiHit);Integral (fADC counts)", 500, 0, 40000);
-	bcal_fadc_digi_pedestal = new TH1I("bcal_fadc_digi_pedestal","BCAL Pedestal (DBCALDigiHit);Pedestal (fADC counts)", 110, 0, 110);
-	bcal_fadc_digi_good_pedestal = new TH1I("bcal_fadc_digi_good_pedestal","BCAL Good Pedestal (DBCALDigiHit);Pedestal (fADC counts)", 40, 80, 120);
+	bcal_fadc_digi_pedestal = new TH1I("bcal_fadc_digi_pedestal","BCAL Pedestal (DBCALDigiHit);Pedestal (fADC counts)", 400, 200, 600);
+	bcal_fadc_digi_good_pedestal = new TH1I("bcal_fadc_digi_good_pedestal","BCAL Good Pedestal (DBCALDigiHit);Pedestal (fADC counts)", 40, 380, 420);
 #if ROOT_VERSION_CODE >= ROOT_VERSION(6,0,0)
 	bcal_fadc_digi_pedestal->SetCanExtend(TH1::kXaxis);
 	bcal_fadc_digi_good_pedestal->SetCanExtend(TH1::kXaxis);
@@ -216,7 +216,7 @@ jerror_t JEventProcessor_BCAL_online::init(void) {
 	bcal_fadc_digi_pedestal->SetBit(TH1::kCanRebin);
 	bcal_fadc_digi_good_pedestal->SetBit(TH1::kCanRebin);
 #endif
-	bcal_fadc_digi_QF = new TH1I("bcal_fadc_digi_QF","Qualtiy Factor (DBCALDigiHit);Qualtiy Factor", 20, 0, 20);
+	bcal_fadc_digi_QF = new TH1I("bcal_fadc_digi_QF","Qualtiy Factor (DBCALDigiHit);Qualtiy Factor", 128, -0.5, 127.5);
 	bcal_fadc_digi_time = new TH1I("bcal_fadc_digi_time","ADC Time (DBCALDigiHit);Time (fADC time/62.5 ps)", 550, -600, 6000);
 	bcal_fadc_digi_occ = new TH2I("bcal_fadc_digi_occ","ADC occupancy (DBCALDigiHit);Module", 48, 0.5, 48.5, 33, 0.5, 33.5);
 	bcal_fadc_digi_pedestal_ave = new TProfile2D("bcal_fadc_digi_pedestal_ave",
@@ -339,9 +339,9 @@ jerror_t JEventProcessor_BCAL_online::init(void) {
 	bcal_shower_y = new TH1I("bcal_shower_y","y (DBCALShower);Y position  (cm)", 500, -100, 100);
 	bcal_shower_z = new TH1I("bcal_shower_z","z (DBCALShower);Z position  (cm)", 600, -100, 500);
 	bcal_shower_t = new TH1I("bcal_shower_t","Time (DBCALShower);Time (ns)", 500, timemin_ns, timemax_ns);
-	bcal_shower_xErr = new TH1I("bcal_shower_xErr","xErr (DBCALShower)", 100, 0, 30);
-	bcal_shower_yErr = new TH1I("bcal_shower_yErr","yErr (DBCALShower)", 100, 0, 30);
-	bcal_shower_zErr = new TH1I("bcal_shower_zErr","zErr (DBCALShower)", 100, 0, 40);
+	bcal_shower_xErr = new TH1I("bcal_shower_xErr","xErr (DBCALShower)", 100, 0, 10);
+	bcal_shower_yErr = new TH1I("bcal_shower_yErr","yErr (DBCALShower)", 100, 0, 10);
+	bcal_shower_zErr = new TH1I("bcal_shower_zErr","zErr (DBCALShower)", 100, 0, 20);
 	bcal_shower_tErr = new TH1I("bcal_shower_tErr","tErr (DBCALShower)", 100, 0, 2);
 	bcal_shower_EErr = new TH1I("bcal_shower_EErr","EErr (DBCALShower);#sigma_E/E", 100, 0, 0.2);
 	bcal_shower_plane = new TH2I("bcal_shower_plane","Shower position (DBCALShower);X position  (cm);Y position  (cm)", 100, -100, 100, 100, -100, 100);

@@ -56,18 +56,20 @@ jerror_t DBCALUnifiedHit_factory::brun(jana::JEventLoop *eventLoop, int32_t runn
 		throw JException("Could not load DBCALGeometry object!");
 	dBCALGeom = BCALGeomVec[0];
 
-    if (USE_TDC){
         //get timewalk corrections from CCDB
         JCalibration *jcalib = eventLoop->GetJCalibration();
-        //these tables hold: module layer sector end c0 c1 c2 c3
+        //these tables hold: module layer sector end c0 c1 c2 c3 threshold
         vector<vector<float> > tdc_timewalk_table;
-        jcalib->Get("BCAL/timewalk_tdc",tdc_timewalk_table);
+        // jcalib->Get("BCAL/timewalk_tdc",tdc_timewalk_table);
+        jcalib->Get("BCAL/timewalk_tdc_c4",tdc_timewalk_table);
 
         for (vector<vector<float> >::const_iterator iter = tdc_timewalk_table.begin();
-                iter != tdc_timewalk_table.end();
-                ++iter) {
-            if (iter->size() != 8) {
-                cout << "DBCALUnifiedHit_factory: Wrong number of values in timewalk_tdc table (should be 8)" << endl;
+             iter != tdc_timewalk_table.end();
+             ++iter) {
+            //if (iter->size() != 8) {
+            //  cout << "DBCALUnifiedHit_factory: Wrong number of values in timewalk_tdc table (should be 8)" << endl;
+            if (iter->size() != 9) {
+                cout << "DBCALUnifiedHit_factory: Wrong number of values in timewalk_tdc table (should be 9)" << endl;
                 continue;
             }
             //be really careful about float->int conversions
@@ -79,10 +81,12 @@ jerror_t DBCALUnifiedHit_factory::brun(jana::JEventLoop *eventLoop, int32_t runn
             float c0 = (*iter)[4];
             float c1 = (*iter)[5];
             float c2 = (*iter)[6];
-            float a_thresh = (*iter)[7];
+            float c3 = (*iter)[7];
+            float thresh = (*iter)[8];
             int cellId = dBCALGeom->cellId(module, layer, sector);
             readout_channel channel(cellId,end);
-            tdc_timewalk_map[channel] = timewalk_coefficients(c0,c1,c2,a_thresh);
+            tdc_timewalk_map_c4[channel] = timewalk_coefficients_c4(c0,c1,c2,c3,thresh);
+            //tdc_timewalk_map[channel] = timewalk_coefficients(c0,c1,c2,a_thresh);
         }
 
         for (int module=1; module<=dBCALGeom->NBCALMODS; module++) {
@@ -90,18 +94,19 @@ jerror_t DBCALUnifiedHit_factory::brun(jana::JEventLoop *eventLoop, int32_t runn
             for (int sector=1; sector<=4; sector++) {
                 for (int layer=1; layer<=dBCALGeom->NBCALLAYSIN; layer++) {
                     int id = dBCALGeom->cellId(module, layer, sector);
-                    if (tdc_timewalk_map.count(readout_channel(id,DBCALGeometry::kUpstream)) != 1) {
+                    //if (tdc_timewalk_map.count(readout_channel(id,dBCALGeom->kUpstream)) != 1) {
+                    if (tdc_timewalk_map_c4.count(readout_channel(id,dBCALGeom->kUpstream)) != 1) {
                         cout << "DBCALUnifiedHit_factory: Channel missing in timewalk_tdc_table: "
-                            << endl << " module " << module << " layer " << layer << " sector " << sector << " upstream" << endl;
+                             << endl << " module " << module << " layer " << layer << " sector " << sector << " upstream" << endl;
                     }
-                    if (tdc_timewalk_map.count(readout_channel(id,DBCALGeometry::kDownstream)) != 1) {
+                    //if (tdc_timewalk_map.count(readout_channel(id,dBCALGeom->kDownstream)) != 1) {
+                    if (tdc_timewalk_map_c4.count(readout_channel(id,dBCALGeom->kDownstream)) != 1) {
                         cout << "DBCALUnifiedHit_factory: Channel missing in timewalk_tdc_table: "
-                            << endl << " module " << module << " layer " << layer << " sector " << sector << " downstream" << endl;
+                             << endl << " module " << module << " layer " << layer << " sector " << sector << " downstream" << endl;
                     }
                 }
             }
         }
-    }
 
     return NOERROR;
 }
@@ -115,6 +120,7 @@ jerror_t DBCALUnifiedHit_factory::evnt(JEventLoop *loop, uint64_t eventnumber) {
     loop->Get(hits);
     loop->Get(tdc_hits);
     if (hits.size() + tdc_hits.size() <= 0) return NOERROR;
+	if (VERBOSE>=3)  jout << eventnumber << " " << hits.size() << " ADC hits, " << tdc_hits.size() << " TDC hits" << endl;
 
     // first arrange the list of hits so they are grouped by cell
     map<readout_channel, cellHits> cellHitMap;
@@ -163,86 +169,87 @@ jerror_t DBCALUnifiedHit_factory::evnt(JEventLoop *loop, uint64_t eventnumber) {
         const vector<const DBCALTDCHit*> &tdc_hits = mapItr->second.tdc_hits;
 
         //if we have no ADC hits in the cell, there is nothing to do with the TDC hits either
-        if (VERBOSE>5) {
-            if (hits.size()==0) {
-                static uint64_t Nwarnings = 0;
-                if(++Nwarnings <= 10) cout << "DBCALUnifiedHit_factory (event " << eventnumber << "): TDC hits without ADC hits" << endl;
-                if(  Nwarnings == 10) cout << "DBCALUnifiedHit_factory: LAST WARNING (others will be suppressed)" <<endl;
-                continue;
-            }
+		if (hits.size()==0) {
+			if (VERBOSE>=1) {
+				if (tdc_hits.size()!=0) {
+					static uint64_t Nwarnings = 0;
+					if(++Nwarnings <= 10) cout << "DBCALUnifiedHit_factory (event " << eventnumber << "): TDC hits without ADC hits" << endl;
+					if(  Nwarnings == 10) cout << "DBCALUnifiedHit_factory: LAST WARNING (others will be suppressed)" <<endl;
+				}
+			}
+			continue;
         }
 
-        // At the moment we only allow 1 ADC hit in the firmware.
-        // Need to revisit handling of multiple ADC events for a hypothetical future.
-
-        // Find the index of the highest energy ADC hit.
-        unsigned int highEIndex = 0;
+        // Find the index of the earliest ADC hit.
+        unsigned int firstIndex = 0;
         for(unsigned int i=1; i<hits.size(); i++){
-            if(hits[i]->E > hits[highEIndex]->E) highEIndex = i;
+            if (hits[i]->t < hits[firstIndex]->t) firstIndex = i;
+			if (VERBOSE>=4 && hits.size()>=2) {
+				printf("DBCALUnifiedHit_factory  event %5llu (%2i,%i,%i,%i) peak %4i, ADC %i %6.1f\n",
+					   (unsigned long long int)eventnumber, module, layer, sector, chan.end, hits[i]->pulse_peak, i, hits[i]->t);
+			}
         }
+		const DBCALHit* hit=hits[firstIndex];
+		float pulse_peak, E, t, t_ADC, t_TDC=0; //these are values that will be assigned to the DBCALUnifiedHit
+		pulse_peak = hit->pulse_peak; 
+		E = hit->E;
+		t_ADC = hit->t;
 
-        // We trust the ADC hit times.  Choose the TDC time that is closest to the ADC time
-        bool haveTDChit = false;
-        if (tdc_hits.size() > 0) haveTDChit = true;
+		// Loop through the TDC hits, apply timewalk correction and find the TDC time closest to the ADC time
+		int goodTDCindex=-1;
+		//timewalk_coefficients tdc_coeff = tdc_timewalk_map[chan];
+		timewalk_coefficients_c4 tdc_coeff = tdc_timewalk_map_c4[chan];
+		float t_diff=100000;
+		bool haveTDChit = false;
+		for (unsigned int i=0; i<tdc_hits.size(); i++) {
+			haveTDChit = true;
+			const DBCALTDCHit* tdc_hit=tdc_hits[i];
+			float tdc_hit_t = tdc_hit->t;
+			//tdc_hit_t -= tdc_coeff.c0 + tdc_coeff.c1/pow(pulse_peak/tdc_coeff.a_thresh, tdc_coeff.c2);
+			float shifted_peak = pulse_peak+tdc_coeff.c2; // only apply formula if time is above TDC zero
+			if (shifted_peak>0) tdc_hit_t -= tdc_coeff.c0 + tdc_coeff.c1*pow(shifted_peak,tdc_coeff.c3);
+			if (VERBOSE>=4) printf("tamewalk %f -> %f: (%f,%f,%f,%f)\n",tdc_hit->t,tdc_hit_t,tdc_coeff.c0,tdc_coeff.c1,tdc_coeff.c2,tdc_coeff.c3);
+			float tdc_adc_diff = tdc_hit_t - t_ADC;
+			if (fabs(tdc_adc_diff) < fabs(t_diff)) {
+				goodTDCindex=i;
+				t_diff=tdc_adc_diff;
+				t_TDC=tdc_hit_t;
+			}
+			if (VERBOSE>=4 || (VERBOSE>=3&&tdc_hits.size()>1)) {
+				printf("DBCALUnifiedHit_factory  event %5llu (%2i,%i,%i,%i) peak %4.0f, ADC 0 %6.1f, TDC %i %6.1f  diff %6.1f    best %2i %6.1f\n",
+					   (unsigned long long int)eventnumber, module, layer, sector, chan.end, pulse_peak, t_ADC, i, tdc_hit_t, tdc_adc_diff, goodTDCindex, t_diff);
+			}
+		}
+		if (VERBOSE>=4 && !haveTDChit) {
+			// printf("DBCALUnifiedHit_factory  event %5llu (%2i,%i,%i,%i) peak %4.0f, ADC 0 %6.1f, TDC           diff           best %2i %6.1f\n",
+			// 	   (unsigned long long int)eventnumber, module, layer, sector, chan.end, pulse_peak, hit->t, goodTDCindex, t_diff);
+			printf("DBCALUnifiedHit_factory  event %5llu (%2i,%i,%i,%i) peak %4.0f, ADC 0 %6.1f\n",
+				   (unsigned long long int)eventnumber, module, layer, sector, chan.end, pulse_peak, hit->t);
+		}
+		// Decide whether to use TDC time
+		if (pulse_peak>tdc_coeff.thresh && USE_TDC==1 && goodTDCindex>=0 && fabs(t_diff)<2) {
+			t = t_TDC;
+		} else {
+			t = t_ADC;
+		}
 
-        // For each ADC hit 
-        for (unsigned int i=0; i<hits.size(); i++) {
-            const DBCALHit* hit=hits[i];
+		// Create the DBCALUnifiedHit
+		DBCALUnifiedHit *uhit = new DBCALUnifiedHit;
+		uhit->E = E;
+		uhit->t = t;
+		uhit->t_ADC = t_ADC;
+		uhit->t_TDC = t_TDC;
+		uhit->has_TDC_hit = haveTDChit;
+		uhit->cellId = cellId;
+		uhit->module = module;
+		uhit->layer = layer;
+		uhit->sector = sector;
+		uhit->end = chan.end;
 
-            float pulse_peak, E, t, t_ADC, t_TDC=0; //these are values that will be assigned to the DBCALUnifiedHit
+		uhit->AddAssociatedObject(hit);
+		if (goodTDCindex>=0) uhit->AddAssociatedObject(tdc_hits[goodTDCindex]);
 
-            pulse_peak = hit->pulse_peak; 
-            E = hit->E;
-            t_ADC = hit->t;
-
-            int goodTDCindex=0;
-            if (haveTDChit) {
-                // Loop through the TDC hits and find the closest to the ADC hit
-                float t_diff=100000;
-                for (unsigned int i=0; i<tdc_hits.size(); i++) {
-                    const DBCALTDCHit* tdc_hit=tdc_hits[i];
-                    float tdc_adc_diff = tdc_hit->t - hit->t;
-                    if (fabs(tdc_adc_diff) < fabs(t_diff)) {
-                        goodTDCindex=i;
-                        t_diff=tdc_adc_diff;
-                    }
-                    if (VERBOSE>5) {
-                        printf("DBCALUnifiedHit_factory  event %5llu (%2i,%i,%i,%i) TDC %i %6.1f  ADC %6.1f diff %6.1f    best %2i %6.1f\n",
-                                (unsigned long long int)eventnumber, module, layer, sector, chan.end, i, tdc_hit->t, hit->t, tdc_adc_diff, goodTDCindex, t_diff);
-                    }
-                }
-                t_TDC = tdc_hits[goodTDCindex]->t;
-                if (USE_TDC){
-                    // Apply the timewalk correction
-                    timewalk_coefficients tdc_coeff = tdc_timewalk_map[chan];
-                    t_TDC -= tdc_coeff.c0 + tdc_coeff.c1/pow(pulse_peak/tdc_coeff.a_thresh, tdc_coeff.c2);
-                }
-            }
-
-            // Decide which time to use for further analysis
-            t = t_ADC;
-            if ( USE_TDC && haveTDChit){
-                t = t_TDC;
-            }
-
-            // Create the DBCALUnifiedHit
-            DBCALUnifiedHit *uhit = new DBCALUnifiedHit;
-            uhit->E = E;
-            uhit->t = t;
-            uhit->t_ADC = t_ADC;
-            uhit->t_TDC = t_TDC;
-            uhit->has_TDC_hit = haveTDChit;
-            uhit->cellId = cellId;
-            uhit->module = module;
-            uhit->layer = layer;
-            uhit->sector = sector;
-            uhit->end = chan.end;
-
-            uhit->AddAssociatedObject(hit);
-            if (haveTDChit) uhit->AddAssociatedObject(tdc_hits[goodTDCindex]);
-
-            _data.push_back(uhit);
-        } // end loop over ADC hist
+		_data.push_back(uhit);
     } // end loop over cells
 
     return NOERROR;

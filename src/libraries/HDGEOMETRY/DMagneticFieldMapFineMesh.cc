@@ -2,6 +2,7 @@
 //
 //    File: DMagneticFieldMapFineMesh.cc
 
+#include <unistd.h>
 #include <sys/stat.h>
 #include <cmath>
 using namespace std;
