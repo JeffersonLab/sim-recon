@@ -52,7 +52,7 @@ jerror_t DBCALHit_factory::brun(jana::JEventLoop *eventLoop, int32_t runnumber)
    /// Read in calibration constants
    vector<double> raw_gains;
    vector<double> raw_pedestals;
-   vector<double> raw_time_offsets;
+   vector<double> raw_ADC_timing_offsets;
    vector<double> raw_channel_global_offset;
    vector<double> raw_tdiff_u_d;
 
@@ -69,7 +69,7 @@ jerror_t DBCALHit_factory::brun(jana::JEventLoop *eventLoop, int32_t runnumber)
    if (scale_factors.find("BCAL_ADC_TSCALE") != scale_factors.end()) {
      t_scale = scale_factors["BCAL_ADC_TSCALE"];
      if (PRINTCALIBRATION) {
-       jout << "DBCALHit_factory >>BCAL_ADC_TSCALE = " << t_base << endl;
+       jout << "DBCALHit_factory >>BCAL_ADC_TSCALE = " << t_scale << endl;
      }
    }
    else
@@ -93,7 +93,7 @@ jerror_t DBCALHit_factory::brun(jana::JEventLoop *eventLoop, int32_t runnumber)
        jout << "Error loading /BCAL/ADC_gains !" << endl;
    if (eventLoop->GetCalib("/BCAL/ADC_pedestals", raw_pedestals))
        jout << "Error loading /BCAL/ADC_pedestals !" << endl;
-   if (eventLoop->GetCalib("/BCAL/ADC_timing_offsets", raw_time_offsets))
+   if (eventLoop->GetCalib("/BCAL/ADC_timing_offsets", raw_ADC_timing_offsets))
        jout << "Error loading /BCAL/ADC_timing_offsets !" << endl;
    if(eventLoop->GetCalib("/BCAL/channel_global_offset", raw_channel_global_offset))
        jout << "Error loading /BCAL/channel_global_offset !" << endl;
@@ -104,8 +104,8 @@ jerror_t DBCALHit_factory::brun(jana::JEventLoop *eventLoop, int32_t runnumber)
    FillCalibTable(gains, raw_gains);
    if (PRINTCALIBRATION) jout << "DBCALHit_factory >> raw_pedestals" << endl;
    FillCalibTable(pedestals, raw_pedestals);
-   if (PRINTCALIBRATION) jout << "DBCALHit_factory >> raw_time_offsets" << endl;
-   FillCalibTable(time_offsets, raw_time_offsets);
+   if (PRINTCALIBRATION) jout << "DBCALHit_factory >> raw_ADC_timing_offsets" << endl;
+   FillCalibTable(ADC_timing_offsets, raw_ADC_timing_offsets);
    if (PRINTCALIBRATION) jout << "DBCALHit_factory >> raw_channel_global_offset" << endl;
    FillCalibTableShort(channel_global_offset, raw_channel_global_offset);
    if (PRINTCALIBRATION) jout << "DBCALHit_factory >> raw_tdiff_u_d" << endl;
@@ -191,21 +191,29 @@ jerror_t DBCALHit_factory::evnt(JEventLoop *loop, uint64_t eventnumber)
           continue;
       }
 
-      double totalpedestal     = pedestal * nsamples_integral/nsamples_pedestal;
+      //double totalpedestal     = pedestal * nsamples_integral/nsamples_pedestal;
       double single_sample_ped = pedestal/nsamples_pedestal;
+      double totalpedestal     = nsamples_integral * single_sample_ped;
 
       double gain              = GetConstant(gains,digihit);
       double hit_E = 0;
       if ( integral > 0 ) hit_E = gain * (integral - totalpedestal);
-      if ( hit_E < 0 ) continue;  // Throw away negative energy hits  
+	  if (VERBOSE>2) printf("%5lu digihit %2i of %2lu, type %i time %4u, peak %3u, int %4.0f %.0f, ped %3.0f %.0f %5.1f %6.1f, gain %.1e, E=%5.0f MeV\n",
+							eventnumber,i,digihits.size(),digihit->datasource,
+							digihit->pulse_time,digihit->pulse_peak,integral,nsamples_integral,
+							pedestal,nsamples_pedestal,single_sample_ped,totalpedestal,gain,hit_E*1000);
+
+      if ( hit_E <= 0 ) continue;  // Throw away negative energy hits  
 
       int pulse_peak_pedsub = digihit->pulse_peak - (int)single_sample_ped;
  
       // Calculate time for channel
       double pulse_time        = (double)digihit->pulse_time;
       double end_sign          = digihit->end ? -1.0 : 1.0; // Upstream = 0 -> Positive (then subtracted)
-      double hit_t             = t_scale * pulse_time + t_base - GetConstant(channel_global_offset,digihit) 
-                                    - (0.5 * end_sign) * GetConstant(tdiff_u_d,digihit);
+      double hit_t             = t_scale * pulse_time + t_base
+          + GetConstant(ADC_timing_offsets,digihit)              // low level indiviual corrections (eg 4 ns offset)
+          - GetConstant(channel_global_offset,digihit)
+          - (0.5 * end_sign) * GetConstant(tdiff_u_d,digihit);
 
       DBCALHit *hit = new DBCALHit;
       hit->module = digihit->module;
