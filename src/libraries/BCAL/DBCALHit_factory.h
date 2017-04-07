@@ -54,7 +54,7 @@ class DBCALHit_factory:public jana::JFactory<DBCALHit>{
 		// constants tables
 		bcal_digi_constants_t gains;
 		bcal_digi_constants_t pedestals;
-		bcal_digi_constants_t time_offsets;
+		bcal_digi_constants_t ADC_timing_offsets;
         bcal_digi_constants_t channel_global_offset;
         bcal_digi_constants_t tdiff_u_d;
 		
