@@ -57,6 +57,11 @@ auto Compare_PhotonComboUses = [](const DPhotonComboUse& lhs, const DPhotonCombo
 //The info objects will exist for the life of the program, and so don't need to be recycled to a resource pool.
 //The combo objects will be recycled every event into a resource pool.
 
+//If we REALLY need the memory, we can store these things in std::array instead of vector
+//These classes would need to have template parameters for the array sizes, and have a common base class
+//However, the base class would have to return either vectors (need to convert) or raw pointers (need bounds checking) instead of std::arrays (since type unknown to base class)
+//So it would require more CPU.
+
 //THE MOST NUMBER OF PARTICLES OF A GIVEN TYPE IS 255 (# stored in unsigned char)
 class DPhotonComboInfo
 {
@@ -83,6 +88,8 @@ class DPhotonComboInfo
 		//it is the responsibility of the containing object to know what the combos are used for: DPhotonComboUse
 
 		unsigned char dNumPhotons = 0;
+//		vector<pair<Particle_t, unsigned char>> dNumParticles;
+
 		//this will be sorted with Compare_PhotonComboUses
 		vector<pair<DPhotonComboUse, unsigned char>> dFurtherDecays; //unsigned char: # of (e.g.) pi0s, etc.
 };

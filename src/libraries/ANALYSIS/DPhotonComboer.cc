@@ -796,15 +796,15 @@ void DPhotonComboer::Combo_Horizontally(const DPhotonComboUse& locNeededGrouping
 		auto locUsedShowers_AllBut1 = locDecayCombo_AllBut1->Get_PhotonShowers(true); //true: entire chain
 		std::sort(locUsedShowers_AllBut1.begin(), locUsedShowers_AllBut1.end()); //IS THIS NECESSARY??
 
+		//this function will do our validity test
+		auto Search_Duplicates = [&locUsedShowers_AllBut1](const DNeutralShower* locShower) -> bool
+			{return std::binary_search(locUsedShowers_AllBut1.begin(), locUsedShowers_AllBut1.end(), locShower);};
+
 		//loop over potential combos to add to the group, creating a new combo for each valid (non-duplicate) grouping
 		for(const auto& locDecayCombo_ToAdd : locDecayCombos_ToAdd)
 		{
 			//search the all-but-1 shower vector to see if any of the showers in this combo are duplicated
 			auto locUsedShowers_ToAdd = locDecayCombo_ToAdd->Get_PhotonShowers(true); //true: entire chain
-
-			//this function will do our validity test
-			auto Search_Duplicates = [&locUsedShowers_AllBut1](const DNeutralShower* locShower) -> bool
-				{return std::binary_search(locUsedShowers_AllBut1.begin(), locUsedShowers_AllBut1.end(), locShower);};
 
 			//conduct search
 			if(std::any_of(locUsedShowers_ToAdd.begin(), locUsedShowers_ToAdd.end(), Search_Duplicates))
@@ -812,7 +812,7 @@ void DPhotonComboer::Combo_Horizontally(const DPhotonComboUse& locNeededGrouping
 
 			//no duplicates: this combo is unique.  build a new combo (first building the further-decays for it)
 			DPhotonCombosByUse_Small locFurtherDecayCombos = locDecayCombo_AllBut1->Get_FurtherDecayCombos(); //the all-but-1 combo contents by use
-			DPhotonCombosByUse_Small locFurtherDecayCombos_ToAdd = locDecayCombo_ToAdd->Get_FurtherDecayCombos(); //the all-but-1 combo contents by use
+			DPhotonCombosByUse_Small locFurtherDecayCombos_ToAdd = locDecayCombo_ToAdd->Get_FurtherDecayCombos(); //the to-add combo contents by use
 			locFurtherDecayCombos.emplace(locPhotonComboUseToAdd, locFurtherDecayCombos_ToAdd[locPhotonComboUseToAdd]); //add to it the new PID
 			auto locNeededGroupingCombo = new DPhotonCombo(0, locFurtherDecayCombos); // create combo with all PIDs
 
@@ -849,6 +849,10 @@ void DPhotonComboer::Combo_Vertically(const DPhotonComboUse& locNeededGroupingUs
 		//therefore, start the search one AFTER the LAST (e.g. -> 2 photon) combo of the N - 1 group
 		//this will guarantee we pass "TEST 1" without ever checking
 
+		//this function will do our "TEST 2"
+		auto Search_Duplicates = [&locUsedShowers_NMinus1](const DNeutralShower* locShower) -> bool
+			{return std::binary_search(locUsedShowers_NMinus1.begin(), locUsedShowers_NMinus1.end(), locShower);};
+
 		//actually, we already saved the iterator to the first (e.g.) pi0 to test when we saved the N - 1 combo, so just retrieve it
 		auto locComboSearchIterator = dResumeSearchIteratorMap[locDecayCombo_NMinus1];
 		if(locComboSearchIterator == std::end(locDecayCombos_1))
@@ -860,10 +864,6 @@ void DPhotonComboer::Combo_Vertically(const DPhotonComboUse& locNeededGroupingUs
 			//search the N - 1 shower vector to see if any of the showers in this combo are duplicated
 			const auto locDecayCombo_1  = *locComboSearchIterator;
 			auto locUsedShowers_1 = locDecayCombo_1->Get_PhotonShowers(true); //true: entire chain
-
-			//this function will do our "TEST 2"
-			auto Search_Duplicates = [&locUsedShowers_NMinus1](const DNeutralShower* locShower) -> bool
-				{return std::binary_search(locUsedShowers_NMinus1.begin(), locUsedShowers_NMinus1.end(), locShower);};
 
 			//conduct "TEST 2" search
 			if(std::any_of(locUsedShowers_1.begin(), locUsedShowers_1.end(), Search_Duplicates))
