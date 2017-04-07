@@ -243,7 +243,7 @@ void Df250EmulatorAlgorithm_v2::EmulateFirmware(const Df250WindowRawData* rawDat
     VMIN /= NPED;   // compute average
 
     // error conditions for timing algorithm
-    bool pedestal_underflow = false;
+    //bool pedestal_underflow = false;
     //for (unsigned int i=0; i < 5; i++) {
     for (unsigned int i=0; i < 4; i++) {
         // We set the "Time Quality bit 0" to 1 if any of the first 5 samples is greated than MaxPed or TET...
@@ -299,7 +299,7 @@ void Df250EmulatorAlgorithm_v2::EmulateFirmware(const Df250WindowRawData* rawDat
             // has to be after the threshold crossing (NO?)
             // has to be before the last sample
             unsigned int ipeak;
-            for (ipeak = TC[p]; ipeak < NW-1; ++ipeak) {
+            for (ipeak = TC[p]; (int)ipeak < NW-1; ++ipeak) {
             //for (ipeak = TC[p]+1; ipeak < NW-1; ++ipeak) {
                 if ((samples[ipeak] & 0xfff) < (samples[ipeak-1] & 0xfff)) {
                     VPEAK[p] = (samples[ipeak-1] & 0xfff);

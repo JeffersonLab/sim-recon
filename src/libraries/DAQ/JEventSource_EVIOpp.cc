@@ -49,6 +49,7 @@ bool sortf250pulsenumbers(const Df250PulseData *a, const Df250PulseData *b) {
 JEventSource_EVIOpp::JEventSource_EVIOpp(const char* source_name):JEventSource(source_name)
 {
 	DONE = false;
+	DISPATCHER_END = false;
 	NEVENTS_PROCESSED = 0;
 	NDISPATCHER_STALLED  = 0;
 	NEVENTBUFF_STALLED   = 0;
@@ -242,14 +243,15 @@ JEventSource_EVIOpp::~JEventSource_EVIOpp()
 	
 	// Wait for dispatcher to complete
 	if(dispatcher_thread){
+		DISPATCHER_END = true;
 		dispatcher_thread->join();
 		delete dispatcher_thread;
 	}
 
 	// Wait for all worker threads to end and destroy them all
-	for(uint32_t i=0; i<worker_threads.size(); i++){
-		worker_threads[i]->Finish();
-		delete worker_threads[i];
+	for(auto w : worker_threads){
+		w->Finish();
+		delete w;
 	}
 	
 	// Delete emulator objects
@@ -413,15 +415,41 @@ void JEventSource_EVIOpp::Dispatcher(void)
 	// Wait for all worker threads to become available so we know 
 	// the system is drained of events. Then set the DONE flag so
 	// GetEvent will properly return NO_MORE_EVENTS_IN_SOURCE.
-	for(uint32_t i=0; i<worker_threads.size(); i++){
-		worker_threads[i]->done = true;
-		while(worker_threads[i]->in_use){
+	for( auto w : worker_threads ){
+		w->done = true;
+		while(w->in_use){
 			this_thread::sleep_for(milliseconds(10));
 		}
 	}
+
+	DONE = true;
+
+	// Free the worker threads (and their associated object pools)
+	// to reduce overall memory consumption. This JEventSource_EVIOpp
+	// object will not be deleted until just before the program exits
+	// so waiting for the destructor call will cause unneccessary
+	// memory use. (This is really for the case when more than one
+	// file is being processed). Since deleting the DEVIOWorkerThread
+	// object will also delete all of its DParsedEvents and
+	// some of those may still be in use, we must wait for all
+	// events to have their in_use flag set before deleting the
+	// worker thread object.
+	for( auto w : worker_threads ){
+	
+		while( true ){
+			bool in_use = false;
+			for( auto pe : w->parsed_event_pool ) in_use |= pe->in_use;
+			if( !in_use ) break;
+			if( DISPATCHER_END ) break;
+			this_thread::sleep_for(milliseconds(10));
+		}
+		
+		w->Finish();
+		delete w;
+	}
+ 	worker_threads.clear();
 	
 	tend = std::chrono::high_resolution_clock::now();
-	DONE = true;
 }
 
 //----------------

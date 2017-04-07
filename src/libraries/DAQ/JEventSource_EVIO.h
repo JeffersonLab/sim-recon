@@ -415,11 +415,13 @@ class JEventSource_EVIO: public jana::JEventSource{
 		void MakeDf125WindowRawData(ObjList *objs, uint32_t rocid, uint32_t slot, uint32_t itrigger, const uint32_t* &iptr);
 		void MakeDf125PulseRawData(ObjList *objs, uint32_t rocid, uint32_t slot, uint32_t itrigger, const uint32_t* &iptr);
 
+#if HAVE_EVIO
 		void ParseTSSync(evioDOMNodeP bankPtr, list<ObjList*> &events);
 		void ParseDVertexBank(evioDOMNodeP bankPtr, list<ObjList*> &events);
 
 		void ParseFA250Scalers(evioDOMNodeP bankPtr, list<ObjList*> &events, uint32_t rocid);
 		void ParseFA250AsyncPedestals(evioDOMNodeP bankPtr, list<ObjList*> &events, uint32_t rocid);
+#endif // HAVE_EVIO		
 
 
 #ifdef HAVE_ET
@@ -430,7 +432,6 @@ class JEventSource_EVIO: public jana::JEventSource{
 };
 
 
-#ifdef HAVE_EVIO		
 
 
 //======================================================================================
@@ -485,6 +486,8 @@ void JEventSource_EVIO::GetEVIOBuffer(jana::JEvent &jevent, uint32_t* &buff, uin
 	size = objs_ptr->eviobuff_size;
 }
 
+#ifdef HAVE_EVIO		
+
 //----------------
 // GetEVIODOMTree
 //----------------
@@ -507,6 +510,7 @@ evioDOMTree* JEventSource_EVIO::GetEVIODOMTree(jana::JEvent &jevent) const
 
 	return objs_ptr->DOMTree;
 }
+#endif // HAVE_EVIO		
 
 
 ////----------------------------------------------------------------------
@@ -723,7 +727,6 @@ void CopyContainerElementsWithCast(vector<T*> &a, vector<U*> &b)
 	}
 }
 
-#endif // HAVE_EVIO		
 
 
 #endif // _JEventSourceGenerator_DAQ_

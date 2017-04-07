@@ -129,6 +129,11 @@ DBCALShower_factory_IU::evnt( JEventLoop *loop, uint64_t eventnumber ){
     t = t + dist_in_BCAL/(30*k_cm/k_nsec);
     shower->t = t;
 
+    // shower widths for further selection in REST
+    shower->sigLong = (**clItr).sigRho();
+    shower->sigTrans = (**clItr).sigPhi();
+    shower->sigTheta = (**clItr).sigTheta();
+
     shower->N_cell = (**clItr).nCells();
     
     // non-linear energy corrections can be found at https://logbooks.jlab.org/entry/3419524 
