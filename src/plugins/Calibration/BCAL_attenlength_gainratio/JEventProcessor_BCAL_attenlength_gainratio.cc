@@ -140,10 +140,10 @@ jerror_t JEventProcessor_BCAL_attenlength_gainratio::init(void)
         hist2D_peakattenlength = new TH2F("hist2D_peakattenlength",histtitle,48,0.5,48.5,16,0.5,16.5);
         sprintf(histtitle,"Gain ratio from peak;Module;Layer and Sector;G_{U}/G_{D}");
         hist2D_peakgainratio = new TH2F("hist2D_peakgainratio",histtitle,48,0.5,48.5,16,0.5,16.5);
-    }
 
-	sprintf(histtitle,"Average Z pos;Module;Layer and Sector;Z  (cm)");
-	hist2D_aveZ = new TH2F("hist2D_aveZ",histtitle,48,0.5,48.5,16,0.5,16.5);
+        sprintf(histtitle,"Average Z pos;Module;Layer and Sector;Z  (cm)");
+        hist2D_aveZ = new TH2F("hist2D_aveZ",histtitle,48,0.5,48.5,16,0.5,16.5);
+    }
 
 	EvsZ_all = new TH2I("EvsZ_all","E vs Z;Z Position (cm);Energy",100,-250.0,250.0,200,0,0.2);
 	EvsZ_layer[0] = new TH2I("EvsZ_layer1","E vs Z (layer 1);Z Position (cm);Energy",100,-250.0,250.0,200,0,0.2);
@@ -308,9 +308,9 @@ jerror_t JEventProcessor_BCAL_attenlength_gainratio::evnt(JEventLoop *loop, uint
 		if (Energy > 0.01) {  // 10 MeV cut to remove bias due to attenuation
 			logintratiovsZ[module-1][layer-1][sector-1]->Fill(zpos, logintratio);
 			logintratiovsZ_all->Fill(zpos, logintratio);
+            logpeakratiovsZ_all->Fill(zpos, logpeakratio);
             if (VERBOSEHISTOGRAMS) {
                 logpeakratiovsZ[module-1][layer-1][sector-1]->Fill(zpos, logpeakratio);
-                logpeakratiovsZ_all->Fill(zpos, logpeakratio);
             }
 		}
         if (VERBOSEHISTOGRAMS) EvsZ[module-1][layer-1][sector-1]->Fill(zpos, Energy);
@@ -388,31 +388,34 @@ jerror_t JEventProcessor_BCAL_attenlength_gainratio::fini(void)
 					hist2D_intgainratio->SetBinContent(module+1,layersect,gainratio);
 					hist2D_intgainratio->SetBinError(module+1,layersect,gainratioerr);
 
-					logpeakratiovsZ[module][layer][sector]->Fit("pol1","q");
-					TF1 *peakfit = (TF1*)logpeakratiovsZ[module][layer][sector]->GetFunction("pol1");
-					p0 = peakfit->GetParameter(0);
-					p1 = peakfit->GetParameter(1);
-					p0err = peakfit->GetParError(0);
-					p1err = peakfit->GetParError(1);
-					attenlength = -2./p1;
-					gainratio = exp(p0);
-					attenlengtherr = 2/p1/p1*p1err;
-					gainratioerr = exp(p0)*p0err;
-					hist2D_peakattenlength->SetBinContent(module+1,layersect,attenlength);
-					hist2D_peakattenlength->SetBinError(module+1,layersect,attenlengtherr);
-					hist2D_peakgainratio->SetBinContent(module+1,layersect,gainratio);
-					hist2D_peakgainratio->SetBinError(module+1,layersect,gainratioerr);
-
-                    float aveZ = EvsZ[module][layer][sector]->GetMean(1);
-                    float aveZerr = EvsZ[module][layer][sector]->GetMeanError(1);
-					hist2D_aveZ->SetBinContent(module+1,layersect,aveZ);
-					hist2D_aveZ->SetBinError(module+1,layersect,aveZerr);
+                    if (VERBOSEHISTOGRAMS) {
+                        logpeakratiovsZ[module][layer][sector]->Fit("pol1","q");
+                        TF1 *peakfit = (TF1*)logpeakratiovsZ[module][layer][sector]->GetFunction("pol1");
+                        p0 = peakfit->GetParameter(0);
+                        p1 = peakfit->GetParameter(1);
+                        p0err = peakfit->GetParError(0);
+                        p1err = peakfit->GetParError(1);
+                        attenlength = -2./p1;
+                        gainratio = exp(p0);
+                        attenlengtherr = 2/p1/p1*p1err;
+                        gainratioerr = exp(p0)*p0err;
+                        hist2D_peakattenlength->SetBinContent(module+1,layersect,attenlength);
+                        hist2D_peakattenlength->SetBinError(module+1,layersect,attenlengtherr);
+                        hist2D_peakgainratio->SetBinContent(module+1,layersect,gainratio);
+                        hist2D_peakgainratio->SetBinError(module+1,layersect,gainratioerr);
+                        float aveZ = EvsZ[module][layer][sector]->GetMean(1);
+                        float aveZerr = EvsZ[module][layer][sector]->GetMeanError(1);
+                        hist2D_aveZ->SetBinContent(module+1,layersect,aveZ);
+                        hist2D_aveZ->SetBinError(module+1,layersect,aveZerr);
+                    }
 				}
 			}
 		}
 	}
-	hist2D_peakattenlength->SetBinContent(0,0,1);
-	hist2D_peakgainratio->SetBinContent(0,0,1);
+    if (VERBOSEHISTOGRAMS) {
+        hist2D_peakattenlength->SetBinContent(0,0,1);
+        hist2D_peakgainratio->SetBinContent(0,0,1);
+    }
 	hist2D_intattenlength->SetBinContent(0,0,1);
 	hist2D_intgainratio->SetBinContent(0,0,1);
 

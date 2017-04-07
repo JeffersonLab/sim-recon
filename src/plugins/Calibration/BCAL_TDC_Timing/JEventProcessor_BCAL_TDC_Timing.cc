@@ -48,6 +48,13 @@ void InitPlugin(JApplication *app){
 //------------------
 JEventProcessor_BCAL_TDC_Timing::JEventProcessor_BCAL_TDC_Timing()
 {
+	VERBOSE = 0;
+	VERBOSEHISTOGRAMS = 0;
+
+	if(gPARMS){
+		gPARMS->SetDefaultParameter("BCAL_TDC_Timing:VERBOSE", VERBOSE, "Verbosity level");
+		gPARMS->SetDefaultParameter("BCAL_TDC_Timing:VERBOSEHISTOGRAMS", VERBOSEHISTOGRAMS, "Create more histograms (default 0 for monitoring)");
+	}
 
 }
 
@@ -602,15 +609,18 @@ jerror_t JEventProcessor_BCAL_TDC_Timing::evnt(JEventLoop *loop, uint64_t eventn
             }
             float intratio = (float)integralUS/(float)integralDS;
             float logintratio = log(intratio);
-            sprintf(title,"Attenuation;Z_{Track}  (cm);log of integral ratio US/DS");
-            Fill2DHistogram ("BCAL_atten_gain", "logintratiovsZtrack", "AllPoints",
-                             localTrackHitZ, logintratio, title,
-                             250, zminlocal, zmaxlocal, 250, -3, 3);
-            sprintf(title,"Attenuation (M%i,L%i,S%i);Z_{Track}  (cm);log of integral ratio US/DS", 
-                    thisPoint->module(), thisPoint->layer(), thisPoint->sector());
-            Fill2DHistogram ("BCAL_atten_gain", "logintratiovsZtrack", channame,
-                             localTrackHitZ, logintratio, title,
-                             250, zminlocal, zmaxlocal, 250, -3, 3);
+
+            if (VERBOSEHISTOGRAMS) {
+                sprintf(title,"Attenuation;Z_{Track}  (cm);log of integral ratio US/DS");
+                Fill2DHistogram ("BCAL_atten_gain", "logintratiovsZtrack", "AllPoints",
+                                 localTrackHitZ, logintratio, title,
+                                 250, zminlocal, zmaxlocal, 250, -3, 3);
+                sprintf(title,"Attenuation (M%i,L%i,S%i);Z_{Track}  (cm);log of integral ratio US/DS", 
+                        thisPoint->module(), thisPoint->layer(), thisPoint->sector());
+                Fill2DHistogram ("BCAL_atten_gain", "logintratiovsZtrack", channame,
+                                 localTrackHitZ, logintratio, title,
+                                 250, zminlocal, zmaxlocal, 250, -3, 3);
+            }
 
             // Now fill some histograms that are useful for aligning the BCAL with the rest of the detector systems
             if (thisRFBunch->dNumParticleVotes >= 2 && scMatch != NULL && dEdx_pion){ // Require good RF bunch and this track match the SC
