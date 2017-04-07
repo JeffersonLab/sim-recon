@@ -89,18 +89,18 @@ jerror_t DBCALUnifiedHit_factory::brun(jana::JEventLoop *eventLoop, int32_t runn
             //tdc_timewalk_map[channel] = timewalk_coefficients(c0,c1,c2,a_thresh);
         }
 
-        for (int module=1; module<=DBCALGeometry::NBCALMODS; module++) {
+        for (int module=1; module<=dBCALGeom->NBCALMODS; module++) {
             //shouldn't be hardcoded
             for (int sector=1; sector<=4; sector++) {
-                for (int layer=1; layer<=DBCALGeometry::NBCALLAYSIN; layer++) {
-                    int id = DBCALGeometry::cellId(module, layer, sector);
-                    //if (tdc_timewalk_map.count(readout_channel(id,DBCALGeometry::kUpstream)) != 1) {
-                    if (tdc_timewalk_map_c4.count(readout_channel(id,DBCALGeometry::kUpstream)) != 1) {
+                for (int layer=1; layer<=dBCALGeom->NBCALLAYSIN; layer++) {
+                    int id = dBCALGeom->cellId(module, layer, sector);
+                    //if (tdc_timewalk_map.count(readout_channel(id,dBCALGeom->kUpstream)) != 1) {
+                    if (tdc_timewalk_map_c4.count(readout_channel(id,dBCALGeom->kUpstream)) != 1) {
                         cout << "DBCALUnifiedHit_factory: Channel missing in timewalk_tdc_table: "
                              << endl << " module " << module << " layer " << layer << " sector " << sector << " upstream" << endl;
                     }
-                    //if (tdc_timewalk_map.count(readout_channel(id,DBCALGeometry::kDownstream)) != 1) {
-                    if (tdc_timewalk_map_c4.count(readout_channel(id,DBCALGeometry::kDownstream)) != 1) {
+                    //if (tdc_timewalk_map.count(readout_channel(id,dBCALGeom->kDownstream)) != 1) {
+                    if (tdc_timewalk_map_c4.count(readout_channel(id,dBCALGeom->kDownstream)) != 1) {
                         cout << "DBCALUnifiedHit_factory: Channel missing in timewalk_tdc_table: "
                              << endl << " module " << module << " layer " << layer << " sector " << sector << " downstream" << endl;
                     }
