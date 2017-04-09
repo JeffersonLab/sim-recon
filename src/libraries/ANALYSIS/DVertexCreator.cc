@@ -119,12 +119,12 @@ void DVertexCreator::Do_All(JEventLoop* locEventLoop, const vector<const DReacti
 	/*************************************************** CHARGED TRACK TIMING CUTS *************************************************
 	*
 	* Charged time cuts are dependent on combo vertex, especially for low-theta tracks.
-	* Wherever the combo vertex is, the track won't pass through it until after the kinfit, so do final PID cuts at the end
+	* Wherever the combo vertex is, the track won't pass through it until after the kinfit, so do "final" PID cuts at the end
 	*
-	* Once we have a vertex for the combo, compute POCA to the vertex and do time cuts there.
+	* Once we have a vertex for the combo, compute POCA to the vertex and do pre-kinfit time cuts there.
 	* This will be pretty accurate, except for slow-single-track channels at low-theta, for which there's nothing you can do anyway.
 	*
-	* We don't want to wait until we have a combo vertex to do some PID timing cuts.
+	* We don't want to wait until we have a combo vertex to do some PID timing cuts, but unfortunately we have to.
 	* Since computing neutral timing every 10cm, we can try to do the same for charged tracks as well, but this doesn't work.
 	*
 	* The maximum error associated with this is:
@@ -200,32 +200,16 @@ void DVertexCreator::Do_All(JEventLoop* locEventLoop, const vector<const DReacti
 	*
 	*******************************************************************************************************************************/
 
-	/* Update vertex infos:
-	 * Add all decaying particles
-	 */
-
 	/*
-	 * Photon comboing:
-	 * FCAL: All together
-	 * BCAL: In bins of vertex-z
-	 * 1) Photon loose RF bunch selection (time cuts)
-	 * 2) For each RF bunch at this vertex-z: Do all fully-neutral combos
-	 *    Loop through all DReactions, figuring out what is needed, then build for all in order of dependency
-	 *    Dependency: 4pi0 depends on 3pi0!!!
-	 *    Do FCAL independent of vertex-z, BCAL dependent, and then mix the two.
-	 *
-	 * 1) Production vertex charged track comboing
+	 * Loop over DReactions:
+	 * 1) Charged track comboing: All vertices
 	 * 2) Production vertex calculation
 	 * 3) Production vertex charged hypo RF bunch selection (time cuts)
-	 * 4) On-demand, vertex-z binned photon comboing (discussed below)
+	 * 4) On-demand, vertex-z binned photon comboing
 	 * 5) Production vertex neutral RF bunch selection (time cuts)
 	 * 6) Final RF bunch vote
-	 * 7) Split up amongst DReactions
-	 * 8) Mass cuts involving charged tracks
-	 *
-	 * Doing charged Mass cuts early not worth the effort / coding overhead (only for Lambda, K0, phi).  Only do once splitting up results amongst DReactions.
+	 * 7)
 	 */
-
 
 	/**************************************************************** DETACHED VERTICES ***************************************************************/
 
