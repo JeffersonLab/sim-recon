@@ -213,7 +213,7 @@ DTrackFitter::FindHitsAndFitTrack(const DKinematicData &starting_params,
     hitselector->GetFDCHits(Bz,q,extrapolations,fdcpseudos,this,N);	
   }
   else{
-    _DBG_ << "No extraplations?" <<endl;
+    return fit_status = kFitNotDone;
   }
 
   // In case the subclass doesn't actually set the mass ....
