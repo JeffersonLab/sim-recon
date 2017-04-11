@@ -193,24 +193,24 @@ jerror_t JEventProcessor_BCAL_TDC_Timing::evnt(JEventLoop *loop, uint64_t eventn
    // The following plots can be used for the calibration or to check the calibration if it has already been done
 
    double MIN_TDIFF = -10.0, MAX_TDIFF = 10.0, MAX_TDIFF_WIDE = 30.0;
-   const int nxbins = 100;
-   double xbins[nxbins+1];
-   for (int i=0; i<=nxbins; i++) {
-       xbins[i] = MIN_TDIFF + (MAX_TDIFF-MIN_TDIFF)/nxbins*i;
+   const int ndtbins = 100;
+   double dtbins[ndtbins+1];
+   for (int i=0; i<=ndtbins; i++) {
+       dtbins[i] = MIN_TDIFF + (MAX_TDIFF-MIN_TDIFF)/ndtbins*i;
    }
-   const int nxbinswide = 200;
-   double xbinswide[nxbinswide+1];
-   for (int i=0; i<=nxbinswide; i++) {
-       xbinswide[i] = MIN_TDIFF + (MAX_TDIFF_WIDE-MIN_TDIFF)/nxbinswide*i;
+   const int ndtbinswide = 200;
+   double dtbinswide[ndtbinswide+1];
+   for (int i=0; i<=ndtbinswide; i++) {
+       dtbinswide[i] = MIN_TDIFF + (MAX_TDIFF_WIDE-MIN_TDIFF)/ndtbinswide*i;
    }
-   const int nybins = 100;
-   double ybins[nybins+1] = {0, 1, 2, 3, 4, 5, 6, 7, 8, 9,10,11,12,13,14,15,16,17,18,20,
-                             21,23,24,26,28,30,32,34,36,39,42,44,48,51,54,58,62,66,71,76,
-                             81,86,92,98,105,112,120,128,137,146,156,167,178,190,203,217,
-                             231,247,264,281,300,321,343,366,390,417,445,475,507,541,578,
-                             617,659,703,750,801,855,913,974,1040,1110,1185,1265,1351,1442,
-                             1539,1643,1754,1872,1998,2133,2277,2430,2594,2769,2956,3155,
-                             3368,3595,3837,4096};
+   const int npeakbins = 100;
+   double peakbins[npeakbins+1] = {0, 1, 2, 3, 4, 5, 6, 7, 8, 9,10,11,12,13,14,15,16,17,18,20,
+                                   21,23,24,26,28,30,32,34,36,39,42,44,48,51,54,58,62,66,71,76,
+                                   81,86,92,98,105,112,120,128,137,146,156,167,178,190,203,217,
+                                   231,247,264,281,300,321,343,366,390,417,445,475,507,541,578,
+                                   617,659,703,750,801,855,913,974,1040,1110,1185,1265,1351,1442,
+                                   1539,1643,1754,1872,1998,2133,2277,2430,2594,2769,2956,3155,
+                                   3368,3595,3837,4096};
 
    for (unsigned int i = 0; i < bcalUnifiedHitVector.size(); i++){
       //int the_cell = (bcalUnifiedHitVector[i]->module - 1) * 16 + (bcalUnifiedHitVector[i]->layer - 1) * 4 + bcalUnifiedHitVector[i]->sector;
@@ -234,22 +234,22 @@ jerror_t JEventProcessor_BCAL_TDC_Timing::evnt(JEventLoop *loop, uint64_t eventn
             Fill2DHistogram ("BCAL_TDC_Timing", "Upstream_TimewalkVsPeak", name,
                              pulse_peak, thisTDCHit->t - thisADCHit->t,
                              "Timewalk; Pulse Peak [ADC Counts]; t_{TDC} - t_{ADC} [ns]",
-                             nybins, ybins, nxbinswide, xbinswide);
+                             npeakbins, peakbins, ndtbinswide, dtbinswide);
             Fill2DHistogram ("BCAL_TDC_Timing", "Timewalk_All", "Upstream_Channel_Deltat",
-                  the_tdc_cell, thisTDCHit->t - thisADCHit->t,
-                  "BCAL Upstream t_{TDC}-t_{ADC}; cellID; t_{TDC} - t_{ADC} [ns] ",
-                  576, 0.5, 576.5, NBINS_TDIFF, MIN_TDIFF, MAX_TDIFF);
+                             the_tdc_cell, thisTDCHit->t - thisADCHit->t,
+                             "BCAL Upstream t_{TDC}-t_{ADC}; cellID; t_{TDC} - t_{ADC} [ns] ",
+                             576, 0.5, 576.5, ndtbins, MIN_TDIFF, MAX_TDIFF);
          }
 
          else{
             Fill2DHistogram ("BCAL_TDC_Timing", "Downstream_TimewalkVsPeak", name,
                              pulse_peak, thisTDCHit->t - thisADCHit->t,
                              "Timewalk; Pulse Peak [ADC Counts]; t_{TDC} - t_{ADC} [ns]",
-                             nybins, ybins, nxbinswide, xbinswide);
+                             npeakbins, peakbins, ndtbinswide, dtbinswide);
             Fill2DHistogram ("BCAL_TDC_Timing", "Timewalk_All", "Downstream_Channel_Deltat",
-                  the_tdc_cell, thisTDCHit->t - thisADCHit->t,
-                  "BCAL Upstream t_{TDC}-t_{ADC}; cellID; t_{TDC} - t_{ADC} [ns] ",
-                  576, 0.5, 576.5, NBINS_TDIFF, MIN_TDIFF, MAX_TDIFF);
+                             the_tdc_cell, thisTDCHit->t - thisADCHit->t,
+                             "BCAL Upstream t_{TDC}-t_{ADC}; cellID; t_{TDC} - t_{ADC} [ns] ",
+                             576, 0.5, 576.5, ndtbins, MIN_TDIFF, MAX_TDIFF);
          }
       }
       // Next look directly at the DBCALUnifiedHit to get the corrected times and plot those seperately
@@ -261,21 +261,21 @@ jerror_t JEventProcessor_BCAL_TDC_Timing::evnt(JEventLoop *loop, uint64_t eventn
             Fill2DHistogram ("BCAL_TDC_Timing", "Upstream_TimewalkVsPeak_Corrected", name,
                              pulse_peak, correctedTDCTime - bcalUnifiedHitVector[i]->t_ADC,
                              "Timewalk; Pulse Peak [ADC Counts]; t_{TDC} - t_{ADC} [ns]",
-                             nybins, ybins, nxbins ,xbins);
+                             npeakbins, peakbins, ndtbins ,dtbins);
             Fill2DHistogram ("BCAL_TDC_Timing", "Timewalk_All", "Upstream_Channel_Deltat_TimewalkCorrected",
-                  the_tdc_cell, correctedTDCTime - bcalUnifiedHitVector[i]->t_ADC,
-                  "BCAL Upstream t_{TDC}-t_{ADC} corrected; cellID; t_{TDC} - t_{ADC} [ns] ",
-                  576, 0.5, 576.5, NBINS_TDIFF, MIN_TDIFF, MAX_TDIFF);
+                             the_tdc_cell, correctedTDCTime - bcalUnifiedHitVector[i]->t_ADC,
+                             "BCAL Upstream t_{TDC}-t_{ADC} corrected; cellID; t_{TDC} - t_{ADC} [ns] ",
+                             576, 0.5, 576.5, ndtbins, MIN_TDIFF, MAX_TDIFF);
          }
          else{
             Fill2DHistogram ("BCAL_TDC_Timing", "Downstream_TimewalkVsPeak_Corrected", name,
                              pulse_peak, correctedTDCTime - bcalUnifiedHitVector[i]->t_ADC,
                              "Timewalk; Pulse Peak [ADC Counts]; t_{TDC} - t_{ADC} [ns]",
-                             nybins, ybins, nxbins ,xbins);
+                             npeakbins, peakbins, ndtbins ,dtbins);
             Fill2DHistogram ("BCAL_TDC_Timing", "Timewalk_All", "Downstream_Channel_Deltat_TimewalkCorrected",
-                  the_tdc_cell, correctedTDCTime - bcalUnifiedHitVector[i]->t_ADC,
-                  "BCAL Downstream t_{TDC}-t_{ADC} corrected; cellID; t_{TDC} - t_{ADC} [ns] ",
-                  576, 0.5, 576.5, NBINS_TDIFF, MIN_TDIFF, MAX_TDIFF);
+                             the_tdc_cell, correctedTDCTime - bcalUnifiedHitVector[i]->t_ADC,
+                             "BCAL Downstream t_{TDC}-t_{ADC} corrected; cellID; t_{TDC} - t_{ADC} [ns] ",
+                             576, 0.5, 576.5, ndtbins, MIN_TDIFF, MAX_TDIFF);
          }
       }
    }
