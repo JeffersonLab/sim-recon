@@ -827,7 +827,8 @@ bool DParticleID::Distance_ToTrack(const DReferenceTrajectory* rt, const DSCHit*
 		*locOutputProjMom = locProjMom;
 	}
 
-	// Correct the locDeltaPhi in case the projected and input SC hit paddles are different
+	// Correct the locDeltaPhi in case the projected and input SC hit paddles are different	
+	unsigned int sc_index=locSCHit->sector-1;
 	DVector3 sc_pos_at_projz = sc_pos[sc_index][locSCPlane] + (locProjPos.Z() - sc_pos[sc_index][locSCPlane].z())*sc_dir[sc_index][locSCPlane];
 	locDeltaPhi = sc_pos_at_projz.Phi() - locProjPos.Phi();
 	while(locDeltaPhi > TMath::Pi())
@@ -840,7 +841,6 @@ bool DParticleID::Distance_ToTrack(const DReferenceTrajectory* rt, const DSCHit*
 	double ds = 0.3*locProjMom.Mag()/fabs(locProjMom.Dot(locPaddleNorm));
 
 	//SET MATCHING INFORMATION
-	unsigned int sc_index=locSCHit->sector-1;
 	locSCHitMatchParams.dSCHit = locSCHit;
 	locSCHitMatchParams.dHitEnergy = locCorrectedHitEnergy;
 	locSCHitMatchParams.dEdx = locSCHitMatchParams.dHitEnergy/ds;
@@ -2145,104 +2145,40 @@ bool DParticleID::Get_StartTime(const DTrackFitter::Extrapolation_t &extrapolati
   double locMatchCut_1D = locMatchCut_2D;
   
   // loop over TOF points, looking for closest match to track position
-  double dx_min=1.0e6,dy_min=1.0e6;
-  unsigned int best_tof_match_x=0;
-  unsigned int best_tof_match_y=0;
+  double d2_min=1.0e6,dy_at_min=0.,dx_at_min=0.;
+  unsigned int best_tof_match=0;
   for (unsigned int i=0;i<TOFPoints.size();i++){
     const DTOFPoint *locTOFPoint = TOFPoints[i];
-    double dx=locTOFPoint->pos.x()-trackpos.x();
-    double dy=locTOFPoint->pos.y()-trackpos.y();
-    if (fabs(dx)<dx_min){
-      dx_min=fabs(dx);
-      best_tof_match_x=i;
-    }
-    if (fabs(dy)<dy_min){
-      dy_min=fabs(dy);
-      best_tof_match_y=i;
+    DVector3 diff=locTOFPoint->pos-trackpos;
+    double d2=diff.Perp2();
+    if (d2<d2_min){
+      d2_min=d2;
+      dy_at_min=diff.y();
+      dx_at_min=diff.x();
+      best_tof_match=i;
     }
   }
-  // If the projections in x and y point to the same bar, apply the match 
-  // criterion.
-  if (best_tof_match_x==best_tof_match_y){ 
-    StartTime=Get_CorrectedHitTime(TOFPoints[best_tof_match_x],trackpos)
-      -extrapolation.t;
-    if (fabs(StartTime-StartTimeGuess)>OUT_OF_TIME_CUT) return false;
-    if (TOFPoints[best_tof_match_x]->Is_XPositionWellDefined()==false){
-      if (dy_min<locMatchCut_1D){
-	return true;
-      }
-    }
-    else if (TOFPoints[best_tof_match_x]->Is_YPositionWellDefined()==false){ 
-      if (dx_min<locMatchCut_1D){
-	return true;
-      }
-    }
-    else{
-      double d=sqrt(dx_min*dx_min+dy_min*dy_min);
-      if (d<locMatchCut_2D){
-	return true;
-      }
+  // Get the start time and check that it is consistent with an initial guess
+  // to within some OUT_OF_TIME_CUT
+  StartTime=Get_CorrectedHitTime(TOFPoints[best_tof_match],trackpos)
+    -extrapolation.t;
+  if (fabs(StartTime-StartTimeGuess)>OUT_OF_TIME_CUT) return false;
+
+  // Apply matching criteria
+  if (TOFPoints[best_tof_match]->Is_XPositionWellDefined()==false){
+    if (dy_at_min<locMatchCut_1D){
+      return true;
     }
   }
-  else{  // otherwise we need to do something more sophisticated...
-    TOFPoints[best_tof_match_x]->pos.Print();
-    TOFPoints[best_tof_match_y]->pos.Print();
-    double StartTime_TOF1
-      =Get_CorrectedHitTime(TOFPoints[best_tof_match_x],trackpos)
-      -extrapolation.t;
-    double StartTime_TOF2
-      =Get_CorrectedHitTime(TOFPoints[best_tof_match_y],trackpos)
-      -extrapolation.t;
-    bool TimeCheck1=fabs(StartTime_TOF1-StartTimeGuess)<=OUT_OF_TIME_CUT;
-    bool TimeCheck2=fabs(StartTime_TOF1-StartTimeGuess)<=OUT_OF_TIME_CUT;
-    if (TimeCheck1==false && TimeCheck2==false) return false;
-
-    bool GoodPoint1=TOFPoints[best_tof_match_x]->Is_XPositionWellDefined()
-      && TOFPoints[best_tof_match_x]->Is_YPositionWellDefined(); 
-    bool GoodPoint2=TOFPoints[best_tof_match_y]->Is_XPositionWellDefined()
-      && TOFPoints[best_tof_match_y]->Is_YPositionWellDefined();
-    
-    // Differences with respect to the track for other coordinates for the 
-    // two possible paddle matches
-    double dx2=TOFPoints[best_tof_match_y]->pos.x()-trackpos.x();
-    double dy2=TOFPoints[best_tof_match_x]->pos.y()-trackpos.y();
-    double dr1=sqrt(dx_min*dx_min+dy2*dy2);
-    double dr2=sqrt(dx2*dx2+dy_min*dy_min);
-
-    if (TimeCheck1==true && TimeCheck2==false){
-      printf(".>>>>>>>. Got here\n");
+  else if (TOFPoints[best_tof_match]->Is_YPositionWellDefined()==false){ 
+    if (dx_at_min<locMatchCut_1D){
+      return true;
     }
-    else if (TimeCheck2==true && TimeCheck1==false){
-      printf(">>>>>>>>>>>>> Got here2\n");
+  }
+  else{
+    if (sqrt(d2_min)<locMatchCut_2D){
+      return true;
     }
-    else {
-      printf("Got here 3!! %d %d\n",GoodPoint1,GoodPoint2);
-      if (GoodPoint1 && GoodPoint2){
-	if (dr1<dr2 && dr1<locMatchCut_2D){
-	  StartTime=StartTime_TOF1;
-	  return true;
-	}
-	else if (dr2<dr1 && dr2<locMatchCut_2D){
-	  StartTime=StartTime_TOF2;
-	  return true;
-	}
-      }
-      else if (GoodPoint1){
-	if (dr1<locMatchCut_2D){
-	  StartTime=StartTime_TOF1;
-	  return true;
-	}
-      }
-      else{
-	if (dr2<locMatchCut_2D){
-	  StartTime=StartTime_TOF2;
-	  return true;
-	}
-
-      }
-    }
-    double dt_tof=fabs(StartTime_TOF1-StartTime_TOF2);
-	   
   }
 
   return false;
