@@ -16,4 +16,5 @@
       thisWireProfile->SetTitle(histoWTitle);
       thisWireProfile->Draw("colz");
    }
+   cWireRes->SaveAs("FDCWireResidualsLocal.png");
 }

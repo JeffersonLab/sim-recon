@@ -16,4 +16,5 @@
       thisCathodeProfile->SetTitle(histoCTitle);
       thisCathodeProfile->Draw("colz");
    }
+   cCathodeRes->SaveAs("FDCCathodeResidualsLocal.png");
 }

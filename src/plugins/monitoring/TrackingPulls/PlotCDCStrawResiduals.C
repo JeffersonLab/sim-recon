@@ -16,4 +16,5 @@
       thisCDCRes->SetTitle(histoCDCTitle);
       thisCDCRes->Draw("colz");
    }
+   cCDCRes->SaveAs("CDCWireResiduals.png");
 }
