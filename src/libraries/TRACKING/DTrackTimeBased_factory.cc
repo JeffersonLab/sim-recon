@@ -851,11 +851,12 @@ void DTrackTimeBased_factory
   //sort(start_times.begin(),start_times.end(),DTrackTimeBased_T0_cmp);
   mStartTime=start_times[0].t0;
   mStartDetector=start_times[0].system;
-
-  for (unsigned int i=0;i<start_times.size();i++){
-    printf("%d t0 %f sys %d\n",i,start_times[i].t0,start_times[i].system);
-  }
   
+  /*
+    for (unsigned int i=0;i<start_times.size();i++){
+    printf("%d t0 %f sys %d\n",i,start_times[i].t0,start_times[i].system);
+    }
+  */
 }
 
 // Create a list of start times and do the fit for a particular mass hypothesis
