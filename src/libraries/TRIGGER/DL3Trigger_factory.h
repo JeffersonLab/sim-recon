@@ -8,8 +8,15 @@
 #ifndef _DL3Trigger_factory_
 #define _DL3Trigger_factory_
 
+#include <mutex>
+using std::mutex;
+
 #include <JANA/JFactory.h>
 #include "DL3Trigger.h"
+
+#ifdef HAVE_TMVA
+#include <TMVA/Reader.h>
+#endif
 
 class DL3Trigger_factory:public jana::JFactory<DL3Trigger>{
 	public:
@@ -21,6 +28,23 @@ class DL3Trigger_factory:public jana::JFactory<DL3Trigger>{
 		bool DO_BCAL_CLUSTER;
 		uint32_t L1_TRIG_MASK;
 		uint32_t L1_FP_TRIG_MASK;
+		string MVA_WEIGHTS;
+		double MVA_CUT;
+		
+		
+#ifdef HAVE_TMVA
+		TMVA::Reader *mvareader;
+#endif
+		Float_t Nstart_counter;
+		Float_t Ntof;
+		Float_t Nbcal_points;
+		Float_t Nbcal_clusters;
+		Float_t Ebcal_points;
+		Float_t Ebcal_clusters;
+		Float_t Nfcal_clusters;
+		Float_t Efcal_clusters;
+		Float_t Ntrack_candidates;
+		Float_t Ptot_candidates;
 
 	private:
 		jerror_t init(void);						///< Called once at program start.

@@ -497,4 +497,5 @@ TObject* GetHistPointer(const char * plugin, const char * directoryName, const c
    return nullptr;
 
 }
+
 #endif

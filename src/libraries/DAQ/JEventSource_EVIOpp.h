@@ -140,6 +140,7 @@ class JEventSource_EVIOpp: public jana::JEventSource{
 
 		
 		bool DONE;
+		bool DISPATCHER_END;
 		std::chrono::high_resolution_clock::time_point tstart;
 		std::chrono::high_resolution_clock::time_point tend;
 
@@ -187,6 +188,7 @@ class JEventSource_EVIOpp: public jana::JEventSource{
 		bool     PARSE_EPICS;
 		bool     PARSE_EVENTTAG;
 		bool     PARSE_TRIGGER;
+		bool     APPLY_TRANSLATION_TABLE;
 		int      ET_STATION_NEVENTS;
 		bool     ET_STATION_CREATE_BLOCKING;
 		bool     LOOP_FOREVER;
@@ -203,6 +205,7 @@ class JEventSource_EVIOpp: public jana::JEventSource{
 		bool     LINK_CONFIG;
 		bool     IGNORE_EMPTY_BOR;
 		bool     TREAT_TRUNCATED_AS_ERROR;
+		string   SYSTEMS_TO_PARSE;
 		
 		uint32_t jobtype;
 };

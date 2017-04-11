@@ -263,6 +263,11 @@ def plugin(env, pluginname=''):
 		ignore  = env['IGNORE_SOURCES']
 		sources = [s for s in env['ALL_SOURCES'] if s.name not in ignore]		
 
+	# Strip out libs that don't need to be linked in plugin
+	if 'OPTIONAL_PLUGIN_LIBS' in env.Dictionary().keys() :
+		REDUCED_LIBS = [s for s in env['LIBS'] if s not in env['OPTIONAL_PLUGIN_LIBS'] ]
+		env.Replace(LIBS=REDUCED_LIBS)
+
 	# Build static library from all source
 	myobjs = env.SharedObject(sources)
 	myplugin = env.SharedLibrary(target = pluginname, source = myobjs, SHLIBPREFIX='', SHLIBSUFFIX='.so')
@@ -565,6 +570,7 @@ def AddHDDS(env):
 ##################################
 def AddHDDM(env):
 	env.AppendUnique(LIBS = 'HDDM')
+	env.PrependUnique(OPTIONAL_PLUGIN_LIBS = 'HDDM')
 	Add_xstream(env)
 
 ##################################
@@ -593,13 +599,13 @@ def AddDANA(env):
 	AddEVIO(env)
 	AddET(env)
 	AddMySQL(env)   # needed for EventStore
-	#AddCODAChannels(env)
 	DANA_LIBS  = "DANA ANALYSIS KINFITTER PID TAGGER TRACKING START_COUNTER"
 	DANA_LIBS += " CERE DIRC CDC TRIGGER PAIR_SPECTROMETER RF"
 	DANA_LIBS += " FDC TOF BCAL FCAL CCAL TPOL HDGEOMETRY TTAB FMWPC"
 	DANA_LIBS += " DAQ JANA EVENTSTORE"
 	DANA_LIBS += " expat"
 	env.PrependUnique(LIBS = DANA_LIBS.split())
+	env.PrependUnique(OPTIONAL_PLUGIN_LIBS = DANA_LIBS.split())
 
 ##################################
 # xstream
@@ -608,6 +614,7 @@ def Add_xstream(env):
 	env.AppendUnique(CPPPATH = ['#external/xstream/include'])
 	env.AppendUnique(CCFLAGS = ['-fPIC'])
 	env.AppendUnique(LIBS=['xstream', 'bz2', 'z'])
+	env.AppendUnique(OPTIONAL_PLUGIN_LIBS = ['xstream', 'bz2', 'z'])
 
 
 ##################################
@@ -653,6 +660,7 @@ def AddEVIO(env):
 		env.AppendUnique(CPPPATH = ['%s/include' % evioroot])
 		env.AppendUnique(LIBPATH = ['%s/lib' % evioroot])
 		env.AppendUnique(LIBS=['evioxx', 'evio', 'expat'])
+		env.AppendUnique(OPTIONAL_PLUGIN_LIBS = ['evioxx', 'evio', 'expat'])
 		AddET(env)
 
 
@@ -668,6 +676,7 @@ def AddET(env):
 		env.AppendUnique(CPPPATH = ['%s/include' % etroot])
 		env.AppendUnique(LIBPATH = ['%s/lib' % etroot])
 		env.AppendUnique(LIBS=['et_remote', 'et'])
+		env.AppendUnique(OPTIONAL_PLUGIN_LIBS = ['et_remote', 'et'])
 
 
 ##################################
@@ -774,9 +783,20 @@ def AddROOT(env):
 	if "ROOT_CFLAGS" not in AddROOT.__dict__:
 		AddROOT.ROOT_CFLAGS    = subprocess.Popen(["%s/bin/root-config" % rootsys, "--cflags"], stdout=subprocess.PIPE).communicate()[0]
 		AddROOT.ROOT_LINKFLAGS = subprocess.Popen(["%s/bin/root-config" % rootsys, "--glibs" ], stdout=subprocess.PIPE).communicate()[0]
+		has_tmva = subprocess.Popen(["%s/bin/root-config" % rootsys, "--has-tmva" ], stdout=subprocess.PIPE).communicate()[0]
+		if 'yes' in has_tmva:
+			AddROOT.ROOT_CFLAGS    += ' -DHAVE_TMVA=1'
+			AddROOT.ROOT_LINKFLAGS += ' -lTMVA'
 
 	AddCompileFlags(env, AddROOT.ROOT_CFLAGS)
 	AddLinkFlags(env, AddROOT.ROOT_LINKFLAGS)
+
+	if env['OSNAME'].startswith("Darwin_macosx"):
+		if "llvm" in env['OSNAME']:
+			AddLinkFlags(env, '-rpath '+rootsys+'/lib')
+		else:
+			AddLinkFlags(env, '-Wl,-rpath,'+rootsys+'/lib')
+
 	env.AppendUnique(LIBS = "Geom")
 	if os.getenv('LD_LIBRARY_PATH'  ) != None : env.Append(LD_LIBRARY_PATH   = os.environ['LD_LIBRARY_PATH'  ])
 	if os.getenv('DYLD_LIBRARY_PATH') != None : env.Append(DYLD_LIBRARY_PATH = os.environ['DYLD_LIBRARY_PATH'])
@@ -900,6 +920,7 @@ def AddROOTSpyMacros(env):
 		if(int(env['SHOWBUILD'])>1) : print "       ROOTSpy Macro for %s" % f
 
 	os.chdir(curpath)
+
 
 ##################################
 # SWIG

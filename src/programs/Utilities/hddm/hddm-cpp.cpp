@@ -1320,6 +1320,7 @@ int main(int argC, char* argV[])
    "      else {\n"
    "         if (MY(next_start) > 0) {\n"
    "            m_istr.seekg(MY(next_start), std::ios_base::beg);\n"
+   "            MY(istr)->clear();\n"
    "            MY(last_start) = MY(next_start);\n"
    "            MY(last_offset) = 0;\n"
    "            MY(next_start) = 0;\n"

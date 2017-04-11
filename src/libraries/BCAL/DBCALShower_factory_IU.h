@@ -15,6 +15,7 @@
 using namespace jana;
 
 #include "BCAL/DBCALShower.h"
+#include "BCAL/DBCALGeometry.h"
 
 #include "TH2F.h"
 #include <DMatrixDSym.h>
@@ -34,6 +35,7 @@ private:
   
   jerror_t evnt(JEventLoop *loop, uint64_t eventnumber);
   jerror_t brun(JEventLoop *loop, int32_t runnumber);
+  jerror_t erun(void);
   //jerror_t CreateCovarianceMatrix();
 
   int VERBOSE;
@@ -49,6 +51,8 @@ private:
   double exponential_param2;
 
   double m_zTarget;
+
+  const DBCALGeometry *dBCALGeom;
 
 };
 

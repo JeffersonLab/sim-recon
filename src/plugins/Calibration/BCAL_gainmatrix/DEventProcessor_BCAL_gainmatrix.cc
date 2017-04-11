@@ -15,6 +15,7 @@
 #include "BCAL/DBCALCluster.h"
 #include "BCAL/DBCALPoint.h"
 #include "PID/DVertex.h"
+#include "TRIGGER/DTrigger.h"
 
 #include <vector>
 #include <deque>
@@ -145,6 +146,12 @@ jerror_t DEventProcessor_BCAL_gainmatrix::evnt(jana::JEventLoop* locEventLoop, u
 
 	// DOCUMENTATION:
 	// ANALYSIS library: https://halldweb1.jlab.org/wiki/index.php/GlueX_Analysis_Software
+
+        // select events with physics events, i.e., not LED and other front panel triggers
+        const DTrigger* locTrigger = NULL; 
+	locEventLoop->GetSingle(locTrigger); 
+	if(locTrigger->Get_L1FrontPanelTriggerBits() != 0) 
+	  return NOERROR;
 
 	vector<const DBCALShower*> locBCALShowers;
 	vector<const DBCALCluster*> locBCALClusters;

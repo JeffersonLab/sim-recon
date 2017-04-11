@@ -20,6 +20,8 @@ using namespace std;
 #include <TVector3.h>
 #include <TH2.h>
 
+int32_t RUN_NUMBER = 30000;
+
 int Nr = 81;
 int Nphi = 1;
 int Nz = 401;
@@ -37,7 +39,7 @@ double Z0 = 0.0;
 bool INCLUDE_GRADIENTS = false;
 
 void Usage(void);
-void ParseCommandLineArgs(int narg, char* argv[]);
+void ParseCommandLineArgs(int narg, char* argv[], vector<char*> &unused_args);
 
 //-----------
 // main
@@ -46,8 +48,16 @@ int main(int narg, char *argv[])
 {
 
 	// Parse command line arguments and then create a DApplication
-	ParseCommandLineArgs(narg, argv);
-	DApplication *dapp = new DApplication(narg, argv);
+	vector<char*> unused_args;
+	ParseCommandLineArgs(narg, argv, unused_args);
+
+	if( !unused_args.empty() ){
+		cout << "The following arguments will be passed to DApplication:" << endl;
+		for(auto a : unused_args) cout << "   " << a << endl;
+		cout << endl;
+	}
+
+	DApplication *dapp = new DApplication(unused_args.size(), unused_args.empty() ? NULL:&unused_args[0]);
 	dapp->Init();
 
 	// open ROOT file
@@ -57,7 +67,7 @@ int main(int narg, char *argv[])
 	cout<<"Opened ROOT file \"bfield.root\""<<endl;
 
 	// Have Dapplication create Magnetic Field Map
-	DMagneticFieldMap *bfield = dapp->GetBfield();
+	DMagneticFieldMap *bfield = dapp->GetBfield(RUN_NUMBER);
 
 	// Create Tree
 	TTree *tree = new TTree("Bfield","Magnetic Field");
@@ -253,6 +263,7 @@ void Usage(void)
 	cout<<endl;
 	cout<<" options:"<<endl;
 	cout<<"    -h, --help   Show this Usage statement"<<endl;
+	cout<<"    -R      #    Set the run number to use when accessing field map"<<endl;
 	cout<<"    -Nr     #    Set the number of grid points in R"<<endl;
 	cout<<"    -Nphi   #    Set the number of grid points in Phi"<<endl;
 	cout<<"    -Nz     #    Set the number of grid points in Z"<<endl;
@@ -284,8 +295,10 @@ void Usage(void)
 //-----------------------
 // ParseCommandLineArgs
 //-----------------------
-void ParseCommandLineArgs(int narg, char* argv[])
+void ParseCommandLineArgs(int narg, char* argv[], vector<char*> &unused_args)
 {
+	unused_args.push_back(argv[0]);
+
 	for(int i=1; i<narg; i++){
 		string arg(argv[i]);
 		string next(i<narg-1 ? argv[i+1]:"");
@@ -293,20 +306,21 @@ void ParseCommandLineArgs(int narg, char* argv[])
 		int   argi = atoi(next.c_str());
 		bool used_next = false; // keep track if "next" is used so we can have a single error check below
 		
-		if(arg=="-Nr"){used_next=true; Nr = argi;}
-		if(arg=="-Nphi"){used_next=true; Nphi = argi;}
-		if(arg=="-Nz"){used_next=true; Nz = argi;}
-		if(arg=="-Rmin"){used_next=true; Rmin = argf;}
-		if(arg=="-Rmax"){used_next=true; Rmax = argf;}
-		if(arg=="-Phimin"){used_next=true; Phimin = argf;}
-		if(arg=="-Phimax"){used_next=true; Phimax = argf;}
-		if(arg=="-Zmin"){used_next=true; Zmin = argf;}
-		if(arg=="-Zmax"){used_next=true; Zmax = argf;}
-		if(arg=="-Z0"){used_next=true; Z0 = argf;}
-		if(arg=="-G"){INCLUDE_GRADIENTS=true;}
-		
 		if(arg=="-h" || arg=="--help"){Usage(); exit(0);}
-		
+		else if(arg=="-R"     ){used_next=true; RUN_NUMBER = argi;}
+		else if(arg=="-Nr"    ){used_next=true; Nr = argi;}
+		else if(arg=="-Nphi"  ){used_next=true; Nphi = argi;}
+		else if(arg=="-Nz"    ){used_next=true; Nz = argi;}
+		else if(arg=="-Rmin"  ){used_next=true; Rmin = argf;}
+		else if(arg=="-Rmax"  ){used_next=true; Rmax = argf;}
+		else if(arg=="-Phimin"){used_next=true; Phimin = argf;}
+		else if(arg=="-Phimax"){used_next=true; Phimax = argf;}
+		else if(arg=="-Zmin"  ){used_next=true; Zmin = argf;}
+		else if(arg=="-Zmax"  ){used_next=true; Zmax = argf;}
+		else if(arg=="-Z0"    ){used_next=true; Z0 = argf;}
+		else if(arg=="-G"     ){INCLUDE_GRADIENTS=true;}
+		else{ unused_args.push_back(argv[i]); }
+
 		if(used_next){
 			// skip to next argument
 			i++;

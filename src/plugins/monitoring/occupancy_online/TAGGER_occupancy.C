@@ -1,4 +1,30 @@
-
+//
+// Guidance: --------------------------------------------
+//
+// This shows the tagger microscope (top) and hodoscope(bottom)
+// occupancies.
+//
+// Please note that for amorphous radiator running there will be
+// 3 channels in the upper plot of fADC values around colun 82
+// that are nearly twice as high as its neighbors. This effect
+// is not as pronounced for the diamond radiator which is shown
+// in the reference plot. This is expected and should be ignored.
+//
+// For all other issues contact:
+//
+//  Alex Barnes - microscope: <see white board>
+//
+//  Nathan Sparks - hodoscope: <see white board>
+//
+//  Run Coordinator:  (757) 383-5542
+//
+//  David Lawrence:   x5567    (office)
+//                    746-6697 (cell)
+//                    595-1302 (home)
+//
+// End Guidance: ----------------------------------------
+//
+//
 // The following are special comments used by RootSpy to know
 // which histograms to fetch for the macro.
 //

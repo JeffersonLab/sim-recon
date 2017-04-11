@@ -4,9 +4,12 @@
 // hnamepath: /Independent/Hist_DetectorMatching/TimeBased/FCAL/PVsTheta_NoHit
 // hnamepath: /Independent/Hist_DetectorMatching/TimeBased/FCAL/TrackFCALRowVsColumn_HasHit
 // hnamepath: /Independent/Hist_DetectorMatching/TimeBased/FCAL/TrackFCALRowVsColumn_NoHit
-
+// hnamepath: /Independent/Hist_DetectorMatching/TimeBased/FCAL/TrackFCALP_HasHit
+// hnamepath: /Independent/Hist_DetectorMatching/TimeBased/FCAL/TrackFCALP_NoHit
+// hnamepath: /Independent/Hist_DetectorMatching/TimeBased/FCAL/TrackFCALR_HasHit
+// hnamepath: /Independent/Hist_DetectorMatching/TimeBased/FCAL/TrackFCALR_NoHit
 {
-	double locMinNumCountsForRatio = 20.0;
+	double locMinNumCountsForRatio = 50.0;
 
 	//Goto Path
 	TDirectory *locDirectory = (TDirectory*)gDirectory->FindObjectAny("Hist_DetectorMatching");
@@ -22,6 +25,22 @@
 	TH2I* locHist_PVsTheta_NoHit_FCAL = (TH2I*)gDirectory->Get("PVsTheta_NoHit");
 	TH2I* locHist_TrackFCALRowVsColumn_HasHit_FCAL = (TH2I*)gDirectory->Get("TrackFCALRowVsColumn_HasHit");
 	TH2I* locHist_TrackFCALRowVsColumn_NoHit_FCAL = (TH2I*)gDirectory->Get("TrackFCALRowVsColumn_NoHit");
+	TH1I* locHist_TrackFCALP_HasHit_FCAL = (TH1I*)gDirectory->Get("TrackFCALP_HasHit");
+	TH1I* locHist_TrackFCALP_NoHit_FCAL = (TH1I*)gDirectory->Get("TrackFCALP_NoHit");
+	TH1I* locHist_TrackFCALR_HasHit_FCAL = (TH1I*)gDirectory->Get("TrackFCALR_HasHit");
+	TH1I* locHist_TrackFCALR_NoHit_FCAL = (TH1I*)gDirectory->Get("TrackFCALR_NoHit");
+
+	//Get original pad margins
+	double locLeftPadMargin = gStyle->GetPadLeftMargin();
+	double locRightPadMargin = gStyle->GetPadRightMargin();
+	double locTopPadMargin = gStyle->GetPadTopMargin();
+	double locBottomPadMargin = gStyle->GetPadBottomMargin();
+
+	//Set new pad margins
+	gStyle->SetPadLeftMargin(0.15);
+	gStyle->SetPadRightMargin(0.15);
+//	gStyle->SetPadTopMargin(locTopPadMargin);
+//	gStyle->SetPadBottomMargin(locBottomPadMargin);
 
 	//FCAL, by element (1 plot)
 	//Get/Make Canvas
@@ -30,7 +49,7 @@
 		locCanvas = new TCanvas("Matching_FCAL", "Matching_FCAL", 1200, 800);
 	else
 		locCanvas = gPad->GetCanvas();
-	locCanvas->Divide(2, 2);
+	locCanvas->Divide(3, 2);
 
 	//Draw
 	locCanvas->cd(1);
@@ -39,11 +58,14 @@
 	if(locHist_FCAL_TrackDistanceVsP != NULL)
 	{
 		locHist_FCAL_TrackDistanceVsP->Rebin2D(2, 2);
+		locHist_FCAL_TrackDistanceVsP->GetYaxis()->SetTitleOffset(1.3);
 		locHist_FCAL_TrackDistanceVsP->GetXaxis()->SetTitleSize(0.05);
 		locHist_FCAL_TrackDistanceVsP->GetYaxis()->SetTitleSize(0.05);
 		locHist_FCAL_TrackDistanceVsP->GetXaxis()->SetLabelSize(0.05);
 		locHist_FCAL_TrackDistanceVsP->GetYaxis()->SetLabelSize(0.05);
 		locHist_FCAL_TrackDistanceVsP->Draw("COLZ");
+		TF1* locFunc = new TF1("FCAL_LCut_VsP", "4.5", 0.0, 10.0);
+		locFunc->Draw("SAME");
 	}
 
 	locCanvas->cd(2);
@@ -52,11 +74,14 @@
 	if(locHist_FCAL_TrackDistanceVsTheta != NULL)
 	{
 		locHist_FCAL_TrackDistanceVsTheta->Rebin2D(2, 2);
+		locHist_FCAL_TrackDistanceVsTheta->GetYaxis()->SetTitleOffset(1.3);
 		locHist_FCAL_TrackDistanceVsTheta->GetXaxis()->SetTitleSize(0.05);
 		locHist_FCAL_TrackDistanceVsTheta->GetYaxis()->SetTitleSize(0.05);
 		locHist_FCAL_TrackDistanceVsTheta->GetXaxis()->SetLabelSize(0.05);
 		locHist_FCAL_TrackDistanceVsTheta->GetYaxis()->SetLabelSize(0.05);
 		locHist_FCAL_TrackDistanceVsTheta->Draw("COLZ");
+		TF1* locFunc = new TF1("FCAL_LCut_VsTheta", "4.5", 0.0, 20.0);
+		locFunc->Draw("SAME");
 	}
 
 	locCanvas->cd(3);
@@ -98,7 +123,7 @@
 		}
 		locAcceptanceHist->SetEntries(locMissingHist->GetEntries() + locFoundHist->GetEntries());
 		locAcceptanceHist->SetStats(kFALSE);
-
+		locAcceptanceHist->GetYaxis()->SetTitleOffset(1.3);
 		locAcceptanceHist->GetXaxis()->SetTitleSize(0.05);
 		locAcceptanceHist->GetYaxis()->SetTitleSize(0.05);
 		locAcceptanceHist->GetXaxis()->SetLabelSize(0.05);
@@ -114,7 +139,7 @@
 		TH2I* locFoundHist = locHist_TrackFCALRowVsColumn_HasHit_FCAL;
 		TH2I* locMissingHist = locHist_TrackFCALRowVsColumn_NoHit_FCAL;
 		string locHistName = string(locFoundHist->GetName()) + string("_Acceptance");
-		string locHistTitle = string("Track / FCAL Match Rate;") + string(locFoundHist->GetXaxis()->GetTitle()) + string(";") + string(locFoundHist->GetYaxis()->GetTitle());
+		string locHistTitle = string("FCAL Match Rate (p > 1 GeV/c);") + string(locFoundHist->GetXaxis()->GetTitle()) + string(";") + string(locFoundHist->GetYaxis()->GetTitle());
 		TH2D* locAcceptanceHist = new TH2D(locHistName.c_str(), locHistTitle.c_str(), locFoundHist->GetNbinsX(), locFoundHist->GetXaxis()->GetXmin(), locFoundHist->GetXaxis()->GetXmax(), locFoundHist->GetNbinsY(), locFoundHist->GetYaxis()->GetXmin(), locFoundHist->GetYaxis()->GetXmax());
 		for(Int_t loc_m = 1; loc_m <= locFoundHist->GetNbinsX(); ++loc_m)
 		{
@@ -142,12 +167,102 @@
 		}
 		locAcceptanceHist->SetEntries(locMissingHist->GetEntries() + locFoundHist->GetEntries());
 		locAcceptanceHist->SetStats(kFALSE);
-
+		locAcceptanceHist->GetYaxis()->SetTitleOffset(1.3);
 		locAcceptanceHist->GetXaxis()->SetTitleSize(0.05);
 		locAcceptanceHist->GetYaxis()->SetTitleSize(0.05);
 		locAcceptanceHist->GetXaxis()->SetLabelSize(0.05);
 		locAcceptanceHist->GetYaxis()->SetLabelSize(0.05);
 		locAcceptanceHist->Draw("COLZ");
 	}
+
+	locCanvas->cd(5);
+	gPad->SetTicks();
+	gPad->SetGrid();
+	if((locHist_TrackFCALP_HasHit_FCAL != NULL) && (locHist_TrackFCALP_NoHit_FCAL != NULL))
+	{
+		TH1I* locFoundHist = locHist_TrackFCALP_HasHit_FCAL;
+		locFoundHist->Rebin(4);
+		TH1I* locMissingHist = locHist_TrackFCALP_NoHit_FCAL;
+		locMissingHist->Rebin(4);
+
+		string locHistName = string(locFoundHist->GetName()) + string("_Acceptance");
+		string locHistTitle = string("Track / FCAL Match Rate;") + string(locFoundHist->GetXaxis()->GetTitle());
+		TH1D* locAcceptanceHist = new TH1D(locHistName.c_str(), locHistTitle.c_str(), locFoundHist->GetNbinsX(), locFoundHist->GetXaxis()->GetXmin(), locFoundHist->GetXaxis()->GetXmax());
+		for(Int_t loc_m = 1; loc_m <= locFoundHist->GetNbinsX(); ++loc_m)
+		{
+			double locNumMissing = locMissingHist->GetBinContent(loc_m);
+			double locNumFound = locFoundHist->GetBinContent(loc_m);
+			double locTotal = locNumMissing + locNumFound;
+			if(!(locTotal >= locMinNumCountsForRatio))
+			{
+				locAcceptanceHist->SetBinContent(loc_m, 0.0);
+				locAcceptanceHist->SetBinError(loc_m, 0.0);
+				continue;
+			}
+
+			double locAcceptance = locNumFound/locTotal;
+			locAcceptanceHist->SetBinContent(loc_m, locAcceptance);
+			double locNumFoundError = sqrt(locNumFound*(1.0 - locAcceptance));
+
+			double locAcceptanceError = locNumFoundError/locTotal;
+			locAcceptanceHist->SetBinError(loc_m, locAcceptanceError);
+		}
+		locAcceptanceHist->SetEntries(locMissingHist->GetEntries() + locFoundHist->GetEntries());
+		locAcceptanceHist->SetStats(kFALSE);
+
+		locAcceptanceHist->GetXaxis()->SetTitleSize(0.05);
+		locAcceptanceHist->GetYaxis()->SetTitleSize(0.05);
+		locAcceptanceHist->GetXaxis()->SetLabelSize(0.05);
+		locAcceptanceHist->GetYaxis()->SetLabelSize(0.05);
+		locAcceptanceHist->Draw("E1");
+	}
+
+	locCanvas->cd(6);
+	gPad->SetTicks();
+	gPad->SetGrid();
+	if((locHist_TrackFCALR_HasHit_FCAL != NULL) && (locHist_TrackFCALR_NoHit_FCAL != NULL))
+	{
+		TH1I* locFoundHist = locHist_TrackFCALR_HasHit_FCAL;
+		locFoundHist->Rebin(2);
+		TH1I* locMissingHist = locHist_TrackFCALR_NoHit_FCAL;
+		locMissingHist->Rebin(2);
+
+		string locHistName = string(locFoundHist->GetName()) + string("_Acceptance");
+		string locHistTitle = string("FCAL Match Rate (p > 1 GeV/c);") + string(locFoundHist->GetXaxis()->GetTitle());
+		TH1D* locAcceptanceHist = new TH1D(locHistName.c_str(), locHistTitle.c_str(), locFoundHist->GetNbinsX(), locFoundHist->GetXaxis()->GetXmin(), locFoundHist->GetXaxis()->GetXmax());
+		for(Int_t loc_m = 1; loc_m <= locFoundHist->GetNbinsX(); ++loc_m)
+		{
+			double locNumMissing = locMissingHist->GetBinContent(loc_m);
+			double locNumFound = locFoundHist->GetBinContent(loc_m);
+			double locTotal = locNumMissing + locNumFound;
+			if(!(locTotal >= locMinNumCountsForRatio))
+			{
+				locAcceptanceHist->SetBinContent(loc_m, 0.0);
+				locAcceptanceHist->SetBinError(loc_m, 0.0);
+				continue;
+			}
+
+			double locAcceptance = locNumFound/locTotal;
+			locAcceptanceHist->SetBinContent(loc_m, locAcceptance);
+			double locNumFoundError = sqrt(locNumFound*(1.0 - locAcceptance));
+
+			double locAcceptanceError = locNumFoundError/locTotal;
+			locAcceptanceHist->SetBinError(loc_m, locAcceptanceError);
+		}
+		locAcceptanceHist->SetEntries(locMissingHist->GetEntries() + locFoundHist->GetEntries());
+		locAcceptanceHist->SetStats(kFALSE);
+
+		locAcceptanceHist->GetXaxis()->SetTitleSize(0.05);
+		locAcceptanceHist->GetYaxis()->SetTitleSize(0.05);
+		locAcceptanceHist->GetXaxis()->SetLabelSize(0.05);
+		locAcceptanceHist->GetYaxis()->SetLabelSize(0.05);
+		locAcceptanceHist->Draw("E1");
+	}
+
+	//Reset original pad margins
+	gStyle->SetPadLeftMargin(locLeftPadMargin);
+	gStyle->SetPadRightMargin(locRightPadMargin);
+	gStyle->SetPadTopMargin(locTopPadMargin);
+	gStyle->SetPadBottomMargin(locBottomPadMargin);
 }
 

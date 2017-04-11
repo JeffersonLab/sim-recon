@@ -9,15 +9,11 @@ using namespace jana;
 
 #include "BCAL/DBCALPoint_factory.h"
 #include "BCAL/DBCALHit.h"
+#include "BCAL/DBCALGeometry.h"
 
 #include "DANA/DApplication.h"
 
 #include "units.h"
-
-/// temp
-//static const int BCAL_NUM_MODULES  = 48;
-//static const int BCAL_NUM_LAYERS   =  4;
-//static const int BCAL_NUM_SECTORS  =  4;
 
 
 //----------------
@@ -38,6 +34,13 @@ jerror_t DBCALPoint_factory::brun(JEventLoop *loop, int32_t runnumber) {
   DApplication* app = dynamic_cast<DApplication*>(loop->GetJApplication());
   DGeometry* geom = app->GetDGeometry(runnumber);
   geom->GetTargetZ(m_z_target_center);
+
+  // load BCAL geometry
+  vector<const DBCALGeometry *> BCALGeomVec;
+  loop->Get(BCALGeomVec);
+  if(BCALGeomVec.size() == 0)
+	throw JException("Could not load DBCALGeometry object!");
+  m_BCALGeom = BCALGeomVec[0];
 
   if(print_messages) jout << "in DBCALPoint_factory, loading constants ..." << endl;
 
@@ -111,10 +114,10 @@ jerror_t DBCALPoint_factory::evnt(JEventLoop *loop, uint64_t eventnumber) {
     
     const DBCALUnifiedHit& hit = (**hitPtr);
     
-    int id = DBCALGeometry::cellId( hit.module, hit.layer, hit.sector );
+    int id = m_BCALGeom->cellId( hit.module, hit.layer, hit.sector );
 
     // Add hit to appropriate list for this cell
-    if(hit.end == DBCALGeometry::kUpstream){
+    if(hit.end == m_BCALGeom->kUpstream){
       cellHitMap[id].uphits.push_back( *hitPtr );
     }else{
       cellHitMap[id].dnhits.push_back( *hitPtr );
@@ -152,11 +155,11 @@ jerror_t DBCALPoint_factory::evnt(JEventLoop *loop, uint64_t eventnumber) {
 
     // first check that the hits don't have absurd timing information
 
-    //int id = DBCALGeometry::cellId( uphit->module, uphit->layer, uphit->sector );  // key the cell identification off of the upstream cell
+    //int id = m_BCALGeom->cellId( uphit->module, uphit->layer, uphit->sector );  // key the cell identification off of the upstream cell
     int table_id = GetCalibIndex( uphit->module, uphit->layer, uphit->sector );  // key the cell identification off of the upstream cell
 
-    float fibLen = DBCALGeometry::GetBCAL_length();
-    //float cEff = DBCALGeometry::C_EFFECTIVE;    
+    float fibLen = m_BCALGeom->GetBCAL_length();
+    //float cEff = m_BCALGeom->C_EFFECTIVE;    
     float cEff = GetEffectiveVelocity(table_id);
 
     // get the position with respect to the center of the module -- positive
@@ -170,7 +173,7 @@ jerror_t DBCALPoint_factory::evnt(JEventLoop *loop, uint64_t eventnumber) {
 
     // pass attenuation length parameters to the DBCALPoint constructor, since
     // many of the calculations are implemented there
-    double attenuation_length = DBCALGeometry::ATTEN_LENGTH;
+    double attenuation_length = m_BCALGeom->ATTEN_LENGTH;
     double attenuation_L1=-1., attenuation_L2=-1.;  // these parameters are ignored for now
     GetAttenuationParameters(table_id, attenuation_length, attenuation_L1, attenuation_L2);
     // if (GetAttenuationParameters(id, attenuation_length, attenuation_L1, attenuation_L2)) {
@@ -186,7 +189,7 @@ jerror_t DBCALPoint_factory::evnt(JEventLoop *loop, uint64_t eventnumber) {
     double track_p2 = -100.0; // will be updated from GetTrackParameters (dimensions: cm/ns^2)
     GetTrackParameters(table_id, track_p0, track_p1, track_p2);
 
-    DBCALPoint *point = new DBCALPoint(*uphit,*dnhit,m_z_target_center,attenuation_length,cEff,track_p0,track_p1,track_p2);
+    DBCALPoint *point = new DBCALPoint(*uphit,*dnhit,m_z_target_center,attenuation_length,cEff,track_p0,track_p1,track_p2,m_BCALGeom);
 
     point->AddAssociatedObject(uphit);
     point->AddAssociatedObject(dnhit);

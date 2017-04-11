@@ -7,13 +7,17 @@
 
 #include <stdlib.h>
 #include <string.h>
+#include <libgen.h>
+#include <unistd.h>
+#include <cinttypes>
+using namespace std;
 
 #include "HDEVIO.h"
 
 //---------------------------------
 // HDEVIO    (Constructor)
 //---------------------------------
-HDEVIO::HDEVIO(string filename):filename(filename)
+HDEVIO::HDEVIO(string filename, bool read_map_file, int verbose):filename(filename),VERBOSE(verbose)
 {
 	// These must be initialized in case we return early
 	// so they aren't deleted in the destructor if they
@@ -56,7 +60,10 @@ HDEVIO::HDEVIO(string filename):filename(filename)
 	
 	NB_next_pos = 0;
 	
-	IGNORE_EMPTY_BOR = false;
+	if(read_map_file) ReadFileMap(); // check if a map file exists and read it if it does
+	
+	IGNORE_EMPTY_BOR   = false;
+	SKIP_EVENT_MAPPING = false;
 	
 	ifs.seekg(0, ios_base::end);
 	total_size_bytes = ifs.tellg();
@@ -740,7 +747,7 @@ void HDEVIO::MapBlocks(bool print_ticker)
 		}
 		
 		// Scan through and map all events within this block
-		MapEvents(bh, br);
+		if( !SKIP_EVENT_MAPPING ) MapEvents(bh, br);
 
 		// Add block to list
 		evio_blocks.push_back(br);
@@ -876,7 +883,7 @@ void HDEVIO::MapEvents(BLOCKHEADER_t &bh, EVIOBlockRecord &br)
 				if(er.last_event  > br.last_event ) br.last_event  = er.last_event;
 				break;
 			default:
-				_DBG_ << "Uknown tag: " << hex << tag << dec << endl;
+				if(VERBOSE>1) _DBG_ << "Uknown tag: " << hex << tag << dec << endl;
 		}
 		
 		br.evio_events.push_back(er);
@@ -1280,4 +1287,177 @@ void HDEVIO::PrintFileSummary(void)
 	cout << endl;
 }
 
+//------------------------
+// SaveFileMap
+//------------------------
+void HDEVIO::SaveFileMap(string fname)
+{
+	// Make sure file has been mapped
+	if(!is_mapped) MapBlocks();
+	
+	// Open output file
+	if(fname=="") fname = filename + ".map";
+	ofstream ofs(fname.c_str());
+	if(!ofs.is_open()){
+		cerr << "Unable to open \""<<fname<<"\" for writing!" << endl;
+		return;
+	}
+	
+	cout << "Writing EVIO file map to: " << fname << endl;
+	
+	char str[256];
+	time_t t = time(NULL);
+	struct tm *tmp = localtime(&t);
+	strftime(str, 255, "%c", tmp);
+	
+	ofs << "#" << endl;
+	ofs << "# HDEVIO block map for " << filename << endl;
+	ofs << "#" << endl;
+	ofs << "# generated " << str << endl;
+	ofs << "#" << endl;
+	ofs << "# " << endl;
+	ofs << "swap_needed: " << swap_needed << endl;
+	ofs << "--------- Start of block data --------" << endl;
+	ofs << "#  pos    block_len  first_evt last_evt block_type" << endl;
+	ofs << "#  + pos    evt_len  evt_header first_evt last_evt event_type" << endl;
+
+	for(auto br : evio_blocks){
+		char line[512];
+		sprintf(line, "0x%08x 0x%06x  %8" PRIu64 "  %8" PRIu64 "     %d", (uint32_t)br.pos, br.block_len, br.first_event, br.last_event, br.block_type);
+		ofs << line << endl;
+		
+		for(auto er : br.evio_events){
+			sprintf(line, "+ 0x%08x 0x%06x 0x%08x %8" PRIu64 " %8" PRIu64 " %d", (uint32_t)er.pos, er.event_len, er.event_header, er.first_event, er.last_event, er.event_type);
+			ofs << line << endl;
+		}
+	}
+	ofs << "# --- End of map ---" << endl;
+	// Close output file	
+	ofs.close();
+	
+	cout << "Done" << endl;
+}
+
+//------------------------
+// ReadFileMap
+//------------------------
+void HDEVIO::ReadFileMap(string fname, bool warn_if_not_found)
+{
+	// Open input file
+	if(VERBOSE>4) cout << " Attempting to read EVIO map file \"" << fname << "\" for \"" << filename << "\"" << endl;
+	if(fname=="") {
+		
+		// No map file name given. Form a list of potential ones
+		// in the order they should be checked.
+		string dname = ".";
+		string bname = filename;
+		auto pos = filename.find_last_of("/");
+		if(pos != string::npos){
+			dname = filename.substr(0, pos);
+			bname = filename.substr(pos+1, filename.size()-pos);
+		}
+
+		vector<string> fnames;
+		fnames.push_back(filename + ".map");
+		fnames.push_back(dname + "/filemaps/" + bname + ".map");
+		fnames.push_back(bname + ".map");
+		fnames.push_back(filename + ".bmap");
+		fnames.push_back(dname + "/filemaps/" + bname + ".bmap");
+		fnames.push_back(bname + ".bmap");
+		
+		// Loop over possible names until we find one that is readable
+		for(string f : fnames){
+			if(VERBOSE>2) cout << "Checking for EVIO map file: " << f << " ...";
+			if( access(f.c_str(), R_OK) != 0 ) {
+				if(VERBOSE>2) cout << "no" << endl;
+				continue;
+			}
+			if(VERBOSE>2)cout << "yes" << endl;
+			fname = f;
+			break;
+		}		
+	}
+	
+	if(fname=="") return;
+	
+	// Open map file
+	ifstream ifs(fname.c_str());
+	if(!ifs.is_open()){
+		if(warn_if_not_found) cerr << "Unable to open \""<<fname<<"\" for reading!" << endl;
+		return;
+	}
+
+	// Check if file was closed cleanly
+	string eof_string("# --- End of map ---");
+	ifs.seekg(-eof_string.length()*2, ifs.end); // not guaranteed how many char's endl is
+	bool closed_cleanly = false;
+	string line;
+	while(getline(ifs,line)){
+		if(string(line).find(eof_string)!=string::npos) closed_cleanly = true;
+	}
+	if(!closed_cleanly){
+		cerr << "Found map file \"" << fname << "\" but it wasn't closed cleanly. Ignoring." << endl;
+		ifs.close();
+		return;
+	}
+	
+	// Reset file pointers to start of file
+	ifs.clear();
+	ifs.seekg(0);
+	
+	// Loop over header
+	while(getline(ifs, line)){
+		
+		if(line.length() < 5   ) continue;
+		if(line.find("#") == 0 ) continue;
+		if(line.find("Start of block data") != string::npos) break;
+	}
+	
+	// Loop over body
+	EVIOBlockRecord br;
+	bool first_block_found = false;
+	string s;
+	while(getline(ifs, s)){
+		stringstream ss(s);
+		if(ss.str().find(eof_string) != string::npos ) break; // end of map trailer
+		if(ss.str().find("#") == 0 ) continue; // ignore all other comment lines
+		
+		if(ss.str().find("+") == 0 ){
+			// EVIO Event Record
+			string tmp;
+			uint64_t tmp64;
+			EVIOEventRecord er;
+			ss >> tmp; // '+"
+			ss << hex;
+			ss >> tmp64; er.pos = tmp64; // operator>> won't stream directly to streampos
+			ss >> er.event_len;
+			ss >> er.event_header;
+			ss << dec;
+			ss >> er.first_event;
+			ss >> er.last_event;
+			ss >> tmp64; er.event_type = (BLOCKTYPE)tmp64; // operator>> won't stream directly to BLOCKTYPE
+			br.evio_events.push_back(er);
+		}else{
+			// EVIO Block Record
+			if(first_block_found){
+				evio_blocks.push_back(br);
+			}else{
+				first_block_found = true;
+			}
+			br.evio_events.clear();
+			uint64_t tmp64;
+			ss << hex;
+			ss >> tmp64; br.pos = tmp64; // operator>> won't stream directly to streampos
+			ss >> br.block_len;
+			ss << dec;
+			ss >> br.first_event;
+			ss >> br.last_event;
+			ss >> tmp64; br.block_type = (BLOCKTYPE)tmp64; // operator>> won't stream directly to BLOCKTYPE
+		}
+	}
+	if(!br.evio_events.empty()) evio_blocks.push_back(br);
+	
+	is_mapped = true;
+	cout << "Read EVIO file map from: " << fname << endl;
+}
 

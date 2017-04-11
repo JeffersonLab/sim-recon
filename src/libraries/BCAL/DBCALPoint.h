@@ -10,6 +10,7 @@
 
 #include "BCAL/DBCALHit.h"
 #include "BCAL/DBCALUnifiedHit.h"
+#include "BCAL/DBCALGeometry.h"
 
 #include <JANA/JObject.h>
 #include <JANA/JFactory.h>
@@ -30,12 +31,16 @@ public:
   JOBJECT_PUBLIC(DBCALPoint);
   
   // this constructor uses two hits to obtain a local z position
-  DBCALPoint(const DBCALUnifiedHit& hit1, const DBCALUnifiedHit& hit2, double z_target_center, double attenutation_length, double c_effective, double track_p0, double track_p1, double track_p2);
+  DBCALPoint(const DBCALUnifiedHit& hit1, const DBCALUnifiedHit& hit2, double z_target_center, 
+  			 double attenutation_length, double c_effective, double track_p0, double track_p1, double track_p2, 
+  			 const DBCALGeometry *locGeom);
   
   float E() const { return m_E; }
   float E_US() const { return m_E_US; }  ///< Return the attenuation corrected Energy of US Hit
   float E_DS() const { return m_E_DS; }  ///< Return the attenuation corrected Energy of DS Hit
   float t() const { return m_t; }
+  float t_US() const { return m_t_US; }  ///< Return the time of US Hit
+  float t_DS() const { return m_t_DS; }  ///< Return the time of DS Hit
 
   // assuming a photon, this gives time at the inner radius of BCAL
   // by extrapolating back on path from center of cell to target
@@ -83,7 +88,9 @@ private:
   float m_E;                     ///< Energy of the Point used in higher objects
   float m_E_US;                  ///< Attenuation corrected Energy of US Hit that contributed to the Point
   float m_E_DS;                  ///< Attenuation corrected Energy of DS Hit that contributed to the Point
-  float m_t;
+  float m_t;                     ///< Arrival time
+  float m_t_US;                  ///< Time of DS Hit that contributed to the Point
+  float m_t_DS;                  ///< Time of DS Hit that contributed to the Point
 
   int m_module, m_layer, m_sector;
 
@@ -97,6 +104,8 @@ private:
   // spherical coordinate locations
   float m_rho, m_sig_rho;        ///< spherical distance wrt target center
   float m_theta, m_sig_theta;    ///< polar angle wrt target center
+  
+  const DBCALGeometry *m_BCALGeom;
 
 };
 

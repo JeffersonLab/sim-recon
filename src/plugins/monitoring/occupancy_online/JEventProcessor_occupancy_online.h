@@ -93,6 +93,14 @@ class JEventProcessor_occupancy_online:public jana::JEventProcessor{
 		TH1I *tof_adc_U_occ;
 		TH1I *tof_adc_D_occ;
 
+		//------------------------ DigiHits ------------------------
+		map<string,double> digihitbinmap; // bin number
+		map<string,double> digihitsclmap; // Scale number of hits by this (0 means don't scale)
+		TH2I *digihits_trig1;
+		TH2I *digihits_trig3;
+		TH2I *digihits_trig4;
+		TH2I *digihits_scale_factors;
+
 
 	private:
 		jerror_t init(void);

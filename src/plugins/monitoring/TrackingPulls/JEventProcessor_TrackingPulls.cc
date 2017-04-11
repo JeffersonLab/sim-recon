@@ -9,6 +9,7 @@
 #include "HistogramTools.h"
 #include "TRACKING/DTrackTimeBased.h"
 #include "PID/DChargedTrack.h"
+#include "TRIGGER/DTrigger.h"
 
 using namespace jana;
 
@@ -69,6 +70,11 @@ jerror_t JEventProcessor_TrackingPulls::evnt(JEventLoop *loop, uint64_t eventnum
    static uint32_t evntCount=0;
    evntCount++;
    // Loop over the tracks, get the tracking pulls, and fill some histograms. Easy peasy
+
+  const DTrigger* locTrigger = NULL; 
+  loop->GetSingle(locTrigger); 
+  if(locTrigger->Get_L1FrontPanelTriggerBits() != 0)
+    return NOERROR;
 
    vector<const DChargedTrack *> chargedTrackVector;
    loop->Get(chargedTrackVector);

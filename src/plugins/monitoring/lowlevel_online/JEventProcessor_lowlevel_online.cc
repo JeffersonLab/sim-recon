@@ -32,9 +32,11 @@ using namespace jana;
 #include <START_COUNTER/DSCTDCDigiHit.h>
 #include <TAGGER/DTAGMDigiHit.h>
 #include <TAGGER/DTAGMTDCDigiHit.h>
+#include "DAQ/DF1TDCHit.h"
 
 #include <FCAL/DFCALGeometry.h>
 #include "TTAB/DTTabUtilities.h"
+#include "TRIGGER/DTrigger.h"
 
 #include <map>
 
@@ -80,10 +82,13 @@ jerror_t JEventProcessor_lowlevel_online::init(void)
     F250_THRESHOLD = 0;
     F125_THRESHOLD = 0;
 
+    gPARMS->SetDefaultParameter("LOWLEVEL:MOREPLOTS", MORE_PLOTS, "Make more monitoring plots.");
+    gPARMS->SetDefaultParameter("LOWLEVEL:CHECKEMULATION", CHECK_EMULATED_DATA, "Make plots for checking emulation.");
     gPARMS->SetDefaultParameter("LOWLEVEL:INDIVIDUAL", INDIVIDUAL_CHANNEL_DATA, "Make histograms for individual channels.");
     gPARMS->SetDefaultParameter("LOWLEVEL:F250DATA", ANALYZE_F250_DATA, "Analyze f250ADC data");
     gPARMS->SetDefaultParameter("LOWLEVEL:F125DATA", ANALYZE_F125_DATA, "Analyze f125ADC data");
-    gPARMS->SetDefaultParameter("LOWLEVEL:F250THRESHOLD", ANALYZE_F125_DATA, "Analyze f125ADC data");
+    gPARMS->SetDefaultParameter("LOWLEVEL:F125THRESHOLD", F125_THRESHOLD, "Set threshold for accepting f125ADC hits (in ADC counts)");
+    gPARMS->SetDefaultParameter("LOWLEVEL:F250THRESHOLD", F250_THRESHOLD, "Set threshold for accepting f250ADC hits (in ADC counts)");
     
 	// Set a base directory
 	TDirectory *base = gDirectory;
@@ -525,6 +530,16 @@ jerror_t JEventProcessor_lowlevel_online::init(void)
         tof_num_events = new TH1I("tof_num_events", "TOF number of events", 1, 0.0, 1.0);
     }
 
+
+    //------------------------ F1TDC ------------------------
+
+    maindir->cd();
+    gDirectory->mkdir("F1TDC")->cd();
+
+    f1tdc_unlocked = new TH2I("f1tdc_unlocked", "F1TDC hits unlocked; ROC id; slot", 100, 0.5, 100.5, 20, 0.5, 20.5);
+    f1tdc_bad_output_fifo = new TH2I("f1tdc_bad_output_fifo", "F1TDC bad output FIFO; ROC id; slot", 100, 0.5, 100.5, 20, 0.5, 20.5);
+    f1tdc_bad_hit_fifo = new TH2I("f1tdc_bad_hit_fifo", "F1TDC bad hit FIFO; ROC id; slot", 100, 0.5, 100.5, 20, 0.5, 20.5);
+
 	// back to base dir
 	base->cd();
   
@@ -572,6 +587,16 @@ jerror_t JEventProcessor_lowlevel_online::evnt(JEventLoop *loop, uint64_t eventn
 	vector<const DTAGHDigiHit*>        taghdigihits;
 	vector<const DTAGHTDCDigiHit*>     taghtdcdigihits;
 	vector<const DTPOLSectorDigiHit*>  tpoldigihits;
+	vector<const DF1TDCHit*>           f1tdchits;
+
+	// ignore front panel triggers
+	const DTrigger* locTrigger = NULL; 
+	loop->GetSingle(locTrigger); 
+	if(locTrigger->Get_L1FrontPanelTriggerBits() != 0)
+	  return NOERROR;
+
+
+	// Get hit data
 	loop->Get(bcaldigihits);
 	loop->Get(bcaltdcdigihits);
 	loop->Get(cdcdigihits);
@@ -591,7 +616,8 @@ jerror_t JEventProcessor_lowlevel_online::evnt(JEventLoop *loop, uint64_t eventn
 	loop->Get(taghdigihits);
 	loop->Get(taghtdcdigihits);
 	loop->Get(tpoldigihits);
-
+	loop->Get(f1tdchits);
+	
     vector< const DFCALGeometry* > geomVec;
     loop->Get( geomVec );
     const DFCALGeometry& fcalGeom = *(geomVec[0]);
@@ -641,8 +667,10 @@ jerror_t JEventProcessor_lowlevel_online::evnt(JEventLoop *loop, uint64_t eventn
             bcal_adc_emudelta_coarsetime->Fill( pulse->course_time - pulse->course_time_emulated );
             bcal_adc_emudelta_finetime->Fill( pulse->fine_time - pulse->fine_time_emulated );
 
+            if(pulse->integral != pulse->integral_emulated)
+		    cout << "BCAL INTEGRAL: " << eventnumber << " " << pulse->rocid << " " << pulse->slot << " " << pulse->channel << endl;
             if(pulse->course_time != pulse->course_time_emulated)
-		    cout << "BCAL: " << eventnumber << " " << pulse->rocid << " " << pulse->slot << " " << pulse->channel << endl;
+		    cout << "BCAL TIMING: " << eventnumber << " " << pulse->rocid << " " << pulse->slot << " " << pulse->channel << endl;
 
             int ichan = 48*(hit->module-1) - 4*(hit->sector-1) + hit->layer;
             if(hit->end == DBCALGeometry::kUpstream)
@@ -683,8 +711,9 @@ jerror_t JEventProcessor_lowlevel_online::evnt(JEventLoop *loop, uint64_t eventn
 	// F1TDC
 	for(unsigned int i = 0; i < bcaltdcdigihits.size(); i++){
 		const DBCALTDCDigiHit *digihit = bcaltdcdigihits[i];
-		double t_tdc = locTTabUtilities->Convert_DigiTimeToNs_F1TDC(digihit);
-		bcal_tdc_time->Fill(t_tdc);
+		//double t_tdc = locTTabUtilities->Convert_DigiTimeToNs_F1TDC(digihit);
+		//bcal_tdc_time->Fill(t_tdc);
+        bcal_tdc_time->Fill(digihit->time);
 	}
 
 	//------------------------ FCAL -----------------------
@@ -720,9 +749,9 @@ jerror_t JEventProcessor_lowlevel_online::evnt(JEventLoop *loop, uint64_t eventn
             fcal_adc_emudelta_finetime->Fill( pulse->fine_time - pulse->fine_time_emulated );
 
             if( pulse->integral != pulse->integral_emulated )
-		    cout << "FCAL: " << eventnumber << " " << pulse->rocid << " " << pulse->slot << " " << pulse->channel << endl;
+		    cout << "FCAL INTEGRAL: " << eventnumber << " " << pulse->rocid << " " << pulse->slot << " " << pulse->channel << endl;
             if( pulse->course_time != pulse->course_time_emulated )
-		    cout << "FCAL: " << eventnumber << " " << pulse->rocid << " " << pulse->slot << " " << pulse->channel << endl;
+	            cout << "FCAL TIMING: " << eventnumber << " " << pulse->rocid << " " << pulse->slot << " " << pulse->channel << endl;
 
             int ichan = fcalGeom.channel( hit->row, hit->column );
             fcalhitmap[ichan].push_back(pulse);
@@ -791,9 +820,9 @@ jerror_t JEventProcessor_lowlevel_online::evnt(JEventLoop *loop, uint64_t eventn
             psc_adc_emudelta_finetime->Fill( pulse->fine_time - pulse->fine_time_emulated );
 
             if( pulse->integral != pulse->integral_emulated )
-		    cout << "PSC: " << eventnumber << " " << pulse->rocid << " " << pulse->slot << " " << pulse->channel << endl;
+		    cout << "PSC INTEGRAL: " << eventnumber << " " << pulse->rocid << " " << pulse->slot << " " << pulse->channel << endl;
             if( pulse->course_time != pulse->course_time_emulated )
-		    cout << "PSC: " << eventnumber << " " << pulse->rocid << " " << pulse->slot << " " << pulse->channel << endl;
+		    cout << "PSC TIMING: " << eventnumber << " " << pulse->rocid << " " << pulse->slot << " " << pulse->channel << endl;
         }
 
         if(INDIVIDUAL_CHANNEL_DATA) {
@@ -845,12 +874,12 @@ jerror_t JEventProcessor_lowlevel_online::evnt(JEventLoop *loop, uint64_t eventn
             ps_adc_emudelta_pedestal->Fill( pulse->pedestal - pulse->pedestal_emulated );
             ps_adc_emudelta_coarsetime->Fill( pulse->course_time - pulse->course_time_emulated );
             ps_adc_emudelta_finetime->Fill( pulse->fine_time - pulse->fine_time_emulated );
-
+ 
             if( pulse->integral != pulse->integral_emulated )
-		    cout << "PS: " << eventnumber << " " << pulse->rocid << " " << pulse->slot << " " << pulse->channel << endl;
+		    cout << "PS INTEGRAL: " << eventnumber << " " << pulse->rocid << " " << pulse->slot << " " << pulse->channel << endl;
             if( pulse->course_time != pulse->course_time_emulated )
-		    cout << "PS: " << eventnumber << " " << pulse->rocid << " " << pulse->slot << " " << pulse->channel << endl;
-        }
+		    cout << "PS TIMING: " << eventnumber << " " << pulse->rocid << " " << pulse->slot << " " << pulse->channel << endl;
+       }
 
         if(INDIVIDUAL_CHANNEL_DATA) {
             int ichan = hit->column-1 + 145*hit->arm;
@@ -902,6 +931,11 @@ jerror_t JEventProcessor_lowlevel_online::evnt(JEventLoop *loop, uint64_t eventn
             st_adc_emudelta_pedestal->Fill( pulse->pedestal - pulse->pedestal_emulated );
             st_adc_emudelta_coarsetime->Fill( pulse->course_time - pulse->course_time_emulated );
             st_adc_emudelta_finetime->Fill( pulse->fine_time - pulse->fine_time_emulated );
+
+            if( pulse->integral != pulse->integral_emulated )
+		    cout << "ST INTEGRAL: " << eventnumber << " " << pulse->rocid << " " << pulse->slot << " " << pulse->channel << endl;
+            if( pulse->course_time != pulse->course_time_emulated )
+		    cout << "ST TIMING: " << eventnumber << " " << pulse->rocid << " " << pulse->slot << " " << pulse->channel << endl;
         }
 
         if(INDIVIDUAL_CHANNEL_DATA) {
@@ -1164,6 +1198,23 @@ jerror_t JEventProcessor_lowlevel_online::evnt(JEventLoop *loop, uint64_t eventn
 		double t_tdc = locTTabUtilities->Convert_DigiTimeToNs_F1TDC(digihit);
 		fdc_tdc_time->Fill(t_tdc);		
 	}
+    }
+
+
+    //------------------------ FDC ------------------------
+    // first try, just keeping track of problems
+    for(uint32_t i=0; i<f1tdchits.size(); i++){
+      const DF1TDCHit *tdchit = f1tdchits[i];
+      
+      if(!tdchit->res_status) {
+        f1tdc_unlocked->Fill(tdchit->rocid, tdchit->slot);
+      }
+      if(!tdchit->res_status) {
+	f1tdc_bad_output_fifo->Fill(tdchit->rocid, tdchit->slot);
+      }
+      if(!tdchit->res_status) {
+	f1tdc_bad_hit_fifo->Fill(tdchit->rocid, tdchit->slot);
+      }
     }
 
 	japp->RootFillUnLock(this); //RELEASE ROOT FILL LOCK
