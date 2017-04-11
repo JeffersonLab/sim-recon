@@ -62,10 +62,11 @@ void daq_words_compare(string fname1="hd_rawdata_031000_001.root", string fname2
 	Int_t Nbins = daq_words_by_type1->GetNbinsX();
 	double Nword_tot1 = daq_words_by_type1->GetBinContent(Nbins-1);
 	double Nword_tot2 = daq_words_by_type2->GetBinContent(Nbins-1);
-	double Nevents   = daq_words_by_type1->GetBinContent(Nbins);
-	double Nunknown  = daq_words_by_type1->GetBinContent(2);
+	double Nevents1   = daq_words_by_type1->GetBinContent(Nbins);
+	double Nevents2   = daq_words_by_type2->GetBinContent(Nbins);
+	double Nunknown1  = daq_words_by_type1->GetBinContent(2);
 	double sum = 0;
-	for(int ibin=1; ibin<=Nbins; ibin++){
+	for(int ibin=1; ibin<=Nbins-2; ibin++){
 		
 		double x = daq_words_by_type1->GetXaxis()->GetBinCenter(ibin);
 		double Nwords = daq_words_by_type1->GetBinContent(ibin);
@@ -73,7 +74,7 @@ void daq_words_compare(string fname1="hd_rawdata_031000_001.root", string fname2
 		
 		if(Nwords == 0) continue;
 		
-		if(ibin < Nbins-2) sum += Nwords;
+		sum += Nwords;
 
 		char str[256];
 		sprintf(str, "%4.1f%%", percent);
@@ -93,16 +94,36 @@ void daq_words_compare(string fname1="hd_rawdata_031000_001.root", string fname2
 		latex.DrawLatex( x, ylab, str);
 	}
 	
+	// Print avg. event sizes
+	double event_size1 = Nword_tot1/Nevents1*4.0/1024.0;
+	double event_size2 = Nword_tot2/Nevents2*4.0/1024.0;
+	char es_str1[256];
+	char es_str2[256];
+	sprintf(es_str1, "%4.1f kB/evt", event_size1);
+	sprintf(es_str2, "%4.1f kB/evt", event_size2);
+	double x = daq_words_by_type1->GetXaxis()->GetBinCenter(Nbins-1);
+	double dx = daq_words_by_type1->GetXaxis()->GetBinWidth(1);
+	double y = pow(10.0, 0.55*(log10(mid)-log10(min)) + log10(mid));
+	latex.SetTextAlign(12);
+	latex.SetTextSize(0.020);
+	latex.SetTextColor(kBlue);
+	latex.DrawLatex( x-dx/1.5, y, es_str1);
+	latex.SetTextAlign(12);
+	latex.SetTextSize(0.020);
+	latex.SetTextColor(kRed);
+	latex.DrawLatex( x, y, es_str2);
+	
+	
 	double y_one_percent = 0.01*Nword_tot1;
-	TLine lin(0.0, y_one_percent, (double)Nbins, y_one_percent);
-	lin.SetLineColor(kMagenta);
-	lin.Draw();
+	TLine *lin = new TLine(0.0, y_one_percent, (double)Nbins, y_one_percent);
+	lin->SetLineColor(kMagenta);
+	lin->Draw();
 
 	cout << "            sum: " << sum << endl;
 	cout << "      Nword_tot: " << Nword_tot1 << endl;
 	cout << "        missing: " << (Nword_tot1-sum)/Nword_tot1*100.0 << "%" << endl;
-	cout << "     Event Size: " << (double)Nword_tot1/(double)Nevents*4.0/1024.0 << " kB/event" << endl;
-	cout << " Nunknown/event: " << (double)Nunknown/(double)Nevents << " bytes" << endl;
+	cout << "     Event Size: " << (double)Nword_tot1/(double)Nevents1*4.0/1024.0 << " kB/event" << endl;
+	cout << " Nunknown/event: " << (double)Nunknown1/(double)Nevents1 << " bytes" << endl;
 
 	latex.SetTextAngle(0);
 	latex.SetTextAlign(11);

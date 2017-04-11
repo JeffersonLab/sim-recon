@@ -24,13 +24,11 @@ using std::string;
 #include <HDGEOMETRY/DMagneticFieldMapSpoiled.h>
 #include <HDGEOMETRY/DMagneticFieldMapParameterized.h>
 #include <HDGEOMETRY/DLorentzMapCalibDB.h>
-//#include "HDGEOMETRY/DMaterialMapCalibDB.h"
 #include <HDGEOMETRY/DRootGeom.h>
 #include "DFactoryGenerator.h"
 
 #include "DANARootErrorHandler.h"
 #include "DStatusBits.h"
-#include <DCalibrationGeneratorCCDB.h>
 
 
 //---------------------------------
@@ -60,9 +58,6 @@ DApplication::DApplication(int narg, char* argv[]):JApplication(narg, argv)
 		AddPluginPath(string(ptr) + "/" + sbms_osname + "/plugins");  // SBMS
 		AddPluginPath(string(ptr) + "/lib/" + sbms_osname);     // BMS
 	}
-	
-	//Register CCDB calibration generator
-	AddCalibrationGenerator(new DCalibrationGeneratorCCDB());
 	
 	// Initialize pointers to NULL. Objects will be instantiated as needed
 	bfield = NULL;

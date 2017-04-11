@@ -80,8 +80,28 @@ jerror_t DBCALShower_factory_IU::brun(JEventLoop *loop, int32_t runnumber) {
 	jerror_t result = LoadCovarianceLookupTables();
 	if (result!=NOERROR) return result;
 	
+	// load BCAL geometry
+  	vector<const DBCALGeometry *> BCALGeomVec;
+  	loop->Get(BCALGeomVec);
+  	if(BCALGeomVec.size() == 0)
+		throw JException("Could not load DBCALGeometry object!");
+	dBCALGeom = BCALGeomVec[0];
+	
   return NOERROR;
 }
+
+
+jerror_t DBCALShower_factory_IU::erun(void) {
+    // delete lookup tables to prevent memory leak
+	for (int i=0; i<5; i++) {
+		for (int j=0; j<=i; j++) {
+            delete CovarianceLookupTable[i][j];
+            CovarianceLookupTable[i][j] = nullptr;
+        }
+    }
+    return NOERROR;
+}
+
 
 jerror_t
 DBCALShower_factory_IU::evnt( JEventLoop *loop, uint64_t eventnumber ){
@@ -117,10 +137,15 @@ DBCALShower_factory_IU::evnt( JEventLoop *loop, uint64_t eventnumber ){
     //so we need to make an adjustment so that the shower t is the time at
     //the shower location (x,y,z)
     double t = (**clItr).t();
-    double inner_rad = DBCALGeometry::GetBCAL_inner_rad();
+    double inner_rad = dBCALGeom->GetBCAL_inner_rad();
     double dist_in_BCAL = rho - inner_rad/sinTh;
     t = t + dist_in_BCAL/(30*k_cm/k_nsec);
     shower->t = t;
+
+    // shower widths for further selection in REST
+    shower->sigLong = (**clItr).sigRho();
+    shower->sigTrans = (**clItr).sigPhi();
+    shower->sigTheta = (**clItr).sigTheta();
 
     shower->N_cell = (**clItr).nCells();
     

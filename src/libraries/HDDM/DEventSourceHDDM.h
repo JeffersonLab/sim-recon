@@ -36,6 +36,7 @@ using namespace std;
 #include "BCAL/DBCALTDCDigiHit.h"
 #include "BCAL/DBCALTruthShower.h"
 #include "BCAL/DBCALTruthCell.h"
+#include "BCAL/DBCALGeometry.h"
 #include "CDC/DCDCHit.h"
 #include "FDC/DFDCHit.h"
 #include "FCAL/DFCALTruthShower.h"
@@ -160,6 +161,8 @@ class DEventSourceHDDM:public JEventSource
 
       map<unsigned int, double> dTargetCenterZMap; //unsigned int is run number
       map<unsigned int, double> dBeamBunchPeriodMap; //unsigned int is run number
+
+	  const DBCALGeometry *dBCALGeom;
 
       JCalibration *jcalib;
       float uscale[192],vscale[192];
