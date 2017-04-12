@@ -95,10 +95,6 @@ void DVertexCreator::Do_All(JEventLoop* locEventLoop, const vector<const DReacti
 	//All combos: Decompose into vertices, group vertices by common final-state charged tracks
 	//That way, the following exercises (for charged tracks) are not repeated for combos that have similar vertices but different #gammas
 
-	//Setup:
-	//Pre-compute delta-t cuts between charged tracks (doesn't depend on vertex position)
-	//Delta-t cut width is sum of PID cut widths of the two tracks
-
 	//For each production vertex:
 	//Make all combos of charged particles that are in time
 	//Calculate vertex positions
@@ -109,69 +105,9 @@ void DVertexCreator::Do_All(JEventLoop* locEventLoop, const vector<const DReacti
 	//Split each vertex: in terms of Nphotons at vertex
 		//for each split: choose rf bunch, do PID cuts
 
-	//So, for each production vertex, must keep track of:
-	//possible-Nphots at vertex (when building)
-
 	//Channel-dependent:
 	//Fully-charged inv-mass cuts at that vertex
 	//for each remaining N_shifts (and the photons for them): neutral inv mass cuts
-
-	/*************************************************** CHARGED TRACK TIMING CUTS *************************************************
-	*
-	* Charged time cuts are dependent on combo vertex, especially for low-theta tracks.
-	* Wherever the combo vertex is, the track won't pass through it until after the kinfit, so do "final" PID cuts at the end
-	*
-	* Once we have a vertex for the combo, compute POCA to the vertex and do pre-kinfit time cuts there.
-	* This will be pretty accurate, except for slow-single-track channels at low-theta, for which there's nothing you can do anyway.
-	*
-	* We don't want to wait until we have a combo vertex to do some PID timing cuts, but unfortunately we have to.
-	* Since computing neutral timing every 10cm, we can try to do the same for charged tracks as well, but this doesn't work.
-	*
-	* The maximum error associated with this is:
-	*
-	* delta_t = t_prop_track - t_beam
-	* delta_delta_t = delta_t_actual - delta_t_guess
-	* delta_delta_t = (t_prop_track_actual - t_beam_actual) - (t_prop_track_guess - t_beam_guess)
-	* delta_delta_t = (t_prop_track_actual - t_prop_track_guess) - (t_beam_actual - t_beam_guess)
-	*
-	* t_prop_track = t_track - path_track/(beta_track*c)
-	* delta_delta_t = ((t_track - path_track_actual/(beta_track*c)) - (t_track - path_track_guess/(beta_track*c))) - (t_beam_actual - t_beam_guess)
-	* delta_delta_t = (path_track_guess - path_track_actual)/(beta_track*c) - (t_beam_actual - t_beam_guess)
-	*
-	* t_beam = t_RF_targcenter + (vertz - targz)/c
-	* delta_delta_t = (path_track_guess - path_track_actual)/(beta_track*c) - ((t_RF_targcenter + (vertz_actual - targz)/c) - (t_RF_targcenter + (vertz_guess - targz)/c))
-	* delta_delta_t = (path_track_guess - path_track_actual)/(beta_track*c) + (vertz_guess - vertz_actual)/c
-	*
-	* define z_error = vertz_actual - vertz_guess
-	* delta_delta_t = (path_track_guess - path_track_actual)/(beta_track*c) - z_error/c
-	*
-	* From here, assume track is straight over the distance z_error/2:
-	*
-	* FCAL:
-	* path_track_guess = path_z_guess/cos(theta)
-	* path_track_actual = path_z_actual/cos(theta), path_z_actual = path_z_guess - z_error
-	* path_track_guess - path_track_actual = path_z_guess/cos(theta) - (path_z_guess - z_error)/cos(theta) = z_error/cos(theta)
-	* delta_delta_t = z_error/(cos(theta)*beta_track*c) - z_error/c
-	* delta_delta_t = (z_error/c) * [1/(cos(theta)*beta_track) - 1]
-	*
-	* BCAL:
-	* path_track_guess = path_r/sin(theta)
-	* path_track_actual = sqrt(path_z_actual*path_z_actual + path_r*path_r)
-	* path_z_actual = path_z_guess - z_error
-	* path_z_guess = path_r/tan(theta)
-	* path_z_actual = path_r/tan(theta) - z_error
-	* path_track_actual = sqrt((path_r/tan(theta) - z_error)^2 + path_r*path_r)
-	* path_track_actual = path_r*sqrt((1/tan(theta) - z_error/path_r)^2 + 1)
-	* delta_delta_t = path_r*(1/sin(theta) - sqrt((1/tan(theta) - z_error/path_r)^2 + 1))/(beta_track*c) - z_error/c
-	*
-	* These errors are too large:
-	* For slow tracks the errors are huge, and for fast tracks the errors are small.
-	* However, for fast tracks the timing isn't good enough to tell one PID from another anyway.
-	* So this does not gain much.
-	*
-	* Instead, charged track timing cuts cannot be placed until the vertex position is found.
-	*
-	*******************************************************************************************************************************/
 
 	/**************************************************** COMBOING CHARGED TRACKS **************************************************
 	*
@@ -204,7 +140,7 @@ void DVertexCreator::Do_All(JEventLoop* locEventLoop, const vector<const DReacti
 	 * Loop over DReactions:
 	 * 1) Charged track comboing: All vertices
 	 * 2) Production vertex calculation
-	 * 3) Production vertex charged hypo RF bunch selection (time cuts)
+	 * 3) Production vertex charged hypo RF bunch selection (time cuts) //as you go!
 	 * 4) On-demand, vertex-z binned photon comboing
 	 * 5) Production vertex neutral RF bunch selection (time cuts)
 	 * 6) Final RF bunch vote
@@ -261,22 +197,6 @@ void DVertexCreator::Do_All(JEventLoop* locEventLoop, const vector<const DReacti
 
 
 
-	//Find production vertices:
-		//If 1+ charged track at vertex, combo them and use them
-		//If none and a detached vertex that has no neutrals or missing particles (DReaction-dependent!):
-			//Compute detached vertex & decaying p4, use to get production vertex
-		//Else: center of target
-
-	//With production vertices:
-		//Calculate temporary(?) neutral p4s & times for cuts (permanent if came from production vertex)
-		//
-
-	//keep as-is
-		//go ahead and combo the detached vertices
-		//just calc vertices for ones that don't depend on them
-
-	//don't forget: tracks/showers at vertices that don't have objects (because vertex unknowable!)
-
 	//When to combo-in the detached vertices?
 		//Once production vertex is chosen
 
@@ -329,32 +249,9 @@ void DVertexCreator::Sort_ChargedTracks(void)
 		if(locChargedTrack->Contains_Charge(-1))
 			dNegativeChargedTracks.push_back(locChargedTrack);
 
-		//loop over hypos
+		//save hypos by PID (with this, it's faster to query possible hypos later)
 		for(auto& locChargedHypo : locChargedTrack->dChargedTrackHypotheses)
-		{
-			//save hypos by PID (with this, it's faster to query possible hypos later)
 			dTrackMap_ByPID[locChargedHypo->PID()].push_back(locChargedHypo);
-
-			//go through all pairs of track hypos, compute whether they are delta-t matches
-			//do this here, ahead of time, so that we can save time later (don't need to repeat calculations)
-			//also, store results mapped by PID so that it is faster to find time-matches with the desired PID
-
-			//loop through remaining tracks
-			for(auto& locCompareIterator = locTrackIterator; locCompareIterator != dChargedTracks.end(); ++locCompareIterator)
-			{
-				//loop through their hypos
-				for(auto& locCompareChargedHypo : (*locCompareIterator)->dChargedTrackHypotheses)
-				{
-					//do delta-t cut
-					if(!Cut_TrackDeltaT(locChargedHypo, locCompareChargedHypo))
-						continue; //failed cut
-
-					//save match
-					dTrackMap_DeltaTMatch[locChargedHypo][locCompareChargedHypo->PID()].push_back(locCompareChargedHypo);
-					dTrackMap_DeltaTMatch[locCompareChargedHypo][locChargedHypo->PID()].push_back(locChargedHypo);
-				}
-			}
-		}
 	}
 
 	//sort tracks so can do faster set_intersection's later

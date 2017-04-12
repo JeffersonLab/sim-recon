@@ -74,11 +74,15 @@ class DSourceComboInfo
 		bool operator< (const DSourceComboInfo& rhs) const;
 
 		//GET MEMBERS
-		vector<pair<Particle_t, unsigned char>> Get_NumParticles(void) const{return dNumParticles;}
+		vector<pair<Particle_t, unsigned char>> Get_NumParticles(bool locEntireChainFlag = false) const{return dNumParticles;}
 		vector<pair<DSourceComboUse, unsigned char>> Get_FurtherDecays(void) const{return dFurtherDecays;}
 
 	private:
 
+		//FORWARD DECLARE COMPARISON STRUCT
+		struct DCompare_ParticlePairPIDs;
+
+		//CONSTRUCTOR
 		DSourceComboInfo(const vector<pair<Particle_t, unsigned char>>& locNumParticles, const vector<pair<DSourceComboUse, unsigned char>>& locFurtherDecays = {});
 
 		//don't have decaying PID a direct member of this combo info
@@ -107,14 +111,23 @@ class DSourceCombo
 		bool Get_IsFCALOnly(void) const{return dIsFCALOnly;}
 
 	private:
+
+		//CONSTRUCTOR
 		DSourceCombo(const vector<pair<Particle_t, const JObject*>>& locSourceParticles, const DSourceCombosByUse_Small& locFurtherDecayCombos = {}, bool locIsFCALOnly = false);
 
+		//particles & decays
 		vector<pair<Particle_t, const JObject*>> dSourceParticles; //original DNeutralShower or DChargedTrack
+		DSourceCombosByUse_Small dFurtherDecayCombos; //vector is e.g. size 3 if 3 pi0s needed
 
-		//DSourceCombosByUse_Small vector: e.g. size 3 if 3 pi0s needed
-		DSourceCombosByUse_Small dFurtherDecayCombos;
-
+		//Control information
 		bool dIsFCALOnly;
+};
+
+struct DSourceComboInfo::DCompare_ParticlePairPIDs
+{
+	bool operator()(const pair<Particle_t, unsigned char>& lhs, const pair<Particle_t, unsigned char>& rhs) const{return lhs.first < rhs.first;} //sort
+	bool operator()(const pair<Particle_t, unsigned char>& lhs, Particle_t rhs) const{return lhs.first < rhs;} //lookup
+	bool operator()(Particle_t lhs, const pair<Particle_t, unsigned char>& rhs) const{return lhs < rhs.first;} //lookup
 };
 
 /*********************************************************** INLINE MEMBER FUNCTION DEFINITIONS ************************************************************/
@@ -124,12 +137,6 @@ inline DSourceComboInfo::DSourceComboInfo(const vector<pair<Particle_t, unsigned
 {
 	std::sort(dNumParticles.begin(), dNumParticles.end());
 	std::sort(dFurtherDecays.begin(), dFurtherDecays.end(), Compare_SourceComboUses);
-}
-
-inline DSourceCombo::DSourceCombo(const vector<pair<Particle_t, const JObject*>>& locSourceParticles, const DSourceCombosByUse_Small& locFurtherDecayCombos, bool locIsFCALOnly) :
-		dSourceParticles(locSourceParticles), dFurtherDecayCombos(locFurtherDecayCombos), dIsFCALOnly(locIsFCALOnly)
-{
-	std::sort(dSourceParticles.begin(), dSourceParticles.end());
 }
 
 inline bool DSourceComboInfo::operator< (const DSourceComboInfo& rhs) const
@@ -151,6 +158,37 @@ inline bool DSourceComboInfo::operator< (const DSourceComboInfo& rhs) const
 		return locMismachIterators.first->second < locMismachIterators.second->second; //compare values
 	else
 		return locMismachIterators.first->first < locMismachIterators.second->first; //compare keys
+}
+
+inline vector<pair<Particle_t, unsigned char>> DSourceComboInfo::Get_NumParticles(bool locEntireChainFlag) const
+{
+	if(!locEntireChainFlag || dFurtherDecays.empty())
+		return dNumParticles;
+
+	vector<pair<Particle_t, unsigned char>> locToReturnNumParticles = dNumParticles;
+	for(const auto& locDecayPair : dFurtherDecays)
+	{
+		const auto& locDecayComboInfo = locDecayPair.first.second;
+		auto locNumDecayParticles = locDecayComboInfo->Get_NumParticles(true);
+
+		for(const auto& locParticlePair : locNumDecayParticles)
+		{
+			//search through locToReturnNumParticles to retrieve the iterator corresponding to this PID if it's already present
+			auto locIteratorPair = std::equal_range(locToReturnNumParticles.begin(), locToReturnNumParticles.end(), locParticlePair.first, DCompare_ParticlePairPIDs());
+			if(locIteratorPair.first != locIteratorPair.second)
+				(*locIteratorPair.first)->second += locParticlePair.second; //it exists: increase it
+			else //doesn't exist. insert it
+				locToReturnNumParticles.insert(locIteratorPair.first, locParticlePair);
+		}
+	}
+
+	return locToReturnNumParticles;
+}
+
+inline DSourceCombo::DSourceCombo(const vector<pair<Particle_t, const JObject*>>& locSourceParticles, const DSourceCombosByUse_Small& locFurtherDecayCombos, bool locIsFCALOnly) :
+		dSourceParticles(locSourceParticles), dFurtherDecayCombos(locFurtherDecayCombos), dIsFCALOnly(locIsFCALOnly)
+{
+	std::sort(dSourceParticles.begin(), dSourceParticles.end());
 }
 
 inline vector<pair<Particle_t, const JObject*>> DSourceCombo::Get_SourceParticles(bool locEntireChainFlag) const

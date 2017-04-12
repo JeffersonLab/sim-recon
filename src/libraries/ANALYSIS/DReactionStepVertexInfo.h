@@ -70,7 +70,7 @@ private:
 
 	//REACTION SUMMARY INFO
 	const DReaction* dReaction;
-	vector<size_t> dReactionStepIndices; //in order
+	vector<size_t> dReactionStepIndices; //in order from smallest to largest
 	bool dIsProductionVertexFlag = false;
 
 	//PARTICLE INFO
