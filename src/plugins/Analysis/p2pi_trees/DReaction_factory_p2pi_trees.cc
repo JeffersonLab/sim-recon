@@ -105,7 +105,8 @@ jerror_t DReaction_factory_p2pi_trees::evnt(JEventLoop* locEventLoop, uint64_t l
 
 	//MISSING MASS
 	locReaction->Add_AnalysisAction(new DHistogramAction_MissingMassSquared(locReaction, false, 1000, -0.1, 0.1, "PreKinFit"));
-	locReaction->Add_AnalysisAction(new DCutAction_MissingMassSquared(locReaction, false, -0.01, 0.005, "PreKinFit"));
+	// locReaction->Add_AnalysisAction(new DCutAction_MissingMassSquared(locReaction, false, -0.01, 0.005, "PreKinFit"));
+	locReaction->Add_AnalysisAction(new DCutAction_MissingMassSquared(locReaction, false, -0.1, 0.1, "PreKinFit"));
 
 	// Require KinFit converges
 	locReaction->Add_AnalysisAction(new DCutAction_KinFitFOM(locReaction, 0.0)); //require kinematic fit converges
@@ -113,7 +114,7 @@ jerror_t DReaction_factory_p2pi_trees::evnt(JEventLoop* locEventLoop, uint64_t l
 	if(unused) {
 	  // Custom cuts (can be applied in TSelector)
 	  locReaction->Add_AnalysisAction(new DCutAction_ProtonPiPlusdEdx(locReaction, 2.2, true)); //select p/pi+ above/below 2.2, //true/false: cut all/no proton candidates above p = 1 GeV/c
-	  locReaction->Add_AnalysisAction(new DCutAction_MissingMassSquared(locReaction, false, -0.006, 0.004));
+	  locReaction->Add_AnalysisAction(new DCutAction_MissingMassSquared(locReaction, false, -0.04, 0.04));
 	  locReaction->Add_AnalysisAction(new DCustomAction_p2pi_cuts(locReaction, false));
 
 	  // Diagnostics for unused tracks and showers with final selection (only useful when analyzing EVIO data)
