@@ -267,6 +267,7 @@ void Fill2DHistogram (const char * plugin, const char * directoryName, const cha
    return;
 }
 
+// This overloaded function allows the creation of a 2D histogram with variable bin sizes.
 void Fill2DHistogram (const char * plugin, const char * directoryName, const char * name, const double valueX , const double valueY , const char * title , int nBinsX, double *xbins, int nBinsY, double *ybins, bool print = false){
 
    static pthread_rwlock_t *mapLock = InitializeMapLock();
