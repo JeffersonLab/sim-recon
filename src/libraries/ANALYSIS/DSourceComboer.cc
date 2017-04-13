@@ -185,6 +185,11 @@ namespace DAnalysis
 * Instead of the above, you can of course plot the delta_m for real data, and get something similar
 * So, choose a z_error of 5: compute at center of 10-cm-wide bins.
 *
+* OK, but what about eta -> 3pi0?  Or Lambda -> pi0, n?
+* eta -> 3pi0: Max error for a given pi0 is ~small, not bad when combined with 3 others: it's fine as long as cut is wide.
+* pi0, n: Neutron is likelys slow, similar to charged tracks: Error is much larger, cannot combo massive neutrals without exact vertex position
+* Well, OK, we can COMBO them, but we can't place mass cuts.
+*
 *******************************************************************************************************************************/
 
 
@@ -347,7 +352,7 @@ void DSourceComboer::Define_LooseCuts(void)
 	dPIDTimingCuts[AntiProton] = dPIDTimingCuts[Proton];
 }
 
-/****************************************************************** CREATE DSourceComboINFO'S *******************************************************************/
+/******************************************************************* CREATE DSOURCOMBOINFO'S ********************************************************************/
 
 void DSourceComboer::Create_SourceComboInfos(const DReactionVertexInfo* locReactionVertexInfo)
 {
@@ -655,7 +660,7 @@ const DSourceComboInfo* DSourceComboer::GetOrMake_SourceComboInfo(const vector<p
 	return locComboInfo;
 }
 
-/********************************************************************* SETUP FOR NEW EVENT **********************************************************************/
+/********************************************************************** SETUP FOR NEW EVENT ***********************************************************************/
 
 void DSourceComboer::Reset_NewEvent(JEventLoop* locEventLoop)
 {
@@ -677,6 +682,7 @@ void DSourceComboer::Reset_NewEvent(JEventLoop* locEventLoop)
 
 //CLEAR MORE THINGS!!
 	//RECYCLE COMBO & VECTOR POINTERS
+	//be careful! don't recycle combos with a use pid != unknown, because they are just copies! not unique pointers!
 }
 
 void DSourceComboer::Setup_NeutralShowers(JEventLoop* locEventLoop)
@@ -793,145 +799,25 @@ double DSourceComboer::Calc_MaxDeltaTError(const DNeutralShower* locNeutralShowe
 	return locPathError/SPEED_OF_LIGHT;
 }
 
-/****************************************************************** PARTICLE UTILITY FUNCTIONS ******************************************************************/
+/******************************************************************* CREATE DSOURCOMBOINFO'S ********************************************************************/
+/******************************************************************* CREATE DSOURCOMBOINFO'S ********************************************************************/
 
-const vector<int>& DSourceComboer::Get_ValidRFBunches(const DSourceComboUse& locSourceComboUse, const DSourceCombo* locSourceCombo) const
+void DSourceComboer::Build_ParticleCombos(JEventLoop* locEventLoop, const DReaction* locReaction)
 {
-	//in general, the valid rf bunches are only combo-dependent, not use-dependent
-	//however, they ARE use-dependent if the combo contains a massive-neutral particle
-	//this is because the timing is needed to get the massive-neutral momentum, which is used in invariant mass cuts for the use
-	auto locRFComboIterator = dValidRFBunches_ByCombo.find(locSourceCombo);
-	if(locRFComboIterator != dValidRFBunches_ByCombo.end())
-		return locRFComboIterator->second; //combo-dependent (no massive neutrals)
+	//This builds the combos and creates DParticleCombo & DParticleComboSteps (doing whatever is necessary)
 
-	auto locRFComboUseIterator = dValidRFBunches_ByUse.find(std::make_pair(locSourceComboUse, locSourceCombo));
-	if(locRFComboUseIterator == dValidRFBunches_ByUse.end())
-		return {}; //shouldn't be possible!!!
-
-	return locRFComboUseIterator->second; //depends on massive neutrals
+	/*****
+	 *
+	 * 1) Create charged combos
+	 * 2) Calculate vertex positions
+	 * 3) For each vertex, create photon combos
+	 * 4)
+	 * Charged tracks vote on RF bunch
+	 * 5)
+	 */
 }
 
-const vector<const JObject*>& DSourceComboer::Get_ParticlesForComboing(Particle_t locPID, ComboingStage_t locComboingStage, const vector<int>& locBeamBunches, size_t locVertexZBin)
-{
-	//find all particles that have an overlapping beam bunch with the input
-	if(ParticleCharge(locPID) != 0) //charged tracks
-		return dTracksByPID[locPID]; //rf bunch & vertex-z are irrelevant
-	else if(locPID != Gamma) //massive neutrals
-		return dPhotonShowersByBeamBunch[0][{}]; //all neutrals: cannot do PID at all, and cannot do mass cuts until a specific vertex is chosen, so vertex-z doesn't matter
-	else if(locComboingStage == d_FCALShowersOnly) //fcal photons
-	{
-		auto locGroupBunchIterator = dFCALPhotonShowersByBeamBunch.find(locBeamBunches);
-		if(locGroupBunchIterator != dFCALPhotonShowersByBeamBunch.end())
-			return locGroupBunchIterator->second;
-		return Get_ShowersByBeamBunch(locBeamBunches, dFCALPhotonShowersByBeamBunch);
-	}
-	else //bcal + fcal photons
-	{
-		auto locGroupBunchIterator = dPhotonShowersByBeamBunch[locVertexZBin].find(locBeamBunches);
-		if(locGroupBunchIterator != dPhotonShowersByBeamBunch[locVertexZBin].end())
-			return locGroupBunchIterator->second;
-		return Get_ShowersByBeamBunch(locBeamBunches, dPhotonShowersByBeamBunch[locVertexZBin]);
-	}
-}
-
-vector<const JObject*>* DSourceComboer::Get_ShowersByBeamBunch(const vector<int>& locBeamBunches, DPhotonShowersByBeamBunch& locShowersByBunch)
-{
-	//find all particles that have an overlapping beam bunch with the input
-	//this won't happen often (max probably tens of times each event), so we can be a little inefficient
-	vector<int> locBunchesSoFar = {*locBeamBunches.begin()};
-	for(auto locBunchIterator = std::next(locBeamBunches.begin()); locBunchIterator != locBeamBunches.end(); ++locBunchIterator)
-	{
-		const auto& locComboShowers = locShowersByBunch[locBunchesSoFar];
-		const auto& locBunchShowers = locShowersByBunch[vector<int>(*locBunchIterator)];
-		locBunchesSoFar.push_back(*locBunchIterator);
-		if(locBunchShowers.empty())
-		{
-			locShowersByBunch.emplace(locBunchesSoFar, locComboShowers);
-			continue;
-		}
-
-		//merge and move-emplace
-		vector<const JObject*> locMergeResult;
-		locMergeResult.reserve(locComboShowers.size() + locBunchShowers.size());
-		std::set_union(locComboShowers.begin(), locComboShowers.end(), locBunchShowers.begin(), locBunchShowers.end(), std::back_inserter(locMergeResult));
-		locShowersByBunch.emplace(locBunchesSoFar, std::move(locMergeResult));
-		Build_ParticleIterators(locBeamBunches, locShowersByBunch[locBeamBunches]);
-	}
-	return &(locShowersByBunch[locBeamBunches]);
-}
-
-/******************************************************************** COMBO UTILITY FUNCTIONS *******************************************************************/
-
-void DSourceComboer::Register_ValidRFBunches(const DSourceComboUse& locSourceComboUse, const DSourceCombo* locSourceCombo, const vector<int>& locRFBunches, ComboingStage_t locComboingStage, size_t locVertexZBin)
-{
-	//see if the combo info contains a massive neutral particle
-
-	//setup
-	const auto& locComboInfo = locSourceComboUse.second;
-	auto locNumParticles = locComboInfo->Get_NumParticles(true); //true: entire chain
-
-	//search function
-	auto Find_MassiveNeutrals = [](const pair<Particle_t, unsigned char>& locPair) -> bool
-			{return (ParticleCharge(locPair.first) != 0) && (ParticleMass(locPair.first) > 0.0);};
-
-	//search and register
-	if(std::any_of(locNumParticles.begin(), locNumParticles.end(), Find_MassiveNeutrals))
-		dValidRFBunches_ByUse.emplace(std::make_pair(locSourceComboUse, locSourceCombo), locRFBunches); //contains a massive neutral
-	else
-		dValidRFBunches_ByCombo.emplace(locSourceCombo, locRFBunches);
-
-	//also, register for each individual bunch: so that we can get valid combos for some input rf bunches later
-	auto& locCombosByBeamBunch = (locComboingStage == d_FCALShowersOnly) ? dSourceCombosByBeamBunch_FCAL[locSourceComboUse] : dSourceCombosByBeamBunch_Both[locVertexZBin][locSourceComboUse];
-	for(const auto& locBeamBunch : locRFBunches)
-	{
-		auto& locComboVector = locCombosByBeamBunch[{locBeamBunch}];
-		locComboVector.push_back(locSourceCombo);
-		vector<const DSourceCombo*>::const_iterator locIterator = std::prev(locComboVector.end());
-		dResumeSearchAfterIterators_Combos.emplace(std::make_pair(locSourceCombo, {locBeamBunch}), locIterator);
-	}
-}
-
-const vector<const DSourceCombo*>& DSourceComboer::Get_CombosForComboing(const DSourceComboUse& locComboUse, ComboingStage_t locComboingStage, const vector<int>& locBeamBunches, size_t locVertexZBin)
-{
-	//find all combos for the given use that have an overlapping beam bunch with the input
-	if(locBeamBunches.empty()) //e.g. a combo of 2 KLongs (RF bunches not saved for massive neutrals)
-		return *(Get_CombosSoFar(locComboingStage, locVertexZBin)[locComboUse]);
-
-	//fcal or bcal time
-	DSourceCombosByBeamBunchByUse& locCombosByBunchByUse = (locComboingStage == d_FCALShowersOnly) ? dSourceCombosByBeamBunch_FCAL : dSourceCombosByBeamBunch_Both[locVertexZBin];
-	auto locGroupBunchIterator = locCombosByBunchByUse[locComboUse].find(locBeamBunches);
-	if(locGroupBunchIterator != locCombosByBunchByUse[locComboUse].end())
-		return locGroupBunchIterator->second;
-	return Get_CombosByBeamBunch(locComboUse, locBeamBunches, locCombosByBunchByUse[locComboUse]);
-}
-
-const vector<const DSourceCombo*>& DSourceComboer::Get_CombosByBeamBunch(DCombosByBeamBunch& locCombosByBunch, const vector<int>& locBeamBunches)
-{
-	//find all combos for the given use that have an overlapping beam bunch with the input
-	//this shouldn't be called very many times per event
-	vector<int> locBunchesSoFar = {*locBeamBunches.begin()};
-	for(auto locBunchIterator = std::next(locBeamBunches.begin()); locBunchIterator != locBeamBunches.end(); ++locBunchIterator)
-	{
-		const auto& locComboShowers = locCombosByBunch[locBunchesSoFar];
-		const auto& locBunchShowers = locCombosByBunch[vector<int>(*locBunchIterator)];
-		locBunchesSoFar.push_back(*locBunchIterator);
-		if(locBunchShowers.empty())
-		{
-			locCombosByBunch.emplace(locBunchesSoFar, locComboShowers);
-			continue;
-		}
-
-		//merge and move-emplace
-		vector<const DSourceCombo*> locMergeResult;
-		locMergeResult.reserve(locComboShowers.size() + locBunchShowers.size());
-		std::set_union(locComboShowers.begin(), locComboShowers.end(), locBunchShowers.begin(), locBunchShowers.end(), std::back_inserter(locMergeResult));
-		locCombosByBunch.emplace(locBunchesSoFar, std::move(locMergeResult));
-		Build_ComboIterators(locBeamBunches, locCombosByBunch[locBeamBunches]);
-	}
-	return &(locCombosByBunch[locBeamBunches]);
-}
-
-/**************************************************************** BUILD PHOTON COMBOS - GENERAL *****************************************************************/
+/**************************************************************** BUILD SOURCE COMBOS - GENERAL *****************************************************************/
 
 
 /****************************************************** COMBOING STRATEGY ******************************************************
@@ -971,13 +857,14 @@ const vector<const DSourceCombo*>* DSourceComboer::Request_VertexCombos(JEventLo
 {
 	Reset_NewEvent(locEventLoop); //does nothing if not actually a new event
 	auto locSourceComboUse = dSourceComboUseReactionMap_Charged[locReactionStepVertexInfo];
-	return Create_SourceCombos(locSourceComboUse, const vector<const DNeutralShower*>& locShowers, dSourceCombos_Charged);
+	Create_SourceCombos(locSourceComboUse, d_ChargedOnly, 0);
+	return Get_CombosSoFar(d_ChargedOnly, 0)[locSourceComboUse];
 //BEWARE: If you fail to select an RF bunch, you cannot simply just delete this combo
 	//It can be used at another vertex that is not a production vertex!!
 	//Therefore, we need another vector<const DSourceCombo*> to store the ones that pass this cut
 }
 
-const vector<const DSourceCombo*>* DSourceComboer::Request_PhotonCombos(JEventLoop* locEventLoop, const DReactionStepVertexInfo* locReactionStepVertexInfo, DVector3 locVertex)
+const vector<const DSourceCombo*>* DSourceComboer::Request_NeutralCombos(JEventLoop* locEventLoop, const DReactionStepVertexInfo* locReactionStepVertexInfo, DVector3 locVertex)
 {
 	Reset_NewEvent(locEventLoop); //does nothing if not actually a new event
 
@@ -991,25 +878,65 @@ const vector<const DSourceCombo*>* DSourceComboer::Request_PhotonCombos(JEventLo
 //RETURN RESULTS
 }
 
-void DSourceComboer::Create_SourceCombos(const DSourceComboUse& locSourceComboUse, ComboingStage_t locComboingStage, size_t locVertexZBin)
+void DSourceComboer::Create_SourceCombos(const DSourceComboUse& locComboUseToCreate, ComboingStage_t locComboingStage, size_t locVertexZBin)
 {
-	const auto& locSourceComboInfo = locSourceComboUse.second;
-	const auto& locDecayPID = locSourceComboUse.first;
+	//create the combos for the combo info
+	const auto& locSourceComboInfo = locComboUseToCreate.second;
+	Create_SourceCombos(locSourceComboInfo, locComboingStage, locVertexZBin);
 
 	//if all we want is a direct grouping, then just make the combos and return
+	const auto& locDecayPID = locComboUseToCreate.first;
 	if(locDecayPID == Unknown)
-		return Create_SourceCombos(locSourceComboInfo, locComboingStage, locVertexZBin);
+		return;
+
+	//Get combos so far
+	auto& locSourceCombosByUseSoFar = Get_CombosSoFar(locComboingStage, locVertexZBin);
+	auto& locCombosByBeamBunch = (locComboingStage == d_FCALShowersOnly) ? dSourceCombosByBeamBunch_FCAL[locComboUseToCreate] : dSourceCombosByBeamBunch_Both[locVertexZBin][locComboUseToCreate];
+
+	//create vector for storing results
+	locSourceCombosByUseSoFar.emplace(locComboUseToCreate, new vector<const DSourceCombo*>());
+	locSourceCombosByUseSoFar[locComboUseToCreate]->reserve(dInitialComboVectorCapacity);
+
+	//get the combos that we just created
+	DSourceComboUse locUnknownComboUse(Unknown, locSourceComboInfo);
+	auto locSourceCombos = locSourceCombosByUseSoFar[locUnknownComboUse];
+
+	//place an invariant mass cut & save the results, but handle differently for massive neutrals
+	bool locHasMassiveNeutrals = Get_HasMassiveNeutrals(locSourceComboInfo);
+	if(!locHasMassiveNeutrals)
+	{
+		for(auto locSourceCombo : locSourceCombos)
+		{
+			if(!Cut_InvariantMass(locSourceCombo, locDecayPID))
+				continue;
+
+			//save the results
+			locSourceCombosByUseSoFar[locComboUseToCreate]->push_back(locSourceCombo);
+
+			const auto& locBeamBunches = Get_ValidRFBunches(locUnknownComboUse, locSourceCombo);
+			for(const auto& locBeamBunch : locBeamBunches)
+				locCombosByBeamBunch[{locBeamBunch}].push_back(locSourceCombo);
+		}
+	}
 	else
 	{
-		//Get combos so far
-		auto& locSourceCombosByUseSoFar = Get_CombosSoFar(locComboingStage, locVertexZBin);
+		for(auto locSourceCombo : locSourceCombos)
+		{
+			auto locBeamBunches = Get_ValidRFBunches(locUnknownComboUse, locSourceCombo);
+			//if locBeamBunches is empty, don't cut: contains only massive neutrals, no determination of rf bunch yet
+			if(!locBeamBunches.empty())
+			{
+				locBeamBunches = Cut_InvariantMass_HasMassiveNeutral(locSourceCombo, locDecayPID, locBeamBunches);
+				if(locBeamBunches.empty())
+					continue; //failed the cut
+			}
 
-		//make the combos, then place an invariant mass cut
-		auto locSourceCombos = Create_SourceCombos(locSourceComboInfo, locComboingStage, locVertexZBin);
-		auto locCutSourceCombos = Cut_InvariantMass(locSourceCombos, locDecayPID);
-
-		//register results
-		locSourceCombosByUseSoFar.emplace(locSourceComboUse, locCutSourceCombos);
+			//save the results
+			locSourceCombosByUseSoFar[locComboUseToCreate]->push_back(locSourceCombo);
+			dValidRFBunches_ByUse.emplace(std::make_pair(locComboUseToCreate, locSourceCombo), locCutBeamBunches);
+			for(const auto& locBeamBunch : locBeamBunches)
+				locCombosByBeamBunch[{locBeamBunch}].push_back(locSourceCombo);
+		}
 	}
 }
 
@@ -1115,21 +1042,12 @@ void DSourceComboer::Combo_Vertically_NDecays(const DSourceComboUse& locComboUse
 
 	//if on the all-showers stage, first copy over ALL fcal-only results
 	if(locComboingStage == d_AllShowers)
-	{
-//Am I SURE doing FCAL separate is faster?  I mean, how many vertex-z bins will there be for a given event?
-		const auto& locFCALComboVector = *dSourceCombos_FCAL[locComboUseToCreate];
-		locSourceCombosByUseSoFar[locComboUseToCreate]->reserve(locFCALComboVector.size() + dInitialComboVectorCapacity);
-		locSourceCombosByUseSoFar[locComboUseToCreate]->assign(locFCALComboVector.begin(), locFCALComboVector.end());
-
-		//PHOTON COMBOS //vector: z-bin //if attempted and all failed, DSourceCombosByUse_Large vector will be empty
-		const auto& locCombosByBeamBunch = dSourceCombosByBeamBunch_FCAL[locComboUseToCreate];
-		dSourceCombosByBeamBunch_Both[locVertexZBin][locComboUseToCreate] = locCombosByBeamBunch; //this is wrong!!! only copy vectors where #bunches = 1
-
-		//this is outright broken: need separate dResumeSearchAfterIterators_Combos for bcal, not trivial to fill it
-		unordered_map<pair<const DSourceCombo*, vector<int>>, vector<const DSourceCombo*>::const_iterator> dResumeSearchAfterIterators_Combos; //vector<int>: RF bunches (empty for all)
-	}
+		Copy_FCALOnlyResults(locComboUseToCreate, locComboingStage, locVertexZBin);
 	else
 		locSourceCombosByUseSoFar[locComboUseToCreate]->reserve(dInitialComboVectorCapacity);
+
+	//get whether the combo info to create contains any massive neutrals
+	bool locHasMassiveNeutrals = Get_HasMassiveNeutrals(locComboUseToCreate.second);
 
 	//now, for each combo of N - 1 (e.g.) pi0s, see which of the single-decay combos are a valid grouping
 	//valid grouping:
@@ -1153,7 +1071,7 @@ void DSourceComboer::Combo_Vertically_NDecays(const DSourceComboUse& locComboUse
 		//this will guarantee we pass "TEST 1" without ever checking
 
 		//actually, we already saved the iterator to the first (e.g.) pi0 to test when we saved the N - 1 combo, so just retrieve it
-		auto locComboSearchIterator = Get_ResumeAtIterator_Combos(locDecayCombo_NMinus1, locValidRFBunches_NMinus1);
+		auto locComboSearchIterator = Get_ResumeAtIterator_Combos(locDecayCombo_NMinus1, locValidRFBunches_NMinus1, locComboingStage, locVertexZBin);
 		if(locComboSearchIterator == std::end(locDecayCombos_1))
 			continue; //e.g. this combo is "AD" and there are only 4 reconstructed combos (ABCD): no potential matches! move on to the next N - 1 combo
 
@@ -1171,16 +1089,11 @@ void DSourceComboer::Combo_Vertically_NDecays(const DSourceComboUse& locComboUse
 		for(; locComboSearchIterator != locDecayCombos_1.end(); ++locComboSearchIterator)
 		{
 			const auto locDecayCombo_1 = *locComboSearchIterator;
-			const auto& locValidRFBunches_1 = Get_ValidRFBunches(locSourceComboDecayUse, locDecayCombo_1);
 
 			//If on all-showers stage, and combo is fcal-only, don't save (combo already created!!)
 			auto locIsFCALOnly = locIsFCALOnly_NMinus1 && locDecayCombo_1->Get_IsFCALOnly();
-if((locComboingStage == d_AllShowers) && locIsFCALOnly)
-	continue; //this combo has already been created (assuming it was valid): during the FCAL-only stage
-
-			//See which RF bunches match up //guaranteed to be at least one, due to selection in Get_ParticlesForComboing() function
-			vector<int> locValidRFBunches = {}; //if charged or massive neutrals, ignore (they don't choose at this stage)
-			std::set_intersection(locValidRFBunches_NMinus1.begin(), locValidRFBunches_NMinus1.end(), locValidRFBunches_1.begin(), locValidRFBunches_1.end(), std::back_inserter(locValidRFBunches));
+			if((locComboingStage == d_AllShowers) && locIsFCALOnly)
+				continue; //this combo has already been created (assuming it was valid): during the FCAL-only stage
 
 			//conduct "TEST 2" search: search the N - 1 shower vector to see if any of the showers in this combo are duplicated
 			auto locUsedParticles_1 = DAnalysis::Get_SourceParticles(locDecayCombo_1->Get_SourceParticles(true)); //true: entire chain
@@ -1188,6 +1101,10 @@ if((locComboingStage == d_AllShowers) && locIsFCALOnly)
 				continue; //at least one photon was a duplicate, this combo won't work
 
 			//no duplicates: this combo is unique.  build a new combo!
+
+			//See which RF bunches match up //guaranteed to be at least one, due to selection in Get_ParticlesForComboing() function
+			const auto& locValidRFBunches_1 = Get_ValidRFBunches(locSourceComboDecayUse, locDecayCombo_1);
+			auto locValidRFBunches = Get_CommonRFBunches(locValidRFBunches_NMinus1, locValidRFBunches_1);
 
 			//take the vector of N - 1 (e.g. -> 2g) combos and add the new one
 			auto locAllDecayCombos = locDecayCombo_NMinus1->Get_FurtherDecayCombos()[locSourceComboDecayUse];
@@ -1199,7 +1116,7 @@ if((locComboingStage == d_AllShowers) && locIsFCALOnly)
 
 			//save it! //in creation order!
 			locSourceCombosByUseSoFar[locComboUseToCreate]->push_back(locCombo);
-			Register_ValidRFBunches(locComboUseToCreate, locCombo, locValidRFBunches, locComboingStage, locVertexZBin);
+			Register_ValidRFBunches(locComboUseToCreate, locCombo, locValidRFBunches, locComboingStage, locVertexZBin, locHasMassiveNeutrals);
 
 			//finally, in case we add more (e.g.) pi0s later (N + 1), save the last pi0
 			//so that we will start the search for the next (e.g.) pi0 in the location after the last one
@@ -1274,10 +1191,18 @@ void DSourceComboer::Combo_Vertically_NParticles(const DSourceComboUse& locCombo
 
 	//create vector for storing results
 	locSourceCombosByUseSoFar.emplace(locComboUseToCreate, new vector<const DSourceCombo*>());
-	locSourceCombosByUseSoFar[locComboUseToCreate]->reserve(dInitialComboVectorCapacity);
+
+	//if on the all-showers stage, first copy over ALL fcal-only results
+	if(locComboingStage == d_AllShowers)
+		Copy_FCALOnlyResults(locComboUseToCreate, locComboingStage, locVertexZBin);
+	else
+		locSourceCombosByUseSoFar[locComboUseToCreate]->reserve(dInitialComboVectorCapacity);
 
 	//For checking RF bunches (ignored if on charged stage)
 	const unordered_map<const JObject*, vector<int>>& locShowerRFMap = (locComboingStage == d_FCALShowersOnly) ? dShowerRFBunches_FCAL : dShowerRFBunches_Both[locVertexZBin];
+
+	//get whether the combo info to create contains any massive neutrals
+	bool locHasMassiveNeutrals = Get_HasMassiveNeutrals(locComboUseToCreate.second);
 
 	if(locNumParticles == 2)
 	{
@@ -1287,25 +1212,27 @@ void DSourceComboer::Combo_Vertically_NParticles(const DSourceComboUse& locCombo
 		auto locLastIteratorToCheck = std::prev(locParticles.end());
 		for(auto locFirstIterator = locParticles.begin(); locFirstIterator != locLastIteratorToCheck; ++locFirstIterator)
 		{
-			const vector<int>* locRFBunches_First = (locPID == Gamma) ? &(locShowerRFMap[*locFirstIterator]) : nullptr;
+			const auto locRFBunches_First = (locPID == Gamma) ? &(locShowerRFMap[*locFirstIterator]) : nullptr;
 			for(auto locSecondIterator = std::next(locFirstIterator); locSecondIterator != locParticles.end(); ++locSecondIterator)
 			{
+				auto locIsFCALOnly = (locComboingStage == d_FCALShowersOnly) || (Get_IsFCALOnly(*locFirstIterator) && Get_IsFCALOnly(*locSecondIterator));
+				if((locComboingStage == d_AllShowers) && locIsFCALOnly)
+					continue; //this combo has already been created (assuming it was valid): during the FCAL-only stage
+
 				//See which RF bunches match up, if any
-				vector<int> locValidRFBunches = {}; //if charged or massive neutrals, ignore (they don't choose at this stage)
-				if(locPID == Gamma)
+				vector<int> locValidRFBunches = {};
+				if(locPID == Gamma) //if charged or massive neutrals, ignore (they don't choose at this stage)
 				{
-					const vector<int>& locRFBunches_Second = locShowerRFMap[*locSecondIterator];
-					std::set_intersection(locRFBunches_First->begin(), locRFBunches_First->end(), locRFBunches_Second.begin(), locRFBunches_Second.end(), std::back_inserter(locValidRFBunches));
+					const auto& locRFBunches_Second = locShowerRFMap[*locSecondIterator];
+					locValidRFBunches = Get_CommonRFBunches(*locRFBunches_First, locRFBunches_Second);
 					if(locValidRFBunches.empty())
 						continue;
 				}
 
-				auto locIsFCALOnly = (locComboingStage == d_FCALShowersOnly) || (Get_IsFCALOnly(*locFirstIterator) && Get_IsFCALOnly(*locSecondIterator));
-
 				auto locCombo = new DSourceCombo({std::make_pair(locPID, *locFirstIterator), std::make_pair(locPID, *locSecondIterator)}, {}, locIsFCALOnly);
 				locSourceCombosByUseSoFar[locComboUseToCreate]->push_back(locCombo); //save it //in creation order
 
-				Register_ValidRFBunches(locComboUseToCreate, locCombo, locValidRFBunches, locComboingStage, locVertexZBin);
+				Register_ValidRFBunches(locComboUseToCreate, locCombo, locValidRFBunches, locComboingStage, locVertexZBin, locHasMassiveNeutrals);
 
 				//in case we add more particles with the same PID later (N + 1), save last object with this PID
 				//so that we will start the search for the next particle one spot after it
@@ -1332,22 +1259,24 @@ void DSourceComboer::Combo_Vertically_NParticles(const DSourceComboUse& locCombo
 
 		for(; locParticleSearchIterator != locParticles.end(); ++locParticleSearchIterator)
 		{
+			auto locIsFCALOnly = (locComboingStage == d_FCALShowersOnly) || (locIsFCALOnly_NMinus1 && Get_IsFCALOnly(*locParticleSearchIterator));
+			if((locComboingStage == d_AllShowers) && locIsFCALOnly)
+				continue; //this combo has already been created (assuming it was valid): during the FCAL-only stage
+
 			//See which RF bunches match up //guaranteed to be at least one, due to selection in Get_ParticlesForComboing() function
 			vector<int> locValidRFBunches = {}; //if charged or massive neutrals, ignore (they don't choose at this stage)
 			if(locPID == Gamma)
 			{
 				const vector<int>& locRFBunches_Second = locShowerRFMap[*locParticleSearchIterator];
-				std::set_intersection(locValidRFBunches_NMinus1.begin(), locValidRFBunches_NMinus1.end(), locRFBunches_Second.begin(), locRFBunches_Second.end(), std::back_inserter(locValidRFBunches));
+				locValidRFBunches = Get_CommonRFBunches(locValidRFBunches_NMinus1, locRFBunches_Second);
 			}
-
-			auto locIsFCALOnly = (locComboingStage == d_FCALShowersOnly) || (locIsFCALOnly_NMinus1 && Get_IsFCALOnly(*locParticleSearchIterator));
 
 			auto locComboParticlePairs = locDecayCombo_NMinus1->Get_SourceParticles();
 			locComboParticlePairs.emplace_back(locPID, *locParticleSearchIterator);
 			auto locCombo = new DSourceCombo(locComboParticlePairs, {}, locIsFCALOnly);
 			locSourceCombosByUseSoFar[locComboUseToCreate]->push_back(locCombo); //save it //in creation order
 
-			Register_ValidRFBunches(locComboUseToCreate, locCombo, locValidRFBunches, locComboingStage, locVertexZBin);
+			Register_ValidRFBunches(locComboUseToCreate, locCombo, locValidRFBunches, locComboingStage, locVertexZBin, locHasMassiveNeutrals);
 
 			//in case we add more particles with the same PID later (N + 1), save last object with this PID
 			//so that we will start the search for the next particle one spot after it
@@ -1378,23 +1307,7 @@ void DSourceComboer::Combo_Horizontally_All(const DSourceComboUse& locComboUseTo
 			return; //already done when comboing vertically!!
 
 		//not much of a combo if there's only 1, is it? //e.g. 1 charged track at a vertex
-
-		//For checking RF bunches (ignored if on charged stage)
-		const unordered_map<const JObject*, vector<int>>& locShowerRFMap = (locComboingStage == d_FCALShowersOnly) ? dShowerRFBunches_FCAL : dShowerRFBunches_Both[locVertexZBin];
-
-		//Get particles for comboing
-		auto locPID = locParticlePair.first;
-		const auto& locParticles = Get_ParticlesForComboing(locPID, locComboingStage, {}, locVertexZBin);
-		for(auto locParticle : locParticles)
-		{
-			auto locIsFCALOnly = Get_IsFCALOnly(locParticle);
-			auto locCombo = new DSourceCombo({std::make_pair(locPID, locParticle)}, {}, locIsFCALOnly);
-			locSourceCombosByUseSoFar[locComboUseToCreate]->push_back(locCombo); //save it //in creation order
-			if(locPID == Gamma)
-				Register_ValidRFBunches(locComboUseToCreate, locCombo, locShowerRFMap.find(locParticle)->second, locComboingStage, locVertexZBin);
-			else
-				Register_ValidRFBunches(locComboUseToCreate, locCombo, {}, locComboingStage, locVertexZBin);
-		}
+		Create_Combo_OneParticle(locComboUseToCreate, locComboingStage, locVertexZBin);
 		return;
 	}
 
@@ -1498,6 +1411,49 @@ void DSourceComboer::Combo_Horizontally_All(const DSourceComboUse& locComboUseTo
 	}
 }
 
+void DSourceComboer::Create_Combo_OneParticle(const DSourceComboUse& locComboUseToCreate, ComboingStage_t locComboingStage, size_t locVertexZBin)
+{
+	//not much of a combo if there's only 1, is it? //e.g. 1 charged track at a vertex
+
+	//Get combos so far
+	auto& locSourceCombosByUseSoFar = Get_CombosSoFar(locComboingStage, locVertexZBin);
+
+	//get combo info contents
+	auto locParticlePair = locComboUseToCreate.second->Get_NumParticles().front();
+
+	//create vector for storing results
+	locSourceCombosByUseSoFar.emplace(locComboUseToCreate, new vector<const DSourceCombo*>());
+
+	//if on the all-showers stage, first copy over ALL fcal-only results
+	if(locComboingStage == d_AllShowers)
+		Copy_FCALOnlyResults(locComboUseToCreate, locComboingStage, locVertexZBin);
+	else
+		locSourceCombosByUseSoFar[locComboUseToCreate]->reserve(dInitialComboVectorCapacity);
+
+	//For checking RF bunches (ignored if on charged stage)
+	const unordered_map<const JObject*, vector<int>>& locShowerRFMap = (locComboingStage == d_FCALShowersOnly) ? dShowerRFBunches_FCAL : dShowerRFBunches_Both[locVertexZBin];
+
+	//get whether the combo info to create contains any massive neutrals
+	auto locPID = locParticlePair.first;
+	bool locHasMassiveNeutrals = (ParticleCharge(locPID) == 0) && (ParticleMass(locPID) > 0.0);
+
+	//Get particles for comboing
+	const auto& locParticles = Get_ParticlesForComboing(locPID, locComboingStage, {}, locVertexZBin);
+	for(auto locParticle : locParticles)
+	{
+		auto locIsFCALOnly = Get_IsFCALOnly(locParticle);
+		if((locComboingStage == d_AllShowers) && locIsFCALOnly)
+			continue; //this combo has already been created (assuming it was valid): during the FCAL-only stage
+
+		auto locCombo = new DSourceCombo({std::make_pair(locPID, locParticle)}, {}, locIsFCALOnly);
+		locSourceCombosByUseSoFar[locComboUseToCreate]->push_back(locCombo); //save it //in creation order
+		if(locPID == Gamma)
+			Register_ValidRFBunches(locComboUseToCreate, locCombo, locShowerRFMap.find(locParticle)->second, locComboingStage, locVertexZBin, locHasMassiveNeutrals);
+		else
+			Register_ValidRFBunches(locComboUseToCreate, locCombo, {}, locComboingStage, locVertexZBin, locHasMassiveNeutrals);
+	}
+}
+
 void DSourceComboer::Combo_Horizontally_AddCombo(const DSourceComboUse& locComboUseToCreate, const DSourceComboUse& locAllBut1ComboUse, const DSourceComboUse& locSourceComboUseToAdd, ComboingStage_t locComboingStage, size_t locVertexZBin)
 {
 	//Get combos so far
@@ -1509,7 +1465,15 @@ void DSourceComboer::Combo_Horizontally_AddCombo(const DSourceComboUse& locCombo
 
 	//create vector for storing results
 	locSourceCombosByUseSoFar.emplace(locComboUseToCreate, new vector<const DSourceCombo*>());
-	locSourceCombosByUseSoFar[locComboUseToCreate]->reserve(dInitialComboVectorCapacity);
+
+	//if on the all-showers stage, first copy over ALL fcal-only results
+	if(locComboingStage == d_AllShowers)
+		Copy_FCALOnlyResults(locComboUseToCreate, locComboingStage, locVertexZBin);
+	else
+		locSourceCombosByUseSoFar[locComboUseToCreate]->reserve(dInitialComboVectorCapacity);
+
+	//get whether the combo info to create contains any massive neutrals
+	bool locHasMassiveNeutrals = Get_HasMassiveNeutrals(locComboUseToCreate.second);
 
 	auto locDecayPID_UseToAdd = locSourceComboUseToAdd.first;
 	auto locComboInfo_UseToAdd = locSourceComboUseToAdd.second;
@@ -1536,6 +1500,8 @@ void DSourceComboer::Combo_Horizontally_AddCombo(const DSourceComboUse& locCombo
 		for(const auto& locDecayCombo_ToAdd : locDecayCombos_ToAdd)
 		{
 			auto locIsFCALOnly = (locIsFCALOnly_AllBut1 && locDecayCombo_ToAdd->Get_IsFCALOnly());
+			if((locComboingStage == d_AllShowers) && locIsFCALOnly)
+				continue; //this combo has already been created (assuming it was valid): during the FCAL-only stage
 
 			//search the all-but-1 shower vector to see if any of the showers in this combo are duplicated
 			auto locUsedParticles_ToAdd = DAnalysis::Get_SourceParticles(locDecayCombo_ToAdd->Get_SourceParticles(true)); //true: entire chain
@@ -1550,8 +1516,8 @@ void DSourceComboer::Combo_Horizontally_AddCombo(const DSourceComboUse& locCombo
 			vector<int> locValidRFBunches = {}; //if charged or massive neutrals, ignore (they don't choose at this stage)
 			if(locComboingStage != d_ChargedOnly)
 			{
-				const auto& locValidRFBunches_AllBut1 = Get_ValidRFBunches(locSourceComboUseToAdd, locDecayCombo_ToAdd);
-				std::set_intersection(locValidRFBunches_AllBut1.begin(), locValidRFBunches_AllBut1.end(), locValidRFBunches_AllBut1.begin(), locValidRFBunches_AllBut1.end(), std::back_inserter(locValidRFBunches));
+				const auto& locValidRFBunches_1 = Get_ValidRFBunches(locSourceComboUseToAdd, locDecayCombo_ToAdd);
+				locValidRFBunches = Get_CommonRFBunches(locValidRFBunches_AllBut1, locValidRFBunches_1);
 			}
 
 			//get contents of the all-but-1 so that we can add to them
@@ -1574,7 +1540,7 @@ void DSourceComboer::Combo_Horizontally_AddCombo(const DSourceComboUse& locCombo
 			//create and save it! //in creation order!
 			auto locNeededGroupingCombo = new DSourceCombo(locComboParticles, locFurtherDecayCombos_Needed, locIsFCALOnly); // create combo with all PIDs
 			locSourceCombosByUseSoFar[locComboUseToCreate]->push_back(locNeededGroupingCombo);
-			Register_ValidRFBunches(locComboUseToCreate, locNeededGroupingCombo, locValidRFBunches, locComboingStage, locVertexZBin);
+			Register_ValidRFBunches(locComboUseToCreate, locNeededGroupingCombo, locValidRFBunches, locComboingStage, locVertexZBin, locHasMassiveNeutrals);
 		}
 	}
 }
@@ -1590,7 +1556,15 @@ void DSourceComboer::Combo_Horizontally_AddParticle(const DSourceComboUse& locCo
 
 	//create vector for storing results
 	locSourceCombosByUseSoFar.emplace(locComboUseToCreate, new vector<const DSourceCombo*>());
-	locSourceCombosByUseSoFar[locComboUseToCreate]->reserve(dInitialComboVectorCapacity);
+
+	//if on the all-showers stage, first copy over ALL fcal-only results
+	if(locComboingStage == d_AllShowers)
+		Copy_FCALOnlyResults(locComboUseToCreate, locComboingStage, locVertexZBin);
+	else
+		locSourceCombosByUseSoFar[locComboUseToCreate]->reserve(dInitialComboVectorCapacity);
+
+	//get whether the combo info to create contains any massive neutrals
+	bool locHasMassiveNeutrals = Get_HasMassiveNeutrals(locComboUseToCreate.second);
 
 	//For checking RF bunches (ignored if on charged stage)
 	const unordered_map<const JObject*, vector<int>>& locShowerRFMap = (locComboingStage == d_FCALShowersOnly) ? dShowerRFBunches_FCAL : dShowerRFBunches_Both[locVertexZBin];
@@ -1617,6 +1591,10 @@ void DSourceComboer::Combo_Horizontally_AddParticle(const DSourceComboUse& locCo
 		//loop over potential showers to add to the group, creating a new combo for each valid (non-duplicate) grouping
 		for(const auto& locParticle : locParticles)
 		{
+			auto locIsFCALOnly = (locComboingStage == d_FCALShowersOnly) || (locIsFCALOnly_AllBut1 && Get_IsFCALOnly(locParticle));
+			if((locComboingStage == d_AllShowers) && locIsFCALOnly)
+				continue; //this combo has already been created (assuming it was valid): during the FCAL-only stage
+
 			//conduct search
 			if(std::binary_search(locUsedParticles_AllBut1.begin(), locUsedParticles_AllBut1.end(), locParticle))
 				continue; //this shower has already been used, this combo won't work
@@ -1626,21 +1604,181 @@ void DSourceComboer::Combo_Horizontally_AddParticle(const DSourceComboUse& locCo
 			if(locComboingStage != d_ChargedOnly)
 			{
 				const vector<int>& locRFBunches_Second = locShowerRFMap[locParticle];
-				std::set_intersection(locValidRFBunches_AllBut1.begin(), locValidRFBunches_AllBut1.end(), locRFBunches_Second.begin(), locRFBunches_Second.end(), std::back_inserter(locValidRFBunches));
+				locValidRFBunches = Get_CommonRFBunches(locValidRFBunches_AllBut1, locRFBunches_Second);
 			}
 
 			//no duplicates: this combo is unique.  build a new combo
-			auto locIsFCALOnly = (locComboingStage == d_FCALShowersOnly) || (locIsFCALOnly_AllBut1 && Get_IsFCALOnly(locParticle));
 			auto locComboParticles = locUsedParticlePairs_AllBut1;
 			locComboParticles.emplace_back(locPID, locParticle);
 			auto locNeededGroupingCombo = new DSourceCombo(locComboParticles, locFurtherDecays, locIsFCALOnly); // create combo with all PIDs
 
 			//save it! //in creation order!
 			locSourceCombosByUseSoFar[locComboUseToCreate]->push_back(locNeededGroupingCombo);
-			Register_ValidRFBunches(locComboUseToCreate, locNeededGroupingCombo, locValidRFBunches, locComboingStage, locVertexZBin);
+			Register_ValidRFBunches(locComboUseToCreate, locNeededGroupingCombo, locValidRFBunches, locComboingStage, locVertexZBin, locHasMassiveNeutrals);
 		}
 	}
 }
 
+
+/***************************************************************** PARTICLE UTILITY FUNCTIONS *****************************************************************/
+
+const vector<int>& DSourceComboer::Get_ValidRFBunches(const DSourceComboUse& locSourceComboUse, const DSourceCombo* locSourceCombo) const
+{
+	//in general, the valid rf bunches are only combo-dependent, not use-dependent
+	//however, they ARE use-dependent if the combo contains a massive-neutral particle
+	//this is because the timing is needed to get the massive-neutral momentum, which is used in invariant mass cuts for the use
+	auto locRFComboIterator = dValidRFBunches_ByCombo.find(locSourceCombo);
+	if(locRFComboIterator != dValidRFBunches_ByCombo.end())
+		return locRFComboIterator->second; //combo-dependent (no massive neutrals)
+
+	auto locRFComboUseIterator = dValidRFBunches_ByUse.find(std::make_pair(locSourceComboUse, locSourceCombo));
+	if(locRFComboUseIterator == dValidRFBunches_ByUse.end())
+		return {}; //shouldn't be possible!!!
+
+	return locRFComboUseIterator->second; //depends on massive neutrals
+}
+
+const vector<const JObject*>& DSourceComboer::Get_ParticlesForComboing(Particle_t locPID, ComboingStage_t locComboingStage, const vector<int>& locBeamBunches, size_t locVertexZBin)
+{
+	//find all particles that have an overlapping beam bunch with the input
+	if(ParticleCharge(locPID) != 0) //charged tracks
+		return dTracksByPID[locPID]; //rf bunch & vertex-z are irrelevant
+	else if(locPID != Gamma) //massive neutrals
+		return dPhotonShowersByBeamBunch[0][{}]; //all neutrals: cannot do PID at all, and cannot do mass cuts until a specific vertex is chosen, so vertex-z doesn't matter
+	else if(locComboingStage == d_FCALShowersOnly) //fcal photons
+	{
+		auto locGroupBunchIterator = dFCALPhotonShowersByBeamBunch.find(locBeamBunches);
+		if(locGroupBunchIterator != dFCALPhotonShowersByBeamBunch.end())
+			return locGroupBunchIterator->second;
+		return Get_ShowersByBeamBunch(locBeamBunches, dFCALPhotonShowersByBeamBunch);
+	}
+	else //bcal + fcal photons
+	{
+		auto locGroupBunchIterator = dPhotonShowersByBeamBunch[locVertexZBin].find(locBeamBunches);
+		if(locGroupBunchIterator != dPhotonShowersByBeamBunch[locVertexZBin].end())
+			return locGroupBunchIterator->second;
+		return Get_ShowersByBeamBunch(locBeamBunches, dPhotonShowersByBeamBunch[locVertexZBin]);
+	}
+}
+
+vector<const JObject*>* DSourceComboer::Get_ShowersByBeamBunch(const vector<int>& locBeamBunches, DPhotonShowersByBeamBunch& locShowersByBunch)
+{
+	//find all particles that have an overlapping beam bunch with the input
+	//this won't happen often (max probably tens of times each event), so we can be a little inefficient
+	vector<int> locBunchesSoFar = {*locBeamBunches.begin()};
+	for(auto locBunchIterator = std::next(locBeamBunches.begin()); locBunchIterator != locBeamBunches.end(); ++locBunchIterator)
+	{
+		const auto& locComboShowers = locShowersByBunch[locBunchesSoFar];
+		const auto& locBunchShowers = locShowersByBunch[vector<int>(*locBunchIterator)];
+		locBunchesSoFar.push_back(*locBunchIterator);
+		if(locBunchShowers.empty())
+		{
+			locShowersByBunch.emplace(locBunchesSoFar, locComboShowers);
+			continue;
+		}
+
+		//merge and move-emplace
+		vector<const JObject*> locMergeResult;
+		locMergeResult.reserve(locComboShowers.size() + locBunchShowers.size());
+		std::set_union(locComboShowers.begin(), locComboShowers.end(), locBunchShowers.begin(), locBunchShowers.end(), std::back_inserter(locMergeResult));
+		locShowersByBunch.emplace(locBunchesSoFar, std::move(locMergeResult));
+		Build_ParticleIterators(locBeamBunches, locShowersByBunch[locBeamBunches]);
+	}
+	return &(locShowersByBunch[locBeamBunches]);
+}
+
+/******************************************************************* COMBO UTILITY FUNCTIONS ******************************************************************/
+
+void DSourceComboer::Register_ValidRFBunches(const DSourceComboUse& locSourceComboUse, const DSourceCombo* locSourceCombo, const vector<int>& locRFBunches, ComboingStage_t locComboingStage, size_t locVertexZBin, bool locHasMassiveNeutrals)
+{
+	//search and register
+	if(locHasMassiveNeutrals)
+		dValidRFBunches_ByUse.emplace(std::make_pair(locSourceComboUse, locSourceCombo), locRFBunches); //contains a massive neutral
+	else
+		dValidRFBunches_ByCombo.emplace(locSourceCombo, locRFBunches);
+
+	//also, register for each individual bunch: so that we can get valid combos for some input rf bunches later
+	auto& locCombosByBeamBunch = (locComboingStage == d_FCALShowersOnly) ? dSourceCombosByBeamBunch_FCAL[locSourceComboUse] : dSourceCombosByBeamBunch_Both[locVertexZBin][locSourceComboUse];
+	auto& locIteratorComboMap = (locComboingStage != d_AllShowers) ? dResumeSearchAfterIterators_Combos : dResumeSearchAfterIterators_AllShowerCombos[locVertexZBin];
+	for(const auto& locBeamBunch : locRFBunches)
+	{
+		auto& locComboVector = locCombosByBeamBunch[{locBeamBunch}];
+		locComboVector.push_back(locSourceCombo);
+		vector<const DSourceCombo*>::const_iterator locIterator = std::prev(locComboVector.end());
+		locIteratorComboMap[locSourceCombo].emplace({locBeamBunch}, locIterator);
+	}
+}
+
+const vector<const DSourceCombo*>& DSourceComboer::Get_CombosForComboing(const DSourceComboUse& locComboUse, ComboingStage_t locComboingStage, const vector<int>& locBeamBunches, size_t locVertexZBin)
+{
+	//find all combos for the given use that have an overlapping beam bunch with the input
+	if(locBeamBunches.empty()) //e.g. a combo of 2 KLongs (RF bunches not saved for massive neutrals)
+		return *(Get_CombosSoFar(locComboingStage, locVertexZBin)[locComboUse]);
+
+	//fcal or bcal time
+	DSourceCombosByBeamBunchByUse& locCombosByBunchByUse = (locComboingStage == d_FCALShowersOnly) ? dSourceCombosByBeamBunch_FCAL : dSourceCombosByBeamBunch_Both[locVertexZBin];
+	auto locGroupBunchIterator = locCombosByBunchByUse[locComboUse].find(locBeamBunches);
+	if(locGroupBunchIterator != locCombosByBunchByUse[locComboUse].end())
+		return locGroupBunchIterator->second;
+	return Get_CombosByBeamBunch(locComboUse, locBeamBunches, locCombosByBunchByUse[locComboUse], locComboingStage, locVertexZBin);
+}
+
+const vector<const DSourceCombo*>& DSourceComboer::Get_CombosByBeamBunch(DCombosByBeamBunch& locCombosByBunch, const vector<int>& locBeamBunches, ComboingStage_t locComboingStage, size_t locVertexZBin)
+{
+	//find all combos for the given use that have an overlapping beam bunch with the input
+	//this shouldn't be called very many times per event
+	vector<int> locBunchesSoFar = {*locBeamBunches.begin()};
+	for(auto locBunchIterator = std::next(locBeamBunches.begin()); locBunchIterator != locBeamBunches.end(); ++locBunchIterator)
+	{
+		const auto& locComboShowers = locCombosByBunch[locBunchesSoFar];
+		const auto& locBunchShowers = locCombosByBunch[vector<int>(*locBunchIterator)];
+		locBunchesSoFar.push_back(*locBunchIterator);
+		if(locBunchShowers.empty())
+		{
+			locCombosByBunch.emplace(locBunchesSoFar, locComboShowers);
+			continue;
+		}
+
+		//merge and move-emplace
+		vector<const DSourceCombo*> locMergeResult;
+		locMergeResult.reserve(locComboShowers.size() + locBunchShowers.size());
+		std::set_union(locComboShowers.begin(), locComboShowers.end(), locBunchShowers.begin(), locBunchShowers.end(), std::back_inserter(locMergeResult));
+		locCombosByBunch.emplace(locBunchesSoFar, std::move(locMergeResult));
+		Build_ComboIterators(locBeamBunches, locCombosByBunch[locBeamBunches], locComboingStage, locVertexZBin);
+	}
+	return &(locCombosByBunch[locBeamBunches]);
+}
+
+void DSourceComboer::Copy_FCALOnlyResults(const DSourceComboUse& locComboUseToCreate, ComboingStage_t locComboingStage, size_t locVertexZBin)
+{
+	//Copy the results from the FCAL-only stage through to the both stage (that way we don't have to repeat them)
+
+	//Get combos so far
+	auto& locSourceCombosByUseSoFar = Get_CombosSoFar(locComboingStage, locVertexZBin);
+
+	//Get the combo vectors
+	const auto& locFCALComboVector = *dSourceCombos_FCAL[locComboUseToCreate];
+	auto& locBothComboVector = *(locSourceCombosByUseSoFar[locComboUseToCreate]);
+
+	//Copy over the combos
+	locBothComboVector.reserve(locFCALComboVector.size() + dInitialComboVectorCapacity);
+	locBothComboVector.assign(locFCALComboVector.begin(), locFCALComboVector.end());
+
+	//Copy over the combos-by-beam-bunch
+	const auto& locCombosByBeamBunch = dSourceCombosByBeamBunch_FCAL[locComboUseToCreate];
+	for(const auto& locComboBeamBunchPair : locCombosByBeamBunch)
+	{
+		if(locComboBeamBunchPair.first.size() == 1) //don't copy the overlap ones: they are not complete & need to be filled on the fly
+			dSourceCombosByBeamBunch_Both[locVertexZBin][locComboUseToCreate].emplace(locComboBeamBunchPair);
+	}
+
+	//Copy over the resume-after iterators
+	for(vector<const DSourceCombo*>::const_iterator locComboIterator = locBothComboVector.begin(); locComboIterator != locBothComboVector.end(); ++locComboIterator)
+	{
+		const auto& locRFBunches = Get_ValidRFBunches(locComboUseToCreate, *locComboIterator);
+		for(const auto& locBeamBunch : locRFBunches)
+			dResumeSearchAfterIterators_AllShowerCombos[locVertexZBin][*locComboIterator].emplace(locBeamBunch, *locComboIterator);
+	}
+}
 
 } //end DAnalysis namespace
