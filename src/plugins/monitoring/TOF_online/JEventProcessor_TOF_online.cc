@@ -15,6 +15,8 @@
 using namespace std;
 using namespace jana;
 #include <DAQ/DCODAEventInfo.h>
+#include <DAQ/DCODAROCInfo.h>
+#include <DAQ/DCAEN1290TDCHit.h>
 
 #include "TOF/DTOFHit.h"
 #include "TOF/DTOFDigiHit.h"
@@ -203,13 +205,35 @@ jerror_t JEventProcessor_TOF_online::evnt(JEventLoop *eventLoop, uint64_t eventn
   memset(hit_down,0,sizeof(hit_down));
 
   // First determine timing shift to resolve 6-fold ambiguity
+  /*
   vector<const DCODAEventInfo*> locCODAEventInfo;
   eventLoop->Get(locCODAEventInfo);
   
   if (locCODAEventInfo.size() == 0){
     return NOERROR;
   }
-  uint64_t TriggerTime = locCODAEventInfo[0]->avg_timestamp;
+  */
+
+  vector< const DCAEN1290TDCHit*> CAENHits;
+  eventLoop->Get(CAENHits);
+  if (CAENHits.size()<=0){
+    return NOERROR;
+  }
+  uint32_t locROCID = CAENHits[0]->rocid; // this is the crate we want the trigger time from
+  int indx = -1;
+  vector <const DCODAROCInfo*> ROCS;
+  eventLoop->Get(ROCS);
+  for ( unsigned int n=0; n<ROCS.size(); n++) {
+    if (locROCID == ROCS[n]->rocid){
+      indx = n;
+      break;
+    }
+  }
+  if (indx<0){
+    return NOERROR;
+  }
+
+  uint64_t TriggerTime = ROCS[indx]->timestamp;
   int TriggerBIT = TriggerTime%6;
   float TimingShift = TOF_TDC_SHIFT - (float)TriggerBIT;
   //cout<<TOF_TDC_SHIFT<<endl;
