@@ -25,10 +25,12 @@ class DBCALHit_factory:public jana::JFactory<DBCALHit>{
 	public:
 		DBCALHit_factory(){
 		  PRINTCALIBRATION = false;
-		  VERBOSE = 1;
+		  VERBOSE = 0;
+		  CHECK_FADC_ERRORS = false;
 		  if(gPARMS){
 		    gPARMS->SetDefaultParameter("BCALHIT:PRINTCALIBRATION", PRINTCALIBRATION, "Print the calibration parameters.");
-		    gPARMS->SetDefaultParameter("BCAL:VERBOSE", VERBOSE, "Set verbosity level. 0=none, 1=default");
+			gPARMS->SetDefaultParameter("BCALHIT:VERBOSE", VERBOSE, "Set level of verbosity.");
+			gPARMS->SetDefaultParameter("BCAL:CHECK_FADC_ERRORS", CHECK_FADC_ERRORS, "Set to 1 to reject hits with fADC250 errors, ser to 0 to keep these hits");
 		  }
 		};
 		~DBCALHit_factory(){};
@@ -52,7 +54,7 @@ class DBCALHit_factory:public jana::JFactory<DBCALHit>{
 		// constants tables
 		bcal_digi_constants_t gains;
 		bcal_digi_constants_t pedestals;
-		bcal_digi_constants_t time_offsets;
+		bcal_digi_constants_t ADC_timing_offsets;
         bcal_digi_constants_t channel_global_offset;
         bcal_digi_constants_t tdiff_u_d;
 		

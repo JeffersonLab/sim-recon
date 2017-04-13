@@ -70,16 +70,28 @@ class DBCALUnifiedHit_factory : public JFactory<DBCALUnifiedHit> {
 
   //For now timewalk corrections are of the form f(ADC) = c0 + c1/(ADC-c3)^c2
   //Store all coefficients in one structure
-  class timewalk_coefficients {
-   public:
-    timewalk_coefficients() :
-      a_thresh(0), c0(0), c1(0), c2(0) {}
-    timewalk_coefficients(float c0, float c1, float c2, float a_thresh) :
-      a_thresh(a_thresh), c0(c0), c1(c1), c2(c2) {}
-    float a_thresh,c0,c1,c2;
+  /* class timewalk_coefficients { */
+  /*  public: */
+  /*   timewalk_coefficients() : */
+  /*     a_thresh(0), c0(0), c1(0), c2(0) {} */
+  /*   timewalk_coefficients(float c0, float c1, float c2, float a_thresh) : */
+  /*     a_thresh(a_thresh), c0(c0), c1(c1), c2(c2) {} */
+  /*   float a_thresh,c0,c1,c2; */
+  /* }; */
+
+  /* map<readout_channel,timewalk_coefficients> tdc_timewalk_map; */
+
+  // structure to store a 4 parameter fit with a threshold
+  class timewalk_coefficients_c4 {
+  public:
+  timewalk_coefficients_c4() :
+      thresh(0), c0(0), c1(0), c2(0), c3(0) {}
+  timewalk_coefficients_c4(float c0, float c1, float c2, float c3, float thresh) :
+      thresh(thresh), c0(c0), c1(c1), c2(c2), c3(c3) {}
+	  float thresh,c0,c1,c2,c3;
   };
 
-  map<readout_channel,timewalk_coefficients> tdc_timewalk_map;
+  map<readout_channel,timewalk_coefficients_c4> tdc_timewalk_map_c4;
 
   const DBCALGeometry *dBCALGeom;
 

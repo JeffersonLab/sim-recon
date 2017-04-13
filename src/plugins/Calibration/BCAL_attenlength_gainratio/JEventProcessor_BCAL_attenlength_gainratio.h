@@ -26,6 +26,7 @@ class JEventProcessor_BCAL_attenlength_gainratio:public jana::JEventProcessor{
 
 	private:
 		uint32_t VERBOSE;
+		uint32_t VERBOSEHISTOGRAMS;
 
 		jerror_t init(void);						///< Called once at program start.
 		jerror_t brun(jana::JEventLoop *eventLoop, int32_t runnumber);	///< Called everytime a new run number is detected.

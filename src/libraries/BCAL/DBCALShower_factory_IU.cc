@@ -90,6 +90,19 @@ jerror_t DBCALShower_factory_IU::brun(JEventLoop *loop, int32_t runnumber) {
   return NOERROR;
 }
 
+
+jerror_t DBCALShower_factory_IU::erun(void) {
+    // delete lookup tables to prevent memory leak
+	for (int i=0; i<5; i++) {
+		for (int j=0; j<=i; j++) {
+            delete CovarianceLookupTable[i][j];
+            CovarianceLookupTable[i][j] = nullptr;
+        }
+    }
+    return NOERROR;
+}
+
+
 jerror_t
 DBCALShower_factory_IU::evnt( JEventLoop *loop, uint64_t eventnumber ){
  

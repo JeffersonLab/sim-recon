@@ -10,6 +10,7 @@
 #include <iomanip>
 #include <set>
 #include <cmath>
+#include <mutex>
 using namespace std;
 
 #include "DTrackWireBased_factory.h"
@@ -115,10 +116,26 @@ jerror_t DTrackWireBased_factory::init(void)
 			else if(ParticleCharge(Particle_t(hypotheses[loc_i])) < 0)
 				mass_hypotheses_negative.push_back(hypotheses[loc_i]);
 		}
-		if(mass_hypotheses_positive.empty())
-			mass_hypotheses_positive.push_back(Unknown); // If empty string is specified, assume they want massless particle
-		if(mass_hypotheses_negative.empty())
-			mass_hypotheses_negative.push_back(Unknown); // If empty string is specified, assume they want massless particle
+		
+		if(mass_hypotheses_positive.empty()){
+			static once_flag pwarn_flag;
+			call_once(pwarn_flag, [](){
+				jout <<
+				jout << "############# WARNING !! ################ " <<endl;
+				jout << "There are no mass hypotheses for positive tracks!" << endl;
+				jout << "Be SURE this is what you really want!" << endl;
+				jout << "######################################### " <<endl;
+			});
+		}
+		if(mass_hypotheses_negative.empty()){
+			static once_flag nwarn_flag;
+			call_once(nwarn_flag, [](){
+				jout << "############# WARNING !! ################ " <<endl;
+				jout << "There are no mass hypotheses for negative tracks!" << endl;
+				jout << "Be SURE this is what you really want!" << endl;
+				jout << "######################################### " <<endl;
+			});
+		}
 	}
 
     return NOERROR;
