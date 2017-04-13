@@ -217,7 +217,7 @@ int main( int argc, char* argv[] ){
 			// cannot ask for the intensity if we haven't called process events above
 			double intensity_i = ati.intensity( i );
 			double weightedInten = ( genFlat ? 1 : ati.intensity( i ) ); 
-			cout << " i=" << i << "  intensity_i=" << intensity_i << endl;
+			// cout << " i=" << i << "  intensity_i=" << intensity_i << endl;
 
 			if( !diag ){
 				
@@ -258,6 +258,7 @@ int main( int argc, char* argv[] ){
 
                                         TVector3 eps(1.0, 0.0, 0.0); // beam polarization vector
                                         double Phi = atan2(y.Dot(eps), beam.Vect().Unit().Dot(eps.Cross(y)));
+					Phi = Phi > 0? Phi : Phi + 3.14159;
 
                                         GDouble psi = phi - Phi;
                                         if(psi < -1*PI) psi += 2*PI;
