@@ -1,0 +1,12 @@
+# Here is the sequence of instructions to generate, fit and view generated distributions
+
+gen_2pi_amp> gen_2pi_amp -c gen_2pi_amp.cfg -o tree_AmpToolsFormatThrown.root -hd HDDMFormatThrown.hddm -a 8.4 -b 9.0 -n 100000 -r 30000
+gen_2pi_amp> mv tree_AmpToolsFormatThrown.root tree_gen_2pi_amp.root
+gen_2pi_amp> gen_2pi_amp -c gen_2pi_amp_flat.cfg -o tree_AmpToolsFormatThrown_flat.root -hd HDDMFormatThrown_flat.hddm -a 8.4 -b 9.0 -n 100000 -r 30000
+gen_2pi_amp> mv tree_AmpToolsFormatThrown_flat.root tree_gen_2pi_amp_flat.root
+gen_2pi_amp> fit -c fit_2pi_amp.cfg
+gen_2pi_amp> cp twopi_amp.fit twopi_amp_fitPars.fit
+gen_2pi_amp> twopi_plotter_amp twopi_amp_fitPars.fit -o twopi_map_fitPars.root
+gen_2pi_amp> mv twopi_fitPars.txt twopi_amp_fitPars.fit2
+gen_2pi_amp> root -l
+root [0] .x twopi_amp.C
