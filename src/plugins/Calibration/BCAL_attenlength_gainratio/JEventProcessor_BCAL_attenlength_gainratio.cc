@@ -179,7 +179,7 @@ jerror_t JEventProcessor_BCAL_attenlength_gainratio::init(void)
 				sprintf(histname,"logintratiovsZ_%02i%i%i",module+1,layer+1,sector+1);
 				sprintf(modtitle,"Channel (M%i,L%i,S%i)",module+1,layer+1,sector+1);
 				sprintf(histtitle,"%s;Z Position (cm);log of integral ratio US/DS",modtitle);
-				logintratiovsZ[module][layer][sector] = new TH2I(histname,histtitle,220,-220.0,220.0,350,400,-4,4);
+				logintratiovsZ[module][layer][sector] = new TH2I(histname,histtitle,220,-220.0,220.0,400,-4,4);
 			}
 		}
 	}
