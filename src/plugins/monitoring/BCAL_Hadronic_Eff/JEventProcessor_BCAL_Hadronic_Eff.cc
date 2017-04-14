@@ -104,18 +104,27 @@ jerror_t JEventProcessor_BCAL_Hadronic_Eff::init(void)
 	locTreeBranchRegister.Register_Single<UChar_t>("ProjectedBCALSectors_Layer1"); //0 if biased or indeterminate
 	locTreeBranchRegister.Register_Single<UChar_t>("NearestBCALSectors_Layer1_Downstream"); //0 if not found
 	locTreeBranchRegister.Register_Single<UChar_t>("NearestBCALSectors_Layer1_Upstream"); //0 if not found
+	locTreeBranchRegister.Register_Single<Float_t>("NearestBCALEnergy_Layer1_Downstream"); //0 if not found
+	locTreeBranchRegister.Register_Single<Float_t>("NearestBCALEnergy_Layer1_Upstream"); //0 if not found
 	//LAYER 2:
 	locTreeBranchRegister.Register_Single<UChar_t>("ProjectedBCALSectors_Layer2"); //0 if biased or indeterminate
 	locTreeBranchRegister.Register_Single<UChar_t>("NearestBCALSectors_Layer2_Downstream"); //0 if not found
 	locTreeBranchRegister.Register_Single<UChar_t>("NearestBCALSectors_Layer2_Upstream"); //0 if not found
+	locTreeBranchRegister.Register_Single<Float_t>("NearestBCALEnergy_Layer2_Downstream"); //0 if not found
+	locTreeBranchRegister.Register_Single<Float_t>("NearestBCALEnergy_Layer2_Upstream"); //0 if not found
 	//LAYER 3:
 	locTreeBranchRegister.Register_Single<UChar_t>("ProjectedBCALSectors_Layer3"); //0 if biased or indeterminate
 	locTreeBranchRegister.Register_Single<UChar_t>("NearestBCALSectors_Layer3_Downstream"); //0 if not found
 	locTreeBranchRegister.Register_Single<UChar_t>("NearestBCALSectors_Layer3_Upstream"); //0 if not found
+	locTreeBranchRegister.Register_Single<Float_t>("NearestBCALEnergy_Layer3_Downstream"); //0 if not found
+	locTreeBranchRegister.Register_Single<Float_t>("NearestBCALEnergy_Layer3_Upstream"); //0 if not found
 	//LAYER 4:
 	locTreeBranchRegister.Register_Single<UChar_t>("ProjectedBCALSectors_Layer4"); //0 if biased or indeterminate
 	locTreeBranchRegister.Register_Single<UChar_t>("NearestBCALSectors_Layer4_Downstream"); //0 if not found
 	locTreeBranchRegister.Register_Single<UChar_t>("NearestBCALSectors_Layer4_Upstream"); //0 if not found
+	locTreeBranchRegister.Register_Single<Float_t>("NearestBCALEnergy_Layer4_Downstream"); //0 if not found
+	locTreeBranchRegister.Register_Single<Float_t>("NearestBCALEnergy_Layer4_Upstream"); //0 if not found
+
 
 	//REGISTER BRANCHES
 	dTreeInterface->Create_Branches(locTreeBranchRegister);
@@ -354,6 +363,7 @@ jerror_t JEventProcessor_BCAL_Hadronic_Eff::evnt(jana::JEventLoop* locEventLoop,
 
 		//Tree-save variables
 		map<int, UChar_t> locProjectedSectorsMap, locNearestSectorsMap_Downstream, locNearestSectorsMap_Upstream;
+		map<int, Float_t> locNearestHitEnergy_Upstream, locNearestHitEnergy_Downstream;
 		//locProjectedSectors: (rounded from search): 4*(module - 1) + sector //sector: 1 -> 192, 0 if biased or indeterminate
 		//locNearestSectors_Downstream & locNearestSectors_Upstream: 4*(module - 1) + sector //sector: 1 -> 192, 0 if not found
 		UChar_t locIsHitInClusterBits = 0; //bits 1 -> 8 correspond to Upstream layer 1 -> 4, then Downstream layer 1 -> 4
@@ -365,6 +375,8 @@ jerror_t JEventProcessor_BCAL_Hadronic_Eff::evnt(jana::JEventLoop* locEventLoop,
 			locProjectedSectorsMap[locLayer] = 0;
 			locNearestSectorsMap_Downstream[locLayer] = 0;
 			locNearestSectorsMap_Upstream[locLayer] = 0;
+			locNearestHitEnergy_Upstream[locLayer] = 0;
+			locNearestHitEnergy_Downstream[locLayer] = 0;
 
 			//require at least 2 other layers in the cluster to have points
 			//use the DBCALPoint's (double-ended hits) to define where hits are to be expected (not the single-ended ones!)
@@ -426,18 +438,22 @@ jerror_t JEventProcessor_BCAL_Hadronic_Eff::evnt(jana::JEventLoop* locEventLoop,
 
 				int locFoundSector = 0;
 				bool locIsInClusterFlag = false;
+				float locFoundE = 0.;
 				if(locUsePointFlag)
 				{
 					locFoundSector = (locNearestPoint.first->module() - 1)*4 + locNearestPoint.first->sector();
 					locIsInClusterFlag = (locClusterPointSet.find(locNearestPoint.first) != locClusterPointSet.end());
+					locFoundE = locNearestPoint.first->E();
 				}
 				else
 				{
 					locFoundSector = (locNearestHit_Upstream.first->module - 1)*4 + locNearestHit_Upstream.first->sector;
 					locIsInClusterFlag = (locClusterUnifiedHitSet.find(locNearestHit_Upstream.first) != locClusterUnifiedHitSet.end());
+					locFoundE = locNearestHit_Upstream.first->E;
 				}
 
 				locNearestSectorsMap_Upstream[locLayer] = UChar_t(locFoundSector);
+				locNearestHitEnergy_Upstream[locLayer] = (Float_t) locFoundE;
 				if(locIsInClusterFlag)
 					locIsHitInClusterBits |= (1 << (locLayer - 1)); //Upstream bits: 1 -> 4
 
@@ -453,18 +469,22 @@ jerror_t JEventProcessor_BCAL_Hadronic_Eff::evnt(jana::JEventLoop* locEventLoop,
 
 				int locFoundSector = 0;
 				bool locIsInClusterFlag = false;
+				float locFoundE = 0.;
 				if(locUsePointFlag)
 				{
 					locFoundSector = (locNearestPoint.first->module() - 1)*4 + locNearestPoint.first->sector();
 					locIsInClusterFlag = (locClusterPointSet.find(locNearestPoint.first) != locClusterPointSet.end());
+					locFoundE = locNearestPoint.first->E();
 				}
 				else
 				{
 					locFoundSector = (locNearestHit_Downstream.first->module - 1)*4 + locNearestHit_Downstream.first->sector;
 					locIsInClusterFlag = (locClusterUnifiedHitSet.find(locNearestHit_Downstream.first) != locClusterUnifiedHitSet.end());
+					locFoundE = locNearestHit_Downstream.first->E;
 				}
 
-				locNearestSectorsMap_Downstream[locLayer] = UChar_t(locFoundSector);
+				locNearestSectorsMap_Downstream[locLayer] = UChar_t(locFoundSector);;
+				locNearestHitEnergy_Downstream[locLayer] = (Float_t) locFoundE;
 				if(locIsInClusterFlag)
 					locIsHitInClusterBits |= (1 << (locLayer - 1 + 4)); //Downstream bits: 5 -> 8
 
@@ -508,18 +528,26 @@ jerror_t JEventProcessor_BCAL_Hadronic_Eff::evnt(jana::JEventLoop* locEventLoop,
 		dTreeFillData.Fill_Single<UInt_t>("ProjectedBCALSectors_Layer1", locProjectedSectorsMap[1]);
 		dTreeFillData.Fill_Single<UInt_t>("NearestBCALSectors_Layer1_Downstream", locNearestSectorsMap_Downstream[1]);
 		dTreeFillData.Fill_Single<UInt_t>("NearestBCALSectors_Layer1_Upstream", locNearestSectorsMap_Upstream[1]);
+		dTreeFillData.Fill_Single<Float_t>("NearestBCALEnergy_Layer1_Downstream", locNearestHitEnergy_Upstream[1]);
+		dTreeFillData.Fill_Single<Float_t>("NearestBCALEnergy_Layer1_Upstream", locNearestHitEnergy_Downstream[1]);
 		//LAYER 2:
 		dTreeFillData.Fill_Single<UInt_t>("ProjectedBCALSectors_Layer2", locProjectedSectorsMap[2]);
 		dTreeFillData.Fill_Single<UInt_t>("NearestBCALSectors_Layer2_Downstream", locNearestSectorsMap_Downstream[2]);
 		dTreeFillData.Fill_Single<UInt_t>("NearestBCALSectors_Layer2_Upstream", locNearestSectorsMap_Upstream[2]);
+		dTreeFillData.Fill_Single<Float_t>("NearestBCALEnergy_Layer2_Downstream", locNearestHitEnergy_Upstream[2]);
+		dTreeFillData.Fill_Single<Float_t>("NearestBCALEnergy_Layer2_Upstream", locNearestHitEnergy_Downstream[2]);
 		//LAYER 3:
 		dTreeFillData.Fill_Single<UInt_t>("ProjectedBCALSectors_Layer3", locProjectedSectorsMap[3]);
 		dTreeFillData.Fill_Single<UInt_t>("NearestBCALSectors_Layer3_Downstream", locNearestSectorsMap_Downstream[3]);
 		dTreeFillData.Fill_Single<UInt_t>("NearestBCALSectors_Layer3_Upstream", locNearestSectorsMap_Upstream[3]);
+		dTreeFillData.Fill_Single<Float_t>("NearestBCALEnergy_Layer3_Downstream", locNearestHitEnergy_Upstream[3]);
+		dTreeFillData.Fill_Single<Float_t>("NearestBCALEnergy_Layer3_Upstream", locNearestHitEnergy_Downstream[3]);
 		//LAYER 4:
 		dTreeFillData.Fill_Single<UInt_t>("ProjectedBCALSectors_Layer4", locProjectedSectorsMap[4]);
 		dTreeFillData.Fill_Single<UInt_t>("NearestBCALSectors_Layer4_Downstream", locNearestSectorsMap_Downstream[4]);
 		dTreeFillData.Fill_Single<UInt_t>("NearestBCALSectors_Layer4_Upstream", locNearestSectorsMap_Upstream[4]);
+		dTreeFillData.Fill_Single<Float_t>("NearestBCALEnergy_Layer4_Downstream", locNearestHitEnergy_Upstream[4]);
+		dTreeFillData.Fill_Single<Float_t>("NearestBCALEnergy_Layer4_Upstream", locNearestHitEnergy_Downstream[4]);
 
 		//FILL TTREE
 		dTreeInterface->Fill(dTreeFillData);

@@ -6,21 +6,30 @@
 
 #include <iostream>
 #include <cmath>
+#include <vector>
+#include <map>
+
 using namespace std;
 
 #include <strings.h>
 
 #include "MyProcessor.h"
+#include "hddm_s_merger.h"
 
 #include <JANA/JEvent.h>
 
 #include <HDDM/DEventSourceHDDM.h>
 #include <TRACKING/DMCThrown.h>
+#include <DRandom2.h>
 
 extern char *OUTFILENAME;
+extern std::map<hddm_s::istream*,double> files2merge;
+extern std::map<hddm_s::istream*,hddm_s::streamposition> start2merge;
 
 static pthread_mutex_t output_file_mutex;
 static pthread_t output_file_mutex_last_owner;
+static pthread_mutex_t input_file_mutex;
+static pthread_t input_file_mutex_last_owner;
 
 #include <JANA/JCalibration.h>
 //static JCalibration *jcalib=NULL;
@@ -127,6 +136,7 @@ jerror_t MyProcessor::init(void)
    pthread_mutexattr_init(&attr);
    pthread_mutexattr_settype(&attr, PTHREAD_MUTEX_ERRORCHECK);
    pthread_mutex_init(&output_file_mutex, NULL);
+   pthread_mutex_init(&input_file_mutex, NULL);
    
    // pthreads does not provide an "invalid" value for 
    // a pthread_t that we can initialize with. Furthermore,
@@ -134,6 +144,7 @@ jerror_t MyProcessor::init(void)
    // a complicated structure. Hence, to make this portable
    // we clear it with bzero.
    bzero(&output_file_mutex_last_owner, sizeof(pthread_t));
+   bzero(&input_file_mutex_last_owner, sizeof(pthread_t));
    
    return NOERROR;
 }
@@ -148,7 +159,7 @@ jerror_t MyProcessor::brun(JEventLoop *loop, int locRunNumber)
     // we check to see if the variation is set and if it contains the string "mc".
     // Note that for now, we only print a warning and do not exit immediately.
     // It might be advisable to apply some tougher love.
-    jerr << "In MyProcessor::brun()" << endl;
+    jout << "In MyProcessor::brun()" << endl;
     if(locCheckCCDBContext) {
         // only do this once
         locCheckCCDBContext = false;        
@@ -160,7 +171,7 @@ jerror_t MyProcessor::brun(JEventLoop *loop, int locRunNumber)
     
         string context = jcalib->GetContext();
       
-        jerr << "checking context = " << context << endl;
+        jout << "checking context = " << context << endl;
 
         // Really we should parse the context string, but since "mc" shouldn't show up
         // outside of the context, we just search the whole string.
@@ -168,6 +179,20 @@ jerror_t MyProcessor::brun(JEventLoop *loop, int locRunNumber)
         if( (context.find("variation") == string::npos) || (context.find("mc") == string::npos) ) {
             PrintCCDBWarning(context);
         }
+
+        std::map<string, float> parms;
+        jcalib->Get("CDC/cdc_parms", parms);
+        hddm_s_merger::set_cdc_min_delta_t_ns(parms.at("CDC_TWO_HIT_RESOL"));
+        jcalib->Get("TOF/tof_parms", parms);
+        hddm_s_merger::set_ftof_min_delta_t_ns(parms.at("TOF_TWO_HIT_RESOL"));
+        jcalib->Get("FDC/fdc_parms", parms);
+        hddm_s_merger::set_fdc_min_delta_t_ns(parms.at("FDC_TWO_HIT_RESOL"));
+        jcalib->Get("START_COUNTER/start_parms", parms);
+        hddm_s_merger::set_stc_min_delta_t_ns(parms.at("START_TWO_HIT_RESOL"));
+        jcalib->Get("BCAL/bcal_parms", parms);
+        hddm_s_merger::set_bcal_min_delta_t_ns(parms.at("BCAL_TWO_HIT_RESOL"));
+        jcalib->Get("FCAL/fcal_parms", parms);
+        hddm_s_merger::set_fcal_min_delta_t_ns(parms.at("FCAL_TWO_HIT_RESOL"));
     }
    
 
@@ -180,6 +205,12 @@ jerror_t MyProcessor::brun(JEventLoop *loop, int locRunNumber)
 	// Pull configuration parameters from RCDB
 	config->ParseRCDBConfigFile(locRunNumber);
 #endif  // HAVE_RCDB
+
+    // rewind any merger input files to the beginning
+    std::map<hddm_s::istream*,hddm_s::streamposition>::iterator iter;
+    for (iter = start2merge.begin(); iter != start2merge.end(); ++iter) {
+        iter->first->setPosition(iter->second);
+    }
 
 	return NOERROR;
 }
@@ -199,10 +230,38 @@ jerror_t MyProcessor::evnt(JEventLoop *loop, uint64_t eventnumber)
    hddm_s::HDDM *record = (hddm_s::HDDM*)event.GetRef();
    if (!record)
       return NOERROR;
-   
+
    // Smear values
    smearer->SmearEvent(record);
-   
+
+   // Load any external events to be merged during smearing
+   std::map<hddm_s::istream*,double>::iterator iter;
+   for (iter = files2merge.begin(); iter != files2merge.end(); ++ iter) {
+      int count = iter->second;
+      if (count != iter->second) {
+         count = gDRandom.Poisson(iter->second);
+      }
+      for (int i=0; i < count; ++i) {
+         hddm_s::HDDM record2;
+         *iter->first >> record2;
+         if (iter->first->eof()) {
+            pthread_mutex_lock(&input_file_mutex);
+            input_file_mutex_last_owner = pthread_self();
+            if (iter->first->eof())
+               iter->first->setPosition(start2merge.at(iter->first));
+            *iter->first >> *record;
+            if (iter->first->eof()) {
+               pthread_mutex_unlock(&input_file_mutex);
+               std::cerr << "Trying to merge from empty input file, "
+                         << "cannot continue!" << std::endl;
+               exit(-1);
+            }
+            pthread_mutex_unlock(&input_file_mutex);
+         }
+         *record += record2;
+      }
+   }
+
    // Write event to output file
    pthread_mutex_lock(&output_file_mutex);
    output_file_mutex_last_owner = pthread_self();
