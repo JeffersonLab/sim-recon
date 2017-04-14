@@ -175,8 +175,8 @@ int main( int argc, char* argv[] ){
 
   // parameters to check
   vector< string > pars;
-  pars.push_back("Primakoff::Aplus::g1Vm0");
-  // pars.push_back("Primakoff::Aminus::g1Vm0");
+  pars.push_back("Primakoff::Aplus::g1Vm0_re");
+  pars.push_back("Primakoff::Aplus::g1Vm0_im");
   /*pars.push_back("Pi+Pi-::helplusN+::g1VM1_re");
   pars.push_back("Pi+Pi-::helplusN+::g1VM0_re");
   pars.push_back("Pi+Pi-::helplusN+::g1VM0_im");
@@ -194,12 +194,11 @@ int main( int argc, char* argv[] ){
   // file for writing parameters (later switch to putting in ROOT file)
   ofstream outfile;
   outfile.open( "twopi_fitPars.txt" );
-  cout << "Openend File twopi_fitPars.txt" << " pars.size=" << pars.size() << endl;
+  cout << "Openend Output File twopi_fitPars.txt" << " pars.size=" << pars.size() << endl;
 
   for(unsigned int i = 0; i<pars.size(); i++) {
     double parValue = results.parValue( pars[i] );
     double parError = results.parError( pars[i] );
-    cout << "Loop i=" << i << parValue << "\t" << parError << "\t" << endl;
     outfile << parValue << "\t" << parError << "\t";
   }
 
