@@ -24,6 +24,7 @@ class DBCALTDCHit:public JObject{
 		int sector;
 		DBCALGeometry::End end;
 		float t;
+		float t_raw;    ///< Uncalibrated time in ns
 
 		int cellId;
 
