@@ -177,19 +177,6 @@ int main( int argc, char* argv[] ){
   vector< string > pars;
   pars.push_back("Primakoff::Aplus::g1Vm0_re");
   pars.push_back("Primakoff::Aplus::g1Vm0_im");
-  /*pars.push_back("Pi+Pi-::helplusN+::g1VM1_re");
-  pars.push_back("Pi+Pi-::helplusN+::g1VM0_re");
-  pars.push_back("Pi+Pi-::helplusN+::g1VM0_im");
-
-  pars.push_back("Pi+Pi-::helplusN+::g1VM-1_re");
-  pars.push_back("Pi+Pi-::helplusN+::g1VM-1_im");
-  pars.push_back("Pi+Pi-::helplusN+::g-1VM1_re");
-  pars.push_back("Pi+Pi-::helplusN+::g-1VM1_im");
-
-  pars.push_back("Pi+Pi-::helplusN+::g-1VM0_re");
-  pars.push_back("Pi+Pi-::helplusN+::g-1VM0_im");
-  pars.push_back("Pi+Pi-::helplusN+::g-1VM-1_re");
-  pars.push_back("Pi+Pi-::helplusN+::g-1VM-1_im");*/
 
   // file for writing parameters (later switch to putting in ROOT file)
   ofstream outfile;
