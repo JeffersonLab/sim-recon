@@ -74,7 +74,7 @@ int main(int narg, char *argv[])
 
 		return 0;
 	}
-	abort();
+
 	// Run hdgeant proper
 	int res = hdgeant_();
 
