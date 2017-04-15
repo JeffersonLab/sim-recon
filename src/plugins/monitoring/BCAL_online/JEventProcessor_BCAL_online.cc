@@ -522,7 +522,6 @@ jerror_t JEventProcessor_BCAL_online::evnt(JEventLoop *loop, uint64_t eventnumbe
 	// FILL HISTOGRAMS
 	// Since we are filling histograms local to this plugin, it will not interfere with other ROOT operations: can use plugin-wide ROOT fill lock
 	japp->RootFillLock(this); //ACQUIRE ROOT FILL LOCK
-	return NOERROR;
 
 	if( (dbcaldigihits.size() > 0) || (dbcaltdcdigihits.size() > 0) )
 		bcal_num_events->Fill(1);
