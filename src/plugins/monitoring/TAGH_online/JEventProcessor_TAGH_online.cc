@@ -347,6 +347,7 @@ jerror_t JEventProcessor_TAGH_online::evnt(JEventLoop *eventLoop, uint64_t event
             hDigiHit_fadcTimeVsSlotID_cut->Fill(hit->counter_id,t_ns);
             hDigiHit_fadcTimeVsQF_cut->Fill(hit->QF,t_ns);
         }
+	abort();
         const Df250WindowRawData* wrd = pd_wrd_cache[hit].second;
         size_t threshold = 400;
         if (wrd != nullptr) {

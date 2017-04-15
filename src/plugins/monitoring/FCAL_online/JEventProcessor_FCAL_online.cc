@@ -233,7 +233,7 @@ jerror_t JEventProcessor_FCAL_online::evnt(JEventLoop *eventLoop, uint64_t event
 
     const DFCALDigiHit& dHit = (**dHitItr);
     dHit.GetSingle( pulseInt );
-    if( pulseInt ) pulseInt->GetSingle( pulsePed );
+    pulseInt->GetSingle( pulsePed );
     dHit.GetSingle( pulseDat );
 	 
 	 pi_pp_cache[&dHit] = pair<const Df250PulseIntegral*, const Df250PulsePedestal*>(pulseInt, pulsePed);
