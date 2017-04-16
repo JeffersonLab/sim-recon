@@ -1647,38 +1647,86 @@ unsigned int DParticleID::PredictSCSector(const DReferenceTrajectory* rt, DVecto
 
 // Predict the start counter paddle that would match a track whose reference
 // trajectory is given by rt.
-unsigned int DParticleID::PredictSCSector(const DReferenceTrajectory* rt, double& locDeltaPhi, DVector3& locProjPos, DVector3& locProjMom, DVector3& locPaddleNorm, double& locPathLength, double& locFlightTime, double& locFlightTimeVariance, int& locSCPlane) const
-{
-	if(rt == nullptr)
-		return 0;
+unsigned int DParticleID::PredictSCSector(const DReferenceTrajectory* rt, double& locDeltaPhi, DVector3& locProjPos, DVector3& locProjMom, DVector3& locPaddleNorm, double& locPathLength, double& locFlightTime, double& locFlightTimeVariance, int& locSCPlane) const{
+  if(rt == nullptr)
+    return 0;
+  if (rt->Nswim_steps==0) return 0;
+  // If the starting point of the track is outside the start counter, bail.
+  if (rt->swim_steps[0].origin.Perp()>sc_pos[0][0].Perp()){
+    return 0;
+  }
+  int index=0,istep=0;
+  double d_old=1000.,d=1000.,dphi=0.;
+  for (unsigned int m=0;m<12;m++){
+    for (int i=0;i<rt->Nswim_steps;i++){
+      locProjPos=rt->swim_steps[i].origin;
+      dphi=locProjPos.Phi()-sc_pos[0][0].Phi();
+      if (dphi<0) dphi+=2.*M_PI;
+      index=int(floor(dphi/(2.*M_PI/30.)));
+      if (index>29) index=0;
+      d=sc_norm[index][m].Dot(locProjPos-sc_pos[index][m]);
+      if (d*d_old<0){ // break if we cross the current plane
+	istep=i;
+	break;
+      }
+      d_old=d;
+    }  
+    // if the z position would be beyond the current segment along z of 
+    // the start counter, move to the next plane
+    double z=locProjPos.z();
+    if (z>sc_pos[index][m+1].z()&&m<11){
+      continue;
+    }
+    // allow for a little slop at the end of the nose
+    else if (z<sc_pos[index][sc_pos[0].size()-1].z()+1.){
+      // Hone in on intersection with the appropriate segment of the start 
+      // counter
+      locProjMom=rt->swim_steps[istep].mom;
+      double ds=-d*locProjMom.Mag()/sc_norm[index][m].Dot(locProjMom);
+      DVector3 B=rt->swim_steps[istep].B;
 
-	unsigned int locBestSCSector = 0;
-	locDeltaPhi=1e6;
-	// loop over geometry for all SC paddles looking for track intersections
-	for(unsigned int locSCSector = 1; locSCSector <= 30; ++locSCSector)
-	{
-		double locTempDeltaPhi, locTempPathLength, locTempFlightTime, locTempFlightTimeVariance;
-		DVector3 locTempProjPos, locTempProjMom, locTempPaddleNorm;
-		int locTempSCPlane;
-		if(!ProjectTo_SC(rt, locSCSector, locTempDeltaPhi, locTempProjPos, locTempProjMom, locTempPaddleNorm, locTempPathLength, locTempFlightTime, locTempFlightTimeVariance, locTempSCPlane))
-			continue;
+      // Current position and momentum
+      double x=locProjPos.x(),y=locProjPos.y();
+      double px=locProjMom.x(),py=locProjMom.y(),pz=locProjMom.z();
+      double p=locProjMom.Mag();
+  
+      // Compute convenience terms involving Bx, By, Bz
+      double k_q=0.003*rt->q;
+      double ds_over_p=ds/p;
+      double factor=k_q*(0.25*ds_over_p);
+      double Bx=B.x(),By=B.y(),Bz=B.z();
+      double Ax=factor*Bx,Ay=factor*By,Az=factor*Bz;
+      double Ax2=Ax*Ax,Ay2=Ay*Ay,Az2=Az*Az;
+      double AxAy=Ax*Ay,AxAz=Ax*Az,AyAz=Ay*Az;
+      double one_plus_Ax2=1.+Ax2;
+      double scale=ds_over_p/(one_plus_Ax2+Ay2+Az2);
+      
+      // Compute position increments
+      double dx=scale*(px*one_plus_Ax2+py*(AxAy+Az)+pz*(AxAz-Ay));
+      double dy=scale*(px*(AxAy-Az)+py*(1.+Ay2)+pz*(AyAz+Ax));
+      double dz=scale*(px*(AxAz+Ay)+py*(AyAz-Ax)+pz*(1.+Az2));
+      
+      locProjPos.SetXYZ(x+dx,y+dy,z+dz);
+      locProjMom.SetXYZ(px+k_q*(Bz*dy-By*dz),py+k_q*(Bx*dz-Bz*dx),
+			pz+k_q*(By*dx-Bx*dy)); 
+      dphi=locProjPos.Phi()-sc_pos[index][m].Phi();
+      if (dphi<0) dphi+=2.*M_PI;
+      locDeltaPhi=dphi;
+      locPaddleNorm=sc_norm[index][m];
+      // Flight time
+      double mass=rt->GetMass();
+      double one_over_betasq=1.+mass*mass/locProjMom.Mag2();
+      locFlightTime=rt->swim_steps[istep].t
+	+ds*sqrt(one_over_betasq)/SPEED_OF_LIGHT;
+      locPathLength=rt->swim_steps[istep].s+ds;
+      locFlightTimeVariance=rt->swim_steps[istep].cov_t_t;
+      locSCPlane=m;
 
-		if(fabs(locTempDeltaPhi) >= fabs(locDeltaPhi))
-			continue;
+      return index+1;
+    }
 
-		locDeltaPhi = locTempDeltaPhi;
-		locProjPos = locTempProjPos;
-		locProjMom = locTempProjMom;
-		locPaddleNorm = locTempPaddleNorm;
-		locPathLength = locTempPathLength;
-		locFlightTime = locTempFlightTime;
-		locFlightTimeVariance = locTempFlightTimeVariance;
-		locSCPlane = locTempSCPlane;
-
-		locBestSCSector = locSCSector;
-	}
-
-	return locBestSCSector;
+  }
+  return 0;
 }
 
 /****************************************************** MISCELLANEOUS ******************************************************/
