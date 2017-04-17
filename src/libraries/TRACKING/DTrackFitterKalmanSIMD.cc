@@ -6552,8 +6552,8 @@ kalman_error_t DTrackFitterKalmanSIMD::RecoverBrokenTracks(double anneal_factor,
 
       // Now refit with the truncated trajectory and list of hits
       //C1=C0;
-      C1=4.0*C0;
-      //C1=10.0*C0;
+      //C1=4.0*C0;
+      C1=10.0*C0;
       S1=central_traj[break_point_step_index].S;
       refit_chisq=MAX_CHI2;
       refit_ndf=0; 
