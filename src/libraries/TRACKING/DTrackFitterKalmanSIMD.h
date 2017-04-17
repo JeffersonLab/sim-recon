@@ -273,6 +273,8 @@ class DTrackFitterKalmanSIMD: public DTrackFitter{
 
   double Step(double oldz,double newz, double dEdx,DMatrix5x1 &S);
   double FasterStep(double oldz,double newz, double dEdx,DMatrix5x1 &S);
+  void FastStep(double &z,double ds, double dEdx,DMatrix5x1 &S); 
+  void FastStep(DVector2 &xy,double ds, double dEdx,DMatrix5x1 &S);
   jerror_t StepJacobian(double oldz,double newz,const DMatrix5x1 &S,
 			double dEdx,DMatrix5x5 &J);
   jerror_t CalcDerivAndJacobian(double z,double dz,const DMatrix5x1 &S,

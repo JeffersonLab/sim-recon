@@ -1252,7 +1252,8 @@ jerror_t DTrackFitterKalmanSIMD::PropagateForwardCDC(int length,int &index,
     temp.B=sqrt(Bx*Bx+By*By+Bz*Bz);
 
     // Step through field
-    ds=FasterStep(z,newz,dEdx,S);
+    double oldz=z;
+    FastStep(z,ds,dEdx,S);
 
     // update path length
     len+=fabs(ds);
@@ -1262,7 +1263,7 @@ jerror_t DTrackFitterKalmanSIMD::PropagateForwardCDC(int length,int &index,
 
     // Get the contribution to the covariance matrix due to multiple 
     // scattering
-    GetProcessNoise(z,ds,temp.chi2c_factor,temp.chi2a_factor,temp.chi2a_corr,
+    GetProcessNoise(oldz,ds,temp.chi2c_factor,temp.chi2a_factor,temp.chi2a_corr,
             temp.S,Q);
 
     // Energy loss straggling
@@ -1272,7 +1273,7 @@ jerror_t DTrackFitterKalmanSIMD::PropagateForwardCDC(int length,int &index,
     }
 
     // Compute the Jacobian matrix and its transpose
-    StepJacobian(newz,z,S,dEdx,J);
+    StepJacobian(newz,oldz,S,dEdx,J);
 
     // update the trajectory
     if (index<=length){
@@ -1287,9 +1288,6 @@ jerror_t DTrackFitterKalmanSIMD::PropagateForwardCDC(int length,int &index,
         temp.Skk=Zero5x1;
         forward_traj.push_front(temp);    
     }
-
-    //update z
-    z=newz;
 
     return NOERROR;
 }
@@ -1705,6 +1703,10 @@ jerror_t DTrackFitterKalmanSIMD::PropagateForward(int length,int &i,
       //  _DBG_ << endl;
       newz=endplate_z+EPS3;
       stepped_to_endplate=true;
+      ds=(newz-z)/dz_ds;
+    }
+    else if (stepped_to_endplate){
+      ds=endplate_dz/dz_ds;
     }
 
     // Check if we are about to step to one of the wire planes
@@ -1712,13 +1714,15 @@ jerror_t DTrackFitterKalmanSIMD::PropagateForward(int length,int &i,
     if (newz>zhit){ 
         newz=zhit;
         done=true;
-    }
+	ds=(newz-z)/dz_ds;
+    }   
 
     // Store magnitude of magnetic field
     temp.B=sqrt(Bx*Bx+By*By+Bz*Bz);
 
     // Step through field
-    ds=FasterStep(z,newz,dEdx,S);
+    double oldz=z;
+    FastStep(z,ds,dEdx,S);
 
     // update path length
     len+=ds;
@@ -1728,7 +1732,7 @@ jerror_t DTrackFitterKalmanSIMD::PropagateForward(int length,int &i,
 
     // Get the contribution to the covariance matrix due to multiple 
     // scattering
-    GetProcessNoise(z,ds,temp.chi2c_factor,temp.chi2a_factor,temp.chi2a_corr,
+    GetProcessNoise(oldz,ds,temp.chi2c_factor,temp.chi2a_factor,temp.chi2a_corr,
             temp.S,Q);
 
     // Energy loss straggling  
@@ -1738,7 +1742,7 @@ jerror_t DTrackFitterKalmanSIMD::PropagateForward(int length,int &i,
     }
 
     // Compute the Jacobian matrix and its transpose
-    StepJacobian(newz,z,S,dEdx,J);
+    StepJacobian(newz,oldz,S,dEdx,J);
 
     // update the trajectory data
     if (i<=length){
@@ -1753,9 +1757,6 @@ jerror_t DTrackFitterKalmanSIMD::PropagateForward(int length,int &i,
         temp.Skk=Zero5x1;
         forward_traj.push_front(temp);
     }
-
-    // update z
-    z=newz;
 
     return NOERROR;
 }
@@ -2185,6 +2186,89 @@ double DTrackFitterKalmanSIMD::FasterStep(double oldz,double newz, double dEdx,
     return ds;
 }
 
+// Assuming that the magnetic field is constant over the step, use a helical
+// model to step directly to the next point along the trajectory.
+void DTrackFitterKalmanSIMD::FastStep(double &z,double ds, double dEdx,
+				      DMatrix5x1 &S){
+  
+  // Compute convenience terms involving Bx, By, Bz
+  double one_over_p=fabs(S(state_q_over_p));
+  double p=1./one_over_p;
+  double tx=S(state_tx),ty=S(state_ty);
+  double denom=sqrt(1.+tx*tx+ty*ty);
+  double px=p*tx/denom;
+  double py=p*ty/denom;
+  double pz=p/denom;
+  double q=S(state_q_over_p)>0?1.:-1.;			 
+  double k_q=qBr2p*q;
+  double ds_over_p=ds*one_over_p;
+  double factor=k_q*(0.25*ds_over_p);
+  double Ax=factor*Bx,Ay=factor*By,Az=factor*Bz;
+  double Ax2=Ax*Ax,Ay2=Ay*Ay,Az2=Az*Az;
+  double AxAy=Ax*Ay,AxAz=Ax*Az,AyAz=Ay*Az;
+  double one_plus_Ax2=1.+Ax2;
+  double scale=ds_over_p/(one_plus_Ax2+Ay2+Az2);
+  
+  // Compute new position 
+  double dx=scale*(px*one_plus_Ax2+py*(AxAy+Az)+pz*(AxAz-Ay));
+  double dy=scale*(px*(AxAy-Az)+py*(1.+Ay2)+pz*(AyAz+Ax));
+  double dz=scale*(px*(AxAz+Ay)+py*(AyAz-Ax)+pz*(1.+Az2));
+  S(state_x)+=dx;
+  S(state_y)+=dy;
+  z+=dz;
+      
+  // Compute new momentum
+  px+=k_q*(Bz*dy-By*dz);
+  py+=k_q*(Bx*dz-Bz*dx);
+  pz+=k_q*(By*dx-Bx*dy); 
+  S(state_tx)=px/pz;
+  S(state_ty)=py/pz;
+  if (fabs(dEdx)>EPS){
+    double one_over_p_sq=one_over_p*one_over_p;
+    double E=sqrt(1./one_over_p_sq+mass2); 
+    S(state_q_over_p)-=S(state_q_over_p)*one_over_p_sq*E*dEdx*ds;    
+  }
+}
+void DTrackFitterKalmanSIMD::FastStep(DVector2 &xy,double ds, double dEdx,
+				      DMatrix5x1 &S){
+  
+  // Compute convenience terms involving Bx, By, Bz
+  double pt=fabs(1./S(state_q_over_pt)); 
+  double one_over_p=cos(atan(S(state_tanl)))/pt;
+  double px=pt*cos(S(state_phi));
+  double py=pt*sin(S(state_phi));
+  double pz=pt*S(state_tanl);
+  double q=S(state_q_over_pt)>0?1.:-1.; 
+  double k_q=qBr2p*q;
+  double ds_over_p=ds*one_over_p;
+  double factor=k_q*(0.25*ds_over_p);
+  double Ax=factor*Bx,Ay=factor*By,Az=factor*Bz;
+  double Ax2=Ax*Ax,Ay2=Ay*Ay,Az2=Az*Az;
+  double AxAy=Ax*Ay,AxAz=Ax*Az,AyAz=Ay*Az;
+  double one_plus_Ax2=1.+Ax2;
+  double scale=ds_over_p/(one_plus_Ax2+Ay2+Az2);
+  
+  // Compute new position 
+  double dx=scale*(px*one_plus_Ax2+py*(AxAy+Az)+pz*(AxAz-Ay));
+  double dy=scale*(px*(AxAy-Az)+py*(1.+Ay2)+pz*(AyAz+Ax));
+  double dz=scale*(px*(AxAz+Ay)+py*(AyAz-Ax)+pz*(1.+Az2));
+  xy.Set(xy.X()+dx,xy.Y()+dy);
+  S(state_z)+=dz;
+      
+  // Compute new momentum
+  px+=k_q*(Bz*dy-By*dz);
+  py+=k_q*(Bx*dz-Bz*dx);
+  pz+=k_q*(By*dx-Bx*dy);
+  pt=sqrt(px*px+py*py); 
+  S(state_q_over_pt)=q/pt;
+  S(state_phi)=atan2(py,px);
+  S(state_tanl)=pt/pz;
+  if (fabs(dEdx)>EPS){
+    double one_over_p_sq=one_over_p*one_over_p;
+    double E=sqrt(1./one_over_p_sq+mass2); 
+    S(state_q_over_p)-=S(state_q_over_pt)*one_over_p_sq*E*dEdx*ds;    
+  }
+}
 
 
 // Compute the Jacobian matrix for the forward parametrization.
@@ -8202,13 +8286,14 @@ jerror_t DTrackFitterKalmanSIMD::ExtrapolateCentralToOtherDetectors(){
 	DMatrix5x1 bestS=S;
 	double dmin=d;
 	DVector2 bestXY=central_traj[k].xy;
-	// Direction vector for track
-	DVector3 phat;
 	double t=central_traj[k].t;
 	double s=central_traj[k].s;
+	// Magnetic field 
+	bfield->GetField(xy.X(),xy.Y(),S(state_z),Bx,By,Bz); 
+	
 	while (fabs(d)>0.05 && count<20){
 	  // track direction
-	  phat.SetXYZ(cos(S(state_phi)),sin(S(state_phi)),S(state_tanl));
+	  DVector3 phat(cos(S(state_phi)),sin(S(state_phi)),S(state_tanl));
 	  phat.SetMag(1.);
 
 	  // path length increment
@@ -8223,7 +8308,7 @@ jerror_t DTrackFitterKalmanSIMD::ExtrapolateCentralToOtherDetectors(){
 	  t-=ds*sqrt(one_over_beta2); // in units where c=1
 	  
 	  // Step along the trajectory using d to estimate path length 
-	  StepStateAndCovariance(xy,-ds,0.,S,Jc,C);
+	  FastStep(xy,-ds,0.,S);
 	  // Find the index for the nearest start counter paddle
 	  double dphi=xy.Phi()-sc_pos[0][0].Phi();
 	  if (dphi<0) dphi+=2.*M_PI;
@@ -8249,7 +8334,7 @@ jerror_t DTrackFitterKalmanSIMD::ExtrapolateCentralToOtherDetectors(){
 	  DVector3 position(bestXY.X(),bestXY.Y(),bestS(state_z));
 	  DVector3 momentum(pt*cos(phi),pt*sin(phi),pt*tanl); 
 	  extrapolations.push_back(Extrapolation_t(SYS_START,position,momentum,
-						   t*TIME_UNIT_CONVERSION,s));
+	  					   t*TIME_UNIT_CONVERSION,s));
 	}  
 	break;
       }
@@ -8454,63 +8539,56 @@ jerror_t DTrackFitterKalmanSIMD::ExtrapolateForwardToOtherDetectors(){
       }
       // if the z position would be beyond the current segment along z of 
       // the start counter, move to the next plane
-      if (z>sc_pos[index][m+1].z()){
+      if (z>sc_pos[index][m+1].z()&&m<11){
 	continue;
-      }
-      else{
-	// Use a series of straight-line approximations for path lengths to 
-	// hone in on intersection with the appropriate segment of the start 
+      }   
+      // allow for a little slop at the end of the nose
+      else if (z<sc_pos[index][sc_pos[0].size()-1].z()+1.){
+	// Hone in on intersection with the appropriate segment of the start 
 	// counter
 	int count=0;
 	DMatrix5x1 bestS=S;
 	double dmin=d;
-	double bestz=z,newz=z;
+	double bestz=z;
 	double t=forward_traj[k].t;
-	double s=forward_traj[k].s;
+	double s=forward_traj[k].s;  
+	// Magnetic field 
+	bfield->GetField(S(state_x),S(state_y),z,Bx,By,Bz); 
 
-	// Direction vector for track
-	DVector3 phat;
 	while (fabs(d)>0.05 && count<20){
 	  // track direction
-	  phat.SetXYZ(S(state_tx),S(state_ty),1);
+	  DVector3 phat(S(state_tx),S(state_ty),1);
 	  phat.SetMag(1.);
-	  
-	  // Find the new z position
-	  double tsquare=S(state_x)*S(state_x)+S(state_y)*S(state_y);
-	  double ds=d/sc_norm[index][m].Dot(phat);
-	  newz=z-ds/sqrt(tsquare+1.);
-	  s-=ds;
 
+	  // Step to the start counter plane
+	  double ds=d/sc_norm[index][m].Dot(phat);
+	  FastStep(z,-ds,0.,S);
+	
 	  // Flight time
 	  double q_over_p_sq=S(state_q_over_p)*S(state_q_over_p);
 	  double one_over_beta2=1.+mass2*q_over_p_sq;
 	  if (one_over_beta2>BIG) one_over_beta2=BIG;
 	  t-=ds*sqrt(one_over_beta2); // in units where c=1
-	  
-	  // Step through field
-	  Step(z,newz,0.,S); 
+	  s-=ds;
 
 	  // Find the index for the nearest start counter paddle
-	  double dphi=atan2(S(state_y),S(state_x))-sc_pos[0][0].Phi();
-	  if (dphi<0) dphi+=2.*M_PI;
-	  index=int(floor(dphi/(2.*M_PI/30.)));
-	  if (index>29) index=0;
-  
-	  // Find the new distance to the start counter (which could now be to
-	  // a plane in the one adjacent to the one before the step...)
-	  d=sc_norm[index][m].Dot(DVector3(S(state_x),S(state_y),z)
-				  -sc_pos[index][m]);
-	  if (fabs(d)<fabs(dmin)){
-	    bestS=S;
-	    dmin=d;
-	    bestz=newz;
-	  }
-	  z=newz;
-	  count++;
+         double dphi=atan2(S(state_y),S(state_x))-sc_pos[0][0].Phi();
+         if (dphi<0) dphi+=2.*M_PI;
+         index=int(floor(dphi/(2.*M_PI/30.)));
+
+	 // Find the new distance to the start counter (which could now be to
+         // a plane in the one adjacent to the one before the step...)
+	 d=sc_norm[index][m].Dot(DVector3(S(state_x),S(state_y),z)
+                                 -sc_pos[index][m]);
+	 if (fabs(d)<fabs(dmin)){
+           bestS=S;
+           dmin=d;
+	   bestz=z;
+	 }
+	 count++;
 	}
-		    
-	// we have gone far enough following the bend of the start 
-	// counter...
+
+	// New position and momentum
 	double tsquare=bestS(state_tx)*bestS(state_tx)
 	  +bestS(state_ty)*bestS(state_ty);
 	double tanl=1./sqrt(tsquare);
@@ -8519,8 +8597,8 @@ jerror_t DTrackFitterKalmanSIMD::ExtrapolateForwardToOtherDetectors(){
 	double phi=atan2(bestS(state_ty),bestS(state_tx));
 	DVector3 position(bestS(state_x),bestS(state_y),bestz);
 	DVector3 momentum(pt*cos(phi),pt*sin(phi),pt*tanl);
-	extrapolations.push_back(Extrapolation_t(SYS_START,position,momentum,
-						 t*TIME_UNIT_CONVERSION,s));
+	//extrapolations.push_back(Extrapolation_t(SYS_START,position,momentum,
+	//						 t*TIME_UNIT_CONVERSION,s));
 
 	intersected_start_counter=true;
 	break;
