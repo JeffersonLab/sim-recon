@@ -246,7 +246,7 @@ inline string Convert_PIDsToROOTName(const vector<Particle_t>& locPIDs)
 	return std::accumulate(locParticleNames.begin(), locParticleNames.end(), string(""));
 }
 
-inline bool Check_IfMissingDecayProduct(const DReaction* locReaction, size_t locStepIndex) const
+inline bool Check_IfMissingDecayProduct(const DReaction* locReaction, size_t locStepIndex)
 {
 	const DReactionStep* locReactionStep = locReaction->Get_ReactionStep(locStepIndex);
 	if(locReactionStep->Get_IsInclusiveFlag())

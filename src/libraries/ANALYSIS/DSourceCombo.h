@@ -230,7 +230,7 @@ vector<const JObject*> Get_SourceParticles(const vector<pair<Particle_t, const J
 	return locOutputParticles;
 }
 
-inline vector<pair<Particle_t, const JObject*>> Get_SourceParticles_ThisVertex(const DSourceCombo* locSourceCombo) const
+inline vector<pair<Particle_t, const JObject*>> Get_SourceParticles_ThisVertex(const DSourceCombo* locSourceCombo)
 {
 	auto locSourceParticles = locSourceCombo->Get_SourceParticles(false);
 	auto locFurtherDecayCombos = locSourceCombo->Get_FurtherDecayCombos();
@@ -247,6 +247,24 @@ inline vector<pair<Particle_t, const JObject*>> Get_SourceParticles_ThisVertex(c
 	}
 
 	return locSourceParticles;
+}
+
+Charge_t Get_ChargeContent(const DSourceComboInfo* locSourceComboInfo)
+{
+	auto locNumParticles = locSourceComboInfo->Get_NumParticles(true);
+
+	Charge_t locCharge = d_Charged;
+	auto Charge_Search = [locCharge](const pair<Particle_t, unsigned char>& locPair) -> bool
+		{return Is_CorrectCharge(locPair.first, locCharge);};
+
+	if(!std::any_of(locNumParticles.begin(), locNumParticles.end(), Charge_Search))
+		return d_Neutral;
+
+	locCharge = d_Neutral;
+	if(!std::any_of(locNumParticles.begin(), locNumParticles.end(), Charge_Search))
+		return d_Charged;
+
+	return d_AllCharges;
 }
 
 } //end DAnalysis namespace

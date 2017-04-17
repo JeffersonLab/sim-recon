@@ -645,6 +645,154 @@ void DSourceComboer::Create_SourceComboInfos_Vertices(const DReactionVertexInfo*
 	dSourceComboUseReactionMap_ChargedPrimary[locReactionVertexInfo] = locStepComboUseMap[0];
 }
 
+map<Particle_t, unsigned char> DSourceComboer::Build_ParticleMap(const DReaction* locReaction, size_t locStepIndex, Charge_t locCharge) const
+{
+	//build map of charged particles
+	map<Particle_t, unsigned char> locNumParticles;
+	auto locParticles = locReaction->Get_FinalPIDs(locStepIndex, false, false, locCharge, true); //no missing or decaying, include duplicates
+	for(const auto& locPID : locParticles)
+	{
+		auto locPIDIterator = locNumParticles.find(locPID);
+		if(locPIDIterator != locNumParticles.end())
+			++(locPIDIterator->second);
+		else
+			locNumParticles.emplace(locPID, 1);
+	}
+
+	return locNumParticles;
+}
+
+void DSourceComboer::Create_SourceComboInfos_Full(const DReactionVertexInfo* locReactionVertexInfo)
+{
+	//here, the goal is to group all the charged tracks such that we can compute the vertex positions
+	//at least, as much as possible anyway
+	//so, here we ignore neutral particles entirely
+
+	//We will register what steps these combos are created for
+	map<size_t, DSourceComboUse> locStepComboUseMap; //size_t = step index
+
+	auto locReaction = locReactionVertexInfo->Get_Reaction();
+
+	//loop over steps in reverse order
+	auto locReactionSteps = locReaction->Get_ReactionSteps();
+	for(auto locStepIterator = locReactionSteps.rbegin(); locStepIterator != locReactionSteps.rend(); ++locStepIterator)
+	{
+		auto locStep = *locStepIterator;
+		auto locStepIndex = locReaction->Get_NumReactionSteps() - std::distance(locReactionSteps.rbegin(), locStepIterator) - 1;
+
+		//create combo uses for all charged, all neutral, then for any mixed decays
+		map<Particle_t, unsigned char> locChargedParticleMap = Build_ParticleMap(locReaction, locStepIndex, d_Charged);
+		map<Particle_t, unsigned char> locNeutralParticleMap = Build_ParticleMap(locReaction, locStepIndex, d_Neutral);
+
+		//get combo infos for final-state decaying particles //if not present, ignore parent
+		auto locFinalStateDecayingComboUsesPair = Get_FinalStateDecayingComboUses(locReaction, locStepIndex, locStepComboUseMap);
+		auto locIncludeParentFlag = locFinalStateDecayingComboUsesPair.first;
+		auto locFurtherDecays = locFinalStateDecayingComboUsesPair.second;
+
+		//split up further-decays into all-charged, all-neutral, and mixed
+		map<DSourceComboUse, unsigned char> locFurtherDecays_Charged, locFurtherDecays_Neutral, locFurtherDecays_Mixed;
+		for(const auto& locDecayPair : locFurtherDecays)
+		{
+			auto locChargeContent = DAnalysis::Get_ChargeContent(std::get<2>(locDecayPair.first));
+			if(locChargeContent == d_Charged)
+				locFurtherDecays_Charged.emplace(locDecayPair);
+			else if(locChargeContent == d_Neutral)
+				locFurtherDecays_Neutral.emplace(locDecayPair);
+			else
+				locFurtherDecays_Mixed.emplace(locDecayPair);
+		}
+
+		//determine whether to include the decay itself in the comboing (or just the products)
+		//only include if can make an invariant mass cut (what it's used for here)
+		//we will still group these separately from the rest of the particles
+		if((locStepIndex != 0) || !DAnalysis::Get_IsFirstStepBeam(locReaction)) //decay
+		{
+			//ignore parent if products include missing particles
+			if(DAnalysis::Check_IfMissingDecayProduct(locReaction, locStepIndex))
+				locIncludeParentFlag = false;
+		}
+		else //direct production
+			locIncludeParentFlag = false;
+
+		//create combo of fully charged
+		//if entirely charged, neutral, or mixed, can just make one use with everything together
+		//else make individual combos, and then group together
+
+		//create combo uses for each case
+		Particle_t locInitPID = locIncludeParentFlag ? locStep->Get_InitialPID() : Unknown;
+		bool locNoChargedFlag = (locChargedParticleMap.empty() && locFurtherDecays_Charged.empty());
+		bool locNoNeutralFlag = (locNeutralParticleMap.empty() && locFurtherDecays_Neutral.empty());
+//be careful: if no particles & # decays = 1, etc. maybe promote
+//is this even possible?
+		bool locTotalIsMixedFlag = locFurtherDecays_Mixed.empty() ? (!locNoChargedFlag && !locNoNeutralFlag) : (!locNoChargedFlag || !locNoNeutralFlag);
+		//init pid is unknown if more than one type
+		Particle_t locInitPID_Group = locTotalIsMixedFlag ? Unknown : locInitPID;
+		if(locNoChargedFlag && locNoNeutralFlag) //only mixed
+		{
+			auto locComboUse_Mixed = Make_ComboUse(locInitPID, {}, locFurtherDecays_Mixed);
+		}
+		else if(locNoNeutralFlag && locFurtherDecays_Mixed.empty()) //only charged
+		{
+			auto locComboUse_Charged = Make_ComboUse(locInitPID, locChargedParticleMap, locFurtherDecays_Charged);
+		}
+		else if(locNoChargedFlag && locFurtherDecays_Mixed.empty()) //only neutral
+		{
+			auto locComboUse_Neutral = Make_ComboUse(locInitPID, locNeutralParticleMap, locFurtherDecays_Neutral);
+		}
+		else //some combination
+		{
+			//create overall combo use
+			map<DSourceComboUse, unsigned char> locFurtherDecays_All;
+			if(!locFurtherDecays_Mixed.empty())
+			{
+				auto locComboUse_Mixed = Make_ComboUse(locInitPID_Group, {}, locFurtherDecays_Mixed);
+				locFurtherDecays_All.insert(locFurtherDecays_Mixed.begin(), locFurtherDecays_Mixed.end());
+			}
+			if(!locNoChargedFlag)
+			{
+				auto locComboUse_Charged = Make_ComboUse(locInitPID_Group, locChargedParticleMap, locFurtherDecays_Charged);
+				locFurtherDecays_All.insert(locFurtherDecays_Charged.begin(), locFurtherDecays_Charged.end());
+			}
+			if(!locNoNeutralFlag)
+			{
+				auto locComboUse_Neutral = Make_ComboUse(locInitPID_Group, locNeutralParticleMap, locFurtherDecays_Neutral);
+				locFurtherDecays_All.insert(locFurtherDecays_Neutral.begin(), locFurtherDecays_Neutral.end());
+			}
+
+			auto locComboUse_All = Make_ComboUse(locInitPID, {}, locFurtherDecays_All);
+		}
+
+		locStepComboUseMap.emplace(locStepIndex, locComboUse_All);
+	}
+
+	//Register the results!!
+	dSourceComboUseReactionMap_Charged.emplace(locReactionStepVertexInfo, locPrimaryComboUse);
+	for(const auto& locUseStepPair : locStepComboUseMap)
+	{
+		dSourceComboInfoStepMap_Charged.emplace(std::make_pair(locReactionStepVertexInfo, locUseStepPair.second), locUseStepPair.first);
+		dSourceComboUseReactionStepMap_Charged.emplace(std::make_pair(locReaction, locUseStepPair.first), locUseStepPair.second);
+	}
+
+	dSourceComboUseReactionMap_ChargedPrimary[locReactionVertexInfo] = locStepComboUseMap[0];
+}
+
+DSourceComboUse DSourceComboer::Make_ComboUse(Particle_t locInitPID, const map<Particle_t, unsigned char>& locNumParticles, const map<DSourceComboUse, unsigned char>& locFurtherDecays)
+{
+	//convert locFurtherDecays map to a vector
+	vector<pair<DSourceComboUse, unsigned char>> locDecayVector;
+	locDecayVector.reserve(locFurtherDecays.size());
+	std::copy(locFurtherDecays.begin(), locFurtherDecays.end(), std::back_inserter(locDecayVector));
+
+	//convert locNumParticles map to a vector
+	vector<pair<Particle_t, unsigned char>> locParticleVector;
+	locParticleVector.reserve(locNumParticles.size());
+	std::copy(locNumParticles.begin(), locNumParticles.end(), std::back_inserter(locParticleVector));
+
+	//make or get the combo info
+	auto locComboInfo = MakeOrGet_SourceComboInfo(locParticleVector, locDecayVector);
+	return DSourceComboUse(locInitPID, Get_VertexZIndex_Unknown(), locComboInfo);
+}
+
 const DSourceComboInfo* DSourceComboer::MakeOrGet_SourceComboInfo(const vector<pair<Particle_t, unsigned char>>& locNumParticles, const vector<pair<DSourceComboUse, unsigned char>>& locFurtherDecays)
 {
 	//to be called (indirectly) by constructor: during the stage when primarily making
