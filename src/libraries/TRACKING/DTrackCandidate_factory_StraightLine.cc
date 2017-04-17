@@ -1541,7 +1541,7 @@ DTrackCandidate_factory_StraightLine::KalmanFilter(DMatrix4x1 &S,DMatrix4x4 &C,
    DMatrix2x4 H;  // Track projection matrix
    DMatrix4x2 H_T; // Transpose of track projection matrix 
    DMatrix4x2 K;  // Kalman gain matrix
-   DMatrix2x2 V(0.0833,0.,0.,0.0004);  // Measurement variance 
+   DMatrix2x2 V(0.0833,0.,0.,0.000256);  // Measurement variance 
    DMatrix2x2 Vtemp,InvV;
    DMatrix2x1 Mdiff;
    DMatrix4x4 I; // identity matrix
