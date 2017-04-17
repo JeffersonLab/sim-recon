@@ -129,20 +129,23 @@ jerror_t DTrackTimeBased_factory::init(void)
 	if(mass_hypotheses_positive.empty()){
 		static once_flag pwarn_flag;
 		call_once(pwarn_flag, [](){
-			jout <<
+			jout << endl;
 			jout << "############# WARNING !! ################ " <<endl;
 			jout << "There are no mass hypotheses for positive tracks!" << endl;
 			jout << "Be SURE this is what you really want!" << endl;
 			jout << "######################################### " <<endl;
+			jout << endl;
 		});
 	}
 	if(mass_hypotheses_negative.empty()){
 		static once_flag nwarn_flag;
 		call_once(nwarn_flag, [](){
+			jout << endl;
 			jout << "############# WARNING !! ################ " <<endl;
 			jout << "There are no mass hypotheses for negative tracks!" << endl;
 			jout << "Be SURE this is what you really want!" << endl;
 			jout << "######################################### " <<endl;
+			jout << endl;
 		});
 	}
 
