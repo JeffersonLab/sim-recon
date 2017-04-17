@@ -3,6 +3,7 @@
 
 #include <map>
 #include <vector>
+#include <tuple>
 #include <memory>
 #include <algorithm>
 
@@ -33,7 +34,7 @@ class DSourceCombo;
 class DSourceComboer;
 
 //DSourceComboUse is what the combo is USED for (the decay of Particle_t (if Unknown then is just a grouping)
-using DSourceComboUse = pair<Particle_t, const DSourceComboInfo*>; //e.g. Pi0, -> 2g
+using DSourceComboUse = tuple<Particle_t, signed char, const DSourceComboInfo*>; //e.g. Pi0, -> 2g //signed char: vertex-z bin of the final state (combo contents)
 using DSourceCombosByUse_Small = map<DSourceComboUse, vector<const DSourceCombo*>>; //for use WITHIN a DSourceCombo (e.g. vector size 3 of pi0 decays)
 //CONSIDER VECTOR INSTEAD OF MAP FOR DSourceCombosByUse_Small
 
@@ -41,11 +42,16 @@ using DSourceCombosByUse_Small = map<DSourceComboUse, vector<const DSourceCombo*
 auto Compare_SourceComboUses = [](const DSourceComboUse& lhs, const DSourceComboUse& rhs) -> bool
 {
 	//this puts the most-massive particles first
-	if(lhs.first == rhs.first)
-		return *lhs.second > *rhs.second;
-	if(ParticleMass(lhs.first) == ParticleMass(rhs.first))
-		return lhs.first > rhs.first;
-	return (ParticleMass(lhs.first) > ParticleMass(rhs.first));
+	if(std::get<0>(lhs) == std::get<0>(rhs))
+	{
+		if(std::get<1>(lhs) == std::get<1>(rhs))
+			return std::get<2>(lhs) > std::get<2>(rhs);
+		else
+			return std::get<1>(lhs) > std::get<1>(rhs);
+	}
+	if(ParticleMass(std::get<0>(lhs)) == ParticleMass(std::get<0>(rhs)))
+		return std::get<0>(lhs) > std::get<0>(rhs);
+	return (ParticleMass(std::get<0>(lhs)) > ParticleMass(std::get<0>(rhs)));
 };
 
 /************************************************************** DEFINE CLASSES ***************************************************************/
@@ -168,7 +174,7 @@ inline vector<pair<Particle_t, unsigned char>> DSourceComboInfo::Get_NumParticle
 	vector<pair<Particle_t, unsigned char>> locToReturnNumParticles = dNumParticles;
 	for(const auto& locDecayPair : dFurtherDecays)
 	{
-		const auto& locDecayComboInfo = locDecayPair.first.second;
+		const auto& locDecayComboInfo = std::get<2>(locDecayPair.first);
 		auto locNumDecayParticles = locDecayComboInfo->Get_NumParticles(true);
 
 		for(const auto& locParticlePair : locNumDecayParticles)
@@ -222,6 +228,25 @@ vector<const JObject*> Get_SourceParticles(const vector<pair<Particle_t, const J
 			locOutputParticles.push_back(locParticlePair.second);
 	}
 	return locOutputParticles;
+}
+
+inline vector<pair<Particle_t, const JObject*>> Get_SourceParticles_ThisVertex(const DSourceCombo* locSourceCombo) const
+{
+	auto locSourceParticles = locSourceCombo->Get_SourceParticles(false);
+	auto locFurtherDecayCombos = locSourceCombo->Get_FurtherDecayCombos();
+	for(const auto& locDecayPair : locFurtherDecayCombos)
+	{
+		auto locDecayPID = std::get<0>(locDecayPair.first);
+		if(IsDetachedVertex(locDecayPID))
+			continue;
+		for(auto locDecayCombo : locDecayPair.second)
+		{
+			auto locDecayParticles = Get_SourceParticles_ThisVertex(locDecayCombo);
+			locSourceParticles.insert(locSourceParticles.end(), locDecayParticles.begin(), locDecayParticles.end());
+		}
+	}
+
+	return locSourceParticles;
 }
 
 } //end DAnalysis namespace

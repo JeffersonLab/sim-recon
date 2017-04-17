@@ -113,28 +113,6 @@ void DVertexCreator::Do_All(JEventLoop* locEventLoop, const vector<const DReacti
 	*
 	*******************************************************************************************************************************/
 
-	/************************************************** CALCULATING VERTEX POSITIONS ***********************************************
-	*
-	* Production vertex:
-	* 1) If there is at least one charged track at the production vertex with a theta > 30 degrees:
-	*    The production vertex is the POCA to the beamline of the track with the largest theta.
-	* 2) If not, then for each detached vertex:
-	*    a) If there are any neutral or missing particles, or there are < 2 detected charged tracks at the detached vertex: ignore it
-	*    b) Otherwise:
-	*       i) The detached vertex is at the center of the lines between the POCAs of the two closest tracks.
-	*       ii) Calculate the p3 of the decaying particles at this point and then find the POCA of the decaying particle to the beamline.
-	* 3) Now, the production vertex is the POCA to the beamline of the track/decaying-particle with the largest theta.
-	* 4) Otherwise, the production vertex is the center of the target.
-	*
-	* Detached vertices:
-	* 1) If at least 2 decay products have defined trajectories (detected & charged or decaying & reconstructed):
-	*    The detached vertex is at the center of the lines between the POCAs of the two closest particles.
-	* 2) If one decay product is detected & charged, and the decaying particle production vertex was well defined (i.e. not forced to be center of target):
-	*    a) Determine the decaying particle trajectory from the missing mass of the system (must be done after beam photon selection!!)
-	*    b) The detached vertex is at the POCA of the charged decay product and the decaying particle
-	* 3) Otherwise use the decaying particle production vertex for its position.
-	*
-	*******************************************************************************************************************************/
 
 	/*
 	 * Loop over DReactions:
@@ -366,177 +344,189 @@ unordered_map<int, double> DVertexCreator::Calc_NeutralRFDeltaTs(const DNeutralS
 
 /********************************************************* MAKE INITIAL SPACETIME GUESSES **********************************************************/
 
-void DKinFitUtils_GlueX::Set_SpacetimeGuesses(const deque<DKinFitConstraint_Vertex*>& locSortedVertexConstraints)
+
+unordered_map<const DReactionStepVertexInfo*, pair<DVector3, double>> DVertexCreator::Get_VertexTimeOffsets(JEventLoop* locEventLoop, const DReactionVertexInfo* locReactionVertexInfo, const DSourceCombo* locReactionCombo)
 {
+	//we can't calculate the time yet: we need the RF time.  however, we can compute the time offset FROM the RF time
+	unordered_map<const DReactionStepVertexInfo*, pair<DVector3, double>> locVertexTimeOffsetMap; //double: time offset from the RF time
+	auto locStepVertexInfos = locReactionVertexInfo->Get_StepVertexInfos();
+	auto locReaction = locReactionVertexInfo->Get_Reaction();
+
 	//loop through vertices, determining initial guesses
-	map<DKinFitParticle*, DKinFitParticle*> locDecayingToDetectedParticleMap; //input decaying particle -> new detected particle
-	for(size_t loc_i = 0; loc_i < locSortedVertexConstraints.size(); ++loc_i)
+	map<pair<int, int>, const DKinematicData*> locReconDecayParticleMap; //decaying particle indices -> kinematic data //indices: when the decaying particle is in the INITIAL state
+	for(const auto& locStepVertexInfo : locStepVertexInfos)
 	{
-		//get constraint
-		DKinFitConstraint_Vertex* locOrigVertexConstraint = locSortedVertexConstraints[loc_i];
-		DKinFitConstraint_Spacetime* locOrigSpacetimeConstraint = dynamic_cast<DKinFitConstraint_Spacetime*>(locOrigVertexConstraint);
+		/***************************************** CHECK IF VERTEX POSITION IS INDETERMINATE A THIS STAGE ********************************************/
 
-		DKinFitConstraint_Vertex* locActiveVertexConstraint = locOrigVertexConstraint;
-		DKinFitConstraint_Spacetime* locActiveSpacetimeConstraint = locOrigSpacetimeConstraint;
+		bool locIsProductionVertexFlag = locStepVertexInfo->Get_ProductionVertexFlag();
+		auto locSourceCombo = DSourceComboer::Get_StepPrimaryVertexCombo_Charged(locReactionCombo, locReactionVertexInfo, locStepVertexInfo);
 
-		/**************************************************** SUBSTITUTE FOR DECAYING PARTICLES ******************************************************/
+		//get particles
+		auto locSourceParticles = DAnalysis::Get_SourceParticles_ThisVertex(locSourceCombo);
+		auto locDecayingParticles = Get_FullConstrainDecayingParticles(locStepVertexInfo, locReconDecayParticleMap);
+		auto locNumConstrainingParticles = locSourceParticles.size() + locDecayingParticles.size();
+		bool locVertexIndeterminateFlag = locIsProductionVertexFlag ? (locNumConstrainingParticles == 0) : (locNumConstrainingParticles < 2);
 
-		//If a decaying particle was previously reconstructed, substitute for it so can do a stand-alone vertex fit
-		set<DKinFitParticle*> locFullConstrainSet = locOrigVertexConstraint->Get_FullConstrainParticles();
-		size_t locNumDecayingConstrainParticles = 0;
-		set<DKinFitParticle*>::iterator locParticleIterator = locFullConstrainSet.begin();
-		for(; locParticleIterator != locFullConstrainSet.end(); ++locParticleIterator)
+		if(locVertexIndeterminateFlag)
 		{
-			if((*locParticleIterator)->Get_KinFitParticleType() == d_DecayingParticle)
-				++locNumDecayingConstrainParticles;
-		}
-		if(locNumDecayingConstrainParticles > 0)
-		{
-			//true: skip bad decaying particles (those whose reconstruction-fits failed) if at all possible
-				//if cannot skip, will set locAttemptFitFlag to false
-			locActiveVertexConstraint = Build_NewConstraint(locOrigVertexConstraint, locDecayingToDetectedParticleMap, locAttemptFitFlag, true);
-			locActiveSpacetimeConstraint = dynamic_cast<DKinFitConstraint_Spacetime*>(locActiveVertexConstraint);
+			//can't determine it.  If this is the production vertex, choose the center of the target.  If not, choose the vertex where the decay parent was produced.
+			auto locParentVertexInfo = locStepVertexInfo->Get_ParentVertexInfo();
+			if(locParentVertexInfo == nullptr)
+				locVertexTimeOffsetMap.emplace(locStepVertexInfo, std::make_pair(DVector3(0.0, 0.0, dTargetCenterZ), 0.0));
+			else
+				locVertexTimeOffsetMap.emplace(locStepVertexInfo, locVertexTimeOffsetMap[locParentVertexInfo]);
+			continue;
 		}
 
 		/*********************************************************** INITIAL VERTEX GUESS ************************************************************/
 
-		//do crude vertex guess: point on DOCA-line between the two closest (by doca) particles
+		/************************************************** CALCULATING VERTEX POSITIONS ***********************************************
+		*
+		* Production vertex:
+		* 1) If there is at least one charged track at the production vertex with a theta > 30 degrees:
+		*    The production vertex is the POCA to the beamline of the track with the largest theta.
+		* 2) If not, then for each detached vertex:
+		*    a) If there are any neutral or missing particles, or there are < 2 detected charged tracks at the detached vertex: ignore it
+		*    b) Otherwise:
+		*       i) The detached vertex is at the center of the lines between the POCAs of the two closest tracks.
+		*       ii) Calculate the p3 of the decaying particles at this point and then find the POCA of the decaying particle to the beamline.
+		* 3) Now, the production vertex is the POCA to the beamline of the track/decaying-particle with the largest theta.
+		* 4) Otherwise, the production vertex is the center of the target.
+		*
+		* Detached vertices:
+		* 1) If at least 2 decay products have defined trajectories (detected & charged or decaying & reconstructed):
+		*    The detached vertex is at the center of the lines between the POCAs of the two closest particles.
+		* 2) If one decay product is detected & charged, and the decaying particle production vertex was well defined (i.e. not forced to be center of target):
+		*    a) Determine the decaying particle trajectory from the missing mass of the system (must be done after beam photon selection!!)
+		*    b) The detached vertex is at the POCA of the charged decay product and the decaying particle
+		* 3) Otherwise use the decaying particle production vertex for its position.
+		*
+		*******************************************************************************************************************************/
 
-		//get particles
-		locFullConstrainSet = locActiveVertexConstraint->Get_FullConstrainParticles();
-		deque<DKinFitParticle*> locFullConstrainDeque;
-		std::copy(locFullConstrainSet.begin(), locFullConstrainSet.end(), std::back_inserter(locFullConstrainDeque));
+		//Get detected charged track hypotheses at this vertex
+		vector<const DKinematicData*> locVertexParticles;
+		locVertexParticles.reserve(locSourceParticles.size());
 
-		//get guess
-		DVector3 locDVertexGuess = dAnalysisUtilities->Calc_CrudeVertex(locFullConstrainDeque);
-		TVector3 locVertexGuess(locDVertexGuess.X(), locDVertexGuess.Y(), locDVertexGuess.Z());
-		if(dDebugLevel > 20)
-			cout << "init vertex guess = " << locVertexGuess.X() << ", " << locVertexGuess.Y() << ", " << locVertexGuess.Z() << endl;
+		auto Get_Hypothesis = [](const pair<Particle_t, const JObject*>& locPair) -> bool
+			{return static_cast<const DChargedTrack*>(locPair.second)->Get_Hypothesis(locPair.first);};
+		std::transform(locVertexParticles.begin(), locVertexParticles.end(), std::back_inserter(locVertexParticles), Get_Hypothesis);
 
-		//set guess
-		locOrigVertexConstraint->Set_InitVertexGuess(locVertexGuess);
-		locActiveVertexConstraint->Set_InitVertexGuess(locVertexGuess);
+
+double dMinThetaForVertex = 30.0;
+		DVector3 locVertexGuess;
+		if(locIsProductionVertexFlag)
+		{
+			//use track with theta nearest 90 degrees
+			auto locThetaNearest90Iterator = Get_ThetaNearest90Iterator(locVertexParticles);
+			double locThetaNearest90 = (*locThetaNearest90Iterator)->momentum().Theta()*180.0/TMath::Pi();
+			if(locThetaNearest90 < dMinThetaForVertex)
+			{
+				//try decaying particles instead
+				auto locDecayingParticles = Get_FullConstrainDecayingParticles(locStepVertexInfo, locReconDecayParticleMap);
+				auto locThetaNearest90Iterator_Decaying = Get_ThetaNearest90Iterator(locDecayingParticles);
+				double locLargestTheta_Decaying = (*locThetaNearest90Iterator_Decaying)->momentum().Theta()*180.0/TMath::Pi();
+				if(locLargestTheta_Decaying > locThetaNearest90)
+					locThetaNearest90Iterator = locThetaNearest90Iterator_Decaying;
+			}
+			locVertexGuess = (*locThetaNearest90Iterator)->position();
+		}
+		else //detached vertex
+		{
+			locVertexParticles.insert(locVertexParticles.end(), locDecayingParticles.begin(), locDecayingParticles.end());
+			locVertexGuess = dAnalysisUtilities->Calc_CrudeVertex(locVertexParticles);
+		}
 
 		/************************************************************ INITIAL TIME GUESS *************************************************************/
 
-		double locTimeGuess = Calc_TimeGuess(locActiveSpacetimeConstraint, locDVertexGuess);
+		double locTimeGuess = Calc_TimeOffset(locActiveSpacetimeConstraint, locVertexGuess);
 
 		/************************************************************ UPDATE WITH RESULTS ************************************************************/
 
-		TLorentzVector locSpacetimeVertex(locVertexGuess, locTimeGuess);
-		Construct_DetectedDecayingParticle_NoFit(locOrigVertexConstraint, locDecayingToDetectedParticleMap, locSpacetimeVertex);
+		DLorentzVector locSpacetimeVertex(locVertexGuess, locTimeGuess);
+		locVertexTimeOffsetMap.emplace(locStepVertexInfo, locSpacetimeVertex);
+		Construct_DecayingParticle(locStepVertexInfo, locSourceCombo, locSpacetimeVertex, locReconDecayParticleMap);
 	}
+
+	//do time offsets once all the vertices have been found
+	Calc_TimeOffsets(locReactionCombo, locReactionVertexInfo, locVertexTimeOffsetMap);
+
+	//free resources
+	for(auto locDecayParticlePair : locReconDecayParticleMap)
+		delete locDecayParticlePair.second;
+
+	return locVertexTimeOffsetMap;
 }
 
-void DKinFitUtils_GlueX::Construct_DetectedDecayingParticle_NoFit(DKinFitConstraint_Vertex* locOrigVertexConstraint, map<DKinFitParticle*, DKinFitParticle*>& locDecayingToDetectedParticleMap, TLorentzVector locSpacetimeVertexGuess)
+vector<const DKinematicData*>::const_iterator DVertexCreator::Get_ThetaNearest90Iterator(const vector<const DKinematicData*>& locParticles)
+{
+	auto Get_Nearer90Theta = [](const DKinematicData* lhs, const DKinematicData* rhs) -> bool
+		{return fabs(lhs->momentum().Theta() - 0.5*TMath::Pi()) < fabs(rhs->momentum().Theta() - 0.5*TMath::Pi());};
+	return std::max_element(locParticles.begin(), locParticles.end(), Get_Nearer90Theta);
+}
+
+vector<const DKinematicData*> DVertexCreator::Get_FullConstrainDecayingParticles(const DReactionStepVertexInfo* locStepVertexInfo, const map<pair<int, int>, const DKinematicData*>& locReconDecayParticleMap)
+{
+	auto locConstrainingDecayingParticles = locStepVertexInfo->Get_DecayingParticles_FullConstrain();
+	vector<const DKinematicData*> locDecayingParticles;
+	for(auto locDecayPair : locConstrainingDecayingParticles)
+	{
+		//the particle pair in the map is where the decaying particle was in the initial state
+		//however, the pairs in locConstrainingDecayingParticles are when then the decaying particles were in the final state
+		//so, we have to convert from final state to initial state to do the map lookup
+		int locDecayStepIndex = DAnalysis::Get_DecayStepIndex(locStepVertexInfo->Get_Reaction(), locDecayPair.first.first, locDecayPair.first.second);
+		auto locParticlePair = std::make_pair(locDecayStepIndex, DReactionStep::Get_ParticleIndex_Initial());
+
+		auto locReconIterator = locReconDecayParticleMap.find(locParticlePair);
+		if(locReconIterator != locReconDecayParticleMap.end())
+			locDecayingParticles.push_back(locReconIterator->second);
+	}
+	return locDecayingParticles;
+}
+
+void DVertexCreator::Construct_DecayingParticle(const DReactionStepVertexInfo* locReactionStepVertexInfo, const DSourceCombo* locSourceCombo, DLorentzVector locSpacetimeVertex, map<pair<int, int>, const DKinematicData*>& locReconDecayParticleMap)
 {
 	//get "decaying" no-constrain decaying particles
-	set<DKinFitParticle*> locNoConstrainParticles = locOrigVertexConstraint->Get_NoConstrainParticles();
-	set<DKinFitParticle*>::iterator locNoConstrainIterator = locNoConstrainParticles.begin();
-	for(; locNoConstrainIterator != locNoConstrainParticles.end(); ++locNoConstrainIterator)
+	map<pair<int, int>, weak_ptr<DReactionStepVertexInfo>> locNoConstrainDecayingParticles = locReactionStepVertexInfo->Get_DecayingParticles_NoConstrain();
+	auto locReaction = locReactionStepVertexInfo->Get_Reaction();
+	for(const auto& locNoConstrainPair : locNoConstrainDecayingParticles)
 	{
-		DKinFitParticle* locInputKinFitParticle = *locNoConstrainIterator;
-		if(locInputKinFitParticle->Get_KinFitParticleType() != d_DecayingParticle)
-			continue; //not a decaying particle
+		//we cannot define decaying p4 via missing mass, because the beam is not chosen yet
+		//therefore, if the no-constrain decaying particle is a final-state particle at this vertex, we cannot define its p4
+		const auto& locParticlePair = locNoConstrainPair.first;
+		if(locParticlePair.second >= 0)
+			continue; //momentum must be determined by missing mass, cannot do yet! (or isn't detached, for which we don't care)
+
+		//only create kinematic data for detached PIDs
+		auto locDecayPID = locReaction->Get_ReactionStep(locParticlePair.first)->Get_PID(locParticlePair.second);
+		if(!IsDetachedVertex(locDecayPID))
+			continue; //not detached: we don't care!
 
 		//create a new one
-		TLorentzVector locP4 = Calc_DecayingP4_ByP3Derived(locInputKinFitParticle, true, true);
-		TMatrixFSym* locCovarianceMatrix = Get_SymMatrixResource(7);
-		(*locCovarianceMatrix)(0, 0) = -1.0; //signal that you shouldn't do fits that need this particle
-		DKinFitParticle* locDetectedKinFitParticle = Make_DetectedParticle(locInputKinFitParticle->Get_PID(),
-			locInputKinFitParticle->Get_Charge(), locInputKinFitParticle->Get_Mass(), locSpacetimeVertexGuess, locP4.Vect(), locCovarianceMatrix);
-
+		auto locP4 = Calc_DecayingP4_ChargedOnly(locSourceCombo);
+		auto locKinematicData = new DKinematicData(locDecayPID, locP4.Vect(), locSpacetimeVertex.Vect(), locSpacetimeVertex.T());
 		//register it
-		locDecayingToDetectedParticleMap[locInputKinFitParticle] = locDetectedKinFitParticle;
+		locReconDecayParticleMap[locParticlePair] = locKinematicData;
 	}
 }
 
-DKinFitConstraint_Vertex* DKinFitUtils_GlueX::Build_NewConstraint(DKinFitConstraint_Vertex* locOrigVertexConstraint, const map<DKinFitParticle*, DKinFitParticle*>& locDecayingToDetectedParticleMap, bool& locAttemptFitFlag, bool locSkipBadDecayingFlag)
+void DVertexCreator::Calc_TimeOffsets(const DSourceCombo* locReactionCombo, const DReactionVertexInfo* locReactionVertexInfo, unordered_map<const DReactionStepVertexInfo*, pair<DVector3, double>>& locVertexTimeOffsetMap)
 {
-	if(dDebugLevel > 10)
-		cout << "DKinFitUtils_GlueX::Build_NewConstraint()" << endl;
-	set<DKinFitParticle*> locNewDetectedParticles, locUsedDecayingParticles;
-
-	//get "detected" versions of reconstructed decaying particles
-	set<DKinFitParticle*> locFullConstrainParticles = locOrigVertexConstraint->Get_FullConstrainParticles();
-	set<DKinFitParticle*>::iterator locFullConstrainIterator = locFullConstrainParticles.begin();
-	set<DKinFitParticle*> locNewFullConstrainParticles;
-	for(; locFullConstrainIterator != locFullConstrainParticles.end(); ++locFullConstrainIterator)
+	for(auto& locVertexPair : locVertexTimeOffsetMap)
 	{
-		DKinFitParticle* locInputKinFitParticle = *locFullConstrainIterator;
-		if(locInputKinFitParticle->Get_KinFitParticleType() != d_DecayingParticle)
-		{
-			locNewFullConstrainParticles.insert(locInputKinFitParticle);
-			continue; //not a decaying particle
-		}
+		auto locStepVertexInfo = locVertexPair.first;
+		if(locStepVertexInfo->Get_ProductionVertexFlag())
+			continue; //offset is already 0 by default
+		auto locVertex = locVertexPair.second.first;
 
-		map<DKinFitParticle*, DKinFitParticle*>::const_iterator locDecayIterator = locDecayingToDetectedParticleMap.find(locInputKinFitParticle);
-		if(locDecayIterator == locDecayingToDetectedParticleMap.end())
-		{
-			if(!locSkipBadDecayingFlag)
-				locAttemptFitFlag = false; //cannot fit. however, still get initial guess
-			continue; //try to see if can fit without this particle
-		}
-		DKinFitParticle* locDetectedDecayingParticle = locDecayIterator->second;
-		if(locDetectedDecayingParticle->Get_CovarianceMatrix() == NULL)
-		{
-			if(locSkipBadDecayingFlag)
-				continue; //try to see if can fit without this particle
-			else
-				locAttemptFitFlag = false; //cannot fit. however, still get initial guess
-		}
-		else if((*(locDetectedDecayingParticle->Get_CovarianceMatrix()))(0, 0) < 0.0)
-		{
-			if(locSkipBadDecayingFlag)
-				continue; //try to see if can fit without this particle
-			else
-				locAttemptFitFlag = false; //cannot fit. however, still get initial guess
-		}
+		auto locParentVertexInfo = locStepVertexInfo->Get_ParentVertexInfo();
+		auto locParentProductionVertex = locVertexTimeOffsetMap[locParentVertexInfo].first;
+		auto locPathLength = (locParentProductionVertex - locVertex).Mag();
 
-		//reconstructed particle found
-		locNewFullConstrainParticles.insert(locDetectedDecayingParticle);
+		auto locSourceCombo = DSourceComboer::Get_StepPrimaryVertexCombo_Charged(locReactionCombo, locReactionVertexInfo, locStepVertexInfo);
+		auto locP4 = Calc_DecayingP4_ChargedOnly(locSourceCombo);
+
+		locVertexPair.second.second = locPathLength/(locP4.Beta()*SPEED_OF_LIGHT); //time offset
 	}
-
-	//Check if have enough particles
-	if(locNewFullConstrainParticles.size() < 2) //cannot fit: try again, using non-fit decaying particles
-		return Build_NewConstraint(locOrigVertexConstraint, locDecayingToDetectedParticleMap, locAttemptFitFlag, false);
-
-	//create new constraint, this time with the new detected particles
-	set<DKinFitParticle*> locNoConstrainParticles = locOrigVertexConstraint->Get_NoConstrainParticles();
-	DKinFitConstraint_Spacetime* locOrigSpacetimeConstraint = dynamic_cast<DKinFitConstraint_Spacetime*>(locOrigVertexConstraint);
-	if(locOrigSpacetimeConstraint == NULL) //vertex fit
-		return Make_VertexConstraint(locNewFullConstrainParticles, locNoConstrainParticles);
-	else
-		return Make_SpacetimeConstraint(locNewFullConstrainParticles, locOrigSpacetimeConstraint->Get_OnlyConstrainTimeParticles(), locNoConstrainParticles);
-}
-
-double DKinFitUtils_GlueX::Calc_TimeGuess(const DKinFitConstraint_Spacetime* locConstraint, DVector3 locVertexGuess)
-{
-	set<DKinFitParticle*> locTimeFindParticles = locConstraint->Get_FullConstrainParticles();
-	set<DKinFitParticle*> locOnlyTimeFindParticles = locConstraint->Get_OnlyConstrainTimeParticles();
-
-	//see if can find the beam particle: if so, use the rf time
-	set<DKinFitParticle*>& locSearchBeamParticles = Get_IncludeBeamlineInVertexFitFlag() ? locTimeFindParticles : locOnlyTimeFindParticles;
-	set<DKinFitParticle*>::iterator locParticleIterator = locSearchBeamParticles.begin();
-	for(; locParticleIterator != locSearchBeamParticles.end(); ++locParticleIterator)
-	{
-		DKinFitParticle* locKinFitParticle = *locParticleIterator;
-		if(locKinFitParticle->Get_KinFitParticleType() != d_BeamParticle)
-			continue;
-
-		//have the beam particle: use the rf time (propagate it to the vertex)
-		double locDeltaZ = locVertexGuess.Z() - locKinFitParticle->Get_Position().Z();
-		return (locKinFitParticle->Get_Time() + locDeltaZ/29.9792458);
-	}
-
-	//propagate each track time to the DOCA to the init vertex guess and average them
-	locTimeFindParticles.insert(locOnlyTimeFindParticles.begin(), locOnlyTimeFindParticles.end());
-
-	//build vector
-	deque<DKinFitParticle*> locTimeFindParticleVector;
-	std::copy(locTimeFindParticles.begin(), locTimeFindParticles.end(), std::back_inserter(locTimeFindParticleVector));
-
-	return dAnalysisUtilities->Calc_CrudeTime(locTimeFindParticleVector, locVertexGuess);
 }
 
 } //end DAnalysis namespace

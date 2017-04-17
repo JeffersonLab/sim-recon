@@ -35,9 +35,10 @@ namespace DAnalysis
 
 //BIG TO DO'S:
 //Figure out how combos will be requested, and then combined together
-//Don't place mass cuts on massive neutrals until vertex position defined
+//Don't place mass cuts on massive neutrals until vertex position fully defined
 //once RF bunch is chosen, redo mass cuts involving massive neutrals
 //fill in calc inv mass functions
+//don't pass vert-z-bin through everything: get from combo use instead
 
 //ANY TIME:
 //Fill dShowerRFBunches_FCAL & dShowerRFBunches_Both
@@ -45,6 +46,14 @@ namespace DAnalysis
 
 //AT THE END:
 //store unsigned char instead of pointer???
+
+//MUST BEWARE DUPLICATE COMBOS
+//let's say a combo of charged tracks has 2 valid RF bunches
+//and we need to combo 2 pi0s with them
+//and the shower timing cuts are loose enough that all 4 showers satisfy both RF bunches
+//if we combo the 2 rf bunches separately: WE HAVE DUPLICATE COMBOS
+//and doing the duplicate check AFTER the fact takes FOREVER
+//therefore, we must take the neutral showers for the 2 rfs, COMBINE THEM, and then COMBO AS A UNIT
 
 /****************************************************** DEFINE LAMBDAS, USING STATEMENTS *******************************************************/
 
@@ -73,7 +82,7 @@ class DSourceComboer : public JObject
 		DSourceComboer(JEventLoop* locEventLoop);
 		DSourceComboer::~DSourceComboer(void);
 
-		const vector<const DSourceCombo*>* Request_VertexCombos(JEventLoop* locEventLoop, const DReactionStepVertexInfo* locReactionStepVertexInfo);
+		const vector<const DSourceCombo*>* Request_VertexCombos(JEventLoop* locEventLoop, const DReactionVertexInfo* locReactionVertexInfo);
 
 		const vector<const DSourceCombo*>* Request_NeutralCombos(JEventLoop* locEventLoop, const DReactionStepVertexInfo* locReactionStepVertexInfo, DVector3 locVertex);
 
@@ -107,36 +116,37 @@ class DSourceComboer : public JObject
 		double Calc_MaxDeltaTError(const DNeutralShower* locNeutralShower, const shared_ptr<const DKinematicData>& locKinematicData) const;
 
 		//CREATE COMBOS - GENERAL METHODS
-		void Create_SourceCombos(const DSourceComboUse& locSourceComboUse, ComboingStage_t locComboingStage, size_t locVertexZBin);
-		void Create_SourceCombos(const DSourceComboInfo* locSourceComboInfo, ComboingStage_t locComboingStage, size_t locVertexZBin);
+		void Create_SourceCombos(const DSourceComboUse& locSourceComboUse, ComboingStage_t locComboingStage);
+		void Create_SourceCombos(const DSourceComboInfo* locSourceComboInfo, ComboingStage_t locComboingStage, signed char locVertexZBin);
 
 		//COMBO VERTICALLY METHODS
-		void Combo_Vertically_AllDecays(const DSourceComboUse& locComboUseToCreate, ComboingStage_t locComboingStage, size_t locVertexZBin);
-		void Combo_Vertically_NDecays(const DSourceComboUse& locComboUseToCreate, const DSourceComboUse& locNMinus1ComboUse, const DSourceComboUse& locSourceComboDecayUse, ComboingStage_t locComboingStage, size_t locVertexZBin);
-		void Combo_Vertically_AllParticles(const DSourceComboUse& locComboUseToCreate, ComboingStage_t locComboingStage, size_t locVertexZBin);
-		void Combo_Vertically_NParticles(const DSourceComboUse& locComboUseToCreate, const DSourceComboUse& locNMinus1ComboUse, ComboingStage_t locComboingStage, size_t locVertexZBin);
+		//Note that vertical comboing always takes place at the same vertex-z
+		void Combo_Vertically_AllDecays(const DSourceComboUse& locComboUseToCreate, ComboingStage_t locComboingStage);
+		void Combo_Vertically_NDecays(const DSourceComboUse& locComboUseToCreate, const DSourceComboUse& locNMinus1ComboUse, const DSourceComboUse& locSourceComboDecayUse, ComboingStage_t locComboingStage);
+		void Combo_Vertically_AllParticles(const DSourceComboUse& locComboUseToCreate, ComboingStage_t locComboingStage);
+		void Combo_Vertically_NParticles(const DSourceComboUse& locComboUseToCreate, const DSourceComboUse& locNMinus1ComboUse, ComboingStage_t locComboingStage);
 
 		//COMBO HORIZONTALLY METHODS
-		void Combo_Horizontally_All(const DSourceComboUse& locComboUseToCreate, ComboingStage_t locComboingStage, size_t locVertexZBin);
-		void Create_Combo_OneParticle(const DSourceComboUse& locComboUseToCreate, ComboingStage_t locComboingStage, size_t locVertexZBin);
-		void Combo_Horizontally_AddCombo(const DSourceComboUse& locComboUseToCreate, const DSourceComboUse& locAllBut1ComboUse, const DSourceComboUse& locSourceComboUseToAdd, ComboingStage_t locComboingStage, size_t locVertexZBin);
-		void Combo_Horizontally_AddParticle(const DSourceComboUse& locComboUseToCreate, const DSourceComboUse& locAllBut1ComboUse, Particle_t locPID, ComboingStage_t locComboingStage, size_t locVertexZBin);
+		void Combo_Horizontally_All(const DSourceComboUse& locComboUseToCreate, ComboingStage_t locComboingStage);
+		void Create_Combo_OneParticle(const DSourceComboUse& locComboUseToCreate, ComboingStage_t locComboingStage);
+		void Combo_Horizontally_AddCombo(const DSourceComboUse& locComboUseToCreate, const DSourceComboUse& locAllBut1ComboUse, const DSourceComboUse& locSourceComboUseToAdd, ComboingStage_t locComboingStage);
+		void Combo_Horizontally_AddParticle(const DSourceComboUse& locComboUseToCreate, const DSourceComboUse& locAllBut1ComboUse, Particle_t locPID, ComboingStage_t locComboingStage);
 
 		//BUILD/RETRIEVE RESUME-AT ITERATORS
 		void Build_ParticleIterators(const vector<int>& locBeamBunches, const vector<const JObject*>& locParticles);
 		vector<const JObject*>::const_iterator Get_ResumeAtIterator_Particles(const DSourceCombo* locSourceCombo, const vector<int>& locBeamBunches) const;
-		void Build_ComboIterators(const vector<int>& locBeamBunches, const vector<const DSourceCombo*>& locCombos, ComboingStage_t locComboingStage, size_t locVertexZBin);
-		vector<const DSourceCombo*>::const_iterator Get_ResumeAtIterator_Combos(const DSourceCombo* locSourceCombo, const vector<int>& locBeamBunches, ComboingStage_t locComboingStage, size_t locVertexZBin) const;
+		void Build_ComboIterators(const vector<int>& locBeamBunches, const vector<const DSourceCombo*>& locCombos, ComboingStage_t locComboingStage, signed char locVertexZBin);
+		vector<const DSourceCombo*>::const_iterator Get_ResumeAtIterator_Combos(const DSourceCombo* locSourceCombo, const vector<int>& locBeamBunches, ComboingStage_t locComboingStage, signed char locVertexZBin) const;
 
 		//GET POTENTIAL PARTICLES & COMBOS FOR COMBOING
-		const vector<const JObject*>& Get_ParticlesForComboing(Particle_t locPID, ComboingStage_t locComboingStage, const vector<int>& locBeamBunches = {}, size_t locVertexZBin = 0);
+		const vector<const JObject*>& Get_ParticlesForComboing(Particle_t locPID, ComboingStage_t locComboingStage, const vector<int>& locBeamBunches = {}, signed char locVertexZBin = 0);
 		vector<const JObject*>* Get_ShowersByBeamBunch(const vector<int>& locBeamBunches, DPhotonShowersByBeamBunch& locShowersByBunch);
-		const vector<const DSourceCombo*>& Get_CombosForComboing(const DSourceComboUse& locComboUse, ComboingStage_t locComboingStage, const vector<int>& locBeamBunches, size_t locVertexZBin);
-		const vector<const DSourceCombo*>& Get_CombosByBeamBunch(DCombosByBeamBunch& locCombosByBunch, const vector<int>& locBeamBunches, ComboingStage_t locComboingStage, size_t locVertexZBin);
+		const vector<const DSourceCombo*>& Get_CombosForComboing(const DSourceComboUse& locComboUse, ComboingStage_t locComboingStage, const vector<int>& locBeamBunches);
+		const vector<const DSourceCombo*>& Get_CombosByBeamBunch(DCombosByBeamBunch& locCombosByBunch, const vector<int>& locBeamBunches, ComboingStage_t locComboingStage, signed char locVertexZBin);
 
 		//GET/DETERMINE/REGISTER VALID RF BUNCHES
 		const vector<int>& Get_ValidRFBunches(const DSourceComboUse& locSourceComboUse, const DSourceCombo* locSourceCombo) const;
-		void Register_ValidRFBunches(const DSourceComboUse& locSourceComboUse, const DSourceCombo* locSourceCombo, const vector<int>& locRFBunches, ComboingStage_t locComboingStage, size_t locVertexZBin, bool locHasMassiveNeutrals);
+		void Register_ValidRFBunches(const DSourceComboUse& locSourceComboUse, const DSourceCombo* locSourceCombo, const vector<int>& locRFBunches, ComboingStage_t locComboingStage, signed char locVertexZBin, bool locHasMassiveNeutrals);
 		vector<int> Get_CommonRFBunches(const vector<int>& locRFBunches1, const vector<int>& locRFBunches2) const;
 
 		//PARTICLE UTILITY FUNCTIONS
@@ -144,13 +154,13 @@ class DSourceComboer : public JObject
 		bool Get_IsFCALOnly(const JObject* locObject) const;
 
 		//COMBO UTILITY FUNCTIONS
-		DSourceCombosByUse_Large& Get_CombosSoFar(ComboingStage_t locComboingStage, size_t locVertexZBin);
-		void Copy_FCALOnlyResults(const DSourceComboUse& locComboUseToCreate, ComboingStage_t locComboingStage, size_t locVertexZBin);
+		DSourceCombosByUse_Large& Get_CombosSoFar(ComboingStage_t locComboingStage);
+		void Copy_FCALOnlyResults(const DSourceComboUse& locComboUseToCreate, ComboingStage_t locComboingStage, signed char locVertexZBin);
 		bool Get_HasMassiveNeutrals(const DSourceComboInfo* locSourceComboInfo) const;
 
 		//VERTEX/RF UTILITY FUNCTIONS
 		size_t Get_PhotonVertexZBin(double locVertexZ) const;
-		double Get_PhotonVertexZBinCenter(size_t locVertexZBin) const;
+		double Get_PhotonVertexZBinCenter(signed char locVertexZBin) const;
 		int Calc_RFBunchShift(double locTimeToStep, double locTimeToStepTo) const; //returns integer shift
 
 		//MASS UTILITY FUNCTIONS
@@ -158,6 +168,10 @@ class DSourceComboer : public JObject
 		double Calc_InvariantMass(const DSourceCombo* locSourceCombo) const;
 		vector<int> Cut_InvariantMass_HasMassiveNeutral(const DSourceCombo* locSourceCombo, Particle_t locDecayPID, vector<int> locValidRFBunches) const;
 		double Calc_InvariantMass_HasMassiveNeutral(const DSourceCombo* locSourceCombo, int locRFBunch) const;
+
+		//definitions of negative values for any particle index //in order such that operator< returns order expected for string (e.g. gp->...)
+		static signed char Get_VertexZIndex_FCAL(void){return -2;}
+		static signed char Get_VertexZIndex_Unknown(void){return -1;}
 
 		/************************************************************** DEFINE MEMBERS ***************************************************************/
 
@@ -176,6 +190,9 @@ class DSourceComboer : public JObject
 		float dPhotonVertexZBinWidth = 10.0;
 		float dPhotonVertexZRangeLow = 45.0;
 		size_t dNumPhotonVertexZBins = 5;
+
+		//due to detached vertices
+		double dMaxDecayTimeOffset = 2.0;
 
 		//CHARGED TRACKS
 		vector<const DChargedTrack*> dChargedTracks;
@@ -202,19 +219,20 @@ class DSourceComboer : public JObject
 		//therefore, use the set when creating the objects during construction, but then move the results into the vector and keep it sorted
 		set<const DSourceComboInfo*, DCompare_SourceComboInfos> dSourceComboInfoSet;
 		vector<const DSourceComboInfo*> dSourceComboInfos;
+		unordered_map<const DReactionVertexInfo*, DSourceComboUse> dSourceComboUseReactionMap_ChargedPrimary; //primary combo info (nullptr if none)
 		unordered_map<shared_ptr<const DReactionStepVertexInfo>, DSourceComboUse> dSourceComboUseReactionMap_Photons; //primary combo info (nullptr if none)
 		unordered_map<shared_ptr<const DReactionStepVertexInfo>, DSourceComboUse> dSourceComboUseReactionMap_Charged; //primary combo info (nullptr if none)
 		unordered_map<pair<shared_ptr<const DReactionStepVertexInfo>, DSourceComboUse>, size_t> dSourceComboInfoStepMap_Photons; //size_t: step index
 		unordered_map<pair<shared_ptr<const DReactionStepVertexInfo>, DSourceComboUse>, size_t> dSourceComboInfoStepMap_Charged; //size_t: step index
+		//i need to go from step -> combo use
+		unordered_map<pair<const DReaction*, size_t>, DSourceComboUse> dSourceComboUseReactionStepMap_Charged; //primary combo info (nullptr if none)
+		unordered_map<pair<const DReaction*, size_t>, DSourceComboUse> dSourceComboUseReactionStepMap_Photons; //primary combo info (nullptr if none)
 
 		//SOURCE COMBOS //vector: z-bin //if attempted and all failed, DSourceCombosByUse_Large vector will be empty
 		size_t dInitialComboVectorCapacity = 100;
-		DSourceCombosByBeamBunchByUse dSourceCombos_Charged;
-		DSourceCombosByUse_Large dSourceCombos_FCAL;
-		vector<DSourceCombosByUse_Large> dSourceCombos_Both;
+		DSourceCombosByUse_Large dSourceCombosByUse;
 		//also, sort by which beam bunches they are valid for: that way when comboing, we can retrieve only the combos that can possibly match the input RF bunches
-		DSourceCombosByBeamBunchByUse dSourceCombosByBeamBunch_FCAL;
-		vector<DSourceCombosByBeamBunchByUse> dSourceCombosByBeamBunch_Both; //vector: vertex-z bins //FCAL + BCAL
+		DSourceCombosByBeamBunchByUse dSourceCombosByBeamBunchByUse;
 
 		//RESUME SEARCH ITERATORS
 		//e.g. if a DSourceCombo is -> 2pi0, and we want to use it as a basis for building a combo of 3pi0s,
@@ -223,8 +241,7 @@ class DSourceComboer : public JObject
 		//they are useful when comboing VERTICALLY, but cannot be used when comboing HORIZONTALLY
 			//e.g. when comboing a pi0 (with photons = A, D) with a single photon, the photon could be B, C, or E+: no single spot to resume at
 		unordered_map<pair<const JObject*, vector<int>>, vector<const JObject*>::const_iterator> dResumeSearchAfterIterators_Particles; //vector<int>: RF bunches (empty for all)
-		unordered_map<const DSourceCombo*, DComboIteratorsByBeamBunch> dResumeSearchAfterIterators_Combos;
-		vector<unordered_map<const DSourceCombo*, DComboIteratorsByBeamBunch>> dResumeSearchAfterIterators_AllShowerCombos; //first vector: vertex-z bins
+		unordered_map<pair<const DSourceCombo*, signed char>, DComboIteratorsByBeamBunch> dResumeSearchAfterIterators_Combos; //char: zbin
 
 		//RESUME-SEARCH-AFTER OBJECTS
 		//The below resume-at vectors are only useful when comboing vertically, so PID-specific versions are not needed
@@ -241,6 +258,72 @@ class DSourceComboer : public JObject
 };
 
 /*********************************************************** INLINE MEMBER FUNCTION DEFINITIONS ************************************************************/
+
+//prefer some kind of map rather than doing this over and over again
+//ugh: no, would be huge
+inline const DSourceCombo* DSourceComboer::Get_StepPrimaryVertexCombo_Charged(const DSourceCombo* locReactionCombo, const DReactionVertexInfo* locReactionVertexInfo, const DReactionStepVertexInfo* locStepVertexInfo)
+{
+	//if it's the production vertex, just return the input
+	if(locStepVertexInfo->Get_ProductionVertexFlag())
+		return locReactionCombo;
+
+	//collect all combos of the desired use that are in the reaction combo
+	auto locSourceComboUse = dSourceComboUseReactionMap_Charged[locStepVertexInfo];
+	auto locCombos = Get_AllCombosByUse(locReactionCombo, locSourceComboUse);
+
+	//if there is only one we can just return it.  but if there are more, we must return the correct one
+	//e.g. if the primary step vertex is the N'th occurrence of the use, we must return the N'th combo
+	if(locCombos.size() == 1)
+		return locCombos[0];
+
+	//get all step vertices, sort by step order
+	auto locStepVertexInfos = locReactionVertexInfo->Get_StepVertexInfos();
+	auto Sort_StepVertices = [](const shared_ptr<const DReactionStepVertexInfo>& lhs, const shared_ptr<const DReactionStepVertexInfo>& rhs) -> bool
+			{return lhs->Get_StepIndices().front() < rhs->Get_StepIndices().front();};
+	std::sort(locStepVertexInfos.begin(), locStepVertexInfos.end(), Sort_StepVertices);
+
+	//now, find what occurrence of the use
+	auto locComboIndex = size_t(0);
+	for(auto locLoopStepVertexInfo : locStepVertexInfos)
+	{
+		if(locLoopStepVertexInfo == locStepVertexInfo)
+			break;
+		if(dSourceComboUseReactionMap_Charged[locLoopStepVertexInfo] == locSourceComboUse)
+			++locComboIndex;
+	}
+
+	//return the corresponding combo
+	return locCombos[locComboIndex];
+}
+
+inline vector<const DSourceCombo*> Get_AllCombosByUse(const DSourceCombo* locParentCombo, const DSourceComboUse& locSourceComboUse)
+{
+	vector<const DSourceCombo*> locCombos;
+	auto locFurtherDecayCombos = locParentCombo->Get_FurtherDecayCombos();
+	for(const auto& locDecayComboPair : locFurtherDecayCombos)
+	{
+		auto locDecayCombos = locDecayComboPair.second;
+		if(locDecayComboPair.first == locSourceComboUse)
+		{
+			locCombos.insert(locCombos.end(), locDecayCombos.begin(), locDecayCombos.end());
+			continue;
+		}
+		for(const auto& locDecayCombo : locDecayCombos)
+		{
+			auto locSubsetCombos = Get_AllCombosByUse(locDecayCombo, locSourceComboUse);
+			locCombos.insert(locCombos.end(), locSubsetCombos.begin(), locSubsetCombos.end());
+		}
+	}
+
+	return locCombos;
+}
+
+inline const DSourceCombo* DSourceComboer::Get_StepCombo(const DSourceCombo* locReactionCombo, const DReaction* locReaction, size_t locStepIndex)
+{
+	auto locSourceComboUse = dSourceComboUseReactionMap_Charged[locStepVertexInfo];
+	return Get_
+}
+
 
 /*****
  * COMBOING PHOTONS AND RF BUNCHES
@@ -275,11 +358,10 @@ inline void DSourceComboer::Build_ParticleIterators(const vector<int>& locBeamBu
 		dResumeSearchAfterIterators_Particles.emplace(std::make_pair(*locIterator, locBeamBunches), locIterator);
 }
 
-inline void DSourceComboer::Build_ComboIterators(const vector<int>& locBeamBunches, const vector<const DSourceCombo*>& locCombos, ComboingStage_t locComboingStage, size_t locVertexZBin)
+inline void DSourceComboer::Build_ComboIterators(const vector<int>& locBeamBunches, const vector<const DSourceCombo*>& locCombos, ComboingStage_t locComboingStage, signed char locVertexZBin)
 {
-	auto& locIteratorComboMap = (locComboingStage != d_AllShowers) ? dResumeSearchAfterIterators_Combos : dResumeSearchAfterIterators_AllShowerCombos[locVertexZBin];
 	for(vector<const DSourceCombo*>::const_iterator locIterator = locCombos.begin(); locIterator != locCombos.end(); ++locIterator)
-		locIteratorComboMap[*locIterator].emplace(locBeamBunches, locIterator);
+		dResumeSearchAfterIterators_Combos[std::make_pair(*locIterator, locVertexZBin)].emplace(locBeamBunches, locIterator);
 }
 
 inline vector<const JObject*>::const_iterator DSourceComboer::Get_ResumeAtIterator_Particles(const DSourceCombo* locSourceCombo, const vector<int>& locBeamBunches) const
@@ -288,13 +370,10 @@ inline vector<const JObject*>::const_iterator DSourceComboer::Get_ResumeAtIterat
 	return std::next(dResumeSearchAfterIterators_Particles[std::make_pair(locPreviousObject, locBeamBunches)]);
 }
 
-inline vector<const DSourceCombo*>::const_iterator DSourceComboer::Get_ResumeAtIterator_Combos(const DSourceCombo* locSourceCombo, const vector<int>& locBeamBunches, ComboingStage_t locComboingStage, size_t locVertexZBin) const
+inline vector<const DSourceCombo*>::const_iterator DSourceComboer::Get_ResumeAtIterator_Combos(const DSourceCombo* locSourceCombo, const vector<int>& locBeamBunches, ComboingStage_t locComboingStage, signed char locVertexZBin) const
 {
 	const auto& locPreviousCombo = dResumeSearchAfterMap_Combos[locSourceCombo];
-	if(locComboingStage == d_AllShowers)
-		return std::next(dResumeSearchAfterIterators_AllShowerCombos[locVertexZBin][locPreviousCombo][locBeamBunches]);
-	else
-		return std::next(dResumeSearchAfterIterators_Combos[locPreviousCombo][locBeamBunches]);
+	return std::next(dResumeSearchAfterIterators_Combos[std::make_pair(locPreviousCombo, locVertexZBin)][locBeamBunches]);
 }
 
 inline bool DSourceComboer::Get_IsFCALOnly(const JObject* locObject) const
@@ -336,44 +415,9 @@ inline vector<int> DSourceComboer::Get_CommonRFBunches(const vector<int>& locRFB
 
 
 
-inline DSourceCombosByUse_Large& DSourceComboer::Get_CombosSoFar(ComboingStage_t locComboingStage, size_t locVertexZBin)
+inline DSourceCombosByUse_Large& DSourceComboer::Get_CombosSoFar(ComboingStage_t locComboingStage)
 {
-	if(locComboingStage == d_ChargedOnly)
-		return dSourceCombos_Charged;
-	else if(locComboingStage == d_FCALShowersOnly)
-		return dSourceCombos_FCAL;
-	else if(locComboingStage == d_AllShowers)
-		return dSourceCombos_Both[locVertexZBin];
-	else
-		return {};
-
-	//CAREFUL: FINAL STAGE!!!
-	//Need to save separately for: Passing charged PID cuts at production vertex
-
-
-	//Assume: only one reaction, no neutrons, no detached vertices, vertex position findable
-	//For a reaction: for each step/vertex (only 1 here), do charged comboing
-	//Then, find the vertex and select the RF bunch(es) (if any)
-		//Store results as map from use to combo to pair of vertex/rf_bunches (if cut, rf will be empty)
-	//for each rf of each use/combo, find photons at production vertex (all?), ignoring charged tracks
-		//do this by requesting the combo results for the primary vertex of the reaction
-		//store results as map of vertex-z-bin to rf to use to combo
-	//then,
-
-	//MUST BEWARE DUPLICATE COMBOS
-	//let's say a combo of charged tracks has 2 valid RF bunches
-	//and we need to combo 2 pi0s with them
-	//and the shower timing cuts are loose enough that all 4 showers satisfy both RF bunches
-	//if we combo the 2 rf bunches separately: WE HAVE DUPLICATE COMBOS
-	//and doing the duplicate check AFTER the fact takes FOREVER
-	//therefore, we must take the neutral showers for the 2 rfs, COMBINE THEM, and then COMBO AS A UNIT
-
-	//once we choose a shower that has less valid rf bunches than the total, we can reduce the size of the potential shower pool
-		//we must be careful about the resume iterators!! they are saved when you are looking at (e.g.) 2 rf bunches, but on lookup may be only 1!!
-			//or when we generate the "needed" vector we can apply a cut with the iterator
-		//or, we can manually cut the showers by rf
-//Where do I register which RF bunches are available as I'm comboing? For the saved combos?
-	//you may create the combo while restricted to only one RF bunch, but it may work several others too: won't know at creation time
+	return dSourceCombosByUse;
 }
 
 
@@ -395,7 +439,7 @@ inline size_t DSourceComboer::Get_PhotonVertexZBin(double locVertexZ) const
 	return locPhotonVertexZBin;
 }
 
-inline double DSourceComboer::Get_PhotonVertexZBinCenter(size_t locVertexZBin) const
+inline double DSourceComboer::Get_PhotonVertexZBinCenter(signed char locVertexZBin) const
 {
 	return dPhotonVertexZRangeLow + (double(locVertexZBin) + 0.5)*dPhotonVertexZBinWidth;
 }
@@ -448,14 +492,50 @@ inline vector<int> DSourceComboer::Cut_InvariantMass_HasMassiveNeutral(const DSo
 	return locValidRFBunches;
 }
 
-inline double DSourceComboer::Calc_InvariantMass(const DSourceCombo* locSourceCombo, size_t locVertexZBin) const
+inline double DSourceComboer::Calc_InvariantMass(const DSourceCombo* locSourceCombo, signed char locVertexZBin) const
 {
 	DLorentzVector locTotalP4;
 	dFinalStateP4ByCombo.emplace(locSourceCombo, locTotalP4);
 	return locTotalP4.M();
 }
 
-inline double DSourceComboer::Calc_InvariantMass_HasMassiveNeutral(const DSourceCombo* locSourceCombo, int locRFBunch, size_t locVertexZBin) const
+inline DLorentzVector DSourceComboer::Calc_DecayingP4_ChargedOnly(const DSourceCombo* locSourceCombo) const
+{
+	//see if it's already been calculated
+	auto locCalcIterator = dFinalStateP4ByCombo.find(locSourceCombo);
+	if(locCalcIterator != dFinalStateP4ByCombo.end())
+		return *locCalcIterator;
+
+	//the input DSourceCombo CANNOT contain any neutrals (or else this will crash!!)
+	auto locSourceParticles = locSourceCombo->Get_SourceParticles(false); //false: NOT the whole chain
+
+	DLorentzVector locTotalP4;
+	for(auto locParticlePair : locSourceParticles)
+	{
+		auto locChargedTrack = static_cast<const DChargedTrack*>(locParticlePair.second);
+		locTotalP4 += locChargedTrack->Get_Hypothesis(locParticlePair.first)->lorentzMomentum();
+	}
+
+	//now loop over decays
+	auto locFurtherDecayCombos = locSourceCombo->Get_FurtherDecayCombos();
+	for(const auto& locCombosByUsePair : locFurtherDecayCombos)
+	{
+		for(const auto& locCombo : locCombosByUsePair.second)
+		{
+			//this check is duplicated at the top!
+			auto locIterator = dFinalStateP4ByCombo.find(locCombo);
+			if(locIterator != dFinalStateP4ByCombo.end())
+				locTotalP4 += locIterator->second;
+			else
+				locTotalP4 += Calc_DecayingP4_ChargedOnly(locCombo);
+		}
+	}
+
+	dFinalStateP4ByCombo.emplace(locSourceCombo, locTotalP4);
+	return locTotalP4;
+}
+
+inline double DSourceComboer::Calc_InvariantMass_HasMassiveNeutral(const DSourceCombo* locSourceCombo, int locRFBunch, signed char locVertexZBin) const
 {
 	auto locSourceParticles = locSourceCombo->Get_SourceParticles(false); //false: NOT the whole chain
 	//vertex-z bin may be different for decay products! (detached vertex)
@@ -495,6 +575,7 @@ inline double DSourceComboer::Calc_InvariantMass_HasMassiveNeutral(const DSource
 				locTotalP4 += locIterator->second;
 			else
 				locTotalP4 += dFinalStateP4ByCombo_HasMassiveNeutrals[locRFBunch][locCombo];
+			//else call Calc_InvariantMass_HasMassiveNeutral!!
 		}
 	}
 

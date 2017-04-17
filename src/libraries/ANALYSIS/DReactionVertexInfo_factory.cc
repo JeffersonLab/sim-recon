@@ -191,6 +191,21 @@ vector<shared_ptr<DReactionStepVertexInfo>> DReactionVertexInfo_factory::Link_Ve
 		locSortedVertexInfos.push_back(locVertexInfo);
 	}
 
+	//set parent vertex infos
+	unordered_map<size_t, shared_ptr<DReactionStepVertexInfo>> locVertexInfoMap;
+	for(auto locVertexInfo : locSortedVertexInfos)
+	{
+		for(auto locStepIndex : locVertexInfo->Get_StepIndices())
+			locVertexInfoMap[locStepIndex] = locVertexInfo;
+	}
+	for(auto locVertexInfo : locSortedVertexInfos)
+	{
+		auto locPrimaryStepIndex = locVertexInfo->Get_StepIndices().front();
+		if(locPrimaryStepIndex == 0)
+			continue; //for 0 is nullptr, but is nullptr by default
+		auto locParentStepIndex = DAnalysis::Get_InitialParticleDecayFromIndices(locReaction, locPrimaryStepIndex).first;
+		locVertexInfo->Set_ParentVertexInfo(locVertexInfoMap[locParentStepIndex]);
+	}
 	return locSortedVertexInfos;
 }
 
@@ -237,13 +252,14 @@ bool DReactionVertexInfo_factory::Associate_DecayingParticles(bool locLinkingFla
 	//The positions of these decaying particles are now defined: Can use to constrain vertices in later constraints
 	//since we need to match with particles in other constraints, save the OTHER index for the particle
 		//if was in initial state, save final-state pair. and vice versa
+	auto locReaction = locVertexInfo->Get_Reaction();
 	for(auto locParticlePair : locNoConstrainDecayingParticles)
 	{
 		if(locParticlePair.second < 0) //was in initial state: save final state
-			locDefinedDecayingParticles.emplace(Get_InitialParticleDecayFromIndices(locReaction, locParticlePair.first), locVertexInfo);
+			locDefinedDecayingParticles.emplace(DAnalysis::Get_InitialParticleDecayFromIndices(locReaction, locParticlePair.first), locVertexInfo);
 		else //was in final state: save initial state
 		{
-			int locDecayStepIndex = Get_DecayStepIndex(locReaction, locParticlePair.first, locParticlePair.second);
+			int locDecayStepIndex = DAnalysis::Get_DecayStepIndex(locReaction, locParticlePair.first, locParticlePair.second);
 			locDefinedDecayingParticles.emplace(std::make_pair(locDecayStepIndex, DReactionStep::Get_ParticleIndex_Initial()), locVertexInfo);
 		}
 	}

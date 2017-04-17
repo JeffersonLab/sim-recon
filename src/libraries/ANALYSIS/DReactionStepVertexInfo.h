@@ -62,6 +62,10 @@ class DReactionStepVertexInfo
 	vector<pair<int, int>> Get_Particles(DReactionState_t locState = d_EitherState, Charge_t locCharge = d_AllCharges,
 			bool locIncludeDecayingFlag = true, bool locIncludeMissingFlag = true, bool locIncludeTargetFlag = true) const;
 
+	//parent vertex info
+	void Set_ParentVertexInfo(const shared_ptr<DReactionStepVertexInfo>& locStepVertexInfo){dParentVertexInfo = locStepVertexInfo;}
+	shared_ptr<DReactionStepVertexInfo> Get_ParentVertexInfo(void) const{return dParentVertexInfo;}
+
 private:
 
 	//PRIVATE METHODS
@@ -81,6 +85,7 @@ private:
 
 	//DECAY INFO
 	//Note, decaying particles that decay in-place at this vertex (e.g. pi0) will only appear once: with their "final-state" indices
+	//If the decaying particle has a detached vertex, then the indices reported here are the ones where it appears for the vertex (initial/final state)
 	vector<pair<int, int>> dDecayingParticles; //all, whether used to constrain or not
 	//below must be weak_ptr or else will have cyclic reference (memory leak!)
 	map<pair<int, int>, weak_ptr<DReactionStepVertexInfo>> dDecayingParticles_NoConstrain; //vertex-info: where it is used to constrain (nullptr if not)
@@ -88,8 +93,9 @@ private:
 
 	//DANGLING
 	//is it dangling? //if is true, then vertex parent is either:
-		//in dDecayingParticles_NoConstrain if it's not empty (will have size 1), or is center of target
+		//in dDecayingParticles_NoConstrain if it's not empty (at most one will have non-null info), or is center of target
 	bool dIsDanglingVertexFlag = false;
+	weak_ptr<DReactionStepVertexInfo> dParentVertexInfo = nullptr; //null if production vertex //weak: to avoid cyclic references
 };
 
 /****************************************************** NAMESPACE-SCOPE NON-INLINE FUNCTION DECLARATIONS *******************************************************/
