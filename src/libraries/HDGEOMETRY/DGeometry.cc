@@ -1135,6 +1135,21 @@ bool DGeometry::GetFDCWires(vector<vector<DFDCWire *> >&fdcwires) const{
       }
    }
 
+   vector<fdc_wire_rotation_t>fdc_wire_rotations;
+   if (jcalib->Get("FDC/wire_rotations",vals)==false){
+      for(unsigned int i=0; i<vals.size(); i++){
+         map<string,double> &row = vals[i];
+
+         // Get the offsets from the calibration database
+         fdc_wire_rotation_t temp;
+         temp.dPhiX=row["dPhiX"];
+         temp.dPhiY=row["dPhiY"];
+         temp.dPhiZ=row["dPhiZ"];
+
+         fdc_wire_rotations.push_back(temp);
+      }
+   }
+
    // Generate the vector of wire plane parameters
    for(int i=0; i<FDC_NUM_LAYERS; i++){
       double angle=-stereo_angles[i]*M_PI/180.+fdc_wire_offsets[i].dphi;
@@ -1166,9 +1181,9 @@ bool DGeometry::GetFDCWires(vector<vector<DFDCWire *> >&fdcwires) const{
          // Set directions of wire's coordinate system with "udir"
          // along wire.
          w->udir.SetXYZ(sin(angle),cos(angle),0.0);
-         w->udir.RotateX(ThetaX[pack_id]);
-         w->udir.RotateY(ThetaY[pack_id]);
-         w->udir.RotateZ(ThetaZ[pack_id]);
+         w->udir.RotateX(ThetaX[pack_id]+fdc_wire_rotations[i].dPhiX);
+         w->udir.RotateY(ThetaY[pack_id]+fdc_wire_rotations[i].dPhiY);
+         w->udir.RotateZ(ThetaZ[pack_id]+fdc_wire_rotations[i].dPhiZ);
          w->u+=dX[pack_id]*w->udir.y()-dY[pack_id]*w->udir.x();
 
          // "s" points in direction from beamline to midpoint of
