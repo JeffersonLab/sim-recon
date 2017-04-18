@@ -58,7 +58,7 @@ void ApplyCDCOffsets(TString rootFile = "hd_root.root", TString pedeOutFile = "m
    for (unsigned int i = 16001; i<=19522; i++){
       int histIndex = i;
       int pedeIndex = i;
-      outFile << resultMap[pedeIndex] + hCDCConstants->GetBinContent(histIndex) << endl;
+      outFile << hCDCConstants->GetBinContent(histIndex) - resultMap[pedeIndex]<< endl;
    }
    outFile.close();
 

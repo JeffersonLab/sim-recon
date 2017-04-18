@@ -1,7 +1,7 @@
 void MakeParameterFile(){
 
    double scale = 1.0;
-   double translationPresigma = 0.002;
+   double translationPresigma = 0.0005;
    double rotationPresigma = 0.0001;
    double gainPresigma = 0.01;
    double pitchPresigma = 0.001;
@@ -11,20 +11,21 @@ void MakeParameterFile(){
    outfile.open("Parameters.txt");
 
    bool fixCDCWires = true;
-   bool fixCDCt0 = true;
+   bool fixCDCt0 = false;
    bool fixCDCGlobalX = true;
    bool fixCDCGlobalY = true;
    bool fixCDCGlobalZ = true;
    bool fixCDCGlobalPhiX = true;
    bool fixCDCGlobalPhiY = true;
    bool fixCDCGlobalPhiZ = true;
-   bool fixFDCt0 = true;
+   bool fixFDCt0 = false;
    bool fixFDCGains = true;
    bool fixFDCCathodeOffsets = true;
-   bool fixFDCCathodeAngles = false;
-   bool fixFDCCellOffsets = false;
-   bool fixFDCWireRotation = false;
-   bool fixFDCPitch = false;
+   bool fixFDCCathodeAngles = true;
+   bool fixFDCCellOffsetsWires = true;
+   bool fixFDCCellOffsetsCathodes = true;
+   bool fixFDCWireRotation = true;
+   bool fixFDCPitch = true;
    bool fixFDCGap = true;
 
    outfile << "Parameter" << endl;
@@ -90,13 +91,16 @@ void MakeParameterFile(){
    for (unsigned int i=1; i<=24; i++){
 
       int indexOffset = 100000 + i*1000;
-      if (fixFDCCellOffsets){
+      if (fixFDCCellOffsetsWires){
          outfile << indexOffset + 1 << " 0.0 -1.0" << endl;
+      }
+      else{
+         outfile << indexOffset + 1 << " 0.0 " << translationPresigma << endl;
+      }
+      if (fixFDCCellOffsetsCathodes){
          outfile << indexOffset + 100 << " 0.0 -1.0" << endl;
       }
       else{
-         // dXw, dYw
-         outfile << indexOffset + 1 << " 0.0 " << translationPresigma << endl;
          outfile << indexOffset + 100 << " 0.0 " << translationPresigma << endl;
       }
 
