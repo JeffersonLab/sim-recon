@@ -8506,11 +8506,11 @@ jerror_t DTrackFitterKalmanSIMD::ExtrapolateCentralToOtherDetectors(){
 // matching
 jerror_t DTrackFitterKalmanSIMD::ExtrapolateForwardToOtherDetectors(){
   if (forward_traj.size()<2) return RESOURCE_UNAVAILABLE;
-
+ 
   // First deal with start counter.  Only do this if the track has a chance
   // to intersect with the start counter volume.
   unsigned int inner_index=forward_traj.size()-1; 
-  unsigned int index_beyond_start_counter=inner_index;
+   unsigned int index_beyond_start_counter=inner_index;
   DMatrix5x1 S=forward_traj[inner_index].S;
   bool intersected_start_counter=false;
   if (S(state_x)*S(state_x)+S(state_y)*S(state_y)<sc_pos[0][12].Perp2()
@@ -8522,7 +8522,7 @@ jerror_t DTrackFitterKalmanSIMD::ExtrapolateForwardToOtherDetectors(){
       for (;k>1;k--){ 
 	S=forward_traj[k].S;
 	z=forward_traj[k].z;
-	
+
 	double dphi=atan2(S(state_y),S(state_x))-sc_pos[0][0].Phi();
 	if (dphi<0) dphi+=2.*M_PI;
 	index=int(floor(dphi/(2.*M_PI/30.)));
@@ -8656,6 +8656,7 @@ jerror_t DTrackFitterKalmanSIMD::ExtrapolateForwardToOtherDetectors(){
     }
 
   }
+  
 
   //--------------------------------
   // Next swim to outer detectors...
@@ -8716,22 +8717,6 @@ jerror_t DTrackFitterKalmanSIMD::ExtrapolateForwardToOtherDetectors(){
 	return NOERROR;
       }
     }    
-    // Check if we have more FDC planes to pass by
-    else if (fdc_plane<24 && z>fdc_z_wires[fdc_plane]-0.1){   
-      // output step near wire plane 
-      double tsquare=S(state_tx)*S(state_tx)+S(state_ty)*S(state_ty);
-      double tanl=1./sqrt(tsquare);
-      double cosl=cos(atan(tanl));
-      double pt=cosl/fabs(S(state_q_over_p));
-      double phi=atan2(S(state_ty),S(state_tx));
-      DVector3 position(S(state_x),S(state_y),z);
-      DVector3 momentum(pt*cos(phi),pt*sin(phi),pt*tanl);
-      extrapolations.push_back(Extrapolation_t(SYS_FDC,position,momentum,
-					       t*TIME_UNIT_CONVERSION,s,
-					       s_theta_ms_sum,theta2ms_sum));
-
-      fdc_plane++;
-    }
    
     // Relationship between arc length and z
     double dz_ds=1./sqrt(1.+S(state_tx)*S(state_tx)
@@ -8776,9 +8761,11 @@ jerror_t DTrackFitterKalmanSIMD::ExtrapolateForwardToOtherDetectors(){
       newz=dFCALz+EPS;
       ds=(newz-z)/dz_ds;
     }
+    bool got_fdc_hit=false;
     if (fdc_plane<24 && newz>fdc_z_wires[fdc_plane]){
       newz=fdc_z_wires[fdc_plane];
       ds=(newz-z)/dz_ds;
+      got_fdc_hit=true;
     }
     s+=ds;
 
@@ -8803,7 +8790,21 @@ jerror_t DTrackFitterKalmanSIMD::ExtrapolateForwardToOtherDetectors(){
 
     // Step through field
     Step(z,newz,dEdx,S); 
-        
+
+    if (got_fdc_hit){
+      double tsquare=S(state_tx)*S(state_tx)+S(state_ty)*S(state_ty);
+      double tanl=1./sqrt(tsquare);
+      double cosl=cos(atan(tanl));
+      double pt=cosl/fabs(S(state_q_over_p));
+      double phi=atan2(S(state_ty),S(state_tx));
+      DVector3 position(S(state_x),S(state_y),z);
+      DVector3 momentum(pt*cos(phi),pt*sin(phi),pt*tanl);
+      extrapolations.push_back(Extrapolation_t(SYS_FDC,position,momentum,
+					       t*TIME_UNIT_CONVERSION,s,
+					       s_theta_ms_sum,theta2ms_sum));
+
+      fdc_plane++;
+    }       
     if (hit_tof==false && newz>dTOFz){
       hit_tof=true;
 
