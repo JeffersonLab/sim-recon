@@ -356,9 +356,9 @@ DTrackFitterKalmanSIMD::DTrackFitterKalmanSIMD(JEventLoop *loop):DTrackFitter(lo
     NUM_CDC_SIGMA_CUT=3.5;
     NUM_FDC_SIGMA_CUT=3.5;
     gPARMS->SetDefaultParameter("KALMAN:NUM_CDC_SIGMA_CUT",NUM_CDC_SIGMA_CUT,
-            "maximum distance in number of sigmas away from extrapolation to accept cdc hit");
+            "maximum distance in number of sigmas away from projection to accept cdc hit");
     gPARMS->SetDefaultParameter("KALMAN:NUM_FDC_SIGMA_CUT",NUM_FDC_SIGMA_CUT,
-            "maximum distance in number of sigmas away from extrapolation to accept fdc hit"); 
+            "maximum distance in number of sigmas away from projection to accept fdc hit"); 
 
     ANNEAL_SCALE=1.5;
     ANNEAL_POW_CONST=20.0;
@@ -779,12 +779,14 @@ DTrackFitter::fit_status_t DTrackFitterKalmanSIMD::FitTrack(void)
             << " vertex=(" << x_ << "," << y_ << "," << z_<<")"
             << " chi2=" << chisq_
             <<endl;
-	for (unsigned int iExtrap=0;iExtrap<extrapolations.size();iExtrap++){
-	  _DBG_ << " Detector: " << extrapolations[iExtrap].detector
-		<< " t: " << extrapolations[iExtrap].t
-		<< " s: " << extrapolations[iExtrap].s
-		<< " s_theta_ms_sum: " << extrapolations[iExtrap].s_theta_ms_sum
+	if (DEBUG_LEVEL==50){
+	  for (unsigned int iExtrap=0;iExtrap<extrapolations.size();iExtrap++){
+	    _DBG_ << " Detector: " << extrapolations[iExtrap].detector
+		  << " t: " << extrapolations[iExtrap].t
+		  << " s: " << extrapolations[iExtrap].s
+		  << " s_theta_ms_sum: " << extrapolations[iExtrap].s_theta_ms_sum
 		<<endl;
+	  }
 	}
         if(DEBUG_LEVEL>1){
             //Dump pulls
@@ -1252,8 +1254,7 @@ jerror_t DTrackFitterKalmanSIMD::PropagateForwardCDC(int length,int &index,
     temp.B=sqrt(Bx*Bx+By*By+Bz*Bz);
 
     // Step through field
-    double oldz=z;
-    FastStep(z,ds,dEdx,S);
+    ds=FasterStep(z,newz,dEdx,S);
 
     // update path length
     len+=fabs(ds);
@@ -1263,7 +1264,7 @@ jerror_t DTrackFitterKalmanSIMD::PropagateForwardCDC(int length,int &index,
 
     // Get the contribution to the covariance matrix due to multiple 
     // scattering
-    GetProcessNoise(oldz,ds,temp.chi2c_factor,temp.chi2a_factor,temp.chi2a_corr,
+    GetProcessNoise(z,ds,temp.chi2c_factor,temp.chi2a_factor,temp.chi2a_corr,
             temp.S,Q);
 
     // Energy loss straggling
@@ -1273,7 +1274,7 @@ jerror_t DTrackFitterKalmanSIMD::PropagateForwardCDC(int length,int &index,
     }
 
     // Compute the Jacobian matrix and its transpose
-    StepJacobian(newz,oldz,S,dEdx,J);
+    StepJacobian(newz,z,S,dEdx,J);
 
     // update the trajectory
     if (index<=length){
@@ -1288,6 +1289,9 @@ jerror_t DTrackFitterKalmanSIMD::PropagateForwardCDC(int length,int &index,
         temp.Skk=Zero5x1;
         forward_traj.push_front(temp);    
     }
+
+    //update z
+    z=newz;
 
     return NOERROR;
 }
@@ -1703,10 +1707,6 @@ jerror_t DTrackFitterKalmanSIMD::PropagateForward(int length,int &i,
       //  _DBG_ << endl;
       newz=endplate_z+EPS3;
       stepped_to_endplate=true;
-      ds=(newz-z)/dz_ds;
-    }
-    else if (stepped_to_endplate){
-      ds=endplate_dz/dz_ds;
     }
 
     // Check if we are about to step to one of the wire planes
@@ -1714,15 +1714,13 @@ jerror_t DTrackFitterKalmanSIMD::PropagateForward(int length,int &i,
     if (newz>zhit){ 
         newz=zhit;
         done=true;
-	ds=(newz-z)/dz_ds;
     }   
 
     // Store magnitude of magnetic field
     temp.B=sqrt(Bx*Bx+By*By+Bz*Bz);
 
     // Step through field
-    double oldz=z;
-    FastStep(z,ds,dEdx,S);
+    ds=FasterStep(z,newz,dEdx,S);
 
     // update path length
     len+=ds;
@@ -1732,7 +1730,7 @@ jerror_t DTrackFitterKalmanSIMD::PropagateForward(int length,int &i,
 
     // Get the contribution to the covariance matrix due to multiple 
     // scattering
-    GetProcessNoise(oldz,ds,temp.chi2c_factor,temp.chi2a_factor,temp.chi2a_corr,
+    GetProcessNoise(z,ds,temp.chi2c_factor,temp.chi2a_factor,temp.chi2a_corr,
             temp.S,Q);
 
     // Energy loss straggling  
@@ -1742,7 +1740,7 @@ jerror_t DTrackFitterKalmanSIMD::PropagateForward(int length,int &i,
     }
 
     // Compute the Jacobian matrix and its transpose
-    StepJacobian(newz,oldz,S,dEdx,J);
+    StepJacobian(newz,z,S,dEdx,J);
 
     // update the trajectory data
     if (i<=length){
@@ -1757,6 +1755,9 @@ jerror_t DTrackFitterKalmanSIMD::PropagateForward(int length,int &i,
         temp.Skk=Zero5x1;
         forward_traj.push_front(temp);
     }
+
+    // update z
+    z=newz;
 
     return NOERROR;
 }
@@ -8238,16 +8239,12 @@ void DTrackFitterKalmanSIMD::TransformCovariance(DMatrix5x5 &C){
 jerror_t DTrackFitterKalmanSIMD::ExtrapolateCentralToOtherDetectors(){
   if (central_traj.size()<2) return RESOURCE_UNAVAILABLE;
 
-  DMatrix5x5 Jc=I5x5;  //Jacobian matrix
-  DMatrix5x5 Q; // multiple scattering matrix
-
   // First deal with start counter.  Only do this if the track has a chance
   // to intersect with the start counter volume.
   unsigned int inner_index=central_traj.size()-1;  
   unsigned int index_beyond_start_counter=inner_index;
   DVector2 xy=central_traj[inner_index].xy;
   DMatrix5x1 S=central_traj[inner_index].S;
-  DMatrix5x5 C;
   if (xy.Mod()<sc_pos[0][12].Perp()&& S(state_z)<sc_pos[0][12].z()){ 
     double d_old=1000.,d=1000.,z=0.;
     unsigned int index=0;
@@ -8275,10 +8272,11 @@ jerror_t DTrackFitterKalmanSIMD::ExtrapolateCentralToOtherDetectors(){
       }
       // if the z position would be beyond the current segment along z of 
       // the start counter, move to the next plane
-      if (z>sc_pos[index][m+1].z()){
+      if (z>sc_pos[index][m+1].z()&&m<11){
 	continue;
-      }
-      else{ 
+      } 
+      // allow for a little slop at the end of the nose
+      else if (z<sc_pos[index][sc_pos[0].size()-1].z()+1.){ 
 	// Propagate the state and covariance through the field
 	// using a straight-line approximation for each step to zero in on the 
 	// start counter paddle
@@ -8401,7 +8399,11 @@ jerror_t DTrackFitterKalmanSIMD::ExtrapolateCentralToOtherDetectors(){
   // Current time and path length
   double t=central_traj[0].t;
   double s=central_traj[0].s;
-  
+
+  // Matrix for multiple scattering covariance terms
+  DMatrix5x5 Q;
+
+
   // Track propagation loop
   while (S(state_z)>Z_MIN && S(state_z)<Z_MAX  
             && r2<R2_MAX){  
@@ -8460,12 +8462,9 @@ jerror_t DTrackFitterKalmanSIMD::ExtrapolateCentralToOtherDetectors(){
     }
     s_theta_ms_sum+=sqrt(fabs(Q(state_D,state_D)));
     
-    // Propagate the state and covariance through the field
-    StepStateAndCovariance(xy,ds,dedx,S,Jc,C);
-    
-    // Add contribution due to multiple scattering
-    C=Q.AddSym(C);
-    
+    // Propagate the state through the field
+    Step(xy,ds,S,dedx);
+     
     r2=xy.Mod2(); 
     // Check if we have passed into the BCAL
     if (r2>65.*65. && S(state_z)<400){
@@ -8597,8 +8596,8 @@ jerror_t DTrackFitterKalmanSIMD::ExtrapolateForwardToOtherDetectors(){
 	double phi=atan2(bestS(state_ty),bestS(state_tx));
 	DVector3 position(bestS(state_x),bestS(state_y),bestz);
 	DVector3 momentum(pt*cos(phi),pt*sin(phi),pt*tanl);
-	//extrapolations.push_back(Extrapolation_t(SYS_START,position,momentum,
-	//						 t*TIME_UNIT_CONVERSION,s));
+	extrapolations.push_back(Extrapolation_t(SYS_START,position,momentum,
+						 t*TIME_UNIT_CONVERSION,s));
 
 	intersected_start_counter=true;
 	break;
@@ -8643,6 +8642,7 @@ jerror_t DTrackFitterKalmanSIMD::ExtrapolateForwardToOtherDetectors(){
     }
     else{ // extrapolations in FDC region
       if (fdc_plane==24) break;	
+
       // output step near wire plane
       if (z>fdc_z_wires[fdc_plane]-0.1){
 	DVector3 position(S(state_x),S(state_y),z);
@@ -8660,7 +8660,6 @@ jerror_t DTrackFitterKalmanSIMD::ExtrapolateForwardToOtherDetectors(){
   //--------------------------------
   // Next swim to outer detectors...
   //--------------------------------
-  DMatrix5x5 J;  // Jacobian matrix
   DMatrix5x5 Q;  // multiple scattering matrix
 
   // Direction and origin of beam line
@@ -8777,6 +8776,10 @@ jerror_t DTrackFitterKalmanSIMD::ExtrapolateForwardToOtherDetectors(){
       newz=dFCALz+EPS;
       ds=(newz-z)/dz_ds;
     }
+    if (fdc_plane<24 && newz>fdc_z_wires[fdc_plane]){
+      newz=fdc_z_wires[fdc_plane];
+      ds=(newz-z)/dz_ds;
+    }
     s+=ds;
 
     // Flight time
@@ -8797,15 +8800,7 @@ jerror_t DTrackFitterKalmanSIMD::ExtrapolateForwardToOtherDetectors(){
     }
     s_theta_ms_sum+=sqrt(Q(state_x,state_x));
     theta2ms_sum+=3.*Q(state_x,state_x)/(ds*ds);
-    
-    /*
-    // Compute the Jacobian matrix
-    StepJacobian(z,newz,S,dEdx,J);  
 
-    // Propagate the covariance matrix
-    //C=Q.AddSym(J*C*J.Transpose());
-    C=Q.AddSym(C.SandwichMultiply(J));
-    */
     // Step through field
     Step(z,newz,dEdx,S); 
         
