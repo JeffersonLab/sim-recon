@@ -714,57 +714,44 @@ void DSourceComboer::Create_SourceComboInfos_Full(const DReactionVertexInfo* loc
 		else //direct production
 			locIncludeParentFlag = false;
 
-		//create combo of fully charged
-		//if entirely charged, neutral, or mixed, can just make one use with everything together
-		//else make individual combos, and then group together
-
 		//create combo uses for each case
 		Particle_t locInitPID = locIncludeParentFlag ? locStep->Get_InitialPID() : Unknown;
 		bool locNoChargedFlag = (locChargedParticleMap.empty() && locFurtherDecays_Charged.empty());
 		bool locNoNeutralFlag = (locNeutralParticleMap.empty() && locFurtherDecays_Neutral.empty());
-//be careful: if no particles & # decays = 1, etc. maybe promote
-//is this even possible?
-		bool locTotalIsMixedFlag = locFurtherDecays_Mixed.empty() ? (!locNoChargedFlag && !locNoNeutralFlag) : (!locNoChargedFlag || !locNoNeutralFlag);
-		//init pid is unknown if more than one type
-		Particle_t locInitPID_Group = locTotalIsMixedFlag ? Unknown : locInitPID;
+
+		DSourceComboUse locPrimaryComboUse(Unknown, Get_VertexZIndex_Unknown(), nullptr);
 		if(locNoChargedFlag && locNoNeutralFlag) //only mixed
-		{
-			auto locComboUse_Mixed = Make_ComboUse(locInitPID, {}, locFurtherDecays_Mixed);
-		}
+			locPrimaryComboUse = Make_ComboUse(locInitPID, {}, locFurtherDecays_Mixed);
 		else if(locNoNeutralFlag && locFurtherDecays_Mixed.empty()) //only charged
-		{
-			auto locComboUse_Charged = Make_ComboUse(locInitPID, locChargedParticleMap, locFurtherDecays_Charged);
-		}
+			locPrimaryComboUse = Make_ComboUse(locInitPID, locChargedParticleMap, locFurtherDecays_Charged);
 		else if(locNoChargedFlag && locFurtherDecays_Mixed.empty()) //only neutral
-		{
-			auto locComboUse_Neutral = Make_ComboUse(locInitPID, locNeutralParticleMap, locFurtherDecays_Neutral);
-		}
+			locPrimaryComboUse = Make_ComboUse(locInitPID, locNeutralParticleMap, locFurtherDecays_Neutral);
 		else //some combination
 		{
-			//create overall combo use
+			//create a combo for each group, with init pid = unknown
 			map<DSourceComboUse, unsigned char> locFurtherDecays_All;
 			if(!locFurtherDecays_Mixed.empty())
 			{
-				auto locComboUse_Mixed = Make_ComboUse(locInitPID_Group, {}, locFurtherDecays_Mixed);
+				auto locComboUse_Mixed = Make_ComboUse(Unknown, {}, locFurtherDecays_Mixed);
 				locFurtherDecays_All.insert(locFurtherDecays_Mixed.begin(), locFurtherDecays_Mixed.end());
 			}
 			if(!locNoChargedFlag)
 			{
-				auto locComboUse_Charged = Make_ComboUse(locInitPID_Group, locChargedParticleMap, locFurtherDecays_Charged);
+				auto locComboUse_Charged = Make_ComboUse(Unknown, locChargedParticleMap, locFurtherDecays_Charged);
 				locFurtherDecays_All.insert(locFurtherDecays_Charged.begin(), locFurtherDecays_Charged.end());
 			}
 			if(!locNoNeutralFlag)
 			{
-				auto locComboUse_Neutral = Make_ComboUse(locInitPID_Group, locNeutralParticleMap, locFurtherDecays_Neutral);
+				auto locComboUse_Neutral = Make_ComboUse(Unknown, locNeutralParticleMap, locFurtherDecays_Neutral);
 				locFurtherDecays_All.insert(locFurtherDecays_Neutral.begin(), locFurtherDecays_Neutral.end());
 			}
 
-			auto locComboUse_All = Make_ComboUse(locInitPID, {}, locFurtherDecays_All);
+			locPrimaryComboUse = Make_ComboUse(locInitPID, {}, locFurtherDecays_All);
 		}
 
-		locStepComboUseMap.emplace(locStepIndex, locComboUse_All);
+		locStepComboUseMap.emplace(locStepIndex, locPrimaryComboUse);
 	}
-
+//RESUME HERE!!
 	//Register the results!!
 	dSourceComboUseReactionMap_Charged.emplace(locReactionStepVertexInfo, locPrimaryComboUse);
 	for(const auto& locUseStepPair : locStepComboUseMap)
