@@ -112,7 +112,7 @@ void DTrackFitterKalmanSIMD::ComputeCDCDrift(double dphi,double delta,double t,
       //tcorr=t-dtc;
 
       //      CDC_RES_PAR2=0.005;
-      double sigma=CDC_RES_PAR1/(tcorr+1.)+CDC_RES_PAR2;
+      double sigma=CDC_RES_PAR1/(tcorr+1.) + CDC_RES_PAR2 + CDC_RES_PAR3*tcorr;
 
       // Variables to store values for time-to-distance functions for delta=0
       // and delta!=0
@@ -370,7 +370,7 @@ DTrackFitterKalmanSIMD::DTrackFitterKalmanSIMD(JEventLoop *loop):DTrackFitter(lo
 
    CDC_VAR_SCALE_FACTOR=36.;
    gPARMS->SetDefaultParameter("KALMAN:CDC_VAR_SCALE_FACTOR",CDC_VAR_SCALE_FACTOR); 
-   CDC_T_DRIFT_MIN=0.;
+   CDC_T_DRIFT_MIN=-8.; // One f125 clock
    gPARMS->SetDefaultParameter("KALMAN:CDC_T_DRIFT_MIN",CDC_T_DRIFT_MIN);
 
    MOLIERE_FRACTION=0.9;
@@ -455,9 +455,10 @@ DTrackFitterKalmanSIMD::DTrackFitterKalmanSIMD(JEventLoop *loop):DTrackFitter(lo
    CDC_DRIFT_BSCALE_PAR2 = cdc_drift_parms["bscale_par2"];
 
    map<string, double> cdc_res_parms;
-   jcalib->Get("CDC/cdc_resolution_parms", cdc_res_parms);
+   jcalib->Get("CDC/cdc_resolution_parms_v2", cdc_res_parms);
    CDC_RES_PAR1 = cdc_res_parms["res_par1"];
    CDC_RES_PAR2 = cdc_res_parms["res_par2"];
+   CDC_RES_PAR3 = cdc_res_parms["res_par3"];
 
    // Parameters for correcting for deflection due to Lorentz force
    map<string,double>lorentz_parms;
@@ -4077,7 +4078,7 @@ kalman_error_t DTrackFitterKalmanSIMD::KalmanCentral(double anneal_factor,
                cdc_updates[cdc_index].variance=V;
                cdc_updates[cdc_index].dDdt0=dDdt0;
                cdc_used_in_fit[cdc_index]=true;
-               if (!(tdrift >= CDC_T_DRIFT_MIN)) cdc_used_in_fit[cdc_index]=false;
+               if (tdrift < CDC_T_DRIFT_MIN) cdc_used_in_fit[cdc_index]=false;
 
                // Update chi2 for this hit
                if (skip_ring==false && tdrift >= CDC_T_DRIFT_MIN){
@@ -4783,12 +4784,12 @@ kalman_error_t DTrackFitterKalmanSIMD::KalmanForward(double fdc_anneal_factor,
                         //Step(z,newz,dedx,S);
 
                         // propagate error matrix to z-position of hit
-                        StepJacobian(z,newz,S0,dedx,J);
+                        StepJacobian(my_z,newz,S0,dedx,J);
                         //C=J*C*J.Transpose();
                         C=C.SandwichMultiply(J);
 
                         // Step reference trajectory by my_dz
-                        Step(z,newz,dedx,S0); 
+                        Step(my_z,newz,dedx,S0); 
 
                         my_z=newz;
                      }
@@ -4807,6 +4808,8 @@ kalman_error_t DTrackFitterKalmanSIMD::KalmanForward(double fdc_anneal_factor,
                      Step(my_z,newz,dedx,S0); 	    
                   }
                   else{
+                     newz = z + dz;
+
                      // Step current state by dz
                      //Step(z,newz,dedx,S);
 
@@ -4996,6 +4999,9 @@ kalman_error_t DTrackFitterKalmanSIMD::KalmanForward(double fdc_anneal_factor,
 
                      // Step S to current position on the reference trajectory
                      Step(newz,z,dedx,S);
+
+                     // Step S0 to current position on the reference trajectory
+                     Step(newz,z,dedx,S0);
                   }
                   else{
                      double my_z=newz;
@@ -5024,6 +5030,9 @@ kalman_error_t DTrackFitterKalmanSIMD::KalmanForward(double fdc_anneal_factor,
 
                      // Step S to current position on the reference trajectory
                      Step(my_z,z,dedx,S);
+
+                     // Step S to current position on the reference trajectory
+                     Step(my_z,z,dedx,S0);
                   }
                }
                cdc_updates[cdc_index].S=S;
@@ -5446,15 +5455,15 @@ kalman_error_t DTrackFitterKalmanSIMD::KalmanForwardCDC(double anneal,DMatrix5x1
                      newz=my_z+my_dz;
 
                      // Step current state by my_dz
-                     Step(z,newz,dedx,S);
+                     // Step(z,newz,dedx,S);
 
                      // propagate error matrix to z-position of hit
-                     StepJacobian(z,newz,S0,dedx,J);
+                     StepJacobian(my_z,newz,S0,dedx,J);
                      //C=J*C*J.Transpose();
                      C=C.SandwichMultiply(J);
 
                      // Step reference trajectory by my_dz
-                     Step(z,newz,dedx,S0); 
+                     Step(my_z,newz,dedx,S0); 
 
                      my_z=newz;
                   }
@@ -5462,7 +5471,7 @@ kalman_error_t DTrackFitterKalmanSIMD::KalmanForwardCDC(double anneal,DMatrix5x1
                   newz=my_z+dz3;
 
                   // Step current state by dz3
-                  Step(my_z,newz,dedx,S);
+                  //Step(my_z,newz,dedx,S);
 
                   // propagate error matrix to z-position of hit
                   StepJacobian(my_z,newz,S0,dedx,J);
@@ -5473,8 +5482,9 @@ kalman_error_t DTrackFitterKalmanSIMD::KalmanForwardCDC(double anneal,DMatrix5x1
                   Step(my_z,newz,dedx,S0); 
                }
                else{
+                  newz = z + dz;
                   // Step current state by dz
-                  Step(z,newz,dedx,S);
+                  //Step(z,newz,dedx,S);
 
                   // propagate error matrix to z-position of hit
                   StepJacobian(z,newz,S0,dedx,J);
@@ -5658,8 +5668,11 @@ kalman_error_t DTrackFitterKalmanSIMD::KalmanForwardCDC(double anneal,DMatrix5x1
                   //C=J*C*J.Transpose();
                   C=C.SandwichMultiply(J);
 
-                  // Step S to current position on the reference trajectory
+                  // Step S to current position on the reference trajectory=
                   Step(newz,z,dedx,S);
+
+                  // Step S0 to current position on the reference trajectory=
+                  Step(newz,z,dedx,S0);
                }
                else{
                   double my_z=newz;
@@ -5688,6 +5701,9 @@ kalman_error_t DTrackFitterKalmanSIMD::KalmanForwardCDC(double anneal,DMatrix5x1
 
                   // Step S to current position on the reference trajectory
                   Step(my_z,z,dedx,S);
+
+                  // Step S0 to current position on the reference trajectory
+                  Step(my_z,z,dedx,S0);
 
                }
             }

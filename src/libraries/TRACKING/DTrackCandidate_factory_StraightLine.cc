@@ -115,10 +115,11 @@ jerror_t DTrackCandidate_factory_StraightLine::brun(jana::JEventLoop *loop, int 
    }
 
    map<string, double> cdc_res_parms;
-   ccdbRequest="CDC/cdc_resolution_parms::NoBField"; // There is a difference between errors in Field on and off
+   ccdbRequest="CDC/cdc_resolution_parms_v2::NoBField"; // There is a difference between errors in Field on and off
    jcalib->Get(ccdbRequest, cdc_res_parms);
    CDC_RES_PAR1 = cdc_res_parms["res_par1"];
    CDC_RES_PAR2 = cdc_res_parms["res_par2"];
+   CDC_RES_PAR3 = cdc_res_parms["res_par3"];
 
    // Get the straw sag parameters from the database
    max_sag.clear();
@@ -1228,7 +1229,7 @@ double DTrackCandidate_factory_StraightLine::CDCDriftDistance(double dphi,
 // Smearing function derived from fitting residuals
 inline double DTrackCandidate_factory_StraightLine::CDCDriftVariance(double t){ 
    if (t<0.) t=0.;
-   double sigma=CDC_RES_PAR1/(t+1.)+CDC_RES_PAR2;
+   double sigma=CDC_RES_PAR1/(t+1.)+CDC_RES_PAR2 + CDC_RES_PAR3*t;
    return sigma*sigma;
 }
 

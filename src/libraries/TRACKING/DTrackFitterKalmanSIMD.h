@@ -513,7 +513,7 @@ class DTrackFitterKalmanSIMD: public DTrackFitter{
   // parameters for scaling drift table for CDC
   double CDC_DRIFT_BSCALE_PAR1,CDC_DRIFT_BSCALE_PAR2;
   // parameters for CDC resolution function
-  double CDC_RES_PAR1,CDC_RES_PAR2;
+  double CDC_RES_PAR1,CDC_RES_PAR2,CDC_RES_PAR3;
   // parameter for scaling CDC hit variance for fits involving FDC hits.
   double CDC_VAR_SCALE_FACTOR;
   // minimum drift time to use CDC hit (can be negative)

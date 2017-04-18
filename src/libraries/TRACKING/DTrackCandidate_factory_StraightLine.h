@@ -129,7 +129,7 @@ class DTrackCandidate_factory_StraightLine:public jana::JFactory<DTrackCandidate
       vector<double>fdc_drift_table;
 
       // Resolution parameters
-      double CDC_RES_PAR1,CDC_RES_PAR2;
+      double CDC_RES_PAR1,CDC_RES_PAR2,CDC_RES_PAR3;
       // Parameters for drift resolution
       double DRIFT_RES_PARMS[3];
       double DRIFT_FUNC_PARMS[4];
