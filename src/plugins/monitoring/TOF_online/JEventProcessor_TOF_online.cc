@@ -15,6 +15,8 @@
 using namespace std;
 using namespace jana;
 #include <DAQ/DCODAEventInfo.h>
+#include <DAQ/DCODAROCInfo.h>
+#include <DAQ/DCAEN1290TDCHit.h>
 
 #include "TOF/DTOFHit.h"
 #include "TOF/DTOFDigiHit.h"
@@ -100,8 +102,8 @@ jerror_t JEventProcessor_TOF_online::init(void) {
   // book hist
   tof_num_events = new TH1I("tof_num_events","TOF Number of events",1, 0.5, 1.5);
 
-  tofe    = new TH1I("tofe","TOF energy in keV",100,0,5000);
-  toft    = new TH1I("toft","TOF time in usec",100,0,500);
+  tofe    = new TH1I("tofe","TOF energy in keV",100,0,15000);
+  toft    = new TH1I("toft","TOF time in ns",200,0,200);
   tofo1   = new TH2I("tofo1","TOF occupancy plane 1 by bar,top/bottom",50,0,50,2,0,2);
   tofo2   = new TH2I("tofo2","TOF occupancy plane 2 by left/right,bar",2,0,2,50,0,50);
 
@@ -115,9 +117,9 @@ jerror_t JEventProcessor_TOF_online::init(void) {
   adcOccU = new TH1I("adcOccU","TOF, fADC Occupancy",86,1,44);
   adcOccD = new TH1I("adcOccD","TOF, fADC Occupancy",86,1,44);
 
-  histPed = new TH1I("histPed","TOF, Pedestals",50,190,210);
+  histPed = new TH1I("histPed","TOF, Pedestals",100, 0, 500);
 
-  hTimeAdc = new TH1I("hTimeAdc","TOF, fADC time",100,0,750);
+  hTimeAdc = new TH1I("hTimeAdc","TOF, fADC time",100,0,400);
   hTimeTdc = new TH1I("hTimeTdc","TOF, TDC time",100,0,750);
 
   planeHor = new TH2I("planeHor","TOF Upstream, Hit position, Horizontal Plane",84,-126,126,84,-126,126);
@@ -125,20 +127,20 @@ jerror_t JEventProcessor_TOF_online::init(void) {
 
 
   TOFPedestalsPlane0 = new TH2F("TOFPedestalsPlane0","TOF Pedestals Plane 0 all PMTs",
-				100,50.,150., 88, 0., 88.);
+				100,0.,500., 88, 0., 88.);
   TOFPedestalsPlane1 = new TH2F("TOFPedestalsPlane1","TOF Pedestals Plane 1 all PMTs",
-				100,50.,150., 88, 0., 88.);
+				100,0.,500., 88, 0., 88.);
   TOFSignalsRawPlane0 = new TH2F("TOFSignalsRawPlane0","TOF ADC Integral Plane 0 all PMTs",
 				 300,0.,10000., 88, 0., 88.);
   TOFSignalsRawPlane1 = new TH2F("TOFSignalsRawPlane1","TOF ADC Integral Plane 1 all PMTs",
 				 300,0.,10000., 88, 0., 88.);
 
   TOFTimesPlane0 = new TH2F("TOFTimesPlane0","TOF TDC times Plane 0 all PMTs",
-			    800,0.,4000., 88, 0., 88.);
+			    800,0.,1000., 88, 0., 88.);
   TOFTimesPlane1 = new TH2F("TOFTimesPlane1","TOF TDC times Plane 1 all PMTs",
-			    800,0.,4000., 88, 0., 88.);
+			    800,0.,1000., 88, 0., 88.);
 
-  TOFWalkExample = new TH2F("TOFWalkEXample", "TOF T-vs-E walk correction example", 200, 10., 24000., 500, 200.,290.);
+  TOFWalkExample = new TH2F("TOFWalkEXample", "TOF T-vs-E walk correction example", 200, 10., 24000., 500, 200.,350.);
 
   // back to main dir
   main->cd();
@@ -203,13 +205,35 @@ jerror_t JEventProcessor_TOF_online::evnt(JEventLoop *eventLoop, uint64_t eventn
   memset(hit_down,0,sizeof(hit_down));
 
   // First determine timing shift to resolve 6-fold ambiguity
+  /*
   vector<const DCODAEventInfo*> locCODAEventInfo;
   eventLoop->Get(locCODAEventInfo);
   
   if (locCODAEventInfo.size() == 0){
     return NOERROR;
   }
-  uint64_t TriggerTime = locCODAEventInfo[0]->avg_timestamp;
+  */
+
+  vector< const DCAEN1290TDCHit*> CAENHits;
+  eventLoop->Get(CAENHits);
+  if (CAENHits.size()<=0){
+    return NOERROR;
+  }
+  uint32_t locROCID = CAENHits[0]->rocid; // this is the crate we want the trigger time from
+  int indx = -1;
+  vector <const DCODAROCInfo*> ROCS;
+  eventLoop->Get(ROCS);
+  for ( unsigned int n=0; n<ROCS.size(); n++) {
+    if (locROCID == ROCS[n]->rocid){
+      indx = n;
+      break;
+    }
+  }
+  if (indx<0){
+    return NOERROR;
+  }
+
+  uint64_t TriggerTime = ROCS[indx]->timestamp;
   int TriggerBIT = TriggerTime%6;
   float TimingShift = TOF_TDC_SHIFT - (float)TriggerBIT;
   //cout<<TOF_TDC_SHIFT<<endl;

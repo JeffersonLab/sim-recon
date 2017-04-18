@@ -125,20 +125,21 @@ jerror_t DBCALTDCHit_factory::evnt(JEventLoop *loop, uint64_t eventnumber)
         hit->end    = digihit->end;
 
         // Apply calibration constants here
-        double T;
+        double T, T_raw;
 
         //See if the input object is an DF1TDCHit. If so, it is real data.  If not, it is simulated data.
         const DF1TDCHit* F1TDCHit = NULL;
         digihit->GetSingle(F1TDCHit);
         double end_sign = digihit->end ? -1.0 : 1.0; // Upstream = 0 -> Positive
         if (F1TDCHit != NULL) { // This is real data.
-            T = locTTabUtilities->Convert_DigiTimeToNs_F1TDC(digihit) + t_base - GetConstant(time_offsets,digihit) 
-                - GetConstant(channel_global_offset,digihit) - (0.5 * end_sign) * GetConstant(tdiff_u_d,digihit); 
+            T_raw = locTTabUtilities->Convert_DigiTimeToNs_F1TDC(digihit) + t_base;
+        } else { // This is simulated data.  Use a simplified time conversion.
+            T_raw = digihit->time * t_scale + t_base;
         }
-        else { // This is simulated data.  Use a simplified time conversion.
-            T = digihit->time * t_scale + t_base - GetConstant(time_offsets,digihit) 
-                - GetConstant(channel_global_offset,digihit) - (0.5 * end_sign) * GetConstant(tdiff_u_d,digihit); 
-        }
+        T = T_raw - GetConstant(time_offsets,digihit) 
+            - GetConstant(channel_global_offset,digihit) 
+            - (0.5 * end_sign) * GetConstant(tdiff_u_d,digihit); 
+        hit->t_raw = T_raw;
         hit->t = T;
 
         /*
