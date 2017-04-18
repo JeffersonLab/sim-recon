@@ -31,10 +31,6 @@ jerror_t DBCALHit_factory::init(void)
   CORRECT_FADC_SATURATION = true;
   gPARMS->SetDefaultParameter("BCAL:CORRECT_FADC_SATURATION", CORRECT_FADC_SATURATION, "Set to 1 to correct pulse integral for fADC saturation, set to 0 to not correct pulse integral. (default = 1)");
 
-  fADC_MinIntegral_Saturation = 55784.;
-  fADC_Saturation_Linear = -5.87e-6;
-  fADC_Saturation_Quadratic = -8.28e-11;  
-
    return NOERROR;
 }
 
@@ -115,6 +111,17 @@ jerror_t DBCALHit_factory::brun(jana::JEventLoop *eventLoop, int32_t runnumber)
    FillCalibTableShort(channel_global_offset, raw_channel_global_offset);
    if (PRINTCALIBRATION) jout << "DBCALHit_factory >> raw_tdiff_u_d" << endl;
    FillCalibTableShort(tdiff_u_d, raw_tdiff_u_d);
+   
+   std::vector<std::map<string,double> > saturation_ADC_pars;
+   if(eventLoop->GetCalib("/BCAL/ADC_saturation", saturation_ADC_pars))
+      jout << "Error loading /BCAL/ADC_saturation !" << endl;
+   for (unsigned int i=0; i < saturation_ADC_pars.size(); i++) {
+	   int end = (saturation_ADC_pars[i])["end"];
+	   int layer = (saturation_ADC_pars[i])["layer"] - 1;
+	   fADC_MinIntegral_Saturation[end][layer] = (saturation_ADC_pars[i])["par0"];
+	   fADC_Saturation_Linear[end][layer] = (saturation_ADC_pars[i])["par1"];
+	   fADC_Saturation_Quadratic[end][layer] = (saturation_ADC_pars[i])["par2"];
+   } 
 
    return NOERROR;
 }
@@ -205,10 +212,10 @@ jerror_t DBCALHit_factory::evnt(JEventLoop *loop, uint64_t eventnumber)
       
       if ( integral > 0 ) { 
 	double integral_pedsub = integral - totalpedestal;
-	if(CORRECT_FADC_SATURATION && integral_pedsub > fADC_MinIntegral_Saturation) {
+	if(CORRECT_FADC_SATURATION && integral_pedsub > fADC_MinIntegral_Saturation[digihit->end][digihit->layer]) {
 		if(digihit->pulse_peak > 4094 || (digihit->pedestal == 1 && digihit->QF == 1)) { // check if fADC is saturated or is MC event
-			double locSaturatedIntegral = integral_pedsub - fADC_MinIntegral_Saturation;
-			double locScaleFactor = 1. + fADC_Saturation_Linear*locSaturatedIntegral + fADC_Saturation_Quadratic*locSaturatedIntegral*locSaturatedIntegral;
+			double locSaturatedIntegral = integral_pedsub - fADC_MinIntegral_Saturation[digihit->end][digihit->layer];
+			double locScaleFactor = 1. + fADC_Saturation_Linear[digihit->end][digihit->layer]*locSaturatedIntegral + fADC_Saturation_Quadratic[digihit->end][digihit->layer]*locSaturatedIntegral*locSaturatedIntegral;
 	    		integral_pedsub *= 1./locScaleFactor;
 		}
 	}

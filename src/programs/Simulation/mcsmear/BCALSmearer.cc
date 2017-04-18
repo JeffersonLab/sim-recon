@@ -669,9 +669,9 @@ void BCALSmearer::CopyBCALHitsToHDDM(map<int, fADCHitList> &fADCHits,
 	    
 	    // fADC saturation based on waveforms from data
 	    if(!bcal_config->NO_FADC_SATURATION) { 
-		    if(integral > bcal_config->fADC_MinIntegral_Saturation) {
-			    double saturatedIntegral = integral - bcal_config->fADC_MinIntegral_Saturation;
-			    integral *= (1. + bcal_config->fADC_Saturation_Linear*saturatedIntegral + bcal_config->fADC_Saturation_Quadratic*saturatedIntegral*saturatedIntegral); 
+		    if(integral > bcal_config->fADC_MinIntegral_Saturation[0][hitlist.sumlayer]) {
+			    double saturatedIntegral = integral - bcal_config->fADC_MinIntegral_Saturation[0][hitlist.sumlayer];
+			    integral *= (1. + bcal_config->fADC_Saturation_Linear[0][hitlist.sumlayer]*saturatedIntegral + bcal_config->fADC_Saturation_Quadratic[0][hitlist.sumlayer]*saturatedIntegral*saturatedIntegral); 
 		    }
 	    }
             fadcs().setPulse_integral(integral);
@@ -687,9 +687,9 @@ void BCALSmearer::CopyBCALHitsToHDDM(map<int, fADCHitList> &fADCHits,
 	    
 	    // fADC saturation based on waveforms from data
 	    if(!bcal_config->NO_FADC_SATURATION) { 
-		    if(integral > bcal_config->fADC_MinIntegral_Saturation) {
-                            double saturatedIntegral = integral - bcal_config->fADC_MinIntegral_Saturation;
-                            integral *= (1. + bcal_config->fADC_Saturation_Linear*saturatedIntegral + bcal_config->fADC_Saturation_Quadratic*saturatedIntegral*saturatedIntegral);
+		    if(integral > bcal_config->fADC_MinIntegral_Saturation[1][hitlist.sumlayer]) {
+                            double saturatedIntegral = integral - bcal_config->fADC_MinIntegral_Saturation[1][hitlist.sumlayer];
+                            integral *= (1. + bcal_config->fADC_Saturation_Linear[1][hitlist.sumlayer]*saturatedIntegral + bcal_config->fADC_Saturation_Quadratic[1][hitlist.sumlayer]*saturatedIntegral*saturatedIntegral);
                     }
 
 	    }
@@ -854,10 +854,15 @@ bcal_config_t::bcal_config_t(JEventLoop *loop)
         
     }
 
-    
-    // set saturation parameters
-    fADC_MinIntegral_Saturation = 56400.;
-    fADC_Saturation_Linear = -4.77e-6;
-    fADC_Saturation_Quadratic = 1.03e-11;
+    std::vector<std::map<string,double> > saturation_ADC_pars;
+    if(loop->GetCalib("/BCAL/ADC_saturation", saturation_ADC_pars))
+	    jout << "Error loading /BCAL/ADC_saturation !" << endl;
+    for (unsigned int i=0; i < saturation_ADC_pars.size(); i++) {
+	    int end = (saturation_ADC_pars[i])["end"];
+	    int layer = (saturation_ADC_pars[i])["layer"] - 1;
+	    fADC_MinIntegral_Saturation[end][layer] = (saturation_ADC_pars[i])["par0"];
+	    fADC_Saturation_Linear[end][layer] = (saturation_ADC_pars[i])["par1"];
+	    fADC_Saturation_Quadratic[end][layer] = (saturation_ADC_pars[i])["par2"];
+    } 
 }
 

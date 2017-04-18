@@ -182,7 +182,7 @@ jerror_t JEventProcessor_BCAL_saturation::evnt(JEventLoop *loop, uint64_t eventn
 	// Digitized fADC hits for bcal
 	for(unsigned int i=0; i<dbcaldigihits.size(); i++) {
 		const DBCALDigiHit *hit = dbcaldigihits[i];
-		int locLayer = hit->layer;
+		int locLayer = hit->layer-1;
 		
 		bcal_fadc_digi_integral->Fill(hit->pulse_integral);
 		if(hit->pulse_peak) { 

@@ -90,7 +90,9 @@ class bcal_config_t
 			return channel_efficiencies.at(index).second;
 	}
 
-	double fADC_MinIntegral_Saturation, fADC_Saturation_Linear, fADC_Saturation_Quadratic;
+	double fADC_MinIntegral_Saturation[2][4];
+        double fADC_Saturation_Linear[2][4];
+	double fADC_Saturation_Quadratic[2][4];
 };
 
 

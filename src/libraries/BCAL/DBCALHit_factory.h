@@ -28,9 +28,9 @@ class DBCALHit_factory:public jana::JFactory<DBCALHit>{
 		  VERBOSE = 0;
 		  CHECK_FADC_ERRORS = false;
 		  if(gPARMS){
-		    gPARMS->SetDefaultParameter("BCALHIT:PRINTCALIBRATION", PRINTCALIBRATION, "Print the calibration parameters.");
+			gPARMS->SetDefaultParameter("BCALHIT:PRINTCALIBRATION", PRINTCALIBRATION, "Print the calibration parameters.");
 			gPARMS->SetDefaultParameter("BCALHIT:VERBOSE", VERBOSE, "Set level of verbosity.");
-			gPARMS->SetDefaultParameter("BCAL:CHECK_FADC_ERRORS", CHECK_FADC_ERRORS, "Set to 1 to reject hits with fADC250 errors, ser to 0 to keep these hits");
+			//gPARMS->SetDefaultParameter("BCAL:CHECK_FADC_ERRORS", CHECK_FADC_ERRORS, "Set to 1 to reject hits with fADC250 errors, ser to 0 to keep these hits");
 		  }
 		};
 		~DBCALHit_factory(){};
@@ -43,6 +43,7 @@ class DBCALHit_factory:public jana::JFactory<DBCALHit>{
 		// DBCALGeometry/DGeometry objects
 		static const int BCAL_NUM_MODULES  = 48;
 		static const int BCAL_NUM_LAYERS   =  4;
+		static const int BCAL_NUM_ENDS     =  2;
 		static const int BCAL_NUM_SECTORS  =  4;
 		static const int BCAL_MAX_CHANNELS =  1536;
 
@@ -86,7 +87,9 @@ class DBCALHit_factory:public jana::JFactory<DBCALHit>{
                     const vector<double> &raw_table);
 
         bool CHECK_FADC_ERRORS, CORRECT_FADC_SATURATION;
-	double fADC_MinIntegral_Saturation, fADC_Saturation_Linear, fADC_Saturation_Quadratic;
+	double fADC_MinIntegral_Saturation[BCAL_NUM_ENDS][BCAL_NUM_LAYERS];
+        double fADC_Saturation_Linear[BCAL_NUM_ENDS][BCAL_NUM_LAYERS];
+	double fADC_Saturation_Quadratic[BCAL_NUM_ENDS][BCAL_NUM_LAYERS];
 };
 
 #endif // _DBCALHit_factory_
