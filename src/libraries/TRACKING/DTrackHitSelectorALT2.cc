@@ -323,7 +323,7 @@ void DTrackHitSelectorALT2::GetCDCHits(double Bz,double q,
   // that are within +/-1 of the straw # of the most probable hit are added 
   // to the list.
   sort(cdchits_tmp.begin(),cdchits_tmp.end(),DTrackHitSelector_cdchit_cmp);
-  unsigned int old_straw=1000,old_ring=1000;
+  int old_straw=1000,old_ring=1000;
   for (unsigned int i=0;i<cdchits_tmp.size();i++){
     if (cdchits_tmp[i].second->wire->ring!=old_ring || 
 	abs(cdchits_tmp[i].second->wire->straw-old_straw)==1){
@@ -1033,5 +1033,21 @@ void DTrackHitSelectorALT2::GetFDCHits(double Bz,double q,
       }
     }
 
+  }
+   // Order according to layer number and probability,then put the hits in the 
+  // output list with the following algorithm:  hits with the highest 
+  // probability in a given layer are automatically put in the output list, 
+  // but if there is more than one hit in a given layer, only those hits 
+  // that are within +/-1 of the wire # of the most probable hit are added 
+  // to the list.
+  sort(fdchits_tmp.begin(),fdchits_tmp.end(),DTrackHitSelector_fdchit_cmp);
+  int old_layer=1000,old_wire=1000;
+  for (unsigned int i=0;i<fdchits_tmp.size();i++){
+    if (fdchits_tmp[i].second->wire->layer!=old_layer || 
+	abs(fdchits_tmp[i].second->wire->wire-old_wire)==1){
+      fdchits_out.push_back(fdchits_tmp[i].second);   
+    }
+    old_wire=fdchits_tmp[i].second->wire->wire;
+    old_layer=fdchits_tmp[i].second->wire->layer;
   }
 }
