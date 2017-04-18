@@ -89,11 +89,14 @@ jerror_t DTrackWireBased_factory::init(void)
 	if(!SKIP_MASS_HYPOTHESES_WIRE_BASED)
 	{
 		vector<int> hypotheses;
+		hypotheses.push_back(Positron);
 		hypotheses.push_back(PiPlus);
 		hypotheses.push_back(KPlus);
 		hypotheses.push_back(Proton);
+		hypotheses.push_back(Electron);
 		hypotheses.push_back(PiMinus);
 		hypotheses.push_back(KMinus);
+		hypotheses.push_back(AntiProton);
 
 		ostringstream locMassStream;
 		for(size_t loc_i = 0; loc_i < hypotheses.size(); ++loc_i)
@@ -120,20 +123,23 @@ jerror_t DTrackWireBased_factory::init(void)
 		if(mass_hypotheses_positive.empty()){
 			static once_flag pwarn_flag;
 			call_once(pwarn_flag, [](){
-				jout <<
+				jout << endl;
 				jout << "############# WARNING !! ################ " <<endl;
 				jout << "There are no mass hypotheses for positive tracks!" << endl;
 				jout << "Be SURE this is what you really want!" << endl;
 				jout << "######################################### " <<endl;
+				jout << endl;
 			});
 		}
 		if(mass_hypotheses_negative.empty()){
 			static once_flag nwarn_flag;
 			call_once(nwarn_flag, [](){
+				jout << endl;
 				jout << "############# WARNING !! ################ " <<endl;
 				jout << "There are no mass hypotheses for negative tracks!" << endl;
 				jout << "Be SURE this is what you really want!" << endl;
 				jout << "######################################### " <<endl;
+				jout << endl;
 			});
 		}
 	}

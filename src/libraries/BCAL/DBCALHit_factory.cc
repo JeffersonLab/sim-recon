@@ -232,6 +232,7 @@ jerror_t DBCALHit_factory::evnt(JEventLoop *loop, uint64_t eventnumber)
       // Calculate time for channel
       double pulse_time        = (double)digihit->pulse_time;
       double end_sign          = digihit->end ? -1.0 : 1.0; // Upstream = 0 -> Positive (then subtracted)
+      double hit_t_raw         = t_scale * pulse_time + t_base;
       double hit_t             = t_scale * pulse_time + t_base
           + GetConstant(ADC_timing_offsets,digihit)              // low level indiviual corrections (eg 4 ns offset)
           - GetConstant(channel_global_offset,digihit)
@@ -246,6 +247,7 @@ jerror_t DBCALHit_factory::evnt(JEventLoop *loop, uint64_t eventnumber)
       hit->E = hit_E;
       hit->pulse_peak = pulse_peak_pedsub;
       hit->t = hit_t;
+      hit->t_raw = hit_t_raw;
 
       hit->AddAssociatedObject(digihit);
 
