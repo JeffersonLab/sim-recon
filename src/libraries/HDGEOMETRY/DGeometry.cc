@@ -1136,7 +1136,7 @@ bool DGeometry::GetFDCWires(vector<vector<DFDCWire *> >&fdcwires) const{
    }
 
    vector<fdc_wire_rotation_t>fdc_wire_rotations;
-   if (jcalib->Get("FDC/wire_rotations",vals)==false){
+   if (jcalib->Get("FDC/cell_rotations",vals)==false){
       for(unsigned int i=0; i<vals.size(); i++){
          map<string,double> &row = vals[i];
 
