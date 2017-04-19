@@ -57,6 +57,9 @@ jerror_t DEventProcessor_BCAL_gainmatrix::init(void)
 	h1D_nhits = new TH1F("h1D_nhits", "Number of hits as function of channel number", n_channels,0,n_channels);
 	h1D_nhits->SetXTitle("channel number");
 	h1D_nhits->SetYTitle("counts");
+	mass_v_chan = new TH2F("mass_v_chan","mass_v_chan",1536,0.,768.,100,.1,.17);
+	mass_v_shE = new TH2F("mass_v_shE","mass_v_shE",2000,0,4,200,.05,.2);
+
 
 	m_mD.ResizeTo(m_nElements,1);
 	m_mC.ResizeTo(m_nElements,m_nElements);
@@ -85,12 +88,16 @@ jerror_t DEventProcessor_BCAL_gainmatrix::init(void)
 //	BCAL_Neutrals->Branch("sh1_y",&y1);
 //	BCAL_Neutrals->Branch("sh2_y",&y2);
 	BCAL_Neutrals->Branch("psi",&psi);
-	BCAL_Neutrals->Branch("cl1_contains_layer4",&logical1);
-	BCAL_Neutrals->Branch("cl2_contains_layer4",&logical2);
+//	BCAL_Neutrals->Branch("cl1_contains_layer4",&logical1);
+//	BCAL_Neutrals->Branch("cl2_contains_layer4",&logical2);
 	BCAL_Neutrals->Branch("vertexZ",&vertexz);
+//	BCAL_Neutrals->Branch("vertexY",&vertexy);
+//	BCAL_Neutrals->Branch("vertexX",&vertexx);
 	BCAL_Neutrals->Branch("num_showers",&num_showers,"num_showers/i");
-	BCAL_Neutrals->Branch("num_tracks",&num_tracks,"num_tracks/i");
+//	BCAL_Neutrals->Branch("num_tracks",&num_tracks,"num_tracks/i");
 	BCAL_Neutrals->Branch("Run_Number", &Run_Number);
+	BCAL_Neutrals->Branch("chan1", &chan1);
+	BCAL_Neutrals->Branch("chan2", &chan2);
 	
 	dEventWriterROOT = NULL;
 	dEventWriterREST = NULL;
@@ -221,6 +228,9 @@ jerror_t DEventProcessor_BCAL_gainmatrix::evnt(jana::JEventLoop* locEventLoop, u
 		TLorentzVector sh1_p(E1*dx1/R1, E1*dy1/R1, E1*dz1/R1, E1);
 		TLorentzVector sh1_p_raw(E1_raw*dx1/R1, E1_raw*dy1/R1, E1_raw*dz1/R1, E1_raw);
 		vertexz = vertexZ;
+		vertexx = vertexX;
+		vertexy = vertexY;
+		chan1 = -99;
 			for(unsigned int j=i+1; j<locBCALShowers.size(); j++){
 			const DBCALShower *s2 = locBCALShowers[j];
 		     	if (find(matchedShowers.begin(), matchedShowers.end(),s2) != matchedShowers.end()) continue;
@@ -253,6 +263,7 @@ jerror_t DEventProcessor_BCAL_gainmatrix::evnt(jana::JEventLoop* locEventLoop, u
 			point_energy.clear();
 			logical1=0;
 			logical2=0;
+			chan2 = -99;
 			for(unsigned int loc_k = 0; loc_k < associated_points1.size(); loc_k++){
 				int module1 = associated_points1[loc_k]->module(); 
 				int layer1 = associated_points1[loc_k]->layer();
@@ -261,8 +272,11 @@ jerror_t DEventProcessor_BCAL_gainmatrix::evnt(jana::JEventLoop* locEventLoop, u
 				double energy1_DS = associated_points1[loc_k]->E_DS();
 				int channel1 = 16*(module1-1)+4*(layer1-1)+(sector1-1);
 				if(layer1==4) logical1=1;
+				if((associated_points1[loc_k]->E() > 0.4*E1_raw) || (associated_points1[loc_k]->E() > 0.25*E1_raw && layer1 ==4) ) chan1 = channel1;
+				if((associated_points1[loc_k]->E() > 0.4*E1_raw && E2_raw > 0.4 && locBCALShowers.size()==2) || (associated_points1[loc_k]->E() > 0.25*E1_raw && layer1 ==4 && locBCALShowers.size()==2)) mass_v_chan->Fill(chan1,inv_mass_raw);
 				point1_energy_calib.push_back(sqrt(energy1_US*energy1_DS/E1_raw/E1_raw));
 				point1_channel.push_back(channel1);
+			}	
 				for(unsigned int loc_p = 0 ; loc_p < associated_points2.size(); loc_p++){
 					int module2 = associated_points2[loc_p]->module(); 
 					int layer2 = associated_points2[loc_p]->layer();
@@ -270,11 +284,13 @@ jerror_t DEventProcessor_BCAL_gainmatrix::evnt(jana::JEventLoop* locEventLoop, u
 					double energy2_US = associated_points2[loc_p]->E_US();
 					double energy2_DS = associated_points2[loc_p]->E_DS();
 					int channel2 = 16*(module2-1)+4*(layer2-1)+(sector2-1);
+					if((associated_points2[loc_p]->E() > 0.4*E2_raw) || (associated_points2[loc_p]->E() > 0.25*E2_raw && layer2 ==4) ) chan2 = channel2;
 					if(layer2==4) logical2=1;
 					point2_energy_calib.push_back(sqrt(energy2_US*energy2_DS/E2_raw/E2_raw));
 					point2_channel.push_back(channel2);
+					if((associated_points2[loc_p]->E() > 0.4*E2_raw && E2_raw > 0.4 && locBCALShowers.size()==2) || (associated_points2[loc_p]->E() > 0.25*E2_raw && layer2 ==4 && locBCALShowers.size()==2)) mass_v_chan->Fill(chan2,inv_mass_raw);
 				}
-			} 
+			 
 			for ( unsigned int f = 0 ; f < point1_energy_calib.size() ; ++f){
 				frac_en.push_back(make_pair(point1_energy_calib[f],point1_channel[f]));
 			}
@@ -285,18 +301,19 @@ jerror_t DEventProcessor_BCAL_gainmatrix::evnt(jana::JEventLoop* locEventLoop, u
 
 			for (unsigned int a = 0 ; a < frac_en.size() ; ++a){
 				point_energy.push_back(frac_en[a].first);
-				if(inv_mass_raw>0.12&&inv_mass_raw<.15&&E1_raw>1.&&E2_raw>1.&&num_tracks>0 &&frac_en[a].first > 0.0 && frac_en[a].first < 30.0)  m_mD[frac_en[a].second][0] += -(inv_mass_raw*inv_mass_raw - pi0_mass*pi0_mass)*(inv_mass_raw*inv_mass_raw)*frac_en[a].first;
-				if(inv_mass_raw>0.12&&inv_mass_raw<.15&&E1_raw>1.&&E2_raw>1.&&num_tracks>0 &&frac_en[a].first > 0.0 && frac_en[a].first < 30.0 ) m_mL[frac_en[a].second][0] += (inv_mass_raw*inv_mass_raw)*frac_en[a].first;
-				if(inv_mass_raw > 0.12 && inv_mass_raw <.15 && E1_raw>1.&&E2_raw>1.&&num_tracks>0 && frac_en[a].first > 0.0 && frac_en[a].first < 30.0 ) m_nhits[frac_en[a].second] += 1;
+				if(inv_mass_raw>0.12&&inv_mass_raw<.15&&E1_raw>1.3 &&E2_raw>1.3 && locBCALShowers.size() == 2 && psi > 0.075 && psi < .12 && frac_en[a].first > 0.0 && frac_en[a].first < 30.0)  m_mD[frac_en[a].second][0] += -(inv_mass_raw*inv_mass_raw - pi0_mass*pi0_mass)*(inv_mass_raw*inv_mass_raw)*frac_en[a].first;
+				if(inv_mass_raw>0.12&&inv_mass_raw<.15&&E1_raw>1.3 &&E2_raw>1.3 && locBCALShowers.size() == 2 && psi > 0.075 && psi < .12 && frac_en[a].first > 0.0 && frac_en[a].first < 30.0 ) m_mL[frac_en[a].second][0] += (inv_mass_raw*inv_mass_raw)*frac_en[a].first;
+				if(inv_mass_raw > 0.12 && inv_mass_raw <.15 && E1_raw>1.3 &&E2_raw>1.3 && locBCALShowers.size() == 2 && psi > 0.075 && psi < .12 && frac_en[a].first > 0.0 && frac_en[a].first < 30.0 ) m_nhits[frac_en[a].second] += 1;
 
 				for(unsigned int b = 0 ; b < frac_en.size(); ++b)
 				{
-			     	if(inv_mass_raw>.12&&inv_mass_raw<.15&&E1_raw>1.&&E2_raw>1.&&num_tracks>0 && frac_en[a].first > 0.0 && frac_en[a].first < 30.0&& frac_en[b].first > 0.0 && frac_en[b].first < 30.0 ) m_mC[frac_en[a].second][frac_en[b].second] += (inv_mass_raw*inv_mass_raw*inv_mass_raw*inv_mass_raw)*(frac_en[a].first)*(frac_en[b].first);
+			     	if(inv_mass_raw>.12&&inv_mass_raw<.15&&E1_raw>1.3 &&E2_raw>1.3 && locBCALShowers.size() == 2 && psi > 0.075 && psi < .12 && frac_en[a].first > 0.0 && frac_en[a].first < 30.0&& frac_en[b].first > 0.0 && frac_en[b].first < 30.0 ) m_mC[frac_en[a].second][frac_en[b].second] += (inv_mass_raw*inv_mass_raw*inv_mass_raw*inv_mass_raw)*(frac_en[a].first)*(frac_en[b].first);
 				}
 		        }
 			for(unsigned int h=0;h<point_energy.size();h++){
-			if(inv_mass_raw>.12&&inv_mass_raw<.15&&E1_raw>1.&&E2_raw>1.&&num_tracks>0 && frac_en[h].first > 0.0 && frac_en[h].first < 30.0 ) m_massbias += (inv_mass_raw*inv_mass_raw - pi0_mass*pi0_mass);
-			}	
+			if(inv_mass_raw>.12&&inv_mass_raw<.15&&E1_raw>1.3 &&E2_raw>1.3 && locBCALShowers.size() == 2 && psi > 0.075 && psi < .12 && frac_en[h].first > 0.0 && frac_en[h].first < 30.0 ) m_massbias += (inv_mass_raw*inv_mass_raw - pi0_mass*pi0_mass);
+			}
+			mass_v_shE->Fill(E2_raw,inv_mass_raw);	
 			BCAL_Neutrals->Fill();
 			}
 		

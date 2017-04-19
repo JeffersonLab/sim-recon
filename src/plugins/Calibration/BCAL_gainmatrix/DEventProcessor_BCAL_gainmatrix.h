@@ -46,10 +46,14 @@ class DEventProcessor_BCAL_gainmatrix : public jana::JEventProcessor
 		Float_t y2  ;
 		Float_t psi  ;
 		Float_t vertexz ;
+		Float_t vertexx ;
+		Float_t vertexy ;
 		Float_t vertexZ  ;
 		Float_t vertexX  ;
 		Float_t vertexY  ;
 		uint32_t Run_Number  ;
+		Int_t chan1 ;
+		Int_t chan2 ;
 		Int_t num_tracks ;
 		Int_t num_showers ;
 		Float_t inv_mass  ;
@@ -82,6 +86,8 @@ class DEventProcessor_BCAL_gainmatrix : public jana::JEventProcessor
 		TH1F* h1D_mD;
 		TH1F* h1D_massbias;
 		TH1F* h1D_nhits;
+		TH2F* mass_v_chan;
+		TH2F* mass_v_shE;
 
 		const DEventWriterROOT* dEventWriterROOT;
 		const DEventWriterREST* dEventWriterREST;

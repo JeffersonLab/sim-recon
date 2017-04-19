@@ -133,8 +133,12 @@ DBCALShower_factory_IU::evnt( JEventLoop *loop, uint64_t eventnumber ){
     
     // non-linear energy corrections can be found at https://logbooks.jlab.org/entry/3419524 
     
-    if( shower->E_raw < energy_cutoff ) shower->E = shower->E_raw / (linear_intercept + linear_slope * shower->E_raw ) ;
-    if( shower->E_raw >= energy_cutoff ) shower->E = shower->E_raw / (exponential_param0 - exp(exponential_param1 * shower->E_raw + exponential_param2));
+//    if( shower->E_raw < energy_cutoff ) shower->E = shower->E_raw / (linear_intercept + linear_slope * shower->E_raw ) ;
+//    if( shower->E_raw >= energy_cutoff ) shower->E = shower->E_raw / (exponential_param0 - exp(exponential_param1 * shower->E_raw + exponential_param2));
+
+//    shower->E = shower->E_raw / (1.06134 - .0647916*exp(-1.44656*shower->E_raw + 0.592866) - 0.0305735*shower->E_raw) ;
+
+	shower->E = shower->E_raw / (1.18965 - 0.0313508*exp(-0.422379*shower->E_raw + 1.81930) - 6.38665/(37.3134 + 1.16775*exp(-1.30991*shower->E_raw + 5.35728)));
 
 	// Get covariance matrix and uncertainties
 	FillCovarianceMatrix(shower);
