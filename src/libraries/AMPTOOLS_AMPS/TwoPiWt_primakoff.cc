@@ -253,7 +253,7 @@ TwoPiWt_primakoff::calcAmplitude( GDouble** pKin ) const
 
     // cout << "calcAmplitude: 2pi mass=" << Wpipi << " Eg=" << Eg << " t=" << t << " sig_ggpipi=" << sig_ggpipi << " sigmat=" << sigmat << endl;
   
-    complex<GDouble> Csig( sigmat*sig_ggpipi/Wpipi, 0.0 );             // Return complex double
+    complex<GDouble> Csig( sqrt(sigmat*sig_ggpipi/Wpipi/exp(6.0*t)), 0.0 );    // Return complex double, sqrt (cross section). Divide out generated exponential. 
   
   return( Csig  );
 }
