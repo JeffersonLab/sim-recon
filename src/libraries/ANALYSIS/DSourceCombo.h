@@ -35,17 +35,23 @@ class DSourceComboer;
 
 //DSourceComboUse is what the combo is USED for (the decay of Particle_t (if Unknown then is just a grouping)
 using DSourceComboUse = tuple<Particle_t, signed char, const DSourceComboInfo*>; //e.g. Pi0, -> 2g //signed char: vertex-z bin of the final state (combo contents)
-using DSourceCombosByUse_Small = map<DSourceComboUse, vector<const DSourceCombo*>>; //for use WITHIN a DSourceCombo (e.g. vector size 3 of pi0 decays)
+using DSourceCombosByUse = map<DSourceComboUse, vector<const DSourceCombo*>>;
 //CONSIDER VECTOR INSTEAD OF MAP FOR DSourceCombosByUse_Small
 
 //Compare_SourceComboUses
 auto Compare_SourceComboUses = [](const DSourceComboUse& lhs, const DSourceComboUse& rhs) -> bool
 {
-	//this puts the most-massive particles first
+	//this puts mixed-charge first, then fully-neutral, then fully-charged
+	auto locChargeContent_LHS = Get_ChargeContent(std::get<2>(lhs));
+	auto locChargeContent_RHS = Get_ChargeContent(std::get<2>(rhs));
+	if(locChargeContent_LHS != locChargeContent_RHS)
+		return locChargeContent_LHS > locChargeContent_RHS;
+
+	//within each of those, it puts the most-massive particles first
 	if(std::get<0>(lhs) == std::get<0>(rhs))
 	{
 		if(std::get<1>(lhs) == std::get<1>(rhs))
-			return std::get<2>(lhs) > std::get<2>(rhs);
+			return *std::get<2>(lhs) > *std::get<2>(rhs);
 		else
 			return std::get<1>(lhs) > std::get<1>(rhs);
 	}
@@ -113,17 +119,17 @@ class DSourceCombo
 
 		//GET MEMBERS
 		vector<pair<Particle_t, const JObject*>> Get_SourceParticles(bool locEntireChainFlag = false) const;
-		DSourceCombosByUse_Small Get_FurtherDecayCombos(void) const{return dFurtherDecayCombos;}
+		DSourceCombosByUse Get_FurtherDecayCombos(void) const{return dFurtherDecayCombos;}
 		bool Get_IsFCALOnly(void) const{return dIsFCALOnly;}
 
 	private:
 
 		//CONSTRUCTOR
-		DSourceCombo(const vector<pair<Particle_t, const JObject*>>& locSourceParticles, const DSourceCombosByUse_Small& locFurtherDecayCombos = {}, bool locIsFCALOnly = false);
+		DSourceCombo(const vector<pair<Particle_t, const JObject*>>& locSourceParticles, const DSourceCombosByUse& locFurtherDecayCombos = {}, bool locIsFCALOnly = false);
 
 		//particles & decays
 		vector<pair<Particle_t, const JObject*>> dSourceParticles; //original DNeutralShower or DChargedTrack
-		DSourceCombosByUse_Small dFurtherDecayCombos; //vector is e.g. size 3 if 3 pi0s needed
+		DSourceCombosByUse dFurtherDecayCombos; //vector is e.g. size 3 if 3 pi0s needed
 
 		//Control information
 		bool dIsFCALOnly;
@@ -191,7 +197,7 @@ inline vector<pair<Particle_t, unsigned char>> DSourceComboInfo::Get_NumParticle
 	return locToReturnNumParticles;
 }
 
-inline DSourceCombo::DSourceCombo(const vector<pair<Particle_t, const JObject*>>& locSourceParticles, const DSourceCombosByUse_Small& locFurtherDecayCombos, bool locIsFCALOnly) :
+inline DSourceCombo::DSourceCombo(const vector<pair<Particle_t, const JObject*>>& locSourceParticles, const DSourceCombosByUse& locFurtherDecayCombos, bool locIsFCALOnly) :
 		dSourceParticles(locSourceParticles), dFurtherDecayCombos(locFurtherDecayCombos), dIsFCALOnly(locIsFCALOnly)
 {
 	std::sort(dSourceParticles.begin(), dSourceParticles.end());

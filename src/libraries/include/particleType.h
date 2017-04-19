@@ -134,10 +134,10 @@ static inline Particle_t RemapParticleID(Particle_t p)
 
 enum Charge_t
 {
-	d_Neutral = 0,
+	d_Charged,
 	d_Positive,
 	d_Negative,
-	d_Charged,
+	d_Neutral,
 	d_AllCharges
 };
 
