@@ -15,7 +15,7 @@
 #include "FDC/DFDCPseudo.h"
 #include <TH3.h>
 #include <TH2.h>
-#include <TH1.h>
+#include <TH1I.h>
 #include <TMatrixFSym.h>
 
 #ifndef M_TWO_PI
@@ -141,6 +141,7 @@ typedef struct{
   DMatrix5x1 S;
   double doca;
   double tcorr,tdrift;
+  double dDdt0;
   double variance;
   DMatrix2x2 V;
   bool used_in_fit;
@@ -308,7 +309,7 @@ class DTrackFitterKalmanSIMD: public DTrackFitter{
 				  const DMatrix5x1 &S,DMatrix5x5 &Q);  
   jerror_t SmoothForwardCDC(void);   
   jerror_t SmoothCentral(void);  
-  void FillPullsVectorEntry(const DMatrix5x1 &Ss,const DMatrix5x5 &Cs,
+  jerror_t FillPullsVectorEntry(const DMatrix5x1 &Ss,const DMatrix5x5 &Cs,
 			    const DKalmanForwardTrajectory_t &traj,
 			    const DKalmanSIMDCDCHit_t *hit,
 			    const DKalmanUpdate_t &update);
@@ -326,6 +327,17 @@ class DTrackFitterKalmanSIMD: public DTrackFitter{
 			   const DVector2 &origin,
 			   const DVector2 &dir,DMatrix5x1 &S,
 			   double &dz_out);
+  jerror_t BrentForward(double z, double dedx, 
+            const double z0w,
+            const DVector2 &origin, 
+            const DVector2 &dir, DMatrix5x1 &S, 
+            double &dz);
+  jerror_t BrentCentral(double dedx, 
+        DVector2 &xy, 
+        const double z0w, 
+        const DVector2 &origin, 
+        const DVector2 &dir, 
+        DMatrix5x1 &Sc, double &ds);
   
   jerror_t PropagateForwardCDC(int length,int &index,double &z,double &r2,
 			       DMatrix5x1 &S, bool &stepped_to_boundary); 
@@ -488,6 +500,7 @@ class DTrackFitterKalmanSIMD: public DTrackFitter{
   int RING_TO_SKIP,PLANE_TO_SKIP;
   double PHOTON_ENERGY_CUTOFF;
   bool USE_FDC_DRIFT_TIMES;
+  bool ALIGNMENT,ALIGNMENT_CENTRAL,ALIGNMENT_FORWARD;
 
   bool USE_CDC_HITS,USE_FDC_HITS;
 
@@ -506,7 +519,7 @@ class DTrackFitterKalmanSIMD: public DTrackFitter{
   // parameters for scaling drift table for CDC
   double CDC_DRIFT_BSCALE_PAR1,CDC_DRIFT_BSCALE_PAR2;
   // parameters for CDC resolution function
-  double CDC_RES_PAR1,CDC_RES_PAR2;
+  double CDC_RES_PAR1,CDC_RES_PAR2,CDC_RES_PAR3;
   // parameter for scaling CDC hit variance for fits involving FDC hits.
   double CDC_VAR_SCALE_FACTOR;
   // minimum drift time to use CDC hit (can be negative)
@@ -538,6 +551,8 @@ class DTrackFitterKalmanSIMD: public DTrackFitter{
   vector<vector<DVector3> >sc_norm;
 
   bool IsHadron,IsElectron,IsPositron;
+  TH1I *alignDerivHists[46];
+  TH2I *brentCheckHists[2];
 
  private:
   unsigned int last_material_map;

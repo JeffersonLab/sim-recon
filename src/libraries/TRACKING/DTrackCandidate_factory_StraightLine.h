@@ -18,6 +18,7 @@
 #include <deque>
 #include <TROOT.h>
 #include <TH2F.h>
+#include <TH1I.h>
 #include "PID/DParticleID.h"
 
 class DParticleID;
@@ -50,8 +51,10 @@ class DTrackCandidate_factory_StraightLine:public jana::JFactory<DTrackCandidate
       };
 
       typedef struct{
-         double resi,err,d,tdrift,s;
-      }update_t;
+         double resi,err,d,delta,tdrift,ddrift,s,V;
+         DMatrix4x1 S;
+         DMatrix4x4 C;
+      }cdc_update_t;
 
       typedef struct{
          double d,tdrift,s;
@@ -70,7 +73,8 @@ class DTrackCandidate_factory_StraightLine:public jana::JFactory<DTrackCandidate
 
       double fdc_drift_distance(double time);
       jerror_t DoFilter(double t0,double start_z,DMatrix4x1 &S,
-            vector<const DFDCPseudo *>&hits);
+            vector<const DFDCPseudo *>&hits,vector<const DCDCTrackHit *>&cdc_hits,
+            set<unsigned int> &used_cdc_hits);
       jerror_t DoFilter(double t0,double OuterZ,DMatrix4x1 &S,
             vector<const DCDCTrackHit *>&hits,double dzsign);
 
@@ -79,23 +83,31 @@ class DTrackCandidate_factory_StraightLine:public jana::JFactory<DTrackCandidate
             vector<const DFDCPseudo *>&pseudos);
       jerror_t SetReferenceTrajectory(double t0,double z,DMatrix4x1 &S,
             deque<trajectory_t>&trajectory,
-            const DCDCTrackHit *last_cdc,double dzsign); 
+            const DCDCTrackHit *last_cdc,double &dzsign); 
 
       jerror_t KalmanFilter(DMatrix4x1 &S,DMatrix4x4 &C,
             vector<const DFDCPseudo *>&hits,
             vector<int>&used_fdc_hits,
+            vector<const DCDCTrackHit *>&cdc_hits,
             deque<trajectory_t>&trajectory,
             vector<fdc_update_t>&pulls,
+            vector<cdc_update_t>&cdc_pulls,
             double &chi2,unsigned int &ndof);
       jerror_t KalmanFilter(DMatrix4x1 &S,DMatrix4x4 &C,
             vector<const DCDCTrackHit *>&hits,
             vector<int>&used_hits,
             deque<trajectory_t>&trajectory,
-            vector<update_t>&pulls,
-            double &chi2,unsigned int &ndof,bool timebased=false);
+            vector<cdc_update_t>&pulls,
+            double &chi2,unsigned int &ndof,bool timebased, unsigned int iter);
+      jerror_t Smooth(deque<trajectory_t>&trajectory,
+            vector<cdc_update_t>&cdc_updates,
+            vector<const DCDCTrackHit *>&hits,
+            DTrackCandidate *cand);
       jerror_t Smooth(deque<trajectory_t>&trajectory,
             vector<fdc_update_t>&updates,
             vector<const DFDCPseudo *>&hits,
+            vector<cdc_update_t>&cdc_pulls,
+            vector<const DCDCTrackHit *>&cdc_hits,
             DTrackCandidate *cand); 
 
       double CDCDriftDistance(double t);
@@ -104,7 +116,7 @@ class DTrackCandidate_factory_StraightLine:public jana::JFactory<DTrackCandidate
       double fdc_drift_variance(double);
       unsigned int Locate(vector<double>&xx,double x);
 
-      bool COSMICS,DEBUG_HISTS,USE_FDC_DRIFT_TIMES,SKIP_CDC;
+      bool COSMICS,DEBUG_HISTS,USE_FDC_DRIFT_TIMES,SKIP_CDC,SKIP_FDC;
       float CHI2CUT;
       int DO_PRUNING;
       int PLANE_TO_SKIP;
@@ -117,10 +129,13 @@ class DTrackCandidate_factory_StraightLine:public jana::JFactory<DTrackCandidate
       vector<double>fdc_drift_table;
 
       // Resolution parameters
-      double CDC_RES_PAR1,CDC_RES_PAR2;
+      double CDC_RES_PAR1,CDC_RES_PAR2,CDC_RES_PAR3;
       // Parameters for drift resolution
       double DRIFT_RES_PARMS[3];
       double DRIFT_FUNC_PARMS[4];
+      double CDC_MATCH_DOCA;
+      int VERBOSE;
+      bool isMC;
 
       // variables to deal with CDC straw sag
       vector<vector<double> >max_sag;
@@ -128,9 +143,11 @@ class DTrackCandidate_factory_StraightLine:public jana::JFactory<DTrackCandidate
       double long_drift_func[3][3];
       double short_drift_func[3][3];
 
+      double cdc_endplate_z, cdc_endplate_rmin, cdc_endplate_rmax,cdc_length;
+
       // Diagnostic histograms
       TH2F *Hvres;
-
+      TH1I *hFDCOccTrkFind, *hFDCOccTrkFit, *hFDCOccTrkSmooth;
 };
 
 #endif // _DTrackCandidate_factory_StraightLine_

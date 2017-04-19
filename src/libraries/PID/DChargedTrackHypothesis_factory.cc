@@ -100,7 +100,7 @@ DChargedTrackHypothesis* DChargedTrackHypothesis_factory::Create_ChargedTrackHyp
 
 	uint64_t locEventNumber = locEventLoop->GetJEvent().GetEventNumber();
 	TMatrixFSym* locCovarianceMatrix = (dynamic_cast<DApplication*>(japp))->Get_CovarianceMatrixResource(7, locEventNumber);
-	*locCovarianceMatrix = *(locChargedTrackHypothesis->errorMatrix());
+	if (locChargedTrackHypothesis->errorMatrix() != nullptr) *locCovarianceMatrix = *(locChargedTrackHypothesis->errorMatrix());
 
 	// CDC/FDC: Default if no other timing info
 	locChargedTrackHypothesis->setTime(locTrackTimeBased->t0());
