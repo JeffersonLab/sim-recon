@@ -359,6 +359,65 @@ bool HDEVIO::read(uint32_t *user_buff, uint32_t user_buff_len, bool allow_swap)
 }
 
 //---------------------------------
+// read
+//---------------------------------
+bool HDEVIO::read(EVIOEventRecord &er, uint32_t *user_buff, uint32_t user_buff_len, bool swap_needed, bool allow_swap)
+{
+	/// Read a specific EVIO event record, by jumping to the
+	/// appropriate point in the file and reading from there
+
+	uint32_t event_len = er.event_len;
+	last_event_len = event_len;
+
+	// Check if user buffer is big enough to hold block
+	if( event_len > user_buff_len ){
+		ClearErrorMessage();
+		err_mess << "user buffer too small for event (" << user_buff_len << " < " << event_len << ")";
+		err_code = HDEVIO_USER_BUFFER_TOO_SMALL;
+		return false;
+	}
+
+	// Set file pointer to start of EVIO event (NOT block header!)
+	last_event_pos = er.pos;
+	ifs.seekg(last_event_pos, ios_base::beg);
+
+	// Read data directly into user buffer
+	ifs.read((char*)user_buff, event_len*sizeof(uint32_t));
+
+	// Swap entire bank if needed
+	this->swap_needed = swap_needed; // set flag in HDEVIO
+	bool isgood = true;
+	if(swap_needed && allow_swap){
+		uint32_t Nswapped = swap_bank(user_buff, user_buff, event_len);
+		isgood = (Nswapped == event_len);
+	}
+
+	// Double check that event length matches EVIO block header
+	// but only if we either don't need to swap or need to and
+	// were allowed to (otherwise, the test will almost certainly
+	// fail!)
+	if( (!swap_needed) || (swap_needed && allow_swap) ){
+		if( (user_buff[0]+1) != event_len ){
+			ClearErrorMessage();
+			err_mess << "WARNING: EVIO bank indicates a different size than block header (" << event_len << " != " << (user_buff[0]+1) << ")";
+			err_code = HDEVIO_EVENT_BIGGER_THAN_BLOCK;
+			Nerrors++;
+			Nbad_blocks++;
+			return false;
+		}
+	}
+
+// streampos last_event_pos; // used to hold file position at last event read in
+// uint32_t last_event_len;  // used to hold last event length in words if user buffer was
+// EVIOBlockRecord NB_block_record;
+// streampos NB_next_pos;
+
+	if(isgood) Nevents++;
+
+	return isgood;
+}
+
+//---------------------------------
 // readSparse
 //---------------------------------
 bool HDEVIO::readSparse(uint32_t *user_buff, uint32_t user_buff_len, bool allow_swap)
@@ -394,56 +453,15 @@ bool HDEVIO::readSparse(uint32_t *user_buff, uint32_t user_buff_len, bool allow_
 		if(sparse_event_idx >= br.evio_events.size()) continue;
 		
 		EVIOEventRecord &er = sparse_block_iter->evio_events[sparse_event_idx];
-
-		uint32_t event_len = er.event_len;
-		last_event_len = event_len;
-	
-		// Check if user buffer is big enough to hold block
-		if( event_len > user_buff_len ){
-			ClearErrorMessage();
-			err_mess << "user buffer too small for event (" << user_buff_len << " < " << event_len << ")";
-			err_code = HDEVIO_USER_BUFFER_TOO_SMALL;
-			return false;
-		}
-
-		// At this point we're committed to reading this event so go
-		// ahead and increment pointer to next event so no matter
-		// what happens below, we don't try reading it again.
-		sparse_event_idx++;
-
-		// Set file pointer to start of EVIO event (NOT block header!)
-		last_event_pos = er.pos;
-		ifs.seekg(last_event_pos, ios_base::beg);
 		
-		// Read data directly into user buffer
-		ifs.read((char*)user_buff, event_len*sizeof(uint32_t));
-
-		// Swap entire bank if needed
-		swap_needed = br.swap_needed; // set flag in HDEVIO
-		bool isgood = true;
-		if(br.swap_needed && allow_swap){
-			uint32_t Nswapped = swap_bank(user_buff, user_buff, event_len);
-			isgood = (Nswapped == event_len);
-		}
+		bool res = read(er, user_buff, user_buff_len, br.swap_needed, allow_swap);
 		
-		// Double check that event length matches EVIO block header
-		// but only if we either don't need to swap or need to and
-		// were allowed to (otherwise, the test will almost certainly
-		// fail!)
-		if( (!br.swap_needed) || (br.swap_needed && allow_swap) ){
-			if( (user_buff[0]+1) != event_len ){
-				ClearErrorMessage();
-				err_mess << "WARNING: EVIO bank indicates a different size than block header (" << event_len << " != " << (user_buff[0]+1) << ")";
-				err_code = HDEVIO_EVENT_BIGGER_THAN_BLOCK;
-				Nerrors++;
-				Nbad_blocks++;
-				return false;
-			}
-		}
+		// Advance the sparse pointer index unless the buffer
+		// was too small. In that case, the user will want to
+		// try again with a larger buffer.
+		if( err_code != HDEVIO_USER_BUFFER_TOO_SMALL ) sparse_event_idx++;
 
-		if(isgood) Nevents++;
-
-		return isgood;
+		return res;		
 	}
 
 	// If we got here then we did not find an event of interest
@@ -451,6 +469,48 @@ bool HDEVIO::readSparse(uint32_t *user_buff, uint32_t user_buff_len, bool allow_
 	SetErrorMessage("No more events");
 	err_code = HDEVIO_EOF;
 	return false; // isgood=false
+}
+
+//---------------------------------
+// readBlockContainingEvent
+//---------------------------------
+bool HDEVIO::readBlockContainingEvent(uint64_t event_number, uint32_t *user_buff, uint32_t user_buff_len, bool allow_swap)
+{
+	err_code = HDEVIO_OK;
+	ClearErrorMessage();
+
+	// Make sure we've mapped this file
+	if(!is_mapped) MapBlocks();
+
+	for(auto &br : evio_blocks){
+		if(br.first_event > event_number) continue;
+		if(br.last_event  < event_number) continue;
+
+		// In case we read using readNoFileBuff later, setup the NB_block_record.
+		NB_block_record = br;
+
+		for(auto &er : br.evio_events){
+
+			// Delete next event record from NB_block_record. This will make
+			// sure the first event record left will be the one that should be
+			// read AFTER the event we are currently processing. (i.e. we
+			// need to make sure NB_block_record is setup for when the next
+			// event is read in after this one.)
+			NB_block_record.evio_events.erase(NB_block_record.evio_events.begin());
+
+			if(er.first_event > event_number) continue;
+			if(er.last_event  < event_number) continue;
+			
+			// Update next block pointer for readFileNoBuff
+			NB_next_pos = br.pos + ((streampos)br.block_len<<2); // <<2 is to multiply by 4 and convert to bytes
+
+			return read(er, user_buff, user_buff_len, br.swap_needed, allow_swap);
+		}
+	}
+	
+	err_mess << "Event " << event_number << " not found in EVIO file \"" << filename << "\"!" << endl;
+	err_code = HDEVIO_EVENT_NOT_IN_FILE;
+	return false;
 }
 
 //---------------------------------

@@ -8,7 +8,10 @@
 ///
 
 #include <set>
+#include <list>
 using namespace std;
+
+#include <stdint.h>
 
 #include <JANA/JEventProcessor.h>
 #include <JANA/JEventLoop.h>
@@ -43,6 +46,8 @@ class MyProcessor:public JEventProcessor
 			JFactory_base *fac;
 		}factory_info_t;
 		vector<factory_info_t> fac_info;
+		
+		list<uint64_t> prev_event_numbers; 
 		
 		void PrintAssociatedObjects(JEventLoop *eventLoop, const factory_info_t *fac_info);
 };

@@ -59,7 +59,8 @@ class HDEVIO{
 			HDEVIO_NO_EVENTS_IN_BUFFER,
 			HDEVIO_USER_BUFFER_TOO_SMALL,
 			HDEVIO_BANK_TRUNCATED,
-			HDEVIO_UNKNOWN_BANK_TYPE
+			HDEVIO_UNKNOWN_BANK_TYPE,
+			HDEVIO_EVENT_NOT_IN_FILE
 		}ERRORCODE_t;
 		
 		enum BLOCKTYPE{
@@ -91,8 +92,8 @@ class HDEVIO{
 			uint32_t trigger_bank_len;
 			uint32_t trigger_bank_header;
 			uint32_t trigger_bank_segment_header;
-			uint32_t first_event_hi; // n.b. contradicts documentation!
-			uint32_t first_event_lo;
+			uint32_t first_event_lo; // n.b. contradicts documentation!
+			uint32_t first_event_hi;
 		}PHYSICSHEADER_t;
 		
 		typedef struct{
@@ -190,7 +191,9 @@ class HDEVIO{
 
 		bool ReadBlock(void);
 		bool read(uint32_t *user_buff, uint32_t user_buff_len, bool allow_swap=true);
+		bool read(EVIOEventRecord &er, uint32_t *user_buff, uint32_t user_buff_len, bool swap_needed, bool allow_swap);
 		bool readSparse(uint32_t *user_buff, uint32_t user_buff_len, bool allow_swap=true);
+		bool readBlockContainingEvent(uint64_t event_number, uint32_t *user_buff, uint32_t user_buff_len, bool allow_swap);
 		bool readNoFileBuff(uint32_t *user_buff, uint32_t user_buff_len, bool allow_swap=true);
 		void rewind(void);
 

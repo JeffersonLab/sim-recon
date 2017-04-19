@@ -26,6 +26,7 @@ bool PRINT_SUMMARY_HEADER = false;
 bool PRINT_STATUS_BITS = false;
 bool ACTIVATE_TAGGED_FOR_SUMMARY = false;
 extern bool SPARSIFY_SUMMARY;
+uint32_t MAX_PREV_EVENTS = 1000000;
 
 set<string> toprint;
 set<string> tosummarize;
@@ -196,26 +197,51 @@ jerror_t MyProcessor::evnt(JEventLoop *eventLoop, uint64_t eventnumber)
 	
 	// Wait for user input if pausing
 	if(PAUSE_BETWEEN_EVENTS && !event_is_boring){
-		cerr.flush();
-		cout<<endl<<"< Hit return for the next event (P=prev. Q=quit) >";
-		cout.flush();
-		char c = getchar(); // see note in hd_dump.cc:main()
-		if(c=='\n')cout<<ansi_up(1);
-		cout<<endl;
-		switch(toupper(c)){
-			case 'Q':
-				eventLoop->QuitProgram();
-				break;
-			case 'P':
-				//eventLoop->GotoEvent(eventnumber-1);
-				break;
-			case 'N':
-				break;
+		while(true){ // loop since user may hit "previous" when no previous events in queue
+			bool done = false;
+			cerr.flush();
+			if(eventLoop->HasRandomAccess())
+				cout<<endl<<"< Hit any key for next event (left arrow=prev Q=quit) >";
+			else
+				cout<<endl<<"< Hit any key for next event (Q=quit) >";
+			cout.flush();
+			char c = getchar(); // see note in hd_dump.cc:main()
+			if(c==27) { // arrow keys return multiple bytes on Mac OSX (first is 27, second is 91, third is value we want)
+				c = getchar();
+				if(c==91) c = getchar();
+			}
+			if(c=='\n')cout<<ansi_up(1);
+			cout<<endl;
+			switch(toupper(c)){
+				case 'Q':
+					eventLoop->QuitProgram();
+					done = true;
+					break;
+				case 68: // left
+					if(prev_event_numbers.empty()){
+						cout << " --- NO MORE PREVIOUS EVENTS ----" << endl;
+					}else{
+						eventLoop->AddToEventQueue( prev_event_numbers.back());
+						prev_event_numbers.pop_back();
+						done = true;
+						usleep(10000); // going backwards too fast results in program crash (?!)
+					}
+					break;
+				case 65: // up
+				case 66: // down
+				case 67: // right
+				default:
+					prev_event_numbers.push_back(eventnumber);
+					done = true;
+					break;
+			}
+			if(done) break;
 		}
 
-		cout<<ansi_up(1)<<"\r                                                     \r";
+//		cout<<ansi_up(1)<<"\r                                                     \r";
 		cout.flush();
 	}
+	if(prev_event_numbers.size() > MAX_PREV_EVENTS) prev_event_numbers.pop_front();
 	
 	return NOERROR;
 }

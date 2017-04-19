@@ -50,6 +50,7 @@ JEventSource_EVIOpp::JEventSource_EVIOpp(const char* source_name):JEventSource(s
 {
 	DONE = false;
 	DISPATCHER_END = false;
+	DISPATCHER_STATE = kRunning;
 	NEVENTS_PROCESSED = 0;
 	NDISPATCHER_STALLED  = 0;
 	NEVENTBUFF_STALLED   = 0;
@@ -320,12 +321,15 @@ void JEventSource_EVIOpp::Dispatcher(void)
 	bool allow_swap = false; // Defer swapping to DEVIOWorkerThread
 	uint64_t istreamorder = 0;
 	while(true){
-	
-		if(japp->GetQuittingStatus()) break;
+
+		if(japp->GetQuittingStatus()) break;		
 
 		// Get worker thread to handle this
 		DEVIOWorkerThread *thr = NULL;
 		while( !thr){
+
+			if(DISPATCHER_STATE == kPausing) DispatcherPaused();
+
 			for(auto t : worker_threads){
 				if(t->in_use) continue;
 				thr = t;
@@ -450,6 +454,143 @@ void JEventSource_EVIOpp::Dispatcher(void)
  	worker_threads.clear();
 	
 	tend = std::chrono::high_resolution_clock::now();
+}
+
+//----------------
+// DispatcherPaused
+//----------------
+void JEventSource_EVIOpp::DispatcherPaused(void)
+{
+	/// This is called when the Dispatcher thread is temporarily paused.
+	/// This allows another thread to access the hdevio object and worker
+	/// threads without interference. This should not be called by anything 
+	/// other than the Dispatcher thread itself. To pause the Dispatcher 
+	/// do the following:
+	///
+	/// 1.) set DISPATCHER_STATE=kPausing
+	/// 2.) wait for DISPATCHER_STATE to be set to kPaused
+	/// 3.) --- do work ----
+	/// 4.) set DISPATCHER_STATE=kRunning
+
+	DISPATCHER_STATE = kPaused;
+	while( DISPATCHER_STATE == kPaused ){
+
+		// Break and return if some other status flags change
+		if(japp->GetQuittingStatus()) break;
+		if(DISPATCHER_END) break;
+		if(DONE) break;
+		
+		// Sleep
+		this_thread::sleep_for(milliseconds(1));
+	}
+}
+
+//----------------
+// GetEvent
+//----------------
+jerror_t JEventSource_EVIOpp::GetEvent(uint64_t eventNumber, JEvent &event)
+{
+	/// Get a specific event via random access
+
+	// Pause the dispatcher thread
+	DISPATCHER_STATE = kPausing;
+	while( DISPATCHER_STATE == kPaused ){
+		if( japp->GetQuittingStatus() || DISPATCHER_END || DONE ) return UNRECOVERABLE_ERROR;
+		this_thread::sleep_for(milliseconds(1));
+	}	
+	//---- Dispatcher thread is now paused ----
+
+	// Wait for any worker threads currently parsing events to finish
+	// and publish their events to the parsed_events list. Since the
+	// parsed_events list may fill up prior to all worker threads
+	// publishing, we temporarily increase the maximum allowed events
+	// in the list to a very large number.
+	uint32_t save_max_parsed_events = MAX_PARSED_EVENTS;
+	MAX_PARSED_EVENTS = 8192 > 10*MAX_PARSED_EVENTS ? 8192:10*MAX_PARSED_EVENTS;
+	while(true){
+		bool in_use = false;
+		for( auto w : worker_threads ) in_use |= w->in_use;
+		if(!in_use) break;
+		if( japp->GetQuittingStatus() || DISPATCHER_END || DONE ) return UNRECOVERABLE_ERROR;
+	}
+	MAX_PARSED_EVENTS = save_max_parsed_events;
+
+	// Check if the requested event is already in the parsed_events list.
+	bool event_in_buffer = false;
+	for(DParsedEvent *pe : parsed_events) event_in_buffer |= pe->event_number == eventNumber;
+
+	// If event of interest is not already in the parsed_events buffer then
+	// remove them all and read in the event block from the file
+	if(!event_in_buffer){
+
+		// Free up any events in parsed_events buffer and clear the buffer
+		for(DParsedEvent *pe : parsed_events) pe->in_use = false;
+		parsed_events.clear();
+		
+		// Use first worker thread to parse event
+		assert( !worker_threads.empty() );
+		DEVIOWorkerThread *thr = worker_threads[0];
+		uint32_t* &buff     = thr->buff;
+		uint32_t  &buff_len = thr->buff_len;
+		
+		bool allow_swap = false; // Defer swapping to DEVIOWorkerThread
+			
+		// Jump to event block containing event of interest and read it
+		// If event buffer is too small, reallocate and try once more.
+		// Appropriately treat any errors 
+		hdevio->readBlockContainingEvent(eventNumber, buff, buff_len, allow_swap);
+		if(hdevio->err_code == HDEVIO::HDEVIO_USER_BUFFER_TOO_SMALL){
+			delete[] buff;
+			buff_len = hdevio->last_event_len;
+			buff = new uint32_t[buff_len];
+			hdevio->readBlockContainingEvent(eventNumber, buff, buff_len, allow_swap);
+		}
+		if(hdevio->err_code == HDEVIO::HDEVIO_OK){
+			// Wake up worker thread to handle event
+			uint32_t myjobtype = jobtype;
+			if(hdevio->swap_needed && SWAP) myjobtype |= DEVIOWorkerThread::JOB_SWAP;
+			thr->in_use = true;
+			thr->jobtype = (DEVIOWorkerThread::JOBTYPE)myjobtype;
+			thr->istreamorder = 0;
+			thr->cv.notify_all();
+			
+			// wait for worker thread to complete parsing
+			while(thr->in_use) {
+				if( japp->GetQuittingStatus() || DISPATCHER_END || DONE ) break;
+				this_thread::sleep_for(milliseconds(1));
+			}
+			
+		}else if(hdevio->err_code == HDEVIO::HDEVIO_EVENT_NOT_IN_FILE){
+			japp->SetExitCode(hdevio->err_code);
+			DISPATCHER_STATE = kRunning;
+			return VALUE_OUT_OF_RANGE;
+		}else{
+			cout << hdevio->err_mess.str() << endl;
+			if(hdevio->err_code != HDEVIO::HDEVIO_EOF){
+				bool ignore_error = false;
+				if( (!TREAT_TRUNCATED_AS_ERROR) && (hdevio->err_code == HDEVIO::HDEVIO_FILE_TRUNCATED) ) ignore_error = true;
+				if(!ignore_error) japp->SetExitCode(hdevio->err_code);
+				return UNKNOWN_ERROR;
+			}
+		}		
+	}
+	
+	// Discard events that are not the event of interest
+	while( !parsed_events.empty() ){
+		DParsedEvent *pe = parsed_events.front();
+		if( pe->event_number == eventNumber ) break;
+		pe->in_use = false;
+		parsed_events.pop_front();
+	}
+	
+	// If any events are left in parsed_events then the first must be
+	// the one of interest (How lucky!)
+	jerror_t err = parsed_events.empty() ? VALUE_OUT_OF_RANGE : GetEvent(event);
+
+	//---- Release dispatcher thread ---
+	DISPATCHER_STATE = kRunning;
+	
+	return err;
 }
 
 //----------------

@@ -115,6 +115,12 @@ class JEventSource_EVIOpp: public jana::JEventSource{
 			kEmulationAlways,
 			kEmulationAuto
 		};
+		
+		enum DispatcherState{
+			kRunning,
+			kPausing,
+			kPaused
+		};
 
 
 		                    JEventSource_EVIOpp(const char* source_name);
@@ -123,10 +129,14 @@ class JEventSource_EVIOpp: public jana::JEventSource{
 		 static const char* static_className(void){return "JEventSource_EVIOpp";}
 		
 		               void Dispatcher(void);
+		               void DispatcherPaused(void);
 		
 		           jerror_t GetEvent(jana::JEvent &event);
 		               void FreeEvent(jana::JEvent &event);
 		           jerror_t GetObjects(jana::JEvent &event, jana::JFactory_base *factory);
+
+		               bool HasRandomAccess(void){ return (source_type == kFileSource); } ///< Does base class support Random Access
+		           jerror_t GetEvent(uint64_t eventNumber, JEvent &event);                ///< Get specific event
 
 		               void LinkBORassociations(DParsedEvent *pe);
 		           uint64_t SearchFileForRunNumber(void);
@@ -141,6 +151,7 @@ class JEventSource_EVIOpp: public jana::JEventSource{
 		
 		bool DONE;
 		bool DISPATCHER_END;
+		DispatcherState DISPATCHER_STATE;
 		std::chrono::high_resolution_clock::time_point tstart;
 		std::chrono::high_resolution_clock::time_point tend;
 
