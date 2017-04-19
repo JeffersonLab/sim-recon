@@ -87,6 +87,7 @@ class DTrackTimeBased_factory:public jana::JFactory<DTrackTimeBased>{
 				 const DTrackTimeBased *src_track,
 				 double my_mass,double q);
   bool InsertMissingHypotheses(void);
+  DReferenceTrajectory *GetReferenceTrajectory(const DKinematicData *track_kd);
 
   // Geometry
   const DGeometry *geom;
