@@ -15,7 +15,7 @@
 #include "AMPTOOLS_DATAIO/HDDMDataWriter.h"
 
 #include "AMPTOOLS_AMPS/TwoPiAngles_primakoff.h"
-#include "AMPTOOLS_AMPS/TwoPiW_primakoff.h"
+#include "AMPTOOLS_AMPS/TwoPiWt_primakoff.h"
 
 #include "AMPTOOLS_MCGEN/ProductionMechanism.h"
 #include "AMPTOOLS_MCGEN/GammaZToXYZ.h"
@@ -140,7 +140,7 @@ int main( int argc, char* argv[] ){
 
 	// setup AmpToolsInterface
 	AmpToolsInterface::registerAmplitude( TwoPiAngles_primakoff() );
-	AmpToolsInterface::registerAmplitude( TwoPiW_primakoff() );
+	AmpToolsInterface::registerAmplitude( TwoPiWt_primakoff() );
 	AmpToolsInterface ati( cfgInfo, AmpToolsInterface::kMCGeneration );
 	
 	ProductionMechanism::Type type =
@@ -159,7 +159,8 @@ int main( int argc, char* argv[] ){
 		// set of amplitudes -- doing so will improve efficiency.  Leaving as is
 		// won't make MC incorrect, it just won't be as fast as it could be
 		
-		resProd.addResonance( 0.775, 0.146,  1.0 );
+		// resProd.addResonance( 0.775, 0.146,  1.0 );
+		resProd.addResonance( 0.4, 0.146,  1.0 );    
 	}
 	
 	vector< int > pTypes;

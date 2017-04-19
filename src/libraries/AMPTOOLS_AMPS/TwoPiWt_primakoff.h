@@ -1,5 +1,5 @@
-#if !defined(TWOPIW_PRIMAKOFF)
-#define TWOPIW_PRIMAKOFF
+#if !defined(TWOPIWT_PRIMAKOFF)
+#define TWOPIWT_PRIMAKOFF
 
 #include "IUAmpTools/Amplitude.h"
 #include "IUAmpTools/AmpParameter.h"
@@ -16,17 +16,17 @@ using namespace std;
 
 class Kinematics;
 
-class TwoPiW_primakoff : public UserAmplitude< TwoPiW_primakoff >
+class TwoPiWt_primakoff : public UserAmplitude< TwoPiWt_primakoff >
 {
   
 public:
 	
-	TwoPiW_primakoff() : UserAmplitude< TwoPiW_primakoff >() {}
-	TwoPiW_primakoff( const vector< string >& args );
+	TwoPiWt_primakoff() : UserAmplitude< TwoPiWt_primakoff >() {}
+	TwoPiWt_primakoff( const vector< string >& args );
 	
-	~TwoPiW_primakoff(){}
+	~TwoPiWt_primakoff(){}
   
-	string name() const { return "TwoPiW_primakoff"; }
+	string name() const { return "TwoPiWt_primakoff"; }
   
   complex< GDouble > calcAmplitude( GDouble** pKin ) const;
 	  

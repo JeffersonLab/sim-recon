@@ -24,7 +24,7 @@ public:
         void setGeneratorType( Type type );
 	
 	TLorentzVector produceResonance( const TLorentzVector& beam );
-	TLorentzVector produceResonanceZ( const TLorentzVector& beam , double t);
+	TLorentzVector produceResonanceZ( const TLorentzVector& beam);
   
   // there may be a better way to do this, like pair< , >
   // but sometimes the user doesn't care about the weight
