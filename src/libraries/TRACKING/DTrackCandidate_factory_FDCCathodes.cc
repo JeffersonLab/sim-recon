@@ -307,7 +307,6 @@ jerror_t DTrackCandidate_factory_FDCCathodes::evnt(JEventLoop *loop, uint64_t ev
       use_fake_point=true;
     }
     // Do the fit
-    _DBG_ << rc << endl;
     if (fit.FitTrackRiemann(rc)==NOERROR){    
       // New track parameters
       tanl=fit.tanl;
