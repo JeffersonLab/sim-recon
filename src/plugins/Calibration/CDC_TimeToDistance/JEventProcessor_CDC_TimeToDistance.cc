@@ -99,11 +99,12 @@ jerror_t JEventProcessor_CDC_TimeToDistance::brun(JEventLoop *eventLoop, int32_t
 //------------------
 jerror_t JEventProcessor_CDC_TimeToDistance::evnt(JEventLoop *loop, uint64_t eventnumber)
 {
+    int straw_offset[29] = {0,0,42,84,138,192,258,324,404,484,577,670,776,882,1005,1128,1263,1398,1544,1690,1848,2006,2176,2346,2528,2710,2907,3104,3313};
+
     // select events with physics events, i.e., not LED and other front panel triggers
     const DTrigger* locTrigger = NULL; 
     loop->GetSingle(locTrigger); 
-    if(locTrigger->Get_L1FrontPanelTriggerBits() != 0) 
-      return NOERROR;
+    if(locTrigger->Get_L1FrontPanelTriggerBits() != 0) return NOERROR;
 
     // Getting the charged tracks will allow us to use the field on data
     vector <const DChargedTrack *> chargedTrackVector;
@@ -119,18 +120,19 @@ jerror_t JEventProcessor_CDC_TimeToDistance::evnt(JEventLoop *loop, uint64_t eve
         // Cut very loosely on the track quality
         const DTrackTimeBased *thisTimeBasedTrack;
         bestHypothesis->GetSingle(thisTimeBasedTrack);
-        if (thisTimeBasedTrack->FOM < 1E-5) return NOERROR;
+        if(!thisTimeBasedTrack->IsSmoothed) continue;
+        if (thisTimeBasedTrack->FOM < 1E-10) continue;
         vector<DTrackFitter::pull_t> pulls = thisTimeBasedTrack->pulls;
         // Loop over the pulls to get the appropriate information for our ring
         for (unsigned int i = 0; i < pulls.size(); i++){
             DTrackFitter::pull_t thisPull = pulls[i];
             //double residual = thisPull.resi;
             //double error = thisPull.err;
-            double time = thisPull.tdrift;
+            double time = thisPull.tcorr;
             double docaphi = thisPull.docaphi;
             if (docaphi > TMath::Pi()) docaphi -= 2 * TMath::Pi();
             double docaz = thisPull.z;
-            if (docaz < 70.0 || docaz > 110.0) continue; // Only focus on the center of the chamber
+            //if (docaz < 70.0 || docaz > 110.0) continue; // Only focus on the center of the chamber
             //if (docaz < 140.0) continue; // Only focus on downstream end of chamber
             double predictedDistance = thisPull.d; // This is the DOCA of the track
             //double distance = residual + predictedDistance; // This is the distance from the T-D lookup
@@ -139,8 +141,16 @@ jerror_t JEventProcessor_CDC_TimeToDistance::evnt(JEventLoop *loop, uint64_t eve
             if (thisCDCHit == NULL) continue;
             if (predictedDistance > 1.5 || predictedDistance < 0.0) continue; // Some strange behavior in field on data?
             int ring = thisCDCHit->wire->ring;
-            if(UNBIASED_RING != 0 && (ring != UNBIASED_RING) ) continue;
             int straw = thisCDCHit->wire->straw;
+
+            // Fill Histogram with the drift times neat t0 (+-50 ns)
+            Fill2DHistogram("CDC_TimeToDistance","","Early Drift Times",
+               time,straw_offset[ring]+straw,
+               "Per straw drift times; Drift time [ns];CCDB Index",
+               200,-50,50,3522,0.5,3522.5);
+
+            if(UNBIASED_RING != 0 && (ring != UNBIASED_RING) ) continue;
+
             // Now just make a bunch of histograms to display all of the information
             //Time to distance relation in bins
             // Calcuate delta
