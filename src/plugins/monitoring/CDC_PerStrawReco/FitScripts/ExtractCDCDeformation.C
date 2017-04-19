@@ -124,7 +124,7 @@ void ExtractCDCDeformation(TString filename = "hd_root.root"){
         sprintf(folder, "Ring %.2i", ring);
         char strawname[100];
         sprintf(strawname,"Straw %.3i Predicted Drift Distance Vs phi_DOCA", straw);
-        TH2I *thisStrawHistogram = Get2DHistogram("CDC_Cosmic_Per_Straw",folder,strawname);
+        TH2I *thisStrawHistogram = Get2DHistogram("CDCPerStrawReco_Middle",folder,strawname);
 
         if (thisStrawHistogram != NULL) {
 
