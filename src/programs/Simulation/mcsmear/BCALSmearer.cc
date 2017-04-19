@@ -669,11 +669,11 @@ void BCALSmearer::CopyBCALHitsToHDDM(map<int, fADCHitList> &fADCHits,
 	    
 	    // fADC saturation based on waveforms from data
 	    if(!bcal_config->NO_FADC_SATURATION) { 
-		    if(integral > bcal_config->fADC_MinIntegral_Saturation[0][hitlist.sumlayer]) {
+		    if(integral > bcal_config->fADC_MinIntegral_Saturation[0][hitlist.sumlayer-1]) {
 			    double y = integral; 
-			    double a = bcal_config->fADC_Saturation_Linear[0][hitlist.sumlayer];
-			    double b = bcal_config->fADC_Saturation_Quadratic[0][hitlist.sumlayer];
-			    double c = bcal_config->fADC_MinIntegral_Saturation[0][hitlist.sumlayer];
+			    double a = bcal_config->fADC_Saturation_Linear[0][hitlist.sumlayer-1];
+			    double b = bcal_config->fADC_Saturation_Quadratic[0][hitlist.sumlayer-1];
+			    double c = bcal_config->fADC_MinIntegral_Saturation[0][hitlist.sumlayer-1];
 			    // "invert" saturation correction for MC
 			    integral = (1 - a*y + 2.*b*c*y - sqrt(1. - 2.*a*y + 4.*b*c*y + (a*a - 4.*b)*y*y))/(2.*b*y);
 		    }
@@ -691,11 +691,11 @@ void BCALSmearer::CopyBCALHitsToHDDM(map<int, fADCHitList> &fADCHits,
 	    
 	    // fADC saturation based on waveforms from data
 	    if(!bcal_config->NO_FADC_SATURATION) { 
-		    if(integral > bcal_config->fADC_MinIntegral_Saturation[1][hitlist.sumlayer]) {
+		    if(integral > bcal_config->fADC_MinIntegral_Saturation[1][hitlist.sumlayer-1]) {
 			    double y = integral; 
-			    double a = bcal_config->fADC_Saturation_Linear[1][hitlist.sumlayer];
-			    double b = bcal_config->fADC_Saturation_Quadratic[1][hitlist.sumlayer];
-			    double c = bcal_config->fADC_MinIntegral_Saturation[1][hitlist.sumlayer];
+			    double a = bcal_config->fADC_Saturation_Linear[1][hitlist.sumlayer-1];
+			    double b = bcal_config->fADC_Saturation_Quadratic[1][hitlist.sumlayer-1];
+			    double c = bcal_config->fADC_MinIntegral_Saturation[1][hitlist.sumlayer-1];
 			    // "invert" saturation correction for MC
 			    integral = (1 - a*y + 2.*b*c*y - sqrt(1. - 2.*a*y + 4.*b*c*y + (a*a - 4.*b)*y*y))/(2.*b*y);
                     }
