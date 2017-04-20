@@ -1660,6 +1660,9 @@ unsigned int DParticleID::PredictSCSector(const DReferenceTrajectory* rt, double
   for (unsigned int m=0;m<12;m++){
     for (int i=0;i<rt->Nswim_steps;i++){
       locProjPos=rt->swim_steps[i].origin;
+      if (!isfinite(locProjPos.Phi())){
+	return 0;
+      }
       dphi=locProjPos.Phi()-sc_pos[0][0].Phi();
       if (dphi<0) dphi+=2.*M_PI;
       index=int(floor(dphi/(2.*M_PI/30.)));

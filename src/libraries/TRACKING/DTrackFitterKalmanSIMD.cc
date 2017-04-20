@@ -610,10 +610,10 @@ void DTrackFitterKalmanSIMD::ResetKalmanSIMD(void)
    mStepSizeZ=2.0;
    //mStepSizeZ=0.5;
 
-   if (fit_type==kTimeBased){
-      mStepSizeS=0.5;
-      mStepSizeZ=0.5;
-   }
+   //if (fit_type==kTimeBased){
+   //   mStepSizeS=0.5;
+   //   mStepSizeZ=0.5;
+   // }
 
 
    mT0=0.,mT0MinimumDriftTime=1e6;
