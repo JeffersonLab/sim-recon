@@ -61,42 +61,44 @@ jerror_t DBCALUnifiedHit_factory::brun(jana::JEventLoop *eventLoop, int32_t runn
         JCalibration *jcalib = eventLoop->GetJCalibration();
         //these tables hold: module layer sector end c0 c1 c2 c3
         vector<vector<float> > tdc_timewalk_table;
-        jcalib->Get("BCAL/timewalk_tdc",tdc_timewalk_table);
-
-        for (vector<vector<float> >::const_iterator iter = tdc_timewalk_table.begin();
-                iter != tdc_timewalk_table.end();
-                ++iter) {
-            if (iter->size() != 8) {
-                cout << "DBCALUnifiedHit_factory: Wrong number of values in timewalk_tdc table (should be 8)" << endl;
-                continue;
+        if(jcalib->Get("BCAL/timewalk_tdc",tdc_timewalk_table)) {
+            jerr << "Error loading BCAL/timewalk_tdc !" << endl;
+        } else {
+            for (vector<vector<float> >::const_iterator iter = tdc_timewalk_table.begin();
+                 iter != tdc_timewalk_table.end();
+                 ++iter) {
+                if (iter->size() != 8) {
+                    cout << "DBCALUnifiedHit_factory: Wrong number of values in timewalk_tdc table (should be 8)" << endl;
+                    continue;
+                }
+                //be really careful about float->int conversions
+                int module = (int)((*iter)[0]+0.5);
+                int layer  = (int)((*iter)[1]+0.5);
+                int sector = (int)((*iter)[2]+0.5);
+                int endi   = (int)((*iter)[3]+0.5);
+                DBCALGeometry::End end = (endi==0) ? DBCALGeometry::kUpstream : DBCALGeometry::kDownstream;
+                float c0 = (*iter)[4];
+                float c1 = (*iter)[5];
+                float c2 = (*iter)[6];
+                float a_thresh = (*iter)[7];
+                int cellId = dBCALGeom->cellId(module, layer, sector);
+                readout_channel channel(cellId,end);
+                tdc_timewalk_map[channel] = timewalk_coefficients(c0,c1,c2,a_thresh);
             }
-            //be really careful about float->int conversions
-            int module = (int)((*iter)[0]+0.5);
-            int layer  = (int)((*iter)[1]+0.5);
-            int sector = (int)((*iter)[2]+0.5);
-            int endi   = (int)((*iter)[3]+0.5);
-            DBCALGeometry::End end = (endi==0) ? DBCALGeometry::kUpstream : DBCALGeometry::kDownstream;
-            float c0 = (*iter)[4];
-            float c1 = (*iter)[5];
-            float c2 = (*iter)[6];
-            float a_thresh = (*iter)[7];
-            int cellId = dBCALGeom->cellId(module, layer, sector);
-            readout_channel channel(cellId,end);
-            tdc_timewalk_map[channel] = timewalk_coefficients(c0,c1,c2,a_thresh);
-        }
-
-        for (int module=1; module<=dBCALGeom->NBCALMODS; module++) {
-            //shouldn't be hardcoded
-            for (int sector=1; sector<=4; sector++) {
-                for (int layer=1; layer<=dBCALGeom->NBCALLAYSIN; layer++) {
-                    int id = dBCALGeom->cellId(module, layer, sector);
-                    if (tdc_timewalk_map.count(readout_channel(id,DBCALGeometry::kUpstream)) != 1) {
-                        cout << "DBCALUnifiedHit_factory: Channel missing in timewalk_tdc_table: "
-                            << endl << " module " << module << " layer " << layer << " sector " << sector << " upstream" << endl;
-                    }
-                    if (tdc_timewalk_map.count(readout_channel(id,DBCALGeometry::kDownstream)) != 1) {
-                        cout << "DBCALUnifiedHit_factory: Channel missing in timewalk_tdc_table: "
-                            << endl << " module " << module << " layer " << layer << " sector " << sector << " downstream" << endl;
+            
+            for (int module=1; module<=dBCALGeom->NBCALMODS; module++) {
+                //shouldn't be hardcoded
+                for (int sector=1; sector<=4; sector++) {
+                    for (int layer=1; layer<=dBCALGeom->NBCALLAYSIN; layer++) {
+                        int id = dBCALGeom->cellId(module, layer, sector);
+                        if (tdc_timewalk_map.count(readout_channel(id,DBCALGeometry::kUpstream)) != 1) {
+                            cout << "DBCALUnifiedHit_factory: Channel missing in timewalk_tdc_table: "
+                                 << endl << " module " << module << " layer " << layer << " sector " << sector << " upstream" << endl;
+                        }
+                        if (tdc_timewalk_map.count(readout_channel(id,DBCALGeometry::kDownstream)) != 1) {
+                            cout << "DBCALUnifiedHit_factory: Channel missing in timewalk_tdc_table: "
+                                 << endl << " module " << module << " layer " << layer << " sector " << sector << " downstream" << endl;
+                        }
                     }
                 }
             }
@@ -214,8 +216,12 @@ jerror_t DBCALUnifiedHit_factory::evnt(JEventLoop *loop, uint64_t eventnumber) {
                 t_TDC = tdc_hits[goodTDCindex]->t;
                 if (USE_TDC){
                     // Apply the timewalk correction
-                    timewalk_coefficients tdc_coeff = tdc_timewalk_map[chan];
-                    t_TDC -= tdc_coeff.c0 + tdc_coeff.c1/pow(pulse_peak/tdc_coeff.a_thresh, tdc_coeff.c2);
+                    if( tdc_timewalk_map.find(chan) != tdc_timewalk_map.end() ) {
+                        // really we should probably print out some more errors here, if we can't find the timewalk correction factor
+                        // but since we complain enough above, it is probably fine...
+                        timewalk_coefficients tdc_coeff = tdc_timewalk_map[chan];
+                        t_TDC -= tdc_coeff.c0 + tdc_coeff.c1/pow(pulse_peak/tdc_coeff.a_thresh, tdc_coeff.c2);
+                    }
                 }
             }
 
