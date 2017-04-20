@@ -16,6 +16,7 @@ using namespace jana;
 
 #include "BCAL/DBCALDigiHit.h"
 #include "BCAL/DBCALHit.h"
+#include "BCAL/DBCALPoint.h"
 #include "BCAL/DBCALUnifiedHit.h"
 #include "DAQ/Df250PulseIntegral.h"
 #include "DAQ/Df250WindowRawData.h"
@@ -108,6 +109,42 @@ static TProfile *high_down_2 = NULL;
 static TProfile *high_down_3 = NULL;
 static TProfile *high_down_4 = NULL;
 
+// Histograms added by Elton for z distributions
+
+
+
+static TProfile* h2_ledboth_Aall_vs_event = NULL;
+static TProfile* h2_ledboth_sector_vs_event = NULL;
+
+static TH1I* h1_ledup_z_all = NULL;;
+static TH2I* h2_ledup_z_vs_cellid = NULL;
+static TH1I* h1_ledup_sector = NULL;
+static TH1I* h1_ledup_sector_config = NULL;
+static TH1I* h1_ledup_Aup_all = NULL;
+static TH1I* h1_ledup_Adown_all = NULL;
+static TH2I* h2_ledup_Aup_vs_z = NULL;
+static TH2I* h2_ledup_Adown_vs_z = NULL;
+static TProfile* h2_ledup_Aup_vs_event = NULL;
+static TProfile* h2_ledup_Adown_vs_event = NULL;
+static TProfile* h2_ledup_Aall_vs_event = NULL;
+static TProfile* h2_ledup_sector_vs_event = NULL;
+
+static TH1I* h1_leddown_z_all = NULL;
+static TH2I* h2_leddown_z_vs_cellid = NULL;
+static TH1I* h1_leddown_sector = NULL;
+static TH1I* h1_leddown_sector_config = NULL;
+static TH1I* h1_leddown_Aup_all = NULL;
+static TH1I* h1_leddown_Adown_all = NULL;
+static TH2I* h2_leddown_Aup_vs_z = NULL;
+static TH2I* h2_leddown_Adown_vs_z = NULL;
+static TProfile* h2_leddown_Aup_vs_event = NULL;
+static TProfile* h2_leddown_Adown_vs_event = NULL;
+static TProfile* h2_leddown_Aall_vs_event = NULL;
+static TProfile* h2_leddown_sector_vs_event = NULL;
+
+
+
+
 //----------------------------------------------------------------------------------
 
 // 	string make_filename( const string& basename, int index, const string& ext )
@@ -161,10 +198,9 @@ jerror_t JEventProcessor_BCAL_LED::init(void) {
 	//high_up_2_counter=0; high_up_3_counter=0; high_up_4_counter=0;
 	//unidentified = 0; ledcounter = 0;
 
-
 	adccount1 = 1100;
-	adccount2 = 1400;
-	adccount3 = 1800;
+	adccount2 = 1200;
+	
 	
 	maxnumberofevents=700000000.0;//Assuming 1Hz LED trigger, 300M for a beam run with 30KHz trigger and 700M for 70KHz
 	//maxnumberofevents=10000.0;//using LED event conter
@@ -200,7 +236,6 @@ jerror_t JEventProcessor_BCAL_LED::init(void) {
 	column2_down_peak_vevent = new TProfile("column2_down_peak_vevent","Avg BCAL peak vs event;event num;peak (all column 2 down chan avg)",nbins,0.0,maxnumberofevents);
 	column3_down_peak_vevent = new TProfile("column3_down_peak_vevent","Avg BCAL peak vs event;event num;peak (all column 3 down chan avg)",nbins,0.0,maxnumberofevents);
 	column4_down_peak_vevent = new TProfile("column4_down_peak_vevent","Avg BCAL peak vs event;event num;peak (all column 4 down chan avg)",nbins,0.0,maxnumberofevents);
-
 	
 	column1_up_peak_vevent1 = new TProfile("column1_up_peak_vevent1","Avg BCAL peak vs event;event num;peak (all column 1 up chan avg)",nbins,0.0,maxnumberofevents);
 	column1_down_peak_vevent1 = new TProfile("column1_down_peak_vevent1","Avg BCAL peak vs event;event num;peak (all column 1 down chan avg)",nbins,0.0,maxnumberofevents);
@@ -305,6 +340,35 @@ jerror_t JEventProcessor_BCAL_LED::init(void) {
 	/////////////////////////////////////////////////////////
 #endif
 
+	h2_ledboth_Aall_vs_event = new TProfile("h2_ledboth_Aall_vs_event", "LED uboth - Aup and Adown vs event", 20000,0,200000000);
+	h2_ledboth_sector_vs_event = new TProfile("h2_ledboth_sector_vs_event", "LED both - sector vs event", 20000,0,200000000);
+
+	h1_ledup_sector = new TH1I("h1_ledup_sector", "LED up - sector", 50,0,5);
+	h2_ledup_z_vs_cellid = new TH2I("h2_ledup_z_vs_cellid", "LED up - z vs Chan ID", 800,0,800,500,-100,400);
+	h1_ledup_sector_config = new TH1I("h1_ledup_sector_config", "LED up - sector -config", 5,0,5);
+	h1_ledup_z_all = new TH1I("h1_ledup_z_all", "LED up - z all channels", 500,-100,400);
+	h1_ledup_Aup_all = new TH1I("h1_ledup_Aup_all", "LED up - Aup all channels", 410,0,4100);
+	h1_ledup_Adown_all = new TH1I("h1_ledup_Adown_all", "LED up - Adown all channels", 410,0,4100);
+	h2_ledup_Aup_vs_z = new TH2I("h2_ledup_Aup_vs_z", "LED up - Aup vs z", 100,-100,400,410,0,4100);
+	h2_ledup_Adown_vs_z = new TH2I("h2_ledup_Adown_vs_z", "LED up - Adown vs z", 100,-100,400,410,0,4100);
+	h2_ledup_Aup_vs_event = new TProfile("h2_ledup_Aup_vs_event", "LED up - Aup vs event", 20000,0,200000000);
+	h2_ledup_Adown_vs_event = new TProfile("h2_ledup_Adown_vs_event", "LED up - Adown vs event", 20000,0,200000000);
+	h2_ledup_Aall_vs_event = new TProfile("h2_ledup_Aall_vs_event", "LED up - Aup and Adown vs event", 20000,0,200000000);
+	h2_ledup_sector_vs_event = new TProfile("h2_ledup_sector_vs_event", "LED up - sector vs event", 20000,0,200000000);
+
+	h1_leddown_sector = new TH1I("h1_leddown_sector", "LED down - sector", 50,0,5);
+	h2_leddown_z_vs_cellid = new TH2I("h2_leddown_z_vs_cellid", "LED down - z vs Chan ID", 800,0,800,500,-100,400);
+	h1_leddown_sector_config = new TH1I("h1_leddown_sector_config", "LED down - sector -config", 5,0,5);
+	h1_leddown_z_all = new TH1I("h1_leddown_z_all", "LED down - z all channels", 500,-100,400);
+	h1_leddown_Aup_all = new TH1I("h1_leddown_Aup_all", "LED down - Aup all channels", 410,0,4100);
+	h1_leddown_Adown_all = new TH1I("h1_leddown_Adown_all", "LED down - Adown all channels", 410,0,4100);
+	h2_leddown_Aup_vs_z = new TH2I("h2_leddown_Aup_vs_z", "LED down - Aup vs z", 100,-100,400,410,0,4100);
+	h2_leddown_Adown_vs_z = new TH2I("h2_leddown_Adown_vs_z", "LED down - Adown vs z", 100,-100,400,410,0,4100);
+	h2_leddown_Aup_vs_event = new TProfile("h2_leddown_Aup_vs_event", "LED down - Aup vs event", 20000,0,200000000);
+	h2_leddown_Adown_vs_event = new TProfile("h2_leddown_Adown_vs_event", "LED down - Adown vs event", 20000,0,200000000);
+	h2_leddown_Aall_vs_event = new TProfile("h2_leddown_Aall_vs_event", "LED down - Aup and Adown vs event", 20000,0,200000000);
+	h2_leddown_sector_vs_event = new TProfile("h2_leddown_sector_vs_event", "LED down - sector vs event", 20000,0,200000000);
+
 	// back to main dir
 	main->cd();
 	
@@ -340,8 +404,10 @@ jerror_t JEventProcessor_BCAL_LED::evnt(JEventLoop *loop, uint64_t eventnumber) 
 	
 	vector<const DBCALDigiHit*> bcaldigihits;
 	
+	vector <const DBCALHit*> hitVector;
 
 	vector<const DBCALHit*> dbcalhits;
+	vector<const DBCALPoint*> dbcalpoints;
 	
 	
 	bool LED_US=0, LED_DS=0;
@@ -382,297 +448,356 @@ jerror_t JEventProcessor_BCAL_LED::evnt(JEventLoop *loop, uint64_t eventnumber) 
 		}
 	} else {
 		//NOtrig++;
-	}
+	}	
+	// Lock ROOT
+	japp->RootWriteLock();
+
+	float ledup_sector = 0;
+	int ledup_sector_int = 0;
+	float ledup_mean = 0;
+	int ledup_events = 0;
+	float leddown_sector = 0;
+	int leddown_sector_int = 0;
+	float leddown_mean = 0;
+	int leddown_events = 0;
 	
 	if (LED_US || LED_DS) {
 		
 
 		loop->Get(dbcalhits);
 		loop->Get(bcaldigihits);
+		loop->Get(dbcalpoints);
 		
-		     int apedsubpeak[1536] = { 0 };
+	        int apedsubpeak[1536] = { 0 };
 		     
-		     int cellsector[1536] =  { 0 };
-		     int cellend[1536] =  { 0 };
+		for( unsigned int i=0; i<dbcalpoints.size(); i++) {
 
-		     
-		for( unsigned int i=0; i<dbcalhits.size(); i++) {
-                        const DBCALHit *bcalhit = dbcalhits[i];
-			const DBCALDigiHit *bcaldigihit = NULL;
-			bcalhit->GetSingle(bcaldigihit);
+			int module = dbcalpoints[i]->module();
+			int layer = dbcalpoints[i]->layer();
+			int sector = dbcalpoints[i]->sector();
+			int cell_id = (module-1)*16 + (layer-1)*4 + sector-1;
+			float z =  dbcalpoints[i]->z();
+			dbcalpoints[i]->Get(hitVector);
+			const DBCALHit *Hit1 = hitVector[0];
+			const DBCALHit *Hit2 = hitVector[1];
+			// float Aup =  dbcalpoints[i]->E_US();
+			// float Adown =  dbcalpoints[i]->E_DS();
+			float Aup = 0;
+			float Adown = 0;
+			if (Hit1->end == DBCALGeometry::kUpstream && Hit2->end == DBCALGeometry::kDownstream) {	  
+			  Aup = Hit1->pulse_peak;
+			  Adown = Hit2->pulse_peak;
+			}
+			else if (Hit2->end == DBCALGeometry::kUpstream && Hit1->end == DBCALGeometry::kDownstream){
+			  Aup = Hit2->pulse_peak;
+			  Adown = Hit1->pulse_peak;
+			}
 
-			int module = bcalhit->module;
-			int layer = bcalhit->layer;
-			int sector = bcalhit->sector;
-		        int end = bcalhit->end;
-			int cell_id = -1;
-				
-				
-				if(bcalhit->end == DBCALGeometry::kDownstream)
-				{
-				cell_id = (module-1)*16 + (layer-1)*4 + sector-1; //has a range of 768 channels enough for one side.
+			// fill histograms for all channels
+			if (LED_US) {
+			  h1_ledup_sector->Fill(sector);
+			  h1_ledup_z_all->Fill(z);;
+			  h2_ledup_z_vs_cellid->Fill(cell_id,z);
+			  h1_ledup_Aup_all->Fill(Aup);;
+			  h1_ledup_Adown_all->Fill(Adown);;
+			  h2_ledup_Aup_vs_z->Fill(z,Aup);
+			  h2_ledup_Adown_vs_z->Fill(z,Adown);
+			  h2_ledup_Aup_vs_event->Fill(eventnumber,Aup);
+			  h2_ledup_Adown_vs_event->Fill(eventnumber,Adown);
+			  // cout << "US - eventnumber=" << eventnumber << " Aup=" << Aup << " Aup=" << Aup << " Adown=" << Adown << " Adown=" << Adown << endl;
+			}
+			else if (LED_DS) {
+			  h1_leddown_sector->Fill(sector);
+			  h1_leddown_z_all->Fill(z);
+			  h2_leddown_z_vs_cellid->Fill(cell_id,z);
+			  h1_leddown_Aup_all->Fill(Aup);;
+			  h1_leddown_Adown_all->Fill(Adown);;
+			  h2_leddown_Aup_vs_z->Fill(z,Aup);
+			  h2_leddown_Adown_vs_z->Fill(z,Adown);
+			  h2_leddown_Aup_vs_event->Fill(eventnumber,Aup);
+			  h2_leddown_Adown_vs_event->Fill(eventnumber,Adown);
+			  // cout << "DS - eventnumber=" << eventnumber << " Aup=" << Aup << " Aup=" << Aup << " Adown=" << Adown << " Adown=" << Adown << endl;
+			}
 
-				}//if downstream cell id
-				if(bcalhit->end == DBCALGeometry::kUpstream)
-				{
-				cell_id = 768 + (module-1)*16 + (layer-1)*4 + sector-1;
-				}
-				
-				apedsubpeak[cell_id] = bcaldigihit->pulse_peak - (int) bcaldigihit->pedestal / bcaldigihit->nsamples_pedestal;
+			// make cuts on z for all hits
+			if ( LED_DS && (z>310 && z<400)) {
+				apedsubpeak[cell_id] = Adown;
 				chcounter[cell_id]++;
+				apedsubpeak[cell_id+768] = Aup;
+				chcounter[cell_id+768]++;
+				h2_ledboth_Aall_vs_event->Fill(eventnumber,Aup);
+				h2_ledboth_Aall_vs_event->Fill(eventnumber,Adown);
+				h2_leddown_Aall_vs_event->Fill(eventnumber,Aup);
+				h2_leddown_Aall_vs_event->Fill(eventnumber,Adown);
+				h2_leddown_sector_vs_event->Fill(eventnumber,sector);
+				h2_ledboth_sector_vs_event->Fill(eventnumber,sector);
 				
-				cellsector[cell_id] = sector;
-				cellend[cell_id] = end;
-
-        }//loop over bcalhits
+				// compute sums
+				leddown_sector += sector;
+				leddown_mean += Aup + Adown;
+				leddown_events++;
 				
-		// Lock ROOT
-		japp->RootWriteLock();
+			} // if condition on z
 
-	for (int chid = 0; chid < 1536; chid++)
-	    {
-	      if (chcounter[chid] > 1) continue;
-	      bcal_peak_vevent->Fill(eventnumber,apedsubpeak[chid]);
-				if (cellend[chid] == DBCALGeometry::kUpstream)
-				   {up_peak_vevent->Fill(eventnumber,apedsubpeak[chid]);
-				    if (chid%4 == 0) {column1_up_peak_vevent->Fill(eventnumber,apedsubpeak[chid]);}
-				    else if (chid%4 == 1) {column2_up_peak_vevent->Fill(eventnumber,apedsubpeak[chid]);}
-				    else if (chid%4 == 2) {column3_up_peak_vevent->Fill(eventnumber,apedsubpeak[chid]);}
-				    else if (chid%4 == 3) {column4_up_peak_vevent->Fill(eventnumber,apedsubpeak[chid]);}
-				   }
-				    
-				else if (cellend[chid] == DBCALGeometry::kDownstream) 
-				    {down_peak_vevent->Fill(eventnumber,apedsubpeak[chid]);
-				    if (chid%4 == 0) {column1_down_peak_vevent->Fill(eventnumber,apedsubpeak[chid]);}
-				    else if (chid%4 == 1) {column2_down_peak_vevent->Fill(eventnumber,apedsubpeak[chid]);}
-				    else if (chid%4 == 2) {column3_down_peak_vevent->Fill(eventnumber,apedsubpeak[chid]);}
-				    else if (chid%4 == 3) {column4_down_peak_vevent->Fill(eventnumber,apedsubpeak[chid]);}
-				    }
-				    
-				if (cellsector[chid] == 1) {column1_peak_vevent->Fill(eventnumber,apedsubpeak[chid]);}
-				else if (cellsector[chid] == 2) {column2_peak_vevent->Fill(eventnumber,apedsubpeak[chid]);}
-				else if (cellsector[chid] == 3) {column3_peak_vevent->Fill(eventnumber,apedsubpeak[chid]);}
-				else if (cellsector[chid] == 4) {column4_peak_vevent->Fill(eventnumber,apedsubpeak[chid]);}
+			if (LED_US && (z>-60 && z<0)) {
+				apedsubpeak[cell_id] = Adown;
+				chcounter[cell_id]++;
+				apedsubpeak[cell_id+768] = Aup;
+				chcounter[cell_id+768]++;
+				h2_ledboth_Aall_vs_event->Fill(eventnumber,Aup);
+				h2_ledboth_Aall_vs_event->Fill(eventnumber,Adown);
+				h2_ledup_Aall_vs_event->Fill(eventnumber,Aup);
+				h2_ledup_Aall_vs_event->Fill(eventnumber,Adown);
+				h2_ledup_sector_vs_event->Fill(eventnumber,sector);
+				h2_ledboth_sector_vs_event->Fill(eventnumber,sector);
+				
+				// compute sums
+				ledup_sector += sector;
+				ledup_mean += Aup + Adown;
+				ledup_events++;
+			} // if condition on z
+
 		}//loop over bcalhits
 
+	 //  compute averages
+	 ledup_sector_int = ledup_events > 0? ledup_sector/ledup_events + 0.5 : 0;
+	 ledup_mean = ledup_events > 0? ledup_mean/(2*ledup_events): 0;
+	 leddown_sector_int = leddown_events > 0? leddown_sector/leddown_events + 0.5: 0;
+	 leddown_mean = leddown_events > 0? leddown_mean/(2*leddown_events) : 0;
+	 if (LED_US) h1_ledup_sector_config->Fill(ledup_sector_int);
+	 if (LED_DS) h1_leddown_sector_config->Fill(leddown_sector_int);
+
+	 // cout << " ledup_evens=" << ledup_events << " ledup_sector=" << ledup_sector << " ledup_mean=" << ledup_mean << endl;
+	 // cout << " leddown_evens=" << leddown_events << " ledown_sector=" << leddown_sector << " leddown_mean=" << leddown_mean << endl << endl;
+
+			
+	 // float sector_delta=0.2;
+	for (int chid = 0; chid < 1536; chid++)  {
+	  // if (chcounter[chid] > 1) continue;
+	      if (chcounter[chid] != 1) continue;
+	      bcal_peak_vevent->Fill(eventnumber,apedsubpeak[chid]);
+				if (LED_US) {
+				    up_peak_vevent->Fill(eventnumber,apedsubpeak[chid]);
+				    if (ledup_sector_int == 1 && chid%4+1 == 1) {column1_up_peak_vevent->Fill(eventnumber,apedsubpeak[chid]);}
+				    else if (ledup_sector_int == 2 && chid%4+1 == 2) {column2_up_peak_vevent->Fill(eventnumber,apedsubpeak[chid]);}
+				    else if (ledup_sector_int == 3 && chid%4+1 == 3) {column3_up_peak_vevent->Fill(eventnumber,apedsubpeak[chid]);}
+				    else if (ledup_sector_int == 4 && chid%4+1 == 4) {column4_up_peak_vevent->Fill(eventnumber,apedsubpeak[chid]);}
+				   }
+				    
+				else if (LED_DS) {
+				    down_peak_vevent->Fill(eventnumber,apedsubpeak[chid]);
+				    if (leddown_sector_int == 1 && chid%4+1 == 1) {column1_down_peak_vevent->Fill(eventnumber,apedsubpeak[chid]);}
+				    else if (leddown_sector_int == 2 && chid%4+1 == 2) {column2_down_peak_vevent->Fill(eventnumber,apedsubpeak[chid]);}
+				    else if (leddown_sector_int == 3 && chid%4+1 == 3) {column3_down_peak_vevent->Fill(eventnumber,apedsubpeak[chid]);}
+				    else if (leddown_sector_int == 4 && chid%4+1 == 4) {column4_down_peak_vevent->Fill(eventnumber,apedsubpeak[chid]);}
+				    }
+				    
+				if (ledup_sector_int == 1 && chid%4+1 == 1) {column1_peak_vevent->Fill(eventnumber,apedsubpeak[chid]);}
+				else if (ledup_sector_int == 2 && chid%4+1 == 2) {column2_peak_vevent->Fill(eventnumber,apedsubpeak[chid]);}
+				else if (ledup_sector_int == 3 && chid%4+1 == 3) {column3_peak_vevent->Fill(eventnumber,apedsubpeak[chid]);}
+				else if (ledup_sector_int == 4 && chid%4+1 == 4) {column4_peak_vevent->Fill(eventnumber,apedsubpeak[chid]);}
+	    }//loop over bcalhits
+
 		   //Deduce LED pulsing configuration based on average pulse peak in BCAL, each side & each column then fill correponding profile.
-		 double column1up = column1_up_peak_vevent->GetBinContent(column1_up_peak_vevent->FindBin(eventnumber));
- 		 double column2up = column2_up_peak_vevent->GetBinContent(column2_up_peak_vevent->FindBin(eventnumber));
-		 double column3up = column3_up_peak_vevent->GetBinContent(column3_up_peak_vevent->FindBin(eventnumber));
-		 double column4up = column4_up_peak_vevent->GetBinContent(column4_up_peak_vevent->FindBin(eventnumber));
+		 double column1up = 0;
+ 		 double column2up = 0;
+		 double column3up = 0;
+		 double column4up = 0;
 
-		 double column1down = column1_down_peak_vevent->GetBinContent(column1_down_peak_vevent->FindBin(eventnumber));
-		 double column2down = column2_down_peak_vevent->GetBinContent(column2_down_peak_vevent->FindBin(eventnumber));
- 		 double column3down = column3_down_peak_vevent->GetBinContent(column3_down_peak_vevent->FindBin(eventnumber));
-		 double column4down = column4_down_peak_vevent->GetBinContent(column4_down_peak_vevent->FindBin(eventnumber));
-		 
-			if      (adccount1 < column1up && column1up < adccount2 && column1up > column1down && column1up > column2up && column1down > column2down && column1up > column3up && column1down > column3down && column1up > column4up && column1down > column4down)
-			    {
-			      //column = 1;
-			    for(int k=0 ;k < 1536;k++) 
-			    {
-			      if (chcounter[k] > 1) continue;
-			      if (k%4 == 0 && apedsubpeak[k] > 0) {low_down_1->Fill(k, apedsubpeak[k]);
-					    if (k < 768) {column1_down_peak_vevent1->Fill(eventnumber,apedsubpeak[k]);
-							  }
-					    else if  (k > 767) {column1_up_peak_vevent1->Fill(eventnumber,apedsubpeak[k]);
-								}
-					    }
-			    }
-			    //low_down_1_counter++;
-			    }
-			else if (adccount1 < column2up && column2up < adccount2 && column2up > column2down && column2up > column1up && column2down > column1down && column2up > column3up && column2down > column3down && column2up > column4up && column2down > column4down)
-			    {//column = 2;
-			    for(int k=0 ;k < 1536;k++) 
-			    {if (k%4 == 1 && apedsubpeak[k] > 0) {low_down_2->Fill(k, apedsubpeak[k]);
-					    if (k < 768) {column2_down_peak_vevent1->Fill(eventnumber,apedsubpeak[k]);
-							  }
-					    else if  (k > 767) {column2_up_peak_vevent1->Fill(eventnumber,apedsubpeak[k]);
-								}
-					    }
-			    }
-			    //low_down_2_counter++;
-			    }
-			else if (adccount1 < column3up && column3up < adccount2 && column3up > column3down && column3up > column1up && column3down > column1down && column3up > column2up && column3down > column2down && column3up > column4up && column3down > column4down)
-			    {//column = 3;
-			    for(int k=0 ;k < 1536;k++) 
-			    {if (k%4 == 2 && apedsubpeak[k] > 0) {low_down_3->Fill(k, apedsubpeak[k]);
-					    if (k < 768) {column3_down_peak_vevent1->Fill(eventnumber,apedsubpeak[k]);
-							  }
-					    else if  (k > 767) {column3_up_peak_vevent1->Fill(eventnumber,apedsubpeak[k]);
-								}
-					    }
-			    }
-			    //low_down_3_counter++;
-			    }
-			else if (adccount1 < column4up && column4up < adccount2 && column4up > column4down && column4up > column1up && column4down > column1down && column4up > column2up && column4down > column2down && column4up > column3up && column4down > column3down)
-			    {//column = 4;
-			    for(int k=0 ;k < 1536;k++) 
-			    {if (k%4 == 3 && apedsubpeak[k] > 0) {low_down_4->Fill(k, apedsubpeak[k]);
-					    if (k < 768) {column4_down_peak_vevent1->Fill(eventnumber,apedsubpeak[k]);
-							  }
-					    else if  (k > 767) {column4_up_peak_vevent1->Fill(eventnumber,apedsubpeak[k]);
-								}
-					    }
-			    }
-			    //low_down_4_counter++;
-			    }
-			   
-		    
-			else if (adccount1 < column1down && column1down < adccount2 && column1down > column1up && column1up > column2up && column1down > column2down && column1up > column3up && column1down > column3down && column1up > column4up && column1down > column4down)
-			    {//column = 1;
-			    for(int k=0 ;k < 1536;k++) 
-			    {if (k%4 == 0 && apedsubpeak[k] > 0) {low_up_1->Fill(k, apedsubpeak[k]);
-					    if (k < 768) {column1_down_peak_vevent2->Fill(eventnumber,apedsubpeak[k]);
-							  }
-					    else if  (k > 767) {column1_up_peak_vevent2->Fill(eventnumber,apedsubpeak[k]);
-								}
-					    }
-			    }
-			    //low_up_1_counter++;			    
-			    }
-			    
-			else if (adccount1 < column2down && column2down < adccount2 && column2down > column2up && column2up > column1up && column2down > column1down && column2up > column3up && column2down > column3down && column2up > column4up && column2down > column4down)
-			    {//column = 2;
-			    for(int k=0 ;k < 1536;k++) 
-			    {if (k%4 == 1 && apedsubpeak[k] > 0) {low_up_2->Fill(k, apedsubpeak[k]);
-					    if (k < 768) {column2_down_peak_vevent2->Fill(eventnumber,apedsubpeak[k]);
-							  }
-					    else if  (k > 767) {column2_up_peak_vevent2->Fill(eventnumber,apedsubpeak[k]);
-								}
-					    }
-			    }
-			    //low_up_2_counter++;
-			    }
-			else if (adccount1 < column3down && column3down < adccount2 && column3down > column3up && column3up > column1up && column3down > column1down && column3up > column2up && column3down > column2down && column3up > column4up && column3down > column4down)
-			    {//column = 3;
-			    for(int k=0 ;k < 1536;k++) 
-			    {if (k%4 == 2 && apedsubpeak[k] > 0) {low_up_3->Fill(k, apedsubpeak[k]);
-					    if (k < 768) {column3_down_peak_vevent2->Fill(eventnumber,apedsubpeak[k]);
-							  }
-					    else if  (k > 767) {column3_up_peak_vevent2->Fill(eventnumber,apedsubpeak[k]);
-								}
-					    }
-			    }
-			    //low_up_3_counter++;
-			    }
-			else if (adccount1 < column4down && column4down < adccount2 && column4down > column4up && column4up > column1up && column4down > column1down && column4up > column2up && column4down > column2down && column4up > column3up && column4down > column3down)
-			    {//column = 4;
-			    for(int k=0 ;k < 1536;k++) 
-			    {if (k%4 == 3 && apedsubpeak[k] > 0) {low_up_4->Fill(k, apedsubpeak[k]);
-					    if (k < 768) {column4_down_peak_vevent2->Fill(eventnumber,apedsubpeak[k]);
-							  }
-					    else if  (k > 767) {column4_up_peak_vevent2->Fill(eventnumber,apedsubpeak[k]);
-								}
-					    }
-			    }
-			    //low_up_4_counter++;
-			    }
-			 
-		      
-		
-			else if (column1up > adccount3 && column1up > column1down && column1up > column2up && column1down > column2down && column1up > column3up && column1down > column3down && column1up > column4up && column1down > column4down)
-			    {//column = 1;
-			    for(int k=0 ;k < 1536;k++) 
-			    {if (k%4 == 0 && apedsubpeak[k] > 0) {high_down_1->Fill(k, apedsubpeak[k]);
-    					    if (k < 768) {column1_down_peak_vevent3->Fill(eventnumber,apedsubpeak[k]);
-							  }
-					    else if  (k > 767) {column1_up_peak_vevent3->Fill(eventnumber,apedsubpeak[k]);
-								}
-					    }
-			    }
-			    //high_down_1_counter++;
-			    }
-			else if (column2up > adccount3 && column2up > column2down && column2up > column1up && column2down > column1down && column2up > column3up && column2down > column3down && column2up > column4up && column2down > column4down)
-			    {//column = 2;
-			    for(int k=0 ;k < 1536;k++) 
-			    {if (k%4 == 1 && apedsubpeak[k] > 0) {high_down_2->Fill(k, apedsubpeak[k]);
-    					    if (k < 768) {column2_down_peak_vevent3->Fill(eventnumber,apedsubpeak[k]);
-							  }
-					    else if  (k > 767) {column2_up_peak_vevent3->Fill(eventnumber,apedsubpeak[k]);
-								}
-					    }
-			    }
-			    //high_down_2_counter++;
-			    }
-			else if (column3up > adccount3 && column3up > column3down && column3up > column1up && column3down > column1down && column3up > column2up && column3down > column2down && column3up > column4up && column3down > column4down)
-			    {//column = 3;
-			    for(int k=0 ;k < 1536;k++) 
-			    {if (k%4 == 2 && apedsubpeak[k] > 0) {high_down_3->Fill(k, apedsubpeak[k]);
-    					    if (k < 768) {column3_down_peak_vevent3->Fill(eventnumber,apedsubpeak[k]);
-							  }
-					    else if  (k > 767) {column3_up_peak_vevent3->Fill(eventnumber,apedsubpeak[k]);
-								}
-					    }
-			    }
-			    //high_down_3_counter++;
-			    }
-			else if (column4up > adccount3 && column4up > column4down && column4up > column1up && column4down > column1down && column4up > column2up && column4down > column2down && column4up > column3up && column4down > column3down)
-			    {//column = 4;
-			    for(int k=0 ;k < 1536;k++) 
-			    {if (k%4 == 3 && apedsubpeak[k] > 0) {high_down_4->Fill(k, apedsubpeak[k]);
-    					    if (k < 768) {column4_down_peak_vevent3->Fill(eventnumber,apedsubpeak[k]);
-							  }
-					    else if  (k > 767) {column4_up_peak_vevent3->Fill(eventnumber,apedsubpeak[k]);
-								}
-					    }
-			    }
-			    //high_down_4_counter++;
-			    }
-			  
+		 double column1down = 0;
+		 double column2down = 0;
+ 		 double column3down = 0;
+		 double column4down = 0;
 
-			else if (column1down > adccount3 && column1down > column1up && column1up > column2up && column1down > column2down && column1up > column3up && column1down > column3down && column1up > column4up && column1down > column4down)
-			    {//column = 1;
-			    for(int k=0 ;k < 1536;k++) 
-			    {if (k%4 == 0 && apedsubpeak[k] > 0) {high_up_1->Fill(k, apedsubpeak[k]);
-    					    if (k < 768) {column1_down_peak_vevent4->Fill(eventnumber,apedsubpeak[k]);
-							  }
-					    else if  (k > 767) {column1_up_peak_vevent4->Fill(eventnumber,apedsubpeak[k]);
-								}
-					   }
-			    }
-			    //high_up_1_counter++;
-			    }
-			else if (column2down > adccount3 && column2down > column2up && column2up > column1up && column2down > column1down && column2up > column3up && column2down > column3down && column2up > column4up && column2down > column4down)
-			    {//column = 2;
-			    for(int k=0 ;k < 1536;k++) 
-			    {if (k%4 == 1 && apedsubpeak[k] > 0) {high_up_2->Fill(k, apedsubpeak[k]);
-    					    if (k < 768) {column2_down_peak_vevent4->Fill(eventnumber,apedsubpeak[k]);
-							  }
-					    else if  (k > 767) {column2_up_peak_vevent4->Fill(eventnumber,apedsubpeak[k]);
-								}
-					   }
-			    }
-			    //high_up_2_counter++;
-			    }
-			else if (column3down > adccount3 && column3down > column3up && column3up > column1up && column3down > column1down && column3up > column2up && column3down > column2down && column3up > column4up && column3down > column4down)
-			    {//column = 3;
-			    for(int k=0 ;k < 1536;k++) 
-			    {if (k%4 == 2 && apedsubpeak[k] > 0) {high_up_3->Fill(k, apedsubpeak[k]);
-    					    if (k < 768) {column3_down_peak_vevent4->Fill(eventnumber,apedsubpeak[k]);
-							  }
-					    else if  (k > 767) {column3_up_peak_vevent4->Fill(eventnumber,apedsubpeak[k]);
-								}
-					   }
-			    }
-			    //high_up_3_counter++;
-			    }
-			else if (column4down > adccount3 && column4down > column4up && column4up > column1up && column4down > column1down && column4up > column2up && column4down > column2down && column4up > column3up && column4down > column3down)
-			    {//column = 4;
-			    for(int k=0 ;k < 1536;k++) 
-			    {if (k%4 == 3 && apedsubpeak[k] > 0) {high_up_4->Fill(k, apedsubpeak[k]);
-    					    if (k < 768) {column4_down_peak_vevent4->Fill(eventnumber,apedsubpeak[k]);
-							  }
-					    else if  (k > 767) {column4_up_peak_vevent4->Fill(eventnumber,apedsubpeak[k]);
-								}
-					   }
-			    }
-			    //high_up_4_counter++;
-			    }
-			//else {unidentified++;}    
-		     // Unlock ROOT
-		japp->RootUnLock();
-	}//if LEDUP || LEDDOWN
+		 column1up = column1_up_peak_vevent->GetBinContent(column1_up_peak_vevent->FindBin(eventnumber));
+ 		 column2up = column2_up_peak_vevent->GetBinContent(column2_up_peak_vevent->FindBin(eventnumber));
+		 column3up = column3_up_peak_vevent->GetBinContent(column3_up_peak_vevent->FindBin(eventnumber));
+		 column4up = column4_up_peak_vevent->GetBinContent(column4_up_peak_vevent->FindBin(eventnumber));
+
+		 column1down = column1_down_peak_vevent->GetBinContent(column1_down_peak_vevent->FindBin(eventnumber));
+		 column2down = column2_down_peak_vevent->GetBinContent(column2_down_peak_vevent->FindBin(eventnumber));
+ 		 column3down = column3_down_peak_vevent->GetBinContent(column3_down_peak_vevent->FindBin(eventnumber));
+		 column4down = column4_down_peak_vevent->GetBinContent(column4_down_peak_vevent->FindBin(eventnumber));
+
+		 // cout << " adccount1=" << adccount1 << " column1up=" << column1up << " column2up=" << column2up << " column3up=" << column3up << " column4up=" << column4up << endl;
+		 // cout << " adccount1=" << adccount1 << " column1down=" << column1down << " column2down=" << column2down << " column3down=" << column3down << " column4down=" << column4down << endl << endl;
+
+		 // Now categorize according to configuration
+
+	for (int chid = 0; chid < 1536; chid++)  {
+	  // if (chcounter[chid] > 1) continue;
+	      if (chcounter[chid] != 1) continue;
+				if (LED_US) {
+				    if (ledup_sector_int == 1 && chid%4+1 == 1) {
+				      if (column1up < adccount1) {
+					low_up_1->Fill(chid,apedsubpeak[chid]);
+					if (chid < 768) {
+					  column1_down_peak_vevent2->Fill(eventnumber,apedsubpeak[chid]);
+					  }
+					 else if  (chid > 767) {
+					   column1_up_peak_vevent2->Fill(eventnumber,apedsubpeak[chid]);
+					 }
+				      }
+				      else {
+					high_up_1->Fill(chid,apedsubpeak[chid]);
+					if (chid < 768) {
+					  column1_down_peak_vevent4->Fill(eventnumber,apedsubpeak[chid]);
+					  }
+					 else if  (chid > 767) {
+					   column1_up_peak_vevent4->Fill(eventnumber,apedsubpeak[chid]);
+					 }
+				      }
+				    }
+				    else if (ledup_sector_int == 2 && chid%4+1 == 2) {
+				      if (column2up < adccount1) {
+					low_up_2->Fill(chid,apedsubpeak[chid]);
+					if (chid < 768) {
+					  column2_down_peak_vevent2->Fill(eventnumber,apedsubpeak[chid]);
+					  }
+					 else if  (chid > 767) {
+					   column2_up_peak_vevent2->Fill(eventnumber,apedsubpeak[chid]);
+					 }
+				      }
+				      else {
+					high_up_2->Fill(chid,apedsubpeak[chid]);
+					if (chid < 768) {
+					  column2_down_peak_vevent4->Fill(eventnumber,apedsubpeak[chid]);
+					  }
+					 else if  (chid > 767) {
+					   column2_up_peak_vevent4->Fill(eventnumber,apedsubpeak[chid]);
+					 }
+				      }
+				    }
+				    else if (ledup_sector_int == 3 && chid%4+1 == 3)  {
+				      if (column3up < adccount1) {
+					low_up_3->Fill(chid,apedsubpeak[chid]);
+					if (chid < 768) {
+					  column3_down_peak_vevent2->Fill(eventnumber,apedsubpeak[chid]);
+					  }
+					 else if  (chid > 767) {
+					   column3_up_peak_vevent2->Fill(eventnumber,apedsubpeak[chid]);
+					 }
+				      }
+				      else {
+					high_up_3->Fill(chid,apedsubpeak[chid]);
+					if (chid < 768) {
+					  column3_down_peak_vevent4->Fill(eventnumber,apedsubpeak[chid]);
+					  }
+					 else if  (chid > 767) {
+					   column3_up_peak_vevent4->Fill(eventnumber,apedsubpeak[chid]);
+					 }
+				      }
+				    }
+				    else if (ledup_sector_int == 4 && chid%4+1 == 4) {
+				      if (column4up < adccount1) {
+					low_up_4->Fill(chid,apedsubpeak[chid]);
+					if (chid < 768) {
+					  column4_down_peak_vevent2->Fill(eventnumber,apedsubpeak[chid]);
+					  }
+					 else if  (chid > 767) {
+					   column4_up_peak_vevent2->Fill(eventnumber,apedsubpeak[chid]);
+					 }
+				      }
+				      else {
+					high_up_4->Fill(chid,apedsubpeak[chid]);
+					if (chid < 768) {
+					  column4_down_peak_vevent4->Fill(eventnumber,apedsubpeak[chid]);
+					  }
+					 else if  (chid > 767) {
+					   column4_up_peak_vevent4->Fill(eventnumber,apedsubpeak[chid]);
+					 }
+				      }
+				    }
+				}	    
+				else if (LED_DS) {
+				    if (leddown_sector_int == 1 && chid%4+1 == 1) {
+				      if (column1down < adccount1) {
+					low_down_1->Fill(chid,apedsubpeak[chid]);
+					// if (eventnumber >31500000 && eventnumber <46000000) cout << " chid=" << chid << " column1down=" << column1down << " apedsub=" << apedsubpeak[chid] << endl;
+					if (chid < 768) {
+					  column1_down_peak_vevent1->Fill(eventnumber,apedsubpeak[chid]);
+					  }
+					 else if  (chid > 767) {
+					   column1_up_peak_vevent1->Fill(eventnumber,apedsubpeak[chid]);
+					 }
+				      }
+				      else {
+					high_down_1->Fill(chid,apedsubpeak[chid]);
+					if (chid < 768) {
+					  column1_down_peak_vevent3->Fill(eventnumber,apedsubpeak[chid]);
+					  }
+					 else if  (chid > 767) {
+					   column1_up_peak_vevent3->Fill(eventnumber,apedsubpeak[chid]);
+					 }
+				      }
+				    }
+				    else if (leddown_sector_int == 2 && chid%4+1 == 2) {
+				      if (column2down < adccount1) {
+					low_down_2->Fill(chid,apedsubpeak[chid]);
+					if (chid < 768) {
+					  column2_down_peak_vevent1->Fill(eventnumber,apedsubpeak[chid]);
+					  }
+					 else if  (chid > 767) {
+					   column2_up_peak_vevent1->Fill(eventnumber,apedsubpeak[chid]);
+					 }
+				      }
+				      else {
+					high_down_2->Fill(chid,apedsubpeak[chid]);
+					if (chid < 768) {
+					  column2_down_peak_vevent3->Fill(eventnumber,apedsubpeak[chid]);
+					  }
+					 else if  (chid > 767) {
+					   column2_up_peak_vevent3->Fill(eventnumber,apedsubpeak[chid]);
+					 }
+				      }
+				    }
+				    else if (leddown_sector_int == 3 && chid%4+1 == 3)  {
+				      if (column3down < adccount1) {
+					low_down_3->Fill(chid,apedsubpeak[chid]);
+					if (chid < 768) {
+					  column3_down_peak_vevent1->Fill(eventnumber,apedsubpeak[chid]);
+					  }
+					 else if  (chid > 767) {
+					   column3_up_peak_vevent1->Fill(eventnumber,apedsubpeak[chid]);
+					 }
+				      }
+				      else {
+					high_down_3->Fill(chid,apedsubpeak[chid]);
+					if (chid < 768) {
+					  column3_down_peak_vevent3->Fill(eventnumber,apedsubpeak[chid]);
+					  }
+					 else if  (chid > 767) {
+					   column3_up_peak_vevent3->Fill(eventnumber,apedsubpeak[chid]);
+					 }
+				      }
+				    }
+				    else if (leddown_sector_int == 4 && chid%4+1 == 4) {
+				      if (column4down < adccount1) {
+					low_down_4->Fill(chid,apedsubpeak[chid]);
+					if (chid < 768) {
+					  column4_down_peak_vevent1->Fill(eventnumber,apedsubpeak[chid]);
+					  }
+					 else if  (chid > 767) {
+					   column4_up_peak_vevent1->Fill(eventnumber,apedsubpeak[chid]);
+					 }
+				      }
+				      else {
+					high_down_4->Fill(chid,apedsubpeak[chid]);
+					if (chid < 768) {
+					  column4_down_peak_vevent3->Fill(eventnumber,apedsubpeak[chid]);
+					  }
+					 else if  (chid > 767) {
+					   column4_up_peak_vevent3->Fill(eventnumber,apedsubpeak[chid]);
+					 }
+				      }
+				    }
+				}
+			
+	}  //loop over bcalhits
+
+	}//if LEDUP || LEDDOWN    
+	// Unlock ROOT
+	japp->RootUnLock();
 	
 
     return NOERROR;
