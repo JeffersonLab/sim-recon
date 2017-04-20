@@ -32,62 +32,62 @@ using namespace jana;
 // root hist pointers
 
 //all channels
-static TProfile *bcal_peak_vevent = NULL;
+static TProfile *bcal_time_vevent = NULL;
 
 //2 sides
-static TProfile *up_peak_vevent = NULL;
-static TProfile *down_peak_vevent = NULL;
+static TProfile *up_time_vevent = NULL;
+static TProfile *down_time_vevent = NULL;
 //4 columns
-static TProfile *column1_peak_vevent = NULL;
-static TProfile *column2_peak_vevent = NULL;
-static TProfile *column3_peak_vevent = NULL;
-static TProfile *column4_peak_vevent = NULL;
+static TProfile *column1_time_vevent = NULL;
+static TProfile *column2_time_vevent = NULL;
+static TProfile *column3_time_vevent = NULL;
+static TProfile *column4_time_vevent = NULL;
 
-static TProfile *column1_up_peak_vevent = NULL;
-static TProfile *column2_up_peak_vevent = NULL;
-static TProfile *column3_up_peak_vevent = NULL;
-static TProfile *column4_up_peak_vevent = NULL;
-static TProfile *column1_down_peak_vevent = NULL;
-static TProfile *column2_down_peak_vevent = NULL;
-static TProfile *column3_down_peak_vevent = NULL;
-static TProfile *column4_down_peak_vevent = NULL;
+static TProfile *column1_up_time_vevent = NULL;
+static TProfile *column2_up_time_vevent = NULL;
+static TProfile *column3_up_time_vevent = NULL;
+static TProfile *column4_up_time_vevent = NULL;
+static TProfile *column1_down_time_vevent = NULL;
+static TProfile *column2_down_time_vevent = NULL;
+static TProfile *column3_down_time_vevent = NULL;
+static TProfile *column4_down_time_vevent = NULL;
 
 
-static TProfile *column1_up_peak_vevent1 = NULL;
-static TProfile *column1_down_peak_vevent1 = NULL;
-static TProfile *column1_up_peak_vevent2 = NULL;
-static TProfile *column1_down_peak_vevent2 = NULL;
-static TProfile *column1_up_peak_vevent3 = NULL;
-static TProfile *column1_down_peak_vevent3 = NULL;
-static TProfile *column1_up_peak_vevent4 = NULL;
-static TProfile *column1_down_peak_vevent4 = NULL;
+static TProfile *column1_up_time_vevent1 = NULL;
+static TProfile *column1_down_time_vevent1 = NULL;
+static TProfile *column1_up_time_vevent2 = NULL;
+static TProfile *column1_down_time_vevent2 = NULL;
+static TProfile *column1_up_time_vevent3 = NULL;
+static TProfile *column1_down_time_vevent3 = NULL;
+static TProfile *column1_up_time_vevent4 = NULL;
+static TProfile *column1_down_time_vevent4 = NULL;
 
-static TProfile *column2_up_peak_vevent1 = NULL;
-static TProfile *column2_down_peak_vevent1 = NULL;
-static TProfile *column2_up_peak_vevent2 = NULL;
-static TProfile *column2_down_peak_vevent2 = NULL;
-static TProfile *column2_up_peak_vevent3 = NULL;
-static TProfile *column2_down_peak_vevent3 = NULL;
-static TProfile *column2_up_peak_vevent4 = NULL;
-static TProfile *column2_down_peak_vevent4 = NULL;
+static TProfile *column2_up_time_vevent1 = NULL;
+static TProfile *column2_down_time_vevent1 = NULL;
+static TProfile *column2_up_time_vevent2 = NULL;
+static TProfile *column2_down_time_vevent2 = NULL;
+static TProfile *column2_up_time_vevent3 = NULL;
+static TProfile *column2_down_time_vevent3 = NULL;
+static TProfile *column2_up_time_vevent4 = NULL;
+static TProfile *column2_down_time_vevent4 = NULL;
 
-static TProfile *column3_up_peak_vevent1 = NULL;
-static TProfile *column3_down_peak_vevent1 = NULL;
-static TProfile *column3_up_peak_vevent2 = NULL;
-static TProfile *column3_down_peak_vevent2 = NULL;
-static TProfile *column3_up_peak_vevent3 = NULL;
-static TProfile *column3_down_peak_vevent3 = NULL;
-static TProfile *column3_up_peak_vevent4 = NULL;
-static TProfile *column3_down_peak_vevent4 = NULL;
+static TProfile *column3_up_time_vevent1 = NULL;
+static TProfile *column3_down_time_vevent1 = NULL;
+static TProfile *column3_up_time_vevent2 = NULL;
+static TProfile *column3_down_time_vevent2 = NULL;
+static TProfile *column3_up_time_vevent3 = NULL;
+static TProfile *column3_down_time_vevent3 = NULL;
+static TProfile *column3_up_time_vevent4 = NULL;
+static TProfile *column3_down_time_vevent4 = NULL;
 
-static TProfile *column4_up_peak_vevent1 = NULL;
-static TProfile *column4_down_peak_vevent1 = NULL;
-static TProfile *column4_up_peak_vevent2 = NULL;
-static TProfile *column4_down_peak_vevent2 = NULL;
-static TProfile *column4_up_peak_vevent3 = NULL;
-static TProfile *column4_down_peak_vevent3 = NULL;
-static TProfile *column4_up_peak_vevent4 = NULL;
-static TProfile *column4_down_peak_vevent4 = NULL;
+static TProfile *column4_up_time_vevent1 = NULL;
+static TProfile *column4_down_time_vevent1 = NULL;
+static TProfile *column4_up_time_vevent2 = NULL;
+static TProfile *column4_down_time_vevent2 = NULL;
+static TProfile *column4_up_time_vevent3 = NULL;
+static TProfile *column4_down_time_vevent3 = NULL;
+static TProfile *column4_up_time_vevent4 = NULL;
+static TProfile *column4_down_time_vevent4 = NULL;
 
   
     
@@ -188,7 +188,7 @@ jerror_t JEventProcessor_BCAL_LED_time::init(void) {
 	
 	// First thread to get here makes all histograms. If one pointer is
 	// already not NULL, assume all histograms are defined and return now
-	if(bcal_peak_vevent != NULL){
+	if(bcal_time_vevent != NULL){
 		japp->RootUnLock();
 		return NOERROR;
 	}
@@ -218,124 +218,124 @@ jerror_t JEventProcessor_BCAL_LED_time::init(void) {
 
 
 	
-	bcal_peak_vevent = new TProfile("bcal_peak_vevent","Avg BCAL peak vs event;event num;peak (all chan avg)",nbins,0.0,maxnumberofevents);
+	bcal_time_vevent = new TProfile("bcal_time_vevent","Avg BCAL time vs event;event num;time (all chan avg)",nbins,0.0,maxnumberofevents);
 	
-	up_peak_vevent = new TProfile("up_peak_vevent","Avg BCAL peak vs event;event num;peak (all upstream chan avg)",nbins,0.0,maxnumberofevents);
-	down_peak_vevent = new TProfile("down_peak_vevent","Avg BCAL peak vs event;event num;peak (all downstream chan avg)",nbins,0.0,maxnumberofevents);
+	up_time_vevent = new TProfile("up_time_vevent","Avg BCAL time vs event;event num;time (all upstream chan avg)",nbins,0.0,maxnumberofevents);
+	down_time_vevent = new TProfile("down_time_vevent","Avg BCAL time vs event;event num;time (all downstream chan avg)",nbins,0.0,maxnumberofevents);
 	
-	column1_peak_vevent = new TProfile("column1_peak_vevent","Avg BCAL peak vs event;event num;peak (all column 1 chan avg)",nbins,0.0,maxnumberofevents);
-	column2_peak_vevent = new TProfile("column2_peak_vevent","Avg BCAL peak vs event;event num;peak (all column 2 chan avg)",nbins,0.0,maxnumberofevents);
-	column3_peak_vevent = new TProfile("column3_peak_vevent","Avg BCAL peak vs event;event num;peak (all column 3 chan avg)",nbins,0.0,maxnumberofevents);
-	column4_peak_vevent = new TProfile("column4_peak_vevent","Avg BCAL peak vs event;event num;peak (all column 4 chan avg)",nbins,0.0,maxnumberofevents);
+	column1_time_vevent = new TProfile("column1_time_vevent","Avg BCAL time vs event;event num;time (all column 1 chan avg)",nbins,0.0,maxnumberofevents);
+	column2_time_vevent = new TProfile("column2_time_vevent","Avg BCAL time vs event;event num;time (all column 2 chan avg)",nbins,0.0,maxnumberofevents);
+	column3_time_vevent = new TProfile("column3_time_vevent","Avg BCAL time vs event;event num;time (all column 3 chan avg)",nbins,0.0,maxnumberofevents);
+	column4_time_vevent = new TProfile("column4_time_vevent","Avg BCAL time vs event;event num;time (all column 4 chan avg)",nbins,0.0,maxnumberofevents);
 	
-	column1_up_peak_vevent = new TProfile("column1_up_peak_vevent","Avg BCAL peak vs event;event num;peak (all column 1 up chan avg)",nbins,0.0,maxnumberofevents);
-	column2_up_peak_vevent = new TProfile("column2_up_peak_vevent","Avg BCAL peak vs event;event num;peak (all column 2 up chan avg)",nbins,0.0,maxnumberofevents);
-	column3_up_peak_vevent = new TProfile("column3_up_peak_vevent","Avg BCAL peak vs event;event num;peak (all column 3 up chan avg)",nbins,0.0,maxnumberofevents);
-	column4_up_peak_vevent = new TProfile("column4_up_peak_vevent","Avg BCAL peak vs event;event num;peak (all column 4 up chan avg)",nbins,0.0,maxnumberofevents);
-	column1_down_peak_vevent = new TProfile("column1_down_peak_vevent","Avg BCAL peak vs event;event num;peak (all column 1 down chan avg)",nbins,0.0,maxnumberofevents);
-	column2_down_peak_vevent = new TProfile("column2_down_peak_vevent","Avg BCAL peak vs event;event num;peak (all column 2 down chan avg)",nbins,0.0,maxnumberofevents);
-	column3_down_peak_vevent = new TProfile("column3_down_peak_vevent","Avg BCAL peak vs event;event num;peak (all column 3 down chan avg)",nbins,0.0,maxnumberofevents);
-	column4_down_peak_vevent = new TProfile("column4_down_peak_vevent","Avg BCAL peak vs event;event num;peak (all column 4 down chan avg)",nbins,0.0,maxnumberofevents);
+	column1_up_time_vevent = new TProfile("column1_up_time_vevent","Avg BCAL time vs event;event num;time (all column 1 up chan avg)",nbins,0.0,maxnumberofevents);
+	column2_up_time_vevent = new TProfile("column2_up_time_vevent","Avg BCAL time vs event;event num;time (all column 2 up chan avg)",nbins,0.0,maxnumberofevents);
+	column3_up_time_vevent = new TProfile("column3_up_time_vevent","Avg BCAL time vs event;event num;time (all column 3 up chan avg)",nbins,0.0,maxnumberofevents);
+	column4_up_time_vevent = new TProfile("column4_up_time_vevent","Avg BCAL time vs event;event num;time (all column 4 up chan avg)",nbins,0.0,maxnumberofevents);
+	column1_down_time_vevent = new TProfile("column1_down_time_vevent","Avg BCAL time vs event;event num;time (all column 1 down chan avg)",nbins,0.0,maxnumberofevents);
+	column2_down_time_vevent = new TProfile("column2_down_time_vevent","Avg BCAL time vs event;event num;time (all column 2 down chan avg)",nbins,0.0,maxnumberofevents);
+	column3_down_time_vevent = new TProfile("column3_down_time_vevent","Avg BCAL time vs event;event num;time (all column 3 down chan avg)",nbins,0.0,maxnumberofevents);
+	column4_down_time_vevent = new TProfile("column4_down_time_vevent","Avg BCAL time vs event;event num;time (all column 4 down chan avg)",nbins,0.0,maxnumberofevents);
 	
-	column1_up_peak_vevent1 = new TProfile("column1_up_peak_vevent1","Avg BCAL peak vs event;event num;peak (all column 1 up chan avg)",nbins,0.0,maxnumberofevents);
-	column1_down_peak_vevent1 = new TProfile("column1_down_peak_vevent1","Avg BCAL peak vs event;event num;peak (all column 1 down chan avg)",nbins,0.0,maxnumberofevents);
-	column1_up_peak_vevent2 = new TProfile("column1_up_peak_vevent2","Avg BCAL peak vs event;event num;peak (all column 1 up chan avg)",nbins,0.0,maxnumberofevents);
-	column1_down_peak_vevent2 = new TProfile("column1_down_peak_vevent2","Avg BCAL peak vs event;event num;peak (all column 1 up chan avg)",nbins,0.0,maxnumberofevents);
-	column1_up_peak_vevent3 = new TProfile("column1_up_peak_vevent3","Avg BCAL peak vs event;event num;peak (all column 1 up chan avg)",nbins,0.0,maxnumberofevents);
-	column1_down_peak_vevent3 = new TProfile("column1_down_peak_vevent3","Avg BCAL peak vs event;event num;peak (all column 1 up chan avg)",nbins,0.0,maxnumberofevents);
-	column1_up_peak_vevent4 = new TProfile("column1_up_peak_vevent4","Avg BCAL peak vs event;event num;peak (all column 1 up chan avg)",nbins,0.0,maxnumberofevents);
-	column1_down_peak_vevent4 = new TProfile("column1_down_peak_vevent4","Avg BCAL peak vs event;event num;peak (all column 1 up chan avg)",nbins,0.0,maxnumberofevents);
+	column1_up_time_vevent1 = new TProfile("column1_up_time_vevent1","Avg BCAL time vs event;event num;time (all column 1 up chan avg)",nbins,0.0,maxnumberofevents);
+	column1_down_time_vevent1 = new TProfile("column1_down_time_vevent1","Avg BCAL time vs event;event num;time (all column 1 down chan avg)",nbins,0.0,maxnumberofevents);
+	column1_up_time_vevent2 = new TProfile("column1_up_time_vevent2","Avg BCAL time vs event;event num;time (all column 1 up chan avg)",nbins,0.0,maxnumberofevents);
+	column1_down_time_vevent2 = new TProfile("column1_down_time_vevent2","Avg BCAL time vs event;event num;time (all column 1 up chan avg)",nbins,0.0,maxnumberofevents);
+	column1_up_time_vevent3 = new TProfile("column1_up_time_vevent3","Avg BCAL time vs event;event num;time (all column 1 up chan avg)",nbins,0.0,maxnumberofevents);
+	column1_down_time_vevent3 = new TProfile("column1_down_time_vevent3","Avg BCAL time vs event;event num;time (all column 1 up chan avg)",nbins,0.0,maxnumberofevents);
+	column1_up_time_vevent4 = new TProfile("column1_up_time_vevent4","Avg BCAL time vs event;event num;time (all column 1 up chan avg)",nbins,0.0,maxnumberofevents);
+	column1_down_time_vevent4 = new TProfile("column1_down_time_vevent4","Avg BCAL time vs event;event num;time (all column 1 up chan avg)",nbins,0.0,maxnumberofevents);
 
-	column2_up_peak_vevent1 = new TProfile("column2_up_peak_vevent1","Avg BCAL peak vs event;event num;peak (all column 2 up chan avg)",nbins,0.0,maxnumberofevents);
-	column2_down_peak_vevent1 = new TProfile("column2_down_peak_vevent1","Avg BCAL peak vs event;event num;peak (all column 2 down chan avg)",nbins,0.0,maxnumberofevents);
-	column2_up_peak_vevent2 = new TProfile("column2_up_peak_vevent2","Avg BCAL peak vs event;event num;peak (all column 2 up chan avg)",nbins,0.0,maxnumberofevents);
-	column2_down_peak_vevent2 = new TProfile("column2_down_peak_vevent2","Avg BCAL peak vs event;event num;peak (all column 2 up chan avg)",nbins,0.0,maxnumberofevents);
-	column2_up_peak_vevent3 = new TProfile("column2_up_peak_vevent3","Avg BCAL peak vs event;event num;peak (all column 2 up chan avg)",nbins,0.0,maxnumberofevents);
-	column2_down_peak_vevent3 = new TProfile("column2_down_peak_vevent3","Avg BCAL peak vs event;event num;peak (all column 2 up chan avg)",nbins,0.0,maxnumberofevents);
-	column2_up_peak_vevent4 = new TProfile("column2_up_peak_vevent4","Avg BCAL peak vs event;event num;peak (all column 2 up chan avg)",nbins,0.0,maxnumberofevents);
-	column2_down_peak_vevent4 = new TProfile("column2_down_peak_vevent4","Avg BCAL peak vs event;event num;peak (all column 2 up chan avg)",nbins,0.0,maxnumberofevents);
+	column2_up_time_vevent1 = new TProfile("column2_up_time_vevent1","Avg BCAL time vs event;event num;time (all column 2 up chan avg)",nbins,0.0,maxnumberofevents);
+	column2_down_time_vevent1 = new TProfile("column2_down_time_vevent1","Avg BCAL time vs event;event num;time (all column 2 down chan avg)",nbins,0.0,maxnumberofevents);
+	column2_up_time_vevent2 = new TProfile("column2_up_time_vevent2","Avg BCAL time vs event;event num;time (all column 2 up chan avg)",nbins,0.0,maxnumberofevents);
+	column2_down_time_vevent2 = new TProfile("column2_down_time_vevent2","Avg BCAL time vs event;event num;time (all column 2 up chan avg)",nbins,0.0,maxnumberofevents);
+	column2_up_time_vevent3 = new TProfile("column2_up_time_vevent3","Avg BCAL time vs event;event num;time (all column 2 up chan avg)",nbins,0.0,maxnumberofevents);
+	column2_down_time_vevent3 = new TProfile("column2_down_time_vevent3","Avg BCAL time vs event;event num;time (all column 2 up chan avg)",nbins,0.0,maxnumberofevents);
+	column2_up_time_vevent4 = new TProfile("column2_up_time_vevent4","Avg BCAL time vs event;event num;time (all column 2 up chan avg)",nbins,0.0,maxnumberofevents);
+	column2_down_time_vevent4 = new TProfile("column2_down_time_vevent4","Avg BCAL time vs event;event num;time (all column 2 up chan avg)",nbins,0.0,maxnumberofevents);
 
-	column3_up_peak_vevent1 = new TProfile("column3_up_peak_vevent1","Avg BCAL peak vs event;event num;peak (all column 3 up chan avg)",nbins,0.0,maxnumberofevents);
-	column3_down_peak_vevent1 = new TProfile("column3_down_peak_vevent1","Avg BCAL peak vs event;event num;peak (all column 3 down chan avg)",nbins,0.0,maxnumberofevents);
-	column3_up_peak_vevent2 = new TProfile("column3_up_peak_vevent2","Avg BCAL peak vs event;event num;peak (all column 3 up chan avg)",nbins,0.0,maxnumberofevents);
-	column3_down_peak_vevent2 = new TProfile("column3_down_peak_vevent2","Avg BCAL peak vs event;event num;peak (all column 3 up chan avg)",nbins,0.0,maxnumberofevents);
-	column3_up_peak_vevent3 = new TProfile("column3_up_peak_vevent3","Avg BCAL peak vs event;event num;peak (all column 3 up chan avg)",nbins,0.0,maxnumberofevents);
-	column3_down_peak_vevent3 = new TProfile("column3_down_peak_vevent3","Avg BCAL peak vs event;event num;peak (all column 3 up chan avg)",nbins,0.0,maxnumberofevents);
-	column3_up_peak_vevent4 = new TProfile("column3_up_peak_vevent4","Avg BCAL peak vs event;event num;peak (all column 3 up chan avg)",nbins,0.0,maxnumberofevents);
-	column3_down_peak_vevent4 = new TProfile("column3_down_peak_vevent4","Avg BCAL peak vs event;event num;peak (all column 3 up chan avg)",nbins,0.0,maxnumberofevents);
+	column3_up_time_vevent1 = new TProfile("column3_up_time_vevent1","Avg BCAL time vs event;event num;time (all column 3 up chan avg)",nbins,0.0,maxnumberofevents);
+	column3_down_time_vevent1 = new TProfile("column3_down_time_vevent1","Avg BCAL time vs event;event num;time (all column 3 down chan avg)",nbins,0.0,maxnumberofevents);
+	column3_up_time_vevent2 = new TProfile("column3_up_time_vevent2","Avg BCAL time vs event;event num;time (all column 3 up chan avg)",nbins,0.0,maxnumberofevents);
+	column3_down_time_vevent2 = new TProfile("column3_down_time_vevent2","Avg BCAL time vs event;event num;time (all column 3 up chan avg)",nbins,0.0,maxnumberofevents);
+	column3_up_time_vevent3 = new TProfile("column3_up_time_vevent3","Avg BCAL time vs event;event num;time (all column 3 up chan avg)",nbins,0.0,maxnumberofevents);
+	column3_down_time_vevent3 = new TProfile("column3_down_time_vevent3","Avg BCAL time vs event;event num;time (all column 3 up chan avg)",nbins,0.0,maxnumberofevents);
+	column3_up_time_vevent4 = new TProfile("column3_up_time_vevent4","Avg BCAL time vs event;event num;time (all column 3 up chan avg)",nbins,0.0,maxnumberofevents);
+	column3_down_time_vevent4 = new TProfile("column3_down_time_vevent4","Avg BCAL time vs event;event num;time (all column 3 up chan avg)",nbins,0.0,maxnumberofevents);
 
-	column4_up_peak_vevent1 = new TProfile("column4_up_peak_vevent1","Avg BCAL peak vs event;event num;peak (all column 4 up chan avg)",nbins,0.0,maxnumberofevents);
-	column4_down_peak_vevent1 = new TProfile("column4_down_peak_vevent1","Avg BCAL peak vs event;event num;peak (all column 4 down chan avg)",nbins,0.0,maxnumberofevents);
-	column4_up_peak_vevent2 = new TProfile("column4_up_peak_vevent2","Avg BCAL peak vs event;event num;peak (all column 4 up chan avg)",nbins,0.0,maxnumberofevents);
-	column4_down_peak_vevent2 = new TProfile("column4_down_peak_vevent2","Avg BCAL peak vs event;event num;peak (all column 4 up chan avg)",nbins,0.0,maxnumberofevents);
-	column4_up_peak_vevent3 = new TProfile("column4_up_peak_vevent3","Avg BCAL peak vs event;event num;peak (all column 4 up chan avg)",nbins,0.0,maxnumberofevents);
-	column4_down_peak_vevent3 = new TProfile("column4_down_peak_vevent3","Avg BCAL peak vs event;event num;peak (all column 4 up chan avg)",nbins,0.0,maxnumberofevents);
-	column4_up_peak_vevent4 = new TProfile("column4_up_peak_vevent4","Avg BCAL peak vs event;event num;peak (all column 4 up chan avg)",nbins,0.0,maxnumberofevents);
-	column4_down_peak_vevent4 = new TProfile("column4_down_peak_vevent4","Avg BCAL peak vs event;event num;peak (all column 4 up chan avg)",nbins,0.0,maxnumberofevents);
+	column4_up_time_vevent1 = new TProfile("column4_up_time_vevent1","Avg BCAL time vs event;event num;time (all column 4 up chan avg)",nbins,0.0,maxnumberofevents);
+	column4_down_time_vevent1 = new TProfile("column4_down_time_vevent1","Avg BCAL time vs event;event num;time (all column 4 down chan avg)",nbins,0.0,maxnumberofevents);
+	column4_up_time_vevent2 = new TProfile("column4_up_time_vevent2","Avg BCAL time vs event;event num;time (all column 4 up chan avg)",nbins,0.0,maxnumberofevents);
+	column4_down_time_vevent2 = new TProfile("column4_down_time_vevent2","Avg BCAL time vs event;event num;time (all column 4 up chan avg)",nbins,0.0,maxnumberofevents);
+	column4_up_time_vevent3 = new TProfile("column4_up_time_vevent3","Avg BCAL time vs event;event num;time (all column 4 up chan avg)",nbins,0.0,maxnumberofevents);
+	column4_down_time_vevent3 = new TProfile("column4_down_time_vevent3","Avg BCAL time vs event;event num;time (all column 4 up chan avg)",nbins,0.0,maxnumberofevents);
+	column4_up_time_vevent4 = new TProfile("column4_up_time_vevent4","Avg BCAL time vs event;event num;time (all column 4 up chan avg)",nbins,0.0,maxnumberofevents);
+	column4_down_time_vevent4 = new TProfile("column4_down_time_vevent4","Avg BCAL time vs event;event num;time (all column 4 up chan avg)",nbins,0.0,maxnumberofevents);
 
 	
 	
-	low_up_1 = new TProfile("low_bias_up_column_1_peak_vchannel","Avg BCAL peak vs channel;channel ID;peak",386,-4,1536);
-	low_up_2 = new TProfile("low_bias_up_column_2_peak_vchannel","Avg BCAL peak vs channel;channel ID;peak",386,-3,1537);
-	low_up_3 = new TProfile("low_bias_up_column_3_peak_vchannel","Avg BCAL peak vs channel;channel ID;peak",386,-2,1538);
-	low_up_4 = new TProfile("low_bias_up_column_4_peak_vchannel","Avg BCAL peak vs channel;channel ID;peak",386,-1,1539);
+	low_up_1 = new TProfile("low_bias_up_column_1_time_vchannel","Avg BCAL time vs channel;channel ID;time",386,-4,1536);
+	low_up_2 = new TProfile("low_bias_up_column_2_time_vchannel","Avg BCAL time vs channel;channel ID;time",386,-3,1537);
+	low_up_3 = new TProfile("low_bias_up_column_3_time_vchannel","Avg BCAL time vs channel;channel ID;time",386,-2,1538);
+	low_up_4 = new TProfile("low_bias_up_column_4_time_vchannel","Avg BCAL time vs channel;channel ID;time",386,-1,1539);
 	
-	low_down_1 = new TProfile("low_bias_down_column_1_peak_vchannel","Avg BCAL peak vs channel;channel ID;peak",386,-4,1536);
-	low_down_2 = new TProfile("low_bias_down_column_2_peak_vchannel","Avg BCAL peak vs channel;channel ID;peak",386,-3,1537);
-	low_down_3 = new TProfile("low_bias_down_column_3_peak_vchannel","Avg BCAL peak vs channel;channel ID;peak",386,-2,1538);
-	low_down_4 = new TProfile("low_bias_down_column_4_peak_vchannel","Avg BCAL peak vs channel;channel ID;peak",386,-1,1539);
+	low_down_1 = new TProfile("low_bias_down_column_1_time_vchannel","Avg BCAL time vs channel;channel ID;time",386,-4,1536);
+	low_down_2 = new TProfile("low_bias_down_column_2_time_vchannel","Avg BCAL time vs channel;channel ID;time",386,-3,1537);
+	low_down_3 = new TProfile("low_bias_down_column_3_time_vchannel","Avg BCAL time vs channel;channel ID;time",386,-2,1538);
+	low_down_4 = new TProfile("low_bias_down_column_4_time_vchannel","Avg BCAL time vs channel;channel ID;time",386,-1,1539);
 	
-	high_up_1 = new TProfile("high_bias_up_column_1_peak_vchannel","Avg BCAL peak vs channel;channel ID;peak",386,-4,1536);
-	high_up_2 = new TProfile("high_bias_up_column_2_peak_vchannel","Avg BCAL peak vs channel;channel ID;peak",386,-3,1537);
-	high_up_3 = new TProfile("high_bias_up_column_3_peak_vchannel","Avg BCAL peak vs channel;channel ID;peak",386,-2,1538);
-	high_up_4 = new TProfile("high_bias_up_column_4_peak_vchannel","Avg BCAL peak vs channel;channel ID;peak",386,-1,1539);
+	high_up_1 = new TProfile("high_bias_up_column_1_time_vchannel","Avg BCAL time vs channel;channel ID;time",386,-4,1536);
+	high_up_2 = new TProfile("high_bias_up_column_2_time_vchannel","Avg BCAL time vs channel;channel ID;time",386,-3,1537);
+	high_up_3 = new TProfile("high_bias_up_column_3_time_vchannel","Avg BCAL time vs channel;channel ID;time",386,-2,1538);
+	high_up_4 = new TProfile("high_bias_up_column_4_time_vchannel","Avg BCAL time vs channel;channel ID;time",386,-1,1539);
 	
-	high_down_1 = new TProfile("high_bias_down_column_1_peak_vchannel","Avg BCAL peak vs channel;channel ID;peak",386,-4,1536);
-	high_down_2 = new TProfile("high_bias_down_column_2_peak_vchannel","Avg BCAL peak vs channel;channel ID;peak",386,-3,1537);
-	high_down_3 = new TProfile("high_bias_down_column_3_peak_vchannel","Avg BCAL peak vs channel;channel ID;peak",386,-2,1538);
-	high_down_4 = new TProfile("high_bias_down_column_4_peak_vchannel","Avg BCAL peak vs channel;channel ID;peak",386,-1,1539);	
+	high_down_1 = new TProfile("high_bias_down_column_1_time_vchannel","Avg BCAL time vs channel;channel ID;time",386,-4,1536);
+	high_down_2 = new TProfile("high_bias_down_column_2_time_vchannel","Avg BCAL time vs channel;channel ID;time",386,-3,1537);
+	high_down_3 = new TProfile("high_bias_down_column_3_time_vchannel","Avg BCAL time vs channel;channel ID;time",386,-2,1538);
+	high_down_4 = new TProfile("high_bias_down_column_4_time_vchannel","Avg BCAL time vs channel;channel ID;time",386,-1,1539);	
 
 #if ROOT_VERSION_CODE >= ROOT_VERSION(6,0,0)
 
-	bcal_peak_vevent->SetCanExtend(TH1::kXaxis);
+	bcal_time_vevent->SetCanExtend(TH1::kXaxis);
 	
-	up_peak_vevent->SetCanExtend(TH1::kXaxis);
-	down_peak_vevent->SetCanExtend(TH1::kXaxis);
+	up_time_vevent->SetCanExtend(TH1::kXaxis);
+	down_time_vevent->SetCanExtend(TH1::kXaxis);
 	
-	column1_peak_vevent->SetCanExtend(TH1::kXaxis);
-	column2_peak_vevent->SetCanExtend(TH1::kXaxis);
-	column3_peak_vevent->SetCanExtend(TH1::kXaxis);
-	column4_peak_vevent->SetCanExtend(TH1::kXaxis);
+	column1_time_vevent->SetCanExtend(TH1::kXaxis);
+	column2_time_vevent->SetCanExtend(TH1::kXaxis);
+	column3_time_vevent->SetCanExtend(TH1::kXaxis);
+	column4_time_vevent->SetCanExtend(TH1::kXaxis);
 
-	column1_up_peak_vevent->SetCanExtend(TH1::kXaxis);
-	column2_up_peak_vevent->SetCanExtend(TH1::kXaxis);
-	column3_up_peak_vevent->SetCanExtend(TH1::kXaxis);
-	column4_up_peak_vevent->SetCanExtend(TH1::kXaxis);
-	column1_down_peak_vevent->SetCanExtend(TH1::kXaxis);
-	column2_down_peak_vevent->SetCanExtend(TH1::kXaxis);
-	column3_down_peak_vevent->SetCanExtend(TH1::kXaxis);
-	column4_down_peak_vevent->SetCanExtend(TH1::kXaxis);
+	column1_up_time_vevent->SetCanExtend(TH1::kXaxis);
+	column2_up_time_vevent->SetCanExtend(TH1::kXaxis);
+	column3_up_time_vevent->SetCanExtend(TH1::kXaxis);
+	column4_up_time_vevent->SetCanExtend(TH1::kXaxis);
+	column1_down_time_vevent->SetCanExtend(TH1::kXaxis);
+	column2_down_time_vevent->SetCanExtend(TH1::kXaxis);
+	column3_down_time_vevent->SetCanExtend(TH1::kXaxis);
+	column4_down_time_vevent->SetCanExtend(TH1::kXaxis);
 	
 	//////////////////////////////////////////////////////////////////////
 #else
-	bcal_peak_vevent->SetBit(TH1::kCanRebin);
+	bcal_time_vevent->SetBit(TH1::kCanRebin);
 	
-	up_peak_vevent->SetBit(TH1::kCanRebin);
-	down_peak_vevent->SetBit(TH1::kCanRebin);
+	up_time_vevent->SetBit(TH1::kCanRebin);
+	down_time_vevent->SetBit(TH1::kCanRebin);
 	
-	column1_peak_vevent->SetBit(TH1::kCanRebin);
-	column2_peak_vevent->SetBit(TH1::kCanRebin);
-	column3_peak_vevent->SetBit(TH1::kCanRebin);
-	column4_peak_vevent->SetBit(TH1::kCanRebin);
+	column1_time_vevent->SetBit(TH1::kCanRebin);
+	column2_time_vevent->SetBit(TH1::kCanRebin);
+	column3_time_vevent->SetBit(TH1::kCanRebin);
+	column4_time_vevent->SetBit(TH1::kCanRebin);
 
-	column1_up_peak_vevent->SetBit(TH1::kCanRebin);
-	column2_up_peak_vevent->SetBit(TH1::kCanRebin);
-	column3_up_peak_vevent->SetBit(TH1::kCanRebin);
-	column4_up_peak_vevent->SetBit(TH1::kCanRebin);
-	column1_down_peak_vevent->SetBit(TH1::kCanRebin);
-	column2_down_peak_vevent->SetBit(TH1::kCanRebin);
-	column3_down_peak_vevent->SetBit(TH1::kCanRebin);
-	column4_down_peak_vevent->SetBit(TH1::kCanRebin);
+	column1_up_time_vevent->SetBit(TH1::kCanRebin);
+	column2_up_time_vevent->SetBit(TH1::kCanRebin);
+	column3_up_time_vevent->SetBit(TH1::kCanRebin);
+	column4_up_time_vevent->SetBit(TH1::kCanRebin);
+	column1_down_time_vevent->SetBit(TH1::kCanRebin);
+	column2_down_time_vevent->SetBit(TH1::kCanRebin);
+	column3_down_time_vevent->SetBit(TH1::kCanRebin);
+	column4_down_time_vevent->SetBit(TH1::kCanRebin);
 	
 	/////////////////////////////////////////////////////////
 #endif
@@ -468,7 +468,7 @@ jerror_t JEventProcessor_BCAL_LED_time::evnt(JEventLoop *loop, uint64_t eventnum
 		loop->Get(bcaldigihits);
 		loop->Get(dbcalpoints);
 		
-	        int apedsubpeak[1536] = { 0 };
+	        int apedsubtime[1536] = { 0 };
 		     
 		for( unsigned int i=0; i<dbcalpoints.size(); i++) {
 
@@ -506,62 +506,62 @@ jerror_t JEventProcessor_BCAL_LED_time::evnt(JEventLoop *loop, uint64_t eventnum
 			  h1_ledup_sector->Fill(sector);
 			  h1_ledup_z_all->Fill(z);;
 			  h2_ledup_z_vs_cellid->Fill(cell_id,z);
-			  h1_ledup_Aup_all->Fill(Aup);;
-			  h1_ledup_Adown_all->Fill(Adown);;
-			  h2_ledup_Aup_vs_z->Fill(z,Aup);
-			  h2_ledup_Adown_vs_z->Fill(z,Adown);
-			  h2_ledup_Aup_vs_event->Fill(eventnumber,Aup);
-			  h2_ledup_Adown_vs_event->Fill(eventnumber,Adown);
-			  // cout << "US - eventnumber=" << eventnumber << " Aup=" << Aup << " Aup=" << Aup << " Adown=" << Adown << " Adown=" << Adown << endl;
+			  h1_ledup_Tup_all->Fill(Tup);;
+			  h1_ledup_Tdown_all->Fill(Tdown);;
+			  h2_ledup_Tup_vs_z->Fill(z,Tup);
+			  h2_ledup_Tdown_vs_z->Fill(z,Tdown);
+			  h2_ledup_Tup_vs_event->Fill(eventnumber,Tup);
+			  h2_ledup_Tdown_vs_event->Fill(eventnumber,Tdown);
+			  // cout << "US - eventnumber=" << eventnumber << " Tup=" << Tup << " Tup=" << Tup << " Tdown=" << Tdown << " Tdown=" << Tdown << endl;
 			}
 			else if (LED_DS) {
 			  h1_leddown_sector->Fill(sector);
 			  h1_leddown_z_all->Fill(z);
 			  h2_leddown_z_vs_cellid->Fill(cell_id,z);
-			  h1_leddown_Aup_all->Fill(Aup);;
-			  h1_leddown_Adown_all->Fill(Adown);;
-			  h2_leddown_Aup_vs_z->Fill(z,Aup);
-			  h2_leddown_Adown_vs_z->Fill(z,Adown);
-			  h2_leddown_Aup_vs_event->Fill(eventnumber,Aup);
-			  h2_leddown_Adown_vs_event->Fill(eventnumber,Adown);
-			  // cout << "DS - eventnumber=" << eventnumber << " Aup=" << Aup << " Aup=" << Aup << " Adown=" << Adown << " Adown=" << Adown << endl;
+			  h1_leddown_Tup_all->Fill(Tup);;
+			  h1_leddown_Tdown_all->Fill(Tdown);;
+			  h2_leddown_Tup_vs_z->Fill(z,Tup);
+			  h2_leddown_Tdown_vs_z->Fill(z,Tdown);
+			  h2_leddown_Tup_vs_event->Fill(eventnumber,Tup);
+			  h2_leddown_Tdown_vs_event->Fill(eventnumber,Tdown);
+			  // cout << "DS - eventnumber=" << eventnumber << " Tup=" << Tup << " Tup=" << Tup << " Tdown=" << Tdown << " Tdown=" << Tdown << endl;
 			}
 
 			// make cuts on z for all hits
 			if ( LED_DS && (z>310 && z<400)) {
-				apedsubpeak[cell_id] = Adown;
+				apedsubtime[cell_id] = Tdown;
 				chcounter[cell_id]++;
-				apedsubpeak[cell_id+768] = Aup;
+				apedsubtime[cell_id+768] = Tup;
 				chcounter[cell_id+768]++;
-				h2_ledboth_Aall_vs_event->Fill(eventnumber,Aup);
-				h2_ledboth_Aall_vs_event->Fill(eventnumber,Adown);
-				h2_leddown_Aall_vs_event->Fill(eventnumber,Aup);
-				h2_leddown_Aall_vs_event->Fill(eventnumber,Adown);
+				h2_ledboth_Aall_vs_event->Fill(eventnumber,Tup);
+				h2_ledboth_Aall_vs_event->Fill(eventnumber,Tdown);
+				h2_leddown_Aall_vs_event->Fill(eventnumber,Tup);
+				h2_leddown_Aall_vs_event->Fill(eventnumber,Tdown);
 				h2_leddown_sector_vs_event->Fill(eventnumber,sector);
 				h2_ledboth_sector_vs_event->Fill(eventnumber,sector);
 				
 				// compute sums
 				leddown_sector += sector;
-				leddown_mean += Aup + Adown;
+				leddown_mean += Tup + Tdown;
 				leddown_events++;
 				
 			} // if condition on z
 
 			if (LED_US && (z>-60 && z<0)) {
-				apedsubpeak[cell_id] = Adown;
+				apedsubtime[cell_id] = Tdown;
 				chcounter[cell_id]++;
-				apedsubpeak[cell_id+768] = Aup;
+				apedsubtime[cell_id+768] = Tup;
 				chcounter[cell_id+768]++;
-				h2_ledboth_Aall_vs_event->Fill(eventnumber,Aup);
-				h2_ledboth_Aall_vs_event->Fill(eventnumber,Adown);
-				h2_ledup_Aall_vs_event->Fill(eventnumber,Aup);
-				h2_ledup_Aall_vs_event->Fill(eventnumber,Adown);
+				h2_ledboth_Aall_vs_event->Fill(eventnumber,Tup);
+				h2_ledboth_Aall_vs_event->Fill(eventnumber,Tdown);
+				h2_ledup_Aall_vs_event->Fill(eventnumber,Tup);
+				h2_ledup_Aall_vs_event->Fill(eventnumber,Tdown);
 				h2_ledup_sector_vs_event->Fill(eventnumber,sector);
 				h2_ledboth_sector_vs_event->Fill(eventnumber,sector);
 				
 				// compute sums
 				ledup_sector += sector;
-				ledup_mean += Aup + Adown;
+				ledup_mean += Tup + Tdown;
 				ledup_events++;
 			} // if condition on z
 
@@ -583,30 +583,30 @@ jerror_t JEventProcessor_BCAL_LED_time::evnt(JEventLoop *loop, uint64_t eventnum
 	for (int chid = 0; chid < 1536; chid++)  {
 	  // if (chcounter[chid] > 1) continue;
 	      if (chcounter[chid] != 1) continue;
-	      bcal_peak_vevent->Fill(eventnumber,apedsubpeak[chid]);
+	      bcal_time_vevent->Fill(eventnumber,apedsubtime[chid]);
 				if (LED_US) {
-				    up_peak_vevent->Fill(eventnumber,apedsubpeak[chid]);
-				    if (ledup_sector_int == 1 && chid%4+1 == 1) {column1_up_peak_vevent->Fill(eventnumber,apedsubpeak[chid]);}
-				    else if (ledup_sector_int == 2 && chid%4+1 == 2) {column2_up_peak_vevent->Fill(eventnumber,apedsubpeak[chid]);}
-				    else if (ledup_sector_int == 3 && chid%4+1 == 3) {column3_up_peak_vevent->Fill(eventnumber,apedsubpeak[chid]);}
-				    else if (ledup_sector_int == 4 && chid%4+1 == 4) {column4_up_peak_vevent->Fill(eventnumber,apedsubpeak[chid]);}
+				    up_time_vevent->Fill(eventnumber,apedsubtime[chid]);
+				    if (ledup_sector_int == 1 && chid%4+1 == 1) {column1_up_time_vevent->Fill(eventnumber,apedsubtime[chid]);}
+				    else if (ledup_sector_int == 2 && chid%4+1 == 2) {column2_up_time_vevent->Fill(eventnumber,apedsubtime[chid]);}
+				    else if (ledup_sector_int == 3 && chid%4+1 == 3) {column3_up_time_vevent->Fill(eventnumber,apedsubtime[chid]);}
+				    else if (ledup_sector_int == 4 && chid%4+1 == 4) {column4_up_time_vevent->Fill(eventnumber,apedsubtime[chid]);}
 				   }
 				    
 				else if (LED_DS) {
-				    down_peak_vevent->Fill(eventnumber,apedsubpeak[chid]);
-				    if (leddown_sector_int == 1 && chid%4+1 == 1) {column1_down_peak_vevent->Fill(eventnumber,apedsubpeak[chid]);}
-				    else if (leddown_sector_int == 2 && chid%4+1 == 2) {column2_down_peak_vevent->Fill(eventnumber,apedsubpeak[chid]);}
-				    else if (leddown_sector_int == 3 && chid%4+1 == 3) {column3_down_peak_vevent->Fill(eventnumber,apedsubpeak[chid]);}
-				    else if (leddown_sector_int == 4 && chid%4+1 == 4) {column4_down_peak_vevent->Fill(eventnumber,apedsubpeak[chid]);}
+				    down_time_vevent->Fill(eventnumber,apedsubtime[chid]);
+				    if (leddown_sector_int == 1 && chid%4+1 == 1) {column1_down_time_vevent->Fill(eventnumber,apedsubtime[chid]);}
+				    else if (leddown_sector_int == 2 && chid%4+1 == 2) {column2_down_time_vevent->Fill(eventnumber,apedsubtime[chid]);}
+				    else if (leddown_sector_int == 3 && chid%4+1 == 3) {column3_down_time_vevent->Fill(eventnumber,apedsubtime[chid]);}
+				    else if (leddown_sector_int == 4 && chid%4+1 == 4) {column4_down_time_vevent->Fill(eventnumber,apedsubtime[chid]);}
 				    }
 				    
-				if (ledup_sector_int == 1 && chid%4+1 == 1) {column1_peak_vevent->Fill(eventnumber,apedsubpeak[chid]);}
-				else if (ledup_sector_int == 2 && chid%4+1 == 2) {column2_peak_vevent->Fill(eventnumber,apedsubpeak[chid]);}
-				else if (ledup_sector_int == 3 && chid%4+1 == 3) {column3_peak_vevent->Fill(eventnumber,apedsubpeak[chid]);}
-				else if (ledup_sector_int == 4 && chid%4+1 == 4) {column4_peak_vevent->Fill(eventnumber,apedsubpeak[chid]);}
+				if (ledup_sector_int == 1 && chid%4+1 == 1) {column1_time_vevent->Fill(eventnumber,apedsubtime[chid]);}
+				else if (ledup_sector_int == 2 && chid%4+1 == 2) {column2_time_vevent->Fill(eventnumber,apedsubtime[chid]);}
+				else if (ledup_sector_int == 3 && chid%4+1 == 3) {column3_time_vevent->Fill(eventnumber,apedsubtime[chid]);}
+				else if (ledup_sector_int == 4 && chid%4+1 == 4) {column4_time_vevent->Fill(eventnumber,apedsubtime[chid]);}
 	    }//loop over bcalhits
 
-		   //Deduce LED pulsing configuration based on average pulse peak in BCAL, each side & each column then fill correponding profile.
+		   //Deduce LED pulsing configuration based on average pulse time in BCAL, each side & each column then fill correponding profile.
 		 double column1up = 0;
  		 double column2up = 0;
 		 double column3up = 0;
@@ -617,15 +617,15 @@ jerror_t JEventProcessor_BCAL_LED_time::evnt(JEventLoop *loop, uint64_t eventnum
  		 double column3down = 0;
 		 double column4down = 0;
 
-		 column1up = column1_up_peak_vevent->GetBinContent(column1_up_peak_vevent->FindBin(eventnumber));
- 		 column2up = column2_up_peak_vevent->GetBinContent(column2_up_peak_vevent->FindBin(eventnumber));
-		 column3up = column3_up_peak_vevent->GetBinContent(column3_up_peak_vevent->FindBin(eventnumber));
-		 column4up = column4_up_peak_vevent->GetBinContent(column4_up_peak_vevent->FindBin(eventnumber));
+		 column1up = column1_up_time_vevent->GetBinContent(column1_up_time_vevent->FindBin(eventnumber));
+ 		 column2up = column2_up_time_vevent->GetBinContent(column2_up_time_vevent->FindBin(eventnumber));
+		 column3up = column3_up_time_vevent->GetBinContent(column3_up_time_vevent->FindBin(eventnumber));
+		 column4up = column4_up_time_vevent->GetBinContent(column4_up_time_vevent->FindBin(eventnumber));
 
-		 column1down = column1_down_peak_vevent->GetBinContent(column1_down_peak_vevent->FindBin(eventnumber));
-		 column2down = column2_down_peak_vevent->GetBinContent(column2_down_peak_vevent->FindBin(eventnumber));
- 		 column3down = column3_down_peak_vevent->GetBinContent(column3_down_peak_vevent->FindBin(eventnumber));
-		 column4down = column4_down_peak_vevent->GetBinContent(column4_down_peak_vevent->FindBin(eventnumber));
+		 column1down = column1_down_time_vevent->GetBinContent(column1_down_time_vevent->FindBin(eventnumber));
+		 column2down = column2_down_time_vevent->GetBinContent(column2_down_time_vevent->FindBin(eventnumber));
+ 		 column3down = column3_down_time_vevent->GetBinContent(column3_down_time_vevent->FindBin(eventnumber));
+		 column4down = column4_down_time_vevent->GetBinContent(column4_down_time_vevent->FindBin(eventnumber));
 
 		 // cout << " adccount1=" << adccount1 << " column1up=" << column1up << " column2up=" << column2up << " column3up=" << column3up << " column4up=" << column4up << endl;
 		 // cout << " adccount1=" << adccount1 << " column1down=" << column1down << " column2down=" << column2down << " column3down=" << column3down << " column4down=" << column4down << endl << endl;
@@ -638,81 +638,81 @@ jerror_t JEventProcessor_BCAL_LED_time::evnt(JEventLoop *loop, uint64_t eventnum
 				if (LED_US) {
 				    if (ledup_sector_int == 1 && chid%4+1 == 1) {
 				      if (column1up < adccount1) {
-					low_up_1->Fill(chid,apedsubpeak[chid]);
+					low_up_1->Fill(chid,apedsubtime[chid]);
 					if (chid < 768) {
-					  column1_down_peak_vevent2->Fill(eventnumber,apedsubpeak[chid]);
+					  column1_down_time_vevent2->Fill(eventnumber,apedsubtime[chid]);
 					  }
 					 else if  (chid > 767) {
-					   column1_up_peak_vevent2->Fill(eventnumber,apedsubpeak[chid]);
+					   column1_up_time_vevent2->Fill(eventnumber,apedsubtime[chid]);
 					 }
 				      }
 				      else {
-					high_up_1->Fill(chid,apedsubpeak[chid]);
+					high_up_1->Fill(chid,apedsubtime[chid]);
 					if (chid < 768) {
-					  column1_down_peak_vevent4->Fill(eventnumber,apedsubpeak[chid]);
+					  column1_down_time_vevent4->Fill(eventnumber,apedsubtime[chid]);
 					  }
 					 else if  (chid > 767) {
-					   column1_up_peak_vevent4->Fill(eventnumber,apedsubpeak[chid]);
+					   column1_up_time_vevent4->Fill(eventnumber,apedsubtime[chid]);
 					 }
 				      }
 				    }
 				    else if (ledup_sector_int == 2 && chid%4+1 == 2) {
 				      if (column2up < adccount1) {
-					low_up_2->Fill(chid,apedsubpeak[chid]);
+					low_up_2->Fill(chid,apedsubtime[chid]);
 					if (chid < 768) {
-					  column2_down_peak_vevent2->Fill(eventnumber,apedsubpeak[chid]);
+					  column2_down_time_vevent2->Fill(eventnumber,apedsubtime[chid]);
 					  }
 					 else if  (chid > 767) {
-					   column2_up_peak_vevent2->Fill(eventnumber,apedsubpeak[chid]);
+					   column2_up_time_vevent2->Fill(eventnumber,apedsubtime[chid]);
 					 }
 				      }
 				      else {
-					high_up_2->Fill(chid,apedsubpeak[chid]);
+					high_up_2->Fill(chid,apedsubtime[chid]);
 					if (chid < 768) {
-					  column2_down_peak_vevent4->Fill(eventnumber,apedsubpeak[chid]);
+					  column2_down_time_vevent4->Fill(eventnumber,apedsubtime[chid]);
 					  }
 					 else if  (chid > 767) {
-					   column2_up_peak_vevent4->Fill(eventnumber,apedsubpeak[chid]);
+					   column2_up_time_vevent4->Fill(eventnumber,apedsubtime[chid]);
 					 }
 				      }
 				    }
 				    else if (ledup_sector_int == 3 && chid%4+1 == 3)  {
 				      if (column3up < adccount1) {
-					low_up_3->Fill(chid,apedsubpeak[chid]);
+					low_up_3->Fill(chid,apedsubtime[chid]);
 					if (chid < 768) {
-					  column3_down_peak_vevent2->Fill(eventnumber,apedsubpeak[chid]);
+					  column3_down_time_vevent2->Fill(eventnumber,apedsubtime[chid]);
 					  }
 					 else if  (chid > 767) {
-					   column3_up_peak_vevent2->Fill(eventnumber,apedsubpeak[chid]);
+					   column3_up_time_vevent2->Fill(eventnumber,apedsubtime[chid]);
 					 }
 				      }
 				      else {
-					high_up_3->Fill(chid,apedsubpeak[chid]);
+					high_up_3->Fill(chid,apedsubtime[chid]);
 					if (chid < 768) {
-					  column3_down_peak_vevent4->Fill(eventnumber,apedsubpeak[chid]);
+					  column3_down_time_vevent4->Fill(eventnumber,apedsubtime[chid]);
 					  }
 					 else if  (chid > 767) {
-					   column3_up_peak_vevent4->Fill(eventnumber,apedsubpeak[chid]);
+					   column3_up_time_vevent4->Fill(eventnumber,apedsubtime[chid]);
 					 }
 				      }
 				    }
 				    else if (ledup_sector_int == 4 && chid%4+1 == 4) {
 				      if (column4up < adccount1) {
-					low_up_4->Fill(chid,apedsubpeak[chid]);
+					low_up_4->Fill(chid,apedsubtime[chid]);
 					if (chid < 768) {
-					  column4_down_peak_vevent2->Fill(eventnumber,apedsubpeak[chid]);
+					  column4_down_time_vevent2->Fill(eventnumber,apedsubtime[chid]);
 					  }
 					 else if  (chid > 767) {
-					   column4_up_peak_vevent2->Fill(eventnumber,apedsubpeak[chid]);
+					   column4_up_time_vevent2->Fill(eventnumber,apedsubtime[chid]);
 					 }
 				      }
 				      else {
-					high_up_4->Fill(chid,apedsubpeak[chid]);
+					high_up_4->Fill(chid,apedsubtime[chid]);
 					if (chid < 768) {
-					  column4_down_peak_vevent4->Fill(eventnumber,apedsubpeak[chid]);
+					  column4_down_time_vevent4->Fill(eventnumber,apedsubtime[chid]);
 					  }
 					 else if  (chid > 767) {
-					   column4_up_peak_vevent4->Fill(eventnumber,apedsubpeak[chid]);
+					   column4_up_time_vevent4->Fill(eventnumber,apedsubtime[chid]);
 					 }
 				      }
 				    }
@@ -720,82 +720,82 @@ jerror_t JEventProcessor_BCAL_LED_time::evnt(JEventLoop *loop, uint64_t eventnum
 				else if (LED_DS) {
 				    if (leddown_sector_int == 1 && chid%4+1 == 1) {
 				      if (column1down < adccount1) {
-					low_down_1->Fill(chid,apedsubpeak[chid]);
-					// if (eventnumber >31500000 && eventnumber <46000000) cout << " chid=" << chid << " column1down=" << column1down << " apedsub=" << apedsubpeak[chid] << endl;
+					low_down_1->Fill(chid,apedsubtime[chid]);
+					// if (eventnumber >31500000 && eventnumber <46000000) cout << " chid=" << chid << " column1down=" << column1down << " apedsub=" << apedsubtime[chid] << endl;
 					if (chid < 768) {
-					  column1_down_peak_vevent1->Fill(eventnumber,apedsubpeak[chid]);
+					  column1_down_time_vevent1->Fill(eventnumber,apedsubtime[chid]);
 					  }
 					 else if  (chid > 767) {
-					   column1_up_peak_vevent1->Fill(eventnumber,apedsubpeak[chid]);
+					   column1_up_time_vevent1->Fill(eventnumber,apedsubtime[chid]);
 					 }
 				      }
 				      else {
-					high_down_1->Fill(chid,apedsubpeak[chid]);
+					high_down_1->Fill(chid,apedsubtime[chid]);
 					if (chid < 768) {
-					  column1_down_peak_vevent3->Fill(eventnumber,apedsubpeak[chid]);
+					  column1_down_time_vevent3->Fill(eventnumber,apedsubtime[chid]);
 					  }
 					 else if  (chid > 767) {
-					   column1_up_peak_vevent3->Fill(eventnumber,apedsubpeak[chid]);
+					   column1_up_time_vevent3->Fill(eventnumber,apedsubtime[chid]);
 					 }
 				      }
 				    }
 				    else if (leddown_sector_int == 2 && chid%4+1 == 2) {
 				      if (column2down < adccount1) {
-					low_down_2->Fill(chid,apedsubpeak[chid]);
+					low_down_2->Fill(chid,apedsubtime[chid]);
 					if (chid < 768) {
-					  column2_down_peak_vevent1->Fill(eventnumber,apedsubpeak[chid]);
+					  column2_down_time_vevent1->Fill(eventnumber,apedsubtime[chid]);
 					  }
 					 else if  (chid > 767) {
-					   column2_up_peak_vevent1->Fill(eventnumber,apedsubpeak[chid]);
+					   column2_up_time_vevent1->Fill(eventnumber,apedsubtime[chid]);
 					 }
 				      }
 				      else {
-					high_down_2->Fill(chid,apedsubpeak[chid]);
+					high_down_2->Fill(chid,apedsubtime[chid]);
 					if (chid < 768) {
-					  column2_down_peak_vevent3->Fill(eventnumber,apedsubpeak[chid]);
+					  column2_down_time_vevent3->Fill(eventnumber,apedsubtime[chid]);
 					  }
 					 else if  (chid > 767) {
-					   column2_up_peak_vevent3->Fill(eventnumber,apedsubpeak[chid]);
+					   column2_up_time_vevent3->Fill(eventnumber,apedsubtime[chid]);
 					 }
 				      }
 				    }
 				    else if (leddown_sector_int == 3 && chid%4+1 == 3)  {
 				      if (column3down < adccount1) {
-					low_down_3->Fill(chid,apedsubpeak[chid]);
+					low_down_3->Fill(chid,apedsubtime[chid]);
 					if (chid < 768) {
-					  column3_down_peak_vevent1->Fill(eventnumber,apedsubpeak[chid]);
+					  column3_down_time_vevent1->Fill(eventnumber,apedsubtime[chid]);
 					  }
 					 else if  (chid > 767) {
-					   column3_up_peak_vevent1->Fill(eventnumber,apedsubpeak[chid]);
+					   column3_up_time_vevent1->Fill(eventnumber,apedsubtime[chid]);
 					 }
 				      }
 				      else {
-					high_down_3->Fill(chid,apedsubpeak[chid]);
+					high_down_3->Fill(chid,apedsubtime[chid]);
 					if (chid < 768) {
-					  column3_down_peak_vevent3->Fill(eventnumber,apedsubpeak[chid]);
+					  column3_down_time_vevent3->Fill(eventnumber,apedsubtime[chid]);
 					  }
 					 else if  (chid > 767) {
-					   column3_up_peak_vevent3->Fill(eventnumber,apedsubpeak[chid]);
+					   column3_up_time_vevent3->Fill(eventnumber,apedsubtime[chid]);
 					 }
 				      }
 				    }
 				    else if (leddown_sector_int == 4 && chid%4+1 == 4) {
 				      if (column4down < adccount1) {
-					low_down_4->Fill(chid,apedsubpeak[chid]);
+					low_down_4->Fill(chid,apedsubtime[chid]);
 					if (chid < 768) {
-					  column4_down_peak_vevent1->Fill(eventnumber,apedsubpeak[chid]);
+					  column4_down_time_vevent1->Fill(eventnumber,apedsubtime[chid]);
 					  }
 					 else if  (chid > 767) {
-					   column4_up_peak_vevent1->Fill(eventnumber,apedsubpeak[chid]);
+					   column4_up_time_vevent1->Fill(eventnumber,apedsubtime[chid]);
 					 }
 				      }
 				      else {
-					high_down_4->Fill(chid,apedsubpeak[chid]);
+					high_down_4->Fill(chid,apedsubtime[chid]);
 					if (chid < 768) {
-					  column4_down_peak_vevent3->Fill(eventnumber,apedsubpeak[chid]);
+					  column4_down_time_vevent3->Fill(eventnumber,apedsubtime[chid]);
 					  }
 					 else if  (chid > 767) {
-					   column4_up_peak_vevent3->Fill(eventnumber,apedsubpeak[chid]);
+					   column4_up_time_vevent3->Fill(eventnumber,apedsubtime[chid]);
 					 }
 				      }
 				    }
@@ -863,7 +863,7 @@ jerror_t JEventProcessor_BCAL_LED_time::erun(void) {
 jerror_t JEventProcessor_BCAL_LED_time::fini(void) {
 	// Called before program exit after event processing is finished.
 
-// 	//Write mean pulse peak to output file
+// 	//Write mean pulse time to output file
 	ofstream foutlowdown ; foutlowdown.open("LED_lowbias_downstream.txt");
 	ofstream foutlowup; foutlowup.open("LED_lowbias_upstream.txt");
 	ofstream fouthighdown; fouthighdown.open("LED_highbias_downstream.txt");
