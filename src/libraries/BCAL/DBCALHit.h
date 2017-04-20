@@ -29,6 +29,7 @@ class DBCALHit:public JObject{
         int pulse_peak; // Pedestal subtracted pulse peak (per event)
 		float E;
 		float t;
+		float t_raw;    ///< Uncalibrated time in ns
 		
 		int cellId;
 
