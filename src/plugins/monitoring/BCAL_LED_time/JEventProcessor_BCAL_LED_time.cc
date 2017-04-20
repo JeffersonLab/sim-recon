@@ -1,12 +1,12 @@
 // $Id$
 //
-//    File: JEventProcessor_BCAL_LED.cc
+//    File: JEventProcessor_BCAL_LED_time.cc
 //
 
 #include <stdint.h>
 #include <vector>
 #include "TTree.h"
-#include "JEventProcessor_BCAL_LED.h"
+#include "JEventProcessor_BCAL_LED_time.h"
 #include <JANA/JApplication.h>
 #include <iostream>
 #include <fstream>
@@ -159,7 +159,7 @@ static TProfile* h2_leddown_sector_vs_event = NULL;
 extern "C"{
 	void InitPlugin(JApplication *app){
 		InitJANAPlugin(app);
-		app->AddProcessor(new JEventProcessor_BCAL_LED());
+		app->AddProcessor(new JEventProcessor_BCAL_LED_time());
 	}
 
 }
@@ -168,20 +168,20 @@ extern "C"{
 //----------------------------------------------------------------------------------
 
 
-JEventProcessor_BCAL_LED::JEventProcessor_BCAL_LED() {
+JEventProcessor_BCAL_LED_time::JEventProcessor_BCAL_LED_time() {
 }
 
 
 //----------------------------------------------------------------------------------
 
 
-JEventProcessor_BCAL_LED::~JEventProcessor_BCAL_LED() {
+JEventProcessor_BCAL_LED_time::~JEventProcessor_BCAL_LED_time() {
 }
 
 
 //----------------------------------------------------------------------------------
 
-jerror_t JEventProcessor_BCAL_LED::init(void) {
+jerror_t JEventProcessor_BCAL_LED_time::init(void) {
 	
 	// lock all root operations
 	japp->RootWriteLock();
@@ -383,7 +383,7 @@ jerror_t JEventProcessor_BCAL_LED::init(void) {
 //----------------------------------------------------------------------------------
 
 
-jerror_t JEventProcessor_BCAL_LED::brun(JEventLoop *eventLoop, int32_t runnumber) {
+jerror_t JEventProcessor_BCAL_LED_time::brun(JEventLoop *eventLoop, int32_t runnumber) {
 	// This is called whenever the run number changes
 	return NOERROR;
 }
@@ -392,7 +392,7 @@ jerror_t JEventProcessor_BCAL_LED::brun(JEventLoop *eventLoop, int32_t runnumber
 //----------------------------------------------------------------------------------
 
 
-jerror_t JEventProcessor_BCAL_LED::evnt(JEventLoop *loop, uint64_t eventnumber) {
+jerror_t JEventProcessor_BCAL_LED_time::evnt(JEventLoop *loop, uint64_t eventnumber) {
 	// This is called for every event. Use of common resources like writing
 	// to a file or filling a histogram should be mutex protected. Using
 	// loop-Get(...) to get reconstructed objects (and thereby activating the
@@ -807,7 +807,7 @@ jerror_t JEventProcessor_BCAL_LED::evnt(JEventLoop *loop, uint64_t eventnumber) 
 //----------------------------------------------------------------------------------
 
 
-jerror_t JEventProcessor_BCAL_LED::erun(void) {
+jerror_t JEventProcessor_BCAL_LED_time::erun(void) {
 	// This is called whenever the run number changes, before it is
 	// changed to give you a chance to clean up before processing
 	// events from the next run number.
@@ -852,7 +852,7 @@ jerror_t JEventProcessor_BCAL_LED::erun(void) {
 //----------------------------------------------------------------------------------
 
 
-jerror_t JEventProcessor_BCAL_LED::fini(void) {
+jerror_t JEventProcessor_BCAL_LED_time::fini(void) {
 	// Called before program exit after event processing is finished.
 
 // 	//Write mean pulse peak to output file
