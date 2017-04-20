@@ -307,16 +307,14 @@
 	  tx.SetTextAlign(11);
 	  tx.SetTextSize(0.06);
 	  char text[100];
-	  sprintf(text, "E_{#gamma} > 7 GeV");
-	  tx.DrawLatex(0.1, locHist_KinFitConLev->GetMaximum()/4., text);
 	  sprintf(text, "Post KinFit");
-	  tx.DrawLatex(0.1, locHist_KinFitConLev->GetMaximum()/16., text);
+	  tx.DrawLatex(0.1, locHist_KinFitConLev->GetMaximum()/4., text);
 	  sprintf(text, "M(#omega) = %0.3f GeV/c^{2}", omega_mass);
-	  tx.DrawLatex(0.1, locHist_KinFitConLev->GetMaximum()/64., text);
+	  tx.DrawLatex(0.1, locHist_KinFitConLev->GetMaximum()/16., text);
 	  sprintf(text, "#Gamma(#omega) = %0.3f GeV/c^{2}", omega_width);
-	  tx.DrawLatex(0.1, locHist_KinFitConLev->GetMaximum()/256., text);
+	  tx.DrawLatex(0.1, locHist_KinFitConLev->GetMaximum()/64., text);
 	  sprintf(text, "N(#omega) = %0.2f / 1k Trigger", n_omega_kinfit/n_triggers*1000);
-	  tx.DrawLatex(0.1,  locHist_KinFitConLev->GetMaximum()/1024., text);
+	  tx.DrawLatex(0.1,  locHist_KinFitConLev->GetMaximum()/256., text);
 	}
 }
 
