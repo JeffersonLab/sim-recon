@@ -484,14 +484,22 @@ jerror_t JEventProcessor_BCAL_LED_time::evnt(JEventLoop *loop, uint64_t eventnum
 			// float Adown =  dbcalpoints[i]->E_DS();
 			float Aup = 0;
 			float Adown = 0;
+			float Tup = 0;
+			float Tdown = 0;
 			if (Hit1->end == DBCALGeometry::kUpstream && Hit2->end == DBCALGeometry::kDownstream) {	  
 			  Aup = Hit1->pulse_peak;
-			  Adown = Hit2->pulse_peak;
+			  Adown = Hit2->pulse_peak;	  
+			  Tup = Hit1->t_raw;
+			  Tdown = Hit2->t_raw;
 			}
 			else if (Hit2->end == DBCALGeometry::kUpstream && Hit1->end == DBCALGeometry::kDownstream){
 			  Aup = Hit2->pulse_peak;
 			  Adown = Hit1->pulse_peak;
+			  Tup = Hit2->t_raw;
+			  Tdown = Hit1->t_raw;
 			}
+
+			cout << "i=" << i << " m=" << module << " l=" << layer << " s=" << sector << " id=" << cell_id << " Aup=" << Aup << " Adown=" << Adown << " Tup=" << Tup << " Tdown=" << Tdown << endl;
 
 			// fill histograms for all channels
 			if (LED_US) {
