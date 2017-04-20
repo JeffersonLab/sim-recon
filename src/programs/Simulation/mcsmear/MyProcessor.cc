@@ -159,7 +159,7 @@ jerror_t MyProcessor::brun(JEventLoop *loop, int locRunNumber)
     // we check to see if the variation is set and if it contains the string "mc".
     // Note that for now, we only print a warning and do not exit immediately.
     // It might be advisable to apply some tougher love.
-    jerr << "In MyProcessor::brun()" << endl;
+    jout << "In MyProcessor::brun()" << endl;
     if(locCheckCCDBContext) {
         // only do this once
         locCheckCCDBContext = false;        
@@ -171,7 +171,7 @@ jerror_t MyProcessor::brun(JEventLoop *loop, int locRunNumber)
     
         string context = jcalib->GetContext();
       
-        jerr << "checking context = " << context << endl;
+        jout << "checking context = " << context << endl;
 
         // Really we should parse the context string, but since "mc" shouldn't show up
         // outside of the context, we just search the whole string.
