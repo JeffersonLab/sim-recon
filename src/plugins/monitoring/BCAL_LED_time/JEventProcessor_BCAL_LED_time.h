@@ -20,8 +20,6 @@ class JEventProcessor_BCAL_LED_time:public jana::JEventProcessor{
 //  int unidentified, ledcounter;
   int adccount1, adccount2, adccount3, nbins;
   double maxnumberofevents;
-
-  int local_eventnum=0;
   
 
  private:
