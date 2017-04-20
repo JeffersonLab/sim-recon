@@ -123,7 +123,7 @@ jerror_t JEventProcessor_BCAL_LED_time::init(void) {
 
 	// create root folder for bcal and cd to it, store main dir
 	TDirectory *main = gDirectory;
-	gDirectory->mkdir("bcalLED")->cd();
+	gDirectory->mkdir("BCAL_LED_time")->cd();
 	gStyle->SetOptStat(111110);
 
 	bcal_peak_vevent = new TProfile("bcal_peak_vevent","Avg BCAL peak vs event;event num;peak (all chan avg)",nbins,0.0,maxnumberofevents);
