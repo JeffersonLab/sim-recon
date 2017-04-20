@@ -8,6 +8,7 @@
 #include <unordered_map>
 #include <cmath>
 #include <algorithm>
+#include <stack>
 
 #include "TF1.h"
 
@@ -89,6 +90,7 @@ class DSourceComboer : public JObject
 		using DCombosByBeamBunch = unordered_map<vector<int>, vector<const DSourceCombo*>>;
 		using DSourceCombosByBeamBunchByUse = unordered_map<DSourceComboUse, DCombosByBeamBunch>;
 		using DComboIteratorsByBeamBunch = unordered_map<vector<int>, vector<const DSourceCombo*>::const_iterator>; //vector<int>: RF bunches (empty for all)
+		using DSourceCombosByUse_Large = map<DSourceComboUse, vector<const DSourceCombo*>*>;
 
 		/********************************************************** DECLARE MEMBER FUNCTIONS ***********************************************************/
 
@@ -150,7 +152,7 @@ class DSourceComboer : public JObject
 		bool Get_IsFCALOnly(const JObject* locObject) const;
 
 		//COMBO UTILITY FUNCTIONS
-		DSourceCombosByUse& Get_CombosSoFar(ComboingStage_t locComboingStage, Charge_t locChargeContent_SearchForUse, const DSourceCombo* locChargedCombo = nullptr);
+		DSourceCombosByUse_Large& Get_CombosSoFar(ComboingStage_t locComboingStage, Charge_t locChargeContent_SearchForUse, const DSourceCombo* locChargedCombo = nullptr);
 		DSourceCombosByBeamBunchByUse& Get_SourceCombosByBeamBunchByUse(Charge_t locChargeContent_SearchForUse, const DSourceCombo* locChargedCombo = nullptr);
 		void Copy_FCALOnlyResults(const DSourceComboUse& locComboUseToCreate, ComboingStage_t locComboingStage, const DSourceCombo* locChargedCombo_WithNow);
 		bool Get_HasMassiveNeutrals(const DSourceComboInfo* locSourceComboInfo) const;
@@ -224,16 +226,16 @@ class DSourceComboer : public JObject
 		//i need to go from step -> combo use
 		unordered_map<const DReaction*, map<size_t, DSourceComboUse>> dSourceComboUseReactionStepMap; //primary combo info (nullptr if none)
 
-		//SOURCE COMBOS //vector: z-bin //if attempted and all failed, DSourceCombosByUse_Small vector will be empty
+		//SOURCE COMBOS //vector: z-bin //if attempted and all failed, DSourceCombosByUse_Large vector will be empty
 		size_t dInitialComboVectorCapacity = 100;
-		DSourceCombosByUse dSourceCombosByUse;
-		unordered_map<const DSourceCombo*, DSourceCombosByUse> dMixedCombosByUseByChargedCombo; //key: charged combo //value: contains mixed & neutral combos //neutral: key is nullptr
+		DSourceCombosByUse_Large dSourceCombosByUse;
+		unordered_map<const DSourceCombo*, DSourceCombosByUse_Large> dMixedCombosByUseByChargedCombo; //key: charged combo //value: contains mixed & neutral combos //neutral: key is nullptr
 		//also, sort by which beam bunches they are valid for: that way when comboing, we can retrieve only the combos that can possibly match the input RF bunches
 		unordered_map<const DSourceCombo*, DSourceCombosByBeamBunchByUse> dSourceCombosByBeamBunchByUse; //key: charged combo //value: contains mixed & neutral combos: key is nullptr
 
 		//RESUME SEARCH ITERATORS
 		//e.g. if a DSourceCombo is -> 2pi0, and we want to use it as a basis for building a combo of 3pi0s,
-		//then this iterator points to the first pi0 in the DSourceCombosByUse_Small vector that we want to test
+		//then this iterator points to the first pi0 in the DSourceCombosByUse_Large vector that we want to test
 		//that way we save a lot of time, since we don't have to look for it again
 		//they are useful when comboing VERTICALLY, but cannot be used when comboing HORIZONTALLY
 			//e.g. when comboing a pi0 (with photons = A, D) with a single photon, the photon could be B, C, or E+: no single spot to resume at
@@ -252,6 +254,10 @@ class DSourceComboer : public JObject
 		//TOTAL FINAL STATE FOUR-MOMENTUM
 		unordered_map<const DSourceCombo*, DLorentzVector> dFinalStateP4ByCombo;
 		unordered_map<int, unordered_map<const DSourceCombo*, DLorentzVector>> dFinalStateP4ByCombo_HasMassiveNeutrals; //int: RF bunch
+
+		//RESOURCE POOLS //deque: these can be huge, don't want to be burned by moving the underlying array (vector)
+		vector<vector<const DSourceCombo*>*> dResourcePool_ComboVectors;
+		vector<DSourceCombo*> dResourcePool_SourceCombos;
 };
 
 /*********************************************************** INLINE MEMBER FUNCTION DEFINITIONS ************************************************************/
@@ -388,7 +394,7 @@ inline vector<int> DSourceComboer::Get_CommonRFBunches(const vector<int>& locRFB
 
 //Mixed results are saved in: (where the keys are the charged contents of the mixed-use step)
 
-inline DSourceCombosByUse& DSourceComboer::Get_CombosSoFar(ComboingStage_t locComboingStage, Charge_t locChargeContent_SearchForUse, const DSourceCombo* locChargedCombo)
+inline DSourceCombosByUse_Large& DSourceComboer::Get_CombosSoFar(ComboingStage_t locComboingStage, Charge_t locChargeContent_SearchForUse, const DSourceCombo* locChargedCombo)
 {
 	//THE INPUT locChargedCombo MUST BE:
 	//If reading from: Whatever charged combo you PREVIOUSLY comboed horizontally with to make the combos you're trying to get

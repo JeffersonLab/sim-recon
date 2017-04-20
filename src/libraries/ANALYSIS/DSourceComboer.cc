@@ -785,10 +785,10 @@ void DSourceComboer::Build_ParticleCombos(JEventLoop* locEventLoop, const DReact
 
 	//Build vertex combos (returns those for the primary vertex, others are stored)
 	Create_SourceCombos(locPrimaryComboUse, d_ChargedStage, 0, nullptr);
-	auto locPrimaryVertexCombos = Get_CombosSoFar(d_ChargedStage, d_Charged, nullptr)[locPrimaryComboUse];
+	const auto& locPrimaryVertexCombos = *(Get_CombosSoFar(d_ChargedStage, d_Charged, nullptr)[locPrimaryComboUse]);
 
 	//loop over primary vertex combos //each contains decay combos except when dangling
-	for(auto locChargedCombo : *locPrimaryVertexCombos)
+	for(auto locChargedCombo : locPrimaryVertexCombos)
 	{
 		//Calc all the vertex positions and time offsets for the vertices for these combos (where possible without beam energy)
 		unordered_map<const DReactionStepVertexInfo*, pair<DVector3, double>> locVertexTimeOffsets = DVertexCreator::Get_VertexTimeOffsets(locEventLoop, locReactionVertexInfo, locChargedCombo);
@@ -1144,7 +1144,7 @@ void DSourceComboer::Combo_Vertically_NDecays(const DSourceComboUse& locComboUse
 			locAllDecayCombos.push_back(locDecayCombo_1);
 
 			//then create the new combo
-			DSourceCombosByUse locFurtherDecayCombos(locSourceComboDecayUse, locAllDecayCombos); //arguments (e.g.): (pi0, -> 2g), N combos of: -> 2g
+			auto locFurtherDecayCombos(locSourceComboDecayUse, locAllDecayCombos); //arguments (e.g.): (pi0, -> 2g), N combos of: -> 2g
 			auto locCombo = new DSourceCombo({}, locFurtherDecayCombos, locIsFCALOnly); // 1 combo of N (e.g.) pi0s
 
 			//save it! //in creation order!
@@ -1569,7 +1569,7 @@ void DSourceComboer::Combo_Horizontally_AddCombo(const DSourceComboUse& locCombo
 				continue; //this combo has already been created (assuming it was valid): during the FCAL-only stage
 
 			//get contents of the all-but-1 so that we can add to them
-			DSourceCombosByUse locFurtherDecayCombos_Needed = locDecayCombo_AllBut1->Get_FurtherDecayCombos(); //the all-but-1 combo contents by use
+			auto locFurtherDecayCombos_Needed = locDecayCombo_AllBut1->Get_FurtherDecayCombos(); //the all-but-1 combo contents by use
 			auto locComboParticles = locDecayCombo_AllBut1->Get_SourceParticles();
 
 			//if the combo-to-add is a direct grouping of measured particles (e.g. X -> 2g), promote them
@@ -1581,7 +1581,7 @@ void DSourceComboer::Combo_Horizontally_AddCombo(const DSourceComboUse& locCombo
 			else //add the decay-combo to the further-decays map
 			{
 				//first building the further-decays for it)
-				DSourceCombosByUse locFurtherDecayCombos_ToAdd = locChargedCombo_WithNow->Get_FurtherDecayCombos(); //the to-add combo contents by use
+				auto locFurtherDecayCombos_ToAdd = locChargedCombo_WithNow->Get_FurtherDecayCombos(); //the to-add combo contents by use
 				locFurtherDecayCombos_Needed.emplace(locSourceComboUseToAdd, locFurtherDecayCombos_ToAdd[locSourceComboUseToAdd]); //add to it the new PID
 			}
 
@@ -1636,7 +1636,7 @@ void DSourceComboer::Combo_Horizontally_AddCombo(const DSourceComboUse& locCombo
 			}
 
 			//get contents of the all-but-1 so that we can add to them
-			DSourceCombosByUse locFurtherDecayCombos_Needed = locDecayCombo_AllBut1->Get_FurtherDecayCombos(); //the all-but-1 combo contents by use
+			auto locFurtherDecayCombos_Needed = locDecayCombo_AllBut1->Get_FurtherDecayCombos(); //the all-but-1 combo contents by use
 			auto locComboParticles = locDecayCombo_AllBut1->Get_SourceParticles();
 
 			//if the combo-to-add is a direct grouping of measured particles (e.g. X -> 2g), promote them
@@ -1648,7 +1648,7 @@ void DSourceComboer::Combo_Horizontally_AddCombo(const DSourceComboUse& locCombo
 			else //add the decay-combo to the further-decays map
 			{
 				//first building the further-decays for it)
-				DSourceCombosByUse locFurtherDecayCombos_ToAdd = locDecayCombo_ToAdd->Get_FurtherDecayCombos(); //the to-add combo contents by use
+				auto locFurtherDecayCombos_ToAdd = locDecayCombo_ToAdd->Get_FurtherDecayCombos(); //the to-add combo contents by use
 				locFurtherDecayCombos_Needed.emplace(locSourceComboUseToAdd, locFurtherDecayCombos_ToAdd[locSourceComboUseToAdd]); //add to it the new PID
 			}
 

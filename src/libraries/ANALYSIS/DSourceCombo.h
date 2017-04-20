@@ -35,7 +35,7 @@ class DSourceComboer;
 
 //DSourceComboUse is what the combo is USED for (the decay of Particle_t (if Unknown then is just a grouping)
 using DSourceComboUse = tuple<Particle_t, signed char, const DSourceComboInfo*>; //e.g. Pi0, -> 2g //signed char: vertex-z bin of the final state (combo contents)
-using DSourceCombosByUse = map<DSourceComboUse, vector<const DSourceCombo*>>;
+using DSourceCombosByUse_Small = map<DSourceComboUse, vector<const DSourceCombo*>>;
 //CONSIDER VECTOR INSTEAD OF MAP FOR DSourceCombosByUse_Small
 
 //Compare_SourceComboUses
@@ -119,17 +119,17 @@ class DSourceCombo
 
 		//GET MEMBERS
 		vector<pair<Particle_t, const JObject*>> Get_SourceParticles(bool locEntireChainFlag = false) const;
-		DSourceCombosByUse Get_FurtherDecayCombos(void) const{return dFurtherDecayCombos;}
+		DSourceCombosByUse_Small Get_FurtherDecayCombos(void) const{return dFurtherDecayCombos;}
 		bool Get_IsFCALOnly(void) const{return dIsFCALOnly;}
 
 	private:
 
 		//CONSTRUCTOR
-		DSourceCombo(const vector<pair<Particle_t, const JObject*>>& locSourceParticles, const DSourceCombosByUse& locFurtherDecayCombos = {}, bool locIsFCALOnly = false);
+		DSourceCombo(const vector<pair<Particle_t, const JObject*>>& locSourceParticles, const DSourceCombosByUse_Small& locFurtherDecayCombos = {}, bool locIsFCALOnly = false);
 
 		//particles & decays
 		vector<pair<Particle_t, const JObject*>> dSourceParticles; //original DNeutralShower or DChargedTrack
-		DSourceCombosByUse dFurtherDecayCombos; //vector is e.g. size 3 if 3 pi0s needed
+		DSourceCombosByUse_Small dFurtherDecayCombos; //vector is e.g. size 3 if 3 pi0s needed
 
 		//Control information
 		bool dIsFCALOnly;
@@ -197,7 +197,7 @@ inline vector<pair<Particle_t, unsigned char>> DSourceComboInfo::Get_NumParticle
 	return locToReturnNumParticles;
 }
 
-inline DSourceCombo::DSourceCombo(const vector<pair<Particle_t, const JObject*>>& locSourceParticles, const DSourceCombosByUse& locFurtherDecayCombos, bool locIsFCALOnly) :
+inline DSourceCombo::DSourceCombo(const vector<pair<Particle_t, const JObject*>>& locSourceParticles, const DSourceCombosByUse_Small& locFurtherDecayCombos, bool locIsFCALOnly) :
 		dSourceParticles(locSourceParticles), dFurtherDecayCombos(locFurtherDecayCombos), dIsFCALOnly(locIsFCALOnly)
 {
 	std::sort(dSourceParticles.begin(), dSourceParticles.end());
