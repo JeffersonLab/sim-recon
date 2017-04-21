@@ -87,7 +87,8 @@ class DEventProcessor_BCAL_gainmatrix : public jana::JEventProcessor
 		TH1F* h1D_massbias;
 		TH1F* h1D_nhits;
 		TH2F* mass_v_chan;
-		TH2F* mass_v_shE;
+		TH2F* mass_v_shE2;
+		TH2F* mass_v_shE1;
 
 		const DEventWriterROOT* dEventWriterROOT;
 		const DEventWriterREST* dEventWriterREST;

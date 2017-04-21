@@ -58,8 +58,8 @@ jerror_t DEventProcessor_BCAL_gainmatrix::init(void)
 	h1D_nhits->SetXTitle("channel number");
 	h1D_nhits->SetYTitle("counts");
 	mass_v_chan = new TH2F("mass_v_chan","mass_v_chan",1536,0.,768.,100,.1,.17);
-	mass_v_shE = new TH2F("mass_v_shE","mass_v_shE",2000,0,4,200,.05,.2);
-
+	mass_v_shE2 = new TH2F("mass_v_shE2","mass_v_shE2",4000,0,8,200,.05,.2);
+	mass_v_shE1 = new TH2F("mass_v_shE1","mass_v_shE1",4000,0,8,200,.05,.2);
 
 	m_mD.ResizeTo(m_nElements,1);
 	m_mC.ResizeTo(m_nElements,m_nElements);
@@ -313,7 +313,8 @@ jerror_t DEventProcessor_BCAL_gainmatrix::evnt(jana::JEventLoop* locEventLoop, u
 			for(unsigned int h=0;h<point_energy.size();h++){
 			if(inv_mass_raw>.12&&inv_mass_raw<.15&&E1_raw>1.3 &&E2_raw>1.3 && locBCALShowers.size() == 2 && psi > 0.075 && psi < .12 && frac_en[h].first > 0.0 && frac_en[h].first < 30.0 ) m_massbias += (inv_mass_raw*inv_mass_raw - pi0_mass*pi0_mass);
 			}
-			mass_v_shE->Fill(E2_raw,inv_mass_raw);	
+			mass_v_shE2->Fill(E2_raw,inv_mass_raw);
+			mass_v_shE1->Fill(E1_raw,inv_mass_raw);	
 			BCAL_Neutrals->Fill();
 			}
 		
