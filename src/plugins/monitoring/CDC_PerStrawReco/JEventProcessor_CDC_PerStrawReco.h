@@ -1,20 +1,20 @@
 // $Id$
 //
-//    File: JEventProcessor_CDC_Cosmics.h
+//    File: JEventProcessor_CDC_PerStrawReco.h
 // Created: Mon Jul  6 13:00:51 EDT 2015
 // Creator: mstaib (on Linux egbert 2.6.32-504.16.2.el6.x86_64 x86_64)
 //
 
-#ifndef _JEventProcessor_CDC_Cosmics_
-#define _JEventProcessor_CDC_Cosmics_
+#ifndef _JEventProcessor_CDC_PerStrawReco_
+#define _JEventProcessor_CDC_PerStrawReco_
 
 #include <JANA/JEventProcessor.h>
 
-class JEventProcessor_CDC_Cosmics:public jana::JEventProcessor{
+class JEventProcessor_CDC_PerStrawReco:public jana::JEventProcessor{
 	public:
-		JEventProcessor_CDC_Cosmics();
-		~JEventProcessor_CDC_Cosmics();
-		const char* className(void){return "JEventProcessor_CDC_Cosmics";}
+		JEventProcessor_CDC_PerStrawReco();
+		~JEventProcessor_CDC_PerStrawReco();
+		const char* className(void){return "JEventProcessor_CDC_PerStrawReco";}
 
 	private:
 		jerror_t init(void);						///< Called once at program start.
@@ -27,5 +27,5 @@ class JEventProcessor_CDC_Cosmics:public jana::JEventProcessor{
         vector<vector<double> >sag_phi_offset;
 };
 
-#endif // _JEventProcessor_CDC_Cosmics_
+#endif // _JEventProcessor_CDC_PerStrawReco_
 

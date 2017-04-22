@@ -28,9 +28,6 @@ void DReaction_factory_p3pi_hists::PIDCuts(DReaction* locReaction)
 	locReaction->Add_AnalysisAction(new DCutAction_PIDDeltaT(locReaction, false, 3.0, Gamma, SYS_FCAL)); //false: measured data
 	locReaction->Add_AnalysisAction(new DCustomAction_dEdxCut_p3pi(locReaction, false)); //false: focus on keeping signal
 	locReaction->Add_AnalysisAction(new DHistogramAction_PID(locReaction, "PostPIDCuts"));
-
-	// Cut low beam energy as tagger settings change during 2017-01
-	locReaction->Add_AnalysisAction(new DCutAction_BeamEnergy(locReaction, false, 7.0, 12.0));
 }
 	
 
