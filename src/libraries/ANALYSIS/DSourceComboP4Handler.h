@@ -9,6 +9,12 @@
 #include "PID/DKinematicData.h"
 #include "ANALYSIS/DSourceCombo.h"
 
+using namespace std;
+using namespace jana;
+
+namespace DAnalysis
+{
+
 //OK, there are several times we might call this:
 //Charged only
 //With neutrals, but vertex not chosen yet
@@ -183,6 +189,8 @@ inline DLorentzVector DSourceComboP4Handler::Calc_P4(const DSourceCombo* locSour
 
 	dFinalStateP4ByCombo_HasMassiveNeutrals[locRFBunch].emplace(locSourceCombo, locTotalP4);
 	return locTotalP4;
+}
+
 }
 
 #endif // DSourceComboP4Handler_h

@@ -27,8 +27,6 @@ using namespace std;
 namespace DAnalysis
 {
 
-using DSourceVertexRequestPair = pair, const DReactionStepVertexInfo*>; //key: primary charged combo for the entire reaction!!
-
 class DSourceComboVertexer
 {
 	public:

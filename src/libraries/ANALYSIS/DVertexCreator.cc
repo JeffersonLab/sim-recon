@@ -196,22 +196,6 @@ void DVertexCreator::Do_All(JEventLoop* locEventLoop, const vector<const DReacti
 	Find_VertexCombos();
 }
 
-
-void DVertexCreator::Build_VertexInfos(JEventLoop* locEventLoop, const vector<const DReaction*>& locReactions)
-{
-	dAllVertexInfos_Set.clear();
-	dAllVertexInfos_Vector.clear();
-	for(auto& locReaction : locReactions)
-	{
-		if(!Check_NumParticles(locReaction))
-			continue;
-//Skim check commented until skims are ready!
-//		if(!Check_Skims(locReaction))
-//			continue;
-		Build_VertexInfos(locReaction);
-	}
-}
-
 void DVertexCreator::Sort_ChargedTracks(void)
 {
 	dPositiveChargedTracks.clear();
