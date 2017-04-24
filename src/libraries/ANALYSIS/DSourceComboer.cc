@@ -39,230 +39,8 @@ namespace DAnalysis
 *
 *******************************************************************************************************************************/
 
-/**************************************************** PHOTON-RF DELTA-T CUTS ***************************************************
-*
-* We would also like to place photon timing cuts in advance as well (these narrow down the possible RF bunch).
-* However, these also depend on the vertex position.
-*
-* The error on the delta-t (delta_delta_t) is derived in a separate section below. The result is:
-* All: delta_delta_t = dr*[1/sin(theta) - sqrt(1 + (1/tan(theta) - z_error/dr)^2)]/c - z_error/c
-* BCAL: delta_delta_t = 65*[1/sin(theta) - sqrt(1 + (1/tan(theta) - z_error/65)^2)]/c - z_error/c
-* FCAL: delta_delta_t = (~650 - z_error)*[1/cos(theta) - sqrt(tan^2(theta) + (1 - z_error/(~650 - z_error))^2)]/c - z_error/c
-*
-* For the FCAL, at a z_error of 30cm (center of target + detached-z), the maximum error in delta_delta_t is 22ps
-* At a z_error of 5cm, delta_delta_t is 3.5ps
-*
-* For the BCAL (dr = 65cm), at a z_error of 30cm (center of target + detached-z), the maximum error in delta_delta_t is 1.8ns (at 140 degrees)
-* For a z_error of 5cm, delta_delta_t is 300ps
-*
-* So, since we are evaluating the photons at z-vertex steps of 10cm anyway (for invariant mass), do the same for the photons.
-* Then, when performing delta-t cuts, increase the width of the cut by the max time error.
-* This error is strongly theta-dependent, so we can calculate the max error on a shower-by-shower basis using the above equations.
-*
-* Because we are comboing as channel-independent as possible, when doing a photon combo we don't know if it's at a detached vertex or not.
-* So, we must also include a max timing offset when doing time cuts (to select RF bunches) due for detached vertices.
-* This time offset is also derived below
-*
-*******************************************************************************************************************************/
-
-/*********************************************** PHOTON-RF DELTA-T CUT DERIVATION **********************************************
-*
-* The error on the photon time difference (delta_delta_t) can be found as:
-* delta_t = t_prop_shower - t_beam
-* delta_delta_t = delta_t_actual - delta_t_guess
-* delta_delta_t = (t_prop_shower_actual - t_beam_actual) - (t_prop_shower_guess - t_beam_guess)
-* delta_delta_t = (t_prop_shower_actual - t_prop_shower_guess) - (t_beam_actual - t_beam_guess)
-*
-* t_prop_shower = t_shower - path_shower/c
-* delta_delta_t = ((t_shower - path_shower_actual/c) - (t_shower - path_shower_guess/c)) - (t_beam_actual - t_beam_guess)
-* delta_delta_t = (path_shower_guess - path_shower_actual)/c - (t_beam_actual - t_beam_guess)
-*
-* t_beam = t_RF_targcenter + (vertz - targz)/c
-* delta_delta_t = (path_shower_guess - path_shower_actual)/c - ((t_RF_targcenter + (vertz_actual - targz)/c) - (t_RF_targcenter + (vertz_guess - targz)/c))
-* delta_delta_t = [path_shower_guess - path_shower_actual - vertz_actual + vertz_guess]/c
-*
-* define z_error = vertz_actual - vertz_guess
-* delta_delta_t = [path_shower_guess - path_shower_actual - z_error]/c
-*
-* path_shower_guess = shower_pos.Perp()/sin(theta)
-* path_shower_actual = sqrt(shower_pos.Perp()^2 + path_z_shower_actual^2)
-*
-* path_z_shower_actual = shower_z - vertz_actual, vertz_actual = z_error + vertz_guess
-* path_z_shower_actual = shower_z - (z_error + vertz_guess)
-* path_z_shower_guess = shower_z - vertz_guess
-* path_z_shower_actual = path_z_shower_guess - z_error
-* So, path_shower_actual = sqrt(shower_pos.Perp()^2 + (path_z_shower_guess - z_error)^2)
-*
-* path_z_shower_guess = shower_pos.Perp()/tan(theta)
-* So, path_shower_actual = sqrt(shower_pos.Perp()^2 + (shower_pos.Perp()/tan(theta) - z_error)^2)
-*
-* Using dr for shower_pos.Perp() and reducing gives:
-* path_shower_actual = dr*sqrt(1 + (1/tan(theta) - z_error/dr)^2)
-* and path_shower_guess = dr/sin(theta)
-*
-* So: delta_delta_t = dr*[1/sin(theta) - sqrt(1 + (1/tan(theta) - z_error/dr)^2)]/c - z_error/c
-*
-* For the FCAL, dr = dz*tan(theta), dz = 650 - z_error (approx 650)
-* So: delta_delta_t = (650 - z_error)*[1/cos(theta) - sqrt(tan^2(theta) + (1 - z_error/(650 - z_error))^2)]/c - z_error/c
-*
-* For the FCAL, the delta_delta_t is at most 23ps when the z_error is 30cm (center of target + detached vertex) (12 degrees)
-* Therefore, the z_error is irrelevant: Just choose the center of the target and increase the width of the delta_t cut as needed.
-*
-* However, for the BCAL the time error is rather large (largest at large angles (e.g. 140 degrees))
-* Even with a z_error of 5cm, the delta_delta_t is 300ps.  Therefore use 10-cm-wide vertex-z bins and increase the delta_t cut width as needed.
-*
-* Now, for the max time offset due to detached vertices:
-* Worst case: Xi- -> Lambda -> pi0, n: ~30cm, say avg beta = 1/3 (beta can't be too small or ~30cm distance not likely!)
-* max_time_offset = delta_t_neutral - delta_t_rf
-* delta_t_neutral = delta_x/(beta*c) = 30/(30*1/3) = 3 ns
-* delta_t_rf = delta_x/(beta*c) = 30/(1*30) = 1ns
-* max_time_offset = 3ns - 1ns = 2ns
-*
-*******************************************************************************************************************************/
 
 
-
-/************************************************ 2-PHOTON MASS ERROR DERIVATION ***********************************************
-*
-* For this error estimate, consider the decay pi0 -> 2g  (or eta -> 2g).
-* The equation for the invariant mass squared of the 2 photons is:
-* m^2 = (E1 + E2)^2 - (px1 + px2)^2 - (py1 + py2)^2 - (pz1 + pz2)^2
-*
-* The difference in mass squared due to the error is: (using "_g" prefix for guess and "_t" prefix for "true")
-* delta(m^2) = m_g^2 - m^2_t
-* delta(m^2) = (px1 + px2)^2_t + (py1 + py2)^2_t + (pz1 + pz2)^2_t - (px1 + px2)^2_g - (py1 + py2)^2_g - (pz1 + pz2)^2_g
-*
-* Simplifying, we will choose the 2 photons to have opposite phi's at 0 & 180 degrees
-* Thus, py1 = py2 = 0 for guess & true momentum.
-* delta(m^2) = (px1 + px2)^2_t + (pz1 + pz2)^2_t - (px1 + px2)^2_g - (pz1 + pz2)^2_g
-* Also, px1_unit = -px2_unit, but we'll use this a little later.
-*
-* Now, assume that both photons have the same E & theta: Whatever the worst-case is, it will be the same for both photons.
-* Since from before px1_unit = -px2_unit, Now px1_t = -px2_t and px1_g = -px2_g. Also, pz1_t = pz2_t = pz_t, & pz1_g = pz2_g = pz_g
-* delta(m^2) = 4*pz_t^2 - 4*pz_g^2
-*
-* Now for photons, pz = E*dz/d, where d is the distance between the shower and the vertex, and dz is the z-component of d.
-* Plugging this in gives:
-* delta(m^2) = 4*E^2*[(dz_t/d_t)^2 - (dz_g/d_g)^2]
-* Using dz_g/d_g = cos(theta_g) gives:
-* delta(m^2) = 4*E^2*[(dz_t/d_t)^2 - cos^2(theta_g)]
-*
-* Now, m_g^2 = (E1 + E2)^2 - (px1 + px2)^2_g - (py1 + py2)^2_g - (pz1 + pz2)^2_g
-* However, we've defined our photon guesses pretty narrowly: py = 0, px1 = -px2, pz1 = pz2, E1 = E2
-* Thus, m_g^2 = (2E)^2 - (2pz_g)^2
-* Plugging in pz_g = E*dz_g/d_g yields:
-* Thus, m_g^2 = 4*E^2*[1 - (dz_g/d_g)^2]
-* Using dz_g/d_g = cos(theta_g)
-* Thus, m_g^2 = 4*E^2*sin^2(theta_g)
-* Rearranging gives: 4*E^2 = m_g^2/sin^2(theta_g)
-*
-* Plugging the above into delta(m^2)
-* delta(m^2) = m_g^2*[(dz_t/d_t)^2 - cos^2(theta_g)]/sin^2(theta_g)
-*
-* But, we want delta_m, not delta(m^2)
-* delta_m = m_g - m_t, m_t = sqrt(m_g^2 - delta(m^2))
-* delta_m = m_g - sqrt(m_g^2 - delta(m^2))
-* delta_m = m_g - sqrt(m_g^2 - m_g^2*[(dz_t/d_t)^2 - cos^2(theta_g)]/sin^2(theta_g))
-*
-* Rearrange and cancel terms
-* delta_m = m_g - m_g*sqrt(1 - [(dz_t/d_t)^2 - cos^2(theta_g)]/sin^2(theta_g))
-* delta_m = m_g - m_g*sqrt([sin^2(theta_g) - (dz_t/d_t)^2 + cos^2(theta_g)]/sin^2(theta_g))
-* delta_m = m_g - m_g*sqrt[1 - (dz_t/d_t)^2]/sin(theta_g)
-* delta_m = m_g - m_g*sqrt[(d_t^2 - dz_t^2)/d_t^2]/sin(theta_g)
-*
-* Note that d_t^2 - dz_t^2 = dx^2 (since dy is zero)
-* delta_m = m_g - m_g*sqrt[dx^2/d_t^2]/sin(theta_g)
-* delta_m = m_g - m_g*dx/(d_t*sin(theta_g))
-*
-* Getting the true dz_t & d_t in terms of some z_error:
-* d_t = sqrt(dx^2 + dz_t^2), dz_t = dz_g + z_error
-* delta_m = m_g - m_g*dx/(sin(theta_g)*sqrt(dx^2 + (dz_g + z_error)^2))
-* And dz_g = dx/tan(theta_g)
-* delta_m = m_g - m_g*dx/(sin(theta_g)*sqrt(dx^2 + (dx/tan(theta_g) + z_error)^2))
-* delta_m = m_g - m_g/(sin(theta_g)*sqrt(1 + (1/tan(theta_g) + z_error/dx)^2))
-*
-* For BCAL, dx = 65.
-* For the FCAL, dx = dz*tan(theta), dz = 650 - z_error (approx 650):
-* delta_m = m_g - m_g/(sin(theta_g)*sqrt(1 + (1 + z_error/(650 - z_error))^2/tan^2(theta_g)))
-* delta_m = m_g - m_g/(cos(theta_g)*sqrt(tan^2(theta_g) + (1 + z_error/(650 - z_error))^2))
-*
-* delta_m Is larger at higher m_g, max at 45 degrees (and is thus small for FCAL)
-* In fact, for the FCAL, delta_m is ~25 MeV for the eta mass when the z_error is 30cm (max: center of target + detached vertex)
-* Therefore, if the center of the target is used, the error is negligible compared to the width of the mass cut.
-*
-* For the BCAL:
-* With m_g near eta mass, z_error = 15: delta_m_max = ~60 MeV
-* With m_g near eta mass, z_error = 10: delta_m_max = ~40 MeV
-* With m_g near eta mass, z_error = 5: delta_m_max = ~20 MeV
-* With m_g near eta mass, z_error = 3: delta_m_max = ~15 MeV
-* With m_g near eta mass, z_error = 2: delta_m_max = ~9 MeV
-* Instead of the above, you can of course plot the delta_m for real data, and get something similar
-* So, choose a z_error of 5: compute at center of 10-cm-wide bins.
-*
-* OK, but what about eta -> 3pi0?  Or Lambda -> pi0, n?
-* eta -> 3pi0: Max error for a given pi0 is ~small, not bad when combined with 3 others: it's fine as long as cut is wide.
-* pi0, n: Neutron is likelys slow, similar to charged tracks: Error is much larger, cannot combo massive neutrals without exact vertex position
-* Well, OK, we can COMBO them, but we can't place mass cuts.
-*
-*******************************************************************************************************************************/
-
-
-/*************************************************** CHARGED TRACK TIMING CUTS *************************************************
-*
-* Charged time cuts are dependent on combo vertex, especially for low-theta tracks.
-* Wherever the combo vertex is, the track won't pass through it until after the kinfit, so do "final" PID cuts at the end
-*
-* Once we have a vertex for the combo, compute POCA to the vertex and do pre-kinfit time cuts there.
-* This will be pretty accurate, except for slow-single-track channels at low-theta, for which there's nothing you can do anyway.
-*
-* We don't want to wait until we have a combo vertex to do some PID timing cuts, but unfortunately we have to.
-* Since computing neutral timing every 10cm, we can try to do the same for charged tracks as well, but this doesn't work.
-*
-* The maximum error associated with this is:
-*
-* delta_t = t_prop_track - t_beam
-* delta_delta_t = delta_t_actual - delta_t_guess
-* delta_delta_t = (t_prop_track_actual - t_beam_actual) - (t_prop_track_guess - t_beam_guess)
-* delta_delta_t = (t_prop_track_actual - t_prop_track_guess) - (t_beam_actual - t_beam_guess)
-*
-* t_prop_track = t_track - path_track/(beta_track*c)
-* delta_delta_t = ((t_track - path_track_actual/(beta_track*c)) - (t_track - path_track_guess/(beta_track*c))) - (t_beam_actual - t_beam_guess)
-* delta_delta_t = (path_track_guess - path_track_actual)/(beta_track*c) - (t_beam_actual - t_beam_guess)
-*
-* t_beam = t_RF_targcenter + (vertz - targz)/c
-* delta_delta_t = (path_track_guess - path_track_actual)/(beta_track*c) - ((t_RF_targcenter + (vertz_actual - targz)/c) - (t_RF_targcenter + (vertz_guess - targz)/c))
-* delta_delta_t = (path_track_guess - path_track_actual)/(beta_track*c) + (vertz_guess - vertz_actual)/c
-*
-* define z_error = vertz_actual - vertz_guess
-* delta_delta_t = (path_track_guess - path_track_actual)/(beta_track*c) - z_error/c
-*
-* From here, assume track is straight over the distance z_error/2:
-*
-* FCAL:
-* path_track_guess = path_z_guess/cos(theta)
-* path_track_actual = path_z_actual/cos(theta), path_z_actual = path_z_guess - z_error
-* path_track_guess - path_track_actual = path_z_guess/cos(theta) - (path_z_guess - z_error)/cos(theta) = z_error/cos(theta)
-* delta_delta_t = z_error/(cos(theta)*beta_track*c) - z_error/c
-* delta_delta_t = (z_error/c) * [1/(cos(theta)*beta_track) - 1]
-*
-* BCAL:
-* path_track_guess = path_r/sin(theta)
-* path_track_actual = sqrt(path_z_actual*path_z_actual + path_r*path_r)
-* path_z_actual = path_z_guess - z_error
-* path_z_guess = path_r/tan(theta)
-* path_z_actual = path_r/tan(theta) - z_error
-* path_track_actual = sqrt((path_r/tan(theta) - z_error)^2 + path_r*path_r)
-* path_track_actual = path_r*sqrt((1/tan(theta) - z_error/path_r)^2 + 1)
-* delta_delta_t = path_r*(1/sin(theta) - sqrt((1/tan(theta) - z_error/path_r)^2 + 1))/(beta_track*c) - z_error/c
-*
-* These errors are too large:
-* For slow tracks the errors are huge, and for fast tracks the errors are small.
-* However, for fast tracks the timing isn't good enough to tell one PID from another anyway.
-* So this does not gain much.
-*
-* Instead, charged track timing cuts cannot be placed until the vertex position is found.
-*
-*******************************************************************************************************************************/
 
 /********************************************************************* CONSTRUCTOR **********************************************************************/
 
@@ -272,24 +50,13 @@ DSourceComboer::DSourceComboer(JEventLoop* locEventLoop)
 	DApplication* locApplication = dynamic_cast<DApplication*>(locEventLoop->GetJApplication());
 	DGeometry* locGeometry = locApplication->GetDGeometry(locEventLoop->GetJEvent().GetRunNumber());
 
-	//BEAM BUNCH PERIOD
-	vector<double> locBeamPeriodVector;
-	locEventLoop->GetCalib("PHOTON_BEAM/RF/beam_period", locBeamPeriodVector);
-	dBeamBunchPeriod = locBeamPeriodVector[0];
-
 	//TARGET INFORMATION
 	double locTargetCenterZ = 65.0;
 	locGeometry->GetTargetZ(locTargetCenterZ);
 	dTargetCenter.SetXYZ(0.0, 0.0, locTargetCenterZ);
-	locGeometry->GetTargetLength(dTargetLength);
 
 	//Get preselect tag
 	gPARMS->SetDefaultParameter("COMBO:SHOWER_SELECT_TAG", dShowerSelectionTag);
-
-	dBCALKinematics.resize(dNumPhotonVertexZBins);
-
-	//DEFINE LOOSE CUTS
-	Define_LooseCuts();
 
 	//CREATE DSourceComboINFO'S
 	vector<const DReactionVertexInfo*> locVertexInfos;
@@ -301,48 +68,11 @@ DSourceComboer::DSourceComboer(JEventLoop* locEventLoop)
 	dSourceComboInfos.reserve(dSourceComboInfoSet.size());
 	std::copy(dSourceComboInfoSet.begin(), dSourceComboInfoSet.end(), std::back_inserter(dSourceComboInfos));
 	dSourceComboInfoSet.clear(); //free up the memory
-}
 
-void DSourceComboer::Define_LooseCuts(void)
-{
-	//Create photon/RF delta-t cuts
-	dPhotonTimeCutMap.emplace(SYS_BCAL, new TF1("df_BCALShowerRFTimeComboingCut", "[0]", 0.0, 12.0));
-	dPhotonTimeCutMap[SYS_BCAL]->SetParameter(0, 2.0);
-	dPhotonTimeCutMap.emplace(SYS_FCAL, new TF1("df_FCALShowerRFTimeComboingCut", "[0]", 0.0, 12.0));
-	dPhotonTimeCutMap[SYS_FCAL]->SetParameter(0, 2.0);
-
-	// Timing Cuts: Photon
-	dPIDTimingCuts[Gamma][SYS_BCAL] = 3.0;
-	dPIDTimingCuts[Gamma][SYS_FCAL] = 2.5;
-
-	// Timing Cuts: Leptons
-	dPIDTimingCuts[Electron][SYS_BCAL] = 1.0;
-	dPIDTimingCuts[Electron][SYS_FCAL] = 2.5;
-	dPIDTimingCuts[Electron][SYS_TOF] = 2.5;
-	dPIDTimingCuts[Positron] = dPIDTimingCuts[Electron];
-	dPIDTimingCuts[MuonMinus] = dPIDTimingCuts[Electron];
-	dPIDTimingCuts[MuonPlus] = dPIDTimingCuts[Electron];
-
-	// Timing Cuts: Mesons
-	dPIDTimingCuts[PiPlus][SYS_BCAL] = 2.0;
-	dPIDTimingCuts[PiPlus][SYS_FCAL] = 2.5;
-	dPIDTimingCuts[PiPlus][SYS_TOF] = 2.5;
-
-	dPIDTimingCuts[PiMinus][SYS_BCAL] = 2.0;
-	dPIDTimingCuts[PiMinus][SYS_FCAL] = 2.5;
-	dPIDTimingCuts[PiMinus][SYS_TOF] = 2.5;
-
-	dPIDTimingCuts[KPlus][SYS_BCAL] = 0.75;
-	dPIDTimingCuts[KPlus][SYS_FCAL] = 2.5;
-	dPIDTimingCuts[KPlus][SYS_TOF] = 2.0;
-	dPIDTimingCuts[KMinus] = dPIDTimingCuts[KPlus];
-
-	// Timing Cuts: Baryons
-	dPIDTimingCuts[Proton][SYS_BCAL] = 2.5;
-	dPIDTimingCuts[Proton][SYS_FCAL] = 2.5;
-	dPIDTimingCuts[Proton][SYS_TOF] = 2.5;
-
-	dPIDTimingCuts[AntiProton] = dPIDTimingCuts[Proton];
+	//CREATE HANDLERS
+	dSourceComboP4Handler = new DSourceComboP4Handler();
+	dSourceComboTimeHandler = new DSourceComboTimeHandler(locEventLoop);
+	dSourceComboVertexer = new DSourceComboVertexer(locEventLoop, this, dSourceComboP4Handler);
 }
 
 /******************************************************************* CREATE DSOURCOMBOINFO'S ********************************************************************/
@@ -447,7 +177,7 @@ DSourceComboUse DSourceComboer::Create_ZDependentSourceComboUses(const DReaction
 	//E.g. if something crazy like 2 KShorts -> 3pi, each at a different vertex-z bin, then they will no longer be grouped together vertically (separate uses: horizontally instead)
 
 	//see if they've already been created.  if so, just return it.
-	auto locVertexZBins = dSourceComboVertexer.Get_VertexZBins(locReactionVertexInfo, locReactionChargedCombo);
+	auto locVertexZBins = dSourceComboVertexer->Get_VertexZBins(locReactionVertexInfo, locReactionChargedCombo);
 	auto locCreationPair = std::make_pair(locReactionVertexInfo, locVertexZBins);
 	auto locUseIterator = dSourceComboUseVertexZMap.find(locCreationPair);
 	if(locUseIterator != dSourceComboUseVertexZMap.end())
@@ -466,7 +196,7 @@ DSourceComboUse DSourceComboer::Create_ZDependentSourceComboUses(const DReaction
 	for(auto locStepVertexInfo : locStepVertexInfos)
 	{
 		//handle indeterminate vertex case
-		if(!dSourceComboVertexer.Get_VertexDeterminableWithCharged(locStepVertexInfo))
+		if(!dSourceComboVertexer->Get_VertexDeterminableWithCharged(locStepVertexInfo))
 		{
 			//no different than before: vertex bin remains unknown
 			//however, it's possible that decay products down the road have a determined vertex-z
@@ -474,7 +204,7 @@ DSourceComboUse DSourceComboer::Create_ZDependentSourceComboUses(const DReaction
 		}
 
 		//for this vertex, get the vertex z bin
-		auto locVertexZBin = dSourceComboVertexer.Get_VertexZBin(locReactionChargedCombo, locStepVertexInfo);
+		auto locVertexZBin = dSourceComboVertexer->Get_VertexZBin(locReactionChargedCombo, locStepVertexInfo);
 
 		//loop over the steps at this vertex z bin, in reverse order
 		auto locStepIndices = locStepVertexInfo->Get_StepIndices();
@@ -660,22 +390,17 @@ void DSourceComboer::Reset_NewEvent(JEventLoop* locEventLoop)
 		return; //nope
 	dEventNumber = locEventNumber;
 
-	//CLEAR OLD DATA
-	dBCALShowers.clear();
-	dFCALShowers.clear();
-	dFCALKinematics.clear();
-	for(auto& locMap : dBCALKinematics)
-		locMap.clear();
-
-	//SETUP NEUTRAL SHOWERS
-	Setup_NeutralShowers(locEventLoop);
-
 //CLEAR MORE THINGS!!
 	//RECYCLE COMBO & VECTOR POINTERS
 	//be careful! don't recycle combos with a use pid != unknown, because they are just copies! not unique pointers!
 
-	dSourceComboP4Handler.Reset();
-	dSourceComboVertexer.Reset();
+	dSourceComboP4Handler->Reset();
+	dSourceComboVertexer->Reset();
+
+	//SETUP NEUTRAL SHOWERS
+	vector<const DNeutralShower*> locNeutralShowers;
+	locEventLoop->Get(locNeutralShowers, dShowerSelectionTag);
+	dSourceComboP4Handler->Setup_NeutralShowers(locNeutralShowers);
 }
 
 void DSourceComboer::Setup_NeutralShowers(JEventLoop* locEventLoop)
@@ -687,9 +412,6 @@ void DSourceComboer::Setup_NeutralShowers(JEventLoop* locEventLoop)
 	//GET RF BUNCH
 	locEventLoop->GetSingle(dInitialEventRFBunch);
 
-	//GET NEUTRAL SHOWERS
-	vector<const DNeutralShower*> locNeutralShowers;
-	locEventLoop->Get(locNeutralShowers);
 
 	//ARRANGE NEUTRAL SHOWERS
 	for(auto& locShower : locNeutralShowers)
@@ -698,108 +420,33 @@ void DSourceComboer::Setup_NeutralShowers(JEventLoop* locEventLoop)
 		locContainer.push_back(locShower);
 	}
 
-	//CALCULATE KINEMATICS
-	//FCAL: at target center
-	for(auto& locShower : dFCALShowers)
-		dFCALKinematics.emplace(locShower, Create_KinematicData(locShower, dTargetCenter));
-	//BCAL: in vertex-z bins
-	for(size_t loc_i = 0; loc_i < dNumPhotonVertexZBins; ++loc_i)
-	{
-		DVector3 locBinCenter(0.0, 0.0, Get_PhotonVertexZBinCenter(loc_i));
-		for(auto& locShower : dBCALShowers)
-			dBCALKinematics[loc_i].emplace(locShower, Create_KinematicData(locShower, locBinCenter));
-	}
 
 	//DETERMINE WHICH RF BUNCHES ARE VALID
 	//FCAL: at target center
 	for(auto& locShower : dFCALShowers)
-		Calc_PhotonBeamBunchShifts(locShower, dFCALKinematics[locShower], dInitialEventRFBunch->dTime, dFCALPhotonShowersByBeamBunch);
+		Calc_PhotonBeamBunchShifts(locShower, dFCALKinematics[locShower], dInitialEventRFBunch->dTime, dShowersByBeamBunchByZBin[DSourceComboInfo::Get_VertexZIndex_FCAL()]);
 	//BCAL + FCAL: in vertex-z bins
 	for(size_t loc_i = 0; loc_i < dNumPhotonVertexZBins; ++loc_i)
 	{
-		const auto& locAllPhotonsByBeamBunch = dPhotonShowersByBeamBunch[loc_i];
-
 		//propagate RF time to vertex position
 		double locPropagatedRFTime = dInitialEventRFBunch->dTime + (Get_PhotonVertexZBinCenter(loc_i) - dTargetCenter.Z())/29.9792458;
 		for(auto& locShower : dBCALShowers)
-			Calc_PhotonBeamBunchShifts(locShower, dBCALKinematics[loc_i][locShower], locPropagatedRFTime, locAllPhotonsByBeamBunch);
+			Calc_PhotonBeamBunchShifts(locShower, dBCALKinematics[loc_i][locShower], locPropagatedRFTime, dShowersByBeamBunchByZBin[loc_i]);
 
 		//insert the previously-done FCAL photons
-		for(auto locBeamBunchPair : dFCALPhotonShowersByBeamBunch)
+		for(auto locBeamBunchPair : dShowersByBeamBunchByZBin[DSourceComboInfo::Get_VertexZIndex_FCAL()])
 		{
 			const auto& locShowers = locBeamBunchPair.second;
-			auto locBothIterator = locAllPhotonsByBeamBunch.find(locBeamBunchPair.first);
-			if(locBothIterator != locAllPhotonsByBeamBunch.end())
+			auto locBothIterator = dShowersByBeamBunchByZBin[loc_i].find(locBeamBunchPair.first);
+			if(locBothIterator != dShowersByBeamBunchByZBin[loc_i].end())
 			{
 				auto locPhotonVector = locBothIterator->second;
 				locPhotonVector.insert(locPhotonVector.end(), locShowers.begin(), locShowers.end());
 			}
 			else
-				locAllPhotonsByBeamBunch.emplace(locBeamBunchPair);
+				dShowersByBeamBunchByZBin[loc_i].emplace(locBeamBunchPair);
 		}
 	}
-}
-
-void DSourceComboer::Calc_PhotonBeamBunchShifts(const DNeutralShower* locNeutralShower, shared_ptr<const DKinematicData>& locKinematicData,
-		double locRFTime, DPhotonShowersByBeamBunch& locShowersByBeamBunch) const
-{
-	//get delta-t cut
-	DetectorSystem_t locSystem = locNeutralShower->dDetectorSystem;
-	double locDeltaTCut = dPhotonTimeCutMap[locSystem]->Eval(locNeutralShower->dEnergy) + Calc_MaxDeltaTError(locNeutralShower, locKinematicData);
-
-	//prepare for loop over possible #-RF-shifts
-	double locVertexTime = locKinematicData->time();
-	int locOrigNumShifts = Calc_RFBunchShift(locRFTime, locVertexTime); //get best shift
-
-	//start with best-shift, then loop up until fails cut
-	int locNumShifts = locOrigNumShifts;
-	double locDeltaT = locVertexTime - (locRFTime + locNumShifts*dBeamBunchPeriod);
-	while(fabs(locDeltaT) < locDeltaTCut)
-	{
-		locShowersByBeamBunch[locNumShifts].push_back(locNeutralShower);
-		++locNumShifts;
-		locDeltaT = locVertexTime - (locRFTime + locNumShifts*dBeamBunchPeriod);
-	}
-
-	//now loop down in n-shifts
-	locNumShifts = locOrigNumShifts - 1;
-	locDeltaT = locVertexTime - (locRFTime + locNumShifts*dBeamBunchPeriod);
-	while(fabs(locDeltaT) < locDeltaTCut)
-	{
-		locShowersByBeamBunch[locNumShifts].push_back(locNeutralShower);
-		--locNumShifts;
-		locDeltaT = locVertexTime - (locRFTime + locNumShifts*dBeamBunchPeriod);
-	}
-
-	//this means we may need to accept EARLIER RF bunches
-	//continue down-shift loop, this time including time offset
-	locDeltaT = locVertexTime - (locRFTime + locNumShifts*dBeamBunchPeriod + dMaxDecayTimeOffset); //+dMaxTimeOffset: takes longer for "RF" time to get there (due to slow decaying particle)
-	while(fabs(locDeltaT) < locDeltaTCut)
-	{
-		locShowersByBeamBunch[locNumShifts].push_back(locNeutralShower);
-		--locNumShifts;
-		locDeltaT = locVertexTime - (locRFTime + locNumShifts*dBeamBunchPeriod + dMaxDecayTimeOffset);
-	}
-}
-
-double DSourceComboer::Calc_MaxDeltaTError(const DNeutralShower* locNeutralShower, const shared_ptr<const DKinematicData>& locKinematicData) const
-{
-	double locTheta = locKinematicData->momentum().Theta();
-	if(locNeutralShower->dDetectorSystem == SYS_BCAL)
-	{
-		float& locZError = dPhotonVertexZBinWidth/2.0; //evaluated at center of bin
-		double locR = locNeutralShower->dSpacetimeVertex.Vect().Perp();
-		double locPathError = locR*(1.0/sin(locTheta) - sqrt(1.0 + pow(1.0/tan(locTheta) - locZError/locR, 2.0))) - locZError;
-		return locPathError/SPEED_OF_LIGHT;
-	}
-
-	//FCAL
-	double locDeltaZ = locNeutralShower->dSpacetimeVertex.Z() - dTargetCenter.Z();
-	double locMaxZError = dTargetLength/2.0 + 15.0; //center of target + detached vertex
-	//delta_delta_t = (650 - z_error)*[1/cos(theta) - sqrt(tan^2(theta) + (1 - z_error/(650 - z_error))^2)]/c - z_error/c
-	double locPathErrorTerm = 1.0/cos(locTheta) - sqrt(pow(tan(locTheta), 2.0) + pow(1.0 - locMaxZError/(locDeltaZ - locMaxZError), 2.0));
-	double locPathError = (locDeltaZ - locMaxZError)*locPathErrorTerm - locMaxZError;
-	return locPathError/SPEED_OF_LIGHT;
 }
 
 /******************************************************************* CREATE DSOURCOMBOINFO'S ********************************************************************/
@@ -844,8 +491,9 @@ void DSourceComboer::Build_ParticleCombos(JEventLoop* locEventLoop, const DReact
 		//fully-neutral combos saved-to/retrieved-from charged-independent area for re-use (use already contains specific vertex-z bin)
 		//first grab fcal combo results from fcal-only use area (or mixed area), first setting the z-bin to -1
 
-	//Massive neutrals: Just combo with the rest of the neutrals
-		//Just hold off on both mass cuts and timing cuts
+	//Massive neutrals:
+		//Just combo at the same time with the rest of the neutrals, but hold off on both mass cuts and timing cuts
+		//They must be done with a specific vertex-z, rather than just a z-bin
 
 	//get step vertex infos (sorted in dependency order)
 	auto locStepVertexInfos = locReactionVertexInfo->Get_StepVertexInfos();
@@ -868,7 +516,7 @@ void DSourceComboer::Build_ParticleCombos(JEventLoop* locEventLoop, const DReact
 	for(auto locChargedCombo : locChargedCombos)
 	{
 		//Calc all the vertex positions and time offsets for the vertices for these combos (where possible without beam energy)
-		dSourceComboVertexer.Calc_VertexTimeOffsets(locReactionVertexInfo, locChargedCombo);
+		dSourceComboVertexer->Calc_VertexTimeOffsets(locReactionVertexInfo, locChargedCombo);
 
 		//For the charged tracks, apply timing cuts to determine which RF bunches are possible
 //handle unknown vertex case!!
@@ -1001,7 +649,7 @@ void DSourceComboer::Create_SourceCombos(const DSourceComboUse& locComboUseToCre
 	{
 		for(auto locSourceCombo : *locSourceCombos)
 		{
-			if(!dSourceComboP4Handler.Cut_InvariantMass(locSourceCombo, locDecayPID, locVertexZBin))
+			if(!dSourceComboP4Handler->Cut_InvariantMass(locSourceCombo, locDecayPID, locVertexZBin))
 				continue;
 
 			//save the results
@@ -1025,7 +673,7 @@ void DSourceComboer::Create_SourceCombos(const DSourceComboUse& locComboUseToCre
 			//if locBeamBunches is empty, don't cut: contains only massive neutrals, no determination of rf bunch yet
 			if(!locBeamBunches.empty())
 			{
-				locBeamBunches = dSourceComboP4Handler.Cut_InvariantMass(locSourceCombo, locDecayPID, locBeamBunches);
+				locBeamBunches = dSourceComboP4Handler->Cut_InvariantMass(locSourceCombo, locDecayPID, locBeamBunches);
 				if(locBeamBunches.empty())
 					continue; //failed the cut
 			}
@@ -1346,8 +994,6 @@ void DSourceComboer::Combo_Vertically_AllParticles(const DSourceComboUse& locCom
 
 void DSourceComboer::Combo_Vertically_NParticles(const DSourceComboUse& locComboUseToCreate, const DSourceComboUse& locNMinus1ComboUse, ComboingStage_t locComboingStage)
 {
-	auto locVertexZBin = std::get<1>(locComboUseToCreate);
-
 	//either: combining two particles with the same PID to create a new combo, or combining a combo of N particles (with the same PID) with one more particle
 	auto locComboInfo = std::get<2>(locComboUseToCreate);
 	auto locParticlePair = locComboInfo->Get_NumParticles().back(); //is guaranteed to be size 1
@@ -1367,7 +1013,7 @@ void DSourceComboer::Combo_Vertically_NParticles(const DSourceComboUse& locCombo
 	}
 
 	//For checking RF bunches (ignored if on charged stage)
-	const unordered_map<const JObject*, vector<int>>& locShowerRFMap = (locComboingStage == d_MixedStage_ZIndependent) ? dShowerRFBunches_FCAL : dShowerRFBunches_Both[locVertexZBin];
+	auto locVertexZBin = (locComboingStage != d_MixedStage_ZIndependent) ? std::get<1>(locComboUseToCreate) : DSourceComboInfo::Get_VertexZIndex_FCAL();
 
 	if(locNumParticles == 2)
 	{
@@ -1377,22 +1023,17 @@ void DSourceComboer::Combo_Vertically_NParticles(const DSourceComboUse& locCombo
 		auto locLastIteratorToCheck = std::prev(locParticles.end());
 		for(auto locFirstIterator = locParticles.begin(); locFirstIterator != locLastIteratorToCheck; ++locFirstIterator)
 		{
-			const auto locRFBunches_First = (locPID == Gamma) ? &(locShowerRFMap[*locFirstIterator]) : nullptr;
+			auto locRFBunches_First = (locPID == Gamma) ? dSourceComboTimeHandler->Get_ValidRFBunches(*locFirstIterator) : {};
 			for(auto locSecondIterator = std::next(locFirstIterator); locSecondIterator != locParticles.end(); ++locSecondIterator)
 			{
 				auto locIsZIndependent = (locComboingStage == d_MixedStage_ZIndependent) || (Get_IsZIndependent(*locFirstIterator) && Get_IsZIndependent(*locSecondIterator));
 				if((locComboingStage == d_MixedStage) && locIsZIndependent)
 					continue; //this combo has already been created (assuming it was valid): during the FCAL-only stage
 
-				//See which RF bunches match up, if any
-				vector<int> locValidRFBunches = {};
-				if(locPID == Gamma) //if charged or massive neutrals, ignore (they don't choose at this stage)
-				{
-					const auto& locRFBunches_Second = locShowerRFMap[*locSecondIterator];
-					locValidRFBunches = Get_CommonRFBunches(*locRFBunches_First, locRFBunches_Second);
-					if(locValidRFBunches.empty())
-						continue;
-				}
+				//See which RF bunches match up, if any //if charged or massive neutrals, ignore (they don't choose at this stage)
+				vector<int> locValidRFBunches = (locPID != Gamma) ? {} : dSourceComboTimeHandler->Get_CommonRFBunches(locRFBunches_First, *locSecondIterator, locVertexZBin);
+				if((locPID == Gamma) && locValidRFBunches.empty())
+					continue;
 
 				auto locCombo = dResourcePool_SourceCombo.Get_Resource();
 				locCombo->Set_Members({std::make_pair(locPID, *locFirstIterator), std::make_pair(locPID, *locSecondIterator)}, {}, locIsZIndependent);
@@ -1430,12 +1071,8 @@ void DSourceComboer::Combo_Vertically_NParticles(const DSourceComboUse& locCombo
 				continue; //this combo has already been created (assuming it was valid): during the FCAL-only stage
 
 			//See which RF bunches match up //guaranteed to be at least one, due to selection in Get_ParticlesForComboing() function
-			vector<int> locValidRFBunches = {}; //if charged or massive neutrals, ignore (they don't choose at this stage)
-			if(locPID == Gamma)
-			{
-				const vector<int>& locRFBunches_Second = locShowerRFMap[*locParticleSearchIterator];
-				locValidRFBunches = Get_CommonRFBunches(locValidRFBunches_NMinus1, locRFBunches_Second);
-			}
+			//if charged or massive neutrals, ignore (they don't choose at this stage)
+			vector<int> locValidRFBunches = (locPID != Gamma) ? {} : dSourceComboTimeHandler->Get_CommonRFBunches(locValidRFBunches_NMinus1, *locParticleSearchIterator, locVertexZBin);
 
 			auto locComboParticlePairs = locCombo_NMinus1->Get_SourceParticles();
 			locComboParticlePairs.emplace_back(locPID, *locParticleSearchIterator);
@@ -1648,7 +1285,6 @@ void DSourceComboer::Create_Combo_OneParticle(const DSourceComboUse& locComboUse
 
 	//get combo use contents
 	auto locParticlePair = std::get<2>(locComboUseToCreate)->Get_NumParticles().front();
-	auto locVertexZBin = std::get<1>(locComboUseToCreate);
 
 	//if on the mixed stage, must be doing all neutrals: first copy over ALL fcal-only results
 	if(locComboingStage == d_MixedStage)
@@ -1660,7 +1296,7 @@ void DSourceComboer::Create_Combo_OneParticle(const DSourceComboUse& locComboUse
 	}
 
 	//For checking RF bunches (ignored if on charged stage)
-	const unordered_map<const JObject*, vector<int>>& locShowerRFMap = (locComboingStage == d_MixedStage_ZIndependent) ? dShowerRFBunches_FCAL : dShowerRFBunches_Both[locVertexZBin];
+	auto locVertexZBin = (locComboingStage != d_MixedStage_ZIndependent) ? std::get<1>(locComboUseToCreate) : DSourceComboInfo::Get_VertexZIndex_FCAL();
 
 	auto locPID = locParticlePair.first;
 
@@ -1676,7 +1312,7 @@ void DSourceComboer::Create_Combo_OneParticle(const DSourceComboUse& locComboUse
 		locCombo->Set_Members({std::make_pair(locPID, locParticle)}, {}, locIsZIndependent);
 		locSourceCombosByUseSoFar[locComboUseToCreate]->push_back(locCombo); //save it //in creation order
 		if(locPID == Gamma)
-			Register_ValidRFBunches(locComboUseToCreate, locCombo, locShowerRFMap.find(locParticle)->second, locComboingStage, nullptr);
+			Register_ValidRFBunches(locComboUseToCreate, locCombo, dSourceComboTimeHandler->Get_ValidRFBunches(locParticle, locVertexZBin), locComboingStage, nullptr);
 		else
 			Register_ValidRFBunches(locComboUseToCreate, locCombo, {}, locComboingStage, nullptr);
 	}
@@ -1829,8 +1465,6 @@ void DSourceComboer::Combo_Horizontally_AddCombo(const DSourceComboUse& locCombo
 
 void DSourceComboer::Combo_Horizontally_AddParticle(const DSourceComboUse& locComboUseToCreate, const DSourceComboUse& locAllBut1ComboUse, Particle_t locPID, ComboingStage_t locComboingStage, const DSourceCombo* locChargedCombo_Presiding)
 {
-	auto locVertexZBin = std::get<1>(locComboUseToCreate);
-
 	//Get combos so far
 	auto& locSourceCombosByUseSoFar = Get_CombosSoFar(locComboingStage, d_Neutral); //if not neutral then is on charged stage: argument doesn't matter
 
@@ -1859,7 +1493,7 @@ void DSourceComboer::Combo_Horizontally_AddParticle(const DSourceComboUse& locCo
 	}
 
 	//For checking RF bunches (ignored if on charged stage)
-	const unordered_map<const JObject*, vector<int>>& locShowerRFMap = (locComboingStage == d_MixedStage_ZIndependent) ? dShowerRFBunches_FCAL : dShowerRFBunches_Both[locVertexZBin];
+	auto locVertexZBin = (locComboingStage != d_MixedStage_ZIndependent) ? std::get<1>(locComboUseToCreate) : DSourceComboInfo::Get_VertexZIndex_FCAL();
 
 	//loop over the combos
 	for(auto locCombo_AllBut1 : *locCombos_AllBut1)
@@ -1891,13 +1525,9 @@ void DSourceComboer::Combo_Horizontally_AddParticle(const DSourceComboUse& locCo
 			if(std::binary_search(locUsedParticles_AllBut1.begin(), locUsedParticles_AllBut1.end(), locParticle))
 				continue; //this shower has already been used, this combo won't work
 
-			//See which RF bunches match up //guaranteed to be at least one, due to selection in Get_CombosForComboing() function
-			vector<int> locValidRFBunches = {}; //if charged or massive neutrals, ignore (they don't choose at this stage)
-			if(locComboingStage != d_ChargedStage)
-			{
-				const vector<int>& locRFBunches_Second = locShowerRFMap[locParticle];
-				locValidRFBunches = Get_CommonRFBunches(locValidRFBunches_AllBut1, locRFBunches_Second);
-			}
+			//See which RF bunches match up //guaranteed to be at least one, due to selection in Get_ParticlesForComboing() function
+			//if charged or massive neutrals, ignore (they don't choose at this stage)
+			vector<int> locValidRFBunches = (locPID != Gamma) ? locValidRFBunches_AllBut1 : dSourceComboTimeHandler->Get_CommonRFBunches(locValidRFBunches_AllBut1, locParticle, locVertexZBin);
 
 			//no duplicates: this combo is unique.  build a new combo
 			auto locComboParticles = locUsedParticlePairs_AllBut1;
@@ -1914,46 +1544,24 @@ void DSourceComboer::Combo_Horizontally_AddParticle(const DSourceComboUse& locCo
 
 /***************************************************************** PARTICLE UTILITY FUNCTIONS *****************************************************************/
 
-const vector<int>& DSourceComboer::Get_ValidRFBunches(const DSourceComboUse& locSourceComboUse, const DSourceCombo* locSourceCombo) const
-{
-	//in general, the valid rf bunches are only combo-dependent, not use-dependent
-	//however, they ARE use-dependent if the combo contains a massive-neutral particle
-	//this is because the timing is needed to get the massive-neutral momentum, which is used in invariant mass cuts for the use
-	auto locRFComboIterator = dValidRFBunches_ByCombo.find(locSourceCombo);
-	if(locRFComboIterator != dValidRFBunches_ByCombo.end())
-		return locRFComboIterator->second; //combo-dependent (no massive neutrals)
-
-	auto locRFComboUseIterator = dValidRFBunches_ByUse.find(std::make_pair(locSourceComboUse, locSourceCombo));
-	if(locRFComboUseIterator == dValidRFBunches_ByUse.end())
-		return {}; //shouldn't be possible!!!
-
-	return locRFComboUseIterator->second; //depends on massive neutrals
-}
-
 const vector<const JObject*>& DSourceComboer::Get_ParticlesForComboing(Particle_t locPID, ComboingStage_t locComboingStage, const vector<int>& locBeamBunches, signed char locVertexZBin)
 {
 	//find all particles that have an overlapping beam bunch with the input
 	if(ParticleCharge(locPID) != 0) //charged tracks
 		return dTracksByPID[locPID]; //rf bunch & vertex-z are irrelevant
 	else if(locPID != Gamma) //massive neutrals
-		return dPhotonShowersByBeamBunch[0][{}]; //all neutrals: cannot do PID at all, and cannot do mass cuts until a specific vertex is chosen, so vertex-z doesn't matter
-	else if(locComboingStage == d_MixedStage_ZIndependent) //fcal photons
-	{
-		auto locGroupBunchIterator = dFCALPhotonShowersByBeamBunch.find(locBeamBunches);
-		if(locGroupBunchIterator != dFCALPhotonShowersByBeamBunch.end())
-			return locGroupBunchIterator->second;
-		return Get_ShowersByBeamBunch(locBeamBunches, dFCALPhotonShowersByBeamBunch);
-	}
-	else //bcal + fcal photons
-	{
-		auto locGroupBunchIterator = dPhotonShowersByBeamBunch[locVertexZBin].find(locBeamBunches);
-		if(locGroupBunchIterator != dPhotonShowersByBeamBunch[locVertexZBin].end())
-			return locGroupBunchIterator->second;
-		return Get_ShowersByBeamBunch(locBeamBunches, dPhotonShowersByBeamBunch[locVertexZBin]);
-	}
+		return dShowersByBeamBunchByZBin[DSourceComboInfo::Get_VertexZIndex_Unknown()][{}]; //all neutrals: cannot do PID at all, and cannot do mass cuts until a specific vertex is chosen, so vertex-z doesn't matter
+
+	if(locComboingStage == d_MixedStage_ZIndependent) //fcal
+		locVertexZBin = DSourceComboInfo::Get_VertexZIndex_FCAL();
+
+	auto locGroupBunchIterator = dShowersByBeamBunchByZBin[locVertexZBin].find(locBeamBunches);
+	if(locGroupBunchIterator != dShowersByBeamBunchByZBin[locVertexZBin].end())
+		return locGroupBunchIterator->second;
+	return Get_ShowersByBeamBunch(locBeamBunches, dShowersByBeamBunchByZBin[locVertexZBin]);
 }
 
-vector<const JObject*>* DSourceComboer::Get_ShowersByBeamBunch(const vector<int>& locBeamBunches, DPhotonShowersByBeamBunch& locShowersByBunch)
+const vector<const JObject*>& DSourceComboer::Get_ShowersByBeamBunch(const vector<int>& locBeamBunches, DPhotonShowersByBeamBunch& locShowersByBunch)
 {
 	//find all particles that have an overlapping beam bunch with the input
 	//this won't happen often (max probably tens of times each event), so we can be a little inefficient
@@ -1976,10 +1584,26 @@ vector<const JObject*>* DSourceComboer::Get_ShowersByBeamBunch(const vector<int>
 		locShowersByBunch.emplace(locBunchesSoFar, std::move(locMergeResult));
 		Build_ParticleIterators(locBeamBunches, locShowersByBunch[locBeamBunches]);
 	}
-	return &(locShowersByBunch[locBeamBunches]);
+	return locShowersByBunch[locBeamBunches];
 }
 
 /******************************************************************* COMBO UTILITY FUNCTIONS ******************************************************************/
+
+const vector<int>& DSourceComboer::Get_ValidRFBunches(const DSourceComboUse& locSourceComboUse, const DSourceCombo* locSourceCombo) const
+{
+	//in general, the valid rf bunches are only combo-dependent, not use-dependent
+	//however, they ARE use-dependent if the combo contains a massive-neutral particle
+	//this is because the timing is needed to get the massive-neutral momentum, which is used in invariant mass cuts for the use
+	auto locRFComboIterator = dValidRFBunches_ByCombo.find(locSourceCombo);
+	if(locRFComboIterator != dValidRFBunches_ByCombo.end())
+		return locRFComboIterator->second; //combo-dependent (no massive neutrals)
+
+	auto locRFComboUseIterator = dValidRFBunches_ByUse.find(std::make_pair(locSourceComboUse, locSourceCombo));
+	if(locRFComboUseIterator == dValidRFBunches_ByUse.end())
+		return {}; //shouldn't be possible!!!
+
+	return locRFComboUseIterator->second; //depends on massive neutrals
+}
 
 void DSourceComboer::Register_ValidRFBunches(const DSourceComboUse& locSourceComboUse, const DSourceCombo* locSourceCombo, const vector<int>& locRFBunches, ComboingStage_t locComboingStage, const DSourceCombo* locChargedCombo_WithNow)
 {
@@ -2160,7 +1784,7 @@ const DSourceCombo* DSourceComboer::Get_Presiding_ChargedCombo(const DSourceComb
 	auto locDesiredVertexZBin = std::get<1>(locNextComboUse);
 	for(auto locNextPotentialCombo : locNextChargedComboVector)
 	{
-		auto locNextVertexZBin = dSourceComboVertexer.Get_VertexZBin(locNextPotentialCombo);
+		auto locNextVertexZBin = dSourceComboVertexer->Get_VertexZBin(locNextPotentialCombo);
 		if(locNextVertexZBin != locDesiredVertexZBin)
 			continue;
 		if(++locCount == locInstance)

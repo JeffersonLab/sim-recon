@@ -28,7 +28,10 @@
 #include "ANALYSIS/DReactionStepVertexInfo.h"
 #include "ANALYSIS/DReactionVertexInfo.h"
 #include "ANALYSIS/DResourcePool.h"
-#include "ANALYSIS/DSourceComboP4Handler.h"
+
+#include "ANALYSIS/DSourceComboVertexer.h"
+#include "ANALYSIS/dSourceComboP4Handler->h"
+#include "ANALYSIS/dSourceComboTimeHandler->h"
 
 using namespace std;
 using namespace jana;
@@ -39,10 +42,10 @@ namespace DAnalysis
 //BIG TO DO'S:
 //once RF bunch is chosen, redo mass cuts involving massive neutrals
 //once vertex position fully defined, place mass cuts on massive neutrals
+//compute vertices using beam energy (missing mass)
 
 //ANY TIME:
-//Fill dShowerRFBunches_FCAL & dShowerRFBunches_Both
-//compute and save Get_ChargeContent() ahead of time (and just read it)
+//Fill dShowerRFBunches
 //Cut combo ahead of time if not enough tracks/showers
 //fill in calc inv mass functions (save results)
 
@@ -97,7 +100,7 @@ class DSourceComboer : public JObject
 
 		/********************************************************** DECLARE MEMBER FUNCTIONS ***********************************************************/
 
-		void Define_LooseCuts(void);
+		//SETUP
 		void Reset_NewEvent(JEventLoop* locEventLoop);
 		void Setup_NeutralShowers(JEventLoop* locEventLoop);
 
@@ -112,11 +115,6 @@ class DSourceComboer : public JObject
 		DSourceComboUse Make_ComboUse(Particle_t locInitPID, const map<Particle_t, unsigned char>& locNumParticles, const map<DSourceComboUse, unsigned char>& locFurtherDecays);
 		const DSourceComboInfo* MakeOrGet_SourceComboInfo(const vector<pair<Particle_t, unsigned char>>& locNumParticles, const vector<pair<DSourceComboUse, unsigned char>>& locFurtherDecays);
 		const DSourceComboInfo* GetOrMake_SourceComboInfo(const vector<pair<Particle_t, unsigned char>>& locNumParticles, const vector<pair<DSourceComboUse, unsigned char>>& locFurtherDecays);
-
-		//TIMING METHODS
-		void Calc_PhotonBeamBunchShifts(const DNeutralShower* locNeutralShower, shared_ptr<const DKinematicData>& locKinematicData, double locRFTime,
-				DPhotonShowersByBeamBunch& locShowersByBeamBunch) const;
-		double Calc_MaxDeltaTError(const DNeutralShower* locNeutralShower, const shared_ptr<const DKinematicData>& locKinematicData) const;
 
 		//CREATE COMBOS - GENERAL METHODS
 		void Create_SourceCombos(const DSourceComboUse& locComboUseToCreate, ComboingStage_t locComboingStage, const DSourceCombo* locChargedCombo_Presiding);
@@ -138,22 +136,21 @@ class DSourceComboer : public JObject
 
 		//BUILD/RETRIEVE RESUME-AT ITERATORS
 		void Build_ParticleIterators(const vector<int>& locBeamBunches, const vector<const JObject*>& locParticles);
-		vector<const JObject*>::const_iterator Get_ResumeAtIterator_Particles(const DSourceCombo* locSourceCombo, const vector<int>& locBeamBunches) const;
 		void Build_ComboIterators(const vector<int>& locBeamBunches, const vector<const DSourceCombo*>& locCombos, ComboingStage_t locComboingStage, signed char locVertexZBin);
+		vector<const JObject*>::const_iterator Get_ResumeAtIterator_Particles(const DSourceCombo* locSourceCombo, const vector<int>& locBeamBunches) const;
 		vector<const DSourceCombo*>::const_iterator Get_ResumeAtIterator_Combos(const DSourceCombo* locSourceCombo, const vector<int>& locBeamBunches, ComboingStage_t locComboingStage, signed char locVertexZBin) const;
 
 		//GET POTENTIAL PARTICLES & COMBOS FOR COMBOING
-		const vector<const JObject*>& Get_ParticlesForComboing(Particle_t locPID, ComboingStage_t locComboingStage, const vector<int>& locBeamBunches = {}, signed char locVertexZBin = 0);
-		vector<const JObject*>* Get_ShowersByBeamBunch(const vector<int>& locBeamBunches, DPhotonShowersByBeamBunch& locShowersByBunch);
 		const vector<const DSourceCombo*>& Get_CombosForComboing(const DSourceComboUse& locComboUse, ComboingStage_t locComboingStage, const vector<int>& locBeamBunches, const DSourceCombo* locChargedCombo_WithPrevious);
 		const vector<const DSourceCombo*>& Get_CombosByBeamBunch(DCombosByBeamBunch& locCombosByBunch, const vector<int>& locBeamBunches, ComboingStage_t locComboingStage, signed char locVertexZBin);
 
 		//GET/DETERMINE/REGISTER VALID RF BUNCHES
 		const vector<int>& Get_ValidRFBunches(const DSourceComboUse& locSourceComboUse, const DSourceCombo* locSourceCombo) const;
 		void Register_ValidRFBunches(const DSourceComboUse& locSourceComboUse, const DSourceCombo* locSourceCombo, const vector<int>& locRFBunches, ComboingStage_t locComboingStage, const DSourceCombo* locChargedCombo_WithNow);
-		vector<int> Get_CommonRFBunches(const vector<int>& locRFBunches1, const vector<int>& locRFBunches2) const;
 
 		//PARTICLE UTILITY FUNCTIONS
+		const vector<const JObject*>& Get_ParticlesForComboing(Particle_t locPID, ComboingStage_t locComboingStage, const vector<int>& locBeamBunches = {}, signed char locVertexZBin = 0);
+		const vector<const JObject*>& Get_ShowersByBeamBunch(const vector<int>& locBeamBunches, DPhotonShowersByBeamBunch& locShowersByBunch);
 		shared_ptr<const DKinematicData> Create_KinematicData(const DNeutralShower* locNeutralShower, const DVector3& locVertex) const;
 		bool Get_IsZIndependent(const JObject* locObject) const;
 
@@ -165,9 +162,6 @@ class DSourceComboer : public JObject
 		const DSourceCombo* Get_ChargedCombo_WithNow(const DSourceCombo* locChargedCombo_Presiding) const;
 		const DSourceCombo* Get_Presiding_ChargedCombo(const DSourceCombo* locChargedCombo_Presiding, const DSourceComboUse& locNextComboUse, ComboingStage_t locComboingStage, size_t locInstance) const;
 
-		//VERTEX/RF UTILITY FUNCTIONS
-		int Calc_RFBunchShift(double locTimeToStep, double locTimeToStepTo) const; //returns integer shift
-
 		/************************************************************** DEFINE MEMBERS ***************************************************************/
 
 		uint64_t dEventNumber = 0; //re-setup on new events
@@ -175,29 +169,10 @@ class DSourceComboer : public JObject
 
 		//EXPERIMENT INFORMATION
 		DVector3 dTargetCenter;
-		double dTargetLength = 30.0;
-		double dBeamBunchPeriod = 1000.0/249.5;
-
-		//due to detached vertices
-		double dMaxDecayTimeOffset = 2.0;
 
 		//CHARGED TRACKS
 		vector<const DChargedTrack*> dChargedTracks;
 		unordered_map<Particle_t, vector<const JObject*>> dTracksByPID;
-
-		//NEUTRAL SHOWER DATA
-		unordered_map<const JObject*, vector<int>> dShowerRFBunches_FCAL; //VECTOR MUST BE SORTED!!
-		vector<unordered_map<const JObject*, vector<int>>> dShowerRFBunches_Both; //vector: vertex-z bins
-		unordered_map<const DNeutralShower*, shared_ptr<const DKinematicData>> dFCALKinematics; //FCAL shower data at center of target
-		vector<unordered_map<const DNeutralShower*, shared_ptr<const DKinematicData>>> dBCALKinematics; //BCAL shower data in vertex-z bins
-
-		//SHOWERS SORTED BY RF BUNCH
-		const DEventRFBunch* dInitialEventRFBunch;
-		DPhotonShowersByBeamBunch dFCALPhotonShowersByBeamBunch;
-		vector<DPhotonShowersByBeamBunch> dPhotonShowersByBeamBunch; //vector: vertex-z bins //FCAL + BCAL
-
-		//CUTS
-		unordered_map<DetectorSystem_t, TF1*> dPhotonTimeCutMap; //function of shower energy (p)
 
 		//SOURCE COMBO INFOS: CREATED ONCE DURING DSourceComboER OBJECT CONSTRUCTION
 		//want to make sure we only have one of each type: suggests using a set
@@ -249,8 +224,9 @@ class DSourceComboer : public JObject
 		DResourcePool<vector<const DSourceCombo>> dResourcePool_SourceComboVector;
 
 		//HANDLERS AND VERTEXERS
-		DSourceComboVertexer dSourceComboVertexer;
-		DSourceComboP4Handler dSourceComboP4Handler;
+		DSourceComboVertexer* dSourceComboVertexer;
+		DSourceComboP4Handler* dSourceComboP4Handler;
+		DSourceComboTimeHandler* dSourceComboTimeHandler;
 };
 
 /*********************************************************** INLINE MEMBER FUNCTION DEFINITIONS ************************************************************/
@@ -342,19 +318,6 @@ inline bool DSourceComboer::Get_IsZIndependent(const JObject* locObject) const
 	return (locNeutralShower->dDetectorSystem == SYS_FCAL);
 }
 
-inline vector<int> DSourceComboer::Get_CommonRFBunches(const vector<int>& locRFBunches1, const vector<int>& locRFBunches2) const
-{
-	//check to see if one of the input vectors is empty //empty means "no idea": all possible bunches are valid
-	if(locRFBunches1.empty())
-		return locRFBunches2;
-	else if(locRFBunches2.empty())
-		return locRFBunches1;
-
-	vector<int> locCommonRFBunches = {}; //if charged or massive neutrals, ignore (they don't choose at this stage)
-	locCommonRFBunches.reserve(locRFBunches1.size() + locRFBunches2.size());
-	std::set_intersection(locRFBunches1.begin(), locRFBunches1.end(), locRFBunches2.begin(), locRFBunches2.end(), std::back_inserter(locCommonRFBunches));
-	return locCommonRFBunches;
-}
 
 inline DSourceCombosByUse_Large& DSourceComboer::Get_CombosSoFar(ComboingStage_t locComboingStage, Charge_t locChargeContent_SearchForUse, const DSourceCombo* locChargedCombo)
 {
@@ -388,20 +351,6 @@ inline DSourceComboer::~DSourceComboer(void)
 		delete locComboInfo;
 }
 
-inline int DSourceComboer::Calc_RFBunchShift(double locTimeToStep, double locTimeToStepTo) const
-{
-	double locDeltaT = locTimeToStepTo - locTimeToStep;
-	return (locDeltaT > 0.0) ? int(locDeltaT/dBeamBunchPeriod + 0.5) : int(locDeltaT/dBeamBunchPeriod - 0.5);
-}
-
-inline shared_ptr<const DKinematicData> DSourceComboer::Create_KinematicData(const DNeutralShower* locNeutralShower, const DVector3& locVertex) const
-{
-	DVector3 locPath = locNeutralShower->dSpacetimeVertex.Vect() - locVertex;
-	double locPathLength = locPath.Mag();
-	double locVertexTime = locNeutralShower->dSpacetimeVertex.T() - locPathLength/29.9792458;
-	DVector3 locMomentum = locNeutralShower->dEnergy*locPath.Unit();
-	return std::make_shared<const DKinematicData>(Gamma, locMomentum, locVertex, locVertexTime);
-}
 
 /*********************************************************** INLINE NAMESPACE-SCOPE FUNCTION DEFINITIONS ************************************************************/
 

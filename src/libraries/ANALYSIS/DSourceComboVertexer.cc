@@ -1,4 +1,5 @@
 #include "ANALYSIS/DSourceComboVertexer.h"
+#include "ANALYSIS/DSourceComboer.h"
 
 namespace DAnalysis
 {
@@ -17,14 +18,9 @@ dSourceComboer(locSourceComboer), dSourceComboP4Handler(locSourceComboP4Handler)
 	DGeometry* locGeometry = locApplication->GetDGeometry(locEventLoop->GetJEvent().GetRunNumber());
 
 	//TARGET INFORMATION
-	locGeometry->GetTargetZ(dTargetCenterZ);
-	dTargetCenter.SetXYZ(0.0, 0.0, dTargetCenterZ);
-	locGeometry->GetTargetLength(dTargetLength);
-
-	//INITIALIZE PHOTON VERTEX-Z EVALUATION BINNING
-	dPhotonVertexZBinWidth = 10.0;
-	dPhotonVertexZRangeLow = dTargetCenter.Z() - dTargetLength/2.0 - 5.0;
-	dNumPhotonVertexZBins = round((dTargetLength + 20.0)/dPhotonVertexZBinWidth);
+	double locTargetCenterZ = 65.0;
+	locGeometry->GetTargetZ(locTargetCenterZ);
+	dTargetCenter.SetXYZ(0.0, 0.0, locTargetCenterZ);
 }
 
 
@@ -47,7 +43,7 @@ void DSourceComboVertexer::Calc_VertexTimeOffsets(const DReactionVertexInfo* loc
 			//If this is the production vertex, choose the center of the target.  If not, choose the vertex where the decay parent was produced.
 			auto locParentVertexInfo = locStepVertexInfo->Get_ParentVertexInfo();
 			if(locParentVertexInfo == nullptr) //production vertex
-				dVertexTimeOffsets[locReactionCombo].emplace(locStepVertexInfo, std::make_pair(DVector3(0.0, 0.0, dTargetCenterZ), 0.0));
+				dVertexTimeOffsets[locReactionCombo].emplace(locStepVertexInfo, std::make_pair(dTargetCenter, 0.0));
 			else //decay products
 				dVertexTimeOffsets[locReactionCombo].emplace(locStepVertexInfo, dVertexTimeOffsets[locReactionCombo][locParentVertexInfo]);
 			continue;

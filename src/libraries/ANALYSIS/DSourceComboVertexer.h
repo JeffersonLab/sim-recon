@@ -21,11 +21,14 @@
 #include "ANALYSIS/DReactionStepVertexInfo.h"
 #include "ANALYSIS/DKinFitUtils_GlueX.h"
 #include "ANALYSIS/DAnalysisUtilities.h"
+#include "ANALYSIS/DSourceComboP4Handler.h"
 
 using namespace std;
 
 namespace DAnalysis
 {
+
+class DSourceComboer;
 
 class DSourceComboVertexer
 {
@@ -65,17 +68,7 @@ class DSourceComboVertexer
 
 		//EXPERIMENT INFORMATION
 		DVector3 dTargetCenter;
-		double dTargetLength = 30.0;
-		double dTargetCenterZ;
 		double dMinThetaForVertex = 30.0;
-
-		//VERTEX-DEPENDENT PHOTON INFORMATION
-		//For every 10cm in vertex-z, calculate the photon p4 & time for placing mass & delta-t cuts
-		//The z-range extends from the upstream end of the target - 5cm to the downstream end + 15cm
-		//so for a 30-cm-long target, it's a range of 50cm: 5bins, evaluated at the center of each bin
-		float dPhotonVertexZBinWidth = 10.0;
-		float dPhotonVertexZRangeLow = 45.0;
-		size_t dNumPhotonVertexZBins = 5;
 
 		//VERTICES AND TIME OFFSETS
 		unordered_map<const DReactionStepVertexInfo*, bool> dVertexDeterminableWithChargedMap; //excludes dangling vertex infos!!
