@@ -3,6 +3,7 @@
 //    File: DReaction_factory_p2pi_trees.cc
 // Created: Wed Mar 29 16:34:58 EDT 2017
 // Creator: elton (on Linux ifarm1401.jlab.org 3.10.0-327.el7.x86_64 x86_64)
+// This DReation is geared toward gamma Z -> pi+ pi- Z, i.e. we do not expect to see the recoil nucleus.
 //
 
 
@@ -42,11 +43,11 @@ jerror_t DReaction_factory_p2pi_trees::evnt(JEventLoop* locEventLoop, uint64_t l
 	bool unused = false;
 	locReaction = new DReaction("p2pi_trees"); //needs to be a unique name for each DReaction object, CANNOT (!) be "Thrown"
 
-	// g, p -> pi+, pi- ,p
+	// g, Z -> pi+, pi- ,Z   - assume lead for now
 	locReactionStep = new DReactionStep();
 	locReactionStep->Set_InitialParticleID(Gamma);
-	locReactionStep->Set_TargetParticleID(Proton);
-	locReactionStep->Add_FinalParticleID(Proton);
+	locReactionStep->Set_TargetParticleID(Pb208);
+	locReactionStep->Add_FinalParticleID(Pb208);
 	locReactionStep->Add_FinalParticleID(PiPlus);
 	locReactionStep->Add_FinalParticleID(PiMinus);
 	locReaction->Add_ReactionStep(locReactionStep);
@@ -56,7 +57,7 @@ jerror_t DReaction_factory_p2pi_trees::evnt(JEventLoop* locEventLoop, uint64_t l
 	/**************************************************** p2pi_trees Control Settings ****************************************************/
 
 	// Event Store
-	locReaction->Set_EventStoreSkims("2q+,q-"); // boolean-AND of skims
+	locReaction->Set_EventStoreSkims("q+,q-"); // boolean-AND of skims
 
 	// Kinematic Fit
 	//locReaction->Set_KinFitType(d_NoFit); //simultaneously constrain apply four-momentum conservation, invariant masses, and common-vertex constraints
@@ -88,9 +89,9 @@ jerror_t DReaction_factory_p2pi_trees::evnt(JEventLoop* locEventLoop, uint64_t l
 	
 	// PID
 	locReaction->Add_AnalysisAction(new DHistogramAction_PID(locReaction));
-	locReaction->Add_AnalysisAction(new DCutAction_PIDDeltaT(locReaction, false, 2.0, Proton, SYS_TOF));
+	/*locReaction->Add_AnalysisAction(new DCutAction_PIDDeltaT(locReaction, false, 2.0, Proton, SYS_TOF));
 	locReaction->Add_AnalysisAction(new DCutAction_PIDDeltaT(locReaction, false, 2.5, Proton, SYS_BCAL));
-	locReaction->Add_AnalysisAction(new DCutAction_PIDDeltaT(locReaction, false, 3.0, Proton, SYS_FCAL));
+	locReaction->Add_AnalysisAction(new DCutAction_PIDDeltaT(locReaction, false, 3.0, Proton, SYS_FCAL));*/
 	locReaction->Add_AnalysisAction(new DCutAction_PIDDeltaT(locReaction, false, 2.0, PiPlus, SYS_TOF));
 	locReaction->Add_AnalysisAction(new DCutAction_PIDDeltaT(locReaction, false, 1.5, PiPlus, SYS_BCAL));
 	locReaction->Add_AnalysisAction(new DCutAction_PIDDeltaT(locReaction, false, 3.0, PiPlus, SYS_FCAL));
@@ -113,9 +114,9 @@ jerror_t DReaction_factory_p2pi_trees::evnt(JEventLoop* locEventLoop, uint64_t l
 
 	if(unused) {
 	  // Custom cuts (can be applied in TSelector)
-	  locReaction->Add_AnalysisAction(new DCutAction_ProtonPiPlusdEdx(locReaction, 2.2, true)); //select p/pi+ above/below 2.2, //true/false: cut all/no proton candidates above p = 1 GeV/c
+	  // locReaction->Add_AnalysisAction(new DCutAction_ProtonPiPlusdEdx(locReaction, 2.2, true)); //select p/pi+ above/below 2.2, //true/false: cut all/no proton candidates above p = 1 GeV/c
 	  locReaction->Add_AnalysisAction(new DCutAction_MissingMassSquared(locReaction, false, -0.04, 0.04));
-	  locReaction->Add_AnalysisAction(new DCustomAction_p2pi_cuts(locReaction, false));
+	  // locReaction->Add_AnalysisAction(new DCustomAction_p2pi_cuts(locReaction, false));
 
 	  // Diagnostics for unused tracks and showers with final selection (only useful when analyzing EVIO data)
 	  // locReaction->Add_AnalysisAction(new DCustomAction_p2pi_unusedHists(locReaction, false, "KinCut_Measured"));
@@ -132,7 +133,7 @@ jerror_t DReaction_factory_p2pi_trees::evnt(JEventLoop* locEventLoop, uint64_t l
 	if(unused)
 	{
 		// Custom cuts (can be applied in TSelector)
-		locReaction->Add_AnalysisAction(new DCustomAction_p2pi_cuts(locReaction, false));
+		// locReaction->Add_AnalysisAction(new DCustomAction_p2pi_cuts(locReaction, false));
 
 		// Diagnostics for unused tracks and showers with final selection (only useful when analyzing EVIO data)
 		locReaction->Add_AnalysisAction(new DCustomAction_p2pi_unusedHists(locReaction, false, "Unused"));
