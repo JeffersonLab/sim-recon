@@ -200,14 +200,14 @@ inline Particle_t DReactionStep::Get_PID(int locParticlceIndex) const
 
 inline size_t Get_NumFinalPIDs(const DReactionStep* locStep, Particle_t locInputPID, bool locIncludeMissingFlag)
 {
-	vector<Particle_t> locFinalPIDs = locStep->Get_FinalPIDs(locIncludeMissingFlag);
+	auto locFinalPIDs = locStep->Get_FinalPIDs(locIncludeMissingFlag);
 	auto locComparator = [](Particle_t locPID) -> size_t {return (locPID == locInputPID) ? 1 : 0;};
 	return std::accumulate(locFinalPIDs.begin(), locFinalPIDs.end(), size_t(0), locComparator);
 }
 
 inline string Get_StepName(const DReactionStep* locStep, bool locIncludeMissingFlag, bool locTLatexFlag)
 {
-	string locStepName = Get_InitialParticlesName(locStep, locTLatexFlag);
+	auto locStepName = Get_InitialParticlesName(locStep, locTLatexFlag);
 	locStepName += locTLatexFlag ? "#rightarrow" : "__";
 	locStepName += Get_FinalParticlesName(locStep, locIncludeMissingFlag, locTLatexFlag);
 	return locStepName;
@@ -215,7 +215,7 @@ inline string Get_StepName(const DReactionStep* locStep, bool locIncludeMissingF
 
 inline string Get_FinalParticlesName(const DReactionStep* locStep, bool locIncludeMissingFlag, bool locTLatexFlag)
 {
-	vector<string> locNames = Get_FinalParticleNames(locStep, locIncludeMissingFlag, locTLatexFlag);
+	auto locNames = Get_FinalParticleNames(locStep, locIncludeMissingFlag, locTLatexFlag);
 	if(locTLatexFlag)
 		return std::accumulate(locNames.begin(), locNames.end(), string(""));
 	else
@@ -223,6 +223,17 @@ inline string Get_FinalParticlesName(const DReactionStep* locStep, bool locInclu
 		auto locRetriever = [](const string& locString) -> string {return string("_") + locString;};
 		return std::accumulate(std::next(locNames.begin()), locNames.end(), locNames.front(), locRetriever);
 	}
+}
+
+inline int Get_ParticleIndex(const DReactionStep* locStep, Particle_t locInputPID, size_t locInstance)
+{
+	//locInstance starts from 1!!!
+	auto locFinalPIDs = locStep->Get_FinalPIDs(false); //exclude missing
+	size_t locCount = 0;
+	auto Instance_Finder = [locInputPID, locInstance, &locCount](Particle_t locPID) -> bool
+		{return (locPID != locInputPID) ? false : (++locCount == locInstance) ? true : false;}
+	auto locIterator = std::find_if(locFinalPIDs.begin(), locFinalPIDs.end(), Instance_Finder);
+	return (locIterator == locFinalPIDs.end()) ? DReactionStep::Get_ParticleIndex_None() : std::distance(locFinalPIDs.begin(), locIterator);
 }
 
 } //end DAnalysis namespace

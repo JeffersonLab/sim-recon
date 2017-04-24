@@ -92,7 +92,8 @@ private:
 	map<pair<int, int>, shared_ptr<DReactionStepVertexInfo>> dDecayingParticles_FullConstrain; //vertex-info: where it was defined
 
 	//DANGLING
-	//is it dangling? //if is true, then vertex parent is either:
+	//is it dangling? dangling = vertex indeterminable, even with all particle information
+	//if is true, then vertex parent is either:
 		//in dDecayingParticles_NoConstrain if it's not empty (at most one will have non-null info), or is center of target
 	bool dIsDanglingVertexFlag = false;
 	weak_ptr<DReactionStepVertexInfo> dParentVertexInfo = nullptr; //null if production vertex //weak: to avoid cyclic references

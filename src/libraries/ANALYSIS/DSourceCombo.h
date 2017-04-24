@@ -31,15 +31,13 @@ MEMORY, TIME CONSIDERATIONS:
 //forward declarations
 class DSourceComboInfo;
 class DSourceCombo;
-class DSourceComboer;
 
 //DSourceComboUse is what the combo is USED for (the decay of Particle_t (if Unknown then is just a grouping)
 using DSourceComboUse = tuple<Particle_t, signed char, const DSourceComboInfo*>; //e.g. Pi0, -> 2g //signed char: vertex-z bin of the final state (combo contents)
 using DSourceCombosByUse_Small = map<DSourceComboUse, vector<const DSourceCombo*>>;
-//CONSIDER VECTOR INSTEAD OF MAP FOR DSourceCombosByUse_Small
 
 //Compare_SourceComboUses
-auto Compare_SourceComboUses = [](const DSourceComboUse& lhs, const DSourceComboUse& rhs) -> bool
+inline auto Compare_SourceComboUses = [](const DSourceComboUse& lhs, const DSourceComboUse& rhs) -> bool
 {
 	//this puts mixed-charge first, then fully-neutral, then fully-charged
 	auto locChargeContent_LHS = Get_ChargeContent(std::get<2>(lhs));
@@ -64,7 +62,6 @@ auto Compare_SourceComboUses = [](const DSourceComboUse& lhs, const DSourceCombo
 
 //In theory, for safety, dynamically-allocated objects should be stored in a shared_ptr
 //However, the combos take a TON of memory, and a shared_ptr<T*> takes 3x the memory of a regular T* pointer
-//Plus, only the DSourceComboer class can create these objects, and it always registers them with itself.
 //The info objects will exist for the life of the program, and so don't need to be recycled to a resource pool.
 //The combo objects will be recycled after every event into a resource pool.
 
@@ -78,24 +75,25 @@ class DSourceComboInfo
 {
 	public:
 
-		//FRIEND CLASS
-		friend class DSourceComboer; //so that can call the constructor
-
-		//CONSTRUCTORS AND OPERATORS
+		//CONSTRUCTOR
 		DSourceComboInfo(void) = delete;
+		DSourceComboInfo(const vector<pair<Particle_t, unsigned char>>& locNumParticles, const vector<pair<DSourceComboUse, unsigned char>>& locFurtherDecays = {});
+
+		//OPERATORS
 		bool operator< (const DSourceComboInfo& rhs) const;
 
 		//GET MEMBERS
 		vector<pair<Particle_t, unsigned char>> Get_NumParticles(bool locEntireChainFlag = false) const{return dNumParticles;}
 		vector<pair<DSourceComboUse, unsigned char>> Get_FurtherDecays(void) const{return dFurtherDecays;}
 
+		//definitions of negative values for any particle index //in order such that operator< returns order expected for string (e.g. gp->...)
+		static signed char Get_VertexZIndex_FCAL(void){return -2;}
+		static signed char Get_VertexZIndex_Unknown(void){return -1;}
+
 	private:
 
 		//FORWARD DECLARE COMPARISON STRUCT
 		struct DCompare_ParticlePairPIDs;
-
-		//CONSTRUCTOR
-		DSourceComboInfo(const vector<pair<Particle_t, unsigned char>>& locNumParticles, const vector<pair<DSourceComboUse, unsigned char>>& locFurtherDecays = {});
 
 		//don't have decaying PID a direct member of this combo info
 		//e.g. for a 2g pair, it has no idea whether or not it came from a Pi0, an eta, through direct production, etc.
@@ -112,27 +110,30 @@ class DSourceCombo
 {
 	public:
 
-		//FRIEND CLASS
-		friend class DSourceComboer; //so that can call the constructor
+		//CONSTRUCTOR
+		DSourceCombo(const vector<pair<Particle_t, const JObject*>>& locSourceParticles, const DSourceCombosByUse_Small& locFurtherDecayCombos, bool locIsZIndependent = false);
 
-		DSourceCombo(void) = delete;
+		//SET MEMBERS
+		void Set_Members(const vector<pair<Particle_t, const JObject*>>& locSourceParticles, const DSourceCombosByUse_Small& locFurtherDecayCombos, bool locIsZIndependent = false){};
 
 		//GET MEMBERS
 		vector<pair<Particle_t, const JObject*>> Get_SourceParticles(bool locEntireChainFlag = false) const;
 		DSourceCombosByUse_Small Get_FurtherDecayCombos(void) const{return dFurtherDecayCombos;}
-		bool Get_IsFCALOnly(void) const{return dIsFCALOnly;}
+		bool Get_IsZIndependent(void) const{return dIsZIndependent;}
 
 	private:
 
-		//CONSTRUCTOR
-		DSourceCombo(const vector<pair<Particle_t, const JObject*>>& locSourceParticles, const DSourceCombosByUse_Small& locFurtherDecayCombos = {}, bool locIsFCALOnly = false);
-
 		//particles & decays
 		vector<pair<Particle_t, const JObject*>> dSourceParticles; //original DNeutralShower or DChargedTrack
+		//FYI, if use PID is unknown: Vector is guaranteed to be size 1, and none of ITS further decays can have an unknown use PID
+		//Note: Either:
+		//1) The entire content is one PID
+		//2) There is at most one particle of each PID
+		//Otherwise, groupings of 2+ (e.g. 2pi-) will be in the further-decay section (X -> 2pi+)
 		DSourceCombosByUse_Small dFurtherDecayCombos; //vector is e.g. size 3 if 3 pi0s needed
 
 		//Control information
-		bool dIsFCALOnly;
+		bool dIsZIndependent;
 };
 
 struct DSourceComboInfo::DCompare_ParticlePairPIDs
@@ -197,9 +198,17 @@ inline vector<pair<Particle_t, unsigned char>> DSourceComboInfo::Get_NumParticle
 	return locToReturnNumParticles;
 }
 
-inline DSourceCombo::DSourceCombo(const vector<pair<Particle_t, const JObject*>>& locSourceParticles, const DSourceCombosByUse_Small& locFurtherDecayCombos, bool locIsFCALOnly) :
-		dSourceParticles(locSourceParticles), dFurtherDecayCombos(locFurtherDecayCombos), dIsFCALOnly(locIsFCALOnly)
+inline DSourceCombo::DSourceCombo(const vector<pair<Particle_t, const JObject*>>& locSourceParticles, const DSourceCombosByUse_Small& locFurtherDecayCombos, bool locIsZIndependent) :
+		dSourceParticles(locSourceParticles), dFurtherDecayCombos(locFurtherDecayCombos), dIsZIndependent(locIsZIndependent)
 {
+	std::sort(dSourceParticles.begin(), dSourceParticles.end());
+}
+
+inline void DSourceCombo::Set_Members(const vector<pair<Particle_t, const JObject*>>& locSourceParticles, const DSourceCombosByUse_Small& locFurtherDecayCombos, bool locIsZIndependent)
+{
+	dSourceParticles = locSourceParticles;
+	dFurtherDecayCombos = locFurtherDecayCombos;
+	dIsZIndependent = locIsZIndependent;
 	std::sort(dSourceParticles.begin(), dSourceParticles.end());
 }
 
@@ -224,7 +233,7 @@ inline vector<pair<Particle_t, const JObject*>> DSourceCombo::Get_SourceParticle
 
 /*********************************************************** INLINE NAMESPACE FUNCTION DEFINITIONS ************************************************************/
 
-vector<const JObject*> Get_SourceParticles(const vector<pair<Particle_t, const JObject*>>& locSourceParticles, Particle_t locPID = Unknown)
+inline vector<const JObject*> Get_SourceParticles(const vector<pair<Particle_t, const JObject*>>& locSourceParticles, Particle_t locPID = Unknown)
 {
 	//if PID is unknown, then all particles
 	vector<const JObject*> locOutputParticles;
@@ -255,7 +264,24 @@ inline vector<pair<Particle_t, const JObject*>> Get_SourceParticles_ThisVertex(c
 	return locSourceParticles;
 }
 
-Charge_t Get_ChargeContent(const DSourceComboInfo* locSourceComboInfo)
+inline vector<const DSourceCombo*> Get_SourceCombos_ThisVertex(const DSourceCombo* locSourceCombo)
+{
+	vector<const DSourceCombo*> locVertexCombos = {locSourceCombo};
+	for(const auto& locDecayPair : locSourceCombo->Get_FurtherDecayCombos())
+	{
+		auto locDecayPID = std::get<0>(locDecayPair.first);
+		if(IsDetachedVertex(locDecayPID))
+			continue;
+		for(auto locDecayCombo : locDecayPair.second)
+		{
+			auto locDecayVertexCombos = Get_SourceCombos_ThisVertex(locDecayCombo);
+			locVertexCombos.insert(locVertexCombos.end(), locDecayVertexCombos.begin(), locDecayVertexCombos.end());
+		}
+	}
+	return locVertexCombos;
+}
+
+inline Charge_t Get_ChargeContent(const DSourceComboInfo* locSourceComboInfo)
 {
 	auto locNumParticles = locSourceComboInfo->Get_NumParticles(true);
 
@@ -271,6 +297,40 @@ Charge_t Get_ChargeContent(const DSourceComboInfo* locSourceComboInfo)
 		return d_Charged;
 
 	return d_AllCharges;
+}
+
+inline bool Get_HasMassiveNeutrals(const DSourceComboInfo* locComboInfo) const
+{
+	//see if the combo info contains a massive neutral particle
+
+	//search function
+	auto Find_MassiveNeutrals = [](const pair<Particle_t, unsigned char>& locPair) -> bool
+		{return (ParticleCharge(locPair.first) != 0) && (ParticleMass(locPair.first) > 0.0);};
+
+	//do search
+	auto locNumParticles = locComboInfo->Get_NumParticles(true); //true: entire chain
+	return std::any_of(locNumParticles.begin(), locNumParticles.end(), Find_MassiveNeutrals);
+}
+
+const DSourceCombo* Find_Combo_AtThisStep(const DSourceCombo* locSourceCombo, const DSourceComboUse& locUseToFind, size_t locDecayInstanceIndex)
+{
+	for(const auto& locDecayPair : locSourceCombo->Get_FurtherDecayCombos())
+	{
+		const auto& locUse = locDecayPair.first;
+		if(locUse == locUseToFind) //good, do stuff
+			return locDecayPair.second[locDecayInstanceIndex];
+		if(std::get<0>(locUse) != Unknown)
+			continue; //is another step!
+
+		//vector of combos is guaranteed to be size 1, and it's guaranteed that none of ITS further decays are unknown
+		auto locComboToSearch = locDecayPair.second[0];
+		for(const auto& locNestedDecayPair : locComboToSearch->Get_FurtherDecayCombos())
+		{
+			if(locUse == locUseToFind) //good, do stuff
+				return locNestedDecayPair.second[locDecayInstanceIndex];
+		}
+	}
+	return nullptr;
 }
 
 } //end DAnalysis namespace

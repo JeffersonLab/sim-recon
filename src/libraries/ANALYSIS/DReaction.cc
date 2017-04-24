@@ -68,6 +68,13 @@ pair<int, int> Get_InitialParticleDecayFromIndices(const DReaction* locReaction,
 	return make_pair(-1, -1);
 }
 
+size_t Get_ParticleInstanceIndex(const DReactionStep* locStep, size_t locParticleIndex)
+{
+	auto locFinalPIDs = locStep->Get_FinalPIDs(false);
+	Particle_t locPID = locFinalPIDs[locParticleIndex];
+	return std::count(locFinalPIDs.begin(), locFinalPIDs.begin() + locParticleIndex, locPID) - 1; //-1: index starting from 0
+}
+
 int Get_DecayStepIndex(const DReaction* locReaction, size_t locStepIndex, size_t locParticleIndex)
 {
 	//check if the input particle decays later in the reaction

@@ -22,15 +22,17 @@ template <typename DType> class DResourcePool
 		DResourcePool(void);
 		~DResourcePool(void);
 
+		void Set_ControlParams(size_t locGetBatchSize = 100, size_t locNumToAllocateAtOnce = 20, size_t locRecycleBatchSize = 1000, size_t locWhenToRecyclePoolSize = 2000, size_t locMaxSharedPoolSize = 10000);
 		DType* Get_Resource(void);
 		shared_ptr<DType> Get_SharedResource(void);
 
-		void Recycle(DType* locResource);
+		//RECYCLE CONST OBJECTS //these methods just const_cast and call the non-const versions
 		void Recycle(const DType* locResource){Recycle(const_cast<DType*>(locResource));}
+		void Recycle(vector<const DType*>& locResources); //clears the input vector
 
-		//These methods clear the input vectors
-		void Recycle(vector<DType*>& locResources);
-		void Recycle(vector<const DType*>& locResources);
+		//RECYCLE NON-CONST OBJECTS
+		void Recycle(DType* locResource);
+		void Recycle(vector<DType*>& locResources); //clears the input vector
 
 		size_t Get_SharedPoolSize(void) const;
 		size_t Get_PoolSize(void) const{return dResourcePool_Local.size();}
@@ -48,6 +50,10 @@ template <typename DType> class DResourcePool
 			return 256; //units are in bytes
 		}
 
+		void Recycle_Implementation(DType* locResource, DType*);
+//		template <typename UType> void Recycle_Implementation(DType* locResource, vector<UType>*);
+//		template <typename DType, typename UType> void Recycle_Implementation(DType* locResource, vector<UType>*);
+
 	private:
 
 		//Assume that access to the shared pool won't happen very often: will mostly access the thread-local pool (this object)
@@ -64,20 +70,69 @@ template <typename DType> class DResourcePool
 		//static class members have external linkage: same instance shared between every translation unit (would be globally, put only private access)
 		static vector<DType*> alignas(Get_CacheLineSize()) dResourcePool_Shared;
 		static atomic<bool> alignas(Get_CacheLineSize()) dSharedPoolLock;
+
+		size_t dContainerResourceMaxCapacity = 1000;
+		size_t dContainerResourceReduceCapacityTo = 100;
 };
 
-//CONSIDER SPECIALIZING FOR CONTAINER TYPES
-//So that they clear() the container and reduce the capacity: std::swap() with temporary
 template <typename DType> class DSharedPtrRecycler
 {
 	public:
+		DSharedPtrRecycler(void) = delete;
 		DSharedPtrRecycler(DResourcePool<DType>* locResourcePool) : dResourcePool(locResourcePool) {};
 		void operator()(DType* locResource) const {dResourcePool->Recycle(locResource);}
 		void operator()(const DType* locResource) const {dResourcePool->Recycle(locResource);}
 	private:
 		DResourcePool<DType>* dResourcePool;
 };
+/*
+//Specialize pool instead of deleter!!
+template <typename DType> class DResourcePool<vector<DType*>>
+{
+	public:
+		//RECYCLE NON-CONST OBJECTS
+		void Recycle(vector<vector<DType*>*>& locResources)
+		{
+			for(auto locResource : locResources)
+				Recycle(locResource);
+		}
+		void Recycle(vector<DType*>* locResource)
+		{
+			if(locResource->size() > dContainerResourceMaxCapacity)
+			{
+				locResource->resize(dContainerResourceReduceCapacityTo);
+				locResource->shrink_to_fit();
+			}
+			locResource->clear();
 
+			dResourcePool_Local.push_back(locResource);
+			if(dResourcePool_Local.size() > dWhenToRecyclePoolSize)
+				Recycle_Resources_StaticPool();
+		}
+		size_t dContainerResourceMaxCapacity = 1000;
+		size_t dContainerResourceReduceCapacityTo = 100;
+};
+
+template <typename DType> class DSharedPtrRecycler<vector<DType*>>
+{
+	public:
+		DSharedPtrRecycler(void) = delete;
+		DSharedPtrRecycler(DResourcePool<vector<DType*>>* locResourcePool) : dResourcePool(locResourcePool) {};
+		void operator()(vector<DType*>* locResource) const
+		{
+			if(locResource->size() > dMaxCapacity)
+			{
+				locResource->resize(dReduceCapacityTo);
+				locResource->shrink_to_fit();
+			}
+			locResource->clear();
+			dResourcePool->Recycle(locResource);
+		}
+		void operator()(const vector<DType*>* locResource) const {dResourcePool->Recycle(locResource);}
+	private:
+		DResourcePool<vector<DType*>>* dResourcePool;
+};
+*/
 /************************************************************************* STATIC MEMBER DEFINITIONS, STRUCTORS *************************************************************************/
 
 //STATIC MEMBER DEFINITIONS
@@ -117,16 +172,18 @@ template <typename DType> DType* DResourcePool<DType>::Get_Resource(void)
 	return locResource;
 }
 
+template <typename DType> void DResourcePool<DType>::Set_ControlParams(size_t locGetBatchSize, size_t locNumToAllocateAtOnce, size_t locRecycleBatchSize, size_t locWhenToRecyclePoolSize, size_t locMaxSharedPoolSize)
+{
+	dGetBatchSize = locGetBatchSize;
+	dNumToAllocateAtOnce = locNumToAllocateAtOnce;
+	dRecycleBatchSize = locRecycleBatchSize;
+	dWhenToRecyclePoolSize = locWhenToRecyclePoolSize;
+	dMaxSharedPoolSize = locMaxSharedPoolSize;
+}
+
 template <typename DType> shared_ptr<DType> DResourcePool<DType>::Get_SharedResource(void)
 {
 	return shared_ptr<DType>(Get_Resource(), DSharedPtrRecycler<DType>(this));
-}
-
-template <typename DType> void DResourcePool<DType>::Recycle(DType* locResource)
-{
-	dResourcePool_Local.push_back(locResource);
-	if(dResourcePool_Local.size() > dWhenToRecyclePoolSize)
-		Recycle_Resources_StaticPool();
 }
 
 template <typename DType> void DResourcePool<DType>::Recycle(vector<const DType*>& locResources)
@@ -150,6 +207,40 @@ template <typename DType> void DResourcePool<DType>::Recycle(vector<DType*>& loc
 		Recycle_Resources_StaticPool();
 }
 
+//http://stackoverflow.com/questions/8314827/how-can-i-specialize-a-template-member-function-for-stdvectort
+template <typename DType> void DResourcePool<DType>::Recycle(DType* locResource)
+{
+	Recycle_Implementation(locResource, static_cast<DType*>(nullptr));
+}
+
+template <typename DType> void DResourcePool<DType>::Recycle_Implementation(DType* locResource, DType*)
+{
+	dResourcePool_Local.push_back(locResource);
+	if(dResourcePool_Local.size() > dWhenToRecyclePoolSize)
+		Recycle_Resources_StaticPool();
+}
+/*
+template <typename DType, typename UType> void DResourcePool<DType>::Recycle_Implementation(DType* locResource, vector<UType>*)
+{
+	if(locResource->size() > dContainerResourceMaxCapacity)
+	{
+		locResource->resize(dContainerResourceReduceCapacityTo);
+		locResource->shrink_to_fit();
+	}
+	locResource->clear();
+	Recycle_Implementation(locResource);
+}
+*/
+/*
+ * 		//Enable this version if type inherits from TObject //void: is return type
+		template <typename DType> typename enable_if<std::is_base_of<TObject, DType>::value, void>::type
+				Create_Branch(string locBranchName, size_t locArraySize, string locArraySizeName);
+
+		//Enable this version if type does NOT inherit from TObject //void: is return type
+		template <typename DType> typename enable_if<!std::is_base_of<TObject, DType>::value, void>::type
+				Create_Branch(string locBranchName, size_t locArraySize, string locArraySizeName);
+ *
+ */
 /************************************************************************* SHARED-POOL-ACCESSING MEMBER FUNCTIONS *************************************************************************/
 
 template <typename DType> void DResourcePool<DType>::Get_Resources_StaticPool(void)
