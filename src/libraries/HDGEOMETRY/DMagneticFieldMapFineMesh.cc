@@ -2,6 +2,7 @@
 //
 //    File: DMagneticFieldMapFineMesh.cc
 
+#include <unistd.h>
 #include <sys/stat.h>
 #include <cmath>
 using namespace std;
@@ -14,6 +15,9 @@ using namespace evio;
 #include "DMagneticFieldMapFineMesh.h"
 
 #include "JANA/JException.h"
+
+#include <DAQ/HDEVIO.h>
+
 
 //---------------------------------
 // DMagneticFieldMapFineMesh    (Constructor)
@@ -846,7 +850,6 @@ double DMagneticFieldMapFineMesh::GetBz(double x, double y, double z) const{
 
 // Read a fine-mesh B-field map from an evio file
 void DMagneticFieldMapFineMesh::GetFineMeshMap(string namepath,int32_t runnumber){ 
-#ifdef HAVE_EVIO
     // The solenoid field map files are stored in CCDB as /Magnets/Solenoid/BFIELD_MAP_NAME
     // The fine-mesh files are now stored as /Magnets/Solenoid/finemeshes/BFIELD_MAP_NAME
     size_t ipos = namepath.rfind("/");
@@ -875,14 +878,14 @@ void DMagneticFieldMapFineMesh::GetFineMeshMap(string namepath,int32_t runnumber
     if(evioFileName != "") {
         ReadEvioFile(evioFileName);
     } else{
-#endif  
     cout << "Fine-mesh evio file does not exist." <<endl;
     cout << "Constructing the fine-mesh B-field map..." << endl;    
     GenerateFineMesh();
 #ifdef HAVE_EVIO
     WriteEvioFile(evioFileNameToWrite);
-  }
 #endif
+    }
+
   cout << " rmin: " << rminFine << " rmax: " << rmaxFine 
        << " dr: " << drFine << " zmin: " << zminFine << " zmax: "
        << zmaxFine << " dz: " << dzFine <<endl;  
@@ -917,7 +920,6 @@ void DMagneticFieldMapFineMesh::GenerateFineMesh(void){
   }
 }
 
-#ifdef HAVE_EVIO
 void DMagneticFieldMapFineMesh::WriteEvioFile(string evioFileName){
   cout << "Writing fine-mesh B-field data to " << evioFileName << "..." <<endl;
 
@@ -939,6 +941,75 @@ void DMagneticFieldMapFineMesh::WriteEvioFile(string evioFileName){
     }
   }
 
+  // Calculate total buffer size needed (in 32bit words)
+  // and allocate buffer
+  uint32_t buff_size = 8; // EVIO block header
+  buff_size += 2;         // outer bank length and header
+  buff_size += 2+6;       // minmaxdelta length, header words plus 6 payload words
+  buff_size += 6*(2+NrFine*NzFine); // 6 banks, each with length,header words and NrFine*NzFine payload
+  uint32_t *buff = new uint32_t[buff_size+8]; // +8 for EVIO block trailer
+  
+  // EVIO block header
+  uint32_t *iptr = buff;
+  *iptr++ = buff_size;  // Number of 32 bit words in evio block
+  *iptr++ = 1;          // Block number
+  *iptr++ = 8;          // Length of block header (words)
+  *iptr++ = 1;          // Event Count
+  *iptr++ = 0;          // Reserved 1
+  *iptr++ = 0x4;        // 0x4=EVIO version 4
+  *iptr++ = 0;          // Reserved 2
+  *iptr++ = 0xc0da0100; // Magic number
+  
+  // Outermost bank
+  *iptr++ = buff_size - 1 - 8; // -1 for length word. -8 for evio block header
+  *iptr++ = (0x1<<16) + (0x0E<<8) + (0);
+  
+  // Table dimensions bank
+  *iptr++ = 2+6 - 1;
+  *iptr++ = (0x2<<16) + (0x02<<8) + (0);
+  *(float*)iptr++ = (float)rminFine;
+  *(float*)iptr++ = (float)rmaxFine;
+  *(float*)iptr++ = (float)drFine;
+  *(float*)iptr++ = (float)zminFine;
+  *(float*)iptr++ = (float)zmaxFine;
+  *(float*)iptr++ = (float)dzFine;
+  
+  // Table values banks
+  for(uint32_t i=0; i<6; i++){
+    vector<float> *d = NULL;
+	 switch(i){
+	   case 0: d = &Br_;     break;
+	   case 1: d = &Bz_;     break;
+	   case 2: d = &dBrdr_;  break;
+	   case 3: d = &dBrdz_;  break;
+	   case 4: d = &dBzdr_;  break;
+	   case 5: d = &dBzdz_;  break;
+	 }
+    *iptr++ = 2+NrFine*NzFine - 1;
+    *iptr++ = (0x3<<16) + (0x02<<8) + (i);
+	 for(float f : *d) *(float*)iptr++ = f;
+	 //for(uint32_t j=0; j<NrFine*NzFine; j++) *(float*)iptr++ = d->at(j);
+  }
+  
+  // EVIO block trailer
+  *iptr++ = 8;             // Number of 32 bit words in evio block
+  *iptr++ = 2;             // Block number
+  *iptr++ = 8;             // Length of block header (words)
+  *iptr++ = 0;             // Event Count
+  *iptr++ = 0;             // Reserved 1
+  *iptr++ = (1<<9) + 0x4;  // (1<<9) last event in stack 0x4=EVIO version 4
+  *iptr++ = 0;             // Reserved 2
+  *iptr++ = 0xc0da0100;    // Magic number
+
+  
+  // Write the actual file
+  ofstream ofs(evioFileName);
+  ofs.write((char*)buff, (buff_size+8)*4);
+  ofs.close();
+  
+  delete[] buff;
+
+#ifdef HAVE_EVIO
   // Open the evio file channel
   unsigned long bufsize=NrFine*NzFine*6*sizeof(float)+6;
   evioFileChannel chan(evioFileName,"w",bufsize);
@@ -960,103 +1031,91 @@ void DMagneticFieldMapFineMesh::WriteEvioFile(string evioFileName){
 
   chan.write(tree);
   chan.close();
+#endif  // HAVE_EVIO
 }
 
 // Read the B-field data from the evio file
 void DMagneticFieldMapFineMesh::ReadEvioFile(string evioFileName){
-  cout << "Reading fine-mesh B-field data from "<< evioFileName << endl;
-  evioFileChannel *chan= new evioFileChannel(evioFileName,"r",100000000);
-  chan->open();
-  while (chan->read()){
-    // create event tree from channel contents
-    evioDOMTree tree(chan);
-    
-    // Loop over the nodes in the evio file
-    evioDOMNodeListP fullList     = tree.getNodeList(typeIs<float>());
-    evioDOMNodeList::const_iterator iter;
-    for(iter=fullList->begin(); iter!=fullList->end(); iter++) {
-      const evioDOMNodeP np = *iter;
-      const vector<float> *vec = NULL;
-      vec=np->getVector<float>();
-      if (vec!=NULL){
-	if (np->tag==2){
-	  rminFine=(*vec)[0];       
-	  rmaxFine=(*vec)[1]; 
-	  drFine=(*vec)[2];	
-	  zminFine=(*vec)[3];
-	  zmaxFine=(*vec)[4];	
-	  dzFine=(*vec)[5];
-	  
-	  zscale=1./dzFine;
-	  rscale=1./drFine;
+	cout << "Reading fine-mesh B-field data from "<< evioFileName << endl;
 
-	  NrFine=(unsigned int)floor((rmaxFine-rminFine)/drFine+0.5);
-	  NzFine=(unsigned int)floor((zmaxFine-zminFine)/dzFine+0.5);
-	  
-	  vector<DBfieldCylindrical_t> temp(NzFine);
-	  
-	  for (unsigned int m=0;m<NrFine;m++){
-	    mBfine.push_back(temp);
-	  }
+	// Open EVIO file
+	HDEVIO hdevio(evioFileName, false);
+	if(!hdevio.is_open){
+		jerr << " Unable to open fine-mesh B-field file!" << endl;
+		return;
 	}
-	else if (np->tag==3){// actual B-field data
-	  switch(np->num){
-	  case 0: // Br
-	    for (unsigned int k=0;k<vec->size();k++){
-	      unsigned int indr=k/NzFine;
-	      unsigned int indz=k%NzFine;
-	      
-	      mBfine[indr][indz].Br=(*vec)[k];
-	    }
-	    break;
-	  case 1: // Bz
-	    for (unsigned int k=0;k<vec->size();k++){
-	      unsigned int indr=k/NzFine;
-	      unsigned int indz=k%NzFine;
-	      
-	      mBfine[indr][indz].Bz=(*vec)[k];
-	    }
-	    break;
-	  case 2: // dBrdr
-	    for (unsigned int k=0;k<vec->size();k++){
-	      unsigned int indr=k/NzFine;
-	      unsigned int indz=k%NzFine;
-	      
-	      mBfine[indr][indz].dBrdr=(*vec)[k];
-	    }
-	    break;
-	  case 3: // dBrdz
-	    for (unsigned int k=0;k<vec->size();k++){
-	      unsigned int indr=k/NzFine;
-	      unsigned int indz=k%NzFine;
-	      
-	      mBfine[indr][indz].dBrdz=(*vec)[k];
-	    }
-	    break;	  
-	  case 4: // dBzdr
-	    for (unsigned int k=0;k<vec->size();k++){
-	      unsigned int indr=k/NzFine;
-	      unsigned int indz=k%NzFine;
-	      
-	      mBfine[indr][indz].dBzdr=(*vec)[k];
-	    }
-	    break;
-	  case 5: // dBzdz
-	    for (unsigned int k=0;k<vec->size();k++){
-	      unsigned int indr=k/NzFine;
-		unsigned int indz=k%NzFine;
+
+	// Allocate a small buffer and attempt to read in event.
+	// This will fail due to the small buffer, but will leave
+	// the size needed in hdevio.last_event_len so we can reallocate.
+	uint32_t buff_size=10; // initially allocate small buffer
+	uint32_t *buff = new uint32_t[buff_size];
+	hdevio.readNoFileBuff(buff, buff_size);
+	if(hdevio.err_code == HDEVIO::HDEVIO_USER_BUFFER_TOO_SMALL){
+		delete[] buff;
+		buff_size = hdevio.last_event_len;
+		buff = new uint32_t[buff_size];
+		hdevio.readNoFileBuff(buff, buff_size);
+	}
+	if(hdevio.err_code != HDEVIO::HDEVIO_OK){
+		jerr << " Problem reading fine-mesh B-field" << endl;
+		jerr << hdevio.err_mess.str() << endl;
+		delete[] buff;
+		return;
+	}
+	
+	// Top-level bank of banks has tag=1, num=0
+	uint32_t *iptr = buff;
+	uint32_t *iend = &iptr[*iptr +1];
+	iptr = &iptr[2];
+
+	// First bank has tag=2, num=0 and length 6 data words
+	if(iptr[0] != 6+1){
+		jerr << " Bad length for minmaxdelta bank!" <<endl;
+		_exit(-1);
+	}
+	float *minmaxdelta = (float*)&iptr[2];
+	rminFine = minmaxdelta[0];       
+	rmaxFine = minmaxdelta[1]; 
+	drFine   = minmaxdelta[2];	
+	zminFine = minmaxdelta[3];
+	zmaxFine = minmaxdelta[4];	
+	dzFine   = minmaxdelta[5];
+	iptr = &iptr[*iptr + 1];
+
+	zscale=1./dzFine;
+	rscale=1./drFine;
+
+	NrFine=(unsigned int)floor((rmaxFine-rminFine)/drFine+0.5);
+	NzFine=(unsigned int)floor((zmaxFine-zminFine)/dzFine+0.5);
+	mBfine.resize(NrFine);
+	for(auto &m : mBfine) m.resize(NzFine);
+
+	// Next 6 banks have tag=3 and num=0-5 and hold
+	// the actual table data
+	for(int num=0; num<=5; num++){
+		uint32_t mynum = iptr[1] & 0xFF;
+		float *fptr = (float*)&iptr[2];
+		uint32_t N = iptr[0] - 1;
+		iptr = &iptr[N+2];
+		if(iptr > iend){
+			jerr << " Bad format of fine mesh B-field file!" << endl;
+			_exit(-1);
+		}
 		
-		mBfine[indr][indz].dBzdz=(*vec)[k];
-	    }
-	    break;
-	  default:
-	    break;	  
-	  } 
+		for(uint32_t k=0; k<N; k++){
+			uint32_t indr=k/NzFine;
+			uint32_t indz=k%NzFine;
+			switch( mynum ){
+				case 0: mBfine[indr][indz].Br    = *fptr++;  break;  // Br
+				case 1: mBfine[indr][indz].Bz    = *fptr++;  break;  // Bz
+				case 2: mBfine[indr][indz].dBrdr = *fptr++;  break;  // dBrdr
+				case 3: mBfine[indr][indz].dBrdz = *fptr++;  break;  // dBrdz
+				case 4: mBfine[indr][indz].dBzdr = *fptr++;  break;  // dBzdr
+				case 5: mBfine[indr][indz].dBzdz = *fptr++;  break;  // dBzdz
+			}
+		}
 	}
-      }
-    }
-  }
-  chan->close(); 
-  delete chan;
+	
+	delete[] buff;
 }
-#endif

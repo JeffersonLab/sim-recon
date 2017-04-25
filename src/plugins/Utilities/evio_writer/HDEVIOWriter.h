@@ -8,6 +8,11 @@
 
 #include <pthread.h>
 
+#include <string>
+#include <vector>
+using namespace std;
+
+
 #include <deque>
 using namespace std;
 
