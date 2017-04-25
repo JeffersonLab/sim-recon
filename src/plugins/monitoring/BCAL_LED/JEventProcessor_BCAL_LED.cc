@@ -3,30 +3,7 @@
 //    File: JEventProcessor_BCAL_LED.cc
 //
 
-#include <stdint.h>
-#include <vector>
-#include "TTree.h"
 #include "JEventProcessor_BCAL_LED.h"
-#include <JANA/JApplication.h>
-#include <iostream>
-#include <fstream>
-
-using namespace std;
-using namespace jana;
-
-#include "BCAL/DBCALDigiHit.h"
-#include "BCAL/DBCALHit.h"
-#include "BCAL/DBCALUnifiedHit.h"
-#include "DAQ/Df250PulseIntegral.h"
-#include "DAQ/Df250WindowRawData.h"
-#include "TRIGGER/DL1Trigger.h"
-
-#include <TDirectory.h>
-#include <TH3.h>
-#include <TH2.h>
-#include <TH1.h>
-#include <TProfile2D.h>
-#include <TStyle.h>
 
 
 //----------------------------------------------------------------------------------
