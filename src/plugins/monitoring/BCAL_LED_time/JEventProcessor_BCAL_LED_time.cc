@@ -484,7 +484,7 @@ jerror_t JEventProcessor_BCAL_LED_time::evnt(JEventLoop *loop, uint64_t eventnum
 		loop->Get(bcaldigihits);
 		loop->Get(dbcalpoints);
 		
-	        int apedsubtime[1536] = { 0 };
+	        float apedsubtime[1536] = { 0. };
 	        int apedsubpeak[1536] = { 0 };
 		     
 		for( unsigned int i=0; i<dbcalpoints.size(); i++) {
@@ -493,6 +493,8 @@ jerror_t JEventProcessor_BCAL_LED_time::evnt(JEventLoop *loop, uint64_t eventnum
 			int layer = dbcalpoints[i]->layer();
 			int sector = dbcalpoints[i]->sector();
 			int cell_id = (module-1)*16 + (layer-1)*4 + sector-1;
+
+			if (layer !=3) continue;
 			float z =  dbcalpoints[i]->z();
 			dbcalpoints[i]->Get(hitVector);
 			const DBCALHit *Hit1 = hitVector[0];
@@ -519,7 +521,7 @@ jerror_t JEventProcessor_BCAL_LED_time::evnt(JEventLoop *loop, uint64_t eventnum
 			  Tdiff = Tdown - Tup;
 			}
 
-			// cout << "i=" << i << " m=" << module << " l=" << layer << " s=" << sector << " id=" << cell_id << " Aup=" << Aup << " Adown=" << Adown << " Tup=" << Tup << " Tdown=" << Tdown << endl;
+			if (layer == 4) cout << "i=" << i << " m=" << module << " l=" << layer << " s=" << sector << " id=" << cell_id << " Aup=" << Aup << " Adown=" << Adown << " Tup=" << Tup << " Tdown=" << Tdown << " Tdif=" << Tdiff << endl;
 
 			// fill histograms for all channels
 			if (LED_US) {
@@ -533,7 +535,6 @@ jerror_t JEventProcessor_BCAL_LED_time::evnt(JEventLoop *loop, uint64_t eventnum
 			  h2_ledup_Tdown_vs_z->Fill(z,Tdown);
 			  h2_ledup_Tup_vs_event->Fill(eventnumber,Tup);
 			  h2_ledup_Tdown_vs_event->Fill(eventnumber,Tdown);
-			  // cout << "US - eventnumber=" << eventnumber << " Tup=" << Tup << " Tup=" << Tup << " Tdown=" << Tdown << " Tdown=" << Tdown << endl;
 			}
 			else if (LED_DS) {
 			  h1_leddown_sector->Fill(sector);
@@ -546,7 +547,6 @@ jerror_t JEventProcessor_BCAL_LED_time::evnt(JEventLoop *loop, uint64_t eventnum
 			  h2_leddown_Tdown_vs_z->Fill(z,Tdown);
 			  h2_leddown_Tup_vs_event->Fill(eventnumber,Tup);
 			  h2_leddown_Tdown_vs_event->Fill(eventnumber,Tdown);
-			  // cout << "DS - eventnumber=" << eventnumber << " Tup=" << Tup << " Tup=" << Tup << " Tdown=" << Tdown << " Tdown=" << Tdown << endl;
 			}
 
 			// make cuts on z for all hits
@@ -570,6 +570,7 @@ jerror_t JEventProcessor_BCAL_LED_time::evnt(JEventLoop *loop, uint64_t eventnum
 				leddown_sector += sector;
 				leddown_mean += Aup + Adown;
 				leddown_events++;
+			  if (layer == 4) cout << "DS - eventnumber=" << eventnumber << " Aup=" << Aup << " Adown=" << Adown << " Tup=" << Tup << " Tdown=" << Tdown << " Tdiff=" << Tdiff << endl;
 				
 			} // if condition on z
 
@@ -592,6 +593,7 @@ jerror_t JEventProcessor_BCAL_LED_time::evnt(JEventLoop *loop, uint64_t eventnum
 				ledup_sector += sector;
 				ledup_mean += Aup + Adown;
 				ledup_events++;
+			  if (layer == 4) cout << "US - eventnumber=" << eventnumber << " Aup=" << Aup << " Adown=" << Adown << " Tup=" << Tup << " Tdown=" << Tdown << " Tdiff=" << Tdiff << endl;
 			} // if condition on z
 
 		}//loop over bcalhits
@@ -604,8 +606,8 @@ jerror_t JEventProcessor_BCAL_LED_time::evnt(JEventLoop *loop, uint64_t eventnum
 	 if (LED_US) h1_ledup_sector_config->Fill(ledup_sector_int);
 	 if (LED_DS) h1_leddown_sector_config->Fill(leddown_sector_int);
 
-	 // cout << " ledup_evens=" << ledup_events << " ledup_sector=" << ledup_sector << " ledup_mean=" << ledup_mean << endl;
-	 // cout << " leddown_evens=" << leddown_events << " ledown_sector=" << leddown_sector << " leddown_mean=" << leddown_mean << endl << endl;
+	 cout << " ledup_events=" << ledup_events << " ledup_sector_int=" << ledup_sector_int << " ledup_mean=" << ledup_mean << endl;
+	 cout << " leddown_events=" << leddown_events << " ledown_sector=" << leddown_sector_int << " leddown_mean=" << leddown_mean << endl << endl;
 
 			
 	 // float sector_delta=0.2;
@@ -613,6 +615,8 @@ jerror_t JEventProcessor_BCAL_LED_time::evnt(JEventLoop *loop, uint64_t eventnum
 	  // if (chcounter[chid] > 1) continue;
 	      if (chcounter[chid] != 1) continue;
 	      bcal_time_vevent->Fill(eventnumber,apedsubtime[chid]);
+
+	      // fill peak histograms for US/Ds to check for low/high configurations
 				if (LED_US) {
 				    up_time_vevent->Fill(eventnumber,apedsubtime[chid]);
 				    if (ledup_sector_int == 1 && chid%4+1 == 1) {column1_up_peak_vevent->Fill(eventnumber,apedsubpeak[chid]);}
@@ -629,6 +633,7 @@ jerror_t JEventProcessor_BCAL_LED_time::evnt(JEventLoop *loop, uint64_t eventnum
 				    else if (leddown_sector_int == 4 && chid%4+1 == 4) {column4_down_peak_vevent->Fill(eventnumber,apedsubpeak[chid]);}
 				    }
 				    
+				// times are used for the undifferentiated histograms. 
 				if (ledup_sector_int == 1 && chid%4+1 == 1) {column1_time_vevent->Fill(eventnumber,apedsubtime[chid]);}
 				else if (ledup_sector_int == 2 && chid%4+1 == 2) {column2_time_vevent->Fill(eventnumber,apedsubtime[chid]);}
 				else if (ledup_sector_int == 3 && chid%4+1 == 3) {column3_time_vevent->Fill(eventnumber,apedsubtime[chid]);}
@@ -664,10 +669,26 @@ jerror_t JEventProcessor_BCAL_LED_time::evnt(JEventLoop *loop, uint64_t eventnum
 	for (int chid = 0; chid < 1536; chid++)  {
 	  // if (chcounter[chid] > 1) continue;
 	      if (chcounter[chid] != 1) continue;
+	      Int_t module;
+	      Int_t layer;
+	      Int_t sector;
+	      if (chid < 768) {
+		module = chid/16 + 1;
+		layer = (chid - (module-1)*16)/4 + 1;
+		sector = (chid - (module-1)*16 - (layer-1)*4) +1; 
+	      }
+	      else {
+		module = (chid-768)/16 + 1; 
+	        layer = (chid-768 - (module-1)*16)/4 + 1;
+		sector = (chid-768 - (module-1)*16 - (layer-1)*4) +1;
+	      }
+	      if (layer == 4) cout << " Pre-HIST module=" << module << " layer=" << layer << " sector=" << sector << " LED_US=" << LED_US << " LED_DS=" << LED_DS << " Tdiff=" << apedsubtime[chid]-apedsubtime[chid+768] << endl;
+	      
 				if (LED_US) {
 				    if (ledup_sector_int == 1 && chid%4+1 == 1) {
 				      if (column1up < adccount1) {
 					if (chid < 768) low_up->Fill(chid,apedsubtime[chid]-apedsubtime[chid+768]);  // fill in time difference hists
+	      if (layer == 4) cout << " UP HIST module=" << module << " layer=" << layer << " sector=" << sector << " LED_US=" << LED_US << " LED_DS=" << LED_DS << " Tdiff=" << apedsubtime[chid]-apedsubtime[chid+768] << endl;
 					low_up_1->Fill(chid,apedsubtime[chid]);
 					if (chid < 768) {
 					  column1_down_time_vevent2->Fill(eventnumber,apedsubtime[chid]);
@@ -757,7 +778,10 @@ jerror_t JEventProcessor_BCAL_LED_time::evnt(JEventLoop *loop, uint64_t eventnum
 				else if (LED_DS) {
 				    if (leddown_sector_int == 1 && chid%4+1 == 1) {
 				      if (column1down < adccount1) {
-					if (chid < 768) low_down->Fill(chid,apedsubtime[chid]-apedsubtime[chid+768]);  // fill in time difference hists
+					if (chid < 768) {
+					  low_down->Fill(chid,apedsubtime[chid]-apedsubtime[chid+768]);  // fill in time difference hists
+					  if (layer == 4) cout << " DS HIST chid=" << chid << " module=" << module << " layer=" << layer << " sector=" << sector << " LED_US=" << LED_US << " LED_DS=" << LED_DS << " Tdiff=" << apedsubtime[chid]-apedsubtime[chid+768] << endl;
+					}
 					low_down_1->Fill(chid,apedsubtime[chid]);
 					// if (eventnumber >31500000 && eventnumber <46000000) cout << " chid=" << chid << " column1down=" << column1down << " apedsub=" << apedsubtime[chid] << endl;
 					if (chid < 768) {
@@ -768,7 +792,10 @@ jerror_t JEventProcessor_BCAL_LED_time::evnt(JEventLoop *loop, uint64_t eventnum
 					 }
 				      }
 				      else {
-					if (chid < 768) high_down->Fill(chid,apedsubtime[chid]-apedsubtime[chid+768]);  // fill in time difference hists
+					if (chid < 768) {
+					  high_down->Fill(chid,apedsubtime[chid]-apedsubtime[chid+768]);  // fill in time difference hists
+					  if (layer == 4) cout << " DS HIST chid=" << chid << " module=" << module << " layer=" << layer << " sector=" << sector << " LED_US=" << LED_US << " LED_DS=" << LED_DS << " Tdiff=" << apedsubtime[chid]-apedsubtime[chid+768] << endl;
+					}
 					high_down_1->Fill(chid,apedsubtime[chid]);
 					if (chid < 768) {
 					  column1_down_time_vevent3->Fill(eventnumber,apedsubtime[chid]);
