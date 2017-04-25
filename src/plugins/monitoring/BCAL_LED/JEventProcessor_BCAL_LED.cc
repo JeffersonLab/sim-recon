@@ -120,6 +120,9 @@ static TH1I* h1_ledup_z_all = NULL;;
 static TH2I* h2_ledup_z_vs_cellid = NULL;
 static TH1I* h1_ledup_sector = NULL;
 static TH1I* h1_ledup_sector_config = NULL;
+static TH1I* h1_ledup_Tdiff_all = NULL;
+static TH1I* h1_ledup_Tup_all = NULL;
+static TH1I* h1_ledup_Tdown_all = NULL;
 static TH1I* h1_ledup_Aup_all = NULL;
 static TH1I* h1_ledup_Adown_all = NULL;
 static TH2I* h2_ledup_Aup_vs_z = NULL;
@@ -133,6 +136,9 @@ static TH1I* h1_leddown_z_all = NULL;
 static TH2I* h2_leddown_z_vs_cellid = NULL;
 static TH1I* h1_leddown_sector = NULL;
 static TH1I* h1_leddown_sector_config = NULL;
+static TH1I* h1_leddown_Tdiff_all = NULL;
+static TH1I* h1_leddown_Tup_all = NULL;
+static TH1I* h1_leddown_Tdown_all = NULL;
 static TH1I* h1_leddown_Aup_all = NULL;
 static TH1I* h1_leddown_Adown_all = NULL;
 static TH2I* h2_leddown_Aup_vs_z = NULL;
@@ -347,6 +353,9 @@ jerror_t JEventProcessor_BCAL_LED::init(void) {
 	h2_ledup_z_vs_cellid = new TH2I("h2_ledup_z_vs_cellid", "LED up - z vs Chan ID", 800,0,800,500,-100,400);
 	h1_ledup_sector_config = new TH1I("h1_ledup_sector_config", "LED up - sector -config", 5,0,5);
 	h1_ledup_z_all = new TH1I("h1_ledup_z_all", "LED up - z all channels", 500,-100,400);
+	h1_ledup_Tdiff_all = new TH1I("h1_ledup_Tdiff_all", "LED up - Tdiff all channels", 400,-50,50);
+	h1_ledup_Tup_all = new TH1I("h1_ledup_Tup_all", "LED up - Tup all channels", 410,0,410);
+	h1_ledup_Tdown_all = new TH1I("h1_ledup_Tdown_all", "LED up - Tdown all channels", 410,0,410);
 	h1_ledup_Aup_all = new TH1I("h1_ledup_Aup_all", "LED up - Aup all channels", 410,0,4100);
 	h1_ledup_Adown_all = new TH1I("h1_ledup_Adown_all", "LED up - Adown all channels", 410,0,4100);
 	h2_ledup_Aup_vs_z = new TH2I("h2_ledup_Aup_vs_z", "LED up - Aup vs z", 100,-100,400,410,0,4100);
@@ -360,6 +369,9 @@ jerror_t JEventProcessor_BCAL_LED::init(void) {
 	h2_leddown_z_vs_cellid = new TH2I("h2_leddown_z_vs_cellid", "LED down - z vs Chan ID", 800,0,800,500,-100,400);
 	h1_leddown_sector_config = new TH1I("h1_leddown_sector_config", "LED down - sector -config", 5,0,5);
 	h1_leddown_z_all = new TH1I("h1_leddown_z_all", "LED down - z all channels", 500,-100,400);
+	h1_leddown_Tdiff_all = new TH1I("h1_leddown_Tdiff_all", "LED down - Tdiff all channels", 400,-50,50);
+	h1_leddown_Tup_all = new TH1I("h1_leddown_Tup_all", "LED down - Tup all channels", 410,0,410);
+	h1_leddown_Tdown_all = new TH1I("h1_leddown_Tdown_all", "LED down - Tdown all channels", 410,0,410);
 	h1_leddown_Aup_all = new TH1I("h1_leddown_Aup_all", "LED down - Aup all channels", 410,0,4100);
 	h1_leddown_Adown_all = new TH1I("h1_leddown_Adown_all", "LED down - Adown all channels", 410,0,4100);
 	h2_leddown_Aup_vs_z = new TH2I("h2_leddown_Aup_vs_z", "LED down - Aup vs z", 100,-100,400,410,0,4100);
@@ -468,6 +480,7 @@ jerror_t JEventProcessor_BCAL_LED::evnt(JEventLoop *loop, uint64_t eventnumber) 
 		loop->Get(bcaldigihits);
 		loop->Get(dbcalpoints);
 		
+	        // float apedsubtime[1536] = { 0. };
 	        int apedsubpeak[1536] = { 0 };
 		     
 		for( unsigned int i=0; i<dbcalpoints.size(); i++) {
@@ -484,13 +497,22 @@ jerror_t JEventProcessor_BCAL_LED::evnt(JEventLoop *loop, uint64_t eventnumber) 
 			// float Adown =  dbcalpoints[i]->E_DS();
 			float Aup = 0;
 			float Adown = 0;
+			float Tup = 0;
+			float Tdown = 0;
+			float Tdiff = 0;
 			if (Hit1->end == DBCALGeometry::kUpstream && Hit2->end == DBCALGeometry::kDownstream) {	  
 			  Aup = Hit1->pulse_peak;
-			  Adown = Hit2->pulse_peak;
+			  Adown = Hit2->pulse_peak;	  
+			  Tup = Hit1->t_raw;
+			  Tdown = Hit2->t_raw;
+			  Tdiff = Tdown - Tup;
 			}
 			else if (Hit2->end == DBCALGeometry::kUpstream && Hit1->end == DBCALGeometry::kDownstream){
 			  Aup = Hit2->pulse_peak;
 			  Adown = Hit1->pulse_peak;
+			  Tup = Hit2->t_raw;
+			  Tdown = Hit1->t_raw;
+			  Tdiff = Tdown - Tup;
 			}
 
 			// fill histograms for all channels
@@ -498,6 +520,9 @@ jerror_t JEventProcessor_BCAL_LED::evnt(JEventLoop *loop, uint64_t eventnumber) 
 			  h1_ledup_sector->Fill(sector);
 			  h1_ledup_z_all->Fill(z);;
 			  h2_ledup_z_vs_cellid->Fill(cell_id,z);
+			  h1_ledup_Tdiff_all->Fill(Tdiff);;
+			  h1_ledup_Tup_all->Fill(Tup);;
+			  h1_ledup_Tdown_all->Fill(Tdown);;
 			  h1_ledup_Aup_all->Fill(Aup);;
 			  h1_ledup_Adown_all->Fill(Adown);;
 			  h2_ledup_Aup_vs_z->Fill(z,Aup);
@@ -510,6 +535,9 @@ jerror_t JEventProcessor_BCAL_LED::evnt(JEventLoop *loop, uint64_t eventnumber) 
 			  h1_leddown_sector->Fill(sector);
 			  h1_leddown_z_all->Fill(z);
 			  h2_leddown_z_vs_cellid->Fill(cell_id,z);
+			  h1_leddown_Tdiff_all->Fill(Tdiff);;
+			  h1_leddown_Tup_all->Fill(Tup);;
+			  h1_leddown_Tdown_all->Fill(Tdown);;
 			  h1_leddown_Aup_all->Fill(Aup);;
 			  h1_leddown_Adown_all->Fill(Adown);;
 			  h2_leddown_Aup_vs_z->Fill(z,Aup);
@@ -520,7 +548,9 @@ jerror_t JEventProcessor_BCAL_LED::evnt(JEventLoop *loop, uint64_t eventnumber) 
 			}
 
 			// make cuts on z for all hits
-			if ( LED_DS && (z>310 && z<400)) {
+			// if ( LED_DS && (z>280 && z<400)) {
+			// cut on Tdiff instead
+			if ( LED_DS && (Tdiff>-30 && Tdiff<-15)) {
 				apedsubpeak[cell_id] = Adown;
 				chcounter[cell_id]++;
 				apedsubpeak[cell_id+768] = Aup;
@@ -537,9 +567,10 @@ jerror_t JEventProcessor_BCAL_LED::evnt(JEventLoop *loop, uint64_t eventnumber) 
 				leddown_mean += Aup + Adown;
 				leddown_events++;
 				
-			} // if condition on z
+			} // if condition on Tdiff
 
-			if (LED_US && (z>-60 && z<0)) {
+			// if (LED_US && (z>-60 && z<0)) {
+			if (LED_US && (Tdiff>15 && Tdiff<30)) {
 				apedsubpeak[cell_id] = Adown;
 				chcounter[cell_id]++;
 				apedsubpeak[cell_id+768] = Aup;
