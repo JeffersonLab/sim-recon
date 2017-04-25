@@ -491,6 +491,6 @@ c      call gppart(7)
       pzdcmd(4) = 0
       pzdcmd(5) = 0
       pzdcmd(6) = 0
-
+      call gsdk(7,pzdcbr,pzdcmd)
 **************
       END
