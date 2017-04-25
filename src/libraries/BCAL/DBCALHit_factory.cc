@@ -215,7 +215,12 @@ jerror_t DBCALHit_factory::evnt(JEventLoop *loop, uint64_t eventnumber)
           + GetConstant(ADC_timing_offsets,digihit)              // low level indiviual corrections (eg 4 ns offset)
           - GetConstant(channel_global_offset,digihit)
           - (0.5 * end_sign) * GetConstant(tdiff_u_d,digihit);
-
+      if (VERBOSE>2) printf("      %2i %i %i %i        , t: %4.0f %.4f %7.3f traw=%7.3f  %7.3f %7.3f %7.3f t=%7.3f\n",
+                            digihit->module, digihit->layer, digihit->sector, digihit->end, 
+                            pulse_time,t_scale,t_base,hit_t_raw,
+                            GetConstant(ADC_timing_offsets,digihit),
+                            GetConstant(channel_global_offset,digihit),
+                            (0.5 * end_sign * GetConstant(tdiff_u_d,digihit)),hit_t);
       DBCALHit *hit = new DBCALHit;
       hit->module = digihit->module;
       hit->layer  = digihit->layer;
