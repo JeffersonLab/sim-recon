@@ -37,6 +37,10 @@ class DSourceComboP4Handler
 		DLorentzVector Calc_P4(const DSourceCombo* locSourceCombo, signed char locVertexZBin) const;
 		DLorentzVector Calc_P4(const DSourceCombo* locSourceCombo, DVector3 locVertex, int locRFBunch) const;
 
+		//UTILITY FUNCTIONS
+		size_t Get_PhotonVertexZBin(double locVertexZ) const;
+		double Get_PhotonVertexZBinCenter(signed char locVertexZBin) const;
+
 	private:
 		DLorentzVector Get_P4(Particle_t locPID, const JObject* locObject, signed char locVertexZBin);
 
@@ -53,7 +57,7 @@ class DSourceComboP4Handler
 		size_t dNumPhotonVertexZBins = 5;
 
 		//NEUTRAL SHOWER DATA
-		unordered_map<signed char, unordered_map<const DNeutralShower*, shared_ptr<const DKinematicData>> dPhotonKinematics; //FCAL shower data at center of target, BCAL in vertex-z bins
+		unordered_map<signed char, unordered_map<const DNeutralShower*, shared_ptr<const DKinematicData>>> dPhotonKinematics; //FCAL shower data at center of target, BCAL in vertex-z bins
 
 		//TOTAL FINAL STATE FOUR-MOMENTUM
 		unordered_map<pair<const DSourceCombo*, signed char>, DLorentzVector> dFinalStateP4ByCombo; //signed char: vertex-z bin
@@ -68,6 +72,22 @@ inline void DSourceComboP4Handler::Reset(void)
 	dPhotonKinematics.clear();
 	dFinalStateP4ByCombo.clear();
 	dFinalStateP4ByCombo_HasMassiveNeutrals.clear();
+}
+
+inline size_t DSourceComboVertexer::Get_PhotonVertexZBin(double locVertexZ) const
+{
+	//given some vertex-z, what bin am I in?
+	int locPhotonVertexZBin = int((locVertexZ - dPhotonVertexZRangeLow)/dPhotonVertexZBinWidth);
+	if(locPhotonVertexZBin < 0)
+		return 0;
+	else if(locPhotonVertexZBin >= dNumPhotonVertexZBins)
+		return dNumPhotonVertexZBins - 1;
+	return locPhotonVertexZBin;
+}
+
+inline double DSourceComboVertexer::Get_PhotonVertexZBinCenter(signed char locVertexZBin) const
+{
+	return dPhotonVertexZRangeLow + (double(locVertexZBin) + 0.5)*dPhotonVertexZBinWidth;
 }
 
 inline shared_ptr<const DKinematicData> DSourceComboer::Create_KinematicData_Photon(const DNeutralShower* locNeutralShower, const DVector3& locVertex) const

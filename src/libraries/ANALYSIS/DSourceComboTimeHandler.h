@@ -24,6 +24,7 @@ class DSourceComboTimeHandler
 		void Reset(void);
 		vector<int> Get_ValidRFBunches(const JObject* locObject, signed char locVertexZBin) const{return dShowerRFBunches[locVertexZBin][locObject];}
 
+		void Setup_NeutralShowers(const vector<const DNeutralShower*>& locNeutralShowers, const DEventRFBunch* locInitialEventRFBunch);
 
 	private:
 
@@ -36,7 +37,6 @@ class DSourceComboTimeHandler
 
 		//SHOWERS SORTED BY RF BUNCH
 		const DEventRFBunch* dInitialEventRFBunch;
-		unordered_map<signed char, DPhotonShowersByBeamBunch> dShowersByBeamBunchByZBin; //char: zbin
 
 		unordered_map<signed char, unordered_map<const JObject*, vector<int>>> dShowerRFBunches; //VECTOR MUST BE SORTED!! //char: z-bin
 

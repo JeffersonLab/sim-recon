@@ -49,10 +49,6 @@ class DSourceComboVertexer
 		signed char Get_VertexZBin(const DSourceCombo* locChargedCombo) const{return Get_PhotonVertexZBin(Get_VertexTimeOffset(locChargedCombo).first.Z());}
 		vector<signed char> Get_VertexZBins(const DReactionVertexInfo* locVertexInfo, const DSourceCombo* locReactionCombo) const;
 
-		//UTILITY FUNCTIONS
-		size_t Get_PhotonVertexZBin(double locVertexZ) const;
-		double Get_PhotonVertexZBinCenter(signed char locVertexZBin) const;
-
 	private:
 		DKinFitUtils_GlueX* dKinFitUtils;
 
@@ -83,23 +79,6 @@ inline void DSourceComboVertexer::Reset(void)
 	dVertexTimeOffsets.clear();
 	dVertexTimeOffsetsByCombo.clear();
 }
-
-inline size_t DSourceComboVertexer::Get_PhotonVertexZBin(double locVertexZ) const
-{
-	//given some vertex-z, what bin am I in?
-	int locPhotonVertexZBin = int((locVertexZ - dPhotonVertexZRangeLow)/dPhotonVertexZBinWidth);
-	if(locPhotonVertexZBin < 0)
-		return 0;
-	else if(locPhotonVertexZBin >= dNumPhotonVertexZBins)
-		return dNumPhotonVertexZBins - 1;
-	return locPhotonVertexZBin;
-}
-
-inline double DSourceComboVertexer::Get_PhotonVertexZBinCenter(signed char locVertexZBin) const
-{
-	return dPhotonVertexZRangeLow + (double(locVertexZBin) + 0.5)*dPhotonVertexZBinWidth;
-}
-
 
 inline vector<signed char> DSourceComboVertexer::Get_VertexZBins(const DReactionVertexInfo* locVertexInfo, const DSourceCombo* locReactionChargedCombo) const
 {

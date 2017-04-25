@@ -189,24 +189,51 @@ DSourceComboTimeHandler::DSourceComboTimeHandler(JEventLoop* locEventLoop)
 	dPIDTimingCuts[AntiProton] = dPIDTimingCuts[Proton];
 }
 
-double DSourceComboTimeHandler::Calc_MaxDeltaTError(const DNeutralShower* locNeutralShower, const shared_ptr<const DKinematicData>& locKinematicData) const
+void DSourceComboTimeHandler::Setup_NeutralShowers(const vector<const DNeutralShower*>& locNeutralShowers, const DEventRFBunch* locInitialEventRFBunch)
 {
-	double locTheta = locKinematicData->momentum().Theta();
-	if(locNeutralShower->dDetectorSystem == SYS_BCAL)
+	//Precompute a few things for the neutral showers, before comboing
+	//Even if it turns out some of this isn't technically needed,
+	//it's still faster than doing a check to see if this has been done or not for every single photon-combo request
+
+	//GET RF BUNCH
+	dInitialEventRFBunch = locInitialEventRFBunch;
+
+
+	//ARRANGE NEUTRAL SHOWERS
+	for(auto& locShower : locNeutralShowers)
 	{
-		float& locZError = dPhotonVertexZBinWidth/2.0; //evaluated at center of bin
-		double locR = locNeutralShower->dSpacetimeVertex.Vect().Perp();
-		double locPathError = locR*(1.0/sin(locTheta) - sqrt(1.0 + pow(1.0/tan(locTheta) - locZError/locR, 2.0))) - locZError;
-		return locPathError/SPEED_OF_LIGHT;
+		auto& locContainer = (locShower->dDetectorSystem == SYS_BCAL) ? dBCALShowers : dFCALShowers;
+		locContainer.push_back(locShower);
 	}
 
-	//FCAL
-	double locDeltaZ = locNeutralShower->dSpacetimeVertex.Z() - dTargetCenter.Z();
-	double locMaxZError = dTargetLength/2.0 + 15.0; //center of target + detached vertex
-	//delta_delta_t = (650 - z_error)*[1/cos(theta) - sqrt(tan^2(theta) + (1 - z_error/(650 - z_error))^2)]/c - z_error/c
-	double locPathErrorTerm = 1.0/cos(locTheta) - sqrt(pow(tan(locTheta), 2.0) + pow(1.0 - locMaxZError/(locDeltaZ - locMaxZError), 2.0));
-	double locPathError = (locDeltaZ - locMaxZError)*locPathErrorTerm - locMaxZError;
-	return locPathError/SPEED_OF_LIGHT;
+
+	//DETERMINE WHICH RF BUNCHES ARE VALID
+	//FCAL: at target center
+	for(auto& locShower : dFCALShowers)
+		Calc_PhotonBeamBunchShifts(locShower, dFCALKinematics[locShower], dInitialEventRFBunch->dTime, dShowersByBeamBunchByZBin[DSourceComboInfo::Get_VertexZIndex_FCAL()]);
+
+	//BCAL + FCAL: in vertex-z bins
+	for(size_t loc_i = 0; loc_i < dNumPhotonVertexZBins; ++loc_i)
+	{
+		//propagate RF time to vertex position
+		double locPropagatedRFTime = dInitialEventRFBunch->dTime + (Get_PhotonVertexZBinCenter(loc_i) - dTargetCenter.Z())/29.9792458;
+		for(auto& locShower : dBCALShowers)
+			Calc_PhotonBeamBunchShifts(locShower, dBCALKinematics[loc_i][locShower], locPropagatedRFTime, dShowersByBeamBunchByZBin[loc_i]);
+
+		//insert the previously-done FCAL photons
+		for(auto locBeamBunchPair : dShowersByBeamBunchByZBin[DSourceComboInfo::Get_VertexZIndex_FCAL()])
+		{
+			const auto& locShowers = locBeamBunchPair.second;
+			auto locBothIterator = dShowersByBeamBunchByZBin[loc_i].find(locBeamBunchPair.first);
+			if(locBothIterator != dShowersByBeamBunchByZBin[loc_i].end())
+			{
+				auto locPhotonVector = locBothIterator->second;
+				locPhotonVector.insert(locPhotonVector.end(), locShowers.begin(), locShowers.end());
+			}
+			else
+				dShowersByBeamBunchByZBin[loc_i].emplace(locBeamBunchPair);
+		}
+	}
 }
 
 void DSourceComboTimeHandler::Calc_PhotonBeamBunchShifts(const DNeutralShower* locNeutralShower, shared_ptr<const DKinematicData>& locKinematicData,
@@ -251,6 +278,25 @@ void DSourceComboTimeHandler::Calc_PhotonBeamBunchShifts(const DNeutralShower* l
 	}
 }
 
+double DSourceComboTimeHandler::Calc_MaxDeltaTError(const DNeutralShower* locNeutralShower, const shared_ptr<const DKinematicData>& locKinematicData) const
+{
+	double locTheta = locKinematicData->momentum().Theta();
+	if(locNeutralShower->dDetectorSystem == SYS_BCAL)
+	{
+		float& locZError = dPhotonVertexZBinWidth/2.0; //evaluated at center of bin
+		double locR = locNeutralShower->dSpacetimeVertex.Vect().Perp();
+		double locPathError = locR*(1.0/sin(locTheta) - sqrt(1.0 + pow(1.0/tan(locTheta) - locZError/locR, 2.0))) - locZError;
+		return locPathError/SPEED_OF_LIGHT;
+	}
+
+	//FCAL
+	double locDeltaZ = locNeutralShower->dSpacetimeVertex.Z() - dTargetCenter.Z();
+	double locMaxZError = dTargetLength/2.0 + 15.0; //center of target + detached vertex
+	//delta_delta_t = (650 - z_error)*[1/cos(theta) - sqrt(tan^2(theta) + (1 - z_error/(650 - z_error))^2)]/c - z_error/c
+	double locPathErrorTerm = 1.0/cos(locTheta) - sqrt(pow(tan(locTheta), 2.0) + pow(1.0 - locMaxZError/(locDeltaZ - locMaxZError), 2.0));
+	double locPathError = (locDeltaZ - locMaxZError)*locPathErrorTerm - locMaxZError;
+	return locPathError/SPEED_OF_LIGHT;
+}
 
 }
 

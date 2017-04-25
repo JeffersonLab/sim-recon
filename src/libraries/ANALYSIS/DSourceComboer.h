@@ -174,6 +174,9 @@ class DSourceComboer : public JObject
 		vector<const DChargedTrack*> dChargedTracks;
 		unordered_map<Particle_t, vector<const JObject*>> dTracksByPID;
 
+		//NEUTRAL SHOWERS
+		unordered_map<signed char, DPhotonShowersByBeamBunch> dShowersByBeamBunchByZBin; //char: zbin
+
 		//SOURCE COMBO INFOS: CREATED ONCE DURING DSourceComboER OBJECT CONSTRUCTION
 		//want to make sure we only have one of each type: suggests using a set
 		//however, after the first few events, almost all of these have already been created: vector has faster lookup time

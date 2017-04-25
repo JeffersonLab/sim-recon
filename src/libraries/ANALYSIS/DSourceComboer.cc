@@ -395,59 +395,20 @@ void DSourceComboer::Reset_NewEvent(JEventLoop* locEventLoop)
 	//be careful! don't recycle combos with a use pid != unknown, because they are just copies! not unique pointers!
 
 	dSourceComboP4Handler->Reset();
+	dSourceComboTimeHandler->Reset();
 	dSourceComboVertexer->Reset();
 
-	//SETUP NEUTRAL SHOWERS
 	vector<const DNeutralShower*> locNeutralShowers;
 	locEventLoop->Get(locNeutralShowers, dShowerSelectionTag);
+
+	const DEventRFBunch* locInitialRFBunch = nullptr;
+	locEventLoop->GetSingle(locInitialRFBunch);
+
+	//SETUP NEUTRAL SHOWERS
 	dSourceComboP4Handler->Setup_NeutralShowers(locNeutralShowers);
+	dSourceComboTimeHandler->Setup_NeutralShowers(locNeutralShowers, locInitialRFBunch);
 }
 
-void DSourceComboer::Setup_NeutralShowers(JEventLoop* locEventLoop)
-{
-	//Precompute a few things for the neutral showers, before comboing
-	//Even if it turns out some of this isn't technically needed,
-	//it's still faster than doing a check to see if this has been done or not for every single photon-combo request
-
-	//GET RF BUNCH
-	locEventLoop->GetSingle(dInitialEventRFBunch);
-
-
-	//ARRANGE NEUTRAL SHOWERS
-	for(auto& locShower : locNeutralShowers)
-	{
-		auto& locContainer = (locShower->dDetectorSystem == SYS_BCAL) ? dBCALShowers : dFCALShowers;
-		locContainer.push_back(locShower);
-	}
-
-
-	//DETERMINE WHICH RF BUNCHES ARE VALID
-	//FCAL: at target center
-	for(auto& locShower : dFCALShowers)
-		Calc_PhotonBeamBunchShifts(locShower, dFCALKinematics[locShower], dInitialEventRFBunch->dTime, dShowersByBeamBunchByZBin[DSourceComboInfo::Get_VertexZIndex_FCAL()]);
-	//BCAL + FCAL: in vertex-z bins
-	for(size_t loc_i = 0; loc_i < dNumPhotonVertexZBins; ++loc_i)
-	{
-		//propagate RF time to vertex position
-		double locPropagatedRFTime = dInitialEventRFBunch->dTime + (Get_PhotonVertexZBinCenter(loc_i) - dTargetCenter.Z())/29.9792458;
-		for(auto& locShower : dBCALShowers)
-			Calc_PhotonBeamBunchShifts(locShower, dBCALKinematics[loc_i][locShower], locPropagatedRFTime, dShowersByBeamBunchByZBin[loc_i]);
-
-		//insert the previously-done FCAL photons
-		for(auto locBeamBunchPair : dShowersByBeamBunchByZBin[DSourceComboInfo::Get_VertexZIndex_FCAL()])
-		{
-			const auto& locShowers = locBeamBunchPair.second;
-			auto locBothIterator = dShowersByBeamBunchByZBin[loc_i].find(locBeamBunchPair.first);
-			if(locBothIterator != dShowersByBeamBunchByZBin[loc_i].end())
-			{
-				auto locPhotonVector = locBothIterator->second;
-				locPhotonVector.insert(locPhotonVector.end(), locShowers.begin(), locShowers.end());
-			}
-			else
-				dShowersByBeamBunchByZBin[loc_i].emplace(locBeamBunchPair);
-		}
-	}
-}
 
 /******************************************************************* CREATE DSOURCOMBOINFO'S ********************************************************************/
 /******************************************************************* CREATE DSOURCOMBOINFO'S ********************************************************************/
