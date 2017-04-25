@@ -19,6 +19,7 @@
 using namespace std;
 using namespace jana;
 
+#include "BCAL/DBCALPoint.h"
 #include "BCAL/DBCALDigiHit.h"
 #include "BCAL/DBCALHit.h"
 #include "BCAL/DBCALUnifiedHit.h"
