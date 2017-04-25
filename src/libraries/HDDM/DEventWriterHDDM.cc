@@ -639,6 +639,20 @@ bool DEventWriterHDDM::Write_HDDMEvent(JEventLoop* locEventLoop, string locOutpu
 	string locOutputFileName = Get_OutputFileName(locOutputFileNameSubString);
 	bool locWriteStatus = Write_HDDMEvent(locOutputFileName, *record);
 	delete record;
+
+	CDCHits.clear();
+	TOFHits.clear();
+	FCALHits.clear();
+	SCHits.clear();
+	BCALDigiHits.clear();
+	BCALTDCDigiHits.clear();
+	PSHits.clear();
+	PSCHits.clear();
+	FDCHits.clear();
+	TAGHHits.clear();
+	TAGMHits.clear();
+	TPOLHits.clear();
+
 	return locWriteStatus;
 }
 
