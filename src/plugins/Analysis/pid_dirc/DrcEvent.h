@@ -66,6 +66,6 @@ private:
 
 #endif
 
-#if defined(__ROOTCLING__)
-#pragma link C++ class DrcEvent+;
-#endif
+// #if defined(__ROOTCLING__)
+// #pragma link C++ class DrcEvent+;
+// #endif

@@ -66,6 +66,6 @@ protected:
 
 #endif
 
-#if defined(__ROOTCLING__)
-#pragma link C++ class DrcHit+;
-#endif
+// #if defined(__ROOTCLING__)
+// #pragma link C++ class DrcHit+;
+// #endif
