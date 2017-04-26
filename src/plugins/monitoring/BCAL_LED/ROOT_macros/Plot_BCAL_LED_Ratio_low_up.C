@@ -17,14 +17,14 @@ TFile *GetReferenceFile(Int_t run, TString variation = "default"){
     sprintf(command, "ccdb dump %s:%i:%s", "/BCAL/LED_monitoring/reference_file", run, variation.Data());
     FILE* inputPipe = gSystem->OpenPipe(command, "r");
     if(inputPipe == NULL)
-        return;
+        return NULL;
     //get the first (comment) line
     char buff[1024];
     if(fgets(buff, sizeof(buff), inputPipe) == NULL)
-        return ;
+        return NULL;
     //get the actual data
     if(fgets(buff, sizeof(buff), inputPipe) == NULL)
-        return;
+        return NULL;
     stringstream ss;
     ss << buff;
     char url_base[1024], path_name[1024];
