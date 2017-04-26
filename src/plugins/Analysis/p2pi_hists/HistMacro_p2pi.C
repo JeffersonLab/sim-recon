@@ -200,14 +200,12 @@
 	tx.SetTextAlign(11);
 	tx.SetTextSize(0.07);
 	char text[100];
-	sprintf(text, "E_{#gamma} > 7 GeV");
-	tx.DrawLatex(0.05, 0.6, text);
 	sprintf(text, "Post KinFit Cut");
-	tx.DrawLatex(0.05, 0.5, text);
+	tx.DrawLatex(0.05, 0.6, text);
 	sprintf(text, "M(#rho) = %0.3f GeV/c^{2}", rho_mass);
-	tx.DrawLatex(0.05, 0.4, text);
+	tx.DrawLatex(0.05, 0.5, text);
 	sprintf(text, "N(#rho) = %0.2f / 1k Trigger", n_rho_kinfit/n_triggers*1000);
-	tx.DrawLatex(0.05, 0.3, text);
+	tx.DrawLatex(0.05, 0.4, text);
 
 }
 

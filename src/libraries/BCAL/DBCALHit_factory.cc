@@ -18,7 +18,6 @@ using namespace std;
 #include <TTAB/DTTabUtilities.h>
 using namespace jana;
 
-
 //------------------
 // init
 //------------------
@@ -29,6 +28,8 @@ jerror_t DBCALHit_factory::init(void)
 
   CHECK_FADC_ERRORS = true;
   gPARMS->SetDefaultParameter("BCAL:CHECK_FADC_ERRORS", CHECK_FADC_ERRORS, "Set to 1 to reject hits with fADC250 errors, ser to 0 to keep these hits");
+  CORRECT_FADC_SATURATION = true;
+  gPARMS->SetDefaultParameter("BCAL:CORRECT_FADC_SATURATION", CORRECT_FADC_SATURATION, "Set to 1 to correct pulse integral for fADC saturation, set to 0 to not correct pulse integral. (default = 1)");
 
    return NOERROR;
 }
@@ -110,6 +111,17 @@ jerror_t DBCALHit_factory::brun(jana::JEventLoop *eventLoop, int32_t runnumber)
    FillCalibTableShort(channel_global_offset, raw_channel_global_offset);
    if (PRINTCALIBRATION) jout << "DBCALHit_factory >> raw_tdiff_u_d" << endl;
    FillCalibTableShort(tdiff_u_d, raw_tdiff_u_d);
+   
+   std::vector<std::map<string,double> > saturation_ADC_pars;
+   if(eventLoop->GetCalib("/BCAL/ADC_saturation", saturation_ADC_pars))
+      jout << "Error loading /BCAL/ADC_saturation !" << endl;
+   for (unsigned int i=0; i < saturation_ADC_pars.size(); i++) {
+	   int end = (saturation_ADC_pars[i])["end"];
+	   int layer = (saturation_ADC_pars[i])["layer"] - 1;
+	   fADC_MinIntegral_Saturation[end][layer] = (saturation_ADC_pars[i])["par0"];
+	   fADC_Saturation_Linear[end][layer] = (saturation_ADC_pars[i])["par1"];
+	   fADC_Saturation_Quadratic[end][layer] = (saturation_ADC_pars[i])["par2"];
+   } 
 
    return NOERROR;
 }
@@ -197,12 +209,22 @@ jerror_t DBCALHit_factory::evnt(JEventLoop *loop, uint64_t eventnumber)
 
       double gain              = GetConstant(gains,digihit);
       double hit_E = 0;
-      if ( integral > 0 ) hit_E = gain * (integral - totalpedestal);
-	  if (VERBOSE>2) printf("%5lu digihit %2i of %2lu, type %i time %4u, peak %3u, int %4.0f %.0f, ped %3.0f %.0f %5.1f %6.1f, gain %.1e, E=%5.0f MeV\n",
+      
+      if ( integral > 0 ) { 
+	double integral_pedsub = integral - totalpedestal;
+	if(CORRECT_FADC_SATURATION && integral_pedsub > fADC_MinIntegral_Saturation[digihit->end][digihit->layer-1]) {
+		if(digihit->pulse_peak > 4094 || (digihit->pedestal == 1 && digihit->QF == 1)) { // check if fADC is saturated or is MC event
+			double locSaturatedIntegral = integral_pedsub - fADC_MinIntegral_Saturation[digihit->end][digihit->layer-1];
+			double locScaleFactor = 1. + fADC_Saturation_Linear[digihit->end][digihit->layer-1]*locSaturatedIntegral + fADC_Saturation_Quadratic[digihit->end][digihit->layer-1]*locSaturatedIntegral*locSaturatedIntegral;
+	    		integral_pedsub *= 1./locScaleFactor;
+		}
+	}
+	hit_E = gain * integral_pedsub;
+      }
+      if (VERBOSE>2) printf("%5lu digihit %2i of %2lu, type %i time %4u, peak %3u, int %4.0f %.0f, ped %3.0f %.0f %5.1f %6.1f, gain %.1e, E=%5.0f MeV\n",
 							eventnumber,i,digihits.size(),digihit->datasource,
 							digihit->pulse_time,digihit->pulse_peak,integral,nsamples_integral,
 							pedestal,nsamples_pedestal,single_sample_ped,totalpedestal,gain,hit_E*1000);
-
       if ( hit_E <= 0 ) continue;  // Throw away negative energy hits  
 
       int pulse_peak_pedsub = digihit->pulse_peak - (int)single_sample_ped;
