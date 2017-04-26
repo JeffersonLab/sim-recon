@@ -136,6 +136,44 @@ class JEventProcessor_BCAL_LED:public jana::JEventProcessor{
   TProfile *high_down_3 = NULL;
   TProfile *high_down_4 = NULL;
 
+// Histograms added by Elton for z distributions
+
+TProfile* h2_ledboth_Aall_vs_event = NULL;
+TProfile* h2_ledboth_sector_vs_event = NULL;
+
+TH1I* h1_ledup_z_all = NULL;;
+TH2I* h2_ledup_z_vs_cellid = NULL;
+TH1I* h1_ledup_sector = NULL;
+TH1I* h1_ledup_sector_config = NULL;
+TH1I* h1_ledup_Tdiff_all = NULL;
+TH1I* h1_ledup_Tup_all = NULL;
+TH1I* h1_ledup_Tdown_all = NULL;
+TH1I* h1_ledup_Aup_all = NULL;
+TH1I* h1_ledup_Adown_all = NULL;
+TH2I* h2_ledup_Aup_vs_z = NULL;
+TH2I* h2_ledup_Adown_vs_z = NULL;
+TProfile* h2_ledup_Aup_vs_event = NULL;
+TProfile* h2_ledup_Adown_vs_event = NULL;
+TProfile* h2_ledup_Aall_vs_event = NULL;
+TProfile* h2_ledup_sector_vs_event = NULL;
+
+TH1I* h1_leddown_z_all = NULL;
+TH2I* h2_leddown_z_vs_cellid = NULL;
+TH1I* h1_leddown_sector = NULL;
+TH1I* h1_leddown_sector_config = NULL;
+TH1I* h1_leddown_Tdiff_all = NULL;
+TH1I* h1_leddown_Tup_all = NULL;
+TH1I* h1_leddown_Tdown_all = NULL;
+TH1I* h1_leddown_Aup_all = NULL;
+TH1I* h1_leddown_Adown_all = NULL;
+TH2I* h2_leddown_Aup_vs_z = NULL;
+TH2I* h2_leddown_Adown_vs_z = NULL;
+TProfile* h2_leddown_Aup_vs_event = NULL;
+TProfile* h2_leddown_Adown_vs_event = NULL;
+TProfile* h2_leddown_Aall_vs_event = NULL;
+TProfile* h2_leddown_sector_vs_event = NULL;
+
+
 };
 
 #endif // _JEventProcessor_BCAL_LED_

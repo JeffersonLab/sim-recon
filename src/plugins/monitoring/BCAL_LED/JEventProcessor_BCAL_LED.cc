@@ -4,159 +4,6 @@
 //
 
 #include "JEventProcessor_BCAL_LED.h"
-#include <JANA/JApplication.h>
-#include <iostream>
-#include <fstream>
-
-using namespace std;
-using namespace jana;
-
-#include "BCAL/DBCALDigiHit.h"
-#include "BCAL/DBCALHit.h"
-#include "BCAL/DBCALPoint.h"
-#include "BCAL/DBCALUnifiedHit.h"
-#include "DAQ/Df250PulseIntegral.h"
-#include "DAQ/Df250WindowRawData.h"
-#include "TRIGGER/DL1Trigger.h"
-
-#include <TDirectory.h>
-#include <TH3.h>
-#include <TH2.h>
-#include <TH1.h>
-#include <TProfile2D.h>
-#include <TStyle.h>
-
-// root hist pointers
-
-//all channels
-static TProfile *bcal_peak_vevent = NULL;
-
-//2 sides
-static TProfile *up_peak_vevent = NULL;
-static TProfile *down_peak_vevent = NULL;
-//4 columns
-static TProfile *column1_peak_vevent = NULL;
-static TProfile *column2_peak_vevent = NULL;
-static TProfile *column3_peak_vevent = NULL;
-static TProfile *column4_peak_vevent = NULL;
-
-static TProfile *column1_up_peak_vevent = NULL;
-static TProfile *column2_up_peak_vevent = NULL;
-static TProfile *column3_up_peak_vevent = NULL;
-static TProfile *column4_up_peak_vevent = NULL;
-static TProfile *column1_down_peak_vevent = NULL;
-static TProfile *column2_down_peak_vevent = NULL;
-static TProfile *column3_down_peak_vevent = NULL;
-static TProfile *column4_down_peak_vevent = NULL;
-
-
-static TProfile *column1_up_peak_vevent1 = NULL;
-static TProfile *column1_down_peak_vevent1 = NULL;
-static TProfile *column1_up_peak_vevent2 = NULL;
-static TProfile *column1_down_peak_vevent2 = NULL;
-static TProfile *column1_up_peak_vevent3 = NULL;
-static TProfile *column1_down_peak_vevent3 = NULL;
-static TProfile *column1_up_peak_vevent4 = NULL;
-static TProfile *column1_down_peak_vevent4 = NULL;
-
-static TProfile *column2_up_peak_vevent1 = NULL;
-static TProfile *column2_down_peak_vevent1 = NULL;
-static TProfile *column2_up_peak_vevent2 = NULL;
-static TProfile *column2_down_peak_vevent2 = NULL;
-static TProfile *column2_up_peak_vevent3 = NULL;
-static TProfile *column2_down_peak_vevent3 = NULL;
-static TProfile *column2_up_peak_vevent4 = NULL;
-static TProfile *column2_down_peak_vevent4 = NULL;
-
-static TProfile *column3_up_peak_vevent1 = NULL;
-static TProfile *column3_down_peak_vevent1 = NULL;
-static TProfile *column3_up_peak_vevent2 = NULL;
-static TProfile *column3_down_peak_vevent2 = NULL;
-static TProfile *column3_up_peak_vevent3 = NULL;
-static TProfile *column3_down_peak_vevent3 = NULL;
-static TProfile *column3_up_peak_vevent4 = NULL;
-static TProfile *column3_down_peak_vevent4 = NULL;
-
-static TProfile *column4_up_peak_vevent1 = NULL;
-static TProfile *column4_down_peak_vevent1 = NULL;
-static TProfile *column4_up_peak_vevent2 = NULL;
-static TProfile *column4_down_peak_vevent2 = NULL;
-static TProfile *column4_up_peak_vevent3 = NULL;
-static TProfile *column4_down_peak_vevent3 = NULL;
-static TProfile *column4_up_peak_vevent4 = NULL;
-static TProfile *column4_down_peak_vevent4 = NULL;
-
-  
-    
-static TProfile *low_up_1 = NULL;
-static TProfile *low_up_2 = NULL;
-static TProfile *low_up_3 = NULL;
-static TProfile *low_up_4 = NULL;
-static TProfile *low_down_1 = NULL;
-static TProfile *low_down_2 = NULL;
-static TProfile *low_down_3 = NULL;
-static TProfile *low_down_4 = NULL;
-
-static TProfile *high_up_1 = NULL;
-static TProfile *high_up_2 = NULL;
-static TProfile *high_up_3 = NULL;
-static TProfile *high_up_4 = NULL;
-static TProfile *high_down_1 = NULL;
-static TProfile *high_down_2 = NULL;
-static TProfile *high_down_3 = NULL;
-static TProfile *high_down_4 = NULL;
-
-// Histograms added by Elton for z distributions
-
-
-
-static TProfile* h2_ledboth_Aall_vs_event = NULL;
-static TProfile* h2_ledboth_sector_vs_event = NULL;
-
-static TH1I* h1_ledup_z_all = NULL;;
-static TH2I* h2_ledup_z_vs_cellid = NULL;
-static TH1I* h1_ledup_sector = NULL;
-static TH1I* h1_ledup_sector_config = NULL;
-static TH1I* h1_ledup_Tdiff_all = NULL;
-static TH1I* h1_ledup_Tup_all = NULL;
-static TH1I* h1_ledup_Tdown_all = NULL;
-static TH1I* h1_ledup_Aup_all = NULL;
-static TH1I* h1_ledup_Adown_all = NULL;
-static TH2I* h2_ledup_Aup_vs_z = NULL;
-static TH2I* h2_ledup_Adown_vs_z = NULL;
-static TProfile* h2_ledup_Aup_vs_event = NULL;
-static TProfile* h2_ledup_Adown_vs_event = NULL;
-static TProfile* h2_ledup_Aall_vs_event = NULL;
-static TProfile* h2_ledup_sector_vs_event = NULL;
-
-static TH1I* h1_leddown_z_all = NULL;
-static TH2I* h2_leddown_z_vs_cellid = NULL;
-static TH1I* h1_leddown_sector = NULL;
-static TH1I* h1_leddown_sector_config = NULL;
-static TH1I* h1_leddown_Tdiff_all = NULL;
-static TH1I* h1_leddown_Tup_all = NULL;
-static TH1I* h1_leddown_Tdown_all = NULL;
-static TH1I* h1_leddown_Aup_all = NULL;
-static TH1I* h1_leddown_Adown_all = NULL;
-static TH2I* h2_leddown_Aup_vs_z = NULL;
-static TH2I* h2_leddown_Adown_vs_z = NULL;
-static TProfile* h2_leddown_Aup_vs_event = NULL;
-static TProfile* h2_leddown_Adown_vs_event = NULL;
-static TProfile* h2_leddown_Aall_vs_event = NULL;
-static TProfile* h2_leddown_sector_vs_event = NULL;
-
-
-
-
-//----------------------------------------------------------------------------------
-
-// 	string make_filename( const string& basename, int index, const string& ext )
-// 	  {
-// 	  ostringstream result;
-// 	  result << basename << index << ext;
-// 	  return result.str();
-// 	  }
-
 
 // Routine used to create our JEventProcessor
 extern "C"{
@@ -191,14 +38,10 @@ jerror_t JEventProcessor_BCAL_LED::init(void) {
 	//high_up_2_counter=0; high_up_3_counter=0; high_up_4_counter=0;
 	//unidentified = 0; ledcounter = 0;
 
-<<<<<<< HEAD
 	adccount1 = 1100;
 	adccount2 = 1200;
 	
-=======
-
 	adccount = 1700;//threshold between 6.25V and 6.25V average pedestal subtracted pulse peak
->>>>>>> b913f8f8188e2aa7c7fe52a72be4725f0e9c28e3
 	
 	maxnumberofevents=24000.0;//700000000.0;//Assuming 1Hz LED trigger, 300M for a beam run with 30KHz trigger and 700M for 70KHz
 	//maxnumberofevents=10000.0;//using LED event conter
@@ -293,119 +136,6 @@ jerror_t JEventProcessor_BCAL_LED::init(void) {
 	high_down_4 = new TProfile("high_bias_down_column_4_peak_vchannel","Avg BCAL peak vs channel;channel ID;peak",1536,0,1536);	
 
 	
-<<<<<<< HEAD
-=======
-
-#if ROOT_VERSION_CODE >= ROOT_VERSION(6,0,0)
-
-	bcal_peak_vevent->SetCanExtend(TH1::kXaxis);
-	
-	up_peak_vevent->SetCanExtend(TH1::kXaxis);
-	down_peak_vevent->SetCanExtend(TH1::kXaxis);
-	
-	column1_peak_vevent->SetCanExtend(TH1::kXaxis);
-	column2_peak_vevent->SetCanExtend(TH1::kXaxis);
-	column3_peak_vevent->SetCanExtend(TH1::kXaxis);
-	column4_peak_vevent->SetCanExtend(TH1::kXaxis);
-
-	column1_up_peak_vevent->SetCanExtend(TH1::kXaxis);
-	column2_up_peak_vevent->SetCanExtend(TH1::kXaxis);
-	column3_up_peak_vevent->SetCanExtend(TH1::kXaxis);
-	column4_up_peak_vevent->SetCanExtend(TH1::kXaxis);
-	column1_down_peak_vevent->SetCanExtend(TH1::kXaxis);
-	column2_down_peak_vevent->SetCanExtend(TH1::kXaxis);
-	column3_down_peak_vevent->SetCanExtend(TH1::kXaxis);
-	column4_down_peak_vevent->SetCanExtend(TH1::kXaxis);
-
-	column1_up_peak_vevent1->SetCanExtend(TH1::kXaxis);
-	column2_up_peak_vevent1->SetCanExtend(TH1::kXaxis);
-	column3_up_peak_vevent1->SetCanExtend(TH1::kXaxis);
-	column4_up_peak_vevent1->SetCanExtend(TH1::kXaxis);
-	column1_down_peak_vevent1->SetCanExtend(TH1::kXaxis);
-	column2_down_peak_vevent1->SetCanExtend(TH1::kXaxis);
-	column3_down_peak_vevent1->SetCanExtend(TH1::kXaxis);
-	column4_down_peak_vevent1->SetCanExtend(TH1::kXaxis);
-	column1_up_peak_vevent2->SetCanExtend(TH1::kXaxis);
-	column2_up_peak_vevent2->SetCanExtend(TH1::kXaxis);
-	column3_up_peak_vevent2->SetCanExtend(TH1::kXaxis);
-	column4_up_peak_vevent2->SetCanExtend(TH1::kXaxis);
-	column1_down_peak_vevent2->SetCanExtend(TH1::kXaxis);
-	column2_down_peak_vevent2->SetCanExtend(TH1::kXaxis);
-	column3_down_peak_vevent2->SetCanExtend(TH1::kXaxis);
-	column4_down_peak_vevent2->SetCanExtend(TH1::kXaxis);
-	column1_up_peak_vevent3->SetCanExtend(TH1::kXaxis);
-	column2_up_peak_vevent3->SetCanExtend(TH1::kXaxis);
-	column3_up_peak_vevent3->SetCanExtend(TH1::kXaxis);
-	column4_up_peak_vevent3->SetCanExtend(TH1::kXaxis);
-	column1_down_peak_vevent3->SetCanExtend(TH1::kXaxis);
-	column2_down_peak_vevent3->SetCanExtend(TH1::kXaxis);
-	column3_down_peak_vevent3->SetCanExtend(TH1::kXaxis);
-	column4_down_peak_vevent3->SetCanExtend(TH1::kXaxis);
-	column1_up_peak_vevent4->SetCanExtend(TH1::kXaxis);
-	column2_up_peak_vevent4->SetCanExtend(TH1::kXaxis);
-	column3_up_peak_vevent4->SetCanExtend(TH1::kXaxis);
-	column4_up_peak_vevent4->SetCanExtend(TH1::kXaxis);
-	column1_down_peak_vevent4->SetCanExtend(TH1::kXaxis);
-	column2_down_peak_vevent4->SetCanExtend(TH1::kXaxis);
-	column3_down_peak_vevent4->SetCanExtend(TH1::kXaxis);
-	column4_down_peak_vevent4->SetCanExtend(TH1::kXaxis);
-	
-	//////////////////////////////////////////////////////////////////////
-#else
-	bcal_peak_vevent->SetBit(TH1::kCanRebin);
-	
-	up_peak_vevent->SetBit(TH1::kCanRebin);
-	down_peak_vevent->SetBit(TH1::kCanRebin);
-	
-	column1_peak_vevent->SetBit(TH1::kCanRebin);
-	column2_peak_vevent->SetBit(TH1::kCanRebin);
-	column3_peak_vevent->SetBit(TH1::kCanRebin);
-	column4_peak_vevent->SetBit(TH1::kCanRebin);
-
-	column1_up_peak_vevent->SetBit(TH1::kCanRebin);
-	column2_up_peak_vevent->SetBit(TH1::kCanRebin);
-	column3_up_peak_vevent->SetBit(TH1::kCanRebin);
-	column4_up_peak_vevent->SetBit(TH1::kCanRebin);
-	column1_down_peak_vevent->SetBit(TH1::kCanRebin);
-	column2_down_peak_vevent->SetBit(TH1::kCanRebin);
-	column3_down_peak_vevent->SetBit(TH1::kCanRebin);
-	column4_down_peak_vevent->SetBit(TH1::kCanRebin);
-	
-	column1_up_peak_vevent1->SetBit(TH1::kCanRebin);
-	column2_up_peak_vevent1->SetBit(TH1::kCanRebin);
-	column3_up_peak_vevent1->SetBit(TH1::kCanRebin);
-	column4_up_peak_vevent1->SetBit(TH1::kCanRebin);
-	column1_down_peak_vevent1->SetBit(TH1::kCanRebin);
-	column2_down_peak_vevent1->SetBit(TH1::kCanRebin);
-	column3_down_peak_vevent1->SetBit(TH1::kCanRebin);
-	column4_down_peak_vevent1->SetBit(TH1::kCanRebin);
-	column1_up_peak_vevent2->SetBit(TH1::kCanRebin);
-	column2_up_peak_vevent2->SetBit(TH1::kCanRebin);
-	column3_up_peak_vevent2->SetBit(TH1::kCanRebin);
-	column4_up_peak_vevent2->SetBit(TH1::kCanRebin);
-	column1_down_peak_vevent2->SetBit(TH1::kCanRebin);
-	column2_down_peak_vevent2->SetBit(TH1::kCanRebin);
-	column3_down_peak_vevent2->SetBit(TH1::kCanRebin);
-	column4_down_peak_vevent2->SetBit(TH1::kCanRebin);
-	column1_up_peak_vevent3->SetBit(TH1::kCanRebin);
-	column2_up_peak_vevent3->SetBit(TH1::kCanRebin);
-	column3_up_peak_vevent3->SetBit(TH1::kCanRebin);
-	column4_up_peak_vevent3->SetBit(TH1::kCanRebin);
-	column1_down_peak_vevent3->SetBit(TH1::kCanRebin);
-	column2_down_peak_vevent3->SetBit(TH1::kCanRebin);
-	column3_down_peak_vevent3->SetBit(TH1::kCanRebin);
-	column4_down_peak_vevent3->SetBit(TH1::kCanRebin);
-	column1_up_peak_vevent4->SetBit(TH1::kCanRebin);
-	column2_up_peak_vevent4->SetBit(TH1::kCanRebin);
-	column3_up_peak_vevent4->SetBit(TH1::kCanRebin);
-	column4_up_peak_vevent4->SetBit(TH1::kCanRebin);
-	column1_down_peak_vevent4->SetBit(TH1::kCanRebin);
-	column2_down_peak_vevent4->SetBit(TH1::kCanRebin);
-	column3_down_peak_vevent4->SetBit(TH1::kCanRebin);
-	column4_down_peak_vevent4->SetBit(TH1::kCanRebin);
-
-	/////////////////////////////////////////////////////////
-#endif
 
 	h2_ledboth_Aall_vs_event = new TProfile("h2_ledboth_Aall_vs_event", "LED uboth - Aup and Adown vs event", 20000,0,200000000);
 	h2_ledboth_sector_vs_event = new TProfile("h2_ledboth_sector_vs_event", "LED both - sector vs event", 20000,0,200000000);
@@ -442,7 +172,6 @@ jerror_t JEventProcessor_BCAL_LED::init(void) {
 	h2_leddown_Aall_vs_event = new TProfile("h2_leddown_Aall_vs_event", "LED down - Aup and Adown vs event", 20000,0,200000000);
 	h2_leddown_sector_vs_event = new TProfile("h2_leddown_sector_vs_event", "LED down - sector vs event", 20000,0,200000000);
 
->>>>>>> master
 	// back to main dir
 	main->cd();
 	
