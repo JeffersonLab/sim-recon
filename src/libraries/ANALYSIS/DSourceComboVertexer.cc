@@ -253,11 +253,11 @@ void DSourceComboVertexer::Calc_TimeOffsets(const DReactionVertexInfo* locReacti
 		//get vertices & path length
 		auto locVertex = Get_Vertex(false, locVertexCombo);
 		auto locParentProductionVertex = Get_Vertex(locParentVertexInfo->Get_ProductionVertexFlag(), locParentCombo);
-		auto locPathLength = (locParentProductionVertex - locVertex).Mag();
+		auto locPathLength = (locVertex - locParentProductionVertex).Mag();
 
 		//compute and save result
 		auto locP4 = dSourceComboP4Handler->Get_P4(locVertexCombo);
-		double locTimeOffset = locPathLength/(locP4.Beta()*SPEED_OF_LIGHT);
+		auto locTimeOffset = locPathLength/(locP4.Beta()*SPEED_OF_LIGHT);
 		dTimeOffsets[locReactionPair].emplace(locVertexCombo, locTimeOffset);
 	}
 }

@@ -9,9 +9,6 @@ DVertexCreator::DVertexCreator(JEventLoop* locEventLoop)
 	dKinFitUtils = new DKinFitUtils_GlueX(locEventLoop);
 	dKinFitUtils->Set_IncludeBeamlineInVertexFitFlag(true);
 
-	//CONTROL
-	dUseSigmaForRFSelectionFlag = false;
-
 	//GET THE GEOMETRY
 	DApplication* locApplication = dynamic_cast<DApplication*>(locEventLoop->GetJApplication());
 	DGeometry* locGeometry = locApplication->GetDGeometry(locEventLoop->GetJEvent().GetRunNumber());
@@ -284,42 +281,6 @@ bool DVertexCreator::Cut_TrackDeltaT(const DChargedTrackHypothesis* locNewCharge
 
 
 
-unordered_map<int, double> DVertexCreator::Calc_NeutralRFDeltaTs(const DNeutralShower* locNeutralShower, const TVector3& locVertex, double locRFTime) const
-{
-	//calc vertex time, get delta-t cut
-	double locPathLength = (locNeutralShower->dSpacetimeVertex.Vect() - locVertex).Mag();
-	double locVertexTime = locNeutralShower->dSpacetimeVertex.T() - locPathLength/29.9792458;
-	double locVertexTimeVariance = dUseSigmaForRFSelectionFlag ? locNeutralShower->dCovarianceMatrix(4, 4) : 1.0;
-	double locDeltaTCut = dPIDTimeCutMap[Gamma][locNeutralShower->dDetectorSystem];
-
-	//loop over possible #-RF-shifts, computing delta-t's
-	unordered_map<int, double> locRFDeltaTMap;
-
-	//start with best-shift, then loop up in n-shifts
-	int locOrigNumShifts = Calc_RFBunchShift(locRFTime, locVertexTime);
-	int locNumShifts = locOrigNumShifts;
-	double locDeltaT = locVertexTime - (locRFTime + locNumShifts*dBeamBunchPeriod);
-	while(fabs(locDeltaT) < locDeltaTCut)
-	{
-		double locChiSq = locDeltaT*locDeltaT/locVertexTimeVariance;
-		locRFDeltaTMap.emplace(locNumShifts, locChiSq);
-		++locNumShifts;
-		locDeltaT = locVertexTime - (locRFTime + locNumShifts*dBeamBunchPeriod);
-	}
-
-	//now loop down in n-shifts
-	int locNumShifts = locOrigNumShifts - 1;
-	double locDeltaT = locVertexTime - (locRFTime + locNumShifts*dBeamBunchPeriod);
-	while(fabs(locDeltaT) < locDeltaTCut)
-	{
-		double locChiSq = locDeltaT*locDeltaT/locVertexTimeVariance;
-		locRFDeltaTMap.emplace(locNumShifts, locChiSq);
-		--locNumShifts;
-		locDeltaT = locVertexTime - (locRFTime + locNumShifts*dBeamBunchPeriod);
-	}
-
-	return locRFDeltaTMap;
-}
 
 
 

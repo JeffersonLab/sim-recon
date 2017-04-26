@@ -47,6 +47,7 @@ class DSourceComboTimeHandler
 
 		//SELECT RF BUNCHES
 		vector<int> Select_RFBunches_Charged(const DReactionVertexInfo* locReactionVertexInfo, const DSourceCombo* locChargedCombo) const;
+		int Select_RFBunch_Full(const DSourceCombo* locReactionFullCombo, const DSourceCombo* locReactionChargedCombo, const vector<int>& locRFBunches);
 
 	private:
 
@@ -57,7 +58,10 @@ class DSourceComboTimeHandler
 
 		double Calc_MaxDeltaTError(const DNeutralShower* locNeutralShower, const shared_ptr<const DKinematicData>& locKinematicData) const;
 
-		//HANDLERS
+		double Calc_RFDeltaTChiSq(const DNeutralShower* locNeutralShower, int locNumShifts, const TVector3& locVertex, double locPropagatedRFTime) const;
+		double Calc_RFDeltaTChiSq(const DChargedTrackHypothesis* locHypothesis, int locNumShifts, double locVertexTime, double locPropagatedRFTime) const;
+
+		//HANDLERS AND UTILITIES
 		const DSourceComboer* dSourceComboer;
 		const DSourceComboVertexer* dSourceComboVertexer;
 		const DAnalysisUtilities* dAnalysisUtilities;
@@ -66,6 +70,7 @@ class DSourceComboTimeHandler
 		DVector3 dTargetCenter;
 		double dTargetLength = 30.0;
 		double dBeamBunchPeriod = 1000.0/249.5;
+		bool dUseSigmaForRFSelectionFlag = false;
 
 		//VERTEX-DEPENDENT PHOTON INFORMATION
 		//For every 10cm in vertex-z, calculate the photon p4 & time for placing mass & delta-t cuts
@@ -151,6 +156,24 @@ inline vector<int> DSourceComboTimeHandler::Get_CommonRFBunches(const vector<int
 	return locCommonRFBunches;
 }
 
+inline double DSourceComboTimeHandler::Calc_RFDeltaTChiSq(const DNeutralShower* locNeutralShower, int locNumShifts, const TVector3& locVertex, double locPropagatedRFTime) const
+{
+	//calc vertex time, get delta-t cut
+	double locPathLength = (locNeutralShower->dSpacetimeVertex.Vect() - locVertex).Mag();
+	double locVertexTime = locNeutralShower->dSpacetimeVertex.T() - locPathLength/29.9792458 - locTimeOffset;
+	double locVertexTimeVariance = dUseSigmaForRFSelectionFlag ? locNeutralShower->dCovarianceMatrix(4, 4) : 1.0;
+
+	double locDeltaT = locVertexTime - locPropagatedRFTime;
+	return locDeltaT*locDeltaT/locVertexTimeVariance;
+}
+
+inline double DSourceComboTimeHandler::Calc_RFDeltaTChiSq(const DChargedTrackHypothesis* locHypothesis, int locNumShifts, double locVertexTime, double locPropagatedRFTime) const
+{
+	//calc vertex time, get delta-t cut
+	double locVertexTimeVariance = dUseSigmaForRFSelectionFlag ? locHypothesis->errorMatrix(6, 6) : 1.0;
+	double locDeltaT = locVertexTime - locPropagatedRFTime;
+	return locDeltaT*locDeltaT/locVertexTimeVariance;
+}
 
 }
 

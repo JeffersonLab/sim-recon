@@ -468,6 +468,16 @@ void DSourceComboer::Build_ParticleCombos(JEventLoop* locEventLoop, const DReact
 		//Then, get the full combos, but only those that satisfy the charged RF bunches
 		const auto& locPrimaryFullCombos = Get_CombosForComboing(locZDependentComboUse, d_MixedStage, locBeamBunches_Charged, locChargedCombo);
 
+		//loop over full combos
+		for(auto locFullCombo : locPrimaryFullCombos)
+		{
+			auto locValidRFBunches = dValidRFBunches_ByCombo[locFullCombo];
+
+//PLACE mass cuts on massive neutrals here! Effectively narrows down RF bunches
+
+			//Select final RF bunch
+			auto locRFBunch = dSourceComboTimeHandler->Select_RFBunch_Full(locFullCombo, locChargedCombo, locValidRFBunches);
+		}
 	}
 
 
@@ -1688,26 +1698,26 @@ const DSourceCombo* DSourceComboer::Get_Presiding_ChargedCombo(const DSourceComb
 	return nullptr; //uh oh ...
 }
 
-const DSourceCombo* DSourceComboer::Get_VertexPrimaryCombo(const DSourceCombo* locReactionChargedCombo, const DReactionStepVertexInfo* locStepVertexInfo)
+const DSourceCombo* DSourceComboer::Get_VertexPrimaryCombo(const DSourceCombo* locReactionCombo, const DReactionStepVertexInfo* locStepVertexInfo)
 {
 	//if it's the production vertex, just return the input
 	if(locStepVertexInfo->Get_ProductionVertexFlag())
-		return locReactionChargedCombo;
+		return locReactionCombo;
 
 	//see if it's already been determined before: if so, just return it
-	auto locCreationPair = std::make_pair(locReactionChargedCombo, locStepVertexInfo);
-	auto locIterator = dVertexPrimaryChargedComboMap.find(locCreationPair);
-	if(locIterator != dVertexPrimaryChargedComboMap.end())
+	auto locCreationPair = std::make_pair(locReactionCombo, locStepVertexInfo);
+	auto locIterator = dVertexPrimaryComboMap.find(locCreationPair);
+	if(locIterator != dVertexPrimaryComboMap.end())
 		return locCreationPair->second;
 
 	//find it
 	auto locReaction = locStepVertexInfo->Get_Reaction();
 	auto locDesiredStepIndex = locStepVertexInfo->Get_StepIndices().front();
-	auto locVertexPrimaryChargedCombo = Get_StepSourceCombo(locReaction, locDesiredStepIndex, locReactionChargedCombo, 0);
+	auto locVertexPrimaryCombo = Get_StepSourceCombo(locReaction, locDesiredStepIndex, locReactionCombo, 0);
 
 	//save it and return it
-	dVertexPrimaryChargedComboMap.emplace(locCreationPair, locVertexPrimaryChargedCombo);
-	return locVertexPrimaryChargedCombo;
+	dVertexPrimaryComboMap.emplace(locCreationPair, locVertexPrimaryCombo);
+	return locVertexPrimaryCombo;
 }
 
 } //end DAnalysis namespace
