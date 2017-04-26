@@ -1,0 +1,13 @@
+import sbms
+from subprocess import call
+
+Import('*')
+env = env.Clone()
+env.Append(IGNORE_SOURCES = {'DrcHit_Dict.cc','DrcEvent_Dict.cc'})
+sbms.AddDANA(env)
+sbms.plugin(env)
+
+
+
+
+
