@@ -542,13 +542,15 @@ jerror_t JEventProcessor_BCAL_TDC_Timing::evnt(JEventLoop *loop, uint64_t eventn
                              Deltat, trackHitZ, title,
                              300, -30, 30, 250, zminhall, zmaxhall); 
 
+            int the_cell = (thisPoint->module() - 1) * 16 + (thisPoint->layer() - 1) * 4 + thisPoint->sector();
             float Deltat_Zcorr = Deltat - (trackHitZ-212)/8.1;
-            sprintf(title, "%s #Delta t (Hit) corrected for Z;#Delta t_{raw} - Z_{Track}/v_{eff}", channame);
-            Fill1DHistogram ("BCAL_TDC_Offsets", "Deltat", channame,
+            sprintf(title, "#Delta t (Hit) corrected for Z;#Delta t - Z_{Track}/v_{eff}");
+            Fill1DHistogram ("BCAL_Global_Offsets", "Deltat", "AllPoints",
                              Deltat_Zcorr, title, 70, -10, 14);
-            sprintf(title, "#Delta t (Hit) corrected for Z;#Delta t_{raw} - Z_{Track}/v_{eff}");
-            Fill1DHistogram ("BCAL_TDC_Offsets", "Deltat", "AllPoints",
-                             Deltat_Zcorr, title, 70, -10, 14);
+            Fill2DHistogram ("BCAL_Global_Offsets", "Deltat", "VsCell",
+                             the_cell, Deltat_Zcorr,
+                             "#Delta t (Hit) corrected for Z;#Delta t - Z_{Track}/v_{eff}",
+                             768, 0.5, 768.5, 70, -10, 14);
 
             Fill2DHistogram ("BCAL_TDC_Offsets", "Delta Z", "AllPoints",
                              trackHitZ, deltaZ,
@@ -610,11 +612,12 @@ jerror_t JEventProcessor_BCAL_TDC_Timing::evnt(JEventLoop *loop, uint64_t eventn
             // Get raw times
             float Deltat_raw = thisADCHit_up->t_raw - thisADCHit_down->t_raw;
             float Deltat_raw_Zcorr = Deltat_raw - (trackHitZ-212)/8.1;
-            sprintf(title, "%s #Delta t (Hit) corrected for Z;#Delta t_{raw} - Z_{Track}/v_{eff}", channame);
-            Fill1DHistogram ("BCAL_TDC_Offsets", "Deltat_raw", channame,
-                             Deltat_raw_Zcorr, title, 70, -10, 14);
+            Fill2DHistogram("BCAL_Global_Offsets", "Deltat_raw", "VsCell",
+                            the_cell, Deltat_raw_Zcorr,
+                            "#Delta t (Hit) corrected for Z;#Delta t_{raw} - Z_{Track}/v_{eff}",
+                            768, 0.5, 768.5, 70, -10, 14);
             sprintf(title, "#Delta t (Hit) corrected for Z;#Delta t_{raw} - Z_{Track}/v_{eff}");
-            Fill1DHistogram ("BCAL_TDC_Offsets", "Deltat_raw", "AllPoints",
+            Fill1DHistogram ("BCAL_Global_Offsets", "Deltat_raw", "AllPoints",
                              Deltat_raw_Zcorr, title, 70, -10, 14);
 
             // Attenuation Length
@@ -667,7 +670,6 @@ jerror_t JEventProcessor_BCAL_TDC_Timing::evnt(JEventLoop *loop, uint64_t eventn
 
                // Now we just plot the difference in from the RF Time to get out the correction
                if (E_point > 0.05) { // The timing is known not to be great for very low energy, so only use our best info 
-                   int the_cell = (thisPoint->module() - 1) * 16 + (thisPoint->layer() - 1) * 4 + thisPoint->sector();
                    Fill2DHistogram("BCAL_Global_Offsets", "Target Time", "deltaTVsCell",
                                    the_cell, targetCenterTime - thisRFBunch->dTime,
                                    "Charged shower points; CCDB Index; t_{Target} - t_{RF} [ns]",
