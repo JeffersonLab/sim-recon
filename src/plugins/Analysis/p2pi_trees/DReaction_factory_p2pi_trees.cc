@@ -38,16 +38,20 @@ jerror_t DReaction_factory_p2pi_trees::evnt(JEventLoop* locEventLoop, uint64_t l
 
 	// Make as many DReaction objects as desired
 	DReactionStep* locReactionStep = NULL;
-	DReaction* locReaction = new DReaction("p2pi_pmiss"); //needs to be a unique name for each DReaction object, CANNOT (!) be "Thrown"
+	DReaction* locReaction = NULL; //needs to be a unique name for each DReaction object, CANNOT (!) be "Thrown"
 
 	bool unused = false;
 	locReaction = new DReaction("p2pi_trees"); //needs to be a unique name for each DReaction object, CANNOT (!) be "Thrown"
 
+	//Required: DReactionSteps to specify the channel and decay chain you want to study
+	//Particles are of type Particle_t, an enum defined in sim-recon/src/libraries/include/particleType.h
 	// g, Z -> pi+, pi- ,Z   - assume lead for now
 	locReactionStep = new DReactionStep();
 	locReactionStep->Set_InitialParticleID(Gamma);
-	locReactionStep->Set_TargetParticleID(Pb208);
-	locReactionStep->Add_FinalParticleID(Pb208);
+	// locReactionStep->Set_TargetParticleID(Pb208);
+	// locReactionStep->Add_FinalParticleID(Pb208);
+	locReactionStep->Set_TargetParticleID(Proton);
+	locReactionStep->Add_FinalParticleID(Proton);
 	locReactionStep->Add_FinalParticleID(PiPlus);
 	locReactionStep->Add_FinalParticleID(PiMinus);
 	locReaction->Add_ReactionStep(locReactionStep);
@@ -98,11 +102,11 @@ jerror_t DReaction_factory_p2pi_trees::evnt(JEventLoop* locEventLoop, uint64_t l
 	locReaction->Add_AnalysisAction(new DCutAction_PIDDeltaT(locReaction, false, 2.0, PiMinus, SYS_TOF));
 	locReaction->Add_AnalysisAction(new DCutAction_PIDDeltaT(locReaction, false, 1.5, PiMinus, SYS_BCAL));
 	locReaction->Add_AnalysisAction(new DCutAction_PIDDeltaT(locReaction, false, 3.0, PiMinus, SYS_FCAL));
-	locReaction->Add_AnalysisAction(new DCustomAction_dEdxCut_p2pi(locReaction, false)); //false: focus on keeping signal
+	// locReaction->Add_AnalysisAction(new DCustomAction_dEdxCut_p2pi(locReaction, false)); //false: focus on keeping signal
 	locReaction->Add_AnalysisAction(new DHistogramAction_PID(locReaction, "PostPIDCuts"));
 
-	// Custom histograms for p2pi
-	locReaction->Add_AnalysisAction(new DCustomAction_p2pi_hists(locReaction, false, "TimingCut_Measured"));
+	// Custom histograms for p2pi  // omit for now since reaction is on heavy target
+	// locReaction->Add_AnalysisAction(new DCustomAction_p2pi_hists(locReaction, false, "TimingCut_Measured"));
 
 	//MISSING MASS
 	locReaction->Add_AnalysisAction(new DHistogramAction_MissingMassSquared(locReaction, false, 1000, -0.1, 0.1, "PreKinFit"));

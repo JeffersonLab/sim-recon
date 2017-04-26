@@ -10,3 +10,7 @@ gen_2pi_amp> twopi_plotter_amp twopi_amp_fitPars.fit -o twopi_map_fitPars.root
 gen_2pi_amp> mv twopi_fitPars.txt twopi_amp_fitPars.fit2
 gen_2pi_amp> root -l
 root [0] .x twopi_amp.C
+
+
+
+hd_root -PPLUGINS=monitoring_hists,p2pi_trees -PNTHREADS=12 ../hddm/dana_rest_gen_2pi_primakoff_030000_*.hddm -o p2pi_trees_030000.root_030000.root
