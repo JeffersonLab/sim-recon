@@ -44,6 +44,8 @@ DApplication::DApplication(int narg, char* argv[]):JApplication(narg, argv)
 	//disable inherently (and horrorifically)-unsafe registration of EVERY TObject with the global TObjectTable //multithreading!!
 	//simply setting/checking a bool is not thread-safe due to cache non-coherence and operation re-shuffling by the compiler
 	TObject::SetObjectStat(kFALSE);
+	//Similar: This adds functions to the global gROOT.  We don't want this, because different threads tend to have their own functions with the same name.
+	TF1::fgAddToGlobList = kFALSE;
 
 	// Add plugin paths to Hall-D specific binary directories
 	const char *bms_osname = getenv("BMS_OSNAME");

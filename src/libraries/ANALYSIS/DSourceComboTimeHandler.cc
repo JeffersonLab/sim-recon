@@ -1,4 +1,5 @@
 #include "ANALYSIS/DSourceComboTimeHandler.h"
+#include "ANALYSIS/DSourceComboer.h"
 
 
 /*************************************************** CHARGED TRACK TIMING CUTS *************************************************
@@ -142,51 +143,61 @@
 namespace DAnalysis
 {
 
-DSourceComboTimeHandler::DSourceComboTimeHandler(JEventLoop* locEventLoop)
+DSourceComboTimeHandler::DSourceComboTimeHandler(JEventLoop* locEventLoop, const DSourceComboer* locSourceComboer, const DSourceComboVertexer* locSourceComboVertexer) :
+		dSourceComboer(locSourceComboer), dSourceComboVertexer(locSourceComboVertexer)
 {
+	locEventLoop->GetSingle(dAnalysisUtilities);
+
 	//BEAM BUNCH PERIOD
 	vector<double> locBeamPeriodVector;
 	locEventLoop->GetCalib("PHOTON_BEAM/RF/beam_period", locBeamPeriodVector);
 	dBeamBunchPeriod = locBeamPeriodVector[0];
 
-	//Create photon/RF delta-t cuts
-	dPhotonTimeCutMap.emplace(SYS_BCAL, new TF1("df_BCALShowerRFTimeComboingCut", "[0]", 0.0, 12.0));
-	dPhotonTimeCutMap[SYS_BCAL]->SetParameter(0, 2.0);
-	dPhotonTimeCutMap.emplace(SYS_FCAL, new TF1("df_FCALShowerRFTimeComboingCut", "[0]", 0.0, 12.0));
-	dPhotonTimeCutMap[SYS_FCAL]->SetParameter(0, 2.0);
+	//These functions can have the same name because we are no longer adding them to the global ROOT list of functions
 
 	// Timing Cuts: Photon
-	dPIDTimingCuts[Gamma][SYS_BCAL] = 3.0;
-	dPIDTimingCuts[Gamma][SYS_FCAL] = 2.5;
+	dPIDTimingCuts[Gamma].emplace(SYS_BCAL, new TF1("df_TimeCut", "[0]", 0.0, 12.0));
+	dPIDTimingCuts[Gamma][SYS_BCAL]->SetParameter(0, 3.0);
+	dPIDTimingCuts[Gamma].emplace(SYS_FCAL, new TF1("df_TimeCut", "[0]", 0.0, 12.0));
+	dPIDTimingCuts[Gamma][SYS_FCAL]->SetParameter(0, 2.5);
 
 	// Timing Cuts: Leptons
-	dPIDTimingCuts[Electron][SYS_BCAL] = 1.0;
-	dPIDTimingCuts[Electron][SYS_FCAL] = 2.5;
-	dPIDTimingCuts[Electron][SYS_TOF] = 2.5;
-	dPIDTimingCuts[Positron] = dPIDTimingCuts[Electron];
-	dPIDTimingCuts[MuonMinus] = dPIDTimingCuts[Electron];
-	dPIDTimingCuts[MuonPlus] = dPIDTimingCuts[Electron];
+	dPIDTimingCuts[Electron].emplace(SYS_BCAL, new TF1("df_TimeCut", "[0]", 0.0, 12.0));
+	dPIDTimingCuts[Electron][SYS_BCAL]->SetParameter(0, 1.0);
+	dPIDTimingCuts[Electron].emplace(SYS_FCAL, new TF1("df_TimeCut", "[0]", 0.0, 12.0));
+	dPIDTimingCuts[Electron][SYS_FCAL]->SetParameter(0, 2.5);
+	dPIDTimingCuts[Electron].emplace(SYS_TOF, new TF1("df_TimeCut", "[0]", 0.0, 12.0));
+	dPIDTimingCuts[Electron][SYS_TOF]->SetParameter(0, 2.5);
+
+	dPIDTimingCuts.emplace(Positron, dPIDTimingCuts[Electron]);
+	dPIDTimingCuts.emplace(MuonMinus, dPIDTimingCuts[Electron]);
+	dPIDTimingCuts.emplace(MuonPlus, dPIDTimingCuts[Electron]);
 
 	// Timing Cuts: Mesons
-	dPIDTimingCuts[PiPlus][SYS_BCAL] = 2.0;
-	dPIDTimingCuts[PiPlus][SYS_FCAL] = 2.5;
-	dPIDTimingCuts[PiPlus][SYS_TOF] = 2.5;
+	dPIDTimingCuts[PiPlus].emplace(SYS_BCAL, new TF1("df_TimeCut", "[0]", 0.0, 12.0));
+	dPIDTimingCuts[PiPlus][SYS_BCAL]->SetParameter(0, 2.0);
+	dPIDTimingCuts[PiPlus].emplace(SYS_FCAL, new TF1("df_TimeCut", "[0]", 0.0, 12.0));
+	dPIDTimingCuts[PiPlus][SYS_FCAL]->SetParameter(0, 2.5);
+	dPIDTimingCuts[PiPlus].emplace(SYS_TOF, new TF1("df_TimeCut", "[0]", 0.0, 12.0));
+	dPIDTimingCuts[PiPlus][SYS_TOF]->SetParameter(0, 2.5);
+	dPIDTimingCuts.emplace(PiMinus, dPIDTimingCuts[PiPlus]);
 
-	dPIDTimingCuts[PiMinus][SYS_BCAL] = 2.0;
-	dPIDTimingCuts[PiMinus][SYS_FCAL] = 2.5;
-	dPIDTimingCuts[PiMinus][SYS_TOF] = 2.5;
-
-	dPIDTimingCuts[KPlus][SYS_BCAL] = 0.75;
-	dPIDTimingCuts[KPlus][SYS_FCAL] = 2.5;
-	dPIDTimingCuts[KPlus][SYS_TOF] = 2.0;
-	dPIDTimingCuts[KMinus] = dPIDTimingCuts[KPlus];
+	dPIDTimingCuts[KPlus].emplace(SYS_BCAL, new TF1("df_TimeCut", "[0]", 0.0, 12.0));
+	dPIDTimingCuts[KPlus][SYS_BCAL]->SetParameter(0, 0.75);
+	dPIDTimingCuts[KPlus].emplace(SYS_FCAL, new TF1("df_TimeCut", "[0]", 0.0, 12.0));
+	dPIDTimingCuts[KPlus][SYS_FCAL]->SetParameter(0, 2.5);
+	dPIDTimingCuts[KPlus].emplace(SYS_TOF, new TF1("df_TimeCut", "[0]", 0.0, 12.0));
+	dPIDTimingCuts[KPlus][SYS_TOF]->SetParameter(0, 2.0);
+	dPIDTimingCuts.emplace(KMinus, dPIDTimingCuts[KPlus]);
 
 	// Timing Cuts: Baryons
-	dPIDTimingCuts[Proton][SYS_BCAL] = 2.5;
-	dPIDTimingCuts[Proton][SYS_FCAL] = 2.5;
-	dPIDTimingCuts[Proton][SYS_TOF] = 2.5;
-
-	dPIDTimingCuts[AntiProton] = dPIDTimingCuts[Proton];
+	dPIDTimingCuts[Proton].emplace(SYS_BCAL, new TF1("df_TimeCut", "[0]", 0.0, 12.0));
+	dPIDTimingCuts[Proton][SYS_BCAL]->SetParameter(0, 2.5);
+	dPIDTimingCuts[Proton].emplace(SYS_FCAL, new TF1("df_TimeCut", "[0]", 0.0, 12.0));
+	dPIDTimingCuts[Proton][SYS_FCAL]->SetParameter(0, 2.5);
+	dPIDTimingCuts[Proton].emplace(SYS_TOF, new TF1("df_TimeCut", "[0]", 0.0, 12.0));
+	dPIDTimingCuts[Proton][SYS_TOF]->SetParameter(0, 2.5);
+	dPIDTimingCuts.emplace(AntiProton, dPIDTimingCuts[Proton]);
 }
 
 void DSourceComboTimeHandler::Setup_NeutralShowers(const vector<const DNeutralShower*>& locNeutralShowers, const DEventRFBunch* locInitialEventRFBunch)
@@ -198,30 +209,44 @@ void DSourceComboTimeHandler::Setup_NeutralShowers(const vector<const DNeutralSh
 	//GET RF BUNCH
 	dInitialEventRFBunch = locInitialEventRFBunch;
 
-
 	//ARRANGE NEUTRAL SHOWERS
+	vector<const DNeutralShower*> locBCALShowers, locFCALShowers;
 	for(auto& locShower : locNeutralShowers)
 	{
-		auto& locContainer = (locShower->dDetectorSystem == SYS_BCAL) ? dBCALShowers : dFCALShowers;
+		auto& locContainer = (locShower->dDetectorSystem == SYS_BCAL) ? locBCALShowers : locFCALShowers;
 		locContainer.push_back(locShower);
 	}
 
+	//CALCULATE KINEMATICS
+	//FCAL: at target center
+	auto locFCALZBin = DSourceComboInfo::Get_VertexZIndex_FCAL();
+	for(auto& locShower : locFCALShowers)
+		dPhotonKinematics[locFCALZBin].emplace(locShower, Create_KinematicData_Photon(locShower, dTargetCenter));
+
+	//BCAL: in vertex-z bins
+	for(size_t loc_i = 0; loc_i < dNumPhotonVertexZBins; ++loc_i)
+	{
+		DVector3 locBinCenter(0.0, 0.0, dSourceComboer->Get_PhotonVertexZBinCenter(loc_i));
+		for(auto& locShower : locBCALShowers)
+			dPhotonKinematics[loc_i].emplace(locShower, Create_KinematicData_Photon(locShower, locBinCenter));
+	}
 
 	//DETERMINE WHICH RF BUNCHES ARE VALID
 	//FCAL: at target center
-	for(auto& locShower : dFCALShowers)
-		Calc_PhotonBeamBunchShifts(locShower, dFCALKinematics[locShower], dInitialEventRFBunch->dTime, dShowersByBeamBunchByZBin[DSourceComboInfo::Get_VertexZIndex_FCAL()]);
+	for(auto& locShower : locFCALShowers)
+		Calc_PhotonBeamBunchShifts(locShower, dPhotonKinematics[locFCALZBin][locShower], dInitialEventRFBunch->dTime, locFCALZBin);
 
 	//BCAL + FCAL: in vertex-z bins
 	for(size_t loc_i = 0; loc_i < dNumPhotonVertexZBins; ++loc_i)
 	{
 		//propagate RF time to vertex position
-		double locPropagatedRFTime = dInitialEventRFBunch->dTime + (Get_PhotonVertexZBinCenter(loc_i) - dTargetCenter.Z())/29.9792458;
-		for(auto& locShower : dBCALShowers)
-			Calc_PhotonBeamBunchShifts(locShower, dBCALKinematics[loc_i][locShower], locPropagatedRFTime, dShowersByBeamBunchByZBin[loc_i]);
+		double locPropagatedRFTime = dInitialEventRFBunch->dTime + (dSourceComboer->Get_PhotonVertexZBinCenter(loc_i) - dTargetCenter.Z())/SPEED_OF_LIGHT;
+		for(auto& locShower : locBCALShowers)
+			Calc_PhotonBeamBunchShifts(locShower, dPhotonKinematics[loc_i][locShower], locPropagatedRFTime, loc_i);
 
 		//insert the previously-done FCAL photons
-		for(auto locBeamBunchPair : dShowersByBeamBunchByZBin[DSourceComboInfo::Get_VertexZIndex_FCAL()])
+		dShowersByBeamBunchByZBin[loc_i].insert(dShowersByBeamBunchByZBin[locFCALZBin].begin(), dShowersByBeamBunchByZBin[locFCALZBin].end());
+		for(auto locBeamBunchPair : dShowersByBeamBunchByZBin[locFCALZBin])
 		{
 			const auto& locShowers = locBeamBunchPair.second;
 			auto locBothIterator = dShowersByBeamBunchByZBin[loc_i].find(locBeamBunchPair.first);
@@ -236,23 +261,33 @@ void DSourceComboTimeHandler::Setup_NeutralShowers(const vector<const DNeutralSh
 	}
 }
 
-void DSourceComboTimeHandler::Calc_PhotonBeamBunchShifts(const DNeutralShower* locNeutralShower, shared_ptr<const DKinematicData>& locKinematicData,
-		double locRFTime, DPhotonShowersByBeamBunch& locShowersByBeamBunch) const
+void DSourceComboTimeHandler::Calc_PhotonBeamBunchShifts(const DNeutralShower* locNeutralShower, shared_ptr<const DKinematicData>& locKinematicData, double locRFTime, signed char locZBin)
 {
 	//get delta-t cut
 	DetectorSystem_t locSystem = locNeutralShower->dDetectorSystem;
-	double locDeltaTCut = dPhotonTimeCutMap[locSystem]->Eval(locNeutralShower->dEnergy) + Calc_MaxDeltaTError(locNeutralShower, locKinematicData);
+	double locDeltaTCut = dPIDTimingCuts[Gamma][locSystem]->Eval(locNeutralShower->dEnergy) + Calc_MaxDeltaTError(locNeutralShower, locKinematicData);
 
-	//prepare for loop over possible #-RF-shifts
+	//do loop over possible #-RF-shifts
 	double locVertexTime = locKinematicData->time();
-	int locOrigNumShifts = Calc_RFBunchShift(locRFTime, locVertexTime); //get best shift
+	auto locRFShifts = Calc_BeamBunchShifts(locVertexTime, locRFTime, locDeltaTCut, true);
+
+	auto locJObject = static_cast<const JObject*>(locNeutralShower);
+	dShowerRFBunches[locZBin].emplace(locJObject, locRFShifts);
+	for(auto locNumShifts : locRFShifts)
+		dShowersByBeamBunchByZBin[locZBin][{locNumShifts}].push_back(locJObject);
+}
+
+vector<int> DSourceComboTimeHandler::Calc_BeamBunchShifts(double locVertexTime, double locRFTime, double locDeltaTCut, bool locIncludeDecayTimeOffset) const
+{
+	auto locOrigNumShifts = Calc_RFBunchShift(locRFTime, locVertexTime); //get best shift
+	vector<int> locRFShifts;
 
 	//start with best-shift, then loop up until fails cut
 	int locNumShifts = locOrigNumShifts;
 	double locDeltaT = locVertexTime - (locRFTime + locNumShifts*dBeamBunchPeriod);
 	while(fabs(locDeltaT) < locDeltaTCut)
 	{
-		locShowersByBeamBunch[locNumShifts].push_back(locNeutralShower);
+		locRFShifts.push_back(locNumShifts);
 		++locNumShifts;
 		locDeltaT = locVertexTime - (locRFTime + locNumShifts*dBeamBunchPeriod);
 	}
@@ -262,20 +297,27 @@ void DSourceComboTimeHandler::Calc_PhotonBeamBunchShifts(const DNeutralShower* l
 	locDeltaT = locVertexTime - (locRFTime + locNumShifts*dBeamBunchPeriod);
 	while(fabs(locDeltaT) < locDeltaTCut)
 	{
-		locShowersByBeamBunch[locNumShifts].push_back(locNeutralShower);
+		locRFShifts.push_back(locNumShifts);
 		--locNumShifts;
 		locDeltaT = locVertexTime - (locRFTime + locNumShifts*dBeamBunchPeriod);
 	}
 
-	//this means we may need to accept EARLIER RF bunches
-	//continue down-shift loop, this time including time offset
-	locDeltaT = locVertexTime - (locRFTime + locNumShifts*dBeamBunchPeriod + dMaxDecayTimeOffset); //+dMaxTimeOffset: takes longer for "RF" time to get there (due to slow decaying particle)
-	while(fabs(locDeltaT) < locDeltaTCut)
+	//due to detached vertices, we may need to accept EARLIER RF bunches
+	if(locIncludeDecayTimeOffset)
 	{
-		locShowersByBeamBunch[locNumShifts].push_back(locNeutralShower);
-		--locNumShifts;
+		//continue down-shift loop, this time including time offset
+		//+dMaxTimeOffset: takes longer for "RF" time to get there (due to slow decaying particle)
 		locDeltaT = locVertexTime - (locRFTime + locNumShifts*dBeamBunchPeriod + dMaxDecayTimeOffset);
+		while(fabs(locDeltaT) < locDeltaTCut)
+		{
+			locRFShifts.push_back(locNumShifts);
+			--locNumShifts;
+			locDeltaT = locVertexTime - (locRFTime + locNumShifts*dBeamBunchPeriod + dMaxDecayTimeOffset);
+		}
 	}
+
+	std::sort(locRFShifts.begin(), locRFShifts.end());
+	return locRFShifts;
 }
 
 double DSourceComboTimeHandler::Calc_MaxDeltaTError(const DNeutralShower* locNeutralShower, const shared_ptr<const DKinematicData>& locKinematicData) const
@@ -296,6 +338,69 @@ double DSourceComboTimeHandler::Calc_MaxDeltaTError(const DNeutralShower* locNeu
 	double locPathErrorTerm = 1.0/cos(locTheta) - sqrt(pow(tan(locTheta), 2.0) + pow(1.0 - locMaxZError/(locDeltaZ - locMaxZError), 2.0));
 	double locPathError = (locDeltaZ - locMaxZError)*locPathErrorTerm - locMaxZError;
 	return locPathError/SPEED_OF_LIGHT;
+}
+
+vector<int> DSourceComboTimeHandler::Select_RFBunches_Charged(const DReactionVertexInfo* locReactionVertexInfo, const DSourceCombo* locReactionChargedCombo) const
+{
+	auto locRFIterator = dChargedComboRFBunches.find(locReactionChargedCombo);
+	if(locRFIterator != dChargedComboRFBunches.end())
+		return locRFIterator->second; //already computed, return results!!
+
+	//All charged tracks vote, even those not at the primary vertex
+	//loop over vertices, get all charged particles at that vertex, utilize that + time offset
+
+	//loop over vertices
+	vector<int> locValidRFBunches;
+	for(auto locStepVertexInfo : locReactionVertexInfo->Get_StepVertexInfos())
+	{
+		auto locIsProductionVertex = locStepVertexInfo->Get_ProductionVertexFlag();
+		auto locVertexPrimaryCombo = dSourceComboer->Get_VertexPrimaryCombo(locReactionChargedCombo, locStepVertexInfo);
+		if(!dSourceComboVertexer->Get_VertexDeterminableWithCharged(locIsProductionVertex, locVertexPrimaryCombo))
+			continue; //vertex position indeterminate at this stage: don't include these tracks
+
+		//get combo, vertex position, and time offset from RF bunch
+		auto locVertex = dSourceComboVertexer->Get_Vertex(locIsProductionVertex, locVertexPrimaryCombo);
+		auto locTimeOffset = dSourceComboVertexer->Get_TimeOffset(locIsProductionVertex, locReactionChargedCombo, locVertexPrimaryCombo);
+		double locPropagatedRFTime = dInitialEventRFBunch->dTime + (locVertex.Z() - dTargetCenter.Z())/SPEED_OF_LIGHT;
+
+		//loop over charged particles
+		auto locChargedParticles = DAnalysis::Get_SourceParticles_ThisVertex(locVertexPrimaryCombo);
+		for(auto locParticlePair : locChargedParticles)
+		{
+			auto locPID = locParticlePair.first;
+			auto locChargedTrack = static_cast<const DChargedTrack*>(locParticlePair.second);
+			auto locHypothesis = locChargedTrack->Get_Hypothesis(locPID);
+
+			//evaluate timing at the POCA to the vertex
+			auto locX4(locHypothesis->x4());
+			auto locP4(locHypothesis->lorentzMomentum());
+
+			auto locPOCAPair = std::make_pair(locHypothesis, dSourceComboVertexer->Get_VertexParticles(locIsProductionVertex, locVertexPrimaryCombo));
+			auto locPOCAIterator = dChargedParticlePOCAToVertexX4.find(locPOCAPair);
+			if(locPOCAIterator != dChargedParticlePOCAToVertexX4.end())
+				locX4 = locPOCAIterator->second;
+			else //do this perhaps time intensive propagation
+			{
+				dAnalysisUtilities->Propagate_Track(locHypothesis->charge(), locVertex, locX4, locP4, nullptr);
+				dChargedParticlePOCAToVertexX4.emplace(locPOCAPair, locX4); //save results so we don't have to do it again
+			}
+
+			auto locVertexTime = locX4.T() + locTimeOffset;
+			auto locSystem = locHypothesis->t1_detector();
+			auto locDeltaTCut = dPIDTimingCuts[locPID][locSystem]->Eval(locP4.P());
+
+			//do loop over possible #-RF-shifts
+			auto locParticleRFBunches = Calc_BeamBunchShifts(locVertexTime, locPropagatedRFTime, locDeltaTCut, false);
+			if(locParticleRFBunches.empty())
+				return {};
+			locValidRFBunches = Get_CommonRFBunches(locValidRFBunches, locParticleRFBunches);
+			if(locValidRFBunches.empty())
+				return {};
+		}
+	}
+
+	dChargedComboRFBunches.emplace(locReactionChargedCombo, locValidRFBunches);
+	return locValidRFBunches;
 }
 
 }

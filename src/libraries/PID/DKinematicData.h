@@ -59,6 +59,7 @@ class DKinematicData : public JObject
 		double pmag(void) const{return dKinematicInfo->dMomentum.Mag();}
 		double pmag2(void) const{return dKinematicInfo->dMomentum.Mag2();}
 		DLorentzVector lorentzMomentum(void) const{return DLorentzVector(momentum(), energy());}
+		DLorentzVector x4(void) const{return DLorentzVector(position(), time());}
 
 		//SETTERS
 		void setPID(Particle_t locPID){dKinematicInfo->dPID = locPID;}

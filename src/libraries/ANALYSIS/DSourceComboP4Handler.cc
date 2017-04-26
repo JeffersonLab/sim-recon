@@ -1,5 +1,42 @@
 #include "ANALYSIS/DSourceComboP4Handler.h"
 
+
+/*************************************************** PHOTON P4 RECONSTRUCTION **************************************************
+*
+* The exact photon momentum is unknown until its production vertex is known.
+* However, that vertex is combo-dependent. We'd like to make cuts on the pi0 mass globally in advance, rather than on a combo-by-combo basis.
+* This would be a huge savings in time and memory.
+*
+* The momentum of the hypotheses calculated in DNeutralParticle is based on the DVertex (class) position.
+* This vertex is determined from all of the "good" charged tracks in the event, typically by doing a kinematic fit.
+*
+* However, there a several potential problems with using this vertex:
+* 1) There may have been extra (junk, accidental) tracks reconstructed in the event. These will throw off the vertex position.
+*    And, if there are only 2 tracks, it can throw it off considerably.
+* 2) The track position & momentum are different for each hypothesis, and it's not clear in advance which hypothesis should be used.
+* 3) The photons may have come from a detached vertex, which can be 10+ cm downstream of the main vertex.
+*
+* So while the DVertex is OK for someone looking for a quick estimate, it should not be used in an actual analysis.
+*
+* Now, as we said before, the true photon momentum is combo-dependent, and we want to do loose mass cuts in a combo-independent way.
+* So, we can compute all of the p4's at a specific vertex position (e.g. center of the target), rather than separately for each combo.
+* But, how much of an impact will a given error in the vertex position have on the calculated 2-photon invariant mass?
+*
+* The calculation below determines that the maximum 2-photon-mass error occurs when both photons are at 45 degrees near the eta peak (less near pi0).
+* Specifically: z_err = 5cm yields a mass error of ~20 MeV, 10cm -> ~40 MeV, 15cm -> ~60 MeV, etc.
+*
+* So, what is the maximum delta_m we can tolerate with our loose cuts?
+* The idea is that the loose cuts should be wide enough around the signal peak to provide enough statistics for sideband subtraction.
+* So, no matter what we choose, it won't affect the signal peak.  But we also don't want to affect the sidebands too much.
+* E.g. pi0 mass peak is from ~110 -> ~160 MeV, loose cut is 50 -> 220 MeV at the moment
+* Therefore, you probably want to keep the maximum delta_m at around the 20 MeV level.
+* This means that the max z_error should be about 5 cm
+*
+* Therefore, every 10 cm, from 5cm upstream of the target to 15 cm downstream of the target (detached vertex) (5 bins):
+* Compute p4s at the centers of these vertex-z bins and do loose mass cuts
+*
+*******************************************************************************************************************************/
+
 /************************************************ 2-PHOTON MASS ERROR DERIVATION ***********************************************
 *
 * For this error estimate, consider the decay pi0 -> 2g  (or eta -> 2g).
@@ -84,6 +121,7 @@
 *
 *******************************************************************************************************************************/
 
+
 namespace DAnalysis
 {
 
@@ -97,12 +135,6 @@ DSourceComboP4Handler::DSourceComboP4Handler(JEventLoop* locEventLoop)
 	double locTargetCenterZ = 65.0;
 	locGeometry->GetTargetZ(locTargetCenterZ);
 	dTargetCenter.SetXYZ(0.0, 0.0, locTargetCenterZ);
-	locGeometry->GetTargetLength(dTargetLength);
-
-	//INITIALIZE PHOTON VERTEX-Z EVALUATION BINNING
-	dPhotonVertexZBinWidth = 10.0;
-	dPhotonVertexZRangeLow = dTargetCenter.Z() - dTargetLength/2.0 - 5.0;
-	dNumPhotonVertexZBins = round((dTargetLength + 20.0)/dPhotonVertexZBinWidth);
 
 	//INVARIANT MASS CUTS: MESONS
 	dInvariantMassCuts.emplace(Pi0, std::make_pair(0.08, 0.19));
@@ -120,30 +152,6 @@ DSourceComboP4Handler::DSourceComboP4Handler(JEventLoop* locEventLoop)
 	dInvariantMassCuts.emplace(SigmaMinus, dInvariantMassCuts[Sigma0]);
 	dInvariantMassCuts.emplace(XiMinus, std::make_pair(1.1, 1.5));
 	dInvariantMassCuts.emplace(Xi0, dInvariantMassCuts[XiMinus]);
-}
-
-void DSourceComboP4Handler::Setup_NeutralShowers(const vector<const DNeutralShower*>& locNeutralShowers)
-{
-	//Precompute kinematics for the neutral showers, before comboing
-	//Even if it turns out some of this isn't technically needed,
-	//it's still faster than doing a check to see if this has been done or not for every single photon-combo request
-
-	//CALCULATE KINEMATICS
-	//FCAL: at target center
-	for(auto& locShower : locNeutralShowers)
-	{
-		if(locNeutralShower->dDetectorSystem == SYS_FCAL)
-		{
-			dPhotonKinematics[DSourceComboInfo::Get_VertexZIndex_FCAL()].emplace(locShower, Create_KinematicData(locShower, dTargetCenter));
-			continue;
-		}
-		//BCAL: in vertex-z bins
-		for(size_t loc_i = 0; loc_i < dNumPhotonVertexZBins; ++loc_i)
-		{
-			DVector3 locBinCenter(0.0, 0.0, Get_PhotonVertexZBinCenter(loc_i));
-			dPhotonKinematics[loc_i].emplace(locShower, Create_KinematicData(locShower, locBinCenter));
-		}
-	}
 }
 
 DLorentzVector DSourceComboP4Handler::Get_P4(Particle_t locPID, const JObject* locObject, signed char locVertexZBin)

@@ -115,11 +115,11 @@ class DAnalysisUtilities : public JObject
 
 		//For handling helical tracks
 		bool Get_IsBFieldNearBeamline(void) const;
-		TVector3 Get_BField(const TVector3& locPosition) const;
-		void Propagate_Track(int locCharge, TVector3 locPropagateToPoint, TLorentzVector& locMeasuredX4, TLorentzVector& locMeasuredP4, TMatrixDSym* locCovarianceMatrix) const;
-		double Calc_PathLength_Step(int locCharge, TVector3 locPropagateToPoint, TLorentzVector& locMeasuredX4, TLorentzVector& locMeasuredP4) const;
-		double Calc_PathLength_FineGrained(int locCharge, TVector3 locPropagateToPoint, TVector3 locMeasuredPosition, TVector3 locMeasuredMomentum) const;
-		void Propagate_Track(double locDeltaPathLength, int locCharge, TLorentzVector& locX4, TLorentzVector& locP4, TMatrixFSym* locCovarianceMatrix) const;
+		DVector3 Get_BField(const DVector3& locPosition) const;
+		double Propagate_Track(int locCharge, const DVector3& locPropagateToPoint, DLorentzVector& locMeasuredX4, DLorentzVector& locMeasuredP4, TMatrixDSym* locCovarianceMatrix) const; //returns path length change
+		double Calc_PathLength_Step(int locCharge, const DVector3& locPropagateToPoint, DLorentzVector& locMeasuredX4, DLorentzVector& locMeasuredP4) const;
+		double Calc_PathLength_FineGrained(int locCharge, const DVector3& locPropagateToPoint, DVector3 locMeasuredPosition, DVector3 locMeasuredMomentum) const;
+		void Propagate_Track(double locDeltaPathLength, int locCharge, DLorentzVector& locX4, DLorentzVector& locP4, TMatrixFSym* locCovarianceMatrix) const;
 
 	private:
 
@@ -128,9 +128,30 @@ class DAnalysisUtilities : public JObject
 		string dTrackSelectionTag;
 		string dShowerSelectionTag;
 		double dTargetZCenter;
+		double dMinPForStraightTrack = 3.0;
+		double dMinDistanceForStraightTrack = 3.0;
 
 		const DParticleID* dPIDAlgorithm;
 		const DMagneticFieldMap* dMagneticFieldMap;
 };
+
+
+inline bool DAnalysisUtilities::Get_IsBFieldNearBeamline(void) const
+{
+	if(dMagneticFieldMap == NULL)
+		return false;
+
+	return (dynamic_cast<const DMagneticFieldMapNoField*>(dMagneticFieldMap) == NULL);
+}
+
+inline DVector3 DAnalysisUtilities::Get_BField(const DVector3& locPosition) const
+{
+	if(!Get_IsBFieldNearBeamline())
+		return DVector3(0.0, 0.0, 0.0);
+
+	double locBx, locBy, locBz;
+	dMagneticFieldMap->GetField(locPosition.X(), locPosition.Y(), locPosition.Z(), locBx, locBy, locBz);
+	return (DVector3(locBx, locBy, locBz));
+}
 
 #endif // _DAnalysisUtilities_

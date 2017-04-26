@@ -132,37 +132,6 @@ static inline Particle_t RemapParticleID(Particle_t p)
   return p;
 }
 
-enum Charge_t
-{
-	d_Charged,
-	d_Positive,
-	d_Negative,
-	d_Neutral,
-	d_AllCharges
-};
-
-bool Is_CorrectCharge(Particle_t locPID, Charge_t locCharge)
-{
-	if(locPID == Unknown)
-		return (locCharge == d_AllCharges);
-	int locIntCharge = ParticleCharge(locPID);
-	switch(locCharge)
-	{
-		case d_Neutral:
-			return (locIntCharge == 0);
-		case d_Positive:
-			return (locIntCharge > 0);
-		case d_Negative:
-			return (locIntCharge < 0);
-		case d_Charged:
-			return (locIntCharge != 0);
-		case d_AllCharges:
-			return true;
-		default:
-			return false;
-	}
-}
-
 inline static char* ParticleType(Particle_t p)
 {
   p = RemapParticleID(p);
@@ -1452,6 +1421,37 @@ inline static Particle_t DemultiplexPID(int locBit, int locIsDecayingFlag)
 		case 45:  return DstarPlus;
 		case 46:  return Lambda_c;
 		default:  return Unknown;
+	}
+}
+
+enum Charge_t
+{
+	d_Charged,
+	d_Positive,
+	d_Negative,
+	d_Neutral,
+	d_AllCharges
+};
+
+bool Is_CorrectCharge(Particle_t locPID, Charge_t locCharge)
+{
+	if(locPID == Unknown)
+		return (locCharge == d_AllCharges);
+	int locIntCharge = ParticleCharge(locPID);
+	switch(locCharge)
+	{
+		case d_Neutral:
+			return (locIntCharge == 0);
+		case d_Positive:
+			return (locIntCharge > 0);
+		case d_Negative:
+			return (locIntCharge < 0);
+		case d_Charged:
+			return (locIntCharge != 0);
+		case d_AllCharges:
+			return true;
+		default:
+			return false;
 	}
 }
 

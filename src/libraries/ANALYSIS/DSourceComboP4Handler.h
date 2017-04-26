@@ -9,7 +9,9 @@
 #include "particleType.h"
 #include "DLorentzVector.h"
 #include "PID/DKinematicData.h"
+#include "PID/DNeutralShower.h"
 #include "ANALYSIS/DSourceCombo.h"
+#include "ANALYSIS/DSourceComboTimeHandler.h"
 
 using namespace std;
 using namespace jana;
@@ -23,9 +25,9 @@ class DSourceComboP4Handler
 		DSourceComboP4Handler(void) = delete;
 		DSourceComboP4Handler(JEventLoop* locEventLoop);
 
-		void Setup_NeutralShowers(const vector<const DNeutralShower*>& locNeutralShowers);
 		void Reset(void);
 
+		void Set_PhotonKinematics(const DPhotonKinematicsByZBin& locPhotonKinematics){dPhotonKinematics = locPhotonKinematics;}
 		DLorentzVector Get_P4(const DSourceCombo* locSourceCombo, signed char locVertexZBin = DSourceComboInfo::Get_VertexZIndex_Unknown());
 
 		//CUT
@@ -37,27 +39,11 @@ class DSourceComboP4Handler
 		DLorentzVector Calc_P4(const DSourceCombo* locSourceCombo, signed char locVertexZBin) const;
 		DLorentzVector Calc_P4(const DSourceCombo* locSourceCombo, DVector3 locVertex, int locRFBunch) const;
 
-		//UTILITY FUNCTIONS
-		size_t Get_PhotonVertexZBin(double locVertexZ) const;
-		double Get_PhotonVertexZBinCenter(signed char locVertexZBin) const;
-
 	private:
 		DLorentzVector Get_P4(Particle_t locPID, const JObject* locObject, signed char locVertexZBin);
 
-		//EXPERIMENT INFORMATION
-		DVector3 dTargetCenter;
-		double dTargetLength = 30.0;
-
-		//VERTEX-DEPENDENT PHOTON INFORMATION
-		//For every 10cm in vertex-z, calculate the photon p4 & time for placing mass & delta-t cuts
-		//The z-range extends from the upstream end of the target - 5cm to the downstream end + 15cm
-		//so for a 30-cm-long target, it's a range of 50cm: 5bins, evaluated at the center of each bin
-		float dPhotonVertexZBinWidth = 10.0;
-		float dPhotonVertexZRangeLow = 45.0;
-		size_t dNumPhotonVertexZBins = 5;
-
 		//NEUTRAL SHOWER DATA
-		unordered_map<signed char, unordered_map<const DNeutralShower*, shared_ptr<const DKinematicData>>> dPhotonKinematics; //FCAL shower data at center of target, BCAL in vertex-z bins
+		DPhotonKinematicsByZBin dPhotonKinematics; //FCAL shower data at center of target, BCAL in vertex-z bins
 
 		//TOTAL FINAL STATE FOUR-MOMENTUM
 		unordered_map<pair<const DSourceCombo*, signed char>, DLorentzVector> dFinalStateP4ByCombo; //signed char: vertex-z bin
@@ -74,31 +60,6 @@ inline void DSourceComboP4Handler::Reset(void)
 	dFinalStateP4ByCombo_HasMassiveNeutrals.clear();
 }
 
-inline size_t DSourceComboVertexer::Get_PhotonVertexZBin(double locVertexZ) const
-{
-	//given some vertex-z, what bin am I in?
-	int locPhotonVertexZBin = int((locVertexZ - dPhotonVertexZRangeLow)/dPhotonVertexZBinWidth);
-	if(locPhotonVertexZBin < 0)
-		return 0;
-	else if(locPhotonVertexZBin >= dNumPhotonVertexZBins)
-		return dNumPhotonVertexZBins - 1;
-	return locPhotonVertexZBin;
-}
-
-inline double DSourceComboVertexer::Get_PhotonVertexZBinCenter(signed char locVertexZBin) const
-{
-	return dPhotonVertexZRangeLow + (double(locVertexZBin) + 0.5)*dPhotonVertexZBinWidth;
-}
-
-inline shared_ptr<const DKinematicData> DSourceComboer::Create_KinematicData_Photon(const DNeutralShower* locNeutralShower, const DVector3& locVertex) const
-{
-	DVector3 locPath = locNeutralShower->dSpacetimeVertex.Vect() - locVertex;
-	double locPathLength = locPath.Mag();
-	double locVertexTime = locNeutralShower->dSpacetimeVertex.T() - locPathLength/29.9792458;
-	DVector3 locMomentum = locNeutralShower->dEnergy*locPath.Unit();
-	return std::make_shared<const DKinematicData>(Gamma, locMomentum, locVertex, locVertexTime);
-}
-
 inline DLorentzVector DSourceComboP4Handler::Get_P4(const DSourceCombo* locSourceCombo, signed char locVertexZBin)
 {
 	auto locIterator = dFinalStateP4ByCombo.find(std::make_pair(locSourceCombo, locVertexZBin));
@@ -108,7 +69,7 @@ inline DLorentzVector DSourceComboP4Handler::Get_P4(const DSourceCombo* locSourc
 	return Calc_P4(locSourceCombo, locVertexZBin);
 }
 
-inline bool DSourceComboP4Handler::Cut_InvariantMass(const DSourceCombo* locSourceCombo, Particle_t locDecayPID) const
+inline bool DSourceComboP4Handler::Cut_InvariantMass(const DSourceCombo* locSourceCombo, Particle_t locDecayPID, signed char locVertexZBin) const
 {
 	//Don't call if it contains massive neutrals! Call the other cut function instead!!
 	auto locCutIterator = dInvariantMassCuts.find(locDecayPID);
@@ -116,7 +77,7 @@ inline bool DSourceComboP4Handler::Cut_InvariantMass(const DSourceCombo* locSour
 		return true; //no cut to place!!
 	auto& locMassCuts = locCutIterator->second;
 
-	auto locInvariantMass = Calc_P4(locSourceCombo).M();
+	auto locInvariantMass = Calc_P4(locSourceCombo, locVertexZBin).M();
 	return ((locInvariantMass >= locMassCuts.first) && (locInvariantMass <= locMassCuts.second));
 }
 
