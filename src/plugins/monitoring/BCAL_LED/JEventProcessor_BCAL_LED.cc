@@ -3,111 +3,8 @@
 //    File: JEventProcessor_BCAL_LED.cc
 //
 
-#include <stdint.h>
-#include <vector>
-#include "TTree.h"
 #include "JEventProcessor_BCAL_LED.h"
-#include <JANA/JApplication.h>
-#include <iostream>
-#include <fstream>
 
-using namespace std;
-using namespace jana;
-
-#include "BCAL/DBCALPoint.h"
-#include "BCAL/DBCALDigiHit.h"
-#include "BCAL/DBCALHit.h"
-#include "BCAL/DBCALUnifiedHit.h"
-#include "DAQ/Df250PulseIntegral.h"
-#include "DAQ/Df250WindowRawData.h"
-#include "TRIGGER/DL1Trigger.h"
-
-#include <TDirectory.h>
-#include <TH3.h>
-#include <TH2.h>
-#include <TH1.h>
-#include <TProfile2D.h>
-#include <TStyle.h>
-
-// root hist pointers
-
-//all channels
-static TProfile *bcal_peak_vevent = NULL;
-
-//2 sides
-static TProfile *up_peak_vevent = NULL;
-static TProfile *down_peak_vevent = NULL;
-//4 columns
-static TProfile *column1_peak_vevent = NULL;
-static TProfile *column2_peak_vevent = NULL;
-static TProfile *column3_peak_vevent = NULL;
-static TProfile *column4_peak_vevent = NULL;
-
-static TProfile *column1_up_peak_vevent = NULL;
-static TProfile *column2_up_peak_vevent = NULL;
-static TProfile *column3_up_peak_vevent = NULL;
-static TProfile *column4_up_peak_vevent = NULL;
-static TProfile *column1_down_peak_vevent = NULL;
-static TProfile *column2_down_peak_vevent = NULL;
-static TProfile *column3_down_peak_vevent = NULL;
-static TProfile *column4_down_peak_vevent = NULL;
-
-
-static TProfile *column1_up_peak_vevent1 = NULL;
-static TProfile *column1_down_peak_vevent1 = NULL;
-static TProfile *column1_up_peak_vevent2 = NULL;
-static TProfile *column1_down_peak_vevent2 = NULL;
-static TProfile *column1_up_peak_vevent3 = NULL;
-static TProfile *column1_down_peak_vevent3 = NULL;
-static TProfile *column1_up_peak_vevent4 = NULL;
-static TProfile *column1_down_peak_vevent4 = NULL;
-
-static TProfile *column2_up_peak_vevent1 = NULL;
-static TProfile *column2_down_peak_vevent1 = NULL;
-static TProfile *column2_up_peak_vevent2 = NULL;
-static TProfile *column2_down_peak_vevent2 = NULL;
-static TProfile *column2_up_peak_vevent3 = NULL;
-static TProfile *column2_down_peak_vevent3 = NULL;
-static TProfile *column2_up_peak_vevent4 = NULL;
-static TProfile *column2_down_peak_vevent4 = NULL;
-
-static TProfile *column3_up_peak_vevent1 = NULL;
-static TProfile *column3_down_peak_vevent1 = NULL;
-static TProfile *column3_up_peak_vevent2 = NULL;
-static TProfile *column3_down_peak_vevent2 = NULL;
-static TProfile *column3_up_peak_vevent3 = NULL;
-static TProfile *column3_down_peak_vevent3 = NULL;
-static TProfile *column3_up_peak_vevent4 = NULL;
-static TProfile *column3_down_peak_vevent4 = NULL;
-
-static TProfile *column4_up_peak_vevent1 = NULL;
-static TProfile *column4_down_peak_vevent1 = NULL;
-static TProfile *column4_up_peak_vevent2 = NULL;
-static TProfile *column4_down_peak_vevent2 = NULL;
-static TProfile *column4_up_peak_vevent3 = NULL;
-static TProfile *column4_down_peak_vevent3 = NULL;
-static TProfile *column4_up_peak_vevent4 = NULL;
-static TProfile *column4_down_peak_vevent4 = NULL;
-
-  
-    
-static TProfile *low_up_1 = NULL;
-static TProfile *low_up_2 = NULL;
-static TProfile *low_up_3 = NULL;
-static TProfile *low_up_4 = NULL;
-static TProfile *low_down_1 = NULL;
-static TProfile *low_down_2 = NULL;
-static TProfile *low_down_3 = NULL;
-static TProfile *low_down_4 = NULL;
-
-static TProfile *high_up_1 = NULL;
-static TProfile *high_up_2 = NULL;
-static TProfile *high_up_3 = NULL;
-static TProfile *high_up_4 = NULL;
-static TProfile *high_down_1 = NULL;
-static TProfile *high_down_2 = NULL;
-static TProfile *high_down_3 = NULL;
-static TProfile *high_down_4 = NULL;
 
 //----------------------------------------------------------------------------------
 
@@ -146,16 +43,6 @@ JEventProcessor_BCAL_LED::~JEventProcessor_BCAL_LED() {
 //----------------------------------------------------------------------------------
 
 jerror_t JEventProcessor_BCAL_LED::init(void) {
-	
-	// lock all root operations
-	japp->RootWriteLock();
-	
-	// First thread to get here makes all histograms. If one pointer is
-	// already not NULL, assume all histograms are defined and return now
-	if(bcal_peak_vevent != NULL){
-		japp->RootUnLock();
-		return NOERROR;
-	}
 	
 	//NOtrig=0; FPtrig=0; GTPtrig=0; FPGTPtrig=0; trigUS=0; trigDS=0; trigCosmic=0;
 	//low_down_1_counter=0; low_down_2_counter=0; low_down_3_counter=0; low_down_4_counter=0; low_up_1_counter=0; low_up_2_counter=0; low_up_3_counter=0; 		low_up_4_counter=0; high_down_1_counter=0; high_down_2_counter=0; high_down_3_counter=0; high_down_4_counter=0; high_up_1_counter=0;
@@ -373,10 +260,6 @@ jerror_t JEventProcessor_BCAL_LED::init(void) {
 
 	// back to main dir
 	main->cd();
-	
-	// unlock
-	japp->RootUnLock();
-	
 	
 	return NOERROR;
 }

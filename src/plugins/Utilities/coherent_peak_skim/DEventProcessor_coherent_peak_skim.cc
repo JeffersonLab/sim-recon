@@ -67,6 +67,8 @@ jerror_t DEventProcessor_coherent_peak_skim::brun(jana::JEventLoop* locEventLoop
 	map<string, double> photon_beam_param;
 	if(locEventLoop->GetCalib("/ANALYSIS/beam_asymmetry/coherent_energy", photon_beam_param) == false)
 		dCoherentPeakRange = pair<double, double>(photon_beam_param["cohmin_energy"], photon_beam_param["cohedge_energy"]);
+	dCoherentPeakRange.first -= 0.2; //same as below
+	dCoherentPeakRange.second += 0.2; //in case the high-side edge is fluctuating a lot
 
 	DApplication* locApplication = dynamic_cast<DApplication*>(locEventLoop->GetJApplication());
 	DGeometry* locGeometry = locApplication->GetDGeometry(locRunNumber);
@@ -108,7 +110,7 @@ jerror_t DEventProcessor_coherent_peak_skim::evnt(jana::JEventLoop* locEventLoop
 
 	const DEventRFBunch* locEventRFBunch = NULL;
 	locEventLoop->GetSingle(locEventRFBunch);
-
+/*
 	bool locIsHadronicEventFlag = false;
 	for(auto locTrack : locChargedTracks)
 	{
@@ -137,6 +139,7 @@ jerror_t DEventProcessor_coherent_peak_skim::evnt(jana::JEventLoop* locEventLoop
 			break;
 		}
 	}
+*/
 	bool locIsTrackEventFlag = !locChargedTracks.empty();
 
 	//see if is in coherent peak
