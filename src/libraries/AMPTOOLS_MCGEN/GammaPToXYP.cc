@@ -36,7 +36,7 @@ double dNidx(double x)
 
 GammaPToXYP::GammaPToXYP( float lowMassXY, float highMassXY, 
                           float massX, float massY, float beamMaxE, float beamPeakE, float beamLowE, float beamHighE,
-                          ProductionMechanism::Type type, float slope = 6.0 ) : 
+                          ProductionMechanism::Type type, float slope ) : 
 m_prodMech( ProductionMechanism::kProton, type, slope ), // last arg is t dependence
 m_target( 0, 0, 0, 0.938 ),
 m_childMass( 0 ) {
