@@ -404,7 +404,7 @@ vector<int> DSourceComboTimeHandler::Select_RFBunches_Charged(const DReactionVer
 	return locValidRFBunches;
 }
 
-int DSourceComboTimeHandler::Select_RFBunch_Full(const DSourceCombo* locReactionFullCombo, const DSourceCombo* locReactionChargedCombo, const vector<int>& locRFBunches)
+int DSourceComboTimeHandler::Select_RFBunch_Full(const DReactionVertexInfo* locReactionVertexInfo, const DSourceCombo* locReactionFullCombo, const DSourceCombo* locReactionChargedCombo, const vector<int>& locRFBunches)
 {
 	//initialize chisq's
 	unordered_map<int, double> locChiSqByRFBunch;
@@ -412,6 +412,7 @@ int DSourceComboTimeHandler::Select_RFBunch_Full(const DSourceCombo* locReaction
 		locChiSqByRFBunch.emplace(locRFBunch, 0.0);
 
 	//loop over vertices
+	auto locPrimaryVertexZ = dSourceComboVertexer->Get_PrimaryVertex(locReactionVertexInfo, locReactionChargedCombo).Z();
 	for(auto locStepVertexInfo : locReactionVertexInfo->Get_StepVertexInfos())
 	{
 		if(locStepVertexInfo->Get_DanglingVertexFlag())
@@ -431,7 +432,7 @@ int DSourceComboTimeHandler::Select_RFBunch_Full(const DSourceCombo* locReaction
 		for(auto locRFBunch : locRFBunches)
 		{
 			//propagate rf time to vertex and add time offset (faster to just do it here rather than for each particle)
-			double locPropagatedRFTime = dInitialEventRFBunch->dTime + (locVertex.Z() - dTargetCenter.Z())/SPEED_OF_LIGHT  + locNumShifts*dBeamBunchPeriod + locTimeOffset;
+			auto locPropagatedRFTime = Calc_PropagatedRFTime(locPrimaryVertexZ, locRFBunch, locTimeOffset);
 
 			//loop over all particles
 			for(auto locParticlePair : locParticles)

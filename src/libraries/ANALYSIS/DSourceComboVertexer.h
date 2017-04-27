@@ -40,7 +40,7 @@ class DSourceComboVertexer
 		void Reset(void);
 
 		//COMPUTE
-		void Calc_VertexTimeOffsets(const DReactionVertexInfo* locReactionVertexInfo, const DSourceCombo* locReactionCombo);
+		void Calc_VertexTimeOffsets(const DReactionVertexInfo* locReactionVertexInfo, const DSourceCombo* locReactionChargedCombo);
 		bool Get_VertexDeterminableWithCharged(bool locIsProductionVertex, const DSourceCombo* locSourceCombo) const{return dVertexDeterminableWithChargedMap.find(std::make_pair(locIsProductionVertex, locSourceCombo))->second;}
 
 		//GET RESULTS
@@ -48,6 +48,7 @@ class DSourceComboVertexer
 		vector<const DKinematicData*> Get_VertexParticles(bool locIsProductionVertex, const DSourceCombo* locVertexChargedCombo) const;
 		DVector3 Get_Vertex(bool locIsProductionVertex, const vector<const DKinematicData*>& locVertexParticles){return dVertexMap.find(std::make_pair(locIsProductionVertex, locVertexParticles))->second;}
 		double Get_TimeOffset(bool locIsProductionVertex, const DSourceCombo* locReactionCombo, const DSourceCombo* locVertexCombo) const;
+		DVector3 Get_PrimaryVertex(const DReactionVertexInfo* locReactionVertexInfo, const DSourceCombo* locReactionChargedCombo) const;
 
 		//GET VERTEX-Z BINS
 		signed char Get_VertexZBin(bool locIsProductionVertex, const DSourceCombo* locChargedCombo) const;

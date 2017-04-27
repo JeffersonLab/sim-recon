@@ -27,10 +27,16 @@ signed char DSourceComboVertexer::Get_VertexZBin(bool locIsProductionVertex, con
 	return dSourceComboer->Get_PhotonVertexZBin(locVertexZ);
 }
 
-void DSourceComboVertexer::Calc_VertexTimeOffsets(const DReactionVertexInfo* locReactionVertexInfo, const DSourceCombo* locReactionCombo)
+DVector3 DSourceComboVertexer::Get_PrimaryVertex(const DReactionVertexInfo* locReactionVertexInfo, const DSourceCombo* locReactionChargedCombo) const
+{
+	auto locIsProductionVertex = locReactionVertexInfo->Get_StepVertexInfo(0)->Get_ProductionVertexFlag();
+	return Get_Vertex(locIsProductionVertex, locReactionChargedCombo);
+}
+
+void DSourceComboVertexer::Calc_VertexTimeOffsets(const DReactionVertexInfo* locReactionVertexInfo, const DSourceCombo* locReactionChargedCombo)
 {
 	auto locIsPrimaryProductionVertex = locReactionVertexInfo->Get_StepVertexInfos().front()->Get_ProductionVertexFlag();
-	if(dTimeOffsets.find(std::make_pair(locIsPrimaryProductionVertex, locReactionCombo)) != dTimeOffsets.end())
+	if(dTimeOffsets.find(std::make_pair(locIsPrimaryProductionVertex, locReactionChargedCombo)) != dTimeOffsets.end())
 		return; //already done!! //e.g. the same channel used for 2 different DReactions
 
 	//loop through vertices, determining initial guesses
@@ -40,7 +46,7 @@ void DSourceComboVertexer::Calc_VertexTimeOffsets(const DReactionVertexInfo* loc
 	{
 		/***************************************** CHECK IF VERTEX POSITION IS INDETERMINATE A THIS STAGE ********************************************/
 
-		auto locSourceCombo = dSourceComboer->Get_VertexPrimaryCombo(locReactionCombo, locStepVertexInfo);
+		auto locSourceCombo = dSourceComboer->Get_VertexPrimaryCombo(locReactionChargedCombo, locStepVertexInfo);
 
 		if(locStepVertexInfo->Get_DanglingVertexFlag())
 		{
@@ -51,7 +57,7 @@ void DSourceComboVertexer::Calc_VertexTimeOffsets(const DReactionVertexInfo* loc
 				dVertexParticlesByCombo.emplace(std::make_pair(true, locSourceCombo), {}); //empty: target center
 			else //decay products
 			{
-				auto locParentCombo = dSourceComboer->Get_VertexPrimaryCombo(locReactionCombo, locParentVertexInfo);
+				auto locParentCombo = dSourceComboer->Get_VertexPrimaryCombo(locReactionChargedCombo, locParentVertexInfo);
 				auto locIsParentProductionVertex = locParentVertexInfo->Get_ProductionVertexFlag();
 				dVertexParticlesByCombo.emplace(std::make_pair(false, locSourceCombo), dVertexParticlesByCombo[std::make_pair(locIsParentProductionVertex, locParentCombo)]);
 			}
@@ -157,7 +163,7 @@ void DSourceComboVertexer::Calc_VertexTimeOffsets(const DReactionVertexInfo* loc
 	}
 
 	//do time offsets once all the vertices have been found
-	Calc_TimeOffsets(locReactionVertexInfo, locReactionCombo);
+	Calc_TimeOffsets(locReactionVertexInfo, locReactionChargedCombo);
 
 	//set the vertices (really, the vertex particles) for the other combos for faster lookup
 	for(const auto& locVertexPrimaryComboPair : locVertexPrimaryComboMap)

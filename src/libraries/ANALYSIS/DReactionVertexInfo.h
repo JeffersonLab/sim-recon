@@ -52,6 +52,18 @@ inline DReactionVertexInfo::DReactionVertexInfo(const DReaction* locReaction, co
 	}
 }
 
+inline vector<shared_ptr<const DReactionStepVertexInfo>> DAnalysis::Get_StepVertexInfos_ReverseOrderByStep(const DReactionVertexInfo* locReactionVertexInfo)
+{
+	auto locStepVertexInfos = locReactionVertexInfo->Get_StepVertexInfos();
+
+	//sort vertex infos in reverse-step order
+	auto Comparator_ReverseOrderByStep = [](const DReactionStepVertexInfo* lhs, const DReactionStepVertexInfo* rhs) -> bool
+		{return lhs->Get_StepIndices().front() > rhs->Get_StepIndices().front();}; // >: reverse order
+
+	std::sort(locStepVertexInfos.begin(), locStepVertexInfos.end(), Comparator_ReverseOrderByStep);
+	return locStepVertexInfos;
+}
+
 } //end DAnalysis namespace
 
 #endif // DReactionVertexInfo_h

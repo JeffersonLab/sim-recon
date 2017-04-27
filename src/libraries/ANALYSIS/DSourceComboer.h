@@ -94,9 +94,15 @@ class DSourceComboer : public JObject
 		DSourceComboer(JEventLoop* locEventLoop);
 		DSourceComboer::~DSourceComboer(void);
 
+		//Get combo characteristics
 		Charge_t Get_ChargeContent(const DSourceComboInfo* locSourceComboInfo) const{return dComboInfoChargeContent.find(locSourceComboInfo)->second;}
+		bool Get_HasMassiveNeutrals(const DSourceComboInfo* locSourceComboInfo) const{return (dComboInfosWithMassiveNeutrals.find(locSourceComboInfo) != dComboInfosWithMassiveNeutrals.end());}
+
 		const DSourceCombo* Get_VertexPrimaryCombo(const DSourceCombo* locReactionChargedCombo, const DReactionStepVertexInfo* locStepVertexInfo);
+
+		//Get combo uses
 		DSourceComboUse Get_SourceComboUse(const DReactionStepVertexInfo* locStepVertexInfo) const{return dSourceComboUseReactionMap.find(locStepVertexInfo)->second;};
+		DSourceComboUse Get_PrimaryComboUse(const DReactionVertexInfo* locReactionVertexInfo) const{return Get_SourceComboUse(locReactionVertexInfo->Get_StepVertexInfo(0));};
 
 	private:
 
@@ -199,8 +205,6 @@ class DSourceComboer : public JObject
 		vector<const DSourceComboInfo*> dSourceComboInfos;
 		unordered_map<const DSourceComboInfo*, Charge_t> dComboInfoChargeContent;
 		unordered_set<const DSourceComboInfo*> dComboInfosWithMassiveNeutrals;
-		//is this necessary??
-		unordered_map<const DReactionVertexInfo*, DSourceComboUse> dSourceComboUseReactionMap_Primary;
 		//the rest
 		unordered_map<const DReactionStepVertexInfo*, DSourceComboUse> dSourceComboUseReactionMap; //primary combo info (nullptr if none)
 		//combo use -> step

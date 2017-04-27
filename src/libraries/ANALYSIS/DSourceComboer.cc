@@ -1,7 +1,11 @@
 #include "ANALYSIS/DSourceComboer.h"
+#include "ANALYSIS/DSourceComboVertexer.h"
+#include "ANALYSIS/DSourceComboTimeHandler.h"
 
 namespace DAnalysis
 {
+
+//Abandon hope, all ye who enter here.
 
 /********************************************************************* CONSTRUCTOR **********************************************************************/
 
@@ -41,6 +45,8 @@ DSourceComboer::DSourceComboer(JEventLoop* locEventLoop)
 	dSourceComboP4Handler = new DSourceComboP4Handler();
 	dSourceComboVertexer = new DSourceComboVertexer(locEventLoop, this, dSourceComboP4Handler);
 	dSourceComboTimeHandler = new DSourceComboTimeHandler(locEventLoop, this, dSourceComboVertexer);
+	dSourceComboP4Handler->Set_SourceComboTimeHandler(dSourceComboTimeHandler);
+	dSourceComboP4Handler->Set_SourceComboVertexer(dSourceComboVertexer);
 }
 
 /******************************************************************* CREATE DSOURCOMBOINFO'S ********************************************************************/
@@ -134,8 +140,6 @@ void DSourceComboer::Create_SourceComboInfos(const DReactionVertexInfo* locReact
 	for(const auto& locUseStepPair : locStepComboUseMap)
 		dSourceComboInfoStepMap.emplace(std::make_pair(locReactionVertexInfo->Get_StepVertexInfo(locUseStepPair.first), locUseStepPair.second), locUseStepPair.first);
 	dSourceComboUseReactionStepMap.emplace(locReaction, locStepComboUseMap);
-
-	dSourceComboUseReactionMap_Primary[locReactionVertexInfo] = locStepComboUseMap[0];
 }
 
 DSourceComboUse DSourceComboer::Create_ZDependentSourceComboUses(const DReactionVertexInfo* locReactionVertexInfo, const DSourceCombo* locReactionChargedCombo)
@@ -153,16 +157,11 @@ DSourceComboUse DSourceComboer::Create_ZDependentSourceComboUses(const DReaction
 		return locUseIterator->second; //already created! we are done
 
 	auto locReaction = locReactionVertexInfo->Get_Reaction();
-	auto locStepVertexInfos = locReactionVertexInfo->Get_StepVertexInfos();
-
-	//sort vertex infos in reverse-step order
-	auto Comparator_ReverseOrderByStep = [](const DReactionStepVertexInfo* lhs, const DReactionStepVertexInfo* rhs) -> bool
-		{return lhs->Get_StepIndices().front() > rhs->Get_StepIndices().front();} // >: reverse order
-	std::sort(locStepVertexInfos.begin(), locStepVertexInfos.end(), Comparator_ReverseOrderByStep);
 
 	//loop over vertex infos in reverse-step order
 	unordered_map<size_t, DSourceComboUse> locCreatedUseMap; //size_t: step index
-	for(auto locStepVertexInfo : locStepVertexInfos)
+	auto locStepVertexInfos = DAnalysis::Get_StepVertexInfos_ReverseOrderByStep(locReactionVertexInfo);
+	for(const auto& locStepVertexInfo : locStepVertexInfos)
 	{
 		auto locVertexPrimaryCombo = Get_VertexPrimaryCombo(locReactionChargedCombo, locStepVertexInfo);
 
@@ -430,7 +429,7 @@ void DSourceComboer::Build_ParticleCombos(JEventLoop* locEventLoop, const DReact
 	auto locStepVertexInfos = locReactionVertexInfo->Get_StepVertexInfos();
 	auto locPrimaryStepVertexInfo = locReactionVertexInfo->Get_StepVertexInfo(0);
 	auto locPrimaryComboUse = dSourceComboUseReactionMap[locPrimaryStepVertexInfo];
-
+	auto locPrimaryComboInfo = std::get<2>(locPrimaryComboUse);
 
 	//handle special case of no charged tracks
 	if(dComboInfoChargeContent[std::get<2>(locPrimaryComboUse)] == d_Neutral)
@@ -451,13 +450,19 @@ void DSourceComboer::Build_ParticleCombos(JEventLoop* locEventLoop, const DReact
 
 		//For the charged tracks, apply timing cuts to determine which RF bunches are possible
 		auto locBeamBunches_Charged = dSourceComboTimeHandler->Select_RFBunches_Charged(locReactionVertexInfo, locChargedCombo);
+		if(locBeamBunches_Charged.empty())
+			continue; //failed PID cuts!
 
 //handle unknown vertex case!!
 
 		//deal with special case of FULLY charged
-		auto locChargeContent = dComboInfoChargeContent[std::get<2>(locPrimaryComboUse)];
+		auto locChargeContent = dComboInfoChargeContent[locPrimaryComboInfo];
 		if(locChargeContent == d_Charged)
 		{
+			//Select final RF bunch
+			auto locRFBunch = dSourceComboTimeHandler->Select_RFBunch_Full(locReactionVertexInfo, locFullCombo, locChargedCombo, locValidRFBunches);
+			//save results
+			continue;
 		}
 
 		//Create full source-particle combos (including neutrals): First using only FCAL showers, then using all showers
@@ -473,10 +478,21 @@ void DSourceComboer::Build_ParticleCombos(JEventLoop* locEventLoop, const DReact
 		{
 			auto locValidRFBunches = dValidRFBunches_ByCombo[locFullCombo];
 
-//PLACE mass cuts on massive neutrals here! Effectively narrows down RF bunches
+			//PLACE mass cuts on massive neutrals here! Effectively narrows down RF bunches
+			if(dComboInfosWithMassiveNeutrals.find(locPrimaryComboInfo) != dComboInfosWithMassiveNeutrals.end())
+			{
+				//the results are saved by the p4 handler
+				if(!dSourceComboP4Handler->Cut_InvariantMass(locFullCombo, locDecayPID, locVertexZBin))
+					continue;
+			}
+
+			//save the results
+			locSourceCombosByUseSoFar[locComboUseToCreate]->push_back(locSourceCombo);
+			if(locComboingStage == d_ChargedStage)
+				continue;
 
 			//Select final RF bunch
-			auto locRFBunch = dSourceComboTimeHandler->Select_RFBunch_Full(locFullCombo, locChargedCombo, locValidRFBunches);
+			auto locRFBunch = dSourceComboTimeHandler->Select_RFBunch_Full(locReactionVertexInfo, locFullCombo, locChargedCombo, locValidRFBunches);
 		}
 	}
 

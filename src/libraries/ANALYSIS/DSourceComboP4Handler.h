@@ -11,7 +11,6 @@
 #include "PID/DKinematicData.h"
 #include "PID/DNeutralShower.h"
 #include "ANALYSIS/DSourceCombo.h"
-#include "ANALYSIS/DSourceComboTimeHandler.h"
 
 using namespace std;
 using namespace jana;
@@ -19,28 +18,45 @@ using namespace jana;
 namespace DAnalysis
 {
 
+class DSourceComboVertexer;
+class DSourceComboTimeHandler;
+
 class DSourceComboP4Handler
 {
 	public:
+
+		//CONSTRUCTORS
 		DSourceComboP4Handler(void) = delete;
-		DSourceComboP4Handler(JEventLoop* locEventLoop);
+		DSourceComboP4Handler(JEventLoop* locEventLoop, const DSourceComboer* locSourceComboer);
 
+		//SET HANDLERS
+		void Set_SourceComboVertexer(const DSourceComboVertexer* locSourceComboVertexer){dSourceComboVertexer = locSourceComboVertexer;}
+		void Set_SourceComboTimeHandler(const DSourceComboTimeHandler* locSourceComboTimeHandler){dSourceComboTimeHandler = locSourceComboTimeHandler;}
+
+		//SETUP FOR EACH EVENT
 		void Reset(void);
-
 		void Set_PhotonKinematics(const DPhotonKinematicsByZBin& locPhotonKinematics){dPhotonKinematics = locPhotonKinematics;}
+
+
 		DLorentzVector Get_P4(const DSourceCombo* locSourceCombo, signed char locVertexZBin = DSourceComboInfo::Get_VertexZIndex_Unknown());
 
 		//CUT
 		//use this method when the combo DOES NOT contain massive neutrals
 		bool Cut_InvariantMass(const DSourceCombo* locSourceCombo, Particle_t locDecayPID, signed char locVertexZBin) const;
 		//use this method when the combo contains massive neutrals
-		vector<int> Cut_InvariantMass(const DSourceCombo* locSourceCombo, Particle_t locDecayPID, DVector3 locVertex, vector<int> locValidRFBunches) const;
+		vector<int> Cut_InvariantMass(const DSourceCombo* locSourceCombo, Particle_t locDecayPID, vector<int> locValidRFBunches, const DVector3& locVertex, double locNoShiftRFVertexTime) const;
 
 		DLorentzVector Calc_P4(const DSourceCombo* locSourceCombo, signed char locVertexZBin) const;
 		DLorentzVector Calc_P4(const DSourceCombo* locSourceCombo, DVector3 locVertex, int locRFBunch) const;
+		DLorentzVector Calc_MassiveNeutralP4(const DNeutralShower* locNeutralShower, Particle_t locPID, const DVector3& locVertex, double locVertexTime) const;
 
 	private:
-		DLorentzVector Get_P4(Particle_t locPID, const JObject* locObject, signed char locVertexZBin);
+		DLorentzVector Get_P4(Particle_t locPID, const JObject* locObject, signed char locVertexZBin, int locRFBunch);
+
+		//HANDLERS
+		const DSourceComboer* dSourceComboer; //for quickly determining whether a combo has a massive neutral or not, and to facilitate access to combo vertices
+		const DSourceComboVertexer* dSourceComboVertexer; //for getting vertex positions & time offsets for massive neutral p4 calculations
+		const DSourceComboTimeHandler* dSourceComboTimeHandler; //for getting the propagated RF time for massive neutral p4 calculations
 
 		//NEUTRAL SHOWER DATA
 		DPhotonKinematicsByZBin dPhotonKinematics; //FCAL shower data at center of target, BCAL in vertex-z bins
@@ -50,6 +66,7 @@ class DSourceComboP4Handler
 		unordered_map<int, unordered_map<const DSourceCombo*, DLorentzVector>> dFinalStateP4ByCombo_HasMassiveNeutrals; //int: RF bunch
 
 		//CUTS
+		double dMaxMassiveNeutralBeta = 0.99999;
 		unordered_map<Particle_t, pair<double, double>> dInvariantMassCuts;
 };
 
