@@ -267,6 +267,72 @@ void Fill2DHistogram (const char * plugin, const char * directoryName, const cha
    return;
 }
 
+// This overloaded function allows the creation of a 2D histogram with variable bin sizes.
+void Fill2DHistogram (const char * plugin, const char * directoryName, const char * name, const double valueX , const double valueY , const char * title , int nBinsX, double *xbins, int nBinsY, double *ybins, bool print = false){
+
+   static pthread_rwlock_t *mapLock = InitializeMapLock();
+   TH2I * histogram;
+   pair<TH2I*, pthread_rwlock_t*> histogramPair;
+
+   char fullNameChar[500];
+   sprintf(fullNameChar, "%s/%s/%s", plugin, directoryName, name);
+   TString fullName = TString(fullNameChar);
+
+   try {
+      pthread_rwlock_rdlock(mapLock); // Grab the read lock
+      histogramPair = Get2DMap().at(fullName);
+      pthread_rwlock_unlock(mapLock);
+   }
+   catch (const std::out_of_range& oor) {
+      // Drop the read lock and grab the write lock
+      pthread_rwlock_unlock(mapLock);
+      pthread_rwlock_wrlock(mapLock);
+      // At this point, more than one thread might have made it through the try and ended up in the catch.
+      // do a single threaded (write locked) "try" again to be sure we aren't duplicating the histogram
+      try{
+         histogramPair = Get2DMap().at(fullName);
+      }
+      catch  (const std::out_of_range& oor) {
+         if (print) std::cerr << ansi_green << plugin << " ===> Making New 2D Histogram " << name << ansi_normal << endl;
+         // Initialize the histogram lock
+         pthread_rwlock_t *histogramLock = new pthread_rwlock_t();
+         pthread_rwlock_init(histogramLock, NULL);
+
+         // Get the ROOT lock and create the histogram
+         // WARNING: Locking inside a lock is bad practice, but sometimes not easy to avoid.
+         // there would be a problem if there was another function that tried to grab the map lock
+         // inside a root lock. In this code, this will not happen.
+         japp->RootWriteLock();
+         TDirectory *homedir = gDirectory;
+         TDirectory *temp;
+         temp = gDirectory->mkdir(plugin);
+         if(temp) GetAllDirectories().push_back(temp);
+         gDirectory->cd(plugin);
+         GetAllDirectories().push_back(gDirectory->mkdir(directoryName));
+         gDirectory->cd(directoryName);
+         histogram = new TH2I( name, title, nBinsX, xbins, nBinsY, ybins);
+         histogram->Fill(valueX, valueY);
+         homedir->cd();
+         japp->RootUnLock();
+
+         Get2DMap()[fullName] = make_pair(histogram,histogramLock);
+         pthread_rwlock_unlock(mapLock);
+         return;
+      }
+      // If nothing is caught, the histogram must have been created by another thread
+      // while we were waiting to grab the write lock. Drop the lock and carry on...
+      pthread_rwlock_unlock(mapLock);
+   }
+
+   histogram = histogramPair.first;
+   pthread_rwlock_t *histogramLockPtr = histogramPair.second;
+   pthread_rwlock_wrlock(histogramLockPtr);
+   histogram->Fill(valueX, valueY);
+   pthread_rwlock_unlock(histogramLockPtr);
+
+   return;
+}
+
 void Fill2DWeightedHistogram (const char * plugin, const char * directoryName, const char * name, const double valueX , const double valueY , const double weight , const char * title , int nBinsX, double xmin, double xmax, int nBinsY, double ymin, double ymax, bool print = false){
 
     static pthread_rwlock_t *mapLock = InitializeMapLock();
@@ -331,6 +397,9 @@ void Fill2DWeightedHistogram (const char * plugin, const char * directoryName, c
 
     return;
 }
+
+
+
 
 void Fill1DProfile (const char * plugin, const char * directoryName, const char * name, const double valueX , const double valueY , const char * title , int nBinsX, double xmin, double xmax, bool print = false){
 
@@ -466,6 +535,36 @@ void SortDirectories(){
       GetAllDirectories()[i]->GetList()->Sort();
    }
    japp->RootUnLock();
+}
+
+TObject* GetHistPointer(const char * plugin, const char * directoryName, const char * name){
+
+   // This method does not take into account thread safety and should only be called from the fini() method!!!!
+   char fullNameChar[500];
+   sprintf(fullNameChar, "%s/%s/%s", plugin, directoryName, name);
+   TString fullName = TString(fullNameChar);
+
+   auto iter1I = Get1DMap().find(fullName);
+   if(iter1I != Get1DMap().end()) return (TObject*) (*iter1I).second.first;
+
+   auto iter1D = Get1DWeightedMap().find(fullName);
+   if(iter1D != Get1DWeightedMap().end()) return (TObject*) (*iter1D).second.first;
+
+   auto iter1P = Get1DProfileMap().find(fullName);
+   if(iter1P != Get1DProfileMap().end()) return (TObject*) (*iter1P).second.first;
+
+   auto iter2I = Get2DMap().find(fullName);
+   if(iter2I != Get2DMap().end()) return (TObject*) (*iter2I).second.first;
+
+   auto iter2D = Get2DWeightedMap().find(fullName);
+   if(iter2D != Get2DWeightedMap().end()) return (TObject*) (*iter2D).second.first;
+
+   auto iter2P = Get2DProfileMap().find(fullName);
+   if(iter2P != Get2DProfileMap().end()) return (TObject*) (*iter2P).second.first;
+
+   jout << "Unable to find histogram " << fullName.Data() << endl;
+   return nullptr;
+
 }
 
 #endif

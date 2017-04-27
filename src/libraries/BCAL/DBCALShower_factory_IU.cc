@@ -90,6 +90,19 @@ jerror_t DBCALShower_factory_IU::brun(JEventLoop *loop, int32_t runnumber) {
   return NOERROR;
 }
 
+
+jerror_t DBCALShower_factory_IU::erun(void) {
+    // delete lookup tables to prevent memory leak
+	for (int i=0; i<5; i++) {
+		for (int j=0; j<=i; j++) {
+            delete CovarianceLookupTable[i][j];
+            CovarianceLookupTable[i][j] = nullptr;
+        }
+    }
+    return NOERROR;
+}
+
+
 jerror_t
 DBCALShower_factory_IU::evnt( JEventLoop *loop, uint64_t eventnumber ){
  
@@ -128,6 +141,11 @@ DBCALShower_factory_IU::evnt( JEventLoop *loop, uint64_t eventnumber ){
     double dist_in_BCAL = rho - inner_rad/sinTh;
     t = t + dist_in_BCAL/(30*k_cm/k_nsec);
     shower->t = t;
+
+    // shower widths for further selection in REST
+    shower->sigLong = (**clItr).sigRho();
+    shower->sigTrans = (**clItr).sigPhi();
+    shower->sigTheta = (**clItr).sigTheta();
 
     shower->N_cell = (**clItr).nCells();
     
