@@ -64,7 +64,7 @@ class DTreeBranchRegister
 			//Instead: Avoid this by removing the list entries
 			while(dUserInfo->GetEntries() > 0)
 				dUserInfo->RemoveLast();
-			delete dUserInfo;
+			//delete dUserInfo; //in fact, deleting this STILL seems to be causing issues.  Just don't delete it. 
 		}
 
 		TList* Get_UserInfo(void) const{return dUserInfo;}

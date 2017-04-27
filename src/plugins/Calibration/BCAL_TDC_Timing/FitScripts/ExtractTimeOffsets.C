@@ -63,16 +63,18 @@ TH1D* GetGausFitMean(TH2I *hist2d, TString tag, bool makeplots);
 
 
 // Do the extraction of the actual constants
-void ExtractTimeOffsets(int run = 2931, TString filename = "hd_root.root", TString tag="default"){
+void ExtractTimeOffsets(int run, TString filename, TString tag){
     printf("ExtractTimeOffsets\n");
 
     // Open our input and output file
     ExtractTimeOffsetsAndCEffNS::thisFile = TFile::Open(filename);
     char outfilename[255];    
-    sprintf(outfilename,"BCALTimeOffsetAndCEff_Results_%i_%s.root",run,tag.Data());
+    sprintf(outfilename,"output/timing/rootfiles/BCALTimeOffset_Results_%s_%i.root",tag.Data(),run);
     TFile *outputFile = TFile::Open(outfilename, "RECREATE");
     outputFile->mkdir("Fits");
     outputFile->mkdir("ResultOverview");
+
+    FILE *outfile;
 
     // Check to make sure it is open
     if (ExtractTimeOffsetsAndCEffNS::thisFile == 0) {
@@ -82,7 +84,7 @@ void ExtractTimeOffsets(int run = 2931, TString filename = "hd_root.root", TStri
     
     // This stream will be for outputting the results in a format suitable for the CCDB
     ofstream channel_global_offset_File;
-    sprintf(outfilename,"channel_global_offset_BCAL_%i_%s.txt",run,tag.Data());
+    sprintf(outfilename,"output/timing/correction/%s/channel_offset_%i.txt",tag.Data(),run);
     channel_global_offset_File.open(outfilename);
 
     TH1I *OldTimeOffsets = new TH1I("OldTimeOffsets", "Total time offset (pre)", 2000, -4, 4);
@@ -115,10 +117,11 @@ void ExtractTimeOffsets(int run = 2931, TString filename = "hd_root.root", TStri
         int nBinsY = residualHist->GetNbinsY();
 
         TString newtag = tag + "_channel";
-        bool makeplots=1; // print images of the fits
+        bool makeplots=0; // print images of the fits
         TH1D *meanhist = GetGausFitMean(residualHist,tag.Data(),makeplots);
 
         for (int i = 1 ; i <= nBinsX; i++){
+            int chanint=i;
             TH1D *projY = residualHist->ProjectionY("temp", i, i);
             // Scan over the histogram
             float nsPerBin = (projY->GetBinCenter(projY->GetNbinsX()) - projY->GetBinCenter(1)) / projY->GetNbinsX();
@@ -144,6 +147,7 @@ void ExtractTimeOffsets(int run = 2931, TString filename = "hd_root.root", TStri
             float priorOffset = priorOffsetHist->GetBinContent(i);
             float residualOffset = maxMean;
             float residualOffsetFit = meanhist->GetBinContent(i);
+            float residualOffsetFitErr = meanhist->GetBinError(i);
             float newOffset = priorOffset + residualOffset;
             float newOffsetFit = priorOffset + residualOffsetFit;
 
@@ -155,6 +159,12 @@ void ExtractTimeOffsets(int run = 2931, TString filename = "hd_root.root", TStri
             NewTimeOffsetsFitVsChannel->SetBinContent(i,newOffsetFit);
             RelativeTimeOffsetsFit->Fill(residualOffsetFit);
             RelativeTimeOffsetsFitVsChannel->SetBinContent(i,residualOffsetFit);
+
+            sprintf(outfilename,"output/timing/channels/%s_%03i.txt",tag.Data(),chanint);
+            outfile = fopen(outfilename, "a");
+            //printf("%05i %f %f\n",chanint,cont,err);
+            fprintf(outfile,"%i %.3f %.3f\n",run,residualOffsetFit,residualOffsetFitErr);
+            fclose(outfile);
 
             printf("%4i   rolling max: %6.3f %+.3f = %6.3f    gaus fit: %6.3f %+.3f = %6.3f    diff: %6.3f\n",
                    i,priorOffset,residualOffset,newOffset,priorOffset,residualOffsetFit,newOffsetFit,residualOffset-residualOffsetFit);
