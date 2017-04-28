@@ -41,27 +41,20 @@ namespace DAnalysis
 
 //BIG TO DO'S:
 //fill tracks by PID
-//once RF bunch is chosen, redo mass cuts involving massive neutrals
-//once vertex position fully defined, place mass cuts on massive neutrals
-//compute vertices using beam energy (missing mass)
 //finish porting from DVertexCreator
 
 //ANY TIME:
 //Cut combo ahead of time if not enough tracks/showers
-//fill in calc inv mass functions
+//MAKE A DChargedTrack_Combo factory. It takes new DTrackTimeBased, makes hypos, combines them with existing hypos (from preselect factory), and makes new charged tracks
 
 //AT THE END:
 //VERY CAREFULLY recycle resources
 //CONSIDER VECTOR INSTEAD OF MAP FOR DSourceCombosByUse_Small
-//store unsigned char instead of pointer???
 
-//MUST BEWARE DUPLICATE COMBOS
-//let's say a combo of charged tracks has 2 valid RF bunches
-//and we need to combo 2 pi0s with them
-//and the shower timing cuts are loose enough that all 4 showers satisfy both RF bunches
-//if we combo the 2 rf bunches separately: WE HAVE DUPLICATE COMBOS
-//and doing the duplicate check AFTER the fact takes FOREVER
-//therefore, we must take the neutral showers for the 2 rfs, COMBINE THEM, and then COMBO AS A UNIT
+//MISCELLANEOUS TO DO:
+//All loops over all containers should be const auto&
+//When saving ROOT TTree, don't save p4 of decaying particles if mass is not constrained in kinfit!
+	//And make sure it's not grabbed in DSelector by default
 
 /****************************************************** DEFINE LAMBDAS, USING STATEMENTS *******************************************************/
 

@@ -537,6 +537,13 @@ void DSourceComboer::Build_ParticleCombos(JEventLoop* locEventLoop, const DReact
 
 /**************************************************************** BUILD SOURCE COMBOS - GENERAL *****************************************************************/
 
+//MUST BEWARE DUPLICATE COMBOS
+//let's say a combo of charged tracks has 2 valid RF bunches
+//and we need to combo 2 pi0s with them
+//and the shower timing cuts are loose enough that all 4 showers satisfy both RF bunches
+//if we combo the 2 rf bunches separately: WE HAVE DUPLICATE COMBOS
+//and doing the duplicate check AFTER the fact takes FOREVER
+//therefore, we must take the neutral showers for the 2 rfs, COMBINE THEM, and then COMBO AS A UNIT
 
 /****************************************************** COMBOING STRATEGY ******************************************************
 *

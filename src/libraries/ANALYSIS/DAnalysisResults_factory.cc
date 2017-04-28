@@ -277,50 +277,8 @@ jerror_t DAnalysisResults_factory::evnt(JEventLoop* locEventLoop, uint64_t event
 	if(dDebugLevel > 0)
 		cout << "# DReactions: " << locReactions.size() << endl;
 
-	//ORDER OF EXECUTION/DEPENDENCIES:
-
-	//With combos:
-		//Post-kinfit analysis actions: Need kinfit
-		//Kinfit
-		//Other pre-kinfit analysis actions
-		//Missing mass analysis actions
-
-	//Combo:
-		//Combo: Need beam, final state, rf bunch, PID cuts, inv mass cuts
-		//Beam + RF Delta-t Cut: Need RF bunch
-
-	//Final-State Timing
-		//Invariant mass cuts with massive neutrals: Need hypo "combo" objects
-		//PID cuts (put in DReaction directly): Need hypo "combo" objects
-		//Neutral & Charged hypo "Combo" objects: Need RF bunch & vertices
-		//RF bunch: Need production vertex
-
-	//Final-State Particles:
-		//Inv mass cuts: Charged & gamma: Need final state & vertices (for accurate gamma p4)
-		//Production & Detached (for combo objects & in case no kinfit) vertices: Need charged final state particles
-		//Charged final-state particles: See below
-
-
-
-
-/************************************************************** BUILDING FINAL-STATE COMBINATIONS **************************************************************/
-
-	//See DVertexCreator comments for HERE
-
-
-	map<const DNeutralParticle*, set<const DNeutralParticle*> > locCompatiblePhotons; //key is first photon, set contains matching photons (but only store once for each pair)
 
 
 	return NOERROR;
 }
 
-
-//MISCELLANEOUS TO DO:
-//MAKE A DChargedTrack_Combo factory. It takes new DTrackTimeBased, makes hypos, combines them with existing hypos (from preselect factory), and makes new charged tracks
-
-//NEED a track POCA to point routine that takes into account the track is curving
-
-//When saving ROOT TTree, don't save p4 of decaying particles if mass is not constrained in kinfit!
-	//And make sure it's not grabbed in DSelector by default
-
-//All loops over all containers should be const auto&
