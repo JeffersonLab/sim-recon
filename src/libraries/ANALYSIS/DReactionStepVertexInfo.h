@@ -81,7 +81,7 @@ private:
 	//pair: step, particle indices (including all: beam, target, decaying, detected, and missing)
 	vector<pair<int, int>> dFullConstrainParticles; //detected charged tracks & beam, decaying when registered
 	vector<pair<int, int>> dOnlyConstrainTimeParticles; //detected photons
-	vector<pair<int, int>> dNoConstrainParticles; //missing, massive neutrals, decaying when registered
+	vector<pair<int, int>> dNoConstrainParticles; //missing, massive neutrals, decaying when registered, target
 
 	//DECAY INFO
 	//Note, decaying particles that decay in-place at this vertex (e.g. pi0) will only appear once: with their "final-state" indices

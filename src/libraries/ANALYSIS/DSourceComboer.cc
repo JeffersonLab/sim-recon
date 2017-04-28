@@ -47,6 +47,7 @@ DSourceComboer::DSourceComboer(JEventLoop* locEventLoop)
 	dSourceComboTimeHandler = new DSourceComboTimeHandler(locEventLoop, this, dSourceComboVertexer);
 	dSourceComboP4Handler->Set_SourceComboTimeHandler(dSourceComboTimeHandler);
 	dSourceComboP4Handler->Set_SourceComboVertexer(dSourceComboVertexer);
+	dSourceComboVertexer->Set_SourceComboTimeHandler(dSourceComboTimeHandler);
 }
 
 /******************************************************************* CREATE DSOURCOMBOINFO'S ********************************************************************/
@@ -369,6 +370,9 @@ void DSourceComboer::Reset_NewEvent(JEventLoop* locEventLoop)
 	vector<const DNeutralShower*> locNeutralShowers;
 	locEventLoop->Get(locNeutralShowers, dShowerSelectionTag);
 
+	vector<const DBeamPhoton*> locBeamPhotons;
+	locEventLoop->Get(locBeamPhotons);
+
 	const DEventRFBunch* locInitialRFBunch = nullptr;
 	locEventLoop->GetSingle(locInitialRFBunch);
 
@@ -376,10 +380,12 @@ void DSourceComboer::Reset_NewEvent(JEventLoop* locEventLoop)
 	dSourceComboTimeHandler->Setup_NeutralShowers(locNeutralShowers, locInitialRFBunch);
 	dSourceComboP4Handler->Set_PhotonKinematics(dSourceComboTimeHandler->Get_PhotonKinematics());
 	dShowersByBeamBunchByZBin = dSourceComboTimeHandler->Get_ShowersByBeamBunchByZBin();
+
+	//SETUP BEAM PARTICLES
+	dSourceComboTimeHandler->Set_BeamParticles(locBeamPhotons);
 }
 
 
-/******************************************************************* CREATE DSOURCOMBOINFO'S ********************************************************************/
 /******************************************************************* CREATE DSOURCOMBOINFO'S ********************************************************************/
 
 void DSourceComboer::Build_ParticleCombos(JEventLoop* locEventLoop, const DReactionVertexInfo* locReactionVertexInfo)
@@ -440,16 +446,16 @@ void DSourceComboer::Build_ParticleCombos(JEventLoop* locEventLoop, const DReact
 
 	//Build vertex combos (returns those for the primary vertex, others are stored)
 	Create_SourceCombos(locPrimaryComboUse, d_ChargedStage, nullptr);
-	const auto& locChargedCombos = *(Get_CombosSoFar(d_ChargedStage, d_Charged, nullptr)[locPrimaryComboUse]);
+	const auto& locReactionChargedCombos = *(Get_CombosSoFar(d_ChargedStage, d_Charged, nullptr)[locPrimaryComboUse]);
 
 	//loop over primary vertex combos //each contains decay combos except when dangling
-	for(auto locChargedCombo : locChargedCombos)
+	for(const auto& locReactionChargedCombo : locReactionChargedCombos)
 	{
 		//Calc all the vertex positions and time offsets for the vertices for these combos (where possible without beam energy)
-		dSourceComboVertexer->Calc_VertexTimeOffsets(locReactionVertexInfo, locChargedCombo);
+		dSourceComboVertexer->Calc_VertexTimeOffsets(locReactionVertexInfo, locReactionChargedCombo);
 
 		//For the charged tracks, apply timing cuts to determine which RF bunches are possible
-		auto locBeamBunches_Charged = dSourceComboTimeHandler->Select_RFBunches_Charged(locReactionVertexInfo, locChargedCombo);
+		auto locBeamBunches_Charged = dSourceComboTimeHandler->Select_RFBunches_Charged(locReactionVertexInfo, locReactionChargedCombo);
 		if(locBeamBunches_Charged.empty())
 			continue; //failed PID cuts!
 
@@ -460,39 +466,69 @@ void DSourceComboer::Build_ParticleCombos(JEventLoop* locEventLoop, const DReact
 		if(locChargeContent == d_Charged)
 		{
 			//Select final RF bunch
-			auto locRFBunch = dSourceComboTimeHandler->Select_RFBunch_Full(locReactionVertexInfo, locFullCombo, locChargedCombo, locValidRFBunches);
-			//save results
+			auto locRFBunch = dSourceComboTimeHandler->Select_RFBunch_Full(locReactionVertexInfo, locReactionChargedCombo, locReactionChargedCombo, locBeamBunches_Charged);
+//save results!!!
 			continue;
 		}
 
 		//Create full source-particle combos (including neutrals): First using only FCAL showers, then using all showers
-		Create_SourceCombos(locPrimaryComboUse, d_MixedStage_ZIndependent, locChargedCombo);
-		auto locZDependentComboUse = Create_ZDependentSourceComboUses(locReactionVertexInfo, locChargedCombo);
-		Create_SourceCombos(locZDependentComboUse, d_MixedStage, locChargedCombo);
+		Create_SourceCombos(locPrimaryComboUse, d_MixedStage_ZIndependent, locReactionChargedCombo);
+		auto locZDependentComboUse = Create_ZDependentSourceComboUses(locReactionVertexInfo, locReactionChargedCombo);
+		Create_SourceCombos(locZDependentComboUse, d_MixedStage, locReactionChargedCombo);
 
 		//Then, get the full combos, but only those that satisfy the charged RF bunches
-		const auto& locPrimaryFullCombos = Get_CombosForComboing(locZDependentComboUse, d_MixedStage, locBeamBunches_Charged, locChargedCombo);
+		const auto& locReactionFullCombos = Get_CombosForComboing(locZDependentComboUse, d_MixedStage, locBeamBunches_Charged, locReactionChargedCombo);
 
 		//loop over full combos
-		for(auto locFullCombo : locPrimaryFullCombos)
+		for(const auto& locReactionFullCombo : locReactionFullCombos)
 		{
-			auto locValidRFBunches = dValidRFBunches_ByCombo[locFullCombo];
+			auto locValidRFBunches = dValidRFBunches_ByCombo[locReactionFullCombo]; //get by value, will cut below if massive neutral
+
+			//Calculate vertex positions & time offsets using photons
+			//not likely to have any effect, but it's necessary sometimes (but rarely)
+			//E.g. g, p ->  K0, Sigma+    K0 -> 3pi: The selected pi0 photons could help define the production vertex
+			dSourceComboVertexer->Calc_VertexTimeOffsets_WithPhotons(locReactionVertexInfo, locReactionChargedCombo, locReactionFullCombo);
 
 			//PLACE mass cuts on massive neutrals here! Effectively narrows down RF bunches
 			if(dComboInfosWithMassiveNeutrals.find(locPrimaryComboInfo) != dComboInfosWithMassiveNeutrals.end())
 			{
-				//the results are saved by the p4 handler
-				if(!dSourceComboP4Handler->Cut_InvariantMass(locFullCombo, locDecayPID, locVertexZBin))
-					continue;
+				if(!dSourceComboP4Handler->Cut_InvariantMass_HasMassiveNeutral(locReactionVertexInfo, locReactionFullCombo, locReactionChargedCombo, locValidRFBunches))
+					continue; //failed cut!
 			}
 
-			//save the results
-			locSourceCombosByUseSoFar[locComboUseToCreate]->push_back(locSourceCombo);
-			if(locComboingStage == d_ChargedStage)
-				continue;
-
 			//Select final RF bunch
-			auto locRFBunch = dSourceComboTimeHandler->Select_RFBunch_Full(locReactionVertexInfo, locFullCombo, locChargedCombo, locValidRFBunches);
+			auto locRFBunch = dSourceComboTimeHandler->Select_RFBunch_Full(locReactionVertexInfo, locReactionFullCombo, locReactionChargedCombo, locValidRFBunches);
+
+			//If beam not needed, then we are done!
+			if(!locPrimaryStepVertexInfo->Get_ProductionVertexFlag())
+			{
+//save results!!!!!!
+				continue;
+			}
+
+			//Select beam particles
+			auto locBeamParticles = dSourceComboTimeHandler->Get_BeamParticlesByRFBunch(locRFBunch);
+			if(locBeamParticles.empty())
+				continue; //no valid beam particles!!
+
+			//loop over beam particles
+			for(auto locBeamParticle : locBeamParticles)
+			{
+				//Calculate remaining vertex positions (that needed to be done via missing mass)
+				dSourceComboVertexer->Calc_VertexTimeOffsets_WithBeam(locReactionVertexInfo, locReactionChargedCombo, locReactionFullCombo, locBeamParticle);
+
+				//placing timing cuts on the particles at these vertices
+
+				//place invariant mass cuts on the particles at these vertices, if they had neutral particles (charged is done already!)
+
+				//place missing mass cuts on any missing particles?? or do with an action?
+
+				//do kinematic fit
+
+				//build particle combo
+
+				//execute actions
+			}
 		}
 	}
 

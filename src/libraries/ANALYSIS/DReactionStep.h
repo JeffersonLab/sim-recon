@@ -236,6 +236,12 @@ inline int Get_ParticleIndex(const DReactionStep* locStep, Particle_t locInputPI
 	return (locIterator == locFinalPIDs.end()) ? DReactionStep::Get_ParticleIndex_None() : std::distance(locFinalPIDs.begin(), locIterator);
 }
 
+inline bool Get_HasMissingParticle_FinalState(const DReactionStep* locStep)
+{
+	auto locMissingParticleIndex = locStep->Get_MissingParticleIndex();
+	return (locStep->Get_IsInclusiveFlag() || (locMissingParticleIndex >= 0));
+}
+
 } //end DAnalysis namespace
 
 #endif // _DReactionStep_

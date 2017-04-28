@@ -143,7 +143,7 @@
 namespace DAnalysis
 {
 
-DSourceComboTimeHandler::DSourceComboTimeHandler(JEventLoop* locEventLoop, const DSourceComboer* locSourceComboer, const DSourceComboVertexer* locSourceComboVertexer) :
+DSourceComboTimeHandler::DSourceComboTimeHandler(JEventLoop* locEventLoop, DSourceComboer* locSourceComboer, const DSourceComboVertexer* locSourceComboVertexer) :
 		dSourceComboer(locSourceComboer), dSourceComboVertexer(locSourceComboVertexer)
 {
 	//UTILITIES

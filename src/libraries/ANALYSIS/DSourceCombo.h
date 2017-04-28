@@ -281,6 +281,25 @@ inline vector<const DSourceCombo*> Get_SourceCombos_ThisVertex(const DSourceComb
 	return locVertexCombos;
 }
 
+inline vector<pair<DSourceComboUse, vector<const DSourceCombo*>>> Get_SourceCombosAndUses_ThisVertex(const DSourceCombo* locSourceCombo)
+{
+	//sorted from most- to least-dependent
+	vector<pair<DSourceComboUse, vector<const DSourceCombo*>>> locVertexCombosByUse;
+	for(const auto& locDecayPair : locSourceCombo->Get_FurtherDecayCombos())
+	{
+		auto locDecayPID = std::get<0>(locDecayPair.first);
+		if(IsDetachedVertex(locDecayPID))
+			continue;
+		locVertexCombosByUse.emplace_back(locDecayPair);
+		for(auto locDecayCombo : locDecayPair.second)
+		{
+			auto locDecayVertexCombosByUse = Get_SourceCombosAndUses_ThisVertex(locDecayCombo);
+			locVertexCombosByUse.insert(locVertexCombosByUse.end(), locDecayVertexCombosByUse.begin(), locDecayVertexCombosByUse.end());
+		}
+	}
+	return locVertexCombosByUse;
+}
+
 inline Charge_t Get_ChargeContent(const DSourceComboInfo* locSourceComboInfo)
 {
 	auto locNumParticles = locSourceComboInfo->Get_NumParticles(true);

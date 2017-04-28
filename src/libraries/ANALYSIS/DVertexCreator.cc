@@ -5,23 +5,6 @@ namespace DAnalysis
 
 DVertexCreator::DVertexCreator(JEventLoop* locEventLoop)
 {
-	//INITIALIZE KINFITUTILS
-	dKinFitUtils = new DKinFitUtils_GlueX(locEventLoop);
-	dKinFitUtils->Set_IncludeBeamlineInVertexFitFlag(true);
-
-	//GET THE GEOMETRY
-	DApplication* locApplication = dynamic_cast<DApplication*>(locEventLoop->GetJApplication());
-	DGeometry* locGeometry = locApplication->GetDGeometry(locEventLoop->GetJEvent().GetRunNumber());
-
-	//TARGET INFORMATION
-	locGeometry->GetTargetZ(dTargetCenterZ);
-	double locTargetLength = 30.0;
-	locGeometry->GetTargetLength(locTargetLength);
-
-	//BEAM BUNCH PERIOD
-	vector<double> locBeamPeriodVector;
-	locEventLoop->GetCalib("PHOTON_BEAM/RF/beam_period", locBeamPeriodVector);
-	dBeamBunchPeriod = locBeamPeriodVector[0];
 
 	//GET TRACKING HYPOTHESES
 	vector<int> locHypotheses = {PiPlus, KPlus, Proton, PiMinus, KMinus};
@@ -45,12 +28,6 @@ DVertexCreator::DVertexCreator(JEventLoop* locEventLoop)
 	//INITIALIZE MISCELLANEOUS MEMBERS
 	dESSkimData = nullptr;
 	dEventRFBunch = nullptr;
-
-	//SETUP dReactionVertexInfoMap
-	vector<const DReactionVertexInfo*> locVertexInfos;
-	locEventLoop->Get(locVertexInfos);
-	for(auto locVertexInfo : locVertexInfos)
-		dReactionVertexInfoMap.emplace(locVertexInfo->Get_Reaction(), locVertexInfo);
 }
 
 void DVertexCreator::Do_All(JEventLoop* locEventLoop, const vector<const DReaction*>& locReactions)
@@ -259,23 +236,6 @@ bool DVertexCreator::Check_Skims(const DReaction* locReaction) const
 	}
 
 	return true;
-}
-
-bool DVertexCreator::Cut_TrackDeltaT(const DChargedTrackHypothesis* locNewChargedHypo, const DChargedTrackHypothesis* locSavedChargedHypo)
-{
-	//ultimately, the PID delta-t cuts determine the range:
-		//max delta-t = PID_cut_track1 + PID_cut_track2
-
-	//first, get the PID timing cuts
-	auto locCutIterator_SavedHypo = dPIDTimeCutMap.find(make_pair(locSavedChargedHypo->PID(), locSavedChargedHypo->t1_detector()));
-	auto locCutIterator_NewHypo = dPIDTimeCutMap.find(make_pair(locNewChargedHypo->PID(), locNewChargedHypo->t1_detector()));
-	if((locCutIterator_SavedHypo == dPIDTimeCutMap.end()) || (locCutIterator_NewHypo == dPIDTimeCutMap.end()))
-		return true; //no delta-t cut: can't cut: true
-
-	//evaluate delta-t
-	double locDeltaT = locSavedChargedHypo->time() - locNewChargedHypo->time();
-	double locMaxDeltaT = locCutIterator_NewHypo->second + locCutIterator_NewHypo->second;
-	return (fabs(locDeltaT) <= locMaxDeltaT);
 }
 
 

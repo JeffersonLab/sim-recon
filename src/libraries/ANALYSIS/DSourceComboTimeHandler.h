@@ -25,15 +25,17 @@ class DSourceComboTimeHandler
 {
 	public:
 		DSourceComboTimeHandler(void) = delete;
-		DSourceComboTimeHandler(JEventLoop* locEventLoop, const DSourceComboer* locSourceComboer, const DSourceComboVertexer* locSourceComboVertexer);
+		DSourceComboTimeHandler(JEventLoop* locEventLoop, DSourceComboer* locSourceComboer, const DSourceComboVertexer* locSourceComboVertexer);
 
 		//SETUP
 		void Reset(void);
 		void Setup_NeutralShowers(const vector<const DNeutralShower*>& locNeutralShowers, const DEventRFBunch* locInitialEventRFBunch);
+		void Set_BeamParticles(const vector<const DBeamPhoton*>& locBeamParticles);
 
 		//GET SETUP RESULTS
 		DPhotonKinematicsByZBin Get_PhotonKinematics(void) const{return dPhotonKinematics;}
 		unordered_map<signed char, DPhotonShowersByBeamBunch> Get_ShowersByBeamBunchByZBin(void) const{return dShowersByBeamBunchByZBin;}
+		vector<const DKinematicData*> Get_BeamParticlesByRFBunch(int locRFBunch) const;
 
 		//GET VALID/COMMON RF BUNCHES
 		//Note that combining with an empty vector does NOT remove all bunches!!
@@ -43,6 +45,7 @@ class DSourceComboTimeHandler
 		vector<int> Get_CommonRFBunches(const vector<int>& locRFBunches1, const vector<int>& locRFBunches2) const;
 
 		//UTILITY FUNCTIONS
+		int Calc_RFBunchShift(double locTimeToStepTo) const{return Calc_RFBunchShift(dInitialEventRFBunch->dTime, locTimeToStepTo);}
 		int Calc_RFBunchShift(double locTimeToStep, double locTimeToStepTo) const;
 		double Calc_PropagatedRFTime(double locPrimaryVertexZ, int locNumRFBunchShifts, double locDetachedVertexTimeOffset) const;
 
@@ -63,7 +66,7 @@ class DSourceComboTimeHandler
 		double Calc_RFDeltaTChiSq(const DChargedTrackHypothesis* locHypothesis, int locNumShifts, double locVertexTime, double locPropagatedRFTime) const;
 
 		//HANDLERS AND UTILITIES
-		const DSourceComboer* dSourceComboer;
+		DSourceComboer* dSourceComboer;
 		const DSourceComboVertexer* dSourceComboVertexer;
 		const DAnalysisUtilities* dAnalysisUtilities;
 
@@ -100,6 +103,8 @@ class DSourceComboTimeHandler
 
 		unordered_map<const DSourceCombo*, vector<int>> dChargedComboRFBunches; //empty vector = FAILED cuts
 
+		unordered_map<int, vector<const DKinematicData*>> dBeamParticlesByRFBunch;
+
 		//CUTS
 		unordered_map<Particle_t, unordered_map<DetectorSystem_t, TF1*>> dPIDTimingCuts; //function of shower energy (p)
 };
@@ -112,6 +117,24 @@ inline void DSourceComboTimeHandler::Reset(void)
 	dChargedComboRFBunches.clear();
 	dShowersByBeamBunchByZBin.clear();
 	dChargedParticlePOCAToVertexX4.clear();
+}
+
+inline void DSourceComboTimeHandler::Set_BeamParticles(const vector<const DBeamPhoton*>& locBeamParticles)
+{
+	//ASSUME that the tagger timing is good enough to determine which bunch it belongs too!
+	for(auto locBeamParticle : locBeamParticles)
+	{
+		auto locRFBunch = Calc_RFBunchShift(dInitialEventRFBunch->dTime, locBeamParticle->time());
+		dBeamParticlesByRFBunch[locRFBunch].push_back(locBeamParticle);
+	}
+}
+
+inline vector<const DKinematicData*> DSourceComboTimeHandler::Get_BeamParticlesByRFBunch(int locRFBunch) const
+{
+	auto locIterator = dBeamParticlesByRFBunch.find(locRFBunch);
+	if(locIterator != dBeamParticlesByRFBunch.end())
+		return locIterator->second;
+	return {};
 }
 
 inline double DSourceComboTimeHandler::Calc_PropagatedRFTime(double locPrimaryVertexZ, int locNumRFBunchShifts, double locDetachedVertexTimeOffset) const

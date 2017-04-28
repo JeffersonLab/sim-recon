@@ -102,7 +102,12 @@ class DSourceComboer : public JObject
 
 		//Get combo uses
 		DSourceComboUse Get_SourceComboUse(const DReactionStepVertexInfo* locStepVertexInfo) const{return dSourceComboUseReactionMap.find(locStepVertexInfo)->second;};
+		DSourceComboUse Get_SourceComboUse(const DReaction* locReaction, size_t locStepIndex) const{return dSourceComboUseReactionStepMap.find(locReaction)->second.find(locStepIndex)->second;};
 		DSourceComboUse Get_PrimaryComboUse(const DReactionVertexInfo* locReactionVertexInfo) const{return Get_SourceComboUse(locReactionVertexInfo->Get_StepVertexInfo(0));};
+
+		//VERTEX-Z BINNING UTILITY FUNCTIONS
+		size_t Get_PhotonVertexZBin(double locVertexZ) const;
+		double Get_PhotonVertexZBinCenter(signed char locVertexZBin) const;
 
 	private:
 
@@ -168,10 +173,6 @@ class DSourceComboer : public JObject
 		const DSourceCombo* Get_StepSourceCombo(const DReaction* locReaction, size_t locDesiredStepIndex, const DSourceCombo* locSourceCombo_Current, size_t locCurrentStepIndex = 0);
 		const DSourceCombo* Get_ChargedCombo_WithNow(const DSourceCombo* locChargedCombo_Presiding) const;
 		const DSourceCombo* Get_Presiding_ChargedCombo(const DSourceCombo* locChargedCombo_Presiding, const DSourceComboUse& locNextComboUse, ComboingStage_t locComboingStage, size_t locInstance) const;
-
-		//VERTEX-Z BINNING UTILITY FUNCTIONS
-		size_t Get_PhotonVertexZBin(double locVertexZ) const;
-		double Get_PhotonVertexZBinCenter(signed char locVertexZBin) const;
 
 		/************************************************************** DEFINE MEMBERS ***************************************************************/
 
