@@ -22,7 +22,7 @@ using namespace jana;
 #include <PID/DKinematicData.h>
 #include <PID/DBeamPhoton.h>
 #include <DIRC/DDIRCTruthBarHit.h>
-#include <DIRC/DDIRCTruthMcpHit.h>
+#include <DIRC/DDIRCTruthPmtHit.h>
 
 #include <TMath.h>
 #include <TFile.h>
@@ -88,8 +88,6 @@ private:
   }
 
   Particle MakeParticle(const DKinematicData *kd, double mass, hit_set hits);
-
-  TFile *fRootFile;
 };
 
 #endif /* DEVENTPROCESSOR_PID_DIRC_H_ */
