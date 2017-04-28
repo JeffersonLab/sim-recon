@@ -62,7 +62,9 @@ ProductionMechanism::produceResonance( const TLorentzVector& beam ){
   double t, tMax, resMass, resMomCM;
 
   do {
-    resMass = generateMass();
+    do // the resonance mass cannot be larger than CM energy - proton mass
+      resMass = generateMass();
+    while ( cmEnergy < resMass + m_recMass );
     resMomCM  = cmMomentum( cmEnergy, resMass, m_recMass );
   
     tMax = 4. * beamMomCM * resMomCM;
