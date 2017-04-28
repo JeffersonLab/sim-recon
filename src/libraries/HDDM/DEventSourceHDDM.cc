@@ -12,7 +12,7 @@
 // Oct 8, 2013 Yi Qiang: added dedicated object for RICH Truth Hit
 // July 5, 2014 R.T.Jones: changed over from c to c++ API for hddm
 // June 22, 2015 J. Stevens: changed RICH -> DIRC and remove CERE
-// May 7, 2017 R. Dzhygadlo: added DDIRCTruthMcpHit DDIRCTruthBarHit
+// May 7, 2017 R. Dzhygadlo: added DDIRCTruthPmtHit DDIRCTruthBarHit
 //
 // DEventSourceHDDM methods
 //
@@ -424,9 +424,9 @@ jerror_t DEventSourceHDDM::GetObjects(JEvent &event, JFactory_base *factory)
      return Extract_DDIRCTruthBarHit(record,
 		     dynamic_cast<JFactory<DDIRCTruthBarHit>*>(factory), tag);
 
-   if (dataClassName == "DDIRCTruthMcpHit")
-     return Extract_DDIRCTruthMcpHit(record,
-		     dynamic_cast<JFactory<DDIRCTruthMcpHit>*>(factory), tag);
+   if (dataClassName == "DDIRCTruthPmtHit")
+     return Extract_DDIRCTruthPmtHit(record,
+		     dynamic_cast<JFactory<DDIRCTruthPmtHit>*>(factory), tag);
 
    // extract CereTruth and CereRichHit hits, yqiang Oct 3, 2012
    // removed CereTruth (merged into MCThrown), added CereHit, yqiang Oct 10 2012
@@ -2842,10 +2842,10 @@ jerror_t DEventSourceHDDM::Extract_DDIRCTruthBarHit(hddm_s::HDDM *record,
 }
 
 //------------------
-// Extract_DDIRCTruthMcpHit
+// Extract_DDIRCTruthPmtHit
 //------------------
-jerror_t DEventSourceHDDM::Extract_DDIRCTruthMcpHit(hddm_s::HDDM *record,
-                                   JFactory<DDIRCTruthMcpHit>* factory, string tag)
+jerror_t DEventSourceHDDM::Extract_DDIRCTruthPmtHit(hddm_s::HDDM *record,
+                                   JFactory<DDIRCTruthPmtHit>* factory, string tag)
 {
    /// Copies the data from the given hddm_s structure. This is called
    /// from JEventSourceHDDM::GetObjects. If factory is NULL, this
@@ -2856,12 +2856,12 @@ jerror_t DEventSourceHDDM::Extract_DDIRCTruthMcpHit(hddm_s::HDDM *record,
    if (tag != "")
       return OBJECT_NOT_AVAILABLE;
 
-   vector<DDIRCTruthMcpHit*> data;
+   vector<DDIRCTruthPmtHit*> data;
 
-   const hddm_s::DircTruthMcpHitList &hits = record->getDircTruthMcpHits();
-   hddm_s::DircTruthMcpHitList::iterator iter;
+   const hddm_s::DircTruthPmtHitList &hits = record->getDircTruthPmtHits();
+   hddm_s::DircTruthPmtHitList::iterator iter;
    for (iter = hits.begin(); iter != hits.end(); ++iter) {
-      DDIRCTruthMcpHit *hit = new DDIRCTruthMcpHit;
+      DDIRCTruthPmtHit *hit = new DDIRCTruthPmtHit;
       hit->x = iter->getX();
       hit->y = iter->getY();
       hit->z = iter->getZ();
