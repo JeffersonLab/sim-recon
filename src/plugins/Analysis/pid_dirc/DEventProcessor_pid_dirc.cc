@@ -105,9 +105,7 @@ jerror_t DEventProcessor_pid_dirc::evnt(JEventLoop *loop, uint64_t eventnumber) 
     }
   }
   
-  std::cout<<"mcthrowns.size() "<< mcthrowns.size()<<std::endl;
-  std::cout<<"dircMcpHits.size() "<< dircMcpHits.size()<<std::endl;
-  std::cout<<"dircBarHits.size() "<< dircBarHits.size()<<std::endl;
+  std::cout<<"#hits "<< dircMcpHits.size()<<std::endl;
 
   // loop over mc/reco tracks
   for (unsigned int j = 0; j < mcthrowns.size(); j++){
@@ -133,7 +131,6 @@ jerror_t DEventProcessor_pid_dirc::evnt(JEventLoop *loop, uint64_t eventnumber) 
       fEvent->AddHit(hit);
       //      fHit = new DrcHit(hit);
     }
-    std::cout<<"NNN  "<<fEvent->GetHitSize() <<std::endl;
     
     //japp->RootWriteLock(); //ACQUIRE ROOT LOCK
     fTree->Fill();
