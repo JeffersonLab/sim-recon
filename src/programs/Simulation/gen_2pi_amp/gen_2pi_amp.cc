@@ -222,7 +222,7 @@ int main( int argc, char* argv[] ){
 			
 			// cannot ask for the intensity if we haven't called process events above
 			double weightedInten = ( genFlat ? 1 : ati.intensity( i ) ); 
-			cout << " i=" << i << "  intensity_i=" << weightedInten << endl;
+			// cout << " i=" << i << "  intensity_i=" << weightedInten << endl;
 
 			if( !diag ){
 				
