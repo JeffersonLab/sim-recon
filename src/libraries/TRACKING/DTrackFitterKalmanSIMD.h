@@ -110,6 +110,7 @@ typedef struct{
 
 typedef struct{ 
   double t,cosa,sina;
+  double phiX,phiY,phiZ; // Alignmnet constants
   double uwire,vstrip,vvar,z,dE;
   double nr,nz;
   int status;
