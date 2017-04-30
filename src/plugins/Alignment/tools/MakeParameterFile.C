@@ -1,5 +1,25 @@
 void MakeParameterFile(){
 
+   // Choose which parameters you would like to fix
+   bool fixCDCWires = true;
+   bool fixCDCt0 = true;
+   bool fixCDCGlobalX = true;
+   bool fixCDCGlobalY = true;
+   bool fixCDCGlobalZ = true;
+   bool fixCDCGlobalPhiX = true;
+   bool fixCDCGlobalPhiY = true;
+   bool fixCDCGlobalPhiZ = true;
+   bool fixFDCt0 = true;
+   bool fixFDCGains = true;
+   bool fixFDCCathodeOffsets = true;
+   bool fixFDCCathodeAngles = false;
+   bool fixFDCCellOffsetsWires = true;
+   bool fixFDCCellOffsetsCathodes = true;
+   bool fixFDCWireRotation = true;
+   bool fixFDCZ = true;
+   bool fixFDCPitch = false;
+   bool fixFDCGap = false;
+
    double scale = 1.0;
    double translationPresigma = 0.0005;
    double rotationPresigma = 0.0001;
@@ -9,24 +29,6 @@ void MakeParameterFile(){
 
    ofstream outfile;
    outfile.open("Parameters.txt");
-
-   bool fixCDCWires = true;
-   bool fixCDCt0 = false;
-   bool fixCDCGlobalX = true;
-   bool fixCDCGlobalY = true;
-   bool fixCDCGlobalZ = true;
-   bool fixCDCGlobalPhiX = true;
-   bool fixCDCGlobalPhiY = true;
-   bool fixCDCGlobalPhiZ = true;
-   bool fixFDCt0 = false;
-   bool fixFDCGains = true;
-   bool fixFDCCathodeOffsets = true;
-   bool fixFDCCathodeAngles = true;
-   bool fixFDCCellOffsetsWires = true;
-   bool fixFDCCellOffsetsCathodes = true;
-   bool fixFDCWireRotation = true;
-   bool fixFDCPitch = true;
-   bool fixFDCGap = true;
 
    outfile << "Parameter" << endl;
 
@@ -91,6 +93,12 @@ void MakeParameterFile(){
    for (unsigned int i=1; i<=24; i++){
 
       int indexOffset = 100000 + i*1000;
+      if(fixFDCZ){
+         outfile<< indexOffset + 5 << " 0.0 -1.0" << endl;
+      }
+      else {
+         outfile<< indexOffset + 5 << " 0.0 " << translationPresigma << endl;
+      }
       if (fixFDCCellOffsetsWires){
          outfile << indexOffset + 1 << " 0.0 -1.0" << endl;
       }
@@ -104,10 +112,16 @@ void MakeParameterFile(){
          outfile << indexOffset + 100 << " 0.0 " << translationPresigma << endl;
       }
 
-      if (fixFDCWireRotation) outfile << indexOffset + 2 << " 0.0 -1.0" << endl;
-      else outfile << indexOffset + 2 << " 0.0 " << rotationPresigma << endl;
-
-      outfile << indexOffset + 3 << " 0.0 -1.0 " << endl; // Fix for now
+      if (fixFDCWireRotation) {
+         outfile << indexOffset + 2 << " 0.0 -1.0" << endl;
+         outfile << indexOffset + 3 << " 0.0 -1.0" << endl;
+         outfile << indexOffset + 4 << " 0.0 -1.0" << endl;
+      }
+      else {
+         outfile << indexOffset + 2 << " 0.0 " << rotationPresigma << endl;
+         outfile << indexOffset + 3 << " 0.0 " << rotationPresigma << endl;
+         outfile << indexOffset + 4 << " 0.0 " << rotationPresigma << endl;
+      }
 
       if (fixFDCCathodeOffsets){
          outfile << indexOffset + 101 << " 0.0 -1.0" << endl;
