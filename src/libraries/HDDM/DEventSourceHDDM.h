@@ -9,7 +9,7 @@
 //         OCt 10, 2012 Yi Qiang: modifed Cerenkov classes with general Cere hits
 //         Oct 8, 2013 Yi Qiang: added dedicated object for RICH Truth Hit
 //         June 22, 2015 J. Stevens: changed RICH -> DIRC and remove CERE
-//         May 7, 2017 R. Dzhygadlo: added DDIRCTruthMcpHit DDIRCTruthBarHit
+//         May 7, 2017 R. Dzhygadlo: added DDIRCTruthPmtHit DDIRCTruthBarHit
 
 #ifndef _JEVENT_SOURCEHDDM_H_
 #define _JEVENT_SOURCEHDDM_H_
@@ -62,7 +62,7 @@ using namespace std;
 #include "DIRC/DDIRCHit.h"
 #include "DIRC/DDIRCTruthHit.h"
 #include "DIRC/DDIRCTruthBarHit.h"
-#include "DIRC/DDIRCTruthMcpHit.h"
+#include "DIRC/DDIRCTruthPmtHit.h"
 #include <RF/DRFTime.h>
 #include <DANA/DApplication.h>
 #include "PAIR_SPECTROMETER/DPSHit.h"
@@ -147,7 +147,7 @@ class DEventSourceHDDM:public JEventSource
       jerror_t Extract_DDIRCHit(hddm_s::HDDM *record, JFactory<DDIRCHit> *factory, string tag);
       jerror_t Extract_DDIRCTruthHit(hddm_s::HDDM *record, JFactory<DDIRCTruthHit> *factory, string tag);
       jerror_t Extract_DDIRCTruthBarHit(hddm_s::HDDM *record, JFactory<DDIRCTruthBarHit> *factory, string tag);
-      jerror_t Extract_DDIRCTruthMcpHit(hddm_s::HDDM *record, JFactory<DDIRCTruthMcpHit> *factory, string tag);
+      jerror_t Extract_DDIRCTruthPmtHit(hddm_s::HDDM *record, JFactory<DDIRCTruthPmtHit> *factory, string tag);
 
       std::ifstream *ifs;
       hddm_s::istream *fin;

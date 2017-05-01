@@ -23,7 +23,19 @@ DEventProcessor_pid_dirc::~DEventProcessor_pid_dirc() {
 }
 
 jerror_t DEventProcessor_pid_dirc::init(void) {
-  fRootFile = new TFile("drc.root","RECREATE");
+  string locOutputFileName = "hd_root.root";
+  if(gPARMS->Exists("OUTPUT_FILENAME"))
+    gPARMS->GetParameter("OUTPUT_FILENAME", locOutputFileName);
+
+  //go to file
+  TFile* locFile = (TFile*)gROOT->FindObject(locOutputFileName.c_str());
+  if(locFile != NULL)
+    locFile->cd("");
+  else
+    gDirectory->Cd("/");
+
+	
+  
   fTree = new TTree("dirc", "dirc tree");
   // fEvent = new TClonesArray("DrcEvent");
   fEvent = new DrcEvent();
@@ -36,12 +48,12 @@ jerror_t DEventProcessor_pid_dirc::evnt(JEventLoop *loop, uint64_t eventnumber) 
   vector<const DMCThrown*> mcthrowns;
   vector<const DMCTrackHit*> mctrackhits;
   vector<const DDIRCTruthBarHit*> dircBarHits;
-  vector<const DDIRCTruthMcpHit*> dircMcpHits;
+  vector<const DDIRCTruthPmtHit*> dircPmtHits;
 
   loop->Get(beam_photons);
   loop->Get(mcthrowns);
   loop->Get(mctrackhits);
-  loop->Get(dircMcpHits);
+  loop->Get(dircPmtHits);
   loop->Get(dircBarHits);
 
   TVector3 VertexGen = TVector3(mcthrowns[0]->position().X(),
@@ -94,9 +106,6 @@ jerror_t DEventProcessor_pid_dirc::evnt(JEventLoop *loop, uint64_t eventnumber) 
     case SYS_TOF:
       tofhits[mctrackhit->track]++;
       break;
-      // case SYS_RICH:
-      // 	richpoints[mctrackhit->track]++;
-      // 	break;
     case SYS_CHERENKOV:
       cerepoints[mctrackhit->track]++;
       break;
@@ -105,50 +114,44 @@ jerror_t DEventProcessor_pid_dirc::evnt(JEventLoop *loop, uint64_t eventnumber) 
     }
   }
   
-  std::cout<<"#hits "<< dircMcpHits.size()<<std::endl;
+  std::cout<<"#hits "<< dircPmtHits.size()<<std::endl;
 
+  japp->RootWriteLock(); //ACQUIRE ROOT LOCK
+  
   // loop over mc/reco tracks
   for (unsigned int j = 0; j < mcthrowns.size(); j++){
 
     fEvent = new DrcEvent();
     DrcHit hit;
-    // loop over MCP's hits
-    for (unsigned int h = 0; h < dircMcpHits.size(); h++){
+    // loop over PMT's hits
+    for (unsigned int h = 0; h < dircPmtHits.size(); h++){
       // identify bar id
       for (unsigned int j = 0; j < dircBarHits.size(); j++){
       }
 
-      int ch=dircMcpHits[h]->ch;
-      int mcp=ch/64;
+      int ch=dircPmtHits[h]->ch;
+      int pmt=ch/64;
       int pix=ch%64;
       
-      hit.SetChannel(dircMcpHits[h]->ch);
-      hit.SetMcpId(mcp);
+      hit.SetChannel(dircPmtHits[h]->ch);
+      hit.SetPmtId(pmt);
       hit.SetPixelId(pix);
-      hit.SetPosition(TVector3(dircMcpHits[h]->x,dircMcpHits[h]->y,dircMcpHits[h]->z));
+      hit.SetPosition(TVector3(dircPmtHits[h]->x,dircPmtHits[h]->y,dircPmtHits[h]->z));
       hit.SetMomentum(TVector3(0,0,0));
-      hit.SetLeadTime(dircMcpHits[h]->t);
+      hit.SetLeadTime(dircPmtHits[h]->t);
       fEvent->AddHit(hit);
-      //      fHit = new DrcHit(hit);
     }
     
-    //japp->RootWriteLock(); //ACQUIRE ROOT LOCK
     fTree->Fill();
-    japp->RootUnLock(); //RELEASE ROOT LOCK
-    //fEvent->Clear();
 
+    // fEvent->Clear();
     // TClonesArray& cevt = *fEvent;
     // Int_t size = cevt.GetEntriesFast();
     // new (cevt[size]) DrcEvent(evt);
-  }
-    
-  // // Although we are only filling objects local to this plugin, TTree::Fill() periodically writes to file: Global ROOT lock
-  // japp->RootWriteLock(); //ACQUIRE ROOT LOCK
+  }    
 
-  // // Copy event number
-  // //fTree->Fill();
-  // japp->RootUnLock(); //RELEASE ROOT LOCK
-
+  japp->RootUnLock(); //RELEASE ROOT LOCK
+      
   return NOERROR;
 }
 
@@ -195,8 +198,5 @@ jerror_t DEventProcessor_pid_dirc::erun(void) {
 }
 
 jerror_t DEventProcessor_pid_dirc::fini(void) {
-  //japp->RootWriteLock(); //ACQUIRE ROOT LOCK
-  if(fRootFile) fRootFile->Write();
-  //japp->RootUnLock(); //RELEASE ROOT LOCK
   return NOERROR;
 }

@@ -29,7 +29,7 @@ public:
   TVector3 GetPosition()     { return fPosition; }
   Double_t GetCherenkovMC()  { return fCherenkovMC;}
   
-  Int_t GetMcpId()       { return fMcpId; }
+  Int_t GetPmtId()       { return fPmtId; }
   Int_t GetPixelId()     { return fPixelId; }
   Int_t GetChannel() { return fChannel;}
   Double_t GetLeadTime() { return fLeadTime; } 
@@ -42,7 +42,7 @@ public:
   void SetPosition(TVector3 val)    { fPosition = val; }
   void SetCherenkovMC(Double_t val) { fCherenkovMC = val; }
   
-  void SetMcpId(Int_t val)   { fMcpId = val; }
+  void SetPmtId(Int_t val)   { fPmtId = val; }
   void SetPixelId(Int_t val) { fPixelId = val; }
   void SetChannel(Int_t val) { fChannel=val; }
   void SetLeadTime(Double_t val) { fLeadTime=val; } 
@@ -56,7 +56,7 @@ protected:
   TVector3 fPosition;
   Double_t fCherenkovMC;
   
-  Int_t fMcpId;
+  Int_t fPmtId;
   Int_t fPixelId;
   Int_t fChannel;
   Double_t fLeadTime;    

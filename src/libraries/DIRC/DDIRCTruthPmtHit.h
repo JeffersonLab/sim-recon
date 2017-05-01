@@ -1,25 +1,25 @@
 // -----------------------------------------
-// DDIRCTruthMcpHit.h
+// DDIRCTruthPmtHit.h
 // created on: 05.04.2017
 // initial athor: r.dzhygadlo at gsi.de
 // -----------------------------------------
 
-#ifndef DDIRCMCPHIT_H_
-#define DDIRCMCPHIT_H_
+#ifndef DDIRCPMTHIT_H_
+#define DDIRCPMTHIT_H_
 
 #include <JANA/JObject.h>
 #include <JANA/JFactory.h>
 using namespace jana;
 
-class DDIRCTruthMcpHit: public JObject {
+class DDIRCTruthPmtHit: public JObject {
 
 public:
-  JOBJECT_PUBLIC (DDIRCTruthMcpHit);
+  JOBJECT_PUBLIC (DDIRCTruthPmtHit);
 
   float x, y, z;   // hit position
   float t;	   // detection time
   float E;	   // poton energy
-  int   ch;        // MCP channel of the hit
+  int   ch;        // PMT channel of the hit
   int   key_bar;   // key of the corresponding bar hit
   
   void toStrings(vector<pair<string, string> >&items) const {
@@ -33,4 +33,4 @@ public:
   }
 };
 
-#endif /* DDIRCMCPHIT_H_ */
+#endif /* DDIRCPMTHIT_H_ */
