@@ -32,18 +32,39 @@ DBCALShower_factory_IU::DBCALShower_factory_IU(){
 	exponential_param0 = 1;      ///< default to make no change to energy
 	exponential_param1 = -10000; ///< default to make no change to energy
 	exponential_param2 = 0;      ///< default to make no change to energy
+	nonlin_form = 0;
+	const_term = 1;
+	first_term_scale_factor = 0;
+	first_exp_param0 = 1;
+	first_exp_param1 = 1;
+	second_term_scale_factor = 0;
+	second_exp_const_term = 1;
+	second_exp_scale_factor = 1;
+	second_exp_param0 = 1;
+	second_exp_param1 = 1;
+
 	VERBOSE = 0;              ///< >0 once off info ; >2 event by event ; >3 everything
 	COVARIANCEFILENAME = "";  ///<  Setting the filename will take precidence over the CCDB.  Files must end in ij.txt, where i and j are integers corresponding to the element of the matrix
 	
 	if (gPARMS){
 		gPARMS->SetDefaultParameter("BCAL:LOAD_NONLIN_CCDB", LOAD_CCDB_CONSTANTS);
 		/// use to set energy corrections on command line
+		gPARMS->SetDefaultParameter("BCAL:nonlin_form", nonlin_form );
 		gPARMS->SetDefaultParameter("BCAL:energy_cutoff", energy_cutoff);
-		gPARMS->SetDefaultParameter("BCAL:linear_slope", linear_slope);
 		gPARMS->SetDefaultParameter("BCAL:linear_intercept", linear_intercept);
+		gPARMS->SetDefaultParameter("BCAL:linear_slope", linear_slope);
 		gPARMS->SetDefaultParameter("BCAL:exponential_param0", exponential_param0);
 		gPARMS->SetDefaultParameter("BCAL:exponential_param1", exponential_param1);
 		gPARMS->SetDefaultParameter("BCAL:exponential_param2", exponential_param2);
+		gPARMS->SetDefaultParameter("BCAL:const_term", const_term);
+		gPARMS->SetDefaultParameter("BCAL:first_term_scale_factor", first_term_scale_factor);
+		gPARMS->SetDefaultParameter("BCAL:first_exp_param0", first_exp_param0);
+		gPARMS->SetDefaultParameter("BCAL:first_exp_param1", first_exp_param1);
+		gPARMS->SetDefaultParameter("BCAL:second_term_scale_factor", second_term_scale_factor);
+		gPARMS->SetDefaultParameter("BCAL:second_exp_const_term", second_exp_const_term);
+		gPARMS->SetDefaultParameter("BCAL:second_exp_scale_factor", second_exp_scale_factor);
+		gPARMS->SetDefaultParameter("BCAL:second_exp_param0", second_exp_param0);
+		gPARMS->SetDefaultParameter("BCAL:second_exp_param1", second_exp_param1);
 		gPARMS->SetDefaultParameter("DBCALShower:VERBOSE", VERBOSE, "Verbosity level for DBCALShower objects and factories");
 		gPARMS->SetDefaultParameter("DBCALShower:COVARIANCEFILENAME", COVARIANCEFILENAME, "File name for covariance files");
 	}
@@ -57,7 +78,59 @@ jerror_t DBCALShower_factory_IU::brun(JEventLoop *loop, int32_t runnumber) {
     //by default, energy correction parameters are obtained through ccdb
     if(LOAD_CCDB_CONSTANTS > 0.5){
 		map<string, double> shower_calib;
-		if (loop->GetCalib("BCAL/shower_calib", shower_calib)) {
+		map<string, double> shower_calib2;
+		
+		map<string, double> nonlinear_form;
+
+		if(loop->GetCalib("BCAL/nonlinear_form", nonlinear_form)){
+			jerr << " Error loading from CCDB\n";
+		} else {
+			nonlin_form = nonlinear_form["nonlin_form"];
+		}
+/*
+		if(nonlin_form == 1){
+			loop->GetCalib("BCAL/shower_calib8", shower_calib8);
+			p0 = shower_calib8["p0"];
+                        p1 = shower_calib8["p1"];
+                        p2 = shower_calib8["p2"];
+                        p3 = shower_calib8["p3"];
+                        p4 = shower_calib8["p4"];
+                        p5 = shower_calib8["p5"];
+                        p6 = shower_calib8["p6"];
+                        p7 = shower_calib8["p7"];
+                        p8 = shower_calib8["p8"];
+		} else if (nonlin_form == 1 && loop->GetCalib("BCAL/shower_calib8", shower_calib8)) {
+			jerr << " Error loading BCAL Spring17 nonlinear shower energy correction parameters from CCDB\n";
+		}
+*/
+		if(nonlin_form == 1){
+                        loop->GetCalib("BCAL/shower_calib2", shower_calib2);
+                        const_term = shower_calib2["const_term"];
+                        first_term_scale_factor = shower_calib2["first_term_scale_factor"];
+                        first_exp_param0 = shower_calib2["first_exp_param0"];
+                        first_exp_param1 = shower_calib2["first_exp_param1"];
+                        second_term_scale_factor = shower_calib2["second_term_scale_factor"];
+			second_exp_const_term = shower_calib2["second_exp_const_term"];
+                        second_exp_scale_factor = shower_calib2["second_exp_scale_factor"];
+                        second_exp_param0 = shower_calib2["second_exp_param0"];
+                        second_exp_param1 = shower_calib2["second_exp_param1"];
+                } else if (nonlin_form == 1 && loop->GetCalib("BCAL/shower_calib2", shower_calib2)) {
+                        jerr << " Error loading BCAL Spring17 nonlinear shower energy correction parameters from CCDB\n";
+                }
+	
+		if(nonlin_form == 0){
+			loop->GetCalib("BCAL/shower_calib", shower_calib);
+			energy_cutoff = shower_calib["energy_cutoff"];
+                        linear_intercept = shower_calib["linear_intercept"];
+                        linear_slope = shower_calib["linear_slope"];
+                        exponential_param0 = shower_calib["exponential_param0"];
+                        exponential_param1 = shower_calib["exponential_param1"];
+                        exponential_param2 = shower_calib["exponential_param2"];
+		} else if (nonlin_form == 0 && loop->GetCalib("BCAL/shower_calib", shower_calib)) {
+                        jerr << "Error loading BCAL Spring16 nonlinear shower energy correction parameters from CCDB\n";
+                }	
+
+/*		if (loop->GetCalib("BCAL/shower_calib", shower_calib)) {
 			jerr << "Error loading from CCDB\n";
 		} else {
 			energy_cutoff = shower_calib["energy_cutoff"];
@@ -67,8 +140,8 @@ jerror_t DBCALShower_factory_IU::brun(JEventLoop *loop, int32_t runnumber) {
 			exponential_param1 = shower_calib["exponential_param1"];
 			exponential_param2 = shower_calib["exponential_param2"];
 		}
-	}
-	if (VERBOSE>0) {
+*/	}
+	if (nonlin_form == 0 && VERBOSE>0) {
 		printf("%20s = %f\n","energy_cutoff",energy_cutoff);
 		printf("%20s = %f\n","linear_intercept",linear_intercept);
 		printf("%20s = %f\n","linear_slope",linear_slope);
@@ -77,6 +150,19 @@ jerror_t DBCALShower_factory_IU::brun(JEventLoop *loop, int32_t runnumber) {
 		printf("%20s = %f\n","exponential_param2",exponential_param2);
 	}
 	
+	if(nonlin_form == 1 && VERBOSE>0) {
+	//	printf("%20s = %f\n", "nonlin_form",nonlin_form);
+		printf("%20s = %f\n","const_term",const_term);
+       		printf("%20s = %f\n","first_term_scale_factor",first_term_scale_factor);
+		printf("%20s = %f\n","first_exp_param0",first_exp_param0);
+		printf("%20s = %f\n","first_exp_param1",first_exp_param1);
+		printf("%20s = %f\n","second_term_scale_factor",second_term_scale_factor);
+		printf("%20s = %f\n","second_exp_const_term",second_exp_const_term);
+		printf("%20s = %f\n","second_exp_scale_factor",second_exp_scale_factor);
+		printf("%20s = %f\n","second_exp_param0",second_exp_param0);
+		printf("%20s = %f\n","second_exp_param1",second_exp_param1);
+	 }
+
 	jerror_t result = LoadCovarianceLookupTables();
 	if (result!=NOERROR) return result;
 	
@@ -89,19 +175,6 @@ jerror_t DBCALShower_factory_IU::brun(JEventLoop *loop, int32_t runnumber) {
 	
   return NOERROR;
 }
-
-
-jerror_t DBCALShower_factory_IU::erun(void) {
-    // delete lookup tables to prevent memory leak
-	for (int i=0; i<5; i++) {
-		for (int j=0; j<=i; j++) {
-            delete CovarianceLookupTable[i][j];
-            CovarianceLookupTable[i][j] = nullptr;
-        }
-    }
-    return NOERROR;
-}
-
 
 jerror_t
 DBCALShower_factory_IU::evnt( JEventLoop *loop, uint64_t eventnumber ){
@@ -142,21 +215,14 @@ DBCALShower_factory_IU::evnt( JEventLoop *loop, uint64_t eventnumber ){
     t = t + dist_in_BCAL/(30*k_cm/k_nsec);
     shower->t = t;
 
-    // shower widths for further selection in REST
-    shower->sigLong = (**clItr).sigRho();
-    shower->sigTrans = (**clItr).sigPhi();
-    shower->sigTheta = (**clItr).sigTheta();
-
     shower->N_cell = (**clItr).nCells();
     
-    // non-linear energy corrections can be found at https://logbooks.jlab.org/entry/3419524 
+    // Spring2016 non-linear energy corrections can be found at https://logbooks.jlab.org/entry/3419524 and Spring2017 at https://logbooks.jlab.org/entry/3469359
     
-//    if( shower->E_raw < energy_cutoff ) shower->E = shower->E_raw / (linear_intercept + linear_slope * shower->E_raw ) ;
-//    if( shower->E_raw >= energy_cutoff ) shower->E = shower->E_raw / (exponential_param0 - exp(exponential_param1 * shower->E_raw + exponential_param2));
+    if(nonlin_form == 0 && shower->E_raw < energy_cutoff ) shower->E = shower->E_raw / (linear_intercept + linear_slope * shower->E_raw ) ;
+    if(nonlin_form == 0 &&  shower->E_raw >= energy_cutoff ) shower->E = shower->E_raw / (exponential_param0 - exp(exponential_param1 * shower->E_raw + exponential_param2));
 
-//    shower->E = shower->E_raw / (1.06134 - .0647916*exp(-1.44656*shower->E_raw + 0.592866) - 0.0305735*shower->E_raw) ;
-
-	shower->E = shower->E_raw / (1.18965 - 0.0313508*exp(-0.422379*shower->E_raw + 1.81930) - 6.38665/(37.3134 + 1.16775*exp(-1.30991*shower->E_raw + 5.35728)));
+    if( nonlin_form == 1) shower->E = shower->E_raw / (const_term - first_term_scale_factor*exp(-first_exp_param0*shower->E_raw + first_exp_param1) - second_term_scale_factor/(second_exp_const_term + second_exp_scale_factor*exp(-second_exp_param0*shower->E_raw + second_exp_param1)));
 
 	// Get covariance matrix and uncertainties
 	FillCovarianceMatrix(shower);
