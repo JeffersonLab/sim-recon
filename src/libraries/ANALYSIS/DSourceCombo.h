@@ -19,13 +19,7 @@ using namespace jana;
 
 namespace DAnalysis
 {
-/*
-MEMORY, TIME CONSIDERATIONS:
 
-//DSourceCombo
-//consider, instead of storing DNeutralShower pointer, store index to main array (unsigned char!!)
-
-*/
 /****************************************************** DEFINE LAMBDAS, USING STATEMENTS *******************************************************/
 
 //forward declarations
@@ -119,7 +113,7 @@ class DSourceCombo
 		//GET MEMBERS
 		vector<pair<Particle_t, const JObject*>> Get_SourceParticles(bool locEntireChainFlag = false) const;
 		DSourceCombosByUse_Small Get_FurtherDecayCombos(void) const{return dFurtherDecayCombos;}
-		bool Get_IsZIndependent(void) const{return dIsZIndependent;}
+		bool Get_IsComboingZIndependent(void) const{return dIsComboingZIndependent;}
 
 	private:
 
@@ -132,8 +126,11 @@ class DSourceCombo
 		//Otherwise, groupings of 2+ (e.g. 2pi-) will be in the further-decay section (X -> 2pi+)
 		DSourceCombosByUse_Small dFurtherDecayCombos; //vector is e.g. size 3 if 3 pi0s needed
 
-		//Control information
-		bool dIsZIndependent;
+		//actually, everything is z-dependent for massive neutrals.
+		//however the momentum is SO z-dependent, that we can't cut on it until the end when we have the final vertex, AFTER comboing
+		//a mere z-bin is not enough.
+		//So, as far as COMBOING is concerned, massive neutrals are Z-INDEPENDENT
+		bool dIsComboingZIndependent; //is false for BCAL photons
 };
 
 struct DSourceComboInfo::DCompare_ParticlePairPIDs
@@ -199,7 +196,7 @@ inline vector<pair<Particle_t, unsigned char>> DSourceComboInfo::Get_NumParticle
 }
 
 inline DSourceCombo::DSourceCombo(const vector<pair<Particle_t, const JObject*>>& locSourceParticles, const DSourceCombosByUse_Small& locFurtherDecayCombos, bool locIsZIndependent) :
-		dSourceParticles(locSourceParticles), dFurtherDecayCombos(locFurtherDecayCombos), dIsZIndependent(locIsZIndependent)
+		dSourceParticles(locSourceParticles), dFurtherDecayCombos(locFurtherDecayCombos), dIsComboingZIndependent(locIsZIndependent)
 {
 	std::sort(dSourceParticles.begin(), dSourceParticles.end());
 }
@@ -208,7 +205,7 @@ inline void DSourceCombo::Set_Members(const vector<pair<Particle_t, const JObjec
 {
 	dSourceParticles = locSourceParticles;
 	dFurtherDecayCombos = locFurtherDecayCombos;
-	dIsZIndependent = locIsZIndependent;
+	dIsComboingZIndependent = locIsZIndependent;
 	std::sort(dSourceParticles.begin(), dSourceParticles.end());
 }
 

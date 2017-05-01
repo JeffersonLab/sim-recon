@@ -18,6 +18,7 @@
 #include "particleType.h"
 #include "DANA/DApplication.h"
 #include "HDGEOMETRY/DGeometry.h"
+#include "EVENTSTORE/DESSkimData.h"
 
 #include "PID/DNeutralShower.h"
 #include "PID/DKinematicData.h"
@@ -39,17 +40,14 @@ using namespace jana;
 namespace DAnalysis
 {
 
-//BIG TO DO'S:
-//fill tracks by PID
-//finish porting from DVertexCreator
-
 //ANY TIME:
-//Cut combo ahead of time if not enough tracks/showers
+//If 2 DReactions are identical in particle content: same reaction vertex info (have vector<DReaction>)
 //MAKE A DChargedTrack_Combo factory. It takes new DTrackTimeBased, makes hypos, combines them with existing hypos (from preselect factory), and makes new charged tracks
 
 //AT THE END:
 //VERY CAREFULLY recycle resources
 //CONSIDER VECTOR INSTEAD OF MAP FOR DSourceCombosByUse_Small
+//destructor contents!
 
 //MISCELLANEOUS TO DO:
 //All loops over all containers should be const auto&
@@ -91,7 +89,7 @@ class DSourceComboer : public JObject
 		Charge_t Get_ChargeContent(const DSourceComboInfo* locSourceComboInfo) const{return dComboInfoChargeContent.find(locSourceComboInfo)->second;}
 		bool Get_HasMassiveNeutrals(const DSourceComboInfo* locSourceComboInfo) const{return (dComboInfosWithMassiveNeutrals.find(locSourceComboInfo) != dComboInfosWithMassiveNeutrals.end());}
 
-		const DSourceCombo* Get_VertexPrimaryCombo(const DSourceCombo* locReactionChargedCombo, const DReactionStepVertexInfo* locStepVertexInfo);
+		const DSourceCombo* Get_VertexPrimaryCombo(const DSourceCombo* locReactionCombo, const DReactionStepVertexInfo* locStepVertexInfo);
 
 		//Get combo uses
 		DSourceComboUse Get_SourceComboUse(const DReactionStepVertexInfo* locStepVertexInfo) const{return dSourceComboUseReactionMap.find(locStepVertexInfo)->second;};
@@ -101,6 +99,7 @@ class DSourceComboer : public JObject
 		//VERTEX-Z BINNING UTILITY FUNCTIONS
 		size_t Get_PhotonVertexZBin(double locVertexZ) const;
 		double Get_PhotonVertexZBinCenter(signed char locVertexZBin) const;
+		size_t Get_VertexZBin_TargetCenter(void) const{return Get_PhotonVertexZBin(dTargetCenter.Z());}
 
 	private:
 
@@ -109,6 +108,10 @@ class DSourceComboer : public JObject
 		//SETUP
 		void Reset_NewEvent(JEventLoop* locEventLoop);
 		void Setup_NeutralShowers(JEventLoop* locEventLoop);
+
+		//INITIAL CHECKS
+		bool Check_NumParticles(const DReaction* locReaction) const;
+		bool Check_Skims(const DReaction* locReaction) const;
 
 		//CREATE PHOTON COMBO INFOS & USES
 		void Create_SourceComboInfos(const DReactionVertexInfo* locReactionVertexInfo);
@@ -125,7 +128,6 @@ class DSourceComboer : public JObject
 		//CREATE COMBOS - GENERAL METHODS
 		void Create_SourceCombos(const DSourceComboUse& locComboUseToCreate, ComboingStage_t locComboingStage, const DSourceCombo* locChargedCombo_Presiding);
 		void Create_SourceCombos_Unknown(const DSourceComboUse& locComboUseToCreate, ComboingStage_t locComboingStage, const DSourceCombo* locChargedCombo_Presiding);
-		//bool Do_CommonComboingTasks(const DSourceComboUse& locComboUseToCreate, const DSourceComboUse& locAllBut1ComboUse, const DSourceComboUse& locSourceComboUseToAdd, ComboingStage_t locComboingStage, const DSourceCombo* locChargedCombo_Presiding, bool locComboingVertically);
 
 		//COMBO VERTICALLY METHODS
 		//Note that vertical comboing always takes place at the same vertex-z
@@ -157,7 +159,7 @@ class DSourceComboer : public JObject
 		const vector<const JObject*>& Get_ParticlesForComboing(Particle_t locPID, ComboingStage_t locComboingStage, const vector<int>& locBeamBunches = {}, signed char locVertexZBin = 0);
 		const vector<const JObject*>& Get_ShowersByBeamBunch(const vector<int>& locBeamBunches, DPhotonShowersByBeamBunch& locShowersByBunch);
 		shared_ptr<const DKinematicData> Create_KinematicData(const DNeutralShower* locNeutralShower, const DVector3& locVertex) const;
-		bool Get_IsZIndependent(const JObject* locObject) const;
+		bool Get_IsComboingZIndependent(const JObject* locObject, Particle_t locPID) const;
 
 		//COMBO UTILITY FUNCTIONS
 		DSourceCombosByUse_Large& Get_CombosSoFar(ComboingStage_t locComboingStage, Charge_t locChargeContent_SearchForUse, const DSourceCombo* locChargedCombo = nullptr);
@@ -171,6 +173,7 @@ class DSourceComboer : public JObject
 
 		uint64_t dEventNumber = 0; //re-setup on new events
 		string dShowerSelectionTag = "PreSelect";
+		string dTrackSelectionTag = "Combo";
 
 		//EXPERIMENT INFORMATION
 		DVector3 dTargetCenter;
@@ -179,12 +182,15 @@ class DSourceComboer : public JObject
 		//For every 10cm in vertex-z, calculate the photon p4 & time for placing mass & delta-t cuts
 		//The z-range extends from the upstream end of the target - 5cm to the downstream end + 15cm
 		//so for a 30-cm-long target, it's a range of 50cm: 5bins, evaluated at the center of each bin
+		//Make sure that the center of the target is the center of a zbin!!!
 		float dPhotonVertexZBinWidth;
 		float dPhotonVertexZRangeLow;
 		size_t dNumPhotonVertexZBins;
 
+		//SKIM INFORMATION
+		const DESSkimData* dESSkimData = nullptr;
+
 		//CHARGED TRACKS
-		vector<const DChargedTrack*> dChargedTracks;
 		unordered_map<Particle_t, vector<const JObject*>> dTracksByPID;
 
 		//NEUTRAL SHOWERS
@@ -276,32 +282,35 @@ inline double DSourceComboer::Get_PhotonVertexZBinCenter(signed char locVertexZB
 	return dPhotonVertexZRangeLow + (double(locVertexZBin) + 0.5)*dPhotonVertexZBinWidth;
 }
 
-/*****
- * COMBOING PHOTONS AND RF BUNCHES
- *
- * So, this is tricky.
- * Start out by allowing ALL beam bunches, regardless of what the charged tracks want.
- * Then, as each photon is chosen, reduce the set of possible photons to choose next: only those that agree on at least one RF bunch
- * As combos are made, the valid RF bunches are saved along with the combo
- * That way, as combos are combined with other combos/particles, we make sure that only valid possibilities are chosen.
- *
- * We can't start with those only valid for the charged tracks because:
- * When we generate combos for a given info, we want to generate ALL combos at once.
- * E.g. some charged tracks may want pi0s with beam bunch = 1, but another group might want pi0s with bunch 1 OR 2.
- * Dealing with the overlap is a nightmare.  This avoids the problem entirely.
- *
- * BEWARE: Massive-neutral-particle momentum depends on the RF bunch. So a cut on the invariant mass with a neutron is effectively a cut on the RF bunches
- * Suppose: Sigma+ -> pi+ n
- * You first generate combos for -> pi+ n, and save them for the use X -> pi+, n
- * We then re-use the combos for the use Sigma+ -> pi+ n
- * But then a cut on the Sigma+ mass reduces the #valid RF bunches. So now we need a new combo!
- * We could decouple the RF bunches from the combo: e.g. save in map from combo_use -> rf bunches
- * However, this would result in many duplicate entries: e.g. X -> 2g, pi0 -> 2g, eta -> 2g, etc.
- * Users choosing final-state neutrons or KLongs is pretty rare compared to everything else: we are better off just creating new combos
- *
- * BEWARE: Massive-neutral-particle momentum depends on the RF bunch. So a cut on the invariant mass with a neutron is effectively a cut on the RF bunches.
- * So we can't actually vote on RF bunches until we choose our massive-neutral particles!!!
- */
+inline bool DSourceComboer::Check_NumParticles(const DReaction* locReaction) const
+{
+	//see if enough particles were detected to build this reaction
+	auto locReactionPIDs = locReaction->Get_FinalPIDs(-1, false, false, d_AllCharges, true); //no missing, no decaying, include duplicates
+	auto locPIDMap = DAnalysis::Convert_VectorToCountMap<Particle_t>(locReactionPIDs);
+	for(const auto& locPIDPair : locPIDMap)
+	{
+		if(Get_ParticlesForComboing(locPIDPair.first, d_MixedStage).size() < locPIDPair.second)
+			return false;
+	}
+}
+
+
+inline bool DSourceComboer::Check_Skims(const DReaction* locReaction) const
+{
+	if(dESSkimData == nullptr)
+		return true;
+
+	string locReactionSkimString = locReaction->Get_EventStoreSkims();
+	vector<string> locReactionSkimVector;
+	SplitString(locReactionSkimString, locReactionSkimVector, ",");
+	for(size_t loc_j = 0; loc_j < locReactionSkimVector.size(); ++loc_j)
+	{
+		if(!dESSkimData->Get_IsEventSkim(locReactionSkimVector[loc_j]))
+			return false;
+	}
+
+	return true;
+}
 
 inline void DSourceComboer::Build_ParticleIterators(const vector<int>& locBeamBunches, const vector<const JObject*>& locParticles)
 {
@@ -327,15 +336,22 @@ inline vector<const DSourceCombo*>::const_iterator DSourceComboer::Get_ResumeAtI
 	return std::next(dResumeSearchAfterIterators_Combos[std::make_pair(locPreviousCombo, locVertexZBin)][locBeamBunches]);
 }
 
-inline bool DSourceComboer::Get_IsZIndependent(const JObject* locObject) const
+inline bool DSourceComboer::Get_IsComboingZIndependent(const JObject* locObject, Particle_t locPID) const
 {
 	//make this virtual!
-	auto locNeutralShower = dynamic_cast<const DNeutralShower*>(locObject);
-	if(locNeutralShower == nullptr)
+	if(ParticleCharge(locPID) != 0)
 		return true;
+
+	//actually, everything is z-dependent for massive neutrals.
+	//however the momentum is SO z-dependent, that we can't cut on it until the end when we have the final vertex, AFTER comboing
+	//a mere z-bin is not enough.
+	//So, as far as COMBOING is concerned, massive neutrals are Z-INDEPENDENT
+	if(ParticleMass(locPID) > 0.0)
+		return true;
+
+	auto locNeutralShower = static_cast<const DNeutralShower*>(locObject);
 	return (locNeutralShower->dDetectorSystem == SYS_FCAL);
 }
-
 
 inline DSourceCombosByUse_Large& DSourceComboer::Get_CombosSoFar(ComboingStage_t locComboingStage, Charge_t locChargeContent_SearchForUse, const DSourceCombo* locChargedCombo)
 {

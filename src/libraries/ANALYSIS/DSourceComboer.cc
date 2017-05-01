@@ -5,7 +5,107 @@
 namespace DAnalysis
 {
 
-//Abandon hope, all ye who enter here.
+//Abandon hope, ye who enter here.
+
+/****************************************************** COMBOING STRATEGY ******************************************************
+*
+* Creating all possible combos can be very time- and memory-intensive if not done properly.
+* For example, consider a 4pi0 analysis and 20 (N) reconstructed showers (it happens).
+* If you make all possible pairs of photons (for pi0's), you get 19 + 18 + 17 + ... 1 = (N - 1)*N/2 = 190 pi0 combos.
+* Now, consider that you have 4 pi0s: On the order of 190^4/16: On the order of a 80 million combos (although less once you guard against photon reuse)
+*
+* So, we must do everything we can to reduce the # of possible combos in ADVANCE of actually attempting to make them.
+* And, we have to make sure we don't do anything twice (e.g. two different users have 4pi0s in their channel).
+* The key to this being efficient (besides splitting the BCAL photons into vertex-z bins and placing timing cuts) is combo re-use.
+*
+* For example, suppose a channel needs 3 pi0s.
+* First this will build all combos for 1 pi0, then all combos for 2 pi0s, then 3.  Placing mass cuts along the way.
+* The results after each of these steps is saved.  That way, if someone then requests 2 pi0s, we merely have to return the results from the previous work.
+* Also, if someone later requests 4pi0s, then we just take the 3pi0 results and expand them by 1 pi0.
+* Or, if someone requests p3pi, we take the 1 pi0 combos and combine them with a proton, pi+, and pi-.  Etc., etc.
+*
+* For more details on how this is done, see the comments in the Create_SourceCombos_Unknown function
+* But ultimately, this results in a clusterfuck of recursive calls.
+* Also, because of how the combo-info classes are structured (decaying PID NOT a member), you have be extremely careful not to get into an infinite loop.
+* So, modify this code at your own peril. Just try not to take the rest of the collaboration down with you.
+*
+* Now, technically, when we construct combos for a (e.g.) pi0, we are saving 2 different results:
+*    The combos of 2 photons, and which of those combos survive the pi0 mass cut.
+* That way, if later someone wants to build an eta, all we have to do is take 2-photon combos and place eta mass cuts.
+*
+* Combos are created on-demand, used immediately, and once they are cut the memory is recycled for the next combo in that event.
+*
+*
+* The BCAL photons are evaluated in different vertex-z bins for calculating their kinematics (momentum & timing).
+* This is because their kinematics have a strong dependence on vertex-z, while the FCAL showers do not (see above derivations).
+* Whereas the FCAL photons have only a small dependence, so their kinematics are regardless of vertex-z.
+* For more discussion the above, see the derivations in the DSourceComboTimeHandler and DSourceComboP4Handler classes.
+*
+*
+*
+*
+*
+* Note that combos are constructed separately for different beam bunches.
+* This is because photons only survive their timing cuts for certain beam bunches.
+* Comboing only within a given beam bunch reduces the #photons we need to combo, and is thus faster.
+*
+* When comboing, first all of the FCAL showers alone are used to build the requested combos.
+* Then, the BCAL showers surviving the timing cuts within the input vertex-z bin are used to build the requested combos.
+* Finally, combos are created using a mix of these BCAL & FCAL showers.
+* The results from this comboing is saved for all cases, that way they can be easily retrieved and combined as needed for similar requests.
+*
+*
+*******************************************************************************************************************************/
+
+/****************************************************** DESIGN MOTIVATION ******************************************************
+*
+*
+*
+* 1) Re-use comboing results between DReactions.
+*    If working on each DReaction individually, it is difficult (takes time & memory) to figure out what has already been done, and what to share
+*    So instead, first break down the DReactions to their combo-building components, and share those components.
+*    Then build combos out of the components, and distribute the results for each DReaction.
+*
+* 2) Reduce the time spent trying combos that we can know in advance won't work.
+*    We can do this by placing cuts IMMEDIATELY on:
+*    a) Time difference between charged tracks
+*    b) Time difference between photons and possible RF bunches (discussed more below).
+*    c) Invariant mass cuts for various decaying particles (e.g. pi0, eta, omega, phi, lambda, etc.)
+*    Also, when building combos of charged tracks, we could only loop over PIDs of the right type, rather than all hypotheses
+*
+* 3) The only way to do both 1) and 2) is to make the loose time & mass cuts reaction-independent.
+*    Users can always specify reaction-dependent tighter cuts later, but they cannot specify looser ones.
+*    However, these cuts should be tweakable on the command line in case someone wants to change them.
+*
+*******************************************************************************************************************************/
+
+
+/*****
+ * COMBOING PHOTONS AND RF BUNCHES
+ *
+ * So, this is tricky.
+ * Start out by allowing ALL beam bunches, regardless of what the charged tracks want.
+ * Then, as each photon is chosen, reduce the set of possible photons to choose next: only those that agree on at least one RF bunch
+ * As combos are made, the valid RF bunches are saved along with the combo
+ * That way, as combos are combined with other combos/particles, we make sure that only valid possibilities are chosen.
+ *
+ * We can't start with those only valid for the charged tracks because:
+ * When we generate combos for a given info, we want to generate ALL combos at once.
+ * E.g. some charged tracks may want pi0s with beam bunch = 1, but another group might want pi0s with bunch 1 OR 2.
+ * Dealing with the overlap is a nightmare.  This avoids the problem entirely.
+ *
+ * BEWARE: Massive-neutral-particle momentum depends on the RF bunch. So a cut on the invariant mass with a neutron is effectively a cut on the RF bunches
+ * Suppose: Sigma+ -> pi+ n
+ * You first generate combos for -> pi+ n, and save them for the use X -> pi+, n
+ * We then re-use the combos for the use Sigma+ -> pi+ n
+ * But then a cut on the Sigma+ mass reduces the #valid RF bunches. So now we need a new combo!
+ * We could decouple the RF bunches from the combo: e.g. save in map from combo_use -> rf bunches
+ * However, this would result in many duplicate entries: e.g. X -> 2g, pi0 -> 2g, eta -> 2g, etc.
+ * Users choosing final-state neutrons or KLongs is pretty rare compared to everything else: we are better off just creating new combos
+ *
+ * BEWARE: Massive-neutral-particle momentum depends on the RF bunch. So a cut on the invariant mass with a neutron is effectively a cut on the RF bunches.
+ * So we can't actually vote on RF bunches until we choose our massive-neutral particles!!!
+ */
 
 /********************************************************************* CONSTRUCTOR **********************************************************************/
 
@@ -23,9 +123,21 @@ DSourceComboer::DSourceComboer(JEventLoop* locEventLoop)
 	locGeometry->GetTargetLength(locTargetLength);
 
 	//INITIALIZE PHOTON VERTEX-Z EVALUATION BINNING
+	//MAKE SURE THAT THE CENTER OF THE TARGET IS THE CENTER OF A BIN
+	//this is a little convoluted (and can probably be calculated without loops ...), but it ensures the above
 	dPhotonVertexZBinWidth = 10.0;
-	dPhotonVertexZRangeLow = dTargetCenter.Z() - locTargetLength/2.0 - 5.0;
-	dNumPhotonVertexZBins = round((locTargetLength + 20.0)/dPhotonVertexZBinWidth);
+	size_t locN = 0;
+	double locTargetUpstreamZ = dTargetCenter.Z() - locTargetLength/2.0;
+	double locTargetDownstreamZ = dTargetCenter.Z() + locTargetLength/2.0;
+	do
+	{
+		++locN;
+		dPhotonVertexZRangeLow = dTargetCenter.Z() - double(locN)*dPhotonVertexZBinWidth;
+	}
+	while(dPhotonVertexZRangeLow + dPhotonVertexZBinWidth > locTargetUpstreamZ);
+	while(dPhotonVertexZRangeLow + locN*dPhotonVertexZBinWidth <= locTargetDownstreamZ)
+		++locN;
+	dNumPhotonVertexZBins = locN + 1; //one extra, for detached vertices
 
 	//Get preselect tag
 	gPARMS->SetDefaultParameter("COMBO:SHOWER_SELECT_TAG", dShowerSelectionTag);
@@ -370,11 +482,18 @@ void DSourceComboer::Reset_NewEvent(JEventLoop* locEventLoop)
 	vector<const DNeutralShower*> locNeutralShowers;
 	locEventLoop->Get(locNeutralShowers, dShowerSelectionTag);
 
+	vector<const DChargedTrack*> locChargedTracks;
+	locEventLoop->Get(locChargedTracks, dTrackSelectionTag);
+
 	vector<const DBeamPhoton*> locBeamPhotons;
 	locEventLoop->Get(locBeamPhotons);
 
 	const DEventRFBunch* locInitialRFBunch = nullptr;
 	locEventLoop->GetSingle(locInitialRFBunch);
+
+    vector<const DESSkimData*> locESSkimDataVector;
+    locEventLoop->Get(locESSkimDataVector);
+    dESSkimData = locESSkimDataVector.empty() ? NULL : locESSkimDataVector[0];
 
 	//SETUP NEUTRAL SHOWERS
 	dSourceComboTimeHandler->Setup_NeutralShowers(locNeutralShowers, locInitialRFBunch);
@@ -383,28 +502,76 @@ void DSourceComboer::Reset_NewEvent(JEventLoop* locEventLoop)
 
 	//SETUP BEAM PARTICLES
 	dSourceComboTimeHandler->Set_BeamParticles(locBeamPhotons);
-}
 
+	//SETUP TRACKS
+	for(const auto& locChargedTrack : locChargedTracks)
+	{
+		for(auto& locChargedHypo : locChargedTrack->dChargedTrackHypotheses)
+			dTracksByPID[locChargedHypo->PID()].push_back(locChargedHypo);
+	}
+	//sort: not strictly necessary, but probably(?) makes sorting later go faster
+	for(auto& locPIDPair : dTracksByPID)
+		std::sort(locPIDPair.second.begin(), locPIDPair.second.end());
+}
 
 /******************************************************************* CREATE DSOURCOMBOINFO'S ********************************************************************/
 
-void DSourceComboer::Build_ParticleCombos(JEventLoop* locEventLoop, const DReactionVertexInfo* locReactionVertexInfo)
+void DSourceComboer::Build_ParticleCombos(const DReactionVertexInfo* locReactionVertexInfo)
 {
-	Reset_NewEvent(locEventLoop); //does nothing if not actually a new event
-
 	//This builds the combos and creates DParticleCombo & DParticleComboSteps (doing whatever is necessary)
+	auto locReaction = locReactionVertexInfo->Get_Reaction();
+	if(!Check_NumParticles(locReaction))
+		return; //no combos!
+	if(!Check_Skims(locReaction))
+		return; //no combos!
 
-
-	//What to do about unknown vertices???:
-		//Will know later (e.g. post beam selection): Use all possible showers, postpone BCAL shower PID & mass cuts (FCAL still fine)
-		//Will never know: Use previous position for
-
-
-
-
-
-
-	//FINAL DISCUSSION:
+	/******************************************************** COMBOING STEPS *******************************************************
+	*
+	* CHARGED STAGE:
+	*
+	* OK, we start with charged tracks, because we can't do much with neutrals until we know the vertex to compute the kinematics.
+	* So, we create our combos, skipping all neutral particles, but filling in all charged tracks.
+	*
+	* If mass cuts are needed (e.g. Lambda -> p, pi-), we first create combos of "-> p, pi-", saving them for the USE "X -> p, pi-"
+	* We then place the invariant mass cut, and those that pass get copied and saved for the USE "Lambda -> p, pi-"
+	* Thus, storing the decay PID separately from the combo means we can reuse the combo without creating new objects in this case.
+	*
+	* Once we have our charged track combos, we can find (most of) the vertices (will discuss exceptions below).
+	* Once we have the vertices, we can compute the time offsets between the vertices (the amount of time a decaying particle took to decay).
+	* And we can then place timing cuts on the charged tracks to select which beam bunches are possible.
+	* Now, you might be thinking that we can cut on the timing of the charged tracks BEFORE we find the vertices, but in some cases we can't.
+	* For a discussion on this, see the comments in DSourceComboTimeHandler.
+	*
+	*
+	*
+	* MIXED STAGE: GENERAL
+	*
+	* OK, now let's combo some neutrals.
+	* First, we combo all of the neutrals that are needed with each other, and THEN we combo them with charged tracks.
+	* (This is how the DSourceComboInfo objects were constructed).
+	* This is because pi0 comboing will take the longest, and we want to make sure it is done largely independent of any charged tracks.
+	*
+	*
+	* MIXED STAGE: VERTEX-Z
+	* Now, as discussed earlier, showers can be broken up into z-dependent and z-independent varieties.
+	* Z-Independent: FCAL photons
+	* Z-Dependent: BCAL showers or FCAL massive neutrals
+	* However, since
+	* Again, for details, see the comments in DSourceComboTimeHandler and DSourceComboP4Handler.
+	*
+	* Now, since the z-independent combos can be reused for any vertex-z, they are created first.
+	* Then, the z-dependent combos are created, and combined with the z-independent ones.
+	* To do this, it turns out it's easier to just try to create combos with ALL showers, and then skip creating the ones we've already created.
+	*
+	* While building combos, mass cuts are placed along the way, EXCEPT on combos with massive neutral particles.
+	* This is because the exact vertex position is needed to get an accurate massive-neutral momentum.
+	* While comboing, we want the results to be as re-usable as possible, that's why we use vertex-z bins.
+	* But vertex-z bins are not sufficient for this, so we will cut on invariant masses with massive neutrals later.
+	*
+	*
+	* MIXED STAGE: BEAM BUNCHES
+	* Now, as far s
+	*******************************************************************************************************************************/
 
 	//charged stage: charged only, no neutrals in infos
 
@@ -455,13 +622,11 @@ void DSourceComboer::Build_ParticleCombos(JEventLoop* locEventLoop, const DReact
 		dSourceComboVertexer->Calc_VertexTimeOffsets(locReactionVertexInfo, locReactionChargedCombo);
 
 		//For the charged tracks, apply timing cuts to determine which RF bunches are possible
-		auto locBeamBunches_Charged = dSourceComboTimeHandler->Select_RFBunches_Charged(locReactionVertexInfo, locReactionChargedCombo);
-		if(locBeamBunches_Charged.empty())
-			continue; //failed PID cuts!
+		vector<int> locBeamBunches_Charged;
+		if(!dSourceComboTimeHandler->Select_RFBunches_Charged(locReactionVertexInfo, locReactionChargedCombo, locBeamBunches_Charged))
+			continue; //failed PID timing cuts!
 
-//handle unknown vertex case!!
-
-		//deal with special case of FULLY charged
+		//Special case of FULLY charged
 		auto locChargeContent = dComboInfoChargeContent[locPrimaryComboInfo];
 		if(locChargeContent == d_Charged)
 		{
@@ -489,14 +654,18 @@ void DSourceComboer::Build_ParticleCombos(JEventLoop* locEventLoop, const DReact
 			//E.g. g, p ->  K0, Sigma+    K0 -> 3pi: The selected pi0 photons could help define the production vertex
 			dSourceComboVertexer->Calc_VertexTimeOffsets_WithPhotons(locReactionVertexInfo, locReactionChargedCombo, locReactionFullCombo);
 
-			//PLACE mass cuts on massive neutrals here! Effectively narrows down RF bunches
-			if(dComboInfosWithMassiveNeutrals.find(locPrimaryComboInfo) != dComboInfosWithMassiveNeutrals.end())
-			{
-				if(!dSourceComboP4Handler->Cut_InvariantMass_HasMassiveNeutral(locReactionVertexInfo, locReactionFullCombo, locReactionChargedCombo, locValidRFBunches))
-					continue; //failed cut!
-			}
+			//Now further select rf bunches, using tracks and BCAL photon showers at the vertices we just found
+			if(!dSourceComboTimeHandler->Select_RFBunches_PhotonVertices(locReactionVertexInfo, locReactionChargedCombo, locReactionFullCombo, locValidRFBunches))
+				continue; //failed PID timing cuts!
 
-			//Select final RF bunch
+			//PLACE mass cuts on massive neutrals: Effectively narrows down RF bunches
+			//do 2 things at once (where vertex is known) (hence the really long function name):
+				//calc & cut invariant mass: when massive neutral present
+				//calc & cut invariant mass: when vertex-z was unknown with only charged tracks, but is known now, and contains BCAL photons (won't happen very often)
+			if(!dSourceComboP4Handler->Cut_InvariantMass_HasMassiveNeutral_OrPhotonVertex(locReactionVertexInfo, locReactionFullCombo, locReactionChargedCombo, locValidRFBunches))
+				continue; //failed cut!
+
+			//Select final RF bunch //this is not a cut: at least one has passed all cuts (check by the Get_CombosForComboing function & the mass cuts)
 			auto locRFBunch = dSourceComboTimeHandler->Select_RFBunch_Full(locReactionVertexInfo, locReactionFullCombo, locReactionChargedCombo, locValidRFBunches);
 
 			//If beam not needed, then we are done!
@@ -518,20 +687,29 @@ void DSourceComboer::Build_ParticleCombos(JEventLoop* locEventLoop, const DReact
 				dSourceComboVertexer->Calc_VertexTimeOffsets_WithBeam(locReactionVertexInfo, locReactionChargedCombo, locReactionFullCombo, locBeamParticle);
 
 				//placing timing cuts on the particles at these vertices
+				if(!dSourceComboTimeHandler->Cut_Timing_MissingMassVertices(locReactionVertexInfo, locReactionChargedCombo, locReactionFullCombo, locRFBunch))
+					continue; //FAILED TIME CUTS!
 
-				//place invariant mass cuts on the particles at these vertices, if they had neutral particles (charged is done already!)
+				//place invariant mass cuts on the particles at these vertices (if they had z-dependent neutral showers (BCAL or massive))
+				if(!dSourceComboP4Handler->Cut_InvariantMass_MissingMassVertex(locReactionVertexInfo, locReactionFullCombo, locReactionChargedCombo, locRFBunch))
+					continue; //FAILED MASS CUTS!
 
-				//place missing mass cuts on any missing particles?? or do with an action?
+				//build particle combo
+
+				//prekinfit actions
 
 				//do kinematic fit
 
-				//build particle combo
+				//add kinfit results TO particle combo (instead of making 2x combos!)
 
 				//execute actions
 			}
 		}
 	}
+}
 
+const DParticleCombo* DSourceComboer::Build_ParticleCombo(const DReactionVertexInfo* locReactionVertexInfo, const DSourceCombo* locFullCombo)
+{
 
 }
 
@@ -544,43 +722,6 @@ void DSourceComboer::Build_ParticleCombos(JEventLoop* locEventLoop, const DReact
 //if we combo the 2 rf bunches separately: WE HAVE DUPLICATE COMBOS
 //and doing the duplicate check AFTER the fact takes FOREVER
 //therefore, we must take the neutral showers for the 2 rfs, COMBINE THEM, and then COMBO AS A UNIT
-
-/****************************************************** COMBOING STRATEGY ******************************************************
-*
-* Combos are not created in advance.  They are created on-demand, when needed.
-*
-* The BCAL photons are evaluated in different vertex-z bins for calculating their kinematics (momentum & timing).
-* This is because their kinematics have a strong dependence on vertex-z, while the FCAL showers do not (see above derivations).
-* Whereas the FCAL photons have only a small dependence, so their kinematics are regardless of vertex-z.
-*
-* The key to this being efficient (besides splitting the BCAL photons into vertex-z bins and placing timing cuts) is combo re-use.
-* For example, suppose a channel needs 3 pi0s.
-* First this will build all combos for 1 pi0, then all combos for 2 pi0s, then 3.  Placing mass cuts along the way.
-* The results after each of these steps is saved.  That way, if someone then requests 2 pi0s, we merely have to return the results from the previous work.
-* Also, if someone later requests 4pi0s, then we just take the 3pi0 results and expand them by 1 pi0.
-*
-* Ultimately, this results in a clusterfuck of recursive calls.
-* Also, because of how the combo-info classes are structured (decaying PID NOT a member), you have be extremely careful not to get into an infinite loop.
-* So, modify this code at your own peril. Just try not to take the rest of the collaboration down with you.
-*
-* Now, technically, when we construct combos for a (e.g.) pi0, we are saving 2 different results:
-*    The combos of 2 photons, and which of those combos survive the pi0 mass cut.
-* That way, if later someone wants to build an eta, all we have to do is take 2-photon combos and place eta mass cuts.
-*
-* Note that combos are constructed separately for different beam bunches.
-* This is because photons only survive their timing cuts for certain beam bunches.
-* Comboing only within a given beam bunch reduces the #photons we need to combo, and is thus faster.
-*
-* When comboing, first all of the FCAL showers alone are used to build the requested combos.
-* Then, the BCAL showers surviving the timing cuts within the input vertex-z bin are used to build the requested combos.
-* Finally, combos are created using a mix of these BCAL & FCAL showers.
-* The results from this comboing is saved for all cases, that way they can be easily retrieved and combined as needed for similar requests.
-*
-* Note, if we combo vertically (e.g. 3pi0s, 2pi+'s, etc.), they are created with a use that may be a subset of the old.
-* Then, when we combo them horizontally, they are promoted out of the vertical combo, at the same level as everything else in the new horizontal combo.
-* This reduces the depth-complexity of the combos.
-*
-*******************************************************************************************************************************/
 
 /*
  * suppose reaction is 0) g, p -> omega, p
@@ -653,6 +794,14 @@ void DSourceComboer::Create_SourceCombos(const DSourceComboUse& locComboUseToCre
 		return;
 	}
 
+	if((locComboingStage == d_MixedStage) && (locVertexZBin == DSourceComboInfo::Get_VertexZIndex_Unknown()))
+	{
+		//we need a zbin for BCAL showers, but it is unknown: can't cut yet!
+		locSourceCombosByUseSoFar.emplace(locComboUseToCreate, locSourceCombos);
+		(*locSourceCombosByBeamBunchByUse)[locComboUseToCreate] = (*locSourceCombosByBeamBunchByUse)[locUnknownComboUse];
+		return;
+	}
+
 	//initialize vector for storing results
 	locSourceCombosByUseSoFar.emplace(locComboUseToCreate, dResourcePool_SourceComboVector.Get_Resource());
 	locSourceCombosByUseSoFar[locComboUseToCreate]->reserve(dInitialComboVectorCapacity);
@@ -660,7 +809,7 @@ void DSourceComboer::Create_SourceCombos(const DSourceComboUse& locComboUseToCre
 	//place an invariant mass cut & save the results
 	for(auto locSourceCombo : *locSourceCombos)
 	{
-		if(!dSourceComboP4Handler->Cut_InvariantMass(locSourceCombo, locDecayPID, locVertexZBin))
+		if(!dSourceComboP4Handler->Cut_InvariantMass_NoMassiveNeutrals(locSourceCombo, locDecayPID, locVertexZBin))
 			continue;
 
 		//save the results
@@ -679,22 +828,29 @@ void DSourceComboer::Create_SourceCombos(const DSourceComboUse& locComboUseToCre
 
 void DSourceComboer::Create_SourceCombos_Unknown(const DSourceComboUse& locComboUseToCreate, ComboingStage_t locComboingStage, const DSourceCombo* locChargedCombo_Presiding)
 {
-
-	//First combo VERTICALLY, and then HORIZONTALLY
-	//What does this mean?
-	//Vertically: Make combos of size N of each PID needed (e.g. 3 pi0s)
-	//Horizontally: Make combos of different PIDs (e.g. 2pi0, pi+, pi-, p)
-
-	//Why start with vertical comboing?
-	//because the thing that takes the most time is when someone decides to analyze (e.g.) 2pi0, 3pi0, then 3pi0 eta, 3pi0 something else, 4pi0, etc.
-	//we want to make the Npi0 combos as needed, then reuse the Npi0s when making combos of other types
-	//thus we want to build vertically (pi0s together, then etas together), and THEN horizontally (combine pi0s & etas, etc)
-	//plus, when building vertically, it's easier to keep track of things since the PID / decay-parent is the same
-
-	//Build all possible combos for all NEEDED GROUPINGS for each of the FURTHER DECAYS (if not done already)
-	//this becomes a series of recursive calls
-	//e.g. if need 3 pi0s, call for 2pi0s, which calls for 1pi0, which calls for 2g
-		//then do the actual pi0 groupings on the return
+	/****************************************************** COMBOING PARTICLES *****************************************************
+	*
+	* First combo VERTICALLY, and then HORIZONTALLY
+	* What does this mean?
+	* Vertically: Make combos of size N of each PID needed (e.g. 3 pi0s)
+	* Horizontally: Make combos of different PIDs (e.g. 2pi0, pi+, pi-, p)
+	*
+	* Why start with vertical comboing?
+	* because the thing that takes the most time is when someone decides to analyze (e.g.) 2pi0, 3pi0, then 3pi0 eta, 3pi0 something else, 4pi0, etc.
+	* we want to make the Npi0 combos as needed, then reuse the Npi0s when making combos of other types
+	* thus we want to build vertically (pi0s together, then etas together), and THEN horizontally (combine pi0s & etas, etc)
+	* plus, when building vertically, it's easier to keep track of things since the PID / decay-parent is the same
+	*
+	* Build all possible combos for all NEEDED GROUPINGS for each of the FURTHER DECAYS (if not done already)
+	* this becomes a series of recursive calls
+	* e.g. if need 3 pi0s, call for 2pi0s, which calls for 1pi0, which calls for 2g
+	* then do the actual pi0 groupings on the return
+	*
+	* Note, if we combo vertically (e.g. 3pi0s, 2pi+'s, etc.), they are created with a use that is strictly that content.
+	* Then, when we combo them horizontally, they are promoted out of the vertical combo, at the same level as everything else in the new horizontal combo.
+	* This reduces the depth-complexity of the combos.
+	*
+	*******************************************************************************************************************************/
 
 	Combo_Vertically_AllDecays(locComboUseToCreate, locComboingStage, locChargedCombo_Presiding);
 	if((locComboingStage == d_ChargedStage) || (dComboInfoChargeContent[std::get<2>(locComboUseToCreate)] == d_Neutral))
@@ -703,38 +859,7 @@ void DSourceComboer::Create_SourceCombos_Unknown(const DSourceComboUse& locCombo
 	//OK, now build horizontally!! //group particles with different PIDs
 	Combo_Horizontally_All(locComboUseToCreate, locComboingStage, locChargedCombo_Presiding);
 }
-/*
-bool DSourceComboer::Do_CommonComboingTasks(const DSourceComboUse& locComboUseToCreate, const DSourceComboUse& locAllBut1ComboUse, const DSourceComboUse& locSourceComboUseToAdd, ComboingStage_t locComboingStage, const DSourceCombo* locChargedCombo_WithNow, bool locComboingVertically)
-{
-	//Returns true if comboing is done, false if there's more work to do
-	auto& locSourceCombosByUseToSaveTo = Get_CombosSoFar(locComboingStage, dComboInfoChargeContent[locComboUseToCreate], locChargedCombo_WithNow);
 
-	if(!locComboingVertically)
-	{
-		//this check will never be needed if comboing vertically (can't mix combo-charges)
-		auto locChargeContent = dComboInfoChargeContent[std::get<2>(locSourceComboUseToAdd)];
-		if((locComboingStage == d_ChargedStage) && (locChargeContent == d_Neutral))
-		{
-			//can't add neutrals, so we are already done! just copy the results to the new vector
-			auto& locSourceCombosByUseSoFar = Get_CombosSoFar(d_ChargedStage, d_Charged, nullptr);
-			auto locCombos_AllBut1 = locSourceCombosByUseSoFar[locAllBut1ComboUse];
-			locSourceCombosByUseToSaveTo.emplace(locComboUseToCreate, locCombos_AllBut1);
-			return true;
-		}
-	}
-
-	//if on the all-showers stage, first copy over ALL fcal-only results
-	if(locComboingStage == d_MixedStage)
-		Copy_FCALOnlyResults(locComboUseToCreate, locComboingStage, locChargedCombo_WithNow);
-	else //initialize vector for storing results
-	{
-		locSourceCombosByUseToSaveTo.emplace(locComboUseToCreate, dResourcePool_SourceComboVector.Get_Resource());
-		locSourceCombosByUseToSaveTo[locComboUseToCreate]->reserve(dInitialComboVectorCapacity);
-	}
-
-	return false;
-}
-*/
 /************************************************************** BUILD PHOTON COMBOS - VERTICALLY ****************************************************************/
 
 void DSourceComboer::Combo_Vertically_AllDecays(const DSourceComboUse& locComboUseToCreate, ComboingStage_t locComboingStage, const DSourceCombo* locChargedCombo_Presiding)
@@ -877,7 +1002,7 @@ void DSourceComboer::Combo_Vertically_NDecays(const DSourceComboUse& locComboUse
 		auto Search_Duplicates = [&locUsedParticles_NMinus1](const JObject* locParticle) -> bool
 				{return std::binary_search(locUsedParticles_NMinus1.begin(), locUsedParticles_NMinus1.end(), locParticle);};
 
-		auto locIsZIndependent_NMinus1 = locCombo_NMinus1->Get_IsZIndependent();
+		auto locIsZIndependent_NMinus1 = locCombo_NMinus1->Get_IsComboingZIndependent();
 
 		//now loop over the potential combos
 		for(; locComboSearchIterator != locDecayCombos_1.end(); ++locComboSearchIterator)
@@ -885,7 +1010,7 @@ void DSourceComboer::Combo_Vertically_NDecays(const DSourceComboUse& locComboUse
 			const auto locDecayCombo_1 = *locComboSearchIterator;
 
 			//If on all-showers stage, and combo is fcal-only, don't save (combo already created!!)
-			auto locIsZIndependent = locIsZIndependent_NMinus1 && locDecayCombo_1->Get_IsZIndependent();
+			auto locIsZIndependent = locIsZIndependent_NMinus1 && locDecayCombo_1->Get_IsComboingZIndependent();
 			if((locComboingStage == d_MixedStage) && locIsZIndependent)
 				continue; //this combo has already been created (assuming it was valid): during the FCAL-only stage
 
@@ -1011,7 +1136,7 @@ void DSourceComboer::Combo_Vertically_NParticles(const DSourceComboUse& locCombo
 			auto locRFBunches_First = (locPID == Gamma) ? dSourceComboTimeHandler->Get_ValidRFBunches(*locFirstIterator, locVertexZBin) : {};
 			for(auto locSecondIterator = std::next(locFirstIterator); locSecondIterator != locParticles.end(); ++locSecondIterator)
 			{
-				auto locIsZIndependent = (locComboingStage == d_MixedStage_ZIndependent) || (Get_IsZIndependent(*locFirstIterator) && Get_IsZIndependent(*locSecondIterator));
+				auto locIsZIndependent = (locComboingStage == d_MixedStage_ZIndependent) || (Get_IsComboingZIndependent(*locFirstIterator, locPID) && Get_IsComboingZIndependent(*locSecondIterator, locPID));
 				if((locComboingStage == d_MixedStage) && locIsZIndependent)
 					continue; //this combo has already been created (assuming it was valid): during the FCAL-only stage
 
@@ -1047,11 +1172,11 @@ void DSourceComboer::Combo_Vertically_NParticles(const DSourceComboUse& locCombo
 		if(locParticleSearchIterator == std::end(locParticles))
 			continue; //e.g. this combo is "AD" and there are only 4 reconstructed combos (ABCD): no potential matches! move on to the next N - 1 combo
 
-		auto locIsZIndependent_NMinus1 = locCombo_NMinus1->Get_IsZIndependent();
+		auto locIsZIndependent_NMinus1 = locCombo_NMinus1->Get_IsComboingZIndependent();
 
 		for(; locParticleSearchIterator != locParticles.end(); ++locParticleSearchIterator)
 		{
-			auto locIsZIndependent = (locComboingStage == d_MixedStage_ZIndependent) || (locIsZIndependent_NMinus1 && Get_IsZIndependent(*locParticleSearchIterator));
+			auto locIsZIndependent = (locComboingStage == d_MixedStage_ZIndependent) || (locIsZIndependent_NMinus1 && Get_IsComboingZIndependent(*locParticleSearchIterator, locPID));
 			if((locComboingStage == d_MixedStage) && locIsZIndependent)
 				continue; //this combo has already been created (assuming it was valid): during the FCAL-only stage
 
@@ -1289,7 +1414,7 @@ void DSourceComboer::Create_Combo_OneParticle(const DSourceComboUse& locComboUse
 	const auto& locParticles = Get_ParticlesForComboing(locPID, locComboingStage, {}, locVertexZBin);
 	for(auto locParticle : locParticles)
 	{
-		auto locIsZIndependent = Get_IsZIndependent(locParticle);
+		auto locIsZIndependent = Get_IsComboingZIndependent(locParticle, locPID);
 		if((locComboingStage == d_MixedStage) && locIsZIndependent)
 			continue; //this combo has already been created (assuming it was valid): during the FCAL-only stage
 
@@ -1345,7 +1470,7 @@ void DSourceComboer::Combo_Horizontally_AddCombo(const DSourceComboUse& locCombo
 		//only one valid option: locChargedCombo_WithNow: create all combos immediately
 		for(auto locCombo_AllBut1 : *locCombos_AllBut1)
 		{
-			auto locIsZIndependent = locCombo_AllBut1->Get_IsZIndependent();
+			auto locIsZIndependent = locCombo_AllBut1->Get_IsComboingZIndependent();
 			if((locComboingStage == d_MixedStage) && locIsZIndependent)
 				continue; //this combo has already been created (assuming it was valid): during the FCAL-only stage
 
@@ -1396,12 +1521,12 @@ void DSourceComboer::Combo_Horizontally_AddCombo(const DSourceComboUse& locCombo
 		auto Search_Duplicates = [&locUsedParticles_AllBut1](const JObject* locParticle) -> bool
 			{return std::binary_search(locUsedParticles_AllBut1.begin(), locUsedParticles_AllBut1.end(), locParticle);};
 
-		auto locIsZIndependent_AllBut1 = locCombo_AllBut1->Get_IsZIndependent();
+		auto locIsZIndependent_AllBut1 = locCombo_AllBut1->Get_IsComboingZIndependent();
 
 		//loop over potential combos to add to the group, creating a new combo for each valid (non-duplicate) grouping
 		for(const auto& locDecayCombo_ToAdd : locDecayCombos_ToAdd)
 		{
-			auto locIsZIndependent = (locIsZIndependent_AllBut1 && locDecayCombo_ToAdd->Get_IsZIndependent());
+			auto locIsZIndependent = (locIsZIndependent_AllBut1 && locDecayCombo_ToAdd->Get_IsComboingZIndependent());
 			if((locComboingStage == d_MixedStage) && locIsZIndependent)
 				continue; //this combo has already been created (assuming it was valid): during the FCAL-only stage
 
@@ -1490,7 +1615,7 @@ void DSourceComboer::Combo_Horizontally_AddParticle(const DSourceComboUse& locCo
 
 		//also, pre-get the further decays & FCAL-only flag, as we'll need them to build new combos
 		auto locFurtherDecays = locCombo_AllBut1->Get_FurtherDecayCombos(); //the all-but-1 combo contents by use
-		auto locIsZIndependent_AllBut1 = locCombo_AllBut1->Get_IsZIndependent();
+		auto locIsZIndependent_AllBut1 = locCombo_AllBut1->Get_IsComboingZIndependent();
 
 		//Get potential particles for comboing
 		const auto& locValidRFBunches_AllBut1 = dValidRFBunches_ByCombo[locCombo_AllBut1];
@@ -1499,7 +1624,7 @@ void DSourceComboer::Combo_Horizontally_AddParticle(const DSourceComboUse& locCo
 		//loop over potential showers to add to the group, creating a new combo for each valid (non-duplicate) grouping
 		for(const auto& locParticle : locParticles)
 		{
-			auto locIsZIndependent = (locComboingStage == d_MixedStage_ZIndependent) || (locIsZIndependent_AllBut1 && Get_IsZIndependent(locParticle));
+			auto locIsZIndependent = (locComboingStage == d_MixedStage_ZIndependent) || (locIsZIndependent_AllBut1 && Get_IsComboingZIndependent(locParticle, locPID));
 			if((locComboingStage == d_MixedStage) && locIsZIndependent)
 				continue; //this combo has already been created (assuming it was valid): during the FCAL-only stage
 
@@ -1529,13 +1654,28 @@ void DSourceComboer::Combo_Horizontally_AddParticle(const DSourceComboUse& locCo
 const vector<const JObject*>& DSourceComboer::Get_ParticlesForComboing(Particle_t locPID, ComboingStage_t locComboingStage, const vector<int>& locBeamBunches, signed char locVertexZBin)
 {
 	//find all particles that have an overlapping beam bunch with the input
+
+	//SPECIAL CASES FOR NEUTRALS:
+	//massive neutral: all showers
+	//unknown RF: All showers
+	//unknown vertex, known RF: from each zbin, all showers that were valid for that rf bunch (already setup)
+
 	if(ParticleCharge(locPID) != 0) //charged tracks
 		return dTracksByPID[locPID]; //rf bunch & vertex-z are irrelevant
 	else if(locPID != Gamma) //massive neutrals
 		return dShowersByBeamBunchByZBin[DSourceComboInfo::Get_VertexZIndex_Unknown()][{}]; //all neutrals: cannot do PID at all, and cannot do mass cuts until a specific vertex is chosen, so vertex-z doesn't matter
 
 	if(locComboingStage == d_MixedStage_ZIndependent) //fcal
+	{
 		locVertexZBin = DSourceComboInfo::Get_VertexZIndex_FCAL();
+		auto locGroupBunchIterator = dShowersByBeamBunchByZBin[locVertexZBin].find(locBeamBunches);
+		if(locGroupBunchIterator != dShowersByBeamBunchByZBin[locVertexZBin].end())
+			return locGroupBunchIterator->second;
+		return Get_ShowersByBeamBunch(locBeamBunches, dShowersByBeamBunchByZBin[locVertexZBin]);
+	}
+
+	if(locBeamBunches.empty())
+		return dShowersByBeamBunchByZBin[DSourceComboInfo::Get_VertexZIndex_Unknown()][{}]; //all showers, regardless of vertex-z
 
 	auto locGroupBunchIterator = dShowersByBeamBunchByZBin[locVertexZBin].find(locBeamBunches);
 	if(locGroupBunchIterator != dShowersByBeamBunchByZBin[locVertexZBin].end())

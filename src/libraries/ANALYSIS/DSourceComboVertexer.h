@@ -48,13 +48,14 @@ class DSourceComboVertexer
 		void Calc_VertexTimeOffsets_WithBeam(const DReactionVertexInfo* locReactionVertexInfo, const DSourceCombo* locReactionChargedCombo, const DSourceCombo* locReactionFullCombo, const DKinematicData* locBeamParticle);
 
 		bool Get_VertexDeterminableWithCharged(bool locIsProductionVertex, const DSourceCombo* locSourceCombo) const{return dVertexDeterminableWithChargedMap.find(std::make_pair(locIsProductionVertex, locSourceCombo))->second;}
+		bool Get_VertexDeterminableWithPhotons(bool locIsProductionVertex, const DSourceCombo* locSourceCombo) const{return dVertexDeterminableWithPhotonsMap.find(std::make_pair(locIsProductionVertex, locSourceCombo))->second;}
 
 		//GET RESULTS
 		DVector3 Get_Vertex(bool locIsProductionVertex, const DSourceCombo* locSourceCombo) const;
 		DVector3 Get_Vertex(bool locIsProductionVertex, const vector<const DKinematicData*>& locVertexParticles){return dVertexMap.find(std::make_pair(locIsProductionVertex, locVertexParticles))->second;}
 		double Get_TimeOffset(bool locIsProductionVertex, const DSourceCombo* locReactionCombo, const DSourceCombo* locVertexCombo) const;
 		DVector3 Get_PrimaryVertex(const DReactionVertexInfo* locReactionVertexInfo, const DSourceCombo* locReactionCombo) const;
-		vector<const DKinematicData*> Get_ConstrainingParticles(bool locIsProductionVertex, const DSourceCombo* locVertexCombo) const;
+		vector<const DKinematicData*> Get_ConstrainingParticles(bool locIsProductionVertex, const DSourceCombo* locVertexCombo) const; //this is empty if vertex not found yet!
 
 		//GET VERTEX-Z BINS
 		signed char Get_VertexZBin(bool locIsProductionVertex, const DSourceCombo* locSourceCombo) const;
@@ -84,6 +85,7 @@ class DSourceComboVertexer
 		//VERTICES AND TIME OFFSETS
 		//bool: is production vertex
 		unordered_map<pair<bool, const DSourceCombo*>, bool> dVertexDeterminableWithChargedMap; //excludes dangling vertex infos!! //only includes primary combos at each vertex
+		unordered_map<pair<bool, const DSourceCombo*>, bool> dVertexDeterminableWithPhotonsMap; //excludes determinable-by-charged & dangling vertex infos!! //only includes primary combos at each vertex
 
 		//time offsets depend on the ENTIRE reaction combo, not just the downstream ones! //time offset is from the RF time
 		//bool: is production vertex

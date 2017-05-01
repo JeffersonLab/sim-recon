@@ -50,8 +50,10 @@ class DSourceComboTimeHandler
 		double Calc_PropagatedRFTime(double locPrimaryVertexZ, int locNumRFBunchShifts, double locDetachedVertexTimeOffset) const;
 
 		//SELECT RF BUNCHES
-		vector<int> Select_RFBunches_Charged(const DReactionVertexInfo* locReactionVertexInfo, const DSourceCombo* locChargedCombo) const;
+		bool Select_RFBunches_Charged(const DReactionVertexInfo* locReactionVertexInfo, const DSourceCombo* locChargedCombo, vector<int>& locValidRFBunches);
+		bool Select_RFBunches_PhotonVertices(const DReactionVertexInfo* locReactionVertexInfo, const DSourceCombo* locReactionChargedCombo, const DSourceCombo* locReactionFullCombo, vector<int>& locValidRFBunches);
 		int Select_RFBunch_Full(const DReactionVertexInfo* locReactionVertexInfo, const DSourceCombo* locReactionFullCombo, const DSourceCombo* locReactionChargedCombo, const vector<int>& locRFBunches);
+		bool Cut_Timing_MissingMassVertices(const DReactionVertexInfo* locReactionVertexInfo, const DSourceCombo* locReactionChargedCombo, const DSourceCombo* locReactionFullCombo, int locRFBunch);
 
 	private:
 
@@ -61,6 +63,8 @@ class DSourceComboTimeHandler
 		vector<int> Calc_BeamBunchShifts(double locVertexTime, double locRFTime, double locDeltaTCut, bool locIncludeDecayTimeOffset) const;
 
 		double Calc_MaxDeltaTError(const DNeutralShower* locNeutralShower, const shared_ptr<const DKinematicData>& locKinematicData) const;
+
+		vector<int> Get_RFBunches_ChargedTrack(const DChargedTrack* locChargedTrack, Particle_t locPID, bool locIsProductionVertex, const DSourceCombo* locVertexPrimaryCombo, DVector3 locVertex, double locTimeOffset, double locPropagatedRFTime);
 
 		double Calc_RFDeltaTChiSq(const DNeutralShower* locNeutralShower, int locNumShifts, const TVector3& locVertex, double locPropagatedRFTime) const;
 		double Calc_RFDeltaTChiSq(const DChargedTrackHypothesis* locHypothesis, int locNumShifts, double locVertexTime, double locPropagatedRFTime) const;
@@ -101,7 +105,10 @@ class DSourceComboTimeHandler
 
 		unordered_map<pair<const DKinematicData*, vector<const DKinematicData*>>, DLorentzVector> dChargedParticlePOCAToVertexX4;
 
-		unordered_map<const DSourceCombo*, vector<int>> dChargedComboRFBunches; //empty vector = FAILED cuts
+		unordered_map<const DSourceCombo*, vector<int>> dChargedComboRFBunches; //empty vector = FAILED cuts //combo: charged
+		unordered_map<const DSourceCombo*, vector<int>> dPhotonVertexRFBunches; //combo: full
+		unordered_map<const DSourceCombo*, int> dFullComboRFBunches; //combo: full
+		unordered_map<const DSourceCombo*, bool> dFullComboTimeCutResults; //combo: full
 
 		unordered_map<int, vector<const DKinematicData*>> dBeamParticlesByRFBunch;
 

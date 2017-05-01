@@ -263,6 +263,20 @@ inline bool Check_IfMissingDecayProduct(const DReaction* locReaction, size_t loc
 	return false;
 }
 
+template <typename DType> map<DType, size_t> Convert_VectorToCountMap(const vector<DType>& locVector)
+{
+	map<DType, size_t> locMap;
+	for(auto locObject : locVector)
+	{
+		auto locIterator = locMap.find(locObject);
+		if(locIterator != locMap.end())
+			++(locIterator->second);
+		else
+			locMap.emplace(locObject, 1);
+	}
+	return locMap;
+}
+
 } //end DAnalysis namespace
 
 #endif // _DReaction_
