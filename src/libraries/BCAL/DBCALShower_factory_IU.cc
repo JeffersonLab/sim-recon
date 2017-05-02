@@ -272,7 +272,6 @@ DBCALShower_factory_IU::LoadCovarianceLookupTables(){
 			japp->RootWriteLock();
 			// change directory to memory so that histograms are not saved to file
 			TDirectory *savedir = gDirectory;
-			gROOT->cd();  
 
 			// Read in string
 			ifstream ifs;
@@ -321,6 +320,7 @@ DBCALShower_factory_IU::LoadCovarianceLookupTables(){
 			char histname[255];
 			sprintf(histname,"covariance_%i%i_thread%s",i,j,idstring.str().c_str());
 			CovarianceLookupTable[i][j] = new TH2F(histname,"Covariance histogram",nxbins,xbins,nybins,ybins);
+                        CovarianceLookupTable[i][j]->SetDirectory(nullptr);
 			// fill histogram
 			while(ss>>cont){
 				if (VERBOSE>1) printf("(%2i,%2i)  (%2i,%2i)  %e  ",i,j,xbin,ybin,cont);
