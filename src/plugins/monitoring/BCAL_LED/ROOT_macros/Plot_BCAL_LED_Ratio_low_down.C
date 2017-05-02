@@ -108,20 +108,20 @@ gStyle->SetPadBottomMargin(0.15);
       
 	
 	
-		run1_low_down_1 = (TProfile*)run1in->Get("bcalLED/low_bias_down_column_1_peak_vchannel");
-		run1_low_down_2 = (TProfile*)run1in->Get("bcalLED/low_bias_down_column_2_peak_vchannel");
-		run1_low_down_3 = (TProfile*)run1in->Get("bcalLED/low_bias_down_column_3_peak_vchannel");
-		run1_low_down_4 = (TProfile*)run1in->Get("bcalLED/low_bias_down_column_4_peak_vchannel");
+		run1_low_down_1 = (TProfile*)run1in->Get("bcalLED/low_bias_down_sector_1_peak_vchannel");
+		run1_low_down_2 = (TProfile*)run1in->Get("bcalLED/low_bias_down_sector_2_peak_vchannel");
+		run1_low_down_3 = (TProfile*)run1in->Get("bcalLED/low_bias_down_sector_3_peak_vchannel");
+		run1_low_down_4 = (TProfile*)run1in->Get("bcalLED/low_bias_down_sector_4_peak_vchannel");
 		
 		//sprintf(string,"BCAL_LED_Reference_Spring2016.root");
 		//printf ("Histogram input filename=%s\n",string);
 		//TFile *run2in = new TFile(string,"read");
 		TFile *run2in = GetReferenceFile(run);
 		
-		run2_low_down_1 = (TProfile*)run2in->Get("bcalLED/low_bias_down_column_1_peak_vchannel");
-		run2_low_down_2 = (TProfile*)run2in->Get("bcalLED/low_bias_down_column_2_peak_vchannel");
-		run2_low_down_3 = (TProfile*)run2in->Get("bcalLED/low_bias_down_column_3_peak_vchannel");
-		run2_low_down_4 = (TProfile*)run2in->Get("bcalLED/low_bias_down_column_4_peak_vchannel");
+		run2_low_down_1 = (TProfile*)run2in->Get("bcalLED/low_bias_down_sector_1_peak_vchannel");
+		run2_low_down_2 = (TProfile*)run2in->Get("bcalLED/low_bias_down_sector_2_peak_vchannel");
+		run2_low_down_3 = (TProfile*)run2in->Get("bcalLED/low_bias_down_sector_3_peak_vchannel");
+		run2_low_down_4 = (TProfile*)run2in->Get("bcalLED/low_bias_down_sector_4_peak_vchannel");
 		
 		cout << "input profiles, projecting into histograms" << "\n";
 		
@@ -138,10 +138,10 @@ gStyle->SetPadBottomMargin(0.15);
 		
 		cout << "profiles projected into histograms" << "\n";
 
-		run1_low_down_1_hist->SetTitle("6v Downstream column 1");
-		run1_low_down_2_hist->SetTitle("6v Downstream column 2");
-		run1_low_down_3_hist->SetTitle("6v Downstream column 3");
-		run1_low_down_4_hist->SetTitle("6v Downstream column 4");
+		run1_low_down_1_hist->SetTitle("6v Downstream sector 1");
+		run1_low_down_2_hist->SetTitle("6v Downstream sector 2");
+		run1_low_down_3_hist->SetTitle("6v Downstream sector 3");
+		run1_low_down_4_hist->SetTitle("6v Downstream sector 4");
 
 		cout << "Divideing histograms" << "\n";
 		
