@@ -129,7 +129,11 @@ jerror_t DEventSourceREST::GetEvent(JEvent &event)
          hddm_r::DataVersionStringList::iterator Versioniter;
          for (Versioniter = locVersionStrings.begin(); Versioniter != locVersionStrings.end(); ++Versioniter) {
         	 string HDDM_DATA_VERSION_STRING = Versioniter->getText();
-             gPARMS->SetDefaultParameter("REST:DATAVERSIONSTRING", HDDM_DATA_VERSION_STRING);
+             if(gPARMS->Exists("REST:DATAVERSIONSTRING"))
+                gPARMS->SetParameter("REST:DATAVERSIONSTRING", HDDM_DATA_VERSION_STRING);
+	     else
+	 	gPARMS->SetDefaultParameter("REST:DATAVERSIONSTRING", HDDM_DATA_VERSION_STRING);
+	     break;
          }
 
          //set REST calib context
