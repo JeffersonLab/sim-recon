@@ -49,6 +49,16 @@ private:
   double exponential_param0;
   double exponential_param1;
   double exponential_param2;
+  double nonlin_form;
+  double const_term;
+  double first_term_scale_factor;
+  double first_exp_param0;
+  double first_exp_param1;
+  double second_term_scale_factor;
+  double second_exp_const_term;
+  double second_exp_scale_factor;
+  double second_exp_param0;
+  double second_exp_param1;
 
   double m_zTarget;
 
