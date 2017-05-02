@@ -49,7 +49,8 @@ enum FDCTrackD {
    dDOCAC_dx,
    dDOCAC_dy,
    dDOCAC_dtx,
-   dDOCAC_dty
+   dDOCAC_dty,
+   size
 };
 
 enum FDCPseudoD {

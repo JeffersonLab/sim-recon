@@ -7657,7 +7657,7 @@ jerror_t DTrackFitterKalmanSIMD::SmoothForward(void){
                double tx=Ss(state_tx);
                double ty=Ss(state_ty);
 
-               // Small angle alignmnet correction
+               // Small angle alignment correction
                x = x + my_fdchits[id]->phiZ*y;
                y = y - my_fdchits[id]->phiZ*x;
                //tz = 1. + my_fdchits[id]->phiY*tx - my_fdchits[id]->phiX*ty;
@@ -7746,7 +7746,7 @@ jerror_t DTrackFitterKalmanSIMD::SmoothForward(void){
 
                vector<double> alignmentDerivatives;
                if (ALIGNMENT_FORWARD){
-                  alignmentDerivatives.resize(19);
+                  alignmentDerivatives.resize(FDCTrackD::size);
                   // Let's get the alignment derivatives
                   //Need the uncorrectes state vector
                   x=Ss(state_x);

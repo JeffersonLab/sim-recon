@@ -1607,14 +1607,22 @@ DTrackCandidate_factory_StraightLine::KalmanFilter(DMatrix4x1 &S,DMatrix4x4 &C,
       if (trajectory[k].id>0){
          unsigned int id=trajectory[k].id-1;
 
-         double cospsi=hits[id]->wire->udir.y();
-         double sinpsi=hits[id]->wire->udir.x();
+         double cospsi=cos(hits[id]->wire->angle);
+         double sinpsi=sin(hits[id]->wire->angle);
 
          // State vector
          double x=S(state_x);
          double y=S(state_y);
          double tx=S(state_tx);
          double ty=S(state_ty);
+
+         // Small angle alignment correction
+         x = x + hits[id]->wire->angles.Z()*y;
+         y = y - hits[id]->wire->angles.Z()*x;
+         //tz = 1. + my_fdchits[id]->phiY*tx - my_fdchits[id]->phiX*ty;
+         tx = (tx + hits[id]->wire->angles.Z()*ty - hits[id]->wire->angles.Y());
+         ty = (ty - hits[id]->wire->angles.Z()*tx + hits[id]->wire->angles.X());
+
          if (std::isnan(x) || std::isnan(y)) return UNRECOVERABLE_ERROR;
 
          // x,y and tx,ty in local coordinate system	
@@ -1939,8 +1947,9 @@ DTrackCandidate_factory_StraightLine::Smooth(deque<trajectory_t>&trajectory,
          dC=A*(Cs-C)*A.Transpose();
          Cs=fdc_updates[id].C+dC;
 
-         double cosa=hits[id]->wire->udir.y();
-         double sina=hits[id]->wire->udir.x();
+         double cosa=cos(hits[id]->wire->angle);
+         double cos2a=cos(2*hits[id]->wire->angle);
+         double sina=sin(hits[id]->wire->angle);
          double u=hits[id]->w;
          double v=hits[id]->s;
 
@@ -1949,6 +1958,14 @@ DTrackCandidate_factory_StraightLine::Smooth(deque<trajectory_t>&trajectory,
          double y=Ss(state_y);
          double tx=Ss(state_tx);
          double ty=Ss(state_ty);
+
+         // Small angle alignment correction
+         x = x + hits[id]->wire->angles.Z()*y;
+         y = y - hits[id]->wire->angles.Z()*x;
+         //tz = 1. + my_fdchits[id]->phiY*tx - my_fdchits[id]->phiX*ty;
+         tx = (tx + hits[id]->wire->angles.Z()*ty - hits[id]->wire->angles.Y());
+         ty = (ty - hits[id]->wire->angles.Z()*tx + hits[id]->wire->angles.X());
+
          // Projected position along the wire 
          double vpred=x*sina+y*cosa;
 
@@ -2036,35 +2053,58 @@ DTrackCandidate_factory_StraightLine::Smooth(deque<trajectory_t>&trajectory,
 
          if (hits[id]->wire->layer!=PLANE_TO_SKIP){
             vector<double> derivatives;
-            derivatives.resize(13);
-            //dDOCAW/ddeltax
-            derivatives[FDCTrackD::dDOCAW_dDeltaX] = (-1.)/sqrt(one_plus_tu2);
+            derivatives.resize(FDCTrackD::size);
+
+            // Need uncorrected track parameters for the derivatives.
+            x=Ss(state_x);
+            y=Ss(state_y);
+            tx=Ss(state_tx);
+            ty=Ss(state_ty);
+
+            //dDOCAW/dDeltaX
+            derivatives[FDCTrackD::dDOCAW_dDeltaX] = -(1/sqrt(1 + pow(tx*cosa - ty*sina,2)));
+
+            //dDOCAW/dDeltaZ
+            derivatives[FDCTrackD::dDOCAW_dDeltaZ] = (tx*cosa - ty*sina)/sqrt(1 + pow(tx*cosa - ty*sina,2));
 
             //dDOCAW/ddeltaPhiX
-            double cos2a = cos(2.*hits[id]->wire->angle);
-            //double sin2a = sin(2.*hits[id]->wire->angle);
-            double tx2 = tx*tx;
-            double ty2 = ty*ty;
-            derivatives[FDCTrackD::dDOCAW_dDeltaPhiX] = (-1.)*(tx*ty*u*cos2a+(x+ty2*x-tx*ty*y)*sina+(y+tx2*y-tx*ty*x+(tx2-ty2)*u*sina)*cosa)/sqrt(one_plus_tu2)/one_plus_tu2;
+            derivatives[FDCTrackD::dDOCAW_dDeltaPhiX] = (sina*(-(tx*cosa) + ty*sina)*(u - x*cosa + y*sina))/pow(1 + pow(tx*cosa - ty*sina,2),1.5);
+
+            //dDOCAW/ddeltaphiY
+            derivatives[FDCTrackD::dDOCAW_dDeltaPhiY] = (cosa*(tx*cosa - ty*sina)*(-u + x*cosa - y*sina))/pow(1 + pow(tx*cosa - ty*sina,2),1.5);
+
+            //dDOCAW/ddeltaphiZ
+            derivatives[FDCTrackD::dDOCAW_dDeltaPhiZ] = (tx*ty*u*cos2a + (x + pow(ty,2)*x - tx*ty*y)*sina + 
+                  cosa*(-(tx*ty*x) + y + pow(tx,2)*y + (pow(tx,2) - pow(ty,2))*u*sina))/
+               pow(1 + pow(tx*cosa - ty*sina,2),1.5);
 
             // dDOCAW/dx
-            derivatives[FDCTrackD::dDOCAW_dx] = cosa/sqrt(one_plus_tu2);
+            derivatives[FDCTrackD::dDOCAW_dx] = cosa/sqrt(1 + pow(tx*cosa - ty*sina,2));
 
             // dDOCAW/dy
-            derivatives[FDCTrackD::dDOCAW_dy] = (-1.)*sina/sqrt(one_plus_tu2);
+            derivatives[FDCTrackD::dDOCAW_dy] = -(sina/sqrt(1 + pow(tx*cosa - ty*sina,2)));
 
             // dDOCAW/dtx
-            derivatives[FDCTrackD::dDOCAW_dtx] = (-1.)*cosa*tu*(upred-u)/sqrt(one_plus_tu2)/one_plus_tu2;
+            derivatives[FDCTrackD::dDOCAW_dtx] = -((cosa*(tx*cosa - ty*sina)*(-u + x*cosa - y*sina))/pow(1 + pow(tx*cosa - ty*sina,2),1.5));
 
             // dDOCAW/dty
-            derivatives[FDCTrackD::dDOCAW_dty] = sina*tu*(upred-u)/sqrt(one_plus_tu2)/one_plus_tu2; 
+            derivatives[FDCTrackD::dDOCAW_dty] = (sina*(-(tx*cosa) + ty*sina)*(u - x*cosa + y*sina))/pow(1 + pow(tx*cosa - ty*sina,2),1.5); 
 
             // And the cathodes
             //dDOCAW/ddeltax
             derivatives[FDCTrackD::dDOCAC_dDeltaX] = 0.;
 
+            //dDOCAW/ddeltax
+            derivatives[FDCTrackD::dDOCAC_dDeltaZ] = ty*cosa + tx*sina;
+
             //dDOCAW/ddeltaPhiX
-            derivatives[FDCTrackD::dDOCAC_dDeltaPhiX] = upred;
+            derivatives[FDCTrackD::dDOCAC_dDeltaPhiX] = 0.;
+
+            //dDOCAW/ddeltaPhiX
+            derivatives[FDCTrackD::dDOCAC_dDeltaPhiY] = 0.;
+
+            //dDOCAW/ddeltaPhiX
+            derivatives[FDCTrackD::dDOCAC_dDeltaPhiZ] = -(x*cosa) + y*sina;
 
             // dDOCAW/dx
             derivatives[FDCTrackD::dDOCAC_dx] = sina;
