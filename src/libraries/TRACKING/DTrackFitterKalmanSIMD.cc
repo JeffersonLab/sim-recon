@@ -4909,8 +4909,8 @@ kalman_error_t DTrackFitterKalmanSIMD::KalmanForward(double fdc_anneal_factor,
                      double mytcorr=0.;
                      double d_shifted;
                      double dt=5.0;
-                     // Dont compute this for very low drift times
-                     if (tdrift < 50.) d_shifted = dm;
+                     // Dont compute this for negative drift times
+                     if (tdrift < 0.) d_shifted = dm;
                      else ComputeCDCDrift(dphi,delta,tdrift+dt,B,d_shifted,myV,mytcorr);
                      dDdt0=(d_shifted-dm)/dt;
                   }
@@ -5583,7 +5583,7 @@ kalman_error_t DTrackFitterKalmanSIMD::KalmanForwardCDC(double anneal,DMatrix5x1
                   double mytcorr=0.;
                   double d_shifted;
                   double dt=2.0;
-                  if (tdrift < 50.) d_shifted = dm;
+                  if (tdrift < 0.) d_shifted = dm;
                   else ComputeCDCDrift(dphi,delta,tdrift+dt,B,d_shifted,myV,mytcorr);
                   dDdt0=(d_shifted-dm)/dt;
                }
@@ -7782,7 +7782,7 @@ jerror_t DTrackFitterKalmanSIMD::SmoothForward(void){
                   double t0shift=4.;//ns
                   double drift_shift = 0.0;
                   if(USE_FDC_DRIFT_TIMES){
-                     if (drift_time < 25.) drift_shift = drift;
+                     if (drift_time < 0.) drift_shift = drift;
                      else drift_shift = (du>0.0?1.:-1.)*fdc_drift_distance(drift_time+t0shift,forward_traj[m].B);
                   }
                   alignmentDerivatives[FDCTrackD::dW_dt0]= (drift_shift-drift)/t0shift;
