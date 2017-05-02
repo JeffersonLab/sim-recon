@@ -106,27 +106,31 @@ gStyle->SetPadBottomMargin(0.15);
    printf ("Histogram input filename=%s\n",infilename.c_str());
    TFile *run1in = new TFile(infilename.c_str(),"read");
 	
-		TProfile *column1_up_peak_vevent2 = (TProfile*)run1in->Get("bcalLED/column1_up_peak_vevent2");
-		if (column1_up_peak_vevent2->FindLastBinAbove(0,1) > 100) run1_low_down_1 = (TProfile*)run1in->Get("bcalLED/high_bias_down_column_1_peak_vchannel");
+// 		TProfile *sector1_up_peak_vevent2 = (TProfile*)run1in->Get("bcalLED/sector1_up_peak_vevent2");
+// 		if (sector1_up_peak_vevent2->FindLastBinAbove(0,1) > 100) 
+		  run1_low_down_1 = (TProfile*)run1in->Get("bcalLED/high_bias_down_sector_1_peak_vchannel");
 
-		TProfile *column2_up_peak_vevent2 = (TProfile*)run1in->Get("bcalLED/column2_up_peak_vevent2");
- 		if (column2_up_peak_vevent2->FindLastBinAbove(0,1) > 100) run1_low_down_2 = (TProfile*)run1in->Get("bcalLED/high_bias_down_column_2_peak_vchannel");
+// 		TProfile *sector2_up_peak_vevent2 = (TProfile*)run1in->Get("bcalLED/sector2_up_peak_vevent2");
+//  		if (sector2_up_peak_vevent2->FindLastBinAbove(0,1) > 100) 
+		  run1_low_down_2 = (TProfile*)run1in->Get("bcalLED/high_bias_down_sector_2_peak_vchannel");
 
-		TProfile *column3_up_peak_vevent2 = (TProfile*)run1in->Get("bcalLED/column3_up_peak_vevent2");
- 		if (column3_up_peak_vevent2->FindLastBinAbove(0,1) > 100) run1_low_down_3 = (TProfile*)run1in->Get("bcalLED/high_bias_down_column_3_peak_vchannel");
+// 		TProfile *sector3_up_peak_vevent2 = (TProfile*)run1in->Get("bcalLED/sector3_up_peak_vevent2");
+//  		if (sector3_up_peak_vevent2->FindLastBinAbove(0,1) > 100) 
+		  run1_low_down_3 = (TProfile*)run1in->Get("bcalLED/high_bias_down_sector_3_peak_vchannel");
 
-		TProfile *column4_up_peak_vevent2 = (TProfile*)run1in->Get("bcalLED/column4_up_peak_vevent2");
- 		if (column4_up_peak_vevent2->FindLastBinAbove(0,1) > 100) run1_low_down_4 = (TProfile*)run1in->Get("bcalLED/high_bias_down_column_4_peak_vchannel");
+// 		TProfile *sector4_up_peak_vevent2 = (TProfile*)run1in->Get("bcalLED/sector4_up_peak_vevent2");
+//  		if (sector4_up_peak_vevent2->FindLastBinAbove(0,1) > 100) 
+		  run1_low_down_4 = (TProfile*)run1in->Get("bcalLED/high_bias_down_sector_4_peak_vchannel");
 		
 		//sprintf(string,"BCAL_LED_Reference_Spring2016.root");
 		//printf ("Histogram input filename=%s\n",string);
 		//TFile *run2in = new TFile(string,"read");
 		TFile *run2in = GetReferenceFile(run);
 		
-		run2_low_down_1 = (TProfile*)run2in->Get("bcalLED/low_bias_down_column_1_peak_vchannel");
-		run2_low_down_2 = (TProfile*)run2in->Get("bcalLED/low_bias_down_column_2_peak_vchannel");
-		run2_low_down_3 = (TProfile*)run2in->Get("bcalLED/low_bias_down_column_3_peak_vchannel");
-		run2_low_down_4 = (TProfile*)run2in->Get("bcalLED/low_bias_down_column_4_peak_vchannel");
+		run2_low_down_1 = (TProfile*)run2in->Get("bcalLED/low_bias_down_sector_1_peak_vchannel");
+		run2_low_down_2 = (TProfile*)run2in->Get("bcalLED/low_bias_down_sector_2_peak_vchannel");
+		run2_low_down_3 = (TProfile*)run2in->Get("bcalLED/low_bias_down_sector_3_peak_vchannel");
+		run2_low_down_4 = (TProfile*)run2in->Get("bcalLED/low_bias_down_sector_4_peak_vchannel");
 		
 		cout << "input profiles, projecting into histograms" << "\n";
 		
