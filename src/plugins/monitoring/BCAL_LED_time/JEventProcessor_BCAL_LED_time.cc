@@ -3,157 +3,8 @@
 //    File: JEventProcessor_BCAL_LED_time.cc
 //
 
-#include <stdint.h>
-#include <vector>
-#include "TTree.h"
+
 #include "JEventProcessor_BCAL_LED_time.h"
-#include <JANA/JApplication.h>
-#include <iostream>
-#include <fstream>
-
-using namespace std;
-using namespace jana;
-
-#include "BCAL/DBCALDigiHit.h"
-#include "BCAL/DBCALHit.h"
-#include "BCAL/DBCALPoint.h"
-#include "BCAL/DBCALUnifiedHit.h"
-#include "DAQ/Df250PulseIntegral.h"
-#include "DAQ/Df250WindowRawData.h"
-#include "TRIGGER/DL1Trigger.h"
-
-#include <TDirectory.h>
-#include <TH3.h>
-#include <TH2.h>
-#include <TH1.h>
-#include <TProfile2D.h>
-#include <TStyle.h>
-
-// root hist pointers
-
-//all channels
-static TProfile *bcal_time_vevent = NULL;
-
-//2 sides
-static TProfile *up_time_vevent = NULL;
-static TProfile *down_time_vevent = NULL;
-//4 columns
-static TProfile *column1_time_vevent = NULL;
-static TProfile *column2_time_vevent = NULL;
-static TProfile *column3_time_vevent = NULL;
-static TProfile *column4_time_vevent = NULL;
-
-static TProfile *column1_up_peak_vevent = NULL;
-static TProfile *column2_up_peak_vevent = NULL;
-static TProfile *column3_up_peak_vevent = NULL;
-static TProfile *column4_up_peak_vevent = NULL;
-static TProfile *column1_down_peak_vevent = NULL;
-static TProfile *column2_down_peak_vevent = NULL;
-static TProfile *column3_down_peak_vevent = NULL;
-static TProfile *column4_down_peak_vevent = NULL;
-
-
-static TProfile *column1_up_time_vevent1 = NULL;
-static TProfile *column1_down_time_vevent1 = NULL;
-static TProfile *column1_up_time_vevent2 = NULL;
-static TProfile *column1_down_time_vevent2 = NULL;
-static TProfile *column1_up_time_vevent3 = NULL;
-static TProfile *column1_down_time_vevent3 = NULL;
-static TProfile *column1_up_time_vevent4 = NULL;
-static TProfile *column1_down_time_vevent4 = NULL;
-
-static TProfile *column2_up_time_vevent1 = NULL;
-static TProfile *column2_down_time_vevent1 = NULL;
-static TProfile *column2_up_time_vevent2 = NULL;
-static TProfile *column2_down_time_vevent2 = NULL;
-static TProfile *column2_up_time_vevent3 = NULL;
-static TProfile *column2_down_time_vevent3 = NULL;
-static TProfile *column2_up_time_vevent4 = NULL;
-static TProfile *column2_down_time_vevent4 = NULL;
-
-static TProfile *column3_up_time_vevent1 = NULL;
-static TProfile *column3_down_time_vevent1 = NULL;
-static TProfile *column3_up_time_vevent2 = NULL;
-static TProfile *column3_down_time_vevent2 = NULL;
-static TProfile *column3_up_time_vevent3 = NULL;
-static TProfile *column3_down_time_vevent3 = NULL;
-static TProfile *column3_up_time_vevent4 = NULL;
-static TProfile *column3_down_time_vevent4 = NULL;
-
-static TProfile *column4_up_time_vevent1 = NULL;
-static TProfile *column4_down_time_vevent1 = NULL;
-static TProfile *column4_up_time_vevent2 = NULL;
-static TProfile *column4_down_time_vevent2 = NULL;
-static TProfile *column4_up_time_vevent3 = NULL;
-static TProfile *column4_down_time_vevent3 = NULL;
-static TProfile *column4_up_time_vevent4 = NULL;
-static TProfile *column4_down_time_vevent4 = NULL;
-
-  
-    
-static TProfile *low_up_1 = NULL;
-static TProfile *low_up_2 = NULL;
-static TProfile *low_up_3 = NULL;
-static TProfile *low_up_4 = NULL;
-static TProfile *low_down_1 = NULL;
-static TProfile *low_down_2 = NULL;
-static TProfile *low_down_3 = NULL;
-static TProfile *low_down_4 = NULL;
-
-static TProfile *low_up = NULL;
-static TProfile *low_down = NULL;
-
-static TProfile *high_up_1 = NULL;
-static TProfile *high_up_2 = NULL;
-static TProfile *high_up_3 = NULL;
-static TProfile *high_up_4 = NULL;
-static TProfile *high_down_1 = NULL;
-static TProfile *high_down_2 = NULL;
-static TProfile *high_down_3 = NULL;
-static TProfile *high_down_4 = NULL;
-
-static TProfile *high_up = NULL;
-static TProfile *high_down = NULL;
-
-// Histograms added by Elton for z distributions
-
-
-
-static TProfile* h2_ledboth_Tall_vs_event = NULL;
-static TProfile* h2_ledboth_sector_vs_event = NULL;
-static TH1I* h1_ledall_layer = NULL;
-
-static TH1I* h1_ledup_z_all = NULL;;
-static TH2I* h2_ledup_z_vs_cellid = NULL;
-static TH1I* h1_ledup_layer = NULL;
-static TH1I* h1_ledup_sector = NULL;
-static TH1I* h1_ledup_sector_config = NULL;
-static TH1I* h1_ledup_Tdiff_all = NULL;
-static TH1I* h1_ledup_Tup_all = NULL;
-static TH1I* h1_ledup_Tdown_all = NULL;
-static TH2I* h2_ledup_Tup_vs_z = NULL;
-static TH2I* h2_ledup_Tdown_vs_z = NULL;
-static TProfile* h2_ledup_Tup_vs_event = NULL;
-static TProfile* h2_ledup_Tdown_vs_event = NULL;
-static TProfile* h2_ledup_Tall_vs_event = NULL;
-static TProfile* h2_ledup_sector_vs_event = NULL;
-
-static TH1I* h1_leddown_z_all = NULL;
-static TH2I* h2_leddown_z_vs_cellid = NULL;
-static TH1I* h1_leddown_layer = NULL;
-static TH1I* h1_leddown_sector = NULL;
-static TH1I* h1_leddown_sector_config = NULL;
-static TH1I* h1_leddown_Tdiff_all = NULL;
-static TH1I* h1_leddown_Tup_all = NULL;
-static TH1I* h1_leddown_Tdown_all = NULL;
-static TH2I* h2_leddown_Tup_vs_z = NULL;
-static TH2I* h2_leddown_Tdown_vs_z = NULL;
-static TProfile* h2_leddown_Tup_vs_event = NULL;
-static TProfile* h2_leddown_Tdown_vs_event = NULL;
-static TProfile* h2_leddown_Tall_vs_event = NULL;
-static TProfile* h2_leddown_sector_vs_event = NULL;
-
-
 
 
 //----------------------------------------------------------------------------------
@@ -360,6 +211,7 @@ jerror_t JEventProcessor_BCAL_LED_time::init(void) {
 	h2_ledboth_Tall_vs_event = new TProfile("h2_ledboth_Tall_vs_event", "LED uboth - Tup and Tdown vs event", 20000,0,200000000);
 	h2_ledboth_sector_vs_event = new TProfile("h2_ledboth_sector_vs_event", "LED both - sector vs event", 20000,0,200000000);
 	h1_ledall_layer = new TH1I("h1_ledall_layer", "LED ALL - layer", 5,0,5);
+	h1_led0_layer = new TH1I("h1_led0_layer", "LED No bit - layer", 5,0,5);
 
 	h1_ledup_layer = new TH1I("h1_ledup_layer", "LED up - layer", 5,0,5);
 	h1_ledup_sector = new TH1I("h1_ledup_sector", "LED up - sector", 50,0,5);
@@ -433,6 +285,7 @@ jerror_t JEventProcessor_BCAL_LED_time::evnt(JEventLoop *loop, uint64_t eventnum
 	
 	
 	bool LED_US=0, LED_DS=0;
+	bool LED_0=0;
 	
 	const DL1Trigger *trig = NULL;
 	try {
@@ -483,18 +336,59 @@ jerror_t JEventProcessor_BCAL_LED_time::evnt(JEventLoop *loop, uint64_t eventnum
 	float leddown_mean = 0;
 	int leddown_events = 0;
         // fill layer histogram
+	loop->Get(dbcalhits);
+	loop->Get(bcaldigihits);
+	loop->Get(dbcalpoints);   
 
-	/*for( unsigned int i=0; i<dbcalpoints.size(); i++) {
-	     int layer = dbcalpoints[i]->layer();
-	     h1_ledall_layer->Fill(layer);
-	     }*/
+	// tag events that did not latch properly. Steal code from Sean's skim program
+
+	double total_bcal_energy = 0.;
+        for(unsigned int i=0; i<dbcalhits.size(); i++) {
+            total_bcal_energy += dbcalhits[i]->E;
+        }
+	if (!(LED_US || LED_DS)) {
+	    LED_0 = (dbcalhits.size() >= 200) || (total_bcal_energy > 12.);
+	    }
+
+	// use timing difference to decide which trigger should have fired.
+
+	float Tdiff = 0;
+	for( unsigned int i=0; i<dbcalpoints.size(); i++) {
+	     dbcalpoints[i]->Get(hitVector);
+	     const DBCALHit *Hit1 = hitVector[0];
+	     const DBCALHit *Hit2 = hitVector[1];
+	     float Tup = 0;
+	     float Tdown = 0;
+	     if (Hit1->end == DBCALGeometry::kUpstream && Hit2->end == DBCALGeometry::kDownstream) {
+		  Tup = Hit1->t_raw;
+		  Tdown = Hit2->t_raw;
+		  Tdiff += Tdown - Tup;
+	     }
+	     else if (Hit2->end == DBCALGeometry::kUpstream && Hit1->end == DBCALGeometry::kDownstream){
+		  Tup = Hit2->t_raw;
+		  Tdown = Hit1->t_raw;
+		  Tdiff += Tdown - Tup;
+	     }
+	}
 	
-	if (LED_US || LED_DS) {
-		
+	if (LED_0) {
+	  if (Tdiff > 0) {
+	    LED_US = 1;
+	  }
+	  else if (Tdiff < 0) {   // eliminate Tdiff=0 default
+	    LED_DS = 1;
+	  }
+	  cout << " total_bcal_energy=" << total_bcal_energy << " bcalhits=" << dbcalhits.size() << endl; 
+	  cout << "LED_US=" << LED_US << " LED_DS=" << LED_DS << " LED_0=" << LED_0 << " Tdiff=" << Tdiff << endl;
+	} 
 
-		loop->Get(dbcalhits);
-		loop->Get(bcaldigihits);
-		loop->Get(dbcalpoints);
+	if (! (LED_US || LED_DS)) {
+	  cout << " *** No bit set " << endl;
+	  cout << " total_bcal_energy=" << total_bcal_energy << " bcalhits=" << dbcalhits.size() << endl; 
+	  cout << "LED_US=" << LED_US << " LED_DS=" << LED_DS << " LED_0=" << LED_0 << " Tdiff=" << Tdiff << endl;
+	}
+
+	if (LED_US || LED_DS) {
 		
 	        float apedsubtime[1536] = { 0. };
 	        int apedsubpeak[1536] = { 0 };
@@ -506,6 +400,7 @@ jerror_t JEventProcessor_BCAL_LED_time::evnt(JEventLoop *loop, uint64_t eventnum
 			int sector = dbcalpoints[i]->sector();
 			int cell_id = (module-1)*16 + (layer-1)*4 + sector-1;
 			h1_ledall_layer->Fill(layer);
+			if (LED_0) h1_led0_layer->Fill(layer);
 
 			/*if (layer != 3) {
 			  // cout << "*** reject " << " module=" << module << " layer=" << layer << " sector=" << sector << " cell_id=" << cell_id << endl;
@@ -538,7 +433,7 @@ jerror_t JEventProcessor_BCAL_LED_time::evnt(JEventLoop *loop, uint64_t eventnum
 			  Tdiff = Tdown - Tup;
 			}
 
-			cout << "i=" << i << " m=" << module << " l=" << layer << " s=" << sector << " id=" << cell_id << " Aup=" << Aup << " Adown=" << Adown << " Tup=" << Tup << " Tdown=" << Tdown << " Tdif=" << Tdiff << endl;
+			// cout << "i=" << i << " m=" << module << " l=" << layer << " s=" << sector << " id=" << cell_id << " Aup=" << Aup << " Adown=" << Adown << " Tup=" << Tup << " Tdown=" << Tdown << " Tdif=" << Tdiff << endl;
 
 			// fill histograms for all channels
 			if (LED_US) {
@@ -589,7 +484,7 @@ jerror_t JEventProcessor_BCAL_LED_time::evnt(JEventLoop *loop, uint64_t eventnum
 				leddown_sector += sector;
 				leddown_mean += Aup + Adown;
 				leddown_events++;
-			  cout << "DS - eventnumber=" << eventnumber << " Aup=" << Aup << " Adown=" << Adown << " Tup=" << Tup << " Tdown=" << Tdown << " Tdiff=" << Tdiff << endl;
+				// cout << "DS - eventnumber=" << eventnumber << " Aup=" << Aup << " Adown=" << Adown << " Tup=" << Tup << " Tdown=" << Tdown << " Tdiff=" << Tdiff << endl;
 				
 			} // if condition on z
 
@@ -612,7 +507,7 @@ jerror_t JEventProcessor_BCAL_LED_time::evnt(JEventLoop *loop, uint64_t eventnum
 				ledup_sector += sector;
 				ledup_mean += Aup + Adown;
 				ledup_events++;
-			  cout << "US - eventnumber=" << eventnumber << " Aup=" << Aup << " Adown=" << Adown << " Tup=" << Tup << " Tdown=" << Tdown << " Tdiff=" << Tdiff << endl;
+				// cout << "US - eventnumber=" << eventnumber << " Aup=" << Aup << " Adown=" << Adown << " Tup=" << Tup << " Tdown=" << Tdown << " Tdiff=" << Tdiff << endl;
 			} // if condition on z
 
 		}//loop over bcalhits
@@ -625,8 +520,8 @@ jerror_t JEventProcessor_BCAL_LED_time::evnt(JEventLoop *loop, uint64_t eventnum
 	 if (LED_US) h1_ledup_sector_config->Fill(ledup_sector_int);
 	 if (LED_DS) h1_leddown_sector_config->Fill(leddown_sector_int);
 
-	 cout << " ledup_events=" << ledup_events << " ledup_sector_int=" << ledup_sector_int << " ledup_mean=" << ledup_mean << endl;
-	 cout << " leddown_events=" << leddown_events << " ledown_sector=" << leddown_sector_int << " leddown_mean=" << leddown_mean << endl << endl;
+	 // cout << " ledup_events=" << ledup_events << " ledup_sector_int=" << ledup_sector_int << " ledup_mean=" << ledup_mean << endl;
+	 // cout << " leddown_events=" << leddown_events << " ledown_sector=" << leddown_sector_int << " leddown_mean=" << leddown_mean << endl << endl;
 
 			
 	 // float sector_delta=0.2;
@@ -688,26 +583,11 @@ jerror_t JEventProcessor_BCAL_LED_time::evnt(JEventLoop *loop, uint64_t eventnum
 	for (int chid = 0; chid < 1536; chid++)  {
 	  // if (chcounter[chid] > 1) continue;
 	      if (chcounter[chid] != 1) continue;
-	      Int_t module;
-	      Int_t layer;
-	      Int_t sector;
-	      if (chid < 768) {
-		module = chid/16 + 1;
-		layer = (chid - (module-1)*16)/4 + 1;
-		sector = (chid - (module-1)*16 - (layer-1)*4) +1; 
-	      }
-	      else {
-		module = (chid-768)/16 + 1; 
-	        layer = (chid-768 - (module-1)*16)/4 + 1;
-		sector = (chid-768 - (module-1)*16 - (layer-1)*4) +1;
-	      }
-	      cout << " Pre-HIST module=" << module << " layer=" << layer << " sector=" << sector << " LED_US=" << LED_US << " LED_DS=" << LED_DS << " Tdiff=" << apedsubtime[chid]-apedsubtime[chid+768] << endl;
-	      
 				if (LED_US) {
 				    if (ledup_sector_int == 1 && chid%4+1 == 1) {
 				      if (column1up < adccount1) {
 					if (chid < 768) low_up->Fill(chid,apedsubtime[chid]-apedsubtime[chid+768]);  // fill in time difference hists
-	      cout << " UP HIST module=" << module << " layer=" << layer << " sector=" << sector << " LED_US=" << LED_US << " LED_DS=" << LED_DS << " Tdiff=" << apedsubtime[chid]-apedsubtime[chid+768] << endl;
+					// cout << " UP HIST module=" << module << " layer=" << layer << " sector=" << sector << " LED_US=" << LED_US << " LED_DS=" << LED_DS << " Tdiff=" << apedsubtime[chid]-apedsubtime[chid+768] << endl;
 					low_up_1->Fill(chid,apedsubtime[chid]);
 					if (chid < 768) {
 					  column1_down_time_vevent2->Fill(eventnumber,apedsubtime[chid]);
@@ -799,7 +679,7 @@ jerror_t JEventProcessor_BCAL_LED_time::evnt(JEventLoop *loop, uint64_t eventnum
 				      if (column1down < adccount1) {
 					if (chid < 768) {
 					  low_down->Fill(chid,apedsubtime[chid]-apedsubtime[chid+768]);  // fill in time difference hists
-					  cout << " DS HIST chid=" << chid << " module=" << module << " layer=" << layer << " sector=" << sector << " LED_US=" << LED_US << " LED_DS=" << LED_DS << " Tdiff=" << apedsubtime[chid]-apedsubtime[chid+768] << endl;
+					  // cout << " DS HIST chid=" << chid << " module=" << module << " layer=" << layer << " sector=" << sector << " LED_US=" << LED_US << " LED_DS=" << LED_DS << " Tdiff=" << apedsubtime[chid]-apedsubtime[chid+768] << endl;
 					}
 					low_down_1->Fill(chid,apedsubtime[chid]);
 					// if (eventnumber >31500000 && eventnumber <46000000) cout << " chid=" << chid << " column1down=" << column1down << " apedsub=" << apedsubtime[chid] << endl;
@@ -813,7 +693,7 @@ jerror_t JEventProcessor_BCAL_LED_time::evnt(JEventLoop *loop, uint64_t eventnum
 				      else {
 					if (chid < 768) {
 					  high_down->Fill(chid,apedsubtime[chid]-apedsubtime[chid+768]);  // fill in time difference hists
-					  cout << " DS HIST chid=" << chid << " module=" << module << " layer=" << layer << " sector=" << sector << " LED_US=" << LED_US << " LED_DS=" << LED_DS << " Tdiff=" << apedsubtime[chid]-apedsubtime[chid+768] << endl;
+					  // cout << " DS HIST chid=" << chid << " module=" << module << " layer=" << layer << " sector=" << sector << " LED_US=" << LED_US << " LED_DS=" << LED_DS << " Tdiff=" << apedsubtime[chid]-apedsubtime[chid+768] << endl;
 					}
 					high_down_1->Fill(chid,apedsubtime[chid]);
 					if (chid < 768) {
