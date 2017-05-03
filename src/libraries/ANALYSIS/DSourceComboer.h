@@ -39,18 +39,16 @@ using namespace jana;
 
 namespace DAnalysis
 {
+//build particle combo
+//make sure someone calls Reset for the DSourceComboer!!
 
 //ANY TIME:
-//If 2 DReactions are identical in particle content: same reaction vertex info (have vector<DReaction>)
 //MAKE A DChargedTrack_Combo factory. It takes new DTrackTimeBased, makes hypos, combines them with existing hypos (from preselect factory), and makes new charged tracks
-
-//AT THE END:
-//VERY CAREFULLY recycle resources
-//CONSIDER VECTOR INSTEAD OF MAP FOR DSourceCombosByUse_Small
-//destructor contents!
+//implement beam/RF delta-t cut! (be careful: channel dependent!)
+//tweak default mass & pid cuts
+//change all references to bcal/fcal to z-independent/dependent showers
 
 //MISCELLANEOUS TO DO:
-//All loops over all containers should be const auto&
 //When saving ROOT TTree, don't save p4 of decaying particles if mass is not constrained in kinfit!
 	//And make sure it's not grabbed in DSelector by default
 
@@ -66,7 +64,10 @@ struct DCompare_SourceComboInfos{
 using DCombosByBeamBunch = unordered_map<vector<int>, vector<const DSourceCombo*>>;
 using DSourceCombosByBeamBunchByUse = unordered_map<DSourceComboUse, DCombosByBeamBunch>;
 using DComboIteratorsByBeamBunch = unordered_map<vector<int>, vector<const DSourceCombo*>::const_iterator>; //vector<int>: RF bunches (empty for all)
-using DSourceCombosByUse_Large = map<DSourceComboUse, vector<const DSourceCombo*>*>;
+//The DSourceCombosByUse_Large type uses a vector to pointer so that the combos can be easily copied and reused for another use
+//e.g. when you can't place a mass cut yet: 2 different uses, identical combos: far faster to just copy the pointer to the large vector
+using DSourceCombosByUse_Large = unordered_map<DSourceComboUse, vector<const DSourceCombo*>*>;
+using DCombosByReaction = unordered_map<const DReaction*, vector<const DParticleCombo*>>;
 
 /************************************************************** DEFINE CLASSES ***************************************************************/
 
@@ -84,6 +85,9 @@ class DSourceComboer : public JObject
 		DSourceComboer(void) = delete;
 		DSourceComboer(JEventLoop* locEventLoop);
 		DSourceComboer::~DSourceComboer(void);
+
+		//BUILD COMBOS (what should be called from the outside to do all of the work)
+		unordered_map<const DReaction*, vector<const DParticleCombo*>> Build_ParticleCombos(const DReactionVertexInfo* locReactionVertexInfo);
 
 		//Get combo characteristics
 		Charge_t Get_ChargeContent(const DSourceComboInfo* locSourceComboInfo) const{return dComboInfoChargeContent.find(locSourceComboInfo)->second;}
@@ -107,6 +111,7 @@ class DSourceComboer : public JObject
 
 		//SETUP
 		void Reset_NewEvent(JEventLoop* locEventLoop);
+		void Recycle_ComboResources(DSourceCombosByUse_Large& locCombosByUse);
 		void Setup_NeutralShowers(JEventLoop* locEventLoop);
 
 		//INITIAL CHECKS
@@ -128,6 +133,10 @@ class DSourceComboer : public JObject
 		//CREATE COMBOS - GENERAL METHODS
 		void Create_SourceCombos(const DSourceComboUse& locComboUseToCreate, ComboingStage_t locComboingStage, const DSourceCombo* locChargedCombo_Presiding);
 		void Create_SourceCombos_Unknown(const DSourceComboUse& locComboUseToCreate, ComboingStage_t locComboingStage, const DSourceCombo* locChargedCombo_Presiding);
+
+		//CREATE COMBOS - WITH BEAM & NEUTRALS METHODS
+		void Combo_WithNeutralsAndBeam(const DReactionVertexInfo* locReactionVertexInfo, const DSourceComboUse& locPrimaryComboUse, const DSourceCombo* locReactionChargedCombo, const vector<int>& locBeamBunches_Charged, DCombosByReaction& locOutputComboMap);
+		void Combo_WithBeam(const DReactionVertexInfo* locReactionVertexInfo, const DSourceCombo* locReactionFullCombo, int locRFBunch, DCombosByReaction& locOutputComboMap);
 
 		//COMBO VERTICALLY METHODS
 		//Note that vertical comboing always takes place at the same vertex-z
@@ -164,19 +173,25 @@ class DSourceComboer : public JObject
 		//COMBO UTILITY FUNCTIONS
 		DSourceCombosByUse_Large& Get_CombosSoFar(ComboingStage_t locComboingStage, Charge_t locChargeContent_SearchForUse, const DSourceCombo* locChargedCombo = nullptr);
 		DSourceCombosByBeamBunchByUse& Get_SourceCombosByBeamBunchByUse(Charge_t locChargeContent_SearchForUse, const DSourceCombo* locChargedCombo = nullptr);
-		void Copy_ZIndependentMixedResults(const DSourceComboUse& locComboUseToCreate, ComboingStage_t locComboingStage, const DSourceCombo* locChargedCombo_WithNow);
+		void Copy_ZIndependentMixedResults(const DSourceComboUse& locComboUseToCreate, const DSourceCombo* locChargedCombo_WithNow);
 		const DSourceCombo* Get_StepSourceCombo(const DReaction* locReaction, size_t locDesiredStepIndex, const DSourceCombo* locSourceCombo_Current, size_t locCurrentStepIndex = 0);
 		const DSourceCombo* Get_ChargedCombo_WithNow(const DSourceCombo* locChargedCombo_Presiding) const;
 		const DSourceCombo* Get_Presiding_ChargedCombo(const DSourceCombo* locChargedCombo_Presiding, const DSourceComboUse& locNextComboUse, ComboingStage_t locComboingStage, size_t locInstance) const;
 
 		/************************************************************** DEFINE MEMBERS ***************************************************************/
 
+		//CONTROL INFORMATION
 		uint64_t dEventNumber = 0; //re-setup on new events
 		string dShowerSelectionTag = "PreSelect";
 		string dTrackSelectionTag = "Combo";
 
 		//EXPERIMENT INFORMATION
 		DVector3 dTargetCenter;
+
+		//COMMAND LINE CUTS
+		pair<bool, size_t> dNumPlusMinusRFBunches = std::make_pair(false, 0); //by default use DReaction cut //only use this if set on command line
+		unordered_map<const DReaction*, size_t> dRFBunchCutsByReaction;
+		unordered_map<const DReactionVertexInfo*, size_t> dMaxRFBunchCuts;
 
 		//VERTEX-DEPENDENT PHOTON INFORMATION
 		//For every 10cm in vertex-z, calculate the photon p4 & time for placing mass & delta-t cuts
@@ -187,14 +202,10 @@ class DSourceComboer : public JObject
 		float dPhotonVertexZRangeLow;
 		size_t dNumPhotonVertexZBins;
 
-		//SKIM INFORMATION
-		const DESSkimData* dESSkimData = nullptr;
-
-		//CHARGED TRACKS
-		unordered_map<Particle_t, vector<const JObject*>> dTracksByPID;
-
-		//NEUTRAL SHOWERS
-		unordered_map<signed char, DPhotonShowersByBeamBunch> dShowersByBeamBunchByZBin; //char: zbin
+		//HANDLERS AND VERTEXERS
+		DSourceComboVertexer* dSourceComboVertexer;
+		DSourceComboP4Handler* dSourceComboP4Handler;
+		DSourceComboTimeHandler* dSourceComboTimeHandler;
 
 		//SOURCE COMBO INFOS: CREATED ONCE DURING DSOURCECOMBOER OBJECT CONSTRUCTION
 			//with some exceptions (specific vertex-z, etc.)
@@ -215,9 +226,16 @@ class DSourceComboer : public JObject
 		unordered_map<pair<const DReactionVertexInfo*, vector<signed char>>, DSourceComboUse> dSourceComboUseVertexZMap;
 		unordered_map<DSourceComboUse, DSourceComboUse> dZDependentUseToIndependentMap; //from z-dependent -> z-independent
 
+		//SKIM INFORMATION
+		const DESSkimData* dESSkimData = nullptr;
+
+		//PARTICLES
+		unordered_map<Particle_t, vector<const JObject*>> dTracksByPID;
+		unordered_map<signed char, DPhotonShowersByBeamBunch> dShowersByBeamBunchByZBin; //char: zbin
+
 		//SOURCE COMBOS //vector: z-bin //if attempted and all failed, DSourceCombosByUse_Large vector will be empty
 		size_t dInitialComboVectorCapacity = 100;
-		DSourceCombosByUse_Large dSourceCombosByUse;
+		DSourceCombosByUse_Large dSourceCombosByUse_Charged;
 		unordered_map<const DSourceCombo*, DSourceCombosByUse_Large> dMixedCombosByUseByChargedCombo; //key: charged combo //value: contains mixed & neutral combos //neutral: key is nullptr
 		//also, sort by which beam bunches they are valid for: that way when comboing, we can retrieve only the combos that can possibly match the input RF bunches
 		unordered_map<const DSourceCombo*, DSourceCombosByBeamBunchByUse> dSourceCombosByBeamBunchByUse; //key: charged combo //value: contains mixed & neutral combos: key is nullptr
@@ -243,11 +261,6 @@ class DSourceComboer : public JObject
 		//RESOURCE POOLS
 		DResourcePool<DSourceCombo> dResourcePool_SourceCombo;
 		DResourcePool<vector<const DSourceCombo>> dResourcePool_SourceComboVector;
-
-		//HANDLERS AND VERTEXERS
-		DSourceComboVertexer* dSourceComboVertexer;
-		DSourceComboP4Handler* dSourceComboP4Handler;
-		DSourceComboTimeHandler* dSourceComboTimeHandler;
 };
 
 /*********************************************************** INLINE MEMBER FUNCTION DEFINITIONS ************************************************************/
@@ -361,9 +374,9 @@ inline DSourceCombosByUse_Large& DSourceComboer::Get_CombosSoFar(ComboingStage_t
 
 	//NOTE: If on mixed stage, it is NOT valid to get fully-charged combos from here! In fact, what you want is probably the input combo!
 	if(locComboingStage == d_ChargedStage)
-		return dSourceCombosByUse;
+		return dSourceCombosByUse_Charged;
 	else if(locChargeContent_SearchForUse == d_Neutral)
-		return dMixedCombosByUseByChargedCombo[nullptr];
+		return dMixedCombosByUseByChargedCombo[nullptr]; //if fully neutral, then the charged combo doesn't matter: only matters for mixing charges
 	return dMixedCombosByUseByChargedCombo[locChargedCombo];
 }
 
@@ -378,9 +391,27 @@ inline DSourceCombosByBeamBunchByUse& DSourceComboer::Get_SourceCombosByBeamBunc
 	return dSourceCombosByBeamBunchByUse[locChargedCombo];
 }
 
+inline void DSourceComboer::Recycle_ComboResources(DSourceCombosByUse_Large& locCombosByUse)
+{
+	for(auto& locCombosByUsePair : locCombosByUse)
+	{
+		//the combos after mass cuts are IDENTICAL to those before the mass cuts: the pointers are just copied
+		//don't recycle them twice!: Only recycle combos stored for a use with an Unknown decay PID
+		if(std::get<0>(locCombosByUsePair.first) != Unknown)
+			continue; //don't recycle! would recycle the same pointers twice!
+
+		//recycle the combos
+		auto locVectorPointer = locCombosByUsePair.second;
+		dResourcePool_SourceCombo.Recycle(*locVectorPointer);
+
+		//the above MOVED the resources out of the vector, and cleared the vector: it now has a capacity of zero
+		dResourcePool_SourceComboVector.Recycle(locVectorPointer); //recycle the combo vector
+	}
+}
+
 inline DSourceComboer::~DSourceComboer(void)
 {
-//DELETE MORE THINGS!!
+	//no need for a resource pool for these objects, as they will exist for the length of the program
 	for(auto locComboInfo : dSourceComboInfos)
 		delete locComboInfo;
 }

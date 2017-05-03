@@ -19,26 +19,33 @@ namespace DAnalysis
 
 class DReactionVertexInfo : public JObject
 {
-public:
-	JOBJECT_PUBLIC(DReactionVertexInfo);
+	public:
+		JOBJECT_PUBLIC(DReactionVertexInfo);
 
-	//CONSTRUCTORS
-	DReactionVertexInfo(void) = delete;
-	DReactionVertexInfo(const DReaction* locReaction, const vector<shared_ptr<DReactionStepVertexInfo>>& locStepVertexInfos);
+		//CONSTRUCTORS
+		DReactionVertexInfo(void) = delete;
+		DReactionVertexInfo(const DReaction* locReaction, const vector<shared_ptr<DReactionStepVertexInfo>>& locStepVertexInfos);
 
-	//GETTERS
-	const DReaction* Get_Reaction(void) const{return dReaction;}
-	vector<shared_ptr<const DReactionStepVertexInfo>> Get_StepVertexInfos(void) const{return dStepVertexInfos;}
-	shared_ptr<const DReactionStepVertexInfo> Get_StepVertexInfo(size_t locStepIndex) const{return dVertexInfoMap.at(locStepIndex);}
+		//SETTERS
+		void Add_Reaction(const DReaction* locReaction){return dReactions.push_back(locReaction);}
 
-private:
-	const DReaction* dReaction;
-	vector<shared_ptr<const DReactionStepVertexInfo>> dStepVertexInfos; //in order of construction dependency
-	unordered_map<size_t, shared_ptr<const DReactionStepVertexInfo>> dVertexInfoMap; //key is step index
+		//GETTERS
+		const DReaction* Get_Reaction(void) const{return dReactions.front();} //since their channels are identical, often any one will do
+		vector<const DReaction*> Get_Reactions(void) const{return dReactions;}
+		vector<shared_ptr<const DReactionStepVertexInfo>> Get_StepVertexInfos(void) const{return dStepVertexInfos;}
+		shared_ptr<const DReactionStepVertexInfo> Get_StepVertexInfo(size_t locStepIndex) const{return dVertexInfoMap.at(locStepIndex);}
+
+	private:
+
+		//these all have identical channel content: particles & steps must be in the same order, although actions, etc. may be different
+		vector<const DReaction*> dReactions;
+
+		vector<shared_ptr<const DReactionStepVertexInfo>> dStepVertexInfos; //in order of construction dependency
+		unordered_map<size_t, shared_ptr<const DReactionStepVertexInfo>> dVertexInfoMap; //key is step index
 };
 
 inline DReactionVertexInfo::DReactionVertexInfo(const DReaction* locReaction, const vector<shared_ptr<DReactionStepVertexInfo>>& locStepVertexInfos) :
-		dReaction(locReaction)
+		dReactions({locReaction})
 {
 	//transform into vector of shared_ptr containing const pointers
 	auto locConstify = [](shared_ptr<DReactionStepVertexInfo>& locVertexInfo) {return std::const_pointer_cast<const DReactionStepVertexInfo>(locVertexInfo);};

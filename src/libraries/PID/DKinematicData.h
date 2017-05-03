@@ -25,7 +25,7 @@ class DKinematicData : public JObject
 
 		// constructors and destructor
 		DKinematicData(void);
-		DKinematicData(Particle_t locPID, DVector3 locMomentum, DVector3 locPosition = DVector3(), double locTime = 0.0, const TMatrixFSym* locErrorMatrix = nullptr);
+		DKinematicData(Particle_t locPID, const DVector3& locMomentum, DVector3 locPosition = DVector3(), double locTime = 0.0, const TMatrixFSym* locErrorMatrix = nullptr);
 		DKinematicData(const DKinematicData& locSourceData, bool locShareKinematicsFlag = false);
 		virtual ~DKinematicData(void) {};
 
@@ -62,6 +62,7 @@ class DKinematicData : public JObject
 		DLorentzVector x4(void) const{return DLorentzVector(position(), time());}
 
 		//SETTERS
+		void Set_Members(Particle_t locPID, const DVector3& locMomentum, DVector3 locPosition = DVector3(), double locTime = 0.0, const TMatrixFSym* locErrorMatrix = nullptr);
 		void setPID(Particle_t locPID){dKinematicInfo->dPID = locPID;}
 		void setMomentum(const DVector3& aMomentum){dKinematicInfo->dMomentum = aMomentum;}
 		void setPosition(const DVector3& aPosition){dKinematicInfo->dPosition = aPosition;}
@@ -88,7 +89,8 @@ class DKinematicData : public JObject
 		struct DKinematicInfo
 		{
 			//CONSTRUCTORS
-			DKinematicInfo(Particle_t locPID, DVector3 locMomentum, DVector3 locPosition = DVector3(), double locTime = 0.0, const TMatrixFSym* locErrorMatrix = nullptr);
+			DKinematicInfo(Particle_t locPID, const DVector3& locMomentum, DVector3 locPosition = DVector3(), double locTime = 0.0, const TMatrixFSym* locErrorMatrix = nullptr);
+			void Set_Members(Particle_t locPID, const DVector3& locMomentum, DVector3 locPosition = DVector3(), double locTime = 0.0, const TMatrixFSym* locErrorMatrix = nullptr);
 
 			//MEMBERS
 			Particle_t dPID = Unknown;
@@ -111,7 +113,7 @@ class DKinematicData : public JObject
 
 inline DKinematicData::DKinematicData(void) : dKinematicInfo(std::make_shared<DKinematicInfo>()) {}
 
-inline DKinematicData::DKinematicData(Particle_t locPID, DVector3 locMomentum, DVector3 locPosition, double locTime, const TMatrixFSym* locErrorMatrix) :
+inline DKinematicData::DKinematicData(Particle_t locPID, const DVector3& locMomentum, DVector3 locPosition, double locTime, const TMatrixFSym* locErrorMatrix) :
 		dKinematicInfo(std::make_shared<DKinematicInfo>(locPID, locMomentum, locPosition, locTime, locErrorMatrix)) {}
 
 inline DKinematicData::DKinematicData(const DKinematicData& locSourceData, bool locShareKinematicsFlag)
@@ -127,10 +129,24 @@ inline DKinematicData& DKinematicData::operator=(const DKinematicData& locSource
 	return *this;
 }
 
-inline DKinematicData::DKinematicInfo::DKinematicInfo(Particle_t locPID, DVector3 locMomentum, DVector3 locPosition, double locTime, const TMatrixFSym* locErrorMatrix) :
+inline DKinematicData::DKinematicInfo::DKinematicInfo(Particle_t locPID, const DVector3& locMomentum, DVector3 locPosition, double locTime, const TMatrixFSym* locErrorMatrix) :
 dPID(locPID), dMomentum(locMomentum), dPosition(locPosition), dTime(locTime), dErrorMatrix(locErrorMatrix) {}
 
 /*********************************************************************** RESET *************************************************************************/
+
+inline void DKinematicData::Set_Members(Particle_t locPID, const DVector3& locMomentum, DVector3 locPosition, double locTime, const TMatrixFSym* locErrorMatrix)
+{
+	dKinematicInfo->Set_Members(locPID, locMomentum, locPosition, locTime, locErrorMatrix);
+}
+
+inline void DKinematicData::DKinematicInfo::Set_Members(Particle_t locPID, const DVector3& locMomentum, DVector3 locPosition, double locTime, const TMatrixFSym* locErrorMatrix)
+{
+	dPID = locPID;
+	dMomentum = locMomentum;
+	dPosition = locPosition;
+	dTime = locTime;
+	dErrorMatrix = locErrorMatrix;
+}
 
 inline void DKinematicData::Reset(void)
 {

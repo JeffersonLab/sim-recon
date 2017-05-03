@@ -50,11 +50,6 @@ jerror_t DParticleCombo_factory_PreKinFit::brun(jana::JEventLoop *locEventLoop, 
 	locEventLoop->GetSingle(dAnalysisUtilities);
 
 	//Only set the below values if they were set on the command line.
-	if(gPARMS->Exists("COMBO:MAX_PHOTON_RF_DELTAT"))
-	{
-		dMaxPhotonRFDeltaT.first = true;
-		gPARMS->GetParameter("COMBO:MAX_PHOTON_RF_DELTAT", dMaxPhotonRFDeltaT.second);
-	}
 
 	if(gPARMS->Exists("COMBO:MIN_CHARGED_PID_FOM"))
 	{

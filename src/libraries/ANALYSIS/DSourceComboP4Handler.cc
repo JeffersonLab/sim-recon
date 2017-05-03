@@ -145,7 +145,7 @@ DSourceComboP4Handler::DSourceComboP4Handler(JEventLoop* locEventLoop, DSourceCo
 	dInvariantMassCuts.emplace(Xi0, dInvariantMassCuts[XiMinus]);
 }
 
-DLorentzVector DSourceComboP4Handler::Get_P4_NonMassiveNeutral(Particle_t locPID, const JObject* locObject, signed char locVertexZBin) const
+DLorentzVector DSourceComboP4Handler::Get_P4_NotMassiveNeutral(Particle_t locPID, const JObject* locObject, signed char locVertexZBin) const
 {
 	if(ParticleCharge(locPID) != 0)
 	{
@@ -156,7 +156,7 @@ DLorentzVector DSourceComboP4Handler::Get_P4_NonMassiveNeutral(Particle_t locPID
 	//assume is photon!
 	auto locNeutralShower = static_cast<const DNeutralShower*>(locObject);
 	if(locNeutralShower->dDetectorSystem == SYS_FCAL)
-		locVertexZBin = DSourceComboInfo::Get_VertexZIndex_FCAL();
+		locVertexZBin = DSourceComboInfo::Get_VertexZIndex_ZIndependent();
 	auto& locKinematicData = dPhotonKinematics.find(locVertexZBin)->second.find(locNeutralShower)->second;
 	return locKinematicData->lorentzMomentum();
 }
@@ -197,8 +197,8 @@ DLorentzVector DSourceComboP4Handler::Calc_P4_NoMassiveNeutrals(const DSourceCom
 	//vertex-z bin may be different for decay products! (detached vertex)
 	//save/retrieve masses by combo instead
 	auto locSourceParticles = locSourceCombo->Get_SourceParticles(false); //false: NOT the whole chain
-	for(auto locParticlePair : locSourceParticles)
-		locTotalP4 += Get_P4_NonMassiveNeutral(locParticlePair.first, locParticlePair.second, locVertexZBin);
+	for(const auto& locParticlePair : locSourceParticles)
+		locTotalP4 += Get_P4_NotMassiveNeutral(locParticlePair.first, locParticlePair.second, locVertexZBin);
 
 	//loop over decays
 	auto locFurtherDecayCombos = locSourceCombo->Get_FurtherDecayCombos();
@@ -219,7 +219,7 @@ DLorentzVector DSourceComboP4Handler::Calc_P4_SourceParticles(const DSourceCombo
 	//z-bin is kept separate from locVertex because it may indicate special values, or the vertex may not be known yet
 	DLorentzVector locTotalP4(0.0, 0.0, 0.0, 0.0);
 	auto locSourceParticles = locSourceCombo->Get_SourceParticles(false); //false: NOT the whole chain
-	for(auto locParticlePair : locSourceParticles)
+	for(const auto& locParticlePair : locSourceParticles)
 	{
 		auto locPID = locParticlePair.first;
 		if((ParticleCharge(locPID) == 0) && (ParticleMass(locPID) > 0.0))
@@ -228,7 +228,7 @@ DLorentzVector DSourceComboP4Handler::Calc_P4_SourceParticles(const DSourceCombo
 			locTotalP4 += Calc_MassiveNeutralP4(locNeutralShower, locPID, locVertex, locRFVertexTime);
 		}
 		else
-			locTotalP4 += Get_P4_NonMassiveNeutral(locParticlePair.first, locParticlePair.second, locVertexZBin);
+			locTotalP4 += Get_P4_NotMassiveNeutral(locParticlePair.first, locParticlePair.second, locVertexZBin);
 	}
 	return locTotalP4;
 }
@@ -320,17 +320,17 @@ bool DSourceComboP4Handler::Cut_InvariantMass_HasMassiveNeutral(bool locIsProduc
 	return !locValidRFBunches.empty();
 }
 
-bool DSourceComboP4Handler::Cut_InvariantMass_HasMassiveNeutral_OrPhotonVertex(const DReactionVertexInfo* locReactionVertexInfo, const DSourceCombo* locReactionFullCombo, const DSourceCombo* locReactionChargedCombo, vector<int>& locValidRFBunches)
+bool DSourceComboP4Handler::Cut_InvariantMass_HasMassiveNeutral_OrPhotonVertex(const DReactionVertexInfo* locReactionVertexInfo, const DSourceCombo* locReactionFullCombo, vector<int>& locValidRFBunches)
 {
 	//do 2 things at once (where vertex is known) (hence the really long function name):
 		//calc & cut invariant mass: when massive neutral present
 		//calc & cut invariant mass: when vertex-z was unknown with only charged tracks, but is known now, and contains BCAL photons (won't happen very often)
 	auto locPrimaryComboUse = dSourceComboer->Get_PrimaryComboUse(locReactionVertexInfo);
-	auto locPrimaryVertexZ = dSourceComboVertexer->Get_PrimaryVertex(locReactionVertexInfo, locReactionChargedCombo).Z();
+	auto locPrimaryVertexZ = dSourceComboVertexer->Get_PrimaryVertex(locReactionVertexInfo, locReactionFullCombo, nullptr).Z();
 
 	//loop over vertices in reverse step order //dependency for calculating invariant mass
 	auto locStepVertexInfos = DAnalysis::Get_StepVertexInfos_ReverseOrderByStep(locReactionVertexInfo);
-	for(auto locStepVertexInfo : locReactionVertexInfo->Get_StepVertexInfos())
+	for(const auto& locStepVertexInfo : locReactionVertexInfo->Get_StepVertexInfos())
 	{
 		if(locStepVertexInfo->Get_DanglingVertexFlag())
 			continue; //unknown position!
@@ -338,14 +338,13 @@ bool DSourceComboP4Handler::Cut_InvariantMass_HasMassiveNeutral_OrPhotonVertex(c
 		//see if vertex position has been found yet
 		auto locIsProductionVertex = locStepVertexInfo->Get_ProductionVertexFlag();
 		auto locVertexPrimaryFullCombo = dSourceComboer->Get_VertexPrimaryCombo(locReactionFullCombo, locStepVertexInfo);
-		if(dSourceComboVertexer->Get_ConstrainingParticles(locIsProductionVertex, locVertexPrimaryFullCombo).empty()) //this is empty if vertex not found yet!
+		if(dSourceComboVertexer->Get_ConstrainingParticles(locIsProductionVertex, locVertexPrimaryFullCombo, nullptr).empty()) //this is empty if vertex not found yet!
 			continue; //vertex not found yet!
 
 		auto locVertexComboUse = dSourceComboer->Get_SourceComboUse(locStepVertexInfo);
 		auto locHasMassiveNeutrals = dSourceComboer->Get_HasMassiveNeutrals(std::get<2>(locVertexComboUse));
 
-		auto locVertexPrimaryChargedCombo = dSourceComboer->Get_VertexPrimaryCombo(locReactionChargedCombo, locStepVertexInfo);
-		auto locVertexConstrainedByChargedFlag = dSourceComboVertexer->Get_VertexDeterminableWithCharged(locIsProductionVertex, locVertexPrimaryChargedCombo);
+		auto locVertexConstrainedByChargedFlag = dSourceComboVertexer->Get_VertexDeterminableWithCharged(locStepVertexInfo);
 		if(locVertexConstrainedByChargedFlag && !locHasMassiveNeutrals)
 			continue; //no massive neutrals, and vertex found with charged: mass cuts already placed
 
@@ -353,8 +352,8 @@ bool DSourceComboP4Handler::Cut_InvariantMass_HasMassiveNeutral_OrPhotonVertex(c
 			continue; //nothing new (e.g. new vertex found with neutrals, but all of the neutrals in the combo are FCAL photons anyway: nothing to do
 
 		//get vertex position and time offset
-		auto locVertex = dSourceComboVertexer->Get_Vertex(locIsProductionVertex, locVertexPrimaryFullCombo);
-		auto locTimeOffset = dSourceComboVertexer->Get_TimeOffset(locIsProductionVertex, locReactionChargedCombo, locVertexPrimaryFullCombo);
+		auto locVertex = dSourceComboVertexer->Get_Vertex(locIsProductionVertex, locVertexPrimaryFullCombo, nullptr);
+		auto locTimeOffset = dSourceComboVertexer->Get_TimeOffset(locIsProductionVertex, locReactionFullCombo, locVertexPrimaryFullCombo, nullptr);
 
 		//get all combos at this vertex, with their uses, in reverse dependency order
 		vector<pair<DSourceComboUse, vector<const DSourceCombo*>>> locSourceCombosAndUses_ThisVertex = DAnalysis::Get_SourceCombosAndUses_ThisVertex(locVertexPrimaryFullCombo);
@@ -374,7 +373,7 @@ bool DSourceComboP4Handler::Cut_InvariantMass_HasMassiveNeutral_OrPhotonVertex(c
 			{
 				if(locDecayCombo->Get_IsComboingZIndependent() && !locDecayHasMassiveNeutrals)
 					continue; //no massive neutrals, no BCAL showers: already cut!
-				if(!Cut_InvariantMass_HasMassiveNeutral(locIsProductionVertex, locReactionChargedCombo, locDecayCombo, locDecayPID, locPrimaryVertexZ, locVertex, locTimeOffset, locValidRFBunches))
+				if(!Cut_InvariantMass_HasMassiveNeutral(locIsProductionVertex, locReactionFullCombo, locDecayCombo, locDecayPID, locPrimaryVertexZ, locVertex, locTimeOffset, locValidRFBunches))
 					return false; //failed mass cut for all possible rf bunches!
 			}
 		}
@@ -383,15 +382,15 @@ bool DSourceComboP4Handler::Cut_InvariantMass_HasMassiveNeutral_OrPhotonVertex(c
 	return true;
 }
 
-bool DSourceComboP4Handler::Cut_InvariantMass_MissingMassVertex(const DReactionVertexInfo* locReactionVertexInfo, const DSourceCombo* locReactionFullCombo, const DSourceCombo* locReactionChargedCombo, int locRFBunch)
+bool DSourceComboP4Handler::Cut_InvariantMass_MissingMassVertex(const DReactionVertexInfo* locReactionVertexInfo, const DSourceCombo* locReactionFullCombo, const DKinematicData* locBeamParticle, int locRFBunch)
 {
 	//calc & cut invariant mass: when vertex-z was unknown without the beam energy
 	auto locPrimaryComboUse = dSourceComboer->Get_PrimaryComboUse(locReactionVertexInfo);
-	auto locPrimaryVertexZ = dSourceComboVertexer->Get_PrimaryVertex(locReactionVertexInfo, locReactionChargedCombo).Z();
+	auto locPrimaryVertexZ = dSourceComboVertexer->Get_PrimaryVertex(locReactionVertexInfo, locReactionFullCombo, locBeamParticle).Z();
 
 	//loop over vertices in reverse step order //dependency for calculating invariant mass
 	auto locStepVertexInfos = DAnalysis::Get_StepVertexInfos_ReverseOrderByStep(locReactionVertexInfo);
-	for(auto locStepVertexInfo : locReactionVertexInfo->Get_StepVertexInfos())
+	for(const auto& locStepVertexInfo : locReactionVertexInfo->Get_StepVertexInfos())
 	{
 		if(locStepVertexInfo->Get_DanglingVertexFlag())
 			continue; //unknown position!
@@ -402,20 +401,19 @@ bool DSourceComboP4Handler::Cut_InvariantMass_MissingMassVertex(const DReactionV
 		auto locVertexComboUse = dSourceComboer->Get_SourceComboUse(locStepVertexInfo);
 		auto locHasMassiveNeutrals = dSourceComboer->Get_HasMassiveNeutrals(std::get<2>(locVertexComboUse));
 
-		auto locVertexPrimaryChargedCombo = dSourceComboer->Get_VertexPrimaryCombo(locReactionChargedCombo, locStepVertexInfo);
-		if(dSourceComboVertexer->Get_VertexDeterminableWithCharged(locIsProductionVertex, locVertexPrimaryChargedCombo))
+		if(dSourceComboVertexer->Get_VertexDeterminableWithCharged(locStepVertexInfo))
 			continue; //vertex found with charged: mass cuts already placed
 
 		auto locVertexPrimaryFullCombo = dSourceComboer->Get_VertexPrimaryCombo(locReactionFullCombo, locStepVertexInfo);
-		if(dSourceComboVertexer->Get_VertexDeterminableWithPhotons(locIsProductionVertex, locVertexPrimaryFullCombo))
+		if(dSourceComboVertexer->Get_VertexDeterminableWithPhotons(locStepVertexInfo))
 			continue; //vertex found with photons: mass cuts already placed
 
 		if(locVertexPrimaryFullCombo->Get_IsComboingZIndependent() && !locHasMassiveNeutrals)
 			continue; //nothing new (e.g. new vertex found with beam, but all of the neutrals in the combo are FCAL photons anyway: nothing to do
 
 		//get vertex position and time offset
-		auto locVertex = dSourceComboVertexer->Get_Vertex(locIsProductionVertex, locVertexPrimaryFullCombo);
-		auto locTimeOffset = dSourceComboVertexer->Get_TimeOffset(locIsProductionVertex, locReactionChargedCombo, locVertexPrimaryFullCombo);
+		auto locVertex = dSourceComboVertexer->Get_Vertex(locIsProductionVertex, locVertexPrimaryFullCombo, locBeamParticle);
+		auto locTimeOffset = dSourceComboVertexer->Get_TimeOffset(locIsProductionVertex, locReactionFullCombo, locVertexPrimaryFullCombo, locBeamParticle);
 
 		//get all combos at this vertex, with their uses, in reverse dependency order
 		vector<pair<DSourceComboUse, vector<const DSourceCombo*>>> locSourceCombosAndUses_ThisVertex = DAnalysis::Get_SourceCombosAndUses_ThisVertex(locVertexPrimaryFullCombo);
@@ -435,7 +433,7 @@ bool DSourceComboP4Handler::Cut_InvariantMass_MissingMassVertex(const DReactionV
 			{
 				if(locDecayCombo->Get_IsComboingZIndependent() && !locDecayHasMassiveNeutrals)
 					continue; //no massive neutrals, no BCAL showers: already cut!
-				if(!Cut_InvariantMass_HasMassiveNeutral(locIsProductionVertex, locReactionChargedCombo, locDecayCombo, locDecayPID, locPrimaryVertexZ, locVertex, locTimeOffset, {locRFBunch}))
+				if(!Cut_InvariantMass_HasMassiveNeutral(locIsProductionVertex, locReactionFullCombo, locDecayCombo, locDecayPID, locPrimaryVertexZ, locVertex, locTimeOffset, {locRFBunch}))
 					return false; //failed mass cut for all possible rf bunches!
 			}
 		}

@@ -85,7 +85,7 @@ class DReactionStep
 			Particle_t dInitialPID = Unknown; //e.g. lambda, gamma
 			Particle_t dSecondBeamPID = Unknown; //second beam, Unknown if not present
 			Particle_t dTargetPID = Unknown; //unknown if none
-			vector<Particle_t> dFinalPIDs; //if inclusive, PID is not here!! minutes are.
+			vector<Particle_t> dFinalPIDs; //if inclusive, there is no indication of it here!
 
 			// CONTROL MEMBERS:
 			int dMissingParticleIndex = DReactionStep::Get_ParticleIndex_None(); //final state particle at this index is missing
@@ -99,7 +99,7 @@ class DReactionStep
 		shared_ptr<DReactionStepInfo> dReactionStepInfo;
 };
 
-/****************************************************** NAMESPACE-SCOPE NON-INLINE FUNCTION DECLARATIONS *******************************************************/
+/********************************************************* NAMESPACE-SCOPE NON-INLINE FUNCTION DECLARATIONS **********************************************************/
 
 string Get_InitialParticlesName(const DReactionStep* locStep, bool locTLatexFlag);
 bool Are_ParticlesIdentical(const DReactionStep* locStep1, const DReactionStep* locStep2, bool locExceptMissingUnknownInInputFlag);
@@ -144,7 +144,7 @@ inline DReactionStep& DReactionStep::operator=(const DReactionStep& locSourceDat
 	return *this;
 }
 
-/************************************************************** DREACTIONSTEPINFO CONSTRUCTORS ***************************************************************/
+/*************************************************************** DREACTIONSTEPINFO FUNCTIONS *****************************************************************/
 
 inline DReactionStep::DReactionStepInfo::DReactionStepInfo(Particle_t locInitialPID, Particle_t locSecondBeamPID, Particle_t locTargetPID,
 		vector<Particle_t> locFinalPIDs, int locMissingParticleIndex) :
@@ -154,7 +154,7 @@ inline DReactionStep::DReactionStepInfo::DReactionStepInfo(Particle_t locInitial
 	Check_IsResonance(dInitialPID);
 	Check_IsResonance(dSecondBeamPID);
 	Check_IsResonance(dTargetPID);
-	for(auto& locPID : dFinalPIDs)
+	for(const auto&& locPID : dFinalPIDs)
 		Check_IsResonance(locPID);
 }
 
@@ -231,7 +231,7 @@ inline int Get_ParticleIndex(const DReactionStep* locStep, Particle_t locInputPI
 	auto locFinalPIDs = locStep->Get_FinalPIDs(false); //exclude missing
 	size_t locCount = 0;
 	auto Instance_Finder = [locInputPID, locInstance, &locCount](Particle_t locPID) -> bool
-		{return (locPID != locInputPID) ? false : (++locCount == locInstance) ? true : false;}
+		{return (locPID != locInputPID) ? false : (++locCount == locInstance) ? true : false;};
 	auto locIterator = std::find_if(locFinalPIDs.begin(), locFinalPIDs.end(), Instance_Finder);
 	return (locIterator == locFinalPIDs.end()) ? DReactionStep::Get_ParticleIndex_None() : std::distance(locFinalPIDs.begin(), locIterator);
 }
@@ -240,6 +240,31 @@ inline bool Get_HasMissingParticle_FinalState(const DReactionStep* locStep)
 {
 	auto locMissingParticleIndex = locStep->Get_MissingParticleIndex();
 	return (locStep->Get_IsInclusiveFlag() || (locMissingParticleIndex >= 0));
+}
+
+inline bool Check_ChannelEquality(const DReactionStep* lhs, const DReactionStep* rhs, bool locSameOrderFlag = true)
+{
+	if((lhs->Get_InitialPID() != rhs->Get_InitialPID()) || (lhs->Get_SecondBeamPID() != rhs->Get_SecondBeamPID()) || (lhs->Get_TargetPID() != rhs->Get_TargetPID()))
+		return false;
+
+	if(locSameOrderFlag)
+		return ((lhs->Get_MissingParticleIndex() == rhs->Get_MissingParticleIndex()) && (lhs->Get_FinalPIDs() == rhs->Get_FinalPIDs()));
+
+	//MISSING PARTICLE INDEX
+	if(lhs->Get_MissingPID() != rhs->Get_MissingPID())
+		return false;
+	auto locMissingIndex_lhs = lhs->Get_MissingParticleIndex();
+	auto locMissingIndex_rhs = rhs->Get_MissingParticleIndex();
+	if((locMissingIndex_lhs != locMissingIndex_rhs) && ((locMissingIndex_lhs < 0) || (locMissingIndex_rhs < 0)))
+		return false; //allow missing final state particle to be in a different spot
+
+	// GET FINAL PARTICLE PIDs:
+	auto locPIDS_lhs = lhs->Get_FinalPIDs();
+	auto locPIDS_rhs = rhs->Get_FinalPIDs();
+	if(locPIDS_lhs.size() != locPIDS_rhs.size())
+		return false;
+
+	return std::is_permutation(locPIDS_lhs.begin(), locPIDS_lhs.end(), locPIDS_rhs.begin());
 }
 
 } //end DAnalysis namespace

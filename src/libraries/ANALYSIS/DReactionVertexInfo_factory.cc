@@ -15,8 +15,29 @@ jerror_t DReactionVertexInfo_factory::evnt(JEventLoop *locEventLoop, uint64_t lo
 {
 	auto locReactions = Get_Reactions(locEventLoop);
 
-	for(auto& locReaction : locReactions)
-		_data.push_back(Build_VertexInfo(locReaction));
+	for(auto locReactionIterator = locReactions.begin(); locReactionIterator != locReactions.end(); ++locReactionIterator)
+	{
+		auto locReaction = *locReactionIterator;
+
+		//see if a reaction that we've already done has an identical channel to this
+		auto Equality_Checker = [&locReaction](const pair<const DReaction*, DReactionVertexInfo*>& locReactionPair) -> bool
+			{return DAnalysis::Check_ChannelEquality(locReaction, locReactionPair.first, true);};
+
+		//do the check
+		auto locSearchIterator = std::find_if(dVertexInfoMap.begin(), dVertexInfoMap.end(), Equality_Checker);
+		if(locSearchIterator != dVertexInfoMap.end())
+		{
+			//not unique! register reaction and move on
+			auto locVertexInfo = locSearchIterator->second;
+			locVertexInfo->Add_Reaction(locReaction);
+			continue;
+		}
+
+		//unique channel: create vertex info
+		auto locVertexInfo = Build_VertexInfo(locReaction);
+		_data.push_back(locVertexInfo);
+		dVertexInfoMap.emplace(locReaction, locVertexInfo);
+	}
 
 	return NOERROR;
 }

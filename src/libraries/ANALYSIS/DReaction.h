@@ -94,7 +94,7 @@ class DReaction : public DReactionBase
 		void Set_KinFitUpdateCovarianceMatricesFlag(bool locUpdateFlag){dKinFitUpdateCovarianceMatricesFlag = locUpdateFlag;}
 
 		// SET PRE-DPARTICLECOMBO CUT VALUES //Command-line values will override these values
-		void Set_MaxPhotonRFDeltaT(double locMaxPhotonRFDeltaT){dMaxPhotonRFDeltaT = pair<bool, double>(true, locMaxPhotonRFDeltaT);}
+		void Set_NumPlusMinusRFBunches(size_t locNumPlusMinusRFBunches){dNumPlusMinusRFBunches = locNumPlusMinusRFBunches;}
 		void Set_MaxExtraGoodTracks(size_t locMaxExtraGoodTracks){dMaxExtraGoodTracks = pair<bool, size_t>(true, locMaxExtraGoodTracks);}
 		void Set_MaxNumBeamPhotonsInBunch(size_t locMaxNumBeamPhotonsInBunch){dMaxNumBeamPhotonsInBunch = pair<bool, size_t>(true, locMaxNumBeamPhotonsInBunch);}
 
@@ -123,7 +123,7 @@ class DReaction : public DReactionBase
 		DAnalysisAction* Get_AnalysisAction(size_t locIndex) const{return dAnalysisActions.at(locIndex);}
 
 		// GET PRE-DPARTICLECOMBO CUT VALUES //Command-line values will override these values
-		pair<bool, double> Get_MaxPhotonRFDeltaT(void) const{return dMaxPhotonRFDeltaT;}
+		size_t Get_NumPlusMinusRFBunches(void) const{return dNumPlusMinusRFBunches;}
 		pair<bool, size_t> Get_MaxExtraGoodTracks(void) const{return dMaxExtraGoodTracks;}
 		pair<bool, size_t> Get_MaxNumBeamPhotonsInBunch(void) const{return dMaxNumBeamPhotonsInBunch;}
 
@@ -161,7 +161,7 @@ class DReaction : public DReactionBase
 		// PRE-DPARTICLECOMBO CONTROL-CUT VALUES
 			//bool = true/false for cut enabled/disabled, double = cut value
 			//Command-line values (variable names are below in all-caps) will override these values
-		pair<bool, double> dMaxPhotonRFDeltaT = make_pair(false, 0.0); //COMBO:MAX_PHOTON_RF_DELTAT - the maximum photon-rf time difference: used for photon selection
+		size_t dNumPlusMinusRFBunches = 99999; //COMBO:NUM_PLUSMINUS_RF_BUNCHES //e.g. if 0 then only center bunch, if 2 then +/- 2 bunches
 		pair<bool, size_t> dMaxExtraGoodTracks = make_pair(false, size_t(0)); //COMBO:MAX_EXTRA_GOOD_TRACKS - "good" defined by PreSelect factory
 		pair<bool, int> dMaxNumBeamPhotonsInBunch = make_pair(false, 0); //COMBO:MAX_NUM_BEAM_PHOTONS cut out combos with more than this # of beam photons surviving the RF delta-t cut
 
@@ -217,6 +217,19 @@ inline bool Get_IsFirstStepBeam(const DReaction* locReaction) const
 	return ((locFirstStep->Get_TargetPID() != Unknown) || (locFirstStep->Get_SecondBeamPID() != Unknown));
 }
 
+inline bool Check_ChannelEquality(const DReaction* lhs, const DReaction* rhs, bool locSameOrderFlag = true)
+{
+	//assume for now that the steps have to be in the same order
+	auto locSteps_lhs = lhs->Get_ReactionSteps();
+	auto locSteps_rhs = rhs->Get_ReactionSteps();
+	if(locSteps_lhs.size() != locSteps_rhs.end())
+		return false;
+
+	auto Equality_Checker = [&locSameOrderFlag](const DReactionStep* lhs, const DReactionStep* rhs) -> bool
+		{return DAnalysis::Check_ChannelEquality(lhs, rhs, locSameOrderFlag);};
+	return std::equal(locSteps_lhs.begin(), locSteps_lhs.end(), locSteps_rhs.begin(), Equality_Checker);
+}
+
 /****************************************************** NAMESPACE-SCOPE INLINE FUNCTIONS: PIDS *******************************************************/
 
 inline vector<Particle_t> Get_ChainPIDs(const DReaction* locReaction, Particle_t locInitialPID, bool locExpandDecayingFlag)
@@ -231,7 +244,7 @@ inline vector<Particle_t> Get_ChainPIDs(const DReaction* locReaction, Particle_t
 	auto locReactionSteps = locReaction->Get_ReactionSteps();
 	auto locPIDSearcher = [](const DReactionStep* locStep) -> bool{return (locStep->Get_InitialPID() == locInitialPID);};
 	auto locStepIterator = std::find_if(locReactionSteps.begin(), locReactionSteps.end(), locPIDSearcher);
-	if(locStepIterator == locReactionSteps.end());
+	if(locStepIterator == locReactionSteps.end())
 		return string("");
 
 	size_t locStepIndex = std::distance(locReactionSteps.begin(), locStepIterator);
@@ -266,7 +279,7 @@ inline bool Check_IfMissingDecayProduct(const DReaction* locReaction, size_t loc
 template <typename DType> map<DType, size_t> Convert_VectorToCountMap(const vector<DType>& locVector)
 {
 	map<DType, size_t> locMap;
-	for(auto locObject : locVector)
+	for(const auto& locObject : locVector)
 	{
 		auto locIterator = locMap.find(locObject);
 		if(locIterator != locMap.end())

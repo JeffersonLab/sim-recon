@@ -21,22 +21,24 @@ namespace DAnalysis
 
 class DReactionVertexInfo_factory : public jana::JFactory<DReactionVertexInfo>
 {
-private:
+	private:
 
-	//PRIMARY FUNCTIONS
-	jerror_t init(void);
-	jerror_t evnt(jana::JEventLoop *locEventLoop, uint64_t locEventNumber);
-	DReactionVertexInfo* Build_VertexInfo(const DReaction* locReaction) const;
+		//PRIMARY FUNCTIONS
+		jerror_t init(void);
+		jerror_t evnt(jana::JEventLoop *locEventLoop, uint64_t locEventNumber);
+		DReactionVertexInfo* Build_VertexInfo(const DReaction* locReaction) const;
 
-	//SETUP
-	vector<const DReaction*> Get_Reactions(JEventLoop* locEventLoop) const;
-	shared_ptr<DReactionStepVertexInfo> Setup_VertexInfo(const DReaction* locReaction, size_t locStepIndex, DReactionStepVertexInfo* locVertexInfo) const;
+		//SETUP
+		vector<const DReaction*> Get_Reactions(JEventLoop* locEventLoop) const;
+		shared_ptr<DReactionStepVertexInfo> Setup_VertexInfo(const DReaction* locReaction, size_t locStepIndex, DReactionStepVertexInfo* locVertexInfo) const;
 
-	//GROUPING
-	void Group_VertexParticles(DReactionStepVertexInfo* locVertexInfo);
-	vector<shared_ptr<DReactionStepVertexInfo>> Link_Vertices(const DReaction* locReaction, vector<shared_ptr<DReactionStepVertexInfo>> locVertexInfos) const;
-	bool Associate_DecayingParticles(bool locLinkingFlag, shared_ptr<DReactionStepVertexInfo>& locVertexInfo,
-			map<pair<int, int>, shared_ptr<DReactionStepVertexInfo>>& locDefinedDecayingParticles) const;
+		//GROUPING
+		void Group_VertexParticles(DReactionStepVertexInfo* locVertexInfo);
+		vector<shared_ptr<DReactionStepVertexInfo>> Link_Vertices(const DReaction* locReaction, vector<shared_ptr<DReactionStepVertexInfo>> locVertexInfos) const;
+		bool Associate_DecayingParticles(bool locLinkingFlag, shared_ptr<DReactionStepVertexInfo>& locVertexInfo, map<pair<int, int>, shared_ptr<DReactionStepVertexInfo>>& locDefinedDecayingParticles) const;
+
+		//not all reactions are stored here, just the first ones
+		unordered_map<const DReaction*, DReactionVertexInfo*> dVertexInfoMap;
 };
 
 } //end DAnalysis namespace

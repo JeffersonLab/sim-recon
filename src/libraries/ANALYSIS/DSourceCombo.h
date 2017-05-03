@@ -28,6 +28,15 @@ class DSourceCombo;
 
 //DSourceComboUse is what the combo is USED for (the decay of Particle_t (if Unknown then is just a grouping)
 using DSourceComboUse = tuple<Particle_t, signed char, const DSourceComboInfo*>; //e.g. Pi0, -> 2g //signed char: vertex-z bin of the final state (combo contents)
+
+//This is used to hold the further decays in the DSourceComboUse objects
+//There are MANY combos, which suggests DSourceCombosByUse_Small should be small: a sorted vector (with lookup via std::binary_search) (24 bytes)
+//However, they are searched in the core of the combo-builder, many recursive calls deep: must have fast lookup: unordered_map (56 bytes: 2.333x larger)
+
+//map is a compromise: 48 bytes, so still 2x the size, but negligibly slower than unordered_map since they are very small
+	//and it may even be faster since you don't have to compute a hash
+//also, you have to insert elements, which is much faster for a map than a vector
+//so we'll choose map for now, and let someone who wants to do some profiling decide whether or not to change it
 using DSourceCombosByUse_Small = map<DSourceComboUse, vector<const DSourceCombo*>>;
 
 //Compare_SourceComboUses
@@ -81,7 +90,7 @@ class DSourceComboInfo
 		vector<pair<DSourceComboUse, unsigned char>> Get_FurtherDecays(void) const{return dFurtherDecays;}
 
 		//definitions of negative values for any particle index //in order such that operator< returns order expected for string (e.g. gp->...)
-		static signed char Get_VertexZIndex_FCAL(void){return -2;}
+		static signed char Get_VertexZIndex_ZIndependent(void){return -2;}
 		static signed char Get_VertexZIndex_Unknown(void){return -1;}
 
 	private:
@@ -111,22 +120,23 @@ class DSourceCombo
 		void Set_Members(const vector<pair<Particle_t, const JObject*>>& locSourceParticles, const DSourceCombosByUse_Small& locFurtherDecayCombos, bool locIsZIndependent = false){};
 
 		//GET MEMBERS
-		vector<pair<Particle_t, const JObject*>> Get_SourceParticles(bool locEntireChainFlag = false) const;
+		vector<pair<Particle_t, const JObject*>> Get_SourceParticles(bool locEntireChainFlag = false, Charge_t locCharge = d_AllCharges) const;
 		DSourceCombosByUse_Small Get_FurtherDecayCombos(void) const{return dFurtherDecayCombos;}
 		bool Get_IsComboingZIndependent(void) const{return dIsComboingZIndependent;}
 
 	private:
 
-		//particles & decays
-		vector<pair<Particle_t, const JObject*>> dSourceParticles; //original DNeutralShower or DChargedTrack
 		//FYI, if use PID is unknown: Vector is guaranteed to be size 1, and none of ITS further decays can have an unknown use PID
 		//Note: Either:
 		//1) The entire content is one PID
 		//2) There is at most one particle of each PID
 		//Otherwise, groupings of 2+ (e.g. 2pi-) will be in the further-decay section (X -> 2pi+)
+
+		//particles & decays
+		vector<pair<Particle_t, const JObject*>> dSourceParticles; //original DNeutralShower or DChargedTrack
 		DSourceCombosByUse_Small dFurtherDecayCombos; //vector is e.g. size 3 if 3 pi0s needed
 
-		//actually, everything is z-dependent for massive neutrals.
+		//everything is z-dependent for massive neutrals.
 		//however the momentum is SO z-dependent, that we can't cut on it until the end when we have the final vertex, AFTER comboing
 		//a mere z-bin is not enough.
 		//So, as far as COMBOING is concerned, massive neutrals are Z-INDEPENDENT
@@ -209,18 +219,22 @@ inline void DSourceCombo::Set_Members(const vector<pair<Particle_t, const JObjec
 	std::sort(dSourceParticles.begin(), dSourceParticles.end());
 }
 
-inline vector<pair<Particle_t, const JObject*>> DSourceCombo::Get_SourceParticles(bool locEntireChainFlag) const
+inline vector<pair<Particle_t, const JObject*>> DSourceCombo::Get_SourceParticles(bool locEntireChainFlag, Charge_t locCharge) const
 {
 	if(!locEntireChainFlag || dFurtherDecayCombos.empty())
 		return dSourceParticles;
 
 	vector<pair<Particle_t, const JObject*>> locToReturnParticles = dSourceParticles;
+
+	auto Charge_Checker = [&locCharge](const pair<Particle_t, const JObject*>& locPair) -> bool {return !Is_CorrectCharge(locPair.first, locCharge);};
+	locToReturnParticles.erase(std::remove_if(locToReturnParticles.begin(), locToReturnParticles.end(), Charge_Checker), locToReturnParticles.end());
+
 	for(const auto& locDecayPair : dFurtherDecayCombos)
 	{
 		const auto& locDecayVector = locDecayPair.second;
-		for(auto locDecayCombo : locDecayVector)
+		for(const auto& locDecayCombo : locDecayVector)
 		{
-			auto locDecayParticles = locDecayCombo->Get_SourceParticles(true);
+			auto locDecayParticles = locDecayCombo->Get_SourceParticles(true, locCharge);
 			locToReturnParticles.insert(locToReturnParticles.end(), locDecayParticles.begin(), locDecayParticles.end());
 		}
 	}
@@ -242,18 +256,18 @@ inline vector<const JObject*> Get_SourceParticles(const vector<pair<Particle_t, 
 	return locOutputParticles;
 }
 
-inline vector<pair<Particle_t, const JObject*>> Get_SourceParticles_ThisVertex(const DSourceCombo* locSourceCombo)
+inline vector<pair<Particle_t, const JObject*>> Get_SourceParticles_ThisVertex(const DSourceCombo* locSourceCombo, Charge_t locCharge = d_AllCharges)
 {
-	auto locSourceParticles = locSourceCombo->Get_SourceParticles(false);
+	auto locSourceParticles = locSourceCombo->Get_SourceParticles(false, locCharge);
 	auto locFurtherDecayCombos = locSourceCombo->Get_FurtherDecayCombos();
 	for(const auto& locDecayPair : locFurtherDecayCombos)
 	{
 		auto locDecayPID = std::get<0>(locDecayPair.first);
 		if(IsDetachedVertex(locDecayPID))
 			continue;
-		for(auto locDecayCombo : locDecayPair.second)
+		for(const auto& locDecayCombo : locDecayPair.second)
 		{
-			auto locDecayParticles = Get_SourceParticles_ThisVertex(locDecayCombo);
+			auto locDecayParticles = Get_SourceParticles_ThisVertex(locDecayCombo, locCharge);
 			locSourceParticles.insert(locSourceParticles.end(), locDecayParticles.begin(), locDecayParticles.end());
 		}
 	}
@@ -269,7 +283,7 @@ inline vector<const DSourceCombo*> Get_SourceCombos_ThisVertex(const DSourceComb
 		auto locDecayPID = std::get<0>(locDecayPair.first);
 		if(IsDetachedVertex(locDecayPID))
 			continue;
-		for(auto locDecayCombo : locDecayPair.second)
+		for(const auto& locDecayCombo : locDecayPair.second)
 		{
 			auto locDecayVertexCombos = Get_SourceCombos_ThisVertex(locDecayCombo);
 			locVertexCombos.insert(locVertexCombos.end(), locDecayVertexCombos.begin(), locDecayVertexCombos.end());
@@ -288,7 +302,7 @@ inline vector<pair<DSourceComboUse, vector<const DSourceCombo*>>> Get_SourceComb
 		if(IsDetachedVertex(locDecayPID))
 			continue;
 		locVertexCombosByUse.emplace_back(locDecayPair);
-		for(auto locDecayCombo : locDecayPair.second)
+		for(const auto& locDecayCombo : locDecayPair.second)
 		{
 			auto locDecayVertexCombosByUse = Get_SourceCombosAndUses_ThisVertex(locDecayCombo);
 			locVertexCombosByUse.insert(locVertexCombosByUse.end(), locDecayVertexCombosByUse.begin(), locDecayVertexCombosByUse.end());

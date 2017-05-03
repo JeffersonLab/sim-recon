@@ -19,9 +19,12 @@ dSourceComboer(locSourceComboer), dSourceComboP4Handler(locSourceComboP4Handler)
 	dTargetCenter.SetXYZ(0.0, 0.0, locTargetCenterZ);
 }
 
-signed char DSourceComboVertexer::Get_VertexZBin(bool locIsProductionVertex, const DSourceCombo* locSourceCombo) const
+signed char DSourceComboVertexer::Get_VertexZBin(bool locIsProductionVertex, const DSourceCombo* locSourceCombo, const DKinematicData* locBeamParticle) const
 {
-	auto locConstrainingParticles = Get_ConstrainingParticles(locIsProductionVertex, locSourceCombo);
+	if(locSourceCombo == nullptr)
+		return DSourceComboInfo::Get_VertexZIndex_Unknown();
+
+	auto locConstrainingParticles = Get_ConstrainingParticles(locIsProductionVertex, locSourceCombo, locBeamParticle);
 	if(locConstrainingParticles.empty())
 		return DSourceComboInfo::Get_VertexZIndex_Unknown();
 	auto locVertexZ = Get_Vertex(locIsProductionVertex, locConstrainingParticles).Z();
@@ -31,7 +34,7 @@ signed char DSourceComboVertexer::Get_VertexZBin(bool locIsProductionVertex, con
 void DSourceComboVertexer::Calc_VertexTimeOffsets_WithCharged(const DReactionVertexInfo* locReactionVertexInfo, const DSourceCombo* locReactionChargedCombo)
 {
 	auto locIsPrimaryProductionVertex = locReactionVertexInfo->Get_StepVertexInfos().front()->Get_ProductionVertexFlag();
-	if(dTimeOffsets.find(std::make_pair(locIsPrimaryProductionVertex, locReactionChargedCombo)) != dTimeOffsets.end())
+	if(dTimeOffsets.find(std::make_tuple(locIsPrimaryProductionVertex, locReactionChargedCombo, nullptr)) != dTimeOffsets.end())
 		return; //already done!! //e.g. the same channel used for 2 different DReactions
 
 	//loop through vertices
@@ -71,7 +74,7 @@ void DSourceComboVertexer::Calc_VertexTimeOffsets_WithCharged(const DReactionVer
 
 		//now, just because it isn't dangling, it doesn't mean we have enough information to actually determine the vertex
 		//e.g. we may need neutrals or beam energy to define constraining decay particle p4/trajectory
-		auto locDeterminableIterator = dVertexDeterminableWithChargedMap.find(locComboProductionPair);
+		auto locDeterminableIterator = dVertexDeterminableWithChargedMap.find(locStepVertexInfo);
 		if(locDeterminableIterator == dVertexDeterminableWithChargedMap.end())
 		{
 			//we don't know yet if it is determinable or not.  figure it out
@@ -79,11 +82,11 @@ void DSourceComboVertexer::Calc_VertexTimeOffsets_WithCharged(const DReactionVer
 
 			//determine it, save result, and continue if can't
 			bool locVertexDeterminableFlag = locIsProductionVertexFlag ? (locNumConstrainingParticles > 0) : (locNumConstrainingParticles > 1);
-			dVertexDeterminableWithChargedMap.emplace(locComboProductionPair, locVertexDeterminableFlag);
+			dVertexDeterminableWithChargedMap.emplace(locStepVertexInfo, locVertexDeterminableFlag);
 			if(!locVertexDeterminableFlag)
 				continue; //can't determine yet, but will be able to in the future
 		}
-		if(locDeterminableIterator->second == false)
+		if(!locDeterminableIterator->second)
 			continue;
 
 		vector<const DKinematicData*> locVertexParticles;
@@ -92,13 +95,13 @@ void DSourceComboVertexer::Calc_VertexTimeOffsets_WithCharged(const DReactionVer
 
 		//set the vertices (really, the vertex particles) for the other combos for faster lookup during neutral comboing
 		auto locVertexCombos = DAnalysis::Get_SourceCombos_ThisVertex(locVertexPrimaryCombo);
-		for(auto& locVertexCombo : locVertexCombos)
+		for(const auto& locVertexCombo : locVertexCombos)
 		{
 			auto locVertexParticles = dConstrainingParticlesByCombo[std::make_pair(locIsProductionVertexFlag, locVertexPrimaryCombo)];
 			dConstrainingParticlesByCombo.emplace(std::make_pair(locIsProductionVertexFlag, locVertexCombo), locVertexParticles);
 		}
 
-		Construct_DecayingParticle_InvariantMass(locStepVertexInfo, locVertexPrimaryCombo, nullptr, locVertex, locReconDecayParticleMap);
+		Construct_DecayingParticle_InvariantMass(locStepVertexInfo, locVertexPrimaryCombo, locVertex, locReconDecayParticleMap);
 	}
 
 	//do time offsets once all the vertices have been found
@@ -112,7 +115,7 @@ void DSourceComboVertexer::Calc_VertexTimeOffsets_WithPhotons(const DReactionVer
 	//E.g. g, p ->  K0, Sigma+    K0 -> 3pi: The selected pi0 photons could help define the production vertex
 
 	auto locIsPrimaryProductionVertex = locReactionVertexInfo->Get_StepVertexInfos().front()->Get_ProductionVertexFlag();
-	if(dTimeOffsets.find(std::make_pair(locIsPrimaryProductionVertex, locReactionFullCombo)) != dTimeOffsets.end())
+	if(dTimeOffsets.find(std::make_tuple(locIsPrimaryProductionVertex, locReactionFullCombo, nullptr)) != dTimeOffsets.end())
 		return; //already done!! //e.g. the same channel used for 2 different DReactions
 
 	//loop over vertices in dependency order
@@ -133,10 +136,10 @@ void DSourceComboVertexer::Calc_VertexTimeOffsets_WithPhotons(const DReactionVer
 		if(dConstrainingParticlesByCombo.find(locChargedComboProductionPair) != dConstrainingParticlesByCombo.end())
 		{
 			//already done! get/construct any recon decaying particles
-			auto locVertex = Get_Vertex(locIsProductionVertexFlag, locVertexPrimaryChargedCombo);
+			auto locVertex = Get_Vertex(locIsProductionVertexFlag, locVertexPrimaryChargedCombo, nullptr);
 			auto locVertexParticles = dConstrainingParticlesByCombo[locChargedComboProductionPair];
 			dConstrainingParticlesByCombo.emplace(locFullComboProductionPair, locVertexParticles); //so that the vertex can be retrieved by either the charged or full combo
-			Construct_DecayingParticle_InvariantMass(locStepVertexInfo, locVertexPrimaryChargedCombo, locVertexPrimaryFullCombo, locVertex, locReconDecayParticleMap);
+			Construct_DecayingParticle_InvariantMass(locStepVertexInfo, locVertexPrimaryFullCombo, locVertex, locReconDecayParticleMap);
 			continue;
 		}
 
@@ -146,7 +149,7 @@ void DSourceComboVertexer::Calc_VertexTimeOffsets_WithPhotons(const DReactionVer
 
 		//now, just because it isn't dangling, it doesn't mean we have enough information to actually determine the vertex
 		//e.g. we may need beam energy to define constraining decay particle p4/trajectory
-		auto locDeterminableIterator = dVertexDeterminableWithPhotonsMap.find(locComboProductionPair);
+		auto locDeterminableIterator = dVertexDeterminableWithPhotonsMap.find(locStepVertexInfo);
 		if(locDeterminableIterator == dVertexDeterminableWithPhotonsMap.end())
 		{
 			//we don't know yet if it is determinable or not.  figure it out
@@ -154,32 +157,31 @@ void DSourceComboVertexer::Calc_VertexTimeOffsets_WithPhotons(const DReactionVer
 
 			//determine it, save result, and continue if can't
 			bool locVertexDeterminableFlag = locIsProductionVertexFlag ? (locNumConstrainingParticles > 0) : (locNumConstrainingParticles > 1);
-			dVertexDeterminableWithPhotonsMap.emplace(locComboProductionPair, locVertexDeterminableFlag);
+			dVertexDeterminableWithPhotonsMap.emplace(locStepVertexInfo, locVertexDeterminableFlag);
 			if(!locVertexDeterminableFlag)
 				continue; //can't determine yet, but will be able to in the future
 		}
-		if(locDeterminableIterator->second == false)
+		if(!locDeterminableIterator->second)
 			continue;
 
 		//find the vertex, save the results
 		vector<const DKinematicData*> locVertexParticles;
 		auto locVertex = Calc_Vertex(locIsProductionVertexFlag, locChargedSourceParticles, locDecayingParticles, locVertexParticles);
-		dConstrainingParticlesByCombo.emplace(locChargedComboProductionPair, locVertexParticles); //so that the vertex can be retrieved via the charged combo
 		dConstrainingParticlesByCombo.emplace(locFullComboProductionPair, locVertexParticles);
 
-		Construct_DecayingParticle_InvariantMass(locStepVertexInfo, locVertexPrimaryChargedCombo, locVertexPrimaryFullCombo, locVertex, locReconDecayParticleMap);
+		Construct_DecayingParticle_InvariantMass(locStepVertexInfo, locVertexPrimaryFullCombo, locVertex, locReconDecayParticleMap);
 	}
 
 	//CALC TIME OFFSETS
 	Calc_TimeOffsets(locReactionVertexInfo, locReactionChargedCombo, locReactionFullCombo);
 }
 
-void DSourceComboVertexer::Calc_VertexTimeOffsets_WithBeam(const DReactionVertexInfo* locReactionVertexInfo, const DSourceCombo* locReactionChargedCombo, const DSourceCombo* locReactionFullCombo, const DKinematicData* locBeamParticle)
+void DSourceComboVertexer::Calc_VertexTimeOffsets_WithBeam(const DReactionVertexInfo* locReactionVertexInfo, const DSourceCombo* locReactionFullCombo, const DKinematicData* locBeamParticle)
 {
 	//IF PRIMARY VERTEX IS UNKNOWN THEN DO NOTHING!
-	if(!Get_IsVertexFoundFlag(true, locReactionChargedCombo, locReactionFullCombo))
+	if(!Get_IsVertexFoundFlag(true, locReactionFullCombo, locBeamParticle))
 		return;
-	auto locPrimaryVertexZ = Get_PrimaryVertex(locReactionVertexInfo, locReactionChargedCombo).Z();
+	auto locPrimaryVertexZ = Get_PrimaryVertex(locReactionVertexInfo, locReactionFullCombo, locBeamParticle).Z();
 
 	int locRFBunch = dSourceComboTimeHandler->Calc_RFBunchShift(locBeamParticle->time());
 
@@ -192,59 +194,52 @@ void DSourceComboVertexer::Calc_VertexTimeOffsets_WithBeam(const DReactionVertex
 			continue; //is forever indeterminate, even with beam energy
 
 		auto locIsProductionVertexFlag = locStepVertexInfo->Get_ProductionVertexFlag();
-		auto locVertexPrimaryChargedCombo = dSourceComboer->Get_VertexPrimaryCombo(locReactionChargedCombo, locStepVertexInfo);
 		auto locVertexPrimaryFullCombo = dSourceComboer->Get_VertexPrimaryCombo(locReactionFullCombo, locStepVertexInfo);
 
 		//see if vertex has already been found //can search with either charged or full
-		auto locChargedComboProductionPair = std::make_pair(locIsProductionVertexFlag, locVertexPrimaryChargedCombo);
-		if(dConstrainingParticlesByCombo.find(locChargedComboProductionPair) != dConstrainingParticlesByCombo.end())
+		auto locFullComboProductionPair = std::make_pair(locIsProductionVertexFlag, locVertexPrimaryFullCombo);
+		if(dConstrainingParticlesByCombo.find(locFullComboProductionPair) != dConstrainingParticlesByCombo.end())
 		{
 			//already done! get/construct any recon decaying particles
-			auto locVertex = Get_Vertex(locIsProductionVertexFlag, locVertexPrimaryChargedCombo);
-			Construct_DecayingParticle_InvariantMass(locStepVertexInfo, locVertexPrimaryChargedCombo, locVertexPrimaryFullCombo, locVertex, locReconDecayParticleMap);
+			auto locVertex = Get_Vertex(locIsProductionVertexFlag, locVertexPrimaryFullCombo, locBeamParticle);
+			Construct_DecayingParticle_InvariantMass(locStepVertexInfo, locVertexPrimaryFullCombo, locVertex, locReconDecayParticleMap);
 			if(locIsProductionVertexFlag) //do missing if needed
 			{
 				auto locRFVertexTime = dSourceComboTimeHandler->Calc_PropagatedRFTime(locPrimaryVertexZ, locRFBunch, 0.0);
-				Construct_DecayingParticle_MissingMass(locStepVertexInfo, locReactionChargedCombo, locReactionFullCombo, locVertexPrimaryFullCombo, locBeamParticle, locVertex, locRFBunch, locRFVertexTime, locReconDecayParticleMap);
+				Construct_DecayingParticle_MissingMass(locStepVertexInfo, locReactionFullCombo, locVertexPrimaryFullCombo, locBeamParticle, locVertex, locRFBunch, locRFVertexTime, locReconDecayParticleMap);
 			}
 			continue;
 		}
 
-		auto locFullComboProductionPair = std::make_pair(locIsProductionVertexFlag, locVertexPrimaryFullCombo);
-
 		//get particles
-		auto locChargedSourceParticles = DAnalysis::Get_SourceParticles_ThisVertex(locVertexPrimaryChargedCombo);
+		auto locChargedSourceParticles = DAnalysis::Get_SourceParticles_ThisVertex(locVertexPrimaryFullCombo, d_Charged);
 		auto locDecayingParticles = Get_FullConstrainDecayingParticles(locStepVertexInfo, locReconDecayParticleMap);
 
 		//find the vertex, save the results
 		vector<const DKinematicData*> locVertexParticles;
 		auto locVertex = Calc_Vertex(locIsProductionVertexFlag, locChargedSourceParticles, locDecayingParticles, locVertexParticles);
-		dConstrainingParticlesByCombo.emplace(locChargedComboProductionPair, locVertexParticles); //so that the vertex can be retrieved via the charged combo
 		dConstrainingParticlesByCombo.emplace(locFullComboProductionPair, locVertexParticles);
 
 		//CALC AND STORE TIME OFFSET
-		auto locChargedReactionPair_TimeOffset = std::make_pair(false, locReactionChargedCombo);
-		auto locFullReactionPair_TimeOffset = std::make_pair(false, locReactionFullCombo);
+		auto locFullReactionTuple_TimeOffset = std::make_tuple(false, locReactionFullCombo, locBeamParticle);
 
 		//get parent
 		auto locParentVertexInfo = locStepVertexInfo->Get_ParentVertexInfo();
 		auto locParentFullCombo = dSourceComboer->Get_VertexPrimaryCombo(locReactionFullCombo, locParentVertexInfo);
-		auto locParentTimeOffset = dTimeOffsets[locFullReactionPair_TimeOffset][locVertexPrimaryFullCombo];
+		auto locParentTimeOffset = dTimeOffsets[locFullReactionTuple_TimeOffset][locVertexPrimaryFullCombo];
 
 		//get vertices & path length
-		auto locParentProductionVertex = Get_Vertex(locParentVertexInfo->Get_ProductionVertexFlag(), locParentFullCombo);
+		auto locParentProductionVertex = Get_Vertex(locParentVertexInfo->Get_ProductionVertexFlag(), locParentFullCombo, locBeamParticle);
 		auto locPathLength = (locVertex - locParentProductionVertex).Mag();
 
 		//compute and save result
 		auto locP4 = locDecayingParticles.back()->lorentzMomentum(); //when locDecayingParticles retrieved, this particle was saved to the back!
 		auto locTimeOffset = locPathLength/(locP4.Beta()*SPEED_OF_LIGHT) + locParentTimeOffset;
-
-		dTimeOffsets[locChargedReactionPair_TimeOffset].emplace(locVertexPrimaryChargedCombo, locTimeOffset);
-		dTimeOffsets[locFullReactionPair_TimeOffset].emplace(locVertexPrimaryFullCombo, locTimeOffset);
+		dTimeOffsets[locFullReactionTuple_TimeOffset].emplace(locVertexPrimaryFullCombo, locTimeOffset);
 
 		//construct decaying particles by missing mass
 		auto locRFVertexTime = dSourceComboTimeHandler->Calc_PropagatedRFTime(locPrimaryVertexZ, locRFBunch, locTimeOffset);
-		Construct_DecayingParticle_MissingMass(locStepVertexInfo, locReactionChargedCombo, locReactionFullCombo, locVertexPrimaryFullCombo, locBeamParticle, locVertex, locRFBunch, locRFVertexTime, locReconDecayParticleMap);
+		Construct_DecayingParticle_MissingMass(locStepVertexInfo, locReactionFullCombo, locVertexPrimaryFullCombo, locBeamParticle, locVertex, locRFBunch, locRFVertexTime, locReconDecayParticleMap);
 	}
 }
 
@@ -324,7 +319,7 @@ vector<const DKinematicData*> DSourceComboVertexer::Get_FullConstrainDecayingPar
 	auto locConstrainingDecayingParticles = locStepVertexInfo->Get_DecayingParticles_FullConstrain();
 	vector<const DKinematicData*> locDecayingParticles;
 	pair<int, int> locDecayMissingMassReconPair(-99, -99); //if there is one (and there will be at most one), save for last (easy to retrieve)
-	for(auto locDecayPair : locConstrainingDecayingParticles)
+	for(const auto& locDecayPair : locConstrainingDecayingParticles)
 	{
 		//the particle pair in the map is where the decaying particle was when it was created (in the initial/final state for invariant/missing mass)
 		//however, the pairs in locConstrainingDecayingParticles are when then the decaying particles are USED (the other state)
@@ -354,17 +349,11 @@ vector<const DKinematicData*> DSourceComboVertexer::Get_FullConstrainDecayingPar
 	return locDecayingParticles;
 }
 
-void DSourceComboVertexer::Construct_DecayingParticle_InvariantMass(const DReactionStepVertexInfo* locReactionStepVertexInfo, const DSourceCombo* locChargedVertexCombo, const DSourceCombo* locFullVertexCombo, DVector3 locVertex, map<pair<int, int>, const DKinematicData*>& locReconDecayParticleMap)
+void DSourceComboVertexer::Construct_DecayingParticle_InvariantMass(const DReactionStepVertexInfo* locReactionStepVertexInfo, const DSourceCombo* locVertexCombo, DVector3 locVertex, map<pair<int, int>, const DKinematicData*>& locReconDecayParticleMap)
 {
 	//we also can't compute the p4 yet if the decay products contain neutrals: this is done before comboing them!
 	auto locSourceComboUse = dSourceComboer->Get_SourceComboUse(locReactionStepVertexInfo);
-	if(locFullVertexCombo == nullptr) //charged only
-	{
-		if(dSourceComboer->Get_ChargeContent(std::get<2>(locSourceComboUse)) != d_Charged)
-			return;
-		locFullVertexCombo = locChargedVertexCombo;
-	}
-	else if(dSourceComboer->Get_HasMassiveNeutrals(std::get<2>(locSourceComboUse)))
+	if(dSourceComboer->Get_HasMassiveNeutrals(std::get<2>(locSourceComboUse)))
 	{
 		//can't compute the p4 yet if the decay products contain massive neutrals: time offset is needed for massive neutral p4, but isn't known yet because decay p4 unknown!
 		//will have to be computed via missing mass instead (although it technically isn't needed for it)
@@ -373,7 +362,6 @@ void DSourceComboVertexer::Construct_DecayingParticle_InvariantMass(const DReact
 
 	auto locReaction = locReactionStepVertexInfo->Get_Reaction();
 	auto locIsProductionVertexFlag = locReactionStepVertexInfo->Get_ProductionVertexFlag();
-	auto locChargedComboProductionPair = std::make_pair(locIsProductionVertexFlag, locChargedVertexCombo);
 
 	//loop over decaying no-constrain decaying particles
 	map<pair<int, int>, weak_ptr<DReactionStepVertexInfo>> locNoConstrainDecayingParticles = locReactionStepVertexInfo->Get_DecayingParticles_NoConstrain();
@@ -391,25 +379,28 @@ void DSourceComboVertexer::Construct_DecayingParticle_InvariantMass(const DReact
 			continue; //either not detached (we don't care!), or is Unknown (missing decay product: can't compute)
 
 		//if the particle has already been created, reuse it!
-		auto locIterator = dReconDecayParticles_FromProducts.find(locSourceComboUse);
+		auto locDecayParticleTuple = std::make_tuple(locDecayPID, locIsProductionVertexFlag, locVertexCombo);
+		auto locIterator = dReconDecayParticles_FromProducts.find(locDecayParticleTuple);
 		if(locIterator != dReconDecayParticles_FromProducts.end())
 		{
-			locReconDecayParticleMap.emplace(locSourceComboUse, locIterator->second);
+			locReconDecayParticleMap.emplace(locDecayParticleTuple, locIterator->second);
 			continue;
 		}
 
 		//create a new one
 		auto locVertexZBin = dSourceComboer->Get_PhotonVertexZBin(locVertex.Z());
-		auto locP4 = dSourceComboP4Handler->Calc_P4_NoMassiveNeutrals(locFullVertexCombo, locVertexZBin);
-		auto locKinematicData = new DKinematicData(locDecayPID, locP4.Vect(), locVertex, 0.0);
+		auto locP4 = dSourceComboP4Handler->Calc_P4_NoMassiveNeutrals(locVertexCombo, locVertexZBin);
+		auto locKinematicData = dResourcePool_KinematicData.Get_Resource();
+		locKinematicData->Reset();
+		locKinematicData->Set_Members(locDecayPID, locP4.Vect(), locVertex, 0.0);
 
 		//register it
 		locReconDecayParticleMap.emplace(locParticlePair, locKinematicData);
-		dReconDecayParticles_FromProducts.emplace(locSourceComboUse, locKinematicData);
+		dReconDecayParticles_FromProducts.emplace(locDecayParticleTuple, locKinematicData);
 	}
 }
 
-void DSourceComboVertexer::Construct_DecayingParticle_MissingMass(const DReactionStepVertexInfo* locReactionStepVertexInfo, const DSourceCombo* locReactionChargedCombo, const DSourceCombo* locReactionFullCombo, const DSourceCombo* locFullVertexCombo, const DKinematicData* locBeamParticle, DVector3 locVertex, int locRFBunch, double locRFVertexTime, map<pair<int, int>, const DKinematicData*>& locReconDecayParticleMap)
+void DSourceComboVertexer::Construct_DecayingParticle_MissingMass(const DReactionStepVertexInfo* locReactionStepVertexInfo, const DSourceCombo* locReactionFullCombo, const DSourceCombo* locFullVertexCombo, const DKinematicData* locBeamParticle, DVector3 locVertex, int locRFBunch, double locRFVertexTime, map<pair<int, int>, const DKinematicData*>& locReconDecayParticleMap)
 {
 	//we can only calculate up to 1 at a time
 	//the input full combo contains the decaying particle for which the missing mass is to be computed
@@ -428,7 +419,10 @@ void DSourceComboVertexer::Construct_DecayingParticle_MissingMass(const DReactio
 		locInitialStateP4 = locBeamParticle->lorentzMomentum() + DLorentzVector(0.0, 0.0, 0.0, ParticleMass(locPID));
 	}
 	else //already computed, look it up!
-		locInitialStateP4 = dReconDecayParticles_FromMissing[std::make_pair(locReactionFullCombo, locSourceComboUse)]->lorentzMomentum();
+	{
+		auto locDecayParticleTuple = std::make_tuple(std::get<0>(locSourceComboUse), locReactionFullCombo, false, locFullVertexCombo, locBeamParticle);
+		locInitialStateP4 = dReconDecayParticles_FromMissing[locDecayParticleTuple]->lorentzMomentum();
+	}
 
 	//loop over decaying no-constrain decaying particles, figure out how many we have to do this for (can't do more than 1!)
 	map<pair<int, int>, weak_ptr<DReactionStepVertexInfo>> locNoConstrainDecayingParticles = locReactionStepVertexInfo->Get_DecayingParticles_NoConstrain();
@@ -455,9 +449,12 @@ void DSourceComboVertexer::Construct_DecayingParticle_MissingMass(const DReactio
 	auto locDecayStepIndex = Get_DecayStepIndex(locReaction, locToReconParticleIndices.first, locToReconParticleIndices.second);
 	auto locDecayUse = dSourceComboer->Get_SourceComboUse(locReaction, locDecayStepIndex);
 
+	auto locReactionStep = locReaction->Get_ReactionStep(locToReconParticleIndices.first);
+	auto locDecayPID = locReactionStep->Get_PID(locToReconParticleIndices.second);
+
 	//if the particle has already been created, reuse it!
-	auto locMissingPair = std::make_pair(locReactionFullCombo, locDecayUse);
-	auto locIterator = dReconDecayParticles_FromMissing.find(locMissingPair);
+	auto locDecayParticleTuple = std::make_tuple(locDecayPID, locReactionFullCombo, locIsProductionVertexFlag, locFullVertexCombo, locBeamParticle);
+	auto locIterator = dReconDecayParticles_FromMissing.find(locDecayParticleTuple);
 	if(locIterator != dReconDecayParticles_FromMissing.end())
 	{
 		locReconDecayParticleMap.emplace(locToReconParticleIndices, locIterator->second);
@@ -465,7 +462,7 @@ void DSourceComboVertexer::Construct_DecayingParticle_MissingMass(const DReactio
 	}
 
 	//make sure there isn't another missing particle
-	for(auto locStepIndex : locReactionStepVertexInfo->Get_StepIndices())
+	for(const auto& locStepIndex : locReactionStepVertexInfo->Get_StepIndices())
 	{
 		if(locStepIndex == locDecayStepIndex)
 			continue;
@@ -477,46 +474,53 @@ void DSourceComboVertexer::Construct_DecayingParticle_MissingMass(const DReactio
 	//calc final state p4
 	auto locVertexZBin = dSourceComboer->Get_PhotonVertexZBin(locVertex.Z());
 	DLorentzVector locFinalStateP4;
-	if(!dSourceComboP4Handler->Calc_P4_HasMassiveNeutrals(locIsProductionVertexFlag, locReactionChargedCombo, locFullVertexCombo, locVertexZBin, locVertex, locRFBunch, locRFVertexTime, locDecayUse, locFinalStateP4))
+	if(!dSourceComboP4Handler->Calc_P4_HasMassiveNeutrals(locIsProductionVertexFlag, locReactionFullCombo, locFullVertexCombo, locVertexZBin, locVertex, locRFBunch, locRFVertexTime, locDecayUse, locFinalStateP4))
 		return; //invalid somehow
 
-	auto locReactionStep = locReaction->Get_ReactionStep(locToReconParticleIndices.first);
-	auto locDecayPID = locReactionStep->Get_PID(locToReconParticleIndices.second);
-
 	auto locP4 = locInitialStateP4 - locFinalStateP4;
-	auto locKinematicData = new DKinematicData(locDecayPID, locP4.Vect(), locVertex, 0.0);
+	auto locKinematicData = dResourcePool_KinematicData.Get_Resource();
+	locKinematicData->Reset();
+	locKinematicData->Set_Members(locDecayPID, locP4.Vect(), locVertex, 0.0);
 
 	//register it
 	locReconDecayParticleMap.emplace(locToReconParticleIndices, locKinematicData);
-	dReconDecayParticles_FromMissing.emplace(locMissingPair, locKinematicData);
+	dReconDecayParticles_FromMissing.emplace(locDecayParticleTuple, locKinematicData);
 }
 
 void DSourceComboVertexer::Calc_TimeOffsets(const DReactionVertexInfo* locReactionVertexInfo, const DSourceCombo* locChargedReactionCombo, const DSourceCombo* locFullReactionCombo)
 {
+	//only for calculating from invariant mass, not missing mass vertices
 	auto locIsPrimaryProductionVertex = locReactionVertexInfo->Get_StepVertexInfos().front()->Get_ProductionVertexFlag();
 	auto locActiveReactionCombo = (locFullReactionCombo != nullptr) ? locFullReactionCombo : locChargedReactionCombo;
 
-	auto locChargedReactionPair = std::make_pair(locIsPrimaryProductionVertex, locChargedReactionCombo);
-	auto locNeutralReactionPair = std::make_pair(locIsPrimaryProductionVertex, locFullReactionCombo);
+	auto locChargedReactionTuple = std::make_tuple(locIsPrimaryProductionVertex, locChargedReactionCombo, nullptr);
+	auto locNeutralReactionTuple = std::make_tuple(locIsPrimaryProductionVertex, locFullReactionCombo, nullptr);
 
-	auto& locChargedTimeOffsetMap = dTimeOffsets[locChargedReactionPair];
-	auto& locFullTimeOffsetMap = dTimeOffsets[locNeutralReactionPair];
+	auto& locChargedTimeOffsetMap = dTimeOffsets[locChargedReactionTuple];
+	auto& locFullTimeOffsetMap = dTimeOffsets[locNeutralReactionTuple];
+	auto& locActiveTimeOffsetMap = (locFullReactionCombo != nullptr) ? locFullTimeOffsetMap : locChargedTimeOffsetMap;
 
 	//loop over vertices
 	//MUST GO IN STEP ORDER!!
-	for(auto locStepVertexInfo : locReactionVertexInfo->Get_StepVertexInfos())
+	for(const auto& locStepVertexInfo : locReactionVertexInfo->Get_StepVertexInfos())
 	{
 		auto locChargedVertexCombo = dSourceComboer->Get_VertexPrimaryCombo(locChargedReactionCombo, locStepVertexInfo);
 		auto locFullVertexCombo = (locFullReactionCombo != nullptr) ? dSourceComboer->Get_VertexPrimaryCombo(locFullReactionCombo, locStepVertexInfo) : nullptr;
 		auto locActiveVertexCombo = (locFullReactionCombo != nullptr) ? locFullVertexCombo : locChargedVertexCombo;
 
 		//see if already determined
-		auto locChargedIterator = locChargedTimeOffsetMap.find(locChargedVertexCombo);
-		if(locChargedIterator != locChargedTimeOffsetMap.end())
-		{
-			if(locFullReactionCombo != nullptr) //save in full map
-				locFullTimeOffsetMap.emplace(locFullVertexCombo, locChargedIterator->second);
+		auto locActiveIterator = locActiveTimeOffsetMap.find(locFullVertexCombo);
+		if(locActiveIterator != locActiveTimeOffsetMap.end())
 			continue; //previously determined!
+		if(locFullReactionCombo != nullptr)
+		{
+			auto locChargedIterator = locChargedTimeOffsetMap.find(locChargedVertexCombo);
+			if(locChargedIterator != locChargedTimeOffsetMap.end())
+			{
+				 //save in full map
+				locFullTimeOffsetMap.emplace(locFullVertexCombo, locChargedIterator->second);
+				continue; //previously determined!
+			}
 		}
 
 		if(locStepVertexInfo->Get_ProductionVertexFlag())
@@ -528,20 +532,18 @@ void DSourceComboVertexer::Calc_TimeOffsets(const DReactionVertexInfo* locReacti
 		//get parent information
 		auto locParentVertexInfo = locStepVertexInfo->Get_ParentVertexInfo();
 		auto locParentCombo = dSourceComboer->Get_VertexPrimaryCombo(locActiveReactionCombo, locParentVertexInfo);
-		auto locParentTimeOffset = locChargedTimeOffsetMap[locChargedVertexCombo];
+		auto locParentTimeOffset = locActiveTimeOffsetMap[locActiveVertexCombo];
 
 		//get vertices & path length
-		auto locVertex = Get_Vertex(false, locActiveVertexCombo);
-		auto locParentProductionVertex = Get_Vertex(locParentVertexInfo->Get_ProductionVertexFlag(), locParentCombo);
+		auto locVertex = Get_Vertex(false, locActiveVertexCombo, nullptr);
+		auto locParentProductionVertex = Get_Vertex(locParentVertexInfo->Get_ProductionVertexFlag(), locParentCombo, nullptr);
 		auto locPathLength = (locVertex - locParentProductionVertex).Mag();
 
 		//compute and save result
-		auto locVertexZBin = Get_VertexZBin(false, locChargedVertexCombo);
+		auto locVertexZBin = Get_VertexZBin(false, locActiveVertexCombo, nullptr);
 		auto locP4 = dSourceComboP4Handler->Calc_P4_NoMassiveNeutrals(locActiveVertexCombo, locVertexZBin);
 		auto locTimeOffset = locPathLength/(locP4.Beta()*SPEED_OF_LIGHT) + locParentTimeOffset;
-		locChargedTimeOffsetMap.emplace(locChargedVertexCombo, locTimeOffset);
-		if(locFullVertexCombo != nullptr)
-			locFullTimeOffsetMap.emplace(locFullVertexCombo, locTimeOffset);
+		locActiveTimeOffsetMap.emplace(locActiveVertexCombo, locTimeOffset);
 	}
 }
 

@@ -45,23 +45,23 @@ class DSourceComboVertexer
 		//COMPUTE
 		void Calc_VertexTimeOffsets_WithCharged(const DReactionVertexInfo* locReactionVertexInfo, const DSourceCombo* locReactionChargedCombo);
 		void Calc_VertexTimeOffsets_WithPhotons(const DReactionVertexInfo* locReactionVertexInfo, const DSourceCombo* locReactionChargedCombo, const DSourceCombo* locReactionFullCombo);
-		void Calc_VertexTimeOffsets_WithBeam(const DReactionVertexInfo* locReactionVertexInfo, const DSourceCombo* locReactionChargedCombo, const DSourceCombo* locReactionFullCombo, const DKinematicData* locBeamParticle);
+		void Calc_VertexTimeOffsets_WithBeam(const DReactionVertexInfo* locReactionVertexInfo, const DSourceCombo* locReactionFullCombo, const DKinematicData* locBeamParticle);
 
-		bool Get_VertexDeterminableWithCharged(bool locIsProductionVertex, const DSourceCombo* locSourceCombo) const{return dVertexDeterminableWithChargedMap.find(std::make_pair(locIsProductionVertex, locSourceCombo))->second;}
-		bool Get_VertexDeterminableWithPhotons(bool locIsProductionVertex, const DSourceCombo* locSourceCombo) const{return dVertexDeterminableWithPhotonsMap.find(std::make_pair(locIsProductionVertex, locSourceCombo))->second;}
+		bool Get_VertexDeterminableWithCharged(const DReactionStepVertexInfo* locStepVertexInfo) const{return dVertexDeterminableWithChargedMap.find(locStepVertexInfo)->second;}
+		bool Get_VertexDeterminableWithPhotons(const DReactionStepVertexInfo* locStepVertexInfo) const{return dVertexDeterminableWithPhotonsMap.find(locStepVertexInfo)->second;}
 
 		//GET RESULTS
-		DVector3 Get_Vertex(bool locIsProductionVertex, const DSourceCombo* locSourceCombo) const;
+		DVector3 Get_Vertex(bool locIsProductionVertex, const DSourceCombo* locSourceCombo, const DKinematicData* locBeamParticle) const;
 		DVector3 Get_Vertex(bool locIsProductionVertex, const vector<const DKinematicData*>& locVertexParticles){return dVertexMap.find(std::make_pair(locIsProductionVertex, locVertexParticles))->second;}
-		double Get_TimeOffset(bool locIsProductionVertex, const DSourceCombo* locReactionCombo, const DSourceCombo* locVertexCombo) const;
-		DVector3 Get_PrimaryVertex(const DReactionVertexInfo* locReactionVertexInfo, const DSourceCombo* locReactionCombo) const;
-		vector<const DKinematicData*> Get_ConstrainingParticles(bool locIsProductionVertex, const DSourceCombo* locVertexCombo) const; //this is empty if vertex not found yet!
+		double Get_TimeOffset(bool locIsProductionVertex, const DSourceCombo* locReactionCombo, const DSourceCombo* locVertexCombo, const DKinematicData* locBeamParticle) const;
+		DVector3 Get_PrimaryVertex(const DReactionVertexInfo* locReactionVertexInfo, const DSourceCombo* locReactionCombo, const DKinematicData* locBeamParticle) const;
+		vector<const DKinematicData*> Get_ConstrainingParticles(bool locIsProductionVertex, const DSourceCombo* locVertexCombo, const DKinematicData* locBeamParticle) const; //beam = nullptr if not determined by missing mass! //this is empty if vertex not found yet!
 
 		//GET VERTEX-Z BINS
-		signed char Get_VertexZBin(bool locIsProductionVertex, const DSourceCombo* locSourceCombo) const;
-		vector<signed char> Get_VertexZBins(bool locIsProductionVertex, const DSourceCombo* locReactionChargedCombo) const;
+		signed char Get_VertexZBin(bool locIsProductionVertex, const DSourceCombo* locSourceCombo, const DKinematicData* locBeamParticle) const;
+		vector<signed char> Get_VertexZBins(bool locIsProductionVertex, const DSourceCombo* locReactionCombo, const DKinematicData* locBeamParticle) const;
 
-		bool Get_IsVertexFoundFlag(bool locIsProductionVertex, const DSourceCombo* locVertexPrimaryChargedCombo, const DSourceCombo* locVertexPrimaryFullCombo = nullptr) const;
+		bool Get_IsVertexFoundFlag(bool locIsProductionVertex, const DSourceCombo* locVertexPrimaryCombo, const DKinematicData* locBeamParticle) const;
 
 	private:
 		vector<const DKinematicData*>::const_iterator Get_ThetaNearest90Iterator(const vector<const DKinematicData*>& locParticles);
@@ -70,9 +70,10 @@ class DSourceComboVertexer
 		DVector3 Calc_Vertex(bool locIsProductionVertexFlag, const vector<pair<Particle_t, const JObject*>>& locChargedSourceParticles, const vector<const DKinematicData*>& locDecayingParticles, vector<const DKinematicData*>& locVertexParticles);
 		void Calc_TimeOffsets(const DReactionVertexInfo* locReactionVertexInfo, const DSourceCombo* locChargedReactionCombo, const DSourceCombo* locFullReactionCombo = nullptr);
 
-		void Construct_DecayingParticle_InvariantMass(const DReactionStepVertexInfo* locReactionStepVertexInfo, const DSourceCombo* locChargedVertexCombo, const DSourceCombo* locFullVertexCombo, DVector3 locVertex, map<pair<int, int>, const DKinematicData*>& locReconDecayParticleMap);
-		void Construct_DecayingParticle_MissingMass(const DReactionStepVertexInfo* locReactionStepVertexInfo, const DSourceCombo* locReactionChargedCombo, const DSourceCombo* locReactionFullCombo, const DSourceCombo* locFullVertexCombo, const DKinematicData* locBeamParticle, DVector3 locVertex, int locRFBunch, double locRFVertexTime, map<pair<int, int>, const DKinematicData*>& locReconDecayParticleMap);
+		void Construct_DecayingParticle_InvariantMass(const DReactionStepVertexInfo* locReactionStepVertexInfo, const DSourceCombo* locVertexCombo, DVector3 locVertex, map<pair<int, int>, const DKinematicData*>& locReconDecayParticleMap);
+		void Construct_DecayingParticle_MissingMass(const DReactionStepVertexInfo* locReactionStepVertexInfo, const DSourceCombo* locReactionFullCombo, const DSourceCombo* locFullVertexCombo, const DKinematicData* locBeamParticle, DVector3 locVertex, int locRFBunch, double locRFVertexTime, map<pair<int, int>, const DKinematicData*>& locReconDecayParticleMap);
 
+		//HANDLERS/ETC.
 		DSourceComboer* dSourceComboer;
 		DSourceComboP4Handler* dSourceComboP4Handler;
 		const DSourceComboTimeHandler* dSourceComboTimeHandler = nullptr;
@@ -82,24 +83,27 @@ class DSourceComboVertexer
 		DVector3 dTargetCenter;
 		double dMinThetaForVertex = 30.0;
 
-		//VERTICES AND TIME OFFSETS
-		//bool: is production vertex
-		unordered_map<pair<bool, const DSourceCombo*>, bool> dVertexDeterminableWithChargedMap; //excludes dangling vertex infos!! //only includes primary combos at each vertex
-		unordered_map<pair<bool, const DSourceCombo*>, bool> dVertexDeterminableWithPhotonsMap; //excludes determinable-by-charged & dangling vertex infos!! //only includes primary combos at each vertex
+		//DETERMINABILITY
+		unordered_map<const DReactionStepVertexInfo*, bool> dVertexDeterminableWithChargedMap; //excludes dangling vertex infos!! //only includes primary combos at each vertex
+		unordered_map<const DReactionStepVertexInfo*, bool> dVertexDeterminableWithPhotonsMap; //excludes determinable-by-charged & dangling vertex infos!! //only includes primary combos at each vertex
 
 		//time offsets depend on the ENTIRE reaction combo, not just the downstream ones! //time offset is from the RF time
-		//bool: is production vertex
-		unordered_map<pair<bool, const DSourceCombo*>, unordered_map<const DSourceCombo*, double>> dTimeOffsets; //first combo: primary reaction combo
+		//bool: is production vertex //why is bool used throughout here?
+		//because the vertexing is different whether it's a production vertex or not, and a given combo of particles can be used either way
+		unordered_map<tuple<bool, const DSourceCombo*, const DKinematicData*>, unordered_map<const DSourceCombo*, double>> dTimeOffsets; //first combo: primary reaction combo //kinematics: beam particle
 
-		//Only works if beam not needed! (e.g. not by missing mass)
+		//VERTICES
 		//Note that this only includes the particles used to find the vertex (+ rarely an extra or 2), not necessarily ALL of those at the vertex
-		//bool: is production vertex
-		unordered_map<pair<bool, const DSourceCombo*>, vector<const DKinematicData*>> dConstrainingParticlesByCombo;
+		//bool: is production vertex, kinematicdata: beam particle
+		unordered_map<tuple<bool, const DSourceCombo*, const DKinematicData*>, vector<const DKinematicData*>> dConstrainingParticlesByCombo;
 		unordered_map<pair<bool, vector<const DKinematicData*>>, DVector3> dVertexMap; //vector: from dConstrainingParticlesByCombo
 
 		//Reconstructed Decaying Particles
-		unordered_map<DSourceComboUse, const DKinematicData*> dReconDecayParticles_FromProducts; //use: where it decays
-		unordered_map<pair<const DSourceCombo*, DSourceComboUse>, const DKinematicData*> dReconDecayParticles_FromMissing; //combo: full reaction combo //use: where it decays
+		unordered_map<tuple<Particle_t, bool, const DSourceCombo*, const DKinematicData*>, const DKinematicData*> dReconDecayParticles_FromProducts; //pid, is prod vertex, full vertex combo, beam particle
+		unordered_map<tuple<Particle_t, const DSourceCombo*, bool, const DSourceCombo*, const DKinematicData*>, const DKinematicData*> dReconDecayParticles_FromMissing; //decay pid, full reaction combo, is prod vertex, full vertex combo, beam particle (this order)
+
+		//RESOURCE POOL
+		DResourcePool<DKinematicData> dResourcePool_KinematicData;
 };
 
 inline void DSourceComboVertexer::Reset(void)
@@ -108,7 +112,11 @@ inline void DSourceComboVertexer::Reset(void)
 	dVertexMap.clear();
 	dTimeOffsets.clear();
 
-	//delete or recycle these!
+	for(const auto& locParticlePair : dReconDecayParticles_FromProducts)
+		dResourcePool_KinematicData.Recycle(locParticlePair.second);
+	for(const auto& locParticlePair : dReconDecayParticles_FromMissing)
+		dResourcePool_KinematicData.Recycle(locParticlePair.second);
+
 	dReconDecayParticles_FromProducts.clear();
 	dReconDecayParticles_FromMissing.clear();
 
@@ -117,37 +125,41 @@ inline void DSourceComboVertexer::Reset(void)
 	dVertexMap.emplace({true, {}}, dTargetCenter);
 }
 
-inline double DSourceComboVertexer::Get_TimeOffset(bool locIsProductionVertex, const DSourceCombo* locReactionCombo, const DSourceCombo* locVertexCombo) const
+inline double DSourceComboVertexer::Get_TimeOffset(bool locIsProductionVertex, const DSourceCombo* locReactionCombo, const DSourceCombo* locVertexCombo, const DKinematicData* locBeamParticle) const
 {
-	return dTimeOffsets.find(std::make_pair(locIsProductionVertex, locReactionCombo))->second.find(locVertexCombo)->second;
+	auto locIterator = dTimeOffsets.find(std::make_tuple(locIsProductionVertex, locReactionCombo, locBeamParticle));
+	return ((locIterator != dTimeOffsets.end()) ? locIterator->second.find(locVertexCombo)->second : 0.0);
 }
 
-inline vector<const DKinematicData*> DSourceComboVertexer::Get_ConstrainingParticles(bool locIsProductionVertex, const DSourceCombo* locVertexCombo) const
+inline vector<const DKinematicData*> DSourceComboVertexer::Get_ConstrainingParticles(bool locIsProductionVertex, const DSourceCombo* locVertexCombo, const DKinematicData* locBeamParticle) const
 {
-	auto locIterator = dConstrainingParticlesByCombo.find(std::make_pair(locIsProductionVertex, locVertexCombo));
+	auto locIterator = dConstrainingParticlesByCombo.find(std::make_tuple(locIsProductionVertex, locVertexCombo, locBeamParticle));
 	if(locIterator != dConstrainingParticlesByCombo.end())
 		return locIterator->second;
 	return {};
 }
 
-inline DVector3 DSourceComboVertexer::Get_Vertex(bool locIsProductionVertex, const DSourceCombo* locSourceCombo) const
+inline DVector3 DSourceComboVertexer::Get_Vertex(bool locIsProductionVertex, const DSourceCombo* locSourceCombo, const DKinematicData* locBeamParticle) const
 {
-	return Get_Vertex(locIsProductionVertex, Get_ConstrainingParticles(locIsProductionVertex, locSourceCombo));
+	return Get_Vertex(locIsProductionVertex, Get_ConstrainingParticles(locIsProductionVertex, locSourceCombo, locBeamParticle));
 }
 
-inline DVector3 DSourceComboVertexer::Get_PrimaryVertex(const DReactionVertexInfo* locReactionVertexInfo, const DSourceCombo* locReactionCombo) const
+inline DVector3 DSourceComboVertexer::Get_PrimaryVertex(const DReactionVertexInfo* locReactionVertexInfo, const DSourceCombo* locReactionCombo, const DKinematicData* locBeamParticle) const
 {
 	auto locIsProductionVertex = locReactionVertexInfo->Get_StepVertexInfo(0)->Get_ProductionVertexFlag();
-	return Get_Vertex(locIsProductionVertex, locReactionCombo);
+	return Get_Vertex(locIsProductionVertex, locReactionCombo, locBeamParticle);
 }
 
-inline vector<signed char> DSourceComboVertexer::Get_VertexZBins(bool locIsProductionVertex, const DSourceCombo* locReactionChargedCombo) const
+inline vector<signed char> DSourceComboVertexer::Get_VertexZBins(bool locIsProductionVertex, const DSourceCombo* locReactionCombo, const DKinematicData* locBeamParticle) const
 {
+	if(locReactionCombo == nullptr)
+		return {};
+
 	vector<signed char> locVertexZBins;
-	const auto& locReactionTimeOffsets = dTimeOffsets.find(std::make_pair(locIsProductionVertex, locReactionChargedCombo))->second;
+	const auto& locReactionTimeOffsets = dTimeOffsets.find(std::make_tuple(locIsProductionVertex, locReactionCombo, locBeamParticle))->second;
 	for(const auto& locComboTimeOffsetPair : locReactionTimeOffsets) //turns out this is fastest: we have the vertex combos!
 	{
-		locVertexZBins.emplace_back(Get_VertexZBin(locIsProductionVertex, locComboTimeOffsetPair.first));
+		locVertexZBins.emplace_back(Get_VertexZBin(locIsProductionVertex, locComboTimeOffsetPair.first, locBeamParticle));
 		locIsProductionVertex = false;
 	}
 	return locVertexZBins;
@@ -160,17 +172,10 @@ inline vector<const DKinematicData*>::const_iterator DSourceComboVertexer::Get_T
 	return std::max_element(locParticles.begin(), locParticles.end(), Get_Nearer90Theta);
 }
 
-inline bool DSourceComboVertexer::Get_IsVertexFoundFlag(bool locIsProductionVertex, const DSourceCombo* locVertexPrimaryChargedCombo, const DSourceCombo* locVertexPrimaryFullCombo) const
+inline bool DSourceComboVertexer::Get_IsVertexFoundFlag(bool locIsProductionVertex, const DSourceCombo* locVertexPrimaryCombo, const DKinematicData* locBeamParticle) const
 {
-	auto locProductionPair = std::make_pair(locIsProductionVertex, locVertexPrimaryChargedCombo);
-	if(dConstrainingParticlesByCombo.find(locProductionPair) != dConstrainingParticlesByCombo.end())
-		return true;
-	if(locVertexPrimaryFullCombo == nullptr)
-		return false;
-
-	locProductionPair = std::make_pair(locIsProductionVertex, locVertexPrimaryFullCombo);
-	return (dConstrainingParticlesByCombo.find(locProductionPair) != dConstrainingParticlesByCombo.end());
-
+	auto locVertexTuple = std::make_tuple(locIsProductionVertex, locVertexPrimaryCombo, locBeamParticle);
+	return (dConstrainingParticlesByCombo.find(locVertexTuple) != dConstrainingParticlesByCombo.end());
 }
 
 } //end DAnalysis namespace

@@ -38,7 +38,7 @@ class DSourceComboP4Handler
 		void Set_PhotonKinematics(const DPhotonKinematicsByZBin& locPhotonKinematics){dPhotonKinematics = locPhotonKinematics;}
 
 		//GET/CALC PARTICLE P4
-		DLorentzVector Get_P4_NonMassiveNeutral(Particle_t locPID, const JObject* locObject, signed char locVertexZBin) const;
+		DLorentzVector Get_P4_NotMassiveNeutral(Particle_t locPID, const JObject* locObject, signed char locVertexZBin) const;
 		DLorentzVector Calc_MassiveNeutralP4(const DNeutralShower* locNeutralShower, Particle_t locPID, const DVector3& locVertex, double locVertexTime) const;
 
 		//GET/CALC COMBO P4
@@ -51,9 +51,9 @@ class DSourceComboP4Handler
 		//CUT
 		//use this method when the combo DOES NOT contain massive neutrals
 		bool Cut_InvariantMass_NoMassiveNeutrals(const DSourceCombo* locSourceCombo, Particle_t locDecayPID, signed char locVertexZBin);
-		bool Cut_InvariantMass_HasMassiveNeutral_OrPhotonVertex(const DReactionVertexInfo* locReactionVertexInfo, const DSourceCombo* locReactionFullCombo, const DSourceCombo* locReactionChargedCombo, vector<int>& locValidRFBunches);
+		bool Cut_InvariantMass_HasMassiveNeutral_OrPhotonVertex(const DReactionVertexInfo* locReactionVertexInfo, const DSourceCombo* locReactionChargedCombo, vector<int>& locValidRFBunches);
 		bool Cut_InvariantMass_HasMassiveNeutral(bool locIsProductionVertex, const DSourceCombo* locReactionChargedCombo, const DSourceCombo* locSourceCombo, Particle_t locDecayPID, double locPrimaryVertexZ, const DVector3& locVertex, double locTimeOffset, vector<int>& locValidRFBunches);
-		bool Cut_InvariantMass_MissingMassVertex(const DReactionVertexInfo* locReactionVertexInfo, const DSourceCombo* locReactionFullCombo, const DSourceCombo* locReactionChargedCombo, int locRFBunch);
+		bool Cut_InvariantMass_MissingMassVertex(const DReactionVertexInfo* locReactionVertexInfo, const DSourceCombo* locReactionFullCombo, const DKinematicData* locBeamParticle, int locRFBunch);
 
 	private:
 		DLorentzVector Get_P4(Particle_t locPID, const JObject* locObject, signed char locVertexZBin, int locRFBunch);
@@ -68,7 +68,7 @@ class DSourceComboP4Handler
 
 		//TOTAL FINAL STATE FOUR-MOMENTUM
 		unordered_map<pair<const DSourceCombo*, signed char>, DLorentzVector> dFinalStateP4ByCombo; //signed char: vertex-z bin
-		unordered_map<tuple<bool, const DSourceCombo*, const DSourceCombo*, int>, DLorentzVector> dFinalStateP4ByCombo_HasMassiveNeutrals; //int: RF bunch //bool: is prod vertex //first combo: reaction charged
+		unordered_map<tuple<bool, const DSourceCombo*, const DSourceCombo*, int>, DLorentzVector> dFinalStateP4ByCombo_HasMassiveNeutrals; //int: RF bunch //bool: is prod vertex //first combo: reaction full
 
 		//CUTS
 		double dMaxMassiveNeutralBeta = 0.99999;
