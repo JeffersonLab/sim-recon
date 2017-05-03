@@ -41,7 +41,32 @@ namespace DAnalysis
 {
 //build particle combo
 //make sure someone calls Reset for the DSourceComboer!!
+//use locMergeCombosSameLevelFlag
+//BEWARE IF locMergeCombosSameLevelFlag = true!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
+/*
+	 * suppose reaction is 0) g, p -> omega, p
+	 *                     1)         omega -> 3pi
+	 *                     2)                   pi0 -> 2g
+	 *
+	 * Note that, for a given step, the particles are grouped together as:
+	 * Decay PID -> All_Charged, All_Neutral, any mixed decays
+	 * Where All_Charged, All_Neutral are separate uses containing the entirety of the contents for that charge (X -> charged, X -> neutral)
+	 * Whereas any mixed decays are on the same level as the X -> charged & X -> neutral "decays"
+	 *
+	 * It will have uses/infos like:
+	 * 0: X -> A, 1 (mixed + charged)
+	 *    A: X -> p (charged) 					OK
+	 * 	1: omega -> B, 2 (mixed)
+	 *    	B: X -> pi+, pi- (charged) 	OK
+	 *			2: pi0 -> 2g (neutral) 			OK
+	 *
+
+auto locDecayPID_AllBut1 = std::get<0>(locAllBut1ComboUse);
+auto locComboInfo_AllBut1 = std::get<2>(locAllBut1ComboUse);
+bool locMergeSameLevelFlag = ((locDecayPID_AllBut1 != Unknown) || (locComboInfo_AllBut1->Get_FurtherDecays().empty() || (locComboInfo_AllBut1->Get_NumParticles().empty() && (locComboInfo_AllBut1->Get_FurtherDecays().size() == 1)));
+
+*/
 //ANY TIME:
 //MAKE A DChargedTrack_Combo factory. It takes new DTrackTimeBased, makes hypos, combines them with existing hypos (from preselect factory), and makes new charged tracks
 //implement beam/RF delta-t cut! (be careful: channel dependent!)
@@ -148,7 +173,7 @@ class DSourceComboer : public JObject
 		//COMBO HORIZONTALLY METHODS
 		void Combo_Horizontally_All(const DSourceComboUse& locComboUseToCreate, ComboingStage_t locComboingStage, const DSourceCombo* locChargedCombo_Presiding);
 		void Create_Combo_OneParticle(const DSourceComboUse& locComboUseToCreate, ComboingStage_t locComboingStage);
-		void Combo_Horizontally_AddCombo(const DSourceComboUse& locComboUseToCreate, const DSourceComboUse& locAllBut1ComboUse, const DSourceComboUse& locSourceComboUseToAdd, ComboingStage_t locComboingStage, const DSourceCombo* locChargedCombo_Presiding);
+		void Combo_Horizontally_AddCombo(const DSourceComboUse& locComboUseToCreate, const DSourceComboUse& locAllBut1ComboUse, const DSourceComboUse& locSourceComboUseToAdd, ComboingStage_t locComboingStage, const DSourceCombo* locChargedCombo_Presiding, bool locMergeCombosSameLevelFlag);
 		void Combo_Horizontally_AddParticle(const DSourceComboUse& locComboUseToCreate, const DSourceComboUse& locAllBut1ComboUse, Particle_t locPID, ComboingStage_t locComboingStage, const DSourceCombo* locChargedCombo_Presiding);
 
 		//BUILD/RETRIEVE RESUME-AT ITERATORS
