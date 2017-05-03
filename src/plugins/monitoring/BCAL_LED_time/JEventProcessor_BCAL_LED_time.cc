@@ -3,158 +3,8 @@
 //    File: JEventProcessor_BCAL_LED_time.cc
 //
 
-#include <stdint.h>
-#include <vector>
-#include "TTree.h"
+
 #include "JEventProcessor_BCAL_LED_time.h"
-#include <JANA/JApplication.h>
-#include <iostream>
-#include <fstream>
-
-using namespace std;
-using namespace jana;
-
-#include "BCAL/DBCALDigiHit.h"
-#include "BCAL/DBCALHit.h"
-#include "BCAL/DBCALPoint.h"
-#include "BCAL/DBCALUnifiedHit.h"
-#include "DAQ/Df250PulseIntegral.h"
-#include "DAQ/Df250WindowRawData.h"
-#include "TRIGGER/DL1Trigger.h"
-
-#include <TDirectory.h>
-#include <TH3.h>
-#include <TH2.h>
-#include <TH1.h>
-#include <TProfile2D.h>
-#include <TStyle.h>
-
-// root hist pointers
-
-//all channels
-static TProfile *bcal_time_vevent = NULL;
-
-//2 sides
-static TProfile *up_time_vevent = NULL;
-static TProfile *down_time_vevent = NULL;
-//4 columns
-static TProfile *column1_time_vevent = NULL;
-static TProfile *column2_time_vevent = NULL;
-static TProfile *column3_time_vevent = NULL;
-static TProfile *column4_time_vevent = NULL;
-
-static TProfile *column1_up_peak_vevent = NULL;
-static TProfile *column2_up_peak_vevent = NULL;
-static TProfile *column3_up_peak_vevent = NULL;
-static TProfile *column4_up_peak_vevent = NULL;
-static TProfile *column1_down_peak_vevent = NULL;
-static TProfile *column2_down_peak_vevent = NULL;
-static TProfile *column3_down_peak_vevent = NULL;
-static TProfile *column4_down_peak_vevent = NULL;
-
-
-static TProfile *column1_up_time_vevent1 = NULL;
-static TProfile *column1_down_time_vevent1 = NULL;
-static TProfile *column1_up_time_vevent2 = NULL;
-static TProfile *column1_down_time_vevent2 = NULL;
-static TProfile *column1_up_time_vevent3 = NULL;
-static TProfile *column1_down_time_vevent3 = NULL;
-static TProfile *column1_up_time_vevent4 = NULL;
-static TProfile *column1_down_time_vevent4 = NULL;
-
-static TProfile *column2_up_time_vevent1 = NULL;
-static TProfile *column2_down_time_vevent1 = NULL;
-static TProfile *column2_up_time_vevent2 = NULL;
-static TProfile *column2_down_time_vevent2 = NULL;
-static TProfile *column2_up_time_vevent3 = NULL;
-static TProfile *column2_down_time_vevent3 = NULL;
-static TProfile *column2_up_time_vevent4 = NULL;
-static TProfile *column2_down_time_vevent4 = NULL;
-
-static TProfile *column3_up_time_vevent1 = NULL;
-static TProfile *column3_down_time_vevent1 = NULL;
-static TProfile *column3_up_time_vevent2 = NULL;
-static TProfile *column3_down_time_vevent2 = NULL;
-static TProfile *column3_up_time_vevent3 = NULL;
-static TProfile *column3_down_time_vevent3 = NULL;
-static TProfile *column3_up_time_vevent4 = NULL;
-static TProfile *column3_down_time_vevent4 = NULL;
-
-static TProfile *column4_up_time_vevent1 = NULL;
-static TProfile *column4_down_time_vevent1 = NULL;
-static TProfile *column4_up_time_vevent2 = NULL;
-static TProfile *column4_down_time_vevent2 = NULL;
-static TProfile *column4_up_time_vevent3 = NULL;
-static TProfile *column4_down_time_vevent3 = NULL;
-static TProfile *column4_up_time_vevent4 = NULL;
-static TProfile *column4_down_time_vevent4 = NULL;
-
-  
-    
-static TProfile *low_up_1 = NULL;
-static TProfile *low_up_2 = NULL;
-static TProfile *low_up_3 = NULL;
-static TProfile *low_up_4 = NULL;
-static TProfile *low_down_1 = NULL;
-static TProfile *low_down_2 = NULL;
-static TProfile *low_down_3 = NULL;
-static TProfile *low_down_4 = NULL;
-
-static TProfile *low_up = NULL;
-static TProfile *low_down = NULL;
-
-static TProfile *high_up_1 = NULL;
-static TProfile *high_up_2 = NULL;
-static TProfile *high_up_3 = NULL;
-static TProfile *high_up_4 = NULL;
-static TProfile *high_down_1 = NULL;
-static TProfile *high_down_2 = NULL;
-static TProfile *high_down_3 = NULL;
-static TProfile *high_down_4 = NULL;
-
-static TProfile *high_up = NULL;
-static TProfile *high_down = NULL;
-
-// Histograms added by Elton for z distributions
-
-
-
-static TProfile* h2_ledboth_Tall_vs_event = NULL;
-static TProfile* h2_ledboth_sector_vs_event = NULL;
-static TH1I* h1_ledall_layer = NULL;
-static TH1I* h1_led0_layer = NULL;
-
-static TH1I* h1_ledup_z_all = NULL;;
-static TH2I* h2_ledup_z_vs_cellid = NULL;
-static TH1I* h1_ledup_layer = NULL;
-static TH1I* h1_ledup_sector = NULL;
-static TH1I* h1_ledup_sector_config = NULL;
-static TH1I* h1_ledup_Tdiff_all = NULL;
-static TH1I* h1_ledup_Tup_all = NULL;
-static TH1I* h1_ledup_Tdown_all = NULL;
-static TH2I* h2_ledup_Tup_vs_z = NULL;
-static TH2I* h2_ledup_Tdown_vs_z = NULL;
-static TProfile* h2_ledup_Tup_vs_event = NULL;
-static TProfile* h2_ledup_Tdown_vs_event = NULL;
-static TProfile* h2_ledup_Tall_vs_event = NULL;
-static TProfile* h2_ledup_sector_vs_event = NULL;
-
-static TH1I* h1_leddown_z_all = NULL;
-static TH2I* h2_leddown_z_vs_cellid = NULL;
-static TH1I* h1_leddown_layer = NULL;
-static TH1I* h1_leddown_sector = NULL;
-static TH1I* h1_leddown_sector_config = NULL;
-static TH1I* h1_leddown_Tdiff_all = NULL;
-static TH1I* h1_leddown_Tup_all = NULL;
-static TH1I* h1_leddown_Tdown_all = NULL;
-static TH2I* h2_leddown_Tup_vs_z = NULL;
-static TH2I* h2_leddown_Tdown_vs_z = NULL;
-static TProfile* h2_leddown_Tup_vs_event = NULL;
-static TProfile* h2_leddown_Tdown_vs_event = NULL;
-static TProfile* h2_leddown_Tall_vs_event = NULL;
-static TProfile* h2_leddown_sector_vs_event = NULL;
-
-
 
 
 //----------------------------------------------------------------------------------
@@ -488,7 +338,7 @@ jerror_t JEventProcessor_BCAL_LED_time::evnt(JEventLoop *loop, uint64_t eventnum
         // fill layer histogram
 	loop->Get(dbcalhits);
 	loop->Get(bcaldigihits);
-	loop->Get(dbcalpoints);
+	loop->Get(dbcalpoints);   
 
 	// tag events that did not latch properly. Steal code from Sean's skim program
 
@@ -733,21 +583,6 @@ jerror_t JEventProcessor_BCAL_LED_time::evnt(JEventLoop *loop, uint64_t eventnum
 	for (int chid = 0; chid < 1536; chid++)  {
 	  // if (chcounter[chid] > 1) continue;
 	      if (chcounter[chid] != 1) continue;
-	      Int_t module;
-	      Int_t layer;
-	      Int_t sector;
-	      if (chid < 768) {
-		module = chid/16 + 1;
-		layer = (chid - (module-1)*16)/4 + 1;
-		sector = (chid - (module-1)*16 - (layer-1)*4) +1; 
-	      }
-	      else {
-		module = (chid-768)/16 + 1; 
-	        layer = (chid-768 - (module-1)*16)/4 + 1;
-		sector = (chid-768 - (module-1)*16 - (layer-1)*4) +1;
-	      }
-	      // cout << " Pre-HIST module=" << module << " layer=" << layer << " sector=" << sector << " LED_US=" << LED_US << " LED_DS=" << LED_DS << " Tdiff=" << apedsubtime[chid]-apedsubtime[chid+768] << endl;
-	      
 				if (LED_US) {
 				    if (ledup_sector_int == 1 && chid%4+1 == 1) {
 				      if (column1up < adccount1) {
