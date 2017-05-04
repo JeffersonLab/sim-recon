@@ -152,9 +152,9 @@ int main( int argc, char* argv[] ){
 	
 	ProductionMechanism::Type type =
 		( genFlat ? ProductionMechanism::kFlat : ProductionMechanism::kResonant );
-	
+
 	// generate over a range of mass -- the daughters are two charged pions
-	GammaPToXYP resProd( lowMass, highMass, 0.140, 0.140, beamMaxE, beamPeakE, beamLowE, beamHighE, type, slope );
+	GammaPToXYP resProd( lowMass, highMass, ParticleMass(PiPlus), ParticleMass(PiMinus), beamMaxE, beamPeakE, beamLowE, beamHighE, type, slope );
 	
 	// seed the distribution with a sum of noninterfering Breit-Wigners
 	// we can easily compute the PDF for this and divide by that when
