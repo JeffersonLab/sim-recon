@@ -3,27 +3,26 @@ double short_drift_func[3][3];
 double magnet_correction[2][2];
 
 vector<double> cdc_drift_table;
-double Bz_avg;
 
 // Set values for the region cut
 float deltaMin = -0.175, deltaMax = 0.175, tMin = 300, tMax = 1200;
 
 unsigned int Locate(vector<double>&xx, double x){
-    int n=xx.size();
-    if (x==xx[0]) return 0;
-    else if (x==xx[n-1]) return n-2;
+   int n=xx.size();
+   if (x==xx[0]) return 0;
+   else if (x==xx[n-1]) return n-2;
 
-    int jl=-1;
-    int ju=n;
-    int ascnd=(xx[n-1]>=xx[0]);
-    while(ju-jl>1){
-        int jm=(ju+jl)>>1;
-        if ( (x>=xx[jm])==ascnd)
-            jl=jm;
-        else
-            ju=jm;
-    } 
-    return jl;
+   int jl=-1;
+   int ju=n;
+   int ascnd=(xx[n-1]>=xx[0]);
+   while(ju-jl>1){
+      int jm=(ju+jl)>>1;
+      if ( (x>=xx[jm])==ascnd)
+         jl=jm;
+      else
+         ju=jm;
+   }
+   return jl;
 }
 
 Double_t TimeToDistance( Double_t *x, Double_t *par){
@@ -31,7 +30,7 @@ Double_t TimeToDistance( Double_t *x, Double_t *par){
    double delta = x[1]; // yAxis
    double t = x[0]; // xAxis
 
-   // Cut out region in  fit. 
+   // Cut out region in  fit.
    if (delta > deltaMax || delta < deltaMin) return 0.0;
    if (delta < (((deltaMax - deltaMin) / (tMax - tMin))*(t - tMin) + deltaMin)) return 0.0;
    // Variables to store values for time-to-distance functions for delta=0
@@ -89,13 +88,12 @@ Double_t TimeToDistance( Double_t *x, Double_t *par){
          d=f_delta;
          return d;
       }
-
       // Drift time is within range of table -- interpolate...
       unsigned int index=0;
       index=Locate(cdc_drift_table,t);
       double dt=cdc_drift_table[index+1]-cdc_drift_table[index];
       double frac=(t-cdc_drift_table[index])/dt;
-      double d_0=0.01*(double(index)+frac); 
+      double d_0=0.01*(double(index)+frac);
 
       double P=0.;
       double tcut=250.0; // ns
@@ -108,20 +106,10 @@ Double_t TimeToDistance( Double_t *x, Double_t *par){
 }
 
 
-void FitTimeToDistance(TString inputROOTFile = "hd_root.root", int run = 11000)
-{
-   // Script for fitting the time to distance relation from data
-   TFile *thisFile = TFile::Open(inputROOTFile);
-   TH1I *Bz_hist = (TH1I *) thisFile->Get("/CDC_TimeToDistance/Bz");
-   TF2 *f1,*f2; const Int_t npar = 18;
-   bool isFieldOff = false;
-   if (Bz_hist == 0) isFieldOff = true;
-   f1 = new TF2("f1",TimeToDistance, 10, 1500, -0.3, 0.3, npar);
-   f2 = new TF2("f2",TimeToDistance, 10, 1500, -0.3, 0.3, npar);
-   //f1 = new TF2("f1",TimeToDistanceFieldOff, 0, 200, -0.18, 0.18, npar);
-   //f2 = new TF2("f2",TimeToDistanceFieldOff, 0, 200, -0.18, 0.18, npar);
+void HistMacro_CDCTimeToDistance(){
+   TF2 *f = new TF2("f",TimeToDistance, 10, 1500, -0.3, 0.3, 18);
 
-   TProfile *constants = thisFile->Get("/CDC_TimeToDistance/CDC_TD_Constants");
+   TProfile *constants = (TProfile *) gDirectory->Get("/CDC_TimeToDistance/CDC_TD_Constants");
    long_drift_func[0][0] = constants->GetBinContent(101);
    long_drift_func[0][1] = constants->GetBinContent(102);
    long_drift_func[0][2] = constants->GetBinContent(103);
@@ -149,9 +137,7 @@ void FitTimeToDistance(TString inputROOTFile = "hd_root.root", int run = 11000)
       cdc_drift_table.push_back(constants->GetBinContent(i));
    }
 
-   // So now you have the input to your function
-
-   Double_t parameters[npar] =
+   Double_t parameters[18] =
    {long_drift_func[0][0], long_drift_func[0][1], long_drift_func[0][2],
       long_drift_func[1][0], long_drift_func[1][1], long_drift_func[1][2],
       long_drift_func[2][0], long_drift_func[2][1], long_drift_func[2][2],
@@ -159,64 +145,38 @@ void FitTimeToDistance(TString inputROOTFile = "hd_root.root", int run = 11000)
       short_drift_func[1][0], short_drift_func[1][1], short_drift_func[1][2],
       short_drift_func[2][0], short_drift_func[2][1], short_drift_func[2][2]};
 
+   f->SetParameters(parameters);
 
-   f1->SetParameters(parameters);
-   f2->SetParameters(parameters);
+   TCanvas *c = new TCanvas("c_TD","CDC TD", 1200, 550);
+   c->Divide(2,1);
 
-   /*
-      double fractionalRange=0.15;
-      for(unsigned int i=0; i < npar; i++){
-      f1->SetParLimits(i,parameters[i]-fractionalRange*parameters[i],parameters[i]+fractionalRange*parameters[i]);
-      f2->SetParLimits(i,parameters[i]-fractionalRange*parameters[i],parameters[i]+fractionalRange*parameters[i]);
-      }
-      */
+   c->cd(1);
 
-   TProfile2D *profile = (TProfile2D *) thisFile->Get("/CDC_TimeToDistance/Predicted Drift Distance Vs Delta Vs t_drift");
+   TProfile2D *profile = (TProfile2D *) gDirectory->Get("/CDC_TimeToDistance/Predicted Drift Distance Vs Delta Vs t_drift");
 
-   //profile->Fit("f2");
    gStyle->SetOptStat(0);
 
-   TCanvas *c1 = new TCanvas ("c1", "c1", 800, 600);
-   Double_t contours[21] = 
-   { 0.00, 0.05, 0.1, 0.15, 0.2, 0.25, 0.3, 0.35, 0.4, 0.45, 
+   Double_t contours[21] =
+   { 0.00, 0.05, 0.1, 0.15, 0.2, 0.25, 0.3, 0.35, 0.4, 0.45,
       0.5, 0.55, 0.6, 0.65, 0.7, 0.75, 0.8, 0.85, 0.9, 0.95, 1.0};
 
    profile->SetContour(21, contours);
    profile->Draw("colz");
-   f1->SetContour(21, contours);
+   profile->GetXaxis()->SetRangeUser(0,1200);
+   profile->GetYaxis()->SetRangeUser(-0.22,0.22);
+   profile->GetYaxis()->SetTitleOffset(1.15);
+   f->SetContour(21, contours);
    profile->Draw("cont2 list same");
-   f1->Draw("cont2 list same");
-   c1->Update();
-   c1->SaveAs(Form("Before_Run%i.png", run));
+   f->Draw("cont2 list same");
 
-   TProfile2D *profileRebin = profile->Rebin2D(4,4, "Rebin");
-   TFitResultPtr fr = profileRebin->Fit("f2", "S");
-   TCanvas *c2 = new TCanvas ("c2", "c2", 800, 600);
-   c2->cd();
-   profile->Draw("colz");
-   f2->SetContour(21, contours);
-   profile->Draw("cont2 list same");
-   f2->Draw("cont2 list same");
-   c2->Update();
-   c2->SaveAs(Form("After_Run%i.png", run));
+   c->cd(2);
+   TH2I *hist = (TH2I *) gDirectory->Get("/CDC_TimeToDistance/Residual Vs. Drift Time"); 
+   hist->Draw("colz");
+   hist->GetXaxis()->SetRangeUser(0,1200);
+   hist->GetYaxis()->SetTitleOffset(1.40);
+   c->cd(2)->SetGridx();
+   c->cd(2)->SetGridy();
 
-   TCanvas *c3 = new TCanvas ("c3", "c3", 800, 600);
-   f1->Draw("cont2 list");
-   f1->SetLineColor(3);
-   f2->Draw("cont2 list same");
-   c3->Update();
-
-   ofstream outputTextFile;
-   outputTextFile.open("ccdb_Format.txt"); 
-   outputTextFile << fr->Parameter(0) << " " << fr->Parameter(1) << " " << fr->Parameter(2) << " " ;
-   outputTextFile << fr->Parameter(3) << " " << fr->Parameter(4) << " " << fr->Parameter(5) << " " ;
-   outputTextFile << fr->Parameter(6) << " " << fr->Parameter(7) << " " << fr->Parameter(8) << " " ;
-   outputTextFile << magnet_correction[0][0] << " " << magnet_correction[0][1] << endl; 
-   outputTextFile << fr->Parameter(9) << " " << fr->Parameter(10) << " " << fr->Parameter(11) << " " ;
-   outputTextFile << fr->Parameter(12) << " " << fr->Parameter(13) << " " << fr->Parameter(14) << " " ;
-   outputTextFile << fr->Parameter(15) << " " << fr->Parameter(16) << " " << fr->Parameter(17) << " " ;
-   outputTextFile << magnet_correction[1][0] << " " << magnet_correction[1][1] << endl;
-   outputTextFile.close();
-
-   return;
+   c->cd();
+   c->Update();
 }
