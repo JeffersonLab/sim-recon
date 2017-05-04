@@ -140,7 +140,10 @@ int main( int argc, char* argv[] ){
 	ReactionInfo* reaction = cfgInfo->reactionList()[0];
 	
 	// random number initialization (set to 0 by default)
+	TRandom3* gRandom = new TRandom3();
 	gRandom->SetSeed(seed);
+	// set seed for drand48() in amptools as well
+	srand48(seed);
 
 	// setup AmpToolsInterface
 	AmpToolsInterface::registerAmplitude( TwoPiAngles_amp() );
