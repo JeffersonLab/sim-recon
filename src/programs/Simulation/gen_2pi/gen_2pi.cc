@@ -54,6 +54,8 @@ int main( int argc, char* argv[] ){
 	int runNum = 9001;
 	int seed = 0;
 
+	double slope = 6.0;
+
 	int nEvents = 10000;
 	int batchSize = 10000;
 	
@@ -98,6 +100,9 @@ int main( int argc, char* argv[] ){
 		if (arg == "-s"){
                         if ((i+1 == argc) || (argv[i+1][0] == '-')) arg = "-h";
                         else  seed = atoi( argv[++i] ); }
+		if (arg == "-t"){
+                        if ((i+1 == argc) || (argv[i+1][0] == '-')) arg = "-h";
+                        else  slope = atof( argv[++i] ); }
 		if (arg == "-d"){
 			diag = true; }
 		if (arg == "-f"){
@@ -116,6 +121,7 @@ int main( int argc, char* argv[] ){
                         cout << "\t -b  <value>\t Maximum photon energy to simulate events [optional]" << endl;
 			cout << "\t -r  <value>\t Run number assigned to generated events [optional]" << endl;
 			cout << "\t -s  <value>\t Random number seed initialization [optional]" << endl;
+			cout << "\t -t  <value>\t Momentum transfer slope [optional]" << endl;
 			cout << "\t -f \t\t Generate flat in M(X) (no physics) [optional]" << endl;
 			cout << "\t -d \t\t Plot only diagnostic histograms [optional]" << endl << endl;
 			exit(1);
@@ -145,7 +151,7 @@ int main( int argc, char* argv[] ){
 		( genFlat ? ProductionMechanism::kFlat : ProductionMechanism::kResonant );
 	
 	// generate over a range of mass -- the daughters are two charged pions
-	GammaPToXYP resProd( lowMass, highMass, 0.140, 0.140, beamMaxE, beamPeakE, beamLowE, beamHighE, type );
+	GammaPToXYP resProd( lowMass, highMass, 0.140, 0.140, beamMaxE, beamPeakE, beamLowE, beamHighE, type, slope );
 	
 	// seed the distribution with a sum of noninterfering Breit-Wigners
 	// we can easily compute the PDF for this and divide by that when

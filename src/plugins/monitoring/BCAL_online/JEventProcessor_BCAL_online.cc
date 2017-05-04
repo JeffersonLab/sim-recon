@@ -88,6 +88,8 @@ static TH2I *bcal_Uhit_tTDC_tADC = NULL;
 static TH2I *bcal_Uhit_tTDC_E = NULL;
 static TH2I *bcal_Uhit_tADC_E = NULL;
 static TProfile2D *bcal_Uhit_tdiff_ave = NULL;
+static TProfile2D *bcal_hit_tdiff_raw_ave = NULL;
+static TProfile2D *bcal_hit_tdiff_ave = NULL;
 
 static TH1I *bcal_num_points = NULL;
 static TH1I *bcal_point_E = NULL;
@@ -207,8 +209,8 @@ jerror_t JEventProcessor_BCAL_online::init(void) {
 	bcal_num_events = new TH1I("bcal_num_events","BCAL Number of events",1, 0.5, 1.5);
 
 	bcal_fadc_digi_integral = new TH1I("bcal_fadc_digi_integral","BCAL Integral (DBCALDigiHit);Integral (fADC counts)", 500, 0, 40000);
-	bcal_fadc_digi_pedestal = new TH1I("bcal_fadc_digi_pedestal","BCAL Pedestal (DBCALDigiHit);Pedestal (fADC counts)", 110, 0, 110);
-	bcal_fadc_digi_good_pedestal = new TH1I("bcal_fadc_digi_good_pedestal","BCAL Good Pedestal (DBCALDigiHit);Pedestal (fADC counts)", 40, 80, 120);
+	bcal_fadc_digi_pedestal = new TH1I("bcal_fadc_digi_pedestal","BCAL Pedestal (DBCALDigiHit);Pedestal (fADC counts)", 400, 200, 600);
+	bcal_fadc_digi_good_pedestal = new TH1I("bcal_fadc_digi_good_pedestal","BCAL Good Pedestal (DBCALDigiHit);Pedestal (fADC counts)", 40, 380, 420);
 #if ROOT_VERSION_CODE >= ROOT_VERSION(6,0,0)
 	bcal_fadc_digi_pedestal->SetCanExtend(TH1::kXaxis);
 	bcal_fadc_digi_good_pedestal->SetCanExtend(TH1::kXaxis);
@@ -216,7 +218,7 @@ jerror_t JEventProcessor_BCAL_online::init(void) {
 	bcal_fadc_digi_pedestal->SetBit(TH1::kCanRebin);
 	bcal_fadc_digi_good_pedestal->SetBit(TH1::kCanRebin);
 #endif
-	bcal_fadc_digi_QF = new TH1I("bcal_fadc_digi_QF","Qualtiy Factor (DBCALDigiHit);Qualtiy Factor", 20, 0, 20);
+	bcal_fadc_digi_QF = new TH1I("bcal_fadc_digi_QF","Qualtiy Factor (DBCALDigiHit);Qualtiy Factor", 128, -0.5, 127.5);
 	bcal_fadc_digi_time = new TH1I("bcal_fadc_digi_time","ADC Time (DBCALDigiHit);Time (fADC time/62.5 ps)", 550, -600, 6000);
 	bcal_fadc_digi_occ = new TH2I("bcal_fadc_digi_occ","ADC occupancy (DBCALDigiHit);Module", 48, 0.5, 48.5, 33, 0.5, 33.5);
 	bcal_fadc_digi_pedestal_ave = new TProfile2D("bcal_fadc_digi_pedestal_ave",
@@ -281,8 +283,12 @@ jerror_t JEventProcessor_BCAL_online::init(void) {
 				     100, Ehit_min, Ehit_max, 100, timemin_ns, timemax_ns);
 	bcal_Uhit_tTDC_twalk = new TH1I("bcal_Uhit_tTDC_twalk","TDC timewalk correction (DBCALUnifiedHit);Timewalk correction  (ns)", 
 				 150, -140, 10);
-	bcal_Uhit_tdiff_ave = new TProfile2D("bcal_Uhit_tdiff_ave", "Mean time diff. (TDC-ADC) (DBCALDigiHit);Module", 
-					     48, 0.5, 48.5, 33, 0.5, 33.5);
+    bcal_Uhit_tdiff_ave = new TProfile2D("bcal_Uhit_tdiff_ave", "Mean time diff. (TDC-ADC) (UnifiedHit);Module",
+                                         48, 0.5, 48.5, 33, 0.5, 33.5);
+    bcal_hit_tdiff_raw_ave = new TProfile2D("bcal_hit_tdiff_raw_ave", "Mean time diff. uncalib. (TDC-ADC) (Hit);Module",
+                                            48, 0.5, 48.5, 33, 0.5, 33.5);
+    bcal_hit_tdiff_ave = new TProfile2D("bcal_hit_tdiff_ave", "Mean time diff. (TDC-ADC) (Hit);Module",
+                                        48, 0.5, 48.5, 33, 0.5, 33.5);
 
 	bcal_num_points = new TH1I("bcal_num_points","Number of BCAL points;Number of points per event", 100, 0, 100);
 	bcal_point_E = new TH1I("bcal_point_E","Energy (DBCALPoint);Energy  (GeV)", 500, Ehit_min, Ehit_max);
@@ -339,9 +345,9 @@ jerror_t JEventProcessor_BCAL_online::init(void) {
 	bcal_shower_y = new TH1I("bcal_shower_y","y (DBCALShower);Y position  (cm)", 500, -100, 100);
 	bcal_shower_z = new TH1I("bcal_shower_z","z (DBCALShower);Z position  (cm)", 600, -100, 500);
 	bcal_shower_t = new TH1I("bcal_shower_t","Time (DBCALShower);Time (ns)", 500, timemin_ns, timemax_ns);
-	bcal_shower_xErr = new TH1I("bcal_shower_xErr","xErr (DBCALShower)", 100, 0, 30);
-	bcal_shower_yErr = new TH1I("bcal_shower_yErr","yErr (DBCALShower)", 100, 0, 30);
-	bcal_shower_zErr = new TH1I("bcal_shower_zErr","zErr (DBCALShower)", 100, 0, 40);
+	bcal_shower_xErr = new TH1I("bcal_shower_xErr","xErr (DBCALShower)", 100, 0, 10);
+	bcal_shower_yErr = new TH1I("bcal_shower_yErr","yErr (DBCALShower)", 100, 0, 10);
+	bcal_shower_zErr = new TH1I("bcal_shower_zErr","zErr (DBCALShower)", 100, 0, 20);
 	bcal_shower_tErr = new TH1I("bcal_shower_tErr","tErr (DBCALShower)", 100, 0, 2);
 	bcal_shower_EErr = new TH1I("bcal_shower_EErr","EErr (DBCALShower);#sigma_E/E", 100, 0, 0.2);
 	bcal_shower_plane = new TH2I("bcal_shower_plane","Shower position (DBCALShower);X position  (cm);Y position  (cm)", 100, -100, 100, 100, -100, 100);
@@ -364,6 +370,8 @@ jerror_t JEventProcessor_BCAL_online::init(void) {
 	bcal_point_z_sector->SetStats(0);
 	bcal_fadc_digi_pedestal_ave->SetStats(0);
 	bcal_Uhit_tdiff_ave->SetStats(0);
+	bcal_hit_tdiff_raw_ave->SetStats(0);
+	bcal_hit_tdiff_ave->SetStats(0);
 	bcal_shower_plane->SetStats(0);
 	bcal_cluster_rho_theta->SetStats(0);
 
@@ -383,6 +391,8 @@ jerror_t JEventProcessor_BCAL_online::init(void) {
 		bcal_fadc_saturated->GetYaxis()->SetBinLabel(ibin, ss.str().c_str());
 		bcal_fadc_digi_pedestal_ave->GetYaxis()->SetBinLabel(ibin, ss.str().c_str());
 		bcal_Uhit_tdiff_ave->GetYaxis()->SetBinLabel(ibin, ss.str().c_str());
+		bcal_hit_tdiff_raw_ave->GetYaxis()->SetBinLabel(ibin, ss.str().c_str());
+		bcal_hit_tdiff_ave->GetYaxis()->SetBinLabel(ibin, ss.str().c_str());
 
 		ss.str("");
 		ss.clear();
@@ -394,6 +404,8 @@ jerror_t JEventProcessor_BCAL_online::init(void) {
 		bcal_fadc_saturated->GetYaxis()->SetBinLabel(ibin+17, ss.str().c_str());
 		bcal_fadc_digi_pedestal_ave->GetYaxis()->SetBinLabel(ibin+17, ss.str().c_str());
 		bcal_Uhit_tdiff_ave->GetYaxis()->SetBinLabel(ibin+17, ss.str().c_str());
+		bcal_hit_tdiff_raw_ave->GetYaxis()->SetBinLabel(ibin+17, ss.str().c_str());
+		bcal_hit_tdiff_ave->GetYaxis()->SetBinLabel(ibin+17, ss.str().c_str());
 	}
 	
 	// Occupancy plots for TDC (without layer 4)
@@ -694,17 +706,27 @@ jerror_t JEventProcessor_BCAL_online::evnt(JEventLoop *loop, uint64_t eventnumbe
 			bcal_Uhit_tdiff->Fill(t_diff);
 			bcal_Uhit_tTDC_E->Fill(Uhit->E,Uhit->t_TDC);
 			bcal_Uhit_tTDC_tADC->Fill(Uhit->t_TDC,Uhit->t_ADC);
-			vector<const DBCALTDCHit*> tdchits;
-			Uhit->Get(tdchits);
-			bcal_Uhit_tTDC_twalk->Fill(Uhit->t_TDC - tdchits[0]->t);
-
+            const DBCALTDCHit* tdchit = NULL;
+            Uhit->GetSingle(tdchit);
+            const DBCALHit* adchit = NULL;
+            Uhit->GetSingle(adchit);
+            float t_diff_hit = tdchit->t - adchit->t;
+            float t_diff_hit_raw = tdchit->t_raw - adchit->t_raw;
+			//vector<const DBCALTDCHit*> tdchits;
+			//Uhit->Get(tdchits);
+			//bcal_Uhit_tTDC_twalk->Fill(Uhit->t_TDC - tdchits[0]->t);
+            bcal_Uhit_tTDC_twalk->Fill(Uhit->t_TDC - tdchit->t);
 			int ix = Uhit->module;
 			int iy = (Uhit->sector-1)*4 + Uhit->layer;
 			if(Uhit->end == DBCALGeometry::kUpstream) {
 				bcal_Uhit_tdiff_ave->Fill(ix, iy+17, t_diff);
+				bcal_hit_tdiff_raw_ave->Fill(ix, iy+17, t_diff_hit_raw);
+				bcal_hit_tdiff_ave->Fill(ix, iy+17, t_diff_hit);
 			}
 			if(Uhit->end == DBCALGeometry::kDownstream) {
 				bcal_Uhit_tdiff_ave->Fill(ix, iy, t_diff);
+				bcal_hit_tdiff_raw_ave->Fill(ix, iy, t_diff_hit_raw);
+				bcal_hit_tdiff_ave->Fill(ix, iy, t_diff_hit);
 			}
 		} else {
 			bcal_Uhit_noTDC_E->Fill(Uhit->E);

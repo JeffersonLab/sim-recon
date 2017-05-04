@@ -12,6 +12,7 @@
 // Oct 8, 2013 Yi Qiang: added dedicated object for RICH Truth Hit
 // July 5, 2014 R.T.Jones: changed over from c to c++ API for hddm
 // June 22, 2015 J. Stevens: changed RICH -> DIRC and remove CERE
+// May 7, 2017 R. Dzhygadlo: added DDIRCTruthPmtHit DDIRCTruthBarHit
 //
 // DEventSourceHDDM methods
 //
@@ -418,6 +419,14 @@ jerror_t DEventSourceHDDM::GetObjects(JEvent &event, JFactory_base *factory)
    if (dataClassName == "DDIRCTruthHit")
       return Extract_DDIRCTruthHit(record,
                      dynamic_cast<JFactory<DDIRCTruthHit>*>(factory), tag);
+
+   if (dataClassName == "DDIRCTruthBarHit")
+     return Extract_DDIRCTruthBarHit(record,
+		     dynamic_cast<JFactory<DDIRCTruthBarHit>*>(factory), tag);
+
+   if (dataClassName == "DDIRCTruthPmtHit")
+     return Extract_DDIRCTruthPmtHit(record,
+		     dynamic_cast<JFactory<DDIRCTruthPmtHit>*>(factory), tag);
 
    // extract CereTruth and CereRichHit hits, yqiang Oct 3, 2012
    // removed CereTruth (merged into MCThrown), added CereHit, yqiang Oct 10 2012
@@ -1280,7 +1289,7 @@ jerror_t DEventSourceHDDM::Extract_DCDCHit(JEventLoop* locEventLoop, hddm_s::HDD
          hit->d      = 0.; // initialize to zero to avoid any NaN
          hit->itrack = 0;  // track information is in TRUTH tag
          hit->ptype  = 0;  // ditto
-         if(!locTruthHits.empty())
+         if((int)locTruthHits.size() == (int)hits.size())
            hit->AddAssociatedObject(locTruthHits[locIndex]); //guaranteed to be in order
          data.push_back(hit);
          ++locIndex;
@@ -2789,4 +2798,82 @@ jerror_t DEventSourceHDDM::Extract_DDIRCTruthHit(hddm_s::HDDM *record,
 
    factory->CopyTo(data);
    return NOERROR;
+}
+
+//------------------
+// Extract_DDIRCTruthBarHit
+//------------------
+jerror_t DEventSourceHDDM::Extract_DDIRCTruthBarHit(hddm_s::HDDM *record,
+                                   JFactory<DDIRCTruthBarHit>* factory, string tag)
+{
+   /// Copies the data from the given hddm_s structure. This is called
+   /// from JEventSourceHDDM::GetObjects. If factory is NULL, this
+   /// returns OBJECT_NOT_AVAILABLE immediately.
+
+   if (factory == NULL)
+      return OBJECT_NOT_AVAILABLE;
+   if (tag != "")
+      return OBJECT_NOT_AVAILABLE;
+
+   vector<DDIRCTruthBarHit*> data;
+
+   const hddm_s::DircTruthBarHitList &hits = record->getDircTruthBarHits();
+   hddm_s::DircTruthBarHitList::iterator iter;
+   for (iter = hits.begin(); iter != hits.end(); ++iter) {
+      DDIRCTruthBarHit *hit = new DDIRCTruthBarHit;
+      hit->x = iter->getX();
+      hit->y = iter->getY();
+      hit->z = iter->getZ();
+      hit->px = iter->getPx();
+      hit->py = iter->getPx();
+      hit->pz = iter->getPx();
+      hit->t = iter->getT();
+      hit->E = iter->getE();
+      hit->pdg = iter->getPdg();
+      hit->bar = iter->getBar();
+      hit->track = iter->getTrack();
+      data.push_back(hit);
+   }
+
+  // Copy into factory
+  factory->CopyTo(data);
+
+  return NOERROR;
+}
+
+//------------------
+// Extract_DDIRCTruthPmtHit
+//------------------
+jerror_t DEventSourceHDDM::Extract_DDIRCTruthPmtHit(hddm_s::HDDM *record,
+                                   JFactory<DDIRCTruthPmtHit>* factory, string tag)
+{
+   /// Copies the data from the given hddm_s structure. This is called
+   /// from JEventSourceHDDM::GetObjects. If factory is NULL, this
+   /// returns OBJECT_NOT_AVAILABLE immediately.
+
+   if (factory == NULL)
+      return OBJECT_NOT_AVAILABLE;
+   if (tag != "")
+      return OBJECT_NOT_AVAILABLE;
+
+   vector<DDIRCTruthPmtHit*> data;
+
+   const hddm_s::DircTruthPmtHitList &hits = record->getDircTruthPmtHits();
+   hddm_s::DircTruthPmtHitList::iterator iter;
+   for (iter = hits.begin(); iter != hits.end(); ++iter) {
+      DDIRCTruthPmtHit *hit = new DDIRCTruthPmtHit;
+      hit->x = iter->getX();
+      hit->y = iter->getY();
+      hit->z = iter->getZ();
+      hit->t = iter->getT();
+      hit->E = iter->getE();
+      hit->ch = iter->getCh();
+      hit->key_bar = iter->getKey_bar();
+      data.push_back(hit);
+   }
+
+  // Copy into factory
+  factory->CopyTo(data);
+
+  return NOERROR;
 }

@@ -883,7 +883,7 @@ void HDEVIO::MapEvents(BLOCKHEADER_t &bh, EVIOBlockRecord &br)
 				if(er.last_event  > br.last_event ) br.last_event  = er.last_event;
 				break;
 			default:
-				_DBG_ << "Uknown tag: " << hex << tag << dec << endl;
+				if(VERBOSE>1) _DBG_ << "Uknown tag: " << hex << tag << dec << endl;
 		}
 		
 		br.evio_events.push_back(er);

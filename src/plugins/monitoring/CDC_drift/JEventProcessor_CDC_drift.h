@@ -5,21 +5,18 @@
 // Creator: wolin (on Linux stan.jlab.org 2.6.32-279.11.1.el6.x86_64 x86_64)
 //
 
-
 #ifndef _JEventProcessor_CDC_drift_
 #define _JEventProcessor_CDC_drift_
 
 #include <JANA/JEventProcessor.h>
 
 
-
 class JEventProcessor_CDC_drift:public jana::JEventProcessor{
-
  public:
   JEventProcessor_CDC_drift();
   ~JEventProcessor_CDC_drift();
-
   const char* className(void){return "JEventProcessor_CDC_drift";}
+
 
  private:
   jerror_t init(void);						///< Called once at program start.
@@ -30,5 +27,5 @@ class JEventProcessor_CDC_drift:public jana::JEventProcessor{
 
 };
 
-
 #endif // _JEventProcessor_CDC_drift_
+

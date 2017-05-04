@@ -23,7 +23,7 @@ class GammaPToXYP {
 public:
   
   GammaPToXYP( float lowMassXY, float highMassXY, float massX, float massY,
-               float beamMaxE, float beamPeakE, float beamLowE, float beamHigh, ProductionMechanism::Type type );
+               float beamMaxE, float beamPeakE, float beamLowE, float beamHigh, ProductionMechanism::Type type, float slope = 6.0 );
   
   Kinematics* generate();
   

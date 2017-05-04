@@ -17,14 +17,14 @@ TFile *GetReferenceFile(Int_t run, TString variation = "default"){
     sprintf(command, "ccdb dump %s:%i:%s", "/BCAL/LED_monitoring/reference_file", run, variation.Data());
     FILE* inputPipe = gSystem->OpenPipe(command, "r");
     if(inputPipe == NULL)
-        return;
+        return NULL;
     //get the first (comment) line
     char buff[1024];
     if(fgets(buff, sizeof(buff), inputPipe) == NULL)
-        return;
+        return NULL;
     //get the actual data
     if(fgets(buff, sizeof(buff), inputPipe) == NULL)
-        return;
+        return NULL;
     stringstream ss;
     ss << buff;
     char url_base[1024], path_name[1024];
@@ -108,20 +108,20 @@ gStyle->SetPadBottomMargin(0.15);
       
 	
 	
-		run1_high_down_1 = (TProfile*)run1in->Get("bcalLED/high_bias_down_column_1_peak_vchannel");
-		run1_high_down_2 = (TProfile*)run1in->Get("bcalLED/high_bias_down_column_2_peak_vchannel");
-		run1_high_down_3 = (TProfile*)run1in->Get("bcalLED/high_bias_down_column_3_peak_vchannel");
-		run1_high_down_4 = (TProfile*)run1in->Get("bcalLED/high_bias_down_column_4_peak_vchannel");
+		run1_high_down_1 = (TProfile*)run1in->Get("bcalLED/high_bias_down_sector_1_peak_vchannel");
+		run1_high_down_2 = (TProfile*)run1in->Get("bcalLED/high_bias_down_sector_2_peak_vchannel");
+		run1_high_down_3 = (TProfile*)run1in->Get("bcalLED/high_bias_down_sector_3_peak_vchannel");
+		run1_high_down_4 = (TProfile*)run1in->Get("bcalLED/high_bias_down_sector_4_peak_vchannel");
 		
 		//sprintf(string,"BCAL_LED_Reference_Spring2016.root");
 		//printf ("Histogram input filename=%s\n",string);
 		//TFile *run2in = new TFile(string,"read");
 		TFile *run2in = GetReferenceFile(run);
 		
-		run2_high_down_1 = (TProfile*)run2in->Get("bcalLED/high_bias_down_column_1_peak_vchannel");
-		run2_high_down_2 = (TProfile*)run2in->Get("bcalLED/high_bias_down_column_2_peak_vchannel");
-		run2_high_down_3 = (TProfile*)run2in->Get("bcalLED/high_bias_down_column_3_peak_vchannel");
-		run2_high_down_4 = (TProfile*)run2in->Get("bcalLED/high_bias_down_column_4_peak_vchannel");
+		run2_high_down_1 = (TProfile*)run2in->Get("bcalLED/high_bias_down_sector_1_peak_vchannel");
+		run2_high_down_2 = (TProfile*)run2in->Get("bcalLED/high_bias_down_sector_2_peak_vchannel");
+		run2_high_down_3 = (TProfile*)run2in->Get("bcalLED/high_bias_down_sector_3_peak_vchannel");
+		run2_high_down_4 = (TProfile*)run2in->Get("bcalLED/high_bias_down_sector_4_peak_vchannel");
 		
 		cout << "input profiles, projecting into histograms" << "\n";
 		
@@ -138,10 +138,10 @@ gStyle->SetPadBottomMargin(0.15);
 		
 		cout << "profiles projected into histograms" << "\n";
 
-		run1_high_down_1_hist->SetTitle("6.25v Downstream column 1");
-		run1_high_down_2_hist->SetTitle("6.25v Downstream column 2");
-		run1_high_down_3_hist->SetTitle("6.25v Downstream column 3");
-		run1_high_down_4_hist->SetTitle("6.25v Downstream column 4");
+		run1_high_down_1_hist->SetTitle("6.25v Downstream sector 1");
+		run1_high_down_2_hist->SetTitle("6.25v Downstream sector 2");
+		run1_high_down_3_hist->SetTitle("6.25v Downstream sector 3");
+		run1_high_down_4_hist->SetTitle("6.25v Downstream sector 4");
 		
 		cout << "Divideing histograms" << "\n";
 		

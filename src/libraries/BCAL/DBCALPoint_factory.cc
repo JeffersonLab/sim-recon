@@ -158,18 +158,19 @@ jerror_t DBCALPoint_factory::evnt(JEventLoop *loop, uint64_t eventnumber) {
     //int id = m_BCALGeom->cellId( uphit->module, uphit->layer, uphit->sector );  // key the cell identification off of the upstream cell
     int table_id = GetCalibIndex( uphit->module, uphit->layer, uphit->sector );  // key the cell identification off of the upstream cell
 
-    float fibLen = m_BCALGeom->GetBCAL_length();
+    // float fibLen = m_BCALGeom->GetBCAL_length();
     //float cEff = m_BCALGeom->C_EFFECTIVE;    
     float cEff = GetEffectiveVelocity(table_id);
 
     // get the position with respect to the center of the module -- positive
     // z in the downstream direction
-    double zLocal = 0.5 * cEff * ( uphit->t - dnhit->t );
+    // double zLocal = 0.5 * cEff * ( uphit->t - dnhit->t );
 
     // if the timing information indicates that the z position is more than 60 cm outside the BCAL, likely the hit is contamined by noise or entirely noise, skip this cell
-    double tol = 60*k_cm;
+    // double tol = 60*k_cm;
 
-    if (zLocal > (0.5*fibLen + tol) || zLocal < (-0.5*fibLen - tol)) continue;
+    // comment out this section and move any checks on z position (i.e. timing) to clusterizer. Elton 5/3/2017
+    // if (zLocal > (0.5*fibLen + tol) || zLocal < (-0.5*fibLen - tol)) continue;
 
     // pass attenuation length parameters to the DBCALPoint constructor, since
     // many of the calculations are implemented there

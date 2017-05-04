@@ -17,6 +17,8 @@ class DEventWriterREST_factory : public jana::JFactory<DEventWriterREST>
 		{
 			dOutputFileBaseName = "dana_rest";
 		   gPARMS->SetDefaultParameter("rest:FILENAME", dOutputFileBaseName);
+		string locDummyString = "";
+                gPARMS->SetDefaultParameter("REST:DATAVERSIONSTRING", locDummyString);
 			return NOERROR;
 		}
 
