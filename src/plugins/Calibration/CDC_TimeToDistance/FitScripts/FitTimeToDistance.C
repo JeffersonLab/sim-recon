@@ -108,7 +108,7 @@ Double_t TimeToDistance( Double_t *x, Double_t *par){
 }
 
 
-void FitTimeToDistance(TString inputROOTFile = "hd_root.root", int run = 11000)
+void FitTimeToDistance(TString inputROOTFile = "hd_root.root")
 {
    // Script for fitting the time to distance relation from data
    TFile *thisFile = TFile::Open(inputROOTFile);
@@ -148,6 +148,8 @@ void FitTimeToDistance(TString inputROOTFile = "hd_root.root", int run = 11000)
    for (unsigned int i=1; i<=78; i++){
       cdc_drift_table.push_back(constants->GetBinContent(i));
    }
+
+   int run = (int) constants->GetBinContent(125);
 
    // So now you have the input to your function
 

@@ -148,6 +148,9 @@ jerror_t JEventProcessor_CDC_TimeToDistance::brun(JEventLoop *eventLoop, int32_t
       HistCurrentConstants->Fill(122,row["B2"]);
    }
 
+   // Save run number
+   HistCurrentConstants->Fill(125,runnumber);
+
    return NOERROR;
 }
 
