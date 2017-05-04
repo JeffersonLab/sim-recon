@@ -28,30 +28,6 @@ void InitPlugin(JApplication *app){
 } // "C"
 
 
-// Summary histograms
-static TH1I *hist_attenlength = nullptr;
-static TH1I *hist_gainratio = nullptr;
-static TH1I *hist_attenlength_err = nullptr;
-static TH1I *hist_gainratio_err = nullptr;
-static TH1I *hist_attenlength_relerr = nullptr;
-static TH1I *hist_gainratio_relerr = nullptr;
-static TH2F *hist2D_peakattenlength = nullptr;
-static TH2F *hist2D_peakgainratio = nullptr;
-static TH2F *hist2D_intattenlength = nullptr;
-static TH2F *hist2D_intgainratio = nullptr;
-
-// Channel by channel histograms
-static TH2I *logpeakratiovsZ_all = nullptr;
-static TH2I *logintratiovsZ_all = nullptr;
-static TH2I *logpeakratiovsZ[JEventProcessor_BCAL_attenlength_gainratio::nummodule][JEventProcessor_BCAL_attenlength_gainratio::numlayer][JEventProcessor_BCAL_attenlength_gainratio::numsector];
-static TH2I *logintratiovsZ[JEventProcessor_BCAL_attenlength_gainratio::nummodule][JEventProcessor_BCAL_attenlength_gainratio::numlayer][JEventProcessor_BCAL_attenlength_gainratio::numsector];
-static TH2I *EvsZ[JEventProcessor_BCAL_attenlength_gainratio::nummodule][JEventProcessor_BCAL_attenlength_gainratio::numlayer][JEventProcessor_BCAL_attenlength_gainratio::numsector];
-
-// Debug histograms to help understand data
-static TH2I *EvsZ_all = nullptr;
-static TH2I *EvsZ_layer[4] = { nullptr };
-static TH2F *hist2D_aveZ = nullptr;
-
 //------------------
 // JEventProcessor_BCAL_attenlength_gainratio (Constructor)
 //------------------
@@ -80,14 +56,6 @@ JEventProcessor_BCAL_attenlength_gainratio::~JEventProcessor_BCAL_attenlength_ga
 //------------------
 jerror_t JEventProcessor_BCAL_attenlength_gainratio::init(void)
 {
-
-
-	japp->RootFillLock(this); //ACQUIRE ROOT FILL LOCK
-
-	if (logintratiovsZ_all != nullptr){
-		japp->RootFillUnLock(this); //RELEASE ROOT FILL LOCK
-		return NOERROR;
-	}
 
 	// Set style
 	gStyle->SetTitleOffset(1, "Y");
@@ -167,7 +135,7 @@ jerror_t JEventProcessor_BCAL_attenlength_gainratio::init(void)
                     sprintf(histname,"logpeakratiovsZ_%02i%i%i",module+1,layer+1,sector+1);
                     sprintf(modtitle,"Channel (M%i,L%i,S%i)",module+1,layer+1,sector+1);
                     sprintf(histtitle,"%s;Z Position (cm);log of pulse height ratio US/DS",modtitle);
-                    logpeakratiovsZ[module][layer][sector] = new TH2I(histname,histtitle,500,-225.0,225.0,500,-3,3);
+                    logpeakratiovsZ[module][layer][sector] = new TH2I(histname,histtitle,220,-220.0,220.0,400,-4,4);
                 }
             }
         }
@@ -179,7 +147,7 @@ jerror_t JEventProcessor_BCAL_attenlength_gainratio::init(void)
 				sprintf(histname,"logintratiovsZ_%02i%i%i",module+1,layer+1,sector+1);
 				sprintf(modtitle,"Channel (M%i,L%i,S%i)",module+1,layer+1,sector+1);
 				sprintf(histtitle,"%s;Z Position (cm);log of integral ratio US/DS",modtitle);
-				logintratiovsZ[module][layer][sector] = new TH2I(histname,histtitle,500,-250.0,250.0,500,-3,3);
+				logintratiovsZ[module][layer][sector] = new TH2I(histname,histtitle,220,-220.0,220.0,400,-4,4);
 			}
 		}
 	}
@@ -200,8 +168,6 @@ jerror_t JEventProcessor_BCAL_attenlength_gainratio::init(void)
 	// back to main dir
 	main->cd();
 	
-	japp->RootFillUnLock(this); //RELEASE ROOT FILL LOCK
-
 	return NOERROR;
 }
 

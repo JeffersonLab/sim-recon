@@ -536,11 +536,21 @@ jerror_t JEventProcessor_BCAL_TDC_Timing::evnt(JEventLoop *loop, uint64_t eventn
             Fill2DHistogram ("BCAL_TDC_Offsets", "ZvsDeltat", chargename,
                              Deltat, trackHitZ,
                              "Z_{Track} vs #Delta t;#Delta t = t_{US}-t_{DS};Z_{Track} [cm]",
-                             300, -30, 30, 250, zminhall, zmaxhall); 
+                             300, -30, 30, 250, zminhall, zmaxhall);
+            sprintf(title, "%s  Z_{Track} vs #Delta t;#Delta t = t_{US}-t_{DS};Z_{Track} [cm]", channame);
             Fill2DHistogram ("BCAL_TDC_Offsets", "ZvsDeltat", channame,
-                             Deltat, trackHitZ,
-                             "Z_{Track} vs #Delta t;#Delta t = t_{US}-t_{DS};Z_{Track} [cm]",
+                             Deltat, trackHitZ, title,
                              300, -30, 30, 250, zminhall, zmaxhall); 
+
+            int the_cell = (thisPoint->module() - 1) * 16 + (thisPoint->layer() - 1) * 4 + thisPoint->sector();
+            float Deltat_Zcorr = Deltat - (trackHitZ-212)/8.1;
+            sprintf(title, "#Delta t (Hit) corrected for Z;#Delta t - Z_{Track}/v_{eff}");
+            Fill1DHistogram ("BCAL_Global_Offsets", "Deltat", "AllPoints",
+                             Deltat_Zcorr, title, 70, -10, 14);
+            Fill2DHistogram ("BCAL_Global_Offsets", "Deltat", "VsCell",
+                             the_cell, Deltat_Zcorr,
+                             "#Delta t (Hit) corrected for Z;#Delta t - Z_{Track}/v_{eff}",
+                             768, 0.5, 768.5, 70, -10, 14);
 
             Fill2DHistogram ("BCAL_TDC_Offsets", "Delta Z", "AllPoints",
                              trackHitZ, deltaZ,
@@ -575,6 +585,40 @@ jerror_t JEventProcessor_BCAL_TDC_Timing::evnt(JEventLoop *loop, uint64_t eventn
                              trackHitZ, BCALHitZ,
                              "Z_{point} Vs. Z_{Track}; Z_{Track} [cm]; Z_{Point} [cm]",
                              500, zminhall, zmaxhall, 500, zminhall, zmaxhall); 
+
+            // Get the unifiedhits
+            vector <const DBCALUnifiedHit*> unifiedhitVector;
+            thisPoint->Get(unifiedhitVector);
+            int up   = unifiedhitVector[0]->end; // up=1   if unifiedhitVector[0]->end = 1 (is downstream)
+            int down = unifiedhitVector[1]->end; // down=1 if unifiedhitVector[1]->end = 1 (is downstream)
+            const DBCALUnifiedHit *thisUnifiedhitup   = unifiedhitVector[up];
+            const DBCALUnifiedHit *thisUnifiedhitdown = unifiedhitVector[down];
+            float t_up = thisUnifiedhitup->t;
+            float t_ADC_up = thisUnifiedhitup->t_ADC;
+            float t_TDC_up = thisUnifiedhitup->t_TDC;
+            float t_down = thisUnifiedhitdown->t;
+            float t_ADC_down = thisUnifiedhitdown->t_ADC;
+            float t_TDC_down = thisUnifiedhitdown->t_TDC;
+            char type[10];
+            sprintf(type,"Mixed");
+            if (t_up == t_ADC_up && t_down == t_ADC_down) sprintf(type,"ADC");
+            if (t_up == t_TDC_up && t_down == t_TDC_down) sprintf(type,"TDC");
+
+            const DBCALHit * thisADCHit_up;
+            thisUnifiedhitup->GetSingle(thisADCHit_up);
+            const DBCALHit * thisADCHit_down;
+            thisUnifiedhitdown->GetSingle(thisADCHit_down);
+
+            // Get raw times
+            float Deltat_raw = thisADCHit_up->t_raw - thisADCHit_down->t_raw;
+            float Deltat_raw_Zcorr = Deltat_raw - (trackHitZ-212)/8.1;
+            Fill2DHistogram("BCAL_Global_Offsets", "Deltat_raw", "VsCell",
+                            the_cell, Deltat_raw_Zcorr,
+                            "#Delta t (Hit) corrected for Z;#Delta t_{raw} - Z_{Track}/v_{eff}",
+                            768, 0.5, 768.5, 70, -10, 14);
+            sprintf(title, "#Delta t (Hit) corrected for Z;#Delta t_{raw} - Z_{Track}/v_{eff}");
+            Fill1DHistogram ("BCAL_Global_Offsets", "Deltat_raw", "AllPoints",
+                             Deltat_raw_Zcorr, title, 70, -10, 14);
 
             // Attenuation Length
             vector<const DBCALDigiHit*> digihits;
@@ -626,7 +670,6 @@ jerror_t JEventProcessor_BCAL_TDC_Timing::evnt(JEventLoop *loop, uint64_t eventn
 
                // Now we just plot the difference in from the RF Time to get out the correction
                if (E_point > 0.05) { // The timing is known not to be great for very low energy, so only use our best info 
-                   int the_cell = (thisPoint->module() - 1) * 16 + (thisPoint->layer() - 1) * 4 + thisPoint->sector();
                    Fill2DHistogram("BCAL_Global_Offsets", "Target Time", "deltaTVsCell",
                                    the_cell, targetCenterTime - thisRFBunch->dTime,
                                    "Charged shower points; CCDB Index; t_{Target} - t_{RF} [ns]",
@@ -647,48 +690,6 @@ jerror_t JEventProcessor_BCAL_TDC_Timing::evnt(JEventLoop *loop, uint64_t eventn
                                            "Charged shower points (E^{2} weighted); CCDB Index; t_{Target} - t_{RF} [ns]",
                                            768, 0.5, 768.5, 200, -10, 10);
                }
-               // Get the unifiedhits
-               vector <const DBCALUnifiedHit*> unifiedhitVector;
-               thisPoint->Get(unifiedhitVector);
-
-               // const DBCALUnifiedHit *thisUnifiedhit1 = unifiedhitVector[0];
-               // const DBCALUnifiedHit *thisUnifiedhit2 = unifiedhitVector[1];
-               // if (thisUnifiedhit1->end==0)
-               // float t1 = thisUnifiedhit1->t;
-               // float t_ADC1 = thisUnifiedhit1->t_ADC;
-               // float t_TDC1 = thisUnifiedhit1->t_TDC;
-               // float t2 = thisUnifiedhit2->t;
-               // float t_ADC2 = thisUnifiedhit2->t_ADC;
-               // float t_TDC2 = thisUnifiedhit2->t_TDC;
-               // char type[10];
-               // sprintf(type,"Mixed");
-               // if (t1 == t_ADC1 && t2 == t_ADC2) sprintf(type,"ADC");
-               // if (t1 == t_TDC1 && t2 == t_TDC2) sprintf(type,"TDC");
-
-               // const DBCALHit * thisADCHit1;
-               // thisUnifiedhit1->GetSingle(thisADCHit1);
-               // const DBCALHit * thisADCHit2;
-               // thisUnifiedhit2->GetSingle(thisADCHit2);
-
-               int up   = unifiedhitVector[0]->end; // up=1   if unifiedhitVector[0]->end = 1 (is downstream)
-               int down = unifiedhitVector[1]->end; // down=1 if unifiedhitVector[1]->end = 1 (is downstream)
-               const DBCALUnifiedHit *thisUnifiedhitup   = unifiedhitVector[up];
-               const DBCALUnifiedHit *thisUnifiedhitdown = unifiedhitVector[down];
-               float t_up = thisUnifiedhitup->t;
-               float t_ADC_up = thisUnifiedhitup->t_ADC;
-               float t_TDC_up = thisUnifiedhitup->t_TDC;
-               float t_down = thisUnifiedhitdown->t;
-               float t_ADC_down = thisUnifiedhitdown->t_ADC;
-               float t_TDC_down = thisUnifiedhitdown->t_TDC;
-               char type[10];
-               sprintf(type,"Mixed");
-               if (t_up == t_ADC_up && t_down == t_ADC_down) sprintf(type,"ADC");
-               if (t_up == t_TDC_up && t_down == t_TDC_down) sprintf(type,"TDC");
-
-               const DBCALHit * thisADCHit_up;
-               thisUnifiedhitup->GetSingle(thisADCHit_up);
-               const DBCALHit * thisADCHit_down;
-               thisUnifiedhitdown->GetSingle(thisADCHit_down);
 
                float pulse_peak_max = max(thisADCHit_up->pulse_peak,thisADCHit_down->pulse_peak);
                float pulse_peak_min = min(thisADCHit_up->pulse_peak,thisADCHit_down->pulse_peak);

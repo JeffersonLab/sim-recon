@@ -20,11 +20,14 @@ jerror_t DParticleComboBlueprint_factory::init(void)
 	dMaxExtraGoodTracks = pair<bool, size_t>(false, 4);
 
 	vector<int> hypotheses;
+	hypotheses.push_back(Positron);
 	hypotheses.push_back(PiPlus);
 	hypotheses.push_back(KPlus);
 	hypotheses.push_back(Proton);
+	hypotheses.push_back(Electron);
 	hypotheses.push_back(PiMinus);
 	hypotheses.push_back(KMinus);
+	hypotheses.push_back(AntiProton);
 
 	ostringstream locMassStream;
 	for(size_t loc_i = 0; loc_i < hypotheses.size(); ++loc_i)

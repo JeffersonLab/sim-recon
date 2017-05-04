@@ -665,7 +665,20 @@ void BCALSmearer::CopyBCALHitsToHDDM(map<int, fADCHitList> &fADCHits,
       	if (integer_time >= 0){
             hddm_s::BcalfADCDigiHitList fadcs = iter->addBcalfADCDigiHits();
             fadcs().setEnd(bcal_index::kUp);
-            fadcs().setPulse_integral(round(hitlist.uphits[i].E/bcal_config->BCAL_MEV_PER_ADC_COUNT));
+	    double integral = round(hitlist.uphits[i].E/bcal_config->BCAL_MEV_PER_ADC_COUNT);
+	    
+	    // fADC saturation based on waveforms from data
+	    if(!bcal_config->NO_FADC_SATURATION) { 
+		    if(integral > bcal_config->fADC_MinIntegral_Saturation[0][hitlist.sumlayer-1]) {
+			    double y = integral; 
+			    double a = bcal_config->fADC_Saturation_Linear[0][hitlist.sumlayer-1];
+			    double b = bcal_config->fADC_Saturation_Quadratic[0][hitlist.sumlayer-1];
+			    double c = bcal_config->fADC_MinIntegral_Saturation[0][hitlist.sumlayer-1];
+			    // "invert" saturation correction for MC
+			    integral = (1 - a*y + 2.*b*c*y - sqrt(1. - 2.*a*y + 4.*b*c*y + (a*a - 4.*b)*y*y))/(2.*b*y);
+		    }
+	    }
+            fadcs().setPulse_integral(integral);
             fadcs().setPulse_time(integer_time);
         }
       }
@@ -674,7 +687,21 @@ void BCALSmearer::CopyBCALHitsToHDDM(map<int, fADCHitList> &fADCHits,
       	if (integer_time >= 0){
             hddm_s::BcalfADCDigiHitList fadcs = iter->addBcalfADCDigiHits();
             fadcs().setEnd(bcal_index::kDown);
-            fadcs().setPulse_integral(round(hitlist.dnhits[i].E/bcal_config->BCAL_MEV_PER_ADC_COUNT));
+	    double integral = round(hitlist.dnhits[i].E/bcal_config->BCAL_MEV_PER_ADC_COUNT);
+	    
+	    // fADC saturation based on waveforms from data
+	    if(!bcal_config->NO_FADC_SATURATION) { 
+		    if(integral > bcal_config->fADC_MinIntegral_Saturation[1][hitlist.sumlayer-1]) {
+			    double y = integral; 
+			    double a = bcal_config->fADC_Saturation_Linear[1][hitlist.sumlayer-1];
+			    double b = bcal_config->fADC_Saturation_Quadratic[1][hitlist.sumlayer-1];
+			    double c = bcal_config->fADC_MinIntegral_Saturation[1][hitlist.sumlayer-1];
+			    // "invert" saturation correction for MC
+			    integral = (1 - a*y + 2.*b*c*y - sqrt(1. - 2.*a*y + 4.*b*c*y + (a*a - 4.*b)*y*y))/(2.*b*y);
+                    }
+
+	    }
+            fadcs().setPulse_integral(integral);
             fadcs().setPulse_time(integer_time);
         } 
       }
@@ -762,6 +789,7 @@ bcal_config_t::bcal_config_t(JEventLoop *loop)
  	NO_SAMPLING_FLUCTUATIONS = false;
  	NO_SAMPLING_FLOOR_TERM = false;
  	NO_POISSON_STATISTICS = false;
+	NO_FADC_SATURATION = false;
 		
 	// Load parameters from CCDB
     cout << "get BCAL/bcal_smear_parms parameters from CCDB..." << endl;
@@ -834,6 +862,15 @@ bcal_config_t::bcal_config_t(JEventLoop *loop)
         
     }
 
-
+    std::vector<std::map<string,double> > saturation_ADC_pars;
+    if(loop->GetCalib("/BCAL/ADC_saturation", saturation_ADC_pars))
+	    jout << "Error loading /BCAL/ADC_saturation !" << endl;
+    for (unsigned int i=0; i < saturation_ADC_pars.size(); i++) {
+	    int end = (saturation_ADC_pars[i])["end"];
+	    int layer = (saturation_ADC_pars[i])["layer"] - 1;
+	    fADC_MinIntegral_Saturation[end][layer] = (saturation_ADC_pars[i])["par0"];
+	    fADC_Saturation_Linear[end][layer] = (saturation_ADC_pars[i])["par1"];
+	    fADC_Saturation_Quadratic[end][layer] = (saturation_ADC_pars[i])["par2"];
+    } 
 }
 
