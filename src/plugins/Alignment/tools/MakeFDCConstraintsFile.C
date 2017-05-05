@@ -1,19 +1,31 @@
 void MakeFDCConstraintsFile(TString rootFile = "hd_root.root"){
 
    // Select constraints
-   bool constrainZ = false;
+   bool constrainPackageZ = false;
+   bool constrainPackageZTogether = false;
    bool constrainWireCathodeAlignment = false;
    bool constraint0 = false;
 
    ofstream outfile;
    outfile.open("FDCConstraints.txt");
 
-   if(constrainZ){
+   if(constrainPackageZ){
       for (unsigned int i=1; i<=4; i++){
          outfile << "Constraint 0.0" << endl;
          for (unsigned int j=1;j<=6;j++){
             int indexOffset = 100000 + ((i-1)*6+j)*1000;
             outfile << indexOffset+5 << " 1.0" << endl;
+         }
+      }
+   }
+
+   if(constrainPackageZTogether){
+      for (unsigned int i=1; i<=4; i++){
+         for (unsigned int j=2;j<=6;j++){
+            outfile << "Constraint 0.0" << endl;
+            int indexOffset = 100000 + ((i-1)*6+j)*1000;
+            outfile << 100000 + ((i-1)*6+1)*1000 + 5<< " 1.0 " << endl;
+            outfile << indexOffset+5 << " -1.0" << endl;
          }
       }
    }
@@ -120,7 +132,7 @@ void MakeFDCConstraintsFile(TString rootFile = "hd_root.root"){
       }
    }
 
-      outfile.close();
-   }
+   outfile.close();
+}
 
 
