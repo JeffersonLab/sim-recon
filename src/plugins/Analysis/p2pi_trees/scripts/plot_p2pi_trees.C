@@ -10,7 +10,7 @@ void plot_p2pi_trees(void)
   gStyle->SetPadLeftMargin(0.15);
   gStyle->SetPadBottomMargin(0.15);
     
-    TString filename = "DSelector_p2pi_trees_geant3";
+    TString filename = "DSelector_p2pi_trees_pulls3";
     
     TFile *f = new TFile(filename+".root","read");
     

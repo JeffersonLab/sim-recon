@@ -77,13 +77,13 @@ void DSelector_p2pi_trees::Init(TTree *locTree)
 	dHist_Phi = new TH1I("Phi", ";Phi (degrees)", 360,-180,180);
 	dHist_psi = new TH1I("psi", ";psi (degrees)", 360,-180,180);
 
-	dHist_pDeltap = new TH1I("pDeltap","; proton: Thrown Fit p - KinFit p/Thrown p",100,-0.2,0.2);
-	dHist_pipDeltap = new TH1I("pipDeltap","; #pi^{+}: Thrown Fit p - KinFit p/Thrown p",100,-0.2,0.2);
-	dHist_pimDeltap = new TH1I("pimDeltap","; #pi^{-}: Thrown Fit p - KinFit p/ Thrown p",100,-0.2,0.2);
+	dHist_pDeltap = new TH1I("pDeltap","; proton: Thrown p - KinFit p/Thrown p",100,-0.2,0.2);
+	dHist_pipDeltap = new TH1I("pipDeltap","; #pi^{+}: Thrown p - KinFit p/Thrown p",100,-0.2,0.2);
+	dHist_pimDeltap = new TH1I("pimDeltap","; #pi^{-}: Thrown p - KinFit p/ Thrown p",100,-0.2,0.2);
 
-	dHist_pDeltap_Measured = new TH1I("pDeltap_Measured","; proton: Thrown Fit p - Measured p/Thrown p",100,-0.2,0.2);
-	dHist_pipDeltap_Measured = new TH1I("pipDeltap_Measured","; #pi^{+}: Thrown Fit p - Measured p/Thrown p",100,-0.2,0.2);
-	dHist_pimDeltap_Measured = new TH1I("pimDeltap_Measured","; #pi^{-}: Thrown Fit p - Measured p/ Thrown p",100,-0.2,0.2);
+	dHist_pDeltap_Measured = new TH1I("pDeltap_Measured","; proton: Thrown p - Measured p/Thrown p",100,-0.2,0.2);
+	dHist_pipDeltap_Measured = new TH1I("pipDeltap_Measured","; #pi^{+}: Thrown p - Measured p/Thrown p",100,-0.2,0.2);
+	dHist_pimDeltap_Measured = new TH1I("pimDeltap_Measured","; #pi^{-}: Thrown p - Measured p/ Thrown p",100,-0.2,0.2);
 
 	// EXAMPLE CUT PARAMETERS:
 	fMinProton_dEdx = new TF1("fMinProton_dEdx", "exp(-1.*[0]*x + [1]) + [2]", 0., 10.);

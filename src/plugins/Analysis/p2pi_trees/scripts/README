@@ -1,3 +1,4 @@
+# Elton Smith. Updated Mar 5, 2017
 # Here is the sequence of instructions to generate, fit and view generated distributions
 
 gen_2pi_amp> gen_2pi_amp -c gen_2pi_amp.cfg -o tree_AmpToolsFormatThrown.root -hd HDDMFormatThrown.hddm -a 8.4 -b 9.0 -n 100000 -r 30000
