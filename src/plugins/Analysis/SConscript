@@ -17,6 +17,6 @@ SConscript(dirs=subdirs, exports='env osname', duplicate=0)
 # Optional targets
 optdirs = ['phys_tree', 'pedestals','bcal_calib','bcal_calib_cosmic_cdc']
 optdirs.extend(['acceptance_hists', 'mcthrown_hists', 'cdc_hists', 'fcal_hists'])
-optdirs.extend(['trackeff_hists','dc_alignment','p2pi_trees'])
+optdirs.extend(['trackeff_hists','dc_alignment','p2pi_trees','Z2pi_trees'])
 sbms.OptionallyBuild(env, optdirs)
 
