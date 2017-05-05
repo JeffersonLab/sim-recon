@@ -12,13 +12,15 @@ void MakeParameterFile(){
    bool fixFDCt0 = true;
    bool fixFDCGains = true;
    bool fixFDCCathodeOffsets = true;
-   bool fixFDCCathodeAngles = false;
+   bool fixFDCCathodeAngles = true;
    bool fixFDCCellOffsetsWires = true;
    bool fixFDCCellOffsetsCathodes = true;
-   bool fixFDCWireRotation = true;
+   bool fixFDCWireRotationX = true;
+   bool fixFDCWireRotationY = true;
+   bool fixFDCWireRotationZ = true;
    bool fixFDCZ = true;
-   bool fixFDCPitch = false;
-   bool fixFDCGap = false;
+   bool fixFDCPitch = true;
+   bool fixFDCGap = true;
 
    double scale = 1.0;
    double translationPresigma = 0.0005;
@@ -112,16 +114,14 @@ void MakeParameterFile(){
          outfile << indexOffset + 100 << " 0.0 " << translationPresigma << endl;
       }
 
-      if (fixFDCWireRotation) {
-         outfile << indexOffset + 2 << " 0.0 -1.0" << endl;
-         outfile << indexOffset + 3 << " 0.0 -1.0" << endl;
-         outfile << indexOffset + 4 << " 0.0 -1.0" << endl;
-      }
-      else {
-         outfile << indexOffset + 2 << " 0.0 " << rotationPresigma << endl;
-         outfile << indexOffset + 3 << " 0.0 " << rotationPresigma << endl;
-         outfile << indexOffset + 4 << " 0.0 " << rotationPresigma << endl;
-      }
+      if (fixFDCWireRotationX) outfile << indexOffset + 2 << " 0.0 -1.0" << endl;
+      else outfile << indexOffset + 2 << " 0.0 " << rotationPresigma << endl;
+
+      if (fixFDCWireRotationY) outfile << indexOffset + 3 << " 0.0 -1.0" << endl;
+      else outfile << indexOffset + 3 << " 0.0 " << rotationPresigma << endl;
+
+      if (fixFDCWireRotationZ) outfile << indexOffset + 4 << " 0.0 -1.0" << endl;
+      else outfile << indexOffset + 4 << " 0.0 " << rotationPresigma << endl;
 
       if (fixFDCCathodeOffsets){
          outfile << indexOffset + 101 << " 0.0 -1.0" << endl;
