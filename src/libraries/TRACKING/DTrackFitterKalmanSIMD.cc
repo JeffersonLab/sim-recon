@@ -7748,11 +7748,6 @@ jerror_t DTrackFitterKalmanSIMD::SmoothForward(void){
                if (ALIGNMENT_FORWARD){
                   alignmentDerivatives.resize(FDCTrackD::size);
                   // Let's get the alignment derivatives
-                  //Need the uncorrectes state vector
-                  x=Ss(state_x);
-                  y=Ss(state_y);
-                  tx=Ss(state_tx);
-                  ty=Ss(state_ty);
 
                   // Things are assumed to be linear near the wire, derivatives can be determined analytically.
                   // First for the wires

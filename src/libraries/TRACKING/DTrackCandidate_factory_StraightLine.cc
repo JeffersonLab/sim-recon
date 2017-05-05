@@ -2055,12 +2055,6 @@ DTrackCandidate_factory_StraightLine::Smooth(deque<trajectory_t>&trajectory,
             vector<double> derivatives;
             derivatives.resize(FDCTrackD::size);
 
-            // Need uncorrected track parameters for the derivatives.
-            x=Ss(state_x);
-            y=Ss(state_y);
-            tx=Ss(state_tx);
-            ty=Ss(state_ty);
-
             //dDOCAW/dDeltaX
             derivatives[FDCTrackD::dDOCAW_dDeltaX] = -(1/sqrt(1 + pow(tx*cosa - ty*sina,2)));
 
