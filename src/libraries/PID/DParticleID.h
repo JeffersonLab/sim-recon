@@ -88,6 +88,9 @@ class DParticleID:public jana::JObject
 		bool Get_StartTime(const DTrackFitter::Extrapolation_t &extrapolation,
 				   const vector<const DFCALShower*>& FCALShowers,
 				   double& StartTime) const;
+		bool Get_StartTime(const vector<DTrackFitter::Extrapolation_t> &extrapolations,
+				   const vector<const DBCALShower*>& locBCALShowers,
+				   double& StartTime) const;  
 
 		/***************** Routines to correct hits using track info **************/
 		double Get_CorrectedHitTime(const DSCHit* locSCHit,

@@ -777,11 +777,13 @@ void DTrackTimeBased_factory
   DTrackTimeBased::DStartTime_t start_time;
   
   // Match to the start counter and the outer detectors
-  double locStartTimeVariance = 0.0, locStartTime = track->t0();  // initial guess from tracking
+  double locStartTimeVariance = 0.0;
+  double track_t0=track->t0();
+  double locStartTime = track_t0;  // initial guess from tracking
   DSCHitMatchParams locSCBestMatchParams; 
   for (unsigned int k=0;k<track->extrapolations.size();k++){
     DTrackFitter::Extrapolation_t myextrapolation=track->extrapolations[k];
-    locStartTime=track->t0(); 
+    locStartTime=track_t0; 
     switch(myextrapolation.detector){
     case SYS_START:
       if (pid_algorithm->Get_StartTime(myextrapolation,sc_hits,locStartTime)){
@@ -816,6 +818,28 @@ void DTrackTimeBased_factory
       break;
     }
   }
+  //  Now deal with the BCAL
+  locStartTime=track_t0;
+  if (pid_algorithm->Get_StartTime(track->extrapolations,bcal_showers,locStartTime)){
+    // Fill in the start time vector
+    start_time.t0=locStartTime;
+    start_time.t0_sigma=0.5;
+    //    start_time.t0_sigma=sqrt(locTimeVariance); //uncomment when ready
+    start_time.system=SYS_BCAL;
+    start_times.push_back(start_time);    
+  }
+  // Add the t0 estimate from the tracking 
+  start_time.t0=track_t0;
+  start_time.t0_sigma=5.;
+  start_time.system=track->t0_detector();
+  start_times.push_back(start_time);
+
+  // Set t0 for the fit to the first entry in the list. Usually this will be
+  // from the start counter.
+  mStartTime=start_times[0].t0;
+  mStartDetector=start_times[0].system;
+
+
 }
 
 // Create a list of start times and do the fit for a particular mass hypothesis

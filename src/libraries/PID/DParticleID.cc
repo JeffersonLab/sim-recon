@@ -2234,3 +2234,59 @@ bool DParticleID::Get_StartTime(const DTrackFitter::Extrapolation_t &extrapolati
 
   return false;
 }
+
+bool DParticleID::Get_StartTime(const vector<DTrackFitter::Extrapolation_t> &extrapolations,
+			      const vector<const DBCALShower*>& locBCALShowers,
+			      double& StartTime) const{  
+  if (locBCALShowers.size()==0) return false; 
+  if (extrapolations.size()==0) return false; // sanity check...
+
+  double StartTimeGuess=StartTime;
+  double dphi_min=1e6;
+  DTrackFitter::Extrapolation_t closest_extrapolation=extrapolations[0];
+  unsigned int best_bcal_match=0;
+  for (unsigned int i=0;i<locBCALShowers.size();i++){
+    DVector3 bcalpos(locBCALShowers[i]->x,locBCALShowers[i]->y,
+		    locBCALShowers[i]->z);
+    DTrackFitter::Extrapolation_t old_extrapolation=extrapolations[0];
+    double d2_old=1.e6,d2=0.;
+    for (unsigned int j=0;j<extrapolations.size();j++){
+      if (extrapolations[j].detector!=SYS_BCAL) continue;
+
+      DVector3 trackpos=extrapolations[j].position;
+      d2=(trackpos-bcalpos).Mag2();
+      if (d2>d2_old){
+	double dphi=old_extrapolation.position.Phi()-bcalpos.Phi();
+	if (dphi<-M_PI) dphi+=2.*M_PI;
+	if (dphi>M_PI) dphi-=2.*M_PI;
+	if (fabs(dphi)<dphi_min){
+	  dphi_min=dphi;
+	  closest_extrapolation=old_extrapolation;
+	  best_bcal_match=i;
+	}
+	break;
+      }
+      d2_old=d2;
+      old_extrapolation=extrapolations[j];
+    }
+  }
+  StartTime=locBCALShowers[best_bcal_match]->t-closest_extrapolation.t;
+  if (fabs(StartTime-StartTimeGuess)>OUT_OF_TIME_CUT) return false;
+  
+  // look for a match in z-position
+  DVector3 bcalpos(locBCALShowers[best_bcal_match]->x,
+		   locBCALShowers[best_bcal_match]->y,
+		   locBCALShowers[best_bcal_match]->z);
+  double dz=closest_extrapolation.position.z()-bcalpos.z();
+  if(fabs(dz) > BCAL_Z_CUT) return false;
+
+  // .. and in phi
+  double locP = closest_extrapolation.momentum.Mag();
+  double locDeltaPhi = 180.0*dphi_min/M_PI;
+  double locPhiCut = BCAL_PHI_CUT_PAR1 + BCAL_PHI_CUT_PAR2*exp(-1.0*BCAL_PHI_CUT_PAR3*locP);
+  if (fabs(locDeltaPhi)<locPhiCut){    
+    return true;
+  }
+
+  return false;
+}
