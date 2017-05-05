@@ -1,5 +1,5 @@
-#if !defined(TWOPIANGLES_AMP)
-#define TWOPIANGLES_AMP
+#if !defined(TWOPIANGLES_PRIMAKOFF)
+#define TWOPIANGLES_PRIMAKOFF
 
 #include "IUAmpTools/Amplitude.h"
 #include "IUAmpTools/UserAmplitude.h"

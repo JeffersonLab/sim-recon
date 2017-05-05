@@ -15,10 +15,10 @@
 #include "AMPTOOLS_DATAIO/HDDMDataWriter.h"
 
 #include "AMPTOOLS_AMPS/TwoPiAngles_primakoff.h"
-#include "AMPTOOLS_AMPS/BreitWigner.h"
+#include "AMPTOOLS_AMPS/TwoPiWt_primakoff.h"
 
 #include "AMPTOOLS_MCGEN/ProductionMechanism.h"
-#include "AMPTOOLS_MCGEN/GammaPToXYP.h"
+#include "AMPTOOLS_MCGEN/GammaZToXYZ.h"
 
 #include "IUAmpTools/AmpToolsInterface.h"
 #include "IUAmpTools/ConfigFileParser.h"
@@ -43,8 +43,10 @@ int main( int argc, char* argv[] ){
 	bool genFlat = false;
 	
 	// default upper and lower bounds 
-	double lowMass = 0.2;
-	double highMass = 2.0;
+	// double lowMass = 0.2;
+	// double highMass = 2.0; 
+	double lowMass = 0.28;
+	double highMass = 0.58 ;
 	
 	double beamMaxE   = 12.0;
 	double beamPeakE  = 9.0;
@@ -123,7 +125,7 @@ int main( int argc, char* argv[] ){
 	}
 	
 	if( configfile.size() == 0 || outname.size() == 0 ){
-		cout << "No config file or output specificed:  run gen_2pi -h for help" << endl;
+		cout << "No config file or output specificed:  run gen_2pi_primakoff -h for help" << endl;
 		exit(1);
 	}
 	
@@ -138,16 +140,16 @@ int main( int argc, char* argv[] ){
 
 	// setup AmpToolsInterface
 	AmpToolsInterface::registerAmplitude( TwoPiAngles_primakoff() );
-	AmpToolsInterface::registerAmplitude( BreitWigner() );
+	AmpToolsInterface::registerAmplitude( TwoPiWt_primakoff() );
 	AmpToolsInterface ati( cfgInfo, AmpToolsInterface::kMCGeneration );
 	
 	ProductionMechanism::Type type =
 		( genFlat ? ProductionMechanism::kFlat : ProductionMechanism::kResonant );
 	
 	// generate over a range of mass -- the daughters are two charged pions
-	GammaPToXYP resProd( lowMass, highMass, 0.140, 0.140, beamMaxE, beamPeakE, beamLowE, beamHighE, type );
+	GammaZToXYZ resProd( lowMass, highMass, 0.140, 0.140, beamMaxE, beamPeakE, beamLowE, beamHighE, type );
 	
-	// seed the distribution with a sum of noninterfering Breit-Wigners
+	// seed the distribution with a sum of noninterfering s-wave amplitudes
 	// we can easily compute the PDF for this and divide by that when
 	// doing accept/reject -- improves efficiency if seeds are picked well
 	
@@ -157,12 +159,13 @@ int main( int argc, char* argv[] ){
 		// set of amplitudes -- doing so will improve efficiency.  Leaving as is
 		// won't make MC incorrect, it just won't be as fast as it could be
 		
-		resProd.addResonance( 0.775, 0.146,  1.0 );
+		// resProd.addResonance( 0.775, 0.146,  1.0 );
+		resProd.addResonance( 0.4, 0.146,  1.0 );    
 	}
 	
 	vector< int > pTypes;
 	pTypes.push_back( Gamma );
-	pTypes.push_back( Proton );
+	pTypes.push_back( Pb208 );     // use lead instead of Sn116 since it is defined in particle list.
 	pTypes.push_back( PiPlus );
 	pTypes.push_back( PiMinus );
 	
@@ -170,14 +173,15 @@ int main( int argc, char* argv[] ){
 	if( hddmname.size() != 0 ) hddmOut = new HDDMDataWriter( hddmname, runNum );
 	ROOTDataWriter rootOut( outname );
 	
-	TFile* diagOut = new TFile( "gen_2pi_diagnostic.root", "recreate" );
+	TFile* diagOut = new TFile( "gen_2pi_primakoff_diagnostic.root", "recreate" );
 	
 	TH1F* mass = new TH1F( "M", "Resonance Mass", 180, lowMass, highMass );
 	TH1F* massW = new TH1F( "M_W", "Weighted Resonance Mass", 180, lowMass, highMass );
 	massW->Sumw2();
-	TH1F* intenW = new TH1F( "intenW", "True PDF / Gen. PDF", 1000, 0, 100 );
-	TH2F* intenWVsM = new TH2F( "intenWVsM", "Ratio vs. M", 100, lowMass, highMass, 1000, 0, 10 );
-	
+	TH1D* intenW = new TH1D( "intenW", "True PDF / Gen. PDF", 1000, 0, 100 );
+	intenW->SetCanExtend(TH1::kXaxis);
+	TH2D* intenWVsM = new TH2D( "intenWVsM", "Ratio vs. M", 100, lowMass, highMass, 1000, 0, 10 );
+	intenWVsM->SetCanExtend(TH2::kYaxis);
 	TH2F* CosTheta_psi = new TH2F( "CosTheta_psi", "cos#theta vs. #psi", 180, -3.14, 3.14, 100, -1, 1);
 	
 	int eventCounter = 0;
@@ -215,9 +219,10 @@ int main( int argc, char* argv[] ){
 			double genWeight = evt->weight();
 			
 			// cannot ask for the intensity if we haven't called process events above
-			double intensity_i = ati.intensity( i );
+			// double ResM = resonance.M();
+		        // double intensity_i = ati.intensity( i );
 			double weightedInten = ( genFlat ? 1 : ati.intensity( i ) ); 
-			cout << " i=" << i << "  intensity_i=" << intensity_i << endl;
+			// cout << " i=" << i << "  intensity_i=" << intensity_i << " maxInten=" << maxInten << " ResM=" << ResM << endl;
 
 			if( !diag ){
 				
@@ -258,6 +263,7 @@ int main( int argc, char* argv[] ){
 
                                         TVector3 eps(1.0, 0.0, 0.0); // beam polarization vector
                                         double Phi = atan2(y.Dot(eps), beam.Vect().Unit().Dot(eps.Cross(y)));
+					Phi = Phi > 0? Phi : Phi + 3.14159;
 
                                         GDouble psi = phi - Phi;
                                         if(psi < -1*PI) psi += 2*PI;

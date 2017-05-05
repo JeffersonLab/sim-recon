@@ -16,14 +16,15 @@ class ProductionMechanism
 public:
 	
 	enum Type { kResonant, kFlat };
-	enum Recoil { kProton, kNeutron };
+	enum Recoil { kProton, kNeutron, kZ };
 	
 	ProductionMechanism( Recoil recoil, Type type, double slope = 5.0 );
 	
 	void setMassRange( double low, double high );
-  void setGeneratorType( Type type );
+        void setGeneratorType( Type type );
 	
 	TLorentzVector produceResonance( const TLorentzVector& beam );
+	TLorentzVector produceResonanceZ( const TLorentzVector& beam);
   
   // there may be a better way to do this, like pair< , >
   // but sometimes the user doesn't care about the weight
@@ -34,7 +35,7 @@ public:
 private:
   
   static const double kPi;
-  double kMproton,kMneutron;
+  double kMproton,kMneutron,kMZ;
 
   double generateMass();
   
