@@ -21,14 +21,13 @@ UserAmplitude< TwoPiAngles_primakoff >( args )
 	phipol  = atof(args[0].c_str() )*3.14159/180.; // azimuthal angle of the photon polarization vector in the lab.
 	polFrac  = AmpParameter( args[1] ); // fraction of polarization (0-1)
 	m_rho = atoi( args[2].c_str() );  // Jz component of rho 
-	PhaseFactor  = AmpParameter( args[3] );  // prefix factor to amplitudes in computation ( 0=1/1=exp(2iPhi)/2=-exp(2iPhi) )
+	PhaseFactor  = AmpParameter( args[3] );  // prefix factor to amplitudes in computation
 	flat = atoi( args[4].c_str() );  // flat=1 uniform angles, flat=0 use YLMs 
 
 	assert( ( phipol >= 0.) && (phipol <= 2*3.14159));
 	assert( ( polFrac >= 0 ) && ( polFrac <= 1 ) );
-        assert( ( m_rho == 1 ) || ( m_rho == 0 ) || ( m_rho == -1 ));
-        assert( ( PhaseFactor == 0 ) || ( PhaseFactor == 1 ) || ( PhaseFactor == 2 ) || ( PhaseFactor == 3 )
-	  ||	( PhaseFactor == 4 ) || ( PhaseFactor == 5 ) || ( PhaseFactor == 6 ) || ( PhaseFactor == 7 ));
+        assert( ( m_rho == 0 ) );
+        assert( ( PhaseFactor == 0 ) || ( PhaseFactor == 1 ));
 	assert( (flat == 0) || (flat == 1) );
 
 	// need to register any free parameters so the framework knows about them
@@ -61,30 +60,42 @@ TwoPiAngles_primakoff::calcAmplitude( GDouble** pKin ) const {
                          (p1_res.Vect()).Dot(y),
                          (p1_res.Vect()).Dot(z) );
 
-        // GDouble cosTheta = angles.CosTheta();
+        GDouble cosTheta = angles.CosTheta();
         // GDouble sinSqTheta = sin(angles.Theta())*sin(angles.Theta());
         // GDouble sin2Theta = sin(2.*angles.Theta());
-        // GDouble phi = angles.Phi();
+        GDouble phi = angles.Phi();
 
-	// TVector3 zlab(0.,0.,1.0);     // z axis in lab
+	TVector3 zlab(0.,0.,1.0);     // z axis in lab
         TVector3 eps(cos(phipol), sin(phipol), 0.0); // beam polarization vector in lab
-	// TVector3 eps_perp = zlab.Cross(eps);         // perpendicular to plane defined by eps
-	// GDouble Phi_test = asin((eps_perp.Cross(y)).Mag());        // compute angle between planes. 
+	TVector3 eps_perp = zlab.Cross(eps);         // perpendicular to plane defined by eps
+	GDouble Phi_test = asin((eps_perp.Cross(y)).Mag());        // compute angle between planes. 
         GDouble Phi = atan2(y.Dot(eps), beam.Vect().Unit().Dot(eps.Cross(y)));
-	Phi = Phi > 0? Phi : Phi + 3.14159;
+	Phi = Phi > 0? Phi : Phi + 3.14159;                     // make angle between eps and hadronic plane a positive number
 
 	// cout << "Phi_test=" << Phi_test << " Phi=" << Phi << " Sum=" << Phi_test+Phi << " Diff=" << Phi_test-Phi << " PhaseFactor=" << PhaseFactor << endl;
      
 	complex< GDouble > i( 0, 1 );
 	complex< GDouble > prefactor( 0, 0 );
 	complex< GDouble > Amp( 0, 0 );
-	Int_t eta_c=1;
+	complex< GDouble> eta_c(1,0);
+	Int_t Mrho=0;
+
+	switch (PhaseFactor) {
+        case 0:
+	  prefactor = 0.5*sqrt(1-polFrac)*(cos(Phi)-i*sin(Phi) - eta_c*(cos(Phi)+i*sin(Phi)) );
+	  Mrho = m_rho;
+	  break;
+        case 1:
+	  prefactor = 0.5*sqrt(1+polFrac)*(cos(Phi)-i*sin(Phi) + eta_c*(cos(Phi)+i*sin(Phi)) );
+	  Mrho = m_rho;
+	  break;
+	}
 	
 	if (flat == 1) {
 	  Amp = 1;
 	}
 	else {
-	  Amp =  1 + eta_c*polFrac*cos(2*Phi);
+	  Amp =  prefactor * Y( 0, Mrho, cosTheta, phi);
 	}
 
 	// cout << " m_rho=" << m_rho << " cosTheta=" << cosTheta << " phi=" << phi << " prefactor=" << prefactor << " Amp=" << Amp << endl;

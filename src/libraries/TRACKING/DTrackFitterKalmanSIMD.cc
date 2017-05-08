@@ -965,8 +965,11 @@ jerror_t DTrackFitterKalmanSIMD::AddFDCHit(const DFDCPseudo *fdchit){
    hit->vstrip=fdchit->s;
    hit->vvar=fdchit->ds*fdchit->ds;
    hit->z=fdchit->wire->origin.z();
-   hit->cosa=fdchit->wire->udir.y();
-   hit->sina=fdchit->wire->udir.x();
+   hit->cosa=cos(fdchit->wire->angle);
+   hit->sina=sin(fdchit->wire->angle);
+   hit->phiX=fdchit->wire->angles.X();
+   hit->phiY=fdchit->wire->angles.Y();
+   hit->phiZ=fdchit->wire->angles.Z();
    hit->nr=0.;
    hit->nz=0.;
    hit->dE=1e6*fdchit->dE;
@@ -4500,16 +4503,26 @@ kalman_error_t DTrackFitterKalmanSIMD::KalmanForward(double fdc_anneal_factor,
          if (forward_traj[k].h_id>0 && forward_traj[k].h_id<1000){
             unsigned int id=forward_traj[k].h_id-1;
 
-            double cosa=my_fdchits[id]->cosa;
-            double sina=my_fdchits[id]->sina;
-            double u=my_fdchits[id]->uwire;
-            double v=my_fdchits[id]->vstrip;
+            // Make the small alignment rotations
+            // Use small-angle form.
 
             // Position and direction from state vector
             double x=S(state_x);
             double y=S(state_y);
             double tx=S(state_tx);
             double ty=S(state_ty);
+            //double tz=1.;
+
+            x = x + my_fdchits[id]->phiZ*y;
+            y = y - my_fdchits[id]->phiZ*x;
+            //tz = 1. + my_fdchits[id]->phiY*tx - my_fdchits[id]->phiX*ty;
+            tx = (tx + my_fdchits[id]->phiZ*ty - my_fdchits[id]->phiY) ;
+            ty = (ty - my_fdchits[id]->phiZ*tx + my_fdchits[id]->phiX) ;
+
+            double cosa=my_fdchits[id]->cosa;
+            double sina=my_fdchits[id]->sina;
+            double u=my_fdchits[id]->uwire;
+            double v=my_fdchits[id]->vstrip;
 
             // Projected position along the wire without doca-dependent corrections
             double vpred_uncorrected=x*sina+y*cosa;
@@ -4674,7 +4687,7 @@ kalman_error_t DTrackFitterKalmanSIMD::KalmanForward(double fdc_anneal_factor,
                      H(0,state_tx)=H_T(state_tx,0);
 
                      // Calculate the kalman gain for this hit 
-                     //Vtemp=V+H*C*H_T;
+                     ///Vtemp=V+H*C*H_T;
                      Vtemp=V+H*C*H_T;
                      InvV=Vtemp.Invert();
 
@@ -5038,8 +5051,8 @@ kalman_error_t DTrackFitterKalmanSIMD::KalmanForward(double fdc_anneal_factor,
                      double mytcorr=0.;
                      double d_shifted;
                      double dt=5.0;
-                     // Dont compute this for very low drift times
-                     if (tdrift < 50.) d_shifted = dm;
+                     // Dont compute this for negative drift times
+                     if (tdrift < 0.) d_shifted = dm;
                      else ComputeCDCDrift(dphi,delta,tdrift+dt,B,d_shifted,myV,mytcorr);
                      dDdt0=(d_shifted-dm)/dt;
                   }
@@ -5712,7 +5725,7 @@ kalman_error_t DTrackFitterKalmanSIMD::KalmanForwardCDC(double anneal,DMatrix5x1
                   double mytcorr=0.;
                   double d_shifted;
                   double dt=2.0;
-                  if (tdrift < 50.) d_shifted = dm;
+                  if (tdrift < 0.) d_shifted = dm;
                   else ComputeCDCDrift(dphi,delta,tdrift+dt,B,d_shifted,myV,mytcorr);
                   dDdt0=(d_shifted-dm)/dt;
                }
@@ -7798,16 +7811,23 @@ jerror_t DTrackFitterKalmanSIMD::SmoothForward(void){
                   return VALUE_OUT_OF_RANGE;
                }
 
-               double cosa=my_fdchits[id]->cosa;
-               double sina=my_fdchits[id]->sina;
-               double u=my_fdchits[id]->uwire;
-               double v=my_fdchits[id]->vstrip;
-
                // Position and direction from state vector
                double x=Ss(state_x);
                double y=Ss(state_y);
                double tx=Ss(state_tx);
                double ty=Ss(state_ty);
+
+               // Small angle alignment correction
+               x = x + my_fdchits[id]->phiZ*y;
+               y = y - my_fdchits[id]->phiZ*x;
+               //tz = 1. + my_fdchits[id]->phiY*tx - my_fdchits[id]->phiX*ty;
+               tx = (tx + my_fdchits[id]->phiZ*ty - my_fdchits[id]->phiY);
+               ty = (ty - my_fdchits[id]->phiZ*tx + my_fdchits[id]->phiX);
+
+               double cosa=my_fdchits[id]->cosa;
+               double sina=my_fdchits[id]->sina;
+               double u=my_fdchits[id]->uwire;
+               double v=my_fdchits[id]->vstrip;
 
                // Projected position along the wire without doca-dependent corrections
                double vpred_uncorrected=x*sina+y*cosa;
@@ -7845,90 +7865,19 @@ jerror_t DTrackFitterKalmanSIMD::SmoothForward(void){
 
                double resi_a=drift-doca;
 
-               vector<double> alignmentDerivatives;
-               if (ALIGNMENT_FORWARD){
-                  alignmentDerivatives.resize(13);
-                  // Let's get the alignment derivatives
-                  // Things are assumed to be linear near the wire, derivatives can be determined analytically.
-                  // First for the wires
-
-                  //dDOCAW/ddeltax
-                  alignmentDerivatives[FDCTrackD::dDOCAW_dDeltaX] = (-1.)/sqrt(one_plus_tu2);
-
-                  //dDOCAW/ddeltaPhiX
-                  double cos2a = cos(2.*my_fdchits[id]->hit->wire->angle);
-                  double sin2a = sin(2.*my_fdchits[id]->hit->wire->angle);
-                  double tx2 = tx*tx;
-                  double ty2 = ty*ty;
-                  alignmentDerivatives[FDCTrackD::dDOCAW_dDeltaPhiX] = (-1.)*(tx*ty*u*cos2a+(x+ty2*x-tx*ty*y)*sina+(y+tx2*y-tx*ty*x+(tx2-ty2)*u*sina)*cosa)/sqrt(one_plus_tu2)/one_plus_tu2;
-
-                  // dDOCAW/dt0
-                  double t0shift=4.;//ns
-                  double drift_shift = 0.0;
-                  if(USE_FDC_DRIFT_TIMES){
-                     if (drift_time < 25.) drift_shift = drift;
-                     else drift_shift = (du>0.0?1.:-1.)*fdc_drift_distance(drift_time+t0shift,forward_traj[m].B);
-                  }
-                  alignmentDerivatives[FDCTrackD::dW_dt0]= (drift_shift-drift)/t0shift;
-
-                  // dDOCAW/dx
-                  alignmentDerivatives[FDCTrackD::dDOCAW_dx] = cosa/sqrt(one_plus_tu2);
-
-                  // dDOCAW/dy
-                  alignmentDerivatives[FDCTrackD::dDOCAW_dy] = (-1.)*sina/sqrt(one_plus_tu2);
-
-                  // dDOCAW/dtx
-                  alignmentDerivatives[FDCTrackD::dDOCAW_dtx] = (-1.)*cosa*tu*(upred-u)/sqrt(one_plus_tu2)/one_plus_tu2;
-
-                  // dDOCAW/dty
-                  alignmentDerivatives[FDCTrackD::dDOCAW_dty] = sina*tu*(upred-u)/sqrt(one_plus_tu2)/one_plus_tu2;
-
-                  // Then for the cathodes. The magnetic field correction now correlates the alignment constants for the wires and cathodes.
-
-                  double vfactor=1 + tx2*cosa*cosa + ty2*sina*sina - tx*ty*sin2a;
-                  //dDOCAC/ddeltax
-                  alignmentDerivatives[FDCTrackD::dDOCAC_dDeltaX] = -((nr + (nz - tv)*tu))/vfactor;
-
-                  //dDOCAC/ddeltaPhiX
-                  alignmentDerivatives[FDCTrackD::dDOCAC_dDeltaPhiX] = upred+(-((nz - tv)*tv*(upred-u)*one_plus_tu2) - vpred_uncorrected*(nr + (nz - tv)*tu)*one_plus_tu2 + 
-                        (u - upred)*(nr + (nz - tv)*tu)*(-2*tx*ty*cos2a + (-tx2 + ty2)*sin2a))/one_plus_tu2/one_plus_tu2;
-
-                  //dDOCAC/dx
-                  alignmentDerivatives[FDCTrackD::dDOCAC_dx] = sina+(cosa*(nr + (nz - tv)*tu))/vfactor;
-
-                  //dDOCAC/dy
-                  alignmentDerivatives[FDCTrackD::dDOCAC_dy] = cosa-(sina*(nr + (nz - tv)*tu))/vfactor;
-
-                  //dDOCAC/dtx
-                  alignmentDerivatives[FDCTrackD::dDOCAC_dtx] = -(cosa*(upred-u)*(2*nr*tx*cosa + (nz - tv)*tx2*cosa*cosa - 2*nr*ty*sina + (nz - tv)*ty2*sina*sina - (nz - tv)*(1 + tx*ty*sin2a)))/vfactor/vfactor;
-
-                  //dDOCAC/dty
-                  alignmentDerivatives[FDCTrackD::dDOCAC_dty] = (sina*(upred-u)*(2*nr*tx*cosa + (nz - tv)*tx2*cosa*cosa - 2*nr*ty*sina + (nz - tv)*ty2*sina*sina - (nz - tv)*(1 + tx*ty*sin2a)))/vfactor/vfactor;
-
-               }
-
-               if (DEBUG_LEVEL>19){
-                  jout << "Layer " << my_fdchits[id]->hit->wire->layer
-                     <<":   t " << drift_time << " x "<< x << " y " << y 
-                     << " coordinate along wire " << v << " resi_c " <<resi
-                     << " coordinate transverse to wire " << drift 
-                     <<" resi_a " << resi_a
-                     <<endl;
-               }
-
                // Variance from filter step
                // This V is really "R" in Fruhwirths notation, in the case that the track is used in the fit.
-               DMatrix2x2 V=fdc_updates[id].V; 
+               DMatrix2x2 V=fdc_updates[id].V;
                // Compute projection matrix and find the variance for the residual
                DMatrix5x2 H_T;
                double temp2=nz_sinalpha_plus_nr_cosalpha-tv*sinalpha;
-               H_T(state_x,1)=sina+cosa*cosalpha*temp2;	
-               H_T(state_y,1)=cosa-sina*cosalpha*temp2;	
+               H_T(state_x,1)=sina+cosa*cosalpha*temp2;
+               H_T(state_y,1)=cosa-sina*cosalpha*temp2;
 
                double cos2_minus_sin2=cosalpha*cosalpha-sinalpha*sinalpha;
                double fac=nz*cos2_minus_sin2-2.*nr*cosalpha*sinalpha;
                double doca_cosalpha=doca*cosalpha;
-               double temp=doca_cosalpha*fac;	
+               double temp=doca_cosalpha*fac;
                H_T(state_tx,1)=cosa*temp
                   -doca_cosalpha*(tu*sina+tv*cosa*cos2_minus_sin2)
                   ;
@@ -7952,6 +7901,133 @@ jerror_t DTrackFitterKalmanSIMD::SmoothForward(void){
                else{
                   //V-=dC.SandwichMultiply(H_T);
                   V=V-H*dC*H_T;
+               }
+
+
+               vector<double> alignmentDerivatives;
+               if (ALIGNMENT_FORWARD){
+                  alignmentDerivatives.resize(FDCTrackD::size);
+                  // Let's get the alignment derivatives
+
+                  // Things are assumed to be linear near the wire, derivatives can be determined analytically.
+                  // First for the wires
+
+                  //dDOCAW/ddeltax
+                  alignmentDerivatives[FDCTrackD::dDOCAW_dDeltaX] = -(1/sqrt(1 + pow(tx*cosa - ty*sina,2)));
+
+                  //dDOCAW/ddeltaz
+                  alignmentDerivatives[FDCTrackD::dDOCAW_dDeltaZ] = (tx*cosa - ty*sina)/sqrt(1 + pow(tx*cosa - ty*sina,2));
+
+                  //dDOCAW/ddeltaPhiX
+                  double cos2a = cos(2.*my_fdchits[id]->hit->wire->angle);
+                  double sin2a = sin(2.*my_fdchits[id]->hit->wire->angle);
+                  double cos3a = cos(3.*my_fdchits[id]->hit->wire->angle);
+                  double sin3a = sin(3.*my_fdchits[id]->hit->wire->angle);
+                  //double tx2 = tx*tx;
+                  //double ty2 = ty*ty;
+                  alignmentDerivatives[FDCTrackD::dDOCAW_dDeltaPhiX] = (sina*(-(tx*cosa) + ty*sina)*(u - x*cosa + y*sina))/
+                     pow(1 + pow(tx*cosa - ty*sina,2),1.5);
+                  alignmentDerivatives[FDCTrackD::dDOCAW_dDeltaPhiY] = -((cosa*(tx*cosa - ty*sina)*(u - x*cosa + y*sina))/
+                        pow(1 + pow(tx*cosa - ty*sina,2),1.5));
+                  alignmentDerivatives[FDCTrackD::dDOCAW_dDeltaPhiZ] = (tx*ty*u*cos2a + (x + pow(ty,2)*x - tx*ty*y)*sina + 
+                        cosa*(-(tx*ty*x) + y + pow(tx,2)*y + (tx - ty)*(tx + ty)*u*sina))/
+                     pow(1 + pow(tx*cosa - ty*sina,2),1.5);
+
+                  // dDOCAW/dt0
+                  double t0shift=4.;//ns
+                  double drift_shift = 0.0;
+                  if(USE_FDC_DRIFT_TIMES){
+                     if (drift_time < 0.) drift_shift = drift;
+                     else drift_shift = (du>0.0?1.:-1.)*fdc_drift_distance(drift_time+t0shift,forward_traj[m].B);
+                  }
+                  alignmentDerivatives[FDCTrackD::dW_dt0]= (drift_shift-drift)/t0shift;
+
+                  // dDOCAW/dx
+                  alignmentDerivatives[FDCTrackD::dDOCAW_dx] = cosa/sqrt(1 + pow(tx*cosa - ty*sina,2));
+
+                  // dDOCAW/dy
+                  alignmentDerivatives[FDCTrackD::dDOCAW_dy] = -(sina/sqrt(1 + pow(tx*cosa - ty*sina,2)));
+
+                  // dDOCAW/dtx
+                  alignmentDerivatives[FDCTrackD::dDOCAW_dtx] = (cosa*(tx*cosa - ty*sina)*(u - x*cosa + y*sina))/pow(1 + pow(tx*cosa - ty*sina,2),1.5);
+
+                  // dDOCAW/dty
+                  alignmentDerivatives[FDCTrackD::dDOCAW_dty] = (sina*(-(tx*cosa) + ty*sina)*(u - x*cosa + y*sina))/
+                     pow(1 + pow(tx*cosa - ty*sina,2),1.5);
+
+                  // Then for the cathodes. The magnetic field correction now correlates the alignment constants for the wires and cathodes.
+
+                  //dDOCAC/ddeltax
+                  alignmentDerivatives[FDCTrackD::dDOCAC_dDeltaX] =
+                     (-nr + (-nz + ty*cosa + tx*sina)*(tx*cosa - ty*sina))/(1 + pow(tx*cosa - ty*sina,2));
+
+                  //dDOCAC/ddeltaz
+                  alignmentDerivatives[FDCTrackD::dDOCAC_dDeltaZ] =
+                     nz + (-nz + (nr*tx + ty)*cosa + (tx - nr*ty)*sina)/(1 + pow(tx*cosa - ty*sina,2));
+
+                  //dDOCAC/ddeltaPhiX
+                  alignmentDerivatives[FDCTrackD::dDOCAC_dDeltaPhiX] =
+                     (-2*y*cosa*sina*(tx*cosa - ty*sina) - 2*x*pow(sina,2)*(tx*cosa - ty*sina) - 
+                      (u - x*cosa + y*sina)*(-(nz*sina) + sina*(ty*cosa + tx*sina) - 
+                         cosa*(tx*cosa - ty*sina)))/(1 + pow(tx*cosa - ty*sina,2)) + 
+                     (2*sina*(tx*cosa - ty*sina)*(-((u - x*cosa + y*sina)*
+                                                    (nr + nz*(tx*cosa - ty*sina) - (ty*cosa + tx*sina)*(tx*cosa - ty*sina))) + 
+                                                  y*cosa*(1 + pow(tx*cosa - ty*sina,2)) + x*sina*(1 + pow(tx*cosa - ty*sina,2))))/
+                     pow(1 + pow(tx*cosa - ty*sina,2),2); 
+
+
+                  //dDOCAC/ddeltaPhiY
+                  alignmentDerivatives[FDCTrackD::dDOCAC_dDeltaPhiY] = (-2*y*pow(cosa,2)*(tx*cosa - ty*sina) - 2*x*cosa*sina*(tx*cosa - ty*sina) - 
+                        (u - x*cosa + y*sina)*(-(nz*cosa) + cosa*(ty*cosa + tx*sina) + 
+                           sina*(tx*cosa - ty*sina)))/(1 + pow(tx*cosa - ty*sina,2)) + 
+                     (2*cosa*(tx*cosa - ty*sina)*(-((u - x*cosa + y*sina)*
+                                                    (nr + nz*(tx*cosa - ty*sina) - (ty*cosa + tx*sina)*(tx*cosa - ty*sina))) + 
+                                                  y*cosa*(1 + pow(tx*cosa - ty*sina,2)) + x*sina*(1 + pow(tx*cosa - ty*sina,2))))/
+                     pow(1 + pow(tx*cosa - ty*sina,2),2);
+
+                  //dDOCAC/ddeltaPhiZ
+                  alignmentDerivatives[FDCTrackD::dDOCAC_dDeltaPhiZ] = (-2*(ty*cosa + tx*sina)*(tx*cosa - ty*sina)*
+                        (-((u - x*cosa + y*sina)*(nr + nz*(tx*cosa - ty*sina) - 
+                                                  (ty*cosa + tx*sina)*(tx*cosa - ty*sina))) + 
+                         y*cosa*(1 + pow(tx*cosa - ty*sina,2)) + x*sina*(1 + pow(tx*cosa - ty*sina,2))))/
+                     pow(1 + pow(tx*cosa - ty*sina,2),2) + 
+                     (2*y*cosa*(ty*cosa + tx*sina)*(tx*cosa - ty*sina) + 
+                      2*x*sina*(ty*cosa + tx*sina)*(tx*cosa - ty*sina) - 
+                      (-(y*cosa) - x*sina)*(nr + nz*(tx*cosa - ty*sina) - 
+                         (ty*cosa + tx*sina)*(tx*cosa - ty*sina)) - 
+                      x*cosa*(1 + pow(tx*cosa - ty*sina,2)) + y*sina*(1 + pow(tx*cosa - ty*sina,2)) - 
+                      (u - x*cosa + y*sina)*(nz*(ty*cosa + tx*sina) - pow(ty*cosa + tx*sina,2) - 
+                         (tx*cosa - ty*sina)*(-(tx*cosa) + ty*sina)))/(1 + pow(tx*cosa - ty*sina,2));
+
+                  //dDOCAC/dx
+                  alignmentDerivatives[FDCTrackD::dDOCAC_dx] = (cosa*(nr - tx*ty + nz*tx*cosa) + sina + ty*(ty - nz*cosa)*sina)/
+                     (1 + pow(tx*cosa - ty*sina,2));
+
+                  //dDOCAC/dy
+                  alignmentDerivatives[FDCTrackD::dDOCAC_dy] = ((1 + pow(tx,2))*cosa - (nr + tx*ty + nz*tx*cosa)*sina + nz*ty*pow(sina,2))/
+                     (1 + pow(tx*cosa - ty*sina,2));
+
+                  //dDOCAC/dtx
+                  alignmentDerivatives[FDCTrackD::dDOCAC_dtx] = ((u - x*cosa + y*sina)*(4*nr*tx - 2*ty*(pow(tx,2) + pow(ty,2)) + nz*(-4 + 3*pow(tx,2) + pow(ty,2))*cosa + 
+                           2*(2*nr*tx + ty*(2 - pow(tx,2) + pow(ty,2)))*cos2a + nz*(tx - ty)*(tx + ty)*cos3a - 2*nz*tx*ty*sina + 
+                           4*(tx - nr*ty + tx*pow(ty,2))*sin2a - 2*nz*tx*ty*sin3a))/
+                     pow(2 + pow(tx,2) + pow(ty,2) + (tx - ty)*(tx + ty)*cos2a - 2*tx*ty*sin2a,2);
+
+                  //dDOCAC/dty
+                  alignmentDerivatives[FDCTrackD::dDOCAC_dty] = -(((u - x*cosa + y*sina)*(-2*(pow(tx,3) + 2*nr*ty + tx*pow(ty,2)) - 2*nz*tx*ty*cosa - 
+                              2*(2*tx + pow(tx,3) - 2*nr*ty - tx*pow(ty,2))*cos2a + 2*nz*tx*ty*cos3a + 
+                              nz*(-4 + pow(tx,2) + 3*pow(ty,2))*sina + 4*(ty + tx*(nr + tx*ty))*sin2a + nz*(tx - ty)*(tx + ty)*sin3a))
+                        /pow(2 + pow(tx,2) + pow(ty,2) + (tx - ty)*(tx + ty)*cos2a - 2*tx*ty*sin2a,2));
+
+               }
+
+               if (DEBUG_LEVEL>19){
+                  jout << "Layer " << my_fdchits[id]->hit->wire->layer
+                     <<":   t " << drift_time << " x "<< x << " y " << y 
+                     << " coordinate along wire " << v << " resi_c " <<resi
+                     << " coordinate transverse to wire " << drift 
+                     <<" resi_a " << resi_a
+                     <<endl;
                }
 
                DTrackFitter::pull_t thisPull = pull_t(resi_a,sqrt(V(0,0)),
