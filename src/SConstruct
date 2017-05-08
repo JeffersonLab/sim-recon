@@ -12,6 +12,7 @@ import sbms
 
 # Get command-line options
 SHOWBUILD = ARGUMENTS.get('SHOWBUILD', 0)
+SHOWPROGRESS = ARGUMENTS.get('SHOWPROGRESS', 1)
 OPTIMIZATION = ARGUMENTS.get('OPTIMIZATION', 2)
 DEBUG = ARGUMENTS.get('DEBUG', 1)
 PROFILE = ARGUMENTS.get('PROFILE', 0)
@@ -134,4 +135,46 @@ if len(build_targets)>0:
 		import sbms_setenv
 		sbms_setenv.mk_setenv_csh(env)
 		sbms_setenv.mk_setenv_bash(env)
+
+
+# The following is used to print the percent done on each line
+# if requested by the user. This is not a perfect system since
+# it requires the total number of nodes to calculate percentage.
+# That is not available from scons directly and must be remembered
+# from a previous build. We write this to a file named ".scons_node_count"
+# in the platform specfic build directory. This is a combination
+# of info found in scons documentaion on the Progress() function
+# and a StackOverflow post (16568673) describing the technique and
+# a second StackOverflow post (8901296) describing how to implement
+# a "finish" routine.
+screen = None
+try:
+	screen = open('/dev/tty', 'w')
+except: pass
+node_count = 0
+node_count_max = 0
+node_count_interval = 1
+node_count_fname = str(env.Dir('#.%s' % osname)) + '/.scons_node_count'
+
+def progress_function(node):
+	global node_count, node_count_max, node_count_interval, node_count_fname
+	node_count += node_count_interval
+	if node_count > node_count_max: node_count_max = 0
+	if node_count_max>0 and screen:
+		screen.write('\r[%3d%%] ' % (node_count*100/node_count_max))
+		screen.flush()
+
+def progress_finish(target, source, env):
+	global node_count
+	with open(node_count_fname, 'w') as f: f.write('%d\n' % node_count)
+
+if SHOWPROGRESS != 0 :
+	try:
+		with open(node_count_fname) as f: node_count_max = int(f.readline())
+	except: pass
+	Progress(progress_function, interval=node_count_interval)
+
+	progress_finish_command = Command('progress_finish', [], progress_finish)
+	Depends(progress_finish_command, BUILD_TARGETS)
+	if 'progress_finish' not in BUILD_TARGETS: BUILD_TARGETS.append('progress_finish')
 
