@@ -147,7 +147,10 @@ if len(build_targets)>0:
 # and a StackOverflow post (16568673) describing the technique and
 # a second StackOverflow post (8901296) describing how to implement
 # a "finish" routine.
-screen = open('/dev/tty', 'w')
+screen = None
+try:
+	screen = open('/dev/tty', 'w')
+except: pass
 node_count = 0
 node_count_max = 0
 node_count_interval = 1
@@ -157,7 +160,7 @@ def progress_function(node):
 	global node_count, node_count_max, node_count_interval, node_count_fname
 	node_count += node_count_interval
 	if node_count > node_count_max: node_count_max = 0
-	if node_count_max>0 :
+	if node_count_max>0 and screen:
 		screen.write('\r[%3d%%] ' % (node_count*100/node_count_max))
 		screen.flush()
 
