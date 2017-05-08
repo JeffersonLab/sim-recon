@@ -380,7 +380,6 @@ DFCALShower_factory::LoadCovarianceLookupTables(){
 			japp->RootWriteLock();
 			// change directory to memory so that histograms are not saved to file
 			TDirectory *savedir = gDirectory;
-			gROOT->cd();
 
 			char histname[255];
 			sprintf(histname,"covariance_%i%i_thread%s",i,j,idstring.str().c_str());
@@ -410,6 +409,7 @@ DFCALShower_factory::LoadCovarianceLookupTables(){
 			if (DUMMYTABLES) {
 				// create dummy histogram since something went wrong
 				CovarianceLookupTable[i][j] = new TH2F(histname,"Covariance histogram",10,0,12,10,0,12);
+	                        CovarianceLookupTable[i][j]->SetDirectory(nullptr);
 			} else {
 				// Parse string
 				int nxbins, nybins;
@@ -433,6 +433,7 @@ DFCALShower_factory::LoadCovarianceLookupTables(){
 				int ybin=1;
 				// create histogram
 				CovarianceLookupTable[i][j] = new TH2F(histname,"Covariance histogram",nxbins,xbins,nybins,ybins);
+	                        CovarianceLookupTable[i][j]->SetDirectory(nullptr);
 				// fill histogram
 				while(ss>>cont){
 					if (VERBOSE>1) printf("(%i,%i) (%i,%i) %e  ",i,j,xbin,ybin,cont);

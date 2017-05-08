@@ -83,7 +83,17 @@ void ApplyFDCOffsets(TString rootFile = "hd_root.root", TString pedeOutFile = "m
    for (unsigned int i = 1; i<=24; i++){
       int histIndex = i*1000;
       int pedeIndex = 100000 + i*1000;
-      outFile << resultMap[pedeIndex + 2] + hFDCConstants->GetBinContent(histIndex+2) << " 0.0 0.0" << endl;
+      outFile << "0.0 0.0 " << resultMap[pedeIndex + 5] + hFDCConstants->GetBinContent(histIndex+5) << endl;
+   }
+   outFile.close();
+
+   outFile.open("cell_rotations.txt");
+   for (unsigned int i = 1; i<=24; i++){
+      int histIndex = i*1000;
+      int pedeIndex = 100000 + i*1000;
+      outFile << resultMap[pedeIndex + 2] + hFDCConstants->GetBinContent(histIndex+2) << " " ;
+      outFile << resultMap[pedeIndex + 3] + hFDCConstants->GetBinContent(histIndex+3) << " " ;
+      outFile << resultMap[pedeIndex + 4] + hFDCConstants->GetBinContent(histIndex+4) << endl;
    }
    outFile.close();
 

@@ -1173,7 +1173,12 @@ bool DGeometry::GetFDCWires(vector<vector<DFDCWire *> >&fdcwires) const{
          // (i.e. at phi=90 degrees).
          float x = u*sin(angle + M_PI/2.0);
          float y = u*cos(angle + M_PI/2.0);
-         w->origin.SetXYZ(x+dX[pack_id],y+dY[pack_id],z_wires[i]);
+         w->origin.SetXYZ(x,y,0.);
+         w->origin.RotateX(ThetaX[pack_id]+fdc_wire_rotations[i].dPhiX);
+         w->origin.RotateY(ThetaY[pack_id]+fdc_wire_rotations[i].dPhiY);
+         w->origin.RotateZ(ThetaZ[pack_id]+fdc_wire_rotations[i].dPhiZ);
+         DVector3 globalOffsets(dX[pack_id],dY[pack_id],z_wires[i]+fdc_wire_offsets[i].dz);
+         w->origin+=globalOffsets;
 
          // Length of wire is set by active radius
          w->L = 2.0*sqrt(pow(FDC_ACTIVE_RADIUS,2.0) - u*u);
@@ -1184,6 +1189,9 @@ bool DGeometry::GetFDCWires(vector<vector<DFDCWire *> >&fdcwires) const{
          w->udir.RotateX(ThetaX[pack_id]+fdc_wire_rotations[i].dPhiX);
          w->udir.RotateY(ThetaY[pack_id]+fdc_wire_rotations[i].dPhiY);
          w->udir.RotateZ(ThetaZ[pack_id]+fdc_wire_rotations[i].dPhiZ);
+         w->angles.SetXYZ(ThetaX[pack_id]+fdc_wire_rotations[i].dPhiX,
+               ThetaY[pack_id]+fdc_wire_rotations[i].dPhiY,
+               ThetaZ[pack_id]+fdc_wire_rotations[i].dPhiZ);
          w->u+=dX[pack_id]*w->udir.y()-dY[pack_id]*w->udir.x();
 
          // "s" points in direction from beamline to midpoint of

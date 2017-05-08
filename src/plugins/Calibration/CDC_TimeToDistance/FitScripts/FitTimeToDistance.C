@@ -108,7 +108,7 @@ Double_t TimeToDistance( Double_t *x, Double_t *par){
 }
 
 
-void FitTimeToDistance(TString inputROOTFile = "hd_root.root", int run = 11000)
+void FitTimeToDistance(TString inputROOTFile = "hd_root.root")
 {
    // Script for fitting the time to distance relation from data
    TFile *thisFile = TFile::Open(inputROOTFile);
@@ -121,64 +121,36 @@ void FitTimeToDistance(TString inputROOTFile = "hd_root.root", int run = 11000)
    //f1 = new TF2("f1",TimeToDistanceFieldOff, 0, 200, -0.18, 0.18, npar);
    //f2 = new TF2("f2",TimeToDistanceFieldOff, 0, 200, -0.18, 0.18, npar);
 
-   // We need the values from the database to serve as our starting point
+   TProfile *constants = thisFile->Get("/CDC_TimeToDistance/CDC_TD_Constants");
+   long_drift_func[0][0] = constants->GetBinContent(101);
+   long_drift_func[0][1] = constants->GetBinContent(102);
+   long_drift_func[0][2] = constants->GetBinContent(103);
+   long_drift_func[1][0] = constants->GetBinContent(104);
+   long_drift_func[1][1] = constants->GetBinContent(105);
+   long_drift_func[1][2] = constants->GetBinContent(106);
+   long_drift_func[2][0] = constants->GetBinContent(107);
+   long_drift_func[2][1] = constants->GetBinContent(108);
+   long_drift_func[2][2] = constants->GetBinContent(109);
+   magnet_correction[0][0] = constants->GetBinContent(110);
+   magnet_correction[0][1] = constants->GetBinContent(111);
+   short_drift_func[0][0] = constants->GetBinContent(112);
+   short_drift_func[0][1] = constants->GetBinContent(113);
+   short_drift_func[0][2] = constants->GetBinContent(114);
+   short_drift_func[1][0] = constants->GetBinContent(115);
+   short_drift_func[1][1] = constants->GetBinContent(116);
+   short_drift_func[1][2] = constants->GetBinContent(117);
+   short_drift_func[2][0] = constants->GetBinContent(118);
+   short_drift_func[2][1] = constants->GetBinContent(119);
+   short_drift_func[2][2] = constants->GetBinContent(120);
+   magnet_correction[1][0] = constants->GetBinContent(121);
+   magnet_correction[1][1] = constants->GetBinContent(122);
 
-   //Pipe the current constants into this macro
-   //NOTE: This dumps the "LATEST" values. If you need something else, modify this script.
-   char command[100];
-   if (isFieldOff) sprintf(command, "ccdb dump /CDC/drift_parameters:%i:NoBField", run);
-   else sprintf(command, "ccdb dump /CDC/drift_parameters:%i:default", run);
-
-   FILE* locInputFile = gSystem->OpenPipe(command, "r");
-   if(locInputFile == NULL)
-      return;
-   //get the first (comment) line
-   char buff[1024];
-   if(fgets(buff, sizeof(buff), locInputFile) == NULL)
-      return;
-   //get the remaining lines
-   double value;
-   bool is_long = true;
-   while(fgets(buff, sizeof(buff), locInputFile) != NULL){
-      istringstream locConstantsStream(buff);
-      if (is_long){
-         locConstantsStream >> long_drift_func[0][0] >> long_drift_func[0][1] >> long_drift_func[0][2];
-         locConstantsStream >> long_drift_func[1][0] >> long_drift_func[1][1] >> long_drift_func[1][2];
-         locConstantsStream >> long_drift_func[2][0] >> long_drift_func[2][1] >> long_drift_func[2][2];
-         locConstantsStream >> magnet_correction[0][0] >> magnet_correction[0][1]; // BField params
-         cout << "a1_Long = " << long_drift_func[0][0] << endl;
-         cout << "Magnet Correction : " << magnet_correction[0][0] << " " << magnet_correction[0][1] << endl;
-         is_long = false;
-      }
-      else{
-         locConstantsStream >> short_drift_func[0][0] >> short_drift_func[0][1] >> short_drift_func[0][2];
-         locConstantsStream >> short_drift_func[1][0] >> short_drift_func[1][1] >> short_drift_func[1][2];
-         locConstantsStream >> short_drift_func[2][0] >> short_drift_func[2][1] >> short_drift_func[2][2];
-         locConstantsStream >> magnet_correction[1][0] >> magnet_correction[1][1];
-         cout << "a1_Short = " << short_drift_func[0][0] << endl;
-      }
+   for (unsigned int i=1; i<=78; i++){
+      cdc_drift_table.push_back(constants->GetBinContent(i));
    }
-   //Close the pipe
-   gSystem->ClosePipe(locInputFile);
 
-   if (isFieldOff) sprintf(command, "ccdb dump /CDC/cdc_drift_table:%i:NoBField", run);
-   else sprintf(command, "ccdb dump /CDC/cdc_drift_table:%i:default", run); 
-   locInputFile = gSystem->OpenPipe(command, "r");
-   if(locInputFile == NULL)
-      return;
-   //get the first (comment) line
-   if(fgets(buff, sizeof(buff), locInputFile) == NULL)
-      return;
-   //get the remaining lines
-   while(fgets(buff, sizeof(buff), locInputFile) != NULL){
-      istringstream locConstantsStream(buff);
-      while (locConstantsStream >> value){
-         cdc_drift_table.push_back(1000. * value);
-         cout << "Drift Table value = " << value << endl;
-      }
-   }
-   //Close the pipe
-   gSystem->ClosePipe(locInputFile);
+   int run = (int) constants->GetBinContent(125);
+
    // So now you have the input to your function
 
    Double_t parameters[npar] =
