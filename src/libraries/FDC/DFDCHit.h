@@ -28,6 +28,7 @@ class DFDCHit : public JObject{
 	    int gLayer;				// 1 through 24
 	    float q;				// charge deposited
 	    float pulse_height;                 // amplitude of signal
+       float pulse_height_raw; //amplitude of signal without gain correction
 	    float t;				// drift time
 	    float r;				// perpendicular distance from 
 	    					// center of chamber to wire/strip center

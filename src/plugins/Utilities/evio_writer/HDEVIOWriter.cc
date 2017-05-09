@@ -76,7 +76,7 @@ HDEVIOWriter::HDEVIOWriter(string sink_name)
 			jout << "Opened file \"" << sink_name << "\" for writing EVIO events." << endl;
 		}
 
-	} catch (evioException &e) {
+	} catch (exception &e) {
 
 		// Unable to open output. Throw exception, informing user
 		jerr << e.what() << endl;

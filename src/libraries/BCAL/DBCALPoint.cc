@@ -45,6 +45,8 @@ DBCALPoint::DBCALPoint(const DBCALUnifiedHit& hit1, const DBCALUnifiedHit& hit2,
   
   double tUp = upHit.t;
   double tDown = downHit.t;
+  m_t_US = tUp;
+  m_t_DS = tDown;
 
   // get the position with respect to the beginning of the module
   // the parameters were extracted from quadratic fits in histograms of z_track = f(tUp - tDown) 

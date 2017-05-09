@@ -39,6 +39,8 @@ public:
   float E_US() const { return m_E_US; }  ///< Return the attenuation corrected Energy of US Hit
   float E_DS() const { return m_E_DS; }  ///< Return the attenuation corrected Energy of DS Hit
   float t() const { return m_t; }
+  float t_US() const { return m_t_US; }  ///< Return the time of US Hit
+  float t_DS() const { return m_t_DS; }  ///< Return the time of DS Hit
 
   // assuming a photon, this gives time at the inner radius of BCAL
   // by extrapolating back on path from center of cell to target
@@ -86,7 +88,9 @@ private:
   float m_E;                     ///< Energy of the Point used in higher objects
   float m_E_US;                  ///< Attenuation corrected Energy of US Hit that contributed to the Point
   float m_E_DS;                  ///< Attenuation corrected Energy of DS Hit that contributed to the Point
-  float m_t;
+  float m_t;                     ///< Arrival time
+  float m_t_US;                  ///< Time of DS Hit that contributed to the Point
+  float m_t_DS;                  ///< Time of DS Hit that contributed to the Point
 
   int m_module, m_layer, m_sector;
 
