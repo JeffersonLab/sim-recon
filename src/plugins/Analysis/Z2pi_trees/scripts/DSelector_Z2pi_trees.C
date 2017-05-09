@@ -72,18 +72,22 @@ void DSelector_Z2pi_trees::Init(TTree *locTree)
 	dHist_KinFitChiSq = new TH1I("KinFitChiSq", ";Kinematic Fit #chi^{2}/NDF", 250, 0., 25.);
 	dHist_KinFitCL = new TH1I("KinFitCL", ";Kinematic Fit Confidence Level", 100, 0., 1.);
 
-	dHist_M2pi = new TH1I("M2pi", ";M_{#pi^{+}#pi^{-}} (GeV/c^{2})", 600, 0, 1.2);
-	dHist_t = new TH1I("t", ";|t| (GeV/c)^{2}", 100, 0.0, 2.0);
+	dHist_M2pigen = new TH1I("M2pigen", ";M_{#pi^{+}#pi^{-}} Gen (GeV/c^{2})", 400, 0.2, 0.6);
+	dHist_M2pikin = new TH1I("M2pikin", ";M_{#pi^{+}#pi^{-}} Kin (GeV/c^{2})", 400, 0.2, 0.6);
+	dHist_M2pidiff = new TH1I("M2pidiff", ";M_{#pi^{+}#pi^{-}} Kin - Gen (GeV/c^{2})", 400, -0.05, 0.05);
+	dHist_tgen = new TH1I("tgen", ";|t| Gen (GeV/c)^{2}", 100, 0.0, 0.01);
+	dHist_tkin = new TH1I("tkin", ";|t| Kin (GeV/c)^{2}", 100, 0.0, 0.01);
+	dHist_tdiff = new TH1I("tdiff", ";|t| Kin - Gen (GeV/c)^{2}", 100, -0.01, 0.01);
 	dHist_CosTheta_Psi = new TH2I("CosTheta_Psi", "; #psi; cos#theta", 360, -180., 180, 200, -1., 1.);
 	dHist_phi = new TH1I("phi", ";phi (degrees)", 360,-180,180);
-	dHist_Phi = new TH1I("Phi", ";Phi (degrees)", 360,-180,180);
+	dHist_Phikin = new TH1I("Phikin", ";Phi Kin (degrees)", 360,0,360);
+	dHist_Phigen = new TH1I("Phigen", ";Phi Gen (degrees)", 360,0,360);
+	dHist_Phidiff = new TH1I("Phidiff", ";Phi Kin - Gen (degrees)", 100,-50,50);
 	dHist_psi = new TH1I("psi", ";psi (degrees)", 360,-180,180);
 
-	// dHist_pDeltap = new TH1I("pDeltap","; proton: Thrown p - KinFit p/Thrown p",100,-0.2,0.2);
 	dHist_pipDeltap = new TH1I("pipDeltap","; #pi^{+}: Thrown p - KinFit p/Thrown p",100,-0.2,0.2);
 	dHist_pimDeltap = new TH1I("pimDeltap","; #pi^{-}: Thrown p - KinFit p/ Thrown p",100,-0.2,0.2);
 
-	// dHist_pDeltap_Measured = new TH1I("pDeltap_Measured","; proton: Thrown p - Measured p/Thrown p",100,-0.2,0.2);
 	dHist_pipDeltap_Measured = new TH1I("pipDeltap_Measured","; #pi^{+}: Thrown p - Measured p/Thrown p",100,-0.2,0.2);
 	dHist_pimDeltap_Measured = new TH1I("pimDeltap_Measured","; #pi^{-}: Thrown p - Measured p/ Thrown p",100,-0.2,0.2);
 
@@ -152,6 +156,9 @@ Bool_t DSelector_Z2pi_trees::Process(Long64_t locEntry)
 	// The processing can be stopped by calling Abort().
 	// Use fStatus to set the return value of TTree::Process().
 	// The return value is currently not used.
+
+	double PI = 3.14159;
+
 
 	//CALL THIS FIRST
 	DSelector::Process(locEntry); //Gets the data from the tree for the entry
@@ -238,7 +245,9 @@ Bool_t DSelector_Z2pi_trees::Process(Long64_t locEntry)
 	dThrownBeam->Get_P4().Print();
 	locPb208P4_Thrown.Print();
 	locPiPlusP4_Thrown.Print();
-	locPiMinusP4_Thrown.Print();
+	locPiMinusP4_Thrown.Print(); 
+	TLorentzVector loc2piP4gen = locPiPlusP4_Thrown + locPiMinusP4_Thrown;
+	double tgen = (dThrownBeam->Get_P4() - locPiPlusP4_Thrown - locPiMinusP4_Thrown).M2();    // use beam and 2pi momenta
 	
 
 	/************************************************* LOOP OVER COMBOS *************************************************/
@@ -399,7 +408,9 @@ Bool_t DSelector_Z2pi_trees::Process(Long64_t locEntry)
 
 		if(locUsedSoFar_2pi.find(locUsedThisCombo_2piMass) == locUsedSoFar_2pi.end())
 		{
-			dHist_M2pi->Fill(loc2piP4.M());
+			dHist_M2pikin->Fill(loc2piP4.M());
+			dHist_M2pigen->Fill(loc2piP4gen.M());
+			dHist_M2pidiff->Fill(loc2piP4.M()-loc2piP4gen.M());
 			locUsedSoFar_2pi.insert(locUsedThisCombo_2piMass);
 		}
 
@@ -457,7 +468,7 @@ Bool_t DSelector_Z2pi_trees::Process(Long64_t locEntry)
 
 
 		// calculate kinematic and angular variables
-		double t = (locBeamP4 - loc2piP4).M2();    // use beam and 2pi momenta
+		double tkin = (locBeamP4 - loc2piP4).M2();    // use beam and 2pi momenta
 		TLorentzRotation resonanceBoost( -loc2piP4.BoostVector() );   // boost into 2pi frame
 		TLorentzVector beam_res = resonanceBoost * locBeamP4;
 		// TLorentzVector recoil_res = resonanceBoost * locProtonP4;
@@ -483,9 +494,48 @@ Bool_t DSelector_Z2pi_trees::Process(Long64_t locEntry)
   
 		TVector3 eps(1.0, 0.0, 0.0); // beam polarization vector
 		TVector3 z (0.,0.,1.);       // along beam direction
-		TVector3 y = p1_res.Vect().Unit().Cross(p2_res.Vect().Unit());    // Take pions to define production plane
-		double Phi = atan2(y.Dot(eps), locBeamP4.Vect().Unit().Dot(eps.Cross(y)));
+		TVector3 y = (locPiPlusP4.Vect().Unit().Cross(z)).Unit();    // ensure that y is perpendicular to z
+		double Phikin = acos(y.Dot(z.Cross(eps)));
+		TVector3 ygen = (locPiPlusP4_Thrown.Vect().Unit().Cross(z)).Unit();
+		double Phigen = acos(ygen.Dot(z.Cross(eps)));
+	        double PhiPiPluskin = locPiPlusP4.Vect().Phi();
+	        double PhiPiMinuskin = locPiMinusP4.Vect().Phi() - PI;  // convert to PiPlus angle
+		while (PhiPiMinuskin < 0) {
+		  PhiPiMinuskin += 2*PI; 
+		}
+		 while (PhiPiPluskin < 0) {
+		   PhiPiPluskin += 2*PI; 
+		 }
+		 if (abs(PhiPiMinuskin - PhiPiPluskin) > 2*PI -0.3) {
+		   if (PhiPiPluskin > PhiPiMinuskin) {
+		     PhiPiPluskin = 0;
+		   }
+		   else {
+		     PhiPiMinuskin = 0;
+		   }
+		 }
+		cout << "       Phigen = " << Phigen << " Phikin = " << Phikin << " PhiPiPluskin=" << PhiPiPluskin << " PhiPiMinuskin=" << PhiPiMinuskin << endl;
 
+	        double PhiPiPlusgen = locPiPlusP4_Thrown.Vect().Phi();
+	        double PhiPiMinusgen = locPiMinusP4_Thrown.Vect().Phi() - PI;  // convert to PiPlus angle
+		while (PhiPiMinusgen < 0) {
+		  PhiPiMinusgen += 2*PI; 
+		}
+		 while (PhiPiPlusgen < 0) {
+		   PhiPiPlusgen += 2*PI; 
+		 }
+		 if (abs(PhiPiMinusgen - PhiPiPlusgen) > 2*PI -0.3) {
+		   if (PhiPiPlusgen > PhiPiMinusgen) {
+		     PhiPiPlusgen = 0;
+		   }
+		   else {
+		     PhiPiMinusgen = 0;
+		   }
+		 }
+		 Phigen = (PhiPiPlusgen+PhiPiMinusgen)/2.;
+		 Phikin = (PhiPiPluskin+PhiPiMinuskin)/2.;
+		cout << "       Phigen = " << Phigen << " Phikin = " << Phikin << " PhiPiPlusgen=" << PhiPiPlusgen << " PhiPiMinusgen=" << PhiPiMinusgen << endl;
+		
 
 		/*double psi = phi - Phi;
 		if(psi < -3.14159) psi += 2*3.14159;
@@ -500,10 +550,14 @@ Bool_t DSelector_Z2pi_trees::Process(Long64_t locEntry)
 		locUsedThisCombo_Angles[PiMinus].insert(locPiMinusTrackID);
 		if(locUsedSoFar_Angles.find(locUsedThisCombo_Angles) == locUsedSoFar_Angles.end())
 		{
-			dHist_t->Fill(fabs(t));
+			dHist_tgen->Fill(fabs(tgen));
+			dHist_tkin->Fill(fabs(tkin));
+			dHist_tdiff->Fill(fabs(tkin)-fabs(tgen));
 			// dHist_CosTheta_Psi->Fill(psi*180./3.14159, CosTheta);
 			// dHist_phi->Fill(phi*180./3.14159);
-			dHist_Phi->Fill(Phi*180./3.14159);
+			dHist_Phigen->Fill(Phigen*180./3.14159);
+			dHist_Phikin->Fill(Phikin*180./3.14159);
+			dHist_Phidiff->Fill((Phikin-Phigen)*180./3.14159);
 			// dHist_psi->Fill(psi*180./3.14159);
 			locUsedSoFar_Angles.insert(locUsedThisCombo_Angles);
 		}

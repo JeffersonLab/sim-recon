@@ -26,18 +26,21 @@ void plot_Z2pi_trees(void)
     TH1F *KinFitChiSq = (TH1F*)f->Get("KinFitChiSq");
     TH1F *KinFitCL = (TH1F*)f->Get("KinFitCL");
     TH1F *MissingMassSquared = (TH1F*)f->Get("MissingMassSquared");
-    TH1F *M2pi = (TH1F*)f->Get("M2pi");
-    TH1F *t = (TH1F*)f->Get("t");
+    TH1F *M2pikin = (TH1F*)f->Get("M2pikin");
+    TH1F *tkin = (TH1F*)f->Get("tkin");
+    TH1F *Phikin = (TH1F*)f->Get("Phikin");
     TH2F *CosTheta_Psi = (TH2F*)f->Get("CosTheta_Psi");
     
-    // TH1F *pDeltap_Measured = (TH1F*)f->Get("pDeltap_Measured");
+    TH1F *M2pidiff = (TH1F*)f->Get("M2pidiff");
+    TH1F *tdiff = (TH1F*)f->Get("tdiff");
+    TH1F *Phidiff = (TH1F*)f->Get("Phidiff");
     TH1F *pipDeltap_Measured = (TH1F*)f->Get("pipDeltap_Measured");
     TH1F *pimDeltap_Measured = (TH1F*)f->Get("pimDeltap_Measured");
     // TH1F *pDeltap = (TH1F*)f->Get("pDeltap");
     TH1F *pipDeltap = (TH1F*)f->Get("pipDeltap");
     TH1F *pimDeltap = (TH1F*)f->Get("pimDeltap");
     
-   TCanvas *c0 = new TCanvas("c0", "c0",200,10,1000,700);
+    TCanvas *c0 = new TCanvas("c0", "c0",200,10,1000,700);
 
    c0->Divide(3,2);
     c0->cd(1);
@@ -89,14 +92,14 @@ void plot_Z2pi_trees(void)
     ymin = 0;
     ymax = 4000;
     
-    /*pMomentumMeasured->SetTitle(filename);
-    // pMomentumMeasured->GetXaxis()->SetRangeUser(xmin,xmax);
-    // pMomentumMeasured->GetYaxis()->SetRangeUser(ymin,ymax);
-    pMomentumMeasured->GetXaxis()->SetTitleSize(0.05);
-    pMomentumMeasured->GetYaxis()->SetTitleSize(0.05);
-    pMomentumMeasured->GetXaxis()->SetTitle("Proton Momentum (GeV)");
-    pMomentumMeasured->SetMarkerColor(4);
-    pMomentumMeasured->Draw();*/
+    Phikin->SetTitle(filename);
+    // Phikin->GetXaxis()->SetRangeUser(xmin,xmax);
+    // Phikin->GetYaxis()->SetRangeUser(ymin,ymax);
+    Phikin->GetXaxis()->SetTitleSize(0.05);
+    Phikin->GetYaxis()->SetTitleSize(0.05);
+    Phikin->GetXaxis()->SetTitle("#Phi Kin (degrees)");
+    Phikin->SetMarkerColor(4);
+    Phikin->Draw();
     
     c0->cd(5);
     // gPad->SetLogy();
@@ -179,43 +182,44 @@ void plot_Z2pi_trees(void)
     ymin = 0;
     ymax = 4000;
     
-    M2pi->SetTitle(filename);
-    // M2pi->GetXaxis()->SetRangeUser(xmin,xmax);
-    // M2pi->GetYaxis()->SetRangeUser(ymin,ymax);
-    M2pi->GetXaxis()->SetTitleSize(0.05);
-    M2pi->GetYaxis()->SetTitleSize(0.05);
-    M2pi->GetXaxis()->SetTitle("Mass 2pi (GeV)");
-    M2pi->SetMarkerColor(4);
-    M2pi->Draw();
+    M2pikin->SetTitle(filename);
+    // M2pikin->GetXaxis()->SetRangeUser(xmin,xmax);
+    // M2pikin->GetYaxis()->SetRangeUser(ymin,ymax);
+    M2pikin->GetXaxis()->SetTitleSize(0.05);
+    M2pikin->GetYaxis()->SetTitleSize(0.05);
+    M2pikin->GetXaxis()->SetTitle("Mass 2pi Kin (GeV)");
+    M2pikin->SetMarkerColor(4);
+    M2pikin->Draw();
     
     c1->cd(5);
-    // gPad->SetLogy();
+    gPad->SetLogy();
     ymin = 0;
     ymax = 4000;
     
-    t->SetTitle(filename);
-    // t->GetXaxis()->SetRangeUser(xmin,xmax);
-    // t->GetYaxis()->SetRangeUser(ymin,ymax);
-    t->GetXaxis()->SetTitleSize(0.05);
-    t->GetYaxis()->SetTitleSize(0.05);
-    t->GetXaxis()->SetTitle("-t (GeV2)");
-    t->SetMarkerColor(4);
-    t->Draw();
+    tkin->SetTitle(filename);
+    // tkin->GetXaxis()->SetRangeUser(xmin,xmax);
+    // tkin->GetYaxis()->SetRangeUser(ymin,ymax);
+    tkin->GetXaxis()->SetTitleSize(0.05);
+    tkin->GetYaxis()->SetTitleSize(0.05);
+    tkin->GetXaxis()->SetTitle("-t Kin (GeV2)");
+    tkin->GetXaxis()->SetNdivisions(505);
+    tkin->SetMarkerColor(4);
+    tkin->Draw();
     
     c1->cd(6);
     // gPad->SetLogy();
     ymin = 0;
     ymax = 4000;
     
-    CosTheta_Psi->SetTitle(filename);
-    // CosTheta_Psi->GetXaxis()->SetRangeUser(xmin,xmax);
-    // CosTheta_Psi->GetYaxis()->SetRangeUser(ymin,ymax);
-    CosTheta_Psi->GetXaxis()->SetTitleSize(0.05);
-    CosTheta_Psi->GetYaxis()->SetTitleSize(0.05);
-    CosTheta_Psi->GetYaxis()->SetTitle("CosTheta");
-    CosTheta_Psi->GetXaxis()->SetTitle("#Psi (Degrees)");
-    CosTheta_Psi->SetMarkerColor(4);
-    CosTheta_Psi->Draw("colz");
+    Phidiff->SetTitle(filename);
+    // Phidiff->GetXaxis()->SetRangeUser(xmin,xmax);
+    // Phidiff->GetYaxis()->SetRangeUser(ymin,ymax);
+    Phidiff->GetXaxis()->SetTitleSize(0.05);
+    Phidiff->GetYaxis()->SetTitleSize(0.05);
+    // Phidiff->GetYaxis()->SetTitle("CosTheta");
+    Phidiff->GetXaxis()->SetTitle("#Phi Gen - Kin (Degrees)");
+    Phidiff->SetMarkerColor(4);
+    Phidiff->Draw();
     
     
     TCanvas *c2 = new TCanvas("c2", "c2",200,10,1000,700);
@@ -227,14 +231,16 @@ void plot_Z2pi_trees(void)
     ymin = 0;
     ymax = 4000;
     
-    /*pDeltap_Measured->SetTitle(filename);
-    // pDeltap_Measured->GetXaxis()->SetRangeUser(xmin,xmax);
-    // pDeltap_Measured->GetYaxis()->SetRangeUser(ymin,ymax);
-    pDeltap_Measured->GetXaxis()->SetTitleSize(0.05);
-    pDeltap_Measured->GetYaxis()->SetTitleSize(0.05);
-    // pDeltap_Measured->GetXaxis()->SetTitle("");
-    pDeltap_Measured->SetMarkerColor(4);
-    pDeltap_Measured->Draw();*/
+    M2pidiff->SetTitle(filename);
+    // M2pidiff->GetXaxis()->SetRangeUser(xmin,xmax);
+    // M2pidiff->GetYaxis()->SetRangeUser(ymin,ymax);
+    M2pidiff->GetXaxis()->SetTitleSize(0.05);
+    M2pidiff->GetYaxis()->SetTitleSize(0.05);
+    // M2pidiff->GetXaxis()->SetTitle("");
+    M2pidiff->SetMarkerColor(4);
+    M2pidiff->GetXaxis()->SetNdivisions(505);
+    M2pidiff->Fit("gaus");
+    M2pidiff->Draw();
     
     c2->cd(2);
     // gPad->SetLogy();
@@ -269,14 +275,16 @@ void plot_Z2pi_trees(void)
     ymin = 0;
     ymax = 4000;
     
-    /*pDeltap->SetTitle(filename);
-    // pDeltap->GetXaxis()->SetRangeUser(xmin,xmax);
-    // pDeltap->GetYaxis()->SetRangeUser(ymin,ymax);
-    pDeltap->GetXaxis()->SetTitleSize(0.05);
-    pDeltap->GetYaxis()->SetTitleSize(0.05);
-    // pDeltap->GetXaxis()->SetTitle("");
-    pDeltap->SetMarkerColor(4);
-    pDeltap->Draw();*/
+    tdiff->SetTitle(filename);
+    // tdiff->GetXaxis()->SetRangeUser(xmin,xmax);
+    // tdiff->GetYaxis()->SetRangeUser(ymin,ymax);
+    tdiff->GetXaxis()->SetTitleSize(0.05);
+    tdiff->GetYaxis()->SetTitleSize(0.05);
+    // tdiff->GetXaxis()->SetTitle("");
+    tdiff->SetMarkerColor(4);
+    tdiff->GetXaxis()->SetNdivisions(505);
+    tdiff->Fit("gaus");
+    tdiff->Draw();
     
     c2->cd(5);
     // gPad->SetLogy();
