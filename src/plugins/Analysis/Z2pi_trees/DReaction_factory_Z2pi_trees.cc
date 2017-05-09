@@ -8,10 +8,10 @@
 //
 
 
-#include "DCustomAction_dEdxCut_Z2pi.h"
-#include "DCustomAction_Z2pi_hists.h"
+// #include "DCustomAction_dEdxCut_Z2pi.h"
+#include "DCustomAction_Z2pi_trees.h"
 #include "DCustomAction_Z2pi_cuts.h"
-#include "DCustomAction_Z2pi_unusedHists.h"
+#include "DCustomAction_p2pi_unusedHists.h"
 #include "DReaction_factory_Z2pi_trees.h"
 
 //------------------
@@ -50,11 +50,9 @@ jerror_t DReaction_factory_Z2pi_trees::evnt(JEventLoop* locEventLoop, uint64_t l
 	locReactionStep = new DReactionStep();
 	locReactionStep->Set_InitialParticleID(Gamma);
 	locReactionStep->Set_TargetParticleID(Pb208);
-	locReactionStep->Add_FinalParticleID(Pb208);
-	// locReactionStep->Set_TargetParticleID(Proton);
-	// locReactionStep->Add_FinalParticleID(Proton);
 	locReactionStep->Add_FinalParticleID(PiPlus);
 	locReactionStep->Add_FinalParticleID(PiMinus);
+	locReactionStep->Add_FinalParticleID(Pb208,true);   // recoil missing
 	locReaction->Add_ReactionStep(locReactionStep);
 	dReactionStepPool.push_back(locReactionStep); //register so will be deleted later: prevent memory leak
 
@@ -62,7 +60,7 @@ jerror_t DReaction_factory_Z2pi_trees::evnt(JEventLoop* locEventLoop, uint64_t l
 	/**************************************************** Z2pi_trees Control Settings ****************************************************/
 
 	// Event Store
-	locReaction->Set_EventStoreSkims("q+,q-"); // boolean-AND of skims
+	// locReaction->Set_EventStoreSkims("q+,q-"); // boolean-AND of skims
 
 	// Kinematic Fit
 	//locReaction->Set_KinFitType(d_NoFit); //simultaneously constrain apply four-momentum conservation, invariant masses, and common-vertex constraints
@@ -84,7 +82,7 @@ jerror_t DReaction_factory_Z2pi_trees::evnt(JEventLoop* locEventLoop, uint64_t l
 
 	// Highly Recommended: Very loose DAnalysisAction cuts, applied just after creating the combination (before saving it)
 	// Example: Missing mass of proton
-	locReaction->Add_ComboPreSelectionAction(new DCutAction_MissingMassSquared(locReaction, false, -0.1, 0.1));
+        locReaction->Add_ComboPreSelectionAction(new DCutAction_MissingMassSquared(locReaction, false, 20000, 60000));
 
 	/**************************************************** Z2pi_trees Analysis Actions ****************************************************/
 
@@ -110,9 +108,9 @@ jerror_t DReaction_factory_Z2pi_trees::evnt(JEventLoop* locEventLoop, uint64_t l
 	// locReaction->Add_AnalysisAction(new DCustomAction_Z2pi_hists(locReaction, false, "TimingCut_Measured"));
 
 	//MISSING MASS
-	locReaction->Add_AnalysisAction(new DHistogramAction_MissingMassSquared(locReaction, false, 1000, -0.1, 0.1, "PreKinFit"));
+	locReaction->Add_AnalysisAction(new DHistogramAction_MissingMassSquared(locReaction, false, 1000, 30000, 50000, "PreKinFit"));
 	// locReaction->Add_AnalysisAction(new DCutAction_MissingMassSquared(locReaction, false, -0.01, 0.005, "PreKinFit"));
-	locReaction->Add_AnalysisAction(new DCutAction_MissingMassSquared(locReaction, false, -0.1, 0.1, "PreKinFit"));
+	locReaction->Add_AnalysisAction(new DCutAction_MissingMassSquared(locReaction, false, 30000,50000, "PreKinFit"));
 
 	// Require KinFit converges
 	locReaction->Add_AnalysisAction(new DCutAction_KinFitFOM(locReaction, 0.0)); //require kinematic fit converges
@@ -120,20 +118,20 @@ jerror_t DReaction_factory_Z2pi_trees::evnt(JEventLoop* locEventLoop, uint64_t l
 	if(unused) {
 	  // Custom cuts (can be applied in TSelector)
 	  // locReaction->Add_AnalysisAction(new DCutAction_ProtonPiPlusdEdx(locReaction, 2.2, true)); //select p/pi+ above/below 2.2, //true/false: cut all/no proton candidates above p = 1 GeV/c
-	  locReaction->Add_AnalysisAction(new DCutAction_MissingMassSquared(locReaction, false, -0.04, 0.04));
+	  locReaction->Add_AnalysisAction(new DCutAction_MissingMassSquared(locReaction, false, 30000,50000));
 	  // locReaction->Add_AnalysisAction(new DCustomAction_Z2pi_cuts(locReaction, false));
 
 	  // Diagnostics for unused tracks and showers with final selection (only useful when analyzing EVIO data)
-	  // locReaction->Add_AnalysisAction(new DCustomAction_Z2pi_unusedHists(locReaction, false, "KinCut_Measured"));
+	  // locReaction->Add_AnalysisAction(new DCustomAction_p2pi_unusedHists(locReaction, false, "KinCut_Measured"));
 	}
 
 
 	// Custom histograms (after kinematic cuts)
-	locReaction->Add_AnalysisAction(new DCustomAction_Z2pi_hists(locReaction, false, "KinCut_Measured"));
+	locReaction->Add_AnalysisAction(new DCustomAction_Z2pi_trees(locReaction, false, "KinCut_Measured"));
 
-	// RHO
-	deque<Particle_t> locRhoPIDs;  locRhoPIDs.push_back(PiPlus);  locRhoPIDs.push_back(PiMinus);
-	locReaction->Add_AnalysisAction(new DHistogramAction_InvariantMass(locReaction, 0, locRhoPIDs, false, 900, 0.3, 1.2, "Rho"));
+	// 2PI
+	deque<Particle_t> loc2piPIDs;  loc2piPIDs.push_back(PiPlus);  loc2piPIDs.push_back(PiMinus);
+	locReaction->Add_AnalysisAction(new DHistogramAction_InvariantMass(locReaction, 0, loc2piPIDs, false, 400, 0.2, 0.6, "2pi Mass"));
 
 	if(unused)
 	{
@@ -141,7 +139,7 @@ jerror_t DReaction_factory_Z2pi_trees::evnt(JEventLoop* locEventLoop, uint64_t l
 		// locReaction->Add_AnalysisAction(new DCustomAction_Z2pi_cuts(locReaction, false));
 
 		// Diagnostics for unused tracks and showers with final selection (only useful when analyzing EVIO data)
-		locReaction->Add_AnalysisAction(new DCustomAction_Z2pi_unusedHists(locReaction, false, "Unused"));
+		locReaction->Add_AnalysisAction(new DCustomAction_p2pi_unusedHists(locReaction, false, "Unused"));
 	}
 
 	// Kinematics of final selection
