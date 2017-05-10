@@ -2441,6 +2441,10 @@ jerror_t DEventSourceHDDM::Extract_DPSHit(hddm_s::HDDM *record,
       hddm_s::PsHitList::iterator iter;
       for (iter = hits.begin(); iter != hits.end(); ++iter) {
          DPSHit *hit = new DPSHit;
+         if(iter->getArm() == 0)
+             hit->arm = DPSGeometry::Arm::kNorth;
+         else 
+             hit->arm = DPSGeometry::Arm::kSouth;
          hit->column = iter->getColumn();
          hit->npix_fadc = iter->getDE();
          hit->t = iter->getT();
@@ -2452,6 +2456,10 @@ jerror_t DEventSourceHDDM::Extract_DPSHit(hddm_s::HDDM *record,
       hddm_s::PsTruthHitList::iterator iter;
       for (iter = hits.begin(); iter != hits.end(); ++iter) {
          DPSHit *hit = new DPSHit;
+         if(iter->getArm() == 0)
+             hit->arm = DPSGeometry::Arm::kNorth;
+         else 
+             hit->arm = DPSGeometry::Arm::kSouth;
          hit->column = iter->getColumn();
          hit->npix_fadc = iter->getDE() * 1e5; // ~1e5 pixels/GeV
          hit->t = iter->getT();
@@ -2528,6 +2536,10 @@ jerror_t DEventSourceHDDM::Extract_DPSCHit(hddm_s::HDDM *record,
       hddm_s::PscHitList::iterator iter;
       for (iter = hits.begin(); iter != hits.end(); ++iter) {
          DPSCHit *hit = new DPSCHit;
+         if(iter->getArm() == 0)
+             hit->arm = DPSGeometry::Arm::kNorth;
+         else 
+             hit->arm = DPSGeometry::Arm::kSouth;
          hit->module = iter->getModule();
          hit->npe_fadc = iter->getDE();
          hit->t = iter->getT();
@@ -2539,6 +2551,10 @@ jerror_t DEventSourceHDDM::Extract_DPSCHit(hddm_s::HDDM *record,
       hddm_s::PscTruthHitList::iterator iter;
       for (iter = hits.begin(); iter != hits.end(); ++iter) {
          DPSCHit *hit = new DPSCHit;
+         if(iter->getArm() == 0)
+             hit->arm = DPSGeometry::Arm::kNorth;
+         else 
+             hit->arm = DPSGeometry::Arm::kSouth;
          hit->module = iter->getModule();
          hit->npe_fadc = iter->getDE() * 5e5; // ~5e5 pe/GeV
          hit->t = iter->getT();
