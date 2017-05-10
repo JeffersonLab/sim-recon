@@ -85,8 +85,11 @@ CobremsGeneration::CobremsGeneration(double Emax_GeV, double Epeak_GeV)
 #if COBREMS_GENERATOR_VERBOSITY > 0
    std::cout << std::endl
              << "Initialization for coherent bremsstralung calculation"
+             << std::endl
+             << " electron beam energy: " << Emax_GeV << " GeV"
+             << std::endl
+             << " primary coherent edge: " << Epeak_GeV << " GeV"
              << std::endl;
-   printBeamlineInfo();
 #endif
 }
 
