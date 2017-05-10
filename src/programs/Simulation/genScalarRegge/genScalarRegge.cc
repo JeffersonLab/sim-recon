@@ -1865,7 +1865,7 @@ double TensorCrossSection(TLorentzVector &q /* beam */,
   double m_rho_sq=m_rho*m_rho;
  
   // Coupling constants 
-  double f=20.;  // scale factor to account for normalization of regge factor 
+  double f=100.;  // scale factor to account for normalization of regge factor 
   // to data?? 
   double gT_sq=f*(2./3.)*150.; // GeV^2
   if (two_particles==(7+17)){
@@ -1990,7 +1990,7 @@ double TensorBackgroundInterference(TLorentzVector &q /* beam */,
   double v2x_plus_v2y=v2.Vect().x()+v2.Vect().y();
   
   // Coupling constants 
-  double f=10.;  // scale factor to account for normalization of regge factor 
+  double f=100.;  // scale factor to account for normalization of regge factor 
   // to data?? 
   double gT_sq=f*(2./3.)*150.; // GeV^2
   if (two_particles==(7+17)){
@@ -2945,9 +2945,9 @@ int main(int narg, char *argv[])
       
       // f0(600)
       if (got_pipi && generate[0]){
- 	double m_Sigma=0.8;
+ 	double m_Sigma=0.7;
 	double M_sq_R=m_Sigma*m_Sigma; 
-	width=0.8;
+	width=1.0;
 	ReBf500=M_sq_R-M_sq;
 	double MRsq_minus_m1sq_m2sq=M_sq_R-m1sq_plus_m2sq;
 	double temp=4.*m1sq*m2sq;
