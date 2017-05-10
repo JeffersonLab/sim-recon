@@ -1035,7 +1035,7 @@ def AddCobrems(env):
 	cobrems_home = os.getenv('HALLD_HOME', 'sim-recon')
 	env.AppendUnique(CPPPATH = ["%s/src/libraries/AMPTOOLS_MCGEN" % (cobrems_home)])
 	env.AppendUnique(LIBPATH = ["%s/%s/lib" % (cobrems_home, env['OSNAME'])])
-	env.AppendUnique(LIBS    = 'AMPTOOLS_MCGEN')
+	env.AppendUnique(LIBS    = ['AMPTOOLS_MCGEN'])
 	env.AppendUnique(CCFLAGS = pyincludes.rstrip().split())
 
 
