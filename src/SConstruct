@@ -66,7 +66,11 @@ if SHOWBUILD==0:
 				  SHLINKCOMSTR    = "Linking    [$TARGET]",
 				  INSTALLSTR      = "Installing [$TARGET]",
 				  ARCOMSTR        = "Archiving  [$TARGET]",
-				  RANLIBCOMSTR    = "Ranlib     [$TARGET]")
+				  RANLIBCOMSTR    = "Ranlib     [$TARGET]")  # nb RANLIBCOMSTR modified in progress functions below
+
+# Ranlib is special since it displays right after archiving without
+# calling the progress_function
+if int(SHOWPROGRESS) == 1 : env.Replace(RANLIBCOMSTR = "[ -- ] Ranlib     [$TARGET]")
 
 
 # Get compiler from environment variables (if set)
@@ -111,6 +115,8 @@ if PROFILE=='1':
 sbms.ApplyPlatformSpecificSettings(env, arch)
 sbms.ApplyPlatformSpecificSettings(env, osname)
 
+
+
 # "external" packages (aka xstream)
 SConscript('external/SConscript', variant_dir=".%s/external" % (osname), exports='env osname', duplicate=0)
 
@@ -136,7 +142,7 @@ if len(build_targets)>0:
 		sbms_setenv.mk_setenv_csh(env)
 		sbms_setenv.mk_setenv_bash(env)
 
-
+#- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
 # The following is used to print the percent done on each line
 # if requested by the user. This is not a perfect system since
 # it requires the total number of nodes to calculate percentage.
@@ -164,17 +170,25 @@ def progress_function(node):
 		screen.write('\r[%3d%%] ' % (node_count*100/node_count_max))
 		screen.flush()
 
-def progress_finish(target, source, env):
+def build_complete(target, source, env):
 	global node_count
 	with open(node_count_fname, 'w') as f: f.write('%d\n' % node_count)
 
-if SHOWPROGRESS != 0 :
+if int(SHOWPROGRESS) == 1 :
+	# Open file (if available) and read node count from last build
 	try:
 		with open(node_count_fname) as f: node_count_max = int(f.readline())
 	except: pass
+	
+	# Register progress function
 	Progress(progress_function, interval=node_count_interval)
 
-	progress_finish_command = Command('progress_finish', [], progress_finish)
+	# Add command to execute at end of build that writes node count to file
+	progress_finish_loc = str(env.Dir('#/..'))+'/sbms_build_complete'
+	progress_finish_command = Command(progress_finish_loc, [], build_complete)
 	Depends(progress_finish_command, BUILD_TARGETS)
-	if 'progress_finish' not in BUILD_TARGETS: BUILD_TARGETS.append('progress_finish')
+	if progress_finish_loc not in BUILD_TARGETS: BUILD_TARGETS.append(progress_finish_loc)
 
+
+# end section on progress counter
+#- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
