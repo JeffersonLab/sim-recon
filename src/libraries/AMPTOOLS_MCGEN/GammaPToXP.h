@@ -17,7 +17,6 @@
 #include "IUAmpTools/Kinematics.h"
 
 class Kinematics;
-class AmpVecs;
 
 class GammaPToXP {
   
