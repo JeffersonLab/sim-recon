@@ -5,6 +5,6 @@ Import('*')
 
 Import('env osname')
 
-subdirs = ['Analysis', 'Utilities', 'AmplitudeAnalysis']
+subdirs = ['Analysis', 'Utilities', 'Simulation', 'AmplitudeAnalysis']
 SConscript(dirs=subdirs, exports='env osname', duplicate=0)
 
