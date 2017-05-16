@@ -30,7 +30,6 @@ class BreitWignerGenerator
     
         double m_mass;
         double m_width;
-        bool m_flatMass;
 };
 
 #endif

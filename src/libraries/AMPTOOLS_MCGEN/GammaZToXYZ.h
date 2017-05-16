@@ -16,7 +16,6 @@
 #include "TH1.h"
 
 class Kinematics;
-class AmpVecs;
 
 class GammaZToXYZ {
   
