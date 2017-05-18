@@ -83,7 +83,7 @@ class DSourceComboer : public JObject
 	public:
 
 		DSourceComboer(void) = delete;
-		DSourceComboer(JEventLoop* locEventLoop);
+		DSourceComboer(JEventLoop* locEventLoop, const vector<const DReaction*>& locReactions);
 		DSourceComboer::~DSourceComboer(void);
 
 		//BUILD COMBOS (what should be called from the outside to do all of the work)
