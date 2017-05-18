@@ -101,7 +101,8 @@ jerror_t JEventProcessor_HLDetectorTiming::init(void)
 	    NBINS_MATCHING = 1000; MIN_MATCHING_T = -100; MAX_MATCHING_T = 400;
 	}
     } else if (DO_VERIFY){
-        NBINS_TAGGER_TIME = 200; MIN_TAGGER_TIME = -20; MAX_TAGGER_TIME = 20;
+        //NBINS_TAGGER_TIME = 200; MIN_TAGGER_TIME = -20; MAX_TAGGER_TIME = 20;
+        NBINS_TAGGER_TIME = 1200; MIN_TAGGER_TIME = -120; MAX_TAGGER_TIME = 120;
         NBINS_MATCHING = 1000; MIN_MATCHING_T = -10; MAX_MATCHING_T = 10;
     } else{
         NBINS_TAGGER_TIME = 100; MIN_TAGGER_TIME = -50; MAX_TAGGER_TIME = 50;
@@ -553,13 +554,13 @@ jerror_t JEventProcessor_HLDetectorTiming::evnt(JEventLoop *loop, uint64_t event
                 tagmHitVector[j]->t - thisRFBunch->dTime,
                 "Tagger - RFBunch Time; #Deltat_{Tagger - RFBunch} [ns]; Entries",
 			//160, -20, 20);
-                    800, -50, 50);
+                    1920, -120, 120);
         if (tagmHitVector[j]->row == 0){
             Fill1DHistogram("HLDetectorTiming", "TRACKING", "TAGM - RFBunch 1D Time",
                     tagmHitVector[j]->t - thisRFBunch->dTime,
                     "TAGM - RFBunch Time; #Deltat_{TAGM - RFBunch} [ns]; Entries",
 			    //480, -30, 30);
-                    800, -50, 50);
+                    1920, -120, 120);
         }
     }
 
