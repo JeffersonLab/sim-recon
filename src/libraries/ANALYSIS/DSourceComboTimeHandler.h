@@ -25,7 +25,7 @@ class DSourceComboTimeHandler
 {
 	public:
 		DSourceComboTimeHandler(void) = delete;
-		DSourceComboTimeHandler(JEventLoop* locEventLoop, DSourceComboer* locSourceComboer, const DSourceComboVertexer* locSourceComboVertexer);
+		DSourceComboTimeHandler(JEventLoop* locEventLoop, DSourceComboer* locSourceComboer, const DSourceComboVertexer* locSourceComboVertexer, const DSourceComboVertexer* locSourceComboVertexer);
 
 		//SETUP
 		void Reset(void);
@@ -33,6 +33,7 @@ class DSourceComboTimeHandler
 		void Set_BeamParticles(const vector<const DBeamPhoton*>& locBeamParticles);
 
 		//GET SETUP RESULTS
+		const DEventRFBunch* Get_InitialEventRFBunch(void) const{return dInitialEventRFBunch;}
 		DPhotonKinematicsByZBin Get_PhotonKinematics(void) const{return dPhotonKinematics;}
 		unordered_map<signed char, DPhotonShowersByBeamBunch> Get_ShowersByBeamBunchByZBin(void) const{return dShowersByBeamBunchByZBin;}
 		vector<const DKinematicData*> Get_BeamParticlesByRFBunch(int locRFBunch, unsigned int locPlusMinusBunchRange) const;
@@ -47,6 +48,7 @@ class DSourceComboTimeHandler
 		//UTILITY FUNCTIONS
 		int Calc_RFBunchShift(double locTimeToStepTo) const{return Calc_RFBunchShift(dInitialEventRFBunch->dTime, locTimeToStepTo);}
 		int Calc_RFBunchShift(double locTimeToStep, double locTimeToStepTo) const;
+		double Calc_RFTime(int locNumRFBunchShifts) const;
 		double Calc_PropagatedRFTime(double locPrimaryVertexZ, int locNumRFBunchShifts, double locDetachedVertexTimeOffset) const;
 
 		//SELECT RF BUNCHES
@@ -154,10 +156,15 @@ inline vector<const DKinematicData*> DSourceComboTimeHandler::Get_BeamParticlesB
 	return locBeamParticles;
 }
 
+inline double DSourceComboTimeHandler::Calc_RFTime(int locNumRFBunchShifts) const
+{
+	return dInitialEventRFBunch->dTime + locNumRFBunchShifts*dBeamBunchPeriod;
+}
+
 inline double DSourceComboTimeHandler::Calc_PropagatedRFTime(double locPrimaryVertexZ, int locNumRFBunchShifts, double locDetachedVertexTimeOffset) const
 {
 	//propagate rf time to vertex and add time offset (faster to just do it here rather than for each particle)
-	return dInitialEventRFBunch->dTime + (locPrimaryVertexZ - dTargetCenter.Z())/SPEED_OF_LIGHT + locNumRFBunchShifts*dBeamBunchPeriod + locDetachedVertexTimeOffset;
+	return Calc_RFTime(locNumRFBunchShifts) + (locPrimaryVertexZ - dTargetCenter.Z())/SPEED_OF_LIGHT + locDetachedVertexTimeOffset;
 }
 
 inline shared_ptr<const DKinematicData> DSourceComboTimeHandler::Create_KinematicData_Photon(const DNeutralShower* locNeutralShower, const DVector3& locVertex) const

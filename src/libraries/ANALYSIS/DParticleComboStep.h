@@ -1,15 +1,14 @@
 #ifndef _DParticleComboStep_
 #define _DParticleComboStep_
 
-#include <deque>
 #include <vector>
 #include <iostream>
 
-#include "JANA/JObject.h"
 #include "particleType.h"
 #include "DLorentzVector.h"
 #include "PID/DKinematicData.h"
-#include "DParticleComboBlueprint.h"
+#include "ANALYSIS/DReactionStep.h"
+#include "ANALYSIS/DSourceCombo.h"
 
 using namespace std;
 using namespace jana;
@@ -19,21 +18,22 @@ class DParticleComboStep
 	public:
 
 		// CONSTRUCTOR:
-		DParticleComboStep(void) : dMeasuredStep(NULL), dParticleComboBlueprintStep(NULL), dInitialParticle(NULL), dTargetParticle(NULL) {}
+		DParticleComboStep(void) : dMeasuredStep(nullptr), dReactionStep(nullptr), dSourceCombo(nullptr), dInitialParticle(nullptr) {}
 
 		// RESET:
 		void Reset(void);
 
-		// SET INITIAL AND TARGET PARTICLES:
+		//SET CONTENTS:
+		void Set_Contents(const DReactionStep* locReactionStep, const DKinematicData* locInitialParticle, const vector<const JObject*>& locSourceObjects, const vector<const DKinematicData*>& locFinalParticles, const DLorentzVector& locSpacetimeVertex);;
+
+		// SET INITIAL PARTICLE:
 		inline void Set_InitialParticle(const DKinematicData* locInitialParticle){dInitialParticle = locInitialParticle;}
-		inline void Set_TargetParticle(const DKinematicData* locTargetParticle){dTargetParticle = locTargetParticle;}
 
 		// SET FINAL PARTICLES:
 		inline void Add_FinalParticle(const DKinematicData* locFinalParticle){dFinalParticles.push_back(locFinalParticle);}
 		inline void Set_FinalParticle(const DKinematicData* locFinalParticle, size_t locFinalParticleIndex){dFinalParticles[locFinalParticleIndex] = locFinalParticle;}
 
 		// SET BLUEPRINT & MEASURED STEP:
-		inline void Set_ParticleComboBlueprintStep(const DParticleComboBlueprintStep* locParticleComboBlueprintStep){dParticleComboBlueprintStep = locParticleComboBlueprintStep;}
 		inline void Set_MeasuredParticleComboStep(const DParticleComboStep* locMeasuredParticleComboStep){dMeasuredStep = locMeasuredParticleComboStep;}
 
 		// SET PRODUCTION/DECAY SPACETIME VERTEX
@@ -41,24 +41,17 @@ class DParticleComboStep
 		inline void Set_Time(double locTime){dSpacetimeVertex.SetT(locTime);}
 		inline void Set_SpacetimeVertex(const DLorentzVector& locSpacetimeVertex){dSpacetimeVertex = locSpacetimeVertex;}
 
-		// GET PARTICLE PIDs:
-		inline Particle_t Get_InitialParticleID(void) const{return ((dParticleComboBlueprintStep != NULL) ? dParticleComboBlueprintStep->Get_InitialParticleID() : Unknown);}
-		inline Particle_t Get_TargetParticleID(void) const{return ((dParticleComboBlueprintStep != NULL) ? dParticleComboBlueprintStep->Get_TargetParticleID() : Unknown);}
-		inline Particle_t Get_FinalParticleID(size_t locFinalParticleIndex) const{return ((dParticleComboBlueprintStep != NULL) ? dParticleComboBlueprintStep->Get_FinalParticleID(locFinalParticleIndex) : Unknown);}
-		void Get_FinalParticleIDs(deque<Particle_t>& locFinalParticleIDs) const;
-
-		// GET INITIAL AND TARGET PARTICLES:
+		// GET INITIAL PARTICLES:
 		inline const DKinematicData* Get_InitialParticle(void) const{return dInitialParticle;}
 		const DKinematicData* Get_InitialParticle_Measured(void) const;
-		inline const DKinematicData* Get_TargetParticle(void) const{return dTargetParticle;}
 
 		// GET FINAL PARTICLES:
 		inline size_t Get_NumFinalParticles(void) const{return dFinalParticles.size();}
 		const DKinematicData* Get_FinalParticle(size_t locFinalParticleIndex) const;
 		const DKinematicData* Get_FinalParticle_Measured(size_t locFinalParticleIndex) const;
-		const JObject* Get_FinalParticle_SourceObject(size_t locFinalParticleIndex) const; //if missing or decaying: source object is null!
+		const JObject* Get_FinalParticle_SourceObject(size_t locFinalParticleIndex) const; //if missing or decaying: source object is nullptr!
 		void Get_FinalParticles(deque<const DKinematicData*>& locParticles) const;
-		const DKinematicData* Get_MissingParticle(void) const; //returns NULL if none missing!
+		const DKinematicData* Get_MissingParticle(void) const; //returns nullptr if none missing!
 
 		// GET FINAL PARTICLES - BY PID:
 		void Get_FinalParticles(Particle_t locPID, deque<const DKinematicData*>& locParticles) const; //get all final particles of the given PID
@@ -73,65 +66,23 @@ class DParticleComboStep
 		void Get_DetectedFinalNeutralParticles(deque<const DKinematicData*>& locParticles) const;
 		void Get_DetectedFinalParticles(deque<const DKinematicData*>& locParticles) const;
 
-		// GET TRAITS - INITIAL PARTICLE:
-		inline bool Is_InitialParticleDetected(void) const{return (Get_InitialParticleID() == Gamma);}
-		inline bool Is_InitialParticleDecaying(void) const{return (Get_InitialParticleID() != Gamma);}
-		inline bool Is_InitialParticleMissing(void) const{return false;} //currently not supported!
-		inline bool Is_InitialParticleCharged(void) const{return (ParticleCharge(Get_InitialParticleID()) != 0);}
-		inline bool Is_InitialParticleNeutral(void) const{return (ParticleCharge(Get_InitialParticleID()) == 0);}
-
-		// GET TRAITS - TARGET PARTICLE:
-		inline bool Is_TargetPresent(void) const{return (Get_TargetParticleID() != Unknown);}
-		inline bool Is_TargetParticleCharged(void) const{return ((Get_TargetParticleID() != Unknown) ? (ParticleCharge(Get_TargetParticleID()) != 0) : false);}
-		inline bool Is_TargetParticleNeutral(void) const{return ((Get_TargetParticleID() != Unknown) ? (ParticleCharge(Get_TargetParticleID()) == 0) : false);}
-
-		// GET TRAITS - FINAL PARTICLES:
-		inline bool Is_FinalParticleDetected(size_t locFinalParticleIndex) const{return (Get_DecayStepIndex(locFinalParticleIndex) == -2);}
-		inline bool Is_FinalParticleDecaying(size_t locFinalParticleIndex) const{return (Get_DecayStepIndex(locFinalParticleIndex) >= 0);}
-		inline bool Is_FinalParticleMissing(size_t locFinalParticleIndex) const{return (Get_DecayStepIndex(locFinalParticleIndex) == -1);}
-		bool Is_FinalParticleCharged(size_t locFinalParticleIndex) const;
-		bool Is_FinalParticleNeutral(size_t locFinalParticleIndex) const;
-
-		// GET PARTICLE NAME STRINGS:
-		string Get_StepName(void) const;
-		string Get_InitialParticlesROOTName(void) const;
-		string Get_FinalParticlesROOTName(void) const;
-		void Get_FinalParticlesROOTName(deque<string>& locParticleNames) const;
-		string Get_FinalDetectedParticlesROOTName(void) const;
-		string Get_StepROOTName(void) const;
-
 		// GET PRODUCTION/DECAY SPACETIME VERTEX
 		inline DVector3 Get_Position(void) const{return dSpacetimeVertex.Vect();}
 		inline double Get_Time(void) const{return dSpacetimeVertex.T();}
 		inline DLorentzVector Get_SpacetimeVertex(void) const{return dSpacetimeVertex;}
 
-		// GET BLUEPRINT
-		inline const DParticleComboBlueprintStep* Get_ParticleComboBlueprintStep(void) const{return dParticleComboBlueprintStep;}
-
-		// GET CONTROL VARIABLES:
-		//DecayStepIndex: one for each final particle: -2 if detected, -1 if missing, >= 0 if decaying, where the # is the step representing the particle decay
-		inline int Get_DecayStepIndex(size_t locFinalParticleIndex) const{return ((dParticleComboBlueprintStep != NULL) ? dParticleComboBlueprintStep->Get_DecayStepIndex(locFinalParticleIndex) : -3);}
-		//MissingParticleIndex: -1 for no missing particles, else final state particle at this index is missing
-		inline int Get_MissingParticleIndex(void) const{return ((dParticleComboBlueprintStep != NULL) ? dParticleComboBlueprintStep->Get_MissingParticleIndex() : -2);}
-		//InitialParticleDecayFromStepIndex: -1 if photon, else index points to step index it is produced at
-		inline int Get_InitialParticleDecayFromStepIndex(void) const{return ((dParticleComboBlueprintStep != NULL) ? dParticleComboBlueprintStep->Get_InitialParticleDecayFromStepIndex() : -2);}
-
-		// COMPARISON OPERATORS:
-		bool operator==(const DParticleComboStep& locParticleComboStep) const;
-		inline bool operator!=(const DParticleComboStep& locParticleComboStep) const{return (!((*this) == locParticleComboStep));}
-
 	private:
 		const DParticleComboStep* dMeasuredStep;
 
-		// BLUEPRINT:
-		const DParticleComboBlueprintStep* dParticleComboBlueprintStep; //contains PIDs, source objects
+		//SOURCE PARTICLES
+		const DReactionStep* dReactionStep;
 
 		// INITIAL PARTICLES:
-		const DKinematicData* dInitialParticle; //if is null: decaying or beam particle not yet set!
-		const DKinematicData* dTargetParticle; //NULL for no target
+		const DKinematicData* dInitialParticle; //if is nullptr: decaying or beam particle not yet set!
 
 		// FINAL PARTICLES:
-		vector<const DKinematicData*> dFinalParticles; //if particle is null: missing or decaying! //these are DChargedTrackHypothesis or DNeutralParticleHypothesis objects if detected
+		vector<const DKinematicData*> dFinalParticles; //if particle is nullptr: missing or decaying! //these are DChargedTrackHypothesis or DNeutralParticleHypothesis objects if detected
+		vector<const JObject*> dSourceObjects; //if particle is nullptr: missing or decaying! //these are DChargedTrack or DNeutralShower objects if detected
 
 		// PRODUCTION/DECAY SPACETIME VERTEX:
 		DLorentzVector dSpacetimeVertex;
@@ -139,60 +90,45 @@ class DParticleComboStep
 
 inline const DKinematicData* DParticleComboStep::Get_InitialParticle_Measured(void) const
 {
-	return ((dMeasuredStep != NULL) ? dMeasuredStep->Get_InitialParticle() : dInitialParticle);
+	return ((dMeasuredStep != nullptr) ? dMeasuredStep->Get_InitialParticle() : dInitialParticle);
 }
 
 inline void DParticleComboStep::Reset(void)
 {
-	dMeasuredStep = NULL;
-	dParticleComboBlueprintStep = NULL;
-	dInitialParticle = NULL;
-	dTargetParticle = NULL;
+	dReactionStep = nullptr;
+	dMeasuredStep = nullptr;
+	dInitialParticle = nullptr;
 	dFinalParticles.clear();
+	dSourceObjects.clear();
 }
 
-inline void DParticleComboStep::Get_FinalParticleIDs(deque<Particle_t>& locFinalParticleIDs) const
+inline void DParticleComboStep::Set_Contents(const DReactionStep* locReactionStep, const DKinematicData* locInitialParticle, const vector<const JObject*>& locSourceObjects, const vector<const DKinematicData*>& locFinalParticles, const DLorentzVector& locSpacetimeVertex)
 {
-	if(dParticleComboBlueprintStep != NULL)
-		dParticleComboBlueprintStep->Get_FinalParticleIDs(locFinalParticleIDs);
-}
-
-inline string DParticleComboStep::Get_InitialParticlesROOTName(void) const
-{
-	string locStepROOTName = ParticleName_ROOT(Get_InitialParticleID());
-	if(Get_TargetParticleID() != Unknown)
-		locStepROOTName += ParticleName_ROOT(Get_TargetParticleID());
-	return locStepROOTName;
-}
-
-inline string DParticleComboStep::Get_StepROOTName(void) const
-{
-	string locStepROOTName = Get_InitialParticlesROOTName();
-	locStepROOTName += "#rightarrow";
-	locStepROOTName += Get_FinalParticlesROOTName();
-	return locStepROOTName;
+	dReactionStep = locReactionStep;
+	dSourceObjects = locSourceObjects;
+	dInitialParticle = locInitialParticle;
+	dFinalParticles = locFinalParticles;
+	dSpacetimeVertex = locSpacetimeVertex;
 }
 
 inline const JObject* DParticleComboStep::Get_FinalParticle_SourceObject(size_t locFinalParticleIndex) const
 {
-	if(dParticleComboBlueprintStep == NULL)
-		return NULL;
 	return dParticleComboBlueprintStep->Get_FinalParticle_SourceObject(locFinalParticleIndex);
 }
 
 inline const DKinematicData* DParticleComboStep::Get_FinalParticle(size_t locFinalParticleIndex) const
 {
 	if(locFinalParticleIndex >= dFinalParticles.size())
-		return NULL;
+		return nullptr;
 	return dFinalParticles[locFinalParticleIndex];
 }
 
 inline const DKinematicData* DParticleComboStep::Get_FinalParticle_Measured(size_t locFinalParticleIndex) const
 {
-	if(dMeasuredStep != NULL)
+	if(dMeasuredStep != nullptr)
 		return dMeasuredStep->Get_FinalParticle_Measured(locFinalParticleIndex);
 	if(locFinalParticleIndex >= dFinalParticles.size())
-		return NULL;
+		return nullptr;
 	return dFinalParticles[locFinalParticleIndex];
 }
 
@@ -206,7 +142,7 @@ inline void DParticleComboStep::Get_FinalParticles(deque<const DKinematicData*>&
 inline void DParticleComboStep::Get_FinalParticles_Measured(deque<const DKinematicData*>& locParticles) const
 {
 	locParticles.clear();
-	if(dMeasuredStep != NULL)
+	if(dMeasuredStep != nullptr)
 		dMeasuredStep->Get_FinalParticles_Measured(locParticles);
 	else
 	{
@@ -228,7 +164,7 @@ inline void DParticleComboStep::Get_FinalParticles(Particle_t locPID, deque<cons
 inline void DParticleComboStep::Get_FinalParticles_Measured(Particle_t locPID, deque<const DKinematicData*>& locParticles) const
 {
 	locParticles.clear();
-	if(dMeasuredStep != NULL)
+	if(dMeasuredStep != nullptr)
 		dMeasuredStep->Get_FinalParticles_Measured(locPID, locParticles);
 	else
 	{
@@ -277,7 +213,7 @@ inline void DParticleComboStep::Get_DetectedFinalChargedParticles(deque<const DK
 inline void DParticleComboStep::Get_DetectedFinalParticles_Measured(deque<const DKinematicData*>& locParticles) const
 {
 	locParticles.clear();
-	if(dMeasuredStep != NULL)
+	if(dMeasuredStep != nullptr)
 		dMeasuredStep->Get_DetectedFinalParticles_Measured(locParticles);
 	else
 	{
@@ -292,7 +228,7 @@ inline void DParticleComboStep::Get_DetectedFinalParticles_Measured(deque<const 
 inline void DParticleComboStep::Get_DetectedFinalNeutralParticles_Measured(deque<const DKinematicData*>& locParticles) const
 {
 	locParticles.clear();
-	if(dMeasuredStep != NULL)
+	if(dMeasuredStep != nullptr)
 		dMeasuredStep->Get_DetectedFinalNeutralParticles_Measured(locParticles);
 	else
 	{
@@ -309,7 +245,7 @@ inline void DParticleComboStep::Get_DetectedFinalNeutralParticles_Measured(deque
 inline void DParticleComboStep::Get_DetectedFinalChargedParticles_Measured(deque<const DKinematicData*>& locParticles) const
 {
 	locParticles.clear();
-	if(dMeasuredStep != NULL)
+	if(dMeasuredStep != nullptr)
 		dMeasuredStep->Get_DetectedFinalChargedParticles_Measured(locParticles);
 	else
 	{
@@ -327,23 +263,10 @@ inline const DKinematicData* DParticleComboStep::Get_MissingParticle(void) const
 {
 	int locMissingParticleIndex = Get_MissingParticleIndex();
 	if(locMissingParticleIndex == -1)
-		return NULL;
+		return nullptr;
 	return dFinalParticles[locMissingParticleIndex];
 }
 
-inline bool DParticleComboStep::Is_FinalParticleCharged(size_t locFinalParticleIndex) const
-{
-	if(locFinalParticleIndex >= Get_NumFinalParticles())
-		return false;
-	return (ParticleCharge(Get_FinalParticleID(locFinalParticleIndex)) != 0);
-}
-
-inline bool DParticleComboStep::Is_FinalParticleNeutral(size_t locFinalParticleIndex) const
-{
-	if(locFinalParticleIndex >= Get_NumFinalParticles())
-		return false;
-	return (ParticleCharge(Get_FinalParticleID(locFinalParticleIndex)) == 0);
-}
 
 #endif // _DParticleComboStep_
 

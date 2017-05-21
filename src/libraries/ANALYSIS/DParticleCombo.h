@@ -5,7 +5,6 @@
 #include <vector>
 #include <set>
 
-#include "JANA/JObject.h"
 #include "particleType.h"
 #include "PID/DKinematicData.h"
 #include "PID/DEventRFBunch.h"
@@ -14,13 +13,10 @@
 #include "ANALYSIS/DKinFitResults.h"
 
 using namespace std;
-using namespace jana;
 
-class DParticleCombo : public JObject
+class DParticleCombo
 {
 	public:
-		JOBJECT_PUBLIC(DParticleCombo);
-
 		void Reset(void);
 
 		// SET STEPS

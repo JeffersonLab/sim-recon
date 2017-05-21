@@ -363,6 +363,32 @@ const DSourceCombo* Find_Combo_AtThisStep(const DSourceCombo* locSourceCombo, co
 	return nullptr;
 }
 
+inline const JObject* Get_SourceParticle_ThisStep(const DSourceCombo* locSourceCombo, Particle_t locPID, size_t locInstance, size_t& locPIDCountSoFar)
+{
+	auto ParticleFinder = [&locPID, &locInstance, &locPIDCountSoFar](pair<Particle_t, const JObject*>& locPair) -> bool
+		{return ((locPair.first != locPID) ? false : ((++locPIDCountSoFar == locInstance) ? true : false));};
+
+	auto locParticles = locSourceCombo->Get_SourceParticles();
+	auto locIterator = std::find_if(locParticles.begin(), locParticles.end(), ParticleFinder);
+	if(locIterator != locParticles.end())
+		return locIterator->second;
+
+	for(const auto& locDecayPair : locSourceCombo->Get_FurtherDecayCombos())
+	{
+		if(std::get<0>(locDecayPair.first) != Unknown)
+			continue; //a new step!
+		for(const auto& locDecayCombo : locDecayPair.second)
+		{
+			auto locParticle = Get_SourceParticle_ThisStep(locDecayCombo, locPID, locInstance, locPIDCountSoFar);
+			if(locParticle != nullptr)
+				return locParticle;
+		}
+	}
+
+	return nullptr;
+}
+
+
 } //end DAnalysis namespace
 
 #endif // DSourceCombo_h

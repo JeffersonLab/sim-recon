@@ -22,6 +22,8 @@ class DEventRFBunch : public jana::JObject
 	public:
 		JOBJECT_PUBLIC(DEventRFBunch);
 
+		void Set_Content(DetectorSystem_t locTimeSource, double locTime, double locTimeVariance, unsigned int locNumParticleVotes = 0);
+
 		DetectorSystem_t dTimeSource; //e.g. SYS_RF, SYS_START, SYS_NULL (no valid source or not enough tracks/showers to pick it)
 
 		double dTime; //The RF time propagated to the center of the target.  This time is defined at the center of the target. 
@@ -36,6 +38,14 @@ class DEventRFBunch : public jana::JObject
 			AddString(items, "#tracks", "%i", dNumParticleVotes);
 		}
 };
+
+inline void DEventRFBunch::Set_Content(DetectorSystem_t locTimeSource, double locTime, double locTimeVariance, unsigned int locNumParticleVotes)
+{
+	dTimeSource = locTimeSource;
+	dTime = locTime;
+	dTimeVariance = locTimeVariance;
+	dNumParticleVotes = locNumParticleVotes;
+}
 
 #endif // _DEventRFBunch_
 

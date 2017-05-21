@@ -997,9 +997,7 @@ void DEventWriterROOT::Fill_DataTree(JEventLoop* locEventLoop, const DReaction* 
 	//indices: charged
 	for(size_t loc_i = 0; loc_i < locChargedTrackHypotheses.size(); ++loc_i)
 	{
-		const DTrackTimeBased* locTrackTimeBased = NULL;
-		locChargedTrackHypotheses[loc_i]->GetSingle(locTrackTimeBased);
-
+		const DTrackTimeBased* locTrackTimeBased = locChargedTrackHypotheses[loc_i]->Get_TrackTimeBased();
 		pair<oid_t, Particle_t> locTrackPair(locTrackTimeBased->id, locTrackTimeBased->PID());
 		locObjectToArrayIndexMap[locTrackPair] = loc_i;
 	}
@@ -1007,9 +1005,7 @@ void DEventWriterROOT::Fill_DataTree(JEventLoop* locEventLoop, const DReaction* 
 	//indices: neutral
 	for(size_t loc_i = 0; loc_i < locNeutralParticleHypotheses.size(); ++loc_i)
 	{
-		const DNeutralShower* locNeutralShower = NULL;
-		locNeutralParticleHypotheses[loc_i]->GetSingle(locNeutralShower);
-
+		const DNeutralShower* locNeutralShower = locNeutralParticleHypotheses[loc_i]->Get_NeutralShower();
 		pair<oid_t, Particle_t> locShowerPair(locNeutralShower->id, locNeutralParticleHypotheses[loc_i]->PID());
 		locObjectToArrayIndexMap[locShowerPair] = loc_i;
 	}
@@ -1824,9 +1820,8 @@ void DEventWriterROOT::Fill_ComboStepData(DTreeFillData* locTreeFillData, const 
 			const DNeutralParticleHypothesis* locMeasuredNeutralHypo = dynamic_cast<const DNeutralParticleHypothesis*>(locKinematicData_Measured);
 
 			//get array index
-			const DNeutralShower* locNeutralShower = NULL;
-			locMeasuredNeutralHypo->GetSingle(locNeutralShower);
-			pair<oid_t, Particle_t> locNeutralPair(locNeutralShower->id, locMeasuredNeutralHypo->PID());
+			const DNeutralShower* locNeutralShower = locNeutralHypo->Get_NeutralShower();
+			pair<oid_t, Particle_t> locNeutralPair(locNeutralShower->id, locNeutralHypo->PID());
 			size_t locNeutralIndex = locObjectToArrayIndexMap.find(locNeutralPair)->second;
 
 			Fill_ComboNeutralData(locTreeFillData, locComboIndex, locParticleBranchName, locMeasuredNeutralHypo, locNeutralHypo, locNeutralIndex, locKinFitType);
@@ -1837,9 +1832,8 @@ void DEventWriterROOT::Fill_ComboStepData(DTreeFillData* locTreeFillData, const 
 			const DChargedTrackHypothesis* locMeasuredChargedHypo = dynamic_cast<const DChargedTrackHypothesis*>(locKinematicData_Measured);
 
 			//get array index
-			const DTrackTimeBased* locTrackTimeBased = NULL;
-			locMeasuredChargedHypo->GetSingle(locTrackTimeBased);
-			pair<oid_t, Particle_t> locTrackPair(locTrackTimeBased->id, locMeasuredChargedHypo->PID());
+			const DTrackTimeBased* locTrackTimeBased = locChargedHypo->Get_TrackTimeBased();
+			pair<oid_t, Particle_t> locTrackPair(locTrackTimeBased->id, locChargedHypo->PID());
 			size_t locChargedIndex = locObjectToArrayIndexMap.find(locTrackPair)->second;
 
 			Fill_ComboChargedData(locTreeFillData, locComboIndex, locParticleBranchName, locMeasuredChargedHypo, locChargedHypo, locChargedIndex, locKinFitType);

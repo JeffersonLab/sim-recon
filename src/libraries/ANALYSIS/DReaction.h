@@ -28,51 +28,7 @@ enum DKinFitType
 	d_P4AndSpacetimeFit //also includes invariant mass constraints
 };
 
-class DReactionBase : public JObject
-{
-	public:
-		JOBJECT_PUBLIC(DReactionBase);
-
-		// CONSTRUCTOR:
-		DReactionBase(string locReactionName); //User must specify a unique reaction name upon construction
-		// DESTRUCTOR:
-		virtual ~DReactionBase(void);
-
-		// SET OBJECT DATA:
-		void Add_ReactionStep(const DReactionStep* locReactionStep){dReactionSteps.push_back(locReactionStep);}
-		void Clear_ReactionSteps(void){dReactionSteps.clear();}
-
-		// SET KINFIT CONTROL
-		void Set_KinFitType(DKinFitType locKinFitType){dKinFitType = locKinFitType;}
-
-		// GET CONTROL INFO:
-		string Get_ReactionName(void) const{return dReactionName;}
-		bool Get_IsInclusiveFlag(void) const;
-
-		// GET KINFIT CONTROL
-		DKinFitType Get_KinFitType(void) const{return dKinFitType;}
-
-		// GET REACTION STEPS:
-		size_t Get_NumReactionSteps(void) const{return dReactionSteps.size();}
-		const DReactionStep* Get_ReactionStep(size_t locStepIndex) const{return dReactionSteps.at(locStepIndex);}
-		vector<const DReactionStep*> Get_ReactionSteps(void) const{return dReactionSteps;}
-
-		// GET PIDS
-		vector<Particle_t> Get_FinalPIDs(bool locIncludeMissingFlag = true, bool locIncludeDecayingFlag = true, Charge_t locCharge = d_AllCharges, bool locIncludeDuplicatesFlag = true) const;
-
-	private:
-		// PRIVATE METHODS:
-		DReactionBase(void); //make default constructor private. MUST set a name upon construction (and must be unique!)
-
-		// CONTROL MEMBERS:
-		string dReactionName; //must be unique
-		DKinFitType dKinFitType; //defined in ANALYSIS/DKinFitResults.h
-
-		// REACTION AND ANALYSIS MEMBERS:
-		vector<const DReactionStep*> dReactionSteps;
-};
-
-class DReaction : public DReactionBase
+class DReaction
 {
 	public:
 		JOBJECT_PUBLIC(DReaction);
