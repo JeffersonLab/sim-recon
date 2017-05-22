@@ -123,34 +123,24 @@ const DParticleCombo* DParticleComboCreator::Build_ParticleCombo(const DReaction
 const DNeutralParticleHypothesis* Create_NeutralHypothesis(JEventLoop* locEventLoop, const DNeutralShower* locNeutralShower, Particle_t locPID, const DEventRFBunch* locEventRFBunch, const DVector3 locVertex)
 {
 	//create
+//DON'T CALL THESE: INSTEAD DO CUSTOM (& SHARE DATA!)
+//ok, maybe do the neutral since the vertex will move
 	DNeutralParticleHypothesis* locNeutralParticleHypothesis = dNeutralParticleHypothesisFactory->Create_DNeutralParticleHypothesis(locEventLoop, locNeutralShower, locPID, locEventRFBunch, locVertex);
 	if(locNeutralParticleHypothesis == NULL)
 		continue;
-
-	locNeutralParticleHypothesis->AddAssociatedObject(locNeutralParticles[loc_j]);
-
-	const DNeutralParticleHypothesis* locOrigNeutralParticleHypothesis = locNeutralParticles[loc_j]->Get_Hypothesis(locPID);
-	if(locOrigNeutralParticleHypothesis != NULL)
-		locNeutralParticleHypothesis->AddAssociatedObject(locOrigNeutralParticleHypothesis);
 }
 
 void Create_Charged()
 {
 	//see if DChargedTrackHypothesis with the desired PID was created by the default factory, AND it passed the PreSelect cuts
 	const DChargedTrackHypothesis* locChargedTrackHypothesis = locChargedTrack->Get_Hypothesis(locPID);
-	if(locChargedTrackHypothesis != NULL)
-	{
+
 		//it was/did. create new object with same PID (so that is registered with the combo factory, and because rf bunch could be different)
-		const DTrackTimeBased* locTrackTimeBased = NULL;
-		locChargedTrackHypothesis->GetSingleT(locTrackTimeBased);
+		const DTrackTimeBased* locTrackTimeBased = locChargedTrackHypothesis->Get_TrackTimeBased();
 		DChargedTrackHypothesis* locNewChargedTrackHypothesis = dChargedTrackHypothesisFactory->Create_ChargedTrackHypothesis(locEventLoop, locTrackTimeBased, dDetectorMatches, locEventRFBunch);
 
-		locNewChargedTrackHypothesis->AddAssociatedObject(locEventRFBunch);
 		locNewChargedTrackHypothesis->AddAssociatedObject(locChargedTrack);
-		locNewChargedTrackHypothesis->AddAssociatedObject(locChargedTrackHypothesis);
-		_data.push_back(locNewChargedTrackHypothesis);
 		return locNewChargedTrackHypothesis;
-	}
 
 }
 

@@ -21,8 +21,9 @@ class DTrackTimeBased:public DTrackingData{
 		JOBJECT_PUBLIC(DTrackTimeBased);
 		
 		//CONSTRUCTORS
-		DTrackTimeBased(const DTrackTimeBased& locSourceData, bool locShareTrackingFlag = false, bool locShareKinematicsFlag = false);
-		DTrackTimeBased(const DTrackingData& locSourceData, bool locShareTrackingFlag = false, bool locShareKinematicsFlag = false);
+		DTrackTimeBased(DTrackTimeBased& locSourceData, bool locShareTrackingFlag = false, bool locShareKinematicsFlag = false);
+		DTrackTimeBased(DTrackingData& locSourceData, bool locShareTrackingFlag = false, bool locShareKinematicsFlag = false);
+		DTrackTimeBased(const DTrackTimeBased& locSourceData) = delete;
 
 		typedef struct{
 		  unsigned int inner_layer;
@@ -77,10 +78,10 @@ class DTrackTimeBased:public DTrackingData{
 		}
 };
 
-inline DTrackTimeBased::DTrackTimeBased(const DTrackTimeBased& locSourceData, bool locShareTrackingFlag,
+inline DTrackTimeBased::DTrackTimeBased(DTrackTimeBased& locSourceData, bool locShareTrackingFlag,
 bool locShareKinematicsFlag) : DTrackingData(locSourceData, locShareTrackingFlag, locShareKinematicsFlag){}
 
-inline DTrackTimeBased::DTrackTimeBased(const DTrackingData& locSourceData, bool locShareTrackingFlag,
+inline DTrackTimeBased::DTrackTimeBased(DTrackingData& locSourceData, bool locShareTrackingFlag,
 bool locShareKinematicsFlag) : DTrackingData(locSourceData, locShareTrackingFlag, locShareKinematicsFlag){}
 
 #endif // _DTrackTimeBased_

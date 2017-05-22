@@ -7,8 +7,9 @@
 #include "particleType.h"
 #include "DLorentzVector.h"
 #include "PID/DKinematicData.h"
+#include "PID/DNeutralParticleHypothesis.h"
+#include "PID/DChargedTrackHypothesis.h"
 #include "ANALYSIS/DReactionStep.h"
-#include "ANALYSIS/DSourceCombo.h"
 
 using namespace std;
 using namespace jana;
@@ -18,13 +19,13 @@ class DParticleComboStep
 	public:
 
 		// CONSTRUCTOR:
-		DParticleComboStep(void) : dMeasuredStep(nullptr), dReactionStep(nullptr), dSourceCombo(nullptr), dInitialParticle(nullptr) {}
+		DParticleComboStep(void) : dMeasuredStep(nullptr), dReactionStep(nullptr), dInitialParticle(nullptr) {}
 
 		// RESET:
 		void Reset(void);
 
 		//SET CONTENTS:
-		void Set_Contents(const DReactionStep* locReactionStep, const DKinematicData* locInitialParticle, const vector<const JObject*>& locSourceObjects, const vector<const DKinematicData*>& locFinalParticles, const DLorentzVector& locSpacetimeVertex);;
+		void Set_Contents(const DReactionStep* locReactionStep, const DKinematicData* locInitialParticle, const vector<const DKinematicData*>& locFinalParticles, const DLorentzVector& locSpacetimeVertex);;
 
 		// SET INITIAL PARTICLE:
 		inline void Set_InitialParticle(const DKinematicData* locInitialParticle){dInitialParticle = locInitialParticle;}
@@ -33,7 +34,7 @@ class DParticleComboStep
 		inline void Add_FinalParticle(const DKinematicData* locFinalParticle){dFinalParticles.push_back(locFinalParticle);}
 		inline void Set_FinalParticle(const DKinematicData* locFinalParticle, size_t locFinalParticleIndex){dFinalParticles[locFinalParticleIndex] = locFinalParticle;}
 
-		// SET BLUEPRINT & MEASURED STEP:
+		// SET MEASURED STEP:
 		inline void Set_MeasuredParticleComboStep(const DParticleComboStep* locMeasuredParticleComboStep){dMeasuredStep = locMeasuredParticleComboStep;}
 
 		// SET PRODUCTION/DECAY SPACETIME VERTEX
@@ -74,7 +75,6 @@ class DParticleComboStep
 	private:
 		const DParticleComboStep* dMeasuredStep;
 
-		//SOURCE PARTICLES
 		const DReactionStep* dReactionStep;
 
 		// INITIAL PARTICLES:
@@ -82,7 +82,6 @@ class DParticleComboStep
 
 		// FINAL PARTICLES:
 		vector<const DKinematicData*> dFinalParticles; //if particle is nullptr: missing or decaying! //these are DChargedTrackHypothesis or DNeutralParticleHypothesis objects if detected
-		vector<const JObject*> dSourceObjects; //if particle is nullptr: missing or decaying! //these are DChargedTrack or DNeutralShower objects if detected
 
 		// PRODUCTION/DECAY SPACETIME VERTEX:
 		DLorentzVector dSpacetimeVertex;
@@ -99,13 +98,11 @@ inline void DParticleComboStep::Reset(void)
 	dMeasuredStep = nullptr;
 	dInitialParticle = nullptr;
 	dFinalParticles.clear();
-	dSourceObjects.clear();
 }
 
-inline void DParticleComboStep::Set_Contents(const DReactionStep* locReactionStep, const DKinematicData* locInitialParticle, const vector<const JObject*>& locSourceObjects, const vector<const DKinematicData*>& locFinalParticles, const DLorentzVector& locSpacetimeVertex)
+inline void DParticleComboStep::Set_Contents(const DReactionStep* locReactionStep, const DKinematicData* locInitialParticle, const vector<const DKinematicData*>& locFinalParticles, const DLorentzVector& locSpacetimeVertex)
 {
 	dReactionStep = locReactionStep;
-	dSourceObjects = locSourceObjects;
 	dInitialParticle = locInitialParticle;
 	dFinalParticles = locFinalParticles;
 	dSpacetimeVertex = locSpacetimeVertex;
@@ -113,7 +110,18 @@ inline void DParticleComboStep::Set_Contents(const DReactionStep* locReactionSte
 
 inline const JObject* DParticleComboStep::Get_FinalParticle_SourceObject(size_t locFinalParticleIndex) const
 {
-	return dParticleComboBlueprintStep->Get_FinalParticle_SourceObject(locFinalParticleIndex);
+	if(dFinalParticles[locFinalParticleIndex] == nullptr)
+		return nullptr;
+	if(ParticleCharge(dReactionStep->Get_FinalPID(locFinalParticleIndex)) == 0)
+	{
+		auto locHypo = static_cast<const DNeutralParticleHypothesis*>(dFinalParticles[locFinalParticleIndex]);
+		return static_cast<const JObject*>(locHypo->Get_NeutralShower());
+	}
+	else
+	{
+		auto locHypo = static_cast<const DChargedTrackHypothesis*>(dFinalParticles[locFinalParticleIndex]);
+		return static_cast<const JObject*>(locHypo->Get_TrackTimeBased());
+	}
 }
 
 inline const DKinematicData* DParticleComboStep::Get_FinalParticle(size_t locFinalParticleIndex) const

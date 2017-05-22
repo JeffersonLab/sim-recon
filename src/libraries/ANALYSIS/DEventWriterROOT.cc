@@ -1203,19 +1203,13 @@ vector<const DChargedTrackHypothesis*> DEventWriterROOT::Get_ChargedHypotheses_U
 		locCombo->Get_DetectedFinalChargedParticles_Measured(locChargedParticles);
 
 		for(auto& locParticle : locChargedParticles)
-		{
-			const DTrackTimeBased* locTrackTimeBased = NULL;
-			locParticle->GetSingle(locTrackTimeBased);
-			locUsedTimeBasedTracks.insert(locTrackTimeBased);
-		}
+			locUsedTimeBasedTracks.insert(static_cast<const DChargedTrackHypothesis*>(locParticle)->Get_TrackTimeBased());
 	}
 
 	//loop through "all" hypos, removing those that weren't used
 	for(auto locIterator = locAllHypos.begin(); locIterator != locAllHypos.end();)
 	{
-		const DTrackTimeBased* locTrackTimeBased = NULL;
-		(*locIterator)->GetSingle(locTrackTimeBased);
-
+		const DTrackTimeBased* locTrackTimeBased = (*locIterator)->Get_TrackTimeBased();
 		if(locUsedTimeBasedTracks.find(locTrackTimeBased) != locUsedTimeBasedTracks.end())
 			++locIterator;
 		else
@@ -1302,9 +1296,7 @@ vector<const DNeutralParticleHypothesis*> DEventWriterROOT::Get_NeutralHypothese
 
 		for(auto& locParticle : locNeutralParticles)
 		{
-			const DNeutralShower* locNeutralShower = NULL;
-			locParticle->GetSingle(locNeutralShower);
-
+			const DNeutralShower* locNeutralShower = static_cast<const DNeutralParticleHypothesis*>(locParticle)->Get_NeutralShower();
 			pair<const DNeutralShower*, Particle_t> locShowerPair(locNeutralShower, locParticle->PID());
 			locUsedNeutralShowers.insert(locShowerPair);
 		}
@@ -1313,10 +1305,8 @@ vector<const DNeutralParticleHypothesis*> DEventWriterROOT::Get_NeutralHypothese
 	//loop through "all" hypos, removing those that weren't used
 	for(auto locIterator = locAllHypos.begin(); locIterator != locAllHypos.end();)
 	{
-		const DNeutralShower* locNeutralShower = NULL;
-		(*locIterator)->GetSingle(locNeutralShower);
+		const DNeutralShower* locNeutralShower = (*locIterator)->Get_NeutralShower();
 		pair<const DNeutralShower*, Particle_t> locShowerPair(locNeutralShower, (*locIterator)->PID());
-
 		if(locUsedNeutralShowers.find(locShowerPair) == locUsedNeutralShowers.end())
 		   locIterator = locAllHypos.erase(locIterator);
 		else

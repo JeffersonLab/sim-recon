@@ -19,6 +19,7 @@
 #include <TOF/DTOFPoint.h>
 #include <BCAL/DBCALShower.h>
 #include <FCAL/DFCALShower.h>
+#include "ANALYSIS/DResourcePool.h"
 
 using namespace std;
 using namespace jana;
@@ -32,8 +33,14 @@ class DChargedTrackHypothesis_factory:public jana::JFactory<DChargedTrackHypothe
 		DChargedTrackHypothesis* Create_ChargedTrackHypothesis(JEventLoop* locEventLoop, const DTrackTimeBased* locTrackTimeBased, const DDetectorMatches* locDetectorMatches, const DEventRFBunch* locEventRFBunch) const;
 		void Add_TimeToTrackingMatrix(DChargedTrackHypothesis* locChargedTrackHypothesis, TMatrixFSym* locCovarianceMatrix, double locFlightTimeVariance, double locHitTimeVariance, double locFlightTimePCorrelation) const;
 
+		void Recycle_Hypotheses(vector<const DChargedTrackHypothesis*>& locHypos){dResourcePool_ChargedTrackHypothesis.Recycle(locHypos);}
+		void Recycle_Hypothesis(const DChargedTrackHypothesis* locHypo){dResourcePool_ChargedTrackHypothesis.Recycle(locHypo);}
+
 	private:
 		const DParticleID* dPIDAlgorithm;
+
+		//RESOURCE POOL
+		DResourcePool<DChargedTrackHypothesis> dResourcePool_ChargedTrackHypothesis;
 
 		jerror_t init(void);						///< Called once at program start.
 		jerror_t brun(jana::JEventLoop *locEventLoop, int32_t runnumber);	///< Called everytime a new run number is detected.

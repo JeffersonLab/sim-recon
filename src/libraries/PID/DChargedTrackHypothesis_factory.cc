@@ -29,6 +29,8 @@ inline bool DChargedTrackHypothesis_SortByEnergy(const DChargedTrackHypothesis* 
 //------------------
 jerror_t DChargedTrackHypothesis_factory::init(void)
 {
+	//Setting this flag makes it so that JANA does not delete the objects in _data.  This factory will manage this memory. 
+	SetFactoryFlag(NOT_OBJECT_OWNER);
 	return NOERROR;
 }
 
@@ -46,6 +48,9 @@ jerror_t DChargedTrackHypothesis_factory::brun(jana::JEventLoop *locEventLoop, i
 //------------------
 jerror_t DChargedTrackHypothesis_factory::evnt(jana::JEventLoop* locEventLoop, uint64_t eventnumber)
 {
+	//Recycle
+	dResourcePool_ChargedTrackHypothesis.Recycle(_data);
+
  	vector<const DTrackTimeBased*> locTrackTimeBasedVector;
 	locEventLoop->Get(locTrackTimeBasedVector);
 
@@ -61,8 +66,7 @@ jerror_t DChargedTrackHypothesis_factory::evnt(jana::JEventLoop* locEventLoop, u
 	for(size_t loc_i = 0; loc_i < locTrackTimeBasedVector.size(); loc_i++)
 	{
 		DChargedTrackHypothesis* locChargedTrackHypothesis = Create_ChargedTrackHypothesis(locEventLoop, locTrackTimeBasedVector[loc_i], locDetectorMatches, locEventRFBunches[0]);
-		if(locChargedTrackHypothesis != NULL)
-			locChargedTrackHypotheses[locChargedTrackHypothesis->candidateid].push_back(locChargedTrackHypothesis);
+		locChargedTrackHypotheses[locChargedTrackHypothesis->candidateid].push_back(locChargedTrackHypothesis);
 	}
 
 	//choose the first hypothesis from each track, and sort by increasing energy in the 1's and 0.1s digits (MeV): pseudo-random
@@ -84,7 +88,8 @@ jerror_t DChargedTrackHypothesis_factory::evnt(jana::JEventLoop* locEventLoop, u
 
 DChargedTrackHypothesis* DChargedTrackHypothesis_factory::Create_ChargedTrackHypothesis(JEventLoop* locEventLoop, const DTrackTimeBased* locTrackTimeBased, const DDetectorMatches* locDetectorMatches, const DEventRFBunch* locEventRFBunch) const
 {
-	DChargedTrackHypothesis* locChargedTrackHypothesis = new DChargedTrackHypothesis(locTrackTimeBased);
+	DChargedTrackHypothesis* locChargedTrackHypothesis = dResourcePool_ChargedTrackHypothesis.Get_Resource();
+	locChargedTrackHypothesis->Share_FromInput_Kinematics(static_cast<const DKinematicData*>(locTrackTimeBased));
 
 	uint64_t locEventNumber = locEventLoop->GetJEvent().GetEventNumber();
 	TMatrixFSym* locCovarianceMatrix = (dynamic_cast<DApplication*>(japp))->Get_CovarianceMatrixResource(7, locEventNumber);

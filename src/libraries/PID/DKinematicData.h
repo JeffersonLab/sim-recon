@@ -31,6 +31,7 @@ class DKinematicData : public JObject
 
 		//Assignment operator
 		DKinematicData& operator=(const DKinematicData& locSourceData);
+		void Share_FromInput_Kinematics(const DKinematicData* locSourceData);
 
 		//Reset
 		virtual void Reset(void);
@@ -107,25 +108,42 @@ class DKinematicData : public JObject
 		//Thus, just share this between the two objects, instead of doubling the memory usage
 		//By inheriting this class, you also get to share the same interface
 		shared_ptr<DKinematicInfo> dKinematicInfo;
+
+		static thread_local DResourcePool<DKinematicInfo> dResourcePool_KinematicInfo;
 };
 
 /************************************************************** CONSTRUCTORS & OPERATORS ***************************************************************/
 
-inline DKinematicData::DKinematicData(void) : dKinematicInfo(std::make_shared<DKinematicInfo>()) {}
+inline DKinematicData::DKinematicData(void) : dKinematicInfo(dResourcePool_KinematicInfo.Get_SharedResource()) {}
 
 inline DKinematicData::DKinematicData(Particle_t locPID, const DVector3& locMomentum, DVector3 locPosition, double locTime, const TMatrixFSym* locErrorMatrix) :
-		dKinematicInfo(std::make_shared<DKinematicInfo>(locPID, locMomentum, locPosition, locTime, locErrorMatrix)) {}
+		dKinematicInfo(dResourcePool_KinematicInfo.Get_SharedResource())
+{
+	dKinematicInfo.Set_Members(locPID, locMomentum, locPosition, locTime, locErrorMatrix);
+}
+
+inline void DKinematicData::Share_FromInput_Kinematics(const DKinematicData* locSourceData)
+{
+	dKinematicInfo = const_cast<DKinematicData*>(locSourceData)->dKinematicInfo;
+}
 
 inline DKinematicData::DKinematicData(const DKinematicData& locSourceData, bool locShareKinematicsFlag)
 {
 	//Default is NOT to share: create a new, independent copy of the input data (tracked separately from input so it can be modified)
-	dKinematicInfo = locShareKinematicsFlag ? locSourceData.dKinematicInfo : std::make_shared<DKinematicInfo>(*(locSourceData.dKinematicInfo));
+	if(locShareKinematicsFlag)
+		dKinematicInfo = locSourceData.dKinematicInfo;
+	else
+	{
+		dKinematicInfo = dResourcePool_KinematicInfo.Get_SharedResource();
+		*dKinematicInfo = *(locSourceData.dKinematicInfo)
+	}
 }
 
 inline DKinematicData& DKinematicData::operator=(const DKinematicData& locSourceData)
 {
 	//Replace current data with a new, independent copy of the input data: tracked separately from input so it can be modified
-	dKinematicInfo = std::make_shared<DKinematicInfo>(*(locSourceData.dKinematicInfo));
+	dKinematicInfo = dResourcePool_KinematicInfo.Get_SharedResource();
+	*dKinematicInfo = *(locSourceData.dKinematicInfo)
 	return *this;
 }
 
@@ -150,7 +168,7 @@ inline void DKinematicData::DKinematicInfo::Set_Members(Particle_t locPID, const
 
 inline void DKinematicData::Reset(void)
 {
-	dKinematicInfo = std::make_shared<DKinematicInfo>(); //not safe to reset individually, since you don't know what it's shared with
+	dKinematicInfo = dResourcePool_KinematicInfo.Get_SharedResource(); //not safe to reset individually, since you don't know what it's shared with
 	ClearAssociatedObjects();
 }
 

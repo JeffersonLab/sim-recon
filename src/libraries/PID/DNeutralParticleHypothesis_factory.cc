@@ -20,6 +20,9 @@ using namespace jana;
 //------------------
 jerror_t DNeutralParticleHypothesis_factory::init(void)
 {
+	//Setting this flag makes it so that JANA does not delete the objects in _data.  This factory will manage this memory. 
+	SetFactoryFlag(NOT_OBJECT_OWNER);
+
 	return NOERROR;
 }
 
@@ -42,6 +45,8 @@ jerror_t DNeutralParticleHypothesis_factory::brun(jana::JEventLoop *locEventLoop
 //------------------
 jerror_t DNeutralParticleHypothesis_factory::evnt(jana::JEventLoop *locEventLoop, uint64_t eventnumber)
 {
+	dResourcePool_NeutralParticleHypothesis.Recycle(_data);
+
 	vector<const DNeutralShower*> locNeutralShowers;
 	locEventLoop->Get(locNeutralShowers);
 
@@ -117,7 +122,7 @@ DNeutralParticleHypothesis* DNeutralParticleHypothesis_factory::Create_DNeutralP
 	}
 
 	// Build DNeutralParticleHypothesis // dEdx not set
-	DNeutralParticleHypothesis* locNeutralParticleHypothesis = new DNeutralParticleHypothesis;
+	DNeutralParticleHypothesis* locNeutralParticleHypothesis = dResourcePool_NeutralParticleHypothesis.Get_Resource();
 	locNeutralParticleHypothesis->Set_NeutralShower(locNeutralShower->dShowerID);
 	locNeutralParticleHypothesis->setPID(locPID);
 	locNeutralParticleHypothesis->setMomentum(locMomentum);

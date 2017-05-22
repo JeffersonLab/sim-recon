@@ -87,4 +87,10 @@ inline void DTrackingData::setTrackingStateVector(double a1, double a2, double a
 	dTrackingInfo->m_TrackingStateVector[4]=a5;
 }
 
+inline void DTrackingData::Reset(void)
+{
+	DKinematicData::Reset();
+	dTrackingInfo = make_shared<DTrackingInfo>(); //not safe to reset individually, since you don't know what it's shared with
+}
+
 #endif /* _DTrackingData_ */

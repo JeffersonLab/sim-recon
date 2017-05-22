@@ -39,9 +39,20 @@ using namespace jana;
 
 namespace DAnalysis
 {
+//MAIN
 //build particle combo
 //make sure someone calls Reset for the DSourceComboer!!
 //finish comments in Build_ParticleCombos()
+
+//SOURCE OBJECTS
+//ditch source objects: use DNeutralShower member and DChargedTrack associated objects!!
+	//DChargedTrack may not be associated!!!!
+	//Use DTrackTimeBased instead!!!
+
+//PARTICLES:
+//MAKE A DChargedTrack_Combo factory. It takes new DTrackTimeBased, makes hypos, combines them with existing hypos (from preselect factory), and makes new charged tracks
+//Make a similar factory for neutrals: pass through, but create hypos for PIDs that are needed that are missing
+//Then, in ROOT tree, save the tracks/neutrals from the above factories: no games needed
 
 //AFTER CREATING COMBOS!!
 //prekinfit actions
@@ -49,13 +60,12 @@ namespace DAnalysis
 //add kinfit results TO particle combo (instead of making 2x combos!)
 //execute actions
 
-
 //ANY TIME:
-//MAKE A DChargedTrack_Combo factory. It takes new DTrackTimeBased, makes hypos, combines them with existing hypos (from preselect factory), and makes new charged tracks
-//implement beam/RF delta-t cut! (be careful: channel dependent!)
 //tweak default mass & pid cuts
 //change all references to bcal/fcal to z-independent/dependent showers
 //consider Changing ROOT format: Put timing info at PID level?
+//Kinematic & hypo objects: static resource pool
+//No longer a target particle: Change code accordingly
 
 //MISCELLANEOUS TO DO:
 //When saving ROOT TTree, don't save p4 of decaying particles if mass is not constrained in kinfit!

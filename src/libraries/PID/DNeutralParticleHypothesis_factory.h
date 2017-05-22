@@ -21,6 +21,7 @@
 #include <PID/DEventRFBunch.h>
 #include <PID/DParticleID.h>
 #include <PID/DVertex.h>
+#include "ANALYSIS/DResourcePool.h"
 #include <DVector3.h>
 #include <DMatrix.h>
 
@@ -35,9 +36,15 @@ class DNeutralParticleHypothesis_factory : public jana::JFactory<DNeutralParticl
 		void Calc_ParticleCovariance_Photon(const DNeutralShower* locNeutralShower, const DVertex* locVertex, const DVector3& locMomentum, const DVector3& locPathVector, TMatrixFSym* locParticleCovariance) const;
 		void Calc_ParticleCovariance_Massive(const DNeutralShower* locNeutralShower, const DVertex* locVertex, double locMass, double locDeltaT, const DVector3& locMomentum, const DVector3& locPathVector, TMatrixFSym* locParticleCovariance) const;
 
+		void Recycle_Hypotheses(vector<const DNeutralParticleHypothesis*>& locHypos){dResourcePool_NeutralParticleHypothesis.Recycle(locHypos);}
+		void Recycle_Hypothesis(const DNeutralParticleHypothesis* locHypo){dResourcePool_NeutralParticleHypothesis.Recycle(locHypo);}
+
 	private:
 		double dTargetCenterZ;
 		const DParticleID* dParticleID;
+
+		//RESOURCE POOL
+		DResourcePool<DNeutralParticleHypothesis> dResourcePool_NeutralParticleHypothesis;
 
 		jerror_t init(void);						///< Called once at program start.
 		jerror_t brun(jana::JEventLoop *locEventLoop, int32_t runnumber);	///< Called everytime a new run number is detected.

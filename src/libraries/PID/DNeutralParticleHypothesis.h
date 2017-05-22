@@ -28,6 +28,8 @@ class DNeutralParticleHypothesis : public DKinematicData
 		DNeutralParticleHypothesis(const DNeutralParticleHypothesis& locSourceData, bool locShareTimingFlag = false, bool locShareKinematicsFlag = false);
 		DNeutralParticleHypothesis& operator= (const DNeutralParticleHypothesis& locSourceData);
 
+		void Reset(void);
+
 		//GETTERS
 		const DNeutralShower* Get_NeutralShower(void) const{return dNeutralShower;}
 
@@ -73,12 +75,15 @@ class DNeutralParticleHypothesis : public DKinematicData
 
 		const DNeutralShower* dNeutralShower;
 		shared_ptr<DTimingInfo> dTimingInfo;
+
+		//RESOURCE POOL
+		static thread_local DResourcePool<DTimingInfo> dResourcePool_TimingInfo;
 };
 
 /************************************************************** CONSTRUCTORS & OPERATORS ***************************************************************/
 
 inline DNeutralParticleHypothesis::DNeutralParticleHypothesis(void) :
-dTimingInfo(make_shared<DTimingInfo>()), dTrackingInfo(make_shared<DTrackingInfo>())
+dTimingInfo(dResourcePool_TimingInfo.Get_SharedResource())
 {}
 
 inline DNeutralParticleHypothesis::DNeutralParticleHypothesis(const DNeutralParticleHypothesis& locSourceData,
@@ -86,13 +91,20 @@ inline DNeutralParticleHypothesis::DNeutralParticleHypothesis(const DNeutralPart
 		DKinematicData(locSourceData, locShareKinematicsFlag)
 {
 	//Default is NOT to share: create a new, independent copy of the input data (tracked separately from input so it can be modified)
-	dTimingInfo = locShareTimingFlag ? locSourceData->dTimingInfo : make_shared<DTimingInfo>(*(locSourceData->dTimingInfo));
+	if(locShareTimingFlag)
+		dTimingInfo = locSourceData->dTimingInfo;
+	else
+	{
+		dTimingInfo = dResourcePool_TimingInfo.Get_SharedResource();
+		*dTimingInfo = *(locSourceData->dTimingInfo);
+	}
 }
 
 inline DNeutralParticleHypothesis& DNeutralParticleHypothesis::operator=(const DNeutralParticleHypothesis& locSourceData)
 {
 	//Replace current data with a new, independent copy of the input data: tracked separately from input so it can be modified
-	dTimingInfo = make_shared<DTimingInfo>(*(locSourceData->dTimingInfo));
+	dTimingInfo = dResourcePool_TimingInfo.Get_SharedResource();
+	*dTimingInfo = *(locSourceData->dTimingInfo);
 	dNeutralShower = locSourceData->dNeutralShower;
 }
 
@@ -117,6 +129,12 @@ inline void DNeutralParticleHypothesis::Set_ChiSq_Overall(double locChiSq, unsig
 	dTimingInfo->dChiSq = locChiSq;
 	dTimingInfo->dNDF = locNDF;
 	dTimingInfo->dFOM = locFOM;
+}
+
+inline void DNeutralParticleHypothesis::Reset(void)
+{
+	DKinematicData::Reset();
+	dTimingInfo = dResourcePool_TimingInfo.Get_SharedResource(); //not safe to reset individually, since you don't know what it's shared with
 }
 
 #endif // _DNeutralParticleHypothesis_
