@@ -17,7 +17,6 @@
 #include "TH1D.h"
 
 class Kinematics;
-class AmpVecs;
 
 class GammaPToXYZP {
   
