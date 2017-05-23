@@ -186,6 +186,34 @@ inline bool Check_ChannelEquality(const DReaction* lhs, const DReaction* rhs, bo
 	return std::equal(locSteps_lhs.begin(), locSteps_lhs.end(), locSteps_rhs.begin(), Equality_Checker);
 }
 
+inline vector<const DReaction*> Get_Reactions(JEventLoop* locEventLoop)
+{
+	// Get DReactions:
+	// Get list of factories and find all the ones producing
+	// DReaction objects. (A simpler way to do this would be to
+	// just use locEventLoop->Get(...), but then only one plugin could
+	// be used at a time.)
+	vector<JFactory_base*> locFactories = locEventLoop->GetFactories();
+	vector<const DReaction*> locReactions;
+	for(size_t loc_i = 0; loc_i < locFactories.size(); ++loc_i)
+	{
+		JFactory<DReaction>* locFactory = dynamic_cast<JFactory<DReaction>*>(locFactories[loc_i]);
+		if(locFactory == nullptr)
+			continue;
+		if(string(locFactory->Tag()) == "Thrown")
+			continue;
+
+		// Found a factory producing DReactions. The reaction objects are
+		// produced at the init stage and are persistent through all event
+		// processing so we can grab the list here and append it to our
+		// overall list.
+		vector<const DReaction*> locReactionsSubset;
+		locFactory->Get(locReactionsSubset);
+		locReactions.insert(locReactions.end(), locReactionsSubset.begin(), locReactionsSubset.end());
+	}
+	return locReactions;
+}
+
 /****************************************************** NAMESPACE-SCOPE INLINE FUNCTIONS: PIDS *******************************************************/
 
 inline vector<Particle_t> Get_ChainPIDs(const DReaction* locReaction, Particle_t locInitialPID, bool locExpandDecayingFlag)

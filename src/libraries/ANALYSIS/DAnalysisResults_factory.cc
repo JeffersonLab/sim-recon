@@ -31,8 +31,8 @@ jerror_t DAnalysisResults_factory::brun(JEventLoop *locEventLoop, int32_t runnum
 
 	gPARMS->SetDefaultParameter("ANALYSIS:DEBUGLEVEL", dDebugLevel);
 
-	vector<const DReaction*> locReactions;
-	Get_Reactions(locEventLoop, locReactions);
+	auto locReactions = DAnalysis::Get_Reactions(locEventLoop);
+	Check_ReactionNames(locReactions);
 
 	vector<const DMCThrown*> locMCThrowns;
 	locEventLoop->Get(locMCThrowns);
@@ -77,33 +77,6 @@ jerror_t DAnalysisResults_factory::brun(JEventLoop *locEventLoop, int32_t runnum
 	}
 
 	return NOERROR;
-}
-
-void DAnalysisResults_factory::Get_Reactions(JEventLoop* locEventLoop, vector<const DReaction*>& locReactions) const
-{
-	// Get list of factories and find all the ones producing
-	// DReaction objects. (A simpler way to do this would be to
-	// just use locEventLoop->Get(...), but then only one plugin could
-	// be used at a time.)
-	locReactions.clear();
-	vector<JFactory_base*> locFactories = locEventLoop->GetFactories();
-	for(size_t loc_i = 0; loc_i < locFactories.size(); ++loc_i)
-	{
-		JFactory<DReaction>* locFactory = dynamic_cast<JFactory<DReaction>* >(locFactories[loc_i]);
-		if(locFactory == NULL)
-			continue;
-		if(string(locFactory->Tag()) == "Thrown")
-			continue;
-
-		// Found a factory producing DReactions. The reaction objects are
-		// produced at the init stage and are persistent through all event
-		// processing so we can grab the list here and append it to our
-		// overall list.
-		vector<const DReaction*> locReactionsSubset;
-		locFactory->Get(locReactionsSubset);
-		locReactions.insert(locReactions.end(), locReactionsSubset.begin(), locReactionsSubset.end());
-	}
-	Check_ReactionNames(locReactions);
 }
 
 void DAnalysisResults_factory::Check_ReactionNames(vector<const DReaction*>& locReactions) const

@@ -52,7 +52,6 @@ jerror_t DNeutralParticleHypothesis_factory::evnt(jana::JEventLoop *locEventLoop
 
 	vector<Particle_t> locPIDHypotheses;
 	locPIDHypotheses.push_back(Gamma);
-	locPIDHypotheses.push_back(Neutron);
 
 	const DEventRFBunch* locEventRFBunch = NULL;
 	locEventLoop->GetSingle(locEventRFBunch);

@@ -135,19 +135,19 @@ inline DChargedTrackHypothesis::DChargedTrackHypothesis(const DChargedTrackHypot
 {
 	//Default is NOT to share: create a new, independent copy of the input data (tracked separately from input so it can be modified)
 	if(locShareTimingFlag)
-		dTrackingInfo = locSourceData->dTrackingInfo;
+		dTrackingInfo = locSourceData.dTrackingInfo;
 	else
 	{
 		dTrackingInfo = dResourcePool_TrackingInfo.Get_SharedResource();
-		*dTrackingInfo = *(locSourceData->dTrackingInfo);
+		*dTrackingInfo = *(locSourceData.dTrackingInfo);
 	}
 
 	if(locShareTimingFlag)
-		dTimingInfo = locSourceData->dTimingInfo;
+		dTimingInfo = locSourceData.dTimingInfo;
 	else
 	{
 		dTimingInfo = dResourcePool_TimingInfo.Get_SharedResource();
-		*dTimingInfo = *(locSourceData->dTimingInfo);
+		*dTimingInfo = *(locSourceData.dTimingInfo);
 	}
 }
 
@@ -165,9 +165,9 @@ inline DChargedTrackHypothesis& DChargedTrackHypothesis::operator=(const DCharge
 	//Replace current data with a new, independent copy of the input data: tracked separately from input so it can be modified
 	DKinematicData::operator=(locSourceData);
 	dTimingInfo = dResourcePool_TimingInfo.Get_SharedResource();
-	dTimingInfo = *(locSourceData->dTimingInfo);
+	dTimingInfo = *(locSourceData.dTimingInfo);
 	dTrackingInfo = dResourcePool_TrackingInfo.Get_SharedResource();
-	dTrackingInfo = *(locSourceData->dTrackingInfo);
+	dTrackingInfo = *(locSourceData.dTrackingInfo);
 	return *this;
 }
 

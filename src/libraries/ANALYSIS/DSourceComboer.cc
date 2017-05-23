@@ -562,7 +562,7 @@ void DSourceComboer::Reset_NewEvent(JEventLoop* locEventLoop)
 	locEventLoop->Get(locNeutralShowers, dShowerSelectionTag);
 
 	vector<const DChargedTrack*> locChargedTracks;
-	locEventLoop->Get(locChargedTracks, dTrackSelectionTag);
+	locEventLoop->Get(locChargedTracks, "Combo");
 
 	vector<const DBeamPhoton*> locBeamPhotons;
 	locEventLoop->Get(locBeamPhotons);

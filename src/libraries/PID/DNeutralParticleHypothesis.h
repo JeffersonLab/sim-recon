@@ -54,8 +54,8 @@ class DNeutralParticleHypothesis : public DKinematicData
 		void toStrings(vector<pair<string,string> > &items) const
 		{
 			DKinematicData::toStrings(items);
-			AddString(items, "PID_ChiSq", "%f", dChiSq);
-			AddString(items, "PID_FOM", "%f", dFOM);
+			AddString(items, "PID_ChiSq", "%f", Get_ChiSq());
+			AddString(items, "PID_FOM", "%f", Get_FOM());
 		}
 
 	private:
@@ -73,8 +73,8 @@ class DNeutralParticleHypothesis : public DKinematicData
 			float dFOM;
 		};
 
-		const DNeutralShower* dNeutralShower;
 		shared_ptr<DTimingInfo> dTimingInfo;
+		const DNeutralShower* dNeutralShower;
 
 		//RESOURCE POOL
 		static thread_local DResourcePool<DTimingInfo> dResourcePool_TimingInfo;
@@ -83,20 +83,20 @@ class DNeutralParticleHypothesis : public DKinematicData
 /************************************************************** CONSTRUCTORS & OPERATORS ***************************************************************/
 
 inline DNeutralParticleHypothesis::DNeutralParticleHypothesis(void) :
-dTimingInfo(dResourcePool_TimingInfo.Get_SharedResource())
+dTimingInfo(dResourcePool_TimingInfo.Get_SharedResource()), dNeutralShower(nullptr)
 {}
 
 inline DNeutralParticleHypothesis::DNeutralParticleHypothesis(const DNeutralParticleHypothesis& locSourceData,
 		bool locShareTimingFlag, bool locShareKinematicsFlag) :
-		DKinematicData(locSourceData, locShareKinematicsFlag)
+		DKinematicData(locSourceData, locShareKinematicsFlag), dNeutralShower(nullptr)
 {
 	//Default is NOT to share: create a new, independent copy of the input data (tracked separately from input so it can be modified)
 	if(locShareTimingFlag)
-		dTimingInfo = locSourceData->dTimingInfo;
+		dTimingInfo = locSourceData.dTimingInfo;
 	else
 	{
 		dTimingInfo = dResourcePool_TimingInfo.Get_SharedResource();
-		*dTimingInfo = *(locSourceData->dTimingInfo);
+		*dTimingInfo = *(locSourceData.dTimingInfo);
 	}
 }
 
@@ -104,8 +104,9 @@ inline DNeutralParticleHypothesis& DNeutralParticleHypothesis::operator=(const D
 {
 	//Replace current data with a new, independent copy of the input data: tracked separately from input so it can be modified
 	dTimingInfo = dResourcePool_TimingInfo.Get_SharedResource();
-	*dTimingInfo = *(locSourceData->dTimingInfo);
-	dNeutralShower = locSourceData->dNeutralShower;
+	*dTimingInfo = *(locSourceData.dTimingInfo);
+	dNeutralShower = locSourceData.dNeutralShower;
+	return *this;
 }
 
 inline DNeutralParticleHypothesis::DTimingInfo::DTimingInfo(void) :

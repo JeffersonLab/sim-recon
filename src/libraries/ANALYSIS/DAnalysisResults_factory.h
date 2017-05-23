@@ -43,8 +43,8 @@ class DAnalysisResults_factory : public jana::JFactory<DAnalysisResults>
 		jerror_t brun(JEventLoop *locEventLoop, int32_t runnumber);	///< Called everytime a new run number is detected.
 		jerror_t evnt(JEventLoop *locEventLoop, uint64_t eventnumber);	///< Called every event.
 
-		void Get_Reactions(JEventLoop* locEventLoop, vector<const DReaction*>& locReactions) const;
 		void Make_ControlHistograms(vector<const DReaction*>& locReactions);
+		void Check_ReactionNames(vector<const DReaction*>& locReactions) const;
 
 		unsigned int dDebugLevel;
 		DApplication* dApplication;
