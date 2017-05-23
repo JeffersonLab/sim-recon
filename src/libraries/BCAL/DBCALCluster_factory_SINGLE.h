@@ -31,10 +31,7 @@ class DBCALCluster_factory_SINGLE:public jana::JFactory<DBCALCluster>{
 		jerror_t evnt(jana::JEventLoop *eventLoop, uint64_t eventnumber);	///< Called every event.
 		jerror_t erun(void);						///< Called everytime run number changes, provided brun has been called.
 		jerror_t fini(void);						///< Called after last event of last event source has been processed.
-
 		double m_z_target_center;
-		const DBCALGeometry *dBCALGeom;
-
 };
 
 #endif // _DBCALCluster_factory_SINGLE_

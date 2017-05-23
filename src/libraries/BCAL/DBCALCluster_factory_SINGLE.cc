@@ -31,14 +31,6 @@ jerror_t DBCALCluster_factory_SINGLE::brun(jana::JEventLoop *eventLoop, int32_t 
 	DApplication* app = dynamic_cast<DApplication*>(eventLoop->GetJApplication());
 	DGeometry* geom = app->GetDGeometry(runnumber);
 	geom->GetTargetZ(m_z_target_center);
-
-	// load BCAL geometry
-	vector<const DBCALGeometry *> BCALGeomVec;
-	eventLoop->Get(BCALGeomVec);
-	if(BCALGeomVec.size() == 0)
-		throw JException("Could not load DBCALGeometry object!");
-	dBCALGeom = BCALGeomVec[0];
-
 	return NOERROR;
 }
 
@@ -55,7 +47,7 @@ jerror_t DBCALCluster_factory_SINGLE::evnt(JEventLoop *loop, uint64_t eventnumbe
 	if(bcalpoints.size() == 0) return NOERROR;
 	
 	// Create DBCALCluster object and all all DBCALPoint objects to it
-	DBCALCluster *cluster = new DBCALCluster(m_z_target_center, dBCALGeom);
+	DBCALCluster *cluster = new DBCALCluster(m_z_target_center);
 	for(unsigned int i=0; i<bcalpoints.size(); i++){
 		cluster->addPoint(bcalpoints[i]);
 	}
