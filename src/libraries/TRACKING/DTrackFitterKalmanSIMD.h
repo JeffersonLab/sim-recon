@@ -110,6 +110,7 @@ typedef struct{
 
 typedef struct{ 
   double t,cosa,sina;
+  double phiX,phiY,phiZ; // Alignment constants
   double uwire,vstrip,vvar,z,dE;
   double nr,nz;
   int status;
@@ -509,6 +510,11 @@ class DTrackFitterKalmanSIMD: public DTrackFitter{
   double MIN_FIT_P;
   // Maximum seed momentum
   double MAX_SEED_P;
+  
+  // Minimum proton momentum
+  double MIN_PROTON_P;
+  // Minimum pion momentum
+  double MIN_PION_P;
 
   // parameters for scaling drift table for CDC
   double CDC_DRIFT_BSCALE_PAR1,CDC_DRIFT_BSCALE_PAR2;

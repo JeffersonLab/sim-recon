@@ -1027,3 +1027,15 @@ def AddAmpPlotter(env):
 	env.AppendUnique(LIBS    = AMPPLOTTER_LIBS)
 
 
+##################################
+# Cobrems
+##################################
+def AddCobrems(env):
+	pyincludes = subprocess.Popen(["python-config", "--includes" ], stdout=subprocess.PIPE).communicate()[0]
+	cobrems_home = os.getenv('HALLD_HOME', 'sim-recon')
+	env.AppendUnique(CPPPATH = ["%s/src/libraries/AMPTOOLS_MCGEN" % (cobrems_home)])
+	env.AppendUnique(LIBPATH = ["%s/%s/lib" % (cobrems_home, env['OSNAME'])])
+	env.AppendUnique(LIBS    = ['AMPTOOLS_MCGEN'])
+	env.AppendUnique(CCFLAGS = pyincludes.rstrip().split())
+
+

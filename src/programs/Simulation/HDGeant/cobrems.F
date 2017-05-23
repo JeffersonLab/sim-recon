@@ -230,7 +230,8 @@ c             write(6,*) q2,xmax
             endif
             theta2=(1-x)*xmax/(x*(1-xmax)) - 1
             FF=REAL(1/(1+q2*betaFF**2))
-            sum=REAL(sum+sigma0*qT2*S2*exp(-Aphonon*q2)*(FF*betaFF**2)**2
+            sum=REAL(sum+sigma0*qT2*S2*exp(-Aphonon*q2)
+     +         * (FF*betaFF**2)**2
      +         * ((1-x)/(x*(1+theta2))**2)
      +         * ((1+(1-x)**2)
      +               - 8*(theta2/(1+theta2)**2)*(1-x)*cos(phi)**2)
@@ -577,7 +578,8 @@ c  tails in different ways, but both agree that the central part is much
 c  more narrow than the formulation by Kaune et.al. below.
 
       carboncor=4.2/4.6
-      sigma2MS_Kaune=REAL(8*dpi*nsites*alpha**2*Z**2*tt*(hbarc/(E*a))**2/a
+      sigma2MS_Kaune=REAL(8*dpi*nsites*alpha**2*Z**2
+     +              *tt*(hbarc/(E*a))**2/a
      +              *log(183*Z**(-1/3.))
      +              *carboncor)
       end

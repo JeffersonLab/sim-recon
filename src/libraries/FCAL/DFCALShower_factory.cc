@@ -41,6 +41,8 @@ DFCALShower_factory::DFCALShower_factory()
   expfit_param1 = 0;
   expfit_param2 = 0;
   expfit_param3 = 0;
+	
+  Timewalk_corr = 0;
 
 
 
@@ -50,6 +52,7 @@ DFCALShower_factory::DFCALShower_factory()
   gPARMS->SetDefaultParameter("FCAL:expfit_param1", expfit_param1);
   gPARMS->SetDefaultParameter("FCAL:expfit_param2", expfit_param2);
   gPARMS->SetDefaultParameter("FCAL:expfit_param3", expfit_param3);
+  gPARMS->SetDefaultParameter("FCAL:Timewalk_corr", Timewalk_corr);
 
 
   // Parameters to make shower-depth correction taken from Radphi, 
@@ -120,6 +123,23 @@ jerror_t DFCALShower_factory::brun(JEventLoop *loop, int32_t runnumber)
 
 	}
     }
+
+    // Get time-walk correction slope
+    if(LOAD_CCDB_CONSTANTS > 0.1) {
+    map<string,double> timewalk_corr;
+    loop->GetCalib("FCAL/Timewalk_corr", timewalk_corr); 
+    Timewalk_corr = timewalk_corr["timewalk_corr"];
+
+    if(debug_level>0) {
+
+jout << "Timewalk_corr = " << Timewalk_corr << endl;
+
+}
+
+}
+	
+
+
 	jerror_t result = LoadCovarianceLookupTables();
 	if (result!=NOERROR) return result;
 
@@ -174,6 +194,10 @@ jerror_t DFCALShower_factory::evnt(JEventLoop *eventLoop, uint64_t eventnumber)
       //so that the t reported is roughly the time of the shower at the
       //position pos_corrected	
       cTime -= ( m_FCALfront + DFCALGeometry::blockLength() - pos_corrected.Z() )/FCAL_C_EFFECTIVE;
+
+// Apply time-walk correction by A. Subedi (05/10/2017)
+	cTime -= Timewalk_corr*Ecorrected;
+
 
       // Make the DFCALShower object
       DFCALShower* shower = new DFCALShower;
@@ -380,7 +404,6 @@ DFCALShower_factory::LoadCovarianceLookupTables(){
 			japp->RootWriteLock();
 			// change directory to memory so that histograms are not saved to file
 			TDirectory *savedir = gDirectory;
-			gROOT->cd();
 
 			char histname[255];
 			sprintf(histname,"covariance_%i%i_thread%s",i,j,idstring.str().c_str());
@@ -410,6 +433,7 @@ DFCALShower_factory::LoadCovarianceLookupTables(){
 			if (DUMMYTABLES) {
 				// create dummy histogram since something went wrong
 				CovarianceLookupTable[i][j] = new TH2F(histname,"Covariance histogram",10,0,12,10,0,12);
+	                        CovarianceLookupTable[i][j]->SetDirectory(nullptr);
 			} else {
 				// Parse string
 				int nxbins, nybins;
@@ -433,6 +457,7 @@ DFCALShower_factory::LoadCovarianceLookupTables(){
 				int ybin=1;
 				// create histogram
 				CovarianceLookupTable[i][j] = new TH2F(histname,"Covariance histogram",nxbins,xbins,nybins,ybins);
+	                        CovarianceLookupTable[i][j]->SetDirectory(nullptr);
 				// fill histogram
 				while(ss>>cont){
 					if (VERBOSE>1) printf("(%i,%i) (%i,%i) %e  ",i,j,xbin,ybin,cont);

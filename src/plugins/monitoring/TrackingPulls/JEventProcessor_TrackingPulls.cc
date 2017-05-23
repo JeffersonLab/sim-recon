@@ -208,6 +208,20 @@ jerror_t JEventProcessor_TrackingPulls::evnt(JEventLoop *loop, uint64_t eventnum
          Fill2DHistogram("TrackingPulls", "TrackPulls","All Pulls Vs. Tracking FOM",
                trackingFOM, resi/err,
                ";Track FOM ;Residual/Error", 140, 0.0, 140.0, 100, -5.0, 5.0);
+         if(fdc_hit != nullptr){
+            Fill1DHistogram("TrackingPulls", "TrackPulls","FDC Wire Error",
+                  err,
+                  "Wire Residual Error", 100, 0.0, 0.1);
+            Fill1DHistogram("TrackingPulls", "TrackPulls","FDC Cathode Error",
+                  errc,
+                  "Cathode Residual Error", 100, 0.0, 0.1);
+         }
+         else{
+            Fill1DHistogram("TrackingPulls", "TrackPulls","CDCError",
+                  err,
+                  "Residual Error", 100, 0.0, 0.1);
+         }
+
 
          // Fill some detector specific info
          // Fill them in order = super-hacked
