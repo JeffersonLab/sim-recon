@@ -84,7 +84,7 @@ class DTOFHit_factory:public jana::JFactory<DTOFHit>{
   jerror_t erun(void);
   jerror_t fini(void);
   
-  void FillCalibTable(tof_digi_constants_t &table, vector<double> &raw_table,
+  void FillCalibTable(tof_digi_constants_t &table, const vector<double> &raw_table,
 		      const DTOFGeometry &tofGeom);
 
   double CalcWalkCorrIntegral(DTOFHit* hit);

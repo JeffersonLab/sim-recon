@@ -86,15 +86,15 @@ jerror_t DTAGMHit_factory_Calib::brun(jana::JEventLoop *eventLoop, int32_t runnu
     if(print_messages) jout << "In DTAGMHit_factory_Calib, loading constants..." << std::endl;
 
     // load base time offset
-    map<string,double> base_time_offset;
-    if (eventLoop->GetCalib("/PHOTON_BEAM/microscope/base_time_offset",base_time_offset))
+    const map<string,double> *base_time_offset;
+    if (eventLoop->GetJCalibration()->Get("/PHOTON_BEAM/microscope/base_time_offset",base_time_offset))
         jout << "Error loading /PHOTON_BEAM/microscope/base_time_offset !" << endl;
-    if (base_time_offset.find("TAGM_BASE_TIME_OFFSET") != base_time_offset.end())
-        t_base = base_time_offset["TAGM_BASE_TIME_OFFSET"];
+    if (base_time_offset->find("TAGM_BASE_TIME_OFFSET") != base_time_offset->end())
+        t_base = base_time_offset->at("TAGM_BASE_TIME_OFFSET");
     else
         jerr << "Unable to get TAGM_BASE_TIME_OFFSET from /PHOTON_BEAM/microscope/base_time_offset !" << endl;
-    if (base_time_offset.find("TAGM_TDC_BASE_TIME_OFFSET") != base_time_offset.end())
-        t_tdc_base = base_time_offset["TAGM_TDC_BASE_TIME_OFFSET"];
+    if (base_time_offset->find("TAGM_TDC_BASE_TIME_OFFSET") != base_time_offset->end())
+        t_tdc_base = base_time_offset->at("TAGM_TDC_BASE_TIME_OFFSET");
     else
         jerr << "Unable to get TAGM_TDC_BASE_TIME_OFFSET from /PHOTON_BEAM/microscope/base_time_offset !" << endl;
 
@@ -291,17 +291,17 @@ bool DTAGMHit_factory_Calib::load_ccdb_constants(
         std::string column_name,
         double result[TAGM_MAX_ROW+1][TAGM_MAX_COLUMN+1])
 {
-    std::vector< std::map<std::string, double> > table;
+    const std::vector< std::map<std::string, double> > *table;
     std::string ccdb_key = "/PHOTON_BEAM/microscope/" + table_name;
-    if (eventLoop->GetCalib(ccdb_key, table))
+    if (eventLoop->GetJCalibration()->Get(ccdb_key, table))
     {
         jout << "Error loading " << ccdb_key << " from ccdb!" << std::endl;
         return false;
     }
-    for (unsigned int i=0; i < table.size(); ++i) {
-        int row = (table[i])["row"];
-        int col = (table[i])["column"];
-        result[row][col] = (table[i])[column_name];
+    for (unsigned int i=0; i < table->size(); ++i) {
+        int row = table->at(i).at("row");
+        int col = table->at(i).at("column");
+        result[row][col] = table->at(i).at(column_name);
     }
     return true;
 }

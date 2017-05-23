@@ -51,24 +51,24 @@ jerror_t DBCALHit_factory::brun(jana::JEventLoop *eventLoop, int32_t runnumber)
   pthread_mutex_unlock(&print_mutex);
 
    /// Read in calibration constants
-   vector<double> raw_gains;
-   vector<double> raw_pedestals;
-   vector<double> raw_ADC_timing_offsets;
-   vector<double> raw_channel_global_offset;
-   vector<double> raw_tdiff_u_d;
+   const vector<double> *raw_gains;
+   const vector<double> *raw_pedestals;
+   const vector<double> *raw_ADC_timing_offsets;
+   const vector<double> *raw_channel_global_offset;
+   const vector<double> *raw_tdiff_u_d;
 
     if(print_messages) jout << "In DBCALHit_factory, loading constants..." << endl;
    
    // load scale factors
-   map<string,double> scale_factors;
-   if (eventLoop->GetCalib("/BCAL/digi_scales", scale_factors))
+   const map<string,double> *scale_factors;
+   if (eventLoop->GetJCalibration()->Get("/BCAL/digi_scales", scale_factors))
        jout << "Error loading /BCAL/digi_scales !" << endl;
-   if (scale_factors.find("BCAL_ADC_ASCALE") != scale_factors.end())
-       a_scale = scale_factors["BCAL_ADC_ASCALE"];
+   if (scale_factors->find("BCAL_ADC_ASCALE") != scale_factors->end())
+       a_scale = scale_factors->at("BCAL_ADC_ASCALE");
    else
        jerr << "Unable to get BCAL_ADC_ASCALE from /BCAL/digi_scales !" << endl;
-   if (scale_factors.find("BCAL_ADC_TSCALE") != scale_factors.end()) {
-     t_scale = scale_factors["BCAL_ADC_TSCALE"];
+   if (scale_factors->find("BCAL_ADC_TSCALE") != scale_factors->end()) {
+     t_scale = scale_factors->at("BCAL_ADC_TSCALE");
      if (PRINTCALIBRATION) {
        jout << "DBCALHit_factory >>BCAL_ADC_TSCALE = " << t_scale << endl;
      }
@@ -77,11 +77,11 @@ jerror_t DBCALHit_factory::brun(jana::JEventLoop *eventLoop, int32_t runnumber)
        jerr << "Unable to get BCAL_ADC_TSCALE from /BCAL/digi_scales !" << endl;
 
   // load base time offset
-   map<string,double> base_time_offset;
-   if (eventLoop->GetCalib("/BCAL/base_time_offset",base_time_offset))
+   const map<string,double> *base_time_offset;
+   if (eventLoop->GetJCalibration()->Get("/BCAL/base_time_offset",base_time_offset))
        jout << "Error loading /BCAL/base_time_offset !" << endl;
-   if (base_time_offset.find("BCAL_BASE_TIME_OFFSET") != base_time_offset.end()) {
-     t_base = base_time_offset["BCAL_BASE_TIME_OFFSET"];
+   if (base_time_offset->find("BCAL_BASE_TIME_OFFSET") != base_time_offset->end()) {
+     t_base = base_time_offset->at("BCAL_BASE_TIME_OFFSET");
      if (PRINTCALIBRATION) {
        jout << "DBCALHit_factory >>BCAL_BASE_TIME_OFFSET = " << t_base << endl;
      }
@@ -90,37 +90,37 @@ jerror_t DBCALHit_factory::brun(jana::JEventLoop *eventLoop, int32_t runnumber)
        jerr << "Unable to get BCAL_BASE_TIME_OFFSET from /BCAL/base_time_offset !" << endl;  
 
    // load constant tables
-   if (eventLoop->GetCalib("/BCAL/ADC_gains", raw_gains))
+   if (eventLoop->GetJCalibration()->Get("/BCAL/ADC_gains", raw_gains))
        jout << "Error loading /BCAL/ADC_gains !" << endl;
-   if (eventLoop->GetCalib("/BCAL/ADC_pedestals", raw_pedestals))
+   if (eventLoop->GetJCalibration()->Get("/BCAL/ADC_pedestals", raw_pedestals))
        jout << "Error loading /BCAL/ADC_pedestals !" << endl;
-   if (eventLoop->GetCalib("/BCAL/ADC_timing_offsets", raw_ADC_timing_offsets))
+   if (eventLoop->GetJCalibration()->Get("/BCAL/ADC_timing_offsets", raw_ADC_timing_offsets))
        jout << "Error loading /BCAL/ADC_timing_offsets !" << endl;
-   if(eventLoop->GetCalib("/BCAL/channel_global_offset", raw_channel_global_offset))
+   if(eventLoop->GetJCalibration()->Get("/BCAL/channel_global_offset", raw_channel_global_offset))
        jout << "Error loading /BCAL/channel_global_offset !" << endl;
-   if(eventLoop->GetCalib("/BCAL/tdiff_u_d", raw_tdiff_u_d))
+   if(eventLoop->GetJCalibration()->Get("/BCAL/tdiff_u_d", raw_tdiff_u_d))
        jout << "Error loading /BCAL/tdiff_u_d !" << endl;
 
    if (PRINTCALIBRATION) jout << "DBCALHit_factory >> raw_gains" << endl;
-   FillCalibTable(gains, raw_gains);
+   FillCalibTable(gains, *raw_gains);
    if (PRINTCALIBRATION) jout << "DBCALHit_factory >> raw_pedestals" << endl;
-   FillCalibTable(pedestals, raw_pedestals);
+   FillCalibTable(pedestals, *raw_pedestals);
    if (PRINTCALIBRATION) jout << "DBCALHit_factory >> raw_ADC_timing_offsets" << endl;
-   FillCalibTable(ADC_timing_offsets, raw_ADC_timing_offsets);
+   FillCalibTable(ADC_timing_offsets, *raw_ADC_timing_offsets);
    if (PRINTCALIBRATION) jout << "DBCALHit_factory >> raw_channel_global_offset" << endl;
-   FillCalibTableShort(channel_global_offset, raw_channel_global_offset);
+   FillCalibTableShort(channel_global_offset, *raw_channel_global_offset);
    if (PRINTCALIBRATION) jout << "DBCALHit_factory >> raw_tdiff_u_d" << endl;
-   FillCalibTableShort(tdiff_u_d, raw_tdiff_u_d);
+   FillCalibTableShort(tdiff_u_d, *raw_tdiff_u_d);
    
-   std::vector<std::map<string,double> > saturation_ADC_pars;
-   if(eventLoop->GetCalib("/BCAL/ADC_saturation", saturation_ADC_pars))
+   const std::vector<std::map<string,double> > *saturation_ADC_pars;
+   if(eventLoop->GetJCalibration()->Get("/BCAL/ADC_saturation", saturation_ADC_pars))
       jout << "Error loading /BCAL/ADC_saturation !" << endl;
-   for (unsigned int i=0; i < saturation_ADC_pars.size(); i++) {
-	   int end = (saturation_ADC_pars[i])["end"];
-	   int layer = (saturation_ADC_pars[i])["layer"] - 1;
-	   fADC_MinIntegral_Saturation[end][layer] = (saturation_ADC_pars[i])["par0"];
-	   fADC_Saturation_Linear[end][layer] = (saturation_ADC_pars[i])["par1"];
-	   fADC_Saturation_Quadratic[end][layer] = (saturation_ADC_pars[i])["par2"];
+   for (unsigned int i=0; i < saturation_ADC_pars->size(); i++) {
+	   int end = (saturation_ADC_pars->at(i)).at("end");
+	   int layer = (saturation_ADC_pars->at(i)).at("layer") - 1;
+	   fADC_MinIntegral_Saturation[end][layer] = (saturation_ADC_pars->at(i)).at("par0");
+	   fADC_Saturation_Linear[end][layer] = (saturation_ADC_pars->at(i)).at("par1");
+	   fADC_Saturation_Quadratic[end][layer] = (saturation_ADC_pars->at(i)).at("par2");
    } 
 
    return NOERROR;

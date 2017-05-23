@@ -28,13 +28,13 @@ bool Compare_TOFSpacetimeHitMatches_Distance(const DTOFPoint_factory::tof_spacet
 jerror_t DTOFPoint_factory::brun(JEventLoop *loop, int32_t runnumber)
 {
 
-	map<string, double> tofparms;
- 	if( !loop->GetCalib("TOF/tof_parms", tofparms))
+	const map<string, double> *tofparms;
+ 	if( !loop->GetJCalibration()->Get("TOF/tof_parms", tofparms))
 	{
 		//cout<<"DTOFPoint_factory: loading values from TOF data base"<<endl;
-		HALFPADDLE = tofparms["TOF_HALFPADDLE"];
-		E_THRESHOLD = tofparms["TOF_E_THRESHOLD"];
-		ATTEN_LENGTH = tofparms["TOF_ATTEN_LENGTH"];
+		HALFPADDLE = tofparms->at("TOF_HALFPADDLE");
+		E_THRESHOLD = tofparms->at("TOF_E_THRESHOLD");
+		ATTEN_LENGTH = tofparms->at("TOF_ATTEN_LENGTH");
 	}
 	else
 	{
@@ -44,10 +44,13 @@ jerror_t DTOFPoint_factory::brun(JEventLoop *loop, int32_t runnumber)
 		ATTEN_LENGTH = 400.;
 	}
 
-	if(eventLoop->GetCalib("TOF/propagation_speed", propagation_speed))
+	const vector<double> *tvals;
+	if(eventLoop->GetJCalibration()->Get("TOF/propagation_speed", tvals))
 		jout << "Error loading /TOF/propagation_speed !" << endl;
-	if(eventLoop->GetCalib("TOF/paddle_resolutions", paddle_resolutions))
+	propagation_speed = *tvals;
+	if(eventLoop->GetJCalibration()->Get("TOF/paddle_resolutions", tvals))
 		jout << "Error loading /TOF/paddle_resolutions !" << endl;
+	paddle_resolutions = *tvals;
 
 	loop->GetSingle(dTOFGeometry);
 

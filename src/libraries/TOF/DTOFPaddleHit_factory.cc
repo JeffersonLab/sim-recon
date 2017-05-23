@@ -33,15 +33,15 @@ using namespace std;
 jerror_t DTOFPaddleHit_factory::brun(JEventLoop *loop, int32_t runnumber)
 {
 
-  map<string, double> tofparms;
+  const map<string, double> *tofparms;
  
-  if ( !loop->GetCalib("TOF/tof_parms", tofparms)){
+  if ( !loop->GetJCalibration()->Get("TOF/tof_parms", tofparms)){
     //cout<<"DTOFPaddleHit_factory: loading values from TOF data base"<<endl;
 
-    C_EFFECTIVE    =    tofparms["TOF_C_EFFECTIVE"];
-    HALFPADDLE     =    tofparms["TOF_HALFPADDLE"];
-    E_THRESHOLD    =    tofparms["TOF_E_THRESHOLD"];
-    ATTEN_LENGTH   =    tofparms["TOF_ATTEN_LENGTH"];
+    C_EFFECTIVE    =    tofparms->at("TOF_C_EFFECTIVE");
+    HALFPADDLE     =    tofparms->at("TOF_HALFPADDLE");
+    E_THRESHOLD    =    tofparms->at("TOF_E_THRESHOLD");
+    ATTEN_LENGTH   =    tofparms->at("TOF_ATTEN_LENGTH");
   } else {
     cout << "DTOFPaddleHit_factory: Error loading values from TOF data base" <<endl;
 
@@ -54,12 +54,15 @@ jerror_t DTOFPaddleHit_factory::brun(JEventLoop *loop, int32_t runnumber)
   ENERGY_ATTEN_FACTOR=exp(HALFPADDLE/ATTEN_LENGTH);
   TIME_COINCIDENCE_CUT=2.*HALFPADDLE/C_EFFECTIVE;
 
-  if(loop->GetCalib("TOF/propagation_speed", propagation_speed))
+  const vector<double> *tmp_propagation_speed;
+  if(loop->GetJCalibration()->Get("TOF/propagation_speed", tmp_propagation_speed))
     jout << "Error loading /TOF/propagation_speed !" << endl;
+  propagation_speed = *tmp_propagation_speed;
 
-  if (loop->GetCalib("TOF/attenuation_lengths",AttenuationLengths))
+  const vector < vector <float> > *tmp_AttenuationLengths;
+  if (loop->GetJCalibration()->Get("TOF/attenuation_lengths",tmp_AttenuationLengths))
     jout << "Error loading /TOF/attenuation_lengths !" <<endl;
-
+  AttenuationLengths = *tmp_AttenuationLengths;
 
   loop->Get(TOFGeom);
 

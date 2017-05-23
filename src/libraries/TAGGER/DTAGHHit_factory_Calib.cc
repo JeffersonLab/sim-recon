@@ -84,16 +84,16 @@ jerror_t DTAGHHit_factory_Calib::brun(jana::JEventLoop *eventLoop, int32_t runnu
     if(print_messages) jout << "In DTAGHHit_factory, loading constants..." << std::endl;
 
     // load base time offset
-    map<string,double> base_time_offset;
-    if (eventLoop->GetCalib("/PHOTON_BEAM/hodoscope/base_time_offset",base_time_offset))
+    const map<string,double> *base_time_offset;
+    if (eventLoop->GetJCalibration()->Get("/PHOTON_BEAM/hodoscope/base_time_offset",base_time_offset))
         jout << "Error loading /PHOTON_BEAM/hodoscope/base_time_offset !" << endl;
-    if (base_time_offset.find("TAGH_BASE_TIME_OFFSET") != base_time_offset.end())
-        t_base = base_time_offset["TAGH_BASE_TIME_OFFSET"];
+    if (base_time_offset->find("TAGH_BASE_TIME_OFFSET") != base_time_offset->end())
+        t_base = base_time_offset->at("TAGH_BASE_TIME_OFFSET");
     else
         jerr << "Unable to get TAGH_BASE_TIME_OFFSET from /PHOTON_BEAM/hodoscope/base_time_offset !" << endl;
 
-    if (base_time_offset.find("TAGH_TDC_BASE_TIME_OFFSET") != base_time_offset.end())
-        t_tdc_base = base_time_offset["TAGH_TDC_BASE_TIME_OFFSET"];
+    if (base_time_offset->find("TAGH_TDC_BASE_TIME_OFFSET") != base_time_offset->end())
+        t_tdc_base = base_time_offset->at("TAGH_TDC_BASE_TIME_OFFSET");
     else
         jerr << "Unable to get TAGH_TDC_BASE_TIME_OFFSET from /PHOTON_BEAM/hodoscope/base_time_offset !" << endl;
 
@@ -278,16 +278,16 @@ bool DTAGHHit_factory_Calib::load_ccdb_constants(
     std::string column_name,
     double result[TAGH_MAX_COUNTER+1])
 {
-    std::vector< std::map<std::string, double> > table;
+    const std::vector< std::map<std::string, double> > *table;
     std::string ccdb_key = "/PHOTON_BEAM/hodoscope/" + table_name;
-    if (eventLoop->GetCalib(ccdb_key, table))
+    if (eventLoop->GetJCalibration()->Get(ccdb_key, table))
     {
         jout << "Error loading " << ccdb_key << " from ccdb!" << std::endl;
         return false;
     }
-    for (unsigned int i=0; i < table.size(); ++i) {
-        int counter = (table[i])["id"];
-        result[counter] = (table[i])[column_name];
+    for (unsigned int i=0; i < table->size(); ++i) {
+        int counter = (table->at(i)).at("id");
+        result[counter] = (table->at(i)).at(column_name);
     }
     return true;
 }

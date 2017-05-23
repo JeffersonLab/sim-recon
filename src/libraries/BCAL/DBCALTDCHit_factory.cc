@@ -63,38 +63,38 @@ jerror_t DBCALTDCHit_factory::brun(jana::JEventLoop *eventLoop, int32_t runnumbe
     if(print_messages) jout << "In DBCALTDCHit_factory, loading constants..." << endl;
 
     // load scale factors
-    map<string,double> scale_factors;
-    if(eventLoop->GetCalib("/BCAL/digi_scales", scale_factors))
+    const map<string,double> *scale_factors;
+    if(eventLoop->GetJCalibration()->Get("/BCAL/digi_scales", scale_factors))
         jout << "Error loading /BCAL/digi_scales !" << endl; 
-    if( scale_factors.find("BCAL_TDC_SCALE") != scale_factors.end() ) {
-        t_scale = scale_factors["BCAL_TDC_SCALE"];
+    if( scale_factors->find("BCAL_TDC_SCALE") != scale_factors->end() ) {
+        t_scale = scale_factors->at("BCAL_TDC_SCALE");
     } else {
         jerr << "Unable to get BCAL_TDC_SCALE from /BCAL/digi_scales !" << endl;
     }
 
     // load base time offset
-    map<string,double> base_time_offset;
-    if (eventLoop->GetCalib("/BCAL/base_time_offset",base_time_offset))
+    const map<string,double> *base_time_offset;
+    if (eventLoop->GetJCalibration()->Get("/BCAL/base_time_offset",base_time_offset))
         jout << "Error loading /BCAL/base_time_offset !" << endl;
-    if (base_time_offset.find("BCAL_TDC_BASE_TIME_OFFSET") != base_time_offset.end())
-        t_base = base_time_offset["BCAL_TDC_BASE_TIME_OFFSET"];
+    if (base_time_offset->find("BCAL_TDC_BASE_TIME_OFFSET") != base_time_offset->end())
+        t_base = base_time_offset->at("BCAL_TDC_BASE_TIME_OFFSET");
     else
         jerr << "Unable to get BCAL_TDC_BASE_TIME_OFFSET from /BCAL/base_time_offset !" << endl;  
 
-    vector<double> raw_time_offsets;
-    vector<double> raw_channel_global_offset;
-    vector<double> raw_tdiff_u_d;
+    const vector<double> *raw_time_offsets;
+    const vector<double> *raw_channel_global_offset;
+    const vector<double> *raw_tdiff_u_d;
 
-    if(eventLoop->GetCalib("/BCAL/TDC_offsets", raw_time_offsets))
+    if(eventLoop->GetJCalibration()->Get("/BCAL/TDC_offsets", raw_time_offsets))
         jout << "Error loading /BCAL/TDC_offsets !" << endl;
-    if(eventLoop->GetCalib("/BCAL/channel_global_offset", raw_channel_global_offset))
+    if(eventLoop->GetJCalibration()->Get("/BCAL/channel_global_offset", raw_channel_global_offset))
         jout << "Error loading /BCAL/channel_global_offset !" << endl;
-    if(eventLoop->GetCalib("/BCAL/tdiff_u_d", raw_tdiff_u_d))
+    if(eventLoop->GetJCalibration()->Get("/BCAL/tdiff_u_d", raw_tdiff_u_d))
         jout << "Error loading /BCAL/tdiff_u_d !" << endl;
 
-    FillCalibTable(time_offsets, raw_time_offsets);
-    FillCalibTableShort(channel_global_offset, raw_channel_global_offset);
-    FillCalibTableShort(tdiff_u_d, raw_tdiff_u_d);
+    FillCalibTable(time_offsets, *raw_time_offsets);
+    FillCalibTableShort(channel_global_offset, *raw_channel_global_offset);
+    FillCalibTableShort(tdiff_u_d, *raw_tdiff_u_d);
     
     return NOERROR;
 }

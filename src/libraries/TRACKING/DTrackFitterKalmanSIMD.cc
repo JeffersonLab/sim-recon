@@ -385,12 +385,12 @@ DTrackFitterKalmanSIMD::DTrackFitterKalmanSIMD(JEventLoop *loop):DTrackFitter(lo
 
    DApplication* dapp = dynamic_cast<DApplication*>(loop->GetJApplication());
    JCalibration *jcalib = dapp->GetJCalibration((loop->GetJEvent()).GetRunNumber());
-   vector< map<string, double> > tvals;
+   const vector< map<string, double> > *tvals;
    cdc_drift_table.clear();
    if (jcalib->Get("CDC/cdc_drift_table", tvals)==false){    
-      for(unsigned int i=0; i<tvals.size(); i++){
-         map<string, double> &row = tvals[i];
-         cdc_drift_table.push_back(1000.*row["t"]);
+      for(unsigned int i=0; i<tvals->size(); i++){
+         const map<string, double> &row = tvals->at(i);
+         cdc_drift_table.push_back(1000.*row.at("t"));
       }
    }
    else{
@@ -406,11 +406,11 @@ DTrackFitterKalmanSIMD::DTrackFitterKalmanSIMD(JEventLoop *loop):DTrackFitter(lo
    int straw_count=0,ring_count=0;
    if (jcalib->Get("CDC/sag_parameters", tvals)==false){
       vector<double>temp,temp2;
-      for(unsigned int i=0; i<tvals.size(); i++){
-         map<string, double> &row = tvals[i];
+      for(unsigned int i=0; i<tvals->size(); i++){
+         const map<string, double> &row = tvals->at(i);
 
-         temp.push_back(row["offset"]);
-         temp2.push_back(row["phi"]);
+         temp.push_back(row.at("offset"));
+         temp2.push_back(row.at("phi"));
 
          straw_count++;
          if (straw_count==straw_number[ring_count]){
@@ -425,7 +425,7 @@ DTrackFitterKalmanSIMD::DTrackFitterKalmanSIMD(JEventLoop *loop):DTrackFitter(lo
    }
 
    if (jcalib->Get("CDC/drift_parameters", tvals)==false){
-      map<string, double> &row = tvals[0]; // long drift side
+      map<string, double> row = tvals->at(0); // long drift side
       long_drift_func[0][0]=row["a1"];
       long_drift_func[0][1]=row["a2"];
       long_drift_func[0][2]=row["a3"];  
@@ -438,7 +438,7 @@ DTrackFitterKalmanSIMD::DTrackFitterKalmanSIMD(JEventLoop *loop):DTrackFitter(lo
       long_drift_Bscale_par1=row["B1"];
       long_drift_Bscale_par2=row["B2"];
 
-      row = tvals[1]; // short drift side
+      row = tvals->at(1); // short drift side
       short_drift_func[0][0]=row["a1"];
       short_drift_func[0][1]=row["a2"];
       short_drift_func[0][2]=row["a3"];  
@@ -452,39 +452,39 @@ DTrackFitterKalmanSIMD::DTrackFitterKalmanSIMD(JEventLoop *loop):DTrackFitter(lo
       short_drift_Bscale_par2=row["B2"];
    }
 
-   map<string, double> cdc_drift_parms;
+   const map<string, double> *cdc_drift_parms;
    jcalib->Get("CDC/cdc_drift_parms", cdc_drift_parms);
-   CDC_DRIFT_BSCALE_PAR1 = cdc_drift_parms["bscale_par1"];
-   CDC_DRIFT_BSCALE_PAR2 = cdc_drift_parms["bscale_par2"];
+   CDC_DRIFT_BSCALE_PAR1 = cdc_drift_parms->at("bscale_par1");
+   CDC_DRIFT_BSCALE_PAR2 = cdc_drift_parms->at("bscale_par2");
 
-   map<string, double> cdc_res_parms;
+   const map<string, double> *cdc_res_parms;
    jcalib->Get("CDC/cdc_resolution_parms_v2", cdc_res_parms);
-   CDC_RES_PAR1 = cdc_res_parms["res_par1"];
-   CDC_RES_PAR2 = cdc_res_parms["res_par2"];
-   CDC_RES_PAR3 = cdc_res_parms["res_par3"];
+   CDC_RES_PAR1 = cdc_res_parms->at("res_par1");
+   CDC_RES_PAR2 = cdc_res_parms->at("res_par2");
+   CDC_RES_PAR3 = cdc_res_parms->at("res_par3");
 
    // Parameters for correcting for deflection due to Lorentz force
-   map<string,double>lorentz_parms;
+   const map<string,double> *lorentz_parms;
    jcalib->Get("FDC/lorentz_deflection_parms",lorentz_parms);
-   LORENTZ_NR_PAR1=lorentz_parms["nr_par1"];
-   LORENTZ_NR_PAR2=lorentz_parms["nr_par2"];
-   LORENTZ_NZ_PAR1=lorentz_parms["nz_par1"];
-   LORENTZ_NZ_PAR2=lorentz_parms["nz_par2"];
+   LORENTZ_NR_PAR1=lorentz_parms->at("nr_par1");
+   LORENTZ_NR_PAR2=lorentz_parms->at("nr_par2");
+   LORENTZ_NZ_PAR1=lorentz_parms->at("nz_par1");
+   LORENTZ_NZ_PAR2=lorentz_parms->at("nz_par2");
 
    // Parameters for accounting for variation in drift distance from FDC
-   map<string,double>drift_res_parms;
+   const map<string,double> *drift_res_parms;
    jcalib->Get("FDC/drift_resolution_parms",drift_res_parms); 
-   DRIFT_RES_PARMS[0]=drift_res_parms["p0"];   
-   DRIFT_RES_PARMS[1]=drift_res_parms["p1"];
-   DRIFT_RES_PARMS[2]=drift_res_parms["p2"]; 
+   DRIFT_RES_PARMS[0]=drift_res_parms->at("p0");   
+   DRIFT_RES_PARMS[1]=drift_res_parms->at("p1");
+   DRIFT_RES_PARMS[2]=drift_res_parms->at("p2"); 
 
    // Time-to-distance function parameters for FDC
-   map<string,double>drift_func_parms;
+   const map<string,double> *drift_func_parms;
    jcalib->Get("FDC/drift_function_parms",drift_func_parms); 
-   DRIFT_FUNC_PARMS[0]=drift_func_parms["p0"];   
-   DRIFT_FUNC_PARMS[1]=drift_func_parms["p1"];
-   DRIFT_FUNC_PARMS[2]=drift_func_parms["p2"]; 
-   DRIFT_FUNC_PARMS[3]=drift_func_parms["p3"];
+   DRIFT_FUNC_PARMS[0]=drift_func_parms->at("p0");   
+   DRIFT_FUNC_PARMS[1]=drift_func_parms->at("p1");
+   DRIFT_FUNC_PARMS[2]=drift_func_parms->at("p2"); 
+   DRIFT_FUNC_PARMS[3]=drift_func_parms->at("p3");
 
 
    /*
@@ -505,9 +505,9 @@ DTrackFitterKalmanSIMD::DTrackFitterKalmanSIMD(JEventLoop *loop):DTrackFitter(lo
 
 
    // center of the target
-   map<string, double> targetparms;
+   const map<string, double> *targetparms;
    if (jcalib->Get("TARGET/target_parms",targetparms)==false){
-      TARGET_Z = targetparms["TARGET_Z_POSITION"];
+      TARGET_Z = targetparms->at("TARGET_Z_POSITION");
    }
    else{
       geom->GetTargetZ(TARGET_Z);

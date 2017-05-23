@@ -89,71 +89,75 @@ jerror_t DTOFHit_factory::brun(jana::JEventLoop *eventLoop, int32_t runnumber)
     const DTOFGeometry& tofGeom = *(tofGeomVect[0]);
     
     /// Read in calibration constants
-    vector<double> raw_adc_pedestals;
-    vector<double> raw_adc_gains;
-    vector<double> raw_adc_offsets;
-    vector<double> raw_tdc_offsets;
-    vector<double> raw_adc2E;
+    const vector<double> *raw_adc_pedestals;
+    const vector<double> *raw_adc_gains;
+    const vector<double> *raw_adc_offsets;
+    const vector<double> *raw_tdc_offsets;
+    const vector<double> *raw_adc2E;
     
     if(print_messages) jout << "In DTOFHit_factory, loading constants..." << endl;
     
     // load scale factors
-    map<string,double> scale_factors;
-    if(eventLoop->GetCalib("/TOF/digi_scales", scale_factors))
+    const map<string,double> *scale_factors;
+    if(eventLoop->GetJCalibration()->Get("/TOF/digi_scales", scale_factors))
       jout << "Error loading /TOF/digi_scales !" << endl;
-    if( scale_factors.find("TOF_ADC_ASCALE") != scale_factors.end() ) {
+    if( scale_factors->find("TOF_ADC_ASCALE") != scale_factors->end() ) {
       ;	//a_scale = scale_factors["TOF_ADC_ASCALE"];
     } else {
       jerr << "Unable to get TOF_ADC_ASCALE from /TOF/digi_scales !" << endl;
     }
-    if( scale_factors.find("TOF_ADC_TSCALE") != scale_factors.end() ) {
+    if( scale_factors->find("TOF_ADC_TSCALE") != scale_factors->end() ) {
       ; //t_scale = scale_factors["TOF_ADC_TSCALE"];
     } else {
       jerr << "Unable to get TOF_ADC_TSCALE from /TOF/digi_scales !" << endl;
     }
     
     // load base time offset
-    map<string,double> base_time_offset;
-    if (eventLoop->GetCalib("/TOF/base_time_offset",base_time_offset))
+    const map<string,double> *base_time_offset;
+    if (eventLoop->GetJCalibration()->Get("/TOF/base_time_offset",base_time_offset))
       jout << "Error loading /TOF/base_time_offset !" << endl;
-    if (base_time_offset.find("TOF_BASE_TIME_OFFSET") != base_time_offset.end())
-      t_base = base_time_offset["TOF_BASE_TIME_OFFSET"];
+    if (base_time_offset->find("TOF_BASE_TIME_OFFSET") != base_time_offset->end())
+      t_base = base_time_offset->at("TOF_BASE_TIME_OFFSET");
     else
       jerr << "Unable to get TOF_BASE_TIME_OFFSET from /TOF/base_time_offset !" << endl;	
     
-    if (base_time_offset.find("TOF_TDC_BASE_TIME_OFFSET") != base_time_offset.end())
-      t_base_tdc = base_time_offset["TOF_TDC_BASE_TIME_OFFSET"];
+    if (base_time_offset->find("TOF_TDC_BASE_TIME_OFFSET") != base_time_offset->end())
+      t_base_tdc = base_time_offset->at("TOF_TDC_BASE_TIME_OFFSET");
     else
       jerr << "Unable to get TOF_TDC_BASE_TIME_OFFSET from /TOF/base_time_offset !" << endl;
     
     // load constant tables
-    if(eventLoop->GetCalib("TOF/pedestals", raw_adc_pedestals))
+    if(eventLoop->GetJCalibration()->Get("TOF/pedestals", raw_adc_pedestals))
       jout << "Error loading /TOF/pedestals !" << endl;
-    if(eventLoop->GetCalib("TOF/gains", raw_adc_gains))
+    if(eventLoop->GetJCalibration()->Get("TOF/gains", raw_adc_gains))
       jout << "Error loading /TOF/gains !" << endl;
-    if(eventLoop->GetCalib("TOF/adc_timing_offsets", raw_adc_offsets))
+    if(eventLoop->GetJCalibration()->Get("TOF/adc_timing_offsets", raw_adc_offsets))
       jout << "Error loading /TOF/adc_timing_offsets !" << endl;
-    if(eventLoop->GetCalib("TOF/timing_offsets", raw_tdc_offsets))
+    if(eventLoop->GetJCalibration()->Get("TOF/timing_offsets", raw_tdc_offsets))
       jout << "Error loading /TOF/timing_offsets !" << endl;
-    if(eventLoop->GetCalib("TOF/timewalk_parms", timewalk_parameters))
+	 const vector<vector<double> > *tmp_timewalk_parameters;
+    if(eventLoop->GetJCalibration()->Get("TOF/timewalk_parms", tmp_timewalk_parameters))
       jout << "Error loading /TOF/timewalk_parms !" << endl;
+	 timewalk_parameters = *tmp_timewalk_parameters;
     
 
     if (USE_AMP_4WALKCORR){
-      if(eventLoop->GetCalib("TOF/timewalk_parms_AMP", timewalk_parameters_AMP))
+	 	const vector<vector<double> > *tmp_timewalk_parameters_AMP;
+      if(eventLoop->GetJCalibration()->Get("TOF/timewalk_parms_AMP", tmp_timewalk_parameters_AMP))
 	jout << "Error loading /TOF/timewalk_parms_AMP !" << endl;
+		timewalk_parameters_AMP = *tmp_timewalk_parameters_AMP;
     }
 
-    FillCalibTable(adc_pedestals, raw_adc_pedestals, tofGeom);
-    FillCalibTable(adc_gains, raw_adc_gains, tofGeom);
-    FillCalibTable(adc_time_offsets, raw_adc_offsets, tofGeom);
-    FillCalibTable(tdc_time_offsets, raw_tdc_offsets, tofGeom);
+    FillCalibTable(adc_pedestals, *raw_adc_pedestals, tofGeom);
+    FillCalibTable(adc_gains, *raw_adc_gains, tofGeom);
+    FillCalibTable(adc_time_offsets, *raw_adc_offsets, tofGeom);
+    FillCalibTable(tdc_time_offsets, *raw_tdc_offsets, tofGeom);
     
-    if(eventLoop->GetCalib("TOF/adc2E", raw_adc2E))
+    if(eventLoop->GetJCalibration()->Get("TOF/adc2E", raw_adc2E))
       jout << "Error loading /TOF/adc2E !" << endl;
 
-    for (unsigned int n=0; n<raw_adc2E.size(); n++){
-      adc2E[n] = raw_adc2E[n];
+    for (unsigned int n=0; n<raw_adc2E->size(); n++){
+      adc2E[n] = raw_adc2E->at(n);
     }
 
     /*
@@ -390,7 +394,7 @@ jerror_t DTOFHit_factory::fini(void)
 //------------------
 // FillCalibTable
 //------------------
-void DTOFHit_factory::FillCalibTable(tof_digi_constants_t &table, vector<double> &raw_table, 
+void DTOFHit_factory::FillCalibTable(tof_digi_constants_t &table, const vector<double> &raw_table, 
         const DTOFGeometry &tofGeom)
 {
     char str[256];
