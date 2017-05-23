@@ -2601,9 +2601,9 @@ void GraphCrossSection(double m1,double m2){
       ImB=width*sqrt(M_sq);
     }
     else{ // f0(1370)
-      double m_f1370=1.37 ;
+      double m_f1370=1.309 ;
       M_sq_R=m_f1370*m_f1370; 
-      width=0.5;
+      width=0.5; // estimate, top of PDG range
       ReB=M_sq_R-M_sq;
       double MRsq_minus_m1sq_m2sq=M_sq_R-m1sq_plus_m2sq;
       double temp=4.*m1sq*m2sq;
@@ -2963,9 +2963,9 @@ int main(int narg, char *argv[])
       }
       // f0(1370)
       if (got_pipi && generate[2]){
- 	double m_f1370=1.309; // Bugg(2007)
+ 	double m_f1370=1.3; // somewhere in the middle of PDG range
 	double M_sq_R=m_f1370*m_f1370; 
-	width=0.207; // Bugg(2007)
+	width=0.5;  // estimate, top of PDG range
 	ReBf1370=M_sq_R-M_sq;
 	double MRsq_minus_m1sq_m2sq=M_sq_R-m1sq_plus_m2sq;
 	double temp=4.*m1sq*m2sq;
