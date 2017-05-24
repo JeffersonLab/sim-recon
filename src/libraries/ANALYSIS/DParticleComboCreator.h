@@ -11,6 +11,10 @@ using namespace jana;
 #include "ANALYSIS/DParticleCombo.h"
 #include "ANALYSIS/DParticleComboStep.h"
 
+#include "ANALYSIS/DSourceComboer.h"
+#include "ANALYSIS/DSourceComboTimeHandler.h"
+#include "ANALYSIS/DSourceComboVertexer.h"
+
 namespace DAnalysis
 {
 
