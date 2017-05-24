@@ -228,7 +228,7 @@ DBCALCluster_factory::clusterize( vector< const DBCALPoint* > points , vector< c
 					clust != clusters.end();
 					++clust ){
 
-				cout << " clust Q = " << (**clust).Q() << endl;
+				//cout << " clust Q = " << (**clust).Q() << endl;
 
 				for(vector< const DBCALPoint* >::iterator pt_o = points.begin();
                                 	pt_o != points.end();
@@ -238,7 +238,7 @@ DBCALCluster_factory::clusterize( vector< const DBCALPoint* > points , vector< c
 							usedPoints.push_back( *pt_o );
 							(**clust).addPoint( *pt_o );
 							points.erase( pt_o );
-							cout << " charged success " << endl; 
+							//cout << " charged success " << endl; 
 							usedPoint = true;
 						}
 						if( usedPoint ) break;
@@ -249,7 +249,7 @@ DBCALCluster_factory::clusterize( vector< const DBCALPoint* > points , vector< c
 					if(BCALCLUSTERVERBOSE>0) cout << " overlap success " << endl;            
 					usedPoints.push_back( *pt );  
 					(**clust).addPoint( *pt );
-					cout << " neut success " << endl;
+					//cout << " neut success " << endl;
 					points.erase( pt );
 					usedPoint = true;
 				}
@@ -267,7 +267,8 @@ DBCALCluster_factory::clusterize( vector< const DBCALPoint* > points , vector< c
 			// see if it can become a new seed
 			if( (**pt).E() > seedThresh && ((**pt).layer() != 4 || (**pt).E() > layer4_minSeed) ){
 				clusters.push_back(new DBCALCluster( *pt, m_z_target_center, q, m_BCALGeom  ) );
-//				tracked_phi = track_phi_inner_r;			
+//				tracked_phi = track_phi_inner_r;
+				//cout << " seed layer = " << (**pt).layer() << endl;			
 				points.erase( pt );
 				usedPoint = true;
 			}
@@ -727,7 +728,7 @@ DBCALCluster_factory::overlap_charged( const DBCALCluster& clust,
 //	cout << "(m,l,s) = (" <<point->module()<<","<<point->layer()<<","<<point->sector()<<")" <<  " sep = " << sep << "sep1 = " << sep_term1 << " sep2 = " << sep_term2 << " fit phi = " << fit_phi << " phi point = " << point->phi() << " delta phi = " << deltaPhi << " rho = " << rho << " theta = " << theta << " inclusion value = " << inclusion_val << " inclusion val1= " << inclusion_val1 << " inclusion val2= " << inclusion_val2<< " clust E = " << clust.E() << " point E = " << point->E() << endl;
 
 	if(sep>m_moliereRadius && sep<7.*m_moliereRadius &&sep_term2>=2.*m_moliereRadius){
-                return ((point->E()/(point->E()+clust.E())) < (inclusion_val1) ) && ((point->E()/(point->E()+clust.E())) < (inclusion_val2) ) && time_match && deltaPhi*180./3.14159<10.;
+                return ((point->E()/(point->E()+clust.E())) < (inclusion_val1) ) && ((point->E()/(point->E()+clust.E())) < (inclusion_val2) ) && time_match /* && deltaPhi*180./3.14159<10.*/ ;
         }
 
         else{
