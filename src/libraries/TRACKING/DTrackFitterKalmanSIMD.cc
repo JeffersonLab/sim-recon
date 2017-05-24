@@ -3066,6 +3066,10 @@ jerror_t DTrackFitterKalmanSIMD::KalmanLoop(void){
      PT_MIN=0.1;
      Q_OVER_P_MAX=10.;
    }
+   else if (MASS>0.4){
+     PT_MIN=0.05;
+     Q_OVER_P_MAX=20.;
+   }
    if (MASS>0.9 && p_mag<MIN_PROTON_P){
       pvec.SetMag(MIN_PROTON_P);
       p_mag=MIN_PROTON_P;
