@@ -2945,7 +2945,7 @@ int main(int narg, char *argv[])
       
       // f0(600)
       if (got_pipi && generate[0]){
- 	double m_Sigma=0.7;
+ 	double m_Sigma=0.6;
 	double M_sq_R=m_Sigma*m_Sigma; 
 	width=1.0;
 	ReBf500=M_sq_R-M_sq;
