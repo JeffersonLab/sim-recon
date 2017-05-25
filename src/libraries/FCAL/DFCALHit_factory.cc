@@ -33,11 +33,15 @@ jerror_t DFCALHit_factory::init(void)
             vector<double>(DFCALGeometry::kBlocksWide));
     vector< vector<double > > new_qualities(DFCALGeometry::kBlocksTall, 
             vector<double>(DFCALGeometry::kBlocksWide));
+    // Get ADC offsets
+    vector< vector<double > > ADC_offsets(DFCALGeometry::kBlocksTall, 
+            vector<double>(DFCALGeometry::kBlocksWide));
 
     gains = new_gains;
     pedestals = new_pedestals;
     time_offsets = new_t0s;
     block_qualities = new_qualities;
+    ADC_Offsets = ADC_offsets;
 
     // set the base conversion scales --
     // a_scale should definitely come from
@@ -81,6 +85,7 @@ jerror_t DFCALHit_factory::brun(jana::JEventLoop *eventLoop, int32_t runnumber)
     vector< double > raw_pedestals;
     vector< double > raw_time_offsets;
     vector< double > raw_block_qualities;    // we should change this to an int?
+    vector< double > raw_ADCoffsets;
 
     if(print_messages) jout << "In DFCALHit_factory, loading constants..." << endl;
 
@@ -115,11 +120,14 @@ jerror_t DFCALHit_factory::brun(jana::JEventLoop *eventLoop, int32_t runnumber)
         jout << "Error loading /FCAL/timing_offsets !" << endl;
     if (eventLoop->GetCalib("/FCAL/block_quality", raw_block_qualities))
         jout << "Error loading /FCAL/block_quality !" << endl;
+    if (eventLoop->GetCalib("/FCAL/ADC_Offsets", raw_ADCoffsets))
+        jout << "Error loading /FCAL/ADC_Offsets !" << endl;
 
     FillCalibTable(gains, raw_gains, fcalGeom);
     FillCalibTable(pedestals, raw_pedestals, fcalGeom);
     FillCalibTable(time_offsets, raw_time_offsets, fcalGeom);
     FillCalibTable(block_qualities, raw_block_qualities, fcalGeom);
+    FillCalibTable(ADC_Offsets, raw_ADCoffsets, fcalGeom);
 
     return NOERROR;
 }
@@ -214,7 +222,7 @@ jerror_t DFCALHit_factory::evnt(JEventLoop *loop, uint64_t eventnumber)
         double A = (double)digihit->pulse_integral;
         double T = (double)digihit->pulse_time;
         hit->E = a_scale * gains[hit->row][hit->column] * (A - integratedPedestal);
-        hit->t = t_scale * T - time_offsets[hit->row][hit->column] + t_base;
+        hit->t = t_scale * T - time_offsets[hit->row][hit->column] + t_base + ADC_Offsets[hit->row][hit->column];;
 
         // Get position of blocks on front face. (This should really come from
         // hdgeant directly so the poisitions can be shifted in mcsmear.)

@@ -42,6 +42,7 @@ class DFCALHit_factory:public jana::JFactory<DFCALHit>{
 		fcal_digi_constants_t pedestals;
 		fcal_digi_constants_t time_offsets;
 		fcal_digi_constants_t block_qualities;
+		fcal_digi_constants_t ADC_Offsets;
 
 		const double GetConstant(const fcal_digi_constants_t &the_table,
 					 const int in_row, const int in_column) const;

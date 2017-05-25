@@ -21,8 +21,6 @@
 
 #define MAX_TB_PASSES 20
 #define MAX_WB_PASSES 20
-#define MIN_PROTON_P 0.3
-#define MIN_PION_P 0.08
 #define MAX_P 12.0
 #define ALPHA 1./137.
 
@@ -342,6 +340,11 @@ DTrackFitterKalmanSIMD::DTrackFitterKalmanSIMD(JEventLoop *loop):DTrackFitter(lo
 
    MIN_FIT_P = 0.050; // GeV
    gPARMS->SetDefaultParameter("TRKFIT:MIN_FIT_P", MIN_FIT_P, "Minimum fit momentum in GeV/c for fit to be considered successful");
+
+   MIN_PROTON_P = 0.0;
+   gPARMS->SetDefaultParameter("TRKFIT:MIN_PROTON_P", MIN_PROTON_P, "Minimum proton momentum for track seeds.");
+   MIN_PION_P = 0.0;
+   gPARMS->SetDefaultParameter("TRKFIT:MIN_PION_P", MIN_PION_P, "Minimum pion momentum for track seeds.");
 
    NUM_CDC_SIGMA_CUT=3.5;
    NUM_FDC_SIGMA_CUT=3.5;

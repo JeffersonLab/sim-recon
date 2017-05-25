@@ -136,7 +136,7 @@ env.Alias('install', installdir)
 
 # Create setenv if user explicitly specified "install" target
 build_targets = map(str,BUILD_TARGETS)
-if len(build_targets)>0:
+if len(build_targets)>0 and not env.GetOption('clean'):
 	if 'install' in build_targets:
 		import sbms_setenv
 		sbms_setenv.mk_setenv_csh(env)
@@ -174,7 +174,15 @@ def build_complete(target, source, env):
 	global node_count
 	with open(node_count_fname, 'w') as f: f.write('%d\n' % node_count)
 
-if int(SHOWPROGRESS) == 1 :
+# Build behavior is not as expected if no other targets are specified
+# and we add the build_complete target. Similar to when cleaning
+# except that doesn't show up in the build targets, but as an option.
+# Check that we building something and not cleaning and that the user
+# did not specify no progress before setting this up.
+show_ticker  = int(SHOWPROGRESS) == 1
+show_ticker &= not env.GetOption('clean')
+show_ticker &= len(BUILD_TARGETS)>0
+if show_ticker :
 	# Open file (if available) and read node count from last build
 	try:
 		with open(node_count_fname) as f: node_count_max = int(f.readline())
