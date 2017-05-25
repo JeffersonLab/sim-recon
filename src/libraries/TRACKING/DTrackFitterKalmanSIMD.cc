@@ -3052,7 +3052,7 @@ jerror_t DTrackFitterKalmanSIMD::KalmanLoop(void){
       theta_deg_sq=theta_deg*theta_deg;
       }
       */
-   double sig_lambda=0.01;
+   double sig_lambda=0.02;
    double dp_over_p_sq
       =dpt_over_pt*dpt_over_pt+tanl_*tanl_*sig_lambda*sig_lambda;
 
@@ -3717,6 +3717,9 @@ kalman_error_t DTrackFitterKalmanSIMD::KalmanCentral(double anneal_factor,
    // Wire origin and direction
    //  unsigned int cdc_index=my_cdchits.size()-1;
    unsigned int cdc_index=break_point_cdc_index;
+   if (break_point_cdc_index<num_cdc-1){
+     num_cdc=break_point_cdc_index+1;
+   }
 
    if (cdc_index<MIN_HITS_FOR_REFIT) chi2cut=1000.0;
 
@@ -5273,6 +5276,9 @@ kalman_error_t DTrackFitterKalmanSIMD::KalmanForwardCDC(double anneal,DMatrix5x1
 
    // wire information  
    unsigned int cdc_index=break_point_cdc_index;
+   if (cdc_index<num_cdc-1){
+     num_cdc=cdc_index+1;
+   }
 
    if (cdc_index<MIN_HITS_FOR_REFIT) chi2cut=100.0;
 
