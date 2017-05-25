@@ -185,10 +185,10 @@ DSourceComboer::DSourceComboer(JEventLoop* locEventLoop, const vector<const DRea
 	dSourceComboP4Handler->Set_SourceComboTimeHandler(dSourceComboTimeHandler);
 	dSourceComboP4Handler->Set_SourceComboVertexer(dSourceComboVertexer);
 	dSourceComboVertexer->Set_SourceComboTimeHandler(dSourceComboTimeHandler);
+	dParticleComboCreator = new DParticleComboCreator(locEventLoop, this, dSourceComboTimeHandler, dSourceComboVertexer);
 }
 
 /******************************************************************* CREATE DSOURCOMBOINFO'S ********************************************************************/
-
 
 void DSourceComboer::Create_SourceComboInfos(const DReactionVertexInfo* locReactionVertexInfo)
 {
@@ -532,6 +532,7 @@ void DSourceComboer::Reset_NewEvent(JEventLoop* locEventLoop)
 	dSourceComboP4Handler->Reset();
 	dSourceComboTimeHandler->Reset();
 	dSourceComboVertexer->Reset();
+	dParticleComboCreator->Reset();
 
 	//PARTICLES
 	dTracksByPID.clear();
@@ -786,9 +787,8 @@ void DSourceComboer::Combo_WithBeam(const DReactionVertexInfo* locReactionVertex
 	//if no beam then we are done!
 	if(!locReactionVertexInfo->Get_StepVertexInfos().front()->Get_ProductionVertexFlag())
 	{
-		auto locParticleCombo = Build_ParticleCombo(locReactionVertexInfo, locReactionFullCombo, nullptr);
 		for(const auto& locReaction : locReactions)
-			locOutputComboMap[locReaction].push_back(locParticleCombo); //since no beam, would be faster to push back once, and copy results to other reactions
+			locOutputComboMap[locReaction].push_back(dParticleComboCreator->Build_ParticleCombo(locReactionVertexInfo, locReactionFullCombo, nullptr, locRFBunch, locReaction->Get_KinFitType()));
 		return;
 	}
 
@@ -812,12 +812,11 @@ void DSourceComboer::Combo_WithBeam(const DReactionVertexInfo* locReactionVertex
 			continue; //FAILED MASS CUTS!
 
 		//build particle combo & save for the apporpriate reactions
-		auto locParticleCombo = Build_ParticleCombo(locReactionVertexInfo, locReactionFullCombo, locBeamParticle);
 		auto locBeamRFBunch = dSourceComboTimeHandler->Calc_RFBunchShift(locBeamParticle->time());
 		for(const auto& locReaction : locReactions)
 		{
 			if(dRFBunchCutsByReaction[locReaction] < locBeamRFBunch)
-				locOutputComboMap[locReaction].push_back(locParticleCombo); //since no beam, would be faster to push back once, and copy results to other reactions
+				locOutputComboMap[locReaction].push_back(dParticleComboCreator->Build_ParticleCombo(locReactionVertexInfo, locReactionFullCombo, locBeamParticle, locRFBunch, locReaction->Get_KinFitType()));
 		}
 	}
 }

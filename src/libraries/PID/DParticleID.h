@@ -139,7 +139,7 @@ class DParticleID:public jana::JObject
 		double Calc_PropagatedRFTime(const DKinematicData* locKinematicData, const DEventRFBunch* locEventRFBunch) const;
 		double Calc_TimingChiSq(const DChargedTrackHypothesis* locChargedHypo, unsigned int &locNDF, double& locTimingPull) const;
 		double Calc_TimingChiSq(const DNeutralParticleHypothesis* locNeutralHypo, unsigned int &locNDF, double& locTimingPull) const;
-		void Calc_ChargedPIDFOM(DChargedTrackHypothesis* locChargedTrackHypothesis, const DEventRFBunch* locEventRFBunch) const;
+		void Calc_ChargedPIDFOM(DChargedTrackHypothesis* locChargedTrackHypothesis) const;
 
 		unsigned int Get_CDCRingBitPattern(vector<const DCDCTrackHit*>& locCDCTrackHits) const;
 		unsigned int Get_FDCPlaneBitPattern(vector<const DFDCPseudo*>& locFDCPseudos) const;

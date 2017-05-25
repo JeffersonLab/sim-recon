@@ -57,6 +57,9 @@ class DSourceComboTimeHandler
 		int Select_RFBunch_Full(const DReactionVertexInfo* locReactionVertexInfo, const DSourceCombo* locReactionFullCombo, const vector<int>& locRFBunches);
 		bool Cut_Timing_MissingMassVertices(const DReactionVertexInfo* locReactionVertexInfo, const DSourceCombo* locReactionFullCombo, const DKinematicData* locBeamParticle, int locRFBunch);
 
+		//GET POCA TO VERTEX
+		DLorentzVector Get_ChargedParticlePOCAToVertexX4(const DChargedTrackHypothesis* locHypothesis, bool locIsProductionVertex, const DSourceCombo* locVertexPrimaryFullCombo, const DKinematicData* locBeamParticle) const;
+
 	private:
 
 		shared_ptr<const DKinematicData> Create_KinematicData_Photon(const DNeutralShower* locNeutralShower, const DVector3& locVertex) const;
@@ -105,7 +108,7 @@ class DSourceComboTimeHandler
 		//RF -> showers
 		unordered_map<signed char, DPhotonShowersByBeamBunch> dShowersByBeamBunchByZBin; //char: zbin
 
-		unordered_map<pair<const DKinematicData*, vector<const DKinematicData*>>, DLorentzVector> dChargedParticlePOCAToVertexX4;
+		unordered_map<pair<const DKinematicData*, vector<const DKinematicData*>>, DLorentzVector> dChargedParticlePOCAToVertexX4; //pair: charged hypo, then vertex particles
 
 		unordered_map<const DSourceCombo*, vector<int>> dChargedComboRFBunches; //empty vector = FAILED cuts //combo: charged
 		unordered_map<const DSourceCombo*, vector<int>> dPhotonVertexRFBunches; //combo: full
@@ -227,6 +230,13 @@ inline double DSourceComboTimeHandler::Calc_RFDeltaTChiSq(const DChargedTrackHyp
 	double locVertexTimeVariance = dUseSigmaForRFSelectionFlag ? locHypothesis->errorMatrix(6, 6) : 1.0;
 	double locDeltaT = locVertexTime - locPropagatedRFTime;
 	return locDeltaT*locDeltaT/locVertexTimeVariance;
+}
+
+inline DLorentzVector DSourceComboTimeHandler::Get_ChargedParticlePOCAToVertexX4(const DChargedTrackHypothesis* locHypothesis, bool locIsProductionVertex, const DSourceCombo* locVertexPrimaryFullCombo, const DKinematicData* locBeamParticle) const
+{
+	auto locPOCAPair = std::make_pair(locHypothesis, dSourceComboVertexer->Get_VertexParticles(locIsProductionVertex, locVertexPrimaryFullCombo, locBeamParticle));
+	auto locIterator = dChargedParticlePOCAToVertexX4.find(locPOCAPair);
+	return (locIterator != dChargedParticlePOCAToVertexX4.end()) ? locIterator->second : DLorentzVector());
 }
 
 }

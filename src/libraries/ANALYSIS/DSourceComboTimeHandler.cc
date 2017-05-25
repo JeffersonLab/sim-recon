@@ -393,7 +393,7 @@ bool DSourceComboTimeHandler::Select_RFBunches_Charged(const DReactionVertexInfo
 			auto locPID = locParticlePair.first;
 			auto locChargedTrack = static_cast<const DChargedTrack*>(locParticlePair.second);
 
-			auto locParticleRFBunches = Get_RFBunches_ChargedTrack(locChargedTrack, locPID, locIsProductionVertex, locVertexPrimaryFullCombo, locVertex, locTimeOffset, locPropagatedRFTime);
+			auto locParticleRFBunches = Get_RFBunches_ChargedTrack(locChargedTrack, locPID, locIsProductionVertex, locVertexPrimaryCombo, locVertex, locTimeOffset, locPropagatedRFTime);
 			if(locParticleRFBunches.empty())
 			{
 				dChargedComboRFBunches.emplace(locReactionChargedCombo, {});

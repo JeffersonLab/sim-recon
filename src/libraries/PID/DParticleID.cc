@@ -1758,7 +1758,7 @@ double DParticleID::Calc_TimingChiSq(const DChargedTrackHypothesis* locChargedHy
 
 	double locStartTimeError = locChargedHypo->t0_err();
 	double locTimeDifferenceVariance = (*locChargedHypo->errorMatrix())(6, 6) + locStartTimeError*locStartTimeError;
-	locPull = (locChargedHypo->t0() - locChargedHypo->time())/sqrt(locTimeDifferenceVariance);
+	locPull = (locChargedHypo->t0() - locChargedHypo->Get_TimeAtPOCAToVertex())/sqrt(locTimeDifferenceVariance);
 	locNDF = 1;
 	return locPull*locPull;
 }
@@ -1780,7 +1780,7 @@ double DParticleID::Calc_TimingChiSq(const DNeutralParticleHypothesis* locNeutra
 	return locPull*locPull;
 }
 
-void DParticleID::Calc_ChargedPIDFOM(DChargedTrackHypothesis* locChargedTrackHypothesis, const DEventRFBunch* locEventRFBunch) const
+void DParticleID::Calc_ChargedPIDFOM(DChargedTrackHypothesis* locChargedTrackHypothesis) const
 {
 	CalcDCdEdxChiSq(locChargedTrackHypothesis);
 

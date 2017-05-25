@@ -168,7 +168,7 @@ DChargedTrackHypothesis* DChargedTrackHypothesis_factory::Create_ChargedTrackHyp
 
 	//Calculate PID ChiSq, NDF, FOM
 	locChargedTrackHypothesis->Set_TimeAtPOCAToVertex(locChargedTrackHypothesis->time());
-	dPIDAlgorithm->Calc_ChargedPIDFOM(locChargedTrackHypothesis, locEventRFBunch);
+	dPIDAlgorithm->Calc_ChargedPIDFOM(locChargedTrackHypothesis);
 
 	return locChargedTrackHypothesis;
 }

@@ -29,7 +29,6 @@ class DReactionVertexInfo_factory : public jana::JFactory<DReactionVertexInfo>
 		DReactionVertexInfo* Build_VertexInfo(const DReaction* locReaction) const;
 
 		//SETUP
-		vector<const DReaction*> Get_Reactions(JEventLoop* locEventLoop) const;
 		shared_ptr<DReactionStepVertexInfo> Setup_VertexInfo(const DReaction* locReaction, size_t locStepIndex, DReactionStepVertexInfo* locVertexInfo) const;
 
 		//GROUPING

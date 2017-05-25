@@ -127,13 +127,21 @@ inline void DSourceComboVertexer::Reset(void)
 
 inline double DSourceComboVertexer::Get_TimeOffset(bool locIsProductionVertex, const DSourceCombo* locReactionCombo, const DSourceCombo* locVertexCombo, const DKinematicData* locBeamParticle) const
 {
+	//the data member MAY be dependent on the beam particle, but it may not
+	//so, first search with the beam particle; if not found then search without it
 	auto locIterator = dTimeOffsets.find(std::make_tuple(locIsProductionVertex, locReactionCombo, locBeamParticle));
+	if((locBeamParticle != nullptr) && (locIterator == dTimeOffsets.end()))
+		locIterator = dTimeOffsets.find(std::make_tuple(locIsProductionVertex, locReactionCombo, nullptr));
 	return ((locIterator != dTimeOffsets.end()) ? locIterator->second.find(locVertexCombo)->second : 0.0);
 }
 
 inline vector<const DKinematicData*> DSourceComboVertexer::Get_ConstrainingParticles(bool locIsProductionVertex, const DSourceCombo* locVertexCombo, const DKinematicData* locBeamParticle) const
 {
+	//the data member MAY be dependent on the beam particle, but it may not
+	//so, first search with the beam particle; if not found then search without it
 	auto locIterator = dConstrainingParticlesByCombo.find(std::make_tuple(locIsProductionVertex, locVertexCombo, locBeamParticle));
+	if((locBeamParticle != nullptr) && (locIterator == dConstrainingParticlesByCombo.end()))
+		locIterator = dConstrainingParticlesByCombo.find(std::make_tuple(locIsProductionVertex, locVertexCombo, nullptr));
 	if(locIterator != dConstrainingParticlesByCombo.end())
 		return locIterator->second;
 	return {};
@@ -156,7 +164,16 @@ inline vector<signed char> DSourceComboVertexer::Get_VertexZBins(bool locIsProdu
 		return {};
 
 	vector<signed char> locVertexZBins;
-	const auto& locReactionTimeOffsets = dTimeOffsets.find(std::make_tuple(locIsProductionVertex, locReactionCombo, locBeamParticle))->second;
+
+	//the data member MAY be dependent on the beam particle, but it may not
+	//so, first search with the beam particle; if not found then search without it
+	auto locIterator = dTimeOffsets.find(std::make_tuple(locIsProductionVertex, locReactionCombo, locBeamParticle));
+	if((locBeamParticle != nullptr) && (locIterator == dTimeOffsets.end()))
+		locIterator = dTimeOffsets.find(std::make_tuple(locIsProductionVertex, locReactionCombo, nullptr));
+	if(locIterator == dTimeOffsets.end())
+		return {};
+
+	const auto& locReactionTimeOffsets = locIterator->second;
 	for(const auto& locComboTimeOffsetPair : locReactionTimeOffsets) //turns out this is fastest: we have the vertex combos!
 	{
 		locVertexZBins.emplace_back(Get_VertexZBin(locIsProductionVertex, locComboTimeOffsetPair.first, locBeamParticle));
@@ -174,8 +191,12 @@ inline vector<const DKinematicData*>::const_iterator DSourceComboVertexer::Get_T
 
 inline bool DSourceComboVertexer::Get_IsVertexFoundFlag(bool locIsProductionVertex, const DSourceCombo* locVertexPrimaryCombo, const DKinematicData* locBeamParticle) const
 {
-	auto locVertexTuple = std::make_tuple(locIsProductionVertex, locVertexPrimaryCombo, locBeamParticle);
-	return (dConstrainingParticlesByCombo.find(locVertexTuple) != dConstrainingParticlesByCombo.end());
+	//the data member MAY be dependent on the beam particle, but it may not
+	//so, first search with the beam particle; if not found then search without it
+	auto locIterator = dConstrainingParticlesByCombo.find(std::make_tuple(locIsProductionVertex, locVertexPrimaryCombo, locBeamParticle));
+	if((locBeamParticle != nullptr) && (locIterator == dConstrainingParticlesByCombo.end()))
+		locIterator = dConstrainingParticlesByCombo.find(std::make_tuple(locIsProductionVertex, locVertexPrimaryCombo, nullptr));
+	return (locIterator != dConstrainingParticlesByCombo.end());
 }
 
 } //end DAnalysis namespace

@@ -33,6 +33,7 @@
 #include "ANALYSIS/DSourceComboVertexer.h"
 #include "ANALYSIS/DSourceComboP4Handler.h"
 #include "ANALYSIS/DSourceComboTimeHandler.h"
+#include "ANALYSIS/DParticleComboCreator.h"
 
 using namespace std;
 using namespace jana;
@@ -40,9 +41,8 @@ using namespace jana;
 namespace DAnalysis
 {
 //MAIN
-//build particle combo
+//build particle combo: beware multiple reactions for combo
 //make sure someone calls Reset for the DSourceComboer!!
-//finish comments in Build_ParticleCombos()
 
 //AFTER CREATING COMBOS!!
 //prekinfit actions
@@ -53,11 +53,9 @@ namespace DAnalysis
 //ANY TIME:
 //tweak default mass & pid cuts
 //change all references to bcal/fcal to z-independent/dependent showers
-//Kinematic & hypo objects: static resource pool
 //No longer a target particle: Change code accordingly
 //ditch source objects: use DNeutralShower member and DTrackTimeBased members instead!!!
-//remove all instances of blueprint
-//change how cov matrix resources are acquired: use new system?
+//finish comments in Build_ParticleCombos()
 
 //MISCELLANEOUS TO DO:
 //When saving ROOT TTree, don't save p4 of decaying particles if mass is not constrained in kinfit!
@@ -218,6 +216,7 @@ class DSourceComboer : public JObject
 		DSourceComboVertexer* dSourceComboVertexer;
 		DSourceComboP4Handler* dSourceComboP4Handler;
 		DSourceComboTimeHandler* dSourceComboTimeHandler;
+		DParticleComboCreator* dParticleComboCreator;
 
 		//SOURCE COMBO INFOS: CREATED ONCE DURING DSOURCECOMBOER OBJECT CONSTRUCTION
 			//with some exceptions (specific vertex-z, etc.)

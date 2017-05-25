@@ -8,7 +8,6 @@
 #include "particleType.h"
 #include "PID/DKinematicData.h"
 #include "PID/DEventRFBunch.h"
-#include "ANALYSIS/DReaction.h"
 #include "ANALYSIS/DParticleComboStep.h"
 #include "ANALYSIS/DKinFitResults.h"
 
@@ -24,12 +23,10 @@ class DParticleCombo
 		void Set_ParticleComboStep(const DParticleComboStep* locParticleComboStep, size_t locStepIndex);
 
 		// SET OBJECT DATA:
-		inline void Set_Reaction(const DReaction* locReaction){dReaction = locReaction;}
 		inline void Set_KinFitResults(const DKinFitResults* locKinFitResults){dKinFitResults = locKinFitResults;}
 		inline void Set_EventRFBunch(const DEventRFBunch* locEventRFBunch){dEventRFBunch = locEventRFBunch;}
 
 		// GET OBJECT DATA:
-		inline const DReaction* Get_Reaction(void) const{return dReaction;}
 		inline const DKinFitResults* Get_KinFitResults(void) const{return dKinFitResults;}
 		inline const DEventRFBunch* Get_EventRFBunch(void) const{return dEventRFBunch;}
 
@@ -70,7 +67,6 @@ class DParticleCombo
 		// PRIVATE METHODS:
 		void Get_DecayChainParticles_Measured_Recursive(int locStepIndex, deque<const DKinematicData*>& locMeasuredParticles) const;
 
-		const DReaction* dReaction;
 		const DKinFitResults* dKinFitResults;
 		const DEventRFBunch* dEventRFBunch;
 		vector<const DParticleComboStep*> dParticleComboSteps;
@@ -78,7 +74,6 @@ class DParticleCombo
 
 inline void DParticleCombo::Reset(void)
 {
-	dReaction = NULL;
 	dKinFitResults = NULL;
 	dEventRFBunch = NULL;
 	dParticleComboSteps.clear();

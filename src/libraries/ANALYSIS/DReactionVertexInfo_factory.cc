@@ -13,8 +13,7 @@ jerror_t DReactionVertexInfo_factory::init(void)
 
 jerror_t DReactionVertexInfo_factory::evnt(JEventLoop *locEventLoop, uint64_t locEventNumber)
 {
-	auto locReactions = Get_Reactions(locEventLoop);
-
+	auto locReactions = DAnalysis::Get_Reactions(locEventLoop);
 	for(auto locReactionIterator = locReactions.begin(); locReactionIterator != locReactions.end(); ++locReactionIterator)
 	{
 		auto locReaction = *locReactionIterator;
@@ -40,26 +39,6 @@ jerror_t DReactionVertexInfo_factory::evnt(JEventLoop *locEventLoop, uint64_t lo
 	}
 
 	return NOERROR;
-}
-
-vector<const DReaction*> DReactionVertexInfo_factory::Get_Reactions(JEventLoop* locEventLoop) const
-{
-	// Get list of factories and find all the ones producing Reaction objects.
-	// A simpler way to do this would be to just use locEventLoop->Get(...), but then only one plugin could be used at a time.
-	vector<const DReaction*> locReactions;
-	for(auto locFactoryBase : locEventLoop->GetFactories())
-	{
-		JFactory<DReaction>* locReactionFactory = dynamic_cast<JFactory<DReaction>* >(locFactoryBase);
-		if(locReactionFactory == NULL)
-			continue;
-		if(string(locReactionFactory->Tag()) == "Thrown")
-			continue;
-
-		vector<const DReaction*> locReactionsSubset;
-		locReactionFactory->Get(locReactionsSubset);
-		locReactions.insert(locReactions.end(), locReactionsSubset.begin(), locReactionsSubset.end());
-	}
-	return locReactions;
 }
 
 DReactionVertexInfo* DReactionVertexInfo_factory::Build_VertexInfo(const DReaction* locReaction) const
@@ -287,3 +266,4 @@ bool DReactionVertexInfo_factory::Associate_DecayingParticles(bool locLinkingFla
 
 	return true;
 }
+

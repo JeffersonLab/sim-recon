@@ -66,7 +66,7 @@ jerror_t DNeutralParticleHypothesis_factory::evnt(jana::JEventLoop *locEventLoop
 		// Loop over vertices and PID hypotheses & create DNeutralParticleHypotheses for each combination
 		for(size_t loc_j = 0; loc_j < locPIDHypotheses.size(); ++loc_j)
 		{
-			DNeutralParticleHypothesis* locNeutralParticleHypothesis = Create_DNeutralParticleHypothesis(locEventLoop, locNeutralShower, locPIDHypotheses[loc_j], locEventRFBunch, locVertex, true);
+			DNeutralParticleHypothesis* locNeutralParticleHypothesis = Create_DNeutralParticleHypothesis(locNeutralShower, locPIDHypotheses[loc_j], locEventRFBunch, locVertex, true);
 			if(locNeutralParticleHypothesis != NULL)
 				_data.push_back(locNeutralParticleHypothesis);	
 		}
@@ -75,7 +75,7 @@ jerror_t DNeutralParticleHypothesis_factory::evnt(jana::JEventLoop *locEventLoop
 	return NOERROR;
 }
 
-DNeutralParticleHypothesis* DNeutralParticleHypothesis_factory::Create_DNeutralParticleHypothesis(JEventLoop *locEventLoop, const DNeutralShower* locNeutralShower, Particle_t locPID, const DEventRFBunch* locEventRFBunch, const DLorentzVector& dSpacetimeVertex, const TMatrixFSym* locVertexCovMatrix)
+DNeutralParticleHypothesis* DNeutralParticleHypothesis_factory::Create_DNeutralParticleHypothesis(const DNeutralShower* locNeutralShower, Particle_t locPID, const DEventRFBunch* locEventRFBunch, const DLorentzVector& dSpacetimeVertex, const TMatrixFSym* locVertexCovMatrix)
 {
 	DVector3 locVertexGuess = dSpacetimeVertex.Vect();
 	double locStartTime = dSpacetimeVertex.T();
@@ -92,9 +92,7 @@ DNeutralParticleHypothesis* DNeutralParticleHypothesis_factory::Create_DNeutralP
 		return NULL; //invalid, will divide by zero when creating error matrix, so skip!
 
 	DVector3 locMomentum(locPath);
-
-	uint64_t locEventNumber = locEventLoop->GetJEvent().GetEventNumber();
-	TMatrixFSym* locParticleCovariance = (locVertexCovMatrix != nullptr) ? (dynamic_cast<DApplication*>(japp))->Get_CovarianceMatrixResource(7, locEventNumber) : nullptr;
+	TMatrixFSym* locParticleCovariance = (locVertexCovMatrix != nullptr) ? (dynamic_cast<DApplication*>(japp))->Get_CovarianceMatrixResource(7) : nullptr;
 
 	double locProjectedTime = 0.0, locPMag = 0.0;
 	if(locPID != Gamma)
