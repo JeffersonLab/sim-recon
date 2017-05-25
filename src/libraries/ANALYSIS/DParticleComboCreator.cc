@@ -49,9 +49,39 @@ void DParticleComboCreator::Reset(void)
 	dNeutralHypoMap.clear();
 }
 
-const DParticleCombo* DParticleComboCreator::Build_ParticleCombo(const DReactionVertexInfo* locReactionVertexInfo, const DSourceCombo* locFullCombo, const DKinematicData* locBeamParticle, int locRFBunchShift, DKinFitType locKinFitType, bool locVertexKinFitFlag)
+bool DParticleComboCreator::Get_CreateNeutralErrorMatrixFlag_Combo(const DReactionVertexInfo* locReactionVertexInfo, DKinFitType locKinFitType)
 {
-	auto locComboTuple = std::make_tuple(locReactionVertexInfo, locFullCombo, locBeamParticle, locRFBunchShift, locVertexKinFitFlag);
+	//is there at least one dangling vertex that has neutrals?
+	auto locDanglingIterator = dDanglingNeutralsFlagMap.find(locReactionVertexInfo);
+	bool locDanglingNeutralsFlag = false;
+	if(locDanglingIterator != dDanglingNeutralsFlagMap.end())
+		locDanglingNeutralsFlag = locDanglingIterator->second;
+	else
+	{
+		for(auto locStepVertexInfo : locReactionVertexInfo->Get_StepVertexInfos())
+		{
+			if(!locStepVertexInfo->Get_DanglingVertexFlag())
+				continue;
+			if(!locStepVertexInfo->Get_OnlyConstrainTimeParticles().empty())
+			{
+				locDanglingNeutralsFlag = true; //photons
+				break;
+			}
+			if(!locStepVertexInfo->Get_NoConstrainParticles(d_FinalState, d_Neutral, false, false, false).empty())
+			{
+				locDanglingNeutralsFlag = true; //massive neutrals
+				break;
+			}
+		}
+		dDanglingNeutralsFlagMap.emplace(locReactionVertexInfo, locDanglingNeutralsFlag);
+	}
+	return ((locKinFitType != d_NoFit) && ((locKinFitType == d_P4Fit) || locDanglingNeutralsFlag));
+}
+
+const DParticleCombo* DParticleComboCreator::Build_ParticleCombo(const DReactionVertexInfo* locReactionVertexInfo, const DSourceCombo* locFullCombo, const DKinematicData* locBeamParticle, int locRFBunchShift, DKinFitType locKinFitType)
+{
+	auto locCreateNeutralErrorMatrixFlag_Combo = Get_CreateNeutralErrorMatrixFlag_Combo(locReactionVertexInfo, locKinFitType);
+	auto locComboTuple = std::make_tuple(locReactionVertexInfo, locFullCombo, locBeamParticle, locRFBunchShift, locCreateNeutralErrorMatrixFlag_Combo);
 	auto locComboIterator = dComboMap.find(locComboTuple);
 	if(locComboIterator != dComboMap.end())
 		return locComboIterator->second;
@@ -89,7 +119,7 @@ const DParticleCombo* DParticleComboCreator::Build_ParticleCombo(const DReaction
 
 		auto locStepVertexInfo = locReactionVertexInfo->Get_StepVertexInfo(loc_i);
 		auto locVertexPrimaryCombo = dSourceComboer->Get_VertexPrimaryCombo(locFullCombo, locStepVertexInfo);
-		bool locCreateNeutralErrorMatrixFlag = ((locKinFitType != d_NoFit) && ((locKinFitType == d_P4Fit) || locStepVertexInfo->Get_DanglingVertexFlag());
+		bool locCreateNeutralErrorMatrixFlag = (locKinFitType != d_NoFit) && ((locKinFitType == d_P4Fit) || locStepVertexInfo->Get_DanglingVertexFlag());
 		if(locReactionStep->Get_FinalPIDs(false, d_Neutral, false).empty())
 			locCreateNeutralErrorMatrixFlag = false; //no neutrals!
 
@@ -141,13 +171,14 @@ const DParticleCombo* DParticleComboCreator::Build_ParticleCombo(const DReaction
 			{
 				auto locNeutralShower = static_cast<const DNeutralShower*>(locSourceParticle);
 				auto locHypoTuple = std::make_tuple(locNeutralShower, locPID, locRFBunchShift, locCreateNeutralErrorMatrixFlag, locIsProductionVertex, locFullCombo, locVertexPrimaryCombo, locBeamParticle); //last 4 needed for spacetime vertex
+				const DNeutralParticleHypothesis* locNewNeutralHypo = nullptr;
 
 				auto locHypoIterator = dNeutralHypoMap.find(locHypoTuple);
 				if(locHypoIterator != dNeutralHypoMap.end())
 					locNewNeutralHypo = locHypoIterator->second;
 				else
 				{
-					auto locVertexCovMatrix = locCreateNeutralErrorMatrixFlag ? : *dVertexCovMatrix : nullptr;
+					auto locVertexCovMatrix = locCreateNeutralErrorMatrixFlag ? *dVertexCovMatrix : nullptr;
 					locNewNeutralHypo = dNeutralParticleHypothesisFactory->Create_DNeutralParticleHypothesis(locNeutralShower, locPID, locEventRFBunch, locSpacetimeVertex, locVertexCovMatrix);
 					dNeutralHypoMap.emplace(locHypoTuple, locNewNeutralHypo);
 				}

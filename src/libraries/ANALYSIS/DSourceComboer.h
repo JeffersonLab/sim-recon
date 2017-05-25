@@ -41,7 +41,6 @@ using namespace jana;
 namespace DAnalysis
 {
 //MAIN
-//build particle combo: beware multiple reactions for combo
 //make sure someone calls Reset for the DSourceComboer!!
 
 //AFTER CREATING COMBOS!!
@@ -56,6 +55,7 @@ namespace DAnalysis
 //No longer a target particle: Change code accordingly
 //ditch source objects: use DNeutralShower member and DTrackTimeBased members instead!!!
 //finish comments in Build_ParticleCombos()
+//combo & steps no longer have dreaction as members!!
 
 //MISCELLANEOUS TO DO:
 //When saving ROOT TTree, don't save p4 of decaying particles if mass is not constrained in kinfit!
