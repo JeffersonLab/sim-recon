@@ -16,12 +16,13 @@ void DParticleComboCreator::DParticleComboCreator(JEventLoop* locEventLoop, cons
 }
 
 
-const DParticleCombo* DParticleComboCreator::Build_ParticleCombo(const DReactionVertexInfo* locReactionVertexInfo, const DSourceCombo* locFullCombo, const DKinematicData* locBeamParticle, int locRFBunchShift)
+const DParticleCombo* DParticleComboCreator::Build_ParticleCombo(JEventLoop* locEventLoop, const DReactionVertexInfo* locReactionVertexInfo, const DSourceCombo* locFullCombo, const DKinematicData* locBeamParticle, int locRFBunchShift)
 {
 	auto locReaction = locReactionVertexInfo->Get_Reaction();
 	auto locPreviousStepSourceCombo = locFullCombo;
 	auto locParticleCombo = dResourcePool_ParticleCombo.Get_Resource();
 	auto locIsPrimaryProductionVertex = locReactionVertexInfo->Get_StepVertexInfos().front()->Get_ProductionVertexFlag();
+	auto locPrimaryVertexZ = dSourceComboVertexer->Get_PrimaryVertex(locReactionVertexInfo, locFullCombo, locBeamParticle).Z();
 
 	//Get/Create RF Bunch
 	const DEventRFBunch* locEventRFBunch = nullptr;
@@ -60,20 +61,22 @@ const DParticleCombo* DParticleComboCreator::Build_ParticleCombo(const DReaction
 		//build spacetime vertex
 		auto locVertex = dSourceComboVertexer->Get_Vertex(locIsProductionVertex, locSourceCombo, locBeamParticle);
 		auto locTimeOffset = dSourceComboVertexer->Get_TimeOffset(locIsProductionVertex, locFullCombo, locSourceCombo, locBeamParticle);
-		DLorentzVector locSpacetimeVertex(locVertex, locTimeOffset + locEventRFBunch->dTime);
+		auto locPropagatedRFTime = dSourceComboTimeHandler->Calc_PropagatedRFTime(locPrimaryVertexZ, locRFBunchShift, locTimeOffset);
+		DLorentzVector locSpacetimeVertex(locVertex, locPropagatedRFTime);
 
-		//Get source objects, in order
-		vector<const JObject*> locSourceObjects;
+		//Build final particles
 		auto locFinalPIDs = locReactionStep->Get_FinalPIDs();
 		unordered_map<Particle_t, size_t> locPIDCountMap;
+		vector<const DKinematicData*> locFinalParticles;
 		for(size_t loc_j = 0; loc_j < locFinalPIDs.size(); ++loc_j)
 		{
 			if(loc_j == locReactionStep->Get_MissingParticleIndex())
 			{
-				locSourceObjects.push_back(nullptr);
+				locFinalParticles.push_back(nullptr);
 				continue;
 			}
 
+			//Get source objects, in order
 			auto locPID = locFinalPIDs[loc_j];
 			auto locPIDIterator = locPIDCountMap.find(locPID);
 			if(locPIDIterator != locPIDCountMap.end())
@@ -83,28 +86,23 @@ const DParticleCombo* DParticleComboCreator::Build_ParticleCombo(const DReaction
 
 			size_t locPIDCountSoFar = 0;
 			auto locSourceParticle = DAnalysis::Get_SourceParticle_ThisStep(locSourceCombo, locPID, locPIDCountMap[locPID], locPIDCountSoFar);
-			locSourceObjects.push_back(locSourceParticle);
-		}
 
-		//Get/Build particles
-		vector<const DKinematicData*> locFinalParticles;
-		for(size_t loc_j = 0; loc_j < locSourceObjects.size(); ++loc_j)
-		{
-			auto locSourceObject = locSourceObjects[loc_j];
-			if(locSourceObject == nullptr)
-			{
-				locFinalParticles.push_back(nullptr);
-				continue;
-			}
-
-			auto locPID = locFinalPIDs[loc_j];
+			//build hypo
 			if(ParticleCharge(locPID) == 0)
 			{
 				auto locNeutralShower = static_cast<const DNeutralShower*>(locNeutralShower);
+				auto locHypoTuple = std::make_tuple(locNeutralShower, locPID, locRFBunchShift, locIsProductionVertex, locFullCombo, locSourceCombo, locBeamParticle); //last 4 needed for spacetime vertex
+	//use tuple, recycle resources when done!
+				auto locNeutralHypo = dNeutralParticleHypothesisFactory->Create_DNeutralParticleHypothesis(locEventLoop, locNeutralShower, locPID, locEventRFBunch, locSpacetimeVertex, locVertexCovMatrix);
+				locFinalParticles.push_back(static_cast<DKinematicData*>(locNeutralHypo));
+			}
+			else //charged
+			{
+
 			}
 		}
 
-		locParticleComboStep->Set_Contents(locReactionStep, locStepBeamParticle, locSourceObjects, locFinalParticles, locSpacetimeVertex);
+		locParticleComboStep->Set_Contents(locReactionStep, locStepBeamParticle, locFinalParticles, locSpacetimeVertex);
 		if(loc_i == 0)
 			locParticleComboStep->Set_InitialParticle(locBeamParticle);
 
@@ -119,28 +117,41 @@ const DParticleCombo* DParticleComboCreator::Build_ParticleCombo(const DReaction
 	}
 }
 
-const DNeutralParticleHypothesis* Create_NeutralHypothesis(JEventLoop* locEventLoop, const DNeutralShower* locNeutralShower, Particle_t locPID, const DEventRFBunch* locEventRFBunch, const DVector3 locVertex)
-{
-	//create
-//DON'T CALL THESE: INSTEAD DO CUSTOM (& SHARE DATA!)
-//ok, maybe do the neutral since the vertex will move
-	DNeutralParticleHypothesis* locNeutralParticleHypothesis = dNeutralParticleHypothesisFactory->Create_DNeutralParticleHypothesis(locEventLoop, locNeutralShower, locPID, locEventRFBunch, locVertex);
-	if(locNeutralParticleHypothesis == NULL)
-		continue;
-}
-
-void Create_Charged()
+const DChargedTrackHypothesis* DParticleComboCreator::Create_Charged(const DChargedTrack* locChargedTrack, Particle_t locPID, const DEventRFBunch* locEventRFBunch, double locPropagatedRFTime)
 {
 	//see if DChargedTrackHypothesis with the desired PID was created by the default factory, AND it passed the PreSelect cuts
-	const DChargedTrackHypothesis* locChargedTrackHypothesis = locChargedTrack->Get_Hypothesis(locPID);
+	auto locOrigHypo = locChargedTrack->Get_Hypothesis(locPID);
+	auto locNewHypo = dChargedTrackHypothesisFactory->Get_Resource();
+	locNewHypo->Share_FromInput(locOrigHypo, true, false, true); //share all but timing info
+	double locTrackPOCATime = locEventRFBunch->
+	locNewHypo->Set_T0(locPropagatedRFTime, locOrigHypo->t0_err(), locOrigHypo->t0_detector());
 
-		//it was/did. create new object with same PID (so that is registered with the combo factory, and because rf bunch could be different)
-		const DTrackTimeBased* locTrackTimeBased = locChargedTrackHypothesis->Get_TrackTimeBased();
-		DChargedTrackHypothesis* locNewChargedTrackHypothesis = dChargedTrackHypothesisFactory->Create_ChargedTrackHypothesis(locEventLoop, locTrackTimeBased, dDetectorMatches, locEventRFBunch);
+//dTimeAtPOCAToVertex: what about DSelector? Need to save position as well? eh?
+	//So this means that the delta-t used for the initial timing cuts is NOT available later!!
 
-		locNewChargedTrackHypothesis->AddAssociatedObject(locChargedTrack);
-		return locNewChargedTrackHypothesis;
+	unsigned int locTimingNDF = 0;
+	double locTimingPull = 0.0;
+	double locTimingChiSq = 0.0;
+	if((locNewHypo->t0_detector() != SYS_NULL) && (locNewHypo->t1_detector() != SYS_NULL))
+	{
+		double locDeltaT = ;
+		double locStartTimeError = locChargedHypo->t0_err();
+		double locTimeDifferenceVariance = (*locChargedHypo->errorMatrix())(6, 6) + locStartTimeError*locStartTimeError;
+		locTimingPull = (locChargedHypo->t0() - locChargedHypo->time())/sqrt(locTimeDifferenceVariance);
+		locTimingNDF = 1;
+		locTimingChiSq = locTimingPull*locTimingPull;
+	}
 
+
+	unsigned int locNDF_Total = locChargedTrackHypothesis->Get_NDF_Timing() + locChargedTrackHypothesis->Get_NDF_DCdEdx();
+	double locChiSq_Total = locChargedTrackHypothesis->Get_ChiSq_Timing() + locChargedTrackHypothesis->Get_ChiSq_DCdEdx();
+	double locFOM = (locNDF_Total > 0) ? TMath::Prob(locChiSq_Total, locNDF_Total) : numeric_limits<double>::quiet_NaN();
+	locChargedTrackHypothesis->Set_ChiSq_Overall(locChiSq_Total, locNDF_Total, locFOM);
+
+	locNewHypo->Set_ChiSq_Timing(double locChiSq, unsigned int locNDF);
+	locNewHypo->Set_ChiSq_Overall(double locChiSq, unsigned int locNDF, double locFOM);
+
+	return locNewHypo;
 }
 
 

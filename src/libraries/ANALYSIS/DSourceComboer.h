@@ -57,6 +57,7 @@ namespace DAnalysis
 //No longer a target particle: Change code accordingly
 //ditch source objects: use DNeutralShower member and DTrackTimeBased members instead!!!
 //remove all instances of blueprint
+//change how cov matrix resources are acquired: use new system?
 
 //MISCELLANEOUS TO DO:
 //When saving ROOT TTree, don't save p4 of decaying particles if mass is not constrained in kinfit!

@@ -66,7 +66,7 @@ jerror_t DChargedTrackHypothesis_factory::evnt(jana::JEventLoop* locEventLoop, u
 	for(size_t loc_i = 0; loc_i < locTrackTimeBasedVector.size(); loc_i++)
 	{
 		DChargedTrackHypothesis* locChargedTrackHypothesis = Create_ChargedTrackHypothesis(locEventLoop, locTrackTimeBasedVector[loc_i], locDetectorMatches, locEventRFBunches[0]);
-		locChargedTrackHypotheses[locChargedTrackHypothesis->candidateid].push_back(locChargedTrackHypothesis);
+		locChargedTrackHypotheses[locChargedTrackHypothesis->Get_TrackTimeBased()->candidateid].push_back(locChargedTrackHypothesis);
 	}
 
 	//choose the first hypothesis from each track, and sort by increasing energy in the 1's and 0.1s digits (MeV): pseudo-random
@@ -79,7 +79,7 @@ jerror_t DChargedTrackHypothesis_factory::evnt(jana::JEventLoop* locEventLoop, u
 	//now loop through the sorted vector, grab all of the hypotheses for each of those tracks from the map, and save them all in _data
 	for(size_t loc_i = 0; loc_i < locTracksToSort.size(); loc_i++)
 	{
-		JObject::oid_t locTrackID = locTracksToSort[loc_i]->candidateid;
+		JObject::oid_t locTrackID = locTracksToSort[loc_i]->Get_TrackTimeBased()->candidateid;
 		_data.insert(_data.end(), locChargedTrackHypotheses[locTrackID].begin(), locChargedTrackHypotheses[locTrackID].end());
 	}
 
@@ -167,6 +167,7 @@ DChargedTrackHypothesis* DChargedTrackHypothesis_factory::Create_ChargedTrackHyp
 	locChargedTrackHypothesis->setErrorMatrix(locCovarianceMatrix);
 
 	//Calculate PID ChiSq, NDF, FOM
+	locChargedTrackHypothesis->Set_TimeAtPOCAToVertex(locChargedTrackHypothesis->time());
 	dPIDAlgorithm->Calc_ChargedPIDFOM(locChargedTrackHypothesis, locEventRFBunch);
 
 	return locChargedTrackHypothesis;

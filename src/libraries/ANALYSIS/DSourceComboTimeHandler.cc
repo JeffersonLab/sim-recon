@@ -638,7 +638,7 @@ vector<int> DSourceComboTimeHandler::Get_RFBunches_ChargedTrack(const DChargedTr
 	auto locPOCAIterator = dChargedParticlePOCAToVertexX4.find(locPOCAPair);
 	if(locPOCAIterator != dChargedParticlePOCAToVertexX4.end())
 		locX4 = locPOCAIterator->second;
-	else //do this perhaps time intensive propagation
+	else //do the propagation
 	{
 		dAnalysisUtilities->Propagate_Track(locHypothesis->charge(), locVertex, locX4, locP4, nullptr);
 		dChargedParticlePOCAToVertexX4.emplace(locPOCAPair, locX4); //save results so we don't have to do it again

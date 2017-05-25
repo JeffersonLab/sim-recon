@@ -39,6 +39,7 @@ class DChargedTrackHypothesis : public DKinematicData
 		double t0_err(void) const{return dTimingInfo->dt0_err;}
 		DetectorSystem_t t0_detector(void) const{return dTimingInfo->dt0_detector;}
 		DetectorSystem_t t1_detector(void) const;
+		double Get_TimeAtPOCAToVertex(void) const{return dTimingInfo->dTimeAtPOCAToVertex;}
 		unsigned int Get_NDF_Timing(void) const{return dTimingInfo->dNDF_Timing;}
 		double Get_ChiSq_Timing(void) const{return dTimingInfo->dChiSq_Timing;}
 
@@ -57,6 +58,7 @@ class DChargedTrackHypothesis : public DKinematicData
 
 		//Timing
 		void Set_T0(double locT0, double locT0Error, DetectorSystem_t locT0Detector);
+		void Set_TimeAtPOCAToVertex(double locTimeAtPOCAToVertex){dTimingInfo->dTimeAtPOCAToVertex = locTimeAtPOCAToVertex;}
 		void Set_ChiSq_Timing(double locChiSq, unsigned int locNDF);
 		void Set_ChiSq_Overall(double locChiSq, unsigned int locNDF, double locFOM);
 
@@ -87,6 +89,7 @@ class DChargedTrackHypothesis : public DKinematicData
 		{
 			DTimingInfo(void);
 
+			//t0 is RF time at poca to vertex
 			double dt0;
 			double dt0_err;
 			DetectorSystem_t dt0_detector;
@@ -98,6 +101,17 @@ class DChargedTrackHypothesis : public DKinematicData
 			unsigned int dNDF; //total NDF used for PID determination
 			double dChiSq; //total chi-squared used for PID determination
 			double dFOM; //overall FOM for PID determination
+
+			//problem: how to store timing information accurately?
+
+			//at the comboing stage, we don't want to evaluate the timing at the track POCA to the beamline, because that can be inaccurate
+			//e.g. for very-low-theta tracks this position is not well defined
+			//instead, we want to evaluate it at the POCA to the reconstructed vertex position on a combo-by-combo basis
+
+			//however, to save memory, we want to share the kinematics (including time!) with the original (non-combo) hypothesis:
+				//both are valid points on the track, and we don't want to recompute the covariance matrix (TONS of memory needed), etc.
+			//So, that means we need to store the time at the poca to the vertex separately
+			double dTimeAtPOCAToVertex;
 		};
 
 		struct DTrackingInfo
@@ -172,7 +186,7 @@ inline DChargedTrackHypothesis& DChargedTrackHypothesis::operator=(const DCharge
 }
 
 inline DChargedTrackHypothesis::DTimingInfo::DTimingInfo(void) :
-dt0(0.0), dt0_err(0.0), dt0_detector(SYS_NULL), dNDF_Timing(0), dChiSq_Timing(0.0), dNDF(0), dChiSq(0.0), dFOM(0.0)
+dt0(0.0), dt0_err(0.0), dt0_detector(SYS_NULL), dNDF_Timing(0), dChiSq_Timing(0.0), dNDF(0), dChiSq(0.0), dFOM(0.0), dTimeAtPOCAToVertex(0.0)
 {}
 
 inline DChargedTrackHypothesis::DTrackingInfo::DTrackingInfo(void) :

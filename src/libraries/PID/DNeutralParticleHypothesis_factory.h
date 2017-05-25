@@ -20,7 +20,6 @@
 #include <PID/DNeutralShower.h>
 #include <PID/DEventRFBunch.h>
 #include <PID/DParticleID.h>
-#include <PID/DVertex.h>
 #include "ANALYSIS/DResourcePool.h"
 #include <DVector3.h>
 #include <DMatrix.h>
@@ -28,13 +27,10 @@
 class DNeutralParticleHypothesis_factory : public jana::JFactory<DNeutralParticleHypothesis>
 {
 	public:
-		DNeutralParticleHypothesis_factory(){};
-		~DNeutralParticleHypothesis_factory(){};
+		DNeutralParticleHypothesis* Create_DNeutralParticleHypothesis(JEventLoop *locEventLoop, const DNeutralShower* locNeutralShower, Particle_t locPID, const DEventRFBunch* locEventRFBunch, const DLorentzVector& dSpacetimeVertex, const TMatrixFSym* locVertexCovMatrix);
 
-		DNeutralParticleHypothesis* Create_DNeutralParticleHypothesis(JEventLoop *locEventLoop, const DNeutralShower* locNeutralShower, Particle_t locPID, const DEventRFBunch* locEventRFBunch, const DVertex* locVertex) const;
-
-		void Calc_ParticleCovariance_Photon(const DNeutralShower* locNeutralShower, const DVertex* locVertex, const DVector3& locMomentum, const DVector3& locPathVector, TMatrixFSym* locParticleCovariance) const;
-		void Calc_ParticleCovariance_Massive(const DNeutralShower* locNeutralShower, const DVertex* locVertex, double locMass, double locDeltaT, const DVector3& locMomentum, const DVector3& locPathVector, TMatrixFSym* locParticleCovariance) const;
+		void Calc_ParticleCovariance_Photon(const DNeutralShower* locNeutralShower, const TMatrixFSym* locVertexCovMatrix, const DVector3& locMomentum, const DVector3& locPathVector, TMatrixFSym* locParticleCovariance) const;
+		void Calc_ParticleCovariance_Massive(const DNeutralShower* locNeutralShower, const TMatrixFSym* locVertexCovMatrix, double locMass, double locDeltaT, const DVector3& locMomentum, const DVector3& locPathVector, TMatrixFSym* locParticleCovariance) const;
 
 		void Recycle_Hypotheses(vector<DNeutralParticleHypothesis*>& locHypos){dResourcePool_NeutralParticleHypothesis.Recycle(locHypos);}
 		void Recycle_Hypotheses(vector<const DNeutralParticleHypothesis*>& locHypos){dResourcePool_NeutralParticleHypothesis.Recycle(locHypos);}
@@ -42,7 +38,7 @@ class DNeutralParticleHypothesis_factory : public jana::JFactory<DNeutralParticl
 
 	private:
 		double dTargetCenterZ;
-		const DParticleID* dParticleID;
+		const DParticleID* dParticleID = nullptr;
 
 		//RESOURCE POOL
 		DResourcePool<DNeutralParticleHypothesis> dResourcePool_NeutralParticleHypothesis;
