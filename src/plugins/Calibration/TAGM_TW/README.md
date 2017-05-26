@@ -9,6 +9,10 @@ To fully align the TAGM with the rest of the detectors, use HLDetectorTiming.
 CCDB version 1.06 or greater is needed for timing.py to work.
 
 ## Running TAGM_TW
+When running `hd_root` with the **TAGM_TW** plugin, make sure to include 
+the option `-PTAGMHit:DELTA_T_ADC_TDC_MAX=200` in order to pick up any 
+large offsets.
+
 Follow these steps after running `hd_root` with the **TAGM_TW** plugin. 
 Be aware that the CCDB table /PHOTON_BEAM/microscope/integral_cuts can 
 interfere with the pulse height distributions. To set these values to 0 
@@ -26,8 +30,10 @@ which will avoid the timewalk from absorbing large offsets.
 
 1. `python timing.py -b <rootfile> <run number> rf <CCDB variation>`
 2. `This produces the file adc_offsets-######.txt and tdc_offsets-######.txt`
+3. `./push-to-ccdb.sh <run number> <variation> adc tdc`
+or
 3. `ccdb add PHOTON_BEAM/microscope/fadc_time_offsets -v <variation> -r #-# adc_offsets-######.txt`
-3. `ccdb add PHOTON_BEAM/microscope/tdc_time_offsets -v <variation> -r #-# tdc_offsets-######.txt`
+4. `ccdb add PHOTON_BEAM/microscope/tdc_time_offsets -v <variation> -r #-# tdc_offsets-######.txt`
 
 ## Timewalk corrections
 The timewalk corrections are to be performed after the initial ADC-RF and raw TDC-ADC calibrations have been performed.
@@ -41,6 +47,8 @@ allows for large timewalks to be included in the fit.
 1. `python tw.py -b <rootfile> <run number>`
 2. `This creates the files results.root and tw-corr.txt`
 3. `root -l -b 'display.C("results.root")' to check the fits`
+4. `./push-to-ccdb.sh <run number> <variation> tw`
+or
 4. `ccdb add /PHOTON_BEAM/microscope/tdc_timewalk_corrections -v <variation> -r #-# tw-corr.txt`
 
 ## Corrected TDC-RF calibration
@@ -53,6 +61,8 @@ both.
 
 1. `python timing.py -b <rootfile> <run number> self <CCDB variation>`
 2. `This overwrites the previous tdc_offsets-#####.txt file`
+3. `./push-to-ccdb.sh <run number> <variation> tdc`
+or
 3. `ccdb add PHOTON_BEAM/microscope/tdc_time_offsets -v <variation> -r #-# tdc_offsets-######.txt`
 
 ## Calibration validation

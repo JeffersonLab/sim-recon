@@ -29,7 +29,6 @@ def main():
 	outfile.cd()
 
 	# If the histogram is empty use the summed output hist instead
-	indCol = [9,27,81,99]
 	base = "TAGM_TW/tdc-rf/h_dt_vs_pp_tdc_"
 	for i in range(1,103):
 		# Summed outputs
@@ -38,25 +37,11 @@ def main():
 		p = tw_corr(h,0,i,newV)
 		p.Write()
 
-		# Individual fiber readouts
-		if i in indCol:
-			for j in range(5):
-				h = rootfile.Get(base+"ind_"+str(j+1)+"_"+str(indCol.index(i)+1))
-				h.Write()
-				if not (h.GetEntries() > 300):
-					h = rootfile.Get(base + str(i)).Clone()
-					h.SetName(base+"ind_"+str(j+1)+"_"+str(indCol.index(i)+1))
-				p = tw_corr(h,j+1,i,newV)
-                                p.Write()
-			
-	# Include defaults for columns 101 and 102
-	#file1 = open('tw-corr.txt','a')
-	#for i in range(2):
-	#	file1.write('0   ' + str(101 + i) + '   ' + '1   ' + '-1   ' +
-        #            	    '0   ' + '8   ' + '0\n')
 	outfile.Close()
 
 def tw_corr(h,row,col,newV):
+	# Create list of columns with individual readout
+	indCol = [9,27,81,99]
 	# Open files for writing constants
 	if (row == 0 and col == 1):
 		file1 = open('tw-corr.txt','w')
@@ -85,6 +70,7 @@ def tw_corr(h,row,col,newV):
 		f1.SetParName(2,"c2")
 		f1.SetParName(3,"c3")
 
+		h.RebinX(16)
 		p = h.ProfileX()
 		fitResult = p.Fit("f1","sRWq")
 
@@ -103,6 +89,10 @@ def tw_corr(h,row,col,newV):
 	# Write constants to file
 	file1.write(str(row) + '   ' + str(col) + '   ' + str(c0) + '   ' + str(c1) + '   ' +
                     str(c2) + '   ' + str(c3) + '   ' + str(dtmean) + '\n')
+	if col in indCol:
+		for j in range(1,6):
+			file1.write(str(j) + '   ' + str(col) + '   ' + str(c0) + '   ' + str(c1) + '   ' +
+        		            str(c2) + '   ' + str(c3) + '   ' + str(dtmean) + '\n')
 	file1.close()
 
 	return p
