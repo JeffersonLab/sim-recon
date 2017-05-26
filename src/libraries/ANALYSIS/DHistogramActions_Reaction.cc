@@ -297,9 +297,6 @@ void DHistogramAction_PID::Initialize(JEventLoop* locEventLoop)
 
 bool DHistogramAction_PID::Perform_Action(JEventLoop* locEventLoop, const DParticleCombo* locParticleCombo)
 {
-	if(Get_NumPreviousParticleCombos() == 0)
-		dPreviouslyHistogrammedParticles.clear();
-
 	vector<const DMCThrownMatching*> locMCThrownMatchingVector;
 	locEventLoop->Get(locMCThrownMatchingVector);
 	const DMCThrownMatching* locMCThrownMatching = locMCThrownMatchingVector.empty() ? NULL : locMCThrownMatchingVector[0];
@@ -1007,12 +1004,6 @@ bool DHistogramAction_ParticleComboKinematics::Perform_Action(JEventLoop* locEve
 		return true; //no fit performed, but kinfit data requested!!
 	}
 
-	if(Get_NumPreviousParticleCombos() == 0)
-	{
-		dPreviouslyHistogrammedParticles.clear();
-		dPreviouslyHistogrammedBeamParticles.clear();
-	}
-
 	const DEventRFBunch* locEventRFBunch = locParticleCombo->Get_EventRFBunch();
 
 	const DKinematicData* locKinematicData;
@@ -1199,9 +1190,6 @@ void DHistogramAction_InvariantMass::Initialize(JEventLoop* locEventLoop)
 
 bool DHistogramAction_InvariantMass::Perform_Action(JEventLoop* locEventLoop, const DParticleCombo* locParticleCombo)
 {
-	if(Get_NumPreviousParticleCombos() == 0)
-		dPreviousSourceObjects.clear();
-
 	vector<double> locMassesToFill;
 	for(size_t loc_i = 0; loc_i < locParticleCombo->Get_NumParticleComboSteps(); ++loc_i)
 	{
@@ -1285,9 +1273,6 @@ void DHistogramAction_MissingMass::Initialize(JEventLoop* locEventLoop)
 
 bool DHistogramAction_MissingMass::Perform_Action(JEventLoop* locEventLoop, const DParticleCombo* locParticleCombo)
 {
-	if(Get_NumPreviousParticleCombos() == 0)
-		dPreviousSourceObjects.clear();
-
 	double locBeamEnergy = locParticleCombo->Get_ParticleComboStep(0)->Get_InitialParticle()->energy();
 
 	//build all possible combinations of the included pids
@@ -1366,9 +1351,6 @@ void DHistogramAction_MissingMassSquared::Initialize(JEventLoop* locEventLoop)
 
 bool DHistogramAction_MissingMassSquared::Perform_Action(JEventLoop* locEventLoop, const DParticleCombo* locParticleCombo)
 {
-	if(Get_NumPreviousParticleCombos() == 0)
-		dPreviousSourceObjects.clear();
-
 	double locBeamEnergy = locParticleCombo->Get_ParticleComboStep(0)->Get_InitialParticle()->energy();
 
 	//build all possible combinations of the included pids
@@ -1439,9 +1421,6 @@ void DHistogramAction_2DInvariantMass::Initialize(JEventLoop* locEventLoop)
 
 bool DHistogramAction_2DInvariantMass::Perform_Action(JEventLoop* locEventLoop, const DParticleCombo* locParticleCombo)
 {
-	if(Get_NumPreviousParticleCombos() == 0)
-		dPreviousSourceObjects.clear();
-
 	vector<pair<double, double> > locMassesToFill;
 	for(size_t loc_i = 0; loc_i < locParticleCombo->Get_NumParticleComboSteps(); ++loc_i)
 	  {
@@ -1527,9 +1506,6 @@ void DHistogramAction_Dalitz::Initialize(JEventLoop* locEventLoop)
 
 bool DHistogramAction_Dalitz::Perform_Action(JEventLoop* locEventLoop, const DParticleCombo* locParticleCombo)
 {
-	if(Get_NumPreviousParticleCombos() == 0)
-		dPreviousSourceObjects.clear();
-
 	vector<pair<double, double> > locMassesToFill;
 	for(size_t loc_i = 0; loc_i < locParticleCombo->Get_NumParticleComboSteps(); ++loc_i)
 	{
@@ -1584,17 +1560,28 @@ bool DHistogramAction_Dalitz::Perform_Action(JEventLoop* locEventLoop, const DPa
 
 void DHistogramAction_KinFitResults::Initialize(JEventLoop* locEventLoop)
 {
-	DKinFitType locKinFitType = Get_Reaction()->Get_KinFitType();
+	auto locReaction = Get_Reaction();
+	DKinFitType locKinFitType = locReaction->Get_KinFitType();
 	if(locKinFitType == d_NoFit)
 		return;
 
 	locEventLoop->GetSingle(dAnalysisUtilities);
-	dKinFitUtils = new DKinFitUtils_GlueX(locEventLoop);
 
-	set<pair<int, int> > locVertexParticles = dKinFitUtils->Get_KinFitVertexParticles(Get_Reaction());
+	//Get the DReactionVertexInfo for this reaction
+	vector<const DReactionVertexInfo*> locReactionVertexInfos;
+	locEventLoop->Get(locReactionVertexInfos);
+	const DReactionVertexInfo* locReactionVertexInfo = nullptr
+	for(auto& locVertexInfo : locReactionVertexInfos)
+	{
+		auto locReactions = locVertexInfo->Get_Reactions();
+		if(locReactions.find() == locReactions.end())
+			continue;
+		locReactionVertexInfo = locVertexInfo;
+		break;
+	}
 
 	size_t locNumConstraints = 0, locNumUnknowns = 0;
-	string locConstraintString = dKinFitUtils->Get_ConstraintInfo(Get_Reaction(), locKinFitType, locNumConstraints, locNumUnknowns);
+	string locConstraintString = dKinFitUtils->Get_ConstraintInfo(locReactionVertexInfo, Get_Reaction(), locNumConstraints, locNumUnknowns);
 
 	size_t locNDF = locNumConstraints - locNumUnknowns;
 	bool locIncludeBeamlineInVertexFitFlag = dKinFitUtils->Get_IncludeBeamlineInVertexFitFlag();
@@ -1620,13 +1607,12 @@ void DHistogramAction_KinFitResults::Initialize(JEventLoop* locEventLoop)
 
 		//beam (pulls & conlev)
 		Particle_t locInitialPID = Get_Reaction()->Get_ReactionStep(0)->Get_InitialParticleID();
-		bool locBeamFlag = (locInitialPID == Gamma);
+		bool locBeamFlag = Get_IsFirstStepBeam(Get_Reaction());
 		if(locBeamFlag)
 		{
-			pair<int, int> locParticlePair(0, -2);
-			bool locIsInVertexFitFlag = (locVertexParticles.find(locParticlePair) != locVertexParticles.end());
-			if(!locIncludeBeamlineInVertexFitFlag)
-				locIsInVertexFitFlag = false;
+			auto locStepVertexInfo = locReactionVertexInfo->Get_StepVertexInfo(0);
+			auto locFullConstrainParticles = locStepVertexInfo->Get_FullConstrainParticles(d_InitialState, d_AllCharges, false);
+			bool locIsInVertexFitFlag = locIncludeBeamlineInVertexFitFlag && !locFullConstrainParticles.empty();
 			bool locIsChargedFlag = (ParticleCharge(locInitialPID) != 0);
 
 			if(locP4IsFit || locIsInVertexFitFlag)
@@ -1659,6 +1645,8 @@ void DHistogramAction_KinFitResults::Initialize(JEventLoop* locEventLoop)
 		for(size_t loc_i = 0; loc_i < Get_Reaction()->Get_NumReactionSteps(); ++loc_i)
 		{
 			const DReactionStep* locReactionStep = Get_Reaction()->Get_ReactionStep(loc_i);
+			auto locStepVertexInfo = locReactionVertexInfo->Get_StepVertexInfo(loc_i);
+			auto locFullConstrainParticles = locStepVertexInfo->Get_FullConstrainParticles(d_FinalState, d_AllCharges, false);
 			ostringstream locStepName;
 			locStepName << "Step" << loc_i << "__" << locReactionStep->Get_StepName();
 			string locStepROOTName = locReactionStep->Get_StepROOTName();
@@ -1680,7 +1668,7 @@ void DHistogramAction_KinFitResults::Initialize(JEventLoop* locEventLoop)
 					continue; //histograms already created for this pid
 
 				pair<int, int> locParticlePair(loc_i, loc_j);
-				bool locIsInVertexFitFlag = (locVertexParticles.find(locParticlePair) != locVertexParticles.end());
+				bool locIsInVertexFitFlag = std::binary_search(locFullConstrainParticles.begin(), locFullConstrainParticles.end(), locParticlePair);
 
 				bool locIsNeutralShowerFlag = (locIsInVertexFitFlag && (ParticleCharge(locPID) == 0));
 				if(!locP4IsFit && !locIsInVertexFitFlag)
@@ -1732,7 +1720,7 @@ void DHistogramAction_KinFitResults::Initialize(JEventLoop* locEventLoop)
 					continue; //histograms already created for this pid
 
 				pair<int, int> locParticlePair(loc_i, loc_j);
-				bool locIsInVertexFitFlag = (locVertexParticles.find(locParticlePair) != locVertexParticles.end());
+				bool locIsInVertexFitFlag = std::binary_search(locFullConstrainParticles.begin(), locFullConstrainParticles.end(), locParticlePair);
 				bool locIsChargedFlag = (ParticleCharge(locPID) != 0);
 
 				bool locIsNeutralShowerFlag = (locIsInVertexFitFlag && (ParticleCharge(locPID) == 0));
@@ -1989,9 +1977,6 @@ void DHistogramAction_MissingTransverseMomentum::Initialize(JEventLoop* locEvent
 
 bool DHistogramAction_MissingTransverseMomentum::Perform_Action(JEventLoop* locEventLoop, const DParticleCombo* locParticleCombo)
 {
-	if(Get_NumPreviousParticleCombos() == 0)
-		dPreviousSourceObjects.clear();
-
 	set<pair<const JObject*, unsigned int> > locSourceObjects;
 	DLorentzVector locFinalStateP4 = dAnalysisUtilities->Calc_FinalStateP4(locParticleCombo, 0, locSourceObjects, Get_UseKinFitResultsFlag()); // Use step '0'
 

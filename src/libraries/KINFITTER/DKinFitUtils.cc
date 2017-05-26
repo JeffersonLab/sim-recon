@@ -398,12 +398,6 @@ DKinFitParticle* DKinFitUtils::Make_DecayingParticle(int locPID, int locCharge, 
 
 /************************************************************* SETUP VERTEX CONSTRAINTS ************************************************************/
 
-deque<DKinFitConstraint_Vertex*> DKinFitUtils::Create_VertexConstraints(const DKinFitChain* locKinFitChain, bool locSpacetimeFitFlag)
-{
-	deque<set<DKinFitParticle*> > locAllVertices = Setup_VertexConstraints(locKinFitChain);
-	return Create_VertexConstraints(locAllVertices, locSpacetimeFitFlag);
-}
-
 deque<set<DKinFitParticle*> > DKinFitUtils::Setup_VertexConstraints(const DKinFitChain* locKinFitChain)
 {
 	//This function organizes the particles into different vertices
@@ -457,99 +451,6 @@ void DKinFitUtils::Setup_VertexConstraint(const DKinFitChain* locKinFitChain, si
 			Setup_VertexConstraint(locKinFitChain, locDecayStepIndex, locVertexParticles, locIncludedStepIndices);
 		}
 	}
-}
-
-deque<DKinFitConstraint_Vertex*> DKinFitUtils::Create_VertexConstraints(const deque<set<DKinFitParticle*> >& locAllVertices, bool locSpacetimeFitFlag)
-{
-	if(dDebugLevel > 10)
-		cout << "DKinFitUtils: Create vertex constraints." << endl;
-
-	//resolve links between vertex & time fits (decaying particles), create constraints, sort them, and return them
-		//sort: the order in which they are defined (as required by the decaying particles they're using)
-	deque<DKinFitConstraint_Vertex*> locSortedConstraints;
-
-	//initialize particle groupings
-	deque<set<DKinFitParticle*> > locAllFullConstrainParticles, locAllDecayingParticles, locAllOnlyConstrainTimeParticles, locAllNoConstrainParticles;
-	for(size_t loc_i = 0; loc_i < locAllVertices.size(); ++loc_i)
-	{
-		set<DKinFitParticle*> locFullConstrainParticles, locDecayingParticles, locOnlyConstrainTimeParticles, locNoConstrainParticles;
-		Group_VertexParticles(locAllVertices[loc_i], locFullConstrainParticles, locDecayingParticles, locOnlyConstrainTimeParticles, locNoConstrainParticles);
-		locAllFullConstrainParticles.push_back(locFullConstrainParticles);
-		locAllDecayingParticles.push_back(locDecayingParticles);
-		locAllOnlyConstrainTimeParticles.push_back(locOnlyConstrainTimeParticles);
-		locAllNoConstrainParticles.push_back(locNoConstrainParticles);
-	}
-
-	//loop over vertex-constraints-to-sort:
-		//find which constraints decaying particles should be defined-by/constrained-to
-		//find order in which constraints need to be constrained
-	size_t locConstraintIndex = 0;
-	bool locProgessMadeFlag = false;
-	set<DKinFitParticle*> locDefinedDecayingParticles;
-	while(!locAllFullConstrainParticles.empty()) //loop through vertices
-	{
-		if(locConstraintIndex == locAllFullConstrainParticles.size())
-		{
-			//made a full loop through
-			if(!locProgessMadeFlag)
-				break; //no progress made: cannot constrain remaining vertices
-			//reset for next pass through
-			locConstraintIndex = 0;
-			locProgessMadeFlag = false;
-			continue;
-		}
-
-		//find which decaying particles at this vertex have been previously defined
-		set<DKinFitParticle*> locVertexDecayingParticles_Defined;
-		if(dLinkVerticesFlag)
-			set_intersection(locAllDecayingParticles[locConstraintIndex].begin(), locAllDecayingParticles[locConstraintIndex].end(),
-				locDefinedDecayingParticles.begin(), locDefinedDecayingParticles.end(),
-				inserter(locVertexDecayingParticles_Defined, locVertexDecayingParticles_Defined.begin()));
-
-		//see if enough defined particles to constrain vertex
-		if(locVertexDecayingParticles_Defined.size() + locAllFullConstrainParticles[locConstraintIndex].size() < 2)
-		{
-			++locConstraintIndex;
-			continue; //nope
-		}
-		//we have enough: can do fit
-
-		//find which decaying particles at this vertex have NOT been previously defined
-		set<DKinFitParticle*> locVertexDecayingParticles_NotDefined;
-		set_difference(locAllDecayingParticles[locConstraintIndex].begin(), locAllDecayingParticles[locConstraintIndex].end(),
-			locDefinedDecayingParticles.begin(), locDefinedDecayingParticles.end(),
-			inserter(locVertexDecayingParticles_NotDefined, locVertexDecayingParticles_NotDefined.end()));
-
-		//Add decaying particles to appropriate sets
-		locAllFullConstrainParticles[locConstraintIndex].insert(locVertexDecayingParticles_Defined.begin(), locVertexDecayingParticles_Defined.end());
-		locAllNoConstrainParticles[locConstraintIndex].insert(locVertexDecayingParticles_NotDefined.begin(), locVertexDecayingParticles_NotDefined.end());
-
-		//Create vertex/spacetime constraint, with decaying particles as no-constrain particles
-		if(locSpacetimeFitFlag)
-			locSortedConstraints.push_back(Make_SpacetimeConstraint(locAllFullConstrainParticles[locConstraintIndex], locAllOnlyConstrainTimeParticles[locConstraintIndex], locAllNoConstrainParticles[locConstraintIndex]));
-		else //vertex only
-		{
-			locAllNoConstrainParticles[locConstraintIndex].insert(locAllOnlyConstrainTimeParticles[locConstraintIndex].begin(), locAllOnlyConstrainTimeParticles[locConstraintIndex].end());
-			locSortedConstraints.push_back(Make_VertexConstraint(locAllFullConstrainParticles[locConstraintIndex], locAllNoConstrainParticles[locConstraintIndex]));
-		}
-
-		//The positions of these decaying particles are now defined: Can use to constrain vertices in later constraints
-		if(dLinkVerticesFlag)
-			locDefinedDecayingParticles.insert(locVertexDecayingParticles_NotDefined.begin(), locVertexDecayingParticles_NotDefined.end());
-
-		//Erase this vertex from future consideration
-		locAllFullConstrainParticles.erase(locAllFullConstrainParticles.begin() + locConstraintIndex);
-		locAllDecayingParticles.erase(locAllDecayingParticles.begin() + locConstraintIndex);
-		locAllOnlyConstrainTimeParticles.erase(locAllOnlyConstrainTimeParticles.begin() + locConstraintIndex);
-		locAllNoConstrainParticles.erase(locAllNoConstrainParticles.begin() + locConstraintIndex);
-
-		locProgessMadeFlag = true;
-	}
-
-	if(dDebugLevel > 10)
-		cout << "DKinFitUtils: Vertex constraints created." << endl;
-
-	return locSortedConstraints;
 }
 
 void DKinFitUtils::Group_VertexParticles(const set<DKinFitParticle*>& locVertexParticles, set<DKinFitParticle*>& locFullConstrainParticles, set<DKinFitParticle*>& locDecayingParticles, set<DKinFitParticle*>& locOnlyConstrainTimeParticles, set<DKinFitParticle*>& locNoConstrainParticles) const

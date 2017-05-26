@@ -581,7 +581,7 @@ void DKinFitUtils_GlueX::Make_KinFitChainStep(const DParticleCombo* locParticleC
 
 /**************************************************************** MAKE CONSTRAINTS *****************************************************************/
 
-set<DKinFitConstraint*> DKinFitUtils_GlueX::Create_Constraints(const DParticleCombo* locParticleCombo, const DKinFitChain* locKinFitChain, DKinFitType locKinFitType, deque<DKinFitConstraint_Vertex*>& locSortedVertexConstraints)
+set<DKinFitConstraint*> DKinFitUtils_GlueX::Create_Constraints(const DReactionVertexInfo* locReactionVertexInfo, const DParticleCombo* locParticleCombo, const DKinFitChain* locKinFitChain, DKinFitType locKinFitType, deque<DKinFitConstraint_Vertex*>& locSortedVertexConstraints)
 {
 	if(dDebugLevel > 10)
 		cout << "DKinFitUtils_GlueX: Create constraints." << endl;
@@ -699,10 +699,19 @@ set<DKinFitConstraint*> DKinFitUtils_GlueX::Create_Constraints(const DParticleCo
 
 	//Create Vertex Constraints
 	//VERTEX OR SPACETIME: Group particles by detached vertex (one deque for each constraint/vertex)
+	locSortedVertexConstraints.clear();
 	if((locKinFitType == d_VertexFit) || (locKinFitType == d_SpacetimeFit) || (locKinFitType == d_P4AndVertexFit) || (locKinFitType == d_P4AndSpacetimeFit))
 	{
 		bool locSpacetimeFitFlag = ((locKinFitType == d_SpacetimeFit) || (locKinFitType == d_P4AndSpacetimeFit));
-		locSortedVertexConstraints = Create_VertexConstraints(locKinFitChain, locSpacetimeFitFlag);
+		for(locStepVertexInfo : locReactionVertexInfo->Get_StepVertexInfos())
+		{
+			auto locDX4 = locParticleCombo->Get_ParticleComboStep(locStepVertexInfo->Get_StepIndices().front())->Get_SpacetimeVertex();
+			TLorentzVector locX4(locDX4.X(), locDX4.Y(), locDX4.Z(), locDX4.T());
+			if(locSpacetimeFitFlag)
+				locSortedVertexConstraints.push_back(Make_SpacetimeConstraint(locStepVertexInfo->Get_FullConstrainParticles(), locStepVertexInfo->Get_OnlyConstrainTimeParticles(), locStepVertexInfo->Get_NoConstrainParticles(), locX4));
+			else
+				locSortedVertexConstraints.push_back(Make_VertexConstraint(locStepVertexInfo->Get_FullConstrainParticles(), locStepVertexInfo->Get_NoConstrainParticles(), locX4.Vect()));
+		}
 	}
 	locAllConstraints.insert(locSortedVertexConstraints.begin(), locSortedVertexConstraints.end());
 
@@ -710,249 +719,6 @@ set<DKinFitConstraint*> DKinFitUtils_GlueX::Create_Constraints(const DParticleCo
 		cout << "DKinFitUtils_GlueX: All Constraints Created." << endl;
 
 	return locAllConstraints;
-}
-
-/********************************************************* MAKE INITIAL SPACETIME GUESSES **********************************************************/
-
-void DKinFitUtils_GlueX::Set_SpacetimeGuesses(const deque<DKinFitConstraint_Vertex*>& locSortedVertexConstraints, bool locIsP4FitFlag)
-{
-	//need to compute the error matrices to make accurate vertex guesses using decaying particles
-		//one vertex fit at a time: in between, the reconstructed decaying particles are turned into "detected" particles for the next fit
-	Set_UpdateCovarianceMatricesFlag(true);
-
-	//loop through vertices, determining initial guesses
-	map<DKinFitParticle*, DKinFitParticle*> locDecayingToDetectedParticleMap; //input decaying particle -> new detected particle
-	for(size_t loc_i = 0; loc_i < locSortedVertexConstraints.size(); ++loc_i)
-	{
-		//get constraint
-		DKinFitConstraint_Vertex* locOrigVertexConstraint = locSortedVertexConstraints[loc_i];
-		DKinFitConstraint_Spacetime* locOrigSpacetimeConstraint = dynamic_cast<DKinFitConstraint_Spacetime*>(locOrigVertexConstraint);
-
-		DKinFitConstraint_Vertex* locActiveVertexConstraint = locOrigVertexConstraint;
-		DKinFitConstraint_Spacetime* locActiveSpacetimeConstraint = locOrigSpacetimeConstraint;
-
-		/**************************************************** SUBSTITUTE FOR DECAYING PARTICLES ******************************************************/
-
-		//If a decaying particle was previously reconstructed, substitute for it so can do a stand-alone vertex fit
-		bool locAttemptFitFlag = true; //if set to false in Build_NewConstraint(), will not attempt fit (a previous fit failed)
-		set<DKinFitParticle*> locFullConstrainSet = locOrigVertexConstraint->Get_FullConstrainParticles();
-		size_t locNumDecayingConstrainParticles = 0;
-		set<DKinFitParticle*>::iterator locParticleIterator = locFullConstrainSet.begin();
-		for(; locParticleIterator != locFullConstrainSet.end(); ++locParticleIterator)
-		{
-			if((*locParticleIterator)->Get_KinFitParticleType() == d_DecayingParticle)
-				++locNumDecayingConstrainParticles;
-		}
-		if(locNumDecayingConstrainParticles > 0)
-		{
-			//true: skip bad decaying particles (those whose reconstruction-fits failed) if at all possible
-				//if cannot skip, will set locAttemptFitFlag to false
-			locActiveVertexConstraint = Build_NewConstraint(locOrigVertexConstraint, locDecayingToDetectedParticleMap, locAttemptFitFlag, true);
-			locActiveSpacetimeConstraint = dynamic_cast<DKinFitConstraint_Spacetime*>(locActiveVertexConstraint);
-		}
-
-		/*********************************************************** INITIAL VERTEX GUESS ************************************************************/
-
-		//do crude vertex guess: point on DOCA-line between the two closest (by doca) particles
-
-		//get particles
-		locFullConstrainSet = locActiveVertexConstraint->Get_FullConstrainParticles();
-		deque<DKinFitParticle*> locFullConstrainDeque;
-		std::copy(locFullConstrainSet.begin(), locFullConstrainSet.end(), std::back_inserter(locFullConstrainDeque));
-
-		//get guess
-		DVector3 locDVertexGuess = dAnalysisUtilities->Calc_CrudeVertex(locFullConstrainDeque);
-		TVector3 locVertexGuess(locDVertexGuess.X(), locDVertexGuess.Y(), locDVertexGuess.Z());
-		if(dDebugLevel > 20)
-			cout << "init vertex guess = " << locVertexGuess.X() << ", " << locVertexGuess.Y() << ", " << locVertexGuess.Z() << endl;
-
-		//set guess
-		locOrigVertexConstraint->Set_InitVertexGuess(locVertexGuess);
-		locActiveVertexConstraint->Set_InitVertexGuess(locVertexGuess);
-
-		/************************************************************ INITIAL TIME GUESS *************************************************************/
-
-		double locTimeGuess = 0.0;
-		if(locActiveSpacetimeConstraint != NULL)
-		{
-			locTimeGuess = Calc_TimeGuess(locActiveSpacetimeConstraint, locDVertexGuess);
-			locOrigSpacetimeConstraint->Set_InitTimeGuess(locTimeGuess);
-			locActiveSpacetimeConstraint->Set_InitTimeGuess(locTimeGuess);
-		}
-
-		/************************************************************** VERTEX/TIME FIT **************************************************************/
-
-		if((locSortedVertexConstraints.size() == 1) && !locIsP4FitFlag)
-			return; //only one constraint: don't do primary fit here
-
-		//Check if should attempt fit
-		if(!locAttemptFitFlag)
-		{
-			//No: The results from a needed previous fit failed. Create new decaying particles and move on.
-			TLorentzVector locSpacetimeVertex(locVertexGuess, locTimeGuess);
-			Construct_DetectedDecayingParticle_NoFit(locOrigVertexConstraint, locDecayingToDetectedParticleMap, locSpacetimeVertex);
-			continue;
-		}
-
-		//Fit & Update vertex guess
-		dKinFitter->Reset_NewFit();
-		dKinFitter->Add_Constraint(locActiveVertexConstraint);
-		bool locFitStatus = dKinFitter->Fit_Reaction();
-
-		/************************************************************ UPDATE WITH RESULTS ************************************************************/
-
-		if(locFitStatus) //True if fit succeeded
-		{
-			//Update vertex guess
-			DKinFitConstraint_Vertex* locNewVertexConstraint = dynamic_cast<DKinFitConstraint_Vertex*>(*dKinFitter->Get_KinFitConstraints().begin());
-			locOrigVertexConstraint->Set_InitVertexGuess(locNewVertexConstraint->Get_CommonVertex());
-
-			//Update time guess (if time fit)
-			if(locOrigSpacetimeConstraint != NULL)
-			{
-				DKinFitConstraint_Spacetime* locNewSpacetimeConstraint = dynamic_cast<DKinFitConstraint_Spacetime*>(locNewVertexConstraint);
-				locOrigSpacetimeConstraint->Set_InitTimeGuess(locNewSpacetimeConstraint->Get_CommonTime());
-			}
-
-			//create detected particles out of reconstructed, detached decaying no-constrain particles in this constraint
-			set<DKinFitParticle*> locNoConstrainParticles = locNewVertexConstraint->Get_NoConstrainParticles();
-			set<DKinFitParticle*>::iterator locResultIterator = locNoConstrainParticles.begin();
-			for(; locResultIterator != locNoConstrainParticles.end(); ++locResultIterator)
-			{
-				if((*locResultIterator)->Get_KinFitParticleType() != d_DecayingParticle)
-					continue;
-
-				Particle_t locPID = PDGtoPType((*locResultIterator)->Get_PID());
-				if(!IsDetachedVertex(locPID))
-					continue; //won't be used as a constraining particle in a vertex constraint
-
-				DKinFitParticle* locInputKinFitParticle = Get_InputKinFitParticle(*locResultIterator);
-				locDecayingToDetectedParticleMap[locInputKinFitParticle] = Make_DetectedParticle(*locResultIterator);
-			}
-		}
-		else //fit failed, but still need to reconstruct decaying particles for next vertex-find step
-		{
-			TLorentzVector locSpacetimeVertex(locVertexGuess, locTimeGuess);
-			Construct_DetectedDecayingParticle_NoFit(locOrigVertexConstraint, locDecayingToDetectedParticleMap, locSpacetimeVertex);
-		}
-
-		//RESET MEMORY FROM LAST KINFIT!!
-		dKinFitter->Recycle_LastFitMemory(); //results no longer needed
-	}
-
-	//RECYCLE CREATED DETECTED DECAYING PARTICLES
-	Recycle_DetectedDecayingParticles(locDecayingToDetectedParticleMap);
-}
-
-void DKinFitUtils_GlueX::Construct_DetectedDecayingParticle_NoFit(DKinFitConstraint_Vertex* locOrigVertexConstraint, map<DKinFitParticle*, DKinFitParticle*>& locDecayingToDetectedParticleMap, TLorentzVector locSpacetimeVertexGuess)
-{
-	//get "decaying" no-constrain decaying particles
-	set<DKinFitParticle*> locNoConstrainParticles = locOrigVertexConstraint->Get_NoConstrainParticles();
-	set<DKinFitParticle*>::iterator locNoConstrainIterator = locNoConstrainParticles.begin();
-	for(; locNoConstrainIterator != locNoConstrainParticles.end(); ++locNoConstrainIterator)
-	{
-		DKinFitParticle* locInputKinFitParticle = *locNoConstrainIterator;
-		if(locInputKinFitParticle->Get_KinFitParticleType() != d_DecayingParticle)
-			continue; //not a decaying particle
-
-		//create a new one
-		TLorentzVector locP4 = Calc_DecayingP4_ByP3Derived(locInputKinFitParticle, true, true);
-		TMatrixFSym* locCovarianceMatrix = Get_SymMatrixResource(7);
-		(*locCovarianceMatrix)(0, 0) = -1.0; //signal that you shouldn't do fits that need this particle
-		DKinFitParticle* locDetectedKinFitParticle = Make_DetectedParticle(locInputKinFitParticle->Get_PID(), 
-			locInputKinFitParticle->Get_Charge(), locInputKinFitParticle->Get_Mass(), locSpacetimeVertexGuess, locP4.Vect(), locCovarianceMatrix);
-
-		//register it
-		locDecayingToDetectedParticleMap[locInputKinFitParticle] = locDetectedKinFitParticle;
-	}
-}
-
-DKinFitConstraint_Vertex* DKinFitUtils_GlueX::Build_NewConstraint(DKinFitConstraint_Vertex* locOrigVertexConstraint, const map<DKinFitParticle*, DKinFitParticle*>& locDecayingToDetectedParticleMap, bool& locAttemptFitFlag, bool locSkipBadDecayingFlag)
-{
-	if(dDebugLevel > 10)
-		cout << "DKinFitUtils_GlueX::Build_NewConstraint()" << endl;
-	set<DKinFitParticle*> locNewDetectedParticles, locUsedDecayingParticles;
-
-	//get "detected" versions of reconstructed decaying particles
-	set<DKinFitParticle*> locFullConstrainParticles = locOrigVertexConstraint->Get_FullConstrainParticles();
-	set<DKinFitParticle*>::iterator locFullConstrainIterator = locFullConstrainParticles.begin();
-	set<DKinFitParticle*> locNewFullConstrainParticles;
-	for(; locFullConstrainIterator != locFullConstrainParticles.end(); ++locFullConstrainIterator)
-	{
-		DKinFitParticle* locInputKinFitParticle = *locFullConstrainIterator;
-		if(locInputKinFitParticle->Get_KinFitParticleType() != d_DecayingParticle)
-		{
-			locNewFullConstrainParticles.insert(locInputKinFitParticle);
-			continue; //not a decaying particle
-		}
-
-		map<DKinFitParticle*, DKinFitParticle*>::const_iterator locDecayIterator = locDecayingToDetectedParticleMap.find(locInputKinFitParticle);
-		if(locDecayIterator == locDecayingToDetectedParticleMap.end())
-		{
-			if(!locSkipBadDecayingFlag)
-				locAttemptFitFlag = false; //cannot fit. however, still get initial guess
-			continue; //try to see if can fit without this particle
-		}
-		DKinFitParticle* locDetectedDecayingParticle = locDecayIterator->second;
-		if(locDetectedDecayingParticle->Get_CovarianceMatrix() == NULL)
-		{
-			if(locSkipBadDecayingFlag)
-				continue; //try to see if can fit without this particle
-			else
-				locAttemptFitFlag = false; //cannot fit. however, still get initial guess
-		}
-		else if((*(locDetectedDecayingParticle->Get_CovarianceMatrix()))(0, 0) < 0.0)
-		{
-			if(locSkipBadDecayingFlag)
-				continue; //try to see if can fit without this particle
-			else
-				locAttemptFitFlag = false; //cannot fit. however, still get initial guess
-		}
-
-		//reconstructed particle found
-		locNewFullConstrainParticles.insert(locDetectedDecayingParticle);
-	}
-
-	//Check if have enough particles
-	if(locNewFullConstrainParticles.size() < 2) //cannot fit: try again, using non-fit decaying particles
-		return Build_NewConstraint(locOrigVertexConstraint, locDecayingToDetectedParticleMap, locAttemptFitFlag, false);
-
-	//create new constraint, this time with the new detected particles
-	set<DKinFitParticle*> locNoConstrainParticles = locOrigVertexConstraint->Get_NoConstrainParticles();
-	DKinFitConstraint_Spacetime* locOrigSpacetimeConstraint = dynamic_cast<DKinFitConstraint_Spacetime*>(locOrigVertexConstraint);
-	if(locOrigSpacetimeConstraint == NULL) //vertex fit
-		return Make_VertexConstraint(locNewFullConstrainParticles, locNoConstrainParticles);
-	else
-		return Make_SpacetimeConstraint(locNewFullConstrainParticles, locOrigSpacetimeConstraint->Get_OnlyConstrainTimeParticles(), locNoConstrainParticles);
-}
-
-double DKinFitUtils_GlueX::Calc_TimeGuess(const DKinFitConstraint_Spacetime* locConstraint, DVector3 locVertexGuess)
-{
-	set<DKinFitParticle*> locTimeFindParticles = locConstraint->Get_FullConstrainParticles();
-	set<DKinFitParticle*> locOnlyTimeFindParticles = locConstraint->Get_OnlyConstrainTimeParticles();
-
-	//see if can find the beam particle: if so, use the rf time
-	set<DKinFitParticle*>& locSearchBeamParticles = Get_IncludeBeamlineInVertexFitFlag() ? locTimeFindParticles : locOnlyTimeFindParticles;
-	set<DKinFitParticle*>::iterator locParticleIterator = locSearchBeamParticles.begin();
-	for(; locParticleIterator != locSearchBeamParticles.end(); ++locParticleIterator)
-	{
-		DKinFitParticle* locKinFitParticle = *locParticleIterator;
-		if(locKinFitParticle->Get_KinFitParticleType() != d_BeamParticle)
-			continue;
-
-		//have the beam particle: use the rf time (propagate it to the vertex)
-		double locDeltaZ = locVertexGuess.Z() - locKinFitParticle->Get_Position().Z();
-		return (locKinFitParticle->Get_Time() + locDeltaZ/29.9792458);
-	}
-
-	//propagate each track time to the DOCA to the init vertex guess and average them
-	locTimeFindParticles.insert(locOnlyTimeFindParticles.begin(), locOnlyTimeFindParticles.end());
-
-	//build vector
-	deque<DKinFitParticle*> locTimeFindParticleVector;
-	std::copy(locTimeFindParticles.begin(), locTimeFindParticles.end(), std::back_inserter(locTimeFindParticleVector));
-
-	return dAnalysisUtilities->Calc_CrudeTime(locTimeFindParticleVector, locVertexGuess);
 }
 
 /************************************************************** CONSTRAINT PREDICTORS **************************************************************/
@@ -969,9 +735,9 @@ set<pair<int, int> > DKinFitUtils_GlueX::Get_KinFitVertexParticles(const DReacti
 		return set<pair<int, int> >();
 
 	//predict vertices
-	deque<set<pair<int, int> > > locVertices = Setup_VertexPredictions(locReaction);
 	string locDummyString;
 	size_t locNumConstraints = 0;
+pair<size_t, string> DKinFitUtils_GlueX::Predict_VertexConstraints(const DReactionVertexInfo* locReactionVertexInfo, bool locSpacetimeFitFlag)
 	locVertices = Predict_VertexConstraints(locReaction, locVertices, false, locNumConstraints, locDummyString); //false: doesn't matter: not used
 
 	//merge vertices together
@@ -982,7 +748,7 @@ set<pair<int, int> > DKinFitUtils_GlueX::Get_KinFitVertexParticles(const DReacti
 	return locVertexParticles;
 }
 
-string DKinFitUtils_GlueX::Get_ConstraintInfo(const DReaction* locReaction, DKinFitType locKinFitType, size_t& locNumConstraints, size_t& locNumUnknowns) const
+string DKinFitUtils_GlueX::Get_ConstraintInfo(const DReactionVertexInfo* locReactionVertexInfo, const DReaction* locReaction, size_t& locNumConstraints, size_t& locNumUnknowns) const
 {
 	//returns constraint string, sets # constraints & unknowns
 	//ASSUMES: Detected particles have non-zero errors!
@@ -991,6 +757,7 @@ string DKinFitUtils_GlueX::Get_ConstraintInfo(const DReaction* locReaction, DKin
 	locNumUnknowns = 0;
 
 	//P4 & Mass Constraints
+	DKinFitType locKinFitType = locReaction->Get_KinFitType();
 	if((locKinFitType == d_P4Fit) || (locKinFitType == d_P4AndVertexFit) || (locKinFitType == d_P4AndSpacetimeFit))
 	{
 		//Mass Constraints
@@ -1065,7 +832,6 @@ string DKinFitUtils_GlueX::Get_ConstraintInfo(const DReaction* locReaction, DKin
 					size_t locEarliestStepIndex = *locP4ConstrainedParticleSteps.begin();
 					locMassConstraintStrings.erase(locEarliestStepIndex); //remove constraint
 				}
-
 			}
 
 			//Finally, add p4 constraint
@@ -1094,36 +860,33 @@ string DKinFitUtils_GlueX::Get_ConstraintInfo(const DReaction* locReaction, DKin
 	if((locKinFitType == d_VertexFit) || (locKinFitType == d_SpacetimeFit) || (locKinFitType == d_P4AndVertexFit) || (locKinFitType == d_P4AndSpacetimeFit))
 	{
 		bool locSpacetimeFitFlag = ((locKinFitType == d_SpacetimeFit) || (locKinFitType == d_P4AndSpacetimeFit));
-		deque<set<pair<int, int> > > locVertices = Setup_VertexPredictions(locReaction);
-
-		string locVertexConstraintString;
-		size_t locNumVertexConstraints = 0;
-		locVertices = Predict_VertexConstraints(locReaction, locVertices, locSpacetimeFitFlag, locNumVertexConstraints, locVertexConstraintString);
-
-		if(!locVertices.empty())
+		auto locConstraintPair = Predict_VertexConstraints(locReactionVertexInfo, locSpacetimeFitFlag);
+		if(locConstraintPair.first > 0)
 		{
 			if(locAllConstraintsString != "")
 				locAllConstraintsString += ", ";
-			locAllConstraintsString += locVertexConstraintString;
+			locAllConstraintsString += locConstraintPair.second;
 
-			locNumConstraints += locNumVertexConstraints;
+			locNumConstraints += 2*DAnalysis::Get_FullConstrainParticles(locReactionVertexInfo).size();
+			locNumConstraints += DAnalysis::Get_OnlyConstrainTimeParticles(locReactionVertexInfo).size();
 			if(locSpacetimeFitFlag)
-				locNumUnknowns += 4*locVertices.size();
+				locNumUnknowns += 4*locConstraintPair.first;
 			else
-				locNumUnknowns += 3*locVertices.size();
+				locNumUnknowns += 3*locConstraintPair.first;
 		}
 	}
 
 	return locAllConstraintsString;
 }
 
-pair<size_t, string> DKinFitUtils_GlueX::Predict_VertexConstraints(const vector<shared_ptr<DReactionStepVertexInfo>>& locVertexInfos, bool locSpacetimeFitFlag) const
+pair<size_t, string> DKinFitUtils_GlueX::Predict_VertexConstraints(const DReactionVertexInfo* locReactionVertexInfo, bool locSpacetimeFitFlag) const
 {
 	//returned: #constraints, constraint string
 	size_t locNumConstraints = 0;
 	string locAllConstraintString;
 
-	for(auto& locVertexInfo : locVertexInfos)
+	auto locStepVertexInfos = locReactionVertexInfo->Get_StepVertexInfos();
+	for(auto& locVertexInfo : locStepVertexInfos)
 	{
 		if(locVertexInfo->Get_DanglingVertexFlag())
 			continue;

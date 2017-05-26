@@ -128,7 +128,7 @@ void DHistogramAction_ObjectMemory::Initialize(JEventLoop* locEventLoop)
 
 bool DHistogramAction_ObjectMemory::Perform_Action(JEventLoop* locEventLoop, const DParticleCombo* locParticleCombo)
 {
-	if(Get_NumPreviousParticleCombos() != 0)
+	if(Get_CalledPriorWithComboFlag())
 		return true; //else double-counting!
 
 	if(dEventCounter > dMaxNumEvents)
@@ -529,9 +529,8 @@ bool DHistogramAction_Reconstruction::Perform_Action(JEventLoop* locEventLoop, c
 {
 	//Expect locParticleCombo to be NULL since this is a reaction-independent action.
 
-	//Optional: Quit the action if it has already been executed this event (else may result in double-counting when filling histograms)
-	if(Get_NumPreviousParticleCombos() != 0)
-		return true;
+	if(Get_CalledPriorWithComboFlag())
+		return true; //else double-counting!
 
 	bool locIsRESTEvent = locEventLoop->GetJEvent().GetStatusBit(kSTATUS_REST);
 
@@ -1097,9 +1096,8 @@ bool DHistogramAction_DetectorMatching::Perform_Action(JEventLoop* locEventLoop,
 {
 	//Expect locParticleCombo to be NULL since this is a reaction-independent action.
 
-	//Optional: Quit the action if it has already been executed this event (else may result in double-counting when filling histograms)
-	if(Get_NumPreviousParticleCombos() != 0)
-		return true;
+	if(Get_CalledPriorWithComboFlag())
+		return true; //else double-counting!
 
 	bool locIsRESTEvent = locEventLoop->GetJEvent().GetStatusBit(kSTATUS_REST);
 
@@ -1906,9 +1904,8 @@ bool DHistogramAction_DetectorPID::Perform_Action(JEventLoop* locEventLoop, cons
 {
 	//Expect locParticleCombo to be NULL since this is a reaction-independent action.
 
-	//Optional: Quit the action if it has already been executed this event (else may result in double-counting when filling histograms)
-	if(Get_NumPreviousParticleCombos() != 0)
-		return true;
+	if(Get_CalledPriorWithComboFlag())
+		return true; //else double-counting!
 
 	vector<const DChargedTrack*> locChargedTracks;
 	locEventLoop->Get(locChargedTracks, dTrackSelectionTag.c_str());
@@ -2149,9 +2146,8 @@ bool DHistogramAction_Neutrals::Perform_Action(JEventLoop* locEventLoop, const D
 {
 	//Expect locParticleCombo to be NULL since this is a reaction-independent action.
 
-	//Optional: Quit the action if it has already been executed this event (else may result in double-counting when filling histograms)
-	if(Get_NumPreviousParticleCombos() != 0)
-		return true;
+	if(Get_CalledPriorWithComboFlag())
+		return true; //else double-counting!
 
 	vector<const DNeutralShower*> locNeutralShowers;
 	locEventLoop->Get(locNeutralShowers);
@@ -2339,9 +2335,8 @@ bool DHistogramAction_DetectorMatchParams::Perform_Action(JEventLoop* locEventLo
 {
 	//Expect locParticleCombo to be NULL since this is a reaction-independent action.
 
-	//Optional: Quit the action if it has already been executed this event (else may result in double-counting when filling histograms)
-	if(Get_NumPreviousParticleCombos() != 0)
-		return true;
+	if(Get_CalledPriorWithComboFlag())
+		return true; //else double-counting!
 
 	vector<const DMCThrown*> locMCThrowns;
 	locEventLoop->Get(locMCThrowns);
@@ -2561,7 +2556,7 @@ void DHistogramAction_EventVertex::Initialize(JEventLoop* locEventLoop)
 
 bool DHistogramAction_EventVertex::Perform_Action(JEventLoop* locEventLoop, const DParticleCombo* locParticleCombo)
 {
-	if(Get_NumPreviousParticleCombos() != 0)
+	if(Get_CalledPriorWithComboFlag())
 		return true; //else double-counting!
 
 	const DVertex* locVertex = NULL;
@@ -2784,7 +2779,7 @@ void DHistogramAction_DetectedParticleKinematics::Initialize(JEventLoop* locEven
 
 bool DHistogramAction_DetectedParticleKinematics::Perform_Action(JEventLoop* locEventLoop, const DParticleCombo* locParticleCombo)
 {
-	if(Get_NumPreviousParticleCombos() != 0)
+	if(Get_CalledPriorWithComboFlag())
 		return true; //else double-counting!
 
 	vector<const DBeamPhoton*> locBeamPhotons;
@@ -3103,7 +3098,7 @@ void DHistogramAction_TrackShowerErrors::Initialize(JEventLoop* locEventLoop)
 
 bool DHistogramAction_TrackShowerErrors::Perform_Action(JEventLoop* locEventLoop, const DParticleCombo* locParticleCombo)
 {
-	if(Get_NumPreviousParticleCombos() != 0)
+	if(Get_CalledPriorWithComboFlag())
 		return true; //else double-counting!
 
 	vector<const DChargedTrack*> locPreSelectChargedTracks;
@@ -3362,7 +3357,7 @@ void DHistogramAction_NumReconstructedObjects::Initialize(JEventLoop* locEventLo
 
 bool DHistogramAction_NumReconstructedObjects::Perform_Action(JEventLoop* locEventLoop, const DParticleCombo* locParticleCombo)
 {
-	if(Get_NumPreviousParticleCombos() != 0)
+	if(Get_CalledPriorWithComboFlag())
 		return true; //else double-counting!
 
 	bool locIsRESTEvent = locEventLoop->GetJEvent().GetStatusBit(kSTATUS_REST);
@@ -3648,7 +3643,7 @@ void DHistogramAction_TrackMultiplicity::Initialize(JEventLoop* locEventLoop)
 
 bool DHistogramAction_TrackMultiplicity::Perform_Action(JEventLoop* locEventLoop, const DParticleCombo* locParticleCombo)
 {
-	if(Get_NumPreviousParticleCombos() != 0)
+	if(Get_CalledPriorWithComboFlag())
 		return true; //else double-counting!
 
 	vector<const DChargedTrack*> locChargedTracks;

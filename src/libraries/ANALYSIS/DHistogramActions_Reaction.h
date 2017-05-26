@@ -94,7 +94,11 @@ class DHistogramAction_PID : public DAnalysisAction
 		}
 
 		void Initialize(JEventLoop* locEventLoop);
-		void Reset_NewEvent(void){dPreviouslyHistogrammedParticles.clear();}
+		void Reset_NewEvent(void)
+		{
+			DAnalysisAction::Reset_NewEvent();
+			dPreviouslyHistogrammedParticles.clear();
+		}
 
 		unsigned int dNum2DPBins, dNum2DdEdxBins, dNum2DBetaBins, dNum2DBCALThetaBins, dNum2DFCALThetaBins, dNum2DThetaBins, dNumBetaBins;
 		unsigned int dNum2DEOverPBins, dNum2DDeltaBetaBins, dNum2DDeltadEdxBins, dNum2DDeltaTBins, dNum2DPullBins, dNumFOMBins, dNum2DFOMBins;
@@ -197,6 +201,7 @@ class DHistogramAction_ParticleComboKinematics : public DAnalysisAction
 		void Initialize(JEventLoop* locEventLoop);
 		void Reset_NewEvent(void)
 		{
+			DAnalysisAction::Reset_NewEvent();
 			dPreviouslyHistogrammedBeamParticles.clear();
 			dPreviouslyHistogrammedParticles.clear();
 		}
@@ -265,7 +270,11 @@ class DHistogramAction_InvariantMass : public DAnalysisAction
 		dNumMassBins(locNumMassBins), dMinMass(locMinMass), dMaxMass(locMaxMass), dAnalysisUtilities(NULL) {}
 
 		void Initialize(JEventLoop* locEventLoop);
-		void Reset_NewEvent(void){dPreviousSourceObjects.clear();}
+		void Reset_NewEvent(void)
+		{
+			DAnalysisAction::Reset_NewEvent();
+			dPreviousSourceObjects.clear();
+		}
 
 	private:
 		bool Perform_Action(JEventLoop* locEventLoop, const DParticleCombo* locParticleCombo);
@@ -327,7 +336,11 @@ class DHistogramAction_MissingMass : public DAnalysisAction
 		}
 
 		void Initialize(JEventLoop* locEventLoop);
-		void Reset_NewEvent(void){dPreviousSourceObjects.clear();}
+		void Reset_NewEvent(void)
+		{
+			DAnalysisAction::Reset_NewEvent();
+			dPreviousSourceObjects.clear();
+		}
 
 	private:
 		bool Perform_Action(JEventLoop* locEventLoop, const DParticleCombo* locParticleCombo);
@@ -394,7 +407,11 @@ class DHistogramAction_MissingMassSquared : public DAnalysisAction
 		}
 
 		void Initialize(JEventLoop* locEventLoop);
-		void Reset_NewEvent(void){dPreviousSourceObjects.clear();}
+		void Reset_NewEvent(void)
+		{
+			DAnalysisAction::Reset_NewEvent();
+			dPreviousSourceObjects.clear();
+		}
 
 	private:
 		bool Perform_Action(JEventLoop* locEventLoop, const DParticleCombo* locParticleCombo);
@@ -426,7 +443,11 @@ class DHistogramAction_2DInvariantMass : public DAnalysisAction
 		dMinX(locMinX), dMaxX(locMaxX), dMinY(locMinY), dMaxY(locMaxY), dAnalysisUtilities(NULL) {}
 
 		void Initialize(JEventLoop* locEventLoop);
-		void Reset_NewEvent(void){dPreviousSourceObjects.clear();}
+		void Reset_NewEvent(void)
+		{
+			DAnalysisAction::Reset_NewEvent();
+			dPreviousSourceObjects.clear();
+		}
 
 	private:
 		bool Perform_Action(JEventLoop* locEventLoop, const DParticleCombo* locParticleCombo);
@@ -452,7 +473,11 @@ class DHistogramAction_Dalitz : public DAnalysisAction
 		dMinX(locMinX), dMaxX(locMaxX), dMinY(locMinY), dMaxY(locMaxY), dAnalysisUtilities(NULL) {}
 
 		void Initialize(JEventLoop* locEventLoop);
-		void Reset_NewEvent(void){dPreviousSourceObjects.clear();}
+		void Reset_NewEvent(void)
+		{
+			DAnalysisAction::Reset_NewEvent();
+			dPreviousSourceObjects.clear();
+		}
 
 	private:
 		bool Perform_Action(JEventLoop* locEventLoop, const DParticleCombo* locParticleCombo);
@@ -499,7 +524,6 @@ class DHistogramAction_KinFitResults : public DAnalysisAction
 
 		double dPullHistConfidenceLevelCut;
 		const DAnalysisUtilities* dAnalysisUtilities;
-		DKinFitUtils_GlueX* dKinFitUtils;
 
 		//below maps: int is step index (-1 for beam), 2nd is particle
 		TH1I* dHist_ConfidenceLevel;
@@ -524,7 +548,11 @@ class DHistogramAction_MissingTransverseMomentum : public DAnalysisAction
 		}
 
 		void Initialize(JEventLoop* locEventLoop);
-		void Reset_NewEvent(void){dPreviousSourceObjects.clear();}
+		void Reset_NewEvent(void)
+		{
+			DAnalysisAction::Reset_NewEvent();
+			dPreviousSourceObjects.clear();
+		}
 
 	private:
 		bool Perform_Action(JEventLoop* locEventLoop, const DParticleCombo* locParticleCombo);

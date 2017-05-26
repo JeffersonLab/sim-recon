@@ -771,7 +771,7 @@ bool DHistogramAction_ThrownParticleKinematics::Perform_Action(JEventLoop* locEv
 	if(locMCThrowns.empty())
 		return true; //e.g. non-simulated event
 
-	if(Get_NumPreviousParticleCombos() != 0)
+	if(Get_CalledPriorWithComboFlag())
 		return true; //else double-counting!
 
 	Particle_t locPID;
@@ -938,7 +938,7 @@ bool DHistogramAction_ReconnedThrownKinematics::Perform_Action(JEventLoop* locEv
 	if(locMCThrowns.empty())
 		return true; //e.g. non-simulated event
 
-	if(Get_NumPreviousParticleCombos() != 0)
+	if(Get_CalledPriorWithComboFlag())
 		return true; //else double-counting!
 
 	const DMCThrownMatching* locMCThrownMatching = NULL;
@@ -1252,7 +1252,7 @@ bool DHistogramAction_GenReconTrackComparison::Perform_Action(JEventLoop* locEve
 	if(locMCThrowns.empty())
 		return true; //e.g. non-simulated event
 
-	if(Get_NumPreviousParticleCombos() != 0)
+	if(Get_CalledPriorWithComboFlag())
 		return true; //else double-counting!
 
 	Particle_t locPID;
@@ -1493,146 +1493,6 @@ bool DHistogramAction_GenReconTrackComparison::Perform_Action(JEventLoop* locEve
 		}
 		Unlock_Action();
 	}
-	return true;
-}
-
-void DHistogramAction_TOFHitStudy::Initialize(JEventLoop* locEventLoop)
-{
-	string locHistName, locHistTitle, locParticleName, locParticleROOTName;
-	Particle_t locPID;
-
-	//CREATE THE HISTOGRAMS
-	//Since we are creating histograms, the contents of gDirectory will be modified: must use JANA-wide ROOT lock
-	japp->RootWriteLock(); //ACQUIRE ROOT LOCK!!
-	{
-		CreateAndChangeTo_ActionDirectory();
-
-		for(size_t loc_i = 0; loc_i < dFinalStatePIDs.size(); ++loc_i)
-		{
-			locPID = dFinalStatePIDs[loc_i];
-			locParticleName = ParticleType(locPID);
-			locParticleROOTName = ParticleName_ROOT(locPID);
-			CreateAndChangeTo_Directory(locParticleName, locParticleName);
-
-			// DeltaT
-			locHistName = string("DeltaT_") + locParticleName;
-			locHistTitle = locParticleROOTName + string(";#Deltat (ns) (Reconstructed - Thrown)");
-			dHistMap_DeltaT[locPID] = GetOrCreate_Histogram<TH1I>(locHistName, locHistTitle, dNumDeltaTBins, dMinDeltaT, dMaxDeltaT);
-
-			// DeltaX
-			locHistName = string("DeltaX_") + locParticleName;
-			locHistTitle = locParticleROOTName + string(";#Deltax (cm) (Reconstructed - Thrown)");
-			dHistMap_DeltaX[locPID] = GetOrCreate_Histogram<TH1I>(locHistName, locHistTitle, dNumDeltaXBins, dMinDeltaX, dMaxDeltaX);
-
-			// DeltaY
-			locHistName = string("DeltaY_") + locParticleName;
-			locHistTitle = locParticleROOTName + string(";#Deltay (cm) (Reconstructed - Thrown)");
-			dHistMap_DeltaY[locPID] = GetOrCreate_Histogram<TH1I>(locHistName, locHistTitle, dNumDeltaXBins, dMinDeltaX, dMaxDeltaX);
-
-			// dE
-			locHistName = string("dE_") + locParticleName;
-			locHistTitle = locParticleROOTName + string(";dE (MeV)");
-			dHistMap_dE[locPID] = GetOrCreate_Histogram<TH1I>(locHistName, locHistTitle, dNumdEBins, dMindE, dMaxdE);
-
-			// DeltaT Vs P
-			locHistName = string("DeltaTVsP_") + locParticleName;
-			locHistTitle = locParticleROOTName + string(";p (GeV/c);#Deltat (ns) (Reconstructed - Thrown)");
-			dHistMap_DeltaTVsP[locPID] = GetOrCreate_Histogram<TH2I>(locHistName, locHistTitle, dNum2DPBins, dMinP, dMaxP, dNumDeltaTBins, dMinDeltaT, dMaxDeltaT);
-
-			// DeltaX Vs P
-			locHistName = string("DeltaXVsP_") + locParticleName;
-			locHistTitle = locParticleROOTName + string(";p (GeV/c);#Deltax (cm) (Reconstructed - Thrown)");
-			dHistMap_DeltaXVsP[locPID] = GetOrCreate_Histogram<TH2I>(locHistName, locHistTitle, dNum2DPBins, dMinP, dMaxP, dNumDeltaXBins, dMinDeltaX, dMaxDeltaX);
-
-			// DeltaY Vs P
-			locHistName = string("DeltaYVsP_") + locParticleName;
-			locHistTitle = locParticleROOTName + string(";p (GeV/c);#Deltay (cm) (Reconstructed - Thrown)");
-			dHistMap_DeltaYVsP[locPID] = GetOrCreate_Histogram<TH2I>(locHistName, locHistTitle, dNum2DPBins, dMinP, dMaxP, dNumDeltaXBins, dMinDeltaX, dMaxDeltaX);
-
-			// dE Vs P
-			locHistName = string("dEVsP_") + locParticleName;
-			locHistTitle = locParticleROOTName + string(";p (GeV/c);dE (GeV)");
-			dHistMap_dEVsP[locPID] = GetOrCreate_Histogram<TH2I>(locHistName, locHistTitle, dNum2DPBins, dMinP, dMaxP, dNumdEBins, dMindE, dMaxdE);
-
-			gDirectory->cd("..");
-		}
-
-		//Return to the base directory
-		ChangeTo_BaseDirectory();
-	}
-	japp->RootUnLock(); //RELEASE ROOT LOCK!!
-}
-
-bool DHistogramAction_TOFHitStudy::Perform_Action(JEventLoop* locEventLoop, const DParticleCombo* locParticleCombo)
-{
-	if(Get_NumPreviousParticleCombos() != 0)
-		return true; //else double-counting!
-
-	vector<const DMCThrownMatching*> locMCThrownMatchingVector;
-	locEventLoop->Get(locMCThrownMatchingVector);
-	if(locMCThrownMatchingVector.empty())
-		return true;
-	const DMCThrownMatching* locMCThrownMatching = locMCThrownMatchingVector[0];
-
-	vector<const DMCThrown*> locMCThrownVector;
-	locEventLoop->Get(locMCThrownVector);
-
-	map<const DTOFTruth*, pair<const DTOFPoint*, double> > locTOFTruthToPointMap;
-	locMCThrownMatching->Get_TOFTruthToPointMap(locTOFTruthToPointMap);
-
-	map<const DTOFTruth*, pair< const DTOFPoint*, double> >::iterator locTOFIterator;
-	for(locTOFIterator = locTOFTruthToPointMap.begin(); locTOFIterator != locTOFTruthToPointMap.end(); ++locTOFIterator)
-	{
-		const DTOFTruth* locTOFTruth = locTOFIterator->first;
-		const DTOFPoint* locTOFPoint = locTOFIterator->second.first;
-		const DMCThrown* locMCThrown = NULL;
-		for(size_t loc_i = 0; loc_i < locMCThrownVector.size(); ++loc_i)
-		{
-			if(locMCThrownVector[loc_i]->myid != locTOFTruth->track)
-				continue;
-			locMCThrown = locMCThrownVector[loc_i];
-			break;
-		}
-
-		Particle_t locPID = (locMCThrown == NULL) ? Unknown : locMCThrown->PID();
-		if(dHistMap_DeltaT.find(locPID) == dHistMap_DeltaT.end())
-			continue;
-
-		DVector3 locMomentumAtTOF(locTOFTruth->px, locTOFTruth->py, locTOFTruth->pz);
-		DVector3 locThrownMomentum = (locMCThrown == NULL) ? locMomentumAtTOF : locMCThrown->momentum();
-		double locThrownPMag = locThrownMomentum.Mag();
-
-		//DTOFPoint and DTOFTruth reported at different z's (I think center vs. detector face): propagate truth information to the reconstructed z
-		double locDeltaZ = locTOFPoint->pos.Z() - locTOFTruth->z;
-		double locDeltaPathLength = locDeltaZ/cos(locMomentumAtTOF.Theta());
-		double locPropagatedTrueX = locTOFTruth->x + locDeltaPathLength*sin(locMomentumAtTOF.Theta())*cos(locMomentumAtTOF.Phi());
-		double locPropagatedTrueY = locTOFTruth->y + locDeltaPathLength*sin(locMomentumAtTOF.Theta())*sin(locMomentumAtTOF.Phi());
-		double locVelocity = 29.9792458*locMomentumAtTOF.Mag()/locTOFTruth->E;
-		double locPropagatedTrueT = locTOFTruth->t + locDeltaPathLength/locVelocity;
-
-		double locDeltaT = locTOFPoint->t - locPropagatedTrueT;
-		double locDeltaX = locTOFPoint->pos.X() - locPropagatedTrueX;
-		double locDeltaY = locTOFPoint->pos.Y() - locPropagatedTrueY;
-
-		double locdE_MeV = locTOFPoint->dE*1000.0;
-
-		//FILL HISTOGRAMS
-		//Since we are filling histograms local to this action, it will not interfere with other ROOT operations: can use action-wide ROOT lock
-		//Note, the mutex is unique to this DReaction + action_string combo: actions of same class with different hists will have a different mutex
-		Lock_Action(); //ACQUIRE ROOT LOCK!!
-		{
-			dHistMap_DeltaT[locPID]->Fill(locDeltaT);
-			dHistMap_DeltaX[locPID]->Fill(locDeltaX);
-			dHistMap_DeltaY[locPID]->Fill(locDeltaY);
-			dHistMap_dE[locPID]->Fill(locdE_MeV);
-			dHistMap_DeltaTVsP[locPID]->Fill(locThrownPMag, locDeltaT);
-			dHistMap_DeltaXVsP[locPID]->Fill(locThrownPMag, locDeltaX);
-			dHistMap_DeltaYVsP[locPID]->Fill(locThrownPMag, locDeltaY);
-			dHistMap_dEVsP[locPID]->Fill(locThrownPMag, locdE_MeV);
-		}
-		Unlock_Action(); //RELEASE ROOT LOCK!!
-	}
-
 	return true;
 }
 

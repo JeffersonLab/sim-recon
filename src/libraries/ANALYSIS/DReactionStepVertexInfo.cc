@@ -28,6 +28,7 @@ void DReactionStepVertexInfo::Set_ParticleIndices(const vector<pair<int, int>>& 
 	dDecayingParticles = locDecayingParticles;
 	dOnlyConstrainTimeParticles = locOnlyConstrainTimeParticles;
 	dNoConstrainParticles = locNoConstrainParticles;
+
 	//sort
 	std::sort(dFullConstrainParticles.begin(), dFullConstrainParticles.end());
 	std::sort(dDecayingParticles.begin(), dDecayingParticles.end());

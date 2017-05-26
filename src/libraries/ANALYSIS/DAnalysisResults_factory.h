@@ -8,8 +8,7 @@
 #ifndef _DAnalysisResults_factory_
 #define _DAnalysisResults_factory_
 
-#include <map>
-#include <deque>
+#include <unordered_map>
 #include <vector>
 
 #include "TH1D.h"
@@ -21,6 +20,10 @@
 
 #include "TRACKING/DMCThrown.h"
 
+#include "KINFITTER/DKinFitter.h"
+#include "ANALYSIS/DKinFitResults.h"
+#include "ANALYSIS/DKinFitUtils_GlueX.h"
+
 #include "ANALYSIS/DReaction.h"
 #include "ANALYSIS/DCutActions.h"
 #include "ANALYSIS/DParticleCombo.h"
@@ -28,6 +31,7 @@
 #include "ANALYSIS/DAnalysisUtilities.h"
 #include "ANALYSIS/DAnalysisResults.h"
 #include "ANALYSIS/DHistogramActions.h"
+#include "ANALYSIS/DSourceComboer.h"
 
 using namespace jana;
 using namespace std;
@@ -35,8 +39,15 @@ using namespace std;
 class DAnalysisResults_factory : public jana::JFactory<DAnalysisResults>
 {
 	public:
-		DAnalysisResults_factory(){};
-		~DAnalysisResults_factory(){};
+		size_t Get_KinFitParticlePoolSize(void) const{return dKinFitUtils->Get_KinFitParticlePoolSize();};
+		size_t Get_KinFitParticlePoolSize_Shared(void) const{return dKinFitUtils->Get_KinFitParticlePoolSize_Shared();};
+		size_t Get_KinFitConstraintVertexPoolSize(void) const{return dKinFitUtils->Get_KinFitConstraintVertexPoolSize();};
+		size_t Get_KinFitConstraintSpacetimePoolSize(void) const{return dKinFitUtils->Get_KinFitConstraintSpacetimePoolSize();};
+		size_t Get_KinFitConstraintP4PoolSize(void) const{return dKinFitUtils->Get_KinFitConstraintP4PoolSize();};
+		size_t Get_KinFitConstraintMassPoolSize(void) const{return dKinFitUtils->Get_KinFitConstraintMassPoolSize();};
+		size_t Get_KinFitChainPoolSize(void) const{return dKinFitUtils->Get_KinFitChainPoolSize();};
+		size_t Get_KinFitChainStepPoolSize(void) const{return dKinFitUtils->Get_KinFitChainStepPoolSize();};
+		size_t Get_SymMatrixPoolSize(void) const{return dKinFitUtils->Get_SymMatrixPoolSize();};
 
 	private:
 		jerror_t init(void);						///< Called once at program start.
@@ -45,19 +56,26 @@ class DAnalysisResults_factory : public jana::JFactory<DAnalysisResults>
 
 		void Make_ControlHistograms(vector<const DReaction*>& locReactions);
 		void Check_ReactionNames(vector<const DReaction*>& locReactions) const;
+		DKinFitResults* Build_KinFitResults(const DParticleCombo* locParticleCombo, DKinFitType locKinFitType, const DKinFitChain* locKinFitChain);
 
-		unsigned int dDebugLevel;
+		unsigned int dDebugLevel = 0;
 		DApplication* dApplication;
 		double dMinThrownMatchFOM;
+		DSourceComboer* dSourceComboer;
 
-		map<const DReaction*, bool> dMCReactionExactMatchFlags;
-		map<const DReaction*, DCutAction_TrueCombo*> dTrueComboCuts;
+		unsigned int dKinFitDebugLevel = 0;
+		DKinFitter* dKinFitter;
+		DKinFitUtils_GlueX* dKinFitUtils;
+		map<pair<set<DKinFitConstraint*>, bool>, DKinFitResults*> dConstraintResultsMap; //used for determining if kinfit results will be identical //bool: update cov matrix flag
 
-		map<const DReaction*, TH1D*> dHistMap_NumParticleCombos;
-		map<const DReaction*, TH1D*> dHistMap_NumEventsSurvivedAction_All;
-		map<const DReaction*, TH1D*> dHistMap_NumEventsWhereTrueComboSurvivedAction;
-		map<const DReaction*, TH2D*> dHistMap_NumCombosSurvivedAction;
-		map<const DReaction*, TH1D*> dHistMap_NumCombosSurvivedAction1D;
+		unordered_map<const DReaction*, bool> dMCReactionExactMatchFlags;
+		unordered_map<const DReaction*, DCutAction_TrueCombo*> dTrueComboCuts;
+
+		unordered_map<const DReaction*, TH1D*> dHistMap_NumParticleCombos;
+		unordered_map<const DReaction*, TH1D*> dHistMap_NumEventsSurvivedAction_All;
+		unordered_map<const DReaction*, TH1D*> dHistMap_NumEventsWhereTrueComboSurvivedAction;
+		unordered_map<const DReaction*, TH2D*> dHistMap_NumCombosSurvivedAction;
+		unordered_map<const DReaction*, TH1D*> dHistMap_NumCombosSurvivedAction1D;
 };
 
 #endif // _DAnalysisResults_factory_

@@ -228,6 +228,8 @@ void DAnalysisResults_factory::Make_ControlHistograms(vector<const DReaction*>& 
 	}
 	dApplication->RootUnLock(); //unlock
 
+	dSourceComboer = new DSourceComboer(locEventLoop);
+
 }
 
 //------------------

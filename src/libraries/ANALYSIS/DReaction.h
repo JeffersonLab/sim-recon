@@ -76,7 +76,7 @@ class DReaction
 
 		// GET ANALYSIS ACTIONS:
 		size_t Get_NumAnalysisActions(void) const{return dAnalysisActions.size();}
-		DAnalysisAction* Get_AnalysisAction(size_t locIndex) const{return dAnalysisActions.at(locIndex);}
+		vector<DAnalysisAction*> Get_AnalysisActions(void) const{return dAnalysisActions;}
 
 		// GET PRE-DPARTICLECOMBO CUT VALUES //Command-line values will override these values
 		size_t Get_NumPlusMinusRFBunches(void) const{return dNumPlusMinusRFBunches;}

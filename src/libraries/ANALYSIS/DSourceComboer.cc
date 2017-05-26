@@ -109,7 +109,7 @@ namespace DAnalysis
 
 /********************************************************************* CONSTRUCTOR **********************************************************************/
 
-DSourceComboer::DSourceComboer(JEventLoop* locEventLoop, const vector<const DReaction*>& locReactions)
+DSourceComboer::DSourceComboer(JEventLoop* locEventLoop)
 {
 	//GET THE GEOMETRY
 	DApplication* locApplication = dynamic_cast<DApplication*>(locEventLoop->GetJApplication());
@@ -141,6 +141,9 @@ DSourceComboer::DSourceComboer(JEventLoop* locEventLoop, const vector<const DRea
 
 	//Get preselect tag
 	gPARMS->SetDefaultParameter("COMBO:SHOWER_SELECT_TAG", dShowerSelectionTag);
+
+	//GET THE REACTIONS
+	locReactions = DAnalysis::Get_Reactions(locEventLoop);
 
 	//CREATE DSourceComboINFO'S
 	vector<const DReactionVertexInfo*> locVertexInfos;

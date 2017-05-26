@@ -64,11 +64,6 @@ class DKinFitUtils //purely virtual: cannot directly instantiate class, can only
 		DKinFitParticle* Make_MissingParticle(int locPID, int locCharge, double locMass);
 		DKinFitParticle* Make_DecayingParticle(int locPID, int locCharge, double locMass, const set<DKinFitParticle*>& locFromInitialState, const set<DKinFitParticle*>& locFromFinalState);
 
-		/********************************************************** SETUP VERTEX CONSTRAINTS ********************************************************/
-
-		//Does not include initial guesses!
-		deque<DKinFitConstraint_Vertex*> Create_VertexConstraints(const DKinFitChain* locKinFitChain, bool locSpacetimeFitFlag);
-
 		/************************************************************* CREATE CONSTRAINTS ***********************************************************/
 
 		DKinFitConstraint_Mass* Make_MassConstraint(DKinFitParticle* locDecayingParticle);

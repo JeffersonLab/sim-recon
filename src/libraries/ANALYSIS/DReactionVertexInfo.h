@@ -27,10 +27,10 @@ class DReactionVertexInfo : public JObject
 		DReactionVertexInfo(const DReaction* locReaction, const vector<shared_ptr<DReactionStepVertexInfo>>& locStepVertexInfos);
 
 		//SETTERS
-		void Add_Reaction(const DReaction* locReaction){return dReactions.push_back(locReaction);}
+		void Add_Reaction(const DReaction* locReaction){return dReactions.insert(locReaction);}
 
 		//GETTERS
-		const DReaction* Get_Reaction(void) const{return dReactions.front();} //since their channels are identical, often any one will do
+		const DReaction* Get_Reaction(void) const{return *dReactions.begin();} //since their channels are identical, any one will do (if used correctly)
 		vector<const DReaction*> Get_Reactions(void) const{return dReactions;}
 		vector<shared_ptr<const DReactionStepVertexInfo>> Get_StepVertexInfos(void) const{return dStepVertexInfos;}
 		shared_ptr<const DReactionStepVertexInfo> Get_StepVertexInfo(size_t locStepIndex) const{return dVertexInfoMap.at(locStepIndex);}
@@ -38,7 +38,7 @@ class DReactionVertexInfo : public JObject
 	private:
 
 		//these all have identical channel content: particles & steps must be in the same order, although actions, etc. may be different
-		vector<const DReaction*> dReactions;
+		unordered_set<const DReaction*> dReactions;
 
 		vector<shared_ptr<const DReactionStepVertexInfo>> dStepVertexInfos; //in order of construction dependency
 		unordered_map<size_t, shared_ptr<const DReactionStepVertexInfo>> dVertexInfoMap; //key is step index
@@ -59,7 +59,8 @@ inline DReactionVertexInfo::DReactionVertexInfo(const DReaction* locReaction, co
 	}
 }
 
-inline vector<shared_ptr<const DReactionStepVertexInfo>> DAnalysis::Get_StepVertexInfos_ReverseOrderByStep(const DReactionVertexInfo* locReactionVertexInfo)
+//NAMESPACE SCOPE FUNCTIONS
+inline vector<shared_ptr<const DReactionStepVertexInfo>> Get_StepVertexInfos_ReverseOrderByStep(const DReactionVertexInfo* locReactionVertexInfo)
 {
 	auto locStepVertexInfos = locReactionVertexInfo->Get_StepVertexInfos();
 
@@ -69,6 +70,32 @@ inline vector<shared_ptr<const DReactionStepVertexInfo>> DAnalysis::Get_StepVert
 
 	std::sort(locStepVertexInfos.begin(), locStepVertexInfos.end(), Comparator_ReverseOrderByStep);
 	return locStepVertexInfos;
+}
+
+vector<pair<int, int>> Get_FullConstrainParticles(const DReactionVertexInfo* locReactionVertexInfo, DReactionState_t locState = d_EitherState, Charge_t locCharge = d_AllCharges, bool locIncludeDecayingFlag = true)
+{
+	//no longer sorted!
+	auto locStepVertexInfos = locReactionVertexInfo->Get_StepVertexInfos();
+	vector<pair<int, int>> locAllFullConstrainParticles;
+	for(auto& locStepVertexInfo : locStepVertexInfos)
+	{
+		auto locFullConstrainParticles = locStepVertexInfo->Get_FullConstrainParticles(locState, locCharge, locIncludeDecayingFlag);
+		locAllFullConstrainParticles.insert(locAllFullConstrainParticles.end(), locFullConstrainParticles.begin(), locFullConstrainParticles.end());
+	}
+	return locAllFullConstrainParticles;
+}
+
+vector<pair<int, int>> Get_OnlyConstrainTimeParticles(const DReactionVertexInfo* locReactionVertexInfo)
+{
+	//no longer sorted!
+	auto locStepVertexInfos = locReactionVertexInfo->Get_StepVertexInfos();
+	vector<pair<int, int>> locAllOnlyConstrainTimeParticles;
+	for(auto& locStepVertexInfo : locStepVertexInfos)
+	{
+		auto locOnlyConstrainTimeParticles = locStepVertexInfo->Get_OnlyConstrainTimeParticles();
+		locAllOnlyConstrainTimeParticles.insert(locAllFullConstrainParticles.end(), locOnlyConstrainTimeParticles.begin(), locOnlyConstrainTimeParticles.end());
+	}
+	return locAllOnlyConstrainTimeParticles;
 }
 
 } //end DAnalysis namespace

@@ -3,6 +3,7 @@
 
 #include <string>
 
+#include "JANA/JObject.h"
 #include "TMatrixDSym.h"
 
 #include "PID/DKinematicData.h"
@@ -15,11 +16,9 @@ using namespace jana;
 
 class DParticleCombo;
 
-class DKinFitResults : public JObject
+class DKinFitResults
 {
 	public:
-		DKinFitResults(void){}
-		JOBJECT_PUBLIC(DKinFitResults);
 
 		/************************************************************ SET FIT INFORMATION ***********************************************************/
 

@@ -80,11 +80,7 @@ class DKinFitUtils_GlueX : public DKinFitUtils
 
 		/************************************************************* CREATE CONSTRAINTS ***********************************************************/
 
-		set<DKinFitConstraint*> Create_Constraints(const DParticleCombo* locParticleCombo, const DKinFitChain* locKinFitChain, DKinFitType locKinFitType, deque<DKinFitConstraint_Vertex*>& locSortedVertexConstraints);
-
-		/*********************************************************** MAKE SPACETIME GUESSES *********************************************************/
-
-		void Set_SpacetimeGuesses(const deque<DKinFitConstraint_Vertex*>& locSortedVertexConstraints, bool locIsP4FitFlag);
+		set<DKinFitConstraint*> Create_Constraints(const DReactionVertexInfo* locReactionVertexInfo, const DParticleCombo* locParticleCombo, const DKinFitChain* locKinFitChain, DKinFitType locKinFitType, deque<DKinFitConstraint_Vertex*>& locSortedVertexConstraints);
 
 		/************************************************************ CONSTRAINT PREDICTORS *********************************************************/
 
@@ -92,9 +88,10 @@ class DKinFitUtils_GlueX : public DKinFitUtils
 			//Whether each neutral is in a vertex constraint or not (may not be enough particles to constrain that particular vertex)
 			//The pull terms needed when creating histograms
 			//The constraint strings for the confidence level histogram
+		pair<size_t, string> Predict_VertexConstraints(const DReactionVertexInfo* locReactionVertexInfo, bool locSpacetimeFitFlag) const;
 
 		set<pair<int, int> > Get_KinFitVertexParticles(const DReaction* locReaction) const;
-		string Get_ConstraintInfo(const DReaction* locReaction, DKinFitType locKinFitType, size_t& locNumConstraints, size_t& locNumUnknowns) const;
+		string Get_ConstraintInfo(const DReactionVertexInfo* locReactionVertexInfo, const DReaction* locReaction, size_t& locNumConstraints, size_t& locNumUnknowns) const;
 
 		/*********************************************************** CALCULATION ROUTINES ***********************************************************/
 
@@ -127,17 +124,9 @@ class DKinFitUtils_GlueX : public DKinFitUtils
 
 		void Make_KinFitChainStep(const DParticleCombo* locParticleCombo, DKinFitType locKinFitType, size_t locStepIndex, DKinFitChain* locKinFitChain, DKinFitChainStep* locKinFitChainStep, map<size_t, size_t>& locStepCreationMap);
 
-		/*********************************************************** MAKE SPACETIME GUESSES *********************************************************/
-
-		void Construct_DetectedDecayingParticle_NoFit(DKinFitConstraint_Vertex* locOrigVertexConstraint, map<DKinFitParticle*, DKinFitParticle*>& locDetectedDecayingParticleMap, TLorentzVector locSpacetimeVertexGuess);
-
-		DKinFitConstraint_Vertex* Build_NewConstraint(DKinFitConstraint_Vertex* locOrigVertexConstraint, const map<DKinFitParticle*, DKinFitParticle*>& locDetectedDecayingParticleMap, bool& locAttemptFitFlag, bool locSkipBadDecayingFlag);
-
-		double Calc_TimeGuess(const DKinFitConstraint_Spacetime* locConstraint, DVector3 locVertexGuess);
-
 		/************************************************************ CONSTRAINT PREDICTORS *********************************************************/
 
-		string Build_VertexConstraintString(const DReaction* locReaction, const set<pair<int, int> >& locAllVertexParticles, set<pair<int, int> >& locFullConstrainParticles, set<pair<int, int> >& locOnlyConstrainTimeParticles, set<pair<int, int> >& locNoConstrainParticles, bool locSpacetimeFitFlag) const;
+		string Build_VertexConstraintString(const DReactionStepVertexInfo* locVertexInfo, bool locSpacetimeFitFlag);
 
 		/*************************************************************** NESTED CLASS ***************************************************************/
 

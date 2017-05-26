@@ -41,10 +41,11 @@ using namespace jana;
 namespace DAnalysis
 {
 //MAIN
-//make sure someone calls Reset for the DSourceComboer!!
-
-//AFTER CREATING COMBOS!!
-//prekinfit actions
+//in pull hist action, locIsInVertexFitFlag, & the neutral flags are broken!
+	//well, just be careful.  e.g. photons not in full-constrain
+	//also, be careful about massive neutrals (what should the pulls be?)
+	//once I have this solution, fix Get_KinFitVertexParticles call in Make_KinFitChainStep
+//purge utils funcs
 //do kinematic fit
 //add kinfit results TO particle combo (instead of making 2x combos!)
 //execute actions
@@ -56,6 +57,7 @@ namespace DAnalysis
 //ditch source objects: use DNeutralShower member and DTrackTimeBased members instead!!!
 //finish comments in Build_ParticleCombos()
 //combo & steps no longer have dreaction as members!!
+//move resource pools to kinfitter!!
 
 //MISCELLANEOUS TO DO:
 //When saving ROOT TTree, don't save p4 of decaying particles if mass is not constrained in kinfit!
@@ -92,7 +94,7 @@ class DSourceComboer : public JObject
 	public:
 
 		DSourceComboer(void) = delete;
-		DSourceComboer(JEventLoop* locEventLoop, const vector<const DReaction*>& locReactions);
+		DSourceComboer(JEventLoop* locEventLoop);
 		DSourceComboer::~DSourceComboer(void);
 
 		//BUILD COMBOS (what should be called from the outside to do all of the work)

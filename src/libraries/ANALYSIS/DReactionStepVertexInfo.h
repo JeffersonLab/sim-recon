@@ -78,7 +78,7 @@ class DReactionStepVertexInfo
 		vector<size_t> dReactionStepIndices; //in order from smallest to largest
 		bool dIsProductionVertexFlag = false;
 
-		//PARTICLE INFO
+		//PARTICLE INFO //sorted!
 		//pair: step, particle indices (including all: beam, target, decaying, detected, and missing)
 		vector<pair<int, int>> dFullConstrainParticles; //detected charged tracks & beam, decaying when registered
 		vector<pair<int, int>> dOnlyConstrainTimeParticles; //detected photons

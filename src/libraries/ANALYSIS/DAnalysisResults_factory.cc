@@ -60,7 +60,7 @@ jerror_t DAnalysisResults_factory::brun(JEventLoop *locEventLoop, int32_t runnum
 
 		//MC: auto-detect whether the DReaction is expected to be the entire reaction or a subset
 		bool locExactMatchFlag = true;
-		if(locReactions[loc_i]->Get_ReactionStep(0)->Get_InitialParticleID() != Gamma)
+		if(DAnalysis::Get_IsFirstStepBeam(locReactions[loc_i])
 			locExactMatchFlag = false;
 		else
 		{
@@ -75,6 +75,19 @@ jerror_t DAnalysisResults_factory::brun(JEventLoop *locEventLoop, int32_t runnum
 		dTrueComboCuts[locReactions[loc_i]] = new DCutAction_TrueCombo(locReactions[loc_i], dMinThrownMatchFOM, locExactMatchFlag);
 		dTrueComboCuts[locReactions[loc_i]]->Initialize(locEventLoop);
 	}
+
+	//CREATE FIT UTILS AND FITTER
+	dKinFitUtils = new DKinFitUtils_GlueX(locEventLoop);
+	dKinFitter = new DKinFitter(dKinFitUtils);
+
+	gPARMS->SetDefaultParameter("KINFIT:DEBUGLEVEL", dKinFitDebugLevel);
+	dKinFitter->Set_DebugLevel(dKinFitDebugLevel);
+
+	//set pool sizes
+	size_t locExpectedNumCombos = 100; //hopefully not often more than this
+	auto KinFitChecker = [](const DReaction* locReaction) -> bool{return (locReaction->Get_KinFitType() != d_NoFit);};
+	auto locNumKinFitReactions = std::count_if(locReactions.begin(), locReactions.end(), KinFitChecker);
+	dKinFitUtils->Set_MaxPoolSizes(locNumKinFitReactions, locExpectedNumCombos);
 
 	return NOERROR;
 }
@@ -226,6 +239,7 @@ void DAnalysisResults_factory::Make_ControlHistograms(vector<const DReaction*>& 
 	}
 	dApplication->RootUnLock(); //unlock
 
+	dSourceComboer = new DSourceComboer(locEventLoop);
 }
 
 //------------------
@@ -233,7 +247,6 @@ void DAnalysisResults_factory::Make_ControlHistograms(vector<const DReaction*>& 
 //------------------
 jerror_t DAnalysisResults_factory::evnt(JEventLoop* locEventLoop, uint64_t eventnumber)
 {
-
 #ifdef VTRACE
 	VT_TRACER("DAnalysisResults_factory::evnt()");
 #endif
@@ -244,14 +257,213 @@ jerror_t DAnalysisResults_factory::evnt(JEventLoop* locEventLoop, uint64_t event
 	if(!locTrigger->Get_IsPhysicsEvent())
 		return NOERROR;
 
-	vector<const DReaction*> locReactions;
-	Get_Reactions(locEventLoop, locReactions);
+	//RESET
+	dSourceComboer->Reset();
+	dKinFitUtils->Reset_NewEvent(locEventLoop->GetJEvent().GetEventNumber());
+	dKinFitter->Reset_NewEvent();
+	dConstraintResultsMap.clear();
 
+	auto locReactions = DAnalysis::Get_Reactions(locEventLoop);
 	if(dDebugLevel > 0)
 		cout << "# DReactions: " << locReactions.size() << endl;
 
+	//GET VERTEX INFOS
+	vector<const DReactionVertexInfo*> locReactionVertexInfos;
+	locEventLoop->Get(locReactionVertexInfos);
 
+	for(auto& locReactionVertexInfo : locReactionVertexInfos)
+	{
+		//BUILD COMBOS
+		auto locReactionComboMap = dSourceComboer->Build_ParticleCombos(locReactionVertexInfo);
+
+		//LOOP OVER REACTIONS
+		for(auto& locReactionComboPair : locReactionComboMap)
+		{
+			auto& locReaction = locReactionComboPair.first;
+			auto& locCombos = locReactionComboPair.second;
+
+			//RESET ACTIONS
+			auto locActions = locReaction->Get_AnalysisActions();
+			for(auto& locAction : locActions)
+				locAction->Reset_NewEvent();
+
+			//LOOP OVER COMBOS
+			vector<const DParticleCombo*> locPassedCombos;
+			for(auto& locCombo : locCombos)
+			{
+				//LOOP OVER PRE-KINFIT ACTIONS
+				size_t locActionIndex = 0;
+				bool locActionFailedFlag = false;
+				for(; locActionIndex < locActions.size(); ++locActionIndex)
+				{
+					if(locAnalysisAction->Get_UseKinFitResultsFlag())
+						break; //need to kinfit first!!!
+					if((*locAction)(locEventLoop, locCombo))
+						continue;
+					locActionFailedFlag = true;
+					break;
+				}
+				if(locActionFailedFlag)
+					continue; //go to next combo
+
+				//KINFIT IF REQUESTED
+				auto locKinFitType = locReaction->Get_KinFitType();
+				if(locKinFitType != d_NoFit)
+				{
+//BEWARE: A given combo can be used for multiple DReactions
+//These DReactions could have different kinfit types
+//Thus, the kinfit results are DIFFERENT if the fit type is different
+//Otherwise it is identical
+		bool locUpdateCovMatricesFlag = locReaction->Get_KinFitUpdateCovarianceMatricesFlag();
+//FUNCTIONS:
+Get_KinFitVertexParticles
+					//MAKE NEW COMBO
+				}
+
+				//LOOP OVER POST-KINFIT ACTIONS
+				for(; locActionIndex < locActions.size(); ++locActionIndex)
+				{
+					if((*locAction)(locEventLoop, locCombo))
+						continue;
+					locActionFailedFlag = true;
+					break;
+				}
+				if(locActionFailedFlag)
+					continue; //go to next combo
+
+				//SAVE COMBO
+				locPassedCombos.push_back(locCombo);
+			}
+		}
+	}
 
 	return NOERROR;
+}
+
+const DKinFitResults* DAnalysisResults_factory::Fit_Kinematics(const DReactionVertexInfo* locReactionVertexInfo, const DParticleCombo* locParticleCombo, DKinFitType locKinFitType, bool locUpdateCovMatricesFlag)
+{
+	//Make DKinFitChain
+//FIX THIS
+	const DKinFitChain* locKinFitChain = dKinFitUtils->Make_KinFitChain(locParticleCombo, locKinFitType);
+
+	//Make Constraints
+	deque<DKinFitConstraint_Vertex*> locSortedVertexConstraints;
+	set<DKinFitConstraint*> locConstraints = dKinFitUtils->Create_Constraints(locReactionVertexInfo, locParticleCombo, locKinFitChain, locKinFitType, locSortedVertexConstraints);
+	if(locConstraints.empty())
+	{
+		dKinFitUtils->Recycle_DKinFitChain(locKinFitChain); //original chain no longer needed: recycle
+		return nullptr; //Nothing to fit!
+	}
+
+	//see if constraints (particles) are identical to a previous kinfit
+	auto locResultPair = std::make_pair(locConstraints, locUpdateCovMatricesFlag);
+	auto locResultIterator = dConstraintResultsMap.find(locResultPair);
+	if(locResultIterator != dConstraintResultsMap.end())
+	{
+		//this has been kinfit before, use the same result
+		DKinFitResults* locKinFitResults = locResultIterator->second;
+		if(locKinFitResults != nullptr)
+		{
+			//previous kinfit succeeded, build the output DKinFitChain and register this combo with that fit
+			set<DKinFitParticle*> locOutputKinFitParticles = locKinFitResults->Get_OutputKinFitParticles();
+			const DKinFitChain* locOutputKinFitChain = dKinFitUtils->Build_OutputKinFitChain(locKinFitChain, locOutputKinFitParticles);
+			locKinFitResults->Add_ParticleCombo(locParticleCombo, locOutputKinFitChain);
+		}
+
+		//else: the previous kinfit failed, so this one will too (don't save)
+		dKinFitUtils->Recycle_DKinFitChain(locKinFitChain); //original chain no longer needed: recycle
+		return;
+	}
+
+	//Add constraints & perform fit
+	dKinFitUtils->Set_UpdateCovarianceMatricesFlag(locUpdateCovMatricesFlag);
+	dKinFitter->Reset_NewFit();
+	dKinFitter->Add_Constraints(locConstraints);
+	bool locFitStatus = dKinFitter->Fit_Reaction();
+
+	//Build results (unless failed), and register
+	DKinFitResults* locKinFitResults = nullptr;
+	if(locFitStatus)
+	{
+		set<DKinFitParticle*> locOutputKinFitParticles = dKinFitter->Get_KinFitParticles();
+		const DKinFitChain* locOutputKinFitChain = dKinFitUtils->Build_OutputKinFitChain(locKinFitChain, locOutputKinFitParticles);
+		locKinFitResults = Build_KinFitResults(locParticleCombo, locOutputKinFitChain);
+	}
+	else //failed fit
+		dKinFitter->Recycle_LastFitMemory(); //RESET MEMORY FROM LAST KINFIT!! //results no longer needed
+
+	dKinFitUtils->Recycle_DKinFitChain(locKinFitChain); //original chain no longer needed: recycle
+	dConstraintResultsMap.emplace(locResultPair, locKinFitResults);
+
+	return locKinFitResults;
+}
+
+DKinFitResults* DAnalysisResults_factory::Build_KinFitResults(const DParticleCombo* locParticleCombo, DKinFitType locKinFitType, const DKinFitChain* locKinFitChain)
+{
+	DKinFitResults* locKinFitResults = new DKinFitResults();
+//?????
+	locKinFitResults->Add_ParticleCombo(locParticleCombo, locKinFitChain);
+
+	locKinFitResults->Set_KinFitType(locKinFitType);
+
+	locKinFitResults->Set_ConfidenceLevel(dKinFitter->Get_ConfidenceLevel());
+	locKinFitResults->Set_ChiSq(dKinFitter->Get_ChiSq());
+	locKinFitResults->Set_NDF(dKinFitter->Get_NDF());
+
+	//locKinFitResults->Set_VEta(dKinFitter->Get_VEta());
+	locKinFitResults->Set_VXi(dKinFitter->Get_VXi());
+	//locKinFitResults->Set_V(dKinFitter->Get_V());
+
+	locKinFitResults->Set_NumConstraints(dKinFitter->Get_NumConstraintEquations());
+	locKinFitResults->Set_NumUnknowns(dKinFitter->Get_NumUnknowns());
+
+	//Output particles and constraints
+	locKinFitResults->Add_OutputKinFitParticles(dKinFitter->Get_KinFitParticles());
+	locKinFitResults->Add_KinFitConstraints(dKinFitter->Get_KinFitConstraints());
+
+	//Pulls
+
+	//Build this:
+	map<const JObject*, map<DKinFitPullType, double> > locPulls_JObject;
+
+	//From this:
+	map<DKinFitParticle*, map<DKinFitPullType, double> > locPulls_KinFitParticle;
+	dKinFitter->Get_Pulls(locPulls_KinFitParticle);
+
+	//By looping over the pulls:
+	map<DKinFitParticle*, map<DKinFitPullType, double> >::iterator locMapIterator = locPulls_KinFitParticle.begin();
+	for(; locMapIterator != locPulls_KinFitParticle.end(); ++locMapIterator)
+	{
+		DKinFitParticle* locOutputKinFitParticle = locMapIterator->first;
+		DKinFitParticle* locInputKinFitParticle = dKinFitUtils->Get_InputKinFitParticle(locOutputKinFitParticle);
+		const JObject* locSourceJObject = dKinFitUtils->Get_SourceJObject(locInputKinFitParticle);
+
+		locPulls_JObject[locSourceJObject] = locMapIterator->second;
+	}
+	//Set Pulls
+	locKinFitResults->Set_Pulls(locPulls_JObject);
+
+	//Particle Mapping
+	//If any particles were NOT part of the kinematic fit, they are still added to the source -> output map
+	set<DKinFitParticle*> locAllKinFitParticles = locKinFitChain->Get_AllParticles();
+	set<DKinFitParticle*>::iterator locParticleIterator = locAllKinFitParticles.begin();
+	for(; locParticleIterator != locAllKinFitParticles.end(); ++locParticleIterator)
+	{
+		const JObject* locSourceJObject = dKinFitUtils->Get_SourceJObject(*locParticleIterator);
+		if(locSourceJObject != NULL)
+		{
+			locKinFitResults->Add_ParticleMapping_SourceToOutput(locSourceJObject, *locParticleIterator);
+			continue; //*locParticleIterator was an input object //not directly used in the fit
+		}
+		DKinFitParticle* locInputKinFitParticle = dKinFitUtils->Get_InputKinFitParticle(*locParticleIterator);
+		if(locInputKinFitParticle != NULL)
+		{
+			locSourceJObject = dKinFitUtils->Get_SourceJObject(locInputKinFitParticle);
+			if(locSourceJObject != NULL) //else was a decaying/missing particle: no source
+				locKinFitResults->Add_ParticleMapping_SourceToOutput(locSourceJObject, *locParticleIterator);
+		}
+	}
+
+	return locKinFitResults;
 }
 
