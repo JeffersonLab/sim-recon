@@ -46,9 +46,7 @@
 #define ONE_OVER_C TIME_UNIT_CONVERSION
 #define CDC_DRIFT_SPEED 55e-4
 #define VAR_S 0.09
-#define Q_OVER_P_MAX 100. // 10 MeV/c
 #define Q_OVER_PT_MAX 100. // 10 MeV/c
-#define PT_MIN 0.01 // 10 MeV/c
 #define MAX_PATH_LENGTH 500.
 #define TAN_MAX 10.
 
@@ -188,7 +186,6 @@ class DTrackFitterKalmanSIMD: public DTrackFitter{
   jerror_t AddCDCHit(const DCDCTrackHit *cdchit);
   jerror_t AddFDCHit(const DFDCPseudo *fdchit);
 
-  jerror_t SetSeed(double q,DVector3 pos, DVector3 mom);
   jerror_t KalmanLoop(void);
   virtual kalman_error_t KalmanForward(double fdc_anneal,double cdc_anneal,DMatrix5x1 &S,DMatrix5x5 &C,
 				 double &chisq,unsigned int &numdof);
@@ -510,6 +507,14 @@ class DTrackFitterKalmanSIMD: public DTrackFitter{
   double MIN_FIT_P;
   // Maximum seed momentum
   double MAX_SEED_P;
+  
+  // Minimum proton momentum
+  double MIN_PROTON_P;
+  // Minimum pion momentum
+  double MIN_PION_P;
+  // minimum pt or p
+  double PT_MIN;
+  double Q_OVER_P_MAX;
 
   // parameters for scaling drift table for CDC
   double CDC_DRIFT_BSCALE_PAR1,CDC_DRIFT_BSCALE_PAR2;

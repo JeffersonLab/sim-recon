@@ -121,7 +121,7 @@ void FitTimeToDistance(TString inputROOTFile = "hd_root.root")
    //f1 = new TF2("f1",TimeToDistanceFieldOff, 0, 200, -0.18, 0.18, npar);
    //f2 = new TF2("f2",TimeToDistanceFieldOff, 0, 200, -0.18, 0.18, npar);
 
-   TProfile *constants = thisFile->Get("/CDC_TimeToDistance/CDC_TD_Constants");
+   TProfile *constants = (TProfile*) thisFile->Get("/CDC_TimeToDistance/CDC_TD_Constants");
    long_drift_func[0][0] = constants->GetBinContent(101);
    long_drift_func[0][1] = constants->GetBinContent(102);
    long_drift_func[0][2] = constants->GetBinContent(103);
@@ -208,17 +208,19 @@ void FitTimeToDistance(TString inputROOTFile = "hd_root.root")
    f2->Draw("cont2 list same");
    c3->Update();
 
-   ofstream outputTextFile;
-   outputTextFile.open("ccdb_Format.txt"); 
-   outputTextFile << fr->Parameter(0) << " " << fr->Parameter(1) << " " << fr->Parameter(2) << " " ;
-   outputTextFile << fr->Parameter(3) << " " << fr->Parameter(4) << " " << fr->Parameter(5) << " " ;
-   outputTextFile << fr->Parameter(6) << " " << fr->Parameter(7) << " " << fr->Parameter(8) << " " ;
-   outputTextFile << magnet_correction[0][0] << " " << magnet_correction[0][1] << endl; 
-   outputTextFile << fr->Parameter(9) << " " << fr->Parameter(10) << " " << fr->Parameter(11) << " " ;
-   outputTextFile << fr->Parameter(12) << " " << fr->Parameter(13) << " " << fr->Parameter(14) << " " ;
-   outputTextFile << fr->Parameter(15) << " " << fr->Parameter(16) << " " << fr->Parameter(17) << " " ;
-   outputTextFile << magnet_correction[1][0] << " " << magnet_correction[1][1] << endl;
-   outputTextFile.close();
+   if ((Int_t) fr == 0){ // Fit converged with no errors
+      ofstream outputTextFile;
+      outputTextFile.open(Form("ccdb_Format_%i.txt",run)); 
+      outputTextFile << fr->Parameter(0) << " " << fr->Parameter(1) << " " << fr->Parameter(2) << " " ;
+      outputTextFile << fr->Parameter(3) << " " << fr->Parameter(4) << " " << fr->Parameter(5) << " " ;
+      outputTextFile << fr->Parameter(6) << " " << fr->Parameter(7) << " " << fr->Parameter(8) << " " ;
+      outputTextFile << magnet_correction[0][0] << " " << magnet_correction[0][1] << endl; 
+      outputTextFile << fr->Parameter(9) << " " << fr->Parameter(10) << " " << fr->Parameter(11) << " " ;
+      outputTextFile << fr->Parameter(12) << " " << fr->Parameter(13) << " " << fr->Parameter(14) << " " ;
+      outputTextFile << fr->Parameter(15) << " " << fr->Parameter(16) << " " << fr->Parameter(17) << " " ;
+      outputTextFile << magnet_correction[1][0] << " " << magnet_correction[1][1] << endl;
+      outputTextFile.close();
+   }
 
    return;
 }
