@@ -2509,8 +2509,8 @@ void GraphCrossSection(double m1,double m2){
     double partial_width=0.05; //?? // guess from note in pdg
     gR=sqrt(8.*M_PI*M_sq_R*partial_width/qR);
 
-    gsq_rho_S_gamma=0.239; // GeV^-2
-    gsq_omega_S_gamma=0.02656;
+    gsq_rho_S_gamma=0.159; // GeV^-2
+    gsq_omega_S_gamma=(1./9.)*gsq_rho_S_gamma;
   }
   else{ // a0(980)
     M_sq_R=0.9825*0.9825;
@@ -2521,7 +2521,7 @@ void GraphCrossSection(double m1,double m2){
     double partial_width=0.06; //?? // guess from note in pdg
     gR=sqrt(8.*M_PI*M_sq_R*partial_width/qR);
     gsq_rho_S_gamma=0.02537;
-    gsq_omega_S_gamma=0.2283;
+    gsq_omega_S_gamma=9.*gsq_rho_S_gamma;
   } 
 
   // Momenta of incoming photon and outgoing S and proton in cm frame
@@ -2633,9 +2633,9 @@ void GraphCrossSection(double m1,double m2){
       double mass=m1_plus_m2+dm*double(j);
       m_array[j]=mass;
       double M_sq=mass*mass;
-      double mf500=0.8;
+      double mf500=0.6;
       M_sq_R=mf500*mf500; 
-      width=0.5;
+      width=1.;
       ReB=M_sq_R-M_sq;
       double MRsq_minus_m1sq_m2sq=M_sq_R-m1sq_plus_m2sq;
       double temp=4.*m1sq*m2sq;
