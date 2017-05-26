@@ -140,6 +140,7 @@ int main( int argc, char* argv[] ){
 	ReactionInfo* reaction = cfgInfo->reactionList()[0];
 	
 	// random number initialization (set to 0 by default)
+	TRandom3* gRandom = new TRandom3();
 	gRandom->SetSeed(seed);
 
 	// setup AmpToolsInterface
@@ -149,9 +150,9 @@ int main( int argc, char* argv[] ){
 	
 	ProductionMechanism::Type type =
 		( genFlat ? ProductionMechanism::kFlat : ProductionMechanism::kResonant );
-	
+
 	// generate over a range of mass -- the daughters are two charged pions
-	GammaPToXYP resProd( lowMass, highMass, 0.140, 0.140, beamMaxE, beamPeakE, beamLowE, beamHighE, type, slope );
+	GammaPToXYP resProd( lowMass, highMass, ParticleMass(PiPlus), ParticleMass(PiMinus), beamMaxE, beamPeakE, beamLowE, beamHighE, type, slope );
 	
 	// seed the distribution with a sum of noninterfering Breit-Wigners
 	// we can easily compute the PDF for this and divide by that when
@@ -222,7 +223,7 @@ int main( int argc, char* argv[] ){
 			
 			// cannot ask for the intensity if we haven't called process events above
 			double weightedInten = ( genFlat ? 1 : ati.intensity( i ) ); 
-			cout << " i=" << i << "  intensity_i=" << weightedInten << endl;
+			// cout << " i=" << i << "  intensity_i=" << weightedInten << endl;
 
 			if( !diag ){
 				

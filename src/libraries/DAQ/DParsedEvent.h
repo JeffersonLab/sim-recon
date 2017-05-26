@@ -166,6 +166,7 @@ class DParsedEvent{
 			MyTypes(returntopool)
 			MyTypes(clearvectors)
 			MyBORTypes(clearvectors)
+      MyDerivedTypes(returntopool)
 			MyDerivedTypes(clearvectors)
 			MyNoPoolTypes(deletepool)
 			MyNoPoolTypes(clearpoolvectors)
