@@ -15,6 +15,10 @@ void DParticleComboCreator::DParticleComboCreator(JEventLoop* locEventLoop, cons
 	locEventLoop->Get(locChargedTrackHypotheses); //make sure that brun() is called for the default factory!!!
 	dChargedTrackHypothesisFactory = static_cast<DChargedTrackHypothesis_factory*>(locEventLoop->GetFactory("DChargedTrackHypothesis"));
 
+	vector<const DBeamPhoton*> locBeamPhotons;
+	locEventLoop->Get(locBeamPhotons); //make sure that brun() is called for the default factory!!!
+	dBeamPhotonfactory = static_cast<DBeamPhoton_factory*>(locEventLoop->GetFactory("DBeamPhoton"));
+
 	locEventLoop->GetSingle(dParticleID);
 
 	//error matrix //too lazy to compute properly right now ... need to hack DAnalysisUtilities::Calc_DOCA()
@@ -230,6 +234,63 @@ const DChargedTrackHypothesis* DParticleComboCreator::Create_ChargedHypo(const D
 
 	locNewHypo->Set_T0(locPropagatedRFTime, locOrigHypo->t0_err(), locOrigHypo->t0_detector());
 	dParticleID->Calc_ChargedPIDFOM(locNewHypo);
+
+	return locNewHypo;
+}
+
+const DBeamPhoton* DParticleComboCreator::Build_BeamPhoton_KinFit(const DBeamPhoton* locBeamPhoton, DKinFitParticle* locKinFitParticle)
+{
+	DBeamPhoton* locNewBeamPhoton = dBeamPhotonfactory->Get_Resource();
+	locNewBeamPhoton->dCounter = locBeamPhoton->dCounter;
+	locNewBeamPhoton->dSystem = locBeamPhoton->dSystem;
+	locNewBeamPhoton->setMomentum(DVector3(locKinFitParticle->Get_Momentum().X(),locKinFitParticle->Get_Momentum().Y(),locKinFitParticle->Get_Momentum().Z()));
+	locNewBeamPhoton->setPosition(DVector3(locKinFitParticle->Get_Position().X(),locKinFitParticle->Get_Position().Y(),locKinFitParticle->Get_Position().Z()));
+	locNewBeamPhoton->setTime(locKinFitParticle->Get_Time());
+	locNewBeamPhoton->setErrorMatrix(locKinFitParticle->Get_CovarianceMatrix());
+	return locNewBeamPhoton;
+}
+
+
+
+DChargedTrackHypothesis* DParticleComboCreator::Build_ChargedTrackHypothesis(const DChargedTrackHypothesis* locOrigHypo, DKinFitParticle* locKinFitParticle, bool locVertexFitFlag)
+{
+	auto locNewHypo = dChargedTrackHypothesisFactory->Get_Resource();
+
+	//p3 & v3
+	TVector3 locFitMomentum = locKinFitParticle->Get_Momentum();
+	TVector3 locFitVertex = locKinFitParticle->Get_Position();
+	locNewHypo->setMomentum(DVector3(locFitMomentum.X(), locFitMomentum.Y(), locFitMomentum.Z()));
+	locNewHypo->setPosition(DVector3(locFitVertex.X(), locFitVertex.Y(), locFitVertex.Z()));
+
+	//t & error matrix
+	locNewHypo->setTime(locKinFitParticle->Get_Time());
+	locNewHypo->setErrorMatrix(locKinFitParticle->Get_CovarianceMatrix());
+
+	if(!locVertexFitFlag)
+		locNewHypo->Share_FromInput(locOrigHypo, true, true, false); //share all but kinematics
+	else //new timing info
+	{
+//OK
+		locNewHypo->Share_FromInput(locOrigHypo, true, false, false); //only share tracking info (not timing or kinematics)
+		auto locPropagatedRFTime = locOrigHypo->t0() + (locCommonVertex.Z() - locOrigHypo->position().Z())/SPEED_OF_LIGHT;
+		locNewHypo->Set_T0(locPropagatedRFTime, locOrigHypo->t0_err(), locOrigHypo->t0_detector());
+
+		//BE CAREFUL HERE!
+		if(locSpacetimeFitFlag)
+		{
+
+		}
+		else
+		{
+			auto locDeltaPathLength = ;
+			auto locTimeAtPOCAToVertex = locKinFitParticle->Get_Time();
+			locNewHypo->Set_TimeAtPOCAToVertex(locTimeAtPOCAToVertex);
+
+		}
+
+		//for this calc: if rf time part of timing constraint, don't use locKinFitParticle->Get_Time() for chisq calc!!!
+		dParticleID->Calc_ChargedPIDFOM(locNewHypo);
+	}
 
 	return locNewHypo;
 }

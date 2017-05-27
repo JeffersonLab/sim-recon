@@ -1668,9 +1668,11 @@ void DHistogramAction_KinFitResults::Initialize(JEventLoop* locEventLoop)
 					continue; //histograms already created for this pid
 
 				pair<int, int> locParticlePair(loc_i, loc_j);
-				bool locIsInVertexFitFlag = std::binary_search(locFullConstrainParticles.begin(), locFullConstrainParticles.end(), locParticlePair);
+				bool locIsInVertexFitFlag = locStepVertexInfo->Get_DanglingVertexFlag();
 
 				bool locIsNeutralShowerFlag = (locIsInVertexFitFlag && (ParticleCharge(locPID) == 0));
+				if((ParticleMass(locPID) > 0.0) && !locSpactimeIsFitFlag)
+					locIsNeutralShowerFlag = false; //massive shower momentum is defined by t, which isn't fit: use particle
 				if(!locP4IsFit && !locIsInVertexFitFlag)
 					continue; //p4 is not fit, and this is not in a vertex fit: no pulls
 				if(locIsNeutralShowerFlag && !locP4IsFit)
@@ -1720,7 +1722,7 @@ void DHistogramAction_KinFitResults::Initialize(JEventLoop* locEventLoop)
 					continue; //histograms already created for this pid
 
 				pair<int, int> locParticlePair(loc_i, loc_j);
-				bool locIsInVertexFitFlag = std::binary_search(locFullConstrainParticles.begin(), locFullConstrainParticles.end(), locParticlePair);
+				bool locIsInVertexFitFlag = locStepVertexInfo->Get_DanglingVertexFlag();
 				bool locIsChargedFlag = (ParticleCharge(locPID) != 0);
 
 				bool locIsNeutralShowerFlag = (locIsInVertexFitFlag && (ParticleCharge(locPID) == 0));
@@ -1788,7 +1790,6 @@ void DHistogramAction_KinFitResults::Create_ParticlePulls(string locFullROOTName
 	//vertex pulls:
 	if((locIsNeutralShowerFlag && locP4IsFit) || (locIsChargedFlag && locIsInVertexFitFlag))
 	{
-//should include case when beamline is in fit!!
 		locPullTypes.insert(pair<DKinFitPullType, pair<string, string> >(d_XxPull, pair<string, string>("Pull_Xx", "x_{x} Pull")));
 		locPullTypes.insert(pair<DKinFitPullType, pair<string, string> >(d_XyPull, pair<string, string>("Pull_Xy", "x_{y} Pull")));
 		locPullTypes.insert(pair<DKinFitPullType, pair<string, string> >(d_XzPull, pair<string, string>("Pull_Xz", "x_{z} Pull")));

@@ -599,7 +599,7 @@ void DSourceComboer::Reset_NewEvent(JEventLoop* locEventLoop)
 
 /********************************************************************* CREATE DSOURCOMBO'S **********************************************************************/
 
-unordered_map<const DReaction*, vector<const DParticleCombo*>> DSourceComboer::Build_ParticleCombos(const DReactionVertexInfo* locReactionVertexInfo)
+unordered_map<const DReaction*, vector<DParticleCombo*>> DSourceComboer::Build_ParticleCombos(const DReactionVertexInfo* locReactionVertexInfo)
 {
 	//This builds the combos and creates DParticleCombo & DParticleComboSteps (doing whatever is necessary)
 	auto locReaction = locReactionVertexInfo->Get_Reaction();
@@ -735,8 +735,8 @@ unordered_map<const DReaction*, vector<const DParticleCombo*>> DSourceComboer::B
 
 		//Combo with neutrals and beam
 		Combo_WithNeutralsAndBeam(locReactionVertexInfo, locPrimaryComboUse, locReactionChargedCombo, locBeamBunches_Charged, locOutputComboMap);
-		return locOutputComboMap;
 	}
+	return locOutputComboMap;
 }
 
 void DSourceComboer::Combo_WithNeutralsAndBeam(const DReactionVertexInfo* locReactionVertexInfo, const DSourceComboUse& locPrimaryComboUse, const DSourceCombo* locReactionChargedCombo, const vector<int>& locBeamBunches_Charged, DCombosByReaction& locOutputComboMap)

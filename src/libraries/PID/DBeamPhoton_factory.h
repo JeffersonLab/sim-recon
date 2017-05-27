@@ -13,11 +13,15 @@
 #include <TAGGER/DTAGMHit.h>
 #include <TAGGER/DTAGHHit.h>
 #include <DANA/DApplication.h>
+#include "ANALYSIS/DResourcePool.h"
 
-class DBeamPhoton_factory:public jana::JFactory<DBeamPhoton>{
+class DBeamPhoton_factory:public jana::JFactory<DBeamPhoton>
+{
 	public:
-		DBeamPhoton_factory(){};
-		~DBeamPhoton_factory(){};
+		const DBeamPhoton* Get_Resource(void){return dResourcePool_BeamPhotons.Get_Resource();};
+		void Recycle_Hypotheses(vector<const DBeamPhoton*>& locHypos){dResourcePool_BeamPhotons.Recycle(locHypos);}
+		void Recycle_Hypotheses(vector<DBeamPhoton*>& locHypos){dResourcePool_BeamPhotons.Recycle(locHypos);}
+		void Recycle_Hypothesis(const DBeamPhoton* locHypo){dResourcePool_BeamPhotons.Recycle(locHypo);}
 
 	private:
 		jerror_t init(void);						///< Called once at program start.
@@ -25,6 +29,9 @@ class DBeamPhoton_factory:public jana::JFactory<DBeamPhoton>{
 		jerror_t evnt(jana::JEventLoop *locEventLoop, uint64_t locEventNumber);	///< Called every event.
 
 		double dTargetCenterZ;
+
+		//RESOURCE POOL
+		DResourcePool<DBeamPhoton> dResourcePool_BeamPhotons;
 
 		// config. parameters
 		double DELTA_T_DOUBLES_MAX;

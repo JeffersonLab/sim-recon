@@ -262,6 +262,7 @@ jerror_t DAnalysisResults_factory::evnt(JEventLoop* locEventLoop, uint64_t event
 	dKinFitUtils->Reset_NewEvent(locEventLoop->GetJEvent().GetEventNumber());
 	dKinFitter->Reset_NewEvent();
 	dConstraintResultsMap.clear();
+	dPreToPostKinFitComboMap.clear();
 
 	auto locReactions = DAnalysis::Get_Reactions(locEventLoop);
 	if(dDebugLevel > 0)
@@ -296,7 +297,8 @@ jerror_t DAnalysisResults_factory::evnt(JEventLoop* locEventLoop, uint64_t event
 				bool locActionFailedFlag = false;
 				for(; locActionIndex < locActions.size(); ++locActionIndex)
 				{
-					if(locAnalysisAction->Get_UseKinFitResultsFlag())
+					auto locAction = locActions[locActionIndex];
+					if(locAction->Get_UseKinFitResultsFlag())
 						break; //need to kinfit first!!!
 					if((*locAction)(locEventLoop, locCombo))
 						continue;
@@ -307,23 +309,15 @@ jerror_t DAnalysisResults_factory::evnt(JEventLoop* locEventLoop, uint64_t event
 					continue; //go to next combo
 
 				//KINFIT IF REQUESTED
-				auto locKinFitType = locReaction->Get_KinFitType();
-				if(locKinFitType != d_NoFit)
+				auto locPostKinFitCombo = locCombo; //changed below if needed
 				{
-//BEWARE: A given combo can be used for multiple DReactions
-//These DReactions could have different kinfit types
-//Thus, the kinfit results are DIFFERENT if the fit type is different
-//Otherwise it is identical
-		bool locUpdateCovMatricesFlag = locReaction->Get_KinFitUpdateCovarianceMatricesFlag();
-//FUNCTIONS:
-Get_KinFitVertexParticles
-					//MAKE NEW COMBO
 				}
 
 				//LOOP OVER POST-KINFIT ACTIONS
 				for(; locActionIndex < locActions.size(); ++locActionIndex)
 				{
-					if((*locAction)(locEventLoop, locCombo))
+					auto locAction = locActions[locActionIndex];
+					if((*locAction)(locEventLoop, locPostKinFitCombo))
 						continue;
 					locActionFailedFlag = true;
 					break;
@@ -332,12 +326,52 @@ Get_KinFitVertexParticles
 					continue; //go to next combo
 
 				//SAVE COMBO
-				locPassedCombos.push_back(locCombo);
+				locPassedCombos.push_back(locPostKinFitCombo);
 			}
 		}
 	}
 
 	return NOERROR;
+}
+
+const DParticleCombo* DAnalysisResults_factory::Handle_ComboFit(const DReactionVertexInfo* locReactionVertexInfo, DParticleCombo* locParticleCombo, const DReaction* locReaction)
+{
+	auto locKinFitType = locReaction->Get_KinFitType();
+	if(locKinFitType == d_NoFit)
+		return locParticleCombo;
+
+	auto locUpdateCovMatricesFlag = locReaction->Get_KinFitUpdateCovarianceMatricesFlag();
+	auto locComboKinFitTuple = std::make_tuple(locParticleCombo, locKinFitType, locUpdateCovMatricesFlag);
+
+	//Check if same fit with this combo already done. If so, return it.
+	auto locComboIterator = dPreToPostKinFitComboMap.find(locComboKinFitTuple);
+	if(locComboIterator != dPreToPostKinFitComboMap.end())
+		return locComboIterator->second;
+
+//BEWARE: A given combo can be used for multiple DReactions
+//These DReactions could have different kinfit types
+//Thus, the kinfit results are DIFFERENT if the fit type is different
+//Otherwise it is identical
+	auto locKinFitResults = Fit_Kinematics(locReactionVertexInfo, locParticleCombo, locKinFitType, locUpdateCovMatricesFlag);
+
+	//See if we need to make a new combo
+	if(locParticleCombo->Get_KinFitResults() != nullptr)
+	{
+		//this combo has already been reused: make a new combo
+//MAKE NEW COMBO
+		dPreToPostKinFitComboMap.emplace(locComboKinFitTuple, locNewParticleCombo);
+		return locNewParticleCombo;
+	}
+	else //reuse combo
+	{
+		locParticleCombo->Set_KinFitResults(locKinFitResults);
+		//create new steps, etc.
+		dPreToPostKinFitComboMap.emplace(locComboKinFitTuple, locParticleCombo);
+		return locParticleCombo;
+	}
+//First time: Reuse combo
+//later times: if combo has already been re-used and either fit is different or update cov is different, then make a new combo, and continue with it instead
+
 }
 
 const DKinFitResults* DAnalysisResults_factory::Fit_Kinematics(const DReactionVertexInfo* locReactionVertexInfo, const DParticleCombo* locParticleCombo, DKinFitType locKinFitType, bool locUpdateCovMatricesFlag)

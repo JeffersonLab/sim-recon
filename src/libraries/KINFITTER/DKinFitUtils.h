@@ -196,14 +196,6 @@ class DKinFitUtils //purely virtual: cannot directly instantiate class, can only
 		set<DKinFitParticle*> Build_CloneParticleSet(const set<DKinFitParticle*>& locInputParticles, const map<DKinFitParticle*, DKinFitParticle*>& locCloneIOMap) const;
 		set<DKinFitConstraint*> Clone_ParticlesAndConstraints(const set<DKinFitConstraint*>& locInputConstraints);
 
-		/********************************************************** SETUP VERTEX CONSTRAINTS ********************************************************/
-
-		//Does not include initial guesses!
-		deque<set<DKinFitParticle*> > Setup_VertexConstraints(const DKinFitChain* locKinFitChain);
-		deque<DKinFitConstraint_Vertex*> Create_VertexConstraints(const deque<set<DKinFitParticle*> >& locAllVertices, bool locSpacetimeFitFlag);
-		void Setup_VertexConstraint(const DKinFitChain* locKinFitChain, size_t locStepIndex, set<DKinFitParticle*>& locVertexParticles, set<size_t>& locIncludedStepIndices);
-		void Group_VertexParticles(const set<DKinFitParticle*>& locVertexParticles, set<DKinFitParticle*>& locFullConstrainParticles, set<DKinFitParticle*>& locDecayingParticles, set<DKinFitParticle*>& locOnlyConstrainTimeParticles, set<DKinFitParticle*>& locNoConstrainParticles) const;
-
 		/*********************************************************** CALCULATION ROUTINES ***********************************************************/
 
 		//Don't call directly: Rather, call the public wrappers (simpler)

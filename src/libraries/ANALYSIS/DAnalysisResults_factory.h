@@ -25,6 +25,7 @@
 #include "ANALYSIS/DKinFitUtils_GlueX.h"
 
 #include "ANALYSIS/DReaction.h"
+#include "ANALYSIS/DReactionVertexInfo.h"
 #include "ANALYSIS/DCutActions.h"
 #include "ANALYSIS/DParticleCombo.h"
 #include "ANALYSIS/DAnalysisAction.h"
@@ -56,6 +57,7 @@ class DAnalysisResults_factory : public jana::JFactory<DAnalysisResults>
 
 		void Make_ControlHistograms(vector<const DReaction*>& locReactions);
 		void Check_ReactionNames(vector<const DReaction*>& locReactions) const;
+		const DKinFitResults* Fit_Kinematics(const DReactionVertexInfo* locReactionVertexInfo, const DParticleCombo* locParticleCombo, DKinFitType locKinFitType, bool locUpdateCovMatricesFlag);
 		DKinFitResults* Build_KinFitResults(const DParticleCombo* locParticleCombo, DKinFitType locKinFitType, const DKinFitChain* locKinFitChain);
 
 		unsigned int dDebugLevel = 0;
@@ -67,6 +69,7 @@ class DAnalysisResults_factory : public jana::JFactory<DAnalysisResults>
 		DKinFitter* dKinFitter;
 		DKinFitUtils_GlueX* dKinFitUtils;
 		map<pair<set<DKinFitConstraint*>, bool>, DKinFitResults*> dConstraintResultsMap; //used for determining if kinfit results will be identical //bool: update cov matrix flag
+		unordered_map<tuple<DParticleCombo*, DKinFitType, bool>, DParticleCombo*> dPreToPostKinFitComboMap;
 
 		unordered_map<const DReaction*, bool> dMCReactionExactMatchFlags;
 		unordered_map<const DReaction*, DCutAction_TrueCombo*> dTrueComboCuts;

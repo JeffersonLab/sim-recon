@@ -41,23 +41,19 @@ using namespace jana;
 namespace DAnalysis
 {
 //MAIN
-//in pull hist action, locIsInVertexFitFlag, & the neutral flags are broken!
-	//well, just be careful.  e.g. photons not in full-constrain
-	//also, be careful about massive neutrals (what should the pulls be?)
-	//once I have this solution, fix Get_KinFitVertexParticles call in Make_KinFitChainStep
-//purge utils funcs
-//do kinematic fit
 //add kinfit results TO particle combo (instead of making 2x combos!)
-//execute actions
+//don't forget decaying/missing particles!!
+//fill action hists
 
 //ANY TIME:
-//tweak default mass & pid cuts
-//change all references to bcal/fcal to z-independent/dependent showers
 //No longer a target particle: Change code accordingly
+//rescattering: make sure kinfit & missing mass calc handles multiple targets correctly!
 //ditch source objects: use DNeutralShower member and DTrackTimeBased members instead!!!
 //finish comments in Build_ParticleCombos()
 //combo & steps no longer have dreaction as members!!
-//move resource pools to kinfitter!!
+//move resource pools to kinfitter?
+//tweak default mass & pid cuts
+//change all references to bcal/fcal to z-independent/dependent showers
 
 //MISCELLANEOUS TO DO:
 //When saving ROOT TTree, don't save p4 of decaying particles if mass is not constrained in kinfit!
@@ -78,7 +74,7 @@ using DComboIteratorsByBeamBunch = unordered_map<vector<int>, vector<const DSour
 //The DSourceCombosByUse_Large type uses a vector to pointer so that the combos can be easily copied and reused for another use
 //e.g. when you can't place a mass cut yet: 2 different uses, identical combos: far faster to just copy the pointer to the large vector
 using DSourceCombosByUse_Large = unordered_map<DSourceComboUse, vector<const DSourceCombo*>*>;
-using DCombosByReaction = unordered_map<const DReaction*, vector<const DParticleCombo*>>;
+using DCombosByReaction = unordered_map<const DReaction*, vector<DParticleCombo*>>;
 
 /************************************************************** DEFINE CLASSES ***************************************************************/
 
@@ -98,7 +94,7 @@ class DSourceComboer : public JObject
 		DSourceComboer::~DSourceComboer(void);
 
 		//BUILD COMBOS (what should be called from the outside to do all of the work)
-		unordered_map<const DReaction*, vector<const DParticleCombo*>> Build_ParticleCombos(const DReactionVertexInfo* locReactionVertexInfo);
+		unordered_map<const DReaction*, vector<DParticleCombo*>> Build_ParticleCombos(const DReactionVertexInfo* locReactionVertexInfo);
 
 		//Get combo characteristics
 		Charge_t Get_ChargeContent(const DSourceComboInfo* locSourceComboInfo) const{return dComboInfoChargeContent.find(locSourceComboInfo)->second;}

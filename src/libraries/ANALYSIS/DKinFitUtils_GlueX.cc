@@ -358,7 +358,7 @@ DKinFitParticle* DKinFitUtils_GlueX::Make_DecayingParticle(Particle_t locPID, co
 
 /**************************************************************** MAKE DKINFITCHAIN ****************************************************************/
 
-const DKinFitChain* DKinFitUtils_GlueX::Make_KinFitChain(const DParticleCombo* locParticleCombo, DKinFitType locKinFitType)
+const DKinFitChain* DKinFitUtils_GlueX::Make_KinFitChain(const DReactionVertexInfo* locReactionVertexInfo, const DParticleCombo* locParticleCombo, DKinFitType locKinFitType)
 {
 	//locKinFitType input in case want to do a different fit
 	if(dDebugLevel > 10)
@@ -380,7 +380,7 @@ const DKinFitChain* DKinFitUtils_GlueX::Make_KinFitChain(const DParticleCombo* l
 		locKinFitChainStep->Set_ConstrainDecayingMassFlag(false); //unless changed later
 
 		//Create it
-		Make_KinFitChainStep(locParticleCombo, locKinFitType, loc_i, locKinFitChain, locKinFitChainStep, locStepCreationMap);
+		Make_KinFitChainStep(locReactionVertexInfo, locParticleCombo, locKinFitType, loc_i, locKinFitChain, locKinFitChainStep, locStepCreationMap);
 		locKinFitChain->Add_KinFitChainStep(locKinFitChainStep);
 	}
 
@@ -483,26 +483,24 @@ const DKinFitChain* DKinFitUtils_GlueX::Make_KinFitChain(const DParticleCombo* l
 	return locKinFitChain;
 }
 
-void DKinFitUtils_GlueX::Make_KinFitChainStep(const DParticleCombo* locParticleCombo, DKinFitType locKinFitType, size_t locStepIndex, DKinFitChain* locKinFitChain, DKinFitChainStep* locKinFitChainStep, map<size_t, size_t>& locStepCreationMap)
+void DKinFitUtils_GlueX::Make_KinFitChainStep(const DReactionVertexInfo* locReactionVertexInfo, const DParticleCombo* locParticleCombo, DKinFitType locKinFitType, size_t locStepIndex, DKinFitChain* locKinFitChain, DKinFitChainStep* locKinFitChainStep, map<size_t, size_t>& locStepCreationMap)
 {
 	//get the steps
 	const DParticleComboStep* locParticleComboStep = locParticleCombo->Get_ParticleComboStep(locStepIndex);
 	const DReaction* locReaction = locParticleCombo->Get_Reaction();
 	const DReactionStep* locReactionStep = locReaction->Get_ReactionStep(locStepIndex);
+	auto locStepVertexInfo = locReactionVertexInfo->Get_StepVertexInfo(locStepIndex);
 	int locKinFitStepIndex = locKinFitChain->Get_NumKinFitChainSteps();
 
 	//if doing a vertex fit, see which neutral particles can be treated as showers
-	set<pair<int, int> > locKinFitVertexParticles;
 	bool locSpactimeIsFitFlag = (locKinFitType == d_SpacetimeFit) || (locKinFitType == d_P4AndSpacetimeFit);
-	if((locKinFitType == d_VertexFit) || (locKinFitType == d_P4AndVertexFit) || (locKinFitType == d_P4AndSpacetimeFit))
-		locKinFitVertexParticles = Get_KinFitVertexParticles(locReaction);
 
 	//initial particle
 	if(locKinFitChainStep->Get_InitialParticles().empty()) //else step already started: initial particle doesn't have fixed mass
 	{
 		locKinFitChainStep->Set_InitialParticleDecayFromStepIndex(-1); //unless set otherwise below (enclosed decaying particle)
 		//initial beam particle
-		const DBeamPhoton* locBeamPhoton = dynamic_cast<const DBeamPhoton*>(locParticleComboStep->Get_InitialParticle());
+		const DBeamPhoton* locBeamPhoton = dynamic_cast<const DBeamPhoton*>(locParticleComboStep->Get_InitialParticle_Measured());
 		if(locBeamPhoton != NULL)
 			locKinFitChainStep->Add_InitialParticle(Make_BeamParticle(locBeamPhoton));
 		else //decaying particle
@@ -530,7 +528,7 @@ void DKinFitUtils_GlueX::Make_KinFitChainStep(const DParticleCombo* locParticleC
 	for(size_t loc_j = 0; loc_j < locParticleComboStep->Get_NumFinalParticles(); ++loc_j)
 	{
 		int locDecayStepIndex = locParticleComboStep->Get_DecayStepIndex(loc_j);
-		const DKinematicData* locKinematicData = locParticleComboStep->Get_FinalParticle(loc_j);
+		const DKinematicData* locKinematicData = locParticleComboStep->Get_FinalParticle_Measured(loc_j);
 		Particle_t locPID = locParticleComboStep->Get_FinalParticleID(loc_j);
 
 		if(locDecayStepIndex == -1) //missing particle
@@ -548,15 +546,14 @@ void DKinFitUtils_GlueX::Make_KinFitChainStep(const DParticleCombo* locParticleC
 			if(IsFixedMass(locPID))
 				continue; //skip for now, will create later
 			//e.g. omega: cannot constrain: add its decay step to this one
-			Make_KinFitChainStep(locParticleCombo, locKinFitType, locDecayStepIndex, locKinFitChain, locKinFitChainStep, locStepCreationMap);
+			Make_KinFitChainStep(locReactionVertexInfo, locParticleCombo, locKinFitType, locDecayStepIndex, locKinFitChain, locKinFitChainStep, locStepCreationMap);
 		}
 		else if(ParticleCharge(locPID) == 0) //detected neutral
 		{
 			const DNeutralParticleHypothesis* locNeutralParticleHypothesis = static_cast<const DNeutralParticleHypothesis*>(locKinematicData);
 
 			//Determine whether we should use the particle or the shower object
-			pair<int, int> locParticlePair(locStepIndex, loc_j);
-			bool locNeutralShowerFlag = (locKinFitVertexParticles.find(locParticlePair) != locKinFitVertexParticles.end());
+			bool locNeutralShowerFlag = locStepVertexInfo->Get_DanglingVertexFlag();
 			if((ParticleMass(locPID) > 0.0) && !locSpactimeIsFitFlag)
 				locNeutralShowerFlag = false; //massive shower momentum is defined by t, which isn't fit: use particle
 
@@ -722,31 +719,6 @@ set<DKinFitConstraint*> DKinFitUtils_GlueX::Create_Constraints(const DReactionVe
 }
 
 /************************************************************** CONSTRAINT PREDICTORS **************************************************************/
-
-//These functions are necessary to determine:
-	//Whether each neutral is in a vertex constraint or not (may not be enough particles to constrain that particular vertex)
-	//The pull terms needed when creating histograms
-	//The constraint strings for the confidence level histogram
-
-set<pair<int, int> > DKinFitUtils_GlueX::Get_KinFitVertexParticles(const DReaction* locReaction) const
-{
-	DKinFitType locKinFitType = locReaction->Get_KinFitType();
-	if((locKinFitType == d_NoFit) || (locKinFitType == d_P4Fit))
-		return set<pair<int, int> >();
-
-	//predict vertices
-	string locDummyString;
-	size_t locNumConstraints = 0;
-pair<size_t, string> DKinFitUtils_GlueX::Predict_VertexConstraints(const DReactionVertexInfo* locReactionVertexInfo, bool locSpacetimeFitFlag)
-	locVertices = Predict_VertexConstraints(locReaction, locVertices, false, locNumConstraints, locDummyString); //false: doesn't matter: not used
-
-	//merge vertices together
-	set<pair<int, int> > locVertexParticles;
-	for(size_t loc_i = 0; loc_i < locVertices.size(); ++loc_i)
-		locVertexParticles.insert(locVertices[loc_i].begin(), locVertices[loc_i].end());
-
-	return locVertexParticles;
-}
 
 string DKinFitUtils_GlueX::Get_ConstraintInfo(const DReactionVertexInfo* locReactionVertexInfo, const DReaction* locReaction, size_t& locNumConstraints, size_t& locNumUnknowns) const
 {

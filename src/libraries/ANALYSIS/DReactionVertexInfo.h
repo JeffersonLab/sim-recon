@@ -2,6 +2,7 @@
 #define DReactionVertexInfo_h
 
 #include <memory>
+#include <unordered_set>
 #include <unordered_map>
 #include <vector>
 #include <algorithm>
@@ -27,7 +28,7 @@ class DReactionVertexInfo : public JObject
 		DReactionVertexInfo(const DReaction* locReaction, const vector<shared_ptr<DReactionStepVertexInfo>>& locStepVertexInfos);
 
 		//SETTERS
-		void Add_Reaction(const DReaction* locReaction){return dReactions.insert(locReaction);}
+		void Add_Reaction(const DReaction* locReaction){dReactions.insert(locReaction);}
 
 		//GETTERS
 		const DReaction* Get_Reaction(void) const{return *dReactions.begin();} //since their channels are identical, any one will do (if used correctly)

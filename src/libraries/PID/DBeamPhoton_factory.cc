@@ -41,7 +41,10 @@ jerror_t DBeamPhoton_factory::init(void)
     gPARMS->SetDefaultParameter("BeamPhoton:DELTA_E_DOUBLES_MAX", DELTA_E_DOUBLES_MAX,
     "Maximum energy difference in GeV between a TAGM-TAGH pair of beam photons"
     " for them to be merged into a single photon");
-    return NOERROR;
+
+	//Setting this flag makes it so that JANA does not delete the objects in _data.  This factory will manage this memory.
+	SetFactoryFlag(NOT_OBJECT_OWNER);
+	return NOERROR;
 }
 
 //------------------
@@ -62,6 +65,8 @@ jerror_t DBeamPhoton_factory::brun(jana::JEventLoop *locEventLoop, int32_t runnu
 //------------------
 jerror_t DBeamPhoton_factory::evnt(jana::JEventLoop *locEventLoop, uint64_t locEventNumber)
 {
+	dResourcePool_BeamPhotons.Recycle(_data);
+
     vector<const DTAGMHit*> tagm_hits;
     locEventLoop->Get(tagm_hits);
 
@@ -69,7 +74,8 @@ jerror_t DBeamPhoton_factory::evnt(jana::JEventLoop *locEventLoop, uint64_t locE
     {
         if (!tagm_hits[ih]->has_fADC) continue; // Skip TDC-only hits (i.e. hits with no ADC info.)
         if (tagm_hits[ih]->row > 0) continue; // Skip individual fiber readouts
-        DBeamPhoton *gamma = new DBeamPhoton;
+        DBeamPhoton* gamma = dResourcePool_BeamPhotons.Get_Resource();
+
         Set_BeamPhoton(gamma, tagm_hits[ih], locEventNumber);
         _data.push_back(gamma);
     }
@@ -96,7 +102,7 @@ jerror_t DBeamPhoton_factory::evnt(jana::JEventLoop *locEventLoop, uint64_t locE
         }
         if (gamma == nullptr)
         {
-            gamma = new DBeamPhoton;
+            gamma = dResourcePool_BeamPhotons.Get_Resource();
             Set_BeamPhoton(gamma, tagh_hits[ih], locEventNumber);
             _data.push_back(gamma);
         }

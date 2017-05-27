@@ -29,6 +29,8 @@
 #include "KINFITTER/DKinFitter.h"
 #include "KINFITTER/DKinFitUtils.h"
 
+#include "ANALYSIS/DReaction.h"
+#include "ANALYSIS/DReactionVertexInfo.h"
 #include "ANALYSIS/DAnalysisUtilities.h"
 
 using namespace std;
@@ -76,7 +78,7 @@ class DKinFitUtils_GlueX : public DKinFitUtils
 		/************************************************************ CREATE DKINFITCHAIN ***********************************************************/
 
 		//optional: can help make constraints
-		const DKinFitChain* Make_KinFitChain(const DParticleCombo* locParticleCombo, DKinFitType locKinFitType);
+		const DKinFitChain* Make_KinFitChain(const DReactionVertexInfo* locReactionVertexInfo, const DParticleCombo* locParticleCombo, DKinFitType locKinFitType);
 
 		/************************************************************* CREATE CONSTRAINTS ***********************************************************/
 
@@ -84,13 +86,7 @@ class DKinFitUtils_GlueX : public DKinFitUtils
 
 		/************************************************************ CONSTRAINT PREDICTORS *********************************************************/
 
-		//These functions are necessary to determine:
-			//Whether each neutral is in a vertex constraint or not (may not be enough particles to constrain that particular vertex)
-			//The pull terms needed when creating histograms
-			//The constraint strings for the confidence level histogram
 		pair<size_t, string> Predict_VertexConstraints(const DReactionVertexInfo* locReactionVertexInfo, bool locSpacetimeFitFlag) const;
-
-		set<pair<int, int> > Get_KinFitVertexParticles(const DReaction* locReaction) const;
 		string Get_ConstraintInfo(const DReactionVertexInfo* locReactionVertexInfo, const DReaction* locReaction, size_t& locNumConstraints, size_t& locNumUnknowns) const;
 
 		/*********************************************************** CALCULATION ROUTINES ***********************************************************/
@@ -122,7 +118,7 @@ class DKinFitUtils_GlueX : public DKinFitUtils
 
 		/************************************************************ CREATE DKINFITCHAIN ***********************************************************/
 
-		void Make_KinFitChainStep(const DParticleCombo* locParticleCombo, DKinFitType locKinFitType, size_t locStepIndex, DKinFitChain* locKinFitChain, DKinFitChainStep* locKinFitChainStep, map<size_t, size_t>& locStepCreationMap);
+		void Make_KinFitChainStep(const DReactionVertexInfo* locReactionVertexInfo, const DParticleCombo* locParticleCombo, DKinFitType locKinFitType, size_t locStepIndex, DKinFitChain* locKinFitChain, DKinFitChainStep* locKinFitChainStep, map<size_t, size_t>& locStepCreationMap);
 
 		/************************************************************ CONSTRAINT PREDICTORS *********************************************************/
 
