@@ -286,8 +286,19 @@ DKinFitParticle* DKinFitUtils_GlueX::Make_DetectedParticle(const DKinematicData*
 	TVector3 locMomentum = Make_TVector3(locKinematicData->momentum());
 	Particle_t locPID = locKinematicData->PID();
 
+	double locPathLength = 0.0;
+	auto locChargedHypo = dynamic_cast<const DChargedTrackHypothesis*>(locKinematicData);
+	if(locChargedHypo != nullptr)
+		locPathLength = locChargedHypo->Get_PathLength();
+	else
+	{
+		auto locNeutralHypo = dynamic_cast<const DNeutralParticleHypothesis*>(locKinematicData);
+		if(locNeutralHypo != nullptr)
+			locPathLength = locNeutralHypo->Get_PathLength();
+	}
+
 	DKinFitParticle* locKinFitParticle = DKinFitUtils::Make_DetectedParticle(PDGtype(locPID), ParticleCharge(locPID), ParticleMass(locPID), 
-		locSpacetimeVertex, locMomentum, locKinematicData->errorMatrix());
+		locSpacetimeVertex, locMomentum, locPathLength, locKinematicData->errorMatrix());
 	dParticleMap_SourceToInput_DetectedParticle[locKinematicData] = locKinFitParticle;
 	dParticleMap_InputToSource_JObject[locKinFitParticle] = locKinematicData;
 	return locKinFitParticle;

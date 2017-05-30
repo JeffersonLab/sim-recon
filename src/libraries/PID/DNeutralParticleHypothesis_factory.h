@@ -36,6 +36,13 @@ class DNeutralParticleHypothesis_factory : public jana::JFactory<DNeutralParticl
 		void Recycle_Hypotheses(vector<const DNeutralParticleHypothesis*>& locHypos){dResourcePool_NeutralParticleHypothesis.Recycle(locHypos);}
 		void Recycle_Hypothesis(const DNeutralParticleHypothesis* locHypo){dResourcePool_NeutralParticleHypothesis.Recycle(locHypo);}
 
+		DNeutralParticleHypothesis* Get_Resource(void)
+		{
+			auto locHypo = dResourcePool_NeutralParticleHypothesis.Get_Resource();
+			locHypo->Reset();
+			return locHypo;
+		}
+
 	private:
 		double dTargetCenterZ;
 		const DParticleID* dParticleID = nullptr;

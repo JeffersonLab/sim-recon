@@ -88,7 +88,7 @@ jerror_t DChargedTrackHypothesis_factory::evnt(jana::JEventLoop* locEventLoop, u
 
 DChargedTrackHypothesis* DChargedTrackHypothesis_factory::Create_ChargedTrackHypothesis(JEventLoop* locEventLoop, const DTrackTimeBased* locTrackTimeBased, const DDetectorMatches* locDetectorMatches, const DEventRFBunch* locEventRFBunch) const
 {
-	DChargedTrackHypothesis* locChargedTrackHypothesis = dResourcePool_ChargedTrackHypothesis.Get_Resource();
+	DChargedTrackHypothesis* locChargedTrackHypothesis = Get_Resource();
 	locChargedTrackHypothesis->Share_FromInput_Kinematics(static_cast<const DKinematicData*>(locTrackTimeBased));
 
 	uint64_t locEventNumber = locEventLoop->GetJEvent().GetEventNumber();

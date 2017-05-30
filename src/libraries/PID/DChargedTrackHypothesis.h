@@ -42,6 +42,7 @@ class DChargedTrackHypothesis : public DKinematicData
 		double Get_TimeAtPOCAToVertex(void) const{return dTimingInfo->dTimeAtPOCAToVertex;}
 		unsigned int Get_NDF_Timing(void) const{return dTimingInfo->dNDF_Timing;}
 		double Get_ChiSq_Timing(void) const{return dTimingInfo->dChiSq_Timing;}
+		double Get_PathLength(void) const;
 
 		//totals for overall PID determination
 		unsigned int Get_NDF(void) const{return dTimingInfo->dNDF;}
@@ -89,7 +90,7 @@ class DChargedTrackHypothesis : public DKinematicData
 		{
 			DTimingInfo(void);
 
-			//t0 is RF time at poca to vertex
+			//t0 is RF time at track poca to common vertex
 			double dt0;
 			double dt0_err;
 			DetectorSystem_t dt0_detector;
@@ -207,6 +208,19 @@ inline DetectorSystem_t DChargedTrackHypothesis::t1_detector(void) const
 	return SYS_NULL;
 }
 
+double DChargedTrackHypothesis::Get_PathLength(void) const
+{
+	if(Get_BCALShowerMatchParams() != nullptr)
+		return Get_BCALShowerMatchParams()->dPathLength;
+	else if(Get_TOFHitMatchParams() != nullptr)
+		return Get_TOFHitMatchParams()->dPathLength;
+	else if(Get_FCALShowerMatchParams() != nullptr)
+		return Get_FCALShowerMatchParams()->dPathLength;
+	else if(Get_SCHitMatchParams() != nullptr)
+		return Get_SCHitMatchParams()->dPathLength;
+	return 0.0;
+}
+
 /********************************************************************** SETTERS ************************************************************************/
 
 inline void DChargedTrackHypothesis::Share_FromInput(const DChargedTrackHypothesis* locSourceData, bool locShareTrackingFlag, bool locShareTimingFlag, bool locShareKinematicsFlag)
@@ -214,7 +228,7 @@ inline void DChargedTrackHypothesis::Share_FromInput(const DChargedTrackHypothes
 	if(locShareTrackingFlag)
 		dTrackingInfo = const_cast<DChargedTrackHypothesis*>(locSourceData)->dTrackingInfo;
 	if(locShareTimingFlag)
-		dTrackingInfo = const_cast<DChargedTrackHypothesis*>(locSourceData)->dTrackingInfo;
+		dTimingInfo = const_cast<DChargedTrackHypothesis*>(locSourceData)->dTimingInfo;
 	if(locShareKinematicsFlag)
 		Share_FromInput_Kinematics(static_cast<const DKinematicData*>(locSourceData));
 }

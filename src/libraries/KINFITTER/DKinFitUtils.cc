@@ -309,7 +309,7 @@ DKinFitParticle* DKinFitUtils::Make_TargetParticle(int locPID, int locCharge, do
 	return locKinFitParticle;
 }
 
-DKinFitParticle* DKinFitUtils::Make_DetectedParticle(int locPID, int locCharge, double locMass, TLorentzVector locSpacetimeVertex, TVector3 locMomentum, const TMatrixFSym* locCovarianceMatrix)
+DKinFitParticle* DKinFitUtils::Make_DetectedParticle(int locPID, int locCharge, double locMass, TLorentzVector locSpacetimeVertex, TVector3 locMomentum, double locPathLength, const TMatrixFSym* locCovarianceMatrix)
 {
 	if((locCovarianceMatrix->GetNrows() != 7) || (locCovarianceMatrix->GetNcols() != 7))
 		return NULL; //is not 7x7
@@ -322,7 +322,7 @@ DKinFitParticle* DKinFitUtils::Make_DetectedParticle(int locPID, int locCharge, 
 	locKinFitParticle->Set_CommonSpacetimeVertex(locSpacetimeVertex);
 	locKinFitParticle->Set_Momentum(locMomentum);
 	locKinFitParticle->Set_CovarianceMatrix(locCovarianceMatrix);
-
+	locKinFitParticle->Set_PathLength(locPathLength);
 	locKinFitParticle->Set_KinFitParticleType(d_DetectedParticle);
 
 	if(dDebugLevel > 5)

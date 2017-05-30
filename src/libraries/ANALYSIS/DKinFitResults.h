@@ -14,8 +14,6 @@
 using namespace std;
 using namespace jana;
 
-class DParticleCombo;
-
 class DKinFitResults
 {
 	public:
@@ -58,7 +56,6 @@ class DKinFitResults
 
 		/************************************************** SET PARTICLES, COMBOS, AND CONSTRAINTS **************************************************/
 
-		void Add_ParticleCombo(const DParticleCombo* locParticleCombo, const DKinFitChain* locKinFitChain);
 		void Add_OutputKinFitParticles(const set<DKinFitParticle*>& locOutputKinFitParticles);
 		void Add_KinFitConstraints(const set<DKinFitConstraint*>& locKinFitConstraints);
 
@@ -66,7 +63,6 @@ class DKinFitResults
 
 		/************************************************** GET PARTICLES, COMBOS, AND CONSTRAINTS **************************************************/
 
-		void Get_ParticleComboMap(map<const DParticleCombo*, const DKinFitChain*>& locParticleComboMap) const{locParticleComboMap = dParticleComboMap;}
 		set<DKinFitParticle*> Get_OutputKinFitParticles(void) const;
 		set<DKinFitParticle*> Get_OutputKinFitParticles(DKinFitParticleType locKinFitParticleType) const;
 		set<const DKinFitConstraint*> Get_OutputKinFitConstraints(void) const{return dKinFitConstraints;}
@@ -101,18 +97,9 @@ class DKinFitResults
 		//Source: JObject from DParticleCombo
 		//Output: DKinFitParticle's containing the fit results
 		map<const JObject*, DKinFitParticle*> dParticleMap_SourceToOutput;
-
-		//multiple combos may have the same kinfit result, and different DKinFitChain's
-		//chain contains output kinfit particles (if a particle not in a constraint, is the input particle)
-		map<const DParticleCombo*, const DKinFitChain*> dParticleComboMap;
 };
 
 /****************************************************** SET PARTICLES, COMBOS, AND CONSTRAINTS ******************************************************/
-
-inline void DKinFitResults::Add_ParticleCombo(const DParticleCombo* locParticleCombo, const DKinFitChain* locKinFitChain)
-{
-	dParticleComboMap[locParticleCombo] = locKinFitChain;
-}
 
 inline void DKinFitResults::Add_OutputKinFitParticles(const set<DKinFitParticle*>& locOutputKinFitParticles)
 {

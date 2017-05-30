@@ -58,7 +58,8 @@ class DKinFitUtils //purely virtual: cannot directly instantiate class, can only
 		DKinFitParticle* Make_BeamParticle(int locPID, int locCharge, double locMass, TLorentzVector locSpacetimeVertex, TVector3 locMomentum, const TMatrixFSym* locCovarianceMatrix);
 		DKinFitParticle* Make_TargetParticle(int locPID, int locCharge, double locMass);
 
-		DKinFitParticle* Make_DetectedParticle(int locPID, int locCharge, double locMass, TLorentzVector locSpacetimeVertex, TVector3 locMomentum, const TMatrixFSym* locCovarianceMatrix);
+		//locPathLength is from timing detector to vertex (for updating the time)
+		DKinFitParticle* Make_DetectedParticle(int locPID, int locCharge, double locMass, TLorentzVector locSpacetimeVertex, TVector3 locMomentum, double locPathLength, const TMatrixFSym* locCovarianceMatrix);
 		DKinFitParticle* Make_DetectedShower(int locPID, double locMass, TLorentzVector locSpacetimeVertex, double locShowerEnergy, const TMatrixFSym* locCovarianceMatrix);
 
 		DKinFitParticle* Make_MissingParticle(int locPID, int locCharge, double locMass);

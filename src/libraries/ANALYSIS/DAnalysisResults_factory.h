@@ -57,7 +57,7 @@ class DAnalysisResults_factory : public jana::JFactory<DAnalysisResults>
 
 		void Make_ControlHistograms(vector<const DReaction*>& locReactions);
 		void Check_ReactionNames(vector<const DReaction*>& locReactions) const;
-		const DKinFitResults* Fit_Kinematics(const DReactionVertexInfo* locReactionVertexInfo, const DParticleCombo* locParticleCombo, DKinFitType locKinFitType, bool locUpdateCovMatricesFlag);
+		pair<const DKinFitChain*, const DKinFitResults*> Fit_Kinematics(const DReactionVertexInfo* locReactionVertexInfo, const DParticleCombo* locParticleCombo, DKinFitType locKinFitType, bool locUpdateCovMatricesFlag);
 		DKinFitResults* Build_KinFitResults(const DParticleCombo* locParticleCombo, DKinFitType locKinFitType, const DKinFitChain* locKinFitChain);
 
 		unsigned int dDebugLevel = 0;

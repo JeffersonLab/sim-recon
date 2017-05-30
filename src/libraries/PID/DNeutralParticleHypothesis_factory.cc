@@ -121,7 +121,7 @@ DNeutralParticleHypothesis* DNeutralParticleHypothesis_factory::Create_DNeutralP
 	}
 
 	// Build DNeutralParticleHypothesis // dEdx not set
-	DNeutralParticleHypothesis* locNeutralParticleHypothesis = dResourcePool_NeutralParticleHypothesis.Get_Resource();
+	DNeutralParticleHypothesis* locNeutralParticleHypothesis = Get_Resource();
 	locNeutralParticleHypothesis->Set_NeutralShower(locNeutralShower->dShowerID);
 	locNeutralParticleHypothesis->setPID(locPID);
 	locNeutralParticleHypothesis->setMomentum(locMomentum);

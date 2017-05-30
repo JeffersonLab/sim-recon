@@ -309,9 +309,7 @@ jerror_t DAnalysisResults_factory::evnt(JEventLoop* locEventLoop, uint64_t event
 					continue; //go to next combo
 
 				//KINFIT IF REQUESTED
-				auto locPostKinFitCombo = locCombo; //changed below if needed
-				{
-				}
+				auto locPostKinFitCombo = Handle_ComboFit(locReactionVertexInfo, locCombo, locReaction);
 
 				//LOOP OVER POST-KINFIT ACTIONS
 				for(; locActionIndex < locActions.size(); ++locActionIndex)
@@ -331,6 +329,7 @@ jerror_t DAnalysisResults_factory::evnt(JEventLoop* locEventLoop, uint64_t event
 		}
 	}
 
+//still need to create/fill _data objs
 	return NOERROR;
 }
 
@@ -340,6 +339,7 @@ const DParticleCombo* DAnalysisResults_factory::Handle_ComboFit(const DReactionV
 	if(locKinFitType == d_NoFit)
 		return locParticleCombo;
 
+	//A given combo can be used for multiple DReactions, each with a different fit type or update-cov flag
 	auto locUpdateCovMatricesFlag = locReaction->Get_KinFitUpdateCovarianceMatricesFlag();
 	auto locComboKinFitTuple = std::make_tuple(locParticleCombo, locKinFitType, locUpdateCovMatricesFlag);
 
@@ -348,13 +348,12 @@ const DParticleCombo* DAnalysisResults_factory::Handle_ComboFit(const DReactionV
 	if(locComboIterator != dPreToPostKinFitComboMap.end())
 		return locComboIterator->second;
 
-//BEWARE: A given combo can be used for multiple DReactions
-//These DReactions could have different kinfit types
-//Thus, the kinfit results are DIFFERENT if the fit type is different
-//Otherwise it is identical
-	auto locKinFitResults = Fit_Kinematics(locReactionVertexInfo, locParticleCombo, locKinFitType, locUpdateCovMatricesFlag);
+	//KINFIT
+	auto locKinFitResultsPair = Fit_Kinematics(locReactionVertexInfo, locParticleCombo, locKinFitType, locUpdateCovMatricesFlag);
+	if(locKinFitResultsPair.second == nullptr)
+		return locParticleCombo; //fit failed, or no constraints
 
-	//See if we need to make a new combo
+	//Fit succeeded. See if we can reuse the input combo object, or need to make a new one
 	if(locParticleCombo->Get_KinFitResults() != nullptr)
 	{
 		//this combo has already been reused: make a new combo
@@ -364,7 +363,7 @@ const DParticleCombo* DAnalysisResults_factory::Handle_ComboFit(const DReactionV
 	}
 	else //reuse combo
 	{
-		locParticleCombo->Set_KinFitResults(locKinFitResults);
+		locParticleCombo->Set_KinFitResults(locKinFitResultsPair.second);
 		//create new steps, etc.
 		dPreToPostKinFitComboMap.emplace(locComboKinFitTuple, locParticleCombo);
 		return locParticleCombo;
@@ -374,10 +373,9 @@ const DParticleCombo* DAnalysisResults_factory::Handle_ComboFit(const DReactionV
 
 }
 
-const DKinFitResults* DAnalysisResults_factory::Fit_Kinematics(const DReactionVertexInfo* locReactionVertexInfo, const DParticleCombo* locParticleCombo, DKinFitType locKinFitType, bool locUpdateCovMatricesFlag)
+pair<const DKinFitChain*, const DKinFitResults*> DAnalysisResults_factory::Fit_Kinematics(const DReactionVertexInfo* locReactionVertexInfo, const DParticleCombo* locParticleCombo, DKinFitType locKinFitType, bool locUpdateCovMatricesFlag)
 {
 	//Make DKinFitChain
-//FIX THIS
 	const DKinFitChain* locKinFitChain = dKinFitUtils->Make_KinFitChain(locParticleCombo, locKinFitType);
 
 	//Make Constraints
@@ -386,7 +384,7 @@ const DKinFitResults* DAnalysisResults_factory::Fit_Kinematics(const DReactionVe
 	if(locConstraints.empty())
 	{
 		dKinFitUtils->Recycle_DKinFitChain(locKinFitChain); //original chain no longer needed: recycle
-		return nullptr; //Nothing to fit!
+		return pair<const DKinFitChain*, const DKinFitResults*>(nullptr, nullptr); //Nothing to fit!
 	}
 
 	//see if constraints (particles) are identical to a previous kinfit
@@ -401,12 +399,12 @@ const DKinFitResults* DAnalysisResults_factory::Fit_Kinematics(const DReactionVe
 			//previous kinfit succeeded, build the output DKinFitChain and register this combo with that fit
 			set<DKinFitParticle*> locOutputKinFitParticles = locKinFitResults->Get_OutputKinFitParticles();
 			const DKinFitChain* locOutputKinFitChain = dKinFitUtils->Build_OutputKinFitChain(locKinFitChain, locOutputKinFitParticles);
-			locKinFitResults->Add_ParticleCombo(locParticleCombo, locOutputKinFitChain);
+			return std::make_pair(locOutputKinFitChain, locKinFitResults);
 		}
 
 		//else: the previous kinfit failed, so this one will too (don't save)
 		dKinFitUtils->Recycle_DKinFitChain(locKinFitChain); //original chain no longer needed: recycle
-		return;
+		return pair<const DKinFitChain*, const DKinFitResults*>(nullptr, nullptr);
 	}
 
 	//Add constraints & perform fit
@@ -417,27 +415,25 @@ const DKinFitResults* DAnalysisResults_factory::Fit_Kinematics(const DReactionVe
 
 	//Build results (unless failed), and register
 	DKinFitResults* locKinFitResults = nullptr;
-	if(locFitStatus)
+	if(locFitStatus) //success
 	{
 		set<DKinFitParticle*> locOutputKinFitParticles = dKinFitter->Get_KinFitParticles();
 		const DKinFitChain* locOutputKinFitChain = dKinFitUtils->Build_OutputKinFitChain(locKinFitChain, locOutputKinFitParticles);
-		locKinFitResults = Build_KinFitResults(locParticleCombo, locOutputKinFitChain);
+		locKinFitResults = Build_KinFitResults(locParticleCombo, locKinFitType, locOutputKinFitChain);
+		dConstraintResultsMap.emplace(locResultPair, locKinFitResults);
+		return std::make_pair(locOutputKinFitChain, locKinFitResults);
 	}
-	else //failed fit
-		dKinFitter->Recycle_LastFitMemory(); //RESET MEMORY FROM LAST KINFIT!! //results no longer needed
 
-	dKinFitUtils->Recycle_DKinFitChain(locKinFitChain); //original chain no longer needed: recycle
+	//failed fit
+	dKinFitter->Recycle_LastFitMemory(); //RESET MEMORY FROM LAST KINFIT!! //results no longer needed
 	dConstraintResultsMap.emplace(locResultPair, locKinFitResults);
-
-	return locKinFitResults;
+	dKinFitUtils->Recycle_DKinFitChain(locKinFitChain); //original chain no longer needed: recycle
+	return pair<const DKinFitChain*, const DKinFitResults*>(nullptr, nullptr);
 }
 
 DKinFitResults* DAnalysisResults_factory::Build_KinFitResults(const DParticleCombo* locParticleCombo, DKinFitType locKinFitType, const DKinFitChain* locKinFitChain)
 {
 	DKinFitResults* locKinFitResults = new DKinFitResults();
-//?????
-	locKinFitResults->Add_ParticleCombo(locParticleCombo, locKinFitChain);
-
 	locKinFitResults->Set_KinFitType(locKinFitType);
 
 	locKinFitResults->Set_ConfidenceLevel(dKinFitter->Get_ConfidenceLevel());
@@ -452,7 +448,8 @@ DKinFitResults* DAnalysisResults_factory::Build_KinFitResults(const DParticleCom
 	locKinFitResults->Set_NumUnknowns(dKinFitter->Get_NumUnknowns());
 
 	//Output particles and constraints
-	locKinFitResults->Add_OutputKinFitParticles(dKinFitter->Get_KinFitParticles());
+	set<DKinFitParticle*> locOutputKinFitParticles = dKinFitter->Get_KinFitParticles();
+	locKinFitResults->Add_OutputKinFitParticles(locOutputKinFitParticles);
 	locKinFitResults->Add_KinFitConstraints(dKinFitter->Get_KinFitConstraints());
 
 	//Pulls
@@ -483,6 +480,8 @@ DKinFitResults* DAnalysisResults_factory::Build_KinFitResults(const DParticleCom
 	set<DKinFitParticle*>::iterator locParticleIterator = locAllKinFitParticles.begin();
 	for(; locParticleIterator != locAllKinFitParticles.end(); ++locParticleIterator)
 	{
+		if(locOutputKinFitParticles.find(*locParticleIterator) == locOutputKinFitParticles.end())
+			continue; //not used in kinfit: don't save!!
 		const JObject* locSourceJObject = dKinFitUtils->Get_SourceJObject(*locParticleIterator);
 		if(locSourceJObject != NULL)
 		{

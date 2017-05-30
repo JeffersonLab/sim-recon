@@ -44,6 +44,7 @@ namespace DAnalysis
 //add kinfit results TO particle combo (instead of making 2x combos!)
 //don't forget decaying/missing particles!!
 //fill action hists
+//tuple-ify kinfit particle creation
 
 //ANY TIME:
 //No longer a target particle: Change code accordingly

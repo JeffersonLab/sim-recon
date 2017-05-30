@@ -33,10 +33,16 @@ class DChargedTrackHypothesis_factory:public jana::JFactory<DChargedTrackHypothe
 		DChargedTrackHypothesis* Create_ChargedTrackHypothesis(JEventLoop* locEventLoop, const DTrackTimeBased* locTrackTimeBased, const DDetectorMatches* locDetectorMatches, const DEventRFBunch* locEventRFBunch) const;
 		void Add_TimeToTrackingMatrix(DChargedTrackHypothesis* locChargedTrackHypothesis, TMatrixFSym* locCovarianceMatrix, double locFlightTimeVariance, double locHitTimeVariance, double locFlightTimePCorrelation) const;
 
-		const DChargedTrackHypothesis* Get_Resource(void){return dResourcePool_ChargedTrackHypothesis.Get_Resource();};
 		void Recycle_Hypotheses(vector<const DChargedTrackHypothesis*>& locHypos){dResourcePool_ChargedTrackHypothesis.Recycle(locHypos);}
 		void Recycle_Hypotheses(vector<DChargedTrackHypothesis*>& locHypos){dResourcePool_ChargedTrackHypothesis.Recycle(locHypos);}
 		void Recycle_Hypothesis(const DChargedTrackHypothesis* locHypo){dResourcePool_ChargedTrackHypothesis.Recycle(locHypo);}
+
+		DChargedTrackHypothesis* Get_Resource(void)
+		{
+			auto locHypo = dResourcePool_ChargedTrackHypothesis.Get_Resource();
+			locHypo->Reset();
+			return locHypo;
+		}
 
 	private:
 		const DParticleID* dPIDAlgorithm;

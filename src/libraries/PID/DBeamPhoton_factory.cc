@@ -74,7 +74,7 @@ jerror_t DBeamPhoton_factory::evnt(jana::JEventLoop *locEventLoop, uint64_t locE
     {
         if (!tagm_hits[ih]->has_fADC) continue; // Skip TDC-only hits (i.e. hits with no ADC info.)
         if (tagm_hits[ih]->row > 0) continue; // Skip individual fiber readouts
-        DBeamPhoton* gamma = dResourcePool_BeamPhotons.Get_Resource();
+        DBeamPhoton* gamma = Get_Resource();
 
         Set_BeamPhoton(gamma, tagm_hits[ih], locEventNumber);
         _data.push_back(gamma);
@@ -102,7 +102,7 @@ jerror_t DBeamPhoton_factory::evnt(jana::JEventLoop *locEventLoop, uint64_t locE
         }
         if (gamma == nullptr)
         {
-            gamma = dResourcePool_BeamPhotons.Get_Resource();
+            gamma = Get_Resource();
             Set_BeamPhoton(gamma, tagh_hits[ih], locEventNumber);
             _data.push_back(gamma);
         }

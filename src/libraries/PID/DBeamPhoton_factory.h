@@ -18,10 +18,17 @@
 class DBeamPhoton_factory:public jana::JFactory<DBeamPhoton>
 {
 	public:
-		const DBeamPhoton* Get_Resource(void){return dResourcePool_BeamPhotons.Get_Resource();};
+
 		void Recycle_Hypotheses(vector<const DBeamPhoton*>& locHypos){dResourcePool_BeamPhotons.Recycle(locHypos);}
 		void Recycle_Hypotheses(vector<DBeamPhoton*>& locHypos){dResourcePool_BeamPhotons.Recycle(locHypos);}
 		void Recycle_Hypothesis(const DBeamPhoton* locHypo){dResourcePool_BeamPhotons.Recycle(locHypo);}
+
+		DBeamPhoton* Get_Resource(void)
+		{
+			auto locBeam = dResourcePool_BeamPhotons.Get_Resource();
+			locBeam->Reset();
+			return locBeam;
+		}
 
 	private:
 		jerror_t init(void);						///< Called once at program start.
