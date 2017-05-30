@@ -159,9 +159,9 @@ void DParticleCombo_factory::Set_DecayingParticles(const DParticleCombo* locNewP
 	Particle_t locPID = PDGtoPType(locKinFitParticle->Get_PID());
 	int locFromStepIndex = locNewParticleComboStep->Get_InitialParticleDecayFromStepIndex();
 
-	DKinematicData* locKinematicData_Common = Build_KinematicData(locPID, locKinFitParticle, locKinFitType, locEventVertex);
+	DKinematicData* locKinematicData_Common = Build_KinematicData(locKinFitParticle, locKinFitType, locEventVertex);
 	bool locCreate2ndObjectFlag = (IsDetachedVertex(locPID) && (locStepIndex != 0) && (locFromStepIndex >= 0));
-	DKinematicData* locKinematicData_Position = locCreate2ndObjectFlag ? Build_KinematicData(locPID, locKinFitParticle, locKinFitType, locEventVertex) : locKinematicData_Common;
+	DKinematicData* locKinematicData_Position = locCreate2ndObjectFlag ? Build_KinematicData(locKinFitParticle, locKinFitType, locEventVertex) : locKinematicData_Common;
 	if(locKinFitParticle->Get_CommonVxParamIndex() >= 0)
 		dKinFitUtils->Propagate_TrackInfoToCommonVertex(locKinematicData_Common, locKinFitParticle, &locKinFitResults->Get_VXi());
 
