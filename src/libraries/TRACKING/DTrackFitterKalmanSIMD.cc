@@ -605,7 +605,9 @@ void DTrackFitterKalmanSIMD::ResetKalmanSIMD(void)
    IsHadron=true;
    IsElectron=false;
    IsPositron=false;
-
+   
+   PT_MIN=0.01;
+   Q_OVER_P_MAX=100.;
 }
 
 //-----------------
@@ -882,41 +884,6 @@ double DTrackFitterKalmanSIMD::ChiSq(fit_type_t fit_type, DReferenceTrajectory *
    if(pulls_ptr)*pulls_ptr = pulls;
 
    return chisq/double(ndf);
-}
-
-// Initialize the state vector
-jerror_t DTrackFitterKalmanSIMD::SetSeed(double q,DVector3 pos, DVector3 mom){
-   if (!isfinite(pos.Mag()) || !isfinite(mom.Mag())){
-      _DBG_ << "Invalid seed data." <<endl;
-      return UNRECOVERABLE_ERROR;
-   }
-   if (mom.Mag()<MIN_FIT_P){
-      mom.SetMag(MIN_FIT_P);
-   }
-   else if (MASS>0.9 && mom.Mag()<MIN_PROTON_P){
-      mom.SetMag(MIN_PROTON_P);
-   }
-   else if (MASS<0.9 && mom.Mag()<MIN_FIT_P){
-      mom.SetMag(MIN_PION_P);
-   }
-   if (mom.Mag()>MAX_P){
-      mom.SetMag(MAX_P);
-   }
-
-   // Forward parameterization 
-   x_=pos.x();
-   y_=pos.y();
-   z_=pos.z();
-   tx_= mom.x()/mom.z();
-   ty_= mom.y()/mom.z();
-   q_over_p_=q/mom.Mag();
-
-   // Central parameterization
-   phi_=mom.Phi();
-   tanl_=tan(M_PI_2-mom.Theta());
-   q_over_pt_=q/mom.Perp();
-
-   return NOERROR;
 }
 
 // Return the momentum at the distance of closest approach to the origin.
@@ -3085,7 +3052,7 @@ jerror_t DTrackFitterKalmanSIMD::KalmanLoop(void){
       theta_deg_sq=theta_deg*theta_deg;
       }
       */
-   double sig_lambda=0.01;
+   double sig_lambda=0.02;
    double dp_over_p_sq
       =dpt_over_pt*dpt_over_pt+tanl_*tanl_*sig_lambda*sig_lambda;
 
@@ -3095,6 +3062,14 @@ jerror_t DTrackFitterKalmanSIMD::KalmanLoop(void){
    // Input momentum 
    DVector3 pvec=input_params.momentum();
    double p_mag=pvec.Mag();
+   if (MASS>0.9){
+     PT_MIN=0.1;
+     Q_OVER_P_MAX=10.;
+   }
+   else if (MASS>0.4){
+     PT_MIN=0.05;
+     Q_OVER_P_MAX=20.;
+   }
    if (MASS>0.9 && p_mag<MIN_PROTON_P){
       pvec.SetMag(MIN_PROTON_P);
       p_mag=MIN_PROTON_P;
@@ -3742,6 +3717,9 @@ kalman_error_t DTrackFitterKalmanSIMD::KalmanCentral(double anneal_factor,
    // Wire origin and direction
    //  unsigned int cdc_index=my_cdchits.size()-1;
    unsigned int cdc_index=break_point_cdc_index;
+   if (break_point_cdc_index<num_cdc-1){
+     num_cdc=break_point_cdc_index+1;
+   }
 
    if (cdc_index<MIN_HITS_FOR_REFIT) chi2cut=1000.0;
 
@@ -5298,6 +5276,9 @@ kalman_error_t DTrackFitterKalmanSIMD::KalmanForwardCDC(double anneal,DMatrix5x1
 
    // wire information  
    unsigned int cdc_index=break_point_cdc_index;
+   if (cdc_index<num_cdc-1){
+     num_cdc=cdc_index+1;
+   }
 
    if (cdc_index<MIN_HITS_FOR_REFIT) chi2cut=100.0;
 
