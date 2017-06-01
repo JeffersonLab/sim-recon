@@ -39,6 +39,7 @@ static TH2I *hPS_tdiffVsE;
 static TH2I *hPSC_tdiffVsE;
 static TH2I *hPSPSC_tdiffVsE;
 static TH1I *hPS_E;
+static TH2I *hPS_EVsEuni;
 // PSC,PS,TAGH coincidences
 static TH2I *hPSTAGH_tdiffVsEdiff;
 static TH2I *hPSTAGH_tdiffVsEtagh;
@@ -107,11 +108,13 @@ jerror_t JEventProcessor_PS_flux::init(void)
     t_start = -999.;
     t_end = 0;
 
+    dRandom = new TRandom3(0);
+
     // create root folder for pspair and cd to it, store main dir
     TDirectory *psFluxDir = gDirectory->mkdir("PS_flux");
     psFluxDir->cd();
     // book hists
-    psflux_num_events = new TH1I("psflux_num_events","PS flux number of events",2,0.5,2.5);
+    psflux_num_events = new TH1I("psflux_num_events","PS flux number of events",3,0.5,3.5);
     hFiducialTime = new TH1F("fiducialTime", "Fiducial time", 1, 0, 1);
     hBeamCurrentTime = new TH1I("beamCurrentTime", "; Event time from DBeamCurrent for all events (seconds)", 1000, 0, 500);
     hBeamCurrentTimeFiducial = new TH1I("beamCurrentTimeFiducial", "; Event time from DBeamCurrent for fiducial events (seconds)", 1000, 0, 500);
@@ -121,7 +124,8 @@ jerror_t JEventProcessor_PS_flux::init(void)
     hPS_E = new TH1I("PS_E","PS pair energy; PS pair energy [GeV]",NEb_PS,Ebl_PS,Ebh_PS);
     hPS_tdiffVsE = new TH2I("PS_tdiffVsE","PS pair time difference vs. PS pair energy;PS pair energy [GeV];PS pair time difference [ns]",NEb_PS,Ebl_PS,Ebh_PS,200,-10.0,10.0);
     hPSC_tdiffVsE = new TH2I("PSC_tdiffVsE","PSC pair time difference vs. PS pair energy;PS pair energy [GeV];PSC pair time difference [ns]",NEb_PS,Ebl_PS,Ebh_PS,200,-10.0,10.0);
-    hPSPSC_tdiffVsE = new TH2I("PSPSC_tdiffVsE","PSC/PS pair time difference of differences vs. PS pair energy;PS pair energy [GeV];PSC/PS pair time difference of differences [ns]",NEb_PS,Ebl_PS,Ebh_PS,200,-10.0,10.0);
+    hPSPSC_tdiffVsE = new TH2I("PSPSC_tdiffVsE","PSC/PS pair time difference vs. PS pair energy;PS pair energy [GeV];PSC/PS pair time difference of differences [ns]",NEb_PS,Ebl_PS,Ebh_PS,200,-10.0,10.0);
+    hPS_EVsEuni = new TH2I("PS_EVsEuni","PS pair energy vs. uniform pair energy; PS uniform pair energy [GeV]; PS pair energy [GeV]",NEb_PS,Ebl_PS,Ebh_PS,NEb_PS,Ebl_PS,Ebh_PS);
     psFluxDir->cd();
     //
     gDirectory->mkdir("PSC_PS_TAGH")->cd();
@@ -163,21 +167,16 @@ jerror_t JEventProcessor_PS_flux::init(void)
     locTreeBranchRegister.Register_Single<Double_t>("PSenergyL");
     locTreeBranchRegister.Register_Single<Double_t>("PSenergyR");
     locTreeBranchRegister.Register_Single<Double_t>("PSPairEnergy");
+    locTreeBranchRegister.Register_Single<Double_t>("PSPairEnergyUniform");
 
     locTreeBranchRegister.Register_Single<Int_t>("NumTAGMhits");
     locTreeBranchRegister.Register_FundamentalArray<Double_t>("TAGMenergy", "NumTAGMhits", locNumTAGMhits);
     locTreeBranchRegister.Register_FundamentalArray<Double_t>("TAGMtime", "NumTAGMhits", locNumTAGMhits);
-    locTreeBranchRegister.Register_FundamentalArray<Double_t>("TAGMintegral", "NumTAGMhits", locNumTAGMhits);
-    locTreeBranchRegister.Register_FundamentalArray<Double_t>("TAGMpulse_peak", "NumTAGMhits", locNumTAGMhits);
-    locTreeBranchRegister.Register_FundamentalArray<bool>("TAGMhasTDC", "NumTAGMhits", locNumTAGMhits);
     locTreeBranchRegister.Register_FundamentalArray<Int_t>("TAGMcolumn", "NumTAGMhits", locNumTAGMhits);
 
     locTreeBranchRegister.Register_Single<Int_t>("NumTAGHhits");
     locTreeBranchRegister.Register_FundamentalArray<Double_t>("TAGHenergy", "NumTAGHhits", locNumTAGHhits);
     locTreeBranchRegister.Register_FundamentalArray<Double_t>("TAGHtime", "NumTAGHhits", locNumTAGHhits);
-    locTreeBranchRegister.Register_FundamentalArray<Double_t>("TAGHintegral", "NumTAGHhits", locNumTAGHhits);
-    locTreeBranchRegister.Register_FundamentalArray<Double_t>("TAGHpulse_peak", "NumTAGHhits", locNumTAGHhits);
-    locTreeBranchRegister.Register_FundamentalArray<bool>("TAGHhasTDC", "NumTAGHhits", locNumTAGHhits);
     locTreeBranchRegister.Register_FundamentalArray<Int_t>("TAGHcounter", "NumTAGHhits", locNumTAGHhits);
 
     //REGISTER BRANCHES
@@ -197,7 +196,7 @@ jerror_t JEventProcessor_PS_flux::brun(JEventLoop *eventLoop, int32_t runnumber)
     eventLoop->Get(psGeomVect);
     if (psGeomVect.size() < 1)
     return OBJECT_NOT_AVAILABLE;
-    const DPSGeometry& psGeom = *(psGeomVect[0]);
+    dPSGeom = psGeomVect[0];
 
     dBeamCurrentFactory = new DBeamCurrent_factory();
     dBeamCurrentFactory->init();
@@ -206,8 +205,8 @@ jerror_t JEventProcessor_PS_flux::brun(JEventLoop *eventLoop, int32_t runnumber)
     // PS pair energy binning
     double wl_min=0.05,wr_min = 0.05;
     double Ebw_PS = wl_min + wr_min;
-    const double Ebl_PS = psGeom.getElow(0,1) + psGeom.getElow(1,1);
-    const double Ebh_PS = psGeom.getEhigh(0,NC_PS) + psGeom.getEhigh(1,NC_PS);
+    const double Ebl_PS = dPSGeom->getElow(0,1) + dPSGeom->getElow(1,1);
+    const double Ebh_PS = dPSGeom->getEhigh(0,NC_PS) + dPSGeom->getEhigh(1,NC_PS);
     double range = fabs(Ebh_PS-Ebl_PS);
     int NEb_PS = range/Ebw_PS-int(range/Ebw_PS) < 0.5 ? int(range/Ebw_PS) : int(range/Ebw_PS) + 1;
     double Elows_PS[NEb_PS+1];
@@ -295,26 +294,28 @@ jerror_t JEventProcessor_PS_flux::evnt(JEventLoop *loop, uint64_t eventnumber)
     vector<const DBeamPhoton*> beamPhotons;
     loop->Get(beamPhotons);
 
-    // beam current and fiducial definition
+    // beam current and fiducial definition (not populated before Spring 2017)
     vector<const DBeamCurrent*> beamCurrent;
     loop->Get(beamCurrent);
-    if( beamCurrent.empty() ) 
-	return NOERROR;
 
     // get start and end time of events relative to start of run from DBeamCurrent
-    if(t_start < 0.) {
-	t_start = beamCurrent[0]->t;
+    if(!beamCurrent.empty()) {
+	    if(t_start < 0.) {
+		    t_start = beamCurrent[0]->t;
+	    }
+	    t_end = beamCurrent[0]->t;
     }
-    t_end = beamCurrent[0]->t;
 
     // FILL HISTOGRAMS
     // Since we are filling histograms local to this plugin, it will not interfere with other ROOT operations: can use plugin-wide ROOT fill lock
     japp->RootFillLock(this); //ACQUIRE ROOT FILL LOCK
     psflux_num_events->Fill(1);
-    hBeamCurrentTime->Fill(beamCurrent[0]->t);
-    if(beamCurrent[0]->is_fiducial) {
-       int timeBin = hBeamCurrentTimeFiducial->FindBin(beamCurrent[0]->t);
-       hBeamCurrentTimeFiducial->SetBinContent(timeBin, 1);
+    if(!beamCurrent.empty()) {
+	    hBeamCurrentTime->Fill(beamCurrent[0]->t);
+	    if(beamCurrent[0]->is_fiducial) {
+	    	    int timeBin = hBeamCurrentTimeFiducial->FindBin(beamCurrent[0]->t);
+		    hBeamCurrentTimeFiducial->SetBinContent(timeBin, 1);
+  	    }
     }
 
     // PSC coincidences
@@ -324,25 +325,37 @@ jerror_t JEventProcessor_PS_flux::evnt(JEventLoop *loop, uint64_t eventnumber)
         const DPSCHit* crhit = cpairs[0]->ee.second;// right hit in coarse PS
         double PSC_tdiff = clhit->t-crhit->t;
 	if (fabs(PSC_tdiff) > 6.) {japp->RootFillUnLock(this); return NOERROR;}
+	psflux_num_events->Fill(2);
 
         // PSC,PS coincidences
         if (fpairs.size()>=1) {
-            psflux_num_events->Fill(2);
+            psflux_num_events->Fill(3);
             // take pair with smallest time difference from sorted vector
             const DPSHit* flhit = fpairs[0]->ee.first;  // left hit in fine PS
             const DPSHit* frhit = fpairs[0]->ee.second; // right hit in fine PS
+
+	    // geometry check for PS/PSC matching
+	    if(flhit->column < geomModuleColumn[clhit->module-1][0] || flhit->column > geomModuleColumn[clhit->module-1][1]) {japp->RootFillUnLock(this); return NOERROR;}
+	    if(frhit->column < geomModuleColumn[crhit->module-1][0] || frhit->column > geomModuleColumn[crhit->module-1][1]) {japp->RootFillUnLock(this); return NOERROR;}
+
+	    // energy variables with random spread in energy bite
+	    double E_left_rndm = dRandom->Rndm()*(dPSGeom->getEhigh(flhit->arm,flhit->column)-dPSGeom->getElow(flhit->arm,flhit->column)) + dPSGeom->getElow(flhit->arm,flhit->column);
+	    double E_right_rndm = dRandom->Rndm()*(dPSGeom->getEhigh(frhit->arm,frhit->column)-dPSGeom->getElow(frhit->arm,frhit->column)) + dPSGeom->getElow(frhit->arm,frhit->column);
             double E_pair = flhit->E+frhit->E;
+	    double E_pair_uni = E_left_rndm+E_right_rndm;
             double PS_tdiff = flhit->t-frhit->t;
             
             hPS_tdiffVsE->Fill(E_pair,PS_tdiff);
             hPSC_tdiffVsE->Fill(E_pair,PSC_tdiff);
-            hPSPSC_tdiffVsE->Fill(E_pair,PSC_tdiff-PS_tdiff);
+            hPSPSC_tdiffVsE->Fill(E_pair, flhit->t-clhit->t);
+	    hPS_EVsEuni->Fill(E_pair_uni,E_pair);
 	    if(fabs(PS_tdiff) < 0.5*dBeamBunchPeriod && fabs(PSC_tdiff) < 0.5*dBeamBunchPeriod)
 		    hPS_E->Fill(E_pair);
 
 	    // Fill PS variables
 	    dTreeFillData.Fill_Single<ULong64_t>("EventNumber", eventnumber);
-	    dTreeFillData.Fill_Single<Bool_t>("IsFiducial", beamCurrent[0]->is_fiducial);
+	    if(!beamCurrent.empty()) 
+		    dTreeFillData.Fill_Single<Bool_t>("IsFiducial", beamCurrent[0]->is_fiducial);
 	    dTreeFillData.Fill_Single<Double_t>("PSCtimeL", clhit->t);
 	    dTreeFillData.Fill_Single<Double_t>("PSCtimeR", crhit->t);
 	    dTreeFillData.Fill_Single<Double_t>("PStimeL", flhit->t);
@@ -350,6 +363,7 @@ jerror_t JEventProcessor_PS_flux::evnt(JEventLoop *loop, uint64_t eventnumber)
 	    dTreeFillData.Fill_Single<Double_t>("PSenergyL", flhit->E);
 	    dTreeFillData.Fill_Single<Double_t>("PSenergyR", frhit->E);
 	    dTreeFillData.Fill_Single<Double_t>("PSPairEnergy", E_pair);
+	    dTreeFillData.Fill_Single<Double_t>("PSPairEnergyUniform", E_pair_uni);
 
 	    int itagm = 0;
 	    int itagh = 0;
@@ -372,9 +386,6 @@ jerror_t JEventProcessor_PS_flux::evnt(JEventLoop *loop, uint64_t eventnumber)
 
 		dTreeFillData.Fill_Array<Double_t>("TAGHenergy", tag->E, itagh);
 		dTreeFillData.Fill_Array<Double_t>("TAGHtime", tag->t, itagh);
-		dTreeFillData.Fill_Array<Double_t>("TAGHintegral", tag->integral, itagh);
-		dTreeFillData.Fill_Array<Double_t>("TAGHpulse_peak", tag->pulse_peak, itagh);
-		dTreeFillData.Fill_Array<bool>("TAGHhasTDC", tag->has_TDC, itagh);
 		dTreeFillData.Fill_Array<Int_t>("TAGHcounter", tag->counter_id, itagh);
 		itagh++;
 		locTAGHhits++;
@@ -403,9 +414,6 @@ jerror_t JEventProcessor_PS_flux::evnt(JEventLoop *loop, uint64_t eventnumber)
 
 		dTreeFillData.Fill_Array<Double_t>("TAGMenergy", tag->E, itagm);
 		dTreeFillData.Fill_Array<Double_t>("TAGMtime", tag->t, itagm);
-		dTreeFillData.Fill_Array<Double_t>("TAGMintegral", tag->integral, itagm);
-		dTreeFillData.Fill_Array<Double_t>("TAGMpulse_peak", tag->pulse_peak, itagm);
-		dTreeFillData.Fill_Array<bool>("TAGMhasTDC", tag->has_TDC, itagm);
 		dTreeFillData.Fill_Array<Int_t>("TAGMcolumn", tag->column, itagm);
 		itagm++;
 		locTAGMhits++;
