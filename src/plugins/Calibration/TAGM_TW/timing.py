@@ -202,10 +202,7 @@ def GetRFTiming(hist,beamPeriod):
 	if (hist.GetMaximum() < 5):
 		print 'Insufficient number of entries for histogram ' + histname
 		return 0
-	mean = hist.GetMean()
-	maxBin = hist.GetMaximumBin()
-	maxContent = hist.GetBinContent(maxBin)
-	maximum = hist.GetBinCenter(maxBin)
+	maximum = GetMaximum(hist)
 	try:
 		if (maximum < -0.5):
 			fitfunc = TF1("fitfunc","[0]*TMath::Exp(-0.5*pow((x-[1])/[2],2))+[0]*TMath::Exp(-0.5*pow((x-[1]-[3])/[2],2))",-beamPeriod/2,0)
@@ -240,8 +237,9 @@ def GetSelfTiming(hist):
 	if (hist.GetMaximum() < 5):
 		print 'Insufficient number of entries for histogram ' + histname
 		return 0
+	maximum = GetMaximum(hist)
 	try:
-		FitResult = hist.Fit("gaus","sRWq","",-20,20)
+		FitResult = hist.Fit("gaus","sRWq","",maximum-2,maximum+2)
 		offset = FitResult.Parameters()[1]
 		sigma = FitResult.Parameters()[2]
 	except:
@@ -281,6 +279,11 @@ def SigError(type,row,col,sig):
 		sigError = type + ': Individual column ' + str(col) + ' row ' + str(row) + \
 			   ' has a sigma (' + str(sig) + ') greater than 1.0 ns\n'
 	return sigError
+
+def GetMaximum(hist):
+	maxBin = hist.GetMaximumBin()
+	maximum = hist.GetBinCenter(maxBin)
+	return maximum
 
 
 if __name__ == "__main__":
