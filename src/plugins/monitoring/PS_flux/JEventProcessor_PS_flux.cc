@@ -294,7 +294,7 @@ jerror_t JEventProcessor_PS_flux::evnt(JEventLoop *loop, uint64_t eventnumber)
     vector<const DBeamPhoton*> beamPhotons;
     loop->Get(beamPhotons);
 
-    // beam current and fiducial definition (not populated before Spring 2017)
+    // beam current and fiducial definition
     vector<const DBeamCurrent*> beamCurrent;
     loop->Get(beamCurrent);
 
