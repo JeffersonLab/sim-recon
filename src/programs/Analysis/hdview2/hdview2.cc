@@ -16,6 +16,8 @@ extern JApplication *japp;
 JEventLoop *eventloop =NULL;
 MyProcessor *myproc = NULL;
 
+int32_t RUNNUMBER = 9999; // set with RUNNUMBER config paramter
+
 void PrintFactoryList(JApplication *japp);
 void ParseCommandLineArguments(int &narg, char *argv[], JApplication *japp);
 void Usage(JApplication *japp);
@@ -31,6 +33,9 @@ int main(int narg, char *argv[])
 	// Instantiate a DApplication object. This has to be done BEFORE
 	// creating the TApplication object since that modifies the argument list.
 	japp = new DApplication(narg, argv);
+	
+	// Check if user specified a run number via config. parameter
+	try{ gPARMS->GetParameter("RUNNUMBER", RUNNUMBER); }catch(...){}
 	
 	// Create a ROOT TApplication object
 	TApplication app("HDView", &narg, argv);
