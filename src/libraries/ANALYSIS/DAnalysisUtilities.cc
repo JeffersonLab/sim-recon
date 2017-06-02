@@ -948,6 +948,7 @@ DLorentzVector DAnalysisUtilities::Calc_FinalStateP4(const DParticleCombo* locPa
 
 double DAnalysisUtilities::Calc_Energy_UnusedShowers(JEventLoop* locEventLoop, const DParticleCombo* locParticleCombo) const
 {
+	DVector3 locVertex(0.0, 0.0, dTargetZCenter);
 	const DEventRFBunch* locEventRFBunch = locParticleCombo->Get_EventRFBunch();
 	double locRFTime = (locEventRFBunch != NULL) ? locEventRFBunch->dTime : numeric_limits<double>::quiet_NaN();
 
@@ -961,7 +962,7 @@ double DAnalysisUtilities::Calc_Energy_UnusedShowers(JEventLoop* locEventLoop, c
 		// requirements on unused showers
 		double locFlightTime = locUnusedNeutralShower->dSpacetimeVertex.Vect().Mag()/SPEED_OF_LIGHT;
 		double locDeltaT = locUnusedNeutralShower->dSpacetimeVertex.T() - locFlightTime - locRFTime;
-		double locDetectorTheta = locUnusedNeutralShower->dSpacetimeVertex.Theta()*180./TMath::Pi();
+		double locDetectorTheta = (locUnusedNeutralShower->dSpacetimeVertex.Vect()-locVertex).Theta()*180./TMath::Pi();
 		if(locDetectorTheta < 2.0 || fabs(locDeltaT) > 4.)
 			continue;		
 
