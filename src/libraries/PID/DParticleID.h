@@ -144,7 +144,7 @@ class DParticleID:public jana::JObject
 		bool Get_BestFCALMatchParams(const DKinematicData* locTrack, const DDetectorMatches* locDetectorMatches, DFCALShowerMatchParams& locBestMatchParams) const;
 
 		// Actual
-		DBCALShowerMatchParams Get_BestBCALMatchParams(DVector3 locMomentum, vector<DBCALShowerMatchParams>& locShowerMatchParams) const;
+		DBCALShowerMatchParams Get_BestBCALMatchParams(vector<DBCALShowerMatchParams>& locShowerMatchParams) const;
 		DSCHitMatchParams Get_BestSCMatchParams(vector<DSCHitMatchParams>& locSCHitMatchParams) const;
 		DTOFHitMatchParams Get_BestTOFMatchParams(vector<DTOFHitMatchParams>& locTOFHitMatchParams) const;
 		DFCALShowerMatchParams Get_BestFCALMatchParams(vector<DFCALShowerMatchParams>& locShowerMatchParams) const;
@@ -158,6 +158,10 @@ class DParticleID:public jana::JObject
 		bool Get_ClosestToTrack(const DReferenceTrajectory* rt, const vector<const DSCHit*>& locSCHits, bool locIsTimeBased, bool locCutFlag, double& locStartTime, DSCHitMatchParams& locBestMatchParams, double* locStartTimeVariance = nullptr, DVector3* locBestProjPos = nullptr, DVector3* locBestProjMom = nullptr) const;
 		const DTOFPaddleHit* Get_ClosestTOFPaddleHit_Horizontal(const DReferenceTrajectory* locReferenceTrajectory, const vector<const DTOFPaddleHit*>& locTOFPaddleHits, double locInputStartTime, double& locBestDeltaY, double& locBestDistance) const;
 		const DTOFPaddleHit* Get_ClosestTOFPaddleHit_Vertical(const DReferenceTrajectory* locReferenceTrajectory, const vector<const DTOFPaddleHit*>& locTOFPaddleHits, double locInputStartTime, double& locBestDeltaX, double& locBestDistance) const;
+
+		bool Get_ClosestToTrack(const vector<DTrackFitter::Extrapolation_t> &extrapolations, const vector<const DBCALShower*>& locBCALShowers, bool locCutFlag, double& locStartTime, DBCALShowerMatchParams& locBestMatchParams, double* locStartTimeVariance = nullptr, DVector3* locBestProjPos = nullptr, DVector3* locBestProjMom = nullptr) const;
+		bool Get_ClosestToTrack(const vector<DTrackFitter::Extrapolation_t> &extrapolations, const vector<const DTOFPoint*>& locTOFPoints, bool locCutFlag, double& locStartTime, DTOFHitMatchParams& locBestMatchParams, double* locStartTimeVariance = nullptr, DVector3* locBestProjPos = nullptr, DVector3* locBestProjMom = nullptr) const;
+
 
 		/********************************************************** PREDICT HIT ELEMENT **********************************************************/
 

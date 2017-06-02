@@ -1084,6 +1084,8 @@ bool DParticleID::Distance_ToTrack(const vector<DTrackFitter::Extrapolation_t> &
   locShowerMatchParams.dFlightTimeVariance = locFlightTimeVariance;
   locShowerMatchParams.dPathLength = locPathLength;
   locShowerMatchParams.dDeltaPhiToShower = locDeltaPhiMin;
+  locShowerMatchParams.dDeltaPhiToShowerCut=BCAL_PHI_CUT_PAR1
+    + BCAL_PHI_CUT_PAR2*exp(-1.0*BCAL_PHI_CUT_PAR3*locProjMom.Mag());
   locShowerMatchParams.dDeltaZToShower = locDeltaZ;
   
   return true;
@@ -1479,18 +1481,17 @@ bool DParticleID::Get_BestBCALMatchParams(const DKinematicData* locTrack, const 
 	if(!locDetectorMatches->Get_BCALMatchParams(locTrack, locShowerMatchParams))
 		return false;
 
-	locBestMatchParams = Get_BestBCALMatchParams(locTrack->momentum(), locShowerMatchParams);
+	locBestMatchParams = Get_BestBCALMatchParams(locShowerMatchParams);
 	return true;
 }
 
-DBCALShowerMatchParams DParticleID::Get_BestBCALMatchParams(DVector3 locMomentum, vector<DBCALShowerMatchParams>& locShowerMatchParams) const
+DBCALShowerMatchParams DParticleID::Get_BestBCALMatchParams(vector<DBCALShowerMatchParams>& locShowerMatchParams) const
 {
 	double locMinChiSq = 9.9E9;
-	double locP = locMomentum.Mag();
 	DBCALShowerMatchParams locBestMatchParams;
 	for(size_t loc_i = 0; loc_i < locShowerMatchParams.size(); ++loc_i)
 	{
-		double locDeltaPhiCut = BCAL_PHI_CUT_PAR1 + BCAL_PHI_CUT_PAR2*exp(-1.0*BCAL_PHI_CUT_PAR3*locP);
+	  double locDeltaPhiCut =locShowerMatchParams[loc_i].dDeltaPhiToShowerCut;
 		double locDeltaPhiError = locDeltaPhiCut/3.0; //Cut is "3 sigma"
 		double locDeltaPhi = 180.0*locShowerMatchParams[loc_i].dDeltaPhiToShower/TMath::Pi();
 		double locMatchChiSq = locDeltaPhi*locDeltaPhi/(locDeltaPhiError*locDeltaPhiError);
@@ -1616,7 +1617,7 @@ bool DParticleID::Get_ClosestToTrack(const DReferenceTrajectory* rt, const vecto
 	if(locShowerMatchParamsVector.empty())
 		return false;
 
-	locBestMatchParams = Get_BestBCALMatchParams(rt->swim_steps[0].mom, locShowerMatchParamsVector);
+	locBestMatchParams = Get_BestBCALMatchParams(locShowerMatchParamsVector);
 
 	if(locStartTimeVariance != nullptr)
 	{
@@ -1957,6 +1958,116 @@ const DTOFPaddleHit* DParticleID::Get_ClosestTOFPaddleHit_Vertical(const DRefere
 
 	return locClosestPaddleHit;
 }
+
+
+bool DParticleID::Get_ClosestToTrack(const vector<DTrackFitter::Extrapolation_t> &extrapolations, const vector<const DBCALShower*>& locBCALShowers, bool locCutFlag, double& locStartTime, DBCALShowerMatchParams& locBestMatchParams, double* locStartTimeVariance, DVector3* locBestProjPos, DVector3* locBestProjMom) const
+{
+  if(extrapolations.size()==0)
+    return false;
+
+  //Loop over bcal showers
+  vector<DBCALShowerMatchParams> locShowerMatchParamsVector;
+  vector<pair<DBCALShowerMatchParams, pair<DVector3, DVector3> > > locMatchProjectionPairs;
+	for(size_t loc_i = 0; loc_i < locBCALShowers.size(); ++loc_i)
+	{
+		DBCALShowerMatchParams locShowerMatchParams;
+		DVector3 locProjPos, locProjMom;
+		if(locCutFlag)
+		{
+			if(!Cut_MatchDistance(extrapolations, locBCALShowers[loc_i], locStartTime, locShowerMatchParams, &locProjPos, &locProjMom))
+				continue;
+		}
+		else
+		{
+			if(!Distance_ToTrack(extrapolations, locBCALShowers[loc_i], locStartTime, locShowerMatchParams, &locProjPos, &locProjMom))
+				continue;
+		}
+		locShowerMatchParamsVector.push_back(locShowerMatchParams);
+		pair<DBCALShowerMatchParams, pair<DVector3, DVector3> > locMatchProjectionPair(locShowerMatchParams, pair<DVector3, DVector3>(locProjPos, locProjMom));
+		locMatchProjectionPairs.push_back(locMatchProjectionPair);
+	}
+	if(locShowerMatchParamsVector.empty())
+		return false;
+
+	locBestMatchParams = Get_BestBCALMatchParams(locShowerMatchParamsVector);
+
+	if(locStartTimeVariance != nullptr)
+	{
+		locStartTime = locBestMatchParams.dBCALShower->t - locBestMatchParams.dFlightTime;
+	//	locTimeVariance = locBestMatchParams.dFlightTimeVariance + locBestMatchParams.dBCALShower->dCovarianceMatrix(4, 4); //uncomment when ready!!
+		*locStartTimeVariance = 0.3*0.3+locBestMatchParams.dFlightTimeVariance;
+	}
+
+	if(locBestProjMom != nullptr)
+	{
+		for(auto& locMatchProjectionPair : locMatchProjectionPairs)
+		{
+			DBCALShowerMatchParams locParams = locMatchProjectionPair.first;
+			if(locParams != locBestMatchParams)
+				continue;
+			*locBestProjPos = locMatchProjectionPair.second.first;
+			*locBestProjMom = locMatchProjectionPair.second.second;
+			break;
+		}
+	}
+
+	return true;
+}
+
+bool DParticleID::Get_ClosestToTrack(const vector<DTrackFitter::Extrapolation_t> &extrapolations, const vector<const DTOFPoint*>& locTOFPoints, bool locCutFlag, double& locStartTime, DTOFHitMatchParams& locBestMatchParams, double* locStartTimeVariance, DVector3* locBestProjPos, DVector3* locBestProjMom) const
+{
+  if(extrapolations.size()==0)
+		return false;
+
+	//Loop over tof points
+	vector<DTOFHitMatchParams> locTOFHitMatchParamsVector;
+	vector<pair<DTOFHitMatchParams, pair<DVector3, DVector3> > > locMatchProjectionPairs;
+	for(size_t loc_i = 0; loc_i < locTOFPoints.size(); ++loc_i)
+	{
+		DTOFHitMatchParams locTOFHitMatchParams;
+		DVector3 locProjPos, locProjMom;
+		if(locCutFlag)
+		{
+			if(!Cut_MatchDistance(extrapolations, locTOFPoints[loc_i], locStartTime, locTOFHitMatchParams, &locProjPos, &locProjMom))
+				continue;
+		}
+		else
+		{
+			if(!Distance_ToTrack(extrapolations, locTOFPoints[loc_i], locStartTime, locTOFHitMatchParams, &locProjPos, &locProjMom))
+				continue;
+		}
+		locTOFHitMatchParamsVector.push_back(locTOFHitMatchParams);
+		pair<DTOFHitMatchParams, pair<DVector3, DVector3> > locMatchProjectionPair(locTOFHitMatchParams, pair<DVector3, DVector3>(locProjPos, locProjMom));
+		locMatchProjectionPairs.push_back(locMatchProjectionPair);
+	}
+	if(locTOFHitMatchParamsVector.empty())
+		return false;
+
+	locBestMatchParams = Get_BestTOFMatchParams(locTOFHitMatchParamsVector);
+
+	if(locStartTimeVariance != nullptr)
+	{
+		locStartTime = locBestMatchParams.dHitTime - locBestMatchParams.dFlightTime;
+	//	locTimeVariance = locBestMatchParams.dFlightTimeVariance + locBestMatchParams.dHitTimeVariance; //uncomment when ready!
+		*locStartTimeVariance = 0.1*0.1+locBestMatchParams.dFlightTimeVariance;
+	}
+
+	if(locBestProjMom != nullptr)
+	{
+		for(auto& locMatchProjectionPair : locMatchProjectionPairs)
+		{
+			DTOFHitMatchParams locParams = locMatchProjectionPair.first;
+			if(locParams != locBestMatchParams)
+				continue;
+			*locBestProjPos = locMatchProjectionPair.second.first;
+			*locBestProjMom = locMatchProjectionPair.second.second;
+			break;
+		}
+	}
+
+	return true;
+}
+
 
 /********************************************************** PREDICT HIT ELEMENT **********************************************************/
 
