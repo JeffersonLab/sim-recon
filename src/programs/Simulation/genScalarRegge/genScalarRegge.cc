@@ -2223,7 +2223,7 @@ double TensorScalarInterference(TLorentzVector &q /* beam */,
   double dpx_plus_dpy=dpx+dpy;
 
   // Coupling constants 
-  double f=10.;  // scale factor to account for normalization of regge factor 
+  double f=100.;  // scale factor to account for normalization of regge factor 
   // to data?? 
   double gT_sq=f*(2./3.)*150.; // GeV^2
   if (two_particles==(7+17)){
