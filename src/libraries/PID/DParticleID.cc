@@ -2068,6 +2068,302 @@ bool DParticleID::Get_ClosestToTrack(const vector<DTrackFitter::Extrapolation_t>
 	return true;
 }
 
+bool DParticleID::Get_ClosestToTrack(const vector<DTrackFitter::Extrapolation_t> &extrapolations, const vector<const DFCALShower*>& locFCALShowers, bool locCutFlag, double& locStartTime, DFCALShowerMatchParams& locBestMatchParams, double* locStartTimeVariance, DVector3* locBestProjPos, DVector3* locBestProjMom) const
+{
+  if(extrapolations.size()==0)
+		return false;
+
+	//Loop over FCAL showers
+	vector<DFCALShowerMatchParams> locShowerMatchParamsVector;
+	vector<pair<DFCALShowerMatchParams, pair<DVector3, DVector3> > > locMatchProjectionPairs;
+	for(size_t loc_i = 0; loc_i < locFCALShowers.size(); ++loc_i)
+	{
+		DFCALShowerMatchParams locShowerMatchParams;
+		DVector3 locProjPos, locProjMom;
+		if(locCutFlag)
+		{
+			if(!Cut_MatchDistance(extrapolations, locFCALShowers[loc_i], locStartTime, locShowerMatchParams, &locProjPos, &locProjMom))
+				continue;
+		}
+		else
+		{
+			if(!Distance_ToTrack(extrapolations, locFCALShowers[loc_i], locStartTime, locShowerMatchParams, &locProjPos, &locProjMom))
+				continue;
+		}
+		locShowerMatchParamsVector.push_back(locShowerMatchParams);
+		pair<DFCALShowerMatchParams, pair<DVector3, DVector3> > locMatchProjectionPair(locShowerMatchParams, pair<DVector3, DVector3>(locProjPos, locProjMom));
+		locMatchProjectionPairs.push_back(locMatchProjectionPair);
+	}
+	if(locShowerMatchParamsVector.empty())
+		return false;
+
+	locBestMatchParams = Get_BestFCALMatchParams(locShowerMatchParamsVector);
+
+	if(locStartTimeVariance != nullptr)
+	{
+		locStartTime = locBestMatchParams.dFCALShower->getTime() - locBestMatchParams.dFlightTime;
+	//	locTimeVariance = locBestMatchParams.dFlightTimeVariance + locBestMatchParams.dFCALShower->dCovarianceMatrix(4, 4); //uncomment when ready!
+		*locStartTimeVariance = 0.5*0.5+locBestMatchParams.dFlightTimeVariance;
+	}
+
+	if(locBestProjMom != nullptr)
+	{
+		for(auto& locMatchProjectionPair : locMatchProjectionPairs)
+		{
+			DFCALShowerMatchParams locParams = locMatchProjectionPair.first;
+			if(locParams != locBestMatchParams)
+				continue;
+			*locBestProjPos = locMatchProjectionPair.second.first;
+			*locBestProjMom = locMatchProjectionPair.second.second;
+			break;
+		}
+	}
+
+	return true;
+}
+
+bool DParticleID::Get_ClosestToTrack(const vector<DTrackFitter::Extrapolation_t> &extrapolations, const vector<const DSCHit*>& locSCHits, bool locIsTimeBased, bool locCutFlag, double& locStartTime, DSCHitMatchParams& locBestMatchParams, double* locStartTimeVariance, DVector3* locBestProjPos, DVector3* locBestProjMom) const
+{
+  if(extrapolations.size()==0)
+		return false;
+
+	//Loop over SC points
+	vector<DSCHitMatchParams> locSCHitMatchParamsVector;
+	vector<pair<DSCHitMatchParams, pair<DVector3, DVector3> > > locMatchProjectionPairs;
+	for(size_t loc_i = 0; loc_i < locSCHits.size(); ++loc_i)
+	{
+		DSCHitMatchParams locSCHitMatchParams;
+		DVector3 locProjPos, locProjMom;
+		if(locCutFlag)
+		{
+			if(!Cut_MatchDistance(extrapolations, locSCHits[loc_i], locStartTime, locSCHitMatchParams, locIsTimeBased, &locProjPos, &locProjMom))
+				continue;
+		}
+		else
+		{
+			if(!Distance_ToTrack(extrapolations, locSCHits[loc_i], locStartTime, locSCHitMatchParams, &locProjPos, &locProjMom))
+				continue;
+		}
+		locSCHitMatchParamsVector.push_back(locSCHitMatchParams);
+		pair<DSCHitMatchParams, pair<DVector3, DVector3> > locMatchProjectionPair(locSCHitMatchParams, pair<DVector3, DVector3>(locProjPos, locProjMom));
+		locMatchProjectionPairs.push_back(locMatchProjectionPair);
+	}
+	if(locSCHitMatchParamsVector.empty())
+		return false;
+
+	locBestMatchParams = Get_BestSCMatchParams(locSCHitMatchParamsVector);
+
+	if(locStartTimeVariance != nullptr)
+	{
+		locStartTime = locBestMatchParams.dHitTime - locBestMatchParams.dFlightTime;
+		*locStartTimeVariance = locBestMatchParams.dFlightTimeVariance + locBestMatchParams.dHitTimeVariance;
+		//locTimeVariance = 0.3*0.3+locBestMatchParams.dFlightTimeVariance;
+	}
+
+	if(locBestProjMom != nullptr)
+	{
+		for(auto& locMatchProjectionPair : locMatchProjectionPairs)
+		{
+			DSCHitMatchParams locParams = locMatchProjectionPair.first;
+			if(locParams != locBestMatchParams)
+				continue;
+			*locBestProjPos = locMatchProjectionPair.second.first;
+			*locBestProjMom = locMatchProjectionPair.second.second;
+			break;
+		}
+	}
+
+	return true;
+}
+
+const DTOFPaddleHit* DParticleID::Get_ClosestTOFPaddleHit_Horizontal(const vector<DTrackFitter::Extrapolation_t> &extrapolations, const vector<const DTOFPaddleHit*>& locTOFPaddleHits, double locInputStartTime, double& locBestDeltaY, double& locBestDistance) const
+{
+  if(extrapolations.size()==0)
+    return false;
+
+  // Find the track projection to the TOF
+  double locFlightTime = 9.9E9;
+  DVector3 proj_pos, proj_mom;
+  bool got_tof_extrapolation=false;
+  for (unsigned int i=0;i<extrapolations.size();i++){
+    if (extrapolations[i].detector==SYS_TOF){
+      got_tof_extrapolation=true;
+
+      proj_pos=extrapolations[i].position; 
+      proj_mom=extrapolations[i].momentum;
+      double dz=dTOFGeometry->CenterHPlane-proj_pos.z();
+      double px=proj_mom.Px();
+      double py=proj_mom.Py();
+      double pz=proj_mom.Pz();
+      double tx=px/pz;
+      double ty=py/pz;
+      DVector3 delta(tx*dz,ty*dz,dz);
+      proj_pos+=delta;
+      locFlightTime=extrapolations[i].t;
+      break;
+    }
+  }
+  if (got_tof_extrapolation==false) return false;
+
+	const DTOFPaddleHit* locClosestPaddleHit = nullptr;
+	locBestDistance = 999.0;
+	locBestDeltaY = 999.0;
+	for(auto& locTOFPaddleHit : locTOFPaddleHits)
+	{
+		if(locTOFPaddleHit->orientation != 1)
+			continue; //horizontal orientation is 1
+
+		bool locNorthIsGoodHitFlag = (locTOFPaddleHit->E_north > TOF_E_THRESHOLD);
+		bool locSouthIsGoodHitFlag = (locTOFPaddleHit->E_south > TOF_E_THRESHOLD);
+		if(!locNorthIsGoodHitFlag && !locSouthIsGoodHitFlag)
+			continue; //hit is junk
+
+		// Check that the hit is not out of time with respect to the track
+
+		//Construct spacetime hit: averages times, or if only one end with hit, reports time at center of paddle
+		DTOFPoint_factory::tof_spacetimehit_t* locSpacetimeHit = dTOFPointFactory->Build_TOFSpacetimeHit_Horizontal(locTOFPaddleHit);
+		double locHitTime = locSpacetimeHit->t;
+
+		// if single-ended paddle, or only one side has a hit: time reported at center: must propagate to track location
+		if(locNorthIsGoodHitFlag != locSouthIsGoodHitFlag)
+		{
+			//Paddle midpoint
+			double locPaddleMidPoint = 0.0; //is 0 except when is single-ended bar (22 & 23)
+			if(!locSpacetimeHit->dIsDoubleEndedBar)
+				locPaddleMidPoint = locNorthIsGoodHitFlag ? ONESIDED_PADDLE_MIDPOINT_MAG : -1.0*ONESIDED_PADDLE_MIDPOINT_MAG;
+
+			//correct the time
+			double locDistanceToMidPoint = locNorthIsGoodHitFlag ? locPaddleMidPoint - proj_pos.X() : proj_pos.X() - locPaddleMidPoint;
+			int id = 44 + locTOFPaddleHit->bar - 1; //for propation speed
+			locHitTime -= locDistanceToMidPoint/propagation_speed[id];
+		}
+
+		//time cut
+		double locDeltaT = locHitTime - locFlightTime - locInputStartTime;
+		if(fabs(locDeltaT) > OUT_OF_TIME_CUT)
+			continue;
+
+		// Check geometric distance, continue only if better than before
+		double locDeltaY = dTOFGeometry->bar2y(locTOFPaddleHit->bar) - proj_pos.Y();
+		double locDeltaX = locTOFPaddleHit->pos - proj_pos.X();
+		double locDistance = sqrt(locDeltaY*locDeltaY + locDeltaX*locDeltaX);
+		if(locNorthIsGoodHitFlag != locSouthIsGoodHitFlag)
+		{
+			//no position information along paddle: use delta-y cut only
+			if(fabs(locDeltaY) > fabs(locBestDistance))
+				continue;
+			if(fabs(locDeltaY) > fabs(locBestDeltaY))
+				continue; //no info on delta-x, so make sure not unfair comparison
+			locBestDistance = fabs(locDeltaY);
+		}
+		else
+		{
+			if(locDistance > locBestDistance)
+				continue;
+			locBestDistance = locDistance;
+		}
+
+		locBestDeltaY = locDeltaY;
+		locClosestPaddleHit = locTOFPaddleHit;
+	}
+
+	return locClosestPaddleHit;
+}
+
+const DTOFPaddleHit* DParticleID::Get_ClosestTOFPaddleHit_Vertical(const vector<DTrackFitter::Extrapolation_t> &extrapolations, const vector<const DTOFPaddleHit*>& locTOFPaddleHits, double locInputStartTime, double& locBestDeltaX, double& locBestDistance) const
+{
+ if(extrapolations.size()==0)
+    return false;
+
+  // Find the track projection to the TOF
+  double locFlightTime = 9.9E9;
+  DVector3 proj_pos, proj_mom;
+  bool got_tof_extrapolation=false;
+  for (unsigned int i=0;i<extrapolations.size();i++){
+    if (extrapolations[i].detector==SYS_TOF){
+      got_tof_extrapolation=true;
+
+      proj_pos=extrapolations[i].position; 
+      proj_mom=extrapolations[i].momentum;
+      double dz=dTOFGeometry->CenterVPlane-proj_pos.z();
+      double px=proj_mom.Px();
+      double py=proj_mom.Py();
+      double pz=proj_mom.Pz();
+      double tx=px/pz;
+      double ty=py/pz;
+      DVector3 delta(tx*dz,ty*dz,dz);
+      proj_pos+=delta;
+      locFlightTime=extrapolations[i].t;
+      break;
+    }
+  }
+  if (got_tof_extrapolation==false) return false;
+
+	// Evaluate matching solely by physical geometry of the paddle: NOT the distance along the paddle of the hit
+	const DTOFPaddleHit* locClosestPaddleHit = nullptr;
+	locBestDistance = 999.0;
+	locBestDeltaX = 999.0;
+	for(auto& locTOFPaddleHit : locTOFPaddleHits)
+	{
+		if(locTOFPaddleHit->orientation != 0)
+			continue; //vertical orientation is 0
+
+		bool locNorthIsGoodHitFlag = (locTOFPaddleHit->E_north > TOF_E_THRESHOLD);
+		bool locSouthIsGoodHitFlag = (locTOFPaddleHit->E_south > TOF_E_THRESHOLD);
+		if(!locNorthIsGoodHitFlag && !locSouthIsGoodHitFlag)
+			continue; //hit is junk
+
+		// Check that the hit is not out of time with respect to the track
+
+		//Construct spacetime hit: averages times, or if only one end with hit, reports time at center of paddle
+		DTOFPoint_factory::tof_spacetimehit_t* locSpacetimeHit = dTOFPointFactory->Build_TOFSpacetimeHit_Vertical(locTOFPaddleHit);
+		double locHitTime = locSpacetimeHit->t;
+
+		// if single-ended paddle, or only one side has a hit: time reported at center: must propagate to track location
+		if(locNorthIsGoodHitFlag != locSouthIsGoodHitFlag)
+		{
+			//Paddle midpoint
+			double locPaddleMidPoint = 0.0; //is 0 except when is single-ended bar (22 & 23)
+			if(!locSpacetimeHit->dIsDoubleEndedBar)
+				locPaddleMidPoint = locNorthIsGoodHitFlag ? ONESIDED_PADDLE_MIDPOINT_MAG : -1.0*ONESIDED_PADDLE_MIDPOINT_MAG;
+
+			//correct the time
+			double locDistanceToMidPoint = locNorthIsGoodHitFlag ? locPaddleMidPoint - proj_pos.Y() : proj_pos.Y() - locPaddleMidPoint;
+			int id = locTOFPaddleHit->bar - 1; //for propation speed
+			locHitTime -= locDistanceToMidPoint/propagation_speed[id];
+		}
+
+		//time cut
+		double locDeltaT = locHitTime - locFlightTime - locInputStartTime;
+		if(fabs(locDeltaT) > OUT_OF_TIME_CUT)
+			continue;
+
+		// Check geometric distance, continue only if better than before
+		double locDeltaX = dTOFGeometry->bar2y(locTOFPaddleHit->bar) - proj_pos.X();
+		double locDeltaY = locTOFPaddleHit->pos - proj_pos.Y();
+		double locDistance = sqrt(locDeltaY*locDeltaY + locDeltaX*locDeltaX);
+		if(locNorthIsGoodHitFlag != locSouthIsGoodHitFlag)
+		{
+			//no position information along paddle: use delta-y cut only
+			if(fabs(locDeltaX) > fabs(locBestDistance))
+				continue;
+			if(fabs(locDeltaX) > fabs(locBestDeltaX))
+				continue; //no info on delta-x, so make sure not unfair comparison
+			locBestDistance = fabs(locDeltaX);
+		}
+		else
+		{
+			if(locDistance > locBestDistance)
+				continue;
+			locBestDistance = locDistance;
+		}
+
+		locBestDeltaX = locDeltaX;
+		locClosestPaddleHit = locTOFPaddleHit;
+	}
+
+	return locClosestPaddleHit;
+}
 
 /********************************************************** PREDICT HIT ELEMENT **********************************************************/
 

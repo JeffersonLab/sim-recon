@@ -161,6 +161,10 @@ class DParticleID:public jana::JObject
 
 		bool Get_ClosestToTrack(const vector<DTrackFitter::Extrapolation_t> &extrapolations, const vector<const DBCALShower*>& locBCALShowers, bool locCutFlag, double& locStartTime, DBCALShowerMatchParams& locBestMatchParams, double* locStartTimeVariance = nullptr, DVector3* locBestProjPos = nullptr, DVector3* locBestProjMom = nullptr) const;
 		bool Get_ClosestToTrack(const vector<DTrackFitter::Extrapolation_t> &extrapolations, const vector<const DTOFPoint*>& locTOFPoints, bool locCutFlag, double& locStartTime, DTOFHitMatchParams& locBestMatchParams, double* locStartTimeVariance = nullptr, DVector3* locBestProjPos = nullptr, DVector3* locBestProjMom = nullptr) const;
+		bool Get_ClosestToTrack(const vector<DTrackFitter::Extrapolation_t> &extrapolations, const vector<const DFCALShower*>& locFCALShowers, bool locCutFlag, double& locStartTime, DFCALShowerMatchParams& locBestMatchParams, double* locStartTimeVariance = nullptr, DVector3* locBestProjPos = nullptr, DVector3* locBestProjMom = nullptr) const;
+		bool Get_ClosestToTrack(const vector<DTrackFitter::Extrapolation_t> &extrapolations, const vector<const DSCHit*>& locSCHits, bool locIsTimeBased, bool locCutFlag, double& locStartTime, DSCHitMatchParams& locBestMatchParams, double* locStartTimeVariance = nullptr, DVector3* locBestProjPos = nullptr, DVector3* locBestProjMom = nullptr) const;	
+		const DTOFPaddleHit* Get_ClosestTOFPaddleHit_Vertical(const vector<DTrackFitter::Extrapolation_t> &extrapolations, const vector<const DTOFPaddleHit*>& locTOFPaddleHits, double locInputStartTime, double& locBestDeltaX, double& locBestDistance) const;
+		const DTOFPaddleHit* Get_ClosestTOFPaddleHit_Horizontal(const vector<DTrackFitter::Extrapolation_t> &extrapolations, const vector<const DTOFPaddleHit*>& locTOFPaddleHits, double locInputStartTime, double& locBestDeltaY, double& locBestDistance) const;
 
 
 		/********************************************************** PREDICT HIT ELEMENT **********************************************************/
