@@ -292,7 +292,8 @@ jerror_t DTrackTimeBased_factory::evnt(JEventLoop *loop, uint64_t eventnumber)
       timebased_track->Ndof = track->Ndof;
       timebased_track->FOM =  TMath::Prob(timebased_track->chisq,
 					  timebased_track->Ndof);
-      timebased_track->pulls = track->pulls;
+      timebased_track->pulls = track->pulls; 
+      timebased_track->extrapolations = track->extrapolations;
       timebased_track->trackid = track->id;
       timebased_track->candidateid=track->candidateid;
       timebased_track->IsSmoothed = track->IsSmoothed;
@@ -390,6 +391,7 @@ jerror_t DTrackTimeBased_factory::evnt(JEventLoop *loop, uint64_t eventnumber)
 	  timebased_track->chisq = track->chisq;
 	  timebased_track->Ndof = track->Ndof;
 	  timebased_track->pulls = track->pulls;
+	  timebased_track->extrapolations = track->extrapolations;
 	  timebased_track->trackid = track->id;
 	  timebased_track->candidateid=track->candidateid;
 	  
@@ -916,7 +918,8 @@ bool DTrackTimeBased_factory::DoFit(const DTrackWireBased *track,
 
       timebased_track->chisq = track->chisq;
       timebased_track->Ndof = track->Ndof;
-      timebased_track->pulls = track->pulls;
+      timebased_track->pulls = track->pulls; 
+      timebased_track->extrapolations = track->extrapolations;
       timebased_track->trackid = track->id;
       timebased_track->candidateid=track->candidateid;
       timebased_track->FOM=track->FOM;
@@ -964,7 +967,10 @@ bool DTrackTimeBased_factory::DoFit(const DTrackWireBased *track,
       timebased_track->rt = GetReferenceTrajectory(track_kd);
       timebased_track->chisq = fitter->GetChisq();
       timebased_track->Ndof = fitter->GetNdof();
-      timebased_track->pulls = fitter->GetPulls();
+      timebased_track->pulls = fitter->GetPulls();  
+      vector<DTrackFitter::Extrapolation_t> extrapolations=fitter->GetExtrapolations();
+      timebased_track->extrapolations.assign(extrapolations.begin(),extrapolations.end());
+
       timebased_track->IsSmoothed = fitter->GetIsSmoothed();
       timebased_track->trackid = track->id;
       timebased_track->candidateid=track->candidateid;
@@ -1069,6 +1075,7 @@ void DTrackTimeBased_factory::AddMissingTrackHypothesis(vector<DTrackTimeBased*>
   timebased_track->chisq = src_track->chisq;
   timebased_track->Ndof = src_track->Ndof;
   timebased_track->pulls = src_track->pulls;
+  timebased_track->extrapolations = src_track->extrapolations;
   timebased_track->trackid = src_track->id;
   timebased_track->candidateid=src_track->candidateid;
   timebased_track->FOM=src_track->FOM;
