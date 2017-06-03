@@ -1229,13 +1229,15 @@ void DHistogramAction_DetectorMatching::Fill_MatchingHists(JEventLoop* locEventL
 	for(locTrackIterator = locBestTrackMap.begin(); locTrackIterator != locBestTrackMap.end(); ++locTrackIterator)
 	{
 		DBCALShowerMatchParams locBestMatchParams;
-		const DReferenceTrajectory* rt = Get_ReferenceTrajectory(locTrackIterator->second);
-		if(rt == nullptr)
+		vector<DTrackFitter::Extrapolation_t> extrapolations;
+		Get_Extrapolations(locTrackIterator->second,extrapolations);
+		
+		if(extrapolations.size()==0)
 			break; //e.g. REST data: no trajectory
 		double locStartTime = locTrackIterator->second->t0();
 		double locStartTimeVariance = 0.0;
 		DVector3 locProjPos, locProjMom;
-		if(locParticleID->Get_ClosestToTrack(rt, locBCALShowers, false, locStartTime, locBestMatchParams, &locStartTimeVariance, &locProjPos, &locProjMom))
+		if(locParticleID->Get_ClosestToTrack(extrapolations, locBCALShowers, false, locStartTime, locBestMatchParams, &locStartTimeVariance, &locProjPos, &locProjMom))
 			locBCALTrackDistanceMap[locTrackIterator->second] = pair<DBCALShowerMatchParams, double>(locBestMatchParams, locProjPos.Z());
 	}
 
@@ -1244,11 +1246,13 @@ void DHistogramAction_DetectorMatching::Fill_MatchingHists(JEventLoop* locEventL
 	for(locTrackIterator = locBestTrackMap.begin(); locTrackIterator != locBestTrackMap.end(); ++locTrackIterator)
 	{
 		DFCALShowerMatchParams locBestMatchParams;
-		const DReferenceTrajectory* rt = Get_ReferenceTrajectory(locTrackIterator->second);
-		if(rt == nullptr)
+		vector<DTrackFitter::Extrapolation_t> extrapolations;
+		Get_Extrapolations(locTrackIterator->second,extrapolations);
+
+		if(extrapolations.size()==0)
 			break; //e.g. REST data: no trajectory
 		double locStartTime = locTrackIterator->second->t0();
-		if(locParticleID->Get_ClosestToTrack(rt, locFCALShowers, false, locStartTime, locBestMatchParams))
+		if(locParticleID->Get_ClosestToTrack(extrapolations, locFCALShowers, false, locStartTime, locBestMatchParams))
 			locFCALTrackDistanceMap[locTrackIterator->second] = locBestMatchParams;
 	}
 
@@ -1257,13 +1261,15 @@ void DHistogramAction_DetectorMatching::Fill_MatchingHists(JEventLoop* locEventL
 	for(locTrackIterator = locBestTrackMap.begin(); locTrackIterator != locBestTrackMap.end(); ++locTrackIterator)
 	{
 		DSCHitMatchParams locBestMatchParams;
-		const DReferenceTrajectory* rt = Get_ReferenceTrajectory(locTrackIterator->second);
-		if(rt == nullptr)
+		vector<DTrackFitter::Extrapolation_t> extrapolations;
+		Get_Extrapolations(locTrackIterator->second,extrapolations);
+
+		if(extrapolations.size()==0)
 			break; //e.g. REST data: no trajectory
 		double locStartTime = locTrackIterator->second->t0();
 		double locStartTimeVariance = 0.0;
 		DVector3 locProjPos, locProjMom;
-		if(locParticleID->Get_ClosestToTrack(rt, locSCHits, locIsTimeBased, false, locStartTime, locBestMatchParams, &locStartTimeVariance, &locProjPos, &locProjMom))
+		if(locParticleID->Get_ClosestToTrack(extrapolations, locSCHits, locIsTimeBased, false, locStartTime, locBestMatchParams, &locStartTimeVariance, &locProjPos, &locProjMom))
 			locSCTrackDistanceMap[locTrackIterator->second] = pair<DSCHitMatchParams, double>(locBestMatchParams, locProjPos.Z());
 	}
 
@@ -1272,11 +1278,13 @@ void DHistogramAction_DetectorMatching::Fill_MatchingHists(JEventLoop* locEventL
 	for(locTrackIterator = locBestTrackMap.begin(); locTrackIterator != locBestTrackMap.end(); ++locTrackIterator)
 	{
 		DTOFHitMatchParams locBestMatchParams;
-		const DReferenceTrajectory* rt = Get_ReferenceTrajectory(locTrackIterator->second);
-		if(rt == nullptr)
-			break; //e.g. REST data: no trajectory
+		vector<DTrackFitter::Extrapolation_t> extrapolations;
+		Get_Extrapolations(locTrackIterator->second,extrapolations);
+
+		if(extrapolations.size()==0)
+		  break; //e.g. REST data: no trajectory
 		double locStartTime = locTrackIterator->second->t0();
-		if(locParticleID->Get_ClosestToTrack(rt, locTOFPoints, false, locStartTime, locBestMatchParams))
+		if(locParticleID->Get_ClosestToTrack(extrapolations, locTOFPoints, false, locStartTime, locBestMatchParams))
 			locTOFPointTrackDistanceMap[locTrackIterator->second] = locBestMatchParams;
 	}
 
@@ -1286,19 +1294,21 @@ void DHistogramAction_DetectorMatching::Fill_MatchingHists(JEventLoop* locEventL
 	for(locTrackIterator = locBestTrackMap.begin(); locTrackIterator != locBestTrackMap.end(); ++locTrackIterator)
 	{
 		const DKinematicData* locKinematicData = locTrackIterator->second;
-		const DReferenceTrajectory* locReferenceTrajectory = Get_ReferenceTrajectory(locKinematicData);
-		if(locReferenceTrajectory == nullptr)
+		vector<DTrackFitter::Extrapolation_t> extrapolations;
+		Get_Extrapolations(locTrackIterator->second,extrapolations);
+
+		if(extrapolations.size()==0)
 			break; //e.g. REST data: no trajectory
 
 		double locBestDeltaX = 999.9, locBestDeltaY = 999.9, locBestDistance_Vertical = 999.9, locBestDistance_Horizontal = 999.9;
 		double locStartTime = locParticleID->Calc_PropagatedRFTime(locKinematicData, locEventRFBunch);
 
-		const DTOFPaddleHit* locClosestTOFPaddleHit_Vertical = locParticleID->Get_ClosestTOFPaddleHit_Vertical(locReferenceTrajectory, locTOFPaddleHits, locStartTime, locBestDeltaX, locBestDistance_Vertical);
+		const DTOFPaddleHit* locClosestTOFPaddleHit_Vertical = locParticleID->Get_ClosestTOFPaddleHit_Vertical(extrapolations, locTOFPaddleHits, locStartTime, locBestDeltaX, locBestDistance_Vertical);
 		pair<double, double> locDistancePair_Vertical(locBestDeltaX, locBestDistance_Vertical);
 		if(locClosestTOFPaddleHit_Vertical != NULL)
 			locVerticalTOFPaddleTrackDistanceMap[locTrackIterator->second] = pair<const DTOFPaddleHit*, pair<double, double> >(locClosestTOFPaddleHit_Vertical, locDistancePair_Vertical);
 
-		const DTOFPaddleHit* locClosestTOFPaddleHit_Horizontal = locParticleID->Get_ClosestTOFPaddleHit_Horizontal(locReferenceTrajectory, locTOFPaddleHits, locStartTime, locBestDeltaY, locBestDistance_Horizontal);
+		const DTOFPaddleHit* locClosestTOFPaddleHit_Horizontal = locParticleID->Get_ClosestTOFPaddleHit_Horizontal(extrapolations, locTOFPaddleHits, locStartTime, locBestDeltaY, locBestDistance_Horizontal);
 		pair<double, double> locDistancePair_Horizontal(locBestDeltaY, locBestDistance_Horizontal);
 		if(locClosestTOFPaddleHit_Horizontal != NULL)
 			locHorizontalTOFPaddleTrackDistanceMap[locTrackIterator->second] = pair<const DTOFPaddleHit*, pair<double, double> >(locClosestTOFPaddleHit_Horizontal, locDistancePair_Horizontal);
