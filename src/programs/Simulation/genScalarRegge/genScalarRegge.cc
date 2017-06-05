@@ -1369,7 +1369,7 @@ void GetResonanceParameters(double m1,double m2, double M_sq,double M_sq_R,
   double g_m1m2=2.82;
   if (got_pipi){
     gK=5.006;
-    g_m1m2=1.705;
+    g_m1m2=1.70315;
   }
   double gKsq=gK*gK;    
   double g_m1m2_sq=g_m1m2*g_m1m2;
@@ -2601,7 +2601,7 @@ void GraphCrossSection(double m1,double m2){
       ImB=width*sqrt(M_sq);
     }
     else{ // f0(1370)
-      double m_f1370=1.309 ;
+      double m_f1370=1.25 ; //guess
       M_sq_R=m_f1370*m_f1370; 
       width=0.5; // estimate, top of PDG range
       ReB=M_sq_R-M_sq;
@@ -2963,7 +2963,7 @@ int main(int narg, char *argv[])
       }
       // f0(1370)
       if (got_pipi && generate[2]){
- 	double m_f1370=1.3; // somewhere in the middle of PDG range
+ 	double m_f1370=1.25; // guess
 	double M_sq_R=m_f1370*m_f1370; 
 	width=0.5;  // estimate, top of PDG range
 	ReBf1370=M_sq_R-M_sq;
