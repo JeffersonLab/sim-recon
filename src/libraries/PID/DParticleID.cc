@@ -2558,6 +2558,67 @@ unsigned int DParticleID::PredictSCSector(const DReferenceTrajectory* rt, double
   return 0;
 }
 
+// Predict the start counter paddle that would match a track whose reference
+// trajectory is given by rt.
+unsigned int DParticleID::PredictSCSector(const vector<DTrackFitter::Extrapolation_t> &extrapolations, double& locDeltaPhi, DVector3& locProjPos, DVector3& locProjMom, DVector3& locPaddleNorm, double& locPathLength, double& locFlightTime, double& locFlightTimeVariance, int& locSCPlane) const{
+  if(extrapolations.size()==0)
+    return 0;
+
+  // Find the track projection to the Start Counter
+  bool got_sc_extrapolation=false;
+  for (unsigned int i=0;i<extrapolations.size();i++){
+    if (extrapolations[i].detector==SYS_START){
+      got_sc_extrapolation=true;
+      locProjPos=extrapolations[i].position;
+      locProjMom=extrapolations[i].momentum;
+      locFlightTime=extrapolations[i].t;
+      locPathLength=extrapolations[i].s;
+      locFlightTimeVariance=0.; // fill this in!
+      break;
+    }
+  }
+  if (got_sc_extrapolation==false) return 0;
+
+  double dphi0=locProjPos.Phi()-sc_pos[0][0].Phi();
+  if (dphi0<0) dphi0+=2.*M_PI;
+  unsigned int index=int(floor(dphi0/(2.*M_PI/30.)));
+  for (unsigned int i=0;i<sc_pos[index].size();i++){
+    if (locProjPos.z()>sc_pos[index][i].z()) continue;
+    
+    locPaddleNorm=sc_norm[index][i-1];
+    locDeltaPhi=locProjPos.Phi()-sc_pos[index][i-1].Phi();
+    if (locDeltaPhi<0) locDeltaPhi+=2.*M_PI;
+
+    break;   
+  }
+  return index+1;
+}
+
+// Predict the start counter paddle that would match a track whose reference
+// trajectory is given by rt.
+unsigned int DParticleID::PredictSCSector(const vector<DTrackFitter::Extrapolation_t> &extrapolations, DVector3* locOutputProjPos, bool* locProjBarrelRegion, double* locMinDPhi) const
+{
+  if(extrapolations.size()==0)
+    return 0;
+
+  DVector3 locProjPos, locProjMom, locPaddleNorm;
+  double locDeltaPhi, locPathLength, locFlightTime, locFlightTimeVariance;
+  int locSCPlane;
+  unsigned int locBestSCSector = PredictSCSector(extrapolations, locDeltaPhi, locProjPos, locProjMom, locPaddleNorm, locPathLength, locFlightTime, locFlightTimeVariance, locSCPlane);
+  if(locBestSCSector == 0)
+    return 0;
+  
+  if(locProjBarrelRegion != NULL)
+    *locProjBarrelRegion = (locProjPos.Z() < sc_pos[locBestSCSector - 1][1].Z()); // End of straight section
+
+  if(locMinDPhi != NULL)
+    *locMinDPhi = locDeltaPhi;
+  
+  if(locOutputProjPos != NULL)
+    *locOutputProjPos = locProjPos;
+  return locBestSCSector;
+}
+
 /****************************************************** MISCELLANEOUS ******************************************************/
 
 double DParticleID::Calc_BCALFlightTimePCorrelation(const DKinematicData* locTrack, DDetectorMatches* locDetectorMatches) const
