@@ -59,11 +59,10 @@ class DSelector_Z2pi_trees : public DSelector
 		TH1I* dHist_tdiff;
 		TH2I* dHist_CosTheta_Psi;;
 		TH1I* dHist_phi;
-		TH1I* dHist_Phikin;
-		TH1I* dHist_Phigen;
-		TH1I* dHist_Phidiff;
-		TH1I* dHist_Phi;
-		TH1I* dHist_psi;
+		TH1I* dHist_psikin;
+		TH1I* dHist_psigen;
+		TH1I* dHist_psidiff;
+		TH1I* dHist_psikin;
 		TH1I* dHist_pDeltap;
 		TH1I* dHist_pipDeltap;
 		TH1I* dHist_pimDeltap;
