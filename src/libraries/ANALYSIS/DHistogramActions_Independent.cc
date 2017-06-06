@@ -1325,6 +1325,11 @@ void DHistogramAction_DetectorMatching::Fill_MatchingHists(JEventLoop* locEventL
 	for(locTrackIterator = locBestTrackMap.begin(); locTrackIterator != locBestTrackMap.end(); ++locTrackIterator)
 	{
 		const DKinematicData* locTrack = locTrackIterator->second;
+		vector<DTrackFitter::Extrapolation_t> extrapolations;
+		Get_Extrapolations(locTrackIterator->second,extrapolations);
+
+		if(extrapolations.size()==0)
+			break; //e.g. REST data: no trajectory
 		const DReferenceTrajectory* locReferenceTrajectory = Get_ReferenceTrajectory(locTrack);
 		if(locReferenceTrajectory == NULL)
 			break; //e.g. REST data: no trajectory
@@ -1332,7 +1337,7 @@ void DHistogramAction_DetectorMatching::Fill_MatchingHists(JEventLoop* locEventL
 		//SC
 		DVector3 locSCIntersection;
 		bool locProjBarrelFlag = false;
-		unsigned int locProjectedSCPaddle = locParticleID->PredictSCSector(locReferenceTrajectory, &locSCIntersection, &locProjBarrelFlag);
+		unsigned int locProjectedSCPaddle = locParticleID->PredictSCSector(extrapolations, &locSCIntersection, &locProjBarrelFlag);
 		if(locProjectedSCPaddle != 0)
 			locProjectedSCPaddleMap[locTrack] = pair<int, bool>(locProjectedSCPaddle, locProjBarrelFlag);
 
