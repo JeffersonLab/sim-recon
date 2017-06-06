@@ -132,11 +132,17 @@ bool DCustomAction_Z2pi_trees::Perform_Action(JEventLoop* locEventLoop, const DP
 	TLorentzRotation resonanceBoost( -locP4_2pi.BoostVector() );
 	TLorentzVector recoil_res = resonanceBoost * locZP4;     // this quantity is poorly defined from missing momenta but calculable
 	TLorentzVector p1_res = resonanceBoost * locPiPlus_P4;
-
-	// these distributions need to be cleaned up for Primakoff. Hopefully they don't bomb at least for now.
 	
-	// normal to the production plane
-	TVector3 y = (locBeamPhoton->lorentzMomentum().Vect().Unit().Cross(-locZP4.Vect().Unit())).Unit();
+	TVector3 zlab(0.,0.,1.0);     // z axis in lab
+	TVector3 y = (locPiPlus_P4.Vect().Cross(zlab)).Unit();    // perpendicular to decay plane. ensure that y is perpendicular to z
+
+        double phipol = 0;                           // *** Note assumes horizontal polarization plane.
+        TVector3 eps(cos(phipol), sin(phipol), 0.0); // beam polarization vector in lab
+	TVector3 eps_perp = eps.Cross(zlab).Unit();         // perpendicular to plane defined by eps
+        double Phi_pip = atan2(y.Dot(eps),y.Dot(eps_perp));  // use this calculation to preserve sign of angle
+
+        // choose helicity frame: z-axis opposite recoil target in rho rest frame. Note that for Primakoff recoil is never measured.
+	y = (locBeamPhoton->lorentzMomentum().Vect().Unit().Cross(-locZP4.Vect().Unit())).Unit();
 	
 	// choose helicity frame: z-axis opposite recoil proton in rho rest frame
 	TVector3 z = -1. * recoil_res.Vect().Unit();
@@ -146,12 +152,9 @@ bool DCustomAction_Z2pi_trees::Perform_Action(JEventLoop* locEventLoop, const DP
 			 (p1_res.Vect()).Dot(z) );
 	
 	// double cosTheta = angles.CosTheta();
-	double phi = angles.Phi();
-	
-	TVector3 eps(1.0, 0.0, 0.0); // beam polarization vector
-	double Phi = atan2(y.Dot(eps), locBeamPhoton->lorentzMomentum().Vect().Unit().Dot(eps.Cross(y)));
+	// double phi = angles.Phi();
 
-	double locPsi = phi - Phi;
+        double locPsi= Phi_pip;               // in the limit of forward scattering (Primakoff), Phi_pip is the angle between pip and the polarizatio
 	if(locPsi < -1*TMath::Pi()) locPsi += 2*TMath::Pi();
         if(locPsi > TMath::Pi()) locPsi -= 2*TMath::Pi();
 
@@ -173,7 +176,7 @@ bool DCustomAction_Z2pi_trees::Perform_Action(JEventLoop* locEventLoop, const DP
 			    dEgamma_M2pi->Fill(locP4_2pi.M(), locBeamPhotonEnergy);
 					
 			    if(locP4_2pi.M() > min2piMassCut && locP4_2pi.M() < max2piMassCut){
-				 dPiPlusPhi_Egamma->Fill(locBeamPhotonEnergy, locP4_2pi.Phi()*180/TMath::Pi());
+			      dPiPlusPhi_Egamma->Fill(locBeamPhotonEnergy, locPiPlus_P4.Vect().Phi()*180/TMath::Pi());
 				 dPiPlusPsi_Egamma->Fill(locBeamPhotonEnergy, locPsi*180/TMath::Pi());
 						
 			         if(locBeamPhotonEnergy > cohmin_energy && locBeamPhotonEnergy < cohedge_energy){

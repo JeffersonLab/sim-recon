@@ -80,9 +80,9 @@ void DSelector_Z2pi_trees::Init(TTree *locTree)
 	dHist_tdiff = new TH1I("tdiff", ";|t| Kin - Gen (GeV/c)^{2}", 100, -0.01, 0.01);
 	dHist_CosTheta_Psi = new TH2I("CosTheta_Psi", "; #psi; cos#theta", 360, -180., 180, 200, -1., 1.);
 	dHist_phi = new TH1I("phi", ";phi (degrees)", 360,-180,180);
-	dHist_Phikin = new TH1I("Phikin", ";Phi Kin (degrees)", 360,0,360);
-	dHist_Phigen = new TH1I("Phigen", ";Phi Gen (degrees)", 360,0,360);
-	dHist_Phidiff = new TH1I("Phidiff", ";Phi Kin - Gen (degrees)", 100,-50,50);
+	dHist_psikin = new TH1I("psikin", ";psi Kin (degrees)", 360,0,360);
+	dHist_psigen = new TH1I("psigen", ";psi Gen (degrees)", 360,0,360);
+	dHist_psidiff = new TH1I("psidiff", ";psi Kin - Gen (degrees)", 100,-50,50);
 	dHist_psi = new TH1I("psi", ";psi (degrees)", 360,-180,180);
 
 	dHist_pipDeltap = new TH1I("pipDeltap","; #pi^{+}: Thrown p - KinFit p/Thrown p",100,-0.2,0.2);
@@ -466,80 +466,69 @@ Bool_t DSelector_Z2pi_trees::Process(Long64_t locEntry)
 		cout << "PiMinus Thrown P4.E=" << locPiMinusP4_Thrown.E() << " Kinfit P4.E=" << locPiMinusP4.E() << " P4 Measured =" << locPiMinusP4_Measured.E() << endl << endl;
 
 
+                // Thrown (generated) variables
+		// calculate kinematic and angular variables
+		double tgen = (dThrownBeam->Get_P4() - loc2piP4_Thrown).M2();    // use beam and 2pi momenta
+		TLorentzRotation resonanceBoost( -loc2piP4_Thrown.BoostVector() );   // boost into 2pi frame
+		TLorentzVector beam_res = resonanceBoost * locBeamP4;
+		TLorentzVector recoil_res = resonanceBoost * locPb208P4_Thrown;
+		TLorentzVector p1_res = resonanceBoost * locPiPlusP4_Thrown;
+		TLorentzVector p2_res = resonanceBoost * locPiMinusP4_Thrown;
 
+	        TVector3 zlab(0.,0.,1.0);     // z axis in lab
+	        TVector3 y = (locPiPlus_P4_Thrown.Vect().Cross(zlab)).Unit();    // perpendicular to decay plane. ensure that y is perpendicular to z
+
+                double phipol = 0;                           // *** Note assumes horizontal polarization plane.
+                TVector3 eps(cos(phipol), sin(phipol), 0.0); // beam polarization vector in lab
+	        TVector3 eps_perp = eps.Cross(zlab).Unit();         // perpendicular to plane defined by eps
+                double Phi_pipgen = atan2(y.Dot(eps),y.Dot(eps_perp));  // use this calculation to preserve sign of angle
+
+                // choose helicity frame: z-axis opposite recoil target in rho rest frame. Note that for Primakoff recoil is never measured.
+	        y = (dThrownBeam->Get_P4()->lorentzMomentum().Vect().Unit().Cross(-locPb208P4_Thrown.Vect().Unit())).Unit();
+	
+	        // choose helicity frame: z-axis opposite recoil proton in rho rest frame
+	        TVector3 z = -1. * recoil_res.Vect().Unit();
+	        TVector3 x = y.Cross(z).Unit();
+	        TVector3 anglesgen( (p1_res.Vect()).Dot(x),
+			 (p1_res.Vect()).Dot(y),
+			 (p1_res.Vect()).Dot(z) );
+	
+	        // double cosTheta = angles.CosTheta();
+	        // double phi = anglesgen.Phi();
+		
+		double psigen = Phi_pipgen;
+		if(psigen < -3.14159) psigen += 2*3.14159;
+		if(psigen > 3.14159) psigen -= 2*3.14159;
+
+
+                // Repeat for kinematically fit variables.
 		// calculate kinematic and angular variables
 		double tkin = (locBeamP4 - loc2piP4).M2();    // use beam and 2pi momenta
-		TLorentzRotation resonanceBoost( -loc2piP4.BoostVector() );   // boost into 2pi frame
-		TLorentzVector beam_res = resonanceBoost * locBeamP4;
-		// TLorentzVector recoil_res = resonanceBoost * locProtonP4;
-		TLorentzVector p1_res = resonanceBoost * locPiPlusP4;
-		TLorentzVector p2_res = resonanceBoost * locPiMinusP4;
+		resonanceBoost( -loc2piP4.BoostVector() );   // boost into 2pi frame
+		beam_res = resonanceBoost * locBeamP4;
+		recoil_res = resonanceBoost * locMissingPb208P4;
+		p1_res = resonanceBoost * locPiPlusP4;
+		p2_res = resonanceBoost * locPiMinusP4;
 
+	        y = (locPiPlus_P4.Vect().Cross(zlab)).Unit();    // perpendicular to decay plane. ensure that y is perpendicular to z
+                double Phi_pipkin  = atan2(y.Dot(eps),y.Dot(eps_perp));  // use this calculation to preserve sign of angle
 
-		/*// normal to the production plane
-
-		  // Helicity angles do not make sense with recoil Pb target
-		TVector3 y = (locBeamP4.Vect().Unit().Cross(-locProtonP4.Vect().Unit())).Unit();
-  
-		// choose helicity frame: z-axis opposite recoil proton in rho rest frame
-		TVector3 z = -1. * recoil_res.Vect().Unit();
-		TVector3 x = y.Cross(z).Unit();
-		TVector3 angles(   (p1_res.Vect()).Dot(x),
-                     (p1_res.Vect()).Dot(y),
-                     (p1_res.Vect()).Dot(z) );
-
-		double CosTheta = angles.CosTheta();
-  
-		double phi = angles.Phi();*/
-  
-		TVector3 eps(1.0, 0.0, 0.0); // beam polarization vector
-		TVector3 z (0.,0.,1.);       // along beam direction
-		TVector3 y = (locPiPlusP4.Vect().Unit().Cross(z)).Unit();    // ensure that y is perpendicular to z
-		double Phikin = acos(y.Dot(z.Cross(eps)));
-		TVector3 ygen = (locPiPlusP4_Thrown.Vect().Unit().Cross(z)).Unit();
-		double Phigen = acos(ygen.Dot(z.Cross(eps)));
-	        double PhiPiPluskin = locPiPlusP4.Vect().Phi();
-	        double PhiPiMinuskin = locPiMinusP4.Vect().Phi() - PI;  // convert to PiPlus angle
-		while (PhiPiMinuskin < 0) {
-		  PhiPiMinuskin += 2*PI; 
-		}
-		 while (PhiPiPluskin < 0) {
-		   PhiPiPluskin += 2*PI; 
-		 }
-		 if (abs(PhiPiMinuskin - PhiPiPluskin) > 2*PI -0.3) {
-		   if (PhiPiPluskin > PhiPiMinuskin) {
-		     PhiPiPluskin = 0;
-		   }
-		   else {
-		     PhiPiMinuskin = 0;
-		   }
-		 }
-		cout << "       Phigen = " << Phigen << " Phikin = " << Phikin << " PhiPiPluskin=" << PhiPiPluskin << " PhiPiMinuskin=" << PhiPiMinuskin << endl;
-
-	        double PhiPiPlusgen = locPiPlusP4_Thrown.Vect().Phi();
-	        double PhiPiMinusgen = locPiMinusP4_Thrown.Vect().Phi() - PI;  // convert to PiPlus angle
-		while (PhiPiMinusgen < 0) {
-		  PhiPiMinusgen += 2*PI; 
-		}
-		 while (PhiPiPlusgen < 0) {
-		   PhiPiPlusgen += 2*PI; 
-		 }
-		 if (abs(PhiPiMinusgen - PhiPiPlusgen) > 2*PI -0.3) {
-		   if (PhiPiPlusgen > PhiPiMinusgen) {
-		     PhiPiPlusgen = 0;
-		   }
-		   else {
-		     PhiPiMinusgen = 0;
-		   }
-		 }
-		 Phigen = (PhiPiPlusgen+PhiPiMinusgen)/2.;
-		 Phikin = (PhiPiPluskin+PhiPiMinuskin)/2.;
-		cout << "       Phigen = " << Phigen << " Phikin = " << Phikin << " PhiPiPlusgen=" << PhiPiPlusgen << " PhiPiMinusgen=" << PhiPiMinusgen << endl;
+                // choose helicity frame: z-axis opposite recoil target in rho rest frame. Note that for Primakoff recoil is never measured.
+	        y = (locBeamP4->lorentzMomentum().Vect().Unit().Cross(-locMissingPb208P4.Vect().Unit())).Unit();
+	
+	        // choose helicity frame: z-axis opposite recoil proton in rho rest frame
+	        z = -1. * recoil_res.Vect().Unit();
+	        x = y.Cross(z).Unit();
+	        TVector3 angleskin( (p1_res.Vect()).Dot(x),
+			 (p1_res.Vect()).Dot(y),
+			 (p1_res.Vect()).Dot(z) );
+	
+	        // double cosTheta = angles.CosTheta();
+	        // double phi = angleskin.Phi();
 		
-
-		/*double psi = phi - Phi;
-		if(psi < -3.14159) psi += 2*3.14159;
-		if(psi > 3.14159) psi -= 2*3.14159;*/
+		double psikin = Phi_pipkin;
+		if(psikin < -3.14159) psikin += 2*3.14159;
+		if(psikin > 3.14159) psikin -= 2*3.14159;
 
 		// cout << " phi=" << phi << " Phi=" << Phi << " psi=" << psi << endl;
 
@@ -553,12 +542,12 @@ Bool_t DSelector_Z2pi_trees::Process(Long64_t locEntry)
 			dHist_tgen->Fill(fabs(tgen));
 			dHist_tkin->Fill(fabs(tkin));
 			dHist_tdiff->Fill(fabs(tkin)-fabs(tgen));
-			// dHist_CosTheta_Psi->Fill(psi*180./3.14159, CosTheta);
+			// dHist_CosTheta_Psi->Fill(psikin*180./3.14159, CosTheta);
 			// dHist_phi->Fill(phi*180./3.14159);
-			dHist_Phigen->Fill(Phigen*180./3.14159);
-			dHist_Phikin->Fill(Phikin*180./3.14159);
-			dHist_Phidiff->Fill((Phikin-Phigen)*180./3.14159);
-			// dHist_psi->Fill(psi*180./3.14159);
+			dHist_psigen->Fill(psigen*180./3.14159);
+			dHist_psikin->Fill(psikin*180./3.14159);
+			dHist_psidiff->Fill((psikin-psigen)*180./3.14159);
+			// dHist_psikin->Fill(psikin*180./3.14159);
 			locUsedSoFar_Angles.insert(locUsedThisCombo_Angles);
 		}
 

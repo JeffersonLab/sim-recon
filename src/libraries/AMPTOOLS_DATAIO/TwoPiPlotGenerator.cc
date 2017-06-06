@@ -39,8 +39,17 @@ TwoPiPlotGenerator::projectEvent( Kinematics* kin ){
   TLorentzVector recoil_res = resonanceBoost * recoil;
   TLorentzVector p1_res = resonanceBoost * p1;
 
-  // normal to the production plane
-  TVector3 y = (beam.Vect().Unit().Cross(-recoil.Vect().Unit())).Unit();
+  // production plane is defined by the pi+ (neglect recoil)
+  TVector3 zlab(0.,0.,1.0);     // z axis in lab
+  TVector3 y = (p1.Vect().Cross(zlab)).Unit();    // perpendicular to decay plane. ensure that y is perpendicular to z
+
+  double phipol = 0;     // should take this variable from the configuration file.
+  TVector3 eps(cos(phipol), sin(phipol), 0.0); // beam polarization vector in lab
+  TVector3 eps_perp = eps.Cross(zlab).Unit();         // perpendicular to plane defined by eps
+  GDouble Phi_pip = atan2(y.Dot(eps),y.Dot(eps_perp));  // use this calculation to preserve sign of angle
+
+  // choose helicity frame: z-axis opposite recoil target in rho rest frame. Note that for Primakoff recoil is never measured.
+  y = (beam.Vect().Unit().Cross(-recoil.Vect().Unit())).Unit();   // redefine y normal to production plane
   
   // choose helicity frame: z-axis opposite recoil proton in rho rest frame
   TVector3 z = -1. * recoil_res.Vect().Unit();
@@ -53,10 +62,11 @@ TwoPiPlotGenerator::projectEvent( Kinematics* kin ){
   
   GDouble phi = angles.Phi();
   
-  TVector3 eps(1.0, 0.0, 0.0); // beam polarization vector
   GDouble Phi = atan2(y.Dot(eps), beam.Vect().Unit().Dot(eps.Cross(y)));
 
-  GDouble psi = phi - Phi;
+  // GDouble psi = phi - Phi;
+  GDouble psi = Phi_pip;    // in the limit of forward scattering (Primakoff), Phi_pip is the angle between pip and the polarization
+  cout << "TwoPiPlotGenerator new version" << endl;
   if(psi < -1*PI) psi += 2*PI;
   if(psi > PI) psi -= 2*PI;
 
