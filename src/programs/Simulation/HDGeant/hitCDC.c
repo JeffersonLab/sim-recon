@@ -314,6 +314,7 @@ void hitCentralDC (float xin[4], float xout[4],
          if (status != 0) {
             printf("CDC: cdc_drift_table::NoBField corrupted in database!\n");
          }
+	 BSCALE_PAR1=1.;
          int k;
          for (k=0;k<nvalues;k++){
             cdc_drift_time[k]*=1000.; // Scale fron micro-secons to ns
