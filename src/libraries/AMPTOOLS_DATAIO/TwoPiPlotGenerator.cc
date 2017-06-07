@@ -29,9 +29,11 @@ void
 TwoPiPlotGenerator::projectEvent( Kinematics* kin ){
   
   TLorentzVector beam   = kin->particle( 0 );
-  TLorentzVector recoil = kin->particle( 1 );
+  // TLorentzVector recoil = kin->particle( 1 );   // moved recoil to last particle.
   TLorentzVector p1 = kin->particle( 2 );
   TLorentzVector p2 = kin->particle( 3 );
+  TLorentzVector target (0,0,0,208.);    // need to get target mass from configuration files
+  TLorentzVector recoil = beam + target - p1 - p2;
 
   TLorentzVector resonance = p1 + p2; 
   TLorentzRotation resonanceBoost( -resonance.BoostVector() );
@@ -66,14 +68,15 @@ TwoPiPlotGenerator::projectEvent( Kinematics* kin ){
 
   // GDouble psi = phi - Phi;
   GDouble psi = Phi_pip;    // in the limit of forward scattering (Primakoff), Phi_pip is the angle between pip and the polarization
-  cout << "TwoPiPlotGenerator new version" << endl;
   if(psi < -1*PI) psi += 2*PI;
   if(psi > PI) psi -= 2*PI;
 
   // compute invariant t
-  GDouble t = - 2* recoil.M() * (recoil.E()-recoil.M());
-
+  // GDouble t = - 2* recoil.M() * (recoil.E()-recoil.M());
+  GDouble t = (beam - p1 - p2).M2();     // use measured particles to compute t
+  
   // calls to fillHistogram go here
+  cout << " mp1=" << p1.M() << " mp2=" << p2.M() << " mrecoil=" << recoil.M() << " m2pi=" << resonance.M() << endl;
   
   fillHistogram( k2PiMass, ( resonance ).M() );
   
