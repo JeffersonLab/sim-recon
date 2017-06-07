@@ -2,7 +2,7 @@
  * DTACHit.h
  *
  *  Created on: Mar 24, 2017
- *      Author: hovanes
+ *      Author: Hovanes Egiyan
  */
 
 #ifndef LIBRARIES_TAC_DTACHIT_H_
@@ -31,11 +31,31 @@ public:
 
 	DTACHit() {
 	}
+	DTACHit( const DTACHit& hit ) : jana::JObject(hit), E(hit.E), T(hit.T), integral(hit.integral),
+			pulsePeak(hit.pulsePeak), timeTDC(hit.timeTDC), timeFADC(hit.timeFADC), npeFADC(hit.npeFADC),
+			fadcPresent(hit.fadcPresent), tdcPresent(hit.tdcPresent) {
+	}
 	virtual ~DTACHit() {
 	}
 
+	DTACHit& operator=( const DTACHit& hit ) {
+		if( this == &hit ) return *this;
+		*(dynamic_cast<jana::JObject*>(this)) = *dynamic_cast<const jana::JObject*>(&hit);
+		T=hit.T;
+		E=hit.E;
+		integral=hit.integral;
+		pulsePeak=hit.pulsePeak;
+		timeTDC=hit.timeTDC;
+		timeFADC=hit.timeFADC;
+		npeFADC = hit.npeFADC;
+		fadcPresent = hit.fadcPresent;
+		tdcPresent = hit.tdcPresent;
+
+		return *this;
+	}
+
 	virtual void toStrings(vector<pair<string, string> > &items) const override {
-		AddString(items, "E(MeV)", "%2.3f", E * 1000.0);
+		AddString(items, "E(MeV)", "%2.3f", E );
 		AddString(items, "t(ns)", "%2.3f", T);
 		AddString(items, "time_tdc(ns)", "%f", timeTDC);
 		AddString(items, "time_fadc(ns)", "%f", timeFADC);

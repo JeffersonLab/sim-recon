@@ -13,6 +13,7 @@ using namespace jana;
 #include "DTACDigiHit.h"
 #include "DTACTDCDigiHit.h"
 #include "DTACHit_factory.h"
+#include <TAC/DRebuildFromRawFADC_factory.h>
 
 jerror_t TAC_init(JEventLoop *loop)
 {
@@ -20,6 +21,7 @@ jerror_t TAC_init(JEventLoop *loop)
 	loop->AddFactory(new JFactory<DTACDigiHit>());
 	loop->AddFactory(new JFactory<DTACTDCDigiHit>());
 	loop->AddFactory(new DTACHit_factory());
+	loop->AddFactory(new DRebuildFromRawFADC_factory<>());
 	loop->AddFactory(new JFactory<DTACHit>("TRUTH"));
 
 	return NOERROR;
