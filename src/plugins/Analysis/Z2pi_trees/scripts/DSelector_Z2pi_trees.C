@@ -80,8 +80,8 @@ void DSelector_Z2pi_trees::Init(TTree *locTree)
 	dHist_tdiff = new TH1I("tdiff", ";|t| Kin - Gen (GeV/c)^{2}", 100, -0.01, 0.01);
 	dHist_CosTheta_Psi = new TH2I("CosTheta_Psi", "; #psi; cos#theta", 360, -180., 180, 200, -1., 1.);
 	dHist_phi = new TH1I("phi", ";phi (degrees)", 360,-180,180);
-	dHist_psikin = new TH1I("psikin", ";psi Kin (degrees)", 360,0,360);
-	dHist_psigen = new TH1I("psigen", ";psi Gen (degrees)", 360,0,360);
+	dHist_psikin = new TH1I("psikin", ";psi Kin (degrees)", 360,-180,180);
+	dHist_psigen = new TH1I("psigen", ";psi Gen (degrees)", 360,-180,180);
 	dHist_psidiff = new TH1I("psidiff", ";psi Kin - Gen (degrees)", 100,-50,50);
 	dHist_psi = new TH1I("psi", ";psi (degrees)", 360,-180,180);
 
@@ -246,7 +246,7 @@ Bool_t DSelector_Z2pi_trees::Process(Long64_t locEntry)
 	locPb208P4_Thrown.Print();
 	locPiPlusP4_Thrown.Print();
 	locPiMinusP4_Thrown.Print(); 
-	TLorentzVector loc2piP4gen = locPiPlusP4_Thrown + locPiMinusP4_Thrown;
+	TLorentzVector loc2piP4_Thrown = locPiPlusP4_Thrown + locPiMinusP4_Thrown;
 	double tgen = (dThrownBeam->Get_P4() - locPiPlusP4_Thrown - locPiMinusP4_Thrown).M2();    // use beam and 2pi momenta
 	
 
@@ -409,8 +409,8 @@ Bool_t DSelector_Z2pi_trees::Process(Long64_t locEntry)
 		if(locUsedSoFar_2pi.find(locUsedThisCombo_2piMass) == locUsedSoFar_2pi.end())
 		{
 			dHist_M2pikin->Fill(loc2piP4.M());
-			dHist_M2pigen->Fill(loc2piP4gen.M());
-			dHist_M2pidiff->Fill(loc2piP4.M()-loc2piP4gen.M());
+			dHist_M2pigen->Fill(loc2piP4_Thrown.M());
+			dHist_M2pidiff->Fill(loc2piP4.M()-loc2piP4_Thrown.M());
 			locUsedSoFar_2pi.insert(locUsedThisCombo_2piMass);
 		}
 
@@ -476,7 +476,7 @@ Bool_t DSelector_Z2pi_trees::Process(Long64_t locEntry)
 		TLorentzVector p2_res = resonanceBoost * locPiMinusP4_Thrown;
 
 	        TVector3 zlab(0.,0.,1.0);     // z axis in lab
-	        TVector3 y = (locPiPlus_P4_Thrown.Vect().Cross(zlab)).Unit();    // perpendicular to decay plane. ensure that y is perpendicular to z
+	        TVector3 y = (locPiPlusP4_Thrown.Vect().Cross(zlab)).Unit();    // perpendicular to decay plane. ensure that y is perpendicular to z
 
                 double phipol = 0;                           // *** Note assumes horizontal polarization plane.
                 TVector3 eps(cos(phipol), sin(phipol), 0.0); // beam polarization vector in lab
@@ -484,7 +484,7 @@ Bool_t DSelector_Z2pi_trees::Process(Long64_t locEntry)
                 double Phi_pipgen = atan2(y.Dot(eps),y.Dot(eps_perp));  // use this calculation to preserve sign of angle
 
                 // choose helicity frame: z-axis opposite recoil target in rho rest frame. Note that for Primakoff recoil is never measured.
-	        y = (dThrownBeam->Get_P4()->lorentzMomentum().Vect().Unit().Cross(-locPb208P4_Thrown.Vect().Unit())).Unit();
+	        y = (dThrownBeam->Get_P4().Vect().Unit().Cross(-locPb208P4_Thrown.Vect().Unit())).Unit();
 	
 	        // choose helicity frame: z-axis opposite recoil proton in rho rest frame
 	        TVector3 z = -1. * recoil_res.Vect().Unit();
@@ -504,17 +504,17 @@ Bool_t DSelector_Z2pi_trees::Process(Long64_t locEntry)
                 // Repeat for kinematically fit variables.
 		// calculate kinematic and angular variables
 		double tkin = (locBeamP4 - loc2piP4).M2();    // use beam and 2pi momenta
-		resonanceBoost( -loc2piP4.BoostVector() );   // boost into 2pi frame
-		beam_res = resonanceBoost * locBeamP4;
-		recoil_res = resonanceBoost * locMissingPb208P4;
-		p1_res = resonanceBoost * locPiPlusP4;
-		p2_res = resonanceBoost * locPiMinusP4;
+		TLorentzRotation resonanceBoost2( -loc2piP4.BoostVector() );   // boost into 2pi frame
+		beam_res = resonanceBoost2 * locBeamP4;
+		recoil_res = resonanceBoost2 * locMissingPb208P4;
+		p1_res = resonanceBoost2 * locPiPlusP4;
+		p2_res = resonanceBoost2 * locPiMinusP4;
 
-	        y = (locPiPlus_P4.Vect().Cross(zlab)).Unit();    // perpendicular to decay plane. ensure that y is perpendicular to z
+	        y = (locPiPlusP4.Vect().Cross(zlab)).Unit();    // perpendicular to decay plane. ensure that y is perpendicular to z
                 double Phi_pipkin  = atan2(y.Dot(eps),y.Dot(eps_perp));  // use this calculation to preserve sign of angle
 
                 // choose helicity frame: z-axis opposite recoil target in rho rest frame. Note that for Primakoff recoil is never measured.
-	        y = (locBeamP4->lorentzMomentum().Vect().Unit().Cross(-locMissingPb208P4.Vect().Unit())).Unit();
+	        y = (locBeamP4.Vect().Unit().Cross(-locMissingPb208P4.Vect().Unit())).Unit();
 	
 	        // choose helicity frame: z-axis opposite recoil proton in rho rest frame
 	        z = -1. * recoil_res.Vect().Unit();
