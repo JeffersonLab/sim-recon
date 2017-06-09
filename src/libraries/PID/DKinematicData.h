@@ -11,6 +11,7 @@
 #include "DLorentzVector.h" 
 #include "particleType.h" 
 #include "TMatrixFSym.h"
+#include "DResourcePool.h"
 
 #ifndef SPEED_OF_LIGHT
 #define SPEED_OF_LIGHT 29.9792458

@@ -45,9 +45,9 @@ template <typename DType> class DResourcePool
 			    This blocks other threads from operating on the other data stored on the cache line. Note that it is also important to align the shared data as well.
 			    See http://www.drdobbs.com/parallel/eliminate-false-sharing/217500206?pgno=4 for more details. */
 
-			//cache line size is 64 for ifarm1402, so this is conservatively larger
+			//cache line size is 64 for ifarm1402, gcc won't allow larger than 128
 			//the cache line size is in /sys/devices/system/cpu/cpu0/cache/index0/coherency_line_size
-			return 256; //units are in bytes
+			return 64; //units are in bytes
 		}
 
 	private:
@@ -56,19 +56,19 @@ template <typename DType> class DResourcePool
 		void Get_Resources_StaticPool(void);
 		void Recycle_Resources_StaticPool(void);
 
-		size_t alignas(Get_CacheLineSize()) dGetBatchSize = 100;
-		size_t alignas(Get_CacheLineSize()) dNumToAllocateAtOnce = 20;
-		size_t alignas(Get_CacheLineSize()) dRecycleBatchSize = 1000;
-		size_t alignas(Get_CacheLineSize()) dWhenToRecyclePoolSize = 2000; //what size the pool should be before recycling dRecycleBatchSize objects
-		size_t alignas(Get_CacheLineSize()) dMaxSharedPoolSize = 10000;
-		vector<DType*> alignas(Get_CacheLineSize()) dResourcePool_Local;
+		alignas(Get_CacheLineSize()) size_t dGetBatchSize = 100;
+		alignas(Get_CacheLineSize()) size_t dNumToAllocateAtOnce = 20;
+		alignas(Get_CacheLineSize()) size_t dRecycleBatchSize = 1000;
+		alignas(Get_CacheLineSize()) size_t dWhenToRecyclePoolSize = 2000; //what size the pool should be before recycling dRecycleBatchSize objects
+		alignas(Get_CacheLineSize()) size_t dMaxSharedPoolSize = 10000;
+		alignas(Get_CacheLineSize()) vector<DType*> dResourcePool_Local;
 
 		//static class members have external linkage: same instance shared between every translation unit (would be globally, put only private access)
-		static vector<DType*> alignas(Get_CacheLineSize()) dResourcePool_Shared;
-		static atomic<bool> alignas(Get_CacheLineSize()) dSharedPoolLock;
+		alignas(Get_CacheLineSize()) static vector<DType*> dResourcePool_Shared;
+		alignas(Get_CacheLineSize()) static atomic<bool> dSharedPoolLock;
 
-		size_t dContainerResourceMaxCapacity = 1000;
-		size_t dContainerResourceReduceCapacityTo = 100;
+		alignas(Get_CacheLineSize()) size_t dContainerResourceMaxCapacity = 1000;
+		alignas(Get_CacheLineSize()) size_t dContainerResourceReduceCapacityTo = 100;
 };
 
 template <typename DType> class DSharedPtrRecycler
