@@ -40,20 +40,9 @@ using namespace jana;
 
 namespace DAnalysis
 {
-//MAIN
-//fill action hists
-
-//ANY TIME:
-//No longer a target particle: Change code accordingly
-//rescattering: make sure kinfit & missing mass calc handles multiple targets correctly!
-//ditch source objects: use DNeutralShower member and DTrackTimeBased members instead!!!
 //finish comments in Build_ParticleCombos()
-//combo & steps no longer have dreaction as members!!
 //move resource pools to kinfitter?
-//tweak default mass & pid cuts
 //change all references to bcal/fcal to z-independent/dependent showers
-
-//MISCELLANEOUS TO DO:
 //When saving ROOT TTree, don't save p4 of decaying particles if mass is not constrained in kinfit!
 	//And make sure it's not grabbed in DSelector by default
 
