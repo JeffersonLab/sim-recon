@@ -41,10 +41,7 @@ using namespace jana;
 namespace DAnalysis
 {
 //MAIN
-//add kinfit results TO particle combo (instead of making 2x combos!)
-//don't forget decaying/missing particles!!
 //fill action hists
-//tuple-ify kinfit particle creation
 
 //ANY TIME:
 //No longer a target particle: Change code accordingly
@@ -113,6 +110,8 @@ class DSourceComboer : public JObject
 		double Get_PhotonVertexZBinCenter(signed char locVertexZBin) const;
 		size_t Get_VertexZBin_TargetCenter(void) const{return Get_PhotonVertexZBin(dTargetCenter.Z());}
 
+		DParticleComboCreator* Get_ParticleComboCreator(void) const{return dParticleComboCreator;}
+
 	private:
 
 		/********************************************************** DECLARE MEMBER FUNCTIONS ***********************************************************/
@@ -139,8 +138,8 @@ class DSourceComboer : public JObject
 		const DSourceComboInfo* GetOrMake_SourceComboInfo(const vector<pair<Particle_t, unsigned char>>& locNumParticles, const vector<pair<DSourceComboUse, unsigned char>>& locFurtherDecays);
 
 		//CREATE COMBOS
-		void Combo_WithNeutralsAndBeam(const DReactionVertexInfo* locReactionVertexInfo, const DSourceComboUse& locPrimaryComboUse, const DSourceCombo* locReactionChargedCombo, const vector<int>& locBeamBunches_Charged, DCombosByReaction& locOutputComboMap);
-		void Combo_WithBeam(const DReactionVertexInfo* locReactionVertexInfo, const DSourceCombo* locReactionFullCombo, int locRFBunch, DCombosByReaction& locOutputComboMap);
+		void Combo_WithNeutralsAndBeam(const vector<const DReaction*>& locReactions, const DReactionVertexInfo* locReactionVertexInfo, const DSourceComboUse& locPrimaryComboUse, const DSourceCombo* locReactionChargedCombo, const vector<int>& locBeamBunches_Charged, DCombosByReaction& locOutputComboMap);
+		void Combo_WithBeam(const vector<const DReaction*>& locReactions, const DReactionVertexInfo* locReactionVertexInfo, const DSourceCombo* locReactionFullCombo, int locRFBunch, DCombosByReaction& locOutputComboMap);
 		const DParticleCombo* Build_ParticleCombo(const DReactionVertexInfo* locReactionVertexInfo, const DSourceCombo* locFullCombo, const DKinematicData* locBeamParticle);
 
 		//CREATE SOURCE COMBOS - GENERAL METHODS

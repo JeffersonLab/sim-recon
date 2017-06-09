@@ -37,8 +37,6 @@ class DParticleComboStep
 		inline void Set_MeasuredParticleComboStep(const DParticleComboStep* locMeasuredParticleComboStep){dMeasuredStep = locMeasuredParticleComboStep;}
 
 		// SET PRODUCTION/DECAY SPACETIME VERTEX
-		inline void Set_Position(const DVector3& locPosition){dSpacetimeVertex.SetVect(locPosition);}
-		inline void Set_Time(double locTime){dSpacetimeVertex.SetT(locTime);}
 		inline void Set_SpacetimeVertex(const DLorentzVector& locSpacetimeVertex){dSpacetimeVertex = locSpacetimeVertex;}
 
 		// GET INITIAL PARTICLES:

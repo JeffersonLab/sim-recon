@@ -3,30 +3,22 @@
 #include <JANA/JEventLoop.h>
 using namespace jana;
 
+//OK
 #include "DReaction_factory_Thrown.h"
 #include "DParticleCombo_factory_Thrown.h"
 
 #include "DAnalysisUtilities_factory.h"
-#include "DParticleComboBlueprint_factory.h"
+#include "DMCThrownMatching_factory.h"
+
+#include "DAnalysisResults_factory.h"
+#include "DEventWriterROOT_factory.h"
 
 #include "DTrackTimeBased_factory_Combo.h"
 #include "DDetectorMatches_factory_Combo.h"
-#include "DEventRFBunch_factory_Combo.h"
-#include "DChargedTrackHypothesis_factory_Combo.h"
-#include "DNeutralParticleHypothesis_factory_Combo.h"
+#include "DChargedTrack_factory_Combo.h"
+#include "DNeutralParticle_factory_Combo.h"
 
-#include "DParticleCombo_factory_PreKinFit.h"
-#include "DKinFitResults_factory.h"
-
-#include "DBeamPhoton_factory_KinFit.h"
-#include "DChargedTrackHypothesis_factory_KinFit.h"
-#include "DNeutralParticleHypothesis_factory_KinFit.h"
-
-#include "DParticleCombo_factory.h"
-#include "DMCThrownMatching_factory.h"
-#include "DAnalysisResults_factory_PreKinFit.h"
-#include "DAnalysisResults_factory.h"
-#include "DEventWriterROOT_factory.h"
+#include "DReactionVertexInfo_factory.h"
 
 #include "DHistogramActions.h"
 #include "DCutActions.h"
@@ -38,26 +30,17 @@ jerror_t ANALYSIS_init(JEventLoop *loop)
 	loop->AddFactory(new DParticleCombo_factory_Thrown);
 
 	loop->AddFactory(new DAnalysisUtilities_factory);
-	loop->AddFactory(new DParticleComboBlueprint_factory);
-
-	loop->AddFactory(new DEventRFBunch_factory_Combo);
-	loop->AddFactory(new DTrackTimeBased_factory_Combo);
-	loop->AddFactory(new DDetectorMatches_factory_Combo);
-	loop->AddFactory(new DChargedTrackHypothesis_factory_Combo);
-	loop->AddFactory(new DNeutralParticleHypothesis_factory_Combo);
-
-	loop->AddFactory(new DParticleCombo_factory_PreKinFit);
-	loop->AddFactory(new DKinFitResults_factory);
-
-	loop->AddFactory(new DBeamPhoton_factory_KinFit);
-	loop->AddFactory(new DChargedTrackHypothesis_factory_KinFit);
-	loop->AddFactory(new DNeutralParticleHypothesis_factory_KinFit);
-
-	loop->AddFactory(new DParticleCombo_factory);
 	loop->AddFactory(new DMCThrownMatching_factory);
-	loop->AddFactory(new DAnalysisResults_factory_PreKinFit);
+
 	loop->AddFactory(new DAnalysisResults_factory);
 	loop->AddFactory(new DEventWriterROOT_factory);
+
+	loop->AddFactory(new DTrackTimeBased_factory_Combo);
+	loop->AddFactory(new DDetectorMatches_factory_Combo);
+	loop->AddFactory(new DChargedTrack_factory_Combo);
+	loop->AddFactory(new DNeutralParticle_factory_Combo);
+
+	loop->AddFactory(new DReactionVertexInfo_factory);
 
 	//For some reason, have difficulty linking these classes without using them somewhere within the library
 	DHistogramAction_ThrownParticleKinematics();

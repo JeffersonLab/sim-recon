@@ -19,9 +19,9 @@ class DBeamPhoton_factory:public jana::JFactory<DBeamPhoton>
 {
 	public:
 
-		void Recycle_Hypotheses(vector<const DBeamPhoton*>& locHypos){dResourcePool_BeamPhotons.Recycle(locHypos);}
-		void Recycle_Hypotheses(vector<DBeamPhoton*>& locHypos){dResourcePool_BeamPhotons.Recycle(locHypos);}
-		void Recycle_Hypothesis(const DBeamPhoton* locHypo){dResourcePool_BeamPhotons.Recycle(locHypo);}
+		void Recycle_Resources(vector<const DBeamPhoton*>& locBeams){dResourcePool_BeamPhotons.Recycle(locBeams);}
+		void Recycle_Resources(vector<DBeamPhoton*>& locBeams){dResourcePool_BeamPhotons.Recycle(locBeams);}
+		void Recycle_Resource(const DBeamPhoton* locBeam){dResourcePool_BeamPhotons.Recycle(locBeam);}
 
 		DBeamPhoton* Get_Resource(void)
 		{

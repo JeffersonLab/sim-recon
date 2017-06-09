@@ -240,6 +240,7 @@ void DAnalysisResults_factory::Make_ControlHistograms(vector<const DReaction*>& 
 	dApplication->RootUnLock(); //unlock
 
 	dSourceComboer = new DSourceComboer(locEventLoop);
+	dParticleComboCreator = dSourceComboer->Get_ParticleComboCreator();
 }
 
 //------------------
@@ -283,57 +284,102 @@ jerror_t DAnalysisResults_factory::evnt(JEventLoop* locEventLoop, uint64_t event
 			auto& locReaction = locReactionComboPair.first;
 			auto& locCombos = locReactionComboPair.second;
 
+			//FIND TRUE COMBO (IF MC)
+			auto locTrueParticleCombo = Find_TrueCombo(locReaction, locCombos);
+			int locLastActionTrueComboSurvives = (locTrueParticleCombo != nullptr) ? -1 : -2; //-1/-2: combo does/does-not exist
+
+			//MAKE RESULTS OBJECT
+			auto locAnalysisResults = new DAnalysisResults();
+			locAnalysisResults->Set_Reaction(locReaction);
+
 			//RESET ACTIONS
 			auto locActions = locReaction->Get_AnalysisActions();
 			for(auto& locAction : locActions)
 				locAction->Reset_NewEvent();
 
 			//LOOP OVER COMBOS
-			vector<const DParticleCombo*> locPassedCombos;
+			vector<size_t> locNumCombosSurvived(1 + locActions.size(), 0);
+			locNumCombosSurvived[0] = locCombos.size(); //first cut is "is there a combo"
 			for(auto& locCombo : locCombos)
 			{
-				//LOOP OVER PRE-KINFIT ACTIONS
+				//EXECUTE PRE-KINFIT ACTIONS
 				size_t locActionIndex = 0;
-				bool locActionFailedFlag = false;
-				for(; locActionIndex < locActions.size(); ++locActionIndex)
-				{
-					auto locAction = locActions[locActionIndex];
-					if(locAction->Get_UseKinFitResultsFlag())
-						break; //need to kinfit first!!!
-					if((*locAction)(locEventLoop, locCombo))
-						continue;
-					locActionFailedFlag = true;
-					break;
-				}
-				if(locActionFailedFlag)
-					continue; //go to next combo
+				if(!Execute_Actions(locCombo, locTrueParticleCombo, true, locActionIndex, locNumCombosSurvived, locLastActionTrueComboSurvives))
+					continue; //failed: go to the next combo
 
 				//KINFIT IF REQUESTED
 				auto locPostKinFitCombo = Handle_ComboFit(locReactionVertexInfo, locCombo, locReaction);
 
-				//LOOP OVER POST-KINFIT ACTIONS
-				for(; locActionIndex < locActions.size(); ++locActionIndex)
-				{
-					auto locAction = locActions[locActionIndex];
-					if((*locAction)(locEventLoop, locPostKinFitCombo))
-						continue;
-					locActionFailedFlag = true;
-					break;
-				}
-				if(locActionFailedFlag)
-					continue; //go to next combo
+				//EXECUTE POST-KINFIT ACTIONS
+				if(!Execute_Actions(locPostKinFitCombo, locTrueParticleCombo, false, locActionIndex, locNumCombosSurvived, locLastActionTrueComboSurvives))
+					continue; //failed: go to the next combo
 
 				//SAVE COMBO
-				locPassedCombos.push_back(locPostKinFitCombo);
+				locAnalysisResults->Add_PassedParticleCombo(locPostKinFitCombo);
 			}
+
+			//FILL HISTOGRAMS
+			LockState();
+			{
+				dHistMap_NumEventsSurvivedAction_All[locReaction]->Fill(0); //initial: a new event
+				if(locNumCombosSurvived[0] > 0)
+					dHistMap_NumParticleCombos[locReaction]->Fill(locNumCombosSurvived[0]);
+				for(size_t loc_j = 0; loc_j < locNumCombosSurvived.size(); ++loc_j)
+				{
+					if(locNumCombosSurvived[loc_j] > 0)
+					{
+						dHistMap_NumEventsSurvivedAction_All[locReaction]->Fill(loc_j + 1); //+1 because 0 is initial (no cuts at all)
+						dHistMap_NumCombosSurvivedAction[locReaction]->Fill(loc_j, locNumCombosSurvived[loc_j]);
+					}
+					for(size_t loc_k = 0; loc_k < locNumCombosSurvived[loc_j]; ++loc_k)
+						dHistMap_NumCombosSurvivedAction1D[locReaction]->Fill(loc_j);
+				}
+				for(size_t loc_j = locNumCombosSurvived.size(); loc_j < (locActions.size() + 1); ++loc_j)
+					dHistMap_NumCombosSurvivedAction[locReaction]->Fill(loc_j, 0);
+				for(int loc_j = -1; loc_j <= locLastActionTrueComboSurvives; ++loc_j) //-1/-2: combo does/does-not exist
+					dHistMap_NumEventsWhereTrueComboSurvivedAction[locReaction]->Fill(loc_j + 1);
+			}
+			UnlockState();
+
+			//SAVE ANALYSIS RESULTS
+			_data.push_back(locAnalysisResults);
 		}
 	}
 
-//still need to create/fill _data objs
 	return NOERROR;
 }
 
-const DParticleCombo* DAnalysisResults_factory::Handle_ComboFit(const DReactionVertexInfo* locReactionVertexInfo, DParticleCombo* locParticleCombo, const DReaction* locReaction)
+bool DAnalysisResults_factory::Execute_Actions(const DParticleCombo* locCombo, const DParticleCombo* locTrueCombo, bool locPreKinFitFlag, size_t& locActionIndex, vector<size_t>& locNumCombosSurvived, int& locLastActionTrueComboSurvives)
+{
+	for(; locActionIndex < locActions.size(); ++locActionIndex)
+	{
+		auto locAction = locActions[locActionIndex];
+		if(locPreKinFitFlag && locAction->Get_UseKinFitResultsFlag())
+			return true; //need to kinfit first!!!
+		if(!(*locAction)(locEventLoop, locCombo))
+			return false; //failed
+
+		++locNumCombosSurvived[locActionIndex + 1];
+		if(locCombo == locTrueParticleCombo)
+			locLastActionTrueComboSurvives = locActionIndex;
+	}
+	return true;
+}
+
+const DParticleCombo* DAnalysisResults_factory::Find_TrueCombo(const DReaction* locReaction, const vector<const DParticleCombo*>& locCombos)
+{
+	//find the true particle combo
+	if(dTrueComboCuts.find(locReaction) == dTrueComboCuts.end())
+		return nullptr;
+	auto locAction = dTrueComboCuts[locReaction];
+	for(auto& locCombo : locCombos)
+	{
+		if((*locAction)(locEventLoop, locCombo))
+			return locCombo;
+	}
+}
+
+const DParticleCombo* DAnalysisResults_factory::Handle_ComboFit(const DReactionVertexInfo* locReactionVertexInfo, const DParticleCombo* locParticleCombo, const DReaction* locReaction)
 {
 	auto locKinFitType = locReaction->Get_KinFitType();
 	if(locKinFitType == d_NoFit)
@@ -353,24 +399,11 @@ const DParticleCombo* DAnalysisResults_factory::Handle_ComboFit(const DReactionV
 	if(locKinFitResultsPair.second == nullptr)
 		return locParticleCombo; //fit failed, or no constraints
 
-	//Fit succeeded. See if we can reuse the input combo object, or need to make a new one
-	if(locParticleCombo->Get_KinFitResults() != nullptr)
-	{
-		//this combo has already been reused: make a new combo
-//MAKE NEW COMBO
-		dPreToPostKinFitComboMap.emplace(locComboKinFitTuple, locNewParticleCombo);
-		return locNewParticleCombo;
-	}
-	else //reuse combo
-	{
-		locParticleCombo->Set_KinFitResults(locKinFitResultsPair.second);
-		//create new steps, etc.
-		dPreToPostKinFitComboMap.emplace(locComboKinFitTuple, locParticleCombo);
-		return locParticleCombo;
-	}
-//First time: Reuse combo
-//later times: if combo has already been re-used and either fit is different or update cov is different, then make a new combo, and continue with it instead
-
+	//Fit succeeded. Create new combo with kinfit results
+	auto locNewParticleCombo = dParticleComboCreator->Create_KinFitCombo_NewCombo(locParticleCombo, locReaction, locKinFitResultsPair.second, locKinFitResultsPair.first);
+	dKinFitUtils->Recycle_DKinFitChain(locKinFitResultsPair.first); //kinfit chain no longer needed: recycle
+	dPreToPostKinFitComboMap.emplace(locComboKinFitTuple, locNewParticleCombo);
+	return locNewParticleCombo;
 }
 
 pair<const DKinFitChain*, const DKinFitResults*> DAnalysisResults_factory::Fit_Kinematics(const DReactionVertexInfo* locReactionVertexInfo, const DParticleCombo* locParticleCombo, DKinFitType locKinFitType, bool locUpdateCovMatricesFlag)

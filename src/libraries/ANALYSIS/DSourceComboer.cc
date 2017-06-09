@@ -602,11 +602,23 @@ void DSourceComboer::Reset_NewEvent(JEventLoop* locEventLoop)
 unordered_map<const DReaction*, vector<DParticleCombo*>> DSourceComboer::Build_ParticleCombos(const DReactionVertexInfo* locReactionVertexInfo)
 {
 	//This builds the combos and creates DParticleCombo & DParticleComboSteps (doing whatever is necessary)
-	auto locReaction = locReactionVertexInfo->Get_Reaction();
-	if(!Check_NumParticles(locReaction))
-		return {}; //no combos!
-	if(!Check_Skims(locReaction))
-		return {}; //no combos!
+
+	//Initialize results to be returned
+	DCombosByReaction locOutputComboMap;
+	auto locReactions = locReactionVertexInfo->Get_Reactions();
+	for(auto locReaction : locReactions)
+		locOutputComboMap[locReaction] = {};
+
+	//All of the reactions in the vertex-info are guaranteed to have the same channel content
+	//They just may differ in actions, or skims
+	//So, we can check #particles for just one reaction, but must check skims for all reactions
+	if(!Check_NumParticles(locReactions.first))
+		return locOutputComboMap; //no combos!
+
+	auto Skim_Checker = [](const DReaction* locReaction) -> bool{return Check_Skims(locReaction);};
+	locReactions.erase(locReactions.remove_if(locReactions.begin(), locReactions.end(), Skim_Checker), locReactions.end());
+	if(locReactions.empty())
+		return locOutputComboMap; //no combos!
 
 	/******************************************************** COMBOING STEPS *******************************************************
 	*
@@ -689,10 +701,6 @@ unordered_map<const DReaction*, vector<DParticleCombo*>> DSourceComboer::Build_P
 	//and doing the duplicate check AFTER the fact takes FOREVER
 	//therefore, we must take the neutral showers for the 2 rfs, COMBINE THEM, and then COMBO AS A UNIT
 
-
-	//results to be returned
-	DCombosByReaction locOutputComboMap;
-
 	//get step vertex infos (sorted in dependency order)
 	auto locStepVertexInfos = locReactionVertexInfo->Get_StepVertexInfos();
 	auto locPrimaryStepVertexInfo = locReactionVertexInfo->Get_StepVertexInfo(0);
@@ -702,7 +710,7 @@ unordered_map<const DReaction*, vector<DParticleCombo*>> DSourceComboer::Build_P
 	//handle special case of no charged tracks
 	if(dComboInfoChargeContent[std::get<2>(locPrimaryComboUse)] == d_Neutral)
 	{
-		Combo_WithNeutralsAndBeam(locReactionVertexInfo, locPrimaryComboUse, nullptr, {}, locOutputComboMap);
+		Combo_WithNeutralsAndBeam(locReactions, locReactionVertexInfo, locPrimaryComboUse, nullptr, {}, locOutputComboMap);
 		return locOutputComboMap;
 	}
 
@@ -729,17 +737,17 @@ unordered_map<const DReaction*, vector<DParticleCombo*>> DSourceComboer::Build_P
 			auto locRFBunch = dSourceComboTimeHandler->Select_RFBunch_Full(locReactionVertexInfo, locReactionChargedCombo, locBeamBunches_Charged);
 
 			//combo with beam and save results!!! (if no beam needed, just saves and returns)
-			Combo_WithBeam(locReactionVertexInfo, locReactionChargedCombo, locRFBunch, locOutputComboMap);
+			Combo_WithBeam(locReactions, locReactionVertexInfo, locReactionChargedCombo, locRFBunch, locOutputComboMap);
 			continue;
 		}
 
 		//Combo with neutrals and beam
-		Combo_WithNeutralsAndBeam(locReactionVertexInfo, locPrimaryComboUse, locReactionChargedCombo, locBeamBunches_Charged, locOutputComboMap);
+		Combo_WithNeutralsAndBeam(locReactions, locReactionVertexInfo, locPrimaryComboUse, locReactionChargedCombo, locBeamBunches_Charged, locOutputComboMap);
 	}
 	return locOutputComboMap;
 }
 
-void DSourceComboer::Combo_WithNeutralsAndBeam(const DReactionVertexInfo* locReactionVertexInfo, const DSourceComboUse& locPrimaryComboUse, const DSourceCombo* locReactionChargedCombo, const vector<int>& locBeamBunches_Charged, DCombosByReaction& locOutputComboMap)
+void DSourceComboer::Combo_WithNeutralsAndBeam(const vector<const DReaction*>& locReactions, const DReactionVertexInfo* locReactionVertexInfo, const DSourceComboUse& locPrimaryComboUse, const DSourceCombo* locReactionChargedCombo, const vector<int>& locBeamBunches_Charged, DCombosByReaction& locOutputComboMap)
 {
 	//Create full source-particle combos (including neutrals): First using only FCAL showers, then using all showers
 	Create_SourceCombos(locPrimaryComboUse, d_MixedStage_ZIndependent, locReactionChargedCombo);
@@ -778,15 +786,12 @@ void DSourceComboer::Combo_WithNeutralsAndBeam(const DReactionVertexInfo* locRea
 		auto locRFBunch = dSourceComboTimeHandler->Select_RFBunch_Full(locReactionVertexInfo, locReactionFullCombo, locValidRFBunches);
 
 		//combo with beam and save results!!! (if no beam needed, just saves and returns)
-		Combo_WithBeam(locReactionVertexInfo, locReactionFullCombo, locRFBunch, locOutputComboMap);
+		Combo_WithBeam(locReactions, locReactionVertexInfo, locReactionFullCombo, locRFBunch, locOutputComboMap);
 	}
 }
 
-void DSourceComboer::Combo_WithBeam(const DReactionVertexInfo* locReactionVertexInfo, const DSourceCombo* locReactionFullCombo, int locRFBunch, DCombosByReaction& locOutputComboMap)
+void DSourceComboer::Combo_WithBeam(const vector<const DReaction*>& locReactions, const DReactionVertexInfo* locReactionVertexInfo, const DSourceCombo* locReactionFullCombo, int locRFBunch, DCombosByReaction& locOutputComboMap)
 {
-	//Get reactions
-	auto locReactions = locReactionVertexInfo->Get_Reactions();
-
 	//if no beam then we are done!
 	if(!locReactionVertexInfo->Get_StepVertexInfos().front()->Get_ProductionVertexFlag())
 	{

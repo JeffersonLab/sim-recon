@@ -33,6 +33,7 @@
 #include "ANALYSIS/DAnalysisResults.h"
 #include "ANALYSIS/DHistogramActions.h"
 #include "ANALYSIS/DSourceComboer.h"
+#include "ANALYSIS/DParticleComboCreator.h"
 
 using namespace jana;
 using namespace std;
@@ -57,6 +58,11 @@ class DAnalysisResults_factory : public jana::JFactory<DAnalysisResults>
 
 		void Make_ControlHistograms(vector<const DReaction*>& locReactions);
 		void Check_ReactionNames(vector<const DReaction*>& locReactions) const;
+		const DParticleCombo* Find_TrueCombo(const DReaction* locReaction, const vector<const DParticleCombo*>& locCombos);
+
+		bool Execute_Actions(const DParticleCombo* locCombo, const DParticleCombo* locTrueCombo, bool locPreKinFitFlag, size_t& locActionIndex, vector<size_t>& locNumCombosSurvived, int& locLastActionTrueComboSurvives);
+
+		const DParticleCombo* Handle_ComboFit(const DReactionVertexInfo* locReactionVertexInfo, const DParticleCombo* locParticleCombo, const DReaction* locReaction);
 		pair<const DKinFitChain*, const DKinFitResults*> Fit_Kinematics(const DReactionVertexInfo* locReactionVertexInfo, const DParticleCombo* locParticleCombo, DKinFitType locKinFitType, bool locUpdateCovMatricesFlag);
 		DKinFitResults* Build_KinFitResults(const DParticleCombo* locParticleCombo, DKinFitType locKinFitType, const DKinFitChain* locKinFitChain);
 
@@ -64,6 +70,7 @@ class DAnalysisResults_factory : public jana::JFactory<DAnalysisResults>
 		DApplication* dApplication;
 		double dMinThrownMatchFOM;
 		DSourceComboer* dSourceComboer;
+		DParticleComboCreator* dParticleComboCreator;
 
 		unsigned int dKinFitDebugLevel = 0;
 		DKinFitter* dKinFitter;
@@ -74,11 +81,11 @@ class DAnalysisResults_factory : public jana::JFactory<DAnalysisResults>
 		unordered_map<const DReaction*, bool> dMCReactionExactMatchFlags;
 		unordered_map<const DReaction*, DCutAction_TrueCombo*> dTrueComboCuts;
 
-		unordered_map<const DReaction*, TH1D*> dHistMap_NumParticleCombos;
-		unordered_map<const DReaction*, TH1D*> dHistMap_NumEventsSurvivedAction_All;
-		unordered_map<const DReaction*, TH1D*> dHistMap_NumEventsWhereTrueComboSurvivedAction;
-		unordered_map<const DReaction*, TH2D*> dHistMap_NumCombosSurvivedAction;
-		unordered_map<const DReaction*, TH1D*> dHistMap_NumCombosSurvivedAction1D;
+		unordered_map<const DReaction*, TH1*> dHistMap_NumParticleCombos;
+		unordered_map<const DReaction*, TH1*> dHistMap_NumEventsSurvivedAction_All;
+		unordered_map<const DReaction*, TH1*> dHistMap_NumEventsWhereTrueComboSurvivedAction;
+		unordered_map<const DReaction*, TH2*> dHistMap_NumCombosSurvivedAction;
+		unordered_map<const DReaction*, TH1*> dHistMap_NumCombosSurvivedAction1D;
 };
 
 #endif // _DAnalysisResults_factory_
