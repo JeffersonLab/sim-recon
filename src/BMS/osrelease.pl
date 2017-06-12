@@ -108,6 +108,10 @@ if ($uname eq 'Linux') {
         $release = '_macosx10.10';
     } elsif ($release_string =~ /^15.*/) {
         $release = '_macosx10.11';
+    } elsif ($release_string =~ /^16.*/) {
+        $release = '_macosx10.12';
+    } elsif ($release_string =~ /^17.*/) {
+        $release = '_macosx10.13';
 	} else {
 	    print STDERR "unrecognized Mac OS X (Darwin) release\n";
 	    $release = '_macosx';
