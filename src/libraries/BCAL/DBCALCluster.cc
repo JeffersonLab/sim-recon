@@ -32,7 +32,7 @@ DBCALCluster::t0() const {
 }
 
 void
-DBCALCluster::addPoint( const DBCALPoint* point ){
+DBCALCluster::addPoint( const DBCALPoint* point, int q ){
   
   // offset phi of the point by +- 2TMath::Pi() to match the cluster
   if( phi() > point->phi() ){
@@ -45,6 +45,7 @@ DBCALCluster::addPoint( const DBCALPoint* point ){
   }
   
   m_points.push_back( point );
+  if( q!=2 ) m_q = q;
   
   makeFromPoints();
 }
@@ -176,7 +177,9 @@ DBCALCluster::makeFromPoints(){
   //to do an average of phi correctly for cases with angles near 0, we need to average cos(phi) and sin(phi) instead of phi itself
   double sum_sin_phi=0;
   double sum_cos_phi=0;
-  
+  charge = 0; 
+
+ 
   for( vector< const DBCALPoint* >::const_iterator pt = m_points.begin();
        pt != m_points.end();
       ++pt ){
@@ -185,7 +188,9 @@ DBCALCluster::makeFromPoints(){
  
     m_E_points += E;
     m_E = m_E_points + m_hit_E_unattenuated_sum;  // add the energy sum from points to the energy sum from single ended hits
-    if(E >= m_E_points) charge = m_q;
+ //   if(E >= m_E_points) charge = m_q;
+   if( (E == m_E_points || (**pt).layer()==1) && charge == 0 ) charge = m_q;
+    	
 
     if ((**pt).layer() == 1) m_E_preshower += E;
     double wt1, wt2;

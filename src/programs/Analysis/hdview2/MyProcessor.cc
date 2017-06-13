@@ -310,13 +310,17 @@ void MyProcessor::FillGraphics(void)
 	
 	  vector<double> BCALpoints_z;
           vector<double> BCALpoints_phi;
+	  vector<double> BCALpoints_t;
           vector<double>::const_iterator points_min_phi;
           vector<double>::const_iterator points_max_phi;
           vector<double>::const_iterator points_min_z;
           vector<double>::const_iterator points_max_z;	
+	  vector<double>::const_iterator points_max_t;
+	  vector<double>::const_iterator points_min_t;
 
 	  for(unsigned int k=0;k<locBcalPoint.size();k++){
 		  BCALpoints_z.push_back(locBcalPoint[k]->z());
+		  BCALpoints_t.push_back(locBcalPoint[k]->t());
 		  BCALpoints_phi.push_back(locBcalPoint[k]->phi()*TMath::RadToDeg());
 	  }
 
@@ -330,6 +334,11 @@ void MyProcessor::FillGraphics(void)
 		  points_max_z = max_element(BCALpoints_z.begin(),BCALpoints_z.end());
 	  }
 	
+	  if(BCALpoints_t.size() > 0){
+		  points_min_t = min_element(BCALpoints_t.begin(),BCALpoints_t.end());
+		  points_max_t = max_element(BCALpoints_t.begin(),BCALpoints_t.end());
+	  }
+
 	  BCALpoints_z.clear();
 	  BCALpoints_phi.clear();
 
@@ -349,6 +358,8 @@ void MyProcessor::FillGraphics(void)
 		  if (point->t()>100) time=99;    // put overflow in last bin
 		  if (point->t()<-100) time=-99;
 		  BCALPointPhiTLayer[point->layer()-1]->Fill(pointphi,time,weight);
+		  BCALPointPhiTLayer[point->layer()-1]->GetXaxis()->SetRangeUser((*points_min_phi-2),(*points_max_phi+2));
+		  BCALPointPhiTLayer[point->layer()-1]->GetYaxis()->SetRangeUser((*points_min_t-5),(*points_max_t+5));
 	  }
 
 	  // Fill BCAL Clusters into histograms
@@ -361,8 +372,14 @@ void MyProcessor::FillGraphics(void)
 	  }
 	  BCALClusterZphiHistos.clear();
 
+	unsigned int oldsize_r = BCALClusterRphiHistos.size();
+	for(unsigned int k=0;k<oldsize_r;k++){
+		delete BCALClusterRphiHistos[k];
+	}
+	BCALClusterRphiHistos.clear();
+
 	  delete ClusterLegend;
-	  ClusterLegend = new TLegend(0.91,0.01,0.99,0.99);
+	  ClusterLegend = new TLegend(0.86,0.01,0.99,0.99);
 	  
 	  for(unsigned int k = 0 ; k < locBcalCluster.size() ; k++){
 	  	  const DBCALCluster* cluster_range = locBcalCluster[k];
@@ -392,6 +409,7 @@ void MyProcessor::FillGraphics(void)
 
 	  for (unsigned int k=0;k<locBcalCluster.size();k++){
 		  char name[255];
+//		  char clust_charge[255];
 		  sprintf(name,"ClusterZphi%i",k);
 		  BCALClusterZphiHistos.push_back(new TH2F(name,"BCAL Clusters;Phi angle [deg];Z position (cm)",48*4,0,360,48,-80,400));
 		  int color=k+1;
@@ -399,13 +417,17 @@ void MyProcessor::FillGraphics(void)
 		  if (k>7) color=k+3; // remove white
 		  FormatHistogram(BCALClusterZphiHistos[k],color);
 		  BCALClusterZphiHistos[k]->SetLineWidth(2);
-		  sprintf(name,"Cluster %i",k+1);
-		  ClusterLegend->AddEntry(BCALClusterZphiHistos[k], name);
+//		  sprintf(name,"Cluster %i",k+1);
 
 		  const DBCALCluster* cluster = locBcalCluster[k];
                   if (BCALVERBOSE>0) printf("cluster %2i, (phi,theta,rho) = (%6.2f,%6.2f,%7.2f) t=%8.3f  E=%8.2f MeV\n", k+1,cluster->phi(), cluster->theta(), cluster->rho(), cluster->t(), cluster->E()*1000);
           	  vector<const DBCALPoint*> clusterpoints;
           	  cluster->Get(clusterpoints);	  
+
+		  int clust_Q = cluster->Q();
+//                  sprintf(clust_charge," Q = %i", clust_Q);
+		  sprintf(name,"Cluster %i (Q = %i)",k+1, clust_Q);
+		  ClusterLegend->AddEntry(BCALClusterZphiHistos[k], name);
 
 		  for (unsigned int l=0;l<clusterpoints.size();l++){
 			  const DBCALPoint* clusterpoint = clusterpoints[l];
@@ -421,6 +443,33 @@ void MyProcessor::FillGraphics(void)
 			  BCALClusterZphiHistos[k]->GetYaxis()->SetRangeUser((*points_min_z-10),(*points_max_z+10));
 		  }
 	  }
+
+	for (unsigned int k=0;k<locBcalCluster.size();k++){
+                  char name[255];
+                  sprintf(name,"ClusterRphi%i",k);
+                  BCALClusterRphiHistos.push_back(new TH2F(name,"BCAL Clusters;Phi angle [deg];Layer",48*4,0,360,5,0,5));
+                  int color=k+1;
+                  if (k>3) color=k+2; // remove yellow
+                  if (k>7) color=k+3; // remove white
+                  FormatHistogram(BCALClusterRphiHistos[k],color);
+                  BCALClusterRphiHistos[k]->SetLineWidth(2);
+                  sprintf(name,"Cluster %i",k+1);
+//                  ClusterLegend->AddEntry(BCALClusterRphiHistos[k], name);
+
+                  const DBCALCluster* cluster = locBcalCluster[k];
+                  vector<const DBCALPoint*> clusterpoints;
+                  cluster->Get(clusterpoints);
+
+                  for (unsigned int l=0;l<clusterpoints.size();l++){
+                          const DBCALPoint* clusterpoint = clusterpoints[l];
+                          float weight = log(clusterpoint->E()*1000);
+                          float pointphi = clusterpoint->phi()*TMath::RadToDeg();
+                          if (pointphi>360) pointphi-=360;
+                          if (pointphi<0) pointphi+=360;
+                          BCALClusterRphiHistos[k]->Fill(pointphi,clusterpoint->layer(),weight);
+                          BCALClusterRphiHistos[k]->GetXaxis()->SetRangeUser((*points_min_phi - 2),(*points_max_phi + 2));
+                  }
+          }
 
 	  vector<const DBCALIncidentParticle*> locBcalParticles;
 	  loop->Get(locBcalParticles);
@@ -467,12 +516,13 @@ void MyProcessor::FillGraphics(void)
 	  }
 
 	  BCALHitCanvas->Clear();
-	  BCALHitCanvas->Divide(1,3,0.001,0.001);
+	  BCALHitCanvas->Divide(1,4,0.001,0.001);
 	  float leftmargin = 0.07;
 	  BCALHitCanvas->cd(1);
 	  gPad->SetGridx();
 	  gPad->SetGridy();
 	  gPad->SetLeftMargin(leftmargin);
+	  gPad->SetRightMargin(0.15);
 	  // if (BCALHitMatrixU->GetMaximum() < 1) {
 	  // 	  BCALHitMatrixU->Scale(1000);  // Scale histogram to MeV
 	  // 	  BCALHitMatrixU->GetZaxis()->SetTitle("Energy  (MeV)");
@@ -500,6 +550,7 @@ void MyProcessor::FillGraphics(void)
 	  gPad->SetGridx();
 	  gPad->SetGridy();
 	  gPad->SetLeftMargin(leftmargin);
+	  gPad->SetRightMargin(0.15);
 	  // if (BCALHitMatrixD->GetMaximum() < 1) {
 	  //   BCALHitMatrixD->Scale(1000);  // Scale histogram to MeV
 	  //   BCALHitMatrixD->GetZaxis()->SetTitle("Energy  (MeV)");
@@ -524,6 +575,7 @@ void MyProcessor::FillGraphics(void)
 	  gPad->SetGridx();
 	  gPad->SetGridy();
 	  gPad->SetLeftMargin(leftmargin);
+	  gPad->SetRightMargin(0.15);
 	  if (BCALClusterZphiHistos.size()>0) {
 		  BCALClusterZphiHistos[0]->SetMaximum(clustermax);
 		  BCALClusterZphiHistos[0]->Draw("box");
@@ -537,6 +589,22 @@ void MyProcessor::FillGraphics(void)
 	  // for (unsigned int n=0;n<BCALPLables.size();n++){
 	  //   BCALPLables[n]->Draw("same");
 	  // }
+//	  BCALHitCanvas->Update();
+
+	BCALHitCanvas->cd(4);
+          gPad->SetGridx();
+          gPad->SetGridy();
+          gPad->SetLeftMargin(leftmargin);
+	  gPad->SetRightMargin(0.15);
+          if (BCALClusterRphiHistos.size()>0) {
+                  BCALClusterRphiHistos[0]->SetMaximum(clustermax);
+                  BCALClusterRphiHistos[0]->Draw("box");
+                  for (unsigned int k=1; k<BCALClusterRphiHistos.size(); k++) {
+                          BCALClusterRphiHistos[k]->SetMaximum(clustermax);
+                          BCALClusterRphiHistos[k]->Draw("box,same");
+                  }
+          }
+          ClusterLegend->Draw();
 	  BCALHitCanvas->Update();
 	}
 	
@@ -1742,7 +1810,7 @@ void MyProcessor::UpdateBcalDisp(void)
       }
     }
 
-	LayerLegend = new TLegend(0.91,0.7,0.99,0.99);
+	LayerLegend = new TLegend(0.86,0.4,0.99,0.9);
 	for (int layer=0; layer<4; layer++) {
 		char name[255];
 		sprintf(name,"PhiZLayer%i",layer+1);
@@ -1798,7 +1866,7 @@ void MyProcessor::UpdateBcalDisp(void)
     
     
     BCALHitCanvas->Clear();
-    BCALHitCanvas->Divide(1,3,0.001,0.001);
+    BCALHitCanvas->Divide(1,4,0.001,0.001);
     BCALHitCanvas->cd(1);
 	gPad->SetRightMargin(0.2);
     BCALHitMatrixU->Draw("colz");
@@ -1806,6 +1874,8 @@ void MyProcessor::UpdateBcalDisp(void)
 	gPad->SetRightMargin(0.2);
     BCALHitMatrixD->Draw("colz");
     BCALHitCanvas->cd(3);
+	gPad->SetRightMargin(0.2);
+    BCALHitCanvas->cd(4);
 	gPad->SetRightMargin(0.2);
     // BCALParticles->Draw("colz");
     // for (unsigned int n=0;n<BCALPLables.size();n++){

@@ -64,7 +64,7 @@ public:
   int Q() const { return charge; }
  
   // these functions modify the cluster
-  void addPoint( const DBCALPoint* point );
+  void addPoint( const DBCALPoint* point , int q );
   void addHit ( const DBCALUnifiedHit* hit, double hit_E_unattenuated );
   void mergeClust( const DBCALCluster& clust );
   void removePoint( const DBCALPoint* point ); 

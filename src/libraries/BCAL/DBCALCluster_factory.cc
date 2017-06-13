@@ -236,7 +236,8 @@ DBCALCluster_factory::clusterize( vector< const DBCALPoint* > points , vector< c
 					if((**clust).Q()==1){
 						if(overlap_charged( **clust,*pt_o, tracked_phi) ){
 							usedPoints.push_back( *pt_o );
-							(**clust).addPoint( *pt_o );
+							int point_q = 1;
+							(**clust).addPoint( *pt_o, point_q  );
 							points.erase( pt_o );
 							//cout << " charged success " << endl; 
 							usedPoint = true;
@@ -246,9 +247,12 @@ DBCALCluster_factory::clusterize( vector< const DBCALPoint* > points , vector< c
 				}
 				if( usedPoint ) break;
 				if( overlap( **clust, *pt ) ){
-					if(BCALCLUSTERVERBOSE>0) cout << " overlap success " << endl;            
+					//cout << " init clust Q = " << (**clust).Q() << " q = " << q << endl;
+					if( (**pt).layer()==1 && fabs((**pt).phi() - track_phi_inner_r) < .175) q = 1; 
+					else q = 0;
 					usedPoints.push_back( *pt );  
-					(**clust).addPoint( *pt );
+					(**clust).addPoint( *pt , q);
+					//cout << " clust Q = " << (**clust).Q() << " q = " << q << " layer = " << (**pt).layer() << " dPhi = " << fabs((**pt).phi() - track_phi_inner_r) << endl;
 					//cout << " neut success " << endl;
 					points.erase( pt );
 					usedPoint = true;
@@ -281,7 +285,7 @@ DBCALCluster_factory::clusterize( vector< const DBCALPoint* > points , vector< c
 		// were added to their closest cluster. If they weren't then we remove 
 		// the point from its original cluster and add it to its closest cluster.
 	
-//		merge( clusters );
+		merge( clusters );
 		// lower the threshold to look for new seeds if none of 
 		// the existing points were used as new clusters or assigned
 		// to existing clusters
@@ -327,7 +331,8 @@ DBCALCluster_factory::recycle_points( vector<const DBCALPoint*> usedPoints, vect
 	vector<double> deltPhi;
 	vector<double>::const_iterator min_sep;
 	vector<double>::const_iterator min_phi;
-        
+        int q = 2;       
+ 
 	if ( clusters.size() <= 1 ) return;
 	
 	sort( clusters.begin(), clusters.end(), ClusterSort );
@@ -412,7 +417,7 @@ DBCALCluster_factory::recycle_points( vector<const DBCALPoint*> usedPoints, vect
 				for(unsigned int i = 0 ; i < associated_points.size(); i++){
 					point_match = ((*usedpt)->E() == associated_points[i]->E());
 					if( point_match==0 && added_point==0 && deltaPhi == *min_phi){
-						(**clust).addPoint( *usedpt );
+						(**clust).addPoint( *usedpt , q );
 						// if the point found a closer cluster then we add it to the closer cluster.
 						// The point is now an associated object of the closer cluster.
 						added_point=1;
@@ -523,7 +528,71 @@ DBCALCluster_factory::overlap( const DBCALCluster& highEClust,
 
 	if(BCALCLUSTERVERBOSE>1) cout << " clust merge: " << " theta match success = " << theta_match << " phi match = " << phi_match << " time match = " << time_match << " high E = " << highEClust.E() << " low E = " << lowEClust.E() << " highE z = " << z1 << " lowE z = " << z2 << " deltaTheta = " << fabs(highEClust.theta()-lowEClust.theta()) << " sigTheta = " << sigTheta << " highE sigTheta = " << highEClust.sigTheta() << " lowE sigTheta = " << lowEClust.sigTheta() << endl;
 
-	return theta_match && phi_match && time_match;
+	vector<const DBCALPoint*> highE_points;
+        highE_points = (highEClust).points();
+
+	vector<const DBCALPoint*> lowE_points;
+	lowE_points = (lowEClust).points();
+
+	double highE_summed_z = 0.;
+        double highE_summed_phi = 0.;
+        double highE_summed_zphi = 0.;
+        double highE_summed_z_sq = 0.;
+        double highE_slope = 0.;
+        double highE_y_intercept = 0.;
+
+	double lowE_summed_z = 0.;
+        double lowE_summed_phi = 0.;
+        double lowE_summed_zphi = 0.;
+        double lowE_summed_z_sq = 0.;
+        double lowE_slope = 0.;
+        double lowE_y_intercept = 0.;
+
+	int connected = 0;
+
+	int lowE_global_sector = -99;
+	int lowE_point_layer = -99;
+	double lowE_point_z = 0.;
+
+        for(unsigned int i = 0 ; i < lowE_points.size() ; i ++){
+                lowE_summed_z += lowE_points[i]->z();
+                lowE_summed_phi += lowE_points[i]->phi();;
+                lowE_summed_zphi += lowE_points[i]->z()*lowE_points[i]->phi();
+                lowE_summed_z_sq += lowE_points[i]->z()*lowE_points[i]->z();
+                if(lowE_points.size()==1) {
+			lowE_global_sector = 4*(lowE_points[i]->module()-1) + lowE_points[i]->sector();
+			lowE_point_layer = lowE_points[i]->layer();  
+			lowE_point_z = lowE_points[i]->z();   
+  		}
+	 }
+       
+	 for(unsigned int i = 0 ; i < highE_points.size() ; i ++){
+                highE_summed_z += highE_points[i]->z();
+                highE_summed_phi += highE_points[i]->phi();;
+                highE_summed_zphi += highE_points[i]->z()*highE_points[i]->phi();
+                highE_summed_z_sq += highE_points[i]->z()*highE_points[i]->z();
+        	int highE_global_sector = 4*(highE_points[i]->module()-1) + highE_points[i]->sector();
+		if( lowE_point_layer == highE_points[i]->layer() && fabs(lowE_point_z - highE_points[i]->z()) < 50. && ( lowE_global_sector+1 == highE_global_sector || lowE_global_sector-1 == highE_global_sector ) ) connected = 1;
+	}
+
+	highE_slope = (highE_summed_z*highE_summed_phi - highE_points.size()*highE_summed_zphi)/(highE_summed_z*highE_summed_z - highE_points.size()*highE_summed_z_sq);
+        highE_y_intercept = (highE_summed_zphi*highE_summed_z - highE_summed_phi*highE_summed_z_sq)/(highE_summed_z*highE_summed_z - highE_points.size()*highE_summed_z_sq);	
+
+	lowE_slope = (lowE_summed_z*lowE_summed_phi - lowE_points.size()*lowE_summed_zphi)/(lowE_summed_z*lowE_summed_z - lowE_points.size()*lowE_summed_z_sq);
+        lowE_y_intercept = (lowE_summed_zphi*lowE_summed_z - lowE_summed_phi*lowE_summed_z_sq)/(lowE_summed_z*lowE_summed_z - lowE_points.size()*lowE_summed_z_sq);
+
+	double delta_slope = fabs(highE_slope - lowE_slope) ;
+	double delta_intercept = fabs(highE_y_intercept - lowE_y_intercept) ;
+
+	highE_points.clear();
+	lowE_points.clear();
+
+//	return theta_match && phi_match && time_match;
+
+	if (highEClust.Q() == 0 && lowEClust.Q() == 0 ) return theta_match && phi_match && time_match;
+	
+	else return ( ( delta_slope < 0.01 && delta_intercept < 2. && deltaPhi < 0.436) || connected == 1 ) ;
+
 
 }
 
@@ -631,7 +700,13 @@ DBCALCluster_factory::overlap_charged( const DBCALCluster& clust,
 	int signAlt = 0;
 	double p_phi = 0.;
 
+	int point_global_sector = 4*(point->module()-1) + point->sector();
+	int point_layer = point->layer();
+	int connected = 0;
+
 	for(unsigned int i = 0 ; i < assoc_points.size() ; i ++){
+		int assoc_point_global_sector = 4*(assoc_points[i]->module() - 1) + assoc_points[i]->sector();
+		if( point_layer == assoc_points[i]->layer() && ( point_global_sector + 1 == assoc_point_global_sector || point_global_sector - 1 == assoc_point_global_sector) ) connected = 1;
 		summed_r += assoc_points[i]->r();
 		double del_phi = assoc_points[i]->phi() - tracked_phi;
 		sign = 0;
@@ -643,7 +718,6 @@ DBCALCluster_factory::overlap_charged( const DBCALCluster& clust,
                         -assoc_points[i]->phi() + tracked_phi - 2*TMath::Pi() );
 		if(del_phiAlt < 0) signAlt = -1;
 		if(del_phiAlt > 0) signAlt = 1;
-//		cout << " del phi = " << del_phi << " del phi alt = " << del_phiAlt << endl;
 		del_phi = min( fabs(del_phi), fabs(del_phiAlt) );
 		if( del_phi == fabs(del_phi) && sign == 1) p_phi = del_phi + tracked_phi;
 		if( del_phi == fabs(del_phi) && sign == -1) p_phi = -del_phi + tracked_phi;
@@ -713,7 +787,9 @@ DBCALCluster_factory::overlap_charged( const DBCALCluster& clust,
 	double inclusion_val1=exp(-(sep_term1-0.1)/c1)-c2+.15;
 	
         //double inclusion_val2 = dphi_inclusion_curve->Eval(sep_term2);	
-	double inclusion_val2=exp(-(sep_term2-2.)/2.5)-sep_term2*0.002+0.07;
+//	double inclusion_val2=exp(-(sep_term2-2.)/2.5)-sep_term2*0.002+0.07;
+	double inclusion_val2=exp(-(sep_term2-2.)/3.)-sep_term2*0.003+0.12;
+
 	
 	// We consider fractional energy (point.E/Clust.E) as a function of spatial separation between
 	// a point and cluster to determine if the point should be included in the cluster.
@@ -735,7 +811,7 @@ DBCALCluster_factory::overlap_charged( const DBCALCluster& clust,
                 return ((point->E()/(point->E()+clust.E())) < (inclusion_val1+2.)) && sep < 10.*m_moliereRadius && time_match && sep_term2<2.*m_moliereRadius;
         }
 
-
+	return connected == 1;
 
 }
 

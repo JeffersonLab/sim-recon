@@ -125,6 +125,7 @@ class MyProcessor:public JEventProcessor
   TH2F *BCALPointZphiLayer[4];
   TH2F *BCALPointPhiTLayer[4];
   std::vector<TH2F*> BCALClusterZphiHistos;
+  std::vector<TH2F*> BCALClusterRphiHistos;
   TLegend *LayerLegend;
   TLegend *ClusterLegend;
   
