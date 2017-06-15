@@ -7,9 +7,9 @@
 #g_eta_gamma_gamma g_rho_eta_gamma g_omega_eta_gamma g_phi_eta_gamma 
 0.0429 0.81 0.29 0.38
 #Number of decay particles
-3
+2
 #GEANT ids of decay particles (1=gamma,7=pi0, 8=pi+, 9=pi-, 17=eta).
-1 2 3
+1 1 
 
 
    
