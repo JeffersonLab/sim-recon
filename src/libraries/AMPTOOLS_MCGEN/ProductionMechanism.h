@@ -56,7 +56,7 @@ private:
   vector< BreitWignerGenerator > m_bwGen;    
   DecayChannelGenerator m_decGen;
 
-  TRandom3 *gRandom;
+  //TRandom3 *gRandom;
 };
 
 #endif

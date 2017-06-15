@@ -52,7 +52,7 @@ TLorentzVector
 ProductionMechanism::produceResonance( const TLorentzVector& beam ){
 
         // initialize pseudo-random generator
-        gRandom = new TRandom3();
+        //gRandom = new TRandom3();
         gRandom->SetSeed(0);
 	
 	TLorentzVector target( 0, 0, 0, kMproton );
