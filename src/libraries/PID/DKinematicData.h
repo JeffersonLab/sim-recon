@@ -86,11 +86,11 @@ class DKinematicData : public JObject
 			AddString(items, "phi(deg)", "%2.3f", momentum().Phi()*180.0/M_PI);
 		}
 
-	private:
-
-		struct DKinematicInfo
+		class DKinematicInfo
 		{
+		public:
 			//CONSTRUCTORS
+			DKinematicInfo(void){};
 			DKinematicInfo(Particle_t locPID, const DVector3& locMomentum, DVector3 locPosition = DVector3(), double locTime = 0.0, const TMatrixFSym* locErrorMatrix = nullptr);
 			void Set_Members(Particle_t locPID, const DVector3& locMomentum, DVector3 locPosition = DVector3(), double locTime = 0.0, const TMatrixFSym* locErrorMatrix = nullptr);
 
@@ -103,6 +103,8 @@ class DKinematicData : public JObject
 			// Tracking information //The setter's are responsible for managing the matrix memory!  These are NEVER the owners.
 			const TMatrixFSym* dErrorMatrix = nullptr;   // Order is (px, py, pz, x, y, z, t)
 		};
+
+	private:
 
 		//memory of object in shared_ptr is managed automatically: deleted automatically when no references are left
 		//This is done because sometimes a new object is needed (e.g. DChargedTrackHypothesis) for which this info hasn't changed (from DTrackTimeBased)
@@ -120,7 +122,7 @@ inline DKinematicData::DKinematicData(void) : dKinematicInfo(dResourcePool_Kinem
 inline DKinematicData::DKinematicData(Particle_t locPID, const DVector3& locMomentum, DVector3 locPosition, double locTime, const TMatrixFSym* locErrorMatrix) :
 		dKinematicInfo(dResourcePool_KinematicInfo.Get_SharedResource())
 {
-	dKinematicInfo.Set_Members(locPID, locMomentum, locPosition, locTime, locErrorMatrix);
+	dKinematicInfo->Set_Members(locPID, locMomentum, locPosition, locTime, locErrorMatrix);
 }
 
 inline void DKinematicData::Share_FromInput_Kinematics(const DKinematicData* locSourceData)
@@ -136,7 +138,7 @@ inline DKinematicData::DKinematicData(const DKinematicData& locSourceData, bool 
 	else
 	{
 		dKinematicInfo = dResourcePool_KinematicInfo.Get_SharedResource();
-		*dKinematicInfo = *(locSourceData.dKinematicInfo)
+		*dKinematicInfo = *(locSourceData.dKinematicInfo);
 	}
 }
 
@@ -144,7 +146,7 @@ inline DKinematicData& DKinematicData::operator=(const DKinematicData& locSource
 {
 	//Replace current data with a new, independent copy of the input data: tracked separately from input so it can be modified
 	dKinematicInfo = dResourcePool_KinematicInfo.Get_SharedResource();
-	*dKinematicInfo = *(locSourceData.dKinematicInfo)
+	*dKinematicInfo = *(locSourceData.dKinematicInfo);
 	return *this;
 }
 

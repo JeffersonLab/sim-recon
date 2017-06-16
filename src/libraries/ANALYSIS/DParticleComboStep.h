@@ -155,7 +155,9 @@ inline void DParticleComboStep::Get_FinalParticles(Particle_t locPID, deque<cons
 	locParticles.clear();
 	for(size_t loc_i = 0; loc_i < dFinalParticles.size(); ++loc_i)
 	{
-		if(Get_FinalParticleID(loc_i) == locPID)
+		if(dFinalParticles[loc_i] == nullptr)
+			continue;
+		if(dFinalParticles[loc_i]->PID() == locPID)
 			locParticles.push_back(dFinalParticles[loc_i]);
 	}
 }
@@ -169,7 +171,9 @@ inline void DParticleComboStep::Get_FinalParticles_Measured(Particle_t locPID, d
 	{
 		for(size_t loc_i = 0; loc_i < dFinalParticles.size(); ++loc_i)
 		{
-			if(Get_FinalParticleID(loc_i) == locPID)
+			if(dFinalParticles[loc_i] == nullptr)
+				continue;
+			if(dFinalParticles[loc_i]->PID() == locPID)
 				locParticles.push_back(dFinalParticles[loc_i]);
 		}
 	}

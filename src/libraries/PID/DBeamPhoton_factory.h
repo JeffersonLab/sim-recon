@@ -13,7 +13,7 @@
 #include <TAGGER/DTAGMHit.h>
 #include <TAGGER/DTAGHHit.h>
 #include <DANA/DApplication.h>
-#include "ANALYSIS/DResourcePool.h"
+#include "DResourcePool.h"
 
 class DBeamPhoton_factory:public jana::JFactory<DBeamPhoton>
 {

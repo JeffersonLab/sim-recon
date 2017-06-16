@@ -34,7 +34,7 @@ class DReactionStep
 		DReactionStep(void); //DEPRECATED
 
 		// OPERATORS
-		DReactionStep& DReactionStep::operator=(const DReactionStep& locSourceData);
+		DReactionStep& operator=(const DReactionStep& locSourceData);
 
 		// MANUALLY SET PIDs: //DEPRECATED
 		void Set_InitialParticleID(Particle_t locPID, bool locIsMissingFlag = false);
@@ -49,7 +49,7 @@ class DReactionStep
 		Particle_t Get_MissingPID(void) const;
 
 		// GET FINAL PARTICLE PIDs:
-		Particle_t Get_FinalPID(size_t locIndex) const{return dReactionStepInfo->dFinalPIDs.at(locIndex);}
+		Particle_t Get_FinalPID(size_t locIndex) const{return dReactionStepInfo->dFinalPIDs[locIndex];}
 		Particle_t Get_PID(int locParticlceIndex) const;
 		size_t Get_NumFinalPIDs(void) const{return dReactionStepInfo->dFinalPIDs.size();}
 		vector<Particle_t> Get_FinalPIDs(bool locIncludeMissingFlag = true, Charge_t locCharge = d_AllCharges, bool locIncludeDuplicatesFlag = true) const;
@@ -62,11 +62,11 @@ class DReactionStep
 		bool Get_KinFitConstrainInitMassFlag(void) const{return dReactionStepInfo->dKinFitConstrainInitMassFlag;}
 
 		//definitions of negative values for any particle index //in order such that operator< returns order expected for string (e.g. gp->...)
-		static int Get_ParticleIndex_None(void){return -5;}
-		static int Get_ParticleIndex_Inclusive(void){return -4;}
-		static int Get_ParticleIndex_Initial(void){return -3;}
-		static int Get_ParticleIndex_SecondBeam(void){return -2;}
-		static int Get_ParticleIndex_Target(void){return -1;}
+		constexpr static int Get_ParticleIndex_None(void){return -5;}
+		constexpr static int Get_ParticleIndex_Inclusive(void){return -4;}
+		constexpr static int Get_ParticleIndex_Initial(void){return -3;}
+		constexpr static int Get_ParticleIndex_SecondBeam(void){return -2;}
+		constexpr static int Get_ParticleIndex_Target(void){return -1;}
 
 	private:
 
@@ -154,7 +154,7 @@ inline DReactionStep::DReactionStepInfo::DReactionStepInfo(Particle_t locInitial
 	Check_IsResonance(dInitialPID);
 	Check_IsResonance(dSecondBeamPID);
 	Check_IsResonance(dTargetPID);
-	for(const auto&& locPID : dFinalPIDs)
+	for(const auto& locPID : dFinalPIDs)
 		Check_IsResonance(locPID);
 }
 
@@ -201,16 +201,8 @@ inline Particle_t DReactionStep::Get_PID(int locParticlceIndex) const
 inline size_t Get_NumFinalPIDs(const DReactionStep* locStep, Particle_t locInputPID, bool locIncludeMissingFlag)
 {
 	auto locFinalPIDs = locStep->Get_FinalPIDs(locIncludeMissingFlag);
-	auto locComparator = [](Particle_t locPID) -> size_t {return (locPID == locInputPID) ? 1 : 0;};
+	auto locComparator = [&locInputPID](Particle_t locPID) -> size_t {return (locPID == locInputPID) ? 1 : 0;};
 	return std::accumulate(locFinalPIDs.begin(), locFinalPIDs.end(), size_t(0), locComparator);
-}
-
-inline string Get_StepName(const DReactionStep* locStep, bool locIncludeMissingFlag, bool locTLatexFlag)
-{
-	auto locStepName = Get_InitialParticlesName(locStep, locTLatexFlag);
-	locStepName += locTLatexFlag ? "#rightarrow" : "__";
-	locStepName += Get_FinalParticlesName(locStep, locIncludeMissingFlag, locTLatexFlag);
-	return locStepName;
 }
 
 inline string Get_FinalParticlesName(const DReactionStep* locStep, bool locIncludeMissingFlag, bool locTLatexFlag)
@@ -223,6 +215,14 @@ inline string Get_FinalParticlesName(const DReactionStep* locStep, bool locInclu
 		auto locRetriever = [](const string& locString) -> string {return string("_") + locString;};
 		return std::accumulate(std::next(locNames.begin()), locNames.end(), locNames.front(), locRetriever);
 	}
+}
+
+inline string Get_StepName(const DReactionStep* locStep, bool locIncludeMissingFlag, bool locTLatexFlag)
+{
+	auto locStepName = Get_InitialParticlesName(locStep, locTLatexFlag);
+	locStepName += locTLatexFlag ? "#rightarrow" : "__";
+	locStepName += Get_FinalParticlesName(locStep, locIncludeMissingFlag, locTLatexFlag);
+	return locStepName;
 }
 
 inline int Get_ParticleIndex(const DReactionStep* locStep, Particle_t locInputPID, size_t locInstance)

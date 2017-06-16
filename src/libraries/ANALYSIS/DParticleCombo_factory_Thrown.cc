@@ -50,14 +50,6 @@ jerror_t DParticleCombo_factory_Thrown::evnt(jana::JEventLoop *locEventLoop, uin
 	}
 	dParticleComboStepPool_Available = dParticleComboStepPool_All;
 
-	if(dParticleComboBlueprintStepPool_All.size() > MAX_dParticleComboStepPoolSize)
-	{
-		for(size_t loc_i = MAX_dParticleComboStepPoolSize; loc_i < dParticleComboBlueprintStepPool_All.size(); ++loc_i)
-			delete dParticleComboBlueprintStepPool_All[loc_i];
-		dParticleComboBlueprintStepPool_All.resize(MAX_dParticleComboStepPoolSize);
-	}
-	dParticleComboBlueprintStepPool_Available = dParticleComboBlueprintStepPool_All;
-
 	deque<pair<const DMCThrown*, deque<const DMCThrown*> > > locThrownSteps;
 	dAnalysisUtilities->Get_ThrownParticleSteps(locEventLoop, locThrownSteps);
 
@@ -88,13 +80,9 @@ DParticleCombo* DParticleCombo_factory_Thrown::Build_ThrownCombo(JEventLoop* loc
 	const DMCThrown* locMCThrown;
 	DParticleCombo* locParticleCombo = new DParticleCombo();
 	DParticleComboStep* locParticleComboStep = Get_ParticleComboStepResource();
-	DParticleComboBlueprintStep* locParticleComboBlueprintStep = Get_ParticleComboBlueprintStepResource();
 	locParticleCombo->Set_Reaction(locThrownReaction);
 	locParticleCombo->Set_EventRFBunch(locEventRFBunches[0]);
 
-	locParticleComboBlueprintStep->Set_ReactionStep(locThrownReaction->Get_ReactionStep(0));
-	locParticleComboBlueprintStep->Set_InitialParticleDecayFromStepIndex(-1);
-	locParticleComboStep->Set_ParticleComboBlueprintStep(locParticleComboBlueprintStep);
 	locParticleComboStep->Set_InitialParticle(&locMCReactions[0]->beam);
 	locParticleComboStep->Set_TargetParticle(&locMCReactions[0]->target);
 	locParticleComboStep->Set_Position(locMCReactions[0]->beam.position());
@@ -106,7 +94,6 @@ DParticleCombo* DParticleCombo_factory_Thrown::Build_ThrownCombo(JEventLoop* loc
 		{
 			locMCThrown = locThrownSteps[loc_i].first;
 			locParticleComboStep = Get_ParticleComboStepResource();
-			locParticleComboBlueprintStep = Get_ParticleComboBlueprintStepResource();
 
 			int locInitialParticleDecayFromStepIndex = -1; //the step where this particle is produced at
 			for(size_t loc_j = 0; loc_j < loc_i; ++loc_j)
@@ -121,10 +108,6 @@ DParticleCombo* DParticleCombo_factory_Thrown::Build_ThrownCombo(JEventLoop* loc
 				if(locInitialParticleDecayFromStepIndex != -1)
 					break;
 			}
-			locParticleComboBlueprintStep->Set_InitialParticleDecayFromStepIndex(locInitialParticleDecayFromStepIndex);
-
-			locParticleComboBlueprintStep->Set_ReactionStep(locThrownReaction->Get_ReactionStep(loc_i));
-			locParticleComboStep->Set_ParticleComboBlueprintStep(locParticleComboBlueprintStep);
 			locParticleComboStep->Set_InitialParticle(locMCThrown);
 			locParticleComboStep->Set_Position(locMCThrown->position());
 			locParticleComboStep->Set_Time(locMCThrown->time());
@@ -141,7 +124,6 @@ DParticleCombo* DParticleCombo_factory_Thrown::Build_ThrownCombo(JEventLoop* loc
 				locDecayStepIndex = loc_k;
 				break;
 			}
-			locParticleComboBlueprintStep->Add_FinalParticle_SourceObject(locMCThrown, locDecayStepIndex);
 			locParticleComboStep->Add_FinalParticle(locMCThrown);
 		}
 		locParticleCombo->Add_ParticleComboStep(locParticleComboStep);
@@ -167,32 +149,13 @@ DParticleComboStep* DParticleCombo_factory_Thrown::Get_ParticleComboStepResource
 	return locParticleComboStep;
 }
 
-DParticleComboBlueprintStep* DParticleCombo_factory_Thrown::Get_ParticleComboBlueprintStepResource(void)
-{
-	DParticleComboBlueprintStep* locParticleComboBlueprintStep;
-	if(dParticleComboBlueprintStepPool_Available.empty())
-	{
-		locParticleComboBlueprintStep = new DParticleComboBlueprintStep();
-		dParticleComboBlueprintStepPool_All.push_back(locParticleComboBlueprintStep);
-	}
-	else
-	{
-		locParticleComboBlueprintStep = dParticleComboBlueprintStepPool_Available.back();
-		locParticleComboBlueprintStep->Reset();
-		dParticleComboBlueprintStepPool_Available.pop_back();
-	}
-	return locParticleComboBlueprintStep;
-}
-
 void DParticleCombo_factory_Thrown::Recycle_Combo(DParticleCombo* locParticleCombo)
 {
 	//deletes combo, but recycles steps
 	for(size_t loc_i = 0; loc_i < locParticleCombo->Get_NumParticleComboSteps(); ++loc_i)
 	{
 		DParticleComboStep* locParticleComboStep = const_cast<DParticleComboStep*>(locParticleCombo->Get_ParticleComboStep(loc_i));
-		DParticleComboBlueprintStep* locParticleComboBlueprintStep = const_cast<DParticleComboBlueprintStep*>(locParticleComboStep->Get_ParticleComboBlueprintStep());
 		dParticleComboStepPool_Available.push_back(locParticleComboStep);
-		dParticleComboBlueprintStepPool_Available.push_back(locParticleComboBlueprintStep);
 	}
 	delete locParticleCombo;
 }
@@ -212,9 +175,6 @@ jerror_t DParticleCombo_factory_Thrown::fini(void)
 {
 	for(size_t loc_i = 0; loc_i < dParticleComboStepPool_All.size(); ++loc_i)
 		delete dParticleComboStepPool_All[loc_i];
-
-	for(size_t loc_i = 0; loc_i < dParticleComboBlueprintStepPool_All.size(); ++loc_i)
-		delete dParticleComboBlueprintStepPool_All[loc_i];
 
 	return NOERROR;
 }

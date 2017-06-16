@@ -16,7 +16,7 @@ template <typename DType> class DResourcePool
 	static_assert(!std::is_pointer<DType>::value, "The template type for DResourcePool must not be a pointer (the stored type IS a pointer though).");
 	static_assert(!std::is_const<DType>::value, "The template type for DResourcePool must not be const.");
 	static_assert(!std::is_volatile<DType>::value, "The template type for DResourcePool must not be volatile.");
-	static_assert(!std::is_default_constructible<DType>::value, "The template type for DResourcePool must have a default constructor.");
+//	static_assert(!std::is_default_constructible<DType>::value, "The template type for DResourcePool must have a default constructor.");
 
 	public:
 		DResourcePool(void);
@@ -87,7 +87,7 @@ template <typename DType> class DSharedPtrRecycler
 //STATIC MEMBER DEFINITIONS
 //Since these are part of a template, these statics will only be defined once, no matter how much this header is included
 template <typename DType> vector<DType*> DResourcePool<DType>::dResourcePool_Shared = {};
-template <typename DType> atomic<bool> DResourcePool<DType>::dSharedPoolLock = false;
+template <typename DType> atomic<bool> DResourcePool<DType>::dSharedPoolLock{false};
 
 //CONSTRUCTOR
 template <typename DType> DResourcePool<DType>::DResourcePool(void)

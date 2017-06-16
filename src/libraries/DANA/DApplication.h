@@ -14,6 +14,7 @@
 #include <algorithm>
 
 #include "TMatrixFSym.h"
+#include "TF1.h"
 
 #include <JANA/jerror.h>
 #include <JANA/JApplication.h>

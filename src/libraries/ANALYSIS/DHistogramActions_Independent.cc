@@ -9,87 +9,74 @@ void DHistogramAction_ObjectMemory::Initialize(JEventLoop* locEventLoop)
 	vector<string> locBinLabels; //fill this
 
 	//ANALYSIS
-	dFactoryPoolBinMap["DParticleComboBlueprintStep"] = 1;
-	locBinLabels.push_back("BlueprintStep");
-
-	dFactoryPoolBinMap["DParticleComboBlueprintStep_Shared"] = 2;
-	locBinLabels.push_back("BlueprintStep_Shared");
-
-	dFactoryPairsToTrack.push_back(pair<string, string>("DParticleComboBlueprint", ""));
-	dFactoryPairBinMap[dFactoryPairsToTrack.back()] = 3;
-	locBinLabels.push_back("ComboBlueprint");
-
-	dFactoryPoolBinMap["DParticleComboBlueprint_Shared"] = 4;
-	locBinLabels.push_back("BlueprintCombo_Shared");
-
 	dFactoryPairsToTrack.push_back(pair<string, string>("DTrackTimeBased", "Combo"));
-	dFactoryPairBinMap[dFactoryPairsToTrack.back()] = 5;
+	dFactoryPairBinMap[dFactoryPairsToTrack.back()] = 1;
 	locBinLabels.push_back("DTrackTimeBased_Combo");
 
 	dFactoryPairsToTrack.push_back(pair<string, string>("DEventRFBunch", "Combo"));
-	dFactoryPairBinMap[dFactoryPairsToTrack.back()] = 6;
+	dFactoryPairBinMap[dFactoryPairsToTrack.back()] = 2;
 	locBinLabels.push_back("DEventRFBunch_Combo");
 
 	dFactoryPairsToTrack.push_back(pair<string, string>("DChargedTrackHypothesis", "Combo"));
-	dFactoryPairBinMap[dFactoryPairsToTrack.back()] = 7;
+	dFactoryPairBinMap[dFactoryPairsToTrack.back()] = 3;
 	locBinLabels.push_back("ChargedHypo_Combo");
 
 	dFactoryPairsToTrack.push_back(pair<string, string>("DNeutralParticleHypothesis", "Combo"));
-	dFactoryPairBinMap[dFactoryPairsToTrack.back()] = 8;
+	dFactoryPairBinMap[dFactoryPairsToTrack.back()] = 4;
 	locBinLabels.push_back("NeutralHypo_Combo");
 
-	dFactoryPoolBinMap["DKinematicData_ComboPreKinFit"] = 9;
+	dFactoryPoolBinMap["DKinematicData_ComboPreKinFit"] = 5;
 	locBinLabels.push_back("KinData_ComboPreKinFit");
 
-	dFactoryPoolBinMap["DParticleComboStep_PreKinFit"] = 10;
+	dFactoryPoolBinMap["DParticleComboStep_PreKinFit"] = 6;
 	locBinLabels.push_back("ComboStep_PreKinFit");
 
 	dFactoryPairsToTrack.push_back(pair<string, string>("DParticleCombo", "PreKinFit"));
-	dFactoryPairBinMap[dFactoryPairsToTrack.back()] = 11;
+	dFactoryPairBinMap[dFactoryPairsToTrack.back()] = 7;
 	locBinLabels.push_back("Combo_PreKinFit");
 
-	dFactoryPoolBinMap["DKinFitParticle"] = 12;
+	dFactoryPoolBinMap["DKinFitParticle"] = 8;
 	locBinLabels.push_back("DKinFitParticle");
 
-	dFactoryPoolBinMap["DKinFitParticle_Shared"] = 13;
+	dFactoryPoolBinMap["DKinFitParticle_Shared"] = 9;
 	locBinLabels.push_back("DKinFitParticle_Shared");
 
-	dFactoryPoolBinMap["DKinFitChainStep"] = 14;
+	dFactoryPoolBinMap["DKinFitChainStep"] = 10;
 	locBinLabels.push_back("DKinFitChainStep");
 
-	dFactoryPoolBinMap["DKinFitChain"] = 15;
+	dFactoryPoolBinMap["DKinFitChain"] = 11;
 	locBinLabels.push_back("DKinFitChain");
 
-	dFactoryPoolBinMap["DKinFitConstraints"] = 16;
+	dFactoryPoolBinMap["DKinFitConstraints"] = 12;
 	locBinLabels.push_back("DKinFitConstraints");
 
-	dFactoryPoolBinMap["TMatrixFSym"] = 17;
+	dFactoryPoolBinMap["TMatrixFSym"] = 13;
 	locBinLabels.push_back("TMatrixFSym");
 
 	dFactoryPairsToTrack.push_back(pair<string, string>("DKinFitResults", ""));
-	dFactoryPairBinMap[dFactoryPairsToTrack.back()] = 18;
+	dFactoryPairBinMap[dFactoryPairsToTrack.back()] = 14;
 	locBinLabels.push_back("DKinFitResults");
 
 	dFactoryPairsToTrack.push_back(pair<string, string>("DBeamPhoton", "KinFit"));
-	dFactoryPairBinMap[dFactoryPairsToTrack.back()] = 19;
+	dFactoryPairBinMap[dFactoryPairsToTrack.back()] = 15;
 	locBinLabels.push_back("BeamPhoton_KinFit");
 
 	dFactoryPairsToTrack.push_back(pair<string, string>("DChargedTrackHypothesis", "KinFit"));
-	dFactoryPairBinMap[dFactoryPairsToTrack.back()] = 20;
+	dFactoryPairBinMap[dFactoryPairsToTrack.back()] = 16;
 	locBinLabels.push_back("ChargedHypo_KinFit");
 
 	dFactoryPairsToTrack.push_back(pair<string, string>("DNeutralParticleHypothesis", "KinFit"));
-	dFactoryPairBinMap[dFactoryPairsToTrack.back()] = 21;
+	dFactoryPairBinMap[dFactoryPairsToTrack.back()] = 17;
 	locBinLabels.push_back("NeutralHypo_KinFit");
 
-	dFactoryPoolBinMap["DKinematicData_Combo"] = 22;
+	dFactoryPoolBinMap["DKinematicData_Combo"] = 18;
 	locBinLabels.push_back("DKinData_Combo");
 
-	dFactoryPoolBinMap["DParticleComboStep"] = 23;
+	dFactoryPoolBinMap["DParticleComboStep"] = 19;
 	locBinLabels.push_back("DParticleComboStep");
 
 	dFactoryPairsToTrack.push_back(pair<string, string>("DParticleCombo", ""));
-	dFactoryPairBinMap[dFactoryPairsToTrack.back()] = 24;
+	dFactoryPairBinMap[dFactoryPairsToTrack.back()] = 20;
 	locBinLabels.push_back("DParticleCombo");
 
 	//CREATE THE HISTOGRAMS
@@ -170,29 +157,6 @@ bool DHistogramAction_ObjectMemory::Perform_Action(JEventLoop* locEventLoop, con
 		unsigned long long locMemory;
 		JFactory_base* locBaseFactory;
 		int locBin;
-
-		//DParticleComboBlueprintStep
-		locBin = dFactoryPoolBinMap["DParticleComboBlueprintStep"];
-		locBaseFactory = locEventLoop->GetFactory("DParticleComboBlueprint", "");
-		DParticleComboBlueprint_factory* locParticleComboBlueprintFactory = static_cast<DParticleComboBlueprint_factory*>(locBaseFactory);
-		locNumObjectsMap[locBin] = locParticleComboBlueprintFactory->Get_ParticleComboBlueprintStepPoolSize();
-		locMemory = sizeof(DParticleComboBlueprintStep)*locNumObjectsMap[locBin];
-		locMemoryMap[locBin] = locMemory;
-		locTotalMemory += locMemory;
-
-		//DParticleComboBlueprintStep_Shared
-		locBin = dFactoryPoolBinMap["DParticleComboBlueprintStep_Shared"];
-		locNumObjectsMap[locBin] = locParticleComboBlueprintFactory->Get_ParticleComboBlueprintStepPoolSize_Shared();
-		locMemory = sizeof(DParticleComboBlueprintStep)*locNumObjectsMap[locBin];
-		locMemoryMap[locBin] = locMemory;
-		locTotalMemory += locMemory;
-
-		//DParticleComboBlueprint_Shared
-		locBin = dFactoryPoolBinMap["DParticleComboBlueprint_Shared"];
-		locNumObjectsMap[locBin] = locParticleComboBlueprintFactory->Get_ParticleComboBlueprintPoolSize_Shared();
-		locMemory = sizeof(DParticleComboBlueprint)*locNumObjectsMap[locBin];
-		locMemoryMap[locBin] = locMemory;
-		locTotalMemory += locMemory;
 
 		//DParticleComboStep_PreKinFit
 		locBin = dFactoryPoolBinMap["DParticleComboStep_PreKinFit"];

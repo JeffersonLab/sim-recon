@@ -62,18 +62,7 @@
 #include "ANALYSIS/DCutActions.h"
 #include "ANALYSIS/DAnalysisResults.h"
 
-#include "ANALYSIS/DParticleCombo_factory_PreKinFit.h"
-#include "ANALYSIS/DKinFitResults_factory.h"
-#include "ANALYSIS/DParticleCombo_factory.h"
-
-#include "ANALYSIS/DParticleComboBlueprint_factory.h"
 #include "ANALYSIS/DTrackTimeBased_factory_Combo.h"
-#include "ANALYSIS/DEventRFBunch_factory_Combo.h"
-#include "ANALYSIS/DChargedTrackHypothesis_factory_Combo.h"
-#include "ANALYSIS/DNeutralParticleHypothesis_factory_Combo.h"
-#include "ANALYSIS/DBeamPhoton_factory_KinFit.h"
-#include "ANALYSIS/DChargedTrackHypothesis_factory_KinFit.h"
-#include "ANALYSIS/DNeutralParticleHypothesis_factory_KinFit.h"
 
 #include "ANALYSIS/DCutActions.h"
 

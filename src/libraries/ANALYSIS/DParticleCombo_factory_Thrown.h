@@ -10,7 +10,6 @@
 #include "ANALYSIS/DReaction.h"
 #include "ANALYSIS/DParticleCombo.h"
 #include "ANALYSIS/DParticleComboStep.h"
-#include "ANALYSIS/DParticleComboBlueprintStep.h"
 #include "PID/DMCReaction.h"
 #include "TRACKING/DMCThrown.h"
 #include "ANALYSIS/DAnalysisUtilities.h"
@@ -41,13 +40,9 @@ class DParticleCombo_factory_Thrown : public jana::JFactory<DParticleCombo>
 		const DAnalysisUtilities* dAnalysisUtilities;
 
 		DParticleComboStep* Get_ParticleComboStepResource(void);
-		DParticleComboBlueprintStep* Get_ParticleComboBlueprintStepResource(void);
 
 		deque<DParticleComboStep*> dParticleComboStepPool_All;
 		deque<DParticleComboStep*> dParticleComboStepPool_Available;
-
-		deque<DParticleComboBlueprintStep*> dParticleComboBlueprintStepPool_All;
-		deque<DParticleComboBlueprintStep*> dParticleComboBlueprintStepPool_Available;
 
 		size_t MAX_dParticleComboStepPoolSize;
 };

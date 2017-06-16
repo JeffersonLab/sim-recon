@@ -6,6 +6,13 @@ namespace DAnalysis
 
 /************************************************************** DREACTION FUNCTIONS ***************************************************************/
 
+DReaction::~DReaction(void)
+{
+	//DO NOT DELETE REACTION STEPS: MIGHT BE SHARED BETWEEN DIFFERENT DREACTIONS
+	for(const auto& locAction : dAnalysisActions)
+		delete locAction;
+}
+
 vector<Particle_t> DReaction::Get_FinalPIDs(int locStepIndex, bool locIncludeMissingFlag, bool locIncludeDecayingFlag, Charge_t locCharge, bool locIncludeDuplicatesFlag) const
 {
 	//define the PID loop

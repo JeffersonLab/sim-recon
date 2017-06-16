@@ -68,13 +68,13 @@ class DNeutralParticleHypothesis : public DKinematicData
 		{
 			DTimingInfo(void);
 
-			double dt0;
-			double dt0_err;
-			DetectorSystem_t dt0_detector;
+			double dt0 = 0.0;
+			double dt0_err = 0.0;
+			DetectorSystem_t dt0_detector = SYS_NULL;
 
-			float dChiSq;
-			unsigned int dNDF;
-			float dFOM;
+			unsigned int dNDF = 0;
+			float dChiSq = 0.0;
+			float dFOM = 0.0;
 		};
 
 		shared_ptr<DTimingInfo> dTimingInfo;

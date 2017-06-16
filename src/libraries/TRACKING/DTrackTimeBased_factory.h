@@ -13,29 +13,27 @@
 #include <TH2.h>
 
 #include <JANA/JFactory.h>
-#include <TRACKING/DTrackFitter.h>
 #include <PID/DParticleID.h>
 #include <BCAL/DBCALShower.h>
 #include <FCAL/DFCALShower.h>
 #include <TOF/DTOFPoint.h>
-#include <TRACKING/DMCThrown.h>
 #include <CDC/DCDCHit.h>
 #include <START_COUNTER/DSCHit.h>
 #include "PID/DParticleID.h"
+
+#include "DMCThrown.h"
+#include "DTrackFitter.h"
+#include "DTrackTimeBased.h"
+#include "DReferenceTrajectory.h"
 
 class DTrackWireBased;
 class DTrackHitSelector;
 class DParticleID;
 
-#include "DTrackTimeBased.h"
-
-/// Time based tracks
+using namespace jana;
+using namespace std;
 
 class DTrackTimeBased_factory:public jana::JFactory<DTrackTimeBased>{
- public:
-  DTrackTimeBased_factory(){};
-  ~DTrackTimeBased_factory(){};
-  
   
  private:
   jerror_t init(void);						///< Called once at program start.

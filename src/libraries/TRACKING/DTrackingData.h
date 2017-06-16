@@ -18,6 +18,7 @@ class DTrackingData : public DKinematicData
 		DTrackingData(const DTrackingData& locSourceData, bool locShareTrackingFlag = false, bool locShareKinematicsFlag = false);
 		DTrackingData(const DKinematicData& locSourceData, bool locShareKinematicsFlag = false);
 		virtual ~DTrackingData(void) {};
+		void Reset(void);
 
 		//Assignment operator
 		DTrackingData& operator=(const DTrackingData& locSourceData);

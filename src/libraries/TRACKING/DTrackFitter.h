@@ -29,6 +29,7 @@ using namespace std;
 
 class DReferenceTrajectory;
 class DGeometry;
+class DParticleID;
 
 //////////////////////////////////////////////////////////////////////////////////
 /// The DTrackFitter class is a base class for different charged track

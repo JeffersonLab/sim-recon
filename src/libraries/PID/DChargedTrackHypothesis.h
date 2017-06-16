@@ -6,6 +6,7 @@
 #include <memory>
 
 #include <PID/DKinematicData.h>
+#include "TRACKING/DTrackTimeBased.h"
 #include <PID/DDetectorMatches.h>
 
 using namespace std;
@@ -167,7 +168,7 @@ inline DChargedTrackHypothesis::DChargedTrackHypothesis(const DChargedTrackHypot
 }
 
 inline DChargedTrackHypothesis::DChargedTrackHypothesis(const DTrackTimeBased* locSourceData) :
-		DKinematicData(*static_cast<DKinematicData*>(locSourceData), true)
+		DKinematicData(*static_cast<const DKinematicData*>(locSourceData), true)
 {
 	//Default is TO share kinematic data
 	dTrackingInfo = dResourcePool_TrackingInfo.Get_SharedResource();
@@ -180,9 +181,9 @@ inline DChargedTrackHypothesis& DChargedTrackHypothesis::operator=(const DCharge
 	//Replace current data with a new, independent copy of the input data: tracked separately from input so it can be modified
 	DKinematicData::operator=(locSourceData);
 	dTimingInfo = dResourcePool_TimingInfo.Get_SharedResource();
-	dTimingInfo = *(locSourceData.dTimingInfo);
+	*dTimingInfo = *(locSourceData.dTimingInfo);
 	dTrackingInfo = dResourcePool_TrackingInfo.Get_SharedResource();
-	dTrackingInfo = *(locSourceData.dTrackingInfo);
+	*dTrackingInfo = *(locSourceData.dTrackingInfo);
 	return *this;
 }
 

@@ -10,11 +10,13 @@
 
 #include <JANA/JObject.h>
 #include <JANA/JFactory.h>
-#include <TRACKING/DTrackingData.h>
-#include <TRACKING/DTrackFitter.h>
+#include "DTrackingData.h"
+#include "DTrackFitter.h"
 
 class DReferenceTrajectory;
 
+using namespace jana;
+using namespace std;
 
 class DTrackTimeBased:public DTrackingData{
 	public:

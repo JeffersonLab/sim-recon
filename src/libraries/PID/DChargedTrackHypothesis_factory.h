@@ -19,7 +19,7 @@
 #include <TOF/DTOFPoint.h>
 #include <BCAL/DBCALShower.h>
 #include <FCAL/DFCALShower.h>
-#include "ANALYSIS/DResourcePool.h"
+#include "DResourcePool.h"
 
 using namespace std;
 using namespace jana;

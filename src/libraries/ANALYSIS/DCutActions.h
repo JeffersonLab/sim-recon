@@ -23,8 +23,6 @@
 #include "ANALYSIS/DAnalysisUtilities.h"
 #include "ANALYSIS/DMCThrownMatching.h"
 
-#include "ANALYSIS/DParticleComboBlueprint_factory.h"
-
 using namespace jana;
 using namespace std;
 

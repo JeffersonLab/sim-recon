@@ -141,14 +141,6 @@ DReaction::DReaction(string locReactionName, vector<const DReactionStep*> locSte
 dReactionName(locReactionName), dKinFitType(locKinFitType), dKinFitUpdateCovarianceMatricesFlag(false), dEnableTTreeOutputFlag(locTreeFileName != ""),
 dSaveUnusedFlag(false), dTTreeOutputFileName(locTreeFileName), dReactionSteps(locSteps) {}
 
-DReaction::~DReaction(void)
-{
-	//DO NOT DELETE REACTION STEPS: MIGHT BE SHARED BETWEEN DIFFERENT DREACTIONS
-	for(size_t loc_i = 0; loc_i < dAnalysisActions.size(); ++loc_i)
-		delete dAnalysisActions[loc_i];
-}
-
-
 /************************************************************** DREACTION INLINE FUNCTIONS ***************************************************************/
 
 inline bool DReaction::Get_IsInclusiveFlag(void) const
@@ -166,7 +158,7 @@ inline void DReaction::Enable_TTreeOutput(string locTTreeOutputFileName, bool lo
 
 /****************************************************** NAMESPACE-SCOPE INLINE FUNCTIONS: MISC *******************************************************/
 
-inline bool Get_IsFirstStepBeam(const DReaction* locReaction) const
+inline bool Get_IsFirstStepBeam(const DReaction* locReaction)
 {
 	//impossible for first step to be rescattering: makes no sense: if has target, treat as beam. else treat as decaying & don't care about production mechanism
 	auto locFirstStep = locReaction->Get_ReactionStep(0);
@@ -178,7 +170,7 @@ inline bool Check_ChannelEquality(const DReaction* lhs, const DReaction* rhs, bo
 	//assume for now that the steps have to be in the same order
 	auto locSteps_lhs = lhs->Get_ReactionSteps();
 	auto locSteps_rhs = rhs->Get_ReactionSteps();
-	if(locSteps_lhs.size() != locSteps_rhs.end())
+	if(locSteps_lhs.size() != locSteps_rhs.size())
 		return false;
 
 	auto Equality_Checker = [&locSameOrderFlag](const DReactionStep* lhs, const DReactionStep* rhs) -> bool
@@ -226,10 +218,10 @@ inline vector<Particle_t> Get_ChainPIDs(const DReaction* locReaction, Particle_t
 {
 	//if multiple decay steps have locInitialPID as the parent, only the first listed is used
 	auto locReactionSteps = locReaction->Get_ReactionSteps();
-	auto locPIDSearcher = [](const DReactionStep* locStep) -> bool{return (locStep->Get_InitialPID() == locInitialPID);};
+	auto locPIDSearcher = [&locInitialPID](const DReactionStep* locStep) -> bool{return (locStep->Get_InitialPID() == locInitialPID);};
 	auto locStepIterator = std::find_if(locReactionSteps.begin(), locReactionSteps.end(), locPIDSearcher);
 	if(locStepIterator == locReactionSteps.end())
-		return string("");
+		return {};
 
 	size_t locStepIndex = std::distance(locReactionSteps.begin(), locStepIterator);
 	return Get_ChainPIDs(locReaction, locStepIndex, locUpToStepIndex, locUpThroughPIDs, locExpandDecayingFlag);

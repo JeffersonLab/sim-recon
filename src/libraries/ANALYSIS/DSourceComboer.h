@@ -28,7 +28,7 @@
 #include "ANALYSIS/DSourceCombo.h"
 #include "ANALYSIS/DReactionStepVertexInfo.h"
 #include "ANALYSIS/DReactionVertexInfo.h"
-#include "ANALYSIS/DResourcePool.h"
+#include "DResourcePool.h"
 
 #include "ANALYSIS/DSourceComboVertexer.h"
 #include "ANALYSIS/DSourceComboP4Handler.h"
