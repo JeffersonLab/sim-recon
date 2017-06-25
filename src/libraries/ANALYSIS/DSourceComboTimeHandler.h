@@ -3,6 +3,7 @@
 
 #include <unordered_map>
 #include <vector>
+#include <map>
 
 #include "particleType.h"
 #include "DLorentzVector.h"
@@ -10,7 +11,8 @@
 #include "PID/DNeutralShower.h"
 #include "PID/DEventRFBunch.h"
 #include "ANALYSIS/DSourceCombo.h"
-#include "ANALYSIS/DSourceComboVertexer.h"
+#include "ANALYSIS/DReactionVertexInfo.h"
+#include "ANALYSIS/DAnalysisUtilities.h"
 
 using namespace std;
 using namespace jana;
@@ -19,13 +21,15 @@ namespace DAnalysis
 {
 
 using DPhotonKinematicsByZBin = unordered_map<signed char, unordered_map<const DNeutralShower*, shared_ptr<const DKinematicData>>>; //char: z-bin
-using DPhotonShowersByBeamBunch = unordered_map<vector<int>, vector<const JObject*>>; //int: beam bunch n-shifts from nominal
+using DPhotonShowersByBeamBunch = map<vector<int>, vector<const JObject*>>; //int: beam bunch n-shifts from nominal
+class DSourceComboer;
+class DSourceComboVertexer;
 
 class DSourceComboTimeHandler
 {
 	public:
 		DSourceComboTimeHandler(void) = delete;
-		DSourceComboTimeHandler(JEventLoop* locEventLoop, DSourceComboer* locSourceComboer, const DSourceComboVertexer* locSourceComboVertexer, const DSourceComboVertexer* locSourceComboVertexer);
+		DSourceComboTimeHandler(JEventLoop* locEventLoop, DSourceComboer* locSourceComboer, const DSourceComboVertexer* locSourceComboVertexer);
 
 		//SETUP
 		void Reset(void);
@@ -41,7 +45,7 @@ class DSourceComboTimeHandler
 		//GET VALID/COMMON RF BUNCHES
 		//Note that combining with an empty vector does NOT remove all bunches!!
 		//It is assumed that an empty vector means "unknown," and that you just want to use the other set instead
-		vector<int> Get_ValidRFBunches(const JObject* locObject, signed char locVertexZBin) const{return dShowerRFBunches[locVertexZBin][locObject];}
+		vector<int> Get_ValidRFBunches(const JObject* locObject, signed char locVertexZBin) const;
 		vector<int> Get_CommonRFBunches(const vector<int>& locRFBunches1, const JObject* locObject, signed char locVertexZBin) const;
 		vector<int> Get_CommonRFBunches(const vector<int>& locRFBunches1, const vector<int>& locRFBunches2) const;
 
@@ -71,8 +75,8 @@ class DSourceComboTimeHandler
 
 		vector<int> Get_RFBunches_ChargedTrack(const DChargedTrack* locChargedTrack, Particle_t locPID, bool locIsProductionVertex, const DSourceCombo* locVertexPrimaryCombo, DVector3 locVertex, double locTimeOffset, double locPropagatedRFTime);
 
-		double Calc_RFDeltaTChiSq(const DNeutralShower* locNeutralShower, int locNumShifts, const TVector3& locVertex, double locPropagatedRFTime) const;
-		double Calc_RFDeltaTChiSq(const DChargedTrackHypothesis* locHypothesis, int locNumShifts, double locVertexTime, double locPropagatedRFTime) const;
+		double Calc_RFDeltaTChiSq(const DNeutralShower* locNeutralShower, const TVector3& locVertex, double locPropagatedRFTime) const;
+		double Calc_RFDeltaTChiSq(const DChargedTrackHypothesis* locHypothesis, double locVertexTime, double locPropagatedRFTime) const;
 
 		//HANDLERS AND UTILITIES
 		DSourceComboer* dSourceComboer;
@@ -108,7 +112,7 @@ class DSourceComboTimeHandler
 		//RF -> showers
 		unordered_map<signed char, DPhotonShowersByBeamBunch> dShowersByBeamBunchByZBin; //char: zbin
 
-		unordered_map<pair<const DKinematicData*, vector<const DKinematicData*>>, DLorentzVector> dChargedParticlePOCAToVertexX4; //pair: charged hypo, then vertex particles
+		map<pair<const DKinematicData*, vector<const DKinematicData*>>, DLorentzVector> dChargedParticlePOCAToVertexX4; //pair: charged hypo, then vertex particles
 
 		unordered_map<const DSourceCombo*, vector<int>> dChargedComboRFBunches; //empty vector = FAILED cuts //combo: charged
 		unordered_map<const DSourceCombo*, vector<int>> dPhotonVertexRFBunches; //combo: full
@@ -118,7 +122,7 @@ class DSourceComboTimeHandler
 		unordered_map<int, vector<const DKinematicData*>> dBeamParticlesByRFBunch;
 
 		//CUTS
-		unordered_map<Particle_t, unordered_map<DetectorSystem_t, TF1*>> dPIDTimingCuts; //function of shower energy (p)
+		map<Particle_t, map<DetectorSystem_t, TF1*>> dPIDTimingCuts; //function of shower energy (p)
 };
 
 inline void DSourceComboTimeHandler::Reset(void)
@@ -213,30 +217,24 @@ inline vector<int> DSourceComboTimeHandler::Get_CommonRFBunches(const vector<int
 	return locCommonRFBunches;
 }
 
-inline double DSourceComboTimeHandler::Calc_RFDeltaTChiSq(const DNeutralShower* locNeutralShower, int locNumShifts, const TVector3& locVertex, double locPropagatedRFTime) const
+inline double DSourceComboTimeHandler::Calc_RFDeltaTChiSq(const DNeutralShower* locNeutralShower, const TVector3& locVertex, double locPropagatedRFTime) const
 {
 	//calc vertex time, get delta-t cut
 	double locPathLength = (locNeutralShower->dSpacetimeVertex.Vect() - locVertex).Mag();
-	double locVertexTime = locNeutralShower->dSpacetimeVertex.T() - locPathLength/29.9792458 - locTimeOffset;
+	double locVertexTime = locNeutralShower->dSpacetimeVertex.T() - locPathLength/29.9792458;
 	double locVertexTimeVariance = dUseSigmaForRFSelectionFlag ? locNeutralShower->dCovarianceMatrix(4, 4) : 1.0;
 
 	double locDeltaT = locVertexTime - locPropagatedRFTime;
 	return locDeltaT*locDeltaT/locVertexTimeVariance;
 }
 
-inline double DSourceComboTimeHandler::Calc_RFDeltaTChiSq(const DChargedTrackHypothesis* locHypothesis, int locNumShifts, double locVertexTime, double locPropagatedRFTime) const
+inline double DSourceComboTimeHandler::Calc_RFDeltaTChiSq(const DChargedTrackHypothesis* locHypothesis, double locVertexTime, double locPropagatedRFTime) const
 {
 	//calc vertex time, get delta-t cut
-	double locVertexTimeVariance = dUseSigmaForRFSelectionFlag ? locHypothesis->errorMatrix(6, 6) : 1.0;
+	auto locErrorMatrix = locHypothesis->errorMatrix();
+	double locVertexTimeVariance = (dUseSigmaForRFSelectionFlag && (locErrorMatrix != nullptr)) ? (*locErrorMatrix)(6, 6) : 1.0;
 	double locDeltaT = locVertexTime - locPropagatedRFTime;
 	return locDeltaT*locDeltaT/locVertexTimeVariance;
-}
-
-inline DLorentzVector DSourceComboTimeHandler::Get_ChargedParticlePOCAToVertexX4(const DChargedTrackHypothesis* locHypothesis, bool locIsProductionVertex, const DSourceCombo* locVertexPrimaryFullCombo, const DKinematicData* locBeamParticle) const
-{
-	auto locPOCAPair = std::make_pair(locHypothesis, dSourceComboVertexer->Get_VertexParticles(locIsProductionVertex, locVertexPrimaryFullCombo, locBeamParticle));
-	auto locIterator = dChargedParticlePOCAToVertexX4.find(locPOCAPair);
-	return (locIterator != dChargedParticlePOCAToVertexX4.end()) ? locIterator->second : DLorentzVector());
 }
 
 }

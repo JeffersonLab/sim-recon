@@ -5,7 +5,6 @@ using namespace jana;
 
 //OK
 #include "DReaction_factory_Thrown.h"
-#include "DParticleCombo_factory_Thrown.h"
 
 #include "DAnalysisUtilities_factory.h"
 #include "DMCThrownMatching_factory.h"
@@ -27,7 +26,6 @@ jerror_t ANALYSIS_init(JEventLoop *loop)
 {
 	/// Create and register ANALYSIS data factories
 	loop->AddFactory(new DReaction_factory_Thrown);
-	loop->AddFactory(new DParticleCombo_factory_Thrown);
 
 	loop->AddFactory(new DAnalysisUtilities_factory);
 	loop->AddFactory(new DMCThrownMatching_factory);
@@ -48,7 +46,6 @@ jerror_t ANALYSIS_init(JEventLoop *loop)
 	DHistogramAction_ReconnedThrownKinematics();
 	DHistogramAction_GenReconTrackComparison();
 	DHistogramAction_TrackMultiplicity();
-	DHistogramAction_TOFHitStudy();
 	DHistogramAction_NumReconstructedObjects();
 	DHistogramAction_DetectorMatchParams();
 	DHistogramAction_Neutrals();

@@ -38,7 +38,8 @@ jerror_t DAnalysisResults_factory::brun(JEventLoop *locEventLoop, int32_t runnum
 	locEventLoop->Get(locMCThrowns);
 
 	//MAKE CONTROL HISTOGRAMS
-	Make_ControlHistograms(locReactions);
+	auto locIsMCFlag = !locMCThrowns.empty();
+	Make_ControlHistograms(locReactions, locIsMCFlag);
 
 	//Loop over reactions
 	for(size_t loc_i = 0; loc_i < locReactions.size(); ++loc_i)
@@ -46,10 +47,11 @@ jerror_t DAnalysisResults_factory::brun(JEventLoop *locEventLoop, int32_t runnum
 		const DReaction* locReaction = locReactions[loc_i];
 
 		//Initialize actions: creates any histograms/trees associated with the action
+		auto locActions = locReaction->Get_AnalysisActions();
 		size_t locNumActions = locReaction->Get_NumAnalysisActions();
 		for(size_t loc_j = 0; loc_j < locNumActions; ++loc_j)
 		{
-			DAnalysisAction* locAnalysisAction = locReaction->Get_AnalysisAction(loc_j);
+			DAnalysisAction* locAnalysisAction = locActions[loc_j];
 			if(dDebugLevel > 0)
 				cout << "Initialize Action # " << loc_j + 1 << ": " << locAnalysisAction->Get_ActionName() << " of reaction: " << locReaction->Get_ReactionName() << endl;
 			locAnalysisAction->Initialize(locEventLoop);
@@ -60,17 +62,11 @@ jerror_t DAnalysisResults_factory::brun(JEventLoop *locEventLoop, int32_t runnum
 
 		//MC: auto-detect whether the DReaction is expected to be the entire reaction or a subset
 		bool locExactMatchFlag = true;
-		if(DAnalysis::Get_IsFirstStepBeam(locReactions[loc_i])
+		if(DAnalysis::Get_IsFirstStepBeam(locReactions[loc_i]))
 			locExactMatchFlag = false;
-		else
-		{
-			Particle_t locMissingPID = Unknown;
-			if(locReactions[loc_i]->Get_MissingPID(locMissingPID))
-			{
-				if(!Is_FinalStateParticle(locMissingPID))
-					locExactMatchFlag = false;
-			}
-		}
+		else if(!locReactions[loc_i]->Get_MissingPIDs().empty())
+			locExactMatchFlag = false;
+
 		dMCReactionExactMatchFlags[locReactions[loc_i]] = locExactMatchFlag;
 		dTrueComboCuts[locReactions[loc_i]] = new DCutAction_TrueCombo(locReactions[loc_i], dMinThrownMatchFOM, locExactMatchFlag);
 		dTrueComboCuts[locReactions[loc_i]]->Initialize(locEventLoop);
@@ -88,6 +84,10 @@ jerror_t DAnalysisResults_factory::brun(JEventLoop *locEventLoop, int32_t runnum
 	auto KinFitChecker = [](const DReaction* locReaction) -> bool{return (locReaction->Get_KinFitType() != d_NoFit);};
 	auto locNumKinFitReactions = std::count_if(locReactions.begin(), locReactions.end(), KinFitChecker);
 	dKinFitUtils->Set_MaxPoolSizes(locNumKinFitReactions, locExpectedNumCombos);
+
+	//CREATE COMBOERS
+	dSourceComboer = new DSourceComboer(locEventLoop);
+	dParticleComboCreator = dSourceComboer->Get_ParticleComboCreator();
 
 	return NOERROR;
 }
@@ -116,7 +116,7 @@ void DAnalysisResults_factory::Check_ReactionNames(vector<const DReaction*>& loc
 	abort();
 }
 
-void DAnalysisResults_factory::Make_ControlHistograms(vector<const DReaction*>& locReactions)
+void DAnalysisResults_factory::Make_ControlHistograms(vector<const DReaction*>& locReactions, bool locIsMCFlag)
 {
 	string locHistName, locHistTitle;
 	TH1D* loc1DHist;
@@ -141,10 +141,11 @@ void DAnalysisResults_factory::Make_ControlHistograms(vector<const DReaction*>& 
 			const DReaction* locReaction = locReactions[loc_i];
 			string locReactionName = locReaction->Get_ReactionName();
 			size_t locNumActions = locReaction->Get_NumAnalysisActions();
+			auto locActions = locReaction->Get_AnalysisActions();
 
 			deque<string> locActionNames;
 			for(size_t loc_j = 0; loc_j < locNumActions; ++loc_j)
-				locActionNames.push_back(locReaction->Get_AnalysisAction(loc_j)->Get_ActionName());
+				locActionNames.push_back(locActions[loc_j]->Get_ActionName());
 
 			string locDirName = locReactionName;
 			string locDirTitle = locReactionName;
@@ -185,7 +186,7 @@ void DAnalysisResults_factory::Make_ControlHistograms(vector<const DReaction*>& 
 			}
 			dHistMap_NumEventsSurvivedAction_All[locReaction] = loc1DHist;
 
-			if(!locMCThrowns.empty())
+			if(locIsMCFlag)
 			{
 				locHistName = "NumEventsWhereTrueComboSurvivedAction";
 				loc1DHist = static_cast<TH1D*>(locDirectoryFile->Get(locHistName.c_str()));
@@ -238,9 +239,6 @@ void DAnalysisResults_factory::Make_ControlHistograms(vector<const DReaction*>& 
 		locCurrentDir->cd();
 	}
 	dApplication->RootUnLock(); //unlock
-
-	dSourceComboer = new DSourceComboer(locEventLoop);
-	dParticleComboCreator = dSourceComboer->Get_ParticleComboCreator();
 }
 
 //------------------
@@ -259,7 +257,7 @@ jerror_t DAnalysisResults_factory::evnt(JEventLoop* locEventLoop, uint64_t event
 		return NOERROR;
 
 	//RESET
-	dSourceComboer->Reset();
+	dSourceComboer->Reset_NewEvent(locEventLoop);
 	dKinFitUtils->Reset_NewEvent(locEventLoop->GetJEvent().GetEventNumber());
 	dKinFitter->Reset_NewEvent();
 	dConstraintResultsMap.clear();
@@ -285,7 +283,7 @@ jerror_t DAnalysisResults_factory::evnt(JEventLoop* locEventLoop, uint64_t event
 			auto& locCombos = locReactionComboPair.second;
 
 			//FIND TRUE COMBO (IF MC)
-			auto locTrueParticleCombo = Find_TrueCombo(locReaction, locCombos);
+			auto locTrueParticleCombo = Find_TrueCombo(locEventLoop, locReaction, locCombos);
 			int locLastActionTrueComboSurvives = (locTrueParticleCombo != nullptr) ? -1 : -2; //-1/-2: combo does/does-not exist
 
 			//MAKE RESULTS OBJECT
@@ -304,14 +302,14 @@ jerror_t DAnalysisResults_factory::evnt(JEventLoop* locEventLoop, uint64_t event
 			{
 				//EXECUTE PRE-KINFIT ACTIONS
 				size_t locActionIndex = 0;
-				if(!Execute_Actions(locCombo, locTrueParticleCombo, true, locActionIndex, locNumCombosSurvived, locLastActionTrueComboSurvives))
+				if(!Execute_Actions(locEventLoop, locCombo, locTrueParticleCombo, true, locActions, locActionIndex, locNumCombosSurvived, locLastActionTrueComboSurvives))
 					continue; //failed: go to the next combo
 
 				//KINFIT IF REQUESTED
 				auto locPostKinFitCombo = Handle_ComboFit(locReactionVertexInfo, locCombo, locReaction);
 
 				//EXECUTE POST-KINFIT ACTIONS
-				if(!Execute_Actions(locPostKinFitCombo, locTrueParticleCombo, false, locActionIndex, locNumCombosSurvived, locLastActionTrueComboSurvives))
+				if(!Execute_Actions(locEventLoop, locPostKinFitCombo, locTrueParticleCombo, false, locActions, locActionIndex, locNumCombosSurvived, locLastActionTrueComboSurvives))
 					continue; //failed: go to the next combo
 
 				//SAVE COMBO
@@ -349,7 +347,7 @@ jerror_t DAnalysisResults_factory::evnt(JEventLoop* locEventLoop, uint64_t event
 	return NOERROR;
 }
 
-bool DAnalysisResults_factory::Execute_Actions(const DParticleCombo* locCombo, const DParticleCombo* locTrueCombo, bool locPreKinFitFlag, size_t& locActionIndex, vector<size_t>& locNumCombosSurvived, int& locLastActionTrueComboSurvives)
+bool DAnalysisResults_factory::Execute_Actions(JEventLoop* locEventLoop, const DParticleCombo* locCombo, const DParticleCombo* locTrueCombo, bool locPreKinFitFlag, const vector<DAnalysisAction*>& locActions, size_t& locActionIndex, vector<size_t>& locNumCombosSurvived, int& locLastActionTrueComboSurvives)
 {
 	for(; locActionIndex < locActions.size(); ++locActionIndex)
 	{
@@ -360,13 +358,13 @@ bool DAnalysisResults_factory::Execute_Actions(const DParticleCombo* locCombo, c
 			return false; //failed
 
 		++locNumCombosSurvived[locActionIndex + 1];
-		if(locCombo == locTrueParticleCombo)
+		if(locCombo == locTrueCombo)
 			locLastActionTrueComboSurvives = locActionIndex;
 	}
 	return true;
 }
 
-const DParticleCombo* DAnalysisResults_factory::Find_TrueCombo(const DReaction* locReaction, const vector<const DParticleCombo*>& locCombos)
+const DParticleCombo* DAnalysisResults_factory::Find_TrueCombo(JEventLoop *locEventLoop, const DReaction* locReaction, const vector<const DParticleCombo*>& locCombos)
 {
 	//find the true particle combo
 	if(dTrueComboCuts.find(locReaction) == dTrueComboCuts.end())
@@ -377,6 +375,7 @@ const DParticleCombo* DAnalysisResults_factory::Find_TrueCombo(const DReaction* 
 		if((*locAction)(locEventLoop, locCombo))
 			return locCombo;
 	}
+	return nullptr;
 }
 
 const DParticleCombo* DAnalysisResults_factory::Handle_ComboFit(const DReactionVertexInfo* locReactionVertexInfo, const DParticleCombo* locParticleCombo, const DReaction* locReaction)
@@ -409,7 +408,7 @@ const DParticleCombo* DAnalysisResults_factory::Handle_ComboFit(const DReactionV
 pair<const DKinFitChain*, const DKinFitResults*> DAnalysisResults_factory::Fit_Kinematics(const DReactionVertexInfo* locReactionVertexInfo, const DParticleCombo* locParticleCombo, DKinFitType locKinFitType, bool locUpdateCovMatricesFlag)
 {
 	//Make DKinFitChain
-	const DKinFitChain* locKinFitChain = dKinFitUtils->Make_KinFitChain(locParticleCombo, locKinFitType);
+	const DKinFitChain* locKinFitChain = dKinFitUtils->Make_KinFitChain(locReactionVertexInfo, locParticleCombo, locKinFitType);
 
 	//Make Constraints
 	deque<DKinFitConstraint_Vertex*> locSortedVertexConstraints;

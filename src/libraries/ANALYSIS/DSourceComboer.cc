@@ -599,7 +599,7 @@ void DSourceComboer::Reset_NewEvent(JEventLoop* locEventLoop)
 
 /********************************************************************* CREATE DSOURCOMBO'S **********************************************************************/
 
-unordered_map<const DReaction*, vector<DParticleCombo*>> DSourceComboer::Build_ParticleCombos(const DReactionVertexInfo* locReactionVertexInfo)
+DCombosByReaction DSourceComboer::Build_ParticleCombos(const DReactionVertexInfo* locReactionVertexInfo)
 {
 	//This builds the combos and creates DParticleCombo & DParticleComboSteps (doing whatever is necessary)
 

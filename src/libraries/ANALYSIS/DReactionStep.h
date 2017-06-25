@@ -76,6 +76,7 @@ class DReactionStep
 		struct DReactionStepInfo
 		{
 			//CONSTRUCTORS
+			DReactionStepInfo(void) = default;
 			DReactionStepInfo(Particle_t locInitialPID, Particle_t locSecondBeamPID, Particle_t locTargetPID, vector<Particle_t> locFinalPIDs,
 					int locMissingParticleIndex = -1);
 
@@ -201,7 +202,7 @@ inline Particle_t DReactionStep::Get_PID(int locParticlceIndex) const
 inline size_t Get_NumFinalPIDs(const DReactionStep* locStep, Particle_t locInputPID, bool locIncludeMissingFlag)
 {
 	auto locFinalPIDs = locStep->Get_FinalPIDs(locIncludeMissingFlag);
-	auto locComparator = [&locInputPID](Particle_t locPID) -> size_t {return (locPID == locInputPID) ? 1 : 0;};
+	auto locComparator = [&locInputPID](size_t locTotal, Particle_t locPID) -> size_t {return ((locPID == locInputPID) ? locTotal + 1 : locTotal);};
 	return std::accumulate(locFinalPIDs.begin(), locFinalPIDs.end(), size_t(0), locComparator);
 }
 
@@ -212,7 +213,7 @@ inline string Get_FinalParticlesName(const DReactionStep* locStep, bool locInclu
 		return std::accumulate(locNames.begin(), locNames.end(), string(""));
 	else
 	{
-		auto locRetriever = [](const string& locString) -> string {return string("_") + locString;};
+		auto locRetriever = [](const string& locTotal, const string& locString) -> string {return locTotal + string("_") + locString;};
 		return std::accumulate(std::next(locNames.begin()), locNames.end(), locNames.front(), locRetriever);
 	}
 }

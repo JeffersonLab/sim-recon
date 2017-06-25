@@ -9,6 +9,8 @@
 #define _DAnalysisResults_factory_
 
 #include <unordered_map>
+#include <map>
+#include <set>
 #include <vector>
 
 #include "TH1D.h"
@@ -19,6 +21,7 @@
 #include "DANA/DApplication.h"
 
 #include "TRACKING/DMCThrown.h"
+#include "TRIGGER/DTrigger.h"
 
 #include "KINFITTER/DKinFitter.h"
 #include "ANALYSIS/DKinFitResults.h"
@@ -56,11 +59,11 @@ class DAnalysisResults_factory : public jana::JFactory<DAnalysisResults>
 		jerror_t brun(JEventLoop *locEventLoop, int32_t runnumber);	///< Called everytime a new run number is detected.
 		jerror_t evnt(JEventLoop *locEventLoop, uint64_t eventnumber);	///< Called every event.
 
-		void Make_ControlHistograms(vector<const DReaction*>& locReactions);
+		void Make_ControlHistograms(vector<const DReaction*>& locReactions, bool locIsMCFlag);
 		void Check_ReactionNames(vector<const DReaction*>& locReactions) const;
-		const DParticleCombo* Find_TrueCombo(const DReaction* locReaction, const vector<const DParticleCombo*>& locCombos);
+		const DParticleCombo* Find_TrueCombo(JEventLoop *locEventLoop, const DReaction* locReaction, const vector<const DParticleCombo*>& locCombos);
 
-		bool Execute_Actions(const DParticleCombo* locCombo, const DParticleCombo* locTrueCombo, bool locPreKinFitFlag, size_t& locActionIndex, vector<size_t>& locNumCombosSurvived, int& locLastActionTrueComboSurvives);
+		bool Execute_Actions(JEventLoop* locEventLoop, const DParticleCombo* locCombo, const DParticleCombo* locTrueCombo, bool locPreKinFitFlag, const vector<DAnalysisAction*>& locActions, size_t& locActionIndex, vector<size_t>& locNumCombosSurvived, int& locLastActionTrueComboSurvives);
 
 		const DParticleCombo* Handle_ComboFit(const DReactionVertexInfo* locReactionVertexInfo, const DParticleCombo* locParticleCombo, const DReaction* locReaction);
 		pair<const DKinFitChain*, const DKinFitResults*> Fit_Kinematics(const DReactionVertexInfo* locReactionVertexInfo, const DParticleCombo* locParticleCombo, DKinFitType locKinFitType, bool locUpdateCovMatricesFlag);
@@ -76,7 +79,7 @@ class DAnalysisResults_factory : public jana::JFactory<DAnalysisResults>
 		DKinFitter* dKinFitter;
 		DKinFitUtils_GlueX* dKinFitUtils;
 		map<pair<set<DKinFitConstraint*>, bool>, DKinFitResults*> dConstraintResultsMap; //used for determining if kinfit results will be identical //bool: update cov matrix flag
-		unordered_map<tuple<DParticleCombo*, DKinFitType, bool>, DParticleCombo*> dPreToPostKinFitComboMap;
+		map<tuple<const DParticleCombo*, DKinFitType, bool>, const DParticleCombo*> dPreToPostKinFitComboMap;
 
 		unordered_map<const DReaction*, bool> dMCReactionExactMatchFlags;
 		unordered_map<const DReaction*, DCutAction_TrueCombo*> dTrueComboCuts;

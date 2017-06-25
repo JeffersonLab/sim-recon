@@ -55,6 +55,7 @@ template <typename DType> class DResourcePool
 		//Assume that access to the shared pool won't happen very often: will mostly access the thread-local pool (this object)
 		void Get_Resources_StaticPool(void);
 		void Recycle_Resources_StaticPool(void);
+		void Recycle_Resources_StaticPool(typename vector<DType*>::iterator locRemoveIterator);
 
 		alignas(Get_CacheLineSize()) size_t dGetBatchSize = 100;
 		alignas(Get_CacheLineSize()) size_t dNumToAllocateAtOnce = 20;
@@ -99,7 +100,7 @@ template <typename DType> DResourcePool<DType>::DResourcePool(void)
 template <typename DType> DResourcePool<DType>::~DResourcePool(void)
 {
 	//Move all objects into the shared pool
-	Recycle_SharedResources(dResourcePool_Local);
+	Recycle_Resources_StaticPool(dResourcePool_Local.begin());
 }
 
 /************************************************************************* NON-SHARED-POOL-ACCESSING MEMBER FUNCTIONS *************************************************************************/
@@ -182,6 +183,11 @@ template <typename DType> void DResourcePool<DType>::Recycle_Resources_StaticPoo
 {
 	//we will remove dGetBatchSize resources from the local resource pool (or all if size < batch size)
 	auto locRemoveIterator = (dGetBatchSize >= dResourcePool_Local.size()) ? dResourcePool_Local.begin() : dResourcePool_Local.end() - dGetBatchSize;
+	Recycle_Resources_StaticPool(locRemoveIterator);
+}
+
+template <typename DType> void DResourcePool<DType>::Recycle_Resources_StaticPool(typename vector<DType*>::iterator locRemoveIterator)
+{
 	auto locMoveIterator = locRemoveIterator; //we will move resources into the shared pool, starting at this spot
 	while(dSharedPoolLock.exchange(true)){} //LOCK
 	{

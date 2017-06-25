@@ -1,7 +1,6 @@
 #ifndef DSourceComboVertexer_h
 #define DSourceComboVertexer_h
 
-#include <deque>
 #include <set>
 #include <unordered_map>
 #include <utility>
@@ -10,6 +9,7 @@
 #include <algorithm>
 #include <iostream>
 #include <sstream>
+#include <map>
 
 #include "JANA/JEventLoop.h"
 
@@ -21,7 +21,6 @@
 #include "ANALYSIS/DReactionStepVertexInfo.h"
 #include "ANALYSIS/DKinFitUtils_GlueX.h"
 #include "ANALYSIS/DAnalysisUtilities.h"
-#include "ANALYSIS/DSourceComboP4Handler.h"
 
 using namespace std;
 
@@ -29,6 +28,8 @@ namespace DAnalysis
 {
 
 class DSourceComboer;
+class DSourceComboP4Handler;
+class DSourceComboTimeHandler;
 
 class DSourceComboVertexer
 {
@@ -52,7 +53,7 @@ class DSourceComboVertexer
 
 		//GET RESULTS
 		DVector3 Get_Vertex(bool locIsProductionVertex, const DSourceCombo* locSourceCombo, const DKinematicData* locBeamParticle) const;
-		DVector3 Get_Vertex(bool locIsProductionVertex, const vector<const DKinematicData*>& locVertexParticles){return dVertexMap.find(std::make_pair(locIsProductionVertex, locVertexParticles))->second;}
+		DVector3 Get_Vertex(bool locIsProductionVertex, const vector<const DKinematicData*>& locVertexParticles) const{return dVertexMap.find(std::make_pair(locIsProductionVertex, locVertexParticles))->second;}
 		double Get_TimeOffset(bool locIsProductionVertex, const DSourceCombo* locReactionCombo, const DSourceCombo* locVertexCombo, const DKinematicData* locBeamParticle) const;
 		DVector3 Get_PrimaryVertex(const DReactionVertexInfo* locReactionVertexInfo, const DSourceCombo* locReactionCombo, const DKinematicData* locBeamParticle) const;
 		vector<const DKinematicData*> Get_ConstrainingParticles(bool locIsProductionVertex, const DSourceCombo* locVertexCombo, const DKinematicData* locBeamParticle) const; //beam = nullptr if not determined by missing mass! //this is empty if vertex not found yet!
@@ -90,17 +91,17 @@ class DSourceComboVertexer
 		//time offsets depend on the ENTIRE reaction combo, not just the downstream ones! //time offset is from the RF time
 		//bool: is production vertex //why is bool used throughout here?
 		//because the vertexing is different whether it's a production vertex or not, and a given combo of particles can be used either way
-		unordered_map<tuple<bool, const DSourceCombo*, const DKinematicData*>, unordered_map<const DSourceCombo*, double>> dTimeOffsets; //first combo: primary reaction combo //kinematics: beam particle
+		map<tuple<bool, const DSourceCombo*, const DKinematicData*>, unordered_map<const DSourceCombo*, double>> dTimeOffsets; //first combo: primary reaction combo //kinematics: beam particle
 
 		//VERTICES
 		//Note that this only includes the particles used to find the vertex (+ rarely an extra or 2), not necessarily ALL of those at the vertex
 		//bool: is production vertex, kinematicdata: beam particle
-		unordered_map<tuple<bool, const DSourceCombo*, const DKinematicData*>, vector<const DKinematicData*>> dConstrainingParticlesByCombo;
-		unordered_map<pair<bool, vector<const DKinematicData*>>, DVector3> dVertexMap; //vector: from dConstrainingParticlesByCombo
+		map<tuple<bool, const DSourceCombo*, const DKinematicData*>, vector<const DKinematicData*>> dConstrainingParticlesByCombo;
+		map<pair<bool, vector<const DKinematicData*>>, DVector3> dVertexMap; //vector: from dConstrainingParticlesByCombo
 
 		//Reconstructed Decaying Particles
-		unordered_map<tuple<Particle_t, bool, const DSourceCombo*, const DKinematicData*>, const DKinematicData*> dReconDecayParticles_FromProducts; //pid, is prod vertex, full vertex combo, beam particle
-		unordered_map<tuple<Particle_t, const DSourceCombo*, bool, const DSourceCombo*, const DKinematicData*>, const DKinematicData*> dReconDecayParticles_FromMissing; //decay pid, full reaction combo, is prod vertex, full vertex combo, beam particle (this order)
+		map<tuple<Particle_t, bool, const DSourceCombo*, const DKinematicData*>, const DKinematicData*> dReconDecayParticles_FromProducts; //pid, is prod vertex, full vertex combo, beam particle
+		map<tuple<Particle_t, const DSourceCombo*, bool, const DSourceCombo*, const DKinematicData*>, const DKinematicData*> dReconDecayParticles_FromMissing; //decay pid, full reaction combo, is prod vertex, full vertex combo, beam particle (this order)
 
 		//RESOURCE POOL
 		DResourcePool<DKinematicData> dResourcePool_KinematicData;
@@ -121,8 +122,8 @@ inline void DSourceComboVertexer::Reset(void)
 	dReconDecayParticles_FromMissing.clear();
 
 	//undeterminable vertices
-	dVertexMap.emplace({false, {}}, dTargetCenter);
-	dVertexMap.emplace({true, {}}, dTargetCenter);
+	dVertexMap.emplace(std::make_pair(false, vector<const DKinematicData*>()), dTargetCenter);
+	dVertexMap.emplace(std::make_pair(true, vector<const DKinematicData*>()), dTargetCenter);
 }
 
 inline double DSourceComboVertexer::Get_TimeOffset(bool locIsProductionVertex, const DSourceCombo* locReactionCombo, const DSourceCombo* locVertexCombo, const DKinematicData* locBeamParticle) const

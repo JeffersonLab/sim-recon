@@ -20,7 +20,7 @@ using namespace jana;
 namespace DAnalysis
 {
 
-/****************************************************** DEFINE LAMBDAS, USING STATEMENTS *******************************************************/
+/****************************************************** DEFINE LAMBDAS, USING STATEMENTS, DECLARE FUNCTIONS *******************************************************/
 
 //forward declarations
 class DSourceComboInfo;
@@ -39,27 +39,15 @@ using DSourceComboUse = tuple<Particle_t, signed char, const DSourceComboInfo*>;
 //so we'll choose map for now, and let someone who wants to do some profiling decide whether or not to change it
 using DSourceCombosByUse_Small = map<DSourceComboUse, vector<const DSourceCombo*>>;
 
-//Compare_SourceComboUses
-inline auto Compare_SourceComboUses = [](const DSourceComboUse& lhs, const DSourceComboUse& rhs) -> bool
-{
-	//this puts mixed-charge first, then fully-neutral, then fully-charged
-	auto locChargeContent_LHS = Get_ChargeContent(std::get<2>(lhs));
-	auto locChargeContent_RHS = Get_ChargeContent(std::get<2>(rhs));
-	if(locChargeContent_LHS != locChargeContent_RHS)
-		return locChargeContent_LHS > locChargeContent_RHS;
-
-	//within each of those, it puts the most-massive particles first
-	if(std::get<0>(lhs) == std::get<0>(rhs))
-	{
-		if(std::get<1>(lhs) == std::get<1>(rhs))
-			return *std::get<2>(lhs) > *std::get<2>(rhs);
-		else
-			return std::get<1>(lhs) > std::get<1>(rhs);
-	}
-	if(ParticleMass(std::get<0>(lhs)) == ParticleMass(std::get<0>(rhs)))
-		return std::get<0>(lhs) > std::get<0>(rhs);
-	return (ParticleMass(std::get<0>(lhs)) > ParticleMass(std::get<0>(rhs)));
-};
+//DECLARE NAMESPACE-SCOPE FUNCTIONS
+vector<const JObject*> Get_SourceParticles(const vector<pair<Particle_t, const JObject*>>& locSourceParticles, Particle_t locPID = Unknown);
+vector<pair<Particle_t, const JObject*>> Get_SourceParticles_ThisVertex(const DSourceCombo* locSourceCombo, Charge_t locCharge = d_AllCharges);
+vector<const DSourceCombo*> Get_SourceCombos_ThisVertex(const DSourceCombo* locSourceCombo);
+vector<pair<DSourceComboUse, vector<const DSourceCombo*>>> Get_SourceCombosAndUses_ThisVertex(const DSourceCombo* locSourceCombo);
+Charge_t Get_ChargeContent(const DSourceComboInfo* locSourceComboInfo);
+bool Get_HasMassiveNeutrals(const DSourceComboInfo* locComboInfo);
+const DSourceCombo* Find_Combo_AtThisStep(const DSourceCombo* locSourceCombo, const DSourceComboUse& locUseToFind, size_t locDecayInstanceIndex);
+const JObject* Get_SourceParticle_ThisStep(const DSourceCombo* locSourceCombo, Particle_t locPID, size_t locInstance, size_t& locPIDCountSoFar);
 
 /************************************************************** DEFINE CLASSES ***************************************************************/
 
@@ -86,7 +74,7 @@ class DSourceComboInfo
 		bool operator< (const DSourceComboInfo& rhs) const;
 
 		//GET MEMBERS
-		vector<pair<Particle_t, unsigned char>> Get_NumParticles(bool locEntireChainFlag = false) const{return dNumParticles;}
+		vector<pair<Particle_t, unsigned char>> Get_NumParticles(bool locEntireChainFlag = false) const;
 		vector<pair<DSourceComboUse, unsigned char>> Get_FurtherDecays(void) const{return dFurtherDecays;}
 
 		//definitions of negative values for any particle index //in order such that operator< returns order expected for string (e.g. gp->...)
@@ -117,7 +105,7 @@ class DSourceCombo
 		DSourceCombo(const vector<pair<Particle_t, const JObject*>>& locSourceParticles, const DSourceCombosByUse_Small& locFurtherDecayCombos, bool locIsZIndependent = false);
 
 		//SET MEMBERS
-		void Set_Members(const vector<pair<Particle_t, const JObject*>>& locSourceParticles, const DSourceCombosByUse_Small& locFurtherDecayCombos, bool locIsZIndependent = false){};
+		void Set_Members(const vector<pair<Particle_t, const JObject*>>& locSourceParticles, const DSourceCombosByUse_Small& locFurtherDecayCombos, bool locIsZIndependent = false);
 
 		//GET MEMBERS
 		vector<pair<Particle_t, const JObject*>> Get_SourceParticles(bool locEntireChainFlag = false, Charge_t locCharge = d_AllCharges) const;
@@ -151,6 +139,30 @@ struct DSourceComboInfo::DCompare_ParticlePairPIDs
 };
 
 /*********************************************************** INLINE MEMBER FUNCTION DEFINITIONS ************************************************************/
+
+//Compare_SourceComboUses
+auto Compare_SourceComboUses = [](const pair<DSourceComboUse, unsigned char>& lhs, const pair<DSourceComboUse, unsigned char>& rhs) -> bool
+{
+	auto locUse_LHS = lhs.first;
+	auto locUse_RHS = rhs.first;
+	//this puts mixed-charge first, then fully-neutral, then fully-charged
+	auto locChargeContent_LHS = Get_ChargeContent(std::get<2>(locUse_LHS));
+	auto locChargeContent_RHS = Get_ChargeContent(std::get<2>(locUse_RHS));
+	if(locChargeContent_LHS != locChargeContent_RHS)
+		return locChargeContent_LHS > locChargeContent_RHS;
+
+	//within each of those, it puts the most-massive particles first
+	if(std::get<0>(locUse_LHS) == std::get<0>(locUse_RHS))
+	{
+		if(std::get<1>(locUse_LHS) == std::get<1>(locUse_RHS))
+			return *std::get<2>(locUse_RHS) < *std::get<2>(locUse_LHS);
+		else
+			return std::get<1>(locUse_LHS) > std::get<1>(locUse_RHS);
+	}
+	if(ParticleMass(std::get<0>(locUse_LHS)) == ParticleMass(std::get<0>(locUse_RHS)))
+		return std::get<0>(locUse_LHS) > std::get<0>(locUse_RHS);
+	return (ParticleMass(std::get<0>(locUse_LHS)) > ParticleMass(std::get<0>(locUse_RHS)));
+};
 
 inline DSourceComboInfo::DSourceComboInfo(const vector<pair<Particle_t, unsigned char>>& locNumParticles, const vector<pair<DSourceComboUse, unsigned char>>& locFurtherDecays) :
 		dNumParticles(locNumParticles), dFurtherDecays(locFurtherDecays)
@@ -196,7 +208,7 @@ inline vector<pair<Particle_t, unsigned char>> DSourceComboInfo::Get_NumParticle
 			//search through locToReturnNumParticles to retrieve the iterator corresponding to this PID if it's already present
 			auto locIteratorPair = std::equal_range(locToReturnNumParticles.begin(), locToReturnNumParticles.end(), locParticlePair.first, DCompare_ParticlePairPIDs());
 			if(locIteratorPair.first != locIteratorPair.second)
-				(*locIteratorPair.first)->second += locParticlePair.second; //it exists: increase it
+				(*locIteratorPair.first).second += locParticlePair.second; //it exists: increase it
 			else //doesn't exist. insert it
 				locToReturnNumParticles.insert(locIteratorPair.first, locParticlePair);
 		}
@@ -244,7 +256,7 @@ inline vector<pair<Particle_t, const JObject*>> DSourceCombo::Get_SourceParticle
 
 /*********************************************************** INLINE NAMESPACE FUNCTION DEFINITIONS ************************************************************/
 
-inline vector<const JObject*> Get_SourceParticles(const vector<pair<Particle_t, const JObject*>>& locSourceParticles, Particle_t locPID = Unknown)
+inline vector<const JObject*> Get_SourceParticles(const vector<pair<Particle_t, const JObject*>>& locSourceParticles, Particle_t locPID)
 {
 	//if PID is unknown, then all particles
 	vector<const JObject*> locOutputParticles;
@@ -256,7 +268,7 @@ inline vector<const JObject*> Get_SourceParticles(const vector<pair<Particle_t, 
 	return locOutputParticles;
 }
 
-inline vector<pair<Particle_t, const JObject*>> Get_SourceParticles_ThisVertex(const DSourceCombo* locSourceCombo, Charge_t locCharge = d_AllCharges)
+inline vector<pair<Particle_t, const JObject*>> Get_SourceParticles_ThisVertex(const DSourceCombo* locSourceCombo, Charge_t locCharge)
 {
 	auto locSourceParticles = locSourceCombo->Get_SourceParticles(false, locCharge);
 	auto locFurtherDecayCombos = locSourceCombo->Get_FurtherDecayCombos();
@@ -329,7 +341,7 @@ inline Charge_t Get_ChargeContent(const DSourceComboInfo* locSourceComboInfo)
 	return d_AllCharges;
 }
 
-inline bool Get_HasMassiveNeutrals(const DSourceComboInfo* locComboInfo) const
+inline bool Get_HasMassiveNeutrals(const DSourceComboInfo* locComboInfo)
 {
 	//see if the combo info contains a massive neutral particle
 
@@ -342,7 +354,7 @@ inline bool Get_HasMassiveNeutrals(const DSourceComboInfo* locComboInfo) const
 	return std::any_of(locNumParticles.begin(), locNumParticles.end(), Find_MassiveNeutrals);
 }
 
-const DSourceCombo* Find_Combo_AtThisStep(const DSourceCombo* locSourceCombo, const DSourceComboUse& locUseToFind, size_t locDecayInstanceIndex)
+inline const DSourceCombo* Find_Combo_AtThisStep(const DSourceCombo* locSourceCombo, const DSourceComboUse& locUseToFind, size_t locDecayInstanceIndex)
 {
 	for(const auto& locDecayPair : locSourceCombo->Get_FurtherDecayCombos())
 	{

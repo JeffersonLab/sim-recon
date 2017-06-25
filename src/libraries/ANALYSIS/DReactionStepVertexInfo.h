@@ -65,7 +65,7 @@ class DReactionStepVertexInfo
 
 		//parent vertex info
 		void Set_ParentVertexInfo(const shared_ptr<DReactionStepVertexInfo>& locStepVertexInfo){dParentVertexInfo = locStepVertexInfo;}
-		shared_ptr<DReactionStepVertexInfo> Get_ParentVertexInfo(void) const{return dParentVertexInfo;}
+		shared_ptr<DReactionStepVertexInfo> Get_ParentVertexInfo(void) const{return (dParentVertexInfo.expired() ? shared_ptr<DReactionStepVertexInfo>(nullptr) : shared_ptr<DReactionStepVertexInfo>(dParentVertexInfo));}
 
 	private:
 
@@ -97,7 +97,7 @@ class DReactionStepVertexInfo
 		//if is true, then vertex parent is either:
 			//in dDecayingParticles_NoConstrain if it's not empty (at most one will have non-null info), or is center of target
 		bool dIsDanglingVertexFlag = false;
-		weak_ptr<DReactionStepVertexInfo> dParentVertexInfo = nullptr; //null if production vertex //weak: to avoid cyclic references
+		weak_ptr<DReactionStepVertexInfo> dParentVertexInfo; //null if production vertex //weak: to avoid cyclic references
 };
 
 /****************************************************** NAMESPACE-SCOPE NON-INLINE FUNCTION DECLARATIONS *******************************************************/
@@ -145,7 +145,7 @@ inline vector<pair<int, int>> DReactionStepVertexInfo::Get_MissingParticles(DRea
 {
 	vector<pair<int, int>> locParticles = Filter_Particles(dNoConstrainParticles, locState, locCharge, false, true, false);
 
-	auto Check_NotMissing = [&dReaction](const pair<int, int>& locIndices) -> bool
+	auto Check_NotMissing = [&](const pair<int, int>& locIndices) -> bool
 	{return (locIndices.second != dReaction->Get_ReactionStep(locIndices.first)->Get_MissingParticleIndex());};
 
 	locParticles.erase(std::remove_if(locParticles.begin(), locParticles.end(), Check_NotMissing), locParticles.end());

@@ -1,5 +1,7 @@
 #include "ANALYSIS/DSourceComboVertexer.h"
 #include "ANALYSIS/DSourceComboer.h"
+#include "ANALYSIS/DSourceComboP4Handler.h"
+#include "ANALYSIS/DSourceComboTimeHandler.h"
 
 namespace DAnalysis
 {

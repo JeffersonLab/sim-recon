@@ -18,6 +18,10 @@
 
 using namespace std;
 using namespace jana;
+using namespace DAnalysis;
+
+namespace DAnalysis
+{
 
 class DAnalysisAction
 {
@@ -329,6 +333,8 @@ template <typename DHistType> inline bool DAnalysisAction::Check_IsValidTH1(stri
 	}
 	return true;
 }
+
+} //end namespace
 
 #endif // _DAnalysisAction_
 

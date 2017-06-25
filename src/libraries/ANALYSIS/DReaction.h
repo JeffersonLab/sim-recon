@@ -12,6 +12,7 @@
 
 using namespace std;
 using namespace jana;
+using namespace DAnalysis;
 
 namespace DAnalysis
 {
@@ -28,7 +29,7 @@ enum DKinFitType
 	d_P4AndSpacetimeFit //also includes invariant mass constraints
 };
 
-class DReaction
+class DReaction : public JObject
 {
 	public:
 		JOBJECT_PUBLIC(DReaction);
@@ -73,6 +74,7 @@ class DReaction
 		// GET PIDS //step index of -1: All steps
 		vector<Particle_t> Get_FinalPIDs(int locStepIndex = -1, bool locIncludeMissingFlag = true, bool locIncludeDecayingFlag = true,
 				Charge_t locCharge = d_AllCharges, bool locIncludeDuplicatesFlag = true) const;
+		vector<Particle_t> Get_MissingPIDs(int locStepIndex = -1, Charge_t locCharge = d_AllCharges, bool locIncludeDuplicatesFlag = true) const;
 
 		// GET ANALYSIS ACTIONS:
 		size_t Get_NumAnalysisActions(void) const{return dAnalysisActions.size();}
@@ -229,7 +231,7 @@ inline vector<Particle_t> Get_ChainPIDs(const DReaction* locReaction, Particle_t
 
 inline string Convert_PIDsToROOTName(const vector<Particle_t>& locPIDs)
 {
-	auto locPIDTransformer = [](Particle_t& locPID) -> string {return ParticleName_ROOT(locPID);};
+	auto locPIDTransformer = [](Particle_t locPID) -> string {return ParticleName_ROOT(locPID);};
 	vector<string> locParticleNames;
 	std::transform(locPIDs.begin(), locPIDs.end(), std::back_inserter(locParticleNames), locPIDTransformer);
 	return std::accumulate(locParticleNames.begin(), locParticleNames.end(), string(""));

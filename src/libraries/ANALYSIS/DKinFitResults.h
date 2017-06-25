@@ -7,6 +7,7 @@
 #include "TMatrixDSym.h"
 
 #include "PID/DKinematicData.h"
+#include "ANALYSIS/DReaction.h" //for DKinFitType
 #include "KINFITTER/DKinFitChain.h"
 #include "KINFITTER/DKinFitParticle.h"
 #include "KINFITTER/DKinFitConstraint.h"

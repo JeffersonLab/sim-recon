@@ -2,7 +2,6 @@
 #define DReactionVertexInfo_h
 
 #include <memory>
-#include <unordered_set>
 #include <unordered_map>
 #include <vector>
 #include <algorithm>
@@ -28,7 +27,7 @@ class DReactionVertexInfo : public JObject
 		DReactionVertexInfo(const DReaction* locReaction, const vector<shared_ptr<DReactionStepVertexInfo>>& locStepVertexInfos);
 
 		//SETTERS
-		void Add_Reaction(const DReaction* locReaction){dReactions.insert(locReaction);}
+		void Add_Reaction(const DReaction* locReaction){dReactions.push_back(locReaction);}
 
 		//GETTERS
 		const DReaction* Get_Reaction(void) const{return *dReactions.begin();} //since their channels are identical, any one will do (if used correctly)
@@ -39,7 +38,7 @@ class DReactionVertexInfo : public JObject
 	private:
 
 		//these all have identical channel content: particles & steps must be in the same order, although actions, etc. may be different
-		unordered_set<const DReaction*> dReactions;
+		vector<const DReaction*> dReactions;
 
 		vector<shared_ptr<const DReactionStepVertexInfo>> dStepVertexInfos; //in order of construction dependency
 		unordered_map<size_t, shared_ptr<const DReactionStepVertexInfo>> dVertexInfoMap; //key is step index
@@ -49,7 +48,7 @@ inline DReactionVertexInfo::DReactionVertexInfo(const DReaction* locReaction, co
 		dReactions({locReaction})
 {
 	//transform into vector of shared_ptr containing const pointers
-	auto locConstify = [](shared_ptr<DReactionStepVertexInfo>& locVertexInfo) {return std::const_pointer_cast<const DReactionStepVertexInfo>(locVertexInfo);};
+	auto locConstify = [](shared_ptr<DReactionStepVertexInfo> locVertexInfo) -> shared_ptr<const DReactionStepVertexInfo> {return std::const_pointer_cast<const DReactionStepVertexInfo>(locVertexInfo);};
 	std::transform(locStepVertexInfos.begin(), locStepVertexInfos.end(), std::back_inserter(dStepVertexInfos), locConstify);
 
 	//build the step index map
@@ -66,7 +65,7 @@ inline vector<shared_ptr<const DReactionStepVertexInfo>> Get_StepVertexInfos_Rev
 	auto locStepVertexInfos = locReactionVertexInfo->Get_StepVertexInfos();
 
 	//sort vertex infos in reverse-step order
-	auto Comparator_ReverseOrderByStep = [](const DReactionStepVertexInfo* lhs, const DReactionStepVertexInfo* rhs) -> bool
+	auto Comparator_ReverseOrderByStep = [](const shared_ptr<const DReactionStepVertexInfo>& lhs, const shared_ptr<const DReactionStepVertexInfo>& rhs) -> bool
 		{return lhs->Get_StepIndices().front() > rhs->Get_StepIndices().front();}; // >: reverse order
 
 	std::sort(locStepVertexInfos.begin(), locStepVertexInfos.end(), Comparator_ReverseOrderByStep);
@@ -94,7 +93,7 @@ vector<pair<int, int>> Get_OnlyConstrainTimeParticles(const DReactionVertexInfo*
 	for(auto& locStepVertexInfo : locStepVertexInfos)
 	{
 		auto locOnlyConstrainTimeParticles = locStepVertexInfo->Get_OnlyConstrainTimeParticles();
-		locAllOnlyConstrainTimeParticles.insert(locAllFullConstrainParticles.end(), locOnlyConstrainTimeParticles.begin(), locOnlyConstrainTimeParticles.end());
+		locAllOnlyConstrainTimeParticles.insert(locAllOnlyConstrainTimeParticles.end(), locOnlyConstrainTimeParticles.begin(), locOnlyConstrainTimeParticles.end());
 	}
 	return locAllOnlyConstrainTimeParticles;
 }

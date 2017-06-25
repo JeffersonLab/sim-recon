@@ -202,7 +202,7 @@ inline const DChargedTrackHypothesis* DMCThrownMatching::Get_MatchingChargedHypo
 			return locHypotheses[loc_i];
 		if(locBestHypothesis == NULL)
 			locBestHypothesis = locHypotheses[loc_i];
-		else if(locHypotheses[loc_i]->dFOM > locBestHypothesis->dFOM)
+		else if(locHypotheses[loc_i]->Get_FOM() > locBestHypothesis->Get_FOM())
 			locBestHypothesis = locHypotheses[loc_i];
 	}
 	return locBestHypothesis;
@@ -223,7 +223,7 @@ inline const DNeutralParticleHypothesis* DMCThrownMatching::Get_MatchingNeutralH
 			return locHypotheses[loc_i];
 		if(locBestHypothesis == NULL)
 			locBestHypothesis = locHypotheses[loc_i];
-		else if(locHypotheses[loc_i]->dFOM > locBestHypothesis->dFOM)
+		else if(locHypotheses[loc_i]->Get_FOM() > locBestHypothesis->Get_FOM())
 			locBestHypothesis = locHypotheses[loc_i];
 	}
 	return locBestHypothesis;

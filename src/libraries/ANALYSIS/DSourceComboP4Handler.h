@@ -3,6 +3,7 @@
 
 #include <unordered_map>
 #include <vector>
+#include <map>
 
 #include "JANA/JEventLoop.h"
 
@@ -11,6 +12,7 @@
 #include "PID/DKinematicData.h"
 #include "PID/DNeutralShower.h"
 #include "ANALYSIS/DSourceCombo.h"
+#include "ANALYSIS/DSourceComboTimeHandler.h"
 
 using namespace std;
 using namespace jana;
@@ -19,7 +21,7 @@ namespace DAnalysis
 {
 
 class DSourceComboVertexer;
-class DSourceComboTimeHandler;
+class DSourceComboer;
 
 class DSourceComboP4Handler
 {
@@ -67,12 +69,12 @@ class DSourceComboP4Handler
 		DPhotonKinematicsByZBin dPhotonKinematics; //FCAL shower data at center of target, BCAL in vertex-z bins
 
 		//TOTAL FINAL STATE FOUR-MOMENTUM
-		unordered_map<pair<const DSourceCombo*, signed char>, DLorentzVector> dFinalStateP4ByCombo; //signed char: vertex-z bin
-		unordered_map<tuple<bool, const DSourceCombo*, const DSourceCombo*, int>, DLorentzVector> dFinalStateP4ByCombo_HasMassiveNeutrals; //int: RF bunch //bool: is prod vertex //first combo: reaction full
+		map<pair<const DSourceCombo*, signed char>, DLorentzVector> dFinalStateP4ByCombo; //signed char: vertex-z bin
+		map<tuple<bool, const DSourceCombo*, const DSourceCombo*, int>, DLorentzVector> dFinalStateP4ByCombo_HasMassiveNeutrals; //int: RF bunch //bool: is prod vertex //first combo: reaction full
 
 		//CUTS
 		double dMaxMassiveNeutralBeta = 0.99999;
-		unordered_map<Particle_t, pair<double, double>> dInvariantMassCuts;
+		map<Particle_t, pair<double, double>> dInvariantMassCuts;
 };
 
 inline void DSourceComboP4Handler::Reset(void)

@@ -40,14 +40,17 @@
 
 #include "ANALYSIS/DParticleCombo.h"
 #include "ANALYSIS/DMCThrownMatching_factory.h"
-#include "ANALYSIS/DParticleCombo_factory_Thrown.h"
 #include "ANALYSIS/DReaction_factory_Thrown.h"
 
 using namespace std;
 using namespace jana;
+using namespace DAnalysis;
 
-class DParticleCombo_factory_Thrown;
 class DReaction_factory_Thrown;
+namespace DAnalysis
+{
+class DParticleComboCreator;
+}
 
 class DAnalysisUtilities : public JObject
 {
@@ -60,7 +63,7 @@ class DAnalysisUtilities : public JObject
 		bool Check_IsBDTSignalEvent(JEventLoop* locEventLoop, const DReaction* locReaction, bool locExclusiveMatchFlag, bool locIncludeDecayingToReactionFlag) const;
 		void Replace_DecayingParticleWithProducts(deque<pair<const DMCThrown*, deque<const DMCThrown*> > >& locThrownSteps, size_t locStepIndex) const;
 		bool Check_ThrownsMatchReaction(JEventLoop* locEventLoop, const DReaction* locReaction, bool locExclusiveMatchFlag) const;
-		bool Check_ThrownsMatchReaction(const DParticleCombo* locThrownCombo, const DReaction* locReaction, bool locExclusiveMatchFlag) const;
+		bool Check_ThrownsMatchReaction(const DReaction* locThrownReaction, const DParticleCombo* locThrownCombo, const DReaction* locReaction, bool locExclusiveMatchFlag) const;
 
 		void Get_UnusedChargedTracks(JEventLoop* locEventLoop, const DParticleCombo* locParticleCombo, vector<const DChargedTrack*>& locUnusedChargedTracks) const;
 		void Get_UnusedTimeBasedTracks(JEventLoop* locEventLoop, const DParticleCombo* locParticleCombo, vector<const DTrackTimeBased*>& locUnusedTimeBasedTracks) const;
@@ -133,6 +136,7 @@ class DAnalysisUtilities : public JObject
 
 		const DParticleID* dPIDAlgorithm;
 		const DMagneticFieldMap* dMagneticFieldMap;
+		DParticleComboCreator* dParticleComboCreator;
 };
 
 
