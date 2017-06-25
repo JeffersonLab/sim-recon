@@ -88,55 +88,59 @@ jerror_t DDetectorMatches_factory_Combo::evnt(jana::JEventLoop* locEventLoop, ui
 		pair<double, double> locEnergyRatio = Calc_EnergyRatio(locTrackTimeBased, locOriginalTrackTimeBased); //2nd is variance, not error!
 
 		//BCAL
-		vector<DBCALShowerMatchParams> locBCALShowerMatchParamsVector;
+		vector<shared_ptr<const DBCALShowerMatchParams>> locBCALShowerMatchParamsVector;
 		locDetectorMatches->Get_BCALMatchParams(locOriginalTrackTimeBased, locBCALShowerMatchParamsVector);
 		for(size_t loc_j = 0; loc_j < locBCALShowerMatchParamsVector.size(); ++loc_j)
 		{
-			double locDeltaT = locBCALShowerMatchParamsVector[loc_j].dFlightTime;
-			double locDeltaTVar = locBCALShowerMatchParamsVector[loc_j].dFlightTimeVariance;
-			locBCALShowerMatchParamsVector[loc_j].dFlightTime *= locEnergyRatio.first;
+			double locDeltaT = locBCALShowerMatchParamsVector[loc_j]->dFlightTime;
+			double locDeltaTVar = locBCALShowerMatchParamsVector[loc_j]->dFlightTimeVariance;
+			auto locNewMatch = std::make_shared<DBCALShowerMatchParams>(*locBCALShowerMatchParamsVector[loc_j]);
+			locNewMatch->dFlightTime *= locEnergyRatio.first;
 			//assumes correlation between delta-t and E-ratio is negligible
-			locBCALShowerMatchParamsVector[loc_j].dFlightTimeVariance = locDeltaTVar*locEnergyRatio.first*locEnergyRatio.first + locEnergyRatio.second*locDeltaT*locDeltaT;
-			locDetectorMatches->Add_Match(locTrackTimeBased, locBCALShowerMatchParamsVector[loc_j].dBCALShower, locBCALShowerMatchParamsVector[loc_j]);
+			locNewMatch->dFlightTimeVariance = locDeltaTVar*locEnergyRatio.first*locEnergyRatio.first + locEnergyRatio.second*locDeltaT*locDeltaT;
+			locDetectorMatches->Add_Match(locTrackTimeBased, locBCALShowerMatchParamsVector[loc_j]->dBCALShower, locNewMatch);
 		}
 
 		//FCAL
-		vector<DFCALShowerMatchParams> locFCALShowerMatchParamsVector;
+		vector<shared_ptr<const DFCALShowerMatchParams>> locFCALShowerMatchParamsVector;
 		locDetectorMatches->Get_FCALMatchParams(locOriginalTrackTimeBased, locFCALShowerMatchParamsVector);
 		for(size_t loc_j = 0; loc_j < locFCALShowerMatchParamsVector.size(); ++loc_j)
 		{
-			double locDeltaT = locFCALShowerMatchParamsVector[loc_j].dFlightTime;
-			double locDeltaTVar = locFCALShowerMatchParamsVector[loc_j].dFlightTimeVariance;
-			locFCALShowerMatchParamsVector[loc_j].dFlightTime *= locEnergyRatio.first;
+			double locDeltaT = locFCALShowerMatchParamsVector[loc_j]->dFlightTime;
+			double locDeltaTVar = locFCALShowerMatchParamsVector[loc_j]->dFlightTimeVariance;
+			auto locNewMatch = std::make_shared<DFCALShowerMatchParams>(*locBCALShowerMatchParamsVector[loc_j]);
+			locNewMatch->dFlightTime *= locEnergyRatio.first;
 			//assumes correlation between delta-t and E-ratio is negligible
-			locFCALShowerMatchParamsVector[loc_j].dFlightTimeVariance = locDeltaTVar*locEnergyRatio.first*locEnergyRatio.first + locEnergyRatio.second*locDeltaT*locDeltaT;
-			locDetectorMatches->Add_Match(locTrackTimeBased, locFCALShowerMatchParamsVector[loc_j].dFCALShower, locFCALShowerMatchParamsVector[loc_j]);
+			locNewMatch->dFlightTimeVariance = locDeltaTVar*locEnergyRatio.first*locEnergyRatio.first + locEnergyRatio.second*locDeltaT*locDeltaT;
+			locDetectorMatches->Add_Match(locTrackTimeBased, locFCALShowerMatchParamsVector[loc_j]->dFCALShower, locNewMatch);
 		}
 
 		//TOF
-		vector<DTOFHitMatchParams> locTOFHitMatchParamsVector;
+		vector<shared_ptr<const DTOFHitMatchParams>> locTOFHitMatchParamsVector;
 		locDetectorMatches->Get_TOFMatchParams(locOriginalTrackTimeBased, locTOFHitMatchParamsVector);
 		for(size_t loc_j = 0; loc_j < locTOFHitMatchParamsVector.size(); ++loc_j)
 		{
-			double locDeltaT = locTOFHitMatchParamsVector[loc_j].dFlightTime;
-			double locDeltaTVar = locTOFHitMatchParamsVector[loc_j].dFlightTimeVariance;
-			locTOFHitMatchParamsVector[loc_j].dFlightTime *= locEnergyRatio.first;
+			double locDeltaT = locTOFHitMatchParamsVector[loc_j]->dFlightTime;
+			double locDeltaTVar = locTOFHitMatchParamsVector[loc_j]->dFlightTimeVariance;
+			auto locNewMatch = std::make_shared<DTOFHitMatchParams>(*locBCALShowerMatchParamsVector[loc_j]);
+			locNewMatch->dFlightTime *= locEnergyRatio.first;
 			//assumes correlation between delta-t and E-ratio is negligible
-			locTOFHitMatchParamsVector[loc_j].dFlightTimeVariance = locDeltaTVar*locEnergyRatio.first*locEnergyRatio.first + locEnergyRatio.second*locDeltaT*locDeltaT;
-			locDetectorMatches->Add_Match(locTrackTimeBased, locTOFHitMatchParamsVector[loc_j].dTOFPoint, locTOFHitMatchParamsVector[loc_j]);
+			locNewMatch->dFlightTimeVariance = locDeltaTVar*locEnergyRatio.first*locEnergyRatio.first + locEnergyRatio.second*locDeltaT*locDeltaT;
+			locDetectorMatches->Add_Match(locTrackTimeBased, locTOFHitMatchParamsVector[loc_j]->dTOFPoint, locNewMatch);
 		}
 
 		//SC
-		vector<DSCHitMatchParams> locSCHitMatchParamsVector;
+		vector<shared_ptr<const DSCHitMatchParams>> locSCHitMatchParamsVector;
 		locDetectorMatches->Get_SCMatchParams(locOriginalTrackTimeBased, locSCHitMatchParamsVector);
 		for(size_t loc_j = 0; loc_j < locSCHitMatchParamsVector.size(); ++loc_j)
 		{
-			double locDeltaT = locSCHitMatchParamsVector[loc_j].dFlightTime;
-			double locDeltaTVar = locSCHitMatchParamsVector[loc_j].dFlightTimeVariance;
-			locSCHitMatchParamsVector[loc_j].dFlightTime *= locEnergyRatio.first;
+			double locDeltaT = locSCHitMatchParamsVector[loc_j]->dFlightTime;
+			double locDeltaTVar = locSCHitMatchParamsVector[loc_j]->dFlightTimeVariance;
+			auto locNewMatch = std::make_shared<DSCHitMatchParams>(*locBCALShowerMatchParamsVector[loc_j]);
+			locNewMatch->dFlightTime *= locEnergyRatio.first;
 			//assumes correlation between delta-t and E-ratio is negligible
-			locSCHitMatchParamsVector[loc_j].dFlightTimeVariance = locDeltaTVar*locEnergyRatio.first*locEnergyRatio.first + locEnergyRatio.second*locDeltaT*locDeltaT;
-			locDetectorMatches->Add_Match(locTrackTimeBased, locSCHitMatchParamsVector[loc_j].dSCHit, locSCHitMatchParamsVector[loc_j]);
+			locNewMatch->dFlightTimeVariance = locDeltaTVar*locEnergyRatio.first*locEnergyRatio.first + locEnergyRatio.second*locDeltaT*locDeltaT;
+			locDetectorMatches->Add_Match(locTrackTimeBased, locSCHitMatchParamsVector[loc_j]->dSCHit, locNewMatch);
 		}
 
 		//Flight-Time/P Correlations

@@ -167,7 +167,7 @@ inline bool Get_IsFirstStepBeam(const DReaction* locReaction)
 	return ((locFirstStep->Get_TargetPID() != Unknown) || (locFirstStep->Get_SecondBeamPID() != Unknown));
 }
 
-inline bool Check_ChannelEquality(const DReaction* lhs, const DReaction* rhs, bool locSameOrderFlag = true)
+inline bool Check_ChannelEquality(const DReaction* lhs, const DReaction* rhs, bool locSameOrderFlag = true, bool locRightSubsetOfLeftFlag = false)
 {
 	//assume for now that the steps have to be in the same order
 	auto locSteps_lhs = lhs->Get_ReactionSteps();
@@ -175,8 +175,8 @@ inline bool Check_ChannelEquality(const DReaction* lhs, const DReaction* rhs, bo
 	if(locSteps_lhs.size() != locSteps_rhs.size())
 		return false;
 
-	auto Equality_Checker = [&locSameOrderFlag](const DReactionStep* lhs, const DReactionStep* rhs) -> bool
-		{return DAnalysis::Check_ChannelEquality(lhs, rhs, locSameOrderFlag);};
+	auto Equality_Checker = [&locSameOrderFlag, &locRightSubsetOfLeftFlag](const DReactionStep* lhs, const DReactionStep* rhs) -> bool
+		{return DAnalysis::Check_ChannelEquality(lhs, rhs, locSameOrderFlag, locRightSubsetOfLeftFlag);};
 	return std::equal(locSteps_lhs.begin(), locSteps_lhs.end(), locSteps_rhs.begin(), Equality_Checker);
 }
 

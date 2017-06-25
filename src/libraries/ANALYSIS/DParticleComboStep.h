@@ -52,9 +52,10 @@ class DParticleComboStep
 		vector<const DKinematicData*> Get_FinalParticles_Measured(void) const{return ((dMeasuredStep == nullptr) ? dFinalParticles : dMeasuredStep->Get_FinalParticles());}
 
 		vector<const DKinematicData*> Get_FinalParticles(const DReactionStep* locReactionStep, bool locIncludeMissingFlag, bool locIncludeDecayingFlag = true, Charge_t locCharge = d_AllCharges) const;
-		vector<const DKinematicData*> Get_FinalParticles_Measured(const DReactionStep* locReactionStep, bool locIncludeMissingFlag, bool locIncludeDecayingFlag = true, Charge_t locCharge = d_AllCharges) const;
+		vector<const DKinematicData*> Get_FinalParticles_Measured(const DReactionStep* locReactionStep, Charge_t locCharge = d_AllCharges) const;
 
 		const JObject* Get_FinalParticle_SourceObject(size_t locFinalParticleIndex) const; //if missing or decaying: source object is nullptr!
+		vector<const JObject*> Get_FinalParticle_SourceObjects(Charge_t locCharge = d_AllCharges) const;
 		const DKinematicData* Get_MissingParticle(const DReactionStep* locReactionStep) const; //returns nullptr if none missing!
 
 		// GET PRODUCTION/DECAY SPACETIME VERTEX
@@ -149,10 +150,24 @@ inline vector<const DKinematicData*> DParticleComboStep::Get_FinalParticles(cons
 	return locFinalParticles;
 }
 
-inline vector<const DKinematicData*> DParticleComboStep::Get_FinalParticles_Measured(const DReactionStep* locReactionStep, bool locIncludeMissingFlag, bool locIncludeDecayingFlag, Charge_t locCharge) const
+inline vector<const DKinematicData*> DParticleComboStep::Get_FinalParticles_Measured(const DReactionStep* locReactionStep, Charge_t locCharge) const
 {
 	auto locStepPointer = (dMeasuredStep != nullptr) ? dMeasuredStep : this;
-	return locStepPointer->Get_FinalParticles(locReactionStep, locIncludeMissingFlag, locIncludeDecayingFlag, locCharge);
+	return locStepPointer->Get_FinalParticles(locReactionStep, false, false, locCharge);
+}
+
+inline vector<const JObject*> DParticleComboStep::Get_FinalParticle_SourceObjects(Charge_t locCharge) const
+{
+	vector<const JObject*> locSourceObjects;
+	for(size_t loc_i = 0; loc_i < Get_NumFinalParticles(); ++loc_i)
+	{
+		auto locSourceObject = Get_FinalParticle_SourceObject(loc_i);
+		if(locSourceObject == nullptr)
+			continue;
+		if(Is_CorrectCharge(dFinalParticles[loc_i]->PID(), locCharge))
+			locSourceObjects.push_back(locSourceObject);
+	}
+	return locSourceObjects;
 }
 
 inline vector<const DKinematicData*> Get_ParticlesWithPID(Particle_t locPID, const vector<const DKinematicData*>& locInputParticles)

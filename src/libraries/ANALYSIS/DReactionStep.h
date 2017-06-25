@@ -243,7 +243,7 @@ inline bool Get_HasMissingParticle_FinalState(const DReactionStep* locStep)
 	return (locStep->Get_IsInclusiveFlag() || (locMissingParticleIndex >= 0));
 }
 
-inline bool Check_ChannelEquality(const DReactionStep* lhs, const DReactionStep* rhs, bool locSameOrderFlag = true)
+inline bool Check_ChannelEquality(const DReactionStep* lhs, const DReactionStep* rhs, bool locSameOrderFlag = true, bool locRightSubsetOfLeftFlag = false)
 {
 	if((lhs->Get_InitialPID() != rhs->Get_InitialPID()) || (lhs->Get_SecondBeamPID() != rhs->Get_SecondBeamPID()) || (lhs->Get_TargetPID() != rhs->Get_TargetPID()))
 		return false;
@@ -256,12 +256,27 @@ inline bool Check_ChannelEquality(const DReactionStep* lhs, const DReactionStep*
 		return false;
 	auto locMissingIndex_lhs = lhs->Get_MissingParticleIndex();
 	auto locMissingIndex_rhs = rhs->Get_MissingParticleIndex();
-	if((locMissingIndex_lhs != locMissingIndex_rhs) && ((locMissingIndex_lhs < 0) || (locMissingIndex_rhs < 0)))
-		return false; //allow missing final state particle to be in a different spot
+	//if it's not, then ... one must be inclusive, the other none
+	if((lhs->Get_MissingPID() == Unknown) && (locMissingIndex_lhs != locMissingIndex_rhs))
+	{
+		if(!locRightSubsetOfLeftFlag)
+			return false;
+		if((locMissingIndex_lhs != DReactionStep::Get_ParticleIndex_Inclusive()) || (locMissingIndex_rhs != DReactionStep::Get_ParticleIndex_None()))
+			return false; //e.g. missing beam vs. inclusive
+	}
 
 	// GET FINAL PARTICLE PIDs:
 	auto locPIDS_lhs = lhs->Get_FinalPIDs();
 	auto locPIDS_rhs = rhs->Get_FinalPIDs();
+	std::sort(locPIDS_lhs.begin(), locPIDS_lhs.end());
+	std::sort(locPIDS_rhs.begin(), locPIDS_rhs.end());
+	if(locRightSubsetOfLeftFlag)
+	{
+		decltype(locPIDS_lhs) locPIDDifference{};
+		locPIDDifference.reserve(locPIDS_rhs.size());
+		std::set_difference(locPIDS_rhs.begin(), locPIDS_rhs.end(), locPIDS_lhs.begin(), locPIDS_lhs.end(), std::back_inserter(locPIDDifference)); //right - left better be empty
+		return locPIDDifference.empty();
+	}
 	if(locPIDS_lhs.size() != locPIDS_rhs.size())
 		return false;
 

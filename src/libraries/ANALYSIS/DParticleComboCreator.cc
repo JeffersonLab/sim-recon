@@ -256,7 +256,7 @@ const DParticleCombo* DParticleComboCreator::Create_KinFitCombo_NewCombo(const D
 {
 	auto locNewCombo = dResourcePool_ParticleCombo.Get_Resource();
 	locNewCombo->Reset();
-	locNewCombo->Set_KinFitResults(locKinFitResultsVector[loc_i]);
+	locNewCombo->Set_KinFitResults(locKinFitResults);
 	locNewCombo->Set_EventRFBunch(locOrigCombo->Get_EventRFBunch());
 	set<DKinFitParticle*> locOutputKinFitParticles = locKinFitResults->Get_OutputKinFitParticles();
 

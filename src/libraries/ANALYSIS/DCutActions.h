@@ -28,8 +28,6 @@ using namespace std;
 
 /*
 //CLASSES DEFINED BELOW:
-DCutAction_MaxNumParticleCombos
-
 DCutAction_TruePID
 DCutAction_AllTruePID
 DCutAction_TrueBeamParticle
@@ -110,22 +108,6 @@ class DCutAction_AllTracksHaveDetectorMatch : public DAnalysisAction
 
 	private:
 		bool Perform_Action(JEventLoop* locEventLoop, const DParticleCombo* locParticleCombo);
-};
-
-class DCutAction_MaxNumParticleCombos : public DAnalysisAction
-{
-	public:
-		DCutAction_MaxNumParticleCombos(const DReaction* locReaction, unsigned int locMaxNumParticleCombos, string locActionUniqueString = "") : 
-		DAnalysisAction(locReaction, "Cut_MaxNumParticleCombos", false, locActionUniqueString), 
-		dMaxNumParticleCombos(locMaxNumParticleCombos){}
-
-		string Get_ActionName(void) const;
-		inline void Initialize(JEventLoop* locEventLoop){}
-
-	private:
-		bool Perform_Action(JEventLoop* locEventLoop, const DParticleCombo* locParticleCombo);
-
-		unsigned int dMaxNumParticleCombos;
 };
 
 class DCutAction_PIDFOM : public DAnalysisAction
@@ -401,7 +383,7 @@ class DCutAction_MissingMass : public DAnalysisAction
 		int dMissingMassOffOfStepIndex;
 		deque<Particle_t> dMissingMassOffOfPIDs;
 
-		const DAnalysisUtilities* dAnalysisUtilities;
+		const DAnalysisUtilities* dAnalysisUtilities = nullptr;
 };
 
 class DCutAction_MissingMassSquared : public DAnalysisAction
@@ -445,7 +427,7 @@ class DCutAction_MissingMassSquared : public DAnalysisAction
 		int dMissingMassOffOfStepIndex;
 		deque<Particle_t> dMissingMassOffOfPIDs;
 
-		const DAnalysisUtilities* dAnalysisUtilities;
+		const DAnalysisUtilities* dAnalysisUtilities = nullptr;
 };
 
 class DCutAction_InvariantMass : public DAnalysisAction
@@ -473,7 +455,7 @@ class DCutAction_InvariantMass : public DAnalysisAction
 
 		double dMinMass;
 		double dMaxMass;
-		const DAnalysisUtilities* dAnalysisUtilities;
+		const DAnalysisUtilities* dAnalysisUtilities = nullptr;
 };
 
 class DCutAction_GoodEventRFBunch : public DAnalysisAction

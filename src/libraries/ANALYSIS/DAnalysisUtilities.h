@@ -94,32 +94,32 @@ class DAnalysisUtilities : public JObject
 		double Calc_DOCAToVertex(const DKinematicData* locKinematicData, const DVector3& locVertex) const;
 		double Calc_DOCAToVertex(const DKinematicData* locKinematicData, const DVector3& locVertex, DVector3& locPOCA) const;
 
-		DLorentzVector Calc_MissingP4(const DParticleCombo* locParticleCombo, bool locUseKinFitDataFlag) const;
-		DLorentzVector Calc_MissingP4(const DParticleCombo* locParticleCombo, set<pair<const JObject*, unsigned int> >& locSourceObjects, bool locUseKinFitDataFlag) const;
-		DLorentzVector Calc_MissingP4(const DParticleCombo* locParticleCombo, size_t locStepIndex, int locUpToStepIndex, set<size_t> locUpThroughIndices, bool locUseKinFitDataFlag) const;
-		DLorentzVector Calc_MissingP4(const DParticleCombo* locParticleCombo, size_t locStepIndex, int locUpToStepIndex, set<size_t> locUpThroughIndices, set<pair<const JObject*, unsigned int> >& locSourceObjects, bool locUseKinFitDataFlag) const;
-		DLorentzVector Calc_FinalStateP4(const DParticleCombo* locParticleCombo, size_t locStepIndex, bool locUseKinFitDataFlag) const;
-		DLorentzVector Calc_FinalStateP4(const DParticleCombo* locParticleCombo, size_t locStepIndex, set<pair<const JObject*, unsigned int> >& locSourceObjects, bool locUseKinFitDataFlag) const;
-		DLorentzVector Calc_FinalStateP4(const DParticleCombo* locParticleCombo, size_t locStepIndex, set<size_t> locToIncludeIndices, bool locUseKinFitDataFlag) const;
-		DLorentzVector Calc_FinalStateP4(const DParticleCombo* locParticleCombo, size_t locStepIndex, set<size_t> locToIncludeIndices, set<pair<const JObject*, unsigned int> >& locSourceObjects, bool locUseKinFitDataFlag) const;
+		DLorentzVector Calc_MissingP4(const DReaction* locReaction, const DParticleCombo* locParticleCombo, bool locUseKinFitDataFlag) const;
+		DLorentzVector Calc_MissingP4(const DReaction* locReaction, const DParticleCombo* locParticleCombo, set<pair<const JObject*, unsigned int> >& locSourceObjects, bool locUseKinFitDataFlag) const;
+		DLorentzVector Calc_MissingP4(const DReaction* locReaction, const DParticleCombo* locParticleCombo, size_t locStepIndex, int locUpToStepIndex, set<size_t> locUpThroughIndices, bool locUseKinFitDataFlag) const;
+		DLorentzVector Calc_MissingP4(const DReaction* locReaction, const DParticleCombo* locParticleCombo, size_t locStepIndex, int locUpToStepIndex, set<size_t> locUpThroughIndices, set<pair<const JObject*, unsigned int> >& locSourceObjects, bool locUseKinFitDataFlag) const;
+		DLorentzVector Calc_FinalStateP4(const DReaction* locReaction, const DParticleCombo* locParticleCombo, size_t locStepIndex, bool locUseKinFitDataFlag) const;
+		DLorentzVector Calc_FinalStateP4(const DReaction* locReaction, const DParticleCombo* locParticleCombo, size_t locStepIndex, set<pair<const JObject*, unsigned int> >& locSourceObjects, bool locUseKinFitDataFlag) const;
+		DLorentzVector Calc_FinalStateP4(const DReaction* locReaction, const DParticleCombo* locParticleCombo, size_t locStepIndex, set<size_t> locToIncludeIndices, bool locUseKinFitDataFlag) const;
+		DLorentzVector Calc_FinalStateP4(const DReaction* locReaction, const DParticleCombo* locParticleCombo, size_t locStepIndex, set<size_t> locToIncludeIndices, set<pair<const JObject*, unsigned int> >& locSourceObjects, bool locUseKinFitDataFlag) const;
 
 		// These routines use the MEAURED particle data.  For the kinfit-data result, just use the error matrix from the missing particle
-		TMatrixFSym Calc_MissingP3Covariance(const DParticleCombo* locParticleCombo) const;
-		TMatrixFSym Calc_MissingP3Covariance(const DParticleCombo* locParticleCombo, size_t locStepIndex, int locUpToStepIndex, set<size_t> locUpThroughIndices) const;
+		TMatrixFSym Calc_MissingP3Covariance(const DReaction* locReaction, const DParticleCombo* locParticleCombo) const;
+		TMatrixFSym Calc_MissingP3Covariance(const DReaction* locReaction, const DParticleCombo* locParticleCombo, size_t locStepIndex, int locUpToStepIndex, set<size_t> locUpThroughIndices) const;
 
-		double Calc_CrudeTime(const deque<const DKinematicData*>& locParticles, const DVector3& locCommonVertex) const;
-		double Calc_CrudeTime(const deque<DKinFitParticle*>& locParticles, const DVector3& locCommonVertex) const;
-		DVector3 Calc_CrudeVertex(const deque<const DKinematicData*>& locParticles) const;
-		DVector3 Calc_CrudeVertex(const deque<DKinFitParticle*>& locParticles) const;
-		DVector3 Calc_CrudeVertex(const deque<const DChargedTrackHypothesis*>& locParticles) const;
-		DVector3 Calc_CrudeVertex(const deque<const DTrackTimeBased*>& locParticles) const;
+		double Calc_CrudeTime(const vector<const DKinematicData*>& locParticles, const DVector3& locCommonVertex) const;
+		double Calc_CrudeTime(const vector<DKinFitParticle*>& locParticles, const DVector3& locCommonVertex) const;
+		DVector3 Calc_CrudeVertex(const vector<const DKinematicData*>& locParticles) const;
+		DVector3 Calc_CrudeVertex(const vector<DKinFitParticle*>& locParticles) const;
+		DVector3 Calc_CrudeVertex(const vector<const DChargedTrackHypothesis*>& locParticles) const;
+		DVector3 Calc_CrudeVertex(const vector<const DTrackTimeBased*>& locParticles) const;
 
 		set<set<size_t> > Build_IndexCombos(const DReactionStep* locReactionStep, deque<Particle_t> locToIncludePIDs) const;
 
 		//For handling helical tracks
 		bool Get_IsBFieldNearBeamline(void) const;
 		DVector3 Get_BField(const DVector3& locPosition) const;
-		double Propagate_Track(int locCharge, const DVector3& locPropagateToPoint, DLorentzVector& locMeasuredX4, DLorentzVector& locMeasuredP4, TMatrixDSym* locCovarianceMatrix) const; //returns path length change
+		double Propagate_Track(int locCharge, const DVector3& locPropagateToPoint, DLorentzVector& locMeasuredX4, DLorentzVector& locMeasuredP4, TMatrixFSym* locCovarianceMatrix) const; //returns path length change
 		double Calc_PathLength_Step(int locCharge, const DVector3& locPropagateToPoint, DLorentzVector& locMeasuredX4, DLorentzVector& locMeasuredP4) const;
 		double Calc_PathLength_FineGrained(int locCharge, const DVector3& locPropagateToPoint, DVector3 locMeasuredPosition, DVector3 locMeasuredMomentum) const;
 		void Propagate_Track(double locDeltaPathLength, int locCharge, DLorentzVector& locX4, DLorentzVector& locP4, TMatrixFSym* locCovarianceMatrix) const;

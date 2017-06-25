@@ -39,9 +39,12 @@ class DNeutralParticleHypothesis : public DKinematicData
 		//Timing
 		double t0(void) const{return dTimingInfo->dt0;}
 		double t0_err(void) const{return dTimingInfo->dt0_err;}
+		double t1(void) const{return dNeutralShower->dSpacetimeVertex.T();}
+		double t1_err(void) const{return dNeutralShower->dCovarianceMatrix(4, 4);}
 		DetectorSystem_t t0_detector(void) const{return dTimingInfo->dt0_detector;}
 		DetectorSystem_t t1_detector(void) const{return dNeutralShower->dDetectorSystem;}
 		double Get_PathLength(void) const{return (dNeutralShower->dSpacetimeVertex.Vect() - position()).Mag();}
+		double measuredBeta(void) const{return ((Get_PathLength()/(t1() - t0())))/29.9792458;}
 
 		//totals for overall PID determination
 		unsigned int Get_NDF(void) const{return dTimingInfo->dNDF;}
@@ -117,7 +120,7 @@ inline DNeutralParticleHypothesis::DTimingInfo::DTimingInfo(void) :
 dt0(0.0), dt0_err(0.0), dt0_detector(SYS_NULL), dNDF(0), dChiSq(0.0), dFOM(0.0)
 {}
 
-/********************************************************************** SETTERS ************************************************************************/
+/********************************************************************** GETTERS ************************************************************************/
 
 inline void DNeutralParticleHypothesis::Share_FromInput(const DNeutralParticleHypothesis* locSourceData, bool locShareTimingFlag, bool locShareKinematicsFlag)
 {

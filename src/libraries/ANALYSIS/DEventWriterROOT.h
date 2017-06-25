@@ -11,30 +11,32 @@
 #include "TFile.h"
 #include "TROOT.h"
 
-#include <JANA/JApplication.h>
-#include <JANA/JObject.h>
-#include <JANA/JEventLoop.h>
+#include "JANA/JApplication.h"
+#include "JANA/JObject.h"
+#include "JANA/JEventLoop.h"
 
-#include <BCAL/DBCALShower.h>
-#include <FCAL/DFCALShower.h>
-#include <TRACKING/DMCThrown.h>
-#include <TRACKING/DTrackTimeBased.h>
+#include "BCAL/DBCALShower.h"
+#include "FCAL/DFCALShower.h"
+#include "TRACKING/DMCThrown.h"
+#include "TRACKING/DTrackTimeBased.h"
 
-#include <PID/DChargedTrack.h>
-#include <PID/DBeamPhoton.h>
-#include <PID/DChargedTrackHypothesis.h>
-#include <PID/DNeutralParticleHypothesis.h>
-#include <PID/DNeutralShower.h>
-#include <PID/DEventRFBunch.h>
-#include <PID/DMCReaction.h>
+#include "PID/DVertex.h"
+#include "PID/DChargedTrack.h"
+#include "PID/DBeamPhoton.h"
+#include "PID/DChargedTrackHypothesis.h"
+#include "PID/DNeutralParticleHypothesis.h"
+#include "PID/DNeutralShower.h"
+#include "PID/DEventRFBunch.h"
+#include "PID/DMCReaction.h"
 
-#include <ANALYSIS/DParticleCombo.h>
-#include <ANALYSIS/DReaction.h>
-#include <ANALYSIS/DAnalysisResults.h>
-#include <ANALYSIS/DAnalysisUtilities.h>
-#include <ANALYSIS/DMCThrownMatching.h>
-#include <ANALYSIS/DCutActions.h>
-#include <ANALYSIS/DTreeInterface.h>
+#include "ANALYSIS/DParticleCombo.h"
+#include "ANALYSIS/DReaction.h"
+#include "ANALYSIS/DAnalysisResults.h"
+#include "ANALYSIS/DAnalysisUtilities.h"
+#include "ANALYSIS/DMCThrownMatching.h"
+#include "ANALYSIS/DCutActions.h"
+#include "ANALYSIS/DTreeInterface.h"
+#include "ANALYSIS/DReactionVertexInfo.h"
 
 using namespace std;
 using namespace jana;
@@ -102,8 +104,8 @@ class DEventWriterROOT : public JObject
 		map<const DReaction*, DTreeFillData*> dTreeFillDataMap;
 
 		//TREE CREATION:
-		void Create_DataTree(const DReaction* locReaction, JEventLoop* locEventLoop, bool locIsMCDataFlag);
-		TMap* Create_UserInfoMaps(DTreeBranchRegister& locTreeBranchRegister, JEventLoop* locEventLoop, const DReaction* locReaction) const;
+		void Create_DataTree(const DReaction* locReaction, const DReactionVertexInfo* locReactionVertexInfo, JEventLoop* locEventLoop, bool locIsMCDataFlag);
+		TMap* Create_UserInfoMaps(DTreeBranchRegister& locTreeBranchRegister, JEventLoop* locEventLoop, const DReaction* locReaction, const DReactionVertexInfo* locReactionVertexInfo) const;
 		void Create_UserTargetInfo(DTreeBranchRegister& locTreeBranchRegister, Particle_t locTargetPID) const;
 		void Create_Branches_Thrown(DTreeBranchRegister& locTreeBranchRegister, bool locIsOnlyThrownFlag) const;
 

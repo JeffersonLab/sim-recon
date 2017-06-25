@@ -4,6 +4,7 @@
 #include <vector>
 #include <string>
 #include <memory>
+#include <limits>
 
 #include <PID/DKinematicData.h>
 #include "TRACKING/DTrackTimeBased.h"
@@ -38,12 +39,15 @@ class DChargedTrackHypothesis : public DKinematicData
 		//Timing
 		double t0(void) const{return dTimingInfo->dt0;}
 		double t0_err(void) const{return dTimingInfo->dt0_err;}
+		double t1(void) const;
+		double t1_err(void) const;
 		DetectorSystem_t t0_detector(void) const{return dTimingInfo->dt0_detector;}
 		DetectorSystem_t t1_detector(void) const;
 		double Get_TimeAtPOCAToVertex(void) const{return dTimingInfo->dTimeAtPOCAToVertex;}
 		unsigned int Get_NDF_Timing(void) const{return dTimingInfo->dNDF_Timing;}
 		double Get_ChiSq_Timing(void) const{return dTimingInfo->dChiSq_Timing;}
 		double Get_PathLength(void) const;
+		double measuredBeta(void) const{return ((Get_PathLength()/(t1() - t0())))/29.9792458;}
 
 		//totals for overall PID determination
 		unsigned int Get_NDF(void) const{return dTimingInfo->dNDF;}
@@ -66,7 +70,7 @@ class DChargedTrackHypothesis : public DKinematicData
 
 		//Tracking
 		void Set_TrackTimeBased(const DTrackTimeBased* locTrackTimeBased){dTrackingInfo->dTrackTimeBased = locTrackTimeBased;}
-		void Set_ChiSq_Tracking(double locChiSq, unsigned int locNDF);
+		void Set_ChiSq_DCdEdx(double locChiSq, unsigned int locNDF);
 
 		//Match params
 		void Set_SCHitMatchParams(shared_ptr<const DSCHitMatchParams> locMatchParams){dTrackingInfo->dSCHitMatchParams = locMatchParams;}
@@ -209,7 +213,7 @@ inline DetectorSystem_t DChargedTrackHypothesis::t1_detector(void) const
 	return SYS_NULL;
 }
 
-double DChargedTrackHypothesis::Get_PathLength(void) const
+inline double DChargedTrackHypothesis::Get_PathLength(void) const
 {
 	if(Get_BCALShowerMatchParams() != nullptr)
 		return Get_BCALShowerMatchParams()->dPathLength;
@@ -219,7 +223,31 @@ double DChargedTrackHypothesis::Get_PathLength(void) const
 		return Get_FCALShowerMatchParams()->dPathLength;
 	else if(Get_SCHitMatchParams() != nullptr)
 		return Get_SCHitMatchParams()->dPathLength;
-	return 0.0;
+	return std::numeric_limits<double>::quiet_NaN();
+}
+
+inline double DChargedTrackHypothesis::t1(void) const
+{
+	auto locDetector = t1_detector();
+	if(locDetector == SYS_BCAL)
+		return Get_BCALShowerMatchParams()->dBCALShower->t;
+	else if(locDetector == SYS_TOF)
+		return Get_TOFHitMatchParams()->dTOFPoint->t;
+	else if(locDetector == SYS_FCAL)
+		return Get_FCALShowerMatchParams()->dFCALShower->getTime();
+	return std::numeric_limits<double>::quiet_NaN();
+}
+
+inline double DChargedTrackHypothesis::t1_err(void) const
+{
+	auto locDetector = t1_detector();
+	if(locDetector == SYS_BCAL)
+		return sqrt(Get_BCALShowerMatchParams()->dBCALShower->ExyztCovariance(4, 4));
+	else if(locDetector == SYS_TOF)
+		return Get_TOFHitMatchParams()->dTOFPoint->tErr;
+	else if(locDetector == SYS_FCAL)
+		return sqrt(Get_FCALShowerMatchParams()->dFCALShower->ExyztCovariance(4, 4));
+	return std::numeric_limits<double>::quiet_NaN();
 }
 
 /********************************************************************** SETTERS ************************************************************************/
@@ -247,7 +275,7 @@ inline void DChargedTrackHypothesis::Set_ChiSq_Timing(double locChiSq, unsigned 
 	dTimingInfo->dNDF_Timing = locNDF;
 }
 
-inline void DChargedTrackHypothesis::Set_ChiSq_Tracking(double locChiSq, unsigned int locNDF)
+inline void DChargedTrackHypothesis::Set_ChiSq_DCdEdx(double locChiSq, unsigned int locNDF)
 {
 	dTrackingInfo->dChiSq_DCdEdx = locChiSq;
 	dTrackingInfo->dNDF_DCdEdx = locNDF;

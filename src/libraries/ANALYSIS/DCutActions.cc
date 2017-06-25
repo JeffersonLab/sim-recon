@@ -13,8 +13,7 @@ string DCutAction_MinTrackHits::Get_ActionName(void) const
 
 bool DCutAction_MinTrackHits::Perform_Action(JEventLoop* locEventLoop, const DParticleCombo* locParticleCombo)
 {
-	deque<const DKinematicData*> locParticles;
-	locParticleCombo->Get_DetectedFinalChargedParticles_Measured(locParticles);
+	auto locParticles = locParticleCombo->Get_FinalParticles_Measured(Get_Reaction(), d_Charged);
 	for(size_t loc_i = 0; loc_i < locParticles.size(); ++loc_i)
 	{
 		const DChargedTrackHypothesis* locChargedTrackHypothesis = static_cast<const DChargedTrackHypothesis*>(locParticles[loc_i]);
@@ -44,22 +43,9 @@ bool DCutAction_ThrownTopology::Perform_Action(JEventLoop* locEventLoop, const D
 	return dAnalysisUtilities->Check_ThrownsMatchReaction(locEventLoop, Get_Reaction(), dExclusiveMatchFlag);
 }
 
-string DCutAction_MaxNumParticleCombos::Get_ActionName(void) const
-{
-	ostringstream locStream;
-	locStream << DAnalysisAction::Get_ActionName() << "_" << dMaxNumParticleCombos;
-	return locStream.str();
-}
-
-bool DCutAction_MaxNumParticleCombos::Perform_Action(JEventLoop* locEventLoop, const DParticleCombo* locParticleCombo)
-{
-	return (Get_NumParticleCombos() <= dMaxNumParticleCombos);
-}
-
 bool DCutAction_AllTracksHaveDetectorMatch::Perform_Action(JEventLoop* locEventLoop, const DParticleCombo* locParticleCombo)
 {
-	deque<const DKinematicData*> locParticles;
-	locParticleCombo->Get_DetectedFinalChargedParticles_Measured(locParticles);
+	auto locParticles = locParticleCombo->Get_FinalParticles_Measured(Get_Reaction(), d_Charged);
 	for(size_t loc_i = 0; loc_i < locParticles.size(); ++loc_i)
 	{
 		const DChargedTrackHypothesis* locChargedTrackHypothesis = static_cast<const DChargedTrackHypothesis*>(locParticles[loc_i]);
@@ -85,25 +71,32 @@ string DCutAction_PIDFOM::Get_ActionName(void) const
 
 bool DCutAction_PIDFOM::Perform_Action(JEventLoop* locEventLoop, const DParticleCombo* locParticleCombo)
 {
-	deque<const DKinematicData*> locParticles;
-	locParticleCombo->Get_FinalParticles_Measured(dStepPID, dParticleID, locParticles);
-	for(size_t loc_i = 0; loc_i < locParticles.size(); ++loc_i)
+	auto locSteps = locParticleCombo->Get_ParticleComboSteps();
+	for(size_t loc_i = 0; loc_i < locSteps.size(); ++loc_i)
 	{
-		if(ParticleCharge(dParticleID) == 0)
+		if((dStepPID != Unknown) && (Get_Reaction()->Get_ReactionStep(loc_i)->Get_InitialPID() != dStepPID))
+			continue;
+		auto locParticles = locSteps[loc_i]->Get_FinalParticles_Measured(Get_Reaction()->Get_ReactionStep(loc_i), d_AllCharges);
+		for(size_t loc_j = 0; loc_j < locParticles.size(); ++loc_j)
 		{
-			const DNeutralParticleHypothesis* locNeutralParticleHypothesis = static_cast<const DNeutralParticleHypothesis*>(locParticles[loc_i]);
-			if((locNeutralParticleHypothesis->dFOM < dMinimumConfidenceLevel) && (locNeutralParticleHypothesis->dNDF > 0))
-				return false;
-			if(dCutNDFZeroFlag && (locNeutralParticleHypothesis->dNDF == 0))
-				return false;
-		}
-		else
-		{
-			const DChargedTrackHypothesis* locChargedTrackHypothesis = static_cast<const DChargedTrackHypothesis*>(locParticles[loc_i]);
-			if((locChargedTrackHypothesis->dFOM < dMinimumConfidenceLevel) && (locChargedTrackHypothesis->dNDF > 0))
-				return false;
-			if(dCutNDFZeroFlag && (locChargedTrackHypothesis->dNDF == 0))
-				return false;
+			if((locParticles[loc_j]->PID() != dParticleID) && (dParticleID != Unknown))
+				continue;
+			if(ParticleCharge(dParticleID) == 0)
+			{
+				const DNeutralParticleHypothesis* locNeutralParticleHypothesis = static_cast<const DNeutralParticleHypothesis*>(locParticles[loc_i]);
+				if((locNeutralParticleHypothesis->Get_FOM() < dMinimumConfidenceLevel) && (locNeutralParticleHypothesis->Get_NDF() > 0))
+					return false;
+				if(dCutNDFZeroFlag && (locNeutralParticleHypothesis->Get_NDF() == 0))
+					return false;
+			}
+			else
+			{
+				const DChargedTrackHypothesis* locChargedTrackHypothesis = static_cast<const DChargedTrackHypothesis*>(locParticles[loc_i]);
+				if((locChargedTrackHypothesis->Get_FOM() < dMinimumConfidenceLevel) && (locChargedTrackHypothesis->Get_NDF() > 0))
+					return false;
+				if(dCutNDFZeroFlag && (locChargedTrackHypothesis->Get_NDF() == 0))
+					return false;
+			}
 		}
 	}
 	return true;
@@ -118,25 +111,23 @@ string DCutAction_EachPIDFOM::Get_ActionName(void) const
 
 bool DCutAction_EachPIDFOM::Perform_Action(JEventLoop* locEventLoop, const DParticleCombo* locParticleCombo)
 {
-	deque<const DKinematicData*> locParticles;
-	locParticleCombo->Get_DetectedFinalParticles_Measured(locParticles);
-
+	auto locParticles = locParticleCombo->Get_FinalParticles_Measured(Get_Reaction(), d_AllCharges);
 	for(size_t loc_i = 0; loc_i < locParticles.size(); ++loc_i)
 	{
 		if(ParticleCharge(locParticles[loc_i]->PID()) == 0)
 		{
 			const DNeutralParticleHypothesis* locNeutralParticleHypothesis = static_cast<const DNeutralParticleHypothesis*>(locParticles[loc_i]);
-			if(dCutNDFZeroFlag && (locNeutralParticleHypothesis->dNDF == 0))
+			if(dCutNDFZeroFlag && (locNeutralParticleHypothesis->Get_NDF() == 0))
 				return false;
-			if((locNeutralParticleHypothesis->dFOM < dMinimumConfidenceLevel) && (locNeutralParticleHypothesis->dNDF > 0))
+			if((locNeutralParticleHypothesis->Get_FOM() < dMinimumConfidenceLevel) && (locNeutralParticleHypothesis->Get_NDF() > 0))
 				return false;
 		}
 		else
 		{
 			const DChargedTrackHypothesis* locChargedTrackHypothesis = static_cast<const DChargedTrackHypothesis*>(locParticles[loc_i]);
-			if(dCutNDFZeroFlag && (locChargedTrackHypothesis->dNDF == 0))
+			if(dCutNDFZeroFlag && (locChargedTrackHypothesis->Get_NDF() == 0))
 				return false;
-			if((locChargedTrackHypothesis->dFOM < dMinimumConfidenceLevel) && (locChargedTrackHypothesis->dNDF > 0))
+			if((locChargedTrackHypothesis->Get_FOM() < dMinimumConfidenceLevel) && (locChargedTrackHypothesis->Get_NDF() > 0))
 				return false;
 		}
 	}
@@ -152,8 +143,7 @@ string DCutAction_CombinedPIDFOM::Get_ActionName(void) const
 
 bool DCutAction_CombinedPIDFOM::Perform_Action(JEventLoop* locEventLoop, const DParticleCombo* locParticleCombo)
 {
-	deque<const DKinematicData*> locParticles;
-	locParticleCombo->Get_DetectedFinalParticles_Measured(locParticles);
+	auto locParticles = locParticleCombo->Get_FinalParticles_Measured(Get_Reaction(), d_AllCharges);
 
 	unsigned int locTotalNDF = 0;
 	double locTotalChiSq = 0.0;
@@ -162,18 +152,18 @@ bool DCutAction_CombinedPIDFOM::Perform_Action(JEventLoop* locEventLoop, const D
 		if(ParticleCharge(locParticles[loc_i]->PID()) == 0)
 		{
 			const DNeutralParticleHypothesis* locNeutralParticleHypothesis = static_cast<const DNeutralParticleHypothesis*>(locParticles[loc_i]);
-			if(dCutNDFZeroFlag && (locNeutralParticleHypothesis->dNDF == 0))
+			if(dCutNDFZeroFlag && (locNeutralParticleHypothesis->Get_NDF() == 0))
 				return false;
-			locTotalNDF += locNeutralParticleHypothesis->dNDF;
-			locTotalChiSq += locNeutralParticleHypothesis->dChiSq;
+			locTotalNDF += locNeutralParticleHypothesis->Get_NDF();
+			locTotalChiSq += locNeutralParticleHypothesis->Get_ChiSq();
 		}
 		else
 		{
 			const DChargedTrackHypothesis* locChargedTrackHypothesis = static_cast<const DChargedTrackHypothesis*>(locParticles[loc_i]);
-			if(dCutNDFZeroFlag && (locChargedTrackHypothesis->dNDF == 0))
+			if(dCutNDFZeroFlag && (locChargedTrackHypothesis->Get_NDF() == 0))
 				return false;
-			locTotalNDF += locChargedTrackHypothesis->dNDF;
-			locTotalChiSq += locChargedTrackHypothesis->dChiSq;
+			locTotalNDF += locChargedTrackHypothesis->Get_NDF();
+			locTotalChiSq += locChargedTrackHypothesis->Get_ChiSq();
 		}
 	}
 	return ((locTotalNDF == 0) ? true : (TMath::Prob(locTotalChiSq, locTotalNDF) >= dMinimumConfidenceLevel));
@@ -191,13 +181,12 @@ bool DCutAction_CombinedTrackingFOM::Perform_Action(JEventLoop* locEventLoop, co
 	unsigned int locTotalNDF = 0;
 	double locTotalChiSq = 0.0;
 
-	deque<const DKinematicData*> locDetectedChargedParticles;
-	locParticleCombo->Get_DetectedFinalChargedParticles_Measured(locDetectedChargedParticles);
-	for(size_t loc_i = 0; loc_i < locDetectedChargedParticles.size(); ++loc_i)
+	auto locParticles = locParticleCombo->Get_FinalParticles_Measured(Get_Reaction(), d_Charged);
+	for(size_t loc_i = 0; loc_i < locParticles.size(); ++loc_i)
 	{
-		const DChargedTrackHypothesis* locChargedTrackHypothesis = dynamic_cast<const DChargedTrackHypothesis*>(locDetectedChargedParticles[loc_i]);
-		locTotalNDF += locChargedTrackHypothesis->dNDF_Track;
-		locTotalChiSq += locChargedTrackHypothesis->dChiSq_Track;
+		auto locTrackTimeBased = (dynamic_cast<const DChargedTrackHypothesis*>(locParticles[loc_i]))->Get_TrackTimeBased();
+		locTotalNDF += locTrackTimeBased->Ndof;
+		locTotalChiSq += locTrackTimeBased->chisq;
 	}
 
 	return ((locTotalNDF == 0) ? true : (TMath::Prob(locTotalChiSq, locTotalNDF) >= dMinimumConfidenceLevel));
@@ -224,7 +213,7 @@ bool DCutAction_MissingMass::Perform_Action(JEventLoop* locEventLoop, const DPar
 	set<set<size_t> >::iterator locComboIterator = locIndexCombos.begin();
 	for(; locComboIterator != locIndexCombos.end(); ++locComboIterator)
 	{
-		DLorentzVector locMissingP4 = dAnalysisUtilities->Calc_MissingP4(locParticleCombo, 0, dMissingMassOffOfStepIndex, *locComboIterator, Get_UseKinFitResultsFlag());
+		DLorentzVector locMissingP4 = dAnalysisUtilities->Calc_MissingP4(Get_Reaction(), locParticleCombo, 0, dMissingMassOffOfStepIndex, *locComboIterator, Get_UseKinFitResultsFlag());
 		double locMissingMass = locMissingP4.M();
 		if((locMissingMass >= dMinimumMissingMass) && (locMissingMass <= dMaximumMissingMass))
 			return true;
@@ -254,7 +243,7 @@ bool DCutAction_MissingMassSquared::Perform_Action(JEventLoop* locEventLoop, con
 	set<set<size_t> >::iterator locComboIterator = locIndexCombos.begin();
 	for(; locComboIterator != locIndexCombos.end(); ++locComboIterator)
 	{
-		DLorentzVector locMissingP4 = dAnalysisUtilities->Calc_MissingP4(locParticleCombo, 0, dMissingMassOffOfStepIndex, *locComboIterator, Get_UseKinFitResultsFlag());
+		DLorentzVector locMissingP4 = dAnalysisUtilities->Calc_MissingP4(Get_Reaction(), locParticleCombo, 0, dMissingMassOffOfStepIndex, *locComboIterator, Get_UseKinFitResultsFlag());
 		double locMissingMassSq = locMissingP4.M2();
 		if((locMissingMassSq >= dMinimumMissingMassSq) && (locMissingMassSq <= dMaximumMissingMassSq))
 			return true;
@@ -279,9 +268,8 @@ bool DCutAction_InvariantMass::Perform_Action(JEventLoop* locEventLoop, const DP
 {
 	for(size_t loc_i = 0; loc_i < locParticleCombo->Get_NumParticleComboSteps(); ++loc_i)
 	{
-		const DParticleComboStep* locParticleComboStep = locParticleCombo->Get_ParticleComboStep(loc_i);
 		const DReactionStep* locReactionStep = Get_Reaction()->Get_ReactionStep(loc_i);
-		if((dInitialPID != Unknown) && (locParticleComboStep->Get_InitialParticleID() != dInitialPID))
+		if((dInitialPID != Unknown) && (locReactionStep->Get_InitialPID() != dInitialPID))
 			continue;
 		if((dStepIndex != -1) && (int(loc_i) != dStepIndex))
 			continue;
@@ -294,7 +282,7 @@ bool DCutAction_InvariantMass::Perform_Action(JEventLoop* locEventLoop, const DP
 		bool locAnyOKFlag = false;
 		for(; locComboIterator != locIndexCombos.end(); ++locComboIterator)
 		{
-			DLorentzVector locFinalStateP4 = dAnalysisUtilities->Calc_FinalStateP4(locParticleCombo, loc_i, *locComboIterator, Get_UseKinFitResultsFlag());
+			DLorentzVector locFinalStateP4 = dAnalysisUtilities->Calc_FinalStateP4(Get_Reaction(), locParticleCombo, loc_i, *locComboIterator, Get_UseKinFitResultsFlag());
 			double locInvariantMass = locFinalStateP4.M();
 			if((locInvariantMass > dMaxMass) || (locInvariantMass < dMinMass))
 				continue;
@@ -317,8 +305,7 @@ string DCutAction_AllVertexZ::Get_ActionName(void) const
 
 bool DCutAction_AllVertexZ::Perform_Action(JEventLoop* locEventLoop, const DParticleCombo* locParticleCombo)
 {
-	deque<const DKinematicData*> locParticles;
-	locParticleCombo->Get_DetectedFinalChargedParticles_Measured(locParticles);
+	auto locParticles = locParticleCombo->Get_FinalParticles_Measured(Get_Reaction(), d_Charged);
 	double locVertexZ;
 	for(size_t loc_i = 0; loc_i < locParticles.size(); ++loc_i)
 	{
@@ -358,20 +345,17 @@ void DCutAction_MaxTrackDOCA::Initialize(JEventLoop* locEventLoop)
 bool DCutAction_MaxTrackDOCA::Perform_Action(JEventLoop* locEventLoop, const DParticleCombo* locParticleCombo)
 {
 	//should be improved...: the particles at a given vertex may span several steps
-	deque<const DParticleComboStep*> locParticleComboStepDeque;
-	locParticleCombo->Get_ParticleComboSteps(dInitialPID, locParticleComboStepDeque);
-	deque<const DKinematicData*> locParticles;
-	double locDOCA;
-
-	for(size_t loc_i = 0; loc_i < locParticleComboStepDeque.size(); ++loc_i)
+	auto locSteps = locParticleCombo->Get_ParticleComboSteps();
+	for(size_t loc_i = 0; loc_i < locSteps.size(); ++loc_i)
 	{
-		const DParticleComboStep* locParticleComboStep = locParticleComboStepDeque[loc_i];
-		locParticleComboStep->Get_DetectedFinalChargedParticles_Measured(locParticles);
+		if((dInitialPID != Unknown) && (Get_Reaction()->Get_ReactionStep(loc_i)->Get_InitialPID() != dInitialPID))
+			continue;
+		auto locParticles = locSteps[loc_i]->Get_FinalParticles_Measured(Get_Reaction()->Get_ReactionStep(loc_i), d_Charged);
 		for(size_t loc_j = 0; loc_j < locParticles.size(); ++loc_j)
 		{
 			for(size_t loc_k = loc_j + 1; loc_k < locParticles.size(); ++loc_k)
 			{
-				locDOCA = dAnalysisUtilities->Calc_DOCA(locParticles[loc_j], locParticles[loc_k]);
+				auto locDOCA = dAnalysisUtilities->Calc_DOCA(locParticles[loc_j], locParticles[loc_k]);
 				if(locDOCA > dMaxTrackDOCA)
 					return false;
 			}
@@ -420,7 +404,7 @@ bool DCutAction_BDTSignalCombo::Perform_Action(JEventLoop* locEventLoop, const D
 		return false;
 
 	//Do we need to pick the beam photon? If so, look for it
-	Particle_t locPID = Get_Reaction()->Get_ReactionStep(0)->Get_InitialParticleID();
+	Particle_t locPID = Get_Reaction()->Get_ReactionStep(0)->Get_InitialPID();
 	if(locPID == Gamma)
 	{
 		if(!(*dCutAction_TrueBeamParticle)(locEventLoop, locParticleCombo))
@@ -439,9 +423,9 @@ bool DCutAction_BDTSignalCombo::Perform_Action(JEventLoop* locEventLoop, const D
 	for(size_t loc_i = 0; loc_i < locParticleCombo->Get_NumParticleComboSteps(); ++loc_i)
 	{
 		const DParticleComboStep* locParticleComboStep = locParticleCombo->Get_ParticleComboStep(loc_i);
+		auto locReactionStep = Get_Reaction()->Get_ReactionStep(loc_i);
 
-		deque<const DKinematicData*> locParticles;
-		locParticleComboStep->Get_DetectedFinalParticles_Measured(locParticles);
+		auto locParticles = locParticleComboStep->Get_FinalParticles_Measured(locReactionStep, d_AllCharges);
 		for(size_t loc_j = 0; loc_j < locParticles.size(); ++loc_j)
 		{
 			const DMCThrown* locMCThrown = NULL;
@@ -470,7 +454,9 @@ bool DCutAction_BDTSignalCombo::Perform_Action(JEventLoop* locEventLoop, const D
 
 			//check if parent is correct
 			const DParticleComboStep* locParentSearchParticleComboStep = locParticleComboStep;
+			auto locParentSearchReactionStep = locReactionStep;
 			int locParentID = locMCThrown->parentid;
+			int locSearchStepIndex = loc_i;
 
 			do
 			{
@@ -480,12 +466,13 @@ bool DCutAction_BDTSignalCombo::Perform_Action(JEventLoop* locEventLoop, const D
 				if(locParentID == 0)
 				{
 					//parent id of 0 is directly produced
-					Particle_t locInitPID = locParentSearchParticleComboStep->Get_InitialParticleID();
+					Particle_t locInitPID = locParentSearchReactionStep->Get_InitialPID();
 					if((locInitPID == phiMeson) || (locInitPID == omega))
 					{
 						//these particles are not constrained: check their parent step instead
-						int locNewSearchStepIndex = locParentSearchParticleComboStep->Get_InitialParticleDecayFromStepIndex();
-						locParentSearchParticleComboStep = locParticleCombo->Get_ParticleComboStep(locNewSearchStepIndex);
+						locSearchStepIndex = DAnalysis::Get_InitialParticleDecayFromIndices(Get_Reaction(), locSearchStepIndex).first;
+						locParentSearchParticleComboStep = locParticleCombo->Get_ParticleComboStep(locSearchStepIndex);
+						locReactionStep = Get_Reaction()->Get_ReactionStep(locSearchStepIndex);
 						continue;
 					}
 					if(locInitPID != Gamma)
@@ -502,7 +489,7 @@ bool DCutAction_BDTSignalCombo::Perform_Action(JEventLoop* locEventLoop, const D
 					continue;
 				}
 
-				if(locPID != locParentSearchParticleComboStep->Get_InitialParticleID())
+				if(locPID != locParentSearchReactionStep->Get_InitialPID())
 				{
 					//the true particle was produced from a different parent
 					if(!dIncludeDecayingToReactionFlag)
@@ -517,8 +504,9 @@ bool DCutAction_BDTSignalCombo::Perform_Action(JEventLoop* locEventLoop, const D
 				//OK, we've determined that the particle in question decayed from the correct particle.
 				//HOWEVER, we need to determine whether the PARENT decayed from the correct particle (and on(back)wards until the production step)
 				locParentID = locMCThrownParent->parentid;
-				int locNewSearchStepIndex = locParentSearchParticleComboStep->Get_InitialParticleDecayFromStepIndex();
-				locParentSearchParticleComboStep = locParticleCombo->Get_ParticleComboStep(locNewSearchStepIndex);
+				locSearchStepIndex = DAnalysis::Get_InitialParticleDecayFromIndices(Get_Reaction(), locSearchStepIndex).first;
+				locParentSearchParticleComboStep = locParticleCombo->Get_ParticleComboStep(locSearchStepIndex);
+				locReactionStep = Get_Reaction()->Get_ReactionStep(locSearchStepIndex);
 			}
 			while(true);
 		}
@@ -558,7 +546,7 @@ bool DCutAction_TrueCombo::Perform_Action(JEventLoop* locEventLoop, const DParti
 		return false; //not the thrown topology: bail
 
 	//Do we need to pick the beam photon? If so, look for it
-	Particle_t locPID = Get_Reaction()->Get_ReactionStep(0)->Get_InitialParticleID();
+	Particle_t locPID = Get_Reaction()->Get_ReactionStep(0)->Get_InitialPID();
 	if(locPID == Gamma)
 	{
 		if(!(*dCutAction_TrueBeamParticle)(locEventLoop, locParticleCombo))
@@ -577,9 +565,9 @@ bool DCutAction_TrueCombo::Perform_Action(JEventLoop* locEventLoop, const DParti
 	for(size_t loc_i = 0; loc_i < locParticleCombo->Get_NumParticleComboSteps(); ++loc_i)
 	{
 		const DParticleComboStep* locParticleComboStep = locParticleCombo->Get_ParticleComboStep(loc_i);
+		auto locReactionStep = Get_Reaction()->Get_ReactionStep(loc_i);
 
-		deque<const DKinematicData*> locParticles;
-		locParticleComboStep->Get_DetectedFinalParticles_Measured(locParticles);
+		auto locParticles = locParticleComboStep->Get_FinalParticles_Measured(locReactionStep, d_AllCharges);
 		for(size_t loc_j = 0; loc_j < locParticles.size(); ++loc_j)
 		{
 			const DMCThrown* locMCThrown = NULL;
@@ -608,7 +596,9 @@ bool DCutAction_TrueCombo::Perform_Action(JEventLoop* locEventLoop, const DParti
 
 			//check if parent is correct
 			const DParticleComboStep* locParentSearchParticleComboStep = locParticleComboStep;
+			auto locParentSearchReactionStep = locReactionStep;
 			int locParentID = locMCThrown->parentid;
+			int locSearchStepIndex = loc_i;
 
 			do
 			{
@@ -617,7 +607,7 @@ bool DCutAction_TrueCombo::Perform_Action(JEventLoop* locEventLoop, const DParti
 				if(locParentID == 0)
 				{
 					//parent id of 0 is directly produced
-					if(locParentSearchParticleComboStep->Get_InitialParticleID() != Gamma)
+					if(locParentSearchReactionStep->Get_InitialPID() != Gamma)
 						return false; //was directly (photo-) produced, but not so in combo: bail
 					break; //good: this is the only "good" exit point of the do-loop
 				}
@@ -630,21 +620,22 @@ bool DCutAction_TrueCombo::Perform_Action(JEventLoop* locEventLoop, const DParti
 					locParentID = locMCThrownParent->parentid;
 					continue;
 				}
-				if(locPID != locParentSearchParticleComboStep->Get_InitialParticleID())
+				if(locPID != locParentSearchReactionStep->Get_InitialPID())
 					return false; //the true particle was produced from a different parent: bail
 
 				//OK, we've determined that the particle in question decayed from the correct particle.
 				//HOWEVER, we need to determine whether the PARENT decayed from the correct particle (and on(back)wards until the production step)
 				locParentID = locMCThrownParent->parentid;
-				int locNewSearchStepIndex = locParentSearchParticleComboStep->Get_InitialParticleDecayFromStepIndex();
-				if(locNewSearchStepIndex < 0)
+				locSearchStepIndex = DAnalysis::Get_InitialParticleDecayFromIndices(Get_Reaction(), locSearchStepIndex).first;
+				if(locSearchStepIndex < 0)
 				{
 					//DReaction is not the full reaction (i.e. doesn't contain beam (e.g. only pi0 decay))
 					if(dExclusiveMatchFlag)
 						return false;
 					break; //good
 				}
-				locParentSearchParticleComboStep = locParticleCombo->Get_ParticleComboStep(locNewSearchStepIndex);
+				locParentSearchParticleComboStep = locParticleCombo->Get_ParticleComboStep(locSearchStepIndex);
+				locParentSearchReactionStep = Get_Reaction()->Get_ReactionStep(locSearchStepIndex);
 			}
 			while(true);
 		}
@@ -684,32 +675,41 @@ bool DCutAction_TruePID::Perform_Action(JEventLoop* locEventLoop, const DParticl
 	vector<const DMCThrownMatching*> locMCThrownMatchingVector;
 	locEventLoop->Get(locMCThrownMatchingVector);
 	const DMCThrownMatching* locMCThrownMatching = locMCThrownMatchingVector[0];
-	const DMCThrown* locMCThrown;
 
-	deque<const DKinematicData*> locParticles;
-	locParticleCombo->Get_FinalParticles_Measured(dInitialPID, dTruePID, locParticles);
-
-	for(size_t loc_i = 0; loc_i < locParticles.size(); ++loc_i)
+	auto locSteps = locParticleCombo->Get_ParticleComboSteps();
+	for(size_t loc_i = 0; loc_i < locSteps.size(); ++loc_i)
 	{
-		if(ParticleCharge(dTruePID) == 0)
+		if((dInitialPID != Unknown) && (Get_Reaction()->Get_ReactionStep(loc_i)->Get_InitialPID() != dInitialPID))
+			continue;
+		auto locParticles = locSteps[loc_i]->Get_FinalParticles_Measured(Get_Reaction()->Get_ReactionStep(loc_i), d_AllCharges);
+		for(size_t loc_j = 0; loc_j < locParticles.size(); ++loc_j)
 		{
-			double locMatchFOM = 0.0;
-			const DNeutralParticleHypothesis* locNeutralParticleHypothesis = static_cast<const DNeutralParticleHypothesis*>(locParticles[loc_i]);
-			locMCThrown = locMCThrownMatching->Get_MatchingMCThrown(locNeutralParticleHypothesis, locMatchFOM);
-			if((locMCThrown == NULL) || (locMatchFOM < dMinThrownMatchFOM))
-				return false;
-			if(((Particle_t)locMCThrown->type) != dTruePID)
-				return false;
-		}
-		else
-		{
-			double locMatchFOM = 0.0;
-			const DChargedTrackHypothesis* locChargedTrackHypothesis = static_cast<const DChargedTrackHypothesis*>(locParticles[loc_i]);
-			locMCThrown = locMCThrownMatching->Get_MatchingMCThrown(locChargedTrackHypothesis, locMatchFOM);
-			if((locMCThrown == NULL) || (locMatchFOM < dMinThrownMatchFOM))
-				return false;
-			if(((Particle_t)locMCThrown->type) != dTruePID)
-				return false;
+			if((locParticles[loc_j]->PID() != dTruePID) && (dTruePID != Unknown))
+				continue;
+
+			for(size_t loc_i = 0; loc_i < locParticles.size(); ++loc_i)
+			{
+				if(ParticleCharge(dTruePID) == 0)
+				{
+					double locMatchFOM = 0.0;
+					const DNeutralParticleHypothesis* locNeutralParticleHypothesis = static_cast<const DNeutralParticleHypothesis*>(locParticles[loc_i]);
+					auto locMCThrown = locMCThrownMatching->Get_MatchingMCThrown(locNeutralParticleHypothesis, locMatchFOM);
+					if((locMCThrown == NULL) || (locMatchFOM < dMinThrownMatchFOM))
+						return false;
+					if(((Particle_t)locMCThrown->type) != dTruePID)
+						return false;
+				}
+				else
+				{
+					double locMatchFOM = 0.0;
+					const DChargedTrackHypothesis* locChargedTrackHypothesis = static_cast<const DChargedTrackHypothesis*>(locParticles[loc_i]);
+					auto locMCThrown = locMCThrownMatching->Get_MatchingMCThrown(locChargedTrackHypothesis, locMatchFOM);
+					if((locMCThrown == NULL) || (locMatchFOM < dMinThrownMatchFOM))
+						return false;
+					if(((Particle_t)locMCThrown->type) != dTruePID)
+						return false;
+				}
+			}
 		}
 	}
 	return true;
@@ -722,9 +722,7 @@ bool DCutAction_AllTruePID::Perform_Action(JEventLoop* locEventLoop, const DPart
 	const DMCThrownMatching* locMCThrownMatching = locMCThrownMatchingVector[0];
 	const DMCThrown* locMCThrown;
 
-	deque<const DKinematicData*> locParticles;
-	locParticleCombo->Get_DetectedFinalParticles_Measured(locParticles);
-
+	auto locParticles = locParticleCombo->Get_FinalParticles_Measured(Get_Reaction(), d_AllCharges);
 	for(size_t loc_i = 0; loc_i < locParticles.size(); ++loc_i)
 	{
 		if(ParticleCharge(locParticles[loc_i]->PID()) == 0)
@@ -773,8 +771,7 @@ string DCutAction_TransverseMomentum::Get_ActionName(void) const
 
 bool DCutAction_TransverseMomentum::Perform_Action(JEventLoop* locEventLoop, const DParticleCombo* locParticleCombo)
 {
-	deque<const DKinematicData*> locParticles;
-	locParticleCombo->Get_DetectedFinalParticles_Measured(locParticles);
+	auto locParticles = locParticleCombo->Get_FinalParticles_Measured(Get_Reaction(), d_AllCharges);
 
 	DVector3 locTotalMomentum;
 	for(size_t loc_i = 0; loc_i < locParticles.size(); ++loc_i)
@@ -792,8 +789,7 @@ string DCutAction_TrackHitPattern::Get_ActionName(void) const
 
 bool DCutAction_TrackHitPattern::Perform_Action(JEventLoop* locEventLoop, const DParticleCombo* locParticleCombo)
 {
-	deque<const DKinematicData*> locParticles;
-	locParticleCombo->Get_DetectedFinalParticles_Measured(locParticles);
+	auto locParticles = locParticleCombo->Get_FinalParticles_Measured(Get_Reaction(), d_AllCharges);
 
 	const DParticleID* locParticleID = NULL;
 	locEventLoop->GetSingle(locParticleID);
@@ -899,8 +895,7 @@ bool DCutAction_ProtonPiPlusdEdx::Perform_Action(JEventLoop* locEventLoop, const
 	//At p > "dOverlapRegionMinP" (default 1.0 GeV/c) you can't distinguish between protons & pions
 		// Assume they are pions, and so for pion candidates don't cut regardless of the dE/dx
 		// For protons, only cut if "dCutProtonsInOverlapRegionFlag" is true
-	deque<const DKinematicData*> locParticles;
-	locParticleCombo->Get_DetectedFinalChargedParticles_Measured(locParticles);
+	auto locParticles = locParticleCombo->Get_FinalParticles_Measured(Get_Reaction(), d_Charged);
 	for(size_t loc_i = 0; loc_i < locParticles.size(); ++loc_i)
 	{
 		const DChargedTrackHypothesis* locChargedTrackHypothesis = static_cast<const DChargedTrackHypothesis*>(locParticles[loc_i]);
@@ -961,16 +956,11 @@ bool DCutAction_TrackFCALShowerEOverP::Perform_Action(JEventLoop* locEventLoop, 
 	// For e+/e-, cuts those with E/p < input value
 	// Does not cut tracks without a matching FCAL shower
 
-	deque<const DKinematicData*> locParticles;
-	if(Get_UseKinFitResultsFlag())
-		locParticleCombo->Get_DetectedFinalChargedParticles(locParticles);
-	else
-		locParticleCombo->Get_DetectedFinalChargedParticles_Measured(locParticles);
-
+	auto locParticles = Get_UseKinFitResultsFlag() ? locParticleCombo->Get_FinalParticles(Get_Reaction(), false, false, d_Charged) : locParticleCombo->Get_FinalParticles_Measured(Get_Reaction(), d_Charged);
 	for(size_t loc_i = 0; loc_i < locParticles.size(); ++loc_i)
 	{
 		const DChargedTrackHypothesis* locChargedTrackHypothesis = static_cast<const DChargedTrackHypothesis*>(locParticles[loc_i]);
-		const DFCALShowerMatchParams* locFCALShowerMatchParams = locChargedTrackHypothesis->Get_FCALShowerMatchParams();
+		auto locFCALShowerMatchParams = locChargedTrackHypothesis->Get_FCALShowerMatchParams();
 		if(locFCALShowerMatchParams == NULL)
 			continue;
 
@@ -1003,12 +993,7 @@ bool DCutAction_TrackShowerEOverP::Perform_Action(JEventLoop* locEventLoop, cons
 	// For e+/e-, cuts those with E/p < input value
 	// Does not cut tracks without a matching FCAL shower
 
-	deque<const DKinematicData*> locParticles;
-	if(Get_UseKinFitResultsFlag())
-		locParticleCombo->Get_DetectedFinalChargedParticles(locParticles);
-	else
-		locParticleCombo->Get_DetectedFinalChargedParticles_Measured(locParticles);
-
+	auto locParticles = Get_UseKinFitResultsFlag() ? locParticleCombo->Get_FinalParticles(Get_Reaction(), false, false, d_Charged) : locParticleCombo->Get_FinalParticles_Measured(Get_Reaction(), d_Charged);
 	for(size_t loc_i = 0; loc_i < locParticles.size(); ++loc_i)
 	{
 		const DChargedTrackHypothesis* locChargedTrackHypothesis = static_cast<const DChargedTrackHypothesis*>(locParticles[loc_i]);
@@ -1021,7 +1006,7 @@ bool DCutAction_TrackShowerEOverP::Perform_Action(JEventLoop* locEventLoop, cons
 		double locShowerEOverP = 0.0;
 		if(dDetector == SYS_FCAL)
 		{
-			const DFCALShowerMatchParams* locFCALShowerMatchParams = locChargedTrackHypothesis->Get_FCALShowerMatchParams();
+			auto locFCALShowerMatchParams = locChargedTrackHypothesis->Get_FCALShowerMatchParams();
 			if(locFCALShowerMatchParams == NULL)
 				continue;
 
@@ -1030,7 +1015,7 @@ bool DCutAction_TrackShowerEOverP::Perform_Action(JEventLoop* locEventLoop, cons
 		}
 		else if(dDetector == SYS_BCAL)
 		{
-			const DBCALShowerMatchParams* locBCALShowerMatchParams = locChargedTrackHypothesis->Get_BCALShowerMatchParams();
+			auto locBCALShowerMatchParams = locChargedTrackHypothesis->Get_BCALShowerMatchParams();
 			if(locBCALShowerMatchParams == NULL)
 				continue;
 
@@ -1064,22 +1049,33 @@ bool DCutAction_PIDDeltaT::Perform_Action(JEventLoop* locEventLoop, const DParti
 	//if dPID = Unknown, apply cut to all PIDs
 	//if dSystem = SYS_NULL, apply cut to all systems
 
-	deque<const DKinematicData*> locParticles;
-	if(Get_UseKinFitResultsFlag())
-		locParticleCombo->Get_DetectedFinalParticles(locParticles);
-	else
-		locParticleCombo->Get_DetectedFinalParticles_Measured(locParticles);
+	auto locParticles = Get_UseKinFitResultsFlag() ? locParticleCombo->Get_FinalParticles(Get_Reaction(), false, false, d_AllCharges) : locParticleCombo->Get_FinalParticles_Measured(Get_Reaction(), d_AllCharges);
 
 	for(size_t loc_i = 0; loc_i < locParticles.size(); ++loc_i)
 	{
 		if((dPID != Unknown) && (locParticles[loc_i]->PID() != dPID))
 			continue;
-		if((dSystem != SYS_NULL) && (locParticles[loc_i]->t1_detector() != dSystem))
-			continue;
 
-		double locDeltaT = locParticles[loc_i]->time() - locParticles[loc_i]->t0();
-		if(fabs(locDeltaT) > dDeltaTCut)
-			return false;
+		auto locChargedHypo = dynamic_cast<const DChargedTrackHypothesis*>(locParticles[loc_i]);
+		if(locChargedHypo != nullptr)
+		{
+			if((dSystem != SYS_NULL) && (locChargedHypo->t1_detector() != dSystem))
+				continue;
+			double locDeltaT = locParticles[loc_i]->time() - locChargedHypo->t0();
+			if(fabs(locDeltaT) > dDeltaTCut)
+				return false;
+			continue;
+		}
+		auto locNeutralHypo = dynamic_cast<const DNeutralParticleHypothesis*>(locParticles[loc_i]);
+		if(locNeutralHypo != nullptr)
+		{
+			if((dSystem != SYS_NULL) && (locNeutralHypo->t1_detector() != dSystem))
+				continue;
+			double locDeltaT = locParticles[loc_i]->time() - locNeutralHypo->t0();
+			if(fabs(locDeltaT) > dDeltaTCut)
+				return false;
+			continue;
+		}
 	}
 
 	return true;
@@ -1097,19 +1093,32 @@ bool DCutAction_PIDTimingBeta::Perform_Action(JEventLoop* locEventLoop, const DP
 	//if dPID = Unknown, apply cut to all PIDs
 	//if dSystem = SYS_NULL, apply cut to all systems
 
-	deque<const DKinematicData*> locParticles;
-	locParticleCombo->Get_DetectedFinalParticles_Measured(locParticles);
-
+	auto locParticles = locParticleCombo->Get_FinalParticles_Measured(Get_Reaction(), d_AllCharges);
 	for(size_t loc_i = 0; loc_i < locParticles.size(); ++loc_i)
 	{
 		if((dPID != Unknown) && (locParticles[loc_i]->PID() != dPID))
 			continue;
-		if((dSystem != SYS_NULL) && (locParticles[loc_i]->t1_detector() != dSystem))
-			continue;
 
-		double locBeta = locParticles[loc_i]->measuredBeta();
-		if((locBeta < dMinBeta) || (locBeta > dMaxBeta))
-			return false;
+		auto locChargedHypo = dynamic_cast<const DChargedTrackHypothesis*>(locParticles[loc_i]);
+		if(locChargedHypo != nullptr)
+		{
+			if((dSystem != SYS_NULL) && (locChargedHypo->t1_detector() != dSystem))
+				continue;
+			double locBeta = locChargedHypo->measuredBeta();
+			if((locBeta < dMinBeta) || (locBeta > dMaxBeta))
+				return false;
+			continue;
+		}
+		auto locNeutralHypo = dynamic_cast<const DNeutralParticleHypothesis*>(locParticles[loc_i]);
+		if(locNeutralHypo != nullptr)
+		{
+			if((dSystem != SYS_NULL) && (locNeutralHypo->t1_detector() != dSystem))
+				continue;
+			double locBeta = locNeutralHypo->measuredBeta();
+			if((locBeta < dMinBeta) || (locBeta > dMaxBeta))
+				return false;
+			continue;
+		}
 	}
 
 	return true;
@@ -1126,14 +1135,13 @@ bool DCutAction_NoPIDHit::Perform_Action(JEventLoop* locEventLoop, const DPartic
 {
 	//if dPID = Unknown, apply cut to all PIDs
 
-	deque<const DKinematicData*> locParticles;
-	locParticleCombo->Get_DetectedFinalParticles_Measured(locParticles);
-
+	auto locParticles = locParticleCombo->Get_FinalParticles_Measured(Get_Reaction(), d_Charged);
 	for(size_t loc_i = 0; loc_i < locParticles.size(); ++loc_i)
 	{
 		if((dPID != Unknown) && (locParticles[loc_i]->PID() != dPID))
 			continue;
-		if(locParticles[loc_i]->t1_detector() == SYS_NULL)
+		auto locChargedHypo = static_cast<const DChargedTrackHypothesis*>(locParticles[loc_i]);
+		if(locChargedHypo->t1_detector() == SYS_NULL)
 			return false;
 	}
 
@@ -1172,22 +1180,21 @@ bool DCutAction_OneVertexKinFit::Perform_Action(JEventLoop* locEventLoop, const 
 	dKinFitUtils->Reset_NewEvent();
 
 	//Get particles for fit (all detected q+)
-	deque<const DKinematicData*> locDetectedParticles;
-	locParticleCombo->Get_DetectedFinalChargedParticles_Measured(locDetectedParticles);
+	auto locParticles = locParticleCombo->Get_FinalParticles_Measured(Get_Reaction(), d_Charged);
 
 	//Make DKinFitParticle objects for each one
 	deque<DKinFitParticle*> locKinFitParticles;
 	set<DKinFitParticle*> locKinFitParticleSet;
-	for(size_t loc_i = 0; loc_i < locDetectedParticles.size(); ++loc_i)
+	for(size_t loc_i = 0; loc_i < locParticles.size(); ++loc_i)
 	{
-		const DChargedTrackHypothesis* locChargedTrackHypothesis = static_cast<const DChargedTrackHypothesis*>(locDetectedParticles[loc_i]);
+		const DChargedTrackHypothesis* locChargedTrackHypothesis = static_cast<const DChargedTrackHypothesis*>(locParticles[loc_i]);
 		DKinFitParticle* locKinFitParticle = dKinFitUtils->Make_DetectedParticle(locChargedTrackHypothesis);
 		locKinFitParticles.push_back(locKinFitParticle);
 		locKinFitParticleSet.insert(locKinFitParticle);
 	}
 
 	// vertex guess
-	TVector3 locVertexGuess = dAnalysisUtilities->Calc_CrudeVertex(locDetectedParticles);
+	TVector3 locVertexGuess = dAnalysisUtilities->Calc_CrudeVertex(locParticles);
 
 	// make & set vertex constraint
 	set<DKinFitParticle*> locNoConstrainParticles;

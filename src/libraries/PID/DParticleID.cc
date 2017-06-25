@@ -597,7 +597,7 @@ bool DParticleID::Distance_ToTrack(const DReferenceTrajectory* rt, const DFCALSh
 
 	//SET MATCHING INFORMATION
 	if(locShowerMatchParams == nullptr)
-		locShowerMatchParams = make_shared<DFCALShowerMatchParams>();
+		locShowerMatchParams = std::make_shared<DFCALShowerMatchParams>();
 	locShowerMatchParams->dFCALShower = locFCALShower;
 	locShowerMatchParams->dx = 45.0*p/(locProjMom.Dot(norm));
 	locShowerMatchParams->dFlightTime = locFlightTime;
@@ -701,7 +701,7 @@ bool DParticleID::Distance_ToTrack(const DReferenceTrajectory* rt, const DBCALSh
 
 	//SET MATCHING INFORMATION
 	if(locShowerMatchParams == nullptr)
-		locShowerMatchParams = make_shared<DBCALShowerMatchParams>();
+		locShowerMatchParams = std::make_shared<DBCALShowerMatchParams>();
 	locShowerMatchParams->dBCALShower = locBCALShower;
 	locShowerMatchParams->dx = locDx;
 	locShowerMatchParams->dFlightTime = locFlightTime;
@@ -800,7 +800,7 @@ bool DParticleID::Distance_ToTrack(const DReferenceTrajectory* rt, const DTOFPoi
 
 	//SET MATCHING INFORMATION
 	if(locTOFHitMatchParams == nullptr)
-		locTOFHitMatchParams = make_shared<DTOFHitMatchParams>();
+		locTOFHitMatchParams = std::make_shared<DTOFHitMatchParams>();
 	double dx = 2.54*locProjMom.Mag()/locProjMom.Dot(norm);
 	locTOFHitMatchParams->dTOFPoint = locTOFPoint;
 
@@ -886,7 +886,7 @@ bool DParticleID::Distance_ToTrack(const DReferenceTrajectory* rt, const DSCHit*
 
 	//SET MATCHING INFORMATION
 	if(locSCHitMatchParams == nullptr)
-		locSCHitMatchParams = make_shared<DSCHitMatchParams>();
+		locSCHitMatchParams = std::make_shared<DSCHitMatchParams>();
 	locSCHitMatchParams->dSCHit = locSCHit;
 	locSCHitMatchParams->dHitEnergy = locCorrectedHitEnergy;
 	locSCHitMatchParams->dEdx = locSCHitMatchParams->dHitEnergy/ds;

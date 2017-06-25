@@ -137,10 +137,10 @@ class DDetectorMatches : public JObject
 		inline size_t Get_NumTrackSCMatches(void) const;
 
 		//SETTERS:
-		inline void Add_Match(const DTrackingData* locTrack, const DBCALShower* locBCALShower, shared_ptr<const DBCALShowerMatchParams>& locShowerMatchParams);
-		inline void Add_Match(const DTrackingData* locTrack, const DFCALShower* locFCALShower, shared_ptr<const DFCALShowerMatchParams>& locShowerMatchParams);
-		inline void Add_Match(const DTrackingData* locTrack, const DTOFPoint* locTOFPoint, shared_ptr<const DTOFHitMatchParams>& locHitMatchParams);
-		inline void Add_Match(const DTrackingData* locTrack, const DSCHit* locSCHit, shared_ptr<const DSCHitMatchParams>& locHitMatchParams);
+		inline void Add_Match(const DTrackingData* locTrack, const DBCALShower* locBCALShower, const shared_ptr<const DBCALShowerMatchParams>& locShowerMatchParams);
+		inline void Add_Match(const DTrackingData* locTrack, const DFCALShower* locFCALShower, const shared_ptr<const DFCALShowerMatchParams>& locShowerMatchParams);
+		inline void Add_Match(const DTrackingData* locTrack, const DTOFPoint* locTOFPoint, const shared_ptr<const DTOFHitMatchParams>& locHitMatchParams);
+		inline void Add_Match(const DTrackingData* locTrack, const DSCHit* locSCHit, const shared_ptr<const DSCHitMatchParams>& locHitMatchParams);
 		inline void Set_DistanceToNearestTrack(const DBCALShower* locBCALShower, double locDeltaPhi, double locDeltaZ);
 		inline void Set_DistanceToNearestTrack(const DFCALShower* locFCALShower, double locDistanceToNearestTrack);
 		inline void Set_FlightTimePCorrelation(const DTrackingData* locTrack, DetectorSystem_t locDetectorSystem, double locCorrelation);
@@ -373,22 +373,22 @@ inline size_t DDetectorMatches::Get_NumTrackSCMatches(void) const
 }
 
 //SETTERS:
-inline void DDetectorMatches::Add_Match(const DTrackingData* locTrack, const DBCALShower* locBCALShower, shared_ptr<const DBCALShowerMatchParams>& locShowerMatchParams)
+inline void DDetectorMatches::Add_Match(const DTrackingData* locTrack, const DBCALShower* locBCALShower, const shared_ptr<const DBCALShowerMatchParams>& locShowerMatchParams)
 {
 	dTrackBCALMatchParams[locTrack].push_back(locShowerMatchParams);
 	dBCALTrackMatchParams[locBCALShower].push_back(locShowerMatchParams);
 }
-inline void DDetectorMatches::Add_Match(const DTrackingData* locTrack, const DFCALShower* locFCALShower, shared_ptr<const DFCALShowerMatchParams>& locShowerMatchParams)
+inline void DDetectorMatches::Add_Match(const DTrackingData* locTrack, const DFCALShower* locFCALShower, const shared_ptr<const DFCALShowerMatchParams>& locShowerMatchParams)
 {
 	dTrackFCALMatchParams[locTrack].push_back(locShowerMatchParams);
 	dFCALTrackMatchParams[locFCALShower].push_back(locShowerMatchParams);
 }
-inline void DDetectorMatches::Add_Match(const DTrackingData* locTrack, const DTOFPoint* locTOFPoint, shared_ptr<const DTOFHitMatchParams>& locHitMatchParams)
+inline void DDetectorMatches::Add_Match(const DTrackingData* locTrack, const DTOFPoint* locTOFPoint, const shared_ptr<const DTOFHitMatchParams>& locHitMatchParams)
 {
 	dTrackTOFMatchParams[locTrack].push_back(locHitMatchParams);
 	dTOFTrackMatchParams[locTOFPoint].push_back(locHitMatchParams);
 }
-inline void DDetectorMatches::Add_Match(const DTrackingData* locTrack, const DSCHit* locSCHit, shared_ptr<const DSCHitMatchParams>& locHitMatchParams)
+inline void DDetectorMatches::Add_Match(const DTrackingData* locTrack, const DSCHit* locSCHit, const shared_ptr<const DSCHitMatchParams>& locHitMatchParams)
 {
 	dTrackSCMatchParams[locTrack].push_back(locHitMatchParams);
 	dSCTrackMatchParams[locSCHit].push_back(locHitMatchParams);

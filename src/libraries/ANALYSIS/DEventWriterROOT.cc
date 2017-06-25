@@ -33,6 +33,9 @@ void DEventWriterROOT::Initialize(JEventLoop* locEventLoop)
 	vector<const DMCThrown*> locMCThrowns;
 	locEventLoop->Get(locMCThrowns);
 
+	vector<const DReactionVertexInfo*> locVertexInfos;
+	locEventLoop->Get(locVertexInfos);
+
 	//Get Target Center Z
 	DApplication* locApplication = dynamic_cast<DApplication*>(locEventLoop->GetJApplication());
 	DGeometry* locGeometry = locApplication->GetDGeometry(locEventLoop->GetJEvent().GetRunNumber());
@@ -40,10 +43,14 @@ void DEventWriterROOT::Initialize(JEventLoop* locEventLoop)
 	locGeometry->GetTargetZ(dTargetCenterZ);
 
 	//CREATE TTREES
-	for(size_t loc_i = 0; loc_i < locReactions.size(); ++loc_i)
+	for(auto& locVertexInfo : locVertexInfos)
 	{
-		if(locReactions[loc_i]->Get_EnableTTreeOutputFlag())
-			Create_DataTree(locReactions[loc_i], locEventLoop, !locMCThrowns.empty());
+		auto locVertexReactions = locVertexInfo->Get_Reactions();
+		for(auto& locReaction : locVertexReactions)
+		{
+			if(locReaction->Get_EnableTTreeOutputFlag())
+				Create_DataTree(locReaction, locVertexInfo, locEventLoop, !locMCThrowns.empty());
+		}
 	}
 }
 
@@ -97,7 +104,7 @@ void DEventWriterROOT::Create_ThrownTree(JEventLoop* locEventLoop, string locOut
 	dThrownTreeInterface->Set_TreeIndexBranchNames("RunNumber", "EventNumber");
 }
 
-void DEventWriterROOT::Create_DataTree(const DReaction* locReaction, JEventLoop* locEventLoop, bool locIsMCDataFlag)
+void DEventWriterROOT::Create_DataTree(const DReaction* locReaction, const DReactionVertexInfo* locReactionVertexInfo, JEventLoop* locEventLoop, bool locIsMCDataFlag)
 {
 	string locReactionName = locReaction->Get_ReactionName();
 	string locOutputFileName = locReaction->Get_TTreeOutputFileName();
@@ -116,7 +123,7 @@ void DEventWriterROOT::Create_DataTree(const DReaction* locReaction, JEventLoop*
 	DTreeBranchRegister locBranchRegister;
 
 	//fill maps
-	TMap* locPositionToNameMap = Create_UserInfoMaps(locBranchRegister, locEventLoop, locReaction);
+	TMap* locPositionToNameMap = Create_UserInfoMaps(locBranchRegister, locEventLoop, locReaction, locReactionVertexInfo);
 
 /******************************************************************** Create Branches ********************************************************************/
 
@@ -135,7 +142,7 @@ void DEventWriterROOT::Create_DataTree(const DReaction* locReaction, JEventLoop*
 		locBranchRegister.Register_Single<Bool_t>("IsThrownTopology");
 	}
 
-	bool locBeamUsedFlag = (locReaction->Get_ReactionStep(0)->Get_TargetParticleID() != Unknown);
+	bool locBeamUsedFlag = DAnalysis::Get_IsFirstStepBeam(locReaction);
 
 	//create branches for final-state particle hypotheses
 	if(locBeamUsedFlag)
@@ -154,7 +161,7 @@ void DEventWriterROOT::Create_DataTree(const DReaction* locReaction, JEventLoop*
 	locTreeInterface->Set_TreeIndexBranchNames("RunNumber", "EventNumber");
 }
 
-TMap* DEventWriterROOT::Create_UserInfoMaps(DTreeBranchRegister& locBranchRegister, JEventLoop* locEventLoop, const DReaction* locReaction) const
+TMap* DEventWriterROOT::Create_UserInfoMaps(DTreeBranchRegister& locBranchRegister, JEventLoop* locEventLoop, const DReaction* locReaction, const DReactionVertexInfo* locReactionVertexInfo) const
 {
 	//kinfit type
 	DKinFitType locKinFitType = locReaction->Get_KinFitType();
@@ -231,8 +238,7 @@ TMap* DEventWriterROOT::Create_UserInfoMaps(DTreeBranchRegister& locBranchRegist
 	for(size_t loc_i = 0; loc_i < locReaction->Get_NumReactionSteps(); ++loc_i)
 	{
 		const DReactionStep* locReactionStep = locReaction->Get_ReactionStep(loc_i);
-		deque<Particle_t> locFinalParticleIDs;
-		locReactionStep->Get_FinalParticleIDs(locFinalParticleIDs);
+		auto locFinalParticleIDs = locReactionStep->Get_FinalPIDs();
 		for(size_t loc_j = 0; loc_j < locFinalParticleIDs.size(); ++loc_j)
 		{
 			if(locReactionStep->Get_MissingParticleIndex() == int(loc_j)) //missing particle
@@ -240,7 +246,7 @@ TMap* DEventWriterROOT::Create_UserInfoMaps(DTreeBranchRegister& locBranchRegist
 			Particle_t locPID = locFinalParticleIDs[loc_j];
 
 			//see if decays in a future step
-			int locDecayStepIndex = locReaction->Get_DecayStepIndex(loc_i, loc_j);
+			int locDecayStepIndex = DAnalysis::Get_DecayStepIndex(locReaction, loc_i, loc_j);
 			if(locDecayStepIndex >= 0) //decaying
 			{
 				if(locDecayingParticleNumberMap.find(locPID) == locDecayingParticleNumberMap.end())
@@ -270,7 +276,7 @@ TMap* DEventWriterROOT::Create_UserInfoMaps(DTreeBranchRegister& locBranchRegist
 		//initial particle
 		{
 			ostringstream locPIDStream, locPositionStream, locParticleNameStream;
-			Particle_t locPID = locReactionStep->Get_InitialParticleID();
+			Particle_t locPID = locReactionStep->Get_InitialPID();
 			locPIDStream << PDGtype(locPID);
 			locObjString_PID = new TObjString(locPIDStream.str().c_str());
 
@@ -303,7 +309,7 @@ TMap* DEventWriterROOT::Create_UserInfoMaps(DTreeBranchRegister& locBranchRegist
 		}
 
 		//target particle
-		Particle_t locTempTargetPID = locReactionStep->Get_TargetParticleID();
+		Particle_t locTempTargetPID = locReactionStep->Get_TargetPID();
 		if((loc_i == 0) && (locTempTargetPID != Unknown))
 		{
 			locTargetPID = locTempTargetPID;
@@ -328,8 +334,7 @@ TMap* DEventWriterROOT::Create_UserInfoMaps(DTreeBranchRegister& locBranchRegist
 		}
 
 		//final particles
-		deque<Particle_t> locFinalParticleIDs;
-		locReactionStep->Get_FinalParticleIDs(locFinalParticleIDs);
+		auto locFinalParticleIDs = locReactionStep->Get_FinalPIDs();
 		for(size_t loc_j = 0; loc_j < locFinalParticleIDs.size(); ++loc_j)
 		{
 			ostringstream locPIDStream, locPositionStream;
@@ -361,7 +366,7 @@ TMap* DEventWriterROOT::Create_UserInfoMaps(DTreeBranchRegister& locBranchRegist
 			//build name
 			ostringstream locParticleNameStream;
 			//see if decays in a future step
-			int locDecayStepIndex = locReaction->Get_DecayStepIndex(loc_i, loc_j);
+			int locDecayStepIndex = DAnalysis::Get_DecayStepIndex(locReaction, loc_i, loc_j);
 			if(locDecayStepIndex >= 0) //decays
 			{
 				if(locDecayingParticleNumberMap_Current.find(locPID) == locDecayingParticleNumberMap_Current.end())
@@ -413,7 +418,7 @@ TMap* DEventWriterROOT::Create_UserInfoMaps(DTreeBranchRegister& locBranchRegist
 		const DReactionStep* locReactionStep = locReaction->Get_ReactionStep(loc_i);
 
 		//initial particle
-		Particle_t locPID = locReactionStep->Get_InitialParticleID();
+		Particle_t locPID = locReactionStep->Get_InitialPID();
 		if(loc_i == 0)
 			continue;
 		if(!IsFixedMass(locPID))
@@ -451,12 +456,11 @@ void DEventWriterROOT::Get_DecayProductNames(const DReaction* locReaction, size_
 	if(locDecayProductNames == NULL)
 		locDecayProductNames = new TList();
 
-	deque<Particle_t> locFinalParticleIDs;
-	locReactionStep->Get_FinalParticleIDs(locFinalParticleIDs);
+	auto locFinalParticleIDs = locReactionStep->Get_FinalPIDs();
 	for(size_t loc_j = 0; loc_j < locFinalParticleIDs.size(); ++loc_j)
 	{
 		//see if decays in a future step //save and continue if doesn't decay
-		int locDecayStepIndex = locReaction->Get_DecayStepIndex(locReactionStepIndex, loc_j);
+		int locDecayStepIndex = DAnalysis::Get_DecayStepIndex(locReaction, locReactionStepIndex, loc_j);
 		if(locDecayStepIndex < 0)
 		{
 			ostringstream locPositionStream;
@@ -681,9 +685,9 @@ void DEventWriterROOT::Create_Branches_Combo(DTreeBranchRegister& locBranchRegis
 		const DReactionStep* locReactionStep = locReaction->Get_ReactionStep(loc_i);
 
 		//initial particle
-		Particle_t locInitialPID = locReactionStep->Get_InitialParticleID();
+		Particle_t locInitialPID = locReactionStep->Get_InitialPID();
 		//should check to make sure the beam particle isn't missing...
-		if((loc_i == 0) && (locReactionStep->Get_InitialParticleID() != Unknown))
+		if((loc_i == 0) && (locReactionStep->Get_InitialPID() != Unknown))
 			Create_Branches_BeamComboParticle(locBranchRegister, locInitialPID, locKinFitType);
 		else //decaying
 		{
@@ -700,11 +704,10 @@ void DEventWriterROOT::Create_Branches_Combo(DTreeBranchRegister& locBranchRegis
 		}
 
 		//final particles
-		deque<Particle_t> locFinalParticleIDs;
-		locReactionStep->Get_FinalParticleIDs(locFinalParticleIDs);
+		auto locFinalParticleIDs = locReactionStep->Get_FinalPIDs();
 		for(size_t loc_j = 0; loc_j < locFinalParticleIDs.size(); ++loc_j)
 		{
-			int locDecayStepIndex = locReaction->Get_DecayStepIndex(loc_i, loc_j);
+			int locDecayStepIndex = DAnalysis::Get_DecayStepIndex(locReaction, loc_i, loc_j);
 			if(locDecayStepIndex >= 0)
 				continue; //decaying particle
 
@@ -924,10 +927,8 @@ void DEventWriterROOT::Fill_DataTree(JEventLoop* locEventLoop, const DReaction* 
 	bool locSaveUnusedFlag = locReaction->Get_SaveUnusedFlag();
 
 	//Get PIDs need for reaction
+	auto locDetectedPIDs = locReaction->Get_FinalPIDs(-1, false, false, d_AllCharges, false);
 	set<Particle_t> locReactionPIDs;
-	//locChargeFlag: 0/1/2/3/4 for all, charged, neutral, q+, q- particles
-	deque<Particle_t> locDetectedPIDs;
-	locReaction->Get_DetectedFinalPIDs(locDetectedPIDs, 0, false); //q+
 	for(size_t loc_j = 0; loc_j < locDetectedPIDs.size(); ++loc_j)
 		locReactionPIDs.insert(locDetectedPIDs[loc_j]);
 
@@ -946,7 +947,7 @@ void DEventWriterROOT::Fill_DataTree(JEventLoop* locEventLoop, const DReaction* 
 	}
 
 	//GET BEAM PHOTONS
-	bool locBeamUsedFlag = (locReaction->Get_ReactionStep(0)->Get_TargetParticleID() != Unknown);
+	bool locBeamUsedFlag = DAnalysis::Get_IsFirstStepBeam(locReaction);
 	vector<const DBeamPhoton*> locBeamPhotons = Get_BeamPhotons(locParticleCombos);
 
 	//create map of particles to array index:
@@ -1309,7 +1310,7 @@ void DEventWriterROOT::Fill_ThrownParticleData(DTreeFillData* locTreeFillData, u
 		{
 			const DChargedTrack* locChargedTrack = locMCThrownMatching->Get_MatchingChargedTrack(locMCThrown, locMatchFOM);
 			if(locChargedTrack != NULL)
-				locMatchID = locChargedTrack->Get_BestFOM()->candidateid;
+				locMatchID = locChargedTrack->candidateid;
 		}
 		else
 		{
@@ -1598,7 +1599,7 @@ void DEventWriterROOT::Fill_ComboStepData(DTreeFillData* locTreeFillData, const 
 	TLorentzVector locStepTX4(locStepX4.X(), locStepX4.Y(), locStepX4.Z(), locStepX4.T());
 
 	//beam & production vertex
-	Particle_t locInitialPID = locParticleComboStep->Get_InitialParticleID();
+	Particle_t locInitialPID = locParticleComboStep->Get_InitialPID();
 	const DKinematicData* locInitialParticle = locParticleComboStep->Get_InitialParticle();
 	const DBeamPhoton* locBeamPhoton = dynamic_cast<const DBeamPhoton*>(locInitialParticle);
 	if(locBeamPhoton != NULL)

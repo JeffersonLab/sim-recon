@@ -218,7 +218,7 @@ jerror_t DParticleID_PID1::GetdEdxSigma_FDC(double locBeta, unsigned int locNumH
 
 jerror_t DParticleID_PID1::CalcDCdEdxChiSq(DChargedTrackHypothesis *locChargedTrackHypothesis) const
 {
-	locChargedTrackHypothesis->Set_ChiSq_Tracking(0.0, 0);
+	locChargedTrackHypothesis->Set_ChiSq_DCdEdx(0.0, 0);
 	unsigned int locMinimumNumberUsedHitsForConfidence = 3; //dE/dx is landau-distributed, so to approximate Gaussian must remove hits with largest dE/dx //3 means 6 or more hits originally
 	Particle_t locPID = locChargedTrackHypothesis->PID();
 	double locChiSq=0.;
@@ -268,7 +268,7 @@ jerror_t DParticleID_PID1::CalcDCdEdxChiSq(DChargedTrackHypothesis *locChargedTr
 	}
 
 	if (locNDF>0)
-		locChargedTrackHypothesis->Set_ChiSq_Tracking(locChiSq, locNDF);
+		locChargedTrackHypothesis->Set_ChiSq_DCdEdx(locChiSq, locNDF);
 
 	return NOERROR;
 }

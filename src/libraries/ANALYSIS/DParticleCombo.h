@@ -38,9 +38,12 @@ class DParticleCombo
 		// GET PARTCILE COMBO STEPS:
 		inline size_t Get_NumParticleComboSteps(void) const{return dParticleComboSteps.size();}
 		const DParticleComboStep* Get_ParticleComboStep(size_t locStepIndex) const;
+		vector<const DParticleComboStep*> Get_ParticleComboSteps(void) const{return dParticleComboSteps;}
 
+		// GET PARTICLES
 		vector<const DKinematicData*> Get_FinalParticles(const DReaction* locReaction, bool locIncludeMissingFlag = true, bool locIncludeDecayingFlag = true, Charge_t locCharge = d_AllCharges) const;
-		vector<const DKinematicData*> Get_FinalParticles_Measured(const DReaction* locReaction, bool locIncludeMissingFlag = true, bool locIncludeDecayingFlag = true, Charge_t locCharge = d_AllCharges) const;
+		vector<const DKinematicData*> Get_FinalParticles_Measured(const DReaction* locReaction, Charge_t locCharge = d_AllCharges) const;
+		vector<const JObject*> Get_FinalParticle_SourceObjects(Charge_t locCharge = d_AllCharges) const;
 
 		// GET FINAL PARTICLES - BY DECAY CHAIN:
 		//get all of the measured particles included in the decaychain starting at locStepIndex
@@ -95,15 +98,26 @@ inline vector<const DKinematicData*> DParticleCombo::Get_FinalParticles(const DR
 	return locParticles;
 }
 
-inline vector<const DKinematicData*> DParticleCombo::Get_FinalParticles_Measured(const DReaction* locReaction, bool locIncludeMissingFlag, bool locIncludeDecayingFlag, Charge_t locCharge) const
+inline vector<const DKinematicData*> DParticleCombo::Get_FinalParticles_Measured(const DReaction* locReaction, Charge_t locCharge) const
 {
 	vector<const DKinematicData*> locParticles;
 	for(size_t loc_i = 0; loc_i < locReaction->Get_NumReactionSteps(); ++loc_i)
 	{
-		auto locStepParticles = dParticleComboSteps[loc_i]->Get_FinalParticles_Measured(locReaction->Get_ReactionStep(loc_i), locIncludeMissingFlag, locIncludeDecayingFlag, locCharge);
+		auto locStepParticles = dParticleComboSteps[loc_i]->Get_FinalParticles_Measured(locReaction->Get_ReactionStep(loc_i), locCharge);
 		locParticles.insert(locParticles.end(), locStepParticles.begin(), locStepParticles.end());
 	}
 	return locParticles;
+}
+
+inline vector<const JObject*> DParticleCombo::Get_FinalParticle_SourceObjects(Charge_t locCharge) const
+{
+	vector<const JObject*> locSourceObjects;
+	for(size_t loc_i = 0; loc_i < Get_NumParticleComboSteps(); ++loc_i)
+	{
+		auto locStepSourceObjects = dParticleComboSteps[loc_i]->Get_FinalParticle_SourceObjects(locCharge);
+		locSourceObjects.insert(locSourceObjects.end(), locStepSourceObjects.begin(), locStepSourceObjects.end());
+	}
+	return locSourceObjects;
 }
 
 inline vector<const DKinematicData*> DParticleCombo::Get_DecayChainParticles_Measured(const DReaction* locReaction, int locStepIndex) const
@@ -132,6 +146,7 @@ inline vector<const DKinematicData*> DParticleCombo::Get_DecayChainParticles_Mea
 		else
 			locMeasuredParticles.push_back(locMeasuredParticle);
 	}
+	return locMeasuredParticles;
 }
 
 } // end namespace

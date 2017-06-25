@@ -31,13 +31,13 @@ jerror_t DChargedTrack_factory_Combo::evnt(jana::JEventLoop *locEventLoop, uint6
 	dChargedTrackHypothesisFactory->Recycle_Hypotheses(dCreatedHypotheses);
 
 	vector<const DChargedTrack*> locChargedTracks;
-	locEventLoop->Get(locChargedTracks, dTrackSelectionTag);
+	locEventLoop->Get(locChargedTracks, dTrackSelectionTag.c_str());
 
 	vector<const DTrackTimeBased*> locTimeBasedTracks;
 	locEventLoop->Get(locTimeBasedTracks, "Combo");
 
 	const DEventRFBunch* locEventRFBunch = nullptr;
-	locEventLoop->Get(locEventRFBunch);
+	locEventLoop->GetSingle(locEventRFBunch);
 
 	const DDetectorMatches* locDetectorMatches = nullptr;
 	locEventLoop->GetSingle(locDetectorMatches, "Combo");
