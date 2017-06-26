@@ -512,6 +512,8 @@ DKinFitResults* DAnalysisResults_factory::Build_KinFitResults(const DParticleCom
 	set<DKinFitParticle*>::iterator locParticleIterator = locAllKinFitParticles.begin();
 	for(; locParticleIterator != locAllKinFitParticles.end(); ++locParticleIterator)
 	{
+		if((*locParticleIterator) == nullptr)
+			continue;
 		if(locOutputKinFitParticles.find(*locParticleIterator) == locOutputKinFitParticles.end())
 			continue; //not used in kinfit: don't save!!
 		const JObject* locSourceJObject = dKinFitUtils->Get_SourceJObject(*locParticleIterator);

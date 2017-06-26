@@ -392,6 +392,8 @@ DKinFitParticle* DParticleComboCreator::Get_DecayingParticle(const DReaction* lo
 		set<DKinFitParticle*>::iterator locParticleIterator = locInitialParticles.begin();
 		for(; locParticleIterator != locInitialParticles.end(); ++locParticleIterator)
 		{
+			if((*locParticleIterator) == nullptr)
+				continue;
 			if((*locParticleIterator)->Get_KinFitParticleType() != d_DecayingParticle)
 				continue; //not a decaying particle
 			locDecayingParticle = *locParticleIterator;
@@ -440,6 +442,8 @@ bool DParticleComboCreator::Search_ForParticleInDecay(const DKinFitChain* locKin
 	set<DKinFitParticle*>::iterator locParticleIterator = locFinalParticles.begin();
 	for(; locParticleIterator != locFinalParticles.end(); ++locParticleIterator)
 	{
+		if((*locParticleIterator) == nullptr)
+			continue;
 		if((*locParticleIterator)->Get_KinFitParticleType() != d_DecayingParticle)
 			continue; //not a decaying particle
 
@@ -475,8 +479,16 @@ void DParticleCombo_factory::Set_SpacetimeVertex(const DParticleCombo* locNewPar
 		return;
 	}
 
-	//instead, get from common vertex of final state particles
-	DKinFitParticle* locFinalKinFitParticle = *(locKinFitChain->Get_KinFitChainStep(0)->Get_FinalParticles().begin());
+	//instead, get from common vertex of the other particles
+	const DKinFitParticle* locFinalKinFitParticle = nullptr;
+	auto locAllParticles = locKinFitChain->Get_AllParticles();
+	for(locFinalKinFitParticle : locAllParticles)
+	{
+		if(locFinalKinFitParticle != nullptr)
+			break;
+	}
+	if(locFinalKinFitParticle == nullptr)
+		return;
 
 	//need the spacetime vertex at the production vertex of the particle grabbed
 	TLorentzVector locSpacetimeVertex;

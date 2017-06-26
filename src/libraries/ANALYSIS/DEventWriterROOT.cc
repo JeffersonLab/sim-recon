@@ -942,8 +942,8 @@ void DEventWriterROOT::Fill_DataTree(JEventLoop* locEventLoop, const DReaction* 
 	}
 	else
 	{
-		locChargedTrackHypotheses = Get_ChargedHypotheses_Used(locEventLoop, locParticleCombos);
-		locNeutralParticleHypotheses = Get_NeutralHypotheses_Used(locEventLoop, locReactionPIDs, locParticleCombos);
+		locChargedTrackHypotheses = Get_ChargedHypotheses_Used(locEventLoop, locReaction, locParticleCombos);
+		locNeutralParticleHypotheses = Get_NeutralHypotheses_Used(locEventLoop, locReaction, locReactionPIDs, locParticleCombos);
 	}
 
 	//GET BEAM PHOTONS
@@ -1056,7 +1056,7 @@ void DEventWriterROOT::Fill_DataTree(JEventLoop* locEventLoop, const DReaction* 
 	locTreeFillData->Fill_Single<UInt_t>("NumCombos", UInt_t(locParticleCombos.size()));
 	for(size_t loc_i = 0; loc_i < locParticleCombos.size(); ++loc_i)
 	{
-		Fill_ComboData(locTreeFillData, locParticleCombos[loc_i], loc_i, locObjectToArrayIndexMap);
+		Fill_ComboData(locTreeFillData, locReaction, locParticleCombos[loc_i], loc_i, locObjectToArrayIndexMap);
 		if(locMCReaction != NULL)
 		{
 			locTreeFillData->Fill_Array<Bool_t>("IsTrueCombo", locIsTrueComboFlags[loc_i], loc_i);
@@ -1111,7 +1111,7 @@ vector<const DChargedTrackHypothesis*> DEventWriterROOT::Get_ChargedHypotheses(J
 	return locChargedHyposToSave;
 }
 
-vector<const DChargedTrackHypothesis*> DEventWriterROOT::Get_ChargedHypotheses_Used(JEventLoop* locEventLoop, const deque<const DParticleCombo*>& locParticleCombos) const
+vector<const DChargedTrackHypothesis*> DEventWriterROOT::Get_ChargedHypotheses_Used(JEventLoop* locEventLoop, const DReaction* locReaction, const deque<const DParticleCombo*>& locParticleCombos) const
 {
 	//get all hypos
 	vector<const DChargedTrackHypothesis*> locAllHypos = Get_ChargedHypotheses(locEventLoop);
@@ -1120,9 +1120,7 @@ vector<const DChargedTrackHypothesis*> DEventWriterROOT::Get_ChargedHypotheses_U
 	set<const DTrackTimeBased*> locUsedTimeBasedTracks;
 	for(auto& locCombo : locParticleCombos)
 	{
-		deque<const DKinematicData*> locChargedParticles;
-		locCombo->Get_DetectedFinalChargedParticles_Measured(locChargedParticles);
-
+		auto locChargedParticles = locCombo->Get_FinalParticles_Measured(locReaction, d_Charged);
 		for(auto& locParticle : locChargedParticles)
 			locUsedTimeBasedTracks.insert(static_cast<const DChargedTrackHypothesis*>(locParticle)->Get_TrackTimeBased());
 	}
@@ -1149,14 +1147,14 @@ vector<const DNeutralParticleHypothesis*> DEventWriterROOT::Get_NeutralHypothese
 	vector<const DNeutralParticle*> locNeutralParticles;
 	locEventLoop->Get(locNeutralParticles, "Combo");
 
-	vector<const DChargedTrackHypothesis*> locNeutralHyposToSave;
+	vector<const DNeutralParticleHypothesis*> locNeutralHyposToSave;
 	for(auto& locNeutralParticle : locNeutralParticles)
 		locNeutralHyposToSave.insert(locNeutralHyposToSave.end(), locNeutralParticle->dNeutralParticleHypotheses.begin(), locNeutralParticle->dNeutralParticleHypotheses.end());
 
 	return locNeutralHyposToSave;
 }
 
-vector<const DNeutralParticleHypothesis*> DEventWriterROOT::Get_NeutralHypotheses_Used(JEventLoop* locEventLoop, const set<Particle_t>& locReactionPIDs, const deque<const DParticleCombo*>& locParticleCombos) const
+vector<const DNeutralParticleHypothesis*> DEventWriterROOT::Get_NeutralHypotheses_Used(JEventLoop* locEventLoop, const DReaction* locReaction, const set<Particle_t>& locReactionPIDs, const deque<const DParticleCombo*>& locParticleCombos) const
 {
 	//get all hypos
 	vector<const DNeutralParticleHypothesis*> locAllHypos = Get_NeutralHypotheses(locEventLoop, locReactionPIDs);
@@ -1165,9 +1163,7 @@ vector<const DNeutralParticleHypothesis*> DEventWriterROOT::Get_NeutralHypothese
 	set<pair<const DNeutralShower*, Particle_t> > locUsedNeutralShowers;
 	for(auto& locCombo : locParticleCombos)
 	{
-		deque<const DKinematicData*> locNeutralParticles;
-		locCombo->Get_DetectedFinalNeutralParticles_Measured(locNeutralParticles);
-
+		auto locNeutralParticles = locCombo->Get_FinalParticles_Measured(locReaction, d_Neutral);
 		for(auto& locParticle : locNeutralParticles)
 		{
 			const DNeutralShower* locNeutralShower = static_cast<const DNeutralParticleHypothesis*>(locParticle)->Get_NeutralShower();
@@ -1380,7 +1376,7 @@ void DEventWriterROOT::Fill_ChargedHypo(DTreeFillData* locTreeFillData, unsigned
 		locFCALShower = locChargedTrackHypothesis->Get_FCALShowerMatchParams()->dFCALShower;
 
 	//IDENTIFIERS
-	locTreeFillData->Fill_Array<Int_t>(Build_BranchName(locParticleBranchName, "TrackID"), locChargedTrackHypothesis->candidateid, locArrayIndex);
+	locTreeFillData->Fill_Array<Int_t>(Build_BranchName(locParticleBranchName, "TrackID"), locTrackTimeBased->candidateid, locArrayIndex);
 	locTreeFillData->Fill_Array<Int_t>(Build_BranchName(locParticleBranchName, "PID"), PDGtype(locChargedTrackHypothesis->PID()), locArrayIndex);
 
 	//MATCHING
@@ -1404,10 +1400,10 @@ void DEventWriterROOT::Fill_ChargedHypo(DTreeFillData* locTreeFillData, unsigned
 	locTreeFillData->Fill_Array<TLorentzVector>(Build_BranchName(locParticleBranchName, "P4_Measured"), locP4_Measured, locArrayIndex);
 
 	//TRACKING INFO
-	locTreeFillData->Fill_Array<UInt_t>(Build_BranchName(locParticleBranchName, "NDF_Tracking"), locChargedTrackHypothesis->dNDF_Track, locArrayIndex);
-	locTreeFillData->Fill_Array<Float_t>(Build_BranchName(locParticleBranchName, "ChiSq_Tracking"), locChargedTrackHypothesis->dChiSq_Track, locArrayIndex);
-	locTreeFillData->Fill_Array<UInt_t>(Build_BranchName(locParticleBranchName, "NDF_DCdEdx"), locChargedTrackHypothesis->dNDF_DCdEdx, locArrayIndex);
-	locTreeFillData->Fill_Array<Float_t>(Build_BranchName(locParticleBranchName, "ChiSq_DCdEdx"), locChargedTrackHypothesis->dChiSq_DCdEdx, locArrayIndex);
+	locTreeFillData->Fill_Array<UInt_t>(Build_BranchName(locParticleBranchName, "NDF_Tracking"), locTrackTimeBased->Ndof, locArrayIndex);
+	locTreeFillData->Fill_Array<Float_t>(Build_BranchName(locParticleBranchName, "ChiSq_Tracking"), locTrackTimeBased->chisq, locArrayIndex);
+	locTreeFillData->Fill_Array<UInt_t>(Build_BranchName(locParticleBranchName, "NDF_DCdEdx"), locChargedTrackHypothesis->Get_NDF_DCdEdx(), locArrayIndex);
+	locTreeFillData->Fill_Array<Float_t>(Build_BranchName(locParticleBranchName, "ChiSq_DCdEdx"), locChargedTrackHypothesis->Get_ChiSq_DCdEdx(), locArrayIndex);
 	locTreeFillData->Fill_Array<Float_t>(Build_BranchName(locParticleBranchName, "dEdx_CDC"), locTrackTimeBased->ddEdx_CDC, locArrayIndex);
 	locTreeFillData->Fill_Array<Float_t>(Build_BranchName(locParticleBranchName, "dEdx_FDC"), locTrackTimeBased->ddEdx_FDC, locArrayIndex);
 
@@ -1432,8 +1428,8 @@ void DEventWriterROOT::Fill_ChargedHypo(DTreeFillData* locTreeFillData, unsigned
 
 	//MEASURED PID INFO
 	locTreeFillData->Fill_Array<Float_t>(Build_BranchName(locParticleBranchName, "Beta_Timing"), locChargedTrackHypothesis->measuredBeta(), locArrayIndex);
-	locTreeFillData->Fill_Array<Float_t>(Build_BranchName(locParticleBranchName, "ChiSq_Timing"), locChargedTrackHypothesis->dChiSq_Timing, locArrayIndex);
-	locTreeFillData->Fill_Array<UInt_t>(Build_BranchName(locParticleBranchName, "NDF_Timing"), locChargedTrackHypothesis->dNDF_Timing, locArrayIndex);
+	locTreeFillData->Fill_Array<Float_t>(Build_BranchName(locParticleBranchName, "ChiSq_Timing"), locChargedTrackHypothesis->Get_ChiSq_Timing(), locArrayIndex);
+	locTreeFillData->Fill_Array<UInt_t>(Build_BranchName(locParticleBranchName, "NDF_Timing"), locChargedTrackHypothesis->Get_NDF_Timing(), locArrayIndex);
 
 	//SHOWER MATCHING: BCAL
 	double locTrackBCAL_DeltaPhi = 999.0, locTrackBCAL_DeltaZ = 999.0;
@@ -1491,8 +1487,8 @@ void DEventWriterROOT::Fill_NeutralHypo(DTreeFillData* locTreeFillData, unsigned
 
 	//MEASURED PID INFO
 	locTreeFillData->Fill_Array<Float_t>(Build_BranchName(locParticleBranchName, "Beta_Timing"), locNeutralParticleHypothesis->measuredBeta(), locArrayIndex);
-	locTreeFillData->Fill_Array<Float_t>(Build_BranchName(locParticleBranchName, "ChiSq_Timing"), locNeutralParticleHypothesis->dChiSq, locArrayIndex);
-	locTreeFillData->Fill_Array<UInt_t>(Build_BranchName(locParticleBranchName, "NDF_Timing"), locNeutralParticleHypothesis->dNDF, locArrayIndex);
+	locTreeFillData->Fill_Array<Float_t>(Build_BranchName(locParticleBranchName, "ChiSq_Timing"), locNeutralParticleHypothesis->Get_ChiSq(), locArrayIndex);
+	locTreeFillData->Fill_Array<UInt_t>(Build_BranchName(locParticleBranchName, "NDF_Timing"), locNeutralParticleHypothesis->Get_NDF(), locArrayIndex);
 
 	//SHOWER ENERGY
 	DetectorSystem_t locDetector = locNeutralShower->dDetectorSystem;
@@ -1545,10 +1541,9 @@ void DEventWriterROOT::Fill_NeutralHypo(DTreeFillData* locTreeFillData, unsigned
 	locTreeFillData->Fill_Array<Float_t>(Build_BranchName(locParticleBranchName, "PhotonRFDeltaTVar"), locPhotonRFDeltaTVar, locArrayIndex);
 }
 
-void DEventWriterROOT::Fill_ComboData(DTreeFillData* locTreeFillData, const DParticleCombo* locParticleCombo, unsigned int locComboIndex, const map<pair<oid_t, Particle_t>, size_t>& locObjectToArrayIndexMap) const
+void DEventWriterROOT::Fill_ComboData(DTreeFillData* locTreeFillData, const DReaction* locReaction, const DParticleCombo* locParticleCombo, unsigned int locComboIndex, const map<pair<oid_t, Particle_t>, size_t>& locObjectToArrayIndexMap) const
 {
 	//MAIN CLASSES
-	const DReaction* locReaction = locParticleCombo->Get_Reaction();
 	const DKinFitResults* locKinFitResults = locParticleCombo->Get_KinFitResults();
 	const DEventRFBunch* locEventRFBunch = locParticleCombo->Get_EventRFBunch();
 
@@ -1585,12 +1580,12 @@ void DEventWriterROOT::Fill_ComboData(DTreeFillData* locTreeFillData, const DPar
 
 	//STEP DATA
 	for(size_t loc_i = 0; loc_i < locParticleCombo->Get_NumParticleComboSteps(); ++loc_i)
-		Fill_ComboStepData(locTreeFillData, locParticleCombo, loc_i, locComboIndex, locKinFitType, locObjectToArrayIndexMap);
+		Fill_ComboStepData(locTreeFillData, locReaction, locParticleCombo, loc_i, locComboIndex, locKinFitType, locObjectToArrayIndexMap);
 }
 
-void DEventWriterROOT::Fill_ComboStepData(DTreeFillData* locTreeFillData, const DParticleCombo* locParticleCombo, unsigned int locStepIndex, unsigned int locComboIndex, DKinFitType locKinFitType, const map<pair<oid_t, Particle_t>, size_t>& locObjectToArrayIndexMap) const
+void DEventWriterROOT::Fill_ComboStepData(DTreeFillData* locTreeFillData, const DReaction* locReaction, const DParticleCombo* locParticleCombo, unsigned int locStepIndex, unsigned int locComboIndex, DKinFitType locKinFitType, const map<pair<oid_t, Particle_t>, size_t>& locObjectToArrayIndexMap) const
 {
-	const DReaction* locReaction = locParticleCombo->Get_Reaction();
+	auto locReactionStep = locReaction->Get_ReactionStep(locStepIndex);
 	const TList* locUserInfo = dTreeInterfaceMap.find(locReaction)->second->Get_UserInfo();
 	const TMap* locPositionToNameMap = (TMap*)locUserInfo->FindObject("PositionToNameMap");
 
@@ -1599,7 +1594,7 @@ void DEventWriterROOT::Fill_ComboStepData(DTreeFillData* locTreeFillData, const 
 	TLorentzVector locStepTX4(locStepX4.X(), locStepX4.Y(), locStepX4.Z(), locStepX4.T());
 
 	//beam & production vertex
-	Particle_t locInitialPID = locParticleComboStep->Get_InitialPID();
+	Particle_t locInitialPID = locReactionStep->Get_InitialPID();
 	const DKinematicData* locInitialParticle = locParticleComboStep->Get_InitialParticle();
 	const DBeamPhoton* locBeamPhoton = dynamic_cast<const DBeamPhoton*>(locInitialParticle);
 	if(locBeamPhoton != NULL)
@@ -1629,7 +1624,7 @@ void DEventWriterROOT::Fill_ComboStepData(DTreeFillData* locTreeFillData, const 
 			if(locInitialParticle == NULL)
 			{
 				//fit failed to converge, calc from other particles
-				DLorentzVector locDecayDP4 = dAnalysisUtilities->Calc_FinalStateP4(locParticleCombo, locStepIndex, false);
+				DLorentzVector locDecayDP4 = dAnalysisUtilities->Calc_FinalStateP4(locReaction, locParticleCombo, locStepIndex, false);
 				locDecayDP4.SetE(sqrt(locDecayDP4.Vect().Mag2() + ParticleMass(locInitialPID)*ParticleMass(locInitialPID)));
 				locDecayP4.SetPxPyPzE(locDecayDP4.Px(), locDecayDP4.Py(), locDecayDP4.Pz(), locDecayDP4.E());
 			}
@@ -1642,12 +1637,12 @@ void DEventWriterROOT::Fill_ComboStepData(DTreeFillData* locTreeFillData, const 
 	//final state particles
 	for(size_t loc_i = 0; loc_i < locParticleComboStep->Get_NumFinalParticles(); ++loc_i)
 	{
-		Particle_t locPID = locParticleComboStep->Get_FinalParticleID(loc_i);
+		Particle_t locPID = locReactionStep->Get_FinalPID(loc_i);
 		const DKinematicData* locKinematicData = locParticleComboStep->Get_FinalParticle(loc_i);
 		const DKinematicData* locKinematicData_Measured = locParticleComboStep->Get_FinalParticle_Measured(loc_i);
 
 		//decaying particle
-		if(locParticleComboStep->Is_FinalParticleDecaying(loc_i))
+		if(DAnalysis::Get_DecayStepIndex(locReaction, locStepIndex, loc_i) >= 0)
 			continue;
 
 		//get the branch name
@@ -1657,7 +1652,7 @@ void DEventWriterROOT::Fill_ComboStepData(DTreeFillData* locTreeFillData, const 
 		string locParticleBranchName = (const char*)(locObjString->GetString());
 
 		//missing particle
-		if(locParticleComboStep->Is_FinalParticleMissing(loc_i))
+		if(locReactionStep->Get_MissingParticleIndex() == int(loc_i))
 		{
 			if((locKinFitType == d_P4Fit) || (locKinFitType == d_P4AndVertexFit) || (locKinFitType == d_P4AndSpacetimeFit))
 			{
@@ -1665,7 +1660,7 @@ void DEventWriterROOT::Fill_ComboStepData(DTreeFillData* locTreeFillData, const 
 				if(locKinematicData == NULL)
 				{
 					//fit failed to converge, calc from other particles
-					DLorentzVector locMissingDP4 = dAnalysisUtilities->Calc_MissingP4(locParticleCombo, false);
+					DLorentzVector locMissingDP4 = dAnalysisUtilities->Calc_MissingP4(locReaction, locParticleCombo, false);
 					locMissingDP4.SetE(sqrt(locMissingDP4.Vect().Mag2() + ParticleMass(locPID)*ParticleMass(locPID)));
 					locMissingP4.SetPxPyPzE(locMissingDP4.Px(), locMissingDP4.Py(), locMissingDP4.Pz(), locMissingDP4.E());
 				}
@@ -1739,13 +1734,13 @@ void DEventWriterROOT::Fill_ComboChargedData(DTreeFillData* locTreeFillData, uns
 
 	//MEASURED PID
 	locTreeFillData->Fill_Array<Float_t>(Build_BranchName(locParticleBranchName, "Beta_Timing_Measured"), locMeasuredChargedHypo->measuredBeta(), locComboIndex);
-	locTreeFillData->Fill_Array<Float_t>(Build_BranchName(locParticleBranchName, "ChiSq_Timing_Measured"), locMeasuredChargedHypo->dChiSq_Timing, locComboIndex);
+	locTreeFillData->Fill_Array<Float_t>(Build_BranchName(locParticleBranchName, "ChiSq_Timing_Measured"), locMeasuredChargedHypo->Get_ChiSq_Timing(), locComboIndex);
 
 	//KINFIT PID
 	if((locKinFitType != d_NoFit) && (locKinFitType != d_SpacetimeFit) && (locKinFitType != d_P4AndSpacetimeFit))
 	{
 		locTreeFillData->Fill_Array<Float_t>(Build_BranchName(locParticleBranchName, "Beta_Timing_KinFit"), locChargedHypo->measuredBeta(), locComboIndex);
-		locTreeFillData->Fill_Array<Float_t>(Build_BranchName(locParticleBranchName, "ChiSq_Timing_KinFit"), locChargedHypo->dChiSq_Timing, locComboIndex);
+		locTreeFillData->Fill_Array<Float_t>(Build_BranchName(locParticleBranchName, "ChiSq_Timing_KinFit"), locChargedHypo->Get_ChiSq_Timing(), locComboIndex);
 	}
 
 	//KINFIT
@@ -1783,14 +1778,14 @@ void DEventWriterROOT::Fill_ComboNeutralData(DTreeFillData* locTreeFillData, uns
 	//MEASURED PID INFO
 	locTreeFillData->Fill_Array<Float_t>(Build_BranchName(locParticleBranchName, "Beta_Timing_Measured"), locMeasuredNeutralHypo->measuredBeta(), locComboIndex);
 	if(locParticleBranchName.substr(0, 6) == "Photon")
-		locTreeFillData->Fill_Array<Float_t>(Build_BranchName(locParticleBranchName, "ChiSq_Timing_Measured"), locMeasuredNeutralHypo->dChiSq, locComboIndex);
+		locTreeFillData->Fill_Array<Float_t>(Build_BranchName(locParticleBranchName, "ChiSq_Timing_Measured"), locMeasuredNeutralHypo->Get_ChiSq(), locComboIndex);
 
 	//KINFIT PID INFO
 	if((locKinFitType != d_NoFit) && (locKinFitType != d_SpacetimeFit) && (locKinFitType != d_P4AndSpacetimeFit))
 	{
 		locTreeFillData->Fill_Array<Float_t>(Build_BranchName(locParticleBranchName, "Beta_Timing_KinFit"), locNeutralHypo->measuredBeta(), locComboIndex);
 		if(locParticleBranchName.substr(0, 6) == "Photon")
-			locTreeFillData->Fill_Array<Float_t>(Build_BranchName(locParticleBranchName, "ChiSq_Timing_KinFit"), locNeutralHypo->dChiSq, locComboIndex);
+			locTreeFillData->Fill_Array<Float_t>(Build_BranchName(locParticleBranchName, "ChiSq_Timing_KinFit"), locNeutralHypo->Get_ChiSq(), locComboIndex);
 	}
 
 	//KINFIT

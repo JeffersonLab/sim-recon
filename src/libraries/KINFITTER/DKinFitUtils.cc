@@ -751,6 +751,16 @@ bool DKinFitUtils::Validate_Constraints(const set<DKinFitConstraint*>& locKinFit
 
 /*************************************************************** CALCULATION ROUTINES **************************************************************/
 
+bool DKinFitUtils::Get_IsDecayingParticleDefinedByProducts(const DKinFitParticle* locKinFitParticle)
+{
+	auto locFromInitState = locKinFitParticle->Get_FromInitialState();
+	if(locFromInitState.empty())
+		return true;
+	if(locFromInitState.size() >= 2)
+		return false;
+	return (locFromInitState[0]->Get_KinFitParticleType() != d_TargetParticle);
+}
+
 TLorentzVector DKinFitUtils::Calc_DecayingP4_ByPosition(const DKinFitParticle* locKinFitParticle, bool locAtPositionFlag, bool locDontPropagateAtAllFlag) const
 {
 	//if input flag is true: return the value of the p4 at spot defined by locKinFitParticle->Get_Position() //else at the common vertex
@@ -758,7 +768,7 @@ TLorentzVector DKinFitUtils::Calc_DecayingP4_ByPosition(const DKinFitParticle* l
 	if(locKinFitParticle->Get_KinFitParticleType() != d_DecayingParticle)
 		return TLorentzVector();
 
-	bool locP3DerivedAtProductionVertexFlag = !locKinFitParticle->Get_FromInitialState().empty(); //else decay vertex
+	bool locP3DerivedAtProductionVertexFlag = !Get_IsDecayingParticleDefinedByProducts(); //else decay vertex
 	bool locP3DerivedAtPositionFlag = (locP3DerivedAtProductionVertexFlag == locKinFitParticle->Get_VertexP4AtProductionVertex());
 	bool locDontPropagateDecayingP3Flag = (locP3DerivedAtPositionFlag == locAtPositionFlag);
 	return Calc_DecayingP4(locKinFitParticle, locDontPropagateDecayingP3Flag, 1.0, locDontPropagateAtAllFlag);
@@ -782,7 +792,7 @@ TLorentzVector DKinFitUtils::Calc_DecayingP4_ByVertex(const DKinFitParticle* loc
 	if(locKinFitParticle->Get_KinFitParticleType() != d_DecayingParticle)
 		return TLorentzVector();
 
-	bool locP3DerivedAtProductionVertexFlag = !locKinFitParticle->Get_FromInitialState().empty();
+	bool locP3DerivedAtProductionVertexFlag = !Get_IsDecayingParticleDefinedByProducts();
 	bool locDontPropagateDecayingP3Flag = (locP3DerivedAtProductionVertexFlag == locAtProductionVertexFlag);
 	return Calc_DecayingP4(locKinFitParticle, locDontPropagateDecayingP3Flag, 1.0, locDontPropagateAtAllFlag);
 }
@@ -813,7 +823,7 @@ TLorentzVector DKinFitUtils::Calc_DecayingP4(const DKinFitParticle* locKinFitPar
 		//And the Xi- DEFINED vertex is at its production vertex (from kaons)
 		//But the p3 is NEEDED at the production vertex, which is where it's DEFINED
 		//Thus we need a factor of -1
-	bool locNeedP4AtProductionVertex = locKinFitParticle->Get_FromInitialState().empty(); //true if defined by decay products; else by missing mass
+	bool locNeedP4AtProductionVertex = Get_IsDecayingParticleDefinedByProducts(); //true if defined by decay products; else by missing mass
 	double locVertexSignMultiplier = (locNeedP4AtProductionVertex == locKinFitParticle->Get_VertexP4AtProductionVertex()) ? -1.0 : 1.0;
 	TVector3 locDeltaX = locVertexSignMultiplier*(locCommonVertex - locPosition); //vector points in the OPPOSITE direction of the momentum
 
@@ -1258,7 +1268,7 @@ void DKinFitUtils::Calc_DecayingParticleJacobian(const DKinFitParticle* locKinFi
 		//And the Xi- DEFINED vertex is at its production vertex (from kaons)
 		//But the p3 is NEEDED at the production vertex, which is where it's DEFINED
 		//Thus we need a factor of -1
-	bool locNeedP4AtProductionVertex = locKinFitParticle->Get_FromInitialState().empty(); //true if defined by decay products; else by missing mass
+	bool locNeedP4AtProductionVertex = Get_IsDecayingParticleDefinedByProducts(); //true if defined by decay products; else by missing mass
 	double locVertexSignMultiplier = (locNeedP4AtProductionVertex == locKinFitParticle->Get_VertexP4AtProductionVertex()) ? -1.0 : 1.0;
 	TVector3 locDeltaX = locVertexSignMultiplier*(locCommonVertex - locPosition); //vector points in the OPPOSITE direction of the momentum
 
@@ -1461,6 +1471,8 @@ const DKinFitChain* DKinFitUtils::Build_OutputKinFitChain(const DKinFitChain* lo
 		set<DKinFitParticle*> locInitialParticles = locInputKinFitChainStep->Get_InitialParticles();
 		for(locParticleIterator = locInitialParticles.begin(); locParticleIterator != locInitialParticles.end(); ++locParticleIterator)
 		{
+			if((*locParticleIterator) == nullptr)
+				continue;
 			map<DKinFitParticle*, DKinFitParticle*>::iterator locMapIterator = locInputToOutputParticleMap.find(*locParticleIterator);
 			DKinFitParticle* locKinFitParticle = (locMapIterator != locInputToOutputParticleMap.end()) ? locMapIterator->second : *locParticleIterator;
 			locOutputKinFitChainStep->Add_InitialParticle(locKinFitParticle);
@@ -1471,6 +1483,8 @@ const DKinFitChain* DKinFitUtils::Build_OutputKinFitChain(const DKinFitChain* lo
 		set<DKinFitParticle*> locFinalParticles = locInputKinFitChainStep->Get_FinalParticles();
 		for(locParticleIterator = locFinalParticles.begin(); locParticleIterator != locFinalParticles.end(); ++locParticleIterator)
 		{
+			if((*locParticleIterator) == nullptr)
+				continue;
 			map<DKinFitParticle*, DKinFitParticle*>::iterator locMapIterator = locInputToOutputParticleMap.find(*locParticleIterator);
 			DKinFitParticle* locKinFitParticle = (locMapIterator != locInputToOutputParticleMap.end()) ? locMapIterator->second : *locParticleIterator;
 			locOutputKinFitChainStep->Add_FinalParticle(locKinFitParticle);

@@ -304,21 +304,6 @@ DKinFitParticle* DKinFitUtils_GlueX::Make_DetectedParticle(const DKinematicData*
 	return locKinFitParticle;
 }
 
-DKinFitParticle* DKinFitUtils_GlueX::Make_DetectedParticle(DKinFitParticle* locDecayingKinFitParticle)
-{
-	if(locDecayingKinFitParticle->Get_KinFitParticleType() != d_DecayingParticle)
-	{
-		cout << "WARNING: NON-DECAYING PARTICLE AS INPUT TO DKinFitUtils_GlueX::Make_DetectedParticle(). RETURNING NULL." << endl;
-		return NULL;
-	}
-
-	DKinFitParticle* locDetectedKinFitParticle = DKinFitUtils::Make_DetectedParticle(locDecayingKinFitParticle->Get_PID(), 
-		locDecayingKinFitParticle->Get_Charge(), locDecayingKinFitParticle->Get_Mass(), locDecayingKinFitParticle->Get_SpacetimeVertex(), 
-		locDecayingKinFitParticle->Get_Momentum(), Clone_SymMatrix(locDecayingKinFitParticle->Get_CovarianceMatrix()));
-
-	return locDetectedKinFitParticle;
-}
-
 DKinFitParticle* DKinFitUtils_GlueX::Make_DetectedShower(const DNeutralShower* locNeutralShower, Particle_t locPID)
 {
 	pair<const DNeutralShower*, Particle_t> locSourcePair(locNeutralShower, locPID);
@@ -369,7 +354,7 @@ DKinFitParticle* DKinFitUtils_GlueX::Make_DecayingParticle(Particle_t locPID, co
 
 /**************************************************************** MAKE DKINFITCHAIN ****************************************************************/
 
-const DKinFitChain* DKinFitUtils_GlueX::Make_KinFitChain(const DReactionVertexInfo* locReactionVertexInfo, const DParticleCombo* locParticleCombo, DKinFitType locKinFitType)
+const DKinFitChain* DKinFitUtils_GlueX::Make_KinFitChain(const DReactionVertexInfo* locReactionVertexInfo, const DReaction* locReaction, const DParticleCombo* locParticleCombo, DKinFitType locKinFitType)
 {
 	//locKinFitType input in case want to do a different fit
 	if(dDebugLevel > 10)
@@ -380,18 +365,10 @@ const DKinFitChain* DKinFitUtils_GlueX::Make_KinFitChain(const DReactionVertexIn
 
 	//Make chain, excluding decaying particles
 		//They must be created using the detected particles, so just create those first
-	map<size_t, size_t> locStepCreationMap; //key is source particle combo step, value is created kinfit step index
 	for(size_t loc_i = 0; loc_i < locParticleCombo->Get_NumParticleComboSteps(); ++loc_i)
 	{
-		if(locStepCreationMap.find(loc_i) != locStepCreationMap.end())
-			continue; //already did this step
-
-		//Start and register new step
-		DKinFitChainStep* locKinFitChainStep = Get_KinFitChainStepResource();
-		locKinFitChainStep->Set_ConstrainDecayingMassFlag(false); //unless changed later
-
 		//Create it
-		Make_KinFitChainStep(locReactionVertexInfo, locParticleCombo, locKinFitType, loc_i, locKinFitChain, locKinFitChainStep, locStepCreationMap);
+		auto locKinFitChainStep = Make_KinFitChainStep(locReactionVertexInfo, locReaction, locParticleCombo, locKinFitType, loc_i, locKinFitChain);
 		locKinFitChain->Add_KinFitChainStep(locKinFitChainStep);
 	}
 
@@ -410,78 +387,80 @@ const DKinFitChain* DKinFitUtils_GlueX::Make_KinFitChain(const DReactionVertexIn
 		locCurrentStepIndex = locKinFitChain->Get_KinFitChainStep(locCurrentStepIndex)->Get_InitialParticleDecayFromStepIndex();
 	}
 
-	//now do the invariant mass loop
+	//now create decaying particles
+	//do the invariant mass loop
+	set<size_t> locProcessedSteps;
 	for(int loc_i = locParticleCombo->Get_NumParticleComboSteps() - 1; loc_i >= 0; --loc_i)
 	{
 		//get steps
-		int locKinFitStepIndex = locStepCreationMap[loc_i];
-		const DParticleComboStep* locParticleComboStep = locParticleCombo->Get_ParticleComboStep(loc_i);
-		DKinFitChainStep* locKinFitChainStep = const_cast<DKinFitChainStep*>(locKinFitChain->Get_KinFitChainStep(locKinFitStepIndex));
+		auto locReactionStep = locReaction->Get_ReactionStep(loc_i);
+		DKinFitChainStep* locKinFitChainStep = const_cast<DKinFitChainStep*>(locKinFitChain->Get_KinFitChainStep(loc_i));
 
 		//skip steps that must defined via missing mass
-		if(locMissingMassSteps.find(locKinFitStepIndex) != locMissingMassSteps.end())
+		if(locMissingMassSteps.find(loc_i) != locMissingMassSteps.end())
 			continue; //decay products contain a missing or open-ended-decaying particle
 
 		//check if initial particle already created for this step (i.e. beam)
 		if(!locKinFitChainStep->Get_InitialParticles().empty())
 			continue; //only do decaying particles
 
+		//mark the progress
+		locProcessedSteps.insert(loc_i);
+
 		//don't create particle for omega, etc. (will confuse kinfitter)
-		Particle_t locPID = locParticleComboStep->Get_InitialParticleID();
+		Particle_t locPID = locReactionStep->Get_InitialPID();
 		if(!IsFixedMass(locPID))
 			continue;
 
 		//since going in reverse order, all decay products are ready: create the decaying particle
-		set<DKinFitParticle*> locFromInitialState; //empty
-		DKinFitParticle* locDecayingParticle = Make_DecayingParticle(locPID, locFromInitialState, locKinFitChainStep->Get_FinalParticles());
+		auto locDecaySourceParticles = Get_StepParticles_NonNull(locKinFitChain, locReaction, loc_i, DReactionStep::Get_ParticleIndex_Initial());
+		DKinFitParticle* locDecayingParticle = Make_DecayingParticle(locPID, locDecaySourceParticles.first, locDecaySourceParticles.second);
 
 		//set decaying particle in the chain
-		locKinFitChainStep->Add_InitialParticle(locDecayingParticle);
-		int locProducedStepIndex = locStepCreationMap[locParticleComboStep->Get_InitialParticleDecayFromStepIndex()];
-		if((locProducedStepIndex < 0) || (locProducedStepIndex == loc_i))
+		locKinFitChainStep->Set_InitialParticle(locDecayingParticle, 0);
+		auto locFromIndices = DAnalysis::Get_InitialParticleDecayFromIndices(locReaction, loc_i);
+		if((locFromIndices.first < 0) || (locFromIndices.first == loc_i))
 			continue; //intial-state open-ended decaying particle
 
-		DKinFitChainStep* locProductionStep = const_cast<DKinFitChainStep*>(locKinFitChain->Get_KinFitChainStep(locProducedStepIndex));
-		locProductionStep->Add_FinalParticle(locDecayingParticle);
-		locKinFitChain->Set_DecayStepIndex(locDecayingParticle, locKinFitStepIndex);
-
-		//mark the progress, and go to the next step
-		locStepCreationMap.erase(loc_i);
+		DKinFitChainStep* locProductionStep = const_cast<DKinFitChainStep*>(locKinFitChain->Get_KinFitChainStep(locFromIndices.first));
+		locProductionStep->Set_FinalParticle(locDecayingParticle, locFromIndices.second);
+		locKinFitChain->Set_DecayStepIndex(locDecayingParticle, loc_i);
 	}
 
 	//now loop from the front, using missing mass for the rest
 	for(size_t loc_i = 0; loc_i < locParticleCombo->Get_NumParticleComboSteps(); ++loc_i)
 	{
 		const DParticleComboStep* locParticleComboStep = locParticleCombo->Get_ParticleComboStep(loc_i);
-		if(locStepCreationMap.find(loc_i) == locStepCreationMap.end())
+		if(locProcessedSteps.find(loc_i) != locProcessedSteps.end())
 			continue;
-		int locKinFitStepIndex = locStepCreationMap[loc_i];
-		DKinFitChainStep* locKinFitChainStep = const_cast<DKinFitChainStep*>(locKinFitChain->Get_KinFitChainStep(locKinFitStepIndex));
+
+		auto locReactionStep = locReaction->Get_ReactionStep(loc_i);
+		DKinFitChainStep* locKinFitChainStep = const_cast<DKinFitChainStep*>(locKinFitChain->Get_KinFitChainStep(loc_i));
 
 		//create decaying particle in final state: first figure out which one needs a particle
 		for(size_t loc_j = 0; loc_j < locParticleComboStep->Get_NumFinalParticles(); ++loc_j)
 		{
 			//DecayStepIndex: >= 0 if decaying, where the # is the step representing the particle decay
-			int locDecayStepIndex = locParticleComboStep->Get_DecayStepIndex(loc_j);
+			int locDecayStepIndex = DAnalysis::Get_DecayStepIndex(locReaction, loc_i, loc_j);
 			if(locDecayStepIndex < 0)
 				continue; //not decaying
 
-			int locKinFitDecayStepIndex = locStepCreationMap[locDecayStepIndex];
-			if(!locKinFitChain->Get_KinFitChainStep(locKinFitDecayStepIndex)->Get_InitialParticles().empty())
+			if(!locKinFitChain->Get_KinFitChainStep(locDecayStepIndex)->Get_InitialParticles().empty())
 				continue; //decaying particle already created
 
 			//don't create particle for omega, etc. (will confuse kinfitter)
-			Particle_t locPID = locParticleComboStep->Get_FinalParticleID(loc_j);
+			Particle_t locPID = locReactionStep->Get_FinalPID(loc_j);
 			if(!IsFixedMass(locPID))
 				continue;
 
 			//make decaying particle
-			DKinFitParticle* locDecayingParticle = Make_DecayingParticle(locPID, locKinFitChainStep->Get_InitialParticles(), locKinFitChainStep->Get_FinalParticles());
-			locKinFitChainStep->Add_FinalParticle(locDecayingParticle);
+			auto locDecaySourceParticles = Get_StepParticles_NonNull(locKinFitChain, locReaction, loc_i, loc_j);
+			DKinFitParticle* locDecayingParticle = Make_DecayingParticle(locPID, locDecaySourceParticles.first, locDecaySourceParticles.second);
+			locKinFitChainStep->Set_FinalParticle(locDecayingParticle, loc_j);
 
-			DKinFitChainStep* locDecayStep = const_cast<DKinFitChainStep*>(locKinFitChain->Get_KinFitChainStep(locKinFitDecayStepIndex));
-			locDecayStep->Add_InitialParticle(locDecayingParticle);
-			locKinFitChain->Set_DecayStepIndex(locDecayingParticle, locKinFitDecayStepIndex);
+			DKinFitChainStep* locDecayStep = const_cast<DKinFitChainStep*>(locKinFitChain->Get_KinFitChainStep(locDecayStepIndex));
+			locDecayStep->Set_InitialParticle(locDecayingParticle, 0);
+			locKinFitChain->Set_DecayStepIndex(locDecayingParticle, locDecayStepIndex);
 		}
 	}
 
@@ -494,11 +473,56 @@ const DKinFitChain* DKinFitUtils_GlueX::Make_KinFitChain(const DReactionVertexIn
 	return locKinFitChain;
 }
 
-void DKinFitUtils_GlueX::Make_KinFitChainStep(const DReactionVertexInfo* locReactionVertexInfo, const DParticleCombo* locParticleCombo, DKinFitType locKinFitType, size_t locStepIndex, DKinFitChain* locKinFitChain, DKinFitChainStep* locKinFitChainStep, map<size_t, size_t>& locStepCreationMap)
+pair<vector<DKinFitParticle*>, vector<DKinFitParticle*>> DKinFitUtils_GlueX::Get_StepParticles_NonNull(const DKinFitChain* locKinFitChain, const DReaction* locReaction, size_t locStepIndex, int locNonFixedMassParticleIndex) const
 {
+	//If one of the final particles is null (decaying non-fixed-mass particle), remove it, AND go to its decay step and get ALL particles (put in init or final state)
+	auto locKinFitStep = locKinFitChain->Get_KinFitChainStep(locStepIndex);
+
+	//Get Initial particles, erase nulls
+	auto locGrabbedInitialParticles = locKinFitStep->Get_InitialParticles();
+	auto locInitialParticles = locGrabbedInitialParticles;
+	std::erase(std::remove(locInitialParticles.begin(), locInitialParticles.end(), nullptr), locInitialParticles.end()); //remove any null particles
+
+	//Get Final particles, erase nulls
+	auto locGrabbedFinalParticles = locKinFitStep->Get_FinalParticles();
+	auto locFinalParticles = locGrabbedFinalParticles;
+	std::erase(std::remove(locFinalParticles.begin(), locFinalParticles.end(), nullptr), locFinalParticles.end()); //remove any null particles
+
+	//If nulls in initial state: go to the previous step
+	for(size_t loc_i = 0; loc_i < locGrabbedFinalParticles.size(); ++loc_i)
+	{
+		if((locGrabbedFinalParticles[loc_i] != nullptr) || (locNonFixedMassParticleIndex == DReactionStep::Get_ParticleIndex_Initial()))
+			continue;
+
+		//null particles in initial state: go to the previous step
+		auto locParticlePair = DAnalysis::Get_InitialParticleDecayFromIndices(locReaction, locStepIndex);
+		auto locStepParticles = Get_StepParticles_NonNull(locKinFitChain, locReaction, locParticlePair.first, locParticlePair.second);
+		locInitialParticles.insert(locInitialParticles.end(), locStepParticles.first.begin(), locStepParticles.first.end());
+		locFinalParticles.insert(locFinalParticles.end(), locStepParticles.second.begin(), locStepParticles.second.end());
+	}
+
+	//If nulls in final state: go to the next step
+	for(size_t loc_i = 0; loc_i < locGrabbedFinalParticles.size(); ++loc_i)
+	{
+		if((locGrabbedFinalParticles[loc_i] != nullptr) || (locNonFixedMassParticleIndex == loc_i))
+			continue;
+
+		auto locDecayStepIndex = DAnalysis::Get_DecayStepIndex(locReaction, locStepIndex, loc_i);
+		auto locStepParticles = Get_StepParticles_NonNull(locKinFitChain, locReaction, locDecayStepIndex, DReactionStep::Get_ParticleIndex_Initial());
+		locInitialParticles.insert(locInitialParticles.end(), locStepParticles.first.begin(), locStepParticles.first.end());
+		locFinalParticles.insert(locFinalParticles.end(), locStepParticles.second.begin(), locStepParticles.second.end());
+	}
+	return std::make_pair(locInitialParticles, locFinalParticles);
+}
+
+DKinFitChainStep* DKinFitUtils_GlueX::Make_KinFitChainStep(const DReactionVertexInfo* locReactionVertexInfo, const DReaction* locReaction, const DParticleCombo* locParticleCombo, DKinFitType locKinFitType, size_t locStepIndex, DKinFitChain* locKinFitChain)
+{
+	//Start and register new step
+	auto locKinFitChainStep = Get_KinFitChainStepResource();
+	locKinFitChainStep->Set_ConstrainDecayingMassFlag(false); //unless changed later
+
 	//get the steps
 	const DParticleComboStep* locParticleComboStep = locParticleCombo->Get_ParticleComboStep(locStepIndex);
-	const DReaction* locReaction = locParticleCombo->Get_Reaction();
 	const DReactionStep* locReactionStep = locReaction->Get_ReactionStep(locStepIndex);
 	auto locStepVertexInfo = locReactionVertexInfo->Get_StepVertexInfo(locStepIndex);
 	int locKinFitStepIndex = locKinFitChain->Get_NumKinFitChainSteps();
@@ -506,59 +530,45 @@ void DKinFitUtils_GlueX::Make_KinFitChainStep(const DReactionVertexInfo* locReac
 	//if doing a vertex fit, see which neutral particles can be treated as showers
 	bool locSpactimeIsFitFlag = (locKinFitType == d_SpacetimeFit) || (locKinFitType == d_P4AndSpacetimeFit);
 
-	//initial particle
-	if(locKinFitChainStep->Get_InitialParticles().empty()) //else step already started: initial particle doesn't have fixed mass
+	//initial beam particle
+	locKinFitChainStep->Set_InitialParticleDecayFromStepIndex(-1); //unless set otherwise below (enclosed decaying particle)
+	const DBeamPhoton* locBeamPhoton = dynamic_cast<const DBeamPhoton*>(locParticleComboStep->Get_InitialParticle_Measured());
+	if(locBeamPhoton != NULL)
+		locKinFitChainStep->Add_InitialParticle(Make_BeamParticle(locBeamPhoton));
+	else //decaying particle
 	{
-		locKinFitChainStep->Set_InitialParticleDecayFromStepIndex(-1); //unless set otherwise below (enclosed decaying particle)
-		//initial beam particle
-		const DBeamPhoton* locBeamPhoton = dynamic_cast<const DBeamPhoton*>(locParticleComboStep->Get_InitialParticle_Measured());
-		if(locBeamPhoton != NULL)
-			locKinFitChainStep->Add_InitialParticle(Make_BeamParticle(locBeamPhoton));
-		else //decaying particle
+		if(locStepIndex == 0) //open-ended
+			locKinFitChain->Set_DefinedParticleStepIndex(locKinFitStepIndex);
+		else //enclosed
 		{
-			if(locStepIndex == 0) //open-ended
-				locKinFitChain->Set_DefinedParticleStepIndex(locKinFitStepIndex);
-			else //enclosed
-			{
-				int locDecayFromStepIndex = locStepCreationMap[locParticleComboStep->Get_InitialParticleDecayFromStepIndex()];
-				locKinFitChainStep->Set_InitialParticleDecayFromStepIndex(locDecayFromStepIndex);
-				Particle_t locPID = locParticleComboStep->Get_InitialParticleID();
-				if(IsFixedMass(locPID))
-					locKinFitChainStep->Set_ConstrainDecayingMassFlag(locReactionStep->Get_KinFitConstrainInitMassFlag());
-			}
+			int locDecayFromStepIndex = DAnalysis::Get_InitialParticleDecayFromIndices(locReaction, locStepIndex).first;
+			locKinFitChainStep->Set_InitialParticleDecayFromStepIndex(locDecayFromStepIndex);
+			Particle_t locPID = locReactionStep->Get_InitialPID();
+			auto locConstrainMassFlag = IsFixedMass(locPID) ? locReactionStep->Get_KinFitConstrainInitMassFlag() : false;
+			locKinFitChainStep->Set_ConstrainDecayingMassFlag(locConstrainMassFlag);
 		}
-		//skip creating decaying particles for now: will create later
-
-		//target particle
-		Particle_t locTargetPID = locParticleComboStep->Get_TargetParticleID();
-		if(locTargetPID != Unknown)
-			locKinFitChainStep->Add_InitialParticle(Make_TargetParticle(locTargetPID));
+		locKinFitChainStep->Add_InitialParticle(nullptr); //will create decaying particle later
 	}
+
+	//target particle
+	Particle_t locTargetPID = locReactionStep->Get_TargetPID();
+	if(locTargetPID != Unknown)
+		locKinFitChainStep->Add_InitialParticle(Make_TargetParticle(locTargetPID));
 
 	//final state particles
 	for(size_t loc_j = 0; loc_j < locParticleComboStep->Get_NumFinalParticles(); ++loc_j)
 	{
-		int locDecayStepIndex = locParticleComboStep->Get_DecayStepIndex(loc_j);
+		int locDecayStepIndex = DAnalysis::Get_DecayStepIndex(locReaction, locStepIndex, loc_j);
 		const DKinematicData* locKinematicData = locParticleComboStep->Get_FinalParticle_Measured(loc_j);
-		Particle_t locPID = locParticleComboStep->Get_FinalParticleID(loc_j);
+		Particle_t locPID = locReactionStep->Get_FinalPID(loc_j);
 
-		if(locDecayStepIndex == -1) //missing particle
+		if(locReactionStep->Get_MissingParticleIndex() == loc_j) //missing particle
 		{
 			locKinFitChain->Set_DefinedParticleStepIndex(locKinFitStepIndex);
-			if(locPID == Unknown)
-			{
-				locKinFitChain->Set_IsInclusiveChannelFlag(true);
-				continue;
-			}
 			locKinFitChainStep->Add_FinalParticle(Make_MissingParticle(locPID));
 		}
 		else if(locDecayStepIndex >= 0) //decaying particle
-		{
-			if(IsFixedMass(locPID))
-				continue; //skip for now, will create later
-			//e.g. omega: cannot constrain: add its decay step to this one
-			Make_KinFitChainStep(locReactionVertexInfo, locParticleCombo, locKinFitType, locDecayStepIndex, locKinFitChain, locKinFitChainStep, locStepCreationMap);
-		}
+			locKinFitChainStep->Add_FinalParticle(nullptr); //skip for now, will create later (unless not fixed mass)
 		else if(ParticleCharge(locPID) == 0) //detected neutral
 		{
 			const DNeutralParticleHypothesis* locNeutralParticleHypothesis = static_cast<const DNeutralParticleHypothesis*>(locKinematicData);
@@ -584,12 +594,16 @@ void DKinFitUtils_GlueX::Make_KinFitChainStep(const DReactionVertexInfo* locReac
 		}
 	}
 
-	locStepCreationMap.insert(pair<size_t, size_t>(locStepIndex, locKinFitStepIndex));
+	//Inclusive?
+	if(locReactionStep->Get_MissingParticleIndex() == DReactionStep::Get_ParticleIndex_Inclusive())
+		locKinFitChain->Set_IsInclusiveChannelFlag(true);
+
+	return locKinFitChainStep;
 }
 
 /**************************************************************** MAKE CONSTRAINTS *****************************************************************/
 
-set<DKinFitConstraint*> DKinFitUtils_GlueX::Create_Constraints(const DReactionVertexInfo* locReactionVertexInfo, const DParticleCombo* locParticleCombo, const DKinFitChain* locKinFitChain, DKinFitType locKinFitType, deque<DKinFitConstraint_Vertex*>& locSortedVertexConstraints)
+set<DKinFitConstraint*> DKinFitUtils_GlueX::Create_Constraints(const DReactionVertexInfo* locReactionVertexInfo, const DReaction* locReaction, const DParticleCombo* locParticleCombo, const DKinFitChain* locKinFitChain, DKinFitType locKinFitType, deque<DKinFitConstraint_Vertex*>& locSortedVertexConstraints)
 {
 	if(dDebugLevel > 10)
 		cout << "DKinFitUtils_GlueX: Create constraints." << endl;
@@ -611,10 +625,12 @@ set<DKinFitConstraint*> DKinFitUtils_GlueX::Create_Constraints(const DReactionVe
 			if(!locKinFitChainStep->Get_ConstrainDecayingMassFlag())
 				continue; //don't apply mass constraint to this step
 
-			set<DKinFitParticle*> locInitialParticles = locKinFitChainStep->Get_InitialParticles();
-			set<DKinFitParticle*>::iterator locParticleIterator = locInitialParticles.begin();
+			auto locInitialParticles = locKinFitChainStep->Get_InitialParticles();
+			auto locParticleIterator = locInitialParticles.begin();
 			for(; locParticleIterator != locInitialParticles.end(); ++locParticleIterator)
 			{
+				if((*locParticleIterator) == nullptr)
+					continue;
 				if((*locParticleIterator)->Get_KinFitParticleType() != d_DecayingParticle)
 					continue; //not a decaying particle
 				DKinFitConstraint_Mass* locMassConstraint = Make_MassConstraint(*locParticleIterator);
@@ -635,8 +651,8 @@ set<DKinFitConstraint*> DKinFitUtils_GlueX::Create_Constraints(const DReactionVe
 	{
 		int locDefinedParticleStepIndex = locKinFitChain->Get_DefinedParticleStepIndex();
 		int locP4StepIndex = (locDefinedParticleStepIndex >= 0) ? locDefinedParticleStepIndex : 0;
-		const DKinFitChainStep* locKinFitChainStep = locKinFitChain->Get_KinFitChainStep(locP4StepIndex);
-		locP4Constraint = Make_P4Constraint(locKinFitChainStep->Get_InitialParticles(), locKinFitChainStep->Get_FinalParticles());
+		auto locStepParticles = Get_StepParticles_NonNull(locKinFitChain, locReaction, locP4StepIndex);
+		locP4Constraint = Make_P4Constraint(locStepParticles.first, locStepParticles.second);
 
 		//OK, now, check to see if the system is overly constrained: 
 			//there must be at least one particle with non-zero errors in the p4 constraint that is NOT in a mass constraint
@@ -689,9 +705,9 @@ set<DKinFitConstraint*> DKinFitUtils_GlueX::Create_Constraints(const DReactionVe
 			{
 				DLorentzVector locDefinedP4;
 				if(locP4Constraint->Get_IsDefinedParticleInFinalState())
-					locDefinedP4 = dAnalysisUtilities->Calc_MissingP4(locParticleCombo, false);
+					locDefinedP4 = dAnalysisUtilities->Calc_MissingP4(locReaction, locParticleCombo, false);
 				else
-					locDefinedP4 = dAnalysisUtilities->Calc_FinalStateP4(locParticleCombo, 0, false);
+					locDefinedP4 = dAnalysisUtilities->Calc_FinalStateP4(locReaction, locParticleCombo, 0, false);
 				TVector3 locInitP3Guess(locDefinedP4.Px(), locDefinedP4.Py(), locDefinedP4.Pz());
 				locP4Constraint->Set_InitP3Guess(locInitP3Guess);
 			}
@@ -711,12 +727,16 @@ set<DKinFitConstraint*> DKinFitUtils_GlueX::Create_Constraints(const DReactionVe
 	if((locKinFitType == d_VertexFit) || (locKinFitType == d_SpacetimeFit) || (locKinFitType == d_P4AndVertexFit) || (locKinFitType == d_P4AndSpacetimeFit))
 	{
 		bool locSpacetimeFitFlag = ((locKinFitType == d_SpacetimeFit) || (locKinFitType == d_P4AndSpacetimeFit));
-		for(locStepVertexInfo : locReactionVertexInfo->Get_StepVertexInfos())
+		for(auto& locStepVertexInfo : locReactionVertexInfo->Get_StepVertexInfos())
 		{
 			auto locDX4 = locParticleCombo->Get_ParticleComboStep(locStepVertexInfo->Get_StepIndices().front())->Get_SpacetimeVertex();
 			TLorentzVector locX4(locDX4.X(), locDX4.Y(), locDX4.Z(), locDX4.T());
+
+			auto locFullConstrainIndices = locStepVertexInfo->Get_FullConstrainParticles();
+			 locFullConstrainParticles;
+
 			if(locSpacetimeFitFlag)
-				locSortedVertexConstraints.push_back(Make_SpacetimeConstraint(locStepVertexInfo->Get_FullConstrainParticles(), locStepVertexInfo->Get_OnlyConstrainTimeParticles(), locStepVertexInfo->Get_NoConstrainParticles(), locX4));
+				locSortedVertexConstraints.push_back(Make_SpacetimeConstraint(, locStepVertexInfo->Get_OnlyConstrainTimeParticles(), locStepVertexInfo->Get_NoConstrainParticles(), locX4));
 			else
 				locSortedVertexConstraints.push_back(Make_VertexConstraint(locStepVertexInfo->Get_FullConstrainParticles(), locStepVertexInfo->Get_NoConstrainParticles(), locX4.Vect()));
 		}
@@ -727,6 +747,17 @@ set<DKinFitConstraint*> DKinFitUtils_GlueX::Create_Constraints(const DReactionVe
 		cout << "DKinFitUtils_GlueX: All Constraints Created." << endl;
 
 	return locAllConstraints;
+}
+
+set<DKinFitParticle*> DKinFitUtils_GlueX::Build_ParticleSet(const vector<pair<int, int>>& locParticleIndices, const DKinFitChain* locKinFitChain)
+{
+//RESUME HERE!!
+	set<DKinFitParticle*> locParticles;
+	for(auto& locParticlePair : locParticleIndices)
+	{
+bargle!
+	}
+	return locParticles;
 }
 
 /************************************************************** CONSTRAINT PREDICTORS **************************************************************/
@@ -752,7 +783,7 @@ string DKinFitUtils_GlueX::Get_ConstraintInfo(const DReactionVertexInfo* locReac
 			if(!locReactionStep->Get_KinFitConstrainInitMassFlag())
 				continue; //don't apply mass constraint to this step
 
-			Particle_t locPID = locReactionStep->Get_InitialParticleID();
+			Particle_t locPID = locReactionStep->Get_InitialPID();
 			if(!IsFixedMass(locPID))
 				continue; //don't apply mass constraint to this step
 
@@ -776,7 +807,7 @@ string DKinFitUtils_GlueX::Get_ConstraintInfo(const DReactionVertexInfo* locReac
 			set<size_t> locP4ConstrainedParticleSteps;
 
 			//check if initial & final states if have non-zero cov errors:
-			if((locP4StepIndex == 0) && (locReactionStep->Get_TargetParticleID() != Unknown) && dWillBeamHaveErrorsFlag)
+			if((locP4StepIndex == 0) && (locReactionStep->Get_TargetPID() != Unknown) && dWillBeamHaveErrorsFlag)
 				locNonZeroErrorFlag = true; //beam: we're good
 			else if((locP4StepIndex != 0) && (locMassConstraintStrings.find(locP4StepIndex) == locMassConstraintStrings.end()))
 				locNonZeroErrorFlag = true; //decaying particle, but mass not constrained: we're good (unless it's e.g. an omega. ugh.)

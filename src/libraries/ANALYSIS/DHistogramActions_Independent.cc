@@ -154,70 +154,10 @@ bool DHistogramAction_ObjectMemory::Perform_Action(JEventLoop* locEventLoop, con
 
 	//RESOURCE POOLS
 	{
-		unsigned long long locMemory;
-		JFactory_base* locBaseFactory;
-		int locBin;
+		unsigned long long locMemory = 0;
+		JFactory_base* locBaseFactory = nullptr;
+		int locBin = 0;
 
-		//DParticleComboStep_PreKinFit
-		locBin = dFactoryPoolBinMap["DParticleComboStep_PreKinFit"];
-		locBaseFactory = locEventLoop->GetFactory("DParticleCombo", "PreKinFit");
-		DParticleCombo_factory_PreKinFit* locParticleComboFactory_PreKinFit = static_cast<DParticleCombo_factory_PreKinFit*>(locBaseFactory);
-		locNumObjectsMap[locBin] = locParticleComboFactory_PreKinFit->Get_ParticleComboStepPoolSize();
-		locMemory = sizeof(DParticleComboStep)*locNumObjectsMap[locBin];
-		locMemoryMap[locBin] = locMemory;
-		locTotalMemory += locMemory;
-
-		//DKinematicData_ComboPreKinFit
-		locBin = dFactoryPoolBinMap["DKinematicData_ComboPreKinFit"];
-		locNumObjectsMap[locBin] = locParticleComboFactory_PreKinFit->Get_KinematicDataPoolSize();
-		locMemory = sizeof(DKinematicData)*locNumObjectsMap[locBin];
-		locMemoryMap[locBin] = locMemory;
-		locTotalMemory += locMemory;
-
-		//DKinFitParticle
-		locBin = dFactoryPoolBinMap["DKinFitParticle"];
-		locBaseFactory = locEventLoop->GetFactory("DKinFitResults", "");
-		DKinFitResults_factory* locKinFitResultsFactory = static_cast<DKinFitResults_factory*>(locBaseFactory);
-		locNumObjectsMap[locBin] = locKinFitResultsFactory->Get_KinFitParticlePoolSize();
-		locMemory = sizeof(DKinFitParticle)*locNumObjectsMap[locBin];
-		locMemoryMap[locBin] = locMemory;
-		locTotalMemory += locMemory;
-
-		//DKinFitParticle_Shared
-		locBin = dFactoryPoolBinMap["DKinFitParticle_Shared"];
-		locNumObjectsMap[locBin] = locKinFitResultsFactory->Get_KinFitParticlePoolSize_Shared();
-		locMemory = sizeof(DKinFitParticle)*locNumObjectsMap[locBin];
-		locMemoryMap[locBin] = locMemory;
-		locTotalMemory += locMemory;
-
-		//DKinFitChainStep
-		locBin = dFactoryPoolBinMap["DKinFitChainStep"];
-		locNumObjectsMap[locBin] = locKinFitResultsFactory->Get_KinFitChainStepPoolSize();
-		locMemory = sizeof(DKinFitChainStep)*locNumObjectsMap[locBin];
-		locMemoryMap[locBin] = locMemory;
-		locTotalMemory += locMemory;
-
-		//DKinFitChain
-		locBin = dFactoryPoolBinMap["DKinFitChain"];
-		locNumObjectsMap[locBin] = locKinFitResultsFactory->Get_KinFitChainPoolSize();
-		locMemory = sizeof(DKinFitChain)*locNumObjectsMap[locBin];
-		locMemoryMap[locBin] = locMemory;
-		locTotalMemory += locMemory;
-
-		//DKinFitConstraints
-		locBin = dFactoryPoolBinMap["DKinFitConstraints"];
-		//vertex
-		locNumObjectsMap[locBin] = locKinFitResultsFactory->Get_KinFitConstraintVertexPoolSize();
-		locMemory = sizeof(DKinFitConstraint_Vertex)*locKinFitResultsFactory->Get_KinFitConstraintVertexPoolSize();
-		//spacetime
-		locNumObjectsMap[locBin] += locKinFitResultsFactory->Get_KinFitConstraintSpacetimePoolSize();
-		locMemory += sizeof(DKinFitConstraint_Spacetime)*locKinFitResultsFactory->Get_KinFitConstraintSpacetimePoolSize();
-		//p4
-		locNumObjectsMap[locBin] += locKinFitResultsFactory->Get_KinFitConstraintP4PoolSize();
-		locMemory += sizeof(DKinFitConstraint_P4)*locKinFitResultsFactory->Get_KinFitConstraintP4PoolSize();
-		//mass
-		locNumObjectsMap[locBin] += locKinFitResultsFactory->Get_KinFitConstraintMassPoolSize();
-		locMemory += sizeof(DKinFitConstraint_Mass)*locKinFitResultsFactory->Get_KinFitConstraintMassPoolSize();
 		//save
 		locMemoryMap[locBin] = locMemory;
 		locTotalMemory += locMemory;
@@ -226,22 +166,6 @@ bool DHistogramAction_ObjectMemory::Perform_Action(JEventLoop* locEventLoop, con
 		locBin = dFactoryPoolBinMap["TMatrixFSym"];
 		locNumObjectsMap[locBin] = (dynamic_cast<DApplication*>(japp))->Get_NumCovarianceMatrices();
 		locMemory = ((unsigned long long)(sizeof(TMatrixDSym) + 7*7*4))*locNumObjectsMap[locBin]; //assume 7x7 matrix of floats (4)
-		locMemoryMap[locBin] = locMemory;
-		locTotalMemory += locMemory;
-
-		//DParticleComboStep
-		locBin = dFactoryPoolBinMap["DParticleComboStep"];
-		locBaseFactory = locEventLoop->GetFactory("DParticleCombo", "");
-		DParticleCombo_factory* locParticleComboFactory = static_cast<DParticleCombo_factory*>(locBaseFactory);
-		locNumObjectsMap[locBin] = locParticleComboFactory->Get_ParticleComboStepPoolSize();
-		locMemory = sizeof(DParticleComboStep)*locNumObjectsMap[locBin];
-		locMemoryMap[locBin] = locMemory;
-		locTotalMemory += locMemory;
-
-		//DKinematicData_Combo
-		locBin = dFactoryPoolBinMap["DKinematicData_Combo"];
-		locNumObjectsMap[locBin] = locParticleComboFactory->Get_KinematicDataPoolSize();
-		locMemory = sizeof(DKinematicData)*locNumObjectsMap[locBin];
 		locMemoryMap[locBin] = locMemory;
 		locTotalMemory += locMemory;
 	}
@@ -560,11 +484,11 @@ bool DHistogramAction_Reconstruction::Perform_Action(JEventLoop* locEventLoop, c
 		//also, select best sc matches for each track
 	map<JObject::oid_t, const DTrackTimeBased*> locBestTrackTimeBasedMap; //lowest tracking FOM for each candidate id
 	map<const DTrackWireBased*, const DTrackTimeBased*> locWireToTimeBasedTrackMap;
-	map<const DTrackTimeBased*, DSCHitMatchParams> locTimeBasedToBestSCMatchMap;
+	map<const DTrackTimeBased*, const DSCHitMatchParams*> locTimeBasedToBestSCMatchMap;
 	for(size_t loc_i = 0; loc_i < locTrackTimeBasedVector.size(); ++loc_i)
 	{
 		//Best SC Match Params
-		DSCHitMatchParams locSCHitMatchParams;
+		shared_ptr<const DSCHitMatchParams> locSCHitMatchParams;
 		if(locParticleID->Get_BestSCMatchParams(locTrackTimeBasedVector[loc_i], locDetectorMatches, locSCHitMatchParams))
 			locTimeBasedToBestSCMatchMap[locTrackTimeBasedVector[loc_i]] = locSCHitMatchParams;
 
@@ -622,7 +546,7 @@ bool DHistogramAction_Reconstruction::Perform_Action(JEventLoop* locEventLoop, c
 		for(size_t loc_i = 0; loc_i < locBeamPhotons.size(); ++loc_i)
 		{
 			double locDeltaT = locBeamPhotons[loc_i]->time() - locEventRFBunch->dTime;
-			if(locBeamPhotons[loc_i]->t0_detector() == SYS_TAGM)
+			if(locBeamPhotons[loc_i]->dSystem == SYS_TAGM)
 				dHist_TAGMRFDeltaTVsColumn->Fill(locBeamPhotons[loc_i]->dCounter, locDeltaT);
 			else
 				dHist_TAGHRFDeltaTVsCounter->Fill(locBeamPhotons[loc_i]->dCounter, locDeltaT);

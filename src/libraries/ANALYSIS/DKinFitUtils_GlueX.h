@@ -78,11 +78,11 @@ class DKinFitUtils_GlueX : public DKinFitUtils
 		/************************************************************ CREATE DKINFITCHAIN ***********************************************************/
 
 		//optional: can help make constraints
-		const DKinFitChain* Make_KinFitChain(const DReactionVertexInfo* locReactionVertexInfo, const DParticleCombo* locParticleCombo, DKinFitType locKinFitType);
+		const DKinFitChain* Make_KinFitChain(const DReactionVertexInfo* locReactionVertexInfo, const DReaction* locReaction, const DParticleCombo* locParticleCombo, DKinFitType locKinFitType);
 
 		/************************************************************* CREATE CONSTRAINTS ***********************************************************/
 
-		set<DKinFitConstraint*> Create_Constraints(const DReactionVertexInfo* locReactionVertexInfo, const DParticleCombo* locParticleCombo, const DKinFitChain* locKinFitChain, DKinFitType locKinFitType, deque<DKinFitConstraint_Vertex*>& locSortedVertexConstraints);
+		set<DKinFitConstraint*> Create_Constraints(const DReactionVertexInfo* locReactionVertexInfo, const DReaction* locReaction, const DParticleCombo* locParticleCombo, const DKinFitChain* locKinFitChain, DKinFitType locKinFitType, deque<DKinFitConstraint_Vertex*>& locSortedVertexConstraints);
 
 		/************************************************************ CONSTRAINT PREDICTORS *********************************************************/
 
@@ -109,16 +109,10 @@ class DKinFitUtils_GlueX : public DKinFitUtils
 		//PRIVATE DEFAULT CONSTRUCTOR
 		DKinFitUtils_GlueX(void){} //Cannot use default constructor. Must construct with DMagneticFieldMap as argument
 
-		/************************************************************** CREATE PARTICLES ************************************************************/
-
-		//This method is only designed to be used when forming the vertex guesses.
-		//It creates a new particle from an existing particle, cloning the covariance matrix
-		//To recycle this memory between fits, the caller is responsible for doing so (between events is done automatically)
-		DKinFitParticle* Make_DetectedParticle(DKinFitParticle* locDecayingKinFitParticle);
-
 		/************************************************************ CREATE DKINFITCHAIN ***********************************************************/
 
-		void Make_KinFitChainStep(const DReactionVertexInfo* locReactionVertexInfo, const DParticleCombo* locParticleCombo, DKinFitType locKinFitType, size_t locStepIndex, DKinFitChain* locKinFitChain, DKinFitChainStep* locKinFitChainStep, map<size_t, size_t>& locStepCreationMap);
+		DKinFitChainStep* Make_KinFitChainStep(const DReactionVertexInfo* locReactionVertexInfo, const DReaction* locReaction, const DParticleCombo* locParticleCombo, DKinFitType locKinFitType, size_t locStepIndex, DKinFitChain* locKinFitChain);
+		pair<vector<DKinFitParticle*>, vector<DKinFitParticle*>> Get_StepParticles_NonNull(const DKinFitChain* locKinFitChain, const DReaction* locReaction, size_t locStepIndex, int locNonFixedMassParticleIndex = -99) const;
 
 		/************************************************************ CONSTRAINT PREDICTORS *********************************************************/
 

@@ -453,7 +453,6 @@ bool DCutAction_BDTSignalCombo::Perform_Action(JEventLoop* locEventLoop, const D
 			}
 
 			//check if parent is correct
-			const DParticleComboStep* locParentSearchParticleComboStep = locParticleComboStep;
 			auto locParentSearchReactionStep = locReactionStep;
 			int locParentID = locMCThrown->parentid;
 			int locSearchStepIndex = loc_i;
@@ -471,7 +470,6 @@ bool DCutAction_BDTSignalCombo::Perform_Action(JEventLoop* locEventLoop, const D
 					{
 						//these particles are not constrained: check their parent step instead
 						locSearchStepIndex = DAnalysis::Get_InitialParticleDecayFromIndices(Get_Reaction(), locSearchStepIndex).first;
-						locParentSearchParticleComboStep = locParticleCombo->Get_ParticleComboStep(locSearchStepIndex);
 						locReactionStep = Get_Reaction()->Get_ReactionStep(locSearchStepIndex);
 						continue;
 					}
@@ -505,7 +503,6 @@ bool DCutAction_BDTSignalCombo::Perform_Action(JEventLoop* locEventLoop, const D
 				//HOWEVER, we need to determine whether the PARENT decayed from the correct particle (and on(back)wards until the production step)
 				locParentID = locMCThrownParent->parentid;
 				locSearchStepIndex = DAnalysis::Get_InitialParticleDecayFromIndices(Get_Reaction(), locSearchStepIndex).first;
-				locParentSearchParticleComboStep = locParticleCombo->Get_ParticleComboStep(locSearchStepIndex);
 				locReactionStep = Get_Reaction()->Get_ReactionStep(locSearchStepIndex);
 			}
 			while(true);
@@ -595,7 +592,6 @@ bool DCutAction_TrueCombo::Perform_Action(JEventLoop* locEventLoop, const DParti
 			}
 
 			//check if parent is correct
-			const DParticleComboStep* locParentSearchParticleComboStep = locParticleComboStep;
 			auto locParentSearchReactionStep = locReactionStep;
 			int locParentID = locMCThrown->parentid;
 			int locSearchStepIndex = loc_i;
@@ -634,7 +630,6 @@ bool DCutAction_TrueCombo::Perform_Action(JEventLoop* locEventLoop, const DParti
 						return false;
 					break; //good
 				}
-				locParentSearchParticleComboStep = locParticleCombo->Get_ParticleComboStep(locSearchStepIndex);
 				locParentSearchReactionStep = Get_Reaction()->Get_ReactionStep(locSearchStepIndex);
 			}
 			while(true);

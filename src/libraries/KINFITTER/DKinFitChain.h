@@ -2,7 +2,6 @@
 #define _DKinFitChain_
 
 #include <vector>
-#include <set>
 #include <algorithm>
 
 #include "DKinFitParticle.h"
@@ -26,7 +25,7 @@ class DKinFitChain
 		size_t Get_NumKinFitChainSteps(void) const{return dKinFitChainSteps.size();}
 
 		//GET ALL PARTICLES
-		set<DKinFitParticle*> Get_AllParticles(void) const;
+		vector<DKinFitParticle*> Get_AllParticles(void) const;
 
 		//GET CONTROL INFO
 		char Get_DefinedParticleStepIndex(void) const{return dDefinedParticleStepIndex;}
@@ -68,13 +67,13 @@ inline const DKinFitChainStep* DKinFitChain::Get_KinFitChainStep(size_t locStepI
 	return ((locStepIndex < dKinFitChainSteps.size()) ? dKinFitChainSteps[locStepIndex] : NULL);
 }
 
-inline set<DKinFitParticle*> DKinFitChain::Get_AllParticles(void) const
+inline vector<DKinFitParticle*> DKinFitChain::Get_AllParticles(void) const
 {
-	set<DKinFitParticle*> locAllParticles;
+	vector<DKinFitParticle*> locAllParticles;
 	for(size_t loc_i = 0; loc_i < dKinFitChainSteps.size(); ++loc_i)
 	{
-		set<DKinFitParticle*> locStepParticles = dKinFitChainSteps[loc_i]->Get_AllParticles();
-		locAllParticles.insert(locStepParticles.begin(), locStepParticles.end());
+		auto locStepParticles = dKinFitChainSteps[loc_i]->Get_AllParticles();
+		locAllParticles.insert(locAllParticles.end(), locStepParticles.begin(), locStepParticles.end());
 	}
 	return locAllParticles;
 }

@@ -248,7 +248,7 @@ void DKinFitter::Prepare_ConstraintsAndParticles(void)
 
 			//Set vertex flag based on whether any particles found or not
 			bool locIsProductionVertex = false;
-			if(locKinFitParticle->Get_FromInitialState().empty()) //p4 defined by invariant mass (decay products)
+			if(dKinFitUtils->Get_IsDecayingParticleDefinedByProducts()) //p4 defined by invariant mass (decay products)
 				locIsProductionVertex = locFinalStateParticlesAtVertex.empty() ? true : false; //if no overlap: not at decay vertex: production
 			else //p4 defined by missing mass
 				locIsProductionVertex = locFinalStateParticlesAtVertex.empty() ? false : true; //if no overlap: not at production vertex: decay
@@ -1094,7 +1094,7 @@ void DKinFitter::Calc_dF_P4(int locFIndex, const DKinFitParticle* locKinFitParti
 		//And the Xi- DEFINED vertex is at its production vertex (from kaons)
 		//But the p3 is NEEDED at the production vertex, which is where it's DEFINED
 		//Thus we need a factor of -1
-	bool locNeedP4AtProductionVertex = locKinFitParticle->Get_FromInitialState().empty(); //true if defined by decay products; else by missing mass
+	bool locNeedP4AtProductionVertex = dKinFitUtils->Get_IsDecayingParticleDefinedByProducts(); //true if defined by decay products; else by missing mass
 	double locVertexSignMultiplier = (locNeedP4AtProductionVertex == locKinFitParticle->Get_VertexP4AtProductionVertex()) ? -1.0 : 1.0;
 	TVector3 locDeltaX = locVertexSignMultiplier*(locCommonVertex - locPosition); //vector points in the OPPOSITE direction of the momentum
 
@@ -1326,7 +1326,7 @@ void DKinFitter::Calc_dF_MassDerivs(size_t locFIndex, const DKinFitParticle* loc
 		//And the Xi- DEFINED vertex is at its production vertex (from kaons)
 		//But the p3 is NEEDED at the production vertex, which is where it's DEFINED
 		//Thus we need a factor of -1 for the Xi-
-	bool locNeedP4AtProductionVertex = locKinFitParticle->Get_FromInitialState().empty(); //true if defined by decay products; else by missing mass
+	bool locNeedP4AtProductionVertex = dKinFitUtils->Get_IsDecayingParticleDefinedByProducts(); //true if defined by decay products; else by missing mass
 	double locVertexSignMultiplier = (locNeedP4AtProductionVertex == locKinFitParticle->Get_VertexP4AtProductionVertex()) ? -1.0 : 1.0;
 	TVector3 locDeltaX = locVertexSignMultiplier*(locCommonVertex - locPosition); //vector points in the OPPOSITE direction of the momentum
 
@@ -1602,7 +1602,7 @@ void DKinFitter::Calc_dF_Vertex_NotDecaying(size_t locFIndex, const DKinFitParti
 		bool locVertexP4AtProductionVertexFlag = locKinFitParticle->Get_VertexP4AtProductionVertex();
 
 		//true if defined by decay products
-		bool locP4DefinedByInvariantMassFlag = locKinFitParticle->Get_FromInitialState().empty();
+		bool locP4DefinedByInvariantMassFlag = dKinFitUtils->Get_IsDecayingParticleDefinedByProducts();
 
 		//Tricky when: P4-define step = common-vertex step
 			//In other words: P4 calculated by particles at a different vertex where the position is defined
@@ -2665,7 +2665,7 @@ void DKinFitter::Update_CovarianceMatrices(void)
 			TMatrixD locJacobian(7, dNumEta + dNumXi + 3*locAdditionalPxParamIndices.size());
 			locJacobian.Zero();
 
-			bool locP3DerivedAtProductionVertexFlag = !locKinFitParticle->Get_FromInitialState().empty(); //else decay vertex
+			bool locP3DerivedAtProductionVertexFlag = !dKinFitUtils->Get_IsDecayingParticleDefinedByProducts(); //else decay vertex
 			bool locP3DerivedAtPositionFlag = (locP3DerivedAtProductionVertexFlag == locKinFitParticle->Get_VertexP4AtProductionVertex());
 			dKinFitUtils->Calc_DecayingParticleJacobian(locKinFitParticle, locP3DerivedAtPositionFlag, 1.0, dNumEta, locAdditionalPxParamIndices, locJacobian);
 

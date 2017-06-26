@@ -108,7 +108,7 @@ jerror_t DDetectorMatches_factory_Combo::evnt(jana::JEventLoop* locEventLoop, ui
 		{
 			double locDeltaT = locFCALShowerMatchParamsVector[loc_j]->dFlightTime;
 			double locDeltaTVar = locFCALShowerMatchParamsVector[loc_j]->dFlightTimeVariance;
-			auto locNewMatch = std::make_shared<DFCALShowerMatchParams>(*locBCALShowerMatchParamsVector[loc_j]);
+			auto locNewMatch = std::make_shared<DFCALShowerMatchParams>(*locFCALShowerMatchParamsVector[loc_j]);
 			locNewMatch->dFlightTime *= locEnergyRatio.first;
 			//assumes correlation between delta-t and E-ratio is negligible
 			locNewMatch->dFlightTimeVariance = locDeltaTVar*locEnergyRatio.first*locEnergyRatio.first + locEnergyRatio.second*locDeltaT*locDeltaT;
@@ -122,7 +122,7 @@ jerror_t DDetectorMatches_factory_Combo::evnt(jana::JEventLoop* locEventLoop, ui
 		{
 			double locDeltaT = locTOFHitMatchParamsVector[loc_j]->dFlightTime;
 			double locDeltaTVar = locTOFHitMatchParamsVector[loc_j]->dFlightTimeVariance;
-			auto locNewMatch = std::make_shared<DTOFHitMatchParams>(*locBCALShowerMatchParamsVector[loc_j]);
+			auto locNewMatch = std::make_shared<DTOFHitMatchParams>(*locTOFHitMatchParamsVector[loc_j]);
 			locNewMatch->dFlightTime *= locEnergyRatio.first;
 			//assumes correlation between delta-t and E-ratio is negligible
 			locNewMatch->dFlightTimeVariance = locDeltaTVar*locEnergyRatio.first*locEnergyRatio.first + locEnergyRatio.second*locDeltaT*locDeltaT;
@@ -136,7 +136,7 @@ jerror_t DDetectorMatches_factory_Combo::evnt(jana::JEventLoop* locEventLoop, ui
 		{
 			double locDeltaT = locSCHitMatchParamsVector[loc_j]->dFlightTime;
 			double locDeltaTVar = locSCHitMatchParamsVector[loc_j]->dFlightTimeVariance;
-			auto locNewMatch = std::make_shared<DSCHitMatchParams>(*locBCALShowerMatchParamsVector[loc_j]);
+			auto locNewMatch = std::make_shared<DSCHitMatchParams>(*locSCHitMatchParamsVector[loc_j]);
 			locNewMatch->dFlightTime *= locEnergyRatio.first;
 			//assumes correlation between delta-t and E-ratio is negligible
 			locNewMatch->dFlightTimeVariance = locDeltaTVar*locEnergyRatio.first*locEnergyRatio.first + locEnergyRatio.second*locDeltaT*locDeltaT;
