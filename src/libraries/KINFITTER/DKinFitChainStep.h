@@ -21,6 +21,8 @@ class DKinFitChainStep
 		vector<DKinFitParticle*> Get_InitialParticles(void) const{return dInitialParticles;}
 		vector<DKinFitParticle*> Get_FinalParticles(void) const{return dFinalParticles;}
 		vector<DKinFitParticle*> Get_AllParticles(void) const;
+		DKinFitParticle* Get_InitialParticle(size_t locIndex) const{return dInitialParticles[locIndex];}
+		DKinFitParticle* Get_FinalParticle(size_t locIndex) const{return dFinalParticles[locIndex];}
 
 		//GET CONTROL INFO
 		char Get_InitialParticleDecayFromStepIndex(void) const{return dInitialParticleDecayFromStepIndex;}

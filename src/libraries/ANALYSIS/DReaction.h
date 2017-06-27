@@ -7,6 +7,8 @@
 #include <iostream>
 
 #include "JANA/JObject.h"
+#include "JANA/JEventLoop.h"
+#include "JANA/JFactory.h"
 #include "particleType.h"
 #include "ANALYSIS/DReactionStep.h"
 
@@ -136,6 +138,8 @@ class DReaction : public JObject
 int Get_DecayStepIndex(const DReaction* locReaction, size_t locStepIndex, size_t locParticleIndex);
 pair<int, int> Get_InitialParticleDecayFromIndices(const DReaction* locReaction, int locStepIndex);
 vector<Particle_t> Get_ChainPIDs(const DReaction* locReaction, size_t locStepIndex, int locUpToStepIndex, vector<Particle_t> locUpThroughPIDs, bool locExpandDecayingFlag);
+int Get_DefinedParticleStepIndex(const DReaction* locReaction);
+vector<const DReaction*> Get_Reactions(JEventLoop* locEventLoop);
 
 /****************************************************** CONSTRUCTORS AND DESTRUCTORS *******************************************************/
 
@@ -178,34 +182,6 @@ inline bool Check_ChannelEquality(const DReaction* lhs, const DReaction* rhs, bo
 	auto Equality_Checker = [&locSameOrderFlag, &locRightSubsetOfLeftFlag](const DReactionStep* lhs, const DReactionStep* rhs) -> bool
 		{return DAnalysis::Check_ChannelEquality(lhs, rhs, locSameOrderFlag, locRightSubsetOfLeftFlag);};
 	return std::equal(locSteps_lhs.begin(), locSteps_lhs.end(), locSteps_rhs.begin(), Equality_Checker);
-}
-
-inline vector<const DReaction*> Get_Reactions(JEventLoop* locEventLoop)
-{
-	// Get DReactions:
-	// Get list of factories and find all the ones producing
-	// DReaction objects. (A simpler way to do this would be to
-	// just use locEventLoop->Get(...), but then only one plugin could
-	// be used at a time.)
-	vector<JFactory_base*> locFactories = locEventLoop->GetFactories();
-	vector<const DReaction*> locReactions;
-	for(size_t loc_i = 0; loc_i < locFactories.size(); ++loc_i)
-	{
-		JFactory<DReaction>* locFactory = dynamic_cast<JFactory<DReaction>*>(locFactories[loc_i]);
-		if(locFactory == nullptr)
-			continue;
-		if(string(locFactory->Tag()) == "Thrown")
-			continue;
-
-		// Found a factory producing DReactions. The reaction objects are
-		// produced at the init stage and are persistent through all event
-		// processing so we can grab the list here and append it to our
-		// overall list.
-		vector<const DReaction*> locReactionsSubset;
-		locFactory->Get(locReactionsSubset);
-		locReactions.insert(locReactions.end(), locReactionsSubset.begin(), locReactionsSubset.end());
-	}
-	return locReactions;
 }
 
 /****************************************************** NAMESPACE-SCOPE INLINE FUNCTIONS: PIDS *******************************************************/

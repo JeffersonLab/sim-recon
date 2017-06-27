@@ -1,9 +1,6 @@
 #ifndef DParticleComboCreator_h
 #define DParticleComboCreator_h
 
-using namespace std;
-using namespace jana;
-
 #include <unordered_map>
 #include <map>
 
@@ -18,6 +15,9 @@ using namespace jana;
 
 #include "ANALYSIS/DSourceComboTimeHandler.h"
 #include "ANALYSIS/DSourceComboVertexer.h"
+
+using namespace std;
+using namespace jana;
 
 class DAnalysisUtilities;
 

@@ -1092,7 +1092,7 @@ void DHistogramAction_DetectorMatching::Fill_MatchingHists(JEventLoop* locEventL
 			break; //e.g. REST data: no trajectory
 		double locStartTime = locTrackIterator->second->t0();
 		if(locParticleID->Get_ClosestToTrack(rt, locFCALShowers, false, locStartTime, locBestMatchParams))
-			locFCALTrackDistanceMap.emplace(locTrackIterator->second, locBestMatchParams);
+			locFCALTrackDistanceMap.emplace(locTrackIterator->second, locBestMatchParams.get());
 	}
 
 	//TRACK / SC CLOSEST MATCHES
@@ -1107,7 +1107,7 @@ void DHistogramAction_DetectorMatching::Fill_MatchingHists(JEventLoop* locEventL
 		double locStartTimeVariance = 0.0;
 		DVector3 locProjPos, locProjMom;
 		if(locParticleID->Get_ClosestToTrack(rt, locSCHits, locIsTimeBased, false, locStartTime, locBestMatchParams, &locStartTimeVariance, &locProjPos, &locProjMom))
-			locSCTrackDistanceMap[locTrackIterator->second] = std::make_pair(locBestMatchParams, locProjPos.Z());
+			locSCTrackDistanceMap[locTrackIterator->second] = std::make_pair(locBestMatchParams.get(), locProjPos.Z());
 	}
 
 	//TRACK / TOF POINT CLOSEST MATCHES
@@ -1120,7 +1120,7 @@ void DHistogramAction_DetectorMatching::Fill_MatchingHists(JEventLoop* locEventL
 			break; //e.g. REST data: no trajectory
 		double locStartTime = locTrackIterator->second->t0();
 		if(locParticleID->Get_ClosestToTrack(rt, locTOFPoints, false, locStartTime, locBestMatchParams))
-			locTOFPointTrackDistanceMap.emplace(locTrackIterator->second, locBestMatchParams);
+			locTOFPointTrackDistanceMap.emplace(locTrackIterator->second, locBestMatchParams.get());
 	}
 
 	//TRACK / TOF PADDLE CLOSEST MATCHES
@@ -1853,10 +1853,10 @@ bool DHistogramAction_DetectorPID::Perform_Action(JEventLoop* locEventLoop, cons
 			double locTheta = locTrackTimeBased->momentum().Theta()*180.0/TMath::Pi();
 
 			//if RF time is indeterminate, start time will be NaN
-			const DBCALShowerMatchParams* locBCALShowerMatchParams = locChargedTrackHypothesis->Get_BCALShowerMatchParams();
-			const DFCALShowerMatchParams* locFCALShowerMatchParams = locChargedTrackHypothesis->Get_FCALShowerMatchParams();
-			const DTOFHitMatchParams* locTOFHitMatchParams = locChargedTrackHypothesis->Get_TOFHitMatchParams();
-			const DSCHitMatchParams* locSCHitMatchParams = locChargedTrackHypothesis->Get_SCHitMatchParams();
+			auto locBCALShowerMatchParams = locChargedTrackHypothesis->Get_BCALShowerMatchParams();
+			auto locFCALShowerMatchParams = locChargedTrackHypothesis->Get_FCALShowerMatchParams();
+			auto locTOFHitMatchParams = locChargedTrackHypothesis->Get_TOFHitMatchParams();
+			auto locSCHitMatchParams = locChargedTrackHypothesis->Get_SCHitMatchParams();
 
 			if(locSCHitMatchParams != NULL)
 			{
@@ -2269,9 +2269,9 @@ void DHistogramAction_DetectorMatchParams::Fill_Hists(JEventLoop* locEventLoop, 
 			pair<int, bool> locChargePair(locQIndex, locUseTruePIDFlag);
 
 			DVector3 locMomentum = locChargedTrackHypothesis->momentum();
-			const DFCALShowerMatchParams* locFCALShowerMatchParams = locChargedTrackHypothesis->Get_FCALShowerMatchParams();
-			const DSCHitMatchParams* locSCHitMatchParams = locChargedTrackHypothesis->Get_SCHitMatchParams();
-			const DBCALShowerMatchParams* locBCALShowerMatchParams = locChargedTrackHypothesis->Get_BCALShowerMatchParams();
+			auto locFCALShowerMatchParams = locChargedTrackHypothesis->Get_FCALShowerMatchParams();
+			auto locSCHitMatchParams = locChargedTrackHypothesis->Get_SCHitMatchParams();
+			auto locBCALShowerMatchParams = locChargedTrackHypothesis->Get_BCALShowerMatchParams();
 
 			//BCAL
 			if(locBCALShowerMatchParams != NULL)
@@ -2715,9 +2715,9 @@ bool DHistogramAction_DetectedParticleKinematics::Perform_Action(JEventLoop* loc
 		double locTheta = locMomentum.Theta()*180.0/TMath::Pi();
 		double locP = locMomentum.Mag();
 		double locBeta_Timing = locChargedTrackHypothesis->measuredBeta();
-		double locDeltaBeta = locChargedTrackHypothesis->deltaBeta();
+		double locDeltaBeta = locBeta_Timing - locChargedTrackHypothesis->lorentzMomentum().Beta();
 
-		Particle_t locPID = (locChargedTrackHypothesis->dFOM < dMinPIDFOM) ? Unknown : locChargedTrackHypothesis->PID();
+		Particle_t locPID = (locChargedTrackHypothesis->Get_FOM() < dMinPIDFOM) ? Unknown : locChargedTrackHypothesis->PID();
 		if(dHistMap_P.find(locPID) == dHistMap_P.end())
 			continue; //not interested in histogramming
 
@@ -2746,7 +2746,7 @@ bool DHistogramAction_DetectedParticleKinematics::Perform_Action(JEventLoop* loc
 	for(size_t loc_i = 0; loc_i < locNeutralParticles.size(); ++loc_i)
 	{
 		const DNeutralParticleHypothesis* locNeutralParticleHypothesis = locNeutralParticles[loc_i]->Get_Hypothesis(Gamma);
-		if(locNeutralParticleHypothesis->dFOM < dMinPIDFOM)
+		if(locNeutralParticleHypothesis->Get_FOM() < dMinPIDFOM)
 			continue;
 
 		Particle_t locPID = locNeutralParticleHypothesis->PID();
@@ -2759,7 +2759,7 @@ bool DHistogramAction_DetectedParticleKinematics::Perform_Action(JEventLoop* loc
 		double locP = locMomentum.Mag();
 
 		double locBeta_Timing = locNeutralParticleHypothesis->measuredBeta();
-		double locDeltaBeta = locNeutralParticleHypothesis->deltaBeta();
+		double locDeltaBeta = locBeta_Timing - locNeutralParticleHypothesis->lorentzMomentum().Beta();
 
 		//FILL HISTOGRAMS
 		//Since we are filling histograms local to this action, it will not interfere with other ROOT operations: can use action-wide ROOT lock
@@ -2993,7 +2993,7 @@ bool DHistogramAction_TrackShowerErrors::Perform_Action(JEventLoop* locEventLoop
 	{
 		const DChargedTrackHypothesis* locChargedTrackHypothesis = locPreSelectChargedTracks[loc_i]->Get_BestFOM();
 
-		Particle_t locPID = (locChargedTrackHypothesis->dFOM < dMinPIDFOM) ? Unknown : locChargedTrackHypothesis->PID();
+		Particle_t locPID = (locChargedTrackHypothesis->Get_FOM() < dMinPIDFOM) ? Unknown : locChargedTrackHypothesis->PID();
 		if(dHistMap_TrackPxErrorVsP.find(locPID) == dHistMap_TrackPxErrorVsP.end())
 			continue; //not interested in histogramming
 
@@ -3048,7 +3048,7 @@ bool DHistogramAction_TrackShowerErrors::Perform_Action(JEventLoop* locEventLoop
 	for(size_t loc_i = 0; loc_i < locNeutralParticles.size(); ++loc_i)
 	{
 		const DNeutralParticleHypothesis* locNeutralParticleHypothesis = locNeutralParticles[loc_i]->Get_Hypothesis(Gamma);
-		if(locNeutralParticleHypothesis->dFOM < dMinPIDFOM)
+		if(locNeutralParticleHypothesis->Get_FOM() < dMinPIDFOM)
 			continue;
 
 		DVector3 locMomentum = locNeutralParticleHypothesis->momentum();
@@ -3564,7 +3564,7 @@ bool DHistogramAction_TrackMultiplicity::Perform_Action(JEventLoop* locEventLoop
 		const DChargedTrackHypothesis* locChargedTrackHypothesis = locGoodChargedTracks[loc_i]->Get_BestFOM();
 		Particle_t locPID = locChargedTrackHypothesis->PID();
 
-		double locPIDFOM = locChargedTrackHypothesis->dFOM;
+		double locPIDFOM = locChargedTrackHypothesis->Get_FOM();
 
 		if(locChargedTrackHypothesis->charge() > 0.0)
 			++locNumGoodPositiveTracks;
@@ -3590,7 +3590,7 @@ bool DHistogramAction_TrackMultiplicity::Perform_Action(JEventLoop* locEventLoop
 	for(size_t loc_i = 0; loc_i < locNeutralParticles.size(); ++loc_i)
 	{
 		const DNeutralParticleHypothesis* locNeutralParticleHypothesis = locNeutralParticles[loc_i]->Get_BestFOM();
-		if(locNeutralParticleHypothesis->dFOM < dMinPIDFOM)
+		if(locNeutralParticleHypothesis->Get_FOM() < dMinPIDFOM)
 			continue;
 
 		Particle_t locPID = locNeutralParticleHypothesis->PID();
@@ -3604,7 +3604,7 @@ bool DHistogramAction_TrackMultiplicity::Perform_Action(JEventLoop* locEventLoop
 	for(size_t loc_i = 0; loc_i < locGoodNeutralParticles.size(); ++loc_i)
 	{
 		const DNeutralParticleHypothesis* locNeutralParticleHypothesis = locGoodNeutralParticles[loc_i]->Get_BestFOM();
-		if(locNeutralParticleHypothesis->dFOM < dMinPIDFOM)
+		if(locNeutralParticleHypothesis->Get_FOM() < dMinPIDFOM)
 			continue;
 
 		Particle_t locPID = locNeutralParticleHypothesis->PID();

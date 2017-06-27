@@ -172,26 +172,51 @@ vector<Particle_t> Get_ChainPIDs(const DReaction* locReaction, size_t locStepInd
 	return locChainPIDs;
 }
 
-//CHANGE ME???
-int Get_DefinedParticleStepIndex(const DReaction* locReaction) const
+int Get_DefinedParticleStepIndex(const DReaction* locReaction)
 {
 	//-1 if none //defined: missing or open-ended-decaying
 	for(size_t loc_i = 0; loc_i < locReaction->Get_NumReactionSteps(); ++loc_i)
 	{
-		const DReactionStep* locReactionStep = locReaction->Get_ReactionStep(loc_i);
+		auto locReactionStep = locReaction->Get_ReactionStep(loc_i);
 
 		//check for open-ended-decaying particle
-		Particle_t locTargetPID = locReactionStep->Get_TargetParticleID();
-		if((loc_i == 0) && (locTargetPID == Unknown))
+		if((loc_i == 0) && (locReactionStep->Get_TargetPID() == Unknown))
 			return loc_i;
 
 		//check for missing particle
-		Particle_t locMissingPID = Unknown;
-		if(locReactionStep->Get_MissingPID(locMissingPID))
+		if(locReactionStep->Get_MissingPID() != Unknown)
 			return loc_i;
 	}
 
 	return -1;
+}
+
+vector<const DReaction*> Get_Reactions(JEventLoop* locEventLoop)
+{
+	// Get DReactions:
+	// Get list of factories and find all the ones producing
+	// DReaction objects. (A simpler way to do this would be to
+	// just use locEventLoop->Get(...), but then only one plugin could
+	// be used at a time.)
+	vector<JFactory_base*> locFactories = locEventLoop->GetFactories();
+	vector<const DReaction*> locReactions;
+	for(size_t loc_i = 0; loc_i < locFactories.size(); ++loc_i)
+	{
+		JFactory<DReaction>* locFactory = dynamic_cast<JFactory<DReaction>*>(locFactories[loc_i]);
+		if(locFactory == nullptr)
+			continue;
+		if(string(locFactory->Tag()) == "Thrown")
+			continue;
+
+		// Found a factory producing DReactions. The reaction objects are
+		// produced at the init stage and are persistent through all event
+		// processing so we can grab the list here and append it to our
+		// overall list.
+		vector<const DReaction*> locReactionsSubset;
+		locFactory->Get(locReactionsSubset);
+		locReactions.insert(locReactions.end(), locReactionsSubset.begin(), locReactionsSubset.end());
+	}
+	return locReactions;
 }
 
 } //end namespace DAnalysis

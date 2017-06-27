@@ -26,7 +26,7 @@ jerror_t DNeutralParticle_factory_Combo::brun(jana::JEventLoop *locEventLoop, in
 	for(size_t loc_i = 0; loc_i < locReactions.size(); ++loc_i)
 	{
 		auto locNeutralPIDs = locReactions[loc_i]->Get_FinalPIDs(-1, false, false, d_Neutral, false);
-		for(auto& locPID : locNeutralPIDs)
+		for(auto locPID : locNeutralPIDs)
 		{
 			if(locPID != Gamma) //already created by default!
 				dNeutralPIDs.insert(locPID);
@@ -46,7 +46,7 @@ jerror_t DNeutralParticle_factory_Combo::brun(jana::JEventLoop *locEventLoop, in
 jerror_t DNeutralParticle_factory_Combo::evnt(jana::JEventLoop *locEventLoop, uint64_t eventnumber)
 {
 	vector<const DNeutralParticle*> locNeutralParticles;
-	locEventLoop->Get(locNeutralParticles, dShowerSelectionTag);
+	locEventLoop->Get(locNeutralParticles, dShowerSelectionTag.c_str());
 
 	//Nothing to do! Pass them through
 	if(dNeutralPIDs.empty())
@@ -58,7 +58,7 @@ jerror_t DNeutralParticle_factory_Combo::evnt(jana::JEventLoop *locEventLoop, ui
 	}
 
 	const DEventRFBunch* locEventRFBunch = nullptr;
-	locEventLoop->Get(locEventRFBunch);
+	locEventLoop->GetSingle(locEventRFBunch);
 
 	const DVertex* locVertex = nullptr;
 	locEventLoop->GetSingle(locVertex);
@@ -72,7 +72,7 @@ jerror_t DNeutralParticle_factory_Combo::evnt(jana::JEventLoop *locEventLoop, ui
 		for(auto& locPID : dNeutralPIDs)
 		{
 			//create new DNeutralParticleHypothesis object
-			auto locNewHypothesis = dNeutralParticleHypothesisFactory->Create_DNeutralParticleHypothesis(locEventLoop, locNeutralParticle->dNeutralShower, locPID, locEventRFBunch, locVertex);
+			auto locNewHypothesis = dNeutralParticleHypothesisFactory->Create_DNeutralParticleHypothesis(locNeutralParticle->dNeutralShower, locPID, locEventRFBunch, locVertex->dSpacetimeVertex, locVertex->dCovarianceMatrix);
 			dCreatedHypotheses.push_back(locNewHypothesis);
 			locNewNeutralParticle->dNeutralParticleHypotheses.push_back(locNewHypothesis);
 		}

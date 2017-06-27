@@ -49,10 +49,10 @@ class DParticleComboStep
 		const DKinematicData* Get_FinalParticle(size_t locFinalParticleIndex) const;
 		const DKinematicData* Get_FinalParticle_Measured(size_t locFinalParticleIndex) const;
 		vector<const DKinematicData*> Get_FinalParticles(void) const{return dFinalParticles;}
-		vector<const DKinematicData*> Get_FinalParticles_Measured(void) const{return ((dMeasuredStep == nullptr) ? dFinalParticles : dMeasuredStep->Get_FinalParticles());}
+		vector<const DKinematicData*> Get_FinalParticles_Measured(void) const{return ((dMeasuredStep == nullptr) ? dFinalParticles : dMeasuredStep->Get_FinalParticles());} //INCLUDES MISSING/DECAYING!!
 
 		vector<const DKinematicData*> Get_FinalParticles(const DReactionStep* locReactionStep, bool locIncludeMissingFlag, bool locIncludeDecayingFlag = true, Charge_t locCharge = d_AllCharges) const;
-		vector<const DKinematicData*> Get_FinalParticles_Measured(const DReactionStep* locReactionStep, Charge_t locCharge = d_AllCharges) const;
+		vector<const DKinematicData*> Get_FinalParticles_Measured(const DReactionStep* locReactionStep, Charge_t locCharge = d_AllCharges) const; //excludes missing/decaying!
 
 		const JObject* Get_FinalParticle_SourceObject(size_t locFinalParticleIndex) const; //if missing or decaying: source object is nullptr!
 		vector<const JObject*> Get_FinalParticle_SourceObjects(Charge_t locCharge = d_AllCharges) const;
@@ -76,6 +76,8 @@ class DParticleComboStep
 		DLorentzVector dSpacetimeVertex;
 };
 
+const JObject* Get_FinalParticle_SourceObject(const DKinematicData* locParticle);
+
 inline const DKinematicData* DParticleComboStep::Get_InitialParticle_Measured(void) const
 {
 	return ((dMeasuredStep != nullptr) ? dMeasuredStep->Get_InitialParticle() : dInitialParticle);
@@ -98,15 +100,7 @@ inline void DParticleComboStep::Set_Contents(const DKinematicData* locInitialPar
 
 inline const JObject* DParticleComboStep::Get_FinalParticle_SourceObject(size_t locFinalParticleIndex) const
 {
-	if(dFinalParticles[locFinalParticleIndex] == nullptr)
-		return nullptr;
-
-	auto locChargedHypo = dynamic_cast<const DChargedTrackHypothesis*>(dFinalParticles[locFinalParticleIndex]);
-	if(locChargedHypo != nullptr)
-		return static_cast<const JObject*>(locChargedHypo->Get_TrackTimeBased());
-
-	auto locNeutralHypo = dynamic_cast<const DNeutralParticleHypothesis*>(dFinalParticles[locFinalParticleIndex]);
-	return ((locNeutralHypo != nullptr) ? static_cast<const JObject*>(locNeutralHypo->Get_NeutralShower()) : nullptr);
+	return DAnalysis::Get_FinalParticle_SourceObject(dFinalParticles[locFinalParticleIndex]);
 }
 
 inline const DKinematicData* DParticleComboStep::Get_FinalParticle(size_t locFinalParticleIndex) const
@@ -181,6 +175,19 @@ inline vector<const DKinematicData*> Get_ParticlesWithPID(Particle_t locPID, con
 			locOutputParticles.push_back(locParticle);
 	}
 	return locOutputParticles;
+}
+
+inline const JObject* Get_FinalParticle_SourceObject(const DKinematicData* locParticle)
+{
+	if(locParticle == nullptr)
+		return nullptr;
+
+	auto locChargedHypo = dynamic_cast<const DChargedTrackHypothesis*>(locParticle);
+	if(locChargedHypo != nullptr)
+		return static_cast<const JObject*>(locChargedHypo->Get_TrackTimeBased());
+
+	auto locNeutralHypo = dynamic_cast<const DNeutralParticleHypothesis*>(locParticle);
+	return ((locNeutralHypo != nullptr) ? static_cast<const JObject*>(locNeutralHypo->Get_NeutralShower()) : nullptr);
 }
 
 } // end namespace

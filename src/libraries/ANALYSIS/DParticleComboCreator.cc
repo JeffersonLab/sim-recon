@@ -163,7 +163,7 @@ const DParticleCombo* DParticleComboCreator::Build_ParticleCombo(const DReaction
 
 		//Build final particles
 		auto locFinalPIDs = locReactionStep->Get_FinalPIDs();
-		unordered_map<Particle_t, size_t> locPIDCountMap;
+		map<Particle_t, size_t> locPIDCountMap;
 		vector<const DKinematicData*> locFinalParticles;
 		for(size_t loc_j = 0; loc_j < locFinalPIDs.size(); ++loc_j)
 		{

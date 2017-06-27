@@ -81,9 +81,9 @@ vector<Particle_t> DReactionStep::Get_FinalPIDs(bool locIncludeMissingFlag, Char
 
 string Get_InitialParticlesName(const DReactionStep* locStep, bool locTLatexFlag)
 {
-    std::function<char*(Particle_t)> locGetNameFunc = locTLatexFlag ? ParticleName_ROOT : ParticleType;
-    string locInitPIDString = locGetNameFunc(locStep->Get_InitialPID());
-	string locStepName = locStep->Get_IsMissingBeamFlag() ? string("(") + locInitPIDString + string(")") : locInitPIDString;
+	std::function<char*(Particle_t)> locGetNameFunc = locTLatexFlag ? ParticleName_ROOT : ParticleType;
+	string locInitPIDString = locGetNameFunc(locStep->Get_InitialPID());
+	string locStepName = (locStep->Get_MissingParticleIndex() == DReactionStep::Get_ParticleIndex_Initial()) ? string("(") + locInitPIDString + string(")") : locInitPIDString;
 
 	Particle_t locSecondBeamPID = locStep->Get_SecondBeamPID();
 	Particle_t locTargetPID = locStep->Get_TargetPID();
@@ -101,10 +101,10 @@ string Get_InitialParticlesName(const DReactionStep* locStep, bool locTLatexFlag
 vector<string> Get_FinalParticleNames(const DReactionStep* locStep, bool locIncludeMissingFlag, bool locTLatexFlag)
 {
 	vector<string> locParticleNames;
-    std::function<char*(Particle_t)> locGetNameFunc = locTLatexFlag ? ParticleName_ROOT : ParticleType;
+	std::function<char*(Particle_t)> locGetNameFunc = locTLatexFlag ? ParticleName_ROOT : ParticleType;
 
 	vector<Particle_t> locFinalPIDs = locStep->Get_FinalPIDs(false);
-	auto locPIDTransformer = [](Particle_t& locPID) -> string {return locGetNameFunc(locPID);};
+	auto locPIDTransformer = [&locGetNameFunc](Particle_t& locPID) -> string {return locGetNameFunc(locPID);};
 	std::transform(locFinalPIDs.begin(), locFinalPIDs.end(), std::back_inserter(locParticleNames), locPIDTransformer);
 
 	if(!locIncludeMissingFlag)

@@ -3,13 +3,16 @@
 
 #include <string>
 #include <vector>
+#include <set>
 
 #include <JANA/JFactory.h>
 #include "PID/DEventRFBunch.h"
 #include <PID/DNeutralParticle.h>
+#include "PID/DVertex.h"
 #include <PID/DNeutralParticleHypothesis.h>
 #include <PID/DNeutralShower.h>
 #include "PID/DNeutralParticleHypothesis_factory.h"
+#include "ANALYSIS/DReaction.h"
 
 using namespace std;
 using namespace jana;
@@ -27,7 +30,7 @@ class DNeutralParticle_factory_Combo : public jana::JFactory<DNeutralParticle>
 		jerror_t evnt(jana::JEventLoop *locEventLoop, uint64_t eventnumber);	///< Called every event.
 
 		string dShowerSelectionTag;
-		vector<Particle_t> dNeutralPIDs;
+		set<Particle_t> dNeutralPIDs;
 		vector<DNeutralParticleHypothesis*> dCreatedHypotheses;
 		DNeutralParticleHypothesis_factory* dNeutralParticleHypothesisFactory;
 };

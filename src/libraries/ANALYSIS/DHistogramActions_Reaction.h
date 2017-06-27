@@ -524,6 +524,7 @@ class DHistogramAction_KinFitResults : public DAnalysisAction
 
 		double dPullHistConfidenceLevelCut;
 		const DAnalysisUtilities* dAnalysisUtilities;
+		DKinFitUtils_GlueX* dKinFitUtils = nullptr;
 
 		//below maps: int is step index (-1 for beam), 2nd is particle
 		TH1I* dHist_ConfidenceLevel;

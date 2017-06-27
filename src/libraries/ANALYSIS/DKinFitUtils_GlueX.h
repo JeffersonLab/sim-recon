@@ -112,11 +112,12 @@ class DKinFitUtils_GlueX : public DKinFitUtils
 		/************************************************************ CREATE DKINFITCHAIN ***********************************************************/
 
 		DKinFitChainStep* Make_KinFitChainStep(const DReactionVertexInfo* locReactionVertexInfo, const DReaction* locReaction, const DParticleCombo* locParticleCombo, DKinFitType locKinFitType, size_t locStepIndex, DKinFitChain* locKinFitChain);
-		pair<vector<DKinFitParticle*>, vector<DKinFitParticle*>> Get_StepParticles_NonNull(const DKinFitChain* locKinFitChain, const DReaction* locReaction, size_t locStepIndex, int locNonFixedMassParticleIndex = -99) const;
+		pair<set<DKinFitParticle*>, set<DKinFitParticle*>> Get_StepParticles_NonNull(const DKinFitChain* locKinFitChain, const DReaction* locReaction, size_t locStepIndex, int locNonFixedMassParticleIndex = -99) const;
+		set<DKinFitParticle*> Build_ParticleSet(const vector<pair<int, int>>& locParticleIndices, const DKinFitChain* locKinFitChain);
 
 		/************************************************************ CONSTRAINT PREDICTORS *********************************************************/
 
-		string Build_VertexConstraintString(const DReactionStepVertexInfo* locVertexInfo, bool locSpacetimeFitFlag);
+		string Build_VertexConstraintString(const DReactionStepVertexInfo* locVertexInfo, bool locSpacetimeFitFlag) const;
 
 		/*************************************************************** NESTED CLASS ***************************************************************/
 
