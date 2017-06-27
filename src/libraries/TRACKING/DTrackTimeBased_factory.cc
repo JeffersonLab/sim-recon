@@ -942,8 +942,8 @@ bool DTrackTimeBased_factory::DoFit(const DTrackWireBased *track,
       timebased_track->candidateid=track->candidateid;
       
       // Set the start time and add the list of start times
-      timebased_track->start_times.assign(start_times.begin(),
-					      start_times.end());
+      timebased_track->setT0(mStartTime,start_times[0].t0_sigma, mStartDetector);
+      timebased_track->start_times.assign(start_times.begin(), start_times.end());
 	  
       if (DEBUG_HISTS){
 	int id=0;

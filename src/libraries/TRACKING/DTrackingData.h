@@ -27,21 +27,27 @@ class DTrackingData : public DKinematicData
 		const TMatrixFSym* TrackingErrorMatrix(void) const{return dTrackingInfo->m_TrackingErrorMatrix;}
 		bool forwardParmFlag(void) const{return dTrackingInfo->m_use_forward_parameters;}
 		void TrackingStateVector(double aVec[5]) const;
+		double t0(void) const{return dTrackingInfo->dt0;}
+		double t0_err(void) const{return dTrackingInfo->dt0_err;}
+		DetectorSystem_t t0_detector(void) const{return dTrackingInfo->dt0_detector;}
 
 		//SETTERS
 		void setForwardParmFlag(bool aFlag){dTrackingInfo->m_use_forward_parameters = aFlag;}
 		void setTrackingErrorMatrix(const TMatrixFSym* aMatrix){dTrackingInfo->m_TrackingErrorMatrix = aMatrix;}
 		void setTrackingStateVector(double a1, double a2, double a3, double a4, double a5);
+		void setT0(double at0, double at0_err, DetectorSystem_t at0_detector);
 
 	private:
 
 		struct DTrackingInfo
 		{
-			// NONE OF THIS DEPENDS ON THE KINEMATIC FIT
-			// so, this can be stored as a pointer & shared between multiple objects instead of stored separately for each
 			const TMatrixFSym *m_TrackingErrorMatrix = nullptr;  // order is q/pt,phi,tanl,D,z
 			bool m_use_forward_parameters = false; // Flag indicating the use of the forward parameterization (x,y,tx,ty,q/p)
 			double m_TrackingStateVector[5] = {0.0, 0.0, 0.0, 0.0, 0.0}; // order is q/pt,phi,tanl,D,z
+
+			double dt0 = 0.0;
+			double dt0_err = 0.0;
+			DetectorSystem_t dt0_detector = SYS_NULL;
 		};
 
 		//memory of object in shared_ptr is managed automatically: deleted automatically when no references are left
@@ -86,6 +92,13 @@ inline void DTrackingData::setTrackingStateVector(double a1, double a2, double a
 	dTrackingInfo->m_TrackingStateVector[2]=a3;
 	dTrackingInfo->m_TrackingStateVector[3]=a4;
 	dTrackingInfo->m_TrackingStateVector[4]=a5;
+}
+
+inline void DTrackingData::setT0(double at0, double at0_err, DetectorSystem_t at0_detector)
+{
+	dTrackingInfo->dt0 = at0;
+	dTrackingInfo->dt0_err = at0_err;
+	dTrackingInfo->dt0_detector = at0_detector;
 }
 
 inline void DTrackingData::Reset(void)

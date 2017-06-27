@@ -394,7 +394,7 @@ const DParticleCombo* DAnalysisResults_factory::Handle_ComboFit(const DReactionV
 		return locComboIterator->second;
 
 	//KINFIT
-	auto locKinFitResultsPair = Fit_Kinematics(locReactionVertexInfo, locParticleCombo, locKinFitType, locUpdateCovMatricesFlag);
+	auto locKinFitResultsPair = Fit_Kinematics(locReactionVertexInfo, locReaction, locParticleCombo, locKinFitType, locUpdateCovMatricesFlag);
 	if(locKinFitResultsPair.second == nullptr)
 		return locParticleCombo; //fit failed, or no constraints
 
@@ -405,14 +405,14 @@ const DParticleCombo* DAnalysisResults_factory::Handle_ComboFit(const DReactionV
 	return locNewParticleCombo;
 }
 
-pair<const DKinFitChain*, const DKinFitResults*> DAnalysisResults_factory::Fit_Kinematics(const DReactionVertexInfo* locReactionVertexInfo, const DParticleCombo* locParticleCombo, DKinFitType locKinFitType, bool locUpdateCovMatricesFlag)
+pair<const DKinFitChain*, const DKinFitResults*> DAnalysisResults_factory::Fit_Kinematics(const DReactionVertexInfo* locReactionVertexInfo, const DReaction* locReaction, const DParticleCombo* locParticleCombo, DKinFitType locKinFitType, bool locUpdateCovMatricesFlag)
 {
 	//Make DKinFitChain
-	const DKinFitChain* locKinFitChain = dKinFitUtils->Make_KinFitChain(locReactionVertexInfo, locParticleCombo, locKinFitType);
+	const DKinFitChain* locKinFitChain = dKinFitUtils->Make_KinFitChain(locReactionVertexInfo, locReaction, locParticleCombo, locKinFitType);
 
 	//Make Constraints
 	deque<DKinFitConstraint_Vertex*> locSortedVertexConstraints;
-	set<DKinFitConstraint*> locConstraints = dKinFitUtils->Create_Constraints(locReactionVertexInfo, locParticleCombo, locKinFitChain, locKinFitType, locSortedVertexConstraints);
+	set<DKinFitConstraint*> locConstraints = dKinFitUtils->Create_Constraints(locReactionVertexInfo, locReaction, locParticleCombo, locKinFitChain, locKinFitType, locSortedVertexConstraints);
 	if(locConstraints.empty())
 	{
 		dKinFitUtils->Recycle_DKinFitChain(locKinFitChain); //original chain no longer needed: recycle
@@ -508,26 +508,25 @@ DKinFitResults* DAnalysisResults_factory::Build_KinFitResults(const DParticleCom
 
 	//Particle Mapping
 	//If any particles were NOT part of the kinematic fit, they are still added to the source -> output map
-	set<DKinFitParticle*> locAllKinFitParticles = locKinFitChain->Get_AllParticles();
-	set<DKinFitParticle*>::iterator locParticleIterator = locAllKinFitParticles.begin();
-	for(; locParticleIterator != locAllKinFitParticles.end(); ++locParticleIterator)
+	auto locAllKinFitParticles = locKinFitChain->Get_AllParticles();
+	for(auto& locKinFitParticle : locAllKinFitParticles)
 	{
-		if((*locParticleIterator) == nullptr)
+		if(locKinFitParticle == nullptr)
 			continue;
-		if(locOutputKinFitParticles.find(*locParticleIterator) == locOutputKinFitParticles.end())
+		if(locOutputKinFitParticles.find(locKinFitParticle) == locOutputKinFitParticles.end())
 			continue; //not used in kinfit: don't save!!
-		const JObject* locSourceJObject = dKinFitUtils->Get_SourceJObject(*locParticleIterator);
+		const JObject* locSourceJObject = dKinFitUtils->Get_SourceJObject(locKinFitParticle);
 		if(locSourceJObject != NULL)
 		{
-			locKinFitResults->Add_ParticleMapping_SourceToOutput(locSourceJObject, *locParticleIterator);
+			locKinFitResults->Add_ParticleMapping_SourceToOutput(locSourceJObject, locKinFitParticle);
 			continue; //*locParticleIterator was an input object //not directly used in the fit
 		}
-		DKinFitParticle* locInputKinFitParticle = dKinFitUtils->Get_InputKinFitParticle(*locParticleIterator);
+		DKinFitParticle* locInputKinFitParticle = dKinFitUtils->Get_InputKinFitParticle(locKinFitParticle);
 		if(locInputKinFitParticle != NULL)
 		{
 			locSourceJObject = dKinFitUtils->Get_SourceJObject(locInputKinFitParticle);
 			if(locSourceJObject != NULL) //else was a decaying/missing particle: no source
-				locKinFitResults->Add_ParticleMapping_SourceToOutput(locSourceJObject, *locParticleIterator);
+				locKinFitResults->Add_ParticleMapping_SourceToOutput(locSourceJObject, locKinFitParticle);
 		}
 	}
 

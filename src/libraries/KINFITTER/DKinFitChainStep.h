@@ -2,7 +2,6 @@
 #define _DKinFitChainStep_
 
 #include <vector>
-#include <algorithm>
 
 #include "DKinFitParticle.h"
 
@@ -71,11 +70,11 @@ inline void DKinFitChainStep::Print_InfoToScreen(void) const
 
 	cout << "DKinFitChainStep init particles: PIDs, pointers:" << endl;
 	for(auto& locParticle : dInitialParticles)
-		cout << (*locIterator)->Get_PID() << ", " << *locIterator << endl;
+		cout << locParticle->Get_PID() << ", " << locParticle << endl;
 
 	cout << "DKinFitChainStep final particles: PIDs, pointers:" << endl;
 	for(auto& locParticle : dFinalParticles)
-		cout << (*locIterator)->Get_PID() << ", " << *locIterator << endl;
+		cout << locParticle->Get_PID() << ", " << locParticle << endl;
 }
 
 #endif // _DKinFitChainStep_

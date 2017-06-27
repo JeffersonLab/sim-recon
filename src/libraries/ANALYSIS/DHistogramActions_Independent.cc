@@ -155,7 +155,6 @@ bool DHistogramAction_ObjectMemory::Perform_Action(JEventLoop* locEventLoop, con
 	//RESOURCE POOLS
 	{
 		unsigned long long locMemory = 0;
-		JFactory_base* locBaseFactory = nullptr;
 		int locBin = 0;
 
 		//save
@@ -490,7 +489,7 @@ bool DHistogramAction_Reconstruction::Perform_Action(JEventLoop* locEventLoop, c
 		//Best SC Match Params
 		shared_ptr<const DSCHitMatchParams> locSCHitMatchParams;
 		if(locParticleID->Get_BestSCMatchParams(locTrackTimeBasedVector[loc_i], locDetectorMatches, locSCHitMatchParams))
-			locTimeBasedToBestSCMatchMap[locTrackTimeBasedVector[loc_i]] = locSCHitMatchParams;
+			locTimeBasedToBestSCMatchMap[locTrackTimeBasedVector[loc_i]] = locSCHitMatchParams.get();
 
 		JObject::oid_t locCandidateID = locTrackTimeBasedVector[loc_i]->candidateid;
 		if(locBestTrackTimeBasedMap.find(locCandidateID) == locBestTrackTimeBasedMap.end())
@@ -641,13 +640,13 @@ bool DHistogramAction_Reconstruction::Perform_Action(JEventLoop* locEventLoop, c
 				dHistMap_PVsTheta_TimeBased_HighTrackFOM[locCharge]->Fill(locTheta, locP);
 
 			//SC/RF DELTA-T
-			map<const DTrackTimeBased*, DSCHitMatchParams>::iterator locSCIterator = locTimeBasedToBestSCMatchMap.find(locTrackTimeBased);
+			auto locSCIterator = locTimeBasedToBestSCMatchMap.find(locTrackTimeBased);
 			if(locSCIterator != locTimeBasedToBestSCMatchMap.end())
 			{
-				DSCHitMatchParams& locSCHitMatchParams = locSCIterator->second;
-				double locPropagatedSCTime = locSCHitMatchParams.dHitTime - locSCHitMatchParams.dFlightTime + (dTargetCenter.Z() - locTrackTimeBased->z())/29.9792458;
+				auto& locSCHitMatchParams = locSCIterator->second;
+				double locPropagatedSCTime = locSCHitMatchParams->dHitTime - locSCHitMatchParams->dFlightTime + (dTargetCenter.Z() - locTrackTimeBased->z())/29.9792458;
 				double locDeltaT = locPropagatedSCTime - locEventRFBunch->dTime;
-				dHist_SCRFDeltaTVsSector->Fill(locSCHitMatchParams.dSCHit->sector, locDeltaT);
+				dHist_SCRFDeltaTVsSector->Fill(locSCHitMatchParams->dSCHit->sector, locDeltaT);
 			}
 		}
 
@@ -1006,7 +1005,7 @@ void DHistogramAction_DetectorMatching::Fill_MatchingHists(JEventLoop* locEventL
 	locCutAction_TrackHitPattern.Initialize(locEventLoop);
 
 	//get the best tracks for each candidate id, based on good hit pattern & tracking FOM
-	map<JObject::oid_t, const DKinematicData*> locBestTrackMap; //lowest tracking FOM for each candidate id
+	map<JObject::oid_t, const DTrackingData*> locBestTrackMap; //lowest tracking FOM for each candidate id
 	if(locIsTimeBased)
 	{
 		vector<const DTrackTimeBased*> locTrackTimeBasedVector;
@@ -1068,41 +1067,39 @@ void DHistogramAction_DetectorMatching::Fill_MatchingHists(JEventLoop* locEventL
 	const DDetectorMatches* locDetectorMatches = NULL;
 	locEventLoop->GetSingle(locDetectorMatches, locDetectorMatchesTag.c_str());
 
-	map<JObject::oid_t, const DKinematicData*>::iterator locTrackIterator;
-
 	//TRACK / BCAL CLOSEST MATCHES
-	map<const DKinematicData*, pair<DBCALShowerMatchParams, double> > locBCALTrackDistanceMap; //double = z
-	for(locTrackIterator = locBestTrackMap.begin(); locTrackIterator != locBestTrackMap.end(); ++locTrackIterator)
+	map<const DTrackingData*, pair<DBCALShowerMatchParams*, double> > locBCALTrackDistanceMap; //double = z
+	for(auto locTrackIterator = locBestTrackMap.begin(); locTrackIterator != locBestTrackMap.end(); ++locTrackIterator)
 	{
-		DBCALShowerMatchParams locBestMatchParams;
 		const DReferenceTrajectory* rt = Get_ReferenceTrajectory(locTrackIterator->second);
 		if(rt == nullptr)
 			break; //e.g. REST data: no trajectory
 		double locStartTime = locTrackIterator->second->t0();
 		double locStartTimeVariance = 0.0;
 		DVector3 locProjPos, locProjMom;
+		shared_ptr<DBCALShowerMatchParams> locBestMatchParams;
 		if(locParticleID->Get_ClosestToTrack(rt, locBCALShowers, false, locStartTime, locBestMatchParams, &locStartTimeVariance, &locProjPos, &locProjMom))
-			locBCALTrackDistanceMap[locTrackIterator->second] = pair<DBCALShowerMatchParams, double>(locBestMatchParams, locProjPos.Z());
+			locBCALTrackDistanceMap[locTrackIterator->second] = std::make_pair(locBestMatchParams.get(), locProjPos.Z());
 	}
 
 	//TRACK / FCAL CLOSEST MATCHES
-	map<const DKinematicData*, DFCALShowerMatchParams> locFCALTrackDistanceMap;
-	for(locTrackIterator = locBestTrackMap.begin(); locTrackIterator != locBestTrackMap.end(); ++locTrackIterator)
+	map<const DTrackingData*, DFCALShowerMatchParams*> locFCALTrackDistanceMap;
+	for(auto locTrackIterator = locBestTrackMap.begin(); locTrackIterator != locBestTrackMap.end(); ++locTrackIterator)
 	{
-		DFCALShowerMatchParams locBestMatchParams;
+		shared_ptr<DFCALShowerMatchParams> locBestMatchParams;
 		const DReferenceTrajectory* rt = Get_ReferenceTrajectory(locTrackIterator->second);
 		if(rt == nullptr)
 			break; //e.g. REST data: no trajectory
 		double locStartTime = locTrackIterator->second->t0();
 		if(locParticleID->Get_ClosestToTrack(rt, locFCALShowers, false, locStartTime, locBestMatchParams))
-			locFCALTrackDistanceMap[locTrackIterator->second] = locBestMatchParams;
+			locFCALTrackDistanceMap.emplace(locTrackIterator->second, locBestMatchParams);
 	}
 
 	//TRACK / SC CLOSEST MATCHES
-	map<const DKinematicData*, pair<DSCHitMatchParams, double> > locSCTrackDistanceMap; //double = z
-	for(locTrackIterator = locBestTrackMap.begin(); locTrackIterator != locBestTrackMap.end(); ++locTrackIterator)
+	map<const DTrackingData*, pair<DSCHitMatchParams*, double> > locSCTrackDistanceMap; //double = z
+	for(auto locTrackIterator = locBestTrackMap.begin(); locTrackIterator != locBestTrackMap.end(); ++locTrackIterator)
 	{
-		DSCHitMatchParams locBestMatchParams;
+		shared_ptr<DSCHitMatchParams> locBestMatchParams;
 		const DReferenceTrajectory* rt = Get_ReferenceTrajectory(locTrackIterator->second);
 		if(rt == nullptr)
 			break; //e.g. REST data: no trajectory
@@ -1110,28 +1107,28 @@ void DHistogramAction_DetectorMatching::Fill_MatchingHists(JEventLoop* locEventL
 		double locStartTimeVariance = 0.0;
 		DVector3 locProjPos, locProjMom;
 		if(locParticleID->Get_ClosestToTrack(rt, locSCHits, locIsTimeBased, false, locStartTime, locBestMatchParams, &locStartTimeVariance, &locProjPos, &locProjMom))
-			locSCTrackDistanceMap[locTrackIterator->second] = pair<DSCHitMatchParams, double>(locBestMatchParams, locProjPos.Z());
+			locSCTrackDistanceMap[locTrackIterator->second] = std::make_pair(locBestMatchParams, locProjPos.Z());
 	}
 
 	//TRACK / TOF POINT CLOSEST MATCHES
-	map<const DKinematicData*, DTOFHitMatchParams> locTOFPointTrackDistanceMap;
-	for(locTrackIterator = locBestTrackMap.begin(); locTrackIterator != locBestTrackMap.end(); ++locTrackIterator)
+	map<const DTrackingData*, DTOFHitMatchParams*> locTOFPointTrackDistanceMap;
+	for(auto locTrackIterator = locBestTrackMap.begin(); locTrackIterator != locBestTrackMap.end(); ++locTrackIterator)
 	{
-		DTOFHitMatchParams locBestMatchParams;
+		shared_ptr<DTOFHitMatchParams> locBestMatchParams;
 		const DReferenceTrajectory* rt = Get_ReferenceTrajectory(locTrackIterator->second);
 		if(rt == nullptr)
 			break; //e.g. REST data: no trajectory
 		double locStartTime = locTrackIterator->second->t0();
 		if(locParticleID->Get_ClosestToTrack(rt, locTOFPoints, false, locStartTime, locBestMatchParams))
-			locTOFPointTrackDistanceMap[locTrackIterator->second] = locBestMatchParams;
+			locTOFPointTrackDistanceMap.emplace(locTrackIterator->second, locBestMatchParams);
 	}
 
 	//TRACK / TOF PADDLE CLOSEST MATCHES
-	map<const DKinematicData*, pair<const DTOFPaddleHit*, pair<double, double> > > locHorizontalTOFPaddleTrackDistanceMap; //doubles: delta-y, distance
-	map<const DKinematicData*, pair<const DTOFPaddleHit*, pair<double, double> > > locVerticalTOFPaddleTrackDistanceMap; //doubles: delta-x, distance
-	for(locTrackIterator = locBestTrackMap.begin(); locTrackIterator != locBestTrackMap.end(); ++locTrackIterator)
+	map<const DTrackingData*, pair<const DTOFPaddleHit*, pair<double, double> > > locHorizontalTOFPaddleTrackDistanceMap; //doubles: delta-y, distance
+	map<const DTrackingData*, pair<const DTOFPaddleHit*, pair<double, double> > > locVerticalTOFPaddleTrackDistanceMap; //doubles: delta-x, distance
+	for(auto locTrackIterator = locBestTrackMap.begin(); locTrackIterator != locBestTrackMap.end(); ++locTrackIterator)
 	{
-		const DKinematicData* locKinematicData = locTrackIterator->second;
+		const DTrackingData* locKinematicData = locTrackIterator->second;
 		const DReferenceTrajectory* locReferenceTrajectory = Get_ReferenceTrajectory(locKinematicData);
 		if(locReferenceTrajectory == nullptr)
 			break; //e.g. REST data: no trajectory
@@ -1151,16 +1148,16 @@ void DHistogramAction_DetectorMatching::Fill_MatchingHists(JEventLoop* locEventL
 	}
 
 	//PROJECTED HIT POSITIONS
-	map<const DKinematicData*, pair<int, bool> > dProjectedSCPaddleMap; //pair: paddle, hit-barrel-flag (false if bend/nose)
-	map<const DKinematicData*, pair<int, int> > dProjectedTOF2DPaddlesMap; //pair: vertical, horizontal
-	map<const DKinematicData*, pair<float, float> > dProjectedTOFXYMap; //pair: x, y
-	map<const DKinematicData*, pair<int, int> > dProjectedFCALRowColumnMap; //pair: column, row
-	map<const DKinematicData*, pair<float, float> > dProjectedFCALXYMap; //pair: x, y
-	map<const DKinematicData*, pair<float, int> > dProjectedBCALModuleSectorMap; //pair: z, module
-	map<const DKinematicData*, pair<float, float> > dProjectedBCALPhiZMap; //pair: z, phi
-	for(locTrackIterator = locBestTrackMap.begin(); locTrackIterator != locBestTrackMap.end(); ++locTrackIterator)
+	map<const DTrackingData*, pair<int, bool> > dProjectedSCPaddleMap; //pair: paddle, hit-barrel-flag (false if bend/nose)
+	map<const DTrackingData*, pair<int, int> > dProjectedTOF2DPaddlesMap; //pair: vertical, horizontal
+	map<const DTrackingData*, pair<float, float> > dProjectedTOFXYMap; //pair: x, y
+	map<const DTrackingData*, pair<int, int> > dProjectedFCALRowColumnMap; //pair: column, row
+	map<const DTrackingData*, pair<float, float> > dProjectedFCALXYMap; //pair: x, y
+	map<const DTrackingData*, pair<float, int> > dProjectedBCALModuleSectorMap; //pair: z, module
+	map<const DTrackingData*, pair<float, float> > dProjectedBCALPhiZMap; //pair: z, phi
+	for(auto locTrackIterator = locBestTrackMap.begin(); locTrackIterator != locBestTrackMap.end(); ++locTrackIterator)
 	{
-		const DKinematicData* locTrack = locTrackIterator->second;
+		const DTrackingData* locTrack = locTrackIterator->second;
 		const DReferenceTrajectory* locReferenceTrajectory = Get_ReferenceTrajectory(locTrack);
 		if(locReferenceTrajectory == NULL)
 			break; //e.g. REST data: no trajectory
@@ -1210,23 +1207,23 @@ void DHistogramAction_DetectorMatching::Fill_MatchingHists(JEventLoop* locEventL
 		//BCAL
 		for(auto locMapPair : locBCALTrackDistanceMap)
 		{
-			const DKinematicData* locTrack = locMapPair.first;
-			DBCALShowerMatchParams locMatchParams = locMapPair.second.first;
-			double locDeltaPhi = locMatchParams.dDeltaPhiToShower*180.0/TMath::Pi();
+			auto locTrack = locMapPair.first;
+			auto locMatchParams = locMapPair.second.first;
+			double locDeltaPhi = locMatchParams->dDeltaPhiToShower*180.0/TMath::Pi();
 			double locProjectedZ = locMapPair.second.second;
 			dHistMap_BCALDeltaPhiVsP[locIsTimeBased]->Fill(locTrack->momentum().Mag(), locDeltaPhi);
-			dHistMap_BCALDeltaZVsTheta[locIsTimeBased]->Fill(locTrack->momentum().Theta()*180.0/TMath::Pi(), locMatchParams.dDeltaZToShower);
+			dHistMap_BCALDeltaZVsTheta[locIsTimeBased]->Fill(locTrack->momentum().Theta()*180.0/TMath::Pi(), locMatchParams->dDeltaZToShower);
 
 			dHistMap_BCALDeltaPhiVsZ[locIsTimeBased]->Fill(locProjectedZ, locDeltaPhi);
-			dHistMap_BCALDeltaZVsZ[locIsTimeBased]->Fill(locProjectedZ, locMatchParams.dDeltaZToShower);
+			dHistMap_BCALDeltaZVsZ[locIsTimeBased]->Fill(locProjectedZ, locMatchParams->dDeltaZToShower);
 		}
 
 		//FCAL
 		for(auto locMapPair : locFCALTrackDistanceMap)
 		{
-			const DKinematicData* locTrack = locMapPair.first;
-			dHistMap_FCALTrackDistanceVsP[locIsTimeBased]->Fill(locTrack->momentum().Mag(), locMapPair.second.dDOCAToShower);
-			dHistMap_FCALTrackDistanceVsTheta[locIsTimeBased]->Fill(locTrack->momentum().Theta()*180.0/TMath::Pi(), locMapPair.second.dDOCAToShower);
+			auto locTrack = locMapPair.first;
+			dHistMap_FCALTrackDistanceVsP[locIsTimeBased]->Fill(locTrack->momentum().Mag(), locMapPair.second->dDOCAToShower);
+			dHistMap_FCALTrackDistanceVsTheta[locIsTimeBased]->Fill(locTrack->momentum().Theta()*180.0/TMath::Pi(), locMapPair.second->dDOCAToShower);
 		}
 
 		//TOF Paddle
@@ -1248,10 +1245,10 @@ void DHistogramAction_DetectorMatching::Fill_MatchingHists(JEventLoop* locEventL
 		//TOF Point
 		for(auto locMapPair : locTOFPointTrackDistanceMap)
 		{
-			const DKinematicData* locTrack = locMapPair.first;
-			const DTOFPoint* locTOFPoint = locMapPair.second.dTOFPoint;
-			double locDeltaX = locMapPair.second.dDeltaXToHit;
-			double locDeltaY = locMapPair.second.dDeltaYToHit;
+			auto locTrack = locMapPair.first;
+			const DTOFPoint* locTOFPoint = locMapPair.second->dTOFPoint;
+			double locDeltaX = locMapPair.second->dDeltaXToHit;
+			double locDeltaY = locMapPair.second->dDeltaYToHit;
 
 			double locDistance = sqrt(locDeltaX*locDeltaX + locDeltaY*locDeltaY);
 			if((fabs(locDeltaX) < 500.0) && (fabs(locDeltaY) < 500.0)) //else position not well-defined
@@ -1276,9 +1273,9 @@ void DHistogramAction_DetectorMatching::Fill_MatchingHists(JEventLoop* locEventL
 		{
 			for(auto locMapPair : locSCTrackDistanceMap)
 			{
-				const DKinematicData* locTrack = locMapPair.first;
-				DSCHitMatchParams locMatchParams = locMapPair.second.first;
-				double locDeltaPhi = locMatchParams.dDeltaPhiToHit*180.0/TMath::Pi();
+				auto locTrack = locMapPair.first;
+				auto locMatchParams = locMapPair.second.first;
+				double locDeltaPhi = locMatchParams->dDeltaPhiToHit*180.0/TMath::Pi();
 				double locProjectedZ = locMapPair.second.second;
 				dHistMap_SCTrackDeltaPhiVsP[locIsTimeBased]->Fill(locTrack->momentum().Mag(), locDeltaPhi);
 				dHistMap_SCTrackDeltaPhiVsTheta[locIsTimeBased]->Fill(locTrack->momentum().Theta()*180.0/TMath::Pi(), locDeltaPhi);
@@ -1291,7 +1288,7 @@ void DHistogramAction_DetectorMatching::Fill_MatchingHists(JEventLoop* locEventL
 		//Does-it-match, by detector
 		for(auto locMapPair : locBestTrackMap)
 		{
-			const DKinematicData* locTrack = locMapPair.second;
+			auto locTrack = locMapPair.second;
 			double locTheta = locTrack->momentum().Theta()*180.0/TMath::Pi();
 			double locPhi = locTrack->momentum().Phi()*180.0/TMath::Pi();
 			double locP = locTrack->momentum().Mag();
@@ -1459,7 +1456,7 @@ void DHistogramAction_DetectorMatching::Fill_MatchingHists(JEventLoop* locEventL
 		//Is-Matched to Something
 		for(auto locMapPair : locBestTrackMap)
 		{
-			const DKinematicData* locTrack = locMapPair.second;
+			auto locTrack = locMapPair.second;
 			double locTheta = locTrack->momentum().Theta()*180.0/TMath::Pi();
 			double locP = locTrack->momentum().Mag();
 			if(locDetectorMatches->Get_IsMatchedToHit(locTrack))

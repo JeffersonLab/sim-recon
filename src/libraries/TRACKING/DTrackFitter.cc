@@ -143,6 +143,7 @@ DTrackFitter::fit_status_t DTrackFitter::FitTrack(const DVector3 &pos, const DVe
 	input_params.setMomentum(mom);
 	input_params.setPID(dParticleID->IDTrack(q, mass));
 	input_params.setTime(t0);
+	input_params.setT0(t0,0.,t0_det);
 
 	DTrackFitter::fit_status_t status = FitTrack();
 

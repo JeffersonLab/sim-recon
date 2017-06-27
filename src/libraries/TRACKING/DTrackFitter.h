@@ -171,7 +171,7 @@ class DTrackFitter:public jana::JObject{
 		// The following should be used as inputs by FitTrack(void)
 		vector<const DCDCTrackHit*> cdchits;	//< Hits in the CDC
 		vector<const DFDCPseudo*> fdchits;		//< Hits in the FDC
-		DKinematicData input_params;				//< Starting parameters for the fit
+		DTrackingData input_params;				//< Starting parameters for the fit
 		fit_type_t fit_type;							//< kWireBased or kTimeBased
 		const DMagneticFieldMap *bfield;			//< Magnetic field map for current event (acquired through loop)
 		const DLorentzDeflections *lorentz_def;//< Correction to FDC cathodes due to Lorentz force
