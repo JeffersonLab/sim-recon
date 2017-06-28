@@ -68,57 +68,7 @@ jerror_t DTACHit_factory::brun(jana::JEventLoop *eventLoop, int32_t runnumber) {
 	if (printMessages)
 		jout << "In DTACHit_factory, loading constants..." << endl;
 
-//	// load scale factors
-//	map<string, double> scaleFactors;
-//	// a_scale (TAC_ADC_SCALE)
-//	if (eventLoop->GetCalib("/TAC/digi_scales", scaleFactors))
-//		jout << "Error loading /TAC/digi_scales !" << endl;
-//	if (scaleFactors.find("TAC_ADC_ASCALE") != scaleFactors.end())
-//		energyScale = scaleFactors["TAC_ADC_ASCALE"];
-//	else
-//		jerr << "Unable to get TAC_ADC_ASCALE from /TAC/digi_scales !" << endl;
-//	// t_scale (TAC_ADC_SCALE)
-//	if (scaleFactors.find("TAC_ADC_TSCALE") != scaleFactors.end())
-//		timeScaleADC = scaleFactors["TAC_ADC_TSCALE"];
-//	else
-//		jerr << "Unable to get TAC_ADC_TSCALE from /TAC/digi_scales !" << endl;
-//
-//	// load base time offset
-//	map<string, double> baseTimeOffsets;
-//	// t_base (TAC_BASE_TIME_OFFSET)
-//	if (eventLoop->GetCalib("/TAC/base_time_offset", baseTimeOffsets))
-//		jout << "Error loading /TAC/base_time_offset !" << endl;
-//	if (baseTimeOffsets.find("TAC_BASE_TIME_OFFSET") != baseTimeOffsets.end())
-//		timeBaseADC = baseTimeOffsets["TAC_BASE_TIME_OFFSET"];
-//	else
-//		jerr
-//				<< "Unable to get TAC_BASE_TIME_OFFSET from /TAC/base_time_offset !"
-//				<< endl;
-//	// t_tdc_base (TAC_TDC_BASE_TIME_OFFSET)
-//	if (baseTimeOffsets.find("TAC_TDC_BASE_TIME_OFFSET")
-//			!= baseTimeOffsets.end())
-//		timeBaseTDC = baseTimeOffsets["TAC_TDC_BASE_TIME_OFFSET"];
-//	else
-//		jerr
-//				<< "Unable to get TAC_BASE_TIME_OFFSET from /TAC/base_time_offset !"
-//				<< endl;
-//
-//	// load constant tables
-//	// a_gains (gains)
-//	if (eventLoop->GetCalib("/TAC/gains", energyGain))
-//		jout << "Error loading /TAC/gains !" << endl;
-//	// a_pedestals (pedestals)
-//	if (eventLoop->GetCalib("/TAC/pedestals", adcPedestal))
-//		jout << "Error loading /TAC/pedestals !" << endl;
-//	// adc_time_offsets (adc_timing_offsets)
-//	if (eventLoop->GetCalib("/TAC/adc_timing_offsets", adcTimeOffset))
-//		jout << "Error loading /TAC/adc_timing_offsets !" << endl;
-//	// tdc_time_offsets (tdc_timing_offsets)
-//	if (eventLoop->GetCalib("/TAC/tdc_timing_offsets", tdcTimeOffsets))
-//		jout << "Error loading /TAC/tdc_timing_offsets !" << endl;
-//	// timewalk_parameters (timewalk_parms)
-//	if (eventLoop->GetCalib("TAC/timewalk_parms_v2", timeWalkParameters))
-//		jout << "Error loading /TAC/timewalk_parms_v2 !" << endl;
+	readCCDB( eventLoop );
 
 	return NOERROR;
 }
@@ -130,6 +80,62 @@ jerror_t DTACHit_factory::evnt(JEventLoop *eventLoop, uint64_t eventNumber) {
 //	cout << "Building basic DTACHit objects" << endl;
 	makeFADCHits(eventLoop, eventNumber);
 	makeTDCHits(eventLoop, eventNumber);
+
+	return NOERROR;
+}
+
+jerror_t DTACHit_factory::readCCDB(JEventLoop *eventLoop) {
+	// load scale factors
+	map<string, double> scaleFactors;
+	// a_scale (TAC_ADC_SCALE)
+	if (eventLoop->GetCalib("/TAC/digi_scales", scaleFactors))
+		jout << "Error loading /TAC/digi_scales !" << endl;
+	if (scaleFactors.find("TAC_ADC_ASCALE") != scaleFactors.end())
+		energyScale = scaleFactors["TAC_ADC_ASCALE"];
+	else
+		jerr << "Unable to get TAC_ADC_ASCALE from /TAC/digi_scales !" << endl;
+	// t_scale (TAC_ADC_SCALE)
+	if (scaleFactors.find("TAC_ADC_TSCALE") != scaleFactors.end())
+		timeScaleADC = scaleFactors["TAC_ADC_TSCALE"];
+	else
+		jerr << "Unable to get TAC_ADC_TSCALE from /TAC/digi_scales !" << endl;
+
+	// load base time offset
+	map<string, double> baseTimeOffsets;
+	// t_base (TAC_BASE_TIME_OFFSET)
+	if (eventLoop->GetCalib("/TAC/base_time_offset", baseTimeOffsets))
+		jout << "Error loading /TAC/base_time_offset !" << endl;
+	if (baseTimeOffsets.find("TAC_BASE_TIME_OFFSET") != baseTimeOffsets.end())
+		timeBaseADC = baseTimeOffsets["TAC_BASE_TIME_OFFSET"];
+	else
+		jerr
+				<< "Unable to get TAC_BASE_TIME_OFFSET from /TAC/base_time_offset !"
+				<< endl;
+	// t_tdc_base (TAC_TDC_BASE_TIME_OFFSET)
+	if (baseTimeOffsets.find("TAC_TDC_BASE_TIME_OFFSET")
+			!= baseTimeOffsets.end())
+		timeBaseTDC = baseTimeOffsets["TAC_TDC_BASE_TIME_OFFSET"];
+	else
+		jerr
+				<< "Unable to get TAC_TDC_BASE_TIME_OFFSET from /TAC/base_time_offset !"
+				<< endl;
+
+	// load constant tables
+	// a_gains (gains)
+	if (eventLoop->GetCalib("/TAC/gains", energyGain))
+		jout << "Error loading /TAC/gains !" << endl;
+	// a_pedestals (pedestals)
+	if (eventLoop->GetCalib("/TAC/pedestals", adcPedestal))
+		jout << "Error loading /TAC/pedestals !" << endl;
+	// adc_time_offsets (adc_timing_offsets)
+	if (eventLoop->GetCalib("/TAC/adc_timing_offsets", adcTimeOffset))
+		jout << "Error loading /TAC/adc_timing_offsets !" << endl;
+	// tdc_time_offsets (tdc_timing_offsets)
+	if (eventLoop->GetCalib("/TAC/timing_offsets", tdcTimeOffsets))
+		jout << "Error loading /TAC/timing_offsets !" << endl;
+	// timewalk_parameters (timewalk_parms)
+	if (eventLoop->GetCalib("TAC/timewalk_parms", timeWalkParameters))
+		jout << "Error loading /TAC/timewalk_parms !" << endl;
 
 	return NOERROR;
 }
@@ -190,7 +196,7 @@ void DTACHit_factory::makeFADCHits(JEventLoop *eventLoop,
 
 		tacHit->setTimeFADC(
 				timeScaleADC * pulseTime - adcTimeOffset + timeBaseADC);
-		tacHit->setT( tacHit->getTimeFADC() );
+		tacHit->setT(tacHit->getTimeFADC());
 		tacHit->setTimeTDC(numeric_limits<double>::quiet_NaN());
 
 		tacHit->setTDCPresent(false);

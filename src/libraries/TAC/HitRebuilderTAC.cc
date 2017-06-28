@@ -9,7 +9,41 @@
 
 using namespace std;
 
-string HitRebuilderTAC::tagString = "REBUILD";
+jerror_t HitRebuilderTAC::readCCDB( JEventLoop* eventLoop) {
+	cout << "In HitRebuilderTAC::readCCDB() , reading calibration constants" << endl;
+	// load scale factors
+	map<string, double> scaleFactors;
+	if (eventLoop->GetCalib("/TAC/digi_scales", scaleFactors))
+		jout << "Error loading /TAC/digi_scales !" << endl;
+	// t_scale (TAC_ADC_SCALE)
+	if (scaleFactors.find("TAC_ADC_TSCALE") != scaleFactors.end())
+		timeScaleADC = adcTimeRescaleFactor * scaleFactors["TAC_ADC_TSCALE"];
+	else
+		jerr << "Unable to get TAC_ADC_TSCALE from /TAC/digi_scales !" << endl;
+
+	// load base time offset
+	map<string, double> baseTimeOffsets;
+	// t_base (TAC_BASE_TIME_OFFSET)
+	if (eventLoop->GetCalib("/TAC/base_time_offset", baseTimeOffsets))
+		jout << "Error loading /TAC/base_time_offset !" << endl;
+	if (baseTimeOffsets.find("TAC_BASE_TIME_OFFSET") != baseTimeOffsets.end())
+		timeBaseADC = baseTimeOffsets["TAC_BASE_TIME_OFFSET"];
+	else
+		jerr
+				<< "Unable to get TAC_BASE_TIME_OFFSET from /TAC/base_time_offset !"
+				<< endl;
+
+	// load constant tables
+	// adc_time_offsets (adc_timing_offsets)
+	if (eventLoop->GetCalib("/TAC/adc_timing_offsets", adcTimeOffset))
+		jout << "Error loading /TAC/adc_timing_offsets !" << endl;
+
+	cout << "timeScaleADC is " << timeScaleADC << " , timeBaseADC is " << timeBaseADC <<
+			" ,  adcTimeOffset is " << adcTimeOffset << endl;
+
+	return NOERROR;
+}
+
 
 const Df250WindowRawData* HitRebuilderTAC::getRawData(const DTACHit* baseHit) {
 //const vector<uint16_t>& DTACHit_Rebuild_factory::getSampleVector(
@@ -59,7 +93,7 @@ double HitRebuilderTAC::getTimeFromRawData(const vector<uint16_t>& samples) {
 	//			<< endl;
 	for (auto& elemIter = minIter; elemIter != maxIter; elemIter++) {
 		double elemNumber = std::distance(samples.begin(), elemIter);
-		weightedSum += elemNumber * (*elemIter);
+		weightedSum += (elemNumber + 0.5) * (*elemIter);
 		normalizationFactor += (*elemIter);
 	}
 	//	cout << "weighted sum is " << weightedSum << " norm factor is " << normalizationFactor << endl;
@@ -97,11 +131,17 @@ vector<DTACHit*> HitRebuilderTAC::operator()(
 		// one rebuild hit will be produced out of one window data. The fact that we sort the
 		// hits in the begining should guarantee us that the useful hit is copied. This can be
 		// reprogrammed differently at a later time.
+		double newTime = baseHit->getT();
 		if (rawDataPtrSet.find(rawData) == rawDataPtrSet.end()) {
 			auto& rawDataVector = rawData->samples;
 			//	auto rawDataVector = getSampleVector(baseHit);
 
-			double newTime = getTimeFromRawData(rawDataVector);
+			try {
+				newTime = getTimeFromRawData(rawDataVector);
+			} catch (const runtime_error& e) {
+				newTime = baseHit->getT();
+				newTime = -10;
+			}
 //		cout << "Received new time " << newTime << endl;
 
 //		DTACHit *newHit = new DTACHit(*baseHit);
@@ -136,3 +176,4 @@ vector<DTACHit*> HitRebuilderTAC::operator()(
 	}
 	return newHitVector;
 }
+

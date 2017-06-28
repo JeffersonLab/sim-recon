@@ -62,7 +62,10 @@ public:
 	virtual void AppendData( DTACHit* hit ) { _data.push_back(hit) ;};
 //	virtual std::string SetTag( std::string tag ) ;
 
+	virtual jerror_t readCCDB( JEventLoop *loop );
+
 	virtual DTACHit* findMatch(double tdcTime);
+
 
 	virtual void makeFADCHits(JEventLoop *loop, uint64_t eventnumber);
 	virtual void makeTDCHits(JEventLoop *loop, uint64_t eventnumber);

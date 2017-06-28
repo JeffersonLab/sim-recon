@@ -11,6 +11,7 @@
 #include <vector>
 #include <set>
 
+#include <JANA/JEventLoop.h>
 #include <JANA/JFactory.h>
 #include <DAQ/Df250WindowRawData.h>
 
@@ -18,27 +19,36 @@
 #include "DTACTDCDigiHit.h"
 #include "DTACHit.h"
 
-class HitRebuilderTAC {
+#include "HitRebuilderInterfaceTAC.h"
+
+class HitRebuilderTAC : virtual public HitRebuilderInterfaceTAC {
 protected:
 	double timeScaleADC = 4.0;
 	double adcTimeOffset = 0;
 	double timeBaseADC = -130;
 
+	double adcTimeRescaleFactor = 64.0;
+
 	std::set<const Df250WindowRawData*> rawDataPtrSet;
 
-	static std::string tagString;
+//	static std::string tagString;
 
-	virtual double getTimeFromRawData(const std::vector<uint16_t>& samples);
-	virtual const Df250WindowRawData* getRawData(const DTACHit* baseHit);
+	virtual double getTimeFromRawData(const std::vector<uint16_t>& samples) override ;
+	virtual const Df250WindowRawData* getRawData(const DTACHit* baseHit) override ;
 
-	static std::string& setTagString( std::string tag ) { return (tagString = tag ); }
+	jerror_t readCCDB( JEventLoop* eventLoop );
+
+//	static std::string& setTagString( std::string tag ) { return (tagString = tag ); }
 public:
-	HitRebuilderTAC(double timeScale, double timeOffset, double timeBase) :
-			timeScaleADC(timeScale), adcTimeOffset(timeOffset), timeBaseADC(
-					timeBase) {
+//	HitRebuilderTAC(double timeScale, double timeOffset, double timeBase  ) :
+//			timeScaleADC(timeScale), adcTimeOffset(timeOffset), timeBaseADC(
+//					timeBase) {
+//	}
+	HitRebuilderTAC( JEventLoop* eventLoop ) : HitRebuilderInterfaceTAC() {
+		HitRebuilderTAC::readCCDB( eventLoop );
 	}
 
-	HitRebuilderTAC(const HitRebuilderTAC& f) :
+	HitRebuilderTAC(const HitRebuilderTAC& f) :HitRebuilderInterfaceTAC(),
 			timeScaleADC(f.timeScaleADC), adcTimeOffset(f.adcTimeOffset), timeBaseADC(
 					f.timeBaseADC) {
 	}
@@ -53,8 +63,12 @@ public:
 	virtual ~HitRebuilderTAC() {
 		// TODO Auto-generated destructor stub
 	}
-	virtual std::vector<DTACHit*> operator()(vector<const DTACHit*>& baseHitVector);
-	static std::string getTagString() {return tagString;}
+
+	virtual std::vector<DTACHit*> operator()(
+			vector<const DTACHit*>& baseHitVector) override ;
+	static std::string getTagString() {
+		return "REBUILD";
+	}
 
 	double getADCTimeOffset() const {
 		return adcTimeOffset;
