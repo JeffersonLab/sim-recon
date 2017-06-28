@@ -1433,7 +1433,7 @@ enum Charge_t
 	d_AllCharges
 };
 
-bool Is_CorrectCharge(Particle_t locPID, Charge_t locCharge)
+inline bool Is_CorrectCharge(Particle_t locPID, Charge_t locCharge)
 {
 	if(locPID == Unknown)
 		return (locCharge == d_AllCharges);
