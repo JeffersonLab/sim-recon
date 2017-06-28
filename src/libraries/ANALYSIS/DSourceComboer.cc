@@ -143,7 +143,7 @@ DSourceComboer::DSourceComboer(JEventLoop* locEventLoop)
 	gPARMS->SetDefaultParameter("COMBO:SHOWER_SELECT_TAG", dShowerSelectionTag);
 
 	//GET THE REACTIONS
-	locReactions = DAnalysis::Get_Reactions(locEventLoop);
+	auto locReactions = DAnalysis::Get_Reactions(locEventLoop);
 
 	//CREATE DSourceComboINFO'S
 	vector<const DReactionVertexInfo*> locVertexInfos;

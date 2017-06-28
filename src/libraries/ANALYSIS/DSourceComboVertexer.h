@@ -17,6 +17,7 @@
 #include "PID/DChargedTrackHypothesis.h"
 #include "PID/DChargedTrack.h"
 #include "PID/DNeutralShower.h"
+#include "ANALYSIS/DSourceCombo.h"
 #include "ANALYSIS/DReaction.h"
 #include "ANALYSIS/DReactionStepVertexInfo.h"
 #include "ANALYSIS/DKinFitUtils_GlueX.h"
@@ -56,7 +57,7 @@ class DSourceComboVertexer
 		DVector3 Get_Vertex(bool locIsProductionVertex, const vector<const DKinematicData*>& locVertexParticles) const{return dVertexMap.find(std::make_pair(locIsProductionVertex, locVertexParticles))->second;}
 		double Get_TimeOffset(bool locIsProductionVertex, const DSourceCombo* locReactionCombo, const DSourceCombo* locVertexCombo, const DKinematicData* locBeamParticle) const;
 		DVector3 Get_PrimaryVertex(const DReactionVertexInfo* locReactionVertexInfo, const DSourceCombo* locReactionCombo, const DKinematicData* locBeamParticle) const;
-		vector<const DKinematicData*> Get_ConstrainingParticles(bool locIsProductionVertex, const DSourceCombo* locVertexCombo, const DKinematicData* locBeamParticle) const; //beam = nullptr if not determined by missing mass! //this is empty if vertex not found yet!
+		vector<const DKinematicData*> Get_ConstrainingParticles(bool locIsProductionVertex, const DSourceCombo* locVertexCombo, const DKinematicData* locBeamParticle = nullptr) const; //beam = nullptr if not determined by missing mass! //this is empty if vertex not found yet!
 
 		//GET VERTEX-Z BINS
 		signed char Get_VertexZBin(bool locIsProductionVertex, const DSourceCombo* locSourceCombo, const DKinematicData* locBeamParticle) const;

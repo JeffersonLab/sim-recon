@@ -21,29 +21,27 @@ jerror_t DTrackTimeBased_factory_Combo::init(void)
 	gPARMS->SetDefaultParameter("COMBO:TRACK_SELECT_TAG", dTrackSelectionTag);
 
 	//remember, charge sign could have flipped during track reconstruction
-	vector<Particle_t> locPIDVector;
-
 	//order of preference:
 		//very similar mass & charge (e.g. pi -> mu, e)
 		//slightly similar mass & charge (e.g. pi -> K)
 		//similar mass, different charge (e.g. pi+ -> pi-)
 		//don't need to list every PID: if none of the below PIDs are available, will choose the one with the best PID FOM
 
-	dParticleIDsToTry.emplace(PiPlus, {KPlus, PiMinus, KMinus, Proton});
-	dParticleIDsToTry.emplace(PiMinus, {KMinus, PiPlus, KPlus});
-	dParticleIDsToTry.emplace(KPlus, {PiPlus, KMinus, PiMinus, Proton});
-	dParticleIDsToTry.emplace(KMinus, {PiMinus, KPlus, PiPlus, Proton});
+	dParticleIDsToTry.emplace(PiPlus, vector<Particle_t>{KPlus, PiMinus, KMinus, Proton});
+	dParticleIDsToTry.emplace(PiMinus, vector<Particle_t>{KMinus, PiPlus, KPlus});
+	dParticleIDsToTry.emplace(KPlus, vector<Particle_t>{PiPlus, KMinus, PiMinus, Proton});
+	dParticleIDsToTry.emplace(KMinus, vector<Particle_t>{PiMinus, KPlus, PiPlus, Proton});
 
-	dParticleIDsToTry.emplace(Proton, {KPlus, PiPlus, KMinus});
-	dParticleIDsToTry.emplace(AntiProton, {KMinus, Proton, PiMinus, KPlus});
+	dParticleIDsToTry.emplace(Proton, vector<Particle_t>{KPlus, PiPlus, KMinus});
+	dParticleIDsToTry.emplace(AntiProton, vector<Particle_t>{KMinus, Proton, PiMinus, KPlus});
 
-	dParticleIDsToTry.emplace(Positron, {PiPlus, KPlus, PiMinus, KMinus});
-	dParticleIDsToTry.emplace(Electron, {PiMinus, KMinus, PiPlus, KPlus});
+	dParticleIDsToTry.emplace(Positron, vector<Particle_t>{PiPlus, KPlus, PiMinus, KMinus});
+	dParticleIDsToTry.emplace(Electron, vector<Particle_t>{PiMinus, KMinus, PiPlus, KPlus});
 
 	dParticleIDsToTry.emplace(MuonPlus, dParticleIDsToTry[Positron]);
 	dParticleIDsToTry.emplace(MuonMinus, dParticleIDsToTry[Electron]);
 
-	dParticleIDsToTry.emplace(Deuteron, {Proton, KPlus, PiPlus});
+	dParticleIDsToTry.emplace(Deuteron, vector<Particle_t>{Proton, KPlus, PiPlus});
 
 	return NOERROR;
 }
@@ -123,19 +121,11 @@ const DChargedTrackHypothesis* DTrackTimeBased_factory_Combo::Get_ChargedHypothe
 
 DTrackTimeBased* DTrackTimeBased_factory_Combo::Convert_ChargedTrack(const DChargedTrackHypothesis* locChargedTrackHypothesis, Particle_t locNewPID)
 {
-	DTrackTimeBased* locTrackTimeBased = new DTrackTimeBased();
-
- 	const DTrackTimeBased* locOriginalTrackTimeBased = NULL;
-	locChargedTrackHypothesis->GetSingleT(locOriginalTrackTimeBased);
-	*locTrackTimeBased = *locOriginalTrackTimeBased;
-
+	auto locOriginalTrackTimeBased = locChargedTrackHypothesis->Get_TrackTimeBased();
+	auto locTrackTimeBased = new DTrackTimeBased(locOriginalTrackTimeBased);
 	locTrackTimeBased->setPID(locNewPID);
 	locTrackTimeBased->rt = nullptr;
-
 	locTrackTimeBased->AddAssociatedObject(locOriginalTrackTimeBased);
-	locTrackTimeBased->AddAssociatedObject(locChargedTrackHypothesis);
-
 	return locTrackTimeBased;
 }
-
 

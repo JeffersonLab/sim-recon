@@ -23,9 +23,10 @@ class DTrackTimeBased:public DTrackingData{
 		JOBJECT_PUBLIC(DTrackTimeBased);
 		
 		//CONSTRUCTORS
+		DTrackTimeBased(void) = default;
 		DTrackTimeBased(DTrackTimeBased& locSourceData, bool locShareTrackingFlag = false, bool locShareKinematicsFlag = false);
 		DTrackTimeBased(DTrackingData& locSourceData, bool locShareTrackingFlag = false, bool locShareKinematicsFlag = false);
-		DTrackTimeBased(const DTrackTimeBased& locSourceData) = delete;
+		DTrackTimeBased(const DTrackTimeBased& locSourceData){*this = locSourceData;}
 
 		typedef struct{
 		  unsigned int inner_layer;

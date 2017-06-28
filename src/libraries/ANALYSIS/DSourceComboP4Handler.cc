@@ -269,7 +269,10 @@ bool DSourceComboP4Handler::Calc_P4_HasMassiveNeutrals(bool locIsProductionVerte
 	auto locP4LookupTuple = std::make_tuple(locIsProductionVertex, locReactionChargedCombo, locSourceCombo, locRFBunch);
 	auto locIterator = dFinalStateP4ByCombo_HasMassiveNeutrals.find(locP4LookupTuple);
 	if(locIterator != dFinalStateP4ByCombo_HasMassiveNeutrals.end())
-		return locIterator->second;
+	{
+		locTotalP4 = locIterator->second;
+		return true;
+	}
 
 	//final state particles
 	auto locVertexZBin = dSourceComboer->Get_PhotonVertexZBin(locVertex.Z());
@@ -357,7 +360,7 @@ bool DSourceComboP4Handler::Cut_InvariantMass_HasMassiveNeutral_OrPhotonVertex(c
 
 		//get all combos at this vertex, with their uses, in reverse dependency order
 		vector<pair<DSourceComboUse, vector<const DSourceCombo*>>> locSourceCombosAndUses_ThisVertex = DAnalysis::Get_SourceCombosAndUses_ThisVertex(locVertexPrimaryFullCombo);
-		locSourceCombosAndUses_ThisVertex.emplace(locSourceCombosAndUses_ThisVertex.begin(), locVertexComboUse, {locVertexPrimaryFullCombo}); //not ideal ...
+		locSourceCombosAndUses_ThisVertex.emplace(locSourceCombosAndUses_ThisVertex.begin(), locVertexComboUse, vector<const DSourceCombo*>{locVertexPrimaryFullCombo}); //not ideal ...
 
 		//loop over combos & uses at this vertex in dependency order (in reverse)
 		for(auto locIterator = locSourceCombosAndUses_ThisVertex.rbegin(); locIterator != locSourceCombosAndUses_ThisVertex.rend(); ++locIterator)
@@ -417,7 +420,7 @@ bool DSourceComboP4Handler::Cut_InvariantMass_MissingMassVertex(const DReactionV
 
 		//get all combos at this vertex, with their uses, in reverse dependency order
 		vector<pair<DSourceComboUse, vector<const DSourceCombo*>>> locSourceCombosAndUses_ThisVertex = DAnalysis::Get_SourceCombosAndUses_ThisVertex(locVertexPrimaryFullCombo);
-		locSourceCombosAndUses_ThisVertex.emplace(locSourceCombosAndUses_ThisVertex.begin(), locVertexComboUse, {locVertexPrimaryFullCombo}); //not ideal ...
+		locSourceCombosAndUses_ThisVertex.emplace(locSourceCombosAndUses_ThisVertex.begin(), locVertexComboUse, vector<const DSourceCombo*>{locVertexPrimaryFullCombo}); //not ideal ...
 
 		//loop over combos & uses at this vertex in dependency order (in reverse)
 		for(auto locIterator = locSourceCombosAndUses_ThisVertex.rbegin(); locIterator != locSourceCombosAndUses_ThisVertex.rend(); ++locIterator)
@@ -433,7 +436,8 @@ bool DSourceComboP4Handler::Cut_InvariantMass_MissingMassVertex(const DReactionV
 			{
 				if(locDecayCombo->Get_IsComboingZIndependent() && !locDecayHasMassiveNeutrals)
 					continue; //no massive neutrals, no BCAL showers: already cut!
-				if(!Cut_InvariantMass_HasMassiveNeutral(locIsProductionVertex, locReactionFullCombo, locDecayCombo, locDecayPID, locPrimaryVertexZ, locVertex, locTimeOffset, {locRFBunch}))
+				vector<int> locRFBunches{locRFBunch};
+				if(!Cut_InvariantMass_HasMassiveNeutral(locIsProductionVertex, locReactionFullCombo, locDecayCombo, locDecayPID, locPrimaryVertexZ, locVertex, locTimeOffset, locRFBunches))
 					return false; //failed mass cut for all possible rf bunches!
 			}
 		}
