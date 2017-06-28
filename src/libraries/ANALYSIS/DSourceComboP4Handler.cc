@@ -189,7 +189,7 @@ DLorentzVector DSourceComboP4Handler::Calc_P4_NoMassiveNeutrals(const DSourceCom
 
 	auto locIterator = dFinalStateP4ByCombo.find(std::make_pair(locSourceCombo, locVertexZBin));
 	if(locIterator != dFinalStateP4ByCombo.end())
-		return *locIterator;
+		return locIterator->second;
 
 	DLorentzVector locTotalP4;
 
@@ -258,7 +258,7 @@ bool DSourceComboP4Handler::Calc_P4_Decay(bool locIsProductionVertex, const DSou
 		auto locDecayIterator = dFinalStateP4ByCombo_HasMassiveNeutrals.find(locDecayP4LookupTuple);
 		if(locDecayIterator == dFinalStateP4ByCombo_HasMassiveNeutrals.end())
 			return false; //failed!
-		locDecayP4 = *locDecayIterator;
+		locDecayP4 = locDecayIterator->second;
 	}
 
 	return true;
@@ -269,7 +269,7 @@ bool DSourceComboP4Handler::Calc_P4_HasMassiveNeutrals(bool locIsProductionVerte
 	auto locP4LookupTuple = std::make_tuple(locIsProductionVertex, locReactionChargedCombo, locSourceCombo, locRFBunch);
 	auto locIterator = dFinalStateP4ByCombo_HasMassiveNeutrals.find(locP4LookupTuple);
 	if(locIterator != dFinalStateP4ByCombo_HasMassiveNeutrals.end())
-		return *locIterator;
+		return locIterator->second;
 
 	//final state particles
 	auto locVertexZBin = dSourceComboer->Get_PhotonVertexZBin(locVertex.Z());
@@ -443,5 +443,3 @@ bool DSourceComboP4Handler::Cut_InvariantMass_MissingMassVertex(const DReactionV
 }
 
 }
-
-#endif // DSourceComboP4Handler_h

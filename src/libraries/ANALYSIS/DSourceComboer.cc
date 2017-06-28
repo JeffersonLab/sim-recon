@@ -2031,7 +2031,7 @@ void DSourceComboer::Copy_ZIndependentMixedResults(const DSourceComboUse& locCom
 	}
 }
 
-const DSourceCombo* DSourceComboer::Get_StepSourceCombo(const DReaction* locReaction, size_t locDesiredStepIndex, const DSourceCombo* locSourceCombo_Current, size_t locCurrentStepIndex)
+const DSourceCombo* DSourceComboer::Get_StepSourceCombo(const DReaction* locReaction, size_t locDesiredStepIndex, const DSourceCombo* locSourceCombo_Current, size_t locCurrentStepIndex) const
 {
 	//Get the list of steps we need to traverse //particle pair: step index, particle instance index
 	vector<pair<size_t, int>> locParticleIndices = {std::make_pair(locDesiredStepIndex, DReactionStep::Get_ParticleIndex_Initial())};
@@ -2048,7 +2048,7 @@ const DSourceCombo* DSourceComboer::Get_StepSourceCombo(const DReaction* locReac
 	{
 		auto locNextStep = locParticleIndices[locParticleIndices.size() - 2].first;
 		auto locInstanceToFind = locParticleIndices.back().second;
-		const auto& locUseToFind = dSourceComboUseReactionStepMap[locReaction][locNextStep];
+		const auto& locUseToFind = dSourceComboUseReactionStepMap.find(locReaction)->second.find(locNextStep)->second;
 		locSourceCombo_Current = DAnalysis::Find_Combo_AtThisStep(locSourceCombo_Current, locUseToFind, locInstanceToFind);
 		if(locSourceCombo_Current == nullptr)
 			return nullptr; //e.g. entirely neutral step when input is charged
@@ -2112,7 +2112,7 @@ const DSourceCombo* DSourceComboer::Get_VertexPrimaryCombo(const DSourceCombo* l
 	auto locCreationPair = std::make_pair(locReactionCombo, locStepVertexInfo);
 	auto locIterator = dVertexPrimaryComboMap.find(locCreationPair);
 	if(locIterator != dVertexPrimaryComboMap.end())
-		return locCreationPair->second;
+		return locIterator->second;
 
 	//find it
 	auto locReaction = locStepVertexInfo->Get_Reaction();
@@ -2121,6 +2121,27 @@ const DSourceCombo* DSourceComboer::Get_VertexPrimaryCombo(const DSourceCombo* l
 
 	//save it and return it
 	dVertexPrimaryComboMap.emplace(locCreationPair, locVertexPrimaryCombo);
+	return locVertexPrimaryCombo;
+}
+
+const DSourceCombo* DSourceComboer::Get_VertexPrimaryCombo(const DSourceCombo* locReactionCombo, const DReactionStepVertexInfo* locStepVertexInfo) const
+{
+	//if it's the production vertex, just return the input
+	if(locStepVertexInfo->Get_ProductionVertexFlag())
+		return locReactionCombo;
+
+	//see if it's already been determined before: if so, just return it
+	auto locCreationPair = std::make_pair(locReactionCombo, locStepVertexInfo);
+	auto locIterator = dVertexPrimaryComboMap.find(locCreationPair);
+	if(locIterator != dVertexPrimaryComboMap.end())
+		return locIterator->second;
+
+	//find it
+	auto locReaction = locStepVertexInfo->Get_Reaction();
+	auto locDesiredStepIndex = locStepVertexInfo->Get_StepIndices().front();
+	auto locVertexPrimaryCombo = Get_StepSourceCombo(locReaction, locDesiredStepIndex, locReactionCombo, 0);
+
+	//return it
 	return locVertexPrimaryCombo;
 }
 

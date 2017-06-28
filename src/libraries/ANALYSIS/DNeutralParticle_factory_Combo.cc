@@ -72,7 +72,7 @@ jerror_t DNeutralParticle_factory_Combo::evnt(jana::JEventLoop *locEventLoop, ui
 		for(auto& locPID : dNeutralPIDs)
 		{
 			//create new DNeutralParticleHypothesis object
-			auto locNewHypothesis = dNeutralParticleHypothesisFactory->Create_DNeutralParticleHypothesis(locNeutralParticle->dNeutralShower, locPID, locEventRFBunch, locVertex->dSpacetimeVertex, locVertex->dCovarianceMatrix);
+			auto locNewHypothesis = dNeutralParticleHypothesisFactory->Create_DNeutralParticleHypothesis(locNeutralParticle->dNeutralShower, locPID, locEventRFBunch, locVertex->dSpacetimeVertex, &locVertex->dCovarianceMatrix);
 			dCreatedHypotheses.push_back(locNewHypothesis);
 			locNewNeutralParticle->dNeutralParticleHypotheses.push_back(locNewHypothesis);
 		}

@@ -1,7 +1,6 @@
 #ifndef DReactionVertexInfo_factory_h
 #define DReactionVertexInfo_factory_h
 
-#include <memory>
 #include <unordered_map>
 #include <map>
 #include <vector>
@@ -9,7 +8,8 @@
 
 #include "JANA/JFactory.h"
 
-#include <particleType.h>
+#include "particleType.h"
+#include "DResourcePool.h"
 #include "ANALYSIS/DReaction.h"
 #include "ANALYSIS/DReactionVertexInfo.h"
 
@@ -26,18 +26,21 @@ class DReactionVertexInfo_factory : public jana::JFactory<DReactionVertexInfo>
 		//PRIMARY FUNCTIONS
 		jerror_t init(void);
 		jerror_t evnt(jana::JEventLoop *locEventLoop, uint64_t locEventNumber);
-		DReactionVertexInfo* Build_VertexInfo(const DReaction* locReaction) const;
+		DReactionVertexInfo* Build_VertexInfo(const DReaction* locReaction);
 
 		//SETUP
-		shared_ptr<DReactionStepVertexInfo> Setup_VertexInfo(const DReaction* locReaction, size_t locStepIndex, DReactionStepVertexInfo* locVertexInfo) const;
+		DReactionStepVertexInfo* Setup_VertexInfo(const DReaction* locReaction, size_t locStepIndex, DReactionStepVertexInfo* locVertexInfo);
 
 		//GROUPING
 		void Group_VertexParticles(DReactionStepVertexInfo* locVertexInfo);
-		vector<shared_ptr<DReactionStepVertexInfo>> Link_Vertices(const DReaction* locReaction, vector<shared_ptr<DReactionStepVertexInfo>> locVertexInfos) const;
-		bool Associate_DecayingParticles(bool locLinkingFlag, shared_ptr<DReactionStepVertexInfo>& locVertexInfo, map<pair<int, int>, shared_ptr<DReactionStepVertexInfo>>& locDefinedDecayingParticles) const;
+		vector<DReactionStepVertexInfo*> Link_Vertices(const DReaction* locReaction, vector<DReactionStepVertexInfo*> locVertexInfos) const;
+		bool Associate_DecayingParticles(bool locLinkingFlag, DReactionStepVertexInfo* locVertexInfo, map<pair<int, int>, DReactionStepVertexInfo*>& locDefinedDecayingParticles) const;
 
 		//not all reactions are stored here, just the first ones
 		unordered_map<const DReaction*, DReactionVertexInfo*> dVertexInfoMap;
+
+		//RESOURCE POOL
+		DResourcePool<DReactionStepVertexInfo> dResourcePool_ReactionStepVertexInfo;
 };
 
 } //end DAnalysis namespace

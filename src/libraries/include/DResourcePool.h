@@ -3,6 +3,7 @@
 
 #include <atomic>
 #include <vector>
+#include <mutex>
 #include <type_traits>
 #include <memory>
 
@@ -16,7 +17,6 @@ template <typename DType> class DResourcePool
 	static_assert(!std::is_pointer<DType>::value, "The template type for DResourcePool must not be a pointer (the stored type IS a pointer though).");
 	static_assert(!std::is_const<DType>::value, "The template type for DResourcePool must not be const.");
 	static_assert(!std::is_volatile<DType>::value, "The template type for DResourcePool must not be volatile.");
-//	static_assert(!std::is_default_constructible<DType>::value, "The template type for DResourcePool must have a default constructor.");
 
 	public:
 		DResourcePool(void);
@@ -65,8 +65,9 @@ template <typename DType> class DResourcePool
 		alignas(Get_CacheLineSize()) vector<DType*> dResourcePool_Local;
 
 		//static class members have external linkage: same instance shared between every translation unit (would be globally, put only private access)
+		alignas(Get_CacheLineSize()) static mutex dSharedPoolMutex;
 		alignas(Get_CacheLineSize()) static vector<DType*> dResourcePool_Shared;
-		alignas(Get_CacheLineSize()) static atomic<bool> dSharedPoolLock;
+		alignas(Get_CacheLineSize()) static size_t dThreadCounter; //must be accessed within a lock due to how it's used in destructor: freeing all resources
 
 		alignas(Get_CacheLineSize()) size_t dContainerResourceMaxCapacity = 1000;
 		alignas(Get_CacheLineSize()) size_t dContainerResourceReduceCapacityTo = 100;
@@ -87,13 +88,18 @@ template <typename DType> class DSharedPtrRecycler
 
 //STATIC MEMBER DEFINITIONS
 //Since these are part of a template, these statics will only be defined once, no matter how much this header is included
+template <typename DType> mutex DResourcePool<DType>::dSharedPoolMutex;
 template <typename DType> vector<DType*> DResourcePool<DType>::dResourcePool_Shared = {};
-template <typename DType> atomic<bool> DResourcePool<DType>::dSharedPoolLock{false};
+template <typename DType> size_t DResourcePool<DType>::dThreadCounter{0};
 
 //CONSTRUCTOR
 template <typename DType> DResourcePool<DType>::DResourcePool(void)
 {
 	dResourcePool_Local.reserve(dGetBatchSize);
+	{
+		std::lock_guard<std::mutex> locLock(dSharedPoolMutex); //LOCK
+		++dThreadCounter;
+	}
 }
 
 //DESTRUCTOR
@@ -101,6 +107,24 @@ template <typename DType> DResourcePool<DType>::~DResourcePool(void)
 {
 	//Move all objects into the shared pool
 	Recycle_Resources_StaticPool(dResourcePool_Local.begin());
+
+	//if this was the last thread, delete all of the remaining resources
+	//first move them outside of the vector, then release the lock
+	vector<DType*> locResources;
+	{
+		std::lock_guard<std::mutex> locLock(dSharedPoolMutex); //LOCK
+		auto locNumRemainingThreads = --dThreadCounter;
+		if(locNumRemainingThreads > 0)
+			return; //not the last thread
+
+		//last thread: move all resources out of the shared pool
+		std::move(dResourcePool_Shared.begin(), dResourcePool_Shared.end(), std::back_inserter(locResources));
+		dResourcePool_Shared.clear();
+	}
+
+	//delete the resources
+	for(auto locResource : locResources)
+		delete locResource;
 }
 
 /************************************************************************* NON-SHARED-POOL-ACCESSING MEMBER FUNCTIONS *************************************************************************/
@@ -170,13 +194,13 @@ template <typename DType> void DResourcePool<DType>::Recycle(DType* locResource)
 template <typename DType> void DResourcePool<DType>::Get_Resources_StaticPool(void)
 {
 	dResourcePool_Local.reserve(dResourcePool_Local.size() + dGetBatchSize);
-	while(dSharedPoolLock.exchange(true)){} //LOCK
 	{
+		std::lock_guard<std::mutex> locLock(dSharedPoolMutex); //LOCK
+
 		auto locFirstMoveIterator = (dGetBatchSize >= dResourcePool_Shared.size()) ? dResourcePool_Shared.begin() : dResourcePool_Shared.end() - dGetBatchSize;
 		std::move(locFirstMoveIterator, dResourcePool_Shared.end(), std::back_inserter(dResourcePool_Local));
 		dResourcePool_Shared.erase(locFirstMoveIterator, dResourcePool_Shared.end());
 	}
-	dSharedPoolLock = false; //UNLOCK
 }
 
 template <typename DType> void DResourcePool<DType>::Recycle_Resources_StaticPool(void)
@@ -189,8 +213,8 @@ template <typename DType> void DResourcePool<DType>::Recycle_Resources_StaticPoo
 template <typename DType> void DResourcePool<DType>::Recycle_Resources_StaticPool(typename vector<DType*>::iterator locRemoveIterator)
 {
 	auto locMoveIterator = locRemoveIterator; //we will move resources into the shared pool, starting at this spot
-	while(dSharedPoolLock.exchange(true)){} //LOCK
 	{
+		std::lock_guard<std::mutex> locLock(dSharedPoolMutex); //LOCK
 		auto locNewPoolSize = dResourcePool_Shared.size() + dRecycleBatchSize;
 		if(locNewPoolSize > dMaxSharedPoolSize)
 		{
@@ -202,7 +226,6 @@ template <typename DType> void DResourcePool<DType>::Recycle_Resources_StaticPoo
 			dResourcePool_Shared.reserve(locNewPoolSize);
 		std::move(locMoveIterator, dResourcePool_Local.end(), std::back_inserter(dResourcePool_Shared));
 	}
-	dSharedPoolLock = false; //UNLOCK
 
 	//any resources that were not moved into the shared pool are deleted instead (too many)
 	auto Deleter = [](DType* locResource) -> void {delete locResource;};
@@ -215,11 +238,10 @@ template <typename DType> void DResourcePool<DType>::Recycle_Resources_StaticPoo
 template <typename DType> size_t DResourcePool<DType>::Get_SharedPoolSize(void) const
 {
 	size_t locSharedPoolSize = 0;
-	while(dSharedPoolLock.exchange(true)){} //LOCK
 	{
+		std::lock_guard<std::mutex> locLock(dSharedPoolMutex);
 		locSharedPoolSize = dResourcePool_Shared.size();
 	}
-	dSharedPoolLock = false; //UNLOCK
 	return locSharedPoolSize;
 }
 

@@ -1,7 +1,6 @@
 #ifndef DReactionStepVertexInfo_h
 #define DReactionStepVertexInfo_h
 
-#include <memory>
 #include <set>
 #include <map>
 #include <vector>
@@ -26,9 +25,11 @@ enum DReactionState_t
 class DReactionStepVertexInfo
 {
 	public:
+
 		//CONSTRUCTORS
-		DReactionStepVertexInfo(void) = delete;
+		DReactionStepVertexInfo(void) = default;
 		DReactionStepVertexInfo(const DReaction* locReaction, size_t locStartStepIndex);
+		void Set_Members(const DReaction* locReaction, size_t locStartStepIndex);
 
 		//ADDING STEPS & PARTICLES
 		void Add_ReactionStep(size_t locStepIndex);
@@ -36,9 +37,9 @@ class DReactionStepVertexInfo
 				const vector<pair<int, int>>& locOnlyConstrainTimeParticles, const vector<pair<int, int>>& locNoConstrainParticles);
 
 		//REGISTER DECAY VERTICES
-		void Register_DecayingNoConstrainUseVertex(const pair<int, int>& locDecayingNoConstrainPair, shared_ptr<DReactionStepVertexInfo>& locVertexInfo);
+		void Register_DecayingNoConstrainUseVertex(const pair<int, int>& locDecayingNoConstrainPair, DReactionStepVertexInfo* locVertexInfo);
 		void Register_DecayingParticleConstraints(const vector<pair<int, int>>& locNoConstrainDecayingParticles,
-				const map<pair<int, int>, shared_ptr<DReactionStepVertexInfo>>& locFullConstrainDecayingParticles);
+				const map<pair<int, int>, DReactionStepVertexInfo*>& locFullConstrainDecayingParticles);
 		void Set_DanglingVertexFlag(bool locIsDanglingVertexFlag){dIsDanglingVertexFlag = locIsDanglingVertexFlag;}
 
 		//GET REACTION INFO
@@ -56,16 +57,16 @@ class DReactionStepVertexInfo
 		vector<pair<int, int>> Get_MissingParticles(DReactionState_t locState = d_EitherState, Charge_t locCharge = d_AllCharges) const;
 
 		//sorted decaying
-		map<pair<int, int>, weak_ptr<DReactionStepVertexInfo>> Get_DecayingParticles_NoConstrain(void) const{return dDecayingParticles_NoConstrain;}
-		map<pair<int, int>, shared_ptr<DReactionStepVertexInfo>> Get_DecayingParticles_FullConstrain(void) const{return dDecayingParticles_FullConstrain;}
+		map<pair<int, int>, DReactionStepVertexInfo*> Get_DecayingParticles_NoConstrain(void) const{return dDecayingParticles_NoConstrain;}
+		map<pair<int, int>, DReactionStepVertexInfo*> Get_DecayingParticles_FullConstrain(void) const{return dDecayingParticles_FullConstrain;}
 
 		//independent of state
 		vector<pair<int, int>> Get_Particles(DReactionState_t locState = d_EitherState, Charge_t locCharge = d_AllCharges,
 				bool locIncludeDecayingFlag = true, bool locIncludeMissingFlag = true, bool locIncludeTargetFlag = true) const;
 
 		//parent vertex info
-		void Set_ParentVertexInfo(const shared_ptr<DReactionStepVertexInfo>& locStepVertexInfo){dParentVertexInfo = locStepVertexInfo;}
-		shared_ptr<DReactionStepVertexInfo> Get_ParentVertexInfo(void) const{return (dParentVertexInfo.expired() ? shared_ptr<DReactionStepVertexInfo>(nullptr) : shared_ptr<DReactionStepVertexInfo>(dParentVertexInfo));}
+		void Set_ParentVertexInfo(const DReactionStepVertexInfo* locStepVertexInfo){dParentVertexInfo = locStepVertexInfo;}
+		const DReactionStepVertexInfo* Get_ParentVertexInfo(void) const{return dParentVertexInfo;}
 
 	private:
 
@@ -74,7 +75,7 @@ class DReactionStepVertexInfo
 				bool locIncludeDecayingFlag = true, bool locIncludeMissingFlag = true, bool locIncludeTargetFlag = true) const;
 
 		//REACTION SUMMARY INFO
-		const DReaction* dReaction; //only the first reaction is stored, though there may be several represented by this object (identical channel content)
+		const DReaction* dReaction = nullptr; //only the first reaction is stored, though there may be several represented by this object (identical channel content)
 		vector<size_t> dReactionStepIndices; //in order from smallest to largest
 		bool dIsProductionVertexFlag = false;
 
@@ -88,16 +89,15 @@ class DReactionStepVertexInfo
 		//Note, decaying particles that decay in-place at this vertex (e.g. pi0) will only appear once: with their "final-state" indices
 		//If the decaying particle has a detached vertex, then the indices reported here are the ones where it appears for the vertex (initial/final state)
 		vector<pair<int, int>> dDecayingParticles; //all, whether used to constrain or not
-		//below must be weak_ptr or else will have cyclic reference (memory leak!)
-		map<pair<int, int>, weak_ptr<DReactionStepVertexInfo>> dDecayingParticles_NoConstrain; //vertex-info: where it is used to constrain (nullptr if not)
-		map<pair<int, int>, shared_ptr<DReactionStepVertexInfo>> dDecayingParticles_FullConstrain; //vertex-info: where it was defined
+		map<pair<int, int>, DReactionStepVertexInfo*> dDecayingParticles_NoConstrain; //vertex-info: where it is used to constrain (nullptr if not)
+		map<pair<int, int>, DReactionStepVertexInfo*> dDecayingParticles_FullConstrain; //vertex-info: where it was defined
 
 		//DANGLING
 		//is it dangling? dangling = vertex indeterminable, even with all particle information
 		//if is true, then vertex parent is either:
 			//in dDecayingParticles_NoConstrain if it's not empty (at most one will have non-null info), or is center of target
 		bool dIsDanglingVertexFlag = false;
-		weak_ptr<DReactionStepVertexInfo> dParentVertexInfo; //null if production vertex //weak: to avoid cyclic references
+		const DReactionStepVertexInfo* dParentVertexInfo = nullptr; //null if production vertex
 };
 
 /****************************************************** NAMESPACE-SCOPE NON-INLINE FUNCTION DECLARATIONS *******************************************************/
@@ -112,6 +112,13 @@ inline DReactionStepVertexInfo::DReactionStepVertexInfo(const DReaction* locReac
 	dIsProductionVertexFlag = ((locStartStepIndex == 0) && DAnalysis::Get_IsFirstStepBeam(locReaction));
 }
 
+inline void DReactionStepVertexInfo::Set_Members(const DReaction* locReaction, size_t locStartStepIndex)
+{
+	dReaction = locReaction;
+	dReactionStepIndices = {locStartStepIndex};
+	dIsProductionVertexFlag = ((locStartStepIndex == 0) && DAnalysis::Get_IsFirstStepBeam(locReaction));
+}
+
 /************************************************************** INLINE FUNCTIONS ***************************************************************/
 
 inline void DReactionStepVertexInfo::Add_ReactionStep(size_t locStepIndex)
@@ -120,7 +127,7 @@ inline void DReactionStepVertexInfo::Add_ReactionStep(size_t locStepIndex)
 	std::sort(dReactionStepIndices.begin(), dReactionStepIndices.end()); //just in case
 }
 
-inline void DReactionStepVertexInfo::Register_DecayingNoConstrainUseVertex(const pair<int, int>& locDecayingNoConstrainPair, shared_ptr<DReactionStepVertexInfo>& locVertexInfo)
+inline void DReactionStepVertexInfo::Register_DecayingNoConstrainUseVertex(const pair<int, int>& locDecayingNoConstrainPair, DReactionStepVertexInfo* locVertexInfo)
 {
 	dDecayingParticles_NoConstrain[locDecayingNoConstrainPair] = locVertexInfo;
 }

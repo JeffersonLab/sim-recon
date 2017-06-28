@@ -41,10 +41,10 @@ jerror_t DReactionVertexInfo_factory::evnt(JEventLoop *locEventLoop, uint64_t lo
 	return NOERROR;
 }
 
-DReactionVertexInfo* DReactionVertexInfo_factory::Build_VertexInfo(const DReaction* locReaction) const
+DReactionVertexInfo* DReactionVertexInfo_factory::Build_VertexInfo(const DReaction* locReaction)
 {
 	set<size_t> locStepIndexSet;
-	vector<shared_ptr<DReactionStepVertexInfo>> locVertexInfos;
+	vector<DReactionStepVertexInfo*> locVertexInfos;
 	for(size_t loc_i = 0; loc_i < locReaction->Get_NumReactionSteps(); ++loc_i)
 	{
 		if(locStepIndexSet.find(loc_i) != locStepIndexSet.end())
@@ -57,18 +57,21 @@ DReactionVertexInfo* DReactionVertexInfo_factory::Build_VertexInfo(const DReacti
 		auto locStepIndexVector = locVertexInfo->Get_StepIndices();
 		std::copy(locStepIndexVector.begin(), locStepIndexVector.end(), std::inserter(locStepIndexSet, locStepIndexSet.end()));
 
-		Group_VertexParticles(locVertexInfo.get());
+		Group_VertexParticles(locVertexInfo);
 	}
 
 	locVertexInfos = Link_Vertices(locReaction, locVertexInfos); //sorted by dependency order
 	return new DReactionVertexInfo(locReaction, locVertexInfos);
 }
 
-shared_ptr<DReactionStepVertexInfo> DReactionVertexInfo_factory::Setup_VertexInfo(const DReaction* locReaction, size_t locStepIndex, DReactionStepVertexInfo* locVertexInfo) const
+DReactionStepVertexInfo* DReactionVertexInfo_factory::Setup_VertexInfo(const DReaction* locReaction, size_t locStepIndex, DReactionStepVertexInfo* locVertexInfo)
 {
 	//create/update vertex info
 	if(locVertexInfo == nullptr)
-		locVertexInfo = make_shared<DReactionStepVertexInfo>(locReaction, locStepIndex);
+	{
+		locVertexInfo = dResourcePool_ReactionStepVertexInfo.Get_Resource();
+		locVertexInfo->Set_Members(locReaction, locStepIndex);
+	}
 	else
 		locVertexInfo->Add_ReactionStep(locStepIndex);
 
@@ -132,7 +135,7 @@ void DReactionVertexInfo_factory::Group_VertexParticles(DReactionStepVertexInfo*
 
 			if(locDecayStepIndex >= 0) //decaying
 				locDecayingParticles.emplace_back(locStepIndex, loc_i);
-			else if(loc_i == locStep->Get_MissingParticleIndex()) //missing
+			else if(int(loc_i) == locStep->Get_MissingParticleIndex()) //missing
 				locNoConstrainParticles.emplace_back(locStepIndex, loc_i);
 			else if(ParticleCharge(locFinalPIDs[loc_i]) != 0) //detected charged
 				locFullConstrainParticles.emplace_back(locStepIndex, loc_i);
@@ -148,7 +151,7 @@ void DReactionVertexInfo_factory::Group_VertexParticles(DReactionStepVertexInfo*
 	locVertexInfo->Set_ParticleIndices(locFullConstrainParticles, locDecayingParticles, locOnlyConstrainTimeParticles, locNoConstrainParticles);
 }
 
-vector<shared_ptr<DReactionStepVertexInfo>> DReactionVertexInfo_factory::Link_Vertices(const DReaction* locReaction, vector<shared_ptr<DReactionStepVertexInfo>> locVertexInfos) const
+vector<DReactionStepVertexInfo*> DReactionVertexInfo_factory::Link_Vertices(const DReaction* locReaction, vector<DReactionStepVertexInfo*> locVertexInfos) const
 {
 	//loop over vertex-constraints-to-sort:
 		//find which constraints decaying particles should be defined-by/constrained-to
@@ -156,8 +159,8 @@ vector<shared_ptr<DReactionStepVertexInfo>> DReactionVertexInfo_factory::Link_Ve
 
 	bool locProgessMadeFlag = false;
 	auto locVertexIterator = locVertexInfos.begin();
-	map<pair<int, int>, shared_ptr<DReactionStepVertexInfo>> locDefinedDecayingParticles;
-	vector<shared_ptr<DReactionStepVertexInfo>> locSortedVertexInfos; //sorted by dependency
+	map<pair<int, int>, DReactionStepVertexInfo*> locDefinedDecayingParticles;
+	vector<DReactionStepVertexInfo*> locSortedVertexInfos; //sorted by dependency
 	while(!locVertexInfos.empty())
 	{
 		if(locVertexIterator == locVertexInfos.end())
@@ -192,7 +195,7 @@ vector<shared_ptr<DReactionStepVertexInfo>> DReactionVertexInfo_factory::Link_Ve
 	}
 
 	//set parent vertex infos
-	unordered_map<size_t, shared_ptr<DReactionStepVertexInfo>> locVertexInfoMap;
+	unordered_map<size_t, DReactionStepVertexInfo*> locVertexInfoMap;
 	for(auto locVertexInfo : locSortedVertexInfos)
 	{
 		for(auto locStepIndex : locVertexInfo->Get_StepIndices())
@@ -209,12 +212,12 @@ vector<shared_ptr<DReactionStepVertexInfo>> DReactionVertexInfo_factory::Link_Ve
 	return locSortedVertexInfos;
 }
 
-bool DReactionVertexInfo_factory::Associate_DecayingParticles(bool locLinkingFlag, shared_ptr<DReactionStepVertexInfo>& locVertexInfo,
-		map<pair<int, int>, shared_ptr<DReactionStepVertexInfo>>& locDefinedDecayingParticles) const
+bool DReactionVertexInfo_factory::Associate_DecayingParticles(bool locLinkingFlag, DReactionStepVertexInfo* locVertexInfo,
+		map<pair<int, int>, DReactionStepVertexInfo*>& locDefinedDecayingParticles) const
 {
 	//find which decaying particles at this vertex have/haven't been previously defined
 	vector<pair<int, int>> locNoConstrainDecayingParticles;
-	map<pair<int, int>, shared_ptr<DReactionStepVertexInfo>> locConstrainingDecayingParticles;
+	map<pair<int, int>, DReactionStepVertexInfo*> locConstrainingDecayingParticles;
 	auto locDecayingParticles = locVertexInfo->Get_DecayingParticles();
 	for(auto locParticlePair : locDecayingParticles)
 	{

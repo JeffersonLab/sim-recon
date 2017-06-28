@@ -23,7 +23,7 @@ vector<Particle_t> DReaction::Get_FinalPIDs(int locStepIndex, bool locIncludeMis
 		{
 			if(!locIncludeDecayingFlag && (DAnalysis::Get_DecayStepIndex(this, locLoopStepIndex, locPIDIndex) >= 0))
 				continue;
-			if(!locIncludeMissingFlag && (locPIDIndex == locStep->Get_MissingParticleIndex()))
+			if(!locIncludeMissingFlag && (int(locPIDIndex) == locStep->Get_MissingParticleIndex()))
 				continue;
 			Particle_t locPID = locStep->Get_FinalPID(locPIDIndex);
 			if(Is_CorrectCharge(locPID, locCharge))
@@ -56,7 +56,7 @@ vector<Particle_t> DReaction::Get_MissingPIDs(int locStepIndex, Charge_t locChar
 	{
 		for(size_t locPIDIndex = 0; locPIDIndex < locStep->Get_NumFinalPIDs(); ++locPIDIndex)
 		{
-			if(locPIDIndex != locStep->Get_MissingParticleIndex())
+			if(int(locPIDIndex) != locStep->Get_MissingParticleIndex())
 				continue;
 			Particle_t locPID = locStep->Get_FinalPID(locPIDIndex);
 			if(Is_CorrectCharge(locPID, locCharge))
@@ -95,7 +95,7 @@ pair<int, int> Get_InitialParticleDecayFromIndices(const DReaction* locReaction,
 
 	//now, search through final-state PIDs until finding the (locPreviousPIDCount + 1)'th instance of this PID
 	size_t locSearchPIDCount = 0;
-	for(size_t loc_i = 0; loc_i < locStepIndex; ++loc_i)
+	for(int loc_i = 0; loc_i < locStepIndex; ++loc_i)
 	{
 		auto locFinalPIDs = locSteps[loc_i]->Get_FinalPIDs(false);
 
@@ -165,7 +165,7 @@ vector<Particle_t> Get_ChainPIDs(const DReaction* locReaction, size_t locStepInd
 			locChainPIDs.push_back(locPID);
 		else
 		{
-			auto locDecayPIDs = Get_ChainPIDs(locDecayingStepIndex, locUpToStepIndex, locUpThroughPIDs, locExpandDecayingFlag);
+			auto locDecayPIDs = Get_ChainPIDs(locReaction, locDecayingStepIndex, locUpToStepIndex, locUpThroughPIDs, locExpandDecayingFlag);
 			locChainPIDs.insert(locChainPIDs.end(), locDecayPIDs.begin(), locDecayPIDs.end());
 		}
 	}

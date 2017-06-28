@@ -6,7 +6,7 @@ namespace DAnalysis
 /************************************************************** MEMBER FUNCTIONS ***************************************************************/
 
 void DReactionStepVertexInfo::Register_DecayingParticleConstraints(const vector<pair<int, int>>& locNoConstrainDecayingParticles,
-		const map<pair<int, int>, shared_ptr<DReactionStepVertexInfo>>& locFullConstrainDecayingParticles = {})
+		const map<pair<int, int>, DReactionStepVertexInfo*>& locFullConstrainDecayingParticles = {})
 {
 	dDecayingParticles_FullConstrain = locFullConstrainDecayingParticles;
 	for(auto locMapPair : locFullConstrainDecayingParticles)
@@ -48,7 +48,7 @@ vector<pair<int, int>> DReactionStepVertexInfo::Filter_Particles(vector<pair<int
 	}
 	if(locCharge != d_AllCharges)
 	{
-		auto Check_Charge = [&this, &locCharge](const pair<int, int>& locIndices) -> bool
+		auto Check_Charge = [this, &locCharge](const pair<int, int>& locIndices) -> bool
 		{
 			Particle_t locPID = dReaction->Get_ReactionStep(locIndices.first)->Get_PID(locIndices.second);
 			return !Is_CorrectCharge(locPID, locCharge);
@@ -57,19 +57,19 @@ vector<pair<int, int>> DReactionStepVertexInfo::Filter_Particles(vector<pair<int
 	}
 	if(!locIncludeDecayingFlag)
 	{
-		auto Check_Decaying = [&this](const pair<int, int>& locIndices) -> bool
+		auto Check_Decaying = [this](const pair<int, int>& locIndices) -> bool
 		{return std::binary_search(dDecayingParticles.begin(), dDecayingParticles.end(), locIndices);};
 		locParticles.erase(std::remove_if(locParticles.begin(), locParticles.end(), Check_Decaying), locParticles.end());
 	}
 	if(!locIncludeMissingFlag)
 	{
-		auto Check_Missing = [&this](const pair<int, int>& locIndices) -> bool
+		auto Check_Missing = [this](const pair<int, int>& locIndices) -> bool
 		{return (locIndices.second == dReaction->Get_ReactionStep(locIndices.first)->Get_MissingParticleIndex());};
 		locParticles.erase(std::remove_if(locParticles.begin(), locParticles.end(), Check_Missing), locParticles.end());
 	}
 	if(!locIncludeTargetFlag)
 	{
-		auto Check_Target = [&this](const pair<int, int>& locIndices) -> bool
+		auto Check_Target = [this](const pair<int, int>& locIndices) -> bool
 		{return (locIndices.second == DReactionStep::Get_ParticleIndex_Target());};
 		locParticles.erase(std::remove_if(locParticles.begin(), locParticles.end(), Check_Target), locParticles.end());
 	}

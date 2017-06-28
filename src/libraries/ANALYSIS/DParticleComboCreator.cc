@@ -8,6 +8,8 @@ namespace DAnalysis
 DParticleComboCreator::DParticleComboCreator(JEventLoop* locEventLoop, const DSourceComboer* locSourceComboer, const DSourceComboTimeHandler* locSourceComboTimeHandler, const DSourceComboVertexer* locSourceComboVertexer) :
 		dSourceComboer(locSourceComboer), dSourceComboTimeHandler(locSourceComboTimeHandler), dSourceComboVertexer(locSourceComboVertexer)
 {
+	dKinFitUtils = new DKinFitUtils_GlueX(locEventLoop);
+
 	vector<const DNeutralParticleHypothesis*> locNeutralParticleHypotheses;
 	locEventLoop->Get(locNeutralParticleHypotheses); //make sure that brun() is called for the default factory!!!
 	dNeutralParticleHypothesisFactory = static_cast<DNeutralParticleHypothesis_factory*>(locEventLoop->GetFactory("DNeutralParticleHypothesis"));
@@ -63,7 +65,7 @@ void DParticleComboCreator::Reset(void)
 	dKinFitNeutralHypoMap.clear();
 
 	for(const auto& locBeamPair : dKinFitBeamPhotonMap)
-		dBeamPhotonfactory->Recycle_Beam(locBeamPair.second);
+		dBeamPhotonfactory->Recycle_Resource(locBeamPair.second);
 	dKinFitBeamPhotonMap.clear();
 }
 
@@ -167,7 +169,7 @@ const DParticleCombo* DParticleComboCreator::Build_ParticleCombo(const DReaction
 		vector<const DKinematicData*> locFinalParticles;
 		for(size_t loc_j = 0; loc_j < locFinalPIDs.size(); ++loc_j)
 		{
-			if(loc_j == locReactionStep->Get_MissingParticleIndex())
+			if(int(loc_j) == locReactionStep->Get_MissingParticleIndex())
 			{
 				locFinalParticles.push_back(nullptr);
 				continue;
@@ -196,12 +198,12 @@ const DParticleCombo* DParticleComboCreator::Build_ParticleCombo(const DReaction
 					locNewNeutralHypo = locHypoIterator->second;
 				else
 				{
-					auto locVertexCovMatrix = locCreateNeutralErrorMatrixFlag ? *dVertexCovMatrix : nullptr;
+					auto locVertexCovMatrix = locCreateNeutralErrorMatrixFlag ? &dVertexCovMatrix : nullptr;
 					locNewNeutralHypo = dNeutralParticleHypothesisFactory->Create_DNeutralParticleHypothesis(locNeutralShower, locPID, locEventRFBunch, locSpacetimeVertex, locVertexCovMatrix);
 					dNeutralHypoMap.emplace(locHypoTuple, locNewNeutralHypo);
 				}
 
-				locFinalParticles.push_back(static_cast<DKinematicData*>(locNewNeutralHypo));
+				locFinalParticles.push_back(static_cast<const DKinematicData*>(locNewNeutralHypo));
 			}
 			else //charged
 			{
@@ -218,7 +220,7 @@ const DParticleCombo* DParticleComboCreator::Build_ParticleCombo(const DReaction
 					dChargedHypoMap.emplace(locHypoTuple, locNewChargedHypo);
 				}
 
-				locFinalParticles.push_back(static_cast<DKinematicData*>(locNewChargedHypo));
+				locFinalParticles.push_back(static_cast<const DKinematicData*>(locNewChargedHypo));
 			}
 		}
 
@@ -281,7 +283,7 @@ const DParticleCombo* DParticleComboCreator::Create_KinFitCombo_NewCombo(const D
 			if(locKinFitParticle == NULL) //not used in kinfit!!
 				locNewComboStep->Set_InitialParticle(locInitialParticle_Measured);
 			else //create a new one
-				locNewComboStep->Set_InitialParticle(Create_BeamPhoton_KinFit(locInitialParticle_Measured, locKinFitParticle));
+				locNewComboStep->Set_InitialParticle(Create_BeamPhoton_KinFit(static_cast<const DBeamPhoton*>(locInitialParticle_Measured), locKinFitParticle));
 		}
 		else //decaying particle! //set here for initial state, and in previous step for final state
 			Set_DecayingParticles(locReaction, locNewCombo, locOrigCombo, loc_j, locNewComboStep, locKinFitChain, locKinFitResults);
@@ -290,7 +292,7 @@ const DParticleCombo* DParticleComboCreator::Create_KinFitCombo_NewCombo(const D
 		for(size_t loc_k = 0; loc_k < locComboStep->Get_NumFinalParticles(); ++loc_k)
 		{
 			auto locKinematicData_Measured = locComboStep->Get_FinalParticle_Measured(loc_k);
-			if(locReactionStep->Get_MissingParticleIndex() == loc_k) //missing!
+			if(locReactionStep->Get_MissingParticleIndex() == int(loc_k)) //missing!
 			{
 				set<DKinFitParticle*> locMissingParticles = locKinFitResults->Get_OutputKinFitParticles(d_MissingParticle);
 				if(!locMissingParticles.empty())
@@ -303,7 +305,7 @@ const DParticleCombo* DParticleComboCreator::Create_KinFitCombo_NewCombo(const D
 			}
 			else if(locKinematicData_Measured == nullptr) //decaying
 				locNewComboStep->Add_FinalParticle(NULL); //is set later, when it's in the initial state
-			else if(locComboStep->Is_FinalParticleNeutral(loc_k)) //neutral
+			else if(ParticleCharge(locKinematicData_Measured->PID()) == 0) //neutral
 			{
 				auto locNeutralHypo = static_cast<const DNeutralParticleHypothesis*>(locKinematicData_Measured);
 				//might have used neutral shower OR neutral hypo. try hypo first
@@ -313,7 +315,7 @@ const DParticleCombo* DParticleComboCreator::Create_KinFitCombo_NewCombo(const D
 				if(locKinFitParticle == NULL) //not used in kinfit!!
 					locNewComboStep->Add_FinalParticle(locKinematicData_Measured);
 				else //create a new one
-					locNewComboStep->Add_FinalParticle(Create_NeutralHypo_KinFit(locKinematicData_Measured, locKinFitParticle, locKinFitType));
+					locNewComboStep->Add_FinalParticle(Create_NeutralHypo_KinFit(locNeutralHypo, locKinFitParticle, locKinFitType));
 			}
 			else //charged
 			{
@@ -327,7 +329,7 @@ const DParticleCombo* DParticleComboCreator::Create_KinFitCombo_NewCombo(const D
 		}
 
 		//SPACETIME VERTEX
-		Set_SpacetimeVertex(locNewCombo, locNewComboStep, loc_j, locKinFitResults, locKinFitChain);
+		Set_SpacetimeVertex(locReaction, locNewCombo, locNewComboStep, loc_j, locKinFitResults, locKinFitChain);
 	}
 
 	return locNewCombo;
@@ -342,10 +344,10 @@ void DParticleComboCreator::Set_DecayingParticles(const DReaction* locReaction, 
 		return; //no need to back-set NULL: was set to NULL by default
 	}
 
-	DKinFitType locKinFitType = locOldParticleCombo->Get_Reaction()->Get_KinFitType();
+	DKinFitType locKinFitType = locReaction->Get_KinFitType();
 	DVector3 locEventVertex = locOldParticleCombo->Get_ParticleComboStep(0)->Get_SpacetimeVertex().Vect();
 	Particle_t locPID = PDGtoPType(locKinFitParticle->Get_PID());
-	int locFromStepIndex = locNewParticleComboStep->Get_InitialParticleDecayFromStepIndex();
+	auto locFromStepIndex = DAnalysis::Get_InitialParticleDecayFromIndices(locReaction, locStepIndex).first;
 
 	DKinematicData* locKinematicData_Common = Build_KinematicData(locKinFitParticle, locKinFitType, locEventVertex);
 	bool locCreate2ndObjectFlag = (IsDetachedVertex(locPID) && (locStepIndex != 0) && (locFromStepIndex >= 0));
@@ -367,7 +369,8 @@ void DParticleComboCreator::Set_DecayingParticles(const DReaction* locReaction, 
 	//find where it is the decaying particle
 	for(size_t loc_i = 0; loc_i < locParticleComboStep->Get_NumFinalParticles(); ++loc_i)
 	{
-		if(locParticleComboStep->Get_DecayStepIndex(loc_i) != int(locStepIndex))
+		auto locDecayStepIndex = DAnalysis::Get_DecayStepIndex(locReaction, locStepIndex, loc_i);
+		if(locDecayStepIndex != int(locStepIndex))
 			continue;
 		locParticleComboStep->Set_FinalParticle(locKinematicData_FinalState, loc_i);
 		break;
@@ -376,8 +379,8 @@ void DParticleComboCreator::Set_DecayingParticles(const DReaction* locReaction, 
 
 DKinFitParticle* DParticleComboCreator::Get_DecayingParticle(const DReaction* locReaction, const DParticleCombo* locOldParticleCombo, size_t locComboStepIndex, const DKinFitChain* locKinFitChain, const DKinFitResults* locKinFitResults)
 {
-	const DParticleComboStep* locParticleComboStep = locOldParticleCombo->Get_ParticleComboStep(locComboStepIndex);
-	Particle_t locPID = locParticleComboStep->Get_InitialParticleID();
+	auto locReactionStep = locReaction->Get_ReactionStep(locComboStepIndex);
+	Particle_t locPID = locReactionStep->Get_InitialPID();
 	if(!IsFixedMass(locPID))
 		return NULL;
 
@@ -388,15 +391,14 @@ DKinFitParticle* DParticleComboCreator::Get_DecayingParticle(const DReaction* lo
 
 		//loop over init particles to get the decaying particle (if present)
 		DKinFitParticle* locDecayingParticle = NULL;
-		set<DKinFitParticle*> locInitialParticles = locKinFitChainStep->Get_InitialParticles();
-		set<DKinFitParticle*>::iterator locParticleIterator = locInitialParticles.begin();
-		for(; locParticleIterator != locInitialParticles.end(); ++locParticleIterator)
+		auto locInitialParticles = locKinFitChainStep->Get_InitialParticles();
+		for(auto locKinFitParticle : locInitialParticles)
 		{
-			if((*locParticleIterator) == nullptr)
+			if(locKinFitParticle == nullptr)
 				continue;
-			if((*locParticleIterator)->Get_KinFitParticleType() != d_DecayingParticle)
+			if(locKinFitParticle->Get_KinFitParticleType() != d_DecayingParticle)
 				continue; //not a decaying particle
-			locDecayingParticle = *locParticleIterator;
+			locDecayingParticle = locKinFitParticle;
 			break;
 		}
 		if(locDecayingParticle == NULL)
@@ -410,8 +412,7 @@ DKinFitParticle* DParticleComboCreator::Get_DecayingParticle(const DReaction* lo
 			//if any step decay product at any step is located as any decay product at any step in the kinfit chain: then matches
 
 		//get all measured products, then just pick the first one to search for
-		deque<const DKinematicData*> locMeasuredParticles;
-		locOldParticleCombo->Get_DecayChainParticles_Measured(locReaction, locComboStepIndex, locMeasuredParticles);
+		auto locMeasuredParticles = locOldParticleCombo->Get_DecayChainParticles_Measured(locReaction, locComboStepIndex);
 		const DKinematicData* locMeasuredParticle = locMeasuredParticles[0];
 		DKinFitParticle* locKinFitParticle = locKinFitResults->Get_OutputKinFitParticle(locMeasuredParticle);
 		if(locKinFitParticle == NULL) //null: neutral shower. Use shower object
@@ -434,29 +435,29 @@ DKinFitParticle* DParticleComboCreator::Get_DecayingParticle(const DReaction* lo
 bool DParticleComboCreator::Search_ForParticleInDecay(const DKinFitChain* locKinFitChain, size_t locStepToSearch, DKinFitParticle* locParticleToFind)
 {
 	const DKinFitChainStep* locKinFitChainStep = locKinFitChain->Get_KinFitChainStep(locStepToSearch);
-	set<DKinFitParticle*> locFinalParticles = locKinFitChainStep->Get_FinalParticles();
-	if(locFinalParticles.find(locParticleToFind) != locFinalParticles.end())
+	auto locFinalParticles = locKinFitChainStep->Get_FinalParticles();
+	std::sort(locFinalParticles.begin(), locFinalParticles.end());
+	if(std::binary_search(locFinalParticles.begin(), locFinalParticles.end(), locParticleToFind))
 		return true; //found it
 
 	//else loop over final state, diving through decays
-	set<DKinFitParticle*>::iterator locParticleIterator = locFinalParticles.begin();
-	for(; locParticleIterator != locFinalParticles.end(); ++locParticleIterator)
+	for(auto locKinFitParticle : locFinalParticles)
 	{
-		if((*locParticleIterator) == nullptr)
+		if(locKinFitParticle == nullptr)
 			continue;
-		if((*locParticleIterator)->Get_KinFitParticleType() != d_DecayingParticle)
+		if(locKinFitParticle->Get_KinFitParticleType() != d_DecayingParticle)
 			continue; //not a decaying particle
 
-		int locDecayStepIndex = locKinFitChain->Get_DecayStepIndex(*locParticleIterator);
+		int locDecayStepIndex = locKinFitChain->Get_DecayStepIndex(locKinFitParticle);
 		if(Search_ForParticleInDecay(locKinFitChain, locDecayStepIndex, locParticleToFind))
 			return true; //found in in subsequent step
 	}
 	return false; //not found (yet)
 }
 
-void DParticleCombo_factory::Set_SpacetimeVertex(const DParticleCombo* locNewParticleCombo, DParticleComboStep* locNewParticleComboStep, size_t locStepIndex, const DKinFitResults* locKinFitResults, const DKinFitChain* locKinFitChain) const
+void DParticleComboCreator::Set_SpacetimeVertex(const DReaction* locReaction, const DParticleCombo* locNewParticleCombo, DParticleComboStep* locNewParticleComboStep, size_t locStepIndex, const DKinFitResults* locKinFitResults, const DKinFitChain* locKinFitChain) const
 {
-	DKinFitType locKinFitType = locNewParticleCombo->Get_Reaction()->Get_KinFitType();
+	DKinFitType locKinFitType = locReaction->Get_KinFitType();
 	if((locKinFitType == d_NoFit) || (locKinFitType == d_P4Fit))
 		return; //neither vertex nor time was fit: no update to give
 
@@ -473,7 +474,7 @@ void DParticleCombo_factory::Set_SpacetimeVertex(const DParticleCombo* locNewPar
 	if(locStepIndex != 0)
 	{
 		//get spacetime vertex from step where this particle was produced
-		int locDecayFromStepIndex = locNewParticleComboStep->Get_InitialParticleDecayFromStepIndex();
+		auto locDecayFromStepIndex = Get_InitialParticleDecayFromIndices(locReaction, locStepIndex).first;
 		const DParticleComboStep* locPreviousParticleComboStep = locNewParticleCombo->Get_ParticleComboStep(locDecayFromStepIndex);
 		locNewParticleComboStep->Set_SpacetimeVertex(locPreviousParticleComboStep->Get_SpacetimeVertex());
 		return;
@@ -482,7 +483,7 @@ void DParticleCombo_factory::Set_SpacetimeVertex(const DParticleCombo* locNewPar
 	//instead, get from common vertex of the other particles
 	const DKinFitParticle* locFinalKinFitParticle = nullptr;
 	auto locAllParticles = locKinFitChain->Get_AllParticles();
-	for(locFinalKinFitParticle : locAllParticles)
+	for(auto& locFinalKinFitParticle : locAllParticles)
 	{
 		if(locFinalKinFitParticle != nullptr)
 			break;
@@ -609,9 +610,7 @@ const DNeutralParticleHypothesis* DParticleComboCreator::Create_NeutralHypo_KinF
 		locChiSq = dParticleID->Calc_TimingChiSq(locNewHypo, locNDF, locTimePull);
 		locFOM = TMath::Prob(locChiSq, locNDF);
 	}
-	locNewHypo->dChiSq = locChiSq;
-	locNewHypo->dNDF = locNDF;
-	locNewHypo->dFOM = locFOM;
+	locNewHypo->Set_ChiSq_Overall(locChiSq, locNDF, locFOM);
 
 	return locNewHypo;
 }
@@ -658,8 +657,6 @@ const DParticleCombo* DParticleComboCreator::Build_ThrownCombo(JEventLoop* locEv
  	vector<const DEventRFBunch*> locEventRFBunches;
 	locEventLoop->Get(locEventRFBunches, "Thrown");
 
-	const DMCThrown* locMCThrown;
-
 	DParticleCombo* locParticleCombo = dResourcePool_ParticleCombo.Get_Resource();
 	DParticleComboStep* locParticleComboStep = dResourcePool_ParticleComboStep.Get_Resource();
 	locParticleCombo->Set_EventRFBunch(locEventRFBunches[0]);
@@ -671,7 +668,7 @@ const DParticleCombo* DParticleComboCreator::Build_ThrownCombo(JEventLoop* locEv
 	{
 		if(loc_i != 0) //else beam & target already set
 		{
-			locMCThrown = locThrownSteps[loc_i].first;
+			auto locMCThrown = locThrownSteps[loc_i].first;
 			locParticleComboStep = dResourcePool_ParticleComboStep.Get_Resource();
 
 			int locInitialParticleDecayFromStepIndex = -1; //the step where this particle is produced at
@@ -691,23 +688,11 @@ const DParticleCombo* DParticleComboCreator::Build_ThrownCombo(JEventLoop* locEv
 			locParticleComboStep->Set_SpacetimeVertex(DLorentzVector(locMCThrown->position(), locMCThrown->time()));
 		}
 		for(size_t loc_j = 0; loc_j < locThrownSteps[loc_i].second.size(); ++loc_j)
-		{
-			locMCThrown = locThrownSteps[loc_i].second[loc_j];
-			//check to see if this particle is a future decay parent
-			int locDecayStepIndex = -2;
-			for(size_t loc_k = loc_i + 1; loc_k < locThrownSteps.size(); ++loc_k)
-			{
-				if(locThrownSteps[loc_k].first != locMCThrown)
-					continue;
-				locDecayStepIndex = loc_k;
-				break;
-			}
-			locParticleComboStep->Add_FinalParticle(locMCThrown);
-		}
+			locParticleComboStep->Add_FinalParticle(locThrownSteps[loc_i].second[loc_j]);
 		locParticleCombo->Add_ParticleComboStep(locParticleComboStep);
 	}
 
-	dComboMap.emplace(locThrownComboTuple, locParticleCombo)
+	dComboMap.emplace(locThrownComboTuple, locParticleCombo);
 	return locParticleCombo;
 }
 

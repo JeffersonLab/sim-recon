@@ -923,7 +923,7 @@ pair<size_t, string> DKinFitUtils_GlueX::Predict_VertexConstraints(const DReacti
 		//add to the full constraint string
 		if(locAllConstraintString != "")
 			locAllConstraintString += ", ";
-		locAllConstraintString += Build_VertexConstraintString(locVertexInfo.get(), locSpacetimeFitFlag);
+		locAllConstraintString += Build_VertexConstraintString(locVertexInfo, locSpacetimeFitFlag);
 	}
 
 	return make_pair(locNumConstraints, locAllConstraintString);

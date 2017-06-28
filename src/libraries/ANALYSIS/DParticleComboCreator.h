@@ -10,9 +10,10 @@
 #include "PID/DNeutralParticleHypothesis_factory.h"
 #include "PID/DBeamPhoton_factory.h"
 #include "PID/DParticleID.h"
+
+#include "ANALYSIS/DKinFitUtils_GlueX.h"
 #include "ANALYSIS/DParticleCombo.h"
 #include "ANALYSIS/DParticleComboStep.h"
-
 #include "ANALYSIS/DSourceComboTimeHandler.h"
 #include "ANALYSIS/DSourceComboVertexer.h"
 
@@ -49,7 +50,7 @@ class DParticleComboCreator
 		bool Search_ForParticleInDecay(const DKinFitChain* locKinFitChain, size_t locStepToSearch, DKinFitParticle* locParticleToFind);
 
 		//SPACETIME VERTEX, POST-KINFIT
-		void Set_SpacetimeVertex(const DParticleCombo* locNewParticleCombo, DParticleComboStep* locNewParticleComboStep, size_t locStepIndex, const DKinFitResults* locKinFitResults, const DKinFitChain* locKinFitChain) const;
+		void Set_SpacetimeVertex(const DReaction* locReaction, const DParticleCombo* locNewParticleCombo, DParticleComboStep* locNewParticleComboStep, size_t locStepIndex, const DKinFitResults* locKinFitResults, const DKinFitChain* locKinFitChain) const;
 
 		//CREATE PARTICLES
 		const DChargedTrackHypothesis* Create_ChargedHypo(const DChargedTrack* locChargedTrack, Particle_t locPID, double locPropagatedRFTime, bool locIsProductionVertex, const DSourceCombo* locVertexPrimaryFullCombo, const DKinematicData* locBeamParticle);
@@ -67,6 +68,7 @@ class DParticleComboCreator
 		const DSourceComboVertexer* dSourceComboVertexer;
 		const DParticleID* dParticleID;
 		const DAnalysisUtilities* dAnalysisUtilities;
+		DKinFitUtils_GlueX* dKinFitUtils;
 
 		//FACTORIES
 		DNeutralParticleHypothesis_factory* dNeutralParticleHypothesisFactory;
@@ -76,8 +78,8 @@ class DParticleComboCreator
 		//CREATED OBJECT MAPS
 		map<tuple<const DSourceCombo*, bool, bool, const DSourceCombo*, const DKinematicData*>, const DParticleComboStep*> dComboStepMap; //kindata is beam (null if not in step): for vertex
 		unordered_map<int, const DEventRFBunch*> dRFBunchMap;
-		map<tuple<const DChargedTrack*, Particle_t, int, bool, bool, const DSourceCombo*, const DSourceCombo*, const DKinematicData*>, DChargedTrackHypothesis*> dChargedHypoMap;
-		map<tuple<const DNeutralShower*, Particle_t, int, bool, const DSourceCombo*, const DSourceCombo*, const DKinematicData*>, DNeutralParticleHypothesis*> dNeutralHypoMap;
+		map<tuple<const DChargedTrack*, Particle_t, int, bool, const DSourceCombo*, const DSourceCombo*, const DKinematicData*>, const DChargedTrackHypothesis*> dChargedHypoMap;
+		map<tuple<const DNeutralShower*, Particle_t, int, bool, bool, const DSourceCombo*, const DSourceCombo*, const DKinematicData*>, const DNeutralParticleHypothesis*> dNeutralHypoMap;
 		map<tuple<const DReactionVertexInfo*, const DSourceCombo*, const DKinematicData*, int, bool>, DParticleCombo*> dComboMap;
 		unordered_map<const DKinFitParticle*, DChargedTrackHypothesis*> dKinFitChargedHypoMap;
 		unordered_map<const DKinFitParticle*, DNeutralParticleHypothesis*> dKinFitNeutralHypoMap;

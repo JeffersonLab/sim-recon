@@ -33,6 +33,8 @@ class DReactionStep
 		// default
 		DReactionStep(void); //DEPRECATED
 
+		void Reset(void);
+
 		// OPERATORS
 		DReactionStep& operator=(const DReactionStep& locSourceData);
 
@@ -143,6 +145,11 @@ inline DReactionStep& DReactionStep::operator=(const DReactionStep& locSourceDat
 	//Replace current data with a new, independent copy of the input data: tracked separately from input so it can be modified
 	dReactionStepInfo = std::make_shared<DReactionStepInfo>(*(locSourceData.dReactionStepInfo));
 	return *this;
+}
+
+inline void DReactionStep::Reset(void)
+{
+	dReactionStepInfo = std::make_shared<DReactionStepInfo>();
 }
 
 /*************************************************************** DREACTIONSTEPINFO FUNCTIONS *****************************************************************/
