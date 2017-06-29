@@ -148,8 +148,7 @@ jerror_t JEventProcessor_SC_Eff::evnt(jana::JEventLoop* locEventLoop, uint64_t l
 			if(!Cut_PIDDeltaT(locChargedTrackHypothesis))
 				continue; //also requires match to BCAL or TOF: no need for separate check
 
-			const DTrackTimeBased* locTrackTimeBased = NULL;
-			locChargedTrackHypothesis->GetSingle(locTrackTimeBased);
+			auto locTrackTimeBased = locChargedTrackHypothesis->Get_TrackTimeBased();
 			if(locTrackTimeBased->FOM < dMinTrackingFOM)
 				continue; //don't trust tracking results: bad tracking FOM
 
@@ -179,8 +178,7 @@ jerror_t JEventProcessor_SC_Eff::evnt(jana::JEventLoop* locEventLoop, uint64_t l
 	// Loop over the good tracks, using the best DTrackTimeBased object for each
 	for(auto& locChargedTrackHypothesis : locBestTracks)
 	{
-		const DTrackTimeBased* locTrackTimeBased = NULL;
-		locChargedTrackHypothesis->GetSingle(locTrackTimeBased);
+		auto locTrackTimeBased = locChargedTrackHypothesis->Get_TrackTimeBased();
 
 		//Predict ST Surface Hit Location
 		DVector3 locPredictedSurfacePosition;

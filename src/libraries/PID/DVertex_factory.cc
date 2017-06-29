@@ -78,7 +78,7 @@ jerror_t DVertex_factory::evnt(JEventLoop* locEventLoop, uint64_t eventnumber)
 
 	//separate the tracks based on high/low tracking FOM & has hit-match
 	map<JObject::oid_t, const DTrackTimeBased*>::iterator locIterator;
-	deque<const DTrackTimeBased*> locTrackTimeBasedVector_OnePerTrack, locTrackTimeBasedVector_OnePerTrack_Good;
+	vector<const DTrackTimeBased*> locTrackTimeBasedVector_OnePerTrack, locTrackTimeBasedVector_OnePerTrack_Good;
 	for(locIterator = locBestTrackTimeBasedMap.begin(); locIterator != locBestTrackTimeBasedMap.end(); ++locIterator)
 	{
 		const DTrackTimeBased* locTrackTimeBased = locIterator->second;
@@ -87,7 +87,7 @@ jerror_t DVertex_factory::evnt(JEventLoop* locEventLoop, uint64_t eventnumber)
 			locTrackTimeBasedVector_OnePerTrack_Good.push_back(locTrackTimeBased);
 	}
 
-	deque<const DTrackTimeBased*> locTrackTimeBasedVectorToUse = (locTrackTimeBasedVector_OnePerTrack_Good.size() >= 2) ? locTrackTimeBasedVector_OnePerTrack_Good : locTrackTimeBasedVector_OnePerTrack;
+	vector<const DTrackTimeBased*> locTrackTimeBasedVectorToUse = (locTrackTimeBasedVector_OnePerTrack_Good.size() >= 2) ? locTrackTimeBasedVector_OnePerTrack_Good : locTrackTimeBasedVector_OnePerTrack;
 
 	//handle cases of no/one track
 	if(locTrackTimeBasedVectorToUse.empty())

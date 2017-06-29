@@ -17,10 +17,12 @@ bool DCutAction_MinTrackHits::Perform_Action(JEventLoop* locEventLoop, const DPa
 	for(size_t loc_i = 0; loc_i < locParticles.size(); ++loc_i)
 	{
 		const DChargedTrackHypothesis* locChargedTrackHypothesis = static_cast<const DChargedTrackHypothesis*>(locParticles[loc_i]);
-		const DTrackTimeBased* locTrackTimeBased = NULL;
-		locChargedTrackHypothesis->GetSingle(locTrackTimeBased);
-		unsigned int locNumTrackHits = locTrackTimeBased->Ndof + 5;
-		if(locNumTrackHits < dMinTrackHits)
+		auto locTrackTimeBased = locChargedTrackHypothesis->Get_TrackTimeBased();
+
+		set<int> locCDCRings, locFDCPlanes;
+		dParticleID->Get_CDCRings(locTrackTimeBased->dCDCRings, locCDCRings);
+		dParticleID->Get_FDCPlanes(locTrackTimeBased->dFDCPlanes, locFDCPlanes);
+		if((locCDCRings.size() + locFDCPlanes.size()) < dMinTrackHits)
 			return false;
 	}
 	return true;
@@ -792,8 +794,7 @@ bool DCutAction_TrackHitPattern::Perform_Action(JEventLoop* locEventLoop, const 
 	for(size_t loc_i = 0; loc_i < locParticles.size(); ++loc_i)
 	{
 		const DChargedTrackHypothesis* locChargedTrackHypothesis = static_cast<const DChargedTrackHypothesis*>(locParticles[loc_i]);
-		const DTrackTimeBased* locTrackTimeBased = NULL;
-		locChargedTrackHypothesis->GetSingle(locTrackTimeBased);
+		auto locTrackTimeBased = locChargedTrackHypothesis->Get_TrackTimeBased();
 		if(!Cut_TrackHitPattern(locParticleID, locTrackTimeBased))
 			return false;
 	}
@@ -905,9 +906,7 @@ bool DCutAction_ProtonPiPlusdEdx::Perform_Action(JEventLoop* locEventLoop, const
 			continue;
 		}
 
-		const DTrackTimeBased* locTrackTimeBased = NULL;
-		locChargedTrackHypothesis->GetSingle(locTrackTimeBased);
-
+		auto locTrackTimeBased = locChargedTrackHypothesis->Get_TrackTimeBased();
 		if((locPID == Proton) && (locTrackTimeBased->ddEdx_CDC*1.0E6 < dTrackdEdxCut_InKeV))
 			return false;
 		if((locPID == PiPlus) && (locTrackTimeBased->ddEdx_CDC*1.0E6 > dTrackdEdxCut_InKeV))

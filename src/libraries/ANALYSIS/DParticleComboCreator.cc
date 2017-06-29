@@ -417,8 +417,7 @@ DKinFitParticle* DParticleComboCreator::Get_DecayingParticle(const DReaction* lo
 		DKinFitParticle* locKinFitParticle = locKinFitResults->Get_OutputKinFitParticle(locMeasuredParticle);
 		if(locKinFitParticle == NULL) //null: neutral shower. Use shower object
 		{
-			const DNeutralShower* locNeutralShower = NULL;
-			locMeasuredParticle->GetSingle(locNeutralShower);
+			const DNeutralShower* locNeutralShower = static_cast<const DNeutralParticleHypothesis*>(locMeasuredParticle)->Get_NeutralShower();
 			locKinFitParticle = locKinFitResults->Get_OutputKinFitParticle(locNeutralShower);
 		}
 

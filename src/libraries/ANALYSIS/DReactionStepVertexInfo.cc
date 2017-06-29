@@ -6,7 +6,7 @@ namespace DAnalysis
 /************************************************************** MEMBER FUNCTIONS ***************************************************************/
 
 void DReactionStepVertexInfo::Register_DecayingParticleConstraints(const vector<pair<int, int>>& locNoConstrainDecayingParticles,
-		const map<pair<int, int>, DReactionStepVertexInfo*>& locFullConstrainDecayingParticles = {})
+		const map<pair<int, int>, const DReactionStepVertexInfo*>& locFullConstrainDecayingParticles = {})
 {
 	dDecayingParticles_FullConstrain = locFullConstrainDecayingParticles;
 	for(auto locMapPair : locFullConstrainDecayingParticles)

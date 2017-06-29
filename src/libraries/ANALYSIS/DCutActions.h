@@ -71,11 +71,12 @@ class DCutAction_MinTrackHits : public DAnalysisAction
 		dMinTrackHits(locMinTrackHits){}
 
 		string Get_ActionName(void) const;
-		void Initialize(JEventLoop* locEventLoop){}
+		void Initialize(JEventLoop* locEventLoop){locEventLoop->GetSingle(dParticleID);}
 
 	private:
 		bool Perform_Action(JEventLoop* locEventLoop, const DParticleCombo* locParticleCombo);
 
+		const DParticleID* dParticleID = nullptr;
 		unsigned int dMinTrackHits;
 };
 

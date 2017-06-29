@@ -328,7 +328,6 @@ bool DSourceComboP4Handler::Cut_InvariantMass_HasMassiveNeutral_OrPhotonVertex(c
 	//do 2 things at once (where vertex is known) (hence the really long function name):
 		//calc & cut invariant mass: when massive neutral present
 		//calc & cut invariant mass: when vertex-z was unknown with only charged tracks, but is known now, and contains BCAL photons (won't happen very often)
-	auto locPrimaryComboUse = dSourceComboer->Get_PrimaryComboUse(locReactionVertexInfo);
 	auto locPrimaryVertexZ = dSourceComboVertexer->Get_PrimaryVertex(locReactionVertexInfo, locReactionFullCombo, nullptr).Z();
 
 	//loop over vertices in reverse step order //dependency for calculating invariant mass
@@ -388,7 +387,6 @@ bool DSourceComboP4Handler::Cut_InvariantMass_HasMassiveNeutral_OrPhotonVertex(c
 bool DSourceComboP4Handler::Cut_InvariantMass_MissingMassVertex(const DReactionVertexInfo* locReactionVertexInfo, const DSourceCombo* locReactionFullCombo, const DKinematicData* locBeamParticle, int locRFBunch)
 {
 	//calc & cut invariant mass: when vertex-z was unknown without the beam energy
-	auto locPrimaryComboUse = dSourceComboer->Get_PrimaryComboUse(locReactionVertexInfo);
 	auto locPrimaryVertexZ = dSourceComboVertexer->Get_PrimaryVertex(locReactionVertexInfo, locReactionFullCombo, locBeamParticle).Z();
 
 	//loop over vertices in reverse step order //dependency for calculating invariant mass

@@ -253,9 +253,8 @@ void DCustomAction_p2gamma_unusedHists::FillTrack(const DChargedTrack* locCharge
 	const DChargedTrackHypothesis* locChargedTrackHypothesis = locChargedTrack->Get_BestFOM();
 	int locCharge = locChargedTrackHypothesis->charge();
 
-	const DTrackTimeBased* locTrackTimeBased = NULL;
-	locChargedTrackHypothesis->GetSingleT(locTrackTimeBased);
-	
+	auto locTrackTimeBased = locChargedTrackHypothesis->Get_TrackTimeBased();
+
 	float nHits = locTrackTimeBased->Ndof + 5.;
 	
 	/* Number of possible hits not implemented yet?  Always returns 0
@@ -407,8 +406,7 @@ void DCustomAction_p2gamma_unusedHists::FillShower(const DNeutralShower* locNeut
                         if(locChargedTrack == NULL) continue; // should never happen
 
                         const DChargedTrackHypothesis* locChargedTrackHypothesis = locChargedTrack->Get_BestFOM();
-			const DTrackTimeBased* locTrackTimeBased = NULL;
-			locChargedTrackHypothesis->GetSingleT(locTrackTimeBased);
+	auto locTrackTimeBased = locChargedTrackHypothesis->Get_TrackTimeBased();
 			
 			if(locNeutralShowers[loc_j]->dDetectorSystem == SYS_FCAL) {
 				DFCALShowerMatchParams locFCALShowerMatchParams;

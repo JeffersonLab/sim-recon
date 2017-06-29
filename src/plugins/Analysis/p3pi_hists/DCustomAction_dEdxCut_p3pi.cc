@@ -49,10 +49,7 @@ bool DCustomAction_dEdxCut_p3pi::Perform_Action(JEventLoop* locEventLoop, const 
 bool DCustomAction_dEdxCut_p3pi::Cut_dEdx(const DChargedTrackHypothesis* locChargedTrackHypothesis) const
 {
 	Particle_t locPID = locChargedTrackHypothesis->PID();
-
-	const DTrackTimeBased* locTrackTimeBased = NULL;
-	locChargedTrackHypothesis->GetSingle(locTrackTimeBased);
-
+	auto locTrackTimeBased = locChargedTrackHypothesis->Get_TrackTimeBased();
 	double locP = locTrackTimeBased->momentum().Mag();
 
 	//if requested max rejection, only do so if no timing information

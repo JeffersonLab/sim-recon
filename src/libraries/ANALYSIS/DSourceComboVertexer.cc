@@ -61,7 +61,7 @@ void DSourceComboVertexer::Calc_VertexTimeOffsets_WithCharged(const DReactionVer
 			{
 				auto locParentCombo = dSourceComboer->Get_VertexPrimaryCombo(locReactionChargedCombo, locParentVertexInfo);
 				auto locIsParentProductionVertex = locParentVertexInfo->Get_ProductionVertexFlag();
-				auto& locVertexParticles = dConstrainingParticlesByCombo[std::make_typle(locIsParentProductionVertex, locParentCombo, (const DKinematicData*)nullptr)];
+				auto& locVertexParticles = dConstrainingParticlesByCombo[std::make_tuple(locIsParentProductionVertex, locParentCombo, (const DKinematicData*)nullptr)];
 				dConstrainingParticlesByCombo.emplace(locComboProductionTuple, locVertexParticles);
 			}
 			continue;
@@ -361,11 +361,10 @@ void DSourceComboVertexer::Construct_DecayingParticle_InvariantMass(const DReact
 		return;
 	}
 
-	auto locReaction = locReactionStepVertexInfo->Get_Reaction();
 	auto locIsProductionVertexFlag = locReactionStepVertexInfo->Get_ProductionVertexFlag();
 
 	//loop over decaying no-constrain decaying particles
-	map<pair<int, int>, weak_ptr<DReactionStepVertexInfo>> locNoConstrainDecayingParticles = locReactionStepVertexInfo->Get_DecayingParticles_NoConstrain();
+	map<pair<int, int>, const DReactionStepVertexInfo*> locNoConstrainDecayingParticles = locReactionStepVertexInfo->Get_DecayingParticles_NoConstrain();
 	for(const auto& locNoConstrainPair : locNoConstrainDecayingParticles)
 	{
 		//we cannot define decaying p4 via missing mass, because the beam is not chosen yet
@@ -380,11 +379,11 @@ void DSourceComboVertexer::Construct_DecayingParticle_InvariantMass(const DReact
 			continue; //either not detached (we don't care!), or is Unknown (missing decay product: can't compute)
 
 		//if the particle has already been created, reuse it!
-		auto locDecayParticleTuple = std::make_tuple(locDecayPID, locIsProductionVertexFlag, locVertexCombo);
+		auto locDecayParticleTuple = std::make_tuple(locDecayPID, locIsProductionVertexFlag, locVertexCombo, (const DKinematicData*)nullptr);
 		auto locIterator = dReconDecayParticles_FromProducts.find(locDecayParticleTuple);
 		if(locIterator != dReconDecayParticles_FromProducts.end())
 		{
-			locReconDecayParticleMap.emplace(locDecayParticleTuple, locIterator->second);
+			locReconDecayParticleMap.emplace(locParticlePair, locIterator->second);
 			continue;
 		}
 
@@ -410,7 +409,6 @@ void DSourceComboVertexer::Construct_DecayingParticle_MissingMass(const DReactio
 	auto locSourceComboUse = dSourceComboer->Get_SourceComboUse(locReactionStepVertexInfo);
 	auto locReaction = locReactionStepVertexInfo->Get_Reaction();
 	auto locIsProductionVertexFlag = locReactionStepVertexInfo->Get_ProductionVertexFlag();
-	auto locFullComboProductionPair = std::make_pair(locIsProductionVertexFlag, locFullVertexCombo);
 
 	//ASSUMES FIXED TARGET EXPERIMENT!
 	DLorentzVector locInitialStateP4; //lookup or is beam + target
@@ -426,7 +424,7 @@ void DSourceComboVertexer::Construct_DecayingParticle_MissingMass(const DReactio
 	}
 
 	//loop over decaying no-constrain decaying particles, figure out how many we have to do this for (can't do more than 1!)
-	map<pair<int, int>, weak_ptr<DReactionStepVertexInfo>> locNoConstrainDecayingParticles = locReactionStepVertexInfo->Get_DecayingParticles_NoConstrain();
+	map<pair<int, int>, const DReactionStepVertexInfo*> locNoConstrainDecayingParticles = locReactionStepVertexInfo->Get_DecayingParticles_NoConstrain();
 	pair<int, int> locToReconParticleIndices(-99, -99);
 	for(const auto& locNoConstrainPair : locNoConstrainDecayingParticles)
 	{
@@ -465,7 +463,7 @@ void DSourceComboVertexer::Construct_DecayingParticle_MissingMass(const DReactio
 	//make sure there isn't another missing particle
 	for(const auto& locStepIndex : locReactionStepVertexInfo->Get_StepIndices())
 	{
-		if(locStepIndex == locDecayStepIndex)
+		if(int(locStepIndex) == locDecayStepIndex)
 			continue;
 		if(DAnalysis::Get_HasMissingParticle_FinalState(locReaction->Get_ReactionStep(locStepIndex)))
 			return; //missing decay product! can't compute 2 missing p4's at once!
@@ -473,9 +471,8 @@ void DSourceComboVertexer::Construct_DecayingParticle_MissingMass(const DReactio
 
 	//create a new one
 	//calc final state p4
-	auto locVertexZBin = dSourceComboer->Get_PhotonVertexZBin(locVertex.Z());
 	DLorentzVector locFinalStateP4;
-	if(!dSourceComboP4Handler->Calc_P4_HasMassiveNeutrals(locIsProductionVertexFlag, locReactionFullCombo, locFullVertexCombo, locVertexZBin, locVertex, locRFBunch, locRFVertexTime, locDecayUse, locFinalStateP4))
+	if(!dSourceComboP4Handler->Calc_P4_HasMassiveNeutrals(locIsProductionVertexFlag, locReactionFullCombo, locFullVertexCombo, locVertex, locRFBunch, locRFVertexTime, locDecayUse, locFinalStateP4))
 		return; //invalid somehow
 
 	auto locP4 = locInitialStateP4 - locFinalStateP4;

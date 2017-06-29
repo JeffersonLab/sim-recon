@@ -691,9 +691,7 @@ bool DHistogramAction_Reconstruction::Perform_Action(JEventLoop* locEventLoop, c
 			if(locChargedTrackHypothesis == NULL)
 				continue;
 
-			const DTrackTimeBased* locTrackTimeBased = NULL;
-			locChargedTrackHypothesis->GetSingle(locTrackTimeBased);
-
+			auto locTrackTimeBased = locChargedTrackHypothesis->Get_TrackTimeBased();
 			double locHitFraction = 1.0*locTrackTimeBased->dNumHitsMatchedToThrown/(locTrackTimeBased->Ndof + 5);
 			dHist_MCMatchedHitsVsTheta->Fill(locTrackTimeBased->momentum().Theta()*180.0/TMath::Pi(), locHitFraction);
 			dHist_MCMatchedHitsVsP->Fill(locTrackTimeBased->momentum().Mag(), locHitFraction);
@@ -1068,7 +1066,7 @@ void DHistogramAction_DetectorMatching::Fill_MatchingHists(JEventLoop* locEventL
 	locEventLoop->GetSingle(locDetectorMatches, locDetectorMatchesTag.c_str());
 
 	//TRACK / BCAL CLOSEST MATCHES
-	map<const DTrackingData*, pair<DBCALShowerMatchParams*, double> > locBCALTrackDistanceMap; //double = z
+	map<const DTrackingData*, pair<const DBCALShowerMatchParams*, double> > locBCALTrackDistanceMap; //double = z
 	for(auto locTrackIterator = locBestTrackMap.begin(); locTrackIterator != locBestTrackMap.end(); ++locTrackIterator)
 	{
 		const DReferenceTrajectory* rt = Get_ReferenceTrajectory(locTrackIterator->second);
@@ -1077,16 +1075,16 @@ void DHistogramAction_DetectorMatching::Fill_MatchingHists(JEventLoop* locEventL
 		double locStartTime = locTrackIterator->second->t0();
 		double locStartTimeVariance = 0.0;
 		DVector3 locProjPos, locProjMom;
-		shared_ptr<DBCALShowerMatchParams> locBestMatchParams;
+		shared_ptr<const DBCALShowerMatchParams> locBestMatchParams;
 		if(locParticleID->Get_ClosestToTrack(rt, locBCALShowers, false, locStartTime, locBestMatchParams, &locStartTimeVariance, &locProjPos, &locProjMom))
 			locBCALTrackDistanceMap[locTrackIterator->second] = std::make_pair(locBestMatchParams.get(), locProjPos.Z());
 	}
 
 	//TRACK / FCAL CLOSEST MATCHES
-	map<const DTrackingData*, DFCALShowerMatchParams*> locFCALTrackDistanceMap;
+	map<const DTrackingData*, const DFCALShowerMatchParams*> locFCALTrackDistanceMap;
 	for(auto locTrackIterator = locBestTrackMap.begin(); locTrackIterator != locBestTrackMap.end(); ++locTrackIterator)
 	{
-		shared_ptr<DFCALShowerMatchParams> locBestMatchParams;
+		shared_ptr<const DFCALShowerMatchParams> locBestMatchParams;
 		const DReferenceTrajectory* rt = Get_ReferenceTrajectory(locTrackIterator->second);
 		if(rt == nullptr)
 			break; //e.g. REST data: no trajectory
@@ -1096,10 +1094,10 @@ void DHistogramAction_DetectorMatching::Fill_MatchingHists(JEventLoop* locEventL
 	}
 
 	//TRACK / SC CLOSEST MATCHES
-	map<const DTrackingData*, pair<DSCHitMatchParams*, double> > locSCTrackDistanceMap; //double = z
+	map<const DTrackingData*, pair<const DSCHitMatchParams*, double> > locSCTrackDistanceMap; //double = z
 	for(auto locTrackIterator = locBestTrackMap.begin(); locTrackIterator != locBestTrackMap.end(); ++locTrackIterator)
 	{
-		shared_ptr<DSCHitMatchParams> locBestMatchParams;
+		shared_ptr<const DSCHitMatchParams> locBestMatchParams;
 		const DReferenceTrajectory* rt = Get_ReferenceTrajectory(locTrackIterator->second);
 		if(rt == nullptr)
 			break; //e.g. REST data: no trajectory
@@ -1111,10 +1109,10 @@ void DHistogramAction_DetectorMatching::Fill_MatchingHists(JEventLoop* locEventL
 	}
 
 	//TRACK / TOF POINT CLOSEST MATCHES
-	map<const DTrackingData*, DTOFHitMatchParams*> locTOFPointTrackDistanceMap;
+	map<const DTrackingData*, const DTOFHitMatchParams*> locTOFPointTrackDistanceMap;
 	for(auto locTrackIterator = locBestTrackMap.begin(); locTrackIterator != locBestTrackMap.end(); ++locTrackIterator)
 	{
-		shared_ptr<DTOFHitMatchParams> locBestMatchParams;
+		shared_ptr<const DTOFHitMatchParams> locBestMatchParams;
 		const DReferenceTrajectory* rt = Get_ReferenceTrajectory(locTrackIterator->second);
 		if(rt == nullptr)
 			break; //e.g. REST data: no trajectory
@@ -1844,9 +1842,7 @@ bool DHistogramAction_DetectorPID::Perform_Action(JEventLoop* locEventLoop, cons
 				continue;
 
 			double locStartTime = locParticleID->Calc_PropagatedRFTime(locChargedTrackHypothesis, locEventRFBunch);
-
-			const DTrackTimeBased* locTrackTimeBased = NULL;
-			locChargedTrackHypothesis->GetSingle(locTrackTimeBased);
+			auto locTrackTimeBased = locChargedTrackHypothesis->Get_TrackTimeBased();
 
 			Particle_t locPID = locChargedTrackHypothesis->PID();
 			double locP = locTrackTimeBased->momentum().Mag();
@@ -2476,8 +2472,7 @@ bool DHistogramAction_EventVertex::Perform_Action(JEventLoop* locEventLoop, cons
 	for(size_t loc_i = 0; loc_i < locChargedTracks.size(); ++loc_i)
 	{
 		const DChargedTrackHypothesis* locChargedTrackHypothesis = locChargedTracks[loc_i]->Get_BestFOM();
-		const DTrackTimeBased* locTrackTimeBased = NULL;
-		locChargedTrackHypothesis->GetSingle(locTrackTimeBased);
+		auto locTrackTimeBased = locChargedTrackHypothesis->Get_TrackTimeBased();
 		if(locTrackTimeBased != NULL)
 			locTrackTimeBasedVector.push_back(locTrackTimeBased);
 	}

@@ -177,7 +177,7 @@ class DKinFitUtils //purely virtual: cannot directly instantiate class, can only
 
 		/************************************************************** PROTECTED MEMBERS ***********************************************************/
 
-		bool Get_IsDecayingParticleDefinedByProducts(const DKinFitParticle* locKinFitParticle);
+		bool Get_IsDecayingParticleDefinedByProducts(const DKinFitParticle* locKinFitParticle) const;
 
 		DKinFitter* dKinFitter; //is set by DKinFitter constructor!
 		bool dLinkVerticesFlag;

@@ -102,6 +102,7 @@ class DSourceCombo
 	public:
 
 		//CONSTRUCTOR
+		DSourceCombo(void) = default;
 		DSourceCombo(const vector<pair<Particle_t, const JObject*>>& locSourceParticles, const DSourceCombosByUse_Small& locFurtherDecayCombos, bool locIsZIndependent = false);
 
 		//SET MEMBERS
@@ -128,7 +129,7 @@ class DSourceCombo
 		//however the momentum is SO z-dependent, that we can't cut on it until the end when we have the final vertex, AFTER comboing
 		//a mere z-bin is not enough.
 		//So, as far as COMBOING is concerned, massive neutrals are Z-INDEPENDENT
-		bool dIsComboingZIndependent; //is false for BCAL photons
+		bool dIsComboingZIndependent = false; //is false for BCAL photons
 };
 
 struct DSourceComboInfo::DCompare_ParticlePairPIDs

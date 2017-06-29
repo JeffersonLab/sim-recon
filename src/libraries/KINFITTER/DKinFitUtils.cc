@@ -751,7 +751,7 @@ bool DKinFitUtils::Validate_Constraints(const set<DKinFitConstraint*>& locKinFit
 
 /*************************************************************** CALCULATION ROUTINES **************************************************************/
 
-bool DKinFitUtils::Get_IsDecayingParticleDefinedByProducts(const DKinFitParticle* locKinFitParticle)
+bool DKinFitUtils::Get_IsDecayingParticleDefinedByProducts(const DKinFitParticle* locKinFitParticle) const
 {
 	auto locFromInitState = locKinFitParticle->Get_FromInitialState();
 	if(locFromInitState.empty())
@@ -1468,25 +1468,27 @@ const DKinFitChain* DKinFitUtils::Build_OutputKinFitChain(const DKinFitChain* lo
 		locOutputKinFitChainStep->Set_InitialParticleDecayFromStepIndex(locInputKinFitChainStep->Get_InitialParticleDecayFromStepIndex());
 		locOutputKinFitChainStep->Set_ConstrainDecayingMassFlag(locInputKinFitChainStep->Get_ConstrainDecayingMassFlag());
 
-		set<DKinFitParticle*> locInitialParticles = locInputKinFitChainStep->Get_InitialParticles();
-		for(locParticleIterator = locInitialParticles.begin(); locParticleIterator != locInitialParticles.end(); ++locParticleIterator)
+		auto locInitialParticles = locInputKinFitChainStep->Get_InitialParticles();
+		for(auto locKinFitParticle : locInitialParticles)
 		{
-			if((*locParticleIterator) == nullptr)
+			if(locKinFitParticle == nullptr)
 				continue;
-			map<DKinFitParticle*, DKinFitParticle*>::iterator locMapIterator = locInputToOutputParticleMap.find(*locParticleIterator);
-			DKinFitParticle* locKinFitParticle = (locMapIterator != locInputToOutputParticleMap.end()) ? locMapIterator->second : *locParticleIterator;
+			auto locMapIterator = locInputToOutputParticleMap.find(locKinFitParticle);
+			if(locMapIterator != locInputToOutputParticleMap.end())
+				locKinFitParticle = locMapIterator->second;
 			locOutputKinFitChainStep->Add_InitialParticle(locKinFitParticle);
-			if((*locParticleIterator)->Get_KinFitParticleType() == d_DecayingParticle)
+			if(locKinFitParticle->Get_KinFitParticleType() == d_DecayingParticle)
 				locOutputKinFitChain->Set_DecayStepIndex(locKinFitParticle, loc_i);
 		}
 
-		set<DKinFitParticle*> locFinalParticles = locInputKinFitChainStep->Get_FinalParticles();
-		for(locParticleIterator = locFinalParticles.begin(); locParticleIterator != locFinalParticles.end(); ++locParticleIterator)
+		auto locFinalParticles = locInputKinFitChainStep->Get_FinalParticles();
+		for(auto locKinFitParticle : locFinalParticles)
 		{
-			if((*locParticleIterator) == nullptr)
+			if(locKinFitParticle == nullptr)
 				continue;
-			map<DKinFitParticle*, DKinFitParticle*>::iterator locMapIterator = locInputToOutputParticleMap.find(*locParticleIterator);
-			DKinFitParticle* locKinFitParticle = (locMapIterator != locInputToOutputParticleMap.end()) ? locMapIterator->second : *locParticleIterator;
+			auto locMapIterator = locInputToOutputParticleMap.find(locKinFitParticle);
+			if(locMapIterator != locInputToOutputParticleMap.end())
+				locKinFitParticle = locKinFitParticle;
 			locOutputKinFitChainStep->Add_FinalParticle(locKinFitParticle);
 		}
 

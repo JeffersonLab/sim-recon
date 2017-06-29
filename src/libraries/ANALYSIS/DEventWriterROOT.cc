@@ -1364,8 +1364,7 @@ void DEventWriterROOT::Fill_ChargedHypo(DTreeFillData* locTreeFillData, unsigned
 	string locParticleBranchName = "ChargedHypo";
 
 	//ASSOCIATED OBJECTS
-	const DTrackTimeBased* locTrackTimeBased = NULL;
-	locChargedTrackHypothesis->GetSingleT(locTrackTimeBased);
+	auto locTrackTimeBased = locChargedTrackHypothesis->Get_TrackTimeBased();
 
 	const DBCALShower* locBCALShower = NULL;
 	if(locChargedTrackHypothesis->Get_BCALShowerMatchParams() != NULL)
@@ -1451,8 +1450,7 @@ void DEventWriterROOT::Fill_ChargedHypo(DTreeFillData* locTreeFillData, unsigned
 void DEventWriterROOT::Fill_NeutralHypo(DTreeFillData* locTreeFillData, unsigned int locArrayIndex, const DNeutralParticleHypothesis* locNeutralParticleHypothesis, const DMCThrownMatching* locMCThrownMatching, const map<const DMCThrown*, unsigned int>& locThrownIndexMap, const DDetectorMatches* locDetectorMatches) const
 {
 	string locParticleBranchName = "NeutralHypo";
-	const DNeutralShower* locNeutralShower = NULL;
-	locNeutralParticleHypothesis->GetSingle(locNeutralShower);
+	const DNeutralShower* locNeutralShower = locNeutralParticleHypothesis->Get_NeutralShower();
 
 	//ASSOCIATED OBJECTS
 	const DBCALShower* locBCALShower = NULL;

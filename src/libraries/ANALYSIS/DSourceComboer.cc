@@ -182,7 +182,7 @@ DSourceComboer::DSourceComboer(JEventLoop* locEventLoop)
 	dSourceComboInfoSet.clear(); //free up the memory
 
 	//CREATE HANDLERS
-	dSourceComboP4Handler = new DSourceComboP4Handler();
+	dSourceComboP4Handler = new DSourceComboP4Handler(locEventLoop, this);
 	dSourceComboVertexer = new DSourceComboVertexer(locEventLoop, this, dSourceComboP4Handler);
 	dSourceComboTimeHandler = new DSourceComboTimeHandler(locEventLoop, this, dSourceComboVertexer);
 	dSourceComboP4Handler->Set_SourceComboTimeHandler(dSourceComboTimeHandler);
@@ -407,7 +407,11 @@ DSourceComboUse DSourceComboer::Build_NewZDependentUse(const DReaction* locReact
 	}
 
 	//build and save new info, use, and return
-	auto locNewComboInfo = locNewFurtherDecays.empty() ? locOrigInfo : GetOrMake_SourceComboInfo(locOrigInfo->Get_NumParticles(), locNewFurtherDecays);
+	vector<pair<DSourceComboUse, unsigned char>> locFurtherDecayVector;
+	locFurtherDecayVector.reserve(locNewFurtherDecays.size());
+	std::copy(locNewFurtherDecays.begin(), locNewFurtherDecays.end(), std::back_inserter(locFurtherDecayVector));
+	auto locNewComboInfo = locNewFurtherDecays.empty() ? locOrigInfo : GetOrMake_SourceComboInfo(locOrigInfo->Get_NumParticles(), locFurtherDecayVector);
+
 	DSourceComboUse locNewComboUse(std::get<0>(locOrigUse), locVertexZBin, locNewComboInfo);
 	dZDependentUseToIndependentMap.emplace(locNewComboUse, locOrigUse);
 	return locNewComboUse;
@@ -503,7 +507,7 @@ const DSourceComboInfo* DSourceComboer::GetOrMake_SourceComboInfo(const vector<p
 	DSourceComboInfo locSearchForInfo(locNumParticles, locFurtherDecays);
 
 	//then search through the vector to retrieve the pointer to the corresponding object if it already exists
-	auto locIteratorPair = std::equal_range(dSourceComboInfos.begin(), dSourceComboInfos.end(), locSearchForInfo, DCompare_SourceComboInfos());
+	auto locIteratorPair = std::equal_range(dSourceComboInfos.begin(), dSourceComboInfos.end(), &locSearchForInfo, DCompare_SourceComboInfos());
 	if(locIteratorPair.first != locIteratorPair.second)
 		return *(locIteratorPair.first); //it exists: return it
 
@@ -563,7 +567,7 @@ void DSourceComboer::Reset_NewEvent(JEventLoop* locEventLoop)
 
 	//GET JANA OBJECTS
 	vector<const DNeutralShower*> locNeutralShowers;
-	locEventLoop->Get(locNeutralShowers, dShowerSelectionTag);
+	locEventLoop->Get(locNeutralShowers, dShowerSelectionTag.c_str());
 
 	vector<const DChargedTrack*> locChargedTracks;
 	locEventLoop->Get(locChargedTracks, "Combo");
@@ -593,7 +597,7 @@ void DSourceComboer::Reset_NewEvent(JEventLoop* locEventLoop)
 			dTracksByPID[locChargedHypo->PID()].push_back(locChargedHypo);
 	}
 	//sort: not strictly necessary, but probably(?) makes sorting later go faster
-	for(const auto& locPIDPair : dTracksByPID)
+	for(auto& locPIDPair : dTracksByPID)
 		std::sort(locPIDPair.second.begin(), locPIDPair.second.end());
 }
 
@@ -612,11 +616,11 @@ DCombosByReaction DSourceComboer::Build_ParticleCombos(const DReactionVertexInfo
 	//All of the reactions in the vertex-info are guaranteed to have the same channel content
 	//They just may differ in actions, or skims
 	//So, we can check #particles for just one reaction, but must check skims for all reactions
-	if(!Check_NumParticles(locReactions.first))
+	if(!Check_NumParticles(locReactions.front()))
 		return locOutputComboMap; //no combos!
 
-	auto Skim_Checker = [](const DReaction* locReaction) -> bool{return Check_Skims(locReaction);};
-	locReactions.erase(locReactions.remove_if(locReactions.begin(), locReactions.end(), Skim_Checker), locReactions.end());
+	auto Skim_Checker = [this](const DReaction* locReaction) -> bool{return Check_Skims(locReaction);};
+	locReactions.erase(std::remove_if(locReactions.begin(), locReactions.end(), Skim_Checker), locReactions.end());
 	if(locReactions.empty())
 		return locOutputComboMap; //no combos!
 
@@ -821,9 +825,10 @@ void DSourceComboer::Combo_WithBeam(const vector<const DReaction*>& locReactions
 
 		//build particle combo & save for the apporpriate reactions
 		auto locBeamRFBunch = dSourceComboTimeHandler->Calc_RFBunchShift(locBeamParticle->time());
+		size_t locDeltaRFBunch = abs(locRFBunch - locBeamRFBunch);
 		for(const auto& locReaction : locReactions)
 		{
-			if(dRFBunchCutsByReaction[locReaction] < locBeamRFBunch)
+			if(dRFBunchCutsByReaction[locReaction] < locDeltaRFBunch)
 				locOutputComboMap[locReaction].push_back(dParticleComboCreator->Build_ParticleCombo(locReactionVertexInfo, locReactionFullCombo, locBeamParticle, locRFBunch, locReaction->Get_KinFitType()));
 		}
 	}
@@ -948,8 +953,8 @@ void DSourceComboer::Create_SourceCombos(const DSourceComboUse& locComboUseToCre
 		locBothComboVector.insert(locBothComboVector.end(), locSourceCombos->begin() + locFCALComboVector.size(), locSourceCombos->end());
 
 		//now the combos by beam bunch
-		const auto& locFCALCombosByBeamBunch = (*locSourceCombosByBeamBunchByUse)[locComboUseFCAL];
-		auto& locBothCombosByBeamBunch = (*locSourceCombosByBeamBunchByUse)[locComboUseToCreate];
+		auto& locFCALCombosByBeamBunch = (*locSourceCombosByBeamBunchByUse)[locComboUseFCAL];
+		map<vector<int>, vector<const DSourceCombo*>>& locBothCombosByBeamBunch = (*locSourceCombosByBeamBunchByUse)[locComboUseToCreate];
 		auto& locUnknownBothCombosByBeamBunch = (*locSourceCombosByBeamBunchByUse)[locUnknownComboUse];
 		for(const auto& locUnknownComboBeamBunchPair : locUnknownBothCombosByBeamBunch)
 		{
@@ -1069,8 +1074,8 @@ void DSourceComboer::Combo_Vertically_AllDecays(const DSourceComboUse& locComboU
 		auto locNeededGroupingUse = locComboUseToCreate;
 		if((locFurtherDecays.size() > 1) || !locNumParticlesNeeded.empty()) //if true: can't use the input
 		{
-			auto locGroupingComboInfo = GetOrMake_SourceComboInfo({}, {locSourceComboDecayUse, locNumDecaysNeeded}); // -> N pi0s (e.g.)
-			locNeededGroupingUse = (Unknown, locVertexZBin, locGroupingComboInfo); // Unknown -> Npi0s (e.g.)
+			auto locGroupingComboInfo = GetOrMake_SourceComboInfo({}, {std::make_pair(locSourceComboDecayUse, locNumDecaysNeeded)}); // -> N pi0s (e.g.)
+			locNeededGroupingUse = std::make_tuple(Unknown, locVertexZBin, locGroupingComboInfo); // Unknown -> Npi0s (e.g.)
 		}
 
 		// Now, see whether the combos for this grouping have already been done
@@ -1082,8 +1087,8 @@ void DSourceComboer::Combo_Vertically_AllDecays(const DSourceComboUse& locComboU
 		auto locNMinus1ComboUse = locSourceComboDecayUse; //initialize (is valid if #needed == 2, otherwise will create it)
 		if(locNumDecaysNeeded > 2)
 		{
-			auto locNMinus1Info = GetOrMake_SourceComboInfo({}, {locSourceComboDecayUse, locNumDecaysNeeded - 1}); // 0 detected particles, N - 1 pi0s (e.g.)
-			locNMinus1ComboUse(Unknown, locVertexZBin, locNMinus1Info); // Unknown -> N - 1 pi0s (e.g.)
+			auto locNMinus1Info = GetOrMake_SourceComboInfo({}, {std::make_pair(locSourceComboDecayUse, locNumDecaysNeeded - 1)}); // 0 detected particles, N - 1 pi0s (e.g.)
+			locNMinus1ComboUse = std::make_tuple(Unknown, locVertexZBin, locNMinus1Info); // Unknown -> N - 1 pi0s (e.g.)
 		}
 
 		// Now, see whether the combos for the direct N - 1 grouping have already been done.  If not, create them
@@ -1122,7 +1127,6 @@ void DSourceComboer::Combo_Vertically_NDecays(const DSourceComboUse& locComboUse
 
 	//if comboing N mixed combos (locComboUseToCreate) (which are thus all used in the same step), do this:
 	//locChargedCombo_WithNow corresponds to N mixed combos
-	const DSourceCombo* locChargedCombo_WithPrevious = nullptr; //corresponds to ONE mixed combo: the next one //will set it below
 	auto locInstance = locNIs2Flag ? 2 : locCombos_NMinus1.front()->Get_FurtherDecayCombos()[locSourceComboDecayUse].size() + 1; //numbering starts with 1, not 0
 	const DSourceCombo* locChargedCombo_WithPrevious = Get_ChargedCombo_WithNow(Get_Presiding_ChargedCombo(locChargedCombo_Presiding, locSourceComboDecayUse, locComboingStage, locInstance));
 
@@ -1194,7 +1198,7 @@ void DSourceComboer::Combo_Vertically_NDecays(const DSourceComboUse& locComboUse
 			}
 
 			//then create the new combo
-			auto locFurtherDecayCombos = {{locSourceComboDecayUse, locAllDecayCombos}}; //arguments (e.g.): (pi0, -> 2g), N combos of: -> 2g
+			DSourceCombosByUse_Small locFurtherDecayCombos = {std::make_pair(locSourceComboDecayUse, locAllDecayCombos)}; //arguments (e.g.): (pi0, -> 2g), N combos of: -> 2g
 			auto locCombo = dResourcePool_SourceCombo.Get_Resource();
 			locCombo->Set_Members({}, locFurtherDecayCombos, locIsZIndependent); // 1 combo of N (e.g.) pi0s
 
@@ -1238,8 +1242,8 @@ void DSourceComboer::Combo_Vertically_AllParticles(const DSourceComboUse& locCom
 		DSourceComboUse locNeededGroupingUse = locComboUseToCreate;
 		if((locNumParticlesNeeded.size() > 1) || !locFurtherDecays.empty()) //if true: can't use the input
 		{
-			auto locGroupingComboInfo = GetOrMake_SourceComboInfo({locPID, locNumPIDNeeded}, {}); // -> N g's (e.g.)
-			locNeededGroupingUse = (Unknown, locVertexZBin, locGroupingComboInfo); // Unknown -> N g's (e.g.)
+			auto locGroupingComboInfo = GetOrMake_SourceComboInfo({std::make_pair(locPID, locNumPIDNeeded)}, {}); // -> N g's (e.g.)
+			locNeededGroupingUse = std::make_tuple(Unknown, locVertexZBin, locGroupingComboInfo); // Unknown -> N g's (e.g.)
 		}
 
 		//See whether the combos for this grouping have already been done
@@ -1255,7 +1259,7 @@ void DSourceComboer::Combo_Vertically_AllParticles(const DSourceComboUse& locCom
 		}
 
 		//build an info and a use for a direct grouping of N - 1 particles //e.g. 3 g's
-		auto locNMinus1Info = GetOrMake_SourceComboInfo({locPID, locNumPIDNeeded - 1}, {}); // N - 1 g's (e.g.), no decaying particles
+		auto locNMinus1Info = GetOrMake_SourceComboInfo({std::make_pair(locPID, locNumPIDNeeded - 1)}, {}); // N - 1 g's (e.g.), no decaying particles
 		DSourceComboUse locNMinus1ComboUse(Unknown, locVertexZBin, locNMinus1Info); // Unknown -> N - 1 g's (e.g.)
 
 		// Now, see whether the combos for the direct N - 1 grouping have already been done.  If not, create them
@@ -1296,7 +1300,7 @@ void DSourceComboer::Combo_Vertically_NParticles(const DSourceComboUse& locCombo
 		auto locLastIteratorToCheck = std::prev(locParticles.end());
 		for(auto locFirstIterator = locParticles.begin(); locFirstIterator != locLastIteratorToCheck; ++locFirstIterator)
 		{
-			auto locRFBunches_First = (locPID == Gamma) ? dSourceComboTimeHandler->Get_ValidRFBunches(*locFirstIterator, locVertexZBin) : {};
+			auto locRFBunches_First = (locPID == Gamma) ? dSourceComboTimeHandler->Get_ValidRFBunches(*locFirstIterator, locVertexZBin) : vector<int>{};
 			for(auto locSecondIterator = std::next(locFirstIterator); locSecondIterator != locParticles.end(); ++locSecondIterator)
 			{
 				auto locIsZIndependent = (locComboingStage == d_MixedStage_ZIndependent) || (Get_IsComboingZIndependent(*locFirstIterator, locPID) && Get_IsComboingZIndependent(*locSecondIterator, locPID));
@@ -1304,7 +1308,7 @@ void DSourceComboer::Combo_Vertically_NParticles(const DSourceComboUse& locCombo
 					continue; //this combo has already been created (assuming it was valid): during the FCAL-only stage
 
 				//See which RF bunches match up, if any //if charged or massive neutrals, ignore (they don't choose at this stage)
-				vector<int> locValidRFBunches = (locPID != Gamma) ? {} : dSourceComboTimeHandler->Get_CommonRFBunches(locRFBunches_First, *locSecondIterator, locVertexZBin);
+				auto locValidRFBunches = (locPID != Gamma) ? vector<int>{} : dSourceComboTimeHandler->Get_CommonRFBunches(locRFBunches_First, *locSecondIterator, locVertexZBin);
 				if((locPID == Gamma) && locValidRFBunches.empty())
 					continue;
 
@@ -1345,7 +1349,7 @@ void DSourceComboer::Combo_Vertically_NParticles(const DSourceComboUse& locCombo
 
 			//See which RF bunches match up //guaranteed to be at least one, due to selection in Get_ParticlesForComboing() function
 			//if charged or massive neutrals, ignore (they don't choose at this stage)
-			vector<int> locValidRFBunches = (locPID != Gamma) ? {} : dSourceComboTimeHandler->Get_CommonRFBunches(locValidRFBunches_NMinus1, *locParticleSearchIterator, locVertexZBin);
+			auto locValidRFBunches = (locPID != Gamma) ? vector<int>{} : dSourceComboTimeHandler->Get_CommonRFBunches(locValidRFBunches_NMinus1, *locParticleSearchIterator, locVertexZBin);
 
 			auto locComboParticlePairs = locCombo_NMinus1->Get_SourceParticles();
 			locComboParticlePairs.emplace_back(locPID, *locParticleSearchIterator);
@@ -1416,9 +1420,8 @@ void DSourceComboer::Combo_Horizontally_All(const DSourceComboUse& locComboUseTo
 		locFurtherDecaysToSearchFor.erase(locFurtherDecaysToSearchFor.begin() + std::distance(locFurtherDecays.begin(), locDecayIterator));
 
 		//build the all-but-1 DSourceComboUse
-		DSourceComboUse locAllBut1ComboUse;
 		auto locAllBut1ComboInfo = GetOrMake_SourceComboInfo(locNumParticlesNeeded, locFurtherDecaysToSearchFor);
-		locAllBut1ComboUse(Unknown, locVertexZBin, locAllBut1ComboInfo); // Unknown -> everything but this decay
+		DSourceComboUse locAllBut1ComboUse{Unknown, locVertexZBin, locAllBut1ComboInfo}; // Unknown -> everything but this decay
 
 		auto locAllBut1ChargeContent = dComboInfoChargeContent[std::get<2>(locAllBut1ComboUse)];
 		if((locComboingStage == d_ChargedStage) && (locAllBut1ChargeContent == d_Neutral))
@@ -1504,7 +1507,7 @@ void DSourceComboer::Combo_Horizontally_All(const DSourceComboUse& locComboUseTo
 			{
 				//create a combo use for X -> N particles of this type
 				auto locSourceInfo_NParticles = GetOrMake_SourceComboInfo({locParticlePair}, {});
-				DSourceComboUse locSourceComboUse_NParticles(Unknown, locSourceInfo_NParticles);
+				DSourceComboUse locSourceComboUse_NParticles(Unknown, locVertexZBin, locSourceInfo_NParticles);
 				bool locExpandAllBut1Flag = (locAllBut1ComboInfo->Get_NumParticles().size() + locAllBut1ComboInfo->Get_FurtherDecays().size()) > 1; //true: has already been comboed horizontally once
 				Combo_Horizontally_AddCombo(locComboUseToCreate, locAllBut1ComboUse, locSourceComboUse_NParticles, locComboingStage, locChargedCombo_WithNow, locExpandAllBut1Flag);
 			}
@@ -1546,7 +1549,7 @@ void DSourceComboer::Combo_Horizontally_All(const DSourceComboUse& locComboUseTo
 	else //subset was missing a decay PID
 	{
 		auto locComboUseToAdd = locFurtherDecays.front().first;
-		if((locComboingStage == d_ChargedStage) && (std::get<2>(locComboUseToAdd) == d_Neutral))
+		if((locComboingStage == d_ChargedStage) && (Get_ChargeContent(std::get<2>(locComboUseToAdd)) == d_Neutral))
 		{
 			//this won't be done yet! just copy the all-but-1 as the desired combos
 			auto& locSourceCombosByUseSoFar = Get_CombosSoFar(locComboingStage, d_Charged);
@@ -1657,14 +1660,14 @@ void DSourceComboer::Combo_Horizontally_AddCombo(const DSourceComboUse& locCombo
 
 			if(locExpandAllBut1Flag)
 			{
-				locFurtherDecayCombos_AllBut1.emplace(locSourceComboUseToAdd, locChargedCombo_WithNow);
+				locFurtherDecayCombos_AllBut1.emplace(locSourceComboUseToAdd, vector<const DSourceCombo*>{locChargedCombo_WithNow});
 				locCombo->Set_Members(locComboParticles_AllBut1, locFurtherDecayCombos_AllBut1, locIsZIndependent); // create combo with all PIDs
 			}
 			else //side by side in a new combo
 			{
 				DSourceCombosByUse_Small locFurtherDecayCombos_Needed;
-				locFurtherDecayCombos_Needed.emplace(locAllBut1ComboUse, {locCombo_AllBut1});
-				locFurtherDecayCombos_Needed.emplace(locSourceComboUseToAdd, {locChargedCombo_WithNow});
+				locFurtherDecayCombos_Needed.emplace(locAllBut1ComboUse, vector<const DSourceCombo*>{locCombo_AllBut1});
+				locFurtherDecayCombos_Needed.emplace(locSourceComboUseToAdd, vector<const DSourceCombo*>{locChargedCombo_WithNow});
 				locCombo->Set_Members({}, locFurtherDecayCombos_Needed, locIsZIndependent); // create combo with all PIDs
 			}
 
@@ -1675,7 +1678,7 @@ void DSourceComboer::Combo_Horizontally_AddCombo(const DSourceComboUse& locCombo
 	}
 
 	//determine whether we should promote the contents of the combos we are combining up to the new combo (else set combo as decay of new combo)
-	auto locComboInfo_UseToCreate = std::get<2>(locSourceComboUseToCreate);
+	auto locComboInfo_UseToCreate = std::get<2>(locComboUseToCreate);
 	bool locPromoteToAddFlag = Get_PromoteFlag(locDecayPID_UseToAdd, locComboInfo_UseToCreate, locComboInfo_UseToAdd);
 	bool locPromoteAllBut1Flag = Get_PromoteFlag(std::get<0>(locAllBut1ComboUse), locComboInfo_UseToCreate, locComboInfo_AllBut1);
 
@@ -1739,7 +1742,7 @@ void DSourceComboer::Combo_Horizontally_AddCombo(const DSourceComboUse& locCombo
 					locFurtherDecayCombos_AllBut1.insert(locFurtherDecayCombos_ToAdd.begin(), locFurtherDecayCombos_ToAdd.end());
 				}
 				else
-					locFurtherDecayCombos_AllBut1.emplace(locSourceComboUseToAdd, locDecayCombo_ToAdd);
+					locFurtherDecayCombos_AllBut1.emplace(locSourceComboUseToAdd, vector<const DSourceCombo*>{locDecayCombo_ToAdd});
 				locCombo->Set_Members(locComboParticles_AllBut1, locFurtherDecayCombos_AllBut1, locIsZIndependent); // create combo with all PIDs
 			}
 			else //side by side in a new combo
@@ -1763,8 +1766,8 @@ void DSourceComboer::Combo_Horizontally_AddCombo(const DSourceComboUse& locCombo
 				else
 				{
 					DSourceCombosByUse_Small locFurtherDecayCombos_Needed;
-					locFurtherDecayCombos_Needed.emplace(locAllBut1ComboUse, {locCombo_AllBut1});
-					locFurtherDecayCombos_Needed.emplace(locSourceComboUseToAdd, {locDecayCombo_ToAdd});
+					locFurtherDecayCombos_Needed.emplace(locAllBut1ComboUse, vector<const DSourceCombo*>{locCombo_AllBut1});
+					locFurtherDecayCombos_Needed.emplace(locSourceComboUseToAdd, vector<const DSourceCombo*>{locDecayCombo_ToAdd});
 					locCombo->Set_Members({}, locFurtherDecayCombos_Needed, locIsZIndependent); // create combo with all PIDs
 				}
 			}
@@ -1935,7 +1938,7 @@ void DSourceComboer::Register_ValidRFBunches(const DSourceComboUse& locSourceCom
 		{
 			auto& locComboVector = locCombosByBeamBunch[{locBeamBunch}];
 			locComboVector.push_back(locSourceCombo);
-			dResumeSearchAfterIterators_Combos[std::make_pair(locSourceCombo, locVertexZBin)].emplace({locBeamBunch}, std::prev(locComboVector.end()));
+			dResumeSearchAfterIterators_Combos[std::make_pair(locSourceCombo, locVertexZBin)].emplace(vector<int>{locBeamBunch}, std::prev(locComboVector.end()));
 		}
 	}
 	if(locRFBunches.empty()) //all //don't need to save the by-beam-bunch, but still need to save the resume-after iterator
@@ -1953,7 +1956,7 @@ const vector<const DSourceCombo*>& DSourceComboer::Get_CombosForComboing(const D
 	//find all combos for the given use that have an overlapping beam bunch with the input
 	auto locChargeContent = dComboInfoChargeContent[std::get<2>(locComboUse)];
 	if(locBeamBunches.empty() || (locChargeContent == d_Charged)) //e.g. fully charged, or a combo of 2 KLongs (RF bunches not saved for massive neutrals)
-		return Get_CombosSoFar(locComboingStage, locChargeContent, locChargedCombo_WithPrevious)[locComboUse];
+		return *((Get_CombosSoFar(locComboingStage, locChargeContent, locChargedCombo_WithPrevious))[locComboUse]);
 
 	auto& locSourceCombosByBeamBunchByUse = Get_SourceCombosByBeamBunchByUse(locChargeContent, locChargedCombo_WithPrevious);
 	auto locGroupBunchIterator = locSourceCombosByBeamBunchByUse[locComboUse].find(locBeamBunches);
@@ -1985,7 +1988,7 @@ const vector<const DSourceCombo*>& DSourceComboer::Get_CombosByBeamBunch(DCombos
 		locCombosByBunch.emplace(locBunchesSoFar, std::move(locMergeResult));
 		Build_ComboIterators(locBeamBunches, locCombosByBunch[locBeamBunches], locComboingStage, locVertexZBin);
 	}
-	return &(locCombosByBunch[locBeamBunches]);
+	return locCombosByBunch[locBeamBunches];
 }
 
 void DSourceComboer::Copy_ZIndependentMixedResults(const DSourceComboUse& locComboUseToCreate, const DSourceCombo* locChargedCombo_WithNow)
@@ -2025,9 +2028,9 @@ void DSourceComboer::Copy_ZIndependentMixedResults(const DSourceComboUse& locCom
 	{
 		const auto& locRFBunches = dValidRFBunches_ByCombo[*locComboIterator];
 		for(const auto& locBeamBunch : locRFBunches)
-			dResumeSearchAfterIterators_Combos[std::make_pair(*locComboIterator, locVertexZBin)].emplace(locBeamBunch, locComboIterator);
+			dResumeSearchAfterIterators_Combos[std::make_pair(*locComboIterator, locVertexZBin)].emplace(vector<int>{locBeamBunch}, locComboIterator);
 		if(locRFBunches.empty()) //all
-			dResumeSearchAfterIterators_Combos[std::make_pair(*locComboIterator, locVertexZBin)].emplace(locRFBunches, locComboIterator);
+			dResumeSearchAfterIterators_Combos[std::make_pair(*locComboIterator, locVertexZBin)].emplace(vector<int>{locRFBunches}, locComboIterator);
 	}
 }
 
@@ -2067,7 +2070,7 @@ const DSourceCombo* DSourceComboer::Get_Presiding_ChargedCombo(const DSourceComb
 		return nullptr;
 	if(locChargedCombo_Presiding == nullptr)
 		return nullptr;
-	if(dComboInfoChargeContent[std::get<2>(locNextComboUse)] != d_AllCharges)
+	if(Get_ChargeContent(std::get<2>(locNextComboUse)) != d_AllCharges)
 		return nullptr; //not needed
 
 	auto locFurtherDecayCombos = locChargedCombo_Presiding->Get_FurtherDecayCombos();

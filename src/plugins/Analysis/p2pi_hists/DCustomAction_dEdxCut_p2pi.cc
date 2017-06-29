@@ -50,8 +50,7 @@ bool DCustomAction_dEdxCut_p2pi::Cut_dEdx(const DChargedTrackHypothesis* locChar
 {
 	Particle_t locPID = locChargedTrackHypothesis->PID();
 
-	const DTrackTimeBased* locTrackTimeBased = NULL;
-	locChargedTrackHypothesis->GetSingle(locTrackTimeBased);
+	auto locTrackTimeBased = locChargedTrackHypothesis->Get_TrackTimeBased();
 
 	double locP = locTrackTimeBased->momentum().Mag();
 

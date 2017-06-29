@@ -140,6 +140,7 @@ pair<int, int> Get_InitialParticleDecayFromIndices(const DReaction* locReaction,
 vector<Particle_t> Get_ChainPIDs(const DReaction* locReaction, size_t locStepIndex, int locUpToStepIndex, vector<Particle_t> locUpThroughPIDs, bool locExpandDecayingFlag);
 int Get_DefinedParticleStepIndex(const DReaction* locReaction);
 vector<const DReaction*> Get_Reactions(JEventLoop* locEventLoop);
+size_t Get_ParticleInstanceIndex(const DReactionStep* locStep, size_t locParticleIndex);
 
 /****************************************************** CONSTRUCTORS AND DESTRUCTORS *******************************************************/
 

@@ -66,7 +66,7 @@ jerror_t DNeutralParticleHypothesis_factory::evnt(jana::JEventLoop *locEventLoop
 		// Loop over vertices and PID hypotheses & create DNeutralParticleHypotheses for each combination
 		for(size_t loc_j = 0; loc_j < locPIDHypotheses.size(); ++loc_j)
 		{
-			DNeutralParticleHypothesis* locNeutralParticleHypothesis = Create_DNeutralParticleHypothesis(locNeutralShower, locPIDHypotheses[loc_j], locEventRFBunch, locVertex, true);
+			DNeutralParticleHypothesis* locNeutralParticleHypothesis = Create_DNeutralParticleHypothesis(locNeutralShower, locPIDHypotheses[loc_j], locEventRFBunch, locVertex->dSpacetimeVertex, &locVertex->dCovarianceMatrix);
 			if(locNeutralParticleHypothesis != NULL)
 				_data.push_back(locNeutralParticleHypothesis);	
 		}
@@ -122,7 +122,7 @@ DNeutralParticleHypothesis* DNeutralParticleHypothesis_factory::Create_DNeutralP
 
 	// Build DNeutralParticleHypothesis // dEdx not set
 	DNeutralParticleHypothesis* locNeutralParticleHypothesis = Get_Resource();
-	locNeutralParticleHypothesis->Set_NeutralShower(locNeutralShower->dShowerID);
+	locNeutralParticleHypothesis->Set_NeutralShower(locNeutralShower);
 	locNeutralParticleHypothesis->setPID(locPID);
 	locNeutralParticleHypothesis->setMomentum(locMomentum);
 	locNeutralParticleHypothesis->setPosition(locVertexGuess);

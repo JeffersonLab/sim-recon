@@ -558,11 +558,7 @@ void DHistogramAction_ParticleComboGenReconComparison::Fill_ChargedHists(const D
 void DHistogramAction_ParticleComboGenReconComparison::Fill_NeutralHists(const DNeutralParticleHypothesis* locNeutralParticleHypothesis, const DMCThrown* locMCThrown, const DEventRFBunch* locThrownEventRFBunch, size_t locStepIndex)
 {
 	Particle_t locPID = locNeutralParticleHypothesis->PID();
-
-	const DNeutralShower* locNeutralShower = NULL;
-	locNeutralParticleHypothesis->GetSingle(locNeutralShower);
-	if(locNeutralShower == NULL)
-		return; //shouldn't be possible ...
+	const DNeutralShower* locNeutralShower = locNeutralParticleHypothesis->Get_NeutralShower();
 
 	double locThrownP = locMCThrown->momentum().Mag();
 	double locThrownTheta = locMCThrown->momentum().Theta()*180.0/TMath::Pi();
@@ -1411,10 +1407,7 @@ bool DHistogramAction_GenReconTrackComparison::Perform_Action(JEventLoop* locEve
 		if(locNeutralParticleHypothesis == NULL)
 			locNeutralParticleHypothesis = locNeutralIterator->second.first->Get_BestFOM();
 
-		const DNeutralShower* locNeutralShower = NULL;
-		locNeutralParticleHypothesis->GetSingle(locNeutralShower);
-		if(locNeutralShower == NULL)
-			continue; //shouldn't be possible ...
+		const DNeutralShower* locNeutralShower = locNeutralParticleHypothesis->Get_NeutralShower();
 
 		locThrownP = locMCThrown->momentum().Mag();
 		locThrownTheta = locMCThrown->momentum().Theta()*180.0/TMath::Pi();

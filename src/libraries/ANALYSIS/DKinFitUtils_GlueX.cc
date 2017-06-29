@@ -582,8 +582,7 @@ DKinFitChainStep* DKinFitUtils_GlueX::Make_KinFitChainStep(const DReactionVertex
 				locKinFitChainStep->Add_FinalParticle(Make_DetectedParticle(locNeutralParticleHypothesis));
 			else //in a vertex constraint: make shower
 			{
-				const DNeutralShower* locNeutralShower = NULL;
-				locNeutralParticleHypothesis->GetSingle(locNeutralShower);
+				const DNeutralShower* locNeutralShower = locNeutralParticleHypothesis->Get_NeutralShower();
 				locKinFitChainStep->Add_FinalParticle(Make_DetectedShower(locNeutralShower, locNeutralParticleHypothesis->PID()));
 			}
 		}

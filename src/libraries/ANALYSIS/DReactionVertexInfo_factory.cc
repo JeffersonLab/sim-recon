@@ -217,7 +217,7 @@ bool DReactionVertexInfo_factory::Associate_DecayingParticles(bool locLinkingFla
 {
 	//find which decaying particles at this vertex have/haven't been previously defined
 	vector<pair<int, int>> locNoConstrainDecayingParticles;
-	map<pair<int, int>, DReactionStepVertexInfo*> locConstrainingDecayingParticles;
+	map<pair<int, int>, const DReactionStepVertexInfo*> locConstrainingDecayingParticles;
 	auto locDecayingParticles = locVertexInfo->Get_DecayingParticles();
 	for(auto locParticlePair : locDecayingParticles)
 	{
@@ -242,7 +242,7 @@ bool DReactionVertexInfo_factory::Associate_DecayingParticles(bool locLinkingFla
 	//each of the constraining decaying particles was a no-constrain at another vertex. set their vertex-info pointer to the new one
 	for(const auto& locMapPair : locConstrainingDecayingParticles)
 	{
-		auto& locDefiningVertexInfo = locMapPair.second;
+		auto locDefiningVertexInfo = const_cast<DReactionStepVertexInfo*>(locMapPair.second); //easier this way
 		locDefiningVertexInfo->Register_DecayingNoConstrainUseVertex(locMapPair.first, locVertexInfo);
 	}
 

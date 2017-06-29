@@ -327,8 +327,7 @@ bool DCustomAction_p2pi_unusedHists::Perform_Action(JEventLoop* locEventLoop, co
                         if(locChargedTrack == NULL) continue; // should never happen
 
                         const DChargedTrackHypothesis* locChargedTrackHypothesis = locChargedTrack->Get_BestFOM();
-			const DTrackTimeBased* locTrackTimeBased = NULL;
-			locChargedTrackHypothesis->GetSingleT(locTrackTimeBased);
+	auto locTrackTimeBased = locChargedTrackHypothesis->Get_TrackTimeBased();
 			const DReferenceTrajectory* rt = locTrackTimeBased->rt;
 			if(rt == NULL) continue;
 
@@ -390,8 +389,7 @@ bool DCustomAction_p2pi_unusedHists::Perform_Action(JEventLoop* locEventLoop, co
                         if(locChargedTrack == NULL) continue; // should never happen
 			
                         const DChargedTrackHypothesis* locChargedTrackHypothesis = locChargedTrack->Get_BestFOM();
-			const DTrackTimeBased* locTrackTimeBased = NULL;
-			locChargedTrackHypothesis->GetSingleT(locTrackTimeBased);
+	auto locTrackTimeBased = locChargedTrackHypothesis->Get_TrackTimeBased();
 			const DReferenceTrajectory* rt = locTrackTimeBased->rt;
 			if(rt == NULL) continue;
 
@@ -482,8 +480,7 @@ void DCustomAction_p2pi_unusedHists::FillTrack(JEventLoop* locEventLoop, const D
 	const DChargedTrackHypothesis* locChargedTrackHypothesis = locChargedTrack->Get_BestFOM();
 	int locCharge = locChargedTrackHypothesis->charge();
 
-	const DTrackTimeBased* locTrackTimeBased = NULL;
-	locChargedTrackHypothesis->GetSingleT(locTrackTimeBased);
+	auto locTrackTimeBased = locChargedTrackHypothesis->Get_TrackTimeBased();
 	
 	double nHits = locTrackTimeBased->Ndof + 5.;
 	double locTheta = locTrackTimeBased->momentum().Theta()*180/TMath::Pi();

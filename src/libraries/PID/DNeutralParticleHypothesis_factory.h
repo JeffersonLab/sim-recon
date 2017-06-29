@@ -20,6 +20,7 @@
 #include <PID/DNeutralShower.h>
 #include <PID/DEventRFBunch.h>
 #include <PID/DParticleID.h>
+#include "PID/DVertex.h"
 #include "DResourcePool.h"
 #include <DVector3.h>
 #include <DMatrix.h>

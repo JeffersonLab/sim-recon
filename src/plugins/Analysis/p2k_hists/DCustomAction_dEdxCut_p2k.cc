@@ -49,9 +49,7 @@ bool DCustomAction_dEdxCut_p2k::Perform_Action(JEventLoop* locEventLoop, const D
 bool DCustomAction_dEdxCut_p2k::Cut_dEdx(const DChargedTrackHypothesis* locChargedTrackHypothesis) const
 {
 	Particle_t locPID = locChargedTrackHypothesis->PID();
-
-	const DTrackTimeBased* locTrackTimeBased = NULL;
-	locChargedTrackHypothesis->GetSingle(locTrackTimeBased);
+	auto locTrackTimeBased = locChargedTrackHypothesis->Get_TrackTimeBased();
 
 	double locP = locTrackTimeBased->momentum().Mag();
 

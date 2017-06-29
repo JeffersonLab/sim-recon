@@ -37,9 +37,9 @@ class DReactionStepVertexInfo
 				const vector<pair<int, int>>& locOnlyConstrainTimeParticles, const vector<pair<int, int>>& locNoConstrainParticles);
 
 		//REGISTER DECAY VERTICES
-		void Register_DecayingNoConstrainUseVertex(const pair<int, int>& locDecayingNoConstrainPair, DReactionStepVertexInfo* locVertexInfo);
+		void Register_DecayingNoConstrainUseVertex(const pair<int, int>& locDecayingNoConstrainPair, const DReactionStepVertexInfo* locVertexInfo);
 		void Register_DecayingParticleConstraints(const vector<pair<int, int>>& locNoConstrainDecayingParticles,
-				const map<pair<int, int>, DReactionStepVertexInfo*>& locFullConstrainDecayingParticles);
+				const map<pair<int, int>, const DReactionStepVertexInfo*>& locFullConstrainDecayingParticles);
 		void Set_DanglingVertexFlag(bool locIsDanglingVertexFlag){dIsDanglingVertexFlag = locIsDanglingVertexFlag;}
 
 		//GET REACTION INFO
@@ -57,8 +57,8 @@ class DReactionStepVertexInfo
 		vector<pair<int, int>> Get_MissingParticles(DReactionState_t locState = d_EitherState, Charge_t locCharge = d_AllCharges) const;
 
 		//sorted decaying
-		map<pair<int, int>, DReactionStepVertexInfo*> Get_DecayingParticles_NoConstrain(void) const{return dDecayingParticles_NoConstrain;}
-		map<pair<int, int>, DReactionStepVertexInfo*> Get_DecayingParticles_FullConstrain(void) const{return dDecayingParticles_FullConstrain;}
+		map<pair<int, int>, const DReactionStepVertexInfo*> Get_DecayingParticles_NoConstrain(void) const{return dDecayingParticles_NoConstrain;}
+		map<pair<int, int>, const DReactionStepVertexInfo*> Get_DecayingParticles_FullConstrain(void) const{return dDecayingParticles_FullConstrain;}
 
 		//independent of state
 		vector<pair<int, int>> Get_Particles(DReactionState_t locState = d_EitherState, Charge_t locCharge = d_AllCharges,
@@ -89,8 +89,8 @@ class DReactionStepVertexInfo
 		//Note, decaying particles that decay in-place at this vertex (e.g. pi0) will only appear once: with their "final-state" indices
 		//If the decaying particle has a detached vertex, then the indices reported here are the ones where it appears for the vertex (initial/final state)
 		vector<pair<int, int>> dDecayingParticles; //all, whether used to constrain or not
-		map<pair<int, int>, DReactionStepVertexInfo*> dDecayingParticles_NoConstrain; //vertex-info: where it is used to constrain (nullptr if not)
-		map<pair<int, int>, DReactionStepVertexInfo*> dDecayingParticles_FullConstrain; //vertex-info: where it was defined
+		map<pair<int, int>, const DReactionStepVertexInfo*> dDecayingParticles_NoConstrain; //vertex-info: where it is used to constrain (nullptr if not)
+		map<pair<int, int>, const DReactionStepVertexInfo*> dDecayingParticles_FullConstrain; //vertex-info: where it was defined
 
 		//DANGLING
 		//is it dangling? dangling = vertex indeterminable, even with all particle information
@@ -127,7 +127,7 @@ inline void DReactionStepVertexInfo::Add_ReactionStep(size_t locStepIndex)
 	std::sort(dReactionStepIndices.begin(), dReactionStepIndices.end()); //just in case
 }
 
-inline void DReactionStepVertexInfo::Register_DecayingNoConstrainUseVertex(const pair<int, int>& locDecayingNoConstrainPair, DReactionStepVertexInfo* locVertexInfo)
+inline void DReactionStepVertexInfo::Register_DecayingNoConstrainUseVertex(const pair<int, int>& locDecayingNoConstrainPair, const DReactionStepVertexInfo* locVertexInfo)
 {
 	dDecayingParticles_NoConstrain[locDecayingNoConstrainPair] = locVertexInfo;
 }

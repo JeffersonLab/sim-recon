@@ -546,8 +546,7 @@ void DMCThrownMatching_factory::Find_GenReconMatches_ChargedHypo(const vector<co
 	for(size_t loc_j = 0; loc_j < locChargedTrackHypothesisVector.size(); ++loc_j)
 	{
 		const DChargedTrackHypothesis* locChargedTrackHypothesis = locChargedTrackHypothesisVector[loc_j];
-		const DTrackTimeBased* locTrackTimeBased = NULL;
-		locChargedTrackHypothesis->GetSingle(locTrackTimeBased);
+		auto locTrackTimeBased = locChargedTrackHypothesis->Get_TrackTimeBased();
 
 		if(locMyIDToThrownMap.find(locTrackTimeBased->dMCThrownMatchMyID) == locMyIDToThrownMap.end())
 			continue;

@@ -221,8 +221,7 @@ jerror_t JEventProcessor_TOF_Eff::evnt(jana::JEventLoop* locEventLoop, uint64_t 
 			if(!Cut_FCALTiming(locChargedTrackHypothesis, locParticleID, locEventRFBunch))
 				continue;
 
-			const DTrackTimeBased* locTrackTimeBased = NULL;
-			locChargedTrackHypothesis->GetSingle(locTrackTimeBased);
+			auto locTrackTimeBased = locChargedTrackHypothesis->Get_TrackTimeBased();
 			if(locTrackTimeBased->FOM < dMinTrackingFOM)
 				continue; //don't trust tracking results: bad tracking FOM
 
@@ -248,8 +247,7 @@ jerror_t JEventProcessor_TOF_Eff::evnt(jana::JEventLoop* locEventLoop, uint64_t 
 	// Loop over the good tracks, using the best DTrackTimeBased object for each
 	for(auto& locChargedTrackHypothesis : locBestTracks)
 	{
-		const DTrackTimeBased* locTrackTimeBased = NULL;
-		locChargedTrackHypothesis->GetSingle(locTrackTimeBased);
+		auto locTrackTimeBased = locChargedTrackHypothesis->Get_TrackTimeBased();
 
 		//Predict TOF Surface Hit Location
 		DVector3 locProjectedTOFIntersection;
