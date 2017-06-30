@@ -93,8 +93,6 @@ jerror_t DReaction_factory_ReactionFilter::evnt(JEventLoop* locEventLoop, uint64
 
 		/************************************************** Pre-Combo Custom Cuts *************************************************/
 
-		Add_PreComboCuts(locReaction, locFSInfo);
-
 		// PID
 		Add_PIDActions(locReaction);
 
@@ -303,39 +301,6 @@ void DReaction_factory_ReactionFilter::Define_LooseCuts(void)
 	dPIDTimingCuts[Proton][SYS_TOF] = 2.5;
 
 	dPIDTimingCuts[AntiProton] = dPIDTimingCuts[Proton];
-}
-
-void DReaction_factory_ReactionFilter::Add_PreComboCuts(DReaction* locReaction, FSInfo* locFSInfo)
-{
-	// Highly Recommended: Very loose invariant mass cuts, applied during DParticleComboBlueprint construction
-	vector<Particle_t> locPIDs = locFSInfo->PIDs();
-	for(auto locPID : locPIDs)
-	{
-		auto locPIDIterator = dInvariantMassCuts.find(locPID);
-		if(locPIDIterator == dInvariantMassCuts.end())
-			continue;
-
-		auto locCutPair = locPIDIterator->second;
-		locReaction->Set_InvariantMassCut(locPID, locCutPair.first, locCutPair.second);
-	}
-
-	// Highly Recommended: Very loose DAnalysisAction cuts, applied just after creating the combination (before saving it)
-	if(locFSInfo->exclusive())
-	{
-		//get cut pair
-		pair<double, double> locCutPair;
-		Particle_t locMissingPID;
-		bool locMissingParticleFlag = locReaction->Get_MissingPID(locMissingPID); //false if none missing
-		if(!locMissingParticleFlag)
-			locCutPair = dMissingMassCuts[Unknown];
-		else
-			locCutPair = dMissingMassCuts[locMissingPID];
-
-		if(locCutPair.first >= 0.0)
-			locReaction->Add_ComboPreSelectionAction(new DCutAction_MissingMass(locReaction, false, locCutPair.first, locCutPair.second));
-		else
-			locReaction->Add_ComboPreSelectionAction(new DCutAction_MissingMassSquared(locReaction, false, locCutPair.first, locCutPair.second));
-	}
 }
 
 void DReaction_factory_ReactionFilter::Add_PIDActions(DReaction* locReaction)

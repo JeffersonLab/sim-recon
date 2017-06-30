@@ -205,13 +205,13 @@ jerror_t JEventProcessor_SC_Eff::evnt(jana::JEventLoop* locEventLoop, uint64_t l
 		dTreeFillData.Fill_Single<Float_t>("ProjectedSCHitZ", locPredictedSurfacePosition.Z());
 		dTreeFillData.Fill_Single<UChar_t>("ProjectedSCHitSector", locPredictedSCSector);
 
-		vector<DSCHitMatchParams> locAllSCMatchParams;
+		vector<shared_ptr<const DSCHitMatchParams>> locAllSCMatchParams;
 		locDetectorMatches->Get_SCMatchParams(locTrackTimeBased, locAllSCMatchParams);
 
 		//pre-sort
 		set<const DSCHit*> locMatchedSCHits;
 		for(auto locSCMatchParams : locAllSCMatchParams)
-			locMatchedSCHits.insert(locSCMatchParams.dSCHit);
+			locMatchedSCHits.insert(locSCMatchParams->dSCHit);
 
 		//FILL ARRAYS
 		size_t locArrayIndex = 0;
@@ -219,15 +219,15 @@ jerror_t JEventProcessor_SC_Eff::evnt(jana::JEventLoop* locEventLoop, uint64_t l
 		{
 			const DSCHit* locSCHit = locSCHits[loc_i];
 
-			DSCHitMatchParams locSCHitMatchParams;
+			shared_ptr<DSCHitMatchParams> locSCHitMatchParams;
 			if(!locParticleID->Distance_ToTrack(locTrackTimeBased->rt, locSCHit, locTrackTimeBased->t0(), locSCHitMatchParams))
 				continue;
 
-			double locDeltaT = locSCHitMatchParams.dHitTime - locSCHitMatchParams.dFlightTime - locChargedTrackHypothesis->time();
+			double locDeltaT = locSCHitMatchParams->dHitTime - locSCHitMatchParams->dFlightTime - locChargedTrackHypothesis->time();
 			bool locIsMatchedToTrack = (locMatchedSCHits.find(locSCHit) != locMatchedSCHits.end());
 
 			dTreeFillData.Fill_Array<UChar_t>("SCHitSector", locSCHit->sector, locArrayIndex);
-			dTreeFillData.Fill_Array<Float_t>("TrackHitDeltaPhi", locSCHitMatchParams.dDeltaPhiToHit, locArrayIndex); //is signed: SC - Track
+			dTreeFillData.Fill_Array<Float_t>("TrackHitDeltaPhi", locSCHitMatchParams->dDeltaPhiToHit, locArrayIndex); //is signed: SC - Track
 			dTreeFillData.Fill_Array<Float_t>("TrackHitDeltaT", locDeltaT, locArrayIndex); //is signed: SC - Track
 			dTreeFillData.Fill_Array<Bool_t>("IsMatchedToTrack", locIsMatchedToTrack, locArrayIndex);
 

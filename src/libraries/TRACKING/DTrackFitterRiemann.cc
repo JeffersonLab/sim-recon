@@ -7,6 +7,7 @@
 #include "DTrackFitterRiemann.h"
 #include "START_COUNTER/DSCHit.h"
 #include "HDGEOMETRY/DMaterialMap.h"
+#include "PID/DParticleID.h"
 #include <TDecompLU.h>
 #include <math.h>
 #include <cmath>

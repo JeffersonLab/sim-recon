@@ -10,6 +10,7 @@
 
 
 #include "DTrackFitter.h"
+#include "PID/DParticleID.h"
 #include "HDGEOMETRY/DRootGeom.h"
 using namespace jana;
 

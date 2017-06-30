@@ -21,10 +21,12 @@ class DTrackWireBased:public DTrackingData{
 		JOBJECT_PUBLIC(DTrackWireBased);
 		
 		//CONSTRUCTORS
+		DTrackWireBased(void) = delete;
 		DTrackWireBased(DTrackWireBased& locSourceData, bool locShareTrackingFlag = false, bool locShareKinematicsFlag = false);
 		DTrackWireBased(DTrackingData& locSourceData, bool locShareTrackingFlag = false, bool locShareKinematicsFlag = false);
 		DTrackWireBased(DKinematicData& locSourceData, bool locShareKinematicsFlag = false);
-		DTrackWireBased(const DTrackWireBased& locSourceData) = delete;
+		DTrackWireBased(const DTrackWireBased& locSourceData){*this = locSourceData;}
+		DTrackWireBased(const DTrackingData& locSourceData);
 
 		oid_t candidateid;	///< which DTrackCandidate this came from
 		float chisq;			///< Chi-squared for the track (not chisq/dof!)
@@ -56,5 +58,6 @@ bool locShareKinematicsFlag) : DTrackingData(locSourceData, locShareTrackingFlag
 inline DTrackWireBased::DTrackWireBased(DKinematicData& locSourceData, bool locShareKinematicsFlag) :
 DTrackingData(locSourceData, false, locShareKinematicsFlag){}
 
+inline DTrackWireBased::DTrackWireBased(const DTrackingData& locSourceData) : DTrackingData(locSourceData){}
 #endif // _DTrackWireBased_
 

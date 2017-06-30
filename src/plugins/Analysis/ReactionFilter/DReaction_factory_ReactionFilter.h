@@ -45,7 +45,6 @@ class DReaction_factory_ReactionFilter : public jana::JFactory<DReaction>
 
 		// Actions & cuts
 		void Define_LooseCuts(void);
-		void Add_PreComboCuts(DReaction* locReaction, FSInfo* locFSInfo);
 		void Add_PIDActions(DReaction* locReaction);
 		void Add_MassHistograms(DReaction* locReaction, FSInfo* locFSInfo, bool locUseKinFitResultsFlag, string locBaseUniqueName = "");
 

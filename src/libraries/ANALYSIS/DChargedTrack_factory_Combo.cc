@@ -33,6 +33,10 @@ jerror_t DChargedTrack_factory_Combo::evnt(jana::JEventLoop *locEventLoop, uint6
 	vector<const DChargedTrack*> locChargedTracks;
 	locEventLoop->Get(locChargedTracks, dTrackSelectionTag.c_str());
 
+	map<JObject::oid_t, const DChargedTrack*> locTrackToCandidateID;
+	for(auto locChargedTrack : locChargedTracks)
+		locTrackToCandidateID.emplace(locChargedTrack->candidateid, locChargedTrack);
+
 	vector<const DTrackTimeBased*> locTimeBasedTracks;
 	locEventLoop->Get(locTimeBasedTracks, "Combo");
 
@@ -46,8 +50,7 @@ jerror_t DChargedTrack_factory_Combo::evnt(jana::JEventLoop *locEventLoop, uint6
 	unordered_map<const DChargedTrack*, vector<const DTrackTimeBased*>> locTimeBasedByChargedTrack;
 	for(auto& locTimeBasedTrack : locTimeBasedTracks)
 	{
-		const DChargedTrack* locChargedTrack = nullptr;
-		locTimeBasedTrack->GetSingle(locChargedTrack);
+		auto locChargedTrack = locTrackToCandidateID[locTimeBasedTrack->candidateid];
 		locTimeBasedByChargedTrack[locChargedTrack].push_back(locTimeBasedTrack);
 	}
 

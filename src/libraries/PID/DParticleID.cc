@@ -1383,7 +1383,7 @@ bool DParticleID::Get_ClosestToTrack(const DReferenceTrajectory* rt, const vecto
 		return false;
 
 	//Loop over SC points
-	vector<shared_ptr<DSCHitMatchParams> > locSCHitMatchParamsVector;
+	vector<shared_ptr<const DSCHitMatchParams> > locSCHitMatchParamsVector;
 	vector<pair<shared_ptr<DSCHitMatchParams>, pair<DVector3, DVector3> > > locMatchProjectionPairs;
 	for(size_t loc_i = 0; loc_i < locSCHits.size(); ++loc_i)
 	{
@@ -1399,7 +1399,7 @@ bool DParticleID::Get_ClosestToTrack(const DReferenceTrajectory* rt, const vecto
 			if(!Distance_ToTrack(rt, locSCHits[loc_i], locStartTime, locSCHitMatchParams, &locProjPos, &locProjMom))
 				continue;
 		}
-		locSCHitMatchParamsVector.push_back(locSCHitMatchParams);
+		locSCHitMatchParamsVector.push_back(std::const_pointer_cast<const DSCHitMatchParams>(locSCHitMatchParams));
 		auto locMatchProjectionPair = make_pair(locSCHitMatchParams, make_pair(locProjPos, locProjMom));
 		locMatchProjectionPairs.push_back(locMatchProjectionPair);
 	}
@@ -1769,15 +1769,15 @@ double DParticleID::Calc_TimingChiSq(const DNeutralParticleHypothesis* locNeutra
 	{
 		// not matched to any hits
 		locNDF = 0;
-		locPull = 0.0;
+		locTimingPull = 0.0;
 		return 0.0;
 	}
 
 	double locStartTimeError = locNeutralHypo->t0_err();
 	double locTimeDifferenceVariance = (*locNeutralHypo->errorMatrix())(6, 6) + locStartTimeError*locStartTimeError;
-	locPull = (locNeutralHypo->t0() - locNeutralHypo->time())/sqrt(locTimeDifferenceVariance);
+	locTimingPull = (locNeutralHypo->t0() - locNeutralHypo->time())/sqrt(locTimeDifferenceVariance);
 	locNDF = 1;
-	return locPull*locPull;
+	return locTimingPull*locTimingPull;
 }
 
 void DParticleID::Calc_ChargedPIDFOM(DChargedTrackHypothesis* locChargedTrackHypothesis) const

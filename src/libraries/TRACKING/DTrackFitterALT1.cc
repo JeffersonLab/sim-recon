@@ -20,6 +20,7 @@ using namespace jana;
 
 #include "GlueX.h"
 #include "DANA/DApplication.h"
+#include "PID/DParticleID.h"
 #include "DMagneticFieldStepper.h"
 #include "DTrackCandidate.h"
 #include "DTrackFitterALT1.h"

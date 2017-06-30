@@ -612,7 +612,8 @@ jerror_t JEventProcessor_HLDetectorTiming::evnt(JEventLoop *loop, uint64_t event
 
         if (pionHypothesis == NULL) continue;
 
-        double trackingFOM = TMath::Prob(pionHypothesis->dChiSq_Track, pionHypothesis->dNDF_Track);
+			auto locTrackTimeBased = pionHypothesis->Get_TrackTimeBased();
+        double trackingFOM = TMath::Prob(locTrackTimeBased->chisq, locTrackTimeBased->Ndof);
         // Some quality cuts for the tracks we will use
         // Keep this minimal for now and investigate later
         //float trackingFOMCut = 0.01;
@@ -621,15 +622,15 @@ jerror_t JEventProcessor_HLDetectorTiming::evnt(JEventLoop *loop, uint64_t event
         unsigned int trackingNDFCut = 5;
 
         if(trackingFOM < trackingFOMCut) continue;
-        if( pionHypothesis->dNDF_Track < trackingNDFCut) continue;
+        if( locTrackTimeBased->Ndof < trackingNDFCut) continue;
 
         //////////////////////////////////////////
         // get best matches to SC/TOF/FCAL/BCAL //
         //////////////////////////////////////////
-        const DSCHitMatchParams      *locSCHitMatchParams       = pionHypothesis->Get_SCHitMatchParams();
-        const DTOFHitMatchParams     *locTOFHitMatchParams      = pionHypothesis->Get_TOFHitMatchParams();
-        const DFCALShowerMatchParams *locFCALShowerMatchParams  = pionHypothesis->Get_FCALShowerMatchParams();
-        const DBCALShowerMatchParams *locBCALShowerMatchParams  = pionHypothesis->Get_BCALShowerMatchParams();
+        auto locSCHitMatchParams       = pionHypothesis->Get_SCHitMatchParams();
+        auto locTOFHitMatchParams      = pionHypothesis->Get_TOFHitMatchParams();
+        auto locFCALShowerMatchParams  = pionHypothesis->Get_FCALShowerMatchParams();
+        auto locBCALShowerMatchParams  = pionHypothesis->Get_BCALShowerMatchParams();
 
         // We will only use tracks matched to the start counter for our calibration since this will be our reference for t0
         if (locSCHitMatchParams == NULL) continue;
@@ -650,8 +651,8 @@ jerror_t JEventProcessor_HLDetectorTiming::evnt(JEventLoop *loop, uint64_t event
                 NBINS_RF_COMPARE, MIN_RF_COMPARE, MAX_RF_COMPARE);
 
         // Get the pulls vector from the track
-        const DTrackTimeBased *thisTimeBasedTrack;
-        pionHypothesis->GetSingle(thisTimeBasedTrack);
+			auto thisTimeBasedTrack = pionHypothesis->Get_TrackTimeBased();
+
         vector<DTrackFitter::pull_t> pulls = thisTimeBasedTrack->pulls;
         double earliestCDCTime = 10000.;
         double earliestFDCTime = 10000.;

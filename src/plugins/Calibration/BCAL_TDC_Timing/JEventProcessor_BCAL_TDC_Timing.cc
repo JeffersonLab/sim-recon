@@ -295,13 +295,12 @@ jerror_t JEventProcessor_BCAL_TDC_Timing::evnt(JEventLoop *loop, uint64_t eventn
 	  if (bestHypothesis == NULL) continue;
 
       // Now from this hypothesis we can get the detector matches to the BCAL
-      const DBCALShowerMatchParams* bcalMatch = bestHypothesis->Get_BCALShowerMatchParams();
-      const DSCHitMatchParams* scMatch = bestHypothesis->Get_SCHitMatchParams(); // Needed for quality cut later
+      auto bcalMatch = bestHypothesis->Get_BCALShowerMatchParams();
+      auto scMatch = bestHypothesis->Get_SCHitMatchParams(); // Needed for quality cut later
       if (bcalMatch == NULL) continue; 
 
       // We also need the reference trajectory, which is buried deep in there
-      const DTrackTimeBased *timeBasedTrack = nullptr;
-      bestHypothesis->GetSingle(timeBasedTrack);
+      const DTrackTimeBased *timeBasedTrack = bestHypothesis->Get_TrackTimeBased();
       const DReferenceTrajectory *rt = timeBasedTrack->rt;
 
 	  // Use CDC dEdx to help reject protons

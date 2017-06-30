@@ -260,14 +260,14 @@ jerror_t JEventProcessor_TOF_Eff::evnt(jana::JEventLoop* locEventLoop, uint64_t 
 
 		//Find closest TOF point
 		double locStartTime = locTrackTimeBased->t0();
-		DTOFHitMatchParams locClosestMatchParams;
+		shared_ptr<const DTOFHitMatchParams> locClosestMatchParams;
 		double locBestPointDeltaX = 999.9, locBestPointDeltaY = 999.9;
 		const DTOFPoint* locClosestTOFPoint = nullptr;
 		if(locParticleID->Get_ClosestToTrack(locTrackTimeBased->rt, locTOFPoints, false, locStartTime, locClosestMatchParams))
 		{
-			locClosestTOFPoint = locClosestMatchParams.dTOFPoint;
-			locBestPointDeltaX = locClosestMatchParams.dDeltaXToHit;
-			locBestPointDeltaY = locClosestMatchParams.dDeltaYToHit;
+			locClosestTOFPoint = locClosestMatchParams->dTOFPoint;
+			locBestPointDeltaX = locClosestMatchParams->dDeltaXToHit;
+			locBestPointDeltaY = locClosestMatchParams->dDeltaYToHit;
 		}
 
 		//Find closest TOF paddles
@@ -278,7 +278,7 @@ jerror_t JEventProcessor_TOF_Eff::evnt(jana::JEventLoop* locEventLoop, uint64_t 
 		const DTOFPaddleHit* locClosestTOFPaddleHit_Horizontal = locParticleID->Get_ClosestTOFPaddleHit_Horizontal(locTrackTimeBased->rt, locTOFPaddleHits, locStartTime, locBestPaddleDeltaY, locBestPaddleDistance_Horizontal);
 
 		//Is match to TOF point?
-		const DTOFHitMatchParams* locTOFHitMatchParams = locChargedTrackHypothesis->Get_TOFHitMatchParams();
+		auto locTOFHitMatchParams = locChargedTrackHypothesis->Get_TOFHitMatchParams();
 		bool locIsMatchedToTrack = (locTOFHitMatchParams != nullptr);
 
 		//If so, calc PID info: timing, dE/dx
@@ -393,7 +393,7 @@ int JEventProcessor_TOF_Eff::Calc_NearestHit(const DTOFPaddleHit* locPaddleHit) 
 
 bool JEventProcessor_TOF_Eff::Cut_FCALTiming(const DChargedTrackHypothesis* locChargedTrackHypothesis, const DParticleID* locParticleID, const DEventRFBunch* locEventRFBunch)
 {
-	const DFCALShowerMatchParams* locFCALShowerMatchParams = locChargedTrackHypothesis->Get_FCALShowerMatchParams();
+	auto locFCALShowerMatchParams = locChargedTrackHypothesis->Get_FCALShowerMatchParams();
 	if(locFCALShowerMatchParams == NULL)
 		return true; //don't require FCAL hit: limits reach of study
 
@@ -406,7 +406,7 @@ bool JEventProcessor_TOF_Eff::Cut_FCALTiming(const DChargedTrackHypothesis* locC
 
 double JEventProcessor_TOF_Eff::Calc_TOFTiming(const DChargedTrackHypothesis* locChargedTrackHypothesis, const DParticleID* locParticleID, const DEventRFBunch* locEventRFBunch, double& locDeltaT)
 {
-	const DTOFHitMatchParams* locTOFHitMatchParams = locChargedTrackHypothesis->Get_TOFHitMatchParams();
+	auto locTOFHitMatchParams = locChargedTrackHypothesis->Get_TOFHitMatchParams();
 	if(locTOFHitMatchParams == nullptr)
 		return -1.0;
 

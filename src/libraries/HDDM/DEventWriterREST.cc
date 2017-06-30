@@ -338,14 +338,14 @@ bool DEventWriterREST::Write_RESTEvent(JEventLoop* locEventLoop, string locOutpu
 		hddm_r::DetectorMatchesList matches = res().addDetectorMatcheses(1);
 		for(size_t loc_j = 0; loc_j < tracks.size(); ++loc_j)
 		{
-			vector<DBCALShowerMatchParams> locBCALShowerMatchParamsVector;
+			vector<shared_ptr<const DBCALShowerMatchParams>> locBCALShowerMatchParamsVector;
 			locDetectorMatches[loc_i]->Get_BCALMatchParams(tracks[loc_j], locBCALShowerMatchParamsVector);
 			for(size_t loc_k = 0; loc_k < locBCALShowerMatchParamsVector.size(); ++loc_k)
 			{
 				hddm_r::BcalMatchParamsList bcalList = matches().addBcalMatchParamses(1);
 				bcalList().setTrack(loc_j);
 
-				const DBCALShower* locBCALShower = locBCALShowerMatchParamsVector[loc_k].dBCALShower;
+				const DBCALShower* locBCALShower = locBCALShowerMatchParamsVector[loc_k]->dBCALShower;
 				size_t locBCALindex = 0;
 				for(; locBCALindex < bcalshowers.size(); ++locBCALindex)
 				{
@@ -354,22 +354,22 @@ bool DEventWriterREST::Write_RESTEvent(JEventLoop* locEventLoop, string locOutpu
 				}
 				bcalList().setShower(locBCALindex);
 
-				bcalList().setDeltaphi(locBCALShowerMatchParamsVector[loc_k].dDeltaPhiToShower);
-				bcalList().setDeltaz(locBCALShowerMatchParamsVector[loc_k].dDeltaZToShower);
-				bcalList().setDx(locBCALShowerMatchParamsVector[loc_k].dx);
-				bcalList().setPathlength(locBCALShowerMatchParamsVector[loc_k].dPathLength);
-				bcalList().setTflight(locBCALShowerMatchParamsVector[loc_k].dFlightTime);
-				bcalList().setTflightvar(locBCALShowerMatchParamsVector[loc_k].dFlightTimeVariance);
+				bcalList().setDeltaphi(locBCALShowerMatchParamsVector[loc_k]->dDeltaPhiToShower);
+				bcalList().setDeltaz(locBCALShowerMatchParamsVector[loc_k]->dDeltaZToShower);
+				bcalList().setDx(locBCALShowerMatchParamsVector[loc_k]->dx);
+				bcalList().setPathlength(locBCALShowerMatchParamsVector[loc_k]->dPathLength);
+				bcalList().setTflight(locBCALShowerMatchParamsVector[loc_k]->dFlightTime);
+				bcalList().setTflightvar(locBCALShowerMatchParamsVector[loc_k]->dFlightTimeVariance);
 			}
 
-			vector<DFCALShowerMatchParams> locFCALShowerMatchParamsVector;
+			vector<shared_ptr<const DFCALShowerMatchParams>> locFCALShowerMatchParamsVector;
 			locDetectorMatches[loc_i]->Get_FCALMatchParams(tracks[loc_j], locFCALShowerMatchParamsVector);
 			for (size_t loc_k = 0; loc_k < locFCALShowerMatchParamsVector.size(); ++loc_k)
 			{
 				hddm_r::FcalMatchParamsList fcalList = matches().addFcalMatchParamses(1);
 				fcalList().setTrack(loc_j);
 
-				const DFCALShower* locFCALShower = locFCALShowerMatchParamsVector[loc_k].dFCALShower;
+				const DFCALShower* locFCALShower = locFCALShowerMatchParamsVector[loc_k]->dFCALShower;
 				size_t locFCALindex = 0;
 				for(; locFCALindex < fcalshowers.size(); ++locFCALindex)
 				{
@@ -378,14 +378,14 @@ bool DEventWriterREST::Write_RESTEvent(JEventLoop* locEventLoop, string locOutpu
 				}
 				fcalList().setShower(locFCALindex);
 
-				fcalList().setDoca(locFCALShowerMatchParamsVector[loc_k].dDOCAToShower);
-				fcalList().setDx(locFCALShowerMatchParamsVector[loc_k].dx);
-				fcalList().setPathlength(locFCALShowerMatchParamsVector[loc_k].dPathLength);
-				fcalList().setTflight(locFCALShowerMatchParamsVector[loc_k].dFlightTime);
-				fcalList().setTflightvar(locFCALShowerMatchParamsVector[loc_k].dFlightTimeVariance);
+				fcalList().setDoca(locFCALShowerMatchParamsVector[loc_k]->dDOCAToShower);
+				fcalList().setDx(locFCALShowerMatchParamsVector[loc_k]->dx);
+				fcalList().setPathlength(locFCALShowerMatchParamsVector[loc_k]->dPathLength);
+				fcalList().setTflight(locFCALShowerMatchParamsVector[loc_k]->dFlightTime);
+				fcalList().setTflightvar(locFCALShowerMatchParamsVector[loc_k]->dFlightTimeVariance);
 			}
 
-			vector<DTOFHitMatchParams> locTOFHitMatchParamsVector;
+			vector<shared_ptr<const DTOFHitMatchParams>> locTOFHitMatchParamsVector;
 			locDetectorMatches[loc_i]->Get_TOFMatchParams(tracks[loc_j], locTOFHitMatchParamsVector);
 			for(size_t loc_k = 0; loc_k < locTOFHitMatchParamsVector.size(); ++loc_k)
 			{
@@ -395,25 +395,25 @@ bool DEventWriterREST::Write_RESTEvent(JEventLoop* locEventLoop, string locOutpu
 				size_t locTOFindex = 0;
 				for(; locTOFindex < tofpoints.size(); ++locTOFindex)
 				{
-					if(tofpoints[locTOFindex] == locTOFHitMatchParamsVector[loc_k].dTOFPoint)
+					if(tofpoints[locTOFindex] == locTOFHitMatchParamsVector[loc_k]->dTOFPoint)
 						break;
 				}
 				tofList().setHit(locTOFindex);
 
-				tofList().setThit(locTOFHitMatchParamsVector[loc_k].dHitTime);
-				tofList().setThitvar(locTOFHitMatchParamsVector[loc_k].dHitTimeVariance);
-				tofList().setEhit(locTOFHitMatchParamsVector[loc_k].dHitEnergy);
+				tofList().setThit(locTOFHitMatchParamsVector[loc_k]->dHitTime);
+				tofList().setThitvar(locTOFHitMatchParamsVector[loc_k]->dHitTimeVariance);
+				tofList().setEhit(locTOFHitMatchParamsVector[loc_k]->dHitEnergy);
 
-				tofList().setDEdx(locTOFHitMatchParamsVector[loc_k].dEdx);
-				tofList().setPathlength(locTOFHitMatchParamsVector[loc_k].dPathLength);
-				tofList().setTflight(locTOFHitMatchParamsVector[loc_k].dFlightTime);
-				tofList().setTflightvar(locTOFHitMatchParamsVector[loc_k].dFlightTimeVariance);
+				tofList().setDEdx(locTOFHitMatchParamsVector[loc_k]->dEdx);
+				tofList().setPathlength(locTOFHitMatchParamsVector[loc_k]->dPathLength);
+				tofList().setTflight(locTOFHitMatchParamsVector[loc_k]->dFlightTime);
+				tofList().setTflightvar(locTOFHitMatchParamsVector[loc_k]->dFlightTimeVariance);
 
-				tofList().setDeltax(locTOFHitMatchParamsVector[loc_k].dDeltaXToHit);
-				tofList().setDeltay(locTOFHitMatchParamsVector[loc_k].dDeltaYToHit);
+				tofList().setDeltax(locTOFHitMatchParamsVector[loc_k]->dDeltaXToHit);
+				tofList().setDeltay(locTOFHitMatchParamsVector[loc_k]->dDeltaYToHit);
 			}
 
-			vector<DSCHitMatchParams> locSCHitMatchParamsVector;
+			vector<shared_ptr<const DSCHitMatchParams>> locSCHitMatchParamsVector;
 			locDetectorMatches[loc_i]->Get_SCMatchParams(tracks[loc_j], locSCHitMatchParamsVector);
 			for(size_t loc_k = 0; loc_k < locSCHitMatchParamsVector.size(); ++loc_k)
 			{
@@ -423,19 +423,19 @@ bool DEventWriterREST::Write_RESTEvent(JEventLoop* locEventLoop, string locOutpu
 				size_t locSCindex = 0;
 				for(; locSCindex < starthits.size(); ++locSCindex)
 				{
-					if(starthits[locSCindex] == locSCHitMatchParamsVector[loc_k].dSCHit)
+					if(starthits[locSCindex] == locSCHitMatchParamsVector[loc_k]->dSCHit)
 						break;
 				}
 				scList().setHit(locSCindex);
 
-				scList().setDEdx(locSCHitMatchParamsVector[loc_k].dEdx);
-				scList().setDeltaphi(locSCHitMatchParamsVector[loc_k].dDeltaPhiToHit);
-				scList().setEhit(locSCHitMatchParamsVector[loc_k].dHitEnergy);
-				scList().setPathlength(locSCHitMatchParamsVector[loc_k].dPathLength);
-				scList().setTflight(locSCHitMatchParamsVector[loc_k].dFlightTime);
-				scList().setTflightvar(locSCHitMatchParamsVector[loc_k].dFlightTimeVariance);
-				scList().setThit(locSCHitMatchParamsVector[loc_k].dHitTime);
-				scList().setThitvar(locSCHitMatchParamsVector[loc_k].dHitTimeVariance);
+				scList().setDEdx(locSCHitMatchParamsVector[loc_k]->dEdx);
+				scList().setDeltaphi(locSCHitMatchParamsVector[loc_k]->dDeltaPhiToHit);
+				scList().setEhit(locSCHitMatchParamsVector[loc_k]->dHitEnergy);
+				scList().setPathlength(locSCHitMatchParamsVector[loc_k]->dPathLength);
+				scList().setTflight(locSCHitMatchParamsVector[loc_k]->dFlightTime);
+				scList().setTflightvar(locSCHitMatchParamsVector[loc_k]->dFlightTimeVariance);
+				scList().setThit(locSCHitMatchParamsVector[loc_k]->dHitTime);
+				scList().setThitvar(locSCHitMatchParamsVector[loc_k]->dHitTimeVariance);
 			}
 
 			double locFlightTimePCorrelation = 0.0;

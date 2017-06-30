@@ -114,8 +114,7 @@ jerror_t JEventProcessor_TrackingPulls::evnt(JEventLoop *loop, uint64_t eventnum
             "P Vs. #phi; #phi [deg.]; |P| [GeV/c]", 180, -180, 180.0, 50, 0.0, 10.0);
 
       // Get the pulls vector from the track
-      const DTrackTimeBased *thisTimeBasedTrack;
-      bestHypothesis->GetSingle(thisTimeBasedTrack);
+		auto thisTimeBasedTrack = bestHypothesis->Get_TrackTimeBased();
 
       vector<DTrackFitter::pull_t> pulls = thisTimeBasedTrack->pulls;
       for (size_t iPull = 0; iPull < pulls.size(); iPull++){

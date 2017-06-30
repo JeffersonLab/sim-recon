@@ -96,7 +96,7 @@ jerror_t DTrackWireBased_factory_THROWN::evnt(JEventLoop *loop, uint64_t eventnu
 		if(fabs(thrown->charge())<1)continue;
 
 		// First, copy over the DKinematicData part
-		DTrackWireBased *track = new DTrackWireBased(*static_cast<DKinematicData*>(thrown), true); //share the memory: isn't changed below
+		DTrackWireBased *track = new DTrackWireBased(*const_cast<DKinematicData*>(static_cast<const DKinematicData*>(thrown)), true); //share the memory: isn't changed below
 		
 		// Add DMCThrown as associated object
 		track->AddAssociatedObject(thrown);

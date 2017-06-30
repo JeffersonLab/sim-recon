@@ -1424,16 +1424,16 @@ inline static Particle_t DemultiplexPID(int locBit, int locIsDecayingFlag)
 	}
 }
 
-enum Charge_t
+typedef enum
 {
 	d_Charged,
 	d_Positive,
 	d_Negative,
 	d_Neutral,
 	d_AllCharges
-};
+} Charge_t;
 
-inline bool Is_CorrectCharge(Particle_t locPID, Charge_t locCharge)
+inline static int Is_CorrectCharge(Particle_t locPID, Charge_t locCharge)
 {
 	if(locPID == Unknown)
 		return (locCharge == d_AllCharges);
@@ -1449,9 +1449,9 @@ inline bool Is_CorrectCharge(Particle_t locPID, Charge_t locCharge)
 		case d_Charged:
 			return (locIntCharge != 0);
 		case d_AllCharges:
-			return true;
+			return 1;
 		default:
-			return false;
+			return 0;
 	}
 }
 

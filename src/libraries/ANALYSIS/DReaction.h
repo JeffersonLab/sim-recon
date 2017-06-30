@@ -144,7 +144,7 @@ size_t Get_ParticleInstanceIndex(const DReactionStep* locStep, size_t locParticl
 
 /****************************************************** CONSTRUCTORS AND DESTRUCTORS *******************************************************/
 
-DReaction::DReaction(string locReactionName, vector<const DReactionStep*> locSteps, DKinFitType locKinFitType, string locTreeFileName) :
+inline DReaction::DReaction(string locReactionName, vector<const DReactionStep*> locSteps, DKinFitType locKinFitType, string locTreeFileName) :
 dReactionName(locReactionName), dKinFitType(locKinFitType), dKinFitUpdateCovarianceMatricesFlag(false), dEnableTTreeOutputFlag(locTreeFileName != ""),
 dSaveUnusedFlag(false), dTTreeOutputFileName(locTreeFileName), dReactionSteps(locSteps) {}
 
@@ -231,7 +231,7 @@ inline bool Check_IfMissingDecayProduct(const DReaction* locReaction, size_t loc
 	return false;
 }
 
-template <typename DType> map<DType, size_t> Convert_VectorToCountMap(const vector<DType>& locVector)
+template <typename DType> inline map<DType, size_t> Convert_VectorToCountMap(const vector<DType>& locVector)
 {
 	map<DType, size_t> locMap;
 	for(const auto& locObject : locVector)

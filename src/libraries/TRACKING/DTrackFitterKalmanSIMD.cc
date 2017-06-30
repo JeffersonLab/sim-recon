@@ -9,6 +9,7 @@
 #include "HDGEOMETRY/DRootGeom.h"
 #include "DANA/DApplication.h"
 #include <JANA/JCalibration.h>
+#include "PID/DParticleID.h"
 
 #include <TH2F.h>
 #include <TROOT.h>

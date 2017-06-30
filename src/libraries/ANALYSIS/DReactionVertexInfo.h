@@ -71,7 +71,7 @@ inline vector<const DReactionStepVertexInfo*> Get_StepVertexInfos_ReverseOrderBy
 	return locStepVertexInfos;
 }
 
-vector<pair<int, int>> Get_FullConstrainParticles(const DReactionVertexInfo* locReactionVertexInfo, DReactionState_t locState = d_EitherState, Charge_t locCharge = d_AllCharges, bool locIncludeDecayingFlag = true)
+inline vector<pair<int, int>> Get_FullConstrainParticles(const DReactionVertexInfo* locReactionVertexInfo, DReactionState_t locState = d_EitherState, Charge_t locCharge = d_AllCharges, bool locIncludeDecayingFlag = true)
 {
 	//no longer sorted!
 	auto locStepVertexInfos = locReactionVertexInfo->Get_StepVertexInfos();
@@ -84,7 +84,7 @@ vector<pair<int, int>> Get_FullConstrainParticles(const DReactionVertexInfo* loc
 	return locAllFullConstrainParticles;
 }
 
-vector<pair<int, int>> Get_OnlyConstrainTimeParticles(const DReactionVertexInfo* locReactionVertexInfo)
+inline vector<pair<int, int>> Get_OnlyConstrainTimeParticles(const DReactionVertexInfo* locReactionVertexInfo)
 {
 	//no longer sorted!
 	auto locStepVertexInfos = locReactionVertexInfo->Get_StepVertexInfos();

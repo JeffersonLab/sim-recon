@@ -282,7 +282,7 @@ jerror_t JEventProcessor_BCAL_Hadronic_Eff::evnt(jana::JEventLoop* locEventLoop,
 		/************************************************ CHECK SHOWER MATCH EFFICIENCY ************************************************/
 
 		//get the best-matched DBCALShower for this track (if any)
-		const DBCALShowerMatchParams* locBCALShowerMatchParams = locChargedTrackHypothesis->Get_BCALShowerMatchParams();
+		auto locBCALShowerMatchParams = locChargedTrackHypothesis->Get_BCALShowerMatchParams();
 		if(locBCALShowerMatchParams == NULL)
 			continue; //don't compute hit efficiencies
 

@@ -173,12 +173,9 @@ jerror_t JEventProcessor_ST_online_tracking::evnt(JEventLoop *eventLoop, uint64_
     {
       // Grab the charged track
       const DChargedTrack *thisChargedTrack = chargedTrackVector[i];
-      
-      // Declare the time based track object
-      const DTrackTimeBased *timeBasedTrack;
 
       // Grab associated time based track object by selecting charged track with best FOM
-      thisChargedTrack->Get_BestTrackingFOM()->GetSingle(timeBasedTrack);
+      const DTrackTimeBased *timeBasedTrack = thisChargedTrack->Get_BestTrackingFOM()->Get_TrackTimeBased();
       // Implement quality cuts for the time based tracks 
       float trackingFOMCut = 0.0027;  // 3 sigma cut
       if(timeBasedTrack->FOM  < trackingFOMCut)  continue;

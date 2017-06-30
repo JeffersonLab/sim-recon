@@ -111,8 +111,8 @@ jerror_t JEventProcessor_CDC_Cosmics::evnt(JEventLoop *loop, uint64_t eventnumbe
         //if (trackCandidateVector.size() != 1) return NOERROR;
         //const DTrackCandidate* thisTrackCandidate = trackCandidateVector[0];
         // Cut very loosely on the track quality
-        const DTrackTimeBased *thisTimeBasedTrack;
-        bestHypothesis->GetSingle(thisTimeBasedTrack);
+	auto thisTimeBasedTrack = bestHypothesis->Get_TrackTimeBased();
+
         if (thisTimeBasedTrack->FOM < 1E-20) return NOERROR;
         vector<DTrackFitter::pull_t> pulls = thisTimeBasedTrack->pulls;
         // Loop over the pulls to get the appropriate information for our ring

@@ -258,7 +258,7 @@ jerror_t DTrackTimeBased_factory::evnt(JEventLoop *loop, uint64_t eventnumber)
       const DTrackWireBased *track = tracks[i];
 
       // Copy over the results of the wire-based fit to DTrackTimeBased
-      DTrackTimeBased *timebased_track = new DTrackTimeBased(*static_cast<DTrackingData*>(track), true, true); //share the memory (isn't changed below)
+      DTrackTimeBased *timebased_track = new DTrackTimeBased(*static_cast<DTrackingData*>(const_cast<DTrackWireBased*>(track)), true, true); //share the memory (isn't changed below)
       
       timebased_track->rt = track->rt;
       timebased_track->chisq = track->chisq;
@@ -350,7 +350,7 @@ jerror_t DTrackTimeBased_factory::evnt(JEventLoop *loop, uint64_t eventnumber)
 	if (fdchits.size()>0
 	    && cdchits.size()<MIN_CDC_HITS_FOR_TB_FORWARD_TRACKING){
 	  // Copy over the results of the wire-based fit to DTrackTimeBased
-	  DTrackTimeBased *timebased_track = new DTrackTimeBased(*static_cast<DTrackingData*>(track), true, true); //share the memory (isn't changed below)
+	  DTrackTimeBased *timebased_track = new DTrackTimeBased(*const_cast<DTrackingData*>(static_cast<const DTrackingData*>(track)), true, true); //share the memory (isn't changed below)
 	  
 	  timebased_track->rt = track->rt;
 	  timebased_track->chisq = track->chisq;
@@ -748,7 +748,7 @@ void DTrackTimeBased_factory
 
   // Match to the start counter and the outer detectors
   double locStartTimeVariance = 0.0, locStartTime = track->time();  // initial guess from tracking
-  shared_ptr<DSCHitMatchParams> locSCBestMatchParams;
+  shared_ptr<const DSCHitMatchParams> locSCBestMatchParams;
   if(pid_algorithm->Get_ClosestToTrack(track->rt, sc_hits, false, true, locStartTime, locSCBestMatchParams, &locStartTimeVariance))
   {
     // Fill in the start time vector
@@ -759,7 +759,7 @@ void DTrackTimeBased_factory
   }
 
   locStartTime = track->time();
-  shared_ptr<DTOFHitMatchParams> locTOFBestMatchParams;
+  shared_ptr<const DTOFHitMatchParams> locTOFBestMatchParams;
   if(pid_algorithm->Get_ClosestToTrack(track->rt, tof_points, true, locStartTime, locTOFBestMatchParams, &locStartTimeVariance))
   {
     // Fill in the start time vector
@@ -770,7 +770,7 @@ void DTrackTimeBased_factory
   }
 
   locStartTime = track->time();
-  shared_ptr<DBCALShowerMatchParams> locBCALBestMatchParams;
+  shared_ptr<const DBCALShowerMatchParams> locBCALBestMatchParams;
   if(pid_algorithm->Get_ClosestToTrack(track->rt, bcal_showers, true, locStartTime, locBCALBestMatchParams, &locStartTimeVariance))
   {
     // Fill in the start time vector
@@ -781,7 +781,7 @@ void DTrackTimeBased_factory
   }
 
   locStartTime = track->time();
-  shared_ptr<DFCALShowerMatchParams> locFCALBestMatchParams;
+  shared_ptr<const DFCALShowerMatchParams> locFCALBestMatchParams;
   if(pid_algorithm->Get_ClosestToTrack(track->rt, fcal_showers, true, locStartTime, locFCALBestMatchParams, &locStartTimeVariance))
   {
     // Fill in the start time vector
@@ -867,7 +867,7 @@ bool DTrackTimeBased_factory::DoFit(const DTrackWireBased *track,
   case DTrackFitter::kFitNoImprovement:
     {
       // Create a new time-based track object
-      DTrackTimeBased *timebased_track = new DTrackTimeBased(*static_cast<DTrackingData*>(track), true, true); //share the memory (isn't changed below)
+      DTrackTimeBased *timebased_track = new DTrackTimeBased(*const_cast<DTrackingData*>(static_cast<const DTrackingData*>(track)), true, true); //share the memory (isn't changed below)
 
       timebased_track->chisq = track->chisq;
       timebased_track->Ndof = track->Ndof;
@@ -1028,7 +1028,7 @@ void DTrackTimeBased_factory::AddMissingTrackHypothesis(vector<DTrackTimeBased*>
 							double my_mass,
 							double q){
   // Create a new time-based track object
-  DTrackTimeBased *timebased_track = new DTrackTimeBased(*static_cast<DKinematicData*>(src_track), true, false); //share some of the memory (PID changed below)
+  DTrackTimeBased *timebased_track = new DTrackTimeBased(*const_cast<DTrackingData*>(static_cast<const DTrackingData*>(src_track)), true, false); //share some of the memory (PID changed below)
 	  
   // Copy over DKinematicData part from the result of a successful fit
   timebased_track->setPID(pid_algorithm->IDTrack(q, my_mass));

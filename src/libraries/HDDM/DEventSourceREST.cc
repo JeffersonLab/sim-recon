@@ -1042,7 +1042,6 @@ jerror_t DEventSourceREST::Extract_DTrackTimeBased(hddm_r::HDDM *record,
          tra->ddEdx_CDC = diter->getDEdxCDC();
          tra->ddx_FDC = diter->getDxFDC();
          tra->ddx_CDC = diter->getDxCDC();
-         tra->setdEdx((tra->dNumHitsUsedFordEdx_CDC >= tra->dNumHitsUsedFordEdx_FDC) ? tra->ddEdx_CDC : tra->ddEdx_FDC);
       }
       else {
          tra->dNumHitsUsedFordEdx_FDC = 0;
@@ -1051,7 +1050,6 @@ jerror_t DEventSourceREST::Extract_DTrackTimeBased(hddm_r::HDDM *record,
          tra->ddEdx_CDC = 0.0;
          tra->ddx_FDC = 0.0;
          tra->ddx_CDC = 0.0;
-         tra->setdEdx(0.0);
       }
 
       data.push_back(tra);
@@ -1111,16 +1109,16 @@ jerror_t DEventSourceREST::Extract_DDetectorMatches(JEventLoop* locEventLoop, hd
          size_t locShowerIndex = bcalIter->getShower();
          size_t locTrackIndex = bcalIter->getTrack();
 
-         DBCALShowerMatchParams locShowerMatchParams;
-         locShowerMatchParams.dBCALShower = locBCALShowers[locShowerIndex];
-         locShowerMatchParams.dx = bcalIter->getDx();
-         locShowerMatchParams.dFlightTime = bcalIter->getTflight();
-         locShowerMatchParams.dFlightTimeVariance = bcalIter->getTflightvar();
-         locShowerMatchParams.dPathLength = bcalIter->getPathlength();
-         locShowerMatchParams.dDeltaPhiToShower = bcalIter->getDeltaphi();
-         locShowerMatchParams.dDeltaZToShower = bcalIter->getDeltaz();
+         auto locShowerMatchParams = std::make_shared<DBCALShowerMatchParams>();
+         locShowerMatchParams->dBCALShower = locBCALShowers[locShowerIndex];
+         locShowerMatchParams->dx = bcalIter->getDx();
+         locShowerMatchParams->dFlightTime = bcalIter->getTflight();
+         locShowerMatchParams->dFlightTimeVariance = bcalIter->getTflightvar();
+         locShowerMatchParams->dPathLength = bcalIter->getPathlength();
+         locShowerMatchParams->dDeltaPhiToShower = bcalIter->getDeltaphi();
+         locShowerMatchParams->dDeltaZToShower = bcalIter->getDeltaz();
 
-         locDetectorMatches->Add_Match(locTrackTimeBasedVector[locTrackIndex], locBCALShowers[locShowerIndex], locShowerMatchParams);
+         locDetectorMatches->Add_Match(locTrackTimeBasedVector[locTrackIndex], locBCALShowers[locShowerIndex], std::const_pointer_cast<const DBCALShowerMatchParams>(locShowerMatchParams));
       }
 
       const hddm_r::FcalMatchParamsList &fcalList = iter->getFcalMatchParamses();
@@ -1130,15 +1128,15 @@ jerror_t DEventSourceREST::Extract_DDetectorMatches(JEventLoop* locEventLoop, hd
          size_t locShowerIndex = fcalIter->getShower();
          size_t locTrackIndex = fcalIter->getTrack();
 
-         DFCALShowerMatchParams locShowerMatchParams;
-         locShowerMatchParams.dFCALShower = locFCALShowers[locShowerIndex];
-         locShowerMatchParams.dx = fcalIter->getDx();
-         locShowerMatchParams.dFlightTime = fcalIter->getTflight();
-         locShowerMatchParams.dFlightTimeVariance = fcalIter->getTflightvar();
-         locShowerMatchParams.dPathLength = fcalIter->getPathlength();
-         locShowerMatchParams.dDOCAToShower = fcalIter->getDoca();
+         auto locShowerMatchParams = std::make_shared<DFCALShowerMatchParams>();
+         locShowerMatchParams->dFCALShower = locFCALShowers[locShowerIndex];
+         locShowerMatchParams->dx = fcalIter->getDx();
+         locShowerMatchParams->dFlightTime = fcalIter->getTflight();
+         locShowerMatchParams->dFlightTimeVariance = fcalIter->getTflightvar();
+         locShowerMatchParams->dPathLength = fcalIter->getPathlength();
+         locShowerMatchParams->dDOCAToShower = fcalIter->getDoca();
 
-         locDetectorMatches->Add_Match(locTrackTimeBasedVector[locTrackIndex], locFCALShowers[locShowerIndex], locShowerMatchParams);
+         locDetectorMatches->Add_Match(locTrackTimeBasedVector[locTrackIndex], locFCALShowers[locShowerIndex], std::const_pointer_cast<const DFCALShowerMatchParams>(locShowerMatchParams));
       }
 
       const hddm_r::ScMatchParamsList &scList = iter->getScMatchParamses();
@@ -1148,18 +1146,18 @@ jerror_t DEventSourceREST::Extract_DDetectorMatches(JEventLoop* locEventLoop, hd
          size_t locHitIndex = scIter->getHit();
          size_t locTrackIndex = scIter->getTrack();
 
-         DSCHitMatchParams locSCHitMatchParams;
-         locSCHitMatchParams.dSCHit = locSCHits[locHitIndex];
-         locSCHitMatchParams.dEdx = scIter->getDEdx();
-         locSCHitMatchParams.dHitTime = scIter->getThit();
-         locSCHitMatchParams.dHitTimeVariance = scIter->getThitvar();
-         locSCHitMatchParams.dHitEnergy = scIter->getEhit();
-         locSCHitMatchParams.dFlightTime = scIter->getTflight();
-         locSCHitMatchParams.dFlightTimeVariance = scIter->getTflightvar();
-         locSCHitMatchParams.dPathLength = scIter->getPathlength();
-         locSCHitMatchParams.dDeltaPhiToHit = scIter->getDeltaphi();
+         auto locSCHitMatchParams = std::make_shared<DSCHitMatchParams>();
+         locSCHitMatchParams->dSCHit = locSCHits[locHitIndex];
+         locSCHitMatchParams->dEdx = scIter->getDEdx();
+         locSCHitMatchParams->dHitTime = scIter->getThit();
+         locSCHitMatchParams->dHitTimeVariance = scIter->getThitvar();
+         locSCHitMatchParams->dHitEnergy = scIter->getEhit();
+         locSCHitMatchParams->dFlightTime = scIter->getTflight();
+         locSCHitMatchParams->dFlightTimeVariance = scIter->getTflightvar();
+         locSCHitMatchParams->dPathLength = scIter->getPathlength();
+         locSCHitMatchParams->dDeltaPhiToHit = scIter->getDeltaphi();
 
-         locDetectorMatches->Add_Match(locTrackTimeBasedVector[locTrackIndex], locSCHits[locHitIndex], locSCHitMatchParams);
+         locDetectorMatches->Add_Match(locTrackTimeBasedVector[locTrackIndex], locSCHits[locHitIndex], std::const_pointer_cast<const DSCHitMatchParams>(locSCHitMatchParams));
       }
 
       const hddm_r::TofMatchParamsList &tofList = iter->getTofMatchParamses();
@@ -1169,21 +1167,21 @@ jerror_t DEventSourceREST::Extract_DDetectorMatches(JEventLoop* locEventLoop, hd
          size_t locHitIndex = tofIter->getHit();
          size_t locTrackIndex = tofIter->getTrack();
 
-         DTOFHitMatchParams locTOFHitMatchParams;
-         locTOFHitMatchParams.dTOFPoint = locTOFPoints[locHitIndex];
+         auto locTOFHitMatchParams = std::make_shared<DTOFHitMatchParams>();
+         locTOFHitMatchParams->dTOFPoint = locTOFPoints[locHitIndex];
 
-         locTOFHitMatchParams.dHitTime = tofIter->getThit();
-         locTOFHitMatchParams.dHitTimeVariance = tofIter->getThitvar();
-         locTOFHitMatchParams.dHitEnergy = tofIter->getEhit();
+         locTOFHitMatchParams->dHitTime = tofIter->getThit();
+         locTOFHitMatchParams->dHitTimeVariance = tofIter->getThitvar();
+         locTOFHitMatchParams->dHitEnergy = tofIter->getEhit();
 
-         locTOFHitMatchParams.dEdx = tofIter->getDEdx();
-         locTOFHitMatchParams.dFlightTime = tofIter->getTflight();
-         locTOFHitMatchParams.dFlightTimeVariance = tofIter->getTflightvar();
-         locTOFHitMatchParams.dPathLength = tofIter->getPathlength();
-         locTOFHitMatchParams.dDeltaXToHit = tofIter->getDeltax();
-         locTOFHitMatchParams.dDeltaYToHit = tofIter->getDeltay();
+         locTOFHitMatchParams->dEdx = tofIter->getDEdx();
+         locTOFHitMatchParams->dFlightTime = tofIter->getTflight();
+         locTOFHitMatchParams->dFlightTimeVariance = tofIter->getTflightvar();
+         locTOFHitMatchParams->dPathLength = tofIter->getPathlength();
+         locTOFHitMatchParams->dDeltaXToHit = tofIter->getDeltax();
+         locTOFHitMatchParams->dDeltaYToHit = tofIter->getDeltay();
 
-         locDetectorMatches->Add_Match(locTrackTimeBasedVector[locTrackIndex], locTOFPoints[locHitIndex], locTOFHitMatchParams);
+         locDetectorMatches->Add_Match(locTrackTimeBasedVector[locTrackIndex], locTOFPoints[locHitIndex], std::const_pointer_cast<const DTOFHitMatchParams>(locTOFHitMatchParams));
       }
 
       const hddm_r::BcalDOCAtoTrackList &bcaldocaList = iter->getBcalDOCAtoTracks();
