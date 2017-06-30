@@ -162,7 +162,13 @@ DSourceComboer::DSourceComboer(JEventLoop* locEventLoop)
 	else //by reaction
 	{
 		for(const auto& locReaction : locReactions)
-			dRFBunchCutsByReaction.emplace(locReaction, locReaction->Get_NumPlusMinusRFBunches());
+		{
+			auto locNumBunches = locReaction->Get_NumPlusMinusRFBunches();
+			pair<bool, double> locMaxPhotonRFDeltaT = locReaction->Get_MaxPhotonRFDeltaT(); //DEPRECATED!!!
+			if(locMaxPhotonRFDeltaT.first)
+				locNumBunches = size_t(locMaxPhotonRFDeltaT.second/dSourceComboTimeHandler->Get_BeamBunchPeriod() - 0.50001);
+			dRFBunchCutsByReaction.emplace(locReaction, locNumBunches);
+		}
 	}
 
 	//save max bunch cuts

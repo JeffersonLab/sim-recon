@@ -619,7 +619,7 @@ jerror_t JEventProcessor_HLDetectorTiming::evnt(JEventLoop *loop, uint64_t event
         //float trackingFOMCut = 0.01;
         //float trackingFOMCut =0.0027;
         float trackingFOMCut = 2.87E-7;
-        unsigned int trackingNDFCut = 5;
+        int trackingNDFCut = 5;
 
         if(trackingFOM < trackingFOMCut) continue;
         if( locTrackTimeBased->Ndof < trackingNDFCut) continue;

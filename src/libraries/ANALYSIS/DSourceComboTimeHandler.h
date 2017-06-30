@@ -54,6 +54,7 @@ class DSourceComboTimeHandler
 		int Calc_RFBunchShift(double locTimeToStep, double locTimeToStepTo) const;
 		double Calc_RFTime(int locNumRFBunchShifts) const;
 		double Calc_PropagatedRFTime(double locPrimaryVertexZ, int locNumRFBunchShifts, double locDetachedVertexTimeOffset) const;
+		double Get_BeamBunchPeriod(void) const{return dBeamBunchPeriod;}
 
 		//SELECT RF BUNCHES
 		bool Select_RFBunches_Charged(const DReactionVertexInfo* locReactionVertexInfo, const DSourceCombo* locChargedCombo, vector<int>& locValidRFBunches);

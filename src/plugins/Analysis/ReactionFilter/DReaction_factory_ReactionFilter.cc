@@ -306,11 +306,10 @@ void DReaction_factory_ReactionFilter::Define_LooseCuts(void)
 void DReaction_factory_ReactionFilter::Add_PIDActions(DReaction* locReaction)
 {
 	//Histogram before cuts
-	locReaction->Add_ComboPreSelectionAction(new DHistogramAction_PID(locReaction));
+	locReaction->Add_AnalysisAction(new DHistogramAction_PID(locReaction));
 
 	//Get, loop over detected PIDs in reaction
-	deque<Particle_t> locDetectedPIDs;
-	locReaction->Get_DetectedFinalPIDs(locDetectedPIDs);
+	auto locDetectedPIDs = locReaction->Get_FinalPIDs(-1, false, false, d_AllCharges, false);
 	for(auto locPID : locDetectedPIDs)
 	{
 		if(dPIDTimingCuts.find(locPID) == dPIDTimingCuts.end())
@@ -318,16 +317,16 @@ void DReaction_factory_ReactionFilter::Add_PIDActions(DReaction* locReaction)
 
 		//Add timing cuts //false: measured data
 		for(auto locSystemPair : dPIDTimingCuts[locPID])
-			locReaction->Add_ComboPreSelectionAction(new DCutAction_PIDDeltaT(locReaction, false, locSystemPair.second, locPID, locSystemPair.first));
+			locReaction->Add_AnalysisAction(new DCutAction_PIDDeltaT(locReaction, false, locSystemPair.second, locPID, locSystemPair.first));
 
 		//For kaon candidates, cut tracks that don't have a matching hit in a timing detector
 			//Kaons are rare, cut ~necessary to reduce high backgrounds
 		if((locPID == KPlus) || (locPID == KMinus))
-			locReaction->Add_ComboPreSelectionAction(new DCutAction_NoPIDHit(locReaction, locPID));
+			locReaction->Add_AnalysisAction(new DCutAction_NoPIDHit(locReaction, locPID));
 	}
 
 	//Loose dE/dx cuts
-	locReaction->Add_ComboPreSelectionAction(new DCustomAction_dEdxCut(locReaction, false)); //false: focus on keeping signal
+	locReaction->Add_AnalysisAction(new DCustomAction_dEdxCut(locReaction, false)); //false: focus on keeping signal
 }
 
 void DReaction_factory_ReactionFilter::Add_MassHistograms(DReaction* locReaction, FSInfo* locFSInfo, bool locUseKinFitResultsFlag, string locBaseUniqueName)
@@ -341,25 +340,27 @@ void DReaction_factory_ReactionFilter::Add_MassHistograms(DReaction* locReaction
 	{
 		//get cut pair
 		pair<double, double> locCutPair;
-		Particle_t locMissingPID;
-		bool locMissingParticleFlag = locReaction->Get_MissingPID(locMissingPID); //false if none missing
-		if(!locMissingParticleFlag)
-			locCutPair = dMissingMassCuts[Unknown];
-		else
-			locCutPair = dMissingMassCuts[locMissingPID];
+		auto locMissingPIDs = locReaction->Get_MissingPIDs();
+		if(locMissingPIDs.size() < 2)
+		{
+			if(locMissingPIDs.empty())
+				locCutPair = dMissingMassCuts[Unknown];
+			else
+				locCutPair = dMissingMassCuts[locMissingPIDs[0]];
 
-		//determine #bins
-		int locNumBins = int((locCutPair.second - locCutPair.first)*1000.0 + 0.001);
-		if(locNumBins < 200)
-			locNumBins *= 5; //get close to 1000 bins
-		if(locNumBins < 500)
-			locNumBins *= 2; //get close to 1000 bins
+			//determine #bins
+			int locNumBins = int((locCutPair.second - locCutPair.first)*1000.0 + 0.001);
+			if(locNumBins < 200)
+				locNumBins *= 5; //get close to 1000 bins
+			if(locNumBins < 500)
+				locNumBins *= 2; //get close to 1000 bins
 
-		//add histogram action
-		if(locCutPair.first >= 0.0)
-			locReaction->Add_AnalysisAction(new DHistogramAction_MissingMass(locReaction, false, locNumBins, locCutPair.first, locCutPair.second, locBaseUniqueName));
-		else
-			locReaction->Add_AnalysisAction(new DHistogramAction_MissingMassSquared(locReaction, false, locNumBins, locCutPair.first, locCutPair.second, locBaseUniqueName));
+			//add histogram action
+			if(locCutPair.first >= 0.0)
+				locReaction->Add_AnalysisAction(new DHistogramAction_MissingMass(locReaction, false, locNumBins, locCutPair.first, locCutPair.second, locBaseUniqueName));
+			else
+				locReaction->Add_AnalysisAction(new DHistogramAction_MissingMassSquared(locReaction, false, locNumBins, locCutPair.first, locCutPair.second, locBaseUniqueName));
+		}
 	}
 
 	//invariant mass

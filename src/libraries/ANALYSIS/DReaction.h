@@ -54,6 +54,7 @@ class DReaction : public JObject
 
 		// SET PRE-DPARTICLECOMBO CUT VALUES //Command-line values will override these values
 		void Set_NumPlusMinusRFBunches(size_t locNumPlusMinusRFBunches){dNumPlusMinusRFBunches = locNumPlusMinusRFBunches;}
+		void Set_MaxPhotonRFDeltaT(double locMaxPhotonRFDeltaT){cout << "WARNING: USING DReaction::Set_MaxPhotonRFDeltaT() IS DEPRECATED. PLEASE SWITCH TO Set_NumPlusMinusRFBunches()" << endl; dMaxPhotonRFDeltaT = pair<bool, double>(true, locMaxPhotonRFDeltaT);} //DEPRECATED!!!
 		void Set_MaxExtraGoodTracks(size_t locMaxExtraGoodTracks){dMaxExtraGoodTracks = pair<bool, size_t>(true, locMaxExtraGoodTracks);}
 		void Set_MaxNumBeamPhotonsInBunch(size_t locMaxNumBeamPhotonsInBunch){dMaxNumBeamPhotonsInBunch = pair<bool, size_t>(true, locMaxNumBeamPhotonsInBunch);}
 
@@ -75,7 +76,7 @@ class DReaction : public JObject
 
 		// GET PIDS //step index of -1: All steps
 		vector<Particle_t> Get_FinalPIDs(int locStepIndex = -1, bool locIncludeMissingFlag = true, bool locIncludeDecayingFlag = true,
-				Charge_t locCharge = d_AllCharges, bool locIncludeDuplicatesFlag = true) const;
+		Charge_t locCharge = d_AllCharges, bool locIncludeDuplicatesFlag = true) const;
 		vector<Particle_t> Get_MissingPIDs(int locStepIndex = -1, Charge_t locCharge = d_AllCharges, bool locIncludeDuplicatesFlag = true) const;
 
 		// GET ANALYSIS ACTIONS:
@@ -84,6 +85,7 @@ class DReaction : public JObject
 
 		// GET PRE-DPARTICLECOMBO CUT VALUES //Command-line values will override these values
 		size_t Get_NumPlusMinusRFBunches(void) const{return dNumPlusMinusRFBunches;}
+		pair<bool, double> Get_MaxPhotonRFDeltaT(void) const{return dMaxPhotonRFDeltaT;} //DEPRECATED!!!
 		pair<bool, size_t> Get_MaxExtraGoodTracks(void) const{return dMaxExtraGoodTracks;}
 		pair<bool, size_t> Get_MaxNumBeamPhotonsInBunch(void) const{return dMaxNumBeamPhotonsInBunch;}
 
@@ -122,6 +124,7 @@ class DReaction : public JObject
 			//bool = true/false for cut enabled/disabled, double = cut value
 			//Command-line values (variable names are below in all-caps) will override these values
 		size_t dNumPlusMinusRFBunches = 99999; //COMBO:NUM_PLUSMINUS_RF_BUNCHES //e.g. if 0 then only center bunch, if 2 then +/- 2 bunches
+		pair<bool, double> dMaxPhotonRFDeltaT = make_pair(false, 0.0); //DEPRECATED!!!!
 		pair<bool, size_t> dMaxExtraGoodTracks = make_pair(false, size_t(0)); //COMBO:MAX_EXTRA_GOOD_TRACKS - "good" defined by PreSelect factory
 		pair<bool, int> dMaxNumBeamPhotonsInBunch = make_pair(false, 0); //COMBO:MAX_NUM_BEAM_PHOTONS cut out combos with more than this # of beam photons surviving the RF delta-t cut
 

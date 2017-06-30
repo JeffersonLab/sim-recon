@@ -182,8 +182,8 @@ jerror_t JEventProcessor_ST_online_tracking::evnt(JEventLoop *eventLoop, uint64_
       // Get the charge of the track and cut on charged tracks
       int q = timeBasedTrack->charge();
       // Grab the ST hit match params object and cut on only tracks matched to the ST
-      DSCHitMatchParams locSCHitMatchParams;
-      bool foundSC = dParticleID->Get_BestSCMatchParams(timeBasedTrack, locDetectorMatches, locSCHitMatchParams);
+      shared_ptr<const DSCHitMatchParams> locBestSCHitMatchParams;
+      bool foundSC = dParticleID->Get_BestSCMatchParams(timeBasedTrack, locDetectorMatches, locBestSCHitMatchParams);
       if (!foundSC) continue;
       // Define vertex vector
       DVector3 vertex;
@@ -208,12 +208,13 @@ jerror_t JEventProcessor_ST_online_tracking::evnt(JEventLoop *eventLoop, uint64_
       //   through the scintillator with its origin at the intersection point
       DVector3 IntersectionMomentum;
       // Grab the paramteres associated to a track matched to the ST
-      vector<DSCHitMatchParams> st_params;
+      vector<shared_ptr<const DSCHitMatchParams>> st_params;
       bool st_match = locDetectorMatches->Get_SCMatchParams(timeBasedTrack, st_params); 
       // If st_match = true, there is a match between this track and the ST
       if (!st_match) continue;
 
-      bool st_match_pid = dParticleID->Cut_MatchDistance(timeBasedTrack->rt, st_params[0].dSCHit, st_params[0].dSCHit->t, locSCHitMatchParams, true, &IntersectionPoint, &IntersectionMomentum);
+      shared_ptr<DSCHitMatchParams> locSCHitMatchParams;
+      bool st_match_pid = dParticleID->Cut_MatchDistance(timeBasedTrack->rt, st_params[0]->dSCHit, st_params[0]->dSCHit->t, locSCHitMatchParams, true, &IntersectionPoint, &IntersectionMomentum);
       if(!st_match_pid) continue;  
 
       DVector3 momentum_vec;
@@ -227,10 +228,10 @@ jerror_t JEventProcessor_ST_online_tracking::evnt(JEventLoop *eventLoop, uint64_
       if (st_match_pid)  // Get the intersection point which can not be obtained from st_match
 	{
 	  // Grab the sector
-	  Int_t sector_m = st_params[0].dSCHit->sector;
+	  Int_t sector_m = st_params[0]->dSCHit->sector;
 	  //Acquire the energy loss per unit length in the ST (arbitrary units)
-	  double dEdx = st_params[0].dEdx;
-	  double dphi = st_params[0].dDeltaPhiToHit*RAD2DEG;
+	  double dEdx = st_params[0]->dEdx;
+	  double dphi = st_params[0]->dDeltaPhiToHit*RAD2DEG;
 	  // Fill dEdx vs Momentum 
 	  h2_dedx_P_mag->Fill(P_mag,dEdx);
 	  // Fill dEdx vs Momentum with cut on positive charges  

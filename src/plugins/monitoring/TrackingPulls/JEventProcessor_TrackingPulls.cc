@@ -83,7 +83,8 @@ jerror_t JEventProcessor_TrackingPulls::evnt(JEventLoop *loop, uint64_t eventnum
 
       if (bestHypothesis == NULL) continue;
 
-      double trackingFOM = TMath::Prob(bestHypothesis->dChiSq_Track, bestHypothesis->dNDF_Track);
+		auto locTrackTimeBased = bestHypothesis->Get_TrackTimeBased();
+      double trackingFOM = TMath::Prob(locTrackTimeBased->chisq, locTrackTimeBased->Ndof);
 
       // Some quality cuts for the tracks we will use
       // Keep this minimal for now and investigate later
@@ -91,7 +92,7 @@ jerror_t JEventProcessor_TrackingPulls::evnt(JEventLoop *loop, uint64_t eventnum
       unsigned int trackingNDFCut = 5;
 
       if(trackingFOM < trackingFOMCut) continue;
-      if( bestHypothesis->dNDF_Track < trackingNDFCut) continue;
+      if( locTrackTimeBased->Ndof < trackingNDFCut) continue;
 
       double phi = bestHypothesis->momentum().Phi()*TMath::RadToDeg();
       double theta = bestHypothesis->momentum().Theta()*TMath::RadToDeg();

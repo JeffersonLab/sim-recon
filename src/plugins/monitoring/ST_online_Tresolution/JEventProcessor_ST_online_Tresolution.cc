@@ -188,8 +188,8 @@ jerror_t JEventProcessor_ST_online_Tresolution::evnt(JEventLoop *loop, uint64_t 
       if(timeBasedTrack->FOM  < trackingFOMCut) continue;
 
       // Grab the ST hit match params object and cut on only tracks matched to the ST
-      shared_ptr<const DSCHitMatchParams> locSCHitMatchParams;
-      foundSC = dParticleID->Get_BestSCMatchParams(timeBasedTrack, locDetectorMatches, locSCHitMatchParams);
+      shared_ptr<const DSCHitMatchParams> locBestSCHitMatchParams;
+      foundSC = dParticleID->Get_BestSCMatchParams(timeBasedTrack, locDetectorMatches, locBestSCHitMatchParams);
       if (!foundSC) continue;
       
       // Define vertex vector and cut on target/scattering chamber geometry
@@ -207,6 +207,7 @@ jerror_t JEventProcessor_ST_online_Tresolution::evnt(JEventLoop *loop, uint64_t 
       if (!st_match) continue;
      
       DVector3 IntersectionPoint, IntersectionMomentum;
+      shared_ptr<DSCHitMatchParams> locSCHitMatchParams;
       bool sc_match_pid = dParticleID->Cut_MatchDistance(timeBasedTrack->rt, st_params[0]->dSCHit, st_params[0]->dSCHit->t, locSCHitMatchParams, true, &IntersectionPoint, &IntersectionMomentum);
       if(!sc_match_pid) continue; 
       // Cut on the number of particle votes to find the best RF time
