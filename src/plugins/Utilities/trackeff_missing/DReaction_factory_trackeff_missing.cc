@@ -384,7 +384,7 @@ set<Particle_t> DReaction_factory_trackeff_missing::Get_InvariantMassPIDs(DReact
 	{
 		const DReactionStep* locReactionStep = locReaction->Get_ReactionStep(loc_i);
 		Particle_t locDecayingPID = locReactionStep->Get_InitialPID();
-		bool locMissingMassFlag = locReaction->Check_IfMissingDecayProduct(loc_i);
+		bool locMissingMassFlag = DAnalysis::Check_IfMissingDecayProduct(locReaction, loc_i);
 		if(locMissingMassFlag)
 			continue;
 		if(locP4FitFlag && locReactionStep->Get_KinFitConstrainInitMassFlag() && IsFixedMass(locDecayingPID))
@@ -407,7 +407,7 @@ map<Particle_t, pair<int, deque<Particle_t> > > DReaction_factory_trackeff_missi
 	{
 		const DReactionStep* locReactionStep = locReaction->Get_ReactionStep(loc_i);
 		Particle_t locDecayingPID = locReactionStep->Get_InitialPID();
-		bool locMissingMassFlag = locReaction->Check_IfMissingDecayProduct(loc_i);
+		bool locMissingMassFlag = DAnalysis::Check_IfMissingDecayProduct(locReaction, loc_i);
 		if(!locMissingMassFlag)
 			continue;
 		if(locP4FitFlag && locReactionStep->Get_KinFitConstrainInitMassFlag() && IsFixedMass(locDecayingPID))
@@ -420,7 +420,7 @@ map<Particle_t, pair<int, deque<Particle_t> > > DReaction_factory_trackeff_missi
 
 		//get production step, other PIDs in that step
 		deque<Particle_t> locMissingMassOffOfPIDs;
-		int locDecayFromStep = locReaction->Get_InitialParticleDecayFromIndices(loc_i).first;
+		int locDecayFromStep = DAnalysis::Get_InitialParticleDecayFromIndices(locReaction, loc_i).first;
 		locReaction->Get_ReactionStep(locDecayFromStep)->Get_FinalPIDs(locMissingMassOffOfPIDs);
 		for(size_t loc_j = 0; loc_j < locMissingMassOffOfPIDs.size(); ++loc_j)
 		{
@@ -434,17 +434,13 @@ map<Particle_t, pair<int, deque<Particle_t> > > DReaction_factory_trackeff_missi
 	}
 
 	//overall missing
-	Particle_t locMissingPID;
-	bool locMissingParticleFlag = locReaction->Get_MissingPID(locMissingPID); //false if none missing
-	if(locMissingParticleFlag && (locMissingPID == Unknown)) //inclusive: no cut
+	if(locReaction->Get_IsInclusiveFlag()) //inclusive: no cut
 		return locMissingPIDs;
-	if(locP4FitFlag && (IsFixedMass(locMissingPID) || !locMissingParticleFlag))
+	auto locMissingPIDVector = locReaction->Get_MissingPIDs();
+	auto locMissingPID = (locMissingPIDs.size() == 1) ? locMissingPIDs[0] : Unknown;
+	if(locP4FitFlag && (IsFixedMass(locMissingPIDVector[0]) || (locMissingPID == Unknown)))
 		return locMissingPIDs; //mass constrained by kinfit
-
-	if(!locMissingParticleFlag) //no missing particle
-		locMissingPID = Unknown;
 	locMissingPIDs[locMissingPID] = pair<int, deque<Particle_t> >(0, deque<Particle_t>());
-
 	return locMissingPIDs;
 }
 
@@ -493,8 +489,7 @@ void DReaction_factory_trackeff_missing::Add_PIDActions(DReaction* locReaction)
 	locReaction->Add_AnalysisAction(new DHistogramAction_PID(locReaction));
 
 	//Get, loop over detected PIDs in reaction
-	deque<Particle_t> locDetectedPIDs;
-	locReaction->Get_DetectedFinalPIDs(locDetectedPIDs);
+	auto locDetectedPIDs = locReaction->Get_FinalPIDs(-1, false, false, d_AllCharges, false);
 	for(auto locPID : locDetectedPIDs)
 	{
 		if(dPIDTimingCuts.find(locPID) == dPIDTimingCuts.end())
@@ -502,16 +497,16 @@ void DReaction_factory_trackeff_missing::Add_PIDActions(DReaction* locReaction)
 
 		//Add timing cuts //false: measured data
 		for(auto locSystemPair : dPIDTimingCuts[locPID])
-			locReaction->Add_ComboPreSelectionAction(new DCutAction_PIDDeltaT(locReaction, false, locSystemPair.second, locPID, locSystemPair.first));
+			locReaction->Add_AnalysisAction(new DCutAction_PIDDeltaT(locReaction, false, locSystemPair.second, locPID, locSystemPair.first));
 
 		//For kaon candidates, cut tracks that don't have a matching hit in a timing detector
 			//Kaons are rare, cut ~necessary to reduce high backgrounds
 		if((locPID == KPlus) || (locPID == KMinus))
-			locReaction->Add_ComboPreSelectionAction(new DCutAction_NoPIDHit(locReaction, locPID));
+			locReaction->Add_AnalysisAction(new DCutAction_NoPIDHit(locReaction, locPID));
 	}
 
 	//Loose dE/dx cuts
-	locReaction->Add_ComboPreSelectionAction(new DCustomAction_dEdxCut_trackeff(locReaction, false)); //false: focus on keeping signal
+	locReaction->Add_AnalysisAction(new DCustomAction_dEdxCut_trackeff(locReaction, false)); //false: focus on keeping signal
 }
 
 void DReaction_factory_trackeff_missing::Add_MassHistograms(DReaction* locReaction, bool locKinFitFlag, string locBaseUniqueName)
