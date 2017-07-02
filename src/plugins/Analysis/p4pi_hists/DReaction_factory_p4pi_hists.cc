@@ -79,12 +79,6 @@ jerror_t DReaction_factory_p4pi_hists::evnt(JEventLoop* locEventLoop, uint64_t l
 	// string is file name (must end in ".root"!!): doen't need to be unique, feel free to change
 	// locReaction->Enable_TTreeOutput("tree_p4pi_hists.root", false); //true/false: do/don't save unused hypotheses
 
-	/************************************************** p4pi_hists Pre-Combo Custom Cuts *************************************************/
-
-	// Highly Recommended: Very loose DAnalysisAction cuts, applied just after creating the combination (before saving it)
-	// Example: Missing mass of proton
-	locReaction->Add_ComboPreSelectionAction(new DCutAction_MissingMass(locReaction, false, -0.2, 0.2));
-
 	/**************************************************** p4pi_hists Analysis Actions ****************************************************/
 
 	

@@ -59,12 +59,6 @@ jerror_t DReaction_factory_p2pi_hists::evnt(JEventLoop* locEventLoop, uint64_t l
 	// Highly Recommended: When generating particle combinations, reject all beam photons that match to a different RF bunch
 	locReaction->Set_MaxPhotonRFDeltaT(0.5*dBeamBunchPeriod);
 
-	/************************************************** p2pi_preco Pre-Combo Custom Cuts *************************************************/
-
-	// Highly Recommended: Very loose DAnalysisAction cuts, applied just after creating the combination (before saving it)
-	// Example: Missing mass squared of proton
-	locReaction->Add_ComboPreSelectionAction(new DCutAction_MissingMassSquared(locReaction, false, -0.1, 0.1));
-
 	/**************************************************** p2pi_preco Analysis Actions ****************************************************/
 
 	// Recommended: Analysis actions automatically performed by the DAnalysisResults factories to histogram useful quantities.
@@ -132,12 +126,6 @@ jerror_t DReaction_factory_p2pi_hists::evnt(JEventLoop* locEventLoop, uint64_t l
 
 	// Highly Recommended: When generating particle combinations, reject all beam photons that match to a different RF bunch
 	locReaction->Set_MaxPhotonRFDeltaT(0.5*dBeamBunchPeriod);
-
-	/************************************************** p2pi_preco_kinfit Pre-Combo Custom Cuts *************************************************/
-
-	// Highly Recommended: Very loose DAnalysisAction cuts, applied just after creating the combination (before saving it)
-	// Example: Missing mass squared of proton
-	locReaction->Add_ComboPreSelectionAction(new DCutAction_MissingMassSquared(locReaction, false, -0.1, 0.1));
 
 	/**************************************************** p2pi_preco_kinfit Analysis Actions ****************************************************/
 

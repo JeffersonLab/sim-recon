@@ -14,8 +14,9 @@ void DCustomAction_CutNoDetectorHit::Initialize(JEventLoop* locEventLoop)
 		//This is so that when running multithreaded, only one thread is writing to the ROOT file at a time. 
 	//NEVER: Get anything from the JEventLoop while in a lock: May deadlock
 
-	const DReaction* locReaction = Get_Reaction();
-	if(!locReaction->Get_MissingPID(dMissingPID))
+	auto locMissingPIDs = Get_Reaction()->Get_MissingPIDs();
+	dMissingPID = (locMissingPIDs.size() == 1) ? locMissingPIDs[0] : Unknown;
+	if(locMissingPIDs.size() != 1)
 		return; //invalid reaction setup
 
 	DApplication* locApplication = dynamic_cast<DApplication*>(locEventLoop->GetJApplication());
@@ -100,7 +101,7 @@ bool DCustomAction_CutNoDetectorHit::Perform_Action(JEventLoop* locEventLoop, co
 	if(ParticleCharge(dMissingPID) == 0)
 		return false; //NOT SUPPORTED
 
-	const DKinematicData* locMissingParticle = locParticleCombo->Get_MissingParticle(); //is NULL if no kinfit!!
+	auto locMissingParticle = (locParticleCombo->Get_MissingParticles(Get_Reaction()))[0]; //is NULL if no kinfit!!
 	if(locMissingParticle == nullptr)
 		return false;
 
@@ -126,39 +127,39 @@ bool DCustomAction_CutNoDetectorHit::Perform_Action(JEventLoop* locEventLoop, co
 	locEventLoop->Get(locSCHits);
 
 	// MATCHING: BCAL
-	DBCALShowerMatchParams locBestBCALMatchParams;
+	shared_ptr<const DBCALShowerMatchParams> locBestBCALMatchParams;
 	double locStartTimeVariance = 0.0;
 	DVector3 locProjPos, locProjMom;
 	double locStartTime = locParticleCombo->Get_ParticleComboStep(0)->Get_SpacetimeVertex().T();
 	bool locBCALHitFoundFlag = dParticleID->Get_ClosestToTrack(&rt, locBCALShowers, false, locStartTime, locBestBCALMatchParams, &locStartTimeVariance, &locProjPos, &locProjMom);
 	double locBCALProjectedZ = locProjPos.Z();
-	double locBCALDeltaPhi = locBestBCALMatchParams.dDeltaPhiToShower*180.0/TMath::Pi();
+	double locBCALDeltaPhi = locBestBCALMatchParams->dDeltaPhiToShower*180.0/TMath::Pi();
 
 	// MATCHING: FCAL
-	DFCALShowerMatchParams locBestFCALMatchParams;
+	shared_ptr<const DFCALShowerMatchParams> locBestFCALMatchParams;
 	locStartTime = locParticleCombo->Get_ParticleComboStep(0)->Get_SpacetimeVertex().T();
 	bool locFCALHitFoundFlag = dParticleID->Get_ClosestToTrack(&rt, locFCALShowers, false, locStartTime, locBestFCALMatchParams);
 
 	// MATCHING: SC
-	DSCHitMatchParams locBestSCMatchParams;
+	shared_ptr<const DSCHitMatchParams> locBestSCMatchParams;
 	locStartTime = locParticleCombo->Get_ParticleComboStep(0)->Get_SpacetimeVertex().T();
 	bool locSCHitFoundFlag = dParticleID->Get_ClosestToTrack(&rt, locSCHits, true, false, locStartTime, locBestSCMatchParams, &locStartTimeVariance, &locProjPos, &locProjMom);
 	double locSCProjectedZ = locProjPos.Z();
-	double locSCDeltaPhi = locBestSCMatchParams.dDeltaPhiToHit*180.0/TMath::Pi();
+	double locSCDeltaPhi = locBestSCMatchParams->dDeltaPhiToHit*180.0/TMath::Pi();
 
 	// MATCHING: TOF
-	DTOFHitMatchParams locBestTOFMatchParams;
+	shared_ptr<const DTOFHitMatchParams> locBestTOFMatchParams;
 	locStartTime = locParticleCombo->Get_ParticleComboStep(0)->Get_SpacetimeVertex().T();
 	bool locTOFHitFoundFlag = dParticleID->Get_ClosestToTrack(&rt, locTOFPoints, false, locStartTime, locBestTOFMatchParams);
 	double locTOFDistance = 999.9;
 	if(locTOFHitFoundFlag)
 	{
-		double locDeltaX = locBestTOFMatchParams.dDeltaXToHit;
-		double locDeltaY = locBestTOFMatchParams.dDeltaYToHit;
-		if(locBestTOFMatchParams.dTOFPoint->Is_XPositionWellDefined() == locBestTOFMatchParams.dTOFPoint->Is_YPositionWellDefined())
+		double locDeltaX = locBestTOFMatchParams->dDeltaXToHit;
+		double locDeltaY = locBestTOFMatchParams->dDeltaYToHit;
+		if(locBestTOFMatchParams->dTOFPoint->Is_XPositionWellDefined() == locBestTOFMatchParams->dTOFPoint->Is_YPositionWellDefined())
 			locTOFDistance = sqrt(locDeltaX*locDeltaX + locDeltaY*locDeltaY);
 		else
-			locTOFDistance = locBestTOFMatchParams.dTOFPoint->Is_XPositionWellDefined() ? locDeltaX : locDeltaY;
+			locTOFDistance = locBestTOFMatchParams->dTOFPoint->Is_XPositionWellDefined() ? locDeltaX : locDeltaY;
 	}
 
 	//FILL HISTOGRAMS
@@ -174,15 +175,15 @@ bool DCustomAction_CutNoDetectorHit::Perform_Action(JEventLoop* locEventLoop, co
 			dHist_BCALDeltaPhiVsP->Fill(locP, locBCALDeltaPhi);
 			dHistMap_BCALDeltaPhiVsZ->Fill(locBCALProjectedZ, locBCALDeltaPhi);
 			dHistMap_BCALDeltaPhiVsTheta->Fill(locTheta, locBCALDeltaPhi);
-			dHist_BCALDeltaZVsTheta->Fill(locTheta, locBestBCALMatchParams.dDeltaZToShower);
-			dHistMap_BCALDeltaZVsZ->Fill(locBCALProjectedZ, locBestBCALMatchParams.dDeltaZToShower);
+			dHist_BCALDeltaZVsTheta->Fill(locTheta, locBestBCALMatchParams->dDeltaZToShower);
+			dHistMap_BCALDeltaZVsZ->Fill(locBCALProjectedZ, locBestBCALMatchParams->dDeltaZToShower);
 		}
 
 		//FCAL
 		if(locFCALHitFoundFlag)
 		{
-			dHist_FCALTrackDistanceVsP->Fill(locP, locBestFCALMatchParams.dDOCAToShower);
-			dHist_FCALTrackDistanceVsTheta->Fill(locTheta, locBestFCALMatchParams.dDOCAToShower);
+			dHist_FCALTrackDistanceVsP->Fill(locP, locBestFCALMatchParams->dDOCAToShower);
+			dHist_FCALTrackDistanceVsTheta->Fill(locTheta, locBestFCALMatchParams->dDOCAToShower);
 		}
 
 		//TOF Point
@@ -224,10 +225,10 @@ bool DCustomAction_CutNoDetectorHit::Perform_Action(JEventLoop* locEventLoop, co
 
 	//BCAL Hit
 	if(locBCALHitFoundFlag)
-		return ((fabs(locBCALDeltaPhi) < 10.0) && (fabs(locBestBCALMatchParams.dDeltaZToShower) < 15.0));
+		return ((fabs(locBCALDeltaPhi) < 10.0) && (fabs(locBestBCALMatchParams->dDeltaZToShower) < 15.0));
 
 	//MUST HAVE FCAL & TOF //extrapolation is poor: wide cuts
 	if(!locTOFHitFoundFlag || !locFCALHitFoundFlag)
 		return false;
-	return ((locTOFDistance < 50.0) && (locBestFCALMatchParams.dDOCAToShower < 50.0));
+	return ((locTOFDistance < 50.0) && (locBestFCALMatchParams->dDOCAToShower < 50.0));
 }

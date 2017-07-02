@@ -41,6 +41,7 @@ class DParticleCombo
 		vector<const DParticleComboStep*> Get_ParticleComboSteps(void) const{return dParticleComboSteps;}
 
 		// GET PARTICLES
+		vector<const DKinematicData*> Get_MissingParticles(const DReaction* locReaction) const;
 		vector<const DKinematicData*> Get_FinalParticles(const DReaction* locReaction, bool locIncludeMissingFlag = true, bool locIncludeDecayingFlag = true, Charge_t locCharge = d_AllCharges) const;
 		vector<const DKinematicData*> Get_FinalParticles_Measured(const DReaction* locReaction, Charge_t locCharge = d_AllCharges) const;
 		vector<const JObject*> Get_FinalParticle_SourceObjects(Charge_t locCharge = d_AllCharges) const;
@@ -118,6 +119,18 @@ inline vector<const JObject*> DParticleCombo::Get_FinalParticle_SourceObjects(Ch
 		locSourceObjects.insert(locSourceObjects.end(), locStepSourceObjects.begin(), locStepSourceObjects.end());
 	}
 	return locSourceObjects;
+}
+
+inline vector<const DKinematicData*> DParticleCombo::Get_MissingParticles(const DReaction* locReaction) const
+{
+	vector<const DKinematicData*> locParticles;
+	for(size_t loc_i = 0; loc_i < locReaction->Get_NumReactionSteps(); ++loc_i)
+	{
+		auto locMissingParticle = dParticleComboSteps[loc_i]->Get_MissingParticle(locReaction->Get_ReactionStep(loc_i));
+		if(locMissingParticle != nullptr)
+			locParticles.push_back(locMissingParticle);
+	}
+	return locParticles;
 }
 
 inline vector<const DKinematicData*> DParticleCombo::Get_DecayChainParticles_Measured(const DReaction* locReaction, int locStepIndex) const

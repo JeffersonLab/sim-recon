@@ -34,8 +34,7 @@ bool DCustomAction_dEdxCut_trackeff::Perform_Action(JEventLoop* locEventLoop, co
 	//NEVER: Grab DParticleCombo or DAnalysisResults objects (of any tag!) from the JEventLoop within this function
 	//NEVER: Grab objects that are created post-kinfit (e.g. DKinFitResults, etc.) from the JEventLoop if Get_UseKinFitResultsFlag() == false: CAN CAUSE INFINITE DEPENDENCY LOOP
 
-	deque<const DKinematicData*> locParticles;
-	locParticleCombo->Get_DetectedFinalChargedParticles_Measured(locParticles);
+	auto locParticles = locParticleCombo->Get_FinalParticles_Measured(Get_Reaction(), d_Charged);
 	for(size_t loc_i = 0; loc_i < locParticles.size(); ++loc_i)
 	{
 		const DChargedTrackHypothesis* locChargedTrackHypothesis = static_cast<const DChargedTrackHypothesis*>(locParticles[loc_i]);
@@ -56,7 +55,7 @@ bool DCustomAction_dEdxCut_trackeff::Cut_dEdx(const DChargedTrackHypothesis* loc
 
 	//if requested max rejection, only do so if no timing information
 		//assume time resolution good enough to separate protons and pions
-	bool locHasNoTimeInfoFlag = (locChargedTrackHypothesis->dNDF_Timing == 0);
+	bool locHasNoTimeInfoFlag = (locChargedTrackHypothesis->Get_NDF_Timing() == 0);
 
 	if(!Cut_dEdx(locPID, locP, locTrackTimeBased->ddEdx_CDC*1.0E6, locHasNoTimeInfoFlag))
 		return false;

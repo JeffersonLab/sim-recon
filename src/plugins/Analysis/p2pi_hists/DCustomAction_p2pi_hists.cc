@@ -51,7 +51,8 @@ void DCustomAction_p2pi_hists::Initialize(JEventLoop* locEventLoop)
 	locEventLoop->GetSingle(dAnalysisUtilities);
 
 	// check if a particle is missing
-	Get_Reaction()->Get_MissingPID(dMissingPID);
+	auto locMissingPIDs = Get_Reaction()->Get_MissingPIDs();
+	dMissingPID = (locMissingPIDs.size() == 1) ? locMissingPIDs[0] : Unknown;
 
 	//CREATE THE HISTOGRAMS
 	//Since we are creating histograms, the contents of gDirectory will be modified: must use JANA-wide ROOT lock
@@ -104,16 +105,8 @@ bool DCustomAction_p2pi_hists::Perform_Action(JEventLoop* locEventLoop, const DP
 	const DParticleComboStep* locParticleComboStep = locParticleCombo->Get_ParticleComboStep(0);
 
 	// get beam photon energy and final state particles
-        const DKinematicData* locBeamPhoton = NULL;
-        deque<const DKinematicData*> locParticles;
-        if(!Get_UseKinFitResultsFlag()) { //measured
-		locBeamPhoton = locParticleComboStep->Get_InitialParticle_Measured();
-                locParticleComboStep->Get_FinalParticles_Measured(locParticles);
-	}
-	else {
-		locBeamPhoton = locParticleComboStep->Get_InitialParticle();
-		locParticleComboStep->Get_FinalParticles(locParticles);
-	}
+	auto locBeamPhoton = Get_UseKinFitResultsFlag() ? locParticleComboStep->Get_InitialParticle() : locParticleComboStep->Get_InitialParticle_Measured();
+	auto locParticles = Get_UseKinFitResultsFlag() ? locParticleComboStep->Get_FinalParticles() : locParticleComboStep->Get_FinalParticles_Measured();
         double locBeamPhotonEnergy = locBeamPhoton->energy();
 
 	// calculate 2pi P4
@@ -125,7 +118,7 @@ bool DCustomAction_p2pi_hists::Perform_Action(JEventLoop* locEventLoop, const DP
         }
 
 	// calculate missing P4
-	DLorentzVector locMissingP4 = dAnalysisUtilities->Calc_MissingP4(locParticleCombo,Get_UseKinFitResultsFlag());
+	DLorentzVector locMissingP4 = dAnalysisUtilities->Calc_MissingP4(Get_Reaction(), locParticleCombo,Get_UseKinFitResultsFlag());
 
 	// reconstructed proton variables
 	double dEdx = 0.;
@@ -133,7 +126,7 @@ bool DCustomAction_p2pi_hists::Perform_Action(JEventLoop* locEventLoop, const DP
 	if(dMissingPID != Proton) {
 		const DChargedTrack* locChargedTrack = static_cast<const DChargedTrack*>(locParticleComboStep->Get_FinalParticle_SourceObject(0));
 		const DChargedTrackHypothesis* locChargedTrackHypothesis = locChargedTrack->Get_Hypothesis(Proton);
-		dEdx = locChargedTrackHypothesis->dEdx()*1e6; // convert to keV
+		dEdx = locChargedTrackHypothesis->Get_TrackTimeBased()->dEdx()*1e6; // convert to keV
 		locProtonP4 = locChargedTrackHypothesis->lorentzMomentum();	
 	}
 	else locProtonP4 = locMissingP4;

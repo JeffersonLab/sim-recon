@@ -30,6 +30,7 @@ class DTrackTimeBased:public DTrackingData{
 		DTrackTimeBased(const DTrackTimeBased& locSourceData){*this = locSourceData;}
 		DTrackTimeBased(const DTrackingData& locSourceData);
 
+		double dEdx(void) const{return ((dNumHitsUsedFordEdx_CDC >= dNumHitsUsedFordEdx_FDC) ? ddEdx_CDC : ddEdx_FDC);}
 		typedef struct{
 		  unsigned int inner_layer;
 		  unsigned int outer_layer;

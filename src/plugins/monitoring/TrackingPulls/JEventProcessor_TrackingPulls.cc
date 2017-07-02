@@ -89,7 +89,7 @@ jerror_t JEventProcessor_TrackingPulls::evnt(JEventLoop *loop, uint64_t eventnum
       // Some quality cuts for the tracks we will use
       // Keep this minimal for now and investigate later
       float trackingFOMCut = 0.001;
-      unsigned int trackingNDFCut = 5;
+      int trackingNDFCut = 5;
 
       if(trackingFOM < trackingFOMCut) continue;
       if( locTrackTimeBased->Ndof < trackingNDFCut) continue;

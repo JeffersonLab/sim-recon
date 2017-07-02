@@ -159,16 +159,8 @@ bool DCustomAction_p2gamma_unusedHists::Perform_Action(JEventLoop* locEventLoop,
 	const DParticleComboStep* locParticleComboStep = locParticleCombo->Get_ParticleComboStep(0);
 
 	// get beam photon energy and final state particles
-        const DKinematicData* locBeamPhoton = NULL;
-        deque<const DKinematicData*> locParticles;
-        if(!Get_UseKinFitResultsFlag()) { //measured
-		locBeamPhoton = locParticleComboStep->Get_InitialParticle_Measured();
-                locParticleComboStep->Get_FinalParticles_Measured(locParticles);
-	}
-	else {
-		locBeamPhoton = locParticleComboStep->Get_InitialParticle();
-		locParticleComboStep->Get_FinalParticles(locParticles);
-	}
+	auto locBeamPhoton = Get_UseKinFitResultsFlag() ? locParticleComboStep->Get_InitialParticle() : locParticleComboStep->Get_InitialParticle_Measured();
+	auto locParticles = Get_UseKinFitResultsFlag() ? locParticleComboStep->Get_FinalParticles() : locParticleComboStep->Get_FinalParticles_Measured();
 	double locBeamPhotonTime = locBeamPhoton->time();
 
 	// detector matches for charged track -to- shower matching
@@ -191,9 +183,7 @@ bool DCustomAction_p2gamma_unusedHists::Perform_Action(JEventLoop* locEventLoop,
 
                         const DChargedTrack* locChargedTrack = static_cast<const DChargedTrack*>(locParticleComboStep->Get_FinalParticle_SourceObject(loc_i));
                         if(locChargedTrack == NULL) continue; // should never happen
-
-                        const DChargedTrackHypothesis* locChargedTrackHypothesis = locChargedTrack->Get_BestFOM();
-                        if(locChargedTracks[loc_j]->Get_BestFOM()->candidateid == locChargedTrackHypothesis->candidateid) {
+                        if(locChargedTracks[loc_j]->candidateid == locChargedTrack->candidateid) {
                                 nMatched++;
 				FillTrack(locChargedTracks[loc_j], true);
 			}

@@ -58,12 +58,6 @@ jerror_t DReaction_factory_p2k_hists::evnt(JEventLoop* locEventLoop, uint64_t lo
 	locReaction->Set_MaxPhotonRFDeltaT(0.5*dBeamBunchPeriod); //beam bunches are every 4.008 ns, (2.004 should be minimum cut value)
 	locReaction->Set_MaxExtraGoodTracks(4);
 
-	/************************************************** p2k_preco Pre-Combo Custom Cuts *************************************************/
-
-	// Highly Recommended: Very loose DAnalysisAction cuts, applied just after creating the combination (before saving it)
-	// Example: Missing mass squared of proton
-	locReaction->Add_ComboPreSelectionAction(new DCutAction_MissingMassSquared(locReaction, false, -0.1, 0.1));
-
 	/**************************************************** p2k_preco Analysis Actions ****************************************************/
 
 	// Recommended: Analysis actions automatically performed by the DAnalysisResults factories to histogram useful quantities.
@@ -121,12 +115,6 @@ jerror_t DReaction_factory_p2k_hists::evnt(JEventLoop* locEventLoop, uint64_t lo
 
 	locReaction->Set_MaxPhotonRFDeltaT(0.5*dBeamBunchPeriod); //beam bunches are every 4.008 ns, (2.004 should be minimum cut value)
 	locReaction->Set_MaxExtraGoodTracks(4);
-
-	/************************************************** p2k_preco_kinfit Pre-Combo Custom Cuts *************************************************/
-
-	// Highly Recommended: Very loose DAnalysisAction cuts, applied just after creating the combination (before saving it)
-	// Example: Missing mass squared of proton
-	locReaction->Add_ComboPreSelectionAction(new DCutAction_MissingMassSquared(locReaction, false, -0.1, 0.1));
 
 	/**************************************************** p2k_preco_kinfit Analysis Actions ****************************************************/
 
