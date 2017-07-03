@@ -200,21 +200,14 @@ jerror_t DReaction_factory_${ReactionFactoryTag}::evnt(JEventLoop* locEventLoop,
 		//Particles are of type Particle_t, an enum defined in sim-recon/src/libraries/include/particleType.h
 
 	//Example: g, p -> pi+, pi-, pi0, (p)
-	locReactionStep = new DReactionStep();
-	locReactionStep->Set_InitialParticleID(Gamma);
-	locReactionStep->Set_TargetParticleID(Proton);
-	locReactionStep->Add_FinalParticleID(PiPlus);
-	locReactionStep->Add_FinalParticleID(PiMinus);
-	locReactionStep->Add_FinalParticleID(Pi0);
-	locReactionStep->Add_FinalParticleID(Proton, true); //true: proton missing
+	//Inputs: Beam, target, non-missing final-state particles (vector), missing final state particle (none by default), bool inclusive_flag = false by default
+	locReactionStep = new DReactionStep(Gamma, Proton, {PiPlus, PiMinus, Pi0}, Proton);
 	locReaction->Add_ReactionStep(locReactionStep);
 	dReactionStepPool.push_back(locReactionStep); //register so will be deleted later: prevent memory leak
 
 	//Example: pi0 -> g, g
-	locReactionStep = new DReactionStep();
-	locReactionStep->Set_InitialParticleID(Pi0);
-	locReactionStep->Add_FinalParticleID(Gamma);
-	locReactionStep->Add_FinalParticleID(Gamma);
+	//Inputs: Decaying, non-missing final-state particles (vector), missing final state particle (none by default), bool inclusive_flag = false by default
+	locReactionStep = new DReactionStep(Pi0, {Gamma, Gamma});
 	//locReactionStep->Set_KinFitConstrainInitMassFlag(false); //default: true //ignored if p4 not fit or is beam //phi, omega not constrained regardless
 	locReaction->Add_ReactionStep(locReactionStep);
 	dReactionStepPool.push_back(locReactionStep); //register so will be deleted later: prevent memory leak
@@ -234,15 +227,7 @@ jerror_t DReaction_factory_${ReactionFactoryTag}::evnt(JEventLoop* locEventLoop,
 	// locReaction->Set_KinFitType(d_P4AndVertexFit);
 
 	// Highly Recommended: When generating particle combinations, reject all beam photons that match to a different RF bunch
-	locReaction->Set_MaxPhotonRFDeltaT(1.5*dBeamBunchPeriod); //1.5: +/-1 sideband
-
-	// Optional: When generating particle combinations, reject all photon candidates with a PID confidence level < 5.73303E-7 (+/- 5-sigma)
-	// Make sure PID errors are calculated correctly before using. 
-	//locReaction->Set_MinPhotonPIDFOM(5.73303E-7);
-
-	// Optional: When generating particle combinations, reject all charged track candidates with a PID confidence level < 5.73303E-7 (+/- 5-sigma)
-	// Make sure PID errors are calculated correctly before using. 
-	//locReaction->Set_MinChargedPIDFOM(5.73303E-7);
+	locReaction->Set_NumPlusMinusRFBunches(1); //1: 3 bunches, -1, 0, 1
 
 	// Highly Recommended: Cut on number of extra \"good\" tracks. \"Good\" tracks are ones that survive the \"PreSelect\" (or user custom) factory.
 		// Important: Keep cut large: Can have many ghost and accidental tracks that look \"good\"
@@ -251,16 +236,6 @@ jerror_t DReaction_factory_${ReactionFactoryTag}::evnt(JEventLoop* locEventLoop,
 	// Highly Recommended: Enable ROOT TTree output for this DReaction
 	// string is file name (must end in \".root\"!!): doen't need to be unique, feel free to change
 	// locReaction->Enable_TTreeOutput(\"tree_${ReactionName}.root\", false); //true/false: do/don't save unused hypotheses
-
-	/************************************************** ${ReactionName} Pre-Combo Custom Cuts *************************************************/
-
-	// Highly Recommended: Very loose invariant mass cuts, applied during DParticleComboBlueprint construction
-	// Example: pi0 -> g, g cut
-	// locReaction->Set_InvariantMassCut(Pi0, 0.0, 0.3);
-
-	// Highly Recommended: Very loose DAnalysisAction cuts, applied just after creating the combination (before saving it)
-	// Example: Missing mass of proton
-	// locReaction->Add_ComboPreSelectionAction(new DCutAction_MissingMass(locReaction, false, 0.7, 1.2));
 
 	/**************************************************** ${ReactionName} Analysis Actions ****************************************************/
 

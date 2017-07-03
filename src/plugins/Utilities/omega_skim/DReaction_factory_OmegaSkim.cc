@@ -94,16 +94,6 @@ jerror_t DReaction_factory_OmegaSkim::evnt(JEventLoop* locEventLoop, uint64_t lo
   // Highly Recommended: When generating particle combinations, reject all beam photons that match to a different RF bunch
   locReaction->Set_MaxPhotonRFDeltaT(0.5*dBeamBunchPeriod);
 
-  /************************************************** p3pi_preco_2FCAL Pre-Combo Custom Cuts *************************************************/
-
-  // Highly Recommended: Very loose invariant mass cuts, applied during DParticleComboBlueprint construction
-  locReaction->Set_InvariantMassCut(Pi0, 0.05, 0.22);
-  locReaction->Set_InvariantMassCut(omega, 0.4, 1.2);
-
-  // Highly Recommended: Very loose DAnalysisAction cuts, applied just after creating the combination (before saving it)
-  // Example: Missing mass squared of proton
-  locReaction->Add_ComboPreSelectionAction(new DCutAction_MissingMassSquared(locReaction, false, -0.1, 0.1));
-
   /**************************************************** p3pi_preco_2FCAL Analysis Actions ****************************************************/
 
   // PID

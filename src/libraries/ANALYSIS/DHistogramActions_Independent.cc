@@ -1186,13 +1186,13 @@ void DHistogramAction_DetectorMatching::Fill_MatchingHists(JEventLoop* locEventL
 	}
 
 	//PROJECTED HIT POSITIONS
-	map<const DTrackingData*, pair<int, bool> > dProjectedSCPaddleMap; //pair: paddle, hit-barrel-flag (false if bend/nose)
-	map<const DTrackingData*, pair<int, int> > dProjectedTOF2DPaddlesMap; //pair: vertical, horizontal
-	map<const DTrackingData*, pair<float, float> > dProjectedTOFXYMap; //pair: x, y
-	map<const DTrackingData*, pair<int, int> > dProjectedFCALRowColumnMap; //pair: column, row
-	map<const DTrackingData*, pair<float, float> > dProjectedFCALXYMap; //pair: x, y
-	map<const DTrackingData*, pair<float, int> > dProjectedBCALModuleSectorMap; //pair: z, module
-	map<const DTrackingData*, pair<float, float> > dProjectedBCALPhiZMap; //pair: z, phi
+	map<const DTrackingData*, pair<int, bool> > locProjectedSCPaddleMap; //pair: paddle, hit-barrel-flag (false if bend/nose)
+	map<const DTrackingData*, pair<int, int> > locProjectedTOF2DPaddlesMap; //pair: vertical, horizontal
+	map<const DTrackingData*, pair<float, float> > locProjectedTOFXYMap; //pair: x, y
+	map<const DTrackingData*, pair<int, int> > locProjectedFCALRowColumnMap; //pair: column, row
+	map<const DTrackingData*, pair<float, float> > locProjectedFCALXYMap; //pair: x, y
+	map<const DTrackingData*, pair<float, int> > locProjectedBCALModuleSectorMap; //pair: z, module
+	map<const DTrackingData*, pair<float, float> > locProjectedBCALPhiZMap; //pair: z, phi
 	for(auto locTrackIterator = locBestTrackMap.begin(); locTrackIterator != locBestTrackMap.end(); ++locTrackIterator)
 	{
 		const DTrackingData* locTrack = locTrackIterator->second;

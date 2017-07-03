@@ -1165,7 +1165,7 @@ void DHistogramAction_InvariantMass::Initialize(JEventLoop* locEventLoop)
 			locParticleNamesForHist += ParticleName_ROOT(dToIncludePIDs[loc_i]);
 	}
 
-	bool locBeamPresent = (Get_Reaction()->Get_ReactionStep(0)->Get_InitialParticleID() == Gamma);
+	bool locBeamPresent = DAnalysis::Get_IsFirstStepBeam(Get_Reaction());
 
 	//CREATE THE HISTOGRAMS
 	//Since we are creating histograms, the contents of gDirectory will be modified: must use JANA-wide ROOT lock

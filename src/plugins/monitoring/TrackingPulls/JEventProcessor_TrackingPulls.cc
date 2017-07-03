@@ -203,7 +203,7 @@ jerror_t JEventProcessor_TrackingPulls::evnt(JEventLoop *loop, uint64_t eventnum
                theta, resi/err,
                ";#theta ;Residual/Error", 140, 0.0, 140.0, 100, -5.0, 5.0);
          Fill2DHistogram("TrackingPulls", "TrackPulls","All Pulls Vs. NDF",
-               bestHypothesis->dNDF_Track, resi/err,
+        		 locTrackTimeBased->Ndof, resi/err,
                ";Track NDF ;Residual/Error", 140, 0.0, 140.0, 100, -5.0, 5.0);
          Fill2DHistogram("TrackingPulls", "TrackPulls","All Pulls Vs. Tracking FOM",
                trackingFOM, resi/err,
@@ -297,13 +297,13 @@ jerror_t JEventProcessor_TrackingPulls::evnt(JEventLoop *loop, uint64_t eventnum
                   theta, resic,
                   ";#theta ;Residual/Error", 50, 0.0, 25.0, 100, -0.1, 0.1);
             Fill2DHistogram("TrackingPulls", "FDCPulls","All Wire Pulls Vs. NDF",
-                  bestHypothesis->dNDF_Track, resi/err,
+            		locTrackTimeBased->Ndof, resi/err,
                   ";Track NDF ;Residual/Error", 50, 0.5, 50.5, 100, -5.0, 5.0);
             Fill2DHistogram("TrackingPulls", "FDCPulls","All Wire Pulls Vs. Tracking FOM",
                   trackingFOM, resi/err,
                   ";Track FOM ;Residual/Error", 100, 0.0, 1.0, 100, -5.0, 5.0);
             Fill2DHistogram("TrackingPulls", "FDCPulls","All Cathode Pulls Vs. NDF",
-                  bestHypothesis->dNDF_Track, resic/errc,
+            		locTrackTimeBased->Ndof, resic/errc,
                   ";Track NDF ;Residual/Error", 50, 0.5, 50.5, 100, -5.0, 5.0);
             Fill2DHistogram("TrackingPulls", "FDCPulls","All Cathode Pulls Vs. Tracking FOM",
                   trackingFOM, resic/errc,
@@ -448,7 +448,7 @@ jerror_t JEventProcessor_TrackingPulls::evnt(JEventLoop *loop, uint64_t eventnum
                   theta, resi,
                   ";#theta ;Residual", 140, 0.0, 140.0, 100, -0.1, 0.1);
             Fill2DHistogram("TrackingPulls", "CDCPulls","All Pulls Vs. NDF",
-                  bestHypothesis->dNDF_Track, resi/err,
+            		locTrackTimeBased->Ndof, resi/err,
                   ";Track NDF ;Residual/Error", 50, 0.5, 50.5, 100, -5.0, 5.0);
             Fill2DHistogram("TrackingPulls", "CDCPulls","All Pulls Vs. Tracking FOM",
                   trackingFOM, resi/err,
