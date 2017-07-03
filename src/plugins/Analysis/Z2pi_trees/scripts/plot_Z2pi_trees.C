@@ -1,4 +1,4 @@
-void plot_Z2pi_trees(void)
+void plot_Z2pi_trees(TString filename)
 {
 // File: Z2pi_trees.C
 //
@@ -10,7 +10,9 @@ void plot_Z2pi_trees(void)
   gStyle->SetPadLeftMargin(0.15);
   gStyle->SetPadBottomMargin(0.15);
     
-    TString filename = "DSelector_Z2pi_trees";
+  // TString filename = "DSelector_Z2pi_trees_flat";
+  // TString filename = "DSelector_Z2pi_trees_signal";
+
     
     TFile *f = new TFile(filename+".root","read");
     
@@ -28,17 +30,24 @@ void plot_Z2pi_trees(void)
     TH1F *MissingMassSquared = (TH1F*)f->Get("MissingMassSquared");
     TH1F *M2pikin = (TH1F*)f->Get("M2pikin");
     TH1F *tkin = (TH1F*)f->Get("tkin");
-    TH1F *Phikin = (TH1F*)f->Get("Phikin");
+    TH1F *psikin = (TH1F*)f->Get("psikin");
     TH2F *CosTheta_Psi = (TH2F*)f->Get("CosTheta_Psi");
     
     TH1F *M2pidiff = (TH1F*)f->Get("M2pidiff");
     TH1F *tdiff = (TH1F*)f->Get("tdiff");
-    TH1F *Phidiff = (TH1F*)f->Get("Phidiff");
+    TH1F *psidiff = (TH1F*)f->Get("psidiff");
     TH1F *pipDeltap_Measured = (TH1F*)f->Get("pipDeltap_Measured");
     TH1F *pimDeltap_Measured = (TH1F*)f->Get("pimDeltap_Measured");
     // TH1F *pDeltap = (TH1F*)f->Get("pDeltap");
     TH1F *pipDeltap = (TH1F*)f->Get("pipDeltap");
     TH1F *pimDeltap = (TH1F*)f->Get("pimDeltap");
+
+    TH1F *Phikin = (TH1F*)f->Get("Phikin");
+    TH1F *phikin = (TH1F*)f->Get("phikin");
+    TH1F *CosTheta = (TH1F*)f->Get("CosTheta");
+    TH1F *Phidiff = (TH1F*)f->Get("Phidiff");
+    TH1F *phidiff = (TH1F*)f->Get("phidiff");
+    TH1F *CosThetadiff = (TH1F*)f->Get("CosThetadiff");
     
     TCanvas *c0 = new TCanvas("c0", "c0",200,10,1000,700);
 
@@ -92,14 +101,14 @@ void plot_Z2pi_trees(void)
     ymin = 0;
     ymax = 4000;
     
-    Phikin->SetTitle(filename);
-    // Phikin->GetXaxis()->SetRangeUser(xmin,xmax);
-    // Phikin->GetYaxis()->SetRangeUser(ymin,ymax);
-    Phikin->GetXaxis()->SetTitleSize(0.05);
-    Phikin->GetYaxis()->SetTitleSize(0.05);
-    Phikin->GetXaxis()->SetTitle("#Phi Kin (degrees)");
-    Phikin->SetMarkerColor(4);
-    Phikin->Draw();
+    CosTheta->SetTitle(filename);
+    // CosTheta->GetXaxis()->SetRangeUser(xmin,xmax);
+    // CosTheta->GetYaxis()->SetRangeUser(ymin,ymax);
+    CosTheta->GetXaxis()->SetTitleSize(0.05);
+    CosTheta->GetYaxis()->SetTitleSize(0.05);
+    CosTheta->GetXaxis()->SetTitle("Cos#Theta");
+    CosTheta->SetMarkerColor(4);
+    CosTheta->Draw();
     
     c0->cd(5);
     // gPad->SetLogy();
@@ -211,15 +220,15 @@ void plot_Z2pi_trees(void)
     ymin = 0;
     ymax = 4000;
     
-    Phidiff->SetTitle(filename);
-    // Phidiff->GetXaxis()->SetRangeUser(xmin,xmax);
-    // Phidiff->GetYaxis()->SetRangeUser(ymin,ymax);
-    Phidiff->GetXaxis()->SetTitleSize(0.05);
-    Phidiff->GetYaxis()->SetTitleSize(0.05);
-    // Phidiff->GetYaxis()->SetTitle("CosTheta");
-    Phidiff->GetXaxis()->SetTitle("#Phi Gen - Kin (Degrees)");
-    Phidiff->SetMarkerColor(4);
-    Phidiff->Draw();
+    CosThetadiff->SetTitle(filename);
+    // CosThetadiff->GetXaxis()->SetRangeUser(xmin,xmax);
+    // CosThetadiff->GetYaxis()->SetRangeUser(ymin,ymax);
+    CosThetadiff->GetXaxis()->SetTitleSize(0.05);
+    CosThetadiff->GetYaxis()->SetTitleSize(0.05);
+    // CosThetadiff->GetYaxis()->SetTitle("CosTheta");
+    CosThetadiff->GetXaxis()->SetTitle("Cos#Theta diff Kin-Gen");
+    CosThetadiff->SetMarkerColor(4);
+    CosThetadiff->Draw();
     
     
     TCanvas *c2 = new TCanvas("c2", "c2",200,10,1000,700);
@@ -313,9 +322,100 @@ void plot_Z2pi_trees(void)
     // pimDeltap->GetXaxis()->SetTitle("#chi^{2}");
     pimDeltap->SetMarkerColor(4);
     pimDeltap->Draw();
+
+    
+    TCanvas *c3 = new TCanvas("c3", "c3",200,10,1000,700);
+    
+    c3->Divide(3,2);
+
+    c3->cd(1);
+    // gPad->SetLogy();
+    ymin = 0;
+    ymax = 4000;
+    
+    Phikin->SetTitle(filename);
+    // Phikin->GetXaxis()->SetRangeUser(xmin,xmax);
+    // Phikin->GetYaxis()->SetRangeUser(ymin,ymax);
+    Phikin->GetXaxis()->SetTitleSize(0.05);
+    Phikin->GetYaxis()->SetTitleSize(0.05);
+    Phikin->GetXaxis()->SetTitle("#Phi Kin (Degrees)");
+    Phikin->SetMarkerColor(4);
+    Phikin->Draw();
+
+    c3->cd(2);
+    // gPad->SetLogy();
+    ymin = 0;
+    ymax = 4000;
+    
+    phikin->SetTitle(filename);
+    // phikin->GetXaxis()->SetRangeUser(xmin,xmax);
+    // phikin->GetYaxis()->SetRangeUser(ymin,ymax);
+    phikin->GetXaxis()->SetTitleSize(0.05);
+    phikin->GetYaxis()->SetTitleSize(0.05);
+    phikin->GetXaxis()->SetTitle("#phi Kin (Degrees)");
+    phikin->SetMarkerColor(4);
+    phikin->Draw();
+
+    c3->cd(3);
+    // gPad->SetLogy();
+    ymin = 0;
+    ymax = 4000;
+    
+    psikin->SetTitle(filename);
+    // psikin->GetXaxis()->SetRangeUser(xmin,xmax);
+    // psikin->GetYaxis()->SetRangeUser(ymin,ymax);
+    psikin->GetXaxis()->SetTitleSize(0.05);
+    psikin->GetYaxis()->SetTitleSize(0.05);
+    psikin->GetXaxis()->SetTitle("#psii Kin (Degrees)");
+    psikin->SetMarkerColor(4);
+    psikin->Draw();
+
+    c3->cd(4);
+    // gPad->SetLogy();
+    ymin = 0;
+    ymax = 4000;
+    
+    Phidiff->SetTitle(filename);
+    // Phidiff->GetXaxis()->SetRangeUser(xmin,xmax);
+    // Phidiff->GetYaxis()->SetRangeUser(ymin,ymax);
+    Phidiff->GetXaxis()->SetTitleSize(0.05);
+    Phidiff->GetYaxis()->SetTitleSize(0.05);
+    Phidiff->GetXaxis()->SetTitle("#Phi Kin-Gen (Degrees)");
+    Phidiff->SetMarkerColor(4);
+    Phidiff->Draw();
+
+    c3->cd(5);
+    // gPad->SetLogy();
+    ymin = 0;
+    ymax = 4000;
+    
+    phidiff->SetTitle(filename);
+    // phidiff->GetXaxis()->SetRangeUser(xmin,xmax);
+    // phidiff->GetYaxis()->SetRangeUser(ymin,ymax);
+    phidiff->GetXaxis()->SetTitleSize(0.05);
+    phidiff->GetYaxis()->SetTitleSize(0.05);
+    phidiff->GetXaxis()->SetTitle("#phi Kin-Gen (Degrees)");
+    phidiff->SetMarkerColor(4);
+    phidiff->Draw();
+
+    c3->cd(6);
+    // gPad->SetLogy();
+    ymin = 0;
+    ymax = 4000;
+    
+    psidiff->SetTitle(filename);
+    // psidiff->GetXaxis()->SetRangeUser(xmin,xmax);
+    // psidiff->GetYaxis()->SetRangeUser(ymin,ymax);
+    psidiff->GetXaxis()->SetTitleSize(0.05);
+    psidiff->GetYaxis()->SetTitleSize(0.05);
+    psidiff->GetXaxis()->SetTitle("#psi Kin-Gen (Degrees)");
+    psidiff->SetMarkerColor(4);
+    psidiff->Draw();
+
     
     
     c0->SaveAs(filename+".pdf(");
     c1->SaveAs(filename+".pdf");
-    c2->SaveAs(filename+".pdf)");
+    c2->SaveAs(filename+".pdf");
+    c3->SaveAs(filename+".pdf)");
 }
