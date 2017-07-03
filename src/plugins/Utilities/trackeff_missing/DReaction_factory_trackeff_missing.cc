@@ -395,14 +395,14 @@ set<Particle_t> DReaction_factory_trackeff_missing::Get_InvariantMassPIDs(DReact
 	return locDecayingPIDs;
 }
 
-map<Particle_t, pair<int, deque<Particle_t> > > DReaction_factory_trackeff_missing::Get_MissingMassPIDs(DReaction* locReaction, bool locKinFitFlag)
+map<Particle_t, pair<int, vector<Particle_t> > > DReaction_factory_trackeff_missing::Get_MissingMassPIDs(DReaction* locReaction, bool locKinFitFlag)
 {
 	//int: decay step index
 	//bool: if true, only return those not constrained by the kinfit
 	DKinFitType locKinFitType = locReaction->Get_KinFitType();
 	bool locP4FitFlag = (locKinFitFlag && ((locKinFitType == d_P4Fit) || (locKinFitType == d_P4AndVertexFit) || (locKinFitType == d_P4AndSpacetimeFit)));
 
-	map<Particle_t, pair<int, deque<Particle_t> > > locMissingPIDs;
+	map<Particle_t, pair<int, vector<Particle_t> > > locMissingPIDs;
 	for(size_t loc_i = 1; loc_i < locReaction->Get_NumReactionSteps(); ++loc_i)
 	{
 		const DReactionStep* locReactionStep = locReaction->Get_ReactionStep(loc_i);
@@ -419,9 +419,8 @@ map<Particle_t, pair<int, deque<Particle_t> > > DReaction_factory_trackeff_missi
 			continue;
 
 		//get production step, other PIDs in that step
-		deque<Particle_t> locMissingMassOffOfPIDs;
 		int locDecayFromStep = DAnalysis::Get_InitialParticleDecayFromIndices(locReaction, loc_i).first;
-		locReaction->Get_ReactionStep(locDecayFromStep)->Get_FinalPIDs(locMissingMassOffOfPIDs);
+		auto locMissingMassOffOfPIDs = locReaction->Get_ReactionStep(locDecayFromStep)->Get_FinalPIDs();
 		for(size_t loc_j = 0; loc_j < locMissingMassOffOfPIDs.size(); ++loc_j)
 		{
 			if(locMissingMassOffOfPIDs[loc_j] != locDecayingPID)
@@ -430,17 +429,17 @@ map<Particle_t, pair<int, deque<Particle_t> > > DReaction_factory_trackeff_missi
 			break;
 		}
 
-		locMissingPIDs[locDecayingPID] = pair<int, deque<Particle_t> >(locDecayFromStep, locMissingMassOffOfPIDs);
+		locMissingPIDs[locDecayingPID] = std::make_pair(locDecayFromStep, locMissingMassOffOfPIDs);
 	}
 
 	//overall missing
 	if(locReaction->Get_IsInclusiveFlag()) //inclusive: no cut
 		return locMissingPIDs;
 	auto locMissingPIDVector = locReaction->Get_MissingPIDs();
-	auto locMissingPID = (locMissingPIDs.size() == 1) ? locMissingPIDs[0] : Unknown;
+	auto locMissingPID = (locMissingPIDVector.size() == 1) ? locMissingPIDVector[0] : Unknown;
 	if(locP4FitFlag && (IsFixedMass(locMissingPIDVector[0]) || (locMissingPID == Unknown)))
 		return locMissingPIDs; //mass constrained by kinfit
-	locMissingPIDs[locMissingPID] = pair<int, deque<Particle_t> >(0, deque<Particle_t>());
+	locMissingPIDs[locMissingPID] = pair<int, vector<Particle_t> >(0, vector<Particle_t>());
 	return locMissingPIDs;
 }
 
@@ -460,21 +459,22 @@ bool DReaction_factory_trackeff_missing::Add_MassCuts(DReaction* locReaction, bo
 		locReaction->Add_AnalysisAction(new DCutAction_InvariantMass(locReaction, locPID, true, locCutPair.first, locCutPair.second));
 	}
 
-	map<Particle_t, pair<int, deque<Particle_t> > > locDecayingPIDs_Missing = Get_MissingMassPIDs(locReaction, locKinFitFlag);
+	map<Particle_t, pair<int, vector<Particle_t> > > locDecayingPIDs_Missing = Get_MissingMassPIDs(locReaction, locKinFitFlag);
 	for(auto& locMapPair : locDecayingPIDs_Missing)
 	{
 		auto& locCutMap = locKinFitFlag ? dMissingMassCuts_KinFit : dMissingMassCuts;
 		auto locCutPair = locCutMap[locMapPair.first];
 		int locDecayFromStep = locMapPair.second.first;
 		auto locMissingMassOffOfPIDs = locMapPair.second.second;
+		deque<Particle_t> locMissingMassOffOfPIDsDeque(locMissingMassOffOfPIDs.begin(), locMissingMassOffOfPIDs.end());
 		locCutsPlacedFlag = true;
 
 		//create the cut
 		DAnalysisAction* locMassCut = nullptr;
 		if(locCutPair.first >= 0.0)
-			locMassCut = new DCutAction_MissingMass(locReaction, locDecayFromStep, locMissingMassOffOfPIDs, locKinFitFlag, locCutPair.first, locCutPair.second);
+			locMassCut = new DCutAction_MissingMass(locReaction, locDecayFromStep, locMissingMassOffOfPIDsDeque, locKinFitFlag, locCutPair.first, locCutPair.second);
 		else
-			locMassCut = new DCutAction_MissingMassSquared(locReaction, locDecayFromStep, locMissingMassOffOfPIDs, locKinFitFlag, locCutPair.first, locCutPair.second);
+			locMassCut = new DCutAction_MissingMassSquared(locReaction, locDecayFromStep, locMissingMassOffOfPIDsDeque, locKinFitFlag, locCutPair.first, locCutPair.second);
 
 		//add the cut
 		locReaction->Add_AnalysisAction(locMassCut);
@@ -537,7 +537,7 @@ void DReaction_factory_trackeff_missing::Add_MassHistograms(DReaction* locReacti
 	}
 
 	//missing mass
-	map<Particle_t, pair<int, deque<Particle_t> > > locDecayingPIDs_Missing = Get_MissingMassPIDs(locReaction);
+	map<Particle_t, pair<int, vector<Particle_t> > > locDecayingPIDs_Missing = Get_MissingMassPIDs(locReaction);
 	for(auto& locMapPair : locDecayingPIDs_Missing)
 	{
 		auto& locCutMap = locKinFitFlag ? dMissingMassCuts_KinFit : dMissingMassCuts;
@@ -549,6 +549,7 @@ void DReaction_factory_trackeff_missing::Add_MassHistograms(DReaction* locReacti
 
 		int locDecayFromStep = locMapPair.second.first;
 		auto locMissingMassOffOfPIDs = locMapPair.second.second;
+		deque<Particle_t> locMissingMassOffOfPIDsDeque(locMissingMassOffOfPIDs.begin(), locMissingMassOffOfPIDs.end());
 
 		//determine #bins
 		int locNumBins = int((locCutPair.second - locCutPair.first)*1000.0 + 0.001);
@@ -562,8 +563,8 @@ void DReaction_factory_trackeff_missing::Add_MassHistograms(DReaction* locReacti
 
 		//add the cut
 		if(locCutPair.first >= 0.0)
-			locReaction->Add_AnalysisAction(new DHistogramAction_MissingMass(locReaction, locDecayFromStep, locMissingMassOffOfPIDs, locKinFitFlag, locNumBins, locCutPair.first, locCutPair.second, locActionUniqueName));
+			locReaction->Add_AnalysisAction(new DHistogramAction_MissingMass(locReaction, locDecayFromStep, locMissingMassOffOfPIDsDeque, locKinFitFlag, locNumBins, locCutPair.first, locCutPair.second, locActionUniqueName));
 		else
-			locReaction->Add_AnalysisAction(new DHistogramAction_MissingMassSquared(locReaction, locDecayFromStep, locMissingMassOffOfPIDs, locKinFitFlag, locNumBins, locCutPair.first, locCutPair.second, locActionUniqueName));
+			locReaction->Add_AnalysisAction(new DHistogramAction_MissingMassSquared(locReaction, locDecayFromStep, locMissingMassOffOfPIDsDeque, locKinFitFlag, locNumBins, locCutPair.first, locCutPair.second, locActionUniqueName));
 	}
 }

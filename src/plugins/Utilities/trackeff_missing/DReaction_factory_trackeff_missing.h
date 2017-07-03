@@ -43,7 +43,7 @@ class DReaction_factory_trackeff_missing : public jana::JFactory<DReaction>
 
 		// Utilities
 		set<Particle_t> Get_InvariantMassPIDs(DReaction* locReaction, bool locKinFitFlag = false);
-		map<Particle_t, pair<int, deque<Particle_t> > > Get_MissingMassPIDs(DReaction* locReaction, bool locKinFitFlag = false);
+		map<Particle_t, pair<int, vector<Particle_t> > > Get_MissingMassPIDs(DReaction* locReaction, bool locKinFitFlag = false);
 
 		double dBeamBunchPeriod;
 		deque<DReactionStep*> dReactionStepPool; //to prevent memory leaks
