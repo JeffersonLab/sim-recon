@@ -3,11 +3,11 @@
 #include "TLorentzVector.h"
 #include "TLorentzRotation.h"
 
-#include "AMPTOOLS_DATAIO/TwoPiPlotGenerator.h"
+#include "AMPTOOLS_DATAIO/TwoZPiPlotGenerator.h"
 #include "IUAmpTools/Histogram1D.h"
 #include "IUAmpTools/Kinematics.h"
 
-TwoPiPlotGenerator::TwoPiPlotGenerator( const FitResults& results ) :
+TwoZPiPlotGenerator::TwoZPiPlotGenerator( const FitResults& results ) :
 PlotGenerator( results )
 {
   // calls to bookHistogram go here
@@ -26,10 +26,10 @@ PlotGenerator( results )
 }
 
 void
-TwoPiPlotGenerator::projectEvent( Kinematics* kin ){
+TwoZPiPlotGenerator::projectEvent( Kinematics* kin ){
   
   TLorentzVector beam   = kin->particle( 0 );
-  TLorentzVector recoil = kin->particle( 1 );   // moved recoil to last particle.
+  TLorentzVector recoil = kin->particle( 1 ); 
   TLorentzVector p1 = kin->particle( 2 );
   TLorentzVector p2 = kin->particle( 3 );
   TLorentzVector resonance = p1 + p2; 
@@ -74,7 +74,7 @@ TwoPiPlotGenerator::projectEvent( Kinematics* kin ){
   GDouble t = (beam - p1 - p2).M2();     // use measured particles to compute t
   
   // calls to fillHistogram go here
-  // cout << " TwoPiPlotGenerator: mp1=" << p1.M() << " mp2=" << p2.M() << " mrecoil=" << recoil.M() << " m2pi=" << resonance.M() << endl;
+  // cout << " TwoZPiPlotGenerator: mp1=" << p1.M() << " mp2=" << p2.M() << " mrecoil=" << recoil.M() << " m2pi=" << resonance.M() << endl;
   
   fillHistogram( k2PiMass, ( resonance ).M() );
   

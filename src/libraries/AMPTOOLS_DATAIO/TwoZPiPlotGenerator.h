@@ -1,5 +1,5 @@
-#if !(defined TWOPIPLOTGENERATOR)
-#define TWOPIPLOTGENERATOR
+#if !(defined TWOZPIPLOTGENERATOR)
+#define TWOZPIPLOTGENERATOR
 
 #include <vector>
 #include <string>
@@ -11,7 +11,7 @@ using namespace std;
 class FitResults;
 class Kinematics;
 
-class TwoPiPlotGenerator : public PlotGenerator
+class TwoZPiPlotGenerator : public PlotGenerator
 {
     
 public:
@@ -19,7 +19,7 @@ public:
   // create an index for different histograms
   enum { k2PiMass = 0, kPiPCosTheta, kPhiPiPlus, kPhiPiMinus, kPhi, kphi, kPsi, kt, kNumHists};
   
-  TwoPiPlotGenerator( const FitResults& results );
+  TwoZPiPlotGenerator( const FitResults& results );
     
 private:
         
