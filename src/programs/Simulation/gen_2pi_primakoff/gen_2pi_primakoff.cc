@@ -247,11 +247,20 @@ int main( int argc, char* argv[] ){
 					TLorentzVector beam_res = resonanceBoost * beam;
 					TLorentzVector recoil_res = resonanceBoost * recoil;
 					TLorentzVector p1_res = resonanceBoost * p1;
-					
-					// normal to the production plane
-                                        TVector3 y = (beam.Vect().Unit().Cross(-recoil.Vect().Unit())).Unit();
 
-                                        // choose helicity frame: z-axis opposite recoil proton in rho rest frame
+                                        double phipol=0;     // need to get this angle from configuration file.
+                                        TVector3 eps(cos(phipol), sin(phipol), 0.0); // beam polarization vector in lab
+	
+					// production plane is defined by the pi+ (neglect recoil)
+					TVector3 zlab(0.,0.,1.0);     // z axis in lab
+					TVector3 y = (p1.Vect().Cross(zlab)).Unit();    // perpendicular to decay plane. ensure that y is perpendicular to z
+					TVector3 eps_perp = eps.Cross(zlab).Unit();         // perpendicular to plane defined by eps
+					GDouble Phi_pip = atan2(y.Dot(eps),y.Dot(eps_perp));  // use this calculation to preserve sign of angle
+					// Phi_pip = Phi_pip > 0? Phi_pip : Phi_pip + 3.14159;                     // make angle between eps and decay plane a positive number. This is psi of vector-meson production in forward kinematics.
+					// redefine to normal to the production plane
+                                        y = (beam.Vect().Unit().Cross(-recoil.Vect().Unit())).Unit();
+
+                                        // choose helicity frame: z-axis opposite recoil in rho rest frame
                                         TVector3 z = -1. * recoil_res.Vect().Unit();
                                         TVector3 x = y.Cross(z).Unit();
                                         TVector3 angles( (p1_res.Vect()).Dot(x),
@@ -259,15 +268,21 @@ int main( int argc, char* argv[] ){
                                                          (p1_res.Vect()).Dot(z) );
 
                                         double cosTheta = angles.CosTheta();
-                                        double phi = angles.Phi();
+                                        // double phi = angles.Phi();
 
-                                        TVector3 eps(1.0, 0.0, 0.0); // beam polarization vector
-                                        double Phi = atan2(y.Dot(eps), beam.Vect().Unit().Dot(eps.Cross(y)));
-					Phi = Phi > 0? Phi : Phi + 3.14159;
-
-                                        GDouble psi = phi - Phi;
+					// GDouble Phi_prod = atan2(y.Dot(eps), beam.Vect().Unit().Dot(eps.Cross(y)));
+					// Phi_prod = Phi_prod > 0? Phi_prod : Phi_prod + 3.14159;
+					// GDouble Phi = Phi_prod;              // retain angle between hadronic plane and polarization, although random for Primakoff
+                                        GDouble psi = Phi_pip;               // in the limit of forward scattering (Primakoff), Phi_pip is the angle between pip and the polarization
                                         if(psi < -1*PI) psi += 2*PI;
                                         if(psi > PI) psi -= 2*PI;
+
+					/*cout << endl << " gen_2pi_primakoff " << endl;
+					cout << " p1="; p1.Vect().Print();
+					cout << " p1_res="; p1_res.Vect().Print();
+                                        cout << " Phi=" << Phi << endl;
+					cout << " phi= " << phi << endl;
+					cout << " psi=" << psi << endl;*/
 					
 					CosTheta_psi->Fill( psi, cosTheta);
 					
