@@ -231,32 +231,32 @@ class DHistogramAction_DetectorMatching : public DAnalysisAction
 		//user can call any of these three constructors
 		DHistogramAction_DetectorMatching(const DReaction* locReaction, string locActionUniqueString = "") :
 		DAnalysisAction(locReaction, "Hist_DetectorMatching", false, locActionUniqueString),
-		dNum2DThetaBins(280), dNum2DPBins(250), dNum2DPhiBins(360), dNum2DDeltaPhiBins(300), dNum2DDeltaZBins(300), dNum2DTrackDOCABins(200),
-		dNumTrackDOCABins(400), dNumFCALTOFXYBins(260), dNum2DBCALZBins(450), dNum2DSCZBins(240), dMinP(0.0), dMaxP(10.0), dMinTheta(0.0), dMaxTheta(140.0),
+		dNum2DThetaBins(280), dNumPBins(500), dNum2DPBins(250), dNum2DPhiBins(360), dNum2DDeltaPhiBins(300), dNum2DDeltaZBins(250), dNum2DTrackDOCABins(200),
+		dNumTrackDOCABins(400), dNumFCALTOFXYBins(260), dNum2DBCALZBins(450), dNum2DSCZBins(240), dNumTOFRBins(360), dMinP(0.0), dMaxP(10.0), dMinTheta(0.0), dMaxTheta(140.0),
 		dMinPhi(-180.0), dMaxPhi(180.0), dSCMatchMinDeltaPhi(-60.0), dSCMatchMaxDeltaPhi(60.0), dMinTrackDOCA(0.0), dMaxTrackMatchDOCA(20.0),
-		dMinDeltaPhi(-30.0), dMaxDeltaPhi(30.0), dMinDeltaZ(-30.0), dMaxDeltaZ(30.0),
+		dMinDeltaPhi(-30.0), dMaxDeltaPhi(30.0), dMinDeltaZ(-50.0), dMaxDeltaZ(50.0),
 		dMinTrackingFOM(0.0027), dMinTOFPaddleMatchDistance(9.0), dMinHitRingsPerCDCSuperlayer(2), dMinHitPlanesPerFDCPackage(4) {}
 
 		DHistogramAction_DetectorMatching(string locActionUniqueString) :
 		DAnalysisAction(NULL, "Hist_DetectorMatching", false, locActionUniqueString),
-		dNum2DThetaBins(280), dNum2DPBins(250), dNum2DPhiBins(360), dNum2DDeltaPhiBins(300), dNum2DDeltaZBins(300), dNum2DTrackDOCABins(200),
-		dNumTrackDOCABins(400), dNumFCALTOFXYBins(260), dNum2DBCALZBins(450), dNum2DSCZBins(240), dMinP(0.0), dMaxP(10.0), dMinTheta(0.0), dMaxTheta(140.0),
+		dNum2DThetaBins(280), dNumPBins(500), dNum2DPBins(250), dNum2DPhiBins(360), dNum2DDeltaPhiBins(300), dNum2DDeltaZBins(250), dNum2DTrackDOCABins(200),
+		dNumTrackDOCABins(400), dNumFCALTOFXYBins(260), dNum2DBCALZBins(450), dNum2DSCZBins(240), dNumTOFRBins(360), dMinP(0.0), dMaxP(10.0), dMinTheta(0.0), dMaxTheta(140.0),
 		dMinPhi(-180.0), dMaxPhi(180.0), dSCMatchMinDeltaPhi(-60.0), dSCMatchMaxDeltaPhi(60.0), dMinTrackDOCA(0.0), dMaxTrackMatchDOCA(20.0),
-		dMinDeltaPhi(-30.0), dMaxDeltaPhi(30.0), dMinDeltaZ(-30.0), dMaxDeltaZ(30.0),
+		dMinDeltaPhi(-30.0), dMaxDeltaPhi(30.0), dMinDeltaZ(-50.0), dMaxDeltaZ(50.0),
 		dMinTrackingFOM(0.0027), dMinTOFPaddleMatchDistance(9.0), dMinHitRingsPerCDCSuperlayer(2), dMinHitPlanesPerFDCPackage(4) {}
 
 		DHistogramAction_DetectorMatching(void) :
 		DAnalysisAction(NULL, "Hist_DetectorMatching", false, ""),
-		dNum2DThetaBins(280), dNum2DPBins(250), dNum2DPhiBins(360), dNum2DDeltaPhiBins(300), dNum2DDeltaZBins(300), dNum2DTrackDOCABins(200),
-		dNumTrackDOCABins(400), dNumFCALTOFXYBins(260), dNum2DBCALZBins(450), dNum2DSCZBins(240), dMinP(0.0), dMaxP(10.0), dMinTheta(0.0), dMaxTheta(140.0),
+		dNum2DThetaBins(280), dNumPBins(500), dNum2DPBins(250), dNum2DPhiBins(360), dNum2DDeltaPhiBins(300), dNum2DDeltaZBins(250), dNum2DTrackDOCABins(200),
+		dNumTrackDOCABins(400), dNumFCALTOFXYBins(260), dNum2DBCALZBins(450), dNum2DSCZBins(240), dNumTOFRBins(360), dMinP(0.0), dMaxP(10.0), dMinTheta(0.0), dMaxTheta(140.0),
 		dMinPhi(-180.0), dMaxPhi(180.0), dSCMatchMinDeltaPhi(-60.0), dSCMatchMaxDeltaPhi(60.0), dMinTrackDOCA(0.0), dMaxTrackMatchDOCA(20.0),
-		dMinDeltaPhi(-30.0), dMaxDeltaPhi(30.0), dMinDeltaZ(-30.0), dMaxDeltaZ(30.0),
+		dMinDeltaPhi(-30.0), dMaxDeltaPhi(30.0), dMinDeltaZ(-50.0), dMaxDeltaZ(50.0),
 		dMinTrackingFOM(0.0027), dMinTOFPaddleMatchDistance(9.0), dMinHitRingsPerCDCSuperlayer(2), dMinHitPlanesPerFDCPackage(4) {}
 
 		void Initialize(JEventLoop* locEventLoop);
 
-		unsigned int dNum2DThetaBins, dNum2DPBins, dNum2DPhiBins, dNum2DDeltaPhiBins, dNum2DDeltaZBins;
-		unsigned int dNum2DTrackDOCABins, dNumTrackDOCABins, dNumFCALTOFXYBins, dNum2DBCALZBins, dNum2DSCZBins;
+		unsigned int dNum2DThetaBins, dNumPBins, dNum2DPBins, dNum2DPhiBins, dNum2DDeltaPhiBins, dNum2DDeltaZBins;
+		unsigned int dNum2DTrackDOCABins, dNumTrackDOCABins, dNumFCALTOFXYBins, dNum2DBCALZBins, dNum2DSCZBins, dNumTOFRBins;
 		double dMinP, dMaxP, dMinTheta, dMaxTheta, dMinPhi, dMaxPhi, dSCMatchMinDeltaPhi, dSCMatchMaxDeltaPhi, dMinTrackDOCA, dMaxTrackMatchDOCA;
 		double dMinDeltaPhi, dMaxDeltaPhi, dMinDeltaZ, dMaxDeltaZ;
 
@@ -286,6 +286,8 @@ class DHistogramAction_DetectorMatching : public DAnalysisAction
 
 		map<bool, TH2I*> dHistMap_SCPaddleVsTheta_HasHit;
 		map<bool, TH2I*> dHistMap_SCPaddleVsTheta_NoHit;
+		map<bool, TH2I*> dHistMap_SCPaddleVsZ_HasHit;
+		map<bool, TH2I*> dHistMap_SCPaddleVsZ_NoHit;
 		map<bool, TH1I*> dHistMap_SCPaddle_BarrelRegion_HasHit;
 		map<bool, TH1I*> dHistMap_SCPaddle_BarrelRegion_NoHit;
 		map<bool, TH1I*> dHistMap_SCPaddle_NoseRegion_HasHit; //includes bend
@@ -295,9 +297,17 @@ class DHistogramAction_DetectorMatching : public DAnalysisAction
 		map<bool, TH2I*> dHistMap_TrackTOFYVsX_NoHit;
 		map<bool, TH2I*> dHistMap_TrackTOF2DPaddles_HasHit;
 		map<bool, TH2I*> dHistMap_TrackTOF2DPaddles_NoHit;
+		map<bool, TH1I*> dHistMap_TrackTOFR_HasHit;
+		map<bool, TH1I*> dHistMap_TrackTOFR_NoHit;
+		map<bool, TH1I*> dHistMap_TrackTOFP_HasHit;
+		map<bool, TH1I*> dHistMap_TrackTOFP_NoHit;
 
 		map<bool, TH2I*> dHistMap_TrackFCALYVsX_HasHit;
 		map<bool, TH2I*> dHistMap_TrackFCALYVsX_NoHit;
+		map<bool, TH1I*> dHistMap_TrackFCALR_HasHit;
+		map<bool, TH1I*> dHistMap_TrackFCALR_NoHit;
+		map<bool, TH1I*> dHistMap_TrackFCALP_HasHit;
+		map<bool, TH1I*> dHistMap_TrackFCALP_NoHit;
 		map<bool, TH2I*> dHistMap_TrackFCALRowVsColumn_HasHit;
 		map<bool, TH2I*> dHistMap_TrackFCALRowVsColumn_NoHit;
 

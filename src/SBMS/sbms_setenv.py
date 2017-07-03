@@ -123,10 +123,10 @@ def mk_setenv_csh(env):
 	if rcdb_home != None:
 		str += '# RCDB\n'
 		str += 'setenv RCDB_HOME %s\n' % rcdb_home
-		str += 'if ( -e $RCDB_HOME/environment.csh ) then\n'
-		str += '  source $RCDB_HOME/environment.csh\n'
-		str += 'endif\n'
 		str += 'setenv RCDB_CONNECTION %s\n' % rcdb_conn
+		str += 'setenv %s ${RCDB_HOME}/cpp/lib:${%s}\n' % (LDLPV, LDLPV)
+		str += 'setenv PYTHONPATH ${RCDB_HOME}/python:${PYTHONPATH}\n'
+		str += 'setenv PATH ${RCDB_HOME}/bin:${RCDB_HOME}/cpp/bin:${PATH}\n'
 		str += '\n'
 
 	# ROOT
@@ -135,6 +135,13 @@ def mk_setenv_csh(env):
 	str += 'setenv PATH ${ROOTSYS}/bin:${PATH}\n'
 	str += 'setenv %s ${ROOTSYS}/lib:${%s}\n' % (LDLPV, LDLPV)
 	str += '\n'
+
+	# AMPTOOLS
+	amptools = os.getenv('AMPTOOLS')	
+	if amptools != None:
+		str += '# AMPTOOLS\n'
+		str += 'setenv AMPTOOLS %s\n' % amptools
+		str += '\n'
 
 	# CERNLIB
 	cern = os.getenv('CERN')
@@ -302,6 +309,13 @@ def mk_setenv_bash(env):
 	str += 'export PATH=${ROOTSYS}/bin:${PATH}\n'
 	str += 'export %s=${ROOTSYS}/lib:${%s}\n' % (LDLPV, LDLPV)
 	str += '\n'
+
+	# AMPTOOLS
+	amptools = os.getenv('AMPTOOLS')	
+	if amptools != None:
+		str += '# AMPTOOLS\n'
+		str += 'export AMPTOOLS=%s\n' % amptools
+		str += '\n'
 
 	# CERNLIB
 	cern = os.getenv('CERN')

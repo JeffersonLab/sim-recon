@@ -7,6 +7,8 @@
 
 #include <stdlib.h>
 #include <string.h>
+#include <libgen.h>
+#include <unistd.h>
 #include <cinttypes>
 using namespace std;
 
@@ -15,7 +17,7 @@ using namespace std;
 //---------------------------------
 // HDEVIO    (Constructor)
 //---------------------------------
-HDEVIO::HDEVIO(string filename, bool read_map_file):filename(filename)
+HDEVIO::HDEVIO(string filename, bool read_map_file, int verbose):filename(filename),VERBOSE(verbose)
 {
 	// These must be initialized in case we return early
 	// so they aren't deleted in the destructor if they
@@ -60,7 +62,8 @@ HDEVIO::HDEVIO(string filename, bool read_map_file):filename(filename)
 	
 	if(read_map_file) ReadFileMap(); // check if a map file exists and read it if it does
 	
-	IGNORE_EMPTY_BOR = false;
+	IGNORE_EMPTY_BOR   = false;
+	SKIP_EVENT_MAPPING = false;
 	
 	ifs.seekg(0, ios_base::end);
 	total_size_bytes = ifs.tellg();
@@ -744,7 +747,7 @@ void HDEVIO::MapBlocks(bool print_ticker)
 		}
 		
 		// Scan through and map all events within this block
-		MapEvents(bh, br);
+		if( !SKIP_EVENT_MAPPING ) MapEvents(bh, br);
 
 		// Add block to list
 		evio_blocks.push_back(br);
@@ -880,7 +883,7 @@ void HDEVIO::MapEvents(BLOCKHEADER_t &bh, EVIOBlockRecord &br)
 				if(er.last_event  > br.last_event ) br.last_event  = er.last_event;
 				break;
 			default:
-				_DBG_ << "Uknown tag: " << hex << tag << dec << endl;
+				if(VERBOSE>1) _DBG_ << "Uknown tag: " << hex << tag << dec << endl;
 		}
 		
 		br.evio_events.push_back(er);
@@ -1341,7 +1344,43 @@ void HDEVIO::SaveFileMap(string fname)
 void HDEVIO::ReadFileMap(string fname, bool warn_if_not_found)
 {
 	// Open input file
-	if(fname=="") fname = filename + ".map";
+	if(VERBOSE>4) cout << " Attempting to read EVIO map file \"" << fname << "\" for \"" << filename << "\"" << endl;
+	if(fname=="") {
+		
+		// No map file name given. Form a list of potential ones
+		// in the order they should be checked.
+		string dname = ".";
+		string bname = filename;
+		auto pos = filename.find_last_of("/");
+		if(pos != string::npos){
+			dname = filename.substr(0, pos);
+			bname = filename.substr(pos+1, filename.size()-pos);
+		}
+
+		vector<string> fnames;
+		fnames.push_back(filename + ".map");
+		fnames.push_back(dname + "/filemaps/" + bname + ".map");
+		fnames.push_back(bname + ".map");
+		fnames.push_back(filename + ".bmap");
+		fnames.push_back(dname + "/filemaps/" + bname + ".bmap");
+		fnames.push_back(bname + ".bmap");
+		
+		// Loop over possible names until we find one that is readable
+		for(string f : fnames){
+			if(VERBOSE>2) cout << "Checking for EVIO map file: " << f << " ...";
+			if( access(f.c_str(), R_OK) != 0 ) {
+				if(VERBOSE>2) cout << "no" << endl;
+				continue;
+			}
+			if(VERBOSE>2)cout << "yes" << endl;
+			fname = f;
+			break;
+		}		
+	}
+	
+	if(fname=="") return;
+	
+	// Open map file
 	ifstream ifs(fname.c_str());
 	if(!ifs.is_open()){
 		if(warn_if_not_found) cerr << "Unable to open \""<<fname<<"\" for reading!" << endl;

@@ -9,6 +9,7 @@
 #include <iostream>
 #include <iomanip>
 #include <set>
+#include <mutex>
 #include <TMath.h>
 using namespace std;
 
@@ -94,11 +95,14 @@ jerror_t DTrackTimeBased_factory::init(void)
 				    SKIP_MASS_HYPOTHESES_WIRE_BASED);
 	
 	vector<int> hypotheses;
+	hypotheses.push_back(Positron);
 	hypotheses.push_back(PiPlus);
 	hypotheses.push_back(KPlus);
 	hypotheses.push_back(Proton);
+	hypotheses.push_back(Electron);
 	hypotheses.push_back(PiMinus);
 	hypotheses.push_back(KMinus);
+	hypotheses.push_back(AntiProton);
 
 	ostringstream locMassStream;
 	for(size_t loc_i = 0; loc_i < hypotheses.size(); ++loc_i)
@@ -121,10 +125,29 @@ jerror_t DTrackTimeBased_factory::init(void)
 		else if(ParticleCharge(Particle_t(hypotheses[loc_i])) < 0)
 			mass_hypotheses_negative.push_back(hypotheses[loc_i]);
 	}
-	if(mass_hypotheses_positive.empty())
-		mass_hypotheses_positive.push_back(Unknown); // If empty string is specified, assume they want massless particle
-	if(mass_hypotheses_negative.empty())
-		mass_hypotheses_negative.push_back(Unknown); // If empty string is specified, assume they want massless particle
+
+	if(mass_hypotheses_positive.empty()){
+		static once_flag pwarn_flag;
+		call_once(pwarn_flag, [](){
+			jout << endl;
+			jout << "############# WARNING !! ################ " <<endl;
+			jout << "There are no mass hypotheses for positive tracks!" << endl;
+			jout << "Be SURE this is what you really want!" << endl;
+			jout << "######################################### " <<endl;
+			jout << endl;
+		});
+	}
+	if(mass_hypotheses_negative.empty()){
+		static once_flag nwarn_flag;
+		call_once(nwarn_flag, [](){
+			jout << endl;
+			jout << "############# WARNING !! ################ " <<endl;
+			jout << "There are no mass hypotheses for negative tracks!" << endl;
+			jout << "Be SURE this is what you really want!" << endl;
+			jout << "######################################### " <<endl;
+			jout << endl;
+		});
+	}
 
 	mNumHypPlus=mass_hypotheses_positive.size();
 	mNumHypMinus=mass_hypotheses_negative.size();
@@ -267,6 +290,7 @@ jerror_t DTrackTimeBased_factory::evnt(JEventLoop *loop, uint64_t eventnumber)
       timebased_track->pulls = track->pulls;
       timebased_track->trackid = track->id;
       timebased_track->candidateid=track->candidateid;
+      timebased_track->IsSmoothed = track->IsSmoothed;
       
       // Lists of hits used in the previous pass
       vector<const DCDCTrackHit *>cdchits;
@@ -687,6 +711,7 @@ int DTrackTimeBased_factory::GetThrownIndex(vector<const DMCThrown*>& locMCThrow
 		cdctrackhits[loc_i]->GetSingle(locCDCHit);
 		vector<const DCDCHit*> locTruthCDCHits;
       locCDCHit->Get(locTruthCDCHits);
+		if(locTruthCDCHits.empty()) continue; // merged simulation with real data bkgnd will not have truth hits associated
 
 		int itrack = locTruthCDCHits[0]->itrack;
 		if(locHitMatches.find(itrack) == locHitMatches.end())
@@ -938,6 +963,7 @@ bool DTrackTimeBased_factory::DoFit(const DTrackWireBased *track,
       timebased_track->chisq = fitter->GetChisq();
       timebased_track->Ndof = fitter->GetNdof();
       timebased_track->pulls = fitter->GetPulls();
+      timebased_track->IsSmoothed = fitter->GetIsSmoothed();
       timebased_track->trackid = track->id;
       timebased_track->candidateid=track->candidateid;
       

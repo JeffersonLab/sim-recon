@@ -103,6 +103,10 @@ DParticleID::DParticleID(JEventLoop *loop)
 		cout << "DParticleID: Error loading values from PID data base" <<endl;
 		DELTA_R_FCAL = 15.0;
 	}
+
+	//IF YOU CHANGE THESE, PLEASE (!!) UPDATE THE CUT LINES DRAWN FOR THE MONITORING IN:
+	// src/plugins/Analysis/monitoring_hists/HistMacro_Matching_*.C
+
 	FCAL_CUT_PAR1=4.5;
 	gPARMS->SetDefaultParameter("FCAL:CUT_PAR1",FCAL_CUT_PAR1);
 
@@ -118,16 +122,16 @@ DParticleID::DParticleID(JEventLoop *loop)
 	TOF_CUT_PAR3 = 6.15;
 	gPARMS->SetDefaultParameter("TOF:CUT_PAR3",TOF_CUT_PAR3);
 
-	BCAL_Z_CUT = 20.0;
+	BCAL_Z_CUT = 30.0;
 	gPARMS->SetDefaultParameter("BCAL:Z_CUT",BCAL_Z_CUT);
 
-	BCAL_PHI_CUT_PAR1=1.0;
+	BCAL_PHI_CUT_PAR1 = 3.0;
 	gPARMS->SetDefaultParameter("BCAL:PHI_CUT_PAR1",BCAL_PHI_CUT_PAR1);
 
-	BCAL_PHI_CUT_PAR2=4.0;
+	BCAL_PHI_CUT_PAR2 = 12.0;
 	gPARMS->SetDefaultParameter("BCAL:PHI_CUT_PAR2",BCAL_PHI_CUT_PAR2);
 
-	BCAL_PHI_CUT_PAR3=1.0;
+	BCAL_PHI_CUT_PAR3 = 0.8;
 	gPARMS->SetDefaultParameter("BCAL:PHI_CUT_PAR3",BCAL_PHI_CUT_PAR3);
 
 	double locSCCutPar = 7.0;
@@ -823,11 +827,18 @@ bool DParticleID::Distance_ToTrack(const DReferenceTrajectory* rt, const DSCHit*
 	if(rt == nullptr)
 		return false;
 
-	// Find intersection with a "barrel" approximation for the start counter
-	double locPathLength = 9.9E9, locFlightTime = 9.9E9, locFlightTimeVariance = 9.9E9, locDeltaPhi = 9.9E9;
+	//The track may be projected to hit a different paddle than the one it actually hit!!!!
+	//First, we need to find where the track is projected to intersect the start counter geometry
 	DVector3 locProjPos, locProjMom, locPaddleNorm;
-	if(!ProjectTo_SC(rt, locSCHit->sector, locDeltaPhi, locProjPos, locProjMom, locPaddleNorm, locPathLength, locFlightTime, locFlightTimeVariance))
+	double locDeltaPhi, locPathLength, locFlightTime, locFlightTimeVariance;
+	int locSCPlane;
+	unsigned int locBestSCSector = PredictSCSector(rt, locDeltaPhi, locProjPos, locProjMom, locPaddleNorm, locPathLength, locFlightTime, locFlightTimeVariance, locSCPlane);
+	if(locBestSCSector == 0)
 		return false;
+
+	//Now, the input SC hit may have been on a separate SC paddle than the projection
+	//So, we have to assume that the locProjPos.Z() for the projected paddle is accurate enough for the hit paddle (no other way to get it).
+	//In fact, we assume that everything from the above is accurate except for locDeltaPhi (we'll recalculate it at the end)
 
 	// Check that the hit is not out of time with respect to the track
 	if(fabs(locSCHit->t - locFlightTime - locInputStartTime) > OUT_OF_TIME_CUT)
@@ -880,6 +891,14 @@ bool DParticleID::Distance_ToTrack(const DReferenceTrajectory* rt, const DSCHit*
 		*locOutputProjMom = locProjMom;
 	}
 
+	// Correct the locDeltaPhi in case the projected and input SC hit paddles are different
+	DVector3 sc_pos_at_projz = sc_pos[sc_index][locSCPlane] + (locProjPos.Z() - sc_pos[sc_index][locSCPlane].z())*sc_dir[sc_index][locSCPlane];
+	locDeltaPhi = sc_pos_at_projz.Phi() - locProjPos.Phi();
+	while(locDeltaPhi > TMath::Pi())
+		locDeltaPhi -= M_TWO_PI;
+	while(locDeltaPhi < -1.0*TMath::Pi())
+		locDeltaPhi += M_TWO_PI;
+
 	// For the dEdx measurement we now need to take into account that L does not
 	// compensate for the position in z at which the start counter paddle starts
 	double ds = 0.3*locProjMom.Mag()/fabs(locProjMom.Dot(locPaddleNorm));
@@ -900,13 +919,14 @@ bool DParticleID::Distance_ToTrack(const DReferenceTrajectory* rt, const DSCHit*
 	return true;
 }
 
-bool DParticleID::ProjectTo_SC(const DReferenceTrajectory* rt, unsigned int locSCSector, double& locDeltaPhi, DVector3& locProjPos, DVector3& locProjMom, DVector3& locPaddleNorm, double& locPathLength, double& locFlightTime, double& locFlightTimeVariance) const
+bool DParticleID::ProjectTo_SC(const DReferenceTrajectory* rt, unsigned int locSCSector, double& locDeltaPhi, DVector3& locProjPos, DVector3& locProjMom, DVector3& locPaddleNorm, double& locPathLength, double& locFlightTime, double& locFlightTimeVariance, int& locSCPlane) const
 {
 	if(rt == nullptr)
 		return false;
 
 	// Find intersection with a "barrel" approximation for the start counter
 	unsigned int sc_index = locSCSector - 1;
+	locSCPlane = -1;
 	if(rt->GetIntersectionWithPlane(sc_pos[sc_index][0], sc_norm[sc_index][0], locProjPos, locProjMom, &locPathLength, &locFlightTime, &locFlightTimeVariance) != NOERROR)
 		return false;
 
@@ -922,16 +942,9 @@ bool DParticleID::ProjectTo_SC(const DReferenceTrajectory* rt, unsigned int locS
 	if (locProjPos.Z() < sc_pos_soss) //unphysical, adjust: due to track projection uncertainty (or it really did miss)
 		locProjPos.SetZ(sc_pos_soss);
 
-	// Initialize the normal vector for the SC paddle to the long, unbent region
-	locPaddleNorm = sc_norm[sc_index][0];
-
 	// Check to see if hit occured in the straight section
 	if (locProjPos.Z() <= sc_pos_eoss)
-	{
-		// Apply a user-specified matching cut in the leg region
-		DVector3 sc_pos_at_projz = sc_pos[sc_index][0] + (locProjPos.Z() - sc_pos_soss)*sc_dir[sc_index][0];
-		locDeltaPhi = sc_pos_at_projz.Phi() - locProjPos.Phi();
-	}
+		locSCPlane = 0;
 	else //bend or nose
 	{
 		//loop through SC planes
@@ -953,21 +966,26 @@ bool DParticleID::ProjectTo_SC(const DReferenceTrajectory* rt, unsigned int locS
 			else if(locProjPos.Z() > sc_pos[sc_index][loc_i + 1].z())
 				continue; //past the end of this plane, go to next plane
 
-			DVector3 sc_pos_at_projz = sc_pos[sc_index][loc_i] + (locProjPos.Z() - sc_pos[sc_index][loc_i].z())*sc_dir[sc_index][loc_i];
-			locDeltaPhi = sc_pos_at_projz.Phi() - locProjPos.Phi();
-			locPaddleNorm = sc_norm[sc_index][loc_i];
+			locSCPlane = loc_i;
 			break;
 		}
 
 		// Check to see if the projections changed their mind, and put the hit in the straight section after all
 		if(locProjPos.Z() < sc_pos_eoss) // Assume hit just past the end of straight section
 		{
-			locProjPos.SetZ(sc_pos_eoss + 0.0001); //some tolerance
-			DVector3 sc_pos_at_projz = sc_pos[sc_index][0] + (locProjPos.Z() - sc_pos_soss)*sc_dir[sc_index][0];
-			locDeltaPhi = sc_pos_at_projz.Phi() - locProjPos.Phi();
+			locProjPos.SetZ(sc_pos_eoss - 0.0001); //some tolerance
+			locSCPlane = 0;
 		}
 	}
+	if(locSCPlane == -1)
+		return false; //should be impossible ...
 
+	//normal to the plane
+	locPaddleNorm = sc_norm[sc_index][locSCPlane];
+
+	//Calculate delta-phi
+	DVector3 sc_pos_at_projz = sc_pos[sc_index][locSCPlane] + (locProjPos.Z() - sc_pos[sc_index][locSCPlane].z())*sc_dir[sc_index][locSCPlane];
+	locDeltaPhi = sc_pos_at_projz.Phi() - locProjPos.Phi();
 	while(locDeltaPhi > TMath::Pi())
 		locDeltaPhi -= M_TWO_PI;
 	while(locDeltaPhi < -1.0*TMath::Pi())
@@ -1674,32 +1692,109 @@ unsigned int DParticleID::PredictSCSector(const DReferenceTrajectory* rt, DVecto
 	if(rt == nullptr)
 		return 0;
 
-	unsigned int locBestSCSector = 0;
-	double min_dphi=1e6;
 	DVector3 locProjPos, locProjMom, locPaddleNorm;
-	// loop over geometry for all SC paddles looking for track intersections
-	for(unsigned int locSCSector = 1; locSCSector <= 30; ++locSCSector)
-	{
-		double locPathLength = 9.9E9, locFlightTime = 9.9E9, locFlightTimeVariance = 9.9E9, locDeltaPhi = 9.9E9;
-		if(!ProjectTo_SC(rt, locSCSector, locDeltaPhi, locProjPos, locProjMom, locPaddleNorm, locPathLength, locFlightTime, locFlightTimeVariance))
-			return 0;
-
-		if(fabs(locDeltaPhi) >= fabs(min_dphi))
-			continue;
-
-		min_dphi = locDeltaPhi;
-		locBestSCSector = locSCSector;
-	}
+	double locDeltaPhi, locPathLength, locFlightTime, locFlightTimeVariance;
+	int locSCPlane;
+	unsigned int locBestSCSector = PredictSCSector(rt, locDeltaPhi, locProjPos, locProjMom, locPaddleNorm, locPathLength, locFlightTime, locFlightTimeVariance, locSCPlane);
+	if(locBestSCSector == 0)
+		return 0;
 
 	if(locProjBarrelRegion != NULL)
 		*locProjBarrelRegion = (locProjPos.Z() < sc_pos[locBestSCSector - 1][1].Z()); // End of straight section
 
 	if(locMinDPhi != NULL)
-		*locMinDPhi = min_dphi;
+		*locMinDPhi = locDeltaPhi;
 
 	if(locOutputProjPos != NULL)
 		*locOutputProjPos = locProjPos;
 	return locBestSCSector;
+}
+
+// Predict the start counter paddle that would match a track whose reference
+// trajectory is given by rt.
+unsigned int DParticleID::PredictSCSector(const DReferenceTrajectory* rt, double& locDeltaPhi, DVector3& locProjPos, DVector3& locProjMom, DVector3& locPaddleNorm, double& locPathLength, double& locFlightTime, double& locFlightTimeVariance, int& locSCPlane) const{
+  if(rt == nullptr)
+    return 0;
+  if (rt->Nswim_steps==0) return 0;
+  // If the starting point of the track is outside the start counter, bail.
+  if (rt->swim_steps[0].origin.Perp()>sc_pos[0][0].Perp()){
+    return 0;
+  }
+  int index=0,istep=0;
+  double d_old=1000.,d=1000.,dphi=0.;
+  for (unsigned int m=0;m<12;m++){
+    for (int i=0;i<rt->Nswim_steps;i++){
+      locProjPos=rt->swim_steps[i].origin;
+      if (!isfinite(locProjPos.Phi())){
+	return 0;
+      }
+      dphi=locProjPos.Phi()-sc_pos[0][0].Phi();
+      if (dphi<0) dphi+=2.*M_PI;
+      index=int(floor(dphi/(2.*M_PI/30.)));
+      if (index>29) index=0;
+      d=sc_norm[index][m].Dot(locProjPos-sc_pos[index][m]);
+      if (d*d_old<0){ // break if we cross the current plane
+	istep=i;
+	break;
+      }
+      d_old=d;
+    }  
+    // if the z position would be beyond the current segment along z of 
+    // the start counter, move to the next plane
+    double z=locProjPos.z();
+    if (z>sc_pos[index][m+1].z()&&m<11){
+      continue;
+    }
+    // allow for a little slop at the end of the nose
+    else if (z<sc_pos[index][sc_pos[0].size()-1].z()+1.){
+      // Hone in on intersection with the appropriate segment of the start 
+      // counter
+      locProjMom=rt->swim_steps[istep].mom;
+      double ds=-d*locProjMom.Mag()/sc_norm[index][m].Dot(locProjMom);
+      DVector3 B=rt->swim_steps[istep].B;
+
+      // Current position and momentum
+      double x=locProjPos.x(),y=locProjPos.y();
+      double px=locProjMom.x(),py=locProjMom.y(),pz=locProjMom.z();
+      double p=locProjMom.Mag();
+  
+      // Compute convenience terms involving Bx, By, Bz
+      double k_q=0.003*rt->q;
+      double ds_over_p=ds/p;
+      double factor=k_q*(0.25*ds_over_p);
+      double Bx=B.x(),By=B.y(),Bz=B.z();
+      double Ax=factor*Bx,Ay=factor*By,Az=factor*Bz;
+      double Ax2=Ax*Ax,Ay2=Ay*Ay,Az2=Az*Az;
+      double AxAy=Ax*Ay,AxAz=Ax*Az,AyAz=Ay*Az;
+      double one_plus_Ax2=1.+Ax2;
+      double scale=ds_over_p/(one_plus_Ax2+Ay2+Az2);
+      
+      // Compute position increments
+      double dx=scale*(px*one_plus_Ax2+py*(AxAy+Az)+pz*(AxAz-Ay));
+      double dy=scale*(px*(AxAy-Az)+py*(1.+Ay2)+pz*(AyAz+Ax));
+      double dz=scale*(px*(AxAz+Ay)+py*(AyAz-Ax)+pz*(1.+Az2));
+      
+      locProjPos.SetXYZ(x+dx,y+dy,z+dz);
+      locProjMom.SetXYZ(px+k_q*(Bz*dy-By*dz),py+k_q*(Bx*dz-Bz*dx),
+			pz+k_q*(By*dx-Bx*dy)); 
+      dphi=locProjPos.Phi()-sc_pos[index][m].Phi();
+      if (dphi<0) dphi+=2.*M_PI;
+      locDeltaPhi=dphi;
+      locPaddleNorm=sc_norm[index][m];
+      // Flight time
+      double mass=rt->GetMass();
+      double one_over_betasq=1.+mass*mass/locProjMom.Mag2();
+      locFlightTime=rt->swim_steps[istep].t
+	+ds*sqrt(one_over_betasq)/SPEED_OF_LIGHT;
+      locPathLength=rt->swim_steps[istep].s+ds;
+      locFlightTimeVariance=rt->swim_steps[istep].cov_t_t;
+      locSCPlane=m;
+
+      return index+1;
+    }
+
+  }
+  return 0;
 }
 
 /****************************************************** MISCELLANEOUS ******************************************************/

@@ -20,6 +20,8 @@ extern DApplication *dapp;
 extern JEventLoop *eventloop;
 extern MyProcessor *myproc;
 
+extern int32_t RUNNUMBER;
+
 jerror_t hdv_getevent(void);
 jerror_t hdv_drawevent(void);
 

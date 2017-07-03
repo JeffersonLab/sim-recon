@@ -93,7 +93,7 @@ DChargedTrackHypothesis* DChargedTrackHypothesis_factory::Create_ChargedTrackHyp
 
 	uint64_t locEventNumber = locEventLoop->GetJEvent().GetEventNumber();
 	TMatrixFSym* locCovarianceMatrix = (dynamic_cast<DApplication*>(japp))->Get_CovarianceMatrixResource(7, locEventNumber);
-	*locCovarianceMatrix = *(locChargedTrackHypothesis->errorMatrix());
+	if (locChargedTrackHypothesis->errorMatrix() != nullptr) *locCovarianceMatrix = *(locChargedTrackHypothesis->errorMatrix());
 
 	// RF Time
 	if(locEventRFBunch->dTimeSource != SYS_NULL)

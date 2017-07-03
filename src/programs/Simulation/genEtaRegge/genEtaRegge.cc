@@ -16,12 +16,7 @@
 #include <string>
 using namespace std;
 
-extern "C"{
-  void cobrems_(float *Ee,float *Epeak, float *emitmr, float *radt,
-		float *dist,float *diameter,int *doPolFlux);
-  float dntdx_(float* x);
-  float dnidx_(float* x);
-}
+#include <CobremsGeneration.hh>
 
 // Masses
 const double m_p=0.93827; // GeV
@@ -39,7 +34,7 @@ double g_phi_eta_gamma=0.38;
 double Emin=3.,Emax=12.0; // GeV
 double zmin=50.0,zmax=80.0; // cm, target extent
 int Nevents=10000;
-int runNo=9000;
+int runNo=10000;
 bool debug=false;
 
 // Diagnostic histograms
@@ -50,8 +45,8 @@ TH2D *thrown_dalitzXY;
 TH2D *thrown_theta_vs_p;
 TH1D *cobrems_vs_E;
 
-char input_file_name[50]="eta548.in";
-char output_file_name[50]="eta_gen.hddm";
+char input_file_name[250]="eta548.in";
+char output_file_name[250]="eta_gen.hddm";
 
 void Usage(void){
   printf("genEtaRegge: generator for eta production based on Regge trajectory formalism.\n");
@@ -59,7 +54,7 @@ void Usage(void){
   printf("   Options:  -N<number of events> (number of events to generate)\n");
   printf("             -O<output.hddm>   (default: eta_gen.hddm)\n");
   printf("             -I<input.in>      (default: eta548.in)\n");
-  printf("             -R<run number>    (default: 9000)\n");
+  printf("             -R<run number>    (default: 10000)\n");
   printf("             -h                (Print this message and exit.)\n");
   printf("Coupling constants, photon beam energy range, and eta decay products are\n");
   printf("specified in the <input.in> file.\n");
@@ -480,7 +475,12 @@ int main(int narg, char *argv[])
   int doPolFlux=0;  // want total flux (1 for polarized flux)
   float emitmr=10.e-9; // electron beam emittance
   float radt=20.e-6; // radiator thickness in m
-  cobrems_(&Ee,&Epeak,&emitmr,&radt,&radColDist,&collDiam,&doPolFlux);
+  CobremsGeneration cobrems(Ee, Epeak);
+  cobrems.setBeamEmittance(emitmr);
+  cobrems.setTargetThickness(radt);
+  cobrems.setCollimatorDistance(radColDist);
+  cobrems.setCollimatorDiameter(collDiam);
+  cobrems.setPolarizedFlag(doPolFlux);
   
   // Create some diagonistic histographs
   CreateHistograms();
@@ -491,8 +491,8 @@ int main(int narg, char *argv[])
   for (int i=1;i<=1000;i++){
     float x=float(cobrems_vs_E->GetBinCenter(i)/Ee);
     float y=0;
-    if (Epeak<Emin) y=dnidx_(&x);
-    else y=dntdx_(&x);
+    if (Epeak<Emin) y=cobrems.Rate_dNidx(x);
+    else y=cobrems.Rate_dNtdx(x);
     cobrems_vs_E->Fill(Ee*double(x),double(y));
   }
 
@@ -637,7 +637,7 @@ int main(int narg, char *argv[])
     }
     WriteEvent(i,beam,vert,particle_types,particle_vectors,file);
     
-    if ((i%100)==0) cout << 100.*double(i)/double(Nevents) << "\% done" << endl;
+    if ((i%(Nevents/10))==0) cout << 100.*double(i)/double(Nevents) << "\% done" << endl;
   }
 
 

@@ -41,6 +41,7 @@ jerror_t JEventProcessor_TOF_TDC_shift::init(void) {
   
   // Create root folder for ST and cd to it, store main dir
   TDirectory *main = gDirectory;
+  filedir = main;
   gDirectory->mkdir("TOF_TDC_shift")->cd();
 
   // TI remainder vs (ADC time - TDC time)
@@ -140,6 +141,7 @@ jerror_t JEventProcessor_TOF_TDC_shift::fini(void) {
   char hname[200];
   Double_t min = +99999;
   Int_t shift = -1;
+  filedir->cd();
   gDirectory->cd("TOF_TDC_shift");
 
   /*
@@ -181,7 +183,7 @@ jerror_t JEventProcessor_TOF_TDC_shift::fini(void) {
   //if(!(shift == 1 || shift == 3 || shift == 5)) shift = -1;
 
   OUTPUT << shift << endl;
-
+  filedir->cd();
   // Called before program exit after event processing is finished.
   return NOERROR;
 }

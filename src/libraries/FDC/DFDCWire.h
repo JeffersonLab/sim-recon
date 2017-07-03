@@ -12,11 +12,12 @@
 
 
 class DFDCWire:public DCoordinateSystem{
-	public:
-		int layer;		///< 1-24
-		int wire;		///< 1-N
-		float u; // coordinate of wire in direction transverse to the wire
-		float angle;	///< radians
+   public:
+      int layer;		///< 1-24
+      int wire;		///< 1-N
+      float u; // coordinate of wire in direction transverse to the wire
+      float angle;	///< radians
+      DVector3 angles; ///< radians
 };
 
 #endif // _DFDCWire_

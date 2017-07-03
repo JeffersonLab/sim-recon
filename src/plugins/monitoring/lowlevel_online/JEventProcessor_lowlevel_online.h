@@ -306,6 +306,10 @@ class JEventProcessor_lowlevel_online:public jana::JEventProcessor{
         TH1I *tof_adc_emudelta_finetime;
 
 
+	//------------------------ F1TDC ------------------------
+	TH2I *f1tdc_unlocked;
+	TH2I *f1tdc_bad_output_fifo;
+	TH2I *f1tdc_bad_hit_fifo;
 
 	private:
 		jerror_t init(void);

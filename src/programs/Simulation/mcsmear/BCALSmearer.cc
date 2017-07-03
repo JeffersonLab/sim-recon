@@ -145,21 +145,22 @@ void BCALSmearer::GetSiPMHits(hddm_s::HDDM *record,
      }
      int table_id = GetCalibIndex( iter->getModule(), layer, iter->getSector() );  // key the cell identification off of the upstream cell
      double cEff = bcal_config->GetEffectiveVelocity(table_id);
-     double attenuation_length = 0; // initialize variable
-     double attenuation_L1=-1., attenuation_L2=-1.;  // these parameters are ignored for now
-     bcal_config->GetAttenuationParameters(table_id, attenuation_length, attenuation_L1, attenuation_L2);
+     //double attenuation_length = 0; // initialize variable
+     //double attenuation_L1=-1., attenuation_L2=-1.;  // these parameters are ignored for now
+     //bcal_config->GetAttenuationParameters(table_id, attenuation_length, attenuation_L1, attenuation_L2);
     
      // Get reference to existing CellHits, or create one if it doesn't exist
      CellHits &cellhitsup = SiPMHits[idxup];
      cellhitsup.Etruth = iter->getE(); // Energy deposited in the cell in GeV
-     cellhitsup.E = iter->getE()*exp(-dist_up/attenuation_length)*1000.; // in attenuated MeV
+     //cellhitsup.E = iter->getE()*exp(-dist_up/attenuation_length)*1000.; // in attenuated MeV
+     cellhitsup.E = iter->getE()*exp(-dist_up/bcal_config->BCAL_ATTENUATION_LENGTH)*1000.; // in attenuated MeV
      cellhitsup.t = iter->getT() + dist_up/cEff; // in ns
      cellhitsup.end = CellHits::kUp; // Keep track of BCal end
 
      // Get reference to existing CellHits, or create one if it doesn't exist
      CellHits &cellhitsdn = SiPMHits[idxdn];
      cellhitsdn.Etruth = iter->getE(); // Energy deposited in the cell in GeV
-     cellhitsdn.E = iter->getE()*exp(-dist_dn/attenuation_length)*1000.; // in attenuated MeV
+     cellhitsdn.E = iter->getE()*exp(-dist_dn/bcal_config->BCAL_ATTENUATION_LENGTH)*1000.; // in attenuated MeV
      cellhitsdn.t = iter->getT() + dist_dn/cEff; // in ns
      cellhitsdn.end = CellHits::kDown; // Keep track of BCal end
    }
@@ -353,7 +354,7 @@ void BCALSmearer::SortSiPMHits(map<bcal_index, CellHits> &SiPMHits, map<int, Sum
       
       // Get reference to SumHits object
       const bcal_index &idx = iter->first;
-      int fADCId = DBCALGeometry::fADCId( idx.module, idx.layer, idx.sector);
+      int fADCId = dBCALGeom->fADCId( idx.module, idx.layer, idx.sector);
       SumHits &sumhits = bcalfADC[fADCId];
       
       // Add CellHits object to list in SumHits
@@ -434,9 +435,9 @@ void BCALSmearer::SimpleDarkHitsSmear(map<int, SumHits> &bcalfADC)
    double sigma4 = bcal_config->BCAL_LAYER4_SIGMA_SCALE*bcal_config->BCAL_MEV_PER_ADC_COUNT; 
 
    // Loop over all fADC readout cells
-   for(int imodule=1; imodule<=DBCALGeometry::NBCALMODS; imodule++){
+   for(int imodule=1; imodule<=dBCALGeom->NBCALMODS; imodule++){
 
-      int n_layers = DBCALGeometry::NBCALLAYSIN + DBCALGeometry::NBCALLAYSOUT;
+      int n_layers = dBCALGeom->NBCALLAYSIN + dBCALGeom->NBCALLAYSOUT;
       for(int fADC_lay=1; fADC_lay<=n_layers; fADC_lay++){
          if(fADC_lay == 1) 
          	sigma = sigma1;
@@ -447,12 +448,12 @@ void BCALSmearer::SimpleDarkHitsSmear(map<int, SumHits> &bcalfADC)
          else if(fADC_lay == 4) 
          	sigma = sigma4;
 
-         int n_sectors = (fADC_lay <= DBCALGeometry::NBCALLAYSIN)? DBCALGeometry::NBCALSECSIN : DBCALGeometry::NBCALSECSOUT;
+         int n_sectors = (fADC_lay <= dBCALGeom->NBCALLAYSIN)? dBCALGeom->NBCALSECSIN : dBCALGeom->NBCALSECSOUT;
          for(int fADC_sec=1; fADC_sec<=n_sectors; fADC_sec++){
 
             // Use cellId(...) to convert fADC layer and sector into fADCId
-            // (see DBCALGeometry::fADCId)
-            int fADCId = DBCALGeometry::cellId(imodule, fADC_lay, fADC_sec);
+            // (see dBCALGeom->fADCId)
+            int fADCId = dBCALGeom->cellId(imodule, fADC_lay, fADC_sec);
             
             // Get SumHits object if it already exists or create new one 
             // if it doesn't.
@@ -538,14 +539,14 @@ void BCALSmearer::FindHits(double thresh_MeV, map<int, SumHits> &bcalfADC, map<i
       double preamp_gain_tdc = 5.0;
       double thresh_MeV_TDC = thresh_MeV/preamp_gain_tdc;
 	  //the outermost layer of the detector is not equipped with TDCs, so don't generate any TDC hits
-	  int layer = DBCALGeometry::layer(fADCId);
+	  int layer = dBCALGeom->layer(fADCId);
 
       for(int ii = 0; ii < (int)sumhits.EUP.size(); ii++){
         // correct simulation efficiencies 
 		if (config->APPLY_EFFICIENCY_CORRECTIONS
-		 		&& !gDRandom.DecideToAcceptHit(bcal_config->GetEfficiencyCorrectionFactor(GetCalibIndex(DBCALGeometry::module(fADCId),
-		 																				  DBCALGeometry::layer(fADCId),
-		 																				  DBCALGeometry::sector(fADCId)),
+		 		&& !gDRandom.DecideToAcceptHit(bcal_config->GetEfficiencyCorrectionFactor(GetCalibIndex(dBCALGeom->module(fADCId),
+		 																				  dBCALGeom->layer(fADCId),
+		 																				  dBCALGeom->sector(fADCId)),
 		 																				  DBCALGeometry::End::kUpstream)))
 		 			continue;
 		 			
@@ -555,9 +556,9 @@ void BCALSmearer::FindHits(double thresh_MeV, map<int, SumHits> &bcalfADC, map<i
       for(int ii = 0; ii < (int)sumhits.EDN.size(); ii++){                                                                     // they are not layer 4 hits and cross threshold.
         // correct simulation efficiencies 
 		if (config->APPLY_EFFICIENCY_CORRECTIONS
-		 		&& !gDRandom.DecideToAcceptHit(bcal_config->GetEfficiencyCorrectionFactor(GetCalibIndex(DBCALGeometry::module(fADCId),
-		 																				  DBCALGeometry::layer(fADCId),
-		 																				  DBCALGeometry::sector(fADCId)),
+		 		&& !gDRandom.DecideToAcceptHit(bcal_config->GetEfficiencyCorrectionFactor(GetCalibIndex(dBCALGeom->module(fADCId),
+		 																				  dBCALGeom->layer(fADCId),
+		 																				  dBCALGeom->sector(fADCId)),
 		 																				  DBCALGeometry::End::kDownstream)))
 		 			continue;
 
@@ -572,9 +573,9 @@ void BCALSmearer::FindHits(double thresh_MeV, map<int, SumHits> &bcalfADC, map<i
          // The module, fADC layer, and fADC sector are encoded in fADCId
          // (n.b. yes, these are the same methods used for extracting 
          // similar quantities from the cellId.)
-         hitlist.module = DBCALGeometry::module(fADCId);
-         hitlist.sumlayer = DBCALGeometry::layer(fADCId);
-         hitlist.sumsector = DBCALGeometry::sector(fADCId);
+         hitlist.module = dBCALGeom->module(fADCId);
+         hitlist.sumlayer = dBCALGeom->layer(fADCId);
+         hitlist.sumsector = dBCALGeom->sector(fADCId);
          
          hitlist.uphits = uphits;
          hitlist.dnhits = dnhits;
@@ -587,9 +588,9 @@ void BCALSmearer::FindHits(double thresh_MeV, map<int, SumHits> &bcalfADC, map<i
          // The module, fADC layer, and fADC sector are encoded in fADCId
          // (n.b. yes, these are the same methods used for extracting 
          // similar quantities from the cellId.)
-         hitlistTDC.module = DBCALGeometry::module(fADCId);
-         hitlistTDC.sumlayer = DBCALGeometry::layer(fADCId);
-         hitlistTDC.sumsector = DBCALGeometry::sector(fADCId);
+         hitlistTDC.module = dBCALGeom->module(fADCId);
+         hitlistTDC.sumlayer = dBCALGeom->layer(fADCId);
+         hitlistTDC.sumsector = dBCALGeom->sector(fADCId);
          
          hitlistTDC.uphits = uphitsTDC;
          hitlistTDC.dnhits = dnhitsTDC;
@@ -665,7 +666,20 @@ void BCALSmearer::CopyBCALHitsToHDDM(map<int, fADCHitList> &fADCHits,
       	if (integer_time >= 0){
             hddm_s::BcalfADCDigiHitList fadcs = iter->addBcalfADCDigiHits();
             fadcs().setEnd(bcal_index::kUp);
-            fadcs().setPulse_integral(round(hitlist.uphits[i].E/bcal_config->BCAL_MEV_PER_ADC_COUNT));
+	    double integral = round(hitlist.uphits[i].E/bcal_config->BCAL_MEV_PER_ADC_COUNT);
+	    
+	    // fADC saturation based on waveforms from data
+	    if(!bcal_config->NO_FADC_SATURATION) { 
+		    if(integral > bcal_config->fADC_MinIntegral_Saturation[0][hitlist.sumlayer-1]) {
+			    double y = integral; 
+			    double a = bcal_config->fADC_Saturation_Linear[0][hitlist.sumlayer-1];
+			    double b = bcal_config->fADC_Saturation_Quadratic[0][hitlist.sumlayer-1];
+			    double c = bcal_config->fADC_MinIntegral_Saturation[0][hitlist.sumlayer-1];
+			    // "invert" saturation correction for MC
+			    integral = (1 - a*y + 2.*b*c*y - sqrt(1. - 2.*a*y + 4.*b*c*y + (a*a - 4.*b)*y*y))/(2.*b*y);
+		    }
+	    }
+            fadcs().setPulse_integral(integral);
             fadcs().setPulse_time(integer_time);
         }
       }
@@ -674,7 +688,21 @@ void BCALSmearer::CopyBCALHitsToHDDM(map<int, fADCHitList> &fADCHits,
       	if (integer_time >= 0){
             hddm_s::BcalfADCDigiHitList fadcs = iter->addBcalfADCDigiHits();
             fadcs().setEnd(bcal_index::kDown);
-            fadcs().setPulse_integral(round(hitlist.dnhits[i].E/bcal_config->BCAL_MEV_PER_ADC_COUNT));
+	    double integral = round(hitlist.dnhits[i].E/bcal_config->BCAL_MEV_PER_ADC_COUNT);
+	    
+	    // fADC saturation based on waveforms from data
+	    if(!bcal_config->NO_FADC_SATURATION) { 
+		    if(integral > bcal_config->fADC_MinIntegral_Saturation[1][hitlist.sumlayer-1]) {
+			    double y = integral; 
+			    double a = bcal_config->fADC_Saturation_Linear[1][hitlist.sumlayer-1];
+			    double b = bcal_config->fADC_Saturation_Quadratic[1][hitlist.sumlayer-1];
+			    double c = bcal_config->fADC_MinIntegral_Saturation[1][hitlist.sumlayer-1];
+			    // "invert" saturation correction for MC
+			    integral = (1 - a*y + 2.*b*c*y - sqrt(1. - 2.*a*y + 4.*b*c*y + (a*a - 4.*b)*y*y))/(2.*b*y);
+                    }
+
+	    }
+            fadcs().setPulse_integral(integral);
             fadcs().setPulse_time(integer_time);
         } 
       }
@@ -762,18 +790,20 @@ bcal_config_t::bcal_config_t(JEventLoop *loop)
  	NO_SAMPLING_FLUCTUATIONS = false;
  	NO_SAMPLING_FLOOR_TERM = false;
  	NO_POISSON_STATISTICS = false;
+	NO_FADC_SATURATION = false;
 		
 	// Load parameters from CCDB
-    cout << "get BCAL/bcal_smear_parms parameters from CCDB..." << endl;
+    cout << "get BCAL/bcal_smear_parms_v2 parameters from CCDB..." << endl;
     map<string, double> bcalparms;
-    if(loop->GetCalib("BCAL/bcal_smear_parms", bcalparms)) {
-     	jerr << "Problem loading BCAL/bcal_smear_parms from CCDB!" << endl;
+    if(loop->GetCalib("BCAL/bcal_smear_parms_v2", bcalparms)) {
+     	jerr << "Problem loading BCAL/bcal_smear_parms_v2 from CCDB!" << endl;
      } else {
      	BCAL_SAMPLINGCOEFA 		  = bcalparms["BCAL_SAMPLINGCOEFA"];
      	BCAL_SAMPLINGCOEFB 		  = bcalparms["BCAL_SAMPLINGCOEFB"];
      	BCAL_TWO_HIT_RESO 		  = bcalparms["BCAL_TWO_HIT_RESO"];
 	BCAL_mevPerPE			  = bcalparms["BCAL_mevPerPE"];
 	BCAL_C_EFFECTIVE		  = bcalparms["BCAL_C_EFFECTIVE"];
+	BCAL_ATTENUATION_LENGTH		  = bcalparms["BCAL_ATTENUATION_LENGTH"];
 	BCAL_ADC_THRESHOLD_MEV		  = bcalparms["BCAL_ADC_THRESHOLD_MEV"];
 	BCAL_FADC_TIME_RESOLUTION	  = bcalparms["BCAL_FADC_TIME_RESOLUTION"]; 
 	BCAL_TDC_TIME_RESOLUTION	  = bcalparms["BCAL_TDC_TIME_RESOLUTION"];
@@ -785,17 +815,17 @@ bcal_config_t::bcal_config_t(JEventLoop *loop)
 
 	}
 	
-    cout << "Get BCAL/attenuation_parameters from CCDB..." <<endl;
-    vector< vector<double> > in_atten_parameters;
-    if(loop->GetCalib("BCAL/attenuation_parameters", in_atten_parameters)) {
-     	jerr << "Problem loading BCAL/bcal_parms from CCDB!" << endl;
-	} else {
-     	attenuation_parameters.clear();
-
-     	for (unsigned int i = 0; i < in_atten_parameters.size(); i++) {
-     		attenuation_parameters.push_back( in_atten_parameters.at(i) );
-     	}
-	}
+    //cout << "Get BCAL/attenuation_parameters from CCDB..." <<endl;
+    //vector< vector<double> > in_atten_parameters;
+    //if(loop->GetCalib("BCAL/attenuation_parameters", in_atten_parameters)) {
+    // 	jerr << "Problem loading BCAL/bcal_parms from CCDB!" << endl;
+	//} else {
+    // 	attenuation_parameters.clear();
+    //
+    // 	for (unsigned int i = 0; i < in_atten_parameters.size(); i++) {
+    // 		attenuation_parameters.push_back( in_atten_parameters.at(i) );
+    // 	}
+	//}
 		
      cout << "Get BCAL/digi_scales parameters from CCDB..." << endl;
      map<string, double> bcaldigiscales;
@@ -834,6 +864,15 @@ bcal_config_t::bcal_config_t(JEventLoop *loop)
         
     }
 
-
+    std::vector<std::map<string,double> > saturation_ADC_pars;
+    if(loop->GetCalib("/BCAL/ADC_saturation", saturation_ADC_pars))
+	    jout << "Error loading /BCAL/ADC_saturation !" << endl;
+    for (unsigned int i=0; i < saturation_ADC_pars.size(); i++) {
+	    int end = (saturation_ADC_pars[i])["end"];
+	    int layer = (saturation_ADC_pars[i])["layer"] - 1;
+	    fADC_MinIntegral_Saturation[end][layer] = (saturation_ADC_pars[i])["par0"];
+	    fADC_Saturation_Linear[end][layer] = (saturation_ADC_pars[i])["par1"];
+	    fADC_Saturation_Quadratic[end][layer] = (saturation_ADC_pars[i])["par2"];
+    } 
 }
 

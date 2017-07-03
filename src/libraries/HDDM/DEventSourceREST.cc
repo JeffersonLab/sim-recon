@@ -129,7 +129,11 @@ jerror_t DEventSourceREST::GetEvent(JEvent &event)
          hddm_r::DataVersionStringList::iterator Versioniter;
          for (Versioniter = locVersionStrings.begin(); Versioniter != locVersionStrings.end(); ++Versioniter) {
         	 string HDDM_DATA_VERSION_STRING = Versioniter->getText();
-             gPARMS->SetDefaultParameter("REST:DATAVERSIONSTRING", HDDM_DATA_VERSION_STRING);
+             if(gPARMS->Exists("REST:DATAVERSIONSTRING"))
+                gPARMS->SetParameter("REST:DATAVERSIONSTRING", HDDM_DATA_VERSION_STRING);
+	     else
+	 	gPARMS->SetDefaultParameter("REST:DATAVERSIONSTRING", HDDM_DATA_VERSION_STRING);
+	     break;
          }
 
          //set REST calib context
@@ -882,6 +886,23 @@ jerror_t DEventSourceREST::Extract_DBCALShower(hddm_r::HDDM *record,
 		{
 			for(; locPreShowerIterator != locPreShowerList.end(); ++locPreShowerIterator)
 				shower->E_preshower = locPreShowerIterator->getPreshowerE();
+		}
+
+		// width
+		const hddm_r::WidthList& locWidthList = iter->getWidths();
+		hddm_r::WidthList::iterator locWidthIterator = locWidthList.begin();
+		if(locWidthIterator == locWidthList.end()) {
+			shower->sigLong = -1.;
+			shower->sigTrans = -1.;
+			shower->sigTheta = -1.;
+		}
+		else //should only be 1
+		{
+			for(; locWidthIterator != locWidthList.end(); ++locWidthIterator) {
+				shower->sigLong = locWidthIterator->getSigLong();
+				shower->sigTrans = locWidthIterator->getSigTrans();
+				shower->sigTheta = locWidthIterator->getSigTheta();
+			}
 		}
 
 		const hddm_r::BcalClusterList& locBcalClusterList = iter->getBcalClusters();

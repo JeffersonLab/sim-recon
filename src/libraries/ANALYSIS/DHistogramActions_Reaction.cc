@@ -1165,6 +1165,8 @@ void DHistogramAction_InvariantMass::Initialize(JEventLoop* locEventLoop)
 			locParticleNamesForHist += ParticleName_ROOT(dToIncludePIDs[loc_i]);
 	}
 
+	bool locBeamPresent = (Get_Reaction()->Get_ReactionStep(0)->Get_InitialParticleID() == Gamma);
+
 	//CREATE THE HISTOGRAMS
 	//Since we are creating histograms, the contents of gDirectory will be modified: must use JANA-wide ROOT lock
 	japp->RootWriteLock(); //ACQUIRE ROOT LOCK!!
@@ -1175,7 +1177,14 @@ void DHistogramAction_InvariantMass::Initialize(JEventLoop* locEventLoop)
 		ostringstream locStream;
 		locStream << locMassPerBin;
 		locHistTitle = string(";") + locParticleNamesForHist + string(" Invariant Mass (GeV/c^{2});# Combos / ") + locStream.str() + string(" MeV/c^{2}");
-		dHist_InvaraintMass = GetOrCreate_Histogram<TH1I>(locHistName, locHistTitle, dNumMassBins, dMinMass, dMaxMass);
+		dHist_InvariantMass = GetOrCreate_Histogram<TH1I>(locHistName, locHistTitle, dNumMassBins, dMinMass, dMaxMass);
+
+		if(locBeamPresent)
+		{
+			locHistName = "InvariantMassVsBeamE";
+			locHistTitle = string(";Beam Energy (GeV);") + locParticleNamesForHist + string(" Invariant Mass (GeV/c^{2})");
+			dHist_InvariantMassVsBeamE = GetOrCreate_Histogram<TH2D>(locHistName, locHistTitle, dNum2DBeamEBins, dMinBeamE, dMaxBeamE, dNum2DMassBins, dMinMass, dMaxMass);
+		}
 
 		//Return to the base directory
 		ChangeTo_BaseDirectory();
@@ -1185,7 +1194,12 @@ void DHistogramAction_InvariantMass::Initialize(JEventLoop* locEventLoop)
 
 bool DHistogramAction_InvariantMass::Perform_Action(JEventLoop* locEventLoop, const DParticleCombo* locParticleCombo)
 {
+	auto locFirstStep = locParticleCombo->Get_ParticleComboStep(0);
+	bool locBeamPresent = (Get_Reaction()->Get_ReactionStep(0)->Get_InitialPID() == Gamma);
+	auto locBeam = Get_UseKinFitResultsFlag() ? locFirstStep->Get_InitialParticle() : locFirstStep->Get_InitialParticle_Measured();
+
 	vector<double> locMassesToFill;
+	vector<double> loc2DMassesToFill;	
 	for(size_t loc_i = 0; loc_i < locParticleCombo->Get_NumParticleComboSteps(); ++loc_i)
 	{
 		const DReactionStep* locReactionStep = Get_Reaction()->Get_ReactionStep(loc_i);
@@ -1204,11 +1218,18 @@ bool DHistogramAction_InvariantMass::Perform_Action(JEventLoop* locEventLoop, co
 			set<pair<const JObject*, unsigned int> > locSourceObjects;
 			DLorentzVector locFinalStateP4 = dAnalysisUtilities->Calc_FinalStateP4(Get_Reaction(), locParticleCombo, loc_i, *locComboIterator, locSourceObjects, Get_UseKinFitResultsFlag());
 
-			if(dPreviousSourceObjects.find(locSourceObjects) != dPreviousSourceObjects.end())
-				continue; //dupe: already histed!
-			dPreviousSourceObjects.insert(locSourceObjects);
+			if(dPreviousSourceObjects.find(locSourceObjects) == dPreviousSourceObjects.end())
+			{
+				dPreviousSourceObjects.insert(locSourceObjects);
+				locMassesToFill.push_back(locFinalStateP4.M());
+			}
 
-			locMassesToFill.push_back(locFinalStateP4.M());
+			auto locBeamSourceObjects = std::make_pair(locSourceObjects, locBeam);
+			if(locBeamPresent && (dPreviousSourceObjects_Beam.find(locBeamSourceObjects) == dPreviousSourceObjects_Beam.end()))
+			{
+				dPreviousSourceObjects_Beam.insert(locBeamSourceObjects);
+				loc2DMassesToFill.push_back(locFinalStateP4.M());
+			}
 		}
 		//don't break: e.g. if multiple pi0's, histogram invariant mass of each one
 	}
@@ -1219,7 +1240,9 @@ bool DHistogramAction_InvariantMass::Perform_Action(JEventLoop* locEventLoop, co
 	Lock_Action();
 	{
 		for(size_t loc_i = 0; loc_i < locMassesToFill.size(); ++loc_i)
-			dHist_InvaraintMass->Fill(locMassesToFill[loc_i]);
+			dHist_InvariantMass->Fill(locMassesToFill[loc_i]);
+		for(size_t loc_i = 0; loc_i < loc2DMassesToFill.size(); ++loc_i)
+			dHist_InvariantMassVsBeamE->Fill(loc2DMassesToFill[loc_i], locBeam->energy());
 	}
 	Unlock_Action();
 

@@ -4,6 +4,11 @@
 
 #include "ANALYSIS/DCutActions.h"
 
+void DCutAction_MinTrackHits::Initialize(JEventLoop* locEventLoop)
+{
+	locEventLoop->GetSingle(dParticleID);
+}
+
 string DCutAction_MinTrackHits::Get_ActionName(void) const
 {
 	ostringstream locStream;
@@ -22,7 +27,8 @@ bool DCutAction_MinTrackHits::Perform_Action(JEventLoop* locEventLoop, const DPa
 		set<int> locCDCRings, locFDCPlanes;
 		dParticleID->Get_CDCRings(locTrackTimeBased->dCDCRings, locCDCRings);
 		dParticleID->Get_FDCPlanes(locTrackTimeBased->dFDCPlanes, locFDCPlanes);
-		if((locCDCRings.size() + locFDCPlanes.size()) < dMinTrackHits)
+		unsigned int locNumTrackHits = locCDCRings.size() + locFDCPlanes.size();
+		if(locNumTrackHits < dMinTrackHits)
 			return false;
 	}
 	return true;

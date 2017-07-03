@@ -178,7 +178,7 @@ bool DCustomAction_p2pi_hists::Perform_Action(JEventLoop* locEventLoop, const DP
 			if(locBeamPhotonEnergy > cohmin_energy && locBeamPhotonEnergy < cohedge_energy) {
 				dMM_M2pi->Fill(locP4_2pi.M(), locMissingP4.M());
 				
-				if(locParticles[1]->lorentzMomentum().Theta()*180/PI > 2. && locParticles[2]->lorentzMomentum().Theta()*180/PI > 2.) {
+				if(locParticles[1]->lorentzMomentum().Theta()*180/TMath::Pi() > 2. && locParticles[2]->lorentzMomentum().Theta()*180/TMath::Pi() > 2.) {
 					dMM_M2pi_noEle->Fill(locP4_2pi.M(), locMissingP4.M());
 					
 					if(locMissingP4.M() > minMMCut && locMissingP4.M() < maxMMCut) {

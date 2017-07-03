@@ -12,6 +12,7 @@ using namespace jana;
 
 #include "BCAL/DBCALPoint.h"
 #include "BCAL/DBCALUnifiedHit.h"
+#include "BCAL/DBCALGeometry.h"
 
 #include <TTree.h>
 
@@ -24,7 +25,7 @@ class DBCALHit;
 class DBCALPoint_factory : public JFactory<DBCALPoint> {
 
  public:
-  DBCALPoint_factory() {
+  DBCALPoint_factory() : m_BCALGeom(NULL) {
     PRINTCALIBRATION = false;
     if(gPARMS){
       gPARMS->SetDefaultParameter("BCALPOINT:PRINTCALIBRATION", PRINTCALIBRATION, "Print the calibration parameters.");
@@ -44,6 +45,9 @@ class DBCALPoint_factory : public JFactory<DBCALPoint> {
   effective_vel_t effective_velocities;
   track_parms_t track_parameters;
  
+  const DBCALGeometry *m_BCALGeom;
+
+ 	// =(
   static const int BCAL_NUM_MODULES  = 48;
   static const int BCAL_NUM_LAYERS   =  4;
   static const int BCAL_NUM_SECTORS  =  4;

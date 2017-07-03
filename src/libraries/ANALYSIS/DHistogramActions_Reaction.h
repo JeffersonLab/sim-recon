@@ -260,14 +260,14 @@ class DHistogramAction_InvariantMass : public DAnalysisAction
 		DHistogramAction_InvariantMass(const DReaction* locReaction, Particle_t locInitialPID, bool locUseKinFitResultsFlag, unsigned int locNumMassBins, double locMinMass, double locMaxMass, string locActionUniqueString = "") :
 		DAnalysisAction(locReaction, "Hist_InvariantMass", locUseKinFitResultsFlag, locActionUniqueString),
 		dInitialPID(locInitialPID), dStepIndex(-1), dToIncludePIDs(deque<Particle_t>()),
-		dNumMassBins(locNumMassBins), dMinMass(locMinMass), dMaxMass(locMaxMass), dAnalysisUtilities(NULL) {}
+		dNumMassBins(locNumMassBins), dMinMass(locMinMass), dMaxMass(locMaxMass), dNum2DMassBins(locNumMassBins/2), dNum2DBeamEBins(600), dMinBeamE(0.0), dMaxBeamE(12.0) {}
 
 		//e.g. if g, p -> pi+, pi-, p
 			//call with step = 0, PIDs = pi+, pi-, and will histogram rho mass
 		DHistogramAction_InvariantMass(const DReaction* locReaction, size_t locStepIndex, deque<Particle_t> locToIncludePIDs, bool locUseKinFitResultsFlag, unsigned int locNumMassBins, double locMinMass, double locMaxMass, string locActionUniqueString = "") :
 		DAnalysisAction(locReaction, "Hist_InvariantMass", locUseKinFitResultsFlag, locActionUniqueString),
 		dInitialPID(Unknown), dStepIndex(locStepIndex), dToIncludePIDs(locToIncludePIDs),
-		dNumMassBins(locNumMassBins), dMinMass(locMinMass), dMaxMass(locMaxMass), dAnalysisUtilities(NULL) {}
+		dNumMassBins(locNumMassBins), dMinMass(locMinMass), dMaxMass(locMaxMass), dNum2DMassBins(locNumMassBins/2), dNum2DBeamEBins(600), dMinBeamE(0.0), dMaxBeamE(12.0) {}
 
 		void Initialize(JEventLoop* locEventLoop);
 		void Reset_NewEvent(void)
@@ -286,10 +286,17 @@ class DHistogramAction_InvariantMass : public DAnalysisAction
 		unsigned int dNumMassBins;
 		double dMinMass, dMaxMass;
 
-		const DAnalysisUtilities* dAnalysisUtilities;
-		TH1I* dHist_InvaraintMass;
+	public:
+		unsigned int dNum2DMassBins, dNum2DBeamEBins;
+		double dMinBeamE, dMaxBeamE;
+
+	private:
+		const DAnalysisUtilities* dAnalysisUtilities = nullptr;
+		TH1I* dHist_InvariantMass;
+		TH2D* dHist_InvariantMassVsBeamE;
 
 		set<set<pair<const JObject*, unsigned int> > > dPreviousSourceObjects;
+		set<pair<set<pair<const JObject*, unsigned int> >, const JObject*>> dPreviousSourceObjects_Beam;
 };
 
 class DHistogramAction_MissingMass : public DAnalysisAction

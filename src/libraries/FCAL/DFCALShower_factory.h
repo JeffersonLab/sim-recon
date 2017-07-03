@@ -28,6 +28,7 @@ class DFCALShower_factory:public JFactory<DFCALShower>{
 	private:
 		jerror_t evnt(JEventLoop *eventLoop, uint64_t eventnumber);	///< Invoked via JEventProcessor virtual method
 		jerror_t brun(JEventLoop *loop, int32_t runnumber);
+        jerror_t erun(void);
 
 		void GetCorrectedEnergyAndPosition(const DFCALCluster* cluster, double &Ecorrected, DVector3 &pos_corrected, double &errZ, const DVector3 *aVertex);
 
@@ -41,6 +42,8 @@ class DFCALShower_factory:public JFactory<DFCALShower>{
 		double expfit_param1;
 		double expfit_param2;
 		double expfit_param3;
+		
+		double Timewalk_corr;
 
 
 		double FCAL_RADIATION_LENGTH;

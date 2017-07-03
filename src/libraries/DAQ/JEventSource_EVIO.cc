@@ -2936,6 +2936,7 @@ void JEventSource_EVIO::ParseEVIOEvent(evioDOMTree *evt, list<ObjList*> &full_ev
     if(VERBOSE>5) evioout << "    Leaving ParseEVIOEvent()" << endl;
 }
 
+#if HAVE_EVIO
 //----------------
 // ParseBuiltTriggerBank
 //----------------
@@ -3099,6 +3100,7 @@ void JEventSource_EVIO::ParseBuiltTriggerBank(evioDOMNodeP trigbank, list<ObjLis
     if(VERBOSE>6) evioout << "      Found "<<events.size()<<" events in Built Trigger Bank"<< endl;
     if(VERBOSE>5) evioout << "    Leaving ParseBuiltTriggerBank()" << endl;
 }
+#endif // HAVE_EVIO		
 
 //----------------
 // ParseModuleConfiguration
@@ -4665,6 +4667,7 @@ void JEventSource_EVIO::ParseCAEN1190(int32_t rocid, const uint32_t* &iptr, cons
 
 }
 
+#if HAVE_EVIO
 //----------------
 // ParseBORevent
 //----------------
@@ -4764,7 +4767,6 @@ void JEventSource_EVIO::ParseBORevent(evioDOMNodeP bankPtr)
     pthread_rwlock_unlock(&BOR_lock);
 
 }
-
 
 
 //------------------
@@ -4946,7 +4948,6 @@ void JEventSource_EVIO::ParseDVertexBank(evioDOMNodeP bankPtr, list<ObjList*> &e
 }
 
 
-
 //----------------
 // ParseEPICSevent
 //----------------
@@ -4987,6 +4988,7 @@ void JEventSource_EVIO::ParseEPICSevent(evioDOMNodeP bankPtr, list<ObjList*> &ev
         }
     }
 }
+#endif // HAVE_EVIO		
 
 //----------------
 // DumpBinary

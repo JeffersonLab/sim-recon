@@ -47,6 +47,7 @@ class JEventProcessor_TOF_TDC_shift:public jana::JEventProcessor{
   jerror_t erun(void);						///< Called everytime run number changes, provided brun has been called.
   jerror_t fini(void);						///< Called after last event of last event source has been processed.
 
+  TDirectory* filedir;
   TH2I *hrocTimeRemainder_AdcTdcTimeDiff;
   TH2I *hrocTimeRemainder_AdcTdcTimeDiff_corrected;
 
