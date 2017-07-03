@@ -4,6 +4,7 @@
 #include <vector>
 
 #include "TLorentzVector.h"
+#include "TRandom3.h"
 
 #include "AMPTOOLS_MCGEN/BreitWignerGenerator.h"
 #include "AMPTOOLS_MCGEN/DecayChannelGenerator.h"
@@ -54,6 +55,8 @@ private:
   
   vector< BreitWignerGenerator > m_bwGen;    
   DecayChannelGenerator m_decGen;
+
+  //TRandom3 *gRandom;
 };
 
 #endif

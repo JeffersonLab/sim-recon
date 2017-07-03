@@ -18,4 +18,4 @@ if os.getenv('AMPTOOLS') != None:
 	sbms.AddROOT(env)
 	sbms.library(env)
 
-
+	sbms.AddCobrems(env)

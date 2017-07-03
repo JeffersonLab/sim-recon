@@ -16,12 +16,7 @@
 #include <string>
 using namespace std;
 
-extern "C"{
-  void cobrems_(float *Ee,float *Epeak, float *emitmr, float *radt,
-		float *dist,float *diameter,int *doPolFlux);
-  float dntdx_(float* x);
-  float dnidx_(float* x);
-}
+#include <CobremsGeneration.hh>
 
 // Masses
 const double m_p=0.93827; // GeV
@@ -480,7 +475,12 @@ int main(int narg, char *argv[])
   int doPolFlux=0;  // want total flux (1 for polarized flux)
   float emitmr=10.e-9; // electron beam emittance
   float radt=20.e-6; // radiator thickness in m
-  cobrems_(&Ee,&Epeak,&emitmr,&radt,&radColDist,&collDiam,&doPolFlux);
+  CobremsGeneration cobrems(Ee, Epeak);
+  cobrems.setBeamEmittance(emitmr);
+  cobrems.setTargetThickness(radt);
+  cobrems.setCollimatorDistance(radColDist);
+  cobrems.setCollimatorDiameter(collDiam);
+  cobrems.setPolarizedFlag(doPolFlux);
   
   // Create some diagonistic histographs
   CreateHistograms();
@@ -491,8 +491,8 @@ int main(int narg, char *argv[])
   for (int i=1;i<=1000;i++){
     float x=float(cobrems_vs_E->GetBinCenter(i)/Ee);
     float y=0;
-    if (Epeak<Emin) y=dnidx_(&x);
-    else y=dntdx_(&x);
+    if (Epeak<Emin) y=cobrems.Rate_dNidx(x);
+    else y=cobrems.Rate_dNtdx(x);
     cobrems_vs_E->Fill(Ee*double(x),double(y));
   }
 

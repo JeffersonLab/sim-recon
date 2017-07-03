@@ -7,6 +7,7 @@
 
 #include "TLorentzVector.h"
 #include "TLorentzRotation.h"
+#include "TRandom3.h"
 
 const double ProductionMechanism::kPi = 3.14159;
 
@@ -49,6 +50,10 @@ ProductionMechanism::setGeneratorType( Type type ){
 
 TLorentzVector
 ProductionMechanism::produceResonance( const TLorentzVector& beam ){
+
+        // initialize pseudo-random generator
+        //gRandom = new TRandom3();
+        gRandom->SetSeed(0);
 	
 	TLorentzVector target( 0, 0, 0, kMproton );
 	
@@ -65,7 +70,9 @@ ProductionMechanism::produceResonance( const TLorentzVector& beam ){
   double t, tMax, resMass, resMomCM;
 
   do {
-    resMass = generateMass();
+    do // the resonance mass cannot be larger than CM energy - proton mass
+      resMass = generateMass();
+    while ( cmEnergy < resMass + m_recMass );
     resMomCM  = cmMomentum( cmEnergy, resMass, m_recMass );
   
     tMax = 4. * beamMomCM * resMomCM;
@@ -183,8 +190,8 @@ ProductionMechanism::cmMomentum( double M, double m1, double m2 ) const {
 
 double
 ProductionMechanism::random( double low, double hi ) const {
-	
-	return( ( hi - low ) * drand48() + low );
+
+        return( ( hi - low ) * gRandom->Uniform() + low );
 }
 
 
