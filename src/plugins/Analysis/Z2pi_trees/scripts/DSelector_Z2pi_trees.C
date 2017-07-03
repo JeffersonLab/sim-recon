@@ -34,8 +34,7 @@ void DSelector_Z2pi_trees::Init(TTree *locTree)
 	dAnalysisActions.push_back(new DHistogramAction_ParticleID(dComboWrapper, false));//false: use measured data
 	dAnalysisActions.push_back(new DHistogramAction_ParticleID(dComboWrapper, true, "KinFit")); //true: use kinfit data;
 	//below: value: +/- N ns, Unknown: All PIDs, SYS_NULL: all timing systems
-	// dAnalysisActions.push_back(new DCutAction_PIDDeltaT(dComboWrapper, false, 2.0, Unknown, SYS_BCAL));
-
+	//dAnalysisActions.push_back(new DCutAction_PIDDeltaT(dComboWrapper, false, 0.5, KPlus, SYS_BCAL));
 
 	//MASSES
 	//dAnalysisActions.push_back(new DHistogramAction_InvariantMass(dComboWrapper, false, Lambda, 1000, 1.0, 1.2, "Lambda"));
@@ -60,8 +59,6 @@ void DSelector_Z2pi_trees::Init(TTree *locTree)
 
 	/******************************** EXAMPLE USER INITIALIZATION: STAND-ALONE HISTOGRAMS *******************************/
 
-
-	//EXAMPLE MANUAL HISTOGRAMS:
 	dHist_MissingMassSquared = new TH1I("MissingMassSquared", ";Missing Mass Squared (GeV/c^{2})^{2}", 600, -0.24, 0.24);
 	dHist_BeamEnergy = new TH1I("BeamEnergy", ";Beam Energy (GeV)", 600, 0.0, 12.0);
 	// dHist_pMomentumMeasured = new TH1I("pMomentumMeasured", ";p Momentum Measured (GeV)", 100, 0.0, 2);
@@ -90,6 +87,7 @@ void DSelector_Z2pi_trees::Init(TTree *locTree)
 
 	dHist_pipDeltap_Measured = new TH1I("pipDeltap_Measured","; #pi^{+}: Thrown p - Measured p/Thrown p",100,-0.2,0.2);
 	dHist_pimDeltap_Measured = new TH1I("pimDeltap_Measured","; #pi^{-}: Thrown p - Measured p/ Thrown p",100,-0.2,0.2);
+
 
 	// EXAMPLE CUT PARAMETERS:
 	// fMinProton_dEdx = new TF1("fMinProton_dEdx", "exp(-1.*[0]*x + [1]) + [2]", 0., 10.);
@@ -158,7 +156,6 @@ Bool_t DSelector_Z2pi_trees::Process(Long64_t locEntry)
 	// The return value is currently not used.
 
 	double PI = 3.14159;
-
 
 	//CALL THIS FIRST
 	DSelector::Process(locEntry); //Gets the data from the tree for the entry
@@ -242,13 +239,15 @@ Bool_t DSelector_Z2pi_trees::Process(Long64_t locEntry)
 		
 	}
 	cout << endl << "Thrown" << endl;  
-	dThrownBeam->Get_P4().Print();
-	locPb208P4_Thrown.Print();
-	locPiPlusP4_Thrown.Print();
-	locPiMinusP4_Thrown.Print(); 
+	cout << " dThrownBeam="; dThrownBeam->Get_P4().Print();
+	cout << " locPb208P4="; locPb208P4_Thrown.Print();
+	cout << " locPiPlusP4="; locPiPlusP4_Thrown.Print();
+	cout << " locPiMinusP4="; locPiMinusP4_Thrown.Print(); 
 	TLorentzVector loc2piP4_Thrown = locPiPlusP4_Thrown + locPiMinusP4_Thrown;
 	double tgen = (dThrownBeam->Get_P4() - locPiPlusP4_Thrown - locPiMinusP4_Thrown).M2();    // use beam and 2pi momenta
 	
+
+
 
 	/************************************************* LOOP OVER COMBOS *************************************************/
 
@@ -277,14 +276,14 @@ Bool_t DSelector_Z2pi_trees::Process(Long64_t locEntry)
 		//dTargetP4 is target p4
 		//Step 0
 		TLorentzVector locBeamP4 = dComboBeamWrapper->Get_P4();
+		TLorentzVector locMissingPb208P4 = dMissingPb208Wrapper->Get_P4();
 		TLorentzVector locPiPlusP4 = dPiPlusWrapper->Get_P4();
 		TLorentzVector locPiMinusP4 = dPiMinusWrapper->Get_P4();
-		TLorentzVector locMissingPb208P4 = dMissingPb208Wrapper->Get_P4();
 
 		cout << "Kin Fit" << endl; 
-		locBeamP4.Print();
-		locPiPlusP4.Print();
-		locPiMinusP4.Print();
+		cout << " locBeamP4="; locBeamP4.Print();
+		cout << " locPiPlusP4="; locPiPlusP4.Print();
+		cout << " locPiMinusP4="; locPiMinusP4.Print();
 
 		TLorentzVector locMissingP4 = locBeamP4;    // Ignore target mass/recoil
 		locMissingP4 -= locPiPlusP4 + locPiMinusP4; 
@@ -299,20 +298,25 @@ Bool_t DSelector_Z2pi_trees::Process(Long64_t locEntry)
 		TLorentzVector locPiMinusP4_Measured = dPiMinusWrapper->Get_P4_Measured();
 
 		cout << "Measured" << endl; 
-		locBeamP4_Measured.Print();
-		locPiPlusP4_Measured.Print();
-		locPiMinusP4_Measured.Print();
+		cout << " locBeamP4_Measured="; locBeamP4_Measured.Print();
+		cout << " locPiPlusP4_Measured="; locPiPlusP4_Measured.Print();
+		cout << " locPiMinusP4_Measured="; locPiMinusP4_Measured.Print();
 
 		/********************************************* COMBINE FOUR-MOMENTUM ********************************************/
 
 		// DO YOUR STUFF HERE
 
 		// Combine 4-vectors
+
 		TLorentzVector locMissingP4_Measured = locBeamP4_Measured;    // Ignore target mass/recoil
-		locMissingP4_Measured -= locPiPlusP4_Measured + locPiMinusP4_Measured; 
+		locMissingP4_Measured -= locPiPlusP4_Measured + locPiMinusP4_Measured;
+ 
 		TLorentzVector loc2piP4_Measured = locPiPlusP4_Measured + locPiMinusP4_Measured;
 
 		cout << "MM2 =" << locMissingP4_Measured.M2() << " DeltaE=" << locBeamP4_Measured.E()-loc2piP4_Measured.E() << endl;
+
+
+
 
 		/******************************************** EXECUTE ANALYSIS ACTIONS *******************************************/
 
@@ -333,7 +337,6 @@ Bool_t DSelector_Z2pi_trees::Process(Long64_t locEntry)
 		dTreeInterface->Fill_Fundamental<Float_t>("my_combo_array", -2*loc_i, loc_i);
 		dTreeInterface->Fill_TObject<TLorentzVector>("my_p4_array", locMyComboP4, loc_i);
 		*/
-
 
 		/**************************************** EXAMPLE: PID CUT ACTION ************************************************/
 
@@ -356,6 +359,7 @@ Bool_t DSelector_Z2pi_trees::Process(Long64_t locEntry)
 		cout << " Passed CDC dE/dX cut " << endl;
 
 
+
 		/************************************ EXAMPLE: SELECTION CUTS AND HISTOGRAMS  ************************************/
 
 		//Missing Mass Squared
@@ -365,7 +369,6 @@ Bool_t DSelector_Z2pi_trees::Process(Long64_t locEntry)
 			//For beam: Don't want to group with final-state photons. Instead use "Unknown" PID (not ideal, but it's easy).
 		map<Particle_t, set<Int_t> > locUsedThisCombo_MissingMass;
 		locUsedThisCombo_MissingMass[Unknown].insert(locBeamID); //beam
-		// locUsedThisCombo_MissingMass[Proton].insert(locProtonTrackID);
 		locUsedThisCombo_MissingMass[PiPlus].insert(locPiPlusTrackID);
 		locUsedThisCombo_MissingMass[PiMinus].insert(locPiMinusTrackID);
 
@@ -475,16 +478,11 @@ Bool_t DSelector_Z2pi_trees::Process(Long64_t locEntry)
 		TLorentzVector p1_res = resonanceBoost * locPiPlusP4_Thrown;
 		TLorentzVector p2_res = resonanceBoost * locPiMinusP4_Thrown;
 
-	        TVector3 zlab(0.,0.,1.0);     // z axis in lab
-	        TVector3 y = (locPiPlusP4_Thrown.Vect().Cross(zlab)).Unit();    // perpendicular to decay plane. ensure that y is perpendicular to z
-
                 double phipol = 0;                           // *** Note assumes horizontal polarization plane.
                 TVector3 eps(cos(phipol), sin(phipol), 0.0); // beam polarization vector in lab
-	        TVector3 eps_perp = eps.Cross(zlab).Unit();         // perpendicular to plane defined by eps
-                double Phi_pipgen = atan2(y.Dot(eps),y.Dot(eps_perp));  // use this calculation to preserve sign of angle
 
                 // choose helicity frame: z-axis opposite recoil target in rho rest frame. Note that for Primakoff recoil is never measured.
-	        y = (dThrownBeam->Get_P4().Vect().Unit().Cross(-locPb208P4_Thrown.Vect().Unit())).Unit();
+	        TVector3 y = (dThrownBeam->Get_P4().Vect().Unit().Cross(-locPb208P4_Thrown.Vect().Unit())).Unit();
 	
 	        // choose helicity frame: z-axis opposite recoil proton in rho rest frame
 	        TVector3 z = -1. * recoil_res.Vect().Unit();
@@ -493,10 +491,12 @@ Bool_t DSelector_Z2pi_trees::Process(Long64_t locEntry)
 			 (p1_res.Vect()).Dot(y),
 			 (p1_res.Vect()).Dot(z) );
 	
-	        // double cosTheta = angles.CosTheta();
-	        // double phi = anglesgen.Phi();
+	        // double CosTheta = angles.CosTheta();
+	        double phi = anglesgen.Phi();
+
+		double Phi = atan2(y.Dot(eps), beam.Vect().Unit().Dot(eps.Cross(y)));
 		
-		double psigen = Phi_pipgen;
+		double psigen = Phi - phi;
 		if(psigen < -3.14159) psigen += 2*3.14159;
 		if(psigen > 3.14159) psigen -= 2*3.14159;
 
@@ -510,9 +510,6 @@ Bool_t DSelector_Z2pi_trees::Process(Long64_t locEntry)
 		p1_res = resonanceBoost2 * locPiPlusP4;
 		p2_res = resonanceBoost2 * locPiMinusP4;
 
-	        y = (locPiPlusP4.Vect().Cross(zlab)).Unit();    // perpendicular to decay plane. ensure that y is perpendicular to z
-                double Phi_pipkin  = atan2(y.Dot(eps),y.Dot(eps_perp));  // use this calculation to preserve sign of angle
-
                 // choose helicity frame: z-axis opposite recoil target in rho rest frame. Note that for Primakoff recoil is never measured.
 	        y = (locBeamP4.Vect().Unit().Cross(-locMissingPb208P4.Vect().Unit())).Unit();
 	
@@ -523,10 +520,12 @@ Bool_t DSelector_Z2pi_trees::Process(Long64_t locEntry)
 			 (p1_res.Vect()).Dot(y),
 			 (p1_res.Vect()).Dot(z) );
 	
-	        // double cosTheta = angles.CosTheta();
-	        // double phi = angleskin.Phi();
+	        // double CosTheta = angles.CosTheta();
+	        double phi = angleskin.Phi();
+
+		double Phi = atan2(y.Dot(eps), beam.Vect().Unit().Dot(eps.Cross(y)));
 		
-		double psikin = Phi_pipkin;
+		double psikin = Phi - phi;
 		if(psikin < -3.14159) psikin += 2*3.14159;
 		if(psikin > 3.14159) psikin -= 2*3.14159;
 
@@ -552,6 +551,7 @@ Bool_t DSelector_Z2pi_trees::Process(Long64_t locEntry)
 		}
 
 		/****************************************** FILL FLAT TREE (IF DESIRED) ******************************************/
+
 
 		/*
 		//FILL ANY CUSTOM BRANCHES FIRST!!
@@ -635,7 +635,6 @@ Bool_t DSelector_Z2pi_trees::Process(Long64_t locEntry)
 	}
 	if(!locIsEventCut && dOutputTreeFileName != "")
 		Fill_OutputTree();
-
 
 
 	return kTRUE;

@@ -31,7 +31,7 @@ bool DCustomAction_Z2pi_cuts::Perform_Action(JEventLoop* locEventLoop, const DPa
 	// calculate 2pi P4
 	DLorentzVector locP4_2pi;
 	for(size_t loc_i = 0; loc_i < 3; ++loc_i) {
-		if(locParticles[loc_i] == NULL) continue; // missing proton
+		if(locParticles[loc_i] == NULL) continue; // missing recoil
                 if(locParticles[loc_i]->PID() == PiPlus || locParticles[loc_i]->PID() == PiMinus)
                         locP4_2pi += locParticles[loc_i]->lorentzMomentum();
         }

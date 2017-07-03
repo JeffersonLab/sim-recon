@@ -102,11 +102,13 @@ bool DCustomAction_Z2pi_trees::Perform_Action(JEventLoop* locEventLoop, const DP
         double locBeamPhotonEnergy = locBeamPhoton->energy();
 
 	// calculate 2pi P4
-	DLorentzVector locP4_2pi;
+	DLorentzVector locP4_2pi, locP4_p1;
 	for(size_t loc_i = 0; loc_i < 3; ++loc_i) {
 		if(locParticles[loc_i] == NULL) continue; // missing particle (i.e. target)
                 if(locParticles[loc_i]->PID() == PiPlus || locParticles[loc_i]->PID() == PiMinus)
                         locP4_2pi += locParticles[loc_i]->lorentzMomentum();
+                if(locParticles[loc_i]->PID() == PiPlus)
+                        locP4_p1 = locParticles[loc_i]->lorentzMomentum();
         }
 
 	// calculate missing P4
@@ -126,23 +128,16 @@ bool DCustomAction_Z2pi_trees::Perform_Action(JEventLoop* locEventLoop, const DP
 	TLorentzVector locDelta = (locP4_2pi - locBeamPhoton->lorentzMomentum()); // calculate t from 2pi measured momenta
 	double t = locDelta.M2();
 
-	TLorentzVector locPiPlus_P4 = locParticles[0]->lorentzMomentum();   // expect two particles, pi+=id 8  and pi-=id 9
+        double phipol = 0;                           // *** Note assumes horizontal polarization plane.
+        TVector3 eps(cos(phipol), sin(phipol), 0.0); // beam polarization vector in lab
 
 	// boost to resonance frame for angular distributions 	
 	TLorentzRotation resonanceBoost( -locP4_2pi.BoostVector() );
 	TLorentzVector recoil_res = resonanceBoost * locZP4;     // this quantity is poorly defined from missing momenta but calculable
-	TLorentzVector p1_res = resonanceBoost * locPiPlus_P4;
-	
-	TVector3 zlab(0.,0.,1.0);     // z axis in lab
-	TVector3 y = (locPiPlus_P4.Vect().Cross(zlab)).Unit();    // perpendicular to decay plane. ensure that y is perpendicular to z
+	TLorentzVector p1_res = resonanceBoost * locP4_p1;
 
-        double phipol = 0;                           // *** Note assumes horizontal polarization plane.
-        TVector3 eps(cos(phipol), sin(phipol), 0.0); // beam polarization vector in lab
-	TVector3 eps_perp = eps.Cross(zlab).Unit();         // perpendicular to plane defined by eps
-        double Phi_pip = atan2(y.Dot(eps),y.Dot(eps_perp));  // use this calculation to preserve sign of angle
-
-        // choose helicity frame: z-axis opposite recoil target in rho rest frame. Note that for Primakoff recoil is never measured.
-	y = (locBeamPhoton->lorentzMomentum().Vect().Unit().Cross(-locZP4.Vect().Unit())).Unit();
+        // choose helicity frame: z-axis opposite recoil target in rho rest frame. Note that for Primakoff recoil is missin P4
+	TVector3 y = (locBeamPhoton->lorentzMomentum().Vect().Unit().Cross(-locZP4.Vect().Unit())).Unit();
 	
 	// choose helicity frame: z-axis opposite recoil proton in rho rest frame
 	TVector3 z = -1. * recoil_res.Vect().Unit();
@@ -151,10 +146,13 @@ bool DCustomAction_Z2pi_trees::Perform_Action(JEventLoop* locEventLoop, const DP
 			 (p1_res.Vect()).Dot(y),
 			 (p1_res.Vect()).Dot(z) );
 	
-	// double cosTheta = angles.CosTheta();
-	// double phi = angles.Phi();
+	// double CosTheta = angles.CosTheta();
 
-        double locPsi= Phi_pip;               // in the limit of forward scattering (Primakoff), Phi_pip is the angle between pip and the polarizatio
+	double phi = angles.Phi();
+
+	double Phi = atan2(y.Dot(eps), locBeamPhoton->lorentzMomentum().Vect().Unit().Dot(eps.Cross(y)));
+
+        double locPsi = Phi - phi;               // angle difference
 	if(locPsi < -1*TMath::Pi()) locPsi += 2*TMath::Pi();
         if(locPsi > TMath::Pi()) locPsi -= 2*TMath::Pi();
 
@@ -176,7 +174,7 @@ bool DCustomAction_Z2pi_trees::Perform_Action(JEventLoop* locEventLoop, const DP
 			    dEgamma_M2pi->Fill(locP4_2pi.M(), locBeamPhotonEnergy);
 					
 			    if(locP4_2pi.M() > min2piMassCut && locP4_2pi.M() < max2piMassCut){
-			      dPiPlusPhi_Egamma->Fill(locBeamPhotonEnergy, locPiPlus_P4.Vect().Phi()*180/TMath::Pi());
+			      dPiPlusPhi_Egamma->Fill(locBeamPhotonEnergy, locP4_p1.Vect().Phi()*180/TMath::Pi());
 				 dPiPlusPsi_Egamma->Fill(locBeamPhotonEnergy, locPsi*180/TMath::Pi());
 						
 			         if(locBeamPhotonEnergy > cohmin_energy && locBeamPhotonEnergy < cohedge_energy){

@@ -21,6 +21,7 @@
 #include "AMPTOOLS_DATAIO/TwoPiPlotGenerator.h"
 #include "AMPTOOLS_DATAIO/ROOTDataReader.h"
 #include "AMPTOOLS_AMPS/TwoPiAngles.h"
+#include "AMPTOOLS_AMPS/TwoPiWt_primakoff.h"
 #include "AMPTOOLS_AMPS/TwoPiAngles_primakoff.h"
 #include "AMPTOOLS_AMPS/BreitWigner.h"
 
@@ -30,6 +31,7 @@ void atiSetup(){
   
   AmpToolsInterface::registerAmplitude( TwoPiAngles() );
   AmpToolsInterface::registerAmplitude( TwoPiAngles_primakoff() );
+  AmpToolsInterface::registerAmplitude( TwoPiWt_primakoff() );
   AmpToolsInterface::registerAmplitude( BreitWigner() );
   AmpToolsInterface::registerDataReader( ROOTDataReader() );
 }

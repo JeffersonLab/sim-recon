@@ -50,9 +50,9 @@ jerror_t DReaction_factory_Z2pi_trees::evnt(JEventLoop* locEventLoop, uint64_t l
 	locReactionStep = new DReactionStep();
 	locReactionStep->Set_InitialParticleID(Gamma);
 	locReactionStep->Set_TargetParticleID(Pb208);
+	locReactionStep->Add_FinalParticleID(Pb208,true);   // recoil missing
 	locReactionStep->Add_FinalParticleID(PiPlus);
 	locReactionStep->Add_FinalParticleID(PiMinus);
-	locReactionStep->Add_FinalParticleID(Pb208,true);   // recoil missing
 	locReaction->Add_ReactionStep(locReactionStep);
 	dReactionStepPool.push_back(locReactionStep); //register so will be deleted later: prevent memory leak
 
@@ -122,12 +122,12 @@ jerror_t DReaction_factory_Z2pi_trees::evnt(JEventLoop* locEventLoop, uint64_t l
 	  // locReaction->Add_AnalysisAction(new DCustomAction_Z2pi_cuts(locReaction, false));
 
 	  // Diagnostics for unused tracks and showers with final selection (only useful when analyzing EVIO data)
-	  locReaction->Add_AnalysisAction(new DCustomAction_p2pi_unusedHists(locReaction, false, "KinCut_Measured"));
+	  //comment locReaction->Add_AnalysisAction(new DCustomAction_p2pi_unusedHists(locReaction, false, "KinCut_Measured"));
 	}
 
 
 	// Custom histograms (after kinematic cuts)
-	locReaction->Add_AnalysisAction(new DCustomAction_Z2pi_trees(locReaction, false, "KinCut_Measured"));
+	// locReaction->Add_AnalysisAction(new DCustomAction_Z2pi_trees(locReaction, false, "KinCut_Measured"));
 
 	// 2PI
 	deque<Particle_t> loc2piPIDs;  loc2piPIDs.push_back(PiPlus);  loc2piPIDs.push_back(PiMinus);
@@ -139,7 +139,7 @@ jerror_t DReaction_factory_Z2pi_trees::evnt(JEventLoop* locEventLoop, uint64_t l
 		// locReaction->Add_AnalysisAction(new DCustomAction_Z2pi_cuts(locReaction, false));
 
 		// Diagnostics for unused tracks and showers with final selection (only useful when analyzing EVIO data)
-		locReaction->Add_AnalysisAction(new DCustomAction_p2pi_unusedHists(locReaction, false, "Unused"));
+		//comment locReaction->Add_AnalysisAction(new DCustomAction_p2pi_unusedHists(locReaction, false, "Unused"));
 	}
 
 	// Kinematics of final selection

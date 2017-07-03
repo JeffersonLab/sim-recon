@@ -90,9 +90,9 @@ void DSelector_Z2pi_trees::Get_ComboWrappers(void)
 	//Step 0
 	dStep0Wrapper = dComboWrapper->Get_ParticleComboStep(0);
 	dComboBeamWrapper = static_cast<DBeamParticle*>(dStep0Wrapper->Get_InitialParticle());
-	dPiPlusWrapper = static_cast<DChargedTrackHypothesis*>(dStep0Wrapper->Get_FinalParticle(0));
-	dPiMinusWrapper = static_cast<DChargedTrackHypothesis*>(dStep0Wrapper->Get_FinalParticle(1));
-	dMissingPb208Wrapper = dStep0Wrapper->Get_FinalParticle(2);
+	dMissingPb208Wrapper = dStep0Wrapper->Get_FinalParticle(0);
+	dPiPlusWrapper = static_cast<DChargedTrackHypothesis*>(dStep0Wrapper->Get_FinalParticle(1));
+	dPiMinusWrapper = static_cast<DChargedTrackHypothesis*>(dStep0Wrapper->Get_FinalParticle(2));
 }
 
 #endif // DSelector_Z2pi_trees_h

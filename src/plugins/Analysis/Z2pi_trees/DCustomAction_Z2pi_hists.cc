@@ -125,6 +125,9 @@ bool DCustomAction_Z2pi_hists::Perform_Action(JEventLoop* locEventLoop, const DP
 
 	TLorentzVector locPiPlus_P4 = locParticles[1]->lorentzMomentum();
 
+        double phipol = 0;     // should take this variable from the configuration file.
+        TVector3 eps(cos(phipol), sin(phipol), 0.0); // beam polarization vector in lab
+
 	// boost to resonance frame for angular distributions 	
 	TLorentzRotation resonanceBoost( -locP4_2pi.BoostVector() );
 	TLorentzVector recoil_res = resonanceBoost * locZP4;     // this quantity is poorly defined from missing momenta but calculable
@@ -142,10 +145,9 @@ bool DCustomAction_Z2pi_hists::Perform_Action(JEventLoop* locEventLoop, const DP
 			 (p1_res.Vect()).Dot(y),
 			 (p1_res.Vect()).Dot(z) );
 	
-	// double cosTheta = angles.CosTheta();
+	// double CosTheta = angles.CosTheta();
 	double phi = angles.Phi();
 	
-	TVector3 eps(1.0, 0.0, 0.0); // beam polarization vector
 	double Phi = atan2(y.Dot(eps), locBeamPhoton->lorentzMomentum().Vect().Unit().Dot(eps.Cross(y)));
 
 	double locPsi = phi - Phi;

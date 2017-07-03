@@ -22,13 +22,13 @@ m_lastWeight( 1. )
   kMproton=ParticleMass(Proton);
   kMneutron=ParticleMass(Neutron);
   // kMZ = 108.;      //  mass of Sn116 
-  kMZ = 208.;      //  use mass of Pb as it is in the particle table
+  kMZ = 208.*0.931494;      //  use mass of Pb as it is in the particle table
 
   switch( recoil ){
     // I'm sure the distinction between these doesn't matter!  
   case kProton:  m_recMass = kMproton; break; //old value: 0.9382
   case kNeutron: m_recMass = kMneutron; break; //old value: 0.9395
-  case kZ: m_recMass = kMZ; break; //default to Sn116
+  case kZ: m_recMass = kMZ; break; //default to Sn116/Pb
   default:       m_recMass = kMproton; break; //old value: 0.9382
   }
 }
