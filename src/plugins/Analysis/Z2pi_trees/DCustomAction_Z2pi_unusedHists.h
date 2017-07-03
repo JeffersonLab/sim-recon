@@ -1,12 +1,12 @@
 // $Id$
 //
-//    File: DCustomAction_p2pi_unusedHists.h
+//    File: DCustomAction_Z2pi_unusedHists.h
 // Created: Thu Jan 22 08:06:18 EST 2015
 // Creator: jrsteven (on Linux ifarm1401 2.6.32-431.el6.x86_64 x86_64)
 //
 
-#ifndef _DCustomAction_p2pi_unusedHists_
-#define _DCustomAction_p2pi_unusedHists_
+#ifndef _DCustomAction_Z2pi_unusedHists_
+#define _DCustomAction_Z2pi_unusedHists_
 
 #include <map>
 #include <string>
@@ -29,12 +29,12 @@
 using namespace std;
 using namespace jana;
 
-class DCustomAction_p2pi_unusedHists : public DAnalysisAction
+class DCustomAction_Z2pi_unusedHists : public DAnalysisAction
 {
 	public:
 
-                DCustomAction_p2pi_unusedHists(const DReaction* locReaction, bool locUseKinFitResultsFlag, string locActionUniqueString = "") : 
-	        DAnalysisAction(locReaction, "Custom_p2pi_unusedHists", locUseKinFitResultsFlag, locActionUniqueString){}
+                DCustomAction_Z2pi_unusedHists(const DReaction* locReaction, bool locUseKinFitResultsFlag, string locActionUniqueString = "") : 
+	        DAnalysisAction(locReaction, "Custom_Z2pi_unusedHists", locUseKinFitResultsFlag, locActionUniqueString){}
 
 		void Initialize(JEventLoop* locEventLoop);
 
@@ -98,5 +98,5 @@ class DCustomAction_p2pi_unusedHists : public DAnalysisAction
 
 };
 
-#endif // _DCustomAction_p2pi_unusedHists_
+#endif // _DCustomAction_Z2pi_unusedHists_
 

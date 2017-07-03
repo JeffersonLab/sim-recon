@@ -1,13 +1,13 @@
 // $Id$
 //
-//    File: DCustomAction_p2pi_unusedHists.cc
+//    File: DCustomAction_Z2pi_unusedHists.cc
 // Created: Thu Jan 22 08:06:18 EST 2015
 // Creator: jrsteven (on Linux ifarm1401 2.6.32-431.el6.x86_64 x86_64)
 //
 
-#include "DCustomAction_p2pi_unusedHists.h"
+#include "DCustomAction_Z2pi_unusedHists.h"
 
-void DCustomAction_p2pi_unusedHists::Initialize(JEventLoop* locEventLoop)
+void DCustomAction_Z2pi_unusedHists::Initialize(JEventLoop* locEventLoop)
 {
 
 	// get PID algos
@@ -246,7 +246,7 @@ void DCustomAction_p2pi_unusedHists::Initialize(JEventLoop* locEventLoop)
 	japp->RootUnLock(); //RELEASE ROOT LOCK!!
 }
 
-bool DCustomAction_p2pi_unusedHists::Perform_Action(JEventLoop* locEventLoop, const DParticleCombo* locParticleCombo)
+bool DCustomAction_Z2pi_unusedHists::Perform_Action(JEventLoop* locEventLoop, const DParticleCombo* locParticleCombo)
 {
 	
 	// should only have one reaction step
@@ -476,7 +476,7 @@ bool DCustomAction_p2pi_unusedHists::Perform_Action(JEventLoop* locEventLoop, co
 }
 
 
-void DCustomAction_p2pi_unusedHists::FillTrack(JEventLoop* locEventLoop, const DChargedTrack* locChargedTrack, bool locMatch, const DMCThrown* locMCThrown)
+void DCustomAction_Z2pi_unusedHists::FillTrack(JEventLoop* locEventLoop, const DChargedTrack* locChargedTrack, bool locMatch, const DMCThrown* locMCThrown)
 {
 
 	const DChargedTrackHypothesis* locChargedTrackHypothesis = locChargedTrack->Get_BestFOM();
@@ -667,7 +667,7 @@ void DCustomAction_p2pi_unusedHists::FillTrack(JEventLoop* locEventLoop, const D
 }
 
 
-void DCustomAction_p2pi_unusedHists::FillShower(const DNeutralShower* locNeutralShower, bool locMatch, double locBeamPhotonTime, double locFlightTime)
+void DCustomAction_Z2pi_unusedHists::FillShower(const DNeutralShower* locNeutralShower, bool locMatch, double locBeamPhotonTime, double locFlightTime)
 {
 	
 	int nClusters = 0;

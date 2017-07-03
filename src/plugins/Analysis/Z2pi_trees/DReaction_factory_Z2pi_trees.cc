@@ -11,7 +11,7 @@
 // #include "DCustomAction_dEdxCut_Z2pi.h"
 #include "DCustomAction_Z2pi_trees.h"
 #include "DCustomAction_Z2pi_cuts.h"
-#include "DCustomAction_p2pi_unusedHists.h"
+#include "DCustomAction_Z2pi_unusedHists.h"
 #include "DReaction_factory_Z2pi_trees.h"
 
 //------------------
@@ -122,7 +122,7 @@ jerror_t DReaction_factory_Z2pi_trees::evnt(JEventLoop* locEventLoop, uint64_t l
 	  // locReaction->Add_AnalysisAction(new DCustomAction_Z2pi_cuts(locReaction, false));
 
 	  // Diagnostics for unused tracks and showers with final selection (only useful when analyzing EVIO data)
-	  //comment locReaction->Add_AnalysisAction(new DCustomAction_p2pi_unusedHists(locReaction, false, "KinCut_Measured"));
+	  //comment locReaction->Add_AnalysisAction(new DCustomAction_Z2pi_unusedHists(locReaction, false, "KinCut_Measured"));
 	}
 
 
@@ -139,7 +139,7 @@ jerror_t DReaction_factory_Z2pi_trees::evnt(JEventLoop* locEventLoop, uint64_t l
 		// locReaction->Add_AnalysisAction(new DCustomAction_Z2pi_cuts(locReaction, false));
 
 		// Diagnostics for unused tracks and showers with final selection (only useful when analyzing EVIO data)
-		//comment locReaction->Add_AnalysisAction(new DCustomAction_p2pi_unusedHists(locReaction, false, "Unused"));
+		//comment locReaction->Add_AnalysisAction(new DCustomAction_Z2pi_unusedHists(locReaction, false, "Unused"));
 	}
 
 	// Kinematics of final selection

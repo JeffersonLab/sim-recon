@@ -75,12 +75,25 @@ void DSelector_Z2pi_trees::Init(TTree *locTree)
 	dHist_tgen = new TH1I("tgen", ";|t| Gen (GeV/c)^{2}", 100, 0.0, 0.01);
 	dHist_tkin = new TH1I("tkin", ";|t| Kin (GeV/c)^{2}", 100, 0.0, 0.01);
 	dHist_tdiff = new TH1I("tdiff", ";|t| Kin - Gen (GeV/c)^{2}", 100, -0.01, 0.01);
-	dHist_CosTheta_Psi = new TH2I("CosTheta_Psi", "; #psi; cos#theta", 360, -180., 180, 200, -1., 1.);
-	dHist_phi = new TH1I("phi", ";phi (degrees)", 360,-180,180);
+	dHist_tkin_tgen = new TH2I("tkin_tgen", "; |t| Gen ; |t| Kin (GeV/c)^{2}", 50, 0, 0.002, 50, 0, 0.002);
+	dHist_CosTheta_psi = new TH2I("CosTheta_psi", "; #psi; Cos#Theta", 90, -180., 180, 200, -1., 1.);
+	dHist_CosThetakin_CosThetagen = new TH2I("CosThetakin_CosThetagen", "; Cos#Theta Gen; Cos#Theta Kin", 50, -1, 1, 50, -1., 1.);
+	dHist_phigen_Phigen = new TH2I("phigen_Phigen", "; #Phi Gen; #phi Gen", 90, -180., 180, 90,-180,180);
+	dHist_phikin_Phikin = new TH2I("phikin_Phikin", "; #Phi Kin; #phi Kin", 90, -180., 180, 90,-180,180);
+	dHist_phikin_phigen = new TH2I("phikin_phigen", "; #phi Gen ; #phi Kin", 90, -180., 180, 90,-180,180);
+	dHist_CosTheta = new TH1I("CosTheta", "; Cos#Theta", 100, -1., 1.);
+	dHist_CosThetadiff = new TH1I("CosThetadiff", "; Cos#Theta diff Kin-Gen", 50, -0.5, 0.5);
+	dHist_Phigen = new TH1I("Phigen", ";Phigen (degrees)", 360,-180,180);
+	dHist_phigen = new TH1I("phigen", ";phigen (degrees)", 360,-180,180);
+	dHist_Phikin = new TH1I("Phikin", ";Phikin (degrees)", 360,-180,180);
+	dHist_phikin = new TH1I("phikin", ";phikin (degrees)", 360,-180,180);
+	dHist_Phimeas = new TH1I("Phimeas", ";Phimeas (degrees)", 360,-180,180);
+	dHist_phimeas = new TH1I("phimeas", ";phimeas (degrees)", 360,-180,180);
 	dHist_psikin = new TH1I("psikin", ";psi Kin (degrees)", 360,-180,180);
 	dHist_psigen = new TH1I("psigen", ";psi Gen (degrees)", 360,-180,180);
+	dHist_Phidiff = new TH1I("Phidiff", ";Phi Kin - Gen (degrees)", 100,-50,50);
+	dHist_phidiff = new TH1I("phidiff", ";phi Kin - Gen (degrees)", 100,-50,50);
 	dHist_psidiff = new TH1I("psidiff", ";psi Kin - Gen (degrees)", 100,-50,50);
-	dHist_psi = new TH1I("psi", ";psi (degrees)", 360,-180,180);
 
 	dHist_pipDeltap = new TH1I("pipDeltap","; #pi^{+}: Thrown p - KinFit p/Thrown p",100,-0.2,0.2);
 	dHist_pimDeltap = new TH1I("pimDeltap","; #pi^{-}: Thrown p - KinFit p/ Thrown p",100,-0.2,0.2);
@@ -280,43 +293,47 @@ Bool_t DSelector_Z2pi_trees::Process(Long64_t locEntry)
 		TLorentzVector locPiPlusP4 = dPiPlusWrapper->Get_P4();
 		TLorentzVector locPiMinusP4 = dPiMinusWrapper->Get_P4();
 
-		cout << "Kin Fit" << endl; 
-		cout << " locBeamP4="; locBeamP4.Print();
-		cout << " locPiPlusP4="; locPiPlusP4.Print();
-		cout << " locPiMinusP4="; locPiMinusP4.Print();
-
 		TLorentzVector locMissingP4 = locBeamP4;    // Ignore target mass/recoil
 		locMissingP4 -= locPiPlusP4 + locPiMinusP4; 
 		TLorentzVector loc2piP4 = locPiPlusP4 + locPiMinusP4;
+
+		cout << "Kin Fit" << endl; 
+		cout << " locBeamP4="; locBeamP4.Print();
+		cout << " locMissingPb208P4="; locMissingPb208P4.Print();
+		cout << " locPiPlusP4="; locPiPlusP4.Print();
+		cout << " locPiMinusP4="; locPiMinusP4.Print();
+		cout << " locMissingP4="; locMissingP4.Print();
+		cout << " loc2piP4="; loc2piP4.Print();
+
 
 		cout << "KIN: MM2 =" << locMissingP4.M2() << " DeltaE=" << locBeamP4.E()-loc2piP4.E() << " GenDeltaE=" << locEbeam_Thrown-locBeamP4.E() << endl;
 
 		// Get Measured P4's:
 		//Step 0
 		TLorentzVector locBeamP4_Measured = dComboBeamWrapper->Get_P4_Measured();
+		TLorentzVector locMissingPb208P4_Measured (0,0,0,193.750748);
+		// TLorentzVector locMissingPb208P4_Measured = dMissingPb208Wrapper->Get_P4_Measured();
 		TLorentzVector locPiPlusP4_Measured = dPiPlusWrapper->Get_P4_Measured();
 		TLorentzVector locPiMinusP4_Measured = dPiMinusWrapper->Get_P4_Measured();
 
+		TLorentzVector locMissingP4_Measured = locBeamP4_Measured;    // Ignore target mass/recoil
+		locMissingP4_Measured -= locPiPlusP4_Measured + locPiMinusP4_Measured; 
+		locMissingPb208P4_Measured += locMissingP4_Measured;
+		TLorentzVector loc2piP4_Measured = locPiPlusP4_Measured + locPiMinusP4_Measured;
+
 		cout << "Measured" << endl; 
 		cout << " locBeamP4_Measured="; locBeamP4_Measured.Print();
+		cout << " locMissingPb208P4_Measured="; locMissingPb208P4_Measured.Print();
 		cout << " locPiPlusP4_Measured="; locPiPlusP4_Measured.Print();
 		cout << " locPiMinusP4_Measured="; locPiMinusP4_Measured.Print();
+		cout << " locMissingP4_Measured="; locMissingP4_Measured.Print();
+		cout << " loc2piP4_Measured="; loc2piP4_Measured.Print();
 
 		/********************************************* COMBINE FOUR-MOMENTUM ********************************************/
 
 		// DO YOUR STUFF HERE
 
 		// Combine 4-vectors
-
-		TLorentzVector locMissingP4_Measured = locBeamP4_Measured;    // Ignore target mass/recoil
-		locMissingP4_Measured -= locPiPlusP4_Measured + locPiMinusP4_Measured;
- 
-		TLorentzVector loc2piP4_Measured = locPiPlusP4_Measured + locPiMinusP4_Measured;
-
-		cout << "MM2 =" << locMissingP4_Measured.M2() << " DeltaE=" << locBeamP4_Measured.E()-loc2piP4_Measured.E() << endl;
-
-
-
 
 		/******************************************** EXECUTE ANALYSIS ACTIONS *******************************************/
 
@@ -491,12 +508,12 @@ Bool_t DSelector_Z2pi_trees::Process(Long64_t locEntry)
 			 (p1_res.Vect()).Dot(y),
 			 (p1_res.Vect()).Dot(z) );
 	
-	        // double CosTheta = angles.CosTheta();
-	        double phi = anglesgen.Phi();
+	        double CosThetagen = anglesgen.CosTheta();
+	        double phigen = anglesgen.Phi();
 
-		double Phi = atan2(y.Dot(eps), beam.Vect().Unit().Dot(eps.Cross(y)));
+		double Phigen = atan2(y.Dot(eps), dThrownBeam->Get_P4().Vect().Unit().Dot(eps.Cross(y)));
 		
-		double psigen = Phi - phi;
+		double psigen = Phigen - phigen;
 		if(psigen < -3.14159) psigen += 2*3.14159;
 		if(psigen > 3.14159) psigen -= 2*3.14159;
 
@@ -510,7 +527,7 @@ Bool_t DSelector_Z2pi_trees::Process(Long64_t locEntry)
 		p1_res = resonanceBoost2 * locPiPlusP4;
 		p2_res = resonanceBoost2 * locPiMinusP4;
 
-                // choose helicity frame: z-axis opposite recoil target in rho rest frame. Note that for Primakoff recoil is never measured.
+                // choose helicity frame: z-axis opposite recoil target in rho rest frame. Note that for Primakoff recoil is missing P4, including target.
 	        y = (locBeamP4.Vect().Unit().Cross(-locMissingPb208P4.Vect().Unit())).Unit();
 	
 	        // choose helicity frame: z-axis opposite recoil proton in rho rest frame
@@ -520,16 +537,43 @@ Bool_t DSelector_Z2pi_trees::Process(Long64_t locEntry)
 			 (p1_res.Vect()).Dot(y),
 			 (p1_res.Vect()).Dot(z) );
 	
-	        // double CosTheta = angles.CosTheta();
-	        double phi = angleskin.Phi();
+	        double CosThetakin = angleskin.CosTheta();
+	        double phikin = angleskin.Phi();
 
-		double Phi = atan2(y.Dot(eps), beam.Vect().Unit().Dot(eps.Cross(y)));
+		double Phikin = atan2(y.Dot(eps), locBeamP4.Vect().Unit().Dot(eps.Cross(y)));
 		
-		double psikin = Phi - phi;
+		double psikin = Phikin - phikin;
 		if(psikin < -3.14159) psikin += 2*3.14159;
 		if(psikin > 3.14159) psikin -= 2*3.14159;
 
-		// cout << " phi=" << phi << " Phi=" << Phi << " psi=" << psi << endl;
+                // Repeat for measured variables.
+		// calculate measured and angular variables
+		double tmeas = (locBeamP4_Measured - loc2piP4_Measured).M2();    // use beam and 2pi momenta
+		TLorentzRotation resonanceBoost3( -loc2piP4_Measured.BoostVector() );   // boost into 2pi frame
+		beam_res = resonanceBoost3 * locBeamP4_Measured;
+		recoil_res = resonanceBoost3 * locMissingPb208P4_Measured;
+		p1_res = resonanceBoost3 * locPiPlusP4_Measured;
+		p2_res = resonanceBoost3 * locPiMinusP4_Measured;
+
+                // choose helicity frame: z-axis opposite recoil target in rho rest frame. Note that for Primakoff recoil is missing P4, including target.
+	        y = (locBeamP4_Measured.Vect().Unit().Cross(-locMissingPb208P4_Measured.Vect().Unit())).Unit();
+	
+	        // choose helicity frame: z-axis opposite recoil proton in rho rest frame
+	        z = -1. * recoil_res.Vect().Unit();
+	        x = y.Cross(z).Unit();
+	        TVector3 anglesmeas( (p1_res.Vect()).Dot(x),
+			 (p1_res.Vect()).Dot(y),
+			 (p1_res.Vect()).Dot(z) );
+	
+	        double CosThetameas = anglesmeas.CosTheta();
+	        double phimeas = anglesmeas.Phi();
+
+		double Phimeas = atan2(y.Dot(eps), locBeamP4_Measured.Vect().Unit().Dot(eps.Cross(y)));
+		
+		double psimeas = Phimeas - phimeas;
+		if(psimeas < -3.14159) psimeas += 2*3.14159;
+		if(psimeas > 3.14159) psimeas -= 2*3.14159;
+
 
 		map<Particle_t, set<Int_t> > locUsedThisCombo_Angles;
 		locUsedThisCombo_Angles[Unknown].insert(locBeamID); //beam
@@ -541,8 +585,23 @@ Bool_t DSelector_Z2pi_trees::Process(Long64_t locEntry)
 			dHist_tgen->Fill(fabs(tgen));
 			dHist_tkin->Fill(fabs(tkin));
 			dHist_tdiff->Fill(fabs(tkin)-fabs(tgen));
-			// dHist_CosTheta_Psi->Fill(psikin*180./3.14159, CosTheta);
+			dHist_tkin_tgen->Fill(fabs(tgen),fabs(tkin));
+			dHist_CosTheta_psi->Fill(psikin*180./3.14159, CosThetakin);
+			dHist_CosTheta->Fill(CosThetakin);
+			dHist_CosThetadiff->Fill(CosThetakin-CosThetagen);
 			// dHist_phi->Fill(phi*180./3.14159);
+			dHist_CosThetakin_CosThetagen->Fill(CosThetagen, CosThetakin);
+			dHist_phikin_Phikin->Fill(Phikin*180./3.14159,phikin*180./3.14159);
+			dHist_phigen_Phigen->Fill(Phigen*180./3.14159,phigen*180./3.14159);
+			dHist_phikin_phigen->Fill(phigen*180./3.14159,phikin*180./3.14159);
+			dHist_phigen->Fill(phigen*180./3.14159);
+			dHist_Phigen->Fill(Phigen*180./3.14159);
+			dHist_phikin->Fill(phikin*180./3.14159);
+			dHist_Phikin->Fill(Phikin*180./3.14159);
+			dHist_Phimeas->Fill(Phimeas*180./3.14159);
+			dHist_phimeas->Fill(phimeas*180./3.14159);
+			dHist_Phidiff->Fill((Phikin-Phigen)*180./3.14159);
+			dHist_phidiff->Fill((phikin-phigen)*180./3.14159);
 			dHist_psigen->Fill(psigen*180./3.14159);
 			dHist_psikin->Fill(psikin*180./3.14159);
 			dHist_psidiff->Fill((psikin-psigen)*180./3.14159);
