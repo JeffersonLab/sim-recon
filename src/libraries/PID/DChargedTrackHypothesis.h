@@ -136,8 +136,8 @@ class DChargedTrackHypothesis : public DKinematicData
 		};
 
 		//memory of object in shared_ptr is managed automatically: deleted automatically when no references are left
-		shared_ptr<DTimingInfo> dTimingInfo;
-		shared_ptr<DTrackingInfo> dTrackingInfo;
+		shared_ptr<DTimingInfo> dTimingInfo = nullptr;
+		shared_ptr<DTrackingInfo> dTrackingInfo = nullptr;
 
 		//RESOURCE POOLS
 		static thread_local DResourcePool<DTimingInfo> dResourcePool_TimingInfo;
@@ -184,6 +184,8 @@ inline DChargedTrackHypothesis& DChargedTrackHypothesis::operator=(const DCharge
 {
 	//Replace current data with a new, independent copy of the input data: tracked separately from input so it can be modified
 	DKinematicData::operator=(locSourceData);
+	if((dTimingInfo == locSourceData.dTimingInfo) && (dTrackingInfo == locSourceData.dTrackingInfo))
+		return *this; //guard against self-assignment
 	dTimingInfo = dResourcePool_TimingInfo.Get_SharedResource();
 	*dTimingInfo = *(locSourceData.dTimingInfo);
 	dTrackingInfo = dResourcePool_TrackingInfo.Get_SharedResource();

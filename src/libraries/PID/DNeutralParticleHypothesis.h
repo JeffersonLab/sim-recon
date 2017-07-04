@@ -80,8 +80,8 @@ class DNeutralParticleHypothesis : public DKinematicData
 			float dFOM = 0.0;
 		};
 
-		shared_ptr<DTimingInfo> dTimingInfo;
-		const DNeutralShower* dNeutralShower;
+		shared_ptr<DTimingInfo> dTimingInfo = nullptr;
+		const DNeutralShower* dNeutralShower = nullptr;
 
 		//RESOURCE POOL
 		static thread_local DResourcePool<DTimingInfo> dResourcePool_TimingInfo;
@@ -111,6 +111,8 @@ inline DNeutralParticleHypothesis& DNeutralParticleHypothesis::operator=(const D
 {
 	//Replace current data with a new, independent copy of the input data: tracked separately from input so it can be modified
 	DKinematicData::operator=(locSourceData);
+	if(dTimingInfo == locSourceData.dTimingInfo)
+		return *this; //guard against self-assignment
 	dTimingInfo = dResourcePool_TimingInfo.Get_SharedResource();
 	*dTimingInfo = *(locSourceData.dTimingInfo);
 	dNeutralShower = locSourceData.dNeutralShower;

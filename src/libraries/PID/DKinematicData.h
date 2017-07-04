@@ -110,7 +110,7 @@ class DKinematicData : public JObject
 		//This is done because sometimes a new object is needed (e.g. DChargedTrackHypothesis) for which this info hasn't changed (from DTrackTimeBased)
 		//Thus, just share this between the two objects, instead of doubling the memory usage
 		//By inheriting this class, you also get to share the same interface
-		shared_ptr<DKinematicInfo> dKinematicInfo;
+		shared_ptr<DKinematicInfo> dKinematicInfo = nullptr;
 
 		static thread_local DResourcePool<DKinematicInfo> dResourcePool_KinematicInfo;
 };
