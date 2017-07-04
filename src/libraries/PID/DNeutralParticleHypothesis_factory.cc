@@ -15,6 +15,8 @@ using namespace std;
 #include "DNeutralParticleHypothesis_factory.h"
 using namespace jana;
 
+thread_local DResourcePool<DNeutralParticleHypothesis::DTimingInfo> DNeutralParticleHypothesis::dResourcePool_TimingInfo;
+
 //------------------
 // init
 //------------------
