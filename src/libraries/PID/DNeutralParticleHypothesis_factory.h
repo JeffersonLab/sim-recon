@@ -33,13 +33,13 @@ class DNeutralParticleHypothesis_factory : public jana::JFactory<DNeutralParticl
 		void Calc_ParticleCovariance_Photon(const DNeutralShower* locNeutralShower, const TMatrixFSym* locVertexCovMatrix, const DVector3& locMomentum, const DVector3& locPathVector, TMatrixFSym* locParticleCovariance) const;
 		void Calc_ParticleCovariance_Massive(const DNeutralShower* locNeutralShower, const TMatrixFSym* locVertexCovMatrix, double locMass, double locDeltaT, const DVector3& locMomentum, const DVector3& locPathVector, TMatrixFSym* locParticleCovariance) const;
 
-		void Recycle_Hypotheses(vector<DNeutralParticleHypothesis*>& locHypos){dResourcePool_NeutralParticleHypothesis.Recycle(locHypos);}
-		void Recycle_Hypotheses(vector<const DNeutralParticleHypothesis*>& locHypos){dResourcePool_NeutralParticleHypothesis.Recycle(locHypos);}
-		void Recycle_Hypothesis(const DNeutralParticleHypothesis* locHypo){dResourcePool_NeutralParticleHypothesis.Recycle(locHypo);}
+		void Recycle_Hypotheses(vector<DNeutralParticleHypothesis*>& locHypos){dResourcePool_NeutralParticleHypothesis->Recycle(locHypos);}
+		void Recycle_Hypotheses(vector<const DNeutralParticleHypothesis*>& locHypos){dResourcePool_NeutralParticleHypothesis->Recycle(locHypos);}
+		void Recycle_Hypothesis(const DNeutralParticleHypothesis* locHypo){dResourcePool_NeutralParticleHypothesis->Recycle(locHypo);}
 
 		DNeutralParticleHypothesis* Get_Resource(void)
 		{
-			auto locHypo = dResourcePool_NeutralParticleHypothesis.Get_Resource();
+			auto locHypo = dResourcePool_NeutralParticleHypothesis->Get_Resource();
 			locHypo->Reset();
 			return locHypo;
 		}
@@ -49,7 +49,7 @@ class DNeutralParticleHypothesis_factory : public jana::JFactory<DNeutralParticl
 		const DParticleID* dParticleID = nullptr;
 
 		//RESOURCE POOL
-		DResourcePool<DNeutralParticleHypothesis> dResourcePool_NeutralParticleHypothesis;
+		DResourcePool<DNeutralParticleHypothesis>* dResourcePool_NeutralParticleHypothesis = nullptr;
 
 		jerror_t init(void);						///< Called once at program start.
 		jerror_t brun(jana::JEventLoop *locEventLoop, int32_t runnumber);	///< Called everytime a new run number is detected.
@@ -59,6 +59,7 @@ class DNeutralParticleHypothesis_factory : public jana::JFactory<DNeutralParticl
 			for(auto locHypo : _data)
 				Recycle_Hypothesis(locHypo);
 			_data.clear();
+			delete dResourcePool_NeutralParticleHypothesis;
 			return NOERROR;
 		}
 };

@@ -30,13 +30,13 @@ class DChargedTrackHypothesis_factory:public jana::JFactory<DChargedTrackHypothe
 		DChargedTrackHypothesis* Create_ChargedTrackHypothesis(JEventLoop* locEventLoop, const DTrackTimeBased* locTrackTimeBased, const DDetectorMatches* locDetectorMatches, const DEventRFBunch* locEventRFBunch);
 		void Add_TimeToTrackingMatrix(DChargedTrackHypothesis* locChargedTrackHypothesis, TMatrixFSym* locCovarianceMatrix, double locFlightTimeVariance, double locHitTimeVariance, double locFlightTimePCorrelation) const;
 
-		void Recycle_Hypotheses(vector<const DChargedTrackHypothesis*>& locHypos){dResourcePool_ChargedTrackHypothesis.Recycle(locHypos);}
-		void Recycle_Hypotheses(vector<DChargedTrackHypothesis*>& locHypos){dResourcePool_ChargedTrackHypothesis.Recycle(locHypos);}
-		void Recycle_Hypothesis(const DChargedTrackHypothesis* locHypo){dResourcePool_ChargedTrackHypothesis.Recycle(locHypo);}
+		void Recycle_Hypotheses(vector<const DChargedTrackHypothesis*>& locHypos){dResourcePool_ChargedTrackHypothesis->Recycle(locHypos);}
+		void Recycle_Hypotheses(vector<DChargedTrackHypothesis*>& locHypos){dResourcePool_ChargedTrackHypothesis->Recycle(locHypos);}
+		void Recycle_Hypothesis(const DChargedTrackHypothesis* locHypo){dResourcePool_ChargedTrackHypothesis->Recycle(locHypo);}
 
 		DChargedTrackHypothesis* Get_Resource(void)
 		{
-			auto locHypo = dResourcePool_ChargedTrackHypothesis.Get_Resource();
+			auto locHypo = dResourcePool_ChargedTrackHypothesis->Get_Resource();
 			locHypo->Reset();
 			return locHypo;
 		}
@@ -45,7 +45,9 @@ class DChargedTrackHypothesis_factory:public jana::JFactory<DChargedTrackHypothe
 		const DParticleID* dPIDAlgorithm;
 
 		//RESOURCE POOL
-		DResourcePool<DChargedTrackHypothesis> dResourcePool_ChargedTrackHypothesis;
+		//For some reason, JANA doesn't call factory destructor until AFTER the threads have been closed
+		//This causes the pool destructor to crash.  Instead, delete in fini();
+		DResourcePool<DChargedTrackHypothesis>* dResourcePool_ChargedTrackHypothesis = nullptr;
 
 		jerror_t init(void);						///< Called once at program start.
 		jerror_t brun(jana::JEventLoop *locEventLoop, int32_t runnumber);	///< Called everytime a new run number is detected.
@@ -55,6 +57,7 @@ class DChargedTrackHypothesis_factory:public jana::JFactory<DChargedTrackHypothe
 			for(auto locHypo : _data)
 				Recycle_Hypothesis(locHypo);
 			_data.clear();
+			delete dResourcePool_ChargedTrackHypothesis;
 			return NOERROR;
 		}
 };

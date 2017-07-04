@@ -18,13 +18,13 @@
 class DBeamPhoton_factory:public jana::JFactory<DBeamPhoton>
 {
 	public:
-		void Recycle_Resources(vector<const DBeamPhoton*>& locBeams){dResourcePool_BeamPhotons.Recycle(locBeams);}
-		void Recycle_Resources(vector<DBeamPhoton*>& locBeams){dResourcePool_BeamPhotons.Recycle(locBeams);}
-		void Recycle_Resource(const DBeamPhoton* locBeam){dResourcePool_BeamPhotons.Recycle(locBeam);}
+		void Recycle_Resources(vector<const DBeamPhoton*>& locBeams){dResourcePool_BeamPhotons->Recycle(locBeams);}
+		void Recycle_Resources(vector<DBeamPhoton*>& locBeams){dResourcePool_BeamPhotons->Recycle(locBeams);}
+		void Recycle_Resource(const DBeamPhoton* locBeam){dResourcePool_BeamPhotons->Recycle(locBeam);}
 
 		DBeamPhoton* Get_Resource(void)
 		{
-			auto locBeam = dResourcePool_BeamPhotons.Get_Resource();
+			auto locBeam = dResourcePool_BeamPhotons->Get_Resource();
 			locBeam->Reset();
 			return locBeam;
 		}
@@ -38,13 +38,14 @@ class DBeamPhoton_factory:public jana::JFactory<DBeamPhoton>
 			for(auto locBeam : _data)
 				Recycle_Resource(locBeam);
 			_data.clear();
+			delete dResourcePool_BeamPhotons;
 			return NOERROR;
 		}
 
 		double dTargetCenterZ;
 
 		//RESOURCE POOL
-		DResourcePool<DBeamPhoton> dResourcePool_BeamPhotons;
+		DResourcePool<DBeamPhoton>* dResourcePool_BeamPhotons = nullptr;
 
 		// config. parameters
 		double DELTA_T_DOUBLES_MAX;

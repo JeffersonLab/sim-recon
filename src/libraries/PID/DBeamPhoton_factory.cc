@@ -44,6 +44,7 @@ jerror_t DBeamPhoton_factory::init(void)
 
 	//Setting this flag makes it so that JANA does not delete the objects in _data.  This factory will manage this memory.
 	SetFactoryFlag(NOT_OBJECT_OWNER);
+	dResourcePool_BeamPhotons = new DResourcePool<DBeamPhoton>();
 	return NOERROR;
 }
 
