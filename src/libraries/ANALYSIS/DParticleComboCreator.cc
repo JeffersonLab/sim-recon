@@ -23,7 +23,6 @@ DParticleComboCreator::DParticleComboCreator(JEventLoop* locEventLoop, const DSo
 	dBeamPhotonfactory = static_cast<DBeamPhoton_factory*>(locEventLoop->GetFactory("DBeamPhoton"));
 
 	locEventLoop->GetSingle(dParticleID);
-	locEventLoop->GetSingle(dAnalysisUtilities);
 
 	//error matrix //too lazy to compute properly right now ... need to hack DAnalysisUtilities::Calc_DOCA()
 	dVertexCovMatrix.ResizeTo(4, 4);
@@ -634,6 +633,8 @@ DKinematicData* DParticleComboCreator::Build_KinematicData(DKinFitParticle* locK
 const DParticleCombo* DParticleComboCreator::Build_ThrownCombo(JEventLoop* locEventLoop)
 {
 	deque<pair<const DMCThrown*, deque<const DMCThrown*> > > locThrownSteps;
+	if(dAnalysisUtilities == nullptr)
+		locEventLoop->GetSingle(dAnalysisUtilities);
 	dAnalysisUtilities->Get_ThrownParticleSteps(locEventLoop, locThrownSteps);
 	if(locThrownSteps.empty())
 		return nullptr;

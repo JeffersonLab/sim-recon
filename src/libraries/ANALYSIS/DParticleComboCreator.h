@@ -63,12 +63,12 @@ class DParticleComboCreator
 		unordered_map<const DReactionVertexInfo*, bool> dDanglingNeutralsFlagMap;
 
 		//UTILITIES
-		const DSourceComboer* dSourceComboer;
-		const DSourceComboTimeHandler* dSourceComboTimeHandler;
-		const DSourceComboVertexer* dSourceComboVertexer;
-		const DParticleID* dParticleID;
-		const DAnalysisUtilities* dAnalysisUtilities;
-		DKinFitUtils_GlueX* dKinFitUtils;
+		const DSourceComboer* dSourceComboer = nullptr;
+		const DSourceComboTimeHandler* dSourceComboTimeHandler = nullptr;
+		const DSourceComboVertexer* dSourceComboVertexer = nullptr;
+		const DParticleID* dParticleID = nullptr;
+		const DAnalysisUtilities* dAnalysisUtilities = nullptr;
+		DKinFitUtils_GlueX* dKinFitUtils = nullptr;
 
 		//FACTORIES
 		DNeutralParticleHypothesis_factory* dNeutralParticleHypothesisFactory;
