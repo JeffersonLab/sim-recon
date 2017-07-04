@@ -31,7 +31,7 @@ class DKinematicData : public JObject
 		virtual ~DKinematicData(void) {};
 
 		//Assignment operator
-		//DKinematicData& operator=(const DKinematicData& locSourceData);
+		DKinematicData& operator=(const DKinematicData& locSourceData);
 		void Share_FromInput_Kinematics(const DKinematicData* locSourceData);
 
 		//Reset
