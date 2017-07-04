@@ -483,7 +483,7 @@ bool DHistogramAction_Reconstruction::Perform_Action(JEventLoop* locEventLoop, c
 		//also, select best sc matches for each track
 	map<JObject::oid_t, const DTrackTimeBased*> locBestTrackTimeBasedMap; //lowest tracking FOM for each candidate id
 	map<const DTrackWireBased*, const DTrackTimeBased*> locWireToTimeBasedTrackMap;
-	map<const DTrackTimeBased*, shared_ptr<const DSCHitMatchParams*>> locTimeBasedToBestSCMatchMap;
+	map<const DTrackTimeBased*, shared_ptr<const DSCHitMatchParams>> locTimeBasedToBestSCMatchMap;
 	for(size_t loc_i = 0; loc_i < locTrackTimeBasedVector.size(); ++loc_i)
 	{
 		//Best SC Match Params
@@ -1106,7 +1106,7 @@ void DHistogramAction_DetectorMatching::Fill_MatchingHists(JEventLoop* locEventL
 	locEventLoop->GetSingle(locDetectorMatches, locDetectorMatchesTag.c_str());
 
 	//TRACK / BCAL CLOSEST MATCHES
-	map<const DTrackingData*, pair<shared_ptr<const DBCALShowerMatchParams*>, double> > locBCALTrackDistanceMap; //double = z
+	map<const DTrackingData*, pair<shared_ptr<const DBCALShowerMatchParams>, double> > locBCALTrackDistanceMap; //double = z
 	for(auto locTrackIterator = locBestTrackMap.begin(); locTrackIterator != locBestTrackMap.end(); ++locTrackIterator)
 	{
 		const DReferenceTrajectory* rt = Get_ReferenceTrajectory(locTrackIterator->second);
@@ -1121,7 +1121,7 @@ void DHistogramAction_DetectorMatching::Fill_MatchingHists(JEventLoop* locEventL
 	}
 
 	//TRACK / FCAL CLOSEST MATCHES
-	map<const DTrackingData*, shared_ptr<const DFCALShowerMatchParams*>> locFCALTrackDistanceMap;
+	map<const DTrackingData*, shared_ptr<const DFCALShowerMatchParams>> locFCALTrackDistanceMap;
 	for(auto locTrackIterator = locBestTrackMap.begin(); locTrackIterator != locBestTrackMap.end(); ++locTrackIterator)
 	{
 		shared_ptr<const DFCALShowerMatchParams> locBestMatchParams;
@@ -1134,7 +1134,7 @@ void DHistogramAction_DetectorMatching::Fill_MatchingHists(JEventLoop* locEventL
 	}
 
 	//TRACK / SC CLOSEST MATCHES
-	map<const DTrackingData*, pair<shared_ptr<const DSCHitMatchParams*>, double> > locSCTrackDistanceMap; //double = z
+	map<const DTrackingData*, pair<shared_ptr<const DSCHitMatchParams>, double> > locSCTrackDistanceMap; //double = z
 	for(auto locTrackIterator = locBestTrackMap.begin(); locTrackIterator != locBestTrackMap.end(); ++locTrackIterator)
 	{
 		shared_ptr<const DSCHitMatchParams> locBestMatchParams;
@@ -1149,7 +1149,7 @@ void DHistogramAction_DetectorMatching::Fill_MatchingHists(JEventLoop* locEventL
 	}
 
 	//TRACK / TOF POINT CLOSEST MATCHES
-	map<const DTrackingData*, shared_ptr<const DTOFHitMatchParams*>> locTOFPointTrackDistanceMap;
+	map<const DTrackingData*, shared_ptr<const DTOFHitMatchParams>> locTOFPointTrackDistanceMap;
 	for(auto locTrackIterator = locBestTrackMap.begin(); locTrackIterator != locBestTrackMap.end(); ++locTrackIterator)
 	{
 		shared_ptr<const DTOFHitMatchParams> locBestMatchParams;
