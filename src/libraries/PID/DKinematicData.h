@@ -31,7 +31,7 @@ class DKinematicData : public JObject
 		virtual ~DKinematicData(void) {};
 
 		//Assignment operator
-		DKinematicData& operator=(const DKinematicData& locSourceData);
+		//DKinematicData& operator=(const DKinematicData& locSourceData);
 		void Share_FromInput_Kinematics(const DKinematicData* locSourceData);
 
 		//Reset
@@ -90,7 +90,7 @@ class DKinematicData : public JObject
 		{
 		public:
 			//CONSTRUCTORS
-			DKinematicInfo(void){};
+			DKinematicInfo(void) = default;
 			DKinematicInfo(Particle_t locPID, const DVector3& locMomentum, DVector3 locPosition = DVector3(), double locTime = 0.0, const TMatrixFSym* locErrorMatrix = nullptr);
 			void Set_Members(Particle_t locPID, const DVector3& locMomentum, DVector3 locPosition = DVector3(), double locTime = 0.0, const TMatrixFSym* locErrorMatrix = nullptr);
 
@@ -110,13 +110,30 @@ class DKinematicData : public JObject
 		//This is done because sometimes a new object is needed (e.g. DChargedTrackHypothesis) for which this info hasn't changed (from DTrackTimeBased)
 		//Thus, just share this between the two objects, instead of doubling the memory usage
 		//By inheriting this class, you also get to share the same interface
-		shared_ptr<DKinematicInfo> dKinematicInfo = nullptr;
+		//shared_ptr<DKinematicInfo> dKinematicInfo = nullptr;
+		DKinematicInfo dKinematicInfoTest;
+		DKinematicInfo* dKinematicInfo = &dKinematicInfoTest;
 
-		static thread_local DResourcePool<DKinematicInfo> dResourcePool_KinematicInfo;
+//		static thread_local DResourcePool<DKinematicInfo> dResourcePool_KinematicInfo;
 };
 
 /************************************************************** CONSTRUCTORS & OPERATORS ***************************************************************/
+inline DKinematicData::DKinematicData(void){}
 
+inline DKinematicData::DKinematicData(Particle_t locPID, const DVector3& locMomentum, DVector3 locPosition, double locTime, const TMatrixFSym* locErrorMatrix)
+{
+	dKinematicInfo->Set_Members(locPID, locMomentum, locPosition, locTime, locErrorMatrix);
+}
+
+inline void DKinematicData::Share_FromInput_Kinematics(const DKinematicData* locSourceData)
+{
+}
+
+inline DKinematicData::DKinematicData(const DKinematicData& locSourceData, bool locShareKinematicsFlag)
+{
+}
+
+/*
 inline DKinematicData::DKinematicData(void) : dKinematicInfo(dResourcePool_KinematicInfo.Get_SharedResource()) {}
 
 inline DKinematicData::DKinematicData(Particle_t locPID, const DVector3& locMomentum, DVector3 locPosition, double locTime, const TMatrixFSym* locErrorMatrix) :
@@ -153,7 +170,7 @@ inline DKinematicData& DKinematicData::operator=(const DKinematicData& locSource
 	*dKinematicInfo = *(locSourceData.dKinematicInfo);
 	return *this;
 }
-
+*/
 inline DKinematicData::DKinematicInfo::DKinematicInfo(Particle_t locPID, const DVector3& locMomentum, DVector3 locPosition, double locTime, const TMatrixFSym* locErrorMatrix) :
 dPID(locPID), dMomentum(locMomentum), dPosition(locPosition), dTime(locTime), dErrorMatrix(locErrorMatrix) {}
 
@@ -175,7 +192,7 @@ inline void DKinematicData::DKinematicInfo::Set_Members(Particle_t locPID, const
 
 inline void DKinematicData::Reset(void)
 {
-	dKinematicInfo = dResourcePool_KinematicInfo.Get_SharedResource(); //not safe to reset individually, since you don't know what it's shared with
+	//dKinematicInfo = dResourcePool_KinematicInfo.Get_SharedResource(); //not safe to reset individually, since you don't know what it's shared with
 	ClearAssociatedObjects();
 }
 
