@@ -8,7 +8,7 @@
 
 #include "DReaction_factory_pi0calib.h"
 #include "DCustomAction_CutPhotonKin.h"
-//#include "DCustomAction_dEdxCut.h"
+#include "DCustomAction_dEdxCut.h"
 
 //------------------
 // init
@@ -28,15 +28,22 @@ jerror_t DReaction_factory_pi0calib::init(void)
 	//Required: DReactionSteps to specify the channel and decay chain you want to study
 		//Particles are of type Particle_t, an enum defined in sim-recon/src/libraries/include/particleType.h
 
-	//Example: g, p -> pi0, p
+	//Example: g, p -> pi+, pi-, pi0
 	locReactionStep = new DReactionStep();
 	locReactionStep->Set_InitialParticleID(Gamma);
 	locReactionStep->Set_TargetParticleID(Proton);
 	locReactionStep->Add_FinalParticleID(PiPlus);
 	locReactionStep->Add_FinalParticleID(PiMinus);
-	locReactionStep->Add_FinalParticleID(Gamma);
-	locReactionStep->Add_FinalParticleID(Gamma);
+	locReactionStep->Add_FinalParticleID(Pi0);
 	locReactionStep->Add_FinalParticleID(Proton);
+	locReaction->Add_ReactionStep(locReactionStep);
+	dReactionStepPool.push_back(locReactionStep); //register so will be deleted later: prevent memory leak
+
+	//Example: pi0 -> g, g
+	locReactionStep = new DReactionStep();
+	locReactionStep->Set_InitialParticleID(Pi0);
+	locReactionStep->Add_FinalParticleID(Gamma);
+	locReactionStep->Add_FinalParticleID(Gamma);
 	locReaction->Add_ReactionStep(locReactionStep);
 	dReactionStepPool.push_back(locReactionStep); //register so will be deleted later: prevent memory leak
 
@@ -44,10 +51,8 @@ jerror_t DReaction_factory_pi0calib::init(void)
 
 	// Recommended: Type of kinematic fit to perform (default is d_NoFit)
 		//fit types are of type DKinFitType, an enum defined in sim-recon/src/libraries/ANALYSIS/DKinFitResults.h
-	locReaction->Set_KinFitType(d_NoFit); //simultaneously constrain apply four-momentum conservation, invariant masses, and common-vertex constraints
-
-	// Highly Recommended: When generating particle combinations, reject all beam photons that match to a different RF bunch (delta_t > 2.004 ns)
-//	locReaction->Set_MaxPhotonRFDeltaT(0.5*4.008); //beam bunches are every 4.008 ns, (2.004 should be minimum cut value)
+//	locReaction->Set_KinFitType(d_NoFit); //simultaneously constrain apply four-momentum conservation, invariant masses, and common-vertex constraints
+	locReaction->Set_KinFitType(d_P4AndVertexFit);
 
 	// Recommended: Enable ROOT TTree output for this DReaction
 //        locReaction->Enable_TTreeOutput("tree_pi0calib.root"); //string is file name (must end in ".root"!!): doen't need to be unique, feel free to change
@@ -58,18 +63,15 @@ jerror_t DReaction_factory_pi0calib::init(void)
 		//These actions are executed sequentially, and are executed on each surviving (non-cut) particle combination 
 		//Pre-defined actions can be found in ANALYSIS/DHistogramActions.h and ANALYSIS/DCutActions.h
 
-	// Custom histograms (before PID)
-//        locReaction->Add_AnalysisAction(new DCustomAction_p2gamma_hists(locReaction, false, "NoKinFit_Measured"));
-
-		locReaction->Set_MaxPhotonRFDeltaT(0.5*dBeamBunchPeriod); //beam bunches are every 4.008 ns, (2.004 should be minimum cut value)
-		locReaction->Set_MaxExtraGoodTracks(4);
+		locReaction->Set_MaxPhotonRFDeltaT(0.5*4.008); //beam bunches are every 4.008 ns, (2.004 should be minimum cut value)
+		locReaction->Set_MaxExtraGoodTracks(1);
 		locReaction->Set_InvariantMassCut(Pi0, 0.05, 0.22);
-//		locReaction->Add_AnalysisAction(new DCustomAction_dEdxCut(locReaction, false)); //true: focus on rejecting background
+		locReaction->Add_ComboPreSelectionAction(new DCutAction_MissingMassSquared(locReaction, false, -0.1, 0.1));
 
 	// Require BCAL photons
 	locReaction->Add_AnalysisAction(new DCustomAction_CutPhotonKin(locReaction));
-	// PID
-//        locReaction->Add_AnalysisAction(new DHistogramAction_PID(locReaction));
+
+	locReaction->Add_AnalysisAction(new DCustomAction_dEdxCut(locReaction, false)); //true: focus on rejecting background
 	// Fiducial PID delta T cuts 
 	//Proton
 	locReaction->Add_AnalysisAction(new DCutAction_PIDDeltaT(locReaction, false, 2.5, Proton, SYS_TOF));  //false: measured data
@@ -88,21 +90,10 @@ jerror_t DReaction_factory_pi0calib::init(void)
 	locReaction->Add_AnalysisAction(new DCutAction_PIDDeltaT(locReaction, false, 2.5, Gamma, SYS_FCAL)); //false: measured data 
 //	locReaction->Add_AnalysisAction(new DCutAction_PIDDeltaT(locReaction,false,2.0,Unknown,SYS_NULL,"LooseDeltaTCut"));
 
-	// Custom histograms (after PID)
-//        locReaction->Add_AnalysisAction(new DCustomAction_p2gamma_hists(locReaction, false, "TimingCut_Measured"));
-
 	// Cuts for future analysis actions applied in CustomAction for now
         locReaction->Add_AnalysisAction(new DCustomAction_p2gamma_cuts(locReaction, false));
-        //locReaction->Add_AnalysisAction(new DCutAction_InvariantMass(locReaction, 0, Gamma, Gamma, false, 0.1, 0.16));
 
-	// Diagnostics for unused tracks and showers with final selection
-//	locReaction->Add_AnalysisAction(new DCustomAction_p2gamma_unusedHists(locReaction, false, "NoKinFit_Measured"));
-
-	// Cut beam energy for TTree entries
-        //locReaction->Add_AnalysisAction(new DCutAction_BeamEnergy(locReaction, false, 2.5, 3.0));
-
-	// Kinematics
-//	locReaction->Add_AnalysisAction(new DHistogramAction_ParticleComboKinematics(locReaction, false)); //false: fill histograms with measured particle data
+	locReaction->Add_AnalysisAction(new DCutAction_KinFitFOM(locReaction, 0.01));
 
 	_data.push_back(locReaction); //Register the DReaction with the factory
 
