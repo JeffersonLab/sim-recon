@@ -139,7 +139,7 @@ class DTrackFitter:public jana::JObject{
 		const DMagneticFieldMap* GetDMagneticFieldMap(void) const {return bfield;}
 
 		void SetFitType(fit_type_t type){fit_type=type;}
-		void SetInputParameters(const DKinematicData &starting_params){input_params=starting_params;}
+		void SetInputParameters(const DKinematicData &starting_params){*static_cast<DKinematicData*>(&input_params)=starting_params;}
 		
 		// Wrappers
 		fit_status_t FitTrack(const DVector3 &pos, const DVector3 &mom, double q, double mass,double t0=NaN,DetectorSystem_t t0_det=SYS_NULL);
