@@ -231,7 +231,8 @@ jerror_t DTrackWireBased_factory::evnt(JEventLoop *loop, uint64_t eventnumber)
          const DTrackCandidate *cand=candidates[i];
 
          // Make a new wire-based track
-         DTrackWireBased *track = new DTrackWireBased(*const_cast<DKinematicData*>(static_cast<const DKinematicData*>(cand)), true); //share the memory: isn't changed below
+         DTrackWireBased *track = new DTrackWireBased(); //share the memory: isn't changed below
+         *static_cast<DKinematicData*>(track) = *static_cast<const DKinematicData*>(cand);
          track->IsSmoothed = cand->IsSmoothed;
 
          // Attach a reference trajectory --  make sure there are enough DReferenceTrajectory objects
@@ -519,7 +520,8 @@ void DTrackWireBased_factory::DoFit(unsigned int c_id,
          if(!isfinite(fitter->GetFitParameters().position().X())) break;
          {    
             // Make a new wire-based track
-             DTrackWireBased *track = new DTrackWireBased(fitter->GetFitParameters()); //don't share underlying data: next fit will overwrite
+             DTrackWireBased *track = new DTrackWireBased();
+             *static_cast<DTrackingData*>(track) = fitter->GetFitParameters();
 
             // Fill reference trajectory
             rt->q = candidate->charge();

@@ -71,6 +71,7 @@ DKinematicData(locSourceData, locShareKinematicsFlag), dTrackingInfo(make_shared
 inline DTrackingData& DTrackingData::operator=(const DTrackingData& locSourceData)
 {
 	//Replace current data with a new, independent copy of the input data: tracked separately from input so it can be modified
+	DKinematicData::operator=(locSourceData);
 	dTrackingInfo = make_shared<DTrackingInfo>(*(locSourceData.dTrackingInfo));
 	return *this;
 }

@@ -281,8 +281,9 @@ jerror_t DTrackTimeBased_factory::evnt(JEventLoop *loop, uint64_t eventnumber)
       const DTrackWireBased *track = tracks[i];
 
       // Copy over the results of the wire-based fit to DTrackTimeBased
-      DTrackTimeBased *timebased_track = new DTrackTimeBased(*static_cast<DTrackingData*>(const_cast<DTrackWireBased*>(track)), true, true); //share the memory (isn't changed below)
-      
+      DTrackTimeBased *timebased_track = new DTrackTimeBased(); //share the memory (isn't changed below)
+      *static_cast<DTrackingData*>(timebased_track) = *static_cast<const DTrackingData*>(track);
+
       timebased_track->rt = track->rt;
       timebased_track->chisq = track->chisq;
       timebased_track->Ndof = track->Ndof;
@@ -374,8 +375,9 @@ jerror_t DTrackTimeBased_factory::evnt(JEventLoop *loop, uint64_t eventnumber)
 	if (fdchits.size()>0
 	    && cdchits.size()<MIN_CDC_HITS_FOR_TB_FORWARD_TRACKING){
 	  // Copy over the results of the wire-based fit to DTrackTimeBased
-	  DTrackTimeBased *timebased_track = new DTrackTimeBased(*const_cast<DTrackingData*>(static_cast<const DTrackingData*>(track)), true, true); //share the memory (isn't changed below)
-	  
+	  DTrackTimeBased *timebased_track = new DTrackTimeBased();
+      *static_cast<DTrackingData*>(timebased_track) = *static_cast<const DTrackingData*>(track);
+
 	  timebased_track->rt = track->rt;
 	  timebased_track->chisq = track->chisq;
 	  timebased_track->Ndof = track->Ndof;
@@ -892,7 +894,8 @@ bool DTrackTimeBased_factory::DoFit(const DTrackWireBased *track,
   case DTrackFitter::kFitNoImprovement:
     {
       // Create a new time-based track object
-      DTrackTimeBased *timebased_track = new DTrackTimeBased(*const_cast<DTrackingData*>(static_cast<const DTrackingData*>(track)), true, true); //share the memory (isn't changed below)
+      DTrackTimeBased *timebased_track = new DTrackTimeBased();
+      *static_cast<DTrackingData*>(timebased_track) = *static_cast<const DTrackingData*>(track);
 
       timebased_track->chisq = track->chisq;
       timebased_track->Ndof = track->Ndof;
@@ -944,8 +947,9 @@ bool DTrackTimeBased_factory::DoFit(const DTrackWireBased *track,
         rt->Reset();
 
       // Create a new time-based track object
-      DTrackTimeBased *timebased_track = new DTrackTimeBased(fitter->GetFitParameters()); //don't share underlying data: next fit will overwrite
-      
+      DTrackTimeBased *timebased_track = new DTrackTimeBased();
+      *static_cast<DTrackingData*>(timebased_track) = fitter->GetFitParameters();
+
       rt->SetMass(mass);
       rt->SetDGeometry(geom);
       rt->q = timebased_track->charge();
@@ -1054,8 +1058,9 @@ void DTrackTimeBased_factory::AddMissingTrackHypothesis(vector<DTrackTimeBased*>
 							double my_mass,
 							double q){
   // Create a new time-based track object
-  DTrackTimeBased *timebased_track = new DTrackTimeBased(*const_cast<DTrackingData*>(static_cast<const DTrackingData*>(src_track)), true, false); //share some of the memory (PID changed below)
-	  
+  DTrackTimeBased *timebased_track = new DTrackTimeBased();
+  *static_cast<DTrackingData*>(timebased_track) = *static_cast<const DTrackingData*>(src_track);
+
   // Copy over DKinematicData part from the result of a successful fit
   timebased_track->setPID(pid_algorithm->IDTrack(q, my_mass));
   timebased_track->chisq = src_track->chisq;

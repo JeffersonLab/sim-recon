@@ -22,14 +22,6 @@ class DTrackTimeBased:public DTrackingData{
 	public:
 		JOBJECT_PUBLIC(DTrackTimeBased);
 		
-		//CONSTRUCTORS
-		DTrackTimeBased(void) = default;
-		DTrackTimeBased(DTrackTimeBased& locSourceData, bool locShareTrackingFlag = false, bool locShareKinematicsFlag = false);
-		DTrackTimeBased(DTrackingData& locSourceData, bool locShareTrackingFlag = false, bool locShareKinematicsFlag = false);
-		DTrackTimeBased(DKinematicData& locSourceData, bool locShareKinematicsFlag = false);
-		DTrackTimeBased(const DTrackTimeBased& locSourceData){*this = locSourceData;}
-		DTrackTimeBased(const DTrackingData& locSourceData);
-
 		double dEdx(void) const{return ((dNumHitsUsedFordEdx_CDC >= dNumHitsUsedFordEdx_FDC) ? ddEdx_CDC : ddEdx_FDC);}
 		typedef struct{
 		  unsigned int inner_layer;
@@ -86,14 +78,5 @@ class DTrackTimeBased:public DTrackingData{
 		}
 };
 
-inline DTrackTimeBased::DTrackTimeBased(DTrackTimeBased& locSourceData, bool locShareTrackingFlag,
-bool locShareKinematicsFlag) : DTrackingData(locSourceData, locShareTrackingFlag, locShareKinematicsFlag){}
-
-inline DTrackTimeBased::DTrackTimeBased(const DTrackingData& locSourceData) : DTrackingData(locSourceData){}
-
-inline DTrackTimeBased::DTrackTimeBased(DTrackingData& locSourceData, bool locShareTrackingFlag,
-bool locShareKinematicsFlag) : DTrackingData(locSourceData, locShareTrackingFlag, locShareKinematicsFlag){}
-
-inline DTrackTimeBased::DTrackTimeBased(DKinematicData& locSourceData, bool locShareKinematicsFlag) : DTrackingData(locSourceData, false, locShareKinematicsFlag){}
 #endif // _DTrackTimeBased_
 

@@ -98,7 +98,8 @@ jerror_t DTrackTimeBased_factory_THROWN::evnt(JEventLoop *loop, uint64_t eventnu
 		if(fabs(thrown->charge())<1)continue;
 
 		// First, copy over the DKinematicData part
-		DTrackTimeBased *track = new DTrackTimeBased(*const_cast<DKinematicData*>(static_cast<const DKinematicData*>(thrown)), true); //share the memory: isn't changed below
+		DTrackTimeBased *track = new DTrackTimeBased();
+	  *static_cast<DKinematicData*>(track) = *static_cast<const DKinematicData*>(thrown);
 
 		// Set PID		
       track->setPID(thrown->PID());

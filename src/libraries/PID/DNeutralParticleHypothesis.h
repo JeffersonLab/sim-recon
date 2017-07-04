@@ -110,6 +110,7 @@ inline DNeutralParticleHypothesis::DNeutralParticleHypothesis(const DNeutralPart
 inline DNeutralParticleHypothesis& DNeutralParticleHypothesis::operator=(const DNeutralParticleHypothesis& locSourceData)
 {
 	//Replace current data with a new, independent copy of the input data: tracked separately from input so it can be modified
+	DKinematicData::operator=(locSourceData);
 	dTimingInfo = dResourcePool_TimingInfo.Get_SharedResource();
 	*dTimingInfo = *(locSourceData.dTimingInfo);
 	dNeutralShower = locSourceData.dNeutralShower;
