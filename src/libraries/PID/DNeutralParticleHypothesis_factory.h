@@ -28,7 +28,6 @@
 class DNeutralParticleHypothesis_factory : public jana::JFactory<DNeutralParticleHypothesis>
 {
 	public:
-		~DNeutralParticleHypothesis_factory(void){for(auto locHypo : _data) Recycle_Hypothesis(locHypo);}
 		DNeutralParticleHypothesis* Create_DNeutralParticleHypothesis(const DNeutralShower* locNeutralShower, Particle_t locPID, const DEventRFBunch* locEventRFBunch, const DLorentzVector& dSpacetimeVertex, const TMatrixFSym* locVertexCovMatrix);
 
 		void Calc_ParticleCovariance_Photon(const DNeutralShower* locNeutralShower, const TMatrixFSym* locVertexCovMatrix, const DVector3& locMomentum, const DVector3& locPathVector, TMatrixFSym* locParticleCovariance) const;
@@ -55,6 +54,13 @@ class DNeutralParticleHypothesis_factory : public jana::JFactory<DNeutralParticl
 		jerror_t init(void);						///< Called once at program start.
 		jerror_t brun(jana::JEventLoop *locEventLoop, int32_t runnumber);	///< Called everytime a new run number is detected.
 		jerror_t evnt(jana::JEventLoop *locEventLoop, uint64_t eventnumber);	///< Called every event.
+		jerror_t fini(void)
+		{
+			for(auto locHypo : _data)
+				Recycle_Hypothesis(locHypo);
+			_data.clear();
+			return NOERROR;
+		}
 };
 
 #endif // _DNeutralParticleHypothesis_factory_

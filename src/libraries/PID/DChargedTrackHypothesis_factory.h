@@ -27,8 +27,6 @@ using namespace jana;
 class DChargedTrackHypothesis_factory:public jana::JFactory<DChargedTrackHypothesis>
 {
 	public:
-		~DChargedTrackHypothesis_factory(){for(auto locHypo : _data) Recycle_Hypothesis(locHypo);}
-
 		DChargedTrackHypothesis* Create_ChargedTrackHypothesis(JEventLoop* locEventLoop, const DTrackTimeBased* locTrackTimeBased, const DDetectorMatches* locDetectorMatches, const DEventRFBunch* locEventRFBunch);
 		void Add_TimeToTrackingMatrix(DChargedTrackHypothesis* locChargedTrackHypothesis, TMatrixFSym* locCovarianceMatrix, double locFlightTimeVariance, double locHitTimeVariance, double locFlightTimePCorrelation) const;
 
@@ -52,6 +50,13 @@ class DChargedTrackHypothesis_factory:public jana::JFactory<DChargedTrackHypothe
 		jerror_t init(void);						///< Called once at program start.
 		jerror_t brun(jana::JEventLoop *locEventLoop, int32_t runnumber);	///< Called everytime a new run number is detected.
 		jerror_t evnt(jana::JEventLoop *locEventLoop, uint64_t eventnumber);	///< Called every event.
+		jerror_t fini(void)
+		{
+			for(auto locHypo : _data)
+				Recycle_Hypothesis(locHypo);
+			_data.clear();
+			return NOERROR;
+		}
 };
 
 #endif // _DChargedTrackHypothesis_factory_
