@@ -154,7 +154,7 @@ inline DChargedTrackHypothesis::DChargedTrackHypothesis(const DChargedTrackHypot
 		bool locShareTimingFlag, bool locShareKinematicsFlag) : DKinematicData(locSourceData, locShareKinematicsFlag)
 {
 	//Default is NOT to share: create a new, independent copy of the input data (tracked separately from input so it can be modified)
-	if(locShareTimingFlag)
+	if(locShareTrackingFlag)
 		dTrackingInfo = locSourceData.dTrackingInfo;
 	else
 	{

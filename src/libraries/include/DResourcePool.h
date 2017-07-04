@@ -2,8 +2,10 @@
 #define DResourcePool_h
 
 #include <atomic>
+#include <typeinfo>
 #include <vector>
 #include <mutex>
+#include <iostream>
 #include <type_traits>
 #include <memory>
 
@@ -78,8 +80,8 @@ template <typename DType> class DSharedPtrRecycler
 	public:
 		DSharedPtrRecycler(void) = delete;
 		DSharedPtrRecycler(DResourcePool<DType>* locResourcePool) : dResourcePool(locResourcePool) {};
-		void operator()(DType* locResource) const {dResourcePool->Recycle(locResource);}
-		void operator()(const DType* locResource) const {dResourcePool->Recycle(locResource);}
+		void operator()(DType* locResource) const {	cout << "SHARED_PTR RECYCLE " << typeid(DType).name() << ": " << locResource << endl; dResourcePool->Recycle(locResource);}
+		void operator()(const DType* locResource) const {cout << "SHARED_PTR RECYCLE " << typeid(DType).name() << ": " << locResource << endl; dResourcePool->Recycle(locResource);}
 	private:
 		DResourcePool<DType>* dResourcePool;
 };
@@ -99,6 +101,7 @@ template <typename DType> DResourcePool<DType>::DResourcePool(void)
 	{
 		std::lock_guard<std::mutex> locLock(dSharedPoolMutex); //LOCK
 		++dThreadCounter;
+		cout << "CONSTRUCTOR THREAD COUNTER " << typeid(DType).name() << ": " << dThreadCounter << endl;
 	}
 }
 
@@ -113,16 +116,19 @@ template <typename DType> DResourcePool<DType>::~DResourcePool(void)
 	vector<DType*> locResources;
 	{
 		std::lock_guard<std::mutex> locLock(dSharedPoolMutex); //LOCK
-		auto locNumRemainingThreads = --dThreadCounter;
-		if(locNumRemainingThreads > 0)
+		--dThreadCounter;
+		cout << "DESTRUCTOR THREAD COUNTER " << typeid(DType).name() << ": " << dThreadCounter << endl;
+		if(dThreadCounter > 0)
 			return; //not the last thread
 
 		//last thread: move all resources out of the shared pool
+		cout << "DESTRUCTOR MOVING FROM SHARED POOL " << typeid(DType).name() << ": " << std::distance(dResourcePool_Shared.begin(), dResourcePool_Shared.end()) << endl;
 		std::move(dResourcePool_Shared.begin(), dResourcePool_Shared.end(), std::back_inserter(locResources));
 		dResourcePool_Shared.clear();
 	}
 
 	//delete the resources
+	cout << "DESTRUCTOR DELETING " << typeid(DType).name() << ": " << locResources.size() << endl;
 	for(auto locResource : locResources)
 		delete locResource;
 }
@@ -184,6 +190,9 @@ template <typename DType> void DResourcePool<DType>::Recycle(vector<DType*>& loc
 //http://stackoverflow.com/questions/8314827/how-can-i-specialize-a-template-member-function-for-stdvectort
 template <typename DType> void DResourcePool<DType>::Recycle(DType* locResource)
 {
+	cout << "RECYCLE " << typeid(DType).name() << ": " << locResource << endl;
+	if(locResource == nullptr)
+		return;
 	dResourcePool_Local.push_back(locResource);
 	if(dResourcePool_Local.size() > dWhenToRecyclePoolSize)
 		Recycle_Resources_StaticPool();
@@ -196,8 +205,10 @@ template <typename DType> void DResourcePool<DType>::Get_Resources_StaticPool(vo
 	dResourcePool_Local.reserve(dResourcePool_Local.size() + dGetBatchSize);
 	{
 		std::lock_guard<std::mutex> locLock(dSharedPoolMutex); //LOCK
-
+		if(dResourcePool_Shared.empty())
+			return;
 		auto locFirstMoveIterator = (dGetBatchSize >= dResourcePool_Shared.size()) ? dResourcePool_Shared.begin() : dResourcePool_Shared.end() - dGetBatchSize;
+		cout << "MOVING FROM SHARED POOL " << typeid(DType).name() << ": " << std::distance(locFirstMoveIterator, dResourcePool_Shared.end()) << endl;
 		std::move(locFirstMoveIterator, dResourcePool_Shared.end(), std::back_inserter(dResourcePool_Local));
 		dResourcePool_Shared.erase(locFirstMoveIterator, dResourcePool_Shared.end());
 	}
@@ -224,8 +235,12 @@ template <typename DType> void DResourcePool<DType>::Recycle_Resources_StaticPoo
 		}
 		else
 			dResourcePool_Shared.reserve(locNewPoolSize);
+		cout << "MOVING TO SHARED POOL " << typeid(DType).name() << ": " << std::distance(locMoveIterator, dResourcePool_Local.end()) << endl;
 		std::move(locMoveIterator, dResourcePool_Local.end(), std::back_inserter(dResourcePool_Shared));
 	}
+
+
+	cout << "DELETING " << typeid(DType).name() << ": " << std::distance(locRemoveIterator, locMoveIterator) << endl;
 
 	//any resources that were not moved into the shared pool are deleted instead (too many)
 	auto Deleter = [](DType* locResource) -> void {delete locResource;};
