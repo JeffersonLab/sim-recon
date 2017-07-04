@@ -144,6 +144,10 @@ inline DKinematicData::DKinematicData(const DKinematicData& locSourceData, bool 
 
 inline DKinematicData& DKinematicData::operator=(const DKinematicData& locSourceData)
 {
+	//Guard against self-assignment
+	if(dKinematicInfo == locSourceData.dKinematicInfo)
+		return *this;
+
 	//Replace current data with a new, independent copy of the input data: tracked separately from input so it can be modified
 	dKinematicInfo = dResourcePool_KinematicInfo.Get_SharedResource();
 	*dKinematicInfo = *(locSourceData.dKinematicInfo);
