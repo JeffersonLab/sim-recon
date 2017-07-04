@@ -257,6 +257,53 @@ inline vector<pair<Particle_t, const JObject*>> DSourceCombo::Get_SourceParticle
 
 /*********************************************************** INLINE NAMESPACE FUNCTION DEFINITIONS ************************************************************/
 
+void Print_SourceComobUse(const DSourceComboUse& locComboUse);
+void Print_SourceComboInfo(const DSourceComboInfo* locComboInfo)
+{
+	cout << "COMBO INFO:" << endl;
+
+	auto locNumParticles = locComboInfo->Get_NumParticles(false);
+	cout << "Particles: ";
+	for(auto& locParticlePair : locNumParticles)
+		cout << locParticlePair.second << " " << ParticleType(locParticlePair.first) << ", ";
+	cout << endl;
+
+	auto locFurtherDecays = locComboInfo->Get_FurtherDecays();
+	cout << "Decays:" << endl;
+	for(auto& locDecayPair : locFurtherDecays)
+	{
+		cout << locDecayPair.second << " ";
+		Print_SourceComobUse(locDecayPair.first);
+	}
+}
+
+void Print_SourceComobUse(const DSourceComboUse& locComboUse)
+{
+	cout << ParticleType(std::get<0>(locComboUse)) << " " << std::get<1>(locComboUse) << ", " << std::get<2>(locComboUse) << endl;
+	Print_SourceComboInfo(std::get<2>(locComboUse));
+}
+
+void Print_SourceCombo(const DSourceCombo* locCombo)
+{
+	cout << "COMBO:" << endl;
+
+	cout << "Z-independent?: " << locCombo->Get_IsComboingZIndependent() << endl;
+	auto locSourceParticles = locCombo->Get_SourceParticles();
+	cout << "Particles: ";
+	for(auto& locParticlePair : locSourceParticles)
+		cout << ParticleType(locParticlePair.first) << " " << locParticlePair.second << ", ";
+	cout << endl;
+
+	DSourceCombosByUse_Small locFurtherDecayCombos = locCombo->Get_FurtherDecayCombos();
+	cout << "Decays:" << endl;
+	for(auto& locDecayPair : locFurtherDecayCombos)
+	{
+		Print_SourceComobUse(locDecayPair.first);
+		for(auto& locCombo : locDecayPair.second)
+			Print_SourceCombo(locCombo);
+	}
+}
+
 inline vector<const JObject*> Get_SourceParticles(const vector<pair<Particle_t, const JObject*>>& locSourceParticles, Particle_t locPID)
 {
 	//if PID is unknown, then all particles

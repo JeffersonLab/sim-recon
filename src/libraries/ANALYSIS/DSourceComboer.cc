@@ -139,8 +139,9 @@ DSourceComboer::DSourceComboer(JEventLoop* locEventLoop)
 		++locN;
 	dNumPhotonVertexZBins = locN + 1; //one extra, for detached vertices
 
-	//Get preselect tag
+	//Get preselect tag, debug level
 	gPARMS->SetDefaultParameter("COMBO:SHOWER_SELECT_TAG", dShowerSelectionTag);
+	gPARMS->SetDefaultParameter("COMBO:DEBUG_LEVEL", dDebugLevel);
 
 	//GET THE REACTIONS
 	auto locReactions = DAnalysis::Get_Reactions(locEventLoop);
@@ -220,6 +221,9 @@ void DSourceComboer::Create_SourceComboInfos(const DReactionVertexInfo* locReact
 	 * 		2: pi0 -> 2g (neutral)
 	 */
 
+	if(dDebugLevel > 0)
+		cout << "CREATING DSourceComboInfo OBJECTS FOR DREACTION " << locReactionVertexInfo->Get_Reaction()->GetName() << endl;
+
 	//We will register what steps these combos are created for
 	map<size_t, DSourceComboUse> locStepComboUseMap; //size_t = step index
 
@@ -230,6 +234,8 @@ void DSourceComboer::Create_SourceComboInfos(const DReactionVertexInfo* locReact
 	{
 		auto locStep = *locStepIterator;
 		auto locStepIndex = locReaction->Get_NumReactionSteps() - std::distance(locReactionSteps.rbegin(), locStepIterator) - 1;
+		if(dDebugLevel >= 5)
+			cout << "Step index " << locStepIndex << endl;
 
 		//create combo uses for all charged, all neutral, then for any mixed decays
 		map<Particle_t, unsigned char> locChargedParticleMap = Build_ParticleMap(locReaction, locStepIndex, d_Charged);
@@ -499,6 +505,8 @@ const DSourceComboInfo* DSourceComboer::MakeOrGet_SourceComboInfo(const vector<p
 
 	//doesn't exist, make it and insert it into the sorted vector in the correct spot
 	auto locComboInfo = new DSourceComboInfo(locNumParticles, locFurtherDecays);
+	if(dDebugLevel >= 5)
+		Print_SourceComboInfo(locComboInfo);
 	dSourceComboInfoSet.insert(locComboInfo);
 	dComboInfoChargeContent.emplace(locComboInfo, DAnalysis::Get_ChargeContent(locComboInfo));
 	if(DAnalysis::Get_HasMassiveNeutrals(locComboInfo))
@@ -519,6 +527,8 @@ const DSourceComboInfo* DSourceComboer::GetOrMake_SourceComboInfo(const vector<p
 
 	//doesn't exist, make it and insert it into the sorted vector in the correct spot
 	auto locComboInfo = new DSourceComboInfo(locNumParticles, locFurtherDecays);
+	if(dDebugLevel >= 5)
+		Print_SourceComboInfo(locComboInfo);
 	dSourceComboInfos.emplace(locIteratorPair.first, locComboInfo);
 	dComboInfoChargeContent.emplace(locComboInfo, DAnalysis::Get_ChargeContent(locComboInfo));
 	if(DAnalysis::Get_HasMassiveNeutrals(locComboInfo))
@@ -612,6 +622,8 @@ void DSourceComboer::Reset_NewEvent(JEventLoop* locEventLoop)
 DCombosByReaction DSourceComboer::Build_ParticleCombos(const DReactionVertexInfo* locReactionVertexInfo)
 {
 	//This builds the combos and creates DParticleCombo & DParticleComboSteps (doing whatever is necessary)
+	if(dDebugLevel > 0)
+		cout << "CREATING DSourceCombo's FOR DREACTION " << locReactionVertexInfo->Get_Reaction()->GetName() << endl;
 
 	//Initialize results to be returned
 	DCombosByReaction locOutputComboMap;
@@ -623,12 +635,20 @@ DCombosByReaction DSourceComboer::Build_ParticleCombos(const DReactionVertexInfo
 	//They just may differ in actions, or skims
 	//So, we can check #particles for just one reaction, but must check skims for all reactions
 	if(!Check_NumParticles(locReactions.front()))
+	{
+		if(dDebugLevel > 0)
+			cout << "Not enough particles: No combos." << endl;
 		return locOutputComboMap; //no combos!
+	}
 
 	auto Skim_Checker = [this](const DReaction* locReaction) -> bool{return Check_Skims(locReaction);};
 	locReactions.erase(std::remove_if(locReactions.begin(), locReactions.end(), Skim_Checker), locReactions.end());
 	if(locReactions.empty())
+	{
+		if(dDebugLevel > 0)
+			cout << "Event not in skim: No combos." << endl;
 		return locOutputComboMap; //no combos!
+	}
 
 	/******************************************************** COMBOING STEPS *******************************************************
 	*
@@ -759,6 +779,9 @@ DCombosByReaction DSourceComboer::Build_ParticleCombos(const DReactionVertexInfo
 
 void DSourceComboer::Combo_WithNeutralsAndBeam(const vector<const DReaction*>& locReactions, const DReactionVertexInfo* locReactionVertexInfo, const DSourceComboUse& locPrimaryComboUse, const DSourceCombo* locReactionChargedCombo, const vector<int>& locBeamBunches_Charged, DCombosByReaction& locOutputComboMap)
 {
+	if(dDebugLevel >= 0)
+		cout << "Comboing neutrals." << endl;
+
 	//Create full source-particle combos (including neutrals): First using only FCAL showers, then using all showers
 	Create_SourceCombos(locPrimaryComboUse, d_MixedStage_ZIndependent, locReactionChargedCombo);
 	auto locZDependentComboUse = Create_ZDependentSourceComboUses(locReactionVertexInfo, locReactionChargedCombo);
@@ -802,6 +825,9 @@ void DSourceComboer::Combo_WithNeutralsAndBeam(const vector<const DReaction*>& l
 
 void DSourceComboer::Combo_WithBeam(const vector<const DReaction*>& locReactions, const DReactionVertexInfo* locReactionVertexInfo, const DSourceCombo* locReactionFullCombo, int locRFBunch, DCombosByReaction& locOutputComboMap)
 {
+	if(dDebugLevel >= 0)
+		cout << "Comboing beam." << endl;
+
 	//if no beam then we are done!
 	if(!locReactionVertexInfo->Get_StepVertexInfos().front()->Get_ProductionVertexFlag())
 	{
