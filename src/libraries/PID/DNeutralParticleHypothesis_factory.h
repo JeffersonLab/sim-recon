@@ -28,6 +28,7 @@
 class DNeutralParticleHypothesis_factory : public jana::JFactory<DNeutralParticleHypothesis>
 {
 	public:
+		~DNeutralParticleHypothesis_factory(void){for(auto locHypo : _data) Recycle_Hypothesis(locHypo);}
 		DNeutralParticleHypothesis* Create_DNeutralParticleHypothesis(const DNeutralShower* locNeutralShower, Particle_t locPID, const DEventRFBunch* locEventRFBunch, const DLorentzVector& dSpacetimeVertex, const TMatrixFSym* locVertexCovMatrix);
 
 		void Calc_ParticleCovariance_Photon(const DNeutralShower* locNeutralShower, const TMatrixFSym* locVertexCovMatrix, const DVector3& locMomentum, const DVector3& locPathVector, TMatrixFSym* locParticleCovariance) const;

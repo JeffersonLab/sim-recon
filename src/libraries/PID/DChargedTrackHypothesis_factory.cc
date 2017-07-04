@@ -7,9 +7,6 @@
 
 #include "DChargedTrackHypothesis_factory.h"
 
-thread_local DResourcePool<DChargedTrackHypothesis::DTimingInfo> DChargedTrackHypothesis::dResourcePool_TimingInfo;
-thread_local DResourcePool<DChargedTrackHypothesis::DTrackingInfo> DChargedTrackHypothesis::dResourcePool_TrackingInfo;
-
 inline bool DChargedTrackHypothesis_SortByEnergy(const DChargedTrackHypothesis* locChargedTrackHypothesis1, const DChargedTrackHypothesis* locChargedTrackHypothesis2)
 {
 	// truncate the track energies: in units of MeV, ignore all digits that are 10s-place and above

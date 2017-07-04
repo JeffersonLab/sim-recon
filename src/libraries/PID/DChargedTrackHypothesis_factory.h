@@ -27,8 +27,7 @@ using namespace jana;
 class DChargedTrackHypothesis_factory:public jana::JFactory<DChargedTrackHypothesis>
 {
 	public:
-		DChargedTrackHypothesis_factory(){};
-		~DChargedTrackHypothesis_factory(){};
+		~DChargedTrackHypothesis_factory(){for(auto locHypo : _data) Recycle_Hypothesis(locHypo);}
 
 		DChargedTrackHypothesis* Create_ChargedTrackHypothesis(JEventLoop* locEventLoop, const DTrackTimeBased* locTrackTimeBased, const DDetectorMatches* locDetectorMatches, const DEventRFBunch* locEventRFBunch);
 		void Add_TimeToTrackingMatrix(DChargedTrackHypothesis* locChargedTrackHypothesis, TMatrixFSym* locCovarianceMatrix, double locFlightTimeVariance, double locHitTimeVariance, double locFlightTimePCorrelation) const;

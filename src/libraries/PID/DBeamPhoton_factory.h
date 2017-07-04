@@ -18,6 +18,7 @@
 class DBeamPhoton_factory:public jana::JFactory<DBeamPhoton>
 {
 	public:
+		~DBeamPhoton_factory(void){for(auto locBeam : _data) Recycle_Resource(locBeam);}
 
 		void Recycle_Resources(vector<const DBeamPhoton*>& locBeams){dResourcePool_BeamPhotons.Recycle(locBeams);}
 		void Recycle_Resources(vector<DBeamPhoton*>& locBeams){dResourcePool_BeamPhotons.Recycle(locBeams);}
