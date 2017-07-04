@@ -136,7 +136,7 @@ class DAnalysisUtilities : public JObject
 		double dMinPForStraightTrack = 3.0;
 		double dMinDistanceForStraightTrack = 3.0;
 
-		const DParticleID* dPIDAlgorithm == nullptr;
+		const DParticleID* dPIDAlgorithm = nullptr;
 		const DMagneticFieldMap* dMagneticFieldMap = nullptr;
 		DParticleComboCreator* dParticleComboCreator = nullptr;
 };
