@@ -19,6 +19,8 @@ dSourceComboer(locSourceComboer), dSourceComboP4Handler(locSourceComboP4Handler)
 	double locTargetCenterZ = 65.0;
 	locGeometry->GetTargetZ(locTargetCenterZ);
 	dTargetCenter.SetXYZ(0.0, 0.0, locTargetCenterZ);
+
+	gPARMS->SetDefaultParameter("COMBO:DEBUG_LEVEL", dDebugLevel);
 }
 
 signed char DSourceComboVertexer::Get_VertexZBin(bool locIsProductionVertex, const DSourceCombo* locSourceCombo, const DKinematicData* locBeamParticle) const

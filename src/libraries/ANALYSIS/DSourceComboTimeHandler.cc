@@ -200,6 +200,8 @@ DSourceComboTimeHandler::DSourceComboTimeHandler(JEventLoop* locEventLoop, DSour
 	dPIDTimingCuts[Proton].emplace(SYS_TOF, new TF1("df_TimeCut", "[0]", 0.0, 12.0));
 	dPIDTimingCuts[Proton][SYS_TOF]->SetParameter(0, 2.5);
 	dPIDTimingCuts.emplace(AntiProton, dPIDTimingCuts[Proton]);
+
+	gPARMS->SetDefaultParameter("COMBO:DEBUG_LEVEL", dDebugLevel);
 }
 
 DLorentzVector DSourceComboTimeHandler::Get_ChargedParticlePOCAToVertexX4(const DChargedTrackHypothesis* locHypothesis, bool locIsProductionVertex, const DSourceCombo* locVertexPrimaryFullCombo, const DKinematicData* locBeamParticle) const

@@ -24,8 +24,6 @@ DAnalysisUtilities::DAnalysisUtilities(JEventLoop* locEventLoop)
 	dShowerSelectionTag = "PreSelect";
 	gPARMS->SetDefaultParameter("COMBO:TRACK_SELECT_TAG", dTrackSelectionTag);
 	gPARMS->SetDefaultParameter("COMBO:SHOWER_SELECT_TAG", dShowerSelectionTag);
-
-	dParticleComboCreator = new DParticleComboCreator(locEventLoop, nullptr, nullptr, nullptr);
 }
 
 bool DAnalysisUtilities::Check_IsBDTSignalEvent(JEventLoop* locEventLoop, const DReaction* locReaction, bool locExclusiveMatchFlag, bool locIncludeDecayingToReactionFlag) const
@@ -43,6 +41,9 @@ bool DAnalysisUtilities::Check_IsBDTSignalEvent(JEventLoop* locEventLoop, const 
 		//if locIncludeDecayingToReactionFlag = true, then it would be included as "Signal," if false, then background
 		//locIncludeDecayingToReactionFlag should be true UNLESS you are explicitly checking all possible reactions that could decay to your channel in your BDT
 			//e.g. could kinfit to g, p -> pi+, pi0, K0, Lambda and include it as a BDT variable
+
+	if(dParticleComboCreator == nullptr)
+		dParticleComboCreator = new DParticleComboCreator(locEventLoop, nullptr, nullptr, nullptr);
 
 	DReaction_factory_Thrown* dThrownReactionFactory = static_cast<DReaction_factory_Thrown*>(locEventLoop->GetFactory("DReaction", "Thrown"));
 
@@ -356,6 +357,8 @@ bool DAnalysisUtilities::Check_ThrownsMatchReaction(JEventLoop* locEventLoop, co
 
 	//note, if you decay a final state particle (e.g. k+, pi+) in your input DReaction*, a match will NOT be found: the thrown reaction/combo is truncated
 	//if locExclusiveMatchFlag = false, then allow the input DReaction to be a subset of the thrown
+	if(dParticleComboCreator == nullptr)
+		dParticleComboCreator = new DParticleComboCreator(locEventLoop, nullptr, nullptr, nullptr);
 	auto locThrownCombo = dParticleComboCreator->Build_ThrownCombo(locEventLoop);
 
 	vector<const DReaction*> locReactions;

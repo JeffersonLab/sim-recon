@@ -138,7 +138,7 @@ class DAnalysisUtilities : public JObject
 
 		const DParticleID* dPIDAlgorithm = nullptr;
 		const DMagneticFieldMap* dMagneticFieldMap = nullptr;
-		DParticleComboCreator* dParticleComboCreator = nullptr;
+		mutable DParticleComboCreator* dParticleComboCreator = nullptr;
 };
 
 
