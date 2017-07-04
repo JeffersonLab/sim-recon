@@ -49,6 +49,7 @@ class DNeutralParticleHypothesis_factory : public jana::JFactory<DNeutralParticl
 		const DParticleID* dParticleID = nullptr;
 
 		//RESOURCE POOL
+		vector<DNeutralParticleHypothesis*> dCreated;
 		DResourcePool<DNeutralParticleHypothesis>* dResourcePool_NeutralParticleHypothesis = nullptr;
 
 		jerror_t init(void);						///< Called once at program start.

@@ -45,7 +45,9 @@ jerror_t DNeutralParticleHypothesis_factory::brun(jana::JEventLoop *locEventLoop
 //------------------
 jerror_t DNeutralParticleHypothesis_factory::evnt(jana::JEventLoop *locEventLoop, uint64_t eventnumber)
 {
-	dResourcePool_NeutralParticleHypothesis->Recycle(_data);
+	dResourcePool_NeutralParticleHypothesis->Recycle(dCreated);
+	dCreated.clear();
+	_data.clear();
 
 	vector<const DNeutralShower*> locNeutralShowers;
 	locEventLoop->Get(locNeutralShowers);

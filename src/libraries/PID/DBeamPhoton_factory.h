@@ -45,6 +45,7 @@ class DBeamPhoton_factory:public jana::JFactory<DBeamPhoton>
 		double dTargetCenterZ;
 
 		//RESOURCE POOL
+		vector<DBeamPhoton*> dCreated;
 		DResourcePool<DBeamPhoton>* dResourcePool_BeamPhotons = nullptr;
 
 		// config. parameters

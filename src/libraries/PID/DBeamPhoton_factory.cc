@@ -66,7 +66,9 @@ jerror_t DBeamPhoton_factory::brun(jana::JEventLoop *locEventLoop, int32_t runnu
 //------------------
 jerror_t DBeamPhoton_factory::evnt(jana::JEventLoop *locEventLoop, uint64_t locEventNumber)
 {
-	dResourcePool_BeamPhotons->Recycle(_data);
+	dResourcePool_BeamPhotons->Recycle(dCreated);
+	dCreated.clear();
+	_data.clear();
 
     vector<const DTAGMHit*> tagm_hits;
     locEventLoop->Get(tagm_hits);

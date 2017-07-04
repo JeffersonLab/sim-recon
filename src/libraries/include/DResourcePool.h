@@ -137,6 +137,7 @@ template <typename DType> DResourcePool<DType>::~DResourcePool(void)
 
 template <typename DType> DType* DResourcePool<DType>::Get_Resource(void)
 {
+	cout << "GET RESOURCE " << typeid(DType).name() << endl;
 	if(dResourcePool_Local.empty())
 		Get_Resources_StaticPool();
 	if(dResourcePool_Local.empty())
@@ -196,6 +197,7 @@ template <typename DType> void DResourcePool<DType>::Recycle(DType* locResource)
 	dResourcePool_Local.push_back(locResource);
 	if(dResourcePool_Local.size() > dWhenToRecyclePoolSize)
 		Recycle_Resources_StaticPool();
+	cout << "DONE RECYCLING" << endl;
 }
 
 /************************************************************************* SHARED-POOL-ACCESSING MEMBER FUNCTIONS *************************************************************************/

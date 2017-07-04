@@ -158,7 +158,7 @@ DTrackFitter::fit_status_t DTrackFitter::FitTrack(const DVector3 &pos, const DVe
 //-------------------
 // FitTrack
 //-------------------
-DTrackFitter::fit_status_t DTrackFitter::FitTrack(const DKinematicData &starting_params)
+DTrackFitter::fit_status_t DTrackFitter::FitTrack(const DTrackingData &starting_params)
 {
 #ifdef PROFILE_TRK_TIMES
   prof_time start_time;
@@ -178,7 +178,7 @@ DTrackFitter::fit_status_t DTrackFitter::FitTrack(const DKinematicData &starting
 // FindHitsAndFitTrack
 //-------------------
 DTrackFitter::fit_status_t 
-DTrackFitter::FindHitsAndFitTrack(const DKinematicData &starting_params, 
+DTrackFitter::FindHitsAndFitTrack(const DKinematicData &starting_params,
 				  const DReferenceTrajectory *rt, JEventLoop *loop, 
 				  double mass,int N,double t0,
 				  DetectorSystem_t t0_det)

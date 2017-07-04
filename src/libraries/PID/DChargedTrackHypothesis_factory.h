@@ -47,6 +47,7 @@ class DChargedTrackHypothesis_factory:public jana::JFactory<DChargedTrackHypothe
 		//RESOURCE POOL
 		//For some reason, JANA doesn't call factory destructor until AFTER the threads have been closed
 		//This causes the pool destructor to crash.  Instead, delete in fini();
+		vector<DChargedTrackHypothesis*> dCreated;
 		DResourcePool<DChargedTrackHypothesis>* dResourcePool_ChargedTrackHypothesis = nullptr;
 
 		jerror_t init(void);						///< Called once at program start.
