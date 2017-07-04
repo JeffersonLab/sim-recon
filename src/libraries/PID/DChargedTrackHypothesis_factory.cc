@@ -50,7 +50,7 @@ jerror_t DChargedTrackHypothesis_factory::brun(jana::JEventLoop *locEventLoop, i
 jerror_t DChargedTrackHypothesis_factory::evnt(jana::JEventLoop* locEventLoop, uint64_t eventnumber)
 {
 	//Recycle
-	dResourcePool_ChargedTrackHypothesis.Recycle(_data);
+	dResourcePool_ChargedTrackHypothesis->Recycle(_data);
 
  	vector<const DTrackTimeBased*> locTrackTimeBasedVector;
 	locEventLoop->Get(locTrackTimeBasedVector);
