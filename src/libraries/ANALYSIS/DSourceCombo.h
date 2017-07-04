@@ -258,7 +258,7 @@ inline vector<pair<Particle_t, const JObject*>> DSourceCombo::Get_SourceParticle
 /*********************************************************** INLINE NAMESPACE FUNCTION DEFINITIONS ************************************************************/
 
 void Print_SourceComobUse(const DSourceComboUse& locComboUse);
-void Print_SourceComboInfo(const DSourceComboInfo* locComboInfo)
+inline void Print_SourceComboInfo(const DSourceComboInfo* locComboInfo)
 {
 	cout << "COMBO INFO:" << endl;
 
@@ -277,13 +277,13 @@ void Print_SourceComboInfo(const DSourceComboInfo* locComboInfo)
 	}
 }
 
-void Print_SourceComobUse(const DSourceComboUse& locComboUse)
+inline void Print_SourceComobUse(const DSourceComboUse& locComboUse)
 {
 	cout << ParticleType(std::get<0>(locComboUse)) << " " << std::get<1>(locComboUse) << ", " << std::get<2>(locComboUse) << endl;
 	Print_SourceComboInfo(std::get<2>(locComboUse));
 }
 
-void Print_SourceCombo(const DSourceCombo* locCombo)
+inline void Print_SourceCombo(const DSourceCombo* locCombo)
 {
 	cout << "COMBO:" << endl;
 
