@@ -224,9 +224,7 @@ jerror_t DParticleID_PID1::CalcDCdEdxChiSq(DChargedTrackHypothesis *locChargedTr
 	double locChiSq=0.;
 	unsigned int locNDF=0;
 
-	vector<const DTrackTimeBased*> locTrackTimeBasedVector;
-	locChargedTrackHypothesis->GetT(locTrackTimeBasedVector);
-	const DTrackTimeBased *locTrackTimeBased = locTrackTimeBasedVector[0];
+	auto locTrackTimeBased = locChargedTrackHypothesis->Get_TrackTimeBased();
 	unsigned int locNumHitsUsedFordEdx_CDC = locTrackTimeBased->dNumHitsUsedFordEdx_CDC;
 	unsigned int locNumHitsUsedFordEdx_FDC = locTrackTimeBased->dNumHitsUsedFordEdx_FDC;
 
