@@ -114,7 +114,7 @@ class DKinematicData : public JObject
 		DKinematicInfo dKinematicInfoTest;
 		DKinematicInfo* dKinematicInfo = &dKinematicInfoTest;
 
-//		static thread_local DResourcePool<DKinematicInfo> dResourcePool_KinematicInfo;
+		static thread_local DResourcePool<DKinematicInfo> dResourcePool_KinematicInfo;
 };
 
 /************************************************************** CONSTRUCTORS & OPERATORS ***************************************************************/
