@@ -90,6 +90,7 @@ DChargedTrackHypothesis* DChargedTrackHypothesis_factory::Create_ChargedTrackHyp
 {
 	DChargedTrackHypothesis* locChargedTrackHypothesis = Get_Resource();
 	locChargedTrackHypothesis->Share_FromInput_Kinematics(static_cast<const DKinematicData*>(locTrackTimeBased));
+	locChargedTrackHypothesis->Set_TrackTimeBased(locTrackTimeBased)
 
 	uint64_t locEventNumber = locEventLoop->GetJEvent().GetEventNumber();
 	TMatrixFSym* locCovarianceMatrix = (dynamic_cast<DApplication*>(japp))->Get_CovarianceMatrixResource(7, locEventNumber);
