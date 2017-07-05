@@ -175,7 +175,7 @@ inline void DKinematicData::DKinematicInfo::Set_Members(Particle_t locPID, const
 
 inline void DKinematicData::Reset(void)
 {
-	//dKinematicInfo = dResourcePool_KinematicInfo.Get_SharedResource(); //not safe to reset individually, since you don't know what it's shared with
+	dKinematicInfo = dResourcePool_KinematicInfo.Get_SharedResource(); //not safe to reset individually, since you don't know what it's shared with
 	ClearAssociatedObjects();
 }
 

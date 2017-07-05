@@ -26,6 +26,15 @@ class DReactionVertexInfo_factory : public jana::JFactory<DReactionVertexInfo>
 		//PRIMARY FUNCTIONS
 		jerror_t init(void);
 		jerror_t evnt(jana::JEventLoop *locEventLoop, uint64_t locEventNumber);
+		jerror_t fini(void)
+		{
+			for(auto locInfo : _data)
+				delete locInfo;
+			_data.clear();
+			delete dResourcePool_ReactionStepVertexInfo;
+			return NOERROR;
+		}
+
 		DReactionVertexInfo* Build_VertexInfo(const DReaction* locReaction);
 
 		//SETUP
@@ -40,7 +49,7 @@ class DReactionVertexInfo_factory : public jana::JFactory<DReactionVertexInfo>
 		unordered_map<const DReaction*, DReactionVertexInfo*> dVertexInfoMap;
 
 		//RESOURCE POOL
-		DResourcePool<DReactionStepVertexInfo> dResourcePool_ReactionStepVertexInfo;
+		DResourcePool<DReactionStepVertexInfo>* dResourcePool_ReactionStepVertexInfo = nullptr;
 };
 
 } //end DAnalysis namespace

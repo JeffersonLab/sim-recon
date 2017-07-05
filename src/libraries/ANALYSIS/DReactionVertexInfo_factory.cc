@@ -8,6 +8,7 @@ jerror_t DReactionVertexInfo_factory::init(void)
 {
 	// This is so that the created objects persist throughout the life of the program instead of being cleared each event.
 	SetFactoryFlag(PERSISTANT);
+	dResourcePool_ReactionStepVertexInfo = new DResourcePool<DReactionStepVertexInfo>();
 	return NOERROR;
 }
 
@@ -69,7 +70,7 @@ DReactionStepVertexInfo* DReactionVertexInfo_factory::Setup_VertexInfo(const DRe
 	//create/update vertex info
 	if(locVertexInfo == nullptr)
 	{
-		locVertexInfo = dResourcePool_ReactionStepVertexInfo.Get_Resource();
+		locVertexInfo = dResourcePool_ReactionStepVertexInfo->Get_Resource();
 		locVertexInfo->Set_Members(locReaction, locStepIndex);
 	}
 	else
