@@ -41,7 +41,7 @@ c     t = t * 1e-6
 c     mospread = mospread * 1e-6
 
       thx=-0.0300/E    !rotation of crystal about x (first)
-      thy=0.250        !rotation of crystal about y (second)
+      thy=0.050        !rotation of crystal about y (second)
 C-- require Epeak < Emax
       if (Epeak.ge.Emax) then
         return
