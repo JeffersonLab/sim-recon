@@ -12,27 +12,36 @@ C
 
       Subroutine cobrems(Emax,Epeak,emitmr,radt,dist,coldiam,polar)
       real Emax,Epeak,emitmr,radt,dist,coldiam
+      integer polar
       include 'cobrems.inc'
       integer i
       real c
       dpi=acos(-1d0)
-      me=5.11e-4        !electron mass (GeV)
-      alpha=7.297e-3    !fine structure constant
-      hbarc=1.97e-16    !Planck's constant * speed of light (GeV m)
-      Z=6               !atomic number of diamond
-      a=3.56e-10        !dimension of diamond unit cell (m)
-      Aphonon=0.5e9     !phonon-free recoil constant (GeV**-2)
+      me=5.1099891e-4          !electron mass (GeV)
+      alpha=7.2973525698e-3    !fine structure constant
+      hbarc=1.973269718e-16    !Planck's constant * speed of light (GeV m)
+      Z=6                      !atomic number of diamond
+c     Z=14                     !atomic number of silicon
+      a=3.56e-10               !dimension of diamond unit cell (m)
+c     a=5.43e-10               !dimension of silicon unit cell (m)
+      Aphonon=0.40e9           !phonon-free recoil constant (GeV**-2)
       betaFF=111*Z**(-1/3.)/me !cutoff for atomic form-factor (/GeV)
-      mospread=20e-6    !crystal r.m.s. mosaic spread
-      E=Emax            !electron beam energy (GeV)
-      Erms=6.0e-4       !electron beam energy rms spread (GeV)
-      emit=emitmr       !electron beam emittance (m r)
-      spot=0.0005       !electron beam spot size at collimator (m)
-      D=dist            !distance from radiator to collimator (m)
-      t=radt            !thickness of radiator (m)
-      collim=coldiam    !collimator diameter (m)
-      thx=-0.0300/E     !rotation of crystal about x (first)
-      thy=0.050         !rotation of crystal about y (second)
+      mospread=20e-6           !crystal r.m.s. mosaic spread
+      E=Emax                   !electron beam energy (GeV)
+      Erms=6.0e-4              !electron beam energy rms spread (GeV)
+      emit=emitmr              !electron beam emittance (m r)
+      spot=0.0005              !electron beam spot size at collimator (m)
+      D=dist                   !distance from radiator to collimator (m)
+      t=radt                   !thickness of radiator (m)
+      collim=coldiam           !collimator diameter (m)
+
+c     spot = spot * 1e-6
+c     emit = emit * 1e-6
+c     t = t * 1e-6
+c     mospread = mospread * 1e-6
+
+      thx=-0.0300/E    !rotation of crystal about x (first)
+      thy=0.250        !rotation of crystal about y (second)
 C-- require Epeak < Emax
       if (Epeak.ge.Emax) then
         return
@@ -40,10 +49,12 @@ C-- require Epeak < Emax
 C-- decide if you want total or polarized flux
       unpolar=(polar.eq.0)
 C-- approximate calculation of angle from primary edge energy
-      edge=Epeak        !desired position of primary edge
-      qtotal=9.8e-6     !Qtot for dominant lattice vector
+      edge=Epeak       !desired position of primary edge
+      qtotal=9.8e-6    !Qtot for dominant lattice vector
       qlong=edge/(E-edge)*me**2/(2*E)
       thx=-qlong/qtotal
+c     thx=48e-6        !special values for NA59 setup
+c     thy=35e-6        !special values for NA59 setup
 C-- PDG formula for radiation length, converted to meters
       c=alpha*Z
       radlen=4*nsites*alpha**3*(hbarc/(a*me))**2/a
@@ -354,16 +365,14 @@ c     write(6,*) dNidxdt2
       polarization=2*(1-x)/((1+theta2)**2*((1-x)**2+1) - 4*theta2*(1-x))
       end
 
-      real function acceptance2(theta2,phi)
-      real theta2,phi
+      real function acceptance2(theta2,phi,xshift,yshift)
+      real theta2,phi,xshift,yshift
       include 'cobrems.inc'
       real xc,yc
-      real xshift,yshift
-      parameter (xshift=1.7e-3,yshift=0)
       real theta
       theta=sqrt(theta2)*me/E
-      xc=D*sin(theta)*cos(phi)+xshift
-      yc=D*sin(theta)*sin(phi)+yshift
+      xc=D*tan(theta)*cos(phi)+xshift
+      yc=D*tan(theta)*sin(phi)+yshift
       acceptance2 = acceptance((atan2(sqrt(xc**2+yc**2),D)*(E/me))**2)
       end
 
@@ -629,7 +638,7 @@ c  like this paper because of the excellent agreement between the theory
 c  and experimental data.
       density=3.534 ! g/cm^3
       ttingcm=tt*100*density
-      Atomicweight=12
+      Atomicweight=12.01
       EinMeV=E*1000
       theta2max=0.157*Z*(Z+1)/Atomicweight*(ttingcm/EinMeV**2)
       theta2screen=theta2max*Atomicweight*(1+3.35*(Z*alpha)**2)
