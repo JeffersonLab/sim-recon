@@ -12,7 +12,7 @@
 using namespace std;
 
 //typical implementation: DResourcePool<MyClass> dMyClassPool; //stores pointers of type MyClass*
-template <typename DType> class DResourcePool
+template <typename DType> class DResourcePool : public std::enable_shared_from_this<DResourcePool<DType>>
 {
 	//TYPE TRAIT REQUIREMENTS
 	//If these statements are false, this won't compile
@@ -79,11 +79,27 @@ template <typename DType> class DSharedPtrRecycler
 {
 	public:
 		DSharedPtrRecycler(void) = delete;
-		DSharedPtrRecycler(DResourcePool<DType>* locResourcePool) : dResourcePool(locResourcePool) {};
-		void operator()(DType* locResource) const {	cout << "SHARED_PTR RECYCLE " << typeid(DType).name() << ": " << locResource << endl; dResourcePool->Recycle(locResource);}
-		void operator()(const DType* locResource) const {cout << "SHARED_PTR RECYCLE " << typeid(DType).name() << ": " << locResource << endl; dResourcePool->Recycle(locResource);}
+		DSharedPtrRecycler(const std::shared_ptr<DResourcePool<DType>>& locResourcePool) : dResourcePool(locResourcePool) {};
+		void operator()(DType* locResource) const
+		{
+			cout << "SHARED_PTR RECYCLE " << typeid(DType).name() << ": " << locResource << endl;
+			auto locSharedPtr = dResourcePool.lock();
+			if(locSharedPtr == nullptr)
+				delete locResource;
+			else
+				locSharedPtr->Recycle(locResource);
+		}
+		void operator()(const DType* locResource) const
+		{
+			cout << "SHARED_PTR RECYCLE " << typeid(DType).name() << ": " << locResource << endl;
+			auto locSharedPtr = dResourcePool.lock();
+			if(locSharedPtr == nullptr)
+				delete locResource;
+			else
+				locSharedPtr->Recycle(locResource);
+		}
 	private:
-		DResourcePool<DType>* dResourcePool;
+		std::weak_ptr<DResourcePool<DType>> dResourcePool;
 };
 
 /************************************************************************* STATIC MEMBER DEFINITIONS, STRUCTORS *************************************************************************/
@@ -164,7 +180,7 @@ template <typename DType> void DResourcePool<DType>::Set_ControlParams(size_t lo
 
 template <typename DType> shared_ptr<DType> DResourcePool<DType>::Get_SharedResource(void)
 {
-	return shared_ptr<DType>(Get_Resource(), DSharedPtrRecycler<DType>(this));
+	return shared_ptr<DType>(Get_Resource(), DSharedPtrRecycler<DType>(this->shared_from_this()));
 }
 
 template <typename DType> void DResourcePool<DType>::Recycle(vector<const DType*>& locResources)

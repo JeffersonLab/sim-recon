@@ -84,13 +84,13 @@ class DNeutralParticleHypothesis : public DKinematicData
 		const DNeutralShower* dNeutralShower = nullptr;
 
 		//RESOURCE POOL
-		static thread_local DResourcePool<DTimingInfo> dResourcePool_TimingInfo;
+		static thread_local shared_ptr<DResourcePool<DTimingInfo>> dResourcePool_TimingInfo;
 };
 
 /************************************************************** CONSTRUCTORS & OPERATORS ***************************************************************/
 
 inline DNeutralParticleHypothesis::DNeutralParticleHypothesis(void) :
-dTimingInfo(dResourcePool_TimingInfo.Get_SharedResource()), dNeutralShower(nullptr)
+dTimingInfo(dResourcePool_TimingInfo->Get_SharedResource()), dNeutralShower(nullptr)
 {}
 
 inline DNeutralParticleHypothesis::DNeutralParticleHypothesis(const DNeutralParticleHypothesis& locSourceData,
@@ -102,7 +102,7 @@ inline DNeutralParticleHypothesis::DNeutralParticleHypothesis(const DNeutralPart
 		dTimingInfo = locSourceData.dTimingInfo;
 	else
 	{
-		dTimingInfo = dResourcePool_TimingInfo.Get_SharedResource();
+		dTimingInfo = dResourcePool_TimingInfo->Get_SharedResource();
 		*dTimingInfo = *(locSourceData.dTimingInfo);
 	}
 }
@@ -113,7 +113,7 @@ inline DNeutralParticleHypothesis& DNeutralParticleHypothesis::operator=(const D
 	DKinematicData::operator=(locSourceData);
 	if(dTimingInfo == locSourceData.dTimingInfo)
 		return *this; //guard against self-assignment
-	dTimingInfo = dResourcePool_TimingInfo.Get_SharedResource();
+	dTimingInfo = dResourcePool_TimingInfo->Get_SharedResource();
 	*dTimingInfo = *(locSourceData.dTimingInfo);
 	dNeutralShower = locSourceData.dNeutralShower;
 	return *this;
@@ -150,7 +150,7 @@ inline void DNeutralParticleHypothesis::Set_ChiSq_Overall(double locChiSq, unsig
 inline void DNeutralParticleHypothesis::Reset(void)
 {
 	DKinematicData::Reset();
-	dTimingInfo = dResourcePool_TimingInfo.Get_SharedResource(); //not safe to reset individually, since you don't know what it's shared with
+	dTimingInfo = dResourcePool_TimingInfo->Get_SharedResource(); //not safe to reset individually, since you don't know what it's shared with
 }
 
 #endif // _DNeutralParticleHypothesis_

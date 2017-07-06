@@ -140,14 +140,14 @@ class DChargedTrackHypothesis : public DKinematicData
 		shared_ptr<DTrackingInfo> dTrackingInfo = nullptr;
 
 		//RESOURCE POOLS
-		static thread_local DResourcePool<DTimingInfo> dResourcePool_TimingInfo;
-		static thread_local DResourcePool<DTrackingInfo> dResourcePool_TrackingInfo;
+		static thread_local shared_ptr<DResourcePool<DTimingInfo>> dResourcePool_TimingInfo;
+		static thread_local shared_ptr<DResourcePool<DTrackingInfo>> dResourcePool_TrackingInfo;
 };
 
 /************************************************************** CONSTRUCTORS & OPERATORS ***************************************************************/
 
 inline DChargedTrackHypothesis::DChargedTrackHypothesis(void) :
-dTimingInfo(dResourcePool_TimingInfo.Get_SharedResource()), dTrackingInfo(dResourcePool_TrackingInfo.Get_SharedResource())
+dTimingInfo(dResourcePool_TimingInfo->Get_SharedResource()), dTrackingInfo(dResourcePool_TrackingInfo->Get_SharedResource())
 {}
 
 inline DChargedTrackHypothesis::DChargedTrackHypothesis(const DChargedTrackHypothesis& locSourceData, bool locShareTrackingFlag,
@@ -158,7 +158,7 @@ inline DChargedTrackHypothesis::DChargedTrackHypothesis(const DChargedTrackHypot
 		dTrackingInfo = locSourceData.dTrackingInfo;
 	else
 	{
-		dTrackingInfo = dResourcePool_TrackingInfo.Get_SharedResource();
+		dTrackingInfo = dResourcePool_TrackingInfo->Get_SharedResource();
 		*dTrackingInfo = *(locSourceData.dTrackingInfo);
 	}
 
@@ -166,7 +166,7 @@ inline DChargedTrackHypothesis::DChargedTrackHypothesis(const DChargedTrackHypot
 		dTimingInfo = locSourceData.dTimingInfo;
 	else
 	{
-		dTimingInfo = dResourcePool_TimingInfo.Get_SharedResource();
+		dTimingInfo = dResourcePool_TimingInfo->Get_SharedResource();
 		*dTimingInfo = *(locSourceData.dTimingInfo);
 	}
 }
@@ -175,8 +175,8 @@ inline DChargedTrackHypothesis::DChargedTrackHypothesis(const DTrackTimeBased* l
 		DKinematicData(*static_cast<const DKinematicData*>(locSourceData), true)
 {
 	//Default is TO share kinematic data
-	dTrackingInfo = dResourcePool_TrackingInfo.Get_SharedResource();
-	dTimingInfo = dResourcePool_TimingInfo.Get_SharedResource();
+	dTrackingInfo = dResourcePool_TrackingInfo->Get_SharedResource();
+	dTimingInfo = dResourcePool_TimingInfo->Get_SharedResource();
 	dTrackingInfo->dTrackTimeBased = locSourceData;
 }
 
@@ -186,9 +186,9 @@ inline DChargedTrackHypothesis& DChargedTrackHypothesis::operator=(const DCharge
 	DKinematicData::operator=(locSourceData);
 	if((dTimingInfo == locSourceData.dTimingInfo) && (dTrackingInfo == locSourceData.dTrackingInfo))
 		return *this; //guard against self-assignment
-	dTimingInfo = dResourcePool_TimingInfo.Get_SharedResource();
+	dTimingInfo = dResourcePool_TimingInfo->Get_SharedResource();
 	*dTimingInfo = *(locSourceData.dTimingInfo);
-	dTrackingInfo = dResourcePool_TrackingInfo.Get_SharedResource();
+	dTrackingInfo = dResourcePool_TrackingInfo->Get_SharedResource();
 	*dTrackingInfo = *(locSourceData.dTrackingInfo);
 	return *this;
 }
@@ -293,8 +293,8 @@ inline void DChargedTrackHypothesis::Set_ChiSq_Overall(double locChiSq, unsigned
 inline void DChargedTrackHypothesis::Reset(void)
 {
 	DKinematicData::Reset();
-	dTimingInfo = dResourcePool_TimingInfo.Get_SharedResource(); //not safe to reset individually, since you don't know what it's shared with
-	dTrackingInfo = dResourcePool_TrackingInfo.Get_SharedResource(); //not safe to reset individually, since you don't know what it's shared with
+	dTimingInfo = dResourcePool_TimingInfo->Get_SharedResource(); //not safe to reset individually, since you don't know what it's shared with
+	dTrackingInfo = dResourcePool_TrackingInfo->Get_SharedResource(); //not safe to reset individually, since you don't know what it's shared with
 }
 
 #endif // _DChargedTrackHypothesis_
