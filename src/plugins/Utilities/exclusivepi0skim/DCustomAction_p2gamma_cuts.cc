@@ -21,11 +21,11 @@ bool DCustomAction_p2gamma_cuts::Perform_Action(JEventLoop* locEventLoop, const 
         deque<const DKinematicData*> locParticles;
         if(!Get_UseKinFitResultsFlag()) { //measured
 		locBeamPhoton = locParticleComboStep->Get_InitialParticle_Measured();
-                locParticleComboStep->Get_FinalParticles_Measured(locParticles);
+                locParticleCombo->Get_DetectedFinalParticles_Measured(locParticles);
 	}
 	else {
 		locBeamPhoton = locParticleComboStep->Get_InitialParticle();
-		locParticleComboStep->Get_FinalParticles(locParticles);
+		locParticleCombo->Get_DetectedFinalParticles(locParticles);
 	}
        
 	// calculate missing mass
