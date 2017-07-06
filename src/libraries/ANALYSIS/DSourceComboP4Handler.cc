@@ -150,10 +150,7 @@ DSourceComboP4Handler::DSourceComboP4Handler(JEventLoop* locEventLoop, DSourceCo
 DLorentzVector DSourceComboP4Handler::Get_P4_NotMassiveNeutral(Particle_t locPID, const JObject* locObject, signed char locVertexZBin) const
 {
 	if(ParticleCharge(locPID) != 0)
-	{
-		auto locChargedTrack = static_cast<const DChargedTrack*>(locObject);
-		return locChargedTrack->Get_Hypothesis(locPID)->lorentzMomentum();
-	}
+		return static_cast<const DChargedTrack*>(locObject)->Get_Hypothesis(locPID)->lorentzMomentum();
 
 	//assume is photon!
 	auto locNeutralShower = static_cast<const DNeutralShower*>(locObject);

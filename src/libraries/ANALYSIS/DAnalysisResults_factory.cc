@@ -45,7 +45,6 @@ jerror_t DAnalysisResults_factory::brun(JEventLoop *locEventLoop, int32_t runnum
 	for(size_t loc_i = 0; loc_i < locReactions.size(); ++loc_i)
 	{
 		const DReaction* locReaction = locReactions[loc_i];
-
 		//Initialize actions: creates any histograms/trees associated with the action
 		auto locActions = locReaction->Get_AnalysisActions();
 		size_t locNumActions = locReaction->Get_NumAnalysisActions();
@@ -274,6 +273,8 @@ jerror_t DAnalysisResults_factory::evnt(JEventLoop* locEventLoop, uint64_t event
 	for(auto& locReactionVertexInfo : locReactionVertexInfos)
 	{
 		//BUILD COMBOS
+		if(dDebugLevel > 0)
+			cout << "Build combos for reaction: " << locReactionVertexInfo->Get_Reaction()->Get_ReactionName() << endl;
 		auto locReactionComboMap = dSourceComboer->Build_ParticleCombos(locReactionVertexInfo);
 
 		//LOOP OVER REACTIONS
@@ -354,6 +355,8 @@ bool DAnalysisResults_factory::Execute_Actions(JEventLoop* locEventLoop, const D
 		auto locAction = locActions[locActionIndex];
 		if(locPreKinFitFlag && locAction->Get_UseKinFitResultsFlag())
 			return true; //need to kinfit first!!!
+		if(dDebugLevel >= 10)
+			cout << "Execute action " << locActionIndex << ": " << locAction->Get_ActionName() << endl;
 		if(!(*locAction)(locEventLoop, locCombo))
 			return false; //failed
 
@@ -394,11 +397,15 @@ const DParticleCombo* DAnalysisResults_factory::Handle_ComboFit(const DReactionV
 		return locComboIterator->second;
 
 	//KINFIT
+	if(dDebugLevel >= 10)
+		cout << "Do kinfit" << endl;
 	auto locKinFitResultsPair = Fit_Kinematics(locReactionVertexInfo, locReaction, locParticleCombo, locKinFitType, locUpdateCovMatricesFlag);
 	if(locKinFitResultsPair.second == nullptr)
 		return locParticleCombo; //fit failed, or no constraints
 
 	//Fit succeeded. Create new combo with kinfit results
+	if(dDebugLevel >= 10)
+		cout << "Create new combo" << endl;
 	auto locNewParticleCombo = dParticleComboCreator->Create_KinFitCombo_NewCombo(locParticleCombo, locReaction, locKinFitResultsPair.second, locKinFitResultsPair.first);
 	dKinFitUtils->Recycle_DKinFitChain(locKinFitResultsPair.first); //kinfit chain no longer needed: recycle
 	dPreToPostKinFitComboMap.emplace(locComboKinFitTuple, locNewParticleCombo);

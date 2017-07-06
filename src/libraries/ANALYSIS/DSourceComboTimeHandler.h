@@ -9,6 +9,7 @@
 #include "DLorentzVector.h"
 #include "PID/DKinematicData.h"
 #include "PID/DNeutralShower.h"
+#include "PID/DChargedTrackHypothesis.h"
 #include "PID/DEventRFBunch.h"
 #include "ANALYSIS/DSourceCombo.h"
 #include "ANALYSIS/DReactionVertexInfo.h"
@@ -74,7 +75,7 @@ class DSourceComboTimeHandler
 
 		double Calc_MaxDeltaTError(const DNeutralShower* locNeutralShower, const shared_ptr<const DKinematicData>& locKinematicData) const;
 
-		vector<int> Get_RFBunches_ChargedTrack(const DChargedTrack* locChargedTrack, Particle_t locPID, bool locIsProductionVertex, const DSourceCombo* locVertexPrimaryCombo, DVector3 locVertex, double locTimeOffset, double locPropagatedRFTime);
+		vector<int> Get_RFBunches_ChargedTrack(const DChargedTrackHypothesis* locHypothesis, bool locIsProductionVertex, const DSourceCombo* locVertexPrimaryCombo, DVector3 locVertex, double locTimeOffset, double locPropagatedRFTime);
 
 		double Calc_RFDeltaTChiSq(const DNeutralShower* locNeutralShower, const TVector3& locVertex, double locPropagatedRFTime) const;
 		double Calc_RFDeltaTChiSq(const DChargedTrackHypothesis* locHypothesis, double locVertexTime, double locPropagatedRFTime) const;
@@ -222,21 +223,29 @@ inline vector<int> DSourceComboTimeHandler::Get_CommonRFBunches(const vector<int
 inline double DSourceComboTimeHandler::Calc_RFDeltaTChiSq(const DNeutralShower* locNeutralShower, const TVector3& locVertex, double locPropagatedRFTime) const
 {
 	//calc vertex time, get delta-t cut
-	double locPathLength = (locNeutralShower->dSpacetimeVertex.Vect() - locVertex).Mag();
-	double locVertexTime = locNeutralShower->dSpacetimeVertex.T() - locPathLength/29.9792458;
-	double locVertexTimeVariance = dUseSigmaForRFSelectionFlag ? locNeutralShower->dCovarianceMatrix(4, 4) : 1.0;
+	auto locPathLength = (locNeutralShower->dSpacetimeVertex.Vect() - locVertex).Mag();
+	auto locVertexTime = locNeutralShower->dSpacetimeVertex.T() - locPathLength/29.9792458;
+	auto locVertexTimeVariance = dUseSigmaForRFSelectionFlag ? locNeutralShower->dCovarianceMatrix(4, 4) : 1.0;
 
-	double locDeltaT = locVertexTime - locPropagatedRFTime;
-	return locDeltaT*locDeltaT/locVertexTimeVariance;
+	auto locDeltaT = locVertexTime - locPropagatedRFTime;
+	auto locChiSq = locDeltaT*locDeltaT/locVertexTimeVariance;
+	if(dDebugLevel >= 5)
+		cout << "neutral Calc_RFDeltaTChiSq(): vertex time, rf time, delta-t, chisq = " << locVertexTime << ", " << locPropagatedRFTime << ", " << locDeltaT << ", " << locChiSq << endl;
+
+	return locChiSq;
 }
 
 inline double DSourceComboTimeHandler::Calc_RFDeltaTChiSq(const DChargedTrackHypothesis* locHypothesis, double locVertexTime, double locPropagatedRFTime) const
 {
 	//calc vertex time, get delta-t cut
 	auto locErrorMatrix = locHypothesis->errorMatrix();
-	double locVertexTimeVariance = (dUseSigmaForRFSelectionFlag && (locErrorMatrix != nullptr)) ? (*locErrorMatrix)(6, 6) : 1.0;
-	double locDeltaT = locVertexTime - locPropagatedRFTime;
-	return locDeltaT*locDeltaT/locVertexTimeVariance;
+	auto locVertexTimeVariance = (dUseSigmaForRFSelectionFlag && (locErrorMatrix != nullptr)) ? (*locErrorMatrix)(6, 6) : 1.0;
+	auto locDeltaT = locVertexTime - locPropagatedRFTime;
+	auto locChiSq = locDeltaT*locDeltaT/locVertexTimeVariance;
+	if(dDebugLevel >= 5)
+		cout << "charged Calc_RFDeltaTChiSq(): vertex time, rf time, delta-t, chisq = " << locVertexTime << ", " << locPropagatedRFTime << ", " << locDeltaT << ", " << locChiSq << endl;
+
+	return locChiSq;
 }
 
 }

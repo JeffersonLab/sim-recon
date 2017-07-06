@@ -11,6 +11,7 @@
 #include "DLorentzVector.h"
 #include "PID/DKinematicData.h"
 #include "PID/DNeutralShower.h"
+#include "PID/DChargedTrack.h"
 #include "ANALYSIS/DSourceCombo.h"
 #include "ANALYSIS/DSourceComboTimeHandler.h"
 

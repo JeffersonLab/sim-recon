@@ -43,6 +43,7 @@ using namespace std;
  *
  * Note that there is a tricky situation that arises when a shared_ptr outlives the life of the DResourcePool.
  * This can happen if (e.g.) shared_ptr's are stored as members of a factory alongside a DResourcePool, and the pool is destroyed first.
+ * Or if they are created by a thread_local pool, and the objects outlive the thread. 
  *
  * To combat this, we have the DSharedPtrRecycler hold a weak_ptr to the DResourcePool (where the object gets recycled to).
  * That way, if the pool has been deleted, the weak_ptr will have expired and we can manually delete the object instead of trying to recycle it.
@@ -292,7 +293,7 @@ template <typename DType> void DResourcePool<DType>::Get_Resources_StaticPool(vo
 		if(dResourcePool_Shared.empty())
 			return;
 		auto locFirstMoveIterator = (dGetBatchSize >= dResourcePool_Shared.size()) ? dResourcePool_Shared.begin() : dResourcePool_Shared.end() - dGetBatchSize;
-		if(dDebugFlag >= 0)
+		if(dDebugFlag > 0)
 			cout << "MOVING FROM SHARED POOL " << typeid(DType).name() << ": " << std::distance(locFirstMoveIterator, dResourcePool_Shared.end()) << endl;
 		std::move(locFirstMoveIterator, dResourcePool_Shared.end(), std::back_inserter(dResourcePool_Local));
 		dResourcePool_Shared.erase(locFirstMoveIterator, dResourcePool_Shared.end());
@@ -320,12 +321,12 @@ template <typename DType> void DResourcePool<DType>::Recycle_Resources_StaticPoo
 		}
 		else
 			dResourcePool_Shared.reserve(locNewPoolSize);
-		if(dDebugFlag >= 0)
+		if(dDebugFlag > 0)
 			cout << "MOVING TO SHARED POOL " << typeid(DType).name() << ": " << std::distance(locMoveIterator, dResourcePool_Local.end()) << endl;
 		std::move(locMoveIterator, dResourcePool_Local.end(), std::back_inserter(dResourcePool_Shared));
 	}
 
-	if(dDebugFlag >= 0)
+	if(dDebugFlag > 0)
 		cout << "DELETING " << typeid(DType).name() << ": " << std::distance(locRemoveIterator, locMoveIterator) << endl;
 
 	//any resources that were not moved into the shared pool are deleted instead (too many)

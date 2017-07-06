@@ -15,10 +15,13 @@ DReaction::~DReaction(void)
 
 vector<Particle_t> DReaction::Get_FinalPIDs(int locStepIndex, bool locIncludeMissingFlag, bool locIncludeDecayingFlag, Charge_t locCharge, bool locIncludeDuplicatesFlag) const
 {
-	//define the PID loop
 	vector<Particle_t> locFinalPIDs;
-	auto locPIDLoop = [&](const DReactionStep* locStep, size_t locLoopStepIndex) -> void
+	for(size_t locLoopStepIndex = 0; locLoopStepIndex < dReactionSteps.size(); ++locLoopStepIndex)
 	{
+		if((locStepIndex != -1) && (int(locLoopStepIndex) != locStepIndex))
+			continue;
+
+		auto locStep = dReactionSteps[locLoopStepIndex];
 		for(size_t locPIDIndex = 0; locPIDIndex < locStep->Get_NumFinalPIDs(); ++locPIDIndex)
 		{
 			if(!locIncludeDecayingFlag && (DAnalysis::Get_DecayStepIndex(this, locLoopStepIndex, locPIDIndex) >= 0))
@@ -29,15 +32,6 @@ vector<Particle_t> DReaction::Get_FinalPIDs(int locStepIndex, bool locIncludeMis
 			if(Is_CorrectCharge(locPID, locCharge))
 				locFinalPIDs.push_back(locPID);
 		}
-	};
-
-	//execute the loop
-	if(locStepIndex != -1)
-		locPIDLoop(Get_ReactionStep(locStepIndex), locStepIndex);
-	else
-	{
-		for(size_t loc_i = 0; loc_i < dReactionSteps.size(); ++loc_i)
-			locPIDLoop(Get_ReactionStep(locStepIndex), loc_i);
 	}
 
 	if(!locIncludeDuplicatesFlag)
@@ -50,10 +44,13 @@ vector<Particle_t> DReaction::Get_FinalPIDs(int locStepIndex, bool locIncludeMis
 
 vector<Particle_t> DReaction::Get_MissingPIDs(int locStepIndex, Charge_t locCharge, bool locIncludeDuplicatesFlag) const
 {
-	//define the PID loop
 	vector<Particle_t> locFinalPIDs;
-	auto locPIDLoop = [&](const DReactionStep* locStep, size_t locLoopStepIndex) -> void
+	for(size_t locLoopStepIndex = 0; locLoopStepIndex < dReactionSteps.size(); ++locLoopStepIndex)
 	{
+		if((locStepIndex != -1) && (int(locLoopStepIndex) != locStepIndex))
+			continue;
+
+		auto locStep = dReactionSteps[locLoopStepIndex];
 		for(size_t locPIDIndex = 0; locPIDIndex < locStep->Get_NumFinalPIDs(); ++locPIDIndex)
 		{
 			if(int(locPIDIndex) != locStep->Get_MissingParticleIndex())
@@ -62,15 +59,6 @@ vector<Particle_t> DReaction::Get_MissingPIDs(int locStepIndex, Charge_t locChar
 			if(Is_CorrectCharge(locPID, locCharge))
 				locFinalPIDs.push_back(locPID);
 		}
-	};
-
-	//execute the loop
-	if(locStepIndex != -1)
-		locPIDLoop(Get_ReactionStep(locStepIndex), locStepIndex);
-	else
-	{
-		for(size_t loc_i = 0; loc_i < dReactionSteps.size(); ++loc_i)
-			locPIDLoop(Get_ReactionStep(locStepIndex), loc_i);
 	}
 
 	if(!locIncludeDuplicatesFlag)
@@ -80,7 +68,6 @@ vector<Particle_t> DReaction::Get_MissingPIDs(int locStepIndex, Charge_t locChar
 	}
 	return locFinalPIDs;
 }
-
 
 /************************************************************** NAMESPACE-SCOPE FUNCTIONS ***************************************************************/
 

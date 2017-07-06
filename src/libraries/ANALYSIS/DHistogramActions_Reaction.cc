@@ -8,7 +8,6 @@ void DHistogramAction_PID::Initialize(JEventLoop* locEventLoop)
 
 	vector<const DParticleID*> locParticleIDs;
 	locEventLoop->Get(locParticleIDs);
-
 	auto locDesiredPIDs = Get_Reaction()->Get_FinalPIDs(-1, false, false, d_AllCharges, false);
 
 	vector<const DMCThrown*> locMCThrowns;

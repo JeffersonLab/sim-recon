@@ -43,7 +43,6 @@ using namespace jana;
 namespace DAnalysis
 {
 //finish comments in Build_ParticleCombos()
-//move resource pools to kinfitter?
 //change all references to bcal/fcal to z-independent/dependent showers
 //When saving ROOT TTree, don't save p4 of decaying particles if mass is not constrained in kinfit!
 	//And make sure it's not grabbed in DSelector by default
@@ -305,12 +304,12 @@ inline bool DSourceComboer::Check_NumParticles(const DReaction* locReaction)
 	//see if enough particles were detected to build this reaction
 	auto locReactionPIDs = locReaction->Get_FinalPIDs(-1, false, false, d_AllCharges, true); //no missing, no decaying, include duplicates
 	auto locPIDMap = DAnalysis::Convert_VectorToCountMap<Particle_t>(locReactionPIDs);
-	if(dDebugLevel >= 5)
+	if(dDebugLevel > 0)
 		cout << "Checking #particles" << endl;
 	for(const auto& locPIDPair : locPIDMap)
 	{
 		auto locNumParticlesForComboing = Get_ParticlesForComboing(locPIDPair.first, d_MixedStage).size();
-		if(dDebugLevel >= 5)
+		if(dDebugLevel > 0)
 			cout << ParticleType(locPIDPair.first) << ": Need " << locPIDPair.second << ", Have " << locNumParticlesForComboing << endl;
 		if(locNumParticlesForComboing < locPIDPair.second)
 			return false;

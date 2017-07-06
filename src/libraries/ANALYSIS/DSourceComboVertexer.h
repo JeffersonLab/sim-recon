@@ -15,7 +15,6 @@
 
 #include "particleType.h"
 #include "PID/DChargedTrackHypothesis.h"
-#include "PID/DChargedTrack.h"
 #include "PID/DNeutralShower.h"
 #include "ANALYSIS/DSourceCombo.h"
 #include "ANALYSIS/DReaction.h"
@@ -49,8 +48,8 @@ class DSourceComboVertexer
 		void Calc_VertexTimeOffsets_WithPhotons(const DReactionVertexInfo* locReactionVertexInfo, const DSourceCombo* locReactionChargedCombo, const DSourceCombo* locReactionFullCombo);
 		void Calc_VertexTimeOffsets_WithBeam(const DReactionVertexInfo* locReactionVertexInfo, const DSourceCombo* locReactionFullCombo, const DKinematicData* locBeamParticle);
 
-		bool Get_VertexDeterminableWithCharged(const DReactionStepVertexInfo* locStepVertexInfo) const{return dVertexDeterminableWithChargedMap.find(locStepVertexInfo)->second;}
-		bool Get_VertexDeterminableWithPhotons(const DReactionStepVertexInfo* locStepVertexInfo) const{return dVertexDeterminableWithPhotonsMap.find(locStepVertexInfo)->second;}
+		bool Get_VertexDeterminableWithCharged(const DReactionStepVertexInfo* locStepVertexInfo) const;
+		bool Get_VertexDeterminableWithPhotons(const DReactionStepVertexInfo* locStepVertexInfo) const;
 
 		//GET RESULTS
 		DVector3 Get_Vertex(bool locIsProductionVertex, const DSourceCombo* locSourceCombo, const DKinematicData* locBeamParticle) const;
@@ -200,6 +199,22 @@ inline bool DSourceComboVertexer::Get_IsVertexFoundFlag(bool locIsProductionVert
 	if((locBeamParticle != nullptr) && (locIterator == dConstrainingParticlesByCombo.end()))
 		locIterator = dConstrainingParticlesByCombo.find(std::make_tuple(locIsProductionVertex, locVertexPrimaryCombo, nullptr));
 	return (locIterator != dConstrainingParticlesByCombo.end());
+}
+
+inline bool DSourceComboVertexer::Get_VertexDeterminableWithCharged(const DReactionStepVertexInfo* locStepVertexInfo) const
+{
+	auto locIterator = dVertexDeterminableWithChargedMap.find(locStepVertexInfo);
+	if(locIterator == dVertexDeterminableWithChargedMap.end())
+		return false;
+	return locIterator->second;
+}
+
+inline bool DSourceComboVertexer::Get_VertexDeterminableWithPhotons(const DReactionStepVertexInfo* locStepVertexInfo) const
+{
+	auto locIterator = dVertexDeterminableWithPhotonsMap.find(locStepVertexInfo);
+	if(locIterator == dVertexDeterminableWithPhotonsMap.end())
+		return false;
+	return locIterator->second;
 }
 
 } //end DAnalysis namespace

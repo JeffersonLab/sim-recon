@@ -206,8 +206,8 @@ const DParticleCombo* DParticleComboCreator::Build_ParticleCombo(const DReaction
 			}
 			else //charged
 			{
-				auto locChargedTrack = static_cast<const DChargedTrack*>(locSourceParticle);
-				auto locHypoTuple = std::make_tuple(locChargedTrack, locPID, locRFBunchShift, locIsProductionVertex, locFullCombo, locVertexPrimaryCombo, locBeamParticle);
+				auto locOrigHypo = static_cast<const DChargedTrack*>(locSourceParticle)->Get_Hypothesis(locPID);
+				auto locHypoTuple = std::make_tuple(locOrigHypo, locRFBunchShift, locIsProductionVertex, locFullCombo, locVertexPrimaryCombo, locBeamParticle);
 				const DChargedTrackHypothesis* locNewChargedHypo = nullptr;
 
 				auto locHypoIterator = dChargedHypoMap.find(locHypoTuple);
@@ -215,7 +215,7 @@ const DParticleCombo* DParticleComboCreator::Build_ParticleCombo(const DReaction
 					locNewChargedHypo = locHypoIterator->second;
 				else
 				{
-					locNewChargedHypo = Create_ChargedHypo(locChargedTrack, locPID, locPropagatedRFTime, locIsProductionVertex, locVertexPrimaryCombo, locBeamParticle);
+					locNewChargedHypo = Create_ChargedHypo(locOrigHypo, locPropagatedRFTime, locIsProductionVertex, locVertexPrimaryCombo, locBeamParticle);
 					dChargedHypoMap.emplace(locHypoTuple, locNewChargedHypo);
 				}
 
@@ -237,10 +237,9 @@ const DParticleCombo* DParticleComboCreator::Build_ParticleCombo(const DReaction
 	return locParticleCombo;
 }
 
-const DChargedTrackHypothesis* DParticleComboCreator::Create_ChargedHypo(const DChargedTrack* locChargedTrack, Particle_t locPID, double locPropagatedRFTime, bool locIsProductionVertex, const DSourceCombo* locVertexPrimaryFullCombo, const DKinematicData* locBeamParticle)
+const DChargedTrackHypothesis* DParticleComboCreator::Create_ChargedHypo(const DChargedTrackHypothesis* locOrigHypo, double locPropagatedRFTime, bool locIsProductionVertex, const DSourceCombo* locVertexPrimaryFullCombo, const DKinematicData* locBeamParticle)
 {
 	//see if DChargedTrackHypothesis with the desired PID was created by the default factory, AND it passed the PreSelect cuts
-	auto locOrigHypo = locChargedTrack->Get_Hypothesis(locPID);
 	auto locNewHypo = dChargedTrackHypothesisFactory->Get_Resource();
 	locNewHypo->Share_FromInput(locOrigHypo, true, false, true); //share all but timing info
 

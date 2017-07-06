@@ -152,6 +152,20 @@ DSourceComboer::DSourceComboer(JEventLoop* locEventLoop)
 	for(const auto& locVertexInfo : locVertexInfos)
 		Create_SourceComboInfos(locVertexInfo);
 
+	//TRANSFER INFOS FROM SET TO VECTOR
+	dSourceComboInfos.reserve(dSourceComboInfoSet.size());
+	std::copy(dSourceComboInfoSet.begin(), dSourceComboInfoSet.end(), std::back_inserter(dSourceComboInfos));
+	dSourceComboInfoSet.clear(); //free up the memory
+
+	//CREATE HANDLERS
+	dSourceComboP4Handler = new DSourceComboP4Handler(locEventLoop, this);
+	dSourceComboVertexer = new DSourceComboVertexer(locEventLoop, this, dSourceComboP4Handler);
+	dSourceComboTimeHandler = new DSourceComboTimeHandler(locEventLoop, this, dSourceComboVertexer);
+	dSourceComboP4Handler->Set_SourceComboTimeHandler(dSourceComboTimeHandler);
+	dSourceComboP4Handler->Set_SourceComboVertexer(dSourceComboVertexer);
+	dSourceComboVertexer->Set_SourceComboTimeHandler(dSourceComboTimeHandler);
+	dParticleComboCreator = new DParticleComboCreator(locEventLoop, this, dSourceComboTimeHandler, dSourceComboVertexer);
+
 	//save rf bunch cuts
 	if(gPARMS->Exists("COMBO:NUM_PLUSMINUS_RF_BUNCHES"))
 	{
@@ -182,20 +196,6 @@ DSourceComboer::DSourceComboer(JEventLoop* locEventLoop)
 				dMaxRFBunchCuts[locVertexInfo] = dRFBunchCutsByReaction[locReaction];
 		}
 	}
-
-	//TRANSFER INFOS FROM SET TO VECTOR
-	dSourceComboInfos.reserve(dSourceComboInfoSet.size());
-	std::copy(dSourceComboInfoSet.begin(), dSourceComboInfoSet.end(), std::back_inserter(dSourceComboInfos));
-	dSourceComboInfoSet.clear(); //free up the memory
-
-	//CREATE HANDLERS
-	dSourceComboP4Handler = new DSourceComboP4Handler(locEventLoop, this);
-	dSourceComboVertexer = new DSourceComboVertexer(locEventLoop, this, dSourceComboP4Handler);
-	dSourceComboTimeHandler = new DSourceComboTimeHandler(locEventLoop, this, dSourceComboVertexer);
-	dSourceComboP4Handler->Set_SourceComboTimeHandler(dSourceComboTimeHandler);
-	dSourceComboP4Handler->Set_SourceComboVertexer(dSourceComboVertexer);
-	dSourceComboVertexer->Set_SourceComboTimeHandler(dSourceComboTimeHandler);
-	dParticleComboCreator = new DParticleComboCreator(locEventLoop, this, dSourceComboTimeHandler, dSourceComboVertexer);
 }
 
 /******************************************************************* CREATE DSOURCOMBOINFO'S ********************************************************************/
@@ -325,6 +325,9 @@ void DSourceComboer::Create_SourceComboInfos(const DReactionVertexInfo* locReact
 	for(const auto& locUseStepPair : locStepComboUseMap)
 		dSourceComboInfoStepMap.emplace(std::make_pair(locReactionVertexInfo->Get_StepVertexInfo(locUseStepPair.first), locUseStepPair.second), locUseStepPair.first);
 	dSourceComboUseReactionStepMap.emplace(locReaction, locStepComboUseMap);
+
+	if(dDebugLevel > 0)
+		cout << "DSourceComboInfo OBJECTS CREATED" << endl;
 }
 
 DSourceComboUse DSourceComboer::Create_ZDependentSourceComboUses(const DReactionVertexInfo* locReactionVertexInfo, const DSourceCombo* locReactionChargedCombo)
@@ -509,6 +512,8 @@ const DSourceComboInfo* DSourceComboer::MakeOrGet_SourceComboInfo(const vector<p
 		Print_SourceComboInfo(locComboInfo);
 	dSourceComboInfoSet.insert(locComboInfo);
 	dComboInfoChargeContent.emplace(locComboInfo, DAnalysis::Get_ChargeContent(locComboInfo));
+	if(dDebugLevel >= 5)
+		cout << "charge content = " << dComboInfoChargeContent[locComboInfo];
 	if(DAnalysis::Get_HasMassiveNeutrals(locComboInfo))
 		dComboInfosWithMassiveNeutrals.insert(locComboInfo);
 	return locComboInfo;
@@ -531,6 +536,8 @@ const DSourceComboInfo* DSourceComboer::GetOrMake_SourceComboInfo(const vector<p
 		Print_SourceComboInfo(locComboInfo);
 	dSourceComboInfos.emplace(locIteratorPair.first, locComboInfo);
 	dComboInfoChargeContent.emplace(locComboInfo, DAnalysis::Get_ChargeContent(locComboInfo));
+	if(dDebugLevel >= 5)
+		cout << "charge content = " << dComboInfoChargeContent[locComboInfo];
 	if(DAnalysis::Get_HasMassiveNeutrals(locComboInfo))
 		dComboInfosWithMassiveNeutrals.insert(locComboInfo);
 	return locComboInfo;
@@ -610,7 +617,7 @@ void DSourceComboer::Reset_NewEvent(JEventLoop* locEventLoop)
 	for(const auto& locChargedTrack : locChargedTracks)
 	{
 		for(const auto& locChargedHypo : locChargedTrack->dChargedTrackHypotheses)
-			dTracksByPID[locChargedHypo->PID()].push_back(locChargedHypo);
+			dTracksByPID[locChargedHypo->PID()].push_back(locChargedTrack);
 	}
 	//sort: not strictly necessary, but probably(?) makes sorting later go faster
 	for(auto& locPIDPair : dTracksByPID)
@@ -623,7 +630,7 @@ DCombosByReaction DSourceComboer::Build_ParticleCombos(const DReactionVertexInfo
 {
 	//This builds the combos and creates DParticleCombo & DParticleComboSteps (doing whatever is necessary)
 	if(dDebugLevel > 0)
-		cout << "CREATING DSourceCombo's FOR DREACTION " << locReactionVertexInfo->Get_Reaction()->GetName() << endl;
+		cout << "CREATING DSourceCombo's FOR DREACTION " << locReactionVertexInfo->Get_Reaction()->Get_ReactionName() << endl;
 
 	//Initialize results to be returned
 	DCombosByReaction locOutputComboMap;
@@ -641,7 +648,7 @@ DCombosByReaction DSourceComboer::Build_ParticleCombos(const DReactionVertexInfo
 		return locOutputComboMap; //no combos!
 	}
 
-	auto Skim_Checker = [this](const DReaction* locReaction) -> bool{return Check_Skims(locReaction);};
+	auto Skim_Checker = [this](const DReaction* locReaction) -> bool{return !Check_Skims(locReaction);};
 	locReactions.erase(std::remove_if(locReactions.begin(), locReactions.end(), Skim_Checker), locReactions.end());
 	if(locReactions.empty())
 	{
@@ -738,8 +745,12 @@ DCombosByReaction DSourceComboer::Build_ParticleCombos(const DReactionVertexInfo
 	auto locPrimaryComboInfo = std::get<2>(locPrimaryComboUse);
 
 	//handle special case of no charged tracks
+	if(dDebugLevel > 0)
+		cout << "Combo charge content: " << dComboInfoChargeContent[std::get<2>(locPrimaryComboUse)] << " (charged/neutral are " << d_Charged << "/" << d_Neutral << ")" << endl;
 	if(dComboInfoChargeContent[std::get<2>(locPrimaryComboUse)] == d_Neutral)
 	{
+		if(dDebugLevel > 0)
+			cout << "No charged tracks." << endl;
 		Combo_WithNeutralsAndBeam(locReactions, locReactionVertexInfo, locPrimaryComboUse, nullptr, {}, locOutputComboMap);
 		return locOutputComboMap;
 	}
@@ -763,8 +774,13 @@ DCombosByReaction DSourceComboer::Build_ParticleCombos(const DReactionVertexInfo
 		auto locChargeContent = dComboInfoChargeContent[locPrimaryComboInfo];
 		if(locChargeContent == d_Charged)
 		{
+			if(dDebugLevel > 0)
+				cout << "Fully charged." << endl;
+
 			//Select final RF bunch
 			auto locRFBunch = dSourceComboTimeHandler->Select_RFBunch_Full(locReactionVertexInfo, locReactionChargedCombo, locBeamBunches_Charged);
+			if(dDebugLevel > 0)
+				cout << "Selected rf bunch." << endl;
 
 			//combo with beam and save results!!! (if no beam needed, just saves and returns)
 			Combo_WithBeam(locReactions, locReactionVertexInfo, locReactionChargedCombo, locRFBunch, locOutputComboMap);
@@ -774,12 +790,19 @@ DCombosByReaction DSourceComboer::Build_ParticleCombos(const DReactionVertexInfo
 		//Combo with neutrals and beam
 		Combo_WithNeutralsAndBeam(locReactions, locReactionVertexInfo, locPrimaryComboUse, locReactionChargedCombo, locBeamBunches_Charged, locOutputComboMap);
 	}
+
+	if(dDebugLevel > 0)
+	{
+		for(auto locComboPair : locOutputComboMap)
+			cout << "reaction, #combos = " << locComboPair.first->Get_ReactionName() << ", " << locComboPair.second.size() << endl;
+	}
+
 	return locOutputComboMap;
 }
 
 void DSourceComboer::Combo_WithNeutralsAndBeam(const vector<const DReaction*>& locReactions, const DReactionVertexInfo* locReactionVertexInfo, const DSourceComboUse& locPrimaryComboUse, const DSourceCombo* locReactionChargedCombo, const vector<int>& locBeamBunches_Charged, DCombosByReaction& locOutputComboMap)
 {
-	if(dDebugLevel >= 0)
+	if(dDebugLevel > 0)
 		cout << "Comboing neutrals." << endl;
 
 	//Create full source-particle combos (including neutrals): First using only FCAL showers, then using all showers
@@ -825,12 +848,14 @@ void DSourceComboer::Combo_WithNeutralsAndBeam(const vector<const DReaction*>& l
 
 void DSourceComboer::Combo_WithBeam(const vector<const DReaction*>& locReactions, const DReactionVertexInfo* locReactionVertexInfo, const DSourceCombo* locReactionFullCombo, int locRFBunch, DCombosByReaction& locOutputComboMap)
 {
-	if(dDebugLevel >= 0)
+	if(dDebugLevel > 0)
 		cout << "Comboing beam." << endl;
 
 	//if no beam then we are done!
 	if(!locReactionVertexInfo->Get_StepVertexInfos().front()->Get_ProductionVertexFlag())
 	{
+		if(dDebugLevel > 0)
+			cout << "No beam particles, we are done!" << endl;
 		for(const auto& locReaction : locReactions)
 			locOutputComboMap[locReaction].push_back(dParticleComboCreator->Build_ParticleCombo(locReactionVertexInfo, locReactionFullCombo, nullptr, locRFBunch, locReaction->Get_KinFitType()));
 		return;
@@ -838,6 +863,8 @@ void DSourceComboer::Combo_WithBeam(const vector<const DReaction*>& locReactions
 
 	//Select beam particles
 	auto locBeamParticles = dSourceComboTimeHandler->Get_BeamParticlesByRFBunch(locRFBunch, dMaxRFBunchCuts[locReactionVertexInfo]);
+	if(dDebugLevel > 0)
+		cout<< "rf bunch, max #rf bunches, #beams = " << locRFBunch << ", " << dMaxRFBunchCuts[locReactionVertexInfo] << ", " << locBeamParticles.size() << endl;
 	if(locBeamParticles.empty())
 		return; //no valid beam particles!!
 
@@ -860,7 +887,9 @@ void DSourceComboer::Combo_WithBeam(const vector<const DReaction*>& locReactions
 		size_t locDeltaRFBunch = abs(locRFBunch - locBeamRFBunch);
 		for(const auto& locReaction : locReactions)
 		{
-			if(dRFBunchCutsByReaction[locReaction] < locDeltaRFBunch)
+			if(dDebugLevel > 0)
+				cout<< "beam rf bunch, delta rf bunch, reaction, max for reaction = " << locBeamRFBunch << ", " << locDeltaRFBunch << ", " << locReaction->Get_ReactionName() << ", " << dRFBunchCutsByReaction[locReaction] << endl;
+			if(locDeltaRFBunch <= dRFBunchCutsByReaction[locReaction])
 				locOutputComboMap[locReaction].push_back(dParticleComboCreator->Build_ParticleCombo(locReactionVertexInfo, locReactionFullCombo, locBeamParticle, locRFBunch, locReaction->Get_KinFitType()));
 		}
 	}
