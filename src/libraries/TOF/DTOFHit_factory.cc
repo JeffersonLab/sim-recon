@@ -29,9 +29,16 @@ static bool COSMIC_DATA = false;
 //------------------
 jerror_t DTOFHit_factory::init(void)
 {
+  USE_NEWAMP_4WALKCORR = 1;
+  gPARMS->SetDefaultParameter("TOF:USE_NEWAMP_4WALKCORR", USE_NEWAMP_4WALKCORR,
+			      "Use Signal Amplitude for NEW walk correction with two fit functions");
   USE_AMP_4WALKCORR = 0;
   gPARMS->SetDefaultParameter("TOF:USE_AMP_4WALKCORR", USE_AMP_4WALKCORR,
 			      "Use Signal Amplitude for walk correction rather than Integral");
+
+  USE_NEW_4WALKCORR = 0;
+  gPARMS->SetDefaultParameter("TOF:USE_NEW_4WALKCORR", USE_NEW_4WALKCORR,
+			      "Use NEW walk correction function with 4 parameters");
   
   DELTA_T_ADC_TDC_MAX = 10.0; // ns
   //	DELTA_T_ADC_TDC_MAX = 30.0; // ns, value based on the studies from cosmic events
@@ -133,16 +140,36 @@ jerror_t DTOFHit_factory::brun(jana::JEventLoop *eventLoop, int32_t runnumber)
       jout << "Error loading /TOF/gains !" << endl;
     if(eventLoop->GetCalib("TOF/adc_timing_offsets", raw_adc_offsets))
       jout << "Error loading /TOF/adc_timing_offsets !" << endl;
-    if(eventLoop->GetCalib("TOF/timing_offsets", raw_tdc_offsets))
-      jout << "Error loading /TOF/timing_offsets !" << endl;
-    if(eventLoop->GetCalib("TOF/timewalk_parms", timewalk_parameters))
-      jout << "Error loading /TOF/timewalk_parms !" << endl;
-    
+
+    if (USE_NEWAMP_4WALKCORR){
+      if(eventLoop->GetCalib("TOF/timing_offsets_NEWAMP", raw_tdc_offsets)){
+
+	jout<<"\033[1;31m";  // red text";
+	jout<< "Error loading /TOF/timing_offsets_NEWAMP !" << endl;
+
+	USE_NEWAMP_4WALKCORR = 0;
+	jout << "Try to resort back to old calibration table /TOF/timing_offsets !\033[0m" << endl; // switch back to black text
+	if(eventLoop->GetCalib("TOF/timing_offsets", raw_tdc_offsets))
+	  jout << "Error loading /TOF/timing_offsets !" << endl;
+
+      }
+    }
+
 
     if (USE_AMP_4WALKCORR){
       if(eventLoop->GetCalib("TOF/timewalk_parms_AMP", timewalk_parameters_AMP))
 	jout << "Error loading /TOF/timewalk_parms_AMP !" << endl;
+    } else if (USE_NEW_4WALKCORR){
+      if(eventLoop->GetCalib("TOF/timewalk_parms_NEW", timewalk_parameters_NEW))
+	jout << "Error loading /TOF/timewalk_parms_NEW !" << endl;
+    } else if (USE_NEWAMP_4WALKCORR){
+      if(eventLoop->GetCalib("TOF/timewalk_parms_NEWAMP", timewalk_parameters_NEWAMP))
+	jout << "Error loading /TOF/timewalk_parms_NEW !" << endl;
+    } else {
+      if(eventLoop->GetCalib("TOF/timewalk_parms", timewalk_parameters))
+	jout << "Error loading /TOF/timewalk_parms !" << endl;
     }
+
 
     FillCalibTable(adc_pedestals, raw_adc_pedestals, tofGeom);
     FillCalibTable(adc_gains, raw_adc_gains, tofGeom);
@@ -171,167 +198,178 @@ jerror_t DTOFHit_factory::brun(jana::JEventLoop *eventLoop, int32_t runnumber)
 //------------------
 jerror_t DTOFHit_factory::evnt(JEventLoop *loop, uint64_t eventnumber)
 {
-	/// Generate DTOFHit object for each DTOFDigiHit object.
-	/// This is where the first set of calibration constants
-	/// is applied to convert from digitzed units into natural
-	/// units.
-	///
-	/// Note that this code does NOT get called for simulated
-	/// data in HDDM format. The HDDM event source will copy
-	/// the precalibrated values directly into the _data vector.
-
-	const DTTabUtilities* locTTabUtilities = NULL;
-	loop->GetSingle(locTTabUtilities);
-
-	// First, make hits out of all fADC250 hits
-	vector<const DTOFDigiHit*> digihits;
-	loop->Get(digihits);
-	for(unsigned int i=0; i<digihits.size(); i++){
-		const DTOFDigiHit *digihit = digihits[i];
-
-        // Error checking for pre-Fall 2016 firmware
-        if(digihit->datasource == 1) {
-            // There is a slight difference between Mode 7 and 8 data
-            // The following condition signals an error state in the flash algorithm
-            // Do not make hits out of these
-            const Df250PulsePedestal* PPobj = NULL;
-            digihit->GetSingle(PPobj);
-            if (PPobj != NULL) {
-                if (PPobj->pedestal == 0 || PPobj->pulse_peak == 0) continue;
-            } else 
-                continue;
-            
-            //if (digihit->pulse_time == 0) continue; // Should already be caught
-        }
-        
-        if(CHECK_FADC_ERRORS && !locTTabUtilities->CheckFADC250_NoErrors(digihit->QF))
-            continue;
-
-        // Initialize pedestal to one found in CCDB, but override it
-        // with one found in event if is available (?)
-        // For now, only keep events with a correct pedestal
-        double pedestal = GetConstant(adc_pedestals, digihit);
-        double nsamples_integral = digihit->nsamples_integral;
-        double nsamples_pedestal = digihit->nsamples_pedestal;
-
-        // nsamples_pedestal should always be positive for valid data - err on the side of caution for now
-        if(nsamples_pedestal == 0) {
-            jerr << "DTOFDigiHit with nsamples_pedestal == 0 !   Event = " << eventnumber << endl;
-            continue;
-        }
-
-        if( (digihit->pedestal>0) && locTTabUtilities->CheckFADC250_PedestalOK(digihit->QF) ) {
-            pedestal = digihit->pedestal * (nsamples_integral/nsamples_pedestal);
-        } else {
-            continue;
-        }
-
-        //double single_sample_ped = pedestal/nsamples_pedestal;
-
-        // Apply calibration constants here
-        double A = (double)digihit->pulse_integral;
-        double T = (double)digihit->pulse_time;
-        T =  t_scale * T - GetConstant(adc_time_offsets, digihit) + t_base;
-        double dA = A - pedestal;
-
-        if (dA<0) continue; 
-
-        DTOFHit *hit = new DTOFHit;
-        hit->plane = digihit->plane;
-        hit->bar   = digihit->bar;
-        hit->end   = digihit->end;
-        hit->dE=dA;  // this will be scaled to energy units later
-	hit->Amp = (float)digihit->pulse_peak - (float)digihit->pedestal/(float)nsamples_pedestal;
-
-        if(COSMIC_DATA)
-            hit->dE = (A - 55*pedestal); // value of 55 is taken from (NSB,NSA)=(10,45) in the confg file
-
-        hit->t_TDC=numeric_limits<double>::quiet_NaN();
-        hit->t_fADC=T;
-        hit->t = hit->t_fADC;  // set initial time to the ADC time, in case there's no matching TDC hit
-
-        hit->has_fADC=true;
-        hit->has_TDC=false;
-
-        /*
-           cout << "TOF ADC hit =  (" << hit->plane << "," << hit->bar << "," << hit->end << ")  " 
-           << t_scale << " " << T << "  "
-           << GetConstant(adc_time_offsets, digihit) << " " 
-           << t_scale*GetConstant(adc_time_offsets, digihit) << " " << hit->t << endl;
-           */
-
-        hit->AddAssociatedObject(digihit);
-
-        _data.push_back(hit);
+  /// Generate DTOFHit object for each DTOFDigiHit object.
+  /// This is where the first set of calibration constants
+  /// is applied to convert from digitzed units into natural
+  /// units.
+  ///
+  /// Note that this code does NOT get called for simulated
+  /// data in HDDM format. The HDDM event source will copy
+  /// the precalibrated values directly into the _data vector.
+  
+  const DTTabUtilities* locTTabUtilities = NULL;
+  loop->GetSingle(locTTabUtilities);
+  
+  // First, make hits out of all fADC250 hits
+  vector<const DTOFDigiHit*> digihits;
+  loop->Get(digihits);
+  for(unsigned int i=0; i<digihits.size(); i++){
+    const DTOFDigiHit *digihit = digihits[i];
+    
+    // Error checking for pre-Fall 2016 firmware
+    if(digihit->datasource == 1) {
+      // There is a slight difference between Mode 7 and 8 data
+      // The following condition signals an error state in the flash algorithm
+      // Do not make hits out of these
+      const Df250PulsePedestal* PPobj = NULL;
+      digihit->GetSingle(PPobj);
+      if (PPobj != NULL) {
+	if (PPobj->pedestal == 0 || PPobj->pulse_peak == 0) continue;
+      } else 
+	continue;
+      
+      //if (digihit->pulse_time == 0) continue; // Should already be caught
     }
-
-	//Get the TDC hits
-    vector<const DTOFTDCDigiHit*> tdcdigihits;
-    loop->Get(tdcdigihits);
-
-    // Next, loop over TDC hits, matching them to the
-    // existing fADC hits where possible and updating
-    // their time information. If no match is found, then
-    // create a new hit with just the TDC info.
-    for(unsigned int i=0; i<tdcdigihits.size(); i++)
+    
+    if(CHECK_FADC_ERRORS && !locTTabUtilities->CheckFADC250_NoErrors(digihit->QF))
+      continue;
+    
+    // Initialize pedestal to one found in CCDB, but override it
+    // with one found in event if is available (?)
+    // For now, only keep events with a correct pedestal
+    double pedestal = GetConstant(adc_pedestals, digihit);
+    double nsamples_integral = digihit->nsamples_integral;
+    double nsamples_pedestal = digihit->nsamples_pedestal;
+    
+    // nsamples_pedestal should always be positive for valid data - err on the side of caution for now
+    if(nsamples_pedestal == 0) {
+      jerr << "DTOFDigiHit with nsamples_pedestal == 0 !   Event = " << eventnumber << endl;
+      continue;
+    }
+    
+    if( (digihit->pedestal>0) && locTTabUtilities->CheckFADC250_PedestalOK(digihit->QF) ) {
+      pedestal = digihit->pedestal * (double)(nsamples_integral)/(double)(nsamples_pedestal);
+    } else {
+      continue;
+    }
+    
+    //double single_sample_ped = pedestal/nsamples_pedestal;
+    
+    // Apply calibration constants here
+    double A = (double)digihit->pulse_integral;
+    double T = (double)digihit->pulse_time;
+    T =  t_scale * T - GetConstant(adc_time_offsets, digihit) + t_base;
+    double dA = A - pedestal;
+    
+    if (dA<0) continue; 
+    
+    DTOFHit *hit = new DTOFHit;
+    hit->plane = digihit->plane;
+    hit->bar   = digihit->bar;
+    hit->end   = digihit->end;
+    hit->dE=dA;  // this will be scaled to energy units later
+    hit->Amp = (float)digihit->pulse_peak - (float)digihit->pedestal/(float)nsamples_pedestal;
+    
+    if(COSMIC_DATA)
+      hit->dE = (A - 55*pedestal); // value of 55 is taken from (NSB,NSA)=(10,45) in the confg file
+    
+    hit->t_TDC=numeric_limits<double>::quiet_NaN();
+    hit->t_fADC=T;
+    hit->t = hit->t_fADC;  // set initial time to the ADC time, in case there's no matching TDC hit
+    
+    hit->has_fADC=true;
+    hit->has_TDC=false;
+    
+    /*
+      cout << "TOF ADC hit =  (" << hit->plane << "," << hit->bar << "," << hit->end << ")  " 
+      << t_scale << " " << T << "  "
+      << GetConstant(adc_time_offsets, digihit) << " " 
+      << t_scale*GetConstant(adc_time_offsets, digihit) << " " << hit->t << endl;
+    */
+    
+    hit->AddAssociatedObject(digihit);
+    
+    _data.push_back(hit);
+  }
+  
+  //Get the TDC hits
+  vector<const DTOFTDCDigiHit*> tdcdigihits;
+  loop->Get(tdcdigihits);
+  
+  // Next, loop over TDC hits, matching them to the
+  // existing fADC hits where possible and updating
+  // their time information. If no match is found, then
+  // create a new hit with just the TDC info.
+  for(unsigned int i=0; i<tdcdigihits.size(); i++)
     {
-        const DTOFTDCDigiHit *digihit = tdcdigihits[i];
+      const DTOFTDCDigiHit *digihit = tdcdigihits[i];
+      
+      // Apply calibration constants here
+      double T = locTTabUtilities->Convert_DigiTimeToNs_CAEN1290TDC(digihit);
+      T += t_base_tdc - GetConstant(tdc_time_offsets, digihit) + tdc_adc_time_offset;
+      
+      /*
+	cout << "TOF TDC hit =  (" << digihit->plane << "," << digihit->bar << "," << digihit->end << ")  " 
+	<< T << "  " << GetConstant(tdc_time_offsets, digihit) << endl;
+      */
+      
+      // Look for existing hits to see if there is a match
+      // or create new one if there is no match
+      DTOFHit *hit = FindMatch(digihit->plane, digihit->bar, digihit->end, T);
+      //DTOFHit *hit = FindMatch(digihit->plane, hit->bar, hit->end, T);
+      if(!hit){
+	hit = new DTOFHit;
+	hit->plane = digihit->plane;
+	hit->bar   = digihit->bar;
+	hit->end   = digihit->end;
+	hit->dE = 0.0;
+	hit->Amp = 0.0;
+	hit->t_fADC=numeric_limits<double>::quiet_NaN();
+	hit->has_fADC=false;
+	
+	_data.push_back(hit);
+      }
+      hit->has_TDC=true;
+      hit->t_TDC=T;
+      
+      if (hit->dE>0.){
 
-        // Apply calibration constants here
-	    double T = locTTabUtilities->Convert_DigiTimeToNs_CAEN1290TDC(digihit);
-	    T += t_base_tdc - GetConstant(tdc_time_offsets, digihit) + tdc_adc_time_offset;
+	// time walk correction
+	// Note at this point the dE value is still in ADC units
+	double tcorr = 0.;
+	if (USE_AMP_4WALKCORR) {
+	  // use amplitude instead of integral
+	  tcorr = CalcWalkCorrAmplitude(hit);
 
-	    /*
-           cout << "TOF TDC hit =  (" << digihit->plane << "," << digihit->bar << "," << digihit->end << ")  " 
-           << T << "  " << GetConstant(tdc_time_offsets, digihit) << endl;
-           */
+	} else if (USE_NEW_4WALKCORR) {
+	  // new functional form with 4 parameter but still using integral
+	  tcorr = CalcWalkCorrNEW(hit);
 
-        // Look for existing hits to see if there is a match
-        // or create new one if there is no match
-        DTOFHit *hit = FindMatch(digihit->plane, digihit->bar, digihit->end, T);
-        //DTOFHit *hit = FindMatch(digihit->plane, hit->bar, hit->end, T);
-        if(!hit){
-            hit = new DTOFHit;
-            hit->plane = digihit->plane;
-            hit->bar   = digihit->bar;
-            hit->end   = digihit->end;
-            hit->dE = 0.0;
-	    hit->Amp = 0.0;
-            hit->t_fADC=numeric_limits<double>::quiet_NaN();
-            hit->has_fADC=false;
+	} else if (USE_NEWAMP_4WALKCORR) {
+	  // new functional form with 2 functions and 4 parameter using amplitude
+	  tcorr = CalcWalkCorrNEWAMP(hit);
 
-            _data.push_back(hit);
-        }
-        hit->has_TDC=true;
-        hit->t_TDC=T;
+	} else {
+	  // use integral
+	  tcorr = CalcWalkCorrIntegral(hit);
 
-        if (hit->dE>0.){
-            // time walk correction
-            // The correction is the form t=t_tdc- C1 (A^C2 - A0^C2)
-	  double tcorr = 0.;
-	  if (USE_AMP_4WALKCORR) {
-	    tcorr = CalcWalkCorrAmplitude(hit);
-	  } else {
-	    tcorr = CalcWalkCorrIntegral(hit);
-	  }
-
-	  //cout<<hit->Amp<<"  :"<<tcorr<<endl;
-
-	  T -= tcorr;
-        }
-        hit->t=T;
-
-        hit->AddAssociatedObject(digihit);
+	}
+	
+	T -= tcorr;
+      }
+      hit->t=T;
+      
+      hit->AddAssociatedObject(digihit);
     }
-
-    // Apply calibration constants to convert pulse integrals to energy units
-    for (unsigned int i=0;i<_data.size();i++){
-      int id=88*_data[i]->plane + 44*_data[i]->end + _data[i]->bar-1;
-      _data[i]->dE *= adc2E[id];
-      //cout<<id<<"   "<< adc2E[id]<<"      "<<_data[i]->dE<<endl;
-    }
-
-    return NOERROR;
+  
+  // Apply calibration constants to convert pulse integrals to energy units
+  for (unsigned int i=0;i<_data.size();i++){
+    int id=88*_data[i]->plane + 44*_data[i]->end + _data[i]->bar-1;
+    _data[i]->dE *= adc2E[id];
+    //cout<<id<<"   "<< adc2E[id]<<"      "<<_data[i]->dE<<endl;
+  }
+  
+  return NOERROR;
 }
 
 //------------------
@@ -595,12 +633,18 @@ return the_table.at(the_cell).second;
 double DTOFHit_factory::CalcWalkCorrIntegral(DTOFHit* hit){
   int id=88*hit->plane+44*hit->end+hit->bar-1;
   double A=hit->dE;
+  double C0=timewalk_parameters[id][1];
   double C1=timewalk_parameters[id][1];
   double C2=timewalk_parameters[id][2];
   double A0=timewalk_parameters[id][3];
 
-  float corr = C1*(pow(A,C2)-pow(A0,C2));
-  
+  double a1 = C0 + C1*pow(A,C2);
+  double a2 = C0 + C1*pow(A0,C2);
+
+  float corr = a1 - a2;
+
+  //cout<<id<<"   "<<A<<"    "<<a1<<"   "<<a2<<"    "<<corr<<endl;
+
   return corr;
 
 
@@ -630,7 +674,71 @@ double DTOFHit_factory::CalcWalkCorrAmplitude(DTOFHit* hit){
   }
 
   float corr = val_at_A - val_at_ref;
+
+  //cout<<id<<"   "<<val_at_A<<"   "<<val_at_ref<<"    "<<corr<<endl;
+
+  return corr;
+
+}
+
+
+double DTOFHit_factory::CalcWalkCorrNEW(DTOFHit* hit){
+ 
+  int id=88*hit->plane+44*hit->end+hit->bar-1;
+  double ADC=hit->dE;
+  double A = timewalk_parameters_NEW[id][0];
+  double B = timewalk_parameters_NEW[id][1];
+  double C = timewalk_parameters_NEW[id][2];
+  double D = timewalk_parameters_NEW[id][3];
+  double ADCREF = timewalk_parameters_NEW[id][4];
+
+  if (ADC>20000.){
+    ADC = 20000.;
+  }
+  double a1 = A + B*pow(ADC,-0.5) + C*pow(ADC,-0.33) + D*pow(ADC,-0.2);
+  double a2 = A + B*pow(ADCREF,-0.5) + C*pow(ADCREF,-0.33) + D*pow(ADCREF,-0.2);
+
+
+  float corr = a1 - a2;
+
+  //cout<<id<<"   "<<a1<<"   "<<a2<<"    "<<corr<<endl;
+
+  return corr;
+
+}
+
+double DTOFHit_factory::CalcWalkCorrNEWAMP(DTOFHit* hit){
+ 
+  int id=88*hit->plane+44*hit->end+hit->bar-1;
+  double ADC=hit->Amp;
+  double loc = timewalk_parameters_NEWAMP[id][8];
+  int offset = 0;
+  if (ADC>loc){
+    offset = 4;
+  }
+  double A = timewalk_parameters_NEWAMP[id][0+offset];
+  double B = timewalk_parameters_NEWAMP[id][1+offset];
+  double C = timewalk_parameters_NEWAMP[id][2+offset];
+  double D = timewalk_parameters_NEWAMP[id][3+offset];
+
+  double ADCREF = timewalk_parameters_NEWAMP[id][9];
+  double A2 = timewalk_parameters_NEWAMP[id][4];
+  double B2 = timewalk_parameters_NEWAMP[id][5];
+  double C2 = timewalk_parameters_NEWAMP[id][6];
+  double D2 = timewalk_parameters_NEWAMP[id][7];
+
+  double a1 = A + B*pow(ADC,-0.5) + C*pow(ADC,-0.33) + D*pow(ADC,-0.2);
+  double a2 = A2 + B2*pow(ADCREF,-0.5) + C2*pow(ADCREF,-0.33) + D2*pow(ADCREF,-0.2);
+
+  if (ADC>4095){
+    a1 += 0.6; // overflow hits are off by about 0.6ns to the regular curve.
+  }
+
+  float corr = a1 - a2;
+
+  //cout<<id<<"     "<<ADC<<"      "<<a1<<"   "<<a2<<"    "<<corr<<endl;
   
   return corr;
 
 }
+
