@@ -121,9 +121,11 @@ const DParticleCombo* DParticleComboCreator::Build_ParticleCombo(const DReaction
 	else
 	{
 		auto locInitialEventRFBunch = dSourceComboTimeHandler->Get_InitialEventRFBunch();
-		auto locEventRFBunch = dResourcePool_EventRFBunch.Get_Resource();
+		auto locNewEventRFBunch = dResourcePool_EventRFBunch.Get_Resource();
 		auto locRFTime = dSourceComboTimeHandler->Calc_RFTime(locRFBunchShift);
-		locEventRFBunch->Set_Content(locInitialEventRFBunch->dTimeSource, locRFTime, locInitialEventRFBunch->dTimeVariance, 0);
+		locNewEventRFBunch->Set_Content(locInitialEventRFBunch->dTimeSource, locRFTime, locInitialEventRFBunch->dTimeVariance, 0);
+		locEventRFBunch = locNewEventRFBunch;
+		dRFBunchMap.emplace(locRFBunchShift, locEventRFBunch);
 	}
 	locParticleCombo->Set_EventRFBunch(locEventRFBunch);
 
@@ -161,6 +163,10 @@ const DParticleCombo* DParticleComboCreator::Build_ParticleCombo(const DReaction
 		auto locTimeOffset = dSourceComboVertexer->Get_TimeOffset(locIsProductionVertex, locFullCombo, locVertexPrimaryCombo, locBeamParticle);
 		auto locPropagatedRFTime = dSourceComboTimeHandler->Calc_PropagatedRFTime(locPrimaryVertexZ, locRFBunchShift, locTimeOffset);
 		DLorentzVector locSpacetimeVertex(locVertex, locPropagatedRFTime);
+
+		//Set initial particle
+		if((locBeamParticle != nullptr) && (loc_i == 0))
+			locParticleComboStep->Set_InitialParticle(locBeamParticle);
 
 		//Build final particles
 		auto locFinalPIDs = locReactionStep->Get_FinalPIDs();
@@ -206,8 +212,8 @@ const DParticleCombo* DParticleComboCreator::Build_ParticleCombo(const DReaction
 			}
 			else //charged
 			{
-				auto locOrigHypo = static_cast<const DChargedTrack*>(locSourceParticle)->Get_Hypothesis(locPID);
-				auto locHypoTuple = std::make_tuple(locOrigHypo, locRFBunchShift, locIsProductionVertex, locFullCombo, locVertexPrimaryCombo, locBeamParticle);
+				auto locChargedTrack = static_cast<const DChargedTrack*>(locSourceParticle);
+				auto locHypoTuple = std::make_tuple(locChargedTrack, locPID, locRFBunchShift, locIsProductionVertex, locFullCombo, locVertexPrimaryCombo, locBeamParticle);
 				const DChargedTrackHypothesis* locNewChargedHypo = nullptr;
 
 				auto locHypoIterator = dChargedHypoMap.find(locHypoTuple);
@@ -215,7 +221,7 @@ const DParticleCombo* DParticleComboCreator::Build_ParticleCombo(const DReaction
 					locNewChargedHypo = locHypoIterator->second;
 				else
 				{
-					locNewChargedHypo = Create_ChargedHypo(locOrigHypo, locPropagatedRFTime, locIsProductionVertex, locVertexPrimaryCombo, locBeamParticle);
+					locNewChargedHypo = Create_ChargedHypo(locChargedTrack, locPID, locPropagatedRFTime, locIsProductionVertex, locVertexPrimaryCombo, locBeamParticle);
 					dChargedHypoMap.emplace(locHypoTuple, locNewChargedHypo);
 				}
 
@@ -224,8 +230,6 @@ const DParticleCombo* DParticleComboCreator::Build_ParticleCombo(const DReaction
 		}
 
 		locParticleComboStep->Set_Contents(locStepBeamParticle, locFinalParticles, locSpacetimeVertex);
-		if(loc_i == 0)
-			locParticleComboStep->Set_InitialParticle(locBeamParticle);
 
 		//save it
 		locParticleCombo->Add_ParticleComboStep(locParticleComboStep);
@@ -237,9 +241,10 @@ const DParticleCombo* DParticleComboCreator::Build_ParticleCombo(const DReaction
 	return locParticleCombo;
 }
 
-const DChargedTrackHypothesis* DParticleComboCreator::Create_ChargedHypo(const DChargedTrackHypothesis* locOrigHypo, double locPropagatedRFTime, bool locIsProductionVertex, const DSourceCombo* locVertexPrimaryFullCombo, const DKinematicData* locBeamParticle)
+const DChargedTrackHypothesis* DParticleComboCreator::Create_ChargedHypo(const DChargedTrack* locChargedTrack, Particle_t locPID, double locPropagatedRFTime, bool locIsProductionVertex, const DSourceCombo* locVertexPrimaryFullCombo, const DKinematicData* locBeamParticle)
 {
 	//see if DChargedTrackHypothesis with the desired PID was created by the default factory, AND it passed the PreSelect cuts
+	auto locOrigHypo = locChargedTrack->Get_Hypothesis(locPID);
 	auto locNewHypo = dChargedTrackHypothesisFactory->Get_Resource();
 	locNewHypo->Share_FromInput(locOrigHypo, true, false, true); //share all but timing info
 
@@ -247,6 +252,7 @@ const DChargedTrackHypothesis* DParticleComboCreator::Create_ChargedHypo(const D
 	locNewHypo->Set_TimeAtPOCAToVertex(locTrackPOCAX4.T());
 
 	locNewHypo->Set_T0(locPropagatedRFTime, locOrigHypo->t0_err(), locOrigHypo->t0_detector());
+	locNewHypo->AddAssociatedObject(locChargedTrack);
 	dParticleID->Calc_ChargedPIDFOM(locNewHypo);
 
 	return locNewHypo;
@@ -290,6 +296,7 @@ const DParticleCombo* DParticleComboCreator::Create_KinFitCombo_NewCombo(const D
 		for(size_t loc_k = 0; loc_k < locComboStep->Get_NumFinalParticles(); ++loc_k)
 		{
 			auto locKinematicData_Measured = locComboStep->Get_FinalParticle_Measured(loc_k);
+			auto locPID = locKinematicData_Measured->PID();
 			if(locReactionStep->Get_MissingParticleIndex() == int(loc_k)) //missing!
 			{
 				set<DKinFitParticle*> locMissingParticles = locKinFitResults->Get_OutputKinFitParticles(d_MissingParticle);
@@ -303,7 +310,7 @@ const DParticleCombo* DParticleComboCreator::Create_KinFitCombo_NewCombo(const D
 			}
 			else if(locKinematicData_Measured == nullptr) //decaying
 				locNewComboStep->Add_FinalParticle(NULL); //is set later, when it's in the initial state
-			else if(ParticleCharge(locKinematicData_Measured->PID()) == 0) //neutral
+			else if(ParticleCharge(locPID) == 0) //neutral
 			{
 				auto locNeutralHypo = static_cast<const DNeutralParticleHypothesis*>(locKinematicData_Measured);
 				//might have used neutral shower OR neutral hypo. try hypo first
@@ -322,7 +329,10 @@ const DParticleCombo* DParticleComboCreator::Create_KinFitCombo_NewCombo(const D
 				if(locKinFitParticle == NULL) //not used in kinfit!!
 					locNewComboStep->Add_FinalParticle(locKinematicData_Measured);
 				else //create a new one
-					locNewComboStep->Add_FinalParticle(Create_ChargedHypo_KinFit(locChargedHypo, locKinFitParticle, locKinFitType));
+				{
+					auto locChargedTrack = static_cast<const DChargedTrack*>(locComboStep->Get_FinalParticle_SourceObject(loc_k));
+					locNewComboStep->Add_FinalParticle(Create_ChargedHypo_KinFit(locChargedTrack, locPID, locKinFitParticle, locKinFitType));
+				}
 			}
 		}
 
@@ -515,8 +525,9 @@ const DBeamPhoton* DParticleComboCreator::Create_BeamPhoton_KinFit(const DBeamPh
 	return locNewBeamPhoton;
 }
 
-const DChargedTrackHypothesis* DParticleComboCreator::Create_ChargedHypo_KinFit(const DChargedTrackHypothesis* locOrigHypo, const DKinFitParticle* locKinFitParticle, DKinFitType locKinFitType)
+const DChargedTrackHypothesis* DParticleComboCreator::Create_ChargedHypo_KinFit(const DChargedTrack* locChargedTrack, Particle_t locPID, const DKinFitParticle* locKinFitParticle, DKinFitType locKinFitType)
 {
+	auto locOrigHypo = locChargedTrack->Get_Hypothesis(locPID);
 	auto locHypoIterator = dKinFitChargedHypoMap.find(locKinFitParticle);
 	if(locHypoIterator != dKinFitChargedHypoMap.end())
 		return locHypoIterator->second;
@@ -560,6 +571,7 @@ const DChargedTrackHypothesis* DParticleComboCreator::Create_ChargedHypo_KinFit(
 		locNewHypo->Set_TimeAtPOCAToVertex(locOrigHypo->Get_TimeAtPOCAToVertex() + locNewHypo->time() - locOrigHypo->time());
 	}
 
+	locNewHypo->AddAssociatedObject(locChargedTrack);
 	dParticleID->Calc_ChargedPIDFOM(locNewHypo);
 	return locNewHypo;
 }

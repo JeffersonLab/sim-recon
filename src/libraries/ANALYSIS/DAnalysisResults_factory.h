@@ -16,6 +16,7 @@
 #include "TH1D.h"
 #include "TH2D.h"
 #include "TDirectoryFile.h"
+#include "TROOT.h"
 
 #include "JANA/JFactory.h"
 #include "DANA/DApplication.h"

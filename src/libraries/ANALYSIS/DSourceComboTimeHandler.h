@@ -4,6 +4,13 @@
 #include <unordered_map>
 #include <vector>
 #include <map>
+#include <memory>
+
+#include "TF1.h"
+#include "TH2I.h"
+#include "TROOT.h"
+#include "TFile.h"
+#include "TDirectoryFile.h"
 
 #include "particleType.h"
 #include "DLorentzVector.h"
@@ -71,14 +78,14 @@ class DSourceComboTimeHandler
 		shared_ptr<const DKinematicData> Create_KinematicData_Photon(const DNeutralShower* locNeutralShower, const DVector3& locVertex) const;
 
 		void Calc_PhotonBeamBunchShifts(const DNeutralShower* locNeutralShower, shared_ptr<const DKinematicData>& locKinematicData, double locRFTime, signed char locZBin);
-		vector<int> Calc_BeamBunchShifts(double locVertexTime, double locRFTime, double locDeltaTCut, bool locIncludeDecayTimeOffset) const;
+		vector<int> Calc_BeamBunchShifts(double locVertexTime, double locOrigRFBunchPropagatedTime, double locDeltaTCut, bool locIncludeDecayTimeOffset) const;
 
 		double Calc_MaxDeltaTError(const DNeutralShower* locNeutralShower, const shared_ptr<const DKinematicData>& locKinematicData) const;
 
 		vector<int> Get_RFBunches_ChargedTrack(const DChargedTrackHypothesis* locHypothesis, bool locIsProductionVertex, const DSourceCombo* locVertexPrimaryCombo, DVector3 locVertex, double locTimeOffset, double locPropagatedRFTime);
 
-		double Calc_RFDeltaTChiSq(const DNeutralShower* locNeutralShower, const TVector3& locVertex, double locPropagatedRFTime) const;
-		double Calc_RFDeltaTChiSq(const DChargedTrackHypothesis* locHypothesis, double locVertexTime, double locPropagatedRFTime) const;
+		pair<double, double> Calc_RFDeltaTChiSq(const DNeutralShower* locNeutralShower, const TVector3& locVertex, double locPropagatedRFTime) const;
+		pair<double, double> Calc_RFDeltaTChiSq(const DChargedTrackHypothesis* locHypothesis, double locVertexTime, double locPropagatedRFTime) const;
 
 		//HANDLERS AND UTILITIES
 		DSourceComboer* dSourceComboer;
@@ -126,6 +133,9 @@ class DSourceComboTimeHandler
 
 		//CUTS
 		map<Particle_t, map<DetectorSystem_t, TF1*>> dPIDTimingCuts; //function of shower energy (p)
+
+		//HISTOGRAMS
+		map<Particle_t, TH2*> dHistMap_RFDeltaTVsP;
 };
 
 inline void DSourceComboTimeHandler::Reset(void)
@@ -220,7 +230,7 @@ inline vector<int> DSourceComboTimeHandler::Get_CommonRFBunches(const vector<int
 	return locCommonRFBunches;
 }
 
-inline double DSourceComboTimeHandler::Calc_RFDeltaTChiSq(const DNeutralShower* locNeutralShower, const TVector3& locVertex, double locPropagatedRFTime) const
+inline pair<double, double> DSourceComboTimeHandler::Calc_RFDeltaTChiSq(const DNeutralShower* locNeutralShower, const TVector3& locVertex, double locPropagatedRFTime) const
 {
 	//calc vertex time, get delta-t cut
 	auto locPathLength = (locNeutralShower->dSpacetimeVertex.Vect() - locVertex).Mag();
@@ -232,10 +242,10 @@ inline double DSourceComboTimeHandler::Calc_RFDeltaTChiSq(const DNeutralShower* 
 	if(dDebugLevel >= 5)
 		cout << "neutral Calc_RFDeltaTChiSq(): vertex time, rf time, delta-t, chisq = " << locVertexTime << ", " << locPropagatedRFTime << ", " << locDeltaT << ", " << locChiSq << endl;
 
-	return locChiSq;
+	return std::make_pair(locDeltaT, locChiSq);
 }
 
-inline double DSourceComboTimeHandler::Calc_RFDeltaTChiSq(const DChargedTrackHypothesis* locHypothesis, double locVertexTime, double locPropagatedRFTime) const
+inline pair<double, double> DSourceComboTimeHandler::Calc_RFDeltaTChiSq(const DChargedTrackHypothesis* locHypothesis, double locVertexTime, double locPropagatedRFTime) const
 {
 	//calc vertex time, get delta-t cut
 	auto locErrorMatrix = locHypothesis->errorMatrix();
@@ -245,7 +255,7 @@ inline double DSourceComboTimeHandler::Calc_RFDeltaTChiSq(const DChargedTrackHyp
 	if(dDebugLevel >= 5)
 		cout << "charged Calc_RFDeltaTChiSq(): vertex time, rf time, delta-t, chisq = " << locVertexTime << ", " << locPropagatedRFTime << ", " << locDeltaT << ", " << locChiSq << endl;
 
-	return locChiSq;
+	return std::make_pair(locDeltaT, locChiSq);
 }
 
 }

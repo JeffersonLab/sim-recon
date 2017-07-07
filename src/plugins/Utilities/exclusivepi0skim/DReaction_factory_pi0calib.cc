@@ -8,7 +8,6 @@
 
 #include "DReaction_factory_pi0calib.h"
 #include "DCustomAction_CutPhotonKin.h"
-//#include "DCustomAction_dEdxCut.h"
 
 //------------------
 // init
@@ -64,7 +63,6 @@ jerror_t DReaction_factory_pi0calib::init(void)
 		locReaction->Set_MaxPhotonRFDeltaT(0.5*dBeamBunchPeriod); //beam bunches are every 4.008 ns, (2.004 should be minimum cut value)
 		locReaction->Set_MaxExtraGoodTracks(4);
 		locReaction->Set_InvariantMassCut(Pi0, 0.05, 0.22);
-//		locReaction->Add_AnalysisAction(new DCustomAction_dEdxCut(locReaction, false)); //true: focus on rejecting background
 
 	// Require BCAL photons
 	locReaction->Add_AnalysisAction(new DCustomAction_CutPhotonKin(locReaction));

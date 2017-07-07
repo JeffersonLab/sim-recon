@@ -757,6 +757,8 @@ void DHistogramAction_ParticleComboKinematics::Initialize(JEventLoop* locEventLo
 	vector<const DAnalysisUtilities*> locAnalysisUtilitiesVector;
 	locEventLoop->Get(locAnalysisUtilitiesVector);
 
+	auto locIsFirstStepBeam = DAnalysis::Get_IsFirstStepBeam(Get_Reaction());
+
 	//CREATE THE HISTOGRAMS
 	//Since we are creating histograms, the contents of gDirectory will be modified: must use JANA-wide ROOT lock
 	japp->RootWriteLock(); //ACQUIRE ROOT LOCK!!
@@ -769,8 +771,7 @@ void DHistogramAction_ParticleComboKinematics::Initialize(JEventLoop* locEventLo
 
 		//beam particle
 		locPID = Get_Reaction()->Get_ReactionStep(0)->Get_InitialPID();
-		bool locBeamParticleUsed = (locPID == Gamma);
-		if(locBeamParticleUsed)
+		if(locIsFirstStepBeam)
 		{
 			locParticleName = string("Beam_") + ParticleType(locPID);
 			CreateAndChangeTo_Directory(locParticleName, locParticleName);
@@ -843,7 +844,7 @@ void DHistogramAction_ParticleComboKinematics::Initialize(JEventLoop* locEventLo
 			else //kinematic fit: decaying & missing particles are reconstructed
 			{
 				locPIDs = Get_Reaction()->Get_FinalPIDs(loc_i, false, true, d_AllCharges, false);
-				if((!locBeamParticleUsed) || (loc_i != 0)) //add decaying parent particle //skip if on beam particle!
+				if((!locIsFirstStepBeam) || (loc_i != 0)) //add decaying parent particle //skip if on beam particle!
 					locPIDs.insert(locPIDs.begin(), locInitialPID);
 
 				Particle_t locMissingPID = locReactionStep->Get_MissingPID();
@@ -990,6 +991,7 @@ bool DHistogramAction_ParticleComboKinematics::Perform_Action(JEventLoop* locEve
 	}
 
 	const DEventRFBunch* locEventRFBunch = locParticleCombo->Get_EventRFBunch();
+	auto locIsFirstStepBeam = DAnalysis::Get_IsFirstStepBeam(Get_Reaction());
 
 	const DKinematicData* locKinematicData;
 	for(size_t loc_i = 0; loc_i < locParticleCombo->Get_NumParticleComboSteps(); ++loc_i)
@@ -1005,7 +1007,7 @@ bool DHistogramAction_ParticleComboKinematics::Perform_Action(JEventLoop* locEve
 			locKinematicData = locParticleComboStep->Get_InitialParticle_Measured();
 		if(locKinematicData != NULL)
 		{
-			if(locInitialPID == Gamma)
+			if(locIsFirstStepBeam)
 			{
 				//check if will be duplicate
 				const JObject* locSourceObject = locParticleComboStep->Get_InitialParticle_Measured();
@@ -1016,7 +1018,7 @@ bool DHistogramAction_ParticleComboKinematics::Perform_Action(JEventLoop* locEve
 				}
 			}
 			else if(Get_UseKinFitResultsFlag()) //decaying particle, but kinfit so can hist
-				Fill_Hists(locEventLoop, locKinematicData, false, locEventRFBunch, loc_i); //has many source object, and is unique to this combo: no dupes to check against: let it ride
+				Fill_Hists(locEventLoop, locKinematicData, false, loc_i); //has many source object, and is unique to this combo: no dupes to check against: let it ride
 		}
 
 		//VERTEX INFORMATION
@@ -1078,13 +1080,13 @@ bool DHistogramAction_ParticleComboKinematics::Perform_Action(JEventLoop* locEve
 			}
 
 			bool locIsMissingFlag = (Get_Reaction()->Get_ReactionStep(loc_i)->Get_MissingParticleIndex() == int(loc_j));
-			Fill_Hists(locEventLoop, locKinematicData, locIsMissingFlag, locEventRFBunch, loc_i);
+			Fill_Hists(locEventLoop, locKinematicData, locIsMissingFlag, loc_i);
 		} //end of particle loop
 	} //end of step loop
 	return true;
 }
 
-void DHistogramAction_ParticleComboKinematics::Fill_Hists(JEventLoop* locEventLoop, const DKinematicData* locKinematicData, bool locIsMissingFlag, const DEventRFBunch* locEventRFBunch, size_t locStepIndex)
+void DHistogramAction_ParticleComboKinematics::Fill_Hists(JEventLoop* locEventLoop, const DKinematicData* locKinematicData, bool locIsMissingFlag, size_t locStepIndex)
 {
 	Particle_t locPID = locKinematicData->PID();
 	DVector3 locMomentum = locKinematicData->momentum();

@@ -6,7 +6,6 @@
 //
 
 
-#include "DCustomAction_dEdxCut_p2pi.h"
 #include "DCustomAction_p2pi_hists.h"
 #include "DCustomAction_p2pi_cuts.h"
 #include "DCustomAction_p2pi_unusedHists.h"
@@ -97,7 +96,7 @@ jerror_t DReaction_factory_p2pi_trees::evnt(JEventLoop* locEventLoop, uint64_t l
 	locReaction->Add_AnalysisAction(new DCutAction_PIDDeltaT(locReaction, false, 2.0, PiMinus, SYS_TOF));
 	locReaction->Add_AnalysisAction(new DCutAction_PIDDeltaT(locReaction, false, 1.5, PiMinus, SYS_BCAL));
 	locReaction->Add_AnalysisAction(new DCutAction_PIDDeltaT(locReaction, false, 3.0, PiMinus, SYS_FCAL));
-	locReaction->Add_AnalysisAction(new DCustomAction_dEdxCut_p2pi(locReaction, false)); //false: focus on keeping signal
+	locReaction->Add_AnalysisAction(new DCutAction_dEdx(locReaction));
 	locReaction->Add_AnalysisAction(new DHistogramAction_PID(locReaction, "PostPIDCuts"));
 
 	// Custom histograms for p2pi
@@ -112,7 +111,6 @@ jerror_t DReaction_factory_p2pi_trees::evnt(JEventLoop* locEventLoop, uint64_t l
 
 	if(unused) {
 	  // Custom cuts (can be applied in TSelector)
-	  locReaction->Add_AnalysisAction(new DCutAction_ProtonPiPlusdEdx(locReaction, 2.2, true)); //select p/pi+ above/below 2.2, //true/false: cut all/no proton candidates above p = 1 GeV/c
 	  locReaction->Add_AnalysisAction(new DCutAction_MissingMassSquared(locReaction, false, -0.006, 0.004));
 	  locReaction->Add_AnalysisAction(new DCustomAction_p2pi_cuts(locReaction, false));
 

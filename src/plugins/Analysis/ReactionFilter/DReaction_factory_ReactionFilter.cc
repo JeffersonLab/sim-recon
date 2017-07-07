@@ -326,7 +326,7 @@ void DReaction_factory_ReactionFilter::Add_PIDActions(DReaction* locReaction)
 	}
 
 	//Loose dE/dx cuts
-	locReaction->Add_AnalysisAction(new DCustomAction_dEdxCut(locReaction, false)); //false: focus on keeping signal
+	locReaction->Add_AnalysisAction(new DCutAction_dEdx(locReaction));
 }
 
 void DReaction_factory_ReactionFilter::Add_MassHistograms(DReaction* locReaction, FSInfo* locFSInfo, bool locUseKinFitResultsFlag, string locBaseUniqueName)

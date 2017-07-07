@@ -52,7 +52,7 @@ DCutAction_InvariantMass
 
 DCutAction_TransverseMomentum
 DCutAction_TrackHitPattern
-DCutAction_ProtonPiPlusdEdx
+DCutAction_dEdx
 DCutAction_BeamEnergy
 DCutAction_TrackShowerEOverP
 DCutAction_TrackFCALShowerEOverP
@@ -520,28 +520,21 @@ class DCutAction_TrackHitPattern : public DAnalysisAction
 		unsigned int dMinHitPlanesPerFDCPackage;
 };
 
-class DCutAction_ProtonPiPlusdEdx : public DAnalysisAction
+class DCutAction_dEdx : public DAnalysisAction
 {
-	//At p > "dOverlapRegionMinP" (default 1.0 GeV/c) you can't distinguish between protons & pions
-		// Assume they are pions, and so for pion candidates don't cut regardless of the dE/dx
-		// For protons, only cut if "dCutProtonsInOverlapRegionFlag" is true
-
 	public:
 
-		DCutAction_ProtonPiPlusdEdx(const DReaction* locReaction, double locTrackdEdxCut_InKeV, bool locCutProtonsInOverlapRegionFlag = false, string locActionUniqueString = "") :
-		DAnalysisAction(locReaction, "Cut_ProtonPiPlusdEdx", false, locActionUniqueString),
-		dTrackdEdxCut_InKeV(locTrackdEdxCut_InKeV), dCutProtonsInOverlapRegionFlag(locCutProtonsInOverlapRegionFlag), dOverlapRegionMinP(1.0) {}
+		DCutAction_dEdx(const DReaction* locReaction, string locActionUniqueString = "") :
+		DAnalysisAction(locReaction, "Cut_dEdx", false, locActionUniqueString){}
 
-		void Initialize(JEventLoop* locEventLoop){};
-		string Get_ActionName(void) const;
+		void Initialize(JEventLoop* locEventLoop);
+		bool Cut_dEdx(const DChargedTrackHypothesis* locChargedTrackHypothesis);
+
+		bool dCutOverlapFlag = false;
+		map<Particle_t, pair<TF1*, TF1*>> dCutMap; //pair: first is lower bound, second is upper bound
 
 	private:
-
 		bool Perform_Action(JEventLoop* locEventLoop, const DParticleCombo* locParticleCombo);
-
-		double dTrackdEdxCut_InKeV;
-		bool dCutProtonsInOverlapRegionFlag;
-		double dOverlapRegionMinP;
 };
 
 class DCutAction_BeamEnergy : public DAnalysisAction

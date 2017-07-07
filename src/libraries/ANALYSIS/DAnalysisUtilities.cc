@@ -802,23 +802,20 @@ DLorentzVector DAnalysisUtilities::Calc_MissingP4(const DReaction* locReaction, 
 	auto locParticles = locUseKinFitDataFlag ? locParticleComboStep->Get_FinalParticles() : locParticleComboStep->Get_FinalParticles_Measured();
 	for(size_t loc_j = 0; loc_j < locParticles.size(); ++loc_j)
 	{
-		//DecayStepIndex: one for each final particle: -2 if detected, -1 if missing, >= 0 if decaying, where the # is the step representing the particle decay
-		int locDecayStepIndex = DAnalysis::Get_DecayStepIndex(locReaction, locStepIndex, loc_j);
-
-		if((locDecayStepIndex == -1) || (locDecayStepIndex == -3))
-			continue; //missing particle or no blueprint
-
+		if(int(loc_j) == locReactionStep->Get_MissingParticleIndex())
+			continue; //exclude missing particle
 		if((int(locStepIndex) == locUpToStepIndex) && (locUpThroughIndices.find(loc_j) == locUpThroughIndices.end()))
 			continue; //skip it: don't want to include it
 
-		Particle_t locPID = locReactionStep->Get_FinalPID(loc_j);
-		if(locDecayStepIndex == -2) //detected
+		int locDecayStepIndex = DAnalysis::Get_DecayStepIndex(locReaction, locStepIndex, loc_j);
+		if(locDecayStepIndex > 0) //decaying-particle
+			locMissingP4 += Calc_MissingP4(locReaction, locParticleCombo, locDecayStepIndex, locUpToStepIndex, locUpThroughIndices, locSourceObjects, locUseKinFitDataFlag); //p4 returned is already < 0
+		else //detected
 		{
+			Particle_t locPID = locReactionStep->Get_FinalPID(loc_j);
 			locMissingP4 -= locParticles[loc_j]->lorentzMomentum();
 			locSourceObjects.insert(pair<const JObject*, unsigned int>(locParticleComboStep->Get_FinalParticle_SourceObject(loc_j), abs(PDGtype(locPID))));
 		}
-		else //decaying-particle
-			locMissingP4 += Calc_MissingP4(locReaction, locParticleCombo, locDecayStepIndex, locUpToStepIndex, locUpThroughIndices, locSourceObjects, locUseKinFitDataFlag); //p4 returned is already < 0
 	}
 
 	return locMissingP4;
@@ -840,6 +837,7 @@ TMatrixFSym DAnalysisUtilities::Calc_MissingP3Covariance(const DReaction* locRea
 	//missing covariance is just sum of covariance matrices of all particles used in the calculation
 		//because errors are uncorrelated: this doesn't work on kinfit data: just use kinfit matrix from missing particle then
 	const DParticleComboStep* locParticleComboStep = locParticleCombo->Get_ParticleComboStep(locStepIndex);
+	auto locReactionStep = locReaction->Get_ReactionStep(locStepIndex);
 	TMatrixFSym locMissingCovarianceMatrix(3);
 	locMissingCovarianceMatrix.Zero();
 
@@ -856,22 +854,20 @@ TMatrixFSym DAnalysisUtilities::Calc_MissingP3Covariance(const DReaction* locRea
 	auto locParticles = locParticleComboStep->Get_FinalParticles_Measured();
 	for(size_t loc_j = 0; loc_j < locParticles.size(); ++loc_j)
 	{
-		//DecayStepIndex: one for each final particle: -2 if detected, -1 if missing, >= 0 if decaying, where the # is the step representing the particle decay
-		int locDecayStepIndex = DAnalysis::Get_DecayStepIndex(locReaction, locStepIndex, loc_j);
-		if((locDecayStepIndex == -1) || (locDecayStepIndex == -3))
-			continue; //missing particle or no blueprint
-
+		if(int(loc_j) == locReactionStep->Get_MissingParticleIndex())
+			continue; //exclude missing particle
 		if((int(locStepIndex) == locUpToStepIndex) && (locUpThroughIndices.find(loc_j) == locUpThroughIndices.end()))
 			continue; //skip it: don't want to include it
 
-		if(locDecayStepIndex == -2) //detected
+		int locDecayStepIndex = DAnalysis::Get_DecayStepIndex(locReaction, locStepIndex, loc_j);
+		if(locDecayStepIndex > 0) //decaying-particle
+			locMissingCovarianceMatrix += Calc_MissingP3Covariance(locReaction, locParticleCombo, locDecayStepIndex, locUpToStepIndex, locUpThroughIndices);
+		else //detected
 		{
 			TMatrixFSym locParticleCovarianceMatrix = *(locParticles[loc_j]->errorMatrix());
 			locParticleCovarianceMatrix.ResizeTo(3, 3);
 			locMissingCovarianceMatrix += locParticleCovarianceMatrix;
 		}
-		else //decaying-particle
-			locMissingCovarianceMatrix += Calc_MissingP3Covariance(locReaction, locParticleCombo, locDecayStepIndex, locUpToStepIndex, locUpThroughIndices);
 	}
 
 	return locMissingCovarianceMatrix;
@@ -917,7 +913,7 @@ DLorentzVector DAnalysisUtilities::Calc_FinalStateP4(const DReaction* locReactio
 			return (DLorentzVector()); //bad!
 
 		int locDecayStepIndex = DAnalysis::Get_DecayStepIndex(locReaction, locStepIndex, loc_i);
-		if(locDecayStepIndex >= 0)
+		if(locDecayStepIndex >= 0) //decaying particle
 		{
 			//measured results, or not constrained by kinfit (either non-fixed mass or excluded from kinfit)
 			if((!locUseKinFitDataFlag) || (!IsFixedMass(locReactionStep->Get_FinalPID(loc_i))))
@@ -929,7 +925,7 @@ DLorentzVector DAnalysisUtilities::Calc_FinalStateP4(const DReaction* locReactio
 				Calc_FinalStateP4(locReaction, locParticleCombo, locDecayStepIndex, set<size_t>(), locSourceObjects, locUseKinFitDataFlag);
 			}
 		}
-		else
+		else //detected particle
 		{
 			locFinalStateP4 += locParticles[loc_i]->lorentzMomentum();
 			locSourceObjects.insert(pair<const JObject*, unsigned int>(locParticleComboStep->Get_FinalParticle_SourceObject(loc_i), abs(PDGtype(locParticles[loc_i]->PID()))));

@@ -127,7 +127,7 @@ bool DCustomAction_p2pi_hists::Perform_Action(JEventLoop* locEventLoop, const DP
 		const DChargedTrack* locChargedTrack = static_cast<const DChargedTrack*>(locParticleComboStep->Get_FinalParticle_SourceObject(0));
 		const DChargedTrackHypothesis* locChargedTrackHypothesis = locChargedTrack->Get_Hypothesis(Proton);
 		dEdx = locChargedTrackHypothesis->Get_TrackTimeBased()->dEdx()*1e6; // convert to keV
-		locProtonP4 = locChargedTrackHypothesis->lorentzMomentum();	
+		locProtonP4 = locChargedTrackHypothesis->lorentzMomentum();
 	}
 	else locProtonP4 = locMissingP4;
 
@@ -155,7 +155,7 @@ bool DCustomAction_p2pi_hists::Perform_Action(JEventLoop* locEventLoop, const DP
 	TVector3 angles( (p1_res.Vect()).Dot(x),
 			 (p1_res.Vect()).Dot(y),
 			 (p1_res.Vect()).Dot(z) );
-	
+
 	double cosTheta = angles.CosTheta();
 	double phi = angles.Phi();
 	
@@ -203,7 +203,7 @@ bool DCustomAction_p2pi_hists::Perform_Action(JEventLoop* locEventLoop, const DP
 					
 					dEgamma_M2pi->Fill(locP4_2pi.M(), locBeamPhotonEnergy);
 					dDeltaE_M2pi_ProtonTag->Fill(locP4_2pi.M(),locMissingP4.E());
-					
+
 					DLorentzVector locP4_ppiplus = locProtonP4;
 					DLorentzVector locP4_ppiminus = locProtonP4;
 					locP4_ppiplus += locParticles[1]->lorentzMomentum();
@@ -213,7 +213,7 @@ bool DCustomAction_p2pi_hists::Perform_Action(JEventLoop* locEventLoop, const DP
 						dMppiplus_M2pi->Fill(locP4_2pi.M(), locP4_ppiplus.M());
 						dMppiminus_M2pi->Fill(locP4_2pi.M(), locP4_ppiminus.M());
 					}
-					
+
 					// some p pi+ mass distributions (hunt for Delta++...)
 					if(locBeamPhotonEnergy < cohmin_energy)
 						dBaryonM_CosTheta_Egamma1->Fill(cosTheta,locP4_ppiplus.M());

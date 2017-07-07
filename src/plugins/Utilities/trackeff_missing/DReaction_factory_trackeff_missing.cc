@@ -9,7 +9,6 @@
 #include "DCustomAction_TrackingEfficiency.h"
 #include "DCustomAction_CutExtraPi0.h"
 #include "DCustomAction_CutExtraShowers.h"
-#include "DCustomAction_dEdxCut_trackeff.h"
 #include "DCustomAction_CutNoDetectorHit.h"
 
 //------------------
@@ -248,7 +247,6 @@ jerror_t DReaction_factory_trackeff_missing::evnt(JEventLoop* locEventLoop, uint
 			//If a histogram action is repeated, it should be created with a unique name (string) to distinguish them
 
 		//FURTHER PID
-		locReaction->Add_AnalysisAction(new DCustomAction_dEdxCut_trackeff(locReaction, true)); //true: focus on rejecting background
 		locReaction->Add_AnalysisAction(new DCutAction_TrackFCALShowerEOverP(locReaction, false, 0.5)); //false: measured data //value: cut e+/e- below this, tracks above this
 		locReaction->Add_AnalysisAction(new DCutAction_EachPIDFOM(locReaction, -9.9E9, true)); //cut particles with PID FOM = 0
 
@@ -507,7 +505,7 @@ void DReaction_factory_trackeff_missing::Add_PIDActions(DReaction* locReaction)
 	}
 
 	//Loose dE/dx cuts
-	locReaction->Add_AnalysisAction(new DCustomAction_dEdxCut_trackeff(locReaction, false)); //false: focus on keeping signal
+	locReaction->Add_AnalysisAction(new DCutAction_dEdx(locReaction));
 }
 
 void DReaction_factory_trackeff_missing::Add_MassHistograms(DReaction* locReaction, bool locKinFitFlag, string locBaseUniqueName)

@@ -883,43 +883,54 @@ bool DCutAction_TrackHitPattern::Cut_TrackHitPattern(const DParticleID* locParti
 	return true;
 }
 
-string DCutAction_ProtonPiPlusdEdx::Get_ActionName(void) const
+void DCutAction_dEdx::Initialize(JEventLoop* locEventLoop)
 {
-	ostringstream locStream;
-	locStream << DAnalysisAction::Get_ActionName() << "_" << dTrackdEdxCut_InKeV;
-	return locStream.str();
+	if(dCutMap.find(Proton) == dCutMap.end())
+	{
+		dCutMap[Proton].first = new TF1("df_dEdxCut_ProtonLow", "exp(-1.0*[0]*x + [1]) + [2]", 0.0, 12.0);
+		dCutMap[Proton].first->SetParameters(3.93024, 3.0, 1.0);
+		dCutMap[Proton].second = new TF1("df_dEdxCut_ProtonHigh", "[0]", 0.0, 12.0);
+		dCutMap[Proton].second->SetParameter(0, 9999999.9);
+	}
+
+	if(dCutMap.find(PiPlus) == dCutMap.end())
+	{
+		dCutMap[PiPlus].first = new TF1("df_dEdxCut_PionLow", "[0]", 0.0, 12.0);
+		dCutMap[PiPlus].first->SetParameter(0, -1.0);
+		dCutMap[PiPlus].second = new TF1("df_dEdxCut_PionHigh", "exp(-1.0*[0]*x + [1]) + [2]", 0.0, 12.0);
+		dCutMap[PiPlus].second->SetParameters(6.0, 2.80149, 2.55);
+	}
 }
 
-bool DCutAction_ProtonPiPlusdEdx::Perform_Action(JEventLoop* locEventLoop, const DParticleCombo* locParticleCombo)
+bool DCutAction_dEdx::Perform_Action(JEventLoop* locEventLoop, const DParticleCombo* locParticleCombo)
 {
-	//ONLY Cut between p/pi+ in the CDC (not the FDC: most protons large angles, so most high dE/dx tracks in the FDC are pions)
-
-	//At p > "dOverlapRegionMinP" (default 1.0 GeV/c) you can't distinguish between protons & pions
-		// Assume they are pions, and so for pion candidates don't cut regardless of the dE/dx
-		// For protons, only cut if "dCutProtonsInOverlapRegionFlag" is true
 	auto locParticles = locParticleCombo->Get_FinalParticles_Measured(Get_Reaction(), d_Charged);
 	for(size_t loc_i = 0; loc_i < locParticles.size(); ++loc_i)
 	{
-		const DChargedTrackHypothesis* locChargedTrackHypothesis = static_cast<const DChargedTrackHypothesis*>(locParticles[loc_i]);
-		Particle_t locPID = locChargedTrackHypothesis->PID();
-		if((locPID != Proton) && (locPID != PiPlus))
-			continue;
-
-		if(locChargedTrackHypothesis->momentum().Mag() > dOverlapRegionMinP)
-		{
-			if((locPID == Proton) && dCutProtonsInOverlapRegionFlag)
-				return false;
-			continue;
-		}
-
-		auto locTrackTimeBased = locChargedTrackHypothesis->Get_TrackTimeBased();
-		if((locPID == Proton) && (locTrackTimeBased->ddEdx_CDC*1.0E6 < dTrackdEdxCut_InKeV))
-			return false;
-		if((locPID == PiPlus) && (locTrackTimeBased->ddEdx_CDC*1.0E6 > dTrackdEdxCut_InKeV))
+		auto locChargedTrackHypothesis = static_cast<const DChargedTrackHypothesis*>(locParticles[loc_i]);
+		if(!Cut_dEdx(locChargedTrackHypothesis))
 			return false;
 	}
 
 	return true;
+}
+
+bool DCutAction_dEdx::Cut_dEdx(const DChargedTrackHypothesis* locChargedTrackHypothesis)
+{
+	auto locTrackTimeBased = locChargedTrackHypothesis->Get_TrackTimeBased();
+
+	Particle_t locPID = locChargedTrackHypothesis->PID();
+	if(dCutMap.find(locPID) == dCutMap.end())
+		return true;
+	auto locCutPair = dCutMap[locPID];
+
+	if(locTrackTimeBased->dNumHitsUsedFordEdx_CDC == 0)
+		return true;
+
+	auto locP = locTrackTimeBased->momentum().Mag();
+	auto locdEdx = locTrackTimeBased->ddEdx_CDC*1.0E6;
+
+	return ((locdEdx >= locCutPair.first->Eval(locP)) || (locdEdx <= locCutPair.second->Eval(locP)));
 }
 
 string DCutAction_BeamEnergy::Get_ActionName(void) const

@@ -6,7 +6,6 @@
 //
 
 #include "DReaction_factory_OmegaSkim.h"
-#include "DCustomAction_dEdxCut_p3pi.h"
 
 void DReaction_factory_OmegaSkim::PIDCuts(DReaction* locReaction)
 {
@@ -22,7 +21,6 @@ void DReaction_factory_OmegaSkim::PIDCuts(DReaction* locReaction)
   locReaction->Add_AnalysisAction(new DCutAction_PIDDeltaT(locReaction, false, 3.0, PiMinus, SYS_FCAL));
   locReaction->Add_AnalysisAction(new DCutAction_PIDDeltaT(locReaction, false, 2.0, Gamma, SYS_BCAL)); //false: measured data
   locReaction->Add_AnalysisAction(new DCutAction_PIDDeltaT(locReaction, false, 3.0, Gamma, SYS_FCAL)); //false: measured data
-  locReaction->Add_AnalysisAction(new DCustomAction_dEdxCut_p3pi(locReaction, false)); //false: focus on keeping signal
   locReaction->Add_AnalysisAction(new DHistogramAction_PID(locReaction, "PostPIDCuts"));
 
   // Cut low beam energy as tagger settings change during 2017-01

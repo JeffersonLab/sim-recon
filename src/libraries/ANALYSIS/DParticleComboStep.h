@@ -9,6 +9,7 @@
 #include "PID/DKinematicData.h"
 #include "PID/DNeutralParticleHypothesis.h"
 #include "PID/DChargedTrackHypothesis.h"
+#include "PID/DChargedTrack.h"
 #include "ANALYSIS/DReactionStep.h"
 
 using namespace std;
@@ -184,7 +185,11 @@ inline const JObject* Get_FinalParticle_SourceObject(const DKinematicData* locPa
 
 	auto locChargedHypo = dynamic_cast<const DChargedTrackHypothesis*>(locParticle);
 	if(locChargedHypo != nullptr)
-		return static_cast<const JObject*>(locChargedHypo->Get_TrackTimeBased());
+	{
+		const DChargedTrack* locChargedTrack = nullptr;
+		locChargedHypo->GetSingle(locChargedTrack);
+		return static_cast<const JObject*>(locChargedTrack);
+	}
 
 	auto locNeutralHypo = dynamic_cast<const DNeutralParticleHypothesis*>(locParticle);
 	return ((locNeutralHypo != nullptr) ? static_cast<const JObject*>(locNeutralHypo->Get_NeutralShower()) : nullptr);

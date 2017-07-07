@@ -97,7 +97,7 @@ bool DCustomAction_p2gamma_hists::Perform_Action(JEventLoop* locEventLoop, const
 	const DChargedTrackHypothesis* locChargedTrackHypothesis = locChargedTrack->Get_Hypothesis(Proton);
 	auto locTrackTimeBased = locChargedTrackHypothesis->Get_TrackTimeBased();
 	double dEdx = locTrackTimeBased->dEdx()*1e6; // convert to keV
-	DLorentzVector locProtonP4 = locChargedTrackHypothesis->lorentzMomentum();	
+	DLorentzVector locProtonP4 = locChargedTrackHypothesis->lorentzMomentum();
 	
 	// calculate missing mass
 	DLorentzVector loc2g_P4;
