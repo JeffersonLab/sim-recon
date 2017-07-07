@@ -212,14 +212,15 @@ DSourceComboTimeHandler::DSourceComboTimeHandler(JEventLoop* locEventLoop, DSour
 
 	gPARMS->SetDefaultParameter("COMBO:DEBUG_LEVEL", dDebugLevel);
 
+	//get file name
+	string locOutputFileName = "hd_root.root";
+	if(gPARMS->Exists("OUTPUT_FILENAME"))
+		gPARMS->GetParameter("OUTPUT_FILENAME", locOutputFileName);
+
 	//CREATE HISTOGRAMS
 	japp->RootWriteLock(); //to prevent undefined behavior due to directory changes, etc.
 	{
 		//get and change to the base (file/global) directory
-		string locOutputFileName = "hd_root.root";
-		if(gPARMS->Exists("OUTPUT_FILENAME"))
-			gPARMS->GetParameter("OUTPUT_FILENAME", locOutputFileName);
-
 		TDirectory* locCurrentDir = gDirectory;
 		TFile* locFile = (TFile*)gROOT->FindObject(locOutputFileName.c_str());
 		if(locFile != NULL)
@@ -228,13 +229,13 @@ DSourceComboTimeHandler::DSourceComboTimeHandler(JEventLoop* locEventLoop, DSour
 			gDirectory->cd("/");
 
 		string locDirName = "Independent";
-		TDirectoryFile* locDirectoryFile = static_cast<TDirectoryFile*>(locFile->GetDirectory(locDirName.c_str()));
+		TDirectoryFile* locDirectoryFile = static_cast<TDirectoryFile*>(gDirectory->GetDirectory(locDirName.c_str()));
 		if(locDirectoryFile == NULL)
 			locDirectoryFile = new TDirectoryFile(locDirName.c_str(), locDirName.c_str());
 		locDirectoryFile->cd();
 
 		locDirName = "Combo_Construction";
-		locDirectoryFile = static_cast<TDirectoryFile*>(locFile->GetDirectory(locDirName.c_str()));
+		locDirectoryFile = static_cast<TDirectoryFile*>(gDirectory->GetDirectory(locDirName.c_str()));
 		if(locDirectoryFile == NULL)
 			locDirectoryFile = new TDirectoryFile(locDirName.c_str(), locDirName.c_str());
 		locDirectoryFile->cd();
@@ -334,7 +335,7 @@ void DSourceComboTimeHandler::Setup_NeutralShowers(const vector<const DNeutralSh
 			continue; //no chance that this has duplicates
 		auto& locShowerVector = locRFShowerPair.second;
 		std::sort(locShowerVector.begin(), locShowerVector.end());
-		std::unique(locShowerVector.begin(), locShowerVector.end());
+		locShowerVector.erase(std::unique(locShowerVector.begin(), locShowerVector.end()), locShowerVector.end());
 	}
 }
 

@@ -42,10 +42,6 @@ using namespace jana;
 
 namespace DAnalysis
 {
-//finish comments in Build_ParticleCombos()
-//change all references to bcal/fcal to z-independent/dependent showers
-//When saving ROOT TTree, don't save p4 of decaying particles if mass is not constrained in kinfit!
-	//And make sure it's not grabbed in DSelector by default
 
 /****************************************************** DEFINE LAMBDAS, USING STATEMENTS *******************************************************/
 
@@ -235,7 +231,8 @@ class DSourceComboer : public JObject
 
 		//PARTICLES
 		map<Particle_t, vector<const JObject*>> dTracksByPID;
-		unordered_map<signed char, DPhotonShowersByBeamBunch> dShowersByBeamBunchByZBin; //char: zbin
+		map<bool, vector<const JObject*>> dTracksByCharge; //true/false: positive/negative
+		unordered_map<signed char, DPhotonShowersByBeamBunch> dShowersByBeamBunchByZBin; //char: zbin //for all showers: unknown z-bin, {} RF bunch
 
 		//SOURCE COMBOS //vector: z-bin //if attempted and all failed, DSourceCombosByUse_Large vector will be empty
 		size_t dInitialComboVectorCapacity = 100;
@@ -282,7 +279,6 @@ inline const DSourceCombo* DSourceComboer::Get_ChargedCombo_WithNow(const DSourc
 	return nullptr; //uh oh ...
 }
 
-
 inline size_t DSourceComboer::Get_PhotonVertexZBin(double locVertexZ) const
 {
 	//given some vertex-z, what bin am I in?
@@ -298,25 +294,6 @@ inline double DSourceComboer::Get_PhotonVertexZBinCenter(signed char locVertexZB
 {
 	return dPhotonVertexZRangeLow + (double(locVertexZBin) + 0.5)*dPhotonVertexZBinWidth;
 }
-
-inline bool DSourceComboer::Check_NumParticles(const DReaction* locReaction)
-{
-	//see if enough particles were detected to build this reaction
-	auto locReactionPIDs = locReaction->Get_FinalPIDs(-1, false, false, d_AllCharges, true); //no missing, no decaying, include duplicates
-	auto locPIDMap = DAnalysis::Convert_VectorToCountMap<Particle_t>(locReactionPIDs);
-	if(dDebugLevel > 0)
-		cout << "Checking #particles" << endl;
-	for(const auto& locPIDPair : locPIDMap)
-	{
-		auto locNumParticlesForComboing = Get_ParticlesForComboing(locPIDPair.first, d_MixedStage).size();
-		if(dDebugLevel > 0)
-			cout << ParticleType(locPIDPair.first) << ": Need " << locPIDPair.second << ", Have " << locNumParticlesForComboing << endl;
-		if(locNumParticlesForComboing < locPIDPair.second)
-			return false;
-	}
-	return true;
-}
-
 
 inline bool DSourceComboer::Check_Skims(const DReaction* locReaction) const
 {

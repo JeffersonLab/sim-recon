@@ -265,26 +265,28 @@ inline void Print_SourceComboInfo(const DSourceComboInfo* locComboInfo)
 	auto locNumParticles = locComboInfo->Get_NumParticles(false);
 	cout << "Particles: ";
 	for(auto& locParticlePair : locNumParticles)
-		cout << locParticlePair.second << " " << ParticleType(locParticlePair.first) << ", ";
+		cout << int(locParticlePair.second) << " " << ParticleType(locParticlePair.first) << ", ";
 	cout << endl;
 
 	auto locFurtherDecays = locComboInfo->Get_FurtherDecays();
 	cout << "Decays:" << endl;
 	for(auto& locDecayPair : locFurtherDecays)
 	{
-		cout << locDecayPair.second << " ";
+		cout << int(locDecayPair.second) << " ";
 		Print_SourceComobUse(locDecayPair.first);
 	}
 }
 
 inline void Print_SourceComobUse(const DSourceComboUse& locComboUse)
 {
-	cout << ParticleType(std::get<0>(locComboUse)) << " " << std::get<1>(locComboUse) << ", " << std::get<2>(locComboUse) << endl;
+	cout << ParticleType(std::get<0>(locComboUse)) << " " << int(std::get<1>(locComboUse)) << ", " << std::get<2>(locComboUse) << endl;
 	Print_SourceComboInfo(std::get<2>(locComboUse));
 }
 
 inline void Print_SourceCombo(const DSourceCombo* locCombo)
 {
+	if(locCombo == nullptr)
+		return;
 	cout << "COMBO:" << endl;
 
 	cout << "Z-independent?: " << locCombo->Get_IsComboingZIndependent() << endl;
@@ -311,6 +313,21 @@ inline vector<const JObject*> Get_SourceParticles(const vector<pair<Particle_t, 
 	for(const auto& locParticlePair : locSourceParticles)
 	{
 		if((locPID == Unknown) || (locParticlePair.first == locPID))
+			locOutputParticles.push_back(locParticlePair.second);
+	}
+	return locOutputParticles;
+}
+
+inline vector<const JObject*> Get_SourceParticles(const vector<pair<Particle_t, const JObject*>>& locSourceParticles, int locCharge)
+{
+	//ignores the charge magnitude: only considers if ><= 0
+	vector<const JObject*> locOutputParticles;
+	for(const auto& locParticlePair : locSourceParticles)
+	{
+		auto locParticleCharge = ParticleCharge(locParticlePair.first);
+		if((locParticleCharge == locCharge) && (locParticleCharge == 0))
+			locOutputParticles.push_back(locParticlePair.second);
+		else if(locParticleCharge*locCharge > 0)
 			locOutputParticles.push_back(locParticlePair.second);
 	}
 	return locOutputParticles;

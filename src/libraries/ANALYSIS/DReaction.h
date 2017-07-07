@@ -54,9 +54,13 @@ class DReaction : public JObject
 
 		// SET PRE-DPARTICLECOMBO CUT VALUES //Command-line values will override these values
 		void Set_NumPlusMinusRFBunches(size_t locNumPlusMinusRFBunches){dNumPlusMinusRFBunches = locNumPlusMinusRFBunches;}
-		void Set_MaxPhotonRFDeltaT(double locMaxPhotonRFDeltaT){cout << "WARNING: USING DReaction::Set_MaxPhotonRFDeltaT() IS DEPRECATED. PLEASE SWITCH TO Set_NumPlusMinusRFBunches()" << endl; dMaxPhotonRFDeltaT = pair<bool, double>(true, locMaxPhotonRFDeltaT);} //DEPRECATED!!!
 		void Set_MaxExtraGoodTracks(size_t locMaxExtraGoodTracks){dMaxExtraGoodTracks = pair<bool, size_t>(true, locMaxExtraGoodTracks);}
 		void Set_MaxNumBeamPhotonsInBunch(size_t locMaxNumBeamPhotonsInBunch){dMaxNumBeamPhotonsInBunch = pair<bool, size_t>(true, locMaxNumBeamPhotonsInBunch);}
+
+		//DEPRECATED FUNCTIONS
+		void Set_MaxPhotonRFDeltaT(double locMaxPhotonRFDeltaT);
+		void Set_InvariantMassCut(Particle_t locStepInitialPID, double locMinInvariantMass, double locMaxInvariantMass);
+		void Add_ComboPreSelectionAction(DAnalysisAction* locAction);
 
 		// SET EventStore SKIMS //comma-separated list expected
 		void Set_EventStoreSkims(string locEventStoreSkims){dEventStoreSkims = locEventStoreSkims;}

@@ -143,11 +143,9 @@ class DReaction_factory_${ReactionFactoryTag} : public jana::JFactory<DReaction>
 		const char* Tag(void){return \"$ReactionFactoryTag\";}
 
 	private:
-		jerror_t brun(JEventLoop* locEventLoop, int32_t locRunNumber);
 		jerror_t evnt(JEventLoop* locEventLoop, uint64_t locEventNumber);
 		jerror_t fini(void);						///< Called after last event of last event source has been processed.
 
-		double dBeamBunchPeriod;
 		deque<DReactionStep*> dReactionStepPool; //to prevent memory leaks
 };
 
@@ -165,18 +163,6 @@ sub PrintFactoryMethods()
 	$content = "
 
 \#include \"DReaction_factory_${ReactionFactoryTag}.h\"
-
-//------------------
-// brun
-//------------------
-jerror_t DReaction_factory_${ReactionFactoryTag}::brun(JEventLoop* locEventLoop, int32_t locRunNumber)
-{
-	vector<double> locBeamPeriodVector;
-	locEventLoop->GetCalib(\"PHOTON_BEAM/RF/beam_period\", locBeamPeriodVector);
-	dBeamBunchPeriod = locBeamPeriodVector[0];
-
-	return NOERROR;
-}
 
 //------------------
 // evnt

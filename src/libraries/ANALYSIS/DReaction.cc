@@ -1,5 +1,6 @@
 #include "ANALYSIS/DReaction.h"
 #include "ANALYSIS/DAnalysisAction.h"
+#include "ANALYSIS/DCutActions.h"
 
 namespace DAnalysis
 {
@@ -67,6 +68,24 @@ vector<Particle_t> DReaction::Get_MissingPIDs(int locStepIndex, Charge_t locChar
 		locFinalPIDs.erase(std::unique(locFinalPIDs.begin(), locFinalPIDs.end()), locFinalPIDs.end());
 	}
 	return locFinalPIDs;
+}
+
+void DReaction::Set_MaxPhotonRFDeltaT(double locMaxPhotonRFDeltaT)
+{
+	cout << "WARNING: USING DReaction::Set_MaxPhotonRFDeltaT() IS DEPRECATED. PLEASE SWITCH TO Set_NumPlusMinusRFBunches()." << endl;
+	dMaxPhotonRFDeltaT = pair<bool, double>(true, locMaxPhotonRFDeltaT);
+}
+
+void DReaction::Add_ComboPreSelectionAction(DAnalysisAction* locAction)
+{
+	cout << "WARNING: USING DReaction::Add_ComboPreSelectionAction() IS DEPRECATED. PLEASE SWITCH TO Add_AnalysisAction()." << endl;
+	Add_AnalysisAction(locAction);
+}
+
+void DReaction::Set_InvariantMassCut(Particle_t locStepInitialPID, double locMinInvariantMass, double locMaxInvariantMass)
+{
+	cout << "WARNING: USING DReaction::Set_InvariantMassCut() IS DEPRECATED. PLEASE SWITCH TO Add_AnalysisAction()." << endl;
+	Add_AnalysisAction(new DCutAction_InvariantMass(this, locStepInitialPID, false, locMinInvariantMass, locMaxInvariantMass));
 }
 
 /************************************************************** NAMESPACE-SCOPE FUNCTIONS ***************************************************************/

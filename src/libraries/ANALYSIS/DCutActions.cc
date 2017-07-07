@@ -885,21 +885,25 @@ bool DCutAction_TrackHitPattern::Cut_TrackHitPattern(const DParticleID* locParti
 
 void DCutAction_dEdx::Initialize(JEventLoop* locEventLoop)
 {
-	if(dCutMap.find(Proton) == dCutMap.end())
+	japp->RootWriteLock(); //ACQUIRE ROOT LOCK!! //I have no idea why this is needed, but without it it crashes.  Sigh. 
 	{
-		dCutMap[Proton].first = new TF1("df_dEdxCut_ProtonLow", "exp(-1.0*[0]*x + [1]) + [2]", 0.0, 12.0);
-		dCutMap[Proton].first->SetParameters(3.93024, 3.0, 1.0);
-		dCutMap[Proton].second = new TF1("df_dEdxCut_ProtonHigh", "[0]", 0.0, 12.0);
-		dCutMap[Proton].second->SetParameter(0, 9999999.9);
-	}
+		if(dCutMap.find(Proton) == dCutMap.end())
+		{
+			dCutMap[Proton].first = new TF1("df_dEdxCut_ProtonLow", "exp(-1.0*[0]*x + [1]) + [2]", 0.0, 12.0);
+			dCutMap[Proton].first->SetParameters(3.93024, 3.0, 1.0);
+			dCutMap[Proton].second = new TF1("df_dEdxCut_ProtonHigh", "[0]", 0.0, 12.0);
+			dCutMap[Proton].second->SetParameter(0, 9999999.9);
+		}
 
-	if(dCutMap.find(PiPlus) == dCutMap.end())
-	{
-		dCutMap[PiPlus].first = new TF1("df_dEdxCut_PionLow", "[0]", 0.0, 12.0);
-		dCutMap[PiPlus].first->SetParameter(0, -1.0);
-		dCutMap[PiPlus].second = new TF1("df_dEdxCut_PionHigh", "exp(-1.0*[0]*x + [1]) + [2]", 0.0, 12.0);
-		dCutMap[PiPlus].second->SetParameters(6.0, 2.80149, 2.55);
+		if(dCutMap.find(PiPlus) == dCutMap.end())
+		{
+			dCutMap[PiPlus].first = new TF1("df_dEdxCut_PionLow", "[0]", 0.0, 12.0);
+			dCutMap[PiPlus].first->SetParameter(0, -1.0);
+			dCutMap[PiPlus].second = new TF1("df_dEdxCut_PionHigh", "exp(-1.0*[0]*x + [1]) + [2]", 0.0, 12.0);
+			dCutMap[PiPlus].second->SetParameters(6.0, 2.80149, 2.55);
+		}
 	}
+	japp->RootUnLock(); //RELEASE ROOT LOCK!!
 }
 
 bool DCutAction_dEdx::Perform_Action(JEventLoop* locEventLoop, const DParticleCombo* locParticleCombo)
