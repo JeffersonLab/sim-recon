@@ -38,6 +38,7 @@ class DSourceComboP4Handler
 		//CONSTRUCTORS
 		DSourceComboP4Handler(void) = delete;
 		DSourceComboP4Handler(JEventLoop* locEventLoop, DSourceComboer* locSourceComboer);
+		~DSourceComboP4Handler(void){Fill_Histograms();}
 
 		//SET HANDLERS
 		void Set_SourceComboVertexer(const DSourceComboVertexer* locSourceComboVertexer){dSourceComboVertexer = locSourceComboVertexer;}
@@ -68,6 +69,7 @@ class DSourceComboP4Handler
 
 	private:
 		DLorentzVector Get_P4(Particle_t locPID, const JObject* locObject, signed char locVertexZBin, int locRFBunch);
+		void Fill_Histograms(void);
 
 		//HANDLERS
 		DSourceComboer* dSourceComboer; //for quickly determining whether a combo has a massive neutral or not, and to facilitate access to combo vertices
@@ -90,10 +92,18 @@ class DSourceComboP4Handler
 		//HISTOGRAMS
 		map<Particle_t, TH1*> dHistMap_InvariantMass;
 		map<Particle_t, TH2*> dHistMap_MissingMassSquaredVsBeamEnergy; //none missing = Unknown pid
+		map<Particle_t, vector<float>> dInvariantMasses;
+		map<Particle_t, vector<pair<float, float>>> dMissingMassPairs;
 };
 
 inline void DSourceComboP4Handler::Reset(void)
 {
+	Fill_Histograms();
+	for(auto& locPIDPair : dInvariantMasses)
+		locPIDPair.second.clear();
+	for(auto& locPIDPair : dMissingMassPairs)
+		locPIDPair.second.clear();
+
 	dPhotonKinematics.clear();
 	dFinalStateP4ByCombo.clear();
 	dFinalStateP4ByCombo_HasMassiveNeutrals.clear();
@@ -109,13 +119,8 @@ inline bool DSourceComboP4Handler::Cut_InvariantMass_NoMassiveNeutrals(const DSo
 
 	auto locInvariantMass = Calc_P4_NoMassiveNeutrals(locVertexCombo, locVertexZBin).M();
 
-	//fill histogram
-	japp->WriteLock("DSourceComboP4Handler");
-	{
-		dHistMap_InvariantMass[locDecayPID]->Fill(locInvariantMass);
-	}
-	japp->Unlock("DSourceComboP4Handler");
-
+	//save and cut
+	dInvariantMasses[locDecayPID].emplace_back(locInvariantMass);
 	return ((locInvariantMass >= locMassCuts.first) && (locInvariantMass <= locMassCuts.second));
 }
 

@@ -196,6 +196,12 @@ DSourceComboP4Handler::DSourceComboP4Handler(JEventLoop* locEventLoop, DSourceCo
 			locDirectoryFile = new TDirectoryFile(locDirName.c_str(), locDirName.c_str());
 		locDirectoryFile->cd();
 
+		locDirName = "Invariant_Mass";
+		locDirectoryFile = static_cast<TDirectoryFile*>(gDirectory->GetDirectory(locDirName.c_str()));
+		if(locDirectoryFile == NULL)
+			locDirectoryFile = new TDirectoryFile(locDirName.c_str(), locDirName.c_str());
+		locDirectoryFile->cd();
+
 		//INVARIANT MASS HISTOGRAMS
 		for(const auto& locPIDPair : dInvariantMassCuts)
 		{
@@ -214,6 +220,13 @@ DSourceComboP4Handler::DSourceComboP4Handler(JEventLoop* locEventLoop, DSourceCo
 			else
 				dHistMap_InvariantMass[locPID] = static_cast<TH1*>(locHist);
 		}
+		gDirectory->cd("..");
+
+		locDirName = "Missing_Mass";
+		locDirectoryFile = static_cast<TDirectoryFile*>(gDirectory->GetDirectory(locDirName.c_str()));
+		if(locDirectoryFile == NULL)
+			locDirectoryFile = new TDirectoryFile(locDirName.c_str(), locDirName.c_str());
+		locDirectoryFile->cd();
 
 		//MISSING MASS HISTOGRAMS
 		for(const auto& locPIDPair : dMissingMassSquaredCuts)
@@ -409,6 +422,9 @@ bool DSourceComboP4Handler::Calc_P4_HasMassiveNeutrals(bool locIsProductionVerte
 
 bool DSourceComboP4Handler::Cut_InvariantMass_HasMassiveNeutral(bool locIsProductionVertex, const DSourceCombo* locReactionFullCombo, const DSourceCombo* locVertexCombo, Particle_t locDecayPID, double locPrimaryVertexZ, const DVector3& locVertex, double locTimeOffset, vector<int>& locValidRFBunches)
 {
+	if(locValidRFBunches.empty())
+		return true; //massive neutral p4 not defined, can't cut
+
 	//cuts on possible RF bunches for the massive neutrals
 	//if no possible rf bunch yields a massive-neutral-momentum that passes the invariant mass cut, returns an empty vector
 	auto locCutIterator = dInvariantMassCuts.find(locDecayPID);
@@ -425,13 +441,8 @@ bool DSourceComboP4Handler::Cut_InvariantMass_HasMassiveNeutral(bool locIsProduc
 		if(!Calc_P4_HasMassiveNeutrals(locIsProductionVertex, locReactionFullCombo, locVertexCombo, locVertex, locRFBunch, locRFVertexTime, DSourceComboUse(Unknown, 0, nullptr), locTotalP4))
 			return true; //can't cut it yet!
 
-		//fill histogram
-		japp->WriteLock("DSourceComboP4Handler");
-		{
-			dHistMap_InvariantMass[locDecayPID]->Fill(locTotalP4.M());
-		}
-		japp->Unlock("DSourceComboP4Handler");
-
+		//save and cut
+		dInvariantMasses[locDecayPID].emplace_back(locTotalP4.M());
 		return ((locTotalP4.M() >= locMassCuts.first) && (locTotalP4.M() <= locMassCuts.second));
 	};
 
@@ -613,14 +624,27 @@ bool DSourceComboP4Handler::Cut_MissingMass(const DReaction* locReaction, const 
 		cout << "beam E, missing mass^2 min/max/measured = " << locBeamEnergy << ", " << locMissingMassSquared_Min << ", " << locMissingMassSquared_Max << ", " << locMissingP4.M2() << endl;
 	}
 
-	//fill histogram
+	//save and cut
+	dMissingMassPairs[locMissingPID].emplace_back(locBeamEnergy, locMissingP4.M2());
+	return ((locMissingP4.M2() >= locMissingMassSquared_Min) && (locMissingP4.M2() <= locMissingMassSquared_Max));
+}
+
+void DSourceComboP4Handler::Fill_Histograms(void)
+{
 	japp->WriteLock("DSourceComboP4Handler");
 	{
-		dHistMap_MissingMassSquaredVsBeamEnergy[locMissingPID]->Fill(locBeamEnergy, locMissingP4.M2());
+		for(auto& locPIDPair : dInvariantMasses)
+		{
+			for(auto& locMass : locPIDPair.second)
+				dHistMap_InvariantMass[locPIDPair.first]->Fill(locMass);
+		}
+		for(auto& locPIDPair : dMissingMassPairs)
+		{
+			for(auto& locMassPair : locPIDPair.second)
+				dHistMap_MissingMassSquaredVsBeamEnergy[locPIDPair.first]->Fill(locMassPair.first, locMassPair.second);
+		}
 	}
 	japp->Unlock("DSourceComboP4Handler");
-
-	return ((locMissingP4.M2() >= locMissingMassSquared_Min) && (locMissingP4.M2() <= locMissingMassSquared_Max));
 }
 
 } //end namespace

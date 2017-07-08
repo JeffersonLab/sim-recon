@@ -3,7 +3,6 @@
 #include "ANALYSIS/DSourceComboTimeHandler.h"
 
 //add early dE/dx cut
-//do smarter locking on mass/time histograms
 //finish comments in Build_ParticleCombos()
 //change all references of bcal/fcal to z-independent/dependent showers
 //change all references of showers/photons to particles
@@ -847,7 +846,7 @@ void DSourceComboer::Combo_WithNeutralsAndBeam(const vector<const DReaction*>& l
 	{
 		auto locValidRFBunches = dValidRFBunches_ByCombo[locReactionFullCombo]; //get by value, will cut below if massive neutral
 
-		//if not fully neutral, do the below
+		//if not fully neutral (at least one vertex position is known), do the below
 		if(locReactionChargedCombo != nullptr)
 		{
 			//Calculate vertex positions & time offsets using photons
@@ -855,12 +854,26 @@ void DSourceComboer::Combo_WithNeutralsAndBeam(const vector<const DReaction*>& l
 			//E.g. g, p ->  K0, Sigma+    K0 -> 3pi: The selected pi0 photons could help define the production vertex
 			dSourceComboVertexer->Calc_VertexTimeOffsets_WithPhotons(locReactionVertexInfo, locReactionChargedCombo, locReactionFullCombo);
 
-			//Now further select rf bunches, using tracks and BCAL photon showers at the vertices we just found
+			//Now further select rf bunches, using tracks at the vertices we just found, and BCAL photon showers at any vertex
+			//this also does PID cuts of photons at charged vertices while we're at it
 			if(!dSourceComboTimeHandler->Select_RFBunches_PhotonVertices(locReactionVertexInfo, locReactionFullCombo, locValidRFBunches))
+				continue; //failed PID timing cuts!
+
+			//if no valid RF bunches, but still haven't cut: none of the charged tracks are at known vertices: select RF bunches with charged only
+			if(locValidRFBunches.empty()) //e.g. g, p -> K0, Sigma+   K0 -> pi+, (pi-)
+			{
+				if(!dSourceComboTimeHandler->Select_RFBunches_AllVerticesUnknown(locReactionVertexInfo, locReactionFullCombo, d_Charged, locValidRFBunches))
+					continue; //failed PID timing cuts!
+			}
+		}
+		else //fully neutral, so no known vertices, target center was chosen as vertex for comboing showers //e.g. g, p -> pi0, (p)
+		{
+			//we will never have a vertex, so do PID cuts for ALL photons using target center to select possible RF bunches
+			if(!dSourceComboTimeHandler->Select_RFBunches_AllVerticesUnknown(locReactionVertexInfo, locReactionFullCombo, d_Neutral, locValidRFBunches))
 				continue; //failed PID timing cuts!
 		}
 
-		//PLACE mass cuts on massive neutrals: Effectively narrows down RF bunches
+		//Place mass cuts on massive neutrals: Effectively narrows down RF bunches
 		//do 2 things at once (where vertex is known) (hence the really long function name):
 			//calc & cut invariant mass: when massive neutral present
 			//calc & cut invariant mass: when vertex-z was unknown with only charged tracks, but is known now, and contains BCAL photons (won't happen very often)
