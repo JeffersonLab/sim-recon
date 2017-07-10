@@ -862,12 +862,8 @@ void DSourceComboer::Reset_NewEvent(JEventLoop* locEventLoop)
 	{
 		for(const auto& locChargedHypo : locChargedTrack->dChargedTrackHypotheses)
 		{
-			if((locChargedHypo->PID() == PiPlus) && (locChargedHypo->t1_detector() == SYS_TOF))
-				cout << "TOF input" << endl;
 			if(!Cut_dEdxAndEOverP(locChargedHypo))
 				continue;
-			if((locChargedHypo->PID() == PiPlus) && (locChargedHypo->t1_detector() == SYS_TOF))
-				cout << "TOF registered" << endl;
 			dTracksByPID[locChargedHypo->PID()].push_back(locChargedTrack);
 			dTracksByCharge[ParticleCharge(locChargedHypo->PID()) > 0].push_back(locChargedTrack); //will insert duplicates
 		}

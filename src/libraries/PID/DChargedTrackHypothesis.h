@@ -93,20 +93,20 @@ class DChargedTrackHypothesis : public DKinematicData
 
 		struct DTimingInfo
 		{
-			DTimingInfo(void);
+			void Reset(void);
 
 			//t0 is RF time at track poca to common vertex
-			double dt0;
-			double dt0_err;
-			DetectorSystem_t dt0_detector;
+			double dt0 = 0.0;
+			double dt0_err = 0.0;
+			DetectorSystem_t dt0_detector = SYS_NULL;
 
-			unsigned int dNDF_Timing;
-			double dChiSq_Timing;
+			unsigned int dNDF_Timing = 0;
+			double dChiSq_Timing = 0.0;
 
 			//technically, these can depend on the tracking chisq also, but no one in their right mind would change the tracking dE/dx info
-			unsigned int dNDF; //total NDF used for PID determination
-			double dChiSq; //total chi-squared used for PID determination
-			double dFOM; //overall FOM for PID determination
+			unsigned int dNDF = 0; //total NDF used for PID determination
+			double dChiSq = 0.0; //total chi-squared used for PID determination
+			double dFOM = 0.0; //overall FOM for PID determination
 
 			//problem: how to store timing information accurately?
 
@@ -117,22 +117,22 @@ class DChargedTrackHypothesis : public DKinematicData
 			//however, to save memory, we want to share the kinematics (including time!) with the original (non-combo) hypothesis:
 				//both are valid points on the track, and we don't want to recompute the covariance matrix (TONS of memory needed), etc.
 			//So, that means we need to store the time at the poca to the vertex separately
-			double dTimeAtPOCAToVertex;
+			double dTimeAtPOCAToVertex = 0.0;
 		};
 
 		struct DTrackingInfo
 		{
-			DTrackingInfo(void);
+			void Reset(void);
 
-			unsigned int dNDF_DCdEdx;
-			double dChiSq_DCdEdx;
+			unsigned int dNDF_DCdEdx = 0;
+			double dChiSq_DCdEdx = 0.0;
 
-			const DTrackTimeBased* dTrackTimeBased; //can get candidateid from here
+			const DTrackTimeBased* dTrackTimeBased = nullptr; //can get candidateid from here
 
-			shared_ptr<const DSCHitMatchParams> dSCHitMatchParams;
-			shared_ptr<const DTOFHitMatchParams> dTOFHitMatchParams;
-			shared_ptr<const DBCALShowerMatchParams> dBCALShowerMatchParams;
-			shared_ptr<const DFCALShowerMatchParams> dFCALShowerMatchParams;
+			shared_ptr<const DSCHitMatchParams> dSCHitMatchParams = nullptr;
+			shared_ptr<const DTOFHitMatchParams> dTOFHitMatchParams = nullptr;
+			shared_ptr<const DBCALShowerMatchParams> dBCALShowerMatchParams = nullptr;
+			shared_ptr<const DFCALShowerMatchParams> dFCALShowerMatchParams = nullptr;
 		};
 
 		//memory of object in shared_ptr is managed automatically: deleted automatically when no references are left
@@ -148,7 +148,10 @@ class DChargedTrackHypothesis : public DKinematicData
 
 inline DChargedTrackHypothesis::DChargedTrackHypothesis(void) :
 dTimingInfo(dResourcePool_TimingInfo->Get_SharedResource()), dTrackingInfo(dResourcePool_TrackingInfo->Get_SharedResource())
-{}
+{
+	dTimingInfo->Reset();
+	dTrackingInfo->Reset();
+}
 
 inline DChargedTrackHypothesis::DChargedTrackHypothesis(const DChargedTrackHypothesis& locSourceData, bool locShareTrackingFlag,
 		bool locShareTimingFlag, bool locShareKinematicsFlag) : DKinematicData(locSourceData, locShareKinematicsFlag)
@@ -177,6 +180,8 @@ inline DChargedTrackHypothesis::DChargedTrackHypothesis(const DTrackTimeBased* l
 	//Default is TO share kinematic data
 	dTrackingInfo = dResourcePool_TrackingInfo->Get_SharedResource();
 	dTimingInfo = dResourcePool_TimingInfo->Get_SharedResource();
+	dTimingInfo->Reset();
+	dTrackingInfo->Reset();
 	dTrackingInfo->dTrackTimeBased = locSourceData;
 }
 
@@ -192,15 +197,6 @@ inline DChargedTrackHypothesis& DChargedTrackHypothesis::operator=(const DCharge
 	*dTrackingInfo = *(locSourceData.dTrackingInfo);
 	return *this;
 }
-
-inline DChargedTrackHypothesis::DTimingInfo::DTimingInfo(void) :
-dt0(0.0), dt0_err(0.0), dt0_detector(SYS_NULL), dNDF_Timing(0), dChiSq_Timing(0.0), dNDF(0), dChiSq(0.0), dFOM(0.0), dTimeAtPOCAToVertex(0.0)
-{}
-
-inline DChargedTrackHypothesis::DTrackingInfo::DTrackingInfo(void) :
-dNDF_DCdEdx(0), dChiSq_DCdEdx(0.0), dTrackTimeBased(nullptr),
-dSCHitMatchParams(nullptr), dTOFHitMatchParams(nullptr), dBCALShowerMatchParams(nullptr), dFCALShowerMatchParams(nullptr)
-{}
 
 /********************************************************************** GETTERS ************************************************************************/
 
@@ -305,7 +301,33 @@ inline void DChargedTrackHypothesis::Reset(void)
 {
 	DKinematicData::Reset();
 	dTimingInfo = dResourcePool_TimingInfo->Get_SharedResource(); //not safe to reset individually, since you don't know what it's shared with
+	dTimingInfo->Reset();
 	dTrackingInfo = dResourcePool_TrackingInfo->Get_SharedResource(); //not safe to reset individually, since you don't know what it's shared with
+	dTrackingInfo->Reset();
+}
+
+inline void DChargedTrackHypothesis::DTimingInfo::Reset(void)
+{
+	dt0 = 0.0;
+	dt0_err = 0.0;
+	dt0_detector = SYS_NULL;
+	dNDF_Timing = 0;
+	dChiSq_Timing = 0.0;
+	dNDF = 0;
+	dChiSq = 0.0;
+	dFOM = 0.0;
+	dTimeAtPOCAToVertex = 0.0;
+}
+
+inline void DChargedTrackHypothesis::DTrackingInfo::Reset(void)
+{
+	dNDF_DCdEdx = 0;
+	dChiSq_DCdEdx = 0.0;
+	dTrackTimeBased = nullptr;
+	dSCHitMatchParams = nullptr;
+	dTOFHitMatchParams = nullptr;
+	dBCALShowerMatchParams = nullptr;
+	dFCALShowerMatchParams = nullptr;
 }
 
 #endif // _DChargedTrackHypothesis_

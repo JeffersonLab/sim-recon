@@ -529,8 +529,6 @@ bool DSourceComboTimeHandler::Select_RFBunches_Charged(const DReactionVertexInfo
 		for(const auto& locParticlePair : locChargedParticles)
 		{
 			auto locChargedHypo = static_cast<const DChargedTrack*>(locParticlePair.second)->Get_Hypothesis(locParticlePair.first);
-			if((locChargedHypo->PID() == PiPlus) && (locChargedHypo->t1_detector() == SYS_TOF))
-				cout << "TOF get bunches" << endl;
 			vector<int> locParticleRFBunches;
 			if(!Get_RFBunches_ChargedTrack(locChargedHypo, locIsProductionVertex, locVertexPrimaryCombo, locVertex, locTimeOffset, locPropagatedRFTime, locParticleRFBunches))
 			{

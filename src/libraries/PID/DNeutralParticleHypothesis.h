@@ -69,7 +69,7 @@ class DNeutralParticleHypothesis : public DKinematicData
 
 		struct DTimingInfo
 		{
-			DTimingInfo(void);
+			void Reset(void);
 
 			double dt0 = 0.0;
 			double dt0_err = 0.0;
@@ -87,11 +87,14 @@ class DNeutralParticleHypothesis : public DKinematicData
 		static thread_local shared_ptr<DResourcePool<DTimingInfo>> dResourcePool_TimingInfo;
 };
 
+
 /************************************************************** CONSTRUCTORS & OPERATORS ***************************************************************/
 
 inline DNeutralParticleHypothesis::DNeutralParticleHypothesis(void) :
 dTimingInfo(dResourcePool_TimingInfo->Get_SharedResource()), dNeutralShower(nullptr)
-{}
+{
+	dTimingInfo->Reset();
+}
 
 inline DNeutralParticleHypothesis::DNeutralParticleHypothesis(const DNeutralParticleHypothesis& locSourceData,
 		bool locShareTimingFlag, bool locShareKinematicsFlag) :
@@ -118,10 +121,6 @@ inline DNeutralParticleHypothesis& DNeutralParticleHypothesis::operator=(const D
 	dNeutralShower = locSourceData.dNeutralShower;
 	return *this;
 }
-
-inline DNeutralParticleHypothesis::DTimingInfo::DTimingInfo(void) :
-dt0(0.0), dt0_err(0.0), dt0_detector(SYS_NULL), dNDF(0), dChiSq(0.0), dFOM(0.0)
-{}
 
 /********************************************************************** GETTERS ************************************************************************/
 
@@ -151,6 +150,17 @@ inline void DNeutralParticleHypothesis::Reset(void)
 {
 	DKinematicData::Reset();
 	dTimingInfo = dResourcePool_TimingInfo->Get_SharedResource(); //not safe to reset individually, since you don't know what it's shared with
+	dTimingInfo->Reset();
+}
+
+inline void DNeutralParticleHypothesis::DTimingInfo::Reset(void)
+{
+	dt0 = 0.0;
+	dt0_err = 0.0;
+	dt0_detector = SYS_NULL;
+	dNDF = 0;
+	dChiSq = 0.0;
+	dFOM = 0.0;
 }
 
 #endif // _DNeutralParticleHypothesis_
