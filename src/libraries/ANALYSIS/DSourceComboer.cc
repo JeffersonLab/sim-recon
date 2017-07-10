@@ -2,7 +2,40 @@
 #include "ANALYSIS/DSourceComboVertexer.h"
 #include "ANALYSIS/DSourceComboTimeHandler.h"
 
-//add early dE/dx cut
+/*
+ * PROBLEMS:
+ * All events fail kinfit
+ * counts in survival hists awkward
+ *
+ * TESTING:
+ * p2pi no-kinfit
+ * p2pi kinfit
+ * p3pi no-kinfit
+ * p3pi kinfit
+ * p3pi missing-p no-kinfit
+ * p3pi missing-p kinfit
+ * p2pi + 2pi0s
+ * p2pi + 3pi0s
+ *
+ * K+ Lambda
+ * K+ Sigma0
+ * K+ pi0 Lambda
+ * K0 Sigma+
+ * ...
+ *
+ * ReactionFilter
+ *
+ * Each test:
+ * Yields are same (or reasonably different)
+ * New functions: print to screen to confirm OK
+ */
+
+//When comparing before and after:
+//comment line in Cut_dEdxAndEOverP()
+//comment cut on SC timing
+
+//add ST timing cut
+//put in max-neutrals guard
 //finish comments in Build_ParticleCombos()
 //change all references of bcal/fcal to z-independent/dependent showers
 //change all references of showers/photons to particles
@@ -202,6 +235,199 @@ DSourceComboer::DSourceComboer(JEventLoop* locEventLoop)
 			if(dRFBunchCutsByReaction[locReaction] > dMaxRFBunchCuts[locVertexInfo])
 				dMaxRFBunchCuts[locVertexInfo] = dRFBunchCutsByReaction[locReaction];
 		}
+	}
+
+	//get file name
+	string locOutputFileName = "hd_root.root";
+	if(gPARMS->Exists("OUTPUT_FILENAME"))
+		gPARMS->GetParameter("OUTPUT_FILENAME", locOutputFileName);
+
+	//Make sure this matches DConstructionStage!!!
+	vector<string> locBuildStages_Event = {"Min # Particles", "Max Extra Tracks", "In Skim", "Charged Combos", "Charged RF Bunch", "Full Combos",
+			"Neutral RF Bunch", "No-Vertex RF Bunch", "Heavy-Neutral IM", "Beam Combos", "MM Vertex Timing", "MM-vertex IM Cuts", "Reaction Beam-RF Cuts", "Missing Mass"};
+	vector<string> locBuildStages_Combo(locBuildStages_Event.begin() + 3, locBuildStages_Event.end());
+
+	//initialize success tracking
+	for(auto locReaction : locReactions)
+	{
+		for(auto locStage = static_cast<DConstructionStageType>(DConstructionStage::Min_Particles); locStage <= static_cast<DConstructionStageType>(DConstructionStage::Missing_Mass); ++locStage)
+			dNumCombosSurvivedStageTracker[locReaction][static_cast<DConstructionStage>(locStage)] = 0;
+	}
+
+	//Setup cuts/hists
+	japp->RootWriteLock(); //ACQUIRE ROOT LOCK!!
+	{
+		//CDC dE/dx Proton
+		ddEdxCutMap[Proton][SYS_CDC].first = new TF1("df_dEdxCut_CDC_ProtonLow", "exp(-1.0*[0]*x + [1]) + [2]", 0.0, 12.0);
+		ddEdxCutMap[Proton][SYS_CDC].first->SetParameters(3.93024, 3.0, 1.0);
+		ddEdxCutMap[Proton][SYS_CDC].second = new TF1("df_dEdxCut_CDC_ProtonHigh", "[0]", 0.0, 12.0);
+		ddEdxCutMap[Proton][SYS_CDC].second->SetParameter(0, 9999999.9);
+
+		//CDC dE/dx Pi+
+		ddEdxCutMap[PiPlus][SYS_CDC].first = new TF1("df_dEdxCut_CDC_PionLow", "[0]", 0.0, 12.0);
+		ddEdxCutMap[PiPlus][SYS_CDC].first->SetParameter(0, -1.0);
+		ddEdxCutMap[PiPlus][SYS_CDC].second = new TF1("df_dEdxCut_CDC_PionHigh", "exp(-1.0*[0]*x + [1]) + [2]", 0.0, 12.0);
+		ddEdxCutMap[PiPlus][SYS_CDC].second->SetParameters(6.0, 2.80149, 2.55);
+
+		//E/p
+		dEOverPCutMap[Electron][SYS_FCAL] = new TF1("df_EOverPCut_FCAL_Electron", "[0]", 0.0, 12.0);
+		dEOverPCutMap[Electron][SYS_FCAL]->SetParameter(0.0, 1.0);
+		dEOverPCutMap[Electron][SYS_BCAL] = new TF1("df_EOverPCut_BCAL_Electron", "[0]", 0.0, 12.0);
+		dEOverPCutMap[Electron][SYS_BCAL]->SetParameter(0.0, 1.0);
+		dEOverPCutMap.emplace(Positron, dEOverPCutMap[Electron]);
+		dEOverPCutMap.emplace(MuonPlus, dEOverPCutMap[Electron]);
+		dEOverPCutMap.emplace(MuonMinus, dEOverPCutMap[Electron]);
+
+		vector<DetectorSystem_t> locdEdxSystems {SYS_CDC, SYS_FDC, SYS_START, SYS_TOF};
+		vector<Particle_t> locPIDs {Electron, Positron, MuonPlus, MuonMinus, PiPlus, PiMinus, KPlus, KMinus, Proton, AntiProton};
+		vector<DetectorSystem_t> locEOverPSystems {SYS_BCAL, SYS_FCAL};
+
+		//get and change to the base (file/global) directory
+		TDirectory* locCurrentDir = gDirectory;
+		TFile* locFile = (TFile*)gROOT->FindObject(locOutputFileName.c_str());
+		if(locFile != NULL)
+			locFile->cd("");
+		else
+			gDirectory->cd("/");
+
+		string locDirName = "Independent";
+		TDirectoryFile* locDirectoryFile = static_cast<TDirectoryFile*>(gDirectory->GetDirectory(locDirName.c_str()));
+		if(locDirectoryFile == NULL)
+			locDirectoryFile = new TDirectoryFile(locDirName.c_str(), locDirName.c_str());
+		locDirectoryFile->cd();
+
+		locDirName = "Combo_Construction";
+		locDirectoryFile = static_cast<TDirectoryFile*>(gDirectory->GetDirectory(locDirName.c_str()));
+		if(locDirectoryFile == NULL)
+			locDirectoryFile = new TDirectoryFile(locDirName.c_str(), locDirName.c_str());
+		locDirectoryFile->cd();
+
+		for(auto& locPID : locPIDs)
+		{
+			locDirName = string("PID_") + ParticleType(locPID);
+			locDirectoryFile = static_cast<TDirectoryFile*>(gDirectory->GetDirectory(locDirName.c_str()));
+			if(locDirectoryFile == NULL)
+				locDirectoryFile = new TDirectoryFile(locDirName.c_str(), locDirName.c_str());
+			locDirectoryFile->cd();
+
+			for(auto& locSystem : locdEdxSystems)
+			{
+				string locHistName = string("dEdxVsP_") + string(SystemName(locSystem));
+				auto locHist = gDirectory->Get(locHistName.c_str());
+				if(locHist == nullptr)
+				{
+					string locHistTitle = ParticleName_ROOT(locPID) + string(", ") + string(SystemName(locSystem)) + string(";p (GeV/c);dE/dX (MeV/cm)");
+					dHistMap_dEdx[locPID][locSystem] = new TH2I(locHistName.c_str(), locHistTitle.c_str(), 400, 0.0, 12.0, 400, 0.0, 25.0);
+				}
+				else
+					dHistMap_dEdx[locPID][locSystem] = static_cast<TH2*>(locHist);
+			}
+
+			for(auto& locSystem : locEOverPSystems)
+			{
+				string locHistName = string("EOverP_") + string(SystemName(locSystem));
+				auto locHist = gDirectory->Get(locHistName.c_str());
+				if(locHist == nullptr)
+				{
+					string locHistTitle = ParticleName_ROOT(locPID) + string(", ") + string(SystemName(locSystem)) + string(";p (GeV/c);E_{Shower}/p_{Track} (c)");
+					dHistMap_EOverP[locPID][locSystem] = new TH2I(locHistName.c_str(), locHistTitle.c_str(), 400, 0.0, 12.0, 400, 0.0, 4.0);
+				}
+				else
+					dHistMap_EOverP[locPID][locSystem] = static_cast<TH2*>(locHist);
+			}
+			gDirectory->cd("..");
+		}
+		locCurrentDir->cd();
+
+		//construction stage tracking
+		for(auto locReaction : locReactions)
+		{
+			string locReactionName = locReaction->Get_ReactionName();
+
+			locDirName = locReactionName;
+			locDirectoryFile = static_cast<TDirectoryFile*>(gDirectory->GetDirectory(locDirName.c_str()));
+			if(locDirectoryFile == NULL)
+				locDirectoryFile = new TDirectoryFile(locDirName.c_str(), locDirName.c_str());
+			locDirectoryFile->cd();
+
+			string locHistName = "ComboConstruction_NumEventsSurvived";
+			auto locHist = gDirectory->Get(locHistName.c_str());
+			if(locHist == nullptr)
+			{
+				string locHistTitle = locReactionName + string(";;# Events Survived Stage");
+				dNumEventsSurvivedStageMap[locReaction] = new TH1D(locHistName.c_str(), locHistTitle.c_str(), locBuildStages_Event.size(), -0.5, locBuildStages_Event.size() - 0.5);
+				for(size_t loc_i = 0; loc_i < locBuildStages_Event.size(); ++loc_i)
+					dNumEventsSurvivedStageMap[locReaction]->GetXaxis()->SetBinLabel(loc_i + 1, locBuildStages_Event[loc_i].c_str());
+			}
+			else
+				dNumEventsSurvivedStageMap[locReaction] = static_cast<TH1*>(locHist);
+
+			locHistName = "ComboConstruction_NumCombosSurvived";
+			locHist = gDirectory->Get(locHistName.c_str());
+			if(locHist == nullptr)
+			{
+				string locHistTitle = locReactionName + string(";;# Combos Survived Stage");
+				dNumCombosSurvivedStageMap[locReaction] = new TH1D(locHistName.c_str(), locHistTitle.c_str(), locBuildStages_Combo.size(), -0.5, locBuildStages_Combo.size() - 0.5);
+				for(size_t loc_i = 0; loc_i < locBuildStages_Combo.size(); ++loc_i)
+					dNumCombosSurvivedStageMap[locReaction]->GetXaxis()->SetBinLabel(loc_i + 1, locBuildStages_Combo[loc_i].c_str());
+			}
+			else
+				dNumCombosSurvivedStageMap[locReaction] = static_cast<TH1*>(locHist);
+
+			locHistName = "ComboConstruction_NumCombosSurvived2D";
+			locHist = gDirectory->Get(locHistName.c_str());
+			if(locHist == nullptr)
+			{
+				string locHistTitle = locReactionName + string(";;# Combos Survived Stage");
+				dNumCombosSurvivedStage2DMap[locReaction] = new TH2D(locHistName.c_str(), locHistTitle.c_str(), locBuildStages_Combo.size(), -0.5, locBuildStages_Combo.size() - 0.5, 1000, 0, 1000);
+				for(size_t loc_i = 0; loc_i < locBuildStages_Combo.size(); ++loc_i)
+					dNumCombosSurvivedStage2DMap[locReaction]->GetXaxis()->SetBinLabel(loc_i + 1, locBuildStages_Combo[loc_i].c_str());
+			}
+			else
+				dNumCombosSurvivedStage2DMap[locReaction] = static_cast<TH2*>(locHist);
+
+			gDirectory->cd("..");
+		}
+		locCurrentDir->cd();
+	}
+	japp->RootUnLock(); //RELEASE ROOT LOCK!!
+}
+
+void DSourceComboer::Fill_SurvivalHistograms(void)
+{
+	japp->WriteLock("DSourceComboer_Survival");
+	{
+		for(auto& locReactionPair : dNumCombosSurvivedStageTracker)
+		{
+			auto& locReaction = locReactionPair.first;
+			for(auto& locStagePair : locReactionPair.second)
+			{
+				auto locNumCombos = locStagePair.second;
+				if(locNumCombos == 0)
+					break;
+
+				auto locStageIndex = static_cast<std::underlying_type<DConstructionStage>::type>(locStagePair.first);
+				dNumEventsSurvivedStageMap[locReaction]->Fill(locStageIndex);
+				if(locStageIndex < 3)
+					continue;
+
+				//fill combo hists
+				auto locBin = locStageIndex - 3 + 1;
+				auto locBinContent = dNumCombosSurvivedStageMap[locReaction]->GetBinContent(locBin) + locNumCombos;
+				dNumCombosSurvivedStageMap[locReaction]->SetBinContent(locBin, locBinContent);
+
+				if(dNumCombosSurvivedStage2DMap[locReaction]->GetYaxis()->FindBin(locNumCombos) <= dNumCombosSurvivedStage2DMap[locReaction]->GetNbinsY())
+					dNumCombosSurvivedStage2DMap[locReaction]->Fill(locBin, locNumCombos);
+			}
+		}
+	}
+	japp->Unlock("DSourceComboer_Survival");
+
+	//Reset for next event
+	for(auto& locReactionPair : dNumCombosSurvivedStageTracker)
+	{
+		for(auto& locStagePair : locReactionPair.second)
+			locStagePair.second = 0;
 	}
 }
 
@@ -566,6 +792,8 @@ void DSourceComboer::Reset_NewEvent(JEventLoop* locEventLoop)
 		return; //nope
 	dEventNumber = locEventNumber;
 
+	Fill_SurvivalHistograms();
+
 	/************************************************************* RECYCLE AND RESET **************************************************************/
 
 	//RECYCLE COMBO & VECTOR POINTERS
@@ -578,6 +806,7 @@ void DSourceComboer::Reset_NewEvent(JEventLoop* locEventLoop)
 	dParticleComboCreator->Reset();
 
 	//PARTICLES
+	dNumChargedTracks = 0;
 	dTracksByPID.clear();
 	dTracksByCharge.clear();
 	dShowersByBeamBunchByZBin.clear();
@@ -628,10 +857,17 @@ void DSourceComboer::Reset_NewEvent(JEventLoop* locEventLoop)
 	dSourceComboTimeHandler->Set_BeamParticles(locBeamPhotons);
 
 	//SETUP TRACKS
+	dNumChargedTracks = locChargedTracks.size();
 	for(const auto& locChargedTrack : locChargedTracks)
 	{
 		for(const auto& locChargedHypo : locChargedTrack->dChargedTrackHypotheses)
 		{
+			if((locChargedHypo->PID() == PiPlus) && (locChargedHypo->t1_detector() == SYS_TOF))
+				cout << "TOF input" << endl;
+			if(!Cut_dEdxAndEOverP(locChargedHypo))
+				continue;
+			if((locChargedHypo->PID() == PiPlus) && (locChargedHypo->t1_detector() == SYS_TOF))
+				cout << "TOF registered" << endl;
 			dTracksByPID[locChargedHypo->PID()].push_back(locChargedTrack);
 			dTracksByCharge[ParticleCharge(locChargedHypo->PID()) > 0].push_back(locChargedTrack); //will insert duplicates
 		}
@@ -645,6 +881,113 @@ void DSourceComboer::Reset_NewEvent(JEventLoop* locEventLoop)
 		auto& locVector = locChargePair.second;
 		std::sort(locVector.begin(), locVector.end());
 		locVector.erase(std::unique(locVector.begin(), locVector.end()), locVector.end()); //remove duplicates
+	}
+
+	//Fill histograms
+	Fill_CutHistograms();
+}
+
+bool DSourceComboer::Cut_dEdxAndEOverP(const DChargedTrackHypothesis* locChargedTrackHypothesis)
+{
+	auto locPID = locChargedTrackHypothesis->PID();
+	auto locTrackTimeBased = locChargedTrackHypothesis->Get_TrackTimeBased();
+	auto locP = locTrackTimeBased->momentum().Mag();
+	bool locPassedCutFlag = true;
+
+	//CDC dE/dx
+	if(locTrackTimeBased->dNumHitsUsedFordEdx_CDC > 0)
+	{
+		auto locdEdx = locTrackTimeBased->ddEdx_CDC*1.0E6;
+		if(!Cut_dEdx(locPID, SYS_CDC, locP, locdEdx))
+			locPassedCutFlag = false;
+	}
+
+	//FDC dE/dx
+	if(locTrackTimeBased->dNumHitsUsedFordEdx_FDC > 0)
+	{
+		auto locdEdx = locTrackTimeBased->ddEdx_FDC*1.0E6;
+		if(!Cut_dEdx(locPID, SYS_FDC, locP, locdEdx))
+			locPassedCutFlag = false;
+	}
+
+	//SC dE/dx
+	auto locSCHitMatchParams = locChargedTrackHypothesis->Get_SCHitMatchParams();
+	if(locSCHitMatchParams != nullptr)
+	{
+		auto locdEdx = locSCHitMatchParams->dEdx*1.0E3;
+		if(!Cut_dEdx(locPID, SYS_START, locP, locdEdx))
+			locPassedCutFlag = false;
+	}
+
+	//TOF dE/dx
+	auto locTOFHitMatchParams = locChargedTrackHypothesis->Get_TOFHitMatchParams();
+	if(locTOFHitMatchParams != nullptr)
+	{
+		auto locdEdx = locTOFHitMatchParams->dEdx*1.0E3;
+		if(!Cut_dEdx(locPID, SYS_TOF, locP, locdEdx))
+			locPassedCutFlag = false;
+	}
+
+	//BCAL E/p
+	auto locBCALShowerMatchParams = locChargedTrackHypothesis->Get_BCALShowerMatchParams();
+	if(locBCALShowerMatchParams != nullptr)
+	{
+		const DBCALShower* locBCALShower = locBCALShowerMatchParams->dBCALShower;
+		double locEOverP = locBCALShower->E/locP;
+		if(!Cut_EOverP(locPID, SYS_BCAL, locP, locEOverP))
+			locPassedCutFlag = false;
+	}
+
+	//FCAL E/p
+	auto locFCALShowerMatchParams = locChargedTrackHypothesis->Get_FCALShowerMatchParams();
+	if(locFCALShowerMatchParams != nullptr)
+	{
+		const DFCALShower* locFCALShower = locFCALShowerMatchParams->dFCALShower;
+		double locEOverP = locFCALShower->getEnergy()/locP;
+		if(!Cut_EOverP(locPID, SYS_FCAL, locP, locEOverP))
+			locPassedCutFlag = false;
+	}
+
+	return locPassedCutFlag;
+}
+
+void DSourceComboer::Fill_CutHistograms(void)
+{
+	japp->WriteLock("DSourceComboer_Cuts");
+	{
+		for(auto& locPIDPair : dHistMap_dEdx)
+		{
+			for(auto& locSystemPair : locPIDPair.second)
+			{
+				auto& locHist = locSystemPair.second;
+				auto& locVector = ddEdxValueMap[locPIDPair.first][locSystemPair.first];
+				for(auto& locVectorPair : locVector)
+					locHist->Fill(locVectorPair.first, locVectorPair.second);
+			}
+		}
+		for(auto& locPIDPair : dHistMap_EOverP)
+		{
+			for(auto& locSystemPair : locPIDPair.second)
+			{
+				auto& locHist = locSystemPair.second;
+				auto& locVector = dEOverPValueMap[locPIDPair.first][locSystemPair.first];
+				for(auto& locVectorPair : locVector)
+					locHist->Fill(locVectorPair.first, locVectorPair.second);
+			}
+		}
+	}
+	japp->Unlock("DSourceComboer_Cuts");
+
+	//Reset for next event
+	for(auto& locPIDPair : ddEdxValueMap)
+	{
+		for(auto& locSystemPair : locPIDPair.second)
+			locSystemPair.second.clear();
+	}
+	for(auto& locPIDPair : dEOverPValueMap)
+	{
+		for(auto& locSystemPair : locPIDPair.second)
+			locSystemPair.second.clear();
 	}
 }
 
@@ -662,24 +1005,8 @@ DCombosByReaction DSourceComboer::Build_ParticleCombos(const DReactionVertexInfo
 	for(auto locReaction : locReactions)
 		locOutputComboMap[locReaction] = {};
 
-	//All of the reactions in the vertex-info are guaranteed to have the same channel content
-	//They just may differ in actions, or skims
-	//So, we can check #particles for just one reaction, but must check skims for all reactions
-	if(!Check_NumParticles(locReactions.front()))
-	{
-		if(dDebugLevel > 0)
-			cout << "Not enough particles: No combos." << endl;
+	if(!Check_Reactions(locReactions))
 		return locOutputComboMap; //no combos!
-	}
-
-	auto Skim_Checker = [this](const DReaction* locReaction) -> bool{return !Check_Skims(locReaction);};
-	locReactions.erase(std::remove_if(locReactions.begin(), locReactions.end(), Skim_Checker), locReactions.end());
-	if(locReactions.empty())
-	{
-		if(dDebugLevel > 0)
-			cout << "Event not in skim: No combos." << endl;
-		return locOutputComboMap; //no combos!
-	}
 
 	/******************************************************** COMBOING STEPS *******************************************************
 	*
@@ -775,6 +1102,11 @@ DCombosByReaction DSourceComboer::Build_ParticleCombos(const DReactionVertexInfo
 	{
 		if(dDebugLevel > 0)
 			cout << "No charged tracks." << endl;
+		for(auto& locReaction : locReactions)
+		{
+			dNumCombosSurvivedStageTracker[locReaction][DConstructionStage::Charged_Combos] = 1; //is really #-events
+			dNumCombosSurvivedStageTracker[locReaction][DConstructionStage::Charged_RFBunch] = 1; //is really #-events
+		}
 		Combo_WithNeutralsAndBeam(locReactions, locReactionVertexInfo, locPrimaryComboUse, nullptr, {}, locOutputComboMap);
 		return locOutputComboMap;
 	}
@@ -782,6 +1114,8 @@ DCombosByReaction DSourceComboer::Build_ParticleCombos(const DReactionVertexInfo
 	//Build vertex combos (returns those for the primary vertex, others are stored)
 	Create_SourceCombos(locPrimaryComboUse, d_ChargedStage, nullptr);
 	const auto& locReactionChargedCombos = *(Get_CombosSoFar(d_ChargedStage, d_Charged, nullptr)[locPrimaryComboUse]);
+	for(auto& locReaction : locReactions)
+		dNumCombosSurvivedStageTracker[locReaction][DConstructionStage::Charged_Combos] = locReactionChargedCombos.size();
 
 	if(dDebugLevel > 0)
 		cout << "Charged combos built." << endl;
@@ -796,6 +1130,8 @@ DCombosByReaction DSourceComboer::Build_ParticleCombos(const DReactionVertexInfo
 		vector<int> locBeamBunches_Charged;
 		if(!dSourceComboTimeHandler->Select_RFBunches_Charged(locReactionVertexInfo, locReactionChargedCombo, locBeamBunches_Charged))
 			continue; //failed PID timing cuts!
+		for(auto& locReaction : locReactions)
+			++(dNumCombosSurvivedStageTracker[locReaction][DConstructionStage::Charged_RFBunch]);
 
 		//Special case of FULLY charged
 		auto locChargeContent = dComboInfoChargeContent[locPrimaryComboInfo];
@@ -808,6 +1144,14 @@ DCombosByReaction DSourceComboer::Build_ParticleCombos(const DReactionVertexInfo
 			auto locRFBunch = dSourceComboTimeHandler->Select_RFBunch_Full(locReactionVertexInfo, locReactionChargedCombo, locBeamBunches_Charged);
 			if(dDebugLevel > 0)
 				cout << "Selected rf bunch." << endl;
+
+			for(auto& locReaction : locReactions)
+			{
+				++(dNumCombosSurvivedStageTracker[locReaction][DConstructionStage::Full_Combos]);
+				++(dNumCombosSurvivedStageTracker[locReaction][DConstructionStage::Neutral_RFBunch]);
+				++(dNumCombosSurvivedStageTracker[locReaction][DConstructionStage::NoVertex_RFBunch]);
+				++(dNumCombosSurvivedStageTracker[locReaction][DConstructionStage::HeavyNeutral_IM]);
+			}
 
 			//combo with beam and save results!!! (if no beam needed, just saves and returns)
 			Combo_WithBeam(locReactions, locReactionVertexInfo, locReactionChargedCombo, locRFBunch, locOutputComboMap);
@@ -840,6 +1184,8 @@ void DSourceComboer::Combo_WithNeutralsAndBeam(const vector<const DReaction*>& l
 
 	//Then, get the full combos, but only those that satisfy the charged RF bunches
 	const auto& locReactionFullCombos = Get_CombosForComboing(locZDependentComboUse, d_MixedStage, locBeamBunches_Charged, locReactionChargedCombo);
+	for(auto& locReaction : locReactions)
+		dNumCombosSurvivedStageTracker[locReaction][DConstructionStage::Full_Combos] += locReactionFullCombos.size();
 
 	//loop over full combos
 	for(const auto& locReactionFullCombo : locReactionFullCombos)
@@ -858,6 +1204,8 @@ void DSourceComboer::Combo_WithNeutralsAndBeam(const vector<const DReaction*>& l
 			//this also does PID cuts of photons at charged vertices while we're at it
 			if(!dSourceComboTimeHandler->Select_RFBunches_PhotonVertices(locReactionVertexInfo, locReactionFullCombo, locValidRFBunches))
 				continue; //failed PID timing cuts!
+			for(auto& locReaction : locReactions)
+				++(dNumCombosSurvivedStageTracker[locReaction][DConstructionStage::Neutral_RFBunch]);
 
 			//if no valid RF bunches, but still haven't cut: none of the charged tracks are at known vertices: select RF bunches with charged only
 			if(locValidRFBunches.empty()) //e.g. g, p -> K0, Sigma+   K0 -> pi+, (pi-)
@@ -865,12 +1213,16 @@ void DSourceComboer::Combo_WithNeutralsAndBeam(const vector<const DReaction*>& l
 				if(!dSourceComboTimeHandler->Select_RFBunches_AllVerticesUnknown(locReactionVertexInfo, locReactionFullCombo, d_Charged, locValidRFBunches))
 					continue; //failed PID timing cuts!
 			}
+			for(auto& locReaction : locReactions)
+				++(dNumCombosSurvivedStageTracker[locReaction][DConstructionStage::NoVertex_RFBunch]);
 		}
 		else //fully neutral, so no known vertices, target center was chosen as vertex for comboing showers //e.g. g, p -> pi0, (p)
 		{
 			//we will never have a vertex, so do PID cuts for ALL photons using target center to select possible RF bunches
 			if(!dSourceComboTimeHandler->Select_RFBunches_AllVerticesUnknown(locReactionVertexInfo, locReactionFullCombo, d_Neutral, locValidRFBunches))
 				continue; //failed PID timing cuts!
+			for(auto& locReaction : locReactions)
+				++(dNumCombosSurvivedStageTracker[locReaction][DConstructionStage::NoVertex_RFBunch]);
 		}
 
 		//Place mass cuts on massive neutrals: Effectively narrows down RF bunches
@@ -879,6 +1231,8 @@ void DSourceComboer::Combo_WithNeutralsAndBeam(const vector<const DReaction*>& l
 			//calc & cut invariant mass: when vertex-z was unknown with only charged tracks, but is known now, and contains BCAL photons (won't happen very often)
 		if(!dSourceComboP4Handler->Cut_InvariantMass_HasMassiveNeutral_OrPhotonVertex(locReactionVertexInfo, locReactionFullCombo, locValidRFBunches))
 			continue; //failed cut!
+		for(auto& locReaction : locReactions)
+			++(dNumCombosSurvivedStageTracker[locReaction][DConstructionStage::HeavyNeutral_IM]);
 
 		//Select final RF bunch //this is not a cut: at least one has passed all cuts (check by the Get_CombosForComboing function & the mass cuts)
 		auto locRFBunch = dSourceComboTimeHandler->Select_RFBunch_Full(locReactionVertexInfo, locReactionFullCombo, locValidRFBunches);
@@ -899,16 +1253,25 @@ void DSourceComboer::Combo_WithBeam(const vector<const DReaction*>& locReactions
 		if(dDebugLevel > 0)
 			cout << "No beam particles, we are done!" << endl;
 		for(const auto& locReaction : locReactions)
+		{
+			++(dNumCombosSurvivedStageTracker[locReaction][DConstructionStage::Beam_Combos]);
+			++(dNumCombosSurvivedStageTracker[locReaction][DConstructionStage::MMVertex_Timing]);
+			++(dNumCombosSurvivedStageTracker[locReaction][DConstructionStage::MMVertex_IMCuts]);
+			++(dNumCombosSurvivedStageTracker[locReaction][DConstructionStage::Reaction_BeamRFCuts]);
+			++(dNumCombosSurvivedStageTracker[locReaction][DConstructionStage::Missing_Mass]);
 			locOutputComboMap[locReaction].push_back(dParticleComboCreator->Build_ParticleCombo(locReactionVertexInfo, locReactionFullCombo, nullptr, locRFBunch, locReaction->Get_KinFitType()));
+		}
 		return;
 	}
 
 	//Select beam particles
 	auto locBeamParticles = dSourceComboTimeHandler->Get_BeamParticlesByRFBunch(locRFBunch, dMaxRFBunchCuts[locReactionVertexInfo]);
 	if(dDebugLevel > 0)
-		cout<< "rf bunch, max #rf bunches, #beams = " << locRFBunch << ", " << dMaxRFBunchCuts[locReactionVertexInfo] << ", " << locBeamParticles.size() << endl;
+		cout << "rf bunch, max #rf bunches, #beams = " << locRFBunch << ", " << dMaxRFBunchCuts[locReactionVertexInfo] << ", " << locBeamParticles.size() << endl;
 	if(locBeamParticles.empty())
 		return; //no valid beam particles!!
+	for(const auto& locReaction : locReactions)
+		dNumCombosSurvivedStageTracker[locReaction][DConstructionStage::Beam_Combos] += locBeamParticles.size();
 
 	//loop over beam particles
 	for(const auto& locBeamParticle : locBeamParticles)
@@ -919,10 +1282,14 @@ void DSourceComboer::Combo_WithBeam(const vector<const DReaction*>& locReactions
 		//placing timing cuts on the particles at these vertices
 		if(!dSourceComboTimeHandler->Cut_Timing_MissingMassVertices(locReactionVertexInfo, locReactionFullCombo, locBeamParticle, locRFBunch))
 			continue; //FAILED TIME CUTS!
+		for(const auto& locReaction : locReactions)
+			++(dNumCombosSurvivedStageTracker[locReaction][DConstructionStage::MMVertex_Timing]);
 
 		//place invariant mass cuts on the particles at these vertices (if they had z-dependent neutral showers (BCAL or massive))
 		if(!dSourceComboP4Handler->Cut_InvariantMass_MissingMassVertex(locReactionVertexInfo, locReactionFullCombo, locBeamParticle, locRFBunch))
 			continue; //FAILED MASS CUTS!
+		for(const auto& locReaction : locReactions)
+			++(dNumCombosSurvivedStageTracker[locReaction][DConstructionStage::MMVertex_IMCuts]);
 
 		//loop over reactions: cut on rf-bunch shift for each reaction, cut on missing mass^2, then save the results
 		auto locBeamRFBunch = dSourceComboTimeHandler->Calc_RFBunchShift(locBeamParticle->time());
@@ -933,9 +1300,11 @@ void DSourceComboer::Combo_WithBeam(const vector<const DReaction*>& locReactions
 				cout<< "beam rf bunch, delta rf bunch, reaction, max for reaction = " << locBeamRFBunch << ", " << locDeltaRFBunch << ", " << locReaction->Get_ReactionName() << ", " << dRFBunchCutsByReaction[locReaction] << endl;
 			if(locDeltaRFBunch > dRFBunchCutsByReaction[locReaction])
 				continue; //FAILED RF BUNCH CUT
+			++(dNumCombosSurvivedStageTracker[locReaction][DConstructionStage::Reaction_BeamRFCuts]);
 
 			if(!dSourceComboP4Handler->Cut_MissingMass(locReaction, locReactionVertexInfo, locReactionFullCombo, locBeamParticle, locRFBunch))
 				continue; //FAILED MISSING MASS^2 CUT!
+			++(dNumCombosSurvivedStageTracker[locReaction][DConstructionStage::Missing_Mass]);
 
 			//build particle combo & save for the apporpriate reactions
 			locOutputComboMap[locReaction].push_back(dParticleComboCreator->Build_ParticleCombo(locReactionVertexInfo, locReactionFullCombo, locBeamParticle, locRFBunch, locReaction->Get_KinFitType()));
@@ -2412,6 +2781,54 @@ bool DSourceComboer::Get_PromoteFlag(Particle_t locDecayPID_UseToCheck, const DS
 		auto locNumParticles_UseToCreate = locComboInfo_UseToCreate->Get_NumParticles();
 		return std::binary_search(locNumParticles_UseToCreate.begin(), locNumParticles_UseToCreate.end(), locNumParticles_ToAdd.front());
 	}
+}
+
+bool DSourceComboer::Check_Reactions(vector<const DReaction*>& locReactions)
+{
+	//All of the reactions in the vertex-info are guaranteed to have the same channel content
+	//They just may differ in actions, or skims
+	//So, we can check #particles for just one reaction, but must check skims for all reactions
+	if(!Check_NumParticles(locReactions.front()))
+	{
+		if(dDebugLevel > 0)
+			cout << "Not enough particles: No combos." << endl;
+		return false;
+	}
+	for(auto& locReaction : locReactions)
+		dNumCombosSurvivedStageTracker[locReaction][DConstructionStage::Min_Particles] = 1; //is really #-events
+
+	//Check Get_MaxExtraGoodTracks
+	auto locNumTracksNeeded = locReactions.front()->Get_FinalPIDs(-1, false, false, d_Charged, true).size(); //no missing, no decaying, include duplicates
+	auto NumExtra_Checker = [&](const DReaction* locReaction) -> bool
+	{
+		auto locCutPair = locReaction->Get_MaxExtraGoodTracks();
+		if(!locCutPair.first)
+			return false;
+		return ((dNumChargedTracks - locNumTracksNeeded) > locCutPair.second);
+	};
+
+	locReactions.erase(std::remove_if(locReactions.begin(), locReactions.end(), NumExtra_Checker), locReactions.end());
+	if(locReactions.empty())
+	{
+		if(dDebugLevel > 0)
+			cout << "Too many tracks: No combos." << endl;
+		return false;
+	}
+	for(auto& locReaction : locReactions)
+		dNumCombosSurvivedStageTracker[locReaction][DConstructionStage::Max_Extra_Tracks] = 1; //is really #-events
+
+	auto Skim_Checker = [this](const DReaction* locReaction) -> bool{return !Check_Skims(locReaction);};
+	locReactions.erase(std::remove_if(locReactions.begin(), locReactions.end(), Skim_Checker), locReactions.end());
+	if(locReactions.empty())
+	{
+		if(dDebugLevel > 0)
+			cout << "Event not in skim: No combos." << endl;
+		return false;
+	}
+	for(auto& locReaction : locReactions)
+		dNumCombosSurvivedStageTracker[locReaction][DConstructionStage::In_Skim] = 1; //is really #-events
+
+	return true;
 }
 
 bool DSourceComboer::Check_NumParticles(const DReaction* locReaction)

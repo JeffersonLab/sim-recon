@@ -530,7 +530,6 @@ class DCutAction_dEdx : public DAnalysisAction
 		void Initialize(JEventLoop* locEventLoop);
 		bool Cut_dEdx(const DChargedTrackHypothesis* locChargedTrackHypothesis);
 
-		bool dCutOverlapFlag = false;
 		map<Particle_t, pair<TF1*, TF1*>> dCutMap; //pair: first is lower bound, second is upper bound
 
 	private:

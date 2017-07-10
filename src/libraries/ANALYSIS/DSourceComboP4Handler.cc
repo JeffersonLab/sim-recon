@@ -212,8 +212,8 @@ DSourceComboP4Handler::DSourceComboP4Handler(JEventLoop* locEventLoop, DSourceCo
 			if(locHist == nullptr)
 			{
 				string locHistTitle = string("From Any Decay Products;") + string(ParticleName_ROOT(locPID)) + string(" Invariant Mass (GeV/c^{2})");
-				auto locMinMass = locMassPair.first;
-				auto locMaxMass = locMassPair.second;
+				auto locMinMass = locMassPair.first - 0.2;
+				auto locMaxMass = locMassPair.second + 0.2;
 				auto locNumBins = 1000.0*(locMaxMass - locMinMass);
 				dHistMap_InvariantMass[locPID] = new TH1I(locHistName.c_str(), locHistTitle.c_str(), locNumBins, locMinMass, locMaxMass);
 			}
@@ -238,8 +238,8 @@ DSourceComboP4Handler::DSourceComboP4Handler(JEventLoop* locEventLoop, DSourceCo
 			if(locHist == nullptr)
 			{
 				string locHistTitle = string("From Any Production Mechanism;Beam Energy (GeV);") + string((locPID != Unknown) ? ParticleName_ROOT(locPID) : "None") + string(" Missing Mass Squared (GeV/c^{2})^{2}");
-				auto locMinMass = locMassPair.first->Eval(12.0); //assume widest at highest energy
-				auto locMaxMass = locMassPair.second->Eval(12.0);
+				auto locMinMass = locMassPair.first->Eval(12.0) - 0.2; //assume widest at highest energy
+				auto locMaxMass = locMassPair.second->Eval(12.0) + 0.2;
 				auto locNumBins = 1000.0*(locMaxMass - locMinMass);
 				dHistMap_MissingMassSquaredVsBeamEnergy[locPID] = new TH2I(locHistName.c_str(), locHistTitle.c_str(), 600, 0.0, 12.0, locNumBins, locMinMass, locMaxMass);
 			}

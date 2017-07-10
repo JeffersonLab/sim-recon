@@ -60,7 +60,7 @@ class DAnalysisResults_factory : public jana::JFactory<DAnalysisResults>
 		jerror_t brun(JEventLoop *locEventLoop, int32_t runnumber);	///< Called everytime a new run number is detected.
 		jerror_t evnt(JEventLoop *locEventLoop, uint64_t eventnumber);	///< Called every event.
 
-		void Make_ControlHistograms(vector<const DReaction*>& locReactions, bool locIsMCFlag);
+		void Make_ControlHistograms(vector<const DReaction*>& locReactions);
 		void Check_ReactionNames(vector<const DReaction*>& locReactions) const;
 		const DParticleCombo* Find_TrueCombo(JEventLoop *locEventLoop, const DReaction* locReaction, const vector<const DParticleCombo*>& locCombos);
 
@@ -75,6 +75,7 @@ class DAnalysisResults_factory : public jana::JFactory<DAnalysisResults>
 		double dMinThrownMatchFOM;
 		DSourceComboer* dSourceComboer;
 		DParticleComboCreator* dParticleComboCreator;
+		bool dIsMCFlag = false;
 
 		unsigned int dKinFitDebugLevel = 0;
 		DKinFitter* dKinFitter;

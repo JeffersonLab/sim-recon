@@ -2461,7 +2461,7 @@ void DKinFitter::Calc_Pulls(void)
 		if(dDebugLevel >= 50)
 		{
 			cout << "pulls: PID = " << locKinFitParticle->Get_PID() << endl;
-			cout << "e, px, vx, t param indices = " << locKinFitParticle->Get_EParamIndex() << ", " << locKinFitParticle->Get_PxParamIndex() << ", " << locKinFitParticle->Get_VxParamIndex() << ", " << locKinFitParticle->Get_TParamIndex() << endl;
+			cout << "e, px, vx, t param indices = " << int(locKinFitParticle->Get_EParamIndex()) << ", " << int(locKinFitParticle->Get_PxParamIndex()) << ", " << int(locKinFitParticle->Get_VxParamIndex()) << ", " << int(locKinFitParticle->Get_TParamIndex()) << endl;
 		}
 
 		int locParamIndex = locKinFitParticle->Get_EParamIndex();

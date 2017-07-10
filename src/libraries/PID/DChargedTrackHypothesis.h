@@ -47,7 +47,7 @@ class DChargedTrackHypothesis : public DKinematicData
 		unsigned int Get_NDF_Timing(void) const{return dTimingInfo->dNDF_Timing;}
 		double Get_ChiSq_Timing(void) const{return dTimingInfo->dChiSq_Timing;}
 		double Get_PathLength(void) const;
-		double measuredBeta(void) const{return ((Get_PathLength()/(t1() - t0())))/29.9792458;}
+		double measuredBeta(void) const{return Get_PathLength()/(29.9792458*(t1() - t0()));}
 
 		//totals for overall PID determination
 		unsigned int Get_NDF(void) const{return dTimingInfo->dNDF;}
@@ -212,20 +212,27 @@ inline DetectorSystem_t DChargedTrackHypothesis::t1_detector(void) const
 		return SYS_TOF;
 	else if(Get_FCALShowerMatchParams() != nullptr)
 		return SYS_FCAL;
+	else if(Get_SCHitMatchParams() != nullptr)
+		return SYS_START;
 	return SYS_NULL;
 }
 
 inline double DChargedTrackHypothesis::Get_PathLength(void) const
 {
+	auto locPathLength = 0.0;
 	if(Get_BCALShowerMatchParams() != nullptr)
-		return Get_BCALShowerMatchParams()->dPathLength;
+		locPathLength = Get_BCALShowerMatchParams()->dPathLength;
 	else if(Get_TOFHitMatchParams() != nullptr)
-		return Get_TOFHitMatchParams()->dPathLength;
+		locPathLength = Get_TOFHitMatchParams()->dPathLength;
 	else if(Get_FCALShowerMatchParams() != nullptr)
-		return Get_FCALShowerMatchParams()->dPathLength;
+		locPathLength = Get_FCALShowerMatchParams()->dPathLength;
 	else if(Get_SCHitMatchParams() != nullptr)
-		return Get_SCHitMatchParams()->dPathLength;
-	return std::numeric_limits<double>::quiet_NaN();
+		locPathLength = Get_SCHitMatchParams()->dPathLength;
+	else
+		return std::numeric_limits<double>::quiet_NaN();
+
+	//correct for the fact that t0 is reported at the poca to the vertex, and the path length above is to the POCA to the beamline
+	return locPathLength + (time() - Get_TimeAtPOCAToVertex())/(29.9792458*lorentzMomentum().Beta());
 }
 
 inline double DChargedTrackHypothesis::t1(void) const
@@ -237,6 +244,8 @@ inline double DChargedTrackHypothesis::t1(void) const
 		return Get_TOFHitMatchParams()->dTOFPoint->t;
 	else if(locDetector == SYS_FCAL)
 		return Get_FCALShowerMatchParams()->dFCALShower->getTime();
+	else if(locDetector == SYS_START)
+		return Get_SCHitMatchParams()->dHitTime;
 	return std::numeric_limits<double>::quiet_NaN();
 }
 
@@ -249,6 +258,8 @@ inline double DChargedTrackHypothesis::t1_err(void) const
 		return Get_TOFHitMatchParams()->dTOFPoint->tErr;
 	else if(locDetector == SYS_FCAL)
 		return sqrt(Get_FCALShowerMatchParams()->dFCALShower->ExyztCovariance(4, 4));
+	else if(locDetector == SYS_FCAL)
+		return sqrt(Get_SCHitMatchParams()->dHitTimeVariance);
 	return std::numeric_limits<double>::quiet_NaN();
 }
 

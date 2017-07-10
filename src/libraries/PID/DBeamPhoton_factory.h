@@ -18,6 +18,8 @@
 class DBeamPhoton_factory:public jana::JFactory<DBeamPhoton>
 {
 	public:
+		DBeamPhoton_factory(void){dResourcePool_BeamPhotons = new DResourcePool<DBeamPhoton>();}
+
 		void Recycle_Resources(vector<const DBeamPhoton*>& locBeams){dResourcePool_BeamPhotons->Recycle(locBeams);}
 		void Recycle_Resources(vector<DBeamPhoton*>& locBeams){dResourcePool_BeamPhotons->Recycle(locBeams);}
 		void Recycle_Resource(const DBeamPhoton* locBeam){dResourcePool_BeamPhotons->Recycle(locBeam);}
@@ -29,9 +31,10 @@ class DBeamPhoton_factory:public jana::JFactory<DBeamPhoton>
 			return locBeam;
 		}
 
-	private:
 		jerror_t init(void);						///< Called once at program start.
 		jerror_t brun(jana::JEventLoop *locEventLoop, int32_t runnumber);	///< Called everytime a new run number is detected.
+
+	private:
 		jerror_t evnt(jana::JEventLoop *locEventLoop, uint64_t locEventNumber);	///< Called every event.
 		jerror_t fini(void)
 		{

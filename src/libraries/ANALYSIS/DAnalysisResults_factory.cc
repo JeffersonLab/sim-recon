@@ -38,8 +38,8 @@ jerror_t DAnalysisResults_factory::brun(JEventLoop *locEventLoop, int32_t runnum
 	locEventLoop->Get(locMCThrowns);
 
 	//MAKE CONTROL HISTOGRAMS
-	auto locIsMCFlag = !locMCThrowns.empty();
-	Make_ControlHistograms(locReactions, locIsMCFlag);
+	dIsMCFlag = !locMCThrowns.empty();
+	Make_ControlHistograms(locReactions);
 
 	//Loop over reactions
 	for(size_t loc_i = 0; loc_i < locReactions.size(); ++loc_i)
@@ -115,19 +115,19 @@ void DAnalysisResults_factory::Check_ReactionNames(vector<const DReaction*>& loc
 	abort();
 }
 
-void DAnalysisResults_factory::Make_ControlHistograms(vector<const DReaction*>& locReactions, bool locIsMCFlag)
+void DAnalysisResults_factory::Make_ControlHistograms(vector<const DReaction*>& locReactions)
 {
 	string locHistName, locHistTitle;
 	TH1D* loc1DHist;
 	TH2D* loc2DHist;
 
+	//get and change to the base (file/global) directory
+	string locOutputFileName = "hd_root.root";
+	if(gPARMS->Exists("OUTPUT_FILENAME"))
+		gPARMS->GetParameter("OUTPUT_FILENAME", locOutputFileName);
+
 	dApplication->RootWriteLock(); //to prevent undefined behavior due to directory changes, etc.
 	{
-		//get and change to the base (file/global) directory
-		string locOutputFileName = "hd_root.root";
-		if(gPARMS->Exists("OUTPUT_FILENAME"))
-			gPARMS->GetParameter("OUTPUT_FILENAME", locOutputFileName);
-
 		TDirectory* locCurrentDir = gDirectory;
 		TFile* locFile = (TFile*)gROOT->FindObject(locOutputFileName.c_str());
 		if(locFile != NULL)
@@ -185,7 +185,7 @@ void DAnalysisResults_factory::Make_ControlHistograms(vector<const DReaction*>& 
 			}
 			dHistMap_NumEventsSurvivedAction_All[locReaction] = loc1DHist;
 
-			if(locIsMCFlag)
+			if(dIsMCFlag)
 			{
 				locHistName = "NumEventsWhereTrueComboSurvivedAction";
 				loc1DHist = static_cast<TH1D*>(locDirectoryFile->Get(locHistName.c_str()));
@@ -227,7 +227,7 @@ void DAnalysisResults_factory::Make_ControlHistograms(vector<const DReaction*>& 
 			{
 				locHistTitle = locReactionName + string(";;# Particle Combos Survived Action");
 				loc1DHist = new TH1D(locHistName.c_str(), locHistTitle.c_str(), locNumActions + 1, -0.5, locNumActions + 1 - 0.5); //+1 for # tracks
-				loc1DHist->GetXaxis()->SetBinLabel(1, "Minimum # Tracks"); // at least one DParticleCombo object before any actions
+				loc1DHist->GetXaxis()->SetBinLabel(1, "Combos Constructed"); // at least one DParticleCombo object before any actions
 				for(size_t loc_j = 0; loc_j < locActionNames.size(); ++loc_j)
 					loc1DHist->GetXaxis()->SetBinLabel(2 + loc_j, locActionNames[loc_j].c_str());
 			}
@@ -325,18 +325,21 @@ jerror_t DAnalysisResults_factory::evnt(JEventLoop* locEventLoop, uint64_t event
 					dHistMap_NumParticleCombos[locReaction]->Fill(locNumCombosSurvived[0]);
 				for(size_t loc_j = 0; loc_j < locNumCombosSurvived.size(); ++loc_j)
 				{
-					if(locNumCombosSurvived[loc_j] > 0)
-					{
-						dHistMap_NumEventsSurvivedAction_All[locReaction]->Fill(loc_j + 1); //+1 because 0 is initial (no cuts at all)
+					if(locNumCombosSurvived[loc_j] == 0)
+						break;
+					if(dHistMap_NumCombosSurvivedAction[locReaction]->GetYaxis()->FindBin(locNumCombosSurvived[loc_j]) <= dHistMap_NumCombosSurvivedAction[locReaction]->GetNbinsY())
 						dHistMap_NumCombosSurvivedAction[locReaction]->Fill(loc_j, locNumCombosSurvived[loc_j]);
-					}
-					for(size_t loc_k = 0; loc_k < locNumCombosSurvived[loc_j]; ++loc_k)
-						dHistMap_NumCombosSurvivedAction1D[locReaction]->Fill(loc_j);
+					if(locNumCombosSurvived[loc_j] > 0)
+						dHistMap_NumEventsSurvivedAction_All[locReaction]->Fill(loc_j + 1); //+1 because 0 is initial (no cuts at all)
+
+					auto locBinContent = dHistMap_NumCombosSurvivedAction1D[locReaction]->GetBinContent(loc_j + 1) + locNumCombosSurvived[loc_j];
+					dHistMap_NumCombosSurvivedAction1D[locReaction]->SetBinContent(loc_j + 1, locBinContent);
 				}
-				for(size_t loc_j = locNumCombosSurvived.size(); loc_j < (locActions.size() + 1); ++loc_j)
-					dHistMap_NumCombosSurvivedAction[locReaction]->Fill(loc_j, 0);
-				for(int loc_j = -1; loc_j <= locLastActionTrueComboSurvives; ++loc_j) //-1/-2: combo does/does-not exist
-					dHistMap_NumEventsWhereTrueComboSurvivedAction[locReaction]->Fill(loc_j + 1);
+				if(dIsMCFlag)
+				{
+					for(int loc_j = -1; loc_j <= locLastActionTrueComboSurvives; ++loc_j) //-1/-2: combo does/does-not exist
+						dHistMap_NumEventsWhereTrueComboSurvivedAction[locReaction]->Fill(loc_j + 1);
+				}
 			}
 			UnlockState();
 
@@ -360,7 +363,7 @@ bool DAnalysisResults_factory::Execute_Actions(JEventLoop* locEventLoop, const D
 		if(!(*locAction)(locEventLoop, locCombo))
 			return false; //failed
 
-		++locNumCombosSurvived[locActionIndex + 1];
+		++(locNumCombosSurvived[locActionIndex + 1]);
 		if(locCombo == locTrueCombo)
 			locLastActionTrueComboSurvives = locActionIndex;
 	}

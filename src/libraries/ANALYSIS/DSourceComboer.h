@@ -62,15 +62,35 @@ using DCombosByReaction = unordered_map<const DReaction*, vector<const DParticle
 
 /************************************************************** DEFINE CLASSES ***************************************************************/
 
-enum ComboingStage_t
-{
-	d_ChargedStage,
-	d_MixedStage_ZIndependent,
-	d_MixedStage
-};
-
 class DSourceComboer : public JObject
 {
+	enum ComboingStage_t
+	{
+		d_ChargedStage,
+		d_MixedStage_ZIndependent,
+		d_MixedStage
+	};
+
+	enum class DConstructionStage
+	{
+		Min_Particles = 0,
+		Max_Extra_Tracks,
+		In_Skim,
+		Charged_Combos,
+		Charged_RFBunch,
+		Full_Combos,
+		Neutral_RFBunch,
+		NoVertex_RFBunch,
+		HeavyNeutral_IM,
+		Beam_Combos,
+		MMVertex_Timing,
+		MMVertex_IMCuts,
+		Reaction_BeamRFCuts,
+		Missing_Mass
+	};
+
+	using DConstructionStageType = std::underlying_type<DConstructionStage>::type;
+
 	public:
 
 		DSourceComboer(void) = delete;
@@ -113,8 +133,16 @@ class DSourceComboer : public JObject
 		void Setup_NeutralShowers(JEventLoop* locEventLoop);
 
 		//INITIAL CHECKS
+		bool Check_Reactions(vector<const DReaction*>& locReactions);
 		bool Check_NumParticles(const DReaction* locReaction);
 		bool Check_Skims(const DReaction* locReaction) const;
+
+		//PARTICLE CUTS
+		bool Cut_dEdxAndEOverP(const DChargedTrackHypothesis* locHypo);
+		bool Cut_dEdx(Particle_t locPID, DetectorSystem_t locSystem, double locP, double locdEdx);
+		bool Cut_EOverP(Particle_t locPID, DetectorSystem_t locSystem, double locP, double locEOverP);
+		void Fill_CutHistograms(void);
+		void Fill_SurvivalHistograms(void);
 
 		//CREATE PHOTON COMBO INFOS & USES
 		void Create_SourceComboInfos(const DReactionVertexInfo* locReactionVertexInfo);
@@ -231,6 +259,7 @@ class DSourceComboer : public JObject
 
 		//PARTICLES
 		map<Particle_t, vector<const JObject*>> dTracksByPID;
+		size_t dNumChargedTracks;
 		map<bool, vector<const JObject*>> dTracksByCharge; //true/false: positive/negative
 		unordered_map<signed char, DPhotonShowersByBeamBunch> dShowersByBeamBunchByZBin; //char: zbin //for all showers: unknown z-bin, {} RF bunch
 
@@ -262,6 +291,22 @@ class DSourceComboer : public JObject
 		//RESOURCE POOLS
 		DResourcePool<DSourceCombo> dResourcePool_SourceCombo;
 		DResourcePool<vector<const DSourceCombo*>> dResourcePool_SourceComboVector;
+
+		//Combo/event tracking
+		map<const DReaction*, TH1*> dNumEventsSurvivedStageMap;
+		map<const DReaction*, TH1*> dNumCombosSurvivedStageMap;
+		map<const DReaction*, TH2*> dNumCombosSurvivedStage2DMap;
+		map<const DReaction*, map<DConstructionStage, size_t>> dNumCombosSurvivedStageTracker; //index is for event stages!!!
+
+		//dE/dx
+		map<Particle_t, map<DetectorSystem_t, pair<TF1*, TF1*>>> ddEdxCutMap; //pair: first is lower bound, second is upper bound
+		map<Particle_t, map<DetectorSystem_t, vector<pair<double, double>>>> ddEdxValueMap; //pair: first is p, 2nd is dE/dx
+		map<Particle_t, map<DetectorSystem_t, TH2*>> dHistMap_dEdx;
+
+		//E/p
+		map<Particle_t, map<DetectorSystem_t, TF1*>> dEOverPCutMap; //if lepton, select above function, else select below
+		map<Particle_t, map<DetectorSystem_t, vector<pair<double, double>>>> dEOverPValueMap; //pair: first is p, 2nd is E/p
+		map<Particle_t, map<DetectorSystem_t, TH2*>> dHistMap_EOverP;
 };
 
 /*********************************************************** INLINE MEMBER FUNCTION DEFINITIONS ************************************************************/
@@ -396,9 +441,30 @@ inline void DSourceComboer::Recycle_ComboResources(DSourceCombosByUse_Large& loc
 	}
 }
 
+inline bool DSourceComboer::Cut_dEdx(Particle_t locPID, DetectorSystem_t locSystem, double locP, double locdEdx)
+{
+	ddEdxValueMap[locPID][locSystem].emplace_back(locP, locdEdx);
+	if(ddEdxCutMap[locPID].find(locSystem) == ddEdxCutMap[locPID].end())
+		return true;
+
+	auto locCutPair = ddEdxCutMap[locPID][locSystem];
+	return ((locdEdx >= locCutPair.first->Eval(locP)) && (locdEdx <= locCutPair.second->Eval(locP)));
+}
+
+inline bool DSourceComboer::Cut_EOverP(Particle_t locPID, DetectorSystem_t locSystem, double locP, double locEOverP)
+{
+	dEOverPValueMap[locPID][locSystem].emplace_back(locP, locEOverP);
+	if(dEOverPCutMap[locPID].find(locSystem) == dEOverPCutMap[locPID].end())
+		return true;
+
+	auto locCutFunc = dEOverPCutMap[locPID][locSystem];
+	return (IsLepton(locPID) == (locEOverP >= locCutFunc->Eval(locP)));
+}
+
 inline DSourceComboer::~DSourceComboer(void)
 {
 	//no need for a resource pool for these objects, as they will exist for the length of the program
+	Fill_SurvivalHistograms();
 	for(auto locComboInfo : dSourceComboInfos)
 		delete locComboInfo;
 }

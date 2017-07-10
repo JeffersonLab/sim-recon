@@ -133,6 +133,11 @@ static inline Particle_t RemapParticleID(Particle_t p)
   return p;
 }
 
+inline static int IsLepton(Particle_t p)
+{
+	return ((p == Electron) || (p == Positron) || (p == MuonPlus) || (p == MuonMinus) || (p == Neutrino));
+}
+
 inline static char* ParticleType(Particle_t p)
 {
   p = RemapParticleID(p);

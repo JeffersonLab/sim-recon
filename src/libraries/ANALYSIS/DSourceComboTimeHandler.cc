@@ -158,6 +158,8 @@ namespace DAnalysis
 DSourceComboTimeHandler::DSourceComboTimeHandler(JEventLoop* locEventLoop, DSourceComboer* locSourceComboer, const DSourceComboVertexer* locSourceComboVertexer) :
 		dSourceComboer(locSourceComboer), dSourceComboVertexer(locSourceComboVertexer)
 {
+	gPARMS->SetDefaultParameter("COMBO:DEBUG_LEVEL", dDebugLevel);
+
 	//UTILITIES
 	locEventLoop->GetSingle(dAnalysisUtilities);
 
@@ -182,12 +184,12 @@ DSourceComboTimeHandler::DSourceComboTimeHandler(JEventLoop* locEventLoop, DSour
 	dPIDTimingCuts[Gamma][SYS_BCAL]->SetParameter(0, 3.0);
 	dPIDTimingCuts[Gamma].emplace(SYS_FCAL, new TF1("df_TimeCut", "[0]", 0.0, 12.0));
 	dPIDTimingCuts[Gamma][SYS_FCAL]->SetParameter(0, 2.5);
-	dRFDeltaTs[Gamma][SYS_BCAL].reserve(1000);
-	dRFDeltaTs[Gamma][SYS_FCAL].reserve(1000);
+	dSelectedRFDeltaTs[Gamma][SYS_BCAL].reserve(1000);
+	dSelectedRFDeltaTs[Gamma][SYS_FCAL].reserve(1000);
 
 	//Unknown: initial RF selection for photons (at beginning of event, prior to vertex) //can be separate cut function
 	dPIDTimingCuts.emplace(Unknown, dPIDTimingCuts[Gamma]);
-	dRFDeltaTs.emplace(Unknown, dRFDeltaTs[Gamma]);
+	dSelectedRFDeltaTs.emplace(Unknown, dSelectedRFDeltaTs[Gamma]);
 
 	// Timing Cuts: Leptons
 	dPIDTimingCuts[Electron].emplace(SYS_BCAL, new TF1("df_TimeCut", "[0]", 0.0, 12.0));
@@ -196,50 +198,54 @@ DSourceComboTimeHandler::DSourceComboTimeHandler(JEventLoop* locEventLoop, DSour
 	dPIDTimingCuts[Electron][SYS_FCAL]->SetParameter(0, 2.5);
 	dPIDTimingCuts[Electron].emplace(SYS_TOF, new TF1("df_TimeCut", "[0]", 0.0, 12.0));
 	dPIDTimingCuts[Electron][SYS_TOF]->SetParameter(0, 2.5);
-	dRFDeltaTs[Electron][SYS_BCAL].reserve(1000);
-	dRFDeltaTs[Electron][SYS_FCAL].reserve(1000);
-	dRFDeltaTs[Electron][SYS_TOF].reserve(1000);
+	dSelectedRFDeltaTs[Electron][SYS_BCAL].reserve(1000);
+	dSelectedRFDeltaTs[Electron][SYS_FCAL].reserve(1000);
+	dSelectedRFDeltaTs[Electron][SYS_TOF].reserve(1000);
+	dSelectedRFDeltaTs[Electron][SYS_START].reserve(1000);
 
 	dPIDTimingCuts.emplace(Positron, dPIDTimingCuts[Electron]);
 	dPIDTimingCuts.emplace(MuonMinus, dPIDTimingCuts[Electron]);
 	dPIDTimingCuts.emplace(MuonPlus, dPIDTimingCuts[Electron]);
-	dRFDeltaTs.emplace(Positron, dRFDeltaTs[Electron]);
-	dRFDeltaTs.emplace(MuonMinus, dRFDeltaTs[Electron]);
-	dRFDeltaTs.emplace(MuonPlus, dRFDeltaTs[Electron]);
+	dSelectedRFDeltaTs.emplace(Positron, dSelectedRFDeltaTs[Electron]);
+	dSelectedRFDeltaTs.emplace(MuonMinus, dSelectedRFDeltaTs[Electron]);
+	dSelectedRFDeltaTs.emplace(MuonPlus, dSelectedRFDeltaTs[Electron]);
 
 	// Timing Cuts: Mesons
-	dPIDTimingCuts[PiPlus].emplace(SYS_BCAL, new TF1("df_TimeCut", "[0]", 0.0, 12.0));
-	dPIDTimingCuts[PiPlus][SYS_BCAL]->SetParameter(0, 2.0);
-	dPIDTimingCuts[PiPlus].emplace(SYS_FCAL, new TF1("df_TimeCut", "[0]", 0.0, 12.0));
-	dPIDTimingCuts[PiPlus][SYS_FCAL]->SetParameter(0, 2.5);
 	dPIDTimingCuts[PiPlus].emplace(SYS_TOF, new TF1("df_TimeCut", "[0]", 0.0, 12.0));
-	dPIDTimingCuts[PiPlus][SYS_TOF]->SetParameter(0, 2.5);
+	dPIDTimingCuts[PiPlus][SYS_TOF]->SetParameter(0, 2.0);
+	dPIDTimingCuts[PiPlus].emplace(SYS_BCAL, new TF1("df_TimeCut", "[0]", 0.0, 12.0));
+	dPIDTimingCuts[PiPlus][SYS_BCAL]->SetParameter(0, 1.5);
+	dPIDTimingCuts[PiPlus].emplace(SYS_FCAL, new TF1("df_TimeCut", "[0]", 0.0, 12.0));
+	dPIDTimingCuts[PiPlus][SYS_FCAL]->SetParameter(0, 3.0);
 	dPIDTimingCuts.emplace(PiMinus, dPIDTimingCuts[PiPlus]);
-	dRFDeltaTs.emplace(PiPlus, dRFDeltaTs[Electron]);
-	dRFDeltaTs.emplace(PiMinus, dRFDeltaTs[Electron]);
+	dSelectedRFDeltaTs.emplace(PiPlus, dSelectedRFDeltaTs[Electron]);
+	dSelectedRFDeltaTs.emplace(PiMinus, dSelectedRFDeltaTs[Electron]);
 
+	dPIDTimingCuts[KPlus].emplace(SYS_TOF, new TF1("df_TimeCut", "[0]", 0.0, 12.0));
+	dPIDTimingCuts[KPlus][SYS_TOF]->SetParameter(0, 2.0);
 	dPIDTimingCuts[KPlus].emplace(SYS_BCAL, new TF1("df_TimeCut", "[0]", 0.0, 12.0));
 	dPIDTimingCuts[KPlus][SYS_BCAL]->SetParameter(0, 0.75);
 	dPIDTimingCuts[KPlus].emplace(SYS_FCAL, new TF1("df_TimeCut", "[0]", 0.0, 12.0));
 	dPIDTimingCuts[KPlus][SYS_FCAL]->SetParameter(0, 2.5);
-	dPIDTimingCuts[KPlus].emplace(SYS_TOF, new TF1("df_TimeCut", "[0]", 0.0, 12.0));
-	dPIDTimingCuts[KPlus][SYS_TOF]->SetParameter(0, 2.0);
 	dPIDTimingCuts.emplace(KMinus, dPIDTimingCuts[KPlus]);
-	dRFDeltaTs.emplace(KPlus, dRFDeltaTs[Electron]);
-	dRFDeltaTs.emplace(KMinus, dRFDeltaTs[Electron]);
+	dSelectedRFDeltaTs.emplace(KPlus, dSelectedRFDeltaTs[Electron]);
+	dSelectedRFDeltaTs.emplace(KMinus, dSelectedRFDeltaTs[Electron]);
 
 	// Timing Cuts: Baryons
+	dPIDTimingCuts[Proton].emplace(SYS_TOF, new TF1("df_TimeCut", "[0]", 0.0, 12.0));
+	dPIDTimingCuts[Proton][SYS_TOF]->SetParameter(0, 2.0);
 	dPIDTimingCuts[Proton].emplace(SYS_BCAL, new TF1("df_TimeCut", "[0]", 0.0, 12.0));
 	dPIDTimingCuts[Proton][SYS_BCAL]->SetParameter(0, 2.5);
 	dPIDTimingCuts[Proton].emplace(SYS_FCAL, new TF1("df_TimeCut", "[0]", 0.0, 12.0));
 	dPIDTimingCuts[Proton][SYS_FCAL]->SetParameter(0, 2.5);
-	dPIDTimingCuts[Proton].emplace(SYS_TOF, new TF1("df_TimeCut", "[0]", 0.0, 12.0));
-	dPIDTimingCuts[Proton][SYS_TOF]->SetParameter(0, 2.5);
 	dPIDTimingCuts.emplace(AntiProton, dPIDTimingCuts[Proton]);
-	dRFDeltaTs.emplace(Proton, dRFDeltaTs[Electron]);
-	dRFDeltaTs.emplace(AntiProton, dRFDeltaTs[Electron]);
+	dSelectedRFDeltaTs.emplace(Proton, dSelectedRFDeltaTs[Electron]);
+	dSelectedRFDeltaTs.emplace(AntiProton, dSelectedRFDeltaTs[Electron]);
+	dAllRFDeltaTs = dSelectedRFDeltaTs;
 
-	gPARMS->SetDefaultParameter("COMBO:DEBUG_LEVEL", dDebugLevel);
+	vector<DetectorSystem_t> locTimingSystems_Charged {SYS_TOF, SYS_BCAL, SYS_FCAL, SYS_START};
+	vector<DetectorSystem_t> locTimingSystems_Neutral {SYS_BCAL, SYS_FCAL};
+	vector<Particle_t> locPIDs {Unknown, Gamma, Electron, Positron, MuonPlus, MuonMinus, PiPlus, PiMinus, KPlus, KMinus, Proton, AntiProton};
 
 	//get file name
 	string locOutputFileName = "hd_root.root";
@@ -269,30 +275,43 @@ DSourceComboTimeHandler::DSourceComboTimeHandler(JEventLoop* locEventLoop, DSour
 			locDirectoryFile = new TDirectoryFile(locDirName.c_str(), locDirName.c_str());
 		locDirectoryFile->cd();
 
-		for(auto locPIDPair : dPIDTimingCuts)
+		for(auto locPID : locPIDs)
 		{
-			auto locPID = locPIDPair.first;
 			auto locPIDString = string((locPID != Unknown) ? ParticleType(locPID) : "Photons_PreVertex");
 
-			locDirName = string("Timing_") + locPIDString;
+			locDirName = string("PID_") + locPIDString;
 			locDirectoryFile = static_cast<TDirectoryFile*>(gDirectory->GetDirectory(locDirName.c_str()));
 			if(locDirectoryFile == NULL)
 				locDirectoryFile = new TDirectoryFile(locDirName.c_str(), locDirName.c_str());
 			locDirectoryFile->cd();
 
-			for(auto locSystemPair : locPIDPair.second)
+			auto& locTimingSystems = (ParticleCharge(locPID) == 0) ? locTimingSystems_Neutral : locTimingSystems_Charged;
+			for(auto locSystem : locTimingSystems)
 			{
-				auto locSystem = locSystemPair.first;
-				string locHistName = string("RFDeltaTVsP_") + locPIDString + string("_") + string(SystemName(locSystem));
+				auto locHistName = string("All_RFDeltaTVsP_") + string(SystemName(locSystem));
 				auto locHist = gDirectory->Get(locHistName.c_str());
 				if(locHist == nullptr)
 				{
 					auto locHistTitle = string((locPID != Unknown) ? ParticleName_ROOT(locPID) : "Photons_PreVertex");
-					locHistTitle += string(", ") + string(SystemName(locSystem)) + string(";p (GeV/c);#Deltat_{Particle - RF}");
-					dHistMap_RFDeltaTVsP[locPID][locSystem] = new TH2I(locHistName.c_str(), locHistTitle.c_str(), 400, 0.0, 12.0, 1400, -7.0, 7.0);
+					locHistTitle += string(" Candidates, ") + string(SystemName(locSystem)) + string(";p (GeV/c);#Deltat_{Particle - All RFs}");
+					dHistMap_RFDeltaTVsP_AllRFs[locPID][locSystem] = new TH2I(locHistName.c_str(), locHistTitle.c_str(), 400, 0.0, 12.0, 1400, -7.0, 7.0);
 				}
 				else
-					dHistMap_RFDeltaTVsP[locPID][locSystem] = static_cast<TH2*>(locHist);
+					dHistMap_RFDeltaTVsP_AllRFs[locPID][locSystem] = static_cast<TH2*>(locHist);
+
+				if(locPID == Unknown)
+					continue;
+
+				locHistName = string("Best_RFDeltaTVsP_") + string(SystemName(locSystem));
+				locHist = gDirectory->Get(locHistName.c_str());
+				if(locHist == nullptr)
+				{
+					auto locHistTitle = string((locPID != Unknown) ? ParticleName_ROOT(locPID) : "Photons_PreVertex");
+					locHistTitle += string(" Candidates, ") + string(SystemName(locSystem)) + string(";p (GeV/c);#Deltat_{Particle - Best RF}");
+					dHistMap_RFDeltaTVsP_BestRF[locPID][locSystem] = new TH2I(locHistName.c_str(), locHistTitle.c_str(), 400, 0.0, 12.0, 1400, -7.0, 7.0);
+				}
+				else
+					dHistMap_RFDeltaTVsP_BestRF[locPID][locSystem] = static_cast<TH2*>(locHist);
 			}
 			gDirectory->cd("..");
 		}
@@ -404,32 +423,34 @@ void DSourceComboTimeHandler::Calc_PhotonBeamBunchShifts(const DNeutralShower* l
 vector<int> DSourceComboTimeHandler::Calc_BeamBunchShifts(double locVertexTime, double locOrigRFBunchPropagatedTime, double locDeltaTCut, bool locIncludeDecayTimeOffset, Particle_t locPID, DetectorSystem_t locSystem, double locP)
 {
 	if(dDebugLevel >= 10)
-		cout << "DSourceComboTimeHandler::Calc_BeamBunchShifts(): period, orig time, vertex time, orig prop rf time, delta-t cut, include offset: " << dBeamBunchPeriod << ", " << dInitialEventRFBunch->dTime << ", " << locVertexTime << ", " << locOrigRFBunchPropagatedTime << ", " << locDeltaTCut << ", " << locIncludeDecayTimeOffset << endl;
+		cout << "DSourceComboTimeHandler::Calc_BeamBunchShifts(): PID, system, period, orig time, vertex time, orig prop rf time, delta-t cut, include offset: " << locPID << ", " << SystemName(locSystem) << ", " << dBeamBunchPeriod << ", " << dInitialEventRFBunch->dTime << ", " << locVertexTime << ", " << locOrigRFBunchPropagatedTime << ", " << locDeltaTCut << ", " << locIncludeDecayTimeOffset << endl;
 	auto locOrigNumShifts = Calc_RFBunchShift(locOrigRFBunchPropagatedTime, locVertexTime); //get best shift
 	vector<int> locRFShifts;
 
 	//start with best-shift, then loop up until fails cut
-	int locNumShifts = locOrigNumShifts;
-	double locDeltaT = locVertexTime - (locOrigRFBunchPropagatedTime + locNumShifts*dBeamBunchPeriod);
-	dRFDeltaTs[locPID][locSystem].push_back(std::make_pair(locP, locDeltaT));
-	while(fabs(locDeltaT) < locDeltaTCut)
+	auto locNumShifts = locOrigNumShifts;
+	auto locDeltaT = locVertexTime - (locOrigRFBunchPropagatedTime + locNumShifts*dBeamBunchPeriod);
+	//cout << "num shifts, delta-t = " << locNumShifts << ", " << locDeltaT << endl;
+	dAllRFDeltaTs[locPID][locSystem].push_back(std::make_pair(locP, locDeltaT));
+	while((fabs(locDeltaT) < locDeltaTCut) || (locOrigNumShifts == locNumShifts)) //extra condition for histogramming purposes only
 	{
-		locRFShifts.push_back(locNumShifts);
+		if(fabs(locDeltaT) < locDeltaTCut)
+			locRFShifts.push_back(locNumShifts);
 		++locNumShifts;
 		locDeltaT = locVertexTime - (locOrigRFBunchPropagatedTime + locNumShifts*dBeamBunchPeriod);
-		dRFDeltaTs[locPID][locSystem].push_back(std::make_pair(locP, locDeltaT));
+		dAllRFDeltaTs[locPID][locSystem].push_back(std::make_pair(locP, locDeltaT));
 	}
 
 	//now loop down in n-shifts
 	locNumShifts = locOrigNumShifts - 1;
 	locDeltaT = locVertexTime - (locOrigRFBunchPropagatedTime + locNumShifts*dBeamBunchPeriod);
-	dRFDeltaTs[locPID][locSystem].push_back(std::make_pair(locP, locDeltaT));
+	dAllRFDeltaTs[locPID][locSystem].push_back(std::make_pair(locP, locDeltaT));
 	while(fabs(locDeltaT) < locDeltaTCut)
 	{
 		locRFShifts.push_back(locNumShifts);
 		--locNumShifts;
 		locDeltaT = locVertexTime - (locOrigRFBunchPropagatedTime + locNumShifts*dBeamBunchPeriod);
-		dRFDeltaTs[locPID][locSystem].push_back(std::make_pair(locP, locDeltaT));
+		dAllRFDeltaTs[locPID][locSystem].push_back(std::make_pair(locP, locDeltaT));
 	}
 
 	//due to detached vertices, we may need to accept EARLIER RF bunches
@@ -437,14 +458,13 @@ vector<int> DSourceComboTimeHandler::Calc_BeamBunchShifts(double locVertexTime, 
 	{
 		//continue down-shift loop, this time including time offset
 		//+dMaxTimeOffset: takes longer for "RF" time to get there (due to slow decaying particle)
+		//Note that in the delta-t histograms, the dMaxDecayTimeOffset would cause a shift in the distribution for positive delta-t's, so we won't include these in the histograms
 		locDeltaT = locVertexTime - (locOrigRFBunchPropagatedTime + locNumShifts*dBeamBunchPeriod + dMaxDecayTimeOffset);
-		dRFDeltaTs[locPID][locSystem].push_back(std::make_pair(locP, locDeltaT));
 		while(fabs(locDeltaT) < locDeltaTCut)
 		{
 			locRFShifts.push_back(locNumShifts);
 			--locNumShifts;
 			locDeltaT = locVertexTime - (locOrigRFBunchPropagatedTime + locNumShifts*dBeamBunchPeriod + dMaxDecayTimeOffset);
-			dRFDeltaTs[locPID][locSystem].push_back(std::make_pair(locP, locDeltaT));
 		}
 	}
 
@@ -509,7 +529,15 @@ bool DSourceComboTimeHandler::Select_RFBunches_Charged(const DReactionVertexInfo
 		for(const auto& locParticlePair : locChargedParticles)
 		{
 			auto locChargedHypo = static_cast<const DChargedTrack*>(locParticlePair.second)->Get_Hypothesis(locParticlePair.first);
-			auto locParticleRFBunches = Get_RFBunches_ChargedTrack(locChargedHypo, locIsProductionVertex, locVertexPrimaryCombo, locVertex, locTimeOffset, locPropagatedRFTime);
+			if((locChargedHypo->PID() == PiPlus) && (locChargedHypo->t1_detector() == SYS_TOF))
+				cout << "TOF get bunches" << endl;
+			vector<int> locParticleRFBunches;
+			if(!Get_RFBunches_ChargedTrack(locChargedHypo, locIsProductionVertex, locVertexPrimaryCombo, locVertex, locTimeOffset, locPropagatedRFTime, locParticleRFBunches))
+			{
+				if(dDebugLevel >= 10)
+					cout << "pid, has no timing info = " << locChargedHypo->PID() << endl;
+				continue;
+			}
 			if(dDebugLevel >= 10)
 				cout << "pid, # valid bunches = " << locChargedHypo->PID() << ", " << locParticleRFBunches.size() << endl;
 
@@ -588,7 +616,12 @@ bool DSourceComboTimeHandler::Select_RFBunches_PhotonVertices(const DReactionVer
 			else //charged, a new vertex: do PID cuts
 			{
 				auto locChargedHypo = static_cast<const DChargedTrack*>(locParticlePair.second)->Get_Hypothesis(locParticlePair.first);
-				locParticleRFBunches = Get_RFBunches_ChargedTrack(locChargedHypo, locIsProductionVertex, locVertexPrimaryFullCombo, locVertex, locTimeOffset, locPropagatedRFTime);
+				if(!Get_RFBunches_ChargedTrack(locChargedHypo, locIsProductionVertex, locVertexPrimaryFullCombo, locVertex, locTimeOffset, locPropagatedRFTime, locParticleRFBunches))
+				{
+					if(dDebugLevel >= 10)
+						cout << "pid, has no timing info = " << locChargedHypo->PID() << endl;
+					continue;
+				}
 			}
 
 			if(locParticleRFBunches.empty())
@@ -651,7 +684,12 @@ bool DSourceComboTimeHandler::Select_RFBunches_AllVerticesUnknown(const DReactio
 			auto locChargedHypo = static_cast<const DChargedTrack*>(locParticlePair.second)->Get_Hypothesis(locParticlePair.first);
 			auto locVertex = locChargedHypo->position();
 			auto locPropagatedRFTime = dInitialEventRFBunch->dTime + (locVertex.Z() - dTargetCenter.Z())/SPEED_OF_LIGHT;
-			locParticleRFBunches = Get_RFBunches_ChargedTrack(locChargedHypo, true, nullptr, locVertex, 0.0, locPropagatedRFTime);
+			if(!Get_RFBunches_ChargedTrack(locChargedHypo, true, nullptr, locVertex, 0.0, locPropagatedRFTime, locParticleRFBunches))
+			{
+				if(dDebugLevel >= 10)
+					cout << "pid, has no timing info = " << locChargedHypo->PID() << endl;
+				continue;
+			}
 		}
 
 		if(locParticleRFBunches.empty())
@@ -688,13 +726,7 @@ int DSourceComboTimeHandler::Select_RFBunch_Full(const DReactionVertexInfo* locR
 		return locRFIterator->second; //already computed, return results!!
 	}
 
-	//only 1: nothing to choose between
-	if(locRFBunches.size() == 1)
-	{
-		dFullComboRFBunches.emplace(locReactionFullCombo, locRFBunches[0]);
-		return locRFBunches[0];
-	}
-
+	//note: even if there's only 1 bunch, we still need to cut on photon timing (if any) (and histogram): proceed with the function
 	if(locRFBunches.empty())
 		return 0; //no information, hope that the default was correct //only detected particles are massive neutrals: e.g. g, p -> K_L, (p)
 
@@ -713,6 +745,7 @@ int DSourceComboTimeHandler::Select_RFBunch_Full(const DReactionVertexInfo* locR
 	auto locPrimaryVertexZ = dSourceComboVertexer->Get_PrimaryVertex(locReactionVertexInfo, locReactionFullCombo, nullptr).Z();
 	if(dDebugLevel >= 10)
 		cout << "primary vertex z: " << locPrimaryVertexZ << endl;
+	map<int, map<Particle_t, map<DetectorSystem_t, vector<pair<float, float>>>>> locRFDeltaTsForHisting; //first float is p, 2nd is delta-t //PID Unknown: photons prior to vertex selection
 	for(const auto& locStepVertexInfo : locReactionVertexInfo->Get_StepVertexInfos())
 	{
 		if(dDebugLevel >= 10)
@@ -753,6 +786,7 @@ int DSourceComboTimeHandler::Select_RFBunch_Full(const DReactionVertexInfo* locR
 					auto locNeutralShower = static_cast<const DNeutralShower*>(locParticlePair.second);
 					auto locRFDeltaTPair = Calc_RFDeltaTChiSq(locNeutralShower, locVertex, locPropagatedRFTime);
 					locChiSqByRFBunch[locRFBunch] += locRFDeltaTPair.second;
+					locRFDeltaTsForHisting[locRFBunch][locPID][locNeutralShower->dDetectorSystem].emplace_back(locNeutralShower->dEnergy, locRFDeltaTPair.first);
 				}
 				else //charged
 				{
@@ -763,6 +797,7 @@ int DSourceComboTimeHandler::Select_RFBunch_Full(const DReactionVertexInfo* locR
 					auto locVertexTime = dChargedParticlePOCAToVertexX4.find(locPOCAPair)->second.T();
 					auto locRFDeltaTPair = Calc_RFDeltaTChiSq(locChargedHypo, locVertexTime, locPropagatedRFTime);
 					locChiSqByRFBunch[locRFBunch] += locRFDeltaTPair.second;
+					locRFDeltaTsForHisting[locRFBunch][locPID][locChargedHypo->t1_detector()].emplace_back(locChargedHypo->momentum().Mag(), locRFDeltaTPair.first);
 				}
 			}
 			if(dDebugLevel >= 10)
@@ -773,8 +808,8 @@ int DSourceComboTimeHandler::Select_RFBunch_Full(const DReactionVertexInfo* locR
 	//if not voted yet, use charged particles at their POCAs to the beamline, else use photons at the target center
 	if(!locVotedFlag)
 	{
-		if(!Compute_RFChiSqs_UnknownVertices(locReactionFullCombo, d_Charged, locRFBunches, locChiSqByRFBunch))
-			Compute_RFChiSqs_UnknownVertices(locReactionFullCombo, d_Neutral, locRFBunches, locChiSqByRFBunch);
+		if(!Compute_RFChiSqs_UnknownVertices(locReactionFullCombo, d_Charged, locRFBunches, locChiSqByRFBunch, locRFDeltaTsForHisting))
+			Compute_RFChiSqs_UnknownVertices(locReactionFullCombo, d_Neutral, locRFBunches, locChiSqByRFBunch, locRFDeltaTsForHisting);
 	}
 
 	//ok, total chisq's are computed, pick the one that is the best!
@@ -784,12 +819,23 @@ int DSourceComboTimeHandler::Select_RFBunch_Full(const DReactionVertexInfo* locR
 	if(dDebugLevel >= 10)
 		cout << "chosen bunch: " << locRFBunch << endl;
 
+	//propagate chosen bunch timing into hist staging vector
+	for(auto& locPIDPair : locRFDeltaTsForHisting[locRFBunch])
+	{
+		for(auto& locSystemPair : locPIDPair.second)
+		{
+			auto& locSaveToVector = dSelectedRFDeltaTs[locPIDPair.first][locSystemPair.first];
+			auto& locMoveFromVector = locSystemPair.second;
+			std::move(locMoveFromVector.begin(), locMoveFromVector.end(), std::back_inserter(locSaveToVector));
+		}
+	}
+
 	//save it and return
 	dFullComboRFBunches.emplace(locReactionFullCombo, locRFBunch);
 	return locRFBunch;
 }
 
-bool DSourceComboTimeHandler::Compute_RFChiSqs_UnknownVertices(const DSourceCombo* locReactionFullCombo, Charge_t locCharge, const vector<int>& locRFBunches, unordered_map<int, double>& locChiSqByRFBunch)
+bool DSourceComboTimeHandler::Compute_RFChiSqs_UnknownVertices(const DSourceCombo* locReactionFullCombo, Charge_t locCharge, const vector<int>& locRFBunches, unordered_map<int, double>& locChiSqByRFBunch, map<int, map<Particle_t, map<DetectorSystem_t, vector<pair<float, float>>>>>& locRFDeltaTsForHisting)
 {
 	//get and loop over all particles
 	auto locSourceParticles = locReactionFullCombo->Get_SourceParticles(true, locCharge);
@@ -810,6 +856,7 @@ bool DSourceComboTimeHandler::Compute_RFChiSqs_UnknownVertices(const DSourceComb
 				auto locPropagatedRFTime = Calc_PropagatedRFTime(dTargetCenter.Z(), locRFBunch, 0.0);
 				auto locRFDeltaTPair = Calc_RFDeltaTChiSq(locNeutralShower, dTargetCenter, locPropagatedRFTime);
 				locChiSqByRFBunch[locRFBunch] += locRFDeltaTPair.second;
+				locRFDeltaTsForHisting[locRFBunch][locPID][locNeutralShower->dDetectorSystem].emplace_back(locNeutralShower->dEnergy, locRFDeltaTPair.first);
 			}
 			else //charged
 			{
@@ -817,6 +864,7 @@ bool DSourceComboTimeHandler::Compute_RFChiSqs_UnknownVertices(const DSourceComb
 				auto locPropagatedRFTime = Calc_PropagatedRFTime(locChargedHypo->position().Z(), locRFBunch, 0.0);
 				auto locRFDeltaTPair = Calc_RFDeltaTChiSq(locChargedHypo, locChargedHypo->time(), locPropagatedRFTime);
 				locChiSqByRFBunch[locRFBunch] += locRFDeltaTPair.second;
+				locRFDeltaTsForHisting[locRFBunch][locPID][locChargedHypo->t1_detector()].emplace_back(locChargedHypo->momentum().Mag(), locRFDeltaTPair.first);
 			}
 		}
 		if(dDebugLevel >= 10)
@@ -903,42 +951,71 @@ void DSourceComboTimeHandler::Fill_Histograms(void)
 {
 	japp->WriteLock("DSourceComboTimeHandler");
 	{
-		for(auto& locPIDPair : dRFDeltaTs)
+		for(auto& locPIDPair : dSelectedRFDeltaTs)
 		{
+			auto locPIDIterator = dHistMap_RFDeltaTVsP_BestRF.find(locPIDPair.first);
+			if(locPIDIterator == dHistMap_RFDeltaTVsP_BestRF.end())
+				continue;
 			for(auto& locSystemPair : locPIDPair.second)
 			{
-				auto& locHist = dHistMap_RFDeltaTVsP[locPIDPair.first][locSystemPair.first];
-				for(auto& locVectorPair : locSystemPair.second)
-					locHist->Fill(locVectorPair.first, locVectorPair.second);
+				auto locSystemIterator = locPIDIterator->second.find(locSystemPair.first);
+				if(locSystemIterator == locPIDIterator->second.end())
+					continue;
+
+				auto& locBestHist = locSystemIterator->second;
+				for(auto& locVectorPair : locSystemPair.second) //best vector
+					locBestHist->Fill(locVectorPair.first, locVectorPair.second);
+			}
+		}
+
+		for(auto& locPIDPair : dAllRFDeltaTs)
+		{
+			auto locPIDIterator = dHistMap_RFDeltaTVsP_AllRFs.find(locPIDPair.first);
+			if(locPIDIterator == dHistMap_RFDeltaTVsP_AllRFs.end())
+				continue;
+			for(auto& locSystemPair : locPIDPair.second)
+			{
+				auto locSystemIterator = locPIDIterator->second.find(locSystemPair.first);
+				if(locSystemIterator == locPIDIterator->second.end())
+					continue;
+
+				auto& locAllHist = locSystemIterator->second;
+				for(auto& locVectorPair : locSystemPair.second) //best vector
+					locAllHist->Fill(locVectorPair.first, locVectorPair.second);
 			}
 		}
 	}
 	japp->Unlock("DSourceComboTimeHandler");
 
 	//Reset for next event
-	for(auto& locPIDPair : dRFDeltaTs)
+	for(auto& locPIDPair : dSelectedRFDeltaTs)
+	{
+		for(auto& locSystemPair : locPIDPair.second)
+			locSystemPair.second.clear();
+	}
+	for(auto& locPIDPair : dAllRFDeltaTs)
 	{
 		for(auto& locSystemPair : locPIDPair.second)
 			locSystemPair.second.clear();
 	}
 }
 
-vector<int> DSourceComboTimeHandler::Get_RFBunches_ChargedTrack(const DChargedTrackHypothesis* locHypothesis, bool locIsProductionVertex, const DSourceCombo* locVertexPrimaryCombo, DVector3 locVertex, double locTimeOffset, double locPropagatedRFTime)
+bool DSourceComboTimeHandler::Get_RFBunches_ChargedTrack(const DChargedTrackHypothesis* locHypothesis, bool locIsProductionVertex, const DSourceCombo* locVertexPrimaryCombo, DVector3 locVertex, double locTimeOffset, double locPropagatedRFTime, vector<int>& locRFBunches)
 {
+	locRFBunches.clear();
+
 	auto locPID = locHypothesis->PID();
 	auto locSystem = locHypothesis->t1_detector();
-	auto locCutFunc = Get_TimeCutFunction(locPID, locSystem);
-	if(locCutFunc == nullptr)
-		return {};
 
-	//INSERT
 	auto locX4 = Get_ChargedPOCAToVertexX4(locHypothesis, locIsProductionVertex, locVertexPrimaryCombo, locVertex);
-
 	auto locVertexTime = locX4.T() - locTimeOffset;
 	auto locP = locHypothesis->momentum().Mag();
-	auto locDeltaTCut = locCutFunc->Eval(locP);
 
-	return Calc_BeamBunchShifts(locVertexTime, locPropagatedRFTime, locDeltaTCut, false, locPID, locSystem, locP);
+	auto locCutFunc = Get_TimeCutFunction(locPID, locSystem);
+	auto locDeltaTCut = (locCutFunc != nullptr) ? locCutFunc->Eval(locP) : 3.0; //if null, still use for histogramming
+
+	locRFBunches = Calc_BeamBunchShifts(locVertexTime, locPropagatedRFTime, locDeltaTCut, false, locPID, locSystem, locP);
+	return (locCutFunc != nullptr);
 }
 
 //evaluate timing at the POCA to the vertex

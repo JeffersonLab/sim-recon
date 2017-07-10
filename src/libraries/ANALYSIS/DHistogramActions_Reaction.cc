@@ -329,7 +329,7 @@ void DHistogramAction_PID::Fill_ChargedHists(const DChargedTrackHypothesis* locC
 	Particle_t locPID = locChargedTrackHypothesis->PID();
 	double locBeta_Timing = locChargedTrackHypothesis->measuredBeta();
 	double locDeltaBeta = locBeta_Timing - locChargedTrackHypothesis->lorentzMomentum().Beta();
-	double locDeltaT = (locChargedTrackHypothesis->time() - locChargedTrackHypothesis->t0());
+	double locDeltaT = (locChargedTrackHypothesis->Get_TimeAtPOCAToVertex() - locChargedTrackHypothesis->t0());
 	double locFOM_Timing = (locChargedTrackHypothesis->Get_NDF_Timing() > 0) ? TMath::Prob(locChargedTrackHypothesis->Get_ChiSq_Timing(), locChargedTrackHypothesis->Get_NDF_Timing()) : numeric_limits<double>::quiet_NaN();
 
 	double locP = locChargedTrackHypothesis->momentum().Mag();
@@ -570,8 +570,8 @@ void DHistogramAction_TrackVertexComparison::Initialize(JEventLoop* locEventLoop
 				// DeltaT Vs P against beam photon
 				if((loc_i == 0) && DAnalysis::Get_IsFirstStepBeam(Get_Reaction()) && (dHistMap_BeamTrackDeltaTVsP.find(locPID) == dHistMap_BeamTrackDeltaTVsP.end()))
 				{
-					locHistName = string("TrackDeltaTVsP_") + ParticleType(locPID) + string("_Beam") + ParticleType(Gamma);
-					locHistTitle = locStepROOTName + string(";") + ParticleName_ROOT(locPID) + string(" Momentum (GeV/c);t_{") + ParticleName_ROOT(locPID) + string("} - t_{Beam ") + ParticleName_ROOT(Gamma) + string("} (ns)");
+					locHistName = string("TrackDeltaTVsP_") + ParticleType(locPID) + string("_Beam") + ParticleType(locPID);
+					locHistTitle = locStepROOTName + string(";") + ParticleName_ROOT(locPID) + string(" Momentum (GeV/c);t_{") + ParticleName_ROOT(locPID) + string("} - t_{Beam ") + ParticleName_ROOT(locPID) + string("} (ns)");
 					dHistMap_BeamTrackDeltaTVsP[locPID] = GetOrCreate_Histogram<TH2I>(locHistName, locHistTitle, dNum2DPBins, dMinP, dMaxP, dNumDeltaVertexTBins, dMinDeltaVertexT, dMaxDeltaVertexT);
 				}
 			}
@@ -1196,7 +1196,7 @@ void DHistogramAction_InvariantMass::Initialize(JEventLoop* locEventLoop)
 bool DHistogramAction_InvariantMass::Perform_Action(JEventLoop* locEventLoop, const DParticleCombo* locParticleCombo)
 {
 	auto locFirstStep = locParticleCombo->Get_ParticleComboStep(0);
-	bool locBeamPresent = (Get_Reaction()->Get_ReactionStep(0)->Get_InitialPID() == Gamma);
+	bool locBeamPresent = DAnalysis::Get_IsFirstStepBeam(Get_Reaction());
 	auto locBeam = Get_UseKinFitResultsFlag() ? locFirstStep->Get_InitialParticle() : locFirstStep->Get_InitialParticle_Measured();
 
 	vector<double> locMassesToFill;
@@ -1680,7 +1680,7 @@ void DHistogramAction_KinFitResults::Initialize(JEventLoop* locEventLoop)
 			auto locPIDs = Get_Reaction()->Get_FinalPIDs(loc_i, false, false, d_AllCharges, false);
 			for(auto locPID : locPIDs)
 			{
-				bool locIsInVertexFitFlag = locStepVertexInfo->Get_DanglingVertexFlag();
+				bool locIsInVertexFitFlag = !locStepVertexInfo->Get_DanglingVertexFlag();
 
 				bool locIsNeutralShowerFlag = (locIsInVertexFitFlag && (ParticleCharge(locPID) == 0));
 				if((ParticleMass(locPID) > 0.0) && !locSpactimeIsFitFlag)
@@ -1722,7 +1722,7 @@ void DHistogramAction_KinFitResults::Initialize(JEventLoop* locEventLoop)
 			bool locFilledFlag = false;
 			for(auto locPID : locPIDs)
 			{
-				bool locIsInVertexFitFlag = locStepVertexInfo->Get_DanglingVertexFlag();
+				bool locIsInVertexFitFlag = !locStepVertexInfo->Get_DanglingVertexFlag();
 				bool locIsChargedFlag = (ParticleCharge(locPID) != 0);
 
 				bool locIsNeutralShowerFlag = (locIsInVertexFitFlag && (ParticleCharge(locPID) == 0));
@@ -1855,7 +1855,7 @@ bool DHistogramAction_KinFitResults::Perform_Action(JEventLoop* locEventLoop, co
 	locKinFitResults->Get_Pulls(locPulls);
 
 	Particle_t locInitPID = Get_Reaction()->Get_ReactionStep(0)->Get_InitialPID();
-	bool locBeamFlag = (locInitPID == Gamma);
+	bool locBeamFlag = DAnalysis::Get_IsFirstStepBeam(Get_Reaction());
 
 	//FILL HISTOGRAMS
 	//Since we are filling histograms local to this action, it will not interfere with other ROOT operations: can use action-wide ROOT lock
@@ -1910,7 +1910,6 @@ bool DHistogramAction_KinFitResults::Perform_Action(JEventLoop* locEventLoop, co
 					auto locNeutralHypo = dynamic_cast<const DNeutralParticleHypothesis*>(locParticle);
 					locParticlePulls = locPulls[locNeutralHypo->Get_NeutralShower()];
 				}
-
 				if(locParticlePulls.empty())
 					continue;
 

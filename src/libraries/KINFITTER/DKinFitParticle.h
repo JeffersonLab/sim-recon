@@ -250,7 +250,7 @@ inline void DKinFitParticle::Print_ParticleParams(void) const
 {
 	cout << "DKinFitParticle: Particle Type Enum, pointer: " << dKinFitParticleType << ", " << this << endl;
 
-	cout << "DKinFitParticle: Particle PID, Q, Mass = " << dPID << ", " << dCharge << ", " << dMass << endl;
+	cout << "DKinFitParticle: Particle PID, Q, Mass = " << dPID << ", " << int(dCharge) << ", " << dMass << endl;
 	cout << "DKinFitParticle: Particle P3, V3, T = " << dMomentum.Px() << ", " << dMomentum.Py() << ", " << dMomentum.Pz() << ", ";
 	cout << dSpacetimeVertex.X() << ", " << dSpacetimeVertex.Y() << ", " << dSpacetimeVertex.Z() << ", " << dSpacetimeVertex.T() << endl;
 	cout << "DKinFitParticle: Particle Common V3, Common T, ShowerE = " << dCommonSpacetimeVertex.X() << ", " << dCommonSpacetimeVertex.Y();
@@ -266,7 +266,8 @@ inline void DKinFitParticle::Print_ParticleParams(void) const
 		cout << endl;
 	}
 
-	cout << "DKinFitParticle: Particle E, Px, Vx, Common Vx, T, Common T indices = " << dEParamIndex << ", " << dPxParamIndex << ", " << dVxParamIndex << ", " << dCommonVxParamIndex << ", " << dTParamIndex << ", " << dCommonTParamIndex << endl;
+	cout << "DKinFitParticle: Particle E, Px, Vx, Common Vx, T, Common T indices = " << int(dEParamIndex) << ", " << int(dPxParamIndex) << ", ";
+	cout << int(dVxParamIndex) << ", " << int(dCommonVxParamIndex) << ", " << int(dTParamIndex) << ", " << int(dCommonTParamIndex) << endl;
 
 	cout << "dFromInitialState size, PIDs: " << dFromInitialState.size();
 	set<DKinFitParticle*>::const_iterator locIterator = dFromInitialState.begin();

@@ -86,10 +86,10 @@ class DSourceComboTimeHandler
 		double Calc_MaxDeltaTError(const DNeutralShower* locNeutralShower, const shared_ptr<const DKinematicData>& locKinematicData) const;
 		DLorentzVector Get_ChargedPOCAToVertexX4(const DChargedTrackHypothesis* locHypothesis, bool locIsProductionVertex, const DSourceCombo* locVertexPrimaryCombo, DVector3 locVertex);
 
-		vector<int> Get_RFBunches_ChargedTrack(const DChargedTrackHypothesis* locHypothesis, bool locIsProductionVertex, const DSourceCombo* locVertexPrimaryCombo, DVector3 locVertex, double locTimeOffset, double locPropagatedRFTime);
+		bool Get_RFBunches_ChargedTrack(const DChargedTrackHypothesis* locHypothesis, bool locIsProductionVertex, const DSourceCombo* locVertexPrimaryCombo, DVector3 locVertex, double locTimeOffset, double locPropagatedRFTime, vector<int>& locRFBunches);
 		TF1* Get_TimeCutFunction(Particle_t locPID, DetectorSystem_t locSystem) const;
 
-		bool Compute_RFChiSqs_UnknownVertices(const DSourceCombo* locReactionFullCombo, Charge_t locCharge, const vector<int>& locRFBunches, unordered_map<int, double>& locChiSqByRFBunch);
+		bool Compute_RFChiSqs_UnknownVertices(const DSourceCombo* locReactionFullCombo, Charge_t locCharge, const vector<int>& locRFBunches, unordered_map<int, double>& locChiSqByRFBunch, map<int, map<Particle_t, map<DetectorSystem_t, vector<pair<float, float>>>>>& locRFDeltaTsForHisting);
 		bool Cut_PhotonPID(const DNeutralShower* locNeutralShower, const DVector3& locVertex, double locPropagatedRFTime, bool locTargetCenterFlag);
 		bool Cut_TrackPID(const DChargedTrackHypothesis* locHypothesis, bool locIsProductionVertex, const DSourceCombo* locVertexPrimaryCombo, DVector3 locVertex, double locPropagatedRFTime);
 
@@ -148,8 +148,10 @@ class DSourceComboTimeHandler
 
 		//HISTOGRAMS
 		//Unknown: initial RF selection for photons (at beginning of event, prior to vertex) //can be separate cut function
-		map<Particle_t, map<DetectorSystem_t, TH2*>> dHistMap_RFDeltaTVsP; //PID Unknown: photons prior to vertex selection
-		map<Particle_t, map<DetectorSystem_t, vector<pair<float, float>>>> dRFDeltaTs; //first float is p, 2nd is delta-t //PID Unknown: photons prior to vertex selection
+		map<Particle_t, map<DetectorSystem_t, TH2*>> dHistMap_RFDeltaTVsP_BestRF; //PID Unknown: photons prior to vertex selection
+		map<Particle_t, map<DetectorSystem_t, TH2*>> dHistMap_RFDeltaTVsP_AllRFs; //PID Unknown: photons prior to vertex selection
+		map<Particle_t, map<DetectorSystem_t, vector<pair<float, float>>>> dSelectedRFDeltaTs; //first float is p, 2nd is delta-t //PID Unknown: photons prior to vertex selection
+		map<Particle_t, map<DetectorSystem_t, vector<pair<float, float>>>> dAllRFDeltaTs; //first float is p, 2nd is delta-t //PID Unknown: photons prior to vertex selection
 
 };
 
@@ -267,7 +269,7 @@ inline bool DSourceComboTimeHandler::Cut_PhotonPID(const DNeutralShower* locNeut
 	//do cut
 	auto locKinematicsPair = Calc_Photon_Kinematics(locNeutralShower, locVertex);
 	auto locDeltaT = locKinematicsPair.second - locPropagatedRFTime;
-	dRFDeltaTs[locPID][locSystem].push_back(std::make_pair(locNeutralShower->dEnergy, locDeltaT));
+	dSelectedRFDeltaTs[locPID][locSystem].emplace_back(locNeutralShower->dEnergy, locDeltaT);
 	return (fabs(locDeltaT) <= locDeltaTCut);
 }
 
@@ -287,7 +289,7 @@ inline bool DSourceComboTimeHandler::Cut_TrackPID(const DChargedTrackHypothesis*
 
 	//do cut
 	auto locDeltaT = locX4.T() - locPropagatedRFTime;
-	dRFDeltaTs[Gamma][locSystem].push_back(std::make_pair(locP, locDeltaT));
+	dSelectedRFDeltaTs[locPID][locSystem].emplace_back(locP, locDeltaT);
 	return (fabs(locDeltaT) <= locDeltaTCut);
 }
 
@@ -300,6 +302,7 @@ inline pair<double, double> DSourceComboTimeHandler::Calc_RFDeltaTChiSq(const DN
 
 	auto locDeltaT = locVertexTime - locPropagatedRFTime;
 	auto locChiSq = locDeltaT*locDeltaT/locVertexTimeVariance;
+//	dSelectedRFDeltaTs[Gamma][locNeutralShower->dDetectorSystem].emplace_back(locP, locDeltaT);
 	if(dDebugLevel >= 5)
 		cout << "neutral Calc_RFDeltaTChiSq(): vertex time, rf time, delta-t, chisq = " << locVertexTime << ", " << locPropagatedRFTime << ", " << locDeltaT << ", " << locChiSq << endl;
 

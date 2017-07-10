@@ -934,7 +934,7 @@ bool DCutAction_dEdx::Cut_dEdx(const DChargedTrackHypothesis* locChargedTrackHyp
 	auto locP = locTrackTimeBased->momentum().Mag();
 	auto locdEdx = locTrackTimeBased->ddEdx_CDC*1.0E6;
 
-	return ((locdEdx >= locCutPair.first->Eval(locP)) || (locdEdx <= locCutPair.second->Eval(locP)));
+	return ((locdEdx >= locCutPair.first->Eval(locP)) && (locdEdx <= locCutPair.second->Eval(locP)));
 }
 
 string DCutAction_BeamEnergy::Get_ActionName(void) const
@@ -1076,7 +1076,7 @@ bool DCutAction_PIDDeltaT::Perform_Action(JEventLoop* locEventLoop, const DParti
 		{
 			if((dSystem != SYS_NULL) && (locChargedHypo->t1_detector() != dSystem))
 				continue;
-			double locDeltaT = locParticles[loc_i]->time() - locChargedHypo->t0();
+			double locDeltaT = locChargedHypo->Get_TimeAtPOCAToVertex() - locChargedHypo->t0();
 			if(fabs(locDeltaT) > dDeltaTCut)
 				return false;
 			continue;

@@ -55,12 +55,15 @@ class DReaction : public JObject
 		// SET PRE-DPARTICLECOMBO CUT VALUES //Command-line values will override these values
 		void Set_NumPlusMinusRFBunches(size_t locNumPlusMinusRFBunches){dNumPlusMinusRFBunches = locNumPlusMinusRFBunches;}
 		void Set_MaxExtraGoodTracks(size_t locMaxExtraGoodTracks){dMaxExtraGoodTracks = pair<bool, size_t>(true, locMaxExtraGoodTracks);}
-		void Set_MaxNumBeamPhotonsInBunch(size_t locMaxNumBeamPhotonsInBunch){dMaxNumBeamPhotonsInBunch = pair<bool, size_t>(true, locMaxNumBeamPhotonsInBunch);}
 
 		//DEPRECATED FUNCTIONS
 		void Set_MaxPhotonRFDeltaT(double locMaxPhotonRFDeltaT);
 		void Set_InvariantMassCut(Particle_t locStepInitialPID, double locMinInvariantMass, double locMaxInvariantMass);
 		void Add_ComboPreSelectionAction(DAnalysisAction* locAction);
+		void Set_MinChargedPIDFOM(double locMinChargedPIDFOM){cout << "WARNING: DReaction::Set_MinChargedPIDFOM() IS CURRENTLY DEPRECATED AND DOES NOTHING." << endl;}
+		void Set_MinPhotonPIDFOM(double locMinPhotonPIDFOM){cout << "WARNING: DReaction::Set_MinPhotonPIDFOM() IS CURRENTLY DEPRECATED AND DOES NOTHING." << endl;}
+		void Set_MinProtonMomentum(double locMinProtonMomentum){cout << "WARNING: DReaction::Set_MinProtonMomentum() IS DEPRECATED AND DOES NOTHING." << endl;}
+		void Set_MaxNumBeamPhotonsInBunch(size_t locMaxNumBeamPhotonsInBunch){cout << "WARNING: DReaction::Set_MinProtonMomentum() IS DEPRECATED AND DOES NOTHING." << endl;}
 
 		// SET EventStore SKIMS //comma-separated list expected
 		void Set_EventStoreSkims(string locEventStoreSkims){dEventStoreSkims = locEventStoreSkims;}
@@ -91,7 +94,6 @@ class DReaction : public JObject
 		size_t Get_NumPlusMinusRFBunches(void) const{return dNumPlusMinusRFBunches;}
 		pair<bool, double> Get_MaxPhotonRFDeltaT(void) const{return dMaxPhotonRFDeltaT;} //DEPRECATED!!!
 		pair<bool, size_t> Get_MaxExtraGoodTracks(void) const{return dMaxExtraGoodTracks;}
-		pair<bool, size_t> Get_MaxNumBeamPhotonsInBunch(void) const{return dMaxNumBeamPhotonsInBunch;}
 
 		// GET EventStore SKIMS //comma-separated list expected
 		string Get_EventStoreSkims(void) const{return dEventStoreSkims;}
@@ -130,7 +132,6 @@ class DReaction : public JObject
 		size_t dNumPlusMinusRFBunches = 99999; //COMBO:NUM_PLUSMINUS_RF_BUNCHES //e.g. if 0 then only center bunch, if 2 then +/- 2 bunches
 		pair<bool, double> dMaxPhotonRFDeltaT = make_pair(false, 0.0); //DEPRECATED!!!!
 		pair<bool, size_t> dMaxExtraGoodTracks = make_pair(false, size_t(0)); //COMBO:MAX_EXTRA_GOOD_TRACKS - "good" defined by PreSelect factory
-		pair<bool, int> dMaxNumBeamPhotonsInBunch = make_pair(false, 0); //COMBO:MAX_NUM_BEAM_PHOTONS cut out combos with more than this # of beam photons surviving the RF delta-t cut
 
 		// EVENT STORE QUERY
 		string dEventStoreSkims = ""; // First is skim name (default = "all"), second is additional query (default = "")

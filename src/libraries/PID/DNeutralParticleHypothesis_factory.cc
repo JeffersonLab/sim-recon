@@ -74,6 +74,7 @@ jerror_t DNeutralParticleHypothesis_factory::evnt(jana::JEventLoop *locEventLoop
 		}
 	}
 
+	dCreated = _data;
 	return NOERROR;
 }
 

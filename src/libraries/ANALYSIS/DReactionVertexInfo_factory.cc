@@ -14,6 +14,8 @@ jerror_t DReactionVertexInfo_factory::init(void)
 
 jerror_t DReactionVertexInfo_factory::evnt(JEventLoop *locEventLoop, uint64_t locEventNumber)
 {
+	dKinFitUtils = new DKinFitUtils_GlueX(locEventLoop);
+
 	auto locReactions = DAnalysis::Get_Reactions(locEventLoop);
 	for(auto locReactionIterator = locReactions.begin(); locReactionIterator != locReactions.end(); ++locReactionIterator)
 	{
@@ -107,10 +109,10 @@ void DReactionVertexInfo_factory::Group_VertexParticles(DReactionStepVertexInfo*
 		if((locStepIndex == 0) && Get_IsFirstStepBeam(locReaction)) //production
 		{
 			//beam 1
-			if(locStep->Get_IsBeamMissingFlag())
-				locNoConstrainParticles.emplace_back(locStepIndex, DReactionStep::Get_ParticleIndex_Initial());
-			else
+			if(!locStep->Get_IsBeamMissingFlag() && dKinFitUtils->Get_IncludeBeamlineInVertexFitFlag())
 				locFullConstrainParticles.emplace_back(locStepIndex, DReactionStep::Get_ParticleIndex_Initial());
+			else
+				locNoConstrainParticles.emplace_back(locStepIndex, DReactionStep::Get_ParticleIndex_Initial());
 
 			//beam 2
 			if(locStep->Get_SecondBeamPID() != Unknown)

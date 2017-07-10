@@ -12,6 +12,7 @@
 #include "DResourcePool.h"
 #include "ANALYSIS/DReaction.h"
 #include "ANALYSIS/DReactionVertexInfo.h"
+#include "ANALYSIS/DKinFitUtils_GlueX.h"
 
 using namespace std;
 using namespace jana;
@@ -50,6 +51,8 @@ class DReactionVertexInfo_factory : public jana::JFactory<DReactionVertexInfo>
 
 		//RESOURCE POOL
 		DResourcePool<DReactionStepVertexInfo>* dResourcePool_ReactionStepVertexInfo = nullptr;
+
+		DKinFitUtils_GlueX* dKinFitUtils;
 };
 
 } //end DAnalysis namespace
