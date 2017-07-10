@@ -70,7 +70,7 @@ void DParticleComboCreator::Reset(void)
 
 bool DParticleComboCreator::Get_CreateNeutralErrorMatrixFlag_Combo(const DReactionVertexInfo* locReactionVertexInfo, DKinFitType locKinFitType)
 {
-	//is there at least one dangling vertex that has neutrals?
+	//is there at least one non-fittable vertex that has neutrals?
 	auto locDanglingIterator = dDanglingNeutralsFlagMap.find(locReactionVertexInfo);
 	bool locDanglingNeutralsFlag = false;
 	if(locDanglingIterator != dDanglingNeutralsFlagMap.end())
@@ -79,14 +79,14 @@ bool DParticleComboCreator::Get_CreateNeutralErrorMatrixFlag_Combo(const DReacti
 	{
 		for(auto locStepVertexInfo : locReactionVertexInfo->Get_StepVertexInfos())
 		{
-			if(!locStepVertexInfo->Get_DanglingVertexFlag())
+			if(locStepVertexInfo->Get_FittableVertexFlag())
 				continue;
 			if(!locStepVertexInfo->Get_OnlyConstrainTimeParticles().empty())
 			{
 				locDanglingNeutralsFlag = true; //photons
 				break;
 			}
-			if(!locStepVertexInfo->Get_NoConstrainParticles(d_FinalState, d_Neutral, false, false, false).empty())
+			if(!locStepVertexInfo->Get_NoConstrainParticles(true, d_FinalState, d_Neutral, false, false, false).empty())
 			{
 				locDanglingNeutralsFlag = true; //massive neutrals
 				break;
@@ -140,7 +140,7 @@ const DParticleCombo* DParticleComboCreator::Build_ParticleCombo(const DReaction
 
 		auto locStepVertexInfo = locReactionVertexInfo->Get_StepVertexInfo(loc_i);
 		auto locVertexPrimaryCombo = dSourceComboer->Get_VertexPrimaryCombo(locFullCombo, locStepVertexInfo);
-		bool locCreateNeutralErrorMatrixFlag = (locKinFitType != d_NoFit) && ((locKinFitType == d_P4Fit) || locStepVertexInfo->Get_DanglingVertexFlag());
+		bool locCreateNeutralErrorMatrixFlag = (locKinFitType != d_NoFit) && ((locKinFitType == d_P4Fit) || !locStepVertexInfo->Get_FittableVertexFlag());
 		if(locReactionStep->Get_FinalPIDs(false, d_Neutral, false).empty())
 			locCreateNeutralErrorMatrixFlag = false; //no neutrals!
 

@@ -43,8 +43,8 @@ class DReactionVertexInfo_factory : public jana::JFactory<DReactionVertexInfo>
 
 		//GROUPING
 		void Group_VertexParticles(DReactionStepVertexInfo* locVertexInfo);
-		vector<DReactionStepVertexInfo*> Link_Vertices(const DReaction* locReaction, vector<DReactionStepVertexInfo*> locVertexInfos) const;
-		bool Associate_DecayingParticles(bool locLinkingFlag, DReactionStepVertexInfo* locVertexInfo, map<pair<int, int>, DReactionStepVertexInfo*>& locDefinedDecayingParticles) const;
+		vector<DReactionStepVertexInfo*> Link_Vertices(const DReaction* locReaction, vector<DReactionStepVertexInfo*> locVertexInfos, bool locFitFlag) const;
+		bool Associate_DecayingParticles(bool locFitFlag, bool locLinkingFlag, DReactionStepVertexInfo* locVertexInfo, map<pair<int, int>, DReactionStepVertexInfo*>& locDefinedDecayingParticles) const;
 
 		//not all reactions are stored here, just the first ones
 		unordered_map<const DReaction*, DReactionVertexInfo*> dVertexInfoMap;

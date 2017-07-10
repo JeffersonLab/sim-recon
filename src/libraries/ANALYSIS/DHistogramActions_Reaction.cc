@@ -1636,7 +1636,7 @@ void DHistogramAction_KinFitResults::Initialize(JEventLoop* locEventLoop)
 		if(locBeamFlag)
 		{
 			auto locStepVertexInfo = locReactionVertexInfo->Get_StepVertexInfo(0);
-			auto locFullConstrainParticles = locStepVertexInfo->Get_FullConstrainParticles(d_InitialState, d_AllCharges, false);
+			auto locFullConstrainParticles = locStepVertexInfo->Get_FullConstrainParticles(true, d_InitialState, d_AllCharges, false);
 			bool locIsInVertexFitFlag = locIncludeBeamlineInVertexFitFlag && !locFullConstrainParticles.empty();
 			bool locIsChargedFlag = (ParticleCharge(locInitialPID) != 0);
 
@@ -1671,7 +1671,7 @@ void DHistogramAction_KinFitResults::Initialize(JEventLoop* locEventLoop)
 		{
 			const DReactionStep* locReactionStep = Get_Reaction()->Get_ReactionStep(loc_i);
 			auto locStepVertexInfo = locReactionVertexInfo->Get_StepVertexInfo(loc_i);
-			auto locFullConstrainParticles = locStepVertexInfo->Get_FullConstrainParticles(d_FinalState, d_AllCharges, false);
+			auto locFullConstrainParticles = locStepVertexInfo->Get_FullConstrainParticles(true, d_FinalState, d_AllCharges, false);
 			ostringstream locStepName;
 			locStepName << "Step" << loc_i << "__" << DAnalysis::Get_StepName(locReactionStep, true, false);
 			string locStepROOTName = DAnalysis::Get_StepName(locReactionStep, true, true);
@@ -1680,7 +1680,7 @@ void DHistogramAction_KinFitResults::Initialize(JEventLoop* locEventLoop)
 			auto locPIDs = Get_Reaction()->Get_FinalPIDs(loc_i, false, false, d_AllCharges, false);
 			for(auto locPID : locPIDs)
 			{
-				bool locIsInVertexFitFlag = !locStepVertexInfo->Get_DanglingVertexFlag();
+				bool locIsInVertexFitFlag = locStepVertexInfo->Get_FittableVertexFlag();
 
 				bool locIsNeutralShowerFlag = (locIsInVertexFitFlag && (ParticleCharge(locPID) == 0));
 				if((ParticleMass(locPID) > 0.0) && !locSpactimeIsFitFlag)
@@ -1722,7 +1722,7 @@ void DHistogramAction_KinFitResults::Initialize(JEventLoop* locEventLoop)
 			bool locFilledFlag = false;
 			for(auto locPID : locPIDs)
 			{
-				bool locIsInVertexFitFlag = !locStepVertexInfo->Get_DanglingVertexFlag();
+				bool locIsInVertexFitFlag = locStepVertexInfo->Get_FittableVertexFlag();
 				bool locIsChargedFlag = (ParticleCharge(locPID) != 0);
 
 				bool locIsNeutralShowerFlag = (locIsInVertexFitFlag && (ParticleCharge(locPID) == 0));

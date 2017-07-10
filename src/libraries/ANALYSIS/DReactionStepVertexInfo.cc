@@ -5,35 +5,35 @@ namespace DAnalysis
 
 /************************************************************** MEMBER FUNCTIONS ***************************************************************/
 
-void DReactionStepVertexInfo::Register_DecayingParticleConstraints(const vector<pair<int, int>>& locNoConstrainDecayingParticles,
+void DReactionStepVertexInfo::Register_DecayingParticleConstraints(bool locFitFlag, const vector<pair<int, int>>& locNoConstrainDecayingParticles,
 		const map<pair<int, int>, const DReactionStepVertexInfo*>& locFullConstrainDecayingParticles = {})
 {
-	dDecayingParticles_FullConstrain = locFullConstrainDecayingParticles;
+	dDecayingParticles_FullConstrain[locFitFlag] = locFullConstrainDecayingParticles;
 	for(auto locMapPair : locFullConstrainDecayingParticles)
-		dFullConstrainParticles.emplace_back(locMapPair.first);
+		dFullConstrainParticles[locFitFlag].emplace_back(locMapPair.first);
 	for(auto locParticlePair : locNoConstrainDecayingParticles)
 	{
-		dDecayingParticles_NoConstrain.emplace(locParticlePair, nullptr);
-		dNoConstrainParticles.emplace_back(locParticlePair);
+		dDecayingParticles_NoConstrain[locFitFlag].emplace(locParticlePair, nullptr);
+		dNoConstrainParticles[locFitFlag].emplace_back(locParticlePair);
 	}
-	std::sort(dFullConstrainParticles.begin(), dFullConstrainParticles.end());
-	std::sort(dNoConstrainParticles.begin(), dNoConstrainParticles.end());
+	std::sort(dFullConstrainParticles[locFitFlag].begin(), dFullConstrainParticles[locFitFlag].end());
+	std::sort(dNoConstrainParticles[locFitFlag].begin(), dNoConstrainParticles[locFitFlag].end());
 }
 
-void DReactionStepVertexInfo::Set_ParticleIndices(const vector<pair<int, int>>& locFullConstrainParticles, const vector<pair<int, int>>& locDecayingParticles,
+void DReactionStepVertexInfo::Set_ParticleIndices(bool locFitFlag, const vector<pair<int, int>>& locFullConstrainParticles, const vector<pair<int, int>>& locDecayingParticles,
 		const vector<pair<int, int>>& locOnlyConstrainTimeParticles, const vector<pair<int, int>>& locNoConstrainParticles)
 {
 	//store
-	dFullConstrainParticles = locFullConstrainParticles;
+	dFullConstrainParticles[locFitFlag] = locFullConstrainParticles;
 	dDecayingParticles = locDecayingParticles;
 	dOnlyConstrainTimeParticles = locOnlyConstrainTimeParticles;
-	dNoConstrainParticles = locNoConstrainParticles;
+	dNoConstrainParticles[locFitFlag] = locNoConstrainParticles;
 
 	//sort
-	std::sort(dFullConstrainParticles.begin(), dFullConstrainParticles.end());
+	std::sort(dFullConstrainParticles[locFitFlag].begin(), dFullConstrainParticles[locFitFlag].end());
 	std::sort(dDecayingParticles.begin(), dDecayingParticles.end());
 	std::sort(dOnlyConstrainTimeParticles.begin(), dOnlyConstrainTimeParticles.end());
-	std::sort(dNoConstrainParticles.begin(), dNoConstrainParticles.end());
+	std::sort(dNoConstrainParticles[locFitFlag].begin(), dNoConstrainParticles[locFitFlag].end());
 }
 
 //if you want beam, say initial state not target or decaying
@@ -43,7 +43,7 @@ vector<pair<int, int>> DReactionStepVertexInfo::Filter_Particles(vector<pair<int
 	if(locState != d_EitherState)
 	{
 		auto Check_State = [&locState](const pair<int, int>& locIndices) -> bool
-		{return ((locIndices.second >= 0) == (locState == d_FinalState));};
+		{return ((locIndices.second >= 0) != (locState == d_FinalState));};
 		locParticles.erase(std::remove_if(locParticles.begin(), locParticles.end(), Check_State), locParticles.end());
 	}
 	if(locCharge != d_AllCharges)

@@ -517,20 +517,18 @@ DKinFitResults* DAnalysisResults_factory::Build_KinFitResults(const DParticleCom
 	locKinFitResults->Set_Pulls(locPulls_JObject);
 
 	//Particle Mapping
-	//If any particles were NOT part of the kinematic fit, they are still added to the source -> output map
-	auto locAllKinFitParticles = locKinFitChain->Get_AllParticles();
-	for(auto& locKinFitParticle : locAllKinFitParticles)
+	for(auto& locKinFitParticle : locOutputKinFitParticles)
 	{
 		if(locKinFitParticle == nullptr)
 			continue;
-		if(locOutputKinFitParticles.find(locKinFitParticle) == locOutputKinFitParticles.end())
-			continue; //not used in kinfit: don't save!!
+
 		const JObject* locSourceJObject = dKinFitUtils->Get_SourceJObject(locKinFitParticle);
 		if(locSourceJObject != NULL)
 		{
 			locKinFitResults->Add_ParticleMapping_SourceToOutput(locSourceJObject, locKinFitParticle);
 			continue; //*locParticleIterator was an input object //not directly used in the fit
 		}
+
 		DKinFitParticle* locInputKinFitParticle = dKinFitUtils->Get_InputKinFitParticle(locKinFitParticle);
 		if(locInputKinFitParticle != NULL)
 		{
@@ -541,5 +539,9 @@ DKinFitResults* DAnalysisResults_factory::Build_KinFitResults(const DParticleCom
 	}
 
 	return locKinFitResults;
+}
+
+void Add_Particles()
+{
 }
 

@@ -4,7 +4,8 @@
 
 /*
  * PROBLEMS:
- * All events fail kinfit
+ * kinfit: p4 is old
+ * kinfit: constraint string
  * counts in survival hists awkward
  *
  * TESTING:
@@ -28,17 +29,14 @@
  * Each test:
  * Yields are same (or reasonably different)
  * New functions: print to screen to confirm OK
+ * Root tree output
  */
 
 //When comparing before and after:
 //comment line in Cut_dEdxAndEOverP()
 //comment cut on SC timing
 
-//add ST timing cut
-//put in max-neutrals guard
 //finish comments in Build_ParticleCombos()
-//change all references of bcal/fcal to z-independent/dependent showers
-//change all references of showers/photons to particles
 //When saving ROOT TTree, don't save p4 of decaying particles if mass is not constrained in kinfit!
 	//And make sure it's not grabbed in DSelector by default
 
@@ -182,6 +180,7 @@ DSourceComboer::DSourceComboer(JEventLoop* locEventLoop)
 	//Get preselect tag, debug level
 	gPARMS->SetDefaultParameter("COMBO:SHOWER_SELECT_TAG", dShowerSelectionTag);
 	gPARMS->SetDefaultParameter("COMBO:DEBUG_LEVEL", dDebugLevel);
+	gPARMS->SetDefaultParameter("COMBO:MAX_NEUTRALS", dMaxNumNeutrals);
 
 	//GET THE REACTIONS
 	auto locReactions = DAnalysis::Get_Reactions(locEventLoop);
@@ -243,7 +242,7 @@ DSourceComboer::DSourceComboer(JEventLoop* locEventLoop)
 		gPARMS->GetParameter("OUTPUT_FILENAME", locOutputFileName);
 
 	//Make sure this matches DConstructionStage!!!
-	vector<string> locBuildStages_Event = {"Min # Particles", "Max Extra Tracks", "In Skim", "Charged Combos", "Charged RF Bunch", "Full Combos",
+	vector<string> locBuildStages_Event = {"Min # Particles", "Max # Particles", "In Skim", "Charged Combos", "Charged RF Bunch", "Full Combos",
 			"Neutral RF Bunch", "No-Vertex RF Bunch", "Heavy-Neutral IM", "Beam Combos", "MM Vertex Timing", "MM-vertex IM Cuts", "Reaction Beam-RF Cuts", "Missing Mass"};
 	vector<string> locBuildStages_Combo(locBuildStages_Event.begin() + 3, locBuildStages_Event.end());
 
@@ -891,7 +890,7 @@ bool DSourceComboer::Cut_dEdxAndEOverP(const DChargedTrackHypothesis* locCharged
 	bool locPassedCutFlag = true;
 
 	//CDC dE/dx
-	if(locTrackTimeBased->dNumHitsUsedFordEdx_CDC > 0)
+	//if(locTrackTimeBased->dNumHitsUsedFordEdx_CDC > 0)
 	{
 		auto locdEdx = locTrackTimeBased->ddEdx_CDC*1.0E6;
 		if(!Cut_dEdx(locPID, SYS_CDC, locP, locdEdx))
@@ -2793,7 +2792,17 @@ bool DSourceComboer::Check_Reactions(vector<const DReaction*>& locReactions)
 	for(auto& locReaction : locReactions)
 		dNumCombosSurvivedStageTracker[locReaction][DConstructionStage::Min_Particles] = 1; //is really #-events
 
-	//Check Get_MaxExtraGoodTracks
+	//Check Max neutrals
+	auto locNumNeutralNeeded = locReactions.front()->Get_FinalPIDs(-1, false, false, d_Neutral, true).size(); //no missing, no decaying, include duplicates
+	auto locNumDetectedShowers = dShowersByBeamBunchByZBin[DSourceComboInfo::Get_VertexZIndex_Unknown()][{}].size();
+	if((locNumNeutralNeeded > 0) && (locNumDetectedShowers > dMaxNumNeutrals))
+	{
+		if(dDebugLevel > 0)
+			cout << "Too many neutrals: No combos." << endl;
+		return false;
+	}
+
+	//Check Max charged tracks
 	auto locNumTracksNeeded = locReactions.front()->Get_FinalPIDs(-1, false, false, d_Charged, true).size(); //no missing, no decaying, include duplicates
 	auto NumExtra_Checker = [&](const DReaction* locReaction) -> bool
 	{
@@ -2811,7 +2820,7 @@ bool DSourceComboer::Check_Reactions(vector<const DReaction*>& locReactions)
 		return false;
 	}
 	for(auto& locReaction : locReactions)
-		dNumCombosSurvivedStageTracker[locReaction][DConstructionStage::Max_Extra_Tracks] = 1; //is really #-events
+		dNumCombosSurvivedStageTracker[locReaction][DConstructionStage::Max_Particles] = 1; //is really #-events
 
 	auto Skim_Checker = [this](const DReaction* locReaction) -> bool{return !Check_Skims(locReaction);};
 	locReactions.erase(std::remove_if(locReactions.begin(), locReactions.end(), Skim_Checker), locReactions.end());
@@ -2857,7 +2866,7 @@ bool DSourceComboer::Check_NumParticles(const DReaction* locReaction)
 	if(dTracksByCharge[true].size() < locNumNegativeNeeded)
 		return false;
 	if(dDebugLevel > 0)
-		cout << "q0: Need " << locNumNeutralNeeded << ", Have " << locNumDetectedShowers << endl;
+		cout << "q0: Need " << locNumNeutralNeeded << ", Have " << locNumDetectedShowers << ", Max allowed: " << dMaxNumNeutrals << endl;
 	if(locNumDetectedShowers < locNumNeutralNeeded)
 		return false;
 

@@ -302,7 +302,6 @@ inline pair<double, double> DSourceComboTimeHandler::Calc_RFDeltaTChiSq(const DN
 
 	auto locDeltaT = locVertexTime - locPropagatedRFTime;
 	auto locChiSq = locDeltaT*locDeltaT/locVertexTimeVariance;
-//	dSelectedRFDeltaTs[Gamma][locNeutralShower->dDetectorSystem].emplace_back(locP, locDeltaT);
 	if(dDebugLevel >= 5)
 		cout << "neutral Calc_RFDeltaTChiSq(): vertex time, rf time, delta-t, chisq = " << locVertexTime << ", " << locPropagatedRFTime << ", " << locDeltaT << ", " << locChiSq << endl;
 

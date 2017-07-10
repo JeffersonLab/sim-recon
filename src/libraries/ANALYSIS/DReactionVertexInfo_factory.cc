@@ -63,7 +63,9 @@ DReactionVertexInfo* DReactionVertexInfo_factory::Build_VertexInfo(const DReacti
 		Group_VertexParticles(locVertexInfo);
 	}
 
-	locVertexInfos = Link_Vertices(locReaction, locVertexInfos); //sorted by dependency order
+	//sorted by dependency order
+	locVertexInfos = Link_Vertices(locReaction, locVertexInfos, false);
+	locVertexInfos = Link_Vertices(locReaction, locVertexInfos, true);
 	return new DReactionVertexInfo(locReaction, locVertexInfos);
 }
 
@@ -97,7 +99,8 @@ void DReactionVertexInfo_factory::Group_VertexParticles(DReactionStepVertexInfo*
 {
 	auto locReaction = locVertexInfo->Get_Reaction();
 	auto locStepIndices = locVertexInfo->Get_StepIndices();
-	vector<pair<int, int>> locFullConstrainParticles, locDecayingParticles, locOnlyConstrainTimeParticles, locNoConstrainParticles;
+	vector<pair<int, int>> locDecayingParticles, locOnlyConstrainTimeParticles;
+	vector<pair<int, int>> locFullConstrainParticles_Fit, locNoConstrainParticles_Fit, locFullConstrainParticles_Recon, locNoConstrainParticles_Recon;
 
 	//Decaying: Only those that can conceivably be used to constrain: All unless dLinkVerticesFlag disabled (then none)
 	bool locFirstStepFlag = true;
@@ -109,18 +112,36 @@ void DReactionVertexInfo_factory::Group_VertexParticles(DReactionStepVertexInfo*
 		if((locStepIndex == 0) && Get_IsFirstStepBeam(locReaction)) //production
 		{
 			//beam 1
-			if(!locStep->Get_IsBeamMissingFlag() && dKinFitUtils->Get_IncludeBeamlineInVertexFitFlag())
-				locFullConstrainParticles.emplace_back(locStepIndex, DReactionStep::Get_ParticleIndex_Initial());
+			if(locStep->Get_IsBeamMissingFlag())
+			{
+				locNoConstrainParticles_Fit.emplace_back(locStepIndex, DReactionStep::Get_ParticleIndex_Initial());
+				locNoConstrainParticles_Recon.emplace_back(locStepIndex, DReactionStep::Get_ParticleIndex_Initial());
+			}
 			else
-				locNoConstrainParticles.emplace_back(locStepIndex, DReactionStep::Get_ParticleIndex_Initial());
+			{
+				locFullConstrainParticles_Recon.emplace_back(locStepIndex, DReactionStep::Get_ParticleIndex_Initial());
+				if(dKinFitUtils->Get_IncludeBeamlineInVertexFitFlag())
+					locFullConstrainParticles_Fit.emplace_back(locStepIndex, DReactionStep::Get_ParticleIndex_Initial());
+				else //not in fit!
+					locNoConstrainParticles_Fit.emplace_back(locStepIndex, DReactionStep::Get_ParticleIndex_Initial());
+			}
 
 			//beam 2
 			if(locStep->Get_SecondBeamPID() != Unknown)
 			{
-				if(locStep->Get_IsSecondBeamMissingFlag())
-					locNoConstrainParticles.emplace_back(locStepIndex, DReactionStep::Get_ParticleIndex_SecondBeam());
+				if(locStep->Get_IsBeamMissingFlag())
+				{
+					locNoConstrainParticles_Fit.emplace_back(locStepIndex, DReactionStep::Get_ParticleIndex_SecondBeam());
+					locNoConstrainParticles_Recon.emplace_back(locStepIndex, DReactionStep::Get_ParticleIndex_SecondBeam());
+				}
 				else
-					locFullConstrainParticles.emplace_back(locStepIndex, DReactionStep::Get_ParticleIndex_SecondBeam());
+				{
+					locFullConstrainParticles_Recon.emplace_back(locStepIndex, DReactionStep::Get_ParticleIndex_SecondBeam());
+					if(dKinFitUtils->Get_IncludeBeamlineInVertexFitFlag())
+						locFullConstrainParticles_Fit.emplace_back(locStepIndex, DReactionStep::Get_ParticleIndex_SecondBeam());
+					else //not in fit!
+						locNoConstrainParticles_Fit.emplace_back(locStepIndex, DReactionStep::Get_ParticleIndex_SecondBeam());
+				}
 			}
 		}
 		else if(locFirstStepFlag) //decaying //if false: not detached: only save once at this vertex (in final state), not twice!!
@@ -128,7 +149,10 @@ void DReactionVertexInfo_factory::Group_VertexParticles(DReactionStepVertexInfo*
 
 		//target
 		if(locStep->Get_TargetPID() != Unknown) //target
-			locNoConstrainParticles.emplace_back(locStepIndex, DReactionStep::Get_ParticleIndex_Target());
+		{
+			locNoConstrainParticles_Fit.emplace_back(locStepIndex, DReactionStep::Get_ParticleIndex_Target());
+			locNoConstrainParticles_Recon.emplace_back(locStepIndex, DReactionStep::Get_ParticleIndex_Target());
+		}
 
 		//final state
 		auto locFinalPIDs = locStep->Get_FinalPIDs();
@@ -139,22 +163,32 @@ void DReactionVertexInfo_factory::Group_VertexParticles(DReactionStepVertexInfo*
 			if(locDecayStepIndex >= 0) //decaying
 				locDecayingParticles.emplace_back(locStepIndex, loc_i);
 			else if(int(loc_i) == locStep->Get_MissingParticleIndex()) //missing
-				locNoConstrainParticles.emplace_back(locStepIndex, loc_i);
+			{
+				locNoConstrainParticles_Fit.emplace_back(locStepIndex, loc_i);
+				locNoConstrainParticles_Recon.emplace_back(locStepIndex, loc_i);
+			}
 			else if(ParticleCharge(locFinalPIDs[loc_i]) != 0) //detected charged
-				locFullConstrainParticles.emplace_back(locStepIndex, loc_i);
+			{
+				locFullConstrainParticles_Fit.emplace_back(locStepIndex, loc_i);
+				locFullConstrainParticles_Recon.emplace_back(locStepIndex, loc_i);
+			}
 			else if(locFinalPIDs[loc_i] == Gamma) //photon
 				locOnlyConstrainTimeParticles.emplace_back(locStepIndex, loc_i);
 			else //massive neutrals can't constrain position or time!
-				locNoConstrainParticles.emplace_back(locStepIndex, loc_i);
+			{
+				locNoConstrainParticles_Fit.emplace_back(locStepIndex, loc_i);
+				locNoConstrainParticles_Recon.emplace_back(locStepIndex, loc_i);
+			}
 		}
 
 		locFirstStepFlag = false;
 	}
 
-	locVertexInfo->Set_ParticleIndices(locFullConstrainParticles, locDecayingParticles, locOnlyConstrainTimeParticles, locNoConstrainParticles);
+	locVertexInfo->Set_ParticleIndices(true, locFullConstrainParticles_Fit, locDecayingParticles, locOnlyConstrainTimeParticles, locNoConstrainParticles_Fit);
+	locVertexInfo->Set_ParticleIndices(false, locFullConstrainParticles_Recon, locDecayingParticles, locOnlyConstrainTimeParticles, locNoConstrainParticles_Recon);
 }
 
-vector<DReactionStepVertexInfo*> DReactionVertexInfo_factory::Link_Vertices(const DReaction* locReaction, vector<DReactionStepVertexInfo*> locVertexInfos) const
+vector<DReactionStepVertexInfo*> DReactionVertexInfo_factory::Link_Vertices(const DReaction* locReaction, vector<DReactionStepVertexInfo*> locVertexInfos, bool locFitFlag) const
 {
 	//loop over vertex-constraints-to-sort:
 		//find which constraints decaying particles should be defined-by/constrained-to
@@ -179,7 +213,7 @@ vector<DReactionStepVertexInfo*> DReactionVertexInfo_factory::Link_Vertices(cons
 		}
 		auto locVertexInfo = *locVertexIterator;
 
-		locProgessMadeFlag = Associate_DecayingParticles(true, locVertexInfo, locDefinedDecayingParticles);
+		locProgessMadeFlag = Associate_DecayingParticles(locFitFlag, true, locVertexInfo, locDefinedDecayingParticles);
 		if(!locProgessMadeFlag)
 			++locVertexIterator; //try again later
 		else //Erase this vertex from future consideration
@@ -193,7 +227,7 @@ vector<DReactionStepVertexInfo*> DReactionVertexInfo_factory::Link_Vertices(cons
 	//save dangling info
 	for(auto locVertexInfo : locVertexInfos)
 	{
-		Associate_DecayingParticles(false, locVertexInfo, locDefinedDecayingParticles);
+		Associate_DecayingParticles(locFitFlag, false, locVertexInfo, locDefinedDecayingParticles);
 		locSortedVertexInfos.push_back(locVertexInfo);
 	}
 
@@ -212,16 +246,17 @@ vector<DReactionStepVertexInfo*> DReactionVertexInfo_factory::Link_Vertices(cons
 		auto locParentStepIndex = DAnalysis::Get_InitialParticleDecayFromIndices(locReaction, locPrimaryStepIndex).first;
 		locVertexInfo->Set_ParentVertexInfo(locVertexInfoMap[locParentStepIndex]);
 	}
+
 	return locSortedVertexInfos;
 }
 
-bool DReactionVertexInfo_factory::Associate_DecayingParticles(bool locLinkingFlag, DReactionStepVertexInfo* locVertexInfo,
-		map<pair<int, int>, DReactionStepVertexInfo*>& locDefinedDecayingParticles) const
+bool DReactionVertexInfo_factory::Associate_DecayingParticles(bool locFitFlag, bool locLinkingFlag, DReactionStepVertexInfo* locVertexInfo, map<pair<int, int>, DReactionStepVertexInfo*>& locDefinedDecayingParticles) const
 {
 	//find which decaying particles at this vertex have/haven't been previously defined
 	vector<pair<int, int>> locNoConstrainDecayingParticles;
 	map<pair<int, int>, const DReactionStepVertexInfo*> locConstrainingDecayingParticles;
 	auto locDecayingParticles = locVertexInfo->Get_DecayingParticles();
+
 	for(auto locParticlePair : locDecayingParticles)
 	{
 		auto locIterator = locDefinedDecayingParticles.find(locParticlePair);
@@ -234,24 +269,36 @@ bool DReactionVertexInfo_factory::Associate_DecayingParticles(bool locLinkingFla
 			locNoConstrainDecayingParticles.emplace_back(locParticlePair);
 	}
 
+	//tricky: beamline can be used to find vertex, but not in a kinfit (because the errors are zero)
+	//so, if a production vertex has only one charged/known-decaying track, then:
+		//it's vertex position can be found: not dangling
+		//it's vertex position cannot be fit (not enough constraints)
+		//have a separate flag:  
+	//enough tracks for kinfit vs. enough tracks to determine separate vertex
+
 	//see if enough tracks //if not linking, then don't need "enough": will register as dangling vertex instead
-	bool locEnoughTracksFlag = (locConstrainingDecayingParticles.size() + locVertexInfo->Get_FullConstrainParticles().size() >= 2);
+	auto locNumConstrainingParticles = locConstrainingDecayingParticles.size() + locVertexInfo->Get_FullConstrainParticles(locFitFlag).size();
+	locVertexInfo->Set_FittableVertexFlag((locNumConstrainingParticles >= 2));
+	if(!locFitFlag && locVertexInfo->Get_ProductionVertexFlag() && !dKinFitUtils->Get_IncludeBeamlineInVertexFitFlag())
+		++locNumConstrainingParticles; //include beamline for reconstruction (but not fitting)
+
+	bool locEnoughTracksFlag = (locNumConstrainingParticles >= 2);
 	if(locLinkingFlag && !locEnoughTracksFlag)
 		return false; //trying to link vertices, not enough tracks yet. try again later
 
 	//Save results
-	locVertexInfo->Register_DecayingParticleConstraints(locNoConstrainDecayingParticles, locConstrainingDecayingParticles);
-
+	locVertexInfo->Register_DecayingParticleConstraints(locFitFlag, locNoConstrainDecayingParticles, locConstrainingDecayingParticles);
 	//each of the constraining decaying particles was a no-constrain at another vertex. set their vertex-info pointer to the new one
 	for(const auto& locMapPair : locConstrainingDecayingParticles)
 	{
 		auto locDefiningVertexInfo = const_cast<DReactionStepVertexInfo*>(locMapPair.second); //easier this way
-		locDefiningVertexInfo->Register_DecayingNoConstrainUseVertex(locMapPair.first, locVertexInfo);
+		locDefiningVertexInfo->Register_DecayingNoConstrainUseVertex(locFitFlag, locMapPair.first, locVertexInfo);
 	}
 
 	if(!locLinkingFlag)
 	{
-		locVertexInfo->Set_DanglingVertexFlag(true);
+		if(!locFitFlag)
+			locVertexInfo->Set_DanglingVertexFlag(true);
 		return false; //this is a dangling vertex, nothing further to do
 	}
 

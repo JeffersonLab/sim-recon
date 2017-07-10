@@ -574,7 +574,7 @@ DKinFitChainStep* DKinFitUtils_GlueX::Make_KinFitChainStep(const DReactionVertex
 			const DNeutralParticleHypothesis* locNeutralParticleHypothesis = static_cast<const DNeutralParticleHypothesis*>(locKinematicData);
 
 			//Determine whether we should use the particle or the shower object
-			bool locNeutralShowerFlag = locStepVertexInfo->Get_DanglingVertexFlag();
+			bool locNeutralShowerFlag = !locStepVertexInfo->Get_FittableVertexFlag();
 			if((ParticleMass(locPID) > 0.0) && !locSpactimeIsFitFlag)
 				locNeutralShowerFlag = false; //massive shower momentum is defined by t, which isn't fit: use particle
 
@@ -731,8 +731,8 @@ set<DKinFitConstraint*> DKinFitUtils_GlueX::Create_Constraints(const DReactionVe
 			auto locDX4 = locParticleCombo->Get_ParticleComboStep(locStepVertexInfo->Get_StepIndices().front())->Get_SpacetimeVertex();
 			TLorentzVector locX4(locDX4.X(), locDX4.Y(), locDX4.Z(), locDX4.T());
 
-			auto locFullConstrainParticles = Build_ParticleSet(locStepVertexInfo->Get_FullConstrainParticles(), locKinFitChain);
-			auto locNoConstrainParticles = Build_ParticleSet(locStepVertexInfo->Get_NoConstrainParticles(), locKinFitChain);
+			auto locFullConstrainParticles = Build_ParticleSet(locStepVertexInfo->Get_FullConstrainParticles(true), locKinFitChain);
+			auto locNoConstrainParticles = Build_ParticleSet(locStepVertexInfo->Get_NoConstrainParticles(true), locKinFitChain);
 			if(locSpacetimeFitFlag)
 				locSortedVertexConstraints.push_back(Make_SpacetimeConstraint(locFullConstrainParticles, Build_ParticleSet(locStepVertexInfo->Get_OnlyConstrainTimeParticles(), locKinFitChain), locNoConstrainParticles, locX4));
 			else
@@ -875,49 +875,43 @@ string DKinFitUtils_GlueX::Get_ConstraintInfo(const DReactionVertexInfo* locReac
 	if((locKinFitType == d_VertexFit) || (locKinFitType == d_SpacetimeFit) || (locKinFitType == d_P4AndVertexFit) || (locKinFitType == d_P4AndSpacetimeFit))
 	{
 		bool locSpacetimeFitFlag = ((locKinFitType == d_SpacetimeFit) || (locKinFitType == d_P4AndSpacetimeFit));
-		auto locConstraintPair = Predict_VertexConstraints(locReactionVertexInfo, locSpacetimeFitFlag);
-		if(locConstraintPair.first > 0)
+		auto locConstraintTuple = Predict_VertexConstraints(locReactionVertexInfo, locSpacetimeFitFlag);
+		if(std::get<0>(locConstraintTuple) > 0)
 		{
+			locNumConstraints += std::get<0>(locConstraintTuple);
+			locNumUnknowns += std::get<1>(locConstraintTuple);
 			if(locAllConstraintsString != "")
 				locAllConstraintsString += ", ";
-			locAllConstraintsString += locConstraintPair.second;
-
-			locNumConstraints += 2*DAnalysis::Get_FullConstrainParticles(locReactionVertexInfo).size();
-			locNumConstraints += DAnalysis::Get_OnlyConstrainTimeParticles(locReactionVertexInfo).size();
-			if(locSpacetimeFitFlag)
-				locNumUnknowns += 4*locConstraintPair.first;
-			else
-				locNumUnknowns += 3*locConstraintPair.first;
+			locAllConstraintsString += std::get<2>(locConstraintTuple);
 		}
 	}
 
 	return locAllConstraintsString;
 }
 
-pair<size_t, string> DKinFitUtils_GlueX::Predict_VertexConstraints(const DReactionVertexInfo* locReactionVertexInfo, bool locSpacetimeFitFlag) const
+tuple<size_t, size_t, string> DKinFitUtils_GlueX::Predict_VertexConstraints(const DReactionVertexInfo* locReactionVertexInfo, bool locSpacetimeFitFlag) const
 {
 	//returned: #constraints, constraint string
-	size_t locNumConstraints = 0;
+	size_t locNumConstraints = 0, locNumUnknowns = 0;
 	string locAllConstraintString;
-
 	auto locStepVertexInfos = locReactionVertexInfo->Get_StepVertexInfos();
 	for(auto& locVertexInfo : locStepVertexInfos)
 	{
-		if(locVertexInfo->Get_DanglingVertexFlag())
+		if(!locVertexInfo->Get_FittableVertexFlag())
 			continue;
 
-		auto locFullConstrainParticles = locVertexInfo->Get_FullConstrainParticles();
+		auto locFullConstrainParticles = locVertexInfo->Get_FullConstrainParticles(true);
 		if(locSpacetimeFitFlag)
 		{
 			locNumConstraints += 3*locFullConstrainParticles.size();
 			locNumConstraints += locVertexInfo->Get_OnlyConstrainTimeParticles().size();
+			locNumUnknowns += 4;
 		}
 		else //vertex only
+		{
 			locNumConstraints += 2*locFullConstrainParticles.size();
-
-		//adjust if beamline not included in vertex fit
-		if(!Get_IncludeBeamlineInVertexFitFlag() && locVertexInfo->Get_ProductionVertexFlag())
-			locNumConstraints -= 2*locVertexInfo->Get_FullConstrainParticles(d_InitialState).size();
+			locNumUnknowns += 3;
+		}
 
 		//add to the full constraint string
 		if(locAllConstraintString != "")
@@ -925,7 +919,7 @@ pair<size_t, string> DKinFitUtils_GlueX::Predict_VertexConstraints(const DReacti
 		locAllConstraintString += Build_VertexConstraintString(locVertexInfo, locSpacetimeFitFlag);
 	}
 
-	return make_pair(locNumConstraints, locAllConstraintString);
+	return std::make_tuple(locNumConstraints, locNumUnknowns, locAllConstraintString);
 }
 
 string DKinFitUtils_GlueX::Build_VertexConstraintString(const DReactionStepVertexInfo* locVertexInfo, bool locSpacetimeFitFlag) const
@@ -935,7 +929,7 @@ string DKinFitUtils_GlueX::Build_VertexConstraintString(const DReactionStepVerte
 
 	//initial state
 	auto locParticles = locVertexInfo->Get_Particles(d_InitialState);
-	auto locFullConstrainParticles = locVertexInfo->Get_FullConstrainParticles(d_InitialState);
+	auto locFullConstrainParticles = locVertexInfo->Get_FullConstrainParticles(true, d_InitialState);
 	for(auto locIndices : locParticles)
 	{
 		auto locStep = locReaction->Get_ReactionStep(locIndices.first);
@@ -944,13 +938,7 @@ string DKinFitUtils_GlueX::Build_VertexConstraintString(const DReactionStepVerte
 		if(locIndices.second == locStep->Get_MissingParticleIndex())
 			locConstraintString += string("(") + locParticleString + string(")"); //missing
 		else if(std::binary_search(locFullConstrainParticles.begin(), locFullConstrainParticles.end(), locIndices)) //constraining
-		{
-			//adjust if beamline not included in vertex fit
-			if(!Get_IncludeBeamlineInVertexFitFlag() && locVertexInfo->Get_ProductionVertexFlag())
-				locConstraintString += locParticleString; //no-constrain
-			else //constrain
-				locConstraintString += string("#color[4]{") + locParticleString + string("}"); //blue
-		}
+			locConstraintString += string("#color[4]{") + locParticleString + string("}"); //blue
 		else //no-constrain
 			locConstraintString += locParticleString; //plain
 	}
@@ -958,7 +946,7 @@ string DKinFitUtils_GlueX::Build_VertexConstraintString(const DReactionStepVerte
 	//final state
 	locConstraintString += "#rightarrow";
 	locParticles = locVertexInfo->Get_Particles(d_FinalState);
-	locFullConstrainParticles = locVertexInfo->Get_FullConstrainParticles(d_FinalState);
+	locFullConstrainParticles = locVertexInfo->Get_FullConstrainParticles(true, d_FinalState);
 	auto locOnlyConstrainTimeParticles = locVertexInfo->Get_OnlyConstrainTimeParticles();
 	for(auto locIndices : locParticles)
 	{

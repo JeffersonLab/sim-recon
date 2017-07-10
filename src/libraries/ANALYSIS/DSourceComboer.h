@@ -74,7 +74,7 @@ class DSourceComboer : public JObject
 	enum class DConstructionStage
 	{
 		Min_Particles = 0,
-		Max_Extra_Tracks,
+		Max_Particles,
 		In_Skim,
 		Charged_Combos,
 		Charged_RFBunch,
@@ -258,6 +258,7 @@ class DSourceComboer : public JObject
 		const DESSkimData* dESSkimData = nullptr;
 
 		//PARTICLES
+		size_t dMaxNumNeutrals = 20;
 		map<Particle_t, vector<const JObject*>> dTracksByPID;
 		size_t dNumChargedTracks;
 		map<bool, vector<const JObject*>> dTracksByCharge; //true/false: positive/negative

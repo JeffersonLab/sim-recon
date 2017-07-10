@@ -86,7 +86,7 @@ class DKinFitUtils_GlueX : public DKinFitUtils
 
 		/************************************************************ CONSTRAINT PREDICTORS *********************************************************/
 
-		pair<size_t, string> Predict_VertexConstraints(const DReactionVertexInfo* locReactionVertexInfo, bool locSpacetimeFitFlag) const;
+		tuple<size_t, size_t, string> Predict_VertexConstraints(const DReactionVertexInfo* locReactionVertexInfo, bool locSpacetimeFitFlag) const;
 		string Get_ConstraintInfo(const DReactionVertexInfo* locReactionVertexInfo, const DReaction* locReaction, size_t& locNumConstraints, size_t& locNumUnknowns) const;
 
 		/*********************************************************** CALCULATION ROUTINES ***********************************************************/
