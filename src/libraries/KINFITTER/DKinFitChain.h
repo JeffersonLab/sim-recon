@@ -28,12 +28,12 @@ class DKinFitChain
 		vector<DKinFitParticle*> Get_AllParticles(void) const;
 
 		//GET CONTROL INFO
-		char Get_DefinedParticleStepIndex(void) const{return dDefinedParticleStepIndex;}
+		signed char Get_DefinedParticleStepIndex(void) const{return dDefinedParticleStepIndex;}
 		bool Get_IsInclusiveChannelFlag(void) const{return dIsInclusiveChannelFlag;}
-		char Get_DecayStepIndex(DKinFitParticle* locKinFitParticle) const;
+		signed char Get_DecayStepIndex(DKinFitParticle* locKinFitParticle) const;
 
 		//SET CONTROL INFO
-		void Set_DefinedParticleStepIndex(int locDefinedParticleStepIndex){dDefinedParticleStepIndex = locDefinedParticleStepIndex;}
+		void Set_DefinedParticleStepIndex(signed char locDefinedParticleStepIndex){dDefinedParticleStepIndex = locDefinedParticleStepIndex;}
 		void Set_IsInclusiveChannelFlag(bool locIsInclusiveChannelFlag){dIsInclusiveChannelFlag = locIsInclusiveChannelFlag;}
 		void Set_DecayStepIndex(DKinFitParticle* locKinFitParticle, int locDecayStepIndex){dDecayStepIndices[locKinFitParticle] = locDecayStepIndex;}
 
@@ -44,7 +44,7 @@ class DKinFitChain
 
 		vector<DKinFitChainStep*> dKinFitChainSteps;
 		map<DKinFitParticle*, char> dDecayStepIndices; //key is decaying particle, value is the step representing the particle decay
-		char dDefinedParticleStepIndex; //step containing the missing or open-ended-decaying particle, -1 if none
+		signed char dDefinedParticleStepIndex; //step containing the missing or open-ended-decaying particle, -1 if none
 		bool dIsInclusiveChannelFlag; //i.e. does the missing particle have PID 0 (unknown)
 };
 
@@ -56,7 +56,7 @@ inline void DKinFitChain::Reset(void)
 	dDecayStepIndices.clear();
 }
 
-inline char DKinFitChain::Get_DecayStepIndex(DKinFitParticle* locKinFitParticle) const
+inline signed char DKinFitChain::Get_DecayStepIndex(DKinFitParticle* locKinFitParticle) const
 {
 	map<DKinFitParticle*, char>::const_iterator locIterator = dDecayStepIndices.find(locKinFitParticle);
 	return ((locIterator != dDecayStepIndices.end()) ? locIterator->second : -1);
@@ -91,7 +91,7 @@ inline void DKinFitChain::Print_InfoToScreen(void) const
 	for(; locIterator != dDecayStepIndices.end(); ++locIterator)
 		cout << locIterator->first->Get_PID() << ", " << locIterator->first << ", " << locIterator->second << endl;
 
-	cout << "DKinFitChain: defined particle step index, inclusive channel flag = " << dDefinedParticleStepIndex << ", " << dIsInclusiveChannelFlag << endl;
+	cout << "DKinFitChain: defined particle step index, inclusive channel flag = " << int(dDefinedParticleStepIndex) << ", " << dIsInclusiveChannelFlag << endl;
 }
 
 #endif // _DKinFitChain_

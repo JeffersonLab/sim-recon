@@ -331,7 +331,8 @@ const DParticleCombo* DParticleComboCreator::Create_KinFitCombo_NewCombo(const D
 				else //create a new one
 				{
 					auto locChargedTrack = static_cast<const DChargedTrack*>(locComboStep->Get_FinalParticle_SourceObject(loc_k));
-					locNewComboStep->Add_FinalParticle(Create_ChargedHypo_KinFit(locChargedTrack, locPID, locKinFitParticle, locKinFitType));
+					auto locNewHypo = Create_ChargedHypo_KinFit(locChargedTrack, locPID, locKinFitParticle, locKinFitType);
+					locNewComboStep->Add_FinalParticle(locNewHypo);
 				}
 			}
 		}
@@ -518,6 +519,7 @@ const DBeamPhoton* DParticleComboCreator::Create_BeamPhoton_KinFit(const DBeamPh
 
 	locNewBeamPhoton->dCounter = locBeamPhoton->dCounter;
 	locNewBeamPhoton->dSystem = locBeamPhoton->dSystem;
+	locNewBeamPhoton->setPID(Gamma);
 	locNewBeamPhoton->setMomentum(DVector3(locKinFitParticle->Get_Momentum().X(),locKinFitParticle->Get_Momentum().Y(),locKinFitParticle->Get_Momentum().Z()));
 	locNewBeamPhoton->setPosition(DVector3(locKinFitParticle->Get_Position().X(),locKinFitParticle->Get_Position().Y(),locKinFitParticle->Get_Position().Z()));
 	locNewBeamPhoton->setTime(locKinFitParticle->Get_Time());
@@ -535,6 +537,7 @@ const DChargedTrackHypothesis* DParticleComboCreator::Create_ChargedHypo_KinFit(
 	//even if vertex is not fit, p4 is fit: different beta: update time info
 	auto locNewHypo = dChargedTrackHypothesisFactory->Get_Resource();
 	dKinFitChargedHypoMap.emplace(locKinFitParticle, locNewHypo);
+	locNewHypo->setPID(locPID);
 
 	//p3 & v3
 	TVector3 locFitMomentum = locKinFitParticle->Get_Momentum();
@@ -584,6 +587,7 @@ const DNeutralParticleHypothesis* DParticleComboCreator::Create_NeutralHypo_KinF
 
 	auto locNewHypo = dNeutralParticleHypothesisFactory->Get_Resource();
 	dKinFitNeutralHypoMap.emplace(locKinFitParticle, locNewHypo);
+	locNewHypo->setPID(locOrigHypo->PID());
 
 	//p3 & v3
 	TVector3 locFitMomentum = locKinFitParticle->Get_Momentum();

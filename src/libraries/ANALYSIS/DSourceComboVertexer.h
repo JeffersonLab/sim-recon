@@ -186,8 +186,9 @@ inline vector<signed char> DSourceComboVertexer::Get_VertexZBins(bool locIsProdu
 
 inline vector<const DKinematicData*>::const_iterator DSourceComboVertexer::Get_ThetaNearest90Iterator(const vector<const DKinematicData*>& locParticles)
 {
+	//true if first less than second
 	auto Get_Nearer90Theta = [](const DKinematicData* lhs, const DKinematicData* rhs) -> bool
-		{return fabs(lhs->momentum().Theta() - 0.5*TMath::Pi()) < fabs(rhs->momentum().Theta() - 0.5*TMath::Pi());};
+		{return fabs(rhs->momentum().Theta() - 0.5*TMath::Pi()) < fabs(lhs->momentum().Theta() - 0.5*TMath::Pi());};
 	return std::max_element(locParticles.begin(), locParticles.end(), Get_Nearer90Theta);
 }
 

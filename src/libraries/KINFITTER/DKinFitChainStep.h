@@ -25,7 +25,7 @@ class DKinFitChainStep
 		DKinFitParticle* Get_FinalParticle(size_t locIndex) const{return dFinalParticles[locIndex];}
 
 		//GET CONTROL INFO
-		char Get_InitialParticleDecayFromStepIndex(void) const{return dInitialParticleDecayFromStepIndex;}
+		signed char Get_InitialParticleDecayFromStepIndex(void) const{return dInitialParticleDecayFromStepIndex;}
 		bool Get_ConstrainDecayingMassFlag(void) const{return dConstrainDecayingMassFlag;}
 
 		//ADD PARTICLES
@@ -44,7 +44,7 @@ class DKinFitChainStep
 	private:
 
 		//refers to the decaying particle in dInitialParticles //-1 if none, else index points to step index it is produced at
-		char dInitialParticleDecayFromStepIndex;
+		signed char dInitialParticleDecayFromStepIndex;
 		bool dConstrainDecayingMassFlag; //true to constrain mass of the initial state particle
 
 		vector<DKinFitParticle*> dInitialParticles;
@@ -68,7 +68,7 @@ inline vector<DKinFitParticle*> DKinFitChainStep::Get_AllParticles(void) const
 
 inline void DKinFitChainStep::Print_InfoToScreen(void) const
 {
-	cout << "DKinFitChainStep decay from, constrain mass flags = " << dInitialParticleDecayFromStepIndex << ", " << dConstrainDecayingMassFlag << endl;
+	cout << "DKinFitChainStep decay from, constrain mass flags = " << int(dInitialParticleDecayFromStepIndex) << ", " << dConstrainDecayingMassFlag << endl;
 
 	cout << "DKinFitChainStep init particles: PIDs, pointers:" << endl;
 	for(auto& locParticle : dInitialParticles)
