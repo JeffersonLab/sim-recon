@@ -4,17 +4,17 @@
 
 /*
  * PROBLEMS:
- * kinfit: p4 is old
- * kinfit: constraint string
+ * 
  * counts in survival hists awkward
  *
  * TESTING:
- * p2pi no-kinfit
- * p2pi kinfit
- * p3pi no-kinfit
- * p3pi kinfit
- * p3pi missing-p no-kinfit
- * p3pi missing-p kinfit
+ * p2pi: Testing trees
+ * p2k
+ * p4pi
+ * p2g
+ * p pi0
+ * p3pi
+ * p3pi missing-p
  * p2pi + 2pi0s
  * p2pi + 3pi0s
  *
@@ -36,6 +36,8 @@
 //comment line in Cut_dEdxAndEOverP()
 //comment cut on SC timing
 
+//TO DO:
+//Require kinfit convergence
 //finish comments in Build_ParticleCombos()
 //When saving ROOT TTree, don't save p4 of decaying particles if mass is not constrained in kinfit!
 	//And make sure it's not grabbed in DSelector by default
