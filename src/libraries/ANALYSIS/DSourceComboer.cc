@@ -38,7 +38,8 @@
 //comment cut on SC timing
 
 //TO DO:
-//Require kinfit convergence
+//fix file ->cd(), full path provided
+//hist kinfit convergence cut (maybe insert action?)
 //finish comments in Build_ParticleCombos()
 //When saving ROOT TTree, don't save p4 of decaying particles if mass is not constrained in kinfit!
 	//And make sure it's not grabbed in DSelector by default
@@ -223,7 +224,7 @@ DSourceComboer::DSourceComboer(JEventLoop* locEventLoop)
 			auto locNumBunches = locReaction->Get_NumPlusMinusRFBunches();
 			pair<bool, double> locMaxPhotonRFDeltaT = locReaction->Get_MaxPhotonRFDeltaT(); //DEPRECATED!!!
 			if(locMaxPhotonRFDeltaT.first)
-				locNumBunches = size_t(locMaxPhotonRFDeltaT.second/dSourceComboTimeHandler->Get_BeamBunchPeriod() - 0.50001);
+				locNumBunches = size_t(locMaxPhotonRFDeltaT.second/dSourceComboTimeHandler->Get_BeamBunchPeriod() - 0.499);
 			dRFBunchCutsByReaction.emplace(locReaction, locNumBunches);
 		}
 	}

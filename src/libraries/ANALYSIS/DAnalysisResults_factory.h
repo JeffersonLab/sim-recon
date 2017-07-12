@@ -77,6 +77,7 @@ class DAnalysisResults_factory : public jana::JFactory<DAnalysisResults>
 		DParticleComboCreator* dParticleComboCreator;
 		bool dIsMCFlag = false;
 
+		bool dRequireKinFitConvergence = true;
 		unsigned int dKinFitDebugLevel = 0;
 		DKinFitter* dKinFitter;
 		DKinFitUtils_GlueX* dKinFitUtils;

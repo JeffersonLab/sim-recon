@@ -322,14 +322,14 @@ inline vector<const JObject*> Get_SourceParticles(const vector<pair<Particle_t, 
 
 inline vector<const JObject*> Get_SourceParticles(const vector<pair<Particle_t, const JObject*>>& locSourceParticles, int locCharge)
 {
-	//ignores the charge magnitude: only considers if ><= 0
+	//ignores the charge magnitude and sign: only considers if ==/!= 0
 	vector<const JObject*> locOutputParticles;
 	for(const auto& locParticlePair : locSourceParticles)
 	{
 		auto locParticleCharge = ParticleCharge(locParticlePair.first);
 		if((locParticleCharge == locCharge) && (locParticleCharge == 0))
 			locOutputParticles.push_back(locParticlePair.second);
-		else if(locParticleCharge*locCharge > 0)
+		else if(locParticleCharge*locCharge != 0)
 			locOutputParticles.push_back(locParticlePair.second);
 	}
 	return locOutputParticles;

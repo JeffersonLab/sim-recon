@@ -29,7 +29,8 @@ jerror_t DAnalysisResults_factory::brun(JEventLoop *locEventLoop, int32_t runnum
 {
 	dApplication = dynamic_cast<DApplication*>(locEventLoop->GetJApplication());
 
-	gPARMS->SetDefaultParameter("ANALYSIS:DEBUGLEVEL", dDebugLevel);
+	gPARMS->SetDefaultParameter("ANALYSIS:DEBUG_LEVEL", dDebugLevel);
+	gPARMS->SetDefaultParameter("ANALYSIS:KINFIT_CONVERGENCE", dRequireKinFitConvergence);
 
 	auto locReactions = DAnalysis::Get_Reactions(locEventLoop);
 	Check_ReactionNames(locReactions);
@@ -308,6 +309,8 @@ jerror_t DAnalysisResults_factory::evnt(JEventLoop* locEventLoop, uint64_t event
 
 				//KINFIT IF REQUESTED
 				auto locPostKinFitCombo = Handle_ComboFit(locReactionVertexInfo, locCombo, locReaction);
+				if(dRequireKinFitConvergence && (locPostKinFitCombo == nullptr))
+					continue; //failed to converge
 
 				//EXECUTE POST-KINFIT ACTIONS
 				if(!Execute_Actions(locEventLoop, locPostKinFitCombo, locTrueParticleCombo, false, locActions, locActionIndex, locNumCombosSurvived, locLastActionTrueComboSurvives))
@@ -404,7 +407,7 @@ const DParticleCombo* DAnalysisResults_factory::Handle_ComboFit(const DReactionV
 		cout << "Do kinfit" << endl;
 	auto locKinFitResultsPair = Fit_Kinematics(locReactionVertexInfo, locReaction, locParticleCombo, locKinFitType, locUpdateCovMatricesFlag);
 	if(locKinFitResultsPair.second == nullptr)
-		return locParticleCombo; //fit failed, or no constraints
+		return (dRequireKinFitConvergence ? nullptr : locParticleCombo); //fit failed, or no constraints
 
 	//Fit succeeded. Create new combo with kinfit results
 	if(dDebugLevel >= 10)
