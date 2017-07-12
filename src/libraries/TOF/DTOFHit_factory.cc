@@ -145,12 +145,16 @@ jerror_t DTOFHit_factory::brun(jana::JEventLoop *eventLoop, int32_t runnumber)
       if(eventLoop->GetCalib("TOF/timing_offsets_NEWAMP", raw_tdc_offsets)){
 
 	jout<<"\033[1;31m";  // red text";
-	jout<< "Error loading /TOF/timing_offsets_NEWAMP !" << endl;
+	jout<< "Error loading /TOF/timing_offsets_NEWAMP !\033[0m" << endl;
 
 	USE_NEWAMP_4WALKCORR = 0;
-	jout << "Try to resort back to old calibration table /TOF/timing_offsets !\033[0m" << endl; // switch back to black text
-	if(eventLoop->GetCalib("TOF/timing_offsets", raw_tdc_offsets))
+	jout << "\033[1;31m"; // red text again";
+	jout << "Try to resort back to old calibration table /TOF/timing_offsets !\033[0m" << endl; 
+	if(eventLoop->GetCalib("TOF/timing_offsets", raw_tdc_offsets)){
 	  jout << "Error loading /TOF/timing_offsets !" << endl;
+	} else {
+	  jout<<"OK Found!"<<endl;
+	}
 
       }
     }
@@ -347,7 +351,7 @@ jerror_t DTOFHit_factory::evnt(JEventLoop *loop, uint64_t eventnumber)
 
 	} else if (USE_NEWAMP_4WALKCORR) {
 	  // new functional form with 2 functions and 4 parameter using amplitude
-	  tcorr = CalcWalkCorrNEWAMP(hit);
+ 	  tcorr = CalcWalkCorrNEWAMP(hit);
 
 	} else {
 	  // use integral
@@ -392,8 +396,6 @@ DTOFHit* DTOFHit_factory::FindMatch(int plane, int bar, int end, double T)
         //double delta_T = fabs(hit->t - T);
         double delta_T = fabs(T - hit->t);
         if(delta_T > DELTA_T_ADC_TDC_MAX) continue;
-
-        return hit;
 
         // if there are multiple hits, pick the one that is closest in time
         if(best_match != NULL) {
