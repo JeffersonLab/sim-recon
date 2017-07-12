@@ -262,7 +262,8 @@ DSourceComboer::DSourceComboer(JEventLoop* locEventLoop)
 	{
 		//CDC dE/dx Proton
 		ddEdxCutMap[Proton][SYS_CDC].first = new TF1("df_dEdxCut_CDC_ProtonLow", "exp(-1.0*[0]*x + [1]) + [2]", 0.0, 12.0);
-		ddEdxCutMap[Proton][SYS_CDC].first->SetParameters(3.93024, 3.0, 1.0);
+//		ddEdxCutMap[Proton][SYS_CDC].first->SetParameters(3.93024, 3.0, 1.0); //will be used after testing is done
+		ddEdxCutMap[Proton][SYS_CDC].first->SetParameters(4.0, 2.25, 1.0); //used for comparison
 		ddEdxCutMap[Proton][SYS_CDC].second = new TF1("df_dEdxCut_CDC_ProtonHigh", "[0]", 0.0, 12.0);
 		ddEdxCutMap[Proton][SYS_CDC].second->SetParameter(0, 9999999.9);
 
@@ -270,7 +271,8 @@ DSourceComboer::DSourceComboer(JEventLoop* locEventLoop)
 		ddEdxCutMap[PiPlus][SYS_CDC].first = new TF1("df_dEdxCut_CDC_PionLow", "[0]", 0.0, 12.0);
 		ddEdxCutMap[PiPlus][SYS_CDC].first->SetParameter(0, -1.0);
 		ddEdxCutMap[PiPlus][SYS_CDC].second = new TF1("df_dEdxCut_CDC_PionHigh", "exp(-1.0*[0]*x + [1]) + [2]", 0.0, 12.0);
-		ddEdxCutMap[PiPlus][SYS_CDC].second->SetParameters(6.0, 2.80149, 2.55);
+		//ddEdxCutMap[PiPlus][SYS_CDC].second->SetParameters(6.0, 2.80149, 2.55); //will be used after testing is done
+		ddEdxCutMap[PiPlus][SYS_CDC].second->SetParameters(2.0, 0.8, 3.0); //used for comparison
 
 		//E/p
 		dEOverPCutMap[Electron][SYS_FCAL] = new TF1("df_EOverPCut_FCAL_Electron", "[0]", 0.0, 12.0);
@@ -894,7 +896,7 @@ bool DSourceComboer::Cut_dEdxAndEOverP(const DChargedTrackHypothesis* locCharged
 	bool locPassedCutFlag = true;
 
 	//CDC dE/dx
-	//if(locTrackTimeBased->dNumHitsUsedFordEdx_CDC > 0)
+	if(locTrackTimeBased->dNumHitsUsedFordEdx_CDC > 0)
 	{
 		auto locdEdx = locTrackTimeBased->ddEdx_CDC*1.0E6;
 		if(!Cut_dEdx(locPID, SYS_CDC, locP, locdEdx))
