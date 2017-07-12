@@ -5,8 +5,8 @@
 /*
  * PROBLEMS:
  * 
- * counts in survival hists awkward
-//#tracks > 3GeV
+ * track timing resolution at 3 GeV
+ * timing not lined up at zero
  *
  * TESTING:
  * p2pi: Testing trees
@@ -33,9 +33,16 @@
  * Root tree output
  */
 
+/*
+FAQ:
+Q) If an event has the minimum # tracks, how can it fail to create combos for that event?
+A) It may be that one of the tracks failed cuts for the PIDs that you need, but passed for others. Thus the total #tracks is OK. 
+   Then, say you need 1 pi+ & 1 proton, and you detected 2 tracks.  The other track may have passed dE/dx cuts for both proton & pi+, so it registers as both. 
+   Also, one track could have both a positively & negatively charged hypothesis, and thus would count for both charges. 
+*/
+
 //When comparing before and after:
-//comment line in Cut_dEdxAndEOverP()
-//comment cut on SC timing
+//time handler charged time
 
 //TO DO:
 //fix file ->cd(), full path provided
@@ -269,7 +276,7 @@ DSourceComboer::DSourceComboer(JEventLoop* locEventLoop)
 
 		//CDC dE/dx Pi+
 		ddEdxCutMap[PiPlus][SYS_CDC].first = new TF1("df_dEdxCut_CDC_PionLow", "[0]", 0.0, 12.0);
-		ddEdxCutMap[PiPlus][SYS_CDC].first->SetParameter(0, -1.0);
+		ddEdxCutMap[PiPlus][SYS_CDC].first->SetParameter(0, -9999999.9);
 		ddEdxCutMap[PiPlus][SYS_CDC].second = new TF1("df_dEdxCut_CDC_PionHigh", "exp(-1.0*[0]*x + [1]) + [2]", 0.0, 12.0);
 		//ddEdxCutMap[PiPlus][SYS_CDC].second->SetParameters(6.0, 2.80149, 2.55); //will be used after testing is done
 		ddEdxCutMap[PiPlus][SYS_CDC].second->SetParameters(2.0, 0.8, 3.0); //used for comparison
@@ -896,6 +903,7 @@ bool DSourceComboer::Cut_dEdxAndEOverP(const DChargedTrackHypothesis* locCharged
 	bool locPassedCutFlag = true;
 
 	//CDC dE/dx
+//cout << "PID, p, dedx, #hits = " << locPID << ", " << locP << ", " << locTrackTimeBased->ddEdx_CDC*1.0E6 << ", " << locTrackTimeBased->dNumHitsUsedFordEdx_CDC << endl;
 	if(locTrackTimeBased->dNumHitsUsedFordEdx_CDC > 0)
 	{
 		auto locdEdx = locTrackTimeBased->ddEdx_CDC*1.0E6;
@@ -1007,7 +1015,15 @@ DCombosByReaction DSourceComboer::Build_ParticleCombos(const DReactionVertexInfo
 		locOutputComboMap[locReaction] = {};
 
 	if(!Check_Reactions(locReactions))
+	{
+//		if(dDebugLevel > 0)
+		{
+//			cout << "FINISHED COMBOING:" << endl;
+			for(auto locComboPair : locOutputComboMap)
+				cout << "event#, reaction, #combos = " << dEventNumber << ", " << locComboPair.first->Get_ReactionName() << ", " << locComboPair.second.size() << endl;
+		}
 		return locOutputComboMap; //no combos!
+	}
 
 	/******************************************************** COMBOING STEPS *******************************************************
 	*
@@ -1109,6 +1125,13 @@ DCombosByReaction DSourceComboer::Build_ParticleCombos(const DReactionVertexInfo
 			dNumCombosSurvivedStageTracker[locReaction][DConstructionStage::Charged_RFBunch] = 1; //is really #-events
 		}
 		Combo_WithNeutralsAndBeam(locReactions, locReactionVertexInfo, locPrimaryComboUse, nullptr, {}, locOutputComboMap);
+
+		if(dDebugLevel > 0)
+		{
+			cout << "FINISHED COMBOING:" << endl;
+			for(auto locComboPair : locOutputComboMap)
+				cout << "event#, reaction, #combos = " << dEventNumber << ", " << locComboPair.first->Get_ReactionName() << ", " << locComboPair.second.size() << endl;
+		}
 		return locOutputComboMap;
 	}
 
@@ -1119,7 +1142,11 @@ DCombosByReaction DSourceComboer::Build_ParticleCombos(const DReactionVertexInfo
 		dNumCombosSurvivedStageTracker[locReaction][DConstructionStage::Charged_Combos] = locReactionChargedCombos.size();
 
 	if(dDebugLevel > 0)
+	{
 		cout << "Charged combos built." << endl;
+		if(locReactionChargedCombos.empty())
+			cout << "no combos for event: " << dEventNumber << endl;
+	}
 
 	//loop over primary vertex combos //each contains decay combos except when dangling
 	for(const auto& locReactionChargedCombo : locReactionChargedCombos)
@@ -1167,7 +1194,7 @@ DCombosByReaction DSourceComboer::Build_ParticleCombos(const DReactionVertexInfo
 	{
 		cout << "FINISHED COMBOING:" << endl;
 		for(auto locComboPair : locOutputComboMap)
-			cout << "reaction, #combos = " << locComboPair.first->Get_ReactionName() << ", " << locComboPair.second.size() << endl;
+			cout << "event#, reaction, #combos = " << dEventNumber << ", " << locComboPair.first->Get_ReactionName() << ", " << locComboPair.second.size() << endl;
 	}
 
 	return locOutputComboMap;
@@ -1309,7 +1336,12 @@ void DSourceComboer::Combo_WithBeam(const vector<const DReaction*>& locReactions
 
 			//build particle combo & save for the apporpriate reactions
 			locOutputComboMap[locReaction].push_back(dParticleComboCreator->Build_ParticleCombo(locReactionVertexInfo, locReactionFullCombo, locBeamParticle, locRFBunch, locReaction->Get_KinFitType()));
-		}
+			if(dDebugLevel >= 10)
+			{
+				cout << "Created particle combo, beam energy, combo contents = " << locBeamParticle->energy() << endl;
+				Print_SourceCombo(locReactionFullCombo);
+			}
+		}	
 	}
 }
 

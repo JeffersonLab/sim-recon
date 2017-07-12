@@ -194,10 +194,10 @@ DSourceComboTimeHandler::DSourceComboTimeHandler(JEventLoop* locEventLoop, DSour
 	// Timing Cuts: Leptons
 	dPIDTimingCuts[Electron].emplace(SYS_BCAL, new TF1("df_TimeCut", "[0]", 0.0, 12.0));
 	dPIDTimingCuts[Electron][SYS_BCAL]->SetParameter(0, 1.0);
-	dPIDTimingCuts[Electron].emplace(SYS_FCAL, new TF1("df_TimeCut", "[0]", 0.0, 12.0));
-	dPIDTimingCuts[Electron][SYS_FCAL]->SetParameter(0, 2.5);
 	dPIDTimingCuts[Electron].emplace(SYS_TOF, new TF1("df_TimeCut", "[0]", 0.0, 12.0));
 	dPIDTimingCuts[Electron][SYS_TOF]->SetParameter(0, 2.5);
+	dPIDTimingCuts[Electron].emplace(SYS_FCAL, new TF1("df_TimeCut", "[0]", 0.0, 12.0));
+	dPIDTimingCuts[Electron][SYS_FCAL]->SetParameter(0, 2.5);
 	dSelectedRFDeltaTs[Electron][SYS_BCAL].reserve(1000);
 	dSelectedRFDeltaTs[Electron][SYS_FCAL].reserve(1000);
 	dSelectedRFDeltaTs[Electron][SYS_TOF].reserve(1000);
@@ -211,20 +211,20 @@ DSourceComboTimeHandler::DSourceComboTimeHandler(JEventLoop* locEventLoop, DSour
 	dSelectedRFDeltaTs.emplace(MuonPlus, dSelectedRFDeltaTs[Electron]);
 
 	// Timing Cuts: Mesons
-	dPIDTimingCuts[PiPlus].emplace(SYS_TOF, new TF1("df_TimeCut", "[0]", 0.0, 12.0));
-	dPIDTimingCuts[PiPlus][SYS_TOF]->SetParameter(0, 2.0);
 	dPIDTimingCuts[PiPlus].emplace(SYS_BCAL, new TF1("df_TimeCut", "[0]", 0.0, 12.0));
-	dPIDTimingCuts[PiPlus][SYS_BCAL]->SetParameter(0, 1.5);
+	dPIDTimingCuts[PiPlus][SYS_BCAL]->SetParameter(0, 2.0);
+	dPIDTimingCuts[PiPlus].emplace(SYS_TOF, new TF1("df_TimeCut", "[0]", 0.0, 12.0));
+	dPIDTimingCuts[PiPlus][SYS_TOF]->SetParameter(0, 2.5);
 	dPIDTimingCuts[PiPlus].emplace(SYS_FCAL, new TF1("df_TimeCut", "[0]", 0.0, 12.0));
-	dPIDTimingCuts[PiPlus][SYS_FCAL]->SetParameter(0, 3.0);
+	dPIDTimingCuts[PiPlus][SYS_FCAL]->SetParameter(0, 2.5);
 	dPIDTimingCuts.emplace(PiMinus, dPIDTimingCuts[PiPlus]);
 	dSelectedRFDeltaTs.emplace(PiPlus, dSelectedRFDeltaTs[Electron]);
 	dSelectedRFDeltaTs.emplace(PiMinus, dSelectedRFDeltaTs[Electron]);
 
-	dPIDTimingCuts[KPlus].emplace(SYS_TOF, new TF1("df_TimeCut", "[0]", 0.0, 12.0));
-	dPIDTimingCuts[KPlus][SYS_TOF]->SetParameter(0, 2.0);
 	dPIDTimingCuts[KPlus].emplace(SYS_BCAL, new TF1("df_TimeCut", "[0]", 0.0, 12.0));
 	dPIDTimingCuts[KPlus][SYS_BCAL]->SetParameter(0, 0.75);
+	dPIDTimingCuts[KPlus].emplace(SYS_TOF, new TF1("df_TimeCut", "[0]", 0.0, 12.0));
+	dPIDTimingCuts[KPlus][SYS_TOF]->SetParameter(0, 2.0);
 	dPIDTimingCuts[KPlus].emplace(SYS_FCAL, new TF1("df_TimeCut", "[0]", 0.0, 12.0));
 	dPIDTimingCuts[KPlus][SYS_FCAL]->SetParameter(0, 2.5);
 	dPIDTimingCuts.emplace(KMinus, dPIDTimingCuts[KPlus]);
@@ -232,10 +232,10 @@ DSourceComboTimeHandler::DSourceComboTimeHandler(JEventLoop* locEventLoop, DSour
 	dSelectedRFDeltaTs.emplace(KMinus, dSelectedRFDeltaTs[Electron]);
 
 	// Timing Cuts: Baryons
-	dPIDTimingCuts[Proton].emplace(SYS_TOF, new TF1("df_TimeCut", "[0]", 0.0, 12.0));
-	dPIDTimingCuts[Proton][SYS_TOF]->SetParameter(0, 2.0);
 	dPIDTimingCuts[Proton].emplace(SYS_BCAL, new TF1("df_TimeCut", "[0]", 0.0, 12.0));
 	dPIDTimingCuts[Proton][SYS_BCAL]->SetParameter(0, 2.5);
+	dPIDTimingCuts[Proton].emplace(SYS_TOF, new TF1("df_TimeCut", "[0]", 0.0, 12.0));
+	dPIDTimingCuts[Proton][SYS_TOF]->SetParameter(0, 2.0);
 	dPIDTimingCuts[Proton].emplace(SYS_FCAL, new TF1("df_TimeCut", "[0]", 0.0, 12.0));
 	dPIDTimingCuts[Proton][SYS_FCAL]->SetParameter(0, 2.5);
 	dPIDTimingCuts.emplace(AntiProton, dPIDTimingCuts[Proton]);
@@ -315,6 +315,15 @@ DSourceComboTimeHandler::DSourceComboTimeHandler(JEventLoop* locEventLoop, DSour
 			}
 			gDirectory->cd("..");
 		}
+
+		//Beam-RF delta-t
+		string locHistName = "BeamRFDeltaTVsBeamE";
+		auto locHist = gDirectory->Get(locHistName.c_str());
+		if(locHist == nullptr)
+			dHist_BeamRFDeltaTVsBeamE = new TH2I(locHistName.c_str(), ";Beam Energy;#Deltat_{Beam - RF}", 400, 0.0, 12.0, 3600, -18.0, 18.0);
+		else
+			dHist_BeamRFDeltaTVsBeamE = static_cast<TH2*>(locHist);
+
 		locCurrentDir->cd();
 	}
 	japp->RootUnLock(); //unlock
@@ -949,6 +958,9 @@ void DSourceComboTimeHandler::Fill_Histograms(void)
 {
 	japp->WriteLock("DSourceComboTimeHandler");
 	{
+		for(auto& locDeltaTPair : dBeamRFDeltaTs)
+			dHist_BeamRFDeltaTVsBeamE->Fill(locDeltaTPair.first, locDeltaTPair.second);
+
 		for(auto& locPIDPair : dSelectedRFDeltaTs)
 		{
 			auto locPIDIterator = dHistMap_RFDeltaTVsP_BestRF.find(locPIDPair.first);
@@ -986,6 +998,7 @@ void DSourceComboTimeHandler::Fill_Histograms(void)
 	japp->Unlock("DSourceComboTimeHandler");
 
 	//Reset for next event
+	dBeamRFDeltaTs.clear();
 	for(auto& locPIDPair : dSelectedRFDeltaTs)
 	{
 		for(auto& locSystemPair : locPIDPair.second)
@@ -1007,10 +1020,14 @@ bool DSourceComboTimeHandler::Get_RFBunches_ChargedTrack(const DChargedTrackHypo
 
 	auto locX4 = Get_ChargedPOCAToVertexX4(locHypothesis, locIsProductionVertex, locVertexPrimaryCombo, locVertex);
 	auto locVertexTime = locX4.T() - locTimeOffset;
-	auto locP = locHypothesis->momentum().Mag();
 
+	auto locP = locHypothesis->momentum().Mag();
 	auto locCutFunc = Get_TimeCutFunction(locPID, locSystem);
 	auto locDeltaTCut = (locCutFunc != nullptr) ? locCutFunc->Eval(locP) : 3.0; //if null, still use for histogramming
+
+//TEMP!
+locVertexTime = locHypothesis->time();
+locPropagatedRFTime = Calc_PropagatedRFTime(locHypothesis->position().Z(), 0, 0.0);
 
 	locRFBunches = Calc_BeamBunchShifts(locVertexTime, locPropagatedRFTime, locDeltaTCut, false, locPID, locSystem, locP);
 	return (locCutFunc != nullptr);

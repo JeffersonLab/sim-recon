@@ -91,17 +91,15 @@ jerror_t DReaction_factory_ReactionFilter::evnt(JEventLoop* locEventLoop, uint64
 		bool locSaveUnusedFlag = locFSInfo->inclusive();
 		locReaction->Enable_TTreeOutput(locTreeFileName, locSaveUnusedFlag); //true/false: do/don't save unused hypotheses
 
-		/************************************************** Pre-Combo Custom Cuts *************************************************/
-
-		// PID
-		Add_PIDActions(locReaction);
-
 		/**************************************************** Analysis Actions ****************************************************/
 
 		// Recommended: Analysis actions automatically performed by the DAnalysisResults factories to histogram useful quantities.
 			//These actions are executed sequentially, and are executed on each surviving (non-cut) particle combination 
 			//Pre-defined actions can be found in ANALYSIS/DHistogramActions_*.h and ANALYSIS/DCutActions.h
 			//If a histogram action is repeated, it should be created with a unique name (string) to distinguish them
+
+		//PID
+		locReaction->Add_AnalysisAction(new DHistogramAction_PID(locReaction));
 
 		// HISTOGRAM MASSES //false/true: measured/kinfit data
 		Add_MassHistograms(locReaction, locFSInfo, false, "PreKinFit");
@@ -301,32 +299,6 @@ void DReaction_factory_ReactionFilter::Define_LooseCuts(void)
 	dPIDTimingCuts[Proton][SYS_TOF] = 2.5;
 
 	dPIDTimingCuts[AntiProton] = dPIDTimingCuts[Proton];
-}
-
-void DReaction_factory_ReactionFilter::Add_PIDActions(DReaction* locReaction)
-{
-	//Histogram before cuts
-	locReaction->Add_AnalysisAction(new DHistogramAction_PID(locReaction));
-
-	//Get, loop over detected PIDs in reaction
-	auto locDetectedPIDs = locReaction->Get_FinalPIDs(-1, false, false, d_AllCharges, false);
-	for(auto locPID : locDetectedPIDs)
-	{
-		if(dPIDTimingCuts.find(locPID) == dPIDTimingCuts.end())
-			continue; //PID timing cut not defined!
-
-		//Add timing cuts //false: measured data
-		for(auto locSystemPair : dPIDTimingCuts[locPID])
-			locReaction->Add_AnalysisAction(new DCutAction_PIDDeltaT(locReaction, false, locSystemPair.second, locPID, locSystemPair.first));
-
-		//For kaon candidates, cut tracks that don't have a matching hit in a timing detector
-			//Kaons are rare, cut ~necessary to reduce high backgrounds
-		if((locPID == KPlus) || (locPID == KMinus))
-			locReaction->Add_AnalysisAction(new DCutAction_NoPIDHit(locReaction, locPID));
-	}
-
-	//Loose dE/dx cuts
-	locReaction->Add_AnalysisAction(new DCutAction_dEdx(locReaction));
 }
 
 void DReaction_factory_ReactionFilter::Add_MassHistograms(DReaction* locReaction, FSInfo* locFSInfo, bool locUseKinFitResultsFlag, string locBaseUniqueName)

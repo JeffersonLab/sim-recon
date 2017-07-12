@@ -449,6 +449,7 @@ inline bool DSourceComboer::Cut_dEdx(Particle_t locPID, DetectorSystem_t locSyst
 		return true;
 
 	auto locCutPair = ddEdxCutMap[locPID][locSystem];
+//cout << "PID, p, dedx, cut value low/high, cut result: " << locPID << ", " << locP << ", " << locdEdx << ", " << locCutPair.first->Eval(locP) << ", " << locCutPair.second->Eval(locP) << ", " << ((locdEdx >= locCutPair.first->Eval(locP)) && (locdEdx <= locCutPair.second->Eval(locP))) << endl;
 	return ((locdEdx >= locCutPair.first->Eval(locP)) && (locdEdx <= locCutPair.second->Eval(locP)));
 }
 
@@ -468,6 +469,10 @@ inline DSourceComboer::~DSourceComboer(void)
 	Fill_SurvivalHistograms();
 	for(auto locComboInfo : dSourceComboInfos)
 		delete locComboInfo;
+	delete dSourceComboVertexer;
+	delete dSourceComboP4Handler;
+	delete dSourceComboTimeHandler;
+	delete dParticleComboCreator;
 }
 
 

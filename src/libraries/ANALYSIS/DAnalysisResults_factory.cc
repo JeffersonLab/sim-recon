@@ -309,7 +309,7 @@ jerror_t DAnalysisResults_factory::evnt(JEventLoop* locEventLoop, uint64_t event
 
 				//KINFIT IF REQUESTED
 				auto locPostKinFitCombo = Handle_ComboFit(locReactionVertexInfo, locCombo, locReaction);
-				if(dRequireKinFitConvergence && (locPostKinFitCombo == nullptr))
+				if(locPostKinFitCombo == nullptr)
 					continue; //failed to converge
 
 				//EXECUTE POST-KINFIT ACTIONS
@@ -321,7 +321,7 @@ jerror_t DAnalysisResults_factory::evnt(JEventLoop* locEventLoop, uint64_t event
 			}
 
 			//FILL HISTOGRAMS
-			LockState();
+			japp->WriteLock("DAnalysisResults");
 			{
 				dHistMap_NumEventsSurvivedAction_All[locReaction]->Fill(0); //initial: a new event
 				if(locNumCombosSurvived[0] > 0)
@@ -344,7 +344,7 @@ jerror_t DAnalysisResults_factory::evnt(JEventLoop* locEventLoop, uint64_t event
 						dHistMap_NumEventsWhereTrueComboSurvivedAction[locReaction]->Fill(loc_j + 1);
 				}
 			}
-			UnlockState();
+			japp->Unlock("DAnalysisResults");
 
 			//SAVE ANALYSIS RESULTS
 			_data.push_back(locAnalysisResults);

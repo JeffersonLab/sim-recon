@@ -148,11 +148,12 @@ class DSourceComboTimeHandler
 
 		//HISTOGRAMS
 		//Unknown: initial RF selection for photons (at beginning of event, prior to vertex) //can be separate cut function
+		TH2* dHist_BeamRFDeltaTVsBeamE;
 		map<Particle_t, map<DetectorSystem_t, TH2*>> dHistMap_RFDeltaTVsP_BestRF; //PID Unknown: photons prior to vertex selection
 		map<Particle_t, map<DetectorSystem_t, TH2*>> dHistMap_RFDeltaTVsP_AllRFs; //PID Unknown: photons prior to vertex selection
+		vector<pair<float, float>> dBeamRFDeltaTs;
 		map<Particle_t, map<DetectorSystem_t, vector<pair<float, float>>>> dSelectedRFDeltaTs; //first float is p, 2nd is delta-t //PID Unknown: photons prior to vertex selection
 		map<Particle_t, map<DetectorSystem_t, vector<pair<float, float>>>> dAllRFDeltaTs; //first float is p, 2nd is delta-t //PID Unknown: photons prior to vertex selection
-
 };
 
 inline void DSourceComboTimeHandler::Reset(void)
@@ -180,6 +181,7 @@ inline void DSourceComboTimeHandler::Set_BeamParticles(const vector<const DBeamP
 	{
 		auto locRFBunch = Calc_RFBunchShift(dInitialEventRFBunch->dTime, locBeamParticle->time());
 		dBeamParticlesByRFBunch[locRFBunch].push_back(locBeamParticle);
+		dBeamRFDeltaTs.emplace_back(locBeamParticle->energy(), locBeamParticle->time() - dInitialEventRFBunch->dTime);
 	}
 }
 

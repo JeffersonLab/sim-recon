@@ -620,7 +620,7 @@ bool DSourceComboP4Handler::Cut_MissingMass(const DReaction* locReaction, const 
 	auto locMissingMassSquared_Max = locCutPair.second->Eval(locBeamEnergy);
 	if(dDebugLevel >= 5)
 	{
-		cout << "missing pxyzE, m2 = " << locMissingP4.Px() << ", " << locMissingP4.Py() << ", " << locMissingP4.Pz() << ", " << locMissingP4.E() << endl;
+		cout << "missing pxyzE = " << locMissingP4.Px() << ", " << locMissingP4.Py() << ", " << locMissingP4.Pz() << ", " << locMissingP4.E() << endl;
 		cout << "beam E, missing mass^2 min/max/measured = " << locBeamEnergy << ", " << locMissingMassSquared_Min << ", " << locMissingMassSquared_Max << ", " << locMissingP4.M2() << endl;
 	}
 
