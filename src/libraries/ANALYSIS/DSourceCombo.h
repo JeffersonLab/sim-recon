@@ -261,6 +261,8 @@ void Print_SourceComobUse(const DSourceComboUse& locComboUse);
 inline void Print_SourceComboInfo(const DSourceComboInfo* locComboInfo)
 {
 	cout << "COMBO INFO:" << endl;
+	if(locComboInfo == nullptr)
+		return;
 
 	auto locNumParticles = locComboInfo->Get_NumParticles(false);
 	cout << "Particles: ";
