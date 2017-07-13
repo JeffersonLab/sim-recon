@@ -1016,9 +1016,9 @@ DCombosByReaction DSourceComboer::Build_ParticleCombos(const DReactionVertexInfo
 
 	if(!Check_Reactions(locReactions))
 	{
-//		if(dDebugLevel > 0)
+		if(dDebugLevel > 0)
 		{
-//			cout << "FINISHED COMBOING:" << endl;
+			cout << "FINISHED COMBOING:" << endl;
 			for(auto locComboPair : locOutputComboMap)
 				cout << "event#, reaction, #combos = " << dEventNumber << ", " << locComboPair.first->Get_ReactionName() << ", " << locComboPair.second.size() << endl;
 		}
