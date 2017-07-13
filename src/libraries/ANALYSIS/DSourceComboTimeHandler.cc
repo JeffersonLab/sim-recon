@@ -413,20 +413,23 @@ void DSourceComboTimeHandler::Setup_NeutralShowers(const vector<const DNeutralSh
 void DSourceComboTimeHandler::Calc_PhotonBeamBunchShifts(const DNeutralShower* locNeutralShower, shared_ptr<const DKinematicData>& locKinematicData, double locRFTime, signed char locZBin)
 {
 	//get delta-t cut
-	DetectorSystem_t locSystem = locNeutralShower->dDetectorSystem;
-	double locDeltaTCut = dPIDTimingCuts[Gamma][locSystem]->Eval(locNeutralShower->dEnergy) + Calc_MaxDeltaTError(locNeutralShower, locKinematicData);
+	auto locSystem = locNeutralShower->dDetectorSystem;
+	auto locDeltaTCut = dPIDTimingCuts[Gamma][locSystem]->Eval(locNeutralShower->dEnergy) + Calc_MaxDeltaTError(locNeutralShower, locKinematicData);
 
 	//do loop over possible #-RF-shifts
-	double locVertexTime = locKinematicData->time();
+	auto locVertexTime = locKinematicData->time();
 	auto locRFShifts = Calc_BeamBunchShifts(locVertexTime, locRFTime, locDeltaTCut, true, Unknown, locSystem, locNeutralShower->dEnergy);
 
 	auto locJObject = static_cast<const JObject*>(locNeutralShower);
+//cout << "zbin, jobject, #shifts = " << int(locZBin) << ", " << locJObject << ", " << locRFShifts.size() << endl;
 	dShowerRFBunches[locZBin].emplace(locJObject, locRFShifts);
 	for(const auto& locNumShifts : locRFShifts)
 	{
 		dShowersByBeamBunchByZBin[locZBin][{locNumShifts}].push_back(locJObject);
 		dShowersByBeamBunchByZBin[DSourceComboInfo::Get_VertexZIndex_Unknown()][{locNumShifts}].push_back(locJObject);
 	}
+	if(locSystem == SYS_FCAL)
+		dShowersByBeamBunchByZBin[DSourceComboInfo::Get_VertexZIndex_ZIndependent()][{}].push_back(locJObject);
 }
 
 vector<int> DSourceComboTimeHandler::Calc_BeamBunchShifts(double locVertexTime, double locOrigRFBunchPropagatedTime, double locDeltaTCut, bool locIncludeDecayTimeOffset, Particle_t locPID, DetectorSystem_t locSystem, double locP)

@@ -201,8 +201,8 @@ class DSourceComboer : public JObject
 		DSourceCombosByUse_Large& Get_CombosSoFar(ComboingStage_t locComboingStage, Charge_t locChargeContent_SearchForUse, const DSourceCombo* locChargedCombo = nullptr);
 		DSourceCombosByBeamBunchByUse& Get_SourceCombosByBeamBunchByUse(Charge_t locChargeContent_SearchForUse, const DSourceCombo* locChargedCombo = nullptr);
 		void Copy_ZIndependentMixedResults(const DSourceComboUse& locComboUseToCreate, const DSourceCombo* locChargedCombo_WithNow);
-		const DSourceCombo* Get_ChargedCombo_WithNow(const DSourceCombo* locChargedCombo_Presiding) const;
-		const DSourceCombo* Get_Presiding_ChargedCombo(const DSourceCombo* locChargedCombo_Presiding, const DSourceComboUse& locNextComboUse, ComboingStage_t locComboingStage, size_t locInstance) const;
+		const DSourceCombo* Get_ChargedCombo_WithNow(const DSourceCombo* locChargedCombo_Presiding, const DSourceComboInfo* locToCreateComboInfo, ComboingStage_t locComboingStage) const;
+		const DSourceCombo* Get_NextChargedCombo(const DSourceCombo* locChargedCombo_Presiding, const DSourceComboUse& locNextComboUse, ComboingStage_t locComboingStage, bool locGetPresidingFlag, size_t locInstance) const;
 		bool Get_PromoteFlag(Particle_t locDecayPID_UseToCheck, const DSourceComboInfo* locComboInfo_UseToCreate, const DSourceComboInfo* locComboInfo_UseToCheck) const;
 
 		/************************************************************** DEFINE MEMBERS ***************************************************************/
@@ -311,19 +311,6 @@ class DSourceComboer : public JObject
 };
 
 /*********************************************************** INLINE MEMBER FUNCTION DEFINITIONS ************************************************************/
-
-inline const DSourceCombo* DSourceComboer::Get_ChargedCombo_WithNow(const DSourceCombo* locChargedCombo_Presiding) const
-{
-	if(locChargedCombo_Presiding == nullptr)
-		return nullptr;
-
-	for(const auto& locFurtherDecayPair : locChargedCombo_Presiding->Get_FurtherDecayCombos())
-	{
-		if(dComboInfoChargeContent.find(std::get<2>(locFurtherDecayPair.first))->second == d_Charged)
-			return locFurtherDecayPair.second[0]; //guaranteed to be size = 1
-	}
-	return nullptr; //uh oh ...
-}
 
 inline size_t DSourceComboer::Get_PhotonVertexZBin(double locVertexZ) const
 {
