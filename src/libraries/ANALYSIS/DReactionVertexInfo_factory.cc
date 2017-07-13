@@ -37,6 +37,7 @@ jerror_t DReactionVertexInfo_factory::evnt(JEventLoop *locEventLoop, uint64_t lo
 
 		//unique channel: create vertex info
 		auto locVertexInfo = Build_VertexInfo(locReaction);
+
 		_data.push_back(locVertexInfo);
 		dVertexInfoMap.emplace(locReaction, locVertexInfo);
 	}
@@ -82,13 +83,13 @@ DReactionStepVertexInfo* DReactionVertexInfo_factory::Setup_VertexInfo(const DRe
 
 	//loop over final particles: add to the vertex constraint, dive through decaying particles that decay in-place
 		//if decaying in-place: don't add (would add to constraint, but not here (purely internal))
-	const DReactionStep* locReactionStep = locReaction->Get_ReactionStep(locStepIndex);
+	auto locReactionStep = locReaction->Get_ReactionStep(locStepIndex);
 	for(size_t loc_i = 0; loc_i < locReactionStep->Get_NumFinalPIDs(); ++loc_i)
 	{
 		//check if particle decays, and if so, if in-place
-		int locDecayStepIndex = Get_DecayStepIndex(locReaction, locStepIndex, loc_i);
-		Particle_t locPID = locReactionStep->Get_FinalPID(loc_i);
-		if((locDecayStepIndex >= 0) && !IsDetachedVertex(locPID)) //yes: combine with the decay products
+		auto locDecayStepIndex = Get_DecayStepIndex(locReaction, locStepIndex, loc_i);
+		auto locPID = locReactionStep->Get_FinalPID(loc_i);
+		if((locDecayStepIndex > 0) && !IsDetachedVertex(locPID)) //yes: combine with the decay products
 			Setup_VertexInfo(locReaction, locDecayStepIndex, locVertexInfo);
 	}
 

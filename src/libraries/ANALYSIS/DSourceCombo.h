@@ -257,54 +257,55 @@ inline vector<pair<Particle_t, const JObject*>> DSourceCombo::Get_SourceParticle
 
 /*********************************************************** INLINE NAMESPACE FUNCTION DEFINITIONS ************************************************************/
 
-void Print_SourceComobUse(const DSourceComboUse& locComboUse);
-inline void Print_SourceComboInfo(const DSourceComboInfo* locComboInfo)
+void Print_SourceComobUse(const DSourceComboUse& locComboUse, unsigned char locNumTabs = 0, bool locIgnoreTabs = false);
+inline void Print_SourceComboInfo(const DSourceComboInfo* locComboInfo, unsigned char locNumTabs = 0)
 {
-	cout << "COMBO INFO:" << endl;
 	if(locComboInfo == nullptr)
 		return;
 
 	auto locNumParticles = locComboInfo->Get_NumParticles(false);
+	for(decltype(locNumTabs) locTabNum = 0; locTabNum < locNumTabs; ++locTabNum) cout << "\t";
 	cout << "Particles: ";
 	for(auto& locParticlePair : locNumParticles)
 		cout << int(locParticlePair.second) << " " << ParticleType(locParticlePair.first) << ", ";
 	cout << endl;
 
 	auto locFurtherDecays = locComboInfo->Get_FurtherDecays();
-	cout << "Decays:" << endl;
 	for(auto& locDecayPair : locFurtherDecays)
 	{
-		cout << int(locDecayPair.second) << " ";
-		Print_SourceComobUse(locDecayPair.first);
+		for(decltype(locNumTabs) locTabNum = 0; locTabNum < locNumTabs; ++locTabNum) cout << "\t";
+		cout << int(locDecayPair.second) << " of ";
+		Print_SourceComobUse(locDecayPair.first, locNumTabs, true);
 	}
 }
 
-inline void Print_SourceComobUse(const DSourceComboUse& locComboUse)
+inline void Print_SourceComobUse(const DSourceComboUse& locComboUse, unsigned char locNumTabs, bool locIgnoreTabs)
 {
-	cout << ParticleType(std::get<0>(locComboUse)) << " " << int(std::get<1>(locComboUse)) << ", " << std::get<2>(locComboUse) << endl;
-	Print_SourceComboInfo(std::get<2>(locComboUse));
+	if(!locIgnoreTabs)
+		for(decltype(locNumTabs) locTabNum = 0; locTabNum < locNumTabs; ++locTabNum) cout << "\t";
+	cout << "Use (decay pid, z-bin, combo info): " << ParticleType(std::get<0>(locComboUse)) << ", " << int(std::get<1>(locComboUse)) << ", " << std::get<2>(locComboUse) << ":" << endl;
+	Print_SourceComboInfo(std::get<2>(locComboUse), locNumTabs + 1);
 }
 
-inline void Print_SourceCombo(const DSourceCombo* locCombo)
+inline void Print_SourceCombo(const DSourceCombo* locCombo, unsigned char locNumTabs = 0)
 {
 	if(locCombo == nullptr)
 		return;
-	cout << "COMBO:" << endl;
 
-	cout << "Z-independent?: " << locCombo->Get_IsComboingZIndependent() << endl;
+	for(decltype(locNumTabs) locTabNum = 0; locTabNum < locNumTabs; ++locTabNum) cout << "\t";
+	cout << "Z-independent?: " << locCombo->Get_IsComboingZIndependent() << ", Particles: ";
 	auto locSourceParticles = locCombo->Get_SourceParticles();
-	cout << "Particles: ";
 	for(auto& locParticlePair : locSourceParticles)
 		cout << ParticleType(locParticlePair.first) << " " << locParticlePair.second << ", ";
 	cout << endl;
 
 	DSourceCombosByUse_Small locFurtherDecayCombos = locCombo->Get_FurtherDecayCombos();
-	cout << "Decays:" << endl;
 	for(auto& locDecayPair : locFurtherDecayCombos)
 	{
-		Print_SourceComobUse(locDecayPair.first);
+		for(decltype(locNumTabs) locTabNum = 0; locTabNum < locNumTabs; ++locTabNum) cout << "\t";
+		Print_SourceComobUse(locDecayPair.first, locNumTabs);
 		for(auto& locCombo : locDecayPair.second)
-			Print_SourceCombo(locCombo);
+			Print_SourceCombo(locCombo, locNumTabs + 1);
 	}
 }
 

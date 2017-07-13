@@ -112,7 +112,7 @@ pair<int, int> Get_InitialParticleDecayFromIndices(const DReaction* locReaction,
 		if(locIterator != locFinalPIDs.end())
 			return pair<int, int>(loc_i, std::distance(locFinalPIDs.begin(), locIterator));
 	}
-	return make_pair(-1, -1);
+	return std::make_pair(-1, -1);
 }
 
 size_t Get_ParticleInstanceIndex(const DReactionStep* locStep, size_t locParticleIndex)
@@ -126,24 +126,24 @@ int Get_DecayStepIndex(const DReaction* locReaction, size_t locStepIndex, size_t
 {
 	//check if the input particle decays later in the reaction
 	auto locSteps = locReaction->Get_ReactionSteps();
-	Particle_t locDecayingPID = locSteps[locStepIndex]->Get_FinalPID(locParticleIndex);
+	auto locDecayingPID = locSteps[locStepIndex]->Get_FinalPID(locParticleIndex);
 
 	//check to see how many final state particles with this pid type there are before now
 	size_t locPreviousPIDCount = 0;
 	for(size_t loc_i = 0; loc_i <= locStepIndex; ++loc_i)
 	{
-		const DReactionStep* locStep = locSteps[loc_i];
+		auto locStep = locSteps[loc_i];
 		auto locFinalPIDs = locStep->Get_FinalPIDs();
-		auto locEndIterator = (loc_i++ == locStepIndex) ? locFinalPIDs.begin() + locParticleIndex : locFinalPIDs.end();
+		auto locEndIterator = (loc_i == locStepIndex) ? locFinalPIDs.begin() + locParticleIndex : locFinalPIDs.end();
 		locPreviousPIDCount += std::count(locFinalPIDs.begin(), locEndIterator, locDecayingPID);
 	}
 
 	//now, find the (locPreviousPIDCount + 1)'th time where this pid is a decay parent
 	size_t locStepPIDCount = 0;
-	auto locStepCounter = [&](const DReactionStep* locStep) -> bool
+	auto StepCounter = [&](const DReactionStep* locStep) -> bool
 		{return (locStep->Get_InitialPID() != locDecayingPID) ? false : (++locStepPIDCount > locPreviousPIDCount);};
 
-	auto locIterator = std::find_if(locSteps.begin(), locSteps.end(), locStepCounter);
+	auto locIterator = std::find_if(std::next(locSteps.begin()), locSteps.end(), StepCounter);
 	return (locIterator == locSteps.end()) ? -1 : std::distance(locSteps.begin(), locIterator);
 }
 

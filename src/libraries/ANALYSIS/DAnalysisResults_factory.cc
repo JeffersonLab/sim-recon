@@ -135,6 +135,7 @@ void DAnalysisResults_factory::Make_ControlHistograms(vector<const DReaction*>& 
 			locFile->cd("");
 		else
 			gDirectory->cd("/");
+		TDirectory* locFileBaseDir = gDirectory;
 
 		for(size_t loc_i = 0; loc_i < locReactions.size(); ++loc_i)
 		{
@@ -149,7 +150,7 @@ void DAnalysisResults_factory::Make_ControlHistograms(vector<const DReaction*>& 
 
 			string locDirName = locReactionName;
 			string locDirTitle = locReactionName;
-			locFile->cd();
+			locFileBaseDir->cd();
 
 			TDirectoryFile* locDirectoryFile = static_cast<TDirectoryFile*>(locFile->GetDirectory(locDirName.c_str()));
 			if(locDirectoryFile == NULL)
