@@ -24,13 +24,13 @@
 //
 // Example:
 //
-// Bcal_hadronic_eff>root -l tree_bcal_hadronic_eff_sum_010492.root
-// root [1] bcal_hadronic_eff->Process("Read_bcal_hadronic_eff2.C")
+// Bcal_hadronic_eff>root -l tree_bcal_hadronic_eff_010492_apr4.root
+// root [1] bcal_hadronic_eff->Process("Read_bcal_hadronic_eff2.C","010492_apr4 1")    Note: TString option = "010492_apr4 1", encodes "filerun layer". Note filerun should be consistent with input file name.
 //
 // Note: script depends on the following parameters, set at the start of the script
-// layer - layer to be plotted
+// layer - layer to be plotted  - now taken from option (optional argument)
 // coinc_cut - difference between tracking position and sector allowed for a match
-// filerun - run number or designation used for output: output filename = "R"+filerun+"_layer"+TString::Itoa(layer,10)+"_cut"+TString::Itoa(coinc_cut,10);
+// filerun - run number or designation used for output: output filename = "R"+filerun+"_layer"+TString::Itoa(layer,10)+"_cut"+TString::Itoa(coinc_cut,10); - from option (optional argument)
 // Output files created in dat, pdf and root subdirectories
 
 #include "Read_bcal_hadronic_eff2.h"
@@ -46,11 +46,13 @@
 
     char estring[256];
     
-    Int_t layer=1;    // select layer for efficiencies
-    Int_t coinc_cut = 3;   // nominal is 3
+	// Int_t layer=1 ;
+	Int_t layer;    // select layer for efficiencies - get from option
+	Int_t coinc_cut = 3;   // nominal is 3
 	Int_t nfiles=1;
-	TString filerun = "030890";
-    TString filename;
+	// TString filerun = "030890-mar23";
+	TString filerun;	// get from option
+	TString filename;
 
     
     Int_t ndx = 0;
@@ -74,8 +76,21 @@ void Read_bcal_hadronic_eff2::Begin(TTree * /*tree*/)
   gStyle->SetPadRightMargin(0.15);
   gStyle->SetPadLeftMargin(0.15);
   gStyle->SetPadBottomMargin(0.15);
-
     
+    TString option = GetOption();
+    // TString filerun = option;
+    
+    TObjArray *tokens = option.Tokenize(" ");
+    Int_t ntokens = tokens->GetEntries();
+    if (ntokens != 2) {
+    	cout << "*** Begin: Number of entries=" << ntokens << endl;
+        exit(1);
+    }
+    // Float_t  = (((TObjString*)tokens->At(1))->GetString()).Atof();
+    // cout << " token1=" << ((TObjString*)tokens->At(0))->GetString()  << " token2=" << ((TObjString*)tokens->At(1))->GetString() << endl;
+    filerun = ((TObjString*)tokens->At(0))->GetString();
+    layer = ((TObjString*)tokens->At(1))->GetString().Atoi();
+    cout << "Begin: filerun=" << filerun << " layer=" << layer << endl;
     
     // Define histograms
     Int_t nbins=100;
@@ -207,9 +222,6 @@ void Read_bcal_hadronic_eff2::Begin(TTree * /*tree*/)
     // cout << "Opening root file: " << (filebase+filerun+".root").Data() << endl;
     filename = "R"+filerun+"_layer"+TString::Itoa(layer,10)+"_cut"+TString::Itoa(coinc_cut,10);
 
-
-   TString option = GetOption();
-
 }
 
 void Read_bcal_hadronic_eff2::SlaveBegin(TTree * /*tree*/)
@@ -256,7 +268,6 @@ Bool_t Read_bcal_hadronic_eff2::Process(Long64_t entry)
 
       fChain->GetEntry(entry);
 
-    // cout << " entry=" << entry << " layer=" << layer << " coinc_cut=" << coinc_cut << endl;
     if (entry >= entry_max) {
         // cout << " Event limit reached =" << entry << endl;
         return kFALSE;
@@ -1085,8 +1096,8 @@ void Read_bcal_hadronic_eff2::Terminate()
     h1_eff_Evis_down->Write();
     outhist->Close();
 
-  // open file for output
-
+    // open file for output
+    
    TString outfile = "dat/"+filename+".dat";
    cout << "Opening file: " << outfile.Data() << endl;
 
