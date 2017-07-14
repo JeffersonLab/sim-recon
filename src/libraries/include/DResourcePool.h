@@ -82,7 +82,7 @@ template <typename DType> class DResourcePool : public std::enable_shared_from_t
 		DResourcePool(void);
 		~DResourcePool(void);
 
-		void Set_ControlParams(size_t locGetBatchSize = 100, size_t locNumToAllocateAtOnce = 20, size_t locRecycleBatchSize = 1000, size_t locWhenToRecyclePoolSize = 2000, size_t locMaxSharedPoolSize = 10000, bool locDebugFlag = false);
+		void Set_ControlParams(size_t locGetBatchSize = 100, size_t locNumToAllocateAtOnce = 20, size_t locRecycleBatchSize = 1000, size_t locWhenToRecyclePoolSize = 2000, size_t locMaxSharedPoolSize = 10000, size_t locDebugLevel = 0);
 		DType* Get_Resource(void);
 		shared_ptr<DType> Get_SharedResource(void);
 
@@ -117,7 +117,7 @@ template <typename DType> class DResourcePool : public std::enable_shared_from_t
 		void Recycle_Resources_StaticPool(void);
 		void Recycle_Resources_StaticPool(typename vector<DType*>::iterator locRemoveIterator);
 
-		alignas(Get_CacheLineSize()) size_t dDebugFlag = 0;
+		alignas(Get_CacheLineSize()) size_t dDebugLevel = 0;
 		alignas(Get_CacheLineSize()) size_t dGetBatchSize = 100;
 		alignas(Get_CacheLineSize()) size_t dNumToAllocateAtOnce = 20;
 		alignas(Get_CacheLineSize()) size_t dRecycleBatchSize = 1000;
@@ -173,7 +173,7 @@ template <typename DType> DResourcePool<DType>::DResourcePool(void)
 	{
 		std::lock_guard<std::mutex> locLock(dSharedPoolMutex); //LOCK
 		++dPoolCounter;
-		if(dDebugFlag > 0)
+		if(dDebugLevel > 0)
 			cout << "CONSTRUCTOR THREAD COUNTER " << typeid(DType).name() << ": " << dPoolCounter << endl;
 	}
 }
@@ -190,20 +190,20 @@ template <typename DType> DResourcePool<DType>::~DResourcePool(void)
 	{
 		std::lock_guard<std::mutex> locLock(dSharedPoolMutex); //LOCK
 		--dPoolCounter;
-		if(dDebugFlag > 0)
+		if(dDebugLevel > 0)
 			cout << "DESTRUCTOR THREAD COUNTER " << typeid(DType).name() << ": " << dPoolCounter << endl;
 		if(dPoolCounter > 0)
 			return; //not the last thread
 
 		//last thread: move all resources out of the shared pool
-		if(dDebugFlag > 0)
+		if(dDebugLevel > 0)
 			cout << "DESTRUCTOR MOVING FROM SHARED POOL " << typeid(DType).name() << ": " << std::distance(dResourcePool_Shared.begin(), dResourcePool_Shared.end()) << endl;
 		std::move(dResourcePool_Shared.begin(), dResourcePool_Shared.end(), std::back_inserter(locResources));
 		dResourcePool_Shared.clear();
 	}
 
 	//delete the resources
-	if(dDebugFlag > 0)
+	if(dDebugLevel > 0)
 		cout << "DESTRUCTOR DELETING " << typeid(DType).name() << ": " << locResources.size() << endl;
 	for(auto locResource : locResources)
 		delete locResource;
@@ -213,7 +213,7 @@ template <typename DType> DResourcePool<DType>::~DResourcePool(void)
 
 template <typename DType> DType* DResourcePool<DType>::Get_Resource(void)
 {
-	if(dDebugFlag >= 10)
+	if(dDebugLevel >= 10)
 		cout << "GET RESOURCE " << typeid(DType).name() << endl;
 	if(dResourcePool_Local.empty())
 		Get_Resources_StaticPool();
@@ -230,9 +230,9 @@ template <typename DType> DType* DResourcePool<DType>::Get_Resource(void)
 	return locResource;
 }
 
-template <typename DType> void DResourcePool<DType>::Set_ControlParams(size_t locGetBatchSize, size_t locNumToAllocateAtOnce, size_t locRecycleBatchSize, size_t locWhenToRecyclePoolSize, size_t locMaxSharedPoolSize, bool locDebugFlag)
+template <typename DType> void DResourcePool<DType>::Set_ControlParams(size_t locGetBatchSize, size_t locNumToAllocateAtOnce, size_t locRecycleBatchSize, size_t locWhenToRecyclePoolSize, size_t locMaxSharedPoolSize, size_t locDebugLevel)
 {
-	dDebugFlag = locDebugFlag;
+	dDebugLevel = locDebugLevel;
 	dGetBatchSize = locGetBatchSize;
 	dNumToAllocateAtOnce = locNumToAllocateAtOnce;
 	dRecycleBatchSize = locRecycleBatchSize;
@@ -272,14 +272,14 @@ template <typename DType> void DResourcePool<DType>::Recycle(vector<DType*>& loc
 //http://stackoverflow.com/questions/8314827/how-can-i-specialize-a-template-member-function-for-stdvectort
 template <typename DType> void DResourcePool<DType>::Recycle(DType* locResource)
 {
-	if(dDebugFlag >= 10)
+	if(dDebugLevel >= 10)
 		cout << "RECYCLE " << typeid(DType).name() << ": " << locResource << endl;
 	if(locResource == nullptr)
 		return;
 	dResourcePool_Local.push_back(locResource);
 	if(dResourcePool_Local.size() > dWhenToRecyclePoolSize)
 		Recycle_Resources_StaticPool();
-	if(dDebugFlag >= 10)
+	if(dDebugLevel >= 10)
 		cout << "DONE RECYCLING" << endl;
 }
 
@@ -293,7 +293,7 @@ template <typename DType> void DResourcePool<DType>::Get_Resources_StaticPool(vo
 		if(dResourcePool_Shared.empty())
 			return;
 		auto locFirstMoveIterator = (dGetBatchSize >= dResourcePool_Shared.size()) ? dResourcePool_Shared.begin() : dResourcePool_Shared.end() - dGetBatchSize;
-		if(dDebugFlag > 0)
+		if(dDebugLevel > 0)
 			cout << "MOVING FROM SHARED POOL " << typeid(DType).name() << ": " << std::distance(locFirstMoveIterator, dResourcePool_Shared.end()) << endl;
 		std::move(locFirstMoveIterator, dResourcePool_Shared.end(), std::back_inserter(dResourcePool_Local));
 		dResourcePool_Shared.erase(locFirstMoveIterator, dResourcePool_Shared.end());
@@ -321,12 +321,12 @@ template <typename DType> void DResourcePool<DType>::Recycle_Resources_StaticPoo
 		}
 		else
 			dResourcePool_Shared.reserve(locNewPoolSize);
-		if(dDebugFlag > 0)
+		if(dDebugLevel > 0)
 			cout << "MOVING TO SHARED POOL " << typeid(DType).name() << ": " << std::distance(locMoveIterator, dResourcePool_Local.end()) << endl;
 		std::move(locMoveIterator, dResourcePool_Local.end(), std::back_inserter(dResourcePool_Shared));
 	}
 
-	if(dDebugFlag > 0)
+	if(dDebugLevel > 0)
 		cout << "DELETING " << typeid(DType).name() << ": " << std::distance(locRemoveIterator, locMoveIterator) << endl;
 
 	//any resources that were not moved into the shared pool are deleted instead (too many)

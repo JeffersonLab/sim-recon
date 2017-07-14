@@ -171,6 +171,45 @@ DSourceComboTimeHandler::DSourceComboTimeHandler(JEventLoop* locEventLoop, DSour
 	double locTargetCenterZ = 65.0;
 	locGeometry->GetTargetZ(locTargetCenterZ);
 	dTargetCenter.SetXYZ(0.0, 0.0, locTargetCenterZ);
+	double locTargetLength;
+	locGeometry->GetTargetLength(locTargetLength);
+
+	//INITIALIZE PHOTON VERTEX-Z EVALUATION BINNING
+	//MAKE SURE THAT THE CENTER OF THE TARGET IS THE CENTER OF A BIN
+	//this is a little convoluted (and can probably be calculated without loops ...), but it ensures the above
+	dPhotonVertexZBinWidth = 10.0;
+	size_t locN = 0;
+	double locTargetUpstreamZ = dTargetCenter.Z() - locTargetLength/2.0;
+	double locTargetDownstreamZ = dTargetCenter.Z() + locTargetLength/2.0;
+	do
+	{
+		++locN;
+		dPhotonVertexZRangeLow = dTargetCenter.Z() - double(locN)*dPhotonVertexZBinWidth;
+	}
+	while(dPhotonVertexZRangeLow + dPhotonVertexZBinWidth > locTargetUpstreamZ);
+	while(dPhotonVertexZRangeLow + locN*dPhotonVertexZBinWidth <= locTargetDownstreamZ)
+		++locN;
+	dNumPhotonVertexZBins = locN + 1; //one extra, for detached vertices
+
+	//print zbins
+	if(dDebugLevel > 0)
+	{
+		cout << "VertexZ Bin Edges: ";
+		for(decltype(dNumPhotonVertexZBins) locZBin = 0; locZBin <= dNumPhotonVertexZBins; ++locZBin)
+			cout << dPhotonVertexZRangeLow + locZBin*dPhotonVertexZBinWidth << ", ";
+		cout << endl;
+	}
+
+	//Init shower maps
+	dShowerRFBunches[DSourceComboInfo::Get_VertexZIndex_ZIndependent()] = {};
+	dShowersByBeamBunchByZBin[DSourceComboInfo::Get_VertexZIndex_ZIndependent()] = {};
+	dShowerRFBunches[DSourceComboInfo::Get_VertexZIndex_Unknown()] = {};
+	dShowersByBeamBunchByZBin[DSourceComboInfo::Get_VertexZIndex_Unknown()] = {};
+	for(decltype(dNumPhotonVertexZBins) locZBin = 0; locZBin <= dNumPhotonVertexZBins; ++locZBin)
+	{
+		dShowerRFBunches[locZBin] = {};
+		dShowersByBeamBunchByZBin[locZBin] = {};
+	}
 
 	//BEAM BUNCH PERIOD
 	vector<double> locBeamPeriodVector;
@@ -365,7 +404,7 @@ void DSourceComboTimeHandler::Setup_NeutralShowers(const vector<const DNeutralSh
 	//BCAL: in vertex-z bins
 	for(size_t loc_i = 0; loc_i < dNumPhotonVertexZBins; ++loc_i)
 	{
-		DVector3 locBinCenter(0.0, 0.0, dSourceComboer->Get_PhotonVertexZBinCenter(loc_i));
+		DVector3 locBinCenter(0.0, 0.0, Get_PhotonVertexZBinCenter(loc_i));
 		for(const auto& locShower : locBCALShowers)
 			dPhotonKinematics[loc_i].emplace(locShower, Create_KinematicData_Photon(locShower, locBinCenter));
 	}
@@ -379,7 +418,7 @@ void DSourceComboTimeHandler::Setup_NeutralShowers(const vector<const DNeutralSh
 	for(size_t loc_i = 0; loc_i < dNumPhotonVertexZBins; ++loc_i)
 	{
 		//propagate RF time to vertex position
-		double locPropagatedRFTime = dInitialEventRFBunch->dTime + (dSourceComboer->Get_PhotonVertexZBinCenter(loc_i) - dTargetCenter.Z())/SPEED_OF_LIGHT;
+		double locPropagatedRFTime = dInitialEventRFBunch->dTime + (Get_PhotonVertexZBinCenter(loc_i) - dTargetCenter.Z())/SPEED_OF_LIGHT;
 		for(const auto& locShower : locBCALShowers)
 			Calc_PhotonBeamBunchShifts(locShower, dPhotonKinematics[loc_i][locShower], locPropagatedRFTime, loc_i);
 
@@ -447,7 +486,11 @@ vector<int> DSourceComboTimeHandler::Calc_BeamBunchShifts(double locVertexTime, 
 	while((fabs(locDeltaT) < locDeltaTCut) || (locOrigNumShifts == locNumShifts)) //extra condition for histogramming purposes only
 	{
 		if(fabs(locDeltaT) < locDeltaTCut)
+		{
+			if(dDebugLevel >= 10)
+				cout << "save shift: " << locNumShifts << endl;
 			locRFShifts.push_back(locNumShifts);
+		}
 		++locNumShifts;
 		locDeltaT = locVertexTime - (locOrigRFBunchPropagatedTime + locNumShifts*dBeamBunchPeriod);
 		dAllRFDeltaTs[locPID][locSystem].push_back(std::make_pair(locP, locDeltaT));
@@ -459,6 +502,8 @@ vector<int> DSourceComboTimeHandler::Calc_BeamBunchShifts(double locVertexTime, 
 	dAllRFDeltaTs[locPID][locSystem].push_back(std::make_pair(locP, locDeltaT));
 	while(fabs(locDeltaT) < locDeltaTCut)
 	{
+		if(dDebugLevel >= 10)
+			cout << "save shift: " << locNumShifts << endl;
 		locRFShifts.push_back(locNumShifts);
 		--locNumShifts;
 		locDeltaT = locVertexTime - (locOrigRFBunchPropagatedTime + locNumShifts*dBeamBunchPeriod);
@@ -474,6 +519,8 @@ vector<int> DSourceComboTimeHandler::Calc_BeamBunchShifts(double locVertexTime, 
 		locDeltaT = locVertexTime - (locOrigRFBunchPropagatedTime + locNumShifts*dBeamBunchPeriod + dMaxDecayTimeOffset);
 		while(fabs(locDeltaT) < locDeltaTCut)
 		{
+			if(dDebugLevel >= 10)
+				cout << "save shift: " << locNumShifts << endl;
 			locRFShifts.push_back(locNumShifts);
 			--locNumShifts;
 			locDeltaT = locVertexTime - (locOrigRFBunchPropagatedTime + locNumShifts*dBeamBunchPeriod + dMaxDecayTimeOffset);
@@ -615,11 +662,15 @@ bool DSourceComboTimeHandler::Select_RFBunches_PhotonVertices(const DReactionVer
 				if(ParticleMass(locPID) > 0.0)
 					continue; //massive neutral, can't vote
 				auto locNeutralShower = static_cast<const DNeutralShower*>(locParticlePair.second);
-				locParticleRFBunches = (locNeutralShower->dDetectorSystem == SYS_FCAL) ? locValidRFBunches : dShowerRFBunches[locVertexZBin][locParticlePair.second]; //FCAL has already voted!
+				locParticleRFBunches = (locNeutralShower->dDetectorSystem != SYS_FCAL) ? dShowerRFBunches[locVertexZBin][locParticlePair.second] : locValidRFBunches; //FCAL has already voted
+				if(dDebugLevel >= 10)
+					cout << "pre-cut: pid, zbin, #bunches, #valid bunches = " << locPID << ", " << int(locVertexZBin) << ", " << locParticleRFBunches.size() << ", " << locValidRFBunches.size() << endl;
 
 				//Do PID cut
-				auto PhotonCutter = [&](int locRFBunch) -> bool {return Cut_PhotonPID(locNeutralShower, locVertex, locPropagatedRFTime + locRFBunch*dBeamBunchPeriod, false);};
+				auto PhotonCutter = [&](int locRFBunch) -> bool {return !Cut_PhotonPID(locNeutralShower, locVertex, locPropagatedRFTime + locRFBunch*dBeamBunchPeriod, false);};
 				locParticleRFBunches.erase(std::remove_if(locParticleRFBunches.begin(), locParticleRFBunches.end(), PhotonCutter), locParticleRFBunches.end());
+				if(dDebugLevel >= 10)
+					cout << "post-cut: pid, zbin, #bunches = " << locPID << ", " << int(locVertexZBin) << ", " << locParticleRFBunches.size() << endl;
 			}
 			else if(locVertexDeterminableWithCharged) //charged, previously cut
 				continue;
@@ -647,6 +698,8 @@ bool DSourceComboTimeHandler::Select_RFBunches_PhotonVertices(const DReactionVer
 
 			//get common rf bunches
 			locValidRFBunches = Get_CommonRFBunches(locValidRFBunches, locParticleRFBunches);
+			if(dDebugLevel >= 10)
+				cout << "#common bunches = " << locValidRFBunches.size() << endl;
 			if(locValidRFBunches.empty())
 			{
 				dPhotonVertexRFBunches.emplace(locReactionFullCombo, vector<int>{});
@@ -673,7 +726,7 @@ bool DSourceComboTimeHandler::Select_RFBunches_AllVerticesUnknown(const DReactio
 
 	//get and loop over all particles
 	auto locSourceParticles = locReactionFullCombo->Get_SourceParticles(true, locCharge);
-	auto locVertexZBin = dSourceComboer->Get_VertexZBin_TargetCenter();
+	auto locVertexZBin = Get_VertexZBin_TargetCenter();
 	for(const auto& locParticlePair : locSourceParticles)
 	{
 		auto locPID = locParticlePair.first;
@@ -683,11 +736,15 @@ bool DSourceComboTimeHandler::Select_RFBunches_AllVerticesUnknown(const DReactio
 			if(ParticleMass(locPID) > 0.0)
 				continue; //massive neutral, can't vote
 			auto locNeutralShower = static_cast<const DNeutralShower*>(locParticlePair.second);
-			locParticleRFBunches = (locNeutralShower->dDetectorSystem == SYS_FCAL) ? locValidRFBunches : dShowerRFBunches[locVertexZBin][locParticlePair.second]; //FCAL has already voted!
+			locParticleRFBunches = (locNeutralShower->dDetectorSystem != SYS_FCAL) ? dShowerRFBunches[locVertexZBin][locParticlePair.second] : locValidRFBunches; //FCAL has already voted
+			if(dDebugLevel >= 10)
+				cout << "pre-cut: pid, #bunches, #valid bunches = " << locPID << ", " << locParticleRFBunches.size() << ", " << locValidRFBunches.size() << endl;
 
 			//Do PID cut
-			auto PhotonCutter = [&](int locRFBunch) -> bool {return Cut_PhotonPID(locNeutralShower, dTargetCenter, dInitialEventRFBunch->dTime + locRFBunch*dBeamBunchPeriod, true);};
+			auto PhotonCutter = [&](int locRFBunch) -> bool {return !Cut_PhotonPID(locNeutralShower, dTargetCenter, dInitialEventRFBunch->dTime + locRFBunch*dBeamBunchPeriod, true);};
 			locParticleRFBunches.erase(std::remove_if(locParticleRFBunches.begin(), locParticleRFBunches.end(), PhotonCutter), locParticleRFBunches.end());
+			if(dDebugLevel >= 10)
+				cout << "post-cut: pid, #bunches, #valid bunches = " << locPID << ", " << locParticleRFBunches.size() << ", " << locValidRFBunches.size() << endl;
 		}
 		else //charged, a new vertex: do PID cuts
 		{
@@ -706,6 +763,11 @@ bool DSourceComboTimeHandler::Select_RFBunches_AllVerticesUnknown(const DReactio
 		{
 			dPhotonVertexRFBunches.emplace(locReactionFullCombo, vector<int>{});
 			return false;
+		}
+		if(locValidRFBunches.empty())
+		{
+			locValidRFBunches = locParticleRFBunches;
+			continue;
 		}
 
 		//get common rf bunches

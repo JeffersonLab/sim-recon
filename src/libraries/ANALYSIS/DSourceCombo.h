@@ -107,6 +107,7 @@ class DSourceCombo
 
 		//SET MEMBERS
 		void Set_Members(const vector<pair<Particle_t, const JObject*>>& locSourceParticles, const DSourceCombosByUse_Small& locFurtherDecayCombos, bool locIsZIndependent = false);
+		void Reset(void);
 
 		//GET MEMBERS
 		vector<pair<Particle_t, const JObject*>> Get_SourceParticles(bool locEntireChainFlag = false, Charge_t locCharge = d_AllCharges) const;
@@ -224,6 +225,13 @@ inline DSourceCombo::DSourceCombo(const vector<pair<Particle_t, const JObject*>>
 	std::sort(dSourceParticles.begin(), dSourceParticles.end());
 }
 
+inline void DSourceCombo::Reset(void)
+{
+	dSourceParticles.clear();
+	dFurtherDecayCombos.clear();
+	dIsComboingZIndependent = false;
+}
+
 inline void DSourceCombo::Set_Members(const vector<pair<Particle_t, const JObject*>>& locSourceParticles, const DSourceCombosByUse_Small& locFurtherDecayCombos, bool locIsZIndependent)
 {
 	dSourceParticles = locSourceParticles;
@@ -257,7 +265,7 @@ inline vector<pair<Particle_t, const JObject*>> DSourceCombo::Get_SourceParticle
 
 /*********************************************************** INLINE NAMESPACE FUNCTION DEFINITIONS ************************************************************/
 
-void Print_SourceComobUse(const DSourceComboUse& locComboUse, unsigned char locNumTabs = 0, bool locIgnoreTabs = false);
+void Print_SourceComboUse(const DSourceComboUse& locComboUse, unsigned char locNumTabs = 0, bool locIgnoreTabs = false);
 inline void Print_SourceComboInfo(const DSourceComboInfo* locComboInfo, unsigned char locNumTabs = 0)
 {
 	if(locComboInfo == nullptr)
@@ -275,16 +283,16 @@ inline void Print_SourceComboInfo(const DSourceComboInfo* locComboInfo, unsigned
 	{
 		for(decltype(locNumTabs) locTabNum = 0; locTabNum < locNumTabs; ++locTabNum) cout << "\t";
 		cout << int(locDecayPair.second) << " of ";
-		Print_SourceComobUse(locDecayPair.first, locNumTabs, true);
+		DAnalysis::Print_SourceComboUse(locDecayPair.first, locNumTabs, true);
 	}
 }
 
-inline void Print_SourceComobUse(const DSourceComboUse& locComboUse, unsigned char locNumTabs, bool locIgnoreTabs)
+inline void Print_SourceComboUse(const DSourceComboUse& locComboUse, unsigned char locNumTabs, bool locIgnoreTabs)
 {
 	if(!locIgnoreTabs)
 		for(decltype(locNumTabs) locTabNum = 0; locTabNum < locNumTabs; ++locTabNum) cout << "\t";
 	cout << "Use (decay pid, z-bin, combo info): " << ParticleType(std::get<0>(locComboUse)) << ", " << int(std::get<1>(locComboUse)) << ", " << std::get<2>(locComboUse) << ":" << endl;
-	Print_SourceComboInfo(std::get<2>(locComboUse), locNumTabs + 1);
+	DAnalysis::Print_SourceComboInfo(std::get<2>(locComboUse), locNumTabs + 1);
 }
 
 inline void Print_SourceCombo(const DSourceCombo* locCombo, unsigned char locNumTabs = 0)
@@ -303,9 +311,9 @@ inline void Print_SourceCombo(const DSourceCombo* locCombo, unsigned char locNum
 	for(auto& locDecayPair : locFurtherDecayCombos)
 	{
 		for(decltype(locNumTabs) locTabNum = 0; locTabNum < locNumTabs; ++locTabNum) cout << "\t";
-		Print_SourceComobUse(locDecayPair.first, locNumTabs);
+		DAnalysis::Print_SourceComboUse(locDecayPair.first, locNumTabs);
 		for(auto& locCombo : locDecayPair.second)
-			Print_SourceCombo(locCombo, locNumTabs + 1);
+			DAnalysis::Print_SourceCombo(locCombo, locNumTabs + 1);
 	}
 }
 

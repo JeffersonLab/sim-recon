@@ -75,6 +75,11 @@ class DSourceComboTimeHandler
 		//GET POCA TO VERTEX
 		DLorentzVector Get_ChargedParticlePOCAToVertexX4(const DChargedTrackHypothesis* locHypothesis, bool locIsProductionVertex, const DSourceCombo* locVertexPrimaryFullCombo, const DKinematicData* locBeamParticle) const;
 
+		//VERTEX-Z BINNING UTILITY FUNCTIONS
+		size_t Get_PhotonVertexZBin(double locVertexZ) const;
+		double Get_PhotonVertexZBinCenter(signed char locVertexZBin) const;
+		size_t Get_VertexZBin_TargetCenter(void) const{return Get_PhotonVertexZBin(dTargetCenter.Z());}
+
 	private:
 
 		pair<DVector3, double> Calc_Photon_Kinematics(const DNeutralShower* locNeutralShower, const DVector3& locVertex) const;
@@ -114,6 +119,7 @@ class DSourceComboTimeHandler
 		//For every 10cm in vertex-z, calculate the photon p4 & time for placing mass & delta-t cuts
 		//The z-range extends from the upstream end of the target - 5cm to the downstream end + 15cm
 		//so for a 30-cm-long target, it's a range of 50cm: 5bins, evaluated at the center of each bin
+		//Make sure that the center of the target is the center of a zbin!!!
 		float dPhotonVertexZBinWidth = 10.0;
 		float dPhotonVertexZRangeLow = 45.0;
 		size_t dNumPhotonVertexZBins = 5;
@@ -163,8 +169,10 @@ inline void DSourceComboTimeHandler::Reset(void)
 	dInitialEventRFBunch = nullptr;
 
 	dPhotonKinematics.clear(); //can probably delete instead of shared_ptr!!
-	dShowerRFBunches.clear();
-	dShowersByBeamBunchByZBin.clear();
+	for(auto& locZPair : dShowerRFBunches)
+		locZPair.second.clear();
+	for(auto& locZPair : dShowersByBeamBunchByZBin)
+		locZPair.second.clear();
 	dChargedParticlePOCAToVertexX4.clear();
 	dBeamParticlesByRFBunch.clear();
 
@@ -173,6 +181,22 @@ inline void DSourceComboTimeHandler::Reset(void)
 	dFullComboRFBunches.clear();
 
 	dFullComboTimeCutResults.clear();
+}
+
+inline size_t DSourceComboTimeHandler::Get_PhotonVertexZBin(double locVertexZ) const
+{
+	//given some vertex-z, what bin am I in?
+	int locPhotonVertexZBin = int((locVertexZ - dPhotonVertexZRangeLow)/dPhotonVertexZBinWidth);
+	if(locPhotonVertexZBin < 0)
+		return 0;
+	else if(locPhotonVertexZBin >= int(dNumPhotonVertexZBins))
+		return dNumPhotonVertexZBins - 1;
+	return locPhotonVertexZBin;
+}
+
+inline double DSourceComboTimeHandler::Get_PhotonVertexZBinCenter(signed char locVertexZBin) const
+{
+	return dPhotonVertexZRangeLow + (double(locVertexZBin) + 0.5)*dPhotonVertexZBinWidth;
 }
 
 inline void DSourceComboTimeHandler::Set_BeamParticles(const vector<const DBeamPhoton*>& locBeamParticles)
@@ -261,7 +285,7 @@ inline vector<int> DSourceComboTimeHandler::Get_CommonRFBunches(const vector<int
 inline bool DSourceComboTimeHandler::Cut_PhotonPID(const DNeutralShower* locNeutralShower, const DVector3& locVertex, double locPropagatedRFTime, bool locTargetCenterFlag)
 {
 	//get delta-t cut
-	DetectorSystem_t locSystem = locNeutralShower->dDetectorSystem;
+	auto locSystem = locNeutralShower->dDetectorSystem;
 	auto locPID = locTargetCenterFlag ? Unknown : Gamma;
 	auto locCutFunc = Get_TimeCutFunction(locPID, locSystem);
 	if(locCutFunc == nullptr)
@@ -271,6 +295,8 @@ inline bool DSourceComboTimeHandler::Cut_PhotonPID(const DNeutralShower* locNeut
 	//do cut
 	auto locKinematicsPair = Calc_Photon_Kinematics(locNeutralShower, locVertex);
 	auto locDeltaT = locKinematicsPair.second - locPropagatedRFTime;
+	if(dDebugLevel >= 10)
+		cout << "photon pid cut: pointer, system, vertex-z, photon t, rf t, delta_t, cut-delta-t, result = " << locNeutralShower << ", " << locSystem << ", " << locVertex.Z() << ", " << locKinematicsPair.second << ", " << locPropagatedRFTime << ", " << locDeltaT << ", " << locDeltaTCut << ", " << (fabs(locDeltaT) <= locDeltaTCut) << endl;
 	dSelectedRFDeltaTs[locPID][locSystem].emplace_back(locNeutralShower->dEnergy, locDeltaT);
 	return (fabs(locDeltaT) <= locDeltaTCut);
 }
@@ -291,6 +317,8 @@ inline bool DSourceComboTimeHandler::Cut_TrackPID(const DChargedTrackHypothesis*
 
 	//do cut
 	auto locDeltaT = locX4.T() - locPropagatedRFTime;
+	if(dDebugLevel >= 10)
+		cout << "track pid cut: pid, pointer, system, vertex-z, track t, rf t, delta_t, cut-delta-t, result = " << locPID << ", " << locHypothesis << ", " << locSystem << ", " << locVertex.Z() << ", " << locX4.T() << ", " << locPropagatedRFTime << ", " << locDeltaT << ", " << locDeltaTCut << ", " << (fabs(locDeltaT) <= locDeltaTCut) << endl;
 	dSelectedRFDeltaTs[locPID][locSystem].emplace_back(locP, locDeltaT);
 	return (fabs(locDeltaT) <= locDeltaTCut);
 }

@@ -291,7 +291,7 @@ DLorentzVector DSourceComboP4Handler::Calc_MassiveNeutralP4(const DNeutralShower
 DLorentzVector DSourceComboP4Handler::Calc_P4_NoMassiveNeutrals(const DSourceCombo* locVertexCombo, signed char locVertexZBin)
 {
 	if(!locVertexCombo->Get_IsComboingZIndependent() && (locVertexZBin == DSourceComboInfo::Get_VertexZIndex_Unknown()))
-		locVertexZBin = dSourceComboer->Get_VertexZBin_TargetCenter(); //we need a zbin for BCAL showers, but it is unknown: we must pick something: center of target
+		locVertexZBin = dSourceComboTimeHandler->Get_VertexZBin_TargetCenter(); //we need a zbin for BCAL showers, but it is unknown: we must pick something: center of target
 
 	auto locIterator = dFinalStateP4ByCombo.find(std::make_pair(locVertexCombo, locVertexZBin));
 	if(locIterator != dFinalStateP4ByCombo.end())
@@ -395,7 +395,7 @@ bool DSourceComboP4Handler::Calc_P4_HasMassiveNeutrals(bool locIsProductionVerte
 	}
 
 	//final state particles
-	auto locVertexZBin = dSourceComboer->Get_PhotonVertexZBin(locVertex.Z());
+	auto locVertexZBin = dSourceComboTimeHandler->Get_PhotonVertexZBin(locVertex.Z());
 	locTotalP4 += Calc_P4_SourceParticles(locVertexCombo, locVertexZBin, locVertex, locRFVertexTime);
 
 	//now loop over decays

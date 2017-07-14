@@ -32,7 +32,7 @@ signed char DSourceComboVertexer::Get_VertexZBin(bool locIsProductionVertex, con
 	if(locConstrainingParticles.empty())
 		return DSourceComboInfo::Get_VertexZIndex_Unknown();
 	auto locVertexZ = Get_Vertex(locIsProductionVertex, locConstrainingParticles).Z();
-	return dSourceComboer->Get_PhotonVertexZBin(locVertexZ);
+	return dSourceComboTimeHandler->Get_PhotonVertexZBin(locVertexZ);
 }
 
 void DSourceComboVertexer::Calc_VertexTimeOffsets_WithCharged(const DReactionVertexInfo* locReactionVertexInfo, const DSourceCombo* locReactionChargedCombo)
@@ -205,7 +205,7 @@ void DSourceComboVertexer::Calc_VertexTimeOffsets_WithBeam(const DReactionVertex
 	auto locPrimaryVertexZ = Get_PrimaryVertex(locReactionVertexInfo, locReactionFullCombo, locBeamParticle).Z();
 	int locRFBunch = dSourceComboTimeHandler->Calc_RFBunchShift(locBeamParticle->time());
 	if(dDebugLevel >= 10)
-		cout << "primary vertex-zm rf bunch: " << locPrimaryVertexZ << ", " << locRFBunch << endl;
+		cout << "primary vertex-z rf bunch: " << locPrimaryVertexZ << ", " << locRFBunch << endl;
 
 	//uses the beam to define remaining vertices
 	//loop over vertices in dependency order
@@ -431,7 +431,7 @@ void DSourceComboVertexer::Construct_DecayingParticle_InvariantMass(const DReact
 		}
 
 		//create a new one
-		auto locVertexZBin = dSourceComboer->Get_PhotonVertexZBin(locVertex.Z());
+		auto locVertexZBin = dSourceComboTimeHandler->Get_PhotonVertexZBin(locVertex.Z());
 		auto locP4 = dSourceComboP4Handler->Calc_P4_NoMassiveNeutrals(locVertexCombo, locVertexZBin);
 		auto locKinematicData = dResourcePool_KinematicData.Get_Resource();
 		locKinematicData->Reset();

@@ -117,11 +117,6 @@ class DSourceComboer : public JObject
 		DSourceComboUse Get_SourceComboUse(const DReaction* locReaction, size_t locStepIndex) const{return dSourceComboUseReactionStepMap.find(locReaction)->second.find(locStepIndex)->second;};
 		DSourceComboUse Get_PrimaryComboUse(const DReactionVertexInfo* locReactionVertexInfo) const{return Get_SourceComboUse(locReactionVertexInfo->Get_StepVertexInfo(0));};
 
-		//VERTEX-Z BINNING UTILITY FUNCTIONS
-		size_t Get_PhotonVertexZBin(double locVertexZ) const;
-		double Get_PhotonVertexZBinCenter(signed char locVertexZBin) const;
-		size_t Get_VertexZBin_TargetCenter(void) const{return Get_PhotonVertexZBin(dTargetCenter.Z());}
-
 		DParticleComboCreator* Get_ParticleComboCreator(void) const{return dParticleComboCreator;}
 
 	private:
@@ -129,7 +124,6 @@ class DSourceComboer : public JObject
 		/********************************************************** DECLARE MEMBER FUNCTIONS ***********************************************************/
 
 		//SETUP
-		void Recycle_ComboResources(DSourceCombosByUse_Large& locCombosByUse);
 		void Setup_NeutralShowers(JEventLoop* locEventLoop);
 
 		//INITIAL CHECKS
@@ -205,6 +199,10 @@ class DSourceComboer : public JObject
 		const DSourceCombo* Get_NextChargedCombo(const DSourceCombo* locChargedCombo_Presiding, const DSourceComboUse& locNextComboUse, ComboingStage_t locComboingStage, bool locGetPresidingFlag, size_t locInstance) const;
 		bool Get_PromoteFlag(Particle_t locDecayPID_UseToCheck, const DSourceComboInfo* locComboInfo_UseToCreate, const DSourceComboInfo* locComboInfo_UseToCheck) const;
 
+		//GET RESOURCES
+		DSourceCombo* Get_SourceComboResource(void);
+		vector<const DSourceCombo*>* Get_SourceComboVectorResource(void);
+
 		/************************************************************** DEFINE MEMBERS ***************************************************************/
 
 		//CONTROL INFORMATION
@@ -219,15 +217,6 @@ class DSourceComboer : public JObject
 		pair<bool, size_t> dNumPlusMinusRFBunches = std::make_pair(false, 0); //by default use DReaction cut //only use this if set on command line
 		unordered_map<const DReaction*, size_t> dRFBunchCutsByReaction;
 		unordered_map<const DReactionVertexInfo*, size_t> dMaxRFBunchCuts;
-
-		//VERTEX-DEPENDENT PHOTON INFORMATION
-		//For every 10cm in vertex-z, calculate the photon p4 & time for placing mass & delta-t cuts
-		//The z-range extends from the upstream end of the target - 5cm to the downstream end + 15cm
-		//so for a 30-cm-long target, it's a range of 50cm: 5bins, evaluated at the center of each bin
-		//Make sure that the center of the target is the center of a zbin!!!
-		float dPhotonVertexZBinWidth;
-		float dPhotonVertexZRangeLow;
-		size_t dNumPhotonVertexZBins;
 
 		//HANDLERS AND VERTEXERS
 		DSourceComboVertexer* dSourceComboVertexer;
@@ -290,8 +279,12 @@ class DSourceComboer : public JObject
 		unordered_map<const DSourceCombo*, vector<int>> dValidRFBunches_ByCombo;
 
 		//RESOURCE POOLS
+		//Don't use these directly!  Use the Get_*Resource functions instead!!
 		DResourcePool<DSourceCombo> dResourcePool_SourceCombo;
 		DResourcePool<vector<const DSourceCombo*>> dResourcePool_SourceComboVector;
+		//These are used to know what to recycle
+		vector<DSourceCombo*> dCreatedCombos;
+		vector<vector<const DSourceCombo*>*> dCreatedComboVectors;
 
 		//Combo/event tracking
 		map<const DReaction*, TH1*> dNumEventsSurvivedStageMap;
@@ -312,20 +305,21 @@ class DSourceComboer : public JObject
 
 /*********************************************************** INLINE MEMBER FUNCTION DEFINITIONS ************************************************************/
 
-inline size_t DSourceComboer::Get_PhotonVertexZBin(double locVertexZ) const
+inline DSourceCombo* DSourceComboer::Get_SourceComboResource(void)
 {
-	//given some vertex-z, what bin am I in?
-	int locPhotonVertexZBin = int((locVertexZ - dPhotonVertexZRangeLow)/dPhotonVertexZBinWidth);
-	if(locPhotonVertexZBin < 0)
-		return 0;
-	else if(locPhotonVertexZBin >= int(dNumPhotonVertexZBins))
-		return dNumPhotonVertexZBins - 1;
-	return locPhotonVertexZBin;
+	auto locCombo = dResourcePool_SourceCombo.Get_Resource();
+	locCombo->Reset();
+	dCreatedCombos.push_back(locCombo);
+	return locCombo;
 }
 
-inline double DSourceComboer::Get_PhotonVertexZBinCenter(signed char locVertexZBin) const
+inline vector<const DSourceCombo*>* DSourceComboer::Get_SourceComboVectorResource(void)
 {
-	return dPhotonVertexZRangeLow + (double(locVertexZBin) + 0.5)*dPhotonVertexZBinWidth;
+	auto locComboVector = dResourcePool_SourceComboVector.Get_Resource();
+	locComboVector->clear();
+	locComboVector->reserve(dInitialComboVectorCapacity);
+	dCreatedComboVectors.push_back(locComboVector);
+	return locComboVector;
 }
 
 inline bool DSourceComboer::Check_Skims(const DReaction* locReaction) const
@@ -409,24 +403,6 @@ inline DSourceCombosByBeamBunchByUse& DSourceComboer::Get_SourceCombosByBeamBunc
 	if(locChargeContent_SearchForUse == d_Neutral)
 		return dSourceCombosByBeamBunchByUse[nullptr];
 	return dSourceCombosByBeamBunchByUse[locChargedCombo];
-}
-
-inline void DSourceComboer::Recycle_ComboResources(DSourceCombosByUse_Large& locCombosByUse)
-{
-	for(auto& locCombosByUsePair : locCombosByUse)
-	{
-		//the combos after mass cuts are IDENTICAL to those before the mass cuts: the pointers are just copied
-		//don't recycle them twice!: Only recycle combos stored for a use with an Unknown decay PID
-		if(std::get<0>(locCombosByUsePair.first) != Unknown)
-			continue; //don't recycle! would recycle the same pointers twice!
-
-		//recycle the combos
-		auto locVectorPointer = locCombosByUsePair.second;
-		dResourcePool_SourceCombo.Recycle(*locVectorPointer);
-
-		//the above MOVED the resources out of the vector, and cleared the vector: it now has a capacity of zero
-		dResourcePool_SourceComboVector.Recycle(locVectorPointer); //recycle the combo vector
-	}
 }
 
 inline bool DSourceComboer::Cut_dEdx(Particle_t locPID, DetectorSystem_t locSystem, double locP, double locdEdx)
