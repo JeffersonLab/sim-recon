@@ -297,10 +297,10 @@ inline bool DSourceComboTimeHandler::Cut_PhotonPID(const DNeutralShower* locNeut
 	auto locDeltaT = locKinematicsPair.second - locPropagatedRFTime;
 	if(dDebugLevel >= 10)
 		cout << "photon pid cut: pointer, system, vertex-z, photon t, rf t, delta_t, cut-delta-t, result = " << locNeutralShower << ", " << locSystem << ", " << locVertex.Z() << ", " << locKinematicsPair.second << ", " << locPropagatedRFTime << ", " << locDeltaT << ", " << locDeltaTCut << ", " << (fabs(locDeltaT) <= locDeltaTCut) << endl;
-	dSelectedRFDeltaTs[locPID][locSystem].emplace_back(locNeutralShower->dEnergy, locDeltaT);
+	if(locTargetCenterFlag) //only histogram if vertex is unknown: if vertex is known, it is histed elsewhere
+		dSelectedRFDeltaTs[locPID][locSystem].emplace_back(locNeutralShower->dEnergy, locDeltaT);
 	return (fabs(locDeltaT) <= locDeltaTCut);
 }
-
 
 inline bool DSourceComboTimeHandler::Cut_TrackPID(const DChargedTrackHypothesis* locHypothesis, bool locIsProductionVertex, const DSourceCombo* locVertexPrimaryCombo, DVector3 locVertex, double locPropagatedRFTime)
 {

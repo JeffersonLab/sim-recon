@@ -65,7 +65,7 @@ class DAnalysisResults_factory : public jana::JFactory<DAnalysisResults>
 		void Check_ReactionNames(vector<const DReaction*>& locReactions) const;
 		const DParticleCombo* Find_TrueCombo(JEventLoop *locEventLoop, const DReaction* locReaction, const vector<const DParticleCombo*>& locCombos);
 
-		bool Execute_Actions(JEventLoop* locEventLoop, const DParticleCombo* locCombo, const DParticleCombo* locTrueCombo, bool locPreKinFitFlag, const vector<DAnalysisAction*>& locActions, size_t& locActionIndex, vector<size_t>& locNumCombosSurvived, int& locLastActionTrueComboSurvives);
+		bool Execute_Actions(JEventLoop* locEventLoop, bool locIsKinFit, const DParticleCombo* locCombo, const DParticleCombo* locTrueCombo, bool locPreKinFitFlag, const vector<DAnalysisAction*>& locActions, size_t& locActionIndex, vector<size_t>& locNumCombosSurvived, int& locLastActionTrueComboSurvives);
 
 		const DParticleCombo* Handle_ComboFit(const DReactionVertexInfo* locReactionVertexInfo, const DParticleCombo* locParticleCombo, const DReaction* locReaction);
 		pair<const DKinFitChain*, const DKinFitResults*> Fit_Kinematics(const DReactionVertexInfo* locReactionVertexInfo, const DReaction* locReaction, const DParticleCombo* locParticleCombo, DKinFitType locKinFitType, bool locUpdateCovMatricesFlag);

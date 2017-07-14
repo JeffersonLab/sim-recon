@@ -76,4 +76,45 @@ vector<pair<int, int>> DReactionStepVertexInfo::Filter_Particles(vector<pair<int
 	return locParticles;
 }
 
+void Print_ReactionStepVertexInfo(const DReactionStepVertexInfo* locStepInfo)
+{
+	cout << "reaction, steps: " << locStepInfo->Get_Reaction()->Get_ReactionName() << ", ";
+	for(auto& locStepIndex : locStepInfo->Get_StepIndices())
+		cout << locStepIndex << ", ";
+	cout << endl;
+
+	cout << "flags: production, dangling, fittable: " << locStepInfo->Get_ProductionVertexFlag() << ", " << locStepInfo->Get_DanglingVertexFlag() << ", " << locStepInfo->Get_FittableVertexFlag() << endl;
+	cout << "parent vertex info: " << locStepInfo->Get_ParentVertexInfo() << endl;
+
+	cout << "DecayingParticles: ";
+	for(auto& locParticlePair : locStepInfo->Get_DecayingParticles())
+		cout << "(" << locParticlePair.first << ", " << locParticlePair.second << "), ";
+	cout << endl;
+
+	cout << "OnlyConstrainTimeParticles: ";
+	for(auto& locParticlePair : locStepInfo->Get_OnlyConstrainTimeParticles())
+		cout << "(" << locParticlePair.first << ", " << locParticlePair.second << "), ";
+	cout << endl;
+
+	cout << "Reconstruction: FullConstrainParticles: ";
+	for(auto& locParticlePair : locStepInfo->Get_FullConstrainParticles(false))
+		cout << "(" << locParticlePair.first << ", " << locParticlePair.second << "), ";
+	cout << endl;
+
+	cout << "Reconstruction: NoConstrainParticles: ";
+	for(auto& locParticlePair : locStepInfo->Get_NoConstrainParticles(false))
+		cout << "(" << locParticlePair.first << ", " << locParticlePair.second << "), ";
+	cout << endl;
+
+	cout << "Fitting: FullConstrainParticles: ";
+	for(auto& locParticlePair : locStepInfo->Get_FullConstrainParticles(true))
+		cout << "(" << locParticlePair.first << ", " << locParticlePair.second << "), ";
+	cout << endl;
+
+	cout << "Fitting: NoConstrainParticles: ";
+	for(auto& locParticlePair : locStepInfo->Get_NoConstrainParticles(true))
+		cout << "(" << locParticlePair.first << ", " << locParticlePair.second << "), ";
+	cout << endl;
+}
+
 } //end namespace DAnalysis

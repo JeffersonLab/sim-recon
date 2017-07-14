@@ -574,7 +574,7 @@ DKinFitChainStep* DKinFitUtils_GlueX::Make_KinFitChainStep(const DReactionVertex
 			const DNeutralParticleHypothesis* locNeutralParticleHypothesis = static_cast<const DNeutralParticleHypothesis*>(locKinematicData);
 
 			//Determine whether we should use the particle or the shower object
-			bool locNeutralShowerFlag = !locStepVertexInfo->Get_FittableVertexFlag();
+			bool locNeutralShowerFlag = locStepVertexInfo->Get_FittableVertexFlag();
 			if((ParticleMass(locPID) > 0.0) && !locSpactimeIsFitFlag)
 				locNeutralShowerFlag = false; //massive shower momentum is defined by t, which isn't fit: use particle
 
@@ -728,6 +728,8 @@ set<DKinFitConstraint*> DKinFitUtils_GlueX::Create_Constraints(const DReactionVe
 		bool locSpacetimeFitFlag = ((locKinFitType == d_SpacetimeFit) || (locKinFitType == d_P4AndSpacetimeFit));
 		for(auto& locStepVertexInfo : locReactionVertexInfo->Get_StepVertexInfos())
 		{
+			if(!locStepVertexInfo->Get_FittableVertexFlag())
+				continue;
 			auto locDX4 = locParticleCombo->Get_ParticleComboStep(locStepVertexInfo->Get_StepIndices().front())->Get_SpacetimeVertex();
 			TLorentzVector locX4(locDX4.X(), locDX4.Y(), locDX4.Z(), locDX4.T());
 

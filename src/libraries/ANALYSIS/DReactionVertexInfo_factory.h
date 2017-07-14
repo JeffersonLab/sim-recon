@@ -36,6 +36,7 @@ class DReactionVertexInfo_factory : public jana::JFactory<DReactionVertexInfo>
 			return NOERROR;
 		}
 
+		size_t dDebugLevel = 0;
 		DReactionVertexInfo* Build_VertexInfo(const DReaction* locReaction);
 
 		//SETUP

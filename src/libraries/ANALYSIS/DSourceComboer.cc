@@ -7,12 +7,13 @@
  * 
  * track timing resolution at 3 GeV
  * check trackids in root tree output
+ * photon bunch timing asymmetric
  *
  * TESTING:
  * p2pi: OK
  * p2k: OK
  * p4pi: OK
- * p2g
+ * p2g: WAITING CONFIRMATION
  * p pi0
  * p3pi
  * p3pi missing-p
@@ -265,6 +266,13 @@ DSourceComboer::DSourceComboer(JEventLoop* locEventLoop)
 		ddEdxCutMap[Proton][SYS_CDC].second = new TF1("df_dEdxCut_CDC_ProtonHigh", "[0]", 0.0, 12.0);
 		ddEdxCutMap[Proton][SYS_CDC].second->SetParameter(0, 9999999.9);
 
+		//CDC dE/dx Anti-Proton
+		ddEdxCutMap[AntiProton][SYS_CDC].first = new TF1("df_dEdxCut_CDC_AntiProtonLow", "exp(-1.0*[0]*x + [1]) + [2]", 0.0, 12.0);
+//		ddEdxCutMap[AntiProton][SYS_CDC].first->SetParameters(3.93024, 3.0, 1.0); //will be used after testing is done
+		ddEdxCutMap[AntiProton][SYS_CDC].first->SetParameters(4.0, 2.25, 1.0); //used for comparison
+		ddEdxCutMap[AntiProton][SYS_CDC].second = new TF1("df_dEdxCut_CDC_AntiProtonHigh", "[0]", 0.0, 12.0);
+		ddEdxCutMap[AntiProton][SYS_CDC].second->SetParameter(0, 9999999.9);
+
 		//CDC dE/dx Pi+
 		ddEdxCutMap[PiPlus][SYS_CDC].first = new TF1("df_dEdxCut_CDC_PionLow", "[0]", 0.0, 12.0);
 		ddEdxCutMap[PiPlus][SYS_CDC].first->SetParameter(0, -9999999.9);
@@ -305,9 +313,15 @@ DSourceComboer::DSourceComboer(JEventLoop* locEventLoop)
 			locDirectoryFile = new TDirectoryFile(locDirName.c_str(), locDirName.c_str());
 		locDirectoryFile->cd();
 
+		locDirName = "PID";
+		locDirectoryFile = static_cast<TDirectoryFile*>(gDirectory->GetDirectory(locDirName.c_str()));
+		if(locDirectoryFile == NULL)
+			locDirectoryFile = new TDirectoryFile(locDirName.c_str(), locDirName.c_str());
+		locDirectoryFile->cd();
+
 		for(auto& locPID : locPIDs)
 		{
-			locDirName = string("PID_") + ParticleType(locPID);
+			locDirName = ParticleType(locPID);
 			locDirectoryFile = static_cast<TDirectoryFile*>(gDirectory->GetDirectory(locDirName.c_str()));
 			if(locDirectoryFile == NULL)
 				locDirectoryFile = new TDirectoryFile(locDirName.c_str(), locDirName.c_str());
@@ -1219,14 +1233,13 @@ void DSourceComboer::Combo_WithNeutralsAndBeam(const vector<const DReaction*>& l
 	if(dDebugLevel > 0)
 		cout << "Comboing neutrals, z-dependent." << endl;
 	Create_SourceCombos(locZDependentComboUse, d_MixedStage, locReactionChargedCombo, 0);
+	if(dDebugLevel > 0)
+		cout << "Neutral combos created." << endl;
 
 	//Then, get the full combos, but only those that satisfy the charged RF bunches
 	const auto& locReactionFullCombos = Get_CombosForComboing(locZDependentComboUse, d_MixedStage, locBeamBunches_Charged, locReactionChargedCombo);
 	for(auto& locReaction : locReactions)
 		dNumCombosSurvivedStageTracker[locReaction][DConstructionStage::Full_Combos] += locReactionFullCombos.size();
-
-	if(dDebugLevel > 0)
-		cout << "Neutral combos created." << endl;
 
 	//loop over full combos
 	for(const auto& locReactionFullCombo : locReactionFullCombos)
@@ -2690,7 +2703,7 @@ const vector<const JObject*>& DSourceComboer::Get_ShowersByBeamBunch(const vecto
 	for(auto locBunchIterator = std::next(locBeamBunches.begin()); locBunchIterator != locBeamBunches.end(); ++locBunchIterator)
 	{
 		const auto& locComboShowers = locShowersByBunch[locBunchesSoFar];
-		const auto& locBunchShowers = locShowersByBunch[vector<int>(*locBunchIterator)];
+		const auto& locBunchShowers = locShowersByBunch[{*locBunchIterator}];
 		locBunchesSoFar.push_back(*locBunchIterator);
 		if(locBunchShowers.empty())
 		{
@@ -2743,7 +2756,6 @@ const vector<const DSourceCombo*>& DSourceComboer::Get_CombosForComboing(const D
 {
 	//THE INPUT locChargedCombo MUST BE:
 	//Whatever charged combo you PREVIOUSLY comboed horizontally with to make the combos you're trying to get
-
 	//find all combos for the given use that have an overlapping beam bunch with the input
 	auto locChargeContent = dComboInfoChargeContent[std::get<2>(locComboUse)];
 	if(locBeamBunches.empty() || (locChargeContent == d_Charged)) //e.g. fully charged, or a combo of 2 KLongs (RF bunches not saved for massive neutrals)
@@ -2759,27 +2771,31 @@ const vector<const DSourceCombo*>& DSourceComboer::Get_CombosForComboing(const D
 
 const vector<const DSourceCombo*>& DSourceComboer::Get_CombosByBeamBunch(DCombosByBeamBunch& locCombosByBunch, const vector<int>& locBeamBunches, ComboingStage_t locComboingStage, signed char locVertexZBin)
 {
+	if(locBeamBunches.empty())
+		return locCombosByBunch[{}];
+
 	//find all combos for the given use that have an overlapping beam bunch with the input
 	//this shouldn't be called very many times per event
 	vector<int> locBunchesSoFar = {*locBeamBunches.begin()};
 	for(auto locBunchIterator = std::next(locBeamBunches.begin()); locBunchIterator != locBeamBunches.end(); ++locBunchIterator)
 	{
-		const auto& locComboShowers = locCombosByBunch[locBunchesSoFar];
-		const auto& locBunchShowers = locCombosByBunch[vector<int>(*locBunchIterator)];
+		const auto& locCombosSoFar = locCombosByBunch[locBunchesSoFar];
+		const auto& locBunchCombos = locCombosByBunch[{*locBunchIterator}];
 		locBunchesSoFar.push_back(*locBunchIterator);
-		if(locBunchShowers.empty())
+		if(locBunchCombos.empty())
 		{
-			locCombosByBunch.emplace(locBunchesSoFar, locComboShowers);
+			locCombosByBunch.emplace(locBunchesSoFar, locCombosSoFar);
 			continue;
 		}
 
 		//merge and move-emplace
 		vector<const DSourceCombo*> locMergeResult;
-		locMergeResult.reserve(locComboShowers.size() + locBunchShowers.size());
-		std::set_union(locComboShowers.begin(), locComboShowers.end(), locBunchShowers.begin(), locBunchShowers.end(), std::back_inserter(locMergeResult));
+		locMergeResult.reserve(locCombosSoFar.size() + locBunchCombos.size());
+		std::set_union(locCombosSoFar.begin(), locCombosSoFar.end(), locBunchCombos.begin(), locBunchCombos.end(), std::back_inserter(locMergeResult));
 		locCombosByBunch.emplace(locBunchesSoFar, std::move(locMergeResult));
 		Build_ComboIterators(locBeamBunches, locCombosByBunch[locBeamBunches], locComboingStage, locVertexZBin);
 	}
+
 	return locCombosByBunch[locBeamBunches];
 }
 

@@ -320,7 +320,7 @@ const DParticleCombo* DParticleComboCreator::Create_KinFitCombo_NewCombo(const D
 				if(locKinFitParticle == NULL) //not used in kinfit!!
 					locNewComboStep->Add_FinalParticle(locKinematicData_Measured);
 				else //create a new one
-					locNewComboStep->Add_FinalParticle(Create_NeutralHypo_KinFit(locNeutralHypo, locKinFitParticle, locKinFitType));
+					locNewComboStep->Add_FinalParticle(Create_NeutralHypo_KinFit(locNeutralHypo, locKinFitParticle));
 			}
 			else //charged
 			{
@@ -331,7 +331,7 @@ const DParticleCombo* DParticleComboCreator::Create_KinFitCombo_NewCombo(const D
 				else //create a new one
 				{
 					auto locChargedTrack = static_cast<const DChargedTrack*>(locComboStep->Get_FinalParticle_SourceObject(loc_k));
-					auto locNewHypo = Create_ChargedHypo_KinFit(locChargedTrack, locPID, locKinFitParticle, locKinFitType);
+					auto locNewHypo = Create_ChargedHypo_KinFit(locChargedTrack, locPID, locKinFitParticle);
 					locNewComboStep->Add_FinalParticle(locNewHypo);
 				}
 			}
@@ -527,7 +527,7 @@ const DBeamPhoton* DParticleComboCreator::Create_BeamPhoton_KinFit(const DBeamPh
 	return locNewBeamPhoton;
 }
 
-const DChargedTrackHypothesis* DParticleComboCreator::Create_ChargedHypo_KinFit(const DChargedTrack* locChargedTrack, Particle_t locPID, const DKinFitParticle* locKinFitParticle, DKinFitType locKinFitType)
+const DChargedTrackHypothesis* DParticleComboCreator::Create_ChargedHypo_KinFit(const DChargedTrack* locChargedTrack, Particle_t locPID, const DKinFitParticle* locKinFitParticle)
 {
 	auto locOrigHypo = locChargedTrack->Get_Hypothesis(locPID);
 	auto locHypoIterator = dKinFitChargedHypoMap.find(locKinFitParticle);
@@ -551,7 +551,7 @@ const DChargedTrackHypothesis* DParticleComboCreator::Create_ChargedHypo_KinFit(
 
 	//if timing was kinfit, there is no chisq to calculate: forced to correct time
 	//therefore, just use measured timing info (pre-kinfit)
-	if((locKinFitType == d_SpacetimeFit) || (locKinFitType == d_P4AndSpacetimeFit))
+	if(locKinFitParticle->Get_CommonTParamIndex() >= 0)
 	{
 		locNewHypo->Share_FromInput(locOrigHypo, true, true, false); //share all but kinematics
 		return locNewHypo;
@@ -561,7 +561,7 @@ const DChargedTrackHypothesis* DParticleComboCreator::Create_ChargedHypo_KinFit(
 	locNewHypo->Share_FromInput(locOrigHypo, true, false, false);
 
 	//update timing info
-	if(locKinFitType != d_P4Fit) //a vertex was fit
+	if(locKinFitParticle->Get_CommonVxParamIndex() >= 0) //a vertex was fit
 	{
 		//all kinematics propagated to vertex position
 		auto locPropagatedRFTime = locOrigHypo->t0() + (locFitVertex.Z() - locOrigHypo->position().Z())/SPEED_OF_LIGHT;
@@ -579,7 +579,7 @@ const DChargedTrackHypothesis* DParticleComboCreator::Create_ChargedHypo_KinFit(
 	return locNewHypo;
 }
 
-const DNeutralParticleHypothesis* DParticleComboCreator::Create_NeutralHypo_KinFit(const DNeutralParticleHypothesis* locOrigHypo, DKinFitParticle* locKinFitParticle, DKinFitType locKinFitType)
+const DNeutralParticleHypothesis* DParticleComboCreator::Create_NeutralHypo_KinFit(const DNeutralParticleHypothesis* locOrigHypo, DKinFitParticle* locKinFitParticle)
 {
 	auto locHypoIterator = dKinFitNeutralHypoMap.find(locKinFitParticle);
 	if(locHypoIterator != dKinFitNeutralHypoMap.end())
@@ -588,6 +588,7 @@ const DNeutralParticleHypothesis* DParticleComboCreator::Create_NeutralHypo_KinF
 	auto locNewHypo = dNeutralParticleHypothesisFactory->Get_Resource();
 	dKinFitNeutralHypoMap.emplace(locKinFitParticle, locNewHypo);
 	locNewHypo->setPID(locOrigHypo->PID());
+	locNewHypo->Set_NeutralShower(locOrigHypo->Get_NeutralShower());
 
 	//p3 & v3
 	TVector3 locFitMomentum = locKinFitParticle->Get_Momentum();
@@ -602,7 +603,7 @@ const DNeutralParticleHypothesis* DParticleComboCreator::Create_NeutralHypo_KinF
 	//if timing was kinfit, there is no chisq to calculate: forced to correct time
 	//also, if vertex was not kinfit, no chisq to calc either: photon beta is still 1, no chisq for massive neutrals
 	//therefore, just use measured timing info (pre-kinfit)
-	if((locKinFitType == d_P4Fit) || (locKinFitType == d_SpacetimeFit) || (locKinFitType == d_P4AndSpacetimeFit))
+	if((locKinFitParticle->Get_CommonVxParamIndex() < 0) || (locKinFitParticle->Get_CommonTParamIndex() >= 0))
 	{
 		locNewHypo->Share_FromInput(locOrigHypo, true, false); //share timing but not kinematics
 		return locNewHypo;

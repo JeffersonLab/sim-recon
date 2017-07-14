@@ -314,11 +314,17 @@ DSourceComboTimeHandler::DSourceComboTimeHandler(JEventLoop* locEventLoop, DSour
 			locDirectoryFile = new TDirectoryFile(locDirName.c_str(), locDirName.c_str());
 		locDirectoryFile->cd();
 
+		locDirName = "PID";
+		locDirectoryFile = static_cast<TDirectoryFile*>(gDirectory->GetDirectory(locDirName.c_str()));
+		if(locDirectoryFile == NULL)
+			locDirectoryFile = new TDirectoryFile(locDirName.c_str(), locDirName.c_str());
+		locDirectoryFile->cd();
+
 		for(auto locPID : locPIDs)
 		{
 			auto locPIDString = string((locPID != Unknown) ? ParticleType(locPID) : "Photons_PreVertex");
 
-			locDirName = string("PID_") + locPIDString;
+			locDirName = locPIDString;
 			locDirectoryFile = static_cast<TDirectoryFile*>(gDirectory->GetDirectory(locDirName.c_str()));
 			if(locDirectoryFile == NULL)
 				locDirectoryFile = new TDirectoryFile(locDirName.c_str(), locDirName.c_str());
@@ -327,22 +333,24 @@ DSourceComboTimeHandler::DSourceComboTimeHandler(JEventLoop* locEventLoop, DSour
 			auto& locTimingSystems = (ParticleCharge(locPID) == 0) ? locTimingSystems_Neutral : locTimingSystems_Charged;
 			for(auto locSystem : locTimingSystems)
 			{
-				auto locHistName = string("All_RFDeltaTVsP_") + string(SystemName(locSystem));
-				auto locHist = gDirectory->Get(locHistName.c_str());
-				if(locHist == nullptr)
+				if(locPID != Gamma)
 				{
-					auto locHistTitle = string((locPID != Unknown) ? ParticleName_ROOT(locPID) : "Photons_PreVertex");
-					locHistTitle += string(" Candidates, ") + string(SystemName(locSystem)) + string(";p (GeV/c);#Deltat_{Particle - All RFs}");
-					dHistMap_RFDeltaTVsP_AllRFs[locPID][locSystem] = new TH2I(locHistName.c_str(), locHistTitle.c_str(), 400, 0.0, 12.0, 1400, -7.0, 7.0);
+					auto locHistName = string("All_RFDeltaTVsP_") + string(SystemName(locSystem));
+					auto locHist = gDirectory->Get(locHistName.c_str());
+					if(locHist == nullptr)
+					{
+						auto locHistTitle = string((locPID != Unknown) ? ParticleName_ROOT(locPID) : "Photons_PreVertex");
+						locHistTitle += string(" Candidates, ") + string(SystemName(locSystem)) + string(";p (GeV/c);#Deltat_{Particle - All RFs}");
+						dHistMap_RFDeltaTVsP_AllRFs[locPID][locSystem] = new TH2I(locHistName.c_str(), locHistTitle.c_str(), 400, 0.0, 12.0, 1400, -7.0, 7.0);
+					}
+					else
+						dHistMap_RFDeltaTVsP_AllRFs[locPID][locSystem] = static_cast<TH2*>(locHist);
 				}
-				else
-					dHistMap_RFDeltaTVsP_AllRFs[locPID][locSystem] = static_cast<TH2*>(locHist);
-
 				if(locPID == Unknown)
 					continue;
 
-				locHistName = string("Best_RFDeltaTVsP_") + string(SystemName(locSystem));
-				locHist = gDirectory->Get(locHistName.c_str());
+				auto locHistName = string("Best_RFDeltaTVsP_") + string(SystemName(locSystem));
+				auto locHist = gDirectory->Get(locHistName.c_str());
 				if(locHist == nullptr)
 				{
 					auto locHistTitle = string((locPID != Unknown) ? ParticleName_ROOT(locPID) : "Photons_PreVertex");
@@ -354,6 +362,8 @@ DSourceComboTimeHandler::DSourceComboTimeHandler(JEventLoop* locEventLoop, DSour
 			}
 			gDirectory->cd("..");
 		}
+
+		gDirectory->cd("..");
 
 		//Beam-RF delta-t
 		string locHistName = "BeamRFDeltaTVsBeamE";

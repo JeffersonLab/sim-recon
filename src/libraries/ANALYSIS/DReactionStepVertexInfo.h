@@ -3,6 +3,7 @@
 
 #include <set>
 #include <map>
+#include <iostream>
 #include <vector>
 #include <algorithm>
 
@@ -110,6 +111,7 @@ class DReactionStepVertexInfo
 /****************************************************** NAMESPACE-SCOPE NON-INLINE FUNCTION DECLARATIONS *******************************************************/
 
 string Build_VertexConstraintString(const DReactionStepVertexInfo* locVertexInfo, bool locSpacetimeFitFlag);
+void Print_ReactionStepVertexInfo(const DReactionStepVertexInfo* locStepInfo);
 
 /************************************************************** CONSTRUCTORS & OPERATORS ***************************************************************/
 

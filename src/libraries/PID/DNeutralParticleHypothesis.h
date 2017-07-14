@@ -151,6 +151,7 @@ inline void DNeutralParticleHypothesis::Reset(void)
 	DKinematicData::Reset();
 	dTimingInfo = dResourcePool_TimingInfo->Get_SharedResource(); //not safe to reset individually, since you don't know what it's shared with
 	dTimingInfo->Reset();
+	dNeutralShower = nullptr;
 }
 
 inline void DNeutralParticleHypothesis::DTimingInfo::Reset(void)

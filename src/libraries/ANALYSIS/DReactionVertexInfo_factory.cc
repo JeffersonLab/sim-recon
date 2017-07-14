@@ -9,6 +9,9 @@ jerror_t DReactionVertexInfo_factory::init(void)
 	// This is so that the created objects persist throughout the life of the program instead of being cleared each event.
 	SetFactoryFlag(PERSISTANT);
 	dResourcePool_ReactionStepVertexInfo = new DResourcePool<DReactionStepVertexInfo>();
+
+	gPARMS->SetDefaultParameter("VERTEXINFO:DEBUG_LEVEL", dDebugLevel);
+
 	return NOERROR;
 }
 
@@ -37,6 +40,11 @@ jerror_t DReactionVertexInfo_factory::evnt(JEventLoop *locEventLoop, uint64_t lo
 
 		//unique channel: create vertex info
 		auto locVertexInfo = Build_VertexInfo(locReaction);
+		if(dDebugLevel > 0)
+		{
+			cout << "CREATED REACTION VERTEX INFO:" << endl;
+			DAnalysis::Print_ReactionVertexInfo(locVertexInfo);
+		}
 
 		_data.push_back(locVertexInfo);
 		dVertexInfoMap.emplace(locReaction, locVertexInfo);

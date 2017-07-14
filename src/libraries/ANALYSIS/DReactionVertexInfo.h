@@ -43,6 +43,13 @@ class DReactionVertexInfo : public JObject
 		unordered_map<size_t, const DReactionStepVertexInfo*> dVertexInfoMap; //key is step index
 };
 
+inline void Print_ReactionVertexInfo(const DReactionVertexInfo* locReactionInfo)
+{
+	cout << "Reaction name: " << locReactionInfo->Get_Reaction()->Get_ReactionName() << endl;
+	for(auto& locStepInfo : locReactionInfo->Get_StepVertexInfos())
+		DAnalysis::Print_ReactionStepVertexInfo(locStepInfo);
+}
+
 inline DReactionVertexInfo::DReactionVertexInfo(const DReaction* locReaction, const vector<DReactionStepVertexInfo*>& locStepVertexInfos) :
 		dReactions({locReaction})
 {
