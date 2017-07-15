@@ -166,7 +166,6 @@ vector<Particle_t> Get_ChainPIDs(const DReaction* locReaction, size_t locStepInd
 
 		//see if decaying, and if so where, if decay expansion is requested (or mass isn't fixed)
 		int locDecayingStepIndex = (!IsFixedMass(locPID) || locExpandDecayingFlag) ? Get_DecayStepIndex(locReaction, locStepIndex, loc_j) : -1;
-
 		if(locDecayingStepIndex == -1)
 			locChainPIDs.push_back(locPID);
 		else

@@ -1159,7 +1159,10 @@ void DHistogramAction_InvariantMass::Initialize(JEventLoop* locEventLoop)
 
 	string locParticleNamesForHist = "";
 	if(dInitialPID != Unknown)
-		locParticleNamesForHist = DAnalysis::Convert_PIDsToROOTName(DAnalysis::Get_ChainPIDs(Get_Reaction(), dInitialPID, !Get_UseKinFitResultsFlag()));
+	{
+		auto locChainPIDs = DAnalysis::Get_ChainPIDs(Get_Reaction(), dInitialPID, !Get_UseKinFitResultsFlag());
+		locParticleNamesForHist = DAnalysis::Convert_PIDsToROOTName(locChainPIDs);
+	}
 	else
 	{
 		for(size_t loc_i = 0; loc_i < dToIncludePIDs.size(); ++loc_i)

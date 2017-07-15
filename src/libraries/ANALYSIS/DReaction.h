@@ -195,12 +195,6 @@ inline bool Check_ChannelEquality(const DReaction* lhs, const DReaction* rhs, bo
 
 /****************************************************** NAMESPACE-SCOPE INLINE FUNCTIONS: PIDS *******************************************************/
 
-inline vector<Particle_t> Get_ChainPIDs(const DReaction* locReaction, Particle_t locInitialPID, bool locExpandDecayingFlag)
-{
-	//if multiple decay steps have locInitialPID as the parent, only the first listed is used
-	return Get_ChainPIDs(locReaction, locInitialPID, -1, vector<Particle_t>(), locExpandDecayingFlag);
-}
-
 inline vector<Particle_t> Get_ChainPIDs(const DReaction* locReaction, Particle_t locInitialPID, int locUpToStepIndex, vector<Particle_t> locUpThroughPIDs, bool locExpandDecayingFlag)
 {
 	//if multiple decay steps have locInitialPID as the parent, only the first listed is used
@@ -214,10 +208,17 @@ inline vector<Particle_t> Get_ChainPIDs(const DReaction* locReaction, Particle_t
 	return Get_ChainPIDs(locReaction, locStepIndex, locUpToStepIndex, locUpThroughPIDs, locExpandDecayingFlag);
 }
 
+inline vector<Particle_t> Get_ChainPIDs(const DReaction* locReaction, Particle_t locInitialPID, bool locExpandDecayingFlag)
+{
+	//if multiple decay steps have locInitialPID as the parent, only the first listed is used
+	return Get_ChainPIDs(locReaction, locInitialPID, -1, vector<Particle_t>(), locExpandDecayingFlag);
+}
+
 inline string Convert_PIDsToROOTName(const vector<Particle_t>& locPIDs)
 {
 	auto locPIDTransformer = [](Particle_t locPID) -> string {return ParticleName_ROOT(locPID);};
 	vector<string> locParticleNames;
+	locParticleNames.reserve(locPIDs.size());
 	std::transform(locPIDs.begin(), locPIDs.end(), std::back_inserter(locParticleNames), locPIDTransformer);
 	return std::accumulate(locParticleNames.begin(), locParticleNames.end(), string(""));
 }
