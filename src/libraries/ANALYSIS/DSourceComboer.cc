@@ -2158,18 +2158,12 @@ void DSourceComboer::Combo_Horizontally_All(const DSourceComboUse& locComboUseTo
 			//build the further-decays, removing this decay
 			auto locFurtherDecaysToSearchFor = locFurtherDecays;
 			const auto& locSourceComboUse_ThisDecay = locDecayIterator->first;
-			auto locChargeContent_ThisDecay = dComboInfoChargeContent[std::get<2>(locSourceComboUse_ThisDecay)];
 			locFurtherDecaysToSearchFor.erase(locFurtherDecaysToSearchFor.begin() + std::distance(locFurtherDecays.begin(), locDecayIterator));
 
 			//build the all-but-1 DSourceComboUse if needed (Unknown -> everything but this decay)
 			auto locCreateNewUseFlag = ((locFurtherDecaysToSearchFor.size() > 1) || !locNumParticlesNeeded.empty());
 			auto locAllBut1ComboInfo = locCreateNewUseFlag ? GetOrMake_SourceComboInfo(locNumParticlesNeeded, locFurtherDecaysToSearchFor, locNumTabs) : std::get<2>((*locFurtherDecaysToSearchFor.begin()).first);
 			auto locAllBut1ComboUse = locCreateNewUseFlag ? DSourceComboUse{Unknown, locVertexZBin, locAllBut1ComboInfo} : (*locFurtherDecaysToSearchFor.begin()).first;
-			if(dDebugLevel >= 20)
-			{
-				cout << "ALL-BUT-1 USE:" << endl;
-				DAnalysis::Print_SourceComboUse(locAllBut1ComboUse, locNumTabs);
-			}
 
 			auto locAllBut1ChargeContent = dComboInfoChargeContent[std::get<2>(locAllBut1ComboUse)];
 			if((locComboingStage == d_ChargedStage) && (locAllBut1ChargeContent == d_Neutral))
@@ -2180,14 +2174,7 @@ void DSourceComboer::Combo_Horizontally_All(const DSourceComboUse& locComboUseTo
 				//yes, it's already been done!
 				//just combo the All-but-1 combos to those from this decay and return the results
 				//don't promote particles or expand all-but-1: create new combo ABOVE all-but-1, that will contain all-but-1 and to-add side-by-side
-
-				//create the combos for the use-to-add (locSourceComboUse_ThisDecay) if they haven't been created yet
-				auto& locSourceCombosByUseSoFar = Get_CombosSoFar(locComboingStage, locChargeContent_ThisDecay, locChargedCombo_WithNow);
-				if(locSourceCombosByUseSoFar.find(locSourceComboUse_ThisDecay) == locSourceCombosByUseSoFar.end()) //if true: not yet
-					Create_SourceCombos(locSourceComboUse_ThisDecay, locComboingStage, locChargedCombo_Presiding, locNumTabs + 1); //this may be something we want to combo vertically: go back to (unknown) mother function
-
-				//combo it horizontally with the rest
-				Combo_Horizontally_AddCombo(locComboUseToCreate, locAllBut1ComboUse, locSourceComboUse_ThisDecay, locComboingStage, locChargedCombo_Presiding, false, locNumTabs);
+				Combo_Horizontally_AddDecay(locComboUseToCreate, locAllBut1ComboUse, locSourceComboUse_ThisDecay, locComboingStage, locChargedCombo_Presiding, false, locNumTabs);
 				return;
 			}
 
@@ -2205,29 +2192,8 @@ void DSourceComboer::Combo_Horizontally_All(const DSourceComboUse& locComboUseTo
 
 			//yes, it's already been done!
 			//just combo the All-but-1 combos to those from this decay and save the results
-			if((locComboingStage == d_ChargedStage) && (locChargeContent_ThisDecay == d_Neutral))
-			{
-				//this won't be done yet! just copy the all-but-1 as the desired combos
-				auto& locAllBut1Combos = locSourceCombosByUseSoFar[locAllBut1ComboUse];
-				locSourceCombosByUseSoFar.emplace(locComboUseToCreate, locAllBut1Combos);
-			}
-			else
-			{
-				if(dDebugLevel >= 20)
-				{
-					cout << "TO-ADD USE:" << endl;
-					DAnalysis::Print_SourceComboUse(locSourceComboUse_ThisDecay, locNumTabs);
-				}
-
-				//create the combos for the use-to-add (locSourceComboUse_ThisDecay) if they haven't been created yet
-				auto& locSourceCombosByUseSoFar = Get_CombosSoFar(locComboingStage, locChargeContent_ThisDecay, locChargedCombo_WithNow);
-				if(locSourceCombosByUseSoFar.find(locSourceComboUse_ThisDecay) == locSourceCombosByUseSoFar.end()) //if true: not yet
-					Create_SourceCombos(locSourceComboUse_ThisDecay, locComboingStage, locChargedCombo_Presiding, locNumTabs + 1); //this may be something we want to combo vertically: go back to (unknown) mother function
-
-				//combo it horizontally with the rest
-				bool locExpandAllBut1Flag = (locAllBut1ComboInfo->Get_NumParticles().size() + locAllBut1ComboInfo->Get_FurtherDecays().size()) > 1; //true: has already been comboed horizontally once
-				Combo_Horizontally_AddCombo(locComboUseToCreate, locAllBut1ComboUse, locSourceComboUse_ThisDecay, locComboingStage, locChargedCombo_Presiding, locExpandAllBut1Flag, locNumTabs);
-			}
+			bool locExpandAllBut1Flag = (locAllBut1ComboInfo->Get_NumParticles().size() + locAllBut1ComboInfo->Get_FurtherDecays().size()) > 1; //true: has already been comboed horizontally once
+			Combo_Horizontally_AddDecay(locComboUseToCreate, locAllBut1ComboUse, locSourceComboUse_ThisDecay, locComboingStage, locChargedCombo_Presiding, locExpandAllBut1Flag, locNumTabs);
 			return;
 		}
 
@@ -2265,32 +2231,8 @@ void DSourceComboer::Combo_Horizontally_All(const DSourceComboUse& locComboUseTo
 
 				//yes, it's already been done!
 				//just combo the All-but-1 combos to those from this particle and return the results
-				if((locComboingStage == d_ChargedStage) && (ParticleCharge(locParticlePair.first) == 0))
-				{
-					//this won't be done yet! just copy the all-but-1 as the desired combos
-					auto& locAllBut1Combos = locSourceCombosByUseSoFar[locAllBut1ComboUse];
-					locSourceCombosByUseSoFar.emplace(locComboUseToCreate, locAllBut1Combos);
-					return;
-				}
-
-				if(locParticlePair.second > 1)
-				{
-					//create a combo use for X -> N particles of this type
-					auto locSourceInfoToAdd = GetOrMake_SourceComboInfo({locParticlePair}, {}, locNumTabs);
-					auto locChargeContentUseToAdd = Get_ChargeContent(locSourceInfoToAdd);
-					DSourceComboUse locComboUseToAdd(Unknown, locVertexZBin, locSourceInfoToAdd);
-
-					//create the combos for the use-to-add if they haven't been created yet
-					auto& locSourceCombosByUseSoFar = Get_CombosSoFar(locComboingStage, locChargeContentUseToAdd, locChargedCombo_WithNow);
-					if(locSourceCombosByUseSoFar.find(locComboUseToAdd) == locSourceCombosByUseSoFar.end()) //if true: not yet
-						Create_SourceCombos(locComboUseToAdd, locComboingStage, locChargedCombo_Presiding, locNumTabs + 1); //this may be something we want to combo vertically: go back to (unknown) mother function
-
-					//combo it horizontally with the rest
-					bool locExpandAllBut1Flag = (locAllBut1ComboInfo->Get_NumParticles().size() + locAllBut1ComboInfo->Get_FurtherDecays().size()) > 1; //true: has already been comboed horizontally once
-					Combo_Horizontally_AddCombo(locComboUseToCreate, locAllBut1ComboUse, locComboUseToAdd, locComboingStage, locChargedCombo_Presiding, locExpandAllBut1Flag, locNumTabs);
-				}
-				else
-					Combo_Horizontally_AddParticle(locComboUseToCreate, locAllBut1ComboUse, locParticlePair.first, locComboingStage, locChargedCombo_Presiding, locNumTabs);
+				bool locExpandAllBut1Flag = (locAllBut1ComboInfo->Get_NumParticles().size() + locAllBut1ComboInfo->Get_FurtherDecays().size()) > 1; //true: has already been comboed horizontally once
+				Combo_Horizontally_AddParticles(locComboUseToCreate, locAllBut1ComboUse, locParticlePair, locComboingStage, locChargedCombo_Presiding, locExpandAllBut1Flag, locNumTabs);
 				return;
 			}
 		}
@@ -2307,57 +2249,63 @@ void DSourceComboer::Combo_Horizontally_All(const DSourceComboUse& locComboUseTo
 
 	//do the final combo!
 	if(locMissingSubsetIsDecayFlag) //subset was missing a decay PID
-	{
-		auto locComboUseToAdd = locFurtherDecays.front().first;
-		auto locChargeContentUseToAdd = Get_ChargeContent(std::get<2>(locComboUseToAdd));
-		if((locComboingStage == d_ChargedStage) && (locChargeContentUseToAdd == d_Neutral))
-		{
-			//this won't be done yet! just copy the all-but-1 as the desired combos
-			auto& locSourceCombosByUseSoFar = Get_CombosSoFar(locComboingStage, d_Charged);
-			auto& locAllBut1Combos = locSourceCombosByUseSoFar[locComboUse_SubsetToBuild];
-			locSourceCombosByUseSoFar.emplace(locComboUseToCreate, locAllBut1Combos);
-		}
-		else
-		{
-			//create the combos for the use-to-add if they haven't been created yet
-			auto& locSourceCombosByUseSoFar = Get_CombosSoFar(locComboingStage, locChargeContentUseToAdd, locChargedCombo_WithNow);
-			if(locSourceCombosByUseSoFar.find(locComboUseToAdd) == locSourceCombosByUseSoFar.end()) //if true: not yet
-				Create_SourceCombos(locComboUseToAdd, locComboingStage, locChargedCombo_Presiding, locNumTabs + 1); //this may be something we want to combo vertically: go back to (unknown) mother function
-
-			//combo it horizontally with the rest
-			Combo_Horizontally_AddCombo(locComboUseToCreate, locComboUse_SubsetToBuild, locComboUseToAdd, locComboingStage, locChargedCombo_Presiding, locExpandAllBut1Flag, locNumTabs);
-		}
-	}
+		Combo_Horizontally_AddDecay(locComboUseToCreate, locComboUse_SubsetToBuild, locFurtherDecays.front().first, locComboingStage, locChargedCombo_Presiding, locExpandAllBut1Flag, locNumTabs);
 	else //subset was missing a detected PID
-	{
-		const auto& locParticlePair = locNumParticlesNeeded.front();
-		if((locComboingStage == d_ChargedStage) && (ParticleCharge(locParticlePair.first) == 0))
-		{
-			//this won't be done yet! just copy the all-but-1 as the desired combos
-			auto& locSourceCombosByUseSoFar = Get_CombosSoFar(locComboingStage, d_Charged);
-			auto& locAllBut1Combos = locSourceCombosByUseSoFar[locComboUse_SubsetToBuild];
-			locSourceCombosByUseSoFar.emplace(locComboUseToCreate, locAllBut1Combos);
-			return;
-		}
-		if(locParticlePair.second > 1)
-		{
-			//create a combo use for X -> N particles of this type
-			auto locSourceInfoToAdd = GetOrMake_SourceComboInfo({locParticlePair}, {}, locNumTabs);
-			auto locChargeContentUseToAdd = Get_ChargeContent(locSourceInfoToAdd);
-			DSourceComboUse locComboUseToAdd(Unknown, locVertexZBin, locSourceInfoToAdd);
-
-			//create the combos for the use-to-add if they haven't been created yet
-			auto& locSourceCombosByUseSoFar = Get_CombosSoFar(locComboingStage, locChargeContentUseToAdd, locChargedCombo_WithNow);
-			if(locSourceCombosByUseSoFar.find(locComboUseToAdd) == locSourceCombosByUseSoFar.end()) //if true: not yet
-				Create_SourceCombos(locComboUseToAdd, locComboingStage, locChargedCombo_Presiding, locNumTabs + 1); //this may be something we want to combo vertically: go back to (unknown) mother function
-
-			//combo it horizontally with the rest
-			Combo_Horizontally_AddCombo(locComboUseToCreate, locComboUse_SubsetToBuild, locComboUseToAdd, locComboingStage, locChargedCombo_Presiding, locExpandAllBut1Flag, locNumTabs);
-		}
-		else
-			Combo_Horizontally_AddParticle(locComboUseToCreate, locComboUse_SubsetToBuild, locParticlePair.first, locComboingStage, locChargedCombo_Presiding, locNumTabs);
-	}
+		Combo_Horizontally_AddParticles(locComboUseToCreate, locComboUse_SubsetToBuild, locNumParticlesNeeded.front(), locComboingStage, locChargedCombo_Presiding, locExpandAllBut1Flag, locNumTabs);
 }
+
+void DSourceComboer::Combo_Horizontally_AddDecay(const DSourceComboUse& locComboUseToCreate, const DSourceComboUse& locComboUseAllBut1, const DSourceComboUse& locComboUseToAdd, ComboingStage_t locComboingStage, const DSourceCombo* locChargedCombo_Presiding, bool locExpandAllBut1Flag, unsigned char locNumTabs)
+{
+	auto locChargeContentUseToAdd = Get_ChargeContent(std::get<2>(locComboUseToAdd));
+	if((locComboingStage == d_ChargedStage) && (locChargeContentUseToAdd == d_Neutral))
+	{
+		//this won't be done yet! just copy the all-but-1 as the desired combos
+		auto& locSourceCombosByUseSoFar = Get_CombosSoFar(locComboingStage, d_Charged);
+		auto& locAllBut1Combos = locSourceCombosByUseSoFar[locComboUseAllBut1];
+		locSourceCombosByUseSoFar.emplace(locComboUseToCreate, locAllBut1Combos);
+		return;
+	}
+
+	//create the combos for the use-to-add if they haven't been created yet
+	auto locChargedCombo_WithNow = Get_ChargedCombo_WithNow(locChargedCombo_Presiding, std::get<2>(locComboUseToCreate), locComboingStage);
+	auto& locSourceCombosByUseSoFar = Get_CombosSoFar(locComboingStage, locChargeContentUseToAdd, locChargedCombo_WithNow);
+	if(locSourceCombosByUseSoFar.find(locComboUseToAdd) == locSourceCombosByUseSoFar.end()) //if true: not yet
+		Create_SourceCombos(locComboUseToAdd, locComboingStage, locChargedCombo_Presiding, locNumTabs + 1); //this may be something we want to combo vertically: go back to (unknown) mother function
+
+	//combo it horizontally with the rest
+	Combo_Horizontally_AddCombo(locComboUseToCreate, locComboUseAllBut1, locComboUseToAdd, locComboingStage, locChargedCombo_Presiding, locExpandAllBut1Flag, locNumTabs);
+}
+
+void DSourceComboer::Combo_Horizontally_AddParticles(const DSourceComboUse& locComboUseToCreate, const DSourceComboUse& locComboUseAllBut1, const pair<Particle_t, unsigned char>& locParticlePairToAdd, ComboingStage_t locComboingStage, const DSourceCombo* locChargedCombo_Presiding, bool locExpandAllBut1Flag, unsigned char locNumTabs)
+{
+	if((locComboingStage == d_ChargedStage) && (ParticleCharge(locParticlePairToAdd.first) == 0))
+	{
+		//this won't be done yet! just copy the all-but-1 as the desired combos
+		auto& locSourceCombosByUseSoFar = Get_CombosSoFar(locComboingStage, d_Charged);
+		auto& locAllBut1Combos = locSourceCombosByUseSoFar[locComboUseAllBut1];
+		locSourceCombosByUseSoFar.emplace(locComboUseToCreate, locAllBut1Combos);
+		return;
+	}
+	if(locParticlePairToAdd.second > 1)
+	{
+		//create a combo use for X -> N particles of this type
+		auto locSourceInfoToAdd = GetOrMake_SourceComboInfo({locParticlePairToAdd}, {}, locNumTabs);
+		auto locChargeContentUseToAdd = Get_ChargeContent(locSourceInfoToAdd);
+		DSourceComboUse locComboUseToAdd(Unknown, std::get<1>(locComboUseToCreate), locSourceInfoToAdd);
+
+		//create the combos for the use-to-add if they haven't been created yet
+		auto locChargedCombo_WithNow = Get_ChargedCombo_WithNow(locChargedCombo_Presiding, std::get<2>(locComboUseToCreate), locComboingStage);
+		auto& locSourceCombosByUseSoFar = Get_CombosSoFar(locComboingStage, locChargeContentUseToAdd, locChargedCombo_WithNow);
+		if(locSourceCombosByUseSoFar.find(locComboUseToAdd) == locSourceCombosByUseSoFar.end()) //if true: not yet
+			Create_SourceCombos(locComboUseToAdd, locComboingStage, locChargedCombo_Presiding, locNumTabs + 1); //this may be something we want to combo vertically: go back to (unknown) mother function
+
+		//combo it horizontally with the rest
+		Combo_Horizontally_AddCombo(locComboUseToCreate, locComboUseAllBut1, locComboUseToAdd, locComboingStage, locChargedCombo_Presiding, locExpandAllBut1Flag, locNumTabs);
+	}
+	else
+		Combo_Horizontally_AddParticle(locComboUseToCreate, locComboUseAllBut1, locParticlePairToAdd.first, locComboingStage, locChargedCombo_Presiding, locNumTabs);
+}
+
 
 void DSourceComboer::Create_Combo_OneParticle(const DSourceComboUse& locComboUseToCreate, ComboingStage_t locComboingStage, unsigned char locNumTabs)
 {

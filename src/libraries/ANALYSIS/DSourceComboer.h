@@ -166,8 +166,12 @@ class DSourceComboer : public JObject
 		void Combo_Vertically_AllParticles(const DSourceComboUse& locComboUseToCreate, ComboingStage_t locComboingStage, unsigned char locNumTabs);
 		void Combo_Vertically_NParticles(const DSourceComboUse& locComboUseToCreate, const DSourceComboUse& locNMinus1ComboUse, ComboingStage_t locComboingStage, unsigned char locNumTabs);
 
-		//COMBO HORIZONTALLY METHODS
+		//COMBO HORIZONTALLY ORGANIZATION METHODS
 		void Combo_Horizontally_All(const DSourceComboUse& locComboUseToCreate, ComboingStage_t locComboingStage, const DSourceCombo* locChargedCombo_Presiding, unsigned char locNumTabs);
+		void Combo_Horizontally_AddDecay(const DSourceComboUse& locComboUseToCreate, const DSourceComboUse& locComboUseAllBut1, const DSourceComboUse& locComboUseToAdd, ComboingStage_t locComboingStage, const DSourceCombo* locChargedCombo_Presiding, bool locExpandAllBut1Flag, unsigned char locNumTabs);
+		void Combo_Horizontally_AddParticles(const DSourceComboUse& locComboUseToCreate, const DSourceComboUse& locComboUseAllBut1, const pair<Particle_t, unsigned char>& locParticlePairToAdd, ComboingStage_t locComboingStage, const DSourceCombo* locChargedCombo_Presiding, bool locExpandAllBut1Flag, unsigned char locNumTabs);
+
+		//COMBO HORIZONTALLY COMBOING METHODS
 		void Create_Combo_OneParticle(const DSourceComboUse& locComboUseToCreate, ComboingStage_t locComboingStage, unsigned char locNumTabs);
 		void Combo_Horizontally_AddCombo(const DSourceComboUse& locComboUseToCreate, const DSourceComboUse& locAllBut1ComboUse, const DSourceComboUse& locSourceComboUseToAdd, ComboingStage_t locComboingStage, const DSourceCombo* locChargedCombo_Presiding, bool locExpandAllBut1Flag, unsigned char locNumTabs);
 		void Combo_Horizontally_AddParticle(const DSourceComboUse& locComboUseToCreate, const DSourceComboUse& locAllBut1ComboUse, Particle_t locPID, ComboingStage_t locComboingStage, const DSourceCombo* locChargedCombo_Presiding, unsigned char locNumTabs);
