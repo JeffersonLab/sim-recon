@@ -809,11 +809,15 @@ DLorentzVector DAnalysisUtilities::Calc_MissingP4(const DReaction* locReaction, 
 
 		int locDecayStepIndex = DAnalysis::Get_DecayStepIndex(locReaction, locStepIndex, loc_j);
 		if(locDecayStepIndex > 0) //decaying-particle
+		{
+			//why plus? because the minus-signs are already applied during the call below
 			locMissingP4 += Calc_MissingP4(locReaction, locParticleCombo, locDecayStepIndex, locUpToStepIndex, locUpThroughIndices, locSourceObjects, locUseKinFitDataFlag); //p4 returned is already < 0
+		}
 		else //detected
 		{
 			Particle_t locPID = locReactionStep->Get_FinalPID(loc_j);
-			locMissingP4 -= locParticles[loc_j]->lorentzMomentum();
+			auto locDetectedP4 = locParticles[loc_j]->lorentzMomentum();
+			locMissingP4 -= locDetectedP4;
 			locSourceObjects.insert(pair<const JObject*, unsigned int>(locParticleComboStep->Get_FinalParticle_SourceObject(loc_j), abs(PDGtype(locPID))));
 		}
 	}

@@ -117,9 +117,19 @@ pair<int, int> Get_InitialParticleDecayFromIndices(const DReaction* locReaction,
 
 size_t Get_ParticleInstanceIndex(const DReactionStep* locStep, size_t locParticleIndex)
 {
-	auto locFinalPIDs = locStep->Get_FinalPIDs(false);
-	Particle_t locPID = locFinalPIDs[locParticleIndex];
-	return std::count(locFinalPIDs.begin(), locFinalPIDs.begin() + locParticleIndex, locPID) - 1; //-1: index starting from 0
+	auto locFinalPIDs = locStep->Get_FinalPIDs();
+	auto locPID = locFinalPIDs[locParticleIndex];
+	size_t locInstanceIndex = 0;
+
+	//see how many of same PID came before the particle index
+	for(size_t loc_i = 0; loc_i < locParticleIndex; ++loc_i)
+	{
+		if(locStep->Get_MissingParticleIndex() == int(loc_i))
+			continue;
+		if(locFinalPIDs[loc_i] == locPID)
+			++locInstanceIndex;
+	}
+	return locInstanceIndex;
 }
 
 int Get_DecayStepIndex(const DReaction* locReaction, size_t locStepIndex, size_t locParticleIndex)

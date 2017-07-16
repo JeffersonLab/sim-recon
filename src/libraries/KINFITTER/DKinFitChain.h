@@ -89,7 +89,7 @@ inline void DKinFitChain::Print_InfoToScreen(void) const
 	cout << "DKinFitChain: PID, Pointer, decay-step indices:" << endl;
 	map<DKinFitParticle*, char>::const_iterator locIterator = dDecayStepIndices.begin();
 	for(; locIterator != dDecayStepIndices.end(); ++locIterator)
-		cout << locIterator->first->Get_PID() << ", " << locIterator->first << ", " << locIterator->second << endl;
+		cout << locIterator->first->Get_PID() << ", " << locIterator->first << ", " << int(locIterator->second) << endl;
 
 	cout << "DKinFitChain: defined particle step index, inclusive channel flag = " << int(dDefinedParticleStepIndex) << ", " << dIsInclusiveChannelFlag << endl;
 }

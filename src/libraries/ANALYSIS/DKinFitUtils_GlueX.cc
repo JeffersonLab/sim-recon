@@ -417,7 +417,7 @@ const DKinFitChain* DKinFitUtils_GlueX::Make_KinFitChain(const DReactionVertexIn
 		DKinFitParticle* locDecayingParticle = Make_DecayingParticle(locPID, locDecaySourceParticles.first, locDecaySourceParticles.second);
 
 		//set decaying particle in the chain
-		locKinFitChainStep->Set_InitialParticle(locDecayingParticle, 0);
+		locKinFitChainStep->Add_InitialParticle(locDecayingParticle);
 		auto locFromIndices = DAnalysis::Get_InitialParticleDecayFromIndices(locReaction, loc_i);
 		if((locFromIndices.first < 0) || (locFromIndices.first == loc_i))
 			continue; //intial-state open-ended decaying particle
@@ -459,7 +459,7 @@ const DKinFitChain* DKinFitUtils_GlueX::Make_KinFitChain(const DReactionVertexIn
 			locKinFitChainStep->Set_FinalParticle(locDecayingParticle, loc_j);
 
 			DKinFitChainStep* locDecayStep = const_cast<DKinFitChainStep*>(locKinFitChain->Get_KinFitChainStep(locDecayStepIndex));
-			locDecayStep->Set_InitialParticle(locDecayingParticle, 0);
+			locDecayStep->Add_InitialParticle(locDecayingParticle);
 			locKinFitChain->Set_DecayStepIndex(locDecayingParticle, locDecayStepIndex);
 		}
 	}
@@ -489,9 +489,9 @@ pair<set<DKinFitParticle*>, set<DKinFitParticle*>> DKinFitUtils_GlueX::Get_StepP
 	locFinalParticles.erase(nullptr); //remove any null particles
 
 	//If nulls in initial state: go to the previous step
-	for(size_t loc_i = 0; loc_i < locGrabbedFinalParticles.size(); ++loc_i)
+	for(size_t loc_i = 0; loc_i < locGrabbedInitialParticles.size(); ++loc_i)
 	{
-		if((locGrabbedFinalParticles[loc_i] != nullptr) || (locNonFixedMassParticleIndex == DReactionStep::Get_ParticleIndex_Initial()))
+		if((locGrabbedInitialParticles[loc_i] != nullptr) || (locNonFixedMassParticleIndex == DReactionStep::Get_ParticleIndex_Initial()))
 			continue;
 
 		//null particles in initial state: go to the previous step
@@ -511,6 +511,20 @@ pair<set<DKinFitParticle*>, set<DKinFitParticle*>> DKinFitUtils_GlueX::Get_StepP
 		auto locStepParticles = Get_StepParticles_NonNull(locKinFitChain, locReaction, locDecayStepIndex, DReactionStep::Get_ParticleIndex_Initial());
 		locInitialParticles.insert(locStepParticles.first.begin(), locStepParticles.first.end());
 		locFinalParticles.insert(locStepParticles.second.begin(), locStepParticles.second.end());
+	}
+
+	if(dDebugLevel >= 10)
+	{
+		cout << "DKinFitUtils_GlueX::Get_StepParticles_NonNull:" << endl;
+		cout << "reaction, step-index, non-fixed-mass particle index: " << locReaction->Get_ReactionName() << ", " << locStepIndex << ", " << locNonFixedMassParticleIndex << endl;
+		cout << "Chain: " << endl;
+		locKinFitChain->Print_InfoToScreen();
+		cout << "Init-particles:" << endl;
+		for(auto& locParticle : locInitialParticles)
+			cout << locParticle->Get_PID() << ", " << locParticle << endl;
+		cout << "Final-particles:" << endl;
+		for(auto& locParticle : locFinalParticles)
+			cout << locParticle->Get_PID() << ", " << locParticle << endl;
 	}
 	return std::make_pair(locInitialParticles, locFinalParticles);
 }
@@ -547,7 +561,7 @@ DKinFitChainStep* DKinFitUtils_GlueX::Make_KinFitChainStep(const DReactionVertex
 			auto locConstrainMassFlag = IsFixedMass(locPID) ? locReactionStep->Get_KinFitConstrainInitMassFlag() : false;
 			locKinFitChainStep->Set_ConstrainDecayingMassFlag(locConstrainMassFlag);
 		}
-		locKinFitChainStep->Add_InitialParticle(nullptr); //will create decaying particle later
+		//will create decaying particle later
 	}
 
 	//target particle

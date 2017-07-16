@@ -202,6 +202,7 @@ class DSourceComboer : public JObject
 		const DSourceCombo* Get_ChargedCombo_WithNow(const DSourceCombo* locChargedCombo_Presiding, const DSourceComboInfo* locToCreateComboInfo, ComboingStage_t locComboingStage) const;
 		const DSourceCombo* Get_NextChargedCombo(const DSourceCombo* locChargedCombo_Presiding, const DSourceComboUse& locNextComboUse, ComboingStage_t locComboingStage, bool locGetPresidingFlag, size_t locInstance) const;
 		bool Get_PromoteFlag(Particle_t locDecayPID_UseToCheck, const DSourceComboInfo* locComboInfo_UseToCreate, const DSourceComboInfo* locComboInfo_UseToCheck) const;
+		const DSourceCombo* Find_Combo_AtThisStep(const DSourceCombo* locSourceCombo, DSourceComboUse locUseToFind, size_t locDecayInstanceIndex) const;
 
 		//GET RESOURCES
 		DSourceCombo* Get_SourceComboResource(void);

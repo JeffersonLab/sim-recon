@@ -46,7 +46,6 @@ vector<const DSourceCombo*> Get_SourceCombos_ThisVertex(const DSourceCombo* locS
 vector<pair<DSourceComboUse, vector<const DSourceCombo*>>> Get_SourceCombosAndUses_ThisVertex(const DSourceCombo* locSourceCombo);
 Charge_t Get_ChargeContent(const DSourceComboInfo* locSourceComboInfo);
 bool Get_HasMassiveNeutrals(const DSourceComboInfo* locComboInfo);
-const DSourceCombo* Find_Combo_AtThisStep(const DSourceCombo* locSourceCombo, const DSourceComboUse& locUseToFind, size_t locDecayInstanceIndex);
 const JObject* Get_SourceParticle_ThisStep(const DSourceCombo* locSourceCombo, Particle_t locPID, size_t locInstance, size_t& locPIDCountSoFar);
 
 /************************************************************** DEFINE CLASSES ***************************************************************/
@@ -423,32 +422,11 @@ inline bool Get_HasMassiveNeutrals(const DSourceComboInfo* locComboInfo)
 
 	//search function
 	auto Find_MassiveNeutrals = [](const pair<Particle_t, unsigned char>& locPair) -> bool
-		{return (ParticleCharge(locPair.first) != 0) && (ParticleMass(locPair.first) > 0.0);};
+		{return ((ParticleCharge(locPair.first) == 0) && (ParticleMass(locPair.first) > 0.0));};
 
 	//do search
 	auto locNumParticles = locComboInfo->Get_NumParticles(true); //true: entire chain
 	return std::any_of(locNumParticles.begin(), locNumParticles.end(), Find_MassiveNeutrals);
-}
-
-inline const DSourceCombo* Find_Combo_AtThisStep(const DSourceCombo* locSourceCombo, const DSourceComboUse& locUseToFind, size_t locDecayInstanceIndex)
-{
-	for(const auto& locDecayPair : locSourceCombo->Get_FurtherDecayCombos())
-	{
-		const auto& locUse = locDecayPair.first;
-		if(locUse == locUseToFind) //good, do stuff
-			return locDecayPair.second[locDecayInstanceIndex];
-		if(std::get<0>(locUse) != Unknown)
-			continue; //is another step!
-
-		//vector of combos is guaranteed to be size 1, and it's guaranteed that none of ITS further decays are unknown
-		auto locComboToSearch = locDecayPair.second[0];
-		for(const auto& locNestedDecayPair : locComboToSearch->Get_FurtherDecayCombos())
-		{
-			if(locUse == locUseToFind) //good, do stuff
-				return locNestedDecayPair.second[locDecayInstanceIndex];
-		}
-	}
-	return nullptr;
 }
 
 inline const JObject* Get_SourceParticle_ThisStep(const DSourceCombo* locSourceCombo, Particle_t locPID, size_t locInstance, size_t& locPIDCountSoFar)

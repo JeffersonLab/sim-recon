@@ -72,11 +72,21 @@ inline void DKinFitChainStep::Print_InfoToScreen(void) const
 
 	cout << "DKinFitChainStep init particles: PIDs, pointers:" << endl;
 	for(auto& locParticle : dInitialParticles)
-		cout << locParticle->Get_PID() << ", " << locParticle << endl;
+	{
+		if(locParticle == nullptr)
+			cout << "X, nullptr" << endl;
+		else
+			cout << locParticle->Get_PID() << ", " << locParticle << endl;
+	}
 
 	cout << "DKinFitChainStep final particles: PIDs, pointers:" << endl;
 	for(auto& locParticle : dFinalParticles)
-		cout << locParticle->Get_PID() << ", " << locParticle << endl;
+	{
+		if(locParticle == nullptr)
+			cout << "X, nullptr" << endl;
+		else
+			cout << locParticle->Get_PID() << ", " << locParticle << endl;
+	}
 }
 
 #endif // _DKinFitChainStep_
