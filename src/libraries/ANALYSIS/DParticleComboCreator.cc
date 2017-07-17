@@ -130,6 +130,7 @@ const DParticleCombo* DParticleComboCreator::Build_ParticleCombo(const DReaction
 
 	auto locReactionSteps = locReaction->Get_ReactionSteps();
 	auto locPreviousStepSourceCombo = locFullCombo;
+
 	for(size_t loc_i = 0; loc_i < locReactionSteps.size(); ++loc_i)
 	{
 		auto locReactionStep = locReactionSteps[loc_i];
@@ -175,6 +176,7 @@ const DParticleCombo* DParticleComboCreator::Build_ParticleCombo(const DReaction
 		auto locFinalPIDs = locReactionStep->Get_FinalPIDs();
 		map<Particle_t, size_t> locPIDCountMap;
 		vector<const DKinematicData*> locFinalParticles;
+		size_t locNumFCALPhotons = 0, locNumBCALPhotons = 0;
 		for(size_t loc_j = 0; loc_j < locFinalPIDs.size(); ++loc_j)
 		{
 //			cout << "j = " << loc_j << endl;
@@ -214,6 +216,10 @@ const DParticleCombo* DParticleComboCreator::Build_ParticleCombo(const DReaction
 					dNeutralHypoMap.emplace(locHypoTuple, locNewNeutralHypo);
 				}
 
+				if(locNeutralShower->dDetectorSystem == SYS_FCAL)
+					++locNumFCALPhotons;
+				else
+					++locNumBCALPhotons;
 				locFinalParticles.push_back(static_cast<const DKinematicData*>(locNewNeutralHypo));
 			}
 			else //charged
@@ -233,6 +239,13 @@ const DParticleCombo* DParticleComboCreator::Build_ParticleCombo(const DReaction
 
 				locFinalParticles.push_back(static_cast<const DKinematicData*>(locNewChargedHypo));
 			}
+		}
+		if((locNumFCALPhotons + locNumBCALPhotons) > 0)
+		{
+			if(dMap.find(locNumFCALPhotons) == dMap.end())
+				dMap[locNumFCALPhotons] = 1;
+			else
+				++(dMap[locNumFCALPhotons]);
 		}
 
 		locParticleComboStep->Set_Contents(locStepBeamParticle, locFinalParticles, locSpacetimeVertex);

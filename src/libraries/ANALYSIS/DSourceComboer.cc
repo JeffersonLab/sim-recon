@@ -829,6 +829,8 @@ void DSourceComboer::Reset_NewEvent(JEventLoop* locEventLoop)
 	if(locEventNumber == dEventNumber)
 		return; //nope
 	dEventNumber = locEventNumber;
+	if(dDebugLevel >= 5) //for the last event
+		Print_NumCombosByUse();
 
 	Fill_SurvivalHistograms();
 
@@ -3174,6 +3176,52 @@ bool DSourceComboer::Check_NumParticles(const DReaction* locReaction)
 			return false;
 	}
 	return true;
+}
+
+void DSourceComboer::Print_NumCombosByUse(void)
+{
+	cout << "Num combos by use (charged):" << endl;
+	for(const auto& locCombosByUsePair : dSourceCombosByUse_Charged)
+	{
+		cout << locCombosByUsePair.second->size() << " of ";
+		Print_SourceComboUse(locCombosByUsePair.first);
+
+		//save
+		auto locIterator = dNumMixedCombosMap_Charged.find(locCombosByUsePair.first);
+		if(locIterator == dNumMixedCombosMap_Charged.end())
+			dNumMixedCombosMap_Charged.emplace(locCombosByUsePair.first, locCombosByUsePair.second->size());
+		else
+			locIterator->second += locCombosByUsePair.second->size();
+	}
+
+	//get #mixed by use (must merge results for different charged combos)
+	map<DSourceComboUse, size_t> locNumMixedCombosMap;
+	for(const auto& locChargedComboPair : dMixedCombosByUseByChargedCombo)
+	{
+		const auto& locCombosByUseMap = locChargedComboPair.second;
+		for(const auto& locCombosByUsePair : locCombosByUseMap)
+		{
+			auto locIterator = locNumMixedCombosMap.find(locCombosByUsePair.first);
+			if(locIterator == locNumMixedCombosMap.end())
+				locNumMixedCombosMap.emplace(locCombosByUsePair.first, locCombosByUsePair.second->size());
+			else
+				locIterator->second += locCombosByUsePair.second->size();
+		}
+	}
+
+	cout << "Num combos by use (neutral/mixed):" << endl;
+	for(const auto& locNumCombosByUsePair : locNumMixedCombosMap)
+	{
+		cout << locNumCombosByUsePair.second << " of ";
+		Print_SourceComboUse(locNumCombosByUsePair.first);
+
+		//save
+		auto locIterator = dNumMixedCombosMap_Mixed.find(locNumCombosByUsePair.first);
+		if(locIterator == dNumMixedCombosMap_Mixed.end())
+			dNumMixedCombosMap_Mixed.emplace(locNumCombosByUsePair.first, locNumCombosByUsePair.second);
+		else
+			locIterator->second += locNumCombosByUsePair.second;
+	}
 }
 
 } //end DAnalysis namespace

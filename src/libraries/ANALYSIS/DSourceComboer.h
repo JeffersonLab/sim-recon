@@ -118,6 +118,7 @@ class DSourceComboer : public JObject
 		DSourceComboUse Get_PrimaryComboUse(const DReactionVertexInfo* locReactionVertexInfo) const{return Get_SourceComboUse(locReactionVertexInfo->Get_StepVertexInfo(0));};
 
 		DParticleComboCreator* Get_ParticleComboCreator(void) const{return dParticleComboCreator;}
+		void Print_NumCombosByUse(void);
 
 	private:
 
@@ -296,6 +297,8 @@ class DSourceComboer : public JObject
 		map<const DReaction*, TH1*> dNumCombosSurvivedStageMap;
 		map<const DReaction*, TH2*> dNumCombosSurvivedStage2DMap;
 		map<const DReaction*, map<DConstructionStage, size_t>> dNumCombosSurvivedStageTracker; //index is for event stages!!!
+		map<DSourceComboUse, size_t> dNumMixedCombosMap_Charged;
+		map<DSourceComboUse, size_t> dNumMixedCombosMap_Mixed;
 
 		//dE/dx
 		map<Particle_t, map<DetectorSystem_t, pair<TF1*, TF1*>>> ddEdxCutMap; //pair: first is lower bound, second is upper bound
@@ -309,6 +312,7 @@ class DSourceComboer : public JObject
 };
 
 /*********************************************************** INLINE MEMBER FUNCTION DEFINITIONS ************************************************************/
+
 
 inline DSourceCombo* DSourceComboer::Get_SourceComboResource(void)
 {
@@ -435,6 +439,24 @@ inline DSourceComboer::~DSourceComboer(void)
 {
 	//no need for a resource pool for these objects, as they will exist for the length of the program
 	Fill_SurvivalHistograms();
+	if(dDebugLevel >= 5)
+	{
+		Print_NumCombosByUse(); //for the final event
+
+		cout << "FINAL Num combos by use (charged):" << endl;
+		for(const auto& locNumCombosByUsePair : dNumMixedCombosMap_Charged)
+		{
+			cout << locNumCombosByUsePair.second << " of ";
+			Print_SourceComboUse(locNumCombosByUsePair.first);
+		}
+		cout << "FINAL Num combos by use (neutral/mixed):" << endl;
+		for(const auto& locNumCombosByUsePair : dNumMixedCombosMap_Mixed)
+		{
+			cout << locNumCombosByUsePair.second << " of ";
+			Print_SourceComboUse(locNumCombosByUsePair.first);
+		}
+
+	}
 	for(auto locComboInfo : dSourceComboInfos)
 		delete locComboInfo;
 	delete dSourceComboVertexer;
