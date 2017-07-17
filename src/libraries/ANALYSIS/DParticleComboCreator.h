@@ -30,7 +30,6 @@ class DSourceComboer;
 class DParticleComboCreator
 {
 	public:
-~DParticleComboCreator(void){cout << "FINAL COUNTS:" << endl; for(auto& locPair : dMap) cout << locPair.first << ", " << locPair.second << endl;}
 		DParticleComboCreator(JEventLoop* locEventLoop, const DSourceComboer* locSourceComboer, const DSourceComboTimeHandler* locSourceComboTimeHandler, const DSourceComboVertexer* locSourceComboVertexer);
 
 		const DParticleCombo* Build_ParticleCombo(const DReactionVertexInfo* locReactionVertexInfo, const DSourceCombo* locFullCombo, const DKinematicData* locBeamParticle, int locRFBunchShift, DKinFitType locKinFitType);
@@ -43,7 +42,7 @@ class DParticleComboCreator
 
 	private:
 
-map<size_t, size_t> dMap;
+		bool dDebugLevel = 0;
 
 		bool Get_CreateNeutralErrorMatrixFlag_Combo(const DReactionVertexInfo* locReactionVertexInfo, DKinFitType locKinFitType);
 

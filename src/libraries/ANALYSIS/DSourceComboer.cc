@@ -13,15 +13,20 @@
  * p2pi: OK
  * p2k: OK
  * p4pi: OK
- * p2g: WAITING CONFIRMATION
- * p pi0
- * p3pi
+ * p2g: OK
+ * p pi0: WAITING CONFIRMATION
+ * p3pi: WAITING BIG RUN & COMPARISON
+ * p2pi0: TESTING
+ * p3pi0
+ * p2pi 2pi0
+ * p eta pi0
+ * p eta 2pi0
+ * pi+(n)
+ * 
  * p3pi missing-p
  * omega p
  * omega missing-p
- * p2pi + 2pi0s
- * p2pi + 3pi0s
- *
+ * 
  * K+ Lambda
  * K+ Sigma0
  * K+ pi0 Lambda
@@ -1716,7 +1721,12 @@ void DSourceComboer::Combo_Vertically_AllDecays(const DSourceComboUse& locComboU
 
 		// Now, see whether the combos for the direct N - 1 grouping have already been done.  If not, create them
 		if(locSourceCombosByUseSoFar.find(locNMinus1ComboUse) == locSourceCombosByUseSoFar.end())
-			Combo_Vertically_AllDecays(locNMinus1ComboUse, locComboingStage, locChargedCombo_WithNow, locNumTabs + 1); //no need to go to top-level combo function since just N - 1: can re-call this one
+		{
+			if(std::get<0>(locNMinus1ComboUse) != Unknown) //e.g. 1 pi0
+				Create_SourceCombos(locNMinus1ComboUse, locComboingStage, locChargedCombo_Presiding, locNumTabs + 1);
+			else //no need to go to top-level combo function since just N - 1: can re-call this one
+				Combo_Vertically_AllDecays(locNMinus1ComboUse, locComboingStage, locChargedCombo_Presiding, locNumTabs + 1);
+		}
 
 		//Finally, we can actually DO the grouping, between the N - 1 combos and the one-off combos
 		Combo_Vertically_NDecays(locNeededGroupingUse, locNMinus1ComboUse, locSourceComboDecayUse, locComboingStage, locChargedCombo_WithNow, locNumTabs);
@@ -1742,35 +1752,41 @@ void DSourceComboer::Combo_Vertically_NDecays(const DSourceComboUse& locComboUse
 		cout << "SINGLE USE:" << endl;
 		DAnalysis::Print_SourceComboUse(locSourceComboDecayUse, locNumTabs);
 	}
-
+cout << "hgiowahg" << endl;
 	auto locVertexZBin = std::get<1>(locComboUseToCreate);
 	auto locNIs2Flag = (locNMinus1ComboUse == locSourceComboDecayUse); //true if need exactly 2 decaying particles
+cout << "fewgeawa" << endl;
 
 	//Get combos so far
 	auto locComboInfoToCreate = std::get<2>(locComboUseToCreate);
 	auto locChargeContent = dComboInfoChargeContent[locComboInfoToCreate];
 	auto locChargedCombo_WithNow = Get_ChargedCombo_WithNow(locChargedCombo_Presiding, locComboInfoToCreate, locComboingStage);
 	auto& locSourceCombosByUseSoFar = Get_CombosSoFar(locComboingStage, locChargeContent, locChargedCombo_WithNow);
+cout << "estjhreshs" << endl;
 
 	//e.g. we are grouping 1 pi0 with N - 1 pi0s to make a combo of N pi0s
 	//so, let's get the combos for (e.g.) 1 pi0 and for N - 1 pi0s
 	const auto& locCombos_NMinus1 = *locSourceCombosByUseSoFar[locNMinus1ComboUse]; //Combos are a vector of (e.g.): -> N - 1 pi0s
 	if(locCombos_NMinus1.empty())
 		return; //bail!
+cout << "g4egshe" << endl;
 
 	//if on the all-showers stage, first copy over ALL fcal-only results
 	locSourceCombosByUseSoFar.emplace(locComboUseToCreate, Get_SourceComboVectorResource());
 	if(locComboingStage == d_MixedStage)
 		Copy_ZIndependentMixedResults(locComboUseToCreate, locChargedCombo_WithNow);
+cout << "sefjsrt" << endl;
 
 	if(locCombos_NMinus1.empty())
 		return; //nothing to create
+cout << "grehs" << endl;
 
 	//if comboing N mixed combos (locComboUseToCreate) (which are thus all used in the same step), do this:
 	//locChargedCombo_WithNow corresponds to N mixed combos
 	auto locInstance = locNIs2Flag ? 2 : locCombos_NMinus1.front()->Get_FurtherDecayCombos()[locSourceComboDecayUse].size() + 1; //numbering starts with 1, not 0
 	auto locNextPresidingCombo = Get_NextChargedCombo(locChargedCombo_Presiding, locSourceComboDecayUse, locComboingStage, true, locInstance);
 	auto locChargedCombo_WithPrevious = Get_ChargedCombo_WithNow(locNextPresidingCombo, locComboInfoToCreate, locComboingStage);
+cout << "hjerjsdfws" << endl;
 
 	//now, for each combo of N - 1 (e.g.) pi0s, see which of the single-decay combos are a valid grouping
 	//valid grouping:
@@ -1780,12 +1796,14 @@ void DSourceComboer::Combo_Vertically_NDecays(const DSourceComboUse& locComboUse
 		//However, validating for Test 1 is much faster, as discussed below.
 	for(const auto& locCombo_NMinus1 : locCombos_NMinus1)
 	{
+cout << "tjretja" << endl;
 		//loop over potential combos to add to the group, creating a new combo for each valid (non-duplicate) grouping
 		//however, we don't have to loop over all of the combos!!
 
 		//first of all, get the potential combos that satisfy the RF bunches for the N - 1 combo
 		const auto& locValidRFBunches_NMinus1 = dValidRFBunches_ByCombo[locCombo_NMinus1];
 		const auto& locDecayCombos_1 = Get_CombosForComboing(locSourceComboDecayUse, locComboingStage, locValidRFBunches_NMinus1, locChargedCombo_WithPrevious);
+cout << "setjtrsfg" << endl;
 
 		//now, note that all of the combos are stored in the order in which they were created (e.g. A, B, C, D)
 		//so (e.g.), groupings of 2 will be created and saved in the order: AB, AC, AD, BC, BD, CD
@@ -1797,6 +1815,7 @@ void DSourceComboer::Combo_Vertically_NDecays(const DSourceComboUse& locComboUse
 		auto locComboSearchIterator = Get_ResumeAtIterator_Combos(locCombo_NMinus1, locValidRFBunches_NMinus1, locComboingStage, locVertexZBin);
 		if(locComboSearchIterator == std::end(locDecayCombos_1))
 			continue; //e.g. this combo is "AD" and there are only 4 reconstructed combos (ABCD): no potential matches! move on to the next N - 1 combo
+cout << "fwwayahd" << endl;
 
 		//before we loop, first get all of the showers used to make the N - 1 grouping, and sort it so that we can quickly search it
 		auto locUsedParticles_NMinus1 = DAnalysis::Get_SourceParticles(locCombo_NMinus1->Get_SourceParticles(true)); //true: entire chain
@@ -1807,10 +1826,12 @@ void DSourceComboer::Combo_Vertically_NDecays(const DSourceComboUse& locComboUse
 				{return std::binary_search(locUsedParticles_NMinus1.begin(), locUsedParticles_NMinus1.end(), locParticle);};
 
 		auto locIsZIndependent_NMinus1 = locCombo_NMinus1->Get_IsComboingZIndependent();
+cout << "grejhsedw" << endl;
 
 		//now loop over the potential combos
 		for(; locComboSearchIterator != locDecayCombos_1.end(); ++locComboSearchIterator)
 		{
+cout << "fhersjesfw" << endl;
 			const auto locDecayCombo_1 = *locComboSearchIterator;
 
 			//If on all-showers stage, and combo is fcal-only, don't save (combo already created!!)
@@ -1822,6 +1843,7 @@ void DSourceComboer::Combo_Vertically_NDecays(const DSourceComboUse& locComboUse
 			auto locUsedParticles_1 = DAnalysis::Get_SourceParticles(locDecayCombo_1->Get_SourceParticles(true)); //true: entire chain
 			if(std::any_of(locUsedParticles_1.begin(), locUsedParticles_1.end(), Search_Duplicates))
 				continue; //at least one photon was a duplicate, this combo won't work
+cout << "erjesgfe" << endl;
 
 			//no duplicates: this combo is unique.  build a new combo!
 
@@ -1838,6 +1860,7 @@ void DSourceComboer::Combo_Vertically_NDecays(const DSourceComboUse& locComboUse
 				locAllDecayCombos = locCombo_NMinus1->Get_FurtherDecayCombos()[locSourceComboDecayUse];
 				locAllDecayCombos.push_back(locDecayCombo_1);
 			}
+cout << "wehesaf" << endl;
 
 			//then create the new combo
 			DSourceCombosByUse_Small locFurtherDecayCombos = {std::make_pair(locSourceComboDecayUse, locAllDecayCombos)}; //arguments (e.g.): (pi0, -> 2g), N combos of: -> 2g
@@ -2822,7 +2845,7 @@ void DSourceComboer::Copy_ZIndependentMixedResults(const DSourceComboUse& locCom
 	auto& locSourceCombosByUseSoFar = Get_CombosSoFar(d_MixedStage, locChargeContent, locChargedCombo_WithNow);
 
 	//Get FCAL results
-	auto locComboUseFCAL = std::make_tuple(std::get<0>(locComboUseToCreate), DSourceComboInfo::Get_VertexZIndex_ZIndependent(), locComboInfo);
+	auto locComboUseFCAL = dZDependentUseToIndependentMap[locComboUseToCreate];
 	if(locSourceCombosByUseSoFar.find(locComboUseFCAL) == locSourceCombosByUseSoFar.end())
 		return; //no results to copy, just return
 	const auto& locFCALComboVector = *(locSourceCombosByUseSoFar[locComboUseFCAL]);

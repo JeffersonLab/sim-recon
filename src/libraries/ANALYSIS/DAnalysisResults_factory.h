@@ -45,7 +45,7 @@ using namespace std;
 class DAnalysisResults_factory : public jana::JFactory<DAnalysisResults>
 {
 	public:
-		~DAnalysisResults_factory(void){delete dSourceComboer; delete dParticleComboCreator;}
+		~DAnalysisResults_factory(void){delete dSourceComboer;}
 		size_t Get_KinFitParticlePoolSize(void) const{return dKinFitUtils->Get_KinFitParticlePoolSize();};
 		size_t Get_KinFitParticlePoolSize_Shared(void) const{return dKinFitUtils->Get_KinFitParticlePoolSize_Shared();};
 		size_t Get_KinFitConstraintVertexPoolSize(void) const{return dKinFitUtils->Get_KinFitConstraintVertexPoolSize();};

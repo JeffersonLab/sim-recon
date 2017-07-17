@@ -749,10 +749,14 @@ set<DKinFitConstraint*> DKinFitUtils_GlueX::Create_Constraints(const DReactionVe
 
 			auto locFullConstrainParticles = Build_ParticleSet(locStepVertexInfo->Get_FullConstrainParticles(true), locKinFitChain);
 			auto locNoConstrainParticles = Build_ParticleSet(locStepVertexInfo->Get_NoConstrainParticles(true), locKinFitChain);
+			auto locOnlyConstrainTimeParticles = Build_ParticleSet(locStepVertexInfo->Get_OnlyConstrainTimeParticles(), locKinFitChain);
 			if(locSpacetimeFitFlag)
-				locSortedVertexConstraints.push_back(Make_SpacetimeConstraint(locFullConstrainParticles, Build_ParticleSet(locStepVertexInfo->Get_OnlyConstrainTimeParticles(), locKinFitChain), locNoConstrainParticles, locX4));
+				locSortedVertexConstraints.push_back(Make_SpacetimeConstraint(locFullConstrainParticles, locOnlyConstrainTimeParticles, locNoConstrainParticles, locX4));
 			else
+			{
+				locNoConstrainParticles.insert(locOnlyConstrainTimeParticles.begin(), locOnlyConstrainTimeParticles.end());
 				locSortedVertexConstraints.push_back(Make_VertexConstraint(locFullConstrainParticles, locNoConstrainParticles, locX4.Vect()));
+			}
 		}
 	}
 	locAllConstraints.insert(locSortedVertexConstraints.begin(), locSortedVertexConstraints.end());
@@ -943,6 +947,14 @@ string DKinFitUtils_GlueX::Build_VertexConstraintString(const DReactionStepVerte
 	auto locReaction = locVertexInfo->Get_Reaction();
 	string locConstraintString = locSpacetimeFitFlag ? "#it{x}^{4}_{" : "#it{x}^{3}_{";
 
+	//if a decaying particle decays in-place at this vertex, we don't want to put it into the string
+	//this will happen if: the vertex-info represents more than one step
+	//they will be present in the info as non-constrain particles in the final-state
+	auto locStepIndices = locVertexInfo->Get_StepIndices(); //steps are listed in order
+	set<pair<int, int>> locExcludeDecayParticleIndices; //these are final-state indices
+	for(size_t loc_i = 1; loc_i < locStepIndices.size(); ++loc_i)
+		locExcludeDecayParticleIndices.insert(DAnalysis::Get_InitialParticleDecayFromIndices(locReaction, locStepIndices[loc_i]));
+
 	//initial state
 	auto locParticles = locVertexInfo->Get_Particles(d_InitialState);
 	auto locFullConstrainParticles = locVertexInfo->Get_FullConstrainParticles(true, d_InitialState);
@@ -966,6 +978,9 @@ string DKinFitUtils_GlueX::Build_VertexConstraintString(const DReactionStepVerte
 	auto locOnlyConstrainTimeParticles = locVertexInfo->Get_OnlyConstrainTimeParticles();
 	for(auto locIndices : locParticles)
 	{
+		if(locExcludeDecayParticleIndices.find(locIndices) != locExcludeDecayParticleIndices.end())
+			continue; //exclude no-constrain decaying particle
+
 		auto locStep = locReaction->Get_ReactionStep(locIndices.first);
 		Particle_t locPID = locStep->Get_PID(locIndices.second);
 		string locParticleString = ParticleName_ROOT(locPID);

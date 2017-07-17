@@ -1868,9 +1868,21 @@ double DParticleID::Calc_TimingChiSq(const DNeutralParticleHypothesis* locNeutra
 		return 0.0;
 	}
 
+	double locDeltaT = locNeutralHypo->t0() - locNeutralHypo->time();
 	double locStartTimeError = locNeutralHypo->t0_err();
-	double locTimeDifferenceVariance = (*locNeutralHypo->errorMatrix())(6, 6) + locStartTimeError*locStartTimeError;
-	locTimingPull = (locNeutralHypo->t0() - locNeutralHypo->time())/sqrt(locTimeDifferenceVariance);
+	double locTimeDifferenceVariance = 0.0;
+	if(locNeutralHypo->errorMatrix() == nullptr)
+	{
+		//we are trying to save memory:
+		//this is pre-kinfit, and the vertex will be fit, so this isn't the final say anyway
+		//however, in case a pre-kinfit cut is used, we want it to be mostly accurate
+		//assume error on hit time dominates (over error on vertex positions (i.e. path length)
+		locTimeDifferenceVariance = locNeutralHypo->Get_NeutralShower()->dCovarianceMatrix(4, 4);
+	}
+	else
+		locTimeDifferenceVariance = (*locNeutralHypo->errorMatrix())(6, 6) + locStartTimeError*locStartTimeError;
+
+	locTimingPull = locDeltaT/sqrt(locTimeDifferenceVariance);
 	locNDF = 1;
 	return locTimingPull*locTimingPull;
 }

@@ -368,8 +368,19 @@ inline vector<const JObject*>::const_iterator DSourceComboer::Get_ResumeAtIterat
 
 inline vector<const DSourceCombo*>::const_iterator DSourceComboer::Get_ResumeAtIterator_Combos(const DSourceCombo* locSourceCombo, const vector<int>& locBeamBunches, ComboingStage_t locComboingStage, signed char locVertexZBin) const
 {
-	const auto& locPreviousCombo = dResumeSearchAfterMap_Combos.find(locSourceCombo)->second;
-	return std::next(dResumeSearchAfterIterators_Combos.find(std::make_pair(locPreviousCombo, locVertexZBin))->second.find(locBeamBunches)->second);
+cout << "source combo, #bunches, stage, zbin: " << locSourceCombo << ", " << locBeamBunches.size() << ", " << locComboingStage << ", " << int(locVertexZBin) << endl;
+cout << "bunches: ";
+for(auto& locBunch : locBeamBunches)
+cout << locBunch << ", ";
+cout << endl;
+	auto locPreviousCombo = dResumeSearchAfterMap_Combos.find(locSourceCombo)->second;
+cout << "previous combo: " << locPreviousCombo << endl;
+auto locSearchPair = std::make_pair(locPreviousCombo, locVertexZBin);
+auto& locBunchIteratorMap = dResumeSearchAfterIterators_Combos.find(locSearchPair)->second;
+cout << "found locBunchIteratorMap" << endl;
+auto locSavedIterator = locBunchIteratorMap.find(locBeamBunches)->second;
+cout << "have saved iterator" << endl;
+	return std::next(locSavedIterator);
 }
 
 inline bool DSourceComboer::Get_IsComboingZIndependent(const JObject* locObject, Particle_t locPID) const
