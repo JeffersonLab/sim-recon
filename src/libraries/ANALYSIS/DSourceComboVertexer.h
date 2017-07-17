@@ -143,7 +143,7 @@ inline vector<const DKinematicData*> DSourceComboVertexer::Get_ConstrainingParti
 	//so, first search with the beam particle; if not found then search without it
 	auto locIterator = dConstrainingParticlesByCombo.find(std::make_tuple(locIsProductionVertex, locVertexCombo, locBeamParticle));
 	if((locBeamParticle != nullptr) && (locIterator == dConstrainingParticlesByCombo.end()))
-		locIterator = dConstrainingParticlesByCombo.find(std::make_tuple(locIsProductionVertex, locVertexCombo, nullptr));
+		locIterator = dConstrainingParticlesByCombo.find(std::make_tuple(locIsProductionVertex, locVertexCombo, (const DKinematicData*)nullptr));
 	if(locIterator != dConstrainingParticlesByCombo.end())
 		return locIterator->second;
 	return {};

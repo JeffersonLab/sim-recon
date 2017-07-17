@@ -110,7 +110,6 @@ const DParticleCombo* DParticleComboCreator::Build_ParticleCombo(const DReaction
 	dComboMap.emplace(locComboTuple, locParticleCombo);
 
 	auto locReaction = locReactionVertexInfo->Get_Reaction();
-	auto locIsPrimaryProductionVertex = locReactionVertexInfo->Get_StepVertexInfos().front()->Get_ProductionVertexFlag();
 	auto locPrimaryVertexZ = dSourceComboVertexer->Get_PrimaryVertex(locReactionVertexInfo, locFullCombo, locBeamParticle).Z();
 
 	//Get/Create RF Bunch
@@ -133,15 +132,15 @@ const DParticleCombo* DParticleComboCreator::Build_ParticleCombo(const DReaction
 	auto locPreviousStepSourceCombo = locFullCombo;
 	for(size_t loc_i = 0; loc_i < locReactionSteps.size(); ++loc_i)
 	{
-//		cout << "i = " << loc_i << endl;
 		auto locReactionStep = locReactionSteps[loc_i];
+		auto locStepVertexInfo = locReactionVertexInfo->Get_StepVertexInfo(loc_i);
 		auto locStepBeamParticle = (loc_i == 0) ? locBeamParticle : nullptr;
-		auto locIsProductionVertex = (loc_i == 0) ? locIsPrimaryProductionVertex : false;
+		auto locIsProductionVertex = locStepVertexInfo->Get_ProductionVertexFlag();
 		auto locSourceCombo = (loc_i == 0) ? locFullCombo : dSourceComboer->Get_StepSourceCombo(locReaction, loc_i, locPreviousStepSourceCombo, loc_i - 1);
 //		Print_SourceCombo(locSourceCombo);
 
-		auto locStepVertexInfo = locReactionVertexInfo->Get_StepVertexInfo(loc_i);
 		auto locVertexPrimaryCombo = dSourceComboer->Get_VertexPrimaryCombo(locFullCombo, locStepVertexInfo);
+
 		bool locCreateNeutralErrorMatrixFlag = (locKinFitType != d_NoFit) && ((locKinFitType == d_P4Fit) || !locStepVertexInfo->Get_FittableVertexFlag());
 		if(locReactionStep->Get_FinalPIDs(false, d_Neutral, false).empty())
 			locCreateNeutralErrorMatrixFlag = false; //no neutrals!

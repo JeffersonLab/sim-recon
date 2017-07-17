@@ -41,7 +41,7 @@ void DSourceComboVertexer::Calc_VertexTimeOffsets_WithCharged(const DReactionVer
 		cout << "DSourceComboVertexer::Calc_VertexTimeOffsets_WithCharged()" << endl;
 
 	auto locIsPrimaryProductionVertex = locReactionVertexInfo->Get_StepVertexInfos().front()->Get_ProductionVertexFlag();
-	if(dTimeOffsets.find(std::make_tuple(locIsPrimaryProductionVertex, locReactionChargedCombo, nullptr)) != dTimeOffsets.end())
+	if(dTimeOffsets.find(std::make_tuple(locIsPrimaryProductionVertex, locReactionChargedCombo, (const DKinematicData*)nullptr)) != dTimeOffsets.end())
 		return; //already done!! //e.g. the same channel used for 2 different DReactions
 
 	//loop through vertices
@@ -130,7 +130,7 @@ void DSourceComboVertexer::Calc_VertexTimeOffsets_WithPhotons(const DReactionVer
 	//E.g. g, p ->  K0, Sigma+    K0 -> 3pi: The selected pi0 photons could help define the production vertex
 
 	auto locIsPrimaryProductionVertex = locReactionVertexInfo->Get_StepVertexInfos().front()->Get_ProductionVertexFlag();
-	if(dTimeOffsets.find(std::make_tuple(locIsPrimaryProductionVertex, locReactionFullCombo, nullptr)) != dTimeOffsets.end())
+	if(dTimeOffsets.find(std::make_tuple(locIsPrimaryProductionVertex, locReactionFullCombo, (const DKinematicData*)nullptr)) != dTimeOffsets.end())
 		return; //already done!! //e.g. the same channel used for 2 different DReactions
 
 	//loop over vertices in dependency order
@@ -548,8 +548,8 @@ void DSourceComboVertexer::Calc_TimeOffsets(const DReactionVertexInfo* locReacti
 	auto locIsPrimaryProductionVertex = locReactionVertexInfo->Get_StepVertexInfos().front()->Get_ProductionVertexFlag();
 	auto locActiveReactionCombo = (locFullReactionCombo != nullptr) ? locFullReactionCombo : locChargedReactionCombo;
 
-	auto locChargedReactionTuple = std::make_tuple(locIsPrimaryProductionVertex, locChargedReactionCombo, nullptr);
-	auto locNeutralReactionTuple = std::make_tuple(locIsPrimaryProductionVertex, locFullReactionCombo, nullptr);
+	auto locChargedReactionTuple = std::make_tuple(locIsPrimaryProductionVertex, locChargedReactionCombo, (const DKinematicData*)nullptr);
+	auto locNeutralReactionTuple = std::make_tuple(locIsPrimaryProductionVertex, locFullReactionCombo, (const DKinematicData*)nullptr);
 
 	auto& locChargedTimeOffsetMap = dTimeOffsets[locChargedReactionTuple];
 	auto& locFullTimeOffsetMap = dTimeOffsets[locNeutralReactionTuple];
