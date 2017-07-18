@@ -54,7 +54,6 @@ struct DCompare_SourceComboInfos{
 //DEFINE USING STATEMENTS
 using DCombosByBeamBunch = map<vector<int>, vector<const DSourceCombo*>>;
 using DSourceCombosByBeamBunchByUse = map<DSourceComboUse, DCombosByBeamBunch>;
-using DComboIteratorsByBeamBunch = map<vector<int>, vector<const DSourceCombo*>::const_iterator>; //vector<int>: RF bunches (empty for all)
 //The DSourceCombosByUse_Large type uses a vector to pointer so that the combos can be easily copied and reused for another use
 //e.g. when you can't place a mass cut yet: 2 different uses, identical combos: far faster to just copy the pointer to the large vector
 using DSourceCombosByUse_Large = map<DSourceComboUse, vector<const DSourceCombo*>*>;
@@ -179,13 +178,13 @@ class DSourceComboer : public JObject
 
 		//BUILD/RETRIEVE RESUME-AT ITERATORS
 		void Build_ParticleIterators(const vector<int>& locBeamBunches, const vector<const JObject*>& locParticles);
-		void Build_ComboIterators(const vector<int>& locBeamBunches, const vector<const DSourceCombo*>& locCombos, ComboingStage_t locComboingStage, signed char locVertexZBin);
+		void Build_ComboIndices(const DSourceComboUse& locSourceComboUse, const vector<int>& locBeamBunches, const vector<const DSourceCombo*>& locCombos, ComboingStage_t locComboingStage);
 		vector<const JObject*>::const_iterator Get_ResumeAtIterator_Particles(const DSourceCombo* locSourceCombo, const vector<int>& locBeamBunches) const;
-		vector<const DSourceCombo*>::const_iterator Get_ResumeAtIterator_Combos(const DSourceCombo* locSourceCombo, const vector<int>& locBeamBunches, ComboingStage_t locComboingStage, signed char locVertexZBin) const;
+		size_t Get_ResumeAtIndex_Combos(const DSourceComboUse& locSourceComboUse, const DSourceCombo* locSourceCombo, const vector<int>& locBeamBunches, ComboingStage_t locComboingStage) const;
 
 		//GET POTENTIAL PARTICLES & COMBOS FOR COMBOING
 		const vector<const DSourceCombo*>& Get_CombosForComboing(const DSourceComboUse& locComboUse, ComboingStage_t locComboingStage, const vector<int>& locBeamBunches, const DSourceCombo* locChargedCombo_WithPrevious);
-		const vector<const DSourceCombo*>& Get_CombosByBeamBunch(DCombosByBeamBunch& locCombosByBunch, const vector<int>& locBeamBunches, ComboingStage_t locComboingStage, signed char locVertexZBin);
+		const vector<const DSourceCombo*>& Get_CombosByBeamBunch(const DSourceComboUse& locComboUse, DCombosByBeamBunch& locCombosByBunch, const vector<int>& locBeamBunches, ComboingStage_t locComboingStage);
 
 		//REGISTER VALID RF BUNCHES
 		void Register_ValidRFBunches(const DSourceComboUse& locSourceComboUse, const DSourceCombo* locSourceCombo, const vector<int>& locRFBunches, ComboingStage_t locComboingStage, const DSourceCombo* locChargedCombo_WithNow);
@@ -274,7 +273,7 @@ class DSourceComboer : public JObject
 		//they are useful when comboing VERTICALLY, but cannot be used when comboing HORIZONTALLY
 			//e.g. when comboing a pi0 (with photons = A, D) with a single photon, the photon could be B, C, or E+: no single spot to resume at
 		map<pair<const JObject*, vector<int>>, vector<const JObject*>::const_iterator> dResumeSearchAfterIterators_Particles; //vector<int>: RF bunches (empty for all)
-		map<pair<const DSourceCombo*, signed char>, DComboIteratorsByBeamBunch> dResumeSearchAfterIterators_Combos; //char: zbin
+		map<pair<const DSourceCombo*, DSourceComboUse>, map<vector<int>, size_t>> dResumeSearchAfterIndices_Combos; //char: zbin, size_t: index
 
 		//RESUME-SEARCH-AFTER OBJECTS
 		//The below resume-at vectors are only useful when comboing vertically, so PID-specific versions are not needed
@@ -354,10 +353,19 @@ inline void DSourceComboer::Build_ParticleIterators(const vector<int>& locBeamBu
 		dResumeSearchAfterIterators_Particles.emplace(std::make_pair(*locIterator, locBeamBunches), locIterator);
 }
 
-inline void DSourceComboer::Build_ComboIterators(const vector<int>& locBeamBunches, const vector<const DSourceCombo*>& locCombos, ComboingStage_t locComboingStage, signed char locVertexZBin)
+inline void DSourceComboer::Build_ComboIndices(const DSourceComboUse& locSourceComboUse, const vector<int>& locBeamBunches, const vector<const DSourceCombo*>& locCombos, ComboingStage_t locComboingStage)
 {
-	for(vector<const DSourceCombo*>::const_iterator locIterator = locCombos.begin(); locIterator != locCombos.end(); ++locIterator)
-		dResumeSearchAfterIterators_Combos[std::make_pair(*locIterator, locVertexZBin)].emplace(locBeamBunches, locIterator);
+	for(size_t loc_i = 0; loc_i < locCombos.size(); ++loc_i)
+	{
+		if(dDebugLevel >= 20)
+		{
+			cout << "build resume iterators: vector address, combo, decay pid, zbin, index, bunches: " << &locCombos << ", " << locCombos[loc_i] << ", " << std::get<0>(locSourceComboUse) << ", " << int(std::get<1>(locSourceComboUse)) << ", " << loc_i << ", ";
+			for(auto& locBunch : locBeamBunches)
+				cout << locBunch << ", ";
+			cout << endl;
+		}
+		dResumeSearchAfterIndices_Combos[std::make_pair(locCombos[loc_i], locSourceComboUse)].emplace(locBeamBunches, loc_i);
+	}
 }
 
 inline vector<const JObject*>::const_iterator DSourceComboer::Get_ResumeAtIterator_Particles(const DSourceCombo* locSourceCombo, const vector<int>& locBeamBunches) const
@@ -366,21 +374,14 @@ inline vector<const JObject*>::const_iterator DSourceComboer::Get_ResumeAtIterat
 	return std::next(dResumeSearchAfterIterators_Particles.find(std::make_pair(locPreviousObject, locBeamBunches))->second);
 }
 
-inline vector<const DSourceCombo*>::const_iterator DSourceComboer::Get_ResumeAtIterator_Combos(const DSourceCombo* locSourceCombo, const vector<int>& locBeamBunches, ComboingStage_t locComboingStage, signed char locVertexZBin) const
+inline size_t DSourceComboer::Get_ResumeAtIndex_Combos(const DSourceComboUse& locSourceComboUse, const DSourceCombo* locSourceCombo, const vector<int>& locBeamBunches, ComboingStage_t locComboingStage) const
 {
-cout << "source combo, #bunches, stage, zbin: " << locSourceCombo << ", " << locBeamBunches.size() << ", " << locComboingStage << ", " << int(locVertexZBin) << endl;
-cout << "bunches: ";
-for(auto& locBunch : locBeamBunches)
-cout << locBunch << ", ";
-cout << endl;
-	auto locPreviousCombo = dResumeSearchAfterMap_Combos.find(locSourceCombo)->second;
-cout << "previous combo: " << locPreviousCombo << endl;
-auto locSearchPair = std::make_pair(locPreviousCombo, locVertexZBin);
-auto& locBunchIteratorMap = dResumeSearchAfterIterators_Combos.find(locSearchPair)->second;
-cout << "found locBunchIteratorMap" << endl;
-auto locSavedIterator = locBunchIteratorMap.find(locBeamBunches)->second;
-cout << "have saved iterator" << endl;
-	return std::next(locSavedIterator);
+	auto locResumeAfterComboIterator = dResumeSearchAfterMap_Combos.find(locSourceCombo);
+	auto locPreviousCombo = (locResumeAfterComboIterator != dResumeSearchAfterMap_Combos.end()) ? locResumeAfterComboIterator->second : locSourceCombo;
+	auto locSearchPair = std::make_pair(locPreviousCombo, locSourceComboUse);
+	auto& locBunchIndexMap = dResumeSearchAfterIndices_Combos.find(locSearchPair)->second;
+	auto locSavedIndex = locBunchIndexMap.find(locBeamBunches)->second;
+	return locSavedIndex + 1;
 }
 
 inline bool DSourceComboer::Get_IsComboingZIndependent(const JObject* locObject, Particle_t locPID) const

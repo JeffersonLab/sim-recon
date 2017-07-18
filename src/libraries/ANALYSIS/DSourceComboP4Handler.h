@@ -121,7 +121,10 @@ inline bool DSourceComboP4Handler::Cut_InvariantMass_NoMassiveNeutrals(const DSo
 
 	//save and cut
 	dInvariantMasses[locDecayPID].emplace_back(locInvariantMass);
-	return ((locInvariantMass >= locMassCuts.first) && (locInvariantMass <= locMassCuts.second));
+	auto locCutResult = ((locInvariantMass >= locMassCuts.first) && (locInvariantMass <= locMassCuts.second));
+	if(dDebugLevel >= 10)
+		cout << "decay pid, z-bin, mass, cut min/max, pass flag: " << locDecayPID << ", " << int(locVertexZBin) << ", " << locInvariantMass << ", " << locMassCuts.first << ", " << locMassCuts.second << ", " << locCutResult << endl;
+	return locCutResult;
 }
 
 inline DLorentzVector DSourceComboP4Handler::Get_P4_HasMassiveNeutrals(bool locIsProductionVertex, const DSourceCombo* locReactionFullCombo, const DSourceCombo* locVertexCombo, int locRFBunch) const

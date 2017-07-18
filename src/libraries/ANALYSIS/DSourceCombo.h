@@ -300,7 +300,7 @@ inline void Print_SourceCombo(const DSourceCombo* locCombo, unsigned char locNum
 		return;
 
 	for(decltype(locNumTabs) locTabNum = 0; locTabNum < locNumTabs; ++locTabNum) cout << "\t";
-	cout << "Z-independent?: " << locCombo->Get_IsComboingZIndependent() << ", Particles: ";
+	cout << "pointer: " << locCombo << ", Z-independent?: " << locCombo->Get_IsComboingZIndependent() << ", Particles: ";
 	auto locSourceParticles = locCombo->Get_SourceParticles();
 	for(auto& locParticlePair : locSourceParticles)
 		cout << ParticleType(locParticlePair.first) << " " << locParticlePair.second << ", ";
