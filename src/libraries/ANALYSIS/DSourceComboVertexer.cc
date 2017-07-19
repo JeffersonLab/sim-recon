@@ -431,8 +431,7 @@ void DSourceComboVertexer::Construct_DecayingParticle_InvariantMass(const DReact
 		}
 
 		//create a new one
-		auto locVertexZBin = dSourceComboTimeHandler->Get_PhotonVertexZBin(locVertex.Z());
-		auto locP4 = dSourceComboP4Handler->Calc_P4_NoMassiveNeutrals(locVertexCombo, locVertexZBin);
+		auto locP4 = dSourceComboP4Handler->Calc_P4_NoMassiveNeutrals(locVertexCombo, locVertex, std::get<1>(locSourceComboUse), nullptr);
 		auto locKinematicData = dResourcePool_KinematicData.Get_Resource();
 		locKinematicData->Reset();
 		locKinematicData->Set_Members(locDecayPID, locP4.Vect(), locVertex, 0.0);
@@ -513,7 +512,7 @@ void DSourceComboVertexer::Construct_DecayingParticle_MissingMass(const DReactio
 	//create a new one
 	//calc final state p4
 	DLorentzVector locFinalStateP4;
-	if(!dSourceComboP4Handler->Calc_P4_HasMassiveNeutrals(locIsProductionVertexFlag, locReactionFullCombo, locFullVertexCombo, locVertex, locRFBunch, locRFVertexTime, locDecayUse, locFinalStateP4))
+	if(!dSourceComboP4Handler->Calc_P4_HasMassiveNeutrals(locIsProductionVertexFlag, locReactionFullCombo, locFullVertexCombo, locVertex, locRFBunch, locRFVertexTime, locDecayUse, locFinalStateP4, locBeamParticle))
 		return; //invalid somehow
 
 	//ASSUMES FIXED TARGET EXPERIMENT!
@@ -606,7 +605,7 @@ void DSourceComboVertexer::Calc_TimeOffsets(const DReactionVertexInfo* locReacti
 
 		//compute and save result
 		auto locVertexZBin = Get_VertexZBin(false, locActiveVertexCombo, nullptr);
-		auto locP4 = dSourceComboP4Handler->Calc_P4_NoMassiveNeutrals(locActiveVertexCombo, locVertexZBin);
+		auto locP4 = dSourceComboP4Handler->Calc_P4_NoMassiveNeutrals(locActiveVertexCombo, locVertex, locVertexZBin, nullptr);
 		auto locTimeOffset = locPathLength/(locP4.Beta()*SPEED_OF_LIGHT) + locParentTimeOffset;
 
 		if(dDebugLevel >= 10)

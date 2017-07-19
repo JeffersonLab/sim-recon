@@ -252,6 +252,10 @@ template <typename DType> shared_ptr<DType> DResourcePool<DType>::Get_SharedReso
 
 template <typename DType> void DResourcePool<DType>::Recycle(vector<const DType*>& locResources)
 {
+for(auto& locResource : locResources)
+delete locResource;
+locResources.clear();
+return;
 	vector<DType*> locNonConstResources;
 	locNonConstResources.reserve(locResources.size());
 
@@ -264,6 +268,10 @@ template <typename DType> void DResourcePool<DType>::Recycle(vector<const DType*
 
 template <typename DType> void DResourcePool<DType>::Recycle(vector<DType*>& locResources)
 {
+for(auto& locResource : locResources)
+delete locResource;
+locResources.clear();
+return;
 	dResourcePool_Local.reserve(dResourcePool_Local.size() + locResources.size());
 	std::move(locResources.begin(), locResources.end(), std::back_inserter(dResourcePool_Local));
 	locResources.clear();
@@ -278,6 +286,8 @@ template <typename DType> void DResourcePool<DType>::Recycle(DType* locResource)
 		cout << "RECYCLE " << typeid(DType).name() << ": " << locResource << endl;
 	if(locResource == nullptr)
 		return;
+delete locResource;
+return;
 	dResourcePool_Local.push_back(locResource);
 	if(dResourcePool_Local.size() > dWhenToRecyclePoolSize)
 		Recycle_Resources_StaticPool();

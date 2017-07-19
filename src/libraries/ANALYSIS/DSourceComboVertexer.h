@@ -52,6 +52,7 @@ class DSourceComboVertexer
 		bool Get_VertexDeterminableWithPhotons(const DReactionStepVertexInfo* locStepVertexInfo) const;
 
 		//GET RESULTS
+		bool Get_IsVertexKnown(bool locIsProductionVertex, const DSourceCombo* locSourceCombo, const DKinematicData* locBeamParticle) const;
 		DVector3 Get_Vertex(bool locIsProductionVertex, const DSourceCombo* locSourceCombo, const DKinematicData* locBeamParticle) const;
 		DVector3 Get_Vertex(bool locIsProductionVertex, const vector<const DKinematicData*>& locVertexParticles) const{return dVertexMap.find(std::make_pair(locIsProductionVertex, locVertexParticles))->second;}
 		double Get_TimeOffset(bool locIsProductionVertex, const DSourceCombo* locReactionCombo, const DSourceCombo* locVertexCombo, const DKinematicData* locBeamParticle) const;
@@ -147,6 +148,11 @@ inline vector<const DKinematicData*> DSourceComboVertexer::Get_ConstrainingParti
 	if(locIterator != dConstrainingParticlesByCombo.end())
 		return locIterator->second;
 	return {};
+}
+
+inline bool DSourceComboVertexer::Get_IsVertexKnown(bool locIsProductionVertex, const DSourceCombo* locSourceCombo, const DKinematicData* locBeamParticle) const
+{
+	return !Get_ConstrainingParticles(locIsProductionVertex, locSourceCombo, locBeamParticle).empty();
 }
 
 inline DVector3 DSourceComboVertexer::Get_Vertex(bool locIsProductionVertex, const DSourceCombo* locSourceCombo, const DKinematicData* locBeamParticle) const

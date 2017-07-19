@@ -6,8 +6,7 @@
  * PROBLEMS:
  * 
  * track timing resolution at 3 GeV
- * check trackids in root tree output
- *
+ * no MM peak in p 2pi0
  *
  * TESTING:
  * p2pi: OK
@@ -19,10 +18,11 @@
  * p2pi0: TESTING
  * p4g
  * p3pi0
+ * p pi0 g
  * p2pi 2pi0
  * p eta pi0
  * p eta 2pi0
- * pi+(n)
+ * pi+ (n)
  * 
  * p3pi missing-p
  * omega p
@@ -57,16 +57,21 @@ A)
 //When comparing before and after:
 //time handler charged time
 
-//TO DO:
+//MUST DO:
 //include lubomir cuts
 //save #tracks to tree
 //review all cuts
-//see if can convert int -> char in tree
-//hist kinfit convergence cut (maybe insert action?)
-//finish comments in Build_ParticleCombos()
 //remove actions from ReactionFilter
 //When saving ROOT TTree, don't save p4 of decaying particles if mass is not constrained in kinfit!
 	//And make sure it's not grabbed in DSelector by default
+
+//DOUBLE-CHECKS:
+// check trackids in root tree output
+//At end, loop over all combos, check if no dupes within them, and no dupes between them
+
+//NICE TO HAVE:
+//see if can convert int -> char in tree
+//finish comments in Build_ParticleCombos()
 
 namespace DAnalysis
 {
@@ -1571,9 +1576,10 @@ void DSourceComboer::Create_SourceCombos(const DSourceComboUse& locComboUseToCre
 	}
 
 	//place an invariant mass cut & save the results
+	auto locVertex = DVector3(0.0, 0.0, dSourceComboTimeHandler->Get_PhotonVertexZBinCenter(locVertexZBin)); //good enough for now, only want exact for missing mass
 	for(const auto& locSourceCombo : *locSourceCombos)
 	{
-		if(!dSourceComboP4Handler->Cut_InvariantMass_NoMassiveNeutrals(locSourceCombo, locDecayPID, locVertexZBin))
+		if(!dSourceComboP4Handler->Cut_InvariantMass_NoMassiveNeutrals(locSourceCombo, locDecayPID, locVertex, locVertexZBin))
 			continue;
 
 		//save the results
