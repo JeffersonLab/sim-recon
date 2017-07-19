@@ -15,7 +15,7 @@
  * p4pi: OK
  * p2g: OK
  * p pi0: WAITING TREE CONFIRMATION
- * p3pi: WAITING BIG RUN & COMPARISON
+ * p3pi: WAITING TREE CONFIRMATION
  * p2pi0: TESTING
  * p4g
  * p3pi0
@@ -874,7 +874,6 @@ void DSourceComboer::Reset_NewEvent(JEventLoop* locEventLoop)
 	//COMBOING RESUME/SEARCH-AFTER TRACKING
 	dResumeSearchAfterIterators_Particles.clear();
 	dResumeSearchAfterIndices_Combos.clear();
-	dResumeSearchAfterMap_Combos.clear();
 	dResumeSearchAfterMap_Particles.clear();
 
 	/************************************************************ SETUP FOR NEW EVENT *************************************************************/
@@ -1397,7 +1396,7 @@ void DSourceComboer::Combo_WithBeam(const vector<const DReaction*>& locReactions
 				cout << "Created particle combo, beam energy, combo contents = " << locBeamParticle->energy() << endl;
 				DAnalysis::Print_SourceCombo(locReactionFullCombo);
 			}
-		}	
+		}
 	}
 }
 
@@ -1775,6 +1774,8 @@ void DSourceComboer::Combo_Vertically_NDecays(const DSourceComboUse& locComboUse
 	if(locComboingStage == d_MixedStage)
 		Copy_ZIndependentMixedResults(locComboUseToCreate, locChargedCombo_WithNow);
 
+	if(dDebugLevel >= 20)
+		cout << "n-1 size: " << locCombos_NMinus1.size() << endl;
 	if(locCombos_NMinus1.empty())
 		return; //nothing to create
 
@@ -1783,6 +1784,9 @@ void DSourceComboer::Combo_Vertically_NDecays(const DSourceComboUse& locComboUse
 	auto locInstance = locNIs2Flag ? 2 : locCombos_NMinus1.front()->Get_FurtherDecayCombos()[locSourceComboDecayUse].size() + 1; //numbering starts with 1, not 0
 	auto locNextPresidingCombo = Get_NextChargedCombo(locChargedCombo_Presiding, locSourceComboDecayUse, locComboingStage, true, locInstance);
 	auto locChargedCombo_WithPrevious = Get_ChargedCombo_WithNow(locNextPresidingCombo, locComboInfoToCreate, locComboingStage);
+
+	if(dDebugLevel >= 20)
+		cout << "instance = " << locInstance << ", combos: presiding, next-presiding, with-previous: " << locChargedCombo_Presiding << ", " << locNextPresidingCombo << ", " << locChargedCombo_WithPrevious << endl;
 
 	//now, for each combo of N - 1 (e.g.) pi0s, see which of the single-decay combos are a valid grouping
 	//valid grouping:
@@ -1798,6 +1802,8 @@ void DSourceComboer::Combo_Vertically_NDecays(const DSourceComboUse& locComboUse
 		//first of all, get the potential combos that satisfy the RF bunches for the N - 1 combo
 		const auto& locValidRFBunches_NMinus1 = dValidRFBunches_ByCombo[locCombo_NMinus1];
 		const auto& locDecayCombos_1 = Get_CombosForComboing(locSourceComboDecayUse, locComboingStage, locValidRFBunches_NMinus1, locChargedCombo_WithPrevious);
+		if(dDebugLevel >= 20)
+			cout << "decay combos vector address, size: " << &locDecayCombos_1 << ", " << locDecayCombos_1.size() << endl;
 
 		//now, note that all of the combos are stored in the order in which they were created (e.g. A, B, C, D)
 		//so (e.g.), groupings of 2 will be created and saved in the order: AB, AC, AD, BC, BD, CD
@@ -1808,6 +1814,8 @@ void DSourceComboer::Combo_Vertically_NDecays(const DSourceComboUse& locComboUse
 		//actually, we already saved the iterator to the first (e.g.) pi0 to test when we saved the N - 1 combo, so just retrieve it
 		auto locNMinus1LastCombo = locNIs2Flag ? locCombo_NMinus1 : locCombo_NMinus1->Get_FurtherDecayCombos()[locSourceComboDecayUse].back();
 		auto locComboSearchIndex = Get_ResumeAtIndex_Combos(locSourceComboDecayUse, locNMinus1LastCombo, locValidRFBunches_NMinus1, locComboingStage);
+		if(dDebugLevel >= 20)
+			cout << "n-1 last combo, begin search index = : " << locNMinus1LastCombo << ", " << locComboSearchIndex << endl;
 		if(locComboSearchIndex == locDecayCombos_1.size())
 			continue; //e.g. this combo is "AD" and there are only 4 reconstructed combos (ABCD): no potential matches! move on to the next N - 1 combo
 
@@ -1866,10 +1874,6 @@ void DSourceComboer::Combo_Vertically_NDecays(const DSourceComboUse& locComboUse
 			//save it! //in creation order!
 			locSourceCombosByUseSoFar[locComboUseToCreate]->push_back(locCombo);
 			Register_ValidRFBunches(locComboUseToCreate, locCombo, locValidRFBunches, locComboingStage, locChargedCombo_WithNow);
-
-			//finally, in case we add more (e.g.) pi0s later (N + 1), save the last pi0
-			//so that we will start the search for the next (e.g.) pi0 in the location after the last one
-			dResumeSearchAfterMap_Combos[locCombo] = locDecayCombo_1;
 		}
 	}
 }
@@ -2822,7 +2826,10 @@ const vector<const DSourceCombo*>& DSourceComboer::Get_CombosForComboing(const D
 {
 	if(dDebugLevel >= 20)
 	{
-		cout << "Get_CombosForComboing: stage, #bunches, charged combo " << locComboingStage << ", " << locBeamBunches.size() << ", " << locChargedCombo_WithPrevious << endl;
+		cout << "Get_CombosForComboing: stage, #bunches, charged combo, bunches " << locComboingStage << ", " << locBeamBunches.size() << ", " << locChargedCombo_WithPrevious << ", ";
+		for(auto& locBunch : locBeamBunches)
+			cout << locBunch << ", ";
+		cout << endl;
 		cout << "GET-COMBOS USE:" << endl;
 		Print_SourceComboUse(locComboUse);
 	}
@@ -2844,6 +2851,13 @@ const vector<const DSourceCombo*>& DSourceComboer::Get_CombosForComboing(const D
 
 const vector<const DSourceCombo*>& DSourceComboer::Get_CombosByBeamBunch(const DSourceComboUse& locComboUse, DCombosByBeamBunch& locCombosByBunch, const vector<int>& locBeamBunches, ComboingStage_t locComboingStage)
 {
+	if(dDebugLevel >= 20)
+	{
+		cout << "Get_CombosByBeamBunch: stage, # bunches, bunches: " << locComboingStage << ", " << locBeamBunches.size() << ", ";
+		for(auto& locBunch : locBeamBunches)
+			cout << locBunch << ", ";
+		cout << endl;
+	}
 	if(locBeamBunches.empty())
 	{
 		Build_ComboIndices(locComboUse, locBeamBunches, locCombosByBunch[locBeamBunches], locComboingStage);
@@ -2884,9 +2898,7 @@ void DSourceComboer::Copy_ZIndependentMixedResults(const DSourceComboUse& locCom
 	//Whatever charged combo you are about to combo horizontally with to make this new, mixed combo
 
 	//Get combos so far
-	auto locVertexZBin = std::get<1>(locComboUseToCreate);
-	auto locComboInfo = std::get<2>(locComboUseToCreate);
-	auto locChargeContent = dComboInfoChargeContent[locComboInfo];
+	auto locChargeContent = dComboInfoChargeContent[std::get<2>(locComboUseToCreate)];
 	auto& locSourceCombosByUseSoFar = Get_CombosSoFar(d_MixedStage, locChargeContent, locChargedCombo_WithNow);
 
 	//Get FCAL results
@@ -2915,35 +2927,31 @@ void DSourceComboer::Copy_ZIndependentMixedResults(const DSourceComboUse& locCom
 	//Copy over the resume-after iterators
 	for(size_t loc_i = 0; loc_i < locBothComboVector.size(); ++loc_i)
 	{
-		const auto& locRFBunches = dValidRFBunches_ByCombo[locBothComboVector[loc_i]];
-		for(const auto& locBeamBunch : locRFBunches)
-		{
-			if(dDebugLevel >= 20)
-				cout << "copy resume indices: vector address, combo, zbin, bunch, index: " << &locBothComboVector << ", " << locBothComboVector[loc_i] << ", " << int(locVertexZBin) << ", " << locBeamBunch << ", " << loc_i << endl;
-			dResumeSearchAfterIndices_Combos[std::make_pair(locBothComboVector[loc_i], locComboUseToCreate)].emplace(vector<int>{locBeamBunch}, loc_i);
-		}
-		if(locRFBunches.empty()) //all
-		{
-			if(dDebugLevel >= 20)
-				cout << "copy resume indices: vector address, combo, zbin, bunch, index: " << &locBothComboVector << ", " << locBothComboVector[loc_i] << ", " << int(locVertexZBin) << ", NONE, " << loc_i << endl;
-			dResumeSearchAfterIndices_Combos[std::make_pair(locBothComboVector[loc_i], locComboUseToCreate)].emplace(vector<int>{locRFBunches}, loc_i);
-		}
+		auto locComboSearchPair_FCAL = std::make_pair(locBothComboVector[loc_i], locComboUseFCAL);
+		auto locComboSearchPair_Mixed = std::make_pair(locBothComboVector[loc_i], locComboUseToCreate);
+
+		if(dDebugLevel >= 20)
+			cout << "copy resume indices: vector address, combo, zbin, index: " << &locBothComboVector << ", " << locBothComboVector[loc_i] << ", " << int(std::get<1>(locComboUseToCreate)) << ", " << loc_i << endl;
+		dResumeSearchAfterIndices_Combos.emplace(locComboSearchPair_Mixed, dResumeSearchAfterIndices_Combos[locComboSearchPair_FCAL]);
 	}
 }
 
-const DSourceCombo* DSourceComboer::Get_StepSourceCombo(const DReaction* locReaction, size_t locDesiredStepIndex, const DSourceCombo* locSourceCombo_Current, size_t locCurrentStepIndex) const
+const DSourceCombo* DSourceComboer::Get_StepSourceCombo(const DReaction* locReaction, size_t locDesiredStepIndex, const DSourceCombo* locVertexPrimaryCombo, size_t locVertexPrimaryStepIndex) const
 {
-//	cout << "reaction, desired step index, current step index: " << locReaction << ", " << locDesiredStepIndex << ", " << locCurrentStepIndex << endl;
+	if(dDebugLevel >= 100)
+		cout << "reaction, desired step index, current step index: " << locReaction << ", " << locDesiredStepIndex << ", " << locVertexPrimaryStepIndex << endl;
 	//Get the list of steps we need to traverse //particle pair: step index, particle instance index
 	vector<pair<size_t, int>> locParticleIndices = {std::make_pair(locDesiredStepIndex, DReactionStep::Get_ParticleIndex_Initial())};
-	while(locParticleIndices.back().first != locCurrentStepIndex)
+	while(locParticleIndices.back().first != locVertexPrimaryStepIndex)
 	{
 		auto locParticlePair = DAnalysis::Get_InitialParticleDecayFromIndices(locReaction, locParticleIndices.back().first);
-//		cout << "decay from pair: " << locParticlePair.first << ", " << locParticlePair.second << endl;
+		if(dDebugLevel >= 100)
+			cout << "decay from pair: " << locParticlePair.first << ", " << locParticlePair.second << endl;
 		auto locStep = locReaction->Get_ReactionStep(locParticlePair.first);
 		auto locInstanceIndex = DAnalysis::Get_ParticleInstanceIndex(locStep, locParticlePair.second);
 		locParticleIndices.emplace_back(locParticlePair.first, locInstanceIndex);
-//		cout << "save indices: " << locParticlePair.first << ", " << locInstanceIndex << endl;
+		if(dDebugLevel >= 100)
+			cout << "save indices: " << locParticlePair.first << ", " << locInstanceIndex << endl;
 	}
 
 	//start from back of locParticleIndices, searching
@@ -2952,14 +2960,17 @@ const DSourceCombo* DSourceComboer::Get_StepSourceCombo(const DReaction* locReac
 		auto locNextStep = locParticleIndices[locParticleIndices.size() - 2].first;
 		auto locInstanceToFind = locParticleIndices.back().second;
 		const auto& locUseToFind = dSourceComboUseReactionStepMap.find(locReaction)->second.find(locNextStep)->second;
-//		cout << "next step, instance to find, use to find: " << locNextStep << ", " << locInstanceToFind << endl;
-//Print_SourceComboUse(locUseToFind);
-		locSourceCombo_Current = Find_Combo_AtThisStep(locSourceCombo_Current, locUseToFind, locInstanceToFind);
-//		cout << "pointer = " << locSourceCombo_Current << endl;
-		if(locSourceCombo_Current == nullptr)
+		if(dDebugLevel >= 100)
+			cout << "next step, instance to find, use to find: " << locNextStep << ", " << locInstanceToFind << endl;
+		if(dDebugLevel >= 100)
+			Print_SourceComboUse(locUseToFind);
+		locVertexPrimaryCombo = Find_Combo_AtThisStep(locVertexPrimaryCombo, locUseToFind, locInstanceToFind);
+		if(dDebugLevel >= 100)
+			cout << "pointer = " << locVertexPrimaryCombo << endl;
+		if(locVertexPrimaryCombo == nullptr)
 			return nullptr; //e.g. entirely neutral step when input is charged
 		if(locNextStep == locDesiredStepIndex)
-			return locSourceCombo_Current;
+			return locVertexPrimaryCombo;
 		locParticleIndices.pop_back();
 	}
 

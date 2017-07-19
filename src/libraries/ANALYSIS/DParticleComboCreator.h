@@ -42,7 +42,7 @@ class DParticleComboCreator
 
 	private:
 
-		bool dDebugLevel = 0;
+		size_t dDebugLevel = 0;
 
 		bool Get_CreateNeutralErrorMatrixFlag_Combo(const DReactionVertexInfo* locReactionVertexInfo, DKinFitType locKinFitType);
 

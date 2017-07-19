@@ -107,7 +107,7 @@ class DSourceComboer : public JObject
 		bool Get_HasMassiveNeutrals(const DSourceComboInfo* locSourceComboInfo) const{return (dComboInfosWithMassiveNeutrals.find(locSourceComboInfo) != dComboInfosWithMassiveNeutrals.end());}
 
 		//Combo utility functions
-		const DSourceCombo* Get_StepSourceCombo(const DReaction* locReaction, size_t locDesiredStepIndex, const DSourceCombo* locSourceCombo_Current, size_t locCurrentStepIndex = 0) const;
+		const DSourceCombo* Get_StepSourceCombo(const DReaction* locReaction, size_t locDesiredStepIndex, const DSourceCombo* locVertexPrimaryCombo, size_t locVertexPrimaryStepIndex = 0) const;
 		const DSourceCombo* Get_VertexPrimaryCombo(const DSourceCombo* locReactionCombo, const DReactionStepVertexInfo* locStepVertexInfo) const;
 		const DSourceCombo* Get_VertexPrimaryCombo(const DSourceCombo* locReactionCombo, const DReactionStepVertexInfo* locStepVertexInfo);
 
@@ -180,7 +180,7 @@ class DSourceComboer : public JObject
 		void Build_ParticleIterators(const vector<int>& locBeamBunches, const vector<const JObject*>& locParticles);
 		void Build_ComboIndices(const DSourceComboUse& locSourceComboUse, const vector<int>& locBeamBunches, const vector<const DSourceCombo*>& locCombos, ComboingStage_t locComboingStage);
 		vector<const JObject*>::const_iterator Get_ResumeAtIterator_Particles(const DSourceCombo* locSourceCombo, const vector<int>& locBeamBunches) const;
-		size_t Get_ResumeAtIndex_Combos(const DSourceComboUse& locSourceComboUse, const DSourceCombo* locSourceCombo, const vector<int>& locBeamBunches, ComboingStage_t locComboingStage) const;
+		size_t Get_ResumeAtIndex_Combos(const DSourceComboUse& locSourceComboUse, const DSourceCombo* locPreviousCombo, const vector<int>& locBeamBunches, ComboingStage_t locComboingStage) const;
 
 		//GET POTENTIAL PARTICLES & COMBOS FOR COMBOING
 		const vector<const DSourceCombo*>& Get_CombosForComboing(const DSourceComboUse& locComboUse, ComboingStage_t locComboingStage, const vector<int>& locBeamBunches, const DSourceCombo* locChargedCombo_WithPrevious);
@@ -277,7 +277,6 @@ class DSourceComboer : public JObject
 
 		//RESUME-SEARCH-AFTER OBJECTS
 		//The below resume-at vectors are only useful when comboing vertically, so PID-specific versions are not needed
-		unordered_map<const DSourceCombo*, const DSourceCombo*> dResumeSearchAfterMap_Combos; //key: Combo containing N combos of the type in the value //value: the last of those N combos
 		unordered_map<const DSourceCombo*, const JObject*> dResumeSearchAfterMap_Particles; //key: Combo containing N particles of the type in the value //value: the last of those N particles
 
 		//VALID RF BUNCHES BY COMBO
@@ -374,13 +373,23 @@ inline vector<const JObject*>::const_iterator DSourceComboer::Get_ResumeAtIterat
 	return std::next(dResumeSearchAfterIterators_Particles.find(std::make_pair(locPreviousObject, locBeamBunches))->second);
 }
 
-inline size_t DSourceComboer::Get_ResumeAtIndex_Combos(const DSourceComboUse& locSourceComboUse, const DSourceCombo* locSourceCombo, const vector<int>& locBeamBunches, ComboingStage_t locComboingStage) const
+inline size_t DSourceComboer::Get_ResumeAtIndex_Combos(const DSourceComboUse& locSourceComboUse, const DSourceCombo* locPreviousCombo, const vector<int>& locBeamBunches, ComboingStage_t locComboingStage) const
 {
-	auto locResumeAfterComboIterator = dResumeSearchAfterMap_Combos.find(locSourceCombo);
-	auto locPreviousCombo = (locResumeAfterComboIterator != dResumeSearchAfterMap_Combos.end()) ? locResumeAfterComboIterator->second : locSourceCombo;
+	//Suppose you are comboing N pi0s together (let's say 3), and 6 different pi0 combos were reconstructed
+	//So, you choose the first pi0, then want to loop over the remaining ones
+	//To avoid duplication, you don't want to loop over ALL of the others, only the ones AFTER the first one
+	//So, the input is the last pi0 that you've chosen for your combo
+	//Then, just find the location where that pi0 is the possible-combos-vector (pi0 vector), and return that index + 1
 	auto locSearchPair = std::make_pair(locPreviousCombo, locSourceComboUse);
 	auto& locBunchIndexMap = dResumeSearchAfterIndices_Combos.find(locSearchPair)->second;
 	auto locSavedIndex = locBunchIndexMap.find(locBeamBunches)->second;
+	if(dDebugLevel >= 20)
+	{
+		cout << "Get_ResumeAtIndex_Combos: previous combo, bunches, saved index" << ", " << locPreviousCombo << ", ";
+		for(auto& locBunch : locBeamBunches)
+			cout << locBunch << ", ";
+		cout << locSavedIndex << endl;
+	}
 	return locSavedIndex + 1;
 }
 

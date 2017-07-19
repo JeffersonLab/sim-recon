@@ -100,11 +100,17 @@ bool DParticleComboCreator::Get_CreateNeutralErrorMatrixFlag_Combo(const DReacti
 
 const DParticleCombo* DParticleComboCreator::Build_ParticleCombo(const DReactionVertexInfo* locReactionVertexInfo, const DSourceCombo* locFullCombo, const DKinematicData* locBeamParticle, int locRFBunchShift, DKinFitType locKinFitType)
 {
+	if(dDebugLevel > 0)
+		cout << "Building particle combo" << endl;
 	auto locCreateNeutralErrorMatrixFlag_Combo = Get_CreateNeutralErrorMatrixFlag_Combo(locReactionVertexInfo, locKinFitType);
 	auto locComboTuple = std::make_tuple(locReactionVertexInfo, locFullCombo, locBeamParticle, locRFBunchShift, locCreateNeutralErrorMatrixFlag_Combo);
 	auto locComboIterator = dComboMap.find(locComboTuple);
 	if(locComboIterator != dComboMap.end())
+	{
+		if(dDebugLevel > 0)
+			cout << "Combo previously created, returning." << endl;
 		return locComboIterator->second;
+	}
 
 	auto locParticleCombo = dResourcePool_ParticleCombo.Get_Resource();
 	locParticleCombo->Reset();
@@ -128,20 +134,28 @@ const DParticleCombo* DParticleComboCreator::Build_ParticleCombo(const DReaction
 		dRFBunchMap.emplace(locRFBunchShift, locEventRFBunch);
 	}
 	locParticleCombo->Set_EventRFBunch(locEventRFBunch);
+	if(dDebugLevel >= 5)
+		cout << "RF Bunch set, shift = " << locRFBunchShift << endl;
 
 	auto locReactionSteps = locReaction->Get_ReactionSteps();
-	auto locPreviousStepSourceCombo = locFullCombo;
-
 	for(size_t loc_i = 0; loc_i < locReactionSteps.size(); ++loc_i)
 	{
 		auto locReactionStep = locReactionSteps[loc_i];
 		auto locStepVertexInfo = locReactionVertexInfo->Get_StepVertexInfo(loc_i);
 		auto locStepBeamParticle = (loc_i == 0) ? locBeamParticle : nullptr;
 		auto locIsProductionVertex = locStepVertexInfo->Get_ProductionVertexFlag();
-		auto locSourceCombo = (loc_i == 0) ? locFullCombo : dSourceComboer->Get_StepSourceCombo(locReaction, loc_i, locPreviousStepSourceCombo, loc_i - 1);
-//		Print_SourceCombo(locSourceCombo);
-
 		auto locVertexPrimaryCombo = dSourceComboer->Get_VertexPrimaryCombo(locFullCombo, locStepVertexInfo);
+		if(dDebugLevel >= 5)
+		{
+			cout << "VERTEX PRIMARY COMBO:" << endl;
+			Print_SourceCombo(locVertexPrimaryCombo);
+		}
+		auto locSourceCombo = (loc_i == 0) ? locFullCombo : dSourceComboer->Get_StepSourceCombo(locReaction, loc_i, locVertexPrimaryCombo, locStepVertexInfo->Get_StepIndices().front());
+		if(dDebugLevel >= 5)
+		{
+			cout << "STEP " << loc_i << ", SOURCE COMBO:" << endl;
+			Print_SourceCombo(locSourceCombo);
+		}
 
 		bool locCreateNeutralErrorMatrixFlag = (locKinFitType != d_NoFit) && ((locKinFitType == d_P4Fit) || !locStepVertexInfo->Get_FittableVertexFlag());
 		if(locReactionStep->Get_FinalPIDs(false, d_Neutral, false).empty())
@@ -153,7 +167,8 @@ const DParticleCombo* DParticleComboCreator::Build_ParticleCombo(const DReaction
 		if(locStepIterator != dComboStepMap.end())
 		{
 			locParticleCombo->Add_ParticleComboStep(locStepIterator->second);
-			locPreviousStepSourceCombo = locSourceCombo;
+			if(dDebugLevel >= 5)
+				cout << "step already created, reuse" << endl;
 			continue;
 		}
 
@@ -166,6 +181,8 @@ const DParticleCombo* DParticleComboCreator::Build_ParticleCombo(const DReaction
 		auto locTimeOffset = dSourceComboVertexer->Get_TimeOffset(locIsProductionVertex, locFullCombo, locVertexPrimaryCombo, locBeamParticle);
 		auto locPropagatedRFTime = dSourceComboTimeHandler->Calc_PropagatedRFTime(locPrimaryVertexZ, locRFBunchShift, locTimeOffset);
 		DLorentzVector locSpacetimeVertex(locVertex, locPropagatedRFTime);
+		if(dDebugLevel >= 5)
+			cout << "spacetime vertex xyzt: " << locSpacetimeVertex.X() << ", " << locSpacetimeVertex.Y() << ", " << locSpacetimeVertex.Z() << ", " << locSpacetimeVertex.T() << endl;
 
 		//Set initial particle
 		if((locBeamParticle != nullptr) && (loc_i == 0))
@@ -179,7 +196,6 @@ const DParticleCombo* DParticleComboCreator::Build_ParticleCombo(const DReaction
 		vector<const DKinematicData*> locFinalParticles;
 		for(size_t loc_j = 0; loc_j < locFinalPIDs.size(); ++loc_j)
 		{
-//			cout << "j = " << loc_j << endl;
 			//if missing or decaying, nothing to get
 			if((int(loc_j) == locReactionStep->Get_MissingParticleIndex()) || (DAnalysis::Get_DecayStepIndex(locReaction, loc_i, loc_j) >= 0))
 			{
@@ -198,6 +214,8 @@ const DParticleCombo* DParticleComboCreator::Build_ParticleCombo(const DReaction
 			size_t locPIDCountSoFar = 0;
 
 			auto locSourceParticle = DAnalysis::Get_SourceParticle_ThisStep(locSourceCombo, locPID, locPIDCountMap[locPID], locPIDCountSoFar);
+			if(dDebugLevel >= 5)
+				cout << "pid index, pid, source particle: " << loc_j << ", " << locPID << ", " << locSourceParticle << endl;
 
 			//build hypo
 			if(ParticleCharge(locPID) == 0) //neutral
@@ -236,14 +254,11 @@ const DParticleCombo* DParticleComboCreator::Build_ParticleCombo(const DReaction
 				locFinalParticles.push_back(static_cast<const DKinematicData*>(locNewChargedHypo));
 			}
 		}
-
 		locParticleComboStep->Set_Contents(locStepBeamParticle, locFinalParticles, locSpacetimeVertex);
 
 		//save it
 		locParticleCombo->Add_ParticleComboStep(locParticleComboStep);
 		dComboStepMap.emplace(locStepTuple, locParticleComboStep);
-
-		locPreviousStepSourceCombo = locSourceCombo;
 	}
 
 	return locParticleCombo;
