@@ -115,7 +115,7 @@ template <typename DType> class DResourcePool : public std::enable_shared_from_t
 		//Assume that access to the shared pool won't happen very often: will mostly access the thread-local pool (this object)
 		void Get_Resources_StaticPool(void);
 		void Recycle_Resources_StaticPool(void);
-		void Recycle_Resources_StaticPool(typename vector<DType*>::iterator locRemoveIterator);
+		void Recycle_Resources_StaticPool(typename vector<DType*>::iterator locRemoveAfterIterator);
 
 		alignas(Get_CacheLineSize()) size_t dDebugLevel = 0;
 		alignas(Get_CacheLineSize()) size_t dGetBatchSize = 100;
@@ -175,6 +175,7 @@ template <typename DType> DResourcePool<DType>::DResourcePool(void)
 		++dPoolCounter;
 		if(dDebugLevel > 0)
 			cout << "CONSTRUCTOR THREAD COUNTER " << typeid(DType).name() << ": " << dPoolCounter << endl;
+		dResourcePool_Shared.reserve(dMaxSharedPoolSize);
 	}
 }
 
@@ -240,6 +241,7 @@ template <typename DType> void DResourcePool<DType>::Set_ControlParams(size_t lo
 	{
 		std::lock_guard<std::mutex> locLock(dSharedPoolMutex); //LOCK
 		dMaxSharedPoolSize = locMaxSharedPoolSize;
+		dResourcePool_Shared.reserve(dMaxSharedPoolSize);
 	}
 }
 
@@ -302,39 +304,38 @@ template <typename DType> void DResourcePool<DType>::Get_Resources_StaticPool(vo
 
 template <typename DType> void DResourcePool<DType>::Recycle_Resources_StaticPool(void)
 {
-	//we will remove dGetBatchSize resources from the local resource pool (or all if size < batch size)
-	auto locRemoveIterator = (dGetBatchSize >= dResourcePool_Local.size()) ? dResourcePool_Local.begin() : dResourcePool_Local.end() - dGetBatchSize;
-	Recycle_Resources_StaticPool(locRemoveIterator);
+	//we will remove dRecycleBatchSize resources from the local resource pool (or all if size < batch size)
+	auto locRemoveAfterIterator = (dRecycleBatchSize >= dResourcePool_Local.size()) ? dResourcePool_Local.begin() : std::prev(dResourcePool_Local.end(), dRecycleBatchSize);
+	if(dDebugLevel > 0)
+		cout << "Removing last " << std::distance(locRemoveAfterIterator, dResourcePool_Local.end()) << " elements" << endl;
+	Recycle_Resources_StaticPool(locRemoveAfterIterator);
 }
 
-template <typename DType> void DResourcePool<DType>::Recycle_Resources_StaticPool(typename vector<DType*>::iterator locRemoveIterator)
+template <typename DType> void DResourcePool<DType>::Recycle_Resources_StaticPool(typename vector<DType*>::iterator locRemoveAfterIterator)
 {
-	auto locMoveIterator = locRemoveIterator; //we will move resources into the shared pool, starting at this spot
+	auto locMoveIterator = locRemoveAfterIterator; //we will move resources into the shared pool, starting at this spot
+	auto locNumElementsToRemove = std::distance(locRemoveAfterIterator, dResourcePool_Local.end());
 	{
 		std::lock_guard<std::mutex> locLock(dSharedPoolMutex); //LOCK
-		auto locNewPoolSize = dResourcePool_Shared.size() + dRecycleBatchSize;
-		if(locNewPoolSize > dMaxSharedPoolSize)
-		{
-			//we won't move all of the resources into the shared pool, as it would be too large: only move a subset
-			locMoveIterator = dResourcePool_Local.end() - (dMaxSharedPoolSize - dResourcePool_Shared.size());
-			dResourcePool_Shared.reserve(dMaxSharedPoolSize);
-		}
-		else
-			dResourcePool_Shared.reserve(locNewPoolSize);
+
+		auto locPotentialNewPoolSize = dResourcePool_Shared.size() + locNumElementsToRemove;
+		if(locPotentialNewPoolSize > dMaxSharedPoolSize) //we won't move all of the resources into the shared pool, as it would be too large: only move a subset
+			locMoveIterator = std::prev(dResourcePool_Local.end(), dMaxSharedPoolSize - dResourcePool_Shared.size());
+
 		if(dDebugLevel > 0)
 			cout << "MOVING TO SHARED POOL " << typeid(DType).name() << ": " << std::distance(locMoveIterator, dResourcePool_Local.end()) << endl;
+
 		std::move(locMoveIterator, dResourcePool_Local.end(), std::back_inserter(dResourcePool_Shared));
 	}
 
 	if(dDebugLevel > 0)
-		cout << "DELETING " << typeid(DType).name() << ": " << std::distance(locRemoveIterator, locMoveIterator) << endl;
+		cout << "DELETING " << typeid(DType).name() << ": " << std::distance(locRemoveAfterIterator, locMoveIterator) << endl;
 
 	//any resources that were not moved into the shared pool are deleted instead (too many)
-	auto Deleter = [](DType* locResource) -> void {delete locResource;};
-	if(locMoveIterator != locRemoveIterator)
-		std::for_each(locRemoveIterator, locMoveIterator, Deleter);
+	auto Deleter = [](DType* locResource) -> void {cout << "deleting " << locResource << endl; delete locResource;};
+	std::for_each(locRemoveAfterIterator, locMoveIterator, Deleter);
 
-	dResourcePool_Local.erase(locRemoveIterator, dResourcePool_Local.end());
+	dResourcePool_Local.resize(std::distance(dResourcePool_Local.begin(), locRemoveAfterIterator));
 }
 
 template <typename DType> size_t DResourcePool<DType>::Get_SharedPoolSize(void) const
