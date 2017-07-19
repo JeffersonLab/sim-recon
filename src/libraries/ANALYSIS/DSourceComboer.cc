@@ -6,7 +6,6 @@
  * PROBLEMS:
  * 
  * track timing resolution at 3 GeV
- * no MM peak in p 2pi0
  *
  * TESTING:
  * p2pi: OK
@@ -15,7 +14,7 @@
  * p2g: OK
  * p pi0: WAITING TREE CONFIRMATION
  * p3pi: WAITING TREE CONFIRMATION
- * p2pi0: TESTING
+ * p2pi0: WAITING LONG RUN (overhaul)
  * p4g
  * p3pi0
  * p pi0 g
@@ -1943,7 +1942,7 @@ void DSourceComboer::Combo_Vertically_AllParticles(const DSourceComboUse& locCom
 		DSourceComboUse locNMinus1ComboUse(Unknown, locVertexZBin, locNMinus1Info); // Unknown -> N - 1 g's (e.g.)
 
 		// Now, see whether the combos for the direct N - 1 grouping have already been done.  If not, create them
-		if(locSourceCombosByUseSoFar.find(locNMinus1ComboUse) != locSourceCombosByUseSoFar.end())
+		if(locSourceCombosByUseSoFar.find(locNMinus1ComboUse) == locSourceCombosByUseSoFar.end())
 			Combo_Vertically_AllParticles(locNMinus1ComboUse, locComboingStage, locNumTabs + 1); //no need to go to top-level combo function since just N - 1: can re-call this one
 
 		//Finally, we can actually DO the grouping, between the N - 1 particles and one more particle
