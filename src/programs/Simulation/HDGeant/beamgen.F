@@ -69,6 +69,8 @@ c  freq > freqMaximum is generated; a few ppm of these is no problem.
       common /genstate/ppol,rndm
       save /genstate/
 
+      real x, theta2
+
       call GRNDM(rndm,7)
       phim = REAL(rndm(1)*TWOPI)
       rhom = mospread*sqrt(-2*log(rndm(2)))
@@ -98,11 +100,11 @@ c  freq > freqMaximum is generated; a few ppm of these is no problem.
       if (freqIntegral(nProfileBins).eq.0) then
          x1 = 1
          x0 = xMinimum**(1./nProfileBins)
-         freqProfile(1) = dNcdxdp((x0+x1)/2,TWOPI/4)
+         freqProfile(1) = dNcdxdp((x0+x1)/2,REAL(TWOPI/8))
          do ip=2,nProfileBins
             x1 = x0
             x0 = xMinimum**(ip*1./nProfileBins)
-            freqProfile(ip) = dNcdxdp((x0+x1)/2,TWOPI/4)
+            freqProfile(ip) = dNcdxdp((x0+x1)/2,REAL(TWOPI/8))
          enddo
          freqMaximum = 0
          do ip=1,nProfileBins-5
@@ -136,16 +138,16 @@ c  freq > freqMaximum is generated; a few ppm of these is no problem.
             f = freqIntegral(nProfileBins)*rndm(2)
             do ip=1,nProfileBins
                if (f.le.freqIntegral(ip)) then
-                  x0 = xMinimum**((ip-1.)/nProfileBins)
-                  x1 = xMinimum**((ip*1.)/nProfileBins)
+                  x1 = xMinimum**((ip-1.)/nProfileBins)
+                  x0 = xMinimum**((ip*1.)/nProfileBins)
                   if (ip.gt.1) then
-                     f0 = freqIntegral(ip-1)
+                     f1 = freqIntegral(ip-1)
                   else
-                     f0 = 0
+                     f1 = 0
                   endif
-                  f1 = freqIntegral(ip)
+                  f0 = freqIntegral(ip)
                   fp = freqProfile(ip)
-                  x = (x0*(f1-f)+x1*(f-f0))/(f1-f0)
+                  x = (x0*(f-f1)+x1*(f0-f))/(f0-f1)
                   go to 4
                endif
             enddo
@@ -237,7 +239,7 @@ c  freq > freqMaximum is generated; a few ppm of these is no problem.
       nubuf = 3
 #endif
       call settofg(vertex,t0)
-      if (bgtagonly.eq.0) then
+      if (bgtagonly.eq.0 .or. t0.eq.0) then
         call GSVERT(vertex,0,0,ubuf,nubuf,nvert)
         call GSKINE(plab,1,nvert,0,0,nt) ! push the beam photon on the stack
       endif

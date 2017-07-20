@@ -59,10 +59,19 @@ jerror_t DAnalysisResults_factory::brun(jana::JEventLoop *locEventLoop, int32_t 
 
 		TDirectory* locCurrentDir = gDirectory;
 		TFile* locFile = (TFile*)gROOT->FindObject(locOutputFileName.c_str());
-		if(locFile != NULL)
-			locFile->cd("");
-		else
-			gDirectory->cd("/");
+		if(locFile == NULL){
+			jerr << "----------------------------------------------------" << endl;
+			jerr << "ERROR: Unable to find ROOT file object \"" << locOutputFileName << "\"!" <<endl;
+			jerr << "This is required by the DAnalysisResults_factory. This may happen if you" << endl;
+			jerr << "are not using hd_root to run your plugin or you have not explicitly opened" << endl;
+			jerr << "a TFile with this name in your plugin." << endl;
+			jerr << endl;
+			jerr << "This is a fatal error so I'm quitting now." << endl;
+			jerr << endl;
+			exit(-1);
+			// gDirectory->cd("/"); // original line executed for this condition
+		}
+		locFile->cd("");
 
 		for(size_t loc_i = 0; loc_i < locReactions.size(); ++loc_i)
 		{
