@@ -1305,7 +1305,7 @@ bool DHistogramAction_MissingMass::Perform_Action(JEventLoop* locEventLoop, cons
 	vector<pair<double, double> > locMassesToFill; //first is missing mass, second is missing p
 	set<set<size_t> >::iterator locComboIterator = locIndexCombos.begin();
 	for(; locComboIterator != locIndexCombos.end(); ++locComboIterator)
-	  {
+	{
 		set<pair<const JObject*, unsigned int> > locSourceObjects;
 		DLorentzVector locMissingP4 = dAnalysisUtilities->Calc_MissingP4(Get_Reaction(), locParticleCombo, 0, dMissingMassOffOfStepIndex, *locComboIterator, locSourceObjects, Get_UseKinFitResultsFlag());
 

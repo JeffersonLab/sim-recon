@@ -18,7 +18,11 @@
 class DBeamPhoton_factory:public jana::JFactory<DBeamPhoton>
 {
 	public:
-		DBeamPhoton_factory(void){dResourcePool_BeamPhotons = new DResourcePool<DBeamPhoton>();}
+		DBeamPhoton_factory(void)
+		{
+			dResourcePool_BeamPhotons = new DResourcePool<DBeamPhoton>();
+			dResourcePool_BeamPhotons->Set_ControlParams(100, 20, 1000, 2000, 0, 0);
+		}
 
 		void Recycle_Resources(vector<const DBeamPhoton*>& locBeams){dResourcePool_BeamPhotons->Recycle(locBeams);}
 		void Recycle_Resources(vector<DBeamPhoton*>& locBeams){dResourcePool_BeamPhotons->Recycle(locBeams);}
