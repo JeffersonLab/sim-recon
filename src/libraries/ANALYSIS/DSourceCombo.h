@@ -219,10 +219,7 @@ inline vector<pair<Particle_t, unsigned char>> DSourceComboInfo::Get_NumParticle
 }
 
 inline DSourceCombo::DSourceCombo(const vector<pair<Particle_t, const JObject*>>& locSourceParticles, const DSourceCombosByUse_Small& locFurtherDecayCombos, bool locIsZIndependent) :
-		dSourceParticles(locSourceParticles), dFurtherDecayCombos(locFurtherDecayCombos), dIsComboingZIndependent(locIsZIndependent)
-{
-	std::sort(dSourceParticles.begin(), dSourceParticles.end());
-}
+		dSourceParticles(locSourceParticles), dFurtherDecayCombos(locFurtherDecayCombos), dIsComboingZIndependent(locIsZIndependent) {}
 
 inline void DSourceCombo::Reset(void)
 {
@@ -236,7 +233,6 @@ inline void DSourceCombo::Set_Members(const vector<pair<Particle_t, const JObjec
 	dSourceParticles = locSourceParticles;
 	dFurtherDecayCombos = locFurtherDecayCombos;
 	dIsComboingZIndependent = locIsZIndependent;
-	std::sort(dSourceParticles.begin(), dSourceParticles.end());
 }
 
 inline vector<pair<Particle_t, const JObject*>> DSourceCombo::Get_SourceParticles(bool locEntireChainFlag, Charge_t locCharge) const

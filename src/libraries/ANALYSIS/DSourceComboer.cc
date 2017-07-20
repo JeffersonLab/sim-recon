@@ -17,12 +17,14 @@
  * p2pi0: WAITING LONG RUN (overhaul)
  * p4g
  * p3pi0
+ * p4pi0
  * p pi0 g
  * p2pi 2pi0
  * p eta pi0
  * p eta 2pi0
  * pi+ (n)
  * 
+ * ppp
  * p3pi missing-p
  * omega p
  * omega missing-p
@@ -876,9 +878,8 @@ void DSourceComboer::Reset_NewEvent(JEventLoop* locEventLoop)
 	dValidRFBunches_ByCombo.clear();
 
 	//COMBOING RESUME/SEARCH-AFTER TRACKING
-	dResumeSearchAfterIterators_Particles.clear();
+	dResumeSearchAfterIndices_Particles.clear();
 	dResumeSearchAfterIndices_Combos.clear();
-	dResumeSearchAfterMap_Particles.clear();
 
 	/************************************************************ SETUP FOR NEW EVENT *************************************************************/
 
@@ -906,8 +907,10 @@ void DSourceComboer::Reset_NewEvent(JEventLoop* locEventLoop)
 	for(auto& locZBinPair : dShowersByBeamBunchByZBin)
 	{
 		auto& locShowerByBunchMap = locZBinPair.second;
+		if(dDebugLevel >= 20)
+			cout << "Register zbin: " << int(locZBinPair.first) << endl;
 		for(auto& locBunchPair : locShowerByBunchMap)
-			Build_ParticleIterators(locBunchPair.first, locBunchPair.second);
+			Build_ParticleIndices(Gamma, locBunchPair.first, locBunchPair.second, locZBinPair.first);
 	}
 
 	//SETUP BEAM PARTICLES
@@ -926,9 +929,13 @@ void DSourceComboer::Reset_NewEvent(JEventLoop* locEventLoop)
 		}
 	}
 
-	//sort, remove duplicates in tracks-by-charge
+	//sort by pid & create indices
 	for(auto& locPIDPair : dTracksByPID)
+	{
 		std::sort(locPIDPair.second.begin(), locPIDPair.second.end());
+		Build_ParticleIndices(locPIDPair.first, {}, locPIDPair.second, DSourceComboInfo::Get_VertexZIndex_ZIndependent());
+	}
+	//sort & remove duplicates in tracks-by-charge
 	for(auto& locChargePair : dTracksByCharge)
 	{
 		auto& locVector = locChargePair.second;
@@ -1983,7 +1990,6 @@ void DSourceComboer::Combo_Vertically_NParticles(const DSourceComboUse& locCombo
 	{
 		//Get particles for comboing
 		const auto& locParticles = Get_ParticlesForComboing(locPID, locComboingStage, {}, locVertexZBin);
-//cout << "pid, zbin, #particles = " << locPID << ", " << int(locVertexZBin) << ", " << locParticles.size() << endl;
 		if(locParticles.size() < 2)
 			return; //not enough to create combos
 
@@ -1999,7 +2005,6 @@ void DSourceComboer::Combo_Vertically_NParticles(const DSourceComboUse& locCombo
 
 				//See which RF bunches match up, if any //if charged or massive neutrals, ignore (they don't choose at this stage)
 				auto locValidRFBunches = (locPID != Gamma) ? vector<int>{} : dSourceComboTimeHandler->Get_CommonRFBunches(locRFBunches_First, *locSecondIterator, locVertexZBin);
-//cout << "#rf bunches first, common: " << locRFBunches_First.size() << ", " << locValidRFBunches.size() << endl;
 				if((locPID == Gamma) && locValidRFBunches.empty())
 					continue;
 
@@ -2014,10 +2019,6 @@ void DSourceComboer::Combo_Vertically_NParticles(const DSourceComboUse& locCombo
 				}
 
 				Register_ValidRFBunches(locComboUseToCreate, locCombo, locValidRFBunches, locComboingStage, nullptr);
-
-				//in case we add more particles with the same PID later (N + 1), save last object with this PID
-				//so that we will start the search for the next particle one spot after it
-				dResumeSearchAfterMap_Particles[locCombo] = *locSecondIterator;
 			}
 		}
 		return;
@@ -2032,24 +2033,28 @@ void DSourceComboer::Combo_Vertically_NParticles(const DSourceComboUse& locCombo
 		const auto& locParticles = Get_ParticlesForComboing(locPID, locComboingStage, locValidRFBunches_NMinus1, locVertexZBin);
 
 		//retrieve where to begin the search
-		auto locParticleSearchIterator = Get_ResumeAtIterator_Particles(locCombo_NMinus1, locValidRFBunches_NMinus1);
-		if(locParticleSearchIterator == std::end(locParticles))
+		auto locLastParticleInCombo = locCombo_NMinus1->Get_SourceParticles(false).back().second;
+		auto locParticleSearchIndex = Get_ResumeAtIndex_Particles(locPID, locLastParticleInCombo, locValidRFBunches_NMinus1, locVertexZBin);
+		if(dDebugLevel >= 20)
+			cout << "particle index, #particles = " << locParticleSearchIndex << ", " << locParticles.size() << endl;
+		if(locParticleSearchIndex == locParticles.size())
 			continue; //e.g. this combo is "AD" and there are only 4 reconstructed combos (ABCD): no potential matches! move on to the next N - 1 combo
 
 		auto locIsZIndependent_NMinus1 = locCombo_NMinus1->Get_IsComboingZIndependent();
 
-		for(; locParticleSearchIterator != locParticles.end(); ++locParticleSearchIterator)
+		for(; locParticleSearchIndex != locParticles.size(); ++locParticleSearchIndex)
 		{
-			auto locIsZIndependent = (locComboingStage == d_MixedStage_ZIndependent) || (locIsZIndependent_NMinus1 && Get_IsComboingZIndependent(*locParticleSearchIterator, locPID));
+			auto& locParticle = locParticles[locParticleSearchIndex];
+			auto locIsZIndependent = (locComboingStage == d_MixedStage_ZIndependent) || (locIsZIndependent_NMinus1 && Get_IsComboingZIndependent(locParticle, locPID));
 			if((locComboingStage == d_MixedStage) && locIsZIndependent)
 				continue; //this combo has already been created (assuming it was valid): during the FCAL-only stage
 
 			//See which RF bunches match up //guaranteed to be at least one, due to selection in Get_ParticlesForComboing() function
 			//if charged or massive neutrals, ignore (they don't choose at this stage)
-			auto locValidRFBunches = (locPID != Gamma) ? vector<int>{} : dSourceComboTimeHandler->Get_CommonRFBunches(locValidRFBunches_NMinus1, *locParticleSearchIterator, locVertexZBin);
+			auto locValidRFBunches = (locPID != Gamma) ? vector<int>{} : dSourceComboTimeHandler->Get_CommonRFBunches(locValidRFBunches_NMinus1, locParticle, locVertexZBin);
 
 			auto locComboParticlePairs = locCombo_NMinus1->Get_SourceParticles();
-			locComboParticlePairs.emplace_back(locPID, *locParticleSearchIterator);
+			locComboParticlePairs.emplace_back(locPID, locParticle);
 			auto locCombo = Get_SourceComboResource();
 			locCombo->Set_Members(locComboParticlePairs, {}, locIsZIndependent);
 			locSourceCombosByUseSoFar[locComboUseToCreate]->push_back(locCombo); //save it //in creation order
@@ -2061,10 +2066,6 @@ void DSourceComboer::Combo_Vertically_NParticles(const DSourceComboUse& locCombo
 			}
 
 			Register_ValidRFBunches(locComboUseToCreate, locCombo, locValidRFBunches, locComboingStage, nullptr);
-
-			//in case we add more particles with the same PID later (N + 1), save last object with this PID
-			//so that we will start the search for the next particle one spot after it
-			dResumeSearchAfterMap_Particles[locCombo] = *locParticleSearchIterator;
 		}
 	}
 }
@@ -2751,7 +2752,7 @@ const vector<const JObject*>& DSourceComboer::Get_ParticlesForComboing(Particle_
 		auto locGroupBunchIterator = dShowersByBeamBunchByZBin[locVertexZBin].find(locBeamBunches);
 		if(locGroupBunchIterator != dShowersByBeamBunchByZBin[locVertexZBin].end())
 			return locGroupBunchIterator->second;
-		return Get_ShowersByBeamBunch(locBeamBunches, dShowersByBeamBunchByZBin[locVertexZBin]);
+		return Get_ShowersByBeamBunch(locBeamBunches, dShowersByBeamBunchByZBin[locVertexZBin], locVertexZBin);
 	}
 
 	if(locBeamBunches.empty())
@@ -2760,10 +2761,10 @@ const vector<const JObject*>& DSourceComboer::Get_ParticlesForComboing(Particle_
 	auto locGroupBunchIterator = dShowersByBeamBunchByZBin[locVertexZBin].find(locBeamBunches);
 	if(locGroupBunchIterator != dShowersByBeamBunchByZBin[locVertexZBin].end())
 		return locGroupBunchIterator->second;
-	return Get_ShowersByBeamBunch(locBeamBunches, dShowersByBeamBunchByZBin[locVertexZBin]);
+	return Get_ShowersByBeamBunch(locBeamBunches, dShowersByBeamBunchByZBin[locVertexZBin], locVertexZBin);
 }
 
-const vector<const JObject*>& DSourceComboer::Get_ShowersByBeamBunch(const vector<int>& locBeamBunches, DPhotonShowersByBeamBunch& locShowersByBunch)
+const vector<const JObject*>& DSourceComboer::Get_ShowersByBeamBunch(const vector<int>& locBeamBunches, DPhotonShowersByBeamBunch& locShowersByBunch, signed char locVertexZBin)
 {
 	if(locBeamBunches.empty())
 		return locShowersByBunch[{}];
@@ -2779,7 +2780,7 @@ const vector<const JObject*>& DSourceComboer::Get_ShowersByBeamBunch(const vecto
 		if(locBunchShowers.empty())
 		{
 			locShowersByBunch.emplace(locBunchesSoFar, locComboShowers);
-			Build_ParticleIterators(locBeamBunches, locShowersByBunch[locBunchesSoFar]);
+			Build_ParticleIndices(Gamma, locBeamBunches, locShowersByBunch[locBunchesSoFar], locVertexZBin);
 			continue;
 		}
 
@@ -2788,7 +2789,7 @@ const vector<const JObject*>& DSourceComboer::Get_ShowersByBeamBunch(const vecto
 		locMergeResult.reserve(locComboShowers.size() + locBunchShowers.size());
 		std::set_union(locComboShowers.begin(), locComboShowers.end(), locBunchShowers.begin(), locBunchShowers.end(), std::back_inserter(locMergeResult));
 		locShowersByBunch.emplace(locBunchesSoFar, std::move(locMergeResult));
-		Build_ParticleIterators(locBeamBunches, locShowersByBunch[locBunchesSoFar]);
+		Build_ParticleIndices(Gamma, locBeamBunches, locShowersByBunch[locBunchesSoFar], locVertexZBin);
 	}
 	return locShowersByBunch[locBeamBunches];
 }
@@ -2870,12 +2871,18 @@ const vector<const DSourceCombo*>& DSourceComboer::Get_CombosByBeamBunch(const D
 	}
 
 	//find all combos for the given use that have an overlapping beam bunch with the input
-	//this shouldn't be called very many times per event
+	//this shouldn't be called very many times per event, so we can be a little inefficient
 	vector<int> locBunchesSoFar = {*locBeamBunches.begin()};
 	for(auto locBunchIterator = std::next(locBeamBunches.begin()); locBunchIterator != locBeamBunches.end(); ++locBunchIterator)
 	{
-		const auto& locCombosSoFar = locCombosByBunch[locBunchesSoFar];
-		const auto& locBunchCombos = locCombosByBunch[{*locBunchIterator}];
+		//get vectors and sort them: sort needed for union below
+		auto& locCombosSoFar = locCombosByBunch[locBunchesSoFar];
+		if((locBunchesSoFar.size() == 1) && !std::is_sorted(locCombosSoFar.begin(), locCombosSoFar.end()))
+			std::sort(locCombosSoFar.begin(), locCombosSoFar.end()); //already sorted if size > 1
+		auto& locBunchCombos = locCombosByBunch[{*locBunchIterator}];
+		if(!std::is_sorted(locCombosSoFar.begin(), locCombosSoFar.end()))
+			std::sort(locBunchCombos.begin(), locBunchCombos.end());
+
 		locBunchesSoFar.push_back(*locBunchIterator);
 		if(locBunchCombos.empty())
 		{
@@ -3200,7 +3207,6 @@ bool DSourceComboer::Check_Reactions(vector<const DReaction*>& locReactions)
 			return false;
 		return ((dNumChargedTracks - locNumTracksNeeded) > locCutPair.second);
 	};
-
 	locReactions.erase(std::remove_if(locReactions.begin(), locReactions.end(), NumExtra_Checker), locReactions.end());
 	if(locReactions.empty())
 	{
@@ -3211,6 +3217,7 @@ bool DSourceComboer::Check_Reactions(vector<const DReaction*>& locReactions)
 	for(auto& locReaction : locReactions)
 		dNumCombosSurvivedStageTracker[locReaction][DConstructionStage::Max_Particles] = 1; //is really #-events
 
+	//Check skims
 	auto Skim_Checker = [this](const DReaction* locReaction) -> bool{return !Check_Skims(locReaction);};
 	locReactions.erase(std::remove_if(locReactions.begin(), locReactions.end(), Skim_Checker), locReactions.end());
 	if(locReactions.empty())
@@ -3265,6 +3272,25 @@ bool DSourceComboer::Check_NumParticles(const DReaction* locReaction)
 		if(dDebugLevel > 0)
 			cout << ParticleType(locPIDPair.first) << ": Need " << locPIDPair.second << ", Have " << locNumParticlesForComboing << endl;
 		if(locNumParticlesForComboing < locPIDPair.second)
+			return false;
+		if(locPIDPair.first != Gamma)
+			continue;
+
+		//check if these photons can even at least agree on a beam bunch, regardless of vertex position
+		size_t locMaxNumPhotonsSameBunch = 0;
+		for(const auto& locZBinPair : dShowersByBeamBunchByZBin) //loop over z-bins
+		{
+			for(const auto& locBunchPair : locZBinPair.second) //loop over bunches
+			{
+				if(locBunchPair.first.empty())
+					continue;
+				if(locBunchPair.second.size() > locMaxNumPhotonsSameBunch)
+					locMaxNumPhotonsSameBunch = locBunchPair.second.size();
+			}
+		}
+		if(dDebugLevel > 0)
+			cout << ParticleType(locPIDPair.first) << ": Need " << locPIDPair.second << ", Have at most " << locMaxNumPhotonsSameBunch << " that agree on any beam bunch." << endl;
+		if(locMaxNumPhotonsSameBunch < locPIDPair.second)
 			return false;
 	}
 	return true;

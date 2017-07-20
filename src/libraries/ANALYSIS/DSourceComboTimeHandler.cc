@@ -205,7 +205,7 @@ DSourceComboTimeHandler::DSourceComboTimeHandler(JEventLoop* locEventLoop, DSour
 	dShowersByBeamBunchByZBin[DSourceComboInfo::Get_VertexZIndex_ZIndependent()] = {};
 	dShowerRFBunches[DSourceComboInfo::Get_VertexZIndex_Unknown()] = {};
 	dShowersByBeamBunchByZBin[DSourceComboInfo::Get_VertexZIndex_Unknown()] = {};
-	for(decltype(dNumPhotonVertexZBins) locZBin = 0; locZBin <= dNumPhotonVertexZBins; ++locZBin)
+	for(decltype(dNumPhotonVertexZBins) locZBin = 0; locZBin < dNumPhotonVertexZBins; ++locZBin)
 	{
 		dShowerRFBunches[locZBin] = {};
 		dShowersByBeamBunchByZBin[locZBin] = {};
@@ -402,7 +402,6 @@ void DSourceComboTimeHandler::Setup_NeutralShowers(const vector<const DNeutralSh
 	{
 		auto& locContainer = (locShower->dDetectorSystem == SYS_BCAL) ? locBCALShowers : locFCALShowers;
 		locContainer.push_back(locShower);
-		dShowersByBeamBunchByZBin[locUnknownZBin][{}].push_back(locShower);
 	}
 
 	//CALCULATE KINEMATICS
@@ -431,31 +430,48 @@ void DSourceComboTimeHandler::Setup_NeutralShowers(const vector<const DNeutralSh
 		double locPropagatedRFTime = dInitialEventRFBunch->dTime + (Get_PhotonVertexZBinCenter(loc_i) - dTargetCenter.Z())/SPEED_OF_LIGHT;
 		for(const auto& locShower : locBCALShowers)
 			Calc_PhotonBeamBunchShifts(locShower, dPhotonKinematics[loc_i][locShower], locPropagatedRFTime, loc_i);
+	}
 
-		//insert the previously-done FCAL photons
-		dShowersByBeamBunchByZBin[loc_i].insert(dShowersByBeamBunchByZBin[locFCALZBin].begin(), dShowersByBeamBunchByZBin[locFCALZBin].end());
-		for(const auto& locBeamBunchPair : dShowersByBeamBunchByZBin[locFCALZBin])
+	//sort the by-bunch-by-zbin shower vectors (will do unions later), and remove duplicate BCAL entries in the z-unknown vector
+	for(auto& locZBinPair : dShowersByBeamBunchByZBin) //loop over z-bins
+	{
+		for(auto& locRFShowerPair : locZBinPair.second)
 		{
-			const auto& locShowers = locBeamBunchPair.second;
-			auto locBothIterator = dShowersByBeamBunchByZBin[loc_i].find(locBeamBunchPair.first);
-			if(locBothIterator != dShowersByBeamBunchByZBin[loc_i].end())
-			{
-				auto locPhotonVector = locBothIterator->second;
-				locPhotonVector.insert(locPhotonVector.end(), locShowers.begin(), locShowers.end());
-			}
-			else
-				dShowersByBeamBunchByZBin[loc_i].emplace(locBeamBunchPair);
+			auto& locShowerVector = locRFShowerPair.second;
+			std::sort(locShowerVector.begin(), locShowerVector.end());
+			if(locZBinPair.first == locUnknownZBin) //remove dupe entries
+				locShowerVector.erase(std::unique(locShowerVector.begin(), locShowerVector.end()), locShowerVector.end());
 		}
 	}
 
-	//remove duplicates in the z-unknown vector
-	for(auto& locRFShowerPair : dShowersByBeamBunchByZBin[locUnknownZBin])
+	if(dDebugLevel >= 20)
 	{
-		if(locRFShowerPair.first.empty())
-			continue; //no chance that this has duplicates
-		auto& locShowerVector = locRFShowerPair.second;
-		std::sort(locShowerVector.begin(), locShowerVector.end());
-		locShowerVector.erase(std::unique(locShowerVector.begin(), locShowerVector.end()), locShowerVector.end());
+		cout << "SHOWER RF BUNCHES:" << endl;
+		for(const auto& locZBinPair : dShowerRFBunches) //loop over z-bins
+		{
+			for(const auto& locShowerPair : locZBinPair.second) //loop over particles
+			{
+				cout << "z-bin, pointer, system, bunches: " << int(locZBinPair.first) << ", " << locShowerPair.first << ", " << SystemName(static_cast<const DNeutralShower*>(locShowerPair.first)->dDetectorSystem) << ", ";
+				for(const auto& locBunch : locShowerPair.second)
+					cout << locBunch << ", ";
+				cout << endl;
+			}
+		}
+		cout << "SHOWERS BY BEAM BUNCH BY ZBIN:" << endl;
+		for(const auto& locZBinPair : dShowersByBeamBunchByZBin) //loop over z-bins
+		{
+			for(const auto& locBunchPair : locZBinPair.second) //loop over bunches
+			{
+				cout << "z-bin, bunch, showers: " << int(locZBinPair.first) << ", ";
+				if(locBunchPair.first.empty())
+					cout << "ANY, ";
+				else
+					cout << locBunchPair.first.front() << ", ";
+				for(const auto& locShower : locBunchPair.second)
+					cout << locShower << ", ";
+				cout << endl;
+			}
+		}
 	}
 }
 
@@ -467,18 +483,34 @@ void DSourceComboTimeHandler::Calc_PhotonBeamBunchShifts(const DNeutralShower* l
 
 	//do loop over possible #-RF-shifts
 	auto locVertexTime = locKinematicData->time();
+	if(dDebugLevel >= 10)
+		cout << "eval time shifts for shower, system, zbin: " << locNeutralShower << ", " << SystemName(locSystem) << ", " << int(locZBin) << endl;
 	auto locRFShifts = Calc_BeamBunchShifts(locVertexTime, locRFTime, locDeltaTCut, true, Unknown, locSystem, locNeutralShower->dEnergy);
 
 	auto locJObject = static_cast<const JObject*>(locNeutralShower);
-//cout << "zbin, jobject, #shifts = " << int(locZBin) << ", " << locJObject << ", " << locRFShifts.size() << endl;
-	dShowerRFBunches[locZBin].emplace(locJObject, locRFShifts);
-	for(const auto& locNumShifts : locRFShifts)
-	{
-		dShowersByBeamBunchByZBin[locZBin][{locNumShifts}].push_back(locJObject);
-		dShowersByBeamBunchByZBin[DSourceComboInfo::Get_VertexZIndex_Unknown()][{locNumShifts}].push_back(locJObject);
-	}
 	if(locSystem == SYS_FCAL)
-		dShowersByBeamBunchByZBin[DSourceComboInfo::Get_VertexZIndex_ZIndependent()][{}].push_back(locJObject);
+	{
+		//FCAL is valid for every z-bin
+		for(auto& locZBinPair : dShowerRFBunches) //loop over z-bins
+		{
+			locZBinPair.second.emplace(locJObject, locRFShifts); //save bunches for each shower
+			for(const auto& locNumShifts : locRFShifts) //save showers by bunch
+				dShowersByBeamBunchByZBin[locZBinPair.first][{locNumShifts}].push_back(locJObject);
+			dShowersByBeamBunchByZBin[locZBinPair.first][{}].push_back(locJObject); //save showers by bunch: any bunch (empty vector)
+		}
+	}
+	else //BCAL: Save to this z-bin & unknown
+	{
+		dShowerRFBunches[locZBin].emplace(locJObject, locRFShifts);
+		dShowerRFBunches[DSourceComboInfo::Get_VertexZIndex_Unknown()].emplace(locJObject, locRFShifts); //will dupe over z's
+		for(const auto& locNumShifts : locRFShifts)
+		{
+			dShowersByBeamBunchByZBin[locZBin][{locNumShifts}].push_back(locJObject);
+			dShowersByBeamBunchByZBin[DSourceComboInfo::Get_VertexZIndex_Unknown()][{locNumShifts}].push_back(locJObject); //will dupe over z's
+		}
+		dShowersByBeamBunchByZBin[DSourceComboInfo::Get_VertexZIndex_Unknown()][{}].push_back(locJObject); //will dupe over z's
+		dShowersByBeamBunchByZBin[locZBin][{}].push_back(locJObject);
+	}
 }
 
 vector<int> DSourceComboTimeHandler::Calc_BeamBunchShifts(double locVertexTime, double locOrigRFBunchPropagatedTime, double locDeltaTCut, bool locIncludeDecayTimeOffset, Particle_t locPID, DetectorSystem_t locSystem, double locP)
