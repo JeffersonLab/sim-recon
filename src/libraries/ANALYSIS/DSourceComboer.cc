@@ -17,7 +17,7 @@
  * p3pi: OVERHAUL AGAIN
  * p2pi0: OVERHAUL AGAIN
  * p4g: OVERHAUL AGAIN
- * p3pi0
+ * p3pi0: OVERHAUL
  * p pi0 g
  * p2pi 2pi0
  * p eta pi0
@@ -1742,7 +1742,7 @@ void DSourceComboer::Combo_Vertically_AllDecays(const DSourceComboUse& locComboU
 				continue;
 
 			//build the decay combo directly
-			if(locSourceCombosByUseSoFar.find(locSourceComboDecayUse) != locSourceCombosByUseSoFar.end()) //if not done already!
+			if(locSourceCombosByUseSoFar.find(locSourceComboDecayUse) == locSourceCombosByUseSoFar.end()) //if not done already!
 			{
 				//must dive down to get the next charged combo
 				//building for the first time: the first one (later ones will be grabbed when building these combos vertically (in Combo_Vertically_NDecays))
@@ -1754,7 +1754,7 @@ void DSourceComboer::Combo_Vertically_AllDecays(const DSourceComboUse& locComboU
 			else if(dDebugLevel > 0)
 				cout << "This decay already created!" << endl;
 
-			continue;
+			continue; //no actual comboing needs to be done with this just yet, will do so in horizontal stage
 		}
 
 		//OK, so we need a grouping of N > 1 decays (e.g. pi0s)
@@ -1787,7 +1787,7 @@ void DSourceComboer::Combo_Vertically_AllDecays(const DSourceComboUse& locComboU
 		// Now, see whether the combos for the direct N - 1 grouping have already been done.  If not, create them
 		if(locSourceCombosByUseSoFar.find(locNMinus1ComboUse) == locSourceCombosByUseSoFar.end())
 		{
-			if(std::get<0>(locNMinus1ComboUse) != Unknown) //e.g. 1 pi0
+			if(locNumDecaysNeeded == 2) //(so N - 1 = 1)
 				Create_SourceCombos(locNMinus1ComboUse, locComboingStage, locChargedCombo_Presiding, locNumTabs + 1);
 			else //no need to go to top-level combo function since just N - 1: can re-call this one
 				Combo_Vertically_AllDecays(locNMinus1ComboUse, locComboingStage, locChargedCombo_Presiding, locNumTabs + 1);
