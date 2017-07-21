@@ -1,6 +1,19 @@
-// hnamepath: /p2pi_preco/Hist_MissingMassSquared/MissingMassSquared
-{
-	TDirectory *locInitDirectory = gDirectory;
+// hnamepath: /p3pi_preco_2FCAL/Hist_InvariantMass_Pi0/InvariantMass
+// hnamepath: /p3pi_preco_2FCAL/Hist_InvariantMass_Omega_PostKinFitCut/InvariantMass
+// hnamepath: /p3pi_preco_2BCAL/Hist_InvariantMass_Pi0/InvariantMass
+// hnamepath: /p3pi_preco_2BCAL/Hist_InvariantMass_Omega_PostKinFitCut/InvariantMass
+// hnamepath: /p3pi_preco_FCAL-BCAL/Hist_InvariantMass_Pi0/InvariantMass
+// hnamepath: /p3pi_preco_FCAL-BCAL/Hist_InvariantMass_Omega_PostKinFitCut/InvariantMass
+// hnamepath: /p3pi_preco_any_kinfit/Hist_MissingMassSquared/MissingMassSquared
+// hnamepath: /p3pi_preco_any_kinfit/Hist_MissingMassSquared_PostKinFitCut/MissingMassSquared
+// hnamepath: /p3pi_preco_any_kinfit/Hist_InvariantMass_Pi0/InvariantMass
+// hnamepath: /p3pi_preco_any_kinfit/Hist_InvariantMass_Pi0_PostKinFitCut/InvariantMass
+// hnamepath: /p3pi_preco_any_kinfit/Hist_KinFitResults/ConfidenceLevel
+// hnamepath: /p3pi_preco_any_kinfit/Hist_InvariantMass_Omega_PostKinFitCut/InvariantMass
+// hnamepath: /p3pi_preco_any_kinfit/Hist_InvariantMass_Omega_KinFit_PostKinFitCut/InvariantMass
+
+
+{	TDirectory *locInitDirectory = gDirectory;
 	TDirectory *locReactionDirectory_2FCAL = (TDirectory*)locInitDirectory->FindObjectAny("p3pi_preco_2FCAL");
 	TDirectory *locReactionDirectory_2BCAL = (TDirectory*)locInitDirectory->FindObjectAny("p3pi_preco_2BCAL");
 	TDirectory *locReactionDirectory_Both = (TDirectory*)locInitDirectory->FindObjectAny("p3pi_preco_FCAL-BCAL");
@@ -18,6 +31,14 @@
 	else
 		locCanvas = gPad->GetCanvas();
 	locCanvas->Divide(3, 2);
+
+	// Get overall normalization to number of triggers
+	TH1D* locHist_NumEvents = (TH1D*) locReactionDirectory_KinFit->Get("NumEventsSurvivedAction");
+	double n_triggers = locHist_NumEvents->GetBinContent(1);
+
+	double n_omega_kinfit;
+	double omega_mass = 0;
+	double omega_width= 0;
 
 	TH1I* locHist_Pi0_2FCAL = (TH1I*)locReactionDirectory_2FCAL->Get("Hist_InvariantMass_Pi0/InvariantMass");
 	TH1I* locHist_Omega_2FCAL = (TH1I*)locReactionDirectory_2FCAL->Get("Hist_InvariantMass_Omega_PostKinFitCut/InvariantMass");
@@ -212,6 +233,17 @@
 		locLegend->AddEntry(locHist_Omega_KinFitCut, "Measured", "F");
 		locLegend->AddEntry(locHist_KinFitOmega_KinFitCut, "KinFit", "F");
 		locLegend->Draw();
+
+		n_omega_kinfit = locHist_Omega_KinFitCut->Integral(100./locNumRebin, 400./locNumRebin);
+		
+		// Determine Mass and Width
+		TF1 *fomega = new TF1("fomega", "gaus", 0.6, 0.9);
+		fomega->SetParameter(1,0.782);
+		fomega->SetParameter(2,0.03);
+		locHist_KinFitOmega_KinFitCut->Fit("fomega", "RQ0");
+		omega_mass = fomega->GetParameter(1);
+		omega_width = fomega->GetParameter(2);
+
 	}
 
 	//measured omega for 3 cases (on top of each other)
@@ -266,6 +298,23 @@
 		locLegend->AddEntry(locHist_Omega_2BCAL, "2#gamma in BCAL", "F");
 		locLegend->AddEntry(locHist_Omega_Both, "1 #gamma in Each", "F");
 		locLegend->Draw();
+	}
+
+	// Print the mass, width and number of reconstructed omegas per trigger (Fitted values)
+	locCanvas->cd(2);
+	if(locHist_KinFitConLev != NULL){
+	  TLatex tx;
+	  tx.SetTextAlign(11);
+	  tx.SetTextSize(0.06);
+	  char text[100];
+	  sprintf(text, "Post KinFit");
+	  tx.DrawLatex(0.1, locHist_KinFitConLev->GetMaximum()/4., text);
+	  sprintf(text, "M(#omega) = %0.3f GeV/c^{2}", omega_mass);
+	  tx.DrawLatex(0.1, locHist_KinFitConLev->GetMaximum()/16., text);
+	  sprintf(text, "#Gamma(#omega) = %0.3f GeV/c^{2}", omega_width);
+	  tx.DrawLatex(0.1, locHist_KinFitConLev->GetMaximum()/64., text);
+	  sprintf(text, "N(#omega) = %0.2f / 1k Trigger", n_omega_kinfit/n_triggers*1000);
+	  tx.DrawLatex(0.1,  locHist_KinFitConLev->GetMaximum()/256., text);
 	}
 }
 

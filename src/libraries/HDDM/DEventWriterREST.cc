@@ -34,8 +34,11 @@ DEventWriterREST::DEventWriterREST(JEventLoop* locEventLoop, string locOutputFil
 	string locIntegrityString = "Turn on/off automatic integrity checking on the output HDDM stream. Set to \"0\" to turn off (it's on by default)";
 	gPARMS->SetDefaultParameter("HDDM:USE_INTEGRITY_CHECKS", HDDM_USE_INTEGRITY_CHECKS, locIntegrityString);
 
-    HDDM_DATA_VERSION_STRING = "";
-    gPARMS->SetDefaultParameter("REST:DATAVERSIONSTRING", HDDM_DATA_VERSION_STRING, "");
+	HDDM_DATA_VERSION_STRING = "";
+	if(gPARMS->Exists("REST:DATAVERSIONSTRING"))
+		gPARMS->GetParameter("REST:DATAVERSIONSTRING", HDDM_DATA_VERSION_STRING);
+	else
+		gPARMS->SetDefaultParameter("REST:DATAVERSIONSTRING", HDDM_DATA_VERSION_STRING, "");
 
     CCDB_CONTEXT_STRING = "";
     // if we can get the calibration context from the DANA interface, then save this as well
@@ -235,6 +238,11 @@ bool DEventWriterREST::Write_RESTEvent(JEventLoop* locEventLoop, string locOutpu
 
 		hddm_r::PreshowerList locPreShowerList = bcal().addPreshowers(1);
 		locPreShowerList().setPreshowerE(bcalshowers[i]->E_preshower);
+
+		hddm_r::WidthList locWidthList = bcal().addWidths(1);
+		locWidthList().setSigLong(bcalshowers[i]->sigLong);
+		locWidthList().setSigTrans(bcalshowers[i]->sigTrans);
+		locWidthList().setSigTheta(bcalshowers[i]->sigTheta);
 
 		//N_cell
 		hddm_r::BcalClusterList bcalcluster = bcal().addBcalClusters(1);

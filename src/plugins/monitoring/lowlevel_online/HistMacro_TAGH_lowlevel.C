@@ -30,7 +30,7 @@
 	if(locHist_ADCmulti != NULL)
 	{
 		locHist_ADCmulti->SetTitle("TAGH ADC Multiplicity");
-		locHist_ADCmulti->Rebin(2);
+		//locHist_ADCmulti->Rebin(2);
 		//locHist_ADCmulti->GetYaxis()->SetRangeUser(0.0, 1.05*locHist_ADCmulti->GetBinContent(locHist_ADCmulti->GetMaximumBin()));
 		locHist_ADCmulti->GetXaxis()->SetTitleSize(0.05);
 		locHist_ADCmulti->GetXaxis()->SetTitle("# ADC Hits");
@@ -48,7 +48,7 @@
 	if(locHist_TDCmulti != NULL)
 	{
 		locHist_TDCmulti->SetTitle("TAGH TDC Multiplicity");
-		locHist_TDCmulti->Rebin(2);
+		//locHist_TDCmulti->Rebin(2);
 		//locHist_TDCmulti->GetYaxis()->SetRangeUser(0.0, 1.05*locHist_TDCmulti->GetBinContent(locHist_TDCmulti->GetMaximumBin()));
 		locHist_TDCmulti->GetXaxis()->SetTitleSize(0.05);
 		locHist_TDCmulti->GetXaxis()->SetTitle("# TDC Hits");
@@ -68,7 +68,7 @@
 	{
 		locHist_ADCintegral->SetTitle("TAGH ADC Integral");
 		//locHist_ADCintegral->Rebin(2);
-		locHist_ADCintegral->GetXaxis()->SetRangeUser(1000.0, 4000.);
+		locHist_ADCintegral->GetXaxis()->SetRangeUser(500.0, 8192.);
 		locHist_ADCintegral->GetXaxis()->SetTitleSize(0.05);
 		//locHist_ADCintegral->GetYaxis()->SetTitle("");
 		locHist_ADCintegral->GetXaxis()->SetLabelSize(0.05);
@@ -84,8 +84,8 @@
 	if(locHist_TDCtime != NULL)
 	{
 		locHist_TDCtime->SetTitle("TAGH TDC Time");
-		locHist_TDCtime->Rebin(2);
-		locHist_TDCtime->GetXaxis()->SetRangeUser(0, 1500);
+		//locHist_TDCtime->Rebin(2);
+		locHist_TDCtime->GetXaxis()->SetRangeUser(0, 2000);
 		locHist_TDCtime->GetXaxis()->SetTitleSize(0.05);
 		//locHist_TDCtime->GetYaxis()->SetTitle("");
 		locHist_TDCtime->GetXaxis()->SetLabelSize(0.05);
@@ -93,5 +93,4 @@
 		locHist_TDCtime->SetFillColor(kYellow);
 		locHist_TDCtime->Draw("");
 	}
-
 }

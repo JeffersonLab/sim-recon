@@ -7,6 +7,7 @@
 
 #include "TLorentzVector.h"
 #include "TLorentzRotation.h"
+#include "TRandom3.h"
 
 const double ProductionMechanism::kPi = 3.14159;
 
@@ -21,11 +22,14 @@ m_lastWeight( 1. )
 {	
   kMproton=ParticleMass(Proton);
   kMneutron=ParticleMass(Neutron);
+  // kMZ = 108.;      //  mass of Sn116 
+  kMZ = 208.*0.931494;      //  use mass of Pb as it is in the particle table
 
   switch( recoil ){
     // I'm sure the distinction between these doesn't matter!  
   case kProton:  m_recMass = kMproton; break; //old value: 0.9382
   case kNeutron: m_recMass = kMneutron; break; //old value: 0.9395
+  case kZ: m_recMass = kMZ; break; //default to Sn116/Pb
   default:       m_recMass = kMproton; break; //old value: 0.9382
   }
 }
@@ -46,6 +50,10 @@ ProductionMechanism::setGeneratorType( Type type ){
 
 TLorentzVector
 ProductionMechanism::produceResonance( const TLorentzVector& beam ){
+
+        // initialize pseudo-random generator
+        //gRandom = new TRandom3();
+        gRandom->SetSeed(0);
 	
 	TLorentzVector target( 0, 0, 0, kMproton );
 	
@@ -55,21 +63,23 @@ ProductionMechanism::produceResonance( const TLorentzVector& beam ){
 	double cmEnergy = ( lab2cmBoost * ( target + beam ) ).E();
 	double beamMomCM = cmMomentum( cmEnergy, beam.M(), target.M() );
 
-  //double exptMax = exp(-1.)/m_slope;   Elton 8/19/2016. remove factor of t for rho production (no spin flip)
-  double exptMax = 1;
+	// double exptMax = exp(-1.)/m_slope;   // Elton 8/19/2016.  t*exp(Bt)
+        double exptMax = 1;   // remove factor of t for rho production (no spin flip). set this value for exp(Bt)
   
   
   double t, tMax, resMass, resMomCM;
 
   do {
-    resMass = generateMass();
+    do // the resonance mass cannot be larger than CM energy - proton mass
+      resMass = generateMass();
+    while ( cmEnergy < resMass + m_recMass );
     resMomCM  = cmMomentum( cmEnergy, resMass, m_recMass );
   
     tMax = 4. * beamMomCM * resMomCM;
     t = random( 0, tMax ); 
   } 
-  //while( random( 0., exptMax ) > t*exp(-m_slope*t) );   Elton 8/19/2016. remove factor of t for rho production (no spin flip)
-	while( random( 0., exptMax ) > exp(-m_slope*t) ); 
+  // while( random( 0., exptMax ) > t*exp(-m_slope*t) );   // Elton 8/19/2016.  t*exp(Bt)
+	while( random( 0., exptMax ) > exp(-m_slope*t) );   // remove factor of t for rho production (no spin flip). Set this line for exp(Bt)
 	
 	TVector3 resonanceMomCM;
 	resonanceMomCM.SetMagThetaPhi( resMomCM,
@@ -79,6 +89,54 @@ ProductionMechanism::produceResonance( const TLorentzVector& beam ){
 	TLorentzVector resonanceCM( resonanceMomCM, 
                                sqrt( resonanceMomCM.Mag2() +
                                     resMass * resMass ) );
+	
+	return cm2labBoost * resonanceCM;
+}
+TLorentzVector
+ProductionMechanism::produceResonanceZ ( const TLorentzVector& beam){
+  /* This method is based on produceResonance, which assumes a proton target and exponential t dependence
+     This method is intended for use with a high Z target in Primakoff production.  Elton 4/14/2017
+
+   */
+	
+	TLorentzVector target( 0, 0, 0, kMZ);
+	
+	TLorentzRotation lab2cmBoost( -( target + beam ).BoostVector() );
+	TLorentzRotation cm2labBoost( ( target + beam ).BoostVector() );
+	
+	double cmEnergy = ( lab2cmBoost * ( target + beam ) ).E();
+	double beamMomCM = cmMomentum( cmEnergy, beam.M(), target.M() );
+
+	// double exptMax = exp(-1.)/m_slope;   // Elton 8/19/2016.  t*exp(Bt)
+        double exptMax = 1;   // remove factor of t for rho production (no spin flip). set this value for exp(Bt)
+
+	double t, tMaxkin, tMax, resMass, resMomCM;
+	// generate the t-distribution. t is positive here (i.e. should be -t)
+
+  do {
+    resMass = generateMass();
+    resMomCM  = cmMomentum( cmEnergy, resMass, m_recMass );
+  
+    tMaxkin = 4. * beamMomCM * resMomCM;
+    tMax = 0.01;   // restrict max to make more efficient for Primakoff generation
+    t = random( 0, tMax ); 
+  } 
+  // while( random( 0., exptMax ) > t*exp(-m_slope*t) );   // Elton 8/19/2016.  t*exp(Bt)
+  while( random( 0., exptMax ) > exp(-m_slope*t) );   // remove factor of t for rho production (no spin flip). Set this line for exp(Bt)
+
+  // cout << endl << "produceResonanceZ, resMomCM=" << resMomCM << " resMass=" << resMass << " t=" << t << " tMax=" << tMax << " cmEnergy=" << cmEnergy << " kMZ=" << kMZ << endl;
+
+	TVector3 resonanceMomCM;
+	double thetaCM = 2.*sqrt(t/tMaxkin); // acos( 1. - 2.*t/tMax ) -> use small angle approximation to avoid roundoff.
+	// double thetaCM = acos( 1. - 2.*t/tMaxkin );
+	double phiCM = random( -kPi, kPi ); 
+
+	resonanceMomCM.SetMagThetaPhi( resMomCM, thetaCM, phiCM);
+	
+	TLorentzVector resonanceCM( resonanceMomCM, 
+                               sqrt( resonanceMomCM.Mag2() +
+                                    resMass * resMass ) );
+	// resonanceCM.Print();
 	
 	return cm2labBoost * resonanceCM;
 }
@@ -132,8 +190,8 @@ ProductionMechanism::cmMomentum( double M, double m1, double m2 ) const {
 
 double
 ProductionMechanism::random( double low, double hi ) const {
-	
-	return( ( hi - low ) * drand48() + low );
+
+        return( ( hi - low ) * gRandom->Uniform() + low );
 }
 
 

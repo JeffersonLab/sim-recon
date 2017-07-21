@@ -255,6 +255,9 @@ void DEVIOBufferWriter::WriteEventToBuffer(JEventLoop *loop, vector<uint32_t> &b
         if(auto *vertex_ptr = dynamic_cast<const DVertex *>(obj_ptr)) {
             WriteDVertexData(loop, buff, vertex_ptr);
         }
+        if(auto *vertex_ptr = dynamic_cast<const DEventRFBunch *>(obj_ptr)) {
+            WriteDEventRFBunchData(loop, buff, vertex_ptr);
+        }
     }
 
 	// Update global header length
@@ -872,7 +875,9 @@ void DEVIOBufferWriter::Writef250Data(vector<uint32_t> &buff,
 
 				if(pulse->emulated == PREFER_EMULATED){
                     // Word 1: Pulse Pedestal
-					buff.push_back(0xC8000000 + (pulse->event_within_block<<19) + (pulse->channel<<15) 
+					//buff.push_back(0xC8000000 + (pulse->event_within_block<<19) + (pulse->channel<<15) 
+                    // first field is the "event_within_block", which is always 1 for reformatted events
+					buff.push_back(0xC8000000 + (0x01<<19) + (pulse->channel<<15) 
                                    + (pulse->QF_pedestal<<14) + (pulse->pedestal&0x3FFF) );
 				
                     // Word 2: Pulse Integral
@@ -1464,6 +1469,47 @@ void DEVIOBufferWriter::WriteDVertexData(JEventLoop *loop, vector<uint32_t> &buf
 
     // Update bank length
     buff[vertex_bank_len_idx] = buff.size() - vertex_bank_len_idx - 1;
+    buff[data_bank_len_idx] = buff.size() - data_bank_len_idx - 1;
+
+}
+
+
+//------------------
+// WriteDEventRFBunchData
+//------------------
+void DEVIOBufferWriter::WriteDEventRFBunchData(JEventLoop *loop, vector<uint32_t> &buff, const DEventRFBunch *rftime) const
+{
+    // Physics Event's Data Bank
+    uint32_t data_bank_len_idx = buff.size();
+    buff.push_back(0); // will be updated later
+    buff.push_back(0x00011001); // Data bank header: 0001=TS rocid , 10=Bank of Banks, 01=1 event
+                                //   Use TS rocid for event-level data
+
+    // DRFTime data block bank
+    uint32_t rftime_bank_len_idx = buff.size();
+    buff.push_back(0); // Length
+    buff.push_back(0x1D020100); // 0x1D02=DRFTimeTag, 0x01=u32int 
+
+
+    // Save 4-vector information - assume doubles are stored in 64-bits
+    // This is usually a good assumption, but is not 100% portable...
+    // We use memcpy to convert between doubles and integers, since
+    // we only need the integers for the bit representations, and this avoids
+    // a nest of nasty casting...
+    uint64_t time_out, time_var_out;
+    double time = rftime->dTime;
+    double time_var = rftime->dTimeVariance;
+    buff.push_back( rftime->dTimeSource );
+    buff.push_back( rftime->dNumParticleVotes );
+    memcpy(&time_out, &time, sizeof(double));
+	buff.push_back( (time_out>> 0)&0xFFFFFFFF ); // low order word
+    buff.push_back( (time_out>>32)&0xFFFFFFFF ); // high order word
+    memcpy(&time_var_out, &time_var, sizeof(double));
+	buff.push_back( (time_var_out>> 0)&0xFFFFFFFF ); // low order word
+	buff.push_back( (time_var_out>>32)&0xFFFFFFFF ); // high order word
+    
+    // Update bank length
+    buff[rftime_bank_len_idx] = buff.size() - rftime_bank_len_idx - 1;
     buff[data_bank_len_idx] = buff.size() - data_bank_len_idx - 1;
 
 }

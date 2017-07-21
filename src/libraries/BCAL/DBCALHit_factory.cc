@@ -18,7 +18,6 @@ using namespace std;
 #include <TTAB/DTTabUtilities.h>
 using namespace jana;
 
-
 //------------------
 // init
 //------------------
@@ -29,6 +28,8 @@ jerror_t DBCALHit_factory::init(void)
 
   CHECK_FADC_ERRORS = true;
   gPARMS->SetDefaultParameter("BCAL:CHECK_FADC_ERRORS", CHECK_FADC_ERRORS, "Set to 1 to reject hits with fADC250 errors, ser to 0 to keep these hits");
+  CORRECT_FADC_SATURATION = true;
+  gPARMS->SetDefaultParameter("BCAL:CORRECT_FADC_SATURATION", CORRECT_FADC_SATURATION, "Set to 1 to correct pulse integral for fADC saturation, set to 0 to not correct pulse integral. (default = 1)");
 
    return NOERROR;
 }
@@ -52,7 +53,7 @@ jerror_t DBCALHit_factory::brun(jana::JEventLoop *eventLoop, int32_t runnumber)
    /// Read in calibration constants
    vector<double> raw_gains;
    vector<double> raw_pedestals;
-   vector<double> raw_time_offsets;
+   vector<double> raw_ADC_timing_offsets;
    vector<double> raw_channel_global_offset;
    vector<double> raw_tdiff_u_d;
 
@@ -69,7 +70,7 @@ jerror_t DBCALHit_factory::brun(jana::JEventLoop *eventLoop, int32_t runnumber)
    if (scale_factors.find("BCAL_ADC_TSCALE") != scale_factors.end()) {
      t_scale = scale_factors["BCAL_ADC_TSCALE"];
      if (PRINTCALIBRATION) {
-       jout << "DBCALHit_factory >>BCAL_ADC_TSCALE = " << t_base << endl;
+       jout << "DBCALHit_factory >>BCAL_ADC_TSCALE = " << t_scale << endl;
      }
    }
    else
@@ -93,7 +94,7 @@ jerror_t DBCALHit_factory::brun(jana::JEventLoop *eventLoop, int32_t runnumber)
        jout << "Error loading /BCAL/ADC_gains !" << endl;
    if (eventLoop->GetCalib("/BCAL/ADC_pedestals", raw_pedestals))
        jout << "Error loading /BCAL/ADC_pedestals !" << endl;
-   if (eventLoop->GetCalib("/BCAL/ADC_timing_offsets", raw_time_offsets))
+   if (eventLoop->GetCalib("/BCAL/ADC_timing_offsets", raw_ADC_timing_offsets))
        jout << "Error loading /BCAL/ADC_timing_offsets !" << endl;
    if(eventLoop->GetCalib("/BCAL/channel_global_offset", raw_channel_global_offset))
        jout << "Error loading /BCAL/channel_global_offset !" << endl;
@@ -104,12 +105,23 @@ jerror_t DBCALHit_factory::brun(jana::JEventLoop *eventLoop, int32_t runnumber)
    FillCalibTable(gains, raw_gains);
    if (PRINTCALIBRATION) jout << "DBCALHit_factory >> raw_pedestals" << endl;
    FillCalibTable(pedestals, raw_pedestals);
-   if (PRINTCALIBRATION) jout << "DBCALHit_factory >> raw_time_offsets" << endl;
-   FillCalibTable(time_offsets, raw_time_offsets);
+   if (PRINTCALIBRATION) jout << "DBCALHit_factory >> raw_ADC_timing_offsets" << endl;
+   FillCalibTable(ADC_timing_offsets, raw_ADC_timing_offsets);
    if (PRINTCALIBRATION) jout << "DBCALHit_factory >> raw_channel_global_offset" << endl;
    FillCalibTableShort(channel_global_offset, raw_channel_global_offset);
    if (PRINTCALIBRATION) jout << "DBCALHit_factory >> raw_tdiff_u_d" << endl;
    FillCalibTableShort(tdiff_u_d, raw_tdiff_u_d);
+   
+   std::vector<std::map<string,double> > saturation_ADC_pars;
+   if(eventLoop->GetCalib("/BCAL/ADC_saturation", saturation_ADC_pars))
+      jout << "Error loading /BCAL/ADC_saturation !" << endl;
+   for (unsigned int i=0; i < saturation_ADC_pars.size(); i++) {
+	   int end = (saturation_ADC_pars[i])["end"];
+	   int layer = (saturation_ADC_pars[i])["layer"] - 1;
+	   fADC_MinIntegral_Saturation[end][layer] = (saturation_ADC_pars[i])["par0"];
+	   fADC_Saturation_Linear[end][layer] = (saturation_ADC_pars[i])["par1"];
+	   fADC_Saturation_Quadratic[end][layer] = (saturation_ADC_pars[i])["par2"];
+   } 
 
    return NOERROR;
 }
@@ -187,26 +199,50 @@ jerror_t DBCALHit_factory::evnt(JEventLoop *loop, uint64_t eventnumber)
       // nsamples_pedestal should always be positive for valid data - err on the side of caution for now
       if(nsamples_pedestal == 0) {
           //throw JException("DBCALDigiHit with nsamples_pedestal == 0 !");
-          jerr << "DBCALDigiHit with nsamples_pedestal == 0 !   Event = " << eventnumber << endl;
+          if(VERBOSE>0)jerr << "DBCALDigiHit with nsamples_pedestal == 0 !   Event = " << eventnumber << endl;
           continue;
       }
 
-      double totalpedestal     = pedestal * nsamples_integral/nsamples_pedestal;
+      //double totalpedestal     = pedestal * nsamples_integral/nsamples_pedestal;
       double single_sample_ped = pedestal/nsamples_pedestal;
+      double totalpedestal     = nsamples_integral * single_sample_ped;
 
       double gain              = GetConstant(gains,digihit);
       double hit_E = 0;
-      if ( integral > 0 ) hit_E = gain * (integral - totalpedestal);
-      if ( hit_E < 0 ) continue;  // Throw away negative energy hits  
+      
+      if ( integral > 0 ) { 
+	double integral_pedsub = integral - totalpedestal;
+	if(CORRECT_FADC_SATURATION && integral_pedsub > fADC_MinIntegral_Saturation[digihit->end][digihit->layer-1]) {
+		if(digihit->pulse_peak > 4094 || (digihit->pedestal == 1 && digihit->QF == 1)) { // check if fADC is saturated or is MC event
+			double locSaturatedIntegral = integral_pedsub - fADC_MinIntegral_Saturation[digihit->end][digihit->layer-1];
+			double locScaleFactor = 1. + fADC_Saturation_Linear[digihit->end][digihit->layer-1]*locSaturatedIntegral + fADC_Saturation_Quadratic[digihit->end][digihit->layer-1]*locSaturatedIntegral*locSaturatedIntegral;
+	    		integral_pedsub *= 1./locScaleFactor;
+		}
+	}
+	hit_E = gain * integral_pedsub;
+      }
+      if (VERBOSE>2) printf("%5lu digihit %2i of %2lu, type %i time %4u, peak %3u, int %4.0f %.0f, ped %3.0f %.0f %5.1f %6.1f, gain %.1e, E=%5.0f MeV\n",
+							eventnumber,i,digihits.size(),digihit->datasource,
+							digihit->pulse_time,digihit->pulse_peak,integral,nsamples_integral,
+							pedestal,nsamples_pedestal,single_sample_ped,totalpedestal,gain,hit_E*1000);
+      if ( hit_E <= 0 ) continue;  // Throw away negative energy hits  
 
       int pulse_peak_pedsub = digihit->pulse_peak - (int)single_sample_ped;
  
       // Calculate time for channel
       double pulse_time        = (double)digihit->pulse_time;
       double end_sign          = digihit->end ? -1.0 : 1.0; // Upstream = 0 -> Positive (then subtracted)
-      double hit_t             = t_scale * pulse_time + t_base - GetConstant(channel_global_offset,digihit) 
-                                    - (0.5 * end_sign) * GetConstant(tdiff_u_d,digihit);
-
+      double hit_t_raw         = t_scale * pulse_time + t_base;
+      double hit_t             = t_scale * pulse_time + t_base
+          + GetConstant(ADC_timing_offsets,digihit)              // low level indiviual corrections (eg 4 ns offset)
+          - GetConstant(channel_global_offset,digihit)
+          - (0.5 * end_sign) * GetConstant(tdiff_u_d,digihit);
+      if (VERBOSE>2) printf("      %2i %i %i %i        , t: %4.0f %.4f %7.3f traw=%7.3f  %7.3f %7.3f %7.3f t=%7.3f\n",
+                            digihit->module, digihit->layer, digihit->sector, digihit->end, 
+                            pulse_time,t_scale,t_base,hit_t_raw,
+                            GetConstant(ADC_timing_offsets,digihit),
+                            GetConstant(channel_global_offset,digihit),
+                            (0.5 * end_sign * GetConstant(tdiff_u_d,digihit)),hit_t);
       DBCALHit *hit = new DBCALHit;
       hit->module = digihit->module;
       hit->layer  = digihit->layer;
@@ -216,6 +252,7 @@ jerror_t DBCALHit_factory::evnt(JEventLoop *loop, uint64_t eventnumber)
       hit->E = hit_E;
       hit->pulse_peak = pulse_peak_pedsub;
       hit->t = hit_t;
+      hit->t_raw = hit_t_raw;
 
       hit->AddAssociatedObject(digihit);
 

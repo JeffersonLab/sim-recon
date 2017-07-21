@@ -25,19 +25,25 @@ class DBCALHit_factory:public jana::JFactory<DBCALHit>{
 	public:
 		DBCALHit_factory(){
 		  PRINTCALIBRATION = false;
+		  VERBOSE = 0;
+		  CHECK_FADC_ERRORS = false;
 		  if(gPARMS){
-		    gPARMS->SetDefaultParameter("BCALHIT:PRINTCALIBRATION", PRINTCALIBRATION, "Print the calibration parameters.");
+			gPARMS->SetDefaultParameter("BCALHIT:PRINTCALIBRATION", PRINTCALIBRATION, "Print the calibration parameters.");
+			gPARMS->SetDefaultParameter("BCALHIT:VERBOSE", VERBOSE, "Set level of verbosity.");
+			//gPARMS->SetDefaultParameter("BCAL:CHECK_FADC_ERRORS", CHECK_FADC_ERRORS, "Set to 1 to reject hits with fADC250 errors, ser to 0 to keep these hits");
 		  }
 		};
 		~DBCALHit_factory(){};
 
 		bool PRINTCALIBRATION;
+		int VERBOSE;
 
 		// shortcut geometry factors
 		// these should really be taken from
 		// DBCALGeometry/DGeometry objects
 		static const int BCAL_NUM_MODULES  = 48;
 		static const int BCAL_NUM_LAYERS   =  4;
+		static const int BCAL_NUM_ENDS     =  2;
 		static const int BCAL_NUM_SECTORS  =  4;
 		static const int BCAL_MAX_CHANNELS =  1536;
 
@@ -49,7 +55,7 @@ class DBCALHit_factory:public jana::JFactory<DBCALHit>{
 		// constants tables
 		bcal_digi_constants_t gains;
 		bcal_digi_constants_t pedestals;
-		bcal_digi_constants_t time_offsets;
+		bcal_digi_constants_t ADC_timing_offsets;
         bcal_digi_constants_t channel_global_offset;
         bcal_digi_constants_t tdiff_u_d;
 		
@@ -80,7 +86,10 @@ class DBCALHit_factory:public jana::JFactory<DBCALHit>{
         void FillCalibTableShort( bcal_digi_constants_t &table,
                     const vector<double> &raw_table);
 
-        bool CHECK_FADC_ERRORS;
+        bool CHECK_FADC_ERRORS, CORRECT_FADC_SATURATION;
+	double fADC_MinIntegral_Saturation[BCAL_NUM_ENDS][BCAL_NUM_LAYERS];
+        double fADC_Saturation_Linear[BCAL_NUM_ENDS][BCAL_NUM_LAYERS];
+	double fADC_Saturation_Quadratic[BCAL_NUM_ENDS][BCAL_NUM_LAYERS];
 };
 
 #endif // _DBCALHit_factory_

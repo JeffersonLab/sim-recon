@@ -1,6 +1,9 @@
 #include "DEventWriterEVIO.h"
 #include "DAQ/DL1Info.h"
 
+#include <DAQ/JEventSource_EVIO.h>
+
+
 size_t& DEventWriterEVIO::Get_NumEVIOOutputThreads(void) const
 {
 	// must be read/used entirely in "EVIOWriter" lock
@@ -167,8 +170,9 @@ bool DEventWriterEVIO::Write_EVIOEvent(JEventLoop* locEventLoop, string locOutpu
 	if(locEventSource == NULL)
 		return false;
 
+#if 0
 #if !HAVE_EVIO
-	jerr << "Compiled without EVIO! Cannot write event." <<  << endl;
+	jerr << "Compiled without EVIO! Cannot write event." << endl;
 	return false;
 #endif // HAVE_EVIO
 
@@ -178,6 +182,7 @@ bool DEventWriterEVIO::Write_EVIOEvent(JEventLoop* locEventLoop, string locOutpu
 		jerr << "WARNING!!! You MUST use this only with EVIO formatted data!!!" << endl;
 		return false;
 	}
+#endif
 	
 	// Optionally write input buffer to a debug file
     // Note that this only works with JEventSource_EVIO (old-style parser)
@@ -264,7 +269,7 @@ bool DEventWriterEVIO::Write_EVIOBuffer(JEventLoop* locEventLoop, vector<uint32_
 		return false;
 
 #if !HAVE_EVIO
-	jerr << "Compiled without EVIO! Cannot write event." <<  << endl;
+	jerr << "Compiled without EVIO! Cannot write event." << endl;
 	return false;
 #endif // HAVE_EVIO
 

@@ -1,0 +1,51 @@
+Parameters.txt
+FDCConstraints.txt
+
+Cfiles       ! following bin files are Cfiles
+./EvioData_Run011055_000_mille_out.mil
+./EvioData_Run011055_001_mille_out.mil
+./EvioData_Run011055_002_mille_out.mil
+./EvioData_Run011055_003_mille_out.mil
+./EvioData_Run011055_004_mille_out.mil
+./EvioData_Run011055_005_mille_out.mil
+./EvioData_Run011055_006_mille_out.mil
+./EvioData_Run011055_007_mille_out.mil
+./EvioData_Run011055_008_mille_out.mil
+./EvioData_Run011055_009_mille_out.mil
+./EvioData_Run011055_010_mille_out.mil
+./EvioData_Run011055_011_mille_out.mil
+./EvioData_Run011055_012_mille_out.mil
+./EvioData_Run011055_013_mille_out.mil
+./EvioData_Run011055_014_mille_out.mil
+./EvioData_Run011055_015_mille_out.mil
+./EvioData_Run011055_016_mille_out.mil
+./EvioData_Run011055_017_mille_out.mil
+./EvioData_Run011055_018_mille_out.mil
+./EvioData_Run011055_019_mille_out.mil
+
+*chisqcut 25.0 10.0 ! cut factor in iterations 1 and 2
+*entries  1 1! lower limit on number of entries/parameter
+*pairentries 10 ! lower limit on number of parameter pairs
+                ! (not yet!)
+*printrecord   1  2      ! debug printout for records
+*printrecord  -1 -1      ! debug printout for bad data records
+outlierdownweighting  3 ! number of internal iterations (> 1)
+dwfractioncut      0.3  ! 0 < value < 0.5
+*presigma           0.05 ! default value for presigma
+*regularisation 5.0      ! regularisation factor
+regularisation 1.0 0.005 ! regularisation factor, pre-sigma
+*debug 2000 2000
+*print 1000 0
+threads 6 
+*bandwidth 10         ! width of precond. band matrix
+*method diagonalization 3 0.001 ! diagonalization      
+*method fullMINRES       3 0.01 ! minimal residual     
+method fullMINRES-QLP    6 2.0
+*method sparseMINRES-QLP     10 1.0
+*method sparseMINRES     3 0.01 ! minimal residual     
+*mrestol      1.0D-8          ! epsilon for MINRES
+*method inversion       3 0.001 ! Gauss matrix inversion
+* last method is applied
+*matiter      3  ! recalculate matrix in iterations
+ 
+end ! optional for end-of-data

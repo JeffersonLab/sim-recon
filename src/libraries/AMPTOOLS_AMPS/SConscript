@@ -6,12 +6,12 @@ import sbms
 Import('*')
 
 # Verify AMPTOOLS environment variable is set
-if os.getenv('AMPTOOLS', 'nada')!='nada' and os.getenv('CERN', 'nada')!='nada':
+if os.getenv('AMPTOOLS', 'nada')!='nada':
 	
 	env = env.Clone()
 
 	sbms.AddAmpTools(env)
-	sbms.AddCERNLIB(env)
+	sbms.AddCobrems(env)
 	sbms.AddROOT(env)
 	sbms.library(env)
 

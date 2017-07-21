@@ -49,7 +49,7 @@ jerror_t DL1Trigger_factory::evnt(JEventLoop *loop, uint64_t eventnumber)
 
 	DL1Trigger *l1trigger = new DL1Trigger;
 
-
+	// Physics and possibly SYNC event
 	for(uint32_t i = 0; i < codarocinfos.size(); i++){
 		const DCODAROCInfo *cri = codarocinfos[i];
 		
@@ -65,6 +65,7 @@ jerror_t DL1Trigger_factory::evnt(JEventLoop *loop, uint64_t eventnumber)
 			// e-mail sent by Bryan Moffit Dec. 15, 2015).
 			l1trigger->trig_mask     = cri->misc[0]; // Global Trigger Processor latch word
 			l1trigger->fp_trig_mask  = cri->misc[1]; // Front Panel latch word
+			l1trigger->event_type = 1;
 			l1_found++;
 		}
 
@@ -75,8 +76,10 @@ jerror_t DL1Trigger_factory::evnt(JEventLoop *loop, uint64_t eventnumber)
 		break; // Should only be 1 with rocid=1
 	}
 
+	// SYNC event
 	if(l1_info.size() == 1){
 	  const DL1Info *l1_sc   = l1_info[0];
+	  l1trigger->event_type  = 2;
 	  l1trigger->nsync       = l1_sc->nsync;
 	  l1trigger->trig_number = l1_sc->trig_number;
 	  l1trigger->live        = l1_sc->live_time;
@@ -95,6 +98,8 @@ jerror_t DL1Trigger_factory::evnt(JEventLoop *loop, uint64_t eventnumber)
 
 	if(l1_found){
 	  _data.push_back(l1trigger);	 
+	}else{
+	  delete l1trigger; // prevent memory leak
 	}
 
 

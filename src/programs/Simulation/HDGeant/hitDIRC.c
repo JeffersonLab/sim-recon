@@ -25,12 +25,8 @@ static int dircpointCount = 0;
 /* register truth points during tracking (from gustep) */
 void hitDIRC(float xin[4], float xout[4], float pin[5], float pout[5],
 		float dEsum, int track, int stack, int history, int ipart) {
-	//float x[3], t;
 
-	//x[0] = (xin[0] + xout[0]) / 2;
-	//x[1] = (xin[1] + xout[1]) / 2;
-	//x[2] = (xin[2] + xout[2]) / 2;
-	//t = (xin[3] + xout[3]) / 2 * 1e9;
+    int itrack = (stack == 0)? gidGetId(track) : -1;
 
 	// post to truth tree
 	if ((history == 0) && (dEsum > 0)) {
@@ -40,9 +36,8 @@ void hitDIRC(float xin[4], float xout[4], float pin[5], float pout[5],
 			s_DIRC_t* dirc = *twig = make_s_DIRC();
 			s_DircTruthPoints_t* points = make_s_DircTruthPoints(1);
 			dirc->dircTruthPoints = points;
-			int a =
-					thisInputEvent->physicsEvents->in[0].reactions->in[0].vertices->in[0].products->mult;
-			points->in[0].primary = (stack <= a);
+			int a = thisInputEvent->physicsEvents->in[0].reactions->in[0].vertices->in[0].products->mult;
+			points->in[0].primary = (track <= a && stack == 0);
 			points->in[0].track = track;
 			points->in[0].x = xin[0];
 			points->in[0].y = xin[1];
@@ -54,7 +49,7 @@ void hitDIRC(float xin[4], float xout[4], float pin[5], float pout[5],
 			points->in[0].E = pin[3];
 			points->in[0].ptype = ipart;
 			points->in[0].trackID = make_s_TrackID();
-			points->in[0].trackID->itrack = gidGetId(track);
+			points->in[0].trackID->itrack = itrack;
 			points->mult = 1;
 			dircpointCount++;
 		}
@@ -117,9 +112,19 @@ s_DIRC_t* pickDirc() {
 		s_DircTruthPoints_t* dircpoints = item->dircTruthPoints;
 		int dircpoint;
 		for (dircpoint = 0; dircpoint < dircpoints->mult; ++dircpoint) {
-			int m = box->dircTruthPoints->mult++;
-			box->dircTruthPoints->in[m] = dircpoints->in[dircpoint];
-		}
+            int track = dircpoints->in[dircpoint].track;
+            double t = dircpoints->in[dircpoint].t;
+            int m = box->dircTruthPoints->mult;
+            if (dircpoints->in[dircpoint].trackID->itrack < 0 ||
+                (m > 0 &&  box->dircTruthPoints->in[m-1].track == track &&
+                 fabs(box->dircTruthPoints->in[m-1].t - t) < 0.5))
+            {
+                FREE(dircpoints->in[dircpoint].trackID);
+                continue;
+            }
+            box->dircTruthPoints->in[m] = dircpoints->in[dircpoint];
+            box->dircTruthPoints->mult++;
+        }
 		if (dircpoints != HDDM_NULL) {
 			FREE(dircpoints);
 		}

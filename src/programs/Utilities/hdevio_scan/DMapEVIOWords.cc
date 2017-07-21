@@ -44,6 +44,8 @@ static TH1D *daq_words_by_type;
 //------------------
 DMapEVIOWords::DMapEVIOWords()
 {
+	max_history_buff_size = 400;
+
 	char daq_block_size_title[256];
 	sprintf(daq_block_size_title, "Block size (%d EVIO events) in kB", BLOCK_SIZE);
 
@@ -60,6 +62,9 @@ DMapEVIOWords::DMapEVIOWords()
 	
 	daq_event_size->SetXTitle("Total event size (kB)");
 	daq_event_tdiff->SetXTitle("#deltat between events (ms)");
+	
+	// Making sure all labels have at least a single space avoids ROOT bugs when interacting with canvas
+	for(int ibin=1; ibin<=kNEVIOWordTypes; ibin++) daq_words_by_type->GetXaxis()->SetBinLabel(ibin, " ");
 	
 	daq_words_by_type->GetXaxis()->SetBinLabel(1 + kUnknown, "unknown");
 	daq_words_by_type->GetXaxis()->SetBinLabel(1 + kEVIOHeader, "EVIO len. & header");
@@ -138,6 +143,8 @@ DMapEVIOWords::DMapEVIOWords()
 
 	daq_words_by_type->GetXaxis()->SetBinLabel(1 + kEPICSheader, "EPICS header");
 	daq_words_by_type->GetXaxis()->SetBinLabel(1 + kEPICSdata, "EPICS data");
+
+	daq_words_by_type->GetXaxis()->SetBinLabel(1 + kTSsync, "TS sync event data");
 
 	daq_words_by_type->GetXaxis()->SetBinLabel(1 + kF800FAFA, "0xf800fafa");
 	daq_words_by_type->GetXaxis()->SetBinLabel(1 + kD00DD00D, "0xd00dd00d");
@@ -218,8 +225,8 @@ void DMapEVIOWords::ParseEvent(uint32_t *buff)
 				
 			// FILL HISTOGRAMS
 			// Since we are filling histograms local to this plugin, it will not interfere with other ROOT operations: can use plugin-wide ROOT fill lock
-			daq_words_by_type->Fill(kBORData, istart[0]/sizeof(uint32_t));
-			daq_words_by_type->Fill(kTotWords, istart[0]/sizeof(uint32_t));
+			daq_words_by_type->Fill(kBORData, istart[0]);
+			daq_words_by_type->Fill(kTotWords, istart[0]);
 			return; // no further parsing needed
 		}
 	}
@@ -232,8 +239,8 @@ void DMapEVIOWords::ParseEvent(uint32_t *buff)
 				// FILL HISTOGRAMS
 				// Since we are filling histograms local to this plugin, it will not interfere with other ROOT operations: can use plugin-wide ROOT fill lock
 				daq_words_by_type->Fill(kEPICSheader, 3.0); // EVIO outer and segment headers + timestamp
-				daq_words_by_type->Fill(kEPICSdata, istart[0]/sizeof(uint32_t) - 3);
-				daq_words_by_type->Fill(kTotWords, istart[0]/sizeof(uint32_t));
+				daq_words_by_type->Fill(kEPICSdata, istart[0] - 3);
+				daq_words_by_type->Fill(kTotWords, istart[0]);
 				return; // no further parsing needed
 			}
 		}
@@ -270,12 +277,12 @@ void DMapEVIOWords::ParseEvent(uint32_t *buff)
 	uint64_t thi = istart[2+6];  
 	uint64_t timestamp = (thi<<32) + (tlo<<0);
 	ts_history.insert(timestamp);
-	if(ts_history.size()>400){
+	if( ts_history.size() > max_history_buff_size ){
 		auto it1 = ts_history.begin();
 		auto it2 = it1;
 		uint64_t t1 = *(it1);
 		uint64_t t2 = *(++it2);
-		ts_history.erase(it1, ++it2);
+		ts_history.erase(it1, it2);
 		double tdiff_ns = (double)(t2 - t1)*4.0;
 		double tdiff_ms = tdiff_ns/1.0E6;
 		daq_event_tdiff->Fill(tdiff_ms);
@@ -287,7 +294,7 @@ void DMapEVIOWords::ParseEvent(uint32_t *buff)
 	for(uint32_t rocid=0; rocid<100; rocid++) Nwords[rocid] = 0;
 	for(uint32_t i=0; i<kNEVIOWordTypes; i++) word_stats[i] = 0;
 
-	word_stats[kNevents]++;
+	word_stats[kNevents]  += istart[1]&0xFF;
 	word_stats[kTotWords] += evio_buffwords;
 
 	word_stats[kEVIOHeader] += 4; // physics event and built trigger bank length and header words
@@ -321,7 +328,7 @@ void DMapEVIOWords::ParseEvent(uint32_t *buff)
 
 		DataWordStats(iptr, imyend, word_stats);
 		
-		iptr = &iptr[len +1];
+		iptr = imyend;
 	}
 	
 	// Updated unknown words counter
@@ -414,6 +421,10 @@ void DMapEVIOWords::DataWordStats(uint32_t *iptr, uint32_t *iend, uint32_t *word
 
 			case 0x55:
 				ParseModuleConfiguration(rocid, iptr, iendbank, word_stats);
+				break;
+
+			case 0xE02:
+				ParseTSscalerBank(iptr, iendbank, word_stats);
 				break;
 
 			default:
@@ -638,3 +649,12 @@ void DMapEVIOWords::ParseModuleConfiguration(uint32_t rocid, uint32_t *&iptr, ui
 	}
 }
 
+//------------------
+// ParseTSscalerBank
+//------------------
+void DMapEVIOWords::ParseTSscalerBank(uint32_t *&iptr, uint32_t *iend, uint32_t *word_stats)
+{
+	word_stats[kTSsync] += (uint32_t)( (uint64_t)iend - (uint64_t)iptr)/sizeof(uint32_t) ;
+
+	iptr = iend;
+}

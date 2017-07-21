@@ -14,6 +14,7 @@
 #include "JANA/JEventLoop.h"
 #include "JANA/JApplication.h"
 
+#include "DANA/DStatusBits.h"
 #include "BCAL/DBCALShower.h"
 #include "TRACKING/DTrackTimeBased.h"
 #include "PID/DParticleID.h"

@@ -20,6 +20,8 @@
 #include "geant321/gcscan.inc"
 #include "geant321/gcomis.inc"
 #include "geant321/gctrak.inc"
+#include "controlparams.inc"
+#include "backgrounds.inc"
 #include "cobrems.inc"
  
       real vertex(4),plab(5),pbeam
@@ -43,7 +45,7 @@ c  freq > freqMaximum is generated; a few ppm of these is no problem.
       real xMinimum,freqMaximum,beamStartZ,Theta02
       common /coherentGen/xMinimum,freqMaximum,beamStartZ,Theta02
       data xMinimum/0.01/
-      data freqMaximum/9.0e-4/
+      data freqMaximum/1.0e-4/
       data beamStartZ/-2400.0/
       data Theta02/1.8/
       save /coherentGen/
@@ -57,7 +59,7 @@ c  freq > freqMaximum is generated; a few ppm of these is no problem.
       data freqIntegral/nProfileBins*0/
       save /freqTables/
       real Wincoh
-      parameter (Wincoh=0.1)
+      data Wincoh/0.1/
 
       integer nubuf
       real ubuf(10)
@@ -66,6 +68,8 @@ c  freq > freqMaximum is generated; a few ppm of these is no problem.
       external hexist
       common /genstate/ppol,rndm
       save /genstate/
+
+      real x, theta2
 
       call GRNDM(rndm,7)
       phim = REAL(rndm(1)*TWOPI)
@@ -96,15 +100,37 @@ c  freq > freqMaximum is generated; a few ppm of these is no problem.
       if (freqIntegral(nProfileBins).eq.0) then
          x1 = 1
          x0 = xMinimum**(1./nProfileBins)
-         freqProfile(1) = dNcdxdp((x0+x1)/2,TWOPI/4)
+         freqProfile(1) = dNcdxdp((x0+x1)/2,REAL(TWOPI/8))
+         do ip=2,nProfileBins
+            x1 = x0
+            x0 = xMinimum**(ip*1./nProfileBins)
+            freqProfile(ip) = dNcdxdp((x0+x1)/2,REAL(TWOPI/8))
+         enddo
+         freqMaximum = 0
+         do ip=1,nProfileBins-5
+            if (freqProfile(ip).lt.freqProfile(ip+1)*0.8) then
+               freqProfile(ip) = freqProfile(ip+1)*0.8
+            elseif (freqProfile(ip).lt.freqProfile(ip+2)*0.6) then
+               freqProfile(ip) = freqProfile(ip+2)*0.6
+            elseif (freqProfile(ip).lt.freqProfile(ip+3)*0.4) then
+               freqProfile(ip) = freqProfile(ip+3)*0.4
+            elseif (freqProfile(ip).lt.freqProfile(ip+4)*0.2) then
+               freqProfile(ip) = freqProfile(ip+4)*0.2
+            endif
+            if (freqMaximum < freqProfile(ip)) then
+               freqMaximum = freqProfile(ip)
+            endif
+         enddo
+         x1 = 1
+         x0 = xMinimum**(1./nProfileBins)
          freqIntegral(1) = freqProfile(1)*(x1-x0)
          do ip=2,nProfileBins
             x1 = x0
             x0 = xMinimum**(ip*1./nProfileBins)
-            freqProfile(ip) = dNcdxdp((x0+x1)/2,TWOPI/4)
             freqIntegral(ip) = freqIntegral(ip-1)
      +                        +freqProfile(ip)*(x1-x0)
          enddo
+         freqMaximum = REAL(4*TWOPI)*freqIntegral(nProfileBins)
       endif
       do i=1,1000000000
          call GRNDM(rndm,5)
@@ -112,16 +138,16 @@ c  freq > freqMaximum is generated; a few ppm of these is no problem.
             f = freqIntegral(nProfileBins)*rndm(2)
             do ip=1,nProfileBins
                if (f.le.freqIntegral(ip)) then
-                  x0 = xMinimum**((ip-1.)/nProfileBins)
-                  x1 = xMinimum**((ip*1.)/nProfileBins)
+                  x1 = xMinimum**((ip-1.)/nProfileBins)
+                  x0 = xMinimum**((ip*1.)/nProfileBins)
                   if (ip.gt.1) then
-                     f0 = freqIntegral(ip-1)
+                     f1 = freqIntegral(ip-1)
                   else
-                     f0 = 0
+                     f1 = 0
                   endif
-                  f1 = freqIntegral(ip)
+                  f0 = freqIntegral(ip)
                   fp = freqProfile(ip)
-                  x = (x0*(f1-f)+x1*(f-f0))/(f1-f0)
+                  x = (x0*(f-f1)+x1*(f0-f))/(f0-f1)
                   go to 4
                endif
             enddo
@@ -147,6 +173,10 @@ c  freq > freqMaximum is generated; a few ppm of these is no problem.
             freq = freq*(Theta02+theta2)**2/Theta02
             freq = freq*x*(-log(xMinimum))
             freq = freq*Wincoh
+            if (freq.gt.freqMaximum) then
+               Wincoh = Wincoh * 0.8
+               cycle
+            endif
             ppol = 0
          endif
          if (freq.gt.freqMaximum) then
@@ -209,8 +239,12 @@ c  freq > freqMaximum is generated; a few ppm of these is no problem.
       nubuf = 3
 #endif
       call settofg(vertex,t0)
-      call GSVERT(vertex,0,0,ubuf,nubuf,nvert)
-      call GSKINE(plab,1,nvert,0,0,nt) ! push the beam photon on the stack
+      if (bgtagonly.eq.0 .or. t0.eq.0) then
+        call GSVERT(vertex,0,0,ubuf,nubuf,nvert)
+        call GSKINE(plab,1,nvert,0,0,nt) ! push the beam photon on the stack
+      endif
       vertex(4) = TOFG
-      call hitTagger(vertex,vertex,plab,plab,0.,1,0,0)
+      if (genbeam_mode(1).eq.0) then
+         call hitTagger(vertex,vertex,plab,plab,0.,1,0,0)
+      endif
       end

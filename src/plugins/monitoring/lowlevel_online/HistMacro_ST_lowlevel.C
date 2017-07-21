@@ -86,8 +86,8 @@
 	if(locHist_TDCtime != NULL)
 	{
 		locHist_TDCtime->SetTitle("ST TDC Time");
-		locHist_TDCtime->Rebin(2);
-		locHist_TDCtime->GetXaxis()->SetRangeUser(0, 1500);
+		//locHist_TDCtime->Rebin(2);
+		locHist_TDCtime->GetXaxis()->SetRangeUser(-500, 4000);
 		locHist_TDCtime->GetXaxis()->SetTitleSize(0.05);
 		//locHist_TDCtime->GetYaxis()->SetTitle("");
 		locHist_TDCtime->GetXaxis()->SetLabelSize(0.05);
@@ -95,5 +95,4 @@
 		locHist_TDCtime->SetFillColor(kYellow);
 		locHist_TDCtime->Draw("");
 	}
-
 }

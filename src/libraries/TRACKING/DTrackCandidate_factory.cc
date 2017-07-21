@@ -207,8 +207,12 @@ jerror_t DTrackCandidate_factory::brun(JEventLoop* eventLoop,int32_t runnumber){
 //------------------
 jerror_t DTrackCandidate_factory::erun(void)
 {
-  if (stepper) delete stepper;
-        return NOERROR;
+  if (stepper) {
+    delete stepper;
+    stepper = nullptr;
+  }
+
+  return NOERROR;
 }
 
 //------------------
@@ -216,9 +220,12 @@ jerror_t DTrackCandidate_factory::erun(void)
 //------------------
 jerror_t DTrackCandidate_factory::fini(void)
 {
- 
-  if (stepper) delete stepper;
-        return NOERROR;
+  if (stepper) {
+    delete stepper;
+    stepper = nullptr;
+  }
+
+  return NOERROR;
 }
 
 
@@ -444,7 +451,7 @@ jerror_t DTrackCandidate_factory::evnt(JEventLoop *loop, uint64_t eventnumber)
       // paddle but the z-position at the radius r just outside the start 
       // counter barrel region is downstream of the nose, which does not make
       // sense for a particle that is actually heading upstream...
-      if (mom.Theta()>M_PI_2){
+      if (mom.Theta()>M_PI_2 && !sc_pos.empty()){
 	double zsc=sc_pos[0][1].z();
 	if (pos.z()>zsc){
 	  unsigned int best_sc_sector_id=0;

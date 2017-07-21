@@ -41,6 +41,8 @@
 
 #include "calibDB.h"
 
+extern s_HDDM_t* thisInputEvent;
+
 // plastic scintillator specific constants
 static float ATTEN_LENGTH =   150;
 static float C_EFFECTIVE  =   15.0;
@@ -49,7 +51,7 @@ static float BAR_LENGTH   =   252.0; // length of the bar
 // kinematic constants
 static float TWO_HIT_RESOL =  25.;// separation time between two different hits
 
-static float THRESH_MEV    =  0.;  // do not through away any hits, one can do that later
+static float THRESH_MEV    =  0.;  // do not throw away any hits, one can do that later
 
 // maximum particle tracks per counter
 static int TOF_MAX_HITS    = 25;  // was 100 changed to 25
@@ -145,6 +147,8 @@ void hitForwardTOF (float xin[4], float xout[4],
 
   }
 
+  int itrack = (stack == 0)? gidGetId(track) : -1;
+  
 
 
   // getplane is coded in
@@ -166,33 +170,17 @@ void hitForwardTOF (float xin[4], float xout[4],
   x[1] = (xin[1] + xout[1])/2;
   x[2] = (xin[2] + xout[2])/2;
   t    = (xin[3] + xout[3])/2 * 1e9;
-  
+
   // tranform the the global x coordinate into the local coordinate of the top_volume FTOF
   // defined in the geometry file src/programs/Simulation/hdds/ForwardTOF_HDDS.xml
   // the function transform Coord is defined in src/programs/Simulation/HDGeant/hitutil/hitutil.F
   transformCoord(x,"global",xlocal,"FTOF");
   transformCoord(zeroHat,"local",xftof,"FTOF");
   
-  // track vector of this step
-  //dx[0] = xin[0] - xout[0];
-  //dx[1] = xin[1] - xout[1];
-  //dx[2] = xin[2] - xout[2];
-  // length of the track of this step
-  //dr = sqrt(dx[0]*dx[0] + dx[1]*dx[1] + dx[2]*dx[2]);
-  // calculate dEdx only if track length is >0.001 cm
-  
-  // The following commented out to avoid compiler warnings 4/26/2015 DL
-//   if (dr > 1e-3) {
-//     dEdx = dEsum/dr;
-//   }
-//   else {
-//     dEdx = 0;
-//   }
-
   /* post the hit to the truth tree */
   // in other words: store the GENERATED track information
   
-  if ((history == 0) && (plane == 0)) { 
+  if ((history == 0) && (plane == 0)) {
     
     // save all tracks from particles that hit the first plane of FTOF
     // save the generated "true" values
@@ -214,7 +202,8 @@ void hitForwardTOF (float xin[4], float xout[4],
       s_ForwardTOF_t* tof = *twig = make_s_ForwardTOF();
       s_FtofTruthPoints_t* points = make_s_FtofTruthPoints(1);
       tof->ftofTruthPoints = points;
-      points->in[0].primary = (stack == 0);
+      int a = thisInputEvent->physicsEvents->in[0].reactions->in[0].vertices->in[0].products->mult;
+      points->in[0].primary = (track <= a && stack == 0);
       points->in[0].track = track;
       points->in[0].x = x[0];
       points->in[0].y = x[1];
@@ -226,7 +215,7 @@ void hitForwardTOF (float xin[4], float xout[4],
       points->in[0].E = pin[3];
       points->in[0].ptype = ipart;
       points->in[0].trackID = make_s_TrackID();
-      points->in[0].trackID->itrack = gidGetId(track);
+      points->in[0].trackID->itrack = itrack;
       points->mult = 1;
       pointCount++;
     }
@@ -270,24 +259,24 @@ void hitForwardTOF (float xin[4], float xout[4],
     float dEnorth = dEsum * exp(-dxnorth/ATTEN_LENGTH);
     float dEsouth = dEsum * exp(-dxsouth/ATTEN_LENGTH);
 
-    if (plane==0){
-      if (column==1){
-	tnorth=0.;
-	dEnorth=0.;
+    if (plane==0) {
+      if (column==1) {
+        tnorth=0.;
+        dEnorth=0.;
       }
-      else if (column==2){	
-	tsouth=0.;
-	dEsouth=0.;
+      else if (column==2) {    
+        tsouth=0.;
+        dEsouth=0.;
       }
     }
-    else{
-      if (column==2){
-	tnorth=0.;
-	dEnorth=0.;
+    else {
+      if (column==2) {
+        tnorth=0.;
+        dEnorth=0.;
       }
-      else if (column==1){
-	tsouth=0.;
-	dEsouth=0.;
+      else if (column==1) {
+        tsouth=0.;
+        dEsouth=0.;
       }
     }
 
@@ -331,7 +320,7 @@ void hitForwardTOF (float xin[4], float xout[4],
       hits = tof->ftofCounters->in[0].ftofTruthHits;
     }
     
-    if (hits != HDDM_NULL) {
+    if (hits != HDDM_NULL && dEnorth > 0) {
       
       // loop over hits in this PM to find correct time slot, north end
       
@@ -348,10 +337,10 @@ void hitForwardTOF (float xin[4], float xout[4],
       // combine the times of this weighted by the energy of the hit
       
       if (nhit < hits->mult) {         /* merge with former hit */
-	float dEnew=hits->in[nhit].dE + dEnorth;
+        float dEnew=hits->in[nhit].dE + dEnorth;
         hits->in[nhit].t = 
           (hits->in[nhit].t * hits->in[nhit].dE + tnorth * dEnorth) /dEnew;
-	hits->in[nhit].dE=dEnew;
+        hits->in[nhit].dE=dEnew;
                 
         // now add MC tracking information 
         // first get MC pointer of this paddle
@@ -367,12 +356,12 @@ void hitForwardTOF (float xin[4], float xout[4],
           extras->in[nMChit].py = pin[1]*pin[4];
           extras->in[nMChit].pz = pin[2]*pin[4];
           extras->in[nMChit].ptype = ipart;
-          extras->in[nMChit].itrack = gidGetId(track);
+          extras->in[nMChit].itrack = itrack;
           extras->in[nMChit].dist = dist;
           extras->mult++;
         }
         
-      }  else if (nhit < MAX_HITS){  // hit in new time window
+      }  else if (nhit < MAX_HITS) {  // hit in new time window
         hits->in[nhit].t = tnorth;
         hits->in[nhit].dE = dEnorth;
         hits->in[nhit].end = 0;
@@ -390,15 +379,17 @@ void hitForwardTOF (float xin[4], float xout[4],
         extras->in[0].py = pin[1]*pin[4];
         extras->in[0].pz = pin[2]*pin[4];
         extras->in[0].ptype = ipart;
-        extras->in[0].itrack = gidGetId(track);
+        extras->in[0].itrack = itrack;
         extras->in[0].dist = dist;
         extras->mult = 1;
-        
       } else {
         fprintf(stderr,"HDGeant error in hitForwardTOF (file hitFTOF.c): ");
         fprintf(stderr,"max hit count %d exceeded, truncating!\n",MAX_HITS);
       }
+    }
       
+    if (hits != HDDM_NULL && dEsouth > 0) {
+
       // loop over hits in this PM to find correct time slot, south end
       
       for (nhit = 0; nhit < hits->mult; nhit++)
@@ -414,10 +405,10 @@ void hitForwardTOF (float xin[4], float xout[4],
       // combine the times of this weighted by the energy of the hit
       
       if (nhit < hits->mult) {         /* merge with former hit */
-	float dEnew=hits->in[nhit].dE + dEsouth;
+        float dEnew=hits->in[nhit].dE + dEsouth;
         hits->in[nhit].t = 
           (hits->in[nhit].t * hits->in[nhit].dE + tsouth * dEsouth) / dEnew;
-	hits->in[nhit].dE=dEnew;
+        hits->in[nhit].dE=dEnew;
         extras = hits->in[nhit].ftofTruthExtras;
 
         // now add MC tracking information 
@@ -431,7 +422,7 @@ void hitForwardTOF (float xin[4], float xout[4],
           extras->in[nMChit].py = pin[1]*pin[4];
           extras->in[nMChit].pz = pin[2]*pin[4];
           extras->in[nMChit].ptype = ipart;
-          extras->in[nMChit].itrack = gidGetId(track);
+          extras->in[nMChit].itrack = itrack;
           extras->in[nMChit].dist = dist;
           extras->mult++;
         }
@@ -453,10 +444,9 @@ void hitForwardTOF (float xin[4], float xout[4],
         extras->in[0].py = pin[1]*pin[4];
         extras->in[0].pz = pin[2]*pin[4];
         extras->in[0].ptype = ipart;
-        extras->in[0].itrack = gidGetId(track);
+        extras->in[0].itrack = itrack;
         extras->in[0].dist = dist;
         extras->mult = 1;
-        
       } else {
         fprintf(stderr,"HDGeant error in hitForwardTOF (file hitFTOF.c): ");
         fprintf(stderr,"max hit count %d exceeded, truncating!\n",MAX_HITS);
@@ -510,7 +500,7 @@ s_ForwardTOF_t* pickForwardTOF ()
       for (iok=i=0; i < hits->mult; i++) {
         
         // check threshold
-        if (hits->in[i].dE >= THRESH_MEV/1e3) {
+        if (hits->in[i].dE > THRESH_MEV/1e3) {
           
           if (iok < i) {
             hits->in[iok] = hits->in[i];
@@ -540,8 +530,18 @@ s_ForwardTOF_t* pickForwardTOF ()
     
     // keep also the MC generated primary track particles
     for (point=0; point < points->mult; ++point) {
-      int m = box->ftofTruthPoints->mult++;
+      int track = points->in[point].track;
+      double t = points->in[point].t;
+      int m = box->ftofTruthPoints->mult;
+      if (points->in[point].trackID->itrack < 0 ||
+         (m > 0 &&  box->ftofTruthPoints->in[m-1].track == track &&
+          fabs(box->ftofTruthPoints->in[m-1].t - t) < 0.5))
+      {
+         FREE(points->in[point].trackID);
+         continue;
+      }
       box->ftofTruthPoints->in[m] = points->in[point];
+      box->ftofTruthPoints->mult++;
     }
     if (points != HDDM_NULL) {
       FREE(points);

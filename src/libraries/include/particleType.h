@@ -50,9 +50,10 @@ typedef enum {
   AntiXiPlus     = 31,
   AntiOmegaPlus  = 32,
   Deuteron       = 45,
+  Triton         = 46,
   Helium         = 47,
   Geantino       = 48,
-  Triton         = 49,
+  He3            = 49,
   
   Pb208          = 111,
 
@@ -244,10 +245,12 @@ inline static char* ParticleType(Particle_t p)
     return (char*)"Sigma(1385)+";
   case Deuteron:
     return (char*)"Deuteron";
-  case Helium:
-    return (char*)"Helium";
   case Triton:
     return (char*)"Triton";
+  case Helium:
+    return (char*)"Helium";
+  case He3:
+    return (char*)"Helium-3";
   case Pb208:
     return (char*)"Pb208";
   case DeltaPlusPlus:
@@ -391,10 +394,12 @@ inline static char* EnumString(Particle_t p)
     return (char*)"Sigma_1385_Plus";
   case Deuteron:
     return (char*)"Deuteron";
-  case Helium:
-    return (char*)"Helium";
   case Triton:
     return (char*)"Triton";
+  case Helium:
+    return (char*)"Helium";
+  case He3:
+    return (char*)"Helium-3";
   case Pb208:
     return (char*)"Pb208";
   case DeltaPlusPlus:
@@ -533,10 +538,12 @@ inline static Particle_t ParticleEnum(const char* locParticleName)
     return Sigma_1385_Plus;
   else if(strcmp(locParticleName, "Deuteron") == 0)
     return Deuteron;
-  else if(strcmp(locParticleName, "Helium") == 0)
-    return Helium;
   else if(strcmp(locParticleName, "Triton") == 0)
     return Triton;
+  else if(strcmp(locParticleName, "Helium") == 0)
+    return Helium;
+  else if(strcmp(locParticleName, "Helium-3") == 0)
+    return He3;
   else if(strcmp(locParticleName, "Pb208") == 0)
     return Pb208;
   else if(strcmp(locParticleName, "Delta++") == 0)
@@ -606,8 +613,9 @@ inline static unsigned short int IsFixedMass(Particle_t p)
   case Geantino:	return 1;
   case EtaPrime:	return 1;
   case Deuteron:	return 1;
+  case Triton:   	return 1;
   case Helium:		return 1;
-  case Triton:	return 1;
+  case He3:		return 1;
   case Pb208:	return 1;
   case Jpsi:    return 1;
   //case eta_c:   return 1;
@@ -666,8 +674,9 @@ inline static unsigned short int IsDetachedVertex(Particle_t p)
   case AntiXiPlus:	return 1;
   case AntiOmegaPlus:	return 1;
   case Deuteron:	return 1;
+  case Triton:  	return 1;
   case Helium:		return 1;
-  case Triton:	return 1;
+  case He3:  		return 1;
   default: return 0;
   }
 }
@@ -777,10 +786,12 @@ inline static char* ParticleName_ROOT(Particle_t p)
     return (char*)"b_{1}(1235)^{#plus}";
   case Deuteron:
     return (char*)"d";
-  case Helium:
-    return (char*)"He";
   case Triton:
     return (char*)"t";
+  case Helium:
+    return (char*)"He";
+  case He3:
+    return (char*)"3He";
   case Pb208:
     return (char*)"Pb^{208}";
   case Sigma_1385_Minus:
@@ -874,8 +885,9 @@ inline static double ParticleMass(Particle_t p)
   case K1_1400_Minus: return 1.403;
   case b1_1235_Plus: return 1.2295;
   case Deuteron:	return 1.875612859;     // from NIST
+  case Triton:	    return 2.808921004;     // from NIST 5.00735630 x 10^-27 kg
   case Helium:		return 3.727379238;     // from NIST 6.64465675 x 10-27 kg
-  case Triton:	        return 2.808921004;     // from NIST 5.00735630 x 10^-27 kg
+  case He3:  		return 2.809413498;
   case Pb208:	        return 193.72899;       // NIST gives 207.976627 AMU
   case Sigma_1385_Minus:	return 1.3872;
   case Sigma_1385_0:		return 1.3837;
@@ -954,8 +966,9 @@ inline static int ParticleCharge(Particle_t p)
   case K1_1400_Minus: return -1;
   case b1_1235_Plus: return 1;
   case Deuteron:	return 1;
+  case Triton:  	return 1;
   case Helium:		return 2;
-  case Triton:	return 1;
+  case He3:		return 2;
   case Pb208:	return 82;
   case Sigma_1385_Minus:	return -1;
   case Sigma_1385_0:		return 0;
@@ -1009,7 +1022,7 @@ inline static int PDGtype(Particle_t p)
   case SigmaMinus:	return  3112;
   case Xi0:		return  3322;
   case XiMinus:		return  3312;
-  case OmegaMinus:	return  3332;
+  case OmegaMinus:	return  3334;
   case AntiNeutron:	return -2112;
   case AntiLambda:	return -3122;
   case AntiSigmaMinus:	return -3112;
@@ -1017,7 +1030,7 @@ inline static int PDGtype(Particle_t p)
   case AntiSigmaPlus:	return -3222;
   case AntiXi0:		return -3322;
   case AntiXiPlus:	return -3312;
-  case AntiOmegaPlus:	return -3332;
+  case AntiOmegaPlus:	return -3334;
   case Geantino:	return  0;
   case Rho0:		return  113;
   case RhoPlus:		return  213;
@@ -1035,8 +1048,9 @@ inline static int PDGtype(Particle_t p)
   case K1_1400_Minus: return  -20323;
   case b1_1235_Plus: return  10213;
   case Deuteron:		return  45;
+  case Triton:		return  46;
   case Helium:		return  47;
-  case Triton:	return  49;
+  case He3:			return  49;
   case Sigma_1385_Minus:	return 3114;
   case Sigma_1385_0:		return 3214;
   case Sigma_1385_Plus:	return 3224;
@@ -1084,7 +1098,7 @@ inline static Particle_t PDGtoPType(int locPDG_PID)
   case 3112:			return SigmaMinus;
   case 3322:			return Xi0;
   case 3312:			return XiMinus;
-  case 3332:			return OmegaMinus;
+  case 3334:			return OmegaMinus;
   case -2112:		return AntiNeutron;
   case -3122:		return AntiLambda;
   case -3112:		return AntiSigmaMinus;
@@ -1092,7 +1106,7 @@ inline static Particle_t PDGtoPType(int locPDG_PID)
   case -3222:		return AntiSigmaPlus;
   case -3322:		return AntiXi0;
   case -3312:		return AntiXiPlus;
-  case -3332:		return AntiOmegaPlus;
+  case -3334:		return AntiOmegaPlus;
   case 113:			return Rho0;
   case 213:			return RhoPlus;
   case -213:			return RhoMinus;
@@ -1109,8 +1123,9 @@ inline static Particle_t PDGtoPType(int locPDG_PID)
   case -20323:		return K1_1400_Minus;
   case 10213:		return b1_1235_Plus;
   case 45:			return Deuteron;
+  case 46:			return Triton;
   case 47:			return Helium;
-  case 49:			return Triton;
+  case 49:			return He3;
   case 3114:			return Sigma_1385_Minus;
   case 3214:			return Sigma_1385_0;
   case 3224:			return Sigma_1385_Plus;
@@ -1151,10 +1166,123 @@ inline static int Is_FinalStateParticle(Particle_t locPID)
 		case AntiProton:  return 1;
 		case AntiNeutron: return 1;
 		case Deuteron:    return 1;
-		case Helium:      return 1;
 		case Triton:      return 1;
+		case Helium:      return 1;
+		case He3:         return 1;
 		case Pb208:       return 1;
 		default: return 0; //decaying
+	}
+}
+
+inline static char* Get_ShortName(Particle_t locPID)
+{
+	switch (locPID) {
+	case Gamma:
+		return (char*)"g";
+	case Positron:
+		return (char*)"ep";
+	case Electron:
+		return (char*)"em";
+	case Neutrino:
+		return (char*)"neut";
+	case MuonPlus:
+		return (char*)"mup";
+	case MuonMinus:
+		return (char*)"mum";
+	case Pi0:
+		return (char*)"pi0";
+	case PiPlus:
+		return (char*)"pip";
+	case PiMinus:
+		return (char*)"pim";
+	case KLong:
+		return (char*)"kl";
+	case KPlus:
+		return (char*)"kp";
+	case KMinus:
+		return (char*)"km";
+	case Neutron:
+		return (char*)"n";
+	case Proton:
+		return (char*)"p";
+	case AntiProton:
+		return (char*)"pbar";
+	case KShort:
+		return (char*)"ks";
+	case Eta:
+		return (char*)"eta";
+
+	case Lambda:
+		return (char*)"lamb";
+	case SigmaPlus:
+		return (char*)"sigp";
+	case Sigma0:
+		return (char*)"sig0";
+	case SigmaMinus:
+		return (char*)"sigm";
+	case Xi0:
+		return (char*)"xi0";
+	case XiMinus:
+		return (char*)"xim";
+	case OmegaMinus:
+		return (char*)"omgm";
+
+	case AntiNeutron:
+		return (char*)"nbar";
+	case AntiLambda:
+		return (char*)"lbar";
+	case AntiSigmaMinus:
+		return (char*)"sigmbar";
+	case AntiSigma0:
+		return (char*)"sig0bar";
+	case AntiSigmaPlus:
+		return (char*)"sigpbar";
+	case AntiXi0:
+		return (char*)"xi0bar";
+	case AntiXiPlus:
+		return (char*)"xipbar";
+	case AntiOmegaPlus:
+		return (char*)"omgpbar";
+
+	case omega:
+		return (char*)"omg";
+	case EtaPrime:
+		return (char*)"etap";
+	case phiMeson:
+		return (char*)"phi";
+
+	case Deuteron:
+		return (char*)"d";
+	case Triton:
+		return (char*)"tri";
+	case Helium:
+		return (char*)"he";
+	case He3:
+		return (char*)"he3";
+	case Pb208:
+		return (char*)"pb";
+
+	case Jpsi:
+		return (char*)"jpsi";
+	case Eta_c:
+		return (char*)"etac";
+	case Chi_c0:
+		return (char*)"chic0";
+	case Chi_c1:
+		return (char*)"chic1";
+	case Chi_c2:
+		return (char*)"chic2";
+	case Psi2s:
+		return (char*)"psi2S";
+	case D0:
+		return (char*)"d0";
+	case DPlus:
+		return (char*)"dp";
+	case Lambda_c:
+		return (char*)"lambc";
+
+	default:
+		return (char*)"Unknown";
 	}
 }
 

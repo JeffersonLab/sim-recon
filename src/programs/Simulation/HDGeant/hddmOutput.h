@@ -11,4 +11,5 @@ s_UpstreamEMveto_t* pickUpstreamEMveto (void);
 s_Tagger_t* pickTagger (void);
 s_PairSpectrometerFine_t *pickPs(void);
 s_PairSpectrometerCoarse_t *pickPsc(void);
+s_TripletPolarimeter_t *pickTpol(void);
 s_McTrajectory_t* pickMCTrajectory (void);

@@ -12,94 +12,6 @@
 
 
 #include "JEventProcessor_CDC_expert_2.h"
-#include <JANA/JApplication.h>
-
-
-using namespace std;
-using namespace jana;
-
-
-#include "CDC/DCDCHit.h"
-#include "CDC/DCDCDigiHit.h"
-#include "DAQ/Df125WindowRawData.h"
-#include "DAQ/Df125CDCPulse.h"
-#include "DAQ/Df125Config.h"
-
-#include <TDirectory.h>
-#include <TH2.h>
-#include <TH1.h>
-
-
-// root hist pointers
-
-
-
-static TH1D *cdc_e = NULL; 
-static TH2D *cdc_e_vs_n = NULL; 
-
-static TH1D *cdc_t = NULL; 
-static TH2D *cdc_t_vs_n = NULL; 
-
-static TH1I *cdc_rt = NULL; 
-static TH2I *cdc_rt_vs_n = NULL; 
-
-static TH1I *cdc_amp = NULL; 
-static TH2I *cdc_amp_vs_n = NULL; 
-
-static TH1I *cdc_rt_qf0 = NULL;
-
-static TH1I *cdc_qf = NULL;
-static TH2I *cdc_qf_vs_n = NULL;
-static TH2I *cdc_qf_vs_a = NULL;
-static TH2I *cdc_qf_vs_rt = NULL;
-
-
-//static TH2D *cdc_e_ring[29];
-static TH2D *cdc_t_ring[29];
-
-static TH2D *cdc_e_vs_t; 
-static TH2D *cdc_e_vs_t_ring[29];
-
-static TH2I *cdc_int_vs_raw_t; 
-static TH2I *cdc_int_vs_raw_t_ring[29];
-
-static TH2I *cdc_o_overflow;
-static TH1I *cdc_ped_overflow;
-static TH1I *cdc_raw_t_overflow;
-
-static TH2I *cdc_o_badt;   
-
-static TH2I *cdc_ped_ring[29];  
-static TH1I *cdc_ped_badt;  
-
-static TH2I *cdc_raw_t_ring[29];
-static TH1I *cdc_raw_t_badt;
-
-static TH2I *cdc_amp_ring[29];  
-static TH1I *cdc_amp_badt;  
-
-
-static TH2I *cdc_intpp_ring[29];  
-//static TH2I *cdc_int_ring[29];  
-
-static TH2I *cdc_initped_ring[29];  
-
-static TH2I *cdc_initped_roc25;  
-static TH2I *cdc_initped_roc26;  
-static TH2I *cdc_initped_roc27;  
-static TH2I *cdc_initped_roc28;  
-
-static TH2I *cdc_ped_roc25;  
-static TH2I *cdc_ped_roc26;  
-static TH2I *cdc_ped_roc27;  
-static TH2I *cdc_ped_roc28;  
-
-static TH2I *cdc_amp_roc25;  
-static TH2I *cdc_amp_roc26;  
-static TH2I *cdc_amp_roc27;  
-static TH2I *cdc_amp_roc28;  
-
-static TH2I *cdc_what_is_n;
 
 
 //----------------------------------------------------------------------------------
@@ -412,6 +324,14 @@ jerror_t JEventProcessor_CDC_expert_2::evnt(JEventLoop *eventLoop, uint64_t even
   //add extra 0 at front to use offset[1] for ring 1
   int straw_offset[29] = {0,0,42,84,138,192,258,324,404,484,577,670,776,882,1005,1128,1263,1398,1544,1690,1848,2006,2176,2346,2528,2710,2907,3104,3313};
 
+  const DTrigger* locTrigger = NULL; 
+  eventLoop->GetSingle(locTrigger); 
+  if(locTrigger->Get_L1FrontPanelTriggerBits() != 0)
+    return NOERROR;
+
+  if (!locTrigger->Get_IsPhysicsEvent()){ // do not look at PS triggers
+    return NOERROR;
+  }
 
   //first set of histograms is for dcdchits, these are t and q after calibration
   //second set is for dcdcdigihits, these are the raw quantities

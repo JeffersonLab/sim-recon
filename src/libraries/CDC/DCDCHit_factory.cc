@@ -233,7 +233,7 @@ jerror_t DCDCHit_factory::evnt(JEventLoop *loop, uint64_t eventnumber)
             }else{
                 static int Nwarnings = 0;
                 if(Nwarnings<10){
-                    _DBG_ << "NO Df125Config object associated with Df125FDCPulse object!" << endl;
+                    _DBG_ << "NO Df125Config object associated with Df125CDCPulse object!" << endl;
                     Nwarnings++;
                     if(Nwarnings==10) _DBG_ << " --- LAST WARNING!! ---" << endl;
                 }

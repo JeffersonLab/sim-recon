@@ -44,7 +44,7 @@ using namespace std;
 
 class HDEVIO{
 	public:
-		HDEVIO(string filename);
+		HDEVIO(string filename, bool read_map_file=true, int verbose=1);
 		virtual ~HDEVIO();
 		
 		enum{
@@ -135,6 +135,7 @@ class HDEVIO{
 			public:
 				streampos pos;
 				uint32_t event_len;
+				uint32_t event_header;
 				uint64_t first_event;
 				uint64_t last_event;
 				BLOCKTYPE event_type;
@@ -174,7 +175,9 @@ class HDEVIO{
 		uint32_t last_event_len;  // used to hold last event length in words if user buffer was
 		                          // too small, this is how big is should be allocated
 		
+		int  VERBOSE;
 		bool IGNORE_EMPTY_BOR;
+		bool SKIP_EVENT_MAPPING;
 		
 		stringstream err_mess;  // last error message
 		uint32_t err_code;    // last error code
@@ -198,6 +201,8 @@ class HDEVIO{
 		void PrintEVIOBlockHeader(void);
 		void PrintStats(void);
 		void PrintFileSummary(void);
+		void SaveFileMap(string fname="");
+		void ReadFileMap(string fname="", bool warn_if_not_found=false);
 
 		uint32_t GetEventMask(void) { return event_type_mask; }
 		uint32_t SetEventMask(uint32_t mask);

@@ -1,15 +1,33 @@
-
+//
+// Guidance: --------------------------------------------
+//
+// Single channels may show low or no number of entries in occupancy plots
+// during normal operation. This could number anywhere from 0 to ~20
+// channels, with slow time dependency (0-3 channels/day). These channels are
+// expected to be randomly spread around the FCAL, and may or may not also
+// line up with yellow/red status on the FCAL HV GUI. Any behavior other than
+// what's described here should be reported to FCAL experts.
+//
+// End Guidance: ----------------------------------------
+//
+//
+//
 // The following are special comments used by RootSpy to know
 // which histograms to fetch for the macro.
 //
 // hnamepath: /occupancy/fcal_occ
 // hnamepath: /occupancy/fcal_num_events
+//
+// e-mail: davidl@jlab.org
+// e-mail: adesh@jlab.org
+// e-mail: jzarling@jlab.org
+//
 
 {
 	// RootSpy saves the current directory and style before
 	// calling the macro and restores it after so it is OK to
 	// change them and not change them back.
-
+        TDirectory *savedir = gDirectory;
 	TDirectory *dir = (TDirectory*)gDirectory->FindObjectAny("occupancy");
 	if(dir) dir->cd();
 

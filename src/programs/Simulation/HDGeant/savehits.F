@@ -163,7 +163,17 @@ C  If no hit is being recorded then nothing to do
 
 c      write(6,*)cnames(NLEVEL)
 *	At end of track segment in sensitive medium: register hit
-      if (cnames(NLEVEL)(1:3).eq.'PSF') then ! Pair spectrometer fine counters
+      if (cnames(NLEVEL)(1:3).eq.'PTS') then ! TPOL silicon detector sectors
+#ifdef MAKE_HITS_WHEN_ILOSS_0
+        if ((ILOSS.eq.0).and.(CHARGE.ne.0)) then
+          dEsum = 0.6e-3   ! 600 keV in silicon
+        endif
+#endif
+        if (dEsum.gt.0) then
+          call hitTPOL(xin,xout,pin,pout,dEsum,ITRA,ISTAK,ISTORY,
+     >          IPART)
+        endif
+      elseif (cnames(NLEVEL)(1:3).eq.'PSF') then ! Pair spectrometer fine counters
 #ifdef MAKE_HITS_WHEN_ILOSS_0
         if ((ILOSS.eq.0).and.(CHARGE.ne.0)) then
           dEsum = 1e-3   ! 1 MeV in plastic

@@ -10,7 +10,7 @@ using namespace jana;
 
 #include <DANA/DStatusBits.h>
 #include "TRIGGER/DL1Trigger.h"
-#include "DAQ/DTSscalers.h"
+#include "DAQ/DL1Info.h"
 #include "DAQ/DEPICSvalue.h"
 
 // Routine used to create our JEventProcessor
@@ -215,14 +215,14 @@ jerror_t JEventProcessor_TS_scaler::evnt(JEventLoop *locEventLoop, uint64_t locE
 	japp->RootFillUnLock(this);
 
 	// check if scalers are filled to identify SYNC events
-	if(locL1Trigger->gtp_sc.size() <= 0)
-		return NOERROR;
+	//if(locL1Trigger->gtp_sc.size() <= 0)
+	//	return NOERROR;
 
-	vector<const DTSscalers*> locTSscalers;
-	locEventLoop->Get(locTSscalers);
-	if(locTSscalers.empty())
+	vector<const DL1Info*> locL1Infos;
+	locEventLoop->Get(locL1Infos);
+	if(locL1Infos.empty())
 		return NOERROR;
-	const DTSscalers *locTSscaler = locTSscalers[0];
+	const DL1Info *locL1Info = locL1Infos[0];
 
 	dEventNumber = locEventNumber;
 
@@ -239,11 +239,11 @@ jerror_t JEventProcessor_TS_scaler::evnt(JEventLoop *locEventLoop, uint64_t locE
 	uint32_t fp_sc[kFPScalers];   /* number of TS front pannel triggers for 16 fron pannel lines (16 trigger bits) */
 	uint32_t fp_rate[kFPScalers]; /* instant. rate of FP triggers */
 	
-	nsync_event = locTSscaler->nsync_event;
-	livetime = locTSscaler->live_time;
-	busytime = locTSscaler->busy_time;
-	live_inst = locTSscaler->inst_livetime;
-	timestamp = locTSscaler->time;
+	nsync_event = locL1Info->nsync;
+	livetime = locL1Info->live_time;
+	busytime = locL1Info->busy_time;
+	live_inst = locL1Info->live_inst;
+	timestamp = locL1Info->unix_time;
 	//printf ("Event=%d int_count=%d livetime=%d busytime=%d time=%d live_inst=%d\n",(int)locEventNumber,int_count,livetime,busytime,(int)timestamp,live_inst);
 	
 	double livetime_integrated = (double)livetime/(livetime+busytime);
@@ -277,14 +277,14 @@ jerror_t JEventProcessor_TS_scaler::evnt(JEventLoop *locEventLoop, uint64_t locE
 	japp->RootFillLock(this);
 	for (int j=0; j<kScalers; j++) {
 		gtp_rec[j] = dTrigCount[j] - dRecordedTriggerBitPrevious[j];
-		gtp_sc[j] = locTSscaler->gtp_scalers[j] - dScalerTriggerBitPrevious[j];
-		gtp_rate[j] = locTSscaler->gtp_rate[j];
+		gtp_sc[j] = locL1Info->gtp_sc[j] - dScalerTriggerBitPrevious[j];
+		gtp_rate[j] = locL1Info->gtp_rate[j];
 
 		dTreeFillData.Fill_Array<uint32_t>("RecordedTriggerBit", dTrigCount[j], j);
-		dTreeFillData.Fill_Array<uint32_t>("ScalerTriggerBit", locTSscaler->gtp_scalers[j], j);
+		dTreeFillData.Fill_Array<uint32_t>("ScalerTriggerBit", locL1Info->gtp_sc[j], j);
 		dTreeFillData.Fill_Array<uint32_t>("ScalerRateTriggerBit", gtp_rate[j], j);
 
-		dScalerTriggerBitPrevious[j] = locTSscaler->gtp_scalers[j];
+		dScalerTriggerBitPrevious[j] = locL1Info->gtp_sc[j];
 		dRecordedTriggerBitPrevious[j] = dTrigCount[j];
 
 		if(j < (int)dTrigBits.size()) {
@@ -298,14 +298,14 @@ jerror_t JEventProcessor_TS_scaler::evnt(JEventLoop *locEventLoop, uint64_t locE
 	}
 	for (int j=0; j<kFPScalers; j++) {
 		fp_rec[j] = dFPTrigCount[j] - dFPRecordedTriggerBitPrevious[j];
-		fp_sc[j] = locTSscaler->fp_scalers[j] - dFPScalerTriggerBitPrevious[j];
-		fp_rate[j] = locTSscaler->fp_rate[j];
+		fp_sc[j] = locL1Info->fp_sc[j] - dFPScalerTriggerBitPrevious[j];
+		fp_rate[j] = locL1Info->fp_rate[j];
 
 		dTreeFillData.Fill_Array<uint32_t>("FPRecordedTriggerBit", dFPTrigCount[j], j);
-		dTreeFillData.Fill_Array<uint32_t>("FPScalerTriggerBit", locTSscaler->fp_scalers[j], j);
+		dTreeFillData.Fill_Array<uint32_t>("FPScalerTriggerBit", locL1Info->fp_sc[j], j);
 		dTreeFillData.Fill_Array<uint32_t>("FPScalerRateTriggerBit", fp_rate[j], j);
 
-		dFPScalerTriggerBitPrevious[j] = locTSscaler->fp_scalers[j];
+		dFPScalerTriggerBitPrevious[j] = locL1Info->fp_sc[j];
 		dFPRecordedTriggerBitPrevious[j] = dFPTrigCount[j];
 
 		if(j < (int)dFPTrigBits.size()) {

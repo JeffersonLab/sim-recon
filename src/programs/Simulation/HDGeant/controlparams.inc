@@ -8,3 +8,9 @@
      +                       ,tgtwidth(2),runtime_geom,get_next_evt
      +                       ,trigger_time_sigma_ns
      +                       ,event_count,override_run_number
+
+      integer genbeam_precol
+      integer genbeam_postcol
+      integer genbeam_mode
+      common /genbeam_pars/ genbeam_precol, genbeam_postcol,
+     +                      genbeam_mode(20)

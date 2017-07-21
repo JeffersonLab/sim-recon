@@ -112,7 +112,11 @@ jerror_t DTrackCandidate_factory_FDCCathodes::brun(JEventLoop* eventLoop,
 //------------------
 jerror_t DTrackCandidate_factory_FDCCathodes::erun(void)
 {
-  if (stepper) delete stepper;
+  if (stepper) {
+    delete stepper;
+    stepper = nullptr;
+  }
+
   return NOERROR;
 }
 //------------------
@@ -120,8 +124,11 @@ jerror_t DTrackCandidate_factory_FDCCathodes::erun(void)
 //------------------
 jerror_t DTrackCandidate_factory_FDCCathodes::fini(void)
 {
-  
-  if (stepper) delete stepper;
+  if (stepper) {
+    delete stepper;
+    stepper = nullptr;
+  }  
+
   return NOERROR;
 }
 
@@ -279,7 +286,9 @@ jerror_t DTrackCandidate_factory_FDCCathodes::evnt(JEventLoop *loop, uint64_t ev
     // Create the fit object and add the hits
     DHelicalFit fit;
     double max_r=0.;
+    rc=0.; // create a guess for rc
     for (unsigned int m=0;m<mytracks[i].size();m++){
+      rc+=mytracks[i][m]->rc;
       for (unsigned int n=0;n<mytracks[i][m]->hits.size();n++){
 	const DFDCPseudo *hit=mytracks[i][m]->hits[n];
 	fit.AddHit(hit);
@@ -290,6 +299,7 @@ jerror_t DTrackCandidate_factory_FDCCathodes::evnt(JEventLoop *loop, uint64_t ev
 	}
       }
     }
+    rc/=double(mytracks[i].size());
     // Fake point at origin
     bool use_fake_point=false;
     if (max_r<MAX_R_VERTEX_LIMIT){

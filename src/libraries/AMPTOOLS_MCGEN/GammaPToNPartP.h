@@ -13,7 +13,6 @@
 #include "AMPTOOLS_MCGEN/ProductionMechanism.h"
 
 class Kinematics;
-class AmpVecs;
 
 class GammaPToNPartP {
   

@@ -9,6 +9,7 @@
 #include <iostream>
 #include <iomanip>
 #include <set>
+#include <mutex>
 #include <TMath.h>
 using namespace std;
 
@@ -94,11 +95,14 @@ jerror_t DTrackTimeBased_factory::init(void)
 				    SKIP_MASS_HYPOTHESES_WIRE_BASED);
 	
 	vector<int> hypotheses;
+	hypotheses.push_back(Positron);
 	hypotheses.push_back(PiPlus);
 	hypotheses.push_back(KPlus);
 	hypotheses.push_back(Proton);
+	hypotheses.push_back(Electron);
 	hypotheses.push_back(PiMinus);
 	hypotheses.push_back(KMinus);
+	hypotheses.push_back(AntiProton);
 
 	ostringstream locMassStream;
 	for(size_t loc_i = 0; loc_i < hypotheses.size(); ++loc_i)
@@ -121,10 +125,29 @@ jerror_t DTrackTimeBased_factory::init(void)
 		else if(ParticleCharge(Particle_t(hypotheses[loc_i])) < 0)
 			mass_hypotheses_negative.push_back(hypotheses[loc_i]);
 	}
-	if(mass_hypotheses_positive.empty())
-		mass_hypotheses_positive.push_back(Unknown); // If empty string is specified, assume they want massless particle
-	if(mass_hypotheses_negative.empty())
-		mass_hypotheses_negative.push_back(Unknown); // If empty string is specified, assume they want massless particle
+
+	if(mass_hypotheses_positive.empty()){
+		static once_flag pwarn_flag;
+		call_once(pwarn_flag, [](){
+			jout << endl;
+			jout << "############# WARNING !! ################ " <<endl;
+			jout << "There are no mass hypotheses for positive tracks!" << endl;
+			jout << "Be SURE this is what you really want!" << endl;
+			jout << "######################################### " <<endl;
+			jout << endl;
+		});
+	}
+	if(mass_hypotheses_negative.empty()){
+		static once_flag nwarn_flag;
+		call_once(nwarn_flag, [](){
+			jout << endl;
+			jout << "############# WARNING !! ################ " <<endl;
+			jout << "There are no mass hypotheses for negative tracks!" << endl;
+			jout << "Be SURE this is what you really want!" << endl;
+			jout << "######################################### " <<endl;
+			jout << endl;
+		});
+	}
 
 	mNumHypPlus=mass_hypotheses_positive.size();
 	mNumHypMinus=mass_hypotheses_negative.size();
@@ -272,6 +295,7 @@ jerror_t DTrackTimeBased_factory::evnt(JEventLoop *loop, uint64_t eventnumber)
       timebased_track->pulls = track->pulls;
       timebased_track->trackid = track->id;
       timebased_track->candidateid=track->candidateid;
+      timebased_track->IsSmoothed = track->IsSmoothed;
       
       // Lists of hits used in the previous pass
       vector<const DCDCTrackHit *>cdchits;
@@ -697,6 +721,7 @@ int DTrackTimeBased_factory::GetThrownIndex(vector<const DMCThrown*>& locMCThrow
 		cdctrackhits[loc_i]->GetSingle(locCDCHit);
 		vector<const DCDCHit*> locTruthCDCHits;
       locCDCHit->Get(locTruthCDCHits);
+		if(locTruthCDCHits.empty()) continue; // merged simulation with real data bkgnd will not have truth hits associated
 
 		int itrack = locTruthCDCHits[0]->itrack;
 		if(locHitMatches.find(itrack) == locHitMatches.end())
@@ -757,43 +782,49 @@ void DTrackTimeBased_factory
   start_times.push_back(start_time);
 
   // Match to the start counter and the outer detectors
-  double locTimeVariance = 0.0, locStartTime = track->t0();  // initial guess from tracking
-  if(pid_algorithm->MatchToSC(track->rt, sc_hits, locStartTime, locTimeVariance))
+  double locStartTimeVariance = 0.0, locStartTime = track->t0();  // initial guess from tracking
+  DSCHitMatchParams locSCBestMatchParams;
+  if(pid_algorithm->Get_ClosestToTrack(track->rt, sc_hits, false, true, locStartTime, locSCBestMatchParams, &locStartTimeVariance))
   {
     // Fill in the start time vector
     start_time.t0=locStartTime;
 //    start_time.t0_sigma=sqrt(locTimeVariance); //uncomment when ready
-    start_time.t0_sigma=0.3;
+    start_time.t0_sigma=sqrt(locStartTimeVariance);
     start_time.system=SYS_START;
     start_times.push_back(start_time); 
   }
 
   locStartTime = track->t0();
-  if (pid_algorithm->MatchToTOF(track->rt, tof_points, locStartTime, locTimeVariance))
+  DTOFHitMatchParams locTOFBestMatchParams;
+  if(pid_algorithm->Get_ClosestToTrack(track->rt, tof_points, true, locStartTime, locTOFBestMatchParams, &locStartTimeVariance))
   {
     // Fill in the start time vector
     start_time.t0=locStartTime;
-    start_time.t0_sigma=0.1;
+    start_time.t0_sigma=sqrt(locStartTimeVariance);
 //    start_time.t0_sigma=sqrt(locTimeVariance); //uncomment when ready
     start_time.system=SYS_TOF;
     start_times.push_back(start_time); 
   }
+
   locStartTime = track->t0();
-  if (pid_algorithm->MatchToBCAL(track->rt, bcal_showers, locStartTime, locTimeVariance))
+  DBCALShowerMatchParams locBCALBestMatchParams;
+  if(pid_algorithm->Get_ClosestToTrack(track->rt, bcal_showers, true, locStartTime, locBCALBestMatchParams, &locStartTimeVariance))
   {
     // Fill in the start time vector
     start_time.t0=locStartTime;
-    start_time.t0_sigma=0.5;
+    start_time.t0_sigma=sqrt(locStartTimeVariance);
 //    start_time.t0_sigma=sqrt(locTimeVariance); //uncomment when ready
     start_time.system=SYS_BCAL;
     start_times.push_back(start_time);
   }
+
   locStartTime = track->t0();
-  if (pid_algorithm->MatchToFCAL(track->rt, fcal_showers, locStartTime, locTimeVariance))
+  DFCALShowerMatchParams locFCALBestMatchParams;
+  if(pid_algorithm->Get_ClosestToTrack(track->rt, fcal_showers, true, locStartTime, locFCALBestMatchParams, &locStartTimeVariance))
   {
     // Fill in the start time vector
     start_time.t0=locStartTime;
-    start_time.t0_sigma=0.5;
+    start_time.t0_sigma=sqrt(locStartTimeVariance);
 //    start_time.t0_sigma=sqrt(locTimeVariance); //uncomment when ready
     start_time.system=SYS_FCAL;
     start_times.push_back(start_time);
@@ -955,6 +986,7 @@ bool DTrackTimeBased_factory::DoFit(const DTrackWireBased *track,
       timebased_track->chisq = fitter->GetChisq();
       timebased_track->Ndof = fitter->GetNdof();
       timebased_track->pulls = fitter->GetPulls();
+      timebased_track->IsSmoothed = fitter->GetIsSmoothed();
       timebased_track->trackid = track->id;
       timebased_track->candidateid=track->candidateid;
       

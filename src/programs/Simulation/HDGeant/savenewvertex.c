@@ -35,7 +35,7 @@ void SaveNewVertex(int kcase, int Npart, float *gkin,
   }
   NewVerts->mult = VertexCount;
   thisInputEvent->physicsEvents->in[0].reactions->in[0].vertices = NewVerts;
-  free(verts);
+  FREE(verts);
   verts = NewVerts;
   //verts->in[VertexCount] = make_s_Vertex();
   verts->mult++;
