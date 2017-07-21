@@ -13,10 +13,10 @@
  * p2k: OK
  * p4pi: OK
  * p2g: OK
- * p pi0: WAITING TREE CONFIRMATION
- * p3pi: WAITING TREE CONFIRMATION
- * p2pi0: CHECK
- * p4g: RESUME RUNNING LONG overhaul
+ * p pi0: OVERHAUL AGAIN
+ * p3pi: OVERHAUL AGAIN
+ * p2pi0: OVERHAUL AGAIN
+ * p4g: OVERHAUL AGAIN
  * p3pi0
  * p pi0 g
  * p2pi 2pi0
@@ -1842,7 +1842,9 @@ void DSourceComboer::Combo_Vertically_NDecays(const DSourceComboUse& locComboUse
 
 	//if comboing N mixed combos (locComboUseToCreate) (which are thus all used in the same step), do this:
 	//locChargedCombo_WithNow corresponds to N mixed combos
-	auto locInstance = locNIs2Flag ? 2 : locCombos_NMinus1.front()->Get_FurtherDecayCombos()[locSourceComboDecayUse].size() + 1; //numbering starts with 1, not 0
+	auto locZIndependentDecayUse = Get_ZIndependentUse(locSourceComboDecayUse);
+	auto locInstanceUse = locCombos_NMinus1.front()->Get_IsComboingZIndependent() ? locZIndependentDecayUse : locSourceComboDecayUse;
+	auto locInstance = locNIs2Flag ? 2 : locCombos_NMinus1.front()->Get_FurtherDecayCombos()[locInstanceUse].size() + 1; //numbering starts with 1, not 0
 	auto locNextPresidingCombo = Get_NextChargedCombo(locChargedCombo_Presiding, locSourceComboDecayUse, locComboingStage, true, locInstance);
 	auto locChargedCombo_WithPrevious = Get_ChargedCombo_WithNow(locNextPresidingCombo, locComboInfoToCreate, locComboingStage);
 
@@ -1881,7 +1883,9 @@ void DSourceComboer::Combo_Vertically_NDecays(const DSourceComboUse& locComboUse
 		//this will guarantee we pass "TEST 1" without ever checking
 
 		//actually, we already saved the iterator to the first (e.g.) pi0 to test when we saved the N - 1 combo, so just retrieve it
-		auto locNMinus1LastCombo = locNIs2Flag ? locCombo_NMinus1 : locCombo_NMinus1->Get_FurtherDecayCombos()[locSourceComboDecayUse].back();
+		auto locNMinus1ComboDecayUse = locCombo_NMinus1->Get_IsComboingZIndependent() ? locZIndependentDecayUse : locSourceComboDecayUse;
+		auto locNMinus1LastCombo = locNIs2Flag ? locCombo_NMinus1 : locCombo_NMinus1->Get_FurtherDecayCombos()[locNMinus1ComboDecayUse].back();
+
 		auto locComboSearchIndex = Get_ResumeAtIndex_Combos(locSourceComboDecayUse, locNMinus1LastCombo, locValidRFBunches_NMinus1, locComboingStage);
 		if(dDebugLevel >= 20)
 			cout << "n-1 last combo, begin search index = : " << locNMinus1LastCombo << ", " << locComboSearchIndex << endl;
@@ -1925,7 +1929,7 @@ void DSourceComboer::Combo_Vertically_NDecays(const DSourceComboUse& locComboUse
 			else //combine a combo of N - 1 (e.g. pi0) decays to this new one
 			{
 				//take the vector of N - 1 (e.g. -> 2g) combos and add the new one
-				locAllDecayCombos = locCombo_NMinus1->Get_FurtherDecayCombos()[locSourceComboDecayUse];
+				locAllDecayCombos = locCombo_NMinus1->Get_FurtherDecayCombos()[locNMinus1ComboDecayUse];
 				locAllDecayCombos.push_back(locDecayCombo_1);
 			}
 
