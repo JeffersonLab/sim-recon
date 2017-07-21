@@ -13,13 +13,16 @@
  * p2k: OK
  * p4pi: OK
  * p2g: OK
- * p pi0: OVERHAUL AGAIN
- * p3pi: OVERHAUL AGAIN
+ * p pi0: OK
+ * p3pi: OVERHAUL RUNNING
  * p2pi0: OVERHAUL AGAIN
  * p4g: OVERHAUL AGAIN
  * p3pi0: OVERHAUL
- * p pi0 g
+ * p pi0 g: OVERHAUL
+ * p2pi g: 
  * p2pi 2pi0
+ * p4pi pi0
+ * p 2k 2pi
  * p eta pi0
  * p eta 2pi0
  * pi+ (n)
@@ -265,8 +268,8 @@ DSourceComboer::DSourceComboer(JEventLoop* locEventLoop)
 		gPARMS->GetParameter("OUTPUT_FILENAME", locOutputFileName);
 
 	//Make sure this matches DConstructionStage!!!
-	vector<string> locBuildStages_Event = {"Min # Particles", "Max # Particles", "In Skim", "Charged Combos", "Charged RF Bunch", "Full Combos",
-			"Neutral RF Bunch", "No-Vertex RF Bunch", "Heavy-Neutral IM", "Beam Combos", "MM Vertex Timing", "MM-vertex IM Cuts", "Reaction Beam-RF Cuts", "Missing Mass"};
+	vector<string> locBuildStages_Event = {"Min # Particles", "Max # Particles", "In Skim", "Charged Combos", "Charged RF Bunch", "Full Combos", "Neutral RF Bunch", 
+			"No-Vertex RF Bunch", "Heavy-Neutral IM", "Beam Combos", "MM Vertex Timing", "MM-vertex IM Cuts", "Accurate-Photon IM", "Reaction Beam-RF Cuts", "Missing Mass"};
 	vector<string> locBuildStages_Combo(locBuildStages_Event.begin() + 3, locBuildStages_Event.end());
 
 	//initialize success tracking
@@ -931,8 +934,12 @@ void DSourceComboer::Reset_NewEvent(JEventLoop* locEventLoop)
 	{
 		for(const auto& locChargedHypo : locChargedTrack->dChargedTrackHypotheses)
 		{
+			if(dDebugLevel >= 5)
+				cout << "track, hypo, pid = " << locChargedTrack << ", " << locChargedHypo << ", " << locChargedHypo->PID() << endl;
 			if(!Cut_dEdxAndEOverP(locChargedHypo))
 				continue;
+			if(dDebugLevel >= 5)
+				cout << "passed cuts, register" << endl;
 			dTracksByPID[locChargedHypo->PID()].push_back(locChargedTrack);
 			dTracksByCharge[ParticleCharge(locChargedHypo->PID()) > 0].push_back(locChargedTrack); //will insert duplicates
 		}
@@ -1358,11 +1365,18 @@ void DSourceComboer::Combo_WithBeam(const vector<const DReaction*>& locReactions
 	{
 		if(dDebugLevel > 0)
 			cout << "No beam particles, we are done!" << endl;
+
+		//place invariant mass cuts using accurate photon kinematics
+		auto locPassMassCutFlag = dSourceComboP4Handler->Cut_InvariantMass_AccuratePhotonKinematics(locReactionVertexInfo, locReactionFullCombo, nullptr, locRFBunch);
 		for(const auto& locReaction : locReactions)
 		{
 			++(dNumCombosSurvivedStageTracker[locReaction][DConstructionStage::Beam_Combos]);
 			++(dNumCombosSurvivedStageTracker[locReaction][DConstructionStage::MMVertex_Timing]);
 			++(dNumCombosSurvivedStageTracker[locReaction][DConstructionStage::MMVertex_IMCuts]);
+			if(!locPassMassCutFlag)
+				continue; //FAILED MASS CUTS!
+
+			++(dNumCombosSurvivedStageTracker[locReaction][DConstructionStage::AccuratePhoton_IM]);
 			++(dNumCombosSurvivedStageTracker[locReaction][DConstructionStage::Reaction_BeamRFCuts]);
 			++(dNumCombosSurvivedStageTracker[locReaction][DConstructionStage::Missing_Mass]);
 			locOutputComboMap[locReaction].push_back(dParticleComboCreator->Build_ParticleCombo(locReactionVertexInfo, locReactionFullCombo, nullptr, locRFBunch, locReaction->Get_KinFitType()));
@@ -1396,6 +1410,12 @@ void DSourceComboer::Combo_WithBeam(const vector<const DReaction*>& locReactions
 			continue; //FAILED MASS CUTS!
 		for(const auto& locReaction : locReactions)
 			++(dNumCombosSurvivedStageTracker[locReaction][DConstructionStage::MMVertex_IMCuts]);
+
+		//place invariant mass cuts using accurate photon kinematics
+		if(!dSourceComboP4Handler->Cut_InvariantMass_AccuratePhotonKinematics(locReactionVertexInfo, locReactionFullCombo, locBeamParticle, locRFBunch))
+			continue; //FAILED MASS CUTS!
+		for(const auto& locReaction : locReactions)
+			++(dNumCombosSurvivedStageTracker[locReaction][DConstructionStage::AccuratePhoton_IM]);
 
 		//loop over reactions: cut on rf-bunch shift for each reaction, cut on missing mass^2, then save the results
 		auto locBeamRFBunch = dSourceComboTimeHandler->Calc_RFBunchShift(locBeamParticle->time());
@@ -1610,14 +1630,13 @@ void DSourceComboer::Create_SourceCombos(const DSourceComboUse& locComboUseToCre
 	}
 
 	//place an invariant mass cut & save the results
-	auto locVertex = DVector3(0.0, 0.0, dSourceComboTimeHandler->Get_PhotonVertexZBinCenter(locVertexZBin)); //good enough for now, only want exact for missing mass
 	for(const auto& locSourceCombo : *locSourceCombos)
 	{
 		//If on all-showers stage, and combo is fcal-only, don't save (combo already created!!)
 		if((locComboingStage == d_MixedStage) && locSourceCombo->Get_IsComboingZIndependent())
 			continue; //this combo has already passed the cut & been saved: during the FCAL-only stage
-		if(!dSourceComboP4Handler->Cut_InvariantMass_NoMassiveNeutrals(locSourceCombo, locDecayPID, locVertex, locVertexZBin))
-			continue;
+		if(!dSourceComboP4Handler->Cut_InvariantMass_NoMassiveNeutrals(locSourceCombo, locDecayPID, dTargetCenter, locVertexZBin, false))
+			continue; //vertex not used if accurate-flag is false: can be anything (target center)
 
 		//save the results
 		locSourceCombosByUseSoFar[locComboUseToCreate]->push_back(locSourceCombo);

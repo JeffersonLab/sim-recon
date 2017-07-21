@@ -84,6 +84,7 @@ class DSourceComboer : public JObject
 		Beam_Combos,
 		MMVertex_Timing,
 		MMVertex_IMCuts,
+		AccuratePhoton_IM,
 		Reaction_BeamRFCuts,
 		Missing_Mass
 	};
