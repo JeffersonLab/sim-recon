@@ -80,7 +80,7 @@ class DSourceComboVertexer
 		DSourceComboP4Handler* dSourceComboP4Handler;
 		const DSourceComboTimeHandler* dSourceComboTimeHandler = nullptr;
 		const DAnalysisUtilities* dAnalysisUtilities;
-		size_t dDebugLevel = 0;
+		int dDebugLevel = 0;
 
 		//EXPERIMENT INFORMATION
 		DVector3 dTargetCenter;

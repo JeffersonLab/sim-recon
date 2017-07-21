@@ -75,7 +75,7 @@ class DSourceComboP4Handler
 		DSourceComboer* dSourceComboer; //for quickly determining whether a combo has a massive neutral or not, and to facilitate access to combo vertices
 		const DSourceComboVertexer* dSourceComboVertexer = nullptr; //for getting vertex positions & time offsets for massive neutral p4 calculations
 		const DSourceComboTimeHandler* dSourceComboTimeHandler = nullptr; //for getting the propagated RF time for massive neutral p4 calculations
-		size_t dDebugLevel = 0;
+		int dDebugLevel = 0;
 
 		//NEUTRAL SHOWER DATA
 		DPhotonKinematicsByZBin dPhotonKinematics; //FCAL shower data at center of target, BCAL in vertex-z bins
