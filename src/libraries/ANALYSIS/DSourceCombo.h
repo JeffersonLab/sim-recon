@@ -139,6 +139,18 @@ struct DSourceComboInfo::DCompare_ParticlePairPIDs
 	bool operator()(Particle_t lhs, const pair<Particle_t, unsigned char>& rhs) const{return lhs < rhs.first;} //lookup
 };
 
+struct DSourceComboChecker_ReusedParticle
+{
+	//returns true if a particle WAS reused
+	bool operator()(const DSourceCombo* locCombo) const
+	{
+		auto locParticles = DAnalysis::Get_SourceParticles(locCombo->Get_SourceParticles(true), Unknown); //all pids
+		std::sort(locParticles.begin(), locParticles.end());
+		auto locUniqueIterator = std::unique(locParticles.begin(), locParticles.end());
+		return (locUniqueIterator != locParticles.end());
+	}
+};
+
 /*********************************************************** INLINE MEMBER FUNCTION DEFINITIONS ************************************************************/
 
 //Compare_SourceComboUses
@@ -450,6 +462,36 @@ inline const JObject* Get_SourceParticle_ThisStep(const DSourceCombo* locSourceC
 	return nullptr;
 }
 
+inline bool Check_AreDuplicateCombos(const DSourceCombo* lhs, const DSourceCombo* rhs)
+{
+	//Assumes inputs are from the same source (excluding z)
+	auto locParticles_lhs = lhs->Get_SourceParticles(false);
+	auto locParticles_rhs = rhs->Get_SourceParticles(false);
+	if(locParticles_lhs.size() != locParticles_rhs.size())
+		return false;
+	if(!std::is_permutation(locParticles_lhs.begin(), locParticles_lhs.end(), locParticles_rhs.begin()))
+		return false;
+
+	auto locDecayCombos_lhs = lhs->Get_FurtherDecayCombos();
+	auto locDecayCombos_rhs = rhs->Get_FurtherDecayCombos();
+	if(locDecayCombos_lhs.size() != locDecayCombos_rhs.size())
+		return false;
+
+	for(const auto& locDecayPair : locDecayCombos_lhs)
+	{
+		auto locIterator = locDecayCombos_rhs.find(locDecayPair.first);
+		if(locIterator == locDecayCombos_rhs.end())
+			return false; //careful, compares z's!!
+
+		auto& locDecayCombos_lhs = locDecayPair.second;
+		auto& locDecayCombos_rhs = locIterator->second;
+		if(locDecayCombos_lhs.size() != locDecayCombos_rhs.size())
+			return false;
+		if(!std::is_permutation(locDecayCombos_lhs.begin(), locDecayCombos_lhs.end(), locDecayCombos_rhs.begin(), Check_AreDuplicateCombos))
+			return false;
+	}
+	return true;
+}
 
 } //end DAnalysis namespace
 

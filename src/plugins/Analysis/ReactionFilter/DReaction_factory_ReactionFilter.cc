@@ -337,11 +337,14 @@ void DReaction_factory_ReactionFilter::Add_MassHistograms(DReaction* locReaction
 
 	//invariant mass
 	vector<Particle_t> locPIDs = locFSInfo->PIDs();
+	set<Particle_t> locPIDsUsed;
 	for(auto locPID : locPIDs)
 	{
 		auto locPIDIterator = dInvariantMassCuts.find(locPID);
 		if(locPIDIterator == dInvariantMassCuts.end())
 			continue;
+		if(locPIDsUsed.find(locPID) != locPIDsUsed.end())
+			continue; //already done!
 
 		auto locCutPair = locPIDIterator->second;
 
@@ -358,6 +361,8 @@ void DReaction_factory_ReactionFilter::Add_MassHistograms(DReaction* locReaction
 		//add histogram action
 		locReaction->Add_AnalysisAction(new DHistogramAction_InvariantMass(locReaction, locPID, locUseKinFitResultsFlag, 
 			locNumBins, locCutPair.first, locCutPair.second, locActionUniqueName));
+
+		locPIDsUsed.insert(locPID);
 	}
 }
 

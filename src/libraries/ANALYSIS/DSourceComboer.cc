@@ -5,6 +5,7 @@
 /*
  * PROBLEMS:
  * 
+ * REDO ALL WITH NEUTRALS!!!!!
  * track timing resolution at 3 GeV
  *
  * TESTING:
@@ -14,17 +15,18 @@
  * p2g: OK
  * p pi0: WAITING TREE CONFIRMATION
  * p3pi: WAITING TREE CONFIRMATION
- * p2pi0: WAITING LONG RUN (overhaul)
- * p4g
+ * p2pi0: CHECK
+ * p4g: RESUME RUNNING LONG overhaul
  * p3pi0
- * p4pi0
  * p pi0 g
  * p2pi 2pi0
  * p eta pi0
  * p eta 2pi0
  * pi+ (n)
+ * p pbar p
  * 
  * ppp
+ * p4pi0
  * p3pi missing-p
  * omega p
  * omega missing-p
@@ -712,6 +714,13 @@ DSourceComboUse DSourceComboer::Build_NewZDependentUse(const DReaction* locReact
 	auto locNewComboInfo = locNewFurtherDecays.empty() ? locOrigInfo : GetOrMake_SourceComboInfo(locOrigInfo->Get_NumParticles(), locFurtherDecayVector, 0);
 
 	DSourceComboUse locNewComboUse(std::get<0>(locOrigUse), locVertexZBin, locNewComboInfo);
+	if(dDebugLevel >= 30)
+	{
+		cout << "NEW Z-DEPENDENT USE:" << endl;
+		Print_SourceComboUse(locNewComboUse);
+		cout << "FROM ORIG USE:" << endl;
+		Print_SourceComboUse(locOrigUse);
+	}
 	dZDependentUseToIndependentMap.emplace(locNewComboUse, locOrigUse);
 	return locNewComboUse;
 }
@@ -1271,6 +1280,9 @@ void DSourceComboer::Combo_WithNeutralsAndBeam(const vector<const DReaction*>& l
 	for(auto& locReaction : locReactions)
 		dNumCombosSurvivedStageTracker[locReaction][DConstructionStage::Full_Combos] += locReactionFullCombos.size();
 
+	if((dDebugLevel > 0) || (dDebugLevel == -1))
+		Check_ForDuplicates(locReactionFullCombos);
+
 	//loop over full combos
 	for(const auto& locReactionFullCombo : locReactionFullCombos)
 	{
@@ -1493,6 +1505,16 @@ void DSourceComboer::Create_SourceCombos(const DSourceComboUse& locComboUseToCre
 	const auto& locVertexZBin = std::get<1>(locComboUseToCreate);
 	const auto& locSourceComboInfo = std::get<2>(locComboUseToCreate);
 
+	//Get combos so far
+	auto locChargedCombo_WithNow = Get_ChargedCombo_WithNow(locChargedCombo_Presiding, locSourceComboInfo, locComboingStage);
+	auto& locSourceCombosByUseSoFar = Get_CombosSoFar(locComboingStage, dComboInfoChargeContent[locSourceComboInfo], locChargedCombo_WithNow);
+	if(locSourceCombosByUseSoFar.find(locComboUseToCreate) != locSourceCombosByUseSoFar.end())
+	{
+		if(dDebugLevel > 0)
+			cout << "Already created!" << endl;
+		return; //we're done!
+	}
+
 	//we will create these combos for an "Unknown" decay (i.e. no decay, just a direct grouping)
 	//then, when we return from this function, we can cut on the invariant mass of the system for any decay we might need it for
 	DSourceComboUse locUnknownComboUse(Unknown, locVertexZBin, locSourceComboInfo);
@@ -1508,12 +1530,8 @@ void DSourceComboer::Create_SourceCombos(const DSourceComboUse& locComboUseToCre
 	if(locDecayPID == Unknown)
 		return;
 
-	//Get combos so far
-	auto locChargedCombo_WithNow = Get_ChargedCombo_WithNow(locChargedCombo_Presiding, locSourceComboInfo, locComboingStage);
-	auto& locSourceCombosByUseSoFar = Get_CombosSoFar(locComboingStage, dComboInfoChargeContent[locSourceComboInfo], locChargedCombo_WithNow);
-	auto locInfoChargeContent = dComboInfoChargeContent[locSourceComboInfo];
-
 	//get the combos that we just created
+	auto locInfoChargeContent = dComboInfoChargeContent[locSourceComboInfo];
 	auto locSourceCombos = locSourceCombosByUseSoFar[locUnknownComboUse];
 
 	if((locComboingStage == d_ChargedStage) && (locInfoChargeContent != d_Charged))
@@ -1525,6 +1543,9 @@ void DSourceComboer::Create_SourceCombos(const DSourceComboUse& locComboUseToCre
 			cout << "On charged stage, need neutrals: done for now" << endl;
 		}
 		locSourceCombosByUseSoFar.emplace(locComboUseToCreate, locSourceCombos);
+
+		//Set the resume indices
+		Build_ComboResumeIndices(locComboUseToCreate, locComboingStage, locChargedCombo_WithNow);
 		return;
 	}
 
@@ -1545,6 +1566,9 @@ void DSourceComboer::Create_SourceCombos(const DSourceComboUse& locComboUseToCre
 		}
 		locSourceCombosByUseSoFar.emplace(locComboUseToCreate, locSourceCombos);
 		(*locSourceCombosByBeamBunchByUse)[locComboUseToCreate] = (*locSourceCombosByBeamBunchByUse)[locUnknownComboUse];
+
+		//Set the resume indices
+		Build_ComboResumeIndices(locComboUseToCreate, locComboingStage, locChargedCombo_WithNow);
 		return;
 	}
 
@@ -1559,25 +1583,29 @@ void DSourceComboer::Create_SourceCombos(const DSourceComboUse& locComboUseToCre
 	if((locComboingStage == d_MixedStage) && (locVertexZBin == DSourceComboInfo::Get_VertexZIndex_Unknown()))
 	{
 		//we need a zbin for BCAL showers, but it is unknown: can't cut yet!
-		//copy the new z-dependent results into the existing vector (because FCAL cuts were already placed!)
-
-		//in locSourceCombos, all of the fcal results are stored at the front
-		//so find where the end of that vector is, and copy over the new ones
-		auto locComboUseFCAL = std::make_tuple(Unknown, DSourceComboInfo::Get_VertexZIndex_ZIndependent(), locSourceComboInfo);
-		const auto& locFCALComboVector = *(locSourceCombosByUseSoFar[locComboUseFCAL]);
-		auto& locBothComboVector = *(locSourceCombosByUseSoFar[locComboUseToCreate]);
-		locBothComboVector.insert(locBothComboVector.end(), locSourceCombos->begin() + locFCALComboVector.size(), locSourceCombos->end());
-
-		//now the combos by beam bunch
-		auto& locFCALCombosByBeamBunch = (*locSourceCombosByBeamBunchByUse)[locComboUseFCAL];
-		map<vector<int>, vector<const DSourceCombo*>>& locBothCombosByBeamBunch = (*locSourceCombosByBeamBunchByUse)[locComboUseToCreate];
-		auto& locUnknownBothCombosByBeamBunch = (*locSourceCombosByBeamBunchByUse)[locUnknownComboUse];
-		for(const auto& locUnknownComboBeamBunchPair : locUnknownBothCombosByBeamBunch)
+		//However, the FCAL ones were already cut during the z-independent stage, and have already been saved
+		//so, just copy over the bcal results from the unknown use
+		for(auto& locCombo : *locSourceCombos)
 		{
-			const auto& locRFBunches = locUnknownComboBeamBunchPair.first;
-			const auto& locUnknownBunchCombos = locUnknownComboBeamBunchPair.second;
-			locBothCombosByBeamBunch[locRFBunches].insert(locBothCombosByBeamBunch[locRFBunches].end(), locUnknownBunchCombos.begin() + locFCALCombosByBeamBunch[locRFBunches].size(), locUnknownBunchCombos.end());
+			if(!locCombo->Get_IsComboingZIndependent()) //bcal only
+				locSourceCombosByUseSoFar[locComboUseToCreate]->push_back(locCombo);
 		}
+
+		//Copy over the combos-by-beam-bunch
+		auto& locUnknownBothCombosByBeamBunch = (*locSourceCombosByBeamBunchByUse)[locUnknownComboUse];
+		for(const auto& locComboBeamBunchPair : locUnknownBothCombosByBeamBunch)
+		{
+			if(locComboBeamBunchPair.first.size() > 1) 
+				continue; //don't copy the overlap ones: they are not complete & need to be filled on the fly
+			for(const auto& locCombo : locComboBeamBunchPair.second)
+			{
+				if(!locCombo->Get_IsComboingZIndependent()) //bcal only
+					(*locSourceCombosByBeamBunchByUse)[locComboUseToCreate][locComboBeamBunchPair.first].push_back(locCombo);
+			}
+		}
+
+		//Set the resume indices
+		Build_ComboResumeIndices(locComboUseToCreate, locComboingStage, locChargedCombo_WithNow);
 		return;
 	}
 
@@ -1585,6 +1613,9 @@ void DSourceComboer::Create_SourceCombos(const DSourceComboUse& locComboUseToCre
 	auto locVertex = DVector3(0.0, 0.0, dSourceComboTimeHandler->Get_PhotonVertexZBinCenter(locVertexZBin)); //good enough for now, only want exact for missing mass
 	for(const auto& locSourceCombo : *locSourceCombos)
 	{
+		//If on all-showers stage, and combo is fcal-only, don't save (combo already created!!)
+		if((locComboingStage == d_MixedStage) && locSourceCombo->Get_IsComboingZIndependent())
+			continue; //this combo has already passed the cut & been saved: during the FCAL-only stage
 		if(!dSourceComboP4Handler->Cut_InvariantMass_NoMassiveNeutrals(locSourceCombo, locDecayPID, locVertex, locVertexZBin))
 			continue;
 
@@ -1597,6 +1628,9 @@ void DSourceComboer::Create_SourceCombos(const DSourceComboUse& locComboUseToCre
 		const auto& locBeamBunches = dValidRFBunches_ByCombo[locSourceCombo];
 		Register_ValidRFBunches(locComboUseToCreate, locSourceCombo, locBeamBunches, locComboingStage, locChargedCombo_WithNow);
 	}
+
+	//Set the resume indices
+	Build_ComboResumeIndices(locComboUseToCreate, locComboingStage, locChargedCombo_WithNow);
 }
 
 void DSourceComboer::Create_SourceCombos_Unknown(const DSourceComboUse& locComboUseToCreate, ComboingStage_t locComboingStage, const DSourceCombo* locChargedCombo_Presiding, unsigned char locNumTabs)
@@ -1644,13 +1678,21 @@ void DSourceComboer::Create_SourceCombos_Unknown(const DSourceComboUse& locCombo
 
 	Combo_Vertically_AllDecays(locComboUseToCreate, locComboingStage, locChargedCombo_Presiding, locNumTabs);
 	if(locSourceCombosByUseSoFar.find(locComboUseToCreate) != locSourceCombosByUseSoFar.end())
+	{
+		if(dDebugLevel > 0)
+			cout << "We're done!" << endl;
 		return; //we're done!
+	}
 
 	if((locComboingStage == d_ChargedStage) || (locChargeContent == d_Neutral))
 	{
 		Combo_Vertically_AllParticles(locComboUseToCreate, locComboingStage, locNumTabs); //no such thing as a "mixed" particle
 		if(locSourceCombosByUseSoFar.find(locComboUseToCreate) != locSourceCombosByUseSoFar.end())
+		{
+			if(dDebugLevel > 0)
+				cout << "We're done!" << endl;
 			return; //we're done!
+		}
 	}
 
 	//OK, now build horizontally!! //group particles with different PIDs
@@ -1676,7 +1718,6 @@ void DSourceComboer::Combo_Vertically_AllDecays(const DSourceComboUse& locComboU
 	//Get combos so far
 	auto locComboInfo = std::get<2>(locComboUseToCreate);
 	auto locChargedCombo_WithNow = Get_ChargedCombo_WithNow(locChargedCombo_Presiding, locComboInfo, locComboingStage);
-	auto& locSourceCombosByUseSoFar = Get_CombosSoFar(locComboingStage, dComboInfoChargeContent[locComboInfo], locChargedCombo_WithNow);
 
 	//get combo use contents
 	auto locVertexZBin = std::get<1>(locComboUseToCreate);
@@ -1693,6 +1734,7 @@ void DSourceComboer::Combo_Vertically_AllDecays(const DSourceComboUse& locComboU
 		if((locComboingStage == d_ChargedStage) && (locDecayChargeContent == d_Neutral))
 			continue; //skip for now!!
 
+		auto& locSourceCombosByUseSoFar = Get_CombosSoFar(locComboingStage, locDecayChargeContent, locChargedCombo_WithNow);
 		if(locNumDecaysNeeded == 1)
 		{
 			//if on a mixed stage, and the to-build combo info is fully charged, skip it: it's already been done
@@ -1709,6 +1751,9 @@ void DSourceComboer::Combo_Vertically_AllDecays(const DSourceComboUse& locComboU
 				//must return to top-level combo function to build this decay, as this may have any structure
 				Create_SourceCombos(locSourceComboDecayUse, locComboingStage, locChargedCombo_NextPresiding, locNumTabs + 1);
 			}
+			else if(dDebugLevel > 0)
+				cout << "This decay already created!" << endl;
+
 			continue;
 		}
 
@@ -1724,7 +1769,11 @@ void DSourceComboer::Combo_Vertically_AllDecays(const DSourceComboUse& locComboU
 
 		// Now, see whether the combos for this grouping have already been done
 		if(locSourceCombosByUseSoFar.find(locNeededGroupingUse) != locSourceCombosByUseSoFar.end())
+		{
+			if(dDebugLevel > 0)
+				cout << "This decay already created!" << endl;
 			continue; //it's already done!!
+		}
 
 		//it's not already done.  darn it.
 		//build an info and a use for a direct grouping of N - 1 decays //e.g. 2pi0s
@@ -1806,6 +1855,7 @@ void DSourceComboer::Combo_Vertically_NDecays(const DSourceComboUse& locComboUse
 		//TEST 2: Also, don't re-use a shower we've already used (e.g. if A & C each contain the same photon, don't group them together)
 		//Technically, if we pass Test 2 we automatically pass Test 1.
 		//However, validating for Test 1 is much faster, as discussed below.
+	auto& locComboResultsVector = *(locSourceCombosByUseSoFar[locComboUseToCreate]);
 	for(const auto& locCombo_NMinus1 : locCombos_NMinus1)
 	{
 		//loop over potential combos to add to the group, creating a new combo for each valid (non-duplicate) grouping
@@ -1816,6 +1866,13 @@ void DSourceComboer::Combo_Vertically_NDecays(const DSourceComboUse& locComboUse
 		const auto& locDecayCombos_1 = Get_CombosForComboing(locSourceComboDecayUse, locComboingStage, locValidRFBunches_NMinus1, locChargedCombo_WithPrevious);
 		if(dDebugLevel >= 20)
 			cout << "decay combos vector address, size: " << &locDecayCombos_1 << ", " << locDecayCombos_1.size() << endl;
+		if(dDebugLevel >= 100)
+		{
+			cout << "Vector combos: ";
+			for(auto& locCombo : locDecayCombos_1)
+				cout << locCombo << ", ";
+			cout << endl;
+		}
 
 		//now, note that all of the combos are stored in the order in which they were created (e.g. A, B, C, D)
 		//so (e.g.), groupings of 2 will be created and saved in the order: AB, AC, AD, BC, BD, CD
@@ -1883,10 +1940,20 @@ void DSourceComboer::Combo_Vertically_NDecays(const DSourceComboUse& locComboUse
 				DAnalysis::Print_SourceCombo(locCombo, locNumTabs);
 			}
 
-			//save it! //in creation order!
-			locSourceCombosByUseSoFar[locComboUseToCreate]->push_back(locCombo);
+			//save it!
+			locComboResultsVector.push_back(locCombo);
 			Register_ValidRFBunches(locComboUseToCreate, locCombo, locValidRFBunches, locComboingStage, locChargedCombo_WithNow);
 		}
+	}
+	if((dDebugLevel > 0) || (dDebugLevel == -1))
+		Check_ForDuplicates(locComboResultsVector);
+
+	//Set the resume indices
+	Build_ComboResumeIndices(locComboUseToCreate, locComboingStage, locChargedCombo_WithNow);
+	if(dDebugLevel >= 5)
+	{
+		for(decltype(locNumTabs) locTabNum = 0; locTabNum < locNumTabs; ++locTabNum) cout << "\t";
+		cout << "Combo_Vertically_NDecays: NUM SOURCE COMBOS CREATED: " << locComboResultsVector.size() << endl;
 	}
 }
 
@@ -1934,7 +2001,11 @@ void DSourceComboer::Combo_Vertically_AllParticles(const DSourceComboUse& locCom
 
 		//See whether the combos for this grouping have already been done
 		if(locSourceCombosByUseSoFar.find(locNeededGroupingUse) != locSourceCombosByUseSoFar.end())
+		{
+			if(dDebugLevel > 0)
+				cout << "This group already created!" << endl;
 			continue; //it's already done!!
+		}
 
 		//it's not already done.  darn it.
 		//if it's a direct combo of 2 particles, just make it and continue
@@ -2021,6 +2092,16 @@ void DSourceComboer::Combo_Vertically_NParticles(const DSourceComboUse& locCombo
 				Register_ValidRFBunches(locComboUseToCreate, locCombo, locValidRFBunches, locComboingStage, nullptr);
 			}
 		}
+		if((dDebugLevel > 0) || (dDebugLevel == -1))
+			Check_ForDuplicates(*(locSourceCombosByUseSoFar[locComboUseToCreate]));
+
+		//Set the resume indices
+		Build_ComboResumeIndices(locComboUseToCreate, locComboingStage, nullptr);
+		if(dDebugLevel >= 5)
+		{
+			for(decltype(locNumTabs) locTabNum = 0; locTabNum < locNumTabs; ++locTabNum) cout << "\t";
+			cout << "Combo_Vertically_NParticles: NUM SOURCE COMBOS CREATED: " << locSourceCombosByUseSoFar[locComboUseToCreate]->size() << endl;
+		}
 		return;
 	}
 
@@ -2068,6 +2149,16 @@ void DSourceComboer::Combo_Vertically_NParticles(const DSourceComboUse& locCombo
 			Register_ValidRFBunches(locComboUseToCreate, locCombo, locValidRFBunches, locComboingStage, nullptr);
 		}
 	}
+	if((dDebugLevel > 0) || (dDebugLevel == -1))
+		Check_ForDuplicates(*(locSourceCombosByUseSoFar[locComboUseToCreate]));
+
+	//Set the resume indices
+	Build_ComboResumeIndices(locComboUseToCreate, locComboingStage, nullptr);
+	if(dDebugLevel >= 5)
+	{
+		cout << "Combo_Vertically_NParticles: NUM SOURCE COMBOS CREATED: " << locSourceCombosByUseSoFar[locComboUseToCreate]->size() << endl;
+		for(decltype(locNumTabs) locTabNum = 0; locTabNum < locNumTabs; ++locTabNum) cout << "\t";
+	}
 }
 
 /************************************************************* BUILD PHOTON COMBOS - HORIZONTALLY ***************************************************************/
@@ -2105,6 +2196,7 @@ void DSourceComboer::Combo_Horizontally_All(const DSourceComboUse& locComboUseTo
 		//not much of a combo if there's only 1, is it? //e.g. 1 charged track at a vertex
 		if((locComboingStage == d_ChargedStage) && (ParticleCharge(locParticlePair.first) == 0))
 			return; //skip for now!!
+
 		Create_Combo_OneParticle(locComboUseToCreate, locComboingStage, locNumTabs);
 		return;
 	}
@@ -2145,6 +2237,8 @@ void DSourceComboer::Combo_Horizontally_All(const DSourceComboUse& locComboUseTo
 				//just copy the all-but-1 as the desired combos
 				auto& locAllBut1Combos = locSourceCombosByUseSoFar[locAllBut1ComboUse];
 				locSourceCombosByUseSoFar.emplace(locComboUseToCreate, locAllBut1Combos);
+				//Set the resume indices
+				Build_ComboResumeIndices(locComboUseToCreate, locComboingStage, locChargedCombo_WithNow);
 				return; 
 			}
 		}
@@ -2301,6 +2395,11 @@ void DSourceComboer::Combo_Horizontally_AddDecay(const DSourceComboUse& locCombo
 		auto& locSourceCombosByUseSoFar = Get_CombosSoFar(locComboingStage, d_Charged);
 		auto& locAllBut1Combos = locSourceCombosByUseSoFar[locComboUseAllBut1];
 		locSourceCombosByUseSoFar.emplace(locComboUseToCreate, locAllBut1Combos);
+		if(dDebugLevel > 0)
+			cout << "Save for later!" << endl;
+
+		//Set the resume indices
+		Build_ComboResumeIndices(locComboUseToCreate, locComboingStage, nullptr);
 		return;
 	}
 
@@ -2322,6 +2421,11 @@ void DSourceComboer::Combo_Horizontally_AddParticles(const DSourceComboUse& locC
 		auto& locSourceCombosByUseSoFar = Get_CombosSoFar(locComboingStage, d_Charged);
 		auto& locAllBut1Combos = locSourceCombosByUseSoFar[locComboUseAllBut1];
 		locSourceCombosByUseSoFar.emplace(locComboUseToCreate, locAllBut1Combos);
+		if(dDebugLevel > 0)
+			cout << "Save for later!" << endl;
+
+		//Set the resume indices
+		Build_ComboResumeIndices(locComboUseToCreate, locComboingStage, nullptr);
 		return;
 	}
 	if(locParticlePairToAdd.second > 1)
@@ -2343,7 +2447,6 @@ void DSourceComboer::Combo_Horizontally_AddParticles(const DSourceComboUse& locC
 	else
 		Combo_Horizontally_AddParticle(locComboUseToCreate, locComboUseAllBut1, locParticlePairToAdd.first, locComboingStage, locChargedCombo_Presiding, locNumTabs);
 }
-
 
 void DSourceComboer::Create_Combo_OneParticle(const DSourceComboUse& locComboUseToCreate, ComboingStage_t locComboingStage, unsigned char locNumTabs)
 {
@@ -2395,6 +2498,16 @@ void DSourceComboer::Create_Combo_OneParticle(const DSourceComboUse& locComboUse
 		else
 			Register_ValidRFBunches(locComboUseToCreate, locCombo, {}, locComboingStage, nullptr);
 	}
+	if((dDebugLevel > 0) || (dDebugLevel == -1))
+		Check_ForDuplicates(*(locSourceCombosByUseSoFar[locComboUseToCreate]));
+
+	//Set the resume indices
+	Build_ComboResumeIndices(locComboUseToCreate, locComboingStage, nullptr);
+	if(dDebugLevel >= 5)
+	{
+		for(decltype(locNumTabs) locTabNum = 0; locTabNum < locNumTabs; ++locTabNum) cout << "\t";
+		cout << "Create_Combo_OneParticle: NUM SOURCE COMBOS CREATED: " << locSourceCombosByUseSoFar[locComboUseToCreate]->size() << endl;
+	}
 }
 
 void DSourceComboer::Combo_Horizontally_AddCombo(const DSourceComboUse& locComboUseToCreate, const DSourceComboUse& locAllBut1ComboUse, const DSourceComboUse& locSourceComboUseToAdd, ComboingStage_t locComboingStage, const DSourceCombo* locChargedCombo_Presiding, bool locExpandAllBut1Flag, unsigned char locNumTabs)
@@ -2440,6 +2553,10 @@ void DSourceComboer::Combo_Horizontally_AddCombo(const DSourceComboUse& locCombo
 	{
 		//can't add neutrals, so we are already done! just copy the results to the new vector
 		locSourceCombosByUseToSaveTo.emplace(locComboUseToCreate, locCombos_AllBut1);
+		//Set the resume indices
+		Build_ComboResumeIndices(locComboUseToCreate, locComboingStage, nullptr);
+		if(dDebugLevel > 0)
+			cout << "Save for later!" << endl;
 		return;
 	}
 
@@ -2511,6 +2628,16 @@ void DSourceComboer::Combo_Horizontally_AddCombo(const DSourceComboUse& locCombo
 			//save it! //in creation order!
 			locSourceCombosByUseToSaveTo[locComboUseToCreate]->push_back(locCombo);
 			Register_ValidRFBunches(locComboUseToCreate, locCombo, locValidRFBunches, locComboingStage, locChargedCombo_WithNow);
+		}
+		if((dDebugLevel > 0) || (dDebugLevel == -1))
+			Check_ForDuplicates(*(locSourceCombosByUseSoFar[locComboUseToCreate]));
+
+		//Set the resume indices
+		Build_ComboResumeIndices(locComboUseToCreate, locComboingStage, locChargedCombo_WithNow);
+		if(dDebugLevel >= 5)
+		{
+			for(decltype(locNumTabs) locTabNum = 0; locTabNum < locNumTabs; ++locTabNum) cout << "\t";
+			cout << "Combo_Horizontally_AddCombo: NUM SOURCE COMBOS CREATED: " << locSourceCombosByUseSoFar[locComboUseToCreate]->size() << endl;
 		}
 		return;
 	}
@@ -2630,6 +2757,16 @@ void DSourceComboer::Combo_Horizontally_AddCombo(const DSourceComboUse& locCombo
 			Register_ValidRFBunches(locComboUseToCreate, locCombo, locValidRFBunches, locComboingStage, locChargedCombo_WithNow);
 		}
 	}
+	if((dDebugLevel > 0) || (dDebugLevel == -1))
+		Check_ForDuplicates(*(locSourceCombosByUseSoFar[locComboUseToCreate]));
+
+	//Set the resume indices
+	Build_ComboResumeIndices(locComboUseToCreate, locComboingStage, locChargedCombo_WithNow);
+	if(dDebugLevel >= 5)
+	{
+		for(decltype(locNumTabs) locTabNum = 0; locTabNum < locNumTabs; ++locTabNum) cout << "\t";
+		cout << "Combo_Horizontally_AddCombo: NUM SOURCE COMBOS CREATED: " << locSourceCombosByUseSoFar[locComboUseToCreate]->size() << endl;
+	}
 }
 
 void DSourceComboer::Combo_Horizontally_AddParticle(const DSourceComboUse& locComboUseToCreate, const DSourceComboUse& locAllBut1ComboUse, Particle_t locPID, ComboingStage_t locComboingStage, const DSourceCombo* locChargedCombo_Presiding, unsigned char locNumTabs)
@@ -2666,6 +2803,10 @@ void DSourceComboer::Combo_Horizontally_AddParticle(const DSourceComboUse& locCo
 	{
 		//can't add neutrals, so we are already done! just copy the results to the new vector
 		locSourceCombosByUseSoFar[locComboUseToCreate] = locCombos_AllBut1;
+		//Set the resume indices
+		Build_ComboResumeIndices(locComboUseToCreate, locComboingStage, nullptr);
+		if(dDebugLevel > 0)
+			cout << "Save for later!" << endl;
 		return;
 	}
 
@@ -2725,8 +2866,18 @@ void DSourceComboer::Combo_Horizontally_AddParticle(const DSourceComboUse& locCo
 
 			//save it! //in creation order!
 			locSourceCombosByUseSoFar[locComboUseToCreate]->push_back(locCombo);
-			Register_ValidRFBunches(locComboUseToCreate, locCombo, locValidRFBunches, locComboingStage, nullptr);
+			Register_ValidRFBunches(locComboUseToCreate, locCombo, locValidRFBunches, locComboingStage, locChargedCombo_WithNow);
 		}
+	}
+	if((dDebugLevel > 0) || (dDebugLevel == -1))
+		Check_ForDuplicates(*(locSourceCombosByUseSoFar[locComboUseToCreate]));
+
+	//Set the resume indices
+	Build_ComboResumeIndices(locComboUseToCreate, locComboingStage, locChargedCombo_WithNow);
+	if(dDebugLevel >= 5)
+	{
+		for(decltype(locNumTabs) locTabNum = 0; locTabNum < locNumTabs; ++locTabNum) cout << "\t";
+		cout << "Combo_Horizontally_AddParticle: NUM SOURCE COMBOS CREATED: " << locSourceCombosByUseSoFar[locComboUseToCreate]->size() << endl;
 	}
 }
 
@@ -2811,20 +2962,30 @@ void DSourceComboer::Register_ValidRFBunches(const DSourceComboUse& locSourceCom
 		auto& locSourceCombosByBeamBunchByUse = Get_SourceCombosByBeamBunchByUse(dComboInfoChargeContent[locComboInfo], locChargedCombo_WithNow);
 		auto& locCombosByBeamBunch = locSourceCombosByBeamBunchByUse[locSourceComboUse];
 		for(const auto& locBeamBunch : locRFBunches)
-		{
-			auto& locComboVector = locCombosByBeamBunch[{locBeamBunch}];
-			locComboVector.push_back(locSourceCombo);
-			dResumeSearchAfterIndices_Combos[std::make_pair(locSourceCombo, locSourceComboUse)].emplace(vector<int>{locBeamBunch}, locComboVector.size() - 1);
-			if(dDebugLevel >= 20)
-				cout << "register resume indices: vector address, combo, decay pid, zbin, bunch, saved index: " << &locComboVector << ", " << locSourceCombo << ", " << std::get<0>(locSourceComboUse) << ", " << int(std::get<1>(locSourceComboUse)) << ", " << locBeamBunch << ", " << locComboVector.size() - 1 << endl;
-		}
+			locCombosByBeamBunch[{locBeamBunch}].push_back(locSourceCombo);
 	}
-	if(locRFBunches.empty()) //all //don't need to save the by-beam-bunch, but still need to save the resume-after iterator
+}
+
+void DSourceComboer::Build_ComboResumeIndices(const DSourceComboUse& locSourceComboUse, ComboingStage_t locComboingStage, const DSourceCombo* locChargedCombo_WithNow)
+{
+	//THE INPUT locChargedCombo MUST BE:
+	//Whatever charged combo you just comboed horizontally with to make these new, mixed combos
+	auto locComboInfo = std::get<2>(locSourceComboUse);
+
+	auto& locComboVector = *(Get_CombosSoFar(locComboingStage, dComboInfoChargeContent[locComboInfo], locChargedCombo_WithNow)[locSourceComboUse]);
+	std::sort(locComboVector.begin(), locComboVector.end());
+	Build_ComboIndices(locSourceComboUse, {}, locComboVector, locComboingStage);
+
+	//register for each individual bunch: so that we can get valid combos for some input rf bunches later
+	if(locComboingStage != d_ChargedStage)
 	{
-		auto& locComboVector = *(Get_CombosSoFar(locComboingStage, dComboInfoChargeContent[locComboInfo], locChargedCombo_WithNow)[locSourceComboUse]);
-		dResumeSearchAfterIndices_Combos[std::make_pair(locSourceCombo, locSourceComboUse)].emplace(locRFBunches, locComboVector.size() - 1);
-		if(dDebugLevel >= 20)
-			cout << "register resume indices: vector address, combo, decay pid, zbin, bunch, saved index: " << &locComboVector << ", " << locSourceCombo << ", " << std::get<0>(locSourceComboUse) << ", " << int(std::get<1>(locSourceComboUse)) << ", NONE, " << locComboVector.size() - 1 << endl;
+		auto& locSourceCombosByBeamBunchByUse = Get_SourceCombosByBeamBunchByUse(dComboInfoChargeContent[locComboInfo], locChargedCombo_WithNow);
+		auto& locCombosByBeamBunch = locSourceCombosByBeamBunchByUse[locSourceComboUse];
+		for(auto& locRFPair : locCombosByBeamBunch)
+		{
+			std::sort(locRFPair.second.begin(), locRFPair.second.end());
+			Build_ComboIndices(locSourceComboUse, locRFPair.first, locRFPair.second, locComboingStage);
+		}
 	}
 }
 
@@ -2877,11 +3038,7 @@ const vector<const DSourceCombo*>& DSourceComboer::Get_CombosByBeamBunch(const D
 	{
 		//get vectors and sort them: sort needed for union below
 		auto& locCombosSoFar = locCombosByBunch[locBunchesSoFar];
-		if((locBunchesSoFar.size() == 1) && !std::is_sorted(locCombosSoFar.begin(), locCombosSoFar.end()))
-			std::sort(locCombosSoFar.begin(), locCombosSoFar.end()); //already sorted if size > 1
 		auto& locBunchCombos = locCombosByBunch[{*locBunchIterator}];
-		if(!std::is_sorted(locCombosSoFar.begin(), locCombosSoFar.end()))
-			std::sort(locBunchCombos.begin(), locBunchCombos.end());
 
 		locBunchesSoFar.push_back(*locBunchIterator);
 		if(locBunchCombos.empty())
@@ -2914,10 +3071,17 @@ void DSourceComboer::Copy_ZIndependentMixedResults(const DSourceComboUse& locCom
 	auto& locSourceCombosByUseSoFar = Get_CombosSoFar(d_MixedStage, locChargeContent, locChargedCombo_WithNow);
 
 	//Get FCAL results
-	auto locComboUseFCAL = dZDependentUseToIndependentMap[locComboUseToCreate];
+	auto locComboUseFCAL = Get_ZIndependentUse(locComboUseToCreate);
+	if(dDebugLevel >= 20)
+	{
+		cout << "FCAL USE: " << endl;
+		Print_SourceComboUse(locComboUseFCAL);
+	}
 	if(locSourceCombosByUseSoFar.find(locComboUseFCAL) == locSourceCombosByUseSoFar.end())
 		return; //no results to copy, just return
 	const auto& locFCALComboVector = *(locSourceCombosByUseSoFar[locComboUseFCAL]);
+	if(dDebugLevel >= 20)
+		cout << "copying " << locFCALComboVector.size() << " from the fcal vector" << endl;
 	if(locFCALComboVector.empty())
 		return;
 
@@ -2928,23 +3092,11 @@ void DSourceComboer::Copy_ZIndependentMixedResults(const DSourceComboUse& locCom
 
 	//Copy over the combos-by-beam-bunch
 	auto& locSourceCombosByBeamBunchByUse = Get_SourceCombosByBeamBunchByUse(locChargeContent, locChargedCombo_WithNow);
-
 	const auto& locCombosByBeamBunch = locSourceCombosByBeamBunchByUse[locComboUseFCAL];
 	for(const auto& locComboBeamBunchPair : locCombosByBeamBunch)
 	{
 		if(locComboBeamBunchPair.first.size() == 1) //don't copy the overlap ones: they are not complete & need to be filled on the fly
 			locSourceCombosByBeamBunchByUse[locComboUseToCreate].emplace(locComboBeamBunchPair);
-	}
-
-	//Copy over the resume-after iterators
-	for(size_t loc_i = 0; loc_i < locBothComboVector.size(); ++loc_i)
-	{
-		auto locComboSearchPair_FCAL = std::make_pair(locBothComboVector[loc_i], locComboUseFCAL);
-		auto locComboSearchPair_Mixed = std::make_pair(locBothComboVector[loc_i], locComboUseToCreate);
-
-		if(dDebugLevel >= 20)
-			cout << "copy resume indices: vector address, combo, zbin, index: " << &locBothComboVector << ", " << locBothComboVector[loc_i] << ", " << int(std::get<1>(locComboUseToCreate)) << ", " << loc_i << endl;
-		dResumeSearchAfterIndices_Combos.emplace(locComboSearchPair_Mixed, dResumeSearchAfterIndices_Combos[locComboSearchPair_FCAL]);
 	}
 }
 
@@ -3339,6 +3491,30 @@ void DSourceComboer::Print_NumCombosByUse(void)
 			dNumMixedCombosMap_Mixed.emplace(locNumCombosByUsePair.first, locNumCombosByUsePair.second);
 		else
 			locIterator->second += locNumCombosByUsePair.second;
+	}
+}
+
+void DSourceComboer::Check_ForDuplicates(const vector<const DSourceCombo*>& locCombos) const
+{
+	//Check for dupes & reuses!
+	if(std::any_of(locCombos.begin(), locCombos.end(), DSourceComboChecker_ReusedParticle()))
+	{
+		cout << "Re-used particles, event = " << dEventNumber << ". Aborting!" << endl;
+		abort();
+	}
+	for(size_t loc_i = 0; loc_i < locCombos.size(); ++loc_i)
+	{
+		for(size_t loc_j = loc_i + 1; loc_j < locCombos.size(); ++loc_j)
+		{
+			if(!DAnalysis::Check_AreDuplicateCombos(locCombos[loc_i], locCombos[loc_j]))
+				continue;
+			cout << "Duplicate particles, event = " << dEventNumber << ". Aborting!" << endl;
+			cout << "DUPE COMBO 1:" << endl;
+			Print_SourceCombo(locCombos[loc_i]);
+			cout << "DUPE COMBO 2:" << endl;
+			Print_SourceCombo(locCombos[loc_j]);
+			abort();
+		}
 	}
 }
 

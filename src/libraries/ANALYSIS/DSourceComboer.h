@@ -65,7 +65,7 @@ class DSourceComboer : public JObject
 {
 	enum ComboingStage_t
 	{
-		d_ChargedStage,
+		d_ChargedStage = 0,
 		d_MixedStage_ZIndependent,
 		d_MixedStage
 	};
@@ -142,6 +142,8 @@ class DSourceComboer : public JObject
 		void Create_SourceComboInfos(const DReactionVertexInfo* locReactionVertexInfo);
 		DSourceComboUse Create_ZDependentSourceComboUses(const DReactionVertexInfo* locReactionVertexInfo, const DSourceCombo* locReactionChargedCombo);
 		DSourceComboUse Build_NewZDependentUse(const DReaction* locReaction, size_t locStepIndex, signed char locVertexZBin, const DSourceComboUse& locOrigUse, const unordered_map<size_t, DSourceComboUse>& locCreatedUseMap);
+		DSourceComboUse Get_ZIndependentUse(const DSourceComboUse& locZDependentUse);
+		const DSourceComboInfo* Get_ZIndependentComboInfo(const DSourceComboInfo* locZDependentComboInfo);
 
 		//CREATE PHOTON COMBO INFOS & USES: UTILITY METHODS
 		map<Particle_t, unsigned char> Build_ParticleMap(const DReaction* locReaction, size_t locStepIndex, Charge_t locCharge) const;
@@ -188,6 +190,7 @@ class DSourceComboer : public JObject
 
 		//REGISTER VALID RF BUNCHES
 		void Register_ValidRFBunches(const DSourceComboUse& locSourceComboUse, const DSourceCombo* locSourceCombo, const vector<int>& locRFBunches, ComboingStage_t locComboingStage, const DSourceCombo* locChargedCombo_WithNow);
+		void Build_ComboResumeIndices(const DSourceComboUse& locSourceComboUse, ComboingStage_t locComboingStage, const DSourceCombo* locChargedCombo_WithNow);
 
 		//PARTICLE UTILITY FUNCTIONS
 		const vector<const JObject*>& Get_ParticlesForComboing(Particle_t locPID, ComboingStage_t locComboingStage, const vector<int>& locBeamBunches = {}, signed char locVertexZBin = 0);
@@ -203,6 +206,7 @@ class DSourceComboer : public JObject
 		const DSourceCombo* Get_NextChargedCombo(const DSourceCombo* locChargedCombo_Presiding, const DSourceComboUse& locNextComboUse, ComboingStage_t locComboingStage, bool locGetPresidingFlag, size_t locInstance) const;
 		bool Get_PromoteFlag(Particle_t locDecayPID_UseToCheck, const DSourceComboInfo* locComboInfo_UseToCreate, const DSourceComboInfo* locComboInfo_UseToCheck) const;
 		const DSourceCombo* Find_Combo_AtThisStep(const DSourceCombo* locSourceCombo, DSourceComboUse locUseToFind, size_t locDecayInstanceIndex) const;
+		void Check_ForDuplicates(const vector<const DSourceCombo*>& locCombos) const;
 
 		//GET RESOURCES
 		DSourceCombo* Get_SourceComboResource(void);
@@ -213,7 +217,7 @@ class DSourceComboer : public JObject
 		//CONTROL INFORMATION
 		uint64_t dEventNumber = 0; //re-setup on new events
 		string dShowerSelectionTag = "PreSelect";
-		size_t dDebugLevel = 0;
+		int dDebugLevel = 0;
 
 		//EXPERIMENT INFORMATION
 		DVector3 dTargetCenter;
@@ -340,6 +344,27 @@ inline bool DSourceComboer::Check_Skims(const DReaction* locReaction) const
 	}
 
 	return true;
+}
+
+inline DSourceComboUse DSourceComboer::Get_ZIndependentUse(const DSourceComboUse& locZDependentUse)
+{
+	auto locIterator = dZDependentUseToIndependentMap.find(locZDependentUse);
+	if(locIterator != dZDependentUseToIndependentMap.end())
+		return locIterator->second;
+
+	auto locZIndependentComboInfo = Get_ZIndependentComboInfo(std::get<2>(locZDependentUse));
+	DSourceComboUse locZIndependentUse(std::get<0>(locZDependentUse), DSourceComboInfo::Get_VertexZIndex_ZIndependent(), locZIndependentComboInfo);
+	dZDependentUseToIndependentMap.emplace(locZDependentUse, locZIndependentUse);
+	return locZIndependentUse;
+}
+
+inline const DSourceComboInfo* DSourceComboer::Get_ZIndependentComboInfo(const DSourceComboInfo* locZDependentComboInfo)
+{
+	vector<pair<DSourceComboUse, unsigned char>> locFurtherDecays_ZIndependent;
+	for(const auto& locDecayPair : locZDependentComboInfo->Get_FurtherDecays())
+		locFurtherDecays_ZIndependent.emplace_back(Get_ZIndependentUse(locDecayPair.first), locDecayPair.second);
+
+	return GetOrMake_SourceComboInfo(locZDependentComboInfo->Get_NumParticles(), locFurtherDecays_ZIndependent, 0);
 }
 
 inline void DSourceComboer::Build_ParticleIndices(Particle_t locPID, const vector<int>& locBeamBunches, const vector<const JObject*>& locParticles, signed char locVertexZBin)

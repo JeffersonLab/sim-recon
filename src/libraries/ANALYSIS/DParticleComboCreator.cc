@@ -186,7 +186,11 @@ const DParticleCombo* DParticleComboCreator::Build_ParticleCombo(const DReaction
 
 		//Set initial particle
 		if((locBeamParticle != nullptr) && (loc_i == 0))
+		{
+			if(dDebugLevel >= 5)
+				cout << "beam particle set: " << locBeamParticle << endl;
 			locParticleComboStep->Set_InitialParticle(locBeamParticle);
+		}
 		else
 			locParticleComboStep->Set_InitialParticle(nullptr);
 
