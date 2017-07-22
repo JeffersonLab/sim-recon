@@ -5,8 +5,8 @@
 /*
  * PROBLEMS:
  * 
- * REDO ALL WITH NEUTRALS!!!!!
  * track timing resolution at 3 GeV
+ * crash on exit in ubuntu: TClonesArray branches invalidated after several threads close
  *
  * TESTING:
  * p2pi: OK
@@ -14,20 +14,28 @@
  * p4pi: OK
  * p2g: OK
  * p pi0: OK
- * p3pi: OVERHAUL RUNNING
- * p2pi0: OVERHAUL AGAIN
- * p4g: OVERHAUL AGAIN
- * p3pi0: OVERHAUL
- * p pi0 g: OVERHAUL
- * p2pi g: 
- * p2pi 2pi0
- * p4pi pi0
- * p 2k 2pi
+ * p3pi: OK
+ * p2pi0: OK
+ * p4g: OVERHAUL RUNNING
+ * p3pi0: OVERHAUL RUNNING
+ * p pi0 g: OVERHAUL RUNNING,
+ * p2pi g: OVERHAUL RUNNING, RUN MASTER
+ * p2pi 2pi0: RUN MASTER, OVERHAUL
+ * p4pi pi0: RUN MASTER, OVERHAUL
+ * p, g: RUN MASTER, OVERHAUL
  * p eta pi0
  * p eta 2pi0
- * pi+ (n)
- * p pbar p
  * 
+ * PLUGINS BY:
+ * Robison
+ * Justin
+ * Lubomir
+ * Mahmoud
+ * Dominick
+ * Tegan
+ * Alex A.
+ * Christiano
+ *
  * ppp
  * p4pi0
  * p3pi missing-p
@@ -64,9 +72,9 @@ A)
 //time handler charged time
 
 //MUST DO:
-//include lubomir cuts
+//include lubomir & aaustreg cuts
 //save #tracks to tree
-//review all cuts
+//fix custom actions: justin & robison
 //remove actions from ReactionFilter
 //When saving ROOT TTree, don't save p4 of decaying particles if mass is not constrained in kinfit!
 	//And make sure it's not grabbed in DSelector by default
@@ -1535,10 +1543,11 @@ void DSourceComboer::Create_SourceCombos(const DSourceComboUse& locComboUseToCre
 		return; //we're done!
 	}
 
-	//we will create these combos for an "Unknown" decay (i.e. no decay, just a direct grouping)
+	//we will create these combos for an "Unknown" decay (i.e. no decay, just a direct grouping) (unless already created!)
 	//then, when we return from this function, we can cut on the invariant mass of the system for any decay we might need it for
 	DSourceComboUse locUnknownComboUse(Unknown, locVertexZBin, locSourceComboInfo);
-	Create_SourceCombos_Unknown(locUnknownComboUse, locComboingStage, locChargedCombo_Presiding, locNumTabs);
+	if(locSourceCombosByUseSoFar.find(locUnknownComboUse) == locSourceCombosByUseSoFar.end())
+		Create_SourceCombos_Unknown(locUnknownComboUse, locComboingStage, locChargedCombo_Presiding, locNumTabs);
 
 	if(dDebugLevel > 0)
 	{
@@ -2323,11 +2332,19 @@ void DSourceComboer::Combo_Horizontally_All(const DSourceComboUse& locComboUseTo
 			}
 
 			//guard against special cases for the all-but-1 combo use //must be after check on whether all-but-1 is charged (it itself is special case)
+			auto locAllBut1ComboUse = DSourceComboUse{Unknown, locVertexZBin, locAllBut1ComboInfo}; //may change below
 			if((locFurtherDecaysToSearchFor.size() > 1) || !locNumParticlesNeeded.empty())
+			{
 				locAllBut1ComboInfo = GetOrMake_SourceComboInfo(locNumParticlesNeeded, locFurtherDecaysToSearchFor, locNumTabs);
+				locAllBut1ComboUse = DSourceComboUse{Unknown, locVertexZBin, locAllBut1ComboInfo};
+			}
 			else if((locFurtherDecaysToSearchFor.size() == 1) && (locFurtherDecaysToSearchFor[0].second > 1))
+			{
 				locAllBut1ComboInfo = GetOrMake_SourceComboInfo({}, {std::make_pair(locSourceComboUse_ThisDecay, locDecayIterator->second)}, locNumTabs);
-			auto locAllBut1ComboUse = DSourceComboUse{Unknown, locVertexZBin, locAllBut1ComboInfo};
+				locAllBut1ComboUse = DSourceComboUse{Unknown, locVertexZBin, locAllBut1ComboInfo};
+			}
+			else if(locFurtherDecaysToSearchFor.size() == 1)
+				locAllBut1ComboUse = (*locFurtherDecaysToSearchFor.begin()).first;
 
 			//Get combos so far
 			auto& locSourceCombosByUseSoFar = Get_CombosSoFar(locComboingStage, dComboInfoChargeContent[locAllBut1ComboInfo], locChargedCombo_WithNow);
@@ -2598,6 +2615,8 @@ void DSourceComboer::Combo_Horizontally_AddCombo(const DSourceComboUse& locCombo
 	auto locComboInfo_UseToCreate = std::get<2>(locComboUseToCreate);
 	bool locPromoteToAddFlag = Get_PromoteFlag(locDecayPID_UseToAdd, locComboInfo_UseToCreate, locComboInfo_UseToAdd); //is ignored if charged
 	bool locPromoteAllBut1Flag = Get_PromoteFlag(std::get<0>(locAllBut1ComboUse), locComboInfo_UseToCreate, locComboInfo_AllBut1);
+	if(dDebugLevel >= 20)
+		cout << "flags: expand all-but-1, promote to-add, promote all-but-1: " << locExpandAllBut1Flag << ", " << locPromoteToAddFlag << ", " << locPromoteAllBut1Flag << endl;
 
 	//check if on mixed stage but comboing to charged
 	if((locComboingStage != d_ChargedStage) && (locChargeContent_ToAdd == d_Charged))
@@ -2669,10 +2688,7 @@ void DSourceComboer::Combo_Horizontally_AddCombo(const DSourceComboUse& locCombo
 	auto locNextPresidingCombo = Get_NextChargedCombo(locChargedCombo_Presiding, locSourceComboUseToAdd, locComboingStage, true, 1);
 	auto locChargedCombo_WithPrevious = Get_ChargedCombo_WithNow(locNextPresidingCombo, locComboInfoToCreate, locComboingStage);
 	if(dDebugLevel >= 20)
-	{
 		cout << "combos: presiding, next-presiding, with-previous: " << locChargedCombo_Presiding << ", " << locNextPresidingCombo << ", " << locChargedCombo_WithPrevious << endl;
-		cout << "flags: expand all-but-1, promote to-add, promote all-but-1: " << locExpandAllBut1Flag << ", " << locPromoteToAddFlag << ", " << locPromoteAllBut1Flag << endl;
-	}
 
 	//now, for each combo of all-but-1-PIDs, see which of the to-add combos we can group to it
 	//valid grouping: Don't re-use a shower we've already used
@@ -3170,23 +3186,44 @@ const DSourceCombo* DSourceComboer::Find_Combo_AtThisStep(const DSourceCombo* lo
 	//if z-dependent, go to z-independent use
 	if(std::get<1>(locUseToFind) != DSourceComboInfo::Get_VertexZIndex_ZIndependent())
 		locUseToFind = dZDependentUseToIndependentMap.find(locUseToFind)->second;
+	if(dDebugLevel >= 100)
+	{
+		cout << "Find_Combo_AtThisStep: USE TO FIND:" << endl;
+		DAnalysis::Print_SourceComboUse(locUseToFind);
+	}
 	for(const auto& locDecayPair : locSourceCombo->Get_FurtherDecayCombos())
 	{
-		auto locUse = locDecayPair.first;
-
 		//if z-dependent, go to z-independent
-		if(std::get<1>(locUse) != DSourceComboInfo::Get_VertexZIndex_ZIndependent())
-			locUse = dZDependentUseToIndependentMap.find(locUse)->second;
-		if(locUse == locUseToFind) //good, do stuff
+		auto locDecayUse = locDecayPair.first;
+		if(std::get<1>(locDecayUse) != DSourceComboInfo::Get_VertexZIndex_ZIndependent())
+			locDecayUse = dZDependentUseToIndependentMap.find(locDecayUse)->second;
+		if(dDebugLevel >= 100)
+		{
+			cout << "USE TO CHECK:" << endl;
+			DAnalysis::Print_SourceComboUse(locDecayUse);
+		}
+
+		if(locDecayUse == locUseToFind) //good, do stuff
 			return locDecayPair.second[locDecayInstanceIndex];
-		if(std::get<0>(locUse) != Unknown)
+		if(std::get<0>(locDecayUse) != Unknown)
 			continue; //is another step!
 
 		//vector of combos is guaranteed to be size 1, and it's guaranteed that none of ITS further decays are unknown
 		auto locComboToSearch = locDecayPair.second[0];
+		if(dDebugLevel >= 100)
+			cout << "#to-check decay uses: " << locComboToSearch->Get_FurtherDecayCombos().size() << endl;
 		for(const auto& locNestedDecayPair : locComboToSearch->Get_FurtherDecayCombos())
 		{
-			if(locUse == locUseToFind) //good, do stuff
+			//if z-dependent, go to z-independent
+			auto locNestedDecayUse = locNestedDecayPair.first;
+			if(std::get<1>(locNestedDecayUse) != DSourceComboInfo::Get_VertexZIndex_ZIndependent())
+				locNestedDecayUse = dZDependentUseToIndependentMap.find(locNestedDecayUse)->second;
+			if(dDebugLevel >= 100)
+			{
+				cout << "NESTED USE TO CHECK:" << endl;
+				DAnalysis::Print_SourceComboUse(locNestedDecayUse);
+			}
+			if(locNestedDecayUse == locUseToFind) //good, do stuff
 				return locNestedDecayPair.second[locDecayInstanceIndex];
 		}
 	}

@@ -460,7 +460,7 @@ inline DSourceCombosByUse_Large& DSourceComboer::Get_CombosSoFar(ComboingStage_t
 	//If saving to (you are making a mixed): Whatever charged combo you are about to combo horizontally with to make this new, mixed combo
 
 	//NOTE: If on mixed stage, it is NOT valid to get fully-charged combos from here! In fact, what you want is probably the input combo!
-	if(locComboingStage == d_ChargedStage)
+	if((locComboingStage == d_ChargedStage) || (locChargeContent_SearchForUse == d_Charged))
 		return dSourceCombosByUse_Charged;
 	else if(locChargeContent_SearchForUse == d_Neutral)
 		return dMixedCombosByUseByChargedCombo[nullptr]; //if fully neutral, then the charged combo doesn't matter: only matters for mixing charges
