@@ -220,7 +220,7 @@ DSourceComboTimeHandler::DSourceComboTimeHandler(JEventLoop* locEventLoop, DSour
 
 	// Timing Cuts: Photon
 	dPIDTimingCuts[Gamma].emplace(SYS_BCAL, new TF1("df_TimeCut", "[0]", 0.0, 12.0));
-	dPIDTimingCuts[Gamma][SYS_BCAL]->SetParameter(0, 3.0);
+	dPIDTimingCuts[Gamma][SYS_BCAL]->SetParameter(0, 1.5);
 	dPIDTimingCuts[Gamma].emplace(SYS_FCAL, new TF1("df_TimeCut", "[0]", 0.0, 12.0));
 	dPIDTimingCuts[Gamma][SYS_FCAL]->SetParameter(0, 2.5);
 	dSelectedRFDeltaTs[Gamma][SYS_BCAL].reserve(1000);
@@ -251,11 +251,11 @@ DSourceComboTimeHandler::DSourceComboTimeHandler(JEventLoop* locEventLoop, DSour
 
 	// Timing Cuts: Mesons
 	dPIDTimingCuts[PiPlus].emplace(SYS_BCAL, new TF1("df_TimeCut", "[0]", 0.0, 12.0));
-	dPIDTimingCuts[PiPlus][SYS_BCAL]->SetParameter(0, 2.0);
+	dPIDTimingCuts[PiPlus][SYS_BCAL]->SetParameter(0, 1.0);
 	dPIDTimingCuts[PiPlus].emplace(SYS_TOF, new TF1("df_TimeCut", "[0]", 0.0, 12.0));
-	dPIDTimingCuts[PiPlus][SYS_TOF]->SetParameter(0, 2.5);
+	dPIDTimingCuts[PiPlus][SYS_TOF]->SetParameter(0, 0.5);
 	dPIDTimingCuts[PiPlus].emplace(SYS_FCAL, new TF1("df_TimeCut", "[0]", 0.0, 12.0));
-	dPIDTimingCuts[PiPlus][SYS_FCAL]->SetParameter(0, 2.5);
+	dPIDTimingCuts[PiPlus][SYS_FCAL]->SetParameter(0, 2.0);
 	dPIDTimingCuts.emplace(PiMinus, dPIDTimingCuts[PiPlus]);
 	dSelectedRFDeltaTs.emplace(PiPlus, dSelectedRFDeltaTs[Electron]);
 	dSelectedRFDeltaTs.emplace(PiMinus, dSelectedRFDeltaTs[Electron]);
@@ -272,11 +272,11 @@ DSourceComboTimeHandler::DSourceComboTimeHandler(JEventLoop* locEventLoop, DSour
 
 	// Timing Cuts: Baryons
 	dPIDTimingCuts[Proton].emplace(SYS_BCAL, new TF1("df_TimeCut", "[0]", 0.0, 12.0));
-	dPIDTimingCuts[Proton][SYS_BCAL]->SetParameter(0, 2.5);
+	dPIDTimingCuts[Proton][SYS_BCAL]->SetParameter(0, 1.0);
 	dPIDTimingCuts[Proton].emplace(SYS_TOF, new TF1("df_TimeCut", "[0]", 0.0, 12.0));
-	dPIDTimingCuts[Proton][SYS_TOF]->SetParameter(0, 2.0);
+	dPIDTimingCuts[Proton][SYS_TOF]->SetParameter(0, 0.6);
 	dPIDTimingCuts[Proton].emplace(SYS_FCAL, new TF1("df_TimeCut", "[0]", 0.0, 12.0));
-	dPIDTimingCuts[Proton][SYS_FCAL]->SetParameter(0, 2.5);
+	dPIDTimingCuts[Proton][SYS_FCAL]->SetParameter(0, 2.0);
 	dPIDTimingCuts.emplace(AntiProton, dPIDTimingCuts[Proton]);
 	dSelectedRFDeltaTs.emplace(Proton, dSelectedRFDeltaTs[Electron]);
 	dSelectedRFDeltaTs.emplace(AntiProton, dSelectedRFDeltaTs[Electron]);

@@ -128,7 +128,7 @@ namespace DAnalysis
 DSourceComboP4Handler::DSourceComboP4Handler(JEventLoop* locEventLoop, DSourceComboer* locSourceComboer) : dSourceComboer(locSourceComboer)
 {
 	//INVARIANT MASS CUTS: MESONS
-	dInvariantMassCuts.emplace(Pi0, std::make_pair(0.08, 0.19));
+	dInvariantMassCuts.emplace(Pi0, std::make_pair(0.1, 0.17)); //80 -> 190
 	dInvariantMassCuts.emplace(KShort, std::make_pair(0.3, 0.7));
 	dInvariantMassCuts.emplace(Eta, std::make_pair(0.3, 0.8));
 	dInvariantMassCuts.emplace(omega, std::make_pair(0.4, 1.2));
