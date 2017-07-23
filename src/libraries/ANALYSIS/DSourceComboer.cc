@@ -23,19 +23,25 @@
  * p2pi 2pi0: RUN MASTER, OVERHAUL
  * p4pi pi0: RUN MASTER, OVERHAUL
  * p, g: RUN MASTER, OVERHAUL
- * p eta pi0
+ * p eta pi0: RUN MASTER, OVERHAUL
  * p eta 2pi0
  * 
  * PLUGINS BY:
  * Robison
- * Justin
  * Lubomir
- * Mahmoud
+ * Justin
  * Dominick
- * Tegan
  * Alex A.
+ * Mahmoud
+ * Tegan
  * Christiano
  *
+ * Reactionfilter all at once: Does it work?
+ * ReactionFilter all (Alex): Crash rate, mem usage, cpu time
+ * Get individual user-plugins working: re-write actions, test individually
+ * - Need results from master
+ *
+ * EVENTUALLY:
  * ppp
  * p4pi0
  * p3pi missing-p
