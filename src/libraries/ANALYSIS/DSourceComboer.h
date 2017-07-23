@@ -299,6 +299,7 @@ class DSourceComboer : public JObject
 		map<const DReaction*, map<DConstructionStage, size_t>> dNumCombosSurvivedStageTracker; //index is for event stages!!!
 		map<DSourceComboUse, size_t> dNumMixedCombosMap_Charged;
 		map<DSourceComboUse, size_t> dNumMixedCombosMap_Mixed;
+		map<vector<const JObject*>, const DSourceCombo*> dNPhotonsToComboMap; //vector contents are auto-sorted by how they're created
 
 		//dE/dx
 		map<Particle_t, map<DetectorSystem_t, pair<TF1*, TF1*>>> ddEdxCutMap; //pair: first is lower bound, second is upper bound

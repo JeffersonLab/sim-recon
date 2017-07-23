@@ -76,6 +76,7 @@ class DSourceComboTimeHandler
 		DLorentzVector Get_ChargedParticlePOCAToVertexX4(const DChargedTrackHypothesis* locHypothesis, bool locIsProductionVertex, const DSourceCombo* locVertexPrimaryFullCombo, const DKinematicData* locBeamParticle) const;
 
 		//VERTEX-Z BINNING UTILITY FUNCTIONS
+		size_t Get_NumVertexZBins(void) const{return dNumPhotonVertexZBins;}
 		size_t Get_PhotonVertexZBin(double locVertexZ) const;
 		double Get_PhotonVertexZBinCenter(signed char locVertexZBin) const;
 		size_t Get_VertexZBin_TargetCenter(void) const{return Get_PhotonVertexZBin(dTargetCenter.Z());}

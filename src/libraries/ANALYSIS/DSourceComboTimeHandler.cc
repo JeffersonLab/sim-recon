@@ -1135,10 +1135,6 @@ bool DSourceComboTimeHandler::Get_RFBunches_ChargedTrack(const DChargedTrackHypo
 	auto locCutFunc = Get_TimeCutFunction(locPID, locSystem);
 	auto locDeltaTCut = (locCutFunc != nullptr) ? locCutFunc->Eval(locP) : 3.0; //if null, still use for histogramming
 
-//TEMP!
-locVertexTime = locHypothesis->time();
-locPropagatedRFTime = Calc_PropagatedRFTime(locHypothesis->position().Z(), 0, 0.0);
-
 	locRFBunches = Calc_BeamBunchShifts(locVertexTime, locPropagatedRFTime, locDeltaTCut, false, locPID, locSystem, locP);
 	return (locCutFunc != nullptr);
 }

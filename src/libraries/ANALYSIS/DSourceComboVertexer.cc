@@ -41,8 +41,8 @@ void DSourceComboVertexer::Calc_VertexTimeOffsets_WithCharged(const DReactionVer
 		cout << "DSourceComboVertexer::Calc_VertexTimeOffsets_WithCharged()" << endl;
 
 	auto locIsPrimaryProductionVertex = locReactionVertexInfo->Get_StepVertexInfos().front()->Get_ProductionVertexFlag();
-	if(dTimeOffsets.find(std::make_tuple(locIsPrimaryProductionVertex, locReactionChargedCombo, (const DKinematicData*)nullptr)) != dTimeOffsets.end())
-		return; //already done!! //e.g. the same channel used for 2 different DReactions
+	//even if below is true, we still need to register step vertex infos
+	auto locEverythingFoundFlag = (dTimeOffsets.find(std::make_tuple(locIsPrimaryProductionVertex, locReactionChargedCombo, (const DKinematicData*)nullptr)) != dTimeOffsets.end());
 
 	//loop through vertices
 	map<pair<int, int>, const DKinematicData*> locReconDecayParticleMap; //decaying particle indices -> kinematic data //indices: when the decaying particle is in the INITIAL state
@@ -104,6 +104,8 @@ void DSourceComboVertexer::Calc_VertexTimeOffsets_WithCharged(const DReactionVer
 		}
 		else if(!locDeterminableIterator->second)
 			continue;
+		if(locEverythingFoundFlag)
+			continue; //already done
 
 		vector<const DKinematicData*> locVertexParticles;
 		auto locVertex = Calc_Vertex(locIsProductionVertexFlag, locChargedSourceParticles, locDecayingParticles, locVertexParticles);
@@ -118,6 +120,8 @@ void DSourceComboVertexer::Calc_VertexTimeOffsets_WithCharged(const DReactionVer
 		}
 		Construct_DecayingParticle_InvariantMass(locStepVertexInfo, locVertexPrimaryCombo, locVertex, locReconDecayParticleMap);
 	}
+	if(locEverythingFoundFlag)
+		return; //already done
 
 	//do time offsets once all the vertices have been found
 	Calc_TimeOffsets(locReactionVertexInfo, locReactionChargedCombo, nullptr);
@@ -130,8 +134,8 @@ void DSourceComboVertexer::Calc_VertexTimeOffsets_WithPhotons(const DReactionVer
 	//E.g. g, p ->  K0, Sigma+    K0 -> 3pi: The selected pi0 photons could help define the production vertex
 
 	auto locIsPrimaryProductionVertex = locReactionVertexInfo->Get_StepVertexInfos().front()->Get_ProductionVertexFlag();
-	if(dTimeOffsets.find(std::make_tuple(locIsPrimaryProductionVertex, locReactionFullCombo, (const DKinematicData*)nullptr)) != dTimeOffsets.end())
-		return; //already done!! //e.g. the same channel used for 2 different DReactions
+	//even if below is true, we still need to register step vertex infos
+	auto locEverythingFoundFlag = (dTimeOffsets.find(std::make_tuple(locIsPrimaryProductionVertex, locReactionFullCombo, (const DKinematicData*)nullptr)) != dTimeOffsets.end());
 
 	//loop over vertices in dependency order
 	map<pair<int, int>, const DKinematicData*> locReconDecayParticleMap; //decaying particle indices -> kinematic data //indices: when the decaying particle is in the INITIAL state
@@ -177,6 +181,8 @@ void DSourceComboVertexer::Calc_VertexTimeOffsets_WithPhotons(const DReactionVer
 		}
 		else if(!locDeterminableIterator->second)
 			continue;
+		if(locEverythingFoundFlag)
+			continue; //already done
 
 		//find the vertex, save the results
 		vector<const DKinematicData*> locVertexParticles;
@@ -185,6 +191,8 @@ void DSourceComboVertexer::Calc_VertexTimeOffsets_WithPhotons(const DReactionVer
 
 		Construct_DecayingParticle_InvariantMass(locStepVertexInfo, locVertexPrimaryFullCombo, locVertex, locReconDecayParticleMap);
 	}
+	if(locEverythingFoundFlag)
+		return; //already done
 
 	//CALC TIME OFFSETS
 	Calc_TimeOffsets(locReactionVertexInfo, locReactionChargedCombo, locReactionFullCombo);

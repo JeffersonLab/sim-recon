@@ -486,16 +486,26 @@ bool DSourceComboP4Handler::Cut_InvariantMass_NoMassiveNeutrals(const DSourceCom
 	auto locInvariantMass = Calc_P4_NoMassiveNeutrals(locVertexCombo, locVertex, locVertexZBin, nullptr, locAccuratePhotonsFlag).M();
 
 	//save and cut
-	if(!locAccuratePhotonsFlag) //has already been filled
-		dInvariantMasses[locDecayPID].emplace_back(locInvariantMass);
 	auto locNumPhotons = DAnalysis::Get_SourceParticles(locVertexCombo->Get_SourceParticles(true, d_Neutral), Gamma).size();
 	auto locHasPhotons = (locNumPhotons > 0);
 	auto locMassError = (locAccuratePhotonsFlag || !locHasPhotons) ? 0.0 : ((locNumPhotons > 2) ? 0.5*double(locNumPhotons)*d2PhotonInvariantMassCutError : d2PhotonInvariantMassCutError);
 	auto locCutMin = locMassCuts.first - locMassError;
 	auto locCutMax = locMassCuts.second + locMassError;
 	auto locCutResult = ((locInvariantMass >= locCutMin) && (locInvariantMass <= locCutMax));
+
+	if(!locAccuratePhotonsFlag) //else has already been saved during inaccurate stage
+	{
+		auto locSaveTuple = std::make_tuple(locDecayPID, locVertexCombo);
+		if(dInvariantMassFilledSet.find(locSaveTuple) == dInvariantMassFilledSet.end())
+		{
+			if(dDebugLevel >= 20)
+				cout << "fill no-massive hist" << endl;
+			dInvariantMasses[locDecayPID].emplace_back(locInvariantMass);
+			dInvariantMassFilledSet.insert(locSaveTuple);
+		}
+	}
 	if(dDebugLevel >= 10)
-		cout << "accurate flag, decay pid, z, mass, cut min/max, pass flag: " << locAccuratePhotonsFlag << ", " << locDecayPID << ", " << locVertex.Z() << ", " << locInvariantMass << ", " << locCutMin << ", " << locCutMax << ", " << locCutResult << endl;
+		cout << "accurate flag, decay pid, z, zbin, mass, cut min/max, pass flag: " << locAccuratePhotonsFlag << ", " << locDecayPID << ", " << locVertex.Z() << ", " << int(locVertexZBin) << ", " << locInvariantMass << ", " << locCutMin << ", " << locCutMax << ", " << locCutResult << endl;
 	return locCutResult;
 }
 
@@ -528,9 +538,19 @@ bool DSourceComboP4Handler::Cut_InvariantMass_HasMassiveNeutral(bool locIsProduc
 			cout << "has-mass neutral: accurate flag, decay pid, z, mass, cut min/max, pass flag: " << locAccuratePhotonsFlag << ", " << locDecayPID << ", " << locVertex.Z() << ", " << locTotalP4.M() << ", " << locCutMin << ", " << locCutMax << ", " << ((locTotalP4.M() >= locCutMin) && (locTotalP4.M() <= locCutMax)) << endl;
 
 		//save and cut
-		if(!locAccuratePhotonsFlag) //has already been filled
-			dInvariantMasses[locDecayPID].emplace_back(locTotalP4.M());
-		return ((locTotalP4.M() < locCutMin) || (locTotalP4.M() > locCutMax));
+		auto locInvariantMass = locTotalP4.M();
+		if(!locAccuratePhotonsFlag) //else has already been saved during inaccurate stage
+		{
+			auto locSaveTuple = std::make_tuple(locDecayPID, locIsProductionVertex, locReactionFullCombo, locVertexCombo, locRFBunch);
+			if(dInvariantMassFilledSet_MassiveNeutral.find(locSaveTuple) == dInvariantMassFilledSet_MassiveNeutral.end())
+			{
+				if(dDebugLevel >= 20)
+					cout << "fill hist: massive neutrals" << endl;
+				dInvariantMasses[locDecayPID].emplace_back(locInvariantMass);
+				dInvariantMassFilledSet_MassiveNeutral.insert(locSaveTuple);
+			}
+		}
+		return ((locInvariantMass < locCutMin) || (locInvariantMass > locCutMax));
 	};
 
 	//apply the function
@@ -543,6 +563,8 @@ bool DSourceComboP4Handler::Cut_InvariantMass_HasMassiveNeutral_OrPhotonVertex(c
 	//do 2 things at once (where vertex is known) (hence the really long function name):
 		//calc & cut invariant mass: when massive neutral present
 		//calc & cut invariant mass: when vertex-z was unknown with only charged tracks, but is known now, and contains BCAL photons (won't happen very often)
+	if(dDebugLevel >= 10)
+		cout << "Cut_InvariantMass_HasMassiveNeutral_OrPhotonVertex()" << endl;
 	auto locPrimaryVertexZ = dSourceComboVertexer->Get_PrimaryVertex(locReactionVertexInfo, locReactionFullCombo, nullptr).Z();
 
 	//loop over vertices in reverse step order //dependency for calculating invariant mass
@@ -562,6 +584,8 @@ bool DSourceComboP4Handler::Cut_InvariantMass_HasMassiveNeutral_OrPhotonVertex(c
 		auto locHasMassiveNeutrals = dSourceComboer->Get_HasMassiveNeutrals(std::get<2>(locVertexComboUse));
 
 		auto locVertexConstrainedByChargedFlag = dSourceComboVertexer->Get_VertexDeterminableWithCharged(locStepVertexInfo);
+		if(dDebugLevel >= 10)
+			cout << "determinable, has-flag: " << locVertexConstrainedByChargedFlag << ", " << locHasMassiveNeutrals << endl;
 		if(locVertexConstrainedByChargedFlag && !locHasMassiveNeutrals)
 			continue; //no massive neutrals, and vertex found with charged: mass cuts already placed
 
@@ -755,15 +779,24 @@ bool DSourceComboP4Handler::Cut_InvariantMass_AccuratePhotonKinematics(const DRe
 			auto locDecayPID = std::get<0>(locDecayComboUse);
 			if(locDecayPID == Unknown)
 				continue; //no mass cut to place!
+			auto locDecayHasMassiveNeutrals = dSourceComboer->Get_HasMassiveNeutrals(std::get<2>(locDecayComboUse));
 
 			//loop over combos
 			for(const auto& locDecayCombo : locIterator->second)
 			{
 				if(DAnalysis::Get_SourceParticles(locDecayCombo->Get_SourceParticles(true, d_Neutral), Gamma).empty())
 					continue; //nothing has changed
-				vector<int> locBeamBunches{locRFBunch};
-				if(!Cut_InvariantMass_HasMassiveNeutral(locIsProductionVertex, locReactionFullCombo, locDecayCombo, locDecayPID, locPrimaryVertexZ, locVertex, locTimeOffset, locBeamBunches, locBeamParticle, true))
-					return false; //even if no-massive neutrals, call this anyway: handles worst-case scenario
+				if(locDecayHasMassiveNeutrals)
+				{
+					vector<int> locBeamBunches{locRFBunch};
+					if(!Cut_InvariantMass_HasMassiveNeutral(locIsProductionVertex, locReactionFullCombo, locDecayCombo, locDecayPID, locPrimaryVertexZ, locVertex, locTimeOffset, locBeamBunches, locBeamParticle, true))
+						return false;
+				}
+				else
+				{
+					if(!Cut_InvariantMass_NoMassiveNeutrals(locDecayCombo, locDecayPID, locVertex, std::get<1>(locDecayComboUse), true))
+						return false;
+				}
 			}
 		}
 	}

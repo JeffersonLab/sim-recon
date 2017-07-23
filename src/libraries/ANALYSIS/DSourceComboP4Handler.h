@@ -4,6 +4,7 @@
 #include <unordered_map>
 #include <vector>
 #include <map>
+#include <set>
 
 #include "TF1.h"
 #include "TH1I.h"
@@ -93,6 +94,8 @@ class DSourceComboP4Handler
 		map<Particle_t, pair<TF1*, TF1*>> dMissingMassSquaredCuts; //cuts are function of beam energy //For none missing, Particle_t = unknown
 
 		//HISTOGRAMS
+		set<tuple<Particle_t, const DSourceCombo*>> dInvariantMassFilledSet; //only filled once per combo, even if used for different vertex-z bins!!!!
+		set<tuple<Particle_t, bool, const DSourceCombo*, const DSourceCombo*, int>> dInvariantMassFilledSet_MassiveNeutral; //int: RF bunch //bool: is prod vertex //first combo: reaction full
 		map<Particle_t, TH1*> dHistMap_InvariantMass;
 		map<Particle_t, TH2*> dHistMap_MissingMassSquaredVsBeamEnergy; //none missing = Unknown pid
 		map<Particle_t, vector<float>> dInvariantMasses;
@@ -107,6 +110,7 @@ inline void DSourceComboP4Handler::Reset(void)
 	for(auto& locPIDPair : dMissingMassPairs)
 		locPIDPair.second.clear();
 
+	dInvariantMassFilledSet.clear();
 	dPhotonKinematics.clear();
 	dFinalStateP4ByCombo.clear();
 	dFinalStateP4ByCombo_HasMassiveNeutrals.clear();

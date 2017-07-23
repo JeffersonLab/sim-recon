@@ -7,6 +7,8 @@
  * 
  * track timing resolution at 3 GeV
  * crash on exit in ubuntu: TClonesArray branches invalidated after several threads close
+ * all at once:
+ * inv mass hists are spiky (need dupe check??)
  *
  * TESTING:
  * p2pi: OK
@@ -18,13 +20,13 @@
  * p2pi0: OK
  * p4g: OK
  * p3pi0: OK
- * p pi0 g: MASTER DONE, OVERHAUL ABORTS?
- * p2pi g: OVERHAUL ABORTS?, RUN MASTER
+ * p pi0 g: OK
+ * p2pi g: RUN MASTER, OVERHAUL
  * p2pi 2pi0: RUN MASTER, OVERHAUL
  * p4pi pi0: RUN MASTER, OVERHAUL
  * p, g: RUN MASTER, OVERHAUL
  * p eta pi0: RUN MASTER, OVERHAUL
- * p eta 2pi0: RUN MASTER, OVERHAUL
+ * p eta 2pi0: LESS IN OVERHAUL!!!!
  * 
  * PLUGINS BY:
  * Robison
@@ -60,6 +62,15 @@
  * Yields are same (or reasonably different)
  * New functions: print to screen to confirm OK
  * Root tree output
+ *
+ * Ideas for reducing output size:
+ * char instead of int
+ * miss mass cuts
+ * st timing cut
+ * min shower photE cut
+ * cut on extra shower energy
+ * beam energy cut
+ * cut on kinfit conlev?
  */
 
 /*
@@ -305,11 +316,7 @@ DSourceComboer::DSourceComboer(JEventLoop* locEventLoop)
 		ddEdxCutMap[Proton][SYS_CDC].second->SetParameter(0, 9999999.9);
 
 		//CDC dE/dx Anti-Proton
-		ddEdxCutMap[AntiProton][SYS_CDC].first = new TF1("df_dEdxCut_CDC_AntiProtonLow", "exp(-1.0*[0]*x + [1]) + [2]", 0.0, 12.0);
-//		ddEdxCutMap[AntiProton][SYS_CDC].first->SetParameters(3.93024, 3.0, 1.0); //will be used after testing is done
-		ddEdxCutMap[AntiProton][SYS_CDC].first->SetParameters(4.0, 2.25, 1.0); //used for comparison
-		ddEdxCutMap[AntiProton][SYS_CDC].second = new TF1("df_dEdxCut_CDC_AntiProtonHigh", "[0]", 0.0, 12.0);
-		ddEdxCutMap[AntiProton][SYS_CDC].second->SetParameter(0, 9999999.9);
+		ddEdxCutMap.emplace(AntiProton, ddEdxCutMap[Proton]);
 
 		//CDC dE/dx Pi+
 		ddEdxCutMap[PiPlus][SYS_CDC].first = new TF1("df_dEdxCut_CDC_PionLow", "[0]", 0.0, 12.0);
@@ -904,6 +911,7 @@ void DSourceComboer::Reset_NewEvent(JEventLoop* locEventLoop)
 	dSourceCombosByBeamBunchByUse.clear();
 	dVertexPrimaryComboMap.clear();
 	dValidRFBunches_ByCombo.clear();
+	dNPhotonsToComboMap.clear();
 
 	//COMBOING RESUME/SEARCH-AFTER TRACKING
 	dResumeSearchAfterIndices_Particles.clear();
@@ -973,6 +981,26 @@ void DSourceComboer::Reset_NewEvent(JEventLoop* locEventLoop)
 		auto& locVector = locChargePair.second;
 		std::sort(locVector.begin(), locVector.end());
 		locVector.erase(std::unique(locVector.begin(), locVector.end()), locVector.end()); //remove duplicates
+	}
+
+	if(dDebugLevel > 0)
+	{
+		cout << "TRACKS BY PID:" << endl;
+		for(const auto& locPIDPair : dTracksByPID)
+		{
+			cout << "PID, pointers: " << locPIDPair.first << ", ";
+			for(const auto& locTrack : locPIDPair.second)
+				cout << locTrack << ", ";
+			cout << endl;
+		}
+		cout << "TRACKS BY CHARGE:" << endl;
+		for(const auto& locChargePair : dTracksByCharge)
+		{
+			cout << "charge, pointers: " << (locChargePair.first ? 1 : -1) << ", ";
+			for(const auto& locTrack : locChargePair.second)
+				cout << locTrack << ", ";
+			cout << endl;
+		}
 	}
 
 	//Fill histograms
@@ -1772,14 +1800,13 @@ void DSourceComboer::Combo_Vertically_AllDecays(const DSourceComboUse& locComboU
 
 		if((locComboingStage == d_ChargedStage) && (locDecayChargeContent == d_Neutral))
 			continue; //skip for now!!
+		//if on a mixed stage, and the to-build combo info is fully charged, skip it: it's already been done
+		if((locComboingStage != d_ChargedStage) && (locDecayChargeContent == d_Charged))
+			continue;
 
 		auto& locSourceCombosByUseSoFar = Get_CombosSoFar(locComboingStage, locDecayChargeContent, locChargedCombo_WithNow);
 		if(locNumDecaysNeeded == 1)
 		{
-			//if on a mixed stage, and the to-build combo info is fully charged, skip it: it's already been done
-			if((locComboingStage != d_ChargedStage) && (locDecayChargeContent == d_Charged))
-				continue;
-
 			//build the decay combo directly
 			if(locSourceCombosByUseSoFar.find(locSourceComboDecayUse) == locSourceCombosByUseSoFar.end()) //if not done already!
 			{
@@ -2031,6 +2058,8 @@ void DSourceComboer::Combo_Vertically_AllParticles(const DSourceComboUse& locCom
 
 		if((locComboingStage == d_ChargedStage) && (ParticleCharge(locPID) == 0))
 			continue; //skip for now!!
+		if((locComboingStage != d_ChargedStage) && (ParticleCharge(locPID) != 0))
+			continue; //already done!
 
 		//OK, so we need a grouping of N > 1 particles with the same PID (e.g. g's)
 		//so, let's create a use of Unknown -> N g's (e.g.)
@@ -2095,6 +2124,35 @@ void DSourceComboer::Combo_Vertically_NParticles(const DSourceComboUse& locCombo
 	//Get combos so far //guaranteed not to be mixed
 	auto& locSourceCombosByUseSoFar = Get_CombosSoFar(locComboingStage, d_Neutral); //if not neutral then is on charged stage: argument doesn't matter
 
+	//check if comboing massive neutrals: comboing results are independent of z-bin: see if this has already been done for a different (non-z-independent) zbin
+	if((ParticleCharge(locPID) == 0) && (ParticleMass(locPID) > 0.0) && (locComboingStage == d_MixedStage))
+	{
+		//if so, just copy the results into this zbin!
+		//note that this can only the case for comboing particles, not comboing combos: decays contain uses, which have the zbin specified
+		for(signed char locZBin = 0; locZBin < (signed char)dSourceComboTimeHandler->Get_NumVertexZBins(); ++locZBin)
+		{
+			if(locZBin == locVertexZBin)
+				continue;
+			auto locZBinUse = DSourceComboUse{std::get<0>(locComboUseToCreate), locZBin, locComboInfo};
+			if(locSourceCombosByUseSoFar.find(locZBinUse) == locSourceCombosByUseSoFar.end())
+				continue;
+
+			//just copy the results!
+			locSourceCombosByUseSoFar[locComboUseToCreate] = locSourceCombosByUseSoFar[locZBinUse];
+			auto& locSourceCombosByBeamBunchByUse = Get_SourceCombosByBeamBunchByUse(dComboInfoChargeContent[locComboInfo], nullptr);
+			locSourceCombosByBeamBunchByUse.emplace(locComboUseToCreate, locSourceCombosByBeamBunchByUse[locZBinUse]);
+
+			//Set the resume indices
+			Build_ComboResumeIndices(locComboUseToCreate, locComboingStage, nullptr);
+			if(dDebugLevel >= 5)
+			{
+				for(decltype(locNumTabs) locTabNum = 0; locTabNum < locNumTabs; ++locTabNum) cout << "\t";
+				cout << "Combo_Vertically_NParticles: NUM SOURCE COMBOS CREATED: " << locSourceCombosByUseSoFar[locComboUseToCreate]->size() << endl;
+			}
+			return;
+		}
+	}
+
 	//if on the all-showers stage, first copy over ALL fcal-only results
 	locSourceCombosByUseSoFar.emplace(locComboUseToCreate, Get_SourceComboVectorResource());
 	if(locComboingStage == d_MixedStage)
@@ -2122,9 +2180,35 @@ void DSourceComboer::Combo_Vertically_NParticles(const DSourceComboUse& locCombo
 				if((locPID == Gamma) && locValidRFBunches.empty())
 					continue;
 
+				//check if this combo is unique!
+				//it will not be unique if: comboing photons, on mixed stage, and this combo has already been created for a different zbin
+				//if so, don't duplicate memory
+				//note that this can only the case for comboing particles, not comboing combos: decays contain uses, which have the zbin specified
+				vector<const JObject*> locPhotons;
+				if((locPID == Gamma) && (locComboingStage == d_MixedStage))
+				{
+					locPhotons = {*locFirstIterator, *locSecondIterator};
+					auto locIterator = dNPhotonsToComboMap.find(locPhotons);
+					if(locIterator != dNPhotonsToComboMap.end()) //if true, already exists, copy it and continue;
+					{
+						auto locCombo = locIterator->second;
+						locSourceCombosByUseSoFar[locComboUseToCreate]->push_back(locCombo);
+						if(dDebugLevel >= 15)
+						{
+							for(decltype(locNumTabs) locTabNum = 0; locTabNum < locNumTabs; ++locTabNum) cout << "\t";
+							cout << "COPIED COMBO:" << endl;
+							DAnalysis::Print_SourceCombo(locCombo, locNumTabs);
+						}
+						Register_ValidRFBunches(locComboUseToCreate, locCombo, locValidRFBunches, locComboingStage, nullptr);
+						continue;
+					}
+				}
+
 				auto locCombo = Get_SourceComboResource();
 				locCombo->Set_Members({std::make_pair(locPID, *locFirstIterator), std::make_pair(locPID, *locSecondIterator)}, {}, locIsZIndependent);
 				locSourceCombosByUseSoFar[locComboUseToCreate]->push_back(locCombo); //save it //in creation order
+				if(locPID == Gamma)
+					dNPhotonsToComboMap.emplace(locPhotons, locCombo);
 				if(dDebugLevel >= 10)
 				{
 					for(decltype(locNumTabs) locTabNum = 0; locTabNum < locNumTabs; ++locTabNum) cout << "\t";
@@ -2177,11 +2261,39 @@ void DSourceComboer::Combo_Vertically_NParticles(const DSourceComboUse& locCombo
 			//if charged or massive neutrals, ignore (they don't choose at this stage)
 			auto locValidRFBunches = (locPID != Gamma) ? vector<int>{} : dSourceComboTimeHandler->Get_CommonRFBunches(locValidRFBunches_NMinus1, locParticle, locVertexZBin);
 
+			//check if this combo is unique!
+			//it will not be unique if: comboing photons, on mixed stage, and this combo has already been created for a different zbin
+			//if so, don't duplicate memory
+			//note that this can only the case for comboing particles, not comboing combos: decays contain uses, which have the zbin specified
 			auto locComboParticlePairs = locCombo_NMinus1->Get_SourceParticles();
+			vector<const JObject*> locPhotons;
+			if((locPID == Gamma) && (locComboingStage == d_MixedStage))
+			{
+				auto GetParticle = [](const pair<Particle_t, const JObject*>& locPair) -> const JObject* {return locPair.second;};
+				std::transform(locComboParticlePairs.begin(), locComboParticlePairs.end(), std::back_inserter(locPhotons), GetParticle);
+				locPhotons.push_back(locParticle);
+				auto locIterator = dNPhotonsToComboMap.find(locPhotons);
+				if(locIterator != dNPhotonsToComboMap.end()) //if true, already exists, save it and continue;
+				{
+					auto locCombo = locIterator->second;
+					locSourceCombosByUseSoFar[locComboUseToCreate]->push_back(locCombo);
+					if(dDebugLevel >= 15)
+					{
+						for(decltype(locNumTabs) locTabNum = 0; locTabNum < locNumTabs; ++locTabNum) cout << "\t";
+						cout << "COPIED COMBO:" << endl;
+						DAnalysis::Print_SourceCombo(locCombo, locNumTabs);
+					}
+					Register_ValidRFBunches(locComboUseToCreate, locCombo, locValidRFBunches, locComboingStage, nullptr);
+					continue;
+				}
+			}
+
 			locComboParticlePairs.emplace_back(locPID, locParticle);
 			auto locCombo = Get_SourceComboResource();
 			locCombo->Set_Members(locComboParticlePairs, {}, locIsZIndependent);
 			locSourceCombosByUseSoFar[locComboUseToCreate]->push_back(locCombo); //save it //in creation order
+			if(locPID == Gamma)
+				dNPhotonsToComboMap.emplace(locPhotons, locCombo);
 			if(dDebugLevel >= 10)
 			{
 				for(decltype(locNumTabs) locTabNum = 0; locTabNum < locNumTabs; ++locTabNum) cout << "\t";
@@ -2288,7 +2400,8 @@ void DSourceComboer::Combo_Horizontally_All(const DSourceComboUse& locComboUseTo
 		else //particles first
 		{
 			auto locAllBut1ComboInfo = GetOrMake_SourceComboInfo(locNumParticlesNeeded, {}, locNumTabs);
-			DSourceComboUse locAllBut1ComboUse{Unknown, locVertexZBin, locAllBut1ComboInfo}; //Unknown -> particles
+			auto locAllBut1ZBin = (Get_ChargeContent(locAllBut1ComboInfo) != d_Charged) ? locVertexZBin : DSourceComboInfo::Get_VertexZIndex_ZIndependent();
+			DSourceComboUse locAllBut1ComboUse{Unknown, locAllBut1ZBin, locAllBut1ComboInfo}; //Unknown -> particles
 
 			//Get combos so far
 			auto& locSourceCombosByUseSoFar = Get_CombosSoFar(locComboingStage, dComboInfoChargeContent[locAllBut1ComboInfo], locChargedCombo_WithNow);
@@ -2337,7 +2450,7 @@ void DSourceComboer::Combo_Horizontally_All(const DSourceComboUse& locComboUseTo
 				//yes, it's already been done!
 				//just combo the All-but-1 combos to those from this decay and return the results
 				//don't promote particles or expand all-but-1: create new combo ABOVE all-but-1, that will contain all-but-1 and to-add side-by-side
-				auto locAllBut1ComboUse = DSourceComboUse{Unknown, locVertexZBin, locAllBut1ComboInfo};
+				auto locAllBut1ComboUse = DSourceComboUse{Unknown, DSourceComboInfo::Get_VertexZIndex_ZIndependent(), locAllBut1ComboInfo};
 				Combo_Horizontally_AddDecay(locComboUseToCreate, locAllBut1ComboUse, locToAddComboUse, locComboingStage, locChargedCombo_Presiding, false, locNumTabs);
 				return;
 			}
@@ -2347,12 +2460,14 @@ void DSourceComboer::Combo_Horizontally_All(const DSourceComboUse& locComboUseTo
 			if((locFurtherDecaysToSearchFor.size() > 1) || !locNumParticlesNeeded.empty())
 			{
 				locAllBut1ComboInfo = GetOrMake_SourceComboInfo(locNumParticlesNeeded, locFurtherDecaysToSearchFor, locNumTabs);
-				locAllBut1ComboUse = DSourceComboUse{Unknown, locVertexZBin, locAllBut1ComboInfo};
+				auto locAllBut1ZBin = (Get_ChargeContent(locAllBut1ComboInfo) != d_Charged) ? locVertexZBin : DSourceComboInfo::Get_VertexZIndex_ZIndependent();
+				locAllBut1ComboUse = DSourceComboUse{Unknown, locAllBut1ZBin, locAllBut1ComboInfo};
 			}
 			else if((locFurtherDecaysToSearchFor.size() == 1) && (locFurtherDecaysToSearchFor[0].second > 1))
 			{
 				locAllBut1ComboInfo = GetOrMake_SourceComboInfo({}, {std::make_pair(locSourceComboUse_ThisDecay, locDecayIterator->second)}, locNumTabs);
-				locAllBut1ComboUse = DSourceComboUse{Unknown, locVertexZBin, locAllBut1ComboInfo};
+				auto locAllBut1ZBin = (Get_ChargeContent(locAllBut1ComboInfo) != d_Charged) ? locVertexZBin : DSourceComboInfo::Get_VertexZIndex_ZIndependent();
+				locAllBut1ComboUse = DSourceComboUse{Unknown, locAllBut1ZBin, locAllBut1ComboInfo};
 			}
 			else if(locFurtherDecaysToSearchFor.size() == 1)
 				locAllBut1ComboUse = (*locFurtherDecaysToSearchFor.begin()).first;
@@ -2395,7 +2510,8 @@ void DSourceComboer::Combo_Horizontally_All(const DSourceComboUse& locComboUseTo
 				auto locAllBut1ComboInfo = GetOrMake_SourceComboInfo(locNumParticlesToSearchFor, locFurtherDecays, locNumTabs);
 				if((locComboingStage == d_ChargedStage) && (dComboInfoChargeContent[locAllBut1ComboInfo] == d_Neutral))
 					continue; //this won't be done yet!
-				DSourceComboUse locAllBut1ComboUse(Unknown, locVertexZBin, locAllBut1ComboInfo); // Unknown -> everything but these particles
+				auto locAllBut1ZBin = (Get_ChargeContent(locAllBut1ComboInfo) != d_Charged) ? locVertexZBin : DSourceComboInfo::Get_VertexZIndex_ZIndependent();
+				DSourceComboUse locAllBut1ComboUse(Unknown, locAllBut1ZBin, locAllBut1ComboInfo); // Unknown -> everything but these particles
 
 				//Get combos so far
 				auto& locSourceCombosByUseSoFar = Get_CombosSoFar(locComboingStage, d_Neutral); //if not neutral then is on charged stage: argument doesn't matter
@@ -2484,7 +2600,8 @@ void DSourceComboer::Combo_Horizontally_AddParticles(const DSourceComboUse& locC
 		//create a combo use for X -> N particles of this type
 		auto locSourceInfoToAdd = GetOrMake_SourceComboInfo({locParticlePairToAdd}, {}, locNumTabs);
 		auto locChargeContentUseToAdd = Get_ChargeContent(locSourceInfoToAdd);
-		DSourceComboUse locComboUseToAdd(Unknown, std::get<1>(locComboUseToCreate), locSourceInfoToAdd);
+		auto locToAddZBin = (locChargeContentUseToAdd != d_Charged) ? std::get<1>(locComboUseToCreate) : DSourceComboInfo::Get_VertexZIndex_ZIndependent();
+		DSourceComboUse locComboUseToAdd(Unknown, locToAddZBin, locSourceInfoToAdd);
 
 		//create the combos for the use-to-add if they haven't been created yet
 		auto locChargedCombo_WithNow = Get_ChargedCombo_WithNow(locChargedCombo_Presiding, std::get<2>(locComboUseToCreate), locComboingStage);
@@ -2517,14 +2634,43 @@ void DSourceComboer::Create_Combo_OneParticle(const DSourceComboUse& locComboUse
 
 	//get combo use contents
 	auto locVertexZBin = std::get<1>(locComboUseToCreate);
-	auto locParticlePair = std::get<2>(locComboUseToCreate)->Get_NumParticles().front();
+	auto locComboInfo = std::get<2>(locComboUseToCreate);
+	auto locParticlePair = locComboInfo->Get_NumParticles().front();
+	auto locPID = locParticlePair.first;
+
+	//check if comboing massive neutrals: comboing results are independent of z-bin: see if this has already been done for a different (non-z-independent) zbin
+	if((ParticleCharge(locPID) == 0) && (ParticleMass(locPID) > 0.0) && (locComboingStage == d_MixedStage))
+	{
+		//if so, just copy the results into this zbin!
+		//note that this is only the case for comboing particles, not comboing combos: decays contain uses, which have the zbin specified
+		for(signed char locZBin = 0; locZBin < (signed char)dSourceComboTimeHandler->Get_NumVertexZBins(); ++locZBin)
+		{
+			if(locZBin == locVertexZBin)
+				continue;
+			auto locZBinUse = DSourceComboUse{std::get<0>(locComboUseToCreate), locZBin, locComboInfo};
+			if(locSourceCombosByUseSoFar.find(locZBinUse) == locSourceCombosByUseSoFar.end())
+				continue;
+
+			//just copy the results!
+			locSourceCombosByUseSoFar[locComboUseToCreate] = locSourceCombosByUseSoFar[locZBinUse];
+			auto& locSourceCombosByBeamBunchByUse = Get_SourceCombosByBeamBunchByUse(dComboInfoChargeContent[locComboInfo], nullptr);
+			locSourceCombosByBeamBunchByUse.emplace(locComboUseToCreate, locSourceCombosByBeamBunchByUse[locZBinUse]);
+
+			//Set the resume indices
+			Build_ComboResumeIndices(locComboUseToCreate, locComboingStage, nullptr);
+			if(dDebugLevel >= 5)
+			{
+				for(decltype(locNumTabs) locTabNum = 0; locTabNum < locNumTabs; ++locTabNum) cout << "\t";
+				cout << "Create_Combo_OneParticle: NUM SOURCE COMBOS CREATED: " << locSourceCombosByUseSoFar[locComboUseToCreate]->size() << endl;
+			}
+			return;
+		}
+	}
 
 	//if on the mixed stage, must be doing all neutrals: first copy over ALL fcal-only results
 	locSourceCombosByUseSoFar.emplace(locComboUseToCreate, Get_SourceComboVectorResource());
 	if(locComboingStage == d_MixedStage)
 		Copy_ZIndependentMixedResults(locComboUseToCreate, nullptr);
-
-	auto locPID = locParticlePair.first;
 
 	//Get particles for comboing
 	const auto& locParticles = Get_ParticlesForComboing(locPID, locComboingStage, {}, locVertexZBin);
@@ -2534,8 +2680,31 @@ void DSourceComboer::Create_Combo_OneParticle(const DSourceComboUse& locComboUse
 		if((locComboingStage == d_MixedStage) && locIsZIndependent)
 			continue; //this combo has already been created (assuming it was valid): during the FCAL-only stage
 
+		//check if this combo is unique!
+		//it will not be unique if: comboing photons, on mixed stage, and this combo has already been created for a different zbin
+		//if so, don't duplicate memory
+		//note that this can only the case for comboing particles, not comboing combos: decays contain uses, which have the zbin specified
+		if((locPID == Gamma) && (locComboingStage == d_MixedStage))
+		{
+			auto locIterator = dNPhotonsToComboMap.find({locParticle});
+			if(locIterator != dNPhotonsToComboMap.end()) //if true, already exists, save it and continue;
+			{
+				auto locCombo = locIterator->second;
+				locSourceCombosByUseSoFar[locComboUseToCreate]->push_back(locCombo);
+				if(dDebugLevel >= 15)
+				{
+					for(decltype(locNumTabs) locTabNum = 0; locTabNum < locNumTabs; ++locTabNum) cout << "\t";
+					cout << "COPIED COMBO:" << endl;
+					DAnalysis::Print_SourceCombo(locCombo, locNumTabs);
+				}
+				continue;
+			}
+		}
+
 		auto locCombo = Get_SourceComboResource();
 		locCombo->Set_Members({std::make_pair(locPID, locParticle)}, {}, locIsZIndependent);
+		if(locPID == Gamma)
+			dNPhotonsToComboMap.emplace(vector<const JObject*>{locParticle}, locCombo);
 		if(dDebugLevel >= 10)
 		{
 			for(decltype(locNumTabs) locTabNum = 0; locTabNum < locNumTabs; ++locTabNum) cout << "\t";
@@ -3482,7 +3651,7 @@ bool DSourceComboer::Check_NumParticles(const DReaction* locReaction)
 		return false;
 	if(dDebugLevel > 0)
 		cout << "q-: Need " << locNumNegativeNeeded << ", Have " << dTracksByCharge[false].size() << endl;
-	if(dTracksByCharge[true].size() < locNumNegativeNeeded)
+	if(dTracksByCharge[false].size() < locNumNegativeNeeded)
 		return false;
 	if(dDebugLevel > 0)
 		cout << "q0: Need " << locNumNeutralNeeded << ", Have " << locNumDetectedShowers << ", Max allowed: " << dMaxNumNeutrals << endl;
