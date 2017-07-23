@@ -16,15 +16,15 @@
  * p pi0: OK
  * p3pi: OK
  * p2pi0: OK
- * p4g: OVERHAUL RUNNING
- * p3pi0: OVERHAUL RUNNING
- * p pi0 g: OVERHAUL RUNNING,
- * p2pi g: OVERHAUL RUNNING, RUN MASTER
+ * p4g: OK
+ * p3pi0: OK
+ * p pi0 g: MASTER DONE, OVERHAUL ABORTS?
+ * p2pi g: OVERHAUL ABORTS?, RUN MASTER
  * p2pi 2pi0: RUN MASTER, OVERHAUL
  * p4pi pi0: RUN MASTER, OVERHAUL
  * p, g: RUN MASTER, OVERHAUL
  * p eta pi0: RUN MASTER, OVERHAUL
- * p eta 2pi0
+ * p eta 2pi0: RUN MASTER, OVERHAUL
  * 
  * PLUGINS BY:
  * Robison
@@ -282,9 +282,10 @@ DSourceComboer::DSourceComboer(JEventLoop* locEventLoop)
 		gPARMS->GetParameter("OUTPUT_FILENAME", locOutputFileName);
 
 	//Make sure this matches DConstructionStage!!!
-	vector<string> locBuildStages_Event = {"Min # Particles", "Max # Particles", "In Skim", "Charged Combos", "Charged RF Bunch", "Full Combos", "Neutral RF Bunch", 
+	vector<string> locBuildStages_Event = {"Input", "Min # Particles", "Max # Particles", "In Skim", "Charged Combos", "Charged RF Bunch", "Full Combos", "Neutral RF Bunch",
 			"No-Vertex RF Bunch", "Heavy-Neutral IM", "Beam Combos", "MM Vertex Timing", "MM-vertex IM Cuts", "Accurate-Photon IM", "Reaction Beam-RF Cuts", "Missing Mass"};
-	vector<string> locBuildStages_Combo(locBuildStages_Event.begin() + 3, locBuildStages_Event.end());
+	vector<string> locBuildStages_Combo{"In Skim Events"}; //has same bin content as "In Skim"
+	locBuildStages_Combo.insert(locBuildStages_Combo.end(), locBuildStages_Event.begin() + 4, locBuildStages_Event.end());
 
 	//initialize success tracking
 	for(auto locReaction : locReactions)
@@ -449,6 +450,7 @@ DSourceComboer::DSourceComboer(JEventLoop* locEventLoop)
 
 void DSourceComboer::Fill_SurvivalHistograms(void)
 {
+	auto locNumPreComboStages = 3; //"In Skim" will be first for #combos
 	japp->WriteLock("DSourceComboer_Survival");
 	{
 		for(auto& locReactionPair : dNumCombosSurvivedStageTracker)
@@ -462,11 +464,11 @@ void DSourceComboer::Fill_SurvivalHistograms(void)
 
 				auto locStageIndex = static_cast<std::underlying_type<DConstructionStage>::type>(locStagePair.first);
 				dNumEventsSurvivedStageMap[locReaction]->Fill(locStageIndex);
-				if(locStageIndex < 3)
+				if(locStageIndex < locNumPreComboStages)
 					continue;
 
 				//fill combo hists
-				auto locBin = locStageIndex - 3 + 1;
+				auto locBin = locStageIndex - locNumPreComboStages + 1;
 				auto locBinContent = dNumCombosSurvivedStageMap[locReaction]->GetBinContent(locBin) + locNumCombos;
 				dNumCombosSurvivedStageMap[locReaction]->SetBinContent(locBin, locBinContent);
 
@@ -1094,7 +1096,10 @@ DCombosByReaction DSourceComboer::Build_ParticleCombos(const DReactionVertexInfo
 	DCombosByReaction locOutputComboMap;
 	auto locReactions = locReactionVertexInfo->Get_Reactions();
 	for(auto locReaction : locReactions)
+	{
 		locOutputComboMap[locReaction] = {};
+		dNumCombosSurvivedStageTracker[locReaction][DConstructionStage::Input] = 1; //is really #events
+	}
 
 	if(!Check_Reactions(locReactions))
 	{

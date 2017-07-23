@@ -72,7 +72,8 @@ class DSourceComboer : public JObject
 
 	enum class DConstructionStage
 	{
-		Min_Particles = 0,
+		Input = 0,
+		Min_Particles,
 		Max_Particles,
 		In_Skim,
 		Charged_Combos,

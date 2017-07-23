@@ -665,6 +665,9 @@ bool DSourceComboTimeHandler::Select_RFBunches_Charged(const DReactionVertexInfo
 
 bool DSourceComboTimeHandler::Select_RFBunches_PhotonVertices(const DReactionVertexInfo* locReactionVertexInfo, const DSourceCombo* locReactionFullCombo, vector<int>& locValidRFBunches)
 {
+	if(dDebugLevel > 0)
+		cout << "Select_RFBunches_PhotonVertices()" << endl;
+
 	//also, do PID cuts of photons at charged vertices while we're at it
 	auto locRFIterator = dPhotonVertexRFBunches.find(locReactionFullCombo);
 	if(locRFIterator != dPhotonVertexRFBunches.end())
