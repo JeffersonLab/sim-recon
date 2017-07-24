@@ -7,7 +7,17 @@
  * 
  * track timing resolution: Confirm OK
  * crash on exit in ubuntu???: TClonesArray branches invalidated after several threads close
- * memory leak with many channels/threads
+ * memory leak!!!
+ *
+ * running with all:
+ * kmkp, pi0kmkp, 2pi0kmkp, pimpipkmkp, pi0pimpipkmkp yield up by ~2 - 3x over master??
+ * 2kmkp up by 8x over master???
+ * 2pi0, pi0eta, 2pi0eta, pi0g, 2eta down by 2x from master
+ * pimpip2eta down by 1.5x from master
+ * 3pi0 down 3x from master
+ *
+ * mem leak:
+ * disable kinfit, see if flat
  *
  * TESTING:
  * p2pi: OK

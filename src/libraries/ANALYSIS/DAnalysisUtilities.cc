@@ -1373,7 +1373,7 @@ double DAnalysisUtilities::Propagate_Track(int locCharge, const DVector3& locPro
 {
 	//ASSUMES THAT THE B-FIELD IS IN THE +Z DIRECTION!!!!!!!!!!!!!!!
 	double locDistance = (locMeasuredX4.Vect() - locPropagateToPoint).Mag();
-	if(!Get_IsBFieldNearBeamline() || (locCharge == 0) || (locMeasuredP4.P() > dMinPForStraightTrack) || (locDistance < dMinDistanceForStraightTrack))
+	if(!Get_IsBFieldNearBeamline() || (locCharge == 0) || (locDistance < dMinDistanceForStraightTrack))
 	{
 		//use simpler methods
 		DVector3 locPOCA;
