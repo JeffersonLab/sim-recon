@@ -133,7 +133,7 @@ class DAnalysisUtilities : public JObject
 		string dTrackSelectionTag;
 		string dShowerSelectionTag;
 		double dTargetZCenter;
-		double dMinPForStraightTrack = 3.0;
+		double dMinPForStraightTrack = 9.0;
 		double dMinDistanceForStraightTrack = 3.0;
 
 		const DParticleID* dPIDAlgorithm = nullptr;

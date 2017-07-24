@@ -15,6 +15,7 @@
 #include <ANALYSIS/DReaction.h>
 #include <ANALYSIS/DHistogramActions.h>
 #include <ANALYSIS/DCutActions.h>
+#include <ANALYSIS/DSourceComboP4Handler.h>
 
 #include "FSInfo.h"
 
@@ -33,7 +34,6 @@ class DReaction_factory_ReactionFilter : public jana::JFactory<DReaction>
 
 	private:
 		jerror_t init(void);
-		jerror_t brun(JEventLoop* locEventLoop, int32_t locRunNumber);
 		jerror_t evnt(JEventLoop* locEventLoop, uint64_t locEventNumber);
 		jerror_t fini(void);						///< Called after last event of last event source has been processed.
 
@@ -43,7 +43,6 @@ class DReaction_factory_ReactionFilter : public jana::JFactory<DReaction>
 		void Create_DecayStep(DReaction* locReaction, FSInfo* locFSInfo, Particle_t locPID);
 
 		// Actions & cuts
-		void Define_LooseCuts(void);
 		void Add_MassHistograms(DReaction* locReaction, FSInfo* locFSInfo, bool locUseKinFitResultsFlag, string locBaseUniqueName = "");
 
 		// User-input channels
@@ -56,9 +55,8 @@ class DReaction_factory_ReactionFilter : public jana::JFactory<DReaction>
 		// Cuts
 		map<Particle_t, pair<double, double> > dMissingMassCuts; //Unknown = none missing //if negative, uses missing mass squared instead
 		map<Particle_t, pair<double, double> > dInvariantMassCuts;
-		map<Particle_t, map<DetectorSystem_t, double> > dPIDTimingCuts;
 
-		double dBeamBunchPeriod;
+		DSourceComboP4Handler* dSourceComboP4Handler;
 		deque<DReactionStep*> dReactionStepPool; //to prevent memory leaks
 };
 

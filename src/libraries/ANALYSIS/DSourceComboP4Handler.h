@@ -13,8 +13,6 @@
 #include "TFile.h"
 #include "TDirectoryFile.h"
 
-#include "JANA/JEventLoop.h"
-
 #include "particleType.h"
 #include "DLorentzVector.h"
 #include "PID/DKinematicData.h"
@@ -38,7 +36,7 @@ class DSourceComboP4Handler
 
 		//CONSTRUCTORS
 		DSourceComboP4Handler(void) = delete;
-		DSourceComboP4Handler(JEventLoop* locEventLoop, DSourceComboer* locSourceComboer);
+		DSourceComboP4Handler(DSourceComboer* locSourceComboer, bool locCreateHistsFlag = true);
 		~DSourceComboP4Handler(void){Fill_Histograms();}
 
 		//SET HANDLERS
@@ -48,6 +46,10 @@ class DSourceComboP4Handler
 		//SETUP FOR EACH EVENT
 		void Reset(void);
 		void Set_PhotonKinematics(const DPhotonKinematicsByZBin& locPhotonKinematics){dPhotonKinematics = locPhotonKinematics;}
+
+		//GET CUTS
+		bool Get_InvariantMassCuts(Particle_t locPID, pair<float, float>& locMinMaxCuts_GeV) const;
+		bool Get_MissingMassSquaredCuts(Particle_t locPID, pair<TF1*, TF1*>& locMinMaxCuts_GeVSq) const;
 
 		//GET/CALC PARTICLE P4
 		DLorentzVector Get_P4_NotMassiveNeutral(Particle_t locPID, const JObject* locObject, const DVector3& locVertex, bool locAccuratePhotonsFlag) const;
@@ -71,6 +73,7 @@ class DSourceComboP4Handler
 
 	private:
 		DLorentzVector Get_P4(Particle_t locPID, const JObject* locObject, signed char locVertexZBin, int locRFBunch);
+		bool Get_InvariantMassCut(const DSourceCombo* locSourceCombo, Particle_t locDecayPID, bool locAccuratePhotonsFlag, pair<float, float>& locMinMaxMassCuts_GeV) const;
 		void Fill_Histograms(void);
 
 		int dDebugLevel = 0;
@@ -111,9 +114,28 @@ inline void DSourceComboP4Handler::Reset(void)
 		locPIDPair.second.clear();
 
 	dInvariantMassFilledSet.clear();
+	dInvariantMassFilledSet_MassiveNeutral.clear();
 	dPhotonKinematics.clear();
 	dFinalStateP4ByCombo.clear();
 	dFinalStateP4ByCombo_HasMassiveNeutrals.clear();
+}
+
+inline bool DSourceComboP4Handler::Get_InvariantMassCuts(Particle_t locPID, pair<float, float>& locMinMaxCuts_GeV) const
+{
+	auto locIterator = dInvariantMassCuts.find(locPID);
+	if(locIterator == dInvariantMassCuts.end())
+		return false;
+	locMinMaxCuts_GeV = locIterator->second;
+	return true;
+}
+
+inline bool DSourceComboP4Handler::Get_MissingMassSquaredCuts(Particle_t locPID, pair<TF1*, TF1*>& locMinMaxCuts_GeVSq) const
+{
+	auto locIterator = dMissingMassSquaredCuts.find(locPID);
+	if(locIterator == dMissingMassSquaredCuts.end())
+		return false;
+	locMinMaxCuts_GeVSq = locIterator->second;
+	return true;
 }
 
 inline DLorentzVector DSourceComboP4Handler::Get_P4_HasMassiveNeutrals(bool locIsProductionVertex, const DSourceCombo* locReactionFullCombo, const DSourceCombo* locVertexCombo, int locRFBunch) const

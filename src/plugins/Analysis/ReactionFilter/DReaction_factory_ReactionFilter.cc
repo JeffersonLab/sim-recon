@@ -13,7 +13,7 @@
 //------------------
 jerror_t DReaction_factory_ReactionFilter::init(void)
 {
-	Define_LooseCuts();
+	dSourceComboP4Handler = new DSourceComboP4Handler(nullptr, false);
 
 	//Get input reactions
 	map<string, string> locParameterMap; //parameter key, value
@@ -26,18 +26,6 @@ jerror_t DReaction_factory_ReactionFilter::init(void)
 		gPARMS->SetDefaultParameter(locFullParamName, locFSValue);
 		dFSInfos.push_back(new FSInfo(locFSValue));
 	}
-
-	return NOERROR;
-}
-
-//------------------
-// brun
-//------------------
-jerror_t DReaction_factory_ReactionFilter::brun(JEventLoop* locEventLoop, int32_t locRunNumber)
-{
-	vector<double> locBeamPeriodVector;
-	locEventLoop->GetCalib("PHOTON_BEAM/RF/beam_period", locBeamPeriodVector);
-	dBeamBunchPeriod = locBeamPeriodVector[0];
 
 	return NOERROR;
 }
@@ -75,7 +63,7 @@ jerror_t DReaction_factory_ReactionFilter::evnt(JEventLoop* locEventLoop, uint64
 		locReaction->Set_KinFitType(d_P4AndVertexFit);
 
 		// Highly Recommended: When generating particle combinations, reject all beam photons that match to a different RF bunch
-		locReaction->Set_MaxPhotonRFDeltaT(1.5*dBeamBunchPeriod); // +/- 1 bunch for sideband subtraction
+		locReaction->Set_NumPlusMinusRFBunches(1); // +/- 1 bunch for sideband subtraction
 
 		// Highly Recommended: Cut on number of extra "good" tracks. "Good" tracks are ones that survive the "PreSelect" (or user custom) factory.
 			// Important: Keep cut large: Can have many ghost and accidental tracks that look "good"
@@ -106,7 +94,7 @@ jerror_t DReaction_factory_ReactionFilter::evnt(JEventLoop* locEventLoop, uint64
 
 		// KINEMATIC FIT
 		locReaction->Add_AnalysisAction(new DHistogramAction_KinFitResults(locReaction, 0.05)); //5% confidence level cut on pull histograms only
-		locReaction->Add_AnalysisAction(new DCutAction_KinFitFOM(locReaction, -1.0)); //require kinematic fit converges
+		//locReaction->Add_AnalysisAction(new DCutAction_KinFitFOM(locReaction, -1.0)); //require kinematic fit converges
 
 		// HISTOGRAM MASSES //false/true: measured/kinfit data
 		Add_MassHistograms(locReaction, locFSInfo, false, "PostKinFit");
@@ -136,25 +124,8 @@ jerror_t DReaction_factory_ReactionFilter::fini(void)
 void DReaction_factory_ReactionFilter::Create_FirstStep(DReaction* locReaction, FSInfo* locFSInfo)
 {
 	// the first reaction step
-	DReactionStep* locReactionStep = new DReactionStep();
-	locReactionStep->Set_InitialParticleID(Gamma);
-	locReactionStep->Set_TargetParticleID(Proton);
-
-	// primary particles
-	vector<Particle_t> locPIDs = locFSInfo->PIDs();
-	for (auto locPID : locPIDs)
-		locReactionStep->Add_FinalParticleID(locPID);
-
-	// add a missing nucleon
-	if (locFSInfo->missingN() && locFSInfo->totalCharge() == 0)
-		locReactionStep->Add_FinalParticleID(Proton, true);
-	if (locFSInfo->missingN() && locFSInfo->totalCharge() == 1)
-		locReactionStep->Add_FinalParticleID(Neutron, true);
-
-	// add an unknown particle
-	if (locFSInfo->inclusive())
-		locReactionStep->Add_FinalParticleID(Unknown, true);
-
+	auto locMissingPID = !locFSInfo->missingN() ? Unknown : ((locFSInfo->totalCharge() == 0) ? Proton : Neutron);
+	auto locReactionStep = new DReactionStep(Gamma, Proton, locFSInfo->PIDs(), locMissingPID, locFSInfo->inclusive(), false);
 	locReaction->Add_ReactionStep(locReactionStep);
 	dReactionStepPool.push_back(locReactionStep);
 }
@@ -194,41 +165,16 @@ void DReaction_factory_ReactionFilter::Create_DecaySteps(DReaction* locReaction,
 void DReaction_factory_ReactionFilter::Create_DecayStep(DReaction* locReaction, FSInfo* locFSInfo, Particle_t locPID)
 {
 	DReactionStep* locReactionStep = nullptr;
-	if (locPID == Pi0)
-	{
-		locReactionStep = new DReactionStep();
-		locReactionStep->Set_InitialParticleID(Pi0);
-		locReactionStep->Add_FinalParticleID(Gamma);
-		locReactionStep->Add_FinalParticleID(Gamma);
-	}
-	else if (locPID == Eta)
-	{
-		locReactionStep = new DReactionStep();
-		locReactionStep->Set_InitialParticleID(Eta);
-		locReactionStep->Add_FinalParticleID(Gamma);
-		locReactionStep->Add_FinalParticleID(Gamma);
-	}
-	else if (locPID == Lambda)
-	{
-		locReactionStep = new DReactionStep();
-		locReactionStep->Set_InitialParticleID(Lambda);
-		locReactionStep->Add_FinalParticleID(Proton);
-		locReactionStep->Add_FinalParticleID(PiMinus);
-	}
-	else if (locPID == AntiLambda)
-	{
-		locReactionStep = new DReactionStep();
-		locReactionStep->Set_InitialParticleID(AntiLambda);
-		locReactionStep->Add_FinalParticleID(AntiProton);
-		locReactionStep->Add_FinalParticleID(PiPlus);
-	}
-	else if (locPID == KShort)
-	{
-		locReactionStep = new DReactionStep();
-		locReactionStep->Set_InitialParticleID(KShort);
-		locReactionStep->Add_FinalParticleID(PiPlus);
-		locReactionStep->Add_FinalParticleID(PiMinus);
-	}
+	if(locPID == Pi0)
+		locReactionStep = new DReactionStep(Pi0, {Gamma, Gamma});
+	else if(locPID == Eta)
+		locReactionStep = new DReactionStep(Eta, {Gamma, Gamma});
+	else if(locPID == Lambda)
+		locReactionStep = new DReactionStep(Lambda, {Proton, PiMinus});
+	else if(locPID == AntiLambda)
+		locReactionStep = new DReactionStep(AntiLambda, {AntiProton, PiPlus});
+	else if(locPID == KShort)
+		locReactionStep = new DReactionStep(KShort, {PiPlus, PiMinus});
 	else
 		return;
 
@@ -244,109 +190,22 @@ void DReaction_factory_ReactionFilter::Create_DecayStep(DReaction* locReaction, 
 
 /************************************************************** ACTIONS AND CUTS **************************************************************/
 
-void DReaction_factory_ReactionFilter::Define_LooseCuts(void)
-{
-	// Missing Mass Cuts
-	dMissingMassCuts[Unknown] = pair<double, double>(-0.1, 0.1);
-	dMissingMassCuts[Proton] = pair<double, double>(0.5, 1.4);
-	dMissingMassCuts[Neutron] = pair<double, double>(0.5, 1.4);
-
-	// Invariant Mass Cuts: Mesons
-	dInvariantMassCuts[Pi0] = pair<double, double>(0.08, 0.19);
-	dInvariantMassCuts[KShort] = pair<double, double>(0.3, 0.7);
-	dInvariantMassCuts[Eta] = pair<double, double>(0.3, 0.8);
-	dInvariantMassCuts[omega] = pair<double, double>(0.4, 1.2);
-	dInvariantMassCuts[EtaPrime] = pair<double, double>(0.6, 1.3);
-	dInvariantMassCuts[phiMeson] = pair<double, double>(0.8, 1.2);
-	dInvariantMassCuts[Jpsi] = pair<double, double>(1.5, 4.0);
-
-	// Invariant Mass Cuts: Baryons
-	dInvariantMassCuts[Lambda] = pair<double, double>(1.0, 1.2);
-	dInvariantMassCuts[Sigma0] = pair<double, double>(1.1, 1.3);
-	dInvariantMassCuts[SigmaPlus] = pair<double, double>(1.1, 1.3);
-	dInvariantMassCuts[XiMinus] = pair<double, double>(1.1, 1.5);
-	dInvariantMassCuts[Xi0] = pair<double, double>(1.1, 1.5);
-
-	// Timing Cuts: Photon
-	dPIDTimingCuts[Gamma][SYS_BCAL] = 3.0;
-	dPIDTimingCuts[Gamma][SYS_FCAL] = 2.5;
-
-	// Timing Cuts: Leptons
-	dPIDTimingCuts[Electron][SYS_BCAL] = 1.0;
-	dPIDTimingCuts[Electron][SYS_FCAL] = 2.5;
-	dPIDTimingCuts[Electron][SYS_TOF] = 2.5;
-	dPIDTimingCuts[Positron] = dPIDTimingCuts[Electron];
-	dPIDTimingCuts[MuonMinus] = dPIDTimingCuts[Electron];
-	dPIDTimingCuts[MuonPlus] = dPIDTimingCuts[Electron];
-
-	// Timing Cuts: Mesons
-	dPIDTimingCuts[PiPlus][SYS_BCAL] = 2.0;
-	dPIDTimingCuts[PiPlus][SYS_FCAL] = 2.5;
-	dPIDTimingCuts[PiPlus][SYS_TOF] = 2.5;
-
-	dPIDTimingCuts[PiMinus][SYS_BCAL] = 2.0;
-	dPIDTimingCuts[PiMinus][SYS_FCAL] = 2.5;
-	dPIDTimingCuts[PiMinus][SYS_TOF] = 2.5;
-
-	dPIDTimingCuts[KPlus][SYS_BCAL] = 0.75;
-	dPIDTimingCuts[KPlus][SYS_FCAL] = 2.5;
-	dPIDTimingCuts[KPlus][SYS_TOF] = 2.0;
-	dPIDTimingCuts[KMinus] = dPIDTimingCuts[KPlus];
-
-	// Timing Cuts: Baryons
-	dPIDTimingCuts[Proton][SYS_BCAL] = 2.5;
-	dPIDTimingCuts[Proton][SYS_FCAL] = 2.5;
-	dPIDTimingCuts[Proton][SYS_TOF] = 2.5;
-
-	dPIDTimingCuts[AntiProton] = dPIDTimingCuts[Proton];
-}
-
 void DReaction_factory_ReactionFilter::Add_MassHistograms(DReaction* locReaction, FSInfo* locFSInfo, bool locUseKinFitResultsFlag, string locBaseUniqueName)
 {
 	bool locConstrainMassFlag = locFSInfo->intermediateMassFits();
 	if(locUseKinFitResultsFlag && locConstrainMassFlag)
 		return;
 
-	//missing mass
-	if(locFSInfo->exclusive() && !locUseKinFitResultsFlag)
-	{
-		//get cut pair
-		pair<double, double> locCutPair;
-		auto locMissingPIDs = locReaction->Get_MissingPIDs();
-		if(locMissingPIDs.size() < 2)
-		{
-			if(locMissingPIDs.empty())
-				locCutPair = dMissingMassCuts[Unknown];
-			else
-				locCutPair = dMissingMassCuts[locMissingPIDs[0]];
-
-			//determine #bins
-			int locNumBins = int((locCutPair.second - locCutPair.first)*1000.0 + 0.001);
-			if(locNumBins < 200)
-				locNumBins *= 5; //get close to 1000 bins
-			if(locNumBins < 500)
-				locNumBins *= 2; //get close to 1000 bins
-
-			//add histogram action
-			if(locCutPair.first >= 0.0)
-				locReaction->Add_AnalysisAction(new DHistogramAction_MissingMass(locReaction, false, locNumBins, locCutPair.first, locCutPair.second, locBaseUniqueName));
-			else
-				locReaction->Add_AnalysisAction(new DHistogramAction_MissingMassSquared(locReaction, false, locNumBins, locCutPair.first, locCutPair.second, locBaseUniqueName));
-		}
-	}
-
 	//invariant mass
 	vector<Particle_t> locPIDs = locFSInfo->PIDs();
 	set<Particle_t> locPIDsUsed;
 	for(auto locPID : locPIDs)
 	{
-		auto locPIDIterator = dInvariantMassCuts.find(locPID);
-		if(locPIDIterator == dInvariantMassCuts.end())
+		pair<float, float> locCutPair;
+		if(!dSourceComboP4Handler->Get_InvariantMassCuts(locPID, locCutPair))
 			continue;
 		if(locPIDsUsed.find(locPID) != locPIDsUsed.end())
 			continue; //already done!
-
-		auto locCutPair = locPIDIterator->second;
 
 		//determine #bins
 		int locNumBins = int((locCutPair.second - locCutPair.first)*1000.0 + 0.001);
@@ -364,5 +223,34 @@ void DReaction_factory_ReactionFilter::Add_MassHistograms(DReaction* locReaction
 
 		locPIDsUsed.insert(locPID);
 	}
+
+	//missing mass
+	if(!locFSInfo->exclusive() || locUseKinFitResultsFlag)
+		return;
+
+	//get cut pair
+	auto locMissingPIDs = locReaction->Get_MissingPIDs();
+	if(locMissingPIDs.size() >= 2)
+		return;
+
+	auto locMissingPID = locMissingPIDs.empty() ? Unknown : locMissingPIDs[0];
+	pair<TF1*, TF1*> locFuncPair;
+	if(!dSourceComboP4Handler->Get_MissingMassSquaredCuts(locMissingPID, locFuncPair))
+		return;
+
+	auto locCutPair = std::make_pair(locFuncPair.first->Eval(12.0), locFuncPair.second->Eval(12.0));
+
+	//determine #bins
+	int locNumBins = int((locCutPair.second - locCutPair.first)*1000.0 + 0.001);
+	if(locNumBins < 200)
+		locNumBins *= 5; //get close to 1000 bins
+	if(locNumBins < 500)
+		locNumBins *= 2; //get close to 1000 bins
+
+	//add histogram action
+	if(locCutPair.first >= 0.0)
+		locReaction->Add_AnalysisAction(new DHistogramAction_MissingMass(locReaction, false, locNumBins, locCutPair.first, locCutPair.second, locBaseUniqueName));
+	else
+		locReaction->Add_AnalysisAction(new DHistogramAction_MissingMassSquared(locReaction, false, locNumBins, locCutPair.first, locCutPair.second, locBaseUniqueName));
 }
 

@@ -5,10 +5,9 @@
 /*
  * PROBLEMS:
  * 
- * track timing resolution at 3 GeV
- * crash on exit in ubuntu: TClonesArray branches invalidated after several threads close
- * all at once:
- * inv mass hists are spiky (need dupe check??)
+ * track timing resolution: Confirm OK
+ * crash on exit in ubuntu???: TClonesArray branches invalidated after several threads close
+ * memory leak with many channels/threads
  *
  * TESTING:
  * p2pi: OK
@@ -21,12 +20,12 @@
  * p4g: OK
  * p3pi0: OK
  * p pi0 g: OK
- * p2pi g: RUN MASTER, OVERHAUL
+ * p2pi g: OK
  * p2pi 2pi0: RUN MASTER, OVERHAUL
- * p4pi pi0: RUN MASTER, OVERHAUL
- * p, g: RUN MASTER, OVERHAUL
- * p eta pi0: RUN MASTER, OVERHAUL
- * p eta 2pi0: LESS IN OVERHAUL!!!!
+ * p4pi pi0: OK
+ * p, g: RUN MASTER
+ * p eta pi0: OK
+ * p eta 2pi0: OK
  * 
  * PLUGINS BY:
  * Robison
@@ -56,13 +55,6 @@
  * K0 Sigma+
  * ...
  *
- * ReactionFilter
- *
- * Each test:
- * Yields are same (or reasonably different)
- * New functions: print to screen to confirm OK
- * Root tree output
- *
  * Ideas for reducing output size:
  * char instead of int
  * miss mass cuts
@@ -79,29 +71,19 @@ Q) If an event has the minimum # tracks, how can it fail to create combos for th
 A) It may be that one of the tracks failed cuts for the PIDs that you need, but passed for others. Thus the total #tracks is OK. 
    Then, say you need 1 pi+ & 1 proton, and you detected 2 tracks.  The other track may have passed dE/dx cuts for both proton & pi+, so it registers as both. 
    Also, one track could have both a positively & negatively charged hypothesis, and thus would count for both charges. 
-
-FAQ:
-Q) Should I cut on the start counter timing?
-A) 
 */
-
-//When comparing before and after:
-//time handler charged time
 
 //MUST DO:
 //include lubomir & aaustreg cuts
 //save #tracks to tree
 //fix custom actions: justin & robison
-//remove actions from ReactionFilter
 //When saving ROOT TTree, don't save p4 of decaying particles if mass is not constrained in kinfit!
 	//And make sure it's not grabbed in DSelector by default
 
 //DOUBLE-CHECKS:
 // check trackids in root tree output
-//At end, loop over all combos, check if no dupes within them, and no dupes between them
 
 //NICE TO HAVE:
-//see if can convert int -> char in tree
 //finish comments in Build_ParticleCombos()
 
 namespace DAnalysis
@@ -248,7 +230,7 @@ DSourceComboer::DSourceComboer(JEventLoop* locEventLoop)
 	dSourceComboInfoSet.clear(); //free up the memory
 
 	//CREATE HANDLERS
-	dSourceComboP4Handler = new DSourceComboP4Handler(locEventLoop, this);
+	dSourceComboP4Handler = new DSourceComboP4Handler(this);
 	dSourceComboVertexer = new DSourceComboVertexer(locEventLoop, this, dSourceComboP4Handler);
 	dSourceComboTimeHandler = new DSourceComboTimeHandler(locEventLoop, this, dSourceComboVertexer);
 	dSourceComboP4Handler->Set_SourceComboTimeHandler(dSourceComboTimeHandler);

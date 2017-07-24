@@ -382,7 +382,7 @@ DLorentzVector DSourceComboTimeHandler::Get_ChargedParticlePOCAToVertexX4(const 
 {
 	auto locPOCAPair = std::make_pair(locHypothesis, dSourceComboVertexer->Get_ConstrainingParticles(locIsProductionVertex, locVertexPrimaryFullCombo, locBeamParticle));
 	auto locIterator = dChargedParticlePOCAToVertexX4.find(locPOCAPair);
-	return ((locIterator != dChargedParticlePOCAToVertexX4.end()) ? locIterator->second : DLorentzVector());
+	return ((locIterator != dChargedParticlePOCAToVertexX4.end()) ? locIterator->second : DLorentzVector(locHypothesis->position(), locHypothesis->time()));
 }
 
 void DSourceComboTimeHandler::Setup_NeutralShowers(const vector<const DNeutralShower*>& locNeutralShowers, const DEventRFBunch* locInitialEventRFBunch)

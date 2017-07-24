@@ -125,8 +125,10 @@
 namespace DAnalysis
 {
 
-DSourceComboP4Handler::DSourceComboP4Handler(JEventLoop* locEventLoop, DSourceComboer* locSourceComboer) : dSourceComboer(locSourceComboer)
+DSourceComboP4Handler::DSourceComboP4Handler(DSourceComboer* locSourceComboer, bool locCreateHistsFlag) : dSourceComboer(locSourceComboer)
 {
+	gPARMS->SetDefaultParameter("COMBO:DEBUG_LEVEL", dDebugLevel);
+
 	//INVARIANT MASS CUTS: MESONS
 	dInvariantMassCuts.emplace(Pi0, std::make_pair(0.1, 0.17)); //80 -> 190
 	dInvariantMassCuts.emplace(KShort, std::make_pair(0.3, 0.7));
@@ -174,6 +176,12 @@ DSourceComboP4Handler::DSourceComboP4Handler(JEventLoop* locEventLoop, DSourceCo
 		//Other
 		dMissingMassSquaredCuts[Neutron] = dMissingMassSquaredCuts[Proton];
 		dMissingMassSquaredCuts[PiMinus] = dMissingMassSquaredCuts[PiPlus];
+
+		if(!locCreateHistsFlag)
+		{
+			japp->RootUnLock(); //RELEASE ROOT LOCK!!
+			return;
+		}
 
 		//HISTOGRAMS
 		//get and change to the base (file/global) directory
@@ -252,8 +260,6 @@ DSourceComboP4Handler::DSourceComboP4Handler(JEventLoop* locEventLoop, DSourceCo
 		locCurrentDir->cd();
 	}
 	japp->RootUnLock(); //RELEASE ROOT LOCK!!
-
-	gPARMS->SetDefaultParameter("COMBO:DEBUG_LEVEL", dDebugLevel);
 }
 
 DLorentzVector DSourceComboP4Handler::Get_P4_NotMassiveNeutral(Particle_t locPID, const JObject* locObject, const DVector3& locVertex, bool locAccuratePhotonsFlag) const
@@ -474,24 +480,37 @@ bool DSourceComboP4Handler::Calc_P4_HasMassiveNeutrals(bool locIsProductionVerte
 	return true;
 }
 
+bool DSourceComboP4Handler::Get_InvariantMassCut(const DSourceCombo* locSourceCombo, Particle_t locDecayPID, bool locAccuratePhotonsFlag, pair<float, float>& locMinMaxMassCuts_GeV) const
+{
+	auto locCutIterator = dInvariantMassCuts.find(locDecayPID);
+	if(locCutIterator == dInvariantMassCuts.end())
+		return false; //no cut to place!!
+	locMinMaxMassCuts_GeV = locCutIterator->second;
+
+	if(locAccuratePhotonsFlag)
+		return true;
+
+	auto locNumPhotons = DAnalysis::Get_SourceParticles(locSourceCombo->Get_SourceParticles(true, d_Neutral), Gamma).size();
+	if(locNumPhotons == 0)
+		return true;
+	auto locMassError = (locNumPhotons > 2) ? 0.5*double(locNumPhotons)*d2PhotonInvariantMassCutError : d2PhotonInvariantMassCutError;
+	locMinMaxMassCuts_GeV.first -= locMassError;
+	locMinMaxMassCuts_GeV.second += locMassError;
+	return true;
+}
+
 bool DSourceComboP4Handler::Cut_InvariantMass_NoMassiveNeutrals(const DSourceCombo* locVertexCombo, Particle_t locDecayPID, const DVector3& locVertex, signed char locVertexZBin, bool locAccuratePhotonsFlag)
 {
 	//Z-bin necessary to signal the special negative bins!!
 	//Don't call if it contains massive neutrals! Call the other cut function instead!!
-	auto locCutIterator = dInvariantMassCuts.find(locDecayPID);
-	if(locCutIterator == dInvariantMassCuts.end())
+	pair<float, float> locMassCuts;
+	if(!Get_InvariantMassCut(locVertexCombo, locDecayPID, locAccuratePhotonsFlag, locMassCuts))
 		return true; //no cut to place!!
-	auto& locMassCuts = locCutIterator->second;
 
 	auto locInvariantMass = Calc_P4_NoMassiveNeutrals(locVertexCombo, locVertex, locVertexZBin, nullptr, locAccuratePhotonsFlag).M();
 
 	//save and cut
-	auto locNumPhotons = DAnalysis::Get_SourceParticles(locVertexCombo->Get_SourceParticles(true, d_Neutral), Gamma).size();
-	auto locHasPhotons = (locNumPhotons > 0);
-	auto locMassError = (locAccuratePhotonsFlag || !locHasPhotons) ? 0.0 : ((locNumPhotons > 2) ? 0.5*double(locNumPhotons)*d2PhotonInvariantMassCutError : d2PhotonInvariantMassCutError);
-	auto locCutMin = locMassCuts.first - locMassError;
-	auto locCutMax = locMassCuts.second + locMassError;
-	auto locCutResult = ((locInvariantMass >= locCutMin) && (locInvariantMass <= locCutMax));
+	auto locCutResult = ((locInvariantMass >= locMassCuts.first) && (locInvariantMass <= locMassCuts.second));
 
 	if(!locAccuratePhotonsFlag) //else has already been saved during inaccurate stage
 	{
@@ -505,7 +524,7 @@ bool DSourceComboP4Handler::Cut_InvariantMass_NoMassiveNeutrals(const DSourceCom
 		}
 	}
 	if(dDebugLevel >= 10)
-		cout << "accurate flag, decay pid, z, zbin, mass, cut min/max, pass flag: " << locAccuratePhotonsFlag << ", " << locDecayPID << ", " << locVertex.Z() << ", " << int(locVertexZBin) << ", " << locInvariantMass << ", " << locCutMin << ", " << locCutMax << ", " << locCutResult << endl;
+		cout << "accurate flag, decay pid, z, zbin, mass, cut min/max, pass flag: " << locAccuratePhotonsFlag << ", " << locDecayPID << ", " << locVertex.Z() << ", " << int(locVertexZBin) << ", " << locInvariantMass << ", " << locMassCuts.first << ", " << locMassCuts.second << ", " << locCutResult << endl;
 	return locCutResult;
 }
 
@@ -514,17 +533,9 @@ bool DSourceComboP4Handler::Cut_InvariantMass_HasMassiveNeutral(bool locIsProduc
 	if(locValidRFBunches.empty())
 		return true; //massive neutral p4 not defined, can't cut
 
-	//cuts on possible RF bunches for the massive neutrals
-	//if no possible rf bunch yields a massive-neutral-momentum that passes the invariant mass cut, returns an empty vector
-	auto locCutIterator = dInvariantMassCuts.find(locDecayPID);
-	if(locCutIterator == dInvariantMassCuts.end())
+	pair<float, float> locMassCuts;
+	if(!Get_InvariantMassCut(locVertexCombo, locDecayPID, locAccuratePhotonsFlag, locMassCuts))
 		return true; //no cut to place!!
-	auto& locMassCuts = locCutIterator->second;
-	auto locNumPhotons = DAnalysis::Get_SourceParticles(locVertexCombo->Get_SourceParticles(true, d_Neutral), Gamma).size();
-	auto locHasPhotons = (locNumPhotons > 0);
-	auto locMassError = (locAccuratePhotonsFlag || !locHasPhotons) ? 0.0 : ((locNumPhotons > 2) ? 0.5*double(locNumPhotons)*d2PhotonInvariantMassCutError : d2PhotonInvariantMassCutError);
-	auto locCutMin = locMassCuts.first - locMassError;
-	auto locCutMax = locMassCuts.second + locMassError;
 
 	//function for calculating and cutting the invariant mass for each rf bunch
 	auto CalcAndCut_InvariantMass = [&](int locRFBunch) -> bool
@@ -534,11 +545,13 @@ bool DSourceComboP4Handler::Cut_InvariantMass_HasMassiveNeutral(bool locIsProduc
 		DLorentzVector locTotalP4(0.0, 0.0, 0.0, 0.0);
 		if(!Calc_P4_HasMassiveNeutrals(locIsProductionVertex, locReactionFullCombo, locVertexCombo, locVertex, locRFBunch, locRFVertexTime, DSourceComboUse(Unknown, 0, nullptr), locTotalP4, locBeamParticle, locAccuratePhotonsFlag))
 			return true; //can't cut it yet!
+
+		auto locInvariantMass = locTotalP4.M();
+		auto locPassCutFlag = ((locInvariantMass < locMassCuts.first) || (locInvariantMass > locMassCuts.second));
 		if(dDebugLevel >= 10)
-			cout << "has-mass neutral: accurate flag, decay pid, z, mass, cut min/max, pass flag: " << locAccuratePhotonsFlag << ", " << locDecayPID << ", " << locVertex.Z() << ", " << locTotalP4.M() << ", " << locCutMin << ", " << locCutMax << ", " << ((locTotalP4.M() >= locCutMin) && (locTotalP4.M() <= locCutMax)) << endl;
+			cout << "has-mass neutral: accurate flag, decay pid, z, mass, cut min/max, pass flag: " << locAccuratePhotonsFlag << ", " << locDecayPID << ", " << locVertex.Z() << ", " << locTotalP4.M() << ", " << locMassCuts.first << ", " << locMassCuts.second << ", " << locPassCutFlag << endl;
 
 		//save and cut
-		auto locInvariantMass = locTotalP4.M();
 		if(!locAccuratePhotonsFlag) //else has already been saved during inaccurate stage
 		{
 			auto locSaveTuple = std::make_tuple(locDecayPID, locIsProductionVertex, locReactionFullCombo, locVertexCombo, locRFBunch);
@@ -550,7 +563,7 @@ bool DSourceComboP4Handler::Cut_InvariantMass_HasMassiveNeutral(bool locIsProduc
 				dInvariantMassFilledSet_MassiveNeutral.insert(locSaveTuple);
 			}
 		}
-		return ((locInvariantMass < locCutMin) || (locInvariantMass > locCutMax));
+		return locPassCutFlag;
 	};
 
 	//apply the function

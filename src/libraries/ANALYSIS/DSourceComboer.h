@@ -224,7 +224,7 @@ class DSourceComboer : public JObject
 		//EXPERIMENT INFORMATION
 		DVector3 dTargetCenter;
 
-		//COMMAND LINE CUTS
+		//RF BUNCH CUTS
 		pair<bool, size_t> dNumPlusMinusRFBunches = std::make_pair(false, 0); //by default use DReaction cut //only use this if set on command line
 		unordered_map<const DReaction*, size_t> dRFBunchCutsByReaction;
 		unordered_map<const DReactionVertexInfo*, size_t> dMaxRFBunchCuts;
