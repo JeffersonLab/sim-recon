@@ -34,6 +34,7 @@ class DChargedTrackHypothesis_factory:public jana::JFactory<DChargedTrackHypothe
 		void Recycle_Hypotheses(vector<DChargedTrackHypothesis*>& locHypos){dResourcePool_ChargedTrackHypothesis->Recycle(locHypos);}
 		void Recycle_Hypothesis(const DChargedTrackHypothesis* locHypo){dResourcePool_ChargedTrackHypothesis->Recycle(locHypo);}
 
+		size_t Get_NumObjectsAllThreads(void) const{return dResourcePool_ChargedTrackHypothesis->Get_NumObjectsAllThreads();}
 		DChargedTrackHypothesis* Get_Resource(void)
 		{
 			auto locHypo = dResourcePool_ChargedTrackHypothesis->Get_Resource();

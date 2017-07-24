@@ -37,6 +37,7 @@ class DNeutralParticleHypothesis_factory : public jana::JFactory<DNeutralParticl
 		void Recycle_Hypotheses(vector<const DNeutralParticleHypothesis*>& locHypos){dResourcePool_NeutralParticleHypothesis->Recycle(locHypos);}
 		void Recycle_Hypothesis(const DNeutralParticleHypothesis* locHypo){dResourcePool_NeutralParticleHypothesis->Recycle(locHypo);}
 
+		size_t Get_NumObjectsAllThreads(void) const{return dResourcePool_NeutralParticleHypothesis->Get_NumObjectsAllThreads();}
 		DNeutralParticleHypothesis* Get_Resource(void)
 		{
 			auto locHypo = dResourcePool_NeutralParticleHypothesis->Get_Resource();

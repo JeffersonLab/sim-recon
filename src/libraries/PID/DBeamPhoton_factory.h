@@ -28,6 +28,7 @@ class DBeamPhoton_factory:public jana::JFactory<DBeamPhoton>
 		void Recycle_Resources(vector<DBeamPhoton*>& locBeams){dResourcePool_BeamPhotons->Recycle(locBeams);}
 		void Recycle_Resource(const DBeamPhoton* locBeam){dResourcePool_BeamPhotons->Recycle(locBeam);}
 
+		size_t Get_NumObjectsAllThreads(void) const{return dResourcePool_BeamPhotons->Get_NumObjectsAllThreads();}
 		DBeamPhoton* Get_Resource(void)
 		{
 			auto locBeam = dResourcePool_BeamPhotons->Get_Resource();

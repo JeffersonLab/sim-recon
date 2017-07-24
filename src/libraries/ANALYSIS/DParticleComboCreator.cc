@@ -36,6 +36,16 @@ DParticleComboCreator::DParticleComboCreator(JEventLoop* locEventLoop, const DSo
 
 void DParticleComboCreator::Reset(void)
 {
+	if(dDebugLevel >= 5)
+	{
+		cout << "Total # of RF Bunches Allocated (All threads): " << dResourcePool_EventRFBunch.Get_NumObjectsAllThreads() << endl;
+		cout << "Total # of Particle Combo Steps Allocated (All threads): " << dResourcePool_ParticleComboStep.Get_NumObjectsAllThreads() << endl;
+		cout << "Total # of Particle Combos Allocated (All threads): " << dResourcePool_ParticleCombo.Get_NumObjectsAllThreads() << endl;
+		cout << "Total # of Charged Hypos (All threads): " << dChargedTrackHypothesisFactory->Get_NumObjectsAllThreads() << endl;
+		cout << "Total # of Neutral Hypos (All threads): " << dNeutralParticleHypothesisFactory->Get_NumObjectsAllThreads() << endl;
+		cout << "Total # of Beam Photons (All threads): " << dBeamPhotonfactory->Get_NumObjectsAllThreads() << endl;
+	}
+
 	for(const auto& locRFPair : dRFBunchMap)
 		dResourcePool_EventRFBunch.Recycle(locRFPair.second);
 	dRFBunchMap.clear();

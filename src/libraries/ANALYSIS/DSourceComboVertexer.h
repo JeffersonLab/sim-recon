@@ -111,6 +111,9 @@ class DSourceComboVertexer
 
 inline void DSourceComboVertexer::Reset(void)
 {
+	if(dDebugLevel >= 5)
+		cout << "Total # of KinematicData's Allocated (All threads): " << dResourcePool_KinematicData.Get_NumObjectsAllThreads() << endl;
+
 	dConstrainingParticlesByCombo.clear();
 	dVertexMap.clear();
 	dTimeOffsets.clear();

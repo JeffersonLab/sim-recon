@@ -96,6 +96,7 @@ template <typename DType> class DResourcePool : public std::enable_shared_from_t
 
 		size_t Get_SharedPoolSize(void) const;
 		size_t Get_PoolSize(void) const{return dResourcePool_Local.size();}
+		size_t Get_NumObjectsAllThreads(void) const{return dObjectCounter;}
 
 		static constexpr unsigned int Get_CacheLineSize(void)
 		{
@@ -129,6 +130,7 @@ template <typename DType> class DResourcePool : public std::enable_shared_from_t
 		alignas(Get_CacheLineSize()) static vector<DType*> dResourcePool_Shared;
 		alignas(Get_CacheLineSize()) static size_t dMaxSharedPoolSize;
 		alignas(Get_CacheLineSize()) static size_t dPoolCounter; //must be accessed within a lock due to how it's used in destructor: freeing all resources
+		alignas(Get_CacheLineSize()) static atomic<size_t> dObjectCounter; //can be accessed without a lock!
 
 		alignas(Get_CacheLineSize()) size_t dContainerResourceMaxCapacity = 1000;
 		alignas(Get_CacheLineSize()) size_t dContainerResourceReduceCapacityTo = 100;
@@ -165,6 +167,7 @@ template <typename DType> mutex DResourcePool<DType>::dSharedPoolMutex;
 template <typename DType> vector<DType*> DResourcePool<DType>::dResourcePool_Shared = {};
 template <typename DType> size_t DResourcePool<DType>::dMaxSharedPoolSize{10000};
 template <typename DType> size_t DResourcePool<DType>::dPoolCounter{0};
+template <typename DType> atomic<size_t> DResourcePool<DType>::dObjectCounter{0};
 
 //CONSTRUCTOR
 template <typename DType> DResourcePool<DType>::DResourcePool(void)
@@ -208,6 +211,9 @@ template <typename DType> DResourcePool<DType>::~DResourcePool(void)
 		cout << "DESTRUCTOR DELETING " << typeid(DType).name() << ": " << locResources.size() << endl;
 	for(auto locResource : locResources)
 		delete locResource;
+	dObjectCounter -= locResources.size(); //I sure hope this is zero!
+	if(dDebugLevel > 0)
+		cout << "All objects (ought) to be destroyed, theoretical # remaining: " << dObjectCounter;
 }
 
 /************************************************************************* NON-SHARED-POOL-ACCESSING MEMBER FUNCTIONS *************************************************************************/
@@ -223,6 +229,7 @@ template <typename DType> DType* DResourcePool<DType>::Get_Resource(void)
 		//perhaps instead use custom allocator
 		for(size_t loc_i = 0; loc_i < dNumToAllocateAtOnce - 1; ++loc_i)
 			dResourcePool_Local.push_back(new DType);
+		dObjectCounter += dNumToAllocateAtOnce;
 		return new DType();
 	}
 
@@ -334,7 +341,7 @@ template <typename DType> void DResourcePool<DType>::Recycle_Resources_StaticPoo
 	//any resources that were not moved into the shared pool are deleted instead (too many)
 	auto Deleter = [](DType* locResource) -> void {delete locResource;};
 	std::for_each(dResourcePool_Local.begin() + locFirstToRemoveIndex, dResourcePool_Local.begin() + locFirstToMoveIndex, Deleter);
-
+	dObjectCounter -= (locFirstToMoveIndex - locFirstToRemoveIndex);
 	dResourcePool_Local.resize(locFirstToRemoveIndex);
 }
 
