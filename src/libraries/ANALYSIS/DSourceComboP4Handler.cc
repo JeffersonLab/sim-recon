@@ -219,7 +219,7 @@ DSourceComboP4Handler::DSourceComboP4Handler(DSourceComboer* locSourceComboer, b
 			auto locHist = gDirectory->Get(locHistName.c_str());
 			if(locHist == nullptr)
 			{
-				string locHistTitle = string("From Any Decay Products;") + string(ParticleName_ROOT(locPID)) + string(" Invariant Mass (GeV/c^{2})");
+				string locHistTitle = string("From All Decay Products;") + string(ParticleName_ROOT(locPID)) + string(" Invariant Mass (GeV/c^{2})");
 				auto locMinMass = locMassPair.first - 0.2;
 				if(locMinMass < 0.0)
 					locMinMass = 0.0;
@@ -247,7 +247,7 @@ DSourceComboP4Handler::DSourceComboP4Handler(DSourceComboer* locSourceComboer, b
 			auto locHist = gDirectory->Get(locHistName.c_str());
 			if(locHist == nullptr)
 			{
-				string locHistTitle = string("From Any Production Mechanism;Beam Energy (GeV);") + string((locPID != Unknown) ? ParticleName_ROOT(locPID) : "None") + string(" Missing Mass Squared (GeV/c^{2})^{2}");
+				string locHistTitle = string("From All Production Mechanisms;Beam Energy (GeV);") + string((locPID != Unknown) ? ParticleName_ROOT(locPID) : "None") + string(" Missing Mass Squared (GeV/c^{2})^{2}");
 				auto locMinMass = locMassPair.first->Eval(12.0) - 0.2; //assume widest at highest energy
 				auto locMaxMass = locMassPair.second->Eval(12.0) + 0.2;
 				auto locNumBins = 1000.0*(locMaxMass - locMinMass);

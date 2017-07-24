@@ -282,7 +282,7 @@ class DSourceComboer : public JObject
 		map<pair<const DSourceCombo*, DSourceComboUse>, map<vector<int>, size_t>> dResumeSearchAfterIndices_Combos; //char: zbin, size_t: index
 
 		//VALID RF BUNCHES BY COMBO
-		unordered_map<const DSourceCombo*, vector<int>> dValidRFBunches_ByCombo;
+		map<pair<const DSourceCombo*, signed char>, vector<int>> dValidRFBunches_ByCombo; //char: zbin
 
 		//RESOURCE POOLS
 		//Don't use these directly!  Use the Get_*Resource functions instead!!

@@ -49,7 +49,7 @@
  *
  * Reactionfilter all at once: Does it work?
  * ReactionFilter all (Alex): Crash rate, mem usage, cpu time
- * Get individual user-plugins working: re-write actions, test individually
+ * Get individual user-plugins working: test individually
  * - Need results from master
  *
  * EVENTUALLY:
@@ -1336,7 +1336,7 @@ void DSourceComboer::Combo_WithNeutralsAndBeam(const vector<const DReaction*>& l
 	for(const auto& locReactionFullCombo : locReactionFullCombos)
 	{
 		//get common RF bunches between charged & neutral
-		auto locNeutralRFBunches = dValidRFBunches_ByCombo[locReactionFullCombo];
+		auto locNeutralRFBunches = dValidRFBunches_ByCombo[std::make_pair(locReactionFullCombo, DSourceComboInfo::Get_VertexZIndex_ZIndependent())];
 		auto locValidRFBunches = dSourceComboTimeHandler->Get_CommonRFBunches(locBeamBunches_Charged, locNeutralRFBunches);
 		if(dDebugLevel > 0)
 			cout << "#charged bunches, #neutral, #common = " << locBeamBunches_Charged.size() << ", " << locNeutralRFBunches.size() << ", " << locValidRFBunches.size() << endl;
@@ -1687,7 +1687,7 @@ void DSourceComboer::Create_SourceCombos(const DSourceComboUse& locComboUseToCre
 			continue;
 
 		//register beam bunches
-		const auto& locBeamBunches = dValidRFBunches_ByCombo[locSourceCombo];
+		const auto& locBeamBunches = dValidRFBunches_ByCombo[std::make_pair(locSourceCombo, locVertexZBin)];
 		Register_ValidRFBunches(locComboUseToCreate, locSourceCombo, locBeamBunches, locComboingStage, locChargedCombo_WithNow);
 	}
 
@@ -1925,7 +1925,7 @@ void DSourceComboer::Combo_Vertically_NDecays(const DSourceComboUse& locComboUse
 		//however, we don't have to loop over all of the combos!!
 
 		//first of all, get the potential combos that satisfy the RF bunches for the N - 1 combo
-		const auto& locValidRFBunches_NMinus1 = dValidRFBunches_ByCombo[locCombo_NMinus1];
+		const auto& locValidRFBunches_NMinus1 = dValidRFBunches_ByCombo[std::make_pair(locCombo_NMinus1, std::get<1>(locNMinus1ComboUse))];
 		const auto& locDecayCombos_1 = Get_CombosForComboing(locSourceComboDecayUse, locComboingStage, locValidRFBunches_NMinus1, locChargedCombo_WithPrevious);
 		if(dDebugLevel >= 20)
 			cout << "decay combos vector address, size: " << &locDecayCombos_1 << ", " << locDecayCombos_1.size() << endl;
@@ -1981,7 +1981,7 @@ void DSourceComboer::Combo_Vertically_NDecays(const DSourceComboUse& locComboUse
 			//no duplicates: this combo is unique.  build a new combo!
 
 			//See which RF bunches match up //guaranteed to be at least one, due to selection in Get_ParticlesForComboing() function
-			auto locValidRFBunches = dSourceComboTimeHandler->Get_CommonRFBunches(locValidRFBunches_NMinus1, dValidRFBunches_ByCombo[locDecayCombo_1]);
+			auto locValidRFBunches = dSourceComboTimeHandler->Get_CommonRFBunches(locValidRFBunches_NMinus1, dValidRFBunches_ByCombo[std::make_pair(locDecayCombo_1, std::get<1>(locSourceComboDecayUse))]);
 
 			//Combine the decay combos
 			vector<const DSourceCombo*> locAllDecayCombos;
@@ -2232,7 +2232,7 @@ void DSourceComboer::Combo_Vertically_NParticles(const DSourceComboUse& locCombo
 	for(const auto& locCombo_NMinus1 : locCombos_NMinus1)
 	{
 		//Get particles for comboing
-		const auto& locValidRFBunches_NMinus1 = dValidRFBunches_ByCombo[locCombo_NMinus1];
+		const auto& locValidRFBunches_NMinus1 = dValidRFBunches_ByCombo[std::make_pair(locCombo_NMinus1, std::get<1>(locNMinus1ComboUse))];
 		const auto& locParticles = Get_ParticlesForComboing(locPID, locComboingStage, locValidRFBunches_NMinus1, locVertexZBin);
 
 		//retrieve where to begin the search
@@ -2438,7 +2438,8 @@ void DSourceComboer::Combo_Horizontally_All(const DSourceComboUse& locComboUseTo
 			//if we can directly build the to-add decay use, then we will (only 1 combo requested)
 			//else we must build a new use first, and then promote the to-add use when comboing horizontally
 			auto locToAddComboInfo = (locDecayIterator->second == 1) ? std::get<2>(locSourceComboUse_ThisDecay) : GetOrMake_SourceComboInfo({}, {std::make_pair(locSourceComboUse_ThisDecay, locDecayIterator->second)}, locNumTabs);
-			auto locToAddComboUse = (locDecayIterator->second == 1) ? locSourceComboUse_ThisDecay : DSourceComboUse{Unknown, locVertexZBin, locToAddComboInfo};
+			auto locToAddZBin = (Get_ChargeContent(locToAddComboInfo) != d_Charged) ? locVertexZBin : DSourceComboInfo::Get_VertexZIndex_ZIndependent();
+			auto locToAddComboUse = (locDecayIterator->second == 1) ? locSourceComboUse_ThisDecay : DSourceComboUse{Unknown, locToAddZBin, locToAddComboInfo};
 
 			if((locComboingStage != d_ChargedStage) && (locAllBut1ChargeContent == d_Charged))
 			{
@@ -2804,7 +2805,7 @@ void DSourceComboer::Combo_Horizontally_AddCombo(const DSourceComboUse& locCombo
 				continue; //this combo has already been created (assuming it was valid): during the FCAL-only stage
 
 			//get the valid RF bunches (those for the all-but-1, because we are comboing with charged which is "all")
-			const auto& locValidRFBunches = dValidRFBunches_ByCombo[locCombo_AllBut1];
+			const auto& locValidRFBunches = dValidRFBunches_ByCombo[std::make_pair(locCombo_AllBut1, std::get<1>(locAllBut1ComboUse))];
 
 			//create new combo!
 			auto locCombo = Get_SourceComboResource();
@@ -2870,7 +2871,7 @@ void DSourceComboer::Combo_Horizontally_AddCombo(const DSourceComboUse& locCombo
 	for(const auto& locCombo_AllBut1 : *locCombos_AllBut1)
 	{
 		//first of all, get the potential combos that satisfy the RF bunches for the all-but-1 combo
-		const auto& locValidRFBunches_AllBut1 = dValidRFBunches_ByCombo[locCombo_AllBut1];
+		const auto& locValidRFBunches_AllBut1 = dValidRFBunches_ByCombo[std::make_pair(locCombo_AllBut1, std::get<1>(locAllBut1ComboUse))];
 		const auto& locDecayCombos_ToAdd = Get_CombosForComboing(locSourceComboUseToAdd, locComboingStage, locValidRFBunches_AllBut1, locChargedCombo_WithPrevious);
 
 		//before we loop, first get all of the showers used to make the all-but-1 grouping, and sort it so that we can quickly search it
@@ -2902,7 +2903,7 @@ void DSourceComboer::Combo_Horizontally_AddCombo(const DSourceComboUse& locCombo
 			//See which RF bunches match up //guaranteed to be at least one, due to selection in Get_CombosForComboing() function
 			vector<int> locValidRFBunches = {}; //if charged or massive neutrals, ignore (they don't choose at this stage)
 			if(locComboingStage != d_ChargedStage)
-				locValidRFBunches = dSourceComboTimeHandler->Get_CommonRFBunches(locValidRFBunches_AllBut1, dValidRFBunches_ByCombo[locDecayCombo_ToAdd]);
+				locValidRFBunches = dSourceComboTimeHandler->Get_CommonRFBunches(locValidRFBunches_AllBut1, dValidRFBunches_ByCombo[std::make_pair(locDecayCombo_ToAdd, std::get<1>(locSourceComboUseToAdd))]);
 
 			//create new combo!
 			auto locCombo = Get_SourceComboResource();
@@ -3048,7 +3049,7 @@ void DSourceComboer::Combo_Horizontally_AddParticle(const DSourceComboUse& locCo
 		auto locIsZIndependent_AllBut1 = locCombo_AllBut1->Get_IsComboingZIndependent();
 
 		//Get potential particles for comboing
-		const auto& locValidRFBunches_AllBut1 = dValidRFBunches_ByCombo[locCombo_AllBut1];
+		const auto& locValidRFBunches_AllBut1 = dValidRFBunches_ByCombo[std::make_pair(locCombo_AllBut1, std::get<1>(locAllBut1ComboUse))];
 		const auto& locParticles = Get_ParticlesForComboing(locPID, locComboingStage, locValidRFBunches_AllBut1, locVertexZBin);
 
 		//loop over potential showers to add to the group, creating a new combo for each valid (non-duplicate) grouping
@@ -3168,7 +3169,7 @@ void DSourceComboer::Register_ValidRFBunches(const DSourceComboUse& locSourceCom
 
 	//search and register
 	auto locComboInfo = std::get<2>(locSourceComboUse);
-	dValidRFBunches_ByCombo.emplace(locSourceCombo, locRFBunches);
+	dValidRFBunches_ByCombo.emplace(std::make_pair(locSourceCombo, std::get<1>(locSourceComboUse)), locRFBunches);
 
 	//also, register for each individual bunch: so that we can get valid combos for some input rf bunches later
 	if(locComboingStage != d_ChargedStage)
