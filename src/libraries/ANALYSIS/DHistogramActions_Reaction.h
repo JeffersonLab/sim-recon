@@ -274,6 +274,7 @@ class DHistogramAction_InvariantMass : public DAnalysisAction
 		{
 			DAnalysisAction::Reset_NewEvent();
 			dPreviousSourceObjects.clear();
+			dPreviousSourceObjects_Beam.clear();
 		}
 
 	private:

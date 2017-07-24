@@ -51,12 +51,10 @@ void DParticleComboCreator::Reset(void)
 		dResourcePool_EventRFBunch.Recycle(locRFPair.second);
 	dRFBunchMap.clear();
 
-	for(const auto& locStepPair : dComboStepMap)
-		dResourcePool_ParticleComboStep.Recycle(locStepPair.second);
+	dResourcePool_ParticleComboStep.Recycle(dCreated_ParticleComboStep);
 	dComboStepMap.clear();
 
-	for(const auto& locComboPair : dComboMap)
-		dResourcePool_ParticleCombo.Recycle(locComboPair.second);
+	dResourcePool_ParticleCombo.Recycle(dCreated_ParticleCombo);
 	dComboMap.clear();
 
 	for(const auto& locHypoPair : dChargedHypoMap)
@@ -125,8 +123,7 @@ const DParticleCombo* DParticleComboCreator::Build_ParticleCombo(const DReaction
 		return locComboIterator->second;
 	}
 
-	auto locParticleCombo = dResourcePool_ParticleCombo.Get_Resource();
-	locParticleCombo->Reset();
+	auto locParticleCombo = Get_ParticleComboResource();
 	dComboMap.emplace(locComboTuple, locParticleCombo);
 
 	auto locReaction = locReactionVertexInfo->Get_Reaction();
@@ -186,8 +183,7 @@ const DParticleCombo* DParticleComboCreator::Build_ParticleCombo(const DReaction
 		}
 
 		//Create a new step
-		auto locParticleComboStep = dResourcePool_ParticleComboStep.Get_Resource();
-		locParticleComboStep->Reset();
+		auto locParticleComboStep = Get_ParticleComboStepResource();
 
 		//build spacetime vertex
 		auto locVertex = dSourceComboVertexer->Get_Vertex(locIsProductionVertex, locVertexPrimaryCombo, locBeamParticle);
@@ -300,8 +296,7 @@ const DChargedTrackHypothesis* DParticleComboCreator::Create_ChargedHypo(const D
 
 const DParticleCombo* DParticleComboCreator::Create_KinFitCombo_NewCombo(const DParticleCombo* locOrigCombo, const DReaction* locReaction, const DKinFitResults* locKinFitResults, const DKinFitChain* locKinFitChain)
 {
-	auto locNewCombo = dResourcePool_ParticleCombo.Get_Resource();
-	locNewCombo->Reset();
+	auto locNewCombo = Get_ParticleComboResource();
 	locNewCombo->Set_KinFitResults(locKinFitResults);
 	locNewCombo->Set_EventRFBunch(locOrigCombo->Get_EventRFBunch());
 	set<DKinFitParticle*> locOutputKinFitParticles = locKinFitResults->Get_OutputKinFitParticles();
@@ -312,8 +307,7 @@ const DParticleCombo* DParticleComboCreator::Create_KinFitCombo_NewCombo(const D
 		auto locComboStep = locOrigCombo->Get_ParticleComboStep(loc_j);
 		auto locReactionStep = locReaction->Get_ReactionStep(loc_j);
 
-		auto locNewComboStep = dResourcePool_ParticleComboStep.Get_Resource();
-		locNewComboStep->Reset();
+		auto locNewComboStep = Get_ParticleComboStepResource();
 		locNewCombo->Add_ParticleComboStep(locNewComboStep);
 
 		locNewComboStep->Set_MeasuredParticleComboStep(locComboStep);
@@ -713,8 +707,8 @@ const DParticleCombo* DParticleComboCreator::Build_ThrownCombo(JEventLoop* locEv
  	vector<const DEventRFBunch*> locEventRFBunches;
 	locEventLoop->Get(locEventRFBunches, "Thrown");
 
-	DParticleCombo* locParticleCombo = dResourcePool_ParticleCombo.Get_Resource();
-	DParticleComboStep* locParticleComboStep = dResourcePool_ParticleComboStep.Get_Resource();
+	auto locParticleCombo = Get_ParticleComboResource();
+	auto locParticleComboStep = Get_ParticleComboStepResource();
 	locParticleCombo->Set_EventRFBunch(locEventRFBunches[0]);
 
 	locParticleComboStep->Set_InitialParticle(&locMCReactions[0]->beam);
@@ -725,7 +719,7 @@ const DParticleCombo* DParticleComboCreator::Build_ThrownCombo(JEventLoop* locEv
 		if(loc_i != 0) //else beam & target already set
 		{
 			auto locMCThrown = locThrownSteps[loc_i].first;
-			locParticleComboStep = dResourcePool_ParticleComboStep.Get_Resource();
+			locParticleComboStep = Get_ParticleComboStepResource();
 
 			int locInitialParticleDecayFromStepIndex = -1; //the step where this particle is produced at
 			for(size_t loc_j = 0; loc_j < loc_i; ++loc_j)

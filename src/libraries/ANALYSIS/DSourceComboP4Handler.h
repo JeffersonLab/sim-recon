@@ -99,6 +99,8 @@ class DSourceComboP4Handler
 		//HISTOGRAMS
 		set<tuple<Particle_t, const DSourceCombo*>> dInvariantMassFilledSet; //only filled once per combo, even if used for different vertex-z bins!!!!
 		set<tuple<Particle_t, bool, const DSourceCombo*, const DSourceCombo*, int>> dInvariantMassFilledSet_MassiveNeutral; //int: RF bunch //bool: is prod vertex //first combo: reaction full
+		map<DetectorSystem_t, TH1*> dHistMap_2GammaMass; //SYS_BCAL/FCAL if both in bcal/fcal, SYS_NULL if one each
+		map<DetectorSystem_t, vector<float>> d2GammaInvariantMasses;
 		map<Particle_t, TH1*> dHistMap_InvariantMass;
 		map<Particle_t, TH2*> dHistMap_MissingMassSquaredVsBeamEnergy; //none missing = Unknown pid
 		map<Particle_t, vector<float>> dInvariantMasses;
@@ -112,6 +114,8 @@ inline void DSourceComboP4Handler::Reset(void)
 		locPIDPair.second.clear();
 	for(auto& locPIDPair : dMissingMassPairs)
 		locPIDPair.second.clear();
+	for(auto& locSystemPair : d2GammaInvariantMasses)
+		locSystemPair.second.clear();
 
 	dInvariantMassFilledSet.clear();
 	dInvariantMassFilledSet_MassiveNeutral.clear();

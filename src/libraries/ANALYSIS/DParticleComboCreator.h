@@ -93,6 +93,24 @@ class DParticleComboCreator
 		DResourcePool<DParticleComboStep> dResourcePool_ParticleComboStep;
 		DResourcePool<DKinematicData> dResourcePool_KinematicData;
 		vector<DKinematicData*> dCreated_KinematicData;
+		vector<DParticleCombo*> dCreated_ParticleCombo;
+		vector<DParticleComboStep*> dCreated_ParticleComboStep;
+
+		DParticleCombo* Get_ParticleComboResource(void)
+		{
+			auto locResource = dResourcePool_ParticleCombo.Get_Resource();
+			locResource->Reset();
+			dCreated_ParticleCombo.push_back(locResource);
+			return locResource;
+		}
+
+		DParticleComboStep* Get_ParticleComboStepResource(void)
+		{
+			auto locResource = dResourcePool_ParticleComboStep.Get_Resource();
+			locResource->Reset();
+			dCreated_ParticleComboStep.push_back(locResource);
+			return locResource;
+		}
 };
 
 }

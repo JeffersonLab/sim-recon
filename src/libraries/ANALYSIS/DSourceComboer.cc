@@ -7,11 +7,18 @@
  * 
  * crash on exit in ubuntu???: TClonesArray branches invalidated after several threads close
  * memory leak!!!
+ * Test hist kinematics with flag = true
  *
  * running with all:
  * 2pi0, pi0eta, 2pi0eta, pi0g, 2eta down by 2x from master
  * pimpip2eta down by 1.5x from master
  * 3pi0 down 3x from master
+ *
+ * Fewer FCAL gammas. Either: 
+ * FCAL pi0s don't get created
+ * FCAL/BCAL pi0s don't get created
+ * FCAL pi0s don't get combined with protons
+ * FCAL/BCAL pi0s don't get combined with protons
  *
  * mem leak:
  * disable kinfit, see if flat
@@ -67,8 +74,6 @@
  * kaon: cut if no pid hit?
  * char instead of int
  * miss mass cuts
- * min shower photE cut
- * cut on extra shower energy
  * beam energy cut
  * cut on kinfit conlev?
  */
@@ -83,6 +88,7 @@ A) It may be that one of the tracks failed cuts for the PIDs that you need, but 
 
 //MUST DO:
 //include lubomir & aaustreg cuts
+//require kaons to hit TOF/BCAL/FCAL
 //save #tracks to tree
 //fix custom actions: justin & robison
 //When saving ROOT TTree, don't save p4 of decaying particles if mass is not constrained in kinfit!
@@ -205,7 +211,7 @@ namespace DAnalysis
 
 DSourceComboer::DSourceComboer(JEventLoop* locEventLoop)
 {
-//	dResourcePool_SourceComboVector.Set_ControlParams(100, 20, 1000, 2000, 10000, true);
+	dResourcePool_SourceComboVector.Set_ControlParams(10, 5, 0, 1000000, 0, 0); //Never recycle to other threads
 	dCreatedCombos.reserve(100000);
 	dCreatedComboVectors.reserve(1000);
 
@@ -900,7 +906,7 @@ void DSourceComboer::Reset_NewEvent(JEventLoop* locEventLoop)
 
 	//RECYCLE THE DSOURCECOMBO OBJECTS
 	dResourcePool_SourceCombo.Recycle(dCreatedCombos);
-	dResourcePool_SourceComboVector.Recycle(dCreatedComboVectors);
+	Recycle_Vectors();
 
 	//COMBOING RESULTS:
 	dSourceCombosByUse_Charged.clear(); //BEWARE, CONTAINS VECTORS
@@ -1315,7 +1321,11 @@ DCombosByReaction DSourceComboer::Build_ParticleCombos(const DReactionVertexInfo
 void DSourceComboer::Combo_WithNeutralsAndBeam(const vector<const DReaction*>& locReactions, const DReactionVertexInfo* locReactionVertexInfo, const DSourceComboUse& locPrimaryComboUse, const DSourceCombo* locReactionChargedCombo, const vector<int>& locBeamBunches_Charged, DCombosByReaction& locOutputComboMap)
 {
 	if(dDebugLevel > 0)
-		cout << "Comboing neutrals, z-independent." << endl;
+	{
+		auto locNumDetectedShowers = dShowersByBeamBunchByZBin[DSourceComboInfo::Get_VertexZIndex_Unknown()][{}].size();
+		auto locNumFCALShowers = dShowersByBeamBunchByZBin[DSourceComboInfo::Get_VertexZIndex_ZIndependent()][{}].size();
+		cout << "Comboing neutrals, z-independent, #FCAL/BCAL showers: " << locNumFCALShowers << "/" << locNumDetectedShowers - locNumFCALShowers << endl;
+	}
 
 	//Create full source-particle combos (including neutrals): First using only FCAL showers, then using all showers
 	Create_SourceCombos(locPrimaryComboUse, d_MixedStage_ZIndependent, locReactionChargedCombo, 0);

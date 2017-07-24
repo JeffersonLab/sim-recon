@@ -201,10 +201,15 @@ TMap* DEventWriterROOT::Create_UserInfoMaps(DTreeBranchRegister& locBranchRegist
 	locKinFitTypeStream << locKinFitType;
 	locMiscInfoMap->Add(new TObjString("KinFitType"), new TObjString(locKinFitTypeStream.str().c_str()));
 
+	string ANALYSIS_VERSION_STRING = "";
+	if(gPARMS->Exists("ANALYSIS:DATAVERSIONSTRING"))
+		gPARMS->GetParameter("ANALYSIS:DATAVERSIONSTRING", ANALYSIS_VERSION_STRING);
+	if(ANALYSIS_VERSION_STRING != "")
+		locMiscInfoMap->Add(new TObjString("ANALYSIS:DATAVERSIONSTRING"), new TObjString(ANALYSIS_VERSION_STRING.c_str()));
+
 	string HDDM_DATA_VERSION_STRING = "";
 	if(gPARMS->Exists("REST:DATAVERSIONSTRING"))
 		gPARMS->GetParameter("REST:DATAVERSIONSTRING", HDDM_DATA_VERSION_STRING);
-
 	if(HDDM_DATA_VERSION_STRING != "")
 		locMiscInfoMap->Add(new TObjString("REST:DATAVERSIONSTRING"), new TObjString(HDDM_DATA_VERSION_STRING.c_str()));
 

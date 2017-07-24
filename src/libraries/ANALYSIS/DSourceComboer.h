@@ -127,6 +127,7 @@ class DSourceComboer : public JObject
 
 		//SETUP
 		void Setup_NeutralShowers(JEventLoop* locEventLoop);
+		void Recycle_Vectors(void);
 
 		//INITIAL CHECKS
 		bool Check_Reactions(vector<const DReaction*>& locReactions);
@@ -265,7 +266,7 @@ class DSourceComboer : public JObject
 		unordered_map<signed char, DPhotonShowersByBeamBunch> dShowersByBeamBunchByZBin; //char: zbin //for all showers: unknown z-bin, {} RF bunch
 
 		//SOURCE COMBOS //vector: z-bin //if attempted and all failed, DSourceCombosByUse_Large vector will be empty
-		size_t dInitialComboVectorCapacity = 10000;
+		size_t dInitialComboVectorCapacity = 100;
 		DSourceCombosByUse_Large dSourceCombosByUse_Charged;
 		unordered_map<const DSourceCombo*, DSourceCombosByUse_Large> dMixedCombosByUseByChargedCombo; //key: charged combo //value: contains mixed & neutral combos //neutral: key is nullptr
 		//also, sort by which beam bunches they are valid for: that way when comboing, we can retrieve only the combos that can possibly match the input RF bunches
@@ -321,6 +322,18 @@ inline DSourceCombo* DSourceComboer::Get_SourceComboResource(void)
 	locCombo->Reset();
 	dCreatedCombos.push_back(locCombo);
 	return locCombo;
+}
+
+inline void DSourceComboer::Recycle_Vectors(void)
+{
+	for(auto& locComboVector : dCreatedComboVectors)
+	{
+		vector<const DSourceCombo*> locTempCombo;
+		locTempCombo.reserve(dInitialComboVectorCapacity);
+		locTempCombo.swap(*locComboVector); //reduces capacity of combo vector to dInitialComboVectorCapacity
+		dResourcePool_SourceComboVector.Recycle(locComboVector);
+	}
+	dCreatedComboVectors.clear();
 }
 
 inline vector<const DSourceCombo*>* DSourceComboer::Get_SourceComboVectorResource(void)

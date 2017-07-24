@@ -210,7 +210,22 @@ DSourceComboP4Handler::DSourceComboP4Handler(DSourceComboer* locSourceComboer, b
 			locDirectoryFile = new TDirectoryFile(locDirName.c_str(), locDirName.c_str());
 		locDirectoryFile->cd();
 
-		//INVARIANT MASS HISTOGRAMS
+		//INVARIANT MASS HISTOGRAMS: 2GAMMA
+		{
+			string locHistName = "InvariantMass_2Gamma_BCAL";
+			auto locHist = gDirectory->Get(locHistName.c_str());
+			dHistMap_2GammaMass[SYS_BCAL] = (locHist != nullptr) ? static_cast<TH1*>(locHist) : new TH1I(locHistName.c_str(), ";BCAL 2#gamma Invariant Mass (GeV/c^{2})", 2000, 0.0, 2.0);
+
+			locHistName = "InvariantMass_2Gamma_FCAL";
+			locHist = gDirectory->Get(locHistName.c_str());
+			dHistMap_2GammaMass[SYS_FCAL] = (locHist != nullptr) ? static_cast<TH1*>(locHist) : new TH1I(locHistName.c_str(), ";FCAL 2#gamma Invariant Mass (GeV/c^{2})", 2000, 0.0, 2.0);
+
+			locHistName = "InvariantMass_2Gamma_BCALFCAL";
+			locHist = gDirectory->Get(locHistName.c_str());
+			dHistMap_2GammaMass[SYS_NULL] = (locHist != nullptr) ? static_cast<TH1*>(locHist) : new TH1I(locHistName.c_str(), ";BCAL/FCAL 2#gamma Invariant Mass (GeV/c^{2})", 2000, 0.0, 2.0);
+		}
+
+		//INVARIANT MASS HISTOGRAMS: PIDS
 		for(const auto& locPIDPair : dInvariantMassCuts)
 		{
 			auto locPID = locPIDPair.first;
@@ -319,19 +334,10 @@ DLorentzVector DSourceComboP4Handler::Calc_P4_NoMassiveNeutrals(const DSourceCom
 		return locIterator->second;
 	}
 
-	DLorentzVector locTotalP4;
-
 	//loop over particles
 	//vertex-z bin may be different for decay products! (detached vertex)
 	//save/retrieve masses by combo instead
-	auto locSourceParticles = locVertexCombo->Get_SourceParticles(false); //false: NOT the whole chain
-	for(const auto& locParticlePair : locSourceParticles)
-	{
-		auto locParticleP4 = Get_P4_NotMassiveNeutral(locParticlePair.first, locParticlePair.second, locVertex, locAccuratePhotonsFlag);
-		if(dDebugLevel >= 20)
-			cout << "pid, pointer, pxyzE = " << locParticlePair.first << ", " << locParticlePair.second << ", " << locParticleP4.Px() << ", " << locParticleP4.Py() << ", " << locParticleP4.Pz() << ", " << locParticleP4.E() << endl;
-		locTotalP4 += locParticleP4;
-	}
+	DLorentzVector locTotalP4 = Calc_P4_SourceParticles(locVertexCombo, locVertex, 0.0, locAccuratePhotonsFlag);
 
 	//loop over decays
 	auto locFurtherDecayCombos = locVertexCombo->Get_FurtherDecayCombos();
@@ -350,6 +356,20 @@ DLorentzVector DSourceComboP4Handler::Calc_P4_NoMassiveNeutrals(const DSourceCom
 	//save the results and return
 	if(!locAccuratePhotonsFlag || !locHasPhotons)
 		dFinalStateP4ByCombo.emplace(std::make_pair(locVertexCombo, locVertexZBin), locTotalP4);
+
+
+	if(!locAccuratePhotonsFlag)
+	{
+		auto locSourceParticles = locVertexCombo->Get_SourceParticles();
+		if((locSourceParticles.size() == 2) && (locSourceParticles[0].first == Gamma) && (locSourceParticles[1].first == Gamma))
+		{
+			auto locSystem1 = static_cast<const DNeutralShower*>(locSourceParticles[0].second)->dDetectorSystem;
+			auto locSystem2 = static_cast<const DNeutralShower*>(locSourceParticles[1].second)->dDetectorSystem;
+			auto locSystem = (locSystem1 != locSystem2) ? SYS_NULL : locSystem1;
+			d2GammaInvariantMasses[locSystem].push_back(locTotalP4.M());
+		}
+	}
+
 	if(dDebugLevel >= 10)
 		cout << "Save Calc_P4_NoMassiveNeutrals: Combo " << locVertexCombo << " P4: " << locTotalP4.Px() << ", " << locTotalP4.Py() << ", " << locTotalP4.Pz() << ", " << locTotalP4.E() << endl;
 	return locTotalP4;
@@ -379,8 +399,10 @@ DLorentzVector DSourceComboP4Handler::Calc_P4_SourceParticles(const DSourceCombo
 			locTotalP4 += locParticleP4;
 		}
 	}
+
 	if(dDebugLevel >= 10)
 		cout << "Calc_P4_SourceParticles: Combo " << locVertexCombo << " P4: " << locTotalP4.Px() << ", " << locTotalP4.Py() << ", " << locTotalP4.Pz() << ", " << locTotalP4.E() << endl;
+
 	return locTotalP4;
 }
 
@@ -829,6 +851,11 @@ void DSourceComboP4Handler::Fill_Histograms(void)
 		{
 			for(auto& locMassPair : locPIDPair.second)
 				dHistMap_MissingMassSquaredVsBeamEnergy[locPIDPair.first]->Fill(locMassPair.first, locMassPair.second);
+		}
+		for(auto& locSystemPair : d2GammaInvariantMasses)
+		{
+			for(auto& locMass : locSystemPair.second)
+				dHistMap_2GammaMass[locSystemPair.first]->Fill(locMass);
 		}
 	}
 	japp->Unlock("DSourceComboP4Handler");
