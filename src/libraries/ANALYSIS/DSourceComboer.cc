@@ -21,7 +21,7 @@
  * p3pi0: OK
  * p pi0 g: OK
  * p2pi g: OK
- * p2pi 2pi0: RUN MASTER, OVERHAUL
+ * p2pi 2pi0: RUN OVERHAUL
  * p4pi pi0: OK
  * p, g: RUN MASTER
  * p eta pi0: OK
