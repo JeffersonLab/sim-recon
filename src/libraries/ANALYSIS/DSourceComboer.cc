@@ -5,13 +5,13 @@
 /*
  * PROBLEMS:
  * 
- * track timing resolution: Confirm OK
  * crash on exit in ubuntu???: TClonesArray branches invalidated after several threads close
  * memory leak!!!
  *
  * running with all:
  * kmkp, pi0kmkp, 2pi0kmkp, pimpipkmkp, pi0pimpipkmkp yield up by ~2 - 3x over master??
  * 2kmkp up by 8x over master???
+ *
  * 2pi0, pi0eta, 2pi0eta, pi0g, 2eta down by 2x from master
  * pimpip2eta down by 1.5x from master
  * 3pi0 down 3x from master
@@ -316,6 +316,9 @@ DSourceComboer::DSourceComboer(JEventLoop* locEventLoop)
 		ddEdxCutMap[PiPlus][SYS_CDC].second = new TF1("df_dEdxCut_CDC_PionHigh", "exp(-1.0*[0]*x + [1]) + [2]", 0.0, 12.0);
 		//ddEdxCutMap[PiPlus][SYS_CDC].second->SetParameters(6.0, 2.80149, 2.55); //will be used after testing is done
 		ddEdxCutMap[PiPlus][SYS_CDC].second->SetParameters(2.0, 0.8, 3.0); //used for comparison
+
+		//CDC dE/dx K+
+		ddEdxCutMap.emplace(KPlus, ddEdxCutMap[PiPlus]);
 
 		//E/p
 		dEOverPCutMap[Electron][SYS_FCAL] = new TF1("df_EOverPCut_FCAL_Electron", "[0]", 0.0, 12.0);
