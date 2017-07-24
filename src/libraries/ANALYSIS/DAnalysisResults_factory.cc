@@ -272,6 +272,7 @@ jerror_t DAnalysisResults_factory::evnt(JEventLoop* locEventLoop, uint64_t event
 	dKinFitter->Reset_NewEvent();
 	dConstraintResultsMap.clear();
 	dPreToPostKinFitComboMap.clear();
+	dResourcePool_KinFitResults.Recycle(dCreatedKinFitResults);
 
 	auto locReactions = DAnalysis::Get_Reactions(locEventLoop);
 	if(dDebugLevel > 0)
@@ -496,7 +497,7 @@ pair<const DKinFitChain*, const DKinFitResults*> DAnalysisResults_factory::Fit_K
 
 DKinFitResults* DAnalysisResults_factory::Build_KinFitResults(const DParticleCombo* locParticleCombo, DKinFitType locKinFitType, const DKinFitChain* locKinFitChain)
 {
-	DKinFitResults* locKinFitResults = new DKinFitResults();
+	auto locKinFitResults = Get_KinFitResultsResource();
 	locKinFitResults->Set_KinFitType(locKinFitType);
 
 	locKinFitResults->Set_ConfidenceLevel(dKinFitter->Get_ConfidenceLevel());

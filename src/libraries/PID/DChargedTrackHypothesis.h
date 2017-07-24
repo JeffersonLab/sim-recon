@@ -89,8 +89,6 @@ class DChargedTrackHypothesis : public DKinematicData
 			AddString(items, "PID_FOM", "%f", dTimingInfo->dFOM);
 		}
 
-	private:
-
 		struct DTimingInfo
 		{
 			void Reset(void);
@@ -134,6 +132,8 @@ class DChargedTrackHypothesis : public DKinematicData
 			shared_ptr<const DBCALShowerMatchParams> dBCALShowerMatchParams = nullptr;
 			shared_ptr<const DFCALShowerMatchParams> dFCALShowerMatchParams = nullptr;
 		};
+
+	private:
 
 		//memory of object in shared_ptr is managed automatically: deleted automatically when no references are left
 		shared_ptr<DTimingInfo> dTimingInfo = nullptr;

@@ -92,6 +92,7 @@ class DParticleComboCreator
 		DResourcePool<DParticleCombo> dResourcePool_ParticleCombo;
 		DResourcePool<DParticleComboStep> dResourcePool_ParticleComboStep;
 		DResourcePool<DKinematicData> dResourcePool_KinematicData;
+		vector<DKinematicData*> dCreated_KinematicData;
 };
 
 }

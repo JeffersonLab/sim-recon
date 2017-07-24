@@ -65,8 +65,6 @@ class DNeutralParticleHypothesis : public DKinematicData
 			AddString(items, "PID_FOM", "%f", Get_FOM());
 		}
 
-	private:
-
 		struct DTimingInfo
 		{
 			void Reset(void);
@@ -80,6 +78,7 @@ class DNeutralParticleHypothesis : public DKinematicData
 			float dFOM = 0.0;
 		};
 
+	private:
 		shared_ptr<DTimingInfo> dTimingInfo = nullptr;
 		const DNeutralShower* dNeutralShower = nullptr;
 

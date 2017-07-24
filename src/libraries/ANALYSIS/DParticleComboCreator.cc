@@ -44,6 +44,7 @@ void DParticleComboCreator::Reset(void)
 		cout << "Total # of Charged Hypos (All threads): " << dChargedTrackHypothesisFactory->Get_NumObjectsAllThreads() << endl;
 		cout << "Total # of Neutral Hypos (All threads): " << dNeutralParticleHypothesisFactory->Get_NumObjectsAllThreads() << endl;
 		cout << "Total # of Beam Photons (All threads): " << dBeamPhotonfactory->Get_NumObjectsAllThreads() << endl;
+		cout << "Total # of KinematicDatas (All threads): " << dResourcePool_KinematicData.Get_NumObjectsAllThreads() << endl;
 	}
 
 	for(const auto& locRFPair : dRFBunchMap)
@@ -77,6 +78,8 @@ void DParticleComboCreator::Reset(void)
 	for(const auto& locBeamPair : dKinFitBeamPhotonMap)
 		dBeamPhotonfactory->Recycle_Resource(locBeamPair.second);
 	dKinFitBeamPhotonMap.clear();
+
+	dResourcePool_KinematicData.Recycle(dCreated_KinematicData);
 }
 
 bool DParticleComboCreator::Get_CreateNeutralErrorMatrixFlag_Combo(const DReactionVertexInfo* locReactionVertexInfo, DKinFitType locKinFitType)
@@ -667,7 +670,8 @@ const DNeutralParticleHypothesis* DParticleComboCreator::Create_NeutralHypo_KinF
 
 DKinematicData* DParticleComboCreator::Build_KinematicData(DKinFitParticle* locKinFitParticle, DKinFitType locKinFitType, DVector3 locPreKinFitVertex)
 {
-	DKinematicData* locKinematicData = dResourcePool_KinematicData.Get_Resource();
+	auto locKinematicData = dResourcePool_KinematicData.Get_Resource();
+	dCreated_KinematicData.push_back(locKinematicData);
 	locKinematicData->Reset();
 	locKinematicData->setPID(PDGtoPType(locKinFitParticle->Get_PID()));
 	locKinematicData->setMomentum(DVector3(locKinFitParticle->Get_Momentum().X(),locKinFitParticle->Get_Momentum().Y(),locKinFitParticle->Get_Momentum().Z()));

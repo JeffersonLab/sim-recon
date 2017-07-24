@@ -85,6 +85,16 @@ class DAnalysisResults_factory : public jana::JFactory<DAnalysisResults>
 		map<pair<set<DKinFitConstraint*>, bool>, DKinFitResults*> dConstraintResultsMap; //used for determining if kinfit results will be identical //bool: update cov matrix flag
 		map<tuple<const DParticleCombo*, DKinFitType, bool>, const DParticleCombo*> dPreToPostKinFitComboMap;
 
+		DResourcePool<DKinFitResults> dResourcePool_KinFitResults;
+		vector<DKinFitResults*> dCreatedKinFitResults;
+		DKinFitResults* Get_KinFitResultsResource(void)
+		{
+			auto locKinFitResults = dResourcePool_KinFitResults.Get_Resource();
+			locKinFitResults->Reset();
+			dCreatedKinFitResults.push_back(locKinFitResults);
+			return locKinFitResults;
+		}
+
 		unordered_map<const DReaction*, bool> dMCReactionExactMatchFlags;
 		unordered_map<const DReaction*, DCutAction_TrueCombo*> dTrueComboCuts;
 

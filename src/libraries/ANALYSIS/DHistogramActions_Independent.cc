@@ -5,79 +5,14 @@
 
 void DHistogramAction_ObjectMemory::Initialize(JEventLoop* locEventLoop)
 {
-	string locHistName, locHistTitle;
-	vector<string> locBinLabels; //fill this
+	//setup binning
+	vector<string> locBinLabels = {"TMatrixFSym", "DKinematicInfo", "Charged DTimingInfo", "DTrackingInfo", "Neutral DTimingInfo", "KinematicDatas", "Charged Hypos", "Neutral Hypos", "Beam Photons",
+			"Combo RF Bunches", "Source Combos", "Source Combo Vectors", "Particle Combos", "Particle Combo Steps",
+			"DKinFitParticle", "DKinFitResults"}; //"DKinFitChainStep", "DKinFitChain", "DKinFitConstraints",
+	for(size_t loc_i = 0; loc_i < locBinLabels.size(); ++loc_i)
+		dBinMap[locBinLabels[loc_i]] = loc_i + 1;
 
-	//ANALYSIS
-	dFactoryPairsToTrack.push_back(pair<string, string>("DTrackTimeBased", "Combo"));
-	dFactoryPairBinMap[dFactoryPairsToTrack.back()] = 1;
-	locBinLabels.push_back("DTrackTimeBased_Combo");
-
-	dFactoryPairsToTrack.push_back(pair<string, string>("DEventRFBunch", "Combo"));
-	dFactoryPairBinMap[dFactoryPairsToTrack.back()] = 2;
-	locBinLabels.push_back("DEventRFBunch_Combo");
-
-	dFactoryPairsToTrack.push_back(pair<string, string>("DChargedTrackHypothesis", "Combo"));
-	dFactoryPairBinMap[dFactoryPairsToTrack.back()] = 3;
-	locBinLabels.push_back("ChargedHypo_Combo");
-
-	dFactoryPairsToTrack.push_back(pair<string, string>("DNeutralParticleHypothesis", "Combo"));
-	dFactoryPairBinMap[dFactoryPairsToTrack.back()] = 4;
-	locBinLabels.push_back("NeutralHypo_Combo");
-
-	dFactoryPoolBinMap["DKinematicData_ComboPreKinFit"] = 5;
-	locBinLabels.push_back("KinData_ComboPreKinFit");
-
-	dFactoryPoolBinMap["DParticleComboStep_PreKinFit"] = 6;
-	locBinLabels.push_back("ComboStep_PreKinFit");
-
-	dFactoryPairsToTrack.push_back(pair<string, string>("DParticleCombo", "PreKinFit"));
-	dFactoryPairBinMap[dFactoryPairsToTrack.back()] = 7;
-	locBinLabels.push_back("Combo_PreKinFit");
-
-	dFactoryPoolBinMap["DKinFitParticle"] = 8;
-	locBinLabels.push_back("DKinFitParticle");
-
-	dFactoryPoolBinMap["DKinFitParticle_Shared"] = 9;
-	locBinLabels.push_back("DKinFitParticle_Shared");
-
-	dFactoryPoolBinMap["DKinFitChainStep"] = 10;
-	locBinLabels.push_back("DKinFitChainStep");
-
-	dFactoryPoolBinMap["DKinFitChain"] = 11;
-	locBinLabels.push_back("DKinFitChain");
-
-	dFactoryPoolBinMap["DKinFitConstraints"] = 12;
-	locBinLabels.push_back("DKinFitConstraints");
-
-	dFactoryPoolBinMap["TMatrixFSym"] = 13;
-	locBinLabels.push_back("TMatrixFSym");
-
-	dFactoryPairsToTrack.push_back(pair<string, string>("DKinFitResults", ""));
-	dFactoryPairBinMap[dFactoryPairsToTrack.back()] = 14;
-	locBinLabels.push_back("DKinFitResults");
-
-	dFactoryPairsToTrack.push_back(pair<string, string>("DBeamPhoton", "KinFit"));
-	dFactoryPairBinMap[dFactoryPairsToTrack.back()] = 15;
-	locBinLabels.push_back("BeamPhoton_KinFit");
-
-	dFactoryPairsToTrack.push_back(pair<string, string>("DChargedTrackHypothesis", "KinFit"));
-	dFactoryPairBinMap[dFactoryPairsToTrack.back()] = 16;
-	locBinLabels.push_back("ChargedHypo_KinFit");
-
-	dFactoryPairsToTrack.push_back(pair<string, string>("DNeutralParticleHypothesis", "KinFit"));
-	dFactoryPairBinMap[dFactoryPairsToTrack.back()] = 17;
-	locBinLabels.push_back("NeutralHypo_KinFit");
-
-	dFactoryPoolBinMap["DKinematicData_Combo"] = 18;
-	locBinLabels.push_back("DKinData_Combo");
-
-	dFactoryPoolBinMap["DParticleComboStep"] = 19;
-	locBinLabels.push_back("DParticleComboStep");
-
-	dFactoryPairsToTrack.push_back(pair<string, string>("DParticleCombo", ""));
-	dFactoryPairBinMap[dFactoryPairsToTrack.back()] = 20;
-	locBinLabels.push_back("DParticleCombo");
+	dKinFitUtils = new DKinFitUtils_GlueX(locEventLoop);
 
 	//CREATE THE HISTOGRAMS
 	//Since we are creating histograms, the contents of gDirectory will be modified: must use JANA-wide ROOT lock
@@ -89,8 +24,8 @@ void DHistogramAction_ObjectMemory::Initialize(JEventLoop* locEventLoop)
 		dResidentMemoryVsEventNumber = new TH1F("ResidentMemoryVsEventNumber", ";Event Counter;Resident Memory (MB)", dMaxNumEvents, 0.5, (double)dMaxNumEvents + 0.5);
 
 		// Total Memory
-		locHistName = "TotalMemory";
-		locHistTitle = ";Event Counter;Total Memory (MB)";
+		string locHistName = "TotalMemory";
+		string locHistTitle = ";Event Counter;Total Memory (MB)";
 		dHist_TotalMemory = GetOrCreate_Histogram<TH1F>(locHistName, locHistTitle, dMaxNumEvents, 0.5, float(dMaxNumEvents) + 0.5);
 
 		// # Objects
@@ -121,7 +56,7 @@ bool DHistogramAction_ObjectMemory::Perform_Action(JEventLoop* locEventLoop, con
 	if(dEventCounter > dMaxNumEvents)
 		return true;
 
-	if(locParticleCombo != NULL)
+	if(locParticleCombo != nullptr)
 		return true; // Protect against infinite recursion (see below)
 
 	//THIS IS EXTREMELY DANGEROUS, AND SHOULD BE AVOIDED UNLESS YOU KNOW !!!!EXACTLY!!!! WHAT YOU ARE DOING
@@ -132,42 +67,129 @@ bool DHistogramAction_ObjectMemory::Perform_Action(JEventLoop* locEventLoop, con
 	vector<const DAnalysisResults*> locAnalysisResults;
 	locEventLoop->Get(locAnalysisResults);
 
-	//FACTORIES
-	//call get-n-rows first outside of lock, just to make sure 
 	map<int, size_t> locNumObjectsMap; //int is bin
 	map<int, double> locMemoryMap; //int is bin
 	double locTotalMemory = 0.0;
-	for(size_t loc_i = 0; loc_i < dFactoryPairsToTrack.size(); ++loc_i)
-	{
-		string locClassName = dFactoryPairsToTrack[loc_i].first;
-		string locTag = dFactoryPairsToTrack[loc_i].second;
-		JFactory_base* locFactory = locEventLoop->GetFactory(locClassName.c_str(), locTag.c_str());
-		size_t locNumObjects = locFactory->GetNrows();
-		unsigned long long locDataClassSize = locFactory->GetDataClassSize();
 
-		double locMemory = locDataClassSize*locNumObjects;
-		int locBin = dFactoryPairBinMap[dFactoryPairsToTrack[loc_i]];
-		locNumObjectsMap[locBin] = locNumObjects;
-		locMemoryMap[locBin] = locMemory;
-		locTotalMemory += locMemory;
-	}
+	/******************************************************* COMPONENT OBJECTS *******************************************************/
 
-	//RESOURCE POOLS
-	{
-		unsigned long long locMemory = 0;
-		int locBin = 0;
+	//TMatrixFSym
+	auto locBin = dBinMap["TMatrixFSym"];
+	locNumObjectsMap[locBin] = (dynamic_cast<DApplication*>(japp))->Get_NumCovarianceMatrices();
+	auto locMemory = (sizeof(TMatrixDSym) + 7*7*4)*locNumObjectsMap[locBin]; //assume 7x7 matrix of floats (4)
+	locMemoryMap[locBin] = locMemory;
+	locTotalMemory += locMemory;
 
-		//save
-		locMemoryMap[locBin] = locMemory;
-		locTotalMemory += locMemory;
+	//DKinematicData::DKinematicInfo
+	locBin = dBinMap["DKinematicInfo"];
+	locNumObjectsMap[locBin] = dResourcePool_KinematicInfo.Get_NumObjectsAllThreads();
+	locMemory = sizeof(DKinematicData::DKinematicInfo)*locNumObjectsMap[locBin];
+	locMemoryMap[locBin] = locMemory;
+	locTotalMemory += locMemory;
 
-		//TMatrixFSym
-		locBin = dFactoryPoolBinMap["TMatrixFSym"];
-		locNumObjectsMap[locBin] = (dynamic_cast<DApplication*>(japp))->Get_NumCovarianceMatrices();
-		locMemory = ((unsigned long long)(sizeof(TMatrixDSym) + 7*7*4))*locNumObjectsMap[locBin]; //assume 7x7 matrix of floats (4)
-		locMemoryMap[locBin] = locMemory;
-		locTotalMemory += locMemory;
-	}
+	//DChargedTrackHypothesis::DTimingInfo
+	locBin = dBinMap["Charged DTimingInfo"];
+	locNumObjectsMap[locBin] = dResourcePool_ChargedHypoTimingInfo.Get_NumObjectsAllThreads();
+	locMemory = sizeof(DChargedTrackHypothesis::DTimingInfo)*locNumObjectsMap[locBin];
+	locMemoryMap[locBin] = locMemory;
+	locTotalMemory += locMemory;
+
+	//DChargedTrackHypothesis::DTrackingInfo
+	locBin = dBinMap["DTrackingInfo"];
+	locNumObjectsMap[locBin] = dResourcePool_ChargedHypoTrackingInfo.Get_NumObjectsAllThreads();
+	locMemory = sizeof(DChargedTrackHypothesis::DTrackingInfo)*locNumObjectsMap[locBin];
+	locMemoryMap[locBin] = locMemory;
+	locTotalMemory += locMemory;
+
+	//DNeutralParticleHypothesis::DTimingInfo
+	locBin = dBinMap["Neutral DTimingInfo"];
+	locNumObjectsMap[locBin] = dResourcePool_NeutralHypoTimingInfo.Get_NumObjectsAllThreads();
+	locMemory = sizeof(DNeutralParticleHypothesis::DTimingInfo)*locNumObjectsMap[locBin];
+	locMemoryMap[locBin] = locMemory;
+	locTotalMemory += locMemory;
+
+	/******************************************************* KINEMATIC DATA OBJECTS *******************************************************/
+
+	//DKinematicData
+	locBin = dBinMap["KinematicDatas"];
+	locNumObjectsMap[locBin] = dResourcePool_KinematicData.Get_NumObjectsAllThreads();
+	locMemory = sizeof(DKinematicData)*locNumObjectsMap[locBin];
+	locMemoryMap[locBin] = locMemory;
+	locTotalMemory += locMemory;
+
+	//DChargedTrackHypothesis
+	locBin = dBinMap["Charged Hypos"];
+	locNumObjectsMap[locBin] = dResourcePool_ChargedTrackHypothesis.Get_NumObjectsAllThreads();
+	locMemory = sizeof(DChargedTrackHypothesis)*locNumObjectsMap[locBin];
+	locMemoryMap[locBin] = locMemory;
+	locTotalMemory += locMemory;
+
+	//DNeutralParticleHypothesis
+	locBin = dBinMap["Neutral Hypos"];
+	locNumObjectsMap[locBin] = dResourcePool_NeutralParticleHypothesis.Get_NumObjectsAllThreads();
+	locMemory = sizeof(DNeutralParticleHypothesis)*locNumObjectsMap[locBin];
+	locMemoryMap[locBin] = locMemory;
+	locTotalMemory += locMemory;
+
+	//DBeamPhoton
+	locBin = dBinMap["Beam Photons"];
+	locNumObjectsMap[locBin] = dResourcePool_BeamPhotons.Get_NumObjectsAllThreads();
+	locMemory = sizeof(DBeamPhoton)*locNumObjectsMap[locBin];
+	locMemoryMap[locBin] = locMemory;
+	locTotalMemory += locMemory;
+
+	/******************************************************* COMBO OBJECTS *******************************************************/
+
+	//DEventRFBunch
+	locBin = dBinMap["Combo RF Bunches"];
+	locNumObjectsMap[locBin] = dResourcePool_EventRFBunch.Get_NumObjectsAllThreads();
+	locMemory = sizeof(DEventRFBunch)*locNumObjectsMap[locBin];
+	locMemoryMap[locBin] = locMemory;
+	locTotalMemory += locMemory;
+
+	//DSourceCombo
+	locBin = dBinMap["Source Combos"];
+	locNumObjectsMap[locBin] = dResourcePool_SourceCombo.Get_NumObjectsAllThreads();
+	locMemory = sizeof(DSourceCombo)*locNumObjectsMap[locBin];
+	locMemoryMap[locBin] = locMemory;
+	locTotalMemory += locMemory;
+
+	//DSourceCombo Vectors
+	locBin = dBinMap["Source Combo Vectors"];
+	locNumObjectsMap[locBin] = dResourcePool_SourceComboVector.Get_NumObjectsAllThreads();
+	locMemory = sizeof(vector<const DSourceCombo*>)*locNumObjectsMap[locBin];
+	locMemoryMap[locBin] = locMemory;
+	locTotalMemory += locMemory;
+
+	//DParticleCombo
+	locBin = dBinMap["Particle Combos"];
+	locNumObjectsMap[locBin] = dResourcePool_ParticleCombo.Get_NumObjectsAllThreads();
+	locMemory = sizeof(DParticleCombo)*locNumObjectsMap[locBin];
+	locMemoryMap[locBin] = locMemory;
+	locTotalMemory += locMemory;
+
+	//DParticleComboStep
+	locBin = dBinMap["Particle Combo Steps"];
+	locNumObjectsMap[locBin] = dResourcePool_ParticleComboStep.Get_NumObjectsAllThreads();
+	locMemory = sizeof(DParticleComboStep)*locNumObjectsMap[locBin];
+	locMemoryMap[locBin] = locMemory;
+	locTotalMemory += locMemory;
+
+	/******************************************************* KINFIT OBJECTS *******************************************************/
+
+	//DKinFitParticle
+	locBin = dBinMap["DKinFitParticle"];
+	locNumObjectsMap[locBin] = dKinFitUtils->Get_KinFitParticlePoolSize_Shared();
+	locMemory = sizeof(DKinematicData)*locNumObjectsMap[locBin];
+	locMemoryMap[locBin] = locMemory;
+	locTotalMemory += locMemory;
+
+	//DKinFitResults
+	locBin = dBinMap["DKinFitResults"];
+	locNumObjectsMap[locBin] = dResourcePool_KinFitResults.Get_NumObjectsAllThreads();
+	locMemory = sizeof(DKinFitResults)*locNumObjectsMap[locBin];
+	locMemoryMap[locBin] = locMemory;
+	locTotalMemory += locMemory;
 
 	//Convert to MB
 	for(auto& locMemoryPair : locMemoryMap)

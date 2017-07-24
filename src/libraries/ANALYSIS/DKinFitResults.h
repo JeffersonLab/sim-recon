@@ -21,6 +21,7 @@ class DKinFitResults
 
 		/************************************************************ SET FIT INFORMATION ***********************************************************/
 
+		void Reset(void);
 		void Set_KinFitType(DKinFitType locKinFitType){dKinFitType = locKinFitType;}
 
 		void Set_NumConstraints(unsigned int locNumConstraints){dNumConstraints = locNumConstraints;}
@@ -74,14 +75,14 @@ class DKinFitResults
 
 	private:
 
-		DKinFitType dKinFitType;
+		DKinFitType dKinFitType = d_NoFit;
 
-		unsigned int dNumConstraints;
-		unsigned int dNumUnknowns;
+		unsigned int dNumConstraints = 0;
+		unsigned int dNumUnknowns = 0;
 
-		double dConfidenceLevel;
-		double dChiSq;
-		unsigned int dNDF;
+		double dConfidenceLevel = 0.0;
+		double dChiSq = 0.0;
+		unsigned int dNDF = 0;
 
 		map<const JObject*, map<DKinFitPullType, double> > dPulls; //JObject is the MEASURED particle (or shower!)
 
@@ -99,6 +100,25 @@ class DKinFitResults
 		//Output: DKinFitParticle's containing the fit results
 		map<const JObject*, DKinFitParticle*> dParticleMap_SourceToOutput;
 };
+
+inline void DKinFitResults::Reset(void)
+{
+	dKinFitType = d_NoFit;
+	dNumConstraints = 0;
+	dNumUnknowns = 0;
+
+	dConfidenceLevel = 0.0;
+	dChiSq = 0.0;
+	dNDF = 0;
+
+	dPulls.clear();
+	dVXi.ResizeTo(0, 0);
+
+	//OUTPUT PARTICLES AND CONSTRAINTS
+	dOutputKinFitParticles.clear();
+	dKinFitConstraints.clear();
+	dParticleMap_SourceToOutput.clear();
+}
 
 /****************************************************** SET PARTICLES, COMBOS, AND CONSTRAINTS ******************************************************/
 

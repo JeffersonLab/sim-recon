@@ -19,6 +19,7 @@
 
 #include "JANA/JEventLoop.h"
 #include "particleType.h"
+#include "DResourcePool.h"
 
 #include <DANA/DStatusBits.h>
 #include "RF/DRFTime.h"
@@ -65,6 +66,7 @@
 #include "ANALYSIS/DTrackTimeBased_factory_Combo.h"
 
 #include "ANALYSIS/DCutActions.h"
+#include "ANALYSIS/DSourceCombo.h"
 
 using namespace std;
 using namespace jana;
@@ -111,10 +113,23 @@ class DHistogramAction_ObjectMemory : public DAnalysisAction
 
 		unsigned int dEventCounter; //not the same as event #: running with multiple threads over many files, possibly starting at event # != 1
 
-		deque<pair<string, string> > dFactoryPairsToTrack; //class name, tag
+		map<string, int> dBinMap;
+		DKinFitUtils_GlueX* dKinFitUtils;
 
-		map<pair<string, string>, int> dFactoryPairBinMap;
-		map<string, int> dFactoryPoolBinMap;
+		DResourcePool<DSourceCombo> dResourcePool_SourceCombo;
+		DResourcePool<vector<const DSourceCombo*>> dResourcePool_SourceComboVector;
+		DResourcePool<DKinematicData> dResourcePool_KinematicData;
+		DResourcePool<DKinFitResults> dResourcePool_KinFitResults;
+		DResourcePool<DEventRFBunch> dResourcePool_EventRFBunch;
+		DResourcePool<DParticleCombo> dResourcePool_ParticleCombo;
+		DResourcePool<DParticleComboStep> dResourcePool_ParticleComboStep;
+		DResourcePool<DBeamPhoton> dResourcePool_BeamPhotons;
+		DResourcePool<DNeutralParticleHypothesis> dResourcePool_NeutralParticleHypothesis;
+		DResourcePool<DChargedTrackHypothesis> dResourcePool_ChargedTrackHypothesis;
+		DResourcePool<DKinematicData::DKinematicInfo> dResourcePool_KinematicInfo;
+		DResourcePool<DChargedTrackHypothesis::DTimingInfo> dResourcePool_ChargedHypoTimingInfo;
+		DResourcePool<DChargedTrackHypothesis::DTrackingInfo> dResourcePool_ChargedHypoTrackingInfo;
+		DResourcePool<DNeutralParticleHypothesis::DTimingInfo> dResourcePool_NeutralHypoTimingInfo;
 
 		TH2I* dHist_NumObjects;
 		TH2F* dHist_Memory;

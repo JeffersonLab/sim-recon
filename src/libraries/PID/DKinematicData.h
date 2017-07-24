@@ -86,9 +86,8 @@ class DKinematicData : public JObject
 			AddString(items, "phi(deg)", "%2.3f", momentum().Phi()*180.0/M_PI);
 		}
 
-		class DKinematicInfo
+		struct DKinematicInfo
 		{
-		public:
 			//CONSTRUCTORS
 			DKinematicInfo(void) = default;
 			DKinematicInfo(Particle_t locPID, const DVector3& locMomentum, DVector3 locPosition = DVector3(), double locTime = 0.0, const TMatrixFSym* locErrorMatrix = nullptr);
