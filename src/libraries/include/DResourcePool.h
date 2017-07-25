@@ -115,8 +115,7 @@ template <typename DType> class DResourcePool : public std::enable_shared_from_t
 
 		//Assume that access to the shared pool won't happen very often: will mostly access the thread-local pool (this object)
 		void Get_Resources_StaticPool(void);
-		void Recycle_Resources_StaticPool(void);
-		void Recycle_Resources_StaticPool(size_t locFirstToRemoveIndex);
+		void Recycle_Resources_StaticPool(vector<DType*>& locResources);
 
 		alignas(Get_CacheLineSize()) size_t dDebugLevel = 0;
 		alignas(Get_CacheLineSize()) size_t dGetBatchSize = 100;
@@ -172,7 +171,7 @@ template <typename DType> atomic<size_t> DResourcePool<DType>::dObjectCounter{0}
 //CONSTRUCTOR
 template <typename DType> DResourcePool<DType>::DResourcePool(void)
 {
-	dResourcePool_Local.reserve(dGetBatchSize);
+	dResourcePool_Local.reserve(dWhenToRecyclePoolSize);
 	{
 		std::lock_guard<std::mutex> locLock(dSharedPoolMutex); //LOCK
 		++dPoolCounter;
@@ -186,7 +185,7 @@ template <typename DType> DResourcePool<DType>::DResourcePool(void)
 template <typename DType> DResourcePool<DType>::~DResourcePool(void)
 {
 	//Move all objects into the shared pool
-	Recycle_Resources_StaticPool(0);
+	Recycle_Resources_StaticPool(dResourcePool_Local);
 
 	//if this was the last thread, delete all of the remaining resources
 	//first move them outside of the vector, then release the lock
@@ -271,23 +270,32 @@ template <typename DType> void DResourcePool<DType>::Recycle(vector<const DType*
 
 template <typename DType> void DResourcePool<DType>::Recycle(vector<DType*>& locResources)
 {
-	dResourcePool_Local.reserve(dResourcePool_Local.size() + locResources.size());
-	std::move(locResources.begin(), locResources.end(), std::back_inserter(dResourcePool_Local));
-	locResources.clear();
-	if(dResourcePool_Local.size() > dWhenToRecyclePoolSize)
-		Recycle_Resources_StaticPool();
+	size_t locFirstToMoveIndex = 0;
+	auto locPotentialNewPoolSize = dResourcePool_Local.size() + locResources.size();
+	if(locPotentialNewPoolSize > dWhenToRecyclePoolSize) //we won't move all of the resources into the local pool, as it would be too large: only move a subset
+		locFirstToMoveIndex = locResources.size() - (dWhenToRecyclePoolSize - dResourcePool_Local.size());
+
+	std::move(locResources.begin() + locFirstToMoveIndex, locResources.end(), std::back_inserter(dResourcePool_Local));
+	locResources.resize(locFirstToMoveIndex);
+	if(!locResources.empty())
+		Recycle_Resources_StaticPool(locResources);
 }
 
-//http://stackoverflow.com/questions/8314827/how-can-i-specialize-a-template-member-function-for-stdvectort
 template <typename DType> void DResourcePool<DType>::Recycle(DType* locResource)
 {
 	if(dDebugLevel >= 10)
 		cout << "RECYCLE " << typeid(DType).name() << ": " << locResource << endl;
 	if(locResource == nullptr)
 		return;
-	dResourcePool_Local.push_back(locResource);
-	if(dResourcePool_Local.size() > dWhenToRecyclePoolSize)
-		Recycle_Resources_StaticPool();
+
+	if(dResourcePool_Local.size() == dWhenToRecyclePoolSize)
+	{
+		vector<DType*>(locResource);
+		Recycle_Resources_StaticPool(locResource);
+	}
+	else
+		dResourcePool_Local.push_back(locResource);
+
 	if(dDebugLevel >= 10)
 		cout << "DONE RECYCLING" << endl;
 }
@@ -296,7 +304,6 @@ template <typename DType> void DResourcePool<DType>::Recycle(DType* locResource)
 
 template <typename DType> void DResourcePool<DType>::Get_Resources_StaticPool(void)
 {
-	dResourcePool_Local.reserve(dResourcePool_Local.size() + dGetBatchSize);
 	{
 		std::lock_guard<std::mutex> locLock(dSharedPoolMutex); //LOCK
 		if(dResourcePool_Shared.empty())
@@ -309,40 +316,31 @@ template <typename DType> void DResourcePool<DType>::Get_Resources_StaticPool(vo
 	} //UNLOCK
 }
 
-template <typename DType> void DResourcePool<DType>::Recycle_Resources_StaticPool(void)
+template <typename DType> void DResourcePool<DType>::Recycle_Resources_StaticPool(vector<DType*>& locResources)
 {
-	//we will remove dRecycleBatchSize resources from the local resource pool (or all if size < batch size)
-	auto locFirstToRemoveIndex = (dRecycleBatchSize >= dResourcePool_Local.size()) ? 0 : dResourcePool_Local.size() - dRecycleBatchSize;
-	if(dDebugLevel > 0)
-		cout << "Removing last " << locFirstToRemoveIndex << " elements" << endl;
-	Recycle_Resources_StaticPool(locFirstToRemoveIndex);
-}
-
-template <typename DType> void DResourcePool<DType>::Recycle_Resources_StaticPool(size_t locFirstToRemoveIndex)
-{
-	auto locFirstToMoveIndex = locFirstToRemoveIndex; //we will move resources into the shared pool, starting at this spot
-	auto locNumElementsToRemove = dResourcePool_Local.size() - locFirstToRemoveIndex;
+	size_t locFirstToMoveIndex = 0;
 	{
 		std::lock_guard<std::mutex> locLock(dSharedPoolMutex); //LOCK
 
-		auto locPotentialNewPoolSize = dResourcePool_Shared.size() + locNumElementsToRemove;
+		auto locPotentialNewPoolSize = dResourcePool_Shared.size() + locResources.size();
 		if(locPotentialNewPoolSize > dMaxSharedPoolSize) //we won't move all of the resources into the shared pool, as it would be too large: only move a subset
-			locFirstToMoveIndex = dResourcePool_Local.size() - (dMaxSharedPoolSize - dResourcePool_Shared.size());
+			locFirstToMoveIndex = locResources.size() - (dMaxSharedPoolSize - dResourcePool_Shared.size());
 
 		if(dDebugLevel > 0)
 			cout << "MOVING TO SHARED POOL " << typeid(DType).name() << ": " << dResourcePool_Local.size() - locFirstToMoveIndex << endl;
 
-		std::move(dResourcePool_Local.begin() + locFirstToMoveIndex, dResourcePool_Local.end(), std::back_inserter(dResourcePool_Shared));
+		std::move(locResources.begin() + locFirstToMoveIndex, locResources.end(), std::back_inserter(dResourcePool_Shared));
 	} //UNLOCK
 
 	if(dDebugLevel > 0)
-		cout << "DELETING " << typeid(DType).name() << ": " << locFirstToMoveIndex - locFirstToRemoveIndex << endl;
+		cout << "DELETING " << typeid(DType).name() << ": " << locFirstToMoveIndex << endl;
 
 	//any resources that were not moved into the shared pool are deleted instead (too many)
 	auto Deleter = [](DType* locResource) -> void {delete locResource;};
-	std::for_each(dResourcePool_Local.begin() + locFirstToRemoveIndex, dResourcePool_Local.begin() + locFirstToMoveIndex, Deleter);
-	dObjectCounter -= (locFirstToMoveIndex - locFirstToRemoveIndex);
-	dResourcePool_Local.resize(locFirstToRemoveIndex);
+	std::for_each(locResources.begin(), locResources.begin() + locFirstToMoveIndex, Deleter);
+
+	dObjectCounter -= locFirstToMoveIndex;
+	locResources.clear();
 }
 
 template <typename DType> size_t DResourcePool<DType>::Get_SharedPoolSize(void) const
