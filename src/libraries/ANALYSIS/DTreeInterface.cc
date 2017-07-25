@@ -98,7 +98,10 @@ void DTreeInterface::GetOrCreate_FileAndTree(string locTreeName)
 		//see if ttree exists already. if not, create it
 		dTree = (TTree*)gDirectory->Get(locTreeName.c_str());
 		if(dTree == nullptr)
+		{
 			dTree = new TTree(locTreeName.c_str(), locTreeName.c_str());
+			dTree->SetAutoFlush(dAutoFlush);
+		}
 
 		locCurrentDir->cd();
 	}

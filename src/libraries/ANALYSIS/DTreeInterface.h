@@ -151,6 +151,7 @@ class DTreeInterface
 			//branches addresses of pointers, so pointers must reside somewhere permanent
 			//However, for fundamental objects/arrays: memory stored in the branches themselves: don't need to hold onto them
 		size_t dMaxArraySize = 1000;
+		Long64_t dAutoFlush = -5000000; //if 200 trees at once, and want them to take at most 1GB of RAM before flush, then flush every 5MB: -5000000 //default every 30MB
 		map<string, TClonesArray*> dMemoryMap_ClonesArray;
 		map<string, TObject*> dMemoryMap_TObject;
 };
