@@ -77,7 +77,7 @@ class DSourceComboTimeHandler
 
 		//VERTEX-Z BINNING UTILITY FUNCTIONS
 		size_t Get_NumVertexZBins(void) const{return dNumPhotonVertexZBins;}
-		size_t Get_PhotonVertexZBin(double locVertexZ) const;
+		signed char Get_PhotonVertexZBin(double locVertexZ) const;
 		double Get_PhotonVertexZBinCenter(signed char locVertexZBin) const;
 		size_t Get_VertexZBin_TargetCenter(void) const{return Get_PhotonVertexZBin(dTargetCenter.Z());}
 
@@ -184,14 +184,16 @@ inline void DSourceComboTimeHandler::Reset(void)
 	dFullComboTimeCutResults.clear();
 }
 
-inline size_t DSourceComboTimeHandler::Get_PhotonVertexZBin(double locVertexZ) const
+inline signed char DSourceComboTimeHandler::Get_PhotonVertexZBin(double locVertexZ) const
 {
 	//given some vertex-z, what bin am I in?
 	int locPhotonVertexZBin = int((locVertexZ - dPhotonVertexZRangeLow)/dPhotonVertexZBinWidth);
 	if(locPhotonVertexZBin < 0)
 		return 0;
-	else if(locPhotonVertexZBin >= int(dNumPhotonVertexZBins))
+	if(locPhotonVertexZBin >= int(dNumPhotonVertexZBins))
 		return dNumPhotonVertexZBins - 1;
+//	if((locPhotonVertexZBin < 0) || (locPhotonVertexZBin >= int(dNumPhotonVertexZBins)))
+//		return DSourceComboInfo::Get_VertexZIndex_Unknown();
 	return locPhotonVertexZBin;
 }
 

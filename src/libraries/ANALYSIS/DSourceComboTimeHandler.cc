@@ -707,15 +707,29 @@ bool DSourceComboTimeHandler::Select_RFBunches_PhotonVertices(const DReactionVer
 				if(ParticleMass(locPID) > 0.0)
 					continue; //massive neutral, can't vote
 				auto locNeutralShower = static_cast<const DNeutralShower*>(locParticlePair.second);
-				locParticleRFBunches = (locNeutralShower->dDetectorSystem != SYS_FCAL) ? dShowerRFBunches[locVertexZBin][locParticlePair.second] : locValidRFBunches; //FCAL has already voted
-				if(dDebugLevel >= 10)
-					cout << "pre-cut: pid, zbin, #bunches, #valid bunches = " << locPID << ", " << int(locVertexZBin) << ", " << locParticleRFBunches.size() << ", " << locValidRFBunches.size() << endl;
+				auto locSystem = locNeutralShower->dDetectorSystem;
 
-				//Do PID cut
-				auto PhotonCutter = [&](int locRFBunch) -> bool {return !Cut_PhotonPID(locNeutralShower, locVertex, locPropagatedRFTime + locRFBunch*dBeamBunchPeriod, false);};
-				locParticleRFBunches.erase(std::remove_if(locParticleRFBunches.begin(), locParticleRFBunches.end(), PhotonCutter), locParticleRFBunches.end());
-				if(dDebugLevel >= 10)
-					cout << "post-cut: pid, zbin, #bunches = " << locPID << ", " << int(locVertexZBin) << ", " << locParticleRFBunches.size() << endl;
+				//if vertex is known, but is outside of the range of our photon kinematics: so we must select rf bunches manually
+				if(locVertexZBin == DSourceComboInfo::Get_VertexZIndex_Unknown())
+				{
+					auto locDeltaTCut = dPIDTimingCuts[Gamma][locSystem]->Eval(locNeutralShower->dEnergy);
+					auto locVertexTime = Calc_Photon_Kinematics(locNeutralShower, locVertex).second;
+					locParticleRFBunches = Calc_BeamBunchShifts(locVertexTime, locPropagatedRFTime, locDeltaTCut, false, Gamma, locSystem, locNeutralShower->dEnergy);
+					if(dDebugLevel >= 10)
+						cout << "post-cut: pid, zbin, #bunches, #valid bunches = " << locPID << ", " << int(locVertexZBin) << ", " << locParticleRFBunches.size() << ", " << locValidRFBunches.size() << endl;
+				}
+				else
+				{
+					locParticleRFBunches = (locSystem != SYS_FCAL) ? dShowerRFBunches[locVertexZBin][locParticlePair.second] : locValidRFBunches; //FCAL has already voted
+					if(dDebugLevel >= 10)
+						cout << "pre-cut: pid, zbin, #bunches, #valid bunches = " << locPID << ", " << int(locVertexZBin) << ", " << locParticleRFBunches.size() << ", " << locValidRFBunches.size() << endl;
+
+					//Do PID cut
+					auto PhotonCutter = [&](int locRFBunch) -> bool {return !Cut_PhotonPID(locNeutralShower, locVertex, locPropagatedRFTime + locRFBunch*dBeamBunchPeriod, false);};
+					locParticleRFBunches.erase(std::remove_if(locParticleRFBunches.begin(), locParticleRFBunches.end(), PhotonCutter), locParticleRFBunches.end());
+					if(dDebugLevel >= 10)
+						cout << "post-cut: pid, zbin, #bunches = " << locPID << ", " << int(locVertexZBin) << ", " << locParticleRFBunches.size() << endl;
+				}
 			}
 			else if(locVertexDeterminableWithCharged) //charged, previously cut
 				continue;

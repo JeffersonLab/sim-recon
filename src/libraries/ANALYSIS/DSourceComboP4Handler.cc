@@ -357,7 +357,6 @@ DLorentzVector DSourceComboP4Handler::Calc_P4_NoMassiveNeutrals(const DSourceCom
 	if(!locAccuratePhotonsFlag || !locHasPhotons)
 		dFinalStateP4ByCombo.emplace(std::make_pair(locVertexCombo, locVertexZBin), locTotalP4);
 
-
 	if(!locAccuratePhotonsFlag)
 	{
 		auto locSourceParticles = locVertexCombo->Get_SourceParticles();
@@ -529,6 +528,8 @@ bool DSourceComboP4Handler::Cut_InvariantMass_NoMassiveNeutrals(const DSourceCom
 	if(!Get_InvariantMassCut(locVertexCombo, locDecayPID, locAccuratePhotonsFlag, locMassCuts))
 		return true; //no cut to place!!
 
+	if(!locVertexCombo->Get_IsComboingZIndependent() && (locVertexZBin == DSourceComboInfo::Get_VertexZIndex_Unknown()) && !locAccuratePhotonsFlag)
+		return true; //don't cut yet: will cut later when vertex known or accurate photons
 	auto locInvariantMass = Calc_P4_NoMassiveNeutrals(locVertexCombo, locVertex, locVertexZBin, nullptr, locAccuratePhotonsFlag).M();
 
 	//save and cut
@@ -558,6 +559,10 @@ bool DSourceComboP4Handler::Cut_InvariantMass_HasMassiveNeutral(bool locIsProduc
 	pair<float, float> locMassCuts;
 	if(!Get_InvariantMassCut(locVertexCombo, locDecayPID, locAccuratePhotonsFlag, locMassCuts))
 		return true; //no cut to place!!
+
+	auto locVertexZBin = dSourceComboTimeHandler->Get_PhotonVertexZBin(locVertex.Z());
+	if(!locVertexCombo->Get_IsComboingZIndependent() && (locVertexZBin == DSourceComboInfo::Get_VertexZIndex_Unknown()) && !locAccuratePhotonsFlag)
+		return true; //don't cut yet: will cut later when vertex known or accurate photons
 
 	//function for calculating and cutting the invariant mass for each rf bunch
 	auto CalcAndCut_InvariantMass = [&](int locRFBunch) -> bool

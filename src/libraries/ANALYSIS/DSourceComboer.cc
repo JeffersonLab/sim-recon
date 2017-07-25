@@ -6,8 +6,10 @@
  * PROBLEMS:
  * 
  * crash on exit in ubuntu???: TClonesArray branches invalidated after several threads close
- * memory leak!!!
  * Test hist kinematics with flag = true
+ * Uncomment accurate photons cut
+ * edit Get_PhotonVertexZBin()
+ * delete lines in tree filler if no more crashes
  *
  * running with all:
  * 2pi0, pi0eta, 2pi0eta, pi0g, 2eta down by 2x from master
@@ -19,9 +21,6 @@
  * FCAL/BCAL pi0s don't get created
  * FCAL pi0s don't get combined with protons
  * FCAL/BCAL pi0s don't get combined with protons
- *
- * mem leak:
- * disable kinfit, see if flat
  *
  * TESTING:
  * p2pi: OK
@@ -51,11 +50,6 @@
  * Tegan
  * Christiano
  *
- * Reactionfilter all at once: Does it work?
- * ReactionFilter all (Alex): Crash rate, mem usage, cpu time
- * Get individual user-plugins working: test individually
- * - Need results from master
- *
  * EVENTUALLY:
  * ppp
  * p4pi0
@@ -70,9 +64,9 @@
  * ...
  *
  * Ideas for reducing output size:
- * st timing cut
- * kaon: cut if no pid hit?
- * char instead of int
+ * st timing cut: maybe not for tracks with enough CDC hits
+ * kaon: cut if no pid hit? and not enough hits in CDC?
+ * char instead of int: requires some kind of flag saved to tree, which is checked to decide how to cast the pointer from the branches
  * miss mass cuts
  * beam energy cut
  * cut on kinfit conlev?
@@ -212,7 +206,7 @@ namespace DAnalysis
 
 DSourceComboer::DSourceComboer(JEventLoop* locEventLoop)
 {
-	dResourcePool_SourceComboVector.Set_ControlParams(10, 5, 50, 200, 200, 0); //Never recycle to other threads
+	dResourcePool_SourceComboVector.Set_ControlParams(10, 5, 200, 200, 0); //Never recycle to other threads
 	dCreatedCombos.reserve(100000);
 	dCreatedComboVectors.reserve(1000);
 
@@ -1468,8 +1462,8 @@ void DSourceComboer::Combo_WithBeam(const vector<const DReaction*>& locReactions
 			++(dNumCombosSurvivedStageTracker[locReaction][DConstructionStage::MMVertex_IMCuts]);
 
 		//place invariant mass cuts using accurate photon kinematics
-		if(!dSourceComboP4Handler->Cut_InvariantMass_AccuratePhotonKinematics(locReactionVertexInfo, locReactionFullCombo, locBeamParticle, locRFBunch))
-			continue; //FAILED MASS CUTS!
+//		if(!dSourceComboP4Handler->Cut_InvariantMass_AccuratePhotonKinematics(locReactionVertexInfo, locReactionFullCombo, locBeamParticle, locRFBunch))
+//			continue; //FAILED MASS CUTS!
 		for(const auto& locReaction : locReactions)
 			++(dNumCombosSurvivedStageTracker[locReaction][DConstructionStage::AccuratePhoton_IM]);
 

@@ -124,21 +124,12 @@ class DFillClass : public DFillBaseClass
 
 		~DFillClass(){};
 
-		void* Get(size_t locArrayIndex);
+		void* Get(size_t locArrayIndex){return static_cast<void*>(&(dFillData[locArrayIndex]));}
 		void Check_Capacity(void);
 
 	private:
 		size_t dMaxFillVectorSize = 1000; //if exceeds this, will drop down on next event
 };
-
-template <typename DType> inline void* DFillClass<DType>::Get(size_t locArrayIndex)
-{
-//	typename vector<DType>::iterator locIterator = dFillData.begin();
-//	std::advance(locIterator, locArrayIndex);
-//	DType& locElementReference = dFillData[locArrayIndex];
-//	DType* locElementPointer = &locElementReference;
-	return static_cast<void*>(&(dFillData[locArrayIndex]));
-}
 
 template <typename DType> inline void DFillClass<DType>::Check_Capacity(void)
 {

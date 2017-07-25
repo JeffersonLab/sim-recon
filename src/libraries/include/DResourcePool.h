@@ -82,7 +82,7 @@ template <typename DType> class DResourcePool : public std::enable_shared_from_t
 		DResourcePool(void);
 		~DResourcePool(void);
 
-		void Set_ControlParams(size_t locGetBatchSize = 100, size_t locNumToAllocateAtOnce = 20, size_t locRecycleBatchSize = 1000, size_t locWhenToRecyclePoolSize = 2000, size_t locMaxSharedPoolSize = 10000, size_t locDebugLevel = 0);
+		void Set_ControlParams(size_t locGetBatchSize = 100, size_t locNumToAllocateAtOnce = 20, size_t locMaxLocalPoolSize = 2000, size_t locMaxSharedPoolSize = 10000, size_t locDebugLevel = 0);
 		DType* Get_Resource(void);
 		shared_ptr<DType> Get_SharedResource(void);
 
@@ -120,8 +120,7 @@ template <typename DType> class DResourcePool : public std::enable_shared_from_t
 		alignas(Get_CacheLineSize()) size_t dDebugLevel = 0;
 		alignas(Get_CacheLineSize()) size_t dGetBatchSize = 100;
 		alignas(Get_CacheLineSize()) size_t dNumToAllocateAtOnce = 20;
-		alignas(Get_CacheLineSize()) size_t dRecycleBatchSize = 1000;
-		alignas(Get_CacheLineSize()) size_t dWhenToRecyclePoolSize = 2000; //what size the pool should be before recycling dRecycleBatchSize objects
+		alignas(Get_CacheLineSize()) size_t dMaxLocalPoolSize = 2000;
 		alignas(Get_CacheLineSize()) vector<DType*> dResourcePool_Local;
 
 		//static class members have external linkage: same instance shared between every translation unit (would be globally, put only private access)
@@ -168,7 +167,7 @@ template <typename DType> atomic<size_t> DResourcePool<DType>::dObjectCounter{0}
 //CONSTRUCTOR
 template <typename DType> DResourcePool<DType>::DResourcePool(void)
 {
-	dResourcePool_Local.reserve(dWhenToRecyclePoolSize);
+	dResourcePool_Local.reserve(dMaxLocalPoolSize);
 	{
 		std::lock_guard<std::mutex> locLock(dSharedPoolMutex); //LOCK
 		++dPoolCounter;
@@ -235,13 +234,12 @@ template <typename DType> DType* DResourcePool<DType>::Get_Resource(void)
 	return locResource;
 }
 
-template <typename DType> void DResourcePool<DType>::Set_ControlParams(size_t locGetBatchSize, size_t locNumToAllocateAtOnce, size_t locRecycleBatchSize, size_t locWhenToRecyclePoolSize, size_t locMaxSharedPoolSize, size_t locDebugLevel)
+template <typename DType> void DResourcePool<DType>::Set_ControlParams(size_t locGetBatchSize, size_t locNumToAllocateAtOnce, size_t locMaxLocalPoolSize, size_t locMaxSharedPoolSize, size_t locDebugLevel)
 {
 	dDebugLevel = locDebugLevel;
 	dGetBatchSize = locGetBatchSize;
 	dNumToAllocateAtOnce = locNumToAllocateAtOnce;
-	dRecycleBatchSize = locRecycleBatchSize;
-	dWhenToRecyclePoolSize = locWhenToRecyclePoolSize;
+	dMaxLocalPoolSize = locMaxLocalPoolSize;
 	{
 		std::lock_guard<std::mutex> locLock(dSharedPoolMutex); //LOCK
 		dMaxSharedPoolSize = locMaxSharedPoolSize;
@@ -270,8 +268,8 @@ template <typename DType> void DResourcePool<DType>::Recycle(vector<DType*>& loc
 {
 	size_t locFirstToMoveIndex = 0;
 	auto locPotentialNewPoolSize = dResourcePool_Local.size() + locResources.size();
-	if(locPotentialNewPoolSize > dWhenToRecyclePoolSize) //we won't move all of the resources into the local pool, as it would be too large: only move a subset
-		locFirstToMoveIndex = locResources.size() - (dWhenToRecyclePoolSize - dResourcePool_Local.size());
+	if(locPotentialNewPoolSize > dMaxLocalPoolSize) //we won't move all of the resources into the local pool, as it would be too large: only move a subset
+		locFirstToMoveIndex = locResources.size() - (dMaxLocalPoolSize - dResourcePool_Local.size());
 
 	std::move(locResources.begin() + locFirstToMoveIndex, locResources.end(), std::back_inserter(dResourcePool_Local));
 	locResources.resize(locFirstToMoveIndex);
@@ -286,7 +284,7 @@ template <typename DType> void DResourcePool<DType>::Recycle(DType* locResource)
 	if(locResource == nullptr)
 		return;
 
-	if(dResourcePool_Local.size() == dWhenToRecyclePoolSize)
+	if(dResourcePool_Local.size() == dMaxLocalPoolSize)
 	{
 		vector<DType*>(locResource);
 		Recycle_Resources_StaticPool(locResource);

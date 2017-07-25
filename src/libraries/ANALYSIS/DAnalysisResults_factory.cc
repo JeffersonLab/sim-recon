@@ -297,6 +297,7 @@ jerror_t DAnalysisResults_factory::evnt(JEventLoop* locEventLoop, uint64_t event
 		{
 			auto& locReaction = locReactionComboPair.first;
 			auto& locCombos = locReactionComboPair.second;
+//if(!locCombos.empty())
 //cout << "event, #combos: " << locEventLoop->GetJEvent().GetEventNumber() << ", " << locCombos.size() << endl;
 
 			//FIND TRUE COMBO (IF MC)
