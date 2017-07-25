@@ -11,6 +11,8 @@ using namespace jana;
 #include "BCAL/DBCALPoint.h"
 #include "BCAL/DBCALDigiHit.h"
 #include "DANA/DApplication.h"
+#include "DANA/DStatusBits.h"
+#include "HistogramTools.h" // To make my life easier
 
 #include <TDirectory.h>
 #include <TStyle.h>
@@ -33,7 +35,7 @@ void InitPlugin(JApplication *app){
 //------------------
 JEventProcessor_BCAL_attenlength_gainratio::JEventProcessor_BCAL_attenlength_gainratio()
 {
-	VERBOSE = 0;
+	VERBOSE = 0; // 4: once per event, 5: multipple times per event
 	VERBOSEHISTOGRAMS = 0;
 
 	if(gPARMS){
@@ -198,6 +200,8 @@ jerror_t JEventProcessor_BCAL_attenlength_gainratio::brun(JEventLoop *eventLoop,
 //------------------
 jerror_t JEventProcessor_BCAL_attenlength_gainratio::evnt(JEventLoop *loop, uint64_t eventnumber)
 {
+    // simulation is tagged by being an HDDM file
+    bool locIsHDDMEvent = loop->GetJEvent().GetStatusBit(kSTATUS_HDDM);
 
 	// Start with matched points
 	vector<const DBCALPoint*> dbcalpoints;
@@ -213,10 +217,13 @@ jerror_t JEventProcessor_BCAL_attenlength_gainratio::evnt(JEventLoop *loop, uint
 	  digihits_vec.push_back(digihits);
 	}
 
+    char name[255], histtitle[255];
+
 	// FILL HISTOGRAMS
 	// Since we are filling histograms local to this plugin, it will not interfere with other ROOT operations: can use plugin-wide ROOT fill lock
 	japp->RootFillLock(this); //ACQUIRE ROOT FILL LOCK
 
+    if (VERBOSE>=4) printf("BCAL_attenlength_gainratio::evnt()  event %4lu points %3lu\n", eventnumber, dbcalpoints.size());
 	for(unsigned int i=0; i<dbcalpoints.size(); i++) {
 		const DBCALPoint *point = dbcalpoints[i];
 		int module = point->module();
@@ -238,8 +245,10 @@ jerror_t JEventProcessor_BCAL_attenlength_gainratio::evnt(JEventLoop *loop, uint
 		}
 		int Vmid0 = (digihits[0]->pulse_peak+digihits[0]->pedestal)/2;
 		int Vmid1 = (digihits[1]->pulse_peak+digihits[1]->pedestal)/2;
+        if (VERBOSE>=5) printf("BCAL_attenlength_gainratio::evnt() peak %4i ped %3i   peak %4i ped %3i\n", 
+                               digihits[0]->pulse_peak,digihits[0]->pedestal,digihits[0]->pulse_peak,digihits[0]->pedestal);
 		if (Vmid0 <= 105 || Vmid1 <= 105 || digihits[0]->pulse_time > 2880 || digihits[1]->pulse_time > 2880)  { // 2880 = 45 samples x 64 subsamples
-			continue;
+            if (!locIsHDDMEvent) continue; // simulation doesn't have peaks at this time
 		}
 
 		float peakUS, peakDS;
@@ -268,13 +277,20 @@ jerror_t JEventProcessor_BCAL_attenlength_gainratio::evnt(JEventLoop *loop, uint
 		float logintratio = log(intratio);
 		float peakratio = (float)peakUS/(float)peakDS;
 		float logpeakratio = log(peakratio);
-		if (VERBOSE>4) printf("%5llu  %2i %i %i  %8.1f  %8.1f  %8.3f  %8.3f  %8.3f\n", 
+		if (VERBOSE>=5) printf("%5llu  %2i %i %i  %8.1f  %8.1f  %8.3f  %8.3f  %8.3f\n", 
 				      (long long unsigned int)eventnumber,module,layer,sector,integralUS,integralDS,intratio,logintratio,zpos);
 
 		if (Energy > 0.01) {  // 10 MeV cut to remove bias due to attenuation
 			logintratiovsZ[module-1][layer-1][sector-1]->Fill(zpos, logintratio);
 			logintratiovsZ_all->Fill(zpos, logintratio);
             logpeakratiovsZ_all->Fill(zpos, logpeakratio);
+
+            sprintf(name,"logintratiovsZ_layer%i",layer);
+            sprintf(histtitle,"Layer %i;Z Position (cm);log of integral ratio US/DS",layer);
+            Fill2DHistogram("bcalgainratio", "logintratiovsZ", name,
+                            zpos, logintratio,
+                            histtitle, 500,-250.0,250.0,500,-3,3);
+
             if (VERBOSEHISTOGRAMS) {
                 logpeakratiovsZ[module-1][layer-1][sector-1]->Fill(zpos, logpeakratio);
             }
