@@ -906,6 +906,7 @@ void DSourceComboer::Reset_NewEvent(JEventLoop* locEventLoop)
 
 	//RECYCLE THE DSOURCECOMBO OBJECTS
 	dResourcePool_SourceCombo.Recycle(dCreatedCombos);
+	decltype(dCreatedCombos)().swap(dCreatedCombos); //should have been reset anyway, but just in case
 	Recycle_Vectors();
 
 	//COMBOING RESULTS:
@@ -1106,12 +1107,12 @@ void DSourceComboer::Fill_CutHistograms(void)
 	for(auto& locPIDPair : ddEdxValueMap)
 	{
 		for(auto& locSystemPair : locPIDPair.second)
-			locSystemPair.second.clear();
+			decltype(locSystemPair.second)().swap(locSystemPair.second);
 	}
 	for(auto& locPIDPair : dEOverPValueMap)
 	{
 		for(auto& locSystemPair : locPIDPair.second)
-			locSystemPair.second.clear();
+			decltype(locSystemPair.second)().swap(locSystemPair.second);
 	}
 }
 

@@ -1108,16 +1108,16 @@ void DSourceComboTimeHandler::Fill_Histograms(void)
 	japp->Unlock("DSourceComboTimeHandler");
 
 	//Reset for next event
-	dBeamRFDeltaTs.clear();
+	decltype(dBeamRFDeltaTs)().swap(dBeamRFDeltaTs);
 	for(auto& locPIDPair : dSelectedRFDeltaTs)
 	{
 		for(auto& locSystemPair : locPIDPair.second)
-			locSystemPair.second.clear();
+			decltype(locSystemPair.second)().swap(locSystemPair.second);
 	}
 	for(auto& locPIDPair : dAllRFDeltaTs)
 	{
 		for(auto& locSystemPair : locPIDPair.second)
-			locSystemPair.second.clear();
+			decltype(locSystemPair.second)().swap(locSystemPair.second);
 	}
 }
 

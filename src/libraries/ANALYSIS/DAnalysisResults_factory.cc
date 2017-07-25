@@ -273,6 +273,9 @@ jerror_t DAnalysisResults_factory::evnt(JEventLoop* locEventLoop, uint64_t event
 	dConstraintResultsMap.clear();
 	dPreToPostKinFitComboMap.clear();
 	dResourcePool_KinFitResults.Recycle(dCreatedKinFitResults);
+	{
+		decltype(dCreatedKinFitResults)().swap(dCreatedKinFitResults); //should have been reset by recycler, but just in case
+	}
 
 	auto locReactions = DAnalysis::Get_Reactions(locEventLoop);
 	if(dDebugLevel > 0)
@@ -294,6 +297,7 @@ jerror_t DAnalysisResults_factory::evnt(JEventLoop* locEventLoop, uint64_t event
 		{
 			auto& locReaction = locReactionComboPair.first;
 			auto& locCombos = locReactionComboPair.second;
+//cout << "event, #combos: " << locEventLoop->GetJEvent().GetEventNumber() << ", " << locCombos.size() << endl;
 
 			//FIND TRUE COMBO (IF MC)
 			auto locTrueParticleCombo = Find_TrueCombo(locEventLoop, locReaction, locCombos);

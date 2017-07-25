@@ -333,7 +333,7 @@ inline void DSourceComboer::Recycle_Vectors(void)
 		locTempCombo.swap(*locComboVector); //reduces capacity of combo vector to dInitialComboVectorCapacity
 		dResourcePool_SourceComboVector.Recycle(locComboVector);
 	}
-	dCreatedComboVectors.clear();
+	decltype(dCreatedComboVectors)().swap(dCreatedComboVectors);
 }
 
 inline vector<const DSourceCombo*>* DSourceComboer::Get_SourceComboVectorResource(void)

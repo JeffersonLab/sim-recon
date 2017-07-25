@@ -111,11 +111,11 @@ inline void DSourceComboP4Handler::Reset(void)
 {
 	Fill_Histograms();
 	for(auto& locPIDPair : dInvariantMasses)
-		locPIDPair.second.clear();
+		decltype(locPIDPair.second)().swap(locPIDPair.second);
 	for(auto& locPIDPair : dMissingMassPairs)
-		locPIDPair.second.clear();
+		decltype(locPIDPair.second)().swap(locPIDPair.second);
 	for(auto& locSystemPair : d2GammaInvariantMasses)
-		locSystemPair.second.clear();
+		decltype(locSystemPair.second)().swap(locSystemPair.second);
 
 	dInvariantMassFilledSet.clear();
 	dInvariantMassFilledSet_MassiveNeutral.clear();
