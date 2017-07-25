@@ -130,9 +130,6 @@ template <typename DType> class DResourcePool : public std::enable_shared_from_t
 		alignas(Get_CacheLineSize()) static size_t dMaxSharedPoolSize;
 		alignas(Get_CacheLineSize()) static size_t dPoolCounter; //must be accessed within a lock due to how it's used in destructor: freeing all resources
 		alignas(Get_CacheLineSize()) static atomic<size_t> dObjectCounter; //can be accessed without a lock!
-
-		alignas(Get_CacheLineSize()) size_t dContainerResourceMaxCapacity = 1000;
-		alignas(Get_CacheLineSize()) size_t dContainerResourceReduceCapacityTo = 100;
 };
 
 /********************************************************************************* DSharedPtrRecycler *********************************************************************************/
@@ -177,7 +174,8 @@ template <typename DType> DResourcePool<DType>::DResourcePool(void)
 		++dPoolCounter;
 		if(dDebugLevel > 0)
 			cout << "CONSTRUCTOR THREAD COUNTER " << typeid(DType).name() << ": " << dPoolCounter << endl;
-		dResourcePool_Shared.reserve(dMaxSharedPoolSize);
+		if(dPoolCounter == 1)
+			dResourcePool_Shared.reserve(dMaxSharedPoolSize);
 	} //UNLOCK
 }
 
