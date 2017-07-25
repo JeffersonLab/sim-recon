@@ -104,8 +104,8 @@ class DTreeInterface
 
 		/******************************************************************* FILL *******************************************************************/
 
-		void Increase_ArraySize(string locBranchName, type_index locTypeIndex, size_t locNewArraySize);
-		template <typename DType> void Increase_ArraySize(string locBranchName, int locNewArraySize);
+		void Change_ArraySize(string locBranchName, type_index locTypeIndex, size_t locNewArraySize);
+		template <typename DType> void Change_ArraySize(string locBranchName, int locNewArraySize);
 		void Fill(string locBranchName, type_index locTypeIndex, void* locVoidPointer, bool locIsArrayFlag, size_t locArrayIndex = 0);
 		template <typename DType> void Fill_TObject(string locBranchName, DType& locObject, bool locIsArrayFlag, size_t locArrayIndex);
 
@@ -150,6 +150,7 @@ class DTreeInterface
 		//These objects are kept here because they must be kept somewhere: 
 			//branches addresses of pointers, so pointers must reside somewhere permanent
 			//However, for fundamental objects/arrays: memory stored in the branches themselves: don't need to hold onto them
+		size_t dMaxArraySize = 1000;
 		map<string, TClonesArray*> dMemoryMap_ClonesArray;
 		map<string, TObject*> dMemoryMap_TObject;
 };
@@ -257,7 +258,7 @@ inline void DTreeInterface::Set_TreeIndexBranchNames(string locTreeIndex_MajorBr
 }
 
 //INCREASE ARRAY SIZE
-template <typename DType> inline void DTreeInterface::Increase_ArraySize(string locBranchName, int locNewArraySize)
+template <typename DType> inline void DTreeInterface::Change_ArraySize(string locBranchName, int locNewArraySize)
 {
 	//create a new, larger array if the current one is too small
 		//DOES NOT copy the old results!  In other words, only call BETWEEN entries, not DURING an entry

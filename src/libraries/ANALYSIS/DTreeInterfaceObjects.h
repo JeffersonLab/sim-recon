@@ -107,6 +107,46 @@ template <typename DType> inline void DTreeBranchRegister::Register_ClonesArray(
 
 /******************************************************************* DTreeFillData ********************************************************************/
 
+//Want to abstract the fill type so we can hold them in a container without dynamically allocating void*'s
+class DFillBaseClass
+{
+	public:
+		virtual ~DFillBaseClass(){};
+		virtual void* Get(size_t locArrayIndex) = 0;
+		virtual void Check_Capacity(void) = 0;
+};
+
+template <typename DType>
+class DFillClass : public DFillBaseClass
+{
+	public:
+		deque<DType> dFillData; //must use deque because vector<bool> won't compile!!!
+
+		~DFillClass(){};
+
+		void* Get(size_t locArrayIndex);
+		void Check_Capacity(void);
+
+	private:
+		size_t dMaxFillVectorSize = 1000; //if exceeds this, will drop down on next event
+};
+
+template <typename DType> inline void* DFillClass<DType>::Get(size_t locArrayIndex)
+{
+//	typename vector<DType>::iterator locIterator = dFillData.begin();
+//	std::advance(locIterator, locArrayIndex);
+//	DType& locElementReference = dFillData[locArrayIndex];
+//	DType* locElementPointer = &locElementReference;
+	return static_cast<void*>(&(dFillData[locArrayIndex]));
+}
+
+template <typename DType> inline void DFillClass<DType>::Check_Capacity(void)
+{
+	if(dFillData.size() <= dMaxFillVectorSize)
+		return;
+	dFillData.resize(dMaxFillVectorSize);
+}
+
 //Need one per thread:
 	//If this is created within the scope of a single object that is shared amongst all threads (e.g. plugin processor): static thread-local variable
 		//Data stored as void*: Requires new on creation and delete on destruction: Try to re-use object
@@ -121,9 +161,7 @@ class DTreeFillData
 		template <typename DType> void Fill_Array(string locBranchName, const DType& locData, unsigned int locArrayIndex);
 
 	private:
-		void Delete(type_index& locTypeIndex, deque<void*>& locVoidDeque);
-
-		map<string, pair<type_index, deque<void*> > > dFillData;
+		map<string, pair<type_index, DFillBaseClass*> > dFillData;
 		map<string, size_t> dArrayLargestIndexFilledMap; //can be less than the size //reset by DTreeInterface after fill
 };
 
@@ -137,26 +175,18 @@ template <typename DType> inline void DTreeFillData::Fill_Single(string locBranc
 	auto locIterator = dFillData.find(locBranchName);
 	if(locIterator == dFillData.end())
 	{
-		//create new object, save in deque
-		void* locVoidData = static_cast<void*>(new DType(locData));
-		deque<void*> locVoidDeque(1, locVoidData);
-
-		//register in map
-		pair<type_index, deque<void*> > locTypePair(locTypeIndex, locVoidDeque);
-		pair<string, pair<type_index, deque<void*> > > locMapPair(locBranchName, locTypePair);
-		dFillData.insert(locMapPair);
-
-		return;
+		//create new object, register in map
+		auto locFillClass = new DFillClass<DType>();
+		locFillClass->dFillData.push_back(locData);
+		dFillData.emplace(locBranchName, std::make_pair(locTypeIndex, static_cast<DFillBaseClass*>(locFillClass)));
 	}
-
-	if(locTypeIndex != locIterator->second.first)
-	{
+	else if(locTypeIndex != locIterator->second.first)
 		cout << "WARNING: CANNOT FILL: IS WRONG TYPE FOR BRANCH " << locBranchName << endl;
-		return;
+	else
+	{
+		auto locFillClass = static_cast<DFillClass<DType>*>(locIterator->second.second);
+		locFillClass->dFillData[0] = locData;
 	}
-
-	deque<void*>& locVoidDeque = locIterator->second.second;
-	*(static_cast<DType*>(locVoidDeque[0])) = locData;
 }
 
 template <typename DType> inline void DTreeFillData::Fill_Array(string locBranchName, const DType& locData, unsigned int locArrayIndex)
@@ -167,41 +197,31 @@ template <typename DType> inline void DTreeFillData::Fill_Array(string locBranch
 	auto locIterator = dFillData.find(locBranchName);
 	if(locIterator == dFillData.end())
 	{
-		//create a new deque, and fill it with new objects
-		deque<void*> locVoidDeque(locArrayIndex + 1);
-		for(size_t loc_i = 0; loc_i < (locArrayIndex + 1); ++loc_i)
-			locVoidDeque[loc_i] = static_cast<void*>(new DType());
+		//create new object, register in map
+		auto locFillClass = new DFillClass<DType>();
+		dFillData.emplace(locBranchName, std::make_pair(locTypeIndex, static_cast<DFillBaseClass*>(locFillClass)));
 
-		//save the new data
-		*(static_cast<DType*>(locVoidDeque[locArrayIndex])) = locData;
-
-		//register with the map
-		pair<type_index, deque<void*> > locTypePair(locTypeIndex, locVoidDeque);
-		pair<string, pair<type_index, deque<void*> > > locMapPair(locBranchName, locTypePair);
-		dFillData.insert(locMapPair);
-
+		//fill
+		locFillClass->dFillData.resize(locArrayIndex);
+		locFillClass->dFillData[locArrayIndex] = locData;
 		dArrayLargestIndexFilledMap[locBranchName] = locArrayIndex;
-		return;
 	}
 	else if(locTypeIndex != locIterator->second.first)
-	{
 		cout << "WARNING: CANNOT FILL: IS WRONG TYPE FOR BRANCH " << locBranchName << endl;
-		return;
+	else
+	{
+		auto locFillClass = static_cast<DFillClass<DType>*>(locIterator->second.second);
+
+		//resize if needed & fill
+		if(locArrayIndex > locFillClass->dFillData.size())
+			locFillClass->dFillData.resize(locArrayIndex);
+		locFillClass->dFillData[locArrayIndex] = locData;
+
+		//register largest index filled
+		auto& locLargestIndexFilled = dArrayLargestIndexFilledMap[locBranchName];
+		if(locArrayIndex > locLargestIndexFilled)
+			locLargestIndexFilled = locArrayIndex;
 	}
-
-	deque<void*>& locVoidDeque = locIterator->second.second;
-
-	//expand deque if needed
-	for(size_t loc_i = locVoidDeque.size(); loc_i <= locArrayIndex; ++loc_i)
-		locVoidDeque.push_back(static_cast<void*>(new DType));
-
-	//set the data
-	*(static_cast<DType*>(locVoidDeque[locArrayIndex])) = locData;
-
-	//register largest index filled
-	auto& locLargestIndexFilled = dArrayLargestIndexFilledMap[locBranchName];
-	if(locArrayIndex > locLargestIndexFilled)
-		locLargestIndexFilled = locArrayIndex;
 }
 
 /************************************************************* DTreeFillData: DESTRUCTOR **************************************************************/
@@ -210,51 +230,8 @@ inline DTreeFillData::~DTreeFillData(void)
 {
 	//delete all memory (void*'s)
 	//loop over branches
-	for(auto& locBranchIterator : dFillData)
-	{
-		string locBranchName = locBranchIterator.first;
-		type_index& locTypeIndex = locBranchIterator.second.first;
-		deque<void*>& locVoidDeque = locBranchIterator.second.second;
-		Delete(locTypeIndex, locVoidDeque);
-	}
-}
-
-inline void DTreeFillData::Delete(type_index& locTypeIndex, deque<void*>& locVoidDeque)
-{
-	for(size_t loc_i = 0; loc_i < locVoidDeque.size(); ++loc_i)
-	{
-		//Fundamental types
-		if(locTypeIndex == type_index(typeid(Char_t)))
-			delete (static_cast<Char_t*>(locVoidDeque[loc_i]));
-		else if(locTypeIndex == type_index(typeid(UChar_t)))
-			delete (static_cast<UChar_t*>(locVoidDeque[loc_i]));
-		else if(locTypeIndex == type_index(typeid(Short_t)))
-			delete (static_cast<Short_t*>(locVoidDeque[loc_i]));
-		else if(locTypeIndex == type_index(typeid(UShort_t)))
-			delete (static_cast<UShort_t*>(locVoidDeque[loc_i]));
-		else if(locTypeIndex == type_index(typeid(Int_t)))
-			delete (static_cast<Int_t*>(locVoidDeque[loc_i]));
-		else if(locTypeIndex == type_index(typeid(UInt_t)))
-			delete (static_cast<UInt_t*>(locVoidDeque[loc_i]));
-		else if(locTypeIndex == type_index(typeid(Float_t)))
-			delete (static_cast<Float_t*>(locVoidDeque[loc_i]));
-		else if(locTypeIndex == type_index(typeid(Double_t)))
-			delete (static_cast<Double_t*>(locVoidDeque[loc_i]));
-		else if(locTypeIndex == type_index(typeid(Long64_t)))
-			delete (static_cast<Long64_t*>(locVoidDeque[loc_i]));
-		else if(locTypeIndex == type_index(typeid(ULong64_t)))
-			delete (static_cast<ULong64_t*>(locVoidDeque[loc_i]));
-		else if(locTypeIndex == type_index(typeid(Bool_t)))
-			delete (static_cast<Bool_t*>(locVoidDeque[loc_i]));
-
-		//TObject
-		else if(locTypeIndex == type_index(typeid(TVector3)))
-			delete (static_cast<TVector3*>(locVoidDeque[loc_i]));
-		else if(locTypeIndex == type_index(typeid(TVector2)))
-			delete (static_cast<TVector2*>(locVoidDeque[loc_i]));
-		else if(locTypeIndex == type_index(typeid(TLorentzVector)))
-			delete (static_cast<TLorentzVector*>(locVoidDeque[loc_i]));
-	}
+	for(auto& locBranchPair : dFillData)
+		delete locBranchPair.second.second;
 }
 
 #endif //DTreeInterfaceObjects
