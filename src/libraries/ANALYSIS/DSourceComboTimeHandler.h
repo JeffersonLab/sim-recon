@@ -188,12 +188,8 @@ inline signed char DSourceComboTimeHandler::Get_PhotonVertexZBin(double locVerte
 {
 	//given some vertex-z, what bin am I in?
 	int locPhotonVertexZBin = int((locVertexZ - dPhotonVertexZRangeLow)/dPhotonVertexZBinWidth);
-	if(locPhotonVertexZBin < 0)
-		return 0;
-	if(locPhotonVertexZBin >= int(dNumPhotonVertexZBins))
-		return dNumPhotonVertexZBins - 1;
-//	if((locPhotonVertexZBin < 0) || (locPhotonVertexZBin >= int(dNumPhotonVertexZBins)))
-//		return DSourceComboInfo::Get_VertexZIndex_Unknown();
+	if((locPhotonVertexZBin < 0) || (locPhotonVertexZBin >= int(dNumPhotonVertexZBins)))
+		return DSourceComboInfo::Get_VertexZIndex_Unknown();
 	return locPhotonVertexZBin;
 }
 

@@ -292,8 +292,8 @@ void DTreeInterface::Fill(DTreeFillData& locTreeFillData)
 			{
 				auto locClonesArray = Get_Pointer_TClonesArray(locBranchName);
 				locClonesArray->Clear(); //empties array
-				if(size_t(locClonesArray->GetEntriesFast()) > dMaxArraySize)
-					locClonesArray->Expand(dMaxArraySize);
+//				if(size_t(locClonesArray->GetEntriesFast()) > dMaxArraySize)
+//					locClonesArray->Expand(dMaxArraySize);
 			}
 
 			//fill array

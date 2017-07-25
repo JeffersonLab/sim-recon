@@ -5,22 +5,7 @@
 /*
  * PROBLEMS:
  * 
- * crash on exit in ubuntu???: TClonesArray branches invalidated after several threads close
  * Test hist kinematics with flag = true
- * Uncomment accurate photons cut
- * edit Get_PhotonVertexZBin()
- * delete lines in tree filler if no more crashes
- *
- * running with all:
- * 2pi0, pi0eta, 2pi0eta, pi0g, 2eta down by 2x from master
- * pimpip2eta down by 1.5x from master
- * 3pi0 down 3x from master
- *
- * Fewer FCAL gammas. Either: 
- * FCAL pi0s don't get created
- * FCAL/BCAL pi0s don't get created
- * FCAL pi0s don't get combined with protons
- * FCAL/BCAL pi0s don't get combined with protons
  *
  * TESTING:
  * p2pi: OK
@@ -1462,8 +1447,8 @@ void DSourceComboer::Combo_WithBeam(const vector<const DReaction*>& locReactions
 			++(dNumCombosSurvivedStageTracker[locReaction][DConstructionStage::MMVertex_IMCuts]);
 
 		//place invariant mass cuts using accurate photon kinematics
-//		if(!dSourceComboP4Handler->Cut_InvariantMass_AccuratePhotonKinematics(locReactionVertexInfo, locReactionFullCombo, locBeamParticle, locRFBunch))
-//			continue; //FAILED MASS CUTS!
+		if(!dSourceComboP4Handler->Cut_InvariantMass_AccuratePhotonKinematics(locReactionVertexInfo, locReactionFullCombo, locBeamParticle, locRFBunch))
+			continue; //FAILED MASS CUTS!
 		for(const auto& locReaction : locReactions)
 			++(dNumCombosSurvivedStageTracker[locReaction][DConstructionStage::AccuratePhoton_IM]);
 
