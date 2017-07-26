@@ -1158,13 +1158,15 @@ bool DSourceComboTimeHandler::Get_RFBunches_ChargedTrack(const DChargedTrackHypo
 
 	auto locPID = locHypothesis->PID();
 	auto locSystem = locHypothesis->t1_detector();
+	if(locSystem == SYS_NULL)
+		return false; //no timing info
 	if(locSystem == SYS_START)
 	{
 		//special case: only cut if only matched to 1 ST hit
 		vector<shared_ptr<const DSCHitMatchParams>> locSCMatchParams;
 		dDetectorMatches->Get_SCMatchParams(locHypothesis->Get_TrackTimeBased(), locSCMatchParams);
 		if(locSCMatchParams.size() > 1)
-			return true; //don't cut on timing! can't tell for sure!
+			return false; //don't cut on timing! can't tell for sure!
 	}
 
 	auto locX4 = Get_ChargedPOCAToVertexX4(locHypothesis, locIsProductionVertex, locVertexPrimaryCombo, locVertex);
@@ -1172,11 +1174,11 @@ bool DSourceComboTimeHandler::Get_RFBunches_ChargedTrack(const DChargedTrackHypo
 
 	auto locP = locHypothesis->momentum().Mag();
 	auto locCutFunc = Get_TimeCutFunction(locPID, locSystem);
-	auto locDeltaTCut = (locCutFunc != nullptr) ? locCutFunc->Eval(locP) : 9999999.0; //if null, still use for histogramming
+	auto locDeltaTCut = (locCutFunc != nullptr) ? locCutFunc->Eval(locP) : 3.0; //if null will return false, but still use for histogramming
 
 //TEMP!!
 locVertexTime = locHypothesis->time();
-locPropagatedRFTime += (locVertex.Z() - locHypothesis->position().Z())/SPEED_OF_LIGHT;
+locPropagatedRFTime += (locHypothesis->position().Z() - locVertex.Z())/SPEED_OF_LIGHT;
 
 	locRFBunches = Calc_BeamBunchShifts(locVertexTime, locPropagatedRFTime, locDeltaTCut, false, locPID, locSystem, locP);
 	return (locCutFunc != nullptr);
