@@ -311,7 +311,7 @@ DSourceComboP4Handler::DSourceComboP4Handler(DSourceComboer* locSourceComboer, b
 			if(locHist == nullptr)
 			{
 				string locHistTitle = string("None Missing: From All Production Mechanisms; Missing Pz (GeV/c); Missing Transverse Momentum (GeV/c)");
-				dHist_NoneMissing_MissingPtVsMissingPz_PostMissMassSqCut = new TH2I(locHistName.c_str(), locHistTitle.c_str(), 1200, -6.0, 6.0, 800, 0.0, 4.0);
+				dHist_NoneMissing_MissingPtVsMissingPz_PostMissMassSqCut = new TH2I(locHistName.c_str(), locHistTitle.c_str(), 1200, -6.0, 6.0, 600, 0.0, 3.0);
 			}
 			else
 				dHist_NoneMissing_MissingPtVsMissingPz_PostMissMassSqCut = static_cast<TH2*>(locHist);
