@@ -6,6 +6,9 @@
  * PROBLEMS:
  * 
  * Test hist kinematics with flag = true
+ * kaons: cut if no TOF/FCAL/BCAL/CDC (cut even if ST)
+ * st timing cut: only if no CDC dE/dx info
+ * fix step vertex z
  *
  * TESTING:
  * p2pi: OK
@@ -916,12 +919,19 @@ void DSourceComboer::Reset_NewEvent(JEventLoop* locEventLoop)
 	const DEventRFBunch* locInitialRFBunch = nullptr;
 	locEventLoop->GetSingle(locInitialRFBunch);
 
+	const DDetectorMatches* locDetectorMatches = nullptr;
+	locEventLoop->GetSingle(locDetectorMatches, "Combo");
+
+const DVertex* locVertex = nullptr;
+locEventLoop->GetSingle(locVertex);
+dSourceComboVertexer->Set_Vertex(locVertex);
+
     vector<const DESSkimData*> locESSkimDataVector;
     locEventLoop->Get(locESSkimDataVector);
     dESSkimData = locESSkimDataVector.empty() ? NULL : locESSkimDataVector[0];
 
 	//SETUP NEUTRAL SHOWERS
-	dSourceComboTimeHandler->Setup_NeutralShowers(locNeutralShowers, locInitialRFBunch);
+	dSourceComboTimeHandler->Setup(locNeutralShowers, locInitialRFBunch, locDetectorMatches);
 	dSourceComboP4Handler->Set_PhotonKinematics(dSourceComboTimeHandler->Get_PhotonKinematics());
 	dShowersByBeamBunchByZBin = dSourceComboTimeHandler->Get_ShowersByBeamBunchByZBin();
 	for(auto& locZBinPair : dShowersByBeamBunchByZBin)
@@ -943,7 +953,7 @@ void DSourceComboer::Reset_NewEvent(JEventLoop* locEventLoop)
 		for(const auto& locChargedHypo : locChargedTrack->dChargedTrackHypotheses)
 		{
 			if(dDebugLevel >= 5)
-				cout << "track, hypo, pid = " << locChargedTrack << ", " << locChargedHypo << ", " << locChargedHypo->PID() << endl;
+				cout << "track, hypo, pid, t1 system = " << locChargedTrack << ", " << locChargedHypo << ", " << locChargedHypo->PID() << ", " << locChargedHypo->t1_detector() << endl;
 			if(!Cut_dEdxAndEOverP(locChargedHypo))
 				continue;
 			if(dDebugLevel >= 5)

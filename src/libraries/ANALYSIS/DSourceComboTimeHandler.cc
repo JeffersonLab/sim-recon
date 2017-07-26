@@ -282,6 +282,20 @@ DSourceComboTimeHandler::DSourceComboTimeHandler(JEventLoop* locEventLoop, DSour
 	dSelectedRFDeltaTs.emplace(AntiProton, dSelectedRFDeltaTs[Electron]);
 	dAllRFDeltaTs = dSelectedRFDeltaTs;
 
+	// Timing Cuts: Start counter
+	// Start counter is special case: Since next to the target, and lower timing resolution, cannot separate PIDs
+	// However, we can separate out-of-time backgrounds from the event (e.g. e+/-, or ghost tracks)
+	// But, we have to be careful: If a lot of hits in the SC, we may accidentally choose the wrong SC hit
+	// This is especially true for low-theta tracks: phi not well defined.
+	// So, this cut will only be applied IF no other PID timing information is available, AND if ONLY 1 ST hit matched to the track in space
+	for(auto& locPIDPair : dPIDTimingCuts)
+	{
+		if(ParticleCharge(locPIDPair.first) == 0)
+			continue;
+		locPIDPair.second.emplace(SYS_START, new TF1("df_TimeCut", "[0]", 0.0, 12.0));
+		locPIDPair.second[SYS_START]->SetParameter(0, 2.0);
+	}
+
 	vector<DetectorSystem_t> locTimingSystems_Charged {SYS_TOF, SYS_BCAL, SYS_FCAL, SYS_START};
 	vector<DetectorSystem_t> locTimingSystems_Neutral {SYS_BCAL, SYS_FCAL};
 	vector<Particle_t> locPIDs {Unknown, Gamma, Electron, Positron, MuonPlus, MuonMinus, PiPlus, PiMinus, KPlus, KMinus, Proton, AntiProton};
@@ -385,7 +399,7 @@ DLorentzVector DSourceComboTimeHandler::Get_ChargedParticlePOCAToVertexX4(const 
 	return ((locIterator != dChargedParticlePOCAToVertexX4.end()) ? locIterator->second : DLorentzVector(locHypothesis->position(), locHypothesis->time()));
 }
 
-void DSourceComboTimeHandler::Setup_NeutralShowers(const vector<const DNeutralShower*>& locNeutralShowers, const DEventRFBunch* locInitialEventRFBunch)
+void DSourceComboTimeHandler::Setup(const vector<const DNeutralShower*>& locNeutralShowers, const DEventRFBunch* locInitialEventRFBunch, const DDetectorMatches* locDetectorMatches)
 {
 	//Precompute a few things for the neutral showers, before comboing
 	//Even if it turns out some of this isn't technically needed,
@@ -393,6 +407,7 @@ void DSourceComboTimeHandler::Setup_NeutralShowers(const vector<const DNeutralSh
 
 	//GET RF BUNCH
 	dInitialEventRFBunch = locInitialEventRFBunch;
+	dDetectorMatches = locDetectorMatches;
 
 	//ARRANGE NEUTRAL SHOWERS
 	//also, save to unknown-z, unknown-rf (all showers)
@@ -1141,6 +1156,14 @@ bool DSourceComboTimeHandler::Get_RFBunches_ChargedTrack(const DChargedTrackHypo
 
 	auto locPID = locHypothesis->PID();
 	auto locSystem = locHypothesis->t1_detector();
+	if(locSystem == SYS_START)
+	{
+		//special case: only cut if only matched to 1 ST hit
+		vector<shared_ptr<const DSCHitMatchParams>> locSCMatchParams;
+		dDetectorMatches->Get_SCMatchParams(locHypothesis->Get_TrackTimeBased(), locSCMatchParams);
+		if(locSCMatchParams.size() > 1)
+			return true; //don't cut on timing! can't tell for sure!
+	}
 
 	auto locX4 = Get_ChargedPOCAToVertexX4(locHypothesis, locIsProductionVertex, locVertexPrimaryCombo, locVertex);
 	auto locVertexTime = locX4.T() - locTimeOffset;
@@ -1148,10 +1171,6 @@ bool DSourceComboTimeHandler::Get_RFBunches_ChargedTrack(const DChargedTrackHypo
 	auto locP = locHypothesis->momentum().Mag();
 	auto locCutFunc = Get_TimeCutFunction(locPID, locSystem);
 	auto locDeltaTCut = (locCutFunc != nullptr) ? locCutFunc->Eval(locP) : 3.0; //if null, still use for histogramming
-
-//TEMP!!!
-locVertexTime = locHypothesis->time();
-locPropagatedRFTime += (locHypothesis->position().Z() - locVertex.Z())/SPEED_OF_LIGHT;
 
 	locRFBunches = Calc_BeamBunchShifts(locVertexTime, locPropagatedRFTime, locDeltaTCut, false, locPID, locSystem, locP);
 	return (locCutFunc != nullptr);

@@ -18,6 +18,7 @@
 #include "PID/DNeutralShower.h"
 #include "PID/DChargedTrackHypothesis.h"
 #include "PID/DEventRFBunch.h"
+#include "PID/DDetectorMatches.h"
 #include "ANALYSIS/DSourceCombo.h"
 #include "ANALYSIS/DReactionVertexInfo.h"
 #include "ANALYSIS/DAnalysisUtilities.h"
@@ -42,7 +43,7 @@ class DSourceComboTimeHandler
 
 		//SETUP
 		void Reset(void);
-		void Setup_NeutralShowers(const vector<const DNeutralShower*>& locNeutralShowers, const DEventRFBunch* locInitialEventRFBunch);
+		void Setup(const vector<const DNeutralShower*>& locNeutralShowers, const DEventRFBunch* locInitialEventRFBunch, const DDetectorMatches* locDetectorMatches);
 		void Set_BeamParticles(const vector<const DBeamPhoton*>& locBeamParticles);
 
 		//GET SETUP RESULTS
@@ -129,6 +130,7 @@ class DSourceComboTimeHandler
 
 		//SHOWERS SORTED BY RF BUNCH
 		const DEventRFBunch* dInitialEventRFBunch = nullptr;
+		const DDetectorMatches* dDetectorMatches = nullptr;
 
 		//zbins: showers are stored based on what zbins they are VALID for
 		//that means that the FCAL showers will appear in EVERY zbin: duplicate entries

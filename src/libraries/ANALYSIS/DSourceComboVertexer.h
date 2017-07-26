@@ -22,6 +22,7 @@
 #include "ANALYSIS/DKinFitUtils_GlueX.h"
 #include "ANALYSIS/DAnalysisUtilities.h"
 
+#include "PID/DVertex.h"
 using namespace std;
 
 namespace DAnalysis
@@ -39,7 +40,7 @@ class DSourceComboVertexer
 		DSourceComboVertexer(void) = delete;
 		DSourceComboVertexer(JEventLoop* locEventLoop, DSourceComboer* locSourceComboer, DSourceComboP4Handler* locSourceComboP4Handler);
 		void Reset(void);
-
+void Set_Vertex(const DVertex* locVertex){dVertex = locVertex;}
 		//SETUP
 		void Set_SourceComboTimeHandler(const DSourceComboTimeHandler* locSourceComboTimeHandler){dSourceComboTimeHandler = locSourceComboTimeHandler;}
 
@@ -84,6 +85,7 @@ class DSourceComboVertexer
 
 		//EXPERIMENT INFORMATION
 		DVector3 dTargetCenter;
+const DVertex* dVertex;
 		double dMinThetaForVertex = 30.0;
 
 		//DETERMINABILITY
