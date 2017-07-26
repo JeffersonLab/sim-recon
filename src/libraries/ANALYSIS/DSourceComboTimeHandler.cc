@@ -617,10 +617,10 @@ bool DSourceComboTimeHandler::Select_RFBunches_Charged(const DReactionVertexInfo
 	auto locRFIterator = dChargedComboRFBunches.find(locReactionChargedCombo);
 	if(locRFIterator != dChargedComboRFBunches.end())
 	{
-		locValidRFBunches = locRFIterator->second; //already computed, return results!!
+		locValidRFBunches = locRFIterator->second.second; //already computed, return results!!
 		if(dDebugLevel >= 10)
-			cout << "Previously done, # valid bunches = " << locValidRFBunches.size() << endl;
-		return (!locValidRFBunches.empty());
+			cout << "Previously done, passed flag, # valid bunches = " << locRFIterator->second.first << ", " << locValidRFBunches.size() << endl;
+		return locRFIterator->second.first;
 	}
 
 	//All charged tracks that are at a known vertex position vote, even those not at the primary vertex
@@ -659,7 +659,7 @@ bool DSourceComboTimeHandler::Select_RFBunches_Charged(const DReactionVertexInfo
 
 			if(locParticleRFBunches.empty())
 			{
-				dChargedComboRFBunches.emplace(locReactionChargedCombo, vector<int>{});
+				dChargedComboRFBunches.emplace(locReactionChargedCombo, std::make_pair(false, vector<int>{}));
 				return false;
 			}
 
@@ -668,13 +668,13 @@ bool DSourceComboTimeHandler::Select_RFBunches_Charged(const DReactionVertexInfo
 				cout << "#common bunches = " << locValidRFBunches.size() << endl;
 			if(locValidRFBunches.empty())
 			{
-				dChargedComboRFBunches.emplace(locReactionChargedCombo, vector<int>{});
+				dChargedComboRFBunches.emplace(locReactionChargedCombo, std::make_pair(false, vector<int>{}));
 				return false;
 			}
 		}
 	}
 
-	dChargedComboRFBunches.emplace(locReactionChargedCombo, locValidRFBunches);
+	dChargedComboRFBunches.emplace(locReactionChargedCombo, std::make_pair(true, locValidRFBunches));
 	if(dDebugLevel >= 10)
 		cout << "# valid bunches = " << locValidRFBunches.size() << endl;
 	return true;
@@ -689,8 +689,8 @@ bool DSourceComboTimeHandler::Select_RFBunches_PhotonVertices(const DReactionVer
 	auto locRFIterator = dPhotonVertexRFBunches.find(locReactionFullCombo);
 	if(locRFIterator != dPhotonVertexRFBunches.end())
 	{
-		locValidRFBunches = locRFIterator->second; //already computed, return results!!
-		return (!locValidRFBunches.empty());
+		locValidRFBunches = locRFIterator->second.second; //already computed, return results!!
+		return locRFIterator->second.first;
 	}
 
 	//loop over vertices
@@ -763,7 +763,7 @@ bool DSourceComboTimeHandler::Select_RFBunches_PhotonVertices(const DReactionVer
 
 			if(locParticleRFBunches.empty())
 			{
-				dPhotonVertexRFBunches.emplace(locReactionFullCombo, vector<int>{});
+				dPhotonVertexRFBunches.emplace(locReactionFullCombo, std::make_pair(false, vector<int>{}));
 				return false;
 			}
 			if(locValidRFBunches.empty())
@@ -778,13 +778,13 @@ bool DSourceComboTimeHandler::Select_RFBunches_PhotonVertices(const DReactionVer
 				cout << "#common bunches = " << locValidRFBunches.size() << endl;
 			if(locValidRFBunches.empty())
 			{
-				dPhotonVertexRFBunches.emplace(locReactionFullCombo, vector<int>{});
+				dPhotonVertexRFBunches.emplace(locReactionFullCombo, std::make_pair(false, vector<int>{}));
 				return false;
 			}
 		}
 	}
 
-	dPhotonVertexRFBunches.emplace(locReactionFullCombo, locValidRFBunches);
+	dPhotonVertexRFBunches.emplace(locReactionFullCombo, std::make_pair(true, locValidRFBunches));
 	return true;
 }
 
@@ -794,8 +794,8 @@ bool DSourceComboTimeHandler::Select_RFBunches_AllVerticesUnknown(const DReactio
 	auto locRFIterator = dPhotonVertexRFBunches.find(locReactionFullCombo);
 	if(locRFIterator != dPhotonVertexRFBunches.end())
 	{
-		locValidRFBunches = locRFIterator->second; //already computed, return results!!
-		return (!locValidRFBunches.empty());
+		locValidRFBunches = locRFIterator->second.second; //already computed, return results!!
+		return locRFIterator->second.first;
 	}
 
 	locValidRFBunches.clear();
@@ -837,7 +837,7 @@ bool DSourceComboTimeHandler::Select_RFBunches_AllVerticesUnknown(const DReactio
 
 		if(locParticleRFBunches.empty())
 		{
-			dPhotonVertexRFBunches.emplace(locReactionFullCombo, vector<int>{});
+			dPhotonVertexRFBunches.emplace(locReactionFullCombo, std::make_pair(false, vector<int>{}));
 			return false;
 		}
 		if(locValidRFBunches.empty())
@@ -850,12 +850,12 @@ bool DSourceComboTimeHandler::Select_RFBunches_AllVerticesUnknown(const DReactio
 		locValidRFBunches = Get_CommonRFBunches(locValidRFBunches, locParticleRFBunches);
 		if(locValidRFBunches.empty())
 		{
-			dPhotonVertexRFBunches.emplace(locReactionFullCombo, vector<int>{});
+			dPhotonVertexRFBunches.emplace(locReactionFullCombo, std::make_pair(false, vector<int>{}));
 			return false;
 		}
 	}
 
-	dPhotonVertexRFBunches.emplace(locReactionFullCombo, locValidRFBunches);
+	dPhotonVertexRFBunches.emplace(locReactionFullCombo, std::make_pair(true, locValidRFBunches));
 	return true;
 }
 

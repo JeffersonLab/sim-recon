@@ -1279,7 +1279,7 @@ DCombosByReaction DSourceComboer::Build_ParticleCombos(const DReactionVertexInfo
 
 	if(dDebugLevel > 0)
 	{
-		cout << "Charged combos built." << endl;
+		cout << "Charged combos built: " << locReactionChargedCombos.size() << endl;
 		if(locReactionChargedCombos.empty())
 			cout << "no combos for event: " << dEventNumber << endl;
 	}
@@ -1351,11 +1351,11 @@ void DSourceComboer::Combo_WithNeutralsAndBeam(const vector<const DReaction*>& l
 	if(dDebugLevel > 0)
 		cout << "Comboing neutrals, z-dependent." << endl;
 	Create_SourceCombos(locZDependentComboUse, d_MixedStage, locReactionChargedCombo, 0);
-	if(dDebugLevel > 0)
-		cout << "Neutral combos created." << endl;
 
 	//Then, get the full combos, but only those that satisfy the charged RF bunches
 	const auto& locReactionFullCombos = Get_CombosForComboing(locZDependentComboUse, d_MixedStage, locBeamBunches_Charged, locReactionChargedCombo);
+	if(dDebugLevel > 0)
+		cout << "Neutral combos created, # with the charged RF bunches: " << locReactionFullCombos.size() << endl;
 	for(auto& locReaction : locReactions)
 		dNumCombosSurvivedStageTracker[locReaction][DConstructionStage::Full_Combos] += locReactionFullCombos.size();
 

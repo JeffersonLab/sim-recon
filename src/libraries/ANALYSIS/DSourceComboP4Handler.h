@@ -97,6 +97,15 @@ class DSourceComboP4Handler
 		map<Particle_t, pair<TF1*, TF1*>> dMissingMassSquaredCuts; //cuts are function of beam energy //For none missing, Particle_t = unknown
 
 		//HISTOGRAMS
+		TH2* dHist_NoneMissing_MissingPzVsBeamEnergy_PreMissMassSqCut;
+		vector<pair<float, float>> dMissingPzVsBeamEnergy_PreMissMassSqCut;
+		TH2* dHist_NoneMissing_MissingPzVsBeamEnergy_PostMissMassSqCut;
+		vector<pair<float, float>> dMissingPzVsBeamEnergy_PostMissMassSqCut;
+		TH2* dHist_NoneMissing_MissingPtVsMissingPz_PreMissMassSqCut;
+		vector<pair<float, float>> dMissingPtVsMissingPz_PreMissMassSqCut;
+		TH2* dHist_NoneMissing_MissingPtVsMissingPz_PostMissMassSqCut;
+		vector<pair<float, float>> dMissingPtVsMissingPz_PostMissMassSqCut;
+
 		set<tuple<Particle_t, const DSourceCombo*>> dInvariantMassFilledSet; //only filled once per combo, even if used for different vertex-z bins!!!!
 		set<tuple<Particle_t, bool, const DSourceCombo*, const DSourceCombo*, int>> dInvariantMassFilledSet_MassiveNeutral; //int: RF bunch //bool: is prod vertex //first combo: reaction full
 		map<DetectorSystem_t, TH1*> dHistMap_2GammaMass; //SYS_BCAL/FCAL if both in bcal/fcal, SYS_NULL if one each
@@ -110,12 +119,6 @@ class DSourceComboP4Handler
 inline void DSourceComboP4Handler::Reset(void)
 {
 	Fill_Histograms();
-	for(auto& locPIDPair : dInvariantMasses)
-		decltype(locPIDPair.second)().swap(locPIDPair.second);
-	for(auto& locPIDPair : dMissingMassPairs)
-		decltype(locPIDPair.second)().swap(locPIDPair.second);
-	for(auto& locSystemPair : d2GammaInvariantMasses)
-		decltype(locSystemPair.second)().swap(locSystemPair.second);
 
 	dInvariantMassFilledSet.clear();
 	dInvariantMassFilledSet_MassiveNeutral.clear();

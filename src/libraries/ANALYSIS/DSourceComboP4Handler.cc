@@ -155,27 +155,26 @@ DSourceComboP4Handler::DSourceComboP4Handler(DSourceComboer* locSourceComboer, b
 	japp->RootWriteLock(); //ACQUIRE ROOT LOCK!! //I have no idea why this is needed, but without it it crashes.  Sigh. 
 	{
 		//Cuts are vs. beam energy
-		//None missing
+		//None missing & photon
 		dMissingMassSquaredCuts[Unknown].first = new TF1("df_MissingMassSquaredCut_NoneLow", "[0]", 0.0, 12.0);
 		dMissingMassSquaredCuts[Unknown].first->SetParameter(0, -0.1);
 		dMissingMassSquaredCuts[Unknown].second = new TF1("df_MissingMassSquaredCut_NoneHigh", "[0]", 0.0, 12.0);
 		dMissingMassSquaredCuts[Unknown].second->SetParameter(0, 0.1);
+		dMissingMassSquaredCuts.emplace(Gamma, dMissingMassSquaredCuts[Unknown]);
 
-		//Proton //to include tails, should be -0.5 -> 3.0 (i.e. make a 2D cut)
+		//Proton/Neutron //to include tails, should be -0.5 -> 3.0 (i.e. make a 2D cut)
 		dMissingMassSquaredCuts[Proton].first = new TF1("df_MissingMassSquaredCut_ProtonLow", "[0]", 0.0, 12.0);
 		dMissingMassSquaredCuts[Proton].first->SetParameter(0, 0.5*0.5);
 		dMissingMassSquaredCuts[Proton].second = new TF1("df_MissingMassSquaredCut_ProtonHigh", "[0]", 0.0, 12.0);
 		dMissingMassSquaredCuts[Proton].second->SetParameter(0, 1.4*1.4);
+		dMissingMassSquaredCuts.emplace(Neutron, dMissingMassSquaredCuts[Proton]);
 
-		//PiPlus //to include tails, should be -1.0 -> 1.0 (i.e. make a 2D cut)
+		//Pi+/- //to include tails, should be -1.0 -> 1.0 (i.e. make a 2D cut)
 		dMissingMassSquaredCuts[PiPlus].first = new TF1("df_MissingMassSquaredCut_PiPlusLow", "[0]", 0.0, 12.0);
 		dMissingMassSquaredCuts[PiPlus].first->SetParameter(0, -0.04);
 		dMissingMassSquaredCuts[PiPlus].second = new TF1("df_MissingMassSquaredCut_PiPlusHigh", "[0]", 0.0, 12.0);
 		dMissingMassSquaredCuts[PiPlus].second->SetParameter(0, 0.08);
-
-		//Other
-		dMissingMassSquaredCuts[Neutron] = dMissingMassSquaredCuts[Proton];
-		dMissingMassSquaredCuts[PiMinus] = dMissingMassSquaredCuts[PiPlus];
+		dMissingMassSquaredCuts.emplace(PiMinus, dMissingMassSquaredCuts[PiPlus]);
 
 		if(!locCreateHistsFlag)
 		{
@@ -270,6 +269,52 @@ DSourceComboP4Handler::DSourceComboP4Handler(DSourceComboer* locSourceComboer, b
 			}
 			else
 				dHistMap_MissingMassSquaredVsBeamEnergy[locPID] = static_cast<TH2*>(locHist);
+		}
+
+		//NONE MISSING, MISSING PZ:
+		{
+			string locHistName = "NoneMissing_MissingPzVsBeamEnergy_PreMissMassSqCut";
+			auto locHist = gDirectory->Get(locHistName.c_str());
+			if(locHist == nullptr)
+			{
+				string locHistTitle = string("None Missing: From All Production Mechanisms;Beam Energy (GeV); Missing Pz (GeV/c)");
+				dHist_NoneMissing_MissingPzVsBeamEnergy_PreMissMassSqCut = new TH2I(locHistName.c_str(), locHistTitle.c_str(), 600, 0.0, 12.0, 1200, -6.0, 6.0);
+			}
+			else
+				dHist_NoneMissing_MissingPzVsBeamEnergy_PreMissMassSqCut = static_cast<TH2*>(locHist);
+
+			locHistName = "NoneMissing_MissingPzVsBeamEnergy_PostMissMassSqCut";
+			locHist = gDirectory->Get(locHistName.c_str());
+			if(locHist == nullptr)
+			{
+				string locHistTitle = string("None Missing: From All Production Mechanisms;Beam Energy (GeV); Missing Pz (GeV/c)");
+				dHist_NoneMissing_MissingPzVsBeamEnergy_PostMissMassSqCut = new TH2I(locHistName.c_str(), locHistTitle.c_str(), 600, 0.0, 12.0, 1200, -6.0, 6.0);
+			}
+			else
+				dHist_NoneMissing_MissingPzVsBeamEnergy_PostMissMassSqCut = static_cast<TH2*>(locHist);
+		}
+
+		//NONE MISSING, MISSING PT:
+		{
+			string locHistName = "NoneMissing_MissingPtVsMissingPz_PreMissMassSqCut";
+			auto locHist = gDirectory->Get(locHistName.c_str());
+			if(locHist == nullptr)
+			{
+				string locHistTitle = string("None Missing: From All Production Mechanisms; Missing Pz (GeV/c); Missing Transverse Momentum (GeV/c)");
+				dHist_NoneMissing_MissingPtVsMissingPz_PreMissMassSqCut = new TH2I(locHistName.c_str(), locHistTitle.c_str(), 1200, -6.0, 6.0, 800, 0.0, 4.0);
+			}
+			else
+				dHist_NoneMissing_MissingPtVsMissingPz_PreMissMassSqCut = static_cast<TH2*>(locHist);
+
+			locHistName = "NoneMissing_MissingPtVsMissingPz_PostMissMassSqCut";
+			locHist = gDirectory->Get(locHistName.c_str());
+			if(locHist == nullptr)
+			{
+				string locHistTitle = string("None Missing: From All Production Mechanisms; Missing Pz (GeV/c); Missing Transverse Momentum (GeV/c)");
+				dHist_NoneMissing_MissingPtVsMissingPz_PostMissMassSqCut = new TH2I(locHistName.c_str(), locHistTitle.c_str(), 1200, -6.0, 6.0, 800, 0.0, 4.0);
+			}
+			else
+				dHist_NoneMissing_MissingPtVsMissingPz_PostMissMassSqCut = static_cast<TH2*>(locHist);
 		}
 
 		locCurrentDir->cd();
@@ -777,7 +822,18 @@ bool DSourceComboP4Handler::Cut_MissingMass(const DReaction* locReaction, const 
 
 	//save and cut
 	dMissingMassPairs[locMissingPID].emplace_back(locBeamEnergy, locMissingP4.M2());
-	return ((locMissingP4.M2() >= locMissingMassSquared_Min) && (locMissingP4.M2() <= locMissingMassSquared_Max));
+	auto locPassCutFlag = ((locMissingP4.M2() >= locMissingMassSquared_Min) && (locMissingP4.M2() <= locMissingMassSquared_Max));
+	if(locMissingPID == Unknown)
+	{
+		dMissingPzVsBeamEnergy_PreMissMassSqCut.emplace_back(locBeamEnergy, locMissingP4.Pz());
+		dMissingPtVsMissingPz_PreMissMassSqCut.emplace_back(locMissingP4.Pz(), locMissingP4.Perp());
+		if(locPassCutFlag)
+		{
+			dMissingPzVsBeamEnergy_PostMissMassSqCut.emplace_back(locBeamEnergy, locMissingP4.Pz());
+			dMissingPtVsMissingPz_PostMissMassSqCut.emplace_back(locMissingP4.Pz(), locMissingP4.Perp());
+		}
+	}
+	return locPassCutFlag;
 }
 
 bool DSourceComboP4Handler::Cut_InvariantMass_AccuratePhotonKinematics(const DReactionVertexInfo* locReactionVertexInfo, const DSourceCombo* locReactionFullCombo, const DKinematicData* locBeamParticle, int locRFBunch)
@@ -862,8 +918,29 @@ void DSourceComboP4Handler::Fill_Histograms(void)
 			for(auto& locMass : locSystemPair.second)
 				dHistMap_2GammaMass[locSystemPair.first]->Fill(locMass);
 		}
+
+		for(auto& locMissingPair : dMissingPzVsBeamEnergy_PreMissMassSqCut)
+			dHist_NoneMissing_MissingPzVsBeamEnergy_PreMissMassSqCut->Fill(locMissingPair.first, locMissingPair.second);
+		for(auto& locMissingPair : dMissingPzVsBeamEnergy_PostMissMassSqCut)
+			dHist_NoneMissing_MissingPzVsBeamEnergy_PostMissMassSqCut->Fill(locMissingPair.first, locMissingPair.second);
+		for(auto& locMissingPair : dMissingPtVsMissingPz_PreMissMassSqCut)
+			dHist_NoneMissing_MissingPtVsMissingPz_PreMissMassSqCut->Fill(locMissingPair.first, locMissingPair.second);
+		for(auto& locMissingPair : dMissingPtVsMissingPz_PostMissMassSqCut)
+			dHist_NoneMissing_MissingPtVsMissingPz_PostMissMassSqCut->Fill(locMissingPair.first, locMissingPair.second);
 	}
 	japp->Unlock("DSourceComboP4Handler");
+
+	vector<pair<float, float>>().swap(dMissingPzVsBeamEnergy_PreMissMassSqCut);
+	vector<pair<float, float>>().swap(dMissingPzVsBeamEnergy_PostMissMassSqCut);
+	vector<pair<float, float>>().swap(dMissingPtVsMissingPz_PreMissMassSqCut);
+	vector<pair<float, float>>().swap(dMissingPtVsMissingPz_PostMissMassSqCut);
+
+	for(auto& locPIDPair : dInvariantMasses)
+		decltype(locPIDPair.second)().swap(locPIDPair.second);
+	for(auto& locPIDPair : dMissingMassPairs)
+		decltype(locPIDPair.second)().swap(locPIDPair.second);
+	for(auto& locSystemPair : d2GammaInvariantMasses)
+		decltype(locSystemPair.second)().swap(locSystemPair.second);
 }
 
 } //end namespace
