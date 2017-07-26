@@ -57,24 +57,15 @@ void DParticleComboCreator::Reset(void)
 	dResourcePool_ParticleCombo.Recycle(dCreated_ParticleCombo);
 	dComboMap.clear();
 
-	for(const auto& locHypoPair : dChargedHypoMap)
-		dChargedTrackHypothesisFactory->Recycle_Hypothesis(locHypoPair.second);
+	dChargedTrackHypothesisFactory->Recycle_Hypotheses(dCreated_ChargedHypo);
 	dChargedHypoMap.clear();
-
-	for(const auto& locHypoPair : dKinFitChargedHypoMap)
-		dChargedTrackHypothesisFactory->Recycle_Hypothesis(locHypoPair.second);
 	dKinFitChargedHypoMap.clear();
 
-	for(const auto& locHypoPair : dNeutralHypoMap)
-		dNeutralParticleHypothesisFactory->Recycle_Hypothesis(locHypoPair.second);
+	dNeutralParticleHypothesisFactory->Recycle_Hypotheses(dCreated_NeutralHypo);
 	dNeutralHypoMap.clear();
-
-	for(const auto& locHypoPair : dKinFitNeutralHypoMap)
-		dNeutralParticleHypothesisFactory->Recycle_Hypothesis(locHypoPair.second);
 	dKinFitNeutralHypoMap.clear();
 
-	for(const auto& locBeamPair : dKinFitBeamPhotonMap)
-		dBeamPhotonfactory->Recycle_Resource(locBeamPair.second);
+	dBeamPhotonfactory->Recycle_Resources(dCreated_BeamPhoton);
 	dKinFitBeamPhotonMap.clear();
 
 	dResourcePool_KinematicData.Recycle(dCreated_KinematicData);
@@ -83,6 +74,9 @@ void DParticleComboCreator::Reset(void)
 	decltype(dCreated_KinematicData)().swap(dCreated_KinematicData);
 	decltype(dCreated_ParticleCombo)().swap(dCreated_ParticleCombo);
 	decltype(dCreated_ParticleComboStep)().swap(dCreated_ParticleComboStep);
+	decltype(dCreated_ChargedHypo)().swap(dCreated_ChargedHypo);
+	decltype(dCreated_NeutralHypo)().swap(dCreated_NeutralHypo);
+	decltype(dCreated_BeamPhoton)().swap(dCreated_BeamPhoton);
 }
 
 bool DParticleComboCreator::Get_CreateNeutralErrorMatrixFlag_Combo(const DReactionVertexInfo* locReactionVertexInfo, DKinFitType locKinFitType)
@@ -249,6 +243,7 @@ const DParticleCombo* DParticleComboCreator::Build_ParticleCombo(const DReaction
 				{
 					auto locVertexCovMatrix = locCreateNeutralErrorMatrixFlag ? &dVertexCovMatrix : nullptr;
 					locNewNeutralHypo = dNeutralParticleHypothesisFactory->Create_DNeutralParticleHypothesis(locNeutralShower, locPID, locEventRFBunch, locSpacetimeVertex, locVertexCovMatrix);
+					dCreated_NeutralHypo.push_back(const_cast<DNeutralParticleHypothesis*>(locNewNeutralHypo));
 					dNeutralHypoMap.emplace(locHypoTuple, locNewNeutralHypo);
 				}
 
@@ -287,6 +282,7 @@ const DChargedTrackHypothesis* DParticleComboCreator::Create_ChargedHypo(const D
 	//see if DChargedTrackHypothesis with the desired PID was created by the default factory, AND it passed the PreSelect cuts
 	auto locOrigHypo = locChargedTrack->Get_Hypothesis(locPID);
 	auto locNewHypo = dChargedTrackHypothesisFactory->Get_Resource();
+	dCreated_ChargedHypo.push_back(locNewHypo);
 	locNewHypo->Share_FromInput(locOrigHypo, true, false, true); //share all but timing info
 
 	auto locTrackPOCAX4 = dSourceComboTimeHandler->Get_ChargedParticlePOCAToVertexX4(locOrigHypo, locIsProductionVertex, locVertexPrimaryFullCombo, locBeamParticle);
@@ -553,6 +549,7 @@ const DBeamPhoton* DParticleComboCreator::Create_BeamPhoton_KinFit(const DBeamPh
 		return locBeamIterator->second;
 
 	DBeamPhoton* locNewBeamPhoton = dBeamPhotonfactory->Get_Resource();
+	dCreated_BeamPhoton.push_back(locNewBeamPhoton);
 	dKinFitBeamPhotonMap.emplace(locKinFitParticle, locNewBeamPhoton);
 
 	locNewBeamPhoton->dCounter = locBeamPhoton->dCounter;
@@ -575,7 +572,9 @@ const DChargedTrackHypothesis* DParticleComboCreator::Create_ChargedHypo_KinFit(
 	//even if vertex is not fit, p4 is fit: different beta: update time info
 	auto locNewHypo = dChargedTrackHypothesisFactory->Get_Resource();
 	dKinFitChargedHypoMap.emplace(locKinFitParticle, locNewHypo);
+	dCreated_ChargedHypo.push_back(locNewHypo);
 	locNewHypo->setPID(locPID);
+	locNewHypo->AddAssociatedObject(locChargedTrack);
 
 	//p3 & v3
 	TVector3 locFitMomentum = locKinFitParticle->Get_Momentum();
@@ -612,7 +611,6 @@ const DChargedTrackHypothesis* DParticleComboCreator::Create_ChargedHypo_KinFit(
 		locNewHypo->Set_TimeAtPOCAToVertex(locOrigHypo->Get_TimeAtPOCAToVertex() + locNewHypo->time() - locOrigHypo->time());
 	}
 
-	locNewHypo->AddAssociatedObject(locChargedTrack);
 	dParticleID->Calc_ChargedPIDFOM(locNewHypo);
 	return locNewHypo;
 }
@@ -624,6 +622,7 @@ const DNeutralParticleHypothesis* DParticleComboCreator::Create_NeutralHypo_KinF
 		return locHypoIterator->second;
 
 	auto locNewHypo = dNeutralParticleHypothesisFactory->Get_Resource();
+	dCreated_NeutralHypo.push_back(locNewHypo);
 	dKinFitNeutralHypoMap.emplace(locKinFitParticle, locNewHypo);
 	locNewHypo->setPID(locOrigHypo->PID());
 	locNewHypo->Set_NeutralShower(locOrigHypo->Get_NeutralShower());

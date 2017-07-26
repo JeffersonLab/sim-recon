@@ -160,7 +160,7 @@ template <typename DType> void DSharedPtrRecycler<DType>::operator()(DType* locR
 //Since these are part of a template, these statics will only be defined once, no matter how much this header is included
 template <typename DType> mutex DResourcePool<DType>::dSharedPoolMutex;
 template <typename DType> vector<DType*> DResourcePool<DType>::dResourcePool_Shared = {};
-template <typename DType> size_t DResourcePool<DType>::dMaxSharedPoolSize{10000};
+template <typename DType> size_t DResourcePool<DType>::dMaxSharedPoolSize{1000};
 template <typename DType> size_t DResourcePool<DType>::dPoolCounter{0};
 template <typename DType> atomic<size_t> DResourcePool<DType>::dObjectCounter{0};
 
@@ -223,9 +223,11 @@ template <typename DType> DType* DResourcePool<DType>::Get_Resource(void)
 	if(dResourcePool_Local.empty())
 	{
 		//perhaps instead use custom allocator
-		for(size_t loc_i = 0; loc_i < dNumToAllocateAtOnce - 1; ++loc_i)
+		auto locPotentialNewSize = dResourcePool_Local.size() + dNumToAllocateAtOnce - 1;
+		auto locNumToAllocate = (locPotentialNewSize <= dMaxLocalPoolSize) ? dNumToAllocateAtOnce : (dMaxLocalPoolSize - dResourcePool_Local.size() + 1);
+		for(size_t loc_i = 0; loc_i < locNumToAllocate - 1; ++loc_i)
 			dResourcePool_Local.push_back(new DType);
-		dObjectCounter += dNumToAllocateAtOnce;
+		dObjectCounter += locNumToAllocate;
 		return new DType();
 	}
 
@@ -238,7 +240,7 @@ template <typename DType> void DResourcePool<DType>::Set_ControlParams(size_t lo
 {
 	dDebugLevel = locDebugLevel;
 	dGetBatchSize = locGetBatchSize;
-	dNumToAllocateAtOnce = locNumToAllocateAtOnce;
+	dNumToAllocateAtOnce = (locNumToAllocateAtOnce > 0) ? locNumToAllocateAtOnce : 1;
 	dMaxLocalPoolSize = locMaxLocalPoolSize;
 	{
 		std::lock_guard<std::mutex> locLock(dSharedPoolMutex); //LOCK
@@ -279,32 +281,23 @@ template <typename DType> void DResourcePool<DType>::Recycle(vector<DType*>& loc
 
 template <typename DType> void DResourcePool<DType>::Recycle(DType* locResource)
 {
-	if(dDebugLevel >= 10)
-		cout << "RECYCLE " << typeid(DType).name() << ": " << locResource << endl;
 	if(locResource == nullptr)
 		return;
-
-	if(dResourcePool_Local.size() == dMaxLocalPoolSize)
-	{
-		vector<DType*>(locResource);
-		Recycle_Resources_StaticPool(locResource);
-	}
-	else
-		dResourcePool_Local.push_back(locResource);
-
-	if(dDebugLevel >= 10)
-		cout << "DONE RECYCLING" << endl;
+	vector<DType*> locResourceVector{locResource};
+	Recycle(locResourceVector);
 }
 
 /************************************************************************* SHARED-POOL-ACCESSING MEMBER FUNCTIONS *************************************************************************/
 
 template <typename DType> void DResourcePool<DType>::Get_Resources_StaticPool(void)
 {
+	auto locPotentialNewLocalSize = dResourcePool_Local.size() + dGetBatchSize;
+	auto locGetBatchSize = (locPotentialNewLocalSize <= dMaxLocalPoolSize) ? dGetBatchSize : dMaxLocalPoolSize - dResourcePool_Local.size();
 	{
 		std::lock_guard<std::mutex> locLock(dSharedPoolMutex); //LOCK
 		if(dResourcePool_Shared.empty())
 			return;
-		auto locFirstToMoveIndex = (dGetBatchSize >= dResourcePool_Shared.size()) ? 0 : dResourcePool_Shared.size() - dGetBatchSize;
+		auto locFirstToMoveIndex = (locGetBatchSize >= dResourcePool_Shared.size()) ? 0 : dResourcePool_Shared.size() - locGetBatchSize;
 		if(dDebugLevel > 0)
 			cout << "MOVING FROM SHARED POOL " << typeid(DType).name() << ": " << dResourcePool_Shared.size() - locFirstToMoveIndex << endl;
 		std::move(dResourcePool_Shared.begin() + locFirstToMoveIndex, dResourcePool_Shared.end(), std::back_inserter(dResourcePool_Local));

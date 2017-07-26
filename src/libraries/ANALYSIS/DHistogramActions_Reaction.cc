@@ -1051,7 +1051,7 @@ bool DHistogramAction_ParticleComboKinematics::Perform_Action(JEventLoop* locEve
 				//tau = (x/c^2)*(E^2 - p^2*c^2)/(p*sqrt(E^2 - p^2*c^2))  //plug in m^2*c^4 = E^2 - p^2*c^2
 				//tau = (x/c^2)*m^2*c^4/(p*m*c^2)  //cancel c's & m's
 				//tau = x*m/p
-				//however, in data, p & m are in units with c = 1, so need an extra 1/c
+				//however, in data, p & m are in units with c = 1, so need an extra 1/c: tau = x*m/(c*p)
 				double locRestFrameLifetime = locPathLength*ParticleMass(locInitialPID)/(29.9792458*locInitialP4.P()); //tau
 				dHistMap_DetachedLifetime_RestFrame[loc_i]->Fill(locRestFrameLifetime);
 				//note that tau = hbar / Gamma, hbar = 6.582119E-22 MeV*s, Gamma = Resonance FWHM

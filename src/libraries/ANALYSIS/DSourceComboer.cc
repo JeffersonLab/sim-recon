@@ -7,10 +7,9 @@
  * 
  * Test hist kinematics with flag = true
  * fix step vertex z
- * remove DVertex
- *
- * t1 = sys_null????: one PID has a detector hit, but not the one you wanted
- * this is ok
+ * nphots identical for 2g & pi0g, slightly less for 2pi0
+ * mem usage: source combo vectors, kin fit results, neutral hypos
+ * include cut on missing E +/- 3(?) GeV
  *
  * TESTING:
  * p2pi: OK
@@ -74,11 +73,16 @@ A) Not exactly. If ANY of the hypos for a track has at least one hit in any dete
 
 */
 
+//TO DO COMPARISONS
+//Comment dE/dx cuts
+
 //UNDO ONCE DONE WITH COMPARISON
 //ST timing cuts
 //Get_RFBunches_ChargedTrack()
 //DVertex in vertexer
 //proton/pi+ dE/dx
+//uncomment E/p
+//only cut k+/k- if no CDC dE/dx info
 
 //MUST DO:
 //merge with master
@@ -326,7 +330,7 @@ DSourceComboer::DSourceComboer(JEventLoop* locEventLoop)
 		ddEdxCutMap[Electron][SYS_FDC].second = new TF1("df_dEdxCut_CDC_ElectronHigh", "[0]", 0.0, 12.0);
 		ddEdxCutMap[Electron][SYS_FDC].second->SetParameter(0, 3.5E-6);
 		ddEdxCutMap.emplace(Positron, ddEdxCutMap[Electron]);
-
+/*
 		//E/p
 		dEOverPCutMap[Electron][SYS_FCAL] = new TF1("df_EOverPCut_FCAL_Electron", "[0]", 0.0, 12.0);
 		dEOverPCutMap[Electron][SYS_FCAL]->SetParameter(0.0, 0.7);
@@ -335,7 +339,7 @@ DSourceComboer::DSourceComboer(JEventLoop* locEventLoop)
 		dEOverPCutMap.emplace(Positron, dEOverPCutMap[Electron]);
 		dEOverPCutMap.emplace(MuonPlus, dEOverPCutMap[Electron]);
 		dEOverPCutMap.emplace(MuonMinus, dEOverPCutMap[Electron]);
-
+*/
 		vector<DetectorSystem_t> locdEdxSystems {SYS_CDC, SYS_FDC, SYS_START, SYS_TOF};
 		vector<Particle_t> locPIDs {Electron, Positron, MuonPlus, MuonMinus, PiPlus, PiMinus, KPlus, KMinus, Proton, AntiProton};
 		vector<DetectorSystem_t> locEOverPSystems {SYS_BCAL, SYS_FCAL};
@@ -1037,7 +1041,8 @@ bool DSourceComboer::Cut_dEdxAndEOverP(const DChargedTrackHypothesis* locCharged
 		if(!Cut_dEdx(locPID, SYS_CDC, locP, locdEdx))
 			locPassedCutFlag = false;
 	}
-	else if((locPID == KPlus) || (locPID == KMinus))
+//	else if((locPID == KPlus) || (locPID == KMinus))
+	if((locPID == KPlus) || (locPID == KMinus))
 	{
 		auto locSystem = locChargedTrackHypothesis->t1_detector();
 		if((locSystem == SYS_START) || (locSystem == SYS_NULL))
@@ -1344,6 +1349,11 @@ void DSourceComboer::Combo_WithNeutralsAndBeam(const vector<const DReaction*>& l
 		auto locNumFCALShowers = dShowersByBeamBunchByZBin[DSourceComboInfo::Get_VertexZIndex_ZIndependent()][{}].size();
 		cout << "Comboing neutrals, z-independent, #FCAL/BCAL showers: " << locNumFCALShowers << "/" << locNumDetectedShowers - locNumFCALShowers << endl;
 	}
+
+	auto locIsPrimaryProductionVertex = locReactionVertexInfo->Get_StepVertexInfos().front()->Get_ProductionVertexFlag();
+	auto locVertexZBins = dSourceComboVertexer->Get_VertexZBins(locIsPrimaryProductionVertex, locReactionChargedCombo, nullptr);
+	if(std::find(locVertexZBins.begin(), locVertexZBins.end(), DSourceComboInfo::Get_VertexZIndex_ZIndependent()) != locVertexZBins.end())
+		return; //there is a vertex zbin that is out of range, and we need neutrals (likely photons): don't allow
 
 	//Create full source-particle combos (including neutrals): First using only FCAL showers, then using all showers
 	Create_SourceCombos(locPrimaryComboUse, d_MixedStage_ZIndependent, locReactionChargedCombo, 0);

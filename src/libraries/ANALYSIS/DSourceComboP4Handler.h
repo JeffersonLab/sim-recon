@@ -95,16 +95,17 @@ class DSourceComboP4Handler
 		double d2PhotonInvariantMassCutError = 0.02;
 		map<Particle_t, pair<double, double>> dInvariantMassCuts;
 		map<Particle_t, pair<TF1*, TF1*>> dMissingMassSquaredCuts; //cuts are function of beam energy //For none missing, Particle_t = unknown
+		pair<TF1*, TF1*> dMissingECuts; //for no-missing-particle only
 
 		//HISTOGRAMS
-		TH2* dHist_NoneMissing_MissingPzVsBeamEnergy_PreMissMassSqCut;
-		vector<pair<float, float>> dMissingPzVsBeamEnergy_PreMissMassSqCut;
-		TH2* dHist_NoneMissing_MissingPzVsBeamEnergy_PostMissMassSqCut;
-		vector<pair<float, float>> dMissingPzVsBeamEnergy_PostMissMassSqCut;
-		TH2* dHist_NoneMissing_MissingPtVsMissingPz_PreMissMassSqCut;
-		vector<pair<float, float>> dMissingPtVsMissingPz_PreMissMassSqCut;
-		TH2* dHist_NoneMissing_MissingPtVsMissingPz_PostMissMassSqCut;
-		vector<pair<float, float>> dMissingPtVsMissingPz_PostMissMassSqCut;
+		TH2* dHist_NoneMissing_MissingEVsBeamEnergy_PreMissMassSqCut;
+		vector<pair<float, float>> dMissingEVsBeamEnergy_PreMissMassSqCut;
+		TH2* dHist_NoneMissing_MissingEVsBeamEnergy_PostMissMassSqCut;
+		vector<pair<float, float>> dMissingEVsBeamEnergy_PostMissMassSqCut;
+		TH2* dHist_NoneMissing_MissingPtVsMissingE_PreMissMassSqCut;
+		vector<pair<float, float>> dMissingPtVsMissingE_PreMissMassSqCut;
+		TH2* dHist_NoneMissing_MissingPtVsMissingE_PostMissMassSqCut;
+		vector<pair<float, float>> dMissingPtVsMissingE_PostMissMassSqCut;
 
 		set<tuple<Particle_t, const DSourceCombo*>> dInvariantMassFilledSet; //only filled once per combo, even if used for different vertex-z bins!!!!
 		set<tuple<Particle_t, bool, const DSourceCombo*, const DSourceCombo*, int>> dInvariantMassFilledSet_MassiveNeutral; //int: RF bunch //bool: is prod vertex //first combo: reaction full
