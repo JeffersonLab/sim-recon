@@ -2204,7 +2204,7 @@ void DSourceComboer::Combo_Vertically_NParticles(const DSourceComboUse& locCombo
 				auto locValidRFBunches = (locPID != Gamma) ? vector<int>{} : dSourceComboTimeHandler->Get_CommonRFBunches(locRFBunches_First, *locSecondIterator, locVertexZBin);
 				if((locPID == Gamma) && locValidRFBunches.empty())
 					continue;
-/*
+
 				//check if this combo is unique!
 				//it will not be unique if: comboing photons, on mixed stage, and this combo has already been created for a different zbin
 				//if so, don't duplicate memory
@@ -2228,12 +2228,12 @@ void DSourceComboer::Combo_Vertically_NParticles(const DSourceComboUse& locCombo
 						continue;
 					}
 				}
-*/
+
 				auto locCombo = Get_SourceComboResource();
 				locCombo->Set_Members({std::make_pair(locPID, *locFirstIterator), std::make_pair(locPID, *locSecondIterator)}, {}, locIsZIndependent);
 				locSourceCombosByUseSoFar[locComboUseToCreate]->push_back(locCombo); //save it //in creation order
-/*				if(locPID == Gamma)
-					dNPhotonsToComboMap.emplace(locPhotons, locCombo); */
+				if(locPID == Gamma)
+					dNPhotonsToComboMap.emplace(locPhotons, locCombo);
 				if(dDebugLevel >= 10)
 				{
 					for(decltype(locNumTabs) locTabNum = 0; locTabNum < locNumTabs; ++locTabNum) cout << "\t";
@@ -2287,7 +2287,7 @@ void DSourceComboer::Combo_Vertically_NParticles(const DSourceComboUse& locCombo
 			auto locValidRFBunches = (locPID != Gamma) ? vector<int>{} : dSourceComboTimeHandler->Get_CommonRFBunches(locValidRFBunches_NMinus1, locParticle, locVertexZBin);
 
 			auto locComboParticlePairs = locCombo_NMinus1->Get_SourceParticles();
-			/*
+
 			//check if this combo is unique!
 			//it will not be unique if: comboing photons, on mixed stage, and this combo has already been created for a different zbin
 			//if so, don't duplicate memory
@@ -2313,14 +2313,13 @@ void DSourceComboer::Combo_Vertically_NParticles(const DSourceComboUse& locCombo
 					continue;
 				}
 			}
-			*/
 
 			locComboParticlePairs.emplace_back(locPID, locParticle);
 			auto locCombo = Get_SourceComboResource();
 			locCombo->Set_Members(locComboParticlePairs, {}, locIsZIndependent);
 			locSourceCombosByUseSoFar[locComboUseToCreate]->push_back(locCombo); //save it //in creation order
-/*			if(locPID == Gamma)
-				dNPhotonsToComboMap.emplace(locPhotons, locCombo); */
+			if(locPID == Gamma)
+				dNPhotonsToComboMap.emplace(locPhotons, locCombo);
 			if(dDebugLevel >= 10)
 			{
 				for(decltype(locNumTabs) locTabNum = 0; locTabNum < locNumTabs; ++locTabNum) cout << "\t";
@@ -2707,7 +2706,7 @@ void DSourceComboer::Create_Combo_OneParticle(const DSourceComboUse& locComboUse
 		auto locIsZIndependent = Get_IsComboingZIndependent(locParticle, locPID);
 		if((locComboingStage == d_MixedStage) && locIsZIndependent)
 			continue; //this combo has already been created (assuming it was valid): during the FCAL-only stage
-/*
+
 		//check if this combo is unique!
 		//it will not be unique if: comboing photons, on mixed stage, and this combo has already been created for a different zbin
 		//if so, don't duplicate memory
@@ -2728,11 +2727,11 @@ void DSourceComboer::Create_Combo_OneParticle(const DSourceComboUse& locComboUse
 				continue;
 			}
 		}
-*/
+
 		auto locCombo = Get_SourceComboResource();
 		locCombo->Set_Members({std::make_pair(locPID, locParticle)}, {}, locIsZIndependent);
-/*		if(locPID == Gamma)
-			dNPhotonsToComboMap.emplace(vector<const JObject*>{locParticle}, locCombo); */
+		if(locPID == Gamma)
+			dNPhotonsToComboMap.emplace(vector<const JObject*>{locParticle}, locCombo);
 		if(dDebugLevel >= 10)
 		{
 			for(decltype(locNumTabs) locTabNum = 0; locTabNum < locNumTabs; ++locTabNum) cout << "\t";
