@@ -288,6 +288,7 @@ DSourceComboTimeHandler::DSourceComboTimeHandler(JEventLoop* locEventLoop, DSour
 	// But, we have to be careful: If a lot of hits in the SC, we may accidentally choose the wrong SC hit
 	// This is especially true for low-theta tracks: phi not well defined.
 	// So, this cut will only be applied IF no other PID timing information is available, AND if ONLY 1 ST hit matched to the track in space
+	/*
 	for(auto& locPIDPair : dPIDTimingCuts)
 	{
 		if(ParticleCharge(locPIDPair.first) == 0)
@@ -295,6 +296,7 @@ DSourceComboTimeHandler::DSourceComboTimeHandler(JEventLoop* locEventLoop, DSour
 		locPIDPair.second.emplace(SYS_START, new TF1("df_TimeCut", "[0]", 0.0, 12.0));
 		locPIDPair.second[SYS_START]->SetParameter(0, 2.0);
 	}
+	*/
 
 	vector<DetectorSystem_t> locTimingSystems_Charged {SYS_TOF, SYS_BCAL, SYS_FCAL, SYS_START};
 	vector<DetectorSystem_t> locTimingSystems_Neutral {SYS_BCAL, SYS_FCAL};
@@ -1170,7 +1172,11 @@ bool DSourceComboTimeHandler::Get_RFBunches_ChargedTrack(const DChargedTrackHypo
 
 	auto locP = locHypothesis->momentum().Mag();
 	auto locCutFunc = Get_TimeCutFunction(locPID, locSystem);
-	auto locDeltaTCut = (locCutFunc != nullptr) ? locCutFunc->Eval(locP) : 3.0; //if null, still use for histogramming
+	auto locDeltaTCut = (locCutFunc != nullptr) ? locCutFunc->Eval(locP) : 9999999.0; //if null, still use for histogramming
+
+//TEMP!!
+locVertexTime = locHypothesis->time();
+locPropagatedRFTime += (locVertex.Z() - locHypothesis->position().Z())/SPEED_OF_LIGHT;
 
 	locRFBunches = Calc_BeamBunchShifts(locVertexTime, locPropagatedRFTime, locDeltaTCut, false, locPID, locSystem, locP);
 	return (locCutFunc != nullptr);

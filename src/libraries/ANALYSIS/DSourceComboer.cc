@@ -6,9 +6,11 @@
  * PROBLEMS:
  * 
  * Test hist kinematics with flag = true
- * kaons: cut if no TOF/FCAL/BCAL/CDC (cut even if ST)
- * st timing cut: only if no CDC dE/dx info
  * fix step vertex z
+ * remove DVertex
+ *
+ * t1 = sys_null????: one PID has a detector hit, but not the one you wanted
+ * this is ok
  *
  * TESTING:
  * p2pi: OK
@@ -34,6 +36,7 @@
  * Justin
  * Dominick
  * Alex A.
+ * Mike
  * Mahmoud
  * Tegan
  * Christiano
@@ -52,8 +55,6 @@
  * ...
  *
  * Ideas for reducing output size:
- * st timing cut: maybe not for tracks with enough CDC hits
- * kaon: cut if no pid hit? and not enough hits in CDC?
  * char instead of int: requires some kind of flag saved to tree, which is checked to decide how to cast the pointer from the branches
  * miss mass cuts
  * beam energy cut
@@ -66,14 +67,21 @@ Q) If an event has the minimum # tracks, how can it fail to create combos for th
 A) It may be that one of the tracks failed cuts for the PIDs that you need, but passed for others. Thus the total #tracks is OK. 
    Then, say you need 1 pi+ & 1 proton, and you detected 2 tracks.  The other track may have passed dE/dx cuts for both proton & pi+, so it registers as both. 
    Also, one track could have both a positively & negatively charged hypothesis, and thus would count for both charges. 
+
+FAQ:
+Q) How can tracks have t1_detector() == SYS_NULL?  I thought the PreSelect cuts were supposed to remove those?
+A) Not exactly. If ANY of the hypos for a track has at least one hit in any detector, ALL hypos are saved.
+
 */
 
+//UNDO ONCE DONE WITH COMPARISON
+//ST timing cuts
+//Get_RFBunches_ChargedTrack()
+//DVertex in vertexer
+//proton/pi+ dE/dx
+
 //MUST DO:
-//include lubomir & aaustreg cuts
-//require kaons to hit TOF/BCAL/FCAL
-//save #tracks to tree
-//clear up temp Get_RFBunches_ChargedTrack
-//fix custom actions: justin & robison
+//merge with master
 //When saving ROOT TTree, don't save p4 of decaying particles if mass is not constrained in kinfit!
 	//And make sure it's not grabbed in DSelector by default
 
@@ -287,14 +295,12 @@ DSourceComboer::DSourceComboer(JEventLoop* locEventLoop)
 	//Setup cuts/hists
 	japp->RootWriteLock(); //ACQUIRE ROOT LOCK!!
 	{
-		//CDC dE/dx Proton
+		//CDC dE/dx Proton, Anti-Proton
 		ddEdxCutMap[Proton][SYS_CDC].first = new TF1("df_dEdxCut_CDC_ProtonLow", "exp(-1.0*[0]*x + [1]) + [2]", 0.0, 12.0);
 //		ddEdxCutMap[Proton][SYS_CDC].first->SetParameters(3.93024, 3.0, 1.0); //will be used after testing is done
 		ddEdxCutMap[Proton][SYS_CDC].first->SetParameters(4.0, 2.25, 1.0); //used for comparison
 		ddEdxCutMap[Proton][SYS_CDC].second = new TF1("df_dEdxCut_CDC_ProtonHigh", "[0]", 0.0, 12.0);
 		ddEdxCutMap[Proton][SYS_CDC].second->SetParameter(0, 9999999.9);
-
-		//CDC dE/dx Anti-Proton
 		ddEdxCutMap.emplace(AntiProton, ddEdxCutMap[Proton]);
 
 		//CDC dE/dx Pi+
@@ -304,14 +310,28 @@ DSourceComboer::DSourceComboer(JEventLoop* locEventLoop)
 		//ddEdxCutMap[PiPlus][SYS_CDC].second->SetParameters(6.0, 2.80149, 2.55); //will be used after testing is done
 		ddEdxCutMap[PiPlus][SYS_CDC].second->SetParameters(2.0, 0.8, 3.0); //used for comparison
 
-		//CDC dE/dx K+
+		//CDC dE/dx K+/K-
 		ddEdxCutMap.emplace(KPlus, ddEdxCutMap[PiPlus]);
+		ddEdxCutMap.emplace(KMinus, ddEdxCutMap[KPlus]);
+
+		//CDC dE/dx e+/e-
+		ddEdxCutMap[Electron][SYS_CDC].first = new TF1("df_dEdxCut_CDC_ElectronLow", "[0]", 0.0, 12.0);
+		ddEdxCutMap[Electron][SYS_CDC].first->SetParameter(0, -9999999.9);
+		ddEdxCutMap[Electron][SYS_CDC].second = new TF1("df_dEdxCut_CDC_ElectronHigh", "[0]", 0.0, 12.0);
+		ddEdxCutMap[Electron][SYS_CDC].second->SetParameter(0, 5.5E-6);
+
+		//FDC dE/dx e+/e-
+		ddEdxCutMap[Electron][SYS_FDC].first = new TF1("df_dEdxCut_CDC_ElectronLow", "[0]", 0.0, 12.0);
+		ddEdxCutMap[Electron][SYS_FDC].first->SetParameter(0, -9999999.9);
+		ddEdxCutMap[Electron][SYS_FDC].second = new TF1("df_dEdxCut_CDC_ElectronHigh", "[0]", 0.0, 12.0);
+		ddEdxCutMap[Electron][SYS_FDC].second->SetParameter(0, 3.5E-6);
+		ddEdxCutMap.emplace(Positron, ddEdxCutMap[Electron]);
 
 		//E/p
 		dEOverPCutMap[Electron][SYS_FCAL] = new TF1("df_EOverPCut_FCAL_Electron", "[0]", 0.0, 12.0);
-		dEOverPCutMap[Electron][SYS_FCAL]->SetParameter(0.0, 1.0);
+		dEOverPCutMap[Electron][SYS_FCAL]->SetParameter(0.0, 0.7);
 		dEOverPCutMap[Electron][SYS_BCAL] = new TF1("df_EOverPCut_BCAL_Electron", "[0]", 0.0, 12.0);
-		dEOverPCutMap[Electron][SYS_BCAL]->SetParameter(0.0, 1.0);
+		dEOverPCutMap[Electron][SYS_BCAL]->SetParameter(0.0, 0.67);
 		dEOverPCutMap.emplace(Positron, dEOverPCutMap[Electron]);
 		dEOverPCutMap.emplace(MuonPlus, dEOverPCutMap[Electron]);
 		dEOverPCutMap.emplace(MuonMinus, dEOverPCutMap[Electron]);
@@ -360,7 +380,8 @@ DSourceComboer::DSourceComboer(JEventLoop* locEventLoop)
 				auto locHist = gDirectory->Get(locHistName.c_str());
 				if(locHist == nullptr)
 				{
-					string locHistTitle = ParticleName_ROOT(locPID) + string(", ") + string(SystemName(locSystem)) + string(";p (GeV/c);dE/dX (MeV/cm)");
+					string locUnits = ((locSystem == SYS_CDC) || (locSystem == SYS_FDC)) ? "(keV/cm)" : "(MeV/cm)";
+					string locHistTitle = ParticleName_ROOT(locPID) + string(", ") + string(SystemName(locSystem)) + string(";p (GeV/c);dE/dX ") + locUnits;
 					dHistMap_dEdx[locPID][locSystem] = new TH2I(locHistName.c_str(), locHistTitle.c_str(), 400, 0.0, 12.0, 400, 0.0, 25.0);
 				}
 				else
@@ -1015,6 +1036,12 @@ bool DSourceComboer::Cut_dEdxAndEOverP(const DChargedTrackHypothesis* locCharged
 		auto locdEdx = locTrackTimeBased->ddEdx_CDC*1.0E6;
 		if(!Cut_dEdx(locPID, SYS_CDC, locP, locdEdx))
 			locPassedCutFlag = false;
+	}
+	else if((locPID == KPlus) || (locPID == KMinus))
+	{
+		auto locSystem = locChargedTrackHypothesis->t1_detector();
+		if((locSystem == SYS_START) || (locSystem == SYS_NULL))
+			return false; //kaons are rare, and no PID information to find them (swamped with background): just cut these away
 	}
 
 	//FDC dE/dx
