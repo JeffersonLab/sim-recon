@@ -98,6 +98,25 @@ class DSourceComboInfo
 inline bool operator<(const DSourceComboUse& lhs, const DSourceComboUse& rhs)
 {
 	//this puts mixed-charge first, then fully-neutral, then fully-charged
+
+	//first, special case of nullptr (guard against it)
+	if((std::get<2>(lhs) == nullptr) || (std::get<2>(rhs) == nullptr))
+	{
+		if(std::get<2>(lhs) != std::get<2>(rhs))
+			return (std::get<2>(lhs) == nullptr);
+
+		if(std::get<0>(lhs) == std::get<0>(rhs))
+		{
+			if(std::get<1>(lhs) == std::get<1>(rhs))
+				return false;
+			else
+				return std::get<1>(lhs) > std::get<1>(rhs);
+		}
+		if(ParticleMass(std::get<0>(lhs)) == ParticleMass(std::get<0>(rhs)))
+			return std::get<0>(lhs) > std::get<0>(rhs);
+		return (ParticleMass(std::get<0>(lhs)) > ParticleMass(std::get<0>(rhs)));
+	}
+
 	auto locChargeContent_LHS = Get_ChargeContent(std::get<2>(lhs));
 	auto locChargeContent_RHS = Get_ChargeContent(std::get<2>(rhs));
 	if(locChargeContent_LHS != locChargeContent_RHS)
