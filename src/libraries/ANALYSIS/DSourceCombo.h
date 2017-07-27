@@ -61,9 +61,13 @@ const JObject* Get_SourceParticle_ThisStep(const DSourceCombo* locSourceCombo, P
 //So it would require more CPU.
 
 //THE MOST NUMBER OF PARTICLES OF A GIVEN TYPE IS 255 (# stored in unsigned char)
+
 class DSourceComboInfo
 {
 	public:
+
+		//FORWARD DECLARE COMPARISON STRUCT
+		struct DCompare_ParticlePairPIDs;
 
 		//CONSTRUCTOR
 		DSourceComboInfo(void) = delete;
@@ -81,9 +85,6 @@ class DSourceComboInfo
 		static signed char Get_VertexZIndex_Unknown(void){return -1;}
 
 	private:
-
-		//FORWARD DECLARE COMPARISON STRUCT
-		struct DCompare_ParticlePairPIDs;
 
 		//don't have decaying PID a direct member of this combo info
 		//e.g. for a 2g pair, it has no idea whether or not it came from a Pi0, an eta, through direct production, etc.

@@ -3603,7 +3603,7 @@ bool DSourceComboer::Get_PromoteFlag(Particle_t locDecayPID_UseToCheck, const DS
 	{
 		auto locNumParticles_ToAdd = locComboInfo_UseToCheck->Get_NumParticles();
 		auto locNumParticles_UseToCreate = locComboInfo_UseToCreate->Get_NumParticles();
-		return std::binary_search(locNumParticles_UseToCreate.begin(), locNumParticles_UseToCreate.end(), locNumParticles_ToAdd.front());
+		return std::binary_search(locNumParticles_UseToCreate.begin(), locNumParticles_UseToCreate.end(), locNumParticles_ToAdd.front(), DSourceComboInfo::DCompare_ParticlePairPIDs());
 	}
 }
 
