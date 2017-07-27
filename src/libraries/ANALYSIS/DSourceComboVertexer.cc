@@ -459,6 +459,9 @@ void DSourceComboVertexer::Construct_DecayingParticle_MissingMass(const DReactio
 	if(dDebugLevel >= 10)
 		cout << "DSourceComboVertexer::Construct_DecayingParticle_MissingMass()" << endl;
 
+	if(locStepVertexInfo->Get_IsInclusiveVertexFlag() || !locStepVertexInfo->Get_MissingParticles().empty())
+		return; //decaying particles are not defined!
+
 	//we can only calculate up to 1 at a time
 	//the input full combo contains the decaying particle for which the missing mass is to be computed
 	//if there is more than one, then this is impossible

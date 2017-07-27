@@ -187,23 +187,30 @@ vector<Particle_t> Get_ChainPIDs(const DReaction* locReaction, size_t locStepInd
 	return locChainPIDs;
 }
 
-int Get_DefinedParticleStepIndex(const DReaction* locReaction)
+vector<size_t> Get_DefinedParticleStepIndex(const DReaction* locReaction)
 {
-	//-1 if none //defined: missing or open-ended-decaying
+	//-1 if none, -2 if more than 1 //defined: missing or open-ended-decaying
+	vector<size_t> locDefinedParticleStepIndices;
 	for(size_t loc_i = 0; loc_i < locReaction->Get_NumReactionSteps(); ++loc_i)
 	{
 		auto locReactionStep = locReaction->Get_ReactionStep(loc_i);
 
 		//check for open-ended-decaying particle
 		if((loc_i == 0) && (locReactionStep->Get_TargetPID() == Unknown))
-			return loc_i;
+		{
+			locDefinedParticleStepIndices.push_back(loc_i);
+			continue;
+		}
 
 		//check for missing particle
-		if(locReactionStep->Get_MissingPID() != Unknown)
-			return loc_i;
+		if(locReactionStep->Get_IsInclusiveFlag() || (locReactionStep->Get_MissingPID() != Unknown))
+		{
+			locDefinedParticleStepIndices.push_back(loc_i);
+			continue;
+		}
 	}
 
-	return -1;
+	return locDefinedParticleStepIndices;
 }
 
 vector<const DReaction*> Get_Reactions(JEventLoop* locEventLoop)

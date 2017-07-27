@@ -28,15 +28,6 @@ class DSourceCombo;
 
 //DSourceComboUse is what the combo is USED for (the decay of Particle_t (if Unknown then is just a grouping)
 using DSourceComboUse = tuple<Particle_t, signed char, const DSourceComboInfo*>; //e.g. Pi0, -> 2g //signed char: vertex-z bin of the final state (combo contents)
-
-//This is used to hold the further decays in the DSourceComboUse objects
-//There are MANY combos, which suggests DSourceCombosByUse_Small should be small: a sorted vector (with lookup via std::binary_search) (24 bytes)
-//However, they are searched in the core of the combo-builder, many recursive calls deep: must have fast lookup: unordered_map (56 bytes: 2.333x larger)
-
-//map is a compromise: 48 bytes, so still 2x the size, but negligibly slower than unordered_map since they are very small
-	//and it may even be faster since you don't have to compute a hash
-//also, you have to insert elements, which is much faster for a map than a vector
-//so we'll choose map for now, and let someone who wants to do some profiling decide whether or not to change it
 using DSourceCombosByUse_Small = vector<pair<DSourceComboUse, vector<const DSourceCombo*>>>;
 
 //DECLARE NAMESPACE-SCOPE FUNCTIONS

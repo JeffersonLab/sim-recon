@@ -146,7 +146,7 @@ class DReaction : public JObject
 int Get_DecayStepIndex(const DReaction* locReaction, size_t locStepIndex, size_t locParticleIndex);
 pair<int, int> Get_InitialParticleDecayFromIndices(const DReaction* locReaction, int locStepIndex);
 vector<Particle_t> Get_ChainPIDs(const DReaction* locReaction, size_t locStepIndex, int locUpToStepIndex, vector<Particle_t> locUpThroughPIDs, bool locExpandDecayingFlag);
-int Get_DefinedParticleStepIndex(const DReaction* locReaction);
+vector<size_t> Get_DefinedParticleStepIndex(const DReaction* locReaction);
 vector<const DReaction*> Get_Reactions(JEventLoop* locEventLoop);
 size_t Get_ParticleInstanceIndex(const DReactionStep* locStep, size_t locParticleIndex);
 

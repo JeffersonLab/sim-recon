@@ -30,6 +30,7 @@ class DReactionStepVertexInfo
 		//CONSTRUCTORS
 		DReactionStepVertexInfo(void);
 		void Set_Members(const DReaction* locReaction, size_t locStartStepIndex);
+		void Reset(void);
 
 		//ADDING STEPS & PARTICLES
 		void Add_ReactionStep(size_t locStepIndex);
@@ -42,6 +43,7 @@ class DReactionStepVertexInfo
 				const map<pair<int, int>, const DReactionStepVertexInfo*>& locFullConstrainDecayingParticles);
 		void Set_DanglingVertexFlag(bool locIsDanglingVertexFlag){dIsDanglingVertexFlag = locIsDanglingVertexFlag;}
 		void Set_FittableVertexFlag(bool locIsFittableVertexFlag){dIsFittableVertexFlag = locIsFittableVertexFlag;}
+		void Set_IsInclusiveVertexFlag(bool locIsInclusiveVertexFlag){dIsInclusiveVertexFlag = locIsInclusiveVertexFlag;}
 
 		//GET REACTION INFO
 		const DReaction* Get_Reaction(void) const{return dReaction;}
@@ -49,6 +51,7 @@ class DReactionStepVertexInfo
 		bool Get_ProductionVertexFlag(void) const{return dIsProductionVertexFlag;}
 		bool Get_DanglingVertexFlag(void) const{return dIsDanglingVertexFlag;}
 		bool Get_FittableVertexFlag(void) const{return dIsFittableVertexFlag;}
+		bool Get_IsInclusiveVertexFlag(void) const{return dIsInclusiveVertexFlag;}
 
 		//GET PARTICLES
 		vector<pair<int, int>> Get_FullConstrainParticles(bool locFitFlag, DReactionState_t locState = d_EitherState, Charge_t locCharge = d_AllCharges, bool locIncludeDecayingFlag = true) const;
@@ -85,6 +88,7 @@ class DReactionStepVertexInfo
 		const DReaction* dReaction = nullptr; //only the first reaction is stored, though there may be several represented by this object (identical channel content)
 		vector<size_t> dReactionStepIndices; //in order from smallest to largest
 		bool dIsProductionVertexFlag = false;
+		bool dIsInclusiveVertexFlag = false;
 
 		//PARTICLE INFO //sorted!
 		//pair: step, particle indices (including all: beam, target, decaying, detected, and missing)
@@ -133,6 +137,29 @@ inline void DReactionStepVertexInfo::Set_Members(const DReaction* locReaction, s
 	dReaction = locReaction;
 	dReactionStepIndices = {locStartStepIndex};
 	dIsProductionVertexFlag = ((locStartStepIndex == 0) && DAnalysis::Get_IsFirstStepBeam(locReaction));
+}
+
+inline void DReactionStepVertexInfo::Reset(void)
+{
+	//REACTION SUMMARY INFO
+	dReaction = nullptr;
+	dReactionStepIndices.clear();
+	dIsProductionVertexFlag = false;
+	dIsInclusiveVertexFlag = false;
+
+	//PARTICLE INFO
+	dFullConstrainParticles.clear();
+	dOnlyConstrainTimeParticles.clear();
+	dNoConstrainParticles.clear();
+
+	//DECAY INFO
+	dDecayingParticles.clear();
+	dDecayingParticles_NoConstrain.clear();
+	dDecayingParticles_FullConstrain.clear();
+
+	dIsDanglingVertexFlag = false;
+	dIsFittableVertexFlag = true;
+	dParentVertexInfo = nullptr;
 }
 
 /************************************************************** INLINE FUNCTIONS ***************************************************************/

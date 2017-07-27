@@ -84,6 +84,7 @@ DReactionStepVertexInfo* DReactionVertexInfo_factory::Setup_VertexInfo(const DRe
 	if(locVertexInfo == nullptr)
 	{
 		locVertexInfo = dResourcePool_ReactionStepVertexInfo->Get_Resource();
+		locVertexInfo->Reset();
 		locVertexInfo->Set_Members(locReaction, locStepIndex);
 	}
 	else
@@ -92,6 +93,8 @@ DReactionStepVertexInfo* DReactionVertexInfo_factory::Setup_VertexInfo(const DRe
 	//loop over final particles: add to the vertex constraint, dive through decaying particles that decay in-place
 		//if decaying in-place: don't add (would add to constraint, but not here (purely internal))
 	auto locReactionStep = locReaction->Get_ReactionStep(locStepIndex);
+	if(locReactionStep->Get_IsInclusiveFlag())
+		locVertexInfo->Set_IsInclusiveVertexFlag(true);
 	for(size_t loc_i = 0; loc_i < locReactionStep->Get_NumFinalPIDs(); ++loc_i)
 	{
 		//check if particle decays, and if so, if in-place
@@ -204,6 +207,7 @@ vector<DReactionStepVertexInfo*> DReactionVertexInfo_factory::Link_Vertices(cons
 		//find order in which constraints need to be constrained
 
 	bool locProgessMadeFlag = false;
+	bool locTryMissingParticleVertexFlag = false;
 	auto locVertexIterator = locVertexInfos.begin();
 	map<pair<int, int>, DReactionStepVertexInfo*> locDefinedDecayingParticles;
 	vector<DReactionStepVertexInfo*> locSortedVertexInfos; //sorted by dependency
@@ -213,7 +217,11 @@ vector<DReactionStepVertexInfo*> DReactionVertexInfo_factory::Link_Vertices(cons
 		{
 			//made a full loop through
 			if(!locProgessMadeFlag)
-				break; //no progress made: cannot constrain remaining vertices
+			{
+				if(locTryMissingParticleVertexFlag)
+					break; //no progress made: cannot constrain remaining vertices
+				locTryMissingParticleVertexFlag = true; //try this now
+			}
 
 			//reset for next pass through
 			locVertexIterator = locVertexInfos.begin();
@@ -221,6 +229,11 @@ vector<DReactionStepVertexInfo*> DReactionVertexInfo_factory::Link_Vertices(cons
 			continue;
 		}
 		auto locVertexInfo = *locVertexIterator;
+		if(!locTryMissingParticleVertexFlag && !locVertexInfo->Get_MissingParticles().empty())
+		{
+			++locVertexIterator; //try again later
+			continue; //first try to reconstruct decaying particles without using the missing mass
+		}
 
 		locProgessMadeFlag = Associate_DecayingParticles(locFitFlag, true, locVertexInfo, locDefinedDecayingParticles);
 		if(!locProgessMadeFlag)
@@ -312,8 +325,11 @@ bool DReactionVertexInfo_factory::Associate_DecayingParticles(bool locFitFlag, b
 	}
 
 	//The positions of these decaying particles are now defined: Can use to constrain vertices in later constraints
+		//However, we can only do so if their p4 is defined as well!  It won't be if there's also a missing particle at this vertex
 	//since we need to match with particles in other constraints, save the OTHER index for the particle
 		//if was in initial state, save final-state pair. and vice versa
+	if(locVertexInfo->Get_IsInclusiveVertexFlag() || !locVertexInfo->Get_MissingParticles().empty())
+		return true; //missing particle: decaying p4 not defined! (have already tried defining it the other way (missing vs invariant) and couldn't)
 	auto locReaction = locVertexInfo->Get_Reaction();
 	for(auto locParticlePair : locNoConstrainDecayingParticles)
 	{

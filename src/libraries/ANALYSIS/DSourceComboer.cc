@@ -5,9 +5,11 @@
 /*
  * PROBLEMS:
  * 
- * fix decay particle creation
- * nphots identical for 2g & pi0g, slightly less for 2pi0
  * check for branches that have bogus content
+ * narrow eta mass cut
+ * fix kaon timing cuts, + any others (e+/-?)
+ * widen pi0 mass cut
+ * widen missing proton/neutron mass cut to 2.2*2.2
  *
  * TESTING:
  * p2pi: OK
@@ -21,22 +23,15 @@
  * p3pi0: OK
  * p pi0 g: OK
  * p2pi g: OK
- * p2pi 2pi0: RUN OVERHAUL
+ * p2pi 2pi0: OK
  * p4pi pi0: OK
- * p, g: RUN MASTER
  * p eta pi0: OK
  * p eta 2pi0: OK
  * 
- * PLUGINS BY:
- * Robison
- * Lubomir
- * Justin
- * Dominick
- * Alex A.
- * Mike
- * Mahmoud
- * Tegan
- * Christiano
+ * USER PLUGINS:
+ * compton: COMPARE
+ * ee_convert: COMPARE
+ * npi_missing: COMPARE
  *
  * EVENTUALLY:
  * ppp
@@ -66,15 +61,13 @@ A) Not exactly. If ANY of the hypos for a track has at least one hit in any dete
 
 */
 
-//TO DO COMPARISONS
-//Comment dE/dx cuts
-
 //UNDO ONCE DONE WITH COMPARISON
 //ST timing cuts
 //Get_RFBunches_ChargedTrack()
 //DVertex in vertexer
 //proton/pi+ dE/dx
 //uncomment E/p
+//uncomment dE/dx
 //only cut k+/k- if no CDC dE/dx info
 //uncomment missE cut
 
@@ -88,6 +81,7 @@ A) Not exactly. If ANY of the hypos for a track has at least one hit in any dete
 
 //NICE TO HAVE:
 //finish comments in Build_ParticleCombos()
+//include missing mass cuts on decaying particles if decay products are missing
 
 namespace DAnalysis
 {
@@ -293,6 +287,7 @@ DSourceComboer::DSourceComboer(JEventLoop* locEventLoop)
 	//Setup cuts/hists
 	japp->RootWriteLock(); //ACQUIRE ROOT LOCK!!
 	{
+/*
 		//CDC dE/dx Proton, Anti-Proton
 		ddEdxCutMap[Proton][SYS_CDC].first = new TF1("df_dEdxCut_CDC_ProtonLow", "exp(-1.0*[0]*x + [1]) + [2]", 0.0, 12.0);
 //		ddEdxCutMap[Proton][SYS_CDC].first->SetParameters(3.93024, 3.0, 1.0); //will be used after testing is done
@@ -324,6 +319,7 @@ DSourceComboer::DSourceComboer(JEventLoop* locEventLoop)
 		ddEdxCutMap[Electron][SYS_FDC].second = new TF1("df_dEdxCut_CDC_ElectronHigh", "[0]", 0.0, 12.0);
 		ddEdxCutMap[Electron][SYS_FDC].second->SetParameter(0, 3.5E-6);
 		ddEdxCutMap.emplace(Positron, ddEdxCutMap[Electron]);
+*/
 /*
 		//E/p
 		dEOverPCutMap[Electron][SYS_FCAL] = new TF1("df_EOverPCut_FCAL_Electron", "[0]", 0.0, 12.0);

@@ -378,13 +378,16 @@ const DKinFitChain* DKinFitUtils_GlueX::Make_KinFitChain(const DReactionVertexIn
 		//not possible if missing decay product: will then compute via missing mass in the next step
 	//but first, figure out which steps we must use missing mass for (and thus must skip on this pass below)
 	set<size_t> locMissingMassSteps;
-	int locCurrentStepIndex = DAnalysis::Get_DefinedParticleStepIndex(locReaction);
-	while(locCurrentStepIndex != -1)
+	auto locDefinedParticleStepIndices = DAnalysis::Get_DefinedParticleStepIndex(locReaction);
+	for(int locCurrentStepIndex : locDefinedParticleStepIndices)
 	{
-		if((locCurrentStepIndex == 0) && locKinFitChain->Get_KinFitChainStep(0)->Get_InitialParticles().empty())
-			break; //is an open-ended decaying particle in the initial state: is ok to define via invariant mass
-		locMissingMassSteps.insert(locCurrentStepIndex);
-		locCurrentStepIndex = locKinFitChain->Get_KinFitChainStep(locCurrentStepIndex)->Get_InitialParticleDecayFromStepIndex();
+		while(locCurrentStepIndex != -1)
+		{
+			if((locCurrentStepIndex == 0) && locKinFitChain->Get_KinFitChainStep(0)->Get_InitialParticles().empty())
+				break; //is an open-ended decaying particle in the initial state: is ok to define via invariant mass
+			locMissingMassSteps.insert(locCurrentStepIndex);
+			locCurrentStepIndex = locKinFitChain->Get_KinFitChainStep(locCurrentStepIndex)->Get_InitialParticleDecayFromStepIndex();
+		}
 	}
 
 	//now create decaying particles
@@ -656,13 +659,14 @@ set<DKinFitConstraint*> DKinFitUtils_GlueX::Create_Constraints(const DReactionVe
 	}
 
 	//Create P4 Constraint
-		//don't do if inclusive reaction
+		//don't do if inclusive reaction, or more than one missing particle
 		//pick the step containing the defined (missing or open-ended-decaying) particle
 		//if no defined particle, use the first step
 	DKinFitConstraint_P4* locP4Constraint = NULL;
-	if(!locKinFitChain->Get_IsInclusiveChannelFlag() && ((locKinFitType == d_P4Fit) || (locKinFitType == d_P4AndVertexFit) || (locKinFitType == d_P4AndSpacetimeFit)))
+	auto locDefinedParticleStepIndices = DAnalysis::Get_DefinedParticleStepIndex(locReaction);
+	if(!locKinFitChain->Get_IsInclusiveChannelFlag() && (locDefinedParticleStepIndices.size() <= 1) && ((locKinFitType == d_P4Fit) || (locKinFitType == d_P4AndVertexFit) || (locKinFitType == d_P4AndSpacetimeFit)))
 	{
-		int locDefinedParticleStepIndex = DAnalysis::Get_DefinedParticleStepIndex(locReaction);
+		int locDefinedParticleStepIndex = locDefinedParticleStepIndices.empty() ? -1 : locDefinedParticleStepIndices[0];
 		int locP4StepIndex = (locDefinedParticleStepIndex >= 0) ? locDefinedParticleStepIndex : 0;
 		auto locStepParticles = Get_StepParticles_NonNull(locKinFitChain, locReaction, locP4StepIndex);
 		locP4Constraint = Make_P4Constraint(locStepParticles.first, locStepParticles.second);
@@ -813,15 +817,16 @@ string DKinFitUtils_GlueX::Get_ConstraintInfo(const DReactionVertexInfo* locReac
 			locMassConstraintStrings[loc_i] = string("#it{m}_{") + string(ParticleName_ROOT(locPID)) + string("}");
 		}
 
-		//P4 Constraint //don't do if inclusive reaction
-		if(!locReaction->Get_IsInclusiveFlag())
+		//P4 Constraint //don't do if inclusive reaction, or more than 1 missing particle
+		auto locDefinedParticleStepIndices = DAnalysis::Get_DefinedParticleStepIndex(locReaction);
+		if(!locReaction->Get_IsInclusiveFlag() && (locDefinedParticleStepIndices.size() <= 1))
 		{
+			int locDefinedParticleStepIndex = locDefinedParticleStepIndices.empty() ? -1 : locDefinedParticleStepIndices[0];
 			//OK, now, check to see if the system is overly constrained: 
 				//there must be at least one particle with non-zero errors in the p4 constraint that is NOT in a mass constraint
 			bool locNonZeroErrorFlag = false;
 
 			//Find step used for p4 constraint: the one with missing/open-ended-decaying particle (if any: else first step)
-			int locDefinedParticleStepIndex = DAnalysis::Get_DefinedParticleStepIndex(locReaction);
 			int locP4StepIndex = (locDefinedParticleStepIndex >= 0) ? locDefinedParticleStepIndex : 0;
 			const DReactionStep* locReactionStep = locReaction->Get_ReactionStep(locP4StepIndex);
 
