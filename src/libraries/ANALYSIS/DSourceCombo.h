@@ -95,7 +95,7 @@ class DSourceComboInfo
 		vector<pair<DSourceComboUse, unsigned char>> dFurtherDecays; //unsigned char: # of (e.g.) pi0s, etc.
 };
 
-bool operator<(const DSourceComboUse& lhs, const DSourceComboUse& rhs)
+inline bool operator<(const DSourceComboUse& lhs, const DSourceComboUse& rhs)
 {
 	//this puts mixed-charge first, then fully-neutral, then fully-charged
 	auto locChargeContent_LHS = Get_ChargeContent(std::get<2>(lhs));

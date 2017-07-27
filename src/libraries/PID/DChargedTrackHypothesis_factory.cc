@@ -32,7 +32,7 @@ jerror_t DChargedTrackHypothesis_factory::init(void)
 	//Setting this flag makes it so that JANA does not delete the objects in _data.  This factory will manage this memory. 
 	SetFactoryFlag(NOT_OBJECT_OWNER);
 	dResourcePool_ChargedTrackHypothesis = new DResourcePool<DChargedTrackHypothesis>();
-	dResourcePool_ChargedTrackHypothesis->Set_ControlParams(100, 20, 0, 0, 0);
+	dResourcePool_ChargedTrackHypothesis->Set_ControlParams(30, 20, 200, 400, 0);
 	return NOERROR;
 }
 
