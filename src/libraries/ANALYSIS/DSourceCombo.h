@@ -95,7 +95,8 @@ class DSourceComboInfo
 		vector<pair<DSourceComboUse, unsigned char>> dFurtherDecays; //unsigned char: # of (e.g.) pi0s, etc.
 };
 
-inline bool operator<(const DSourceComboUse& lhs, const DSourceComboUse& rhs)
+//inline bool operator<(const DSourceComboUse& lhs, const DSourceComboUse& rhs)
+inline bool Compare_SourceComboUses(const DSourceComboUse& lhs, const DSourceComboUse& rhs)
 {
 	//this puts mixed-charge first, then fully-neutral, then fully-charged
 
@@ -144,9 +145,9 @@ struct DSourceComboInfo::DCompare_ParticlePairPIDs
 
 struct DSourceComboInfo::DCompare_FurtherDecays
 {
-	bool operator()(const pair<DSourceComboUse, unsigned char>& lhs, const pair<DSourceComboUse, unsigned char>& rhs) const{return DAnalysis::operator<(lhs.first, rhs.first);} //sort
-	bool operator()(const pair<DSourceComboUse, unsigned char>& lhs, DSourceComboUse rhs) const{return DAnalysis::operator<(lhs.first, rhs);} //lookup
-	bool operator()(DSourceComboUse lhs, const pair<DSourceComboUse, unsigned char>& rhs) const{return DAnalysis::operator<(lhs, rhs.first);} //lookup
+	bool operator()(const pair<DSourceComboUse, unsigned char>& lhs, const pair<DSourceComboUse, unsigned char>& rhs) const{return Compare_SourceComboUses(lhs.first, rhs.first);} //sort
+	bool operator()(const pair<DSourceComboUse, unsigned char>& lhs, DSourceComboUse rhs) const{return Compare_SourceComboUses(lhs.first, rhs);} //lookup
+	bool operator()(DSourceComboUse lhs, const pair<DSourceComboUse, unsigned char>& rhs) const{return Compare_SourceComboUses(lhs, rhs.first);} //lookup
 };
 
 class DSourceCombo
@@ -190,9 +191,9 @@ class DSourceCombo
 
 struct DSourceCombo::DCompare_FurtherDecays
 {
-	bool operator()(const pair<DSourceComboUse, vector<const DSourceCombo*>>& lhs, const pair<DSourceComboUse, vector<const DSourceCombo*>>& rhs) const{return DAnalysis::operator<(lhs.first, rhs.first);} //sort
-	bool operator()(const pair<DSourceComboUse, vector<const DSourceCombo*>>& lhs, DSourceComboUse rhs) const{return DAnalysis::operator<(lhs.first, rhs);} //lookup
-	bool operator()(DSourceComboUse lhs, const pair<DSourceComboUse, vector<const DSourceCombo*>>& rhs) const{return DAnalysis::operator<(lhs, rhs.first);} //lookup
+	bool operator()(const pair<DSourceComboUse, vector<const DSourceCombo*>>& lhs, const pair<DSourceComboUse, vector<const DSourceCombo*>>& rhs) const{return lhs.first < rhs.first;} //sort
+	bool operator()(const pair<DSourceComboUse, vector<const DSourceCombo*>>& lhs, DSourceComboUse rhs) const{return lhs.first < rhs;} //lookup
+	bool operator()(DSourceComboUse lhs, const pair<DSourceComboUse, vector<const DSourceCombo*>>& rhs) const{return lhs < rhs.first;} //lookup
 };
 
 struct DSourceComboChecker_ReusedParticle
@@ -228,7 +229,7 @@ inline bool DSourceComboInfo::operator< (const DSourceComboInfo& rhs) const
 	//check if there's a mismatch between the maps
 	auto locMismachIterators = std::mismatch(dFurtherDecays.begin(), dFurtherDecays.end(), rhs.dFurtherDecays.begin());
 	if(locMismachIterators.first == dFurtherDecays.end())
-		return false; //maps are identical
+		return false; //vectors are identical
 
 	//check if keys are equal
 	if(locMismachIterators.first->first == locMismachIterators.second->first)
