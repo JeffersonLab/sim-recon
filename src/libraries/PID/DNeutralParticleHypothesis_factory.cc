@@ -23,7 +23,7 @@ jerror_t DNeutralParticleHypothesis_factory::init(void)
 	//Setting this flag makes it so that JANA does not delete the objects in _data.  This factory will manage this memory. 
 	SetFactoryFlag(NOT_OBJECT_OWNER);
 	dResourcePool_NeutralParticleHypothesis = new DResourcePool<DNeutralParticleHypothesis>();
-	dResourcePool_NeutralParticleHypothesis->Set_ControlParams(30, 20, 300, 500, 0);
+	dResourcePool_NeutralParticleHypothesis->Set_ControlParams(30, 20, 600, 0, 0); //MUST KEEP SHARED POOL EMPTY, OR ELSE WILL CRASH
 
 	return NOERROR;
 }
