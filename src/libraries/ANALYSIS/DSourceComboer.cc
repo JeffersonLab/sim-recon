@@ -6,7 +6,7 @@
  * PROBLEMS:
  * 
  * Test hist kinematics with flag = true
- * fix step vertex z
+ * fix step vertex z: 2g, pi0eta, 2pi0
  * nphots identical for 2g & pi0g, slightly less for 2pi0
  *
  * TESTING:
@@ -1943,8 +1943,9 @@ void DSourceComboer::Combo_Vertically_NDecays(const DSourceComboUse& locComboUse
 	size_t locInstance = 2; //changed below if needed
 	if(!locNIs2Flag)
 	{
-		auto locIteratorPair = std::equal_range(locFirstNMinus1FurtherDecayCombos.begin(), locFirstNMinus1FurtherDecayCombos.end(), locInstanceUse, DSourceCombo::DCompare_FurtherDecays());
-		locInstance = (*locIteratorPair.first).second.size() + 1; //numbering starts with 1, not 0
+//		auto locIteratorPair = std::equal_range(locFirstNMinus1FurtherDecayCombos.begin(), locFirstNMinus1FurtherDecayCombos.end(), locInstanceUse, DSourceCombo::DCompare_FurtherDecays());
+//		locInstance = (*locIteratorPair.first).second.size() + 1; //numbering starts with 1, not 0
+		locInstance = (*std::find(locFirstNMinus1FurtherDecayCombos.begin(), locFirstNMinus1FurtherDecayCombos.end(), locInstanceUse)).second.size() + 1; //numbering starts with 1, not 0
 	}
 	auto locNextPresidingCombo = Get_NextChargedCombo(locChargedCombo_Presiding, locSourceComboDecayUse, locComboingStage, true, locInstance);
 	auto locChargedCombo_WithPrevious = Get_ChargedCombo_WithNow(locNextPresidingCombo, locComboInfoToCreate, locComboingStage);
@@ -1989,8 +1990,9 @@ void DSourceComboer::Combo_Vertically_NDecays(const DSourceComboUse& locComboUse
 		auto locNMinus1LastCombo = locCombo_NMinus1;
 		if(!locNIs2Flag)
 		{
-			auto locIteratorPair = std::equal_range(locNMinus1FurtherDecayCombos.begin(), locNMinus1FurtherDecayCombos.end(), locNMinus1ComboDecayUse, DSourceCombo::DCompare_FurtherDecays());
-			locNMinus1LastCombo = (*locIteratorPair.first).second.back();
+//			auto locIteratorPair = std::equal_range(locNMinus1FurtherDecayCombos.begin(), locNMinus1FurtherDecayCombos.end(), locNMinus1ComboDecayUse, DSourceCombo::DCompare_FurtherDecays());
+//			locNMinus1LastCombo = (*locIteratorPair.first).second.back();
+			locNMinus1LastCombo = (*std::find(locNMinus1FurtherDecayCombos.begin(), locNMinus1FurtherDecayCombos.end(), locNMinus1ComboDecayUse)).second.back();
 		}
 
 		auto locComboSearchIndex = Get_ResumeAtIndex_Combos(locSourceComboDecayUse, locNMinus1LastCombo, locValidRFBunches_NMinus1, locComboingStage);
@@ -2035,8 +2037,9 @@ void DSourceComboer::Combo_Vertically_NDecays(const DSourceComboUse& locComboUse
 				locAllDecayCombos = {locCombo_NMinus1, locDecayCombo_1};
 			else //combine a combo of N - 1 (e.g. pi0) decays to this new one
 			{
-				auto locIteratorPair = std::equal_range(locNMinus1FurtherDecayCombos.begin(), locNMinus1FurtherDecayCombos.end(), locNMinus1ComboDecayUse, DSourceCombo::DCompare_FurtherDecays());
-				locAllDecayCombos = (*locIteratorPair.first).second;
+//				auto locIteratorPair = std::equal_range(locNMinus1FurtherDecayCombos.begin(), locNMinus1FurtherDecayCombos.end(), locNMinus1ComboDecayUse, DSourceCombo::DCompare_FurtherDecays());
+//				locAllDecayCombos = (*locIteratorPair.first).second;
+				locAllDecayCombos = (*std::find(locNMinus1FurtherDecayCombos.begin(), locNMinus1FurtherDecayCombos.end(), locNMinus1ComboDecayUse)).second;
 				locAllDecayCombos.push_back(locDecayCombo_1);
 			}
 
@@ -3513,15 +3516,18 @@ const DSourceCombo* DSourceComboer::Get_NextChargedCombo(const DSourceCombo* loc
 	auto locFurtherDecayCombos = locChargedCombo_Presiding->Get_FurtherDecayCombos();
 
 	auto locUseToFind = (locComboingStage == d_MixedStage_ZIndependent) ? locNextComboUse : dZDependentUseToIndependentMap.find(locNextComboUse)->second;
-	auto locIteratorPair = std::equal_range(locFurtherDecayCombos.begin(), locFurtherDecayCombos.end(), locUseToFind, DSourceCombo::DCompare_FurtherDecays());
+//	auto locIteratorPair = std::equal_range(locFurtherDecayCombos.begin(), locFurtherDecayCombos.end(), locUseToFind, DSourceCombo::DCompare_FurtherDecays());
+	auto locIterator = std::find(locFurtherDecayCombos.begin(), locFurtherDecayCombos.end(), locUseToFind);
 
 	//check if the use you are looking for is a temporary (e.g. vertical grouping of 2KShorts when comboing horizontally)
 	//or if the charged combos were supposed to be comboed with neutrals, but were instead promoted: no intermediary charged combo, just retuern current
-	if(locIteratorPair.first == locIteratorPair.second)
+//	if(locIteratorPair.first == locIteratorPair.second)
+	if(locIterator == locFurtherDecayCombos.end())
 		return locChargedCombo_Presiding; //temporary: the presiding is still the same!
 
 	//get the vector of potential charged combos
-	auto locNextChargedComboVector = (*locIteratorPair.first).second;
+//	auto locNextChargedComboVector = (*locIteratorPair.first).second;
+	auto locNextChargedComboVector = (*locIterator).second;
 
 	//if getting with-now, size is guaranteed to be 1, just get the first one
 	if(!locGetPresidingFlag)
