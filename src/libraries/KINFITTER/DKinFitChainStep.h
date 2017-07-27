@@ -63,6 +63,7 @@ inline vector<DKinFitParticle*> DKinFitChainStep::Get_AllParticles(void) const
 {
 	auto locAllParticles = dInitialParticles;
 	locAllParticles.insert(locAllParticles.end(), dFinalParticles.begin(), dFinalParticles.end());
+	locAllParticles.erase(std::remove(locAllParticles.begin(), locAllParticles.end(), nullptr), locAllParticles.end());
 	return locAllParticles;
 }
 

@@ -5,9 +5,9 @@
 /*
  * PROBLEMS:
  * 
- * Test hist kinematics with flag = true
- * fix step vertex z
+ * fix decay particle creation
  * nphots identical for 2g & pi0g, slightly less for 2pi0
+ * check for branches that have bogus content
  *
  * TESTING:
  * p2pi: OK

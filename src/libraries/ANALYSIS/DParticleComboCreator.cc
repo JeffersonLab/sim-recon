@@ -343,7 +343,7 @@ const DParticleCombo* DParticleComboCreator::Create_KinFitCombo_NewCombo(const D
 					locNewComboStep->Add_FinalParticle(NULL);
 			}
 			else if(locKinematicData_Measured == nullptr) //decaying
-				locNewComboStep->Add_FinalParticle(NULL); //is set later, when it's in the initial state
+				locNewComboStep->Add_FinalParticle(nullptr); //is set later, when it's in the initial state
 			else if(ParticleCharge(locKinematicData_Measured->PID()) == 0) //neutral
 			{
 				auto locNeutralHypo = static_cast<const DNeutralParticleHypothesis*>(locKinematicData_Measured);
@@ -381,9 +381,9 @@ const DParticleCombo* DParticleComboCreator::Create_KinFitCombo_NewCombo(const D
 void DParticleComboCreator::Set_DecayingParticles(const DReaction* locReaction, const DParticleCombo* locNewParticleCombo, const DParticleCombo* locOldParticleCombo, size_t locStepIndex, DParticleComboStep* locNewParticleComboStep, const DKinFitChain* locKinFitChain, const DKinFitResults* locKinFitResults)
 {
 	auto locKinFitParticle = Get_DecayingParticle(locReaction, locOldParticleCombo, locStepIndex, locKinFitChain, locKinFitResults);
-	if(locKinFitParticle == NULL) //not used in fit
+	if(locKinFitParticle == nullptr) //not used in fit
 	{
-		locNewParticleComboStep->Set_InitialParticle(NULL);
+		locNewParticleComboStep->Set_InitialParticle(nullptr);
 		return; //no need to back-set NULL: was set to NULL by default
 	}
 
@@ -412,7 +412,7 @@ void DParticleComboCreator::Set_DecayingParticles(const DReaction* locReaction, 
 	//find where it is the decaying particle
 	for(size_t loc_i = 0; loc_i < locParticleComboStep->Get_NumFinalParticles(); ++loc_i)
 	{
-		auto locDecayStepIndex = DAnalysis::Get_DecayStepIndex(locReaction, locStepIndex, loc_i);
+		auto locDecayStepIndex = DAnalysis::Get_DecayStepIndex(locReaction, locFromStepIndex, loc_i);
 		if(locDecayStepIndex != int(locStepIndex))
 			continue;
 		locParticleComboStep->Set_FinalParticle(locKinematicData_FinalState, loc_i);
@@ -425,15 +425,15 @@ DKinFitParticle* DParticleComboCreator::Get_DecayingParticle(const DReaction* lo
 	auto locReactionStep = locReaction->Get_ReactionStep(locComboStepIndex);
 	Particle_t locPID = locReactionStep->Get_InitialPID();
 	if(!IsFixedMass(locPID))
-		return NULL;
+		return nullptr;
 
 	//find which step in the DKinFitChain this combo step corresponds to
 	for(size_t loc_i = 0; loc_i < locKinFitChain->Get_NumKinFitChainSteps(); ++loc_i)
 	{
-		const DKinFitChainStep* locKinFitChainStep = locKinFitChain->Get_KinFitChainStep(loc_i);
+		auto locKinFitChainStep = locKinFitChain->Get_KinFitChainStep(loc_i);
 
 		//loop over init particles to get the decaying particle (if present)
-		DKinFitParticle* locDecayingParticle = NULL;
+		DKinFitParticle* locDecayingParticle = nullptr;
 		auto locInitialParticles = locKinFitChainStep->Get_InitialParticles();
 		for(auto locKinFitParticle : locInitialParticles)
 		{
@@ -444,9 +444,8 @@ DKinFitParticle* DParticleComboCreator::Get_DecayingParticle(const DReaction* lo
 			locDecayingParticle = locKinFitParticle;
 			break;
 		}
-		if(locDecayingParticle == NULL)
+		if(locDecayingParticle == nullptr)
 			continue; //no decaying particles in this step
-
 		if(PDGtoPType(locDecayingParticle->Get_PID()) != locPID)
 			continue; //wrong PID
 
@@ -503,42 +502,38 @@ void DParticleComboCreator::Set_SpacetimeVertex(const DReaction* locReaction, co
 	if((locKinFitType == d_NoFit) || (locKinFitType == d_P4Fit))
 		return; //neither vertex nor time was fit: no update to give
 
-	//Position & Time
-	const DKinematicData* locKinematicData = locNewParticleComboStep->Get_InitialParticle();
-	if(locKinematicData != NULL)
-	{
-		DLorentzVector locSpacetimeVertex(locKinematicData->position(), locKinematicData->time());
-		locNewParticleComboStep->Set_SpacetimeVertex(locSpacetimeVertex);
-		return;
-	}
-
 	//mass not fixed: if not initial step, get spacetime vertex from step where this particle was produced
-	if(locStepIndex != 0)
-	{
-		//get spacetime vertex from step where this particle was produced
-		auto locDecayFromStepIndex = Get_InitialParticleDecayFromIndices(locReaction, locStepIndex).first;
-		const DParticleComboStep* locPreviousParticleComboStep = locNewParticleCombo->Get_ParticleComboStep(locDecayFromStepIndex);
-		locNewParticleComboStep->Set_SpacetimeVertex(locPreviousParticleComboStep->Get_SpacetimeVertex());
-		return;
-	}
 
 	//instead, get from common vertex of the other particles
-	const DKinFitParticle* locFinalKinFitParticle = nullptr;
-	auto locAllParticles = locKinFitChain->Get_AllParticles();
-	for(auto& locFinalKinFitParticle : locAllParticles)
+	auto locAllParticles = locKinFitChain->Get_KinFitChainStep(locStepIndex)->Get_FinalParticles();
+	if(locAllParticles.empty())
 	{
-		if(locFinalKinFitParticle != nullptr)
-			break;
+		if(locStepIndex == 0) //get from the first particle you find
+		{
+			size_t locNextStepIndex = 1;
+			while(locAllParticles.empty() && (locNextStepIndex < locKinFitChain->Get_NumKinFitChainSteps()))
+			{
+				locAllParticles = locKinFitChain->Get_KinFitChainStep(locNextStepIndex)->Get_AllParticles();
+				++locNextStepIndex;
+			}
+		}
+		else
+		{
+			//get spacetime vertex from step where this particle was produced
+			auto locDecayFromStepIndex = Get_InitialParticleDecayFromIndices(locReaction, locStepIndex).first;
+			const DParticleComboStep* locPreviousParticleComboStep = locNewParticleCombo->Get_ParticleComboStep(locDecayFromStepIndex);
+			locNewParticleComboStep->Set_SpacetimeVertex(locPreviousParticleComboStep->Get_SpacetimeVertex());
+			return;
+		}
 	}
-	if(locFinalKinFitParticle == nullptr)
-		return;
+	auto locKinFitParticle = locAllParticles[0];
 
 	//need the spacetime vertex at the production vertex of the particle grabbed
 	TLorentzVector locSpacetimeVertex;
-	if(locFinalKinFitParticle->Get_VertexP4AtProductionVertex()) //"position" is at production vertex
-		locSpacetimeVertex = locFinalKinFitParticle->Get_SpacetimeVertex();
+	if(locKinFitParticle->Get_VertexP4AtProductionVertex()) //"position" is at production vertex
+		locSpacetimeVertex = locKinFitParticle->Get_SpacetimeVertex();
 	else //"position" is at decay vertex
-		locSpacetimeVertex = locFinalKinFitParticle->Get_CommonSpacetimeVertex(); //get production
+		locSpacetimeVertex = locKinFitParticle->Get_CommonSpacetimeVertex(); //get production
 	locNewParticleComboStep->Set_SpacetimeVertex(locSpacetimeVertex);
 }
 

@@ -568,8 +568,3 @@ DKinFitResults* DAnalysisResults_factory::Build_KinFitResults(const DParticleCom
 
 	return locKinFitResults;
 }
-
-void Add_Particles()
-{
-}
-

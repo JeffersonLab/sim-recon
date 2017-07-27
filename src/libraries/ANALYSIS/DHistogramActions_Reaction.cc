@@ -1007,7 +1007,7 @@ bool DHistogramAction_ParticleComboKinematics::Perform_Action(JEventLoop* locEve
 			locKinematicData = locParticleComboStep->Get_InitialParticle_Measured();
 		if(locKinematicData != NULL)
 		{
-			if(locIsFirstStepBeam)
+			if(locIsFirstStepBeam && (loc_i == 0))
 			{
 				//check if will be duplicate
 				const JObject* locSourceObject = locParticleComboStep->Get_InitialParticle_Measured();
@@ -1103,7 +1103,8 @@ void DHistogramAction_ParticleComboKinematics::Fill_Hists(JEventLoop* locEventLo
 	else
 	{
 		auto locChargedHypo = dynamic_cast<const DChargedTrackHypothesis*>(locKinematicData);
-		locBeta_Timing = locChargedHypo->measuredBeta();
+		if(locChargedHypo != nullptr)
+			locBeta_Timing = locChargedHypo->measuredBeta();
 	}
 	double locDeltaBeta = locBeta_Timing - locKinematicData->lorentzMomentum().Beta();
 

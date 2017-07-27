@@ -1488,7 +1488,7 @@ const DKinFitChain* DKinFitUtils::Build_OutputKinFitChain(const DKinFitChain* lo
 				continue;
 			auto locMapIterator = locInputToOutputParticleMap.find(locKinFitParticle);
 			if(locMapIterator != locInputToOutputParticleMap.end())
-				locKinFitParticle = locKinFitParticle;
+				locKinFitParticle = locMapIterator->second;
 			locOutputKinFitChainStep->Add_FinalParticle(locKinFitParticle);
 		}
 
