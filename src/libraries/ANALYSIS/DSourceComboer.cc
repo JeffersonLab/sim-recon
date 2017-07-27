@@ -1939,11 +1939,11 @@ void DSourceComboer::Combo_Vertically_NDecays(const DSourceComboUse& locComboUse
 	//locChargedCombo_WithNow corresponds to N mixed combos
 	auto locZIndependentDecayUse = Get_ZIndependentUse(locSourceComboDecayUse);
 	auto locInstanceUse = locCombos_NMinus1.front()->Get_IsComboingZIndependent() ? locZIndependentDecayUse : locSourceComboDecayUse;
-	auto locNMinus1FurtherDecayCombos = locCombos_NMinus1.front()->Get_FurtherDecayCombos();
+	auto locFirstNMinus1FurtherDecayCombos = locCombos_NMinus1.front()->Get_FurtherDecayCombos();
 	size_t locInstance = 2; //changed below if needed
 	if(!locNIs2Flag)
 	{
-		auto locIteratorPair = std::equal_range(locNMinus1FurtherDecayCombos.begin(), locNMinus1FurtherDecayCombos.end(), locInstanceUse, DSourceCombo::DCompare_FurtherDecays());
+		auto locIteratorPair = std::equal_range(locFirstNMinus1FurtherDecayCombos.begin(), locFirstNMinus1FurtherDecayCombos.end(), locInstanceUse, DSourceCombo::DCompare_FurtherDecays());
 		locInstance = (*locIteratorPair.first).second.size() + 1; //numbering starts with 1, not 0
 	}
 	auto locNextPresidingCombo = Get_NextChargedCombo(locChargedCombo_Presiding, locSourceComboDecayUse, locComboingStage, true, locInstance);
