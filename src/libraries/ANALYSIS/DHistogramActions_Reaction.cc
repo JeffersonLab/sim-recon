@@ -685,7 +685,7 @@ bool DHistogramAction_TrackVertexComparison::Perform_Action(JEventLoop* locEvent
 				locPIDPairs.push_back(pair<Particle_t, Particle_t>(locParticles[locHigherMassParticleIndex]->PID(), locParticles[locLowerMassParticleIndex]->PID()));
 			}
 
-			const DKinematicData* locBeamParticle = DAnalysis::Get_IsFirstStepBeam(Get_Reaction()) ? locParticleComboStep->Get_InitialParticle() : NULL;
+			const DKinematicData* locBeamParticle = ((loc_i == 0) && DAnalysis::Get_IsFirstStepBeam(Get_Reaction())) ? locParticleComboStep->Get_InitialParticle() : NULL;
 			double locBeamDeltaT = (locBeamParticle != NULL) ? locParticles[loc_j]->time() - locBeamParticle->time() : numeric_limits<double>::quiet_NaN();
 			locDOCA = dAnalysisUtilities->Calc_DOCAToVertex(locParticles[loc_j], locVertex);
 
