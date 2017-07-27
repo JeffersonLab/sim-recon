@@ -189,7 +189,7 @@ DSourceComboTimeHandler::DSourceComboTimeHandler(JEventLoop* locEventLoop, DSour
 	while(dPhotonVertexZRangeLow + dPhotonVertexZBinWidth > locTargetUpstreamZ);
 	while(dPhotonVertexZRangeLow + locN*dPhotonVertexZBinWidth <= locTargetDownstreamZ)
 		++locN;
-	dNumPhotonVertexZBins = locN + 1; //one extra, for detached vertices
+	dNumPhotonVertexZBins = locN + 2; //two extra, for detached vertices
 
 	//print zbins
 	if(dDebugLevel > 0)

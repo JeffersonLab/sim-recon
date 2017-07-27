@@ -119,12 +119,12 @@ class DSourceComboTimeHandler
 
 		//VERTEX-DEPENDENT PHOTON INFORMATION
 		//For every 10cm in vertex-z, calculate the photon p4 & time for placing mass & delta-t cuts
-		//The z-range extends from the upstream end of the target - 5cm to the downstream end + 15cm
+		//The z-range extends from the upstream end of the target - 5cm to the downstream end + 25cm
 		//so for a 30-cm-long target, it's a range of 50cm: 5bins, evaluated at the center of each bin
 		//Make sure that the center of the target is the center of a zbin!!!
 		float dPhotonVertexZBinWidth = 10.0;
 		float dPhotonVertexZRangeLow = 45.0;
-		size_t dNumPhotonVertexZBins = 5;
+		size_t dNumPhotonVertexZBins = 6;
 		//due to detached vertices
 		double dMaxDecayTimeOffset = 2.0;
 
