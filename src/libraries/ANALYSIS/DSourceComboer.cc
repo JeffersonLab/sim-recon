@@ -32,6 +32,9 @@
  * compton: COMPARE
  * ee_convert: COMPARE
  * npi_missing: COMPARE
+ * jpsi_robison: COMPARE
+ * jpsi_lp: COMPARE
+ * incl_jpsi_lp: COMPARE
  *
  * EVENTUALLY:
  * ppp

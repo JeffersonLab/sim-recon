@@ -157,6 +157,8 @@ void DAnalysisResults_factory::Make_ControlHistograms(vector<const DReaction*>& 
 				}
 				locActionNames.push_back(locAction->Get_ActionName());
 			}
+			if(locPreKinFitFlag && (locKinFitType != d_NoFit))
+				locActionNames.push_back("KinFit Convergence");
 
 			string locDirName = locReactionName;
 			string locDirTitle = locReactionName;
