@@ -8,11 +8,6 @@
  * Test hist kinematics with flag = true
  * fix step vertex z
  * nphots identical for 2g & pi0g, slightly less for 2pi0
- * consider: if only track, cut on ST if nothing else available, even if > matched hit
- * at least do so if all hits agree on bunch
- * if track has no RF bunch: is z-independent. don't redo for different z
- * consider: vector instead of map for combo decay contents
- * consider: within combo don't save use: save pid + info instead (no z): can copy combos instead of remaking (need fast
  *
  * TESTING:
  * p2pi: OK
@@ -56,11 +51,6 @@
  * K0 Sigma+
  * ...
  *
- * Ideas for reducing output size:
- * char instead of int: requires some kind of flag saved to tree, which is checked to decide how to cast the pointer from the branches
- * miss mass cuts
- * beam energy cut
- * cut on kinfit conlev?
  */
 
 /*
@@ -2046,7 +2036,8 @@ void DSourceComboer::Combo_Vertically_NDecays(const DSourceComboUse& locComboUse
 			else //combine a combo of N - 1 (e.g. pi0) decays to this new one
 			{
 				auto locIteratorPair = std::equal_range(locNMinus1FurtherDecayCombos.begin(), locNMinus1FurtherDecayCombos.end(), locNMinus1ComboDecayUse, DSourceCombo::DCompare_FurtherDecays());
-				(*locIteratorPair.first).second.push_back(locDecayCombo_1);
+				locAllDecayCombos = (*locIteratorPair.first).second;
+				locAllDecayCombos.push_back(locDecayCombo_1);
 			}
 
 			//then create the new combo
