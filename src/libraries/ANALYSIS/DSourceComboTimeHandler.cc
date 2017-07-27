@@ -628,6 +628,7 @@ bool DSourceComboTimeHandler::Select_RFBunches_Charged(const DReactionVertexInfo
 	//Applying the RF time cuts is effectively applying PID timing cuts
 
 	//loop over vertices
+	auto locOnlyTrackFlag = (locReactionChargedCombo->Get_SourceParticles(true, d_Charged) == 1);
 	locValidRFBunches.clear();
 	for(const auto& locStepVertexInfo : locReactionVertexInfo->Get_StepVertexInfos())
 	{
@@ -648,7 +649,7 @@ bool DSourceComboTimeHandler::Select_RFBunches_Charged(const DReactionVertexInfo
 		{
 			auto locChargedHypo = static_cast<const DChargedTrack*>(locParticlePair.second)->Get_Hypothesis(locParticlePair.first);
 			vector<int> locParticleRFBunches;
-			if(!Get_RFBunches_ChargedTrack(locChargedHypo, locIsProductionVertex, locVertexPrimaryCombo, locVertex, locTimeOffset, locPropagatedRFTime, locParticleRFBunches))
+			if(!Get_RFBunches_ChargedTrack(locChargedHypo, locIsProductionVertex, locVertexPrimaryCombo, locVertex, locTimeOffset, locPropagatedRFTime, locOnlyTrackFlag, locParticleRFBunches))
 			{
 				if(dDebugLevel >= 10)
 					cout << "pid, has no timing info = " << locChargedHypo->PID() << endl;
@@ -694,6 +695,7 @@ bool DSourceComboTimeHandler::Select_RFBunches_PhotonVertices(const DReactionVer
 	}
 
 	//loop over vertices
+	auto locOnlyTrackFlag = (locReactionFullCombo->Get_SourceParticles(true, d_Charged) == 1);
 	for(const auto& locStepVertexInfo : locReactionVertexInfo->Get_StepVertexInfos())
 	{
 		if(locStepVertexInfo->Get_DanglingVertexFlag())
@@ -753,7 +755,7 @@ bool DSourceComboTimeHandler::Select_RFBunches_PhotonVertices(const DReactionVer
 			else //charged, a new vertex: do PID cuts
 			{
 				auto locChargedHypo = static_cast<const DChargedTrack*>(locParticlePair.second)->Get_Hypothesis(locParticlePair.first);
-				if(!Get_RFBunches_ChargedTrack(locChargedHypo, locIsProductionVertex, locVertexPrimaryFullCombo, locVertex, locTimeOffset, locPropagatedRFTime, locParticleRFBunches))
+				if(!Get_RFBunches_ChargedTrack(locChargedHypo, locIsProductionVertex, locVertexPrimaryFullCombo, locVertex, locTimeOffset, locPropagatedRFTime, locOnlyTrackFlag, locParticleRFBunches))
 				{
 					if(dDebugLevel >= 10)
 						cout << "pid, has no timing info = " << locChargedHypo->PID() << endl;
@@ -803,6 +805,7 @@ bool DSourceComboTimeHandler::Select_RFBunches_AllVerticesUnknown(const DReactio
 	//get and loop over all particles
 	auto locSourceParticles = locReactionFullCombo->Get_SourceParticles(true, locCharge);
 	auto locVertexZBin = Get_VertexZBin_TargetCenter();
+	auto locOnlyTrackFlag = (locReactionFullCombo->Get_SourceParticles(true, d_Charged) == 1);
 	for(const auto& locParticlePair : locSourceParticles)
 	{
 		auto locPID = locParticlePair.first;
@@ -827,7 +830,7 @@ bool DSourceComboTimeHandler::Select_RFBunches_AllVerticesUnknown(const DReactio
 			auto locChargedHypo = static_cast<const DChargedTrack*>(locParticlePair.second)->Get_Hypothesis(locParticlePair.first);
 			auto locVertex = locChargedHypo->position();
 			auto locPropagatedRFTime = dInitialEventRFBunch->dTime + (locVertex.Z() - dTargetCenter.Z())/SPEED_OF_LIGHT;
-			if(!Get_RFBunches_ChargedTrack(locChargedHypo, true, nullptr, locVertex, 0.0, locPropagatedRFTime, locParticleRFBunches))
+			if(!Get_RFBunches_ChargedTrack(locChargedHypo, true, nullptr, locVertex, 0.0, locPropagatedRFTime, locOnlyTrackFlag, locParticleRFBunches))
 			{
 				if(dDebugLevel >= 10)
 					cout << "pid, has no timing info = " << locChargedHypo->PID() << endl;
@@ -1152,7 +1155,7 @@ void DSourceComboTimeHandler::Fill_Histograms(void)
 	}
 }
 
-bool DSourceComboTimeHandler::Get_RFBunches_ChargedTrack(const DChargedTrackHypothesis* locHypothesis, bool locIsProductionVertex, const DSourceCombo* locVertexPrimaryCombo, DVector3 locVertex, double locTimeOffset, double locPropagatedRFTime, vector<int>& locRFBunches)
+bool DSourceComboTimeHandler::Get_RFBunches_ChargedTrack(const DChargedTrackHypothesis* locHypothesis, bool locIsProductionVertex, const DSourceCombo* locVertexPrimaryCombo, DVector3 locVertex, double locTimeOffset, double locPropagatedRFTime, bool locOnlyTrackFlag, vector<int>& locRFBunches)
 {
 	locRFBunches.clear();
 
@@ -1160,7 +1163,7 @@ bool DSourceComboTimeHandler::Get_RFBunches_ChargedTrack(const DChargedTrackHypo
 	auto locSystem = locHypothesis->t1_detector();
 	if(locSystem == SYS_NULL)
 		return false; //no timing info
-	if(locSystem == SYS_START)
+	if((locSystem == SYS_START) && !locOnlyTrackFlag)
 	{
 		//special case: only cut if only matched to 1 ST hit
 		vector<shared_ptr<const DSCHitMatchParams>> locSCMatchParams;

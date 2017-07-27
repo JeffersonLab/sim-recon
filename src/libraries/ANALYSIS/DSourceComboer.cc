@@ -8,8 +8,11 @@
  * Test hist kinematics with flag = true
  * fix step vertex z
  * nphots identical for 2g & pi0g, slightly less for 2pi0
- * mem usage: source combo vectors, kin fit results, neutral hypos
- * include cut on missing E +/- 3(?) GeV
+ * consider: if only track, cut on ST if nothing else available, even if > matched hit
+ * at least do so if all hits agree on bunch
+ * if track has no RF bunch: is z-independent. don't redo for different z
+ * consider: vector instead of map for combo decay contents
+ * consider: within combo don't save use: save pid + info instead (no z): can copy combos instead of remaking
  *
  * TESTING:
  * p2pi: OK
@@ -83,6 +86,7 @@ A) Not exactly. If ANY of the hypos for a track has at least one hit in any dete
 //proton/pi+ dE/dx
 //uncomment E/p
 //only cut k+/k- if no CDC dE/dx info
+//uncomment missE cut
 
 //MUST DO:
 //merge with master
