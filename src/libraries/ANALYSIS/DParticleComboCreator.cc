@@ -11,6 +11,8 @@ DParticleComboCreator::DParticleComboCreator(JEventLoop* locEventLoop, const DSo
 	gPARMS->SetDefaultParameter("COMBO:DEBUG_LEVEL", dDebugLevel);
 	dKinFitUtils = new DKinFitUtils_GlueX(locEventLoop);
 
+	dResourcePool_KinematicData.Set_ControlParams(20, 20, 400, 0, 0); //MUST KEEP SHARED POOL EMPTY, OR ELSE WILL CRASH
+
 	vector<const DNeutralParticleHypothesis*> locNeutralParticleHypotheses;
 	locEventLoop->Get(locNeutralParticleHypotheses); //make sure that brun() is called for the default factory!!!
 	dNeutralParticleHypothesisFactory = static_cast<DNeutralParticleHypothesis_factory*>(locEventLoop->GetFactory("DNeutralParticleHypothesis"));
@@ -673,8 +675,7 @@ DKinematicData* DParticleComboCreator::Build_KinematicData(DKinFitParticle* locK
 	else
 		locKinematicData->setPosition(DVector3(locKinFitParticle->Get_Position().X(),locKinFitParticle->Get_Position().Y(),locKinFitParticle->Get_Position().Z()));
 	locKinematicData->setTime(locKinFitParticle->Get_Time());
-	if(locKinFitParticle->Get_CovarianceMatrix() != NULL)
-		locKinematicData->setErrorMatrix(locKinFitParticle->Get_CovarianceMatrix());
+	locKinematicData->setErrorMatrix(locKinFitParticle->Get_CovarianceMatrix());
 
 	return locKinematicData;
 }
