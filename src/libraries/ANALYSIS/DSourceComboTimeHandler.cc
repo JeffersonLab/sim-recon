@@ -628,7 +628,7 @@ bool DSourceComboTimeHandler::Select_RFBunches_Charged(const DReactionVertexInfo
 	//Applying the RF time cuts is effectively applying PID timing cuts
 
 	//loop over vertices
-	auto locOnlyTrackFlag = (locReactionChargedCombo->Get_SourceParticles(true, d_Charged) == 1);
+	auto locOnlyTrackFlag = (locReactionChargedCombo->Get_SourceParticles(true, d_Charged).size() == 1);
 	locValidRFBunches.clear();
 	for(const auto& locStepVertexInfo : locReactionVertexInfo->Get_StepVertexInfos())
 	{
@@ -695,7 +695,7 @@ bool DSourceComboTimeHandler::Select_RFBunches_PhotonVertices(const DReactionVer
 	}
 
 	//loop over vertices
-	auto locOnlyTrackFlag = (locReactionFullCombo->Get_SourceParticles(true, d_Charged) == 1);
+	auto locOnlyTrackFlag = (locReactionFullCombo->Get_SourceParticles(true, d_Charged).size() == 1);
 	for(const auto& locStepVertexInfo : locReactionVertexInfo->Get_StepVertexInfos())
 	{
 		if(locStepVertexInfo->Get_DanglingVertexFlag())
@@ -805,7 +805,7 @@ bool DSourceComboTimeHandler::Select_RFBunches_AllVerticesUnknown(const DReactio
 	//get and loop over all particles
 	auto locSourceParticles = locReactionFullCombo->Get_SourceParticles(true, locCharge);
 	auto locVertexZBin = Get_VertexZBin_TargetCenter();
-	auto locOnlyTrackFlag = (locReactionFullCombo->Get_SourceParticles(true, d_Charged) == 1);
+	auto locOnlyTrackFlag = (locReactionFullCombo->Get_SourceParticles(true, d_Charged).size() == 1);
 	for(const auto& locParticlePair : locSourceParticles)
 	{
 		auto locPID = locParticlePair.first;
