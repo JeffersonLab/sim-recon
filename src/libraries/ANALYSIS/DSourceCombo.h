@@ -37,7 +37,7 @@ using DSourceComboUse = tuple<Particle_t, signed char, const DSourceComboInfo*>;
 	//and it may even be faster since you don't have to compute a hash
 //also, you have to insert elements, which is much faster for a map than a vector
 //so we'll choose map for now, and let someone who wants to do some profiling decide whether or not to change it
-using DSourceCombosByUse_Small = vector<pair<DSourceComboUse, vector<const DSourceCombo*>>>;
+using DSourceCombosByUse_Small = map<DSourceComboUse, vector<const DSourceCombo*>>;
 
 //DECLARE NAMESPACE-SCOPE FUNCTIONS
 vector<const JObject*> Get_SourceParticles(const vector<pair<Particle_t, const JObject*>>& locSourceParticles, Particle_t locPID = Unknown);
@@ -65,10 +65,6 @@ class DSourceComboInfo
 {
 	public:
 
-		//FORWARD DECLARE COMPARISON STRUCTS
-		struct DCompare_ParticlePairPIDs;
-		struct DCompare_FurtherDecays;
-
 		//CONSTRUCTOR
 		DSourceComboInfo(void) = delete;
 		DSourceComboInfo(const vector<pair<Particle_t, unsigned char>>& locNumParticles, const vector<pair<DSourceComboUse, unsigned char>>& locFurtherDecays = {});
@@ -86,76 +82,23 @@ class DSourceComboInfo
 
 	private:
 
+		//FORWARD DECLARE COMPARISON STRUCT
+		struct DCompare_ParticlePairPIDs;
+
 		//don't have decaying PID a direct member of this combo info
 		//e.g. for a 2g pair, it has no idea whether or not it came from a Pi0, an eta, through direct production, etc.
 		//this way, e.g., the 2g combos can be used for ANY of those possibilities, without creating new objects
 		//it is the responsibility of the containing object to know what the combos are used for: DSourceComboUse
 
 		vector<pair<Particle_t, unsigned char>> dNumParticles;
+
+		//this will be sorted with Compare_SourceComboUses
 		vector<pair<DSourceComboUse, unsigned char>> dFurtherDecays; //unsigned char: # of (e.g.) pi0s, etc.
-};
-
-//inline bool operator<(const DSourceComboUse& lhs, const DSourceComboUse& rhs)
-inline bool Compare_SourceComboUses(const DSourceComboUse& lhs, const DSourceComboUse& rhs)
-{
-	//this puts mixed-charge first, then fully-neutral, then fully-charged
-
-	//first, special case of nullptr (guard against it)
-	if((std::get<2>(lhs) == nullptr) || (std::get<2>(rhs) == nullptr))
-	{
-		if(std::get<2>(lhs) != std::get<2>(rhs))
-			return (std::get<2>(lhs) == nullptr);
-
-		if(std::get<0>(lhs) == std::get<0>(rhs))
-		{
-			if(std::get<1>(lhs) == std::get<1>(rhs))
-				return false;
-			else
-				return std::get<1>(lhs) > std::get<1>(rhs);
-		}
-		if(ParticleMass(std::get<0>(lhs)) == ParticleMass(std::get<0>(rhs)))
-			return std::get<0>(lhs) > std::get<0>(rhs);
-		return (ParticleMass(std::get<0>(lhs)) > ParticleMass(std::get<0>(rhs)));
-	}
-
-	auto locChargeContent_LHS = Get_ChargeContent(std::get<2>(lhs));
-	auto locChargeContent_RHS = Get_ChargeContent(std::get<2>(rhs));
-	if(locChargeContent_LHS != locChargeContent_RHS)
-		return locChargeContent_LHS > locChargeContent_RHS;
-
-	//within each of those, it puts the most-massive particles first
-	if(std::get<0>(lhs) == std::get<0>(rhs))
-	{
-		if(std::get<1>(lhs) == std::get<1>(rhs))
-			return *std::get<2>(rhs) < *std::get<2>(lhs);
-		else
-			return std::get<1>(lhs) > std::get<1>(rhs);
-	}
-	if(ParticleMass(std::get<0>(lhs)) == ParticleMass(std::get<0>(rhs)))
-		return std::get<0>(lhs) > std::get<0>(rhs);
-	return (ParticleMass(std::get<0>(lhs)) > ParticleMass(std::get<0>(rhs)));
-}
-
-struct DSourceComboInfo::DCompare_ParticlePairPIDs
-{
-	bool operator()(const pair<Particle_t, unsigned char>& lhs, const pair<Particle_t, unsigned char>& rhs) const{return lhs.first < rhs.first;} //sort
-	bool operator()(const pair<Particle_t, unsigned char>& lhs, Particle_t rhs) const{return lhs.first < rhs;} //lookup
-	bool operator()(Particle_t lhs, const pair<Particle_t, unsigned char>& rhs) const{return lhs < rhs.first;} //lookup
-};
-
-struct DSourceComboInfo::DCompare_FurtherDecays
-{
-	bool operator()(const pair<DSourceComboUse, unsigned char>& lhs, const pair<DSourceComboUse, unsigned char>& rhs) const{return Compare_SourceComboUses(lhs.first, rhs.first);} //sort
-	bool operator()(const pair<DSourceComboUse, unsigned char>& lhs, DSourceComboUse rhs) const{return Compare_SourceComboUses(lhs.first, rhs);} //lookup
-	bool operator()(DSourceComboUse lhs, const pair<DSourceComboUse, unsigned char>& rhs) const{return Compare_SourceComboUses(lhs, rhs.first);} //lookup
 };
 
 class DSourceCombo
 {
 	public:
-
-		//FORWARD DECLARE COMPARISON STRUCT
-		struct DCompare_FurtherDecays;
 
 		//CONSTRUCTOR
 		DSourceCombo(void) = default;
@@ -189,11 +132,11 @@ class DSourceCombo
 		bool dIsComboingZIndependent = false; //is false for BCAL photons
 };
 
-struct DSourceCombo::DCompare_FurtherDecays
+struct DSourceComboInfo::DCompare_ParticlePairPIDs
 {
-	bool operator()(const pair<DSourceComboUse, vector<const DSourceCombo*>>& lhs, const pair<DSourceComboUse, vector<const DSourceCombo*>>& rhs) const{return lhs.first < rhs.first;} //sort
-	bool operator()(const pair<DSourceComboUse, vector<const DSourceCombo*>>& lhs, DSourceComboUse rhs) const{return lhs.first < rhs;} //lookup
-	bool operator()(DSourceComboUse lhs, const pair<DSourceComboUse, vector<const DSourceCombo*>>& rhs) const{return lhs < rhs.first;} //lookup
+	bool operator()(const pair<Particle_t, unsigned char>& lhs, const pair<Particle_t, unsigned char>& rhs) const{return lhs.first < rhs.first;} //sort
+	bool operator()(const pair<Particle_t, unsigned char>& lhs, Particle_t rhs) const{return lhs.first < rhs;} //lookup
+	bool operator()(Particle_t lhs, const pair<Particle_t, unsigned char>& rhs) const{return lhs < rhs.first;} //lookup
 };
 
 struct DSourceComboChecker_ReusedParticle
@@ -210,11 +153,35 @@ struct DSourceComboChecker_ReusedParticle
 
 /*********************************************************** INLINE MEMBER FUNCTION DEFINITIONS ************************************************************/
 
+//Compare_SourceComboUses
+auto Compare_SourceComboUses = [](const pair<DSourceComboUse, unsigned char>& lhs, const pair<DSourceComboUse, unsigned char>& rhs) -> bool
+{
+	auto locUse_LHS = lhs.first;
+	auto locUse_RHS = rhs.first;
+	//this puts mixed-charge first, then fully-neutral, then fully-charged
+	auto locChargeContent_LHS = Get_ChargeContent(std::get<2>(locUse_LHS));
+	auto locChargeContent_RHS = Get_ChargeContent(std::get<2>(locUse_RHS));
+	if(locChargeContent_LHS != locChargeContent_RHS)
+		return locChargeContent_LHS > locChargeContent_RHS;
+
+	//within each of those, it puts the most-massive particles first
+	if(std::get<0>(locUse_LHS) == std::get<0>(locUse_RHS))
+	{
+		if(std::get<1>(locUse_LHS) == std::get<1>(locUse_RHS))
+			return *std::get<2>(locUse_RHS) < *std::get<2>(locUse_LHS);
+		else
+			return std::get<1>(locUse_LHS) > std::get<1>(locUse_RHS);
+	}
+	if(ParticleMass(std::get<0>(locUse_LHS)) == ParticleMass(std::get<0>(locUse_RHS)))
+		return std::get<0>(locUse_LHS) > std::get<0>(locUse_RHS);
+	return (ParticleMass(std::get<0>(locUse_LHS)) > ParticleMass(std::get<0>(locUse_RHS)));
+};
+
 inline DSourceComboInfo::DSourceComboInfo(const vector<pair<Particle_t, unsigned char>>& locNumParticles, const vector<pair<DSourceComboUse, unsigned char>>& locFurtherDecays) :
 		dNumParticles(locNumParticles), dFurtherDecays(locFurtherDecays)
 {
-	std::sort(dNumParticles.begin(), dNumParticles.end(), DCompare_ParticlePairPIDs());
-	std::sort(dFurtherDecays.begin(), dFurtherDecays.end(), DCompare_FurtherDecays());
+	std::sort(dNumParticles.begin(), dNumParticles.end());
+	std::sort(dFurtherDecays.begin(), dFurtherDecays.end(), Compare_SourceComboUses);
 }
 
 inline bool DSourceComboInfo::operator< (const DSourceComboInfo& rhs) const
@@ -229,7 +196,7 @@ inline bool DSourceComboInfo::operator< (const DSourceComboInfo& rhs) const
 	//check if there's a mismatch between the maps
 	auto locMismachIterators = std::mismatch(dFurtherDecays.begin(), dFurtherDecays.end(), rhs.dFurtherDecays.begin());
 	if(locMismachIterators.first == dFurtherDecays.end())
-		return false; //vectors are identical
+		return false; //maps are identical
 
 	//check if keys are equal
 	if(locMismachIterators.first->first == locMismachIterators.second->first)
@@ -275,10 +242,9 @@ inline void DSourceCombo::Reset(void)
 
 inline void DSourceCombo::Set_Members(const vector<pair<Particle_t, const JObject*>>& locSourceParticles, const DSourceCombosByUse_Small& locFurtherDecayCombos, bool locIsZIndependent)
 {
-	dIsComboingZIndependent = locIsZIndependent;
 	dSourceParticles = locSourceParticles;
 	dFurtherDecayCombos = locFurtherDecayCombos;
-	std::sort(dFurtherDecayCombos.begin(), dFurtherDecayCombos.end(), DCompare_FurtherDecays());
+	dIsComboingZIndependent = locIsZIndependent;
 }
 
 inline vector<pair<Particle_t, const JObject*>> DSourceCombo::Get_SourceParticles(bool locEntireChainFlag, Charge_t locCharge) const
@@ -511,14 +477,14 @@ inline bool Check_AreDuplicateCombos(const DSourceCombo* lhs, const DSourceCombo
 	if(locDecayCombos_lhs.size() != locDecayCombos_rhs.size())
 		return false;
 
-	for(auto& locDecayPair : locDecayCombos_lhs)
+	for(const auto& locDecayPair : locDecayCombos_lhs)
 	{
-		auto locIteratorPair = std::equal_range(locDecayCombos_rhs.begin(), locDecayCombos_rhs.end(), locDecayPair.first, DSourceCombo::DCompare_FurtherDecays());
-		if(locIteratorPair.first == locIteratorPair.second)
+		auto locIterator = locDecayCombos_rhs.find(locDecayPair.first);
+		if(locIterator == locDecayCombos_rhs.end())
 			return false; //careful, compares z's!!
 
 		auto& locDecayCombos_lhs = locDecayPair.second;
-		auto& locDecayCombos_rhs = (*locIteratorPair.first).second;
+		auto& locDecayCombos_rhs = locIterator->second;
 		if(locDecayCombos_lhs.size() != locDecayCombos_rhs.size())
 			return false;
 		if(!std::is_permutation(locDecayCombos_lhs.begin(), locDecayCombos_lhs.end(), locDecayCombos_rhs.begin(), Check_AreDuplicateCombos))
