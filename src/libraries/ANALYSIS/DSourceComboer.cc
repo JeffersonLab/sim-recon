@@ -10,6 +10,7 @@
  * fix kaon timing cuts, + any others (e+/-?)
  * widen pi0 mass cut
  * widen missing proton/neutron mass cut to 2.2*2.2
+ * put in D0, D* mass cuts
  *
  * TESTING:
  * p2pi: OK
@@ -35,6 +36,16 @@
  * jpsi_robison: COMPARE
  * jpsi_lp: COMPARE
  * incl_jpsi_lp: COMPARE
+ * pimpipeta_resolution: COMPARE
+ * eenpip: COMPARE
+ * etapipi: COMPARE
+ *
+ * TO DO:
+ * Alex's
+ * Mike's
+ * Tegan's
+ * Christiano's
+ * Mahmoud's
  *
  * EVENTUALLY:
  * ppp
@@ -3694,6 +3705,10 @@ bool DSourceComboer::Check_NumParticles(const DReaction* locReaction)
 	if(dDebugLevel > 0)
 		cout << "q-: Need " << locNumNegativeNeeded << ", Have " << dTracksByCharge[false].size() << endl;
 	if(dTracksByCharge[false].size() < locNumNegativeNeeded)
+		return false;
+	if(dDebugLevel > 0)
+		cout << "q+/-: Need " << locNumNegativeNeeded + locNumPositiveNeeded << ", Have " << dNumChargedTracks << endl;
+	if(dNumChargedTracks < (locNumNegativeNeeded + locNumPositiveNeeded))
 		return false;
 	if(dDebugLevel > 0)
 		cout << "q0: Need " << locNumNeutralNeeded << ", Have " << locNumDetectedShowers << ", Max allowed: " << dMaxNumNeutrals << endl;

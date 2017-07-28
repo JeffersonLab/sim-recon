@@ -157,6 +157,18 @@ inline void DReactionStepVertexInfo::Reset(void)
 	dDecayingParticles_NoConstrain.clear();
 	dDecayingParticles_FullConstrain.clear();
 
+	//EMPLACE
+	dFullConstrainParticles.emplace(true, vector<pair<int, int>>{});
+	dFullConstrainParticles.emplace(false, vector<pair<int, int>>{});
+	dNoConstrainParticles.emplace(true, vector<pair<int, int>>{});
+	dNoConstrainParticles.emplace(false, vector<pair<int, int>>{});
+
+	dDecayingParticles_NoConstrain.emplace(true, map<pair<int, int>, const DReactionStepVertexInfo*>{});
+	dDecayingParticles_NoConstrain.emplace(false, map<pair<int, int>, const DReactionStepVertexInfo*>{});
+	dDecayingParticles_FullConstrain.emplace(true, map<pair<int, int>, const DReactionStepVertexInfo*>{});
+	dDecayingParticles_FullConstrain.emplace(false, map<pair<int, int>, const DReactionStepVertexInfo*>{});
+
+	//FLAGS
 	dIsDanglingVertexFlag = false;
 	dIsFittableVertexFlag = true;
 	dParentVertexInfo = nullptr;
