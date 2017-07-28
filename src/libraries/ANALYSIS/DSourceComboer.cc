@@ -309,15 +309,16 @@ DSourceComboer::DSourceComboer(JEventLoop* locEventLoop)
 //		ddEdxCutMap[Proton][SYS_CDC].first->SetParameters(3.93024, 3.0, 1.0); //will be used after testing is done
 		ddEdxCutMap[Proton][SYS_CDC].first->SetParameters(4.0, 2.25, 1.0); //used for comparison
 		ddEdxCutMap[Proton][SYS_CDC].second = new TF1("df_dEdxCut_CDC_ProtonHigh", "[0]", 0.0, 12.0);
-		ddEdxCutMap[Proton][SYS_CDC].second->SetParameter(0, 9999999.9);
+		ddEdxCutMap[Proton][SYS_CDC].second->SetParameter(0, 9.9E9);
 		ddEdxCutMap.emplace(AntiProton, ddEdxCutMap[Proton]);
 
-		//CDC dE/dx Pi+
+		//CDC dE/dx Pi+/-
 		ddEdxCutMap[PiPlus][SYS_CDC].first = new TF1("df_dEdxCut_CDC_PionLow", "[0]", 0.0, 12.0);
-		ddEdxCutMap[PiPlus][SYS_CDC].first->SetParameter(0, -9999999.9);
+		ddEdxCutMap[PiPlus][SYS_CDC].first->SetParameter(0, -9.9E9);
 		ddEdxCutMap[PiPlus][SYS_CDC].second = new TF1("df_dEdxCut_CDC_PionHigh", "exp(-1.0*[0]*x + [1]) + [2]", 0.0, 12.0);
 		//ddEdxCutMap[PiPlus][SYS_CDC].second->SetParameters(6.0, 2.80149, 2.55); //will be used after testing is done
 		ddEdxCutMap[PiPlus][SYS_CDC].second->SetParameters(2.0, 0.8, 3.0); //used for comparison
+		ddEdxCutMap.emplace(PiMinus, ddEdxCutMap[PiPlus]);
 
 		//CDC dE/dx K+/K-
 		ddEdxCutMap.emplace(KPlus, ddEdxCutMap[PiPlus]);
@@ -327,13 +328,13 @@ DSourceComboer::DSourceComboer(JEventLoop* locEventLoop)
 		ddEdxCutMap[Electron][SYS_CDC].first = new TF1("df_dEdxCut_CDC_ElectronLow", "[0]", 0.0, 12.0);
 		ddEdxCutMap[Electron][SYS_CDC].first->SetParameter(0, -9999999.9);
 		ddEdxCutMap[Electron][SYS_CDC].second = new TF1("df_dEdxCut_CDC_ElectronHigh", "[0]", 0.0, 12.0);
-		ddEdxCutMap[Electron][SYS_CDC].second->SetParameter(0, 5.5E-6);
+		ddEdxCutMap[Electron][SYS_CDC].second->SetParameter(0, 5.5);
 
 		//FDC dE/dx e+/e-
 		ddEdxCutMap[Electron][SYS_FDC].first = new TF1("df_dEdxCut_CDC_ElectronLow", "[0]", 0.0, 12.0);
 		ddEdxCutMap[Electron][SYS_FDC].first->SetParameter(0, -9999999.9);
 		ddEdxCutMap[Electron][SYS_FDC].second = new TF1("df_dEdxCut_CDC_ElectronHigh", "[0]", 0.0, 12.0);
-		ddEdxCutMap[Electron][SYS_FDC].second->SetParameter(0, 3.5E-6);
+		ddEdxCutMap[Electron][SYS_FDC].second->SetParameter(0, 3.5);
 		ddEdxCutMap.emplace(Positron, ddEdxCutMap[Electron]);
 */
 /*

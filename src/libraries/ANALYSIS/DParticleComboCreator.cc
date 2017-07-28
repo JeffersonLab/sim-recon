@@ -173,7 +173,7 @@ const DParticleCombo* DParticleComboCreator::Build_ParticleCombo(const DReaction
 			locCreateNeutralErrorMatrixFlag = false; //no neutrals!
 
 		//reuse step if already created
-		auto locStepTuple = std::make_tuple(locSourceCombo, locCreateNeutralErrorMatrixFlag, locIsProductionVertex, locFullCombo, locBeamParticle);
+		auto locStepTuple = std::make_tuple(locStepVertexInfo, locSourceCombo, locCreateNeutralErrorMatrixFlag, locIsProductionVertex, locFullCombo, locBeamParticle);
 		auto locStepIterator = dComboStepMap.find(locStepTuple);
 		if(locStepIterator != dComboStepMap.end())
 		{
