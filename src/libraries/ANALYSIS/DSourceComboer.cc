@@ -6,7 +6,6 @@
  * PROBLEMS:
  * 
  * check for branches that have bogus content
- * consider #meson/baryon dependent missing mass cuts (ugh)
  *
  * TESTING:
  * p2pi: OK
