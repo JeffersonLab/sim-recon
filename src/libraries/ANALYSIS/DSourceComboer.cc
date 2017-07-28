@@ -6,11 +6,7 @@
  * PROBLEMS:
  * 
  * check for branches that have bogus content
- * narrow eta mass cut
- * fix kaon timing cuts, + any others (e+/-?)
- * widen pi0 mass cut
- * widen missing proton/neutron mass cut to 2.2*2.2
- * put in D0, D* mass cuts
+ * consider #meson/baryon dependent missing mass cuts (ugh)
  *
  * TESTING:
  * p2pi: OK
@@ -39,10 +35,10 @@
  * pimpipeta_resolution: COMPARE
  * eenpip: COMPARE
  * etapipi: COMPARE
+ * papp: COMPARE
  *
  * TO DO:
  * Alex's
- * Mike's
  * Tegan's
  * Christiano's
  * Mahmoud's
@@ -80,10 +76,17 @@ A) Not exactly. If ANY of the hypos for a track has at least one hit in any dete
 //Get_RFBunches_ChargedTrack()
 //DVertex in vertexer
 //proton/pi+ dE/dx
+//uncomment d0, lambdac mass cuts
 //uncomment E/p
 //uncomment dE/dx
 //only cut k+/k- if no CDC dE/dx info
 //uncomment missE cut
+
+//DO ONCE DONE WITH COMPARISON
+//narrow eta mass cut
+ //fix kaon timing cuts, + any others (e+/-?)
+ //widen pi0 mass cut
+ //widen missing proton/neutron mass cut to 2.2*2.2
 
 //MUST DO:
 //merge with master

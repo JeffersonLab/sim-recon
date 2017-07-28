@@ -136,6 +136,7 @@ DSourceComboP4Handler::DSourceComboP4Handler(DSourceComboer* locSourceComboer, b
 	dInvariantMassCuts.emplace(omega, std::make_pair(0.4, 1.2));
 	dInvariantMassCuts.emplace(EtaPrime, std::make_pair(0.6, 1.3));
 	dInvariantMassCuts.emplace(phiMeson, std::make_pair(0.8, 1.2));
+//	dInvariantMassCuts.emplace(D0, std::make_pair(1.8, 1.92));
 //	dInvariantMassCuts.emplace(Jpsi, std::make_pair(2.7, 3.5)); //TURN THIS BACK ON!!!!
 
 	//INVARIANT MASS CUTS: BARYONS
@@ -145,6 +146,7 @@ DSourceComboP4Handler::DSourceComboP4Handler(DSourceComboer* locSourceComboer, b
 	dInvariantMassCuts.emplace(SigmaMinus, dInvariantMassCuts[Sigma0]);
 	dInvariantMassCuts.emplace(XiMinus, std::make_pair(1.1, 1.5));
 	dInvariantMassCuts.emplace(Xi0, dInvariantMassCuts[XiMinus]);
+//	dInvariantMassCuts.emplace(Lambda_c, std::make_pair(2.0, 2.6));
 
 	//get file name
 	string locOutputFileName = "hd_root.root";
