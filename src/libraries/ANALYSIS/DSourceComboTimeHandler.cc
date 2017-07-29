@@ -222,7 +222,7 @@ DSourceComboTimeHandler::DSourceComboTimeHandler(JEventLoop* locEventLoop, DSour
 	dPIDTimingCuts[Gamma].emplace(SYS_BCAL, new TF1("df_TimeCut", "[0]", 0.0, 12.0));
 	dPIDTimingCuts[Gamma][SYS_BCAL]->SetParameter(0, 1.5);
 	dPIDTimingCuts[Gamma].emplace(SYS_FCAL, new TF1("df_TimeCut", "[0]", 0.0, 12.0));
-	dPIDTimingCuts[Gamma][SYS_FCAL]->SetParameter(0, 2.5);
+	dPIDTimingCuts[Gamma][SYS_FCAL]->SetParameter(0, 2.0);
 	dSelectedRFDeltaTs[Gamma][SYS_BCAL].reserve(1000);
 	dSelectedRFDeltaTs[Gamma][SYS_FCAL].reserve(1000);
 
@@ -234,9 +234,9 @@ DSourceComboTimeHandler::DSourceComboTimeHandler(JEventLoop* locEventLoop, DSour
 	dPIDTimingCuts[Electron].emplace(SYS_BCAL, new TF1("df_TimeCut", "[0]", 0.0, 12.0));
 	dPIDTimingCuts[Electron][SYS_BCAL]->SetParameter(0, 1.0);
 	dPIDTimingCuts[Electron].emplace(SYS_TOF, new TF1("df_TimeCut", "[0]", 0.0, 12.0));
-	dPIDTimingCuts[Electron][SYS_TOF]->SetParameter(0, 2.5);
+	dPIDTimingCuts[Electron][SYS_TOF]->SetParameter(0, 2.0);
 	dPIDTimingCuts[Electron].emplace(SYS_FCAL, new TF1("df_TimeCut", "[0]", 0.0, 12.0));
-	dPIDTimingCuts[Electron][SYS_FCAL]->SetParameter(0, 2.5);
+	dPIDTimingCuts[Electron][SYS_FCAL]->SetParameter(0, 2.0);
 	dSelectedRFDeltaTs[Electron][SYS_BCAL].reserve(1000);
 	dSelectedRFDeltaTs[Electron][SYS_FCAL].reserve(1000);
 	dSelectedRFDeltaTs[Electron][SYS_TOF].reserve(1000);
@@ -265,7 +265,7 @@ DSourceComboTimeHandler::DSourceComboTimeHandler(JEventLoop* locEventLoop, DSour
 	dPIDTimingCuts[KPlus].emplace(SYS_TOF, new TF1("df_TimeCut", "[0]", 0.0, 12.0));
 	dPIDTimingCuts[KPlus][SYS_TOF]->SetParameter(0, 2.0);
 	dPIDTimingCuts[KPlus].emplace(SYS_FCAL, new TF1("df_TimeCut", "[0]", 0.0, 12.0));
-	dPIDTimingCuts[KPlus][SYS_FCAL]->SetParameter(0, 2.5);
+	dPIDTimingCuts[KPlus][SYS_FCAL]->SetParameter(0, 2.0);
 	dPIDTimingCuts.emplace(KMinus, dPIDTimingCuts[KPlus]);
 	dSelectedRFDeltaTs.emplace(KPlus, dSelectedRFDeltaTs[Electron]);
 	dSelectedRFDeltaTs.emplace(KMinus, dSelectedRFDeltaTs[Electron]);

@@ -78,7 +78,7 @@ class DParticleComboCreator
 		DBeamPhoton_factory* dBeamPhotonfactory;
 
 		//CREATED OBJECT MAPS
-		map<tuple<const DReactionStepVertexInfo*, const DSourceCombo*, bool, bool, const DSourceCombo*, const DKinematicData*>, const DParticleComboStep*> dComboStepMap; //kindata is beam (null if not in step): for vertex
+		map<tuple<DReactionStep, const DSourceCombo*, bool, bool, const DSourceCombo*, const DKinematicData*>, const DParticleComboStep*> dComboStepMap; //kindata is beam (null if not in step): for vertex
 		unordered_map<int, const DEventRFBunch*> dRFBunchMap;
 		map<tuple<const DChargedTrack*, Particle_t, int, bool, const DSourceCombo*, const DSourceCombo*, const DKinematicData*>, const DChargedTrackHypothesis*> dChargedHypoMap;
 		map<tuple<const DNeutralShower*, Particle_t, int, bool, bool, const DSourceCombo*, const DSourceCombo*, const DKinematicData*>, const DNeutralParticleHypothesis*> dNeutralHypoMap;

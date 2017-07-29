@@ -101,7 +101,7 @@ jerror_t DReaction_factory_ReactionFilter::evnt(JEventLoop* locEventLoop, uint64
 		Add_MassHistograms(locReaction, locFSInfo, true, "PostKinFit_KinFit");
 
 		// KINEMATICS
-		locReaction->Add_AnalysisAction(new DHistogramAction_ParticleComboKinematics(locReaction, true)); //false: measured data
+		locReaction->Add_AnalysisAction(new DHistogramAction_ParticleComboKinematics(locReaction, false)); //false: measured data
 
 		_data.push_back(locReaction); //Register the DReaction with the factory
 	}

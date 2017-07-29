@@ -37,6 +37,7 @@ class DReactionStep
 
 		// OPERATORS
 		DReactionStep& operator=(const DReactionStep& locSourceData);
+		bool operator<(const DReactionStep& locStep) const{return *dReactionStepInfo < *(locStep.dReactionStepInfo);} //ignores dKinFitConstrainInitMassFlag!!!!
 
 		// MANUALLY SET PIDs: //DEPRECATED
 		void Set_InitialParticleID(Particle_t locPID, bool locIsMissingFlag = false);
@@ -82,7 +83,7 @@ class DReactionStep
 			DReactionStepInfo(Particle_t locInitialPID, Particle_t locSecondBeamPID, Particle_t locTargetPID, vector<Particle_t> locFinalPIDs,
 					int locMissingParticleIndex = -1);
 
-			// QUERY MISSING PARTICLE INDEX
+			bool operator<(const DReactionStepInfo& locInfo) const; //ignores dKinFitConstrainInitMassFlag!!! //not ideal, but in a hurry: for DParticleComboCreator::dComboStepMap
 
 			// PID MEMBERS:
 			Particle_t dInitialPID = Unknown; //e.g. lambda, gamma
@@ -167,6 +168,23 @@ inline DReactionStep::DReactionStepInfo::DReactionStepInfo(Particle_t locInitial
 	Check_IsResonance(dTargetPID);
 	for(const auto& locPID : dFinalPIDs)
 		Check_IsResonance(locPID);
+}
+
+inline bool DReactionStep::DReactionStepInfo::operator<(const DReactionStepInfo& locInfo) const
+{
+	if(dInitialPID != locInfo.dInitialPID)
+		return (dInitialPID < locInfo.dInitialPID);
+
+	if(dSecondBeamPID != locInfo.dSecondBeamPID)
+		return (dSecondBeamPID < locInfo.dSecondBeamPID);
+
+	if(dTargetPID != locInfo.dTargetPID)
+		return (dTargetPID < locInfo.dTargetPID);
+
+	if(dMissingParticleIndex != locInfo.dMissingParticleIndex)
+		return (dMissingParticleIndex < locInfo.dMissingParticleIndex);
+
+	return (dFinalPIDs < locInfo.dFinalPIDs);
 }
 
 /************************************************************** DREACTIONSTEP INLINE FUNCTIONS ***************************************************************/

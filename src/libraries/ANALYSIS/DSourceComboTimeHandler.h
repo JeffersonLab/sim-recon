@@ -189,10 +189,10 @@ inline void DSourceComboTimeHandler::Reset(void)
 inline signed char DSourceComboTimeHandler::Get_PhotonVertexZBin(double locVertexZ) const
 {
 	//given some vertex-z, what bin am I in?
-	int locPhotonVertexZBin = int((locVertexZ - dPhotonVertexZRangeLow)/dPhotonVertexZBinWidth);
-	if((locPhotonVertexZBin < 0) || (locPhotonVertexZBin >= int(dNumPhotonVertexZBins)))
+	if(locVertexZ < dPhotonVertexZRangeLow)
 		return DSourceComboInfo::Get_VertexZIndex_Unknown();
-	return locPhotonVertexZBin;
+	int locPhotonVertexZBin = int((locVertexZ - dPhotonVertexZRangeLow)/dPhotonVertexZBinWidth);
+	return ((locPhotonVertexZBin >= int(dNumPhotonVertexZBins)) ? DSourceComboInfo::Get_VertexZIndex_Unknown() : locPhotonVertexZBin);
 }
 
 inline double DSourceComboTimeHandler::Get_PhotonVertexZBinCenter(signed char locVertexZBin) const

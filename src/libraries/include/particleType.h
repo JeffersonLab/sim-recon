@@ -827,7 +827,7 @@ inline static char* ParticleName_ROOT(Particle_t p)
   case DstarPlus:
     return (char*)"D^{*+}";
   case Lambda_c:
-    return (char*)"Lambda_{c}";
+    return (char*)"#Lambda_{c}";
 		 
   default:
     return (char*)"X";
