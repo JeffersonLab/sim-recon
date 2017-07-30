@@ -82,6 +82,8 @@ class DSourceComboTimeHandler
 		double Get_PhotonVertexZBinCenter(signed char locVertexZBin) const;
 		size_t Get_VertexZBin_TargetCenter(void) const{return Get_PhotonVertexZBin(dTargetCenter.Z());}
 
+		void Vote_OldMethod(const DSourceCombo* locReactionFullCombo, vector<int>& locValidRFBunches);
+
 	private:
 
 		pair<DVector3, double> Calc_Photon_Kinematics(const DNeutralShower* locNeutralShower, const DVector3& locVertex) const;
@@ -104,6 +106,7 @@ class DSourceComboTimeHandler
 		pair<double, double> Calc_RFDeltaTChiSq(const DChargedTrackHypothesis* locHypothesis, double locVertexTime, double locPropagatedRFTime) const;
 
 		void Fill_Histograms(void);
+
 
 		//HANDLERS AND UTILITIES
 		DSourceComboer* dSourceComboer;

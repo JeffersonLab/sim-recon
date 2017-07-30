@@ -877,7 +877,7 @@ int DSourceComboTimeHandler::Select_RFBunch_Full(const DReactionVertexInfo* locR
 		return locRFIterator->second; //already computed, return results!!
 	}
 
-	//note: even if there's only 1 bunch, we still need to cut on photon timing (if any) (and histogram): proceed with the function
+	//note: even if there's only 1 bunch, we still want to histogram: proceed with the function
 	if(locRFBunches.empty())
 		return 0; //no information, hope that the default was correct //only detected particles are massive neutrals: e.g. g, p -> K_L, (p)
 
@@ -954,6 +954,7 @@ int DSourceComboTimeHandler::Select_RFBunch_Full(const DReactionVertexInfo* locR
 			if(dDebugLevel >= 10)
 				cout << "bunch, total delta-t chisq = " << locRFBunch << ", " << locChiSqByRFBunch[locRFBunch] << endl;
 		}
+
 	}
 
 	//if not voted yet, use charged particles at their POCAs to the beamline, else use photons at the target center
@@ -984,6 +985,88 @@ int DSourceComboTimeHandler::Select_RFBunch_Full(const DReactionVertexInfo* locR
 	//save it and return
 	dFullComboRFBunches.emplace(locReactionFullCombo, locRFBunch);
 	return locRFBunch;
+}
+
+void DSourceComboTimeHandler::Vote_OldMethod(const DSourceCombo* locReactionFullCombo, vector<int>& locValidRFBunches)
+{
+	map<int, pair<size_t, double>> locOldMethodVoting; //double: sum(delta-t^2)
+	auto locVertex = dSourceComboVertexer->Get_Vertex(true, locReactionFullCombo, nullptr);
+	double locPropagatedRFTime = dInitialEventRFBunch->dTime + (locVertex.Z() - dTargetCenter.Z())/SPEED_OF_LIGHT;
+
+	//assume all delta-t cuts <= 2ns
+	auto locParticles = locReactionFullCombo->Get_SourceParticles(true);
+
+	//loop over all particles
+	for(const auto& locParticlePair : locParticles)
+	{
+		auto locPID = locParticlePair.first;
+		if((ParticleCharge(locPID) == 0) && (ParticleMass(locPID) > 0.0))
+			continue; //ignore massive neutrals: timing defines their momentum, cannot be used
+
+		vector<int> locParticleRFBunches;
+		double locVertexTime = 0.0;
+		if(ParticleCharge(locPID) == 0)
+		{
+			auto locNeutralShower = static_cast<const DNeutralShower*>(locParticlePair.second);
+			locVertexTime = Calc_Photon_Kinematics(locNeutralShower, locVertex).second;
+			locParticleRFBunches = Calc_BeamBunchShifts(locVertexTime, locPropagatedRFTime, 0.5*dBeamBunchPeriod, false, Gamma, locNeutralShower->dDetectorSystem, locNeutralShower->dEnergy);
+		}
+		else //charged
+		{
+			auto locHypothesis = static_cast<const DChargedTrack*>(locParticlePair.second)->Get_Hypothesis(locParticlePair.first);
+			auto locP = locHypothesis->momentum().Mag();
+
+			//OLD SYSTEM PREFERENCE ORDER FOR SELECTING BUNCHES: TOF/SC/BCAL/FCAL
+			locVertexTime = locHypothesis->time();
+			if((locHypothesis->Get_TOFHitMatchParams() == nullptr) && (locHypothesis->Get_SCHitMatchParams() != nullptr))
+			{
+				//MUST CUT ON SC TIME TOO!!!
+				locVertexTime = locHypothesis->Get_SCHitMatchParams()->dHitTime - locHypothesis->Get_SCHitMatchParams()->dFlightTime;
+				locParticleRFBunches = Calc_BeamBunchShifts(locVertexTime, locPropagatedRFTime, 0.5*dBeamBunchPeriod, false, locPID, SYS_START, locP);
+			}
+			else
+				locParticleRFBunches = Calc_BeamBunchShifts(locVertexTime, locPropagatedRFTime, 0.5*dBeamBunchPeriod, false, locPID, locHypothesis->t1_detector(), locP);
+		}
+
+		for(auto& locRFBunch : locParticleRFBunches)
+		{
+			double locDeltaT = locVertexTime - (locPropagatedRFTime + dBeamBunchPeriod*locRFBunch);
+			auto locIterator = locOldMethodVoting.find(locRFBunch);
+			if(locIterator == locOldMethodVoting.end())
+				locOldMethodVoting.emplace(locRFBunch, pair<size_t, double>(1, locDeltaT*locDeltaT));
+			else
+			{
+				++(locIterator->second.first);
+				locIterator->second.second += locDeltaT*locDeltaT;
+			}
+		}
+	}
+
+	int locChosenBunch = 0;
+	size_t locMostVotes = 0;
+	double locBestDeltaTSq = 9999999.9;
+	for(auto& locVotes : locOldMethodVoting)
+	{
+		if(locVotes.second.first > locMostVotes)
+		{
+			locChosenBunch = locVotes.first;
+			locMostVotes = locVotes.second.first;
+			locBestDeltaTSq = locVotes.second.second;
+		}
+		else if(locVotes.second.first == locMostVotes)
+		{
+			if(locVotes.second.second < locBestDeltaTSq)
+			{
+				locChosenBunch = locVotes.first;
+				locBestDeltaTSq = locVotes.second.second;
+			}
+		}
+	}
+
+	vector<int> locBestVector{locChosenBunch};
+	vector<int> locCommonRFBunches = {}; //if charged or massive neutrals, ignore (they don't choose at this stage)
+	std::set_intersection(locBestVector.begin(), locBestVector.end(), locValidRFBunches.begin(), locValidRFBunches.end(), std::back_inserter(locCommonRFBunches));
+	locValidRFBunches = locCommonRFBunches;
 }
 
 bool DSourceComboTimeHandler::Compute_RFChiSqs_UnknownVertices(const DSourceCombo* locReactionFullCombo, Charge_t locCharge, const vector<int>& locRFBunches, unordered_map<int, double>& locChiSqByRFBunch, map<int, map<Particle_t, map<DetectorSystem_t, vector<pair<float, float>>>>>& locRFDeltaTsForHisting)
@@ -1163,17 +1246,18 @@ bool DSourceComboTimeHandler::Get_RFBunches_ChargedTrack(const DChargedTrackHypo
 	if(locSystem == SYS_NULL)
 		return false; //no timing info
 
-/*
-//TEMP COMMENTED
-	if((locSystem == SYS_START) && !locOnlyTrackFlag)
+	if(dDebugLevel != -2) //NOT Comparison-to-old mode
 	{
-		//special case: only cut if only matched to 1 ST hit
-		vector<shared_ptr<const DSCHitMatchParams>> locSCMatchParams;
-		dDetectorMatches->Get_SCMatchParams(locHypothesis->Get_TrackTimeBased(), locSCMatchParams);
-		if(locSCMatchParams.size() > 1)
-			return false; //don't cut on timing! can't tell for sure!
+		if((locSystem == SYS_START) && !locOnlyTrackFlag)
+		{
+			//special case: only cut if only matched to 1 ST hit
+			vector<shared_ptr<const DSCHitMatchParams>> locSCMatchParams;
+			dDetectorMatches->Get_SCMatchParams(locHypothesis->Get_TrackTimeBased(), locSCMatchParams);
+			if(locSCMatchParams.size() > 1)
+				return false; //don't cut on timing! can't tell for sure!
+		}
 	}
-*/
+
 	auto locX4 = Get_ChargedPOCAToVertexX4(locHypothesis, locIsProductionVertex, locVertexPrimaryCombo, locVertex);
 	auto locVertexTime = locX4.T() - locTimeOffset;
 
@@ -1181,28 +1265,13 @@ bool DSourceComboTimeHandler::Get_RFBunches_ChargedTrack(const DChargedTrackHypo
 	auto locCutFunc = Get_TimeCutFunction(locPID, locSystem);
 	auto locDeltaTCut = (locCutFunc != nullptr) ? locCutFunc->Eval(locP) : 3.0; //if null will return false, but still use for histogramming
 
-//	if(dDebugLevel == -2) //Comparison-to-old mode
+	if(dDebugLevel == -2) //Comparison-to-old mode
 	{
 		locVertexTime = locHypothesis->time();
 		locPropagatedRFTime += (locHypothesis->position().Z() - locVertex.Z())/SPEED_OF_LIGHT;
 	}
 
 	locRFBunches = Calc_BeamBunchShifts(locVertexTime, locPropagatedRFTime, locDeltaTCut, false, locPID, locSystem, locP);
-
-//	if(dDebugLevel == -2) //Comparison-to-old mode
-	{
-		//OLD SYSTEM PREFERENCE ORDER FOR SELECTING BUNCHES: TOF/SC/BCAL/FCAL
-		if((locHypothesis->Get_TOFHitMatchParams() == nullptr) && (locHypothesis->Get_SCHitMatchParams() != nullptr))
-		{
-			//MUST CUT ON SC TIME TOO!!!
-			locVertexTime = locHypothesis->Get_SCHitMatchParams()->dHitTime - locHypothesis->Get_SCHitMatchParams()->dFlightTime;
-			auto locSCRFBunches = Calc_BeamBunchShifts(locVertexTime, locPropagatedRFTime, 1000.0/499.0, false, locPID, SYS_START, locP);
-			if(locSCRFBunches.empty())
-				locRFBunches.clear();
-			else if(!locRFBunches.empty())
-				locRFBunches = Get_CommonRFBunches(locRFBunches, locSCRFBunches);
-		}
-	}
 	return (locCutFunc != nullptr);
 }
 

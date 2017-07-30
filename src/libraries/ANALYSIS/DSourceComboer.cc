@@ -7,45 +7,10 @@
  * 
  * check for branches that have bogus content
  *
- * TESTING:
- * p2pi: OK
- * p2k: OK
- * p4pi: OK
- * p2g: OK
- * p pi0: OK
- * p3pi: OK
- * p2pi0: OK
- * p4g: OK
- * p3pi0: OK
- * p pi0 g: OK
- * p2pi g: OK
- * p2pi 2pi0: OK
- * p4pi pi0: OK
- * p eta pi0: OK
- * p eta 2pi0: OK
+ * OK:
+ *
+ * PROBLEMS:
  * 
- * USER PLUGINS:
- * compton: COMPARE
- * ee_convert: COMPARE
- * npi_missing: COMPARE
- * jpsi_robison: COMPARE
- * jpsi_lp: COMPARE
- * incl_jpsi_lp: COMPARE
- * pimpipeta_resolution: COMPARE
- * eenpip: COMPARE
- * etapipi: COMPARE
- * papp: COMPARE
- * eta_etapr_eeg: COMPARE
- * Dstar: COMPARE
- * LambdaC: COMPARE
- * eta_etapr_eeg: COMPARE
- * etapreeg_2pi: COMPARE
- * pi0dalitz_sd: COMPARE
- * EtaPrm_MKamel: COMPARE
- *
- * TO DO:
- * Tegan's
- *
  * EVENTUALLY:
  * ppp
  * p4pi0
@@ -76,8 +41,6 @@ A) Not exactly. If ANY of the hypos for a track has at least one hit in any dete
 
 //UNDO ONCE DONE WITH COMPARISON
 //ST timing cuts
-//Get_RFBunches_ChargedTrack()
-//DVertex in vertexer
 //proton/pi+ dE/dx
 //uncomment d0, lambdac mass cuts
 //uncomment dE/dx
@@ -1430,6 +1393,13 @@ void DSourceComboer::Combo_WithNeutralsAndBeam(const vector<const DReaction*>& l
 				++(dNumCombosSurvivedStageTracker[locReaction][DConstructionStage::NoVertex_RFBunch]);
 		}
 
+		if(dDebugLevel == -2) //Comparison-to-old mode
+		{
+			dSourceComboTimeHandler->Vote_OldMethod(locReactionFullCombo, locValidRFBunches);
+			if(locValidRFBunches.empty())
+				continue;
+		}
+
 		//Place mass cuts on massive neutrals: Effectively narrows down RF bunches
 		//do 2 things at once (where vertex is known) (hence the really long function name):
 			//calc & cut invariant mass: when massive neutral present
@@ -1548,29 +1518,6 @@ void DSourceComboer::Combo_WithBeam(const vector<const DReaction*>& locReactions
  * 	1: omega -> B, 2 (mixed) (both are listed as further decays)
  *    	B: X -> pi+, pi- (charged)
  * 		2: pi0 -> 2g (neutral)
- *
- * So, it will be comboed as:
- *
- * CHARGED STAGE:
- * 0: Combo_Vertically_AllDecays() -> Call Create_SourceCombos() with 1
- * 		1: Combo_Vertically_AllDecays() -> Call Create_SourceCombos() with B
- * 			B: Combo_Horizontally_All() -> Call Combo_Horizontally_All() (near end, after particle loop) with X -> pi-
- * 				X -> pi-: Create_Combo_OneParticle()
- * 			B: Call Combo_Horizontally_AddParticle() (near end of Combo_Horizontally_All(), after call to create X -> pi-)
- * 		1: Combo_Vertically_AllDecays() -> Skip 2 since contains all neutrals
- * 		1: Combo_Horizontally_All() -> in further decay loop, save combos of B as 1 (since only missing pi0s, which are fully neutral)
- * 0: Combo_Vertically_AllDecays() -> Call Create_SourceCombos() with A
- * 		A: Combo_Horizontally_All() -> Create_Combo_OneParticle()
- * 0: Combo_Horizontally_All() -> in further decay loop call Combo_Horizontally_AddCombo()
- *
- * MIXED STAGE:
- * 0: Combo_Vertically_AllDecays() -> Call Create_SourceCombos() with 1
- * 		1: Combo_Vertically_AllDecays() -> Skip B since already created
- * 		1: Combo_Vertically_AllDecays() -> Call Create_SourceCombos() with 2
- * 			2: Combo_Vertically_AllParticles() -> Combo_Vertically_NParticles()
- * 		1: Combo_Horizontally_All() -> in further decay loop call Combo_Horizontally_AddCombo()
- * 0: Combo_Vertically_AllDecays() -> Skip A since already created
- * 0: Combo_Horizontally_All() -> further decay loop -> Combo_Horizontally_AddCombo()
  *
  * The purpose of passing through the charged combo:
  * 1) To retrieve the correct charged combo when comboing it to neutrals to create mixed
