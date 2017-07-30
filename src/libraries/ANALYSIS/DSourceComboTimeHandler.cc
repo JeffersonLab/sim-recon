@@ -1158,11 +1158,13 @@ void DSourceComboTimeHandler::Fill_Histograms(void)
 bool DSourceComboTimeHandler::Get_RFBunches_ChargedTrack(const DChargedTrackHypothesis* locHypothesis, bool locIsProductionVertex, const DSourceCombo* locVertexPrimaryCombo, DVector3 locVertex, double locTimeOffset, double locPropagatedRFTime, bool locOnlyTrackFlag, vector<int>& locRFBunches)
 {
 	locRFBunches.clear();
-
 	auto locPID = locHypothesis->PID();
 	auto locSystem = locHypothesis->t1_detector();
 	if(locSystem == SYS_NULL)
 		return false; //no timing info
+
+/*
+//TEMP COMMENTED
 	if((locSystem == SYS_START) && !locOnlyTrackFlag)
 	{
 		//special case: only cut if only matched to 1 ST hit
@@ -1171,7 +1173,7 @@ bool DSourceComboTimeHandler::Get_RFBunches_ChargedTrack(const DChargedTrackHypo
 		if(locSCMatchParams.size() > 1)
 			return false; //don't cut on timing! can't tell for sure!
 	}
-
+*/
 	auto locX4 = Get_ChargedPOCAToVertexX4(locHypothesis, locIsProductionVertex, locVertexPrimaryCombo, locVertex);
 	auto locVertexTime = locX4.T() - locTimeOffset;
 
@@ -1184,6 +1186,16 @@ locVertexTime = locHypothesis->time();
 locPropagatedRFTime += (locHypothesis->position().Z() - locVertex.Z())/SPEED_OF_LIGHT;
 
 	locRFBunches = Calc_BeamBunchShifts(locVertexTime, locPropagatedRFTime, locDeltaTCut, false, locPID, locSystem, locP);
+
+//TEMP!
+//OLD SYSTEM PREFERENCE ORDER: TOF/SC/BCAL/FCAL
+if((locHypothesis->Get_TOFHitMatchParams() == nullptr) && (locHypothesis->Get_SCHitMatchParams() != nullptr))
+{
+	//MUST CUT ON SC TIME TOO!!!
+	locVertexTime = locHypothesis->Get_SCHitMatchParams()->dHitTime - locHypothesis->Get_SCHitMatchParams()->dFlightTime;
+	auto locSCRFBunches = Calc_BeamBunchShifts(locVertexTime, locPropagatedRFTime, 1000.0/499.0, false, locPID, SYS_START, locP);
+}
+
 	return (locCutFunc != nullptr);
 }
 

@@ -341,7 +341,9 @@ inline void Print_SourceCombo(const DSourceCombo* locCombo, unsigned char locNum
 	DSourceCombosByUse_Small locFurtherDecayCombos = locCombo->Get_FurtherDecayCombos();
 	for(auto& locDecayPair : locFurtherDecayCombos)
 	{
-		DAnalysis::Print_SourceComboUse(locDecayPair.first, locNumTabs);
+		for(decltype(locNumTabs) locTabNum = 0; locTabNum < locNumTabs; ++locTabNum) cout << "\t";
+		cout << locDecayPair.second.size() << " of ";
+		DAnalysis::Print_SourceComboUse(locDecayPair.first, locNumTabs, true);
 		for(auto& locCombo : locDecayPair.second)
 			DAnalysis::Print_SourceCombo(locCombo, locNumTabs + 1);
 	}
