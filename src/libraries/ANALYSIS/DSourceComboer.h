@@ -189,12 +189,12 @@ class DSourceComboer : public JObject
 		size_t Get_ResumeAtIndex_Combos(const DSourceComboUse& locSourceComboUse, const DSourceCombo* locPreviousCombo, const vector<int>& locBeamBunches, ComboingStage_t locComboingStage) const;
 
 		//GET POTENTIAL PARTICLES & COMBOS FOR COMBOING
-		const vector<const DSourceCombo*>& Get_CombosForComboing(const DSourceComboUse& locComboUse, ComboingStage_t locComboingStage, const vector<int>& locBeamBunches, const DSourceCombo* locChargedCombo_WithPrevious);
+		const vector<const DSourceCombo*>& Get_CombosForComboing(const DSourceComboUse& locComboUse, ComboingStage_t locComboingStage, const vector<int>& locBeamBunches, const DSourceCombo* locChargedCombo_PresidingPrevious);
 		const vector<const DSourceCombo*>& Get_CombosByBeamBunch(const DSourceComboUse& locComboUse, DCombosByBeamBunch& locCombosByBunch, const vector<int>& locBeamBunches, ComboingStage_t locComboingStage);
 
 		//REGISTER VALID RF BUNCHES
-		void Register_ValidRFBunches(const DSourceComboUse& locSourceComboUse, const DSourceCombo* locSourceCombo, const vector<int>& locRFBunches, ComboingStage_t locComboingStage, const DSourceCombo* locChargedCombo_WithNow);
-		void Build_ComboResumeIndices(const DSourceComboUse& locSourceComboUse, ComboingStage_t locComboingStage, const DSourceCombo* locChargedCombo_WithNow);
+		void Register_ValidRFBunches(const DSourceComboUse& locSourceComboUse, const DSourceCombo* locSourceCombo, const vector<int>& locRFBunches, ComboingStage_t locComboingStage, const DSourceCombo* locChargedCombo_Presiding);
+		void Build_ComboResumeIndices(const DSourceComboUse& locSourceComboUse, ComboingStage_t locComboingStage, const DSourceCombo* locChargedCombo_Presiding);
 
 		//PARTICLE UTILITY FUNCTIONS
 		const vector<const JObject*>& Get_ParticlesForComboing(Particle_t locPID, ComboingStage_t locComboingStage, const vector<int>& locBeamBunches = {}, signed char locVertexZBin = 0);
@@ -205,7 +205,7 @@ class DSourceComboer : public JObject
 		//COMBO UTILITY FUNCTIONS
 		DSourceCombosByUse_Large& Get_CombosSoFar(ComboingStage_t locComboingStage, Charge_t locChargeContent_SearchForUse, const DSourceCombo* locChargedCombo = nullptr);
 		DSourceCombosByBeamBunchByUse& Get_SourceCombosByBeamBunchByUse(Charge_t locChargeContent_SearchForUse, const DSourceCombo* locChargedCombo = nullptr);
-		void Copy_ZIndependentMixedResults(const DSourceComboUse& locComboUseToCreate, const DSourceCombo* locChargedCombo_WithNow);
+		void Copy_ZIndependentMixedResults(const DSourceComboUse& locComboUseToCreate, const DSourceCombo* locChargedCombo_Presiding);
 		const DSourceCombo* Get_ChargedCombo_WithNow(const DSourceCombo* locChargedCombo_Presiding, const DSourceComboInfo* locToCreateComboInfo, ComboingStage_t locComboingStage) const;
 		const DSourceCombo* Get_NextChargedCombo(const DSourceCombo* locChargedCombo_Presiding, const DSourceComboUse& locNextComboUse, ComboingStage_t locComboingStage, bool locGetPresidingFlag, size_t locInstance) const;
 		bool Get_PromoteFlag(Particle_t locDecayPID_UseToCheck, const DSourceComboInfo* locComboInfo_UseToCreate, const DSourceComboInfo* locComboInfo_UseToCheck) const;
@@ -472,8 +472,8 @@ inline bool DSourceComboer::Get_IsComboingZIndependent(const JObject* locObject,
 inline DSourceCombosByUse_Large& DSourceComboer::Get_CombosSoFar(ComboingStage_t locComboingStage, Charge_t locChargeContent_SearchForUse, const DSourceCombo* locChargedCombo)
 {
 	//THE INPUT locChargedCombo MUST BE:
-	//If reading from: Whatever charged combo you PREVIOUSLY comboed horizontally with to make the combos you're trying to get
-	//If saving to (you are making a mixed): Whatever charged combo you are about to combo horizontally with to make this new, mixed combo
+	//If reading from: Whatever charged combo PREVIOUSLY presided over the creation of the combos you're trying to get
+	//If saving to (you are making a mixed): Whatever charged combo is presiding over what you are about to make
 
 	//NOTE: If on mixed stage, it is NOT valid to get fully-charged combos from here! In fact, what you want is probably the input combo!
 	if((locComboingStage == d_ChargedStage) || (locChargeContent_SearchForUse == d_Charged))
@@ -487,8 +487,8 @@ inline DSourceCombosByBeamBunchByUse& DSourceComboer::Get_SourceCombosByBeamBunc
 {
 //shouldn't ever be called if charged
 	//THE INPUT locChargedCombo MUST BE:
-	//If reading from: Whatever charged combo you PREVIOUSLY comboed horizontally with to make the combos you're trying to get
-	//If saving to (you are making a mixed): Whatever charged combo you just comboed horizontally with to make this new, mixed combo
+	//If reading from: Whatever charged combo PREVIOUSLY presided over the creation of the combos you're trying to get
+	//If saving to (you are making a mixed): Whatever charged combo is presiding over what you are about to make
 	if(locChargeContent_SearchForUse == d_Neutral)
 		return dSourceCombosByBeamBunchByUse[nullptr];
 	return dSourceCombosByBeamBunchByUse[locChargedCombo];
