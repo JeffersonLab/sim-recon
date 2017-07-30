@@ -2946,7 +2946,7 @@ void DSourceComboer::Combo_Horizontally_AddCombo(const DSourceComboUse& locCombo
 	//if on the all-showers stage, first copy over ALL fcal-only results
 	locSourceCombosByUseToSaveTo.emplace(locComboUseToCreate, Get_SourceComboVectorResource());
 	if(locComboingStage == d_MixedStage)
-		Copy_ZIndependentMixedResults(locComboUseToCreate, locChargedCombo_WithNow);
+		Copy_ZIndependentMixedResults(locComboUseToCreate, locChargedCombo_Presiding);
 
 	if(locCombos_AllBut1->empty())
 		return; //nothing to save, plant an empty vector
@@ -3450,7 +3450,7 @@ void DSourceComboer::Copy_ZIndependentMixedResults(const DSourceComboUse& locCom
 
 	//Get combos so far
 	auto locChargeContent = dComboInfoChargeContent[std::get<2>(locComboUseToCreate)];
-	auto& locSourceCombosByUseSoFar = Get_CombosSoFar(d_MixedStage, locChargeContent, locChargedCombo_Presiding);
+	auto& locSourceCombosByUseSoFar = Get_CombosSoFar(d_MixedStage_ZIndependent, locChargeContent, locChargedCombo_Presiding);
 
 	//Get FCAL results
 	auto locComboUseFCAL = Get_ZIndependentUse(locComboUseToCreate);
