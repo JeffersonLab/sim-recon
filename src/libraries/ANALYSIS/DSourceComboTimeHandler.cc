@@ -1181,21 +1181,28 @@ bool DSourceComboTimeHandler::Get_RFBunches_ChargedTrack(const DChargedTrackHypo
 	auto locCutFunc = Get_TimeCutFunction(locPID, locSystem);
 	auto locDeltaTCut = (locCutFunc != nullptr) ? locCutFunc->Eval(locP) : 3.0; //if null will return false, but still use for histogramming
 
-//TEMP!!
-locVertexTime = locHypothesis->time();
-locPropagatedRFTime += (locHypothesis->position().Z() - locVertex.Z())/SPEED_OF_LIGHT;
+//	if(dDebugLevel == -2) //Comparison-to-old mode
+	{
+		locVertexTime = locHypothesis->time();
+		locPropagatedRFTime += (locHypothesis->position().Z() - locVertex.Z())/SPEED_OF_LIGHT;
+	}
 
 	locRFBunches = Calc_BeamBunchShifts(locVertexTime, locPropagatedRFTime, locDeltaTCut, false, locPID, locSystem, locP);
 
-//TEMP!
-//OLD SYSTEM PREFERENCE ORDER: TOF/SC/BCAL/FCAL
-if((locHypothesis->Get_TOFHitMatchParams() == nullptr) && (locHypothesis->Get_SCHitMatchParams() != nullptr))
-{
-	//MUST CUT ON SC TIME TOO!!!
-	locVertexTime = locHypothesis->Get_SCHitMatchParams()->dHitTime - locHypothesis->Get_SCHitMatchParams()->dFlightTime;
-	auto locSCRFBunches = Calc_BeamBunchShifts(locVertexTime, locPropagatedRFTime, 1000.0/499.0, false, locPID, SYS_START, locP);
-}
-
+//	if(dDebugLevel == -2) //Comparison-to-old mode
+	{
+		//OLD SYSTEM PREFERENCE ORDER FOR SELECTING BUNCHES: TOF/SC/BCAL/FCAL
+		if((locHypothesis->Get_TOFHitMatchParams() == nullptr) && (locHypothesis->Get_SCHitMatchParams() != nullptr))
+		{
+			//MUST CUT ON SC TIME TOO!!!
+			locVertexTime = locHypothesis->Get_SCHitMatchParams()->dHitTime - locHypothesis->Get_SCHitMatchParams()->dFlightTime;
+			auto locSCRFBunches = Calc_BeamBunchShifts(locVertexTime, locPropagatedRFTime, 1000.0/499.0, false, locPID, SYS_START, locP);
+			if(locSCRFBunches.empty())
+				locRFBunches.clear();
+			else if(!locRFBunches.empty())
+				locRFBunches = Get_CommonRFBunches(locRFBunches, locSCRFBunches);
+		}
+	}
 	return (locCutFunc != nullptr);
 }
 
