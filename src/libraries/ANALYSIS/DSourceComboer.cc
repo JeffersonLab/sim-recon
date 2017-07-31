@@ -52,6 +52,9 @@ A) You can try reducing the #z-bins by increasing their widths. However, much su
 //DOUBLE-CHECKS:
 // check trackids in root tree output
 
+//DETACHED:
+//Fix prekinfit neutral hypo creation: Not technically correct ... due to time offset if detached vertex
+
 //NICE TO HAVE:
 //finish comments in Build_ParticleCombos()
 //include missing mass cuts on decaying particles if decay products are missing

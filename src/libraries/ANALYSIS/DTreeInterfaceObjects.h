@@ -204,7 +204,7 @@ template <typename DType> inline void DTreeFillData::Fill_Array(string locBranch
 		auto locFillClass = static_cast<DFillClass<DType>*>(locIterator->second.second);
 
 		//resize if needed & fill
-		if(locArrayIndex > locFillClass->dFillData.size())
+		if(locArrayIndex >= locFillClass->dFillData.size())
 			locFillClass->dFillData.resize(locArrayIndex + 1);
 		locFillClass->dFillData[locArrayIndex] = locData;
 
@@ -214,7 +214,15 @@ template <typename DType> inline void DTreeFillData::Fill_Array(string locBranch
 			locLargestIndexFilled = locArrayIndex;
 	}
 }
+/*
+//Enable this version if type inherits from TObject //void: is return type
+template <typename DType> typename enable_if<std::is_base_of<TObject, DType>::value, void>::type
+		Create_Branch(string locBranchName, size_t locArraySize, string locArraySizeName);
 
+//Enable this version if type does NOT inherit from TObject //void: is return type
+template <typename DType> typename enable_if<!std::is_base_of<TObject, DType>::value, void>::type
+		Create_Branch(string locBranchName, size_t locArraySize, string locArraySizeName);
+*/
 /************************************************************* DTreeFillData: DESTRUCTOR **************************************************************/
 
 inline DTreeFillData::~DTreeFillData(void)
