@@ -1076,7 +1076,7 @@ bool DCutAction_PIDDeltaT::Perform_Action(JEventLoop* locEventLoop, const DParti
 		{
 			if((dSystem != SYS_NULL) && (locChargedHypo->t1_detector() != dSystem))
 				continue;
-			double locDeltaT = locParticles[loc_i]->time() - locParticles[loc_i]->t0();
+			double locDeltaT = locChargedHypo->time() - locChargedHypo->t0();
 //			double locDeltaT = locChargedHypo->Get_TimeAtPOCAToVertex() - locChargedHypo->t0();
 			if(fabs(locDeltaT) > dDeltaTCut)
 				return false;
