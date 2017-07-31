@@ -964,6 +964,22 @@ double DAnalysisUtilities::Calc_Energy_UnusedShowers(JEventLoop* locEventLoop, c
 	return locEnergy_UnusedShowers;
 }
 
+int DAnalysisUtilities::Calc_Momentum_UnusedTracks(JEventLoop* locEventLoop, const DParticleCombo* locParticleCombo, double &locSumPMag_UnusedTracks, TVector3 &locSumP3_UnusedTracks) const
+{
+	vector<const DChargedTrack*> locUnusedChargedTracks;
+	Get_UnusedChargedTracks(locEventLoop, locParticleCombo, locUnusedChargedTracks);
+	
+	for(size_t loc_i = 0; loc_i < locUnusedChargedTracks.size(); ++loc_i) {
+		const DChargedTrack* locUnusedChargedTrack = locUnusedChargedTracks[loc_i];
+		const DChargedTrackHypothesis *locUnusedChargedTrackHypothesis = locUnusedChargedTrack->Get_BestTrackingFOM();
+
+		locSumPMag_UnusedTracks += locUnusedChargedTrackHypothesis->pmag();
+		locSumP3_UnusedTracks += locUnusedChargedTrackHypothesis->momentum();
+	}
+	
+	return (int)locUnusedChargedTracks.size();
+}
+
 double DAnalysisUtilities::Calc_DOCAToVertex(const DKinematicData* locKinematicData, const DVector3& locVertex) const
 {
 	DVector3 locPOCA;

@@ -106,8 +106,19 @@ int main(int narg, char *argv[])
 
 	if(PRINT_TRIPS){
 		cout << endl;
-		cout << "Trip times relative to start of run in seconds:" << endl;
-		for(auto t : fac->trip) cout << t << endl;
+		cout << "Trip/recover times relative to start of run in seconds:" << endl;
+		cout << "tripped  recovered  off" << endl;
+		cout << "-------  --------  -------" << endl;
+		uint32_t i=1; // First recover time is start of run
+		for(auto t : fac->trip){
+			char str[256];
+			if( i < fac->recover.size())
+				sprintf(str, "%7.0f  %7.0f  %7.0f", t, fac->recover[i], fac->recover[i]-t);
+			else
+				sprintf(str, "%6.0f", t);
+			cout << str << endl;
+			i++;
+		}
 		cout << endl;
 	}
 

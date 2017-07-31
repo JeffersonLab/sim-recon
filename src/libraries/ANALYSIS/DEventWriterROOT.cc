@@ -151,6 +151,7 @@ void DEventWriterROOT::Create_DataTree(const DReaction* locReaction, const DReac
 	Create_Branches_ChargedHypotheses(locBranchRegister, locIsMCDataFlag);
 
 	//create branches for combos
+	locBranchRegister.Register_Single<UChar_t>("NumUnusedTracks");
 	Create_Branches_Combo(locBranchRegister, locReaction, locIsMCDataFlag, locPositionToNameMap);
 
 	//Custom branches
@@ -690,6 +691,8 @@ void DEventWriterROOT::Create_Branches_Combo(DTreeBranchRegister& locBranchRegis
 			locBranchRegister.Register_FundamentalArray<Float_t>("RFTime_KinFit", locNumComboString, dInitNumComboArraySize);
 	}
 	locBranchRegister.Register_FundamentalArray<Float_t>("Energy_UnusedShowers", locNumComboString, dInitNumComboArraySize);
+	locBranchRegister.Register_FundamentalArray<Float_t>("SumPMag_UnusedTracks", locNumComboString, dInitNumComboArraySize);
+	locBranchRegister.Register_ClonesArray<TVector3>("SumP3_UnusedTracks", dInitNumComboArraySize);
 
 	map<Particle_t, unsigned int> locParticleNumberMap_Current;
 	for(size_t loc_i = 0; loc_i < locReaction->Get_NumReactionSteps(); ++loc_i)
@@ -709,7 +712,7 @@ void DEventWriterROOT::Create_Branches_Combo(DTreeBranchRegister& locBranchRegis
 			TObjString* locObjString = (TObjString*)locPositionToNameMap->GetValue(locPositionStream.str().c_str());
 			string locParticleBranchName = (const char*)(locObjString->GetString());
 
-			if(IsFixedMass(locInitialPID) && ((locKinFitType == d_P4Fit) || (locKinFitType == d_P4AndVertexFit) || (locKinFitType == d_P4AndSpacetimeFit)))
+			if(IsFixedMass(locInitialPID) && locReactionStep->Get_KinFitConstrainInitMassFlag() && ((locKinFitType == d_P4Fit) || (locKinFitType == d_P4AndVertexFit) || (locKinFitType == d_P4AndSpacetimeFit)))
 				locBranchRegister.Register_ClonesArray<TLorentzVector>(Build_BranchName(locParticleBranchName, "P4_KinFit"), dInitNumComboArraySize);
 			if((loc_i == 0) || IsDetachedVertex(locInitialPID))
 				locBranchRegister.Register_ClonesArray<TLorentzVector>(Build_BranchName(locParticleBranchName, "X4"), dInitNumComboArraySize);
@@ -1064,6 +1067,12 @@ void DEventWriterROOT::Fill_DataTree(JEventLoop* locEventLoop, const DReaction* 
 	for(size_t loc_i = 0; loc_i < locNeutralParticleHypotheses.size(); ++loc_i)
 		Fill_NeutralHypo(locTreeFillData, loc_i, locNeutralParticleHypotheses[loc_i], locMCThrownMatching, locThrownIndexMap, locDetectorMatches);
 
+	//UNUSED TRACKS
+	double locSumPMag_UnusedTracks = 0.0;
+	TVector3 locSumP3_UnusedTracks;
+	int locNumUnusedTracks = dAnalysisUtilities->Calc_Momentum_UnusedTracks(locEventLoop, locParticleCombos[0], locSumPMag_UnusedTracks, locSumP3_UnusedTracks);
+	locTreeFillData->Fill_Single<UChar_t>("NumUnusedTracks", locNumUnusedTracks);
+
 	//COMBOS
 	locTreeFillData->Fill_Single<UInt_t>("NumCombos", UInt_t(locParticleCombos.size()));
 	for(size_t loc_i = 0; loc_i < locParticleCombos.size(); ++loc_i)
@@ -1073,6 +1082,13 @@ void DEventWriterROOT::Fill_DataTree(JEventLoop* locEventLoop, const DReaction* 
 		//ENERGY OF UNUSED SHOWERS (access to event loop required)
 		double locEnergy_UnusedShowers = dAnalysisUtilities->Calc_Energy_UnusedShowers(locEventLoop, locParticleCombos[loc_i]);
 		locTreeFillData->Fill_Array<Float_t>("Energy_UnusedShowers", locEnergy_UnusedShowers, loc_i);
+
+		//MOMENTUM OF UNUSED TRACKS (access to event loop required)
+		double locSumPMag_UnusedTracks = 0;
+		TVector3 locSumP3_UnusedTracks;
+		dAnalysisUtilities->Calc_Momentum_UnusedTracks(locEventLoop, locParticleCombos[loc_i], locSumPMag_UnusedTracks, locSumP3_UnusedTracks);
+		locTreeFillData->Fill_Array<Float_t>("SumPMag_UnusedTracks", locSumPMag_UnusedTracks, loc_i);
+		locTreeFillData->Fill_Array<TVector3>("SumP3_UnusedTracks", locSumP3_UnusedTracks, loc_i);
 
 		if(locMCReaction != NULL)
 		{
@@ -1649,7 +1665,7 @@ void DEventWriterROOT::Fill_ComboStepData(DTreeFillData* locTreeFillData, const 
 
 		if((locStepIndex == 0) || IsDetachedVertex(locInitialPID))
 			locTreeFillData->Fill_Array<TLorentzVector>(Build_BranchName(locParticleBranchName, "X4"), locStepTX4, locComboIndex);
-		if(IsFixedMass(locInitialPID) && ((locKinFitType == d_P4Fit) || (locKinFitType == d_P4AndVertexFit) || (locKinFitType == d_P4AndSpacetimeFit)))
+		if(IsFixedMass(locInitialPID) && locReactionStep->Get_KinFitConstrainInitMassFlag() && ((locKinFitType == d_P4Fit) || (locKinFitType == d_P4AndVertexFit) || (locKinFitType == d_P4AndSpacetimeFit)))
 		{
 			TLorentzVector locDecayP4;
 			if(locInitialParticle == NULL)
