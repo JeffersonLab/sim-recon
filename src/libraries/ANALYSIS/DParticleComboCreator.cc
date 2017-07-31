@@ -139,6 +139,7 @@ const DParticleCombo* DParticleComboCreator::Build_ParticleCombo(const DReaction
 	{
 		auto locInitialEventRFBunch = dSourceComboTimeHandler->Get_InitialEventRFBunch();
 		auto locNewEventRFBunch = dResourcePool_EventRFBunch.Get_Resource();
+		locNewEventRFBunch->Reset();
 		auto locRFTime = dSourceComboTimeHandler->Calc_RFTime(locRFBunchShift);
 		locNewEventRFBunch->Set_Content(locInitialEventRFBunch->dTimeSource, locRFTime, locInitialEventRFBunch->dTimeVariance, 0);
 		locEventRFBunch = locNewEventRFBunch;

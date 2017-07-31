@@ -86,6 +86,37 @@ jerror_t DReaction_factory_ReactionFilter::evnt(JEventLoop* locEventLoop, uint64
 			//Pre-defined actions can be found in ANALYSIS/DHistogramActions_*.h and ANALYSIS/DCutActions.h
 			//If a histogram action is repeated, it should be created with a unique name (string) to distinguish them
 
+
+        locReaction->Add_ComboPreSelectionAction(new DCutAction_NoPIDHit(locReaction, KPlus));
+        locReaction->Add_ComboPreSelectionAction(new DCutAction_NoPIDHit(locReaction, KMinus));
+
+        locReaction->Add_ComboPreSelectionAction(new DCutAction_PIDDeltaT(locReaction, false, 1.5, Gamma, SYS_BCAL));
+        locReaction->Add_ComboPreSelectionAction(new DCutAction_PIDDeltaT(locReaction, false, 2.0, Gamma, SYS_FCAL));
+        locReaction->Add_ComboPreSelectionAction(new DCutAction_PIDDeltaT(locReaction, false, 2.0, Electron, SYS_TOF));
+        locReaction->Add_ComboPreSelectionAction(new DCutAction_PIDDeltaT(locReaction, false, 1.0, Electron, SYS_BCAL));
+        locReaction->Add_ComboPreSelectionAction(new DCutAction_PIDDeltaT(locReaction, false, 2.0, Electron, SYS_FCAL));
+        locReaction->Add_ComboPreSelectionAction(new DCutAction_PIDDeltaT(locReaction, false, 2.0, Positron, SYS_TOF));
+        locReaction->Add_ComboPreSelectionAction(new DCutAction_PIDDeltaT(locReaction, false, 1.0, Positron, SYS_BCAL));
+        locReaction->Add_ComboPreSelectionAction(new DCutAction_PIDDeltaT(locReaction, false, 2.0, Positron, SYS_FCAL));
+        locReaction->Add_ComboPreSelectionAction(new DCutAction_PIDDeltaT(locReaction, false, 0.5, PiPlus, SYS_TOF));
+        locReaction->Add_ComboPreSelectionAction(new DCutAction_PIDDeltaT(locReaction, false, 1.0, PiPlus, SYS_BCAL));
+        locReaction->Add_ComboPreSelectionAction(new DCutAction_PIDDeltaT(locReaction, false, 2.0, PiPlus, SYS_FCAL));
+        locReaction->Add_ComboPreSelectionAction(new DCutAction_PIDDeltaT(locReaction, false, 0.5, PiMinus, SYS_TOF));
+        locReaction->Add_ComboPreSelectionAction(new DCutAction_PIDDeltaT(locReaction, false, 1.0, PiMinus, SYS_BCAL));
+        locReaction->Add_ComboPreSelectionAction(new DCutAction_PIDDeltaT(locReaction, false, 2.0, PiMinus, SYS_FCAL));
+        locReaction->Add_ComboPreSelectionAction(new DCutAction_PIDDeltaT(locReaction, false, 2.0, KPlus, SYS_TOF));
+        locReaction->Add_ComboPreSelectionAction(new DCutAction_PIDDeltaT(locReaction, false, 0.75, KPlus, SYS_BCAL));
+        locReaction->Add_ComboPreSelectionAction(new DCutAction_PIDDeltaT(locReaction, false, 2.0, KPlus, SYS_FCAL));
+        locReaction->Add_ComboPreSelectionAction(new DCutAction_PIDDeltaT(locReaction, false, 2.0, KMinus, SYS_TOF));
+        locReaction->Add_ComboPreSelectionAction(new DCutAction_PIDDeltaT(locReaction, false, 0.75, KMinus, SYS_BCAL));
+        locReaction->Add_ComboPreSelectionAction(new DCutAction_PIDDeltaT(locReaction, false, 2.0, KMinus, SYS_FCAL));
+        locReaction->Add_ComboPreSelectionAction(new DCutAction_PIDDeltaT(locReaction, false, 0.6, Proton, SYS_TOF));
+        locReaction->Add_ComboPreSelectionAction(new DCutAction_PIDDeltaT(locReaction, false, 1.0, Proton, SYS_BCAL));
+        locReaction->Add_ComboPreSelectionAction(new DCutAction_PIDDeltaT(locReaction, false, 2.0, Proton, SYS_FCAL));
+        locReaction->Add_ComboPreSelectionAction(new DCutAction_PIDDeltaT(locReaction, false, 0.6, AntiProton, SYS_TOF));
+        locReaction->Add_ComboPreSelectionAction(new DCutAction_PIDDeltaT(locReaction, false, 1.0, AntiProton, SYS_BCAL));
+        locReaction->Add_ComboPreSelectionAction(new DCutAction_PIDDeltaT(locReaction, false, 2.0, AntiProton, SYS_FCAL));
+
 		//PID
 		locReaction->Add_AnalysisAction(new DHistogramAction_PID(locReaction));
 

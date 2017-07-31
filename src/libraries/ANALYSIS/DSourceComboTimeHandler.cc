@@ -302,21 +302,11 @@ DSourceComboTimeHandler::DSourceComboTimeHandler(JEventLoop* locEventLoop, DSour
 	vector<DetectorSystem_t> locTimingSystems_Neutral {SYS_BCAL, SYS_FCAL};
 	vector<Particle_t> locPIDs {Unknown, Gamma, Electron, Positron, MuonPlus, MuonMinus, PiPlus, PiMinus, KPlus, KMinus, Proton, AntiProton};
 
-	//get file name
-	string locOutputFileName = "hd_root.root";
-	if(gPARMS->Exists("OUTPUT_FILENAME"))
-		gPARMS->GetParameter("OUTPUT_FILENAME", locOutputFileName);
-
 	//CREATE HISTOGRAMS
 	japp->RootWriteLock(); //to prevent undefined behavior due to directory changes, etc.
 	{
 		//get and change to the base (file/global) directory
 		TDirectory* locCurrentDir = gDirectory;
-		TFile* locFile = (TFile*)gROOT->FindObject(locOutputFileName.c_str());
-		if(locFile != NULL)
-			locFile->cd("");
-		else
-			gDirectory->cd("/");
 
 		string locDirName = "Independent";
 		TDirectoryFile* locDirectoryFile = static_cast<TDirectoryFile*>(gDirectory->GetDirectory(locDirName.c_str()));
@@ -739,9 +729,9 @@ bool DSourceComboTimeHandler::Select_RFBunches_PhotonVertices(const DReactionVer
 				}
 				else
 				{
-					locParticleRFBunches = (locSystem != SYS_FCAL) ? dShowerRFBunches[locVertexZBin][locParticlePair.second] : locValidRFBunches; //FCAL has already voted
+					locParticleRFBunches = dShowerRFBunches[locVertexZBin][locParticlePair.second];
 					if(dDebugLevel >= 10)
-						cout << "pre-cut: pid, zbin, #bunches, #valid bunches = " << locPID << ", " << int(locVertexZBin) << ", " << locParticleRFBunches.size() << ", " << locValidRFBunches.size() << endl;
+						cout << "pre-cut: pointer, system, energy, pid, zbin, #bunches, #valid bunches = " << locParticlePair.second << ", " << locSystem << ", " << locNeutralShower->dEnergy << ", " << locPID << ", " << int(locVertexZBin) << ", " << locParticleRFBunches.size() << ", " << locValidRFBunches.size() << endl;
 
 					//Do PID cut
 					auto PhotonCutter = [&](int locRFBunch) -> bool {return !Cut_PhotonPID(locNeutralShower, locVertex, locPropagatedRFTime + locRFBunch*dBeamBunchPeriod, false);};
@@ -815,7 +805,7 @@ bool DSourceComboTimeHandler::Select_RFBunches_AllVerticesUnknown(const DReactio
 			if(ParticleMass(locPID) > 0.0)
 				continue; //massive neutral, can't vote
 			auto locNeutralShower = static_cast<const DNeutralShower*>(locParticlePair.second);
-			locParticleRFBunches = (locNeutralShower->dDetectorSystem != SYS_FCAL) ? dShowerRFBunches[locVertexZBin][locParticlePair.second] : locValidRFBunches; //FCAL has already voted
+			locParticleRFBunches = dShowerRFBunches[locVertexZBin][locParticlePair.second];
 			if(dDebugLevel >= 10)
 				cout << "pre-cut: pid, #bunches, #valid bunches = " << locPID << ", " << locParticleRFBunches.size() << ", " << locValidRFBunches.size() << endl;
 
@@ -1245,7 +1235,7 @@ bool DSourceComboTimeHandler::Get_RFBunches_ChargedTrack(const DChargedTrackHypo
 	auto locSystem = locHypothesis->t1_detector();
 	if(locSystem == SYS_NULL)
 		return false; //no timing info
-
+/*
 	if(dDebugLevel != -2) //NOT Comparison-to-old mode
 	{
 		if((locSystem == SYS_START) && !locOnlyTrackFlag)
@@ -1257,7 +1247,7 @@ bool DSourceComboTimeHandler::Get_RFBunches_ChargedTrack(const DChargedTrackHypo
 				return false; //don't cut on timing! can't tell for sure!
 		}
 	}
-
+*/
 	auto locX4 = Get_ChargedPOCAToVertexX4(locHypothesis, locIsProductionVertex, locVertexPrimaryCombo, locVertex);
 	auto locVertexTime = locX4.T() - locTimeOffset;
 
@@ -1265,7 +1255,7 @@ bool DSourceComboTimeHandler::Get_RFBunches_ChargedTrack(const DChargedTrackHypo
 	auto locCutFunc = Get_TimeCutFunction(locPID, locSystem);
 	auto locDeltaTCut = (locCutFunc != nullptr) ? locCutFunc->Eval(locP) : 3.0; //if null will return false, but still use for histogramming
 
-	if(dDebugLevel == -2) //Comparison-to-old mode
+//	if(dDebugLevel == -2) //Comparison-to-old mode
 	{
 		locVertexTime = locHypothesis->time();
 		locPropagatedRFTime += (locHypothesis->position().Z() - locVertex.Z())/SPEED_OF_LIGHT;

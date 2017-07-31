@@ -148,11 +148,6 @@ DSourceComboP4Handler::DSourceComboP4Handler(DSourceComboer* locSourceComboer, b
 	dInvariantMassCuts.emplace(Xi0, dInvariantMassCuts[XiMinus]);
 //	dInvariantMassCuts.emplace(Lambda_c, std::make_pair(2.0, 2.6));
 
-	//get file name
-	string locOutputFileName = "hd_root.root";
-	if(gPARMS->Exists("OUTPUT_FILENAME"))
-		gPARMS->GetParameter("OUTPUT_FILENAME", locOutputFileName);
-
 	//MISSING MASS CUTS & MASS HISTOGRAMS
 	japp->RootWriteLock(); //ACQUIRE ROOT LOCK!! //I have no idea why this is needed, but without it it crashes.  Sigh. 
 	{
@@ -201,11 +196,6 @@ DSourceComboP4Handler::DSourceComboP4Handler(DSourceComboer* locSourceComboer, b
 		//HISTOGRAMS
 		//get and change to the base (file/global) directory
 		TDirectory* locCurrentDir = gDirectory;
-		TFile* locFile = (TFile*)gROOT->FindObject(locOutputFileName.c_str());
-		if(locFile != NULL)
-			locFile->cd("");
-		else
-			gDirectory->cd("/");
 
 		string locDirName = "Independent";
 		TDirectoryFile* locDirectoryFile = static_cast<TDirectoryFile*>(gDirectory->GetDirectory(locDirName.c_str()));

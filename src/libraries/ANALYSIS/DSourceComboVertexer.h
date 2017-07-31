@@ -43,6 +43,7 @@ class DSourceComboVertexer
 void Set_Vertex(const DVertex* locVertex){dVertex = locVertex;}
 		//SETUP
 		void Set_SourceComboTimeHandler(const DSourceComboTimeHandler* locSourceComboTimeHandler){dSourceComboTimeHandler = locSourceComboTimeHandler;}
+		void Set_DebugLevel(int locDebugLevel){dDebugLevel = locDebugLevel;}
 
 		//COMPUTE
 		void Calc_VertexTimeOffsets_WithCharged(const DReactionVertexInfo* locReactionVertexInfo, const DSourceCombo* locReactionChargedCombo);

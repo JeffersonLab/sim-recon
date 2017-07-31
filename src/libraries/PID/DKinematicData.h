@@ -91,7 +91,9 @@ class DKinematicData : public JObject
 			//CONSTRUCTORS
 			DKinematicInfo(void) = default;
 			DKinematicInfo(Particle_t locPID, const DVector3& locMomentum, DVector3 locPosition = DVector3(), double locTime = 0.0, const TMatrixFSym* locErrorMatrix = nullptr);
+
 			void Set_Members(Particle_t locPID, const DVector3& locMomentum, DVector3 locPosition = DVector3(), double locTime = 0.0, const TMatrixFSym* locErrorMatrix = nullptr);
+			void Reset(void);
 
 			//MEMBERS
 			Particle_t dPID = Unknown;
@@ -116,7 +118,7 @@ class DKinematicData : public JObject
 
 /************************************************************** CONSTRUCTORS & OPERATORS ***************************************************************/
 
-inline DKinematicData::DKinematicData(void) : dKinematicInfo(dResourcePool_KinematicInfo->Get_SharedResource()) {}
+inline DKinematicData::DKinematicData(void) : dKinematicInfo(dResourcePool_KinematicInfo->Get_SharedResource()) {dKinematicInfo->Reset();}
 
 inline DKinematicData::DKinematicData(Particle_t locPID, const DVector3& locMomentum, DVector3 locPosition, double locTime, const TMatrixFSym* locErrorMatrix) :
 		dKinematicInfo(dResourcePool_KinematicInfo->Get_SharedResource())
@@ -175,7 +177,17 @@ inline void DKinematicData::DKinematicInfo::Set_Members(Particle_t locPID, const
 inline void DKinematicData::Reset(void)
 {
 	dKinematicInfo = dResourcePool_KinematicInfo->Get_SharedResource(); //not safe to reset individually, since you don't know what it's shared with
+	dKinematicInfo->Reset();
 	ClearAssociatedObjects();
+}
+
+inline void DKinematicData::DKinematicInfo::Reset(void)
+{
+	dPID = Unknown;
+	dMomentum = DVector3();
+	dPosition = DVector3();
+	dTime = 0.0;
+	dErrorMatrix = nullptr;
 }
 
 #endif /* _DKINEMATICDATA_ */

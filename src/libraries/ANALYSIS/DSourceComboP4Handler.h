@@ -38,6 +38,7 @@ class DSourceComboP4Handler
 		DSourceComboP4Handler(void) = delete;
 		DSourceComboP4Handler(DSourceComboer* locSourceComboer, bool locCreateHistsFlag = true);
 		~DSourceComboP4Handler(void){Fill_Histograms();}
+		void Set_DebugLevel(int locDebugLevel){dDebugLevel = locDebugLevel;}
 
 		//SET HANDLERS
 		void Set_SourceComboVertexer(const DSourceComboVertexer* locSourceComboVertexer){dSourceComboVertexer = locSourceComboVertexer;}

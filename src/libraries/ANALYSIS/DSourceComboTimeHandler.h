@@ -43,6 +43,7 @@ class DSourceComboTimeHandler
 
 		//SETUP
 		void Reset(void);
+		void Set_DebugLevel(int locDebugLevel){dDebugLevel = locDebugLevel;}
 		void Setup(const vector<const DNeutralShower*>& locNeutralShowers, const DEventRFBunch* locInitialEventRFBunch, const DDetectorMatches* locDetectorMatches);
 		void Set_BeamParticles(const vector<const DBeamPhoton*>& locBeamParticles);
 

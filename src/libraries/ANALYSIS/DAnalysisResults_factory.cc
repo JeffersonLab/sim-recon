@@ -123,33 +123,9 @@ void DAnalysisResults_factory::Make_ControlHistograms(vector<const DReaction*>& 
 	TH1D* loc1DHist;
 	TH2D* loc2DHist;
 
-	//get and change to the base (file/global) directory
-	string locOutputFileName = "hd_root.root";
-	if(gPARMS->Exists("OUTPUT_FILENAME"))
-		gPARMS->GetParameter("OUTPUT_FILENAME", locOutputFileName);
-
 	dApplication->RootWriteLock(); //to prevent undefined behavior due to directory changes, etc.
 	{
 		TDirectory* locCurrentDir = gDirectory;
-		TFile* locFile = (TFile*)gROOT->FindObject(locOutputFileName.c_str());
-		if(locFile == NULL){
-			jerr << "----------------------------------------------------" << endl;
-			jerr << "ERROR: Unable to find ROOT file object \"" << locOutputFileName << "\"!" <<endl;
-			jerr << "This is required by the DAnalysisResults_factory. This may happen if you" << endl;
-			jerr << "are not using hd_root to run your plugin or you have not explicitly opened" << endl;
-			jerr << "a TFile with this name in your plugin." << endl;
-			jerr << endl;
-			jerr << "This is a fatal error so I'm quitting now." << endl;
-			jerr << endl;
-			exit(-1);
-			// gDirectory->cd("/"); // original line executed for this condition
-		}
-		if(locFile != NULL)
-			locFile->cd("");
-		else
-			gDirectory->cd("/");
-		TDirectory* locFileBaseDir = gDirectory;
-		locFile->cd("");
 
 		for(size_t loc_i = 0; loc_i < locReactions.size(); ++loc_i)
 		{
@@ -175,9 +151,9 @@ void DAnalysisResults_factory::Make_ControlHistograms(vector<const DReaction*>& 
 
 			string locDirName = locReactionName;
 			string locDirTitle = locReactionName;
-			locFileBaseDir->cd();
+			locCurrentDir->cd();
 
-			TDirectoryFile* locDirectoryFile = static_cast<TDirectoryFile*>(locFile->GetDirectory(locDirName.c_str()));
+			TDirectoryFile* locDirectoryFile = static_cast<TDirectoryFile*>(locCurrentDir->GetDirectory(locDirName.c_str()));
 			if(locDirectoryFile == NULL)
 				locDirectoryFile = new TDirectoryFile(locDirName.c_str(), locDirTitle.c_str());
 			locDirectoryFile->cd();

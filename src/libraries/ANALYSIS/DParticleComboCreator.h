@@ -39,6 +39,7 @@ class DParticleComboCreator
 		const DParticleCombo* Build_ThrownCombo(JEventLoop* locEventLoop, const DReaction* locThrownReaction, deque<pair<const DMCThrown*, deque<const DMCThrown*> > >& locThrownSteps);
 
 		void Reset(void);
+		void Set_DebugLevel(int locDebugLevel){dDebugLevel = locDebugLevel;}
 
 	private:
 

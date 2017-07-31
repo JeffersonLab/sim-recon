@@ -334,7 +334,7 @@ DVector3 DSourceComboVertexer::Calc_Vertex(bool locIsProductionVertexFlag, const
 		}
 		locVertexParticles = {*locThetaNearest90Iterator};
 		auto locVertex = locVertexParticles[0]->position();
-		if(dDebugLevel == -2) //Comparison-to-old mode
+//		if(dDebugLevel == -2) //Comparison-to-old mode
 			locVertex = dVertex->dSpacetimeVertex.Vect();
 		dVertexMap.emplace(std::make_pair(locIsProductionVertexFlag, locVertexParticles), locVertex);
 		if(dDebugLevel >= 10)
@@ -352,7 +352,7 @@ DVector3 DSourceComboVertexer::Calc_Vertex(bool locIsProductionVertexFlag, const
 	if(locVertexIterator == dVertexMap.end())
 	{
 		auto locVertex = dAnalysisUtilities->Calc_CrudeVertex(locVertexParticles);
-		if(dDebugLevel == -2) //Comparison-to-old mode
+//		if(dDebugLevel == -2) //Comparison-to-old mode
 			locVertex = dVertex->dSpacetimeVertex.Vect();
 		if(dDebugLevel >= 10)
 			cout << "crude vertex = " << locVertex.X() << ", " << locVertex.Y() << ", " << locVertex.Z() << endl;

@@ -54,6 +54,7 @@ A) You can try reducing the #z-bins by increasing their widths. However, much su
 //only cut k+/k- if no CDC dE/dx info
 //uncomment missE cut
 //UNDO DELTA-T CUT CHANGE IN DCUTACTIONS
+//fix vertexer, time handler debug modes
 
 //DO ONCE DONE WITH COMPARISON
 //update ALL cut values
@@ -248,11 +249,6 @@ DSourceComboer::DSourceComboer(JEventLoop* locEventLoop)
 		}
 	}
 
-	//get file name
-	string locOutputFileName = "hd_root.root";
-	if(gPARMS->Exists("OUTPUT_FILENAME"))
-		gPARMS->GetParameter("OUTPUT_FILENAME", locOutputFileName);
-
 	//Make sure this matches DConstructionStage!!!
 	vector<string> locBuildStages_Event = {"Input", "Min # Particles", "Max # Particles", "In Skim", "Charged Combos", "Charged RF Bunch", "Full Combos", "Neutral RF Bunch",
 			"No-Vertex RF Bunch", "Heavy-Neutral IM", "Beam Combos", "MM Vertex Timing", "MM-vertex IM Cuts", "Accurate-Photon IM", "Reaction Beam-RF Cuts", "Missing Mass"};
@@ -319,11 +315,6 @@ DSourceComboer::DSourceComboer(JEventLoop* locEventLoop)
 
 		//get and change to the base (file/global) directory
 		TDirectory* locCurrentDir = gDirectory;
-		TFile* locFile = (TFile*)gROOT->FindObject(locOutputFileName.c_str());
-		if(locFile != NULL)
-			locFile->cd("");
-		else
-			gDirectory->cd("/");
 
 		string locDirName = "Independent";
 		TDirectoryFile* locDirectoryFile = static_cast<TDirectoryFile*>(gDirectory->GetDirectory(locDirName.c_str()));
@@ -865,6 +856,13 @@ void DSourceComboer::Reset_NewEvent(JEventLoop* locEventLoop)
 		cout << "Total # of Combo Vectors Allocated (All threads): " << dResourcePool_SourceComboVector.Get_NumObjectsAllThreads() << endl;
 		Print_NumCombosByUse();
 	}
+/*
+dDebugLevel = (dEventNumber == 1016489) ? 500 : 0;
+dSourceComboTimeHandler->Set_DebugLevel(dDebugLevel);
+dSourceComboP4Handler->Set_DebugLevel(dDebugLevel);
+dSourceComboVertexer->Set_DebugLevel(dDebugLevel);
+dParticleComboCreator->Set_DebugLevel(dDebugLevel);
+*/
 
 	Fill_SurvivalHistograms();
 
@@ -1393,7 +1391,7 @@ void DSourceComboer::Combo_WithNeutralsAndBeam(const vector<const DReaction*>& l
 				++(dNumCombosSurvivedStageTracker[locReaction][DConstructionStage::NoVertex_RFBunch]);
 		}
 
-		if(dDebugLevel == -2) //Comparison-to-old mode
+//		if(dDebugLevel == -2) //Comparison-to-old mode
 		{
 			dSourceComboTimeHandler->Vote_OldMethod(locReactionFullCombo, locValidRFBunches);
 			if(locValidRFBunches.empty())
@@ -3790,7 +3788,7 @@ bool DSourceComboer::Check_Reactions(vector<const DReaction*>& locReactions)
 	//Check Max neutrals
 	auto locNumNeutralNeeded = locReactions.front()->Get_FinalPIDs(-1, false, false, d_Neutral, true).size(); //no missing, no decaying, include duplicates
 	auto locNumDetectedShowers = dShowersByBeamBunchByZBin[DSourceComboInfo::Get_VertexZIndex_Unknown()][{}].size();
-if(dDebugLevel == -2)
+//if(dDebugLevel == -2)
 {
 	if(locNumDetectedShowers > dMaxNumNeutrals)
 		return false;
