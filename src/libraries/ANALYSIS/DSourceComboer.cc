@@ -7,29 +7,15 @@
  * 
  * 59 channels
  * OK:
- * EtaPrm_MKamel
- * jpsi_robison
- * lowmass_electrons_robison
- * incl_jpsi_lp_ep
- * eenpip
- * compton
- * ee_convert
- * etapr_eeg_noMKF
- * etapreeg_2pi
- * pimpipeta_resolution
- * etapipi_charged
- * papp
+ * npi_missing
+ * EtaPrm_MKamel (7.5% higher)
  *
  * EH:
- * pi0_dalitz_preco: 10% higher
- * pi0_dalitz_preco_noMconst: 10% higher
+ * jpsi_lp higher
  *
  * PROBLEMS:
- * npi_missing: 25% low
- * etapipi_neutral: 20% low
- * unconst: 7.5% lower
- *
- * SKIPPED: ReactionFilter, Tegan, Alex
+ * BTbcal_eta_3pi0 down by 25%
+ * 2g 25% higher?!?!
  *
  * EVENTUALLY:
  * ppp

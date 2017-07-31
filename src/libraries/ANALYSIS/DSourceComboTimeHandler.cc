@@ -1018,7 +1018,7 @@ void DSourceComboTimeHandler::Vote_OldMethod(const DSourceCombo* locReactionFull
 
 			//OLD SYSTEM PREFERENCE ORDER FOR SELECTING BUNCHES: TOF/SC/BCAL/FCAL
 			locVertexTime = locHypothesis->time();
-			if((locHypothesis->Get_TOFHitMatchParams() == nullptr) && (locHypothesis->Get_SCHitMatchParams() != nullptr))
+			if((locHypothesis->t1_detector() != SYS_TOF) && (locHypothesis->Get_SCHitMatchParams() != nullptr))
 			{
 				//MUST CUT ON SC TIME TOO!!!
 				locVertexTime = locHypothesis->Get_SCHitMatchParams()->dHitTime - locHypothesis->Get_SCHitMatchParams()->dFlightTime;
