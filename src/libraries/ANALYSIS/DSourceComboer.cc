@@ -4,7 +4,6 @@
 
 /*
  * PROBLEMS:
- * why do pid cuts do anything?
  * 
  * 59 channels
  * OK:
@@ -22,8 +21,6 @@
  * papp
  *
  * EH:
- * jpsi_lp: 10% higher (why not jpsi_robison?)
- * incl_jpsi_lp_em: 5% higher
  * pi0_dalitz_preco: 10% higher
  * pi0_dalitz_preco_noMconst: 10% higher
  *
@@ -70,6 +67,7 @@ A) You can try reducing the #z-bins by increasing their widths. However, much su
 //uncomment dE/dx
 //only cut k+/k- if no CDC dE/dx info
 //uncomment missE cut
+//UNDO DELTA-T CUT CHANGE IN DCUTACTIONS
 
 //DO ONCE DONE WITH COMPARISON
 //update ALL cut values
