@@ -124,8 +124,8 @@ jerror_t DEventRFBunch_factory::Select_RFBunch(JEventLoop* locEventLoop, vector<
 		locBestRFBunchShift = Conduct_Vote(locEventLoop, locRFTime->dTime, locTimes, true, locHighestNumVotes);
 	else if(Find_NeutralTimes(locEventLoop, locTimes))
 		locBestRFBunchShift = Conduct_Vote(locEventLoop, locRFTime->dTime, locTimes, false, locHighestNumVotes);
-	else //SET NaN
-		return Create_NaNRFBunch();
+	else //PASS-THROUGH, WILL HAVE TO RESOLVE WHEN COMBOING
+		locBestRFBunchShift = 0;
 
 	DEventRFBunch* locEventRFBunch = new DEventRFBunch();
 	locEventRFBunch->dTime = locRFTime->dTime + dBeamBunchPeriod*double(locBestRFBunchShift);

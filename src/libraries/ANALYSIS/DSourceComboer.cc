@@ -4,11 +4,36 @@
 
 /*
  * PROBLEMS:
- * hd_root dana_rest_011529_001.hddm -PPLUGINS=ReactionFilter -PEVENTS_TO_SKIP=154 -PEVENTS_TO_KEEP=1 -PNTHREADS=1 -PCOMBO:DEBUG_LEVEL=500 -PReactionFilter:FS1=EXC_100_2000000 >& log.txt
- * Changes when adding BTbcal_eta_2 !!!
+ * why do pid cuts do anything?
+ * 
+ * 59 channels
+ * OK:
+ * EtaPrm_MKamel
+ * jpsi_robison
+ * lowmass_electrons_robison
+ * incl_jpsi_lp_ep
+ * eenpip
+ * compton
+ * ee_convert
+ * etapr_eeg_noMKF
+ * etapreeg_2pi
+ * pimpipeta_resolution
+ * etapipi_charged
+ * papp
+ *
+ * EH:
+ * jpsi_lp: 10% higher (why not jpsi_robison?)
+ * incl_jpsi_lp_em: 5% higher
+ * pi0_dalitz_preco: 10% higher
+ * pi0_dalitz_preco_noMconst: 10% higher
  *
  * PROBLEMS:
- * 
+ * npi_missing: 25% low
+ * etapipi_neutral: 20% low
+ * unconst: 7.5% lower
+ *
+ * SKIPPED: ReactionFilter, Tegan, Alex
+ *
  * EVENTUALLY:
  * ppp
  * omega p
@@ -48,9 +73,6 @@ A) You can try reducing the #z-bins by increasing their widths. However, much su
 
 //DO ONCE DONE WITH COMPARISON
 //update ALL cut values
-
-//DOUBLE-CHECKS:
-// check trackids in root tree output
 
 //DETACHED:
 //Fix prekinfit neutral hypo creation: Not technically correct ... due to time offset if detached vertex
@@ -1488,7 +1510,7 @@ void DSourceComboer::Combo_WithBeam(const vector<const DReaction*>& locReactions
 				continue; //FAILED MISSING MASS^2 CUT!
 			++(dNumCombosSurvivedStageTracker[locReaction][DConstructionStage::Missing_Mass]);
 
-			//build particle combo & save for the apporpriate reactions
+			//build particle combo & save
 			locOutputComboMap[locReaction].push_back(dParticleComboCreator->Build_ParticleCombo(locReactionVertexInfo, locReactionFullCombo, locBeamParticle, locRFBunch, locReaction->Get_KinFitType()));
 			if(dDebugLevel >= 10)
 			{
@@ -3784,6 +3806,11 @@ bool DSourceComboer::Check_Reactions(vector<const DReaction*>& locReactions)
 	//Check Max neutrals
 	auto locNumNeutralNeeded = locReactions.front()->Get_FinalPIDs(-1, false, false, d_Neutral, true).size(); //no missing, no decaying, include duplicates
 	auto locNumDetectedShowers = dShowersByBeamBunchByZBin[DSourceComboInfo::Get_VertexZIndex_Unknown()][{}].size();
+if(dDebugLevel == -2)
+{
+	if(locNumDetectedShowers > dMaxNumNeutrals)
+		return false;
+}
 	if((locNumNeutralNeeded > 0) && (locNumDetectedShowers > dMaxNumNeutrals))
 	{
 		if(dDebugLevel > 0)
