@@ -4,17 +4,13 @@
 
 /*
  * PROBLEMS:
- * 
- * check for branches that have bogus content
- *
- * OK:
+ * hd_root dana_rest_011529_001.hddm -PPLUGINS=ReactionFilter -PEVENTS_TO_SKIP=154 -PEVENTS_TO_KEEP=1 -PNTHREADS=1 -PCOMBO:DEBUG_LEVEL=500 -PReactionFilter:FS1=EXC_100_2000000 >& log.txt
+ * Changes when adding BTbcal_eta_2 !!!
  *
  * PROBLEMS:
  * 
  * EVENTUALLY:
  * ppp
- * p4pi0
- * p3pi missing-p
  * omega p
  * omega missing-p
  * 
@@ -37,6 +33,9 @@ FAQ:
 Q) How can tracks have t1_detector() == SYS_NULL?  I thought the PreSelect cuts were supposed to remove those?
 A) Not exactly. If ANY of the hypos for a track has at least one hit in any detector, ALL hypos are saved.
 
+FAQ:
+Q) How can I speed this up?
+A) You can try reducing the #z-bins by increasing their widths. However, much sure you also increase the uncertainty on the timing & invariant-mass cuts for photons as well.
 */
 
 //UNDO ONCE DONE WITH COMPARISON
@@ -48,15 +47,7 @@ A) Not exactly. If ANY of the hypos for a track has at least one hit in any dete
 //uncomment missE cut
 
 //DO ONCE DONE WITH COMPARISON
-//narrow eta mass cut
-//fix kaon timing cuts, + any others (e+/-?)
-//widen pi0 mass cut
-//widen missing proton/neutron mass cut to 2.2*2.2
-
-//MUST DO:
-//merge with master
-//When saving ROOT TTree, don't save p4 of decaying particles if mass is not constrained in kinfit!
-	//And make sure it's not grabbed in DSelector by default
+//update ALL cut values
 
 //DOUBLE-CHECKS:
 // check trackids in root tree output
@@ -70,7 +61,7 @@ namespace DAnalysis
 
 //Abandon all hope, ye who enter here.
 //Seriously, it will take you at LEAST a month to understand this.
-//If you don't have that kind of time, just give up now. 
+//If you really want to see what's going on, run with -PCOMBO:DEBUG_LEVEL=5000 and prepare to embrace the pain
 
 /****************************************************** COMBOING STRATEGY ******************************************************
 *

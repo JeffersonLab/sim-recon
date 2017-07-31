@@ -149,11 +149,11 @@ class DTreeFillData
 	public:
 		~DTreeFillData(void);
 		template <typename DType> void Fill_Single(string locBranchName, const DType& locData);
-		template <typename DType> void Fill_Array(string locBranchName, const DType& locData, unsigned int locArrayIndex);
+		template <typename DType> void Fill_Array(string locBranchName, const DType& locData, size_t locArrayIndex);
 
 	private:
 		map<string, pair<type_index, DFillBaseClass*> > dFillData;
-		map<string, size_t> dArrayLargestIndexFilledMap; //can be less than the size //reset by DTreeInterface after fill
+		map<string, int> dArrayLargestIndexFilledMap; //can be less than the size //reset by DTreeInterface after fill
 };
 
 /*********************************************************** DTreeFillData: FILL BRANCHES *************************************************************/
@@ -180,7 +180,7 @@ template <typename DType> inline void DTreeFillData::Fill_Single(string locBranc
 	}
 }
 
-template <typename DType> inline void DTreeFillData::Fill_Array(string locBranchName, const DType& locData, unsigned int locArrayIndex)
+template <typename DType> inline void DTreeFillData::Fill_Array(string locBranchName, const DType& locData, size_t locArrayIndex)
 {
 	DTreeTypeChecker::Is_Supported<DType>();
 	type_index locTypeIndex(typeid(DType));
@@ -193,7 +193,7 @@ template <typename DType> inline void DTreeFillData::Fill_Array(string locBranch
 		dFillData.emplace(locBranchName, std::make_pair(locTypeIndex, static_cast<DFillBaseClass*>(locFillClass)));
 
 		//fill
-		locFillClass->dFillData.resize(locArrayIndex);
+		locFillClass->dFillData.resize(locArrayIndex + 1);
 		locFillClass->dFillData[locArrayIndex] = locData;
 		dArrayLargestIndexFilledMap[locBranchName] = locArrayIndex;
 	}
@@ -205,12 +205,12 @@ template <typename DType> inline void DTreeFillData::Fill_Array(string locBranch
 
 		//resize if needed & fill
 		if(locArrayIndex > locFillClass->dFillData.size())
-			locFillClass->dFillData.resize(locArrayIndex);
+			locFillClass->dFillData.resize(locArrayIndex + 1);
 		locFillClass->dFillData[locArrayIndex] = locData;
 
 		//register largest index filled
 		auto& locLargestIndexFilled = dArrayLargestIndexFilledMap[locBranchName];
-		if(locArrayIndex > locLargestIndexFilled)
+		if(int(locArrayIndex) > locLargestIndexFilled)
 			locLargestIndexFilled = locArrayIndex;
 	}
 }

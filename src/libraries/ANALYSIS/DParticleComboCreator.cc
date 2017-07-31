@@ -324,7 +324,7 @@ const DParticleCombo* DParticleComboCreator::Create_KinFitCombo_NewCombo(const D
 			if(locKinFitParticle == NULL) //not used in kinfit!!
 				locNewComboStep->Set_InitialParticle(locInitialParticle_Measured);
 			else //create a new one
-				locNewComboStep->Set_InitialParticle(Create_BeamPhoton_KinFit(static_cast<const DBeamPhoton*>(locInitialParticle_Measured), locKinFitParticle));
+				locNewComboStep->Set_InitialParticle(Create_BeamPhoton_KinFit(static_cast<const DBeamPhoton*>(locInitialParticle_Measured), locKinFitParticle, locComboStep->Get_SpacetimeVertex()));
 		}
 		else //decaying particle! //set here for initial state, and in previous step for final state
 			Set_DecayingParticles(locReaction, locNewCombo, locOrigCombo, loc_j, locNewComboStep, locKinFitChain, locKinFitResults);
@@ -539,7 +539,7 @@ void DParticleComboCreator::Set_SpacetimeVertex(const DReaction* locReaction, co
 	locNewParticleComboStep->Set_SpacetimeVertex(locSpacetimeVertex);
 }
 
-const DBeamPhoton* DParticleComboCreator::Create_BeamPhoton_KinFit(const DBeamPhoton* locBeamPhoton, const DKinFitParticle* locKinFitParticle)
+const DBeamPhoton* DParticleComboCreator::Create_BeamPhoton_KinFit(const DBeamPhoton* locBeamPhoton, const DKinFitParticle* locKinFitParticle, const DLorentzVector& locSpacetimeVertex)
 {
 	auto locBeamIterator = dKinFitBeamPhotonMap.find(locKinFitParticle);
 	if(locBeamIterator != dKinFitBeamPhotonMap.end())
@@ -553,8 +553,14 @@ const DBeamPhoton* DParticleComboCreator::Create_BeamPhoton_KinFit(const DBeamPh
 	locNewBeamPhoton->dSystem = locBeamPhoton->dSystem;
 	locNewBeamPhoton->setPID(Gamma);
 	locNewBeamPhoton->setMomentum(DVector3(locKinFitParticle->Get_Momentum().X(),locKinFitParticle->Get_Momentum().Y(),locKinFitParticle->Get_Momentum().Z()));
-	locNewBeamPhoton->setPosition(DVector3(locKinFitParticle->Get_Position().X(),locKinFitParticle->Get_Position().Y(),locKinFitParticle->Get_Position().Z()));
-	locNewBeamPhoton->setTime(locKinFitParticle->Get_Time());
+	if(locKinFitParticle->Get_CommonVxParamIndex() >= 0)
+		locNewBeamPhoton->setPosition(DVector3(locKinFitParticle->Get_Position().X(),locKinFitParticle->Get_Position().Y(),locKinFitParticle->Get_Position().Z()));
+	else
+		locNewBeamPhoton->setPosition(locSpacetimeVertex.Vect());
+	if(locKinFitParticle->Get_CommonTParamIndex() >= 0)
+		locNewBeamPhoton->setTime(locKinFitParticle->Get_Time());
+	else
+		locNewBeamPhoton->setTime(locSpacetimeVertex.T());
 	locNewBeamPhoton->setErrorMatrix(locKinFitParticle->Get_CovarianceMatrix());
 	return locNewBeamPhoton;
 }

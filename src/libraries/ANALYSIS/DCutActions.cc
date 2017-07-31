@@ -263,7 +263,7 @@ bool DCutAction_MissingMassSquared::Perform_Action(JEventLoop* locEventLoop, con
 string DCutAction_InvariantMass::Get_ActionName(void) const
 {
 	ostringstream locStream;
-	locStream << DAnalysisAction::Get_ActionName() << "_" << dMinMass << "_" << dMaxMass;
+	locStream << DAnalysisAction::Get_ActionName() << "_" << dInitialPID << "_" << dMinMass << "_" << dMaxMass;
 	return locStream.str();
 }
 

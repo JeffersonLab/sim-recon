@@ -270,14 +270,14 @@ void DTreeInterface::Fill(DTreeFillData& locTreeFillData)
 			}
 
 			//is array, get how many to fill
-			size_t& locLargestIndexFilled = locLargestIndexFilledIterator->second;
+			auto& locLargestIndexFilled = locLargestIndexFilledIterator->second;
 
 			//increase array size if necessary, or decrease if too large from last event
 			auto locFundamentalArraySizeIterator = locFundamentalArraySizeMap.find(locBranchName);
 			if(locFundamentalArraySizeIterator != locFundamentalArraySizeMap.end())
 			{
 				size_t locCurrentArraySize = locFundamentalArraySizeMap[locBranchName]; //may not be in map! (tobj)
-				if((locLargestIndexFilled + 1) >= locCurrentArraySize)
+				if((locLargestIndexFilled + 1) > int(locCurrentArraySize))
 				{
 					Change_ArraySize(locBranchName, locTypeIndex, locLargestIndexFilled + 1);
 					locFundamentalArraySizeMap[locBranchName] = locLargestIndexFilled + 1;
@@ -297,11 +297,11 @@ void DTreeInterface::Fill(DTreeFillData& locTreeFillData)
 			}
 
 			//fill array
-			for(size_t locArrayIndex = 0; locArrayIndex <= locLargestIndexFilled; ++locArrayIndex)
+			for(int locArrayIndex = 0; locArrayIndex <= locLargestIndexFilled; ++locArrayIndex)
 				Fill(locBranchName, locTypeIndex, locFillBaseClass->Get(locArrayIndex), true, locArrayIndex);
 
 			//reset DTreeFillData for next event!
-			locLargestIndexFilled = 0;
+			locLargestIndexFilled = -1;
 		}
 
 		//fill tree
