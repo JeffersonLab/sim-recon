@@ -130,14 +130,14 @@ DSourceComboP4Handler::DSourceComboP4Handler(DSourceComboer* locSourceComboer, b
 	gPARMS->SetDefaultParameter("COMBO:DEBUG_LEVEL", dDebugLevel);
 
 	//INVARIANT MASS CUTS: MESONS
-	dInvariantMassCuts.emplace(Pi0, std::make_pair(0.1, 0.17)); //80 -> 190
+	dInvariantMassCuts.emplace(Pi0, std::make_pair(0.08, 0.19));
 	dInvariantMassCuts.emplace(KShort, std::make_pair(0.3, 0.7));
-	dInvariantMassCuts.emplace(Eta, std::make_pair(0.3, 0.8));
+	dInvariantMassCuts.emplace(Eta, std::make_pair(0.4, 0.7));
 	dInvariantMassCuts.emplace(omega, std::make_pair(0.4, 1.2));
 	dInvariantMassCuts.emplace(EtaPrime, std::make_pair(0.6, 1.3));
 	dInvariantMassCuts.emplace(phiMeson, std::make_pair(0.8, 1.2));
-//	dInvariantMassCuts.emplace(D0, std::make_pair(1.8, 1.92));
-//	dInvariantMassCuts.emplace(Jpsi, std::make_pair(2.7, 3.5)); //TURN THIS BACK ON!!!!
+	dInvariantMassCuts.emplace(D0, std::make_pair(1.8, 1.92));
+//	dInvariantMassCuts.emplace(Jpsi, std::make_pair(2.7, 3.5));
 
 	//INVARIANT MASS CUTS: BARYONS
 	dInvariantMassCuts.emplace(Lambda, std::make_pair(1.0, 1.2));
@@ -146,7 +146,7 @@ DSourceComboP4Handler::DSourceComboP4Handler(DSourceComboer* locSourceComboer, b
 	dInvariantMassCuts.emplace(SigmaMinus, dInvariantMassCuts[Sigma0]);
 	dInvariantMassCuts.emplace(XiMinus, std::make_pair(1.1, 1.5));
 	dInvariantMassCuts.emplace(Xi0, dInvariantMassCuts[XiMinus]);
-//	dInvariantMassCuts.emplace(Lambda_c, std::make_pair(2.0, 2.6));
+	dInvariantMassCuts.emplace(Lambda_c, std::make_pair(2.0, 2.6));
 
 	//MISSING MASS CUTS & MASS HISTOGRAMS
 	japp->RootWriteLock(); //ACQUIRE ROOT LOCK!! //I have no idea why this is needed, but without it it crashes.  Sigh. 
@@ -182,11 +182,11 @@ DSourceComboP4Handler::DSourceComboP4Handler(DSourceComboer* locSourceComboer, b
 */
 		//Missing E cuts
 		dMissingECuts = std::pair<TF1*, TF1*>(nullptr, nullptr);
-/*		dMissingECuts.first = new TF1("df_MissingECut_NoneLow", "[0]", 0.0, 12.0);
+		dMissingECuts.first = new TF1("df_MissingECut_NoneLow", "[0]", 0.0, 12.0);
 		dMissingECuts.first->SetParameter(0, -3.0);
 		dMissingECuts.second = new TF1("df_MissingECut_NoneHigh", "[0]", 0.0, 12.0);
 		dMissingECuts.second->SetParameter(0, 3.0);
-*/
+
 		if(!locCreateHistsFlag)
 		{
 			japp->RootUnLock(); //RELEASE ROOT LOCK!!

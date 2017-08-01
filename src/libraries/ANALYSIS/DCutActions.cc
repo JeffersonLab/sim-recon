@@ -1065,7 +1065,7 @@ bool DCutAction_PIDDeltaT::Perform_Action(JEventLoop* locEventLoop, const DParti
 	//if dSystem = SYS_NULL, apply cut to all systems
 
 	auto locParticles = Get_UseKinFitResultsFlag() ? locParticleCombo->Get_FinalParticles(Get_Reaction(), false, false, d_AllCharges) : locParticleCombo->Get_FinalParticles_Measured(Get_Reaction(), d_AllCharges);
-auto locVertex = locParticleCombo->Get_ParticleComboStep(0)->Get_SpacetimeVertex().Vect();
+//auto locVertex = locParticleCombo->Get_ParticleComboStep(0)->Get_SpacetimeVertex().Vect();
 	for(size_t loc_i = 0; loc_i < locParticles.size(); ++loc_i)
 	{
 		if((dPID != Unknown) && (locParticles[loc_i]->PID() != dPID))
@@ -1076,8 +1076,8 @@ auto locVertex = locParticleCombo->Get_ParticleComboStep(0)->Get_SpacetimeVertex
 		{
 			if((dSystem != SYS_NULL) && (locChargedHypo->t1_detector() != dSystem))
 				continue;
-			double locDeltaT = locChargedHypo->time() - (locChargedHypo->t0() + (locChargedHypo->position().Z() - locVertex.Z())/SPEED_OF_LIGHT);
-//			double locDeltaT = locChargedHypo->Get_TimeAtPOCAToVertex() - locChargedHypo->t0(); //UNCOMMENT WHEN DONE COMPARING
+//			double locDeltaT = locChargedHypo->time() - (locChargedHypo->t0() + (locChargedHypo->position().Z() - locVertex.Z())/SPEED_OF_LIGHT); //COMPARE: to old
+			double locDeltaT = locChargedHypo->Get_TimeAtPOCAToVertex() - locChargedHypo->t0(); //UNCOMMENT WHEN DONE COMPARING
 			if(fabs(locDeltaT) > dDeltaTCut)
 				return false;
 			continue;

@@ -222,7 +222,7 @@ DSourceComboTimeHandler::DSourceComboTimeHandler(JEventLoop* locEventLoop, DSour
 	dPIDTimingCuts[Gamma].emplace(SYS_BCAL, new TF1("df_TimeCut", "[0]", 0.0, 12.0));
 	dPIDTimingCuts[Gamma][SYS_BCAL]->SetParameter(0, 1.5);
 	dPIDTimingCuts[Gamma].emplace(SYS_FCAL, new TF1("df_TimeCut", "[0]", 0.0, 12.0));
-	dPIDTimingCuts[Gamma][SYS_FCAL]->SetParameter(0, 2.0);
+	dPIDTimingCuts[Gamma][SYS_FCAL]->SetParameter(0, 2.5);
 	dSelectedRFDeltaTs[Gamma][SYS_BCAL].reserve(1000);
 	dSelectedRFDeltaTs[Gamma][SYS_FCAL].reserve(1000);
 
@@ -234,7 +234,7 @@ DSourceComboTimeHandler::DSourceComboTimeHandler(JEventLoop* locEventLoop, DSour
 	dPIDTimingCuts[Electron].emplace(SYS_BCAL, new TF1("df_TimeCut", "[0]", 0.0, 12.0));
 	dPIDTimingCuts[Electron][SYS_BCAL]->SetParameter(0, 1.0);
 	dPIDTimingCuts[Electron].emplace(SYS_TOF, new TF1("df_TimeCut", "[0]", 0.0, 12.0));
-	dPIDTimingCuts[Electron][SYS_TOF]->SetParameter(0, 2.0);
+	dPIDTimingCuts[Electron][SYS_TOF]->SetParameter(0, 0.5);
 	dPIDTimingCuts[Electron].emplace(SYS_FCAL, new TF1("df_TimeCut", "[0]", 0.0, 12.0));
 	dPIDTimingCuts[Electron][SYS_FCAL]->SetParameter(0, 2.0);
 	dSelectedRFDeltaTs[Electron][SYS_BCAL].reserve(1000);
@@ -263,9 +263,9 @@ DSourceComboTimeHandler::DSourceComboTimeHandler(JEventLoop* locEventLoop, DSour
 	dPIDTimingCuts[KPlus].emplace(SYS_BCAL, new TF1("df_TimeCut", "[0]", 0.0, 12.0));
 	dPIDTimingCuts[KPlus][SYS_BCAL]->SetParameter(0, 0.75);
 	dPIDTimingCuts[KPlus].emplace(SYS_TOF, new TF1("df_TimeCut", "[0]", 0.0, 12.0));
-	dPIDTimingCuts[KPlus][SYS_TOF]->SetParameter(0, 2.0);
+	dPIDTimingCuts[KPlus][SYS_TOF]->SetParameter(0, 0.3);
 	dPIDTimingCuts[KPlus].emplace(SYS_FCAL, new TF1("df_TimeCut", "[0]", 0.0, 12.0));
-	dPIDTimingCuts[KPlus][SYS_FCAL]->SetParameter(0, 2.0);
+	dPIDTimingCuts[KPlus][SYS_FCAL]->SetParameter(0, 2.5);
 	dPIDTimingCuts.emplace(KMinus, dPIDTimingCuts[KPlus]);
 	dSelectedRFDeltaTs.emplace(KPlus, dSelectedRFDeltaTs[Electron]);
 	dSelectedRFDeltaTs.emplace(KMinus, dSelectedRFDeltaTs[Electron]);
@@ -288,15 +288,13 @@ DSourceComboTimeHandler::DSourceComboTimeHandler(JEventLoop* locEventLoop, DSour
 	// But, we have to be careful: If a lot of hits in the SC, we may accidentally choose the wrong SC hit
 	// This is especially true for low-theta tracks: phi not well defined.
 	// So, this cut will only be applied IF no other PID timing information is available, AND if ONLY 1 ST hit matched to the track in space
-	/*
 	for(auto& locPIDPair : dPIDTimingCuts)
 	{
 		if(ParticleCharge(locPIDPair.first) == 0)
 			continue;
 		locPIDPair.second.emplace(SYS_START, new TF1("df_TimeCut", "[0]", 0.0, 12.0));
-		locPIDPair.second[SYS_START]->SetParameter(0, 2.0);
+		locPIDPair.second[SYS_START]->SetParameter(0, 2.5);
 	}
-	*/
 
 	vector<DetectorSystem_t> locTimingSystems_Charged {SYS_TOF, SYS_BCAL, SYS_FCAL, SYS_START};
 	vector<DetectorSystem_t> locTimingSystems_Neutral {SYS_BCAL, SYS_FCAL};
@@ -1256,19 +1254,17 @@ bool DSourceComboTimeHandler::Get_RFBunches_ChargedTrack(const DChargedTrackHypo
 	auto locSystem = locHypothesis->t1_detector();
 	if(locSystem == SYS_NULL)
 		return false; //no timing info
-/*
-	if(dDebugLevel != -2) //NOT Comparison-to-old mode
+
+	//COMPARE: NOT Comparison-to-old mode
+	if((locSystem == SYS_START) && !locOnlyTrackFlag)
 	{
-		if((locSystem == SYS_START) && !locOnlyTrackFlag)
-		{
-			//special case: only cut if only matched to 1 ST hit
-			vector<shared_ptr<const DSCHitMatchParams>> locSCMatchParams;
-			dDetectorMatches->Get_SCMatchParams(locHypothesis->Get_TrackTimeBased(), locSCMatchParams);
-			if(locSCMatchParams.size() > 1)
-				return false; //don't cut on timing! can't tell for sure!
-		}
+		//special case: only cut if only matched to 1 ST hit
+		vector<shared_ptr<const DSCHitMatchParams>> locSCMatchParams;
+		dDetectorMatches->Get_SCMatchParams(locHypothesis->Get_TrackTimeBased(), locSCMatchParams);
+		if(locSCMatchParams.size() > 1)
+			return false; //don't cut on timing! can't tell for sure!
 	}
-*/
+
 	auto locX4 = Get_ChargedPOCAToVertexX4(locHypothesis, locIsProductionVertex, locVertexPrimaryCombo, locVertex);
 	auto locVertexTime = locX4.T() - locTimeOffset;
 
@@ -1276,7 +1272,7 @@ bool DSourceComboTimeHandler::Get_RFBunches_ChargedTrack(const DChargedTrackHypo
 	auto locCutFunc = Get_TimeCutFunction(locPID, locSystem);
 	auto locDeltaTCut = (locCutFunc != nullptr) ? locCutFunc->Eval(locP) : 3.0; //if null will return false, but still use for histogramming
 
-//	if(dDebugLevel == -2) //Comparison-to-old mode
+	if(false) //COMPARE: Comparison-to-old mode
 	{
 		locVertexTime = locHypothesis->time();
 		locPropagatedRFTime += (locHypothesis->position().Z() - locVertex.Z())/SPEED_OF_LIGHT;
