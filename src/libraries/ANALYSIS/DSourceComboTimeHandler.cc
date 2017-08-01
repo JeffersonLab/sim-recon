@@ -1071,6 +1071,11 @@ void DSourceComboTimeHandler::Vote_OldMethod(const DSourceCombo* locReactionFull
 		cout << "chosen bunch = " << locChosenBunch << endl;
 
 	vector<int> locBestVector{locChosenBunch};
+	if(locValidRFBunches.empty())
+	{
+		locValidRFBunches = locBestVector;
+		return;
+	}
 	vector<int> locCommonRFBunches = {}; //if charged or massive neutrals, ignore (they don't choose at this stage)
 	std::set_intersection(locBestVector.begin(), locBestVector.end(), locValidRFBunches.begin(), locValidRFBunches.end(), std::back_inserter(locCommonRFBunches));
 	locValidRFBunches = locCommonRFBunches;
