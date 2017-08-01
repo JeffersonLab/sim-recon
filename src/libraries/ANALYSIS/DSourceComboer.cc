@@ -7,15 +7,11 @@
  * 
  * 59 channels
  * OK:
- * npi_missing
- * EtaPrm_MKamel (7.5% higher)
  *
  * EH:
  * jpsi_lp higher
  *
  * PROBLEMS:
- * BTbcal_eta_3pi0 down by 25%
- * 2g 25% higher?!?!
  *
  * EVENTUALLY:
  * ppp

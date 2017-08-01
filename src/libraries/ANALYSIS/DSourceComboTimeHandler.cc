@@ -981,7 +981,6 @@ void DSourceComboTimeHandler::Vote_OldMethod(const DSourceCombo* locReactionFull
 {
 	map<int, pair<size_t, double>> locOldMethodVoting; //double: sum(delta-t^2)
 	auto locVertex = dSourceComboVertexer->Get_Vertex(true, locReactionFullCombo, nullptr);
-	double locPropagatedRFTime = dInitialEventRFBunch->dTime + (locVertex.Z() - dTargetCenter.Z())/SPEED_OF_LIGHT;
 
 	//assume all delta-t cuts <= 2ns
 	auto locParticles = locReactionFullCombo->Get_SourceParticles(true);
@@ -994,11 +993,12 @@ void DSourceComboTimeHandler::Vote_OldMethod(const DSourceCombo* locReactionFull
 			continue; //ignore massive neutrals: timing defines their momentum, cannot be used
 
 		vector<int> locParticleRFBunches;
-		double locVertexTime = 0.0;
+		double locVertexTime = 0.0, locPropagatedRFTime = 0.0;
 		if(ParticleCharge(locPID) == 0)
 		{
 			auto locNeutralShower = static_cast<const DNeutralShower*>(locParticlePair.second);
 			locVertexTime = Calc_Photon_Kinematics(locNeutralShower, locVertex).second;
+			locPropagatedRFTime = dInitialEventRFBunch->dTime + (locVertex.Z() - dTargetCenter.Z())/SPEED_OF_LIGHT;
 			locParticleRFBunches = Calc_BeamBunchShifts(locVertexTime, locPropagatedRFTime, 0.5*dBeamBunchPeriod, false, Gamma, locNeutralShower->dDetectorSystem, locNeutralShower->dEnergy);
 		}
 		else //charged
@@ -1008,6 +1008,7 @@ void DSourceComboTimeHandler::Vote_OldMethod(const DSourceCombo* locReactionFull
 
 			//OLD SYSTEM PREFERENCE ORDER FOR SELECTING BUNCHES: TOF/SC/BCAL/FCAL
 			locVertexTime = locHypothesis->time();
+			locPropagatedRFTime = dInitialEventRFBunch->dTime + (locHypothesis->position().Z() - dTargetCenter.Z())/SPEED_OF_LIGHT;
 			if((locHypothesis->t1_detector() != SYS_TOF) && (locHypothesis->Get_SCHitMatchParams() != nullptr))
 			{
 				//MUST CUT ON SC TIME TOO!!!
