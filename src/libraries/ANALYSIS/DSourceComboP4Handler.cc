@@ -132,7 +132,7 @@ DSourceComboP4Handler::DSourceComboP4Handler(DSourceComboer* locSourceComboer, b
 	//INVARIANT MASS CUTS: MESONS
 	dInvariantMassCuts.emplace(Pi0, std::make_pair(0.08, 0.19));
 	dInvariantMassCuts.emplace(KShort, std::make_pair(0.3, 0.7));
-	dInvariantMassCuts.emplace(Eta, std::make_pair(0.4, 0.7));
+	dInvariantMassCuts.emplace(Eta, std::make_pair(0.35, 0.75));
 	dInvariantMassCuts.emplace(omega, std::make_pair(0.4, 1.2));
 	dInvariantMassCuts.emplace(EtaPrime, std::make_pair(0.6, 1.3));
 	dInvariantMassCuts.emplace(phiMeson, std::make_pair(0.8, 1.2));
