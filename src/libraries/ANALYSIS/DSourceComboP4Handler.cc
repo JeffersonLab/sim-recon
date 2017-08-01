@@ -159,19 +159,21 @@ DSourceComboP4Handler::DSourceComboP4Handler(DSourceComboer* locSourceComboer, b
 		dMissingMassSquaredCuts[Unknown].second->SetParameter(0, 0.1);
 		dMissingMassSquaredCuts.emplace(Gamma, dMissingMassSquaredCuts[Unknown]);
 
-		//Proton/Neutron
-		dMissingMassSquaredCuts[Proton].first = new TF1("df_MissingMassSquaredCut_ProtonLow", "[0]", 0.0, 12.0);
-		dMissingMassSquaredCuts[Proton].first->SetParameter(0, 0.5*0.5);
-		dMissingMassSquaredCuts[Proton].second = new TF1("df_MissingMassSquaredCut_ProtonHigh", "[0]", 0.0, 12.0);
-		dMissingMassSquaredCuts[Proton].second->SetParameter(0, 1.4*1.4);
-		dMissingMassSquaredCuts.emplace(Neutron, dMissingMassSquaredCuts[Proton]);
-
 		//Pi+/-
 		dMissingMassSquaredCuts[PiPlus].first = new TF1("df_MissingMassSquaredCut_PiPlusLow", "[0]", 0.0, 12.0);
 		dMissingMassSquaredCuts[PiPlus].first->SetParameter(0, -1.0);
 		dMissingMassSquaredCuts[PiPlus].second = new TF1("df_MissingMassSquaredCut_PiPlusHigh", "[0]", 0.0, 12.0);
 		dMissingMassSquaredCuts[PiPlus].second->SetParameter(0, 1.0);
 		dMissingMassSquaredCuts.emplace(PiMinus, dMissingMassSquaredCuts[PiPlus]);
+		dMissingMassSquaredCuts.emplace(Pi0, dMissingMassSquaredCuts[PiPlus]);
+
+		//Proton/Neutron
+		dMissingMassSquaredCuts[Proton].first = new TF1("df_MissingMassSquaredCut_ProtonLow", "[0]", 0.0, 12.0);
+		dMissingMassSquaredCuts[Proton].first->SetParameter(0, -0.5);
+		dMissingMassSquaredCuts[Proton].second = new TF1("df_MissingMassSquaredCut_ProtonHigh", "[0]", 0.0, 12.0);
+		dMissingMassSquaredCuts[Proton].second->SetParameter(0, 4.41);
+		dMissingMassSquaredCuts.emplace(Neutron, dMissingMassSquaredCuts[Proton]);
+
 /*
 		//e+/-
 		dMissingMassSquaredCuts[Electron].first = new TF1("df_MissingMassSquaredCut_PiPlusLow", "[0]", 0.0, 12.0);
