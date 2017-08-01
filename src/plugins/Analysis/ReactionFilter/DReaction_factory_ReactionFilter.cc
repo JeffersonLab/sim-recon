@@ -86,7 +86,8 @@ jerror_t DReaction_factory_ReactionFilter::evnt(JEventLoop* locEventLoop, uint64
 			//Pre-defined actions can be found in ANALYSIS/DHistogramActions_*.h and ANALYSIS/DCutActions.h
 			//If a histogram action is repeated, it should be created with a unique name (string) to distinguish them
 
-
+/*
+		//COMPARE:
         locReaction->Add_ComboPreSelectionAction(new DCutAction_NoPIDHit(locReaction, KPlus));
         locReaction->Add_ComboPreSelectionAction(new DCutAction_NoPIDHit(locReaction, KMinus));
 
@@ -116,6 +117,7 @@ jerror_t DReaction_factory_ReactionFilter::evnt(JEventLoop* locEventLoop, uint64
         locReaction->Add_ComboPreSelectionAction(new DCutAction_PIDDeltaT(locReaction, false, 0.6, AntiProton, SYS_TOF));
         locReaction->Add_ComboPreSelectionAction(new DCutAction_PIDDeltaT(locReaction, false, 1.0, AntiProton, SYS_BCAL));
         locReaction->Add_ComboPreSelectionAction(new DCutAction_PIDDeltaT(locReaction, false, 2.0, AntiProton, SYS_FCAL));
+*/
 
 		//PID
 		locReaction->Add_AnalysisAction(new DHistogramAction_PID(locReaction));
