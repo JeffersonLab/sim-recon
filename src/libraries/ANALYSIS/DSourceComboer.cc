@@ -1276,6 +1276,13 @@ DCombosByReaction DSourceComboer::Build_ParticleCombos(const DReactionVertexInfo
 			if(dDebugLevel > 0)
 				cout << "Fully charged." << endl;
 
+			//if(dDebugLevel == -2) //Comparison-to-old mode
+			{
+				dSourceComboTimeHandler->Vote_OldMethod(locReactionChargedCombo, locBeamBunches_Charged);
+				if(locBeamBunches_Charged.empty())
+					continue;
+			}
+
 			//Select final RF bunch
 			auto locRFBunch = dSourceComboTimeHandler->Select_RFBunch_Full(locReactionVertexInfo, locReactionChargedCombo, locBeamBunches_Charged);
 			if(dDebugLevel > 0)
