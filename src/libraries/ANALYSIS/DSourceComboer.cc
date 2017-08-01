@@ -3298,7 +3298,11 @@ const vector<const JObject*>& DSourceComboer::Get_ShowersByBeamBunch(const vecto
 	{
 		const auto& locComboShowers = locShowersByBunch[locBunchesSoFar];
 		const auto& locBunchShowers = locShowersByBunch[{*locBunchIterator}];
+
 		locBunchesSoFar.push_back(*locBunchIterator);
+		if(locShowersByBunch.find(locBunchesSoFar) != locShowersByBunch.end())
+			continue; //this subset already created and indexed
+
 		if(locBunchShowers.empty())
 		{
 			locShowersByBunch.emplace(locBunchesSoFar, locComboShowers);
@@ -3311,7 +3315,7 @@ const vector<const JObject*>& DSourceComboer::Get_ShowersByBeamBunch(const vecto
 		locMergeResult.reserve(locComboShowers.size() + locBunchShowers.size());
 		std::set_union(locComboShowers.begin(), locComboShowers.end(), locBunchShowers.begin(), locBunchShowers.end(), std::back_inserter(locMergeResult));
 		locShowersByBunch.emplace(locBunchesSoFar, std::move(locMergeResult));
-		Build_ParticleIndices(Gamma, locBeamBunches, locShowersByBunch[locBunchesSoFar], locVertexZBin);
+		Build_ParticleIndices(Gamma, locBunchesSoFar, locShowersByBunch[locBunchesSoFar], locVertexZBin);
 	}
 	return locShowersByBunch[locBeamBunches];
 }
@@ -3399,14 +3403,17 @@ const vector<const DSourceCombo*>& DSourceComboer::Get_CombosByBeamBunch(const D
 
 	//find all combos for the given use that have an overlapping beam bunch with the input
 	//this shouldn't be called very many times per event, so we can be a little inefficient
-	vector<int> locBunchesSoFar = {*locBeamBunches.begin()};
+	vector<int> locBunchesSoFar = {*locBeamBunches.begin()}; //0
 	for(auto locBunchIterator = std::next(locBeamBunches.begin()); locBunchIterator != locBeamBunches.end(); ++locBunchIterator)
 	{
 		//get vectors and sort them: sort needed for union below
-		auto& locCombosSoFar = locCombosByBunch[locBunchesSoFar];
-		auto& locBunchCombos = locCombosByBunch[{*locBunchIterator}];
+		auto& locCombosSoFar = locCombosByBunch[locBunchesSoFar]; //{0}
+		auto& locBunchCombos = locCombosByBunch[{*locBunchIterator}]; //{1}
 
-		locBunchesSoFar.push_back(*locBunchIterator);
+		locBunchesSoFar.push_back(*locBunchIterator); //{0, 1}
+		if(locCombosByBunch.find(locBunchesSoFar) != locCombosByBunch.end())
+			continue; //this subset already created and indexed
+
 		if(locBunchCombos.empty())
 		{
 			locCombosByBunch.emplace(locBunchesSoFar, locCombosSoFar);
@@ -3418,8 +3425,8 @@ const vector<const DSourceCombo*>& DSourceComboer::Get_CombosByBeamBunch(const D
 		vector<const DSourceCombo*> locMergeResult;
 		locMergeResult.reserve(locCombosSoFar.size() + locBunchCombos.size());
 		std::set_union(locCombosSoFar.begin(), locCombosSoFar.end(), locBunchCombos.begin(), locBunchCombos.end(), std::back_inserter(locMergeResult));
-		locCombosByBunch.emplace(locBunchesSoFar, std::move(locMergeResult));
-		Build_ComboIndices(locComboUse, locBeamBunches, locCombosByBunch[locBunchesSoFar], locComboingStage);
+		locCombosByBunch.emplace(locBunchesSoFar, std::move(locMergeResult)); //when building for 0, 1, 2 this replaces 0,1
+		Build_ComboIndices(locComboUse, locBunchesSoFar, locCombosByBunch[locBunchesSoFar], locComboingStage);
 	}
 
 	return locCombosByBunch[locBeamBunches];
