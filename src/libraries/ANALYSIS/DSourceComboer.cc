@@ -56,6 +56,7 @@ A) You can try reducing the #z-bins by increasing their widths. However, much su
 
 //DETACHED:
 //Fix prekinfit neutral hypo creation: Not technically correct ... due to time offset if detached vertex
+//revisit dMaxDecayTimeOffset
 
 //NICE TO HAVE:
 //finish comments in Build_ParticleCombos()

@@ -560,19 +560,18 @@ vector<int> DSourceComboTimeHandler::Calc_BeamBunchShifts(double locVertexTime, 
 	}
 
 	//due to detached vertices, we may need to accept EARLIER RF bunches
-	if(locIncludeDecayTimeOffset)
+	if(false) //locIncludeDecayTimeOffset: revisit later!
 	{
 		//continue down-shift loop, this time including time offset
-		//+dMaxTimeOffset: takes longer for "RF" time to get there (due to slow decaying particle)
 		//Note that in the delta-t histograms, the dMaxDecayTimeOffset would cause a shift in the distribution for positive delta-t's, so we won't include these in the histograms
-		locDeltaT = locVertexTime - (locOrigRFBunchPropagatedTime + locNumShifts*dBeamBunchPeriod + dMaxDecayTimeOffset);
-		while(fabs(locDeltaT) < locDeltaTCut)
+		locDeltaT = locVertexTime - (locOrigRFBunchPropagatedTime + locNumShifts*dBeamBunchPeriod);
+		while(fabs(locDeltaT) < (locDeltaTCut + dMaxDecayTimeOffset))
 		{
 			if(dDebugLevel >= 10)
 				cout << "save shift: " << locNumShifts << endl;
 			locRFShifts.push_back(locNumShifts);
 			--locNumShifts;
-			locDeltaT = locVertexTime - (locOrigRFBunchPropagatedTime + locNumShifts*dBeamBunchPeriod + dMaxDecayTimeOffset);
+			locDeltaT = locVertexTime - (locOrigRFBunchPropagatedTime + locNumShifts*dBeamBunchPeriod);
 		}
 	}
 
