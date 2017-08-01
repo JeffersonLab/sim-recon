@@ -1008,6 +1008,8 @@ void DSourceComboTimeHandler::Vote_OldMethod(const DSourceCombo* locReactionFull
 		{
 			auto locHypothesis = static_cast<const DChargedTrack*>(locParticlePair.second)->Get_Hypothesis(locParticlePair.first);
 			auto locP = locHypothesis->momentum().Mag();
+			if(locHypothesis->t1_detector() == SYS_NULL)
+				continue;
 
 			//OLD SYSTEM PREFERENCE ORDER FOR SELECTING BUNCHES: TOF/SC/BCAL/FCAL
 			locVertexTime = locHypothesis->time();
