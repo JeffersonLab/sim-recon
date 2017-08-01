@@ -982,6 +982,9 @@ void DSourceComboTimeHandler::Vote_OldMethod(const DSourceCombo* locReactionFull
 	map<int, pair<size_t, double>> locOldMethodVoting; //double: sum(delta-t^2)
 	auto locVertex = dSourceComboVertexer->Get_Vertex(true, locReactionFullCombo, nullptr);
 
+	if(dDebugLevel >= 20)
+		cout << "Vote_OldMethod()" << endl;
+
 	//assume all delta-t cuts <= 2ns
 	auto locParticles = locReactionFullCombo->Get_SourceParticles(true);
 
@@ -1017,6 +1020,13 @@ void DSourceComboTimeHandler::Vote_OldMethod(const DSourceCombo* locReactionFull
 			}
 			else
 				locParticleRFBunches = Calc_BeamBunchShifts(locVertexTime, locPropagatedRFTime, 0.5*dBeamBunchPeriod, false, locPID, locHypothesis->t1_detector(), locP);
+			if(dDebugLevel >= 20)
+			{
+				cout << "OldMethod: PID, t1, sc, position, prop-rf-time, vertex-time, #bunches, bunches: " << locHypothesis->PID() << ", " << locHypothesis->t1_detector() << ", " << locHypothesis->Get_SCMHitMatchParams() << ", " << locHypothesis->position().Z() << ", " << locPropagatedRFTime << ", " << locVertexTime << ", " << locParticleRFBunches.size();
+				for(auto& locBunch : locParticleRFBunches)
+					cout << ", " << locBunch;
+				cout << endl;
+			}
 		}
 
 		for(auto& locRFBunch : locParticleRFBunches)
@@ -1038,6 +1048,8 @@ void DSourceComboTimeHandler::Vote_OldMethod(const DSourceCombo* locReactionFull
 	double locBestDeltaTSq = 9999999.9;
 	for(auto& locVotes : locOldMethodVoting)
 	{
+		if(dDebugLevel >= 20)
+			cout << "bunch, #votes: " << locVotes.first << ", " << locVotes.second.first << endl;
 		if(locVotes.second.first > locMostVotes)
 		{
 			locChosenBunch = locVotes.first;
@@ -1053,6 +1065,8 @@ void DSourceComboTimeHandler::Vote_OldMethod(const DSourceCombo* locReactionFull
 			}
 		}
 	}
+	if(dDebugLevel >= 20)
+		cout << "chosen bunch = " << locChosenBunch << endl;
 
 	vector<int> locBestVector{locChosenBunch};
 	vector<int> locCommonRFBunches = {}; //if charged or massive neutrals, ignore (they don't choose at this stage)
