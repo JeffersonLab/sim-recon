@@ -588,7 +588,7 @@ double DSourceComboTimeHandler::Calc_MaxDeltaTError(const DNeutralShower* locNeu
 		auto locZError = dPhotonVertexZBinWidth/2.0; //evaluated at center of bin
 		auto locR = locNeutralShower->dSpacetimeVertex.Vect().Perp();
 		auto locPathError = locR*(1.0/sin(locTheta) - sqrt(1.0 + pow(1.0/tan(locTheta) - locZError/locR, 2.0))) - locZError;
-		return locPathError/SPEED_OF_LIGHT;
+		return fabs(locPathError)/SPEED_OF_LIGHT;
 	}
 
 	//FCAL
@@ -597,7 +597,7 @@ double DSourceComboTimeHandler::Calc_MaxDeltaTError(const DNeutralShower* locNeu
 	//delta_delta_t = (650 - z_error)*[1/cos(theta) - sqrt(tan^2(theta) + (1 - z_error/(650 - z_error))^2)]/c - z_error/c
 	double locPathErrorTerm = 1.0/cos(locTheta) - sqrt(pow(tan(locTheta), 2.0) + pow(1.0 - locMaxZError/(locDeltaZ - locMaxZError), 2.0));
 	double locPathError = (locDeltaZ - locMaxZError)*locPathErrorTerm - locMaxZError;
-	return locPathError/SPEED_OF_LIGHT;
+	return fabs(locPathError)/SPEED_OF_LIGHT;
 }
 
 bool DSourceComboTimeHandler::Select_RFBunches_Charged(const DReactionVertexInfo* locReactionVertexInfo, const DSourceCombo* locReactionChargedCombo, vector<int>& locValidRFBunches)

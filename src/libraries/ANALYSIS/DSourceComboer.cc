@@ -9,7 +9,6 @@
  * OK:
  *
  * EH:
- * jpsi_lp higher
  *
  * PROBLEMS:
  *
