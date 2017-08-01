@@ -1022,7 +1022,7 @@ void DSourceComboTimeHandler::Vote_OldMethod(const DSourceCombo* locReactionFull
 				locParticleRFBunches = Calc_BeamBunchShifts(locVertexTime, locPropagatedRFTime, 0.5*dBeamBunchPeriod, false, locPID, locHypothesis->t1_detector(), locP);
 			if(dDebugLevel >= 20)
 			{
-				cout << "OldMethod: PID, t1, sc, position, prop-rf-time, vertex-time, #bunches, bunches: " << locHypothesis->PID() << ", " << locHypothesis->t1_detector() << ", " << locHypothesis->Get_SCMHitMatchParams() << ", " << locHypothesis->position().Z() << ", " << locPropagatedRFTime << ", " << locVertexTime << ", " << locParticleRFBunches.size();
+				cout << "OldMethod: PID, t1, sc, position, prop-rf-time, vertex-time, #bunches, bunches: " << locHypothesis->PID() << ", " << locHypothesis->t1_detector() << ", " << locHypothesis->Get_SCHitMatchParams() << ", " << locHypothesis->position().Z() << ", " << locPropagatedRFTime << ", " << locVertexTime << ", " << locParticleRFBunches.size();
 				for(auto& locBunch : locParticleRFBunches)
 					cout << ", " << locBunch;
 				cout << endl;
