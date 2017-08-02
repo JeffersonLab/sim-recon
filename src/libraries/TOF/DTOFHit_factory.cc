@@ -142,6 +142,7 @@ jerror_t DTOFHit_factory::brun(jana::JEventLoop *eventLoop, int32_t runnumber)
       jout << "Error loading /TOF/adc_timing_offsets !" << endl;
 
     if (USE_NEWAMP_4WALKCORR){
+
       if(eventLoop->GetCalib("TOF/timing_offsets_NEWAMP", raw_tdc_offsets)){
 
 	jout<<"\033[1;31m";  // red text";
@@ -155,30 +156,40 @@ jerror_t DTOFHit_factory::brun(jana::JEventLoop *eventLoop, int32_t runnumber)
 	} else {
 	  jout<<"OK Found!"<<endl;
 	}
+	if(eventLoop->GetCalib("TOF/timewalk_parms", timewalk_parameters))
+	  jout << "Error loading /TOF/timewalk_parms !" << endl;
 
+      } else { // timing offsets for NEWAMP exist, get also the walk parameters
+
+	if(eventLoop->GetCalib("TOF/timewalk_parms_NEWAMP", timewalk_parameters_NEWAMP))
+	  jout << "Error loading /TOF/timewalk_parms_NEWAMP !" << endl;
+      
       }
-    }
 
 
-    if (USE_AMP_4WALKCORR){
+    } else if (USE_AMP_4WALKCORR){
       if(eventLoop->GetCalib("TOF/timewalk_parms_AMP", timewalk_parameters_AMP))
 	jout << "Error loading /TOF/timewalk_parms_AMP !" << endl;
+      if(eventLoop->GetCalib("TOF/timing_offsets", raw_tdc_offsets))
+	jout << "Error loading /TOF/timing_offsets !" << endl;
     } else if (USE_NEW_4WALKCORR){
       if(eventLoop->GetCalib("TOF/timewalk_parms_NEW", timewalk_parameters_NEW))
 	jout << "Error loading /TOF/timewalk_parms_NEW !" << endl;
-    } else if (USE_NEWAMP_4WALKCORR){
-      if(eventLoop->GetCalib("TOF/timewalk_parms_NEWAMP", timewalk_parameters_NEWAMP))
-	jout << "Error loading /TOF/timewalk_parms_NEW !" << endl;
+      if(eventLoop->GetCalib("TOF/timing_offsets", raw_tdc_offsets))
+	jout << "Error loading /TOF/timing_offsets !" << endl;
     } else {
       if(eventLoop->GetCalib("TOF/timewalk_parms", timewalk_parameters))
 	jout << "Error loading /TOF/timewalk_parms !" << endl;
+      if(eventLoop->GetCalib("TOF/timing_offsets", raw_tdc_offsets))
+	jout << "Error loading /TOF/timing_offsets !" << endl;
     }
 
-
+    
     FillCalibTable(adc_pedestals, raw_adc_pedestals, tofGeom);
     FillCalibTable(adc_gains, raw_adc_gains, tofGeom);
     FillCalibTable(adc_time_offsets, raw_adc_offsets, tofGeom);
     FillCalibTable(tdc_time_offsets, raw_tdc_offsets, tofGeom);
+
     
     if(eventLoop->GetCalib("TOF/adc2E", raw_adc2E))
       jout << "Error loading /TOF/adc2E !" << endl;
