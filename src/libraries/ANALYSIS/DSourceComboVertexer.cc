@@ -333,8 +333,10 @@ DVector3 DSourceComboVertexer::Calc_Vertex(bool locIsProductionVertexFlag, const
 				locThetaNearest90Iterator = locThetaNearest90Iterator_Decaying;
 		}
 		locVertexParticles = {*locThetaNearest90Iterator};
-		auto locVertex = locVertexParticles[0]->position();
-		if(false) //COMPARE: Comparison-to-old mode
+		//vertex is 1/2-way between track POCA to beamline and the beamline itself: if POCA not on beamline, likely due to resolution issues, 
+		auto locTrackPosition = locVertexParticles[0]->position();
+		auto locVertex = DVertex(0.5*locTrackPosition.X(), 0.5*locTrackPosition.Y(), locTrackPosition.Z());
+//		if(false) //COMPARE: Comparison-to-old mode
 			locVertex = dVertex->dSpacetimeVertex.Vect();
 		dVertexMap.emplace(std::make_pair(locIsProductionVertexFlag, locVertexParticles), locVertex);
 		if(dDebugLevel >= 10)
@@ -352,7 +354,7 @@ DVector3 DSourceComboVertexer::Calc_Vertex(bool locIsProductionVertexFlag, const
 	if(locVertexIterator == dVertexMap.end())
 	{
 		auto locVertex = dAnalysisUtilities->Calc_CrudeVertex(locVertexParticles);
-		if(false) //COMPARE: Comparison-to-old mode
+//		if(false) //COMPARE: Comparison-to-old mode
 			locVertex = dVertex->dSpacetimeVertex.Vect();
 		if(dDebugLevel >= 10)
 			cout << "crude vertex = " << locVertex.X() << ", " << locVertex.Y() << ", " << locVertex.Z() << endl;

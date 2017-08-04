@@ -34,16 +34,9 @@ Q) How can I speed this up?
 A) You can try reducing the #z-bins by increasing their widths. However, much sure you also increase the uncertainty on the timing & invariant-mass cuts for photons as well.
 */
 
-//DO ONCE DONE WITH COMPARISON
-//update ALL cut values
-
 //TO COMPARE:
 //Look for "COMPARE:"
-
-//DETACHED:
-//Fix prekinfit neutral hypo creation: Not technically correct ... due to time offset if detached vertex
-//revisit dMaxDecayTimeOffset
-//interesting phenomena: showers at a vertex with a large radius
+//Update master cut values
 
 //NICE TO HAVE:
 //finish comments in Build_ParticleCombos()
@@ -248,6 +241,7 @@ DSourceComboer::DSourceComboer(JEventLoop* locEventLoop)
 	//Setup cuts/hists
 	japp->RootWriteLock(); //ACQUIRE ROOT LOCK!!
 	{
+/*
 		//CDC dE/dx Proton, Anti-Proton
 		ddEdxCutMap[Proton][SYS_CDC].first = new TF1("df_dEdxCut_CDC_ProtonLow", "exp(-1.0*[0]*x + [1]) + [2]", 0.0, 12.0);
 		ddEdxCutMap[Proton][SYS_CDC].first->SetParameters(4.0, 2.25, 1.0);
@@ -281,6 +275,7 @@ DSourceComboer::DSourceComboer(JEventLoop* locEventLoop)
 		ddEdxCutMap[Electron][SYS_FDC].second = new TF1("df_dEdxCut_CDC_ElectronHigh", "[0]", 0.0, 12.0);
 		ddEdxCutMap[Electron][SYS_FDC].second->SetParameter(0, 3.5);
 		ddEdxCutMap.emplace(Positron, ddEdxCutMap[Electron]);
+*/
 /*
 		//E/p
 		dEOverPCutMap[Electron][SYS_FCAL] = new TF1("df_EOverPCut_FCAL_Electron", "[0]", 0.0, 12.0);
@@ -994,7 +989,8 @@ bool DSourceComboer::Cut_dEdxAndEOverP(const DChargedTrackHypothesis* locCharged
 		if(!Cut_dEdx(locPID, SYS_CDC, locP, locdEdx))
 			locPassedCutFlag = false;
 	}
-	else if((locPID == KPlus) || (locPID == KMinus)) //	if((locPID == KPlus) || (locPID == KMinus)) //COMPARE: use this instead
+//	else if((locPID == KPlus) || (locPID == KMinus)) 
+	if((locPID == KPlus) || (locPID == KMinus)) //COMPARE: use this instead
 	{
 		auto locSystem = locChargedTrackHypothesis->t1_detector();
 		if((locSystem == SYS_START) || (locSystem == SYS_NULL))
@@ -1261,7 +1257,7 @@ DCombosByReaction DSourceComboer::Build_ParticleCombos(const DReactionVertexInfo
 			if(dDebugLevel > 0)
 				cout << "Fully charged." << endl;
 
-			if(false) //COMPARE: Comparison-to-old mode
+//			if(false) //COMPARE: Comparison-to-old mode
 			{
 				dSourceComboTimeHandler->Vote_OldMethod(locReactionChargedCombo, locBeamBunches_Charged);
 				if(locBeamBunches_Charged.empty())
@@ -1379,7 +1375,7 @@ void DSourceComboer::Combo_WithNeutralsAndBeam(const vector<const DReaction*>& l
 				++(dNumCombosSurvivedStageTracker[locReaction][DConstructionStage::NoVertex_RFBunch]);
 		}
 
-		if(false) //COMPARE: Comparison-to-old mode
+//		if(false) //COMPARE: Comparison-to-old mode
 		{
 			dSourceComboTimeHandler->Vote_OldMethod(locReactionFullCombo, locValidRFBunches);
 			if(locValidRFBunches.empty())
@@ -3783,7 +3779,7 @@ bool DSourceComboer::Check_Reactions(vector<const DReaction*>& locReactions)
 	//Check Max neutrals
 	auto locNumNeutralNeeded = locReactions.front()->Get_FinalPIDs(-1, false, false, d_Neutral, true).size(); //no missing, no decaying, include duplicates
 	auto locNumDetectedShowers = dShowersByBeamBunchByZBin[DSourceComboInfo::Get_VertexZIndex_Unknown()][{}].size();
-	if(false) //COMPARE: Comparison-to-old mode
+//	if(false) //COMPARE: Comparison-to-old mode
 	{
 		if(locNumDetectedShowers > dMaxNumNeutrals)
 			return false;

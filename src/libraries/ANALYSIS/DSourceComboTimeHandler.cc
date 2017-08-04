@@ -222,7 +222,7 @@ DSourceComboTimeHandler::DSourceComboTimeHandler(JEventLoop* locEventLoop, DSour
 	dPIDTimingCuts[Gamma].emplace(SYS_BCAL, new TF1("df_TimeCut", "[0]", 0.0, 12.0));
 	dPIDTimingCuts[Gamma][SYS_BCAL]->SetParameter(0, 1.5);
 	dPIDTimingCuts[Gamma].emplace(SYS_FCAL, new TF1("df_TimeCut", "[0]", 0.0, 12.0));
-	dPIDTimingCuts[Gamma][SYS_FCAL]->SetParameter(0, 2.5);
+	dPIDTimingCuts[Gamma][SYS_FCAL]->SetParameter(0, 2.0); //2.5!!!
 	dSelectedRFDeltaTs[Gamma][SYS_BCAL].reserve(1000);
 	dSelectedRFDeltaTs[Gamma][SYS_FCAL].reserve(1000);
 
@@ -265,7 +265,7 @@ DSourceComboTimeHandler::DSourceComboTimeHandler(JEventLoop* locEventLoop, DSour
 	dPIDTimingCuts[KPlus].emplace(SYS_TOF, new TF1("df_TimeCut", "[0]", 0.0, 12.0));
 	dPIDTimingCuts[KPlus][SYS_TOF]->SetParameter(0, 0.3);
 	dPIDTimingCuts[KPlus].emplace(SYS_FCAL, new TF1("df_TimeCut", "[0]", 0.0, 12.0));
-	dPIDTimingCuts[KPlus][SYS_FCAL]->SetParameter(0, 2.5);
+	dPIDTimingCuts[KPlus][SYS_FCAL]->SetParameter(0, 2.0); //2.5!!!
 	dPIDTimingCuts.emplace(KMinus, dPIDTimingCuts[KPlus]);
 	dSelectedRFDeltaTs.emplace(KPlus, dSelectedRFDeltaTs[Electron]);
 	dSelectedRFDeltaTs.emplace(KMinus, dSelectedRFDeltaTs[Electron]);
@@ -293,7 +293,7 @@ DSourceComboTimeHandler::DSourceComboTimeHandler(JEventLoop* locEventLoop, DSour
 		if(ParticleCharge(locPIDPair.first) == 0)
 			continue;
 		locPIDPair.second.emplace(SYS_START, new TF1("df_TimeCut", "[0]", 0.0, 12.0));
-		locPIDPair.second[SYS_START]->SetParameter(0, 2.5);
+		locPIDPair.second[SYS_START]->SetParameter(0, 2.0); //2.5!!!
 	}
 
 	vector<DetectorSystem_t> locTimingSystems_Charged {SYS_TOF, SYS_BCAL, SYS_FCAL, SYS_START};
@@ -525,14 +525,26 @@ vector<int> DSourceComboTimeHandler::Calc_BeamBunchShifts(double locVertexTime, 
 	auto locOrigNumShifts = Calc_RFBunchShift(locOrigRFBunchPropagatedTime, locVertexTime); //get best shift
 	vector<int> locRFShifts;
 
+	//if this particle is a decay product, the decaying particle may have been moving slowly across a large distance
+	//if so, we must correct for this delta-t before making a comparison
+	//if we know the distance, we can just correct the inputs to this function and it's not an issue
+	//but when evaluating photons before comboing, we obviously don't know the distance
+	//so, that means that we have to asymmetrically widen the cut:
+	//since delta_t = t_particle - t_rf, and this uncertainty acts as an increase to the t_rf (or a decrease to t_particle), we must have a larger delta_t cut on the HIGH side
+		//e.g. a cut at +/- 1ns becomes -1ns to 3ns
+		//this applies to both BCAL & FCAL photons
+		//this is only done at the beginning when picking valid RF bunches for all showers
+	auto locMinDeltaT = locDeltaTCut;
+	auto locMaxDeltaT = locIncludeDecayTimeOffset ? locDeltaTCut + dMaxDecayTimeOffset : locDeltaTCut;
+
 	//start with best-shift, then loop up until fails cut
 	auto locNumShifts = locOrigNumShifts;
 	auto locDeltaT = locVertexTime - (locOrigRFBunchPropagatedTime + locNumShifts*dBeamBunchPeriod);
 	//cout << "num shifts, delta-t = " << locNumShifts << ", " << locDeltaT << endl;
 	dAllRFDeltaTs[locPID][locSystem].push_back(std::make_pair(locP, locDeltaT));
-	while((fabs(locDeltaT) < locDeltaTCut) || (locOrigNumShifts == locNumShifts)) //extra condition for histogramming purposes only
+	while(((locDeltaT >= locMinDeltaT) && (locDeltaT < locMaxDeltaT)) || (locOrigNumShifts == locNumShifts)) //extra condition for histogramming purposes only
 	{
-		if(fabs(locDeltaT) < locDeltaTCut)
+		if((locDeltaT >= locMinDeltaT) && (locDeltaT < locMaxDeltaT))
 		{
 			if(dDebugLevel >= 10)
 				cout << "save shift: " << locNumShifts << endl;
@@ -547,7 +559,7 @@ vector<int> DSourceComboTimeHandler::Calc_BeamBunchShifts(double locVertexTime, 
 	locNumShifts = locOrigNumShifts - 1;
 	locDeltaT = locVertexTime - (locOrigRFBunchPropagatedTime + locNumShifts*dBeamBunchPeriod);
 	dAllRFDeltaTs[locPID][locSystem].push_back(std::make_pair(locP, locDeltaT));
-	while(fabs(locDeltaT) < locDeltaTCut)
+	while((locDeltaT >= locMinDeltaT) && (locDeltaT < locMaxDeltaT))
 	{
 		if(dDebugLevel >= 10)
 			cout << "save shift: " << locNumShifts << endl;
@@ -555,22 +567,6 @@ vector<int> DSourceComboTimeHandler::Calc_BeamBunchShifts(double locVertexTime, 
 		--locNumShifts;
 		locDeltaT = locVertexTime - (locOrigRFBunchPropagatedTime + locNumShifts*dBeamBunchPeriod);
 		dAllRFDeltaTs[locPID][locSystem].push_back(std::make_pair(locP, locDeltaT));
-	}
-
-	//due to detached vertices, we may need to accept EARLIER RF bunches
-	if(false) //locIncludeDecayTimeOffset: revisit later!
-	{
-		//continue down-shift loop, this time including time offset
-		//Note that in the delta-t histograms, the dMaxDecayTimeOffset would cause a shift in the distribution for positive delta-t's, so we won't include these in the histograms
-		locDeltaT = locVertexTime - (locOrigRFBunchPropagatedTime + locNumShifts*dBeamBunchPeriod);
-		while(fabs(locDeltaT) < (locDeltaTCut + dMaxDecayTimeOffset))
-		{
-			if(dDebugLevel >= 10)
-				cout << "save shift: " << locNumShifts << endl;
-			locRFShifts.push_back(locNumShifts);
-			--locNumShifts;
-			locDeltaT = locVertexTime - (locOrigRFBunchPropagatedTime + locNumShifts*dBeamBunchPeriod);
-		}
 	}
 
 	std::sort(locRFShifts.begin(), locRFShifts.end());
@@ -1256,6 +1252,7 @@ bool DSourceComboTimeHandler::Get_RFBunches_ChargedTrack(const DChargedTrackHypo
 		return false; //no timing info
 
 	//COMPARE: NOT Comparison-to-old mode
+/*
 	if((locSystem == SYS_START) && !locOnlyTrackFlag)
 	{
 		//special case: only cut if only matched to 1 ST hit
@@ -1264,7 +1261,7 @@ bool DSourceComboTimeHandler::Get_RFBunches_ChargedTrack(const DChargedTrackHypo
 		if(locSCMatchParams.size() > 1)
 			return false; //don't cut on timing! can't tell for sure!
 	}
-
+*/
 	auto locX4 = Get_ChargedPOCAToVertexX4(locHypothesis, locIsProductionVertex, locVertexPrimaryCombo, locVertex);
 	auto locVertexTime = locX4.T() - locTimeOffset;
 
@@ -1272,7 +1269,7 @@ bool DSourceComboTimeHandler::Get_RFBunches_ChargedTrack(const DChargedTrackHypo
 	auto locCutFunc = Get_TimeCutFunction(locPID, locSystem);
 	auto locDeltaTCut = (locCutFunc != nullptr) ? locCutFunc->Eval(locP) : 3.0; //if null will return false, but still use for histogramming
 
-	if(false) //COMPARE: Comparison-to-old mode
+//	if(false) //COMPARE: Comparison-to-old mode
 	{
 		locVertexTime = locHypothesis->time();
 		locPropagatedRFTime += (locHypothesis->position().Z() - locVertex.Z())/SPEED_OF_LIGHT;

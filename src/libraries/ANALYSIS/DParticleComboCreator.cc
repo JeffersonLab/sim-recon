@@ -245,7 +245,6 @@ const DParticleCombo* DParticleComboCreator::Build_ParticleCombo(const DReaction
 				else
 				{
 					auto locVertexCovMatrix = locCreateNeutralErrorMatrixFlag ? &dVertexCovMatrix : nullptr;
-//Not technically correct ... due to time offset if detached vertex
 					locNewNeutralHypo = dNeutralParticleHypothesisFactory->Create_DNeutralParticleHypothesis(locNeutralShower, locPID, locEventRFBunch, locSpacetimeVertex, locVertexCovMatrix);
 					dCreated_NeutralHypo.push_back(const_cast<DNeutralParticleHypothesis*>(locNewNeutralHypo));
 					dNeutralHypoMap.emplace(locHypoTuple, locNewNeutralHypo);
