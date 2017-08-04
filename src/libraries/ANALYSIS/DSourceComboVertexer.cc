@@ -335,7 +335,7 @@ DVector3 DSourceComboVertexer::Calc_Vertex(bool locIsProductionVertexFlag, const
 		locVertexParticles = {*locThetaNearest90Iterator};
 		//vertex is 1/2-way between track POCA to beamline and the beamline itself: if POCA not on beamline, likely due to resolution issues, 
 		auto locTrackPosition = locVertexParticles[0]->position();
-		auto locVertex = DVertex(0.5*locTrackPosition.X(), 0.5*locTrackPosition.Y(), locTrackPosition.Z());
+		auto locVertex = DVector3(0.5*locTrackPosition.X(), 0.5*locTrackPosition.Y(), locTrackPosition.Z());
 //		if(false) //COMPARE: Comparison-to-old mode
 			locVertex = dVertex->dSpacetimeVertex.Vect();
 		dVertexMap.emplace(std::make_pair(locIsProductionVertexFlag, locVertexParticles), locVertex);
