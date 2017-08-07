@@ -6,6 +6,7 @@
 #include "JANA/JObject.h"
 #include "TMatrixDSym.h"
 
+#include "DResettable.h"
 #include "PID/DKinematicData.h"
 #include "ANALYSIS/DReaction.h" //for DKinFitType
 #include "KINFITTER/DKinFitChain.h"
@@ -15,13 +16,14 @@
 using namespace std;
 using namespace jana;
 
-class DKinFitResults
+class DKinFitResults : public DResettable
 {
 	public:
 
 		/************************************************************ SET FIT INFORMATION ***********************************************************/
 
 		void Reset(void);
+		void Release(void);
 		void Set_KinFitType(DKinFitType locKinFitType){dKinFitType = locKinFitType;}
 
 		void Set_NumConstraints(unsigned int locNumConstraints){dNumConstraints = locNumConstraints;}
@@ -115,6 +117,14 @@ inline void DKinFitResults::Reset(void)
 	dVXi.ResizeTo(0, 0);
 
 	//OUTPUT PARTICLES AND CONSTRAINTS
+	dOutputKinFitParticles.clear();
+	dKinFitConstraints.clear();
+	dParticleMap_SourceToOutput.clear();
+}
+
+inline void DKinFitResults::Release(void)
+{
+	dPulls.clear();
 	dOutputKinFitParticles.clear();
 	dKinFitConstraints.clear();
 	dParticleMap_SourceToOutput.clear();
