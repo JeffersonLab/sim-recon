@@ -1199,12 +1199,12 @@ bool DCutAction_OneVertexKinFit::Perform_Action(JEventLoop* locEventLoop, const 
 	auto locParticles = locParticleCombo->Get_FinalParticles_Measured(Get_Reaction(), d_Charged);
 
 	//Make DKinFitParticle objects for each one
-	deque<DKinFitParticle*> locKinFitParticles;
-	set<DKinFitParticle*> locKinFitParticleSet;
+	deque<shared_ptr<DKinFitParticle>> locKinFitParticles;
+	set<shared_ptr<DKinFitParticle>> locKinFitParticleSet;
 	for(size_t loc_i = 0; loc_i < locParticles.size(); ++loc_i)
 	{
 		const DChargedTrackHypothesis* locChargedTrackHypothesis = static_cast<const DChargedTrackHypothesis*>(locParticles[loc_i]);
-		DKinFitParticle* locKinFitParticle = dKinFitUtils->Make_DetectedParticle(locChargedTrackHypothesis);
+		auto locKinFitParticle = dKinFitUtils->Make_DetectedParticle(locChargedTrackHypothesis);
 		locKinFitParticles.push_back(locKinFitParticle);
 		locKinFitParticleSet.insert(locKinFitParticle);
 	}
@@ -1213,8 +1213,7 @@ bool DCutAction_OneVertexKinFit::Perform_Action(JEventLoop* locEventLoop, const 
 	TVector3 locVertexGuess = dAnalysisUtilities->Calc_CrudeVertex(locParticles);
 
 	// make & set vertex constraint
-	set<DKinFitParticle*> locNoConstrainParticles;
-	DKinFitConstraint_Vertex* locVertexConstraint = dKinFitUtils->Make_VertexConstraint(locKinFitParticleSet, locNoConstrainParticles, locVertexGuess);
+	DKinFitConstraint_Vertex* locVertexConstraint = dKinFitUtils->Make_VertexConstraint(locKinFitParticleSet, {}, locVertexGuess);
 	dKinFitter->Add_Constraint(locVertexConstraint);
 
 	// PERFORM THE KINEMATIC FIT

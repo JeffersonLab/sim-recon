@@ -33,8 +33,24 @@ enum DKinFitPullType
 	d_TPull
 };
 
+class DKinFitter;
+class DKinFitUtils;
+class DKinFitConstraint_Spacetime;
+class DKinFitConstraint_Vertex;
+class DKinFitConstraint_P4;
+class DKinFitConstraint_Mass;
+class DKinFitUtils_GlueX;
+
 class DKinFitParticle : public DResettable
 {
+	friend class DKinFitter;
+	friend class DKinFitUtils;
+	friend class DKinFitConstraint_Spacetime;
+	friend class DKinFitConstraint_Vertex;
+	friend class DKinFitConstraint_P4;
+	friend class DKinFitConstraint_Mass;
+	friend class DKinFitUtils_GlueX;
+
 	public:
 
 		//STRUCTORS

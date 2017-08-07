@@ -141,11 +141,13 @@ DSourceComboP4Handler::DSourceComboP4Handler(DSourceComboer* locSourceComboer, b
 
 	//INVARIANT MASS CUTS: BARYONS
 	dInvariantMassCuts.emplace(Lambda, std::make_pair(1.0, 1.2));
+	dInvariantMassCuts.emplace(AntiLambda, dInvariantMassCuts[Lambda]);
 	dInvariantMassCuts.emplace(Sigma0, std::make_pair(1.1, 1.3));
 	dInvariantMassCuts.emplace(SigmaPlus, dInvariantMassCuts[Sigma0]);
 	dInvariantMassCuts.emplace(SigmaMinus, dInvariantMassCuts[Sigma0]);
 	dInvariantMassCuts.emplace(XiMinus, std::make_pair(1.1, 1.5));
 	dInvariantMassCuts.emplace(Xi0, dInvariantMassCuts[XiMinus]);
+	dInvariantMassCuts.emplace(OmegaMinus, std::make_pair(1.32, 2.22));
 	dInvariantMassCuts.emplace(Lambda_c, std::make_pair(2.0, 2.6));
 
 	//MISSING MASS CUTS & MASS HISTOGRAMS

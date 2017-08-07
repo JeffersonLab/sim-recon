@@ -183,7 +183,7 @@ class DKinFitUtils //contains pure-virtual functions: cannot directly instantiat
 
 		/************************************************************** CLONE RESOURCES *************************************************************/
 
-		shared_ptr<DKinFitParticle> Clone_KinFitParticle(DKinFitParticle* locKinFitParticle);
+		shared_ptr<DKinFitParticle> Clone_KinFitParticle(const shared_ptr<DKinFitParticle>& locKinFitParticle);
 		set<shared_ptr<DKinFitParticle>> Build_CloneParticleSet(const set<shared_ptr<DKinFitParticle>>& locInputParticles, const map<shared_ptr<DKinFitParticle>, shared_ptr<DKinFitParticle>>& locCloneIOMap) const;
 		set<DKinFitConstraint*> Clone_ParticlesAndConstraints(const set<DKinFitConstraint*>& locInputConstraints);
 
@@ -193,7 +193,7 @@ class DKinFitUtils //contains pure-virtual functions: cannot directly instantiat
 		TLorentzVector Calc_DecayingP4(const DKinFitParticle* locKinFitParticle, bool locIsConstrainedParticle, double locStateSignMultiplier, bool locDontPropagateAtAllFlag = false) const;
 
 		bool Calc_PathLength(const DKinFitParticle* locKinFitParticle, const TMatrixDSym* locVXi, const TMatrixFSym* locCovarianceMatrix, pair<double, double>& locPathLengthPair) const;
-		void Calc_DecayingParticleJacobian(const DKinFitParticle* locKinFitParticle, bool locDontPropagateDecayingP3Flag, double locStateSignMultiplier, int locNumEta, const map<shared_ptr<const DKinFitParticle>, int>& locAdditionalPxParamIndices, TMatrixD& locJacobian) const;
+		void Calc_DecayingParticleJacobian(const DKinFitParticle* locKinFitParticle, bool locDontPropagateDecayingP3Flag, double locStateSignMultiplier, int locNumEta, const map<const DKinFitParticle*, int>& locAdditionalPxParamIndices, TMatrixD& locJacobian) const;
 
 		/*************************************************************** CLONE MAPPING **************************************************************/
 

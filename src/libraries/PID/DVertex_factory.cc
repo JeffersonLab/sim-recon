@@ -108,13 +108,12 @@ jerror_t DVertex_factory::evnt(JEventLoop* locEventLoop, uint64_t eventnumber)
 	TVector3 locTRoughPosition(locRoughPosition.X(), locRoughPosition.Y(), locRoughPosition.Z());
 
 	// create particles for kinematic fit
-	set<DKinFitParticle*> locKinFitParticles;
+	set<shared_ptr<DKinFitParticle>> locKinFitParticles;
 	for(size_t loc_i = 0; loc_i < locTrackTimeBasedVectorToUse.size(); ++loc_i)
 		locKinFitParticles.insert(dKinFitUtils->Make_DetectedParticle(locTrackTimeBasedVectorToUse[loc_i]));
 
 	// create vertex constraint
-	set<DKinFitParticle*> locNoConstrainParticles;
-	DKinFitConstraint_Vertex* locVertexConstraint = dKinFitUtils->Make_VertexConstraint(locKinFitParticles, locNoConstrainParticles, locTRoughPosition);
+	DKinFitConstraint_Vertex* locVertexConstraint = dKinFitUtils->Make_VertexConstraint(locKinFitParticles, {}, locTRoughPosition);
 	dKinFitter->Add_Constraint(locVertexConstraint);
 
 	// fit, save, and return
@@ -219,15 +218,15 @@ jerror_t DVertex_factory::Create_Vertex_KinFit(const DEventRFBunch* locEventRFBu
 
 	//Particle Maps & Pulls
 	//Build pulls from this:
-	map<DKinFitParticle*, map<DKinFitPullType, double> > locPulls_KinFitParticle;
+	map<shared_ptr<DKinFitParticle>, map<DKinFitPullType, double> > locPulls_KinFitParticle;
 	dKinFitter->Get_Pulls(locPulls_KinFitParticle);
 
 	//By looping over the pulls:
-	map<DKinFitParticle*, map<DKinFitPullType, double> >::iterator locMapIterator = locPulls_KinFitParticle.begin();
+	auto locMapIterator = locPulls_KinFitParticle.begin();
 	for(; locMapIterator != locPulls_KinFitParticle.end(); ++locMapIterator)
 	{
-		DKinFitParticle* locOutputKinFitParticle = locMapIterator->first;
-		DKinFitParticle* locInputKinFitParticle = dKinFitUtils->Get_InputKinFitParticle(locOutputKinFitParticle);
+		auto locOutputKinFitParticle = locMapIterator->first;
+		auto locInputKinFitParticle = dKinFitUtils->Get_InputKinFitParticle(locOutputKinFitParticle);
 
 		const JObject* locSourceJObject = dKinFitUtils->Get_SourceJObject(locInputKinFitParticle);
 		locVertex->dKinFitPulls[locSourceJObject] = locMapIterator->second;

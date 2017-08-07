@@ -438,7 +438,7 @@ shared_ptr<TMatrixFSym> DKinFitUtils::Clone_SymMatrix(const TMatrixFSym* locMatr
 	return locNewMatrix;
 }
 
-shared_ptr<DKinFitParticle> DKinFitUtils::Clone_KinFitParticle(DKinFitParticle* locKinFitParticle)
+shared_ptr<DKinFitParticle> DKinFitUtils::Clone_KinFitParticle(const shared_ptr<DKinFitParticle>& locKinFitParticle)
 {
 	auto locClonedKinFitParticle = dResourcePool_KinFitParticle->Get_SharedResource();
 	*locClonedKinFitParticle = *locKinFitParticle;
@@ -524,7 +524,7 @@ set<DKinFitConstraint*> DKinFitUtils::Clone_ParticlesAndConstraints(const set<DK
 		//but for this fit, can track locally (here)
 	map<shared_ptr<DKinFitParticle>, shared_ptr<DKinFitParticle>> locCloneIOMap; //for this fit
 	for(auto& locParticle : locAllParticles)
-		locCloneIOMap[locParticle] = Clone_KinFitParticle(locParticle.get());
+		locCloneIOMap[locParticle] = Clone_KinFitParticle(locParticle);
 
 	//Now, for all of the decaying cloned particles, go through and set new pointers for the from-initial and from-final state particles
 	for(auto& locClonePair : locCloneIOMap)
@@ -642,8 +642,9 @@ void DKinFitUtils::Recycle_DKinFitChain(const DKinFitChain* locKinFitChain)
 		locKinFitChainStep->Reset();
 		dKinFitChainStepPool_Available.push_back(locKinFitChainStep);
 	}
-	locKinFitChain->Reset();
-	dKinFitChainPool_Available.push_back(const_cast<DKinFitChain*>(locKinFitChain));
+	auto locNonConstChain = const_cast<DKinFitChain*>(locKinFitChain);
+	locNonConstChain->Reset();
+	dKinFitChainPool_Available.push_back(locNonConstChain);
 }
 
 /*************************************************************** VALIDATE CONSTRAINTS **************************************************************/
@@ -940,8 +941,6 @@ bool DKinFitUtils::Propagate_TrackInfoToCommonVertex(const DKinFitParticle* locK
 
 		locTransformationMatrix_CommonTime(locCommonTParamIndex_TempMatrix, locCovMatrixTParamIndex) = 1.0;
 
-		if(locKinFitParticle->Get_PID() == 3122)
-			cout << "A, sizes: " << locCovarianceMatrix->GetNrows() << ", " << locCovarianceMatrix->GetNcols() << ", " << locTransformationMatrix_CommonTime.GetNrows() << ", " << locTransformationMatrix_CommonTime.GetNcols() << endl;
 		locCovarianceMatrix->Similarity(locTransformationMatrix_CommonTime);
 	}
 	else if(!locNeutralShowerFlag) //non-accelerating, non-shower
@@ -970,8 +969,6 @@ bool DKinFitUtils::Propagate_TrackInfoToCommonVertex(const DKinFitParticle* locK
 
 		locTransformationMatrix_CommonTime(locCommonTParamIndex_TempMatrix, locCovMatrixTParamIndex) = 1.0;
 
-		if(locKinFitParticle->Get_PID() == 3122)
-			cout << "B, sizes: " << locCovarianceMatrix->GetNrows() << ", " << locCovarianceMatrix->GetNcols() << ", " << locTransformationMatrix_CommonTime.GetNrows() << ", " << locTransformationMatrix_CommonTime.GetNcols() << endl;
 		locCovarianceMatrix->Similarity(locTransformationMatrix_CommonTime);
 	}
 	else //neutral shower
@@ -996,8 +993,6 @@ bool DKinFitUtils::Propagate_TrackInfoToCommonVertex(const DKinFitParticle* locK
 
 		locTransformationMatrix_CommonTime(locCommonTParamIndex_TempMatrix, locCovMatrixTParamIndex) = 1.0;
 
-		if(locKinFitParticle->Get_PID() == 3122)
-			cout << "C, sizes: " << locCovarianceMatrix->GetNrows() << ", " << locCovarianceMatrix->GetNcols() << ", " << locTransformationMatrix_CommonTime.GetNrows() << ", " << locTransformationMatrix_CommonTime.GetNcols() << endl;
 		locCovarianceMatrix->Similarity(locTransformationMatrix_CommonTime);
 	}
 
@@ -1042,8 +1037,6 @@ bool DKinFitUtils::Propagate_TrackInfoToCommonVertex(const DKinFitParticle* locK
 	locTransformationMatrix_Propagation(6, locCommonTParamIndex_TempMatrix) = 1.0;
 
 	//transform!!
-	if(locKinFitParticle->Get_PID() == 3122)
-		cout << "D, sizes: " << locCovarianceMatrix->GetNrows() << ", " << locCovarianceMatrix->GetNcols() << ", " << locTransformationMatrix_Propagation.GetNrows() << ", " << locTransformationMatrix_Propagation.GetNcols() << endl;
 	locCovarianceMatrix->Similarity(locTransformationMatrix_Propagation); //FINALLY!!!
 
 	//now calculate the path length
@@ -1083,15 +1076,14 @@ bool DKinFitUtils::Calc_PathLength(const DKinFitParticle* locKinFitParticle, con
 	}
 	else // non-accelerating
 		locPathLengthPair.first = locDeltaX.Mag();
-//if(locKinFitParticle->Get_PID() == 3122)
-//cout << "path length: cov matrix, update falg: " << locCovarianceMatrix << ", " << dUpdateCovarianceMatricesFlag << endl;
+
 	//if not updating the errors, set the error to zero
 	if((locCovarianceMatrix == nullptr) || !dUpdateCovarianceMatricesFlag)
 	{
 		locPathLengthPair.second = 0.0;
 		return true;
 	}
-return true;
+
 	//now compute the uncertainty
 	//add common v3 to matrix: 10x10 or 8x8 (neutral shower)
 	TMatrixFSym locTempMatrix(*locCovarianceMatrix);
@@ -1153,7 +1145,7 @@ return true;
 	return true;
 }
 
-void DKinFitUtils::Calc_DecayingParticleJacobian(const DKinFitParticle* locKinFitParticle, bool locDontPropagateDecayingP3Flag, double locStateSignMultiplier, int locNumEta, const map<shared_ptr<const DKinFitParticle>, int>& locAdditionalPxParamIndices, TMatrixD& locJacobian) const
+void DKinFitUtils::Calc_DecayingParticleJacobian(const DKinFitParticle* locKinFitParticle, bool locDontPropagateDecayingP3Flag, double locStateSignMultiplier, int locNumEta, const map<const DKinFitParticle*, int>& locAdditionalPxParamIndices, TMatrixD& locJacobian) const
 {
 	//locJacobian: matrix used to convert dV to the decaying particle covariance matrix: indices are px, py, pz, x, y, z, t
 		//dimensions are: 7, (dNumXi + locNumEta);

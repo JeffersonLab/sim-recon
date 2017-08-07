@@ -2203,7 +2203,6 @@ jerror_t DEventSourceHDDM::Extract_DTrackTimeBased(hddm_s::HDDM *record,
       track->id = iter->getId();
 
       // Reconstitute errorMatrix
-      uint64_t locEventNumber = locEventLoop->GetJEvent().GetEventNumber();
       auto locCovarianceMatrix = dResourcePool_TMatrixFSym->Get_SharedResource();
       locCovarianceMatrix->ResizeTo(7, 7);
       string str_vals = iter->getErrorMatrix().getVals();

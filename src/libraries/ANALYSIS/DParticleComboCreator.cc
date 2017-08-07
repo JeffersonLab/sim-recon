@@ -301,6 +301,8 @@ const DChargedTrackHypothesis* DParticleComboCreator::Create_ChargedHypo(const D
 
 const DParticleCombo* DParticleComboCreator::Create_KinFitCombo_NewCombo(const DParticleCombo* locOrigCombo, const DReaction* locReaction, const DKinFitResults* locKinFitResults, const DKinFitChain* locKinFitChain)
 {
+	dKinFitUtils->Set_UpdateCovarianceMatricesFlag(locReaction->Get_KinFitUpdateCovarianceMatricesFlag());
+
 	auto locNewCombo = Get_ParticleComboResource();
 	locNewCombo->Set_KinFitResults(locKinFitResults);
 	locNewCombo->Set_EventRFBunch(locOrigCombo->Get_EventRFBunch());
@@ -326,7 +328,7 @@ const DParticleCombo* DParticleComboCreator::Create_KinFitCombo_NewCombo(const D
 			if(locKinFitParticle == NULL) //not used in kinfit!!
 				locNewComboStep->Set_InitialParticle(locInitialParticle_Measured);
 			else //create a new one
-				locNewComboStep->Set_InitialParticle(Create_BeamPhoton_KinFit(static_cast<const DBeamPhoton*>(locInitialParticle_Measured), locKinFitParticle, locComboStep->Get_SpacetimeVertex()));
+				locNewComboStep->Set_InitialParticle(Create_BeamPhoton_KinFit(static_cast<const DBeamPhoton*>(locInitialParticle_Measured), locKinFitParticle.get(), locComboStep->Get_SpacetimeVertex()));
 		}
 		else //decaying particle! //set here for initial state, and in previous step for final state
 			Set_DecayingParticles(locReaction, locNewCombo, locOrigCombo, loc_j, locNewComboStep, locKinFitChain, locKinFitResults);
@@ -340,7 +342,7 @@ const DParticleCombo* DParticleComboCreator::Create_KinFitCombo_NewCombo(const D
 				auto locMissingParticles = locKinFitResults->Get_OutputKinFitParticles(d_MissingParticle);
 				if(!locMissingParticles.empty())
 				{
-					auto locNewKinematicData = Build_KinematicData(*locMissingParticles.begin(), locKinFitType, locComboStep->Get_SpacetimeVertex().Vect());
+					auto locNewKinematicData = Build_KinematicData((*locMissingParticles.begin()).get(), locKinFitType, locComboStep->Get_SpacetimeVertex().Vect());
 					locNewComboStep->Add_FinalParticle(locNewKinematicData);
 				}
 				else //not used in kinfit: do not create: NULL
@@ -358,7 +360,7 @@ const DParticleCombo* DParticleComboCreator::Create_KinFitCombo_NewCombo(const D
 				if(locKinFitParticle == NULL) //not used in kinfit!!
 					locNewComboStep->Add_FinalParticle(locKinematicData_Measured);
 				else //create a new one
-					locNewComboStep->Add_FinalParticle(Create_NeutralHypo_KinFit(locNeutralHypo, locKinFitParticle));
+					locNewComboStep->Add_FinalParticle(Create_NeutralHypo_KinFit(locNeutralHypo, locKinFitParticle.get()));
 			}
 			else //charged
 			{
@@ -369,7 +371,7 @@ const DParticleCombo* DParticleComboCreator::Create_KinFitCombo_NewCombo(const D
 				else //create a new one
 				{
 					auto locChargedTrack = static_cast<const DChargedTrack*>(locComboStep->Get_FinalParticle_SourceObject(loc_k));
-					auto locNewHypo = Create_ChargedHypo_KinFit(locChargedTrack, locKinematicData_Measured->PID(), locKinFitParticle);
+					auto locNewHypo = Create_ChargedHypo_KinFit(locChargedTrack, locKinematicData_Measured->PID(), locKinFitParticle.get());
 					locNewComboStep->Add_FinalParticle(locNewHypo);
 				}
 			}
@@ -396,11 +398,11 @@ void DParticleComboCreator::Set_DecayingParticles(const DReaction* locReaction, 
 	auto locPID = PDGtoPType(locKinFitParticle->Get_PID());
 	auto locFromStepIndex = DAnalysis::Get_InitialParticleDecayFromIndices(locReaction, locStepIndex).first;
 
-	auto locKinematicData_Common = Build_KinematicData(locKinFitParticle, locKinFitType, locEventVertex);
+	auto locKinematicData_Common = Build_KinematicData(locKinFitParticle.get(), locKinFitType, locEventVertex);
 	bool locCreate2ndObjectFlag = (IsDetachedVertex(locPID) && (locStepIndex != 0) && (locFromStepIndex >= 0));
-	auto locKinematicData_Position = locCreate2ndObjectFlag ? Build_KinematicData(locKinFitParticle, locKinFitType, locEventVertex) : locKinematicData_Common;
+	auto locKinematicData_Position = locCreate2ndObjectFlag ? Build_KinematicData(locKinFitParticle.get(), locKinFitType, locEventVertex) : locKinematicData_Common;
 	if(locKinFitParticle->Get_CommonVxParamIndex() >= 0)
-		dKinFitUtils->Propagate_TrackInfoToCommonVertex(locKinematicData_Common, locKinFitParticle, &locKinFitResults->Get_VXi());
+		dKinFitUtils->Propagate_TrackInfoToCommonVertex(locKinematicData_Common, locKinFitParticle.get(), &locKinFitResults->Get_VXi());
 
 	bool locAtProdVertexFlag = locKinFitParticle->Get_VertexP4AtProductionVertex();
 	auto locKinematicData_InitState = locAtProdVertexFlag ? locKinematicData_Common : locKinematicData_Position;
@@ -424,7 +426,7 @@ void DParticleComboCreator::Set_DecayingParticles(const DReaction* locReaction, 
 	}
 }
 
-DKinFitParticle* DParticleComboCreator::Get_DecayingParticle(const DReaction* locReaction, const DParticleCombo* locOldParticleCombo, size_t locComboStepIndex, const DKinFitChain* locKinFitChain, const DKinFitResults* locKinFitResults)
+shared_ptr<DKinFitParticle> DParticleComboCreator::Get_DecayingParticle(const DReaction* locReaction, const DParticleCombo* locOldParticleCombo, size_t locComboStepIndex, const DKinFitChain* locKinFitChain, const DKinFitResults* locKinFitResults)
 {
 	auto locReactionStep = locReaction->Get_ReactionStep(locComboStepIndex);
 	Particle_t locPID = locReactionStep->Get_InitialPID();
@@ -437,7 +439,7 @@ DKinFitParticle* DParticleComboCreator::Get_DecayingParticle(const DReaction* lo
 		auto locKinFitChainStep = locKinFitChain->Get_KinFitChainStep(loc_i);
 
 		//loop over init particles to get the decaying particle (if present)
-		DKinFitParticle* locDecayingParticle = nullptr;
+		shared_ptr<DKinFitParticle> locDecayingParticle = nullptr;
 		auto locInitialParticles = locKinFitChainStep->Get_InitialParticles();
 		for(auto locKinFitParticle : locInitialParticles)
 		{
@@ -460,7 +462,7 @@ DKinFitParticle* DParticleComboCreator::Get_DecayingParticle(const DReaction* lo
 		//get all measured products, then just pick the first one to search for
 		auto locMeasuredParticles = locOldParticleCombo->Get_DecayChainParticles_Measured(locReaction, locComboStepIndex);
 		const DKinematicData* locMeasuredParticle = locMeasuredParticles[0];
-		DKinFitParticle* locKinFitParticle = locKinFitResults->Get_OutputKinFitParticle(locMeasuredParticle);
+		auto locKinFitParticle = locKinFitResults->Get_OutputKinFitParticle(locMeasuredParticle);
 		if(locKinFitParticle == NULL) //null: neutral shower. Use shower object
 		{
 			const DNeutralShower* locNeutralShower = static_cast<const DNeutralParticleHypothesis*>(locMeasuredParticle)->Get_NeutralShower();
@@ -477,7 +479,7 @@ DKinFitParticle* DParticleComboCreator::Get_DecayingParticle(const DReaction* lo
 	return NULL;
 }
 
-bool DParticleComboCreator::Search_ForParticleInDecay(const DKinFitChain* locKinFitChain, size_t locStepToSearch, DKinFitParticle* locParticleToFind)
+bool DParticleComboCreator::Search_ForParticleInDecay(const DKinFitChain* locKinFitChain, size_t locStepToSearch, const shared_ptr<DKinFitParticle>& locParticleToFind)
 {
 	const DKinFitChainStep* locKinFitChainStep = locKinFitChain->Get_KinFitChainStep(locStepToSearch);
 	auto locFinalParticles = locKinFitChainStep->Get_FinalParticles();

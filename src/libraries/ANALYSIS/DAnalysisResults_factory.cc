@@ -520,11 +520,11 @@ DKinFitResults* DAnalysisResults_factory::Build_KinFitResults(const DParticleCom
 	map<const JObject*, map<DKinFitPullType, double> > locPulls_JObject;
 
 	//From this:
-	map<DKinFitParticle*, map<DKinFitPullType, double> > locPulls_KinFitParticle;
+	map<shared_ptr<DKinFitParticle>, map<DKinFitPullType, double> > locPulls_KinFitParticle;
 	dKinFitter->Get_Pulls(locPulls_KinFitParticle);
 
 	//By looping over the pulls:
-	map<shared_ptr<DKinFitParticle>, map<DKinFitPullType, double> >::iterator locMapIterator = locPulls_KinFitParticle.begin();
+	auto locMapIterator = locPulls_KinFitParticle.begin();
 	for(; locMapIterator != locPulls_KinFitParticle.end(); ++locMapIterator)
 	{
 		auto locOutputKinFitParticle = locMapIterator->first;

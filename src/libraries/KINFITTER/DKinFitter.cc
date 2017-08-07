@@ -248,7 +248,7 @@ void DKinFitter::Prepare_ConstraintsAndParticles(void)
 
 			//Set vertex flag based on whether any particles found or not
 			bool locIsProductionVertex = false;
-			if(dKinFitUtils->Get_IsDecayingParticleDefinedByProducts(locKinFitParticle)) //p4 defined by invariant mass (decay products)
+			if(dKinFitUtils->Get_IsDecayingParticleDefinedByProducts(locKinFitParticle.get())) //p4 defined by invariant mass (decay products)
 				locIsProductionVertex = locFinalStateParticlesAtVertex.empty() ? true : false; //if no overlap: not at decay vertex: production
 			else //p4 defined by missing mass
 				locIsProductionVertex = locFinalStateParticlesAtVertex.empty() ? false : true; //if no overlap: not at production vertex: decay
@@ -299,7 +299,7 @@ void DKinFitter::Prepare_ConstraintsAndParticles(void)
 	{
 		auto locKinFitParticle = *locParticleIterator;
 		if(locKinFitParticle->Get_KinFitParticleType() == d_DecayingParticle)
-			locKinFitParticle->Set_Momentum(dKinFitUtils->Calc_DecayingP4_ByPosition(locKinFitParticle, true).Vect());
+			locKinFitParticle->Set_Momentum(dKinFitUtils->Calc_DecayingP4_ByPosition(locKinFitParticle.get(), true).Vect());
 	}
 
 	//set vertex constraint flags: used if not accelerating
@@ -1027,7 +1027,7 @@ void DKinFitter::Calc_dF(void)
 			auto locDecayingParticle = locKinFitConstraint_Mass->Get_DecayingParticle();
 			double locTargetedMass = locDecayingParticle->Get_Mass();
 
-			TLorentzVector locXP4 = dKinFitUtils->Calc_DecayingP4_ByP3Derived(locDecayingParticle, true);
+			TLorentzVector locXP4 = dKinFitUtils->Calc_DecayingP4_ByP3Derived(locDecayingParticle.get(), true);
 			if(dDebugLevel > 30)
 				cout << "Final decaying pxyzE is: " << locXP4.Px() << ", " << locXP4.Py() << ", " << locXP4.Pz() << ", " << locXP4.E() << endl;
 			dF(locFIndex, 0) += locXP4.M2() - locTargetedMass*locTargetedMass;
@@ -2440,7 +2440,7 @@ void DKinFitter::Update_ParticleParams(void)
 		auto locKinFitParticle = *locParticleIterator;
 		if(locKinFitParticle->Get_KinFitParticleType() != d_DecayingParticle)
 			continue;
-		locKinFitParticle->Set_Momentum(dKinFitUtils->Calc_DecayingP4_ByPosition(locKinFitParticle, true).Vect());
+		locKinFitParticle->Set_Momentum(dKinFitUtils->Calc_DecayingP4_ByPosition(locKinFitParticle.get(), true).Vect());
 	}
 }
 
@@ -2557,7 +2557,7 @@ void DKinFitter::Set_FinalTrackInfo(void)
 		TVector3 locMomentum;
 		TLorentzVector locSpacetimeVertex;
 		pair<double, double> locPathLengthPair;
-		if(!dKinFitUtils->Propagate_TrackInfoToCommonVertex(locKinFitParticle, &dVXi, locMomentum, locSpacetimeVertex, locPathLengthPair, locCovarianceMatrix))
+		if(!dKinFitUtils->Propagate_TrackInfoToCommonVertex(locKinFitParticle.get(), &dVXi, locMomentum, locSpacetimeVertex, locPathLengthPair, locCovarianceMatrix))
 			continue; // info not propagated
 
 		if(dDebugLevel >= 50)
@@ -2589,7 +2589,7 @@ void DKinFitter::Set_FinalTrackInfo(void)
 			continue;
 
 		pair<double, double> locPathLengthPair;
-		if(dKinFitUtils->Calc_PathLength(locKinFitParticle, &dVXi, locKinFitParticle->Get_CovarianceMatrix().get(), locPathLengthPair))
+		if(dKinFitUtils->Calc_PathLength(locKinFitParticle.get(), &dVXi, locKinFitParticle->Get_CovarianceMatrix().get(), locPathLengthPair))
 		{
 			locKinFitParticle->Set_PathLength(locPathLengthPair.first);
 			locKinFitParticle->Set_PathLengthUncertainty(locPathLengthPair.second);
@@ -2649,7 +2649,7 @@ void DKinFitter::Update_CovarianceMatrices(void)
 
 			auto locDerivedFromParticles = locKinFitParticle->Get_FromAllParticles();
 			auto locFromIterator = locDerivedFromParticles.begin();
-			map<shared_ptr<const DKinFitParticle>, int> locAdditionalPxParamIndices;
+			map<const DKinFitParticle*, int> locAdditionalPxParamIndices;
 			for(; locFromIterator != locDerivedFromParticles.end(); ++locFromIterator)
 			{
 				DKinFitParticleType locKinFitParticleType = (*locFromIterator)->Get_KinFitParticleType();
@@ -2658,15 +2658,15 @@ void DKinFitter::Update_CovarianceMatrices(void)
 				if((*locFromIterator)->Get_PxParamIndex() >= 0)
 					continue; //uncertainties are already in matrices: ignore
 				int locNewPxParamIndex = dNumEta + dNumXi + 3*locAdditionalPxParamIndices.size();
-				locAdditionalPxParamIndices[*locFromIterator] = locNewPxParamIndex;
+				locAdditionalPxParamIndices[(*locFromIterator).get()] = locNewPxParamIndex;
 			}
 
 			TMatrixD locJacobian(7, dNumEta + dNumXi + 3*locAdditionalPxParamIndices.size());
 			locJacobian.Zero();
 
-			bool locP3DerivedAtProductionVertexFlag = !dKinFitUtils->Get_IsDecayingParticleDefinedByProducts(locKinFitParticle); //else decay vertex
+			bool locP3DerivedAtProductionVertexFlag = !dKinFitUtils->Get_IsDecayingParticleDefinedByProducts(locKinFitParticle.get()); //else decay vertex
 			bool locP3DerivedAtPositionFlag = (locP3DerivedAtProductionVertexFlag == locKinFitParticle->Get_VertexP4AtProductionVertex());
-			dKinFitUtils->Calc_DecayingParticleJacobian(locKinFitParticle, locP3DerivedAtPositionFlag, 1.0, dNumEta, locAdditionalPxParamIndices, locJacobian);
+			dKinFitUtils->Calc_DecayingParticleJacobian(locKinFitParticle.get(), locP3DerivedAtPositionFlag, 1.0, dNumEta, locAdditionalPxParamIndices, locJacobian);
 
 			//set vertex & time terms
 			if(locVxParamIndex >= 0)
@@ -2697,7 +2697,7 @@ void DKinFitter::Update_CovarianceMatrices(void)
 				locTempCovarianceMatrix.SetSub(0, dV); //insert dV
 
 				//insert p3 covariance matrices of additional particles
-				map<shared_ptr<const DKinFitParticle>, int>::iterator locPxParamIterator = locAdditionalPxParamIndices.begin();
+				auto locPxParamIterator = locAdditionalPxParamIndices.begin();
 				for(; locPxParamIterator != locAdditionalPxParamIndices.end(); ++locPxParamIterator)
 				{
 					int locPxParamIndex = locPxParamIterator->second;
