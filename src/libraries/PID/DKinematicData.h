@@ -11,6 +11,7 @@
 #include "DLorentzVector.h" 
 #include "particleType.h" 
 #include "TMatrixFSym.h"
+#include "DResettable.h"
 #include "DResourcePool.h"
 
 #ifndef SPEED_OF_LIGHT
@@ -20,13 +21,13 @@
 using namespace std;
 using namespace jana;
 
-class DKinematicData : public JObject
+class DKinematicData : public JObject, public DResettable
 {
 	public:
 
 		// constructors and destructor
 		DKinematicData(void);
-		DKinematicData(Particle_t locPID, const DVector3& locMomentum, DVector3 locPosition = DVector3(), double locTime = 0.0, const TMatrixFSym* locErrorMatrix = nullptr);
+		DKinematicData(Particle_t locPID, const DVector3& locMomentum, DVector3 locPosition = DVector3(), double locTime = 0.0, const shared_ptr<const TMatrixFSym>& locErrorMatrix = nullptr);
 		DKinematicData(const DKinematicData& locSourceData, bool locShareKinematicsFlag = false);
 		virtual ~DKinematicData(void) {};
 
@@ -34,8 +35,9 @@ class DKinematicData : public JObject
 		DKinematicData& operator=(const DKinematicData& locSourceData);
 		void Share_FromInput_Kinematics(const DKinematicData* locSourceData);
 
-		//Reset
+		//Reset & Release
 		virtual void Reset(void);
+		virtual void Release(void);
 
 		//GETTERS
 		Particle_t PID(void) const{return dKinematicInfo->dPID;}
@@ -44,7 +46,7 @@ class DKinematicData : public JObject
 		const DVector3& momentum(void) const{return dKinematicInfo->dMomentum;}
 		const DVector3& position(void) const{return dKinematicInfo->dPosition;}
 		double time(void) const{return dKinematicInfo->dTime;}
-		const TMatrixFSym* errorMatrix(void) const{return dKinematicInfo->dErrorMatrix;}
+		shared_ptr<const TMatrixFSym> errorMatrix(void) const{return dErrorMatrix;}
 
 		//components
 		double px(void) const{return dKinematicInfo->dMomentum.Px();}
@@ -64,12 +66,13 @@ class DKinematicData : public JObject
 		DLorentzVector x4(void) const{return DLorentzVector(position(), time());}
 
 		//SETTERS
-		void Set_Members(Particle_t locPID, const DVector3& locMomentum, DVector3 locPosition = DVector3(), double locTime = 0.0, const TMatrixFSym* locErrorMatrix = nullptr);
+		void Set_Members(Particle_t locPID, const DVector3& locMomentum, DVector3 locPosition = DVector3(), double locTime = 0.0, const shared_ptr<const TMatrixFSym>& locErrorMatrix = nullptr);
 		void setPID(Particle_t locPID){dKinematicInfo->dPID = locPID;}
 		void setMomentum(const DVector3& aMomentum){dKinematicInfo->dMomentum = aMomentum;}
 		void setPosition(const DVector3& aPosition){dKinematicInfo->dPosition = aPosition;}
 		void setTime(double locTime){dKinematicInfo->dTime = locTime;}
-		void setErrorMatrix(const TMatrixFSym* aMatrix){dKinematicInfo->dErrorMatrix = aMatrix;}
+		void setErrorMatrix(const shared_ptr<const TMatrixFSym>& aMatrix){dErrorMatrix = aMatrix;}
+		void setErrorMatrix(const shared_ptr<TMatrixFSym>& aMatrix){dErrorMatrix = std::const_pointer_cast<const TMatrixFSym>(aMatrix);}
 
 		void toStrings(vector<pair<string,string> > &items) const
 		{
@@ -86,23 +89,22 @@ class DKinematicData : public JObject
 			AddString(items, "phi(deg)", "%2.3f", momentum().Phi()*180.0/M_PI);
 		}
 
-		struct DKinematicInfo
+		class DKinematicInfo : public DResettable
 		{
-			//CONSTRUCTORS
-			DKinematicInfo(void) = default;
-			DKinematicInfo(Particle_t locPID, const DVector3& locMomentum, DVector3 locPosition = DVector3(), double locTime = 0.0, const TMatrixFSym* locErrorMatrix = nullptr);
+			public:
+				//CONSTRUCTORS
+				DKinematicInfo(void) = default;
+				DKinematicInfo(Particle_t locPID, const DVector3& locMomentum, DVector3 locPosition = DVector3(), double locTime = 0.0);
 
-			void Set_Members(Particle_t locPID, const DVector3& locMomentum, DVector3 locPosition = DVector3(), double locTime = 0.0, const TMatrixFSym* locErrorMatrix = nullptr);
-			void Reset(void);
+				void Set_Members(Particle_t locPID, const DVector3& locMomentum, DVector3 locPosition = DVector3(), double locTime = 0.0);
+				void Reset(void);
+				void Release(void){};
 
-			//MEMBERS
-			Particle_t dPID = Unknown;
-			DVector3 dMomentum;
-			DVector3 dPosition;
-			double dTime = 0.0; // Time of the track propagated at dPosition
-
-			// Tracking information //The setter's are responsible for managing the matrix memory!  These are NEVER the owners.
-			const TMatrixFSym* dErrorMatrix = nullptr;   // Order is (px, py, pz, x, y, z, t)
+				//MEMBERS
+				Particle_t dPID = Unknown;
+				DVector3 dMomentum;
+				DVector3 dPosition;
+				double dTime = 0.0; // Time of the track propagated at dPosition
 		};
 
 	private:
@@ -113,22 +115,26 @@ class DKinematicData : public JObject
 		//By inheriting this class, you also get to share the same interface
 		shared_ptr<DKinematicInfo> dKinematicInfo = nullptr;
 
+		//This member must be separate from DKinematicInfo or else it may be recycled on a different thread from which it was created, causing a race condition!
+		shared_ptr<const TMatrixFSym> dErrorMatrix = nullptr; // Order is (px, py, pz, x, y, z, t)
+
 		static thread_local shared_ptr<DResourcePool<DKinematicInfo>> dResourcePool_KinematicInfo;
 };
 
 /************************************************************** CONSTRUCTORS & OPERATORS ***************************************************************/
 
-inline DKinematicData::DKinematicData(void) : dKinematicInfo(dResourcePool_KinematicInfo->Get_SharedResource()) {dKinematicInfo->Reset();}
+inline DKinematicData::DKinematicData(void) : dKinematicInfo(dResourcePool_KinematicInfo->Get_SharedResource()), dErrorMatrix(nullptr){}
 
-inline DKinematicData::DKinematicData(Particle_t locPID, const DVector3& locMomentum, DVector3 locPosition, double locTime, const TMatrixFSym* locErrorMatrix) :
-		dKinematicInfo(dResourcePool_KinematicInfo->Get_SharedResource())
+inline DKinematicData::DKinematicData(Particle_t locPID, const DVector3& locMomentum, DVector3 locPosition, double locTime, const shared_ptr<const TMatrixFSym>& locErrorMatrix) :
+		dKinematicInfo(dResourcePool_KinematicInfo->Get_SharedResource()), dErrorMatrix(locErrorMatrix)
 {
-	dKinematicInfo->Set_Members(locPID, locMomentum, locPosition, locTime, locErrorMatrix);
+	dKinematicInfo->Set_Members(locPID, locMomentum, locPosition, locTime);
 }
 
 inline void DKinematicData::Share_FromInput_Kinematics(const DKinematicData* locSourceData)
 {
 	dKinematicInfo = const_cast<DKinematicData*>(locSourceData)->dKinematicInfo;
+	dErrorMatrix = locSourceData->dErrorMatrix;
 }
 
 inline DKinematicData::DKinematicData(const DKinematicData& locSourceData, bool locShareKinematicsFlag)
@@ -141,6 +147,7 @@ inline DKinematicData::DKinematicData(const DKinematicData& locSourceData, bool 
 		dKinematicInfo = dResourcePool_KinematicInfo->Get_SharedResource();
 		*dKinematicInfo = *(locSourceData.dKinematicInfo);
 	}
+	dErrorMatrix = locSourceData.dErrorMatrix; //it's const so it can't be modified: share and then replace if desired
 }
 
 inline DKinematicData& DKinematicData::operator=(const DKinematicData& locSourceData)
@@ -152,32 +159,41 @@ inline DKinematicData& DKinematicData::operator=(const DKinematicData& locSource
 	//Replace current data with a new, independent copy of the input data: tracked separately from input so it can be modified
 	dKinematicInfo = dResourcePool_KinematicInfo->Get_SharedResource();
 	*dKinematicInfo = *(locSourceData.dKinematicInfo);
+
+	dErrorMatrix = locSourceData.dErrorMatrix; //it's const so it can't be modified: share and then replace if desired
 	return *this;
 }
 
-inline DKinematicData::DKinematicInfo::DKinematicInfo(Particle_t locPID, const DVector3& locMomentum, DVector3 locPosition, double locTime, const TMatrixFSym* locErrorMatrix) :
-dPID(locPID), dMomentum(locMomentum), dPosition(locPosition), dTime(locTime), dErrorMatrix(locErrorMatrix) {}
+inline DKinematicData::DKinematicInfo::DKinematicInfo(Particle_t locPID, const DVector3& locMomentum, DVector3 locPosition, double locTime) :
+dPID(locPID), dMomentum(locMomentum), dPosition(locPosition), dTime(locTime) {}
 
-/*********************************************************************** RESET *************************************************************************/
+/*********************************************************************** RESET & RELEASE *************************************************************************/
 
-inline void DKinematicData::Set_Members(Particle_t locPID, const DVector3& locMomentum, DVector3 locPosition, double locTime, const TMatrixFSym* locErrorMatrix)
+inline void DKinematicData::Set_Members(Particle_t locPID, const DVector3& locMomentum, DVector3 locPosition, double locTime, const shared_ptr<const TMatrixFSym>& locErrorMatrix)
 {
-	dKinematicInfo->Set_Members(locPID, locMomentum, locPosition, locTime, locErrorMatrix);
+	dKinematicInfo->Set_Members(locPID, locMomentum, locPosition, locTime);
+	dErrorMatrix = locErrorMatrix;
 }
 
-inline void DKinematicData::DKinematicInfo::Set_Members(Particle_t locPID, const DVector3& locMomentum, DVector3 locPosition, double locTime, const TMatrixFSym* locErrorMatrix)
+inline void DKinematicData::DKinematicInfo::Set_Members(Particle_t locPID, const DVector3& locMomentum, DVector3 locPosition, double locTime)
 {
 	dPID = locPID;
 	dMomentum = locMomentum;
 	dPosition = locPosition;
 	dTime = locTime;
-	dErrorMatrix = locErrorMatrix;
 }
 
 inline void DKinematicData::Reset(void)
 {
 	dKinematicInfo = dResourcePool_KinematicInfo->Get_SharedResource(); //not safe to reset individually, since you don't know what it's shared with
-	dKinematicInfo->Reset();
+	dErrorMatrix = nullptr;
+	ClearAssociatedObjects();
+}
+
+inline void DKinematicData::Release(void)
+{
+	dKinematicInfo = nullptr;
+	dErrorMatrix = nullptr;
 	ClearAssociatedObjects();
 }
 
@@ -187,7 +203,6 @@ inline void DKinematicData::DKinematicInfo::Reset(void)
 	dMomentum = DVector3();
 	dPosition = DVector3();
 	dTime = 0.0;
-	dErrorMatrix = nullptr;
 }
 
 #endif /* _DKINEMATICDATA_ */

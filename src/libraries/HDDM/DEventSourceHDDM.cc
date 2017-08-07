@@ -2204,17 +2204,19 @@ jerror_t DEventSourceHDDM::Extract_DTrackTimeBased(hddm_s::HDDM *record,
 
       // Reconstitute errorMatrix
       uint64_t locEventNumber = locEventLoop->GetJEvent().GetEventNumber();
-      TMatrixFSym* locCovarianceMatrix = (dynamic_cast<DApplication*>(japp))->Get_CovarianceMatrixResource(7, locEventNumber);
+      auto locCovarianceMatrix = dResourcePool_TMatrixFSym->Get_SharedResource();
+      locCovarianceMatrix->ResizeTo(7, 7);
       string str_vals = iter->getErrorMatrix().getVals();
-      StringToTMatrixFSym(str_vals, locCovarianceMatrix,
+      StringToTMatrixFSym(str_vals, locCovarianceMatrix.get(),
                           iter->getErrorMatrix().getNrows(),
                           iter->getErrorMatrix().getNcols());
       track->setErrorMatrix(locCovarianceMatrix);
 
       // Reconstitute TrackingErrorMatrix
       str_vals = iter->getTrackingErrorMatrix().getVals();
-      TMatrixFSym* TrackingErrorMatrix = (dynamic_cast<DApplication*>(japp))->Get_CovarianceMatrixResource(7, locEventNumber);
-      StringToTMatrixFSym(str_vals, TrackingErrorMatrix,
+      auto TrackingErrorMatrix = dResourcePool_TMatrixFSym->Get_SharedResource();
+      TrackingErrorMatrix->ResizeTo(5, 5);
+      StringToTMatrixFSym(str_vals, TrackingErrorMatrix.get(),
                           iter->getTrackingErrorMatrix().getNrows(),
                           iter->getTrackingErrorMatrix().getNcols());
       track->setTrackingErrorMatrix(TrackingErrorMatrix);
@@ -2225,7 +2227,7 @@ jerror_t DEventSourceHDDM::Extract_DTrackTimeBased(hddm_s::HDDM *record,
       if (rt) {
          rt->SetMass(track->mass());
          rt->SetDGeometry(geom);
-         rt->Swim(pos, mom, track->charge(),locCovarianceMatrix);
+         rt->Swim(pos, mom, track->charge(),locCovarianceMatrix.get());
          rts.push_back(rt);
       }
       track->rt = rt;

@@ -295,7 +295,7 @@ bool DEventWriterREST::Write_RESTEvent(JEventLoop* locEventLoop, string locOutpu
 		fit().setT0err(0.0);
 		fit().setT0det(SYS_CDC);
 
-		const TMatrixFSym& errors = *(tracks[i]->TrackingErrorMatrix());
+		const TMatrixFSym& errors = *(tracks[i]->TrackingErrorMatrix().get());
 		fit().setE11(errors(0,0));
 		fit().setE12(errors(0,1));
 		fit().setE13(errors(0,2));

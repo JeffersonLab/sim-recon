@@ -967,9 +967,12 @@ void DHistogramAction_ParticleComboKinematics::Initialize(JEventLoop* locEventLo
 				locHistTitle = string(";") + locInitParticleROOTName + string(" Lifetime (ns)");
 				dHistMap_DetachedLifetime[loc_i] = GetOrCreate_Histogram<TH1I>(locHistName, locHistTitle, dNumLifetimeBins, 0.0, dMaxLifetime);
 
-				locHistName = locInitParticleName + string("Lifetime_RestFrame");
-				locHistTitle = string(";") + locInitParticleROOTName + string(" Rest Frame Lifetime (ns)");
-				dHistMap_DetachedLifetime_RestFrame[loc_i] = GetOrCreate_Histogram<TH1I>(locHistName, locHistTitle, dNumLifetimeBins, 0.0, dMaxLifetime);
+				if(Get_UseKinFitResultsFlag())
+				{
+					locHistName = locInitParticleName + string("Lifetime_RestFrame");
+					locHistTitle = string(";") + locInitParticleROOTName + string(" Rest Frame Lifetime (ns)");
+					dHistMap_DetachedLifetime_RestFrame[loc_i] = GetOrCreate_Histogram<TH1I>(locHistName, locHistTitle, dNumLifetimeBins, 0.0, dMaxLifetime);
+				}
 			}
 
 			if(locDirectoryCreatedFlag)

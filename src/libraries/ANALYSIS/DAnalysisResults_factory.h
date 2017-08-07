@@ -46,15 +46,12 @@ class DAnalysisResults_factory : public jana::JFactory<DAnalysisResults>
 {
 	public:
 		~DAnalysisResults_factory(void){delete dSourceComboer;}
-		size_t Get_KinFitParticlePoolSize(void) const{return dKinFitUtils->Get_KinFitParticlePoolSize();};
-		size_t Get_KinFitParticlePoolSize_Shared(void) const{return dKinFitUtils->Get_KinFitParticlePoolSize_Shared();};
 		size_t Get_KinFitConstraintVertexPoolSize(void) const{return dKinFitUtils->Get_KinFitConstraintVertexPoolSize();};
 		size_t Get_KinFitConstraintSpacetimePoolSize(void) const{return dKinFitUtils->Get_KinFitConstraintSpacetimePoolSize();};
 		size_t Get_KinFitConstraintP4PoolSize(void) const{return dKinFitUtils->Get_KinFitConstraintP4PoolSize();};
 		size_t Get_KinFitConstraintMassPoolSize(void) const{return dKinFitUtils->Get_KinFitConstraintMassPoolSize();};
 		size_t Get_KinFitChainPoolSize(void) const{return dKinFitUtils->Get_KinFitChainPoolSize();};
 		size_t Get_KinFitChainStepPoolSize(void) const{return dKinFitUtils->Get_KinFitChainStepPoolSize();};
-		size_t Get_SymMatrixPoolSize(void) const{return dKinFitUtils->Get_SymMatrixPoolSize();};
 
 	private:
 		jerror_t init(void);						///< Called once at program start.

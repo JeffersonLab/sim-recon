@@ -103,7 +103,6 @@ class DParticleComboCreator
 		DParticleCombo* Get_ParticleComboResource(void)
 		{
 			auto locResource = dResourcePool_ParticleCombo.Get_Resource();
-			locResource->Reset();
 			dCreated_ParticleCombo.push_back(locResource);
 			return locResource;
 		}
@@ -111,7 +110,6 @@ class DParticleComboCreator
 		DParticleComboStep* Get_ParticleComboStepResource(void)
 		{
 			auto locResource = dResourcePool_ParticleComboStep.Get_Resource();
-			locResource->Reset();
 			dCreated_ParticleComboStep.push_back(locResource);
 			return locResource;
 		}

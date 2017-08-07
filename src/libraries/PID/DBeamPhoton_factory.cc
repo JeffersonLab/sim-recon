@@ -128,7 +128,8 @@ void DBeamPhoton_factory::Set_BeamPhoton(DBeamPhoton* gamma, const DTAGMHit* hit
     gamma->dSystem = SYS_TAGM;
     gamma->AddAssociatedObject(hit);
 
-	TMatrixFSym* locCovarianceMatrix = (dynamic_cast<DApplication*>(japp))->Get_CovarianceMatrixResource(7, locEventNumber);
+	auto locCovarianceMatrix = dResourcePool_TMatrixFSym->Get_SharedResource();
+	locCovarianceMatrix->ResizeTo(7, 7);
 	locCovarianceMatrix->Zero();
 	gamma->setErrorMatrix(locCovarianceMatrix);
 }
@@ -145,7 +146,8 @@ void DBeamPhoton_factory::Set_BeamPhoton(DBeamPhoton* gamma, const DTAGHHit* hit
     gamma->dSystem = SYS_TAGH;
     gamma->AddAssociatedObject(hit);
 
-	TMatrixFSym* locCovarianceMatrix = (dynamic_cast<DApplication*>(japp))->Get_CovarianceMatrixResource(7, locEventNumber);
+	auto locCovarianceMatrix = dResourcePool_TMatrixFSym->Get_SharedResource();
+	locCovarianceMatrix->ResizeTo(7, 7);
 	locCovarianceMatrix->Zero();
 	gamma->setErrorMatrix(locCovarianceMatrix);
 }

@@ -850,7 +850,7 @@ TMatrixFSym DAnalysisUtilities::Calc_MissingP3Covariance(const DReaction* locRea
 	{
 		//initial particle
 		locKinematicData = locParticleComboStep->Get_InitialParticle_Measured();
-		TMatrixFSym locParticleCovarianceMatrix = *(locKinematicData->errorMatrix());
+		TMatrixFSym locParticleCovarianceMatrix = *(locKinematicData->errorMatrix().get());
 		locParticleCovarianceMatrix.ResizeTo(3, 3);
 		locMissingCovarianceMatrix += locParticleCovarianceMatrix;
 	}
@@ -868,7 +868,7 @@ TMatrixFSym DAnalysisUtilities::Calc_MissingP3Covariance(const DReaction* locRea
 			locMissingCovarianceMatrix += Calc_MissingP3Covariance(locReaction, locParticleCombo, locDecayStepIndex, locUpToStepIndex, locUpThroughIndices);
 		else //detected
 		{
-			TMatrixFSym locParticleCovarianceMatrix = *(locParticles[loc_j]->errorMatrix());
+			TMatrixFSym locParticleCovarianceMatrix = *(locParticles[loc_j]->errorMatrix().get());
 			locParticleCovarianceMatrix.ResizeTo(3, 3);
 			locMissingCovarianceMatrix += locParticleCovarianceMatrix;
 		}

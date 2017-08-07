@@ -33,6 +33,8 @@ jerror_t DChargedTrackHypothesis_factory::init(void)
 	SetFactoryFlag(NOT_OBJECT_OWNER);
 	dResourcePool_ChargedTrackHypothesis = new DResourcePool<DChargedTrackHypothesis>();
 	dResourcePool_ChargedTrackHypothesis->Set_ControlParams(30, 20, 500, 0, 0); //MUST KEEP SHARED POOL EMPTY, OR ELSE WILL CRASH
+	dResourcePool_TMatrixFSym = std::make_shared<DResourcePool<TMatrixFSym>>();
+	dResourcePool_TMatrixFSym->Set_ControlParams(20, 20, 50, 50000, 0);
 	return NOERROR;
 }
 
@@ -97,9 +99,10 @@ DChargedTrackHypothesis* DChargedTrackHypothesis_factory::Create_ChargedTrackHyp
 	locChargedTrackHypothesis->Share_FromInput_Kinematics(static_cast<const DKinematicData*>(locTrackTimeBased));
 	locChargedTrackHypothesis->Set_TrackTimeBased(locTrackTimeBased);
 
-	uint64_t locEventNumber = locEventLoop->GetJEvent().GetEventNumber();
-	TMatrixFSym* locCovarianceMatrix = (dynamic_cast<DApplication*>(japp))->Get_CovarianceMatrixResource(7, locEventNumber);
-	if (locChargedTrackHypothesis->errorMatrix() != nullptr) *locCovarianceMatrix = *(locChargedTrackHypothesis->errorMatrix());
+	auto locCovarianceMatrix = dResourcePool_TMatrixFSym->Get_SharedResource();
+	locCovarianceMatrix->ResizeTo(7, 7);
+	if(locChargedTrackHypothesis->errorMatrix() != nullptr)
+		*locCovarianceMatrix = *(locChargedTrackHypothesis->errorMatrix());
 
 	// RF Time
 	if(locEventRFBunch->dTimeSource != SYS_NULL)
@@ -145,7 +148,7 @@ DChargedTrackHypothesis* DChargedTrackHypothesis_factory::Create_ChargedTrackHyp
 		const DBCALShower* locBCALShower = locBCALShowerMatchParams->dBCALShower;
 		locChargedTrackHypothesis->setTime(locBCALShower->t - locBCALShowerMatchParams->dFlightTime);
 //		double locFlightTimePCorrelation = locDetectorMatches->Get_FlightTimePCorrelation(locTrackTimeBased, SYS_BCAL); //uncomment when ready!!
-//		Add_TimeToTrackingMatrix(locChargedTrackHypothesis, locCovarianceMatrix, locBCALShowerMatchParams->dFlightTimeVariance, locBCALShower->tErr()*locBCALShower->tErr(), locFlightTimePCorrelation); //uncomment when ready!!
+//		Add_TimeToTrackingMatrix(locChargedTrackHypothesis, locCovarianceMatrix.get(), locBCALShowerMatchParams->dFlightTimeVariance, locBCALShower->tErr()*locBCALShower->tErr(), locFlightTimePCorrelation); //uncomment when ready!!
 		(*locCovarianceMatrix)(6 , 6) = 0.3*0.3+locBCALShowerMatchParams->dFlightTimeVariance;
 	}
 
@@ -155,7 +158,7 @@ DChargedTrackHypothesis* DChargedTrackHypothesis_factory::Create_ChargedTrackHyp
 		auto locTOFHitMatchParams = locChargedTrackHypothesis->Get_TOFHitMatchParams();
 		locChargedTrackHypothesis->setTime(locTOFHitMatchParams->dHitTime - locTOFHitMatchParams->dFlightTime);
 //		double locFlightTimePCorrelation = locDetectorMatches->Get_FlightTimePCorrelation(locTrackTimeBased, SYS_TOF); //uncomment when ready!!
-//		Add_TimeToTrackingMatrix(locChargedTrackHypothesis, locCovarianceMatrix, locTOFHitMatchParams->dFlightTimeVariance, locTOFHitMatchParams->dHitTimeVariance, locFlightTimePCorrelation); //uncomment when ready!!
+//		Add_TimeToTrackingMatrix(locChargedTrackHypothesis, locCovarianceMatrix.get(), locTOFHitMatchParams->dFlightTimeVariance, locTOFHitMatchParams->dHitTimeVariance, locFlightTimePCorrelation); //uncomment when ready!!
 		(*locCovarianceMatrix)(6, 6) = 0.1*0.1+locTOFHitMatchParams->dFlightTimeVariance;
 	}
 
@@ -166,7 +169,7 @@ DChargedTrackHypothesis* DChargedTrackHypothesis_factory::Create_ChargedTrackHyp
 		const DFCALShower* locFCALShower = locFCALShowerMatchParams->dFCALShower;
 		locChargedTrackHypothesis->setTime(locFCALShower->getTime() - locFCALShowerMatchParams->dFlightTime);
 //		double locFlightTimePCorrelation = locDetectorMatches->Get_FlightTimePCorrelation(locTrackTimeBased, SYS_FCAL); //uncomment when ready!!
-//		Add_TimeToTrackingMatrix(locChargedTrackHypothesis, locCovarianceMatrix, locFCALShowerMatchParams->dFlightTimeVariance, locFCALShower->dCovarianceMatrix(4, 4), locFlightTimePCorrelation); //uncomment when ready!!
+//		Add_TimeToTrackingMatrix(locChargedTrackHypothesis, locCovarianceMatrix.get(), locFCALShowerMatchParams->dFlightTimeVariance, locFCALShower->dCovarianceMatrix(4, 4), locFlightTimePCorrelation); //uncomment when ready!!
 		(*locCovarianceMatrix)(6, 6) = 0.5*0.5+locFCALShowerMatchParams->dFlightTimeVariance;
 	}
 

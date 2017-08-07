@@ -9,6 +9,8 @@
 #include <type_traits>
 #include <memory>
 
+#include "DResettable.h"
+
 using namespace std;
 
 /****************************************************** OVERVIEW ******************************************************
@@ -49,6 +51,7 @@ using namespace std;
  * That way, if the pool has been deleted, the weak_ptr will have expired and we can manually delete the object instead of trying to recycle it.
  * This only works if the pool itself has been created within a shared_ptr in the first place, so it is recommended that these pools be defined as:
  *
+ * YOU MUST DO THIS!!
  * auto dMyClassPool = std::make_shared<DResourcePool<MyClass>>();
  *
  *************************************************** FACTORY OBJECTS **************************************************
@@ -68,6 +71,19 @@ using namespace std;
  * The resource pools for these shared_ptr's are defined to be private thread_local within the classes themselves.
  * That way each thread has an instance of the pool, while still sharing a common pool underneath.
  *
+ *********************************************** BEWARE: CLASS COMPONENTS **********************************************
+ *
+ * Problem: Creating a resource on one thread, and recycling it on another thread: race condition in the resource pool LOCAL pool.
+ *
+ * How does this happen?  You create a charged-hypo on one thread, which creates a DKinematicInfo object on that thread.
+ * You then recycle the hypo, and another thread picks it up.  The other thread calls Hypo::Reset(), which clears the DKinematicInfo.
+ * Since it's stored in a shared_ptr, it goes back to the thread it was created.
+ *
+ * Solution 1: Disable intra-thread sharing of objects that CONTAIN shared_ptrs: Everything that is or inherits from DKinematicData
+ * Do this by setting the max size of the shared pool to zero for these types.
+ *
+ * Solution 2: Have those objects inherit from DResettable (below), and define the member functions.
+ *
  **********************************************************************************************************************/
 
 template <typename DType> class DResourcePool : public std::enable_shared_from_this<DResourcePool<DType>>
@@ -80,6 +96,7 @@ template <typename DType> class DResourcePool : public std::enable_shared_from_t
 
 	public:
 		DResourcePool(void);
+		DResourcePool(size_t locGetBatchSize, size_t locNumToAllocateAtOnce, size_t locMaxLocalPoolSize, size_t locMaxSharedPoolSize, size_t locDebugLevel);
 		~DResourcePool(void);
 
 		void Set_ControlParams(size_t locGetBatchSize = 100, size_t locNumToAllocateAtOnce = 20, size_t locMaxLocalPoolSize = 2000, size_t locMaxSharedPoolSize = 10000, size_t locDebugLevel = 0);
@@ -112,6 +129,14 @@ template <typename DType> class DResourcePool : public std::enable_shared_from_t
 		}
 
 	private:
+
+		//Enable this version if type inherits from DResettable //void: is return type
+		template <typename RType> typename std::enable_if<std::is_base_of<DResettable, RType>::value, void>::type Release_Resources(DResettable* locResource){locResource->Release();}
+		template <typename RType> typename std::enable_if<std::is_base_of<DResettable, RType>::value, void>::type Reset(DResettable* locResource){locResource->Reset();}
+
+		//Enable this version if type does NOT inherit from DResettable //void: is return type
+		template <typename RType> typename std::enable_if<!std::is_base_of<DResettable, RType>::value, void>::type Release_Resources(RType* locResource){};
+		template <typename RType> typename std::enable_if<!std::is_base_of<DResettable, RType>::value, void>::type Reset(RType* locResource){};
 
 		//Assume that access to the shared pool won't happen very often: will mostly access the thread-local pool (this object)
 		void Get_Resources_StaticPool(void);
@@ -165,6 +190,11 @@ template <typename DType> size_t DResourcePool<DType>::dPoolCounter{0};
 template <typename DType> atomic<size_t> DResourcePool<DType>::dObjectCounter{0};
 
 //CONSTRUCTOR
+template <typename DType> DResourcePool<DType>::DResourcePool(size_t locGetBatchSize, size_t locNumToAllocateAtOnce, size_t locMaxLocalPoolSize, size_t locMaxSharedPoolSize, size_t locDebugLevel) : DResourcePool()
+{
+	Set_ControlParams(locGetBatchSize, locNumToAllocateAtOnce, locMaxLocalPoolSize, locMaxSharedPoolSize, locDebugLevel);
+}
+
 template <typename DType> DResourcePool<DType>::DResourcePool(void)
 {
 	dResourcePool_Local.reserve(dMaxLocalPoolSize);
@@ -233,6 +263,7 @@ template <typename DType> DType* DResourcePool<DType>::Get_Resource(void)
 
 	auto locResource = dResourcePool_Local.back();
 	dResourcePool_Local.pop_back();
+	Reset<DType>(locResource);
 	return locResource;
 }
 
@@ -268,6 +299,9 @@ template <typename DType> void DResourcePool<DType>::Recycle(vector<const DType*
 
 template <typename DType> void DResourcePool<DType>::Recycle(vector<DType*>& locResources)
 {
+	for(auto& locResource : locResources)
+		Release_Resources<DType>(locResource);
+
 	size_t locFirstToMoveIndex = 0;
 	auto locPotentialNewPoolSize = dResourcePool_Local.size() + locResources.size();
 	if(locPotentialNewPoolSize > dMaxLocalPoolSize) //we won't move all of the resources into the local pool, as it would be too large: only move a subset

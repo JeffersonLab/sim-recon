@@ -57,7 +57,7 @@ void Set_Vertex(const DVertex* locVertex){dVertex = locVertex;}
 		bool Get_IsVertexKnown(bool locIsProductionVertex, const DSourceCombo* locSourceCombo, const DKinematicData* locBeamParticle) const;
 		DVector3 Get_Vertex(bool locIsProductionVertex, const DSourceCombo* locSourceCombo, const DKinematicData* locBeamParticle) const;
 		DVector3 Get_Vertex(bool locIsProductionVertex, const vector<const DKinematicData*>& locVertexParticles) const{return dVertexMap.find(std::make_pair(locIsProductionVertex, locVertexParticles))->second;}
-		double Get_TimeOffset(bool locIsProductionVertex, const DSourceCombo* locReactionCombo, const DSourceCombo* locVertexCombo, const DKinematicData* locBeamParticle) const;
+		double Get_TimeOffset(bool locIsPrimaryProductionVertex, const DSourceCombo* locReactionCombo, const DSourceCombo* locVertexCombo, const DKinematicData* locBeamParticle) const;
 		DVector3 Get_PrimaryVertex(const DReactionVertexInfo* locReactionVertexInfo, const DSourceCombo* locReactionCombo, const DKinematicData* locBeamParticle) const;
 		vector<const DKinematicData*> Get_ConstrainingParticles(bool locIsProductionVertex, const DSourceCombo* locVertexCombo, const DKinematicData* locBeamParticle = nullptr) const; //beam = nullptr if not determined by missing mass! //this is empty if vertex not found yet!
 
@@ -131,13 +131,13 @@ inline void DSourceComboVertexer::Reset(void)
 	dVertexMap.emplace(std::make_pair(true, vector<const DKinematicData*>()), dTargetCenter);
 }
 
-inline double DSourceComboVertexer::Get_TimeOffset(bool locIsProductionVertex, const DSourceCombo* locReactionCombo, const DSourceCombo* locVertexCombo, const DKinematicData* locBeamParticle) const
+inline double DSourceComboVertexer::Get_TimeOffset(bool locIsPrimaryProductionVertex, const DSourceCombo* locReactionCombo, const DSourceCombo* locVertexCombo, const DKinematicData* locBeamParticle) const
 {
 	//the data member MAY be dependent on the beam particle, but it may not
 	//so, first search with the beam particle; if not found then search without it
-	auto locIterator = dTimeOffsets.find(std::make_tuple(locIsProductionVertex, locReactionCombo, locBeamParticle));
+	auto locIterator = dTimeOffsets.find(std::make_tuple(locIsPrimaryProductionVertex, locReactionCombo, locBeamParticle));
 	if((locBeamParticle != nullptr) && (locIterator == dTimeOffsets.end()))
-		locIterator = dTimeOffsets.find(std::make_tuple(locIsProductionVertex, locReactionCombo, nullptr));
+		locIterator = dTimeOffsets.find(std::make_tuple(locIsPrimaryProductionVertex, locReactionCombo, nullptr));
 	return ((locIterator != dTimeOffsets.end()) ? locIterator->second.find(locVertexCombo)->second : 0.0);
 }
 

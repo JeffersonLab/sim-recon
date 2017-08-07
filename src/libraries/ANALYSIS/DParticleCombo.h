@@ -6,6 +6,7 @@
 #include <set>
 
 #include "particleType.h"
+#include "DResettable.h"
 #include "PID/DKinematicData.h"
 #include "PID/DEventRFBunch.h"
 #include "ANALYSIS/DParticleComboStep.h"
@@ -18,10 +19,11 @@ using namespace DAnalysis;
 namespace DAnalysis
 {
 
-class DParticleCombo
+class DParticleCombo : public DResettable
 {
 	public:
 		void Reset(void);
+		void Release(void){Reset();};
 
 		// SET STEPS
 		inline void Add_ParticleComboStep(const DParticleComboStep* locParticleComboStep){dParticleComboSteps.push_back(locParticleComboStep);}

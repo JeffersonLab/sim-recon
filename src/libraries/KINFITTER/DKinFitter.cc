@@ -130,26 +130,26 @@ void DKinFitter::Print_Matrix(const TMatrixF& locMatrix) const
 	}
 }
 
-bool DKinFitter::Get_IsConstrainingVertex(DKinFitParticle* locKinFitParticle) const
+bool DKinFitter::Get_IsConstrainingVertex(const shared_ptr<DKinFitParticle>& locKinFitParticle) const
 {
-	set<DKinFitConstraint_Vertex*> locConstraints = Get_Constraints<DKinFitConstraint_Vertex>(locKinFitParticle);
-	set<DKinFitConstraint_Vertex*>::iterator locSetIterator = locConstraints.begin();
+	auto locConstraints = Get_Constraints<DKinFitConstraint_Vertex>(locKinFitParticle);
+	auto locSetIterator = locConstraints.begin();
 	for(; locSetIterator != locConstraints.end(); ++locSetIterator)
 	{
-		set<DKinFitParticle*> locConstrainingParticles = (*locSetIterator)->Get_AllConstrainingParticles();
+		auto locConstrainingParticles = (*locSetIterator)->Get_AllConstrainingParticles();
 		if(locConstrainingParticles.find(locKinFitParticle) != locConstrainingParticles.end())
 			return true;
 	}
 	return false;
 }
 
-bool DKinFitter::Get_IsTimeConstrained(DKinFitParticle* locKinFitParticle) const
+bool DKinFitter::Get_IsTimeConstrained(const shared_ptr<DKinFitParticle>& locKinFitParticle) const
 {
-	set<DKinFitConstraint_Spacetime*> locConstraints = Get_Constraints<DKinFitConstraint_Spacetime>(locKinFitParticle);
-	set<DKinFitConstraint_Spacetime*>::iterator locSetIterator = locConstraints.begin();
+	auto locConstraints = Get_Constraints<DKinFitConstraint_Spacetime>(locKinFitParticle);
+	auto locSetIterator = locConstraints.begin();
 	for(; locSetIterator != locConstraints.end(); ++locSetIterator)
 	{
-		set<DKinFitParticle*> locConstrainedParticles = (*locSetIterator)->Get_AllConstrainingParticles();
+		auto locConstrainedParticles = (*locSetIterator)->Get_AllConstrainingParticles();
 		if(locConstrainedParticles.find(locKinFitParticle) != locConstrainedParticles.end())
 			return true;
 	}
@@ -187,11 +187,11 @@ void DKinFitter::Prepare_ConstraintsAndParticles(void)
 	set<DKinFitConstraint*>::iterator locConstraintIterator = dKinFitConstraints.begin();
 	for(; locConstraintIterator != dKinFitConstraints.end(); ++locConstraintIterator)
 	{
-		set<DKinFitParticle*> locKinFitParticles = (*locConstraintIterator)->Get_AllParticles();
+		auto locKinFitParticles = (*locConstraintIterator)->Get_AllParticles();
 		dKinFitParticles.insert(locKinFitParticles.begin(), locKinFitParticles.end());
 
 		//loop over the particles
-		set<DKinFitParticle*>::iterator locParticleIterator = locKinFitParticles.begin();
+		auto locParticleIterator = locKinFitParticles.begin();
 		for(; locParticleIterator != locKinFitParticles.end(); ++locParticleIterator)
 		{
 			dParticleConstraintMap[*locParticleIterator].insert(*locConstraintIterator);
@@ -206,17 +206,17 @@ void DKinFitter::Prepare_ConstraintsAndParticles(void)
 			DKinFitConstraint_Vertex* locVertexConstraint = dynamic_cast<DKinFitConstraint_Vertex*>(*locConstraintIterator);
 			if(locVertexConstraint != NULL)
 			{
-				set<DKinFitParticle*> locNoConstrainParticles = locVertexConstraint->Get_NoConstrainParticles();
+				auto locNoConstrainParticles = locVertexConstraint->Get_NoConstrainParticles();
 				if(locNoConstrainParticles.find(*locParticleIterator) != locNoConstrainParticles.end())
 					continue; //is not used to constrain, so neither is it's p4-defining particles (or at least, not here)
 			}
 
 			//this decaying particle is directly used in the constraint.  all p4-defining particles are then also used (but indirectly)
-			set<DKinFitParticle*> locFromAllParticles = (*locParticleIterator)->Get_FromAllParticles();
+			auto locFromAllParticles = (*locParticleIterator)->Get_FromAllParticles();
 			dKinFitParticles.insert(locFromAllParticles.begin(), locFromAllParticles.end());
 
 			//dParticleConstraintMap
-			set<DKinFitParticle*>::iterator locDerivingParticleIterator = locFromAllParticles.begin();
+			auto locDerivingParticleIterator = locFromAllParticles.begin();
 			for(; locDerivingParticleIterator != locFromAllParticles.end(); ++locDerivingParticleIterator)
 				dParticleConstraintMap[*locDerivingParticleIterator].insert(*locConstraintIterator);
 		}
@@ -224,16 +224,16 @@ void DKinFitter::Prepare_ConstraintsAndParticles(void)
 
 	//Set dVertexP4AtProductionVertex on decaying particles
 	//Loop over vertex constraints, searching for decaying particles where their positions are defined
-	set<DKinFitConstraint_Vertex*> locVertexConstraints = Get_Constraints<DKinFitConstraint_Vertex>();
-	set<DKinFitConstraint_Vertex*>::iterator locVertexIterator = locVertexConstraints.begin();
+	auto locVertexConstraints = Get_Constraints<DKinFitConstraint_Vertex>();
+	auto locVertexIterator = locVertexConstraints.begin();
 	for(; locVertexIterator != locVertexConstraints.end(); ++locVertexIterator)
 	{
-		set<DKinFitParticle*> locAllConstraintParticles = (*locVertexIterator)->Get_AllParticles();
-		set<DKinFitParticle*> locNoConstrainParticles = (*locVertexIterator)->Get_NoConstrainParticles();
-		set<DKinFitParticle*>::iterator locParticleIterator = locNoConstrainParticles.begin();
+		auto locAllConstraintParticles = (*locVertexIterator)->Get_AllParticles();
+		auto locNoConstrainParticles = (*locVertexIterator)->Get_NoConstrainParticles();
+		auto locParticleIterator = locNoConstrainParticles.begin();
 		for(; locParticleIterator != locNoConstrainParticles.end(); ++locParticleIterator)
 		{
-			DKinFitParticle* locKinFitParticle = *locParticleIterator;
+			auto locKinFitParticle = *locParticleIterator;
 			if(locKinFitParticle->Get_KinFitParticleType() != d_DecayingParticle)
 				continue;
 
@@ -241,8 +241,8 @@ void DKinFitter::Prepare_ConstraintsAndParticles(void)
 			//Now we must determine whether this is the production or decay vertex
 
 			//See which from-final-state particles are found in the vertex constraint
-			set<DKinFitParticle*> locFromFinalState = locKinFitParticle->Get_FromFinalState();
-			set<DKinFitParticle*> locFinalStateParticlesAtVertex;
+			auto locFromFinalState = locKinFitParticle->Get_FromFinalState();
+			set<shared_ptr<DKinFitParticle>> locFinalStateParticlesAtVertex;
 			set_intersection(locAllConstraintParticles.begin(), locAllConstraintParticles.end(), locFromFinalState.begin(), 
 				locFromFinalState.end(), inserter(locFinalStateParticlesAtVertex, locFinalStateParticlesAtVertex.begin()));
 
@@ -269,10 +269,10 @@ void DKinFitter::Prepare_ConstraintsAndParticles(void)
 		(*locSpacetimeIterator)->Set_CommonTime((*locSpacetimeIterator)->Get_InitTimeGuess());
 
 	//neutral shower p3
-	set<DKinFitParticle*>::iterator locParticleIterator = dKinFitParticles.begin();
+	auto locParticleIterator = dKinFitParticles.begin();
 	for(; locParticleIterator != dKinFitParticles.end(); ++locParticleIterator)
 	{
-		DKinFitParticle* locParticle = *locParticleIterator;
+		auto locParticle = *locParticleIterator;
 		if(!locParticle->Get_IsNeutralShowerFlag())
 			continue; //only do for neutral showers
 
@@ -289,7 +289,7 @@ void DKinFitter::Prepare_ConstraintsAndParticles(void)
 	if(!locP4Constraints.empty())
 	{
 		DKinFitConstraint_P4* locP4Constraint = *(locP4Constraints.begin());
-		DKinFitParticle* locKinFitParticle = locP4Constraint->Get_DefinedParticle();
+		auto locKinFitParticle = locP4Constraint->Get_DefinedParticle();
 		if(locKinFitParticle != NULL)
 			locKinFitParticle->Set_Momentum(locP4Constraint->Get_InitP3Guess());
 	}
@@ -297,7 +297,7 @@ void DKinFitter::Prepare_ConstraintsAndParticles(void)
 	//decaying: p3
 	for(locParticleIterator = dKinFitParticles.begin(); locParticleIterator != dKinFitParticles.end(); ++locParticleIterator)
 	{
-		DKinFitParticle* locKinFitParticle = *locParticleIterator;
+		auto locKinFitParticle = *locParticleIterator;
 		if(locKinFitParticle->Get_KinFitParticleType() == d_DecayingParticle)
 			locKinFitParticle->Set_Momentum(dKinFitUtils->Calc_DecayingP4_ByPosition(locKinFitParticle, true).Vect());
 	}
@@ -305,10 +305,10 @@ void DKinFitter::Prepare_ConstraintsAndParticles(void)
 	//set vertex constraint flags: used if not accelerating
 	for(locVertexIterator = locVertexConstraints.begin(); locVertexIterator != locVertexConstraints.end(); ++locVertexIterator)
 	{
-		set<DKinFitParticle*> locFullConstrainParticles = (*locVertexIterator)->Get_FullConstrainParticles();
+		auto locFullConstrainParticles = (*locVertexIterator)->Get_FullConstrainParticles();
 		for(locParticleIterator = locFullConstrainParticles.begin(); locParticleIterator != locFullConstrainParticles.end(); ++locParticleIterator)
 		{
-			DKinFitParticle* locParticle = *locParticleIterator;
+			auto locParticle = *locParticleIterator;
 			TVector3 locMomentum = locParticle->Get_Momentum();
 
 			unsigned short int locVertexConstraintFlag = 0;
@@ -329,10 +329,10 @@ void DKinFitter::Set_MatrixSizes(void)
 	dNumF = 0; //num constraint eqs
 
 	//Calculate dNumEta
-	set<DKinFitParticle*>::iterator locParticleIterator = dKinFitParticles.begin();
+	auto locParticleIterator = dKinFitParticles.begin();
 	for(; locParticleIterator != dKinFitParticles.end(); ++locParticleIterator)
 	{
-		DKinFitParticle* locKinFitParticle = *locParticleIterator;
+		auto locKinFitParticle = *locParticleIterator;
 		DKinFitParticleType locKinFitParticleType = locKinFitParticle->Get_KinFitParticleType();
 		if((locKinFitParticleType == d_MissingParticle) || (locKinFitParticleType == d_DecayingParticle) || (locKinFitParticleType == d_TargetParticle))
 			continue;
@@ -485,10 +485,10 @@ void DKinFitter::Fill_InputMatrices(void)
 
 	//SETUP dY
 	int locParamIndex = 0;
-	set<DKinFitParticle*>::iterator locParticleIterator = dKinFitParticles.begin();
+	auto locParticleIterator = dKinFitParticles.begin();
 	for(; locParticleIterator != dKinFitParticles.end(); ++locParticleIterator)
 	{
-		DKinFitParticle* locKinFitParticle = *locParticleIterator;
+		auto locKinFitParticle = *locParticleIterator;
 		DKinFitParticleType locKinFitParticleType = locKinFitParticle->Get_KinFitParticleType();
 
 		if((locKinFitParticleType == d_MissingParticle) || (locKinFitParticleType == d_DecayingParticle) || (locKinFitParticleType == d_TargetParticle))
@@ -562,7 +562,7 @@ void DKinFitter::Fill_InputMatrices(void)
 			locKinFitConstraint_P4->Set_FIndex(locConstraintIndex);
 			locConstraintIndex += 4; //p4
 
-			DKinFitParticle* locDefinedParticle = locKinFitConstraint_P4->Get_DefinedParticle();
+			auto locDefinedParticle = locKinFitConstraint_P4->Get_DefinedParticle();
 			if(locDefinedParticle == NULL)
 				continue; //no missing particles
 
@@ -595,7 +595,7 @@ void DKinFitter::Fill_InputMatrices(void)
 			locKinFitConstraint_Vertex->Set_CommonVxParamIndex(locParamIndex);
 			locParamIndex += 3;
 
-			set<DKinFitParticle*> locFullConstrainParticles = locKinFitConstraint_Vertex->Get_FullConstrainParticles();
+			auto locFullConstrainParticles = locKinFitConstraint_Vertex->Get_FullConstrainParticles();
 			locParticleIterator = locFullConstrainParticles.begin();
 			for(; locParticleIterator != locFullConstrainParticles.end(); ++locParticleIterator)
 			{
@@ -616,7 +616,7 @@ void DKinFitter::Fill_InputMatrices(void)
 			locKinFitConstraint_Spacetime->Set_CommonTParamIndex(locParamIndex + 3);
 			locParamIndex += 4;
 
-			set<DKinFitParticle*> locFullConstrainParticles = locKinFitConstraint_Spacetime->Get_FullConstrainParticles();
+			auto locFullConstrainParticles = locKinFitConstraint_Spacetime->Get_FullConstrainParticles();
 			locParticleIterator = locFullConstrainParticles.begin();
 			for(; locParticleIterator != locFullConstrainParticles.end(); ++locParticleIterator)
 			{
@@ -624,7 +624,7 @@ void DKinFitter::Fill_InputMatrices(void)
 				locConstraintIndex += 3;
 			}
 
-			set<DKinFitParticle*> locOnlyConstrainTimeParticles = locKinFitConstraint_Spacetime->dOnlyConstrainTimeParticles;
+			auto locOnlyConstrainTimeParticles = locKinFitConstraint_Spacetime->dOnlyConstrainTimeParticles;
 			locParticleIterator = locOnlyConstrainTimeParticles.begin();
 			for(; locParticleIterator != locOnlyConstrainTimeParticles.end(); ++locParticleIterator)
 			{
@@ -640,7 +640,7 @@ void DKinFitter::Fill_InputMatrices(void)
 	locParticleIterator = dKinFitParticles.begin();
 	for(; locParticleIterator != dKinFitParticles.end(); ++locParticleIterator)
 	{
-		DKinFitParticle* locKinFitParticle = *locParticleIterator;
+		auto locKinFitParticle = *locParticleIterator;
 		DKinFitParticleType locKinFitParticleType = locKinFitParticle->Get_KinFitParticleType();
 
 		if((locKinFitParticleType == d_DecayingParticle) || (locKinFitParticleType == d_MissingParticle) || (locKinFitParticleType == d_TargetParticle))
@@ -648,7 +648,7 @@ void DKinFitter::Fill_InputMatrices(void)
 
 		TVector3 locMomentum = locKinFitParticle->Get_Momentum();
 		TVector3 locPosition = locKinFitParticle->Get_Position();
-		const TMatrixFSym& locCovarianceMatrix = *(locKinFitParticle->Get_CovarianceMatrix());
+		const TMatrixFSym& locCovarianceMatrix = *(locKinFitParticle->Get_CovarianceMatrix().get());
 
 		int locPxParamIndex = locKinFitParticle->Get_PxParamIndex();
 		int locVxParamIndex = locKinFitParticle->Get_VxParamIndex();
@@ -862,7 +862,7 @@ bool DKinFitter::Iterate(void)
 			cout << "DKinFitter: dEta: " << endl;
 			Print_Matrix(dEta);
 			cout << "DKinFitter: dChiSq = " << dChiSq << endl;
-			set<DKinFitParticle*>::iterator locParticleIterator = dKinFitParticles.begin();
+			auto locParticleIterator = dKinFitParticles.begin();
 			for(; locParticleIterator != dKinFitParticles.end(); ++locParticleIterator)
 				(*locParticleIterator)->Print_ParticleParams();
 		}
@@ -1004,15 +1004,15 @@ void DKinFitter::Calc_dF(void)
 				cout << "DKinFitter: P4 Constraint, F index = " << locFIndex << endl;
 
 			//initial state
-			set<DKinFitParticle*> locInitialParticles = locKinFitConstraint_P4->Get_InitialParticles();
-			set<DKinFitParticle*>::iterator locParticleIterator = locInitialParticles.begin();
+			auto locInitialParticles = locKinFitConstraint_P4->Get_InitialParticles();
+			auto locParticleIterator = locInitialParticles.begin();
 			for(; locParticleIterator != locInitialParticles.end(); ++locParticleIterator)
-				Calc_dF_P4(locFIndex, *locParticleIterator, 1.0);
+				Calc_dF_P4(locFIndex, (*locParticleIterator).get(), 1.0);
 
 			//final state
-			set<DKinFitParticle*> locFinalParticles = locKinFitConstraint_P4->Get_FinalParticles();
+			auto locFinalParticles = locKinFitConstraint_P4->Get_FinalParticles();
 			for(locParticleIterator = locFinalParticles.begin(); locParticleIterator != locFinalParticles.end(); ++locParticleIterator)
-				Calc_dF_P4(locFIndex, *locParticleIterator, -1.0);
+				Calc_dF_P4(locFIndex, (*locParticleIterator).get(), -1.0);
 
 			continue;
 		}
@@ -1024,7 +1024,7 @@ void DKinFitter::Calc_dF(void)
 			if(dDebugLevel > 10)
 				cout << "DKinFitter: Mass Constraint, F index = " << locFIndex << endl;
 
-			DKinFitParticle* locDecayingParticle = locKinFitConstraint_Mass->Get_DecayingParticle();
+			auto locDecayingParticle = locKinFitConstraint_Mass->Get_DecayingParticle();
 			double locTargetedMass = locDecayingParticle->Get_Mass();
 
 			TLorentzVector locXP4 = dKinFitUtils->Calc_DecayingP4_ByP3Derived(locDecayingParticle, true);
@@ -1032,7 +1032,7 @@ void DKinFitter::Calc_dF(void)
 				cout << "Final decaying pxyzE is: " << locXP4.Px() << ", " << locXP4.Py() << ", " << locXP4.Pz() << ", " << locXP4.E() << endl;
 			dF(locFIndex, 0) += locXP4.M2() - locTargetedMass*locTargetedMass;
 
-			Calc_dF_MassDerivs(locFIndex, locDecayingParticle, locXP4, 1.0, true);
+			Calc_dF_MassDerivs(locFIndex, locDecayingParticle.get(), locXP4, 1.0, true);
 			continue;
 		}
 
@@ -1040,11 +1040,11 @@ void DKinFitter::Calc_dF(void)
 		DKinFitConstraint_Spacetime* locKinFitConstraint_Spacetime = dynamic_cast<DKinFitConstraint_Spacetime*>(*locConstraintIterator);
 		if((locKinFitConstraint_Vertex != NULL) && (locKinFitConstraint_Spacetime == NULL))
 		{
-			set<DKinFitParticle*> locFullConstrainParticles = locKinFitConstraint_Vertex->Get_FullConstrainParticles();
-			set<DKinFitParticle*>::iterator locParticleIterator = locFullConstrainParticles.begin();
+			auto locFullConstrainParticles = locKinFitConstraint_Vertex->Get_FullConstrainParticles();
+			auto locParticleIterator = locFullConstrainParticles.begin();
 			for(; locParticleIterator != locFullConstrainParticles.end(); ++locParticleIterator)
 			{
-				DKinFitParticle* locKinFitParticle = *locParticleIterator;
+				auto locKinFitParticle = *locParticleIterator;
 				DKinFitParticleType locKinFitParticleType = locKinFitParticle->Get_KinFitParticleType();
 
 				bool locIsDecayingFlag = (locKinFitParticleType == d_DecayingParticle);
@@ -1052,7 +1052,7 @@ void DKinFitter::Calc_dF(void)
 				if(dDebugLevel > 10)
 					cout << "DKinFitter: F index, locIsDecayingFlag = " << locFIndex << ", " << locIsDecayingFlag << endl;
 
-				Calc_dF_Vertex(locFIndex, locKinFitParticle, NULL, 1.0);
+				Calc_dF_Vertex(locFIndex, locKinFitParticle.get(), NULL, 1.0);
 			}
 
 			continue;
@@ -1228,17 +1228,17 @@ void DKinFitter::Calc_dF_P4(int locFIndex, const DKinFitParticle* locKinFitParti
 
 		//replace the decaying particle with the particles it's momentum is derived from
 		//initial state
-		set<DKinFitParticle*> locFromInitialState = locKinFitParticle->Get_FromInitialState();
-		set<DKinFitParticle*>::iterator locParticleIterator = locFromInitialState.begin();
+		auto locFromInitialState = locKinFitParticle->Get_FromInitialState();
+		auto locParticleIterator = locFromInitialState.begin();
 		for(; locParticleIterator != locFromInitialState.end(); ++locParticleIterator)
 		{
 			if(dDebugLevel > 30)
 				cout << "decaying, partially replace with init-state PID = " << (*locParticleIterator)->Get_PID() << endl;
-			Calc_dF_P4(locFIndex, *locParticleIterator, locStateSignMultiplier); //decaying particle multiplier * 1.0
+			Calc_dF_P4(locFIndex, (*locParticleIterator).get(), locStateSignMultiplier); //decaying particle multiplier * 1.0
 		}
 
 		//final state
-		set<DKinFitParticle*> locFromFinalState = locKinFitParticle->Get_FromFinalState();
+		auto locFromFinalState = locKinFitParticle->Get_FromFinalState();
 		bool locDefinedByInvariantMassFlag = locFromInitialState.empty();
 		double locNextStateSignMultiplier = locStateSignMultiplier;
 		//If defined by invariant mass: add p4s of final state particles
@@ -1249,7 +1249,7 @@ void DKinFitter::Calc_dF_P4(int locFIndex, const DKinFitParticle* locKinFitParti
 		{
 			if(dDebugLevel > 30)
 				cout << "decaying, partially replace with final-state PID = " << (*locParticleIterator)->Get_PID() << endl;
-			Calc_dF_P4(locFIndex, *locParticleIterator, locNextStateSignMultiplier);
+			Calc_dF_P4(locFIndex, (*locParticleIterator).get(), locNextStateSignMultiplier);
 		}
 	}
 	else if(locChargedBFieldFlag && locCommonVertexFitFlag && (locKinFitParticleType != d_DecayingParticle) && (locKinFitParticleType != d_MissingParticle))
@@ -1402,17 +1402,17 @@ void DKinFitter::Calc_dF_MassDerivs(size_t locFIndex, const DKinFitParticle* loc
 
 		//replace the decaying particle with the particles it's momentum is derived from
 		//initial state
-		set<DKinFitParticle*> locFromInitialState = locKinFitParticle->Get_FromInitialState();
-		set<DKinFitParticle*>::iterator locParticleIterator = locFromInitialState.begin();
+		auto locFromInitialState = locKinFitParticle->Get_FromInitialState();
+		auto locParticleIterator = locFromInitialState.begin();
 		for(; locParticleIterator != locFromInitialState.end(); ++locParticleIterator)
 		{
 			if(dDebugLevel > 30)
 				cout << "decaying, partially replace with init-state PID = " << (*locParticleIterator)->Get_PID() << endl;
-			Calc_dF_MassDerivs(locFIndex, *locParticleIterator, locXP4, locStateSignMultiplier, false); //decaying particle multiplier * 1.0
+			Calc_dF_MassDerivs(locFIndex, (*locParticleIterator).get(), locXP4, locStateSignMultiplier, false); //decaying particle multiplier * 1.0
 		}
 
 		//final state
-		set<DKinFitParticle*> locFromFinalState = locKinFitParticle->Get_FromFinalState();
+		auto locFromFinalState = locKinFitParticle->Get_FromFinalState();
 		bool locDefinedByInvariantMassFlag = locFromInitialState.empty();
 		double locNextStateSignMultiplier = locStateSignMultiplier;
 		//If defined by invariant mass: add p4s of final state particles
@@ -1423,7 +1423,7 @@ void DKinFitter::Calc_dF_MassDerivs(size_t locFIndex, const DKinFitParticle* loc
 		{
 			if(dDebugLevel > 30)
 				cout << "decaying, partially replace with final-state PID = " << (*locParticleIterator)->Get_PID() << endl;
-			Calc_dF_MassDerivs(locFIndex, *locParticleIterator, locXP4, locNextStateSignMultiplier, false);
+			Calc_dF_MassDerivs(locFIndex, (*locParticleIterator).get(), locXP4, locNextStateSignMultiplier, false);
 		}
 	}
 	else if(locChargedBFieldFlag && locCommonVertexFitFlag && (locKinFitParticleType != d_DecayingParticle) && (locKinFitParticleType != d_MissingParticle))
@@ -1488,17 +1488,17 @@ void DKinFitter::Calc_dF_Vertex(size_t locFIndex, const DKinFitParticle* locKinF
 
 	//replace the decaying particle with the particles it's momentum is derived from
 	//initial state
-	set<DKinFitParticle*> locFromInitialState = locKinFitParticle->Get_FromInitialState();
-	set<DKinFitParticle*>::iterator locParticleIterator = locFromInitialState.begin();
+	auto locFromInitialState = locKinFitParticle->Get_FromInitialState();
+	auto locParticleIterator = locFromInitialState.begin();
 	for(; locParticleIterator != locFromInitialState.end(); ++locParticleIterator)
 	{
 		if(dDebugLevel > 30)
 			cout << "decaying, partially replace with init-state PID = " << (*locParticleIterator)->Get_PID() << endl;
-		Calc_dF_Vertex(locFIndex, *locParticleIterator, locKinFitParticle, locStateSignMultiplier);
+		Calc_dF_Vertex(locFIndex, (*locParticleIterator).get(), locKinFitParticle, locStateSignMultiplier);
 	}
 
 	//final state
-	set<DKinFitParticle*> locFromFinalState = locKinFitParticle->Get_FromFinalState();
+	auto locFromFinalState = locKinFitParticle->Get_FromFinalState();
 	bool locDefinedByInvariantMassFlag = locFromInitialState.empty();
 	double locNextStateSignMultiplier = locStateSignMultiplier;
 	//If defined by invariant mass: add p4s of final state particles
@@ -1509,7 +1509,7 @@ void DKinFitter::Calc_dF_Vertex(size_t locFIndex, const DKinFitParticle* locKinF
 	{
 		if(dDebugLevel > 30)
 			cout << "decaying, partially replace with final-state PID = " << (*locParticleIterator)->Get_PID() << endl;
-		Calc_dF_Vertex(locFIndex, *locParticleIterator, locKinFitParticle, locNextStateSignMultiplier);
+		Calc_dF_Vertex(locFIndex, (*locParticleIterator).get(), locKinFitParticle, locNextStateSignMultiplier);
 	}
 }
 
@@ -2364,10 +2364,10 @@ void DKinFitter::Update_ParticleParams(void)
 	}
 
 	// update particle information
-	set<DKinFitParticle*>::iterator locParticleIterator = dKinFitParticles.begin();
+	auto locParticleIterator = dKinFitParticles.begin();
 	for(; locParticleIterator != dKinFitParticles.end(); ++locParticleIterator)
 	{
-		DKinFitParticle* locKinFitParticle = *locParticleIterator;
+		auto locKinFitParticle = *locParticleIterator;
 		DKinFitParticleType locKinFitParticleType = locKinFitParticle->Get_KinFitParticleType();
 		if(locKinFitParticleType == d_TargetParticle)
 			continue; //nothing to update
@@ -2437,7 +2437,7 @@ void DKinFitter::Update_ParticleParams(void)
 		//must do last because assumes all other particle p3's are updated
 	for(locParticleIterator = dKinFitParticles.begin(); locParticleIterator != dKinFitParticles.end(); ++locParticleIterator)
 	{
-		DKinFitParticle* locKinFitParticle = *locParticleIterator;
+		auto locKinFitParticle = *locParticleIterator;
 		if(locKinFitParticle->Get_KinFitParticleType() != d_DecayingParticle)
 			continue;
 		locKinFitParticle->Set_Momentum(dKinFitUtils->Calc_DecayingP4_ByPosition(locKinFitParticle, true).Vect());
@@ -2448,10 +2448,10 @@ void DKinFitter::Update_ParticleParams(void)
 
 void DKinFitter::Calc_Pulls(void)
 {
-	set<DKinFitParticle*>::iterator locParticleIterator = dKinFitParticles.begin();
+	auto locParticleIterator = dKinFitParticles.begin();
 	for(; locParticleIterator != dKinFitParticles.end(); ++locParticleIterator)
 	{
-		DKinFitParticle* locKinFitParticle = *locParticleIterator;
+		auto locKinFitParticle = *locParticleIterator;
 		DKinFitParticleType locKinFitParticleType = locKinFitParticle->Get_KinFitParticleType();
 
 		if((locKinFitParticleType == d_DecayingParticle) || (locKinFitParticleType == d_MissingParticle) || (locKinFitParticleType == d_TargetParticle))
@@ -2515,11 +2515,11 @@ void DKinFitter::Calc_Pulls(void)
 		cout << "DKinFitter: dVY: " << endl;
 		Print_Matrix(dVY);
 		cout << "DKinFitter: Pulls: " << endl;
-		map<DKinFitParticle*, map<DKinFitPullType, double> >::iterator locIterator;
+		map<shared_ptr<DKinFitParticle>, map<DKinFitPullType, double> >::iterator locIterator;
 		for(locIterator = dPulls.begin(); locIterator != dPulls.end(); ++locIterator)
 		{
 			map<DKinFitPullType, double>& locParticlePulls = locIterator->second;
-			DKinFitParticle* locKinFitParticle = locIterator->first;
+			auto locKinFitParticle = locIterator->first;
 			TVector3 locMomentum = locKinFitParticle->Get_Momentum();
 			cout << "particle PID, p3 = " << locKinFitParticle->Get_PID() << ", " << locMomentum.Px() << ", " << locMomentum.Py() << ", " << locMomentum.Pz() << ":" << endl;
 			for(size_t loc_i = 0; loc_i < 8; ++loc_i)
@@ -2539,10 +2539,10 @@ void DKinFitter::Set_FinalTrackInfo(void)
 		Update_CovarianceMatrices();
 
 	// propagate the track parameters
-	set<DKinFitParticle*>::iterator locParticleIterator = dKinFitParticles.begin();
+	auto locParticleIterator = dKinFitParticles.begin();
 	for(; locParticleIterator != dKinFitParticles.end(); ++locParticleIterator)
 	{
-		DKinFitParticle* locKinFitParticle = *locParticleIterator;
+		auto locKinFitParticle = *locParticleIterator;
 		DKinFitParticleType locKinFitParticleType = locKinFitParticle->Get_KinFitParticleType();
 		if((locKinFitParticleType == d_TargetParticle) || (locKinFitParticleType == d_MissingParticle) || (locKinFitParticleType == d_DecayingParticle))
 			continue; // particle properties already defined at the fit vertex
@@ -2552,7 +2552,7 @@ void DKinFitter::Set_FinalTrackInfo(void)
 
 		//updating the covariance matrix: a unique cov matrix object was cloned on fit start, so can safely update it directly
 			//unless DKinFitUtils::Get_UpdateCovarianceMatricesFlag() is false. In which case, this matrix is not propagated (is unchanged)
-		TMatrixFSym* locCovarianceMatrix = const_cast<TMatrixFSym*>(locKinFitParticle->Get_CovarianceMatrix());
+		TMatrixFSym* locCovarianceMatrix = const_cast<TMatrixFSym*>(locKinFitParticle->Get_CovarianceMatrix().get());
 
 		TVector3 locMomentum;
 		TLorentzVector locSpacetimeVertex;
@@ -2582,15 +2582,14 @@ void DKinFitter::Set_FinalTrackInfo(void)
 	//calculate the path length of decaying particles involved in 2 vertex fits
 	for(locParticleIterator = dKinFitParticles.begin(); locParticleIterator != dKinFitParticles.end(); ++locParticleIterator)
 	{
-		DKinFitParticle* locKinFitParticle = *locParticleIterator;
+		auto locKinFitParticle = *locParticleIterator;
 		DKinFitParticleType locKinFitParticleType = locKinFitParticle->Get_KinFitParticleType();
 
 		if((locKinFitParticleType != d_DecayingParticle) || !locKinFitParticle->Get_FitCommonVertexFlag())
 			continue;
 
 		pair<double, double> locPathLengthPair;
-		const TMatrixFSym* locCovarianceMatrix = locKinFitParticle->Get_CovarianceMatrix();
-		if(dKinFitUtils->Calc_PathLength(locKinFitParticle, &dVXi, locCovarianceMatrix, locPathLengthPair))
+		if(dKinFitUtils->Calc_PathLength(locKinFitParticle, &dVXi, locKinFitParticle->Get_CovarianceMatrix().get(), locPathLengthPair))
 		{
 			locKinFitParticle->Set_PathLength(locPathLengthPair.first);
 			locKinFitParticle->Set_PathLengthUncertainty(locPathLengthPair.second);
@@ -2602,10 +2601,10 @@ void DKinFitter::Update_CovarianceMatrices(void)
 {
 	//correlations between fit and unfit measured parameters:
 		//assume that the correlations remain unchanged: the changes in the parameters and their uncertainties should be small wrst their values
-	set<DKinFitParticle*>::iterator locParticleIterator = dKinFitParticles.begin();
+	auto locParticleIterator = dKinFitParticles.begin();
 	for(; locParticleIterator != dKinFitParticles.end(); ++locParticleIterator)
 	{
-		DKinFitParticle* locKinFitParticle = *locParticleIterator;
+		auto locKinFitParticle = *locParticleIterator;
 		DKinFitParticleType locKinFitParticleType = locKinFitParticle->Get_KinFitParticleType();
 		if(locKinFitParticleType == d_TargetParticle)
 			continue;
@@ -2616,12 +2615,12 @@ void DKinFitter::Update_CovarianceMatrices(void)
 		if(locReconstructedParticleFlag) //Brand new particle: Set the covariance matrix from scratch
 		{
 			//Particle had none: Make a new one
-			TMatrixFSym* locCovarianceMatrix = dKinFitUtils->Get_SymMatrixResource(7);
+			auto locCovarianceMatrix = dKinFitUtils->Get_SymMatrixResource(7);
 			locCovarianceMatrix->Zero();
 			locKinFitParticle->Set_CovarianceMatrix(locCovarianceMatrix);
 		}
 		//updating the covariance matrix: a unique cov matrix object was cloned on fit start, so can safely update it directly
-		TMatrixFSym& locCovarianceMatrix = *(const_cast<TMatrixFSym*>(locKinFitParticle->Get_CovarianceMatrix()));
+		TMatrixFSym& locCovarianceMatrix = *(const_cast<TMatrixFSym*>(locKinFitParticle->Get_CovarianceMatrix().get()));
 
 		int locPxParamIndex = locKinFitParticle->Get_PxParamIndex();
 		int locVxParamIndex = locKinFitParticle->Get_VxParamIndex();
@@ -2648,9 +2647,9 @@ void DKinFitter::Update_CovarianceMatrices(void)
 			//if the decaying particle is not a constraining particle (e.g. vertex no-constrain):
 			//look for particles that define the momentum that were NOT in the fit. They're uncertainties are needed, but are not in the input matrices
 
-			set<DKinFitParticle*> locDerivedFromParticles = locKinFitParticle->Get_FromAllParticles();
-			set<DKinFitParticle*>::iterator locFromIterator = locDerivedFromParticles.begin();
-			map<const DKinFitParticle*, int> locAdditionalPxParamIndices;
+			auto locDerivedFromParticles = locKinFitParticle->Get_FromAllParticles();
+			auto locFromIterator = locDerivedFromParticles.begin();
+			map<shared_ptr<const DKinFitParticle>, int> locAdditionalPxParamIndices;
 			for(; locFromIterator != locDerivedFromParticles.end(); ++locFromIterator)
 			{
 				DKinFitParticleType locKinFitParticleType = (*locFromIterator)->Get_KinFitParticleType();
@@ -2698,7 +2697,7 @@ void DKinFitter::Update_CovarianceMatrices(void)
 				locTempCovarianceMatrix.SetSub(0, dV); //insert dV
 
 				//insert p3 covariance matrices of additional particles
-				map<const DKinFitParticle*, int>::iterator locPxParamIterator = locAdditionalPxParamIndices.begin();
+				map<shared_ptr<const DKinFitParticle>, int>::iterator locPxParamIterator = locAdditionalPxParamIndices.begin();
 				for(; locPxParamIterator != locAdditionalPxParamIndices.end(); ++locPxParamIterator)
 				{
 					int locPxParamIndex = locPxParamIterator->second;

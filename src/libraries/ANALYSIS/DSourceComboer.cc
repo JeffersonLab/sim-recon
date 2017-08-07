@@ -4,16 +4,26 @@
 
 /*
  * PROBLEMS:
+ * Crash doesn't happen unless p4 + detached vertex
+ * I.e. it doesn't happen if other decaying particles, or if p4-only fit
+ * Crash PROBABLY doesn't happen unless recycling kinfit chain/steps
+ * No crash if no create kinfit combo
+ *
+ * Doing the above should not cause a crash
+ * And for some reason it likes to keep pointing back to DEventSourceREST
  * 
+ * Test to make sure it crashes, then resume in DParticleComboCreator::Set_DecayingParticles()
+ *
  * EVENTUALLY:
  * ppp
  * omega p
- * omega missing-p
+ * K0 Sigma+
+ * K0 Sigma+ (pi0)
+ * K+ K+ Xi-
  * 
  * K+ Lambda
  * K+ Sigma0
  * K+ pi0 Lambda
- * K0 Sigma+
  * ...
  *
  */
@@ -597,7 +607,7 @@ DSourceComboUse DSourceComboer::Create_ZDependentSourceComboUses(const DReaction
 	//E.g. if something crazy like 2 KShorts -> 3pi, each at a different vertex-z bin, then they will no longer be grouped together vertically (separate uses: horizontally instead)
 
 	//see if they've already been created.  if so, just return it.
-	auto locIsPrimaryProductionVertex = locReactionVertexInfo->Get_StepVertexInfos().front()->Get_ProductionVertexFlag();
+	auto locIsPrimaryProductionVertex = locReactionVertexInfo->Get_StepVertexInfo(0)->Get_ProductionVertexFlag();
 	auto locVertexZBins = dSourceComboVertexer->Get_VertexZBins(locIsPrimaryProductionVertex, locReactionChargedCombo, nullptr);
 	auto locCreationPair = std::make_pair(locReactionVertexInfo, locVertexZBins);
 	auto locUseIterator = dSourceComboUseVertexZMap.find(locCreationPair);
@@ -1305,7 +1315,7 @@ void DSourceComboer::Combo_WithNeutralsAndBeam(const vector<const DReaction*>& l
 		cout << endl << "Comboing neutrals, z-independent, #FCAL/BCAL showers: " << locNumFCALShowers << "/" << locNumDetectedShowers - locNumFCALShowers << endl;
 	}
 
-	auto locIsPrimaryProductionVertex = locReactionVertexInfo->Get_StepVertexInfos().front()->Get_ProductionVertexFlag();
+	auto locIsPrimaryProductionVertex = locReactionVertexInfo->Get_StepVertexInfo(0)->Get_ProductionVertexFlag();
 	auto locVertexZBins = dSourceComboVertexer->Get_VertexZBins(locIsPrimaryProductionVertex, locReactionChargedCombo, nullptr);
 	if(std::find(locVertexZBins.begin(), locVertexZBins.end(), DSourceComboInfo::Get_VertexZIndex_Unknown()) != locVertexZBins.end())
 		return; //there is a vertex zbin that is out of range, and we need neutrals (likely photons): don't allow: will blow up memory due to no invariant mass cuts
@@ -1405,7 +1415,7 @@ void DSourceComboer::Combo_WithBeam(const vector<const DReaction*>& locReactions
 		cout << endl << "Comboing beam." << endl;
 
 	//if no beam then we are done!
-	if(!locReactionVertexInfo->Get_StepVertexInfos().front()->Get_ProductionVertexFlag())
+	if(!locReactionVertexInfo->Get_StepVertexInfo(0)->Get_ProductionVertexFlag())
 	{
 		if(dDebugLevel > 0)
 			cout << "No beam particles, we are done!" << endl;
@@ -3472,7 +3482,10 @@ void DSourceComboer::Copy_ZIndependentMixedResults(const DSourceComboUse& locCom
 const DSourceCombo* DSourceComboer::Get_StepSourceCombo(const DReaction* locReaction, size_t locDesiredStepIndex, const DSourceCombo* locVertexPrimaryCombo, size_t locVertexPrimaryStepIndex) const
 {
 	if(dDebugLevel >= 100)
-		cout << "reaction, desired step index, current step index: " << locReaction << ", " << locDesiredStepIndex << ", " << locVertexPrimaryStepIndex << endl;
+		cout << "reaction, desired step index, current step index: " << locReaction->Get_ReactionName() << ", " << locDesiredStepIndex << ", " << locVertexPrimaryStepIndex << endl;
+	if(locDesiredStepIndex == locVertexPrimaryStepIndex)
+		return locVertexPrimaryCombo;
+
 	//Get the list of steps we need to traverse //particle pair: step index, particle instance index
 	vector<pair<size_t, int>> locParticleIndices = {std::make_pair(locDesiredStepIndex, DReactionStep::Get_ParticleIndex_Initial())};
 	while(locParticleIndices.back().first != locVertexPrimaryStepIndex)

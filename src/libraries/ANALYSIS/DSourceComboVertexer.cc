@@ -40,7 +40,7 @@ void DSourceComboVertexer::Calc_VertexTimeOffsets_WithCharged(const DReactionVer
 	if(dDebugLevel >= 10)
 		cout << "DSourceComboVertexer::Calc_VertexTimeOffsets_WithCharged()" << endl;
 
-	auto locIsPrimaryProductionVertex = locReactionVertexInfo->Get_StepVertexInfos().front()->Get_ProductionVertexFlag();
+	auto locIsPrimaryProductionVertex = locReactionVertexInfo->Get_StepVertexInfo(0)->Get_ProductionVertexFlag();
 	//even if below is true, we still need to register step vertex infos
 	auto locEverythingFoundFlag = (dTimeOffsets.find(std::make_tuple(locIsPrimaryProductionVertex, locReactionChargedCombo, (const DKinematicData*)nullptr)) != dTimeOffsets.end());
 
@@ -133,7 +133,7 @@ void DSourceComboVertexer::Calc_VertexTimeOffsets_WithPhotons(const DReactionVer
 	//not likely to have any effect, but it's necessary sometimes (but rarely)
 	//E.g. g, p ->  K0, Sigma+    K0 -> 3pi: The selected pi0 photons could help define the production vertex
 
-	auto locIsPrimaryProductionVertex = locReactionVertexInfo->Get_StepVertexInfos().front()->Get_ProductionVertexFlag();
+	auto locIsPrimaryProductionVertex = locReactionVertexInfo->Get_StepVertexInfo(0)->Get_ProductionVertexFlag();
 	//even if below is true, we still need to register step vertex infos
 	auto locEverythingFoundFlag = (dTimeOffsets.find(std::make_tuple(locIsPrimaryProductionVertex, locReactionFullCombo, (const DKinematicData*)nullptr)) != dTimeOffsets.end());
 
@@ -336,7 +336,7 @@ DVector3 DSourceComboVertexer::Calc_Vertex(bool locIsProductionVertexFlag, const
 		//vertex is 1/2-way between track POCA to beamline and the beamline itself: if POCA not on beamline, likely due to resolution issues, 
 		auto locTrackPosition = locVertexParticles[0]->position();
 		auto locVertex = DVector3(0.5*locTrackPosition.X(), 0.5*locTrackPosition.Y(), locTrackPosition.Z());
-//		if(false) //COMPARE: Comparison-to-old mode
+		if(false) //COMPARE: Comparison-to-old mode
 			locVertex = dVertex->dSpacetimeVertex.Vect();
 		dVertexMap.emplace(std::make_pair(locIsProductionVertexFlag, locVertexParticles), locVertex);
 		if(dDebugLevel >= 10)
@@ -354,8 +354,6 @@ DVector3 DSourceComboVertexer::Calc_Vertex(bool locIsProductionVertexFlag, const
 	if(locVertexIterator == dVertexMap.end())
 	{
 		auto locVertex = dAnalysisUtilities->Calc_CrudeVertex(locVertexParticles);
-//		if(false) //COMPARE: Comparison-to-old mode
-			locVertex = dVertex->dSpacetimeVertex.Vect();
 		if(dDebugLevel >= 10)
 			cout << "crude vertex = " << locVertex.X() << ", " << locVertex.Y() << ", " << locVertex.Z() << endl;
 		dVertexMap.emplace(std::make_pair(locIsProductionVertexFlag, locVertexParticles), locVertex);
@@ -529,7 +527,7 @@ void DSourceComboVertexer::Construct_DecayingParticle_MissingMass(const DReactio
 	//create a new one
 	//calc final state p4
 	DLorentzVector locFinalStateP4;
-	if(!dSourceComboP4Handler->Calc_P4_HasMassiveNeutrals(locIsProductionVertexFlag, locReactionFullCombo, locFullVertexCombo, locVertex, locRFBunch, locRFVertexTime, locDecayUse, locFinalStateP4, locBeamParticle, true))
+	if(!dSourceComboP4Handler->Calc_P4_HasMassiveNeutrals(locIsProductionVertexFlag, true, locReactionFullCombo, locFullVertexCombo, locVertex, locRFBunch, locRFVertexTime, locDecayUse, locFinalStateP4, locBeamParticle, true))
 		return; //invalid somehow
 
 	//ASSUMES FIXED TARGET EXPERIMENT!
@@ -561,7 +559,7 @@ void DSourceComboVertexer::Calc_TimeOffsets(const DReactionVertexInfo* locReacti
 		cout << "DSourceComboVertexer::Calc_TimeOffsets()" << endl;
 
 	//only for calculating from invariant mass, not missing mass vertices
-	auto locIsPrimaryProductionVertex = locReactionVertexInfo->Get_StepVertexInfos().front()->Get_ProductionVertexFlag();
+	auto locIsPrimaryProductionVertex = locReactionVertexInfo->Get_StepVertexInfo(0)->Get_ProductionVertexFlag();
 	auto locActiveReactionCombo = (locFullReactionCombo != nullptr) ? locFullReactionCombo : locChargedReactionCombo;
 
 	auto locChargedReactionTuple = std::make_tuple(locIsPrimaryProductionVertex, locChargedReactionCombo, (const DKinematicData*)nullptr);
@@ -599,18 +597,18 @@ void DSourceComboVertexer::Calc_TimeOffsets(const DReactionVertexInfo* locReacti
 			}
 		}
 
-		if(locStepVertexInfo->Get_ProductionVertexFlag())
+		auto locParentVertexInfo = locStepVertexInfo->Get_ParentVertexInfo();
+		if(locStepVertexInfo->Get_ProductionVertexFlag() || (locParentVertexInfo == nullptr))
 		{
 			if(dDebugLevel >= 10)
-				cout << "Production vertex: time offset = 0" << endl;
+				cout << "Primary vertex: time offset = 0" << endl;
 			locChargedTimeOffsetMap.emplace(locChargedReactionCombo, 0.0);
 			continue;
 		}
 
 		//get parent information
-		auto locParentVertexInfo = locStepVertexInfo->Get_ParentVertexInfo();
 		auto locParentCombo = dSourceComboer->Get_VertexPrimaryCombo(locActiveReactionCombo, locParentVertexInfo);
-		auto locParentTimeOffset = locActiveTimeOffsetMap[locActiveVertexCombo];
+		auto locParentTimeOffset = locActiveTimeOffsetMap[locParentCombo];
 
 		if(dDebugLevel >= 10)
 			cout << "Parent time offset = " << locParentTimeOffset << endl;
@@ -619,6 +617,8 @@ void DSourceComboVertexer::Calc_TimeOffsets(const DReactionVertexInfo* locReacti
 		auto locVertex = Get_Vertex(false, locActiveVertexCombo, nullptr);
 		auto locParentProductionVertex = Get_Vertex(locParentVertexInfo->Get_ProductionVertexFlag(), locParentCombo, nullptr);
 		auto locPathLength = (locVertex - locParentProductionVertex).Mag();
+		if(dDebugLevel >= 10)
+			cout << "Vertex, parent vertex, path length: " << locVertex.X() << ", " << locVertex.Y() << ", " << locVertex.Z() << ", " << locParentProductionVertex.X() << ", " << locParentProductionVertex.Y() << ", " << locParentProductionVertex.Z() << ", " << locPathLength << endl;
 
 		//compute and save result
 		auto locVertexZBin = Get_VertexZBin(false, locActiveVertexCombo, nullptr);

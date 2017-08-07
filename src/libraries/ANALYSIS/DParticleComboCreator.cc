@@ -129,6 +129,7 @@ const DParticleCombo* DParticleComboCreator::Build_ParticleCombo(const DReaction
 
 	auto locReaction = locReactionVertexInfo->Get_Reaction();
 	auto locPrimaryVertexZ = dSourceComboVertexer->Get_PrimaryVertex(locReactionVertexInfo, locFullCombo, locBeamParticle).Z();
+	auto locIsPrimaryProductionVertex = locReactionVertexInfo->Get_StepVertexInfo(0)->Get_ProductionVertexFlag();
 
 	//Get/Create RF Bunch
 	const DEventRFBunch* locEventRFBunch = nullptr;
@@ -189,7 +190,7 @@ const DParticleCombo* DParticleComboCreator::Build_ParticleCombo(const DReaction
 
 		//build spacetime vertex
 		auto locVertex = dSourceComboVertexer->Get_Vertex(locIsProductionVertex, locVertexPrimaryCombo, locBeamParticle);
-		auto locTimeOffset = dSourceComboVertexer->Get_TimeOffset(locIsProductionVertex, locFullCombo, locVertexPrimaryCombo, locBeamParticle);
+		auto locTimeOffset = dSourceComboVertexer->Get_TimeOffset(locIsPrimaryProductionVertex, locFullCombo, locVertexPrimaryCombo, locBeamParticle);
 		auto locPropagatedRFTime = dSourceComboTimeHandler->Calc_PropagatedRFTime(locPrimaryVertexZ, locRFBunchShift, locTimeOffset);
 		DLorentzVector locSpacetimeVertex(locVertex, locPropagatedRFTime);
 		if(dDebugLevel >= 5)
@@ -674,7 +675,6 @@ DKinematicData* DParticleComboCreator::Build_KinematicData(DKinFitParticle* locK
 {
 	auto locKinematicData = dResourcePool_KinematicData.Get_Resource();
 	dCreated_KinematicData.push_back(locKinematicData);
-	locKinematicData->Reset();
 	locKinematicData->setPID(PDGtoPType(locKinFitParticle->Get_PID()));
 	locKinematicData->setMomentum(DVector3(locKinFitParticle->Get_Momentum().X(),locKinFitParticle->Get_Momentum().Y(),locKinFitParticle->Get_Momentum().Z()));
 	if((locKinFitType == d_P4Fit) || (locKinFitType == d_NoFit))

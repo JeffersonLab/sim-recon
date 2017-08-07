@@ -521,7 +521,7 @@ void DSourceComboTimeHandler::Calc_PhotonBeamBunchShifts(const DNeutralShower* l
 vector<int> DSourceComboTimeHandler::Calc_BeamBunchShifts(double locVertexTime, double locOrigRFBunchPropagatedTime, double locDeltaTCut, bool locIncludeDecayTimeOffset, Particle_t locPID, DetectorSystem_t locSystem, double locP)
 {
 	if(dDebugLevel >= 10)
-		cout << "DSourceComboTimeHandler::Calc_BeamBunchShifts(): PID, system, period, orig time, vertex time, orig prop rf time, delta-t cut, include offset: " << locPID << ", " << SystemName(locSystem) << ", " << dBeamBunchPeriod << ", " << dInitialEventRFBunch->dTime << ", " << locVertexTime << ", " << locOrigRFBunchPropagatedTime << ", " << locDeltaTCut << ", " << locIncludeDecayTimeOffset << endl;
+		cout << "DSourceComboTimeHandler::Calc_BeamBunchShifts(): PID, system, period, orig rf time, particle vertex time, orig prop rf time, delta-t cut, include offset: " << locPID << ", " << SystemName(locSystem) << ", " << dBeamBunchPeriod << ", " << dInitialEventRFBunch->dTime << ", " << locVertexTime << ", " << locOrigRFBunchPropagatedTime << ", " << locDeltaTCut << ", " << locIncludeDecayTimeOffset << endl;
 	auto locOrigNumShifts = Calc_RFBunchShift(locOrigRFBunchPropagatedTime, locVertexTime); //get best shift
 	vector<int> locRFShifts;
 
@@ -534,13 +534,14 @@ vector<int> DSourceComboTimeHandler::Calc_BeamBunchShifts(double locVertexTime, 
 		//e.g. a cut at +/- 1ns becomes -1ns to 3ns
 		//this applies to both BCAL & FCAL photons
 		//this is only done at the beginning when picking valid RF bunches for all showers
-	auto locMinDeltaT = locDeltaTCut;
+	auto locMinDeltaT = -1.0*locDeltaTCut;
 	auto locMaxDeltaT = locIncludeDecayTimeOffset ? locDeltaTCut + dMaxDecayTimeOffset : locDeltaTCut;
 
 	//start with best-shift, then loop up until fails cut
 	auto locNumShifts = locOrigNumShifts;
 	auto locDeltaT = locVertexTime - (locOrigRFBunchPropagatedTime + locNumShifts*dBeamBunchPeriod);
-	//cout << "num shifts, delta-t = " << locNumShifts << ", " << locDeltaT << endl;
+	if(dDebugLevel >= 20)
+		cout << "num shifts, delta-t = " << locNumShifts << ", " << locDeltaT << endl;
 	dAllRFDeltaTs[locPID][locSystem].push_back(std::make_pair(locP, locDeltaT));
 	while(((locDeltaT >= locMinDeltaT) && (locDeltaT < locMaxDeltaT)) || (locOrigNumShifts == locNumShifts)) //extra condition for histogramming purposes only
 	{
@@ -552,12 +553,16 @@ vector<int> DSourceComboTimeHandler::Calc_BeamBunchShifts(double locVertexTime, 
 		}
 		++locNumShifts;
 		locDeltaT = locVertexTime - (locOrigRFBunchPropagatedTime + locNumShifts*dBeamBunchPeriod);
+		if(dDebugLevel >= 20)
+			cout << "num shifts, delta-t = " << locNumShifts << ", " << locDeltaT << endl;
 		dAllRFDeltaTs[locPID][locSystem].push_back(std::make_pair(locP, locDeltaT));
 	}
 
 	//now loop down in n-shifts
 	locNumShifts = locOrigNumShifts - 1;
 	locDeltaT = locVertexTime - (locOrigRFBunchPropagatedTime + locNumShifts*dBeamBunchPeriod);
+	if(dDebugLevel >= 20)
+		cout << "num shifts, delta-t = " << locNumShifts << ", " << locDeltaT << endl;
 	dAllRFDeltaTs[locPID][locSystem].push_back(std::make_pair(locP, locDeltaT));
 	while((locDeltaT >= locMinDeltaT) && (locDeltaT < locMaxDeltaT))
 	{
@@ -566,6 +571,8 @@ vector<int> DSourceComboTimeHandler::Calc_BeamBunchShifts(double locVertexTime, 
 		locRFShifts.push_back(locNumShifts);
 		--locNumShifts;
 		locDeltaT = locVertexTime - (locOrigRFBunchPropagatedTime + locNumShifts*dBeamBunchPeriod);
+		if(dDebugLevel >= 20)
+			cout << "num shifts, delta-t = " << locNumShifts << ", " << locDeltaT << endl;
 		dAllRFDeltaTs[locPID][locSystem].push_back(std::make_pair(locP, locDeltaT));
 	}
 
@@ -613,18 +620,30 @@ bool DSourceComboTimeHandler::Select_RFBunches_Charged(const DReactionVertexInfo
 	//loop over vertices
 	auto locOnlyTrackFlag = (locReactionChargedCombo->Get_SourceParticles(true, d_Charged).size() == 1);
 	locValidRFBunches.clear();
+	auto locPrimaryVertexZ = dSourceComboVertexer->Get_PrimaryVertex(locReactionVertexInfo, locReactionChargedCombo, nullptr).Z();
+	auto locIsPrimaryProductionVertex = locReactionVertexInfo->Get_StepVertexInfo(0)->Get_ProductionVertexFlag();
+
 	for(const auto& locStepVertexInfo : locReactionVertexInfo->Get_StepVertexInfos())
 	{
+		if(dDebugLevel >= 20)
+			cout << "step: " << locStepVertexInfo->Get_StepIndices().front() << endl;
+
 		auto locIsProductionVertex = locStepVertexInfo->Get_ProductionVertexFlag();
 		auto locVertexPrimaryCombo = dSourceComboer->Get_VertexPrimaryCombo(locReactionChargedCombo, locStepVertexInfo);
+		if(dDebugLevel >= 20)
+		{
+			cout << "PRIMARY VERTEX COMBO:" << endl;
+			DAnalysis::Print_SourceCombo(locVertexPrimaryCombo);
+		}
 		if(!dSourceComboVertexer->Get_VertexDeterminableWithCharged(locStepVertexInfo))
 			continue; //vertex position indeterminate at this stage: don't include these tracks
 
 		//get combo, vertex position, and time offset from RF bunch
 		auto locVertex = dSourceComboVertexer->Get_Vertex(locIsProductionVertex, locVertexPrimaryCombo, nullptr);
-		auto locTimeOffset = dSourceComboVertexer->Get_TimeOffset(locIsProductionVertex, locReactionChargedCombo, locVertexPrimaryCombo, nullptr);
-		double locPropagatedRFTime = dInitialEventRFBunch->dTime + (locVertex.Z() - dTargetCenter.Z())/SPEED_OF_LIGHT;
-		//cout << "vertex z, targ z, init time, prop time = " << locVertex.Z() << ", " << dTargetCenter.Z() << ", " << dInitialEventRFBunch->dTime << ", " << locPropagatedRFTime << endl;
+		auto locTimeOffset = dSourceComboVertexer->Get_TimeOffset(locIsPrimaryProductionVertex, locReactionChargedCombo, locVertexPrimaryCombo, nullptr);
+		auto locPropagatedRFTime = Calc_PropagatedRFTime(locPrimaryVertexZ, 0, locTimeOffset);
+		if(dDebugLevel >= 20)
+			cout << "primary vertex z, targ z, init rf time, time offset, prop time = " << locPrimaryVertexZ << ", " << dTargetCenter.Z() << ", " << dInitialEventRFBunch->dTime << ", " << locTimeOffset << ", " << locPropagatedRFTime << endl;
 
 		//loop over charged particles
 		auto locChargedParticles = DAnalysis::Get_SourceParticles_ThisVertex(locVertexPrimaryCombo);
@@ -632,7 +651,7 @@ bool DSourceComboTimeHandler::Select_RFBunches_Charged(const DReactionVertexInfo
 		{
 			auto locChargedHypo = static_cast<const DChargedTrack*>(locParticlePair.second)->Get_Hypothesis(locParticlePair.first);
 			vector<int> locParticleRFBunches;
-			if(!Get_RFBunches_ChargedTrack(locChargedHypo, locIsProductionVertex, locVertexPrimaryCombo, locVertex, locTimeOffset, locPropagatedRFTime, locOnlyTrackFlag, locParticleRFBunches))
+			if(!Get_RFBunches_ChargedTrack(locChargedHypo, locIsProductionVertex, locVertexPrimaryCombo, locVertex, locPropagatedRFTime, locOnlyTrackFlag, locParticleRFBunches))
 			{
 				if(dDebugLevel >= 10)
 					cout << "pid, has no timing info = " << locChargedHypo->PID() << endl;
@@ -678,7 +697,9 @@ bool DSourceComboTimeHandler::Select_RFBunches_PhotonVertices(const DReactionVer
 	}
 
 	//loop over vertices
+	auto locIsPrimaryProductionVertex = locReactionVertexInfo->Get_StepVertexInfo(0)->Get_ProductionVertexFlag();
 	auto locOnlyTrackFlag = (locReactionFullCombo->Get_SourceParticles(true, d_Charged).size() == 1);
+	auto locPrimaryVertexZ = dSourceComboVertexer->Get_PrimaryVertex(locReactionVertexInfo, locReactionFullCombo, nullptr).Z();
 	for(const auto& locStepVertexInfo : locReactionVertexInfo->Get_StepVertexInfos())
 	{
 		if(locStepVertexInfo->Get_DanglingVertexFlag())
@@ -695,8 +716,8 @@ bool DSourceComboTimeHandler::Select_RFBunches_PhotonVertices(const DReactionVer
 		auto locVertex = dSourceComboVertexer->Get_Vertex(locIsProductionVertex, locVertexPrimaryFullCombo, nullptr);
 		auto locVertexZBin = dSourceComboVertexer->Get_VertexZBin(locIsProductionVertex, locVertexPrimaryFullCombo, nullptr);
 
-		auto locTimeOffset = dSourceComboVertexer->Get_TimeOffset(locIsProductionVertex, locReactionFullCombo, locVertexPrimaryFullCombo, nullptr);
-		double locPropagatedRFTime = dInitialEventRFBunch->dTime + (locVertex.Z() - dTargetCenter.Z())/SPEED_OF_LIGHT;
+		auto locTimeOffset = dSourceComboVertexer->Get_TimeOffset(locIsPrimaryProductionVertex, locReactionFullCombo, locVertexPrimaryFullCombo, nullptr);
+		auto locPropagatedRFTime = Calc_PropagatedRFTime(locPrimaryVertexZ, 0, locTimeOffset);
 
 		//loop over particles at this vertex: BCAL photons & charged tracks get to vote (FCAL photons already voted, but faster)
 		auto locSourceParticles = DAnalysis::Get_SourceParticles_ThisVertex(locVertexPrimaryFullCombo);
@@ -738,7 +759,7 @@ bool DSourceComboTimeHandler::Select_RFBunches_PhotonVertices(const DReactionVer
 			else //charged, a new vertex: do PID cuts
 			{
 				auto locChargedHypo = static_cast<const DChargedTrack*>(locParticlePair.second)->Get_Hypothesis(locParticlePair.first);
-				if(!Get_RFBunches_ChargedTrack(locChargedHypo, locIsProductionVertex, locVertexPrimaryFullCombo, locVertex, locTimeOffset, locPropagatedRFTime, locOnlyTrackFlag, locParticleRFBunches))
+				if(!Get_RFBunches_ChargedTrack(locChargedHypo, locIsProductionVertex, locVertexPrimaryFullCombo, locVertex, locPropagatedRFTime, locOnlyTrackFlag, locParticleRFBunches))
 				{
 					if(dDebugLevel >= 10)
 						cout << "pid, has no timing info = " << locChargedHypo->PID() << endl;
@@ -813,7 +834,7 @@ bool DSourceComboTimeHandler::Select_RFBunches_AllVerticesUnknown(const DReactio
 			auto locChargedHypo = static_cast<const DChargedTrack*>(locParticlePair.second)->Get_Hypothesis(locParticlePair.first);
 			auto locVertex = locChargedHypo->position();
 			auto locPropagatedRFTime = dInitialEventRFBunch->dTime + (locVertex.Z() - dTargetCenter.Z())/SPEED_OF_LIGHT;
-			if(!Get_RFBunches_ChargedTrack(locChargedHypo, true, nullptr, locVertex, 0.0, locPropagatedRFTime, locOnlyTrackFlag, locParticleRFBunches))
+			if(!Get_RFBunches_ChargedTrack(locChargedHypo, true, nullptr, locVertex, locPropagatedRFTime, locOnlyTrackFlag, locParticleRFBunches))
 			{
 				if(dDebugLevel >= 10)
 					cout << "pid, has no timing info = " << locChargedHypo->PID() << endl;
@@ -877,6 +898,7 @@ int DSourceComboTimeHandler::Select_RFBunch_Full(const DReactionVertexInfo* locR
 
 	//loop over vertices, using only particles at the vertices that have been determined
 	auto locPrimaryVertexZ = dSourceComboVertexer->Get_PrimaryVertex(locReactionVertexInfo, locReactionFullCombo, nullptr).Z();
+	auto locIsPrimaryProductionVertex = locReactionVertexInfo->Get_StepVertexInfo(0)->Get_ProductionVertexFlag();
 	if(dDebugLevel >= 10)
 		cout << "primary vertex z: " << locPrimaryVertexZ << endl;
 	map<int, map<Particle_t, map<DetectorSystem_t, vector<pair<float, float>>>>> locRFDeltaTsForHisting; //first float is p, 2nd is delta-t //PID Unknown: photons prior to vertex selection
@@ -895,7 +917,7 @@ int DSourceComboTimeHandler::Select_RFBunch_Full(const DReactionVertexInfo* locR
 
 		//get combo, vertex position, and time offset from RF bunch
 		auto locVertex = dSourceComboVertexer->Get_Vertex(locIsProductionVertex, locVertexPrimaryFullCombo, nullptr);
-		auto locTimeOffset = dSourceComboVertexer->Get_TimeOffset(locIsProductionVertex, locReactionFullCombo, locVertexPrimaryFullCombo, nullptr);
+		auto locTimeOffset = dSourceComboVertexer->Get_TimeOffset(locIsPrimaryProductionVertex, locReactionFullCombo, locVertexPrimaryFullCombo, nullptr);
 		auto locParticles = DAnalysis::Get_SourceParticles_ThisVertex(locVertexPrimaryFullCombo);
 		if(dDebugLevel >= 10)
 			cout << "this vertex z, time offset: " << locVertex.Z() << ", " << locTimeOffset << endl;
@@ -1128,6 +1150,7 @@ bool DSourceComboTimeHandler::Cut_Timing_MissingMassVertices(const DReactionVert
 	//All charged tracks vote, even those not at the primary vertex
 	//loop over vertices, get all charged particles at that vertex, utilize that + time offset
 	auto locPrimaryVertexZ = dSourceComboVertexer->Get_PrimaryVertex(locReactionVertexInfo, locReactionFullCombo, locBeamParticle).Z();
+	auto locIsPrimaryProductionVertex = locReactionVertexInfo->Get_StepVertexInfo(0)->Get_ProductionVertexFlag();
 
 	//loop over vertices
 	for(const auto& locStepVertexInfo : locReactionVertexInfo->Get_StepVertexInfos())
@@ -1149,7 +1172,7 @@ bool DSourceComboTimeHandler::Cut_Timing_MissingMassVertices(const DReactionVert
 		auto locVertexPrimaryFullCombo = dSourceComboer->Get_VertexPrimaryCombo(locReactionFullCombo, locStepVertexInfo);
 		auto locVertex = dSourceComboVertexer->Get_Vertex(locIsProductionVertex, locVertexPrimaryFullCombo, locBeamParticle);
 
-		auto locTimeOffset = dSourceComboVertexer->Get_TimeOffset(locIsProductionVertex, locReactionFullCombo, locVertexPrimaryFullCombo, locBeamParticle);
+		auto locTimeOffset = dSourceComboVertexer->Get_TimeOffset(locIsPrimaryProductionVertex, locReactionFullCombo, locVertexPrimaryFullCombo, locBeamParticle);
 		auto locPropagatedRFTime = Calc_PropagatedRFTime(locPrimaryVertexZ, locRFBunch, locTimeOffset);
 
 		//loop over particles at this vertex: BCAL photons & charged tracks will get cut (FCAL photons already voted!)
@@ -1243,7 +1266,7 @@ void DSourceComboTimeHandler::Fill_Histograms(void)
 	}
 }
 
-bool DSourceComboTimeHandler::Get_RFBunches_ChargedTrack(const DChargedTrackHypothesis* locHypothesis, bool locIsProductionVertex, const DSourceCombo* locVertexPrimaryCombo, DVector3 locVertex, double locTimeOffset, double locPropagatedRFTime, bool locOnlyTrackFlag, vector<int>& locRFBunches)
+bool DSourceComboTimeHandler::Get_RFBunches_ChargedTrack(const DChargedTrackHypothesis* locHypothesis, bool locIsProductionVertex, const DSourceCombo* locVertexPrimaryCombo, DVector3 locVertex, double locPropagatedRFTime, bool locOnlyTrackFlag, vector<int>& locRFBunches)
 {
 	locRFBunches.clear();
 	auto locPID = locHypothesis->PID();
@@ -1263,13 +1286,13 @@ bool DSourceComboTimeHandler::Get_RFBunches_ChargedTrack(const DChargedTrackHypo
 	}
 */
 	auto locX4 = Get_ChargedPOCAToVertexX4(locHypothesis, locIsProductionVertex, locVertexPrimaryCombo, locVertex);
-	auto locVertexTime = locX4.T() - locTimeOffset;
+	auto locVertexTime = locX4.T();
 
 	auto locP = locHypothesis->momentum().Mag();
 	auto locCutFunc = Get_TimeCutFunction(locPID, locSystem);
 	auto locDeltaTCut = (locCutFunc != nullptr) ? locCutFunc->Eval(locP) : 3.0; //if null will return false, but still use for histogramming
 
-//	if(false) //COMPARE: Comparison-to-old mode
+	if(false) //COMPARE: Comparison-to-old mode
 	{
 		locVertexTime = locHypothesis->time();
 		locPropagatedRFTime += (locHypothesis->position().Z() - locVertex.Z())/SPEED_OF_LIGHT;

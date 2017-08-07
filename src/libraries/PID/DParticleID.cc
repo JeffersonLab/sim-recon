@@ -1877,7 +1877,7 @@ double DParticleID::Calc_TimingChiSq(const DNeutralParticleHypothesis* locNeutra
 		//this is pre-kinfit, and the vertex will be fit, so this isn't the final say anyway
 		//however, in case a pre-kinfit cut is used, we want it to be mostly accurate
 		//assume error on hit time dominates (over error on vertex positions (i.e. path length)
-		locTimeDifferenceVariance = locNeutralHypo->Get_NeutralShower()->dCovarianceMatrix(4, 4);
+		locTimeDifferenceVariance = (*(locNeutralHypo->Get_NeutralShower()->dCovarianceMatrix))(4, 4);
 	}
 	else
 		locTimeDifferenceVariance = (*locNeutralHypo->errorMatrix())(6, 6) + locStartTimeError*locStartTimeError;

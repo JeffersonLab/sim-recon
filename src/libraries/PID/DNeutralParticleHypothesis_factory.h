@@ -41,7 +41,6 @@ class DNeutralParticleHypothesis_factory : public jana::JFactory<DNeutralParticl
 		DNeutralParticleHypothesis* Get_Resource(void)
 		{
 			auto locHypo = dResourcePool_NeutralParticleHypothesis->Get_Resource();
-			locHypo->Reset();
 			return locHypo;
 		}
 
@@ -52,6 +51,7 @@ class DNeutralParticleHypothesis_factory : public jana::JFactory<DNeutralParticl
 		//RESOURCE POOL
 		vector<DNeutralParticleHypothesis*> dCreated;
 		DResourcePool<DNeutralParticleHypothesis>* dResourcePool_NeutralParticleHypothesis = nullptr;
+		shared_ptr<DResourcePool<TMatrixFSym>> dResourcePool_TMatrixFSym;
 
 		jerror_t init(void);						///< Called once at program start.
 		jerror_t brun(jana::JEventLoop *locEventLoop, int32_t runnumber);	///< Called everytime a new run number is detected.

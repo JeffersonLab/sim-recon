@@ -484,31 +484,9 @@ jerror_t DEventSourceREST::Extract_DBeamPhoton(hddm_r::HDDM *record,
 
 	DVector3 pos(0.0, 0.0, locTargetCenterZ);
 
-	//get cov matrices ahead of time (fewer locks)
-	//first, see how many are needed
-	size_t locNumMatrices = 0;
+	//now get the objects
    const hddm_r::TagmBeamPhotonList &locTagmBeamPhotonList = record->getTagmBeamPhotons();
    hddm_r::TagmBeamPhotonList::iterator locTAGMiter;
-   for(locTAGMiter = locTagmBeamPhotonList.begin(); locTAGMiter != locTagmBeamPhotonList.end(); ++locTAGMiter)
-   {
-      if(locTAGMiter->getJtag() == tag)
-         ++locNumMatrices;
-   }
-
-   const hddm_r::TaghBeamPhotonList &locTaghBeamPhotonList = record->getTaghBeamPhotons();
-   hddm_r::TaghBeamPhotonList::iterator locTAGHiter;
-   for(locTAGHiter = locTaghBeamPhotonList.begin(); locTAGHiter != locTaghBeamPhotonList.end(); ++locTAGHiter)
-   {
-      if(locTAGHiter->getJtag() == tag)
-         ++locNumMatrices;
-   }
-
-	//get the matrices
-   uint64_t locEventNumber = eventLoop->GetJEvent().GetEventNumber();
-	DApplication* locApplication = dynamic_cast<DApplication*>(japp);
-	deque<TMatrixFSym*> locMatrices = locApplication->Get_CovarianceMatrixResources(7, locNumMatrices, locEventNumber);
-
-	//now get the objects
    for(locTAGMiter = locTagmBeamPhotonList.begin(); locTAGMiter != locTagmBeamPhotonList.end(); ++locTAGMiter)
    {
       if (locTAGMiter->getJtag() != tag)
@@ -522,16 +500,17 @@ jerror_t DEventSourceREST::Extract_DBeamPhoton(hddm_r::HDDM *record,
 		gamma->setPosition(pos);
 		gamma->setTime(locTAGMiter->getT());
 
-		TMatrixFSym* loc7x7ErrorMatrix = locMatrices.back();
-		locMatrices.pop_back();
-		loc7x7ErrorMatrix->Zero();
-		gamma->setErrorMatrix(loc7x7ErrorMatrix);
+	      auto locCovarianceMatrix = dResourcePool_TMatrixFSym->Get_SharedResource();
+	      locCovarianceMatrix->ResizeTo(7, 7);
+	      locCovarianceMatrix->Zero();
+		gamma->setErrorMatrix(locCovarianceMatrix);
 
         tagmGeom->E_to_column(locTAGMiter->getE(), gamma->dCounter);
 		dbeam_photons.push_back(gamma);
    }
 
-
+   const hddm_r::TaghBeamPhotonList &locTaghBeamPhotonList = record->getTaghBeamPhotons();
+   hddm_r::TaghBeamPhotonList::iterator locTAGHiter;
    for(locTAGHiter = locTaghBeamPhotonList.begin(); locTAGHiter != locTaghBeamPhotonList.end(); ++locTAGHiter)
    {
       if (locTAGHiter->getJtag() != tag)
@@ -545,10 +524,10 @@ jerror_t DEventSourceREST::Extract_DBeamPhoton(hddm_r::HDDM *record,
 		gamma->setPosition(pos);
 		gamma->setTime(locTAGHiter->getT());
 
-		TMatrixFSym* loc7x7ErrorMatrix = locMatrices.back();
-		locMatrices.pop_back();
-		loc7x7ErrorMatrix->Zero();
-		gamma->setErrorMatrix(loc7x7ErrorMatrix);
+	      auto locCovarianceMatrix = dResourcePool_TMatrixFSym->Get_SharedResource();
+	      locCovarianceMatrix->ResizeTo(7, 7);
+	      locCovarianceMatrix->Zero();
+		gamma->setErrorMatrix(locCovarianceMatrix);
 
 		taghGeom->E_to_counter(locTAGHiter->getE(), gamma->dCounter);
 		dbeam_photons.push_back(gamma);
@@ -941,24 +920,9 @@ jerror_t DEventSourceREST::Extract_DTrackTimeBased(hddm_r::HDDM *record,
 
    vector<DTrackTimeBased*> data;
 
-	//get cov matrices ahead of time (fewer locks)
-	//first, see how many are needed
-	size_t locNumMatrices = 0;
+   // loop over chargedTrack records
    const hddm_r::ChargedTrackList &tracks = record->getChargedTracks();
    hddm_r::ChargedTrackList::iterator iter;
-   for (iter = tracks.begin(); iter != tracks.end(); ++iter)
-   {
-      if(iter->getJtag() == tag)
-         ++locNumMatrices;
-   }
-
-	//get the matrices
-   uint64_t locEventNumber = locEventLoop->GetJEvent().GetEventNumber();
-	DApplication* locApplication = dynamic_cast<DApplication*>(japp);
-	deque<TMatrixFSym*> loc7x7Matrices = locApplication->Get_CovarianceMatrixResources(7, locNumMatrices, locEventNumber);
-	deque<TMatrixFSym*> loc5x5Matrices = locApplication->Get_CovarianceMatrixResources(5, locNumMatrices, locEventNumber);
-
-   // loop over chargedTrack records
    for (iter = tracks.begin(); iter != tracks.end(); ++iter) {
       if (iter->getJtag() != tag) {
          continue;
@@ -979,8 +943,8 @@ jerror_t DEventSourceREST::Extract_DTrackTimeBased(hddm_r::HDDM *record,
       tra->setPosition(track_pos);
       tra->setMomentum(track_mom);
 
-      TMatrixFSym* loc5x5ErrorMatrix = loc5x5Matrices.back();
-		loc5x5Matrices.pop_back();
+      auto loc5x5ErrorMatrix = dResourcePool_TMatrixFSym->Get_SharedResource();
+      loc5x5ErrorMatrix->ResizeTo(5, 5);
       (*loc5x5ErrorMatrix)(0,0) = fit.getE11();
       (*loc5x5ErrorMatrix)(0,1) = (*loc5x5ErrorMatrix)(1,0) = fit.getE12();
       (*loc5x5ErrorMatrix)(0,2) = (*loc5x5ErrorMatrix)(2,0) = fit.getE13();
@@ -1013,9 +977,9 @@ jerror_t DEventSourceREST::Extract_DTrackTimeBased(hddm_r::HDDM *record,
       tra->setTrackingStateVector(vect[0], vect[1], vect[2], vect[3], vect[4]);
 
       // Set the 7x7 covariance matrix.
-      TMatrixFSym* loc7x7ErrorMatrix = loc7x7Matrices.back();
-		loc7x7Matrices.pop_back();
-	   Get7x7ErrorMatrix(tra->mass(), vect, loc5x5ErrorMatrix, loc7x7ErrorMatrix);
+      auto loc7x7ErrorMatrix = dResourcePool_TMatrixFSym->Get_SharedResource();
+      loc7x7ErrorMatrix->ResizeTo(7, 7);
+	   Get7x7ErrorMatrix(tra->mass(), vect, loc5x5ErrorMatrix.get(), loc7x7ErrorMatrix.get());
       tra->setErrorMatrix(loc7x7ErrorMatrix);
       (*loc7x7ErrorMatrix)(6, 6) = fit.getT0err()*fit.getT0err();
 

@@ -114,8 +114,9 @@ class DHistogramAction_ObjectMemory : public DAnalysisAction
 		unsigned int dEventCounter; //not the same as event #: running with multiple threads over many files, possibly starting at event # != 1
 
 		map<string, int> dBinMap;
-		DKinFitUtils_GlueX* dKinFitUtils;
 
+		DResourcePool<TMatrixFSym> dResourcePool_TMatrixFSym;
+		DResourcePool<DKinFitParticle> dResourcePool_KinFitParticle;
 		DResourcePool<DSourceCombo> dResourcePool_SourceCombo;
 		DResourcePool<vector<const DSourceCombo*>> dResourcePool_SourceComboVector;
 		DResourcePool<DKinematicData> dResourcePool_KinematicData;

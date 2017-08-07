@@ -22,6 +22,9 @@ class DBeamPhoton_factory:public jana::JFactory<DBeamPhoton>
 		{
 			dResourcePool_BeamPhotons = new DResourcePool<DBeamPhoton>();
 			dResourcePool_BeamPhotons->Set_ControlParams(100, 20, 2000, 0, 0); //MUST KEEP SHARED POOL EMPTY, OR ELSE WILL CRASH
+
+			dResourcePool_TMatrixFSym = std::make_shared<DResourcePool<TMatrixFSym>>();
+			dResourcePool_TMatrixFSym->Set_ControlParams(20, 20, 50, 50000, 0);
 		}
 
 		void Recycle_Resources(vector<const DBeamPhoton*>& locBeams){dResourcePool_BeamPhotons->Recycle(locBeams);}
@@ -55,6 +58,7 @@ class DBeamPhoton_factory:public jana::JFactory<DBeamPhoton>
 		//RESOURCE POOL
 		vector<DBeamPhoton*> dCreated;
 		DResourcePool<DBeamPhoton>* dResourcePool_BeamPhotons = nullptr;
+		shared_ptr<DResourcePool<TMatrixFSym>> dResourcePool_TMatrixFSym;
 
 		// config. parameters
 		double DELTA_T_DOUBLES_MAX;

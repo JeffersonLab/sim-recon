@@ -38,7 +38,6 @@ class DChargedTrackHypothesis_factory:public jana::JFactory<DChargedTrackHypothe
 		DChargedTrackHypothesis* Get_Resource(void)
 		{
 			auto locHypo = dResourcePool_ChargedTrackHypothesis->Get_Resource();
-			locHypo->Reset();
 			return locHypo;
 		}
 
@@ -50,6 +49,7 @@ class DChargedTrackHypothesis_factory:public jana::JFactory<DChargedTrackHypothe
 		//This causes the pool destructor to crash.  Instead, delete in fini();
 		vector<DChargedTrackHypothesis*> dCreated;
 		DResourcePool<DChargedTrackHypothesis>* dResourcePool_ChargedTrackHypothesis = nullptr;
+		shared_ptr<DResourcePool<TMatrixFSym>> dResourcePool_TMatrixFSym;
 
 		jerror_t init(void);						///< Called once at program start.
 		jerror_t brun(jana::JEventLoop *locEventLoop, int32_t runnumber);	///< Called everytime a new run number is detected.

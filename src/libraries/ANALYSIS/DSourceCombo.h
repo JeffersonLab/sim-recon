@@ -11,6 +11,7 @@
 #include "JANA/JEventLoop.h"
 
 #include "particleType.h"
+#include "DResettable.h"
 
 #include "PID/DNeutralShower.h"
 
@@ -140,7 +141,7 @@ struct DSourceComboInfo::DCompare_FurtherDecays
 	bool operator()(DSourceComboUse lhs, const pair<DSourceComboUse, unsigned char>& rhs) const{return DAnalysis::operator<(lhs, rhs.first);} //lookup
 };
 
-class DSourceCombo
+class DSourceCombo : public DResettable
 {
 	public:
 
@@ -154,6 +155,7 @@ class DSourceCombo
 		//SET MEMBERS
 		void Set_Members(const vector<pair<Particle_t, const JObject*>>& locSourceParticles, const DSourceCombosByUse_Small& locFurtherDecayCombos, bool locIsZIndependent = false);
 		void Reset(void);
+		void Release(void){Reset();};
 
 		//GET MEMBERS
 		vector<pair<Particle_t, const JObject*>> Get_SourceParticles(bool locEntireChainFlag = false, Charge_t locCharge = d_AllCharges) const;

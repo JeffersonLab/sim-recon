@@ -321,7 +321,6 @@ class DSourceComboer : public JObject
 inline DSourceCombo* DSourceComboer::Get_SourceComboResource(void)
 {
 	auto locCombo = dResourcePool_SourceCombo.Get_Resource();
-	locCombo->Reset();
 	dCreatedCombos.push_back(locCombo);
 	return locCombo;
 }

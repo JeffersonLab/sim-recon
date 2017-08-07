@@ -12,8 +12,6 @@ void DHistogramAction_ObjectMemory::Initialize(JEventLoop* locEventLoop)
 	for(size_t loc_i = 0; loc_i < locBinLabels.size(); ++loc_i)
 		dBinMap[locBinLabels[loc_i]] = loc_i + 1;
 
-	dKinFitUtils = new DKinFitUtils_GlueX(locEventLoop);
-
 	//CREATE THE HISTOGRAMS
 	//Since we are creating histograms, the contents of gDirectory will be modified: must use JANA-wide ROOT lock
 	japp->RootWriteLock(); //ACQUIRE ROOT LOCK!!
@@ -75,7 +73,7 @@ bool DHistogramAction_ObjectMemory::Perform_Action(JEventLoop* locEventLoop, con
 
 	//TMatrixFSym
 	auto locBin = dBinMap["TMatrixFSym"];
-	locNumObjectsMap[locBin] = (dynamic_cast<DApplication*>(japp))->Get_NumCovarianceMatrices();
+	locNumObjectsMap[locBin] = dResourcePool_TMatrixFSym.Get_NumObjectsAllThreads();
 	auto locMemory = (sizeof(TMatrixDSym) + 7*7*4)*locNumObjectsMap[locBin]; //assume 7x7 matrix of floats (4)
 	locMemoryMap[locBin] = locMemory;
 	locTotalMemory += locMemory;
@@ -179,8 +177,8 @@ bool DHistogramAction_ObjectMemory::Perform_Action(JEventLoop* locEventLoop, con
 
 	//DKinFitParticle
 	locBin = dBinMap["DKinFitParticle"];
-	locNumObjectsMap[locBin] = dKinFitUtils->Get_KinFitParticlePoolSize_Shared();
-	locMemory = sizeof(DKinematicData)*locNumObjectsMap[locBin];
+	locNumObjectsMap[locBin] = dResourcePool_KinFitParticle.Get_NumObjectsAllThreads();
+	locMemory = sizeof(DKinFitParticle)*locNumObjectsMap[locBin];
 	locMemoryMap[locBin] = locMemory;
 	locTotalMemory += locMemory;
 
@@ -3087,7 +3085,7 @@ bool DHistogramAction_TrackShowerErrors::Perform_Action(JEventLoop* locEventLoop
 		double locTheta = locMomentum.Theta()*180.0/TMath::Pi();
 		double locP = locMomentum.Mag();
 
-		const TMatrixFSym& locCovarianceMatrix = *(locChargedTrackHypothesis->errorMatrix());
+		const TMatrixFSym& locCovarianceMatrix = *(locChargedTrackHypothesis->errorMatrix().get());
 		double locPxError = sqrt(locCovarianceMatrix(0, 0));
 		double locPyError = sqrt(locCovarianceMatrix(1, 1));
 		double locPzError = sqrt(locCovarianceMatrix(2, 2));
@@ -3142,7 +3140,7 @@ bool DHistogramAction_TrackShowerErrors::Perform_Action(JEventLoop* locEventLoop
 		double locP = locMomentum.Mag();
 
 		const DNeutralShower* locNeutralShower = locNeutralParticles[loc_i]->dNeutralShower;
-		const TMatrixFSym& locCovarianceMatrix = locNeutralShower->dCovarianceMatrix;
+		const TMatrixFSym& locCovarianceMatrix = *(locNeutralShower->dCovarianceMatrix);
 		bool locIsBCALFlag = (locNeutralShower->dDetectorSystem == SYS_BCAL);
 		double locEError = sqrt(locCovarianceMatrix(0, 0));
 		double locXError = sqrt(locCovarianceMatrix(1, 1));

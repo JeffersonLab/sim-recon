@@ -5,6 +5,7 @@
 #include <iostream>
 
 #include "particleType.h"
+#include "DResettable.h"
 #include "DLorentzVector.h"
 #include "PID/DKinematicData.h"
 #include "PID/DNeutralParticleHypothesis.h"
@@ -18,11 +19,12 @@ using namespace jana;
 namespace DAnalysis
 {
 
-class DParticleComboStep
+class DParticleComboStep : public DResettable
 {
 	public:
 		// RESET:
 		void Reset(void);
+		void Release(void){Reset();};
 
 		//SET CONTENTS:
 		void Set_Contents(const DKinematicData* locInitialParticle, const vector<const DKinematicData*>& locFinalParticles, const DLorentzVector& locSpacetimeVertex);

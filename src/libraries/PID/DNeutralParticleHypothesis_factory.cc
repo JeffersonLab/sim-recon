@@ -24,6 +24,8 @@ jerror_t DNeutralParticleHypothesis_factory::init(void)
 	SetFactoryFlag(NOT_OBJECT_OWNER);
 	dResourcePool_NeutralParticleHypothesis = new DResourcePool<DNeutralParticleHypothesis>();
 	dResourcePool_NeutralParticleHypothesis->Set_ControlParams(30, 20, 600, 0, 0); //MUST KEEP SHARED POOL EMPTY, OR ELSE WILL CRASH
+	dResourcePool_TMatrixFSym = std::make_shared<DResourcePool<TMatrixFSym>>();
+	dResourcePool_TMatrixFSym->Set_ControlParams(20, 20, 50, 50000, 0);
 
 	return NOERROR;
 }
@@ -97,7 +99,9 @@ DNeutralParticleHypothesis* DNeutralParticleHypothesis_factory::Create_DNeutralP
 		return NULL; //invalid, will divide by zero when creating error matrix, so skip!
 
 	DVector3 locMomentum(locPath);
-	TMatrixFSym* locParticleCovariance = (locVertexCovMatrix != nullptr) ? (dynamic_cast<DApplication*>(japp))->Get_CovarianceMatrixResource(7) : nullptr;
+	shared_ptr<TMatrixFSym> locParticleCovariance = (locVertexCovMatrix != nullptr) ? dResourcePool_TMatrixFSym->Get_SharedResource() : nullptr;
+	if(locParticleCovariance != nullptr)
+		locParticleCovariance->ResizeTo(7, 7);
 
 	double locProjectedTime = 0.0, locPMag = 0.0;
 	if(locPID != Gamma)
@@ -113,7 +117,7 @@ DNeutralParticleHypothesis* DNeutralParticleHypothesis_factory::Create_DNeutralP
 		locMomentum.SetMag(locPMag);
 		locProjectedTime = locStartTime + (locVertexGuess.Z() - dTargetCenterZ)/29.9792458;
 		if(locVertexCovMatrix != nullptr)
-			Calc_ParticleCovariance_Massive(locNeutralShower, locVertexCovMatrix, locMass, locDeltaT, locMomentum, locPath, locParticleCovariance);
+			Calc_ParticleCovariance_Massive(locNeutralShower, locVertexCovMatrix, locMass, locDeltaT, locMomentum, locPath, locParticleCovariance.get());
 	}
 	else
 	{
@@ -122,7 +126,7 @@ DNeutralParticleHypothesis* DNeutralParticleHypothesis_factory::Create_DNeutralP
 		locProjectedTime = locHitTime - locFlightTime;
 		locMomentum.SetMag(locPMag);
 		if(locVertexCovMatrix != nullptr)
-			Calc_ParticleCovariance_Photon(locNeutralShower, locVertexCovMatrix, locMomentum, locPath, locParticleCovariance);
+			Calc_ParticleCovariance_Photon(locNeutralShower, locVertexCovMatrix, locMomentum, locPath, locParticleCovariance.get());
 	}
 
 	// Build DNeutralParticleHypothesis // dEdx not set
@@ -156,7 +160,7 @@ void DNeutralParticleHypothesis_factory::Calc_ParticleCovariance_Photon(const DN
 	for(unsigned int loc_l = 0; loc_l < 5; ++loc_l) //shower: e, x, y, z, t
 	{
 		for(unsigned int loc_m = 0; loc_m < 5; ++loc_m)
-			locShowerPlusVertCovariance(loc_l, loc_m) = locNeutralShower->dCovarianceMatrix(loc_l, loc_m);
+			locShowerPlusVertCovariance(loc_l, loc_m) = (*(locNeutralShower->dCovarianceMatrix))(loc_l, loc_m);
 	}
 	for(unsigned int loc_l = 0; loc_l < 3; ++loc_l) //vertex xyz
 	{
@@ -224,7 +228,7 @@ void DNeutralParticleHypothesis_factory::Calc_ParticleCovariance_Massive(const D
 	for(unsigned int loc_l = 0; loc_l < 5; ++loc_l) //shower: e, x, y, z, t
 	{
 		for(unsigned int loc_m = 0; loc_m < 5; ++loc_m)
-			locShowerPlusVertCovariance(loc_l, loc_m) = locNeutralShower->dCovarianceMatrix(loc_l, loc_m);
+			locShowerPlusVertCovariance(loc_l, loc_m) = (*(locNeutralShower->dCovarianceMatrix))(loc_l, loc_m);
 	}
 	for(unsigned int loc_l = 0; loc_l < 4; ++loc_l) //vertex xyzt
 	{

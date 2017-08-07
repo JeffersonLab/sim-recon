@@ -458,8 +458,9 @@ pair<const DKinFitChain*, const DKinFitResults*> DAnalysisResults_factory::Fit_K
 		if(locKinFitResults != nullptr)
 		{
 			//previous kinfit succeeded, build the output DKinFitChain and register this combo with that fit
-			set<DKinFitParticle*> locOutputKinFitParticles = locKinFitResults->Get_OutputKinFitParticles();
+			auto locOutputKinFitParticles = locKinFitResults->Get_OutputKinFitParticles();
 			const DKinFitChain* locOutputKinFitChain = dKinFitUtils->Build_OutputKinFitChain(locKinFitChain, locOutputKinFitParticles);
+			dKinFitUtils->Recycle_DKinFitChain(locKinFitChain); //original chain no longer needed: recycle
 			return std::make_pair(locOutputKinFitChain, locKinFitResults);
 		}
 
@@ -478,7 +479,7 @@ pair<const DKinFitChain*, const DKinFitResults*> DAnalysisResults_factory::Fit_K
 	DKinFitResults* locKinFitResults = nullptr;
 	if(locFitStatus) //success
 	{
-		set<DKinFitParticle*> locOutputKinFitParticles = dKinFitter->Get_KinFitParticles();
+		auto locOutputKinFitParticles = dKinFitter->Get_KinFitParticles();
 		const DKinFitChain* locOutputKinFitChain = dKinFitUtils->Build_OutputKinFitChain(locKinFitChain, locOutputKinFitParticles);
 		locKinFitResults = Build_KinFitResults(locParticleCombo, locKinFitType, locOutputKinFitChain);
 		dConstraintResultsMap.emplace(locResultPair, locKinFitResults);
@@ -509,7 +510,7 @@ DKinFitResults* DAnalysisResults_factory::Build_KinFitResults(const DParticleCom
 	locKinFitResults->Set_NumUnknowns(dKinFitter->Get_NumUnknowns());
 
 	//Output particles and constraints
-	set<DKinFitParticle*> locOutputKinFitParticles = dKinFitter->Get_KinFitParticles();
+	auto locOutputKinFitParticles = dKinFitter->Get_KinFitParticles();
 	locKinFitResults->Add_OutputKinFitParticles(locOutputKinFitParticles);
 	locKinFitResults->Add_KinFitConstraints(dKinFitter->Get_KinFitConstraints());
 
@@ -523,12 +524,12 @@ DKinFitResults* DAnalysisResults_factory::Build_KinFitResults(const DParticleCom
 	dKinFitter->Get_Pulls(locPulls_KinFitParticle);
 
 	//By looping over the pulls:
-	map<DKinFitParticle*, map<DKinFitPullType, double> >::iterator locMapIterator = locPulls_KinFitParticle.begin();
+	map<shared_ptr<DKinFitParticle>, map<DKinFitPullType, double> >::iterator locMapIterator = locPulls_KinFitParticle.begin();
 	for(; locMapIterator != locPulls_KinFitParticle.end(); ++locMapIterator)
 	{
-		DKinFitParticle* locOutputKinFitParticle = locMapIterator->first;
-		DKinFitParticle* locInputKinFitParticle = dKinFitUtils->Get_InputKinFitParticle(locOutputKinFitParticle);
-		const JObject* locSourceJObject = dKinFitUtils->Get_SourceJObject(locInputKinFitParticle);
+		auto locOutputKinFitParticle = locMapIterator->first;
+		auto locInputKinFitParticle = dKinFitUtils->Get_InputKinFitParticle(locOutputKinFitParticle);
+		auto locSourceJObject = dKinFitUtils->Get_SourceJObject(locInputKinFitParticle);
 
 		locPulls_JObject[locSourceJObject] = locMapIterator->second;
 	}
@@ -548,7 +549,7 @@ DKinFitResults* DAnalysisResults_factory::Build_KinFitResults(const DParticleCom
 			continue; //*locParticleIterator was an input object //not directly used in the fit
 		}
 
-		DKinFitParticle* locInputKinFitParticle = dKinFitUtils->Get_InputKinFitParticle(locKinFitParticle);
+		auto locInputKinFitParticle = dKinFitUtils->Get_InputKinFitParticle(locKinFitParticle);
 		if(locInputKinFitParticle != NULL)
 		{
 			locSourceJObject = dKinFitUtils->Get_SourceJObject(locInputKinFitParticle);

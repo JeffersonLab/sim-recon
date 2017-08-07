@@ -468,7 +468,7 @@ void DHistogramAction_ParticleComboGenReconComparison::Fill_ChargedHists(const D
 	double locDeltaPhi = locChargedTrackHypothesis->momentum().Phi()*180.0/TMath::Pi() - locMCThrown->momentum().Phi()*180.0/TMath::Pi();
 	double locDeltaT = locChargedTrackHypothesis->time() - locMCThrown->time(); //time comparison isn't fair if track comes from a detached vertex!!!
 	double locDeltaVertexZ = locChargedTrackHypothesis->position().Z() - locMCThrown->position().Z();
-	const TMatrixDSym& locCovarianceMatrix = *(locChargedTrackHypothesis->errorMatrix());
+	const TMatrixDSym& locCovarianceMatrix = *(locChargedTrackHypothesis->errorMatrix().get());
 
 	double locStartTime = locThrownEventRFBunch->dTime + (locMCThrown->z() - dTargetZCenter)/29.9792458;
 	double locTimePull = (locStartTime - locChargedTrackHypothesis->time())/sqrt(locCovarianceMatrix(6, 6));
@@ -569,7 +569,7 @@ void DHistogramAction_ParticleComboGenReconComparison::Fill_NeutralHists(const D
 	double locDeltaPhi = locNeutralP3.Phi()*180.0/TMath::Pi() - locMCThrown->momentum().Phi()*180.0/TMath::Pi();
 	double locDeltaT = locNeutralParticleHypothesis->time() - locMCThrown->time(); //time comparison isn't fair if track comes from a detached vertex!!!
 	double locDeltaVertexZ = locNeutralParticleHypothesis->position().Z() - locMCThrown->position().Z();
-	const TMatrixDSym& locCovarianceMatrix = *(locNeutralParticleHypothesis->errorMatrix());
+	const TMatrixDSym& locCovarianceMatrix = *(locNeutralParticleHypothesis->errorMatrix().get());
 
 	double locStartTime = locThrownEventRFBunch->dTime + (locMCThrown->z() - dTargetZCenter)/29.9792458;
 	double locTimePull = (locStartTime - locNeutralParticleHypothesis->time())/sqrt(locCovarianceMatrix(6, 6));
@@ -590,7 +590,7 @@ void DHistogramAction_ParticleComboGenReconComparison::Fill_NeutralHists(const D
 		locEPull = (locNeutralParticleHypothesis->energy() - locMCThrown->energy())/locEUncertainty;
 	}
 	else
-		locEPull = (locNeutralShower->dEnergy - locMCThrown->energy())/sqrt(locNeutralShower->dCovarianceMatrix(0, 0));
+		locEPull = (locNeutralShower->dEnergy - locMCThrown->energy())/sqrt((*(locNeutralShower->dCovarianceMatrix))(0, 0));
 
 	//FILL HISTOGRAMS
 	//Since we are filling histograms local to this action, it will not interfere with other ROOT operations: can use action-wide ROOT lock
@@ -1297,7 +1297,7 @@ bool DHistogramAction_GenReconTrackComparison::Perform_Action(JEventLoop* locEve
 		locDeltaPhi = locChargedTrackHypothesis->momentum().Phi()*180.0/TMath::Pi() - locMCThrown->momentum().Phi()*180.0/TMath::Pi();
 		locDeltaT = locChargedTrackHypothesis->time() - locMCThrown->time(); //time comparison isn't fair if track comes from a detached vertex!!!
 		locDeltaVertexZ = locChargedTrackHypothesis->position().Z() - locMCThrown->position().Z();
-		const TMatrixDSym& locCovarianceMatrix = *(locChargedTrackHypothesis->errorMatrix());
+		const TMatrixDSym& locCovarianceMatrix = *(locChargedTrackHypothesis->errorMatrix().get());
 
 		vector<const DTrackTimeBased*> locTrackTimeBasedVector;
 		locChargedTrackHypothesis->Get(locTrackTimeBasedVector);
@@ -1416,7 +1416,7 @@ bool DHistogramAction_GenReconTrackComparison::Perform_Action(JEventLoop* locEve
 		locDeltaPhi = locNeutralParticleHypothesis->momentum().Phi()*180.0/TMath::Pi() - locMCThrown->momentum().Phi()*180.0/TMath::Pi();
 		locDeltaT = locNeutralParticleHypothesis->time() - locMCThrown->time(); //time comparison isn't fair if track comes from a detached vertex!!!
 		locDeltaVertexZ = locNeutralParticleHypothesis->position().Z() - locMCThrown->position().Z();
-		const TMatrixDSym& locCovarianceMatrix = *(locNeutralParticleHypothesis->errorMatrix());
+		const TMatrixDSym& locCovarianceMatrix = *(locNeutralParticleHypothesis->errorMatrix().get());
 
 		double locStartTime = locThrownEventRFBunch->dTime + (locMCThrown->z() - dTargetZCenter)/29.9792458;
 		double locTimePull = (locStartTime - locNeutralParticleHypothesis->time())/sqrt(locCovarianceMatrix(6, 6));
@@ -1464,7 +1464,7 @@ bool DHistogramAction_GenReconTrackComparison::Perform_Action(JEventLoop* locEve
 					continue;
 				double locPull = 0.0;
 				if(dPullTypes[loc_j] == d_EPull)
-					locPull = (locNeutralShower->dEnergy - locMCThrown->energy())/sqrt(locNeutralShower->dCovarianceMatrix(0, 0));
+					locPull = (locNeutralShower->dEnergy - locMCThrown->energy())/sqrt((*(locNeutralShower->dCovarianceMatrix))(0, 0));
 				else if((dPullTypes[loc_j] >= d_XxPull) && (dPullTypes[loc_j] <= d_XzPull))
 				{
 					int locIndex = int(dPullTypes[loc_j] - d_XxPull);

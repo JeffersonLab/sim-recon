@@ -6,6 +6,7 @@
 #include <memory>
 #include <limits>
 
+#include "DResettable.h"
 #include <PID/DKinematicData.h>
 #include "TRACKING/DTrackTimeBased.h"
 #include <PID/DDetectorMatches.h>
@@ -25,6 +26,7 @@ class DChargedTrackHypothesis : public DKinematicData
 		DChargedTrackHypothesis& operator=(const DChargedTrackHypothesis& locSourceData);
 
 		void Reset(void);
+		void Release(void);
 
 		//SHARE RESOURCES
 		void Share_FromInput(const DChargedTrackHypothesis* locSourceData, bool locShareTrackingFlag, bool locShareTimingFlag, bool locShareKinematicsFlag);
@@ -89,48 +91,52 @@ class DChargedTrackHypothesis : public DKinematicData
 			AddString(items, "PID_FOM", "%f", dTimingInfo->dFOM);
 		}
 
-		struct DTimingInfo
+		class DTimingInfo : public DResettable
 		{
-			void Reset(void);
+			public:
+				void Reset(void);
+				void Release(void){};
 
-			//t0 is RF time at track poca to common vertex
-			double dt0 = 0.0;
-			double dt0_err = 0.0;
-			DetectorSystem_t dt0_detector = SYS_NULL;
+				//t0 is RF time at track poca to common vertex
+				double dt0 = 0.0;
+				double dt0_err = 0.0;
+				DetectorSystem_t dt0_detector = SYS_NULL;
 
-			unsigned int dNDF_Timing = 0;
-			double dChiSq_Timing = 0.0;
+				unsigned int dNDF_Timing = 0;
+				double dChiSq_Timing = 0.0;
 
-			//technically, these can depend on the tracking chisq also, but no one in their right mind would change the tracking dE/dx info
-			unsigned int dNDF = 0; //total NDF used for PID determination
-			double dChiSq = 0.0; //total chi-squared used for PID determination
-			double dFOM = 0.0; //overall FOM for PID determination
+				//technically, these can depend on the tracking chisq also, but no one in their right mind would change the tracking dE/dx info
+				unsigned int dNDF = 0; //total NDF used for PID determination
+				double dChiSq = 0.0; //total chi-squared used for PID determination
+				double dFOM = 0.0; //overall FOM for PID determination
 
-			//problem: how to store timing information accurately?
+				//problem: how to store timing information accurately?
 
-			//at the comboing stage, we don't want to evaluate the timing at the track POCA to the beamline, because that can be inaccurate
-			//e.g. for very-low-theta tracks this position is not well defined
-			//instead, we want to evaluate it at the POCA to the reconstructed vertex position on a combo-by-combo basis
+				//at the comboing stage, we don't want to evaluate the timing at the track POCA to the beamline, because that can be inaccurate
+				//e.g. for very-low-theta tracks this position is not well defined
+				//instead, we want to evaluate it at the POCA to the reconstructed vertex position on a combo-by-combo basis
 
-			//however, to save memory, we want to share the kinematics (including time!) with the original (non-combo) hypothesis:
-				//both are valid points on the track, and we don't want to recompute the covariance matrix (TONS of memory needed), etc.
-			//So, that means we need to store the time at the poca to the vertex separately
-			double dTimeAtPOCAToVertex = 0.0;
+				//however, to save memory, we want to share the kinematics (including time!) with the original (non-combo) hypothesis:
+					//both are valid points on the track, and we don't want to recompute the covariance matrix (TONS of memory needed), etc.
+				//So, that means we need to store the time at the poca to the vertex separately
+				double dTimeAtPOCAToVertex = 0.0;
 		};
 
-		struct DTrackingInfo
+		class DTrackingInfo : public DResettable
 		{
-			void Reset(void);
+			public:
+				void Reset(void);
+				void Release(void){Reset();};
 
-			unsigned int dNDF_DCdEdx = 0;
-			double dChiSq_DCdEdx = 0.0;
+				unsigned int dNDF_DCdEdx = 0;
+				double dChiSq_DCdEdx = 0.0;
 
-			const DTrackTimeBased* dTrackTimeBased = nullptr; //can get candidateid from here
+				const DTrackTimeBased* dTrackTimeBased = nullptr; //can get candidateid from here
 
-			shared_ptr<const DSCHitMatchParams> dSCHitMatchParams = nullptr;
-			shared_ptr<const DTOFHitMatchParams> dTOFHitMatchParams = nullptr;
-			shared_ptr<const DBCALShowerMatchParams> dBCALShowerMatchParams = nullptr;
-			shared_ptr<const DFCALShowerMatchParams> dFCALShowerMatchParams = nullptr;
+				shared_ptr<const DSCHitMatchParams> dSCHitMatchParams = nullptr;
+				shared_ptr<const DTOFHitMatchParams> dTOFHitMatchParams = nullptr;
+				shared_ptr<const DBCALShowerMatchParams> dBCALShowerMatchParams = nullptr;
+				shared_ptr<const DFCALShowerMatchParams> dFCALShowerMatchParams = nullptr;
 		};
 
 	private:
@@ -147,11 +153,7 @@ class DChargedTrackHypothesis : public DKinematicData
 /************************************************************** CONSTRUCTORS & OPERATORS ***************************************************************/
 
 inline DChargedTrackHypothesis::DChargedTrackHypothesis(void) :
-dTimingInfo(dResourcePool_TimingInfo->Get_SharedResource()), dTrackingInfo(dResourcePool_TrackingInfo->Get_SharedResource())
-{
-	dTimingInfo->Reset();
-	dTrackingInfo->Reset();
-}
+dTimingInfo(dResourcePool_TimingInfo->Get_SharedResource()), dTrackingInfo(dResourcePool_TrackingInfo->Get_SharedResource()) {}
 
 inline DChargedTrackHypothesis::DChargedTrackHypothesis(const DChargedTrackHypothesis& locSourceData, bool locShareTrackingFlag,
 		bool locShareTimingFlag, bool locShareKinematicsFlag) : DKinematicData(locSourceData, locShareKinematicsFlag)
@@ -180,8 +182,6 @@ inline DChargedTrackHypothesis::DChargedTrackHypothesis(const DTrackTimeBased* l
 	//Default is TO share kinematic data
 	dTrackingInfo = dResourcePool_TrackingInfo->Get_SharedResource();
 	dTimingInfo = dResourcePool_TimingInfo->Get_SharedResource();
-	dTimingInfo->Reset();
-	dTrackingInfo->Reset();
 	dTrackingInfo->dTrackTimeBased = locSourceData;
 }
 
@@ -301,9 +301,14 @@ inline void DChargedTrackHypothesis::Reset(void)
 {
 	DKinematicData::Reset();
 	dTimingInfo = dResourcePool_TimingInfo->Get_SharedResource(); //not safe to reset individually, since you don't know what it's shared with
-	dTimingInfo->Reset();
 	dTrackingInfo = dResourcePool_TrackingInfo->Get_SharedResource(); //not safe to reset individually, since you don't know what it's shared with
-	dTrackingInfo->Reset();
+}
+
+inline void DChargedTrackHypothesis::Release(void)
+{
+	DKinematicData::Release();
+	dTimingInfo = nullptr;
+	dTrackingInfo = nullptr;
 }
 
 inline void DChargedTrackHypothesis::DTimingInfo::Reset(void)
