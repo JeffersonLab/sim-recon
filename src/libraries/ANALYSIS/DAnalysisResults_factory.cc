@@ -18,7 +18,7 @@ jerror_t DAnalysisResults_factory::init(void)
 {
 	dDebugLevel = 0;
 	dMinThrownMatchFOM = 5.73303E-7;
-	dResourcePool_KinFitResults.Set_ControlParams(100, 20, 1000, 1000, 0);
+	dResourcePool_KinFitResults.Set_ControlParams(100, 20, 300, 500, 0);
 
 	return NOERROR;
 }

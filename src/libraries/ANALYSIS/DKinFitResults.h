@@ -123,6 +123,7 @@ inline void DKinFitResults::Reset(void)
 
 inline void DKinFitResults::Release(void)
 {
+	dVXi.ResizeTo(0, 0);
 	dPulls.clear();
 	dOutputKinFitParticles.clear();
 	dKinFitConstraints.clear();
