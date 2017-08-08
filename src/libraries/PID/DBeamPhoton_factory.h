@@ -21,10 +21,10 @@ class DBeamPhoton_factory:public jana::JFactory<DBeamPhoton>
 		DBeamPhoton_factory(void)
 		{
 			dResourcePool_BeamPhotons = new DResourcePool<DBeamPhoton>();
-			dResourcePool_BeamPhotons->Set_ControlParams(100, 20, 200, 1000, 0);
+			dResourcePool_BeamPhotons->Set_ControlParams(100, 20, 200, 500, 0);
 
 			dResourcePool_TMatrixFSym = std::make_shared<DResourcePool<TMatrixFSym>>();
-			dResourcePool_TMatrixFSym->Set_ControlParams(20, 20, 50, 50000, 0);
+			dResourcePool_TMatrixFSym->Set_ControlParams(20, 20, 50);
 		}
 
 		void Recycle_Resources(vector<const DBeamPhoton*>& locBeams){dResourcePool_BeamPhotons->Recycle(locBeams);}

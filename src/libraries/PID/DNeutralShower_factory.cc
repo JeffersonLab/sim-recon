@@ -29,7 +29,7 @@ inline bool DNeutralShower_SortByEnergy(const DNeutralShower* locNeutralShower1,
 //------------------
 jerror_t DNeutralShower_factory::init(void)
 {
-	dResourcePool_TMatrixFSym->Set_ControlParams(20, 20, 20, 50000, 0);
+	dResourcePool_TMatrixFSym->Set_ControlParams(20, 20, 20);
 	return NOERROR;
 }
 

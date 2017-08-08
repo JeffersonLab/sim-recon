@@ -539,7 +539,7 @@ DTrackFitterKalmanSIMD::DTrackFitterKalmanSIMD(JEventLoop *loop):DTrackFitter(lo
    brentCheckHists[1]=new TH2I("CentralBrentCheck","DOCA vs ds", 100, -5., 5., 100, 0.0, 1.5);
   }
    
-	dResourcePool_TMatrixFSym->Set_ControlParams(20, 20, 50, 50000, 0);
+	dResourcePool_TMatrixFSym->Set_ControlParams(20, 20, 50);
 }
 
 //-----------------

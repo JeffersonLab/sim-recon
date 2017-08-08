@@ -96,10 +96,12 @@ template <typename DType> class DResourcePool : public std::enable_shared_from_t
 
 	public:
 		DResourcePool(void);
+		DResourcePool(size_t locGetBatchSize, size_t locNumToAllocateAtOnce, size_t locMaxLocalPoolSize);
 		DResourcePool(size_t locGetBatchSize, size_t locNumToAllocateAtOnce, size_t locMaxLocalPoolSize, size_t locMaxSharedPoolSize, size_t locDebugLevel);
 		~DResourcePool(void);
 
-		void Set_ControlParams(size_t locGetBatchSize = 100, size_t locNumToAllocateAtOnce = 20, size_t locMaxLocalPoolSize = 2000, size_t locMaxSharedPoolSize = 10000, size_t locDebugLevel = 0);
+		void Set_ControlParams(size_t locGetBatchSize, size_t locNumToAllocateAtOnce, size_t locMaxLocalPoolSize);
+		void Set_ControlParams(size_t locGetBatchSize, size_t locNumToAllocateAtOnce, size_t locMaxLocalPoolSize, size_t locMaxSharedPoolSize, size_t locDebugLevel);
 		DType* Get_Resource(void);
 		shared_ptr<DType> Get_SharedResource(void);
 
@@ -189,10 +191,15 @@ template <typename DType> size_t DResourcePool<DType>::dMaxSharedPoolSize{1000};
 template <typename DType> size_t DResourcePool<DType>::dPoolCounter{0};
 template <typename DType> atomic<size_t> DResourcePool<DType>::dObjectCounter{0};
 
-//CONSTRUCTOR
+//CONSTRUCTORS
 template <typename DType> DResourcePool<DType>::DResourcePool(size_t locGetBatchSize, size_t locNumToAllocateAtOnce, size_t locMaxLocalPoolSize, size_t locMaxSharedPoolSize, size_t locDebugLevel) : DResourcePool()
 {
 	Set_ControlParams(locGetBatchSize, locNumToAllocateAtOnce, locMaxLocalPoolSize, locMaxSharedPoolSize, locDebugLevel);
+}
+
+template <typename DType> DResourcePool<DType>::DResourcePool(size_t locGetBatchSize, size_t locNumToAllocateAtOnce, size_t locMaxLocalPoolSize) : DResourcePool()
+{
+	Set_ControlParams(locGetBatchSize, locNumToAllocateAtOnce, locMaxLocalPoolSize);
 }
 
 template <typename DType> DResourcePool<DType>::DResourcePool(void)
@@ -278,6 +285,13 @@ template <typename DType> void DResourcePool<DType>::Set_ControlParams(size_t lo
 		dMaxSharedPoolSize = locMaxSharedPoolSize;
 		dResourcePool_Shared.reserve(dMaxSharedPoolSize);
 	} //UNLOCK
+}
+
+template <typename DType> void DResourcePool<DType>::Set_ControlParams(size_t locGetBatchSize, size_t locNumToAllocateAtOnce, size_t locMaxLocalPoolSize)
+{
+	dGetBatchSize = locGetBatchSize;
+	dNumToAllocateAtOnce = (locNumToAllocateAtOnce > 0) ? locNumToAllocateAtOnce : 1;
+	dMaxLocalPoolSize = locMaxLocalPoolSize;
 }
 
 template <typename DType> shared_ptr<DType> DResourcePool<DType>::Get_SharedResource(void)

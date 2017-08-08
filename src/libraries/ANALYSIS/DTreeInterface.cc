@@ -282,11 +282,11 @@ void DTreeInterface::Fill(DTreeFillData& locTreeFillData)
 					Change_ArraySize(locBranchName, locTypeIndex, locLargestIndexFilled + 1);
 					locFundamentalArraySizeMap[locBranchName] = locLargestIndexFilled + 1;
 				}
-				else if(locCurrentArraySize > dMaxArraySize)
+/*				else if(locCurrentArraySize > dMaxArraySize)
 				{
 					Change_ArraySize(locBranchName, locTypeIndex, dMaxArraySize);
 					locFundamentalArraySizeMap[locBranchName] = dMaxArraySize;
-				}
+				} */
 			}
 			else //is clones array: clear it
 			{

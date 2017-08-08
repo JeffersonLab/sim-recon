@@ -34,7 +34,7 @@ jerror_t DChargedTrackHypothesis_factory::init(void)
 	dResourcePool_ChargedTrackHypothesis = new DResourcePool<DChargedTrackHypothesis>();
 	dResourcePool_ChargedTrackHypothesis->Set_ControlParams(30, 20, 200, 2000, 0);
 	dResourcePool_TMatrixFSym = std::make_shared<DResourcePool<TMatrixFSym>>();
-	dResourcePool_TMatrixFSym->Set_ControlParams(20, 20, 50, 50000, 0);
+	dResourcePool_TMatrixFSym->Set_ControlParams(20, 20, 50);
 	return NOERROR;
 }
 

@@ -10,7 +10,7 @@ DKinFitUtils::DKinFitUtils(void)
 	dUpdateCovarianceMatricesFlag = true;
 
 	dResourcePool_TMatrixFSym = std::make_shared<DResourcePool<TMatrixFSym>>();
-	dResourcePool_TMatrixFSym->Set_ControlParams(100, 20, 1000, 50000, 0);
+	dResourcePool_TMatrixFSym->Set_ControlParams(20, 20, 100);
 
 	dResourcePool_KinFitParticle = std::make_shared<DResourcePool<DKinFitParticle>>();
 	dResourcePool_KinFitParticle->Set_ControlParams(50, 20, 500, 5000, 0);

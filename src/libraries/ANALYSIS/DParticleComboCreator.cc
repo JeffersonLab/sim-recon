@@ -12,6 +12,8 @@ DParticleComboCreator::DParticleComboCreator(JEventLoop* locEventLoop, const DSo
 	dKinFitUtils = new DKinFitUtils_GlueX(locEventLoop);
 
 	dResourcePool_KinematicData.Set_ControlParams(20, 20, 200, 1000, 0);
+	dResourcePool_ParticleCombo.Set_ControlParams(100, 20, 1000, 3000, 0);
+	dResourcePool_ParticleComboStep.Set_ControlParams(100, 50, 1500, 4000, 0);
 
 	vector<const DNeutralParticleHypothesis*> locNeutralParticleHypotheses;
 	locEventLoop->Get(locNeutralParticleHypotheses); //make sure that brun() is called for the default factory!!!

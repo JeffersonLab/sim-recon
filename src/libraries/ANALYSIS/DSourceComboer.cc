@@ -156,7 +156,8 @@ namespace DAnalysis
 
 DSourceComboer::DSourceComboer(JEventLoop* locEventLoop)
 {
-	dResourcePool_SourceComboVector.Set_ControlParams(10, 5, 200, 200, 0); //Never recycle to other threads
+	dResourcePool_SourceCombo.Set_ControlParams(100, 50, 1000, 20000, 0);
+	dResourcePool_SourceComboVector.Set_ControlParams(10, 5, 200, 1200, 0);
 	dCreatedCombos.reserve(100000);
 	dCreatedComboVectors.reserve(1000);
 
