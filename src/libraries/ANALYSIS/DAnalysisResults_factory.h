@@ -46,12 +46,6 @@ class DAnalysisResults_factory : public jana::JFactory<DAnalysisResults>
 {
 	public:
 		~DAnalysisResults_factory(void){delete dSourceComboer;}
-		size_t Get_KinFitConstraintVertexPoolSize(void) const{return dKinFitUtils->Get_KinFitConstraintVertexPoolSize();};
-		size_t Get_KinFitConstraintSpacetimePoolSize(void) const{return dKinFitUtils->Get_KinFitConstraintSpacetimePoolSize();};
-		size_t Get_KinFitConstraintP4PoolSize(void) const{return dKinFitUtils->Get_KinFitConstraintP4PoolSize();};
-		size_t Get_KinFitConstraintMassPoolSize(void) const{return dKinFitUtils->Get_KinFitConstraintMassPoolSize();};
-		size_t Get_KinFitChainPoolSize(void) const{return dKinFitUtils->Get_KinFitChainPoolSize();};
-		size_t Get_KinFitChainStepPoolSize(void) const{return dKinFitUtils->Get_KinFitChainStepPoolSize();};
 
 	private:
 		jerror_t init(void);						///< Called once at program start.
@@ -65,8 +59,8 @@ class DAnalysisResults_factory : public jana::JFactory<DAnalysisResults>
 		bool Execute_Actions(JEventLoop* locEventLoop, bool locIsKinFit, const DParticleCombo* locCombo, const DParticleCombo* locTrueCombo, bool locPreKinFitFlag, const vector<DAnalysisAction*>& locActions, size_t& locActionIndex, vector<size_t>& locNumCombosSurvived, int& locLastActionTrueComboSurvives);
 
 		const DParticleCombo* Handle_ComboFit(const DReactionVertexInfo* locReactionVertexInfo, const DParticleCombo* locParticleCombo, const DReaction* locReaction);
-		pair<const DKinFitChain*, const DKinFitResults*> Fit_Kinematics(const DReactionVertexInfo* locReactionVertexInfo, const DReaction* locReaction, const DParticleCombo* locParticleCombo, DKinFitType locKinFitType, bool locUpdateCovMatricesFlag);
-		DKinFitResults* Build_KinFitResults(const DParticleCombo* locParticleCombo, DKinFitType locKinFitType, const DKinFitChain* locKinFitChain);
+		pair<shared_ptr<const DKinFitChain>, const DKinFitResults*> Fit_Kinematics(const DReactionVertexInfo* locReactionVertexInfo, const DReaction* locReaction, const DParticleCombo* locParticleCombo, DKinFitType locKinFitType, bool locUpdateCovMatricesFlag);
+		DKinFitResults* Build_KinFitResults(const DParticleCombo* locParticleCombo, DKinFitType locKinFitType, const shared_ptr<const DKinFitChain>& locKinFitChain);
 
 		unsigned int dDebugLevel = 0;
 		DApplication* dApplication;
@@ -79,7 +73,7 @@ class DAnalysisResults_factory : public jana::JFactory<DAnalysisResults>
 		unsigned int dKinFitDebugLevel = 0;
 		DKinFitter* dKinFitter;
 		DKinFitUtils_GlueX* dKinFitUtils;
-		map<pair<set<DKinFitConstraint*>, bool>, DKinFitResults*> dConstraintResultsMap; //used for determining if kinfit results will be identical //bool: update cov matrix flag
+		map<pair<set<shared_ptr<DKinFitConstraint>>, bool>, DKinFitResults*> dConstraintResultsMap; //used for determining if kinfit results will be identical //bool: update cov matrix flag
 		map<tuple<const DParticleCombo*, DKinFitType, bool>, const DParticleCombo*> dPreToPostKinFitComboMap;
 
 		DResourcePool<DKinFitResults> dResourcePool_KinFitResults;

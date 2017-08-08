@@ -21,6 +21,9 @@ class DKinFitConstraint_Spacetime : public DKinFitConstraint_Vertex
 	friend class DKinFitUtils;
 
 	public:
+		DKinFitConstraint_Spacetime(void);
+		~DKinFitConstraint_Spacetime(void){}
+
 		double Get_InitTimeGuess(void) const{return dInitTimeGuess;};
 		void Set_InitTimeGuess(double locInitTimeGuess){dInitTimeGuess = locInitTimeGuess;};
 
@@ -35,11 +38,10 @@ class DKinFitConstraint_Spacetime : public DKinFitConstraint_Vertex
 
 		void Print_ConstraintInfo(void) const;
 
-	private:
-		DKinFitConstraint_Spacetime(void);
-		~DKinFitConstraint_Spacetime(void){}
-
 		void Reset(void);
+		void Release(void);
+
+	private:
 
 		void Set_CommonTime(double locTime);
 		void Set_CommonVertex(const TVector3& locVertex);
@@ -62,6 +64,12 @@ inline void DKinFitConstraint_Spacetime::Reset(void)
 {
 	DKinFitConstraint_Vertex::Reset();
 	dInitTimeGuess = 0.0;
+	dOnlyConstrainTimeParticles.clear();
+}
+
+inline void DKinFitConstraint_Spacetime::Release(void)
+{
+	DKinFitConstraint_Vertex::Release();
 	dOnlyConstrainTimeParticles.clear();
 }
 

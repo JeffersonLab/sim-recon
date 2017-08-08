@@ -164,7 +164,7 @@ void DKinFitter::Prepare_ConstraintsAndParticles(void)
 	if(dDebugLevel > 5)
 	{
 		cout << "DKinFitter: Pre-fit constraint info:" << endl;
-		set<DKinFitConstraint*>::iterator locConstraintIterator = dKinFitConstraints.begin();
+		auto locConstraintIterator = dKinFitConstraints.begin();
 		for(; locConstraintIterator != dKinFitConstraints.end(); ++locConstraintIterator)
 			(*locConstraintIterator)->Print_ConstraintInfo();
 	}
@@ -178,13 +178,13 @@ void DKinFitter::Prepare_ConstraintsAndParticles(void)
 	if(dDebugLevel > 10)
 	{
 		cout << "DKinFitter: Cloned (Fit) constraint info:" << endl;
-		set<DKinFitConstraint*>::iterator locConstraintIterator = dKinFitConstraints.begin();
+		auto locConstraintIterator = dKinFitConstraints.begin();
 		for(; locConstraintIterator != dKinFitConstraints.end(); ++locConstraintIterator)
 			(*locConstraintIterator)->Print_ConstraintInfo();
 	}
 
 	//Build dKinFitParticles, dParticleConstraintMap & _Direct
-	set<DKinFitConstraint*>::iterator locConstraintIterator = dKinFitConstraints.begin();
+	auto locConstraintIterator = dKinFitConstraints.begin();
 	for(; locConstraintIterator != dKinFitConstraints.end(); ++locConstraintIterator)
 	{
 		auto locKinFitParticles = (*locConstraintIterator)->Get_AllParticles();
@@ -203,7 +203,7 @@ void DKinFitter::Prepare_ConstraintsAndParticles(void)
 			//now, check for particles that may not directly be used in this constraint, but ARE used to define this decaying particle
 			
 			//this will not be the case if the particle is in a vertex constraint, but only as a no-constrain particle
-			DKinFitConstraint_Vertex* locVertexConstraint = dynamic_cast<DKinFitConstraint_Vertex*>(*locConstraintIterator);
+			auto locVertexConstraint = std::dynamic_pointer_cast<DKinFitConstraint_Vertex>(*locConstraintIterator);
 			if(locVertexConstraint != NULL)
 			{
 				auto locNoConstrainParticles = locVertexConstraint->Get_NoConstrainParticles();
@@ -263,8 +263,8 @@ void DKinFitter::Prepare_ConstraintsAndParticles(void)
 		(*locVertexIterator)->Set_CommonVertex((*locVertexIterator)->Get_InitVertexGuess());
 
 	//Common times (init vertex guess already set above)
-	set<DKinFitConstraint_Spacetime*> locSpacetimeConstraints = Get_Constraints<DKinFitConstraint_Spacetime>();
-	set<DKinFitConstraint_Spacetime*>::iterator locSpacetimeIterator = locSpacetimeConstraints.begin();
+	auto locSpacetimeConstraints = Get_Constraints<DKinFitConstraint_Spacetime>();
+	auto locSpacetimeIterator = locSpacetimeConstraints.begin();
 	for(; locSpacetimeIterator != locSpacetimeConstraints.end(); ++locSpacetimeIterator)
 		(*locSpacetimeIterator)->Set_CommonTime((*locSpacetimeIterator)->Get_InitTimeGuess());
 
@@ -285,10 +285,10 @@ void DKinFitter::Prepare_ConstraintsAndParticles(void)
 	}
 
 	//missing/open-ended-decaying p3
-	set<DKinFitConstraint_P4*> locP4Constraints = Get_Constraints<DKinFitConstraint_P4>();
+	auto locP4Constraints = Get_Constraints<DKinFitConstraint_P4>();
 	if(!locP4Constraints.empty())
 	{
-		DKinFitConstraint_P4* locP4Constraint = *(locP4Constraints.begin());
+		auto locP4Constraint = *(locP4Constraints.begin());
 		auto locKinFitParticle = locP4Constraint->Get_DefinedParticle();
 		if(locKinFitParticle != NULL)
 			locKinFitParticle->Set_Momentum(locP4Constraint->Get_InitP3Guess());
@@ -362,10 +362,10 @@ void DKinFitter::Set_MatrixSizes(void)
 	}
 
 	//Calculate dNumXi and dNumF
-	set<DKinFitConstraint*>::iterator locConstraintIterator = dKinFitConstraints.begin();
+	auto locConstraintIterator = dKinFitConstraints.begin();
 	for(; locConstraintIterator != dKinFitConstraints.end(); ++locConstraintIterator)
 	{
-		DKinFitConstraint_P4* locKinFitConstraint_P4 = dynamic_cast<DKinFitConstraint_P4*>(*locConstraintIterator);
+		auto locKinFitConstraint_P4 = std::dynamic_pointer_cast<DKinFitConstraint_P4>(*locConstraintIterator);
 		if(locKinFitConstraint_P4 != NULL)
 		{
 			dNumF += 4;
@@ -374,14 +374,14 @@ void DKinFitter::Set_MatrixSizes(void)
 			continue;
 		}
 
-		DKinFitConstraint_Mass* locKinFitConstraint_Mass = dynamic_cast<DKinFitConstraint_Mass*>(*locConstraintIterator);
+		auto locKinFitConstraint_Mass = std::dynamic_pointer_cast<DKinFitConstraint_Mass>(*locConstraintIterator);
 		if(locKinFitConstraint_Mass != NULL)
 		{
 			dNumF += 1;
 			continue;
 		}
 
-		DKinFitConstraint_Vertex* locKinFitConstraint_Vertex = dynamic_cast<DKinFitConstraint_Vertex*>(*locConstraintIterator);
+		auto locKinFitConstraint_Vertex = std::dynamic_pointer_cast<DKinFitConstraint_Vertex>(*locConstraintIterator);
 		if(locKinFitConstraint_Vertex != NULL)
 		{
 			dNumXi += 3; //v3
@@ -389,7 +389,7 @@ void DKinFitter::Set_MatrixSizes(void)
 			continue;
 		}
 
-		DKinFitConstraint_Spacetime* locKinFitConstraint_Spacetime = dynamic_cast<DKinFitConstraint_Spacetime*>(*locConstraintIterator);
+		auto locKinFitConstraint_Spacetime = std::dynamic_pointer_cast<DKinFitConstraint_Spacetime>(*locConstraintIterator);
 		if(locKinFitConstraint_Spacetime != NULL)
 		{
 			dNumXi += 4; //v3, t
@@ -553,10 +553,10 @@ void DKinFitter::Fill_InputMatrices(void)
 	//SETUP dXi (with initial guesses) and constraint equation indices
 	locParamIndex = 0;
 	int locConstraintIndex = 0;
-	set<DKinFitConstraint*>::iterator locConstraintIterator = dKinFitConstraints.begin();
+	auto locConstraintIterator = dKinFitConstraints.begin();
 	for(; locConstraintIterator != dKinFitConstraints.end(); ++locConstraintIterator)
 	{
-		DKinFitConstraint_P4* locKinFitConstraint_P4 = dynamic_cast<DKinFitConstraint_P4*>(*locConstraintIterator);
+		auto locKinFitConstraint_P4 = std::dynamic_pointer_cast<DKinFitConstraint_P4>(*locConstraintIterator);
 		if(locKinFitConstraint_P4 != NULL)
 		{
 			locKinFitConstraint_P4->Set_FIndex(locConstraintIndex);
@@ -576,7 +576,7 @@ void DKinFitter::Fill_InputMatrices(void)
 			continue;
 		}
 
-		DKinFitConstraint_Mass* locKinFitConstraint_Mass = dynamic_cast<DKinFitConstraint_Mass*>(*locConstraintIterator);
+		auto locKinFitConstraint_Mass = std::dynamic_pointer_cast<DKinFitConstraint_Mass>(*locConstraintIterator);
 		if(locKinFitConstraint_Mass != NULL)
 		{
 			locKinFitConstraint_Mass->Set_FIndex(locConstraintIndex);
@@ -584,8 +584,8 @@ void DKinFitter::Fill_InputMatrices(void)
 			continue;
 		}
 
-		DKinFitConstraint_Vertex* locKinFitConstraint_Vertex = dynamic_cast<DKinFitConstraint_Vertex*>(*locConstraintIterator);
-		DKinFitConstraint_Spacetime* locKinFitConstraint_Spacetime = dynamic_cast<DKinFitConstraint_Spacetime*>(*locConstraintIterator);
+		auto locKinFitConstraint_Vertex = std::dynamic_pointer_cast<DKinFitConstraint_Vertex>(*locConstraintIterator);
+		auto locKinFitConstraint_Spacetime = std::dynamic_pointer_cast<DKinFitConstraint_Spacetime>(*locConstraintIterator);
 		if((locKinFitConstraint_Vertex != NULL) && (locKinFitConstraint_Spacetime == NULL))
 		{
 			TVector3 locPosition = locKinFitConstraint_Vertex->Get_InitVertexGuess();
@@ -993,10 +993,10 @@ void DKinFitter::Calc_dF(void)
 	dF_dEta.Zero();
 
 	size_t locFIndex = 0;
-	set<DKinFitConstraint*>::iterator locConstraintIterator = dKinFitConstraints.begin();
+	auto locConstraintIterator = dKinFitConstraints.begin();
 	for(; locConstraintIterator != dKinFitConstraints.end(); ++locConstraintIterator)
 	{
-		DKinFitConstraint_P4* locKinFitConstraint_P4 = dynamic_cast<DKinFitConstraint_P4*>(*locConstraintIterator);
+		auto locKinFitConstraint_P4 = std::dynamic_pointer_cast<DKinFitConstraint_P4>(*locConstraintIterator);
 		if(locKinFitConstraint_P4 != NULL)
 		{
 			int locFIndex = locKinFitConstraint_P4->Get_FIndex();
@@ -1017,7 +1017,7 @@ void DKinFitter::Calc_dF(void)
 			continue;
 		}
 
-		DKinFitConstraint_Mass* locKinFitConstraint_Mass = dynamic_cast<DKinFitConstraint_Mass*>(*locConstraintIterator);
+		auto locKinFitConstraint_Mass = std::dynamic_pointer_cast<DKinFitConstraint_Mass>(*locConstraintIterator);
 		if(locKinFitConstraint_Mass != NULL)
 		{
 			int locFIndex = locKinFitConstraint_Mass->Get_FIndex();
@@ -1036,8 +1036,8 @@ void DKinFitter::Calc_dF(void)
 			continue;
 		}
 
-		DKinFitConstraint_Vertex* locKinFitConstraint_Vertex = dynamic_cast<DKinFitConstraint_Vertex*>(*locConstraintIterator);
-		DKinFitConstraint_Spacetime* locKinFitConstraint_Spacetime = dynamic_cast<DKinFitConstraint_Spacetime*>(*locConstraintIterator);
+		auto locKinFitConstraint_Vertex = std::dynamic_pointer_cast<DKinFitConstraint_Vertex>(*locConstraintIterator);
+		auto locKinFitConstraint_Spacetime = std::dynamic_pointer_cast<DKinFitConstraint_Spacetime>(*locConstraintIterator);
 		if((locKinFitConstraint_Vertex != NULL) && (locKinFitConstraint_Spacetime == NULL))
 		{
 			auto locFullConstrainParticles = locKinFitConstraint_Vertex->Get_FullConstrainParticles();
@@ -2343,22 +2343,22 @@ TVector3 DKinFitter::Calc_VertexParams_P4DerivedAtCommonVertex(const DKinFitPart
 void DKinFitter::Update_ParticleParams(void)
 {
 	// update common vertices
-	set<DKinFitConstraint_Vertex*> locVertexConstraints = Get_Constraints<DKinFitConstraint_Vertex>();
-	set<DKinFitConstraint_Vertex*>::iterator locVertexIterator = locVertexConstraints.begin();
+	auto locVertexConstraints = Get_Constraints<DKinFitConstraint_Vertex>();
+	auto locVertexIterator = locVertexConstraints.begin();
 	for(; locVertexIterator != locVertexConstraints.end(); ++locVertexIterator)
 	{
-		DKinFitConstraint_Vertex* locConstraint = *locVertexIterator;
+		auto locConstraint = *locVertexIterator;
 		int locParamIndex = locConstraint->Get_CommonVxParamIndex();
 		TVector3 locVertex(dXi(locParamIndex, 0), dXi(locParamIndex + 1, 0), dXi(locParamIndex + 2, 0));
 		locConstraint->Set_CommonVertex(locVertex);
 	}
 
 	// update common times
-	set<DKinFitConstraint_Spacetime*> locSpacetimeConstraints = Get_Constraints<DKinFitConstraint_Spacetime>();
-	set<DKinFitConstraint_Spacetime*>::iterator locSpacetimeIterator = locSpacetimeConstraints.begin();
+	auto locSpacetimeConstraints = Get_Constraints<DKinFitConstraint_Spacetime>();
+	auto locSpacetimeIterator = locSpacetimeConstraints.begin();
 	for(; locSpacetimeIterator != locSpacetimeConstraints.end(); ++locSpacetimeIterator)
 	{
-		DKinFitConstraint_Spacetime* locConstraint = *locSpacetimeIterator;
+		auto locConstraint = *locSpacetimeIterator;
 		int locParamIndex = locConstraint->Get_CommonTParamIndex();
 		locConstraint->Set_CommonTime(dXi(locParamIndex, 0));
 	}

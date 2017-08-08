@@ -4,18 +4,19 @@
 #include <vector>
 
 #include "DKinFitParticle.h"
+#include "DResettable.h"
 
 //This class is not necessary to use the kinematic fitter, but it is necessary to use some of the setup help functions in DKinFitUtils
 	//Is mostly useful when coding for the generic situation of ANY possible decay chain (rather than handling a specific one)
 
 using namespace std;
 
-class DKinFitChainStep
+class DKinFitChainStep : public DResettable
 {
 	public:
 
-		DKinFitChainStep(void) : dInitialParticleDecayFromStepIndex(-1), dConstrainDecayingMassFlag(false) {}
 		void Reset(void);
+		void Release(void);
 
 		//GET PARTICLES
 		vector<shared_ptr<DKinFitParticle>> Get_InitialParticles(void) const{return dInitialParticles;}
@@ -44,8 +45,8 @@ class DKinFitChainStep
 	private:
 
 		//refers to the decaying particle in dInitialParticles //-1 if none, else index points to step index it is produced at
-		signed char dInitialParticleDecayFromStepIndex;
-		bool dConstrainDecayingMassFlag; //true to constrain mass of the initial state particle
+		signed char dInitialParticleDecayFromStepIndex = -1;
+		bool dConstrainDecayingMassFlag = false; //true to constrain mass of the initial state particle
 
 		vector<shared_ptr<DKinFitParticle>> dInitialParticles;
 		vector<shared_ptr<DKinFitParticle>> dFinalParticles;
@@ -55,6 +56,12 @@ inline void DKinFitChainStep::Reset(void)
 {
 	dInitialParticleDecayFromStepIndex = -1;
 	dConstrainDecayingMassFlag = false;
+	dInitialParticles.clear();
+	dFinalParticles.clear();
+}
+
+inline void DKinFitChainStep::Release(void)
+{
 	dInitialParticles.clear();
 	dFinalParticles.clear();
 }

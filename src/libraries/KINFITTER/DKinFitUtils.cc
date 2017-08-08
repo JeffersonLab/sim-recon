@@ -4,48 +4,34 @@
 
 DKinFitUtils::DKinFitUtils(void)
 {
-	dKinFitter = NULL; //Is set by DKinFitter constructor
+	dKinFitter = nullptr; //Is set by DKinFitter constructor
 	dLinkVerticesFlag = true;
 	dDebugLevel = 0;
 	dUpdateCovarianceMatricesFlag = true;
-
-	size_t locNumFitsPerEventGuess = 20;
-
-	//final x2: input/output
-	dMaxKinFitConstraintVertexPoolSize = 2*locNumFitsPerEventGuess*2;
-	dMaxKinFitConstraintSpacetimePoolSize = 2*locNumFitsPerEventGuess*2;
-	dMaxKinFitConstraintP4PoolSize = locNumFitsPerEventGuess*2;
-	dMaxKinFitConstraintMassPoolSize = 2*locNumFitsPerEventGuess*2;
-
-	dMaxKinFitChainPoolSize = locNumFitsPerEventGuess;
-	dMaxKinFitChainStepPoolSize = 3*locNumFitsPerEventGuess;
 
 	dResourcePool_TMatrixFSym = std::make_shared<DResourcePool<TMatrixFSym>>();
 	dResourcePool_TMatrixFSym->Set_ControlParams(100, 20, 1000, 50000, 0);
 
 	dResourcePool_KinFitParticle = std::make_shared<DResourcePool<DKinFitParticle>>();
 	dResourcePool_KinFitParticle->Set_ControlParams(50, 20, 500, 5000, 0);
-}
 
-DKinFitUtils::~DKinFitUtils(void)
-{
-	for(size_t loc_i = 0; loc_i < dKinFitConstraintVertexPool_All.size(); ++loc_i)
-		delete dKinFitConstraintVertexPool_All[loc_i];
+	dResourcePool_KinFitChainStep = std::make_shared<DResourcePool<DKinFitChainStep>>();
+	dResourcePool_KinFitChainStep->Set_ControlParams(5, 5, 50, 100, 0);
 
-	for(size_t loc_i = 0; loc_i < dKinFitConstraintSpacetimePool_All.size(); ++loc_i)
-		delete dKinFitConstraintSpacetimePool_All[loc_i];
+	dResourcePool_KinFitChain = std::make_shared<DResourcePool<DKinFitChain>>();
+	dResourcePool_KinFitChain->Set_ControlParams(5, 5, 50, 100, 0);
 
-	for(size_t loc_i = 0; loc_i < dKinFitConstraintP4Pool_All.size(); ++loc_i)
-		delete dKinFitConstraintP4Pool_All[loc_i];
+	dResourcePool_MassConstraint = std::make_shared<DResourcePool<DKinFitConstraint_Mass>>();
+	dResourcePool_MassConstraint->Set_ControlParams(20, 20, 100, 300, 0);
 
-	for(size_t loc_i = 0; loc_i < dKinFitConstraintMassPool_All.size(); ++loc_i)
-		delete dKinFitConstraintMassPool_All[loc_i];
+	dResourcePool_P4Constraint = std::make_shared<DResourcePool<DKinFitConstraint_P4>>();
+	dResourcePool_P4Constraint->Set_ControlParams(20, 20, 100, 300, 0);
 
-	for(size_t loc_i = 0; loc_i < dKinFitChainPool_All.size(); ++loc_i)
-		delete dKinFitChainPool_All[loc_i];
+	dResourcePool_VertexConstraint = std::make_shared<DResourcePool<DKinFitConstraint_Vertex>>();
+	dResourcePool_VertexConstraint->Set_ControlParams(20, 20, 100, 300, 0);
 
-	for(size_t loc_i = 0; loc_i < dKinFitChainStepPool_All.size(); ++loc_i)
-		delete dKinFitChainStepPool_All[loc_i];
+	dResourcePool_SpacetimeConstraint = std::make_shared<DResourcePool<DKinFitConstraint_Spacetime>>();
+	dResourcePool_SpacetimeConstraint->Set_ControlParams(20, 20, 100, 300, 0);
 }
 
 void DKinFitUtils::Reset_NewEvent(void)
@@ -55,159 +41,7 @@ void DKinFitUtils::Reset_NewEvent(void)
 	dP4ConstraintMap.clear();
 	dVertexConstraintMap.clear();
 	dSpacetimeConstraintMap.clear();
-
-	// delete pool sizes if too large, preventing memory-leakage-like behavor.
-	if(dKinFitConstraintVertexPool_All.size() > dMaxKinFitConstraintVertexPoolSize)
-	{
-		for(size_t loc_i = dMaxKinFitConstraintVertexPoolSize; loc_i < dKinFitConstraintVertexPool_All.size(); ++loc_i)
-			delete dKinFitConstraintVertexPool_All[loc_i];
-		dKinFitConstraintVertexPool_All.resize(dMaxKinFitConstraintVertexPoolSize);
-	}
-	dKinFitConstraintVertexPool_Available = dKinFitConstraintVertexPool_All;
-
-	if(dKinFitConstraintSpacetimePool_All.size() > dMaxKinFitConstraintSpacetimePoolSize)
-	{
-		for(size_t loc_i = dMaxKinFitConstraintSpacetimePoolSize; loc_i < dKinFitConstraintSpacetimePool_All.size(); ++loc_i)
-			delete dKinFitConstraintSpacetimePool_All[loc_i];
-		dKinFitConstraintSpacetimePool_All.resize(dMaxKinFitConstraintSpacetimePoolSize);
-	}
-	dKinFitConstraintSpacetimePool_Available = dKinFitConstraintSpacetimePool_All;
-
-	if(dKinFitConstraintP4Pool_All.size() > dMaxKinFitConstraintP4PoolSize)
-	{
-		for(size_t loc_i = dMaxKinFitConstraintP4PoolSize; loc_i < dKinFitConstraintP4Pool_All.size(); ++loc_i)
-			delete dKinFitConstraintP4Pool_All[loc_i];
-		dKinFitConstraintP4Pool_All.resize(dMaxKinFitConstraintP4PoolSize);
-	}
-	dKinFitConstraintP4Pool_Available = dKinFitConstraintP4Pool_All;
-
-	if(dKinFitConstraintMassPool_All.size() > dMaxKinFitConstraintMassPoolSize)
-	{
-		for(size_t loc_i = dMaxKinFitConstraintMassPoolSize; loc_i < dKinFitConstraintMassPool_All.size(); ++loc_i)
-			delete dKinFitConstraintMassPool_All[loc_i];
-		dKinFitConstraintMassPool_All.resize(dMaxKinFitConstraintMassPoolSize);
-	}
-	dKinFitConstraintMassPool_Available = dKinFitConstraintMassPool_All;
-
-	if(dKinFitChainPool_All.size() > dMaxKinFitChainPoolSize)
-	{
-		for(size_t loc_i = dMaxKinFitChainPoolSize; loc_i < dKinFitChainPool_All.size(); ++loc_i)
-			delete dKinFitChainPool_All[loc_i];
-		dKinFitChainPool_All.resize(dMaxKinFitChainPoolSize);
-	}
-	dKinFitChainPool_Available = dKinFitChainPool_All;
-
-	if(dKinFitChainStepPool_All.size() > dMaxKinFitChainStepPoolSize)
-	{
-		for(size_t loc_i = dMaxKinFitChainStepPoolSize; loc_i < dKinFitChainStepPool_All.size(); ++loc_i)
-			delete dKinFitChainStepPool_All[loc_i];
-		dKinFitChainStepPool_All.resize(dMaxKinFitChainStepPoolSize);
-	}
-	dKinFitChainStepPool_Available = dKinFitChainStepPool_All;
-
 	Reset_NewFit();
-}
-
-DKinFitConstraint_Vertex* DKinFitUtils::Get_KinFitConstraintVertexResource(void)
-{
-	DKinFitConstraint_Vertex* locKinFitConstraint;
-	if(dKinFitConstraintVertexPool_Available.empty())
-	{
-		locKinFitConstraint = new DKinFitConstraint_Vertex;
-		dKinFitConstraintVertexPool_All.push_back(locKinFitConstraint);
-	}
-	else
-	{
-		locKinFitConstraint = dKinFitConstraintVertexPool_Available.back();
-		locKinFitConstraint->Reset();
-		dKinFitConstraintVertexPool_Available.pop_back();
-	}
-	return locKinFitConstraint;
-}
-
-DKinFitConstraint_Spacetime* DKinFitUtils::Get_KinFitConstraintSpacetimeResource(void)
-{
-	DKinFitConstraint_Spacetime* locKinFitConstraint;
-	if(dKinFitConstraintSpacetimePool_Available.empty())
-	{
-		locKinFitConstraint = new DKinFitConstraint_Spacetime;
-		dKinFitConstraintSpacetimePool_All.push_back(locKinFitConstraint);
-	}
-	else
-	{
-		locKinFitConstraint = dKinFitConstraintSpacetimePool_Available.back();
-		locKinFitConstraint->Reset();
-		dKinFitConstraintSpacetimePool_Available.pop_back();
-	}
-	return locKinFitConstraint;
-}
-
-DKinFitConstraint_P4* DKinFitUtils::Get_KinFitConstraintP4Resource(void)
-{
-	DKinFitConstraint_P4* locKinFitConstraint;
-	if(dKinFitConstraintP4Pool_Available.empty())
-	{
-		locKinFitConstraint = new DKinFitConstraint_P4;
-		dKinFitConstraintP4Pool_All.push_back(locKinFitConstraint);
-	}
-	else
-	{
-		locKinFitConstraint = dKinFitConstraintP4Pool_Available.back();
-		locKinFitConstraint->Reset();
-		dKinFitConstraintP4Pool_Available.pop_back();
-	}
-	return locKinFitConstraint;
-}
-
-DKinFitConstraint_Mass* DKinFitUtils::Get_KinFitConstraintMassResource(void)
-{
-	DKinFitConstraint_Mass* locKinFitConstraint;
-	if(dKinFitConstraintMassPool_Available.empty())
-	{
-		locKinFitConstraint = new DKinFitConstraint_Mass;
-		dKinFitConstraintMassPool_All.push_back(locKinFitConstraint);
-	}
-	else
-	{
-		locKinFitConstraint = dKinFitConstraintMassPool_Available.back();
-		locKinFitConstraint->Reset();
-		dKinFitConstraintMassPool_Available.pop_back();
-	}
-	return locKinFitConstraint;
-}
-
-DKinFitChain* DKinFitUtils::Get_KinFitChainResource(void)
-{
-	DKinFitChain* locKinFitChain;
-	if(dKinFitChainPool_Available.empty())
-	{
-		locKinFitChain = new DKinFitChain;
-		dKinFitChainPool_All.push_back(locKinFitChain);
-	}
-	else
-	{
-		locKinFitChain = dKinFitChainPool_Available.back();
-		locKinFitChain->Reset();
-		dKinFitChainPool_Available.pop_back();
-	}
-	return locKinFitChain;
-}
-
-DKinFitChainStep* DKinFitUtils::Get_KinFitChainStepResource(void)
-{
-	DKinFitChainStep* locKinFitChainStep;
-	if(dKinFitChainStepPool_Available.empty())
-	{
-		locKinFitChainStep = new DKinFitChainStep;
-		dKinFitChainStepPool_All.push_back(locKinFitChainStep);
-	}
-	else
-	{
-		locKinFitChainStep = dKinFitChainStepPool_Available.back();
-		locKinFitChainStep->Reset();
-		dKinFitChainStepPool_Available.pop_back();
-	}
-	return locKinFitChainStep;
 }
 
 shared_ptr<TMatrixFSym> DKinFitUtils::Get_SymMatrixResource(unsigned int locNumMatrixRows)
@@ -351,12 +185,12 @@ shared_ptr<DKinFitParticle> DKinFitUtils::Make_DecayingParticle(int locPID, int 
 
 /**************************************************************** CREATE CONSTRAINTS ***************************************************************/
 
-DKinFitConstraint_Mass* DKinFitUtils::Make_MassConstraint(const shared_ptr<DKinFitParticle>& locDecayingParticle)
+shared_ptr<DKinFitConstraint_Mass> DKinFitUtils::Make_MassConstraint(const shared_ptr<DKinFitParticle>& locDecayingParticle)
 {
 	if(locDecayingParticle->dKinFitParticleType != d_DecayingParticle)
 	{
 		cout << "ERROR: Wrong particle type in DKinFitUtils::Make_MassConstraint(). Returning NULL." << endl;
-		return NULL;
+		return nullptr;
 	}
 
 	//if constraint already exists for this particle, return it
@@ -364,22 +198,22 @@ DKinFitConstraint_Mass* DKinFitUtils::Make_MassConstraint(const shared_ptr<DKinF
 	if(locIterator != dMassConstraintMap.end())
 		return locIterator->second;
 
-	DKinFitConstraint_Mass* locConstraint = Get_KinFitConstraintMassResource();
+	auto locConstraint = dResourcePool_MassConstraint->Get_SharedResource();
 	locConstraint->Set_DecayingParticle(locDecayingParticle);
 
 	dMassConstraintMap[locDecayingParticle] = locConstraint;
 	return locConstraint;
 }
 
-DKinFitConstraint_P4* DKinFitUtils::Make_P4Constraint(const set<shared_ptr<DKinFitParticle>>& locInitialParticles, const set<shared_ptr<DKinFitParticle>>& locFinalParticles)
+shared_ptr<DKinFitConstraint_P4> DKinFitUtils::Make_P4Constraint(const set<shared_ptr<DKinFitParticle>>& locInitialParticles, const set<shared_ptr<DKinFitParticle>>& locFinalParticles)
 {
 	//if constraint already exists for this input, return it
-	pair<set<shared_ptr<DKinFitParticle>>, set<shared_ptr<DKinFitParticle>>> locInputPair(locInitialParticles, locFinalParticles);
+	auto locInputPair = std::make_pair(locInitialParticles, locFinalParticles);
 	auto locIterator = dP4ConstraintMap.find(locInputPair);
 	if(locIterator != dP4ConstraintMap.end())
 		return locIterator->second;
 
-	DKinFitConstraint_P4* locConstraint = Get_KinFitConstraintP4Resource();
+	auto locConstraint = dResourcePool_P4Constraint->Get_SharedResource();
 	locConstraint->Set_InitialParticles(locInitialParticles);
 	locConstraint->Set_FinalParticles(locFinalParticles);
 
@@ -387,15 +221,15 @@ DKinFitConstraint_P4* DKinFitUtils::Make_P4Constraint(const set<shared_ptr<DKinF
 	return locConstraint;
 }
 
-DKinFitConstraint_Vertex* DKinFitUtils::Make_VertexConstraint(const set<shared_ptr<DKinFitParticle>>& locFullConstrainParticles, const set<shared_ptr<DKinFitParticle>>& locNoConstrainParticles, TVector3 locVertexGuess)
+shared_ptr<DKinFitConstraint_Vertex> DKinFitUtils::Make_VertexConstraint(const set<shared_ptr<DKinFitParticle>>& locFullConstrainParticles, const set<shared_ptr<DKinFitParticle>>& locNoConstrainParticles, TVector3 locVertexGuess)
 {
 	//if constraint already exists for this input, return it
-	pair<set<shared_ptr<DKinFitParticle>>, set<shared_ptr<DKinFitParticle>>> locInputPair(locFullConstrainParticles, locNoConstrainParticles);
+	auto locInputPair = std::make_pair(locFullConstrainParticles, locNoConstrainParticles);
 	auto locIterator = dVertexConstraintMap.find(locInputPair);
 	if(locIterator != dVertexConstraintMap.end())
 		return locIterator->second;
 
-	DKinFitConstraint_Vertex* locConstraint = Get_KinFitConstraintVertexResource();
+	auto locConstraint = dResourcePool_VertexConstraint->Get_SharedResource();
 	locConstraint->Set_FullConstrainParticles(locFullConstrainParticles);
 	locConstraint->Set_NoConstrainParticles(locNoConstrainParticles);
 	locConstraint->Set_InitVertexGuess(locVertexGuess);
@@ -404,7 +238,7 @@ DKinFitConstraint_Vertex* DKinFitUtils::Make_VertexConstraint(const set<shared_p
 	return locConstraint;
 }
 
-DKinFitConstraint_Spacetime* DKinFitUtils::Make_SpacetimeConstraint(const set<shared_ptr<DKinFitParticle>>& locFullConstrainParticles, const set<shared_ptr<DKinFitParticle>>& locOnlyConstrainTimeParticles, const set<shared_ptr<DKinFitParticle>>& locNoConstrainParticles, TLorentzVector locSpacetimeGuess)
+shared_ptr<DKinFitConstraint_Spacetime> DKinFitUtils::Make_SpacetimeConstraint(const set<shared_ptr<DKinFitParticle>>& locFullConstrainParticles, const set<shared_ptr<DKinFitParticle>>& locOnlyConstrainTimeParticles, const set<shared_ptr<DKinFitParticle>>& locNoConstrainParticles, TLorentzVector locSpacetimeGuess)
 {
 	cout << "ERROR: SPACETIME CONSTRAINTS ARE NOT SUPPORTED YET. RETURNING NULL FROM DKinFitUtils::Make_SpacetimeConstraint()." << endl;
 	return NULL;
@@ -415,7 +249,7 @@ DKinFitConstraint_Spacetime* DKinFitUtils::Make_SpacetimeConstraint(const set<sh
 	if(locIterator != dSpacetimeConstraintMap.end())
 		return locIterator->second;
 
-	DKinFitConstraint_Spacetime* locConstraint = Get_KinFitConstraintSpacetimeResource();
+	auto locConstraint = dResourcePool_SpacetimeConstraint->Get_SharedResource();
 	locConstraint->Set_FullConstrainParticles(locFullConstrainParticles);
 	locConstraint->Set_OnlyConstrainTimeParticles(locOnlyConstrainTimeParticles);
 	locConstraint->Set_NoConstrainParticles(locNoConstrainParticles);
@@ -455,39 +289,35 @@ shared_ptr<DKinFitParticle> DKinFitUtils::Clone_KinFitParticle(const shared_ptr<
 	return locClonedKinFitParticle;
 }
 
-DKinFitConstraint_P4* DKinFitUtils::Clone_KinFitConstraint_P4(const DKinFitConstraint_P4* locConstraint)
+shared_ptr<DKinFitConstraint_P4> DKinFitUtils::Clone_KinFitConstraint_P4(const DKinFitConstraint_P4* locConstraint)
 {
 	//to be called PRIOR to a fit
-	DKinFitConstraint_P4* locClonedConstraint = Get_KinFitConstraintP4Resource();
+	auto locClonedConstraint = dResourcePool_P4Constraint->Get_SharedResource();
 	*locClonedConstraint = *locConstraint;
-//	dKinFitConstraintCloningOIMap[locClonedConstraint] = locConstraint;
 	return locClonedConstraint;
 }
 
-DKinFitConstraint_Mass* DKinFitUtils::Clone_KinFitConstraint_Mass(const DKinFitConstraint_Mass* locConstraint)
+shared_ptr<DKinFitConstraint_Mass> DKinFitUtils::Clone_KinFitConstraint_Mass(const DKinFitConstraint_Mass* locConstraint)
 {
 	//to be called PRIOR to a fit
-	DKinFitConstraint_Mass* locClonedConstraint = Get_KinFitConstraintMassResource();
+	auto locClonedConstraint = dResourcePool_MassConstraint->Get_SharedResource();
 	*locClonedConstraint = *locConstraint;
-//	dKinFitConstraintCloningOIMap[locClonedConstraint] = locConstraint;
 	return locClonedConstraint;
 }
 
-DKinFitConstraint_Vertex* DKinFitUtils::Clone_KinFitConstraint_Vertex(const DKinFitConstraint_Vertex* locConstraint)
+shared_ptr<DKinFitConstraint_Vertex> DKinFitUtils::Clone_KinFitConstraint_Vertex(const DKinFitConstraint_Vertex* locConstraint)
 {
 	//to be called PRIOR to a fit
-	DKinFitConstraint_Vertex* locClonedConstraint = Get_KinFitConstraintVertexResource();
+	auto locClonedConstraint = dResourcePool_VertexConstraint->Get_SharedResource();
 	*locClonedConstraint = *locConstraint;
-//	dKinFitConstraintCloningOIMap[locClonedConstraint] = locConstraint;
 	return locClonedConstraint;
 }
 
-DKinFitConstraint_Spacetime* DKinFitUtils::Clone_KinFitConstraint_Spacetime(const DKinFitConstraint_Spacetime* locConstraint)
+shared_ptr<DKinFitConstraint_Spacetime> DKinFitUtils::Clone_KinFitConstraint_Spacetime(const DKinFitConstraint_Spacetime* locConstraint)
 {
 	//to be called PRIOR to a fit
-	DKinFitConstraint_Spacetime* locClonedConstraint = Get_KinFitConstraintSpacetimeResource();
+	auto locClonedConstraint = dResourcePool_SpacetimeConstraint->Get_SharedResource();
 	*locClonedConstraint = *locConstraint;
-//	dKinFitConstraintCloningOIMap[locClonedConstraint] = locConstraint;
 	return locClonedConstraint;
 }
 
@@ -499,9 +329,9 @@ set<shared_ptr<DKinFitParticle>> DKinFitUtils::Build_CloneParticleSet(const set<
 	return locCloneParticles;
 }
 
-set<DKinFitConstraint*> DKinFitUtils::Clone_ParticlesAndConstraints(const set<DKinFitConstraint*>& locInputConstraints)
+set<shared_ptr<DKinFitConstraint>> DKinFitUtils::Clone_ParticlesAndConstraints(const set<shared_ptr<DKinFitConstraint>>& locInputConstraints)
 {
-	set<DKinFitConstraint*> locClonedConstraints;
+	set<shared_ptr<DKinFitConstraint>> locClonedConstraints;
 
 	//Get all of the particles from the constraints (some particles may be listed in multiple constraints!)
 		//This is why you can't clone the constraint particles one constraint at a time
@@ -551,43 +381,43 @@ set<DKinFitConstraint*> DKinFitUtils::Clone_ParticlesAndConstraints(const set<DK
 	//Clone the constraints, and then set the particles to the cloned particles
 	for(auto& locConstraint : locInputConstraints)
 	{
-		DKinFitConstraint_P4* locP4Constraint = dynamic_cast<DKinFitConstraint_P4*>(locConstraint);
+		auto locP4Constraint = std::dynamic_pointer_cast<DKinFitConstraint_P4>(locConstraint);
 		if(locP4Constraint != NULL)
 		{
-			DKinFitConstraint_P4* locClonedConstraint = Clone_KinFitConstraint_P4(locP4Constraint);
+			auto locClonedConstraint = Clone_KinFitConstraint_P4(locP4Constraint.get());
 			locClonedConstraint->Set_InitialParticles(Build_CloneParticleSet(locClonedConstraint->Get_InitialParticles(), locCloneIOMap));
 			locClonedConstraint->Set_FinalParticles(Build_CloneParticleSet(locClonedConstraint->Get_FinalParticles(), locCloneIOMap));
-			locClonedConstraints.insert(locClonedConstraint);
+			locClonedConstraints.insert(std::dynamic_pointer_cast<DKinFitConstraint>(locClonedConstraint));
 			continue;
 		}
 
-		DKinFitConstraint_Mass* locMassConstraint = dynamic_cast<DKinFitConstraint_Mass*>(locConstraint);
+		auto locMassConstraint = std::dynamic_pointer_cast<DKinFitConstraint_Mass>(locConstraint);
 		if(locMassConstraint != NULL)
 		{
-			DKinFitConstraint_Mass* locClonedConstraint = Clone_KinFitConstraint_Mass(locMassConstraint);
+			auto locClonedConstraint = Clone_KinFitConstraint_Mass(locMassConstraint.get());
 			locClonedConstraint->Set_DecayingParticle(locCloneIOMap.find(locClonedConstraint->Get_DecayingParticle())->second);
-			locClonedConstraints.insert(locClonedConstraint);
+			locClonedConstraints.insert(std::dynamic_pointer_cast<DKinFitConstraint>(locClonedConstraint));
 			continue;
 		}
 
-		DKinFitConstraint_Vertex* locVertexConstraint = dynamic_cast<DKinFitConstraint_Vertex*>(locConstraint);
-		DKinFitConstraint_Spacetime* locSpacetimeConstraint = dynamic_cast<DKinFitConstraint_Spacetime*>(locConstraint);
+		auto locVertexConstraint = std::dynamic_pointer_cast<DKinFitConstraint_Vertex>(locConstraint);
+		auto locSpacetimeConstraint = std::dynamic_pointer_cast<DKinFitConstraint_Spacetime>(locConstraint);
 		if((locVertexConstraint != NULL) && (locSpacetimeConstraint == NULL))
 		{
-			DKinFitConstraint_Vertex* locClonedConstraint = Clone_KinFitConstraint_Vertex(locVertexConstraint);
+			auto locClonedConstraint = Clone_KinFitConstraint_Vertex(locVertexConstraint.get());
 			locClonedConstraint->Set_FullConstrainParticles(Build_CloneParticleSet(locClonedConstraint->Get_FullConstrainParticles(), locCloneIOMap));
 			locClonedConstraint->Set_NoConstrainParticles(Build_CloneParticleSet(locClonedConstraint->Get_NoConstrainParticles(), locCloneIOMap));
-			locClonedConstraints.insert(locClonedConstraint);
+			locClonedConstraints.insert(std::dynamic_pointer_cast<DKinFitConstraint>(locClonedConstraint));
 			continue;
 		}
 
 		if(locSpacetimeConstraint != NULL)
 		{
-			DKinFitConstraint_Spacetime* locClonedConstraint = Clone_KinFitConstraint_Spacetime(locSpacetimeConstraint);
+			auto locClonedConstraint = Clone_KinFitConstraint_Spacetime(locSpacetimeConstraint.get());
 			locClonedConstraint->Set_FullConstrainParticles(Build_CloneParticleSet(locClonedConstraint->Get_FullConstrainParticles(), locCloneIOMap));
 			locClonedConstraint->Set_NoConstrainParticles(Build_CloneParticleSet(locClonedConstraint->Get_NoConstrainParticles(), locCloneIOMap));
 			locClonedConstraint->Set_OnlyConstrainTimeParticles(Build_CloneParticleSet(locClonedConstraint->Get_OnlyConstrainTimeParticles(), locCloneIOMap));
-			locClonedConstraints.insert(locClonedConstraint);
+			locClonedConstraints.insert(std::dynamic_pointer_cast<DKinFitConstraint>(locClonedConstraint));
 			continue;
 		}
 	}
@@ -595,61 +425,36 @@ set<DKinFitConstraint*> DKinFitUtils::Clone_ParticlesAndConstraints(const set<DK
 	return locClonedConstraints;
 }
 
-void DKinFitUtils::Recycle_LastFitMemory(set<DKinFitConstraint*>& locKinFitConstraints)
+void DKinFitUtils::Recycle_LastFitMemory(set<shared_ptr<DKinFitConstraint>>& locKinFitConstraints)
 {
-	//Recycle the constraints (also recycles particles & matrices)
-	for(auto& locConstraint : locKinFitConstraints)
+	//Get all of the particles from the constraints (some particles may be listed in multiple constraints!)
+	//This is why you can't clone the constraint particles one constraint at a time
+	set<shared_ptr<DKinFitParticle>> locAllParticles;
+	auto locConstraintIterator = locKinFitConstraints.begin();
+	for(; locConstraintIterator != locKinFitConstraints.end(); ++locConstraintIterator)
 	{
-		locConstraint->Reset();
-		DKinFitConstraint_P4* locP4Constraint = dynamic_cast<DKinFitConstraint_P4*>(locConstraint);
-		if(locP4Constraint != NULL)
-		{
-			dKinFitConstraintP4Pool_Available.push_back(locP4Constraint);
-			continue;
-		}
+		auto locConstraintKinFitParticles = (*locConstraintIterator)->Get_AllParticles();
+		locAllParticles.insert(locConstraintKinFitParticles.begin(), locConstraintKinFitParticles.end());
 
-		DKinFitConstraint_Mass* locMassConstraint = dynamic_cast<DKinFitConstraint_Mass*>(locConstraint);
-		if(locMassConstraint != NULL)
+		//now, for those particles that may not directly be used in a constraint, but ARE used to define a decaying particle
+		auto locParticleIterator = locConstraintKinFitParticles.begin();
+		for(; locParticleIterator != locConstraintKinFitParticles.end(); ++locParticleIterator)
 		{
-			dKinFitConstraintMassPool_Available.push_back(locMassConstraint);
-			continue;
-		}
-
-		//Inherits from Vertex, so must check this one first!
-		DKinFitConstraint_Spacetime* locSpacetimeConstraint = dynamic_cast<DKinFitConstraint_Spacetime*>(locConstraint);
-		if(locSpacetimeConstraint != NULL)
-		{
-			dKinFitConstraintSpacetimePool_Available.push_back(locSpacetimeConstraint);
-			continue;
-		}
-
-		DKinFitConstraint_Vertex* locVertexConstraint = dynamic_cast<DKinFitConstraint_Vertex*>(locConstraint);
-		if(locVertexConstraint != NULL)
-		{
-			dKinFitConstraintVertexPool_Available.push_back(locVertexConstraint);
-			continue;
+			auto locFromAllParticles = (*locParticleIterator)->Get_FromAllParticles();
+			locAllParticles.insert(locFromAllParticles.begin(), locFromAllParticles.end());
 		}
 	}
+
+	//Remove them from the output-to-input clone map
+	for(auto& locParticle : locAllParticles)
+		dParticleMap_OutputToInput.erase(locParticle);
 
 	locKinFitConstraints.clear();
 }
 
-void DKinFitUtils::Recycle_DKinFitChain(const DKinFitChain* locKinFitChain)
-{
-	for(size_t loc_i = 0; loc_i < locKinFitChain->Get_NumKinFitChainSteps(); ++loc_i)
-	{
-		DKinFitChainStep* locKinFitChainStep = const_cast<DKinFitChainStep*>(locKinFitChain->Get_KinFitChainStep(loc_i));
-		locKinFitChainStep->Reset();
-		dKinFitChainStepPool_Available.push_back(locKinFitChainStep);
-	}
-	auto locNonConstChain = const_cast<DKinFitChain*>(locKinFitChain);
-	locNonConstChain->Reset();
-	dKinFitChainPool_Available.push_back(locNonConstChain);
-}
-
 /*************************************************************** VALIDATE CONSTRAINTS **************************************************************/
 
-bool DKinFitUtils::Validate_Constraints(const set<DKinFitConstraint*>& locKinFitConstraints) const
+bool DKinFitUtils::Validate_Constraints(const set<shared_ptr<DKinFitConstraint>>& locKinFitConstraints) const
 {
 	//Do independent of the kinematic fitter!
 	//Empty for now. User can override in derived class
@@ -1346,7 +1151,7 @@ void DKinFitUtils::Calc_DecayingParticleJacobian(const DKinFitParticle* locKinFi
 	}
 }
 
-const DKinFitChain* DKinFitUtils::Build_OutputKinFitChain(const DKinFitChain* locInputKinFitChain, set<shared_ptr<DKinFitParticle>>& locKinFitOutputParticles)
+shared_ptr<const DKinFitChain> DKinFitUtils::Build_OutputKinFitChain(const shared_ptr<const DKinFitChain>& locInputKinFitChain, set<shared_ptr<DKinFitParticle>>& locKinFitOutputParticles)
 {
 	if(dDebugLevel > 20)
 	{
@@ -1359,7 +1164,7 @@ const DKinFitChain* DKinFitUtils::Build_OutputKinFitChain(const DKinFitChain* lo
 	for(auto& locParticle : locKinFitOutputParticles)
 		locInputToOutputParticleMap[dParticleMap_OutputToInput[locParticle]] = locParticle;
 
-	auto locOutputKinFitChain = Get_KinFitChainResource();
+	auto locOutputKinFitChain = dResourcePool_KinFitChain->Get_SharedResource();
 	locOutputKinFitChain->Set_DefinedParticleStepIndex(locInputKinFitChain->Get_DefinedParticleStepIndex());
 	locOutputKinFitChain->Set_IsInclusiveChannelFlag(locInputKinFitChain->Get_IsInclusiveChannelFlag());
 
@@ -1367,7 +1172,7 @@ const DKinFitChain* DKinFitUtils::Build_OutputKinFitChain(const DKinFitChain* lo
 	for(size_t loc_i = 0; loc_i < locInputKinFitChain->Get_NumKinFitChainSteps(); ++loc_i)
 	{
 		auto locInputKinFitChainStep = locInputKinFitChain->Get_KinFitChainStep(loc_i);
-		auto locOutputKinFitChainStep = Get_KinFitChainStepResource();
+		auto locOutputKinFitChainStep = dResourcePool_KinFitChainStep->Get_SharedResource();
 
 		locOutputKinFitChainStep->Set_InitialParticleDecayFromStepIndex(locInputKinFitChainStep->Get_InitialParticleDecayFromStepIndex());
 		locOutputKinFitChainStep->Set_ConstrainDecayingMassFlag(locInputKinFitChainStep->Get_ConstrainDecayingMassFlag());

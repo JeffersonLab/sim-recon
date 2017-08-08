@@ -299,7 +299,7 @@ const DChargedTrackHypothesis* DParticleComboCreator::Create_ChargedHypo(const D
 	return locNewHypo;
 }
 
-const DParticleCombo* DParticleComboCreator::Create_KinFitCombo_NewCombo(const DParticleCombo* locOrigCombo, const DReaction* locReaction, const DKinFitResults* locKinFitResults, const DKinFitChain* locKinFitChain)
+const DParticleCombo* DParticleComboCreator::Create_KinFitCombo_NewCombo(const DParticleCombo* locOrigCombo, const DReaction* locReaction, const DKinFitResults* locKinFitResults, const shared_ptr<const DKinFitChain>& locKinFitChain)
 {
 	dKinFitUtils->Set_UpdateCovarianceMatricesFlag(locReaction->Get_KinFitUpdateCovarianceMatricesFlag());
 
@@ -384,7 +384,7 @@ const DParticleCombo* DParticleComboCreator::Create_KinFitCombo_NewCombo(const D
 	return locNewCombo;
 }
 
-void DParticleComboCreator::Set_DecayingParticles(const DReaction* locReaction, const DParticleCombo* locNewParticleCombo, const DParticleCombo* locOldParticleCombo, size_t locStepIndex, DParticleComboStep* locNewParticleComboStep, const DKinFitChain* locKinFitChain, const DKinFitResults* locKinFitResults)
+void DParticleComboCreator::Set_DecayingParticles(const DReaction* locReaction, const DParticleCombo* locNewParticleCombo, const DParticleCombo* locOldParticleCombo, size_t locStepIndex, DParticleComboStep* locNewParticleComboStep, const shared_ptr<const DKinFitChain>& locKinFitChain, const DKinFitResults* locKinFitResults)
 {
 	auto locKinFitParticle = Get_DecayingParticle(locReaction, locOldParticleCombo, locStepIndex, locKinFitChain, locKinFitResults);
 	if(locKinFitParticle == nullptr) //not used in fit
@@ -426,7 +426,7 @@ void DParticleComboCreator::Set_DecayingParticles(const DReaction* locReaction, 
 	}
 }
 
-shared_ptr<DKinFitParticle> DParticleComboCreator::Get_DecayingParticle(const DReaction* locReaction, const DParticleCombo* locOldParticleCombo, size_t locComboStepIndex, const DKinFitChain* locKinFitChain, const DKinFitResults* locKinFitResults)
+shared_ptr<DKinFitParticle> DParticleComboCreator::Get_DecayingParticle(const DReaction* locReaction, const DParticleCombo* locOldParticleCombo, size_t locComboStepIndex, const shared_ptr<const DKinFitChain>& locKinFitChain, const DKinFitResults* locKinFitResults)
 {
 	auto locReactionStep = locReaction->Get_ReactionStep(locComboStepIndex);
 	Particle_t locPID = locReactionStep->Get_InitialPID();
@@ -479,9 +479,9 @@ shared_ptr<DKinFitParticle> DParticleComboCreator::Get_DecayingParticle(const DR
 	return NULL;
 }
 
-bool DParticleComboCreator::Search_ForParticleInDecay(const DKinFitChain* locKinFitChain, size_t locStepToSearch, const shared_ptr<DKinFitParticle>& locParticleToFind)
+bool DParticleComboCreator::Search_ForParticleInDecay(const shared_ptr<const DKinFitChain>& locKinFitChain, size_t locStepToSearch, const shared_ptr<DKinFitParticle>& locParticleToFind)
 {
-	const DKinFitChainStep* locKinFitChainStep = locKinFitChain->Get_KinFitChainStep(locStepToSearch);
+	auto locKinFitChainStep = locKinFitChain->Get_KinFitChainStep(locStepToSearch);
 	auto locFinalParticles = locKinFitChainStep->Get_FinalParticles();
 	std::sort(locFinalParticles.begin(), locFinalParticles.end());
 	if(std::binary_search(locFinalParticles.begin(), locFinalParticles.end(), locParticleToFind))
@@ -502,7 +502,7 @@ bool DParticleComboCreator::Search_ForParticleInDecay(const DKinFitChain* locKin
 	return false; //not found (yet)
 }
 
-void DParticleComboCreator::Set_SpacetimeVertex(const DReaction* locReaction, const DParticleCombo* locNewParticleCombo, DParticleComboStep* locNewParticleComboStep, size_t locStepIndex, const DKinFitResults* locKinFitResults, const DKinFitChain* locKinFitChain) const
+void DParticleComboCreator::Set_SpacetimeVertex(const DReaction* locReaction, const DParticleCombo* locNewParticleCombo, DParticleComboStep* locNewParticleComboStep, size_t locStepIndex, const DKinFitResults* locKinFitResults, const shared_ptr<const DKinFitChain>& locKinFitChain) const
 {
 	DKinFitType locKinFitType = locReaction->Get_KinFitType();
 	if((locKinFitType == d_NoFit) || (locKinFitType == d_P4Fit))

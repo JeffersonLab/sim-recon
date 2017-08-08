@@ -51,8 +51,8 @@ class DKinFitter //purely virtual: cannot directly instantiate class, can only i
 		void Reset_NewFit(void);
 
 		//ADD CONSTRAINTS
-		void Add_Constraint(DKinFitConstraint* locKinFitConstraint){dKinFitConstraints.insert(locKinFitConstraint);}
-		void Add_Constraints(const set<DKinFitConstraint*>& locKinFitConstraints);
+		void Add_Constraint(const shared_ptr<DKinFitConstraint>& locKinFitConstraint){dKinFitConstraints.insert(locKinFitConstraint);}
+		void Add_Constraints(const set<shared_ptr<DKinFitConstraint>>& locKinFitConstraints);
 
 		//FIT!
 		bool Fit_Reaction(void); //IF YOU OVERRIDE THIS METHOD IN THE DERIVED CLASS, MAKE SURE YOU CALL THIS BASE CLASS METHOD!!
@@ -96,7 +96,7 @@ class DKinFitter //purely virtual: cannot directly instantiate class, can only i
 		const TMatrixDSym& Get_V(void) {return dV;}
 
 		//GET OUTPUT PARTICLES & CONSTRAINTS
-		set<DKinFitConstraint*> Get_KinFitConstraints(void) const{return dKinFitConstraints;}
+		set<shared_ptr<DKinFitConstraint>> Get_KinFitConstraints(void) const{return dKinFitConstraints;}
 		set<shared_ptr<DKinFitParticle>> Get_KinFitParticles(void) const{return dKinFitParticles;}
 
 		/************************************************************ END GET FIT RESULTS ***********************************************************/
@@ -111,12 +111,12 @@ class DKinFitter //purely virtual: cannot directly instantiate class, can only i
 		void Print_Matrix(const TMatrixD& locMatrix) const;
 		void Print_Matrix(const TMatrixF& locMatrix) const;
 
-		template <typename DType> set<DType*> Get_Constraints(void) const;
-		template <typename DType> set<DType*> Get_Constraints(const set<DKinFitConstraint*>& locConstraints) const;
+		template <typename DType> set<shared_ptr<DType>> Get_Constraints(void) const;
+		template <typename DType> set<shared_ptr<DType>> Get_Constraints(const set<shared_ptr<DKinFitConstraint>>& locConstraints) const;
 
 		//When we ask this question, we want to know, is the particle's information used in a constraint of the given type
 			//For example, if a decaying particle is used for a vertex constraint, the particle's that DEFINE the decaying particle are also included
-		template <typename DType> set<DType*> Get_Constraints(const shared_ptr<DKinFitParticle>& locKinFitParticle, bool locOnlyDirectFlag = false) const;
+		template <typename DType> set<shared_ptr<DType>> Get_Constraints(const shared_ptr<DKinFitParticle>& locKinFitParticle, bool locOnlyDirectFlag = false) const;
 		template <typename DType> bool Get_IsInConstraint(const shared_ptr<DKinFitParticle>& locKinFitParticle, bool locOnlyDirectFlag = false) const;
 		template <typename DType> bool Get_IsIndirectlyInConstraint(const shared_ptr<DKinFitParticle>& locKinFitParticle) const;
 
@@ -172,10 +172,10 @@ class DKinFitter //purely virtual: cannot directly instantiate class, can only i
 
 		/******************************************************** CONSTRAINTS AND PARTICLES *********************************************************/
 
-		set<DKinFitConstraint*> dKinFitConstraints;
+		set<shared_ptr<DKinFitConstraint>> dKinFitConstraints;
 		set<shared_ptr<DKinFitParticle>> dKinFitParticles;
-		map<shared_ptr<DKinFitParticle>, set<DKinFitConstraint*> > dParticleConstraintMap; //these particles are either directly or indirectly in these constraints
-		map<shared_ptr<DKinFitParticle>, set<DKinFitConstraint*> > dParticleConstraintMap_Direct; //these particles are directly in these constraints
+		map<shared_ptr<DKinFitParticle>, set<shared_ptr<DKinFitConstraint>>> dParticleConstraintMap; //these particles are either directly or indirectly in these constraints
+		map<shared_ptr<DKinFitParticle>, set<shared_ptr<DKinFitConstraint>>> dParticleConstraintMap_Direct; //these particles are directly in these constraints
 		//indirect: if only present to define the momentum of a decaying particle
 
 		/*********************************************************** FIT MATRIX VARIABLES ***********************************************************/
@@ -218,25 +218,25 @@ class DKinFitter //purely virtual: cannot directly instantiate class, can only i
 		map<shared_ptr<DKinFitParticle>, map<DKinFitPullType, double> > dPulls; //key is particle, 2nd key is param type
 };
 
-inline void DKinFitter::Add_Constraints(const set<DKinFitConstraint*>& locKinFitConstraints)
+inline void DKinFitter::Add_Constraints(const set<shared_ptr<DKinFitConstraint>>& locKinFitConstraints)
 {
 	dKinFitConstraints.insert(locKinFitConstraints.begin(), locKinFitConstraints.end());
 }
 
-template <typename DType> inline set<DType*> DKinFitter::Get_Constraints(void) const
+template <typename DType> inline set<shared_ptr<DType>> DKinFitter::Get_Constraints(void) const
 {
 	//Get all constraints of a given type
 	return Get_Constraints<DType>(dKinFitConstraints);
 }
 
-template <typename DType> inline set<DType*> DKinFitter::Get_Constraints(const set<DKinFitConstraint*>& locConstraints) const
+template <typename DType> inline set<shared_ptr<DType>> DKinFitter::Get_Constraints(const set<shared_ptr<DKinFitConstraint>>& locConstraints) const
 {
 	//Get all constraints of a given type
-	set<DType*> locTypeConstraints;
+	set<shared_ptr<DType>> locTypeConstraints;
 	auto locConstraintIterator = locConstraints.begin();
 	for(; locConstraintIterator != locConstraints.end(); ++locConstraintIterator)
 	{
-		DType* locConstraint = dynamic_cast<DType*>(*locConstraintIterator);
+		auto locConstraint = std::dynamic_pointer_cast<DType>(*locConstraintIterator);
 		if(locConstraint != NULL)
 			locTypeConstraints.insert(locConstraint);
 	}
@@ -255,16 +255,16 @@ template <typename DType> inline bool DKinFitter::Get_IsIndirectlyInConstraint(c
 	return (Get_IsInConstraint<DType>(locKinFitParticle, false) && !Get_IsInConstraint<DType>(locKinFitParticle, true));
 }
 
-template <typename DType> inline set<DType*> DKinFitter::Get_Constraints(const shared_ptr<DKinFitParticle>& locKinFitParticle, bool locOnlyDirectFlag) const
+template <typename DType> inline set<shared_ptr<DType>> DKinFitter::Get_Constraints(const shared_ptr<DKinFitParticle>& locKinFitParticle, bool locOnlyDirectFlag) const
 {
 	//Get all constraints of a given type that a given particle is in: either directly or INDIRECTLY
 		//If the particle is used to define the p3 of a decaying particle that is used in a given constraint, it is included
 	auto& locConstraintMap = locOnlyDirectFlag ? dParticleConstraintMap_Direct : dParticleConstraintMap;
 	auto locMapIterator = locConstraintMap.find(locKinFitParticle);
 	if(locMapIterator == locConstraintMap.end())
-		return set<DType*>();
+		return set<shared_ptr<DType>>();
 
-	const set<DKinFitConstraint*>& locParticleConstraints = locMapIterator->second;
+	auto& locParticleConstraints = locMapIterator->second;
 	return Get_Constraints<DType>(locParticleConstraints);
 }
 

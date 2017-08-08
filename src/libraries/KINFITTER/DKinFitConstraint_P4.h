@@ -19,6 +19,9 @@ class DKinFitConstraint_P4 : public DKinFitConstraint
 
 	public:
 
+		DKinFitConstraint_P4(void);
+		~DKinFitConstraint_P4(void){}
+
 		TVector3 Get_InitP3Guess(void) const{return dInitP3Guess;};
 		void Set_InitP3Guess(const TVector3& locInitP3Guess){dInitP3Guess = locInitP3Guess;};
 
@@ -34,12 +37,11 @@ class DKinFitConstraint_P4 : public DKinFitConstraint
 		set<shared_ptr<DKinFitParticle>> Get_AllParticles(void) const;
 		void Print_ConstraintInfo(void) const;
 
+		void Reset(void);
+		void Release(void);
+
 	private:
 
-		DKinFitConstraint_P4(void);
-		~DKinFitConstraint_P4(void){}
-
-		void Reset(void);
 		void Set_FIndex(char locFIndex){dFIndex = locFIndex;}
 
 		void Set_InitialParticles(const set<shared_ptr<DKinFitParticle>>& locInitialParticles){dInitialParticles = locInitialParticles;}
@@ -61,6 +63,12 @@ inline void DKinFitConstraint_P4::Reset(void)
 {
 	dFIndex = 0;
 	dInitP3Guess = TVector3(0.0, 0.0, 0.0);
+	dInitialParticles.clear();
+	dFinalParticles.clear();
+}
+
+inline void DKinFitConstraint_P4::Release(void)
+{
 	dInitialParticles.clear();
 	dFinalParticles.clear();
 }

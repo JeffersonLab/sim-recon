@@ -4,15 +4,8 @@
 
 /*
  * PROBLEMS:
- * Crash doesn't happen unless p4 + detached vertex
- * I.e. it doesn't happen if other decaying particles, or if p4-only fit
- * Crash PROBABLY doesn't happen unless recycling kinfit chain/steps
- * No crash if no create kinfit combo
- *
- * Doing the above should not cause a crash
- * And for some reason it likes to keep pointing back to DEventSourceREST
- * 
- * Test to make sure it crashes, then resume in DParticleComboCreator::Set_DecayingParticles()
+ * Make all kinfit pools new & shared resources
+ * detached vertex time cut width: detect when needed, only use it then
  *
  * EVENTUALLY:
  * ppp

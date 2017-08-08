@@ -9,7 +9,6 @@
 #include "DResettable.h"
 #include "PID/DKinematicData.h"
 #include "ANALYSIS/DReaction.h" //for DKinFitType
-#include "KINFITTER/DKinFitChain.h"
 #include "KINFITTER/DKinFitParticle.h"
 #include "KINFITTER/DKinFitConstraint.h"
 
@@ -61,7 +60,7 @@ class DKinFitResults : public DResettable
 		/************************************************** SET PARTICLES, COMBOS, AND CONSTRAINTS **************************************************/
 
 		void Add_OutputKinFitParticles(const set<shared_ptr<DKinFitParticle>>& locOutputKinFitParticles);
-		void Add_KinFitConstraints(const set<DKinFitConstraint*>& locKinFitConstraints);
+		void Add_KinFitConstraints(const set<shared_ptr<DKinFitConstraint>>& locKinFitConstraints);
 
 		void Add_ParticleMapping_SourceToOutput(const JObject* locSourceJObject, const shared_ptr<DKinFitParticle>& locOutputKinFitParticle);
 
@@ -69,7 +68,7 @@ class DKinFitResults : public DResettable
 
 		set<shared_ptr<DKinFitParticle>> Get_OutputKinFitParticles(void) const;
 		set<shared_ptr<DKinFitParticle>> Get_OutputKinFitParticles(DKinFitParticleType locKinFitParticleType) const;
-		set<const DKinFitConstraint*> Get_OutputKinFitConstraints(void) const{return dKinFitConstraints;}
+		set<shared_ptr<const DKinFitConstraint>> Get_OutputKinFitConstraints(void) const{return dKinFitConstraints;}
 
 		//Source: JObject from DParticleCombo
 		//Output: DKinFitParticle's containing the fit results (if not included in fit, is still the INPUT object)
@@ -95,7 +94,7 @@ class DKinFitResults : public DResettable
 
 		//OUTPUT PARTICLES AND CONSTRAINTS
 		map<DKinFitParticleType, set<shared_ptr<DKinFitParticle>> > dOutputKinFitParticles; //does not include particles not used in the constraints!
-		set<const DKinFitConstraint*> dKinFitConstraints;
+		set<shared_ptr<const DKinFitConstraint>> dKinFitConstraints;
 
 		//PARTICLE MAPS
 		//Source: JObject from DParticleCombo
@@ -139,9 +138,10 @@ inline void DKinFitResults::Add_OutputKinFitParticles(const set<shared_ptr<DKinF
 		dOutputKinFitParticles[(*locIterator)->Get_KinFitParticleType()].insert(*locIterator);
 }
 
-inline void DKinFitResults::Add_KinFitConstraints(const set<DKinFitConstraint*>& locKinFitConstraints)
+inline void DKinFitResults::Add_KinFitConstraints(const set<shared_ptr<DKinFitConstraint>>& locKinFitConstraints)
 {
-	dKinFitConstraints.insert(locKinFitConstraints.begin(), locKinFitConstraints.end());
+	for(auto& locConstraint : locKinFitConstraints)
+		dKinFitConstraints.insert(std::const_pointer_cast<const DKinFitConstraint>(locConstraint));
 }
 
 inline void DKinFitResults::Add_ParticleMapping_SourceToOutput(const JObject* locSourceJObject, const shared_ptr<DKinFitParticle>& locOutputKinFitParticle)

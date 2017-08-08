@@ -48,7 +48,6 @@ class DKinFitUtils_GlueX : public DKinFitUtils
 
 		void Reset_NewEvent(uint64_t locEventNumber);
 		void Reset_NewEvent(void);
-		void Set_MaxPoolSizes(size_t locNumReactions, size_t locExpectedNumCombos);
 		void Set_IncludeBeamlineInVertexFitFlag(bool locIncludeBeamlineInVertexFitFlag){dIncludeBeamlineInVertexFitFlag = locIncludeBeamlineInVertexFitFlag;}
 
 		/************************************************************** CREATE PARTICLES ************************************************************/
@@ -75,11 +74,11 @@ class DKinFitUtils_GlueX : public DKinFitUtils
 		/************************************************************ CREATE DKINFITCHAIN ***********************************************************/
 
 		//optional: can help make constraints
-		const DKinFitChain* Make_KinFitChain(const DReactionVertexInfo* locReactionVertexInfo, const DReaction* locReaction, const DParticleCombo* locParticleCombo, DKinFitType locKinFitType);
+		shared_ptr<const DKinFitChain> Make_KinFitChain(const DReactionVertexInfo* locReactionVertexInfo, const DReaction* locReaction, const DParticleCombo* locParticleCombo, DKinFitType locKinFitType);
 
 		/************************************************************* CREATE CONSTRAINTS ***********************************************************/
 
-		set<DKinFitConstraint*> Create_Constraints(const DReactionVertexInfo* locReactionVertexInfo, const DReaction* locReaction, const DParticleCombo* locParticleCombo, const DKinFitChain* locKinFitChain, DKinFitType locKinFitType, deque<DKinFitConstraint_Vertex*>& locSortedVertexConstraints);
+		set<shared_ptr<DKinFitConstraint>> Create_Constraints(const DReactionVertexInfo* locReactionVertexInfo, const DReaction* locReaction, const DParticleCombo* locParticleCombo, const shared_ptr<const DKinFitChain>& locKinFitChain, DKinFitType locKinFitType, vector<shared_ptr<DKinFitConstraint_Vertex>>& locSortedVertexConstraints);
 
 		/************************************************************ CONSTRAINT PREDICTORS *********************************************************/
 
@@ -106,9 +105,9 @@ class DKinFitUtils_GlueX : public DKinFitUtils
 
 		/************************************************************ CREATE DKINFITCHAIN ***********************************************************/
 
-		DKinFitChainStep* Make_KinFitChainStep(const DReactionVertexInfo* locReactionVertexInfo, const DReaction* locReaction, const DParticleCombo* locParticleCombo, DKinFitType locKinFitType, size_t locStepIndex, DKinFitChain* locKinFitChain);
-		pair<set<shared_ptr<DKinFitParticle>>, set<shared_ptr<DKinFitParticle>>> Get_StepParticles_NonNull(const DKinFitChain* locKinFitChain, const DReaction* locReaction, size_t locStepIndex, int locNonFixedMassParticleIndex = -99) const;
-		set<shared_ptr<DKinFitParticle>> Build_ParticleSet(const vector<pair<int, int>>& locParticleIndices, const DKinFitChain* locKinFitChain);
+		shared_ptr<DKinFitChainStep> Make_KinFitChainStep(const DReactionVertexInfo* locReactionVertexInfo, const DReaction* locReaction, const DParticleCombo* locParticleCombo, DKinFitType locKinFitType, size_t locStepIndex, const shared_ptr<DKinFitChain>& locKinFitChain);
+		pair<set<shared_ptr<DKinFitParticle>>, set<shared_ptr<DKinFitParticle>>> Get_StepParticles_NonNull(const shared_ptr<const DKinFitChain>& locKinFitChain, const DReaction* locReaction, size_t locStepIndex, int locNonFixedMassParticleIndex = -99) const;
+		set<shared_ptr<DKinFitParticle>> Build_ParticleSet(const vector<pair<int, int>>& locParticleIndices, const shared_ptr<const DKinFitChain>& locKinFitChain);
 
 		/************************************************************ CONSTRAINT PREDICTORS *********************************************************/
 

@@ -33,7 +33,7 @@ class DParticleComboCreator
 		DParticleComboCreator(JEventLoop* locEventLoop, const DSourceComboer* locSourceComboer, const DSourceComboTimeHandler* locSourceComboTimeHandler, const DSourceComboVertexer* locSourceComboVertexer);
 
 		const DParticleCombo* Build_ParticleCombo(const DReactionVertexInfo* locReactionVertexInfo, const DSourceCombo* locFullCombo, const DKinematicData* locBeamParticle, int locRFBunchShift, DKinFitType locKinFitType);
-		const DParticleCombo* Create_KinFitCombo_NewCombo(const DParticleCombo* locOrigCombo, const DReaction* locReaction, const DKinFitResults* locKinFitResults, const DKinFitChain* locKinFitChain);
+		const DParticleCombo* Create_KinFitCombo_NewCombo(const DParticleCombo* locOrigCombo, const DReaction* locReaction, const DKinFitResults* locKinFitResults, const shared_ptr<const DKinFitChain>& locKinFitChain);
 
 		const DParticleCombo* Build_ThrownCombo(JEventLoop* locEventLoop);
 		const DParticleCombo* Build_ThrownCombo(JEventLoop* locEventLoop, const DReaction* locThrownReaction, deque<pair<const DMCThrown*, deque<const DMCThrown*> > >& locThrownSteps);
@@ -48,12 +48,12 @@ class DParticleComboCreator
 		bool Get_CreateNeutralErrorMatrixFlag_Combo(const DReactionVertexInfo* locReactionVertexInfo, DKinFitType locKinFitType);
 
 		//DECAYING PARTICLES, POST-KINFIT
-		void Set_DecayingParticles(const DReaction* locReaction, const DParticleCombo* locNewParticleCombo, const DParticleCombo* locOldParticleCombo, size_t locStepIndex, DParticleComboStep* locNewParticleComboStep, const DKinFitChain* locKinFitChain, const DKinFitResults* locKinFitResults);
-		shared_ptr<DKinFitParticle> Get_DecayingParticle(const DReaction* locReaction, const DParticleCombo* locOldParticleCombo, size_t locComboStepIndex, const DKinFitChain* locKinFitChain, const DKinFitResults* locKinFitResults);
-		bool Search_ForParticleInDecay(const DKinFitChain* locKinFitChain, size_t locStepToSearch, const shared_ptr<DKinFitParticle>& locParticleToFind);
+		void Set_DecayingParticles(const DReaction* locReaction, const DParticleCombo* locNewParticleCombo, const DParticleCombo* locOldParticleCombo, size_t locStepIndex, DParticleComboStep* locNewParticleComboStep, const shared_ptr<const DKinFitChain>& locKinFitChain, const DKinFitResults* locKinFitResults);
+		shared_ptr<DKinFitParticle> Get_DecayingParticle(const DReaction* locReaction, const DParticleCombo* locOldParticleCombo, size_t locComboStepIndex, const shared_ptr<const DKinFitChain>& locKinFitChain, const DKinFitResults* locKinFitResults);
+		bool Search_ForParticleInDecay(const shared_ptr<const DKinFitChain>& locKinFitChain, size_t locStepToSearch, const shared_ptr<DKinFitParticle>& locParticleToFind);
 
 		//SPACETIME VERTEX, POST-KINFIT
-		void Set_SpacetimeVertex(const DReaction* locReaction, const DParticleCombo* locNewParticleCombo, DParticleComboStep* locNewParticleComboStep, size_t locStepIndex, const DKinFitResults* locKinFitResults, const DKinFitChain* locKinFitChain) const;
+		void Set_SpacetimeVertex(const DReaction* locReaction, const DParticleCombo* locNewParticleCombo, DParticleComboStep* locNewParticleComboStep, size_t locStepIndex, const DKinFitResults* locKinFitResults, const shared_ptr<const DKinFitChain>& locKinFitChain) const;
 
 		//CREATE PARTICLES
 		const DChargedTrackHypothesis* Create_ChargedHypo(const DChargedTrack* locChargedTrack, Particle_t locPID, double locPropagatedRFTime, bool locIsProductionVertex, const DSourceCombo* locVertexPrimaryFullCombo, const DKinematicData* locBeamParticle);

@@ -1203,7 +1203,7 @@ bool DCutAction_OneVertexKinFit::Perform_Action(JEventLoop* locEventLoop, const 
 	set<shared_ptr<DKinFitParticle>> locKinFitParticleSet;
 	for(size_t loc_i = 0; loc_i < locParticles.size(); ++loc_i)
 	{
-		const DChargedTrackHypothesis* locChargedTrackHypothesis = static_cast<const DChargedTrackHypothesis*>(locParticles[loc_i]);
+		auto locChargedTrackHypothesis = static_cast<const DChargedTrackHypothesis*>(locParticles[loc_i]);
 		auto locKinFitParticle = dKinFitUtils->Make_DetectedParticle(locChargedTrackHypothesis);
 		locKinFitParticles.push_back(locKinFitParticle);
 		locKinFitParticleSet.insert(locKinFitParticle);
@@ -1213,7 +1213,7 @@ bool DCutAction_OneVertexKinFit::Perform_Action(JEventLoop* locEventLoop, const 
 	TVector3 locVertexGuess = dAnalysisUtilities->Calc_CrudeVertex(locParticles);
 
 	// make & set vertex constraint
-	DKinFitConstraint_Vertex* locVertexConstraint = dKinFitUtils->Make_VertexConstraint(locKinFitParticleSet, {}, locVertexGuess);
+	auto locVertexConstraint = dKinFitUtils->Make_VertexConstraint(locKinFitParticleSet, {}, locVertexGuess);
 	dKinFitter->Add_Constraint(locVertexConstraint);
 
 	// PERFORM THE KINEMATIC FIT
@@ -1225,7 +1225,7 @@ bool DCutAction_OneVertexKinFit::Perform_Action(JEventLoop* locEventLoop, const 
 
 	// GET THE FIT RESULTS
 	double locConfidenceLevel = dKinFitter->Get_ConfidenceLevel();
-	DKinFitConstraint_Vertex* locResultVertexConstraint = dynamic_cast<DKinFitConstraint_Vertex*>(*dKinFitter->Get_KinFitConstraints().begin());
+	auto locResultVertexConstraint = std::dynamic_pointer_cast<DKinFitConstraint_Vertex>(*dKinFitter->Get_KinFitConstraints().begin());
 	TVector3 locFitVertex = locResultVertexConstraint->Get_CommonVertex();
 
 	//RESET MEMORY FROM LAST KINFIT!!

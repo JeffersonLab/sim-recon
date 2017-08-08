@@ -21,6 +21,9 @@ class DKinFitConstraint_Vertex : public DKinFitConstraint
 
 	public:
 
+		DKinFitConstraint_Vertex(void);
+		virtual ~DKinFitConstraint_Vertex(void){}
+
 		TVector3 Get_InitVertexGuess(void) const{return dInitVertexGuess;};
 		void Set_InitVertexGuess(const TVector3& locInitVertexGuess){dInitVertexGuess = locInitVertexGuess;};
 
@@ -35,12 +38,10 @@ class DKinFitConstraint_Vertex : public DKinFitConstraint
 
 		void Print_ConstraintInfo(void) const;
 
-	protected:
-
-		DKinFitConstraint_Vertex(void);
-		virtual ~DKinFitConstraint_Vertex(void){}
-
 		virtual void Reset(void);
+		virtual void Release(void);
+
+	protected:
 
 		void Set_FIndex(const shared_ptr<DKinFitParticle>& locKinFitParticle, char locFIndex){dConstraintEquationParticleMap[locKinFitParticle] = locFIndex;}
 		void Set_CommonVxParamIndex(char locCommonVxParamIndex);
@@ -66,6 +67,13 @@ inline DKinFitConstraint_Vertex::DKinFitConstraint_Vertex(void)
 inline void DKinFitConstraint_Vertex::Reset(void)
 {
 	dInitVertexGuess = TVector3(0.0, 0.0, 0.0);
+	dFullConstrainParticles.clear();
+	dNoConstrainParticles.clear();
+	dConstraintEquationParticleMap.clear();
+}
+
+inline void DKinFitConstraint_Vertex::Release(void)
+{
 	dFullConstrainParticles.clear();
 	dNoConstrainParticles.clear();
 	dConstraintEquationParticleMap.clear();

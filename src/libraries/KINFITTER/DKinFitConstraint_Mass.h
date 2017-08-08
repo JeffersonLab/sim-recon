@@ -18,18 +18,20 @@ class DKinFitConstraint_Mass : public DKinFitConstraint
 
 	public:
 
+		DKinFitConstraint_Mass(void);
+		~DKinFitConstraint_Mass(void){}
+
 		shared_ptr<DKinFitParticle> Get_DecayingParticle(void) const{return dDecayingParticle;}
 		set<shared_ptr<DKinFitParticle>> Get_AllParticles(void) const{return {dDecayingParticle};}
 
 		char Get_FIndex(void) const{return dFIndex;}
 		void Print_ConstraintInfo(void) const;
 
+		void Reset(void);
+		void Release(void){dDecayingParticle = nullptr;}
+
 	private:
 
-		DKinFitConstraint_Mass(void);
-		~DKinFitConstraint_Mass(void){}
-
-		void Reset(void);
 		void Set_FIndex(char locFIndex){dFIndex = locFIndex;}
 		void Set_DecayingParticle(const shared_ptr<DKinFitParticle>& locDecayingParticle){dDecayingParticle = locDecayingParticle;}
 
@@ -45,7 +47,7 @@ inline DKinFitConstraint_Mass::DKinFitConstraint_Mass(void)
 inline void DKinFitConstraint_Mass::Reset(void)
 {
 	dFIndex = 0;
-	dDecayingParticle = NULL;
+	dDecayingParticle = nullptr;
 }
 
 inline void DKinFitConstraint_Mass::Print_ConstraintInfo(void) const

@@ -113,7 +113,7 @@ jerror_t DVertex_factory::evnt(JEventLoop* locEventLoop, uint64_t eventnumber)
 		locKinFitParticles.insert(dKinFitUtils->Make_DetectedParticle(locTrackTimeBasedVectorToUse[loc_i]));
 
 	// create vertex constraint
-	DKinFitConstraint_Vertex* locVertexConstraint = dKinFitUtils->Make_VertexConstraint(locKinFitParticles, {}, locTRoughPosition);
+	auto locVertexConstraint = dKinFitUtils->Make_VertexConstraint(locKinFitParticles, {}, locTRoughPosition);
 	dKinFitter->Add_Constraint(locVertexConstraint);
 
 	// fit, save, and return
@@ -194,7 +194,7 @@ jerror_t DVertex_factory::Create_Vertex_Rough(DVector3 locPosition, const DEvent
 
 jerror_t DVertex_factory::Create_Vertex_KinFit(const DEventRFBunch* locEventRFBunch)
 {
-	DKinFitConstraint_Vertex* locResultVertexConstraint = dynamic_cast<DKinFitConstraint_Vertex*>(*dKinFitter->Get_KinFitConstraints().begin());
+	auto locResultVertexConstraint = std::dynamic_pointer_cast<DKinFitConstraint_Vertex>(*dKinFitter->Get_KinFitConstraints().begin());
 
 	TVector3 locFitVertex = locResultVertexConstraint->Get_CommonVertex();
 	DVector3 locDFitVertex(locFitVertex.X(), locFitVertex.Y(), locFitVertex.Z());

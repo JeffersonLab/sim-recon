@@ -3,25 +3,27 @@
 
 #include <vector>
 #include <algorithm>
+#include <memory>
 
 #include "DKinFitParticle.h"
 #include "DKinFitChainStep.h"
+#include "DResettable.h"
 
 //This class is not necessary to use the kinematic fitter, but it is necessary to use some of the setup help functions in DKinFitUtils
 	//Is mostly useful when coding for the generic situation of ANY possible decay chain (rather than handling a specific one)
 
 using namespace std;
 
-class DKinFitChain
+class DKinFitChain : public DResettable
 {
 	public:
 
-		DKinFitChain(void) : dDefinedParticleStepIndex(-1), dIsInclusiveChannelFlag(false) {}
 		void Reset(void);
+		void Release(void);
 
 		//GET, ADD STEPS
-		const DKinFitChainStep* Get_KinFitChainStep(size_t locStepIndex) const;
-		void Add_KinFitChainStep(DKinFitChainStep* locKinFitChainStep){dKinFitChainSteps.push_back(locKinFitChainStep);}
+		shared_ptr<const DKinFitChainStep> Get_KinFitChainStep(size_t locStepIndex) const;
+		void Add_KinFitChainStep(const shared_ptr<DKinFitChainStep>& locKinFitChainStep){dKinFitChainSteps.push_back(locKinFitChainStep);}
 		size_t Get_NumKinFitChainSteps(void) const{return dKinFitChainSteps.size();}
 
 		//GET ALL PARTICLES
@@ -42,10 +44,10 @@ class DKinFitChain
 
 	private:
 
-		vector<DKinFitChainStep*> dKinFitChainSteps;
+		vector<shared_ptr<DKinFitChainStep>> dKinFitChainSteps;
 		map<shared_ptr<DKinFitParticle>, char> dDecayStepIndices; //key is decaying particle, value is the step representing the particle decay
-		signed char dDefinedParticleStepIndex; //step containing the missing or open-ended-decaying particle, -1 if none
-		bool dIsInclusiveChannelFlag; //i.e. does the missing particle have PID 0 (unknown)
+		signed char dDefinedParticleStepIndex = -1; //step containing the missing or open-ended-decaying particle, -1 if none
+		bool dIsInclusiveChannelFlag = false; //i.e. does the missing particle have PID 0 (unknown)
 };
 
 inline void DKinFitChain::Reset(void)
@@ -56,15 +58,21 @@ inline void DKinFitChain::Reset(void)
 	dDecayStepIndices.clear();
 }
 
+inline void DKinFitChain::Release(void)
+{
+	dKinFitChainSteps.clear();
+	dDecayStepIndices.clear();
+}
+
 inline signed char DKinFitChain::Get_DecayStepIndex(const shared_ptr<DKinFitParticle>& locKinFitParticle) const
 {
 	auto locIterator = dDecayStepIndices.find(locKinFitParticle);
 	return ((locIterator != dDecayStepIndices.end()) ? locIterator->second : -1);
 }
 
-inline const DKinFitChainStep* DKinFitChain::Get_KinFitChainStep(size_t locStepIndex) const
+inline shared_ptr<const DKinFitChainStep> DKinFitChain::Get_KinFitChainStep(size_t locStepIndex) const
 {
-	return ((locStepIndex < dKinFitChainSteps.size()) ? dKinFitChainSteps[locStepIndex] : NULL);
+	return ((locStepIndex < dKinFitChainSteps.size()) ? std::const_pointer_cast<const DKinFitChainStep>(dKinFitChainSteps[locStepIndex]) : nullptr);
 }
 
 inline vector<shared_ptr<DKinFitParticle>> DKinFitChain::Get_AllParticles(void) const
