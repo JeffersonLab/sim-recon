@@ -116,21 +116,31 @@ class DHistogramAction_ObjectMemory : public DAnalysisAction
 		map<string, int> dBinMap;
 
 		DResourcePool<TMatrixFSym> dResourcePool_TMatrixFSym;
-		DResourcePool<DKinFitParticle> dResourcePool_KinFitParticle;
-		DResourcePool<DSourceCombo> dResourcePool_SourceCombo;
-		DResourcePool<vector<const DSourceCombo*>> dResourcePool_SourceComboVector;
-		DResourcePool<DKinematicData> dResourcePool_KinematicData;
-		DResourcePool<DKinFitResults> dResourcePool_KinFitResults;
-		DResourcePool<DEventRFBunch> dResourcePool_EventRFBunch;
-		DResourcePool<DParticleCombo> dResourcePool_ParticleCombo;
-		DResourcePool<DParticleComboStep> dResourcePool_ParticleComboStep;
-		DResourcePool<DBeamPhoton> dResourcePool_BeamPhotons;
-		DResourcePool<DNeutralParticleHypothesis> dResourcePool_NeutralParticleHypothesis;
-		DResourcePool<DChargedTrackHypothesis> dResourcePool_ChargedTrackHypothesis;
 		DResourcePool<DKinematicData::DKinematicInfo> dResourcePool_KinematicInfo;
 		DResourcePool<DChargedTrackHypothesis::DTimingInfo> dResourcePool_ChargedHypoTimingInfo;
 		DResourcePool<DChargedTrackHypothesis::DTrackingInfo> dResourcePool_ChargedHypoTrackingInfo;
 		DResourcePool<DNeutralParticleHypothesis::DTimingInfo> dResourcePool_NeutralHypoTimingInfo;
+
+		DResourcePool<DKinematicData> dResourcePool_KinematicData;
+		DResourcePool<DBeamPhoton> dResourcePool_BeamPhotons;
+		DResourcePool<DNeutralParticleHypothesis> dResourcePool_NeutralParticleHypothesis;
+		DResourcePool<DChargedTrackHypothesis> dResourcePool_ChargedTrackHypothesis;
+		DResourcePool<DEventRFBunch> dResourcePool_EventRFBunch;
+
+		DResourcePool<DSourceCombo> dResourcePool_SourceCombo;
+		DResourcePool<vector<const DSourceCombo*>> dResourcePool_SourceComboVector;
+		DResourcePool<DParticleCombo> dResourcePool_ParticleCombo;
+		DResourcePool<DParticleComboStep> dResourcePool_ParticleComboStep;
+
+		DResourcePool<DKinFitParticle> dResourcePool_KinFitParticle;
+		DResourcePool<DKinFitChainStep> dResourcePool_KinFitChainStep;
+		DResourcePool<DKinFitChain> dResourcePool_KinFitChain;
+		DResourcePool<DKinFitResults> dResourcePool_KinFitResults;
+
+		DResourcePool<DKinFitConstraint_Mass> dResourcePool_MassConstraint;
+		DResourcePool<DKinFitConstraint_P4> dResourcePool_P4Constraint;
+		DResourcePool<DKinFitConstraint_Vertex> dResourcePool_VertexConstraint;
+		DResourcePool<DKinFitConstraint_Spacetime> dResourcePool_SpacetimeConstraint;
 
 		TH2I* dHist_NumObjects;
 		TH2F* dHist_Memory;

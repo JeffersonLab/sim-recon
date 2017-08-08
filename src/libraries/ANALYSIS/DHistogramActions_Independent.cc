@@ -8,7 +8,7 @@ void DHistogramAction_ObjectMemory::Initialize(JEventLoop* locEventLoop)
 	//setup binning
 	vector<string> locBinLabels = {"TMatrixFSym", "DKinematicInfo", "Charged DTimingInfo", "DTrackingInfo", "Neutral DTimingInfo", "KinematicDatas", "Charged Hypos", "Neutral Hypos", "Beam Photons",
 			"Combo RF Bunches", "Source Combos", "Source Combo Vectors", "Particle Combos", "Particle Combo Steps",
-			"DKinFitParticle", "DKinFitResults"}; //"DKinFitChainStep", "DKinFitChain", "DKinFitConstraints",
+			"DKinFitParticle", "DKinFitChainStep", "DKinFitChain", "DKinFitResults", "DKinFitConstraint_Mass", "DKinFitConstraint_P4", "DKinFitConstraint_Vertex", "DKinFitConstraint_Spacetime"};
 	for(size_t loc_i = 0; loc_i < locBinLabels.size(); ++loc_i)
 		dBinMap[locBinLabels[loc_i]] = loc_i + 1;
 
@@ -182,10 +182,54 @@ bool DHistogramAction_ObjectMemory::Perform_Action(JEventLoop* locEventLoop, con
 	locMemoryMap[locBin] = locMemory;
 	locTotalMemory += locMemory;
 
+	//DKinFitChainStep
+	locBin = dBinMap["DKinFitChainStep"];
+	locNumObjectsMap[locBin] = dResourcePool_KinFitChainStep.Get_NumObjectsAllThreads();
+	locMemory = sizeof(DKinFitChainStep)*locNumObjectsMap[locBin];
+	locMemoryMap[locBin] = locMemory;
+	locTotalMemory += locMemory;
+
+	//DKinFitChain
+	locBin = dBinMap["DKinFitChain"];
+	locNumObjectsMap[locBin] = dResourcePool_KinFitChain.Get_NumObjectsAllThreads();
+	locMemory = sizeof(DKinFitChain)*locNumObjectsMap[locBin];
+	locMemoryMap[locBin] = locMemory;
+	locTotalMemory += locMemory;
+
 	//DKinFitResults
 	locBin = dBinMap["DKinFitResults"];
 	locNumObjectsMap[locBin] = dResourcePool_KinFitResults.Get_NumObjectsAllThreads();
 	locMemory = sizeof(DKinFitResults)*locNumObjectsMap[locBin];
+	locMemoryMap[locBin] = locMemory;
+	locTotalMemory += locMemory;
+
+	/******************************************************* KINFIT CONSTRAINTS *******************************************************/
+
+	//DKinFitConstraint_Mass
+	locBin = dBinMap["DKinFitConstraint_Mass"];
+	locNumObjectsMap[locBin] = dResourcePool_MassConstraint.Get_NumObjectsAllThreads();
+	locMemory = sizeof(DKinFitConstraint_Mass)*locNumObjectsMap[locBin];
+	locMemoryMap[locBin] = locMemory;
+	locTotalMemory += locMemory;
+
+	//DKinFitConstraint_P4
+	locBin = dBinMap["DKinFitConstraint_P4"];
+	locNumObjectsMap[locBin] = dResourcePool_P4Constraint.Get_NumObjectsAllThreads();
+	locMemory = sizeof(DKinFitConstraint_P4)*locNumObjectsMap[locBin];
+	locMemoryMap[locBin] = locMemory;
+	locTotalMemory += locMemory;
+
+	//DKinFitConstraint_Vertex
+	locBin = dBinMap["DKinFitConstraint_Vertex"];
+	locNumObjectsMap[locBin] = dResourcePool_VertexConstraint.Get_NumObjectsAllThreads();
+	locMemory = sizeof(DKinFitConstraint_Vertex)*locNumObjectsMap[locBin];
+	locMemoryMap[locBin] = locMemory;
+	locTotalMemory += locMemory;
+
+	//DKinFitConstraint_Spacetime
+	locBin = dBinMap["DKinFitConstraint_Spacetime"];
+	locNumObjectsMap[locBin] = dResourcePool_SpacetimeConstraint.Get_NumObjectsAllThreads();
+	locMemory = sizeof(DKinFitConstraint_Spacetime)*locNumObjectsMap[locBin];
 	locMemoryMap[locBin] = locMemory;
 	locTotalMemory += locMemory;
 

@@ -216,6 +216,27 @@ DSourceComboTimeHandler::DSourceComboTimeHandler(JEventLoop* locEventLoop, DSour
 	locEventLoop->GetCalib("PHOTON_BEAM/RF/beam_period", locBeamPeriodVector);
 	dBeamBunchPeriod = locBeamPeriodVector[0];
 
+	//Look for troublesome channels: those with photons being produced from a detached vertex
+	//If any, adjust dMaxDecayTimeOffset accordingly
+	auto locReactions = DAnalysis::Get_Reactions(locEventLoop);
+	for(auto& locReaction : locReactions)
+	{
+		for(size_t loc_i = 0; loc_i < locReaction->Get_NumReactionSteps(); ++loc_i)
+		{
+			auto locStep = locReaction->Get_ReactionStep(loc_i);
+			auto locPID = locStep->Get_InitialPID();
+			if(!IsDetachedVertex(locPID))
+				continue;
+			auto locChainPIDs = DAnalysis::Get_ChainPIDs(locReaction, loc_i, -1, {}, true);
+			if(std::find(locChainPIDs.begin(), locChainPIDs.end(), Gamma) == locChainPIDs.end())
+				continue;
+			if((locPID == XiMinus) || (locPID == OmegaMinus) || (locPID == Xi0))
+				dMaxDecayTimeOffset = 2.0; //if 2x or 3x strange quarks, increase distance
+			else if(dMaxDecayTimeOffset < 1.9)
+				dMaxDecayTimeOffset = 1.0;
+		}
+	}
+
 	//These functions can have the same name because we are no longer adding them to the global ROOT list of functions
 
 	// Timing Cuts: Photon

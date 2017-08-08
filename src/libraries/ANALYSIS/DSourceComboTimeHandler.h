@@ -130,7 +130,7 @@ class DSourceComboTimeHandler
 		float dPhotonVertexZRangeLow = 45.0;
 		size_t dNumPhotonVertexZBins = 6;
 		//due to detached vertices
-		double dMaxDecayTimeOffset = 2.0;
+		double dMaxDecayTimeOffset = 0.0; //changed in constructor if needed
 
 		//SHOWERS SORTED BY RF BUNCH
 		const DEventRFBunch* dInitialEventRFBunch = nullptr;
