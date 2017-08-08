@@ -221,7 +221,7 @@ DSourceComboTimeHandler::DSourceComboTimeHandler(JEventLoop* locEventLoop, DSour
 	auto locReactions = DAnalysis::Get_Reactions(locEventLoop);
 	for(auto& locReaction : locReactions)
 	{
-		for(size_t loc_i = 0; loc_i < locReaction->Get_NumReactionSteps(); ++loc_i)
+		for(size_t loc_i = 1; loc_i < locReaction->Get_NumReactionSteps(); ++loc_i)
 		{
 			auto locStep = locReaction->Get_ReactionStep(loc_i);
 			auto locPID = locStep->Get_InitialPID();
