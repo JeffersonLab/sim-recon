@@ -66,7 +66,7 @@ inline DReactionVertexInfo::DReactionVertexInfo(const DReaction* locReaction, co
 }
 
 //NAMESPACE SCOPE FUNCTIONS
-inline vector<const DReactionStepVertexInfo*> Get_StepVertexInfos_OrderByStep(const DReactionVertexInfo* locReactionVertexInfo) const
+inline vector<const DReactionStepVertexInfo*> Get_StepVertexInfos_OrderByStep(const DReactionVertexInfo* locReactionVertexInfo)
 {
 	auto locStepVertexInfos = locReactionVertexInfo->Get_StepVertexInfos();
 
