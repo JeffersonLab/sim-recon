@@ -72,7 +72,10 @@ DReactionVertexInfo* DReactionVertexInfo_factory::Build_VertexInfo(const DReacti
 		Group_VertexParticles(locVertexInfo);
 	}
 
-	//sorted by dependency order
+	//work in reverse: try to build decaying particles out of decay products first, rather than missing mass
+	std::reverse(std::begin(locVertexInfos), std::end(locVertexInfos));
+
+	//results are sorted by dependency order
 	locVertexInfos = Link_Vertices(locReaction, locVertexInfos, false);
 	locVertexInfos = Link_Vertices(locReaction, locVertexInfos, true);
 	return new DReactionVertexInfo(locReaction, locVertexInfos);
