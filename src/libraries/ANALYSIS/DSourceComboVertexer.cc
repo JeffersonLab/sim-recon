@@ -571,7 +571,7 @@ void DSourceComboVertexer::Calc_TimeOffsets(const DReactionVertexInfo* locReacti
 
 	//loop over vertices
 	//MUST GO IN STEP ORDER!!
-	for(const auto& locStepVertexInfo : locReactionVertexInfo->Get_StepVertexInfos())
+	for(const auto& locStepVertexInfo : locReactionVertexInfo->Get_StepVertexInfos_StepOrder())
 	{
 		if(dDebugLevel >= 10)
 			cout << "Step: " << locStepVertexInfo->Get_StepIndices().front() << endl;

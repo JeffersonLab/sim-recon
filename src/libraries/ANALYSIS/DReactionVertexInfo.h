@@ -32,6 +32,7 @@ class DReactionVertexInfo : public JObject
 		const DReaction* Get_Reaction(void) const{return *dReactions.begin();} //since their channels are identical, any one will do (if used correctly)
 		vector<const DReaction*> Get_Reactions(void) const{return dReactions;}
 		vector<const DReactionStepVertexInfo*> Get_StepVertexInfos(void) const{return dStepVertexInfos;}
+		vector<const DReactionStepVertexInfo*> Get_StepVertexInfos_StepOrder(void) const;
 		const DReactionStepVertexInfo* Get_StepVertexInfo(size_t locStepIndex) const{return dVertexInfoMap.at(locStepIndex);}
 
 	private:
@@ -63,6 +64,19 @@ inline DReactionVertexInfo::DReactionVertexInfo(const DReaction* locReaction, co
 		for(auto locStepIndex : locVertexInfo->Get_StepIndices())
 			dVertexInfoMap.emplace(locStepIndex, locVertexInfo);
 	}
+}
+
+inline vector<const DReactionStepVertexInfo*> DReactionVertexInfo::Get_StepVertexInfos_StepOrder(void) const
+{
+	vector<const DReactionStepVertexInfo*> locVertexInfos;
+	for(const auto& locStepPair : dVertexInfoMap)
+	{
+		if(locStepPair.first == 0)
+			locVertexInfos.push_back(locStepPair.second);
+		else if(locStepPair.second != locVertexInfos.back())
+			locVertexInfos.push_back(locStepPair.second);
+	}
+	return locVertexInfos;
 }
 
 //NAMESPACE SCOPE FUNCTIONS
