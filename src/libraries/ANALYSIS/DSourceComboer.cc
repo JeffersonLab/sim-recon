@@ -3701,11 +3701,14 @@ const DSourceCombo* DSourceComboer::Get_NextChargedCombo(const DSourceCombo* loc
 	for(const auto& locNextPotentialCombo : locNextChargedComboVector)
 	{
 		//either locNextPotentialCombo is the primary combo of a detached vertex (and we need to check the zbin), or it's not (returns -1) and we don't
-		auto locNextVertexZBin = dSourceComboVertexer->Get_VertexZBin(false, locNextPotentialCombo, nullptr);
-		if(dDebugLevel >= 20)
-			cout << "next potential combo, next zbin, desired zbin = " << locNextPotentialCombo << ", " << int(locNextVertexZBin) << ", " << int(locDesiredVertexZBin) << endl;
-		if((locNextVertexZBin != locDesiredVertexZBin) && (locNextVertexZBin != DSourceComboInfo::Get_VertexZIndex_Unknown()))
-			continue;
+		if(IsDetachedVertex(std::get<0>(locUseToFind)))
+		{
+			auto locNextVertexZBin = dSourceComboVertexer->Get_VertexZBin(false, locNextPotentialCombo, nullptr);
+			if(dDebugLevel >= 20)
+				cout << "detached next potential combo, next zbin, desired zbin = " << locNextPotentialCombo << ", " << int(locNextVertexZBin) << ", " << int(locDesiredVertexZBin) << endl;
+			if(locNextVertexZBin != locDesiredVertexZBin)
+				continue;
+		}
 		if(dDebugLevel >= 20)
 			cout << "pre-count, instance = " << locCount << ", " << locInstance << endl;
 		if(++locCount == locInstance)
