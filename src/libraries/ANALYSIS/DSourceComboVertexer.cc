@@ -571,7 +571,7 @@ void DSourceComboVertexer::Calc_TimeOffsets(const DReactionVertexInfo* locReacti
 
 	//loop over vertices
 	//MUST GO IN STEP ORDER!!
-	for(const auto& locStepVertexInfo : locReactionVertexInfo->Get_StepVertexInfos_StepOrder())
+	for(const auto& locStepVertexInfo : DAnalysis::Get_StepVertexInfos_OrderByStep(locReactionVertexInfo))
 	{
 		if(dDebugLevel >= 10)
 			cout << "Step: " << locStepVertexInfo->Get_StepIndices().front() << endl;
@@ -605,6 +605,12 @@ void DSourceComboVertexer::Calc_TimeOffsets(const DReactionVertexInfo* locReacti
 			locChargedTimeOffsetMap.emplace(locChargedReactionCombo, 0.0);
 			continue;
 		}
+
+		//if this vertex has not been determined yet: save calcing of time offset for later
+		if((locFullReactionCombo == nullptr) && !Get_VertexDeterminableWithCharged(locStepVertexInfo))
+			continue; //don't know the vertex yet, try the next vertex
+		if((locFullReactionCombo != nullptr) && !Get_VertexDeterminableWithPhotons(locStepVertexInfo))
+			continue; //don't know the vertex yet, try the next vertex
 
 		//get parent information
 		auto locParentCombo = dSourceComboer->Get_VertexPrimaryCombo(locActiveReactionCombo, locParentVertexInfo);

@@ -32,7 +32,6 @@ class DReactionVertexInfo : public JObject
 		const DReaction* Get_Reaction(void) const{return *dReactions.begin();} //since their channels are identical, any one will do (if used correctly)
 		vector<const DReaction*> Get_Reactions(void) const{return dReactions;}
 		vector<const DReactionStepVertexInfo*> Get_StepVertexInfos(void) const{return dStepVertexInfos;}
-		vector<const DReactionStepVertexInfo*> Get_StepVertexInfos_StepOrder(void) const;
 		const DReactionStepVertexInfo* Get_StepVertexInfo(size_t locStepIndex) const{return dVertexInfoMap.at(locStepIndex);}
 
 	private:
@@ -66,20 +65,19 @@ inline DReactionVertexInfo::DReactionVertexInfo(const DReaction* locReaction, co
 	}
 }
 
-inline vector<const DReactionStepVertexInfo*> DReactionVertexInfo::Get_StepVertexInfos_StepOrder(void) const
+//NAMESPACE SCOPE FUNCTIONS
+inline vector<const DReactionStepVertexInfo*> Get_StepVertexInfos_OrderByStep(const DReactionVertexInfo* locReactionVertexInfo) const
 {
-	vector<const DReactionStepVertexInfo*> locVertexInfos;
-	for(const auto& locStepPair : dVertexInfoMap)
-	{
-		if(locStepPair.first == 0)
-			locVertexInfos.push_back(locStepPair.second);
-		else if(locStepPair.second != locVertexInfos.back())
-			locVertexInfos.push_back(locStepPair.second);
-	}
-	return locVertexInfos;
+	auto locStepVertexInfos = locReactionVertexInfo->Get_StepVertexInfos();
+
+	//sort vertex infos in reverse-step order
+	auto Comparator_OrderByStep = [](const DReactionStepVertexInfo* lhs, const DReactionStepVertexInfo* rhs) -> bool
+		{return lhs->Get_StepIndices().front() < rhs->Get_StepIndices().front();}; // >: reverse order
+
+	std::sort(locStepVertexInfos.begin(), locStepVertexInfos.end(), Comparator_OrderByStep);
+	return locStepVertexInfos;
 }
 
-//NAMESPACE SCOPE FUNCTIONS
 inline vector<const DReactionStepVertexInfo*> Get_StepVertexInfos_ReverseOrderByStep(const DReactionVertexInfo* locReactionVertexInfo)
 {
 	auto locStepVertexInfos = locReactionVertexInfo->Get_StepVertexInfos();
