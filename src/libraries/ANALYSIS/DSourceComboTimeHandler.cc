@@ -665,7 +665,7 @@ bool DSourceComboTimeHandler::Select_RFBunches_Charged(const DReactionVertexInfo
 		auto locTimeOffset = dSourceComboVertexer->Get_TimeOffset(locIsPrimaryProductionVertex, locReactionChargedCombo, locVertexPrimaryCombo, nullptr);
 
 //		auto locPropagatedRFTime = Calc_PropagatedRFTime(locPrimaryVertexZ, 0, locTimeOffset);
-		auto locPropagatedRFTime = Calc_PropagatedRFTime(locPrimaryVertexZ, 0, 0.0); //COMPARE:
+		auto locPropagatedRFTime = Calc_PropagatedRFTime(locVertex.Z(), 0, 0.0); //COMPARE:
 		if(dDebugLevel >= 20)
 			cout << "primary vertex z, targ z, init rf time, time offset, prop time = " << locPrimaryVertexZ << ", " << dTargetCenter.Z() << ", " << dInitialEventRFBunch->dTime << ", " << locTimeOffset << ", " << locPropagatedRFTime << endl;
 
@@ -742,7 +742,7 @@ bool DSourceComboTimeHandler::Select_RFBunches_PhotonVertices(const DReactionVer
 
 		auto locTimeOffset = dSourceComboVertexer->Get_TimeOffset(locIsPrimaryProductionVertex, locReactionFullCombo, locVertexPrimaryFullCombo, nullptr);
 		//auto locPropagatedRFTime = Calc_PropagatedRFTime(locPrimaryVertexZ, 0, locTimeOffset);
-		auto locPropagatedRFTime = Calc_PropagatedRFTime(locPrimaryVertexZ, 0, 0.0); //COMPARE:
+		auto locPropagatedRFTime = Calc_PropagatedRFTime(locVertex.Z(), 0, 0.0); //COMPARE:
 
 		//loop over particles at this vertex: BCAL photons & charged tracks get to vote (FCAL photons already voted, but faster)
 		auto locSourceParticles = DAnalysis::Get_SourceParticles_ThisVertex(locVertexPrimaryFullCombo);
