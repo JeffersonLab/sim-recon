@@ -534,7 +534,10 @@ void DParticleComboCreator::Set_SpacetimeVertex(const DReaction* locReaction, co
 			return;
 		}
 	}
+
 	auto locKinFitParticle = locAllParticles[0];
+	if(locKinFitParticle->Get_CommonVxParamIndex() < 0)
+		return; //vertex fit chosen but could not be performed: don't update!
 
 	//need the spacetime vertex at the production vertex of the particle grabbed
 	TLorentzVector locSpacetimeVertex;
@@ -566,7 +569,7 @@ const DBeamPhoton* DParticleComboCreator::Create_BeamPhoton_KinFit(const DBeamPh
 	if(locKinFitParticle->Get_CommonTParamIndex() >= 0)
 		locNewBeamPhoton->setTime(locKinFitParticle->Get_Time());
 	else
-		locNewBeamPhoton->setTime(locSpacetimeVertex.T());
+		locNewBeamPhoton->setTime(locBeamPhoton->time() + (locNewBeamPhoton->position().Z() - locBeamPhoton->position().Z())/SPEED_OF_LIGHT);
 	locNewBeamPhoton->setErrorMatrix(locKinFitParticle->Get_CovarianceMatrix());
 	return locNewBeamPhoton;
 }

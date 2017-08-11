@@ -185,12 +185,13 @@ DSourceComboP4Handler::DSourceComboP4Handler(DSourceComboer* locSourceComboer, b
 		dMissingMassSquaredCuts.emplace(Positron, dMissingMassSquaredCuts[Electron]);
 */
 		//Missing E cuts
-		dMissingECuts = std::pair<TF1*, TF1*>(nullptr, nullptr);
+		dMissingECuts = std::pair<TF1*, TF1*>(nullptr, nullptr); //COMPARE:
+/*
 		dMissingECuts.first = new TF1("df_MissingECut_NoneLow", "[0]", 0.0, 12.0);
 		dMissingECuts.first->SetParameter(0, -3.0);
 		dMissingECuts.second = new TF1("df_MissingECut_NoneHigh", "[0]", 0.0, 12.0);
 		dMissingECuts.second->SetParameter(0, 3.0);
-
+*/
 		if(!locCreateHistsFlag)
 		{
 			japp->RootUnLock(); //RELEASE ROOT LOCK!!

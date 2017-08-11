@@ -303,6 +303,7 @@ DSourceComboTimeHandler::DSourceComboTimeHandler(JEventLoop* locEventLoop, DSour
 	dSelectedRFDeltaTs.emplace(AntiProton, dSelectedRFDeltaTs[Electron]);
 	dAllRFDeltaTs = dSelectedRFDeltaTs;
 
+/* //COMPARE:
 	// Timing Cuts: Start counter
 	// Start counter is special case: Since next to the target, and lower timing resolution, cannot separate PIDs
 	// However, we can separate out-of-time backgrounds from the event (e.g. e+/-, or ghost tracks)
@@ -316,7 +317,7 @@ DSourceComboTimeHandler::DSourceComboTimeHandler(JEventLoop* locEventLoop, DSour
 		locPIDPair.second.emplace(SYS_START, new TF1("df_TimeCut", "[0]", 0.0, 12.0));
 		locPIDPair.second[SYS_START]->SetParameter(0, 2.0); //2.5!!!
 	}
-
+*/
 	vector<DetectorSystem_t> locTimingSystems_Charged {SYS_TOF, SYS_BCAL, SYS_FCAL, SYS_START};
 	vector<DetectorSystem_t> locTimingSystems_Neutral {SYS_BCAL, SYS_FCAL};
 	vector<Particle_t> locPIDs {Unknown, Gamma, Electron, Positron, MuonPlus, MuonMinus, PiPlus, PiMinus, KPlus, KMinus, Proton, AntiProton};
@@ -1316,7 +1317,7 @@ bool DSourceComboTimeHandler::Get_RFBunches_ChargedTrack(const DChargedTrackHypo
 	auto locCutFunc = Get_TimeCutFunction(locPID, locSystem);
 	auto locDeltaTCut = (locCutFunc != nullptr) ? locCutFunc->Eval(locP) : 3.0; //if null will return false, but still use for histogramming
 
-	if(false) //COMPARE: Comparison-to-old mode
+//	if(false) //COMPARE: Comparison-to-old mode
 	{
 		locVertexTime = locHypothesis->time();
 		locPropagatedRFTime += (locHypothesis->position().Z() - locVertex.Z())/SPEED_OF_LIGHT;
