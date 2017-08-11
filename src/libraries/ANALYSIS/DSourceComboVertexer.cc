@@ -23,6 +23,20 @@ dSourceComboer(locSourceComboer), dSourceComboP4Handler(locSourceComboP4Handler)
 	gPARMS->SetDefaultParameter("COMBO:DEBUG_LEVEL", dDebugLevel);
 }
 
+vector<signed char> DSourceComboVertexer::Get_VertexZBins(const DReactionVertexInfo* locReactionVertexInfo, const DSourceCombo* locReactionCombo, const DKinematicData* locBeamParticle) const
+{
+	if(locReactionCombo == nullptr)
+		return {};
+
+	vector<signed char> locVertexZBins;
+	for(auto locStepInfo : locReactionVertexInfo->Get_StepVertexInfos())
+	{
+		auto locVertexPrimaryCombo = dSourceComboer->Get_VertexPrimaryCombo(locReactionCombo, locStepInfo);
+		locVertexZBins.emplace_back(Get_VertexZBin(locStepInfo->Get_ProductionVertexFlag(), locVertexPrimaryCombo, locBeamParticle));
+	}
+	return locVertexZBins;
+}
+
 signed char DSourceComboVertexer::Get_VertexZBin(bool locIsProductionVertex, const DSourceCombo* locSourceCombo, const DKinematicData* locBeamParticle) const
 {
 	if(locSourceCombo == nullptr)

@@ -4,8 +4,18 @@
 
 /*
  * PROBLEMS:
- * Make all kinfit pools new & shared resources
- * detached vertex time cut width: detect when needed, only use it then
+ * for charged tracks at detached vertices, at cut width due to uncertainty in pre-kinfit vertex position
+ * will then have to re-apply cuts post-kinfit!!
+ *
+ * missing decay products: when building infos, set decay pid (not unknown)
+ * but then we need to know not to cut on the mass: expand use to include a bool for cut-mass flag (for the unknown version, bool should ALWAYS be false!)
+ * this flag is false if: there's a missing decay product further down the chain, OR if it's a rescattering step AND the target particle is NOT MISSING
+ * When DO we cut the mass then? well, actually we do want to do it at the same time, just that we want to subtract the final state target particle from the p4 before cutting (the cut action must do this too!)
+ * So, how to know what to do? during comboing we know nothing of the target. we'd want to save the PID of the target particle to subtract in the USE.  So then we set it as unknown for don't subtract anything
+ * But then how do we tell it not to cut at all for the missing decay product case?  It has to be a separate variable. 
+ * In summary: expand use by 2 variables: has-missing-decay-product flag, and subtract-p4-pid-before-invariant-mass-cut flag. These are always false/Unknown for uses with decaypid = Unknown
+ * We also need to expand the missing mass calc function to include ALL initial state targets (loop over all steps)
+ * While we're at it, tell it to cut the missing mass of all decaying particles that claim to have a missing decay product
  *
  * EVENTUALLY:
  * ppp
@@ -601,8 +611,7 @@ DSourceComboUse DSourceComboer::Create_ZDependentSourceComboUses(const DReaction
 	//E.g. if something crazy like 2 KShorts -> 3pi, each at a different vertex-z bin, then they will no longer be grouped together vertically (separate uses: horizontally instead)
 
 	//see if they've already been created.  if so, just return it.
-	auto locIsPrimaryProductionVertex = locReactionVertexInfo->Get_StepVertexInfo(0)->Get_ProductionVertexFlag();
-	auto locVertexZBins = dSourceComboVertexer->Get_VertexZBins(locIsPrimaryProductionVertex, locReactionChargedCombo, nullptr);
+	auto locVertexZBins = dSourceComboVertexer->Get_VertexZBins(locReactionVertexInfo, locReactionChargedCombo, nullptr);
 	auto locCreationPair = std::make_pair(locReactionVertexInfo, locVertexZBins);
 	auto locUseIterator = dSourceComboUseVertexZMap.find(locCreationPair);
 	if(locUseIterator != dSourceComboUseVertexZMap.end())
@@ -1309,8 +1318,14 @@ void DSourceComboer::Combo_WithNeutralsAndBeam(const vector<const DReaction*>& l
 		cout << endl << "Comboing neutrals, z-independent, #FCAL/BCAL showers: " << locNumFCALShowers << "/" << locNumDetectedShowers - locNumFCALShowers << endl;
 	}
 
-	auto locIsPrimaryProductionVertex = locReactionVertexInfo->Get_StepVertexInfo(0)->Get_ProductionVertexFlag();
-	auto locVertexZBins = dSourceComboVertexer->Get_VertexZBins(locIsPrimaryProductionVertex, locReactionChargedCombo, nullptr);
+	auto locVertexZBins = dSourceComboVertexer->Get_VertexZBins(locReactionVertexInfo, locReactionChargedCombo, nullptr);
+	if(dDebugLevel >= 5)
+	{
+		cout << "charged combo, vertex zbins: " << locReactionChargedCombo;
+		for(auto& locZBin : locVertexZBins)
+			cout << ", " << int(locZBin);
+		cout << endl;
+	}
 	if(std::find(locVertexZBins.begin(), locVertexZBins.end(), DSourceComboInfo::Get_VertexZIndex_Unknown()) != locVertexZBins.end())
 		return; //there is a vertex zbin that is out of range, and we need neutrals (likely photons): don't allow: will blow up memory due to no invariant mass cuts
 

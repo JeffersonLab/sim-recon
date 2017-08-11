@@ -63,7 +63,7 @@ void Set_Vertex(const DVertex* locVertex){dVertex = locVertex;}
 
 		//GET VERTEX-Z BINS
 		signed char Get_VertexZBin(bool locIsProductionVertex, const DSourceCombo* locSourceCombo, const DKinematicData* locBeamParticle) const;
-		vector<signed char> Get_VertexZBins(bool locIsProductionVertex, const DSourceCombo* locReactionCombo, const DKinematicData* locBeamParticle) const;
+		vector<signed char> Get_VertexZBins(const DReactionVertexInfo* locReactionVertexInfo, const DSourceCombo* locReactionCombo, const DKinematicData* locBeamParticle) const;
 
 		bool Get_IsVertexFoundFlag(bool locIsProductionVertex, const DSourceCombo* locVertexPrimaryCombo, const DKinematicData* locBeamParticle) const;
 
@@ -167,30 +167,6 @@ inline DVector3 DSourceComboVertexer::Get_PrimaryVertex(const DReactionVertexInf
 {
 	auto locIsProductionVertex = locReactionVertexInfo->Get_StepVertexInfo(0)->Get_ProductionVertexFlag();
 	return Get_Vertex(locIsProductionVertex, locReactionCombo, locBeamParticle);
-}
-
-inline vector<signed char> DSourceComboVertexer::Get_VertexZBins(bool locIsProductionVertex, const DSourceCombo* locReactionCombo, const DKinematicData* locBeamParticle) const
-{
-	if(locReactionCombo == nullptr)
-		return {};
-
-	vector<signed char> locVertexZBins;
-
-	//the data member MAY be dependent on the beam particle, but it may not
-	//so, first search with the beam particle; if not found then search without it
-	auto locIterator = dTimeOffsets.find(std::make_tuple(locIsProductionVertex, locReactionCombo, locBeamParticle));
-	if((locBeamParticle != nullptr) && (locIterator == dTimeOffsets.end()))
-		locIterator = dTimeOffsets.find(std::make_tuple(locIsProductionVertex, locReactionCombo, nullptr));
-	if(locIterator == dTimeOffsets.end())
-		return {};
-
-	const auto& locReactionTimeOffsets = locIterator->second;
-	for(const auto& locComboTimeOffsetPair : locReactionTimeOffsets) //turns out this is fastest: we have the vertex combos!
-	{
-		locVertexZBins.emplace_back(Get_VertexZBin(locIsProductionVertex, locComboTimeOffsetPair.first, locBeamParticle));
-		locIsProductionVertex = false;
-	}
-	return locVertexZBins;
 }
 
 inline vector<const DKinematicData*>::const_iterator DSourceComboVertexer::Get_ThetaNearest90Iterator(const vector<const DKinematicData*>& locParticles)
