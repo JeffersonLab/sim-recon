@@ -209,12 +209,14 @@ jerror_t DCDCHit_factory::evnt(JEventLoop *loop, uint64_t eventnumber)
         // Grab the pedestal from the digihit since this should be consistent between the old and new formats
         uint32_t raw_ped           = digihit->pedestal;
         uint32_t nsamples_integral = digihit->nsamples_integral;
+        uint32_t maxamp            = 0; //get this from CDCPulse
 
         // There are a few values from the new data type that are critical for the interpretation of the data
         uint16_t IBIT = 0; // 2^{IBIT} Scale factor for integral
-        //        uint16_t ABIT = 0; // 2^{ABIT} Scale factor for amplitude
+        uint16_t ABIT = 0; // 2^{ABIT} Scale factor for amplitude
         uint16_t PBIT = 0; // 2^{PBIT} Scale factor for pedestal
         uint16_t NW   = 0;
+
 
         // This is the place to make quality cuts on the data. 
         // Try to get the new data type, if that fails, try to get the old...
@@ -227,13 +229,13 @@ jerror_t DCDCHit_factory::evnt(JEventLoop *loop, uint64_t eventnumber)
             // Set some constants to defaults until they appear correctly in the config words in the future
             if(config){
                 IBIT = config->IBIT == 0xffff ? 4 : config->IBIT;
-                //            ABIT = config->ABIT == 0xffff ? 3 : config->ABIT;
+                ABIT = config->ABIT == 0xffff ? 3 : config->ABIT;
                 PBIT = config->PBIT == 0xffff ? 0 : config->PBIT;
                 NW   = config->NW   == 0xffff ? 180 : config->NW;
             }else{
                 static int Nwarnings = 0;
                 if(Nwarnings<10){
-                    _DBG_ << "NO Df125Config object associated with Df125CDCPulse object!" << endl;
+                    _DBG_ << "NO Df125Config object associated with Df125FDCPulse object!" << endl;
                     Nwarnings++;
                     if(Nwarnings==10) _DBG_ << " --- LAST WARNING!! ---" << endl;
                 }
@@ -243,6 +245,8 @@ jerror_t DCDCHit_factory::evnt(JEventLoop *loop, uint64_t eventnumber)
             // The integration window in the CDC should always extend past the end of the window
             // Only true after about run 4100
             nsamples_integral = (NW - (digihit->pulse_time / 10));  
+ 
+            maxamp = CDCPulseObj->first_max_amp;
 
         }
         else{ // Use the old format
@@ -273,11 +277,19 @@ jerror_t DCDCHit_factory::evnt(JEventLoop *loop, uint64_t eventnumber)
         uint32_t scaled_ped = raw_ped << PBIT;
         pedestal = double(scaled_ped * nsamples_integral);
 
+        
+        if (maxamp > 0) maxamp = maxamp << ABIT;
+        if (maxamp <= scaled_ped) continue;
+
+        maxamp = maxamp - scaled_ped;
+
         // Apply calibration constants here
-        double integral = double(digihit->pulse_integral << IBIT);
+        //double integral = double(digihit->pulse_integral << IBIT);
         double t_raw = double(digihit->pulse_time);
 
-        double q = a_scale * gains[ring-1][straw-1] * (integral - pedestal);
+        //double q = a_scale * gains[ring-1][straw-1] * (integral - pedestal);
+        double q = a_scale * gains[ring-1][straw-1] * maxamp * 28.8;
+
         double t = t_scale * t_raw - time_offsets[ring-1][straw-1] + t_base;
 
         if (q < DIGI_THRESHOLD) 
