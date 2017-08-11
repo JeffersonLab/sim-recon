@@ -722,9 +722,6 @@ bool DParticleID::Distance_ToTrack(const DReferenceTrajectory* rt, const DTOFPoi
 	if(rt == nullptr)
 	  return false;
 
-	if (! START_EXIST)
-	  return false;            // if no Start Counter in geometry
-
 	// Find the distance of closest approach between the track trajectory
 	// and the tof cluster position, looking for the minimum
 	DVector3 tof_pos = locTOFPoint->pos;
