@@ -49,7 +49,7 @@ int main( int argc, char* argv[] ){
 	double highMass = 0.58 ;
 	
 	double beamMaxE   = 12.0;
-	double beamPeakE  = 9.0;
+	double beamPeakE  = 6.0;
 	double beamLowE   = 0.139*2;
 	double beamHighE  = 12.0;
 	
@@ -87,7 +87,7 @@ int main( int argc, char* argv[] ){
 			else  beamMaxE = atof( argv[++i] ); }
 		if (arg == "-p"){
 			if ((i+1 == argc) || (argv[i+1][0] == '-')) arg = "-h";
-			else  beamPeakE = atof( argv[++i] ); }
+			else beamPeakE = atof( argv[++i] ); }
 		if (arg == "-a"){
 			if ((i+1 == argc) || (argv[i+1][0] == '-')) arg = "-h";
                         else  beamLowE = atof( argv[++i] ); }
@@ -288,8 +288,11 @@ int main( int argc, char* argv[] ){
 					
 					// we want to save events with weight 1
 					evt->setWeight( 1.0 );
+					float vx = 0;
+					float vy = 0;
+					float vz = 1;   // vertex for CCP experiment
 					
-					if( hddmOut ) hddmOut->writeEvent( *evt, pTypes );
+					if( hddmOut ) hddmOut->writeEvent( *evt, pTypes, vx, vy, vz);
 					rootOut.writeEvent( *evt );
 					++eventCounter;
 				}
