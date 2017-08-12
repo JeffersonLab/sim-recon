@@ -131,6 +131,7 @@ class DSourceComboTimeHandler
 		size_t dNumPhotonVertexZBins = 6;
 		//due to detached vertices
 		double dMaxDecayTimeOffset = 0.0; //changed in constructor if needed
+		double dDecayTimeUncertainty = 0.0; //due to uncertain path length
 
 		//SHOWERS SORTED BY RF BUNCH
 		const DEventRFBunch* dInitialEventRFBunch = nullptr;

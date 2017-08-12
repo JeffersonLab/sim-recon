@@ -22,12 +22,7 @@
  * omega p
  * K0 Sigma+
  * K0 Sigma+ (pi0)
- * K+ K+ Xi-
  * 
- * K+ Lambda
- * K+ Sigma0
- * K+ pi0 Lambda
- * ...
  *
  */
 
@@ -232,7 +227,7 @@ DSourceComboer::DSourceComboer(JEventLoop* locEventLoop)
 	for(const auto& locVertexInfo : locVertexInfos)
 	{
 		dMaxRFBunchCuts.emplace(locVertexInfo, 0);
-		for(const auto& locReaction : locReactions)
+		for(const auto& locReaction : locVertexInfo->Get_Reactions())
 		{
 			if(dRFBunchCutsByReaction[locReaction] > dMaxRFBunchCuts[locVertexInfo])
 				dMaxRFBunchCuts[locVertexInfo] = dRFBunchCutsByReaction[locReaction];
