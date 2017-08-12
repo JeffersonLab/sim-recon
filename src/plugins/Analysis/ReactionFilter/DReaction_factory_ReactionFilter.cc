@@ -8,6 +8,15 @@
 
 #include "DReaction_factory_ReactionFilter.h"
 
+/*
+ * COMMAND LINE INPUT:
+ * Reaction, missing particles, inclusive step, fit type, # +/- bunches, # extra tracks, constrain init mass flag
+ * E.g. one line to specify reaction, another to specify flags
+ * Flag line: -PReaction:FS1_Flags=FitEnumValue_NBunches_NExtraTracks
+ * Reaction line: 2 modes: Simple mode, control mode
+ * Simple mode:
+ */
+
 //------------------
 // init
 //------------------

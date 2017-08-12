@@ -64,6 +64,7 @@ class DReaction : public JObject
 		void Set_MinPhotonPIDFOM(double locMinPhotonPIDFOM){cout << "WARNING: DReaction::Set_MinPhotonPIDFOM() IS CURRENTLY DEPRECATED AND DOES NOTHING." << endl;}
 		void Set_MinProtonMomentum(double locMinProtonMomentum){cout << "WARNING: DReaction::Set_MinProtonMomentum() IS DEPRECATED AND DOES NOTHING." << endl;}
 		void Set_MaxNumBeamPhotonsInBunch(size_t locMaxNumBeamPhotonsInBunch){cout << "WARNING: DReaction::Set_MinProtonMomentum() IS DEPRECATED AND DOES NOTHING." << endl;}
+		void Set_AnyComboFlag(bool locAnyComboFlag){cout << "WARNING: DReaction::Set_AnyComboFlag() IS CURRENTLY DEPRECATED AND DOES NOTHING." << endl;}
 
 		// SET EventStore SKIMS //comma-separated list expected
 		void Set_EventStoreSkims(string locEventStoreSkims){dEventStoreSkims = locEventStoreSkims;}
@@ -104,11 +105,6 @@ class DReaction : public JObject
 		bool Get_SaveUnusedFlag(void) const{return dSaveUnusedFlag;}
 		bool Get_EnableTTreeOutputFlag(void) const{return dEnableTTreeOutputFlag;}
 
-		// BUILD ANY FLAGS
-		//Default false. If true: Once one is built, don't bother making others. 
-		bool Get_AnyComboFlag(void) const{return dAnyComboFlag;}
-		void Set_AnyComboFlag(bool locAnyComboFlag){dAnyComboFlag = locAnyComboFlag;}
-
 	private:
 		// PRIVATE METHODS:
 
@@ -135,10 +131,6 @@ class DReaction : public JObject
 
 		// EVENT STORE QUERY
 		string dEventStoreSkims = ""; // First is skim name (default = "all"), second is additional query (default = "")
-
-		// BUILD ANY FLAGS
-		//Default false. If true: Once one is built, don't bother making others. 
-		bool dAnyComboFlag = false;
 };
 
 /****************************************************** NAMESPACE-SCOPE NON-INLINE FUNCTION DECLARATIONS *******************************************************/

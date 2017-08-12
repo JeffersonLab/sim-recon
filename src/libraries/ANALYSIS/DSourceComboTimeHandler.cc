@@ -184,7 +184,7 @@ DSourceComboTimeHandler::DSourceComboTimeHandler(JEventLoop* locEventLoop, DSour
 	do
 	{
 		++locN;
-		dPhotonVertexZRangeLow = dTargetCenter.Z() - double(locN)*dPhotonVertexZBinWidth;
+		dPhotonVertexZRangeLow = dTargetCenter.Z() - (double(locN) - 0.5)*dPhotonVertexZBinWidth;
 	}
 	while(dPhotonVertexZRangeLow + dPhotonVertexZBinWidth > locTargetUpstreamZ);
 	while(dPhotonVertexZRangeLow + locN*dPhotonVertexZBinWidth <= locTargetDownstreamZ)
