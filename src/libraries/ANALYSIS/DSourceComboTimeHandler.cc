@@ -1321,6 +1321,8 @@ bool DSourceComboTimeHandler::Get_RFBunches_ChargedTrack(const DChargedTrackHypo
 	{
 		locVertexTime = locHypothesis->time();
 		locPropagatedRFTime += (locHypothesis->position().Z() - locVertex.Z())/SPEED_OF_LIGHT;
+		if(dDebugLevel >= 20)
+			cout << "charged track z, new track vert time, new prop rf time: " << locHypothesis->position().Z() << ", " << locVertexTime << ", " << locPropagatedRFTime << endl;
 	}
 
 	locRFBunches = Calc_BeamBunchShifts(locVertexTime, locPropagatedRFTime, locDeltaTCut, false, locPID, locSystem, locP);
