@@ -107,9 +107,9 @@ inline void DKinFitConstraint_Spacetime::Set_CommonTime(double locTime)
 	for(auto& locParticle : dNoConstrainParticles)
 	{
 		DKinFitParticleType locKinFitParticleType = locParticle->Get_KinFitParticleType();
-		if((locKinFitParticleType == d_MissingParticle) || (locKinFitParticleType == d_DecayingParticle))
+		if((locKinFitParticleType == d_MissingParticle) || (locKinFitParticleType == d_DecayingParticle) || (locKinFitParticleType == d_TargetParticle))
 			locParticle->Set_Time(locTime);
-		else
+		if(locKinFitParticleType != d_DecayingParticle)
 			locParticle->Set_CommonTime(locTime);
 	}
 	for(auto& locParticle : dOnlyConstrainTimeParticles)
@@ -140,7 +140,7 @@ inline void DKinFitConstraint_Spacetime::Set_CommonTParamIndex(char locCommonTPa
 		DKinFitParticleType locKinFitParticleType = locParticle->Get_KinFitParticleType();
 		if((locKinFitParticleType == d_MissingParticle) || (locKinFitParticleType == d_DecayingParticle))
 			locParticle->Set_TParamIndex(locCommonTParamIndex); //not included in fit, but particle vertex is defined by the fit result
-		else
+		if(locKinFitParticleType != d_DecayingParticle)
 			locParticle->Set_CommonTParamIndex(locCommonTParamIndex);
 	}
 }

@@ -108,9 +108,9 @@ inline void DKinFitConstraint_Vertex::Set_CommonVertex(const TVector3& locVertex
 	for(auto& locParticle : dNoConstrainParticles)
 	{
 		auto locKinFitParticleType = locParticle->Get_KinFitParticleType();
-		if((locKinFitParticleType == d_MissingParticle) || (locKinFitParticleType == d_DecayingParticle))
+		if((locKinFitParticleType == d_MissingParticle) || (locKinFitParticleType == d_DecayingParticle) || (locKinFitParticleType == d_TargetParticle))
 			locParticle->Set_Position(locVertex);
-		else
+		if(locKinFitParticleType != d_DecayingParticle)
 			locParticle->Set_CommonVertex(locVertex);
 	}
 }
@@ -131,7 +131,7 @@ inline void DKinFitConstraint_Vertex::Set_CommonVxParamIndex(char locCommonVxPar
 		DKinFitParticleType locKinFitParticleType = locParticle->Get_KinFitParticleType();
 		if((locKinFitParticleType == d_MissingParticle) || (locKinFitParticleType == d_DecayingParticle))
 			locParticle->Set_VxParamIndex(locCommonVxParamIndex);
-		else
+		if(locKinFitParticleType != d_DecayingParticle)
 			locParticle->Set_CommonVxParamIndex(locCommonVxParamIndex);
 	}
 }

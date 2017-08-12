@@ -6,6 +6,7 @@
  * PROBLEMS:
  * for charged tracks at detached vertices, at cut width due to uncertainty in pre-kinfit vertex position
  * will then have to re-apply cuts post-kinfit!!
+ * do not cut timing of charged OR neutral particles at detached vertices!!!!!!! There is just too much uncertainty in the path length of the decaying particle
  *
  * missing decay products: when building infos, set decay pid (not unknown)
  * but then we need to know not to cut on the mass: expand use to include a bool for cut-mass flag (for the unknown version, bool should ALWAYS be false!)
