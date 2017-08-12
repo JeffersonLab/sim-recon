@@ -14,7 +14,22 @@
  * E.g. one line to specify reaction, another to specify flags
  * Flag line: -PReaction:FS1_Flags=FitEnumValue_NBunches_NExtraTracks
  * Reaction line: 2 modes: Simple mode, control mode
- * Simple mode:
+ * Simple mode: Just list final state particles
+ * Any particles whose default decays are not explicitly listed: default decay mode will be used if any. If none available, it will be assumed that the particle is to be detected.
+ * This means that no default decay should be listed for the pi+, k+, etc.
+ * Control mode: Form 1: BeamPID_TargetPID__FS1PID_FS2PID_FS3PID
+ * Control mode: Form 2: DecayPID_TargetPID__FS1PID_FS2PID_FS3PID
+ * Control mode: Form 3: DecayPID__FS1PID_FS2PID_FS3PID
+ * To distinguish between forms 1 & 2: If first step, form 1 is assumed
+ * Maybe append __NoConstrain to tell it not to constrain mass. No: want to specify separate from specifying decays (for default decays)
+ * PID: Geant PID
+ * parentheses around any means missing, Unknown means inclusive
+ *
+ * CONTROL MODE EXAMPLES:
+ * -PReaction:FS1=1_14__14_8_9 #g, p -> p, pi+, pi-
+ * -PReaction:FS2=1_14__14_8_9_7 #g, p -> p, pi+, pi-, pi0
+ * -PReaction:FS3=1_14__14_8_9_7 #g, p -> p, pi+, pi-, pi0
+ * -PReaction:FS3D1=7__2_3_1 # pi0 -> e+, e-, g
  */
 
 //------------------

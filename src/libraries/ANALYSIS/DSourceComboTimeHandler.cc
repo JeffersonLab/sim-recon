@@ -758,7 +758,7 @@ bool DSourceComboTimeHandler::Select_RFBunches_PhotonVertices(const DReactionVer
 				auto locSystem = locNeutralShower->dDetectorSystem;
 
 				//if vertex is known, but is outside of the range of our photon kinematics: so we must select rf bunches manually
-				if(locVertexZBin == DSourceComboInfo::Get_VertexZIndex_Unknown())
+				if(locVertexZBin == DSourceComboInfo::Get_VertexZIndex_OutOfRange())
 				{
 					auto locDeltaTCut = dPIDTimingCuts[Gamma][locSystem]->Eval(locNeutralShower->dEnergy);
 					auto locVertexTime = Calc_Photon_Kinematics(locNeutralShower, locVertex).second;

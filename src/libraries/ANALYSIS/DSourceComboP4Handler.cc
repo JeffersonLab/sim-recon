@@ -345,6 +345,8 @@ DLorentzVector DSourceComboP4Handler::Get_P4_NotMassiveNeutral(Particle_t locPID
 		signed char locVertexZBin = DSourceComboInfo::Get_VertexZIndex_ZIndependent();
 		if(locNeutralShower->dDetectorSystem == SYS_BCAL)
 			locVertexZBin = dSourceComboTimeHandler->Get_PhotonVertexZBin(locVertex.Z());
+		if(locVertexZBin == DSourceComboInfo::Get_VertexZIndex_OutOfRange())
+			locVertexZBin = dSourceComboTimeHandler->Get_VertexZBin_TargetCenter(); //we need a zbin for BCAL showers, but it is unknown: we must pick something: center of target
 		auto& locKinematicData = dPhotonKinematics.find(locVertexZBin)->second.find(locNeutralShower)->second;
 		return locKinematicData->lorentzMomentum();
 	}
@@ -377,8 +379,8 @@ DLorentzVector DSourceComboP4Handler::Calc_MassiveNeutralP4(const DNeutralShower
 
 DLorentzVector DSourceComboP4Handler::Calc_P4_NoMassiveNeutrals(const DSourceCombo* locVertexCombo, const DVector3& locVertex, signed char locVertexZBin, const DKinematicData* locBeamParticle, bool locAccuratePhotonsFlag)
 {
-	//locVertexZBin MUST be a separate argument, to signal special bins -1 & -2!!!
-	if(!locVertexCombo->Get_IsComboingZIndependent() && (locVertexZBin == DSourceComboInfo::Get_VertexZIndex_Unknown()))
+	//locVertexZBin MUST be a separate argument, to signal special bins!!!
+	if(!locVertexCombo->Get_IsComboingZIndependent() && ((locVertexZBin == DSourceComboInfo::Get_VertexZIndex_Unknown()) || (locVertexZBin == DSourceComboInfo::Get_VertexZIndex_OutOfRange())))
 		locVertexZBin = dSourceComboTimeHandler->Get_VertexZBin_TargetCenter(); //we need a zbin for BCAL showers, but it is unknown: we must pick something: center of target
 
 	auto locHasPhotons = !DAnalysis::Get_SourceParticles(locVertexCombo->Get_SourceParticles(true, d_Neutral), Gamma).empty();

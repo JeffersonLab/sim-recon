@@ -1313,16 +1313,27 @@ void DSourceComboer::Combo_WithNeutralsAndBeam(const vector<const DReaction*>& l
 		cout << endl << "Comboing neutrals, z-independent, #FCAL/BCAL showers: " << locNumFCALShowers << "/" << locNumDetectedShowers - locNumFCALShowers << endl;
 	}
 
-	auto locVertexZBins = dSourceComboVertexer->Get_VertexZBins(locReactionVertexInfo, locReactionChargedCombo, nullptr);
 	if(dDebugLevel >= 5)
 	{
 		cout << "charged combo, vertex zbins: " << locReactionChargedCombo;
+		auto locVertexZBins = dSourceComboVertexer->Get_VertexZBins(locReactionVertexInfo, locReactionChargedCombo, nullptr);
 		for(auto& locZBin : locVertexZBins)
 			cout << ", " << int(locZBin);
 		cout << endl;
 	}
-	if(std::find(locVertexZBins.begin(), locVertexZBins.end(), DSourceComboInfo::Get_VertexZIndex_Unknown()) != locVertexZBins.end())
-		return; //there is a vertex zbin that is out of range, and we need neutrals (likely photons): don't allow: will blow up memory due to no invariant mass cuts
+	//if there is a vertex zbin that is out of range, and we need photons: don't allow: will blow up memory due to no invariant mass cuts
+	for(auto& locStepVertexInfo : locReactionVertexInfo->Get_StepVertexInfos())
+	{
+		auto locZBin = dSourceComboVertexer->Get_VertexZBin(locStepVertexInfo, locReactionChargedCombo, nullptr);
+		if(locZBin != DSourceComboInfo::Get_VertexZIndex_OutOfRange())
+			continue;
+		if(!locStepVertexInfo->Get_OnlyConstrainTimeParticles().empty())
+		{
+			if(dDebugLevel > 0)
+				cout << "Combo has photons at a vertex that is out of range: don't combo." << endl;
+			return; //has photons, don't combo
+		}
+	}
 
 	//Create full source-particle combos (including neutrals): First using only FCAL showers, then using all showers
 	Create_SourceCombos(locPrimaryComboUse, d_MixedStage_ZIndependent, locReactionChargedCombo, 0);

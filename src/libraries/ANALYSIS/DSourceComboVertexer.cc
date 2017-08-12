@@ -37,6 +37,12 @@ vector<signed char> DSourceComboVertexer::Get_VertexZBins(const DReactionVertexI
 	return locVertexZBins;
 }
 
+signed char DSourceComboVertexer::Get_VertexZBin(const DReactionStepVertexInfo* locStepVertexInfo, const DSourceCombo* locReactionCombo, const DKinematicData* locBeamParticle) const
+{
+	auto locVertexPrimaryCombo = dSourceComboer->Get_VertexPrimaryCombo(locReactionCombo, locStepVertexInfo);
+	return Get_VertexZBin(locStepVertexInfo->Get_ProductionVertexFlag(), locVertexPrimaryCombo, locBeamParticle);
+}
+
 signed char DSourceComboVertexer::Get_VertexZBin(bool locIsProductionVertex, const DSourceCombo* locSourceCombo, const DKinematicData* locBeamParticle) const
 {
 	if(locSourceCombo == nullptr)
