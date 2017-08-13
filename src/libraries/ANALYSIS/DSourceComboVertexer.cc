@@ -561,7 +561,7 @@ void DSourceComboVertexer::Construct_DecayingParticle_MissingMass(const DReactio
 	}
 	else //already computed, look it up!
 	{
-		auto locPreviousVertexInfo = (locStepVertexInfo->dParentVertexInfo == nullptr) ? locStepVertexInfo : locStepVertexInfo->dParentVertexInfo;
+		auto locPreviousVertexInfo = (locStepVertexInfo->Get_ParentVertexInfo() == nullptr) ? locStepVertexInfo : locStepVertexInfo->Get_ParentVertexInfo();
 		auto locPreviousIsProdVertexFlag = locPreviousVertexInfo->Get_ProductionVertexFlag();
 		auto locPreviousFullVertexCombo = dSourceComboer->Get_VertexPrimaryCombo(locReactionFullCombo, locPreviousVertexInfo);
 		auto locPreviousDecayPID = std::get<0>(locSourceComboUse);

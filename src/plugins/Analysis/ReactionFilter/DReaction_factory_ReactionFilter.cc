@@ -92,13 +92,15 @@ void Parse_Input(void)
 		auto& locFlagString = std::get<1>(locReactionPair.second);
 
 		//create dreaction (NEED A NAMING SCHEME!!!)
+		//firststep_specifiedstep1_specifiedstep2_..._flagstring
+		//use first step
+		//if decay specified, then do underscores
 
 		//loop over remaining args
 		for(auto& locDecayStepString : std::get<2>(locReactionPair.second))
 		{
 		}
 	}
-	*/
 }
 
 //------------------
