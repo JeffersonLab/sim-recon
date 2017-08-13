@@ -229,7 +229,7 @@ inline vector<pair<int, int>> Get_MissingDecayProductIndices(const DReaction* lo
 		auto locDecayStepIndex = Get_DecayStepIndex(locReaction, locStepIndex, loc_i);
 		if(locDecayStepIndex <= 0)
 			continue;
-		auto locFurtherMissingDecayProducts = DAnalysis::Get_MissingDecayProductIndices(locReaction, locDecayStepIndex));
+		auto locFurtherMissingDecayProducts = DAnalysis::Get_MissingDecayProductIndices(locReaction, locDecayStepIndex);
 		locMissingDecayProductIndices.insert(locMissingDecayProductIndices.end(), locFurtherMissingDecayProducts.begin(), locFurtherMissingDecayProducts.end());
 	}
 	return locMissingDecayProductIndices;

@@ -1879,7 +1879,7 @@ void DSourceComboer::Combo_Vertically_AllDecays(const DSourceComboUse& locComboU
 		if((locFurtherDecays.size() > 1) || !locNumParticlesNeeded.empty()) //if true: can't use the input
 		{
 			auto locGroupingComboInfo = GetOrMake_SourceComboInfo({}, {std::make_pair(locSourceComboDecayUse, locNumDecaysNeeded)}, locNumTabs); // -> N pi0s (e.g.)
-			locNeededGroupingUse = std::make_tuple(Unknown, locVertexZBin, locGroupingComboInfo); // Unknown -> Npi0s (e.g.)
+			locNeededGroupingUse = std::make_tuple(Unknown, locVertexZBin, locGroupingComboInfo, false, Unknown); // Unknown -> Npi0s (e.g.)
 		}
 
 		// Now, see whether the combos for this grouping have already been done
@@ -1897,7 +1897,7 @@ void DSourceComboer::Combo_Vertically_AllDecays(const DSourceComboUse& locComboU
 		if(locNumDecaysNeeded > 2)
 		{
 			auto locNMinus1Info = GetOrMake_SourceComboInfo({}, {std::make_pair(locSourceComboDecayUse, locNumDecaysNeeded - 1)}, locNumTabs); // 0 detected particles, N - 1 pi0s (e.g.)
-			locNMinus1ComboUse = std::make_tuple(Unknown, locVertexZBin, locNMinus1Info); // Unknown -> N - 1 pi0s (e.g.)
+			locNMinus1ComboUse = std::make_tuple(Unknown, locVertexZBin, locNMinus1Info, false, Unknown); // Unknown -> N - 1 pi0s (e.g.)
 		}
 
 		// Now, see whether the combos for the direct N - 1 grouping have already been done.  If not, create them
@@ -2137,7 +2137,7 @@ void DSourceComboer::Combo_Vertically_AllParticles(const DSourceComboUse& locCom
 		if((locNumParticlesNeeded.size() > 1) || !locFurtherDecays.empty()) //if true: can't use the input
 		{
 			auto locGroupingComboInfo = GetOrMake_SourceComboInfo({std::make_pair(locPID, locNumPIDNeeded)}, {}, locNumTabs); // -> N g's (e.g.)
-			locNeededGroupingUse = std::make_tuple(Unknown, locVertexZBin, locGroupingComboInfo); // Unknown -> N g's (e.g.)
+			locNeededGroupingUse = std::make_tuple(Unknown, locVertexZBin, locGroupingComboInfo, false, Unknown); // Unknown -> N g's (e.g.)
 		}
 
 		//See whether the combos for this grouping have already been done
