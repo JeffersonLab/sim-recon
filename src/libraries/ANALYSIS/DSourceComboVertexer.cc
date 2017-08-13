@@ -297,6 +297,8 @@ void DSourceComboVertexer::Calc_VertexTimeOffsets_WithBeam(const DReactionVertex
 
 		//construct decaying particles by missing mass
 		auto locRFVertexTime = dSourceComboTimeHandler->Calc_PropagatedRFTime(locPrimaryVertexZ, locRFBunch, locTimeOffset);
+		if(dDebugLevel >= 10)
+			cout << "parent time offset, beta, path length, time offset, prop rf time: " << locParentTimeOffset << ", " << locP4.Beta() << ", " << locPathLength << ", " << locTimeOffset << ", " << locRFVertexTime << endl;
 		Construct_DecayingParticle_MissingMass(locStepVertexInfo, locReactionFullCombo, locVertexPrimaryFullCombo, locBeamParticle, locVertex, locRFBunch, locRFVertexTime, locReconDecayParticleMap);
 	}
 }
@@ -559,11 +561,20 @@ void DSourceComboVertexer::Construct_DecayingParticle_MissingMass(const DReactio
 	}
 	else //already computed, look it up!
 	{
-		auto locDecayParticleTuple = std::make_tuple(std::get<0>(locSourceComboUse), locReactionFullCombo, false, locFullVertexCombo, locBeamParticle);
-		locInitialStateP4 = dReconDecayParticles_FromMissing[locDecayParticleTuple]->lorentzMomentum();
+		auto locPreviousVertexInfo = (locStepVertexInfo->dParentVertexInfo == nullptr) ? locStepVertexInfo : locStepVertexInfo->dParentVertexInfo;
+		auto locPreviousIsProdVertexFlag = locPreviousVertexInfo->Get_ProductionVertexFlag();
+		auto locPreviousFullVertexCombo = dSourceComboer->Get_VertexPrimaryCombo(locReactionFullCombo, locPreviousVertexInfo);
+		auto locPreviousDecayPID = std::get<0>(locSourceComboUse);
+		auto locPreviousDecayParticleTuple = std::make_tuple(locPreviousDecayPID, locReactionFullCombo, locPreviousIsProdVertexFlag, locPreviousFullVertexCombo, locBeamParticle);
+cout << "found?: " << (dReconDecayParticles_FromMissing.find(locPreviousDecayParticleTuple) != dReconDecayParticles_FromMissing.end()) << endl;
+		locInitialStateP4 = dReconDecayParticles_FromMissing[locPreviousDecayParticleTuple]->lorentzMomentum();
+		if(dDebugLevel >= 10)
+			cout << "retrieved decaying pid, p4: " << locPreviousDecayPID << ", " << locInitialStateP4.Px() << ", " << locInitialStateP4.Py() << ", " << locInitialStateP4.Pz() << ", " << locInitialStateP4.E() << endl;
 	}
 
 	auto locP4 = locInitialStateP4 - locFinalStateP4;
+	if(dDebugLevel >= 10)
+		cout << "pid, missing p4: " << locDecayPID << ", " << locP4.Px() << ", " << locP4.Py() << ", " << locP4.Pz() << ", " << locP4.E() << endl;
 	auto locKinematicData = dResourcePool_KinematicData.Get_Resource();
 	locKinematicData->Reset();
 	locKinematicData->Set_Members(locDecayPID, locP4.Vect(), locVertex, 0.0);

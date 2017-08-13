@@ -650,20 +650,14 @@ pair<bool, map<DSourceComboUse, unsigned char>> DSourceComboer::Get_FinalStateDe
 
 		auto locUseIterator = locStepComboUseMap.find(size_t(locDecayStepIndex));
 		if(locUseIterator == locStepComboUseMap.end())
-		{
 			locIncludeParentFlag = false;
-			cout << "NOT FOUND IN STEP MAP" << endl;
-		}
 		else
 		{
 			//save decay
 			auto& locSourceComboUse = locUseIterator->second;
 			auto locDecayIterator = locFurtherDecays.find(locSourceComboUse);
 			if(locDecayIterator == locFurtherDecays.end())
-			{
-				cout << "NOT FOUND IN DECAY MAP" << endl;
 				locFurtherDecays.emplace(locSourceComboUse, 1);
-			}
 			else
 				++(locDecayIterator->second);
 		}

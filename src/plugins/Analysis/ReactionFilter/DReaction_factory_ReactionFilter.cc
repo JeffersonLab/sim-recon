@@ -84,21 +84,18 @@ void Parse_Input(void)
 				std::get<2>(locInputStrings[locReactionNumber]).push_back(locKeyValue);
 		}
 	}
-/*
+
 	//loop through channels, setting up the reactions
 	for(auto& locReactionPair : locInputStrings)
 	{
-		auto& locFirstStepString = locReactionPair.second.first;
+		auto& locFirstStepString = std::get<0>(locReactionPair.second);
+		auto& locFlagString = std::get<1>(locReactionPair.second);
 
 		//create dreaction (NEED A NAMING SCHEME!!!)
 
 		//loop over remaining args
-		for(auto& locSubKeyPairs : locReactionPair.second.second)
+		for(auto& locDecayStepString : std::get<2>(locReactionPair.second))
 		{
-			auto& locKey = locSubKeyPairs.first;
-			{
-				//set flags
-			}
 		}
 	}
 	*/
