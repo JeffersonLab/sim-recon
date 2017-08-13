@@ -324,6 +324,8 @@ const DChargedTrackHypothesis* DParticleComboCreator::Create_ChargedHypo(const D
 
 const DParticleCombo* DParticleComboCreator::Create_KinFitCombo_NewCombo(const DParticleCombo* locOrigCombo, const DReaction* locReaction, const DKinFitResults* locKinFitResults, const shared_ptr<const DKinFitChain>& locKinFitChain)
 {
+	if(dDebugLevel > 0)
+		cout << "Create kinfit combo" << endl;
 	dKinFitUtils->Set_UpdateCovarianceMatricesFlag(locReaction->Get_KinFitUpdateCovarianceMatricesFlag());
 
 	auto locNewCombo = Get_ParticleComboResource();
@@ -334,6 +336,8 @@ const DParticleCombo* DParticleComboCreator::Create_KinFitCombo_NewCombo(const D
 
 	for(size_t loc_j = 0; loc_j < locOrigCombo->Get_NumParticleComboSteps(); ++loc_j)
 	{
+		if(dDebugLevel >= 5)
+			cout << "Step: " << loc_j << endl;
 		auto locComboStep = locOrigCombo->Get_ParticleComboStep(loc_j);
 		auto locReactionStep = locReaction->Get_ReactionStep(loc_j);
 
@@ -345,6 +349,8 @@ const DParticleCombo* DParticleComboCreator::Create_KinFitCombo_NewCombo(const D
 		locNewComboStep->Set_SpacetimeVertex(locComboStep->Get_SpacetimeVertex()); //overridden if kinematic fit
 		Set_SpacetimeVertex(locReaction, locNewCombo, locNewComboStep, loc_j, locKinFitResults, locKinFitChain, locOrigShiftedRFTime);
 		auto locSpacetimeVertex = locNewComboStep->Get_SpacetimeVertex();
+		if(dDebugLevel >= 5)
+			cout << "spacetime vertex set" << endl;
 
 		//INITIAL PARTICLE
 		auto locInitialParticle_Measured = locComboStep->Get_InitialParticle_Measured();
@@ -409,6 +415,9 @@ const DParticleCombo* DParticleComboCreator::Create_KinFitCombo_NewCombo(const D
 
 void DParticleComboCreator::Set_SpacetimeVertex(const DReaction* locReaction, const DParticleCombo* locNewParticleCombo, DParticleComboStep* locNewParticleComboStep, size_t locStepIndex, const DKinFitResults* locKinFitResults, const shared_ptr<const DKinFitChain>& locKinFitChain, double locOrigShiftedRFTime) const
 {
+	if(dDebugLevel >= 5)
+		cout << "DParticleComboCreator::Set_SpacetimeVertex" << endl;
+
 	DKinFitType locKinFitType = locReaction->Get_KinFitType();
 	if((locKinFitType == d_NoFit) || (locKinFitType == d_P4Fit))
 		return; //neither vertex nor time was fit: no update to give
@@ -419,12 +428,14 @@ void DParticleComboCreator::Set_SpacetimeVertex(const DReaction* locReaction, co
 	auto locAllParticles = locKinFitChain->Get_KinFitChainStep(locStepIndex)->Get_FinalParticles();
 	if(locAllParticles.empty())
 	{
+		if(dDebugLevel >= 5)
+			cout << "somehow no particles at this step" << endl;
 		if(locStepIndex == 0) //get from the first particle you find
 		{
 			size_t locNextStepIndex = 1;
 			while(locAllParticles.empty() && (locNextStepIndex < locKinFitChain->Get_NumKinFitChainSteps()))
 			{
-				locAllParticles = locKinFitChain->Get_KinFitChainStep(locNextStepIndex)->Get_AllParticles();
+				locAllParticles = locKinFitChain->Get_KinFitChainStep(locNextStepIndex)->Get_FinalParticles();
 				++locNextStepIndex;
 			}
 		}
@@ -439,9 +450,12 @@ void DParticleComboCreator::Set_SpacetimeVertex(const DReaction* locReaction, co
 	}
 
 	auto locKinFitParticle = locAllParticles[0];
-	if((locKinFitParticle->Get_KinFitParticleType() != d_DecayingParticle) && (locKinFitParticle->Get_CommonVxParamIndex() < 0))
+	auto locParticleType = locKinFitParticle->Get_KinFitParticleType();
+	if(dDebugLevel >= 20)
+		cout << "particle type, common vx param index, vx param index: " << locParticleType << ", " << locKinFitParticle->Get_CommonVxParamIndex() << ", " << locKinFitParticle->Get_VxParamIndex() << endl;
+	if((locParticleType == d_DetectedParticle) && (locKinFitParticle->Get_CommonVxParamIndex() < 0))
 		return; //vertex fit chosen but could not be performed: don't update!
-	if((locKinFitParticle->Get_KinFitParticleType() == d_DecayingParticle) && (locKinFitParticle->Get_VxParamIndex() < 0))
+	if((locParticleType != d_DetectedParticle) && (locKinFitParticle->Get_VxParamIndex() < 0))
 		return; //vertex fit chosen but could not be performed: don't update!
 
 	//need the spacetime vertex at the production vertex of the particle grabbed
@@ -450,27 +464,42 @@ void DParticleComboCreator::Set_SpacetimeVertex(const DReaction* locReaction, co
 		locSpacetimeVertex = locKinFitParticle->Get_SpacetimeVertex();
 	else //"position" is at decay vertex
 		locSpacetimeVertex = locKinFitParticle->Get_CommonSpacetimeVertex(); //get production
+	locNewParticleComboStep->Set_SpacetimeVertex(locSpacetimeVertex); //set (for now)
 
-	if(locKinFitParticle->Get_CommonTParamIndex() < 0)
+	//see if we need to update the time
+	if(dDebugLevel >= 20)
+		cout << "particle type, common t param index, t param index: " << locParticleType << ", " << locKinFitParticle->Get_CommonTParamIndex() << ", " << locKinFitParticle->Get_TParamIndex() << endl;
+	if((locParticleType == d_DetectedParticle) && (locKinFitParticle->Get_CommonTParamIndex() >= 0))
+		return; //time was constrained by the kinfit, we're done
+	if((locParticleType != d_DetectedParticle) && (locKinFitParticle->Get_TParamIndex() >= 0))
+		return; //time was constrained by the kinfit, we're done
+
+	//time not constrained. instead, get from rf time and propagate it
+	if(locStepIndex == 0)
+		locSpacetimeVertex.SetT(locOrigShiftedRFTime + (locSpacetimeVertex.Z() - dTargetCenter.Z())/SPEED_OF_LIGHT);
+	else
 	{
-		//time not constrained. instead, get from rf time and propagate it
-		if(locStepIndex == 0)
-			locSpacetimeVertex.SetT(locOrigShiftedRFTime + (locSpacetimeVertex.Z() - dTargetCenter.Z())/SPEED_OF_LIGHT);
+		auto locDecayFromStepIndices = Get_InitialParticleDecayFromIndices(locReaction, locStepIndex);
+		if(dDebugLevel >= 20)
+			cout << "decay from indices: " << locDecayFromStepIndices.first << ", " << locDecayFromStepIndices.second << endl;
+		auto locPreviousParticleComboStep = locNewParticleCombo->Get_ParticleComboStep(locDecayFromStepIndices.first);
+cout << "previous step: " << locPreviousParticleComboStep << endl;
+		auto locPreviousSpacetimeVertex = locPreviousParticleComboStep->Get_SpacetimeVertex();
+		if(dDebugLevel >= 20)
+			cout << "previous spacetime vertex: " << locPreviousSpacetimeVertex.X() << ", " << locPreviousSpacetimeVertex.Y() << ", " << locPreviousSpacetimeVertex.Z() << ", " << locPreviousSpacetimeVertex.T() << endl;
+
+		auto locDecayingParticle = locPreviousParticleComboStep->Get_FinalParticle(locDecayFromStepIndices.second);
+cout << "particle: " << locDecayingParticle << endl;
+		if(!IsDetachedVertex(locDecayingParticle->PID()))
+			locSpacetimeVertex.SetT(locPreviousSpacetimeVertex.T());
 		else
 		{
-			auto locDecayFromStepIndices = Get_InitialParticleDecayFromIndices(locReaction, locStepIndex);
-			auto locPreviousParticleComboStep = locNewParticleCombo->Get_ParticleComboStep(locDecayFromStepIndices.first);
-			auto locPreviousSpacetimeVertex = locPreviousParticleComboStep->Get_SpacetimeVertex();
-
-			auto locDecayingParticle = locPreviousParticleComboStep->Get_FinalParticle(locDecayFromStepIndices.second);
-			if(!IsDetachedVertex(locDecayingParticle->PID()))
-				locSpacetimeVertex.SetT(locPreviousSpacetimeVertex.T());
-			else
-			{
-				auto locBeta = locDecayingParticle->lorentzMomentum().Beta();
-				auto locPathLength = (locSpacetimeVertex.Vect() - locPreviousSpacetimeVertex.Vect()).Mag();
-				locSpacetimeVertex.SetT(locPreviousSpacetimeVertex.T() + locPathLength/(locBeta*SPEED_OF_LIGHT));
-			}
+			auto locBeta = locDecayingParticle->lorentzMomentum().Beta();
+			auto locPathLength = (locSpacetimeVertex.Vect() - locPreviousSpacetimeVertex.Vect()).Mag();
+			auto locTime = locPreviousSpacetimeVertex.T() + locPathLength/(locBeta*SPEED_OF_LIGHT);
+			if(dDebugLevel >= 20)
+				cout << "calced beta, path, time: " << locBeta << ", " << locPathLength << ", " << locTime << endl;
+			locSpacetimeVertex.SetT(locTime);
 		}
 	}
 
