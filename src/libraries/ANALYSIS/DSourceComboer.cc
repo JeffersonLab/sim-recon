@@ -578,6 +578,9 @@ void DSourceComboer::Create_SourceComboInfos(const DReactionVertexInfo* locReact
 			}
 		}
 
+		if(dDebugLevel >= 5)
+			cout << "locIncludeParentFlag, init pid, target pid, missing-product flag, to-exclude pid: " << locIncludeParentFlag << ", " << locInitPID << ", " << locTargetPID << ", " << locMissingDecayProductFlag << ", " << locDecayProductToExclude << endl;
+
 		//default to unknown use
 		DSourceComboUse locPrimaryComboUse(Unknown, DSourceComboInfo::Get_VertexZIndex_ZIndependent(), nullptr, false, Unknown);
 		if(locNoChargedFlag && locNoNeutralFlag) //only mixed
@@ -801,7 +804,13 @@ DSourceComboUse DSourceComboer::Make_ComboUse(Particle_t locInitPID, const map<P
 
 	//make or get the combo info
 	auto locComboInfo = MakeOrGet_SourceComboInfo(locParticleVector, locDecayVector, 0);
-	return DSourceComboUse(locInitPID, DSourceComboInfo::Get_VertexZIndex_ZIndependent(), locComboInfo, locMissingDecayProductFlag, locDecayProductToExclude);
+	auto locComboUse = DSourceComboUse(locInitPID, DSourceComboInfo::Get_VertexZIndex_ZIndependent(), locComboInfo, locMissingDecayProductFlag, locDecayProductToExclude);
+	if(dDebugLevel >= 5)
+	{
+		cout << "CREATED COMBO USE:" << endl;
+		DAnalysis::Print_SourceComboUse(locComboUse);
+	}
+	return locComboUse;
 }
 
 const DSourceComboInfo* DSourceComboer::MakeOrGet_SourceComboInfo(const vector<pair<Particle_t, unsigned char>>& locNumParticles, const vector<pair<DSourceComboUse, unsigned char>>& locFurtherDecays, unsigned char locNumTabs)

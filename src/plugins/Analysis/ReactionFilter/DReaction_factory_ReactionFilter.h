@@ -10,6 +10,7 @@
 
 #include <iostream>
 #include <iomanip>
+#include <sstream>
 
 #include "JANA/JFactory.h"
 #include "ANALYSIS/DReaction.h"

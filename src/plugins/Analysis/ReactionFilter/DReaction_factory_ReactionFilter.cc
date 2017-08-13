@@ -50,6 +50,33 @@ jerror_t DReaction_factory_ReactionFilter::init(void)
 	return NOERROR;
 }
 
+void Parse_Input(void)
+{
+	//Get input
+	map<size_t, vector<pair<string, string>>> locInputStrings; //key is reaction#, value pair is: first: key remaining after reaction# & colon, second: param value
+	map<string, string> locParameterMap; //parameter key - filter, value
+	gPARMS->GetParameters(locParameterMap, "Reaction"); //gets all parameters with this filter at the beginning of the key
+	for(auto locParamPair : locParameterMap)
+	{
+		//make sure that what follows "Reaction," up to the colon (if any) is a number
+		auto locColonIndex = locParamPair.first.find(':');
+		auto locPreColonName = locParamPair.first.substr(0, locColonIndex);
+		istringstream locIStream(locPreColonName);
+		size_t locReactionNumber;
+		locIStream >> locReactionNumber;
+		if(locIStream.fail())
+			continue; //must be for a different use
+
+		//hack so that don't get warning message about no default
+		string locKeyValue;
+		string locFullParamName = string("Reaction") + locParamPair.first; //have to add back on the filter
+		gPARMS->SetDefaultParameter(locFullParamName, locKeyValue);
+
+		auto locPostColonName = (locColonIndex != string::npos) ? locParamPair.first.substr(locColonIndex + 1) : "";
+		locInputStrings[locReactionNumber].emplace_back(locPostColonName, locKeyValue);
+	}
+}
+
 //------------------
 // evnt
 //------------------
