@@ -147,7 +147,7 @@ inline double DSourceComboVertexer::Get_TimeOffset(bool locIsPrimaryProductionVe
 	if(locBeamParticle == nullptr)
 	{
 		auto locIterator = dTimeOffsets.find(std::make_tuple(locIsPrimaryProductionVertex, locReactionCombo, nullptr));
-		if(locIterator != dTimeOffsets.end())
+		if(locIterator == dTimeOffsets.end())
 			return 0.0;
 		auto& locComboMap = locIterator->second;
 		auto locComboIterator = locComboMap.find(locVertexCombo);

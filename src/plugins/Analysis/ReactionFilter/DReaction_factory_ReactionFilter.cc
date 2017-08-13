@@ -21,6 +21,7 @@
  * -PReaction3=1_14__14_8_9_7 #g, p -> p, pi+, pi-, pi0
  * -PReaction3:Decay1=7__2_3_1 # pi0 -> e+, e-, g
  * -PReaction3:Flags=F1_B2_T4_No7  #Fit enum 1 (p4-only (includes mass)), +/- 2 RF bunches, 4 extra tracks, don't constrain mass on pi0 (can have any number) # Can list these in any order
+ * -PReaction3:Name=my_pi0_channel
  *
  * -PReaction4=1_14__14_8_9_(7) #g, p -> p, pi+, pi-, missing pi0
  * -PReaction4=1_14__14_8_9_(0) #g, p -> p, pi+, pi-, inclusive
@@ -53,7 +54,8 @@ jerror_t DReaction_factory_ReactionFilter::init(void)
 void Parse_Input(void)
 {
 	//Get input channel info
-	map<size_t, tuple<string, string, vector<string>>> locInputStrings; //key is reaction#, 1st string: value for 1st decay step //2nd string: value for flags //string vector: value for decays
+	//key is reaction#, 1st string: name (if any) //2nd string: value for 1st decay step //3rd string: value for flags //string vector: value for decays
+	map<size_t, tuple<string, string, string, vector<string>>> locInputStrings;
 	map<string, string> locParameterMap; //parameter key - filter, value
 	gPARMS->GetParameters(locParameterMap, "Reaction"); //gets all parameters with this filter at the beginning of the key
 	for(auto locParamPair : locParameterMap)
@@ -74,14 +76,16 @@ void Parse_Input(void)
 
 		//save it in the input map
 		if(locColonIndex == string::npos)
-			std::get<0>(locInputStrings[locReactionNumber]) = locKeyValue;
+			std::get<1>(locInputStrings[locReactionNumber]) = locKeyValue;
 		else
 		{
 			auto locPostColonName = locParamPair.first.substr(locColonIndex + 1);
-			if(locPostColonName.substr(0, 5) == "Flags")
-				std::get<1>(locInputStrings[locReactionNumber]) = locKeyValue;
+			if(locPostColonName.substr(0, 54) == "Name")
+				std::get<0>(locInputStrings[locReactionNumber]) = locKeyValue;
+			else if(locPostColonName.substr(0, 5) == "Flags")
+				std::get<2>(locInputStrings[locReactionNumber]) = locKeyValue;
 			else
-				std::get<2>(locInputStrings[locReactionNumber]).push_back(locKeyValue);
+				std::get<3>(locInputStrings[locReactionNumber]).push_back(locKeyValue);
 		}
 	}
 
@@ -92,15 +96,29 @@ void Parse_Input(void)
 		auto& locFlagString = std::get<1>(locReactionPair.second);
 
 		//create dreaction (NEED A NAMING SCHEME!!!)
-		//firststep_specifiedstep1_specifiedstep2_..._flagstring
+		//firststep__specifiedstep1__specifiedstep2_..._flagstring
 		//use first step
 		//if decay specified, then do underscores
+		//also put "miss" in front of missing particles
 
 		//loop over remaining args
 		for(auto& locDecayStepString : std::get<2>(locReactionPair.second))
 		{
+			Particle_t locInitPID;
+			auto locColonIndex = locParamPair.first.find(':');
+			istringstream locIStream(locPreColonName);
+			size_t locReactionNumber;
+			locIStream >> locReactionNumber;
+			if(locIStream.fail())
+				continue; //must be for a different use
+			//ShortName();
 		}
 	}
+}
+
+tuple<Particle_t, Particle_t, vector<Particle_t>> Parse_StepPIDString(const string& locStepString)
+{
+
 }
 
 //------------------
