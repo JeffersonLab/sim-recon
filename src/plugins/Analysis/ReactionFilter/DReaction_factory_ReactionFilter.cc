@@ -120,7 +120,7 @@ void Parse_Input(void)
 
 bool Convert_StringToPID(string locString, Particle_t& locPID, bool& locIsMissingFlag)
 {
-	if(locString[0] == "(")
+	if(locString[0] == '(')
 	{
 		locIsMissingFlag = true;
 		locString = locString.substr(1, locString.size() - 2);
