@@ -1161,14 +1161,6 @@ bool DSourceComboTimeHandler::Cut_Timing_MissingMassVertices(const DReactionVert
 	if(dDebugLevel >= 10)
 		cout << "DSourceComboTimeHandler::Cut_Timing_MissingMassVertices()" << endl;
 
-	auto locTimeCutIterator = dFullComboTimeCutResults.find(locReactionFullCombo);
-	if(locTimeCutIterator != dFullComboTimeCutResults.end())
-	{
-		if(dDebugLevel >= 10)
-			cout << "previously computed: " << locTimeCutIterator->second << endl;
-		return locTimeCutIterator->second; //already computed, return results!!
-	}
-
 	//All charged tracks vote, even those not at the primary vertex
 	//loop over vertices, get all charged particles at that vertex, utilize that + time offset
 	auto locPrimaryVertexZ = dSourceComboVertexer->Get_PrimaryVertex(locReactionVertexInfo, locReactionFullCombo, locBeamParticle).Z();
@@ -1210,24 +1202,17 @@ bool DSourceComboTimeHandler::Cut_Timing_MissingMassVertices(const DReactionVert
 
 				//Do PID cut
 				if(!Cut_PhotonPID(locNeutralShower, locVertex, locPropagatedRFTime, false))
-				{
-					dFullComboTimeCutResults.emplace(locReactionFullCombo, false);
 					return false;
-				}
 			}
 			else //charged
 			{
 				auto locChargedHypo = static_cast<const DChargedTrack*>(locParticlePair.second)->Get_Hypothesis(locParticlePair.first);
 				if(!Cut_TrackPID(locChargedHypo, locIsProductionVertex, locReactionFullCombo, locVertexPrimaryFullCombo, locBeamParticle, locVertex, locPropagatedRFTime))
-				{
-					dFullComboTimeCutResults.emplace(locReactionFullCombo, false);
 					return false;
-				}
 			}
 		}
 	}
 
-	dFullComboTimeCutResults.emplace(locReactionFullCombo, true);
 	return true;
 }
 

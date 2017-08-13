@@ -249,12 +249,8 @@ void DSourceComboVertexer::Calc_VertexTimeOffsets_WithBeam(const DReactionVertex
 		//see if vertex has already been found //can search with either charged or full
 		auto locFullComboProductionTuple = std::make_tuple(true, locReactionFullCombo, locVertexPrimaryFullCombo, locBeamParticle);
 		if(dDebugLevel >= 20)
-		{
-			cout << "is determinable by charge/neutral, is found before: " << Get_VertexDeterminableWithCharged(locStepVertexInfo) << ", " << Get_VertexDeterminableWithPhotons(locStepVertexInfo);
-			cout << ", " << (dConstrainingParticlesByCombo.find(locFullComboProductionTuple) != dConstrainingParticlesByCombo.end()) << endl;
-		}
-//REMOVE FINAL CHECK: MUST BE UNIQUE!!
-		if(Get_VertexDeterminableWithCharged(locStepVertexInfo) || Get_VertexDeterminableWithPhotons(locStepVertexInfo) || (dConstrainingParticlesByCombo.find(locFullComboProductionTuple) != dConstrainingParticlesByCombo.end()))
+			cout << "is determinable by charge/neutral: " << Get_VertexDeterminableWithCharged(locStepVertexInfo) << ", " << Get_VertexDeterminableWithPhotons(locStepVertexInfo) << endl;
+		if(Get_VertexDeterminableWithCharged(locStepVertexInfo) || Get_VertexDeterminableWithPhotons(locStepVertexInfo))
 		{
 			if(dDebugLevel >= 10)
 				cout << "vertex already found" << endl;
