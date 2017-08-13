@@ -5,7 +5,7 @@
 namespace DAnalysis
 {
 
-DParticleComboCreator::DParticleComboCreator(JEventLoop* locEventLoop, const DSourceComboer* locSourceComboer, const DSourceComboTimeHandler* locSourceComboTimeHandler, const DSourceComboVertexer* locSourceComboVertexer) :
+DParticleComboCreator::DParticleComboCreator(JEventLoop* locEventLoop, const DSourceComboer* locSourceComboer, DSourceComboTimeHandler* locSourceComboTimeHandler, const DSourceComboVertexer* locSourceComboVertexer) :
 		dSourceComboer(locSourceComboer), dSourceComboTimeHandler(locSourceComboTimeHandler), dSourceComboVertexer(locSourceComboVertexer)
 {
 	gPARMS->SetDefaultParameter("COMBO:DEBUG_LEVEL", dDebugLevel);
@@ -200,7 +200,7 @@ const DParticleCombo* DParticleComboCreator::Build_ParticleCombo(const DReaction
 		auto locParticleComboStep = Get_ParticleComboStepResource();
 
 		//build spacetime vertex
-		auto locVertex = dSourceComboVertexer->Get_Vertex(locIsProductionVertex, locVertexPrimaryCombo, locBeamParticle);
+		auto locVertex = dSourceComboVertexer->Get_Vertex(locIsProductionVertex, locFullCombo, locVertexPrimaryCombo, locBeamParticle);
 		auto locTimeOffset = dSourceComboVertexer->Get_TimeOffset(locIsPrimaryProductionVertex, locFullCombo, locVertexPrimaryCombo, locBeamParticle);
 		auto locPropagatedRFTime = dSourceComboTimeHandler->Calc_PropagatedRFTime(locPrimaryVertexZ, locRFBunchShift, locTimeOffset);
 		DLorentzVector locSpacetimeVertex(locVertex, locPropagatedRFTime);
@@ -275,7 +275,7 @@ const DParticleCombo* DParticleComboCreator::Build_ParticleCombo(const DReaction
 					locNewChargedHypo = locHypoIterator->second;
 				else
 				{
-					locNewChargedHypo = Create_ChargedHypo(locChargedTrack, locPID, locPropagatedRFTime, locIsProductionVertex, locVertexPrimaryCombo, locBeamParticle);
+					locNewChargedHypo = Create_ChargedHypo(locChargedTrack, locPID, locPropagatedRFTime, locIsProductionVertex, locFullCombo, locVertexPrimaryCombo, locBeamParticle, locSpacetimeVertex.Vect());
 					dChargedHypoMap.emplace(locHypoTuple, locNewChargedHypo);
 				}
 
@@ -292,7 +292,7 @@ const DParticleCombo* DParticleComboCreator::Build_ParticleCombo(const DReaction
 	return locParticleCombo;
 }
 
-const DChargedTrackHypothesis* DParticleComboCreator::Create_ChargedHypo(const DChargedTrack* locChargedTrack, Particle_t locPID, double locPropagatedRFTime, bool locIsProductionVertex, const DSourceCombo* locVertexPrimaryFullCombo, const DKinematicData* locBeamParticle)
+const DChargedTrackHypothesis* DParticleComboCreator::Create_ChargedHypo(const DChargedTrack* locChargedTrack, Particle_t locPID, double locPropagatedRFTime, bool locIsProductionVertex, const DSourceCombo* locReactionFullCombo, const DSourceCombo* locVertexPrimaryFullCombo, const DKinematicData* locBeamParticle, DVector3 locVertex)
 {
 	//see if DChargedTrackHypothesis with the desired PID was created by the default factory, AND it passed the PreSelect cuts
 	auto locOrigHypo = locChargedTrack->Get_Hypothesis(locPID);
@@ -300,7 +300,8 @@ const DChargedTrackHypothesis* DParticleComboCreator::Create_ChargedHypo(const D
 	dCreated_ChargedHypo.push_back(locNewHypo);
 	locNewHypo->Share_FromInput(locOrigHypo, true, false, true); //share all but timing info
 
-	auto locTrackPOCAX4 = dSourceComboTimeHandler->Get_ChargedParticlePOCAToVertexX4(locOrigHypo, locIsProductionVertex, locVertexPrimaryFullCombo, locBeamParticle);
+	auto locTrackPOCAX4 = dSourceComboTimeHandler->Get_ChargedPOCAToVertexX4(locOrigHypo, locIsProductionVertex, locReactionFullCombo, locVertexPrimaryFullCombo, locBeamParticle, locVertex);
+
 	locNewHypo->Set_TimeAtPOCAToVertex(locTrackPOCAX4.T());
 
 	locNewHypo->Set_T0(locPropagatedRFTime, locOrigHypo->t0_err(), locOrigHypo->t0_detector());

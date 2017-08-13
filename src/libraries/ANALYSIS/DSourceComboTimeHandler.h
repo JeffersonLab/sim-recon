@@ -78,7 +78,7 @@ class DSourceComboTimeHandler
 		bool Cut_Timing_MissingMassVertices(const DReactionVertexInfo* locReactionVertexInfo, const DSourceCombo* locReactionFullCombo, const DKinematicData* locBeamParticle, int locRFBunch);
 
 		//GET POCA TO VERTEX
-		DLorentzVector Get_ChargedParticlePOCAToVertexX4(const DChargedTrackHypothesis* locHypothesis, bool locIsProductionVertex, const DSourceCombo* locVertexPrimaryFullCombo, const DKinematicData* locBeamParticle) const;
+		DLorentzVector Get_ChargedPOCAToVertexX4(const DChargedTrackHypothesis* locHypothesis, bool locIsProductionVertex, const DSourceCombo* locReactionFullCombo, const DSourceCombo* locVertexPrimaryCombo, const DKinematicData* locBeamPhoton, DVector3 locVertex);
 
 		//VERTEX-Z BINNING UTILITY FUNCTIONS
 		size_t Get_NumVertexZBins(void) const{return dNumPhotonVertexZBins;}
@@ -97,14 +97,13 @@ class DSourceComboTimeHandler
 		vector<int> Calc_BeamBunchShifts(double locVertexTime, double locOrigRFBunchPropagatedTime, double locDeltaTCut, bool locIncludeDecayTimeOffset, Particle_t locPID, DetectorSystem_t locSystem, double locP);
 
 		double Calc_MaxDeltaTError(const DNeutralShower* locNeutralShower, const shared_ptr<const DKinematicData>& locKinematicData) const;
-		DLorentzVector Get_ChargedPOCAToVertexX4(const DChargedTrackHypothesis* locHypothesis, bool locIsProductionVertex, const DSourceCombo* locVertexPrimaryCombo, DVector3 locVertex);
 
 		bool Get_RFBunches_ChargedTrack(const DChargedTrackHypothesis* locHypothesis, bool locIsProductionVertex, const DSourceCombo* locVertexPrimaryCombo, DVector3 locVertex, double locPropagatedRFTime, bool locOnlyTrackFlag, vector<int>& locRFBunches);
 		TF1* Get_TimeCutFunction(Particle_t locPID, DetectorSystem_t locSystem) const;
 
 		bool Compute_RFChiSqs_UnknownVertices(const DSourceCombo* locReactionFullCombo, Charge_t locCharge, const vector<int>& locRFBunches, unordered_map<int, double>& locChiSqByRFBunch, map<int, map<Particle_t, map<DetectorSystem_t, vector<pair<float, float>>>>>& locRFDeltaTsForHisting);
 		bool Cut_PhotonPID(const DNeutralShower* locNeutralShower, const DVector3& locVertex, double locPropagatedRFTime, bool locTargetCenterFlag);
-		bool Cut_TrackPID(const DChargedTrackHypothesis* locHypothesis, bool locIsProductionVertex, const DSourceCombo* locVertexPrimaryCombo, DVector3 locVertex, double locPropagatedRFTime);
+		bool Cut_TrackPID(const DChargedTrackHypothesis* locHypothesis, bool locIsProductionVertex, const DSourceCombo* locFullReactionCombo, const DSourceCombo* locVertexPrimaryCombo, const DKinematicData* locBeamPhoton, DVector3 locVertex, double locPropagatedRFTime);
 
 		pair<double, double> Calc_RFDeltaTChiSq(const DNeutralShower* locNeutralShower, const TVector3& locVertex, double locPropagatedRFTime) const;
 		pair<double, double> Calc_RFDeltaTChiSq(const DChargedTrackHypothesis* locHypothesis, double locVertexTime, double locPropagatedRFTime) const;
@@ -304,47 +303,6 @@ inline vector<int> DSourceComboTimeHandler::Get_CommonRFBunches(const vector<int
 	locCommonRFBunches.reserve(locRFBunches1.size() + locRFBunches2.size());
 	std::set_intersection(locRFBunches1.begin(), locRFBunches1.end(), locRFBunches2.begin(), locRFBunches2.end(), std::back_inserter(locCommonRFBunches));
 	return locCommonRFBunches;
-}
-
-inline bool DSourceComboTimeHandler::Cut_PhotonPID(const DNeutralShower* locNeutralShower, const DVector3& locVertex, double locPropagatedRFTime, bool locTargetCenterFlag)
-{
-	//get delta-t cut
-	auto locSystem = locNeutralShower->dDetectorSystem;
-	auto locPID = locTargetCenterFlag ? Unknown : Gamma;
-	auto locCutFunc = Get_TimeCutFunction(locPID, locSystem);
-	if(locCutFunc == nullptr)
-		return true;
-	auto locDeltaTCut = locCutFunc->Eval(locNeutralShower->dEnergy);
-
-	//do cut
-	auto locKinematicsPair = Calc_Photon_Kinematics(locNeutralShower, locVertex);
-	auto locDeltaT = locKinematicsPair.second - locPropagatedRFTime;
-	if(dDebugLevel >= 10)
-		cout << "photon pid cut: pointer, system, vertex-z, photon t, rf t, delta_t, cut-delta-t, result = " << locNeutralShower << ", " << locSystem << ", " << locVertex.Z() << ", " << locKinematicsPair.second << ", " << locPropagatedRFTime << ", " << locDeltaT << ", " << locDeltaTCut << ", " << (fabs(locDeltaT) <= locDeltaTCut) << endl;
-	if(locTargetCenterFlag) //only histogram if vertex is unknown: if vertex is known, it is histed elsewhere
-		dSelectedRFDeltaTs[locPID][locSystem].emplace_back(locNeutralShower->dEnergy, locDeltaT);
-	return (fabs(locDeltaT) <= locDeltaTCut);
-}
-
-inline bool DSourceComboTimeHandler::Cut_TrackPID(const DChargedTrackHypothesis* locHypothesis, bool locIsProductionVertex, const DSourceCombo* locVertexPrimaryCombo, DVector3 locVertex, double locPropagatedRFTime)
-{
-	//get delta-t cut
-	auto locPID = locHypothesis->PID();
-	auto locSystem = locHypothesis->t1_detector();
-	auto locCutFunc = Get_TimeCutFunction(locPID, locSystem);
-	if(locCutFunc == nullptr)
-		return true;
-	auto locP = locHypothesis->momentum().Mag();
-	auto locDeltaTCut = locCutFunc->Eval(locP);
-
-	auto locX4 = Get_ChargedPOCAToVertexX4(locHypothesis, locIsProductionVertex, locVertexPrimaryCombo, locVertex);
-
-	//do cut
-	auto locDeltaT = locX4.T() - locPropagatedRFTime;
-	if(dDebugLevel >= 10)
-		cout << "track pid cut: pid, pointer, system, vertex-z, track t, rf t, delta_t, cut-delta-t, result = " << locPID << ", " << locHypothesis << ", " << locSystem << ", " << locVertex.Z() << ", " << locX4.T() << ", " << locPropagatedRFTime << ", " << locDeltaT << ", " << locDeltaTCut << ", " << (fabs(locDeltaT) <= locDeltaTCut) << endl;
-	dSelectedRFDeltaTs[locPID][locSystem].emplace_back(locP, locDeltaT);
-	return (fabs(locDeltaT) <= locDeltaTCut);
 }
 
 inline pair<double, double> DSourceComboTimeHandler::Calc_RFDeltaTChiSq(const DNeutralShower* locNeutralShower, const TVector3& locVertex, double locPropagatedRFTime) const

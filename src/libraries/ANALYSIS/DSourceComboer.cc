@@ -786,7 +786,7 @@ DSourceComboUse DSourceComboer::Create_ZDependentSourceComboUses(const DReaction
 
 		//for this vertex, get the vertex z bin
 		auto locIsProductionVertex = locStepVertexInfo->Get_ProductionVertexFlag();
-		auto locVertexZBin = (locReactionChargedCombo != nullptr) ? dSourceComboVertexer->Get_VertexZBin(locIsProductionVertex, locVertexPrimaryCombo, nullptr) : dSourceComboTimeHandler->Get_VertexZBin_TargetCenter();
+		auto locVertexZBin = (locReactionChargedCombo != nullptr) ? dSourceComboVertexer->Get_VertexZBin_NoBeam(locIsProductionVertex, locVertexPrimaryCombo) : dSourceComboTimeHandler->Get_VertexZBin_TargetCenter();
 
 		//loop over the steps at this vertex z bin, in reverse order
 		auto locStepIndices = locStepVertexInfo->Get_StepIndices();
@@ -1368,7 +1368,7 @@ void DSourceComboer::Combo_WithNeutralsAndBeam(const vector<const DReaction*>& l
 	//if there is a vertex zbin that is out of range, and we need photons: don't allow: will blow up memory due to no invariant mass cuts
 	for(auto& locStepVertexInfo : locReactionVertexInfo->Get_StepVertexInfos())
 	{
-		auto locZBin = dSourceComboVertexer->Get_VertexZBin(locStepVertexInfo, locReactionChargedCombo, nullptr);
+		auto locZBin = dSourceComboVertexer->Get_VertexZBin_NoBeam(locStepVertexInfo, locReactionChargedCombo);
 		if(locZBin != DSourceComboInfo::Get_VertexZIndex_OutOfRange())
 			continue;
 		if(!locStepVertexInfo->Get_OnlyConstrainTimeParticles().empty())
@@ -3784,7 +3784,7 @@ const DSourceCombo* DSourceComboer::Get_NextChargedCombo(const DSourceCombo* loc
 		//either locNextPotentialCombo is the primary combo of a detached vertex (and we need to check the zbin), or it's not (returns -1) and we don't
 		if(IsDetachedVertex(std::get<0>(locUseToFind)))
 		{
-			auto locNextVertexZBin = dSourceComboVertexer->Get_VertexZBin(false, locNextPotentialCombo, nullptr);
+			auto locNextVertexZBin = dSourceComboVertexer->Get_VertexZBin_NoBeam(false, locNextPotentialCombo);
 			if(dDebugLevel >= 20)
 				cout << "detached next potential combo, next zbin, desired zbin = " << locNextPotentialCombo << ", " << int(locNextVertexZBin) << ", " << int(locDesiredVertexZBin) << endl;
 			if(locNextVertexZBin != locDesiredVertexZBin)

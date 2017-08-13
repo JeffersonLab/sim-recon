@@ -30,7 +30,7 @@ class DSourceComboer;
 class DParticleComboCreator
 {
 	public:
-		DParticleComboCreator(JEventLoop* locEventLoop, const DSourceComboer* locSourceComboer, const DSourceComboTimeHandler* locSourceComboTimeHandler, const DSourceComboVertexer* locSourceComboVertexer);
+		DParticleComboCreator(JEventLoop* locEventLoop, const DSourceComboer* locSourceComboer, DSourceComboTimeHandler* locSourceComboTimeHandler, const DSourceComboVertexer* locSourceComboVertexer);
 
 		const DParticleCombo* Build_ParticleCombo(const DReactionVertexInfo* locReactionVertexInfo, const DSourceCombo* locFullCombo, const DKinematicData* locBeamParticle, int locRFBunchShift, DKinFitType locKinFitType);
 		const DParticleCombo* Create_KinFitCombo_NewCombo(const DParticleCombo* locOrigCombo, const DReaction* locReaction, const DKinFitResults* locKinFitResults, const shared_ptr<const DKinFitChain>& locKinFitChain);
@@ -56,7 +56,7 @@ class DParticleComboCreator
 		void Set_SpacetimeVertex(const DReaction* locReaction, const DParticleCombo* locNewParticleCombo, DParticleComboStep* locNewParticleComboStep, size_t locStepIndex, const DKinFitResults* locKinFitResults, const shared_ptr<const DKinFitChain>& locKinFitChain, double locOrigShiftedRFTime) const;
 
 		//CREATE PARTICLES
-		const DChargedTrackHypothesis* Create_ChargedHypo(const DChargedTrack* locChargedTrack, Particle_t locPID, double locPropagatedRFTime, bool locIsProductionVertex, const DSourceCombo* locVertexPrimaryFullCombo, const DKinematicData* locBeamParticle);
+		const DChargedTrackHypothesis* Create_ChargedHypo(const DChargedTrack* locChargedTrack, Particle_t locPID, double locPropagatedRFTime, bool locIsProductionVertex, const DSourceCombo* locReactionFullCombo, const DSourceCombo* locVertexPrimaryFullCombo, const DKinematicData* locBeamParticle, DVector3 locVertex);
 		const DBeamPhoton* Create_BeamPhoton_KinFit(const DBeamPhoton* locBeamPhoton, const DKinFitParticle* locKinFitParticle, const DLorentzVector& locSpacetimeVertex);
 		const DChargedTrackHypothesis* Create_ChargedHypo_KinFit(const DChargedTrack* locChargedTrack, Particle_t locPID, const DKinFitParticle* locKinFitParticle, double locPropagatedRFTime);
 		const DNeutralParticleHypothesis* Create_NeutralHypo_KinFit(const DNeutralParticleHypothesis* locOrigHypo, DKinFitParticle* locKinFitParticle, double locPropagatedRFTime);
@@ -68,7 +68,7 @@ class DParticleComboCreator
 
 		//UTILITIES
 		const DSourceComboer* dSourceComboer = nullptr;
-		const DSourceComboTimeHandler* dSourceComboTimeHandler = nullptr;
+		DSourceComboTimeHandler* dSourceComboTimeHandler = nullptr;
 		const DSourceComboVertexer* dSourceComboVertexer = nullptr;
 		const DParticleID* dParticleID = nullptr;
 		const DAnalysisUtilities* dAnalysisUtilities = nullptr;
