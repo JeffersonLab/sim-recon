@@ -101,9 +101,9 @@ inline bool operator<(const DSourceComboUse& lhs, const DSourceComboUse& rhs)
 		if(std::get<2>(lhs) != std::get<2>(rhs))
 			return (std::get<2>(lhs) == nullptr);
 		if(std::get<3>(lhs) != std::get<3>(rhs))
-			return (std::get<3>(lhs) < std::get<3>(lhs));
+			return (std::get<3>(lhs) < std::get<3>(rhs));
 		if(std::get<4>(lhs) != std::get<4>(rhs))
-			return (std::get<4>(lhs) < std::get<4>(lhs));
+			return (std::get<4>(lhs) < std::get<4>(rhs));
 
 		if(std::get<0>(lhs) == std::get<0>(rhs))
 		{
@@ -123,9 +123,9 @@ inline bool operator<(const DSourceComboUse& lhs, const DSourceComboUse& rhs)
 		return locChargeContent_LHS > locChargeContent_RHS;
 
 	if(std::get<3>(lhs) != std::get<3>(rhs))
-		return (std::get<3>(lhs) < std::get<3>(lhs));
+		return (std::get<3>(lhs) < std::get<3>(rhs));
 	if(std::get<4>(lhs) != std::get<4>(rhs))
-		return (std::get<4>(lhs) < std::get<4>(lhs));
+		return (std::get<4>(lhs) < std::get<4>(rhs));
 
 	//within each of those, it puts the most-massive particles first
 	if(std::get<0>(lhs) == std::get<0>(rhs))

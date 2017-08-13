@@ -53,7 +53,7 @@ jerror_t DReaction_factory_ReactionFilter::init(void)
 void Parse_Input(void)
 {
 	//Get input channel info
-	map<size_t, pair<string, vector<pair<string, string>>>> locInputStrings; //key is reaction#, 1st string: value for 1st decay step //pair is remaining keys: first: key remaining after colon, second: param value
+	map<size_t, tuple<string, string, vector<string>>> locInputStrings; //key is reaction#, 1st string: value for 1st decay step //2nd string: value for flags //string vector: value for decays
 	map<string, string> locParameterMap; //parameter key - filter, value
 	gPARMS->GetParameters(locParameterMap, "Reaction"); //gets all parameters with this filter at the beginning of the key
 	for(auto locParamPair : locParameterMap)
@@ -74,19 +74,34 @@ void Parse_Input(void)
 
 		//save it in the input map
 		if(locColonIndex == string::npos)
-			locInputStrings[locReactionNumber].first = locKeyValue;
+			std::get<0>(locInputStrings[locReactionNumber]) = locKeyValue;
 		else
 		{
 			auto locPostColonName = locParamPair.first.substr(locColonIndex + 1);
-			locInputStrings[locReactionNumber].second.emplace_back(locPostColonName, locKeyValue);
+			if(locPostColonName.substr(0, 5) == "Flags")
+				std::get<1>(locInputStrings[locReactionNumber]) = locKeyValue;
+			else
+				std::get<2>(locInputStrings[locReactionNumber]).push_back(locKeyValue);
 		}
 	}
-
+/*
 	//loop through channels, setting up the reactions
 	for(auto& locReactionPair : locInputStrings)
 	{
 		auto& locFirstStepString = locReactionPair.second.first;
+
+		//create dreaction (NEED A NAMING SCHEME!!!)
+
+		//loop over remaining args
+		for(auto& locSubKeyPairs : locReactionPair.second.second)
+		{
+			auto& locKey = locSubKeyPairs.first;
+			{
+				//set flags
+			}
+		}
 	}
+	*/
 }
 
 //------------------

@@ -531,8 +531,6 @@ void DSourceComboer::Create_SourceComboInfos(const DReactionVertexInfo* locReact
 		for(const auto& locDecayPair : locFurtherDecays)
 		{
 			auto locChargeContent = dComboInfoChargeContent[std::get<2>(locDecayPair.first)];
-cout << "charge content, use: " << locChargeContent << ", ";
-Print_SourceComboUse(locDecayPair.first);
 			if(locChargeContent == d_Charged)
 				locFurtherDecays_Charged.emplace(locDecayPair);
 			else if(locChargeContent == d_Neutral)
@@ -624,7 +622,6 @@ Print_SourceComboUse(locDecayPair.first);
 			locPrimaryComboUse = Make_ComboUse(locInitPID, locParticleMap_All, locFurtherDecays_All, locMissingDecayProductFlag, locDecayProductToExclude);
 		}
 
-cout << "register at: " << locStepIndex << endl;
 		locStepComboUseMap.emplace(locStepIndex, locPrimaryComboUse);
 	}
 
@@ -648,7 +645,6 @@ pair<bool, map<DSourceComboUse, unsigned char>> DSourceComboer::Get_FinalStateDe
 	for(size_t loc_i = 0; loc_i < locStep->Get_NumFinalPIDs(); ++loc_i)
 	{
 		int locDecayStepIndex = DAnalysis::Get_DecayStepIndex(locReaction, locStepIndex, loc_i);
-cout << "step index, pid index, decay step index: " << locStepIndex << ", " << loc_i << ", " << locDecayStepIndex << endl;
 		if(locDecayStepIndex < 0)
 			continue;
 
@@ -662,8 +658,6 @@ cout << "step index, pid index, decay step index: " << locStepIndex << ", " << l
 		{
 			//save decay
 			auto& locSourceComboUse = locUseIterator->second;
-cout << "USE IN DECAY MAP:" << endl;
-Print_SourceComboUse(locSourceComboUse);
 			auto locDecayIterator = locFurtherDecays.find(locSourceComboUse);
 			if(locDecayIterator == locFurtherDecays.end())
 			{
