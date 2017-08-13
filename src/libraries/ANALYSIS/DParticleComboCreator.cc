@@ -164,16 +164,21 @@ const DParticleCombo* DParticleComboCreator::Build_ParticleCombo(const DReaction
 	auto locReactionSteps = locReaction->Get_ReactionSteps();
 	for(size_t loc_i = 0; loc_i < locReactionSteps.size(); ++loc_i)
 	{
+		if(dDebugLevel >= 5)
+			cout << "Step: " << loc_i << endl;
+
 		auto locReactionStep = locReactionSteps[loc_i];
 		auto locStepVertexInfo = locReactionVertexInfo->Get_StepVertexInfo(loc_i);
 		auto locStepBeamParticle = (loc_i == 0) ? locBeamParticle : nullptr;
 		auto locIsProductionVertex = locStepVertexInfo->Get_ProductionVertexFlag();
+
 		auto locVertexPrimaryCombo = dSourceComboer->Get_VertexPrimaryCombo(locFullCombo, locStepVertexInfo);
 		if(dDebugLevel >= 5)
 		{
 			cout << "VERTEX PRIMARY COMBO:" << endl;
 			Print_SourceCombo(locVertexPrimaryCombo);
 		}
+
 		auto locSourceCombo = (loc_i == 0) ? locFullCombo : dSourceComboer->Get_StepSourceCombo(locReaction, loc_i, locVertexPrimaryCombo, locStepVertexInfo->Get_StepIndices().front());
 		if(dDebugLevel >= 5)
 		{
@@ -201,8 +206,14 @@ const DParticleCombo* DParticleComboCreator::Build_ParticleCombo(const DReaction
 
 		//build spacetime vertex
 		auto locVertex = dSourceComboVertexer->Get_Vertex(locIsProductionVertex, locFullCombo, locVertexPrimaryCombo, locBeamParticle);
+		if(dDebugLevel >= 20)
+			cout << "vertex: " << locVertex.X() << ", " << locVertex.Y() << ", " << locVertex.Z() << endl;
 		auto locTimeOffset = dSourceComboVertexer->Get_TimeOffset(locIsPrimaryProductionVertex, locFullCombo, locVertexPrimaryCombo, locBeamParticle);
+		if(dDebugLevel >= 20)
+			cout << "time offset: " << locTimeOffset << endl;
 		auto locPropagatedRFTime = dSourceComboTimeHandler->Calc_PropagatedRFTime(locPrimaryVertexZ, locRFBunchShift, locTimeOffset);
+		if(dDebugLevel >= 20)
+			cout << "prop rf time: " << locPropagatedRFTime << endl;
 		DLorentzVector locSpacetimeVertex(locVertex, locPropagatedRFTime);
 		if(dDebugLevel >= 5)
 			cout << "spacetime vertex xyzt: " << locSpacetimeVertex.X() << ", " << locSpacetimeVertex.Y() << ", " << locSpacetimeVertex.Z() << ", " << locSpacetimeVertex.T() << endl;
