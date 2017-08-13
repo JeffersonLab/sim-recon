@@ -139,34 +139,65 @@ bool Convert_StringToPID(string locString, Particle_t& locPID, bool& locIsMissin
 bool Parse_StepPIDString(string locStepString, tuple<Particle_t, Particle_t, vector<Particle_t>, Particle_t, int>& locStepTuple)
 {
 	//return tuple: initial pid, target/2nd-beam pid, detected final pids, missing final pid (if any), missing particle index
+	locStepTuple = std::make_tuple(Unknown, Unknown, vector<Particle_t>{}, Unknown, DReactionStep::Get_ParticleIndex_None());
 
 	//find separator
 	auto locStateSeparationIndex = locStepString.find("__");
 	if(locStateSeparationIndex == string::npos)
 		return false;
 
-	int locMissingParticleIndex = DReactionStep::Get_ParticleIndex_None();
-
 	//start with initial state
 	{
 		auto locInitStateString = locStepString.substr(0, locStateSeparationIndex);
 		auto locUnderscoreIndex = locInitStateString.find("_");
-		if(locUnderscoreIndex == string::npos)
+		auto locInitParticleString = (locUnderscoreIndex != string::npos) ? locInitStateString.substr(0, locUnderscoreIndex) : locInitStateString;
+
+		Particle_t locPID;
+		bool locIsMissingFlag;
+		if(!Convert_StringToPID(locInitParticleString, locPID, locIsMissingFlag))
+			return false;
+		std::get<0>(locStepTuple) = locPID;
+		if(locIsMissingFlag)
+			std::get<4>(locStepTuple) = DReactionStep::Get_ParticleIndex_Initial();
+
+		if(locUnderscoreIndex != string::npos)
 		{
-			Particle_t locPID;
-			bool locIsMissingFlag;
+			locInitStateString = locInitStateString.substr(locUnderscoreIndex + 1);
 			if(!Convert_StringToPID(locInitStateString, locPID, locIsMissingFlag))
 				return false;
-			std::get<0>(locStepTuple) = locPID;
+			std::get<1>(locStepTuple) = locPID;
 			if(locIsMissingFlag)
-				locMissingParticleIndex = DReactionStep::Get_ParticleIndex_Initial();
+				std::get<4>(locStepTuple) = DReactionStep::Get_ParticleIndex_SecondBeam();
 		}
 	}
 
-	while(!locStepString.empty())
+	locStepString = locStepString.substr(locStateSeparationIndex + 2);
+	while(true)
 	{
+		auto locUnderscoreIndex = locStepString.find("_");
+		auto locParticleString = (locUnderscoreIndex != string::npos) ? locStepString.substr(0, locUnderscoreIndex) : locStepString;
 
+		Particle_t locPID;
+		bool locIsMissingFlag;
+		if(!Convert_StringToPID(locParticleString, locPID, locIsMissingFlag))
+			return false;
+		if(locIsMissingFlag)
+		{
+			if(locPID != Unknown)
+				std::get<3>(locStepTuple) = locPID;
+			else
+				std::get<4>(locStepTuple) = DReactionStep::Get_ParticleIndex_Inclusive();
+		}
+		else
+			std::get<2>(locStepTuple).push_back(locPID);
+
+		if(locUnderscoreIndex == string::npos)
+			break;
+		locStepString = locStepString.substr(locUnderscoreIndex + 1);
 	}
+
+	if(std::get<3>(locStepTuple) != Unknown)
+		std::get<4>(locStepTuple) = std::get<2>(locStepTuple).size();
 
 	return true;
 }

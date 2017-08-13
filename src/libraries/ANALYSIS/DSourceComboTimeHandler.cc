@@ -1187,7 +1187,8 @@ bool DSourceComboTimeHandler::Cut_Timing_MissingMassVertices(const DReactionVert
 		auto locVertex = dSourceComboVertexer->Get_Vertex(locIsProductionVertex, locReactionFullCombo, locVertexPrimaryFullCombo, locBeamParticle);
 
 		auto locTimeOffset = dSourceComboVertexer->Get_TimeOffset(locIsPrimaryProductionVertex, locReactionFullCombo, locVertexPrimaryFullCombo, locBeamParticle);
-		auto locPropagatedRFTime = Calc_PropagatedRFTime(locPrimaryVertexZ, locRFBunch, locTimeOffset);
+		//auto locPropagatedRFTime = Calc_PropagatedRFTime(locPrimaryVertexZ, locRFBunch, locTimeOffset);
+		auto locPropagatedRFTime = Calc_PropagatedRFTime(locVertex.Z(), locRFBunch, 0.0); //COMPARE:
 
 		//loop over particles at this vertex: BCAL photons & charged tracks will get cut (FCAL photons already voted!)
 		auto locSourceParticles = DAnalysis::Get_SourceParticles_ThisVertex(locVertexPrimaryFullCombo);
@@ -1362,9 +1363,18 @@ bool DSourceComboTimeHandler::Cut_TrackPID(const DChargedTrackHypothesis* locHyp
 	auto locDeltaTCut = locCutFunc->Eval(locP);
 
 	auto locX4 = Get_ChargedPOCAToVertexX4(locHypothesis, locIsProductionVertex, locFullReactionCombo, locVertexPrimaryCombo, locBeamPhoton, locVertex);
+	auto locDeltaT = locX4.T() - locPropagatedRFTime;
+
+//	if(false) //COMPARE: Comparison-to-old mode
+	{
+		auto locVertexTime = locHypothesis->time();
+		locPropagatedRFTime += (locHypothesis->position().Z() - locVertex.Z())/SPEED_OF_LIGHT;
+		locDeltaT = locVertexTime - locPropagatedRFTime;
+		if(dDebugLevel >= 20)
+			cout << "charged track z, new track vert time, new prop rf time: " << locHypothesis->position().Z() << ", " << locVertexTime << ", " << locPropagatedRFTime << endl;
+	}
 
 	//do cut
-	auto locDeltaT = locX4.T() - locPropagatedRFTime;
 	if(dDebugLevel >= 10)
 		cout << "track pid cut: pid, pointer, system, vertex-z, track t, rf t, delta_t, cut-delta-t, result = " << locPID << ", " << locHypothesis << ", " << locSystem << ", " << locVertex.Z() << ", " << locX4.T() << ", " << locPropagatedRFTime << ", " << locDeltaT << ", " << locDeltaTCut << ", " << (fabs(locDeltaT) <= locDeltaTCut) << endl;
 	dSelectedRFDeltaTs[locPID][locSystem].emplace_back(locP, locDeltaT);
