@@ -188,8 +188,6 @@ inline void DSourceComboTimeHandler::Reset(void)
 	dChargedComboRFBunches.clear();
 	dPhotonVertexRFBunches.clear();
 	dFullComboRFBunches.clear();
-
-	dFullComboTimeCutResults.clear();
 }
 
 inline signed char DSourceComboTimeHandler::Get_PhotonVertexZBin(double locVertexZ) const
