@@ -251,8 +251,8 @@ void DSourceComboVertexer::Calc_VertexTimeOffsets_WithBeam(const DReactionVertex
 		auto locVertexPrimaryFullCombo = dSourceComboer->Get_VertexPrimaryCombo(locReactionFullCombo, locStepVertexInfo);
 
 		//see if vertex has already been found //can search with either charged or full
-		auto locFullComboProductionTuple = std::make_tuple(locIsProductionVertexFlag, locVertexPrimaryFullCombo, (const DKinematicData*)nullptr);
-		if(dConstrainingParticlesByCombo.find(locFullComboProductionTuple) != dConstrainingParticlesByCombo.end())
+		auto locFullComboProductionTuple = std::make_tuple(locIsProductionVertexFlag, locVertexPrimaryFullCombo, locBeamParticle);
+		if(Get_VertexDeterminableWithCharged(locStepVertexInfo) || Get_VertexDeterminableWithPhotons(locStepVertexInfo) || (dConstrainingParticlesByCombo.find(locFullComboProductionTuple) != dConstrainingParticlesByCombo.end()))
 		{
 			if(dDebugLevel >= 10)
 				cout << "vertex already found" << endl;
