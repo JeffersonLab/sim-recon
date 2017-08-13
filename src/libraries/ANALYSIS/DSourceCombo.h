@@ -28,7 +28,10 @@ class DSourceComboInfo;
 class DSourceCombo;
 
 //DSourceComboUse is what the combo is USED for (the decay of Particle_t (if Unknown then is just a grouping)
-using DSourceComboUse = tuple<Particle_t, signed char, const DSourceComboInfo*>; //e.g. Pi0, -> 2g //signed char: vertex-z bin of the final state (combo contents)
+//signed char: vertex-z bin of the final state (combo contents)
+//bool: true/false if has/doesn't-have missing decay product (is always false if decay pid == Unknown)
+//last pid: Pid to exclude from calculating the invariant mass of the decay (is always Unknown if decay pid == Unknown) (e.g. if rescattering Lambda, p -> p, p, pi- then this would be Proton)
+using DSourceComboUse = tuple<Particle_t, signed char, const DSourceComboInfo*, bool, Particle_t>; //e.g. Pi0, zbin, -> 2g, false, Unknown
 using DSourceCombosByUse_Small = vector<pair<DSourceComboUse, vector<const DSourceCombo*>>>;
 
 //DECLARE NAMESPACE-SCOPE FUNCTIONS
@@ -97,6 +100,10 @@ inline bool operator<(const DSourceComboUse& lhs, const DSourceComboUse& rhs)
 	{
 		if(std::get<2>(lhs) != std::get<2>(rhs))
 			return (std::get<2>(lhs) == nullptr);
+		if(std::get<3>(lhs) != std::get<3>(rhs))
+			return (std::get<3>(lhs) < std::get<3>(lhs));
+		if(std::get<4>(lhs) != std::get<4>(rhs))
+			return (std::get<4>(lhs) < std::get<4>(lhs));
 
 		if(std::get<0>(lhs) == std::get<0>(rhs))
 		{
@@ -114,6 +121,11 @@ inline bool operator<(const DSourceComboUse& lhs, const DSourceComboUse& rhs)
 	auto locChargeContent_RHS = Get_ChargeContent(std::get<2>(rhs));
 	if(locChargeContent_LHS != locChargeContent_RHS)
 		return locChargeContent_LHS > locChargeContent_RHS;
+
+	if(std::get<3>(lhs) != std::get<3>(rhs))
+		return (std::get<3>(lhs) < std::get<3>(lhs));
+	if(std::get<4>(lhs) != std::get<4>(rhs))
+		return (std::get<4>(lhs) < std::get<4>(lhs));
 
 	//within each of those, it puts the most-massive particles first
 	if(std::get<0>(lhs) == std::get<0>(rhs))
@@ -325,7 +337,8 @@ inline void Print_SourceComboUse(const DSourceComboUse& locComboUse, unsigned ch
 {
 	if(!locIgnoreTabs)
 		for(decltype(locNumTabs) locTabNum = 0; locTabNum < locNumTabs; ++locTabNum) cout << "\t";
-	cout << "Use (decay pid, z-bin, combo info): " << ParticleType(std::get<0>(locComboUse)) << ", " << int(std::get<1>(locComboUse)) << ", " << std::get<2>(locComboUse) << ":" << endl;
+	cout << "Use (decay pid, z-bin, combo info, has-missing-decay-product, mass-cut-pid-to-exclude): ";
+	cout << ParticleType(std::get<0>(locComboUse)) << ", " << int(std::get<1>(locComboUse)) << ", " << std::get<2>(locComboUse) << ", " << std::get<3>(locComboUse) << ", " << std::get<4>(locComboUse) << ":" << endl;
 	DAnalysis::Print_SourceComboInfo(std::get<2>(locComboUse), locNumTabs + 1);
 }
 

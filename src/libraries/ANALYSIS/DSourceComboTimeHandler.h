@@ -53,6 +53,9 @@ class DSourceComboTimeHandler
 		unordered_map<signed char, DPhotonShowersByBeamBunch> Get_ShowersByBeamBunchByZBin(void) const{return dShowersByBeamBunchByZBin;}
 		vector<const DKinematicData*> Get_BeamParticlesByRFBunch(int locRFBunch, unsigned int locPlusMinusBunchRange) const;
 
+		//GET CUTS
+		bool Get_TimeCut(Particle_t locPID, DetectorSystem_t locSystem, TF1* locTimeCut_ns) const;
+
 		//GET VALID/COMMON RF BUNCHES
 		//Note that combining with an empty vector does NOT remove all bunches!!
 		//It is assumed that an empty vector means "unknown," and that you just want to use the other set instead
@@ -213,6 +216,21 @@ inline void DSourceComboTimeHandler::Set_BeamParticles(const vector<const DBeamP
 		dBeamParticlesByRFBunch[locRFBunch].push_back(locBeamParticle);
 		dBeamRFDeltaTs.emplace_back(locBeamParticle->energy(), locBeamParticle->time() - dInitialEventRFBunch->dTime);
 	}
+}
+
+inline bool DSourceComboTimeHandler::Get_TimeCut(Particle_t locPID, DetectorSystem_t locSystem, TF1* locTimeCut_ns) const
+{
+	auto locIterator = dPIDTimingCuts.find(locPID);
+	if(locIterator == dPIDTimingCuts.end())
+		return false;
+
+	auto locSystemMap = locIterator->second;
+	auto locSystemIterator = locSystemMap.find(locSystem);
+	if(locSystemIterator == locSystemMap.end())
+		return false;
+
+	locTimeCut_ns = locSystemIterator->second;
+	return true;
 }
 
 inline vector<const DKinematicData*> DSourceComboTimeHandler::Get_BeamParticlesByRFBunch(int locCenterRFBunch, unsigned int locPlusMinusBunchRange) const

@@ -24,11 +24,11 @@ class DAnalysisAction;
 enum DKinFitType
 {
 	d_NoFit = 0, 
-	d_P4Fit, //also includes invariant mass constraints
-	d_VertexFit,
-	d_SpacetimeFit,
-	d_P4AndVertexFit, //also includes invariant mass constraints
-	d_P4AndSpacetimeFit //also includes invariant mass constraints
+	d_P4Fit = 1, //also includes invariant mass constraints
+	d_VertexFit = 2,
+	d_SpacetimeFit = 3,
+	d_P4AndVertexFit = 4, //also includes invariant mass constraints
+	d_P4AndSpacetimeFit = 5 //also includes invariant mass constraints
 };
 
 class DReaction : public JObject
@@ -215,21 +215,29 @@ inline string Convert_PIDsToROOTName(const vector<Particle_t>& locPIDs)
 	return std::accumulate(locParticleNames.begin(), locParticleNames.end(), string(""));
 }
 
-inline bool Check_IfMissingDecayProduct(const DReaction* locReaction, size_t locStepIndex)
+inline vector<pair<int, int>> Get_MissingDecayProductIndices(const DReaction* locReaction, size_t locStepIndex)
 {
-	const DReactionStep* locReactionStep = locReaction->Get_ReactionStep(locStepIndex);
+	vector<pair<int, int>> locMissingDecayProductIndices;
+	auto locReactionStep = locReaction->Get_ReactionStep(locStepIndex);
 	if(locReactionStep->Get_IsInclusiveFlag())
-		return true;
+		locMissingDecayProductIndices.emplace_back(locStepIndex, DReactionStep::Get_ParticleIndex_Inclusive());
 	if(locReactionStep->Get_MissingPID() != Unknown)
-		return true;
+		locMissingDecayProductIndices.emplace_back(locStepIndex, locReactionStep->Get_MissingParticleIndex());
 
 	for(size_t loc_i = 0; loc_i < locReactionStep->Get_NumFinalPIDs(); ++loc_i)
 	{
-		int locDecayStepIndex = Get_DecayStepIndex(locReaction, locStepIndex, loc_i);
-		if((locDecayStepIndex > 0) && Check_IfMissingDecayProduct(locReaction, locDecayStepIndex))
-			return true;
+		auto locDecayStepIndex = Get_DecayStepIndex(locReaction, locStepIndex, loc_i);
+		if(locDecayStepIndex <= 0)
+			continue;
+		auto locFurtherMissingDecayProducts = DAnalysis::Get_MissingDecayProductIndices(locReaction, locDecayStepIndex));
+		locMissingDecayProductIndices.insert(locMissingDecayProductIndices.end(), locFurtherMissingDecayProducts.begin(), locFurtherMissingDecayProducts.end());
 	}
-	return false;
+	return locMissingDecayProductIndices;
+}
+
+inline bool Check_IfMissingDecayProduct(const DReaction* locReaction, size_t locStepIndex)
+{
+	return (!DAnalysis::Get_MissingDecayProductIndices(locReaction, locStepIndex).empty());
 }
 
 template <typename DType> inline map<DType, size_t> Convert_VectorToCountMap(const vector<DType>& locVector)

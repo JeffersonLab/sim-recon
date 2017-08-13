@@ -160,6 +160,75 @@ DSourceComboTimeHandler::DSourceComboTimeHandler(JEventLoop* locEventLoop, DSour
 {
 	gPARMS->SetDefaultParameter("COMBO:DEBUG_LEVEL", dDebugLevel);
 
+	//These functions can have the same name because we are no longer adding them to the global ROOT list of functions
+
+	// Timing Cuts: Photon
+	dPIDTimingCuts[Gamma].emplace(SYS_BCAL, new TF1("df_TimeCut", "[0]", 0.0, 12.0));
+	dPIDTimingCuts[Gamma][SYS_BCAL]->SetParameter(0, 1.5);
+	dPIDTimingCuts[Gamma].emplace(SYS_FCAL, new TF1("df_TimeCut", "[0]", 0.0, 12.0));
+	dPIDTimingCuts[Gamma][SYS_FCAL]->SetParameter(0, 2.0); //2.5!!!
+	dSelectedRFDeltaTs[Gamma][SYS_BCAL].reserve(1000);
+	dSelectedRFDeltaTs[Gamma][SYS_FCAL].reserve(1000);
+
+	//Unknown: initial RF selection for photons (at beginning of event, prior to vertex) //can be separate cut function
+	dPIDTimingCuts.emplace(Unknown, dPIDTimingCuts[Gamma]);
+	dSelectedRFDeltaTs.emplace(Unknown, dSelectedRFDeltaTs[Gamma]);
+
+	// Timing Cuts: Leptons
+	dPIDTimingCuts[Electron].emplace(SYS_BCAL, new TF1("df_TimeCut", "[0]", 0.0, 12.0));
+	dPIDTimingCuts[Electron][SYS_BCAL]->SetParameter(0, 1.0);
+	dPIDTimingCuts[Electron].emplace(SYS_TOF, new TF1("df_TimeCut", "[0]", 0.0, 12.0));
+	dPIDTimingCuts[Electron][SYS_TOF]->SetParameter(0, 0.5);
+	dPIDTimingCuts[Electron].emplace(SYS_FCAL, new TF1("df_TimeCut", "[0]", 0.0, 12.0));
+	dPIDTimingCuts[Electron][SYS_FCAL]->SetParameter(0, 2.0);
+	dSelectedRFDeltaTs[Electron][SYS_BCAL].reserve(1000);
+	dSelectedRFDeltaTs[Electron][SYS_FCAL].reserve(1000);
+	dSelectedRFDeltaTs[Electron][SYS_TOF].reserve(1000);
+	dSelectedRFDeltaTs[Electron][SYS_START].reserve(1000);
+
+	dPIDTimingCuts.emplace(Positron, dPIDTimingCuts[Electron]);
+	dPIDTimingCuts.emplace(MuonMinus, dPIDTimingCuts[Electron]);
+	dPIDTimingCuts.emplace(MuonPlus, dPIDTimingCuts[Electron]);
+	dSelectedRFDeltaTs.emplace(Positron, dSelectedRFDeltaTs[Electron]);
+	dSelectedRFDeltaTs.emplace(MuonMinus, dSelectedRFDeltaTs[Electron]);
+	dSelectedRFDeltaTs.emplace(MuonPlus, dSelectedRFDeltaTs[Electron]);
+
+	// Timing Cuts: Mesons
+	dPIDTimingCuts[PiPlus].emplace(SYS_BCAL, new TF1("df_TimeCut", "[0]", 0.0, 12.0));
+	dPIDTimingCuts[PiPlus][SYS_BCAL]->SetParameter(0, 1.0);
+	dPIDTimingCuts[PiPlus].emplace(SYS_TOF, new TF1("df_TimeCut", "[0]", 0.0, 12.0));
+	dPIDTimingCuts[PiPlus][SYS_TOF]->SetParameter(0, 0.5);
+	dPIDTimingCuts[PiPlus].emplace(SYS_FCAL, new TF1("df_TimeCut", "[0]", 0.0, 12.0));
+	dPIDTimingCuts[PiPlus][SYS_FCAL]->SetParameter(0, 2.0);
+	dPIDTimingCuts.emplace(PiMinus, dPIDTimingCuts[PiPlus]);
+	dSelectedRFDeltaTs.emplace(PiPlus, dSelectedRFDeltaTs[Electron]);
+	dSelectedRFDeltaTs.emplace(PiMinus, dSelectedRFDeltaTs[Electron]);
+
+	dPIDTimingCuts[KPlus].emplace(SYS_BCAL, new TF1("df_TimeCut", "[0]", 0.0, 12.0));
+	dPIDTimingCuts[KPlus][SYS_BCAL]->SetParameter(0, 0.75);
+	dPIDTimingCuts[KPlus].emplace(SYS_TOF, new TF1("df_TimeCut", "[0]", 0.0, 12.0));
+	dPIDTimingCuts[KPlus][SYS_TOF]->SetParameter(0, 0.3);
+	dPIDTimingCuts[KPlus].emplace(SYS_FCAL, new TF1("df_TimeCut", "[0]", 0.0, 12.0));
+	dPIDTimingCuts[KPlus][SYS_FCAL]->SetParameter(0, 2.0); //2.5!!!
+	dPIDTimingCuts.emplace(KMinus, dPIDTimingCuts[KPlus]);
+	dSelectedRFDeltaTs.emplace(KPlus, dSelectedRFDeltaTs[Electron]);
+	dSelectedRFDeltaTs.emplace(KMinus, dSelectedRFDeltaTs[Electron]);
+
+	// Timing Cuts: Baryons
+	dPIDTimingCuts[Proton].emplace(SYS_BCAL, new TF1("df_TimeCut", "[0]", 0.0, 12.0));
+	dPIDTimingCuts[Proton][SYS_BCAL]->SetParameter(0, 1.0);
+	dPIDTimingCuts[Proton].emplace(SYS_TOF, new TF1("df_TimeCut", "[0]", 0.0, 12.0));
+	dPIDTimingCuts[Proton][SYS_TOF]->SetParameter(0, 0.6);
+	dPIDTimingCuts[Proton].emplace(SYS_FCAL, new TF1("df_TimeCut", "[0]", 0.0, 12.0));
+	dPIDTimingCuts[Proton][SYS_FCAL]->SetParameter(0, 2.0);
+	dPIDTimingCuts.emplace(AntiProton, dPIDTimingCuts[Proton]);
+	dSelectedRFDeltaTs.emplace(Proton, dSelectedRFDeltaTs[Electron]);
+	dSelectedRFDeltaTs.emplace(AntiProton, dSelectedRFDeltaTs[Electron]);
+	dAllRFDeltaTs = dSelectedRFDeltaTs;
+
+	if(locEventLoop == nullptr)
+		return; //only interested in querying cuts
+
 	//UTILITIES
 	locEventLoop->GetSingle(dAnalysisUtilities);
 
@@ -237,71 +306,6 @@ DSourceComboTimeHandler::DSourceComboTimeHandler(JEventLoop* locEventLoop, DSour
 		}
 	}
 
-	//These functions can have the same name because we are no longer adding them to the global ROOT list of functions
-
-	// Timing Cuts: Photon
-	dPIDTimingCuts[Gamma].emplace(SYS_BCAL, new TF1("df_TimeCut", "[0]", 0.0, 12.0));
-	dPIDTimingCuts[Gamma][SYS_BCAL]->SetParameter(0, 1.5);
-	dPIDTimingCuts[Gamma].emplace(SYS_FCAL, new TF1("df_TimeCut", "[0]", 0.0, 12.0));
-	dPIDTimingCuts[Gamma][SYS_FCAL]->SetParameter(0, 2.0); //2.5!!!
-	dSelectedRFDeltaTs[Gamma][SYS_BCAL].reserve(1000);
-	dSelectedRFDeltaTs[Gamma][SYS_FCAL].reserve(1000);
-
-	//Unknown: initial RF selection for photons (at beginning of event, prior to vertex) //can be separate cut function
-	dPIDTimingCuts.emplace(Unknown, dPIDTimingCuts[Gamma]);
-	dSelectedRFDeltaTs.emplace(Unknown, dSelectedRFDeltaTs[Gamma]);
-
-	// Timing Cuts: Leptons
-	dPIDTimingCuts[Electron].emplace(SYS_BCAL, new TF1("df_TimeCut", "[0]", 0.0, 12.0));
-	dPIDTimingCuts[Electron][SYS_BCAL]->SetParameter(0, 1.0);
-	dPIDTimingCuts[Electron].emplace(SYS_TOF, new TF1("df_TimeCut", "[0]", 0.0, 12.0));
-	dPIDTimingCuts[Electron][SYS_TOF]->SetParameter(0, 0.5);
-	dPIDTimingCuts[Electron].emplace(SYS_FCAL, new TF1("df_TimeCut", "[0]", 0.0, 12.0));
-	dPIDTimingCuts[Electron][SYS_FCAL]->SetParameter(0, 2.0);
-	dSelectedRFDeltaTs[Electron][SYS_BCAL].reserve(1000);
-	dSelectedRFDeltaTs[Electron][SYS_FCAL].reserve(1000);
-	dSelectedRFDeltaTs[Electron][SYS_TOF].reserve(1000);
-	dSelectedRFDeltaTs[Electron][SYS_START].reserve(1000);
-
-	dPIDTimingCuts.emplace(Positron, dPIDTimingCuts[Electron]);
-	dPIDTimingCuts.emplace(MuonMinus, dPIDTimingCuts[Electron]);
-	dPIDTimingCuts.emplace(MuonPlus, dPIDTimingCuts[Electron]);
-	dSelectedRFDeltaTs.emplace(Positron, dSelectedRFDeltaTs[Electron]);
-	dSelectedRFDeltaTs.emplace(MuonMinus, dSelectedRFDeltaTs[Electron]);
-	dSelectedRFDeltaTs.emplace(MuonPlus, dSelectedRFDeltaTs[Electron]);
-
-	// Timing Cuts: Mesons
-	dPIDTimingCuts[PiPlus].emplace(SYS_BCAL, new TF1("df_TimeCut", "[0]", 0.0, 12.0));
-	dPIDTimingCuts[PiPlus][SYS_BCAL]->SetParameter(0, 1.0);
-	dPIDTimingCuts[PiPlus].emplace(SYS_TOF, new TF1("df_TimeCut", "[0]", 0.0, 12.0));
-	dPIDTimingCuts[PiPlus][SYS_TOF]->SetParameter(0, 0.5);
-	dPIDTimingCuts[PiPlus].emplace(SYS_FCAL, new TF1("df_TimeCut", "[0]", 0.0, 12.0));
-	dPIDTimingCuts[PiPlus][SYS_FCAL]->SetParameter(0, 2.0);
-	dPIDTimingCuts.emplace(PiMinus, dPIDTimingCuts[PiPlus]);
-	dSelectedRFDeltaTs.emplace(PiPlus, dSelectedRFDeltaTs[Electron]);
-	dSelectedRFDeltaTs.emplace(PiMinus, dSelectedRFDeltaTs[Electron]);
-
-	dPIDTimingCuts[KPlus].emplace(SYS_BCAL, new TF1("df_TimeCut", "[0]", 0.0, 12.0));
-	dPIDTimingCuts[KPlus][SYS_BCAL]->SetParameter(0, 0.75);
-	dPIDTimingCuts[KPlus].emplace(SYS_TOF, new TF1("df_TimeCut", "[0]", 0.0, 12.0));
-	dPIDTimingCuts[KPlus][SYS_TOF]->SetParameter(0, 0.3);
-	dPIDTimingCuts[KPlus].emplace(SYS_FCAL, new TF1("df_TimeCut", "[0]", 0.0, 12.0));
-	dPIDTimingCuts[KPlus][SYS_FCAL]->SetParameter(0, 2.0); //2.5!!!
-	dPIDTimingCuts.emplace(KMinus, dPIDTimingCuts[KPlus]);
-	dSelectedRFDeltaTs.emplace(KPlus, dSelectedRFDeltaTs[Electron]);
-	dSelectedRFDeltaTs.emplace(KMinus, dSelectedRFDeltaTs[Electron]);
-
-	// Timing Cuts: Baryons
-	dPIDTimingCuts[Proton].emplace(SYS_BCAL, new TF1("df_TimeCut", "[0]", 0.0, 12.0));
-	dPIDTimingCuts[Proton][SYS_BCAL]->SetParameter(0, 1.0);
-	dPIDTimingCuts[Proton].emplace(SYS_TOF, new TF1("df_TimeCut", "[0]", 0.0, 12.0));
-	dPIDTimingCuts[Proton][SYS_TOF]->SetParameter(0, 0.6);
-	dPIDTimingCuts[Proton].emplace(SYS_FCAL, new TF1("df_TimeCut", "[0]", 0.0, 12.0));
-	dPIDTimingCuts[Proton][SYS_FCAL]->SetParameter(0, 2.0);
-	dPIDTimingCuts.emplace(AntiProton, dPIDTimingCuts[Proton]);
-	dSelectedRFDeltaTs.emplace(Proton, dSelectedRFDeltaTs[Electron]);
-	dSelectedRFDeltaTs.emplace(AntiProton, dSelectedRFDeltaTs[Electron]);
-	dAllRFDeltaTs = dSelectedRFDeltaTs;
 
 /* //COMPARE:
 	// Timing Cuts: Start counter

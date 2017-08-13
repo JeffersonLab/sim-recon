@@ -11,11 +11,12 @@
 #include <iostream>
 #include <iomanip>
 
-#include <JANA/JFactory.h>
-#include <ANALYSIS/DReaction.h>
-#include <ANALYSIS/DHistogramActions.h>
-#include <ANALYSIS/DCutActions.h>
-#include <ANALYSIS/DSourceComboP4Handler.h>
+#include "JANA/JFactory.h"
+#include "ANALYSIS/DReaction.h"
+#include "ANALYSIS/DHistogramActions.h"
+#include "ANALYSIS/DCutActions.h"
+#include "ANALYSIS/DSourceComboP4Handler.h"
+#include "ANALYSIS/DSourceComboTimeHandler.h"
 
 #include "FSInfo.h"
 
@@ -56,7 +57,8 @@ class DReaction_factory_ReactionFilter : public jana::JFactory<DReaction>
 		map<Particle_t, pair<double, double> > dMissingMassCuts; //Unknown = none missing //if negative, uses missing mass squared instead
 		map<Particle_t, pair<double, double> > dInvariantMassCuts;
 
-		DSourceComboP4Handler* dSourceComboP4Handler;
+		DSourceComboP4Handler* dSourceComboP4Handler = nullptr;
+		DSourceComboTimeHandler* dSourceComboTimeHandler = nullptr;
 		deque<DReactionStep*> dReactionStepPool; //to prevent memory leaks
 };
 

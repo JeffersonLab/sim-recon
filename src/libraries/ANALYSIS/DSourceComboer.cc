@@ -13,8 +13,9 @@
  * this flag is false if: there's a missing decay product further down the chain, OR if it's a rescattering step AND the target particle is NOT MISSING
  * When DO we cut the mass then? well, actually we do want to do it at the same time, just that we want to subtract the final state target particle from the p4 before cutting (the cut action must do this too!)
  * So, how to know what to do? during comboing we know nothing of the target. we'd want to save the PID of the target particle to subtract in the USE.  So then we set it as unknown for don't subtract anything
- * But then how do we tell it not to cut at all for the missing decay product case?  It has to be a separate variable. 
- * In summary: expand use by 2 variables: has-missing-decay-product flag, and subtract-p4-pid-before-invariant-mass-cut flag. These are always false/Unknown for uses with decaypid = Unknown
+ * But then how do we tell it not to cut at all for the missing decay product case?  It has to be a separate variable.
+ *
+ * In summary: expand use by 2 variables: has-missing-decay-product flag, and subtract-p4-pid-before-invariant-mass-cut PID. These are always false/Unknown for uses with decaypid = Unknown
  * We also need to expand the missing mass calc function to include ALL initial state targets (loop over all steps)
  * While we're at it, tell it to cut the missing mass of all decaying particles that claim to have a missing decay product
  *
@@ -43,11 +44,20 @@ Q) How can I speed this up?
 A) You can try reducing the #z-bins by increasing their widths. However, much sure you also increase the uncertainty on the timing & invariant-mass cuts for photons as well.
 */
 
+//TO DO:
+//Implement new combo use
+//Get 2 final channels working
+//Undo comparison changes
+//Change time handling for detached decay products
+//reaction filter: cut on pid post-kinfit
+//Implement new reaction filter input
+
 //TO COMPARE:
 //Look for "COMPARE:"
 //Update master cut values
 
 //NICE TO HAVE:
+//DSELECTOR: fit hist/cut of pid delta-t's when coming from detached vertex
 //finish comments in Build_ParticleCombos()
 //include missing mass cuts on decaying particles if decay products are missing
 
@@ -529,30 +539,53 @@ void DSourceComboer::Create_SourceComboInfos(const DReactionVertexInfo* locReact
 				locFurtherDecays_Mixed.emplace(locDecayPair);
 		}
 
-		//determine whether to include the decay itself in the comboing (or just the products)
-		//only include if can make an invariant mass cut (what it's used for here)
-		//we will still group these separately from the rest of the particles
-		if((locStepIndex != 0) || !DAnalysis::Get_IsFirstStepBeam(locReaction)) //decay
-		{
-			//ignore parent if products include missing particles
-			if(DAnalysis::Check_IfMissingDecayProduct(locReaction, locStepIndex))
-				locIncludeParentFlag = false;
-		}
-		else //direct production
+
+		//exclude parent if production
+		if((locStepIndex == 0) && DAnalysis::Get_IsFirstStepBeam(locReaction)) //decay
 			locIncludeParentFlag = false;
 
 		//create combo uses for each case
-		Particle_t locInitPID = locIncludeParentFlag ? locStep->Get_InitialPID() : Unknown;
+		auto locInitPID = locIncludeParentFlag ? locStep->Get_InitialPID() : Unknown;
 		bool locNoChargedFlag = (locChargedParticleMap.empty() && locFurtherDecays_Charged.empty());
 		bool locNoNeutralFlag = (locNeutralParticleMap.empty() && locFurtherDecays_Neutral.empty());
 
-		DSourceComboUse locPrimaryComboUse(Unknown, DSourceComboInfo::Get_VertexZIndex_ZIndependent(), nullptr);
+		//determine if we need to exclude a decay product from the invariant mass cuts (e.g. rescattering)
+		auto locTargetPID = locStep->Get_TargetPID();
+		auto locDecayProductToExclude = ((locStepIndex != 0) && (locTargetPID != Unknown) && (locStep->Get_MissingPID() != locTargetPID)) ? locTargetPID : Unknown;
+
+		//determine if there is a missing decay product, such that we can't do invariant mass cuts
+		bool locMissingDecayProductFlag = false;
+		if((locStepIndex != 0) || !DAnalysis::Get_IsFirstStepBeam(locReaction)) //decay
+		{
+			auto locMissingDecayProductIndices = DAnalysis::Get_MissingDecayProductIndices(locReaction, locStepIndex);
+			for(auto& locMissingPair : locMissingDecayProductIndices)
+			{
+				if(locMissingPair.second == DReactionStep::Get_ParticleIndex_Inclusive())
+				{
+					locMissingDecayProductFlag = true;
+					break;
+				}
+
+				//check if missing particle is just rescattered target
+				auto locMissingParticleStep = locReaction->Get_ReactionStep(locMissingPair.first);
+				auto locMissingStepTargetPID = locMissingParticleStep->Get_TargetPID();
+				if((locMissingStepTargetPID != Unknown) && (locMissingParticleStep->Get_MissingPID() == locMissingStepTargetPID))
+					continue; //yep, go to next one
+
+				//nope, register and break
+				locMissingDecayProductFlag = true;
+				break;
+			}
+		}
+
+		//default to unknown use
+		DSourceComboUse locPrimaryComboUse(Unknown, DSourceComboInfo::Get_VertexZIndex_ZIndependent(), nullptr, false, Unknown);
 		if(locNoChargedFlag && locNoNeutralFlag) //only mixed
-			locPrimaryComboUse = Make_ComboUse(locInitPID, {}, locFurtherDecays_Mixed);
+			locPrimaryComboUse = Make_ComboUse(locInitPID, {}, locFurtherDecays_Mixed, locMissingDecayProductFlag, locDecayProductToExclude);
 		else if(locNoNeutralFlag && locFurtherDecays_Mixed.empty()) //only charged
-			locPrimaryComboUse = Make_ComboUse(locInitPID, locChargedParticleMap, locFurtherDecays_Charged);
+			locPrimaryComboUse = Make_ComboUse(locInitPID, locChargedParticleMap, locFurtherDecays_Charged, locMissingDecayProductFlag, locDecayProductToExclude);
 		else if(locNoChargedFlag && locFurtherDecays_Mixed.empty()) //only neutral
-			locPrimaryComboUse = Make_ComboUse(locInitPID, locNeutralParticleMap, locFurtherDecays_Neutral);
+			locPrimaryComboUse = Make_ComboUse(locInitPID, locNeutralParticleMap, locFurtherDecays_Neutral, locMissingDecayProductFlag, locDecayProductToExclude);
 		else //some combination
 		{
 			auto locFurtherDecays_All = locFurtherDecays_Mixed;
@@ -565,7 +598,7 @@ void DSourceComboer::Create_SourceComboInfos(const DReactionVertexInfo* locReact
 					locFurtherDecays_All.emplace(locFurtherDecays_Charged.begin()->first, 1);
 				else //multiple Charged decaying particles, group together separately (own use)
 				{
-					auto locComboUse_Charged = Make_ComboUse(Unknown, locChargedParticleMap, locFurtherDecays_Charged);
+					auto locComboUse_Charged = Make_ComboUse(Unknown, locChargedParticleMap, locFurtherDecays_Charged, false, Unknown);
 					locFurtherDecays_All.emplace(locComboUse_Charged, 1);
 				}
 			}
@@ -578,12 +611,12 @@ void DSourceComboer::Create_SourceComboInfos(const DReactionVertexInfo* locReact
 					locParticleMap_All.emplace(locNeutralParticleMap.begin()->first, locNeutralParticleMap.begin()->second); //detected
 				else //multiple neutral particles, group together separately (own use)
 				{
-					auto locComboUse_Neutral = Make_ComboUse(Unknown, locNeutralParticleMap, locFurtherDecays_Neutral);
+					auto locComboUse_Neutral = Make_ComboUse(Unknown, locNeutralParticleMap, locFurtherDecays_Neutral, false, Unknown);
 					locFurtherDecays_All.emplace(locComboUse_Neutral, 1);
 				}
 			}
 
-			locPrimaryComboUse = Make_ComboUse(locInitPID, locParticleMap_All, locFurtherDecays_All);
+			locPrimaryComboUse = Make_ComboUse(locInitPID, locParticleMap_All, locFurtherDecays_All, locMissingDecayProductFlag, locDecayProductToExclude);
 		}
 
 		locStepComboUseMap.emplace(locStepIndex, locPrimaryComboUse);
@@ -696,7 +729,7 @@ DSourceComboUse DSourceComboer::Build_NewZDependentUse(const DReaction* locReact
 	std::copy(locNewFurtherDecays.begin(), locNewFurtherDecays.end(), std::back_inserter(locFurtherDecayVector));
 	auto locNewComboInfo = locNewFurtherDecays.empty() ? locOrigInfo : GetOrMake_SourceComboInfo(locOrigInfo->Get_NumParticles(), locFurtherDecayVector, 0);
 
-	DSourceComboUse locNewComboUse(std::get<0>(locOrigUse), locVertexZBin, locNewComboInfo);
+	DSourceComboUse locNewComboUse(std::get<0>(locOrigUse), locVertexZBin, locNewComboInfo, std::get<3>(locOrigUse), std::get<4>(locOrigUse));
 	if(dDebugLevel >= 30)
 	{
 		cout << "NEW Z-DEPENDENT USE:" << endl;
@@ -754,7 +787,7 @@ map<Particle_t, unsigned char> DSourceComboer::Build_ParticleMap(const DReaction
 	return locNumParticles;
 }
 
-DSourceComboUse DSourceComboer::Make_ComboUse(Particle_t locInitPID, const map<Particle_t, unsigned char>& locNumParticles, const map<DSourceComboUse, unsigned char>& locFurtherDecays)
+DSourceComboUse DSourceComboer::Make_ComboUse(Particle_t locInitPID, const map<Particle_t, unsigned char>& locNumParticles, const map<DSourceComboUse, unsigned char>& locFurtherDecays, bool locMissingDecayProductFlag, Particle_t locDecayProductToExclude)
 {
 	//convert locFurtherDecays map to a vector
 	vector<pair<DSourceComboUse, unsigned char>> locDecayVector;
@@ -768,7 +801,7 @@ DSourceComboUse DSourceComboer::Make_ComboUse(Particle_t locInitPID, const map<P
 
 	//make or get the combo info
 	auto locComboInfo = MakeOrGet_SourceComboInfo(locParticleVector, locDecayVector, 0);
-	return DSourceComboUse(locInitPID, DSourceComboInfo::Get_VertexZIndex_ZIndependent(), locComboInfo);
+	return DSourceComboUse(locInitPID, DSourceComboInfo::Get_VertexZIndex_ZIndependent(), locComboInfo, locMissingDecayProductFlag, locDecayProductToExclude);
 }
 
 const DSourceComboInfo* DSourceComboer::MakeOrGet_SourceComboInfo(const vector<pair<Particle_t, unsigned char>>& locNumParticles, const vector<pair<DSourceComboUse, unsigned char>>& locFurtherDecays, unsigned char locNumTabs)
@@ -1572,6 +1605,7 @@ void DSourceComboer::Create_SourceCombos(const DSourceComboUse& locComboUseToCre
 	const auto& locDecayPID = std::get<0>(locComboUseToCreate);
 	const auto& locVertexZBin = std::get<1>(locComboUseToCreate);
 	const auto& locSourceComboInfo = std::get<2>(locComboUseToCreate);
+	const auto& locMissingDecayProductFlag = std::get<3>(locComboUseToCreate);
 
 	//Get combos so far
 	auto& locSourceCombosByUseSoFar = Get_CombosSoFar(locComboingStage, dComboInfoChargeContent[locSourceComboInfo], locChargedCombo_Presiding);
@@ -1584,7 +1618,7 @@ void DSourceComboer::Create_SourceCombos(const DSourceComboUse& locComboUseToCre
 
 	//we will create these combos for an "Unknown" decay (i.e. no decay, just a direct grouping) (unless already created!)
 	//then, when we return from this function, we can cut on the invariant mass of the system for any decay we might need it for
-	DSourceComboUse locUnknownComboUse(Unknown, locVertexZBin, locSourceComboInfo);
+	DSourceComboUse locUnknownComboUse(Unknown, locVertexZBin, locSourceComboInfo, false, Unknown);
 	if(locSourceCombosByUseSoFar.find(locUnknownComboUse) == locSourceCombosByUseSoFar.end())
 		Create_SourceCombos_Unknown(locUnknownComboUse, locComboingStage, locChargedCombo_Presiding, locNumTabs);
 
@@ -1609,6 +1643,21 @@ void DSourceComboer::Create_SourceCombos(const DSourceComboUse& locComboUseToCre
 		{
 			for(decltype(locNumTabs) locTabNum = 0; locTabNum < locNumTabs; ++locTabNum) cout << "\t";
 			cout << "On charged stage, need neutrals: done for now" << endl;
+		}
+		locSourceCombosByUseSoFar.emplace(locComboUseToCreate, locSourceCombos);
+
+		//Set the resume indices
+		Build_ComboResumeIndices(locComboUseToCreate, locComboingStage, locChargedCombo_Presiding);
+		return;
+	}
+
+	if(locMissingDecayProductFlag)
+	{
+		//Don't cut! just copy results and return
+		if(dDebugLevel > 0)
+		{
+			for(decltype(locNumTabs) locTabNum = 0; locTabNum < locNumTabs; ++locTabNum) cout << "\t";
+			cout << "Missing decay product: No invariant mass cut." << endl;
 		}
 		locSourceCombosByUseSoFar.emplace(locComboUseToCreate, locSourceCombos);
 
@@ -2109,7 +2158,7 @@ void DSourceComboer::Combo_Vertically_AllParticles(const DSourceComboUse& locCom
 
 		//build an info and a use for a direct grouping of N - 1 particles //e.g. 3 g's
 		auto locNMinus1Info = GetOrMake_SourceComboInfo({std::make_pair(locPID, locNumPIDNeeded - 1)}, {}, locNumTabs); // N - 1 g's (e.g.), no decaying particles
-		DSourceComboUse locNMinus1ComboUse(Unknown, locVertexZBin, locNMinus1Info); // Unknown -> N - 1 g's (e.g.)
+		DSourceComboUse locNMinus1ComboUse(Unknown, locVertexZBin, locNMinus1Info, false, Unknown); // Unknown -> N - 1 g's (e.g.)
 
 		// Now, see whether the combos for the direct N - 1 grouping have already been done.  If not, create them
 		if(locSourceCombosByUseSoFar.find(locNMinus1ComboUse) == locSourceCombosByUseSoFar.end())
@@ -2154,7 +2203,7 @@ void DSourceComboer::Combo_Vertically_NParticles(const DSourceComboUse& locCombo
 		{
 			if(locZBin == locVertexZBin)
 				continue;
-			auto locZBinUse = DSourceComboUse{std::get<0>(locComboUseToCreate), locZBin, locComboInfo};
+			auto locZBinUse = DSourceComboUse{Unknown, locZBin, locComboInfo, false, Unknown};
 			if(locSourceCombosByUseSoFar.find(locZBinUse) == locSourceCombosByUseSoFar.end())
 				continue;
 
@@ -2392,8 +2441,8 @@ void DSourceComboer::Combo_Horizontally_All(const DSourceComboUse& locComboUseTo
 		//2pi0s, one photon: if exists, just combo with one omega
 		//etc.
 
-	DSourceComboUse locComboUse_SubsetToBuild(Unknown, locVertexZBin, nullptr);
-	DSourceComboUse locComboUse_SubsetToAdd(Unknown, locVertexZBin, nullptr);
+	DSourceComboUse locComboUse_SubsetToBuild(Unknown, locVertexZBin, nullptr, false, Unknown);
+	DSourceComboUse locComboUse_SubsetToAdd(Unknown, locVertexZBin, nullptr, false, Unknown);
 	auto locChargedCombo_SubsetToBuildPresiding = locChargedCombo_Presiding;
 
 	//First test the case: 1 set of particles, 1 decay
@@ -2438,7 +2487,7 @@ void DSourceComboer::Combo_Horizontally_All(const DSourceComboUse& locComboUseTo
 
 			auto locAllBut1ComboInfo = GetOrMake_SourceComboInfo(locNumParticlesNeeded, {}, locNumTabs);
 			auto locAllBut1ZBin = (Get_ChargeContent(locAllBut1ComboInfo) != d_Charged) ? locVertexZBin : DSourceComboInfo::Get_VertexZIndex_ZIndependent();
-			DSourceComboUse locAllBut1ComboUse{Unknown, locAllBut1ZBin, locAllBut1ComboInfo}; //Unknown -> particles
+			DSourceComboUse locAllBut1ComboUse{Unknown, locAllBut1ZBin, locAllBut1ComboInfo, false, Unknown}; //Unknown -> particles
 
 			//Get combos so far //not mixed charge: with-now is nullptr
 			auto& locSourceCombosByUseSoFar = Get_CombosSoFar(locComboingStage, dComboInfoChargeContent[locAllBut1ComboInfo], nullptr);
@@ -2448,7 +2497,7 @@ void DSourceComboer::Combo_Horizontally_All(const DSourceComboUse& locComboUseTo
 			auto locToAddComboInfo = (locFurtherDecays[0].second == 1) ? std::get<2>(locFurtherDecays[0].first) : GetOrMake_SourceComboInfo({}, {std::make_pair(locFurtherDecays[0].first, locFurtherDecays[0].second)}, locNumTabs);
 			auto locToAddChargeContent = dComboInfoChargeContent[locToAddComboInfo];
 			auto locToAddZBin = (locToAddChargeContent != d_Charged) ? locVertexZBin : DSourceComboInfo::Get_VertexZIndex_ZIndependent();
-			auto locToAddComboUse = (locFurtherDecays[0].second == 1) ? locFurtherDecays[0].first : DSourceComboUse{Unknown, locToAddZBin, locToAddComboInfo};
+			auto locToAddComboUse = (locFurtherDecays[0].second == 1) ? locFurtherDecays[0].first : DSourceComboUse{Unknown, locToAddZBin, locToAddComboInfo, false, Unknown};
 
 			// Now, see whether the combos for this grouping have already been done
 			if(locSourceCombosByUseSoFar.find(locAllBut1ComboUse) == locSourceCombosByUseSoFar.end()) //if true: not yet
@@ -2492,22 +2541,22 @@ void DSourceComboer::Combo_Horizontally_All(const DSourceComboUse& locComboUseTo
 			auto locToAddComboInfo = (locDecayIterator->second == 1) ? std::get<2>(locSourceComboUse_ThisDecay) : GetOrMake_SourceComboInfo({}, {std::make_pair(locSourceComboUse_ThisDecay, locDecayIterator->second)}, locNumTabs);
 			auto locToAddChargeContent = dComboInfoChargeContent[locToAddComboInfo];
 			auto locToAddZBin = (locToAddChargeContent != d_Charged) ? locVertexZBin : DSourceComboInfo::Get_VertexZIndex_ZIndependent();
-			auto locToAddComboUse = (locDecayIterator->second == 1) ? locSourceComboUse_ThisDecay : DSourceComboUse{Unknown, locToAddZBin, locToAddComboInfo};
+			auto locToAddComboUse = (locDecayIterator->second == 1) ? locSourceComboUse_ThisDecay : DSourceComboUse{Unknown, locToAddZBin, locToAddComboInfo, false, Unknown};
 
 			//guard against special cases for the all-but-1 combo use //must be after check on whether all-but-1 is charged (it itself is special case)
-			auto locAllBut1ComboUse = DSourceComboUse{Unknown, locVertexZBin, locAllBut1ComboInfo}; //may change below
+			auto locAllBut1ComboUse = DSourceComboUse{Unknown, locVertexZBin, locAllBut1ComboInfo, false, Unknown}; //may change below
 			auto locChargedCombo_PresidingToUse = locChargedCombo_Presiding; //may change below
 			if((locFurtherDecaysToSearchFor.size() > 1) || !locNumParticlesNeeded.empty())
 			{
 				locAllBut1ComboInfo = GetOrMake_SourceComboInfo(locNumParticlesNeeded, locFurtherDecaysToSearchFor, locNumTabs);
 				auto locAllBut1ZBin = (Get_ChargeContent(locAllBut1ComboInfo) != d_Charged) ? locVertexZBin : DSourceComboInfo::Get_VertexZIndex_ZIndependent();
-				locAllBut1ComboUse = DSourceComboUse{Unknown, locAllBut1ZBin, locAllBut1ComboInfo};
+				locAllBut1ComboUse = DSourceComboUse{Unknown, locAllBut1ZBin, locAllBut1ComboInfo, false, Unknown};
 			}
 			else if((locFurtherDecaysToSearchFor.size() == 1) && (locFurtherDecaysToSearchFor[0].second > 1))
 			{
 				locAllBut1ComboInfo = GetOrMake_SourceComboInfo({}, {std::make_pair(locSourceComboUse_ThisDecay, locDecayIterator->second)}, locNumTabs);
 				auto locAllBut1ZBin = (Get_ChargeContent(locAllBut1ComboInfo) != d_Charged) ? locVertexZBin : DSourceComboInfo::Get_VertexZIndex_ZIndependent();
-				locAllBut1ComboUse = DSourceComboUse{Unknown, locAllBut1ZBin, locAllBut1ComboInfo};
+				locAllBut1ComboUse = DSourceComboUse{Unknown, locAllBut1ZBin, locAllBut1ComboInfo, false, Unknown};
 			}
 			else if(locFurtherDecaysToSearchFor.size() == 1)
 			{
@@ -2597,7 +2646,7 @@ void DSourceComboer::Combo_Horizontally_All(const DSourceComboUse& locComboUseTo
 					continue; //this won't be done yet!
 				auto locChargedContentAllBut1 = Get_ChargeContent(locAllBut1ComboInfo);
 				auto locAllBut1ZBin = (locChargedContentAllBut1 != d_Charged) ? locVertexZBin : DSourceComboInfo::Get_VertexZIndex_ZIndependent();
-				DSourceComboUse locAllBut1ComboUse(Unknown, locAllBut1ZBin, locAllBut1ComboInfo); // Unknown -> everything but these particles
+				DSourceComboUse locAllBut1ComboUse(Unknown, locAllBut1ZBin, locAllBut1ComboInfo, false, Unknown); // Unknown -> everything but these particles
 
 				//Get combos so far
 				auto locChargedCombo_PresidingToUse = locChargedCombo_Presiding;
@@ -2735,7 +2784,7 @@ void DSourceComboer::Combo_Horizontally_AddParticles(const DSourceComboUse& locC
 		auto locSourceInfoToAdd = GetOrMake_SourceComboInfo({locParticlePairToAdd}, {}, locNumTabs);
 		auto locChargeContentUseToAdd = Get_ChargeContent(locSourceInfoToAdd);
 		auto locToAddZBin = (locChargeContentUseToAdd != d_Charged) ? std::get<1>(locComboUseToCreate) : DSourceComboInfo::Get_VertexZIndex_ZIndependent();
-		DSourceComboUse locComboUseToAdd(Unknown, locToAddZBin, locSourceInfoToAdd);
+		DSourceComboUse locComboUseToAdd(Unknown, locToAddZBin, locSourceInfoToAdd, false, Unknown);
 
 		//create the combos for the use-to-add if they haven't been created yet
 		auto locChargedCombo_NextPresiding = Get_NextChargedCombo(locChargedCombo_Presiding, locComboUseToAdd, locComboingStage, true, 1);
@@ -2782,7 +2831,7 @@ void DSourceComboer::Create_Combo_OneParticle(const DSourceComboUse& locComboUse
 		{
 			if(locZBin == locVertexZBin)
 				continue;
-			auto locZBinUse = DSourceComboUse{std::get<0>(locComboUseToCreate), locZBin, locComboInfo};
+			auto locZBinUse = DSourceComboUse{Unknown, locZBin, locComboInfo, false, Unknown};
 			if(locSourceCombosByUseSoFar.find(locZBinUse) == locSourceCombosByUseSoFar.end())
 				continue;
 
@@ -2986,7 +3035,7 @@ void DSourceComboer::Combo_Horizontally_AddCombo(const DSourceComboUse& locCombo
 
 	//determine whether we should promote the contents of the combos we are combining up to the new combo (else set combo as decay of new combo)
 	auto locComboInfo_UseToCreate = std::get<2>(locComboUseToCreate);
-	DSourceComboUse locNonNeutralUse{Unknown, 0, nullptr};
+	DSourceComboUse locNonNeutralUse{Unknown, 0, nullptr, false, Unknown};
 	bool locPromoteToAddFlag = Get_PromoteFlag(locComboingStage, locDecayPID_UseToAdd, locComboInfo_UseToCreate, locComboInfo_UseToAdd, locNonNeutralUse); //is ignored if charged
 	bool locPromoteAllBut1Flag = Get_PromoteFlag(locComboingStage, std::get<0>(locAllBut1ComboUse), locComboInfo_UseToCreate, locComboInfo_AllBut1, locNonNeutralUse);
 	if(dDebugLevel >= 20)
@@ -3650,7 +3699,7 @@ const DSourceCombo* DSourceComboer::Get_ChargedCombo_WithNow(const DSourceCombo*
 		return nullptr;
 
 	//find the charged use what use we want
-	DSourceComboUse locWithNowComboUse{Unknown, 0, nullptr};
+	DSourceComboUse locWithNowComboUse{Unknown, 0, nullptr, false, Unknown};
 	for(const auto& locDecayComboPair : locToCreateComboInfo->Get_FurtherDecays())
 	{
 		if(Get_ChargeContent(std::get<2>(locDecayComboPair.first)) != d_Charged)
@@ -3787,7 +3836,7 @@ const DSourceCombo* DSourceComboer::Get_VertexPrimaryCombo(const DSourceCombo* l
 
 bool DSourceComboer::Get_PromoteFlag(ComboingStage_t locComboingStage, Particle_t locDecayPID_UseToCheck, const DSourceComboInfo* locComboInfo_UseToCreate, const DSourceComboInfo* locComboInfo_UseToCheck, DSourceComboUse& locNonNeutralUse) const
 {
-	locNonNeutralUse = DSourceComboUse{Unknown, 0, nullptr};
+	locNonNeutralUse = DSourceComboUse{Unknown, 0, nullptr, false, Unknown};
 	if(locDecayPID_UseToCheck != Unknown)
 		return false;
 
@@ -3810,7 +3859,7 @@ bool DSourceComboer::Get_PromoteFlag(ComboingStage_t locComboingStage, Particle_
 		}
 		if((locNumNeutralUses >= 1) && (locNumNonNeutralUses == 1))
 			return false; //merely a promoted charged combo
-		locNonNeutralUse = DSourceComboUse{Unknown, 0, nullptr}; //reset in case > 1
+		locNonNeutralUse = DSourceComboUse{Unknown, 0, nullptr, false, Unknown}; //reset in case > 1
 	}
 
 //we must: ungroup all-but-1 use: save the existing combo under the charged/mixed use & ditch the neutral decay uses

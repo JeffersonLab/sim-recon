@@ -1065,7 +1065,6 @@ bool DCutAction_PIDDeltaT::Perform_Action(JEventLoop* locEventLoop, const DParti
 	//if dSystem = SYS_NULL, apply cut to all systems
 
 	auto locParticles = Get_UseKinFitResultsFlag() ? locParticleCombo->Get_FinalParticles(Get_Reaction(), false, false, d_AllCharges) : locParticleCombo->Get_FinalParticles_Measured(Get_Reaction(), d_AllCharges);
-//auto locVertex = locParticleCombo->Get_ParticleComboStep(0)->Get_SpacetimeVertex().Vect();
 	for(size_t loc_i = 0; loc_i < locParticles.size(); ++loc_i)
 	{
 		if((dPID != Unknown) && (locParticles[loc_i]->PID() != dPID))

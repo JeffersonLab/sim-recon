@@ -151,7 +151,7 @@ class DSourceComboer : public JObject
 		//CREATE PHOTON COMBO INFOS & USES: UTILITY METHODS
 		map<Particle_t, unsigned char> Build_ParticleMap(const DReaction* locReaction, size_t locStepIndex, Charge_t locCharge) const;
 		pair<bool, map<DSourceComboUse, unsigned char>> Get_FinalStateDecayingComboUses(const DReaction* locReaction, size_t locStepIndex, const map<size_t, DSourceComboUse>& locStepComboUseMap) const;
-		DSourceComboUse Make_ComboUse(Particle_t locInitPID, const map<Particle_t, unsigned char>& locNumParticles, const map<DSourceComboUse, unsigned char>& locFurtherDecays);
+		DSourceComboUse Make_ComboUse(Particle_t locInitPID, const map<Particle_t, unsigned char>& locNumParticles, const map<DSourceComboUse, unsigned char>& locFurtherDecays, bool locMissingDecayProductFlag, Particle_t locDecayProductToExclude);
 		const DSourceComboInfo* MakeOrGet_SourceComboInfo(const vector<pair<Particle_t, unsigned char>>& locNumParticles, const vector<pair<DSourceComboUse, unsigned char>>& locFurtherDecays, unsigned char locNumTabs);
 		const DSourceComboInfo* GetOrMake_SourceComboInfo(const vector<pair<Particle_t, unsigned char>>& locNumParticles, const vector<pair<DSourceComboUse, unsigned char>>& locFurtherDecays, unsigned char locNumTabs);
 
@@ -370,7 +370,7 @@ inline DSourceComboUse DSourceComboer::Get_ZIndependentUse(const DSourceComboUse
 		return locIterator->second;
 
 	auto locZIndependentComboInfo = Get_ZIndependentComboInfo(std::get<2>(locZDependentUse));
-	DSourceComboUse locZIndependentUse(std::get<0>(locZDependentUse), DSourceComboInfo::Get_VertexZIndex_ZIndependent(), locZIndependentComboInfo);
+	DSourceComboUse locZIndependentUse(std::get<0>(locZDependentUse), DSourceComboInfo::Get_VertexZIndex_ZIndependent(), locZIndependentComboInfo, std::get<3>(locZDependentUse), std::get<4>(locZDependentUse));
 	dZDependentUseToIndependentMap.emplace(locZDependentUse, locZIndependentUse);
 	return locZIndependentUse;
 }

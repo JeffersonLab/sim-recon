@@ -1,35 +1,30 @@
-// $Id$
-//
-//    File: DReaction_factory_ReactionFilter.cc
-// Created: Mon Nov 21 17:54:40 EST 2016
-// Creator: pmatt (on Darwin Pauls-MacBook-Pro-2.local 13.4.0 i386)
-//
-
-
 #include "DReaction_factory_ReactionFilter.h"
 
 /*
  * COMMAND LINE INPUT:
- * Reaction, missing particles, inclusive step, fit type, # +/- bunches, # extra tracks, constrain init mass flag
- * E.g. one line to specify reaction, another to specify flags
- * Flag line: -PReaction:FS1_Flags=FitEnumValue_NBunches_NExtraTracks
- * Reaction line: 2 modes: Simple mode, control mode
- * Simple mode: Just list final state particles
- * Any particles whose default decays are not explicitly listed: default decay mode will be used if any. If none available, it will be assumed that the particle is to be detected.
+ *
+ * Any particles whose decays are not explicitly listed: default decay mode will be used if any. If none available, it will be assumed that the particle is to be detected.
  * This means that no default decay should be listed for the pi+, k+, etc.
- * Control mode: Form 1: BeamPID_TargetPID__FS1PID_FS2PID_FS3PID
- * Control mode: Form 2: DecayPID_TargetPID__FS1PID_FS2PID_FS3PID
- * Control mode: Form 3: DecayPID__FS1PID_FS2PID_FS3PID
+ *
+ * Reaction Form 1: BeamPID_TargetPID__FS1PID_FS2PID_FS3PID
+ * Reaction Form 2: DecayPID_TargetPID__FS1PID_FS2PID_FS3PID
+ * Reaction Form 3: DecayPID__FS1PID_FS2PID_FS3PID
  * To distinguish between forms 1 & 2: If first step, form 1 is assumed
- * Maybe append __NoConstrain to tell it not to constrain mass. No: want to specify separate from specifying decays (for default decays)
+ *
  * PID: Geant PID
  * parentheses around any means missing, Unknown means inclusive
  *
  * CONTROL MODE EXAMPLES:
- * -PReaction:FS1=1_14__14_8_9 #g, p -> p, pi+, pi-
- * -PReaction:FS2=1_14__14_8_9_7 #g, p -> p, pi+, pi-, pi0
- * -PReaction:FS3=1_14__14_8_9_7 #g, p -> p, pi+, pi-, pi0
- * -PReaction:FS3D1=7__2_3_1 # pi0 -> e+, e-, g
+ * -PReaction1=1_14__14_8_9 #g, p -> p, pi+, pi-
+ * -PReaction2=1_14__14_8_9_7 #g, p -> p, pi+, pi-, pi0
+ *
+ * -PReaction3=1_14__14_8_9_7 #g, p -> p, pi+, pi-, pi0
+ * -PReaction3:Decay1=7__2_3_1 # pi0 -> e+, e-, g
+ * -PReaction3:Flags=F1_B2_T4_No7  #Fit enum 1 (p4-only (includes mass)), +/- 2 RF bunches, 4 extra tracks, don't constrain mass on pi0 (can have any number) # Can list these in any order
+ *
+ * -PReaction4=1_14__14_8_9_(7) #g, p -> p, pi+, pi-, missing pi0
+ * -PReaction4=1_14__14_8_9_(0) #g, p -> p, pi+, pi-, inclusive
+ *
  */
 
 //------------------
@@ -38,6 +33,7 @@
 jerror_t DReaction_factory_ReactionFilter::init(void)
 {
 	dSourceComboP4Handler = new DSourceComboP4Handler(nullptr, false);
+	dSourceComboTimeHandler = new DSourceComboTimeHandler(nullptr, nullptr, nullptr);
 
 	//Get input reactions
 	map<string, string> locParameterMap; //parameter key, value
@@ -153,6 +149,8 @@ jerror_t DReaction_factory_ReactionFilter::evnt(JEventLoop* locEventLoop, uint64
 		locReaction->Add_AnalysisAction(new DHistogramAction_KinFitResults(locReaction, 0.05)); //5% confidence level cut on pull histograms only
 		//locReaction->Add_AnalysisAction(new DCutAction_KinFitFOM(locReaction, -1.0)); //require kinematic fit converges
 
+//bool Get_TimeCut(Particle_t locPID, DetectorSystem_t locSystem, TF1* locTimeCut_ns) const;
+
 		// HISTOGRAM MASSES //false/true: measured/kinfit data
 		Add_MassHistograms(locReaction, locFSInfo, false, "PostKinFit");
 		Add_MassHistograms(locReaction, locFSInfo, true, "PostKinFit_KinFit");
@@ -222,16 +220,44 @@ void DReaction_factory_ReactionFilter::Create_DecaySteps(DReaction* locReaction,
 void DReaction_factory_ReactionFilter::Create_DecayStep(DReaction* locReaction, FSInfo* locFSInfo, Particle_t locPID)
 {
 	DReactionStep* locReactionStep = nullptr;
+
+	//MESONS
 	if(locPID == Pi0)
 		locReactionStep = new DReactionStep(Pi0, {Gamma, Gamma});
+	else if(locPID == KShort)
+		locReactionStep = new DReactionStep(KShort, {PiMinus, PiPlus});
 	else if(locPID == Eta)
 		locReactionStep = new DReactionStep(Eta, {Gamma, Gamma});
+	else if(locPID == omega)
+		locReactionStep = new DReactionStep(omega, {PiMinus, PiPlus, Pi0});
+	else if(locPID == EtaPrime)
+		locReactionStep = new DReactionStep(EtaPrime, {PiMinus, PiPlus, Eta});
+	else if(locPID == phiMeson)
+		locReactionStep = new DReactionStep(phiMeson, {KMinus, KPlus});
+	else if(locPID == D0)
+		locReactionStep = new DReactionStep(D0, {PiMinus, KPlus});
+	else if(locPID == Jpsi)
+		locReactionStep = new DReactionStep(Jpsi, {Electron, Positron});
+
+	//BARYONS
 	else if(locPID == Lambda)
-		locReactionStep = new DReactionStep(Lambda, {Proton, PiMinus});
+		locReactionStep = new DReactionStep(Lambda, {PiMinus, Proton});
 	else if(locPID == AntiLambda)
-		locReactionStep = new DReactionStep(AntiLambda, {AntiProton, PiPlus});
-	else if(locPID == KShort)
-		locReactionStep = new DReactionStep(KShort, {PiPlus, PiMinus});
+		locReactionStep = new DReactionStep(AntiLambda, {PiPlus, AntiProton});
+	else if(locPID == SigmaMinus)
+		locReactionStep = new DReactionStep(SigmaMinus, {PiMinus, Neutron});
+	else if(locPID == Sigma0)
+		locReactionStep = new DReactionStep(Sigma0, {Gamma, Lambda});
+	else if(locPID == SigmaPlus)
+		locReactionStep = new DReactionStep(SigmaPlus, {Pi0, Proton});
+	else if(locPID == Xi0)
+		locReactionStep = new DReactionStep(Xi0, {Pi0, Lambda});
+	else if(locPID == XiMinus)
+		locReactionStep = new DReactionStep(XiMinus, {PiMinus, Lambda});
+	else if(locPID == OmegaMinus)
+		locReactionStep = new DReactionStep(OmegaMinus, {KMinus, Lambda});
+	else if(locPID == Lambda_c)
+		locReactionStep = new DReactionStep(Lambda_c, {PiPlus, KMinus, Proton});
 	else
 		return;
 
