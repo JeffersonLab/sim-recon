@@ -118,11 +118,22 @@ void Parse_Input(void)
 	*/
 }
 
-bool Convert_StringToPID(string locString, Particle_t& locPID)
+bool Convert_StringToPID(string locString, Particle_t& locPID, bool& locIsMissingFlag)
 {
+	if(locString[0] == "(")
+	{
+		locIsMissingFlag = true;
+		locString = locString.substr(1, locString.size() - 2);
+	}
+
 	istringstream locIStream(locString);
-	locIStream >> locPID;
-	return !locIStream.fail();
+	int locPIDInt;
+	locIStream >> locPIDInt;
+	if(locIStream.fail())
+		return false;
+
+	locPID = (Particle_t)locPIDInt;
+	return true;
 }
 
 bool Parse_StepPIDString(string locStepString, tuple<Particle_t, Particle_t, vector<Particle_t>, Particle_t, int>& locStepTuple)
@@ -134,6 +145,8 @@ bool Parse_StepPIDString(string locStepString, tuple<Particle_t, Particle_t, vec
 	if(locStateSeparationIndex == string::npos)
 		return false;
 
+	int locMissingParticleIndex = DReactionStep::Get_ParticleIndex_None();
+
 	//start with initial state
 	{
 		auto locInitStateString = locStepString.substr(0, locStateSeparationIndex);
@@ -141,9 +154,12 @@ bool Parse_StepPIDString(string locStepString, tuple<Particle_t, Particle_t, vec
 		if(locUnderscoreIndex == string::npos)
 		{
 			Particle_t locPID;
-			if(!Convert_StringToPID(locInitStateString, locPID))
+			bool locIsMissingFlag;
+			if(!Convert_StringToPID(locInitStateString, locPID, locIsMissingFlag))
 				return false;
 			std::get<0>(locStepTuple) = locPID;
+			if(locIsMissingFlag)
+				locMissingParticleIndex = DReactionStep::Get_ParticleIndex_Initial();
 		}
 	}
 
