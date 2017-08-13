@@ -622,6 +622,7 @@ void DSourceComboer::Create_SourceComboInfos(const DReactionVertexInfo* locReact
 			locPrimaryComboUse = Make_ComboUse(locInitPID, locParticleMap_All, locFurtherDecays_All, locMissingDecayProductFlag, locDecayProductToExclude);
 		}
 
+cout << "register at: " << locStepIndex << endl;
 		locStepComboUseMap.emplace(locStepIndex, locPrimaryComboUse);
 	}
 
@@ -636,114 +637,6 @@ void DSourceComboer::Create_SourceComboInfos(const DReactionVertexInfo* locReact
 		cout << "DSourceComboInfo OBJECTS CREATED" << endl;
 }
 
-DSourceComboUse DSourceComboer::Create_ZDependentSourceComboUses(const DReactionVertexInfo* locReactionVertexInfo, const DSourceCombo* locReactionChargedCombo)
-{
-	//this creates new uses, with the specific vertex-z bins needed
-	//note that the use can have a different structure from the charged!! (although not likely)
-	//E.g. if something crazy like 2 KShorts -> 3pi, each at a different vertex-z bin, then they will no longer be grouped together vertically (separate uses: horizontally instead)
-
-	//see if they've already been created.  if so, just return it.
-	auto locVertexZBins = dSourceComboVertexer->Get_VertexZBins(locReactionVertexInfo, locReactionChargedCombo, nullptr);
-	auto locCreationPair = std::make_pair(locReactionVertexInfo, locVertexZBins);
-	auto locUseIterator = dSourceComboUseVertexZMap.find(locCreationPair);
-	if(locUseIterator != dSourceComboUseVertexZMap.end())
-		return locUseIterator->second; //already created! we are done
-
-	auto locReaction = locReactionVertexInfo->Get_Reaction();
-
-	//loop over vertex infos in reverse-step order
-	unordered_map<size_t, DSourceComboUse> locCreatedUseMap; //size_t: step index
-	auto locStepVertexInfos = DAnalysis::Get_StepVertexInfos_ReverseOrderByStep(locReactionVertexInfo);
-	for(const auto& locStepVertexInfo : locStepVertexInfos)
-	{
-		auto locVertexPrimaryCombo = (locReactionChargedCombo != nullptr) ? Get_VertexPrimaryCombo(locReactionChargedCombo, locStepVertexInfo) : nullptr;
-
-		//for this vertex, get the vertex z bin
-		auto locIsProductionVertex = locStepVertexInfo->Get_ProductionVertexFlag();
-		auto locVertexZBin = (locReactionChargedCombo != nullptr) ? dSourceComboVertexer->Get_VertexZBin(locIsProductionVertex, locVertexPrimaryCombo, nullptr) : dSourceComboTimeHandler->Get_VertexZBin_TargetCenter();
-
-		//loop over the steps at this vertex z bin, in reverse order
-		auto locStepIndices = locStepVertexInfo->Get_StepIndices();
-		for(auto locStepIterator = locStepIndices.rbegin(); locStepIterator != locStepIndices.rend(); ++locStepIterator)
-		{
-			auto locStepIndex = *locStepIterator;
-			auto locStepOrigUse = dSourceComboUseReactionStepMap[locReaction][locStepIndex];
-
-			//build new use for the further decays, setting the vertex z-bins
-			auto locNewComboUse = Build_NewZDependentUse(locReaction, locStepIndex, locVertexZBin, locStepOrigUse, locCreatedUseMap);
-			locCreatedUseMap.emplace(locStepIndex, locNewComboUse);
-		}
-	}
-
-	dSourceComboUseVertexZMap.emplace(locCreationPair, locCreatedUseMap[0]);
-	return locCreatedUseMap[0];
-}
-
-DSourceComboUse DSourceComboer::Build_NewZDependentUse(const DReaction* locReaction, size_t locStepIndex, signed char locVertexZBin, const DSourceComboUse& locOrigUse, const unordered_map<size_t, DSourceComboUse>& locCreatedUseMap)
-{
-	//each step can be broken up into combo infos with a depth of 2 (grouping charges separately)
-	auto locStep = locReaction->Get_ReactionStep(locStepIndex);
-	auto locOrigInfo = std::get<2>(locOrigUse);
-	if(dComboInfoChargeContent[locOrigInfo] == d_Charged)
-	{
-		dZDependentUseToIndependentMap.emplace(locOrigUse, locOrigUse);
-		return locOrigUse; //no need to change!: no neutrals anyway
-	}
-
-	map<DSourceComboUse, unsigned char> locNewFurtherDecays;
-	auto locOrigFurtherDecays = locOrigInfo->Get_FurtherDecays();
-	for(const auto& locDecayPair : locOrigFurtherDecays)
-	{
-		const auto& locOrigDecayUse = locDecayPair.first;
-		auto locDecayPID = std::get<0>(locOrigDecayUse);
-		if(locDecayPID != Unknown)
-		{
-			//these decays are represented by other steps, and have already been saved
-			for(unsigned char locInstance = 1; locInstance <= locDecayPair.second; ++locInstance)
-			{
-				auto locParticleIndex = DAnalysis::Get_ParticleIndex(locStep, locDecayPID, locInstance);
-				auto locDecayStepIndex = DAnalysis::Get_DecayStepIndex(locReaction, locStepIndex, locParticleIndex);
-				const auto& locSavedDecayUse = locCreatedUseMap.find(locDecayStepIndex)->second; //is same as locOrigDecayUse, except different zbins along chain
-
-				//save the use for this decay
-				auto locUseIterator = locNewFurtherDecays.find(locSavedDecayUse);
-				if(locUseIterator != locNewFurtherDecays.end())
-					++(locUseIterator->second);
-				else
-					locNewFurtherDecays.emplace(locSavedDecayUse, 1);
-			}
-		}
-		else //is unknown (and guaranteed to be size 1 since has unknown parent)
-		{
-			//must dig down, but only one level: their decays must terminate at new steps (or end)
-			auto locNewComboUse = Build_NewZDependentUse(locReaction, locStepIndex, locVertexZBin, locOrigDecayUse, locCreatedUseMap);
-			//save the use for this decay
-			auto locUseIterator = locNewFurtherDecays.find(locNewComboUse);
-			if(locUseIterator != locNewFurtherDecays.end())
-				++(locUseIterator->second);
-			else
-				locNewFurtherDecays.emplace(locNewComboUse, 1);
-		}
-	}
-
-	//build and save new info, use, and return
-	vector<pair<DSourceComboUse, unsigned char>> locFurtherDecayVector;
-	locFurtherDecayVector.reserve(locNewFurtherDecays.size());
-	std::copy(locNewFurtherDecays.begin(), locNewFurtherDecays.end(), std::back_inserter(locFurtherDecayVector));
-	auto locNewComboInfo = locNewFurtherDecays.empty() ? locOrigInfo : GetOrMake_SourceComboInfo(locOrigInfo->Get_NumParticles(), locFurtherDecayVector, 0);
-
-	DSourceComboUse locNewComboUse(std::get<0>(locOrigUse), locVertexZBin, locNewComboInfo, std::get<3>(locOrigUse), std::get<4>(locOrigUse));
-	if(dDebugLevel >= 30)
-	{
-		cout << "NEW Z-DEPENDENT USE:" << endl;
-		Print_SourceComboUse(locNewComboUse);
-		cout << "FROM ORIG USE:" << endl;
-		Print_SourceComboUse(locOrigUse);
-	}
-	dZDependentUseToIndependentMap.emplace(locNewComboUse, locOrigUse);
-	return locNewComboUse;
-}
-
 pair<bool, map<DSourceComboUse, unsigned char>> DSourceComboer::Get_FinalStateDecayingComboUses(const DReaction* locReaction, size_t locStepIndex, const map<size_t, DSourceComboUse>& locStepComboUseMap) const
 {
 	//get combo infos for final-state decaying particles //if one is not present, ignore parent
@@ -753,6 +646,7 @@ pair<bool, map<DSourceComboUse, unsigned char>> DSourceComboer::Get_FinalStateDe
 	for(size_t loc_i = 0; loc_i < locStep->Get_NumFinalPIDs(); ++loc_i)
 	{
 		int locDecayStepIndex = DAnalysis::Get_DecayStepIndex(locReaction, locStepIndex, loc_i);
+cout << "step index, pid index, decay step index: " << locStepIndex << ", " << loc_i << ", " << locDecayStepIndex << endl;
 		if(locDecayStepIndex < 0)
 			continue;
 		auto locUseIterator = locStepComboUseMap.find(size_t(locDecayStepIndex));
@@ -867,6 +761,114 @@ const DSourceComboInfo* DSourceComboer::GetOrMake_SourceComboInfo(const vector<p
 	if(DAnalysis::Get_HasMassiveNeutrals(locComboInfo))
 		dComboInfosWithMassiveNeutrals.insert(locComboInfo);
 	return locComboInfo;
+}
+
+DSourceComboUse DSourceComboer::Create_ZDependentSourceComboUses(const DReactionVertexInfo* locReactionVertexInfo, const DSourceCombo* locReactionChargedCombo)
+{
+	//this creates new uses, with the specific vertex-z bins needed
+	//note that the use can have a different structure from the charged!! (although not likely)
+	//E.g. if something crazy like 2 KShorts -> 3pi, each at a different vertex-z bin, then they will no longer be grouped together vertically (separate uses: horizontally instead)
+
+	//see if they've already been created.  if so, just return it.
+	auto locVertexZBins = dSourceComboVertexer->Get_VertexZBins(locReactionVertexInfo, locReactionChargedCombo, nullptr);
+	auto locCreationPair = std::make_pair(locReactionVertexInfo, locVertexZBins);
+	auto locUseIterator = dSourceComboUseVertexZMap.find(locCreationPair);
+	if(locUseIterator != dSourceComboUseVertexZMap.end())
+		return locUseIterator->second; //already created! we are done
+
+	auto locReaction = locReactionVertexInfo->Get_Reaction();
+
+	//loop over vertex infos in reverse-step order
+	unordered_map<size_t, DSourceComboUse> locCreatedUseMap; //size_t: step index
+	auto locStepVertexInfos = DAnalysis::Get_StepVertexInfos_ReverseOrderByStep(locReactionVertexInfo);
+	for(const auto& locStepVertexInfo : locStepVertexInfos)
+	{
+		auto locVertexPrimaryCombo = (locReactionChargedCombo != nullptr) ? Get_VertexPrimaryCombo(locReactionChargedCombo, locStepVertexInfo) : nullptr;
+
+		//for this vertex, get the vertex z bin
+		auto locIsProductionVertex = locStepVertexInfo->Get_ProductionVertexFlag();
+		auto locVertexZBin = (locReactionChargedCombo != nullptr) ? dSourceComboVertexer->Get_VertexZBin(locIsProductionVertex, locVertexPrimaryCombo, nullptr) : dSourceComboTimeHandler->Get_VertexZBin_TargetCenter();
+
+		//loop over the steps at this vertex z bin, in reverse order
+		auto locStepIndices = locStepVertexInfo->Get_StepIndices();
+		for(auto locStepIterator = locStepIndices.rbegin(); locStepIterator != locStepIndices.rend(); ++locStepIterator)
+		{
+			auto locStepIndex = *locStepIterator;
+			auto locStepOrigUse = dSourceComboUseReactionStepMap[locReaction][locStepIndex];
+
+			//build new use for the further decays, setting the vertex z-bins
+			auto locNewComboUse = Build_NewZDependentUse(locReaction, locStepIndex, locVertexZBin, locStepOrigUse, locCreatedUseMap);
+			locCreatedUseMap.emplace(locStepIndex, locNewComboUse);
+		}
+	}
+
+	dSourceComboUseVertexZMap.emplace(locCreationPair, locCreatedUseMap[0]);
+	return locCreatedUseMap[0];
+}
+
+DSourceComboUse DSourceComboer::Build_NewZDependentUse(const DReaction* locReaction, size_t locStepIndex, signed char locVertexZBin, const DSourceComboUse& locOrigUse, const unordered_map<size_t, DSourceComboUse>& locCreatedUseMap)
+{
+	//each step can be broken up into combo infos with a depth of 2 (grouping charges separately)
+	auto locStep = locReaction->Get_ReactionStep(locStepIndex);
+	auto locOrigInfo = std::get<2>(locOrigUse);
+	if(dComboInfoChargeContent[locOrigInfo] == d_Charged)
+	{
+		dZDependentUseToIndependentMap.emplace(locOrigUse, locOrigUse);
+		return locOrigUse; //no need to change!: no neutrals anyway
+	}
+
+	map<DSourceComboUse, unsigned char> locNewFurtherDecays;
+	auto locOrigFurtherDecays = locOrigInfo->Get_FurtherDecays();
+	for(const auto& locDecayPair : locOrigFurtherDecays)
+	{
+		const auto& locOrigDecayUse = locDecayPair.first;
+		auto locDecayPID = std::get<0>(locOrigDecayUse);
+		if(locDecayPID != Unknown)
+		{
+			//these decays are represented by other steps, and have already been saved
+			for(unsigned char locInstance = 1; locInstance <= locDecayPair.second; ++locInstance)
+			{
+				auto locParticleIndex = DAnalysis::Get_ParticleIndex(locStep, locDecayPID, locInstance);
+				auto locDecayStepIndex = DAnalysis::Get_DecayStepIndex(locReaction, locStepIndex, locParticleIndex);
+				const auto& locSavedDecayUse = locCreatedUseMap.find(locDecayStepIndex)->second; //is same as locOrigDecayUse, except different zbins along chain
+
+				//save the use for this decay
+				auto locUseIterator = locNewFurtherDecays.find(locSavedDecayUse);
+				if(locUseIterator != locNewFurtherDecays.end())
+					++(locUseIterator->second);
+				else
+					locNewFurtherDecays.emplace(locSavedDecayUse, 1);
+			}
+		}
+		else //is unknown (and guaranteed to be size 1 since has unknown parent)
+		{
+			//must dig down, but only one level: their decays must terminate at new steps (or end)
+			auto locNewComboUse = Build_NewZDependentUse(locReaction, locStepIndex, locVertexZBin, locOrigDecayUse, locCreatedUseMap);
+			//save the use for this decay
+			auto locUseIterator = locNewFurtherDecays.find(locNewComboUse);
+			if(locUseIterator != locNewFurtherDecays.end())
+				++(locUseIterator->second);
+			else
+				locNewFurtherDecays.emplace(locNewComboUse, 1);
+		}
+	}
+
+	//build and save new info, use, and return
+	vector<pair<DSourceComboUse, unsigned char>> locFurtherDecayVector;
+	locFurtherDecayVector.reserve(locNewFurtherDecays.size());
+	std::copy(locNewFurtherDecays.begin(), locNewFurtherDecays.end(), std::back_inserter(locFurtherDecayVector));
+	auto locNewComboInfo = locNewFurtherDecays.empty() ? locOrigInfo : GetOrMake_SourceComboInfo(locOrigInfo->Get_NumParticles(), locFurtherDecayVector, 0);
+
+	DSourceComboUse locNewComboUse(std::get<0>(locOrigUse), locVertexZBin, locNewComboInfo, std::get<3>(locOrigUse), std::get<4>(locOrigUse));
+	if(dDebugLevel >= 30)
+	{
+		cout << "NEW Z-DEPENDENT USE:" << endl;
+		Print_SourceComboUse(locNewComboUse);
+		cout << "FROM ORIG USE:" << endl;
+		Print_SourceComboUse(locOrigUse);
+	}
+	dZDependentUseToIndependentMap.emplace(locNewComboUse, locOrigUse);
+	return locNewComboUse;
 }
 
 /********************************************************************** SETUP FOR NEW EVENT ***********************************************************************/
