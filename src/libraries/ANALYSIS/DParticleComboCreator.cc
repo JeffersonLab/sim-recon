@@ -483,13 +483,11 @@ void DParticleComboCreator::Set_SpacetimeVertex(const DReaction* locReaction, co
 		if(dDebugLevel >= 20)
 			cout << "decay from indices: " << locDecayFromStepIndices.first << ", " << locDecayFromStepIndices.second << endl;
 		auto locPreviousParticleComboStep = locNewParticleCombo->Get_ParticleComboStep(locDecayFromStepIndices.first);
-cout << "previous step: " << locPreviousParticleComboStep << endl;
 		auto locPreviousSpacetimeVertex = locPreviousParticleComboStep->Get_SpacetimeVertex();
 		if(dDebugLevel >= 20)
 			cout << "previous spacetime vertex: " << locPreviousSpacetimeVertex.X() << ", " << locPreviousSpacetimeVertex.Y() << ", " << locPreviousSpacetimeVertex.Z() << ", " << locPreviousSpacetimeVertex.T() << endl;
 
 		auto locDecayingParticle = Get_DecayingParticle(locReaction, locOldParticleCombo, locStepIndex, locKinFitChain, locKinFitResults);
-cout << "particle: " << locDecayingParticle << endl;
 		if((locDecayingParticle == nullptr) || !IsDetachedVertex(PDGtoPType(locDecayingParticle->Get_PID())))
 			locSpacetimeVertex.SetT(locPreviousSpacetimeVertex.T());
 		else
