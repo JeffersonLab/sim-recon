@@ -531,6 +531,8 @@ void DSourceComboer::Create_SourceComboInfos(const DReactionVertexInfo* locReact
 		for(const auto& locDecayPair : locFurtherDecays)
 		{
 			auto locChargeContent = dComboInfoChargeContent[std::get<2>(locDecayPair.first)];
+cout << "charge content, use: " << locChargeContent << ", ";
+Print_SourceComboUse(locDecayPair.first);
 			if(locChargeContent == d_Charged)
 				locFurtherDecays_Charged.emplace(locDecayPair);
 			else if(locChargeContent == d_Neutral)
@@ -649,16 +651,25 @@ pair<bool, map<DSourceComboUse, unsigned char>> DSourceComboer::Get_FinalStateDe
 cout << "step index, pid index, decay step index: " << locStepIndex << ", " << loc_i << ", " << locDecayStepIndex << endl;
 		if(locDecayStepIndex < 0)
 			continue;
+
 		auto locUseIterator = locStepComboUseMap.find(size_t(locDecayStepIndex));
 		if(locUseIterator == locStepComboUseMap.end())
+		{
 			locIncludeParentFlag = false;
+			cout << "NOT FOUND IN STEP MAP" << endl;
+		}
 		else
 		{
 			//save decay
 			auto& locSourceComboUse = locUseIterator->second;
+cout << "USE IN DECAY MAP:" << endl;
+Print_SourceComboUse(locSourceComboUse);
 			auto locDecayIterator = locFurtherDecays.find(locSourceComboUse);
 			if(locDecayIterator == locFurtherDecays.end())
+			{
+				cout << "NOT FOUND IN DECAY MAP" << endl;
 				locFurtherDecays.emplace(locSourceComboUse, 1);
+			}
 			else
 				++(locDecayIterator->second);
 		}
