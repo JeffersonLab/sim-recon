@@ -49,11 +49,11 @@ class DParticleComboCreator
 
 		//DECAYING PARTICLES, POST-KINFIT
 		void Set_DecayingParticles(const DReaction* locReaction, const DParticleCombo* locNewParticleCombo, const DParticleCombo* locOldParticleCombo, size_t locStepIndex, DParticleComboStep* locNewParticleComboStep, const shared_ptr<const DKinFitChain>& locKinFitChain, const DKinFitResults* locKinFitResults);
-		shared_ptr<DKinFitParticle> Get_DecayingParticle(const DReaction* locReaction, const DParticleCombo* locOldParticleCombo, size_t locComboStepIndex, const shared_ptr<const DKinFitChain>& locKinFitChain, const DKinFitResults* locKinFitResults);
-		bool Search_ForParticleInDecay(const shared_ptr<const DKinFitChain>& locKinFitChain, size_t locStepToSearch, const shared_ptr<DKinFitParticle>& locParticleToFind);
+		shared_ptr<DKinFitParticle> Get_DecayingParticle(const DReaction* locReaction, const DParticleCombo* locOldParticleCombo, size_t locComboStepIndex, const shared_ptr<const DKinFitChain>& locKinFitChain, const DKinFitResults* locKinFitResults) const;
+		bool Search_ForParticleInDecay(const shared_ptr<const DKinFitChain>& locKinFitChain, size_t locStepToSearch, const shared_ptr<DKinFitParticle>& locParticleToFind) const;
 
 		//SPACETIME VERTEX, POST-KINFIT
-		void Set_SpacetimeVertex(const DReaction* locReaction, const DParticleCombo* locNewParticleCombo, DParticleComboStep* locNewParticleComboStep, size_t locStepIndex, const DKinFitResults* locKinFitResults, const shared_ptr<const DKinFitChain>& locKinFitChain, double locOrigShiftedRFTime) const;
+		void Set_SpacetimeVertex(const DReaction* locReaction, const DParticleCombo* locNewParticleCombo, const DParticleCombo* locOldParticleCombo, DParticleComboStep* locNewParticleComboStep, size_t locStepIndex, const DKinFitResults* locKinFitResults, const shared_ptr<const DKinFitChain>& locKinFitChain, double locOrigShiftedRFTime) const;
 
 		//CREATE PARTICLES
 		const DChargedTrackHypothesis* Create_ChargedHypo(const DChargedTrack* locChargedTrack, Particle_t locPID, double locPropagatedRFTime, bool locIsProductionVertex, const DSourceCombo* locReactionFullCombo, const DSourceCombo* locVertexPrimaryFullCombo, const DKinematicData* locBeamParticle, DVector3 locVertex);

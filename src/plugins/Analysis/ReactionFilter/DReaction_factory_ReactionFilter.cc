@@ -118,12 +118,41 @@ void Parse_Input(void)
 	*/
 }
 
-tuple<Particle_t, Particle_t, vector<Particle_t>> Parse_StepPIDString(string locStepString)
+bool Convert_StringToPID(string locString, Particle_t& locPID)
 {
+	istringstream locIStream(locString);
+	locIStream >> locPID;
+	return !locIStream.fail();
+}
+
+bool Parse_StepPIDString(string locStepString, tuple<Particle_t, Particle_t, vector<Particle_t>, Particle_t, int>& locStepTuple)
+{
+	//return tuple: initial pid, target/2nd-beam pid, detected final pids, missing final pid (if any), missing particle index
+
+	//find separator
+	auto locStateSeparationIndex = locStepString.find("__");
+	if(locStateSeparationIndex == string::npos)
+		return false;
+
+	//start with initial state
+	{
+		auto locInitStateString = locStepString.substr(0, locStateSeparationIndex);
+		auto locUnderscoreIndex = locInitStateString.find("_");
+		if(locUnderscoreIndex == string::npos)
+		{
+			Particle_t locPID;
+			if(!Convert_StringToPID(locInitStateString, locPID))
+				return false;
+			std::get<0>(locStepTuple) = locPID;
+		}
+	}
+
 	while(!locStepString.empty())
 	{
 
 	}
+
+	return true;
 }
 
 //------------------
