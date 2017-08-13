@@ -95,7 +95,7 @@ const DVertex* dVertex;
 		unordered_map<const DReactionStepVertexInfo*, bool> dVertexDeterminableWithPhotonsMap; //excludes determinable-by-charged & dangling vertex infos!! //only includes primary combos at each vertex
 
 		//time offsets depend on the ENTIRE reaction combo, not just the downstream ones! //time offset is from the RF time
-		//bool: is production vertex //why is bool used throughout here?
+		//bool: is the PRIMARY vertex a production vertex //why is bool used throughout here?
 		//because the vertexing is different whether it's a production vertex or not, and a given combo of particles can be used either way
 		map<tuple<bool, const DSourceCombo*, const DKinematicData*>, unordered_map<const DSourceCombo*, double>> dTimeOffsets; //first combo: primary reaction combo //kinematics: beam particle
 

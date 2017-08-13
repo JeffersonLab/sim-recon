@@ -230,6 +230,8 @@ void DSourceComboVertexer::Calc_VertexTimeOffsets_WithBeam(const DReactionVertex
 			cout << "primary vertex unknown, nothing we can do." << endl;
 		return;
 	}
+
+	auto locIsPrimaryProductionVertex = locReactionVertexInfo->Get_StepVertexInfo(0)->Get_ProductionVertexFlag();
 	auto locPrimaryVertexZ = Get_PrimaryVertex(locReactionVertexInfo, locReactionFullCombo, locBeamParticle).Z();
 	int locRFBunch = dSourceComboTimeHandler->Calc_RFBunchShift(locBeamParticle->time());
 	if(dDebugLevel >= 10)
@@ -279,15 +281,15 @@ void DSourceComboVertexer::Calc_VertexTimeOffsets_WithBeam(const DReactionVertex
 		dConstrainingParticlesByCombo.emplace(locFullComboProductionTuple, locVertexParticles);
 
 		//CALC AND STORE TIME OFFSET
-		auto locFullReactionTuple_TimeOffset = std::make_tuple(false, locReactionFullCombo, locBeamParticle);
+		auto locFullReactionTuple_TimeOffset = std::make_tuple(locIsPrimaryProductionVertex, locReactionFullCombo, locBeamParticle);
 
 		//get parent
 		auto locParentVertexInfo = locStepVertexInfo->Get_ParentVertexInfo();
-		auto locParentFullCombo = dSourceComboer->Get_VertexPrimaryCombo(locReactionFullCombo, locParentVertexInfo);
-		auto locParentTimeOffset = dTimeOffsets[locFullReactionTuple_TimeOffset][locVertexPrimaryFullCombo];
+		auto locParentVertexFullCombo = dSourceComboer->Get_VertexPrimaryCombo(locReactionFullCombo, locParentVertexInfo);
+		auto locParentTimeOffset = dTimeOffsets[locFullReactionTuple_TimeOffset][locParentVertexFullCombo];
 
 		//get vertices & path length
-		auto locParentProductionVertex = Get_Vertex(locParentVertexInfo->Get_ProductionVertexFlag(), locParentFullCombo, locBeamParticle);
+		auto locParentProductionVertex = Get_Vertex(locParentVertexInfo->Get_ProductionVertexFlag(), locParentVertexFullCombo, locBeamParticle);
 		auto locPathLength = (locVertex - locParentProductionVertex).Mag();
 
 		//compute and save result
@@ -566,7 +568,6 @@ void DSourceComboVertexer::Construct_DecayingParticle_MissingMass(const DReactio
 		auto locPreviousFullVertexCombo = dSourceComboer->Get_VertexPrimaryCombo(locReactionFullCombo, locPreviousVertexInfo);
 		auto locPreviousDecayPID = std::get<0>(locSourceComboUse);
 		auto locPreviousDecayParticleTuple = std::make_tuple(locPreviousDecayPID, locReactionFullCombo, locPreviousIsProdVertexFlag, locPreviousFullVertexCombo, locBeamParticle);
-cout << "found?: " << (dReconDecayParticles_FromMissing.find(locPreviousDecayParticleTuple) != dReconDecayParticles_FromMissing.end()) << endl;
 		locInitialStateP4 = dReconDecayParticles_FromMissing[locPreviousDecayParticleTuple]->lorentzMomentum();
 		if(dDebugLevel >= 10)
 			cout << "retrieved decaying pid, p4: " << locPreviousDecayPID << ", " << locInitialStateP4.Px() << ", " << locInitialStateP4.Py() << ", " << locInitialStateP4.Pz() << ", " << locInitialStateP4.E() << endl;
