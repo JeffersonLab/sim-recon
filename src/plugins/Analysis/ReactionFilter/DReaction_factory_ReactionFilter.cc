@@ -80,7 +80,7 @@ void Parse_Input(void)
 		else
 		{
 			auto locPostColonName = locParamPair.first.substr(locColonIndex + 1);
-			if(locPostColonName.substr(0, 54) == "Name")
+			if(locPostColonName.substr(0, 4) == "Name")
 				std::get<0>(locInputStrings[locReactionNumber]) = locKeyValue;
 			else if(locPostColonName.substr(0, 5) == "Flags")
 				std::get<2>(locInputStrings[locReactionNumber]) = locKeyValue;
@@ -88,12 +88,13 @@ void Parse_Input(void)
 				std::get<3>(locInputStrings[locReactionNumber]).push_back(locKeyValue);
 		}
 	}
-
+/*
 	//loop through channels, setting up the reactions
 	for(auto& locReactionPair : locInputStrings)
 	{
-		auto& locFirstStepString = std::get<0>(locReactionPair.second);
-		auto& locFlagString = std::get<1>(locReactionPair.second);
+		auto& locNameString = std::get<0>(locReactionPair.second);
+		auto& locFirstStepString = std::get<1>(locReactionPair.second);
+		auto& locFlagString = std::get<2>(locReactionPair.second);
 
 		//create dreaction (NEED A NAMING SCHEME!!!)
 		//firststep__specifiedstep1__specifiedstep2_..._flagstring
@@ -101,7 +102,7 @@ void Parse_Input(void)
 		//if decay specified, then do underscores
 		//also put "miss" in front of missing particles
 
-		//loop over remaining args
+		//loop over steps
 		for(auto& locDecayStepString : std::get<2>(locReactionPair.second))
 		{
 			Particle_t locInitPID;
@@ -114,11 +115,15 @@ void Parse_Input(void)
 			//ShortName();
 		}
 	}
+	*/
 }
 
-tuple<Particle_t, Particle_t, vector<Particle_t>> Parse_StepPIDString(const string& locStepString)
+tuple<Particle_t, Particle_t, vector<Particle_t>> Parse_StepPIDString(string locStepString)
 {
+	while(!locStepString.empty())
+	{
 
+	}
 }
 
 //------------------
