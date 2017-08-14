@@ -1,5 +1,5 @@
-#if !defined(TWOPSANGLES)
-#define TWOPSANGLES
+#if !defined(TWOPSHELICITY)
+#define TWOPSHELICITY
 
 #include "IUAmpTools/Amplitude.h"
 #include "IUAmpTools/UserAmplitude.h"
