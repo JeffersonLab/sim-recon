@@ -395,6 +395,7 @@ void ParseCommandLineArguments(int narg, char *argv[])
 		
 		if(argv[i][0]=='-'){
 			string arg(argv[i]);
+			string next = (i+1)<narg ? (const char*)argv[i+1]:"";
 			if(arg=="-h" || arg=="--help")Usage();
 
 			if(arg=="-checksum" || arg=="--checksum")print_xml_md5_checksum = true;
@@ -404,7 +405,10 @@ void ParseCommandLineArguments(int narg, char *argv[])
 					HDDS_XML = arg.substr(arg.find("=")+1);
 				}
 			}
-			
+			if( arg=="-r" && next.length()>0 ){
+				RUN_NUMBER = atoi(next.c_str());
+				i++;
+			}
 		}else{
 			vals.push_back(atof(argv[i]));
 		}
@@ -452,11 +456,22 @@ void Usage(void)
 	cout<<"or the checksums don't match, then the shared object is automatically"<<endl;
 	cout<<"(re)generated."<<endl;
 	cout<<endl;
+	cout<<"Information from the CCDB hosted material map will also be printed."<<endl;
+	cout<<"This map is used by the track reconstruction software. It is derived"<<endl;
+	cout<<"from the same ROOT geometry classes used for the above. Keep in mind"<<endl;
+	cout<<"though that the CCDB material maps are maintained by a human regenerating"<<endl;
+	cout<<"the maps and committing them to CCDB. i.e. they are not updated automatically."<<endl;
+	cout<<"One can specify the run number used to index the CCDB via the -r run"<<endl;
+	cout<<"command line option. The location of the CCDB and variation are set by"<<endl;
+	cout<<"the standard environment variables."<<endl;
+	cout<<""<<endl;
+	cout<<endl;
 	cout<<" options:"<<endl;
 	cout<<"    -h or --help          Print this usage statement"<<endl;
 	cout<<"    -xml[=main_HDDS.xml]  Dynamically generate geometry"<<endl;
 	cout<<"    -checksum             Print the MD5 checksum of the "<<endl;
 	cout<<"                          geometry and exit"<<endl;
+	cout<<"    -r run                Set run number used for CCDB query"<<endl;
 	cout<<endl;
 	cout<<"If the -xml option is given and no file is specified,"<<endl;
 	cout<<"then a value of: "<<HDDS_XML<<endl;
