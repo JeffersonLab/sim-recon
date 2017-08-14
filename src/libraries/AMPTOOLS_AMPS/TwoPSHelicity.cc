@@ -53,8 +53,10 @@ TwoPSHelicity::calcAmplitude( GDouble** pKin ) const {
   
   // helicity frame: z-axis is propagation of resonance X => opposite recoil proton in X rest frame
   TVector3 z = -1. * recoil_res.Vect().Unit();
+
   // y axis perpendicular to production plane
   TVector3 y = beam_res.Vect().Cross(z).Unit();
+
   TVector3 x = y.Cross(z);
   
   TVector3 angles( (p1_res.Vect()).Dot(x),
