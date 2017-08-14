@@ -260,8 +260,8 @@ inline void DKinFitParticle::Print_ParticleParams(void) const
 	cout << "DKinFitParticle: Particle Type Enum, pointer: " << dKinFitParticleType << ", " << this << endl;
 
 	cout << "DKinFitParticle: Particle PID, Q, Mass = " << dPID << ", " << int(dCharge) << ", " << dMass << endl;
-	cout << "DKinFitParticle: Particle P3, V3, T = " << dMomentum.Px() << ", " << dMomentum.Py() << ", " << dMomentum.Pz() << ", ";
-	cout << dSpacetimeVertex.X() << ", " << dSpacetimeVertex.Y() << ", " << dSpacetimeVertex.Z() << ", " << dSpacetimeVertex.T() << endl;
+	cout << "DKinFitParticle: Particle P3, V3, T, path length = " << dMomentum.Px() << ", " << dMomentum.Py() << ", " << dMomentum.Pz() << ", ";
+	cout << dSpacetimeVertex.X() << ", " << dSpacetimeVertex.Y() << ", " << dSpacetimeVertex.Z() << ", " << dSpacetimeVertex.T() << ", " << dPathLength << endl;
 	cout << "DKinFitParticle: Particle Common V3, Common T, ShowerE = " << dCommonSpacetimeVertex.X() << ", " << dCommonSpacetimeVertex.Y();
 	cout << ", " << dCommonSpacetimeVertex.Z() << ", " << dCommonSpacetimeVertex.T() << ", " << dShowerEnergy << endl;
 

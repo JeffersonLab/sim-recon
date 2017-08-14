@@ -70,7 +70,9 @@ bool Convert_StringToPID(string locString, Particle_t& locPID, bool& locIsMissin
 	return true;
 }
 
-bool Parse_StepPIDString(string locStepString, tuple<Particle_t, Particle_t, vector<Particle_t>, Particle_t, int>& locStepTuple)
+using DReactionStepTuple = tuple<Particle_t, Particle_t, vector<Particle_t>, Particle_t, int>;
+
+bool Parse_StepPIDString(string locStepString, DReactionStepTuple& locStepTuple)
 {
 	//return tuple: initial pid, target/2nd-beam pid, detected final pids, missing final pid (if any), missing particle index
 	locStepTuple = std::make_tuple(Unknown, Unknown, vector<Particle_t>{}, Unknown, DReactionStep::Get_ParticleIndex_None());
@@ -136,7 +138,7 @@ bool Parse_StepPIDString(string locStepString, tuple<Particle_t, Particle_t, vec
 	return true;
 }
 
-DReactionStep* Create_ReactionStep(const tuple<Particle_t, Particle_t, vector<Particle_t>, Particle_t, int>& locStepTuple)
+DReactionStep* Create_ReactionStep(const DReactionStepTuple& locStepTuple)
 {
 	auto locInclusiveFlag = (std::get<4>(locStepTuple) == DReactionStep::Get_ParticleIndex_Inclusive());
 	auto locBeamMissingFlag = (std::get<4>(locStepTuple) == DReactionStep::Get_ParticleIndex_Initial());
@@ -148,14 +150,14 @@ DReactionStep* Create_ReactionStep(const tuple<Particle_t, Particle_t, vector<Pa
 		auto locStep = new DReactionStep(std::get<0>(locStepTuple), std::get<1>(locStepTuple), std::get<2>(locStepTuple), std::get<3>(locStepTuple), locInclusiveFlag, locBeamMissingFlag);
 }
 
-string Create_StepNameString(const tuple<Particle_t, Particle_t, vector<Particle_t>, Particle_t, int>& locStepTuple, bool locFirstStepFlag)
+string Create_StepNameString(const DReactionStepTuple& locStepTuple, bool locFirstStepFlag)
 {
 	string locNameString = "";
 	if(!locFirstStepFlag)
 	{
 		locNameString = ShortName(std::get<0>(locStepTuple));
 		auto locSecondPID = std::get<1>(locStepTuple);
-		if(locSecondPID != nullptr)
+		if(locSecondPID != Unknown)
 			locNameString += ShortName(locSecondPID);
 		locNameString += "_";
 	}
@@ -168,7 +170,72 @@ string Create_StepNameString(const tuple<Particle_t, Particle_t, vector<Particle
 	return locNameString;
 }
 
-void Parse_Input(void)
+void Create_DefaultDecayStep(DReaction* locReaction, Particle_t locPID)
+{
+	//DO NOT SPECIFY DEFAULT DECAYS FOR PARTICLES THAT CAN BE DETECTED!!!!!! (e.g. pion, neutron, klong)
+
+	//MESONS
+	if(locPID == Pi0)
+		locReaction->Add_ReactionStep(new DReactionStep(Pi0, {Gamma, Gamma}));
+	else if(locPID == KShort)
+		locReaction->Add_ReactionStep(new DReactionStep(KShort, {PiMinus, PiPlus}));
+	else if(locPID == Eta)
+		locReaction->Add_ReactionStep(new DReactionStep(Eta, {Gamma, Gamma}));
+	else if(locPID == omega)
+	{
+		locReaction->Add_ReactionStep(new DReactionStep(omega, {PiMinus, PiPlus, Pi0}));
+		Create_DefaultDecayStep(locReaction, Pi0);
+	}
+	else if(locPID == EtaPrime)
+	{
+		locReaction->Add_ReactionStep(new DReactionStep(EtaPrime, {PiMinus, PiPlus, Eta}));
+		Create_DefaultDecayStep(locReaction, Eta);
+	}
+	else if(locPID == phiMeson)
+		locReaction->Add_ReactionStep(new DReactionStep(phiMeson, {KMinus, KPlus}));
+	else if(locPID == D0)
+		locReaction->Add_ReactionStep(new DReactionStep(D0, {PiMinus, KPlus}));
+	else if(locPID == Jpsi)
+		locReaction->Add_ReactionStep(new DReactionStep(Jpsi, {Electron, Positron}));
+
+	//BARYONS
+	else if(locPID == Lambda)
+		locReaction->Add_ReactionStep(new DReactionStep(Lambda, {PiMinus, Proton}));
+	else if(locPID == AntiLambda)
+		locReaction->Add_ReactionStep(new DReactionStep(AntiLambda, {PiPlus, AntiProton}));
+	else if(locPID == SigmaMinus)
+		locReaction->Add_ReactionStep(new DReactionStep(SigmaMinus, {PiMinus, Neutron}));
+	else if(locPID == Sigma0)
+	{
+		locReaction->Add_ReactionStep(new DReactionStep(Sigma0, {Gamma, Lambda}));
+		Create_DefaultDecayStep(locReaction, Lambda);
+	}
+	else if(locPID == SigmaPlus)
+	{
+		locReaction->Add_ReactionStep(new DReactionStep(SigmaPlus, {Pi0, Proton}));
+		Create_DefaultDecayStep(locReaction, Pi0);
+	}
+	else if(locPID == Xi0)
+	{
+		locReaction->Add_ReactionStep(new DReactionStep(Xi0, {Pi0, Lambda}));
+		Create_DefaultDecayStep(locReaction, Pi0);
+		Create_DefaultDecayStep(locReaction, Lambda);
+	}
+	else if(locPID == XiMinus)
+	{
+		locReaction->Add_ReactionStep(new DReactionStep(XiMinus, {PiMinus, Lambda}));
+		Create_DefaultDecayStep(locReaction, Lambda);
+	}
+	else if(locPID == OmegaMinus)
+	{
+		locReaction->Add_ReactionStep(new DReactionStep(OmegaMinus, {KMinus, Lambda}));
+		Create_DefaultDecayStep(locReaction, Lambda);
+	}
+	else if(locPID == Lambda_c)
+		locReaction->Add_ReactionStep(new DReactionStep(Lambda_c, {PiPlus, KMinus, Proton}));
+}
+
+map<size_t, tuple<string, string, string, vector<string>>> Parse_Input(void)
 {
 	//Get input channel info
 	//key is reaction#, 1st string: name (if any) //2nd string: value for 1st decay step //3rd string: value for flags //string vector: value for decays
@@ -205,7 +272,11 @@ void Parse_Input(void)
 				std::get<3>(locInputStrings[locReactionNumber]).push_back(locKeyValue);
 		}
 	}
+	return locInputStrings;
+}
 
+void Create_Reactions(const map<size_t, tuple<string, string, string, vector<string>>>& locInputStrings)
+{
 	//loop through channels, setting up the reactions
 	for(auto& locReactionPair : locInputStrings)
 	{
@@ -213,30 +284,28 @@ void Parse_Input(void)
 		auto& locFirstStepString = std::get<1>(locReactionPair.second);
 		auto& locFlagString = std::get<2>(locReactionPair.second);
 
-		tuple<Particle_t, Particle_t, vector<Particle_t>, Particle_t, int> locFirstStepTuple;
+		DReactionStepTuple locFirstStepTuple;
 		if(!Parse_StepPIDString(locFirstStepString, locFirstStepTuple))
 			return;
 
-		//create dreaction (NEED A NAMING SCHEME!!!)
-		//firststep__specifiedstep1__specifiedstep2_..._flagstring
-		//use first step
-		//if decay specified, then do underscores
-		//also put "miss" in front of missing particles
-		auto locPrimaryStep = Create_ReactionStep(locFirstStepTuple);
-
 		//see if we need to make our tree/reaction name
+		//automatic reaction naming scheme (if not manually specified):
+		//FirstStep__SpecifiedDecayStep1__SpecifiedDecayStep2_..._FlagString
+		//within a step: InitName1InitName2_FinalName1FinalName2... //name is from ShortName()
+		//also put "miss" in front of missing particles
 		string locReactionName = "";
 		if(locNameString == "") //yep
 			locReactionName = Create_StepNameString(locFirstStepTuple, true); //will continue below if needed
 
 		//loop over steps
+		vector<DReactionStepTuple> locDecayStepTuples;
 		for(auto& locDecayStepString : std::get<3>(locReactionPair.second))
 		{
-			tuple<Particle_t, Particle_t, vector<Particle_t>, Particle_t, int> locDecayStepTuple;
+			DReactionStepTuple locDecayStepTuple;
 			if(!Parse_StepPIDString(locDecayStepString, locDecayStepTuple))
 				return;
+			locDecayStepTuples.push_back(locDecayStepTuple);
 
-			auto locDecayStep = Create_ReactionStep(locDecayStepTuple);
 			if(locNameString == "") //yep
 				locReactionName += string("__") + Create_StepNameString(locDecayStepTuple, false);
 		}
@@ -244,7 +313,29 @@ void Parse_Input(void)
 		if(locNameString == "") //add flags
 			locReactionName += string("__") + locFlagString;
 
+		//create dreaction & first step
 		auto locReaction = new DReaction(locReactionName);
+		auto locPrimaryStep = Create_ReactionStep(locFirstStepTuple);
+
+		//loop over final state particles. if the user has specified a decay for any of them, use that one. else generate decays as needed
+		for(auto& locFinalPID : std::get<2>(locFirstStepTuple))
+		{
+			auto Find_DecayStep = [&locFinalPID](const DReactionStepTuple& locDecayStepTuple) -> bool{return (std::get<0>(locDecayStepTuple) == locFinalPID);};
+			auto locStepTupleIterator = std::find_if(locDecayStepTuples.begin(), locDecayStepTuples.end(), Find_DecayStep);
+
+			//If not found, create default decay chain (if it's a detected particle (e.g. pion), this won't do anything)
+			if(locStepTupleIterator == locDecayStepTuples.end())
+				Create_DefaultDecayStep(locReaction, locFinalPID);
+			else
+			{
+				//use user-specified decay, and erase it from the vector
+				auto locDecayStep = Create_ReactionStep(*locStepTupleIterator);
+				locReaction->Add_ReactionStep(locDecayStep);
+				locDecayStepTuples.erase(locStepTupleIterator);
+			}
+		}
+
+		//Set flags
 	}
 }
 

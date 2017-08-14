@@ -63,7 +63,7 @@ class DKinFitUtils_GlueX : public DKinFitUtils
 		using DKinFitUtils::Make_DetectedParticle; //this is necessary because the above declaration hides the base class function, which is needed by DKinFitResults_factory
 
 		shared_ptr<DKinFitParticle> Make_DetectedShower(const DNeutralShower* locNeutralShower, Particle_t locPID); //DO NOT call this unless the neutral is also in a vertex fit!
-		shared_ptr<DKinFitParticle> Make_TargetParticle(Particle_t locPID);
+		shared_ptr<DKinFitParticle> Make_TargetParticle(Particle_t locPID, size_t locInstance = 0); //instance: can have target 2x in same combo: rescattering
 		shared_ptr<DKinFitParticle> Make_DecayingParticle(Particle_t locPID, const set<shared_ptr<DKinFitParticle>>& locFromInitialState, const set<shared_ptr<DKinFitParticle>>& locFromFinalState);
 		shared_ptr<DKinFitParticle> Make_MissingParticle(Particle_t locPID);
 
@@ -145,7 +145,7 @@ class DKinFitUtils_GlueX : public DKinFitUtils
 		map<pair<const DBeamPhoton*, const DEventRFBunch*>, shared_ptr<DKinFitParticle>> dParticleMap_SourceToInput_Beam;
 		map<const DKinematicData*, shared_ptr<DKinFitParticle>> dParticleMap_SourceToInput_DetectedParticle;
 		map<pair<const DNeutralShower*, Particle_t>, shared_ptr<DKinFitParticle>> dParticleMap_SourceToInput_Shower;
-		map<Particle_t, shared_ptr<DKinFitParticle>> dParticleMap_SourceToInput_Target;
+		map<pair<Particle_t, size_t>, shared_ptr<DKinFitParticle>> dParticleMap_SourceToInput_Target; //size_t: instance (can have target 2x in same combo: rescattering)
 		map<DDecayingParticleInfo, shared_ptr<DKinFitParticle>> dParticleMap_SourceToInput_Decaying;
 		map<Particle_t, shared_ptr<DKinFitParticle>> dParticleMap_SourceToInput_Missing;
 

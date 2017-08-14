@@ -164,13 +164,14 @@ shared_ptr<DKinFitParticle> DKinFitUtils_GlueX::Make_DetectedShower(const DNeutr
 	return locKinFitParticle;
 }
 
-shared_ptr<DKinFitParticle> DKinFitUtils_GlueX::Make_TargetParticle(Particle_t locPID)
+shared_ptr<DKinFitParticle> DKinFitUtils_GlueX::Make_TargetParticle(Particle_t locPID, size_t locInstance)
 {
-	if(dParticleMap_SourceToInput_Target.find(locPID) != dParticleMap_SourceToInput_Target.end())
-		return dParticleMap_SourceToInput_Target[locPID]; //not unique, return existing
+	auto locTargetPair = std::make_pair(locPID, locInstance);
+	if(dParticleMap_SourceToInput_Target.find(locTargetPair) != dParticleMap_SourceToInput_Target.end())
+		return dParticleMap_SourceToInput_Target[locTargetPair]; //not unique, return existing
 
 	auto locKinFitParticle = DKinFitUtils::Make_TargetParticle(PDGtype(locPID), ParticleCharge(locPID), ParticleMass(locPID));
-	dParticleMap_SourceToInput_Target[locPID] = locKinFitParticle;
+	dParticleMap_SourceToInput_Target[locTargetPair] = locKinFitParticle;
 	return locKinFitParticle;
 }
 
@@ -415,7 +416,22 @@ shared_ptr<DKinFitChainStep> DKinFitUtils_GlueX::Make_KinFitChainStep(const DRea
 	//target particle
 	Particle_t locTargetPID = locReactionStep->Get_TargetPID();
 	if(locTargetPID != Unknown)
-		locKinFitChainStep->Add_InitialParticle(Make_TargetParticle(locTargetPID));
+	{
+		size_t locTargetInstance = 0;
+		for(size_t loc_i = 0; loc_i < locStepIndex; ++loc_i)
+		{
+			auto locPreviousStep = locKinFitChain->Get_KinFitChainStep(loc_i);
+			auto locInitialParticles = locPreviousStep->Get_InitialParticles();
+			for(auto& loKinFitParticle : locInitialParticles)
+			{
+				if(loKinFitParticle == nullptr)
+					continue;
+				if(loKinFitParticle->Get_KinFitParticleType() == d_TargetParticle)
+					++locTargetInstance;
+			}
+		}
+		locKinFitChainStep->Add_InitialParticle(Make_TargetParticle(locTargetPID, locTargetInstance));
+	}
 
 	//final state particles
 	for(size_t loc_j = 0; loc_j < locParticleComboStep->Get_NumFinalParticles(); ++loc_j)

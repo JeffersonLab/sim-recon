@@ -8,16 +8,7 @@
  * will then have to re-apply cuts post-kinfit!!
  * do not cut timing of charged OR neutral particles at detached vertices!!!!!!! There is just too much uncertainty in the path length of the decaying particle
  *
- * missing decay products: when building infos, set decay pid (not unknown)
- * but then we need to know not to cut on the mass: expand use to include a bool for cut-mass flag (for the unknown version, bool should ALWAYS be false!)
- * this flag is false if: there's a missing decay product further down the chain, OR if it's a rescattering step AND the target particle is NOT MISSING
- * When DO we cut the mass then? well, actually we do want to do it at the same time, just that we want to subtract the final state target particle from the p4 before cutting (the cut action must do this too!)
- * So, how to know what to do? during comboing we know nothing of the target. we'd want to save the PID of the target particle to subtract in the USE.  So then we set it as unknown for don't subtract anything
- * But then how do we tell it not to cut at all for the missing decay product case?  It has to be a separate variable.
- *
- * In summary: expand use by 2 variables: has-missing-decay-product flag, and subtract-p4-pid-before-invariant-mass-cut PID. These are always false/Unknown for uses with decaypid = Unknown
- * We also need to expand the missing mass calc function to include ALL initial state targets (loop over all steps)
- * While we're at it, tell it to cut the missing mass of all decaying particles that claim to have a missing decay product
+ * Target particle used 2x for same chain if rescattering! Position is not well defined! Check!
  *
  * EVENTUALLY:
  * ppp
@@ -45,11 +36,9 @@ A) You can try reducing the #z-bins by increasing their widths. However, much su
 */
 
 //TO DO:
-//Implement new combo use
-//Get 2 final channels working
 //Undo comparison changes
 //Change time handling for detached decay products
-//reaction filter: cut on pid post-kinfit
+//reaction filter: cut on pid post-kinfit all channels
 //Implement new reaction filter input
 
 //TO COMPARE:
@@ -539,7 +528,6 @@ void DSourceComboer::Create_SourceComboInfos(const DReactionVertexInfo* locReact
 				locFurtherDecays_Mixed.emplace(locDecayPair);
 		}
 
-
 		//exclude parent if production
 		if((locStepIndex == 0) && DAnalysis::Get_IsFirstStepBeam(locReaction)) //decay
 			locIncludeParentFlag = false;
@@ -549,46 +537,25 @@ void DSourceComboer::Create_SourceComboInfos(const DReactionVertexInfo* locReact
 		bool locNoChargedFlag = (locChargedParticleMap.empty() && locFurtherDecays_Charged.empty());
 		bool locNoNeutralFlag = (locNeutralParticleMap.empty() && locFurtherDecays_Neutral.empty());
 
-		//determine if we need to exclude a decay product from the invariant mass cuts (e.g. rescattering)
-		auto locTargetPID = locStep->Get_TargetPID();
-		auto locDecayProductToExclude = ((locStepIndex != 0) && (locTargetPID != Unknown) && (locStep->Get_MissingPID() != locTargetPID)) ? locTargetPID : Unknown;
+		//determine if we need to subtract a target particle when calculating the invariant mass (e.g. rescattering)
+		auto locTargetToInclude = (locStepIndex != 0) ? locStep->Get_TargetPID() : Unknown;
 
 		//determine if there is a missing decay product, such that we can't do invariant mass cuts
 		bool locMissingDecayProductFlag = false;
 		if((locStepIndex != 0) || !DAnalysis::Get_IsFirstStepBeam(locReaction)) //decay
-		{
-			auto locMissingDecayProductIndices = DAnalysis::Get_MissingDecayProductIndices(locReaction, locStepIndex);
-			for(auto& locMissingPair : locMissingDecayProductIndices)
-			{
-				if(locMissingPair.second == DReactionStep::Get_ParticleIndex_Inclusive())
-				{
-					locMissingDecayProductFlag = true;
-					break;
-				}
-
-				//check if missing particle is just rescattered target
-				auto locMissingParticleStep = locReaction->Get_ReactionStep(locMissingPair.first);
-				auto locMissingStepTargetPID = locMissingParticleStep->Get_TargetPID();
-				if((locMissingStepTargetPID != Unknown) && (locMissingParticleStep->Get_MissingPID() == locMissingStepTargetPID))
-					continue; //yep, go to next one
-
-				//nope, register and break
-				locMissingDecayProductFlag = true;
-				break;
-			}
-		}
+			locMissingDecayProductFlag = DAnalysis::Check_IfMissingDecayProduct(locReaction, locStepIndex);
 
 		if(dDebugLevel >= 5)
-			cout << "locIncludeParentFlag, init pid, target pid, missing-product flag, to-exclude pid: " << locIncludeParentFlag << ", " << locInitPID << ", " << locTargetPID << ", " << locMissingDecayProductFlag << ", " << locDecayProductToExclude << endl;
+			cout << "locIncludeParentFlag, init pid, missing-product flag, to-include target pid: " << locIncludeParentFlag << ", " << locInitPID << ", " << locMissingDecayProductFlag << ", " << locTargetToInclude << endl;
 
 		//default to unknown use
 		DSourceComboUse locPrimaryComboUse(Unknown, DSourceComboInfo::Get_VertexZIndex_ZIndependent(), nullptr, false, Unknown);
 		if(locNoChargedFlag && locNoNeutralFlag) //only mixed
-			locPrimaryComboUse = Make_ComboUse(locInitPID, {}, locFurtherDecays_Mixed, locMissingDecayProductFlag, locDecayProductToExclude);
+			locPrimaryComboUse = Make_ComboUse(locInitPID, {}, locFurtherDecays_Mixed, locMissingDecayProductFlag, locTargetToInclude);
 		else if(locNoNeutralFlag && locFurtherDecays_Mixed.empty()) //only charged
-			locPrimaryComboUse = Make_ComboUse(locInitPID, locChargedParticleMap, locFurtherDecays_Charged, locMissingDecayProductFlag, locDecayProductToExclude);
+			locPrimaryComboUse = Make_ComboUse(locInitPID, locChargedParticleMap, locFurtherDecays_Charged, locMissingDecayProductFlag, locTargetToInclude);
 		else if(locNoChargedFlag && locFurtherDecays_Mixed.empty()) //only neutral
-			locPrimaryComboUse = Make_ComboUse(locInitPID, locNeutralParticleMap, locFurtherDecays_Neutral, locMissingDecayProductFlag, locDecayProductToExclude);
+			locPrimaryComboUse = Make_ComboUse(locInitPID, locNeutralParticleMap, locFurtherDecays_Neutral, locMissingDecayProductFlag, locTargetToInclude);
 		else //some combination
 		{
 			auto locFurtherDecays_All = locFurtherDecays_Mixed;
@@ -619,7 +586,7 @@ void DSourceComboer::Create_SourceComboInfos(const DReactionVertexInfo* locReact
 				}
 			}
 
-			locPrimaryComboUse = Make_ComboUse(locInitPID, locParticleMap_All, locFurtherDecays_All, locMissingDecayProductFlag, locDecayProductToExclude);
+			locPrimaryComboUse = Make_ComboUse(locInitPID, locParticleMap_All, locFurtherDecays_All, locMissingDecayProductFlag, locTargetToInclude);
 		}
 
 		locStepComboUseMap.emplace(locStepIndex, locPrimaryComboUse);
@@ -683,7 +650,7 @@ map<Particle_t, unsigned char> DSourceComboer::Build_ParticleMap(const DReaction
 	return locNumParticles;
 }
 
-DSourceComboUse DSourceComboer::Make_ComboUse(Particle_t locInitPID, const map<Particle_t, unsigned char>& locNumParticles, const map<DSourceComboUse, unsigned char>& locFurtherDecays, bool locMissingDecayProductFlag, Particle_t locDecayProductToExclude)
+DSourceComboUse DSourceComboer::Make_ComboUse(Particle_t locInitPID, const map<Particle_t, unsigned char>& locNumParticles, const map<DSourceComboUse, unsigned char>& locFurtherDecays, bool locMissingDecayProductFlag, Particle_t locTargetToInclude)
 {
 	//convert locFurtherDecays map to a vector
 	vector<pair<DSourceComboUse, unsigned char>> locDecayVector;
@@ -697,7 +664,7 @@ DSourceComboUse DSourceComboer::Make_ComboUse(Particle_t locInitPID, const map<P
 
 	//make or get the combo info
 	auto locComboInfo = MakeOrGet_SourceComboInfo(locParticleVector, locDecayVector, 0);
-	auto locComboUse = DSourceComboUse(locInitPID, DSourceComboInfo::Get_VertexZIndex_ZIndependent(), locComboInfo, locMissingDecayProductFlag, locDecayProductToExclude);
+	auto locComboUse = DSourceComboUse(locInitPID, DSourceComboInfo::Get_VertexZIndex_ZIndependent(), locComboInfo, locMissingDecayProductFlag, locTargetToInclude);
 	if(dDebugLevel >= 5)
 	{
 		cout << "CREATED COMBO USE:" << endl;
@@ -1737,12 +1704,13 @@ void DSourceComboer::Create_SourceCombos(const DSourceComboUse& locComboUseToCre
 	}
 
 	//place an invariant mass cut & save the results
+	auto locTargetPIDToSubtract = std::get<4>(locComboUseToCreate);
 	for(const auto& locSourceCombo : *locSourceCombos)
 	{
 		//If on all-showers stage, and combo is fcal-only, don't save (combo already created!!)
 		if((locComboingStage == d_MixedStage) && locSourceCombo->Get_IsComboingZIndependent())
 			continue; //this combo has already passed the cut & been saved: during the FCAL-only stage
-		if(!dSourceComboP4Handler->Cut_InvariantMass_NoMassiveNeutrals(locSourceCombo, locDecayPID, dTargetCenter, locVertexZBin, false))
+		if(!dSourceComboP4Handler->Cut_InvariantMass_NoMassiveNeutrals(locSourceCombo, locDecayPID, locTargetPIDToSubtract, dTargetCenter, locVertexZBin, false))
 			continue; //vertex not used if accurate-flag is false: can be anything (target center)
 
 		//save the results

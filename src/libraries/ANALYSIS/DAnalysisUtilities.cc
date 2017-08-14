@@ -789,14 +789,14 @@ DLorentzVector DAnalysisUtilities::Calc_MissingP4(const DReaction* locReaction, 
 		if(locUseKinFitDataFlag) //kinfit
 			locKinematicData = locParticleComboStep->Get_InitialParticle();
 		locMissingP4 += locKinematicData->lorentzMomentum();
+	}
 
-		//target particle
-		Particle_t locPID = locReactionStep->Get_TargetPID();
-		if(locPID != Unknown)
-		{
-			double locMass = ParticleMass(locPID);
-			locMissingP4 += DLorentzVector(DVector3(0.0, 0.0, 0.0), locMass);
-		}
+	//target particle
+	Particle_t locPID = locReactionStep->Get_TargetPID();
+	if(locPID != Unknown)
+	{
+		double locMass = ParticleMass(locPID);
+		locMissingP4 += DLorentzVector(DVector3(0.0, 0.0, 0.0), locMass);
 	}
 
 	auto locParticles = locUseKinFitDataFlag ? locParticleComboStep->Get_FinalParticles() : locParticleComboStep->Get_FinalParticles_Measured();
@@ -906,6 +906,14 @@ DLorentzVector DAnalysisUtilities::Calc_FinalStateP4(const DReaction* locReactio
 	auto locReactionStep = locReaction->Get_ReactionStep(locStepIndex);
 
 	auto locParticles = locUseKinFitDataFlag ? locParticleComboStep->Get_FinalParticles() : locParticleComboStep->Get_FinalParticles_Measured();
+
+	//subtract rescattering target if any!!
+	if(locStepIndex != 0)
+	{
+		Particle_t locPID = locReactionStep->Get_TargetPID();
+		if(locPID != Unknown)
+			locFinalStateP4 -= DLorentzVector(DVector3(0.0, 0.0, 0.0), ParticleMass(locPID));
+	}
 
 	bool locDoSubsetFlag = !locToIncludeIndices.empty();
 	for(size_t loc_i = 0; loc_i < locParticles.size(); ++loc_i)

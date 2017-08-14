@@ -465,7 +465,7 @@ void DSourceComboVertexer::Construct_DecayingParticle_InvariantMass(const DReact
 		}
 
 		//create a new one
-		auto locP4 = dSourceComboP4Handler->Calc_P4_NoMassiveNeutrals(nullptr, locVertexCombo, locVertex, std::get<1>(locSourceComboUse), nullptr, false);
+		auto locP4 = dSourceComboP4Handler->Calc_P4_NoMassiveNeutrals(nullptr, locVertexCombo, locVertex, std::get<1>(locSourceComboUse), nullptr, DSourceComboUse(Unknown, 0, nullptr, false, Unknown), false);
 		auto locKinematicData = dResourcePool_KinematicData.Get_Resource();
 		locKinematicData->Reset();
 		locKinematicData->Set_Members(locDecayPID, locP4.Vect(), locVertex, 0.0);
@@ -523,6 +523,7 @@ void DSourceComboVertexer::Construct_DecayingParticle_MissingMass(const DReactio
 		return;
 
 	auto locDecayStepIndex = Get_DecayStepIndex(locReaction, locToReconParticleIndices.first, locToReconParticleIndices.second);
+	auto locDecayUse = dSourceComboer->Get_SourceComboUse(locReaction, locDecayStepIndex);
 
 	auto locReactionStep = locReaction->Get_ReactionStep(locToReconParticleIndices.first);
 	auto locDecayPID = locReactionStep->Get_PID(locToReconParticleIndices.second);
@@ -546,11 +547,10 @@ void DSourceComboVertexer::Construct_DecayingParticle_MissingMass(const DReactio
 	}
 
 	//create a new one
-	//calc final state p4 of particles AT THIS VERTEX!
+	//calc final state p4, excluding the decay use for the decay that we are trying to reconstruct via missing mass
 	DLorentzVector locFinalStateP4;
-	auto locSourceCombosThisVertex = DAnalysis::Get_SourceCombos_ThisVertex(locFullVertexCombo);
-	for(auto& locComboThisVertex : locSourceCombosThisVertex)
-		locFinalStateP4 += dSourceComboP4Handler->Calc_P4_SourceParticles(locComboThisVertex, locVertex, locRFVertexTime, true);
+	if(!dSourceComboP4Handler->Calc_P4_HasMassiveNeutrals(locIsProductionVertexFlag, true, locReactionFullCombo, locFullVertexCombo, locVertex, locRFBunch, locRFVertexTime, locDecayUse, locFinalStateP4, locBeamParticle, true))
+		return; //invalid somehow
 
 	//ASSUMES FIXED TARGET EXPERIMENT!
 	DLorentzVector locInitialStateP4; //lookup or is beam + target
@@ -658,7 +658,7 @@ void DSourceComboVertexer::Calc_TimeOffsets(const DReactionVertexInfo* locReacti
 
 		//compute and save result
 		auto locVertexZBin = Get_VertexZBin_NoBeam(false, locActiveVertexCombo);
-		auto locP4 = dSourceComboP4Handler->Calc_P4_NoMassiveNeutrals(nullptr, locActiveVertexCombo, locVertex, locVertexZBin, nullptr, false);
+		auto locP4 = dSourceComboP4Handler->Calc_P4_NoMassiveNeutrals(nullptr, locActiveVertexCombo, locVertex, locVertexZBin, nullptr, DSourceComboUse(Unknown, 0, nullptr, false, Unknown), false);
 		auto locTimeOffset = locPathLength/(locP4.Beta()*SPEED_OF_LIGHT) + locParentTimeOffset;
 
 		if(dDebugLevel >= 10)

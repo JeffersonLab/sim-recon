@@ -1234,21 +1234,19 @@ void DKinFitter::Calc_dF_P4(int locFIndex, const DKinFitParticle* locKinFitParti
 		{
 			if(dDebugLevel > 30)
 				cout << "decaying, partially replace with init-state PID = " << (*locParticleIterator)->Get_PID() << endl;
-			Calc_dF_P4(locFIndex, (*locParticleIterator).get(), locStateSignMultiplier); //decaying particle multiplier * 1.0
+			auto locNextStateSignMultiplier = dKinFitUtils->Get_IsDecayingParticleDefinedByProducts(locKinFitParticle) ? -1.0*locStateSignMultiplier : locStateSignMultiplier;
+			Calc_dF_P4(locFIndex, (*locParticleIterator).get(), locNextStateSignMultiplier);
 		}
 
 		//final state
 		auto locFromFinalState = locKinFitParticle->Get_FromFinalState();
-		bool locDefinedByInvariantMassFlag = locFromInitialState.empty();
-		double locNextStateSignMultiplier = locStateSignMultiplier;
-		//If defined by invariant mass: add p4s of final state particles
-		//If defined by missing mass: add p4s of init state, subtract final state
-		if(!locDefinedByInvariantMassFlag)
-			locNextStateSignMultiplier *= -1.0;
 		for(locParticleIterator = locFromFinalState.begin(); locParticleIterator != locFromFinalState.end(); ++locParticleIterator)
 		{
 			if(dDebugLevel > 30)
 				cout << "decaying, partially replace with final-state PID = " << (*locParticleIterator)->Get_PID() << endl;
+			//If defined by invariant mass: add p4s of final state particles
+			//If defined by missing mass: add p4s of init state, subtract final state
+			auto locNextStateSignMultiplier = dKinFitUtils->Get_IsDecayingParticleDefinedByProducts(locKinFitParticle) ? locStateSignMultiplier : -1.0*locStateSignMultiplier;
 			Calc_dF_P4(locFIndex, (*locParticleIterator).get(), locNextStateSignMultiplier);
 		}
 	}
@@ -1408,21 +1406,19 @@ void DKinFitter::Calc_dF_MassDerivs(size_t locFIndex, const DKinFitParticle* loc
 		{
 			if(dDebugLevel > 30)
 				cout << "decaying, partially replace with init-state PID = " << (*locParticleIterator)->Get_PID() << endl;
-			Calc_dF_MassDerivs(locFIndex, (*locParticleIterator).get(), locXP4, locStateSignMultiplier, false); //decaying particle multiplier * 1.0
+			auto locNextStateSignMultiplier = dKinFitUtils->Get_IsDecayingParticleDefinedByProducts(locKinFitParticle) ? -1.0*locStateSignMultiplier : locStateSignMultiplier;
+			Calc_dF_MassDerivs(locFIndex, (*locParticleIterator).get(), locXP4, locNextStateSignMultiplier, false);
 		}
 
 		//final state
 		auto locFromFinalState = locKinFitParticle->Get_FromFinalState();
-		bool locDefinedByInvariantMassFlag = locFromInitialState.empty();
-		double locNextStateSignMultiplier = locStateSignMultiplier;
-		//If defined by invariant mass: add p4s of final state particles
-		//If defined by missing mass: add p4s of init state, subtract final state
-		if(!locDefinedByInvariantMassFlag)
-			locNextStateSignMultiplier *= -1.0;
 		for(locParticleIterator = locFromFinalState.begin(); locParticleIterator != locFromFinalState.end(); ++locParticleIterator)
 		{
 			if(dDebugLevel > 30)
 				cout << "decaying, partially replace with final-state PID = " << (*locParticleIterator)->Get_PID() << endl;
+			//If defined by invariant mass: add p4s of final state particles
+			//If defined by missing mass: add p4s of init state, subtract final state
+			auto locNextStateSignMultiplier = dKinFitUtils->Get_IsDecayingParticleDefinedByProducts(locKinFitParticle) ? locStateSignMultiplier : -1.0*locStateSignMultiplier;
 			Calc_dF_MassDerivs(locFIndex, (*locParticleIterator).get(), locXP4, locNextStateSignMultiplier, false);
 		}
 	}
@@ -1483,9 +1479,6 @@ void DKinFitter::Calc_dF_Vertex(size_t locFIndex, const DKinFitParticle* locKinF
 	if(locKinFitParticleType != d_DecayingParticle)
 		return;
 
-	// find the p4 constraint where the decaying particle momentum is defined //this is the point where the position is defined as well
-		//why this constraint? because if you choose the other one, the momentum has to be propagated across a distance, requiring a different (& MUCH more complicated) partial derivative
-
 	//replace the decaying particle with the particles it's momentum is derived from
 	//initial state
 	auto locFromInitialState = locKinFitParticle->Get_FromInitialState();
@@ -1494,21 +1487,19 @@ void DKinFitter::Calc_dF_Vertex(size_t locFIndex, const DKinFitParticle* locKinF
 	{
 		if(dDebugLevel > 30)
 			cout << "decaying, partially replace with init-state PID = " << (*locParticleIterator)->Get_PID() << endl;
-		Calc_dF_Vertex(locFIndex, (*locParticleIterator).get(), locKinFitParticle, locStateSignMultiplier);
+		auto locNextStateSignMultiplier = dKinFitUtils->Get_IsDecayingParticleDefinedByProducts(locKinFitParticle) ? -1.0*locStateSignMultiplier : locStateSignMultiplier;
+		Calc_dF_Vertex(locFIndex, (*locParticleIterator).get(), locKinFitParticle, locNextStateSignMultiplier);
 	}
 
 	//final state
 	auto locFromFinalState = locKinFitParticle->Get_FromFinalState();
-	bool locDefinedByInvariantMassFlag = locFromInitialState.empty();
-	double locNextStateSignMultiplier = locStateSignMultiplier;
-	//If defined by invariant mass: add p4s of final state particles
-	//If defined by missing mass: add p4s of init state, subtract final state
-	if(!locDefinedByInvariantMassFlag)
-		locNextStateSignMultiplier *= -1.0;
 	for(locParticleIterator = locFromFinalState.begin(); locParticleIterator != locFromFinalState.end(); ++locParticleIterator)
 	{
 		if(dDebugLevel > 30)
 			cout << "decaying, partially replace with final-state PID = " << (*locParticleIterator)->Get_PID() << endl;
+		//If defined by invariant mass: add p4s of final state particles
+		//If defined by missing mass: add p4s of init state, subtract final state
+		auto locNextStateSignMultiplier = dKinFitUtils->Get_IsDecayingParticleDefinedByProducts(locKinFitParticle) ? locStateSignMultiplier : -1.0*locStateSignMultiplier;
 		Calc_dF_Vertex(locFIndex, (*locParticleIterator).get(), locKinFitParticle, locNextStateSignMultiplier);
 	}
 }

@@ -30,7 +30,7 @@ class DSourceCombo;
 //DSourceComboUse is what the combo is USED for (the decay of Particle_t (if Unknown then is just a grouping)
 //signed char: vertex-z bin of the final state (combo contents)
 //bool: true/false if has/doesn't-have missing decay product (is always false if decay pid == Unknown)
-//last pid: Pid to exclude from calculating the invariant mass of the decay (is always Unknown if decay pid == Unknown) (e.g. if rescattering Lambda, p -> p, p, pi- then this would be Proton)
+//last pid: Rescattering Target PID (target excluded for 1st step) //is always Unknown if decay pid == Unknown)
 using DSourceComboUse = tuple<Particle_t, signed char, const DSourceComboInfo*, bool, Particle_t>; //e.g. Pi0, zbin, -> 2g, false, Unknown
 using DSourceCombosByUse_Small = vector<pair<DSourceComboUse, vector<const DSourceCombo*>>>;
 
