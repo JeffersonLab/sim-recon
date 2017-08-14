@@ -523,7 +523,6 @@ void DSourceComboVertexer::Construct_DecayingParticle_MissingMass(const DReactio
 		return;
 
 	auto locDecayStepIndex = Get_DecayStepIndex(locReaction, locToReconParticleIndices.first, locToReconParticleIndices.second);
-	auto locDecayUse = dSourceComboer->Get_SourceComboUse(locReaction, locDecayStepIndex);
 
 	auto locReactionStep = locReaction->Get_ReactionStep(locToReconParticleIndices.first);
 	auto locDecayPID = locReactionStep->Get_PID(locToReconParticleIndices.second);
@@ -547,10 +546,11 @@ void DSourceComboVertexer::Construct_DecayingParticle_MissingMass(const DReactio
 	}
 
 	//create a new one
-	//calc final state p4
+	//calc final state p4 of particles AT THIS VERTEX!
 	DLorentzVector locFinalStateP4;
-	if(!dSourceComboP4Handler->Calc_P4_HasMassiveNeutrals(locIsProductionVertexFlag, true, locReactionFullCombo, locFullVertexCombo, locVertex, locRFBunch, locRFVertexTime, locDecayUse, locFinalStateP4, locBeamParticle, true))
-		return; //invalid somehow
+	auto locSourceCombosThisVertex = DAnalysis::Get_SourceCombos_ThisVertex(locFullVertexCombo);
+	for(auto& locComboThisVertex : locSourceCombosThisVertex)
+		locFinalStateP4 += dSourceComboP4Handler->Calc_P4_SourceParticles(locComboThisVertex, locVertex, locRFVertexTime, true);
 
 	//ASSUMES FIXED TARGET EXPERIMENT!
 	DLorentzVector locInitialStateP4; //lookup or is beam + target
