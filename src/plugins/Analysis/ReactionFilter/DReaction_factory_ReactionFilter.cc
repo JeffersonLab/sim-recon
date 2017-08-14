@@ -136,6 +136,18 @@ bool Parse_StepPIDString(string locStepString, tuple<Particle_t, Particle_t, vec
 	return true;
 }
 
+DReactionStep* Create_ReactionStep(const tuple<Particle_t, Particle_t, vector<Particle_t>, Particle_t, int>& locStepTuple)
+{
+	auto locInclusiveFlag = (std::get<4>(locStepTuple) == DReactionStep::Get_ParticleIndex_Inclusive());
+	auto locBeamMissingFlag = (std::get<4>(locStepTuple) == DReactionStep::Get_ParticleIndex_Initial());
+//	auto locSecondBeamMissingFlag = (std::get<4>(locStepTuple) == DReactionStep::Get_ParticleIndex_SecondBeam());
+
+	if(std::get<1>(locStepTuple) == Unknown) //no target or 2nd beam: pure decay
+		auto locStep = new DReactionStep(std::get<0>(locStepTuple), std::get<2>(locStepTuple), std::get<3>(locStepTuple), locInclusiveFlag);
+	else //rescattering decay //2nd beam is not allowed for now (and in fact, is undistinguishable in input scheme)
+		auto locStep = new DReactionStep(std::get<0>(locStepTuple), std::get<1>(locStepTuple), std::get<2>(locStepTuple), std::get<3>(locStepTuple), locInclusiveFlag, locBeamMissingFlag);
+}
+
 void Parse_Input(void)
 {
 	//Get input channel info
@@ -190,39 +202,21 @@ void Parse_Input(void)
 		//use first step
 		//if decay specified, then do underscores
 		//also put "miss" in front of missing particles
+		auto locPrimaryStep = Create_ReactionStep(locFirstStepTuple);
 
 		//loop over steps
 		for(auto& locDecayStepString : std::get<3>(locReactionPair.second))
 		{
-			tuple<Particle_t, Particle_t, vector<Particle_t>, Particle_t, int> locStepTuple;
-			if(!Parse_StepPIDString(locDecayStepString, locStepTuple))
+			tuple<Particle_t, Particle_t, vector<Particle_t>, Particle_t, int> locDecayStepTuple;
+			if(!Parse_StepPIDString(locDecayStepString, locDecayStepTuple))
 				return;
+
+			auto locDecayStep = Create_ReactionStep(locDecayStepTuple);
 
 			//ShortName();
 		}
 	}
 }
-
-DReactionStep* Create_ReactionStep(const tuple<Particle_t, Particle_t, vector<Particle_t>, Particle_t, int>& locStepTuple, bool locFirstStepFlag)
-{
-	auto locInclusiveFlag = (std::get<4>(locStepTuple) == DReactionStep::Get_ParticleIndex_Inclusive());
-	auto locBeamMissingFlag = (std::get<4>(locStepTuple) == DReactionStep::Get_ParticleIndex_Initial());
-	auto locSecondBeamMissingFlag = (std::get<4>(locStepTuple) == DReactionStep::Get_ParticleIndex_SecondBeam());
-
-
-	if(std::get<1>(locStepTuple) == Unknown) //no target or 2nd beam: pure decay
-		auto locStep = new DReactionStep(std::get<0>(locStepTuple), std::get<2>(locStepTuple), std::get<3>(locStepTuple), locInclusiveFlag);
-	else //rescattering decay
-		auto locStep = new DReactionStep(std::get<0>(locStepTuple), std::get<1>(locStepTuple), std::get<2>(locStepTuple), std::get<3>(locStepTuple), locInclusiveFlag, false);
-}
-/*
-		//if fixed-target production or rescattering:
-		DReactionStep(Particle_t locScatteringPID, Particle_t locTargetPID, vector<Particle_t> locNonMissingFinalPIDs, Particle_t locMissingFinalPID = Unknown,
-				bool locInclusiveFlag = false, bool locBeamMissingFlag = false);
-		//if 2 beams: collider experiment
-		DReactionStep(pair<Particle_t, Particle_t> locBeamPIDs, vector<Particle_t> locNonMissingFinalPIDs, Particle_t locMissingFinalPID = Unknown,
-				bool locInclusiveFlag = false, bool locFirstBeamMissingFlag = false, bool locSecondBeamMissingFlag = false);
-*/
 
 //------------------
 // evnt

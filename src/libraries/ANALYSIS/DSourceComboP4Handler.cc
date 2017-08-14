@@ -531,12 +531,6 @@ bool DSourceComboP4Handler::Calc_P4_HasMassiveNeutrals(bool locIsProductionVerte
 	if(!locHasPhotons || !locAccuratePhotonsFlag)
 	{
 		auto locIterator = dFinalStateP4ByCombo_HasMassiveNeutrals.find(locP4LookupTuple);
-		if(locIterator == dFinalStateP4ByCombo_HasMassiveNeutrals.end())
-		{
-			//try with null beam
-			locP4LookupTuple = std::make_tuple(locIsProductionVertex, locReactionFullCombo, locVertexCombo, locRFBunch, (const DKinematicData*)nullptr);
-			locIterator = dFinalStateP4ByCombo_HasMassiveNeutrals.find(locP4LookupTuple);
-		}
 		if(locIterator != dFinalStateP4ByCombo_HasMassiveNeutrals.end())
 		{
 			locTotalP4 = locIterator->second;
