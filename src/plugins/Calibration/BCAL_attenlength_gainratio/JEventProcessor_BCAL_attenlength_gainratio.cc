@@ -229,7 +229,9 @@ jerror_t JEventProcessor_BCAL_attenlength_gainratio::evnt(JEventLoop *loop, uint
 		int module = point->module();
 		int layer = point->layer();
 		int sector = point->sector();
-		float Energy = point->E();
+		float pointE = point->E();
+		float pointEus = point->E_US();
+		float pointEds = point->E_DS();
 
 		// get the associated digi hits
 		vector<const DBCALDigiHit*> &digihits = digihits_vec[i];
@@ -277,10 +279,11 @@ jerror_t JEventProcessor_BCAL_attenlength_gainratio::evnt(JEventLoop *loop, uint
 		float logintratio = log(intratio);
 		float peakratio = (float)peakUS/(float)peakDS;
 		float logpeakratio = log(peakratio);
+		float logEratio = log(pointEus/pointEds);
 		if (VERBOSE>=5) printf("%5llu  %2i %i %i  %8.1f  %8.1f  %8.3f  %8.3f  %8.3f\n", 
 				      (long long unsigned int)eventnumber,module,layer,sector,integralUS,integralDS,intratio,logintratio,zpos);
 
-		if (Energy > 0.01) {  // 10 MeV cut to remove bias due to attenuation
+		if (pointE > 0.01) {  // 10 MeV cut to remove bias due to attenuation
 			logintratiovsZ[module-1][layer-1][sector-1]->Fill(zpos, logintratio);
 			logintratiovsZ_all->Fill(zpos, logintratio);
             logpeakratiovsZ_all->Fill(zpos, logpeakratio);
@@ -288,16 +291,28 @@ jerror_t JEventProcessor_BCAL_attenlength_gainratio::evnt(JEventLoop *loop, uint
             sprintf(name,"logintratiovsZ_layer%i",layer);
             sprintf(histtitle,"Layer %i;Z Position (cm);log of integral ratio US/DS",layer);
             Fill2DHistogram("bcalgainratio", "logintratiovsZ", name,
-                            zpos, logintratio,
-                            histtitle, 500,-250.0,250.0,500,-3,3);
+                            zpos, logintratio, histtitle, 500,-250.0,250.0,500,-3,3);
+
+            if (VERBOSEHISTOGRAMS) {
+                sprintf(name,"logEratiovsZ_%02i%i%i",module,layer,sector);
+                sprintf(histtitle,"Channel (M%i,L%i,S%i);Z Position (cm);log of E ratio   ln(E_{US}/E_{DS}) ",module,layer,sector);
+                Fill2DHistogram("bcalgainratio", "logEratiovsZ", name,
+                                zpos, logEratio, histtitle, 250,-250.0,250.0,400,-4,4);
+            }
+
+            sprintf(name,"logEratiovsZ_layer%i",layer);
+            sprintf(histtitle,"Layer %i;Z Position (cm);log of E ratio   ln(E_{US}/E_{DS}) ",layer);
+            Fill2DHistogram("bcalgainratio", "logEratiovsZ", name,
+                            zpos, logEratio, histtitle, 500,-250.0,250.0,500,-3,3);
+
 
             if (VERBOSEHISTOGRAMS) {
                 logpeakratiovsZ[module-1][layer-1][sector-1]->Fill(zpos, logpeakratio);
             }
 		}
-        if (VERBOSEHISTOGRAMS) EvsZ[module-1][layer-1][sector-1]->Fill(zpos, Energy);
-		EvsZ_all->Fill(zpos, Energy);
-		EvsZ_layer[layer-1]->Fill(zpos, Energy);
+        if (VERBOSEHISTOGRAMS) EvsZ[module-1][layer-1][sector-1]->Fill(zpos, pointE);
+		EvsZ_all->Fill(zpos, pointE);
+		EvsZ_layer[layer-1]->Fill(zpos, pointE);
 	}
 
 	japp->RootFillUnLock(this); //RELEASE ROOT FILL LOCK
@@ -341,6 +356,43 @@ jerror_t JEventProcessor_BCAL_attenlength_gainratio::fini(void)
 	// }
 	printf("BCAL_attenlength_gainratio::fini >>  Fitting all histograms\n");
 
+    if (VERBOSEHISTOGRAMS) {
+        for (int module=0; module<nummodule; module++) {
+            for (int layer=0; layer<numlayer; layer++) {
+                for (int sector=0; sector<numsector; sector++) {
+                    char name[255];
+                    sprintf(name,"logEratiovsZ_%02i%i%i",module+1,layer+1,sector+1);
+                    TH2I* hist  = (TH2I*)GetHistPointer("bcalgainratio", "logEratiovsZ", name);
+                    if (hist) {
+                        int layersect = (layer)*4 + sector + 1;
+                        int entries = hist->GetEntries();
+                        if (entries>10) {
+                            hist->Fit("pol1","q");
+                            TF1 *intfit = (TF1*)hist->GetFunction("pol1");
+                            float p0 = intfit->GetParameter(0);
+                            float p1 = intfit->GetParameter(1);
+                            //float p0err = intfit->GetParError(0);
+                            //float p1err = intfit->GetParError(1);
+                        
+                            float attenlength = -2./p1;
+                            float gainratio = exp(p0);
+                            //float attenlengtherr = 2/p1/p1*p1err;
+                            //float gainratioerr = exp(p0)*p0err;
+                            if (VERBOSE>0) printf("(%2i,%i,%i) %3i %8.3f %8.3f   ", module, layer,sector,entries,attenlength,gainratio);
+                        
+                            char histtitle[255];
+                            sprintf(histtitle,"Atten. length from E;Module;Layer and Sector");
+                            Fill2DWeightedHistogram("bcalgainratio", "results", "hist2D_Eattenlength",
+                                                    module+1,layersect,attenlength, histtitle, 48,0.5,48.5,16,0.5,16.5);
+                            sprintf(histtitle,"Gain ratio from integ.;Module;Layer and Sector;G_{U}/G_{D}");
+                            Fill2DWeightedHistogram("bcalgainratio", "results", "hist2D_Egainratio",
+                                                    module+1,layersect,gainratio, histtitle, 48,0.5,48.5,16,0.5,16.5);
+                        }
+                    }
+                }
+            }
+        }
+    }
 	for (int module=0; module<nummodule; module++) {
 		for (int layer=0; layer<numlayer; layer++) {
 			for (int sector=0; sector<numsector; sector++) {
@@ -402,6 +454,8 @@ jerror_t JEventProcessor_BCAL_attenlength_gainratio::fini(void)
 	hist2D_intgainratio->SetBinContent(0,0,1);
 
 	japp->RootFillUnLock(this); //RELEASE ROOT FILL LOCK
+
+    SortDirectories();
 
 	return NOERROR;
 }
