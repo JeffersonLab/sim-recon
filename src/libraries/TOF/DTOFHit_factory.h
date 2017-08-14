@@ -51,6 +51,8 @@ class DTOFHit_factory:public jana::JFactory<DTOFHit>{
   // PARAMETERS:
   double DELTA_T_ADC_TDC_MAX;
   int USE_AMP_4WALKCORR;
+  int USE_NEW_4WALKCORR;
+  int USE_NEWAMP_4WALKCORR;
 
   tof_digi_constants_t adc_pedestals;
   tof_digi_constants_t adc_gains;
@@ -59,6 +61,8 @@ class DTOFHit_factory:public jana::JFactory<DTOFHit>{
   
   vector<vector<double> >timewalk_parameters;
   vector<vector<double> >timewalk_parameters_AMP;
+  vector<vector<double> >timewalk_parameters_NEW;
+  vector<vector<double> >timewalk_parameters_NEWAMP;
 
   
   DTOFHit* FindMatch(int plane, int bar, int end, double T);
@@ -89,6 +93,8 @@ class DTOFHit_factory:public jana::JFactory<DTOFHit>{
 
   double CalcWalkCorrIntegral(DTOFHit* hit);
   double CalcWalkCorrAmplitude(DTOFHit* hit);
+  double CalcWalkCorrNEW(DTOFHit* hit);
+  double CalcWalkCorrNEWAMP(DTOFHit* hit);
 
 
   bool CHECK_FADC_ERRORS;

@@ -1577,7 +1577,9 @@ DReferenceTrajectory::swim_step_t* DReferenceTrajectory::FindPlaneCrossing(const
 	// trajectory or the end
 	int last_index=Nswim_steps-1;
 	double forward_dist= norm.Dot(swim_step->origin-origin);
+	if( forward_dist == 0.0 ) return swim_step;
 	double backward_dist= norm.Dot(swim_steps[last_index].origin-origin);
+	if( backward_dist ==0.0 ) return &swim_steps[last_index];
 	if (detector==SYS_START || fabs(forward_dist)<fabs(backward_dist)){ // start at beginning
 	  for(int i=first_i; i<Nswim_steps; i++, swim_step++){
 	      

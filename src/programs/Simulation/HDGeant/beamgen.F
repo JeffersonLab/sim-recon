@@ -69,6 +69,8 @@ c  freq > freqMaximum is generated; a few ppm of these is no problem.
       common /genstate/ppol,rndm
       save /genstate/
 
+      real x, theta2
+
       call GRNDM(rndm,7)
       phim = REAL(rndm(1)*TWOPI)
       rhom = mospread*sqrt(-2*log(rndm(2)))
@@ -98,11 +100,11 @@ c  freq > freqMaximum is generated; a few ppm of these is no problem.
       if (freqIntegral(nProfileBins).eq.0) then
          x1 = 1
          x0 = xMinimum**(1./nProfileBins)
-         freqProfile(1) = dNcdxdp((x0+x1)/2,TWOPI/4)
+         freqProfile(1) = dNcdxdp((x0+x1)/2,REAL(TWOPI/8))
          do ip=2,nProfileBins
             x1 = x0
             x0 = xMinimum**(ip*1./nProfileBins)
-            freqProfile(ip) = dNcdxdp((x0+x1)/2,TWOPI/4)
+            freqProfile(ip) = dNcdxdp((x0+x1)/2,REAL(TWOPI/8))
          enddo
          freqMaximum = 0
          do ip=1,nProfileBins-5
@@ -130,22 +132,26 @@ c  freq > freqMaximum is generated; a few ppm of these is no problem.
          enddo
          freqMaximum = REAL(4*TWOPI)*freqIntegral(nProfileBins)
       endif
+
+c To get pure incoherent radiation, eg. using the amorphous radiator,
+c set the x rotation angle to 0 by assigning Epeak = 0 in control.in
+
       do i=1,1000000000
          call GRNDM(rndm,5)
-         if (rndm(1).gt.1/(Wincoh+1)) then             !try coherent generation
+         if (thx.ne.0.and.rndm(1).gt.1/(Wincoh+1)) then             !try coherent generation
             f = freqIntegral(nProfileBins)*rndm(2)
             do ip=1,nProfileBins
                if (f.le.freqIntegral(ip)) then
-                  x0 = xMinimum**((ip-1.)/nProfileBins)
-                  x1 = xMinimum**((ip*1.)/nProfileBins)
+                  x1 = xMinimum**((ip-1.)/nProfileBins)
+                  x0 = xMinimum**((ip*1.)/nProfileBins)
                   if (ip.gt.1) then
-                     f0 = freqIntegral(ip-1)
+                     f1 = freqIntegral(ip-1)
                   else
-                     f0 = 0
+                     f1 = 0
                   endif
-                  f1 = freqIntegral(ip)
+                  f0 = freqIntegral(ip)
                   fp = freqProfile(ip)
-                  x = (x0*(f1-f)+x1*(f-f0))/(f1-f0)
+                  x = (x0*(f-f1)+x1*(f0-f))/(f0-f1)
                   go to 4
                endif
             enddo
@@ -175,7 +181,7 @@ c  freq > freqMaximum is generated; a few ppm of these is no problem.
                Wincoh = Wincoh * 0.8
                cycle
             endif
-            ppol = 0
+            ppol = abrems_polarization(x,theta2,phi)
          endif
          if (freq.gt.freqMaximum) then
             print *, 'Warning from beamgen: freq=',freq,
@@ -237,7 +243,7 @@ c  freq > freqMaximum is generated; a few ppm of these is no problem.
       nubuf = 3
 #endif
       call settofg(vertex,t0)
-      if (bgtagonly.eq.0) then
+      if (bgtagonly.eq.0 .or. t0.eq.0) then
         call GSVERT(vertex,0,0,ubuf,nubuf,nvert)
         call GSKINE(plab,1,nvert,0,0,nt) ! push the beam photon on the stack
       endif
@@ -245,4 +251,27 @@ c  freq > freqMaximum is generated; a few ppm of these is no problem.
       if (genbeam_mode(1).eq.0) then
          call hitTagger(vertex,vertex,plab,plab,0.,1,0,0)
       endif
+      end
+
+      function abrems_polarization(x, theta2, phi)
+      real abrems_polarization
+      real x       ! photon energy in units of endpoint energy E0
+      real theta2  ! photon polar angle**2 in units of (mElectron/E0)**2
+      real phi     ! photon azimuthal angle in radians
+      real pol
+      real Acoeff(3,4)
+      data Acoeff/0.93000, 0.73000, 0.87610,
+     +            0.64250, 1.05648, 0.57510,
+     +            0.66598, 0.84643, 0.74918,
+     +            1.62506, 1.97061, 1.52849/
+      real a(3)
+      do n=1,3
+        a(n) = Acoeff(n,1)**2 +
+     +         Acoeff(n,2)**2 * x**2 +
+     +         Acoeff(n,3)**2 * x**4 +
+     +         Acoeff(n,4)**2 * x**16
+        a(n) = a(n)**2
+      enddo
+      pol = theta2 / (a(1) + a(2) * theta2 + a(3) * theta2**2)
+      abrems_polarization = pol * cos(2*phi)
       end
