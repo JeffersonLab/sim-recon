@@ -16,7 +16,8 @@ using namespace std;
 #include "units.h"
 
 DBCALPoint::DBCALPoint(const DBCALUnifiedHit& hit1, const DBCALUnifiedHit& hit2, double z_target_center, 
-		double attenuation_length, double c_effective, double track_p0, double track_p1, 
+		double attenuation_length, double c_effective, double veff_U, double veff_D,
+		double track_p0, double track_p1, 
 		double track_p2, const DBCALGeometry *locGeom) : m_BCALGeom(locGeom)
 {
   
@@ -52,24 +53,24 @@ DBCALPoint::DBCALPoint(const DBCALUnifiedHit& hit1, const DBCALUnifiedHit& hit2,
   // the parameters were extracted from quadratic fits in histograms of z_track = f(tUp - tDown) 
   // we are thus defining z_point so that it matches the z-coordinate of the track (at the middle of each layer)
   // the p0, p1 and p2 tags are the usual names for the parameters of a quadratic fit in ROOT
-  m_zGlobal = track_p0 + track_p1 * ( tUp - tDown ) + track_p2 * ( tUp - tDown ) * ( tUp - tDown ); 
+  //////m_zGlobal = track_p0 + track_p1 * ( tUp - tDown ) + track_p2 * ( tUp - tDown ) * ( tUp - tDown ); 
   
   // get the position with respect to the center of the module -- positive
   // z in the downstream direction
-  m_zLocal = m_zGlobal - m_BCALGeom->GetBCAL_center(); 
-
-  // set the z position relative to the center of the target
-  m_z = m_zGlobal - z_target_center;
-
-/* the old method -- kept now for reference. Will be deleted
- *
+//////  m_zLocal = m_zGlobal - m_BCALGeom->GetBCAL_center(); 
+  if (hit1.layer>3) {
+  // get the position with respect to the beginning of the module
+  // the parameters were extracted from quadratic fits in histograms of z_track = f(tUp - tDown) 
+  // we are thus defining z_point so that it matches the z-coordinate of the track (at the middle of each layer)
+  // the p0, p1 and p2 tags are the usual names for the parameters of a quadratic fit in ROOT
+    m_zGlobal = track_p0 + track_p1 * ( tUp - tDown ) + track_p2 * ( tUp - tDown ) * ( tUp - tDown ); 
+  
   // get the position with respect to the center of the module -- positive
   // z in the downstream direction
-  m_zLocal = 0.5 * c_effective * ( tUp - tDown ); 
+    m_zLocal = m_zGlobal - m_BCALGeom->GetBCAL_center(); 
 
   // set the z position relative to the center of the target
-  m_z = m_zLocal + m_BCALGeom->GetBCAL_center() - z_target_center;
-*/
+    m_z = m_zGlobal - z_target_center;
 
   //At this point m_z may be unphysical, i.e. it may be outside the BCAL.
   //For the time being, this is okay. Forcing the z-position inside the
@@ -86,7 +87,13 @@ DBCALPoint::DBCALPoint(const DBCALUnifiedHit& hit1, const DBCALUnifiedHit& hit2,
   //and averaging.
   
   // compute the arrival time of the energy at the cell
-  m_t = 0.5 * ( tUp + tDown - fibLen / c_effective );
+    m_t = 0.5 * ( tUp + tDown - fibLen / c_effective );
+  } else {
+    m_zLocal = ((tUp - tDown)*veff_U*veff_D + 0.5*fibLen*(veff_U-veff_D)) / (veff_U+veff_D);
+    m_zGlobal = m_zLocal + m_BCALGeom->GetBCAL_center(); 
+    m_z = m_zGlobal - z_target_center;
+    m_t = 0.5*(tUp+tDown - (0.5*fibLen-m_zLocal)/veff_D - (0.5*fibLen+m_zLocal)/veff_U);
+  }  
   
   // now compute attentuation factors for each end based on distance
   // the light must travel

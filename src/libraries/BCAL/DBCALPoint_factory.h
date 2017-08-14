@@ -20,6 +20,8 @@ typedef vector< vector<double> >  attenuation_parms_t;
 typedef vector< double >          effective_vel_t;
 typedef vector< vector<double> >  track_parms_t;
 
+typedef vector< vector<double> >  veff_UD_t;
+
 class DBCALHit;
 
 class DBCALPoint_factory : public JFactory<DBCALPoint> {
@@ -45,6 +47,8 @@ class DBCALPoint_factory : public JFactory<DBCALPoint> {
   effective_vel_t effective_velocities;
   track_parms_t track_parameters;
  
+  veff_UD_t veff_UD;
+ 
   const DBCALGeometry *m_BCALGeom;
 
  	// =(
@@ -61,11 +65,19 @@ class DBCALPoint_factory : public JFactory<DBCALPoint> {
 	  return BCAL_NUM_LAYERS*BCAL_NUM_SECTORS*(module-1) + BCAL_NUM_SECTORS*(layer-1) + (sector-1);
   }
 
+  const int GetCalibIndex2( int module, int layer, int sector ) const {
+          int calIndex = (BCAL_NUM_LAYERS-1)*BCAL_NUM_SECTORS*(module-1) + BCAL_NUM_SECTORS*(layer-1) + (sector-1);
+	  if (layer>3) calIndex = -999;
+	  return calIndex;
+  }
+
   bool GetAttenuationParameters(int id, double &attenuation_length,
 				double &attenuation_L1, double &attenuation_L2);
   double GetEffectiveVelocity(int id);
   bool GetTrackParameters(int id, double &track_p0,
 		  	  double &track_p1, double &track_p2);
+			  
+  bool GetVeffUD(int id, double &veff_U, double &veff_D);
 };
 
 #endif //_DBCALPoint_factory_

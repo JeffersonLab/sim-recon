@@ -72,6 +72,17 @@ jerror_t DBCALPoint_factory::brun(JEventLoop *loop, int32_t runnumber) {
    }
 
 
+  // load veff_UD
+  veff_UD.clear();
+
+  // Passing in the member vector directly was sometimes causing a crash...
+  vector< vector<double> > veff_UD_temp;
+  loop->GetCalib("/BCAL/effective_velocities_regina", veff_UD_temp);
+
+  for (unsigned int i = 0; i < veff_UD_temp.size(); i++){
+    veff_UD.push_back(veff_UD_temp.at(i));
+  }
+
   // load effective velocities
   effective_velocities.clear();
 
@@ -162,6 +173,13 @@ jerror_t DBCALPoint_factory::evnt(JEventLoop *loop, uint64_t eventnumber) {
     //float cEff = m_BCALGeom->C_EFFECTIVE;    
     float cEff = GetEffectiveVelocity(table_id);
 
+    double veff_U=-1., veff_D=-1.;  // these parameters are ignored for now
+    int table_id2 = -999;
+    if ((uphit->layer)<4) {
+      table_id2 = GetCalibIndex2( uphit->module, uphit->layer, uphit->sector );
+      GetVeffUD(table_id2, veff_U, veff_D);
+    }  
+    
     // get the position with respect to the center of the module -- positive
     // z in the downstream direction
     // double zLocal = 0.5 * cEff * ( uphit->t - dnhit->t );
@@ -190,7 +208,8 @@ jerror_t DBCALPoint_factory::evnt(JEventLoop *loop, uint64_t eventnumber) {
     double track_p2 = -100.0; // will be updated from GetTrackParameters (dimensions: cm/ns^2)
     GetTrackParameters(table_id, track_p0, track_p1, track_p2);
 
-    DBCALPoint *point = new DBCALPoint(*uphit,*dnhit,m_z_target_center,attenuation_length,cEff,track_p0,track_p1,track_p2,m_BCALGeom);
+//    DBCALPoint *point = new DBCALPoint(*uphit,*dnhit,m_z_target_center,attenuation_length,cEff,track_p0,track_p1,track_p2,m_BCALGeom);
+    DBCALPoint *point = new DBCALPoint(*uphit,*dnhit,m_z_target_center,attenuation_length,cEff,veff_U,veff_D,track_p0,track_p1,track_p2,m_BCALGeom);
 
     point->AddAssociatedObject(uphit);
     point->AddAssociatedObject(dnhit);
@@ -235,6 +254,21 @@ bool DBCALPoint_factory::GetTrackParameters(int id, double &track_p0,
 	}
   	else{
   		jerr<<"Failed to retrieve the z_track parameters from CCDB!!!" << endl;
+  		exit(-1);
+  	}
+}
+
+bool DBCALPoint_factory::GetVeffUD(int id, double &veff_U, double &veff_D)
+{
+	vector<double> &eff_vel = veff_UD.at(id);
+
+	if(!eff_vel.empty()){
+		veff_U = eff_vel[3];
+		veff_D = eff_vel[4];
+		return true;
+	}
+  	else{
+  		jerr<<"Failed to retrieve the veff_UD parameters from CCDB!!!" << endl;
   		exit(-1);
   	}
 }

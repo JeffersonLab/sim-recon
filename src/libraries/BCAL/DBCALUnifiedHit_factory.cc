@@ -62,16 +62,16 @@ jerror_t DBCALUnifiedHit_factory::brun(jana::JEventLoop *eventLoop, int32_t runn
     vector<vector<float> > tdc_timewalk_table;
     
     // jcalib->Get("BCAL/timewalk_tdc",tdc_timewalk_table);
-    if(jcalib->Get("BCAL/timewalk_tdc_c4",tdc_timewalk_table)) {
-        jerr << "Error loading BCAL/timewalk_tdc !" << endl;
+    if(jcalib->Get("BCAL/timewalk_constants_regina",tdc_timewalk_table)) {
+        jerr << "Error loading BCAL/timewalk_constants_regina !" << endl;
     } else {
         for (vector<vector<float> >::const_iterator iter = tdc_timewalk_table.begin();
              iter != tdc_timewalk_table.end();
              ++iter) {
             //if (iter->size() != 8) {
             //  cout << "DBCALUnifiedHit_factory: Wrong number of values in timewalk_tdc table (should be 8)" << endl;
-            if (iter->size() != 9) {
-                cout << "DBCALUnifiedHit_factory: Wrong number of values in timewalk_tdc table (should be 9)" << endl;
+            if (iter->size() != 10) {
+                cout << "DBCALUnifiedHit_factory: Wrong number of values in timewalk_tdc table (should be 10)" << endl;
                 continue;
             }
             //be really careful about float->int conversions
@@ -84,10 +84,12 @@ jerror_t DBCALUnifiedHit_factory::brun(jana::JEventLoop *eventLoop, int32_t runn
             float c1 = (*iter)[5];
             float c2 = (*iter)[6];
             float c3 = (*iter)[7];
-            float thresh = (*iter)[8];
+            float c4 = (*iter)[8];
+            float c5 = (*iter)[9];
+
             int cellId = dBCALGeom->cellId(module, layer, sector);
             readout_channel channel(cellId,end);
-            tdc_timewalk_map_c4[channel] = timewalk_coefficients_c4(c0,c1,c2,c3,thresh);
+            tdc_timewalk_map_regina[channel] = timewalk_coefficients_regina(c0,c1,c2,c3,c4,c5);
             //tdc_timewalk_map[channel] = timewalk_coefficients(c0,c1,c2,a_thresh);
         }
         
@@ -97,12 +99,12 @@ jerror_t DBCALUnifiedHit_factory::brun(jana::JEventLoop *eventLoop, int32_t runn
                 for (int layer=1; layer<=dBCALGeom->NBCALLAYSIN; layer++) {
                     int id = dBCALGeom->cellId(module, layer, sector);
                     //if (tdc_timewalk_map.count(readout_channel(id,dBCALGeom->kUpstream)) != 1) {
-                    if (tdc_timewalk_map_c4.count(readout_channel(id,dBCALGeom->kUpstream)) != 1) {
+                    if (tdc_timewalk_map_regina.count(readout_channel(id,dBCALGeom->kUpstream)) != 1) {
                         cout << "DBCALUnifiedHit_factory: Channel missing in timewalk_tdc_table: "
                              << endl << " module " << module << " layer " << layer << " sector " << sector << " upstream" << endl;
                     }
                     //if (tdc_timewalk_map.count(readout_channel(id,dBCALGeom->kDownstream)) != 1) {
-                    if (tdc_timewalk_map_c4.count(readout_channel(id,dBCALGeom->kDownstream)) != 1) {
+                    if (tdc_timewalk_map_regina.count(readout_channel(id,dBCALGeom->kDownstream)) != 1) {
                         cout << "DBCALUnifiedHit_factory: Channel missing in timewalk_tdc_table: "
                              << endl << " module " << module << " layer " << layer << " sector " << sector << " downstream" << endl;
                     }
@@ -202,12 +204,12 @@ jerror_t DBCALUnifiedHit_factory::evnt(JEventLoop *loop, uint64_t eventnumber) {
 		// Loop through the TDC hits, apply timewalk correction and find the TDC time closest to the ADC time
 		int goodTDCindex=-1;
 		//timewalk_coefficients tdc_coeff = tdc_timewalk_map[chan];
-		timewalk_coefficients_c4 tdc_coeff;
+		timewalk_coefficients_regina tdc_coeff;
         bool good_timewalk_params = false;
-        if( tdc_timewalk_map_c4.find(chan) != tdc_timewalk_map_c4.end() ) {
+        if( tdc_timewalk_map_regina.find(chan) != tdc_timewalk_map_regina.end() ) {
             // really we should probably print out some more errors here, if we can't find the timewalk correction factor
             // but since we complain enough above, it is probably fine...
-            tdc_coeff = tdc_timewalk_map_c4[chan];
+            tdc_coeff = tdc_timewalk_map_regina[chan];
             good_timewalk_params = true;
         }
 		float t_diff=100000;
@@ -219,9 +221,9 @@ jerror_t DBCALUnifiedHit_factory::evnt(JEventLoop *loop, uint64_t eventnumber) {
 
             if(good_timewalk_params) {
                 //tdc_hit_t -= tdc_coeff.c0 + tdc_coeff.c1/pow(pulse_peak/tdc_coeff.a_thresh, tdc_coeff.c2);
-                float shifted_peak = pulse_peak+tdc_coeff.c2; // only apply formula if time is above TDC zero
-                if (shifted_peak>0) tdc_hit_t -= tdc_coeff.c0 + tdc_coeff.c1*pow(shifted_peak,tdc_coeff.c3);
-                if (VERBOSE>=4) printf("tamewalk %f -> %f: (%f,%f,%f,%f)\n",tdc_hit->t,tdc_hit_t,tdc_coeff.c0,tdc_coeff.c1,tdc_coeff.c2,tdc_coeff.c3);
+                float shifted_peak = pulse_peak-tdc_coeff.c0; // only apply formula if time is above TDC zero
+                if (shifted_peak>0) tdc_hit_t -= tdc_coeff.c1 + tdc_coeff.c2*pow(shifted_peak,tdc_coeff.c3) + tdc_coeff.c4*pow(shifted_peak,tdc_coeff.c5);
+                if (VERBOSE>=4) printf("timewalk %f -> %f: (%f,%f,%f,%f,%f,%f)\n",tdc_hit->t,tdc_hit_t,tdc_coeff.c0,tdc_coeff.c1,tdc_coeff.c2,tdc_coeff.c3,tdc_coeff.c4,tdc_coeff.c5);
             }
 
 			float tdc_adc_diff = tdc_hit_t - t_ADC;
@@ -242,7 +244,8 @@ jerror_t DBCALUnifiedHit_factory::evnt(JEventLoop *loop, uint64_t eventnumber) {
 				   (unsigned long long int)eventnumber, module, layer, sector, chan.end, pulse_peak, hit->t);
 		}
 		// Decide whether to use TDC time
-		if (pulse_peak>tdc_coeff.thresh && USE_TDC==1 && goodTDCindex>=0 && fabs(t_diff)<2 && good_timewalk_params) {
+//		if (pulse_peak>tdc_coeff.thresh && USE_TDC==1 && goodTDCindex>=0 && fabs(t_diff)<2 && good_timewalk_params) {
+		if (haveTDChit && USE_TDC==1 && goodTDCindex>=0 && fabs(t_diff)<2 && good_timewalk_params) {
 			t = t_TDC;
 		} else {
 			t = t_ADC;
