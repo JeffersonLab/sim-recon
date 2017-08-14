@@ -1362,6 +1362,17 @@ bool DSourceComboTimeHandler::Cut_TrackPID(const DChargedTrackHypothesis* locHyp
 	auto locP = locHypothesis->momentum().Mag();
 	auto locDeltaTCut = locCutFunc->Eval(locP);
 
+	//COMPARE: NOT Comparison-to-old mode
+/*
+	if(locSystem == SYS_START) //can't be only track if it's a detached vertex (which is the only way this function is called)
+	{
+		//special case: only cut if only matched to 1 ST hit
+		vector<shared_ptr<const DSCHitMatchParams>> locSCMatchParams;
+		dDetectorMatches->Get_SCMatchParams(locHypothesis->Get_TrackTimeBased(), locSCMatchParams);
+		if(locSCMatchParams.size() > 1)
+			return true; //don't cut on timing! can't tell for sure!
+	}
+*/
 	auto locX4 = Get_ChargedPOCAToVertexX4(locHypothesis, locIsProductionVertex, locFullReactionCombo, locVertexPrimaryCombo, locBeamPhoton, locVertex);
 	auto locDeltaT = locX4.T() - locPropagatedRFTime;
 

@@ -51,72 +51,6 @@ jerror_t DReaction_factory_ReactionFilter::init(void)
 	return NOERROR;
 }
 
-void Parse_Input(void)
-{
-	//Get input channel info
-	//key is reaction#, 1st string: name (if any) //2nd string: value for 1st decay step //3rd string: value for flags //string vector: value for decays
-	map<size_t, tuple<string, string, string, vector<string>>> locInputStrings;
-	map<string, string> locParameterMap; //parameter key - filter, value
-	gPARMS->GetParameters(locParameterMap, "Reaction"); //gets all parameters with this filter at the beginning of the key
-	for(auto locParamPair : locParameterMap)
-	{
-		//make sure that what follows "Reaction," up to the colon (if any) is a number
-		auto locColonIndex = locParamPair.first.find(':');
-		auto locPreColonName = locParamPair.first.substr(0, locColonIndex);
-		istringstream locIStream(locPreColonName);
-		size_t locReactionNumber;
-		locIStream >> locReactionNumber;
-		if(locIStream.fail())
-			continue; //must be for a different use
-
-		//hack so that don't get warning message about no default
-		string locKeyValue;
-		string locFullParamName = string("Reaction") + locParamPair.first; //have to add back on the filter
-		gPARMS->SetDefaultParameter(locFullParamName, locKeyValue);
-
-		//save it in the input map
-		if(locColonIndex == string::npos)
-			std::get<1>(locInputStrings[locReactionNumber]) = locKeyValue;
-		else
-		{
-			auto locPostColonName = locParamPair.first.substr(locColonIndex + 1);
-			if(locPostColonName.substr(0, 4) == "Name")
-				std::get<0>(locInputStrings[locReactionNumber]) = locKeyValue;
-			else if(locPostColonName.substr(0, 5) == "Flags")
-				std::get<2>(locInputStrings[locReactionNumber]) = locKeyValue;
-			else
-				std::get<3>(locInputStrings[locReactionNumber]).push_back(locKeyValue);
-		}
-	}
-/*
-	//loop through channels, setting up the reactions
-	for(auto& locReactionPair : locInputStrings)
-	{
-		auto& locNameString = std::get<0>(locReactionPair.second);
-		auto& locFirstStepString = std::get<1>(locReactionPair.second);
-		auto& locFlagString = std::get<2>(locReactionPair.second);
-
-		//create dreaction (NEED A NAMING SCHEME!!!)
-		//firststep__specifiedstep1__specifiedstep2_..._flagstring
-		//use first step
-		//if decay specified, then do underscores
-		//also put "miss" in front of missing particles
-
-		//loop over steps
-		for(auto& locDecayStepString : std::get<2>(locReactionPair.second))
-		{
-			Particle_t locInitPID;
-			auto locColonIndex = locParamPair.first.find(':');
-			istringstream locIStream(locPreColonName);
-			size_t locReactionNumber;
-			locIStream >> locReactionNumber;
-			if(locIStream.fail())
-				continue; //must be for a different use
-			//ShortName();
-		}
-	}
-	*/
-}
 
 bool Convert_StringToPID(string locString, Particle_t& locPID, bool& locIsMissingFlag)
 {
@@ -201,6 +135,94 @@ bool Parse_StepPIDString(string locStepString, tuple<Particle_t, Particle_t, vec
 
 	return true;
 }
+
+void Parse_Input(void)
+{
+	//Get input channel info
+	//key is reaction#, 1st string: name (if any) //2nd string: value for 1st decay step //3rd string: value for flags //string vector: value for decays
+	map<size_t, tuple<string, string, string, vector<string>>> locInputStrings;
+	map<string, string> locParameterMap; //parameter key - filter, value
+	gPARMS->GetParameters(locParameterMap, "Reaction"); //gets all parameters with this filter at the beginning of the key
+	for(auto locParamPair : locParameterMap)
+	{
+		//make sure that what follows "Reaction," up to the colon (if any) is a number
+		auto locColonIndex = locParamPair.first.find(':');
+		auto locPreColonName = locParamPair.first.substr(0, locColonIndex);
+		istringstream locIStream(locPreColonName);
+		size_t locReactionNumber;
+		locIStream >> locReactionNumber;
+		if(locIStream.fail())
+			continue; //must be for a different use
+
+		//hack so that don't get warning message about no default
+		string locKeyValue;
+		string locFullParamName = string("Reaction") + locParamPair.first; //have to add back on the filter
+		gPARMS->SetDefaultParameter(locFullParamName, locKeyValue);
+
+		//save it in the input map
+		if(locColonIndex == string::npos)
+			std::get<1>(locInputStrings[locReactionNumber]) = locKeyValue;
+		else
+		{
+			auto locPostColonName = locParamPair.first.substr(locColonIndex + 1);
+			if(locPostColonName.substr(0, 4) == "Name")
+				std::get<0>(locInputStrings[locReactionNumber]) = locKeyValue;
+			else if(locPostColonName.substr(0, 5) == "Flags")
+				std::get<2>(locInputStrings[locReactionNumber]) = locKeyValue;
+			else
+				std::get<3>(locInputStrings[locReactionNumber]).push_back(locKeyValue);
+		}
+	}
+
+	//loop through channels, setting up the reactions
+	for(auto& locReactionPair : locInputStrings)
+	{
+		auto& locNameString = std::get<0>(locReactionPair.second);
+		auto& locFirstStepString = std::get<1>(locReactionPair.second);
+		auto& locFlagString = std::get<2>(locReactionPair.second);
+
+		tuple<Particle_t, Particle_t, vector<Particle_t>, Particle_t, int> locFirstStepTuple;
+		if(!Parse_StepPIDString(locFirstStepString, locFirstStepTuple))
+			return;
+
+		//create dreaction (NEED A NAMING SCHEME!!!)
+		//firststep__specifiedstep1__specifiedstep2_..._flagstring
+		//use first step
+		//if decay specified, then do underscores
+		//also put "miss" in front of missing particles
+
+		//loop over steps
+		for(auto& locDecayStepString : std::get<3>(locReactionPair.second))
+		{
+			tuple<Particle_t, Particle_t, vector<Particle_t>, Particle_t, int> locStepTuple;
+			if(!Parse_StepPIDString(locDecayStepString, locStepTuple))
+				return;
+
+			//ShortName();
+		}
+	}
+}
+
+DReactionStep* Create_ReactionStep(const tuple<Particle_t, Particle_t, vector<Particle_t>, Particle_t, int>& locStepTuple, bool locFirstStepFlag)
+{
+	auto locInclusiveFlag = (std::get<4>(locStepTuple) == DReactionStep::Get_ParticleIndex_Inclusive());
+	auto locBeamMissingFlag = (std::get<4>(locStepTuple) == DReactionStep::Get_ParticleIndex_Initial());
+	auto locSecondBeamMissingFlag = (std::get<4>(locStepTuple) == DReactionStep::Get_ParticleIndex_SecondBeam());
+
+
+	if(std::get<1>(locStepTuple) == Unknown) //no target or 2nd beam: pure decay
+		auto locStep = new DReactionStep(std::get<0>(locStepTuple), std::get<2>(locStepTuple), std::get<3>(locStepTuple), locInclusiveFlag);
+	else //rescattering decay
+		auto locStep = new DReactionStep(std::get<0>(locStepTuple), std::get<1>(locStepTuple), std::get<2>(locStepTuple), std::get<3>(locStepTuple), locInclusiveFlag, false);
+}
+/*
+		//if fixed-target production or rescattering:
+		DReactionStep(Particle_t locScatteringPID, Particle_t locTargetPID, vector<Particle_t> locNonMissingFinalPIDs, Particle_t locMissingFinalPID = Unknown,
+				bool locInclusiveFlag = false, bool locBeamMissingFlag = false);
+		//if 2 beams: collider experiment
+		DReactionStep(pair<Particle_t, Particle_t> locBeamPIDs, vector<Particle_t> locNonMissingFinalPIDs, Particle_t locMissingFinalPID = Unknown,
+				bool locInclusiveFlag = false, bool locFirstBeamMissingFlag = false, bool locSecondBeamMissingFlag = false);
+*/
 
 //------------------
 // evnt

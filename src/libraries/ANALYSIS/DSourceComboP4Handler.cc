@@ -493,10 +493,19 @@ bool DSourceComboP4Handler::Calc_P4_Decay(bool locIsProductionVertex, bool locIs
 	else if(!locAccuratePhotonsFlag)
 	{
 		//p4 better have already been calculated: if not, it means it was uncalcable (e.g. vertex unknown)
-		auto locDecayP4LookupTuple = std::make_tuple(locIsProductionVertex, locReactionFullCombo, locDecayCombo, locRFBunch);
+		auto locDecayP4LookupTuple = std::make_tuple(locIsProductionVertex, locReactionFullCombo, locDecayCombo, locRFBunch, locBeamParticle);
 		auto locDecayIterator = dFinalStateP4ByCombo_HasMassiveNeutrals.find(locDecayP4LookupTuple);
 		if(locDecayIterator == dFinalStateP4ByCombo_HasMassiveNeutrals.end())
-			return false; //failed!
+		{
+			if(locBeamParticle == nullptr)
+				return false; //failed!
+
+			//try without beam particle
+			locDecayP4LookupTuple = std::make_tuple(locIsProductionVertex, locReactionFullCombo, locDecayCombo, locRFBunch, (const DKinematicData*)nullptr);
+			locDecayIterator = dFinalStateP4ByCombo_HasMassiveNeutrals.find(locDecayP4LookupTuple);
+			if(locDecayIterator == dFinalStateP4ByCombo_HasMassiveNeutrals.end())
+				return false; //failed!
+		}
 		locDecayP4 = locDecayIterator->second;
 	}
 	else //recalculate regardless
@@ -516,15 +525,25 @@ bool DSourceComboP4Handler::Calc_P4_Decay(bool locIsProductionVertex, bool locIs
 
 bool DSourceComboP4Handler::Calc_P4_HasMassiveNeutrals(bool locIsProductionVertex, bool locIsPrimaryProductionVertex, const DSourceCombo* locReactionFullCombo, const DSourceCombo* locVertexCombo, DVector3 locVertex, int locRFBunch, double locRFVertexTime, const DSourceComboUse& locToExcludeUse, DLorentzVector& locTotalP4, const DKinematicData* locBeamParticle, bool locAccuratePhotonsFlag)
 {
-	auto locP4LookupTuple = std::make_tuple(locIsProductionVertex, locReactionFullCombo, locVertexCombo, locRFBunch);
+	auto locP4LookupTuple = std::make_tuple(locIsProductionVertex, locReactionFullCombo, locVertexCombo, locRFBunch, locBeamParticle);
 	auto locHasPhotons = !DAnalysis::Get_SourceParticles(locVertexCombo->Get_SourceParticles(true, d_Neutral), Gamma).empty();
-	auto locIterator = (locHasPhotons && locAccuratePhotonsFlag) ? dFinalStateP4ByCombo_HasMassiveNeutrals.end() : dFinalStateP4ByCombo_HasMassiveNeutrals.find(locP4LookupTuple);
-	if(locIterator != dFinalStateP4ByCombo_HasMassiveNeutrals.end())
+
+	if(!locHasPhotons || !locAccuratePhotonsFlag)
 	{
-		locTotalP4 = locIterator->second;
-		if(dDebugLevel >= 10)
-			cout << "Read Calc_P4_HasMassiveNeutrals: Combo " << locVertexCombo << " P4: " << locTotalP4.Px() << ", " << locTotalP4.Py() << ", " << locTotalP4.Pz() << ", " << locTotalP4.E() << endl;
-		return true;
+		auto locIterator = dFinalStateP4ByCombo_HasMassiveNeutrals.find(locP4LookupTuple);
+		if(locIterator == dFinalStateP4ByCombo_HasMassiveNeutrals.end())
+		{
+			//try with null beam
+			locP4LookupTuple = std::make_tuple(locIsProductionVertex, locReactionFullCombo, locVertexCombo, locRFBunch, (const DKinematicData*)nullptr);
+			locIterator = dFinalStateP4ByCombo_HasMassiveNeutrals.find(locP4LookupTuple);
+		}
+		if(locIterator != dFinalStateP4ByCombo_HasMassiveNeutrals.end())
+		{
+			locTotalP4 = locIterator->second;
+			if(dDebugLevel >= 10)
+				cout << "Read Calc_P4_HasMassiveNeutrals: Combo " << locVertexCombo << " P4: " << locTotalP4.Px() << ", " << locTotalP4.Py() << ", " << locTotalP4.Pz() << ", " << locTotalP4.E() << endl;
+			return true;
+		}
 	}
 
 	//final state particles

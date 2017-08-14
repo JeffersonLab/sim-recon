@@ -61,7 +61,6 @@ class DSourceComboP4Handler
 		DLorentzVector Calc_P4_SourceParticles(const DSourceCombo* locVertexCombo, const DVector3& locVertex, double locRFVertexTime, bool locAccuratePhotonsFlag);
 		bool Calc_P4_Decay(bool locIsProductionVertex, bool locIsPrimaryProductionVertex, const DSourceCombo* locReactionFullCombo, const DSourceComboUse& locDecayUse, const DSourceCombo* locDecayCombo, DVector3 locVertex, int locRFBunch, double locRFVertexTime, DLorentzVector& locDecayP4, const DKinematicData* locBeamParticle, bool locAccuratePhotonsFlag);
 		bool Calc_P4_HasMassiveNeutrals(bool locIsProductionVertex, bool locIsPrimaryProductionVertex, const DSourceCombo* locReactionFullCombo, const DSourceCombo* locVertexCombo, DVector3 locVertex, int locRFBunch, double locRFVertexTime, const DSourceComboUse& locToExcludeUse, DLorentzVector& locTotalP4, const DKinematicData* locBeamParticle, bool locAccuratePhotonsFlag);
-		DLorentzVector Get_P4_HasMassiveNeutrals(bool locIsProductionVertex, const DSourceCombo* locReactionFullCombo, const DSourceCombo* locVertexCombo, int locRFBunch) const; //ASSUMES ALREADY CALCULATED!!
 
 		//CUT
 		//use this method when the combo DOES NOT contain massive neutrals
@@ -89,7 +88,7 @@ class DSourceComboP4Handler
 
 		//TOTAL FINAL STATE FOUR-MOMENTUM
 		map<pair<const DSourceCombo*, signed char>, DLorentzVector> dFinalStateP4ByCombo; //signed char: vertex-z bin
-		map<tuple<bool, const DSourceCombo*, const DSourceCombo*, int>, DLorentzVector> dFinalStateP4ByCombo_HasMassiveNeutrals; //int: RF bunch //bool: is prod vertex //first combo: reaction full
+		map<tuple<bool, const DSourceCombo*, const DSourceCombo*, int, const DKinematicData*>, DLorentzVector> dFinalStateP4ByCombo_HasMassiveNeutrals; //int: RF bunch //bool: is prod vertex //first combo: reaction full //kindata: beam
 
 		//CUTS
 		double dMaxMassiveNeutralBeta = 0.99999;
@@ -145,12 +144,6 @@ inline bool DSourceComboP4Handler::Get_MissingMassSquaredCuts(Particle_t locPID,
 		return false;
 	locMinMaxCuts_GeVSq = locIterator->second;
 	return true;
-}
-
-inline DLorentzVector DSourceComboP4Handler::Get_P4_HasMassiveNeutrals(bool locIsProductionVertex, const DSourceCombo* locReactionFullCombo, const DSourceCombo* locVertexCombo, int locRFBunch) const
-{
-	auto locTuple = std::make_tuple(locIsProductionVertex, locReactionFullCombo, locVertexCombo, locRFBunch);
-	return dFinalStateP4ByCombo_HasMassiveNeutrals.find(locTuple)->second;
 }
 
 }
