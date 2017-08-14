@@ -184,8 +184,10 @@ int main( int argc, char* argv[] ){
 	TH1F* intenW = new TH1F( "intenW", "True PDF / Gen. PDF", 1000, 0, 100 );
 	TH2F* intenWVsM = new TH2F( "intenWVsM", "Ratio vs. M", 100, lowMass, highMass, 1000, 0, 10 );
 	
+	TH1F* t = new TH1F( "t", "-t Distribution", 200, 0, 1 );
+	
 	TH2F* M_CosTheta = new TH2F( "M_CosTheta", "M vs. cos#vartheta", 100, lowMass, highMass, 100, -1, 1);
-	TH2F* M_phi = new TH2F( "M_phi", "M vs. #varphi", 100, lowMass, highMass, 180, -3.14, 3.14);
+	TH2F* M_Phi = new TH2F( "M_Phi", "M vs. #varphi", 100, lowMass, highMass, 180, -3.14, 3.14);
 	
 	int eventCounter = 0;
 	while( eventCounter < nEvents ){
@@ -242,6 +244,9 @@ int main( int argc, char* argv[] ){
 					TLorentzVector beam = evt->particle ( 0 );
 					TLorentzVector recoil = evt->particle ( 1 );
 					TLorentzVector p1 = evt->particle ( 2 );
+					TLorentzVector target(0,0,0,recoil[3]);
+
+					t->Fill(-1*(evt->particle(1)-target).M2());
 			
 					TLorentzRotation resonanceBoost( -resonance.BoostVector() );
 					
@@ -265,7 +270,7 @@ int main( int argc, char* argv[] ){
                                         double phi = angles.Phi();
 
 					M_CosTheta->Fill( resonance.M(), cosTheta);
-					M_phi->Fill( resonance.M(), phi);
+					M_Phi->Fill( resonance.M(), phi);
 
 					// we want to save events with weight 1
 					evt->setWeight( 1.0 );
@@ -297,8 +302,9 @@ int main( int argc, char* argv[] ){
 	massW->Write();
 	intenW->Write();
 	intenWVsM->Write();
+	t->Write();
 	M_CosTheta->Write();
-	M_phi->Write();
+	M_Phi->Write();
 	diagOut->Close();
 	
 	if( hddmOut ) delete hddmOut;
