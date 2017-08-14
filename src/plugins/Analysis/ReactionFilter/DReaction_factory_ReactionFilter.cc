@@ -148,6 +148,26 @@ DReactionStep* Create_ReactionStep(const tuple<Particle_t, Particle_t, vector<Pa
 		auto locStep = new DReactionStep(std::get<0>(locStepTuple), std::get<1>(locStepTuple), std::get<2>(locStepTuple), std::get<3>(locStepTuple), locInclusiveFlag, locBeamMissingFlag);
 }
 
+string Create_StepNameString(const tuple<Particle_t, Particle_t, vector<Particle_t>, Particle_t, int>& locStepTuple, bool locFirstStepFlag)
+{
+	string locNameString = "";
+	if(!locFirstStepFlag)
+	{
+		locNameString = ShortName(std::get<0>(locStepTuple));
+		auto locSecondPID = std::get<1>(locStepTuple);
+		if(locSecondPID != nullptr)
+			locNameString += ShortName(locSecondPID);
+		locNameString += "_";
+	}
+	for(auto& locFinalPID : std::get<2>(locStepTuple))
+		locNameString += ShortName(locFinalPID);
+	auto locMissFinalPID = std::get<3>(locStepTuple);
+	if(locMissFinalPID != Unknown)
+		locNameString += string("miss") + ShortName(locMissFinalPID);
+
+	return locNameString;
+}
+
 void Parse_Input(void)
 {
 	//Get input channel info
@@ -204,6 +224,11 @@ void Parse_Input(void)
 		//also put "miss" in front of missing particles
 		auto locPrimaryStep = Create_ReactionStep(locFirstStepTuple);
 
+		//see if we need to make our tree/reaction name
+		string locReactionName = "";
+		if(locNameString == "") //yep
+			locReactionName = Create_StepNameString(locFirstStepTuple, true); //will continue below if needed
+
 		//loop over steps
 		for(auto& locDecayStepString : std::get<3>(locReactionPair.second))
 		{
@@ -212,9 +237,14 @@ void Parse_Input(void)
 				return;
 
 			auto locDecayStep = Create_ReactionStep(locDecayStepTuple);
-
-			//ShortName();
+			if(locNameString == "") //yep
+				locReactionName += string("__") + Create_StepNameString(locDecayStepTuple, false);
 		}
+
+		if(locNameString == "") //add flags
+			locReactionName += string("__") + locFlagString;
+
+		auto locReaction = new DReaction(locReactionName);
 	}
 }
 

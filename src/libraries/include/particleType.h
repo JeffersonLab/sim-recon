@@ -434,6 +434,159 @@ inline static char* EnumString(Particle_t p)
     return (char*)"Unknown";
   }
 }
+
+inline static char* ShortName(Particle_t locPID)
+{
+  //returns string that is exact match to enum name. for auto-generating code
+  locPID = RemapParticleID(locPID);
+
+  switch (locPID) {
+  case Unknown:
+	return (char*)"x";
+  case Gamma:
+	return (char*)"g";
+  case Positron:
+	return (char*)"ep";
+  case Electron:
+	return (char*)"em";
+  case Neutrino:
+	return (char*)"nu";
+  case MuonPlus:
+	return (char*)"mup";
+  case MuonMinus:
+	return (char*)"mum";
+  case Pi0:
+	return (char*)"pi0";
+  case PiPlus:
+	return (char*)"pip";
+  case PiMinus:
+	return (char*)"pim";
+  case KLong:
+	return (char*)"kl";
+  case KPlus:
+	return (char*)"kp";
+  case KMinus:
+	return (char*)"km";
+  case Neutron:
+	return (char*)"n";
+  case Proton:
+	return (char*)""; //understood
+  case AntiProton:
+	return (char*)"antip";
+  case KShort:
+	return (char*)"ks";
+  case Eta:
+	return (char*)"eta";
+  case Lambda:
+	return (char*)"lamb";
+  case SigmaPlus:
+	return (char*)"sigp";
+  case Sigma0:
+	return (char*)"sig0";
+  case SigmaMinus:
+	return (char*)"sigm";
+  case Xi0:
+	return (char*)"xi0";
+  case XiMinus:
+	return (char*)"xim";
+  case OmegaMinus:
+	return (char*)"omegam";
+  case AntiNeutron:
+	return (char*)"antin";
+  case AntiLambda:
+	return (char*)"antilamb";
+  case AntiSigmaMinus:
+	return (char*)"antisigm";
+  case AntiSigma0:
+	return (char*)"antisig0";
+  case AntiSigmaPlus:
+	return (char*)"antisigp";
+  case AntiXi0:
+	return (char*)"antixi0";
+  case AntiXiPlus:
+	return (char*)"antixip";
+  case AntiOmegaPlus:
+	return (char*)"antiomegap";
+  case Geantino:
+	return (char*)"geant";
+  case omega:
+	return (char*)"omega";
+  case EtaPrime:
+	return (char*)"etap";
+  case phiMeson:
+	return (char*)"phi";
+  case Deuteron:
+	return (char*)"d";
+  case Triton:
+	return (char*)"tri";
+  case Helium:
+	return (char*)"he";
+  case He3:
+	return (char*)"he3";
+  case Pb208:
+	return (char*)"pb208";
+  case Jpsi:
+	return (char*)"jpsi";
+  case Eta_c:
+	return (char*)"etac";
+  case Chi_c0:
+	return (char*)"chic0";
+  case Chi_c1:
+	return (char*)"chic1";
+  case Chi_c2:
+	return (char*)"chic2";
+  case Psi2s:
+	return (char*)"psi2s";
+  case D0:
+	return (char*)"d0";
+  case DPlus:
+	return (char*)"dp";
+  case Dstar0:
+	return (char*)"ds0";
+  case DstarPlus:
+	return (char*)"dsp";
+  case Lambda_c:
+	return (char*)"lambc";
+
+  //not really supported
+  case Rho0:
+	return (char*)"Rho0";
+  case RhoPlus:
+	return (char*)"RhoPlus";
+  case RhoMinus:
+	return (char*)"RhoMinus";
+  case a0_980:
+	return (char*)"a0_980";
+  case f0_980:
+	return (char*)"f0_980";
+  case KStar_892_0:
+	return (char*)"KStar_892_0";
+  case KStar_892_Plus:
+	return (char*)"KStar_892_Plus";
+  case KStar_892_Minus:
+	return (char*)"KStar_892_Minus";
+  case AntiKStar_892_0:
+	return (char*)"AntiKStar_892_0";
+  case K1_1400_Plus:
+	return (char*)"K1_1400_Plus";
+  case K1_1400_Minus:
+	return (char*)"K1_1400_Minus";
+  case b1_1235_Plus:
+	return (char*)"b1_1235_Plus";
+  case Sigma_1385_Minus:
+	return (char*)"Sigma_1385_Minus";
+  case Sigma_1385_0:
+	return (char*)"Sigma_1385_0";
+  case Sigma_1385_Plus:
+	return (char*)"Sigma_1385_Plus";
+  case DeltaPlusPlus:
+	return (char*)"DeltaPlusPlus";
+
+  default:
+	return (char*)"x";
+  }
+}
+
 inline static Particle_t ParticleEnum(const char* locParticleName)
 {
   if(strcmp(locParticleName, "Unknown") == 0)
