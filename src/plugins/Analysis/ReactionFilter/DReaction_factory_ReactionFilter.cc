@@ -530,6 +530,8 @@ string DReaction_factory_ReactionFilter::Create_StepNameString(const DReactionSt
 	if(locMissFinalPID != Unknown)
 		locNameString += string("miss") + ShortName(locMissFinalPID);
 
+	if(std::get<4>(locStepTuple) == DReactionStep::Get_ParticleIndex_Inclusive())
+		locNameString += "inc";
 	return locNameString;
 }
 
