@@ -169,6 +169,14 @@ DSourceComboP4Handler::DSourceComboP4Handler(DSourceComboer* locSourceComboer, b
 		dMissingMassSquaredCuts.emplace(PiMinus, dMissingMassSquaredCuts[PiPlus]);
 		dMissingMassSquaredCuts.emplace(Pi0, dMissingMassSquaredCuts[PiPlus]);
 
+		//K+/-
+		dMissingMassSquaredCuts[KPlus].first = new TF1("df_MissingMassSquaredCut_KPlusLow", "[0]", 0.0, 12.0);
+		dMissingMassSquaredCuts[KPlus].first->SetParameter(0, -1.0);
+		dMissingMassSquaredCuts[KPlus].second = new TF1("df_MissingMassSquaredCut_KPlusHigh", "[0]", 0.0, 12.0);
+		dMissingMassSquaredCuts[KPlus].second->SetParameter(0, 2.0);
+		dMissingMassSquaredCuts.emplace(KMinus, dMissingMassSquaredCuts[KPlus]);
+		dMissingMassSquaredCuts.emplace(KShort, dMissingMassSquaredCuts[KPlus]);
+
 		//Proton/Neutron
 		dMissingMassSquaredCuts[Proton].first = new TF1("df_MissingMassSquaredCut_ProtonLow", "[0]", 0.0, 12.0);
 		dMissingMassSquaredCuts[Proton].first->SetParameter(0, -0.5);
@@ -186,12 +194,11 @@ DSourceComboP4Handler::DSourceComboP4Handler(DSourceComboer* locSourceComboer, b
 */
 		//Missing E cuts
 		dMissingECuts = std::pair<TF1*, TF1*>(nullptr, nullptr); //COMPARE:
-/*
 		dMissingECuts.first = new TF1("df_MissingECut_NoneLow", "[0]", 0.0, 12.0);
 		dMissingECuts.first->SetParameter(0, -3.0);
 		dMissingECuts.second = new TF1("df_MissingECut_NoneHigh", "[0]", 0.0, 12.0);
 		dMissingECuts.second->SetParameter(0, 3.0);
-*/
+
 		if(!locCreateHistsFlag)
 		{
 			japp->RootUnLock(); //RELEASE ROOT LOCK!!

@@ -174,7 +174,7 @@ DSourceComboTimeHandler::DSourceComboTimeHandler(JEventLoop* locEventLoop, DSour
 	dPIDTimingCuts[Gamma].emplace(SYS_BCAL, new TF1("df_TimeCut", "[0]", 0.0, 12.0));
 	dPIDTimingCuts[Gamma][SYS_BCAL]->SetParameter(0, 1.5);
 	dPIDTimingCuts[Gamma].emplace(SYS_FCAL, new TF1("df_TimeCut", "[0]", 0.0, 12.0));
-	dPIDTimingCuts[Gamma][SYS_FCAL]->SetParameter(0, 2.0); //2.5!!!
+	dPIDTimingCuts[Gamma][SYS_FCAL]->SetParameter(0, 2.5); //2.5!!!
 	dSelectedRFDeltaTs[Gamma][SYS_BCAL].reserve(1000);
 	dSelectedRFDeltaTs[Gamma][SYS_FCAL].reserve(1000);
 
@@ -217,7 +217,7 @@ DSourceComboTimeHandler::DSourceComboTimeHandler(JEventLoop* locEventLoop, DSour
 	dPIDTimingCuts[KPlus].emplace(SYS_TOF, new TF1("df_TimeCut", "[0]", 0.0, 12.0));
 	dPIDTimingCuts[KPlus][SYS_TOF]->SetParameter(0, 0.3);
 	dPIDTimingCuts[KPlus].emplace(SYS_FCAL, new TF1("df_TimeCut", "[0]", 0.0, 12.0));
-	dPIDTimingCuts[KPlus][SYS_FCAL]->SetParameter(0, 2.0); //2.5!!!
+	dPIDTimingCuts[KPlus][SYS_FCAL]->SetParameter(0, 2.5); //2.5!!!
 	dPIDTimingCuts.emplace(KMinus, dPIDTimingCuts[KPlus]);
 	dSelectedRFDeltaTs.emplace(KPlus, dSelectedRFDeltaTs[Electron]);
 	dSelectedRFDeltaTs.emplace(KMinus, dSelectedRFDeltaTs[Electron]);
@@ -233,6 +233,21 @@ DSourceComboTimeHandler::DSourceComboTimeHandler(JEventLoop* locEventLoop, DSour
 	dSelectedRFDeltaTs.emplace(Proton, dSelectedRFDeltaTs[Electron]);
 	dSelectedRFDeltaTs.emplace(AntiProton, dSelectedRFDeltaTs[Electron]);
 	dAllRFDeltaTs = dSelectedRFDeltaTs;
+
+//COMPARE:
+	// Timing Cuts: Start counter
+	// Start counter is special case: Since next to the target, and lower timing resolution, cannot separate PIDs
+	// However, we can separate out-of-time backgrounds from the event (e.g. e+/-, or ghost tracks)
+	// But, we have to be careful: If a lot of hits in the SC, we may accidentally choose the wrong SC hit
+	// This is especially true for low-theta tracks: phi not well defined.
+	// So, this cut will only be applied IF no other PID timing information is available, AND if ONLY 1 ST hit matched to the track in space
+	for(auto& locPIDPair : dPIDTimingCuts)
+	{
+		if(ParticleCharge(locPIDPair.first) == 0)
+			continue;
+		locPIDPair.second.emplace(SYS_START, new TF1("df_TimeCut", "[0]", 0.0, 12.0));
+		locPIDPair.second[SYS_START]->SetParameter(0, 2.5); //2.5!!!
+	}
 
 	if(locEventLoop == nullptr)
 		return; //only interested in querying cuts
@@ -314,22 +329,6 @@ DSourceComboTimeHandler::DSourceComboTimeHandler(JEventLoop* locEventLoop, DSour
 		}
 	}
 
-
-/* //COMPARE:
-	// Timing Cuts: Start counter
-	// Start counter is special case: Since next to the target, and lower timing resolution, cannot separate PIDs
-	// However, we can separate out-of-time backgrounds from the event (e.g. e+/-, or ghost tracks)
-	// But, we have to be careful: If a lot of hits in the SC, we may accidentally choose the wrong SC hit
-	// This is especially true for low-theta tracks: phi not well defined.
-	// So, this cut will only be applied IF no other PID timing information is available, AND if ONLY 1 ST hit matched to the track in space
-	for(auto& locPIDPair : dPIDTimingCuts)
-	{
-		if(ParticleCharge(locPIDPair.first) == 0)
-			continue;
-		locPIDPair.second.emplace(SYS_START, new TF1("df_TimeCut", "[0]", 0.0, 12.0));
-		locPIDPair.second[SYS_START]->SetParameter(0, 2.0); //2.5!!!
-	}
-*/
 	vector<DetectorSystem_t> locTimingSystems_Charged {SYS_TOF, SYS_BCAL, SYS_FCAL, SYS_START};
 	vector<DetectorSystem_t> locTimingSystems_Neutral {SYS_BCAL, SYS_FCAL};
 	vector<Particle_t> locPIDs {Unknown, Gamma, Electron, Positron, MuonPlus, MuonMinus, PiPlus, PiMinus, KPlus, KMinus, Proton, AntiProton};
@@ -667,8 +666,8 @@ bool DSourceComboTimeHandler::Select_RFBunches_Charged(const DReactionVertexInfo
 		auto locVertex = dSourceComboVertexer->Get_Vertex_NoBeam(locIsProductionVertex, locVertexPrimaryCombo);
 		auto locTimeOffset = dSourceComboVertexer->Get_TimeOffset(locIsPrimaryProductionVertex, locReactionChargedCombo, locVertexPrimaryCombo, nullptr);
 
-//		auto locPropagatedRFTime = Calc_PropagatedRFTime(locPrimaryVertexZ, 0, locTimeOffset);
-		auto locPropagatedRFTime = Calc_PropagatedRFTime(locVertex.Z(), 0, 0.0); //COMPARE:
+		auto locPropagatedRFTime = Calc_PropagatedRFTime(locPrimaryVertexZ, 0, locTimeOffset);
+//		auto locPropagatedRFTime = Calc_PropagatedRFTime(locVertex.Z(), 0, 0.0); //COMPARE:
 		if(dDebugLevel >= 20)
 			cout << "primary vertex z, targ z, init rf time, time offset, prop time = " << locPrimaryVertexZ << ", " << dTargetCenter.Z() << ", " << dInitialEventRFBunch->dTime << ", " << locTimeOffset << ", " << locPropagatedRFTime << endl;
 
@@ -744,8 +743,8 @@ bool DSourceComboTimeHandler::Select_RFBunches_PhotonVertices(const DReactionVer
 		auto locVertexZBin = dSourceComboVertexer->Get_VertexZBin_NoBeam(locIsProductionVertex, locVertexPrimaryFullCombo);
 
 		auto locTimeOffset = dSourceComboVertexer->Get_TimeOffset(locIsPrimaryProductionVertex, locReactionFullCombo, locVertexPrimaryFullCombo, nullptr);
-		//auto locPropagatedRFTime = Calc_PropagatedRFTime(locPrimaryVertexZ, 0, locTimeOffset);
-		auto locPropagatedRFTime = Calc_PropagatedRFTime(locVertex.Z(), 0, 0.0); //COMPARE:
+		auto locPropagatedRFTime = Calc_PropagatedRFTime(locPrimaryVertexZ, 0, locTimeOffset);
+//		auto locPropagatedRFTime = Calc_PropagatedRFTime(locVertex.Z(), 0, 0.0); //COMPARE:
 
 		//loop over particles at this vertex: BCAL photons & charged tracks get to vote (FCAL photons already voted, but faster)
 		auto locSourceParticles = DAnalysis::Get_SourceParticles_ThisVertex(locVertexPrimaryFullCombo);
@@ -1193,8 +1192,8 @@ bool DSourceComboTimeHandler::Cut_Timing_MissingMassVertices(const DReactionVert
 		auto locVertex = dSourceComboVertexer->Get_Vertex(locIsProductionVertex, locReactionFullCombo, locVertexPrimaryFullCombo, locBeamParticle);
 
 		auto locTimeOffset = dSourceComboVertexer->Get_TimeOffset(locIsPrimaryProductionVertex, locReactionFullCombo, locVertexPrimaryFullCombo, locBeamParticle);
-		//auto locPropagatedRFTime = Calc_PropagatedRFTime(locPrimaryVertexZ, locRFBunch, locTimeOffset);
-		auto locPropagatedRFTime = Calc_PropagatedRFTime(locVertex.Z(), locRFBunch, 0.0); //COMPARE:
+		auto locPropagatedRFTime = Calc_PropagatedRFTime(locPrimaryVertexZ, locRFBunch, locTimeOffset);
+//		auto locPropagatedRFTime = Calc_PropagatedRFTime(locVertex.Z(), locRFBunch, 0.0); //COMPARE:
 
 		//loop over particles at this vertex: BCAL photons & charged tracks will get cut (FCAL photons already voted!)
 		auto locSourceParticles = DAnalysis::Get_SourceParticles_ThisVertex(locVertexPrimaryFullCombo);
@@ -1289,7 +1288,6 @@ bool DSourceComboTimeHandler::Get_RFBunches_ChargedTrack(const DChargedTrackHypo
 		return false; //no timing info
 
 	//COMPARE: NOT Comparison-to-old mode
-/*
 	if((locSystem == SYS_START) && !locOnlyTrackFlag)
 	{
 		//special case: only cut if only matched to 1 ST hit
@@ -1298,7 +1296,7 @@ bool DSourceComboTimeHandler::Get_RFBunches_ChargedTrack(const DChargedTrackHypo
 		if(locSCMatchParams.size() > 1)
 			return false; //don't cut on timing! can't tell for sure!
 	}
-*/
+
 	auto locX4 = Get_ChargedPOCAToVertexX4(locHypothesis, locIsProductionVertex, nullptr, locVertexPrimaryCombo, nullptr, locVertex);
 	auto locVertexTime = locX4.T();
 
@@ -1308,7 +1306,7 @@ bool DSourceComboTimeHandler::Get_RFBunches_ChargedTrack(const DChargedTrackHypo
 	if(locDetachedVertex) //not in COMPARE mode
 		locDeltaTCut += dChargedDecayProductTimeUncertainty;
 
-//	if(false) //COMPARE: Comparison-to-old mode
+	if(false) //COMPARE: Comparison-to-old mode
 	{
 		locVertexTime = locHypothesis->time();
 		locPropagatedRFTime += (locHypothesis->position().Z() - locVertex.Z())/SPEED_OF_LIGHT;
@@ -1378,7 +1376,6 @@ bool DSourceComboTimeHandler::Cut_TrackPID(const DChargedTrackHypothesis* locHyp
 		locDeltaTCut += dChargedDecayProductTimeUncertainty;
 
 	//COMPARE: NOT Comparison-to-old mode
-/*
 	if(locSystem == SYS_START) //can't be only track if it's a detached vertex (which is the only way this function is called)
 	{
 		//special case: only cut if only matched to 1 ST hit
@@ -1387,11 +1384,11 @@ bool DSourceComboTimeHandler::Cut_TrackPID(const DChargedTrackHypothesis* locHyp
 		if(locSCMatchParams.size() > 1)
 			return true; //don't cut on timing! can't tell for sure!
 	}
-*/
+
 	auto locX4 = Get_ChargedPOCAToVertexX4(locHypothesis, locIsProductionVertex, locFullReactionCombo, locVertexPrimaryCombo, locBeamPhoton, locVertex);
 	auto locDeltaT = locX4.T() - locPropagatedRFTime;
 
-//	if(false) //COMPARE: Comparison-to-old mode
+	if(false) //COMPARE: Comparison-to-old mode
 	{
 		auto locVertexTime = locHypothesis->time();
 		locPropagatedRFTime += (locHypothesis->position().Z() - locVertex.Z())/SPEED_OF_LIGHT;
