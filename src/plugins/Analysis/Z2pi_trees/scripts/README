@@ -19,7 +19,7 @@ gen_2pi_primakoff> root -l
 root [0].x plot_Z2pi_trees.C("DSelector_Z2pi_trees_signal")
 root [0].q
 
-gen_2pi_primakoff> tree_to_amptools  tree_DSelector_Z2pi_trees_signal.root Z2pi_trees_Tree
+gen_2pi_primakoff> tree_to_amptools tree_DSelector_Z2pi_trees_signal.root Z2pi_trees_Tree
 gen_2pi_primakoff> mv AmpToolsInputTree.root tree_DSelector_Z2pi_trees_signal_amptools.root
 
 gen_2pi_primakoff> fit -c fit_2pi_primakoff.cfg
