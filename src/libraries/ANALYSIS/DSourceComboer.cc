@@ -35,16 +35,13 @@ A) You can try reducing the #z-bins by increasing their widths. However, much su
 */
 
 //TO DO:
-//Implement new reaction filter input
-	//How/how-much to study?
-	//No easy way to implement in master
-//reaction filter: cut on pid post-kinfit all channels
+//increase width on charged tracks at detached vertices (neutrals too?)
 //Undo comparison changes
-//Change time handling for detached decay products
+//make config in new format
+//Update master cut values
 
 //TO COMPARE:
 //Look for "COMPARE:"
-//Update master cut values
 
 //NICE TO HAVE:
 //DSELECTOR: fit hist/cut of pid delta-t's when coming from detached vertex

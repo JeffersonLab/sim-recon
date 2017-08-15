@@ -97,14 +97,15 @@ class DSourceComboTimeHandler
 		void Calc_PhotonBeamBunchShifts(const DNeutralShower* locNeutralShower, shared_ptr<const DKinematicData>& locKinematicData, double locRFTime, signed char locZBin);
 		vector<int> Calc_BeamBunchShifts(double locVertexTime, double locOrigRFBunchPropagatedTime, double locDeltaTCut, bool locIncludeDecayTimeOffset, Particle_t locPID, DetectorSystem_t locSystem, double locP);
 
-		double Calc_MaxDeltaTError(const DNeutralShower* locNeutralShower, const shared_ptr<const DKinematicData>& locKinematicData) const;
+		double Calc_MaxDeltaTError(const DNeutralShower* locNeutralShower, double locTheta) const{return Calc_MaxDeltaTError(locNeutralShower, locTheta, dPhotonVertexZBinWidth/2.0);}
+		double Calc_MaxDeltaTError(const DNeutralShower* locNeutralShower, double locTheta, double locZError) const;
 
-		bool Get_RFBunches_ChargedTrack(const DChargedTrackHypothesis* locHypothesis, bool locIsProductionVertex, const DSourceCombo* locVertexPrimaryCombo, DVector3 locVertex, double locPropagatedRFTime, bool locOnlyTrackFlag, vector<int>& locRFBunches);
+		bool Get_RFBunches_ChargedTrack(const DChargedTrackHypothesis* locHypothesis, bool locIsProductionVertex, const DSourceCombo* locVertexPrimaryCombo, DVector3 locVertex, double locPropagatedRFTime, bool locOnlyTrackFlag, bool locDetachedVertex, vector<int>& locRFBunches);
 		TF1* Get_TimeCutFunction(Particle_t locPID, DetectorSystem_t locSystem) const;
 
 		bool Compute_RFChiSqs_UnknownVertices(const DSourceCombo* locReactionFullCombo, Charge_t locCharge, const vector<int>& locRFBunches, unordered_map<int, double>& locChiSqByRFBunch, map<int, map<Particle_t, map<DetectorSystem_t, vector<pair<float, float>>>>>& locRFDeltaTsForHisting);
-		bool Cut_PhotonPID(const DNeutralShower* locNeutralShower, const DVector3& locVertex, double locPropagatedRFTime, bool locTargetCenterFlag);
-		bool Cut_TrackPID(const DChargedTrackHypothesis* locHypothesis, bool locIsProductionVertex, const DSourceCombo* locFullReactionCombo, const DSourceCombo* locVertexPrimaryCombo, const DKinematicData* locBeamPhoton, DVector3 locVertex, double locPropagatedRFTime);
+		bool Cut_PhotonPID(const DNeutralShower* locNeutralShower, const DVector3& locVertex, double locPropagatedRFTime, bool locTargetCenterFlag, bool locDetachedVertex);
+		bool Cut_TrackPID(const DChargedTrackHypothesis* locHypothesis, bool locIsProductionVertex, const DSourceCombo* locFullReactionCombo, const DSourceCombo* locVertexPrimaryCombo, const DKinematicData* locBeamPhoton, DVector3 locVertex, double locPropagatedRFTime, bool locDetachedVertex);
 
 		pair<double, double> Calc_RFDeltaTChiSq(const DNeutralShower* locNeutralShower, const TVector3& locVertex, double locPropagatedRFTime) const;
 		pair<double, double> Calc_RFDeltaTChiSq(const DChargedTrackHypothesis* locHypothesis, double locVertexTime, double locPropagatedRFTime) const;
@@ -134,7 +135,8 @@ class DSourceComboTimeHandler
 		size_t dNumPhotonVertexZBins = 6;
 		//due to detached vertices
 		double dMaxDecayTimeOffset = 0.0; //changed in constructor if needed
-		double dDecayTimeUncertainty = 0.0; //due to uncertain path length
+		double dDetachedPathLengthUncertainty = 10.0; //guess
+		double dChargedDecayProductTimeUncertainty = 2.0; //due to uncertain path length
 
 		//SHOWERS SORTED BY RF BUNCH
 		const DEventRFBunch* dInitialEventRFBunch = nullptr;

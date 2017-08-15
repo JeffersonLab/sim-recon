@@ -58,6 +58,10 @@
 *
 * Instead, charged track timing cuts cannot be placed until the vertex position is found.
 *
+* If it's a detached vertex, it may have been reconstructed at the wrong point.
+* If we assume a maximum error of 10cm in z on the vertex location, then the delta_t uncertainty is ~2ns for the relevant kinematics (from above eqs)
+* Therefore, for these charged particles, the cut will be 2ns wider in both directions, and tighter cuts should be placed after the kinfit.
+*
 *******************************************************************************************************************************/
 
 /**************************************************** PHOTON-RF DELTA-T CUTS ***************************************************
@@ -138,6 +142,10 @@
 * delta_t_neutral = delta_x/(beta*c) = 30/(30*1/3) = 3 ns
 * delta_t_rf = delta_x/(beta*c) = 30/(1*30) = 1ns
 * max_time_offset = 3ns - 1ns = 2ns
+*
+* And, due to the uncertainty in the position of the detached vertices:
+* Assume 10cm (as is for charged tracks).
+* Can use above error functions to increase width of cut. Will want to cut tighter after kinfit.
 *
 *******************************************************************************************************************************/
 
@@ -503,7 +511,7 @@ void DSourceComboTimeHandler::Calc_PhotonBeamBunchShifts(const DNeutralShower* l
 {
 	//get delta-t cut
 	auto locSystem = locNeutralShower->dDetectorSystem;
-	auto locDeltaTCut = dPIDTimingCuts[Gamma][locSystem]->Eval(locNeutralShower->dEnergy) + Calc_MaxDeltaTError(locNeutralShower, locKinematicData);
+	auto locDeltaTCut = dPIDTimingCuts[Gamma][locSystem]->Eval(locNeutralShower->dEnergy) + Calc_MaxDeltaTError(locNeutralShower, locKinematicData->momentum().Theta());
 
 	//do loop over possible #-RF-shifts
 	auto locVertexTime = locKinematicData->time();
@@ -599,12 +607,10 @@ vector<int> DSourceComboTimeHandler::Calc_BeamBunchShifts(double locVertexTime, 
 	return locRFShifts;
 }
 
-double DSourceComboTimeHandler::Calc_MaxDeltaTError(const DNeutralShower* locNeutralShower, const shared_ptr<const DKinematicData>& locKinematicData) const
+double DSourceComboTimeHandler::Calc_MaxDeltaTError(const DNeutralShower* locNeutralShower, double locTheta, double locZError) const
 {
-	double locTheta = locKinematicData->momentum().Theta();
 	if(locNeutralShower->dDetectorSystem == SYS_BCAL)
 	{
-		auto locZError = dPhotonVertexZBinWidth/2.0; //evaluated at center of bin
 		auto locR = locNeutralShower->dSpacetimeVertex.Vect().Perp();
 		auto locPathError = locR*(1.0/sin(locTheta) - sqrt(1.0 + pow(1.0/tan(locTheta) - locZError/locR, 2.0))) - locZError;
 		return fabs(locPathError)/SPEED_OF_LIGHT;
@@ -672,7 +678,7 @@ bool DSourceComboTimeHandler::Select_RFBunches_Charged(const DReactionVertexInfo
 		{
 			auto locChargedHypo = static_cast<const DChargedTrack*>(locParticlePair.second)->Get_Hypothesis(locParticlePair.first);
 			vector<int> locParticleRFBunches;
-			if(!Get_RFBunches_ChargedTrack(locChargedHypo, locIsProductionVertex, locVertexPrimaryCombo, locVertex, locPropagatedRFTime, locOnlyTrackFlag, locParticleRFBunches))
+			if(!Get_RFBunches_ChargedTrack(locChargedHypo, locIsProductionVertex, locVertexPrimaryCombo, locVertex, locPropagatedRFTime, locOnlyTrackFlag, !locIsProductionVertex, locParticleRFBunches))
 			{
 				if(dDebugLevel >= 10)
 					cout << "pid, has no timing info = " << locChargedHypo->PID() << endl;
@@ -770,7 +776,7 @@ bool DSourceComboTimeHandler::Select_RFBunches_PhotonVertices(const DReactionVer
 						cout << "pre-cut: pointer, system, energy, pid, zbin, #bunches, #valid bunches = " << locParticlePair.second << ", " << locSystem << ", " << locNeutralShower->dEnergy << ", " << locPID << ", " << int(locVertexZBin) << ", " << locParticleRFBunches.size() << ", " << locValidRFBunches.size() << endl;
 
 					//Do PID cut
-					auto PhotonCutter = [&](int locRFBunch) -> bool {return !Cut_PhotonPID(locNeutralShower, locVertex, locPropagatedRFTime + locRFBunch*dBeamBunchPeriod, false);};
+					auto PhotonCutter = [&](int locRFBunch) -> bool {return !Cut_PhotonPID(locNeutralShower, locVertex, locPropagatedRFTime + locRFBunch*dBeamBunchPeriod, false, !locIsProductionVertex);};
 					locParticleRFBunches.erase(std::remove_if(locParticleRFBunches.begin(), locParticleRFBunches.end(), PhotonCutter), locParticleRFBunches.end());
 					if(dDebugLevel >= 10)
 						cout << "post-cut: pid, zbin, #bunches = " << locPID << ", " << int(locVertexZBin) << ", " << locParticleRFBunches.size() << endl;
@@ -781,7 +787,7 @@ bool DSourceComboTimeHandler::Select_RFBunches_PhotonVertices(const DReactionVer
 			else //charged, a new vertex: do PID cuts
 			{
 				auto locChargedHypo = static_cast<const DChargedTrack*>(locParticlePair.second)->Get_Hypothesis(locParticlePair.first);
-				if(!Get_RFBunches_ChargedTrack(locChargedHypo, locIsProductionVertex, locVertexPrimaryFullCombo, locVertex, locPropagatedRFTime, locOnlyTrackFlag, locParticleRFBunches))
+				if(!Get_RFBunches_ChargedTrack(locChargedHypo, locIsProductionVertex, locVertexPrimaryFullCombo, locVertex, locPropagatedRFTime, locOnlyTrackFlag, !locIsProductionVertex, locParticleRFBunches))
 				{
 					if(dDebugLevel >= 10)
 						cout << "pid, has no timing info = " << locChargedHypo->PID() << endl;
@@ -846,7 +852,7 @@ bool DSourceComboTimeHandler::Select_RFBunches_AllVerticesUnknown(const DReactio
 				cout << "pre-cut: pid, #bunches, #valid bunches = " << locPID << ", " << locParticleRFBunches.size() << ", " << locValidRFBunches.size() << endl;
 
 			//Do PID cut
-			auto PhotonCutter = [&](int locRFBunch) -> bool {return !Cut_PhotonPID(locNeutralShower, dTargetCenter, dInitialEventRFBunch->dTime + locRFBunch*dBeamBunchPeriod, true);};
+			auto PhotonCutter = [&](int locRFBunch) -> bool {return !Cut_PhotonPID(locNeutralShower, dTargetCenter, dInitialEventRFBunch->dTime + locRFBunch*dBeamBunchPeriod, true, false);};
 			locParticleRFBunches.erase(std::remove_if(locParticleRFBunches.begin(), locParticleRFBunches.end(), PhotonCutter), locParticleRFBunches.end());
 			if(dDebugLevel >= 10)
 				cout << "post-cut: pid, #bunches, #valid bunches = " << locPID << ", " << locParticleRFBunches.size() << ", " << locValidRFBunches.size() << endl;
@@ -856,7 +862,7 @@ bool DSourceComboTimeHandler::Select_RFBunches_AllVerticesUnknown(const DReactio
 			auto locChargedHypo = static_cast<const DChargedTrack*>(locParticlePair.second)->Get_Hypothesis(locParticlePair.first);
 			auto locVertex = locChargedHypo->position();
 			auto locPropagatedRFTime = dInitialEventRFBunch->dTime + (locVertex.Z() - dTargetCenter.Z())/SPEED_OF_LIGHT;
-			if(!Get_RFBunches_ChargedTrack(locChargedHypo, true, nullptr, locVertex, locPropagatedRFTime, locOnlyTrackFlag, locParticleRFBunches))
+			if(!Get_RFBunches_ChargedTrack(locChargedHypo, true, nullptr, locVertex, locPropagatedRFTime, locOnlyTrackFlag, false, locParticleRFBunches))
 			{
 				if(dDebugLevel >= 10)
 					cout << "pid, has no timing info = " << locChargedHypo->PID() << endl;
@@ -1202,13 +1208,13 @@ bool DSourceComboTimeHandler::Cut_Timing_MissingMassVertices(const DReactionVert
 				auto locNeutralShower = static_cast<const DNeutralShower*>(locParticlePair.second);
 
 				//Do PID cut
-				if(!Cut_PhotonPID(locNeutralShower, locVertex, locPropagatedRFTime, false))
+				if(!Cut_PhotonPID(locNeutralShower, locVertex, locPropagatedRFTime, false, !locIsProductionVertex))
 					return false;
 			}
 			else //charged
 			{
 				auto locChargedHypo = static_cast<const DChargedTrack*>(locParticlePair.second)->Get_Hypothesis(locParticlePair.first);
-				if(!Cut_TrackPID(locChargedHypo, locIsProductionVertex, locReactionFullCombo, locVertexPrimaryFullCombo, locBeamParticle, locVertex, locPropagatedRFTime))
+				if(!Cut_TrackPID(locChargedHypo, locIsProductionVertex, locReactionFullCombo, locVertexPrimaryFullCombo, locBeamParticle, locVertex, locPropagatedRFTime, !locIsProductionVertex))
 					return false;
 			}
 		}
@@ -1274,7 +1280,7 @@ void DSourceComboTimeHandler::Fill_Histograms(void)
 	}
 }
 
-bool DSourceComboTimeHandler::Get_RFBunches_ChargedTrack(const DChargedTrackHypothesis* locHypothesis, bool locIsProductionVertex, const DSourceCombo* locVertexPrimaryCombo, DVector3 locVertex, double locPropagatedRFTime, bool locOnlyTrackFlag, vector<int>& locRFBunches)
+bool DSourceComboTimeHandler::Get_RFBunches_ChargedTrack(const DChargedTrackHypothesis* locHypothesis, bool locIsProductionVertex, const DSourceCombo* locVertexPrimaryCombo, DVector3 locVertex, double locPropagatedRFTime, bool locOnlyTrackFlag, bool locDetachedVertex, vector<int>& locRFBunches)
 {
 	locRFBunches.clear();
 	auto locPID = locHypothesis->PID();
@@ -1299,6 +1305,8 @@ bool DSourceComboTimeHandler::Get_RFBunches_ChargedTrack(const DChargedTrackHypo
 	auto locP = locHypothesis->momentum().Mag();
 	auto locCutFunc = Get_TimeCutFunction(locPID, locSystem);
 	auto locDeltaTCut = (locCutFunc != nullptr) ? locCutFunc->Eval(locP) : 3.0; //if null will return false, but still use for histogramming
+	if(locDetachedVertex) //not in COMPARE mode
+		locDeltaTCut += dChargedDecayProductTimeUncertainty;
 
 //	if(false) //COMPARE: Comparison-to-old mode
 	{
@@ -1331,7 +1339,7 @@ DLorentzVector DSourceComboTimeHandler::Get_ChargedPOCAToVertexX4(const DCharged
 	return locX4;
 }
 
-bool DSourceComboTimeHandler::Cut_PhotonPID(const DNeutralShower* locNeutralShower, const DVector3& locVertex, double locPropagatedRFTime, bool locTargetCenterFlag)
+bool DSourceComboTimeHandler::Cut_PhotonPID(const DNeutralShower* locNeutralShower, const DVector3& locVertex, double locPropagatedRFTime, bool locTargetCenterFlag, bool locDetachedVertex)
 {
 	//get delta-t cut
 	auto locSystem = locNeutralShower->dDetectorSystem;
@@ -1339,10 +1347,14 @@ bool DSourceComboTimeHandler::Cut_PhotonPID(const DNeutralShower* locNeutralShow
 	auto locCutFunc = Get_TimeCutFunction(locPID, locSystem);
 	if(locCutFunc == nullptr)
 		return true;
+
+	auto locKinematicsPair = Calc_Photon_Kinematics(locNeutralShower, locVertex);
+
 	auto locDeltaTCut = locCutFunc->Eval(locNeutralShower->dEnergy);
+	if(locDetachedVertex) //not in COMPARE mode
+		locDeltaTCut += Calc_MaxDeltaTError(locNeutralShower, locKinematicsPair.first.Theta(), dDetachedPathLengthUncertainty);
 
 	//do cut
-	auto locKinematicsPair = Calc_Photon_Kinematics(locNeutralShower, locVertex);
 	auto locDeltaT = locKinematicsPair.second - locPropagatedRFTime;
 	if(dDebugLevel >= 10)
 		cout << "photon pid cut: pointer, system, vertex-z, photon t, rf t, delta_t, cut-delta-t, result = " << locNeutralShower << ", " << locSystem << ", " << locVertex.Z() << ", " << locKinematicsPair.second << ", " << locPropagatedRFTime << ", " << locDeltaT << ", " << locDeltaTCut << ", " << (fabs(locDeltaT) <= locDeltaTCut) << endl;
@@ -1351,7 +1363,7 @@ bool DSourceComboTimeHandler::Cut_PhotonPID(const DNeutralShower* locNeutralShow
 	return (fabs(locDeltaT) <= locDeltaTCut);
 }
 
-bool DSourceComboTimeHandler::Cut_TrackPID(const DChargedTrackHypothesis* locHypothesis, bool locIsProductionVertex, const DSourceCombo* locFullReactionCombo, const DSourceCombo* locVertexPrimaryCombo, const DKinematicData* locBeamPhoton, DVector3 locVertex, double locPropagatedRFTime)
+bool DSourceComboTimeHandler::Cut_TrackPID(const DChargedTrackHypothesis* locHypothesis, bool locIsProductionVertex, const DSourceCombo* locFullReactionCombo, const DSourceCombo* locVertexPrimaryCombo, const DKinematicData* locBeamPhoton, DVector3 locVertex, double locPropagatedRFTime, bool locDetachedVertex)
 {
 	//get delta-t cut
 	auto locPID = locHypothesis->PID();
@@ -1359,8 +1371,11 @@ bool DSourceComboTimeHandler::Cut_TrackPID(const DChargedTrackHypothesis* locHyp
 	auto locCutFunc = Get_TimeCutFunction(locPID, locSystem);
 	if(locCutFunc == nullptr)
 		return true;
+
 	auto locP = locHypothesis->momentum().Mag();
 	auto locDeltaTCut = locCutFunc->Eval(locP);
+	if(locDetachedVertex) //not in COMPARE mode
+		locDeltaTCut += dChargedDecayProductTimeUncertainty;
 
 	//COMPARE: NOT Comparison-to-old mode
 /*
