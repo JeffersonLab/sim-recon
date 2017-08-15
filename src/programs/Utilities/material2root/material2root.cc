@@ -15,7 +15,10 @@ using namespace std;
 #include <TFile.h>
 #include <TH2D.h>
 
-void Usage(JApplication &app);
+int32_t RUN_NUMBER = -1;
+
+void ParseCommandLineArguments(int narg, char *argv[]);
+void Usage(string mess="");
 
 
 //-----------
@@ -23,23 +26,28 @@ void Usage(JApplication &app);
 //-----------
 int main(int narg, char *argv[])
 {
+
+	ParseCommandLineArguments(narg, argv);
+
+
 	// open ROOT file
 	TFile *f = new TFile("material.root","RECREATE","Produced by material2root");
 	cout<<"Opened ROOT file \""<<"material.root"<<"\" ..."<<endl;
 
 	DApplication *dapp = new DApplication(narg, argv);
 	DRootGeom *rg = new DRootGeom(dapp);
-	DGeometry *geom = dapp->GetDGeometry(9999);
+	DGeometry *geom = dapp->GetDGeometry(RUN_NUMBER);
 
-	TH2D *radlen_LL = new TH2D("radlen_LL", "Radiation Length", 1500, -100.0, 650.0, 500, 0.0, 125.0);
+	TH2D *radlen_LL = new TH2D("radlen_LL", "Radiation Length;z (cm); r(cm); rad. length (cm)", 1500, -100.0, 650.0, 500, 0.0, 125.0);
 	TH2D *radlen_table = (TH2D*)radlen_LL->Clone("radlen_table");
-	TH2D *radlen_LL_xy = new TH2D("radlen_LL_xy", "Radiation Length", 900, -10.0, 10.0, 900, -10.0, 10.0);
+	TH2D *radlen_LL_xy = new TH2D("radlen_LL_xy", "Radiation Length;x (cm); y(cm); rad. length (cm)", 900, -10.0, 10.0, 900, -10.0, 10.0);
 	TH2D *radlen_table_xy = (TH2D*)radlen_LL_xy->Clone("radlen_table_xy");
 	TH2D *A_LL = (TH2D*)radlen_LL->Clone("A_LL");
 	TH2D *A_table = (TH2D*)radlen_LL->Clone("A_table");
 	TH2D *Z_LL = (TH2D*)radlen_LL->Clone("Z_LL");
 	TH2D *Z_table = (TH2D*)radlen_LL->Clone("Z_table");
 	TH2D *density_LL = (TH2D*)radlen_LL->Clone("density_LL");
+	density_LL->SetTitle("Radiation Length;z (cm); r(cm); density (g/cm^{3})");
 	TH2D *density_table = (TH2D*)radlen_LL->Clone("density_table");
 
 	for(int ir = 1; ir<=radlen_LL->GetNbinsY(); ir++){
@@ -92,16 +100,44 @@ int main(int narg, char *argv[])
 }
 
 //-----------
+// ParseCommandLineArguments
+//-----------
+void ParseCommandLineArguments(int narg, char *argv[])
+{
+	if( narg < 2 ) Usage();
+	
+	for(int i=1; i<narg; i++){
+		string arg = argv[i];
+		string next = (i+1) < narg ? argv[i+1]:"";
+		bool missing_arg = false;
+		
+		if( arg == "-h" || arg =="--help" ) Usage();
+		if( arg == "-r" ){
+			if( next.find("-") != 0){
+				RUN_NUMBER = atoi(next.c_str());
+			}else{ missing_arg = true; }
+		}
+		
+		if(missing_arg) Usage( "argument " + arg + " requires and argument!" );
+	}
+	
+	if(RUN_NUMBER<0) {
+		Usage("Run number MUST be specified with -r option!");
+	}
+}
+
+
+//-----------
 // Usage
 //-----------
-void Usage(JApplication &app)
+void Usage(string mess)
 {
-	cout<<endl;
-	cout<<"Usage:"<<endl;
-	cout<<"    material2root"<<endl;
-	cout<<endl;
-	app.Usage();
-	cout<<endl;
+	cout << endl;
+	cout << "Usage:" << endl;
+	cout << "    material2root -r RUN" << endl;
+	cout << endl;
+	cout << mess << endl;
+	cout << endl;
 	
 	exit(0);
 }
