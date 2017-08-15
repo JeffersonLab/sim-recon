@@ -25,7 +25,7 @@ void radlen_vs_r_vs_z(void)
 	radlen_table->SetTitle("Material Map from DGeometry::FindMat(...)");
 	radlen_table->Draw("colz");
 	
-	c1->SaveAs("radlen_vs_r_vs_z.gif");
+	c1->SaveAs("radlen_vs_r_vs_z.png");
 	c1->SaveAs("radlen_vs_r_vs_z.pdf");
 }
 

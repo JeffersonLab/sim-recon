@@ -25,7 +25,7 @@ void density_vs_r_vs_z(void)
 	density_table->SetTitle("Material Map from FindMatTable(...)");
 	density_table->Draw("colz");
 	
-	c1->SaveAs("density_vs_r_vs_z.gif");
+	c1->SaveAs("density_vs_r_vs_z.png");
 	c1->SaveAs("density_vs_r_vs_z.pdf");
 }
 
