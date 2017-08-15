@@ -1,11 +1,15 @@
 #!/bin/tcsh -f
 
+# This script is deprecated. Use mkAllMaterialMaps.py
+# instead (assuming you have a computer with enough
+# resources)
+
 # Target
-mkMaterialMap -Nr 2 -Nz 2 -rmin 0 -rmax 1.8 -zmin 64.9 -zmax 65.1 -n_r 5 -n_z 5 -n_phi 10
+mkMaterialMap -Nr 2 -Nz 2 -rmin 0 -rmax 0.78 -zmin 50.0 -zmax 80.0 -n_r 50 -n_z 50 -n_phi 100
 mv material_map material_map00_target
 
 # Target wall
-mkMaterialMap -Nr 20 -Nz 2 -rmin 1.82 -rmax 1.9 -zmin 23.0 -zmax 65.1 -n_r 100 -n_z 5 -n_phi 10
+mkMaterialMap -Nr 8 -Nz 5 -rmin 0.78 -rmax 1.26 -zmin 50.0 -zmax 80.0 -n_r 100 -n_z 50 -n_phi 10
 mv material_map material_map01_target_wall
 
 # Scattering chamber
@@ -29,7 +33,7 @@ mkMaterialMap -Nr 50 -Nz 5 -rmin 9.0 -rmax 9.75 -zmin 17 -zmax 167 -n_r 1000 -n_
 mv material_map material_map11_CDC_inner_shell
 
 # CDC
-mkMaterialMap -Nr 10 -Nz 10 -rmin 9.75 -rmax 56.0 -zmin 17 -zmax 167 -n_r 100 -n_z 100 -n_phi 200
+mkMaterialMap -Nr 5 -Nz 5 -rmin 9.75 -rmax 56.0 -zmin 17 -zmax 167 -n_r 100 -n_z 100 -n_phi 200
 mv material_map material_map12_CDC
 
 # CDC outer shell
