@@ -254,6 +254,11 @@ inline string Get_StepName(const DReactionStep* locStep, bool locIncludeMissingF
 	return locStepName;
 }
 
+inline void Print_ReactionStep(const DReactionStep* locReactionStep)
+{
+	cout << DAnalysis::Get_StepName(locReactionStep, true, false) << endl;
+}
+
 inline int Get_ParticleIndex(const DReactionStep* locStep, Particle_t locInputPID, size_t locInstance)
 {
 	//locInstance starts from 1!!!

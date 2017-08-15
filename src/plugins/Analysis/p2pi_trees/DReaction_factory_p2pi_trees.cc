@@ -86,7 +86,7 @@ jerror_t DReaction_factory_p2pi_trees::evnt(JEventLoop* locEventLoop, uint64_t l
 	//Pre-defined actions can be found in ANALYSIS/DHistogramActions.h and ANALYSIS/DCutActions.h
 	
 	// PID
-	locReaction->Add_AnalysisAction(new DHistogramAction_PID(locReaction));
+	locReaction->Add_AnalysisAction(new DHistogramAction_PID(locReaction, false));
 	locReaction->Add_AnalysisAction(new DCutAction_PIDDeltaT(locReaction, false, 2.0, Proton, SYS_TOF));
 	locReaction->Add_AnalysisAction(new DCutAction_PIDDeltaT(locReaction, false, 2.5, Proton, SYS_BCAL));
 	locReaction->Add_AnalysisAction(new DCutAction_PIDDeltaT(locReaction, false, 3.0, Proton, SYS_FCAL));
@@ -97,7 +97,7 @@ jerror_t DReaction_factory_p2pi_trees::evnt(JEventLoop* locEventLoop, uint64_t l
 	locReaction->Add_AnalysisAction(new DCutAction_PIDDeltaT(locReaction, false, 1.5, PiMinus, SYS_BCAL));
 	locReaction->Add_AnalysisAction(new DCutAction_PIDDeltaT(locReaction, false, 3.0, PiMinus, SYS_FCAL));
 	locReaction->Add_AnalysisAction(new DCutAction_dEdx(locReaction));
-	locReaction->Add_AnalysisAction(new DHistogramAction_PID(locReaction, "PostPIDCuts"));
+	locReaction->Add_AnalysisAction(new DHistogramAction_PID(locReaction, false, "PostPIDCuts"));
 
 	// Custom histograms for p2pi
 	locReaction->Add_AnalysisAction(new DCustomAction_p2pi_hists(locReaction, false, "TimingCut_Measured"));

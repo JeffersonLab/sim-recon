@@ -65,7 +65,7 @@ jerror_t DReaction_factory_b1pi_hists::init(void)
 	locReaction->Add_AnalysisAction(new DHistogramAction_ParticleComboKinematics(locReaction, false));
 
 	//PID
-	locReaction->Add_AnalysisAction(new DHistogramAction_PID(locReaction));
+	locReaction->Add_AnalysisAction(new DHistogramAction_PID(locReaction, false));
 	locReaction->Add_AnalysisAction(new DCutAction_CombinedPIDFOM(locReaction, 0.01)); //1%
 
 	//Kinematic Fit Results and Confidence Level Cut

@@ -88,7 +88,7 @@ jerror_t DReaction_factory_p4pi_hists::evnt(JEventLoop* locEventLoop, uint64_t l
 	//If a histogram action is repeated, it should be created with a unique name (string) to distinguish them
 	
 	// HISTOGRAM PID
-	locReaction->Add_AnalysisAction(new DHistogramAction_PID(locReaction));
+	locReaction->Add_AnalysisAction(new DHistogramAction_PID(locReaction, false));
 
 	// CUT PID
 	// SYS_TOF, SYS_BCAL, SYS_FCAL, ...: DetectorSystem_t: Defined in libraries/include/GlueX.h
@@ -104,7 +104,7 @@ jerror_t DReaction_factory_p4pi_hists::evnt(JEventLoop* locEventLoop, uint64_t l
 	locReaction->Add_AnalysisAction(new DCutAction_PIDDeltaT(locReaction, false, 2.5, Proton, SYS_BCAL)); //false: measured data
 	locReaction->Add_AnalysisAction(new DCutAction_PIDDeltaT(locReaction, false, 3.0, Proton, SYS_FCAL)); //false: measured data
 	
-	locReaction->Add_AnalysisAction(new DHistogramAction_PID(locReaction, "PostPIDCuts"));
+	locReaction->Add_AnalysisAction(new DHistogramAction_PID(locReaction, false, "PostPIDCuts"));
 
 	// HISTOGRAM MASSES //false/true: measured/kinfit data
 	locReaction->Add_AnalysisAction(new DHistogramAction_MissingMassSquared(locReaction, false, 800, -0.04, 0.04));

@@ -390,7 +390,8 @@ shared_ptr<DKinFitChainStep> DKinFitUtils_GlueX::Make_KinFitChainStep(const DRea
 	int locKinFitStepIndex = locKinFitChain->Get_NumKinFitChainSteps();
 
 	//if doing a vertex fit, see which neutral particles can be treated as showers
-	bool locSpactimeIsFitFlag = (locKinFitType == d_SpacetimeFit) || (locKinFitType == d_P4AndSpacetimeFit);
+	bool locSpactimeIsFitFlag = ((locKinFitType == d_SpacetimeFit) || (locKinFitType == d_P4AndSpacetimeFit));
+	bool locVertexIsFitFlag = (locSpactimeIsFitFlag || (locKinFitType == d_VertexFit) || (locKinFitType == d_P4AndVertexFit));
 
 	//initial beam particle
 	locKinFitChainStep->Set_InitialParticleDecayFromStepIndex(-1); //unless set otherwise below (enclosed decaying particle)
@@ -452,7 +453,7 @@ shared_ptr<DKinFitChainStep> DKinFitUtils_GlueX::Make_KinFitChainStep(const DRea
 			auto locNeutralParticleHypothesis = static_cast<const DNeutralParticleHypothesis*>(locKinematicData);
 
 			//Determine whether we should use the particle or the shower object
-			bool locNeutralShowerFlag = locStepVertexInfo->Get_FittableVertexFlag();
+			bool locNeutralShowerFlag = locVertexIsFitFlag && locStepVertexInfo->Get_FittableVertexFlag();
 			if((ParticleMass(locPID) > 0.0) && !locSpactimeIsFitFlag)
 				locNeutralShowerFlag = false; //massive shower momentum is defined by t, which isn't fit: use particle
 

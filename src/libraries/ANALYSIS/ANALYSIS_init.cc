@@ -54,7 +54,7 @@ jerror_t ANALYSIS_init(JEventLoop *loop)
 	DHistogramAction_Reconstruction();
 	DHistogramAction_ObjectMemory();
 
-	DHistogramAction_PID(NULL);
+	DHistogramAction_PID(NULL, false);
 	DHistogramAction_TrackVertexComparison(NULL);
 	DHistogramAction_ParticleComboKinematics(NULL, false);
 	DHistogramAction_TruePID(NULL);

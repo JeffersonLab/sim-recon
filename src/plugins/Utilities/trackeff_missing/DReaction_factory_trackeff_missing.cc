@@ -485,7 +485,7 @@ bool DReaction_factory_trackeff_missing::Add_MassCuts(DReaction* locReaction, bo
 void DReaction_factory_trackeff_missing::Add_PIDActions(DReaction* locReaction)
 {
 	//Histogram before cuts
-	locReaction->Add_AnalysisAction(new DHistogramAction_PID(locReaction));
+	locReaction->Add_AnalysisAction(new DHistogramAction_PID(locReaction, false));
 
 	//Get, loop over detected PIDs in reaction
 	auto locDetectedPIDs = locReaction->Get_FinalPIDs(-1, false, false, d_AllCharges, false);

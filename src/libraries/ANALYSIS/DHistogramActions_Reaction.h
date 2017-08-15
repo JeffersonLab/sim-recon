@@ -77,8 +77,8 @@ class DHistogramAction_PID : public DAnalysisAction
 {
 	public:
 
-		DHistogramAction_PID(const DReaction* locReaction, string locActionUniqueString = "") : 
-		DAnalysisAction(locReaction, "Hist_PID", false, locActionUniqueString), 
+		DHistogramAction_PID(const DReaction* locReaction, bool locUseKinFitResultsFlag = false, string locActionUniqueString = "") :
+		DAnalysisAction(locReaction, "Hist_PID", locUseKinFitResultsFlag, locActionUniqueString),
 		dNum2DPBins(250), dNum2DdEdxBins(400), dNum2DBetaBins(400), dNum2DBCALThetaBins(260), dNum2DFCALThetaBins(120), dNum2DThetaBins(280), dNumBetaBins(700),
 		dNum2DEOverPBins(300), dNum2DDeltaBetaBins(400), dNum2DDeltadEdxBins(300), dNum2DDeltaTBins(400), dNum2DPullBins(200), dNumFOMBins(400), 
 		dNum2DFOMBins(200), dMinP(0.0), dMaxP(10.0), dMaxBCALP(3.0), dMindEdX(0.0), dMaxdEdX(25.0), dMinBeta(-0.2), dMaxBeta(1.2), dMinBCALTheta(10.0), 

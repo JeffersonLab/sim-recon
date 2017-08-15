@@ -61,7 +61,7 @@ jerror_t DReaction_factory_p2k_hists::evnt(JEventLoop* locEventLoop, uint64_t lo
 		//Pre-defined actions can be found in ANALYSIS/DHistogramActions.h and ANALYSIS/DCutActions.h
 
 	// PID
-	locReaction->Add_AnalysisAction(new DHistogramAction_PID(locReaction));
+	locReaction->Add_AnalysisAction(new DHistogramAction_PID(locReaction, false));
 	locReaction->Add_AnalysisAction(new DCutAction_PIDDeltaT(locReaction, false, 0.75, KPlus, SYS_TOF)); //cut at delta-t +/- 1.0 //false: measured data
 	locReaction->Add_AnalysisAction(new DCutAction_PIDDeltaT(locReaction, false, 1.5, KPlus, SYS_BCAL)); //cut at delta-t +/- 1.0 //false: measured data
 	locReaction->Add_AnalysisAction(new DCutAction_PIDDeltaT(locReaction, false, 3.0, KPlus, SYS_FCAL)); //cut at delta-t +/- 1.0 //false: measured data
@@ -74,7 +74,7 @@ jerror_t DReaction_factory_p2k_hists::evnt(JEventLoop* locEventLoop, uint64_t lo
 	locReaction->Add_AnalysisAction(new DCutAction_NoPIDHit(locReaction, KPlus));
 	locReaction->Add_AnalysisAction(new DCutAction_NoPIDHit(locReaction, KMinus));
 	locReaction->Add_AnalysisAction(new DCutAction_dEdx(locReaction));
-	locReaction->Add_AnalysisAction(new DHistogramAction_PID(locReaction, "PostPIDCuts"));
+	locReaction->Add_AnalysisAction(new DHistogramAction_PID(locReaction, false, "PostPIDCuts"));
 
 	// Custom histograms for p2k (no KinFit cut)
 	locReaction->Add_AnalysisAction(new DCustomAction_p2k_hists(locReaction, false, "NoKinFit_Measured"));
@@ -119,7 +119,7 @@ jerror_t DReaction_factory_p2k_hists::evnt(JEventLoop* locEventLoop, uint64_t lo
 		//Pre-defined actions can be found in ANALYSIS/DHistogramActions.h and ANALYSIS/DCutActions.h
 
 	// PID
-	locReaction->Add_AnalysisAction(new DHistogramAction_PID(locReaction));
+	locReaction->Add_AnalysisAction(new DHistogramAction_PID(locReaction, false));
 	locReaction->Add_AnalysisAction(new DCutAction_PIDDeltaT(locReaction, false, 0.75, KPlus, SYS_TOF)); //cut at delta-t +/- 1.0 //false: measured data
 	locReaction->Add_AnalysisAction(new DCutAction_PIDDeltaT(locReaction, false, 1.5, KPlus, SYS_BCAL)); //cut at delta-t +/- 1.0 //false: measured data
 	locReaction->Add_AnalysisAction(new DCutAction_PIDDeltaT(locReaction, false, 3.0, KPlus, SYS_FCAL)); //cut at delta-t +/- 1.0 //false: measured data
@@ -132,7 +132,7 @@ jerror_t DReaction_factory_p2k_hists::evnt(JEventLoop* locEventLoop, uint64_t lo
 	locReaction->Add_AnalysisAction(new DCutAction_NoPIDHit(locReaction, KPlus));
 	locReaction->Add_AnalysisAction(new DCutAction_NoPIDHit(locReaction, KMinus));
 	locReaction->Add_AnalysisAction(new DCutAction_dEdx(locReaction));
-	locReaction->Add_AnalysisAction(new DHistogramAction_PID(locReaction, "PostPIDCuts"));
+	locReaction->Add_AnalysisAction(new DHistogramAction_PID(locReaction, false, "PostPIDCuts"));
 
 	//MASSES
 	locReaction->Add_AnalysisAction(new DHistogramAction_MissingMassSquared(locReaction, false, 1000, -0.1, 0.1));

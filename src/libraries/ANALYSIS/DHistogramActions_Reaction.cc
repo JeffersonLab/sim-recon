@@ -304,7 +304,7 @@ bool DHistogramAction_PID::Perform_Action(JEventLoop* locEventLoop, const DParti
 	for(size_t loc_i = 0; loc_i < locParticleCombo->Get_NumParticleComboSteps(); ++loc_i)
 	{
 		const DParticleComboStep* locParticleComboStep = locParticleCombo->Get_ParticleComboStep(loc_i);
-		auto locParticles = locParticleComboStep->Get_FinalParticles_Measured(Get_Reaction()->Get_ReactionStep(loc_i), d_AllCharges);
+		auto locParticles = Get_UseKinFitResultsFlag() ? locParticleComboStep->Get_FinalParticles(Get_Reaction()->Get_ReactionStep(loc_i), false, false, d_AllCharges) : locParticleComboStep->Get_FinalParticles_Measured(Get_Reaction()->Get_ReactionStep(loc_i), d_AllCharges);
 		for(size_t loc_j = 0; loc_j < locParticles.size(); ++loc_j)
 		{
 			//check if will be duplicate
@@ -1620,6 +1620,8 @@ void DHistogramAction_KinFitResults::Initialize(JEventLoop* locEventLoop)
 
 	bool locP4IsFit = ((locKinFitType != d_VertexFit) && (locKinFitType != d_SpacetimeFit));
 	bool locSpactimeIsFitFlag = (locKinFitType == d_SpacetimeFit) || (locKinFitType == d_P4AndSpacetimeFit);
+	bool locVertexIsFitFlag = (locSpactimeIsFitFlag || (locKinFitType == d_VertexFit) || (locKinFitType == d_P4AndVertexFit));
+
 	//bool locIsInclusiveChannelFlag = Get_Reaction()->Get_IsInclusiveChannelFlag();
 	//Below, should in theory check on whether to create pxyz pull histograms in the inclusive channel case
 	//But, this is tricky: can have inclusive (no p4) but still have mass constraints (p4)
@@ -1644,7 +1646,7 @@ void DHistogramAction_KinFitResults::Initialize(JEventLoop* locEventLoop)
 		{
 			auto locStepVertexInfo = locReactionVertexInfo->Get_StepVertexInfo(0);
 			auto locFullConstrainParticles = locStepVertexInfo->Get_FullConstrainParticles(true, d_InitialState, d_AllCharges, false);
-			bool locIsInVertexFitFlag = locIncludeBeamlineInVertexFitFlag && !locFullConstrainParticles.empty();
+			bool locIsInVertexFitFlag = locVertexIsFitFlag && locIncludeBeamlineInVertexFitFlag && !locFullConstrainParticles.empty();
 			bool locIsChargedFlag = (ParticleCharge(locInitialPID) != 0);
 
 			if(locP4IsFit || locIsInVertexFitFlag)
@@ -1687,7 +1689,7 @@ void DHistogramAction_KinFitResults::Initialize(JEventLoop* locEventLoop)
 			auto locPIDs = Get_Reaction()->Get_FinalPIDs(loc_i, false, false, d_AllCharges, false);
 			for(auto locPID : locPIDs)
 			{
-				bool locIsInVertexFitFlag = locStepVertexInfo->Get_FittableVertexFlag();
+				bool locIsInVertexFitFlag = locVertexIsFitFlag && locStepVertexInfo->Get_FittableVertexFlag();
 
 				bool locIsNeutralShowerFlag = (locIsInVertexFitFlag && (ParticleCharge(locPID) == 0));
 				if((ParticleMass(locPID) > 0.0) && !locSpactimeIsFitFlag)
@@ -1729,7 +1731,7 @@ void DHistogramAction_KinFitResults::Initialize(JEventLoop* locEventLoop)
 			bool locFilledFlag = false;
 			for(auto locPID : locPIDs)
 			{
-				bool locIsInVertexFitFlag = locStepVertexInfo->Get_FittableVertexFlag();
+				bool locIsInVertexFitFlag = locVertexIsFitFlag && locStepVertexInfo->Get_FittableVertexFlag();
 				bool locIsChargedFlag = (ParticleCharge(locPID) != 0);
 
 				bool locIsNeutralShowerFlag = (locIsInVertexFitFlag && (ParticleCharge(locPID) == 0));

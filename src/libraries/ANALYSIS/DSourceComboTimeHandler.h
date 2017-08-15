@@ -54,6 +54,7 @@ class DSourceComboTimeHandler
 		vector<const DKinematicData*> Get_BeamParticlesByRFBunch(int locRFBunch, unsigned int locPlusMinusBunchRange) const;
 
 		//GET CUTS
+		map<DetectorSystem_t, TF1*> Get_TimeCuts(Particle_t locPID) const;
 		bool Get_TimeCut(Particle_t locPID, DetectorSystem_t locSystem, TF1* locTimeCut_ns) const;
 
 		//GET VALID/COMMON RF BUNCHES
@@ -212,6 +213,14 @@ inline void DSourceComboTimeHandler::Set_BeamParticles(const vector<const DBeamP
 		dBeamParticlesByRFBunch[locRFBunch].push_back(locBeamParticle);
 		dBeamRFDeltaTs.emplace_back(locBeamParticle->energy(), locBeamParticle->time() - dInitialEventRFBunch->dTime);
 	}
+}
+
+inline map<DetectorSystem_t, TF1*> DSourceComboTimeHandler::Get_TimeCuts(Particle_t locPID) const
+{
+	auto locIterator = dPIDTimingCuts.find(locPID);
+	if(locIterator == dPIDTimingCuts.end())
+		return {};
+	return locIterator->second;
 }
 
 inline bool DSourceComboTimeHandler::Get_TimeCut(Particle_t locPID, DetectorSystem_t locSystem, TF1* locTimeCut_ns) const

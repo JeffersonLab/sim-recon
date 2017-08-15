@@ -165,6 +165,12 @@ inline void DReaction::Enable_TTreeOutput(string locTTreeOutputFileName, bool lo
 
 /****************************************************** NAMESPACE-SCOPE INLINE FUNCTIONS: MISC *******************************************************/
 
+inline void Print_Reaction(const DReaction* locReaction)
+{
+	for(auto& locStep : locReaction->Get_ReactionSteps())
+		DAnalysis::Print_ReactionStep(locStep);
+}
+
 inline bool Get_IsFirstStepBeam(const DReaction* locReaction)
 {
 	//impossible for first step to be rescattering: makes no sense: if has target, treat as beam. else treat as decaying & don't care about production mechanism

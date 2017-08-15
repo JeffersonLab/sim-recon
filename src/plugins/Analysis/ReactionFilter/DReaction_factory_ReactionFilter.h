@@ -19,13 +19,13 @@
 #include "ANALYSIS/DSourceComboP4Handler.h"
 #include "ANALYSIS/DSourceComboTimeHandler.h"
 
-#include "FSInfo.h"
-
 using namespace std;
 using namespace jana;
 
 class DReaction_factory_ReactionFilter : public jana::JFactory<DReaction>
 {
+	using DReactionStepTuple = tuple<Particle_t, Particle_t, vector<Particle_t>, Particle_t, int>;
+
 	public:
 		DReaction_factory_ReactionFilter()
 		{
@@ -35,28 +35,28 @@ class DReaction_factory_ReactionFilter : public jana::JFactory<DReaction>
 		const char* Tag(void){return "ReactionFilter";}
 
 	private:
-		jerror_t init(void);
 		jerror_t evnt(JEventLoop* locEventLoop, uint64_t locEventNumber);
-		jerror_t fini(void);						///< Called after last event of last event source has been processed.
 
-		// Create Reaction Steps
-		void Create_FirstStep(DReaction* locReaction, FSInfo* locFSInfo);
-		void Create_DecaySteps(DReaction* locReaction, FSInfo* locFSInfo);
-		void Create_DecayStep(DReaction* locReaction, FSInfo* locFSInfo, Particle_t locPID);
+		//UTILITY FUNCTIONS
+		map<size_t, tuple<string, string, string, vector<string>>> Parse_Input(void);
+		bool Convert_StringToPID(string locString, Particle_t& locPID, bool& locIsMissingFlag);
+		bool Parse_StepPIDString(string locStepString, DReactionStepTuple& locStepTuple);
+		string Create_StepNameString(const DReactionStepTuple& locStepTuple, bool locFirstStepFlag);
 
-		// Actions & cuts
-		void Add_MassHistograms(DReaction* locReaction, FSInfo* locFSInfo, bool locUseKinFitResultsFlag, string locBaseUniqueName = "");
+		//CUSTOMIZATION FUNCTIONS
+		void Set_Flags(DReaction* locReaction, string locRemainingFlagString);
+		void Create_DefaultDecayStep(DReaction* locReaction, Particle_t locPID);
 
-		// User-input channels
-		deque<FSInfo*> dFSInfos;
+		//CREATION FUNCTIONS
+		void Create_Steps(DReaction* locReaction, DReactionStep* locCurrentStep, vector<DReactionStepTuple>& locDecayStepTuples);
+		vector<DReaction*> Create_Reactions(const map<size_t, tuple<string, string, string, vector<string>>>& locInputStrings);
+		DReactionStep* Create_ReactionStep(const DReactionStepTuple& locStepTuple);
 
-		// Keep track of DReactionSteps that have been created for decaying particles
-		// These can be re-used between DReactions, allowing the analysis library to save memory for combo steps
-		map<pair<Particle_t, bool>, set<DReactionStep*> > dDecayStepMap_All; //bool: true for mass constrained by kinfit, false if not
-
-		// Cuts
-		map<Particle_t, pair<double, double> > dMissingMassCuts; //Unknown = none missing //if negative, uses missing mass squared instead
-		map<Particle_t, pair<double, double> > dInvariantMassCuts;
+		//ACTIONS
+		void Add_MassHistograms(DReaction* locReaction, bool locUseKinFitResultsFlag, string locBaseUniqueName = "");
+		void Create_InvariantMassHistogram(DReaction* locReaction, Particle_t locPID, bool locUseKinFitResultsFlag, string locBaseUniqueName);
+		void Create_MissingMassSquaredHistogram(DReaction* locReaction, Particle_t locPID, bool locUseKinFitResultsFlag, string locBaseUniqueName, int locMissingMassOffOfStepIndex, const deque<Particle_t>& locMissingMassOffOfPIDs);
+		void Add_PostKinfitTimingCuts(DReaction* locReaction);
 
 		DSourceComboP4Handler* dSourceComboP4Handler = nullptr;
 		DSourceComboTimeHandler* dSourceComboTimeHandler = nullptr;

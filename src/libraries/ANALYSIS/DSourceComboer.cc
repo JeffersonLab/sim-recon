@@ -8,7 +8,6 @@
  * will then have to re-apply cuts post-kinfit!!
  * do not cut timing of charged OR neutral particles at detached vertices!!!!!!! There is just too much uncertainty in the path length of the decaying particle
  *
- * Target particle used 2x for same chain if rescattering! Position is not well defined! Check!
  *
  * EVENTUALLY:
  * ppp
@@ -36,10 +35,12 @@ A) You can try reducing the #z-bins by increasing their widths. However, much su
 */
 
 //TO DO:
+//Implement new reaction filter input
+	//How/how-much to study?
+	//No easy way to implement in master
+//reaction filter: cut on pid post-kinfit all channels
 //Undo comparison changes
 //Change time handling for detached decay products
-//reaction filter: cut on pid post-kinfit all channels
-//Implement new reaction filter input
 
 //TO COMPARE:
 //Look for "COMPARE:"
