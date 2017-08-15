@@ -31,7 +31,7 @@
 
 /******************************************************************************** CUSTOMIZATION FUNCTIONS ********************************************************************************/
 
-bool gDebugFlag = true;
+bool gDebugFlag = false;
 
 void DReaction_factory_ReactionFilter::Create_DefaultDecayStep(DReaction* locReaction, Particle_t locPID)
 {
