@@ -476,7 +476,11 @@ void DParticleComboCreator::Set_SpacetimeVertex(const DReaction* locReaction, co
 
 	//time not constrained. instead, get from rf time and propagate it
 	if(locStepIndex == 0)
+	{
 		locSpacetimeVertex.SetT(locOrigShiftedRFTime + (locSpacetimeVertex.Z() - dTargetCenter.Z())/SPEED_OF_LIGHT);
+		if(dDebugLevel >= 5)
+			cout << "step 0: orig rf time, vertex-z, targz, shifted rf time: " << locOrigShiftedRFTime << ", " << locSpacetimeVertex.Z() << ", " << dTargetCenter.Z() << ", " << locSpacetimeVertex.T() << endl;
+	}
 	else
 	{
 		auto locDecayFromStepIndices = Get_InitialParticleDecayFromIndices(locReaction, locStepIndex);
@@ -709,13 +713,15 @@ const DNeutralParticleHypothesis* DParticleComboCreator::Create_NeutralHypo_KinF
 	locNewHypo->Set_NeutralShower(locOrigHypo->Get_NeutralShower());
 
 	//p3 & v3
+	auto locWasNeutralShowerInFit = (locKinFitParticle->Get_EParamIndex() >= 0);
 	TVector3 locFitMomentum = locKinFitParticle->Get_Momentum();
-	TVector3 locFitVertex = locKinFitParticle->Get_Position();
+	TVector3 locFitVertex = locWasNeutralShowerInFit ? locKinFitParticle->Get_CommonVertex() : locKinFitParticle->Get_Position();
 	locNewHypo->setMomentum(DVector3(locFitMomentum.X(), locFitMomentum.Y(), locFitMomentum.Z()));
 	locNewHypo->setPosition(DVector3(locFitVertex.X(), locFitVertex.Y(), locFitVertex.Z()));
 
 	//t & error matrix
-	locNewHypo->setTime(locKinFitParticle->Get_Time());
+	auto locTime = locWasNeutralShowerInFit ? locKinFitParticle->Get_CommonTime() : locKinFitParticle->Get_Time();
+	locNewHypo->setTime(locTime);
 	locNewHypo->setErrorMatrix(locKinFitParticle->Get_CovarianceMatrix());
 
 	//if timing was kinfit, there is no chisq to calculate: forced to correct time
@@ -728,6 +734,8 @@ const DNeutralParticleHypothesis* DParticleComboCreator::Create_NeutralHypo_KinF
 	}
 
 	//update timing info
+	if(dDebugLevel >= 20)
+		cout << "orig hypo time, orig vertz, new hypo time, new hypo vertz, t0: " << locOrigHypo->time() << ", " << locOrigHypo->position().Z() << ", " << locNewHypo->time() << ", " << locNewHypo->position().Z() << ", " << locPropagatedRFTime << endl;
 	locNewHypo->Set_T0(locPropagatedRFTime, locOrigHypo->t0_err(), locOrigHypo->t0_detector());
 
 	// Calculate DNeutralParticleHypothesis FOM

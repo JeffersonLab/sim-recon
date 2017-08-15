@@ -2388,14 +2388,15 @@ void DKinFitter::Update_ParticleParams(void)
 				locKinFitParticle->Set_CommonVertex(locPosition);
 		}
 
-		//energy
+		//neutral shower energy and time
 		locParamIndex = locKinFitParticle->Get_EParamIndex();
 		if(locParamIndex >= 0) //neutral shower: set momentum also //must be after Vx & common vertex are set
 		{
 			double locE = locSourceMatrix(locParamIndex, 0);
 			locKinFitParticle->Set_ShowerEnergy(locE);
 			double locPMag = sqrt(locE*locE - locKinFitParticle->Get_Mass()*locKinFitParticle->Get_Mass());
-			TVector3 locMomentum = locKinFitParticle->Get_Position() - locKinFitParticle->Get_CommonVertex();
+			TVector3 locPath = locKinFitParticle->Get_Position() - locKinFitParticle->Get_CommonVertex();
+			TVector3 locMomentum = locPath;
 			locMomentum.SetMag(locPMag);
 			locKinFitParticle->Set_Momentum(locMomentum);
 		}
@@ -2409,9 +2410,9 @@ void DKinFitter::Update_ParticleParams(void)
 			if(locKinFitParticle->Get_CommonTParamIndex() < 0)
 				locKinFitParticle->Set_CommonTime(locTime);
 		}
-		else if((locKinFitParticle->Get_PxParamIndex() >= 0) && !locIsUnknownParticleFlag)
+		else if((locKinFitParticle->Get_PxParamIndex() >= 0) && !locIsUnknownParticleFlag && (locKinFitParticle->Get_EParamIndex() < 0))
 		{
-			//momentum has changed: update time
+			//momentum has changed (and not a neutral shower): update time
 			//note: not dependent on position change: trajectory moved, but doesn't change path length (if does, is unknown & small)
 
 			//note: for charged, is losing energy along the trajectory
