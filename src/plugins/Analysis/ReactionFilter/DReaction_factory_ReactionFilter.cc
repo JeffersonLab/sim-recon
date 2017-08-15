@@ -31,8 +31,6 @@
 
 /******************************************************************************** CUSTOMIZATION FUNCTIONS ********************************************************************************/
 
-bool gDebugFlag = false;
-
 void DReaction_factory_ReactionFilter::Create_DefaultDecayStep(DReaction* locReaction, Particle_t locPID)
 {
 	//DO NOT SPECIFY DEFAULT DECAYS FOR PARTICLES THAT CAN BE DETECTED!!!!!! (e.g. pion, neutron, klong)
@@ -267,7 +265,7 @@ vector<DReaction*> DReaction_factory_ReactionFilter::Create_Reactions(const map<
 		auto& locNameString = std::get<0>(locReactionPair.second);
 		auto& locFirstStepString = std::get<1>(locReactionPair.second);
 		auto& locFlagString = std::get<2>(locReactionPair.second);
-		if(gDebugFlag)
+		if(dDebugFlag)
 			cout << "name string, first step string, flag string, #decay strings: " << locNameString << ", " << locFirstStepString << ", " << locFlagString << ", " << std::get<3>(locReactionPair.second).size() << endl;
 
 		DReactionStepTuple locFirstStepTuple;
@@ -304,7 +302,7 @@ vector<DReaction*> DReaction_factory_ReactionFilter::Create_Reactions(const map<
 		if((locNameString == "") && (locFlagString != "")) //add flags to name
 			locReactionName += string("__") + locFlagString;
 
-		if(gDebugFlag)
+		if(dDebugFlag)
 			cout << "reaction name: " << locReactionName << endl;
 
 		//create dreaction & first step
@@ -319,7 +317,7 @@ vector<DReaction*> DReaction_factory_ReactionFilter::Create_Reactions(const map<
 		Set_Flags(locReaction, locFlagString);
 
 		//save reaction
-		if(gDebugFlag)
+		if(dDebugFlag)
 		{
 			cout << "CREATED REACTION:" << endl;
 			DAnalysis::Print_Reaction(locReaction);
@@ -482,7 +480,7 @@ void DReaction_factory_ReactionFilter::Create_MissingMassSquaredHistogram(DReact
 	else
 		locActionUniqueNameStream << ParticleType(locPID) << "_Step" << locMissingMassOffOfStepIndex << "_" << locBaseUniqueName;
 
-	if(gDebugFlag)
+	if(dDebugFlag)
 	{
 		cout << "create miss mass squared action: off step index, kinfit flag, off pids: " << locMissingMassOffOfStepIndex << ", " << locUseKinFitResultsFlag;
 		for(auto& locPID : locMissingMassOffOfPIDs)
@@ -544,13 +542,13 @@ map<size_t, tuple<string, string, string, vector<string>>> DReaction_factory_Rea
 	gPARMS->GetParameters(locParameterMap, "Reaction"); //gets all parameters with this filter at the beginning of the key
 	for(auto locParamPair : locParameterMap)
 	{
-		if(gDebugFlag)
+		if(dDebugFlag)
 			cout << "param pair: " << locParamPair.first << ", " << locParamPair.second << endl;
 
 		//make sure that what follows "Reaction," up to the colon (if any) is a number
 		auto locColonIndex = locParamPair.first.find(':');
 		auto locPreColonName = locParamPair.first.substr(0, locColonIndex);
-		if(gDebugFlag)
+		if(dDebugFlag)
 			cout << "colon index, pre-colon name: " << locColonIndex << ", " << locPreColonName << endl;
 
 		istringstream locIStream(locPreColonName);
@@ -558,7 +556,7 @@ map<size_t, tuple<string, string, string, vector<string>>> DReaction_factory_Rea
 		locIStream >> locReactionNumber;
 		if(locIStream.fail())
 			continue; //must be for a different use
-		if(gDebugFlag)
+		if(dDebugFlag)
 			cout << "reaction #: " << locReactionNumber << endl;
 
 		//hack so that don't get warning message about no default
@@ -623,7 +621,7 @@ bool DReaction_factory_ReactionFilter::Parse_StepPIDString(string locStepString,
 	{
 		auto locUnderscoreIndex = locRemainingStepString.find("_");
 		auto locParticleString = (locUnderscoreIndex != string::npos) ? locRemainingStepString.substr(0, locUnderscoreIndex) : locRemainingStepString;
-		if(gDebugFlag)
+		if(dDebugFlag)
 			cout << "remaining string, underscore index, particle string: " << locRemainingStepString << ", " << locUnderscoreIndex << ", " << locParticleString << endl;
 
 		Particle_t locPID = Unknown;
@@ -651,7 +649,7 @@ bool DReaction_factory_ReactionFilter::Parse_StepPIDString(string locStepString,
 	if(std::get<3>(locStepTuple) != Unknown)
 		std::get<4>(locStepTuple) = std::get<2>(locStepTuple).size();
 
-	if(gDebugFlag)
+	if(dDebugFlag)
 	{
 		cout << "step tuple: init pid, 2nd init pid, #final pids, missing pid, missing index: " << std::get<0>(locStepTuple) << ", " << std::get<1>(locStepTuple);
 		cout << ", " << std::get<2>(locStepTuple).size() << ", " << std::get<3>(locStepTuple) << ", " << std::get<4>(locStepTuple) << endl;

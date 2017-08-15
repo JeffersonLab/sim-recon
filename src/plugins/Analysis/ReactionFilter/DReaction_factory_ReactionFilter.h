@@ -35,6 +35,8 @@ class DReaction_factory_ReactionFilter : public jana::JFactory<DReaction>
 		const char* Tag(void){return "ReactionFilter";}
 
 	private:
+		bool dDebugFlag = false;
+
 		jerror_t evnt(JEventLoop* locEventLoop, uint64_t locEventNumber);
 
 		//UTILITY FUNCTIONS
