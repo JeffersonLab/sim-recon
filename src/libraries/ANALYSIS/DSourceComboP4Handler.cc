@@ -161,6 +161,13 @@ DSourceComboP4Handler::DSourceComboP4Handler(DSourceComboer* locSourceComboer, b
 		dMissingMassSquaredCuts[Unknown].second->SetParameter(0, 0.1);
 		dMissingMassSquaredCuts.emplace(Gamma, dMissingMassSquaredCuts[Unknown]);
 
+		//e+/-
+		dMissingMassSquaredCuts[Positron].first = new TF1("df_MissingMassSquaredCut_EPlusLow", "[0]", 0.0, 12.0);
+		dMissingMassSquaredCuts[Positron].first->SetParameter(0, -1.0);
+		dMissingMassSquaredCuts[Positron].second = new TF1("df_MissingMassSquaredCut_EPlusHigh", "[0]", 0.0, 12.0);
+		dMissingMassSquaredCuts[Positron].second->SetParameter(0, 1.0);
+		dMissingMassSquaredCuts.emplace(Electron, dMissingMassSquaredCuts[Positron]);
+
 		//Pi+/-
 		dMissingMassSquaredCuts[PiPlus].first = new TF1("df_MissingMassSquaredCut_PiPlusLow", "[0]", 0.0, 12.0);
 		dMissingMassSquaredCuts[PiPlus].first->SetParameter(0, -1.0);
