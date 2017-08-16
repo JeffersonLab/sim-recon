@@ -12,11 +12,15 @@ void density_vs_r_vs_z(void)
 	c1->Divide(1,2);
 	
 	c1->cd(1);
+	gPad->SetRightMargin(0.15);
+	density_LL->GetZaxis()->SetRangeUser(0.0, 1.25);
 	density_LL->SetStats(0);
 	density_LL->SetTitle("Material Map from FindMatLL(...)");
 	density_LL->Draw("colz");
 
 	c1->cd(2);
+	gPad->SetRightMargin(0.15);
+	density_table->GetZaxis()->SetRangeUser(0.0, 1.25);
 	density_table->SetStats(0);
 	density_table->SetTitle("Material Map from FindMatTable(...)");
 	density_table->Draw("colz");
