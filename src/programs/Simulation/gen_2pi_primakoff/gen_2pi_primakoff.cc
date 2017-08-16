@@ -293,6 +293,7 @@ int main( int argc, char* argv[] ){
 					float vz = 1;   // vertex for CCP experiment
 					
 					if( hddmOut ) hddmOut->writeEvent( *evt, pTypes, vx, vy, vz);
+					// note that there is no provision currently for vertex output in root file
 					rootOut.writeEvent( *evt );
 					++eventCounter;
 				}
