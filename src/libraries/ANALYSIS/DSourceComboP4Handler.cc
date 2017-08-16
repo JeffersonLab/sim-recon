@@ -533,6 +533,8 @@ bool DSourceComboP4Handler::Calc_P4_Decay(bool locIsProductionVertex, bool locIs
 	{
 		locVertex = dSourceComboVertexer->Get_Vertex(false, locReactionFullCombo, locDecayCombo, locBeamParticle);
 		auto locPrimaryVertex = dSourceComboVertexer->Get_Vertex(true, locReactionFullCombo, locReactionFullCombo, locBeamParticle);
+		if(!dSourceComboVertexer->Get_IsTimeOffsetKnown(locIsPrimaryProductionVertex, locReactionFullCombo, locDecayCombo, locBeamParticle))
+			return false; //not from this vertex
 		auto locTimeOffset = dSourceComboVertexer->Get_TimeOffset(locIsPrimaryProductionVertex, locReactionFullCombo, locDecayCombo, locBeamParticle);
 		locRFVertexTime = dSourceComboTimeHandler->Calc_PropagatedRFTime(locPrimaryVertex.Z(), locRFBunch, locTimeOffset);
 		if(!Calc_P4_HasMassiveNeutrals(false, locIsPrimaryProductionVertex, locReactionFullCombo, locDecayCombo, locVertex, locRFBunch, locRFVertexTime, locToExcludeUse, locDecayP4, locBeamParticle, locAccuratePhotonsFlag))
@@ -741,6 +743,8 @@ bool DSourceComboP4Handler::Cut_InvariantMass_HasMassiveNeutral_OrPhotonVertex(c
 
 		//get vertex position and time offset
 		auto locVertex = dSourceComboVertexer->Get_Vertex_NoBeam(locIsProductionVertex, locVertexPrimaryFullCombo);
+		if(!dSourceComboVertexer->Get_IsTimeOffsetKnown(locIsPrimaryProductionVertex, locReactionFullCombo, locVertexPrimaryFullCombo, nullptr))
+			continue; //not from this vertex
 		auto locTimeOffset = dSourceComboVertexer->Get_TimeOffset(locIsPrimaryProductionVertex, locReactionFullCombo, locVertexPrimaryFullCombo, nullptr);
 
 		//get all combos at this vertex, with their uses, in reverse dependency order
@@ -803,6 +807,8 @@ bool DSourceComboP4Handler::Cut_InvariantMass_MissingMassVertex(const DReactionV
 
 		//get vertex position and time offset
 		auto locVertex = dSourceComboVertexer->Get_Vertex(locIsProductionVertex, locReactionFullCombo, locVertexPrimaryFullCombo, locBeamParticle);
+		if(!dSourceComboVertexer->Get_IsTimeOffsetKnown(locIsPrimaryProductionVertex, locReactionFullCombo, locVertexPrimaryFullCombo, locBeamParticle))
+			continue; //not from this vertex
 		auto locTimeOffset = dSourceComboVertexer->Get_TimeOffset(locIsPrimaryProductionVertex, locReactionFullCombo, locVertexPrimaryFullCombo, locBeamParticle);
 
 		//get all combos at this vertex, with their uses, in reverse dependency order
@@ -864,8 +870,7 @@ bool DSourceComboP4Handler::Cut_MissingMass(const DReaction* locReaction, const 
 
 	//get primary vertex info
 	auto locPrimaryVertex = dSourceComboVertexer->Get_PrimaryVertex(locReactionVertexInfo, locReactionFullCombo, locBeamParticle);
-	auto locTimeOffset = dSourceComboVertexer->Get_TimeOffset(true, locReactionFullCombo, locReactionFullCombo, locBeamParticle);
-	auto locRFVertexTime = dSourceComboTimeHandler->Calc_PropagatedRFTime(locPrimaryVertex.Z(), locRFBunch, locTimeOffset);
+	auto locRFVertexTime = dSourceComboTimeHandler->Calc_PropagatedRFTime(locPrimaryVertex.Z(), locRFBunch, 0.0);
 
 	//compute final-state p4
 	DLorentzVector locFinalStateP4(0.0, 0.0, 0.0, 0.0);
@@ -931,6 +936,8 @@ bool DSourceComboP4Handler::Cut_InvariantMass_AccuratePhotonKinematics(const DRe
 
 		//get vertex position and time offset
 		auto locVertex = dSourceComboVertexer->Get_Vertex(locIsProductionVertex, locReactionFullCombo, locVertexPrimaryFullCombo, locBeamParticle);
+		if(!dSourceComboVertexer->Get_IsTimeOffsetKnown(locIsPrimaryProductionVertex, locReactionFullCombo, locVertexPrimaryFullCombo, locBeamParticle))
+			continue; //not from this vertex
 		auto locTimeOffset = dSourceComboVertexer->Get_TimeOffset(locIsPrimaryProductionVertex, locReactionFullCombo, locVertexPrimaryFullCombo, locBeamParticle);
 
 		//get all combos at this vertex, with their uses, in reverse dependency order

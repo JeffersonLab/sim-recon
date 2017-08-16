@@ -6,11 +6,29 @@
  * PROBLEMS:
  *
  * EVENTUALLY:
- * ppp
+ * K+ Sigma0: COMPARE
+ * K+ K+ pi- Xi0, Xi0 -> pi0, Lambda
  * omega p
+ * omega p missing pi+
+ * omega p missing g
+ *
+ * n, pi+
+ * n, pi0, pi+
+ * K+ Lambda, Lambda -> n, pi0
+ *
+ * 2K0 p, K0 -> 3pi
+ *
  * K0 Sigma+
+ * K0 Sigma+ missing pi+
+ * K0 Sigma+ missing proton
+ * K0 Sigma+ missing g
+ * K0 Sigma+ pi0
+ * K0 Sigma+ pi0 missing pi0 g
  * K0 Sigma+ (pi0)
  * 
+ * K0 Sigma+, K0 -> 3pi
+ * K0 pi+ Lambda, K0 -> 3pi
+ *
  *
  */
 
@@ -1326,7 +1344,7 @@ void DSourceComboer::Combo_WithNeutralsAndBeam(const vector<const DReaction*>& l
 	//if there is a vertex zbin that is out of range, and we need photons: don't allow: will blow up memory due to no invariant mass cuts
 	for(auto& locStepVertexInfo : locReactionVertexInfo->Get_StepVertexInfos())
 	{
-		auto locZBin = dSourceComboVertexer->Get_VertexZBin_NoBeam(locStepVertexInfo, locReactionChargedCombo);
+		auto locZBin = dSourceComboVertexer->Get_VertexZBin(locStepVertexInfo, locReactionChargedCombo, nullptr);
 		if(locZBin != DSourceComboInfo::Get_VertexZIndex_OutOfRange())
 			continue;
 		if(!locStepVertexInfo->Get_OnlyConstrainTimeParticles().empty())
@@ -3541,6 +3559,49 @@ void DSourceComboer::Copy_ZIndependentMixedResults(const DSourceComboUse& locCom
 	}
 }
 
+const DSourceCombo* DSourceComboer::Get_VertexPrimaryCombo(const DSourceCombo* locReactionCombo, const DReactionStepVertexInfo* locStepVertexInfo)
+{
+	//if it's the production vertex, just return the input
+	if(locStepVertexInfo->Get_ProductionVertexFlag())
+		return locReactionCombo;
+
+	//see if it's already been determined before: if so, just return it
+	auto locCreationPair = std::make_pair(locReactionCombo, locStepVertexInfo);
+	auto locIterator = dVertexPrimaryComboMap.find(locCreationPair);
+	if(locIterator != dVertexPrimaryComboMap.end())
+		return locIterator->second;
+
+	//find it
+	auto locReaction = locStepVertexInfo->Get_Reaction();
+	auto locDesiredStepIndex = locStepVertexInfo->Get_StepIndices().front();
+	auto locVertexPrimaryCombo = Get_StepSourceCombo(locReaction, locDesiredStepIndex, locReactionCombo, 0);
+
+	//save it and return it
+	dVertexPrimaryComboMap.emplace(locCreationPair, locVertexPrimaryCombo);
+	return locVertexPrimaryCombo;
+}
+
+const DSourceCombo* DSourceComboer::Get_VertexPrimaryCombo(const DSourceCombo* locReactionCombo, const DReactionStepVertexInfo* locStepVertexInfo) const
+{
+	//if it's the production vertex, just return the input
+	if(locStepVertexInfo->Get_ProductionVertexFlag())
+		return locReactionCombo;
+
+	//see if it's already been determined before: if so, just return it
+	auto locCreationPair = std::make_pair(locReactionCombo, locStepVertexInfo);
+	auto locIterator = dVertexPrimaryComboMap.find(locCreationPair);
+	if(locIterator != dVertexPrimaryComboMap.end())
+		return locIterator->second;
+
+	//find it
+	auto locReaction = locStepVertexInfo->Get_Reaction();
+	auto locDesiredStepIndex = locStepVertexInfo->Get_StepIndices().front();
+	auto locVertexPrimaryCombo = Get_StepSourceCombo(locReaction, locDesiredStepIndex, locReactionCombo, 0);
+
+	//return it
+	return locVertexPrimaryCombo;
+}
+
 const DSourceCombo* DSourceComboer::Get_StepSourceCombo(const DReaction* locReaction, size_t locDesiredStepIndex, const DSourceCombo* locVertexPrimaryCombo, size_t locVertexPrimaryStepIndex) const
 {
 	if(dDebugLevel >= 100)
@@ -3632,7 +3693,9 @@ const DSourceCombo* DSourceComboer::Find_Combo_AtThisStep(const DSourceCombo* lo
 				return locNestedDecayPair.second[locDecayInstanceIndex];
 		}
 	}
-	return nullptr;
+
+	//Not found: Either invalid request, OR the input is a fully-charged combo being used for a Use that contains neutrals (created during charged-only stage): Return the input, it is already what you want
+	return locSourceCombo;
 }
 
 /*
@@ -3758,49 +3821,6 @@ const DSourceCombo* DSourceComboer::Get_NextChargedCombo(const DSourceCombo* loc
 	if(dDebugLevel >= 20)
 		cout << "uh oh" << endl;
 	return nullptr; //uh oh ...
-}
-
-const DSourceCombo* DSourceComboer::Get_VertexPrimaryCombo(const DSourceCombo* locReactionCombo, const DReactionStepVertexInfo* locStepVertexInfo)
-{
-	//if it's the production vertex, just return the input
-	if(locStepVertexInfo->Get_ProductionVertexFlag())
-		return locReactionCombo;
-
-	//see if it's already been determined before: if so, just return it
-	auto locCreationPair = std::make_pair(locReactionCombo, locStepVertexInfo);
-	auto locIterator = dVertexPrimaryComboMap.find(locCreationPair);
-	if(locIterator != dVertexPrimaryComboMap.end())
-		return locIterator->second;
-
-	//find it
-	auto locReaction = locStepVertexInfo->Get_Reaction();
-	auto locDesiredStepIndex = locStepVertexInfo->Get_StepIndices().front();
-	auto locVertexPrimaryCombo = Get_StepSourceCombo(locReaction, locDesiredStepIndex, locReactionCombo, 0);
-
-	//save it and return it
-	dVertexPrimaryComboMap.emplace(locCreationPair, locVertexPrimaryCombo);
-	return locVertexPrimaryCombo;
-}
-
-const DSourceCombo* DSourceComboer::Get_VertexPrimaryCombo(const DSourceCombo* locReactionCombo, const DReactionStepVertexInfo* locStepVertexInfo) const
-{
-	//if it's the production vertex, just return the input
-	if(locStepVertexInfo->Get_ProductionVertexFlag())
-		return locReactionCombo;
-
-	//see if it's already been determined before: if so, just return it
-	auto locCreationPair = std::make_pair(locReactionCombo, locStepVertexInfo);
-	auto locIterator = dVertexPrimaryComboMap.find(locCreationPair);
-	if(locIterator != dVertexPrimaryComboMap.end())
-		return locIterator->second;
-
-	//find it
-	auto locReaction = locStepVertexInfo->Get_Reaction();
-	auto locDesiredStepIndex = locStepVertexInfo->Get_StepIndices().front();
-	auto locVertexPrimaryCombo = Get_StepSourceCombo(locReaction, locDesiredStepIndex, locReactionCombo, 0);
-
-	//return it
-	return locVertexPrimaryCombo;
 }
 
 bool DSourceComboer::Get_PromoteFlag(ComboingStage_t locComboingStage, Particle_t locDecayPID_UseToCheck, const DSourceComboInfo* locComboInfo_UseToCreate, const DSourceComboInfo* locComboInfo_UseToCheck, DSourceComboUse& locNonNeutralUse) const

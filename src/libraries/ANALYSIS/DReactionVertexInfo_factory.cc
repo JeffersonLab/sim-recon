@@ -70,6 +70,11 @@ DReactionVertexInfo* DReactionVertexInfo_factory::Build_VertexInfo(const DReacti
 		std::copy(locStepIndexVector.begin(), locStepIndexVector.end(), std::inserter(locStepIndexSet, locStepIndexSet.end()));
 
 		Group_VertexParticles(locVertexInfo);
+		if(dDebugLevel > 0)
+		{
+			cout << "Grouped vertex info: " << endl;
+			DAnalysis::Print_ReactionStepVertexInfo(locVertexInfo);
+		}
 	}
 
 	//work in reverse: try to build decaying particles out of decay products first, rather than missing mass
@@ -77,6 +82,12 @@ DReactionVertexInfo* DReactionVertexInfo_factory::Build_VertexInfo(const DReacti
 
 	//results are sorted by dependency order
 	locVertexInfos = Link_Vertices(locReaction, locVertexInfos, false);
+	if(dDebugLevel > 0)
+	{
+		cout << "Linked vertex infos, fitflag = false: " << endl;
+		for(auto& locVertexInfo : locVertexInfos)
+			DAnalysis::Print_ReactionStepVertexInfo(locVertexInfo);
+	}
 	locVertexInfos = Link_Vertices(locReaction, locVertexInfos, true);
 	return new DReactionVertexInfo(locReaction, locVertexInfos);
 }
@@ -224,6 +235,8 @@ vector<DReactionStepVertexInfo*> DReactionVertexInfo_factory::Link_Vertices(cons
 				if(locTryMissingParticleVertexFlag)
 					break; //no progress made: cannot constrain remaining vertices
 				locTryMissingParticleVertexFlag = true; //try this now
+				if(dDebugLevel > 0)
+					cout << "try another loop, using missing mass" << endl;
 			}
 
 			//reset for next pass through
@@ -231,6 +244,8 @@ vector<DReactionStepVertexInfo*> DReactionVertexInfo_factory::Link_Vertices(cons
 			locProgessMadeFlag = false;
 			continue;
 		}
+
+		//Try a vertex info
 		auto locVertexInfo = *locVertexIterator;
 		if(!locTryMissingParticleVertexFlag && !locVertexInfo->Get_MissingParticles().empty())
 		{
@@ -277,22 +292,26 @@ vector<DReactionStepVertexInfo*> DReactionVertexInfo_factory::Link_Vertices(cons
 
 bool DReactionVertexInfo_factory::Associate_DecayingParticles(bool locFitFlag, bool locLinkingFlag, DReactionStepVertexInfo* locVertexInfo, map<pair<int, int>, DReactionStepVertexInfo*>& locDefinedDecayingParticles) const
 {
+	if(dDebugLevel > 0)
+	{
+		cout << "Associate_DecayingParticles: fit flag, link flag, info, #defined decaying: " << locFitFlag << ", " << locLinkingFlag << ", " << locVertexInfo << ", " << locDefinedDecayingParticles.size() << endl;
+		DAnalysis::Print_ReactionStepVertexInfo(locVertexInfo);
+	}
+
 	//find which decaying particles at this vertex have/haven't been previously defined
 	vector<pair<int, int>> locNoConstrainDecayingParticles;
 	map<pair<int, int>, const DReactionStepVertexInfo*> locConstrainingDecayingParticles;
 	auto locDecayingParticles = locVertexInfo->Get_DecayingParticles();
-
 	for(auto locParticlePair : locDecayingParticles)
 	{
 		auto locIterator = locDefinedDecayingParticles.find(locParticlePair);
 		if(locIterator != locDefinedDecayingParticles.end())
-		{
 			locConstrainingDecayingParticles.emplace(*locIterator);
-			locDefinedDecayingParticles.erase(locIterator); //can't use the same one twice
-		}
 		else //not found
 			locNoConstrainDecayingParticles.emplace_back(locParticlePair);
 	}
+	if(dDebugLevel > 0)
+		cout << "# decaying particles, constrain/no-constrain: " << locConstrainingDecayingParticles.size() << ", " << locNoConstrainDecayingParticles.size() << endl;
 
 	//tricky: beamline can be used to find vertex, but not in a kinfit (because the errors are zero)
 	//so, if a production vertex has only one charged/known-decaying track, then:
@@ -303,9 +322,10 @@ bool DReactionVertexInfo_factory::Associate_DecayingParticles(bool locFitFlag, b
 
 	//see if enough tracks //if not linking, then don't need "enough": will register as dangling vertex instead
 	auto locNumConstrainingParticles = locConstrainingDecayingParticles.size() + locVertexInfo->Get_FullConstrainParticles(locFitFlag).size();
-	locVertexInfo->Set_FittableVertexFlag((locNumConstrainingParticles >= 2));
-	if(!locFitFlag && locVertexInfo->Get_ProductionVertexFlag() && !dKinFitUtils->Get_IncludeBeamlineInVertexFitFlag())
-		++locNumConstrainingParticles; //include beamline for reconstruction (but not fitting)
+	if(locFitFlag)
+		locVertexInfo->Set_FittableVertexFlag((locNumConstrainingParticles >= 2));
+	if(dDebugLevel > 0)
+		cout << "#constraining: " << locNumConstrainingParticles << endl;
 
 	bool locEnoughTracksFlag = (locNumConstrainingParticles >= 2);
 	if(locLinkingFlag && !locEnoughTracksFlag)
@@ -318,6 +338,7 @@ bool DReactionVertexInfo_factory::Associate_DecayingParticles(bool locFitFlag, b
 	{
 		auto locDefiningVertexInfo = const_cast<DReactionStepVertexInfo*>(locMapPair.second); //easier this way
 		locDefiningVertexInfo->Register_DecayingNoConstrainUseVertex(locFitFlag, locMapPair.first, locVertexInfo);
+		locDefinedDecayingParticles.erase(locMapPair.first); //can't use the same one twice
 	}
 
 	if(!locLinkingFlag)
@@ -336,12 +357,22 @@ bool DReactionVertexInfo_factory::Associate_DecayingParticles(bool locFitFlag, b
 	auto locReaction = locVertexInfo->Get_Reaction();
 	for(auto locParticlePair : locNoConstrainDecayingParticles)
 	{
+		if(dDebugLevel > 0)
+			cout << "defined decaying particle indices: " << locParticlePair.first << ", " << locParticlePair.second << endl;
 		if(locParticlePair.second < 0) //was in initial state: save final state
-			locDefinedDecayingParticles.emplace(DAnalysis::Get_InitialParticleDecayFromIndices(locReaction, locParticlePair.first), locVertexInfo);
+		{
+			auto locParticlePairToRegister = DAnalysis::Get_InitialParticleDecayFromIndices(locReaction, locParticlePair.first);
+			if(dDebugLevel > 0)
+				cout << "registering decaying particle indices: " << locParticlePairToRegister.first << ", " << locParticlePairToRegister.second << endl;
+			locDefinedDecayingParticles.emplace(locParticlePairToRegister, locVertexInfo);
+		}
 		else //was in final state: save initial state
 		{
 			int locDecayStepIndex = DAnalysis::Get_DecayStepIndex(locReaction, locParticlePair.first, locParticlePair.second);
-			locDefinedDecayingParticles.emplace(std::make_pair(locDecayStepIndex, DReactionStep::Get_ParticleIndex_Initial()), locVertexInfo);
+			auto locParticlePairToRegister = std::make_pair(locDecayStepIndex, DReactionStep::Get_ParticleIndex_Initial());
+			if(dDebugLevel > 0)
+				cout << "registering decaying particle indices: " << locParticlePairToRegister.first << ", " << locParticlePairToRegister.second << endl;
+			locDefinedDecayingParticles.emplace(locParticlePairToRegister, locVertexInfo);
 		}
 	}
 

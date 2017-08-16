@@ -56,6 +56,8 @@ void Set_Vertex(const DVertex* locVertex){dVertex = locVertex;}
 		//GET RESULTS
 		bool Get_IsVertexKnown(bool locIsProductionVertex, const DSourceCombo* locReactionCombo, const DSourceCombo* locVertexCombo, const DKinematicData* locBeamParticle) const;
 		bool Get_IsVertexKnown_NoBeam(bool locIsProductionVertex, const DSourceCombo* locVertexCombo) const;
+		bool Get_IsTimeOffsetKnown(bool locIsPrimaryProductionVertex, const DSourceCombo* locReactionCombo, const DSourceCombo* locVertexCombo, const DKinematicData* locBeamParticle) const;
+
 		DVector3 Get_Vertex_NoBeam(bool locIsProductionVertex, const DSourceCombo* locVertexCombo) const;
 		DVector3 Get_Vertex(bool locIsProductionVertex, const DSourceCombo* locReactionCombo, const DSourceCombo* locVertexCombo, const DKinematicData* locBeamParticle) const;
 		DVector3 Get_Vertex(bool locIsProductionVertex, const vector<const DKinematicData*>& locVertexParticles) const{return dVertexMap.find(std::make_pair(locIsProductionVertex, locVertexParticles))->second;}
@@ -104,9 +106,10 @@ const DVertex* dVertex;
 
 		//VERTEX-CONSTRAINING PARTICLES
 		//kinematic data: beam particle
-		//bool: is vertex combo production-vertex flag
+		//first bool: is vertex combo production-vertex flag
+		//second bool: is vertex combo a charged combo re-used in place of a has-neutrals combo (e.g. Xi0 -> pi0, Lambda: The lambda combo is used for Xi0 during charged-only stage)
 		//If beam is NOT needed to find the vertex then the primary reaction combo (first combo) is nullptr!!! (also not needed)
-		map<tuple<bool, const DSourceCombo*, const DSourceCombo*, const DKinematicData*>, vector<const DKinematicData*>> dConstrainingParticlesByCombo; //first combo: primary reaction combo
+		map<tuple<bool, const DSourceCombo*, const DSourceCombo*, const DKinematicData*, bool>, vector<const DKinematicData*>> dConstrainingParticlesByCombo; //first combo: primary reaction combo
 
 		//VERTICES
 		//Note that this only includes the particles used to find the vertex (+ rarely an extra or 2), not necessarily ALL of those at the vertex
@@ -140,6 +143,32 @@ inline void DSourceComboVertexer::Reset(void)
 	dVertexMap.emplace(std::make_pair(true, vector<const DKinematicData*>()), dTargetCenter);
 }
 
+inline bool DSourceComboVertexer::Get_IsTimeOffsetKnown(bool locIsPrimaryProductionVertex, const DSourceCombo* locReactionCombo, const DSourceCombo* locVertexCombo, const DKinematicData* locBeamParticle) const
+{
+	//the data member MAY be dependent on the beam particle, but it may not
+	//so, first search with the beam particle; if not found then search without it
+	if(locBeamParticle == nullptr)
+	{
+		auto locIterator = dTimeOffsets.find(std::make_tuple(locIsPrimaryProductionVertex, locReactionCombo, nullptr));
+		if(locIterator == dTimeOffsets.end())
+			return false;
+		auto& locComboMap = locIterator->second;
+		auto locComboIterator = locComboMap.find(locVertexCombo);
+		return (locComboIterator != locComboMap.end());
+	}
+
+	auto locIterator = dTimeOffsets.find(std::make_tuple(locIsPrimaryProductionVertex, locReactionCombo, locBeamParticle));
+	if(locIterator == dTimeOffsets.end())
+		return Get_TimeOffset(locIsPrimaryProductionVertex, locReactionCombo, locVertexCombo, nullptr); //try without beam
+
+	auto& locComboMap = locIterator->second;
+	auto locComboIterator = locComboMap.find(locVertexCombo);
+	if(locComboIterator == locComboMap.end())
+		return Get_TimeOffset(locIsPrimaryProductionVertex, locReactionCombo, locVertexCombo, nullptr); //try without beam
+
+	return true;
+}
+
 inline double DSourceComboVertexer::Get_TimeOffset(bool locIsPrimaryProductionVertex, const DSourceCombo* locReactionCombo, const DSourceCombo* locVertexCombo, const DKinematicData* locBeamParticle) const
 {
 	//the data member MAY be dependent on the beam particle, but it may not
@@ -166,10 +195,12 @@ inline double DSourceComboVertexer::Get_TimeOffset(bool locIsPrimaryProductionVe
 	return locComboIterator->second;
 }
 
-inline vector<const DKinematicData*> DSourceComboVertexer::Get_ConstrainingParticles(bool locIsProductionVertex, const DSourceCombo* locReactionCombo, const DSourceCombo* locVertexCombo, const DKinematicData* locBeamParticle) const
+inline vector<const DKinematicData*> DSourceComboVertexer::Get_ConstrainingParticles(bool locIsProductionVertex, const DSourceCombo* locReactionCombo, const DSourceCombo* locVertexCombo, const DKinematicData* locBeamParticle, bool locIsCombo2ndVertex) const
 {
 	//the data member MAY be dependent on the beam particle, but it may not
 	//so, first search with the beam particle; if not found then search without it
+	//second bool: is vertex combo a charged combo re-used in place of a has-neutrals combo (e.g. Xi0 -> pi0, Lambda: The lambda combo is used for Xi0 during charged-only stage)
+
 	if(locBeamParticle == nullptr)
 	{
 		auto locIterator = dConstrainingParticlesByCombo.find(std::make_tuple(locIsProductionVertex, (const DSourceCombo*)nullptr, locVertexCombo, (const DKinematicData*)nullptr));

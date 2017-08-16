@@ -208,7 +208,7 @@ const DParticleCombo* DParticleComboCreator::Build_ParticleCombo(const DReaction
 		auto locVertex = dSourceComboVertexer->Get_Vertex(locIsProductionVertex, locFullCombo, locVertexPrimaryCombo, locBeamParticle);
 		if(dDebugLevel >= 20)
 			cout << "vertex: " << locVertex.X() << ", " << locVertex.Y() << ", " << locVertex.Z() << endl;
-		auto locTimeOffset = dSourceComboVertexer->Get_TimeOffset(locIsPrimaryProductionVertex, locFullCombo, locVertexPrimaryCombo, locBeamParticle);
+		auto locTimeOffset = dSourceComboVertexer->Get_TimeOffset(locIsPrimaryProductionVertex, locFullCombo, locVertexPrimaryCombo, locBeamParticle); //if unknown, is 0
 		if(dDebugLevel >= 20)
 			cout << "time offset: " << locTimeOffset << endl;
 		auto locPropagatedRFTime = dSourceComboTimeHandler->Calc_PropagatedRFTime(locPrimaryVertexZ, locRFBunchShift, locTimeOffset);
