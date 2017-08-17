@@ -108,3 +108,27 @@ script with no arguments:
 
 > add_to_ccdb.csh
 
+
+
+Verifying geometry
+---------------------------------------
+The program "material2root" (in src/programs/Utilities)
+can be used to produce plots of the material maps
+read from CCDB and compare them to ones generated
+from DRootGeom directly. Make sure the material2root
+program has been linked against a HDGEOMTERY library
+that has the correct geometry. e.g. if you modified
+it for CPP before recompiling mkMaterialMap, then
+you also need to recompile material2root.
+
+Run the program giving it an appropriate run number:
+
+> material2root -r 30000
+
+There are two macros in the source directory for
+material2root that can be used to make plots that
+visually compare the two. 
+
+> material2root
+> root -l density_vs_r_vs_z.C
+> root -l radlen_vs_r_vs_z.C
