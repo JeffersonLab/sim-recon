@@ -24,7 +24,7 @@ import os
 # appropriate.
 # Note that only the first 19 characters display in the
 # "vers" command.
-LABEL = 'HDDS: 3.11'
+LABEL = ''
 
 procs = {}
 
@@ -95,16 +95,16 @@ AddProc('material_map31_cables', 'mkMaterialMap -Nr 30 -Nz 10 -rmin 61.0 -rmax 6
 # committing them to the default variation in ccdb.
 
 # TOF
-AddProc('material_map51_TOF', 'mkMaterialMap -Nr 100 -Nz 10 -rmin 0.0 -rmax 180.0 -zmin 605 -zmax 611 -n_r 100 -n_z 100 -n_phi 100')
+#AddProc('material_map51_TOF', 'mkMaterialMap -Nr 100 -Nz 10 -rmin 0.0 -rmax 180.0 -zmin 605 -zmax 611 -n_r 100 -n_z 100 -n_phi 100')
 
 # FCAL
-AddProc('material_map55_FCAL', 'mkMaterialMap -Nr 100 -Nz 10 -rmin 0.0 -rmax 180.0 -zmin 624 -zmax 670 -n_r 100 -n_z 100 -n_phi 100')
+#AddProc('material_map55_FCAL', 'mkMaterialMap -Nr 100 -Nz 10 -rmin 0.0 -rmax 180.0 -zmin 624 -zmax 670 -n_r 100 -n_z 100 -n_phi 100')
 
 # FCAL_PMT
-AddProc('material_map56_FCAL_PMT', 'mkMaterialMap -Nr 100 -Nz 10 -rmin 0.0 -rmax 180.0 -zmin 669 -zmax 690 -n_r 100 -n_z 100 -n_phi 100')
+#AddProc('material_map56_FCAL_PMT', 'mkMaterialMap -Nr 100 -Nz 10 -rmin 0.0 -rmax 180.0 -zmin 669 -zmax 690 -n_r 100 -n_z 100 -n_phi 100')
 
 # FMWPC
-AddProc('material_map61_FMWPC', 'mkMaterialMap -Nr 60 -Nz 175 -rmin 0.0 -rmax 180.0 -zmin 925 -zmax 1100 -n_r 100 -n_z 100 -n_phi 100')
+#AddProc('material_map61_FMWPC', 'mkMaterialMap -Nr 60 -Nz 175 -rmin 0.0 -rmax 180.0 -zmin 925 -zmax 1100 -n_r 100 -n_z 100 -n_phi 100')
 
 
 print 'Waiting for all processes to complete ...'
