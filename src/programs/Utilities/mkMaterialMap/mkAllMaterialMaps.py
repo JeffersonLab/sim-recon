@@ -88,6 +88,24 @@ AddProc('material_map23_FDC4', 'mkMaterialMap -Nr 30 -Nz 20 -rmin 0.0 -rmax 60.5
 # FDC cables
 AddProc('material_map31_cables', 'mkMaterialMap -Nr 30 -Nz 10 -rmin 61.0 -rmax 65.0 -zmin 167 -zmax 365 -n_r 1000 -n_z 1000 -n_phi 10')
 
+#---------------------------------------------------------------
+# The following are not used by GlueX but are here for CPP which
+# tracks particles through the FCAL and the FMWPC. They are
+# commented out by default to reduce the risk of accidentally 
+# committing them to the default variation in ccdb.
+
+# TOF
+AddProc('material_map51_TOF', 'mkMaterialMap -Nr 100 -Nz 10 -rmin 0.0 -rmax 180.0 -zmin 605 -zmax 611 -n_r 100 -n_z 100 -n_phi 100')
+
+# FCAL
+AddProc('material_map55_FCAL', 'mkMaterialMap -Nr 100 -Nz 10 -rmin 0.0 -rmax 180.0 -zmin 624 -zmax 670 -n_r 100 -n_z 100 -n_phi 100')
+
+# FCAL_PMT
+AddProc('material_map56_FCAL_PMT', 'mkMaterialMap -Nr 100 -Nz 10 -rmin 0.0 -rmax 180.0 -zmin 669 -zmax 690 -n_r 100 -n_z 100 -n_phi 100')
+
+# FMWPC
+AddProc('material_map61_FMWPC', 'mkMaterialMap -Nr 60 -Nz 175 -rmin 0.0 -rmax 180.0 -zmin 925 -zmax 1100 -n_r 100 -n_z 100 -n_phi 100')
+
 
 print 'Waiting for all processes to complete ...'
 finished = []
@@ -95,15 +113,15 @@ while True:
 	Ndone = 0
 	Ntotal = 0
 	for lab in procs:
-		Ntotal += 1
-		if procs[lab].poll() is not None :
-			Ndone += 1
-			if lab not in finished:
-				finished.append(lab)
-				print ' finished: %s' % lab
-				subprocess.call(['sed', '-i', '0,/^/s//#%s\\n/' % LABEL, 'dir_%s/material_map' % lab])
-				subprocess.call(['mv', 'dir_%s/material_map' % lab, lab])
-				subprocess.call(['rmdir', 'dir_%s' % lab])
+ 		Ntotal += 1
+ 		if procs[lab].poll() is not None :
+ 			Ndone += 1
+ 			if lab not in finished:
+ 				finished.append(lab)
+ 				print ' finished: %s' % lab
+ 				subprocess.call(['sed', '-i', '0,/^/s//#%s\\n/' % LABEL, 'dir_%s/material_map' % lab])
+ 				subprocess.call(['mv', 'dir_%s/material_map' % lab, lab])
+ 				subprocess.call(['rmdir', 'dir_%s' % lab])
 	if Ndone >= Ntotal: break
 	print '%d/%d processes complete' % (Ndone,Ntotal)
 	time.sleep(2)
@@ -117,8 +135,8 @@ f.write("#    r       z       A      Z   density  radlen   rhoZ_overA  rhoZ_over
 f.write("#%  00      01      02     03        04      05           06               07            08            09          10\n")
 f.write("   0.5    -49.5  14.803  7.374  0.001214  30035  0.000604743      -0.00977523   0.000795067   7.60355e-05  0.00967126\n")
 f.write(" 119.5    -49.5  14.803  7.374  0.001214  30035  0.000604743      -0.00977523   0.000795067   7.60355e-05  0.00967126\n")
-f.write("   0.5    649.5  14.803  7.374  0.001214  30035  0.000604743      -0.00977523   0.000795067   7.60355e-05  0.00967126\n")
-f.write(" 119.5    649.5  14.803  7.374  0.001214  30035  0.000604743      -0.00977523   0.000795067   7.60355e-05  0.00967126\n")
+f.write("   0.5    1199.5  14.803  7.374  0.001214  30035  0.000604743      -0.00977523   0.000795067   7.60355e-05  0.00967126\n")
+f.write(" 119.5    1199.5  14.803  7.374  0.001214  30035  0.000604743      -0.00977523   0.000795067   7.60355e-05  0.00967126\n")
 f.close()
 
 
