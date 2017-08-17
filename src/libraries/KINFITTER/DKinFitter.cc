@@ -1485,9 +1485,9 @@ void DKinFitter::Calc_dF_Vertex(size_t locFIndex, const DKinFitParticle* locKinF
 	auto locParticleIterator = locFromInitialState.begin();
 	for(; locParticleIterator != locFromInitialState.end(); ++locParticleIterator)
 	{
-		if(dDebugLevel > 30)
-			cout << "decaying, partially replace with init-state PID = " << (*locParticleIterator)->Get_PID() << endl;
 		auto locNextStateSignMultiplier = dKinFitUtils->Get_IsDecayingParticleDefinedByProducts(locKinFitParticle) ? -1.0*locStateSignMultiplier : locStateSignMultiplier;
+		if(dDebugLevel > 30)
+			cout << "decaying, partially replace with init-state PID = " << (*locParticleIterator)->Get_PID() << ", next sign multiplier: " << locNextStateSignMultiplier << endl;
 		Calc_dF_Vertex(locFIndex, (*locParticleIterator).get(), locKinFitParticle, locNextStateSignMultiplier);
 	}
 
@@ -1495,11 +1495,11 @@ void DKinFitter::Calc_dF_Vertex(size_t locFIndex, const DKinFitParticle* locKinF
 	auto locFromFinalState = locKinFitParticle->Get_FromFinalState();
 	for(locParticleIterator = locFromFinalState.begin(); locParticleIterator != locFromFinalState.end(); ++locParticleIterator)
 	{
-		if(dDebugLevel > 30)
-			cout << "decaying, partially replace with final-state PID = " << (*locParticleIterator)->Get_PID() << endl;
 		//If defined by invariant mass: add p4s of final state particles
 		//If defined by missing mass: add p4s of init state, subtract final state
 		auto locNextStateSignMultiplier = dKinFitUtils->Get_IsDecayingParticleDefinedByProducts(locKinFitParticle) ? locStateSignMultiplier : -1.0*locStateSignMultiplier;
+		if(dDebugLevel > 30)
+			cout << "decaying, partially replace with final-state PID = " << (*locParticleIterator)->Get_PID() << ", next sign multiplier: " << locNextStateSignMultiplier << endl;
 		Calc_dF_Vertex(locFIndex, (*locParticleIterator).get(), locKinFitParticle, locNextStateSignMultiplier);
 	}
 }

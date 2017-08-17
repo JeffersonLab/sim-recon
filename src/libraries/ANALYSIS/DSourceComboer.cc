@@ -745,7 +745,7 @@ DSourceComboUse DSourceComboer::Create_ZDependentSourceComboUses(const DReaction
 	//E.g. if something crazy like 2 KShorts -> 3pi, each at a different vertex-z bin, then they will no longer be grouped together vertically (separate uses: horizontally instead)
 
 	//see if they've already been created.  if so, just return it.
-	auto locVertexZBins = dSourceComboVertexer->Get_VertexZBins(locReactionVertexInfo, locReactionChargedCombo, nullptr);
+	auto locVertexZBins = dSourceComboVertexer->Get_VertexZBins(locReactionVertexInfo, locReactionChargedCombo, nullptr, true);
 	auto locCreationPair = std::make_pair(locReactionVertexInfo, locVertexZBins);
 	auto locUseIterator = dSourceComboUseVertexZMap.find(locCreationPair);
 	if(locUseIterator != dSourceComboUseVertexZMap.end())
@@ -759,10 +759,11 @@ DSourceComboUse DSourceComboer::Create_ZDependentSourceComboUses(const DReaction
 	for(const auto& locStepVertexInfo : locStepVertexInfos)
 	{
 		auto locVertexPrimaryCombo = (locReactionChargedCombo != nullptr) ? Get_VertexPrimaryCombo(locReactionChargedCombo, locStepVertexInfo) : nullptr;
+		auto locIsCombo2ndVertex = locStepVertexInfo->Get_FullConstrainParticles(false, d_EitherState, d_AllCharges, false).empty();
 
 		//for this vertex, get the vertex z bin
 		auto locIsProductionVertex = locStepVertexInfo->Get_ProductionVertexFlag();
-		auto locVertexZBin = (locReactionChargedCombo != nullptr) ? dSourceComboVertexer->Get_VertexZBin_NoBeam(locIsProductionVertex, locVertexPrimaryCombo) : dSourceComboTimeHandler->Get_VertexZBin_TargetCenter();
+		auto locVertexZBin = (locReactionChargedCombo != nullptr) ? dSourceComboVertexer->Get_VertexZBin_NoBeam(locIsProductionVertex, locVertexPrimaryCombo, locIsCombo2ndVertex) : dSourceComboTimeHandler->Get_VertexZBin_TargetCenter();
 
 		//loop over the steps at this vertex z bin, in reverse order
 		auto locStepIndices = locStepVertexInfo->Get_StepIndices();
@@ -1336,7 +1337,7 @@ void DSourceComboer::Combo_WithNeutralsAndBeam(const vector<const DReaction*>& l
 	if(dDebugLevel >= 5)
 	{
 		cout << "charged combo, vertex zbins: " << locReactionChargedCombo;
-		auto locVertexZBins = dSourceComboVertexer->Get_VertexZBins(locReactionVertexInfo, locReactionChargedCombo, nullptr);
+		auto locVertexZBins = dSourceComboVertexer->Get_VertexZBins(locReactionVertexInfo, locReactionChargedCombo, nullptr, true);
 		for(auto& locZBin : locVertexZBins)
 			cout << ", " << int(locZBin);
 		cout << endl;
@@ -1344,7 +1345,7 @@ void DSourceComboer::Combo_WithNeutralsAndBeam(const vector<const DReaction*>& l
 	//if there is a vertex zbin that is out of range, and we need photons: don't allow: will blow up memory due to no invariant mass cuts
 	for(auto& locStepVertexInfo : locReactionVertexInfo->Get_StepVertexInfos())
 	{
-		auto locZBin = dSourceComboVertexer->Get_VertexZBin(locStepVertexInfo, locReactionChargedCombo, nullptr);
+		auto locZBin = dSourceComboVertexer->Get_VertexZBin(locStepVertexInfo, locReactionChargedCombo, nullptr, true);
 		if(locZBin != DSourceComboInfo::Get_VertexZIndex_OutOfRange())
 			continue;
 		if(!locStepVertexInfo->Get_OnlyConstrainTimeParticles().empty())
@@ -3806,7 +3807,10 @@ const DSourceCombo* DSourceComboer::Get_NextChargedCombo(const DSourceCombo* loc
 		//either locNextPotentialCombo is the primary combo of a detached vertex (and we need to check the zbin), or it's not (returns -1) and we don't
 		if(IsDetachedVertex(std::get<0>(locUseToFind)))
 		{
-			auto locNextVertexZBin = dSourceComboVertexer->Get_VertexZBin_NoBeam(false, locNextPotentialCombo);
+			auto locVertexChargeContent = DAnalysis::Get_ChargeContent_ThisVertex(std::get<2>(locUseToFind));
+			auto locIsCombo2ndVertex = (locVertexChargeContent == d_Neutral);
+
+			auto locNextVertexZBin = dSourceComboVertexer->Get_VertexZBin_NoBeam(false, locNextPotentialCombo, locIsCombo2ndVertex);
 			if(dDebugLevel >= 20)
 				cout << "detached next potential combo, next zbin, desired zbin = " << locNextPotentialCombo << ", " << int(locNextVertexZBin) << ", " << int(locDesiredVertexZBin) << endl;
 			if(locNextVertexZBin != locDesiredVertexZBin)

@@ -421,8 +421,9 @@ DLorentzVector DSourceComboP4Handler::Calc_P4_NoMassiveNeutrals(const DSourceCom
 		auto locDecayVertexZBin = std::get<1>(locCombosByUsePair.first);
 		for(const auto& locCombo : locCombosByUsePair.second)
 		{
-			auto locIsVertexKnown = dSourceComboVertexer->Get_IsVertexKnown(false, locReactionCombo, locCombo, locBeamParticle); //false: will be detached if needed
-			auto locDecayVertex = (locDetachedVertexFlag && locIsVertexKnown) ? dSourceComboVertexer->Get_Vertex(false, locReactionCombo, locCombo, locBeamParticle) : locVertex;
+			//2nd false: either during charged-only stage, and vertex doesn't matter, or on neutral stage, and is-2nd-combo-use flag is false: just use false
+			auto locIsVertexKnown = dSourceComboVertexer->Get_IsVertexKnown(false, locReactionCombo, locCombo, locBeamParticle, false); //1st false: will be detached if needed
+			auto locDecayVertex = (locDetachedVertexFlag && locIsVertexKnown) ? dSourceComboVertexer->Get_Vertex(false, locReactionCombo, locCombo, locBeamParticle, false) : locVertex;
 			locTotalP4 += Calc_P4_NoMassiveNeutrals(locReactionCombo, locCombo, locDecayVertex, locDecayVertexZBin, locBeamParticle, locToExcludeUse, locAccuratePhotonsFlag);
 		}
 
@@ -506,7 +507,7 @@ bool DSourceComboP4Handler::Calc_P4_Decay(bool locIsProductionVertex, bool locIs
 	if(!locHasMassiveNeutrals)
 	{
 		if(locAccuratePhotonsFlag)
-			locVertex = dSourceComboVertexer->Get_Vertex(locIsProductionVertex, locReactionFullCombo, locDecayCombo, locBeamParticle);
+			locVertex = dSourceComboVertexer->Get_Vertex(locIsProductionVertex, locReactionFullCombo, locDecayCombo, locBeamParticle, false);
 		else
 			locVertex.SetXYZ(0.0, 0.0, dSourceComboTimeHandler->Get_PhotonVertexZBinCenter(locDecayVertexZBin));
 		locDecayP4 = Calc_P4_NoMassiveNeutrals(locReactionFullCombo, locDecayCombo, locVertex, locDecayVertexZBin, locBeamParticle, locToExcludeUse, locAccuratePhotonsFlag);
@@ -531,8 +532,8 @@ bool DSourceComboP4Handler::Calc_P4_Decay(bool locIsProductionVertex, bool locIs
 	}
 	else //recalculate regardless
 	{
-		locVertex = dSourceComboVertexer->Get_Vertex(false, locReactionFullCombo, locDecayCombo, locBeamParticle);
-		auto locPrimaryVertex = dSourceComboVertexer->Get_Vertex(true, locReactionFullCombo, locReactionFullCombo, locBeamParticle);
+		locVertex = dSourceComboVertexer->Get_Vertex(false, locReactionFullCombo, locDecayCombo, locBeamParticle, false);
+		auto locPrimaryVertex = dSourceComboVertexer->Get_Vertex(true, locReactionFullCombo, locReactionFullCombo, locBeamParticle, false);
 		if(!dSourceComboVertexer->Get_IsTimeOffsetKnown(locIsPrimaryProductionVertex, locReactionFullCombo, locDecayCombo, locBeamParticle))
 			return false; //not from this vertex
 		auto locTimeOffset = dSourceComboVertexer->Get_TimeOffset(locIsPrimaryProductionVertex, locReactionFullCombo, locDecayCombo, locBeamParticle);
@@ -726,7 +727,7 @@ bool DSourceComboP4Handler::Cut_InvariantMass_HasMassiveNeutral_OrPhotonVertex(c
 		//see if vertex position has been found yet
 		auto locIsProductionVertex = locStepVertexInfo->Get_ProductionVertexFlag();
 		auto locVertexPrimaryFullCombo = dSourceComboer->Get_VertexPrimaryCombo(locReactionFullCombo, locStepVertexInfo);
-		if(!dSourceComboVertexer->Get_IsVertexKnown_NoBeam(locIsProductionVertex, locVertexPrimaryFullCombo))
+		if(!dSourceComboVertexer->Get_IsVertexKnown_NoBeam(locIsProductionVertex, locVertexPrimaryFullCombo, false))
 			continue; //vertex not found yet!
 
 		auto locVertexComboUse = dSourceComboer->Get_SourceComboUse(locStepVertexInfo);
@@ -742,7 +743,7 @@ bool DSourceComboP4Handler::Cut_InvariantMass_HasMassiveNeutral_OrPhotonVertex(c
 			continue; //nothing new (e.g. new vertex found with neutrals, but all of the neutrals in the combo are FCAL photons anyway: nothing to do
 
 		//get vertex position and time offset
-		auto locVertex = dSourceComboVertexer->Get_Vertex_NoBeam(locIsProductionVertex, locVertexPrimaryFullCombo);
+		auto locVertex = dSourceComboVertexer->Get_Vertex_NoBeam(locIsProductionVertex, locVertexPrimaryFullCombo, false);
 		if(!dSourceComboVertexer->Get_IsTimeOffsetKnown(locIsPrimaryProductionVertex, locReactionFullCombo, locVertexPrimaryFullCombo, nullptr))
 			continue; //not from this vertex
 		auto locTimeOffset = dSourceComboVertexer->Get_TimeOffset(locIsPrimaryProductionVertex, locReactionFullCombo, locVertexPrimaryFullCombo, nullptr);
@@ -806,7 +807,7 @@ bool DSourceComboP4Handler::Cut_InvariantMass_MissingMassVertex(const DReactionV
 			continue; //nothing new (e.g. new vertex found with beam, but all of the neutrals in the combo are FCAL photons anyway: nothing to do
 
 		//get vertex position and time offset
-		auto locVertex = dSourceComboVertexer->Get_Vertex(locIsProductionVertex, locReactionFullCombo, locVertexPrimaryFullCombo, locBeamParticle);
+		auto locVertex = dSourceComboVertexer->Get_Vertex(locIsProductionVertex, locReactionFullCombo, locVertexPrimaryFullCombo, locBeamParticle, false);
 		if(!dSourceComboVertexer->Get_IsTimeOffsetKnown(locIsPrimaryProductionVertex, locReactionFullCombo, locVertexPrimaryFullCombo, locBeamParticle))
 			continue; //not from this vertex
 		auto locTimeOffset = dSourceComboVertexer->Get_TimeOffset(locIsPrimaryProductionVertex, locReactionFullCombo, locVertexPrimaryFullCombo, locBeamParticle);
@@ -935,7 +936,7 @@ bool DSourceComboP4Handler::Cut_InvariantMass_AccuratePhotonKinematics(const DRe
 			continue; //nothing has changed
 
 		//get vertex position and time offset
-		auto locVertex = dSourceComboVertexer->Get_Vertex(locIsProductionVertex, locReactionFullCombo, locVertexPrimaryFullCombo, locBeamParticle);
+		auto locVertex = dSourceComboVertexer->Get_Vertex(locIsProductionVertex, locReactionFullCombo, locVertexPrimaryFullCombo, locBeamParticle, false);
 		if(!dSourceComboVertexer->Get_IsTimeOffsetKnown(locIsPrimaryProductionVertex, locReactionFullCombo, locVertexPrimaryFullCombo, locBeamParticle))
 			continue; //not from this vertex
 		auto locTimeOffset = dSourceComboVertexer->Get_TimeOffset(locIsPrimaryProductionVertex, locReactionFullCombo, locVertexPrimaryFullCombo, locBeamParticle);

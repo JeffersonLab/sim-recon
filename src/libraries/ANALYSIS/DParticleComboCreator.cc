@@ -205,7 +205,7 @@ const DParticleCombo* DParticleComboCreator::Build_ParticleCombo(const DReaction
 		auto locParticleComboStep = Get_ParticleComboStepResource();
 
 		//build spacetime vertex
-		auto locVertex = dSourceComboVertexer->Get_Vertex(locIsProductionVertex, locFullCombo, locVertexPrimaryCombo, locBeamParticle);
+		auto locVertex = dSourceComboVertexer->Get_Vertex(locIsProductionVertex, locFullCombo, locVertexPrimaryCombo, locBeamParticle, false);
 		if(dDebugLevel >= 20)
 			cout << "vertex: " << locVertex.X() << ", " << locVertex.Y() << ", " << locVertex.Z() << endl;
 		auto locTimeOffset = dSourceComboVertexer->Get_TimeOffset(locIsPrimaryProductionVertex, locFullCombo, locVertexPrimaryCombo, locBeamParticle); //if unknown, is 0
@@ -311,7 +311,7 @@ const DChargedTrackHypothesis* DParticleComboCreator::Create_ChargedHypo(const D
 	dCreated_ChargedHypo.push_back(locNewHypo);
 	locNewHypo->Share_FromInput(locOrigHypo, true, false, true); //share all but timing info
 
-	auto locTrackPOCAX4 = dSourceComboTimeHandler->Get_ChargedPOCAToVertexX4(locOrigHypo, locIsProductionVertex, locReactionFullCombo, locVertexPrimaryFullCombo, locBeamParticle, locVertex);
+	auto locTrackPOCAX4 = dSourceComboTimeHandler->Get_ChargedPOCAToVertexX4(locOrigHypo, locIsProductionVertex, locReactionFullCombo, locVertexPrimaryFullCombo, locBeamParticle, false, locVertex);
 
 	locNewHypo->Set_TimeAtPOCAToVertex(locTrackPOCAX4.T());
 

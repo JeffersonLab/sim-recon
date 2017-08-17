@@ -235,6 +235,8 @@ shared_ptr<const DKinFitChain> DKinFitUtils_GlueX::Make_KinFitChain(const DReact
 		}
 	}
 
+	auto locIsVertexFit = (locKinFitType != d_P4Fit);
+
 	//now create decaying particles
 	//do the invariant mass loop
 	set<size_t> locProcessedSteps;
@@ -259,6 +261,17 @@ shared_ptr<const DKinFitChain> DKinFitUtils_GlueX::Make_KinFitChain(const DReact
 		auto locPID = locReactionStep->Get_InitialPID();
 		if(!IsFixedMass(locPID))
 			continue;
+
+		if(locIsVertexFit)
+		{
+			//decaying particle MUST be defined by how it is used for finding the vertex (i.e. as in locReactionVertexInfo)
+			//e.g. if Xi0 -> pi0, Lambda, and Xi0 defined BY Lambda (instead of missing mass), then the Xi0 constraints on the Xi0 decay vertex would depend on the lambda constraints: matrix determinant = 0, uninvertable
+			auto locStepVertexInfo = locReactionVertexInfo->Get_StepVertexInfo(loc_i);
+			auto locDecayParticlePair = std::make_pair(loc_i, DReactionStep::Get_ParticleIndex_Initial());
+			auto locDecayingFullConstrainParticles = locStepVertexInfo->Get_DecayingParticles_FullConstrain(true);
+			if(locDecayingFullConstrainParticles.find(locDecayParticlePair) != locDecayingFullConstrainParticles.end())
+				continue; //must define particle by missing mass instead to be consistent with vertex fit
+		}
 
 		//since going in reverse order, all decay products are ready: create the decaying particle
 		auto locDecaySourceParticles = Get_StepParticles_NonNull(locKinFitChain, locReaction, loc_i, DReactionStep::Get_ParticleIndex_Initial());
@@ -494,6 +507,7 @@ set<shared_ptr<DKinFitConstraint>> DKinFitUtils_GlueX::Create_Constraints(const 
 	map<shared_ptr<DKinFitParticle>, shared_ptr<DKinFitConstraint_Mass>> locParticleMassConstraintMap;
 	map<shared_ptr<DKinFitParticle>, size_t> locParticleDecayStepMap; //key is decaying particle, value is step index
 	map<size_t, shared_ptr<DKinFitConstraint_Mass>> locStepMassConstraintMap;
+	int locP4StepIndex = 0; //will use to define p4 constraint step, if requested
 	if((locKinFitType == d_P4Fit) || (locKinFitType == d_P4AndVertexFit) || (locKinFitType == d_P4AndSpacetimeFit))
 	{
 		//loop over steps, but skip init step (if open-ended decaying, do p4 constraint instead)
@@ -503,19 +517,21 @@ set<shared_ptr<DKinFitConstraint>> DKinFitUtils_GlueX::Create_Constraints(const 
 			if(!locKinFitChainStep->Get_ConstrainDecayingMassFlag())
 				continue; //don't apply mass constraint to this step
 
-			auto locInitialParticles = locKinFitChainStep->Get_InitialParticles();
-			auto locParticleIterator = locInitialParticles.begin();
-			for(; locParticleIterator != locInitialParticles.end(); ++locParticleIterator)
+			for(auto locKinFitParticle : locKinFitChainStep->Get_InitialParticles())
 			{
-				if((*locParticleIterator) == nullptr)
+				if(locKinFitParticle == nullptr)
 					continue;
-				if((*locParticleIterator)->Get_KinFitParticleType() != d_DecayingParticle)
+				if(locKinFitParticle->Get_KinFitParticleType() != d_DecayingParticle)
 					continue; //not a decaying particle
 
-				auto locMassConstraint = Make_MassConstraint(*locParticleIterator);
+				//if this decay is defined by missing mass, the p4-constrain step CANNOT precede this decay: over-constrained system
+				if(!Get_IsDecayingParticleDefinedByProducts(locKinFitParticle.get()))
+					locP4StepIndex = loc_i; //this can (and must!) be overwritten by further steps if needed (if decay chain continually defined this way)
+
+				auto locMassConstraint = Make_MassConstraint(locKinFitParticle);
 				locMassConstraints.insert(locMassConstraint);
-				locParticleMassConstraintMap[*locParticleIterator] = locMassConstraint;
-				locParticleDecayStepMap[*locParticleIterator] = loc_i;
+				locParticleMassConstraintMap[locKinFitParticle] = locMassConstraint;
+				locParticleDecayStepMap[locKinFitParticle] = loc_i;
 				locStepMassConstraintMap[loc_i] = locMassConstraint;
 			}
 		}
@@ -529,17 +545,16 @@ set<shared_ptr<DKinFitConstraint>> DKinFitUtils_GlueX::Create_Constraints(const 
 	auto locDefinedParticleStepIndices = DAnalysis::Get_DefinedParticleStepIndex(locReaction);
 	if(!locKinFitChain->Get_IsInclusiveChannelFlag() && (locDefinedParticleStepIndices.size() <= 1) && ((locKinFitType == d_P4Fit) || (locKinFitType == d_P4AndVertexFit) || (locKinFitType == d_P4AndSpacetimeFit)))
 	{
-		int locDefinedParticleStepIndex = locDefinedParticleStepIndices.empty() ? -1 : locDefinedParticleStepIndices[0];
-		int locP4StepIndex = (locDefinedParticleStepIndex >= 0) ? locDefinedParticleStepIndex : 0;
+		if(!locDefinedParticleStepIndices.empty()) //there is a missing or open-ended decaying particle
+			locP4StepIndex = locDefinedParticleStepIndices.front(); //use it as the p4 constraint step instead
 		auto locStepParticles = Get_StepParticles_NonNull(locKinFitChain, locReaction, locP4StepIndex);
 		locP4Constraint = Make_P4Constraint(locStepParticles.first, locStepParticles.second);
 
 		//OK, now, check to see if the system is overly constrained: 
-			//there must be at least one particle with non-zero errors in the p4 constraint that is NOT in a mass constraint
+			//there must be at least one particle with non-zero errors in the p4 constraint that is NOT in ANY mass constraint
 		bool locNonZeroErrorFlag = false;
-		set<size_t> locP4ConstrainedParticleSteps;
-
 		auto locAllParticles = locP4Constraint->Get_AllParticles();
+		set<size_t> locP4ConstrainedParticleSteps;
 		for(auto& locKinFitParticle : locAllParticles)
 		{
 			DKinFitParticleType locKinFitParticleType = locKinFitParticle->Get_KinFitParticleType();
@@ -553,7 +568,9 @@ set<shared_ptr<DKinFitConstraint>> DKinFitUtils_GlueX::Create_Constraints(const 
 					break;
 				}
 				locP4ConstrainedParticleSteps.insert(locParticleDecayStepMap[locKinFitParticle]);
+				continue;
 			}
+
 			if(locKinFitParticle->Get_CovarianceMatrix() == NULL)
 				continue;
 			if((locKinFitParticleType == d_BeamParticle) && !dWillBeamHaveErrorsFlag)
@@ -566,32 +583,26 @@ set<shared_ptr<DKinFitConstraint>> DKinFitUtils_GlueX::Create_Constraints(const 
 		if(!locNonZeroErrorFlag)
 		{
 			//system is over-constrained: we must delete a constraint
-			//if there is a missing/open-ended particle: delete a mass constraint; else, delete the p4 constraint
-			if((locP4Constraint->Get_DefinedParticle() == NULL) || locP4ConstrainedParticleSteps.empty())
-				locP4Constraint = NULL; //remove the p4 constraint
-			else //remove a mass constraint: delete the one in the earliest step (so consistent) (will be by missing mass if present)
-			{
-				size_t locEarliestStepIndex = *locP4ConstrainedParticleSteps.begin();
-				locMassConstraints.erase(locStepMassConstraintMap[locEarliestStepIndex]); //remove constraint
-			}
+			//prefer to delete a mass constraint: it is only 1 degree of freedom, whereas p4 constraint can be 4
+
+			//remove a mass constraint: delete the one in the earliest step (so consistent)
+			size_t locEarliestStepIndex = *locP4ConstrainedParticleSteps.begin();
+			locMassConstraints.erase(locStepMassConstraintMap[locEarliestStepIndex]); //remove constraint
 		}
 
 		//set init p3 guess
-		if(locP4Constraint != NULL)
+		if(locP4Constraint->Get_DefinedParticle() != NULL)
 		{
-			if(locP4Constraint->Get_DefinedParticle() != NULL)
-			{
-				DLorentzVector locDefinedP4;
-				if(locP4Constraint->Get_IsDefinedParticleInFinalState())
-					locDefinedP4 = dAnalysisUtilities->Calc_MissingP4(locReaction, locParticleCombo, false);
-				else
-					locDefinedP4 = dAnalysisUtilities->Calc_FinalStateP4(locReaction, locParticleCombo, 0, false);
-				TVector3 locInitP3Guess(locDefinedP4.Px(), locDefinedP4.Py(), locDefinedP4.Pz());
-				locP4Constraint->Set_InitP3Guess(locInitP3Guess);
-			}
+			DLorentzVector locDefinedP4;
+			if(locP4Constraint->Get_IsDefinedParticleInFinalState())
+				locDefinedP4 = dAnalysisUtilities->Calc_MissingP4(locReaction, locParticleCombo, false);
 			else
-				locP4Constraint->Set_InitP3Guess(TVector3(0.0, 0.0, 0.0));
+				locDefinedP4 = dAnalysisUtilities->Calc_FinalStateP4(locReaction, locParticleCombo, 0, false);
+			TVector3 locInitP3Guess(locDefinedP4.Px(), locDefinedP4.Py(), locDefinedP4.Pz());
+			locP4Constraint->Set_InitP3Guess(locInitP3Guess);
 		}
+		else
+			locP4Constraint->Set_InitP3Guess(TVector3(0.0, 0.0, 0.0));
 	}
 
 	//Set P4 & Mass constraints
@@ -660,11 +671,13 @@ string DKinFitUtils_GlueX::Get_ConstraintInfo(const DReactionVertexInfo* locReac
 
 	//P4 & Mass Constraints
 	DKinFitType locKinFitType = locReaction->Get_KinFitType();
+	auto locIsVertexFit = ((locKinFitType != d_NoFit) && (locKinFitType != d_P4Fit));
 	if((locKinFitType == d_P4Fit) || (locKinFitType == d_P4AndVertexFit) || (locKinFitType == d_P4AndSpacetimeFit))
 	{
 		//Mass Constraints
 		//loop over steps, but skip init step (if open-ended decaying, do p4 constraint instead)
 		map<size_t, string> locMassConstraintStrings;
+		int locP4StepIndex = 0; //may be changed below
 		for(size_t loc_i = 1; loc_i < locReaction->Get_NumReactionSteps(); ++loc_i)
 		{
 			const DReactionStep* locReactionStep = locReaction->Get_ReactionStep(loc_i);
@@ -675,6 +688,20 @@ string DKinFitUtils_GlueX::Get_ConstraintInfo(const DReactionVertexInfo* locReac
 			if(!IsFixedMass(locPID))
 				continue; //don't apply mass constraint to this step
 
+			if(locIsVertexFit)
+			{
+				//decaying particle MUST be defined by how it is used for finding the vertex (i.e. as in locReactionVertexInfo)
+				//e.g. if Xi0 -> pi0, Lambda, and Xi0 defined BY Lambda (instead of missing mass), then the Xi0 constraints on the Xi0 decay vertex would depend on the lambda constraints: matrix determinant = 0, uninvertable
+				auto locStepVertexInfo = locReactionVertexInfo->Get_StepVertexInfo(loc_i);
+				auto locDecayParticlePair = std::make_pair(loc_i, DReactionStep::Get_ParticleIndex_Initial());
+				auto locDecayingFullConstrainParticles = locStepVertexInfo->Get_DecayingParticles_FullConstrain(true);
+
+				//if following is true: must define particle by missing mass instead to be consistent with vertex fit
+				//if true: because this decay is defined by missing mass, the p4-constrain step CANNOT precede this decay: over-constrained system
+				if(locDecayingFullConstrainParticles.find(locDecayParticlePair) != locDecayingFullConstrainParticles.end())
+					locP4StepIndex = loc_i; //this can (and must!) be overwritten by further steps if needed (if decay chain continually defined this way)
+			}
+
 			locMassConstraintStrings[loc_i] = string("#it{m}_{") + string(ParticleName_ROOT(locPID)) + string("}");
 		}
 
@@ -682,13 +709,13 @@ string DKinFitUtils_GlueX::Get_ConstraintInfo(const DReactionVertexInfo* locReac
 		auto locDefinedParticleStepIndices = DAnalysis::Get_DefinedParticleStepIndex(locReaction);
 		if(!locReaction->Get_IsInclusiveFlag() && (locDefinedParticleStepIndices.size() <= 1))
 		{
-			int locDefinedParticleStepIndex = locDefinedParticleStepIndices.empty() ? -1 : locDefinedParticleStepIndices[0];
+			if(!locDefinedParticleStepIndices.empty())
+				locP4StepIndex = locDefinedParticleStepIndices.front();
 			//OK, now, check to see if the system is overly constrained: 
 				//there must be at least one particle with non-zero errors in the p4 constraint that is NOT in a mass constraint
 			bool locNonZeroErrorFlag = false;
 
 			//Find step used for p4 constraint: the one with missing/open-ended-decaying particle (if any: else first step)
-			int locP4StepIndex = (locDefinedParticleStepIndex >= 0) ? locDefinedParticleStepIndex : 0;
 			const DReactionStep* locReactionStep = locReaction->Get_ReactionStep(locP4StepIndex);
 
 			set<size_t> locP4ConstrainedParticleSteps;
@@ -721,14 +748,15 @@ string DKinFitUtils_GlueX::Get_ConstraintInfo(const DReactionVertexInfo* locReac
 				}
 			}
 
-			bool locIncludeP4ConstraintFlag = true;
 			if(!locNonZeroErrorFlag)
 			{
 				//system is over-constrained: we must delete a constraint
-				//if there is a missing/open-ended particle: delete a mass constraint; else, delete the p4 constraint
-				if((locDefinedParticleStepIndex < 0) || locP4ConstrainedParticleSteps.empty())
-					locIncludeP4ConstraintFlag = false; //remove the p4 constraint
-				else //remove a mass constraint: delete the one in the earliest step (so consistent) (will be by missing mass if present)
+				//prefer to delete a mass constraint: it is only 1 degree of freedom, whereas p4 constraint can be 4
+
+				//if initial particle is constrained, remove the constraint on that one
+				if((locP4StepIndex != 0) && (locMassConstraintStrings.find(locP4StepIndex) != locMassConstraintStrings.end()))
+					locMassConstraintStrings.erase(locP4StepIndex); //remove constraint
+				else //else delete the one in the earliest step (so consistent)
 				{
 					size_t locEarliestStepIndex = *locP4ConstrainedParticleSteps.begin();
 					locMassConstraintStrings.erase(locEarliestStepIndex); //remove constraint
@@ -736,13 +764,10 @@ string DKinFitUtils_GlueX::Get_ConstraintInfo(const DReactionVertexInfo* locReac
 			}
 
 			//Finally, add p4 constraint
-			if(locIncludeP4ConstraintFlag)
-			{
-				locAllConstraintsString = "#it{p}^{4}";
-				locNumConstraints += 4;
-				if(locDefinedParticleStepIndex >= 0)
-					locNumUnknowns += 3;
-			}
+			locAllConstraintsString = "#it{p}^{4}";
+			locNumConstraints += 4;
+			if(!locDefinedParticleStepIndices.empty())
+				locNumUnknowns += 3;
 		}
 
 		//Finally, add remaining mass constraints

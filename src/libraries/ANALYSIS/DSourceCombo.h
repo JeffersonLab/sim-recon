@@ -447,10 +447,8 @@ inline vector<pair<DSourceComboUse, vector<const DSourceCombo*>>> Get_SourceComb
 	return locVertexCombosByUse;
 }
 
-inline Charge_t Get_ChargeContent(const DSourceComboInfo* locSourceComboInfo)
+inline Charge_t Get_ChargeContent(const vector<pair<Particle_t, unsigned char>>& locNumParticles)
 {
-	auto locNumParticles = locSourceComboInfo->Get_NumParticles(true);
-
 	Charge_t locCharge = d_Charged;
 	auto Charge_Search = [&locCharge](const pair<Particle_t, unsigned char>& locPair) -> bool
 		{return Is_CorrectCharge(locPair.first, locCharge);};
@@ -463,6 +461,47 @@ inline Charge_t Get_ChargeContent(const DSourceComboInfo* locSourceComboInfo)
 		return d_Charged;
 
 	return d_AllCharges;
+}
+
+inline Charge_t Get_ChargeContent(const DSourceComboInfo* locSourceComboInfo)
+{
+	return Get_ChargeContent(locSourceComboInfo->Get_NumParticles(true));
+}
+
+inline vector<pair<Particle_t, unsigned char>> Get_NumParticles_ThisVertex(const DSourceComboInfo* locSourceComboInfo)
+{
+	//return is NOT sorted
+
+	auto locNumParticles = locSourceComboInfo->Get_NumParticles(false); //only this info, for starters
+	for(const auto& locDecayPair : locSourceComboInfo->Get_FurtherDecays())
+	{
+		auto locDecayPID = std::get<0>(locDecayPair.first);
+		if(IsDetachedVertex(locDecayPID))
+			continue;
+
+		auto locDecayNumParticles = Get_NumParticles_ThisVertex(std::get<2>(locDecayPair.first));
+		for(const auto& locDecayParticlePair : locDecayNumParticles)
+		{
+			bool locFoundFlag = false;
+			for(auto& locParticlePairSoFar : locNumParticles)
+			{
+				if(locDecayParticlePair.first != locParticlePairSoFar.first)
+					continue;
+				locParticlePairSoFar.second += locDecayParticlePair.second;
+				locFoundFlag = true;
+				break;
+			}
+			if(!locFoundFlag)
+				locNumParticles.push_back(locDecayParticlePair);
+		}
+	}
+
+	return locNumParticles;
+}
+
+inline Charge_t Get_ChargeContent_ThisVertex(const DSourceComboInfo* locSourceComboInfo)
+{
+	return Get_ChargeContent(Get_NumParticles_ThisVertex(locSourceComboInfo));
 }
 
 inline bool Get_HasMassiveNeutrals(const DSourceComboInfo* locComboInfo)
