@@ -16,17 +16,23 @@ using namespace std;
 #include <TGeoPgon.h>
 #include <TGeoMatrix.h>
 
-#include <hddsroot.h>
+#include <DANA/DApplication.h>
 
+//#include <hddsroot.h>
+
+extern TGeoManager * hddsroot();
+extern const char* md5geom(void);
 
 void Usage(void);
 void ParseCommandLineArguments(int narg, char *argv[]);
 
 bool USE_XML = false;
 bool SHOW_ANCESTORY=true;
+bool SHOW_CCDB = true;
 double X_LAB = 20.0;
 double Y_LAB = 20.0;
 double Z_LAB = 650.0;
+int32_t RUN_NUMBER = 30000;
 
 static void *dlgeom_handle=NULL;
 string HDDS_XML = "$HDDS_HOME/main_HDDS.xml";
@@ -52,12 +58,8 @@ int main(int narg, char *argv[])
 	pos[2] = Z_LAB;
 
 	if(!gGeoManager){
-#if ROOT_MAJOR>=5 && ROOT_MINOR>=28	
 		new TGeoManager();
 		cout<<"Created TGeoManager :"<<gGeoManager<<endl;
-#else
-		cout<<"Skipping explicit TGeoManager creation due to ROOT ver. < 5.28"<<endl;
-#endif
 	}
 
 	TGeoManager *DRGeom = NULL;
@@ -87,6 +89,12 @@ int main(int narg, char *argv[])
 	if(!mat){
 		cerr<<"Can't get material object from TGeoVolume!"<<endl;
 		return -3;
+	}
+	
+	DGeometry *geom = NULL;
+	if(SHOW_CCDB){
+		DApplication *dapp = new DApplication(narg, argv);
+		geom = dapp->GetDGeometry(RUN_NUMBER);
 	}
 	
 	cout<<endl;
@@ -121,6 +129,36 @@ int main(int narg, char *argv[])
 		}
 		cout<<endl;
 	}
+	
+	// Optionally get info from material maps in CCDB and print
+	if(SHOW_CCDB){
+		DVector3 pos(X_LAB, Y_LAB, Z_LAB);
+		const DMaterialMap *map = geom->FindDMaterialMap(pos);
+		cout << endl;
+		if(!map){
+			cerr << "Unable to find material map in CCDB corresponding to this point" << endl;
+		}else{
+			const DMaterialMap::MaterialNode *node = map->FindNode(pos);
+			
+			// Some maps have numbers very close to, but not quite
+			// zero fro rmin. For purposes of display, call anything 
+			// within 1 um of r=0 to be actually at r=0
+			double rmin = map->GetRmin();
+			if( fabs(rmin) < 1.0E-6) rmin = 0.0;
+
+			cout << "Material map info from CCDB for run " << RUN_NUMBER << endl;
+			cout<<"==============================================="<<endl;
+			cout << "    namepath: " << map->GetNamepath() << endl;
+			cout << "R range (cm): " << rmin << " - " <<  map->GetRmax() << endl;
+			cout << "Z range (cm): " << map->GetZmin() << " - " <<  map->GetZmax() << endl;
+			cout << "     density: " << node->Density <<" g/cm^3"<< endl;
+			cout << " rad. length: " << node->RadLen <<" cm"<< endl;
+			cout << "           A: " << node->A << endl;
+			cout << "           Z: " << node->Z << endl;
+		}
+	}
+	
+	cout << endl;
 
 	return 0;
 }
@@ -215,7 +253,8 @@ void MakeSharedObjectFromXML(void)
 	cout << "Generating C++ from XML source ...." << endl;
 	string cmd = "$HDDS_HOME/bin/$BMS_OSNAME/hdds-root_h " + HDDS_XML + " >> tmp_hddsroot.cc";
 	cout << cmd << endl;
-	system(cmd.c_str());
+	int err = system(cmd.c_str());
+	if(err!=0){ cerr << "Error running \""<< cmd << "\"" << endl; exit(-1); }
 	
 	// Close off file with externally accessible md5geom wrapper
 	ofs.open("tmp_hddsroot.cc", ios_base::app);
@@ -228,7 +267,8 @@ void MakeSharedObjectFromXML(void)
 	cout << "Compiling C++ into shared object ..." << endl;
 	cmd = "c++ -shared -fPIC -o tmp_hddsroot.so `root-config --cflags --libs` -lGeom tmp_hddsroot.cc";
 	cout << cmd << endl;
-	system(cmd.c_str());
+	err = system(cmd.c_str());
+	if(err!=0){ cerr << "Error running \""<< cmd << "\"" << endl; exit(-1); }
 	
 	// Remove temporary C++ source file
 	unlink("./tmp_hddsroot.cc");
@@ -307,7 +347,8 @@ const char* md5geom_xml(void)
 	static string md5_xml=""; 
 	string fname = "tmp_hddsroot.md5";
 	string cmd = "$HDDS_HOME/bin/$BMS_OSNAME/hdds-md5 " + HDDS_XML + " > " + fname;
-	system(cmd.c_str());
+	int err = system(cmd.c_str());
+	if(err!=0){ cerr << "Error running \""<< cmd << "\"" << endl; exit(-1); }
 	ifstream ifs(fname.c_str());
 	if(ifs.is_open()){
 		string str;
@@ -354,6 +395,7 @@ void ParseCommandLineArguments(int narg, char *argv[])
 		
 		if(argv[i][0]=='-'){
 			string arg(argv[i]);
+			string next = (i+1)<narg ? (const char*)argv[i+1]:"";
 			if(arg=="-h" || arg=="--help")Usage();
 
 			if(arg=="-checksum" || arg=="--checksum")print_xml_md5_checksum = true;
@@ -363,7 +405,10 @@ void ParseCommandLineArguments(int narg, char *argv[])
 					HDDS_XML = arg.substr(arg.find("=")+1);
 				}
 			}
-			
+			if( arg=="-r" && next.length()>0 ){
+				RUN_NUMBER = atoi(next.c_str());
+				i++;
+			}
 		}else{
 			vals.push_back(atof(argv[i]));
 		}
@@ -411,11 +456,22 @@ void Usage(void)
 	cout<<"or the checksums don't match, then the shared object is automatically"<<endl;
 	cout<<"(re)generated."<<endl;
 	cout<<endl;
+	cout<<"Information from the CCDB hosted material map will also be printed."<<endl;
+	cout<<"This map is used by the track reconstruction software. It is derived"<<endl;
+	cout<<"from the same ROOT geometry classes used for the above. Keep in mind"<<endl;
+	cout<<"though that the CCDB material maps are maintained by a human regenerating"<<endl;
+	cout<<"the maps and committing them to CCDB. i.e. they are not updated automatically."<<endl;
+	cout<<"One can specify the run number used to index the CCDB via the -r run"<<endl;
+	cout<<"command line option. The location of the CCDB and variation are set by"<<endl;
+	cout<<"the standard environment variables."<<endl;
+	cout<<""<<endl;
+	cout<<endl;
 	cout<<" options:"<<endl;
 	cout<<"    -h or --help          Print this usage statement"<<endl;
 	cout<<"    -xml[=main_HDDS.xml]  Dynamically generate geometry"<<endl;
 	cout<<"    -checksum             Print the MD5 checksum of the "<<endl;
 	cout<<"                          geometry and exit"<<endl;
+	cout<<"    -r run                Set run number used for CCDB query"<<endl;
 	cout<<endl;
 	cout<<"If the -xml option is given and no file is specified,"<<endl;
 	cout<<"then a value of: "<<HDDS_XML<<endl;

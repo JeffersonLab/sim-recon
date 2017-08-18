@@ -637,6 +637,8 @@ def AddCCDB(env):
 ##################################
 def AddRCDB(env):
 	rcdb_home = os.getenv('RCDB_HOME')
+	env.Append(CPPDEFINES='RCDB_MYSQL')
+#	env.Append(CPPDEFINES='RCDB_SQLITE')
 	if(rcdb_home != None) :
 		env.AppendUnique(CXXFLAGS = ['-DHAVE_RCDB'])
 		RCDB_CPPPATH = ["%s/cpp/include" % (rcdb_home), "%s/cpp/include/SQLite" % (rcdb_home)]

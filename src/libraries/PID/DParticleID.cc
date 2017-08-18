@@ -84,6 +84,10 @@ DParticleID::DParticleID(JEventLoop *loop)
 			}
 			sc_dir.push_back(temp);
 		}
+	  START_EXIST = true;      // Found Start Counter
+	}
+	else {
+	  START_EXIST = false;      // no Start Counter found
 	}
 
 
@@ -325,6 +329,8 @@ jerror_t DParticleID::GetDCdEdxHits(const DTrackTimeBased *track, vector<dedx_t>
     if(!((locReturnValue >= 0.0) || (locReturnValue <= 0.0)))
       continue; //NaN
 
+    if (cdchits[i]->dE <= 0.0) continue; // pedestal > signal
+
     my_rt->GetLastDOCAPoint(pos, mom);
 
     // Create the dE,dx pair from the position and momentum using a helical approximation for the path 
@@ -342,6 +348,9 @@ jerror_t DParticleID::GetDCdEdxHits(const DTrackTimeBased *track, vector<dedx_t>
     double locReturnValue = my_rt->DistToRT(fdchits[i]->wire);
     if(!((locReturnValue >= 0.0) || (locReturnValue <= 0.0)))
       continue; //NaN
+
+    if (fdchits[i]->dE <= 0.0) continue; // pedestal > signal
+
     my_rt->GetLastDOCAPoint(pos, mom);
    
     double gas_thickness = 1.0; // cm
@@ -716,7 +725,7 @@ bool DParticleID::Distance_ToTrack(const DReferenceTrajectory* rt, const DBCALSh
 bool DParticleID::Distance_ToTrack(const DReferenceTrajectory* rt, const DTOFPoint* locTOFPoint, double locInputStartTime, DTOFHitMatchParams& locTOFHitMatchParams, DVector3* locOutputProjPos, DVector3* locOutputProjMom) const
 {
 	if(rt == nullptr)
-		return false;
+	  return false;
 
 	// Find the distance of closest approach between the track trajectory
 	// and the tof cluster position, looking for the minimum
@@ -820,6 +829,9 @@ bool DParticleID::Distance_ToTrack(const DReferenceTrajectory* rt, const DSCHit*
 {
 	if(rt == nullptr)
 		return false;
+	if (! START_EXIST)
+	  return false;            // if no Start Counter in geometry
+
 
 	//The track may be projected to hit a different paddle than the one it actually hit!!!!
 	//First, we need to find where the track is projected to intersect the start counter geometry
@@ -915,6 +927,9 @@ bool DParticleID::ProjectTo_SC(const DReferenceTrajectory* rt, unsigned int locS
 {
 	if(rt == nullptr)
 		return false;
+	if (! START_EXIST)
+	  return false;            // if no Start Counter in geometry
+
 
 	// Find intersection with a "barrel" approximation for the start counter
 	unsigned int sc_index = locSCSector - 1;
@@ -1070,6 +1085,9 @@ bool DParticleID::Cut_MatchDistance(const DReferenceTrajectory* rt, const DSCHit
 {
 	if(rt == nullptr)
 		return false;
+	if (! START_EXIST)
+	  return false;            // if no Start Counter in geometry
+
 
 	DVector3 locProjPos, locProjMom;
 	if(!Distance_ToTrack(rt, locSCHit, locInputStartTime, locSCHitMatchParams, &locProjPos, &locProjMom))
@@ -1391,6 +1409,9 @@ bool DParticleID::Get_ClosestToTrack(const DReferenceTrajectory* rt, const vecto
 {
 	if(rt == nullptr)
 		return false;
+	if (! START_EXIST)
+	  return false;            // if no Start Counter in geometry
+
 
 	//Loop over SC points
 	vector<DSCHitMatchParams> locSCHitMatchParamsVector;
@@ -1683,6 +1704,9 @@ unsigned int DParticleID::PredictSCSector(const DReferenceTrajectory* rt, DVecto
 {
 	if(rt == nullptr)
 		return 0;
+	if (! START_EXIST)
+	  return false;            // if no Start Counter in geometry
+
 
 	DVector3 locProjPos, locProjMom, locPaddleNorm;
 	double locDeltaPhi, locPathLength, locFlightTime, locFlightTimeVariance;

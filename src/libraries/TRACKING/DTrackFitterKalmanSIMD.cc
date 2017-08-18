@@ -275,7 +275,7 @@ DTrackFitterKalmanSIMD::DTrackFitterKalmanSIMD(JEventLoop *loop):DTrackFitter(lo
 
    ADD_VERTEX_POINT=false; 
    gPARMS->SetDefaultParameter("KALMAN:ADD_VERTEX_POINT", ADD_VERTEX_POINT);
-
+  
    THETA_CUT=70.0; 
    gPARMS->SetDefaultParameter("KALMAN:THETA_CUT", THETA_CUT);
 
@@ -512,7 +512,10 @@ DTrackFitterKalmanSIMD::DTrackFitterKalmanSIMD(JEventLoop *loop):DTrackFitter(lo
    else{
       geom->GetTargetZ(TARGET_Z);
    }
-
+   if (ADD_VERTEX_POINT){
+     gPARMS->SetDefaultParameter("KALMAN:VERTEX_POSITION",TARGET_Z);
+   }
+   
    // Inform user of some configuration settings
    static bool config_printed = false;
    if(!config_printed){
