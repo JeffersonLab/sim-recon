@@ -12,11 +12,15 @@ void radlen_vs_r_vs_z(void)
 	c1->Divide(1,2);
 	
 	c1->cd(1);
+	gPad->SetRightMargin(0.15);
+	radlen_LL->GetZaxis()->SetRangeUser(0.0, 35000.0);
 	radlen_LL->SetStats(0);
 	radlen_LL->SetTitle("Material Map from DRootGeom::FindMatLL(...)");
 	radlen_LL->Draw("colz");
 
 	c1->cd(2);
+	gPad->SetRightMargin(0.15);
+	radlen_table->GetZaxis()->SetRangeUser(0.0, 35000.0);
 	radlen_table->SetStats(0);
 	radlen_table->SetTitle("Material Map from DGeometry::FindMat(...)");
 	radlen_table->Draw("colz");
