@@ -379,6 +379,17 @@ DVector3 DSourceComboVertexer::Calc_Vertex(bool locIsProductionVertexFlag, const
 				locThetaNearest90Iterator = locThetaNearest90Iterator_Decaying;
 		}
 		locVertexParticles = {*locThetaNearest90Iterator};
+		auto locPOCAToBeamline = locVertexParticles[0]->position(); //not true if decaying
+
+		//see if is a decaying particle
+		if(std::find(locDecayingParticles.begin(), locDecayingParticles.end(), locVertexParticles[0]) != locDecayingParticles.end())
+		{
+			//it is decaying: find POCA to beamline
+			DVector3 locInterDOCA1, locInterDOCA2;
+			dAnalysisUtilities->Calc_DOCA(locVertexParticles[0]->momentum().Unit(), DVector3(0.0, 0.0, 1.0), locPOCAToBeamline, DVector3(), locInterDOCA1, locInterDOCA2);
+			locPOCAToBeamline = locInterDOCA1;
+		}
+
 		//vertex is 1/2-way between track POCA to beamline and the beamline itself: if POCA not on beamline, likely due to resolution issues, 
 		auto locTrackPosition = locVertexParticles[0]->position();
 		auto locVertex = DVector3(0.5*locTrackPosition.X(), 0.5*locTrackPosition.Y(), locTrackPosition.Z());

@@ -7,7 +7,7 @@
  *
  * EVENTUALLY:
  * K+ Sigma0: COMPARE
- * K+ K+ pi- Xi0, Xi0 -> pi0, Lambda
+ * K+ K+ pi- Xi0, Xi0 -> pi0, Lambda: COMPARE
  * omega p
  * omega p missing pi+
  * omega p missing g
