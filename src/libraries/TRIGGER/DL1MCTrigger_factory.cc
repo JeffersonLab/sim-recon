@@ -29,7 +29,7 @@ jerror_t DL1MCTrigger_factory::init(void)
   FCAL_NSB         =  3;
   FCAL_WINDOW      =  10;
 
-  BCAL_ADC_PER_MEV =  34.48276;
+  BCAL_ADC_PER_MEV =  34.48276; // Not corrected energy 
   BCAL_CELL_THR    =  20;
   BCAL_EN_SC       =  1;
   BCAL_NSA         =  19;
@@ -92,13 +92,17 @@ jerror_t DL1MCTrigger_factory::init(void)
 
   gPARMS->SetDefaultParameter("TRIG:BCAL_OFFSET", BCAL_OFFSET,
 			      "Timing offset between BCAL and FCAL energies at GTP (sampels)");
-  
+
+
+  BCAL_ADC_PER_MEV_CORRECT  =  22.7273;
+
 
   time_shift = 100;
 
   time_min  =  0;
   time_max  =  (sample - 1)*max_adc_bins;
 
+  
 
   return NOERROR;
 }
@@ -143,7 +147,7 @@ jerror_t DL1MCTrigger_factory::brun(jana::JEventLoop *eventLoop, int32_t runnumb
     }
   }
 
-  //  runnumber = 30942;
+  // runnumber = 30942;
 
   if(use_rcdb == 1){
     status = Read_RCDB(runnumber);
@@ -157,9 +161,10 @@ jerror_t DL1MCTrigger_factory::brun(jana::JEventLoop *eventLoop, int32_t runnumb
   
     trigger_conf trig_tmp;
     trig_tmp.bit = 0;
-    trig_tmp.gtp.fcal   = FCAL_EN_SC;
-    trig_tmp.gtp.bcal   = BCAL_EN_SC;
-    trig_tmp.gtp.en_thr = FCAL_BCAL_EN;
+    trig_tmp.gtp.fcal      =  FCAL_EN_SC;
+    trig_tmp.gtp.bcal      =  BCAL_EN_SC;
+    trig_tmp.gtp.en_thr    =  FCAL_BCAL_EN;
+    trig_tmp.gtp.fcal_min  =  200;
     triggers_enabled.push_back(trig_tmp);
 
     cout << " Do not use RCDB for the trigger simulation. Default (spring 2017) trigger settings are used " << endl;
@@ -356,7 +361,7 @@ jerror_t DL1MCTrigger_factory::evnt(JEventLoop *loop, uint64_t eventnumber){
 	    if((bcal_signal_hits[ii].module == bcal_signal_hits[jj].module) &&
 	       (bcal_signal_hits[ii].layer  == bcal_signal_hits[jj].layer) &&
 	       (bcal_signal_hits[ii].sector == bcal_signal_hits[jj].sector) &&    
-	       (bcal_signal_hits[ii].end   == bcal_signal_hits[jj].end)){
+	       (bcal_signal_hits[ii].end    == bcal_signal_hits[jj].end)){
 
 	      bcal_signal_hits[jj].merged = 1;
 
@@ -401,9 +406,9 @@ jerror_t DL1MCTrigger_factory::evnt(JEventLoop *loop, uint64_t eventnumber){
 	  
 	  trigger->bcal_en      =  bcal_hit_en;
 	  trigger->bcal_adc     =  bcal_hit_adc_en;
-	  trigger->bcal_adc_en  =  bcal_hit_adc_en/BCAL_ADC_PER_MEV/2./1000.;
+	  trigger->bcal_adc_en  =  bcal_hit_adc_en/BCAL_ADC_PER_MEV_CORRECT/2./1000.;
 	  trigger->bcal_gtp     =  bcal_gtp_max;
-	  trigger->bcal_gtp_en  =  bcal_gtp_max/BCAL_ADC_PER_MEV/2./1000.;	  	  
+	  trigger->bcal_gtp_en  =  bcal_gtp_max/BCAL_ADC_PER_MEV_CORRECT/2./1000.;	  	  
 	  
 	  _data.push_back(trigger);	 
 	  
