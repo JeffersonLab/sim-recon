@@ -171,6 +171,8 @@ class DL1MCTrigger_factory:public jana::JFactory<DL1MCTrigger>{
 		int FindTriggers(DL1MCTrigger *trigger);
 		void PrintTriggers();
 
+		float  BCAL_ADC_PER_MEV_CORRECT;
+
 		
  private:
 		jerror_t init(void);						///< Called once at program start.
