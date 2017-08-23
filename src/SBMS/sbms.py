@@ -605,6 +605,7 @@ def AddDANA(env):
 	DANA_LIBS += " DAQ JANA EVENTSTORE"
 	DANA_LIBS += " expat"
 	env.PrependUnique(LIBS = DANA_LIBS.split())
+        env.Append(LIBS = 'DANA')
 	env.PrependUnique(OPTIONAL_PLUGIN_LIBS = DANA_LIBS.split())
 
 ##################################
