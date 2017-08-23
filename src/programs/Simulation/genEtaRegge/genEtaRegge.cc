@@ -481,6 +481,7 @@ int main(int narg, char *argv[])
   cobrems.setCollimatorDistance(radColDist);
   cobrems.setCollimatorDiameter(collDiam);
   cobrems.setPolarizedFlag(doPolFlux);
+  cobrems.setCollimatedFlag(true);
   
   // Create some diagonistic histographs
   CreateHistograms();
