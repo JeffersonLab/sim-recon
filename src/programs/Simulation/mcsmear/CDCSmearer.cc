@@ -13,7 +13,7 @@ cdc_config_t::cdc_config_t(JEventLoop *loop)
     CDC_CHARGE_TO_ADC_COUNTS = 1.;
 
     // temporary? this is a ballpark guess from Naomi (sdobbs, 8/28/2017)
-    CDC_INTEGRAL_TO_AMPLITUDE = 1. / 28.;
+    CDC_INTEGRAL_TO_AMPLITUDE = 1. / 29.;
  		
  	// load data from CCDB
  	jout << "get CDC/cdc_parms parameters from CCDB..." << endl;
