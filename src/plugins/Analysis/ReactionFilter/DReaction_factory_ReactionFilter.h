@@ -47,7 +47,7 @@ class DReaction_factory_ReactionFilter : public jana::JFactory<DReaction>
 
 		//CUSTOMIZATION FUNCTIONS
 		void Set_Flags(DReaction* locReaction, string locRemainingFlagString);
-		void Create_DefaultDecayStep(DReaction* locReaction, Particle_t locPID);
+		DReactionStep* Create_DefaultDecayStep(Particle_t locPID);
 
 		//CREATION FUNCTIONS
 		void Create_Steps(DReaction* locReaction, DReactionStep* locCurrentStep, vector<DReactionStepTuple>& locDecayStepTuples);

@@ -156,6 +156,7 @@ class DSourceComboTimeHandler
 
 		unordered_map<const DSourceCombo*, pair<bool, vector<int>>> dChargedComboRFBunches; //bool: passed/failed cuts (can pass with empty vector if no timing info) //combo: charged
 		unordered_map<const DSourceCombo*, pair<bool, vector<int>>> dPhotonVertexRFBunches; //bool: passed/failed cuts (can pass with empty vector if no timing info) //combo: full
+		unordered_map<const DSourceCombo*, pair<bool, vector<int>>> dUnknownVertexRFBunches; //bool: passed/failed cuts (can pass with empty vector if no timing info) //combo: full
 		unordered_map<const DSourceCombo*, int> dFullComboRFBunches; //combo: full
 
 		unordered_map<int, vector<const DKinematicData*>> dBeamParticlesByRFBunch;
@@ -190,6 +191,7 @@ inline void DSourceComboTimeHandler::Reset(void)
 
 	dChargedComboRFBunches.clear();
 	dPhotonVertexRFBunches.clear();
+	dUnknownVertexRFBunches.clear();
 	dFullComboRFBunches.clear();
 }
 

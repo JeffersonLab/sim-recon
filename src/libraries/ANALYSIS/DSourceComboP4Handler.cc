@@ -683,7 +683,7 @@ bool DSourceComboP4Handler::Cut_InvariantMass_HasMassiveNeutral(bool locIsProduc
 			locTotalP4 -= DLorentzVector(TVector3(), ParticleMass(locTargetPIDToSubtract));
 
 		auto locInvariantMass = locTotalP4.M();
-		auto locPassCutFlag = ((locInvariantMass < locMassCuts.first) || (locInvariantMass > locMassCuts.second));
+		auto locPassCutFlag = ((locInvariantMass > locMassCuts.first) && (locInvariantMass < locMassCuts.second));
 		if(dDebugLevel >= 10)
 			cout << "has-mass neutral: accurate flag, decay pid, z, mass, cut min/max, pass flag: " << locAccuratePhotonsFlag << ", " << locDecayPID << ", " << locVertex.Z() << ", " << locTotalP4.M() << ", " << locMassCuts.first << ", " << locMassCuts.second << ", " << locPassCutFlag << endl;
 

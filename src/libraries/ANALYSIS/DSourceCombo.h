@@ -288,13 +288,13 @@ inline void DSourceCombo::Set_Members(const vector<pair<Particle_t, const JObjec
 
 inline vector<pair<Particle_t, const JObject*>> DSourceCombo::Get_SourceParticles(bool locEntireChainFlag, Charge_t locCharge) const
 {
-	if(!locEntireChainFlag || dFurtherDecayCombos.empty())
-		return dSourceParticles;
-
 	vector<pair<Particle_t, const JObject*>> locToReturnParticles = dSourceParticles;
 
 	auto Charge_Checker = [&locCharge](const pair<Particle_t, const JObject*>& locPair) -> bool {return !Is_CorrectCharge(locPair.first, locCharge);};
 	locToReturnParticles.erase(std::remove_if(locToReturnParticles.begin(), locToReturnParticles.end(), Charge_Checker), locToReturnParticles.end());
+
+	if(!locEntireChainFlag || dFurtherDecayCombos.empty())
+		return locToReturnParticles;
 
 	for(const auto& locDecayPair : dFurtherDecayCombos)
 	{

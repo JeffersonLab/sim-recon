@@ -31,69 +31,49 @@
 
 /******************************************************************************** CUSTOMIZATION FUNCTIONS ********************************************************************************/
 
-void DReaction_factory_ReactionFilter::Create_DefaultDecayStep(DReaction* locReaction, Particle_t locPID)
+DReactionStep* DReaction_factory_ReactionFilter::Create_DefaultDecayStep(Particle_t locPID)
 {
 	//DO NOT SPECIFY DEFAULT DECAYS FOR PARTICLES THAT CAN BE DETECTED!!!!!! (e.g. pion, neutron, klong)
 
 	//MESONS
 	if(locPID == Pi0)
-		locReaction->Add_ReactionStep(new DReactionStep(Pi0, {Gamma, Gamma}));
+		return (new DReactionStep(Pi0, {Gamma, Gamma}));
 	else if(locPID == KShort)
-		locReaction->Add_ReactionStep(new DReactionStep(KShort, {PiMinus, PiPlus}));
+		return (new DReactionStep(KShort, {PiMinus, PiPlus}));
 	else if(locPID == Eta)
-		locReaction->Add_ReactionStep(new DReactionStep(Eta, {Gamma, Gamma}));
+		return (new DReactionStep(Eta, {Gamma, Gamma}));
 	else if(locPID == omega)
-	{
-		locReaction->Add_ReactionStep(new DReactionStep(omega, {PiMinus, PiPlus, Pi0}));
-		Create_DefaultDecayStep(locReaction, Pi0);
-	}
+		return (new DReactionStep(omega, {PiMinus, PiPlus, Pi0}));
 	else if(locPID == EtaPrime)
-	{
-		locReaction->Add_ReactionStep(new DReactionStep(EtaPrime, {PiMinus, PiPlus, Eta}));
-		Create_DefaultDecayStep(locReaction, Eta);
-	}
+		return (new DReactionStep(EtaPrime, {PiMinus, PiPlus, Eta}));
 	else if(locPID == phiMeson)
-		locReaction->Add_ReactionStep(new DReactionStep(phiMeson, {KMinus, KPlus}));
+		return (new DReactionStep(phiMeson, {KMinus, KPlus}));
 	else if(locPID == D0)
-		locReaction->Add_ReactionStep(new DReactionStep(D0, {PiMinus, KPlus}));
+		return (new DReactionStep(D0, {PiMinus, KPlus}));
 	else if(locPID == Jpsi)
-		locReaction->Add_ReactionStep(new DReactionStep(Jpsi, {Electron, Positron}));
+		return (new DReactionStep(Jpsi, {Electron, Positron}));
 
 	//BARYONS
 	else if(locPID == Lambda)
-		locReaction->Add_ReactionStep(new DReactionStep(Lambda, {PiMinus, Proton}));
+		return (new DReactionStep(Lambda, {PiMinus, Proton}));
 	else if(locPID == AntiLambda)
-		locReaction->Add_ReactionStep(new DReactionStep(AntiLambda, {PiPlus, AntiProton}));
+		return (new DReactionStep(AntiLambda, {PiPlus, AntiProton}));
 	else if(locPID == SigmaMinus)
-		locReaction->Add_ReactionStep(new DReactionStep(SigmaMinus, {PiMinus, Neutron}));
+		return (new DReactionStep(SigmaMinus, {PiMinus, Neutron}));
 	else if(locPID == Sigma0)
-	{
-		locReaction->Add_ReactionStep(new DReactionStep(Sigma0, {Gamma, Lambda}));
-		Create_DefaultDecayStep(locReaction, Lambda);
-	}
+		return (new DReactionStep(Sigma0, {Gamma, Lambda}));
 	else if(locPID == SigmaPlus)
-	{
-		locReaction->Add_ReactionStep(new DReactionStep(SigmaPlus, {Pi0, Proton}));
-		Create_DefaultDecayStep(locReaction, Pi0);
-	}
+		return (new DReactionStep(SigmaPlus, {Pi0, Proton}));
 	else if(locPID == Xi0)
-	{
-		locReaction->Add_ReactionStep(new DReactionStep(Xi0, {Pi0, Lambda}));
-		Create_DefaultDecayStep(locReaction, Pi0);
-		Create_DefaultDecayStep(locReaction, Lambda);
-	}
+		return (new DReactionStep(Xi0, {Pi0, Lambda}));
 	else if(locPID == XiMinus)
-	{
-		locReaction->Add_ReactionStep(new DReactionStep(XiMinus, {PiMinus, Lambda}));
-		Create_DefaultDecayStep(locReaction, Lambda);
-	}
+		return (new DReactionStep(XiMinus, {PiMinus, Lambda}));
 	else if(locPID == OmegaMinus)
-	{
-		locReaction->Add_ReactionStep(new DReactionStep(OmegaMinus, {KMinus, Lambda}));
-		Create_DefaultDecayStep(locReaction, Lambda);
-	}
+		return (new DReactionStep(OmegaMinus, {KMinus, Lambda}));
 	else if(locPID == Lambda_c)
-		locReaction->Add_ReactionStep(new DReactionStep(Lambda_c, {PiPlus, KMinus, Proton}));
+		return (new DReactionStep(Lambda_c, {PiPlus, KMinus, Proton}));
+
+	return nullptr;
 }
 
 void DReaction_factory_ReactionFilter::Set_Flags(DReaction* locReaction, string locRemainingFlagString)
@@ -240,18 +220,19 @@ void DReaction_factory_ReactionFilter::Create_Steps(DReaction* locReaction, DRea
 		auto locStepTupleIterator = std::find_if(locDecayStepTuples.begin(), locDecayStepTuples.end(), Find_DecayStep);
 
 		//If not found, create default decay chain (if it's a detected particle (e.g. pion), this won't do anything)
+		DReactionStep* locDecayStep = nullptr;
 		if(locStepTupleIterator == locDecayStepTuples.end())
+			locDecayStep = Create_DefaultDecayStep(locFinalPID);
+		else //use user-specified decay, and erase it from the vector
 		{
-			Create_DefaultDecayStep(locReaction, locFinalPID);
-			continue;
+			locDecayStep = Create_ReactionStep(*locStepTupleIterator);
+			locDecayStepTuples.erase(locStepTupleIterator);
 		}
-
-		//use user-specified decay, and erase it from the vector
-		auto locDecayStep = Create_ReactionStep(*locStepTupleIterator);
-		locReaction->Add_ReactionStep(locDecayStep);
-		locDecayStepTuples.erase(locStepTupleIterator);
+		if(locDecayStep == nullptr)
+			continue; //must be a final-state particle
 
 		//and, call this function again to see if we need to create decays for THOSE particles
+		locReaction->Add_ReactionStep(locDecayStep);
 		Create_Steps(locReaction, locDecayStep, locDecayStepTuples);
 	}
 }
@@ -303,7 +284,7 @@ vector<DReaction*> DReaction_factory_ReactionFilter::Create_Reactions(const map<
 			locReactionName += string("__") + locFlagString;
 
 		if(dDebugFlag)
-			cout << "reaction name: " << locReactionName << endl;
+			cout << "ReactionFilter: reaction name: " << locReactionName << endl;
 
 		//create dreaction & first step
 		auto locReaction = new DReaction(locReactionName);
@@ -317,11 +298,8 @@ vector<DReaction*> DReaction_factory_ReactionFilter::Create_Reactions(const map<
 		Set_Flags(locReaction, locFlagString);
 
 		//save reaction
-		if(dDebugFlag)
-		{
-			cout << "CREATED REACTION:" << endl;
-			DAnalysis::Print_Reaction(locReaction);
-		}
+		cout << "ReactionFilter: Reaction: " << locReactionName << endl;
+		DAnalysis::Print_Reaction(locReaction);
 
 		locReactions.push_back(locReaction);
 	}

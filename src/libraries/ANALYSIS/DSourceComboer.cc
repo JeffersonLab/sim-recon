@@ -6,6 +6,7 @@
  * PROBLEMS:
  *
  * EVENTUALLY:
+ * K0 Sigma+: COMPARE
  * K+ Sigma0: COMPARE
  * K+ K+ pi- Xi0, Xi0 -> pi0, Lambda: COMPARE
  * omega p
@@ -18,11 +19,7 @@
  *
  * 2K0 p, K0 -> 3pi
  *
- * K0 Sigma+
- * K0 Sigma+ missing pi+
- * K0 Sigma+ missing proton
  * K0 Sigma+ missing g
- * K0 Sigma+ pi0
  * K0 Sigma+ pi0 missing pi0 g
  * K0 Sigma+ (pi0)
  * 
@@ -758,12 +755,10 @@ DSourceComboUse DSourceComboer::Create_ZDependentSourceComboUses(const DReaction
 	auto locStepVertexInfos = DAnalysis::Get_StepVertexInfos_ReverseOrderByStep(locReactionVertexInfo);
 	for(const auto& locStepVertexInfo : locStepVertexInfos)
 	{
-		auto locVertexPrimaryCombo = (locReactionChargedCombo != nullptr) ? Get_VertexPrimaryCombo(locReactionChargedCombo, locStepVertexInfo) : nullptr;
-		auto locIsCombo2ndVertex = locStepVertexInfo->Get_FullConstrainParticles(false, d_EitherState, d_AllCharges, false).empty();
-
 		//for this vertex, get the vertex z bin
-		auto locIsProductionVertex = locStepVertexInfo->Get_ProductionVertexFlag();
-		auto locVertexZBin = (locReactionChargedCombo != nullptr) ? dSourceComboVertexer->Get_VertexZBin_NoBeam(locIsProductionVertex, locVertexPrimaryCombo, locIsCombo2ndVertex) : dSourceComboTimeHandler->Get_VertexZBin_TargetCenter();
+		auto locVertexZBin = (locReactionChargedCombo != nullptr) ? dSourceComboVertexer->Get_VertexZBin(locStepVertexInfo, locReactionChargedCombo, nullptr, true) : dSourceComboTimeHandler->Get_VertexZBin_TargetCenter();
+		if(dDebugLevel >= 20)
+			cout << "step, vertex primary combo, 2nd vertex flag, is prod-vertex, vertex z-bin = " << locStepVertexInfo->Get_StepIndices().front() << ", " << locVertexZBin << endl;
 
 		//loop over the steps at this vertex z bin, in reverse order
 		auto locStepIndices = locStepVertexInfo->Get_StepIndices();
@@ -1307,7 +1302,7 @@ DCombosByReaction DSourceComboer::Build_ParticleCombos(const DReactionVertexInfo
 			}
 
 			//combo with beam and save results!!! (if no beam needed, just saves and returns)
-			Combo_WithBeam(locReactions, locReactionVertexInfo, locReactionChargedCombo, locRFBunch, locOutputComboMap);
+			Combo_WithBeam(locReactions, locReactionVertexInfo, locPrimaryComboUse, locReactionChargedCombo, locRFBunch, locOutputComboMap);
 			continue;
 		}
 
@@ -1441,11 +1436,11 @@ void DSourceComboer::Combo_WithNeutralsAndBeam(const vector<const DReaction*>& l
 		auto locRFBunch = dSourceComboTimeHandler->Select_RFBunch_Full(locReactionVertexInfo, locReactionFullCombo, locValidRFBunches);
 
 		//combo with beam and save results!!! (if no beam needed, just saves and returns)
-		Combo_WithBeam(locReactions, locReactionVertexInfo, locReactionFullCombo, locRFBunch, locOutputComboMap);
+		Combo_WithBeam(locReactions, locReactionVertexInfo, locZDependentComboUse, locReactionFullCombo, locRFBunch, locOutputComboMap);
 	}
 }
 
-void DSourceComboer::Combo_WithBeam(const vector<const DReaction*>& locReactions, const DReactionVertexInfo* locReactionVertexInfo, const DSourceCombo* locReactionFullCombo, int locRFBunch, DCombosByReaction& locOutputComboMap)
+void DSourceComboer::Combo_WithBeam(const vector<const DReaction*>& locReactions, const DReactionVertexInfo* locReactionVertexInfo, const DSourceComboUse& locReactionFullComboUse, const DSourceCombo* locReactionFullCombo, int locRFBunch, DCombosByReaction& locOutputComboMap)
 {
 	if(dDebugLevel > 0)
 		cout << endl << "Comboing beam." << endl;
@@ -1487,7 +1482,7 @@ void DSourceComboer::Combo_WithBeam(const vector<const DReaction*>& locReactions
 	for(const auto& locBeamParticle : locBeamParticles)
 	{
 		//Calculate remaining vertex positions (that needed to be done via missing mass)
-		dSourceComboVertexer->Calc_VertexTimeOffsets_WithBeam(locReactionVertexInfo, locReactionFullCombo, locBeamParticle);
+		dSourceComboVertexer->Calc_VertexTimeOffsets_WithBeam(locReactionVertexInfo, locReactionFullComboUse, locReactionFullCombo, locBeamParticle);
 
 		//placing timing cuts on the particles at these vertices
 		if(!dSourceComboTimeHandler->Cut_Timing_MissingMassVertices(locReactionVertexInfo, locReactionFullCombo, locBeamParticle, locRFBunch))
@@ -3699,6 +3694,100 @@ const DSourceCombo* DSourceComboer::Find_Combo_AtThisStep(const DSourceCombo* lo
 	return locSourceCombo;
 }
 
+DSourceComboUse DSourceComboer::Get_StepSourceComboUse(const DReaction* locReaction, size_t locDesiredStepIndex, DSourceComboUse locVertexPrimaryComboUse, size_t locVertexPrimaryStepIndex) const
+{
+	if(dDebugLevel >= 100)
+		cout << "reaction, desired step index, current step index: " << locReaction->Get_ReactionName() << ", " << locDesiredStepIndex << ", " << locVertexPrimaryStepIndex << endl;
+	if(locDesiredStepIndex == locVertexPrimaryStepIndex)
+		return locVertexPrimaryComboUse;
+
+	//Get the list of steps we need to traverse //particle pair: step index, particle instance index
+	vector<pair<size_t, int>> locParticleIndices = {std::make_pair(locDesiredStepIndex, DReactionStep::Get_ParticleIndex_Initial())};
+	while(locParticleIndices.back().first != locVertexPrimaryStepIndex)
+	{
+		auto locParticlePair = DAnalysis::Get_InitialParticleDecayFromIndices(locReaction, locParticleIndices.back().first);
+		if(dDebugLevel >= 100)
+			cout << "decay from pair: " << locParticlePair.first << ", " << locParticlePair.second << endl;
+		auto locStep = locReaction->Get_ReactionStep(locParticlePair.first);
+		auto locInstanceIndex = DAnalysis::Get_ParticleInstanceIndex(locStep, locParticlePair.second);
+		locParticleIndices.emplace_back(locParticlePair.first, locInstanceIndex);
+		if(dDebugLevel >= 100)
+			cout << "save indices: " << locParticlePair.first << ", " << locInstanceIndex << endl;
+	}
+
+	//start from back of locParticleIndices, searching
+	while(true)
+	{
+		auto locNextStep = locParticleIndices[locParticleIndices.size() - 2].first;
+		auto locInstanceToFind = locParticleIndices.back().second;
+		const auto& locUseToFind = dSourceComboUseReactionStepMap.find(locReaction)->second.find(locNextStep)->second;
+		if(dDebugLevel >= 100)
+			cout << "next step, instance to find, use to find: " << locNextStep << ", " << locInstanceToFind << endl;
+		if(dDebugLevel >= 100)
+			Print_SourceComboUse(locUseToFind);
+		locVertexPrimaryComboUse = Find_ZDependentUse_AtThisStep(locVertexPrimaryComboUse, locUseToFind, locInstanceToFind);
+		if(std::get<2>(locVertexPrimaryComboUse) == nullptr)
+			return locVertexPrimaryComboUse; //e.g. entirely neutral step when input is charged
+		if(locNextStep == locDesiredStepIndex)
+			return locVertexPrimaryComboUse;
+		locParticleIndices.pop_back();
+	}
+
+	return DSourceComboUse(Unknown, 0, nullptr, 0, Unknown);
+}
+
+DSourceComboUse DSourceComboer::Find_ZDependentUse_AtThisStep(const DSourceComboUse& locSourceComboUse, DSourceComboUse locUseToFind, size_t locDecayInstanceIndex) const
+{
+	//ignores z-bin when comparing
+	//if z-dependent, go to z-independent use
+	if(std::get<1>(locUseToFind) != DSourceComboInfo::Get_VertexZIndex_ZIndependent())
+		locUseToFind = dZDependentUseToIndependentMap.find(locUseToFind)->second;
+	if(dDebugLevel >= 100)
+	{
+		cout << "Find_Combo_AtThisStep: USE TO FIND:" << endl;
+		DAnalysis::Print_SourceComboUse(locUseToFind);
+	}
+	for(const auto& locDecayPair : std::get<2>(locSourceComboUse)->Get_FurtherDecays())
+	{
+		//if z-dependent, go to z-independent
+		auto locDecayUse = locDecayPair.first;
+		auto locZIndependentDecayUse = locDecayUse;
+		if(std::get<1>(locDecayUse) != DSourceComboInfo::Get_VertexZIndex_ZIndependent())
+			locZIndependentDecayUse = dZDependentUseToIndependentMap.find(locDecayUse)->second;
+		if(dDebugLevel >= 100)
+		{
+			cout << "USE TO CHECK:" << endl;
+			DAnalysis::Print_SourceComboUse(locDecayUse);
+		}
+
+		if(locZIndependentDecayUse == locUseToFind) //good, do stuff
+			return locDecayUse;
+		if(std::get<0>(locDecayUse) != Unknown)
+			continue; //is another step!
+
+		//check other uses at this step (further depth guaranteed to be only 1)
+		if(dDebugLevel >= 100)
+			cout << "#to-check decay uses: " << std::get<2>(locDecayUse)->Get_FurtherDecays().size() << endl;
+		for(const auto& locNestedDecayPair : std::get<2>(locDecayUse)->Get_FurtherDecays())
+		{
+			//if z-dependent, go to z-independent
+			auto locNestedDecayUse = locNestedDecayPair.first;
+			auto locZIndependentNestedDecayUse = locNestedDecayUse;
+			if(std::get<1>(locNestedDecayUse) != DSourceComboInfo::Get_VertexZIndex_ZIndependent())
+				locZIndependentNestedDecayUse = dZDependentUseToIndependentMap.find(locNestedDecayUse)->second;
+			if(dDebugLevel >= 100)
+			{
+				cout << "NESTED USE TO CHECK:" << endl;
+				DAnalysis::Print_SourceComboUse(locZIndependentNestedDecayUse);
+			}
+			if(locZIndependentNestedDecayUse == locUseToFind) //good, do stuff
+				return locNestedDecayUse;
+		}
+	}
+
+	//Not found: Either invalid request, OR the input is a fully-charged combo being used for a Use that contains neutrals (created during charged-only stage): Return the input, it is already what you want
+	return DSourceComboUse(Unknown, 0, nullptr, 0, Unknown);
+}
 /*
  * For K0, Sigma+, p the full combos will be:
  * 0: X -> A, 1, 3 (mixed -> charged, mixed, mixed)
@@ -3813,7 +3902,7 @@ const DSourceCombo* DSourceComboer::Get_NextChargedCombo(const DSourceCombo* loc
 			auto locNextVertexZBin = dSourceComboVertexer->Get_VertexZBin_NoBeam(false, locNextPotentialCombo, locIsCombo2ndVertex);
 			if(dDebugLevel >= 20)
 				cout << "detached next potential combo, next zbin, desired zbin = " << locNextPotentialCombo << ", " << int(locNextVertexZBin) << ", " << int(locDesiredVertexZBin) << endl;
-			if(locNextVertexZBin != locDesiredVertexZBin)
+			if((locNextVertexZBin != locDesiredVertexZBin) && (locDesiredVertexZBin != DSourceComboInfo::Get_VertexZIndex_ZIndependent())) //if desired = independent, we don't care
 				continue;
 		}
 		if(dDebugLevel >= 20)

@@ -112,6 +112,7 @@ class DSourceComboer : public JObject
 		const DSourceCombo* Get_StepSourceCombo(const DReaction* locReaction, size_t locDesiredStepIndex, const DSourceCombo* locVertexPrimaryCombo, size_t locVertexPrimaryStepIndex = 0) const;
 		const DSourceCombo* Get_VertexPrimaryCombo(const DSourceCombo* locReactionCombo, const DReactionStepVertexInfo* locStepVertexInfo) const;
 		const DSourceCombo* Get_VertexPrimaryCombo(const DSourceCombo* locReactionCombo, const DReactionStepVertexInfo* locStepVertexInfo);
+		DSourceComboUse Get_StepSourceComboUse(const DReaction* locReaction, size_t locDesiredStepIndex, DSourceComboUse locVertexPrimaryComboUse, size_t locVertexPrimaryStepIndex) const;
 
 		//Get combo uses
 		DSourceComboUse Get_SourceComboUse(const DReactionStepVertexInfo* locStepVertexInfo) const{return dSourceComboUseReactionMap.find(locStepVertexInfo)->second;};
@@ -157,7 +158,7 @@ class DSourceComboer : public JObject
 
 		//CREATE COMBOS
 		void Combo_WithNeutralsAndBeam(const vector<const DReaction*>& locReactions, const DReactionVertexInfo* locReactionVertexInfo, const DSourceComboUse& locPrimaryComboUse, const DSourceCombo* locReactionChargedCombo, const vector<int>& locBeamBunches_Charged, DCombosByReaction& locOutputComboMap);
-		void Combo_WithBeam(const vector<const DReaction*>& locReactions, const DReactionVertexInfo* locReactionVertexInfo, const DSourceCombo* locReactionFullCombo, int locRFBunch, DCombosByReaction& locOutputComboMap);
+		void Combo_WithBeam(const vector<const DReaction*>& locReactions, const DReactionVertexInfo* locReactionVertexInfo, const DSourceComboUse& locReactionFullComboUse, const DSourceCombo* locReactionFullCombo, int locRFBunch, DCombosByReaction& locOutputComboMap);
 		const DParticleCombo* Build_ParticleCombo(const DReactionVertexInfo* locReactionVertexInfo, const DSourceCombo* locFullCombo, const DKinematicData* locBeamParticle);
 
 		//CREATE SOURCE COMBOS - GENERAL METHODS
@@ -212,6 +213,7 @@ class DSourceComboer : public JObject
 		bool Get_PromoteFlag(ComboingStage_t locComboingStage, Particle_t locDecayPID_UseToCheck, const DSourceComboInfo* locComboInfo_UseToCreate, const DSourceComboInfo* locComboInfo_UseToCheck, DSourceComboUse& locNonNeutralUse) const;
 		const DSourceCombo* Find_Combo_AtThisStep(const DSourceCombo* locSourceCombo, DSourceComboUse locUseToFind, size_t locDecayInstanceIndex) const;
 		void Check_ForDuplicates(const vector<const DSourceCombo*>& locCombos) const;
+		DSourceComboUse Find_ZDependentUse_AtThisStep(const DSourceComboUse& locSourceComboUse, DSourceComboUse locUseToFind, size_t locDecayInstanceIndex) const;
 
 		//GET RESOURCES
 		DSourceCombo* Get_SourceComboResource(void);
