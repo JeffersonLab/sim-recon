@@ -167,35 +167,38 @@
 		double all_trigs = h->GetBinContent(33,1);
 
 		// trig 1
-		sprintf(str, "(%4.1f%%)", h->GetBinContent(1,1)/all_trigs*100.0);
+		double Ntrig1 = h->GetBinContent(1,1);
+		sprintf(str, "(%4.1f%%)", Ntrig1/all_trigs*100.0);
 		latex.DrawLatex(0.45, 0.675, str);
 		latex2.DrawLatex(0.45, 0.635, "of all trigs");
-		sprintf(str, "(%4.1f%%)", h->GetBinContent(1,3)/h->GetBinContent(1,1)*100.0);
-		latex.DrawLatex(0.45, 0.450, str);
-		latex2.DrawLatex(0.45, 0.410, "of trig 1's");
-		sprintf(str, "(%4.1f%%)", h->GetBinContent(1,4)/h->GetBinContent(1,1)*100.0);
-		latex.DrawLatex(0.45, 0.225, str);
-		latex2.DrawLatex(0.45, 0.185, "of trig 1's");
+ 		sprintf(str, "(%4.1f%%)", h->GetBinContent(1,3)/Ntrig1*100.0);
+ 		latex.DrawLatex(0.45, 0.450, str);
+ 		latex2.DrawLatex(0.45, 0.410, "of trig 1's");
+ 		sprintf(str, "(%4.1f%%)", h->GetBinContent(1,4)/Ntrig1*100.0);
+ 		latex.DrawLatex(0.45, 0.225, str);
+ 		latex2.DrawLatex(0.45, 0.185, "of trig 1's");
 
 		// trig 3
-		sprintf(str, "(%4.1f%%)", h->GetBinContent(3,1)/all_trigs*100.0);
+		double Ntrig3 = h->GetBinContent(3,1);
+		sprintf(str, "(%4.1f%%)", Ntrig3/all_trigs*100.0);
 		latex.DrawLatex(0.65, 0.675, str);
 		latex2.DrawLatex(0.65, 0.635, "of all trigs");
-		sprintf(str, "(%4.1f%%)", h->GetBinContent(3,3)/h->GetBinContent(3,1)*100.0);
+		sprintf(str, "(%4.1f%%)", h->GetBinContent(3,3)/Ntrig3*100.0);
 		latex.DrawLatex(0.65, 0.450, str);
 		latex2.DrawLatex(0.65, 0.410, "of trig 3's");
-		sprintf(str, "(%4.1f%%)", h->GetBinContent(3,4)/h->GetBinContent(3,1)*100.0);
+		sprintf(str, "(%4.1f%%)", h->GetBinContent(3,4)/Ntrig3*100.0);
 		latex.DrawLatex(0.65, 0.225, str);
 		latex2.DrawLatex(0.65, 0.185, "of trig 3's");
 
 		// trig 4
-		sprintf(str, "(%4.1f%%)", h->GetBinContent(4,1)/all_trigs*100.0);
+		double Ntrig4 = h->GetBinContent(4,1);
+		sprintf(str, "(%4.1f%%)", Ntrig4/all_trigs*100.0);
 		latex.DrawLatex(0.85, 0.675, str);
 		latex2.DrawLatex(0.85, 0.635, "of all trigs");
-		sprintf(str, "(%4.1f%%)", h->GetBinContent(4,3)/h->GetBinContent(4,1)*100.0);
+		sprintf(str, "(%4.1f%%)", h->GetBinContent(4,3)/Ntrig4*100.0);
 		latex.DrawLatex(0.85, 0.450, str);
 		latex2.DrawLatex(0.85, 0.410, "of trig 4's");
-		sprintf(str, "(%4.1f%%)", h->GetBinContent(4,4)/h->GetBinContent(4,1)*100.0);
+		sprintf(str, "(%4.1f%%)", h->GetBinContent(4,4)/Ntrig4*100.0);
 		latex.DrawLatex(0.85, 0.225, str);
 		latex2.DrawLatex(0.85, 0.185, "of trig 4's");
 		
