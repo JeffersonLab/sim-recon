@@ -5,6 +5,9 @@
  *      Author: Hovanes Egiyan
  */
 
+#include <cmath>
+using namespace std;
+
 #include <TAC/HitRebuilderTAC.h>
 
 using namespace std;
