@@ -11,6 +11,9 @@
  *      Author: Hovanes Egiyan
  */
 
+#include <cmath>
+using namespace std;
+
 #include "DTACHit_factory.h"
 
 // The parameter below can be overwritten from the command line
