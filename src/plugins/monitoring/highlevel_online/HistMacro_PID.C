@@ -48,7 +48,7 @@ class FitWrapper{
 			Double_t gs;
 			gs=0.;
 			if(abs(p[2])>1.E-20){
-				gs=p[0]/sqrt(2.*3.1416)/p[2]*exp(-pow((x-p[1])/p[2],2)/2.);
+				gs=p[0]/sqrt(2.0*3.1416)/p[2] * exp(-pow((x-p[1])/p[2],2)/2.0);
 			}
 			return gs;
 		}
@@ -512,8 +512,8 @@ class FitWrapper{
 		}
 	}	
 
-
 	TLatex latex;
+
 
 	//----------- Pi0 --------------
 	locCanvas->cd(1);
@@ -610,7 +610,6 @@ class FitWrapper{
 		}	
 	}
 
-
 	//----------- Phi --------------
 	locCanvas->cd(2);
 	gPad->SetTicks();
@@ -644,88 +643,6 @@ class FitWrapper{
 				latex.DrawLatex(1.4, max*0.65, str);
 			}
 		}
-
-#if 0
-		// Only do fit if there are at least 25 entries in the
-		// bin at 1020MeV
-		Int_t Npeak = KPlusKMinus->GetBinContent(KPlusKMinus->FindBin(1.020));
-		double max = 1.05*KPlusKMinus->GetMaximum();
-		if(Npeak < 25){
-			KPlusKMinus->Draw();
-		}else{
-		
-			// Fit to phi peak
-			TF1 *fun = (TF1*)gDirectory->FindObjectAny("fun_phi_fit");
-			if(!fun)fun = new TF1("fun_phi_fit", "[0]*TMath::Voigt(x-[1], [2], [3]) + pol2(4)");
-
-			// Fit once with fixed parameters to force finding of polynomial params
-			fun->FixParameter(0, Npeak*0.5);
-			fun->FixParameter(1, 1.020);
-			fun->FixParameter(2, 0.2);
-			fun->FixParameter(3, 0.1);
-			fun->SetParameter(4, 0.0);
-			fun->FixParameter(5, 0.0);
-			fun->SetParameter(6, 0.0);
-			fun->SetParameter(7, 0.0);
-			//fun->SetParameter(8, 0.0);
-
-			// Region of interest for fit
-			double lo = 0.98;
-			double hi = 1.07;
-
-			// Fit and Draw
-			KPlusKMinus->Fit(fun, "", "", lo, hi);
-
-			// Release Voigt parameters and fit again
-			fun->ReleaseParameter(0);
-			fun->ReleaseParameter(1);
-			fun->ReleaseParameter(2);
-			fun->ReleaseParameter(3);
-
-			// Fit and Draw again (histogram and function)
-			KPlusKMinus->Fit(fun, "", "", lo, hi);
-
-			// Second function for drawing background
-			TF1 *fun2 = (TF1*)gDirectory->FindObjectAny("fun_phi_fit2");
-			if(!fun2) fun2 = new TF1("fun_phi_fit2", "pol3(0)" , lo, hi);
-			double pars[10];
-			fun->GetParameters(pars);
-			fun2->SetParameters(&pars[4]);
-			fun2->SetLineColor(kMagenta);
-			fun2->SetLineStyle(2);
-			fun2->Draw("same");
-
-			// Get number of rho's
-			double I = fun->Integral(lo, hi) - fun2->Integral(lo,hi);
-			I /= TwoGammaMass->GetBinWidth(1);
-			char str[256];
-			sprintf(str, "num. #phi : %g", I);
-
-			latex.SetTextColor(kBlack);
-			latex.SetTextAngle(0.0);
-			latex.SetTextAlign(11);
-			latex.SetTextSize(0.075);
-			latex.DrawLatex(0.81, max*0.93, str);
-
-			// Print rate per trigger
-			if(Ntrig_tot>0.0){
-				sprintf(str, "%3.3f per 1k triggers", I/Ntrig_tot*1000.0);
-				latex.SetTextSize(0.06);
-				latex.DrawLatex(0.81, max*0.85, str);
-			}
-		}
-
-		TLine lin;
-		lin.SetLineColor(kMagenta);
-		lin.SetLineWidth(1);
-		lin.DrawLine(1.020, 0.0, 1.020, max);
-		
-		latex.SetTextAngle(90.0);
-		latex.SetTextSize(0.035);
-		latex.SetTextAlign(21);
-		latex.SetTextColor(kMagenta);
-		latex.DrawLatex(1.015, max/2.0, "1020 MeV");
-#endif
 	}
 
 	//----------- Rho --------------
@@ -796,6 +713,5 @@ class FitWrapper{
 				latex.DrawLatex(1.010, max*0.65, str);
 			}
 		}
-
 	}
 }
