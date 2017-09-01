@@ -38,6 +38,8 @@ class JEventProcessor_highlevel_online:public jana::JEventProcessor
 		~JEventProcessor_highlevel_online(){};
 		const char* className(void){return "JEventProcessor_highlevel_online";}
 
+		TH1D* dHist_EventInfo;
+
 		TH1I* dHist_BeamBunchPeriod;
 		TH1F* dHist_BeamBunchPeriod_DFT;
 
@@ -88,6 +90,9 @@ class JEventProcessor_highlevel_online:public jana::JEventProcessor
 		pair<double, double> dCoherentPeakRange;
 		pair<int, int> dRFSidebandBunchRange;
 		map<Particle_t, map<DetectorSystem_t, double> > dTimingCutMap;
+
+		double last_timestamp;
+		double unix_offset;
 };
 
 #endif // _JEventProcessor_highlevel_online_

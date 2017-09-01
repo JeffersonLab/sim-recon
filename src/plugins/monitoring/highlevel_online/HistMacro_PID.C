@@ -1,3 +1,4 @@
+// hnamepath: /highlevel/EventInfo
 // hnamepath: /highlevel/TwoGammaMass
 // hnamepath: /highlevel/PiPlusPiMinus
 // hnamepath: /highlevel/KPlusKMinus
@@ -9,6 +10,8 @@
 // e-mail: staylor@jlab.org
 // e-mail: sdobbs@jlab.org
 //
+
+#include <time.h>
 
 {
 
@@ -491,6 +494,7 @@ class FitWrapper{
 		return;
 	locDirectory->cd();
 
+	TH1* EventInfo           = (TH1*)gDirectory->Get("EventInfo");
 	TH1* TwoGammaMass        = (TH1*)gDirectory->Get("TwoGammaMass");
 	TH1* PiPlusPiMinus       = (TH1*)gDirectory->Get("PiPlusPiMinus");
 	TH1* KPlusKMinus         = (TH1*)gDirectory->Get("KPlusKMinus");
@@ -511,6 +515,18 @@ class FitWrapper{
 			if(trig[itrig-1]) Ntrig_tot += (double)L1bits_gtp->GetBinContent(itrig);
 		}
 	}	
+	
+	// Get unix time for time series DB entries
+	double unix_time =  0;
+	if(EventInfo){
+		Double_t Nunix = EventInfo->GetBinContent(1);
+		if(Nunix>0.0){
+			Double_t sum_unix_time = EventInfo->GetBinContent(2);
+			unix_time = (sum_unix_time/Nunix);
+			time_t t = (time_t)unix_time;
+			cout << ctime(&t);
+		}
+	}
 
 	TLatex latex;
 
@@ -560,10 +576,19 @@ class FitWrapper{
 		if(!fun2) fun2 = new TF1("fun_pi0_fit", "pol2(0)" , lo, hi);
 		double pars[10];
 		fun->GetParameters(pars);
+		const Double_t *errs = fun->GetParErrors();
 		fun2->SetParameters(&pars[3]);
 		fun2->SetLineColor(kMagenta);
 		fun2->SetLineStyle(2);
 		fun2->Draw("same");
+		
+		// Add to time series (n.b. time needs to be in ns)
+		if(unix_time > 0){
+// 			stringstream ss;
+// 			ss << "mass_fit,ptype=pi0 mass="<<pars[1]<<",width="<<pars[2]<<",mass_err="<<errs[1]<<",width_err="<<errs[2]<<" "<<(uint64_t)(unix_time*1.0E9);
+// 			InsertSeriesData(ss.str());
+			InsertSeriesMassFit("pi0", pars[1], pars[2], errs[1], errs[2], unix_time);
+		}
 		
 		double max = 1.05*TwoGammaMass->GetMaximum();
 		TLine lin;
