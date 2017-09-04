@@ -171,7 +171,7 @@
 
       integer openInput, skipInput, openOutput
       external openInput, skipInput, openOutput
-      real beamE0, beamEpeak, beamEmin, radColDist
+      real beamE0, beamEpeak, beamEmin, radColDist, colDiam
       real beamEmit, radThick
       common /beamPars/ beamE0,beamEpeak,beamEmin,radColDist,colDiam,
      +                  beamEmit, radThick
