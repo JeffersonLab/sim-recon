@@ -582,13 +582,8 @@ class FitWrapper{
 		fun2->SetLineStyle(2);
 		fun2->Draw("same");
 		
-		// Add to time series (n.b. time needs to be in ns)
-		if(unix_time > 0){
-// 			stringstream ss;
-// 			ss << "mass_fit,ptype=pi0 mass="<<pars[1]<<",width="<<pars[2]<<",mass_err="<<errs[1]<<",width_err="<<errs[2]<<" "<<(uint64_t)(unix_time*1.0E9);
-// 			InsertSeriesData(ss.str());
-			InsertSeriesMassFit("pi0", pars[1], pars[2], errs[1], errs[2], unix_time);
-		}
+		// Add to time series
+		if(unix_time > 0)InsertSeriesMassFit("pi0", pars[1], pars[2], errs[1], errs[2], unix_time);
 		
 		double max = 1.05*TwoGammaMass->GetMaximum();
 		TLine lin;
