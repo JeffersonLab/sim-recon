@@ -894,6 +894,9 @@ jerror_t DEventSourceHDDM::Extract_DBCALDigiHit(hddm_s::HDDM *record,
       response->sector            = iter->getSector();
       response->pulse_integral    = (uint32_t)iter->getPulse_integral();
       response->pulse_peak        = 0;
+      if(iter->getBcalfADCPeaks().size() > 0) {
+          response->pulse_peak    = iter->getBcalfADCPeak().getPeakAmp();
+      }
       response->pulse_time        = (uint32_t)iter->getPulse_time();
       response->pedestal          = 1;
       response->QF                = 1;
@@ -1286,6 +1289,9 @@ jerror_t DEventSourceHDDM::Extract_DCDCHit(JEventLoop* locEventLoop, hddm_s::HDD
          hit->straw  = iter->getStraw();
          hit->q      = iter->getQ();
          hit->t      = iter->getT();
+         if(iter->getCdcDigihits().size() > 0) {
+             hit->amp  = iter->getCdcDigihit().getPeakAmp();
+         }
          hit->d      = 0.; // initialize to zero to avoid any NaN
          hit->itrack = 0;  // track information is in TRUTH tag
          hit->ptype  = 0;  // ditto
@@ -1344,7 +1350,7 @@ jerror_t DEventSourceHDDM::Extract_DFDCHit(hddm_s::HDDM *record,
          newHit->module  = ahiter->getModule();
          newHit->element = ahiter->getWire();
          newHit->q       = ahiter->getDE();
-	 newHit->pulse_height = 0.; // not measured
+         newHit->pulse_height = 0.;     // not measured
          newHit->t       = ahiter->getT();
          newHit->d       = 0.; // initialize to zero to avoid any NaN
          newHit->itrack  = 0;  // track information is in TRUTH tag
@@ -1369,7 +1375,10 @@ jerror_t DEventSourceHDDM::Extract_DFDCHit(hddm_s::HDDM *record,
             newHit->element -= 1000;
          newHit->plane   = chiter->getPlane();
          newHit->q       = chiter->getQ();
-	 newHit->pulse_height = newHit->q; 
+         newHit->pulse_height = newHit->q;
+         if(chiter->getFdcDigihits().size() > 0) {
+             newHit->pulse_height  = chiter->getFdcDigihit().getPeakAmp();
+         }
          newHit->t       = chiter->getT();
          newHit->d       = 0.; // initialize to zero to avoid any NaN
          newHit->itrack  = 0;  // track information is in TRUTH tag
@@ -1661,7 +1670,10 @@ jerror_t DEventSourceHDDM::Extract_DFCALHit(hddm_s::HDDM *record,
          mchit->y      = pos.Y();
          mchit->E      = iter->getE();
          mchit->t      = iter->getT();
-	 mchit->intOverPeak = 6.;
+         mchit->intOverPeak = 6.;
+         if(iter->getFcalDigihits().size() > 0) {
+             mchit->intOverPeak  = iter->getFcalDigihit().getIntegralOverPeak();
+         }
          data.push_back(mchit);
        }
     }
@@ -1957,11 +1969,15 @@ jerror_t DEventSourceHDDM::Extract_DTOFHit( hddm_s::HDDM *record,
             tofhit->plane = hiter->getPlane();
             tofhit->end   = hiter->getEnd();
             tofhit->dE    = hiter->getDE();
+            tofhit->Amp   = 0.;
+            if(hiter->getFtofDigihits().size() > 0) {
+                tofhit->Amp  = hiter->getFtofDigihit().getPeakAmp();
+            }
             tofhit->t     = hiter->getT();
-	    tofhit->t_TDC = tofhit->t;
-	    tofhit->t_fADC= tofhit->t;
-	    tofhit->has_TDC=true;
-	    tofhit->has_fADC=true;
+            tofhit->t_TDC = tofhit->t;
+            tofhit->t_fADC= tofhit->t;          
+            tofhit->has_TDC=true;
+            tofhit->has_fADC=true;
             data.push_back(tofhit);
             if (tofhit->end == 0)
                north_hits.push_back(tofhit);
@@ -2075,10 +2091,14 @@ jerror_t DEventSourceHDDM::Extract_DSCHit(hddm_s::HDDM *record,
          hit->sector = iter->getSector();
          hit->dE = iter->getDE();
          hit->t = iter->getT();
-	 hit->t_TDC=hit->t;
-	 hit->t_fADC=hit->t;
-	 hit->has_TDC=true;
-	 hit->has_fADC=true;
+         hit->t_TDC=hit->t;
+         hit->t_fADC=hit->t;
+         hit->pulse_height = 0.;
+         if(iter->getStcDigihits().size() > 0) {
+             hit->pulse_height  = iter->getStcDigihit().getPeakAmp();
+         }
+         hit->has_TDC=true;
+         hit->has_fADC=true;
          data.push_back(hit);
       }
    }
@@ -2090,10 +2110,10 @@ jerror_t DEventSourceHDDM::Extract_DSCHit(hddm_s::HDDM *record,
          hit->sector = iter->getSector();
          hit->dE = iter->getDE();
          hit->t = iter->getT();
-	 hit->t_TDC=hit->t;
-	 hit->t_fADC=hit->t;
-	 hit->has_TDC=true;
-	 hit->has_fADC=true;
+         hit->t_TDC=hit->t;
+         hit->t_fADC=hit->t;
+         hit->has_TDC=true;
+         hit->has_fADC=true;
          data.push_back(hit);
       }
    }

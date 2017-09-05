@@ -30,7 +30,9 @@
     <hitView minOccurs="0" version="2.0">
       <centralDC minOccurs="0">
         <cdcStraw maxOccurs="unbounded" minOccurs="0" ring="int" straw="int">
-          <cdcStrawHit q="float" maxOccurs="unbounded" t="float"/>
+          <cdcStrawHit q="float" maxOccurs="unbounded" t="float">
+            <cdcDigihit minOccurs="0" peakAmp="float"/>
+          </cdcStrawHit>
           <cdcStrawTruthHit q="float" maxOccurs="unbounded" t="float" d="float" itrack="int" ptype="int"/>
         </cdcStraw>
         <cdcTruthPoint dEdx="float" dradius="float" maxOccurs="unbounded" minOccurs="0" phi="float" primary="boolean" ptype="int" px="float" py="float" pz="float" r="float" t="float" track="int" z="float">
@@ -44,7 +46,9 @@
             <fdcAnodeTruthHit dE="float" maxOccurs="unbounded" t="float" t_unsmeared="float" d="float" itrack="int" ptype="int"/>
           </fdcAnodeWire>
           <fdcCathodeStrip maxOccurs="unbounded" minOccurs="0" plane="int" strip="int">
-            <fdcCathodeHit maxOccurs="unbounded" q="float" t="float"/>
+            <fdcCathodeHit maxOccurs="unbounded" q="float" t="float">
+              <fdcDigihit minOccurs="0" peakAmp="float"/>
+            </fdcCathodeHit>
             <fdcCathodeTruthHit maxOccurs="unbounded" q="float" t="float" itrack="int" ptype="int"/>
           </fdcCathodeStrip>
           <fdcTruthPoint E="float" dEdx="float" dradius="float" maxOccurs="unbounded" minOccurs="0" primary="boolean" ptype="int" px="float" py="float" pz="float" t="float" track="int" x="float" y="float" z="float">
@@ -54,7 +58,9 @@
       </forwardDC>
       <startCntr minOccurs="0">
         <stcPaddle maxOccurs="unbounded" minOccurs="0" sector="int">
-          <stcHit dE="float" maxOccurs="unbounded" t="float"/>
+          <stcHit dE="float" maxOccurs="unbounded" t="float">
+            <stcDigihit minOccurs="0" peakAmp="float"/>
+          </stcHit>
           <stcTruthHit dE="float" maxOccurs="unbounded" t="float" itrack="int" ptype="int"/>
         </stcPaddle>
         <stcTruthPoint E="float" dEdx="float" maxOccurs="unbounded" minOccurs="0" phi="float" primary="boolean" ptype="int" px="float" py="float" pz="float" r="float" sector="int" t="float" track="int" z="float">
@@ -70,7 +76,9 @@
             <bcalSiPMTruth minOccurs="0" incident_id="int" E="float"/>
           </bcalSiPMSpectrum>
           <bcalfADCHit end="int" E="float" maxOccurs="unbounded" minOccurs="0" t="float"/>
-          <bcalfADCDigiHit end="int" pulse_integral="int" maxOccurs="unbounded" minOccurs="0" pulse_time="int"/>
+          <bcalfADCDigiHit end="int" pulse_integral="int" maxOccurs="unbounded" minOccurs="0" pulse_time="int">
+            <bcalfADCPeak minOccurs="0" peakAmp="float"/>
+          </bcalfADCDigiHit>
           <bcalTDCHit end="int" maxOccurs="unbounded" minOccurs="0" t="float"/>
           <bcalTDCDigiHit end="int" maxOccurs="unbounded" minOccurs="0" time="float"/>
           <bcalTruthHit E="float" maxOccurs="unbounded" minOccurs="0" t="float" zLocal="float" incident_id="int"/>
@@ -115,7 +123,9 @@
       <forwardTOF minOccurs="0">
         <ftofCounter bar="int" maxOccurs="unbounded" minOccurs="0" plane="int">
           <!-- ftof hits are either north / beam-left (end=0) or south / beam-right (end=1)-->
-          <ftofHit end="int" maxOccurs="unbounded" minOccurs="0" dE="float" t="float"/>
+          <ftofHit end="int" maxOccurs="unbounded" minOccurs="0" dE="float" t="float">
+            <ftofDigihit minOccurs="0" peakAmp="float"/>
+          </ftofHit>
           <ftofTruthHit end="int" maxOccurs="unbounded" minOccurs="0" dE="float" t="float">
              <ftofTruthExtra maxOccurs="unbounded" minOccurs="0" ptype="int" itrack="int" px="float" py="float" pz="float" x="float" y="float" z="float" E="float" dist="float"/>
           </ftofTruthHit>
@@ -126,7 +136,9 @@
       </forwardTOF>
       <forwardEMcal minOccurs="0">
         <fcalBlock column="int" maxOccurs="unbounded" minOccurs="0" row="int">
-          <fcalHit E="float" maxOccurs="unbounded" t="float"/>
+          <fcalHit E="float" maxOccurs="unbounded" t="float">
+            <fcalDigihit minOccurs="0" integralOverPeak="float"/>
+          </fcalHit>
           <fcalTruthHit E="float" maxOccurs="unbounded" t="float"/>
         </fcalBlock>
         <fcalTruthShower E="float" maxOccurs="unbounded" minOccurs="0" primary="boolean" ptype="int" px="float" py="float" pz="float" t="float" track="int" x="float" y="float" z="float">
