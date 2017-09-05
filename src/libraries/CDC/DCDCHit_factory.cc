@@ -216,6 +216,9 @@ jerror_t DCDCHit_factory::evnt(JEventLoop *loop, uint64_t eventnumber)
         uint16_t PBIT = 0; // 2^{PBIT} Scale factor for pedestal
         uint16_t NW   = 0;
 
+        // pulse amplitude
+        double raw_amp = 0.;
+
         // This is the place to make quality cuts on the data. 
         // Try to get the new data type, if that fails, try to get the old...
         const Df125CDCPulse *CDCPulseObj = NULL;
@@ -244,6 +247,7 @@ jerror_t DCDCHit_factory::evnt(JEventLoop *loop, uint64_t eventnumber)
             // Only true after about run 4100
             nsamples_integral = (NW - (digihit->pulse_time / 10));  
 
+            raw_amp = CDCPulseObj->first_max_amp;
         }
         else{ // Use the old format
             // This code will at some point become deprecated in the future...
@@ -278,6 +282,7 @@ jerror_t DCDCHit_factory::evnt(JEventLoop *loop, uint64_t eventnumber)
         double t_raw = double(digihit->pulse_time);
 
         double q = a_scale * gains[ring-1][straw-1] * (integral - pedestal);
+        double amp = a_scale * raw_amp;
         double t = t_scale * t_raw - time_offsets[ring-1][straw-1] + t_base;
 
         if (q < DIGI_THRESHOLD) 
@@ -290,6 +295,7 @@ jerror_t DCDCHit_factory::evnt(JEventLoop *loop, uint64_t eventnumber)
         // Values for d, itrack, ptype only apply to MC data
         // note that ring/straw counting starts at 1
         hit->q = q;
+        hit->amp = amp;
         hit->t = t;
         hit->d = 0.0;
         hit->itrack = -1;
