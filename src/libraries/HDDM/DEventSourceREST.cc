@@ -326,6 +326,7 @@ jerror_t DEventSourceREST::Extract_DMCReaction(hddm_r::HDDM *record,
       mcreaction->beam.setPosition(locPosition);
       mcreaction->beam.setMomentum(DVector3(0.0, 0.0, Ebeam));
       mcreaction->beam.setTime(torig - (zorig - locTargetCenterZ)/29.9792458);
+      cout << "dmcreation targ center z, zorig, torig, time: " << locTargetCenterZ << ", " << zorig << ", " << torig << mcreaction->beam.time() << endl;
       mcreaction->beam.setPID(Gamma);
 
       mcreaction->target.setPosition(locPosition);
@@ -412,7 +413,7 @@ jerror_t DEventSourceREST::Extract_DRFTime(hddm_r::HDDM *record,
 			locTime -= locBeamBunchPeriod;
 		while(locTime < -0.5*locBeamBunchPeriod)
 			locTime += locBeamBunchPeriod;
-
+		cout << "RFtime: orig time, beam period, new time: " << locMCGENPhotons[0]->time() << ", " << locBeamBunchPeriod << ", " << locTime << endl;
 		DRFTime *locRFTime = new DRFTime;
 		locRFTime->dTime = locTime;
 		locRFTime->dTimeVariance = 0.0;
@@ -468,6 +469,7 @@ jerror_t DEventSourceREST::Extract_DBeamPhoton(hddm_r::HDDM *record,
 		   if(!tagmGeom->E_to_column(beamphoton->energy(), beamphoton->dCounter))
 		   	  taghGeom->E_to_counter(beamphoton->energy(), beamphoton->dCounter);
 		   dbeam_photons.push_back(beamphoton);
+		   cout << "mcgen photon time, z: " << beamphoton->time() << ", " << beamphoton->z() << endl;
 		}
 
 		// Copy into factories
@@ -552,6 +554,7 @@ jerror_t DEventSourceREST::Extract_DBeamPhoton(hddm_r::HDDM *record,
 		gamma->setMass(0);
 		gamma->setTime(locTAGHiter->getT());
 		gamma->setT0(locTAGHiter->getT(), 0.350, SYS_TAGH);
+		cout << "beam photon time, z: " << gamma->time() << ", " << gamma->z() << endl;
 
 		TMatrixFSym* loc7x7ErrorMatrix = locMatrices.back();
 		locMatrices.pop_back();

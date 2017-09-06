@@ -162,8 +162,8 @@ class DHistogramAction_ThrownParticleKinematics : public DAnalysisAction
 	public:
 		DHistogramAction_ThrownParticleKinematics(const DReaction* locReaction, string locActionUniqueString = "") : 
 		DAnalysisAction(locReaction, "Hist_ThrownParticleKinematics", false, locActionUniqueString), 
-		dNumPBins(500), dNumThetaBins(560), dNumPhiBins(360), dNumVertexZBins(600), dNumTBins(400), dNumVertexXYBins(400), dNum2DPBins(250), dNum2DThetaBins(140), dNum2DPhiBins(180),
-		dMinT(-20.0), dMaxT(20.0), dMinP(0.0), dMaxP(10.0), dMinTheta(0.0), dMaxTheta(140.0), dMinPhi(-180.0), dMaxPhi(180.0), dMinVertexZ(0.0), dMaxVertexZ(200.0), dMinVertexXY(-10.0), dMaxVertexXY(10.0)
+		dNumPBins(500), dNumThetaBins(560), dNumPhiBins(360), dNumVertexZBins(750), dNumTBins(400), dNumVertexXYBins(400), dNum2DPBins(250), dNum2DThetaBins(140), dNum2DPhiBins(180),
+		dMinT(-20.0), dMaxT(20.0), dMinP(0.0), dMaxP(10.0), dMinTheta(0.0), dMaxTheta(140.0), dMinPhi(-180.0), dMaxPhi(180.0), dMinVertexZ(-50.0), dMaxVertexZ(200.0), dMinVertexXY(-10.0), dMaxVertexXY(10.0)
 		{
 			dFinalStatePIDs.push_back(Gamma);  dFinalStatePIDs.push_back(Neutron);
 			dFinalStatePIDs.push_back(PiPlus);  dFinalStatePIDs.push_back(KPlus);  dFinalStatePIDs.push_back(Proton);
@@ -172,8 +172,8 @@ class DHistogramAction_ThrownParticleKinematics : public DAnalysisAction
 
 		DHistogramAction_ThrownParticleKinematics(string locActionUniqueString) : 
 		DAnalysisAction(NULL, "Hist_ThrownParticleKinematics", false, locActionUniqueString), 
-		dNumPBins(500), dNumThetaBins(560), dNumPhiBins(360), dNumVertexZBins(600), dNumTBins(400), dNumVertexXYBins(400), dNum2DPBins(250), dNum2DThetaBins(140), dNum2DPhiBins(180),
-		dMinT(-20.0), dMaxT(20.0), dMinP(0.0), dMaxP(10.0), dMinTheta(0.0), dMaxTheta(140.0), dMinPhi(-180.0), dMaxPhi(180.0), dMinVertexZ(0.0), dMaxVertexZ(200.0), dMinVertexXY(-10.0), dMaxVertexXY(10.0)
+		dNumPBins(500), dNumThetaBins(560), dNumPhiBins(360), dNumVertexZBins(750), dNumTBins(400), dNumVertexXYBins(400), dNum2DPBins(250), dNum2DThetaBins(140), dNum2DPhiBins(180),
+		dMinT(-20.0), dMaxT(20.0), dMinP(0.0), dMaxP(10.0), dMinTheta(0.0), dMaxTheta(140.0), dMinPhi(-180.0), dMaxPhi(180.0), dMinVertexZ(-50.0), dMaxVertexZ(200.0), dMinVertexXY(-10.0), dMaxVertexXY(10.0)
 		{
 			dFinalStatePIDs.push_back(Gamma);  dFinalStatePIDs.push_back(Neutron);
 			dFinalStatePIDs.push_back(PiPlus);  dFinalStatePIDs.push_back(KPlus);  dFinalStatePIDs.push_back(Proton);
@@ -182,8 +182,8 @@ class DHistogramAction_ThrownParticleKinematics : public DAnalysisAction
 
 		DHistogramAction_ThrownParticleKinematics(void) : 
 		DAnalysisAction(NULL, "Hist_ThrownParticleKinematics", false, ""), 
-		dNumPBins(500), dNumThetaBins(560), dNumPhiBins(360), dNumVertexZBins(600), dNumTBins(400), dNumVertexXYBins(400), dNum2DPBins(250), dNum2DThetaBins(140), dNum2DPhiBins(180),
-		dMinT(-20.0), dMaxT(20.0), dMinP(0.0), dMaxP(10.0), dMinTheta(0.0), dMaxTheta(140.0), dMinPhi(-180.0), dMaxPhi(180.0), dMinVertexZ(0.0), dMaxVertexZ(200.0), dMinVertexXY(-10.0), dMaxVertexXY(10.0)
+		dNumPBins(500), dNumThetaBins(560), dNumPhiBins(360), dNumVertexZBins(750), dNumTBins(400), dNumVertexXYBins(400), dNum2DPBins(250), dNum2DThetaBins(140), dNum2DPhiBins(180),
+		dMinT(-20.0), dMaxT(20.0), dMinP(0.0), dMaxP(10.0), dMinTheta(0.0), dMaxTheta(140.0), dMinPhi(-180.0), dMaxPhi(180.0), dMinVertexZ(-50.0), dMaxVertexZ(200.0), dMinVertexXY(-10.0), dMaxVertexXY(10.0)
 		{
 			dFinalStatePIDs.push_back(Gamma);  dFinalStatePIDs.push_back(Neutron);
 			dFinalStatePIDs.push_back(PiPlus);  dFinalStatePIDs.push_back(KPlus);  dFinalStatePIDs.push_back(Proton);
@@ -220,9 +220,9 @@ class DHistogramAction_ReconnedThrownKinematics : public DAnalysisAction
 	public:
 		DHistogramAction_ReconnedThrownKinematics(const DReaction* locReaction, string locActionUniqueString = "") : 
 		DAnalysisAction(locReaction, "Hist_ReconnedThrownKinematics", false, locActionUniqueString), 
-		dMinThrownMatchFOM(5.73303E-7), dNumPBins(500), dNumThetaBins(560), dNumPhiBins(360), dNumVertexZBins(600), dNumTBins(400), dNumVertexXYBins(400),
+		dMinThrownMatchFOM(5.73303E-7), dNumPBins(500), dNumThetaBins(560), dNumPhiBins(360), dNumVertexZBins(750), dNumTBins(400), dNumVertexXYBins(400),
 		dNum2DPBins(250), dNum2DThetaBins(140), dNum2DPhiBins(180), dNumBetaBins(400),
-		dMinT(-20.0), dMaxT(20.0), dMinP(0.0), dMaxP(10.0), dMinTheta(0.0), dMaxTheta(140.0), dMinPhi(-180.0), dMaxPhi(180.0), dMinVertexZ(0.0),
+		dMinT(-20.0), dMaxT(20.0), dMinP(0.0), dMaxP(10.0), dMinTheta(0.0), dMaxTheta(140.0), dMinPhi(-180.0), dMaxPhi(180.0), dMinVertexZ(-50.0),
 		dMaxVertexZ(200.0), dMinVertexXY(-10.0), dMaxVertexXY(10.0), dMinBeta(-0.2), dMaxBeta(1.2)
 		{
 			dFinalStatePIDs.push_back(Gamma);  dFinalStatePIDs.push_back(Neutron);
@@ -234,9 +234,9 @@ class DHistogramAction_ReconnedThrownKinematics : public DAnalysisAction
 
 		DHistogramAction_ReconnedThrownKinematics(string locActionUniqueString) : 
 		DAnalysisAction(NULL, "Hist_ReconnedThrownKinematics", false, locActionUniqueString), 
-		dMinThrownMatchFOM(5.73303E-7), dNumPBins(500), dNumThetaBins(560), dNumPhiBins(360), dNumVertexZBins(600), dNumTBins(400), dNumVertexXYBins(400),
+		dMinThrownMatchFOM(5.73303E-7), dNumPBins(500), dNumThetaBins(560), dNumPhiBins(360), dNumVertexZBins(750), dNumTBins(400), dNumVertexXYBins(400),
 		dNum2DPBins(250), dNum2DThetaBins(140), dNum2DPhiBins(180), dNumBetaBins(400),
-		dMinT(-20.0), dMaxT(20.0), dMinP(0.0), dMaxP(10.0), dMinTheta(0.0), dMaxTheta(140.0), dMinPhi(-180.0), dMaxPhi(180.0), dMinVertexZ(0.0),
+		dMinT(-20.0), dMaxT(20.0), dMinP(0.0), dMaxP(10.0), dMinTheta(0.0), dMaxTheta(140.0), dMinPhi(-180.0), dMaxPhi(180.0), dMinVertexZ(-50.0),
 		dMaxVertexZ(200.0), dMinVertexXY(-10.0), dMaxVertexXY(10.0), dMinBeta(-0.2), dMaxBeta(1.2)
 		{
 			dFinalStatePIDs.push_back(Gamma);  dFinalStatePIDs.push_back(Neutron);
@@ -248,9 +248,9 @@ class DHistogramAction_ReconnedThrownKinematics : public DAnalysisAction
 
 		DHistogramAction_ReconnedThrownKinematics(void) : 
 		DAnalysisAction(NULL, "Hist_ReconnedThrownKinematics", false, ""), 
-		dMinThrownMatchFOM(5.73303E-7), dNumPBins(500), dNumThetaBins(560), dNumPhiBins(360), dNumVertexZBins(600), dNumTBins(400), dNumVertexXYBins(400),
+		dMinThrownMatchFOM(5.73303E-7), dNumPBins(500), dNumThetaBins(560), dNumPhiBins(360), dNumVertexZBins(750), dNumTBins(400), dNumVertexXYBins(400),
 		dNum2DPBins(250), dNum2DThetaBins(140), dNum2DPhiBins(180), dNumBetaBins(400),
-		dMinT(-20.0), dMaxT(20.0), dMinP(0.0), dMaxP(10.0), dMinTheta(0.0), dMaxTheta(140.0), dMinPhi(-180.0), dMaxPhi(180.0), dMinVertexZ(0.0),
+		dMinT(-20.0), dMaxT(20.0), dMinP(0.0), dMaxP(10.0), dMinTheta(0.0), dMaxTheta(140.0), dMinPhi(-180.0), dMaxPhi(180.0), dMinVertexZ(-50.0),
 		dMaxVertexZ(200.0), dMinVertexXY(-10.0), dMaxVertexXY(10.0), dMinBeta(-0.2), dMaxBeta(1.2)
 		{
 			dFinalStatePIDs.push_back(Gamma);  dFinalStatePIDs.push_back(Neutron);
