@@ -3,10 +3,12 @@
 
 #include <vector>
 #include <iostream>
+#include <memory>
 
 #include "particleType.h"
 #include "DResettable.h"
 #include "DLorentzVector.h"
+#include "KINFITTER/DKinFitParticle.h"
 #include "PID/DKinematicData.h"
 #include "PID/DNeutralParticleHypothesis.h"
 #include "PID/DChargedTrackHypothesis.h"
@@ -30,24 +32,26 @@ class DParticleComboStep : public DResettable
 		void Set_Contents(const DKinematicData* locInitialParticle, const vector<const DKinematicData*>& locFinalParticles, const DLorentzVector& locSpacetimeVertex);
 
 		// SET INITIAL PARTICLE:
-		inline void Set_InitialParticle(const DKinematicData* locInitialParticle){dInitialParticle = locInitialParticle;}
+		void Set_InitialParticle(const DKinematicData* locInitialParticle){dInitialParticle = locInitialParticle;}
+		void Set_InitialKinFitParticle(std::shared_ptr<const DKinFitParticle> locInitialKinFitParticle){dInitialKinFitParticle = locInitialKinFitParticle;}
 
 		// SET FINAL PARTICLES:
-		inline void Add_FinalParticle(const DKinematicData* locFinalParticle){dFinalParticles.push_back(locFinalParticle);}
-		inline void Set_FinalParticle(const DKinematicData* locFinalParticle, size_t locFinalParticleIndex){dFinalParticles[locFinalParticleIndex] = locFinalParticle;}
+		void Add_FinalParticle(const DKinematicData* locFinalParticle){dFinalParticles.push_back(locFinalParticle);}
+		void Set_FinalParticle(const DKinematicData* locFinalParticle, size_t locFinalParticleIndex){dFinalParticles[locFinalParticleIndex] = locFinalParticle;}
 
 		// SET MEASURED STEP:
-		inline void Set_MeasuredParticleComboStep(const DParticleComboStep* locMeasuredParticleComboStep){dMeasuredStep = locMeasuredParticleComboStep;}
+		void Set_MeasuredParticleComboStep(const DParticleComboStep* locMeasuredParticleComboStep){dMeasuredStep = locMeasuredParticleComboStep;}
 
 		// SET PRODUCTION/DECAY SPACETIME VERTEX
-		inline void Set_SpacetimeVertex(const DLorentzVector& locSpacetimeVertex){dSpacetimeVertex = locSpacetimeVertex;}
+		void Set_SpacetimeVertex(const DLorentzVector& locSpacetimeVertex){dSpacetimeVertex = locSpacetimeVertex;}
 
 		// GET INITIAL PARTICLES:
-		inline const DKinematicData* Get_InitialParticle(void) const{return dInitialParticle;}
+		const DKinematicData* Get_InitialParticle(void) const{return dInitialParticle;}
 		const DKinematicData* Get_InitialParticle_Measured(void) const;
+		std::shared_ptr<const DKinFitParticle> Get_InitialKinFitParticle(void) const{return dInitialKinFitParticle;}
 
 		// GET FINAL PARTICLES:
-		inline size_t Get_NumFinalParticles(void) const{return dFinalParticles.size();}
+		size_t Get_NumFinalParticles(void) const{return dFinalParticles.size();}
 
 		const DKinematicData* Get_FinalParticle(size_t locFinalParticleIndex) const;
 		const DKinematicData* Get_FinalParticle_Measured(size_t locFinalParticleIndex) const;
@@ -62,15 +66,16 @@ class DParticleComboStep : public DResettable
 		const DKinematicData* Get_MissingParticle(const DReactionStep* locReactionStep) const; //returns nullptr if none missing!
 
 		// GET PRODUCTION/DECAY SPACETIME VERTEX
-		inline DVector3 Get_Position(void) const{return dSpacetimeVertex.Vect();}
-		inline double Get_Time(void) const{return dSpacetimeVertex.T();}
-		inline DLorentzVector Get_SpacetimeVertex(void) const{return dSpacetimeVertex;}
+		DVector3 Get_Position(void) const{return dSpacetimeVertex.Vect();}
+		double Get_Time(void) const{return dSpacetimeVertex.T();}
+		DLorentzVector Get_SpacetimeVertex(void) const{return dSpacetimeVertex;}
 
 	private:
 		const DParticleComboStep* dMeasuredStep = nullptr;
 
 		// INITIAL PARTICLES:
 		const DKinematicData* dInitialParticle = nullptr; //if is nullptr: decaying or beam particle not yet set!
+		std::shared_ptr<const DKinFitParticle> dInitialKinFitParticle = nullptr; //not ideal. however, for decaying particles this can be EXTREMELY difficult to extract from the kinfitresults (e.g. if multiple pi0s)
 
 		// FINAL PARTICLES:
 		vector<const DKinematicData*> dFinalParticles; //if particle is nullptr: missing or decaying! //these are DChargedTrackHypothesis or DNeutralParticleHypothesis objects if detected

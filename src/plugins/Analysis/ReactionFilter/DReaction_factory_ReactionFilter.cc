@@ -322,31 +322,35 @@ void DReaction_factory_ReactionFilter::Add_MassHistograms(DReaction* locReaction
 			++locNumInclusiveSteps;
 	}
 
+	//invariant mass
 	set<Particle_t> locDecayPIDsUsed;
-	for(size_t loc_i = 0; loc_i < locReaction->Get_NumReactionSteps(); ++loc_i)
+	for(size_t loc_i = 1; loc_i < locReaction->Get_NumReactionSteps(); ++loc_i)
 	{
 		//do missing mass squared hists for every decaying and missing particle
 		auto locReactionStep = locReaction->Get_ReactionStep(loc_i);
 
-		//invariant mass
-		if((loc_i > 0) && (!locP4Fit || !locUseKinFitResultsFlag || !locReactionStep->Get_KinFitConstrainInitMassFlag()))
-		{
-			auto locDecayPID = locReactionStep->Get_InitialPID();
-			if(locDecayPIDsUsed.find(locDecayPID) != locDecayPIDsUsed.end())
-				continue; //already done!
-			if(DAnalysis::Check_IfMissingDecayProduct(locReaction, loc_i))
-				continue;
+		if(locP4Fit && locUseKinFitResultsFlag && locReactionStep->Get_KinFitConstrainInitMassFlag())
+			continue;
 
-			Create_InvariantMassHistogram(locReaction, locDecayPID, locUseKinFitResultsFlag, locBaseUniqueName);
-			locDecayPIDsUsed.insert(locDecayPID);
-		}
+		auto locDecayPID = locReactionStep->Get_InitialPID();
+		if(locDecayPIDsUsed.find(locDecayPID) != locDecayPIDsUsed.end())
+			continue; //already done!
+		if(DAnalysis::Check_IfMissingDecayProduct(locReaction, loc_i))
+			continue;
 
-		//missing mass
+		Create_InvariantMassHistogram(locReaction, locDecayPID, locUseKinFitResultsFlag, locBaseUniqueName);
+		locDecayPIDsUsed.insert(locDecayPID);
+	}
+
+	//missing mass
+	for(size_t loc_i = 0; loc_i < locReaction->Get_NumReactionSteps(); ++loc_i)
+	{
+		auto locReactionStep = locReaction->Get_ReactionStep(loc_i);
 		set<Particle_t> locMissingDecayPIDsUsed;
 		for(size_t loc_j = 0; loc_j < locReactionStep->Get_NumFinalPIDs(); ++loc_j)
 		{
 			auto locPID = locReactionStep->Get_FinalPID(loc_j);
-//cout << "j, pid, missing index: " << loc_j << ", " << locPID  << ", " << locReactionStep->Get_MissingParticleIndex() << endl;
+//cout << "i, j, pid, missing index: " << loc_i << ", " << loc_j << ", " << locPID  << ", " << locReactionStep->Get_MissingParticleIndex() << endl;
 			if(locMissingDecayPIDsUsed.find(locPID) != locMissingDecayPIDsUsed.end())
 				continue;
 
@@ -455,6 +459,10 @@ void DReaction_factory_ReactionFilter::Create_MissingMassSquaredHistogram(DReact
 	ostringstream locActionUniqueNameStream;
 	if((locPID == Unknown) && (locMissingMassOffOfStepIndex == 0))
 		locActionUniqueNameStream << locBaseUniqueName;
+	else if(locMissingMassOffOfStepIndex == 0)
+		locActionUniqueNameStream << ParticleType(locPID) << "_" << locBaseUniqueName;
+	else if(locPID == Unknown)
+		locActionUniqueNameStream << "Step" << locMissingMassOffOfStepIndex << "_" << locBaseUniqueName;
 	else
 		locActionUniqueNameStream << ParticleType(locPID) << "_Step" << locMissingMassOffOfStepIndex << "_" << locBaseUniqueName;
 

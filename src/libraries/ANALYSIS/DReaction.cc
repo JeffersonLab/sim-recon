@@ -103,7 +103,7 @@ pair<int, int> Get_InitialParticleDecayFromIndices(const DReaction* locReaction,
 	size_t locSearchPIDCount = 0;
 	for(int loc_i = 0; loc_i < locStepIndex; ++loc_i)
 	{
-		auto locFinalPIDs = locSteps[loc_i]->Get_FinalPIDs(false);
+		auto locFinalPIDs = locSteps[loc_i]->Get_FinalPIDs(false); //exclude missing
 
 		auto locPIDCounter = [&](Particle_t locPID) -> bool
 			{return (locPID != locDecayingPID) ? false : (++locSearchPIDCount > locPreviousPIDCount);};
@@ -137,13 +137,15 @@ int Get_DecayStepIndex(const DReaction* locReaction, size_t locStepIndex, size_t
 	//check if the input particle decays later in the reaction
 	auto locSteps = locReaction->Get_ReactionSteps();
 	auto locDecayingPID = locSteps[locStepIndex]->Get_FinalPID(locParticleIndex);
+	if(locSteps[locStepIndex]->Get_MissingParticleIndex() == int(locParticleIndex))
+		return -1; //missing, does not decay
 
 	//check to see how many final state particles with this pid type there are before now
 	size_t locPreviousPIDCount = 0;
 	for(size_t loc_i = 0; loc_i <= locStepIndex; ++loc_i)
 	{
 		auto locStep = locSteps[loc_i];
-		auto locFinalPIDs = locStep->Get_FinalPIDs();
+		auto locFinalPIDs = locStep->Get_FinalPIDs(false); //exclude missing
 		auto locEndIterator = (loc_i == locStepIndex) ? locFinalPIDs.begin() + locParticleIndex : locFinalPIDs.end();
 		locPreviousPIDCount += std::count(locFinalPIDs.begin(), locEndIterator, locDecayingPID);
 	}

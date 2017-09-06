@@ -78,6 +78,8 @@ class DKinFitParticle : public DResettable
 		void Set_ShowerEnergy(double locShowerEnergy){dShowerEnergy = locShowerEnergy;}
 		void Set_PathLength(double locPathLength){dPathLength = locPathLength;}
 		void Set_PathLengthUncertainty(double locPathLengthUncertainty){dPathLengthUncertainty = locPathLengthUncertainty;}
+		void Set_RestFrameLifetimeUncertainty(double locRestFrameLifetimeUncertainty){dRestFrameLifetimeUncertainty = locRestFrameLifetimeUncertainty;}
+		void Set_RestFrameLifetime(double locRestFrameLifetime){dRestFrameLifetime = locRestFrameLifetime;}
 
 		void Set_CommonVertex(TVector3 locCommonVertex){dCommonSpacetimeVertex.SetVect(locCommonVertex);}
 		void Set_CommonTime(double locCommonTime){dCommonSpacetimeVertex.SetT(locCommonTime);}
@@ -110,6 +112,8 @@ class DKinFitParticle : public DResettable
 		double Get_ShowerEnergy(void) const{return dShowerEnergy;}
 		double Get_PathLength(void) const{return dPathLength;}
 		double Get_PathLengthUncertainty(void) const{return dPathLengthUncertainty;}
+		double Get_RestFrameLifetimeUncertainty(void) const{return dRestFrameLifetimeUncertainty;}
+		double Get_RestFrameLifetime(void) const{return dRestFrameLifetime;}
 		shared_ptr<const TMatrixFSym> Get_CovarianceMatrix(void) const{return dCovarianceMatrix;}
 		TLorentzVector Get_SpacetimeVertex(void) const{return dSpacetimeVertex;}
 		TVector3 Get_CommonVertex(void) const{return dCommonSpacetimeVertex.Vect();}
@@ -134,10 +138,10 @@ class DKinFitParticle : public DResettable
 		char Get_CommonTParamIndex(void) const{return dCommonTParamIndex;}
 		char Get_EParamIndex(void) const{return dEParamIndex;}
 
-		int Get_CovMatrixEParamIndex(void) const{return ((dCovarianceMatrix == NULL) ? -1 : ((dCovarianceMatrix->GetNcols() == 7) ? -1 : 0));}
-		int Get_CovMatrixPxParamIndex(void) const{return ((dCovarianceMatrix == NULL) ? -1 : ((dCovarianceMatrix->GetNcols() == 7) ? 0 : -1));}
-		int Get_CovMatrixVxParamIndex(void) const{return ((dCovarianceMatrix == NULL) ? -1 : ((dCovarianceMatrix->GetNcols() == 7) ? 3 : 1));}
-		int Get_CovMatrixTParamIndex(void) const{return ((dCovarianceMatrix == NULL) ? -1 : ((dCovarianceMatrix->GetNcols() == 7) ? 6 : 4));}
+		int Get_CovMatrixEParamIndex(void) const{return ((dCovarianceMatrix == NULL) ? -1 : ((dCovarianceMatrix->GetNcols() >= 7) ? -1 : 0));}
+		int Get_CovMatrixPxParamIndex(void) const{return ((dCovarianceMatrix == NULL) ? -1 : ((dCovarianceMatrix->GetNcols() >= 7) ? 0 : -1));}
+		int Get_CovMatrixVxParamIndex(void) const{return ((dCovarianceMatrix == NULL) ? -1 : ((dCovarianceMatrix->GetNcols() >= 7) ? 3 : 1));}
+		int Get_CovMatrixTParamIndex(void) const{return ((dCovarianceMatrix == NULL) ? -1 : ((dCovarianceMatrix->GetNcols() >= 7) ? 6 : 4));}
 
 		bool Get_IsNeutralShowerFlag(void) const{return dIsNeutralShowerFlag;}
 
@@ -155,12 +159,18 @@ class DKinFitParticle : public DResettable
 
 		double dShowerEnergy;
 		TVector3 dMomentum; //must be the value of the momentum at dSpacetimeVertex
-		shared_ptr<const TMatrixFSym> dCovarianceMatrix; //is 7x7 for charged particles, and is either 7x7 or 5x5 for neutrals
-		//7x7 format: px, py, pz, x, y, z, t
+
+		//is 7x7 for detected charged particles, either 7x7 (particles) or 5x5 (showers) for neutrals
+		//for decaying particles, is 11x11 if involved in 2 vertex fits (otherwise 7x7): includes common vertex
+		shared_ptr<const TMatrixFSym> dCovarianceMatrix; 
 		//5x5 format: E, x, y, z, t
+		//7x7 format: px, py, pz, x, y, z, t
+		//11x11 format: px, py, pz, x, y, z, t, common x, common y, common z, common t
 
 		double dPathLength;
 		double dPathLengthUncertainty;
+		double dRestFrameLifetime; //is 0 unless decaying particle in 2 vertex fits
+		double dRestFrameLifetimeUncertainty; //is 0 unless decaying particle in 2 vertex fits
 
 		unsigned char dVertexConstraintFlag; //unused unless in vertex fit //can choose between equations //only for non-accelerating particles not constrained in time
 
@@ -199,6 +209,8 @@ inline void DKinFitParticle::Reset(void)
 	dCovarianceMatrix = NULL;
 	dPathLength = 0.0;
 	dPathLengthUncertainty = 0.0;
+	dRestFrameLifetime = 0.0;
+	dRestFrameLifetimeUncertainty = 0.0;
 
 	dVertexConstraintFlag = 0;
 

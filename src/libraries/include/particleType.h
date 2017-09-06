@@ -512,7 +512,7 @@ inline static char* ShortName(Particle_t locPID)
   case omega:
 	return (char*)"omega";
   case EtaPrime:
-	return (char*)"etap";
+	return (char*)"etapr";
   case phiMeson:
 	return (char*)"phi";
   case Deuteron:

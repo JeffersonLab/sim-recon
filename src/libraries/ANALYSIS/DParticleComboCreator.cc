@@ -360,7 +360,10 @@ const DParticleCombo* DParticleComboCreator::Create_KinFitCombo_NewCombo(const D
 			if(locKinFitParticle == NULL) //not used in kinfit!!
 				locNewComboStep->Set_InitialParticle(locInitialParticle_Measured);
 			else //create a new one
+			{
 				locNewComboStep->Set_InitialParticle(Create_BeamPhoton_KinFit(static_cast<const DBeamPhoton*>(locInitialParticle_Measured), locKinFitParticle.get(), locSpacetimeVertex));
+				locNewComboStep->Set_InitialKinFitParticle(locKinFitParticle);
+			}
 		}
 		else //decaying particle! //set here for initial state, and in previous step for final state
 			Set_DecayingParticles(locReaction, locNewCombo, locOrigCombo, loc_j, locNewComboStep, locKinFitChain, locKinFitResults);
@@ -529,6 +532,7 @@ void DParticleComboCreator::Set_DecayingParticles(const DReaction* locReaction, 
 	auto locKinematicData_Decay = locCreate2ndObjectFlag ? Build_KinematicData(locKinFitResults, locKinFitParticle.get(), locDecaySpacetimeVertex, false) : locKinematicData_Production;
 
 	locNewParticleComboStep->Set_InitialParticle(locKinematicData_Decay);
+	locNewParticleComboStep->Set_InitialKinFitParticle(locKinFitParticle);
 
 	//now, back-set the particle at the other vertex
 	if((locStepIndex == 0) || (locFromStepIndex < 0))

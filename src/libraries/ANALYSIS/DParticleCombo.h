@@ -26,19 +26,19 @@ class DParticleCombo : public DResettable
 		void Release(void){Reset();};
 
 		// SET STEPS
-		inline void Add_ParticleComboStep(const DParticleComboStep* locParticleComboStep){dParticleComboSteps.push_back(locParticleComboStep);}
+		void Add_ParticleComboStep(const DParticleComboStep* locParticleComboStep){dParticleComboSteps.push_back(locParticleComboStep);}
 		void Set_ParticleComboStep(const DParticleComboStep* locParticleComboStep, size_t locStepIndex);
 
 		// SET OBJECT DATA:
-		inline void Set_KinFitResults(const DKinFitResults* locKinFitResults){dKinFitResults = locKinFitResults;}
-		inline void Set_EventRFBunch(const DEventRFBunch* locEventRFBunch){dEventRFBunch = locEventRFBunch;}
+		void Set_KinFitResults(const DKinFitResults* locKinFitResults){dKinFitResults = locKinFitResults;}
+		void Set_EventRFBunch(const DEventRFBunch* locEventRFBunch){dEventRFBunch = locEventRFBunch;}
 
 		// GET OBJECT DATA:
-		inline const DKinFitResults* Get_KinFitResults(void) const{return dKinFitResults;}
-		inline const DEventRFBunch* Get_EventRFBunch(void) const{return dEventRFBunch;}
+		const DKinFitResults* Get_KinFitResults(void) const{return dKinFitResults;}
+		const DEventRFBunch* Get_EventRFBunch(void) const{return dEventRFBunch;}
 
 		// GET PARTCILE COMBO STEPS:
-		inline size_t Get_NumParticleComboSteps(void) const{return dParticleComboSteps.size();}
+		size_t Get_NumParticleComboSteps(void) const{return dParticleComboSteps.size();}
 		const DParticleComboStep* Get_ParticleComboStep(size_t locStepIndex) const;
 		vector<const DParticleComboStep*> Get_ParticleComboSteps(void) const{return dParticleComboSteps;}
 

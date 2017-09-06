@@ -901,10 +901,14 @@ bool DKinFitUtils_GlueX::Propagate_TrackInfoToCommonVertex(DKinematicData* locKi
 
 	TVector3 locMomentum;
 	TLorentzVector locSpacetimeVertex;
-	pair<double, double> locPathLengthPair;
-	auto locCovarianceMatrix = Get_SymMatrixResource(7);
-	if(!DKinFitUtils::Propagate_TrackInfoToCommonVertex(locKinFitParticle, locVXi, locMomentum, locSpacetimeVertex, locPathLengthPair, locCovarianceMatrix.get()))
+	pair<double, double> locPathLengthPair, locRestFrameLifetimePair;
+	TMatrixFSym locTempCovarianceMatrix(11);
+	if(!DKinFitUtils::Propagate_TrackInfoToCommonVertex(locKinFitParticle, locVXi, locMomentum, locSpacetimeVertex, locPathLengthPair, locRestFrameLifetimePair, &locTempCovarianceMatrix))
 		return false;
+
+	//Convert 10x10 to 7x7
+	auto locCovarianceMatrix = Get_SymMatrixResource(7);
+	*locCovarianceMatrix = locTempCovarianceMatrix.GetSub(0, 6, *locCovarianceMatrix);
 
 	locKinematicData->setMomentum(DVector3(locMomentum.X(),locMomentum.Y(),locMomentum.Z()));
 	locKinematicData->setPosition(DVector3(locSpacetimeVertex.Vect().X(),locSpacetimeVertex.Vect().Y(),locSpacetimeVertex.Vect().Z()));
@@ -912,3 +916,4 @@ bool DKinFitUtils_GlueX::Propagate_TrackInfoToCommonVertex(DKinematicData* locKi
 	locKinematicData->setErrorMatrix(locCovarianceMatrix);
 	return true;
 }
+

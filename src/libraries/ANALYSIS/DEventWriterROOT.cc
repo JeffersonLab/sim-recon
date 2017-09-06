@@ -48,8 +48,9 @@ void DEventWriterROOT::Initialize(JEventLoop* locEventLoop)
 		auto locVertexReactions = locVertexInfo->Get_Reactions();
 		for(auto& locReaction : locVertexReactions)
 		{
+			dVertexInfoMap.emplace(locReaction, locVertexInfo);
 			if(locReaction->Get_EnableTTreeOutputFlag())
-				Create_DataTree(locReaction, locVertexInfo, locEventLoop, !locMCThrowns.empty());
+				Create_DataTree(locReaction, locEventLoop, !locMCThrowns.empty());
 		}
 	}
 }
@@ -104,7 +105,7 @@ void DEventWriterROOT::Create_ThrownTree(JEventLoop* locEventLoop, string locOut
 	dThrownTreeInterface->Set_TreeIndexBranchNames("RunNumber", "EventNumber");
 }
 
-void DEventWriterROOT::Create_DataTree(const DReaction* locReaction, const DReactionVertexInfo* locReactionVertexInfo, JEventLoop* locEventLoop, bool locIsMCDataFlag)
+void DEventWriterROOT::Create_DataTree(const DReaction* locReaction, JEventLoop* locEventLoop, bool locIsMCDataFlag)
 {
 	string locReactionName = locReaction->Get_ReactionName();
 	string locOutputFileName = locReaction->Get_TTreeOutputFileName();
@@ -123,7 +124,7 @@ void DEventWriterROOT::Create_DataTree(const DReaction* locReaction, const DReac
 	DTreeBranchRegister locBranchRegister;
 
 	//fill maps
-	TMap* locPositionToNameMap = Create_UserInfoMaps(locBranchRegister, locEventLoop, locReaction, locReactionVertexInfo);
+	TMap* locPositionToNameMap = Create_UserInfoMaps(locBranchRegister, locEventLoop, locReaction);
 
 /******************************************************************** Create Branches ********************************************************************/
 
@@ -162,8 +163,10 @@ void DEventWriterROOT::Create_DataTree(const DReaction* locReaction, const DReac
 	locTreeInterface->Set_TreeIndexBranchNames("RunNumber", "EventNumber");
 }
 
-TMap* DEventWriterROOT::Create_UserInfoMaps(DTreeBranchRegister& locBranchRegister, JEventLoop* locEventLoop, const DReaction* locReaction, const DReactionVertexInfo* locReactionVertexInfo) const
+TMap* DEventWriterROOT::Create_UserInfoMaps(DTreeBranchRegister& locBranchRegister, JEventLoop* locEventLoop, const DReaction* locReaction) const
 {
+	auto locReactionVertexInfo = dVertexInfoMap.find(locReaction)->second;
+
 	//kinfit type
 	DKinFitType locKinFitType = locReaction->Get_KinFitType();
 
@@ -665,12 +668,14 @@ void DEventWriterROOT::Create_Branches_NeutralHypotheses(DTreeBranchRegister& lo
 
 void DEventWriterROOT::Create_Branches_Combo(DTreeBranchRegister& locBranchRegister, const DReaction* locReaction, bool locIsMCDataFlag, TMap* locPositionToNameMap) const
 {
+	auto locReactionVertexInfo = dVertexInfoMap.find(locReaction)->second;
 	string locNumComboString = "NumCombos";
 	locBranchRegister.Register_Single<UInt_t>(locNumComboString);
 
 	//kinfit type
 	DKinFitType locKinFitType = locReaction->Get_KinFitType();
 	bool locKinFitFlag = (locKinFitType != d_NoFit);
+	bool locVertexKinFitFlag = locKinFitFlag && (locKinFitType != d_P4Fit);
 
 	//Is-cut
 	locBranchRegister.Register_FundamentalArray<Bool_t>("IsComboCut", locNumComboString, dInitNumComboArraySize);
@@ -716,6 +721,11 @@ void DEventWriterROOT::Create_Branches_Combo(DTreeBranchRegister& locBranchRegis
 				locBranchRegister.Register_ClonesArray<TLorentzVector>(Build_BranchName(locParticleBranchName, "P4_KinFit"), dInitNumComboArraySize);
 			if((loc_i == 0) || IsDetachedVertex(locInitialPID))
 				locBranchRegister.Register_ClonesArray<TLorentzVector>(Build_BranchName(locParticleBranchName, "X4"), dInitNumComboArraySize);
+
+			auto locStepVertexInfo = locReactionVertexInfo->Get_StepVertexInfo(loc_i);
+			auto locParentVertexInfo = locStepVertexInfo->Get_ParentVertexInfo();
+			if(IsDetachedVertex(locInitialPID) && locVertexKinFitFlag && (locParentVertexInfo != nullptr) && locStepVertexInfo->Get_FittableVertexFlag() && locParentVertexInfo->Get_FittableVertexFlag())
+				locBranchRegister.Register_FundamentalArray<Float_t>(Build_BranchName(locParticleBranchName, "RestFrameLifetimeSigma"), locNumComboString, dInitNumComboArraySize);
 		}
 
 		//final particles
@@ -1453,12 +1463,12 @@ void DEventWriterROOT::Fill_ChargedHypo(DTreeFillData* locTreeFillData, unsigned
 	locTreeFillData->Fill_Array<Float_t>(Build_BranchName(locParticleBranchName, "Energy_FCAL"), locFCALEnergy, locArrayIndex);
 
 	//HIT SHOWER WIDTH
-        double locSigLongBCAL = (locBCALShower != NULL) ? locBCALShower->sigLong : 0.0;
-        double locSigThetaBCAL = (locBCALShower != NULL) ? locBCALShower->sigTheta : 0.0;
-        double locSigTransBCAL = (locBCALShower != NULL) ? locBCALShower->sigTrans : 0.0;
-        locTreeFillData->Fill_Array<Float_t>(Build_BranchName(locParticleBranchName, "SigLong_BCAL"), locSigLongBCAL, locArrayIndex);
-        locTreeFillData->Fill_Array<Float_t>(Build_BranchName(locParticleBranchName, "SigTheta_BCAL"), locSigThetaBCAL, locArrayIndex);
-        locTreeFillData->Fill_Array<Float_t>(Build_BranchName(locParticleBranchName, "SigTrans_BCAL"), locSigTransBCAL, locArrayIndex);
+	double locSigLongBCAL = (locBCALShower != NULL) ? locBCALShower->sigLong : 0.0;
+	double locSigThetaBCAL = (locBCALShower != NULL) ? locBCALShower->sigTheta : 0.0;
+	double locSigTransBCAL = (locBCALShower != NULL) ? locBCALShower->sigTrans : 0.0;
+	locTreeFillData->Fill_Array<Float_t>(Build_BranchName(locParticleBranchName, "SigLong_BCAL"), locSigLongBCAL, locArrayIndex);
+	locTreeFillData->Fill_Array<Float_t>(Build_BranchName(locParticleBranchName, "SigTheta_BCAL"), locSigThetaBCAL, locArrayIndex);
+	locTreeFillData->Fill_Array<Float_t>(Build_BranchName(locParticleBranchName, "SigTrans_BCAL"), locSigTransBCAL, locArrayIndex);
 
 	//TIMING INFO
 	locTreeFillData->Fill_Array<Float_t>(Build_BranchName(locParticleBranchName, "HitTime"), locChargedTrackHypothesis->t1(), locArrayIndex);
@@ -1632,11 +1642,12 @@ void DEventWriterROOT::Fill_ComboData(DTreeFillData* locTreeFillData, const DRea
 
 void DEventWriterROOT::Fill_ComboStepData(DTreeFillData* locTreeFillData, const DReaction* locReaction, const DParticleCombo* locParticleCombo, unsigned int locStepIndex, unsigned int locComboIndex, DKinFitType locKinFitType, const map<pair<oid_t, Particle_t>, size_t>& locObjectToArrayIndexMap) const
 {
+	auto locReactionVertexInfo = dVertexInfoMap.find(locReaction)->second;
 	auto locReactionStep = locReaction->Get_ReactionStep(locStepIndex);
 	const TList* locUserInfo = dTreeInterfaceMap.find(locReaction)->second->Get_UserInfo();
 	const TMap* locPositionToNameMap = (TMap*)locUserInfo->FindObject("PositionToNameMap");
 
-	const DParticleComboStep* locParticleComboStep = locParticleCombo->Get_ParticleComboStep(locStepIndex);
+	auto locParticleComboStep = locParticleCombo->Get_ParticleComboStep(locStepIndex);
 	DLorentzVector locStepX4 = locParticleComboStep->Get_SpacetimeVertex();
 	TLorentzVector locStepTX4(locStepX4.X(), locStepX4.Y(), locStepX4.Z(), locStepX4.T());
 
@@ -1663,9 +1674,8 @@ void DEventWriterROOT::Fill_ComboStepData(DTreeFillData* locTreeFillData, const 
 		TObjString* locObjString = (TObjString*)locPositionToNameMap->GetValue(locPositionStream.str().c_str());
 		string locParticleBranchName = (const char*)(locObjString->GetString());
 
-		if((locStepIndex == 0) || IsDetachedVertex(locInitialPID))
-			locTreeFillData->Fill_Array<TLorentzVector>(Build_BranchName(locParticleBranchName, "X4"), locStepTX4, locComboIndex);
-		if(IsFixedMass(locInitialPID) && locReactionStep->Get_KinFitConstrainInitMassFlag() && ((locKinFitType == d_P4Fit) || (locKinFitType == d_P4AndVertexFit) || (locKinFitType == d_P4AndSpacetimeFit)))
+		auto locP4FitFlag = ((locKinFitType == d_P4Fit) || (locKinFitType == d_P4AndVertexFit) || (locKinFitType == d_P4AndSpacetimeFit));
+		if(IsFixedMass(locInitialPID) && locReactionStep->Get_KinFitConstrainInitMassFlag() && locP4FitFlag)
 		{
 			TLorentzVector locDecayP4;
 			if(locInitialParticle == NULL)
@@ -1678,6 +1688,19 @@ void DEventWriterROOT::Fill_ComboStepData(DTreeFillData* locTreeFillData, const 
 			else
 				locDecayP4.SetPxPyPzE(locInitialParticle->momentum().X(), locInitialParticle->momentum().Y(), locInitialParticle->momentum().Z(), locInitialParticle->energy());
 			locTreeFillData->Fill_Array<TLorentzVector>(Build_BranchName(locParticleBranchName, "P4_KinFit"), locDecayP4, locComboIndex);
+		}
+
+		if((locStepIndex == 0) || IsDetachedVertex(locInitialPID))
+			locTreeFillData->Fill_Array<TLorentzVector>(Build_BranchName(locParticleBranchName, "X4"), locStepTX4, locComboIndex);
+
+		auto locStepVertexInfo = locReactionVertexInfo->Get_StepVertexInfo(locStepIndex);
+		auto locParentVertexInfo = locStepVertexInfo->Get_ParentVertexInfo();
+		auto locVertexKinFitFlag = ((locKinFitType != d_P4Fit) && (locKinFitType != d_NoFit));
+		if(IsDetachedVertex(locInitialPID) && locVertexKinFitFlag && (locParentVertexInfo != nullptr) && locStepVertexInfo->Get_FittableVertexFlag() && locParentVertexInfo->Get_FittableVertexFlag())
+		{
+			auto locKinFitParticle = locParticleComboStep->Get_InitialKinFitParticle();
+			auto locLifetimeSigma = locKinFitParticle->Get_RestFrameLifetimeUncertainty();
+			locTreeFillData->Fill_Array<Float_t>(Build_BranchName(locParticleBranchName, "RestFrameLifetimeSigma"), locLifetimeSigma, locComboIndex);
 		}
 	}
 

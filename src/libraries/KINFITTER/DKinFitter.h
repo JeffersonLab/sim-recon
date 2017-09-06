@@ -108,9 +108,6 @@ class DKinFitter //purely virtual: cannot directly instantiate class, can only i
 
 		/************************************************************ UTILITY FUNCTIONS *************************************************************/
 
-		void Print_Matrix(const TMatrixD& locMatrix) const;
-		void Print_Matrix(const TMatrixF& locMatrix) const;
-
 		template <typename DType> set<shared_ptr<DType>> Get_Constraints(void) const;
 		template <typename DType> set<shared_ptr<DType>> Get_Constraints(const set<shared_ptr<DKinFitConstraint>>& locConstraints) const;
 
@@ -156,7 +153,7 @@ class DKinFitter //purely virtual: cannot directly instantiate class, can only i
 		void Update_ParticleParams(void);
 		void Calc_Pulls(void);
 		void Set_FinalTrackInfo(void);
-		void Update_CovarianceMatrices(void);
+		void Update_CovarianceMatrices(bool locDecayingParticlesOnlyFlag);
 
 		/***************************************************** FIT CONTROL AND UTILITY VARIABLES ****************************************************/
 

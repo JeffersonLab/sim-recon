@@ -4,6 +4,7 @@
 
 /*
  * PROBLEMS:
+ * Test RestFrameLifetimeSigma, read in DSelector
  *
  * EVENTUALLY:
  * K0 Sigma+: COMPARE
@@ -17,14 +18,8 @@
  * n, pi0, pi+
  * K+ Lambda, Lambda -> n, pi0
  *
- * 2K0 p, K0 -> 3pi
  *
- * K0 Sigma+ missing g
- * K0 Sigma+ pi0 missing pi0 g
  * K0 Sigma+ (pi0)
- * 
- * K0 Sigma+, K0 -> 3pi
- * K0 pi+ Lambda, K0 -> 3pi
  *
  *
  */
@@ -55,7 +50,6 @@ A) You can try reducing the #z-bins by increasing their widths. However, much su
 //NICE TO HAVE:
 //DSELECTOR: fit hist/cut of pid delta-t's when coming from detached vertex
 //finish comments in Build_ParticleCombos()
-//include missing mass cuts on decaying particles if decay products are missing
 
 namespace DAnalysis
 {
@@ -1513,7 +1507,7 @@ void DSourceComboer::Combo_WithBeam(const vector<const DReaction*>& locReactions
 				continue; //FAILED RF BUNCH CUT
 			++(dNumCombosSurvivedStageTracker[locReaction][DConstructionStage::Reaction_BeamRFCuts]);
 
-			if(!dSourceComboP4Handler->Cut_MissingMass(locReaction, locReactionVertexInfo, locReactionFullCombo, locBeamParticle, locRFBunch))
+			if(!dSourceComboP4Handler->Cut_MissingMassSquared(locReaction, locReactionVertexInfo, locReactionFullComboUse, locReactionFullCombo, locBeamParticle, locRFBunch))
 				continue; //FAILED MISSING MASS^2 CUT!
 			++(dNumCombosSurvivedStageTracker[locReaction][DConstructionStage::Missing_Mass]);
 

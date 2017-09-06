@@ -90,7 +90,7 @@ class DKinFitUtils //contains pure-virtual functions: cannot directly instantiat
 		//if input flag is true: return the value of the p4 at the production vertex //else return it at the decay vertex
 		TLorentzVector Calc_DecayingP4_ByVertex(const DKinFitParticle* locKinFitParticle, bool locAtProductionVertexFlag, bool locDontPropagateAtAllFlag = false) const;
 
-		bool Propagate_TrackInfoToCommonVertex(const DKinFitParticle* locKinFitParticle, const TMatrixDSym* locVXi, TVector3& locMomentum, TLorentzVector& locSpacetimeVertex, pair<double, double>& locPathLengthPair, TMatrixFSym* locCovarianceMatrix) const;
+		bool Propagate_TrackInfoToCommonVertex(const DKinFitParticle* locKinFitParticle, const TMatrixDSym* locVXi, TVector3& locMomentum, TLorentzVector& locSpacetimeVertex, pair<double, double>& locPathLengthPair, pair<double, double>& locRestFrameLifetimePair, TMatrixFSym* locCovarianceMatrix) const;
 
 		/********************************************************** DKINFITCHAIN RESOURCES **********************************************************/
 
@@ -98,6 +98,9 @@ class DKinFitUtils //contains pure-virtual functions: cannot directly instantiat
 		shared_ptr<const DKinFitChain> Build_OutputKinFitChain(const shared_ptr<const DKinFitChain>& locInputKinFitChain, set<shared_ptr<DKinFitParticle>>& locKinFitOutputParticles);
 
 	protected:
+
+		void Print_Matrix(const TMatrixD& locMatrix) const;
+		void Print_Matrix(const TMatrixF& locMatrix) const;
 
 		/************************************************************* ABSTRACT FUNCTIONS ***********************************************************/
 
@@ -154,7 +157,7 @@ class DKinFitUtils //contains pure-virtual functions: cannot directly instantiat
 		//Don't call directly: Rather, call the public wrappers (simpler)
 		TLorentzVector Calc_DecayingP4(const DKinFitParticle* locKinFitParticle, bool locIsConstrainedParticle, double locStateSignMultiplier, bool locDontPropagateAtAllFlag = false) const;
 
-		bool Calc_PathLength(const DKinFitParticle* locKinFitParticle, const TMatrixDSym* locVXi, const TMatrixFSym* locCovarianceMatrix, pair<double, double>& locPathLengthPair) const;
+		bool Calc_PathLength(const DKinFitParticle* locKinFitParticle, const TMatrixDSym* locVXi, const TMatrixFSym* locCovarianceMatrix, pair<double, double>& locPathLengthPair, pair<double, double>& locRestFrameLifetimePair) const;
 		void Calc_DecayingParticleJacobian(const DKinFitParticle* locKinFitParticle, bool locDontPropagateDecayingP3Flag, double locStateSignMultiplier, int locNumEta, const map<const DKinFitParticle*, int>& locAdditionalPxParamIndices, TMatrixD& locJacobian) const;
 
 		/*************************************************************** CLONE MAPPING **************************************************************/

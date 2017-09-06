@@ -598,7 +598,7 @@ TLorentzVector DKinFitUtils::Calc_DecayingP4(const DKinFitParticle* locKinFitPar
 	return locP4Sum;
 }
 
-bool DKinFitUtils::Propagate_TrackInfoToCommonVertex(const DKinFitParticle* locKinFitParticle, const TMatrixDSym* locVXi, TVector3& locMomentum, TLorentzVector& locSpacetimeVertex, pair<double, double>& locPathLengthPair, TMatrixFSym* locCovarianceMatrix) const
+bool DKinFitUtils::Propagate_TrackInfoToCommonVertex(const DKinFitParticle* locKinFitParticle, const TMatrixDSym* locVXi, TVector3& locMomentum, TLorentzVector& locSpacetimeVertex, pair<double, double>& locPathLengthPair, pair<double, double>& locRestFrameLifetimePair, TMatrixFSym* locCovarianceMatrix) const
 {
 	// propagates the track info to the fit common vertex
 		//returns false if nothing changed (info not propagated: e.g. missing particle), else returns true
@@ -616,8 +616,7 @@ bool DKinFitUtils::Propagate_TrackInfoToCommonVertex(const DKinFitParticle* locK
 		//propagating the covariance matrix:
 			//add common v3 to matrix: 10x10 or 8x8 (neutral shower)
 			//add common time to matrix: 11x11 or 9x9 (neutral shower): if kinfit just add in (no correlations to meas, corr to common v3), else transform
-			//transform to 7x7: common v3 & common t are just copied to the measured spots
-	//the output covariance matrix is 7x7, even if the particle represents a neutral shower (5x5)
+			//for non-decaying: transform to 7x7: common v3 & common t are just copied to the measured spots
 
 	DKinFitParticleType locKinFitParticleType = locKinFitParticle->Get_KinFitParticleType();
 
@@ -631,7 +630,7 @@ bool DKinFitUtils::Propagate_TrackInfoToCommonVertex(const DKinFitParticle* locK
 	if(dUpdateCovarianceMatricesFlag)
 	{
 		if(locFitCovMatrix != NULL)
-			*locCovarianceMatrix = *locFitCovMatrix;
+			locCovarianceMatrix->SetSub(0, *locFitCovMatrix);
 		else
 			locCovarianceMatrix->Zero();
 	}
@@ -688,119 +687,126 @@ bool DKinFitUtils::Propagate_TrackInfoToCommonVertex(const DKinFitParticle* locK
 
 	//if not updating the covariance matrix, skip to the path length and return
 	if(!dUpdateCovarianceMatricesFlag)
-		return Calc_PathLength(locKinFitParticle, locVXi, locCovarianceMatrix, locPathLengthPair);
+		return Calc_PathLength(locKinFitParticle, locVXi, nullptr, locPathLengthPair, locRestFrameLifetimePair);
 
 	//UPDATE THE COVARIANCE MATRIX
-	int locCommonVxParamIndex_TempMatrix, locCommonTParamIndex_TempMatrix;
+	int locCommonVxParamIndex_TempMatrix = 7, locCommonTParamIndex_TempMatrix = 10; //changed if needed
 
-	//add common v3 to matrix: 10x10 or 8x8 (neutral shower)
-	locCommonVxParamIndex_TempMatrix = locCovarianceMatrix->GetNcols();
-	locCovarianceMatrix->ResizeTo(locCommonVxParamIndex_TempMatrix + 3, locCommonVxParamIndex_TempMatrix + 3);
-	for(size_t loc_i = 0; loc_i < 3; ++loc_i)
+	//add common spacetime to cov matrix, unless already included (is included for decaying	
+	if(locKinFitParticleType != d_DecayingParticle)
 	{
-		for(size_t loc_j = 0; loc_j < 3; ++loc_j)
-			(*locCovarianceMatrix)(loc_i + locCommonVxParamIndex_TempMatrix, loc_j + locCommonVxParamIndex_TempMatrix) = (*locVXi)(locCommonVxParamIndex + loc_i, locCommonVxParamIndex + loc_j);
-	}
-	// done: no correlations between common vertex and measured params!!!
-
-	//add common time to matrix: 11x11 or 9x9 (neutral shower): if kinfit just add in (no correlations to meas, corr to common v3), else transform
-		//note that if the common time is not kinfit, then the true uncertainty is overestimated: 
-			//cannot be obtained without a kinematic fit (3 equations (xyz), one unknown (time))
-	locCommonTParamIndex_TempMatrix = locCovarianceMatrix->GetNcols();
-	if(locKinFitParticle->Get_FitCommonTimeFlag()) //spacetime was fit
-	{
-		locCovarianceMatrix->ResizeTo(locCovarianceMatrix->GetNcols() + 1, locCovarianceMatrix->GetNcols() + 1);
-		(*locCovarianceMatrix)(locCommonTParamIndex_TempMatrix, locCommonTParamIndex_TempMatrix) = (*locVXi)(locCommonTParamIndex, locCommonTParamIndex);
-		for(size_t loc_i = 0; loc_i < 3; ++loc_i) //correlations to common v3
+		//add common v3 to matrix: 10x10 or 8x8 (neutral shower)
+		locCommonVxParamIndex_TempMatrix = locCovarianceMatrix->GetNcols();
+		locCovarianceMatrix->ResizeTo(locCommonVxParamIndex_TempMatrix + 3, locCommonVxParamIndex_TempMatrix + 3);
+		for(size_t loc_i = 0; loc_i < 3; ++loc_i)
 		{
-			(*locCovarianceMatrix)(locCommonTParamIndex_TempMatrix, locCommonVxParamIndex_TempMatrix + loc_i) = (*locVXi)(locCommonTParamIndex, locCommonVxParamIndex + loc_i);
-			(*locCovarianceMatrix)(locCommonVxParamIndex_TempMatrix + loc_i, locCommonTParamIndex_TempMatrix) = (*locVXi)(locCommonVxParamIndex + loc_i, locCommonTParamIndex);
+			for(size_t loc_j = 0; loc_j < 3; ++loc_j)
+				(*locCovarianceMatrix)(loc_i + locCommonVxParamIndex_TempMatrix, loc_j + locCommonVxParamIndex_TempMatrix) = (*locVXi)(locCommonVxParamIndex + loc_i, locCommonVxParamIndex + loc_j);
+		}
+		// done: no correlations between common vertex and measured params!!!
+
+		//add common time to matrix: 11x11 or 9x9 (neutral shower): if kinfit just add in (no correlations to meas, corr to common v3), else transform
+			//note that if the common time is not kinfit, then the true uncertainty is overestimated: 
+				//cannot be obtained without a kinematic fit (3 equations (xyz), one unknown (time))
+		locCommonTParamIndex_TempMatrix = locCovarianceMatrix->GetNcols();
+		if(locKinFitParticle->Get_FitCommonTimeFlag()) //spacetime was fit
+		{
+			locCovarianceMatrix->ResizeTo(locCovarianceMatrix->GetNcols() + 1, locCovarianceMatrix->GetNcols() + 1);
+			(*locCovarianceMatrix)(locCommonTParamIndex_TempMatrix, locCommonTParamIndex_TempMatrix) = (*locVXi)(locCommonTParamIndex, locCommonTParamIndex);
+			for(size_t loc_i = 0; loc_i < 3; ++loc_i) //correlations to common v3
+			{
+				(*locCovarianceMatrix)(locCommonTParamIndex_TempMatrix, locCommonVxParamIndex_TempMatrix + loc_i) = (*locVXi)(locCommonTParamIndex, locCommonVxParamIndex + loc_i);
+				(*locCovarianceMatrix)(locCommonVxParamIndex_TempMatrix + loc_i, locCommonTParamIndex_TempMatrix) = (*locVXi)(locCommonVxParamIndex + loc_i, locCommonTParamIndex);
+			}
+		}
+		else if((locCharge != 0) && Get_IsBFieldNearBeamline()) //in b-field & charged
+		{
+			double locDeltaXDotH = locDeltaX.Dot(locH);
+			double locPDotH = locP4.Vect().Dot(locH);
+
+			TMatrixD locTransformationMatrix_CommonTime(locCovarianceMatrix->GetNcols() + 1, locCovarianceMatrix->GetNcols());
+			for(unsigned int loc_i = 0; int(loc_i) < locCovarianceMatrix->GetNcols(); ++loc_i)
+				locTransformationMatrix_CommonTime(loc_i, loc_i) = 1.0; //other params are unchanged
+
+			TVector3 locDCommonTimeDP3 = (locDeltaXDotH/(29.9792458*locPDotH)) * ((1.0/locP4.E())*locP4.Vect() - (locP4.E()/locPDotH)*locH);
+			TVector3 locDCommonTimeDCommonVertex = (locP4.E()/(29.9792458*locPDotH))*locH;
+			TVector3 locDCommonTimeDPosition = -1.0*locDCommonTimeDCommonVertex;
+
+			locTransformationMatrix_CommonTime(locCommonTParamIndex_TempMatrix, locCovMatrixPxParamIndex) = locDCommonTimeDP3.X();
+			locTransformationMatrix_CommonTime(locCommonTParamIndex_TempMatrix, locCovMatrixPxParamIndex + 1) = locDCommonTimeDP3.Y();
+			locTransformationMatrix_CommonTime(locCommonTParamIndex_TempMatrix, locCovMatrixPxParamIndex + 2) = locDCommonTimeDP3.Z();
+
+			locTransformationMatrix_CommonTime(locCommonTParamIndex_TempMatrix, locCovMatrixVxParamIndex) = locDCommonTimeDPosition.X();
+			locTransformationMatrix_CommonTime(locCommonTParamIndex_TempMatrix, locCovMatrixVxParamIndex + 1) = locDCommonTimeDPosition.Y();
+			locTransformationMatrix_CommonTime(locCommonTParamIndex_TempMatrix, locCovMatrixVxParamIndex + 2) = locDCommonTimeDPosition.Z();
+
+			locTransformationMatrix_CommonTime(locCommonTParamIndex_TempMatrix, locCommonVxParamIndex_TempMatrix) = locDCommonTimeDCommonVertex.X();
+			locTransformationMatrix_CommonTime(locCommonTParamIndex_TempMatrix, locCommonVxParamIndex_TempMatrix + 1) = locDCommonTimeDCommonVertex.Y();
+			locTransformationMatrix_CommonTime(locCommonTParamIndex_TempMatrix, locCommonVxParamIndex_TempMatrix + 2) = locDCommonTimeDCommonVertex.Z();
+
+			locTransformationMatrix_CommonTime(locCommonTParamIndex_TempMatrix, locCovMatrixTParamIndex) = 1.0;
+
+			locCovarianceMatrix->Similarity(locTransformationMatrix_CommonTime);
+		}
+		else if(!locNeutralShowerFlag) //non-accelerating, non-shower
+		{
+			double locDeltaXDotP = locDeltaX.Dot(locP4.Vect());
+
+			TMatrixD locTransformationMatrix_CommonTime(locCovarianceMatrix->GetNcols() + 1, locCovarianceMatrix->GetNcols());
+			for(unsigned int loc_i = 0; int(loc_i) < locCovarianceMatrix->GetNcols(); ++loc_i)
+				locTransformationMatrix_CommonTime(loc_i, loc_i) = 1.0; //other params are unchanged
+
+			TVector3 locDCommonTimeDP3 = (1.0/(29.9792458*locP4.Vect().Mag2())) * (locP4.E()*locDeltaX + locDeltaXDotP*(1.0/locP4.E() - 2.0*locP4.E()/locP4.Vect().Mag2())*locP4.Vect());
+			TVector3 locDCommonTimeDCommonVertex = (locP4.E()/(29.9792458*locP4.Vect().Mag2()))*locP4.Vect();
+			TVector3 locDCommonTimeDPosition = -1.0*locDCommonTimeDCommonVertex;
+
+			locTransformationMatrix_CommonTime(locCommonTParamIndex_TempMatrix, locCovMatrixPxParamIndex) = locDCommonTimeDP3.X();
+			locTransformationMatrix_CommonTime(locCommonTParamIndex_TempMatrix, locCovMatrixPxParamIndex + 1) = locDCommonTimeDP3.Y();
+			locTransformationMatrix_CommonTime(locCommonTParamIndex_TempMatrix, locCovMatrixPxParamIndex + 2) = locDCommonTimeDP3.Z();
+
+			locTransformationMatrix_CommonTime(locCommonTParamIndex_TempMatrix, locCovMatrixVxParamIndex) = locDCommonTimeDPosition.X();
+			locTransformationMatrix_CommonTime(locCommonTParamIndex_TempMatrix, locCovMatrixVxParamIndex + 1) = locDCommonTimeDPosition.Y();
+			locTransformationMatrix_CommonTime(locCommonTParamIndex_TempMatrix, locCovMatrixVxParamIndex + 2) = locDCommonTimeDPosition.Z();
+
+			locTransformationMatrix_CommonTime(locCommonTParamIndex_TempMatrix, locCommonVxParamIndex_TempMatrix) = locDCommonTimeDCommonVertex.X();
+			locTransformationMatrix_CommonTime(locCommonTParamIndex_TempMatrix, locCommonVxParamIndex_TempMatrix + 1) = locDCommonTimeDCommonVertex.Y();
+			locTransformationMatrix_CommonTime(locCommonTParamIndex_TempMatrix, locCommonVxParamIndex_TempMatrix + 2) = locDCommonTimeDCommonVertex.Z();
+
+			locTransformationMatrix_CommonTime(locCommonTParamIndex_TempMatrix, locCovMatrixTParamIndex) = 1.0;
+
+			locCovarianceMatrix->Similarity(locTransformationMatrix_CommonTime);
+		}
+		else //neutral shower
+		{
+			TMatrixD locTransformationMatrix_CommonTime(locCovarianceMatrix->GetNcols() + 1, locCovarianceMatrix->GetNcols());
+			for(unsigned int loc_i = 0; int(loc_i) < locCovarianceMatrix->GetNcols(); ++loc_i)
+				locTransformationMatrix_CommonTime(loc_i, loc_i) = 1.0; //other params are unchanged
+
+			double locDCommonTimeDEnergy = locDeltaX.Mag()*locP4.M2()/(29.9792458*locP4.P()*locP4.Vect().Mag2());
+			TVector3 locDCommonTimeDPosition = (locP4.E()/(29.9792458*locP4.P()*locDeltaX.Mag()))*locDeltaX;
+			TVector3 locDCommonTimeDCommonVertex = -1.0*locDCommonTimeDPosition;
+
+			locTransformationMatrix_CommonTime(locCommonTParamIndex_TempMatrix, locCovMatrixEParamIndex) = locDCommonTimeDEnergy;
+
+			locTransformationMatrix_CommonTime(locCommonTParamIndex_TempMatrix, locCovMatrixVxParamIndex) = locDCommonTimeDPosition.X();
+			locTransformationMatrix_CommonTime(locCommonTParamIndex_TempMatrix, locCovMatrixVxParamIndex + 1) = locDCommonTimeDPosition.Y();
+			locTransformationMatrix_CommonTime(locCommonTParamIndex_TempMatrix, locCovMatrixVxParamIndex + 2) = locDCommonTimeDPosition.Z();
+
+			locTransformationMatrix_CommonTime(locCommonTParamIndex_TempMatrix, locCommonVxParamIndex_TempMatrix) = locDCommonTimeDCommonVertex.X();
+			locTransformationMatrix_CommonTime(locCommonTParamIndex_TempMatrix, locCommonVxParamIndex_TempMatrix + 1) = locDCommonTimeDCommonVertex.Y();
+			locTransformationMatrix_CommonTime(locCommonTParamIndex_TempMatrix, locCommonVxParamIndex_TempMatrix + 2) = locDCommonTimeDCommonVertex.Z();
+
+			locTransformationMatrix_CommonTime(locCommonTParamIndex_TempMatrix, locCovMatrixTParamIndex) = 1.0;
+
+			locCovarianceMatrix->Similarity(locTransformationMatrix_CommonTime);
 		}
 	}
-	else if((locCharge != 0) && Get_IsBFieldNearBeamline()) //in b-field & charged
-	{
-		double locDeltaXDotH = locDeltaX.Dot(locH);
-		double locPDotH = locP4.Vect().Dot(locH);
 
-		TMatrixD locTransformationMatrix_CommonTime(locCovarianceMatrix->GetNcols() + 1, locCovarianceMatrix->GetNcols());
-		for(unsigned int loc_i = 0; int(loc_i) < locCovarianceMatrix->GetNcols(); ++loc_i)
-			locTransformationMatrix_CommonTime(loc_i, loc_i) = 1.0; //other params are unchanged
+	//transform to 7x7 (non-decaying) or switch common/position (decaying): 
+	//common v3 & common t are just copied to the measured spots; p is propagated if in bfield, else is copied
+	auto locMatrixSize = (locKinFitParticleType == d_DecayingParticle) ? 11 : 7;
+	TMatrixD locTransformationMatrix_Propagation(locMatrixSize, locCovarianceMatrix->GetNcols());
 
-		TVector3 locDCommonTimeDP3 = (locDeltaXDotH/(29.9792458*locPDotH)) * ((1.0/locP4.E())*locP4.Vect() - (locP4.E()/locPDotH)*locH);
-		TVector3 locDCommonTimeDCommonVertex = (locP4.E()/(29.9792458*locPDotH))*locH;
-		TVector3 locDCommonTimeDPosition = -1.0*locDCommonTimeDCommonVertex;
-
-		locTransformationMatrix_CommonTime(locCommonTParamIndex_TempMatrix, locCovMatrixPxParamIndex) = locDCommonTimeDP3.X();
-		locTransformationMatrix_CommonTime(locCommonTParamIndex_TempMatrix, locCovMatrixPxParamIndex + 1) = locDCommonTimeDP3.Y();
-		locTransformationMatrix_CommonTime(locCommonTParamIndex_TempMatrix, locCovMatrixPxParamIndex + 2) = locDCommonTimeDP3.Z();
-
-		locTransformationMatrix_CommonTime(locCommonTParamIndex_TempMatrix, locCovMatrixVxParamIndex) = locDCommonTimeDPosition.X();
-		locTransformationMatrix_CommonTime(locCommonTParamIndex_TempMatrix, locCovMatrixVxParamIndex + 1) = locDCommonTimeDPosition.Y();
-		locTransformationMatrix_CommonTime(locCommonTParamIndex_TempMatrix, locCovMatrixVxParamIndex + 2) = locDCommonTimeDPosition.Z();
-
-		locTransformationMatrix_CommonTime(locCommonTParamIndex_TempMatrix, locCommonVxParamIndex_TempMatrix) = locDCommonTimeDCommonVertex.X();
-		locTransformationMatrix_CommonTime(locCommonTParamIndex_TempMatrix, locCommonVxParamIndex_TempMatrix + 1) = locDCommonTimeDCommonVertex.Y();
-		locTransformationMatrix_CommonTime(locCommonTParamIndex_TempMatrix, locCommonVxParamIndex_TempMatrix + 2) = locDCommonTimeDCommonVertex.Z();
-
-		locTransformationMatrix_CommonTime(locCommonTParamIndex_TempMatrix, locCovMatrixTParamIndex) = 1.0;
-
-		locCovarianceMatrix->Similarity(locTransformationMatrix_CommonTime);
-	}
-	else if(!locNeutralShowerFlag) //non-accelerating, non-shower
-	{
-		double locDeltaXDotP = locDeltaX.Dot(locP4.Vect());
-
-		TMatrixD locTransformationMatrix_CommonTime(locCovarianceMatrix->GetNcols() + 1, locCovarianceMatrix->GetNcols());
-		for(unsigned int loc_i = 0; int(loc_i) < locCovarianceMatrix->GetNcols(); ++loc_i)
-			locTransformationMatrix_CommonTime(loc_i, loc_i) = 1.0; //other params are unchanged
-
-		TVector3 locDCommonTimeDP3 = (1.0/(29.9792458*locP4.Vect().Mag2())) * (locP4.E()*locDeltaX + locDeltaXDotP*(1.0/locP4.E() - 2.0*locP4.E()/locP4.Vect().Mag2())*locP4.Vect());
-		TVector3 locDCommonTimeDCommonVertex = (locP4.E()/(29.9792458*locP4.Vect().Mag2()))*locP4.Vect();
-		TVector3 locDCommonTimeDPosition = -1.0*locDCommonTimeDCommonVertex;
-
-		locTransformationMatrix_CommonTime(locCommonTParamIndex_TempMatrix, locCovMatrixPxParamIndex) = locDCommonTimeDP3.X();
-		locTransformationMatrix_CommonTime(locCommonTParamIndex_TempMatrix, locCovMatrixPxParamIndex + 1) = locDCommonTimeDP3.Y();
-		locTransformationMatrix_CommonTime(locCommonTParamIndex_TempMatrix, locCovMatrixPxParamIndex + 2) = locDCommonTimeDP3.Z();
-
-		locTransformationMatrix_CommonTime(locCommonTParamIndex_TempMatrix, locCovMatrixVxParamIndex) = locDCommonTimeDPosition.X();
-		locTransformationMatrix_CommonTime(locCommonTParamIndex_TempMatrix, locCovMatrixVxParamIndex + 1) = locDCommonTimeDPosition.Y();
-		locTransformationMatrix_CommonTime(locCommonTParamIndex_TempMatrix, locCovMatrixVxParamIndex + 2) = locDCommonTimeDPosition.Z();
-
-		locTransformationMatrix_CommonTime(locCommonTParamIndex_TempMatrix, locCommonVxParamIndex_TempMatrix) = locDCommonTimeDCommonVertex.X();
-		locTransformationMatrix_CommonTime(locCommonTParamIndex_TempMatrix, locCommonVxParamIndex_TempMatrix + 1) = locDCommonTimeDCommonVertex.Y();
-		locTransformationMatrix_CommonTime(locCommonTParamIndex_TempMatrix, locCommonVxParamIndex_TempMatrix + 2) = locDCommonTimeDCommonVertex.Z();
-
-		locTransformationMatrix_CommonTime(locCommonTParamIndex_TempMatrix, locCovMatrixTParamIndex) = 1.0;
-
-		locCovarianceMatrix->Similarity(locTransformationMatrix_CommonTime);
-	}
-	else //neutral shower
-	{
-		TMatrixD locTransformationMatrix_CommonTime(locCovarianceMatrix->GetNcols() + 1, locCovarianceMatrix->GetNcols());
-		for(unsigned int loc_i = 0; int(loc_i) < locCovarianceMatrix->GetNcols(); ++loc_i)
-			locTransformationMatrix_CommonTime(loc_i, loc_i) = 1.0; //other params are unchanged
-
-		double locDCommonTimeDEnergy = locDeltaX.Mag()*locP4.M2()/(29.9792458*locP4.P()*locP4.Vect().Mag2());
-		TVector3 locDCommonTimeDPosition = (locP4.E()/(29.9792458*locP4.P()*locDeltaX.Mag()))*locDeltaX;
-		TVector3 locDCommonTimeDCommonVertex = -1.0*locDCommonTimeDPosition;
-
-		locTransformationMatrix_CommonTime(locCommonTParamIndex_TempMatrix, locCovMatrixEParamIndex) = locDCommonTimeDEnergy;
-
-		locTransformationMatrix_CommonTime(locCommonTParamIndex_TempMatrix, locCovMatrixVxParamIndex) = locDCommonTimeDPosition.X();
-		locTransformationMatrix_CommonTime(locCommonTParamIndex_TempMatrix, locCovMatrixVxParamIndex + 1) = locDCommonTimeDPosition.Y();
-		locTransformationMatrix_CommonTime(locCommonTParamIndex_TempMatrix, locCovMatrixVxParamIndex + 2) = locDCommonTimeDPosition.Z();
-
-		locTransformationMatrix_CommonTime(locCommonTParamIndex_TempMatrix, locCommonVxParamIndex_TempMatrix) = locDCommonTimeDCommonVertex.X();
-		locTransformationMatrix_CommonTime(locCommonTParamIndex_TempMatrix, locCommonVxParamIndex_TempMatrix + 1) = locDCommonTimeDCommonVertex.Y();
-		locTransformationMatrix_CommonTime(locCommonTParamIndex_TempMatrix, locCommonVxParamIndex_TempMatrix + 2) = locDCommonTimeDCommonVertex.Z();
-
-		locTransformationMatrix_CommonTime(locCommonTParamIndex_TempMatrix, locCovMatrixTParamIndex) = 1.0;
-
-		locCovarianceMatrix->Similarity(locTransformationMatrix_CommonTime);
-	}
-
-	//transform to 7x7: common v3 & common t are just copied to the measured spots; p is propagated if in bfield, else is copied
-	TMatrixD locTransformationMatrix_Propagation(7, locCovarianceMatrix->GetNcols());
 	//p3
 	if((locCharge != 0) && Get_IsBFieldNearBeamline()) //charged & in b-field
 	{
@@ -839,14 +845,26 @@ bool DKinFitUtils::Propagate_TrackInfoToCommonVertex(const DKinFitParticle* locK
 	//t
 	locTransformationMatrix_Propagation(6, locCommonTParamIndex_TempMatrix) = 1.0;
 
+	if(locKinFitParticleType == d_DecayingParticle)
+	{
+		//common v3
+		for(unsigned int loc_i = 0; loc_i < 3; ++loc_i)
+			locTransformationMatrix_Propagation(7 + loc_i, locCovMatrixVxParamIndex + loc_i) = 1.0;
+
+		//common t
+		locTransformationMatrix_Propagation(10, locCovMatrixTParamIndex) = 1.0;
+	}
+
 	//transform!!
 	locCovarianceMatrix->Similarity(locTransformationMatrix_Propagation); //FINALLY!!!
 
 	//now calculate the path length
-	return Calc_PathLength(locKinFitParticle, locVXi, locCovarianceMatrix, locPathLengthPair);
+	if(locKinFitParticleType == d_DecayingParticle)
+		return true; //don't recompute path length, because we've done it already
+	return Calc_PathLength(locKinFitParticle, locVXi, locCovarianceMatrix, locPathLengthPair, locRestFrameLifetimePair);
 }
 
-bool DKinFitUtils::Calc_PathLength(const DKinFitParticle* locKinFitParticle, const TMatrixDSym* locVXi, const TMatrixFSym* locCovarianceMatrix, pair<double, double>& locPathLengthPair) const
+bool DKinFitUtils::Calc_PathLength(const DKinFitParticle* locKinFitParticle, const TMatrixDSym* locVXi, const TMatrixFSym* locCovarianceMatrix, pair<double, double>& locPathLengthPair, pair<double, double>& locRestFrameLifetimePair) const
 {
 	//locPathLengthPair: value, uncertainty
 	DKinFitParticleType locKinFitParticleType = locKinFitParticle->Get_KinFitParticleType();
@@ -857,9 +875,11 @@ bool DKinFitUtils::Calc_PathLength(const DKinFitParticle* locKinFitParticle, con
 	if((locKinFitParticleType == d_TargetParticle) || (locKinFitParticleType == d_MissingParticle))
 		return false; // particle properties already defined at the fit vertex
 
-	int locCovMatrixPxParamIndex = locKinFitParticle->Get_CovMatrixPxParamIndex();
-	int locCovMatrixVxParamIndex = locKinFitParticle->Get_CovMatrixVxParamIndex();
-	int locCommonVxParamIndex = locKinFitParticle->Get_CommonVxParamIndex();
+	auto locCovMatrixPxParamIndex = locKinFitParticle->Get_CovMatrixPxParamIndex();
+	auto locCovMatrixVxParamIndex = locKinFitParticle->Get_CovMatrixVxParamIndex();
+	auto locCommonVxParamIndex = locKinFitParticle->Get_CommonVxParamIndex();
+	auto locCommonTParamIndex = locKinFitParticle->Get_CommonTParamIndex();
+	auto locVxParamIndex = locKinFitParticle->Get_VxParamIndex();
 
 	int locCharge = locKinFitParticle->Get_Charge();
 	TVector3 locCommonVertex = locKinFitParticle->Get_CommonVertex();
@@ -870,80 +890,156 @@ bool DKinFitUtils::Calc_PathLength(const DKinFitParticle* locKinFitParticle, con
 	TVector3 locH = locBField.Unit();
 
 	//First, compute the path length
+	double locPMag = locMomentum.Mag();
 	if((locCharge != 0) && Get_IsBFieldNearBeamline()) //in b-field & charged
 	{
 		double locDeltaXDotH = locDeltaX.Dot(locH);
 		double locPDotH = locMomentum.Dot(locH);
-		double locPMag = locMomentum.Mag();
 		locPathLengthPair.first = locDeltaXDotH*locPMag/locPDotH; //cos(theta_helix) = p.dot(h)/|p| = x.dot(h)/l (l = path length)
 	}
 	else // non-accelerating
 		locPathLengthPair.first = locDeltaX.Mag();
 
+	//Then, compute the lifetime if decaying & in 2 vertex constraints
+	auto locMass = locKinFitParticle->Get_Mass();
+	if((locKinFitParticleType == d_DecayingParticle) && (locVxParamIndex >= 0) && (locCommonVxParamIndex >= 0))
+	{
+		//below, t, x, and tau are really delta-t, delta-x, and delta-tau
+		//tau = gamma*(t - beta*x/c)  //plug in: t = x/(beta*c), gamma = 1/sqrt(1 - beta^2)
+		//tau = (x/(beta*c) - beta*x/c)/sqrt(1 - beta^2)  //plug in beta = p*c/E
+		//tau = (x*E/(p*c^2) - p*x/E)/sqrt(1 - p^2*c^2/E^2)  //multiply num & denom by E*P, factor x/c^2 out of num
+		//tau = (x/c^2)*(E^2 - p^2*c^2)/(p*sqrt(E^2 - p^2*c^2))  //plug in m^2*c^4 = E^2 - p^2*c^2
+		//tau = (x/c^2)*m^2*c^4/(p*m*c^2)  //cancel c's & m's
+		//tau = x*m/p
+		//however, in data, p & m are in units with c = 1, so need an extra 1/c: tau = x*m/(c*p)
+		locRestFrameLifetimePair.first = locPathLengthPair.first*locMass/(29.9792458*locPMag); //tau
+	}
+	else
+	{
+		locRestFrameLifetimePair.first = 0.0;
+		locRestFrameLifetimePair.second = 0.0;
+	}
+
 	//if not updating the errors, set the error to zero
-	if((locCovarianceMatrix == nullptr) || !dUpdateCovarianceMatricesFlag)
+	if(locCovarianceMatrix == nullptr)
 	{
 		locPathLengthPair.second = 0.0;
+		locRestFrameLifetimePair.second = 0.0;
 		return true;
 	}
 
 	//now compute the uncertainty
-	//add common v3 to matrix: 10x10 or 8x8 (neutral shower)
-	TMatrixFSym locTempMatrix(*locCovarianceMatrix);
-
-	int locCommonVxParamIndex_TempMatrix = locTempMatrix.GetNcols();
-	locTempMatrix.ResizeTo(locCommonVxParamIndex_TempMatrix + 3, locCommonVxParamIndex_TempMatrix + 3);
-	for(size_t loc_i = 0; loc_i < 3; ++loc_i)
+	//if decaying just reuse matrix, else add common v3 to matrix: 11x11 or 9x9 (neutral shower)
+	TMatrixFSym locTempMatrix(locCovarianceMatrix->GetNcols());
+	locTempMatrix = *locCovarianceMatrix;
+	int locCommonVxParamIndex_TempMatrix = (locKinFitParticleType != d_DecayingParticle) ? locTempMatrix.GetNcols() : 7;
+	if(locKinFitParticleType != d_DecayingParticle)
 	{
-		for(size_t loc_j = 0; loc_j < 3; ++loc_j)
-			locTempMatrix(loc_i + locCommonVxParamIndex_TempMatrix, loc_j + locCommonVxParamIndex_TempMatrix) = (*locVXi)(locCommonVxParamIndex + loc_i, locCommonVxParamIndex + loc_j);
+		locTempMatrix.ResizeTo(locCommonVxParamIndex_TempMatrix + 4, locCommonVxParamIndex_TempMatrix + 4);
+		size_t locSizeToCopy = (locCommonTParamIndex >= 0) ? 4 : 3;
+		for(size_t loc_i = 0; loc_i < locSizeToCopy; ++loc_i)
+		{
+			for(size_t loc_j = 0; loc_j < locSizeToCopy; ++loc_j)
+				locTempMatrix(loc_i + locCommonVxParamIndex_TempMatrix, loc_j + locCommonVxParamIndex_TempMatrix) = (*locVXi)(locCommonVxParamIndex + loc_i, locCommonVxParamIndex + loc_j);
+		}
 	}
 
-	//find path length & its uncertainty
+	//find path length & flight time uncertainties
+	TMatrixD locTransformationMatrix(2, locTempMatrix.GetNcols());
 	if((locCharge != 0) && Get_IsBFieldNearBeamline()) //in b-field & charged
 	{
 		double locDeltaXDotH = locDeltaX.Dot(locH);
 		double locPDotH = locMomentum.Dot(locH);
 		double locPMag = locMomentum.Mag();
 
-		TMatrixD locTransformationMatrix_PathLength(1, locTempMatrix.GetNcols());
-
 		TVector3 locDPathDP3 = (locDeltaXDotH/locPDotH)*((1.0/locPMag)*locMomentum - (locPMag/locPDotH)*locH);
 		TVector3 locDPathDCommon = (locPMag/locPDotH)*locH;
 		TVector3 locDPathDPosition = -1.0*locDPathDCommon;
+		double locMOverC = locMass/29.9792458;
+		TVector3 locDLifetimeDP3 = -1.0*locMOverC*(locDeltaXDotH/(locPDotH*locPDotH))*locH;
+		TVector3 locDLifetimeDCommon = (locMOverC/locPDotH)*locH;
+		TVector3 locDLifetimeDPosition = -1.0*locDLifetimeDCommon;
 
-		locTransformationMatrix_PathLength(0, locCovMatrixPxParamIndex) = locDPathDP3.X();
-		locTransformationMatrix_PathLength(0, locCovMatrixPxParamIndex + 1) = locDPathDP3.Y();
-		locTransformationMatrix_PathLength(0, locCovMatrixPxParamIndex + 2) = locDPathDP3.Z();
+		//Path length
+		locTransformationMatrix(0, locCovMatrixPxParamIndex) = locDPathDP3.X();
+		locTransformationMatrix(0, locCovMatrixPxParamIndex + 1) = locDPathDP3.Y();
+		locTransformationMatrix(0, locCovMatrixPxParamIndex + 2) = locDPathDP3.Z();
 
-		locTransformationMatrix_PathLength(0, locCovMatrixVxParamIndex) = locDPathDPosition.X();
-		locTransformationMatrix_PathLength(0, locCovMatrixVxParamIndex + 1) = locDPathDPosition.Y();
-		locTransformationMatrix_PathLength(0, locCovMatrixVxParamIndex + 2) = locDPathDPosition.Z();
+		locTransformationMatrix(0, locCovMatrixVxParamIndex) = locDPathDPosition.X();
+		locTransformationMatrix(0, locCovMatrixVxParamIndex + 1) = locDPathDPosition.Y();
+		locTransformationMatrix(0, locCovMatrixVxParamIndex + 2) = locDPathDPosition.Z();
 
-		locTransformationMatrix_PathLength(0, locCommonVxParamIndex_TempMatrix) = locDPathDCommon.X();
-		locTransformationMatrix_PathLength(0, locCommonVxParamIndex_TempMatrix + 1) = locDPathDCommon.Y();
-		locTransformationMatrix_PathLength(0, locCommonVxParamIndex_TempMatrix + 2) = locDPathDCommon.Z();
+		locTransformationMatrix(0, locCommonVxParamIndex_TempMatrix) = locDPathDCommon.X();
+		locTransformationMatrix(0, locCommonVxParamIndex_TempMatrix + 1) = locDPathDCommon.Y();
+		locTransformationMatrix(0, locCommonVxParamIndex_TempMatrix + 2) = locDPathDCommon.Z();
 
-		locTempMatrix.Similarity(locTransformationMatrix_PathLength);
+		//Lifetime
+		locTransformationMatrix(1, locCovMatrixPxParamIndex) = locDLifetimeDP3.X();
+		locTransformationMatrix(1, locCovMatrixPxParamIndex + 1) = locDLifetimeDP3.Y();
+		locTransformationMatrix(1, locCovMatrixPxParamIndex + 2) = locDLifetimeDP3.Z();
+
+		locTransformationMatrix(1, locCovMatrixVxParamIndex) = locDLifetimeDPosition.X();
+		locTransformationMatrix(1, locCovMatrixVxParamIndex + 1) = locDLifetimeDPosition.Y();
+		locTransformationMatrix(1, locCovMatrixVxParamIndex + 2) = locDLifetimeDPosition.Z();
+
+		locTransformationMatrix(1, locCommonVxParamIndex_TempMatrix) = locDLifetimeDCommon.X();
+		locTransformationMatrix(1, locCommonVxParamIndex_TempMatrix + 1) = locDLifetimeDCommon.Y();
+		locTransformationMatrix(1, locCommonVxParamIndex_TempMatrix + 2) = locDLifetimeDCommon.Z();
 	}
 	else // non-accelerating
 	{
-		TMatrixD locTransformationMatrix_PathLength(1, locTempMatrix.GetNcols());
-
 		TVector3 locDPathDCommon = locDeltaX.Unit();
 		TVector3 locDPathDPosition = -1.0*locDPathDCommon;
+		double locMOverC = locMass/29.9792458;
+		TVector3 locDLifetimeDP3 = -1.0*locMOverC*(locPathLengthPair.first/(locPMag*locPMag*locPMag))*locMomentum;
+		TVector3 locDLifetimeDCommon = (locMOverC/(locPMag*locPathLengthPair.first))*locDeltaX;
+		TVector3 locDLifetimeDPosition = -1.0*locDLifetimeDCommon;
 
-		locTransformationMatrix_PathLength(0, locCovMatrixVxParamIndex) = locDPathDPosition.X();
-		locTransformationMatrix_PathLength(0, locCovMatrixVxParamIndex + 1) = locDPathDPosition.Y();
-		locTransformationMatrix_PathLength(0, locCovMatrixVxParamIndex + 2) = locDPathDPosition.Z();
+		//Path length
+		locTransformationMatrix(0, locCovMatrixVxParamIndex) = locDPathDPosition.X();
+		locTransformationMatrix(0, locCovMatrixVxParamIndex + 1) = locDPathDPosition.Y();
+		locTransformationMatrix(0, locCovMatrixVxParamIndex + 2) = locDPathDPosition.Z();
 
-		locTransformationMatrix_PathLength(0, locCommonVxParamIndex_TempMatrix) = locDPathDCommon.X();
-		locTransformationMatrix_PathLength(0, locCommonVxParamIndex_TempMatrix + 1) = locDPathDCommon.Y();
-		locTransformationMatrix_PathLength(0, locCommonVxParamIndex_TempMatrix + 2) = locDPathDCommon.Z();
+		locTransformationMatrix(0, locCommonVxParamIndex_TempMatrix) = locDPathDCommon.X();
+		locTransformationMatrix(0, locCommonVxParamIndex_TempMatrix + 1) = locDPathDCommon.Y();
+		locTransformationMatrix(0, locCommonVxParamIndex_TempMatrix + 2) = locDPathDCommon.Z();
 
-		locTempMatrix.Similarity(locTransformationMatrix_PathLength);
+		//Lifetime
+		locTransformationMatrix(1, locCovMatrixPxParamIndex) = locDLifetimeDP3.X();
+		locTransformationMatrix(1, locCovMatrixPxParamIndex + 1) = locDLifetimeDP3.Y();
+		locTransformationMatrix(1, locCovMatrixPxParamIndex + 2) = locDLifetimeDP3.Z();
+
+		locTransformationMatrix(1, locCovMatrixVxParamIndex) = locDLifetimeDPosition.X();
+		locTransformationMatrix(1, locCovMatrixVxParamIndex + 1) = locDLifetimeDPosition.Y();
+		locTransformationMatrix(1, locCovMatrixVxParamIndex + 2) = locDLifetimeDPosition.Z();
+
+		locTransformationMatrix(1, locCommonVxParamIndex_TempMatrix) = locDLifetimeDCommon.X();
+		locTransformationMatrix(1, locCommonVxParamIndex_TempMatrix + 1) = locDLifetimeDCommon.Y();
+		locTransformationMatrix(1, locCommonVxParamIndex_TempMatrix + 2) = locDLifetimeDCommon.Z();
 	}
+
+	if(dDebugLevel >= 20)
+	{
+		cout << "Calc_PathLength: Combined matrix: " << endl;
+		Print_Matrix(locTempMatrix);
+		cout << "Calc_PathLength: Transform matrix: " << endl;
+		Print_Matrix(locTransformationMatrix);
+	}
+
+	locTempMatrix.Similarity(locTransformationMatrix);
+	if(dDebugLevel >= 20)
+	{
+		cout << "path/life matrix: " << endl;
+		Print_Matrix(locTempMatrix);
+	}
+
 	locPathLengthPair.second = sqrt(locTempMatrix(0, 0));
+	locRestFrameLifetimePair.second = sqrt(locTempMatrix(1, 1));
+	if(dDebugLevel >= 20)
+	{
+		cout << "calced path, sigma = " << locPathLengthPair.first << ", " << locPathLengthPair.second << endl;
+		cout << "calced lifetime, sigma = " << locRestFrameLifetimePair.first << ", " << locRestFrameLifetimePair.second << endl;
+	}
 
 	return true;
 }
@@ -951,8 +1047,9 @@ bool DKinFitUtils::Calc_PathLength(const DKinFitParticle* locKinFitParticle, con
 void DKinFitUtils::Calc_DecayingParticleJacobian(const DKinFitParticle* locKinFitParticle, bool locDontPropagateDecayingP3Flag, double locStateSignMultiplier, int locNumEta, const map<const DKinFitParticle*, int>& locAdditionalPxParamIndices, TMatrixD& locJacobian) const
 {
 	//locJacobian: matrix used to convert dV to the decaying particle covariance matrix: indices are px, py, pz, x, y, z, t
-		//dimensions are: 7, (dNumXi + locNumEta);
+		//dimensions are: 7/11, (dNumXi + locNumEta); (11 if common vertex is fit, 7 otherwise)
 	//uses defining-particles to calculate decaying particle information
+	//technically, this only calculates & sets the d_p3_Lambda/d_all terms.  Setting 1's for the d_vertex/d_vertex's must be done outside of this function.  Everything else is zero. 
 
 	DKinFitParticleType locKinFitParticleType = locKinFitParticle->Get_KinFitParticleType();
 
@@ -1208,3 +1305,24 @@ shared_ptr<const DKinFitChain> DKinFitUtils::Build_OutputKinFitChain(const share
 
 	return locOutputKinFitChain;
 }
+
+void DKinFitUtils::Print_Matrix(const TMatrixD& locMatrix) const
+{
+	for(int loc_i = 0; loc_i < locMatrix.GetNrows(); ++loc_i)
+	{
+		for(int loc_j = 0; loc_j < locMatrix.GetNcols(); ++loc_j)
+			cout << locMatrix(loc_i, loc_j) << ", ";
+		cout << endl;
+	}
+}
+
+void DKinFitUtils::Print_Matrix(const TMatrixF& locMatrix) const
+{
+	for(int loc_i = 0; loc_i < locMatrix.GetNrows(); ++loc_i)
+	{
+		for(int loc_j = 0; loc_j < locMatrix.GetNcols(); ++loc_j)
+			cout << locMatrix(loc_i, loc_j) << ", ";
+		cout << endl;
+	}
+}
+
