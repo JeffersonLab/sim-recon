@@ -38,7 +38,7 @@ int main(int narg, char *argv[])
 	DRootGeom *rg = new DRootGeom(dapp);
 	DGeometry *geom = dapp->GetDGeometry(RUN_NUMBER);
 
-	TH2D *radlen_LL = new TH2D("radlen_LL", "Radiation Length;z (cm); r(cm); rad. length (cm)", 1500, -100.0, 650.0, 500, 0.0, 125.0);
+	TH2D *radlen_LL = new TH2D("radlen_LL", "Radiation Length;z (cm); r(cm); rad. length (cm)", 2500, -100.0, 1170.0, 1000, 0.0, 125.0);
 	TH2D *radlen_table = (TH2D*)radlen_LL->Clone("radlen_table");
 	TH2D *radlen_LL_xy = new TH2D("radlen_LL_xy", "Radiation Length;x (cm); y(cm); rad. length (cm)", 900, -10.0, 10.0, 900, -10.0, 10.0);
 	TH2D *radlen_table_xy = (TH2D*)radlen_LL_xy->Clone("radlen_table_xy");
@@ -47,7 +47,10 @@ int main(int narg, char *argv[])
 	TH2D *Z_LL = (TH2D*)radlen_LL->Clone("Z_LL");
 	TH2D *Z_table = (TH2D*)radlen_LL->Clone("Z_table");
 	TH2D *density_LL = (TH2D*)radlen_LL->Clone("density_LL");
-	density_LL->SetTitle("Radiation Length;z (cm); r(cm); density (g/cm^{3})");
+	density_LL->SetTitle("Density");
+	density_LL->SetXTitle("z (cm)");
+	density_LL->SetYTitle("r (cm)");
+	density_LL->SetZTitle("density (g/cm^3)");
 	TH2D *density_table = (TH2D*)radlen_LL->Clone("density_table");
 
 	for(int ir = 1; ir<=radlen_LL->GetNbinsY(); ir++){

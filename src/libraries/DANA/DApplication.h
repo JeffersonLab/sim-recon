@@ -57,6 +57,16 @@ class DApplication:public JApplication{
 		void Recycle_Matrices(deque<TMatrixFSym*>& locMatrices);
 		void Recycle_Matrices(deque<const TMatrixFSym*>& locMatrices);
 
+		pthread_rwlock_t* GetReadWriteLock(string &name) {
+			return rw_locks.count( name ) == 0 ? nullptr : rw_locks[name];
+		}
+		pthread_rwlock_t* GetRootReadWriteLock() {
+			return root_rw_lock;
+		}
+		pthread_rwlock_t* GetRootFillLock( JEventProcessor *proc ) {
+			return root_fill_rw_lock.count( proc ) == 0 ? nullptr : root_fill_rw_lock[proc];
+		}
+
 	protected:
 	
 		DMagneticFieldMap *bfield;
