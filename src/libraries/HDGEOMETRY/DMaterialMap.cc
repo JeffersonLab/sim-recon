@@ -21,6 +21,7 @@ DMaterialMap::DMaterialMap(string namepath, JCalibration *jcalib)
 	/// This will read in the map and figure out the number of grid
 	/// points in each direction (r, and z) and the range in each.
 
+	IS_VALID = false;
 	MAX_BOUNDARY_SEARCH_STEPS = 30;
 	ENABLE_BOUNDARY_CHECK = true;
 	
@@ -123,6 +124,8 @@ DMaterialMap::DMaterialMap(string namepath, JCalibration *jcalib)
 	
 	// Now find the r and z boundaries that will be used during swimming
 	FindBoundaries();
+	
+	IS_VALID = true;
 }
 
 //-----------------

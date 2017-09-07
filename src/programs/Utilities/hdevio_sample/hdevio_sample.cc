@@ -103,7 +103,7 @@ int main(int narg, char *argv[])
 	}
 	
 	ofs.close();
-	if(buff) delete buff;
+	if(buff) delete[] buff;
 
 	return 0;
 }

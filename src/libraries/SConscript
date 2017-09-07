@@ -8,7 +8,7 @@ Import('env osname')
 # Loop over libraries, building each
 subdirs = ['include', 'BCAL', 'FCAL', 'DANA', 'TAGGER', 'HDGEOMETRY', 'TRACKING']
 subdirs.extend(['CCAL', 'START_COUNTER', 'RF', 'TRIGGER', 'CDC', 'FDC', 'PID', 'KINFITTER', 'ANALYSIS'])
-subdirs.extend(['CERE', 'DIRC', 'HDDM', 'TOF', 'PAIR_SPECTROMETER', 'TPOL', 'FMWPC'])
+subdirs.extend(['CERE', 'DIRC', 'HDDM', 'TOF', 'PAIR_SPECTROMETER', 'TPOL', 'FMWPC', 'TAC'])
 subdirs.extend(['DAQ', 'TTAB', 'EVENTSTORE'])
 subdirs.extend(['AMPTOOLS_AMPS', 'AMPTOOLS_DATAIO', 'AMPTOOLS_MCGEN'])
 

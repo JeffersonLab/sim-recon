@@ -125,7 +125,6 @@ DTranslationTable::DTranslationTable(JEventLoop *loop)
 			"JANA call stack. You will want this if using the janadot"
 			"plugin, but otherwise, it will just give a slight performance"
 			"hit.");
-
 	if(SYSTEMS_TO_PARSE != ""){
 		jerr << "You have set the TT:SYSTEMS_TO_PARSE config. parameter." << endl;
 		jerr << "This is now deprecated. Please use EVIO:SYSTEMS_TO_PARSE" << endl;
@@ -281,8 +280,9 @@ void DTranslationTable::SetSystemsToParse(string systems, JEventSource *eventsou
 		rocid_map[name_to_id[        "TAGM"]] = {71, 75};
 		rocid_map[name_to_id[         "TOF"]] = {77, 78};
 		rocid_map[name_to_id[        "TPOL"]] = {84};
+		rocid_map[name_to_id[         "TAC"]] = {14, 78};
 	}
-	
+
 	// Parse string of system names
 	std::istringstream ss(systems);
 	std::string token;
@@ -391,6 +391,8 @@ void DTranslationTable::ApplyTranslationTable(JEventLoop *loop) const
          case PSC:        MakePSCDigiHit(chaninfo.psc, pi, pt, pp);                break;
          case RF:         MakeRFDigiTime(chaninfo.rf, pt);                         break;
          case TPOLSECTOR: MakeTPOLSectorDigiHit(chaninfo.tpolsector, pi, pt, pp);  break;
+         case TAC:        MakeTACDigiHit(chaninfo.tac, pi, pt, pp);  	   		   break;
+
          default:
             if (VERBOSE > 4) ttout << "       - Don't know how to make DigiHit objects for this detector type!" << std::endl;
             break;
@@ -433,7 +435,8 @@ void DTranslationTable::ApplyTranslationTable(JEventLoop *loop) const
          case PSC:        MakePSCDigiHit(  chaninfo.psc,  pd);             break;
          case RF:         MakeRFDigiTime(  chaninfo.rf,   pd);             break;
          case TPOLSECTOR: MakeTPOLSectorDigiHit(chaninfo.tpolsector, pd);  break;
-         default:
+         case TAC: 		  MakeTACDigiHit(chaninfo.tac, pd);  			   break;
+        default:
             if (VERBOSE > 4) ttout << "       - Don't know how to make DigiHit objects for this detector type!" << std::endl;
             break;
       }
@@ -602,7 +605,7 @@ void DTranslationTable::ApplyTranslationTable(JEventLoop *loop) const
          case TAGM:        MakeTAGMTDCDigiHit(chaninfo.tagm, hit);      break;
          case TAGH:        MakeTAGHTDCDigiHit(chaninfo.tagh, hit);      break;
          case PSC:         MakePSCTDCDigiHit(chaninfo.psc, hit);        break;
-         default:     
+        default:
              if (VERBOSE > 4) ttout << "       - Don't know how to make DigiHit objects for this detector type!" << std::endl;
              break;
       }
@@ -642,6 +645,7 @@ void DTranslationTable::ApplyTranslationTable(JEventLoop *loop) const
       switch (chaninfo.det_sys) {
          case TOF:    MakeTOFTDCDigiHit(chaninfo.tof, hit); break;
          case RF:     MakeRFTDCDigiTime(chaninfo.rf, hit);  break;
+         case TAC:    MakeTACTDCDigiHit(chaninfo.tac, hit); break;
          default:     
              if (VERBOSE > 4) ttout << "       - Don't know how to make DigiHit objects for this detector type!" << std::endl;
              break;
@@ -676,6 +680,7 @@ void DTranslationTable::ApplyTranslationTable(JEventLoop *loop) const
       	Addf250ObjectsToCallStack(loop, "DFCALDigiHit");
       	Addf250ObjectsToCallStack(loop, "DSCDigiHit");
       	Addf250ObjectsToCallStack(loop, "DTOFDigiHit");
+      	Addf250ObjectsToCallStack(loop, "DTACDigiHit");
       	Addf125CDCObjectsToCallStack(loop, "DCDCDigiHit", cdcpulses.size()>0);
       	Addf125FDCObjectsToCallStack(loop, "DFDCCathodeDigiHit", fdcpulses.size()>0);
       	AddF1TDCObjectsToCallStack(loop, "DBCALTDCDigiHit");
@@ -684,6 +689,7 @@ void DTranslationTable::ApplyTranslationTable(JEventLoop *loop) const
       	AddF1TDCObjectsToCallStack(loop, "DRFTDCDigiTime");
       	AddF1TDCObjectsToCallStack(loop, "DSCTDCDigiHit");
       	AddCAEN1290TDCObjectsToCallStack(loop, "DTOFTDCDigiHit");
+      	AddCAEN1290TDCObjectsToCallStack(loop, "DTACTDCDigiHit");
 		}
    }
 }
@@ -1312,6 +1318,53 @@ DTPOLSectorDigiHit* DTranslationTable::MakeTPOLSectorDigiHit(const TPOLSECTORInd
    return h;
 }
 
+
+
+//---------------------------------
+// MakeTACDigiHit
+//---------------------------------
+DTACDigiHit* DTranslationTable::MakeTACDigiHit(const TACIndex_t &idx,
+							     const Df250PulseIntegral *pi,
+							     const Df250PulseTime *pt,
+							     const Df250PulsePedestal *pp) const
+{
+   DTACDigiHit *h = new DTACDigiHit();
+   CopyDf250Info(h, pi, pt, pp);
+
+   vDTACDigiHit.push_back(h);
+
+   return h;
+}
+
+//---------------------------------
+// MakeTACDigiHit
+//---------------------------------
+DTACDigiHit* DTranslationTable::MakeTACDigiHit(const TACIndex_t &idx,
+							     const Df250PulseData *pd) const
+{
+	   DTACDigiHit *h = new DTACDigiHit();
+	   CopyDf250Info(h, pd);
+
+	   vDTACDigiHit.push_back(h);
+
+   return h;
+}
+
+//---------------------------------
+// MakeTACTDCDigiHit
+//---------------------------------
+DTACTDCDigiHit*  DTranslationTable::MakeTACTDCDigiHit(
+                                    const TACIndex_t &idx,
+                                    const DCAEN1290TDCHit *hit) const
+{
+   DTACTDCDigiHit *h = new DTACTDCDigiHit();
+   CopyDCAEN1290TDCInfo(h, hit);
+
+   vDTACTDCDigiHit.push_back(h);
+
+   return h;
+}
+
 //---------------------------------
 // GetDetectorIndex
 //---------------------------------
@@ -1398,6 +1451,11 @@ const DTranslationTable::csc_t
              if ( det_channel.tpolsector == in_channel.tpolsector )
                 found = true;
              break;
+          case DTranslationTable::TAC:
+             if ( det_channel.tac == in_channel.tac )
+                found = true;
+             break;
+
           default:
              jerr << "DTranslationTable::GetDAQIndex(): "
                   << "Invalid detector type = " << in_channel.det_sys 
@@ -1474,6 +1532,10 @@ string DTranslationTable::Channel2Str(const DChannelInfo &in_channel) const
     case DTranslationTable::TPOLSECTOR:
        ss << "sector = " << in_channel.tpolsector.sector;
        break;
+    case DTranslationTable::TAC:
+       ss << " ";
+       break;
+
     default:
        ss << "Unknown detector type" << std::endl;
     }   
@@ -1638,8 +1700,8 @@ void DTranslationTable::ReadTranslationTable(JCalibration *jcalib)
       // Copy from stringstream to tt
       tt_xml = ss.str();
    }
-	
-	// If a ROCID by system map exists it probably means the user 
+   
+	// If a ROCID by system map exists it probably means the user
 	// specified particular systems to parse and the default map
 	// has to be installed above in SetSystemsToParse. Make a copy
 	// and clear the map so that it can be filled while parsing.
@@ -1647,7 +1709,7 @@ void DTranslationTable::ReadTranslationTable(JCalibration *jcalib)
 	// a descrepancy.
 	auto save_rocid_map = Get_ROCID_By_System();
 	Get_ROCID_By_System().clear();
-   
+
    // create parser and specify element handlers
    XML_Parser xmlParser = XML_ParserCreate(NULL);
    if (xmlParser == NULL) {
@@ -1694,7 +1756,7 @@ void DTranslationTable::ReadTranslationTable(JCalibration *jcalib)
 			exit(-1);
 		}
 	}
-	
+
    jout << Get_TT().size() << " channels defined in translation table" << std::endl;
    XML_ParserFree(xmlParser);
 
@@ -1736,7 +1798,10 @@ DTranslationTable::Detector_t DetectorStr2DetID(string &type)
       return DTranslationTable::TOF;
    } else if ( type == "tpol" ) {
       return DTranslationTable::TPOLSECTOR;
-   } else {
+   } else if ( type == "tac" ) {
+	      return DTranslationTable::TAC;
+   } else
+   {
       return DTranslationTable::UNKNOWN_DETECTOR;
    }
 }
@@ -1989,7 +2054,10 @@ void StartElement(void *userData, const char *xmlname, const char **atts)
          case DTranslationTable::TPOLSECTOR:
             ci.tpolsector.sector = sector;
             break;
-         case DTranslationTable::UNKNOWN_DETECTOR:
+         case DTranslationTable::TAC:
+//        	 ci.tac;
+            break;
+        case DTranslationTable::UNKNOWN_DETECTOR:
 		 default:
             break;
       }

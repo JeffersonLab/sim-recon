@@ -30,7 +30,8 @@ enum DetectorSystem_t{
      SYS_PS         = 0x2000,
      SYS_PSC        = 0x4000,
      SYS_FMWPC      = 0x8000,
-     SYS_TPOL       = 0x10000
+     SYS_TPOL       = 0x10000,
+	 SYS_TAC		= 0x20000
 };
 
 inline const char* SystemName(DetectorSystem_t sys)
@@ -90,6 +91,9 @@ inline const char* SystemName(DetectorSystem_t sys)
           case SYS_TPOL:
               return "TPOL";
               break;
+          case SYS_TAC:
+              return "TAC";
+              break;
      }
      return "UNKNOWN";
 }
@@ -134,6 +138,8 @@ inline DetectorSystem_t NameToSystem(const char* locSystemName)
 		return SYS_FMWPC;
 	else if(strcmp(locSystemName, "TPOL") == 0)
 		return SYS_TPOL;
+	else if(strcmp(locSystemName, "TAC") == 0)
+		return SYS_TAC;
 	else
 		return SYS_NULL;
 }

@@ -601,10 +601,11 @@ def AddDANA(env):
 	AddMySQL(env)   # needed for EventStore
 	DANA_LIBS  = "DANA ANALYSIS KINFITTER PID TAGGER TRACKING START_COUNTER"
 	DANA_LIBS += " CERE DIRC CDC TRIGGER PAIR_SPECTROMETER RF"
-	DANA_LIBS += " FDC TOF BCAL FCAL CCAL TPOL HDGEOMETRY TTAB FMWPC"
+	DANA_LIBS += " FDC TOF BCAL FCAL CCAL TPOL HDGEOMETRY TTAB FMWPC TAC"
 	DANA_LIBS += " DAQ JANA EVENTSTORE"
 	DANA_LIBS += " expat"
 	env.PrependUnique(LIBS = DANA_LIBS.split())
+        env.Append(LIBS = 'DANA')
 	env.PrependUnique(OPTIONAL_PLUGIN_LIBS = DANA_LIBS.split())
 
 ##################################
@@ -852,6 +853,21 @@ def AddROOT(env):
 				print "       ROOT dictionary for %s" % f
 	os.chdir(curpath)
 
+
+##################################
+# ROOTSPY
+##################################
+def AddROOTSpy(env):
+	rootspy = os.getenv('ROOTSPY')
+	if(rootspy != None) :
+		env.AppendUnique(CXXFLAGS = ['-DHAVE_ROOTSPY'])
+		env.AppendUnique(CPPPATH = ['%s/include' % rootspy, '%s/include/libRootSpy' % rootspy])
+		env.AppendUnique(LIBPATH = ['%s/lib' % rootspy])
+		env.AppendUnique(LIBS=['RootSpy'])
+		AddROOT(env)
+
+
+
 ##################################
 # ROOTSPY Macro build function
 ##################################
@@ -1037,7 +1053,7 @@ def AddCobrems(env):
 	cobrems_home = os.getenv('HALLD_HOME', 'sim-recon')
 	env.AppendUnique(CPPPATH = ["%s/src/libraries/AMPTOOLS_MCGEN" % (cobrems_home)])
 	env.AppendUnique(LIBPATH = ["%s/%s/lib" % (cobrems_home, env['OSNAME'])])
-	env.AppendUnique(LIBS    = ['AMPTOOLS_MCGEN'])
+	env.AppendUnique(LIBS    = 'AMPTOOLS_MCGEN')
 	env.AppendUnique(CCFLAGS = pyincludes.rstrip().split())
 
 
