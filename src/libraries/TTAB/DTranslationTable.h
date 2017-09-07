@@ -10,6 +10,7 @@
 
 #include <set>
 #include <string>
+
 using namespace std;
 
 
@@ -61,6 +62,8 @@ using namespace jana;
 #include <PAIR_SPECTROMETER/DPSCDigiHit.h>
 #include <PAIR_SPECTROMETER/DPSCTDCDigiHit.h>
 #include <TPOL/DTPOLSectorDigiHit.h>
+#include <TAC/DTACDigiHit.h>
+#include <TAC/DTACTDCDigiHit.h>
 
 // (See comments in DParsedEvent.h for enlightenment)
 #define MyTypes(X) \
@@ -83,7 +86,9 @@ using namespace jana;
 		X(DPSDigiHit) \
 		X(DPSCDigiHit) \
 		X(DPSCTDCDigiHit) \
-		X(DTPOLSectorDigiHit)
+		X(DTPOLSectorDigiHit) \
+		X(DTACDigiHit) \
+		X(DTACTDCDigiHit)
 
 #define MyfADCTypes(X) \
 		X(DBCALDigiHit) \
@@ -96,7 +101,8 @@ using namespace jana;
 		X(DTAGHDigiHit) \
 		X(DPSDigiHit) \
 		X(DPSCDigiHit) \
-		X(DTPOLSectorDigiHit)
+		X(DTPOLSectorDigiHit) \
+		X(DTACDigiHit)
 
 
 #include "GlueX.h"
@@ -138,6 +144,7 @@ class DTranslationTable:public jana::JObject{
 			TAGM,
 			TOF,
 			TPOLSECTOR,
+			TAC,
 			NUM_DETECTOR_TYPES
 		};
 
@@ -155,7 +162,8 @@ class DTranslationTable:public jana::JObject{
 				case TAGH: return "TAGH";
 				case TAGM: return "TAGM";
 				case TOF: return "TOF";
-			        case TPOLSECTOR: return "TPOL"; // is set to TPOL to match what is in CCDB, fix later
+				case TPOLSECTOR: return "TPOL"; // is set to TPOL to match what is in CCDB, fix later
+				case TAC: return "TAC";
 				case UNKNOWN_DETECTOR:
 				default:
 					return "UNKNOWN";
@@ -296,6 +304,13 @@ class DTranslationTable:public jana::JObject{
 			}
 		};
 
+		class TACIndex_t {
+		public:
+			inline bool operator==( const TACIndex_t& rhs ) const {
+				return true;
+			}
+		};
+
 		// DChannelInfo holds translation between indexing schemes
 		// for one channel.
 		class DChannelInfo{
@@ -317,6 +332,7 @@ class DTranslationTable:public jana::JObject{
 					TAGMIndex_t tagm;
 					TOFIndex_t tof;
 					TPOLSECTORIndex_t tpolsector;
+					TACIndex_t tac;
 				};
 		};
 
@@ -390,7 +406,7 @@ class DTranslationTable:public jana::JObject{
 			}
 			MyfADCTypes(overwritensamples)
 		}
-		
+
 
 		//-----------------------------------------------------------------------
 
@@ -408,6 +424,7 @@ class DTranslationTable:public jana::JObject{
 		DPSCDigiHit*        MakePSCDigiHit(        const PSCIndex_t &idx,        const Df250PulseData *pd) const;
 		DRFDigiTime*        MakeRFDigiTime(        const RFIndex_t &idx,         const Df250PulseData *pd) const;
 		DTPOLSectorDigiHit* MakeTPOLSectorDigiHit( const TPOLSECTORIndex_t &idx, const Df250PulseData *pd) const;
+		DTACDigiHit* 		MakeTACDigiHit( 	   const TACIndex_t &idx, 		 const Df250PulseData *pd) const;
 
 		// fADC250 -- commissioning -> Fall 2016
 		DBCALDigiHit*       MakeBCALDigiHit(const BCALIndex_t &idx, const Df250PulseIntegral *pi, const Df250PulseTime *pt, const Df250PulsePedestal *pp) const;
@@ -420,6 +437,7 @@ class DTranslationTable:public jana::JObject{
 		DPSCDigiHit*        MakePSCDigiHit( const PSCIndex_t &idx,  const Df250PulseIntegral *pi, const Df250PulseTime *pt, const Df250PulsePedestal *pp) const;
 		DRFDigiTime*        MakeRFDigiTime( const RFIndex_t &idx,   const Df250PulseTime *hit) const;
 		DTPOLSectorDigiHit* MakeTPOLSectorDigiHit(const TPOLSECTORIndex_t &idx, const Df250PulseIntegral *pi, const Df250PulseTime *pt, const Df250PulsePedestal *pp) const;
+		DTACDigiHit* 		MakeTACDigiHit( const TACIndex_t &idx,  const Df250PulseIntegral *pi, const Df250PulseTime *pt, const Df250PulsePedestal *pp) const;
 
 		// fADC125
 		DCDCDigiHit* MakeCDCDigiHit(const CDCIndex_t &idx, const Df125PulseIntegral *pi, const Df125PulseTime *pt, const Df125PulsePedestal *pp) const;
@@ -439,6 +457,8 @@ class DTranslationTable:public jana::JObject{
 		// CAEN1290TDC
 		DTOFTDCDigiHit*  MakeTOFTDCDigiHit(const TOFIndex_t &idx,        const DCAEN1290TDCHit *hit) const;
 		DRFTDCDigiTime*  MakeRFTDCDigiTime(const RFIndex_t &idx,         const DCAEN1290TDCHit *hit) const;
+		DTACTDCDigiHit*  MakeTACTDCDigiHit( const TACIndex_t &idx,       const DCAEN1290TDCHit *hit) const;
+
 
 		void Addf250ObjectsToCallStack(JEventLoop *loop, string caller) const;
 		void Addf125CDCObjectsToCallStack(JEventLoop *loop, string caller, bool addpulseobjs) const;

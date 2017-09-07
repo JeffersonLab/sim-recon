@@ -247,7 +247,7 @@ c             write(6,*) q2,xmax
      +         * ((1+(1-x)**2)
      +               - 8*(theta2/(1+theta2)**2)*(1-x)*cos(phi)**2)
      +         * acceptance(theta2)
-     +         * polarization(x,theta2))
+     +         * polarization(x,theta2,phi))
 C comment out the preceding line to disable polarization -RTJ
             q2points=q2points+1
             q2theta2(q2points)=theta2
@@ -355,14 +355,27 @@ c     write(6,*) dNidxdt2
      +      +8*theta2**2*(1-x)*cos(phi)**2*sin(phi)**2
       end
 
-      real function polarization(x,theta2)
-      real x,theta2
+      real function polarization(x,theta2,phi)
+      real x,theta2,phi
+      real Npara,Nperp
+      real paverage
       include 'cobrems.inc'
       if (unpolar) then
         polarization=1
         return
       endif
-      polarization=2*(1-x)/((1+theta2)**2*((1-x)**2+1) - 4*theta2*(1-x))
+
+c  This formula was taken from Eq. A5 of Kaune, Miller, et.al.
+c  PhysRevD.11.479, but it has been averaged over phi already.
+c  8/30/2017 - replacing this with the full phi-dependent
+c              expression below, based on Eq. A4.
+c     paverage=2*(1-x)/((1+theta2)**2*((1-x)**2+1) - 4*theta2*(1-x))
+
+      Npara = 0.5*(2-x)**2*(1+theta2)**2 - 8*theta2*(1-x)*cos(phi)**2 -
+     +        8*theta2**2*(1-x)*(cos(phi)*sin(phi))**2
+      Nperp = 0.5*x**2*(1+theta2)**2 +
+     +        8*theta2**2*(1-x)*(cos(phi)*sin(phi))**2
+      polarization = (Npara - Nperp) / (Npara + Nperp)
       end
 
       real function acceptance2(theta2,phi,xshift,yshift)
