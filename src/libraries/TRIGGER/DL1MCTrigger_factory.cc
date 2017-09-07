@@ -2,6 +2,7 @@
 
 #include <iostream>
 #include <iomanip>
+#include <cmath>
 using namespace std;
 
 #include <JANA/JApplication.h>
@@ -11,6 +12,11 @@ using namespace std;
 using namespace jana;
 
 #include "DL1MCTrigger_factory.h"
+
+#if HAVE_RCDB
+#include "RCDB/Connection.h"
+#include "RCDB/ConfigParser.h"
+#endif
 
 
 //------------------
@@ -441,6 +447,8 @@ jerror_t DL1MCTrigger_factory::fini(void)
 
 int  DL1MCTrigger_factory::Read_RCDB(int32_t runnumber){
 
+#if HAVE_RCDB
+
   vector<const DTranslationTable*> ttab;  
   eventLoop->Get(ttab);
   
@@ -802,6 +810,13 @@ int  DL1MCTrigger_factory::Read_RCDB(int32_t runnumber){
   }    // Loop over crates       
   
   return 0;
+
+#else // HAVE_RCDB
+
+  return 10; // RCDB is not available
+
+#endif
+
 }
 
 

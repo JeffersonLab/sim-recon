@@ -31,9 +31,18 @@
       data outfile/20*0/
       integer openInput, skipInput, openOutput
       external openInput, skipInput, openOutput
-      real beamE0, beamEpeak, beamEmin, radColDist
-      common /beamPars/ beamE0,beamEpeak,beamEmin,radColDist
-      data beamE0,beamEpeak,beamEmin,radColDist/0.,0.,0.,76./
+      real beamE0, beamEpeak, beamEmin, radColDist, colDiam
+      real beamEmit, radThick
+      common /beamPars/ beamE0,beamEpeak,beamEmin,radColDist,colDiam,
+     +                  beamEmit, radThick
+      data beamE0/0/
+      data beamEpeak/0/
+      data beamEmin/0/
+      data radColDist/76.0/
+      data colDiam/0.0034/
+      data beamEmit/1e-8/
+      data radThick/20e-6/
+
       data fhalo/0.0/
       data bfield/-999.0/
       data nosecondaries/0/
@@ -85,7 +94,7 @@ C..geant..
       call ffkey('infile',infile,20,'MIXED')
       call ffkey('skip',iskip,1,'INTEGER')
       call ffkey('outfile',outfile,20,'MIXED')
-      call ffkey('beam',beamE0,4,'REAL')
+      call ffkey('beam',beamE0,7,'REAL')
       call ffkey('bfield', bfield,1,'REAL')
       call ffkey('nosecondaries', nosecondaries,1,'INTEGER')
       call ffkey('halo',fhalo,1,'REAL')
@@ -152,7 +161,8 @@ C..geant..
       endif
       xMinimum = beamEmin/beamE0
             
-      call cobrems(beamE0,beamEpeak,radColDist)
+      call cobrems(beamE0,beamEpeak,beamEmit,radThick,
+     +             radColDist,colDiam,0)
 *
 *             Initialize graphics package
 *
