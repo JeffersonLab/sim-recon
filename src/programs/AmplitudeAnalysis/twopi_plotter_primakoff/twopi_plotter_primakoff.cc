@@ -18,18 +18,20 @@
 #include "AmpPlotter/PlotterMainWindow.h"
 #include "AmpPlotter/PlotFactory.h"
 
-#include "AMPTOOLS_DATAIO/TwoPiPlotGenerator.h"
+#include "AMPTOOLS_DATAIO/TwoZPiPlotGenerator.h"
 #include "AMPTOOLS_DATAIO/ROOTDataReader.h"
 #include "AMPTOOLS_AMPS/TwoPiAngles.h"
+#include "AMPTOOLS_AMPS/TwoPiWt_primakoff.h"
 #include "AMPTOOLS_AMPS/TwoPiAngles_primakoff.h"
 #include "AMPTOOLS_AMPS/BreitWigner.h"
 
-typedef TwoPiPlotGenerator PlotGen;
+typedef TwoZPiPlotGenerator PlotGen;
 
 void atiSetup(){
   
   AmpToolsInterface::registerAmplitude( TwoPiAngles() );
   AmpToolsInterface::registerAmplitude( TwoPiAngles_primakoff() );
+  AmpToolsInterface::registerAmplitude( TwoPiWt_primakoff() );
   AmpToolsInterface::registerAmplitude( BreitWigner() );
   AmpToolsInterface::registerDataReader( ROOTDataReader() );
 }
@@ -131,16 +133,16 @@ int main( int argc, char* argv[] ){
       if (isum < sums.size() && iplot == PlotGenerator::kData) continue; // only plot data once
 
       // loop over different variables
-      for (unsigned int ivar  = 0; ivar  < TwoPiPlotGenerator::kNumHists; ivar++){
+      for (unsigned int ivar  = 0; ivar  < TwoZPiPlotGenerator::kNumHists; ivar++){
 
         // set unique histogram name for each plot (could put in directories...)
         string histname =  "";
-        if (ivar == TwoPiPlotGenerator::k2PiMass)  histname += "M2pi";
-	else if (ivar == TwoPiPlotGenerator::kPiPCosTheta)  histname += "cosTheta";
-        else if (ivar == TwoPiPlotGenerator::kPhi)  histname += "Phi";
-        else if (ivar == TwoPiPlotGenerator::kphi)  histname += "phi";
-        else if (ivar == TwoPiPlotGenerator::kPsi)  histname += "psi";
-        else if (ivar == TwoPiPlotGenerator::kt)  histname += "t";
+        if (ivar == TwoZPiPlotGenerator::k2PiMass)  histname += "M2pi";
+	else if (ivar == TwoZPiPlotGenerator::kPiPCosTheta)  histname += "cosTheta";
+        else if (ivar == TwoZPiPlotGenerator::kPhi)  histname += "Phi";
+        else if (ivar == TwoZPiPlotGenerator::kphi)  histname += "phi";
+        else if (ivar == TwoZPiPlotGenerator::kPsi)  histname += "psi";
+        else if (ivar == TwoZPiPlotGenerator::kt)  histname += "t";
         else continue;
 
         if (iplot == PlotGenerator::kData) histname += "dat";

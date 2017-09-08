@@ -99,7 +99,7 @@ jerror_t DVertex_factory::evnt(JEventLoop* locEventLoop, uint64_t eventnumber)
 	DVector3 locRoughPosition = dAnalysisUtilities->Calc_CrudeVertex(locTrackTimeBasedVectorToUse);
 
 	// if only want rough guess, save it and exit
-	if(dNoKinematicFitFlag)
+	if(dNoKinematicFitFlag || (locTrackTimeBasedVectorToUse[0]->errorMatrix() == nullptr))
 		return Create_Vertex_Rough(locRoughPosition, locEventRFBunch);
 
 	//prepare for kinematic fit
@@ -155,15 +155,18 @@ jerror_t DVertex_factory::Create_Vertex_OneTrack(const DTrackTimeBased* locTrack
 	locVertex->dKinFitChiSq = 0.0;
 
 	//error matrix
-    const TMatrixFSym& locTrackErrorMatrix = *(locTrackTimeBased->errorMatrix());
-	locVertex->dCovarianceMatrix.ResizeTo(4, 4);
-	locVertex->dCovarianceMatrix.Zero();
-	for(size_t loc_i = 0; loc_i < 3; ++loc_i)
+	if(locTrackTimeBased->errorMatrix() != nullptr)
 	{
-		for(size_t loc_j = 0; loc_j < 3; ++loc_j)
-			locVertex->dCovarianceMatrix(loc_i, loc_j) = locTrackErrorMatrix(loc_i + 3, loc_j + 3);
+		const TMatrixFSym& locTrackErrorMatrix = *(locTrackTimeBased->errorMatrix());
+		locVertex->dCovarianceMatrix.ResizeTo(4, 4);
+		locVertex->dCovarianceMatrix.Zero();
+		for(size_t loc_i = 0; loc_i < 3; ++loc_i)
+		{
+			for(size_t loc_j = 0; loc_j < 3; ++loc_j)
+				locVertex->dCovarianceMatrix(loc_i, loc_j) = locTrackErrorMatrix(loc_i + 3, loc_j + 3);
+		}
+		locVertex->dCovarianceMatrix(3, 3) = locEventRFBunch->dTimeVariance; //t variance
 	}
-	locVertex->dCovarianceMatrix(3, 3) = locEventRFBunch->dTimeVariance; //t variance
 
 	_data.push_back(locVertex);
 	return NOERROR;

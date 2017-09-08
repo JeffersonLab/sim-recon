@@ -685,6 +685,10 @@ void DEventWriterROOT::Create_Branches_Combo(DTreeBranchRegister& locBranchRegis
 		if((locKinFitType == d_SpacetimeFit) || (locKinFitType == d_P4AndSpacetimeFit))
 			locBranchRegister.Register_FundamentalArray<Float_t>("RFTime_KinFit", locNumComboString, dInitNumComboArraySize);
 	}
+	locBranchRegister.Register_FundamentalArray<Float_t>("Energy_UnusedShowers", locNumComboString, dInitNumComboArraySize);
+	locBranchRegister.Register_FundamentalArray<Int_t>("NumUnusedTracks", locNumComboString, dInitNumComboArraySize);
+	locBranchRegister.Register_FundamentalArray<Float_t>("SumPMag_UnusedTracks", locNumComboString, dInitNumComboArraySize);
+	locBranchRegister.Register_ClonesArray<TVector3>("SumP3_UnusedTracks", dInitNumComboArraySize);
 
 	map<Particle_t, unsigned int> locParticleNumberMap_Current;
 	for(size_t loc_i = 0; loc_i < locReaction->Get_NumReactionSteps(); ++loc_i)
@@ -1097,6 +1101,20 @@ void DEventWriterROOT::Fill_DataTree(JEventLoop* locEventLoop, const DReaction* 
 	for(size_t loc_i = 0; loc_i < locParticleCombos.size(); ++loc_i)
 	{
 		Fill_ComboData(locTreeFillData, locParticleCombos[loc_i], loc_i, locObjectToArrayIndexMap);
+		
+		//ENERGY OF UNUSED SHOWERS (access to event loop required)
+		double locEnergy_UnusedShowers = dAnalysisUtilities->Calc_Energy_UnusedShowers(locEventLoop, locParticleCombos[loc_i]);
+		locTreeFillData->Fill_Array<Float_t>("Energy_UnusedShowers", locEnergy_UnusedShowers, loc_i);
+
+		//MOMENTUM OF UNUSED TRACKS (access to event loop required)
+		double locSumPMag_UnusedTracks = 0;
+		TVector3 locSumP3_UnusedTracks;
+		int locNumUnusedTracks = dAnalysisUtilities->Calc_Momentum_UnusedTracks(locEventLoop, locParticleCombos[loc_i], locSumPMag_UnusedTracks, locSumP3_UnusedTracks);
+		
+		locTreeFillData->Fill_Array<Int_t>("NumUnusedTracks", locNumUnusedTracks, loc_i);
+		locTreeFillData->Fill_Array<Float_t>("SumPMag_UnusedTracks", locSumPMag_UnusedTracks, loc_i);
+		locTreeFillData->Fill_Array<TVector3>("SumP3_UnusedTracks", locSumP3_UnusedTracks, loc_i);
+
 		if(locMCReaction != NULL)
 		{
 			locTreeFillData->Fill_Array<Bool_t>("IsTrueCombo", locIsTrueComboFlags[loc_i], loc_i);

@@ -492,7 +492,7 @@ int main(int narg, char *argv[])
     float x=float(cobrems_vs_E->GetBinCenter(i)/Ee);
     float y=0;
     if (Epeak<Emin) y=cobrems.Rate_dNidx(x);
-    else y=cobrems.Rate_dNtdx(&x);
+    else y=cobrems.Rate_dNtdx(x);
     cobrems_vs_E->Fill(Ee*double(x),double(y));
   }
 

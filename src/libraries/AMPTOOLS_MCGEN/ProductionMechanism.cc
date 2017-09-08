@@ -7,6 +7,7 @@
 
 #include "TLorentzVector.h"
 #include "TLorentzRotation.h"
+#include "TRandom3.h"
 
 const double ProductionMechanism::kPi = 3.14159;
 
@@ -22,13 +23,13 @@ m_lastWeight( 1. )
   kMproton=ParticleMass(Proton);
   kMneutron=ParticleMass(Neutron);
   // kMZ = 108.;      //  mass of Sn116 
-  kMZ = 208.;      //  use mass of Pb as it is in the particle table
+  kMZ = 208.*0.931494;      //  use mass of Pb as it is in the particle table
 
   switch( recoil ){
     // I'm sure the distinction between these doesn't matter!  
   case kProton:  m_recMass = kMproton; break; //old value: 0.9382
   case kNeutron: m_recMass = kMneutron; break; //old value: 0.9395
-  case kZ: m_recMass = kMZ; break; //default to Sn116
+  case kZ: m_recMass = kMZ; break; //default to Sn116/Pb
   default:       m_recMass = kMproton; break; //old value: 0.9382
   }
 }
@@ -49,6 +50,10 @@ ProductionMechanism::setGeneratorType( Type type ){
 
 TLorentzVector
 ProductionMechanism::produceResonance( const TLorentzVector& beam ){
+
+        // initialize pseudo-random generator
+        //gRandom = new TRandom3();
+        gRandom->SetSeed(0);
 	
 	TLorentzVector target( 0, 0, 0, kMproton );
 	
@@ -65,7 +70,9 @@ ProductionMechanism::produceResonance( const TLorentzVector& beam ){
   double t, tMax, resMass, resMomCM;
 
   do {
-    resMass = generateMass();
+    do // the resonance mass cannot be larger than CM energy - proton mass
+      resMass = generateMass();
+    while ( cmEnergy < resMass + m_recMass );
     resMomCM  = cmMomentum( cmEnergy, resMass, m_recMass );
   
     tMax = 4. * beamMomCM * resMomCM;
@@ -183,8 +190,8 @@ ProductionMechanism::cmMomentum( double M, double m1, double m2 ) const {
 
 double
 ProductionMechanism::random( double low, double hi ) const {
-	
-	return( ( hi - low ) * drand48() + low );
+
+        return( ( hi - low ) * gRandom->Uniform() + low );
 }
 
 

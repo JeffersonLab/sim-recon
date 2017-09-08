@@ -7,6 +7,7 @@
 #include <JANA/JApplication.h>
 #include <TH1I.h>
 #include <TH2I.h>
+#include <TH3I.h>
 #include <TProfile.h>
 #include <TProfile2D.h>
 #include <TDirectory.h>
@@ -56,6 +57,11 @@ map<TString, pair<TH2I*, pthread_rwlock_t*> >& Get2DMap(void){
 map<TString, pair<TH2D*, pthread_rwlock_t*> >& Get2DWeightedMap(void){
    static map<TString, pair<TH2D*, pthread_rwlock_t*> > TH2DMap;
    return TH2DMap;
+}
+
+map<TString, pair<TH3I*, pthread_rwlock_t*> >& Get3DMap(void){
+   static map<TString, pair<TH3I*, pthread_rwlock_t*> > TH3IMap;
+   return TH3IMap;
 }
 
 map<TString, pair<TProfile*, pthread_rwlock_t*> >& Get1DProfileMap(void){
@@ -398,6 +404,70 @@ void Fill2DWeightedHistogram (const char * plugin, const char * directoryName, c
     return;
 }
 
+void Fill3DHistogram (const char * plugin, const char * directoryName, const char * name, const double valueX , const double valueY , const double valueZ , const char * title , int nBinsX, double xmin, double xmax, int nBinsY, double ymin, double ymax, int nBinsZ, double zmin, double zmax, bool print = false){
+
+   static pthread_rwlock_t *mapLock = InitializeMapLock();
+   TH3I * histogram;
+   pair<TH3I*, pthread_rwlock_t*> histogramPair;
+
+   char fullNameChar[500];
+   sprintf(fullNameChar, "%s/%s/%s", plugin, directoryName, name);
+   TString fullName = TString(fullNameChar);
+
+   try {
+      pthread_rwlock_rdlock(mapLock); // Grab the read lock
+      histogramPair = Get3DMap().at(fullName);
+      pthread_rwlock_unlock(mapLock); 
+   }
+   catch (const std::out_of_range& oor) {
+      // Drop the read lock and grab the write lock
+      pthread_rwlock_unlock(mapLock);
+      pthread_rwlock_wrlock(mapLock);
+      // At this point, more than one thread might have made it through the try and ended up in the catch.
+      // do a single threaded (write locked) "try" again to be sure we aren't duplicating the histogram
+      try{
+         histogramPair = Get3DMap().at(fullName);
+      }
+      catch  (const std::out_of_range& oor) {
+         if (print) std::cerr << ansi_green << plugin << " ===> Making New 3D Histogram " << name << ansi_normal << endl;
+         // Initialize the histogram lock
+         pthread_rwlock_t *histogramLock = new pthread_rwlock_t();
+         pthread_rwlock_init(histogramLock, NULL);
+
+         // Get the ROOT lock and create the histogram
+         // WARNING: Locking inside a lock is bad practice, but sometimes not easy to avoid.
+         // there would be a problem if there was another function that tried to grab the map lock
+         // inside a root lock. In this code, this will not happen.
+         japp->RootWriteLock();
+         TDirectory *homedir = gDirectory;
+         TDirectory *temp;
+         temp = gDirectory->mkdir(plugin);
+         if(temp) GetAllDirectories().push_back(temp);
+         gDirectory->cd(plugin);
+         GetAllDirectories().push_back(gDirectory->mkdir(directoryName));
+         gDirectory->cd(directoryName);
+         histogram = new TH3I( name, title, nBinsX, xmin, xmax, nBinsY, ymin, ymax, nBinsZ, zmin, zmax);
+         histogram->Fill(valueX, valueY, valueZ);
+         homedir->cd();
+         japp->RootUnLock();
+
+         Get3DMap()[fullName] = make_pair(histogram,histogramLock);
+         pthread_rwlock_unlock(mapLock);
+         return;
+      }
+      // If nothing is caught, the histogram must have been created by another thread
+      // while we were waiting to grab the write lock. Drop the lock and carry on...
+      pthread_rwlock_unlock(mapLock);
+   }
+
+   histogram = histogramPair.first;
+   pthread_rwlock_t *histogramLockPtr = histogramPair.second;
+   pthread_rwlock_wrlock(histogramLockPtr);
+   histogram->Fill(valueX, valueY, valueZ);
+   pthread_rwlock_unlock(histogramLockPtr);
+
+   return;
+}
 
 
 
@@ -561,6 +631,9 @@ TObject* GetHistPointer(const char * plugin, const char * directoryName, const c
 
    auto iter2P = Get2DProfileMap().find(fullName);
    if(iter2P != Get2DProfileMap().end()) return (TObject*) (*iter2P).second.first;
+
+   auto iter3I = Get3DMap().find(fullName);
+   if(iter3I != Get3DMap().end()) return (TObject*) (*iter3I).second.first;
 
    jout << "Unable to find histogram " << fullName.Data() << endl;
    return nullptr;

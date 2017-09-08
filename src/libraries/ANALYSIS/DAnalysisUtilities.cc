@@ -946,6 +946,48 @@ DLorentzVector DAnalysisUtilities::Calc_FinalStateP4(const DParticleCombo* locPa
 	return locFinalStateP4;
 }
 
+double DAnalysisUtilities::Calc_Energy_UnusedShowers(JEventLoop* locEventLoop, const DParticleCombo* locParticleCombo) const
+{
+	DVector3 locVertex(0.0, 0.0, dTargetZCenter);
+	const DEventRFBunch* locEventRFBunch = locParticleCombo->Get_EventRFBunch();
+	double locRFTime = (locEventRFBunch != NULL) ? locEventRFBunch->dTime : numeric_limits<double>::quiet_NaN();
+
+	vector<const DNeutralShower*> locUnusedNeutralShowers;
+	Get_UnusedNeutralShowers(locEventLoop, locParticleCombo, locUnusedNeutralShowers);
+	
+	double locEnergy_UnusedShowers = 0.; 
+	for(size_t loc_i = 0; loc_i < locUnusedNeutralShowers.size(); ++loc_i) {
+		const DNeutralShower* locUnusedNeutralShower = locUnusedNeutralShowers[loc_i];
+
+		// requirements on unused showers
+		double locFlightTime = (locUnusedNeutralShower->dSpacetimeVertex.Vect() - locVertex).Mag()/SPEED_OF_LIGHT;
+		double locDeltaT = locUnusedNeutralShower->dSpacetimeVertex.T() - locFlightTime - locRFTime;
+		double locDetectorTheta = (locUnusedNeutralShower->dSpacetimeVertex.Vect()-locVertex).Theta()*180./TMath::Pi();
+		if(locDetectorTheta < 2.0 || fabs(locDeltaT) > 4.)
+			continue;		
+
+		locEnergy_UnusedShowers += locUnusedNeutralShower->dEnergy;
+	}
+	
+	return locEnergy_UnusedShowers;
+}
+
+int DAnalysisUtilities::Calc_Momentum_UnusedTracks(JEventLoop* locEventLoop, const DParticleCombo* locParticleCombo, double &locSumPMag_UnusedTracks, TVector3 &locSumP3_UnusedTracks) const
+{
+	vector<const DChargedTrack*> locUnusedChargedTracks;
+	Get_UnusedChargedTracks(locEventLoop, locParticleCombo, locUnusedChargedTracks);
+	
+	for(size_t loc_i = 0; loc_i < locUnusedChargedTracks.size(); ++loc_i) {
+		const DChargedTrack* locUnusedChargedTrack = locUnusedChargedTracks[loc_i];
+		const DChargedTrackHypothesis *locUnusedChargedTrackHypothesis = locUnusedChargedTrack->Get_BestTrackingFOM();
+
+		locSumPMag_UnusedTracks += locUnusedChargedTrackHypothesis->pmag();
+		locSumP3_UnusedTracks += locUnusedChargedTrackHypothesis->momentum();
+	}
+	
+	return (int)locUnusedChargedTracks.size();
+}
+
 double DAnalysisUtilities::Calc_DOCAToVertex(const DKinematicData* locKinematicData, const DVector3& locVertex) const
 {
 	DVector3 locPOCA;

@@ -160,15 +160,23 @@ void ExtractTimeOffsets(int run, TString filename, TString tag){
             RelativeTimeOffsetsFit->Fill(residualOffsetFit);
             RelativeTimeOffsetsFitVsChannel->SetBinContent(i,residualOffsetFit);
 
-            sprintf(outfilename,"output/timing/channels/%s_%03i.txt",tag.Data(),chanint);
+            if (residualOffsetFitErr<0.1) { // only write output if it's not ridiculous
+                sprintf(outfilename,"output/timing/channels_fit/%s_%03i.txt",tag.Data(),chanint);
+                outfile = fopen(outfilename, "a");
+                //printf("%05i %f %f\n",chanint,cont,err);
+                fprintf(outfile,"%i %.3f %.3f\n",run,newOffsetFit,residualOffsetFitErr);
+                fclose(outfile);
+            }
+
+            sprintf(outfilename,"output/timing/channels_roll/%s_%03i.txt",tag.Data(),chanint);
             outfile = fopen(outfilename, "a");
             //printf("%05i %f %f\n",chanint,cont,err);
-            fprintf(outfile,"%i %.3f %.3f\n",run,residualOffsetFit,residualOffsetFitErr);
+            fprintf(outfile,"%i %.3f\n",run,newOffset);
             fclose(outfile);
 
             printf("%4i   rolling max: %6.3f %+.3f = %6.3f    gaus fit: %6.3f %+.3f = %6.3f    diff: %6.3f\n",
                    i,priorOffset,residualOffset,newOffset,priorOffset,residualOffsetFit,newOffsetFit,residualOffset-residualOffsetFit);
-            channel_global_offset_File <<  newOffsetFit << endl;;
+            channel_global_offset_File <<  newOffsetFit << endl;
         }
     }
     channel_global_offset_File.close();
