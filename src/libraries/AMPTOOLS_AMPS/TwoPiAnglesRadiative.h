@@ -1,5 +1,5 @@
-#if !defined(THREEPIANGLESSCHILLING)
-#define THREEPIANGLESSCHILLING
+#if !defined(TWOPIANGLESRADIATIVE)
+#define TWOPIANGLESRADIATIVE
 
 #include "IUAmpTools/Amplitude.h"
 #include "IUAmpTools/UserAmplitude.h"
@@ -14,7 +14,7 @@
 
 #ifdef GPU_ACCELERATION
 void
-GPUThreePiAnglesSchilling_exec( dim3 dimGrid, dim3 dimBlock, GPU_AMP_PROTO,
+GPUTwoPiAnglesRadiative_exec( dim3 dimGrid, dim3 dimBlock, GPU_AMP_PROTO,
                      int j, int m, GDouble bigTheta, GDouble refFact );
 
 #endif // GPU_ACCELERATION
@@ -24,15 +24,15 @@ using namespace std;
 
 class Kinematics;
 
-class ThreePiAnglesSchilling : public UserAmplitude< ThreePiAnglesSchilling >
+class TwoPiAnglesRadiative : public UserAmplitude< TwoPiAnglesRadiative >
 {
     
 public:
 	
-	ThreePiAnglesSchilling() : UserAmplitude< ThreePiAnglesSchilling >() { };
-	ThreePiAnglesSchilling( const vector< string >& args );
+	TwoPiAnglesRadiative() : UserAmplitude< TwoPiAnglesRadiative >() { };
+	TwoPiAnglesRadiative( const vector< string >& args );
 	
-	string name() const { return "ThreePiAnglesSchilling"; }
+	string name() const { return "TwoPiAnglesRadiative"; }
     
 	complex< GDouble > calcAmplitude( GDouble** pKin ) const;
 	
