@@ -97,7 +97,7 @@ jerror_t DL1MCTrigger_factory::init(void)
 			      "Energy threshold for the FCAL & BCAL trigger");
 
   gPARMS->SetDefaultParameter("TRIG:BCAL_OFFSET", BCAL_OFFSET,
-			      "Timing offset between BCAL and FCAL energies at GTP (sampels)");
+			      "Timing offset between BCAL and FCAL energies at GTP (samples)");
 
 
   BCAL_ADC_PER_MEV_CORRECT  =  22.7273;
@@ -145,9 +145,10 @@ jerror_t DL1MCTrigger_factory::brun(jana::JEventLoop *eventLoop, int32_t runnumb
   
   // Don't use RCDB for mc_generic: ideal MC simulation
 
-  string JANA_CALIB_CONTEXT = getenv("JANA_CALIB_CONTEXT");
+  string JANA_CALIB_CONTEXT = "";
 
   if(getenv("JANA_CALIB_CONTEXT") != NULL ){ 
+  string JANA_CALIB_CONTEXT = getenv("JANA_CALIB_CONTEXT");
     if(JANA_CALIB_CONTEXT.find("mc_generic") != string::npos){
       use_rcdb = 0;
     }
@@ -159,7 +160,6 @@ jerror_t DL1MCTrigger_factory::brun(jana::JEventLoop *eventLoop, int32_t runnumb
     status = Read_RCDB(runnumber);
     PrintTriggers();
   }
-
   
   if( (use_rcdb == 0) || (status > 0) || (triggers_enabled.size() == 0)){
 
@@ -462,6 +462,9 @@ int  DL1MCTrigger_factory::Read_RCDB(int32_t runnumber){
   else
     RCDB_CONNECTION = "mysql://rcdb@hallddb.jlab.org/rcdb";   // default to outward-facing MySQL DB
 
+  // say something useful
+  jout << "Loading RCDB ..." << endl;
+  jout << "RCDB_CONNECTION = " << RCDB_CONNECTION << endl;
 
   rcdb::Connection connection(RCDB_CONNECTION);
   

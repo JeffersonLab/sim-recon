@@ -10,9 +10,9 @@ jerror_t DTrigger_factory::evnt(JEventLoop* locEventLoop, uint64_t locEventNumbe
 	const DL1Trigger* locL1Trigger = locL1Triggers.empty() ? NULL : locL1Triggers[0];
 
     // realistic trigger simulation
-	//vector<const DL1MCTrigger*> locMCTriggers;
-	//locEventLoop->Get(locMCTriggers);
-	//const DL1MCTrigger* locMCTrigger = locMCTriggers.empty() ? NULL : locMCTriggers[0];
+	vector<const DL1MCTrigger*> locMCTriggers;
+	locEventLoop->Get(locMCTriggers);
+	const DL1MCTrigger* locMCTrigger = locMCTriggers.empty() ? NULL : locMCTriggers[0];
 
     // old-style approximation of trigger simulation
 	vector<const DMCTrigger*> locOldMCTriggers;
@@ -27,14 +27,12 @@ jerror_t DTrigger_factory::evnt(JEventLoop* locEventLoop, uint64_t locEventNumbe
 		locTrigger->Set_L1TriggerBits(locL1Trigger->trig_mask);
 		locTrigger->Set_L1FrontPanelTriggerBits(locL1Trigger->fp_trig_mask);
 	}
-/*
 	else if(locMCTrigger != NULL)
 	{
 		//IS MC DATA: USE SIMULATED TRIGGER INFORMATION IF AVAILABLE
 		locTrigger->Set_L1TriggerBits(locMCTrigger->trig_mask);
 		locTrigger->Set_L1FrontPanelTriggerBits(0);
 	}
-*/
 	else if(locOldMCTrigger != NULL)
 	{
 		//IS MC DATA: NO REALISTIC TRIGGER SIMULATION, DO NOT TRUST DMCTRIGGER: JUST ALWAYS SET TRIGGER BIT = 1
