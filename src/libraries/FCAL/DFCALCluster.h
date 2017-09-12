@@ -60,6 +60,7 @@ class DFCALCluster : public JObject {
    double getEallowed(const int ihit) const;
    double getEnergy() const;
    double getEmax() const;
+   int getChannelEmax() const;
    double getTime() const;
    double getTimeMaxE() const;
    double getTimeEWeight() const;
@@ -113,6 +114,7 @@ class DFCALCluster : public JObject {
    double fTimeMaxE;      // cluster time(ns) set by first (max E) block, for now
    double fTimeEWeight;   // cluster time(ns) energy weighted average
    double fEmax;          // energy in the first block of the cluster
+   int fChannelEmax;      // Channel number with maximum energy
    DVector3 fCentroid;    // cluster centroid position (cm) [z=0 at target center]
    double fRMS;           // cluster r.m.s. size (cm)
    double fRMS_t;         // r.m.s. of energy weighted hits (ns)
@@ -158,6 +160,11 @@ inline double DFCALCluster::getEnergy() const
 inline double DFCALCluster::getEmax() const
 {
    return fEmax;
+}
+
+inline int DFCALCluster::getChannelEmax() const
+{
+   return fChannelEmax;
 }
 
 inline double DFCALCluster::getTime() const

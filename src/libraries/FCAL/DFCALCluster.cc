@@ -13,6 +13,7 @@ DFCALCluster::DFCALCluster( const int nhits )
 {
    fEnergy = 0;
    fEmax = 0;
+   fChannelEmax = 0;
    fTime = 0;
    fTimeMaxE = 0;
    fTimeEWeight = 0;
@@ -124,9 +125,11 @@ bool DFCALCluster::update( const userhits_t* const hitList,
    t2EWeight /= energy;
 
    double eMax=0, timeMax=0;
+   int chMax=0;
    if (fNhits > 0) { 
        eMax = hitList->hit[fHit[0]].E;
        timeMax = hitList->hit[fHit[0]].t;
+       chMax = hitList->hit[fHit[0]].ch;
    }
 
    DVector3 centroid;
@@ -226,6 +229,7 @@ bool DFCALCluster::update( const userhits_t* const hitList,
    }
    if (fabs(eMax-fEmax) > 0.001) {
       fEmax = eMax;
+      fChannelEmax = chMax;
       fTimeMaxE = timeMax;
       something_changed = true;
    }
