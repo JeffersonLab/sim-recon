@@ -1,15 +1,15 @@
 {
-   // Script used for fitting the output of the FCAL_Pi0BruteForce plugin
+   // Script used for fitting the output of the FCAL_Pi0HFA plugin
    // Invoke using root -l -b <rootfile> FitGains.C
    // Force Batch Mode
    gROOT->SetBatch();
 
-   TProfile *hCurrentGainConstants = (TProfile *) gDirectory->Get("FCAL_Pi0BruteForce/CurrentGainConstants");
-   TH1I *hPi0Mass = (TH1I *) gDirectory->Get("FCAL_Pi0BruteForce/Pi0Mass");
-   TH2I *hPi0MassVsChNum = (TH2I *) gDirectory->Get("FCAL_Pi0BruteForce/Pi0MassVsChNum");
-   TH2F *hPi0MassVsChNumWeighted = (TH2F *) gDirectory->Get("FCAL_Pi0BruteForce/Pi0MassVsChNumWeighted"); 
-   TH2F *hPi0MassVsChNumWeightedSquared = (TH2F *) gDirectory->Get("FCAL_Pi0BruteForce/Pi0MassVsChNumWeightedSquared");
-   TH2I *hPi0MassVsE = (TH2I *) gDirectory->Get("FCAL_Pi0BruteForce/Pi0MassVsE");
+   TProfile *hCurrentGainConstants = (TProfile *) gDirectory->Get("FCAL_Pi0HFA/CurrentGainConstants");
+   TH1I *hPi0Mass = (TH1I *) gDirectory->Get("FCAL_Pi0HFA/Pi0Mass");
+   TH2I *hPi0MassVsChNum = (TH2I *) gDirectory->Get("FCAL_Pi0HFA/Pi0MassVsChNum");
+   TH2F *hPi0MassVsChNumWeighted = (TH2F *) gDirectory->Get("FCAL_Pi0HFA/Pi0MassVsChNumWeighted"); 
+   TH2F *hPi0MassVsChNumWeightedSquared = (TH2F *) gDirectory->Get("FCAL_Pi0HFA/Pi0MassVsChNumWeightedSquared");
+   TH2I *hPi0MassVsE = (TH2I *) gDirectory->Get("FCAL_Pi0HFA/Pi0MassVsE");
 
    // Make an output file
    TFile *outFile = new TFile("FCALPi0FitResults.root","RECREATE");
