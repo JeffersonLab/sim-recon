@@ -161,7 +161,7 @@ class DL1MCTrigger_factory:public jana::JFactory<DL1MCTrigger>{
 		double time_min;
 		double time_max;
 		
-		int Read_RCDB(int32_t runnumber);		
+		int Read_RCDB(int32_t runnumber, bool print_messages);		
 		int Digitize(double en, double time, int amp_array[sample], int type);
 		template <typename T>  int FADC_SSP(vector<T> merged_hits, 
 						    int detector);

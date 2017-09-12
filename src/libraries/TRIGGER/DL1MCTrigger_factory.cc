@@ -157,8 +157,9 @@ jerror_t DL1MCTrigger_factory::brun(jana::JEventLoop *eventLoop, int32_t runnumb
   // runnumber = 30942;
 
   if(use_rcdb == 1){
-    status = Read_RCDB(runnumber);
-    PrintTriggers();
+    status = Read_RCDB(runnumber, print_messages);
+    if(print_messages)
+        PrintTriggers();
   }
   
   if( (use_rcdb == 0) || (status > 0) || (triggers_enabled.size() == 0)){
@@ -445,7 +446,7 @@ jerror_t DL1MCTrigger_factory::fini(void)
 // Read RCDB 
 //*********************
 
-int  DL1MCTrigger_factory::Read_RCDB(int32_t runnumber){
+int  DL1MCTrigger_factory::Read_RCDB(int32_t runnumber, bool print_messages){
 
 #if HAVE_RCDB
 
@@ -463,8 +464,10 @@ int  DL1MCTrigger_factory::Read_RCDB(int32_t runnumber){
     RCDB_CONNECTION = "mysql://rcdb@hallddb.jlab.org/rcdb";   // default to outward-facing MySQL DB
 
   // say something useful
-  jout << "Loading RCDB ..." << endl;
-  jout << "RCDB_CONNECTION = " << RCDB_CONNECTION << endl;
+  if(print_messages) {
+      jout << "DL1MCTrigger_factory: Loading RCDB ..." << endl;
+      jout << "   URL: " << RCDB_CONNECTION << endl;
+  }
 
   rcdb::Connection connection(RCDB_CONNECTION);
   
