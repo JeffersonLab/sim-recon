@@ -13,7 +13,7 @@
 #include "AMPTOOLS_AMPS/clebschGordan.h"
 #include "AMPTOOLS_AMPS/wignerD.h"
 
-#include <CobremsGeneration.hh>
+#include "AMPTOOLS_MCGEN/CobremsGeneration.hh"
 
 TwoPiAnglesRadiative::TwoPiAnglesRadiative( const vector< string >& args ) :
     UserAmplitude< TwoPiAnglesRadiative >( args )

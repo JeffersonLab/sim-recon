@@ -18,20 +18,18 @@
 #include "AmpPlotter/PlotterMainWindow.h"
 #include "AmpPlotter/PlotFactory.h"
 
-#include "AMPTOOLS_DATAIO/ThreePiPlotGeneratorSchilling.h"
+#include "AMPTOOLS_DATAIO/OmegaRadiativePlotGenerator.h"
 #include "AMPTOOLS_DATAIO/ROOTDataReader.h"
 #include "AMPTOOLS_DATAIO/ROOTDataReaderWithTCut.h"
-#include "AMPTOOLS_AMPS/ThreePiAnglesSchilling.h"
+#include "AMPTOOLS_AMPS/TwoPiAnglesRadiative.cc"
 #include "AMPTOOLS_AMPS/BreitWigner.h"
-#include "AMPTOOLS_AMPS/BreitWigner3body.h"
 
-typedef ThreePiPlotGeneratorSchilling PlotGen;
+typedef OmegaRadiativePlotGenerator PlotGen;
 
 void atiSetup(){
   
-  AmpToolsInterface::registerAmplitude( ThreePiAnglesSchilling() );
+  AmpToolsInterface::registerAmplitude( TwoPiAnglesRadiative() );
   AmpToolsInterface::registerAmplitude( BreitWigner() );
-  AmpToolsInterface::registerAmplitude( BreitWigner3body() );
   AmpToolsInterface::registerDataReader( ROOTDataReader() );
   AmpToolsInterface::registerDataReader( ROOTDataReaderWithTCut() );
 }
@@ -49,12 +47,12 @@ int main( int argc, char* argv[] ){
 
   if (argc < 2){
     cout << "Usage:" << endl << endl;
-    cout << "\tthreepi_schilling_plotter <results file name> -o <output file name>" << endl << endl;
+    cout << "\tomega_radiative_plotter <results file name> -o <output file name>" << endl << endl;
     return 0;
   }
 
   bool showGui = false;
-  string outName = "threepi_schilling_plot.root";
+  string outName = "omega_radiative_plot.root";
   string resultsName(argv[1]);
   for (int i = 2; i < argc; i++){
 
@@ -135,16 +133,16 @@ int main( int argc, char* argv[] ){
       if (isum < sums.size() && iplot == PlotGenerator::kData) continue; // only plot data once
 
       // loop over different variables
-      for (unsigned int ivar  = 0; ivar  < ThreePiPlotGeneratorSchilling::kNumHists; ivar++){
+      for (unsigned int ivar  = 0; ivar  < OmegaRadiativePlotGenerator::kNumHists; ivar++){
 
         // set unique histogram name for each plot (could put in directories...)
         string histname =  "";
-        if (ivar == ThreePiPlotGeneratorSchilling::k3PiMass)  histname += "M3pi";
-	     else if (ivar == ThreePiPlotGeneratorSchilling::kCosTheta)  histname += "cosTheta";
-        else if (ivar == ThreePiPlotGeneratorSchilling::kPhi)  histname += "Phi";
-        else if (ivar == ThreePiPlotGeneratorSchilling::kphi)  histname += "phi";
-        else if (ivar == ThreePiPlotGeneratorSchilling::kPsi)  histname += "psi";
-        else if (ivar == ThreePiPlotGeneratorSchilling::kt)  histname += "t";
+             if (ivar == OmegaRadiativePlotGenerator::kOmegaMass)  histname += "MOmega";
+	     else if (ivar == OmegaRadiativePlotGenerator::kCosTheta)  histname += "cosTheta";
+        else if (ivar == OmegaRadiativePlotGenerator::kPhi)  histname += "Phi";
+        else if (ivar == OmegaRadiativePlotGenerator::kphi)  histname += "phi";
+        else if (ivar == OmegaRadiativePlotGenerator::kPsi)  histname += "psi";
+        else if (ivar == OmegaRadiativePlotGenerator::kt)  histname += "t";
         else continue;
 
         if (iplot == PlotGenerator::kData) histname += "dat";
@@ -195,7 +193,7 @@ int main( int argc, char* argv[] ){
 
   // file for writing parameters (later switch to putting in ROOT file)
   ofstream outfile;
-  outfile.open( "threepi_schilling_fitPars.txt" );
+  outfile.open( "omega_radiative_fitPars.txt" );
 
   for(unsigned int i = 0; i<pars.size(); i++) {
     double parValue = results.parValue( pars[i] );

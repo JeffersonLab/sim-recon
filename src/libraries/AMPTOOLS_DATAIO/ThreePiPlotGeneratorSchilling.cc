@@ -18,10 +18,10 @@ PlotGenerator( results )
   bookHistogram( kPhiPiPlus,  new Histogram1D( 50, -1*PI, PI, "PhiPiPlus",  "#Phi_{#pi_{+}}" ) );
   bookHistogram( kPhiPiMinus, new Histogram1D( 50, -1*PI, PI, "PhiPiMinus", "#Phi_{#pi_{-}}" ) );
   bookHistogram( kPhiPi0, new Histogram1D( 50, -1*PI, PI, "PhiPi0", "#Phi_{#pi_{0}}" ) );
-  bookHistogram( kCosTheta, new Histogram1D( 50, -1., 1., "CosTheta", "cos#theta" ) );
-  bookHistogram( kPhi, new Histogram1D( 50, -1*PI, PI, "Phi", "#Phi" ) );
-  bookHistogram( kphi, new Histogram1D( 50, -1*PI, PI, "phi", "#phi" ) );
-  bookHistogram( kPsi, new Histogram1D( 50, -1*PI, PI, "psi", "#psi" ) );
+  bookHistogram( kCosTheta, new Histogram1D( 50, -1., 1., "CosTheta", "cos#theta;cos#theta" ) );
+  bookHistogram( kPhi, new Histogram1D( 50, -1*PI, PI, "Phi", "#Phi; #Phi[rad.]" ) );
+  bookHistogram( kphi, new Histogram1D( 50, -1*PI, PI, "phi", "#phi; #phi[rad.]" ) );
+  bookHistogram( kPsi, new Histogram1D( 50, -1*PI, PI, "psi", "#psi; #psi [rad.]" ) );
   bookHistogram( kt, new Histogram1D( 100, 0, 1.0 , "t", "-t" ) );
 }
 
@@ -58,8 +58,12 @@ ThreePiPlotGeneratorSchilling::projectEvent( Kinematics* kin ){
   GDouble cosTheta = angles.CosTheta();
   
   GDouble phi = angles.Phi();
-  
-  TVector3 eps(1.0, 0.0, 0.0); // beam polarization vector
+ 
+  // Use the right polarization vector 
+  double polAngle = 0.0539258; // PARA Spring 2016
+  //double polAngle = 1.62927; // PERP Spring 2016
+  //TVector3 eps(1.0, 0.0, 0.0); // beam polarization vector
+  TVector3 eps(cos(polAngle), sin(polAngle), 0.0); // beam polarization vector
   GDouble Phi = atan2(y.Dot(eps), beam.Vect().Unit().Dot(eps.Cross(y)));
 
   GDouble psi = phi - Phi;
