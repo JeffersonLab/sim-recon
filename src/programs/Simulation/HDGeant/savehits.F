@@ -286,10 +286,14 @@ c      write(6,*)cnames(NLEVEL)
         endif
 #endif
         if ((dEsum.ne.0).or.(ISTORY.ne.2)) then
-          call hitForwardEMcal
-     +                       (xin,xout,pin,pout,dEsum,ITRA,ISTAK,ISTORY,
-     >          IPART)
+          call hitForwardEMcal(xin,xout,pin,pout,dEsum,ITRA,ISTAK,
+     >          ISTORY,IPART,0)
           ISTORY = 2  ! this particle has entered the FCal (inherited trait)
+        endif
+      elseif (cnames(NLEVEL).eq.'LGLG') then  ! forward calorimeter light guides
+        if (dEsum.gt.0) then
+          call hitForwardEMcal(xin,xout,pin,pout,dEsum,ITRA,ISTAK,
+     >          ISTORY,IPART,1)
         endif
       elseif (cnames(NLEVEL).eq.'LTBL') then  ! Compton calorimeter
 #ifdef MAKE_HITS_WHEN_ILOSS_0

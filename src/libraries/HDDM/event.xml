@@ -127,7 +127,9 @@
       <forwardEMcal minOccurs="0">
         <fcalBlock column="int" maxOccurs="unbounded" minOccurs="0" row="int">
           <fcalHit E="float" maxOccurs="unbounded" t="float"/>
-          <fcalTruthHit E="float" maxOccurs="unbounded" t="float"/>
+          <fcalTruthHit E="float" maxOccurs="unbounded" t="float">
+            <fcalTruthLightGuide dE="float" maxOccurs="unbounded" t="float"/>
+          </fcalTruthHit>
         </fcalBlock>
         <fcalTruthShower E="float" maxOccurs="unbounded" minOccurs="0" primary="boolean" ptype="int" px="float" py="float" pz="float" t="float" track="int" x="float" y="float" z="float">
           <trackID minOccurs="0" itrack="int"/>
