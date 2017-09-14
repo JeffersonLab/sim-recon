@@ -219,7 +219,7 @@ void hitForwardEMcal (float xin[4], float xout[4],
          lghits->in[0].dE = dEsum;
          lghits->in[0].t = t;
          lghits->mult = 1;
-         hits->in[nhit].t = 0;
+         hits->in[nhit].t = t;
          hits->in[nhit].E = 0;
          hits->mult++;
       }
