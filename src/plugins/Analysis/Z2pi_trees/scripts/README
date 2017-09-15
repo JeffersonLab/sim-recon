@@ -1,8 +1,8 @@
 # Elton Smith. Updated June 7, 2017. Mod for Z2pi_trees
 # Here is the sequence of instructions to generate, fit and view generated distributions
 
-gen_2pi_primakoff> gen_2pi_primakoff -c gen_2pi_primakoff_signal.cfg -o tree_gen_2pi_primakoff_signal.root -hd gen_2pi_primakoff_signal.hddm -a 5.5 -b 6.0 -p 6.0 -n 100000 -r 30000
-gen_2pi_primakoff> gen_2pi_primakoff -c gen_2pi_primakoff_flat.cfg -o tree_gen_2pi_primakoff_flat.root -hd gen_2pi_primakoff_flat.hddm -a 5.5 -b 6.0 -p 6.0 -n 100000 -r 30000
+gen_2pi_primakoff> gen_2pi_primakoff -c gen_2pi_primakoff_signal.cfg -o tree_gen_2pi_primakoff_signal.root -hd gen_2pi_primakoff_signal.hddm -a 5.5 -b 6.0 -p 6.0 -m 11.6 -n 100000 -r 31000
+gen_2pi_primakoff> gen_2pi_primakoff -c gen_2pi_primakoff_flat.cfg -o tree_gen_2pi_primakoff_flat.root -hd gen_2pi_primakoff_flat.hddm -a 5.5 -b 6.0 -p 6.0 -m 11.6 -n 100000 -r 31000
 
 # Here are instructions for processing MC smeared output files / or data
 

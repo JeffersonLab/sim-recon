@@ -1145,8 +1145,6 @@ void DHistogramAction_ParticleComboKinematics::Fill_BeamHists(const DKinematicDa
 	double locTheta = locMomentum.Theta()*180.0/TMath::Pi();
 	double locP = locMomentum.Mag();
 	double locDeltaTRF = locKinematicData->time() - (locEventRFBunch->dTime + (locKinematicData->z() - dTargetZCenter)/29.9792458);
-	cout << " ComboKinematics:" << " locKinematicData->time()=" << locKinematicData->time() << " locEventRFBunch->dTime=" << locEventRFBunch->dTime
-	     << "  locKinematicData->z()=" << locKinematicData->z() << endl;
 
 	//FILL HISTOGRAMS
 	//Since we are filling histograms local to this action, it will not interfere with other ROOT operations: can use action-wide ROOT lock
@@ -1160,7 +1158,6 @@ void DHistogramAction_ParticleComboKinematics::Fill_BeamHists(const DKinematicDa
 		dBeamParticleHist_PhiVsTheta->Fill(locTheta, locPhi);
 		dBeamParticleHist_VertexZ->Fill(locKinematicData->position().Z());
 		dBeamParticleHist_VertexYVsX->Fill(locKinematicData->position().X(), locKinematicData->position().Y());
-		cout << " ComboKinematics:" << " locDeltaTRF=" << locDeltaTRF << " dTargetZCenter=" << dTargetZCenter << endl;
 		dBeamParticleHist_DeltaTRF->Fill(locDeltaTRF);
 		dBeamParticleHist_DeltaTRFVsBeamE->Fill(locKinematicData->energy(), locDeltaTRF);
 	}
