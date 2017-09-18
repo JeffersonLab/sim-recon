@@ -7,45 +7,45 @@
 
 #include "BCAL/DBCALCluster.h"
 #include "BCAL/DBCALPoint.h"
-#include "BCAL/DBCALGeometry.h"
 #include "units.h"
 
 #include <math.h>
+#include <TMath.h>
 
-DBCALCluster::DBCALCluster( const DBCALPoint* point, double z_target_center, const DBCALGeometry *locGeom )
-  : m_points ( 0 ),  m_hit_E_unattenuated_sum(0.0),  m_z_target_center(z_target_center), m_BCALGeom(locGeom) {
+DBCALCluster::DBCALCluster( const DBCALPoint* point, double z_target_center, double q, const DBCALGeometry *locGeom )
+  : m_points ( 0 ),  m_hit_E_unattenuated_sum(0.0),  m_z_target_center(z_target_center), m_q(q), m_BCALGeom(locGeom) {
 
   m_points.push_back( point );
   makeFromPoints();
 }
 
-DBCALCluster::DBCALCluster(double z_target_center, const DBCALGeometry *locGeom) 
-  : m_z_target_center(z_target_center), m_BCALGeom(locGeom) {
+DBCALCluster::DBCALCluster(double z_target_center, const DBCALGeometry *locGeom) : m_z_target_center(z_target_center), m_BCALGeom(locGeom) {
   clear(); //initialize all values to zero
 }
 
 float
 DBCALCluster::t0() const {
   
-  float path = m_BCALGeom->GetBCAL_inner_rad() / sin( m_theta );
+	float path = m_BCALGeom->GetBCAL_inner_rad() / sin( m_theta );
   
   return m_t - ( path / ( 30 * k_cm / k_nsec ) );
 }
 
 void
-DBCALCluster::addPoint( const DBCALPoint* point ){
+DBCALCluster::addPoint( const DBCALPoint* point, int q ){
   
-  // offset phi of the point by +- 2PI to match the cluster
+  // offset phi of the point by +- 2TMath::Pi() to match the cluster
   if( phi() > point->phi() ){
     
-    if( fabs( phi() - point->phi() - 2*M_PI ) < M_PI ) point->add2Pi();
+    if( fabs( phi() - point->phi() - 2*TMath::Pi() ) < TMath::Pi() ) point->add2Pi();
   }
   else{
     
-    if( fabs( point->phi() - phi() - 2*M_PI ) < M_PI ) point->sub2Pi();
+    if( fabs( point->phi() - phi() - 2*TMath::Pi() ) < TMath::Pi() ) point->sub2Pi();
   }
   
   m_points.push_back( point );
+  if( q!=2 ) m_q = q;
   
   makeFromPoints();
 }
@@ -55,11 +55,11 @@ DBCALCluster::removePoint( const DBCALPoint* point){
 
 if( phi() > point->phi() ){
 
-    if( fabs( phi() - point->phi() - 2*M_PI ) < M_PI ) point->add2Pi();
+    if( fabs( phi() - point->phi() - 2*TMath::Pi() ) < TMath::Pi() ) point->add2Pi();
   }
   else{
 
-    if( fabs( point->phi() - phi() - 2*M_PI ) < M_PI ) point->sub2Pi();
+    if( fabs( point->phi() - phi() - 2*TMath::Pi() ) < TMath::Pi() ) point->sub2Pi();
   }
 
   if(find(m_points.begin(),m_points.end(),point) != m_points.end()) m_points.erase( find(m_points.begin(),m_points.end(),point ));
@@ -89,14 +89,14 @@ DBCALCluster::mergeClust( const DBCALCluster& clust ){
       pt != otherPoints.end();
       ++pt ){
 
-    // offset phi of the point by +- 2PI to match the cluster if needed
+    // offset phi of the point by +- 2TMath::Pi() to match the cluster if needed
     if( phi() > (**pt).phi() ){
       
-      if( fabs( phi() - (**pt).phi() - 2*M_PI ) < M_PI ) (**pt).add2Pi();
+      if( fabs( phi() - (**pt).phi() - 2*TMath::Pi() ) < TMath::Pi() ) (**pt).add2Pi();
     }
     else{
       
-      if( fabs( (**pt).phi() - phi() - 2*M_PI ) < M_PI ) (**pt).sub2Pi();
+      if( fabs( (**pt).phi() - phi() - 2*TMath::Pi() ) < TMath::Pi() ) (**pt).sub2Pi();
     }
     
     m_points.push_back( *pt );
@@ -177,15 +177,20 @@ DBCALCluster::makeFromPoints(){
   //to do an average of phi correctly for cases with angles near 0, we need to average cos(phi) and sin(phi) instead of phi itself
   double sum_sin_phi=0;
   double sum_cos_phi=0;
-  
+  charge = 0; 
+
+ 
   for( vector< const DBCALPoint* >::const_iterator pt = m_points.begin();
        pt != m_points.end();
       ++pt ){
      
     double E = (**pt).E();
-    
+ 
     m_E_points += E;
     m_E = m_E_points + m_hit_E_unattenuated_sum;  // add the energy sum from points to the energy sum from single ended hits
+    if( E == m_E_points || ( (**pt).layer()==1 && charge == 0 ) ) charge = m_q;
+    	
+
     if ((**pt).layer() == 1) m_E_preshower += E;
     double wt1, wt2;
     if ((**pt).layer() != 4 || average_layer4) {
@@ -240,7 +245,7 @@ DBCALCluster::makeFromPoints(){
   m_sig_theta = sigma_z*sin(m_theta)*sin(m_theta)/m_BCALGeom->GetBCAL_inner_rad();
   
   m_phi = atan2(sum_sin_phi,sum_cos_phi);
-  if( m_phi < 0 ) m_phi += 2*M_PI;
+  if( m_phi < 0 ) m_phi += 2*TMath::Pi();
   // calculate the RMS of phi
   m_sig_phi=0;
   for( vector< const DBCALPoint* >::const_iterator pt = m_points.begin();
@@ -258,8 +263,8 @@ DBCALCluster::makeFromPoints(){
 
     double deltaPhi = (**pt).phi() - m_phi;
     double deltaPhiAlt = ( (**pt).phi() > m_phi ?
-			   (**pt).phi() - m_phi - 2*M_PI :
-			   m_phi - (**pt).phi() - 2*M_PI );
+			   (**pt).phi() - m_phi - 2*TMath::Pi() :
+			   m_phi - (**pt).phi() - 2*TMath::Pi() );
     deltaPhi = min( fabs( deltaPhi ), fabs( deltaPhiAlt ) );
     m_sig_phi += deltaPhi * deltaPhi * wt1;
 
@@ -322,9 +327,9 @@ DBCALCluster::makeFromPoints(){
   if( m_sig_phi   < 1E-6 ) m_sig_phi   = m_points.at(0)->sigPhi()/sqrt(n_avg);
   if( m_sig_theta < 1E-6 ) m_sig_theta = m_points.at(0)->sigPhi()/sqrt(n_avg);
   
-  // correct phi of the cluster if we've drifted outside of 0 - 2PI
-  if( m_phi > 2*M_PI ) m_phi -= 2*M_PI;
-  if( m_phi < 0 ) m_phi += 2*M_PI;
+  // correct phi of the cluster if we've drifted outside of 0 - 2TMath::Pi()
+  if( m_phi > 2*TMath::Pi() ) m_phi -= 2*TMath::Pi();
+  if( m_phi < 0 ) m_phi += 2*TMath::Pi();
 }
 
 void 
@@ -340,6 +345,7 @@ DBCALCluster::toStrings( vector< pair < string, string > > &items) const {
   AddString(items, "E", "%5.2f", m_E );
   AddString(items, "E_preshower", "%5.2f", m_E_preshower );
   AddString(items, "N_cell", "%i", m_points.size() );
+  AddString(items, "charge", "%i", charge );
 }
 
 
