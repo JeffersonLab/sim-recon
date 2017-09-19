@@ -3,8 +3,6 @@
 #include "ANALYSIS/DSourceComboTimeHandler.h"
 
 /*
- * PROBLEMS:
- * Test RestFrameLifetimeSigma, read in DSelector
  *
  * EVENTUALLY:
  * K0 Sigma+: COMPARE
@@ -752,7 +750,7 @@ DSourceComboUse DSourceComboer::Create_ZDependentSourceComboUses(const DReaction
 		//for this vertex, get the vertex z bin
 		auto locVertexZBin = (locReactionChargedCombo != nullptr) ? dSourceComboVertexer->Get_VertexZBin(locStepVertexInfo, locReactionChargedCombo, nullptr, true) : dSourceComboTimeHandler->Get_VertexZBin_TargetCenter();
 		if(dDebugLevel >= 20)
-			cout << "step, vertex primary combo, 2nd vertex flag, is prod-vertex, vertex z-bin = " << locStepVertexInfo->Get_StepIndices().front() << ", " << locVertexZBin << endl;
+			cout << "step, vertex z-bin = " << locStepVertexInfo->Get_StepIndices().front() << ", " << locVertexZBin << endl;
 
 		//loop over the steps at this vertex z bin, in reverse order
 		auto locStepIndices = locStepVertexInfo->Get_StepIndices();
@@ -3005,7 +3003,7 @@ void DSourceComboer::Combo_Horizontally_AddCombo(const DSourceComboUse& locCombo
 		Copy_ZIndependentMixedResults(locComboUseToCreate, locChargedCombo_Presiding);
 
 	if(locCombos_AllBut1->empty())
-		return; //nothing to save, plant an empty vector
+		return; //nothing to do
 
 	auto locDecayPID_UseToAdd = std::get<0>(locSourceComboUseToAdd);
 	auto locComboInfo_UseToAdd = std::get<2>(locSourceComboUseToAdd);
@@ -3896,7 +3894,8 @@ const DSourceCombo* DSourceComboer::Get_NextChargedCombo(const DSourceCombo* loc
 			auto locNextVertexZBin = dSourceComboVertexer->Get_VertexZBin_NoBeam(false, locNextPotentialCombo, locIsCombo2ndVertex);
 			if(dDebugLevel >= 20)
 				cout << "detached next potential combo, next zbin, desired zbin = " << locNextPotentialCombo << ", " << int(locNextVertexZBin) << ", " << int(locDesiredVertexZBin) << endl;
-			if((locNextVertexZBin != locDesiredVertexZBin) && (locDesiredVertexZBin != DSourceComboInfo::Get_VertexZIndex_ZIndependent())) //if desired = independent, we don't care
+			//if desired = independent we don't care, or if unknown we don't need to check
+			if((locNextVertexZBin != locDesiredVertexZBin) && (locDesiredVertexZBin != DSourceComboInfo::Get_VertexZIndex_ZIndependent()) && (locDesiredVertexZBin != DSourceComboInfo::Get_VertexZIndex_Unknown()))
 				continue;
 		}
 		if(dDebugLevel >= 20)

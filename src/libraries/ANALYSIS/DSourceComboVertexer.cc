@@ -40,7 +40,7 @@ signed char DSourceComboVertexer::Get_VertexZBin(const DReactionStepVertexInfo* 
 	if(locStepVertexInfo->Get_DanglingVertexFlag())
 	{
 		auto locParentVertexInfo = locStepVertexInfo->Get_ParentVertexInfo();
-		return (locParentVertexInfo != nullptr) ? Get_VertexZBin(locParentVertexInfo, locReactionCombo, locBeamParticle, locComboIsFullyCharged) : DSourceComboInfo::Get_VertexZIndex_Unknown();
+		return (locParentVertexInfo != nullptr) ? Get_VertexZBin(locParentVertexInfo, locReactionCombo, locBeamParticle, locComboIsFullyCharged) : dSourceComboTimeHandler->Get_VertexZBin_TargetCenter();
 	}
 
 	auto locVertexPrimaryCombo = dSourceComboer->Get_VertexPrimaryCombo(locReactionCombo, locStepVertexInfo);
@@ -97,6 +97,7 @@ void DSourceComboVertexer::Calc_VertexTimeOffsets_WithCharged(const DReactionVer
 				auto locIsParentProductionVertex = locParentVertexInfo->Get_ProductionVertexFlag();
 				auto locIsParentCombo2ndVertex = locParentVertexInfo->Get_FullConstrainParticles(false, d_FinalState, d_Charged, false).empty();
 				auto& locVertexParticles = dConstrainingParticlesByCombo[std::make_tuple(locIsParentProductionVertex, (const DSourceCombo*)nullptr, locParentCombo, (const DKinematicData*)nullptr, locIsParentCombo2ndVertex)];
+				auto locVertex = Get_Vertex(locIsParentProductionVertex, locVertexParticles);
 				if(dDebugLevel >= 10)
 				{
 					cout << "Dangling, parent info = " << locParentVertexInfo << endl;
@@ -105,10 +106,15 @@ void DSourceComboVertexer::Calc_VertexTimeOffsets_WithCharged(const DReactionVer
 					DAnalysis::Print_SourceCombo(locParentCombo);
 					cout << "vertex particles: ";
 					for(auto& locParticle : locVertexParticles)
-						cout << locParticle->PID() << ", ";
+						cout << locParticle << ", " << locParticle->PID() << ", ";
 					cout << endl;
+					cout << "Lookup tuple: " << locIsParentProductionVertex << ", 0, " << locParentCombo << ", 0, " << locIsParentCombo2ndVertex << endl;
+					cout << "Save tuple: " << locIsProductionVertexFlag << ", 0, " << locVertexPrimaryCombo << ", 0, " << locIsCombo2ndVertex << endl;
+					cout << "save z, zbin: " << locVertex.Z() << ", " << int(dSourceComboTimeHandler->Get_PhotonVertexZBin(locVertex.Z())) << endl;
 				}
 				dConstrainingParticlesByCombo.emplace(locComboProductionTuple, locVertexParticles);
+				if(locIsProductionVertexFlag != locIsParentProductionVertex)
+					dVertexMap.emplace(std::make_pair(locIsProductionVertexFlag, locVertexParticles), locVertex);
 			}
 			continue;
 		}
@@ -405,7 +411,7 @@ DVector3 DSourceComboVertexer::Calc_Vertex(bool locIsProductionVertexFlag, const
 			locVertex = dVertex->dSpacetimeVertex.Vect();
 		dVertexMap.emplace(std::make_pair(locIsProductionVertexFlag, locVertexParticles), locVertex);
 		if(dDebugLevel >= 10)
-			cout << "particle PID, theta, production vertex = " << locVertexParticles[0]->PID() << ", " << locVertexParticles[0]->momentum().Theta()*180.0/TMath::Pi() << ", " << locVertex.X() << ", " << locVertex.Y() << ", " << locVertex.Z() << endl;
+			cout << "pointer, particle PID, theta, production vertex = " << locVertexParticles[0] << ", " << locVertexParticles[0]->PID() << ", " << locVertexParticles[0]->momentum().Theta()*180.0/TMath::Pi() << ", " << locVertex.X() << ", " << locVertex.Y() << ", " << locVertex.Z() << endl;
 		return locVertex;
 	}
 

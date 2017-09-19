@@ -725,7 +725,7 @@ void DEventWriterROOT::Create_Branches_Combo(DTreeBranchRegister& locBranchRegis
 			auto locStepVertexInfo = locReactionVertexInfo->Get_StepVertexInfo(loc_i);
 			auto locParentVertexInfo = locStepVertexInfo->Get_ParentVertexInfo();
 			if(IsDetachedVertex(locInitialPID) && locVertexKinFitFlag && (locParentVertexInfo != nullptr) && locStepVertexInfo->Get_FittableVertexFlag() && locParentVertexInfo->Get_FittableVertexFlag())
-				locBranchRegister.Register_FundamentalArray<Float_t>(Build_BranchName(locParticleBranchName, "RestFrameLifetimeSigma"), locNumComboString, dInitNumComboArraySize);
+				locBranchRegister.Register_FundamentalArray<Float_t>(Build_BranchName(locParticleBranchName, "PathLengthSigma"), locNumComboString, dInitNumComboArraySize);
 		}
 
 		//final particles
@@ -1699,8 +1699,8 @@ void DEventWriterROOT::Fill_ComboStepData(DTreeFillData* locTreeFillData, const 
 		if(IsDetachedVertex(locInitialPID) && locVertexKinFitFlag && (locParentVertexInfo != nullptr) && locStepVertexInfo->Get_FittableVertexFlag() && locParentVertexInfo->Get_FittableVertexFlag())
 		{
 			auto locKinFitParticle = locParticleComboStep->Get_InitialKinFitParticle();
-			auto locLifetimeSigma = locKinFitParticle->Get_RestFrameLifetimeUncertainty();
-			locTreeFillData->Fill_Array<Float_t>(Build_BranchName(locParticleBranchName, "RestFrameLifetimeSigma"), locLifetimeSigma, locComboIndex);
+			auto locPathLengthSigma = locKinFitParticle->Get_PathLengthUncertainty();
+			locTreeFillData->Fill_Array<Float_t>(Build_BranchName(locParticleBranchName, "PathLengthSigma"), locPathLengthSigma, locComboIndex);
 		}
 	}
 

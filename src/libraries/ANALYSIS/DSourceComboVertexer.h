@@ -60,7 +60,7 @@ void Set_Vertex(const DVertex* locVertex){dVertex = locVertex;}
 
 		DVector3 Get_Vertex_NoBeam(bool locIsProductionVertex, const DSourceCombo* locVertexCombo, bool locIsCombo2ndVertex) const;
 		DVector3 Get_Vertex(bool locIsProductionVertex, const DSourceCombo* locReactionCombo, const DSourceCombo* locVertexCombo, const DKinematicData* locBeamParticle, bool locIsCombo2ndVertex) const;
-		DVector3 Get_Vertex(bool locIsProductionVertex, const vector<const DKinematicData*>& locVertexParticles) const{return dVertexMap.find(std::make_pair(locIsProductionVertex, locVertexParticles))->second;}
+		DVector3 Get_Vertex(bool locIsProductionVertex, const vector<const DKinematicData*>& locVertexParticles) const;
 		double Get_TimeOffset(bool locIsPrimaryProductionVertex, const DSourceCombo* locReactionCombo, const DSourceCombo* locVertexCombo, const DKinematicData* locBeamParticle) const;
 		DVector3 Get_PrimaryVertex(const DReactionVertexInfo* locReactionVertexInfo, const DSourceCombo* locReactionCombo, const DKinematicData* locBeamParticle) const;
 
@@ -207,6 +207,8 @@ inline vector<const DKinematicData*> DSourceComboVertexer::Get_ConstrainingParti
 	//the data member MAY be dependent on the beam particle, but it may not
 	//so, first search with the beam particle; if not found then search without it
 
+//cout << "Query tuple: " << locIsProductionVertex << ", " << locReactionCombo << ", " << locVertexCombo << ", " << locBeamParticle << ", " << locIsCombo2ndVertex << endl;
+
 	if(locBeamParticle == nullptr)
 	{
 		auto locIterator = dConstrainingParticlesByCombo.find(std::make_tuple(locIsProductionVertex, (const DSourceCombo*)nullptr, locVertexCombo, (const DKinematicData*)nullptr, locIsCombo2ndVertex));
@@ -228,6 +230,14 @@ inline vector<const DKinematicData*> DSourceComboVertexer::Get_ConstrainingParti
 	if(locIterator != dConstrainingParticlesByCombo.end())
 		return locIterator->second;
 	return {};
+}
+
+inline DVector3 DSourceComboVertexer::Get_Vertex(bool locIsProductionVertex, const vector<const DKinematicData*>& locVertexParticles) const
+{
+	auto locIterator = dVertexMap.find(std::make_pair(locIsProductionVertex, locVertexParticles));
+	if(locIterator != dVertexMap.end())
+		return locIterator->second;
+	return dTargetCenter;
 }
 
 inline signed char DSourceComboVertexer::Get_VertexZBin_NoBeam(bool locIsProductionVertex, const DSourceCombo* locPrimaryVertexCombo, bool locIsCombo2ndVertex) const

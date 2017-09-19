@@ -76,6 +76,7 @@ class DSourceComboInfo
 		vector<pair<DSourceComboUse, unsigned char>> Get_FurtherDecays(void) const{return dFurtherDecays;}
 
 		//definitions of negative values for any particle index //in order such that operator< returns order expected for string (e.g. gp->...)
+		//Note: If the vertex is UnknowABLE, the bin for the parent vertex is chosen. If the production vertex is Unknowable, then the center of the target is used. 
 		static signed char Get_VertexZIndex_OutOfRange(void){return -3;}
 		static signed char Get_VertexZIndex_ZIndependent(void){return -2;}
 		static signed char Get_VertexZIndex_Unknown(void){return -1;}
