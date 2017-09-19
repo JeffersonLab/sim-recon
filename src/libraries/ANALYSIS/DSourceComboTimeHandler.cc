@@ -1182,18 +1182,17 @@ bool DSourceComboTimeHandler::Cut_Timing_MissingMassVertices(const DReactionVert
 	if(dDebugLevel >= 10)
 		cout << "DSourceComboTimeHandler::Cut_Timing_MissingMassVertices()" << endl;
 
+	//Also cuts those at dangling vertices
+
 	//All charged tracks vote, even those not at the primary vertex
 	//loop over vertices, get all charged particles at that vertex, utilize that + time offset
 	auto locPrimaryVertexZ = dSourceComboVertexer->Get_PrimaryVertex(locReactionVertexInfo, locReactionFullCombo, locBeamParticle).Z();
-	auto locIsPrimaryProductionVertex = locReactionVertexInfo->Get_StepVertexInfo(0)->Get_ProductionVertexFlag();
 
 	//loop over vertices
 	for(const auto& locStepVertexInfo : locReactionVertexInfo->Get_StepVertexInfos())
 	{
 		if(dDebugLevel >= 10)
 			cout << "Step: " << locStepVertexInfo->Get_StepIndices().front() << ", dangling-flag = " << locStepVertexInfo->Get_DanglingVertexFlag() << endl;
-		if(locStepVertexInfo->Get_DanglingVertexFlag())
-			continue;
 
 		if(dDebugLevel >= 10)
 			cout << "determinable flags: " << dSourceComboVertexer->Get_VertexDeterminableWithCharged(locStepVertexInfo) << ", " << dSourceComboVertexer->Get_VertexDeterminableWithPhotons(locStepVertexInfo) << endl;
@@ -1205,11 +1204,10 @@ bool DSourceComboTimeHandler::Cut_Timing_MissingMassVertices(const DReactionVert
 		//get combo, vertex position, and time offset from RF bunch
 		auto locIsProductionVertex = locStepVertexInfo->Get_ProductionVertexFlag();
 		auto locVertexPrimaryFullCombo = dSourceComboer->Get_VertexPrimaryCombo(locReactionFullCombo, locStepVertexInfo);
-		auto locVertex = dSourceComboVertexer->Get_Vertex(locIsProductionVertex, locReactionFullCombo, locVertexPrimaryFullCombo, locBeamParticle, false);
-		if(!dSourceComboVertexer->Get_IsTimeOffsetKnown(locIsPrimaryProductionVertex, locReactionFullCombo, locVertexPrimaryFullCombo, locBeamParticle))
-			continue; //not from this vertex
 
-		auto locTimeOffset = dSourceComboVertexer->Get_TimeOffset(locIsPrimaryProductionVertex, locReactionFullCombo, locVertexPrimaryFullCombo, locBeamParticle);
+		//get vertex position and time offset
+		auto locVertex = dSourceComboVertexer->Get_Vertex(locStepVertexInfo, locReactionFullCombo, locBeamParticle, false);
+		auto locTimeOffset = dSourceComboVertexer->Get_TimeOffset(locReactionVertexInfo, locStepVertexInfo, locReactionFullCombo, locBeamParticle);
 		auto locPropagatedRFTime = Calc_PropagatedRFTime(locPrimaryVertexZ, locRFBunch, locTimeOffset);
 //		auto locPropagatedRFTime = Calc_PropagatedRFTime(locVertex.Z(), locRFBunch, 0.0); //COMPARE:
 

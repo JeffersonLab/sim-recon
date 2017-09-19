@@ -140,7 +140,6 @@ const DParticleCombo* DParticleComboCreator::Build_ParticleCombo(const DReaction
 
 	auto locReaction = locReactionVertexInfo->Get_Reaction();
 	auto locPrimaryVertexZ = dSourceComboVertexer->Get_PrimaryVertex(locReactionVertexInfo, locFullCombo, locBeamParticle).Z();
-	auto locIsPrimaryProductionVertex = locReactionVertexInfo->Get_StepVertexInfo(0)->Get_ProductionVertexFlag();
 
 	//Get/Create RF Bunch
 	const DEventRFBunch* locEventRFBunch = nullptr;
@@ -204,13 +203,15 @@ const DParticleCombo* DParticleComboCreator::Build_ParticleCombo(const DReaction
 		//Create a new step
 		auto locParticleComboStep = Get_ParticleComboStepResource();
 
-		//build spacetime vertex
-		auto locVertex = dSourceComboVertexer->Get_Vertex(locIsProductionVertex, locFullCombo, locVertexPrimaryCombo, locBeamParticle, false);
+		//get vertex position and time offset
+		auto locVertex = dSourceComboVertexer->Get_Vertex(locStepVertexInfo, locFullCombo, locBeamParticle, false);
 		if(dDebugLevel >= 20)
 			cout << "vertex: " << locVertex.X() << ", " << locVertex.Y() << ", " << locVertex.Z() << endl;
-		auto locTimeOffset = dSourceComboVertexer->Get_TimeOffset(locIsPrimaryProductionVertex, locFullCombo, locVertexPrimaryCombo, locBeamParticle); //if unknown, is 0
+		auto locTimeOffset = dSourceComboVertexer->Get_TimeOffset(locReactionVertexInfo, locStepVertexInfo, locFullCombo, locBeamParticle);
 		if(dDebugLevel >= 20)
 			cout << "time offset: " << locTimeOffset << endl;
+
+		//build spacetime vertex
 		auto locPropagatedRFTime = dSourceComboTimeHandler->Calc_PropagatedRFTime(locPrimaryVertexZ, locRFBunchShift, locTimeOffset);
 		if(dDebugLevel >= 20)
 			cout << "prop rf time: " << locPropagatedRFTime << endl;

@@ -1,7 +1,3 @@
-#ifdef VTRACE
-#include "vt_user.h"
-#endif
-
 #include "DKinFitUtils_GlueX.h"
 
 /******************************************************************** INITIALIZE *******************************************************************/
@@ -650,9 +646,15 @@ set<shared_ptr<DKinFitParticle>> DKinFitUtils_GlueX::Build_ParticleSet(const vec
 	{
 		auto locStep = locKinFitChain->Get_KinFitChainStep(locParticlePair.first);
 		if(locParticlePair.second >= 0)
-			locParticles.insert(locStep->Get_FinalParticle(locParticlePair.second));
+		{
+			if(locStep->Get_FinalParticle(locParticlePair.second) != nullptr)
+				locParticles.insert(locStep->Get_FinalParticle(locParticlePair.second));
+		}
 		else if(locParticlePair.second == DReactionStep::Get_ParticleIndex_Initial())
-			locParticles.insert(locStep->Get_InitialParticle(0));
+		{
+			if(locStep->Get_InitialParticle(0) != nullptr)
+				locParticles.insert(locStep->Get_InitialParticle(0));
+		}
 		else
 			locParticles.insert(locStep->Get_InitialParticle(1));
 	}

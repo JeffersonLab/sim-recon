@@ -8,16 +8,15 @@
  * K0 Sigma+: COMPARE
  * K+ Sigma0: COMPARE
  * K+ K+ pi- Xi0, Xi0 -> pi0, Lambda: COMPARE
- * omega p
- * omega p missing pi+
- * omega p missing g
+ * K0 Sigma+ (pi0): COMPARE
+ * omega p: COMPARE
+ * omega p missing pi+: COMPARE
  *
  * n, pi+
  * n, pi0, pi+
  * K+ Lambda, Lambda -> n, pi0
  *
  *
- * K0 Sigma+ (pi0)
  *
  *
  */
@@ -3890,12 +3889,13 @@ const DSourceCombo* DSourceComboer::Get_NextChargedCombo(const DSourceCombo* loc
 		{
 			auto locVertexChargeContent = DAnalysis::Get_ChargeContent_ThisVertex(std::get<2>(locUseToFind));
 			auto locIsCombo2ndVertex = (locVertexChargeContent == d_Neutral);
+			auto locIsVertexKnown = dSourceComboVertexer->Get_IsVertexKnown_NoBeam(false, locNextPotentialCombo, locIsCombo2ndVertex);
+			auto locNextVertexZBin = dSourceComboVertexer->Get_VertexZBin_NoBeam(false, locNextPotentialCombo, locIsCombo2ndVertex); //defaults to center of target if not known
 
-			auto locNextVertexZBin = dSourceComboVertexer->Get_VertexZBin_NoBeam(false, locNextPotentialCombo, locIsCombo2ndVertex);
 			if(dDebugLevel >= 20)
 				cout << "detached next potential combo, next zbin, desired zbin = " << locNextPotentialCombo << ", " << int(locNextVertexZBin) << ", " << int(locDesiredVertexZBin) << endl;
 			//if desired = independent we don't care, or if unknown we don't need to check
-			if((locNextVertexZBin != locDesiredVertexZBin) && (locDesiredVertexZBin != DSourceComboInfo::Get_VertexZIndex_ZIndependent()) && (locDesiredVertexZBin != DSourceComboInfo::Get_VertexZIndex_Unknown()))
+			if(locIsVertexKnown && (locNextVertexZBin != locDesiredVertexZBin) && (locDesiredVertexZBin != DSourceComboInfo::Get_VertexZIndex_ZIndependent()))
 				continue;
 		}
 		if(dDebugLevel >= 20)

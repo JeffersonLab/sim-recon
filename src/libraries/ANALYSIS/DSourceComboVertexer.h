@@ -53,25 +53,31 @@ void Set_Vertex(const DVertex* locVertex){dVertex = locVertex;}
 		bool Get_VertexDeterminableWithCharged(const DReactionStepVertexInfo* locStepVertexInfo) const;
 		bool Get_VertexDeterminableWithPhotons(const DReactionStepVertexInfo* locStepVertexInfo) const;
 
-		//GET RESULTS
+		//GET IS-KNOWN
 		bool Get_IsVertexKnown(bool locIsProductionVertex, const DSourceCombo* locReactionCombo, const DSourceCombo* locVertexCombo, const DKinematicData* locBeamParticle, bool locIsCombo2ndVertex) const;
 		bool Get_IsVertexKnown_NoBeam(bool locIsProductionVertex, const DSourceCombo* locVertexCombo, bool locIsCombo2ndVertex) const;
 		bool Get_IsTimeOffsetKnown(bool locIsPrimaryProductionVertex, const DSourceCombo* locReactionCombo, const DSourceCombo* locVertexCombo, const DKinematicData* locBeamParticle) const;
 
+		//GET VERTEX
 		DVector3 Get_Vertex_NoBeam(bool locIsProductionVertex, const DSourceCombo* locVertexCombo, bool locIsCombo2ndVertex) const;
 		DVector3 Get_Vertex(bool locIsProductionVertex, const DSourceCombo* locReactionCombo, const DSourceCombo* locVertexCombo, const DKinematicData* locBeamParticle, bool locIsCombo2ndVertex) const;
 		DVector3 Get_Vertex(bool locIsProductionVertex, const vector<const DKinematicData*>& locVertexParticles) const;
-		double Get_TimeOffset(bool locIsPrimaryProductionVertex, const DSourceCombo* locReactionCombo, const DSourceCombo* locVertexCombo, const DKinematicData* locBeamParticle) const;
+		DVector3 Get_Vertex(const DReactionStepVertexInfo* locStepVertexInfo, const DSourceCombo* locReactionCombo, const DKinematicData* locBeamParticle, bool locComboIsFullyCharged) const; //Only one that will handle dangling correctly!
 		DVector3 Get_PrimaryVertex(const DReactionVertexInfo* locReactionVertexInfo, const DSourceCombo* locReactionCombo, const DKinematicData* locBeamParticle) const;
 
+		//GET TIME OFFSET
+		double Get_TimeOffset(bool locIsPrimaryProductionVertex, const DSourceCombo* locReactionCombo, const DSourceCombo* locVertexCombo, const DKinematicData* locBeamParticle) const;
+		double Get_TimeOffset(const DReactionVertexInfo* locReactionVertexInfo, const DReactionStepVertexInfo* locStepVertexInfo, const DSourceCombo* locReactionCombo, const DKinematicData* locBeamParticle) const; //Only one that will handle dangling correctly!
+
+		//GET CONSTRAINING PARTICLES (for vertex)
 		vector<const DKinematicData*> Get_ConstrainingParticles(bool locIsProductionVertex, const DSourceCombo* locReactionCombo, const DSourceCombo* locVertexCombo, const DKinematicData* locBeamParticle, bool locIsCombo2ndVertex) const;
 		vector<const DKinematicData*> Get_ConstrainingParticles_NoBeam(bool locIsProductionVertex, const DSourceCombo* locVertexCombo, bool locIsCombo2ndVertex) const;
 
 		//GET VERTEX-Z BINS
 		signed char Get_VertexZBin(bool locIsProductionVertex, const DSourceCombo* locReactionCombo, const DSourceCombo* locPrimaryVertexCombo, const DKinematicData* locBeamParticle, bool locIsCombo2ndVertex) const;
 		signed char Get_VertexZBin_NoBeam(bool locIsProductionVertex, const DSourceCombo* locPrimaryVertexCombo, bool locIsCombo2ndVertex) const;
-		signed char Get_VertexZBin(const DReactionStepVertexInfo* locStepVertexInfo, const DSourceCombo* locReactionCombo, const DKinematicData* locBeamParticle, bool locComboIsFullyCharged) const;
-		vector<signed char> Get_VertexZBins(const DReactionVertexInfo* locReactionVertexInfo, const DSourceCombo* locReactionCombo, const DKinematicData* locBeamParticle, bool locComboIsFullyCharged) const;
+		signed char Get_VertexZBin(const DReactionStepVertexInfo* locStepVertexInfo, const DSourceCombo* locReactionCombo, const DKinematicData* locBeamParticle, bool locComboIsFullyCharged) const; //Only one that will handle dangling correctly!
+		vector<signed char> Get_VertexZBins(const DReactionVertexInfo* locReactionVertexInfo, const DSourceCombo* locReactionCombo, const DKinematicData* locBeamParticle, bool locComboIsFullyCharged) const; //This will call the above
 
 	private:
 		vector<const DKinematicData*>::const_iterator Get_ThetaNearest90Iterator(const vector<const DKinematicData*>& locParticles);
