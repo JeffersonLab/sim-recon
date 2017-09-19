@@ -6,7 +6,7 @@ gen_2pi_amp> gen_2pi_amp -c gen_2pi_amp_flat.cfg -o tree_AmpToolsFormatThrown_fl
 gen_2pi_amp> mv tree_AmpToolsFormatThrown_flat.root tree_gen_2pi_amp_flat.root
 gen_2pi_amp> fit -c fit_2pi_amp.cfg
 gen_2pi_amp> cp twopi_amp.fit twopi_amp_fitPars.fit
-gen_2pi_amp> twopi_plotter_amp twopi_amp_fitPars.fit -o twopi_map_fitPars.root
+gen_2pi_amp> twopi_plotter_amp twopi_amp_fitPars.fit -o twopi_amp_fitPars.root
 gen_2pi_amp> mv twopi_fitPars.txt twopi_amp_fitPars.fit2
 gen_2pi_amp> root -l
 root [0] .x twopi_amp.C

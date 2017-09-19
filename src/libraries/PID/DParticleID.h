@@ -227,6 +227,9 @@ class DParticleID:public jana::JObject
 		// Prohibit default constructor
 		DParticleID();
 
+		// define bool in case there is no Start Counter in geometry (e.g. CPP)
+		bool START_EXIST = true;
+
 		// start counter geometry parameters
 		double sc_leg_tcor;
 		double sc_angle_cor;

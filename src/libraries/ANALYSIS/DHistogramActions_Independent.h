@@ -575,8 +575,8 @@ class DHistogramAction_EventVertex : public DAnalysisAction
 	public:
 		DHistogramAction_EventVertex(const DReaction* locReaction, string locActionUniqueString = "") : 
 		DAnalysisAction(locReaction, "Hist_EventVertex", false, locActionUniqueString), 
-		dNumConfidenceLevelBins(400), dNumPullBins(200), dNumVertexZBins(600), dNumTBins(400), dNumRFTBins(300), dNumVertexXYBins(400),
-		dMinVertexZ(0.0), dMaxVertexZ(200.0), dMinT(-20.0), dMaxT(20.0), dMinVertexXY(-10.0), dMaxVertexXY(10.0), 
+		dNumConfidenceLevelBins(400), dNumPullBins(200), dNumVertexZBins(750), dNumTBins(400), dNumRFTBins(300), dNumVertexXYBins(400),
+		dMinVertexZ(-50.0), dMaxVertexZ(200.0), dMinT(-20.0), dMaxT(20.0), dMinVertexXY(-10.0), dMaxVertexXY(10.0), 
 		dMinPull(-4.0), dMaxPull(4.0), dPullHistConfidenceLevelCut(0.05), dTrackSelectionTag("NotATag")
 		{
 			dFinalStatePIDs.push_back(PiPlus);  dFinalStatePIDs.push_back(Proton);  dFinalStatePIDs.push_back(PiMinus);
@@ -584,8 +584,8 @@ class DHistogramAction_EventVertex : public DAnalysisAction
 
 		DHistogramAction_EventVertex(string locActionUniqueString) : 
 		DAnalysisAction(NULL, "Hist_EventVertex", false, locActionUniqueString), 
-		dNumConfidenceLevelBins(400), dNumPullBins(200), dNumVertexZBins(600), dNumTBins(400), dNumRFTBins(300), dNumVertexXYBins(400),
-		dMinVertexZ(0.0), dMaxVertexZ(200.0), dMinT(-20.0), dMaxT(20.0), dMinVertexXY(-10.0), dMaxVertexXY(10.0), 
+		dNumConfidenceLevelBins(400), dNumPullBins(200), dNumVertexZBins(750), dNumTBins(400), dNumRFTBins(300), dNumVertexXYBins(400),
+		dMinVertexZ(-50.0), dMaxVertexZ(200.0), dMinT(-20.0), dMaxT(20.0), dMinVertexXY(-10.0), dMaxVertexXY(10.0), 
 		dMinPull(-4.0), dMaxPull(4.0), dPullHistConfidenceLevelCut(0.05), dTrackSelectionTag("NotATag")
 		{
 			dFinalStatePIDs.push_back(PiPlus);  dFinalStatePIDs.push_back(Proton);  dFinalStatePIDs.push_back(PiMinus);
@@ -593,8 +593,8 @@ class DHistogramAction_EventVertex : public DAnalysisAction
 
 		DHistogramAction_EventVertex(void) : 
 		DAnalysisAction(NULL, "Hist_EventVertex", false, ""), 
-		dNumConfidenceLevelBins(400), dNumPullBins(200), dNumVertexZBins(600), dNumTBins(400), dNumRFTBins(300), dNumVertexXYBins(400),
-		dMinVertexZ(0.0), dMaxVertexZ(200.0), dMinT(-20.0), dMaxT(20.0), dMinVertexXY(-10.0), dMaxVertexXY(10.0), 
+		dNumConfidenceLevelBins(400), dNumPullBins(200), dNumVertexZBins(750), dNumTBins(400), dNumRFTBins(300), dNumVertexXYBins(400),
+		dMinVertexZ(-50.0), dMaxVertexZ(200.0), dMinT(-20.0), dMaxT(20.0), dMinVertexXY(-10.0), dMaxVertexXY(10.0), 
 		dMinPull(-4.0), dMaxPull(4.0), dPullHistConfidenceLevelCut(0.05), dTrackSelectionTag("NotATag")
 		{
 			dFinalStatePIDs.push_back(PiPlus);  dFinalStatePIDs.push_back(Proton);  dFinalStatePIDs.push_back(PiMinus);
@@ -631,9 +631,9 @@ class DHistogramAction_DetectedParticleKinematics : public DAnalysisAction
 	public:
 		DHistogramAction_DetectedParticleKinematics(const DReaction* locReaction, string locActionUniqueString = "") : 
 		DAnalysisAction(locReaction, "Hist_DetectedParticleKinematics", false, locActionUniqueString), 
-		dMinPIDFOM(5.73303E-7), dNumPBins(600), dNumThetaBins(560), dNumPhiBins(360), dNumVertexZBins(600), dNumTBins(400),
+		dMinPIDFOM(5.73303E-7), dNumPBins(600), dNumThetaBins(560), dNumPhiBins(360), dNumVertexZBins(750), dNumTBins(400),
 		dNumVertexXYBins(400), dNumBetaBins(400), dNum2DDeltaBetaBins(400), dNum2DPBins(300), dNum2DThetaBins(140), dNum2DPhiBins(180), dNumBeamEBins(650),
-		dMinT(-20.0), dMaxT(20.0), dMinP(0.0), dMaxP(12.0), dMaxBeamE(13.0), dMinTheta(0.0), dMaxTheta(140.0), dMinPhi(-180.0), dMaxPhi(180.0), dMinVertexZ(0.0), dMaxVertexZ(200.0),
+		dMinT(-20.0), dMaxT(20.0), dMinP(0.0), dMaxP(12.0), dMaxBeamE(13.0), dMinTheta(0.0), dMaxTheta(140.0), dMinPhi(-180.0), dMaxPhi(180.0), dMinVertexZ(-50.0), dMaxVertexZ(200.0),
 		dMinVertexXY(-10.0), dMaxVertexXY(10.0), dMinBeta(-0.2), dMaxBeta(1.2), dMinDeltaBeta(-1.0), dMaxDeltaBeta(1.0),
 		dTrackSelectionTag("NotATag"), dShowerSelectionTag("NotATag")
 		{
@@ -644,9 +644,9 @@ class DHistogramAction_DetectedParticleKinematics : public DAnalysisAction
 
 		DHistogramAction_DetectedParticleKinematics(string locActionUniqueString) : 
 		DAnalysisAction(NULL, "Hist_DetectedParticleKinematics", false, locActionUniqueString), 
-		dMinPIDFOM(5.73303E-7), dNumPBins(600), dNumThetaBins(560), dNumPhiBins(360), dNumVertexZBins(600), dNumTBins(400),
+		dMinPIDFOM(5.73303E-7), dNumPBins(600), dNumThetaBins(560), dNumPhiBins(360), dNumVertexZBins(750), dNumTBins(400),
 		dNumVertexXYBins(400), dNumBetaBins(400), dNum2DDeltaBetaBins(400), dNum2DPBins(300), dNum2DThetaBins(140), dNum2DPhiBins(180), dNumBeamEBins(650),
-		dMinT(-20.0), dMaxT(20.0), dMinP(0.0), dMaxP(12.0), dMaxBeamE(13.0), dMinTheta(0.0), dMaxTheta(140.0), dMinPhi(-180.0), dMaxPhi(180.0), dMinVertexZ(0.0), dMaxVertexZ(200.0),
+		dMinT(-20.0), dMaxT(20.0), dMinP(0.0), dMaxP(12.0), dMaxBeamE(13.0), dMinTheta(0.0), dMaxTheta(140.0), dMinPhi(-180.0), dMaxPhi(180.0), dMinVertexZ(-50.0), dMaxVertexZ(200.0),
 		dMinVertexXY(-10.0), dMaxVertexXY(10.0), dMinBeta(-0.2), dMaxBeta(1.2), dMinDeltaBeta(-1.0), dMaxDeltaBeta(1.0),
 		dTrackSelectionTag("NotATag"), dShowerSelectionTag("NotATag")
 		{
@@ -657,9 +657,9 @@ class DHistogramAction_DetectedParticleKinematics : public DAnalysisAction
 
 		DHistogramAction_DetectedParticleKinematics(void) : 
 		DAnalysisAction(NULL, "Hist_DetectedParticleKinematics", false, ""), 
-		dMinPIDFOM(5.73303E-7), dNumPBins(600), dNumThetaBins(560), dNumPhiBins(360), dNumVertexZBins(600), dNumTBins(400),
+		dMinPIDFOM(5.73303E-7), dNumPBins(600), dNumThetaBins(560), dNumPhiBins(360), dNumVertexZBins(750), dNumTBins(400),
 		dNumVertexXYBins(400), dNumBetaBins(400), dNum2DDeltaBetaBins(400), dNum2DPBins(300), dNum2DThetaBins(140), dNum2DPhiBins(180), dNumBeamEBins(650),
-		dMinT(-20.0), dMaxT(20.0), dMinP(0.0), dMaxP(12.0), dMaxBeamE(13.0), dMinTheta(0.0), dMaxTheta(140.0), dMinPhi(-180.0), dMaxPhi(180.0), dMinVertexZ(0.0), dMaxVertexZ(200.0),
+		dMinT(-20.0), dMaxT(20.0), dMinP(0.0), dMaxP(12.0), dMaxBeamE(13.0), dMinTheta(0.0), dMaxTheta(140.0), dMinPhi(-180.0), dMaxPhi(180.0), dMinVertexZ(-50.0), dMaxVertexZ(200.0),
 		dMinVertexXY(-10.0), dMaxVertexXY(10.0), dMinBeta(-0.2), dMaxBeta(1.2), dMinDeltaBeta(-1.0), dMaxDeltaBeta(1.0),
 		dTrackSelectionTag("NotATag"), dShowerSelectionTag("NotATag")
 		{

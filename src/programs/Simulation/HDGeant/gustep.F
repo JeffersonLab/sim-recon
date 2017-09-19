@@ -354,13 +354,13 @@ c
       save enterbcal
 
       if (genbeam_precol.ne.0) then
-         call storeBeam(vect, tofg)
+         ! call storeBeam(vect, tofg)
          writenohits = 1
          ISTOP = 99
          return
       else if (genbeam_postcol.ne.0) then
          if (vect(3).gt.-1520) then
-            call storeBeam(vect, tofg)
+            ! call storeBeam(vect, tofg)
             writenohits = 1
             ISTOP = 99
          else

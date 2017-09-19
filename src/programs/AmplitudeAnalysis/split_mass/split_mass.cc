@@ -11,11 +11,10 @@
 #include "AMPTOOLS_DATAIO/ROOTDataReader.h"
 #include "AMPTOOLS_DATAIO/ROOTDataWriter.h"
 
-#include "CLHEP/Vector/LorentzVector.h"
+#include "TLorentzVector.h"
 
 #include "TH1F.h"
 using namespace std;
-using namespace CLHEP;
 
 #define DEFTREENAME "kin"
 
@@ -115,18 +114,18 @@ int main( int argc, char* argv[] ){
   Kinematics* event;
   while( ( event = in.getEvent() ) != NULL && eventCount++ < maxEvents ){
     
-    vector< HepLorentzVector > fs = event->particleList();
+    vector< TLorentzVector > fs = event->particleList();
     
-    HepLorentzVector x;
+    TLorentzVector x;
     // the first two entries in this list are the beam and the recoil
     // skip them in computing the mass
-    for( vector< HepLorentzVector >::iterator particle = fs.begin() + 2;
+    for( vector< TLorentzVector >::iterator particle = fs.begin() + 2;
 	 particle != fs.end(); ++particle ){
       
       x += *particle;
     }
     
-    int bin = static_cast< int >( floor( ( x.m() - lowMass ) / step ) );
+    int bin = static_cast< int >( floor( ( x.M() - lowMass ) / step ) );
     if( ( bin < numBins ) && ( bin >= 0 ) ){
       
       outFile[bin]->writeEvent( *event );
