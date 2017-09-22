@@ -101,7 +101,9 @@ class FitWrapper{
 			Double_t peak_pos_3   = 0.0,             // 2-nd peak position (mass)
 			Double_t peak_width_3 = 0.0,             // 2-nd peak width,  =0 - peak ignored
 			Double_t peak_pos_4   = 0.0,             // 2-nd peak position (mass)
-			Double_t peak_width_4 = 0.0)             // 2-nd peak width,  =0 - peak ignored
+			Double_t peak_width_4 = 0.0,             // 2-nd peak width,  =0 - peak ignored
+			Double_t *pars_out    = NULL,            // fit pars (if not NULL)
+			Double_t *errs_out    = NULL)            // fit par errors (if not NULL)
 		{
 
 			if(h1 == NULL){
@@ -128,7 +130,7 @@ class FitWrapper{
 	   			  return 0;
 			}
 
-			if(h1->GetEntries()<500){
+			if(h1->GetEntries()<20){
 			  cout << "FitPeaksWithBackgr: No fit - too few entries " << h1->GetEntries() << endl;
 				return 0;
 			}
@@ -307,6 +309,8 @@ class FitWrapper{
 			  for(int j=0;j<3;j++){
 				 par[j]=ftf->GetParameter(5+i*4+1+j);
 				 epar[j]=ftf->GetParError(5+i*4+1+j);
+				 if(pars_out) pars_out[i*3 + j] = par[j];
+				 if(errs_out) errs_out[i*3 + j] = epar[j];
 			  }
 			  printf(" %d   %8.1f +/- %7.1f   ",i+1,par[0]/xbin,epar[0]/xbin);
 			  printf("  %8.4f +/- %7.4f   ",par[1],epar[1]);
@@ -643,7 +647,9 @@ class FitWrapper{
 		KPlusKMinus->SetStats(0);
 		KPlusKMinus->GetXaxis()->SetRangeUser(0.8, 2.0);
 		
-		Double_t I = FitWrapper::FitPeaksWithBackgr(KPlusKMinus, 0.494*2, 1.8, "GG", 1.02, 0.01, 1.22, 0.05);
+		Double_t pars_out[3*2];
+		Double_t errs_out[3*2];
+		Double_t I = FitWrapper::FitPeaksWithBackgr(KPlusKMinus, 0.494*2, 1.8, "GG", 1.02, 0.01, 1.22, 0.05, 0.0, 0.0, 0.0, 0.0, pars_out, errs_out);
 
 		if(I>0.0){
 			char str[256];
@@ -662,6 +668,9 @@ class FitWrapper{
 				latex.SetTextSize(0.06);
 				latex.DrawLatex(1.4, max*0.65, str);
 			}
+
+			// Add to time series
+			if(unix_time > 0)InsertSeriesMassFit("phi", pars_out[1], pars_out[2], errs_out[1], errs_out[2], unix_time);
 		}
 	}
 
@@ -677,8 +686,10 @@ class FitWrapper{
 		PiPlusPiMinus->GetYaxis()->SetLabelSize(0.035);
 		PiPlusPiMinus->SetStats(0);
 
+		Double_t pars_out[3*2];
+		Double_t errs_out[3*2];
 		//Double_t I = FitWrapper::FitWithBackground(PiPlusPiMinus, 0.770, 0.1, 0.3, 1.6);
-		Double_t I = FitWrapper::FitPeaksWithBackgr(PiPlusPiMinus, 0.139*2, 1.8, "G", 0.770, 0.085);
+		Double_t I = FitWrapper::FitPeaksWithBackgr(PiPlusPiMinus, 0.139*2, 1.8, "G", 0.770, 0.085, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, pars_out, errs_out);
 		
 		if(I>0.0){
 			char str[256];
@@ -697,6 +708,9 @@ class FitWrapper{
 				latex.SetTextSize(0.06);
 				latex.DrawLatex(1.010, max*0.65, str);
 			}
+
+			// Add to time series
+			if(unix_time > 0)InsertSeriesMassFit("rho", pars_out[1], pars_out[2], errs_out[1], errs_out[2], unix_time);
 		}
 	}
 
@@ -712,8 +726,10 @@ class FitWrapper{
 		PiPlusPiMinusPiZero->GetYaxis()->SetLabelSize(0.035);
 		PiPlusPiMinusPiZero->SetStats(0);
 	
+		Double_t pars_out[3*2];
+		Double_t errs_out[3*2];
 		//Double_t I = FitWrapper::FitWithBackground(PiPlusPiMinusPiZero, 0.782, 0.03, 0.42, 1.6);
-		Double_t I = FitWrapper::FitPeaksWithBackgr(PiPlusPiMinusPiZero, 0.139*2+0.135, 1.3, "G", 0.782, 0.009);
+		Double_t I = FitWrapper::FitPeaksWithBackgr(PiPlusPiMinusPiZero, 0.139*2+0.135, 1.3, "G", 0.782, 0.009, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, pars_out, errs_out);
 		
 		if(I>0.0){
 			char str[256];
@@ -732,6 +748,9 @@ class FitWrapper{
 				latex.SetTextSize(0.06);
 				latex.DrawLatex(1.010, max*0.65, str);
 			}
+
+			// Add to time series
+			if(unix_time > 0)InsertSeriesMassFit("omega", pars_out[1], pars_out[2], errs_out[1], errs_out[2], unix_time);
 		}
 	}
 }
