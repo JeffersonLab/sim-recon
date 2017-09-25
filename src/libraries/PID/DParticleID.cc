@@ -385,7 +385,7 @@ jerror_t DParticleID::CalcDCdEdx(const DTrackTimeBased *locTrackTimeBased, const
 {
 	locdx_CDC = 0.0;
 	locdEdx_CDC = 0.0;
-	locNumHitsUsedFordEdx_CDC = locdEdxHits_CDC.size()/2;
+	locNumHitsUsedFordEdx_CDC = locdEdxHits_CDC.size()*4/5;
 	if(locNumHitsUsedFordEdx_CDC > 0)
 	{
 		for(unsigned int loc_i = 0; loc_i < locNumHitsUsedFordEdx_CDC; ++loc_i)
@@ -398,7 +398,7 @@ jerror_t DParticleID::CalcDCdEdx(const DTrackTimeBased *locTrackTimeBased, const
 
 	locdx_FDC = 0.0;
 	locdEdx_FDC = 0.0;
-	locNumHitsUsedFordEdx_FDC = locdEdxHits_FDC.size()/2;
+	locNumHitsUsedFordEdx_FDC = locdEdxHits_FDC.size()*4/5;
 	if(locNumHitsUsedFordEdx_FDC > 0)
 	{
 		for(unsigned int loc_i = 0; loc_i < locNumHitsUsedFordEdx_FDC; ++loc_i)

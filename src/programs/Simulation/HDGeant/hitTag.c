@@ -49,7 +49,6 @@
 #define FIXED_TWO_HIT_RESOL     25.
 #define FIXED_MAX_HITS          5000
 #define C_CM_PER_NS             29.9792458
-#define REF_TIME_Z_CM           65.
 #define TAG_T_MIN_NS            -200
 #define TAG_T_MAX_NS            +200
 
@@ -66,6 +65,8 @@ static int microCount = 0;
 static int hodoCount = 0;
 static int printDone = 0;
 static float beam_period = -1.0;
+
+float get_reference_plane_();
 
 /* register hits during event initialization (from gukine) */
 
@@ -91,7 +92,8 @@ void hitTagger (float xin[4], float xout[4],
    int hodo_chan;
    double Etag = 0;
    double E = pin[3];
-   double t = xin[3]*1e9-(xin[2]-REF_TIME_Z_CM)/C_CM_PER_NS;
+   float ref_time_z_cm = get_reference_plane_();
+   double t = xin[3]*1e9-(xin[2]-ref_time_z_cm)/C_CM_PER_NS;
    t = floor(t/beam_period+0.5)*beam_period;
 
    /* read tagger set endpoint energy from calibdb */
