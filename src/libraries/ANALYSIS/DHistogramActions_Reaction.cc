@@ -1225,7 +1225,6 @@ bool DHistogramAction_InvariantMass::Perform_Action(JEventLoop* locEventLoop, co
 		{
 			set<pair<const JObject*, unsigned int> > locSourceObjects;
 			DLorentzVector locFinalStateP4 = dAnalysisUtilities->Calc_FinalStateP4(Get_Reaction(), locParticleCombo, loc_i, *locComboIterator, locSourceObjects, Get_UseKinFitResultsFlag());
-
 			if(dPreviousSourceObjects.find(locSourceObjects) == dPreviousSourceObjects.end())
 			{
 				dPreviousSourceObjects.insert(locSourceObjects);

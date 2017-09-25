@@ -107,6 +107,7 @@ class DSourceComboer : public JObject
 		//Get combo characteristics
 		Charge_t Get_ChargeContent(const DSourceComboInfo* locSourceComboInfo) const{return dComboInfoChargeContent.find(locSourceComboInfo)->second;}
 		bool Get_HasMassiveNeutrals(const DSourceComboInfo* locSourceComboInfo) const{return (dComboInfosWithMassiveNeutrals.find(locSourceComboInfo) != dComboInfosWithMassiveNeutrals.end());}
+		bool Get_HasPhotons(const DSourceComboInfo* locSourceComboInfo) const{return (dComboInfosWithPhotons.find(locSourceComboInfo) != dComboInfosWithPhotons.end());}
 
 		//Combo utility functions
 		const DSourceCombo* Get_StepSourceCombo(const DReaction* locReaction, size_t locDesiredStepIndex, const DSourceCombo* locVertexPrimaryCombo, size_t locVertexPrimaryStepIndex = 0) const;
@@ -249,6 +250,7 @@ class DSourceComboer : public JObject
 		vector<const DSourceComboInfo*> dSourceComboInfos;
 		unordered_map<const DSourceComboInfo*, Charge_t> dComboInfoChargeContent;
 		unordered_set<const DSourceComboInfo*> dComboInfosWithMassiveNeutrals;
+		unordered_set<const DSourceComboInfo*> dComboInfosWithPhotons;
 		//the rest
 		unordered_map<const DReactionStepVertexInfo*, DSourceComboUse> dSourceComboUseReactionMap; //primary combo info (nullptr if none)
 		//combo use -> step

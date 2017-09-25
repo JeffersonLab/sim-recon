@@ -2,7 +2,6 @@
 #include "ANALYSIS/DSourceComboer.h"
 #include "ANALYSIS/DSourceComboVertexer.h"
 
-
 /*************************************************** CHARGED TRACK TIMING CUTS *************************************************
 *
 * Charged time cuts are dependent on combo vertex, especially for low-theta tracks.
@@ -235,6 +234,7 @@ DSourceComboTimeHandler::DSourceComboTimeHandler(JEventLoop* locEventLoop, DSour
 	dAllRFDeltaTs = dSelectedRFDeltaTs;
 
 //COMPARE:
+/*
 	// Timing Cuts: Start counter
 	// Start counter is special case: Since next to the target, and lower timing resolution, cannot separate PIDs
 	// However, we can separate out-of-time backgrounds from the event (e.g. e+/-, or ghost tracks)
@@ -248,7 +248,7 @@ DSourceComboTimeHandler::DSourceComboTimeHandler(JEventLoop* locEventLoop, DSour
 		locPIDPair.second.emplace(SYS_START, new TF1("df_TimeCut", "[0]", 0.0, 12.0));
 		locPIDPair.second[SYS_START]->SetParameter(0, 2.5); //2.5!!!
 	}
-
+*/
 	if(locEventLoop == nullptr)
 		return; //only interested in querying cuts
 
@@ -669,8 +669,8 @@ bool DSourceComboTimeHandler::Select_RFBunches_Charged(const DReactionVertexInfo
 			continue; //not from this vertex
 		auto locTimeOffset = dSourceComboVertexer->Get_TimeOffset(locIsPrimaryProductionVertex, locReactionChargedCombo, locVertexPrimaryCombo, nullptr);
 
-		auto locPropagatedRFTime = Calc_PropagatedRFTime(locPrimaryVertexZ, 0, locTimeOffset);
-//		auto locPropagatedRFTime = Calc_PropagatedRFTime(locVertex.Z(), 0, 0.0); //COMPARE:
+//		auto locPropagatedRFTime = Calc_PropagatedRFTime(locPrimaryVertexZ, 0, locTimeOffset);
+		auto locPropagatedRFTime = Calc_PropagatedRFTime(locVertex.Z(), 0, 0.0); //COMPARE:
 		if(dDebugLevel >= 20)
 			cout << "primary vertex z, targ z, init rf time, time offset, prop time = " << locPrimaryVertexZ << ", " << dTargetCenter.Z() << ", " << dInitialEventRFBunch->dTime << ", " << locTimeOffset << ", " << locPropagatedRFTime << endl;
 
@@ -748,8 +748,8 @@ bool DSourceComboTimeHandler::Select_RFBunches_PhotonVertices(const DReactionVer
 			continue; //not from this vertex
 		auto locTimeOffset = dSourceComboVertexer->Get_TimeOffset(locIsPrimaryProductionVertex, locReactionFullCombo, locVertexPrimaryFullCombo, nullptr);
 
-		auto locPropagatedRFTime = Calc_PropagatedRFTime(locPrimaryVertexZ, 0, locTimeOffset);
-//		auto locPropagatedRFTime = Calc_PropagatedRFTime(locVertex.Z(), 0, 0.0); //COMPARE:
+//		auto locPropagatedRFTime = Calc_PropagatedRFTime(locPrimaryVertexZ, 0, locTimeOffset);
+		auto locPropagatedRFTime = Calc_PropagatedRFTime(locVertex.Z(), 0, 0.0); //COMPARE:
 
 		//loop over particles at this vertex: BCAL photons & charged tracks get to vote (FCAL photons already voted, but faster)
 		auto locSourceParticles = DAnalysis::Get_SourceParticles_ThisVertex(locVertexPrimaryFullCombo);
@@ -1208,8 +1208,8 @@ bool DSourceComboTimeHandler::Cut_Timing_MissingMassVertices(const DReactionVert
 		//get vertex position and time offset
 		auto locVertex = dSourceComboVertexer->Get_Vertex(locStepVertexInfo, locReactionFullCombo, locBeamParticle, false);
 		auto locTimeOffset = dSourceComboVertexer->Get_TimeOffset(locReactionVertexInfo, locStepVertexInfo, locReactionFullCombo, locBeamParticle);
-		auto locPropagatedRFTime = Calc_PropagatedRFTime(locPrimaryVertexZ, locRFBunch, locTimeOffset);
-//		auto locPropagatedRFTime = Calc_PropagatedRFTime(locVertex.Z(), locRFBunch, 0.0); //COMPARE:
+//		auto locPropagatedRFTime = Calc_PropagatedRFTime(locPrimaryVertexZ, locRFBunch, locTimeOffset);
+		auto locPropagatedRFTime = Calc_PropagatedRFTime(locVertex.Z(), locRFBunch, 0.0); //COMPARE:
 
 		//loop over particles at this vertex: BCAL photons & charged tracks will get cut (FCAL photons already voted!)
 		auto locSourceParticles = DAnalysis::Get_SourceParticles_ThisVertex(locVertexPrimaryFullCombo);
@@ -1302,7 +1302,7 @@ bool DSourceComboTimeHandler::Get_RFBunches_ChargedTrack(const DChargedTrackHypo
 	auto locSystem = locHypothesis->t1_detector();
 	if(locSystem == SYS_NULL)
 		return false; //no timing info
-
+/*
 	//COMPARE: NOT Comparison-to-old mode
 	if((locSystem == SYS_START) && !locOnlyTrackFlag)
 	{
@@ -1312,17 +1312,17 @@ bool DSourceComboTimeHandler::Get_RFBunches_ChargedTrack(const DChargedTrackHypo
 		if(locSCMatchParams.size() > 1)
 			return false; //don't cut on timing! can't tell for sure!
 	}
-
+*/
 	auto locX4 = Get_ChargedPOCAToVertexX4(locHypothesis, locIsProductionVertex, nullptr, locVertexPrimaryCombo, nullptr, locIsCombo2ndVertex, locVertex);
 	auto locVertexTime = locX4.T();
 
 	auto locP = locHypothesis->momentum().Mag();
 	auto locCutFunc = Get_TimeCutFunction(locPID, locSystem);
 	auto locDeltaTCut = (locCutFunc != nullptr) ? locCutFunc->Eval(locP) : 3.0; //if null will return false, but still use for histogramming
-	if(locDetachedVertex) //not in COMPARE mode
-		locDeltaTCut += dChargedDecayProductTimeUncertainty;
+//	if(locDetachedVertex) //not in COMPARE mode
+//		locDeltaTCut += dChargedDecayProductTimeUncertainty;
 
-	if(false) //COMPARE: Comparison-to-old mode
+//	if(false) //COMPARE: Comparison-to-old mode
 	{
 		locVertexTime = locHypothesis->time();
 		locPropagatedRFTime += (locHypothesis->position().Z() - locVertex.Z())/SPEED_OF_LIGHT;
@@ -1365,8 +1365,8 @@ bool DSourceComboTimeHandler::Cut_PhotonPID(const DNeutralShower* locNeutralShow
 	auto locKinematicsPair = Calc_Photon_Kinematics(locNeutralShower, locVertex);
 
 	auto locDeltaTCut = locCutFunc->Eval(locNeutralShower->dEnergy);
-	if(locDetachedVertex) //not in COMPARE mode
-		locDeltaTCut += Calc_MaxDeltaTError(locNeutralShower, locKinematicsPair.first.Theta(), dDetachedPathLengthUncertainty);
+//	if(locDetachedVertex) //not in COMPARE mode
+//		locDeltaTCut += Calc_MaxDeltaTError(locNeutralShower, locKinematicsPair.first.Theta(), dDetachedPathLengthUncertainty);
 
 	//do cut
 	auto locDeltaT = locKinematicsPair.second - locPropagatedRFTime;
@@ -1388,9 +1388,9 @@ bool DSourceComboTimeHandler::Cut_TrackPID(const DChargedTrackHypothesis* locHyp
 
 	auto locP = locHypothesis->momentum().Mag();
 	auto locDeltaTCut = locCutFunc->Eval(locP);
-	if(locDetachedVertex) //not in COMPARE mode
-		locDeltaTCut += dChargedDecayProductTimeUncertainty;
-
+//	if(locDetachedVertex) //not in COMPARE mode
+//		locDeltaTCut += dChargedDecayProductTimeUncertainty;
+/*
 	//COMPARE: NOT Comparison-to-old mode
 	if(locSystem == SYS_START) //can't be only track if it's a detached vertex (which is the only way this function is called)
 	{
@@ -1400,11 +1400,11 @@ bool DSourceComboTimeHandler::Cut_TrackPID(const DChargedTrackHypothesis* locHyp
 		if(locSCMatchParams.size() > 1)
 			return true; //don't cut on timing! can't tell for sure!
 	}
-
+*/
 	auto locX4 = Get_ChargedPOCAToVertexX4(locHypothesis, locIsProductionVertex, locFullReactionCombo, locVertexPrimaryCombo, locBeamPhoton, locIsCombo2ndVertex, locVertex);
 	auto locDeltaT = locX4.T() - locPropagatedRFTime;
 
-	if(false) //COMPARE: Comparison-to-old mode
+//	if(false) //COMPARE: Comparison-to-old mode
 	{
 		auto locVertexTime = locHypothesis->time();
 		locPropagatedRFTime += (locHypothesis->position().Z() - locVertex.Z())/SPEED_OF_LIGHT;

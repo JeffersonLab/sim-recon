@@ -128,6 +128,7 @@ namespace DAnalysis
 DSourceComboP4Handler::DSourceComboP4Handler(DSourceComboer* locSourceComboer, bool locCreateHistsFlag) : dSourceComboer(locSourceComboer)
 {
 	gPARMS->SetDefaultParameter("COMBO:DEBUG_LEVEL", dDebugLevel);
+	gPARMS->SetDefaultParameter("COMBO:MAX_MASSIVE_NEUTRAL_BETA", dMaxMassiveNeutralBeta);
 
 	//INVARIANT MASS CUTS: MESONS
 	dInvariantMassCuts.emplace(Pi0, std::make_pair(0.08, 0.19));
@@ -199,12 +200,15 @@ DSourceComboP4Handler::DSourceComboP4Handler(DSourceComboer* locSourceComboer, b
 		dMissingMassSquaredCuts[Electron].second->SetParameter(0, 1.0);
 		dMissingMassSquaredCuts.emplace(Positron, dMissingMassSquaredCuts[Electron]);
 */
+
+/*
 		//Missing E cuts
 		dMissingECuts = std::pair<TF1*, TF1*>(nullptr, nullptr); //COMPARE:
 		dMissingECuts.first = new TF1("df_MissingECut_NoneLow", "[0]", 0.0, 12.0);
 		dMissingECuts.first->SetParameter(0, -3.0);
 		dMissingECuts.second = new TF1("df_MissingECut_NoneHigh", "[0]", 0.0, 12.0);
 		dMissingECuts.second->SetParameter(0, 3.0);
+*/
 
 		if(!locCreateHistsFlag)
 		{
@@ -375,9 +379,10 @@ DLorentzVector DSourceComboP4Handler::Calc_MassiveNeutralP4(const DNeutralShower
 	//locRFVertexTime: the RF time propagated to the vertex, through any decaying particles if necessary
 	auto locMass = ParticleMass(locPID);
 	auto locPath = locNeutralShower->dSpacetimeVertex.Vect() - locVertex;
+	auto locPathMag = locPath.Mag();
 	double locDeltaT = locNeutralShower->dSpacetimeVertex.T() - locRFVertexTime;
 
-	double locBeta = locPath.Mag()/(locDeltaT*29.9792458);
+	double locBeta = locPathMag/(locDeltaT*29.9792458);
 	if(locBeta >= 1.0)
 		locBeta = dMaxMassiveNeutralBeta;
 	if(locBeta < 0.0)
@@ -386,6 +391,9 @@ DLorentzVector DSourceComboP4Handler::Calc_MassiveNeutralP4(const DNeutralShower
 	auto locGamma = 1.0/sqrt(1.0 - locBeta*locBeta);
 	auto locPMag = locGamma*locBeta*locMass;
 	locPath.SetMag(locPMag); //is now the momentum!
+
+	if(dDebugLevel >= 20)
+		cout << "Calc_MassiveNeutralP4: pid, mass, shower-z, vertex-z, path, shower t, rf t, delta-t, beta, pmag = " << locPID << ", " << locMass << ", " << locNeutralShower->dSpacetimeVertex.Vect().Z() << ", " << locVertex.Z() << ", " << locPathMag << ", " << locNeutralShower->dSpacetimeVertex.T() << ", " << locRFVertexTime << ", " << locDeltaT << ", " << locBeta << ", " << locPMag << endl;
 
 	auto locEnergy = sqrt(locPMag*locPMag + locMass*locMass);
 	return DLorentzVector(locPath, locEnergy);
@@ -703,7 +711,7 @@ bool DSourceComboP4Handler::Cut_InvariantMass_HasMassiveNeutral(bool locIsProduc
 				dInvariantMassFilledSet_MassiveNeutral.insert(locSaveTuple);
 			}
 		}
-		return locPassCutFlag;
+		return !locPassCutFlag; //because it's used in remove_if!!
 	};
 
 	//apply the function

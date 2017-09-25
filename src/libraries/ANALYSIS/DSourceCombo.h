@@ -518,6 +518,19 @@ inline bool Get_HasMassiveNeutrals(const DSourceComboInfo* locComboInfo)
 	return std::any_of(locNumParticles.begin(), locNumParticles.end(), Find_MassiveNeutrals);
 }
 
+inline bool Get_HasPhotons(const DSourceComboInfo* locComboInfo)
+{
+	//see if the combo info contains a massive neutral particle
+
+	//search function
+	auto Find_MassiveNeutrals = [](const pair<Particle_t, unsigned char>& locPair) -> bool
+		{return ((ParticleCharge(locPair.first) == 0) && (ParticleMass(locPair.first) <= 0.0000000001));};
+
+	//do search
+	auto locNumParticles = locComboInfo->Get_NumParticles(true); //true: entire chain
+	return std::any_of(locNumParticles.begin(), locNumParticles.end(), Find_MassiveNeutrals);
+}
+
 inline const JObject* Get_SourceParticle_ThisStep(const DSourceCombo* locSourceCombo, Particle_t locPID, size_t locInstance, size_t& locPIDCountSoFar)
 {
 	auto ParticleFinder = [&locPID, &locInstance, &locPIDCountSoFar](pair<Particle_t, const JObject*>& locPair) -> bool

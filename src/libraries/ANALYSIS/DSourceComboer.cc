@@ -234,7 +234,7 @@ DSourceComboer::DSourceComboer(JEventLoop* locEventLoop)
 
 	//Make sure this matches DConstructionStage!!!
 	vector<string> locBuildStages_Event = {"Input", "Min # Particles", "Max # Particles", "In Skim", "Charged Combos", "Charged RF Bunch", "Full Combos", "Neutral RF Bunch",
-			"No-Vertex RF Bunch", "Heavy-Neutral IM", "Beam Combos", "MM Vertex Timing", "MM-vertex IM Cuts", "Accurate-Photon IM", "Reaction Beam-RF Cuts", "Missing Mass"};
+			"No-Vertex RF Bunch", "Heavy-Neutral IM", "Beam Combos", "MM/Dangling-Vertex Timing", "MM/Dangling-Vertex IM Cuts", "Accurate-Photon IM", "Reaction Beam-RF Cuts", "Missing Mass"};
 	vector<string> locBuildStages_Combo{"In Skim Events"}; //has same bin content as "In Skim"
 	locBuildStages_Combo.insert(locBuildStages_Combo.end(), locBuildStages_Event.begin() + 4, locBuildStages_Event.end());
 
@@ -695,6 +695,8 @@ const DSourceComboInfo* DSourceComboer::MakeOrGet_SourceComboInfo(const vector<p
 	}
 	if(DAnalysis::Get_HasMassiveNeutrals(locComboInfo))
 		dComboInfosWithMassiveNeutrals.insert(locComboInfo);
+	if(DAnalysis::Get_HasPhotons(locComboInfo))
+		dComboInfosWithPhotons.insert(locComboInfo);
 	return locComboInfo;
 }
 
@@ -723,6 +725,8 @@ const DSourceComboInfo* DSourceComboer::GetOrMake_SourceComboInfo(const vector<p
 	}
 	if(DAnalysis::Get_HasMassiveNeutrals(locComboInfo))
 		dComboInfosWithMassiveNeutrals.insert(locComboInfo);
+	if(DAnalysis::Get_HasPhotons(locComboInfo))
+		dComboInfosWithPhotons.insert(locComboInfo);
 	return locComboInfo;
 }
 
@@ -1004,8 +1008,8 @@ bool DSourceComboer::Cut_dEdxAndEOverP(const DChargedTrackHypothesis* locCharged
 		if(!Cut_dEdx(locPID, SYS_CDC, locP, locdEdx))
 			locPassedCutFlag = false;
 	}
-	else if((locPID == KPlus) || (locPID == KMinus))
-//	if((locPID == KPlus) || (locPID == KMinus)) //COMPARE: use this instead
+//	else if((locPID == KPlus) || (locPID == KMinus))
+	if((locPID == KPlus) || (locPID == KMinus)) //COMPARE: use this instead
 	{
 		auto locSystem = locChargedTrackHypothesis->t1_detector();
 		if((locSystem == SYS_START) || (locSystem == SYS_NULL))
@@ -1272,7 +1276,7 @@ DCombosByReaction DSourceComboer::Build_ParticleCombos(const DReactionVertexInfo
 			if(dDebugLevel > 0)
 				cout << "Fully charged." << endl;
 
-			if(false) //COMPARE: Comparison-to-old mode
+//			if(false) //COMPARE: Comparison-to-old mode
 			{
 				dSourceComboTimeHandler->Vote_OldMethod(locReactionChargedCombo, locBeamBunches_Charged);
 				if(locBeamBunches_Charged.empty())
@@ -1350,7 +1354,11 @@ void DSourceComboer::Combo_WithNeutralsAndBeam(const vector<const DReaction*>& l
 	Create_SourceCombos(locZDependentComboUse, d_MixedStage, locReactionChargedCombo, 0);
 
 	//Then, get the full combos, but only those that satisfy the charged RF bunches
-	const auto& locReactionFullCombos = Get_CombosForComboing(locZDependentComboUse, d_MixedStage, locBeamBunches_Charged, locReactionChargedCombo);
+	vector<int> locComboRFBunches = locBeamBunches_Charged;
+	//However, if there are no photons (only massive neutrals), then all of the combos have been saved with RF bunches = {} (empty set)
+	if(!Get_HasPhotons(std::get<2>(locPrimaryComboUse)))
+		locComboRFBunches.clear();
+	const auto& locReactionFullCombos = Get_CombosForComboing(locZDependentComboUse, d_MixedStage, locComboRFBunches, locReactionChargedCombo);
 	if(dDebugLevel > 0)
 		cout << endl << "Neutral combos created, # with the charged RF bunches: " << locReactionFullCombos.size() << endl;
 	for(auto& locReaction : locReactions)
@@ -1407,7 +1415,7 @@ void DSourceComboer::Combo_WithNeutralsAndBeam(const vector<const DReaction*>& l
 				++(dNumCombosSurvivedStageTracker[locReaction][DConstructionStage::NoVertex_RFBunch]);
 		}
 
-		if(false) //COMPARE: Comparison-to-old mode
+//		if(false) //COMPARE: Comparison-to-old mode
 		{
 			dSourceComboTimeHandler->Vote_OldMethod(locReactionFullCombo, locValidRFBunches);
 			if(locValidRFBunches.empty())
@@ -3970,7 +3978,7 @@ bool DSourceComboer::Check_Reactions(vector<const DReaction*>& locReactions)
 	//Check Max neutrals
 	auto locNumNeutralNeeded = locReactions.front()->Get_FinalPIDs(-1, false, false, d_Neutral, true).size(); //no missing, no decaying, include duplicates
 	auto locNumDetectedShowers = dShowersByBeamBunchByZBin[DSourceComboInfo::Get_VertexZIndex_Unknown()][{}].size();
-	if(false) //COMPARE: Comparison-to-old mode
+//	if(false) //COMPARE: Comparison-to-old mode
 	{
 		if(locNumDetectedShowers > dMaxNumNeutrals)
 			return false;

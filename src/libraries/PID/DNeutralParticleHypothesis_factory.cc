@@ -27,6 +27,8 @@ jerror_t DNeutralParticleHypothesis_factory::init(void)
 	dResourcePool_TMatrixFSym = std::make_shared<DResourcePool<TMatrixFSym>>();
 	dResourcePool_TMatrixFSym->Set_ControlParams(50, 20, 1000, 15000, 0);
 
+	gPARMS->SetDefaultParameter("COMBO:MAX_MASSIVE_NEUTRAL_BETA", dMaxMassiveNeutralBeta);
+
 	return NOERROR;
 }
 
@@ -109,12 +111,15 @@ DNeutralParticleHypothesis* DNeutralParticleHypothesis_factory::Create_DNeutralP
 		double locDeltaT = locHitTime - locStartTime;
 		double locBeta = locPathLength/(locDeltaT*29.9792458);
 		if(locBeta >= 1.0)
-			locBeta = 0.9999;
+			locBeta = dMaxMassiveNeutralBeta;
 		if(locBeta < 0.0)
 			locBeta = 0.0;
 		double locGamma = 1.0/sqrt(1.0 - locBeta*locBeta);
 		locPMag = locGamma*locBeta*locMass;
 		locMomentum.SetMag(locPMag);
+
+//cout << "DNeutralParticleHypothesis_factory: pid, mass, shower-z, vertex-z, path, shower t, rf t, delta-t, beta, pmag = " << locPID << ", " << locMass << ", " << locHitPoint.Z() << ", " << locVertexGuess.Z() << ", " << locPathLength << ", " << locHitTime << ", " << locStartTime << ", " << locDeltaT << ", " << locBeta << ", " << locPMag << endl;
+
 		locProjectedTime = locStartTime + (locVertexGuess.Z() - dTargetCenterZ)/29.9792458;
 		if(locVertexCovMatrix != nullptr)
 			Calc_ParticleCovariance_Massive(locNeutralShower, locVertexCovMatrix, locMass, locDeltaT, locMomentum, locPath, locParticleCovariance.get());
