@@ -79,13 +79,13 @@ class DParticleID:public jana::JObject
 		double GetdEdxSigma_DC(double num_hits,double p,double mass, double mean_path_length, bool locIsCDCFlag) const; //bool is false for FDC
 
 		/*********** Routines to get start time for time-based tracking ***************/
-		bool Get_StartTime(const DTrackFitter::Extrapolation_t &extrapolation,
+		bool Get_StartTime(const vector<DTrackFitter::Extrapolation_t> &extrapolations,
 				   const vector<const DSCHit*>& SCHits, 
 				   double& StartTime) const;	
-		bool Get_StartTime(const DTrackFitter::Extrapolation_t &extrapolation,
+		bool Get_StartTime(const vector<DTrackFitter::Extrapolation_t> &extrapolations,
 				   const vector<const DTOFPoint*>& TOFPoints, 
 				   double& StartTime) const;
-		bool Get_StartTime(const DTrackFitter::Extrapolation_t &extrapolation,
+		bool Get_StartTime(const vector<DTrackFitter::Extrapolation_t> &extrapolations,
 				   const vector<const DFCALShower*>& FCALShowers,
 				   double& StartTime) const;
 		bool Get_StartTime(const vector<DTrackFitter::Extrapolation_t> &extrapolations,

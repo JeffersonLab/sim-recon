@@ -632,22 +632,11 @@ bool DParticleID::Distance_ToTrack(const vector<DTrackFitter::Extrapolation_t> &
     return false;
 
   // Find the track projection to the FCAL
-  double locPathLength = 9.9E9, locFlightTime = 9.9E9;
-  double locFlightTimeVariance=9.9E9;	
-  DVector3 locProjPos, locProjMom;
-  bool got_fcal_extrapolation=false;
-  for (unsigned int i=0;i<extrapolations.size();i++){
-    if (extrapolations[i].detector==SYS_FCAL){
-      got_fcal_extrapolation=true;
-      locProjPos=extrapolations[i].position;
-      locProjMom=extrapolations[i].momentum;
-      locFlightTime=extrapolations[i].t;
-      locPathLength=extrapolations[i].s;
-      locFlightTimeVariance=0.; // fill this in!
-      break;
-    }
-  }
-  if (got_fcal_extrapolation==false) return false;
+  DVector3 locProjPos=extrapolations[0].position;
+  DVector3 locProjMom=extrapolations[0].momentum;
+  double locFlightTime=extrapolations[0].t;
+  double locPathLength=extrapolations[0].s;
+  double locFlightTimeVariance=0.; // fill this in!
 
   // Check that the hit is not out of time with respect to the track
   double locDeltaT = locFCALShower->getTime() - locFlightTime - locInputStartTime;
@@ -838,22 +827,11 @@ bool DParticleID::Distance_ToTrack(const vector<DTrackFitter::Extrapolation_t>&e
     return false;
 
   // Find the track projection to the TOF
-  double locPathLength = 9.9E9, locFlightTime = 9.9E9;
-  double locFlightTimeVariance=9.9E9;	
-  DVector3 locProjPos, locProjMom;
-  bool got_tof_extrapolation=false;
-  for (unsigned int i=0;i<extrapolations.size();i++){
-    if (extrapolations[i].detector==SYS_TOF){
-      got_tof_extrapolation=true;
-      locProjPos=extrapolations[i].position;
-      locProjMom=extrapolations[i].momentum;
-      locFlightTime=extrapolations[i].t;
-      locPathLength=extrapolations[i].s;
-      locFlightTimeVariance=0.; // fill this in!
-      break;
-    }
-  }
-  if (got_tof_extrapolation==false) return false;
+  DVector3 locProjPos=extrapolations[0].position;
+  DVector3 locProjMom=extrapolations[0].momentum;
+  double locFlightTime=extrapolations[0].t;
+  double locPathLength=extrapolations[0].s;
+  double locFlightTimeVariance=0.; // fill this in!
 
   //If position was not well-defined, correct time due to propagation along 
   //paddle
@@ -978,8 +956,6 @@ bool DParticleID::Distance_ToTrack(const vector<DTrackFitter::Extrapolation_t> &
   double d2_old=1.e6,d2=0.;
   DVector3 proj_pos_surface;
   for (unsigned int j=0;j<extrapolations.size();j++){
-    if (extrapolations[j].detector!=SYS_BCAL) continue;
-    
     // Save position of first extrapolation point in BCAL
     if (got_bcal_extrapolation==false){
       proj_pos_surface=extrapolations[j].position;
@@ -1058,8 +1034,6 @@ bool DParticleID::Distance_ToTrack(const vector<DTrackFitter::Extrapolation_t> &
     old_extrapolation=extrapolations[0];
     d2_old=1e6;
     for (unsigned int j=0;j<extrapolations.size();j++){
-      if (extrapolations[j].detector!=SYS_BCAL) continue;
-    
       bcal_pos.SetMagThetaPhi(points[m]->rho(),points[m]->theta(),
 			      points[m]->phi());
       locPointProjPos=extrapolations[j].position;
@@ -1109,22 +1083,11 @@ bool DParticleID::Distance_ToTrack(const vector<DTrackFitter::Extrapolation_t> &
     return false;
 
   // Find the track projection to the Start Counter
-  double locPathLength = 9.9E9, locFlightTime = 9.9E9;
-  double locFlightTimeVariance=9.9E9;	
-  DVector3 locProjPos, locProjMom;
-  bool got_sc_extrapolation=false;
-  for (unsigned int i=0;i<extrapolations.size();i++){
-    if (extrapolations[i].detector==SYS_START){
-      got_sc_extrapolation=true;
-      locProjPos=extrapolations[i].position;
-      locProjMom=extrapolations[i].momentum;
-      locFlightTime=extrapolations[i].t;
-      locPathLength=extrapolations[i].s;
-      locFlightTimeVariance=0.; // fill this in!
-      break;
-    }
-  }
-  if (got_sc_extrapolation==false) return false;
+  DVector3 locProjPos=extrapolations[0].position;
+  DVector3 locProjMom=extrapolations[0].momentum;
+  double locFlightTime=extrapolations[0].t;
+  double locPathLength=extrapolations[0].s;
+  double locFlightTimeVariance=0.; // fill this in!
 
   //Now, the input SC hit may have been on a separate SC paddle than the projection
   //So, we have to assume that the locProjPos.Z() for the projected paddle is accurate enough for the hit paddle (no other way to get it).
@@ -1445,6 +1408,8 @@ bool DParticleID::Cut_MatchDistance(const vector<DTrackFitter::Extrapolation_t> 
 
 bool DParticleID::Cut_MatchDistance(const vector<DTrackFitter::Extrapolation_t> &extrapolations, const DBCALShower* locBCALShower, double locInputStartTime, DBCALShowerMatchParams& locShowerMatchParams, DVector3 *locOutputProjPos, DVector3 *locOutputProjMom) const
 {
+  cout << " Got here : " <<extrapolations.size() << endl;
+
 	DVector3 locProjPos, locProjMom;
 	if(!Distance_ToTrack(extrapolations, locBCALShower, locInputStartTime, locShowerMatchParams, &locProjPos, &locProjMom))
 		return false;
@@ -2203,122 +2168,99 @@ const DTOFPaddleHit* DParticleID::Get_ClosestTOFPaddleHit_Horizontal(const vecto
     return false;
 
   // Find the track projection to the TOF
-  double locFlightTime = 9.9E9;
-  DVector3 proj_pos, proj_mom;
-  bool got_tof_extrapolation=false;
-  for (unsigned int i=0;i<extrapolations.size();i++){
-    if (extrapolations[i].detector==SYS_TOF){
-      got_tof_extrapolation=true;
+  DVector3 proj_pos=extrapolations[0].position; 
+  DVector3 proj_mom=extrapolations[0].momentum;
+  double dz=dTOFGeometry->CenterHPlane-proj_pos.z();
+  double px=proj_mom.Px();
+  double py=proj_mom.Py();
+  double pz=proj_mom.Pz();
+  double tx=px/pz;
+  double ty=py/pz;
+  DVector3 delta(tx*dz,ty*dz,dz);
+  proj_pos+=delta;
+  double locFlightTime=extrapolations[0].t;
 
-      proj_pos=extrapolations[i].position; 
-      proj_mom=extrapolations[i].momentum;
-      double dz=dTOFGeometry->CenterHPlane-proj_pos.z();
-      double px=proj_mom.Px();
-      double py=proj_mom.Py();
-      double pz=proj_mom.Pz();
-      double tx=px/pz;
-      double ty=py/pz;
-      DVector3 delta(tx*dz,ty*dz,dz);
-      proj_pos+=delta;
-      locFlightTime=extrapolations[i].t;
-      break;
-    }
+  const DTOFPaddleHit* locClosestPaddleHit = nullptr;
+  locBestDistance = 999.0;
+  locBestDeltaY = 999.0;
+  for(auto& locTOFPaddleHit : locTOFPaddleHits){
+    if(locTOFPaddleHit->orientation != 1)
+      continue; //horizontal orientation is 1
+    
+    bool locNorthIsGoodHitFlag = (locTOFPaddleHit->E_north > TOF_E_THRESHOLD);
+    bool locSouthIsGoodHitFlag = (locTOFPaddleHit->E_south > TOF_E_THRESHOLD);
+    if(!locNorthIsGoodHitFlag && !locSouthIsGoodHitFlag)
+      continue; //hit is junk  
+		
+    // Check that the hit is not out of time with respect to the track
+    
+    //Construct spacetime hit: averages times, or if only one end with hit, reports time at center of paddle
+    DTOFPoint_factory::tof_spacetimehit_t* locSpacetimeHit = dTOFPointFactory->Build_TOFSpacetimeHit_Horizontal(locTOFPaddleHit);
+    double locHitTime = locSpacetimeHit->t;
+    
+    // if single-ended paddle, or only one side has a hit: time reported at center: must propagate to track location
+    if(locNorthIsGoodHitFlag != locSouthIsGoodHitFlag)
+      {
+	//Paddle midpoint
+	double locPaddleMidPoint = 0.0; //is 0 except when is single-ended bar (22 & 23)
+	if(!locSpacetimeHit->dIsDoubleEndedBar)
+	  locPaddleMidPoint = locNorthIsGoodHitFlag ? ONESIDED_PADDLE_MIDPOINT_MAG : -1.0*ONESIDED_PADDLE_MIDPOINT_MAG;
+	
+	//correct the time
+	double locDistanceToMidPoint = locNorthIsGoodHitFlag ? locPaddleMidPoint - proj_pos.X() : proj_pos.X() - locPaddleMidPoint;
+	int id = 44 + locTOFPaddleHit->bar - 1; //for propation speed
+	locHitTime -= locDistanceToMidPoint/propagation_speed[id];
+      }
+    
+    //time cut
+    double locDeltaT = locHitTime - locFlightTime - locInputStartTime;
+    if(fabs(locDeltaT) > OUT_OF_TIME_CUT)
+      continue;
+    
+    // Check geometric distance, continue only if better than before
+    double locDeltaY = dTOFGeometry->bar2y(locTOFPaddleHit->bar) - proj_pos.Y();
+    double locDeltaX = locTOFPaddleHit->pos - proj_pos.X();
+    double locDistance = sqrt(locDeltaY*locDeltaY + locDeltaX*locDeltaX);
+    if(locNorthIsGoodHitFlag != locSouthIsGoodHitFlag)
+      {
+	//no position information along paddle: use delta-y cut only
+	if(fabs(locDeltaY) > fabs(locBestDistance))
+	  continue;
+	if(fabs(locDeltaY) > fabs(locBestDeltaY))
+	  continue; //no info on delta-x, so make sure not unfair comparison
+	locBestDistance = fabs(locDeltaY);
+      }
+    else
+      {
+	if(locDistance > locBestDistance)
+				continue;
+	locBestDistance = locDistance;
+		}
+    
+    locBestDeltaY = locDeltaY;
+    locClosestPaddleHit = locTOFPaddleHit;
   }
-  if (got_tof_extrapolation==false) return false;
-
-	const DTOFPaddleHit* locClosestPaddleHit = nullptr;
-	locBestDistance = 999.0;
-	locBestDeltaY = 999.0;
-	for(auto& locTOFPaddleHit : locTOFPaddleHits)
-	{
-		if(locTOFPaddleHit->orientation != 1)
-			continue; //horizontal orientation is 1
-
-		bool locNorthIsGoodHitFlag = (locTOFPaddleHit->E_north > TOF_E_THRESHOLD);
-		bool locSouthIsGoodHitFlag = (locTOFPaddleHit->E_south > TOF_E_THRESHOLD);
-		if(!locNorthIsGoodHitFlag && !locSouthIsGoodHitFlag)
-			continue; //hit is junk
-
-		// Check that the hit is not out of time with respect to the track
-
-		//Construct spacetime hit: averages times, or if only one end with hit, reports time at center of paddle
-		DTOFPoint_factory::tof_spacetimehit_t* locSpacetimeHit = dTOFPointFactory->Build_TOFSpacetimeHit_Horizontal(locTOFPaddleHit);
-		double locHitTime = locSpacetimeHit->t;
-
-		// if single-ended paddle, or only one side has a hit: time reported at center: must propagate to track location
-		if(locNorthIsGoodHitFlag != locSouthIsGoodHitFlag)
-		{
-			//Paddle midpoint
-			double locPaddleMidPoint = 0.0; //is 0 except when is single-ended bar (22 & 23)
-			if(!locSpacetimeHit->dIsDoubleEndedBar)
-				locPaddleMidPoint = locNorthIsGoodHitFlag ? ONESIDED_PADDLE_MIDPOINT_MAG : -1.0*ONESIDED_PADDLE_MIDPOINT_MAG;
-
-			//correct the time
-			double locDistanceToMidPoint = locNorthIsGoodHitFlag ? locPaddleMidPoint - proj_pos.X() : proj_pos.X() - locPaddleMidPoint;
-			int id = 44 + locTOFPaddleHit->bar - 1; //for propation speed
-			locHitTime -= locDistanceToMidPoint/propagation_speed[id];
-		}
-
-		//time cut
-		double locDeltaT = locHitTime - locFlightTime - locInputStartTime;
-		if(fabs(locDeltaT) > OUT_OF_TIME_CUT)
-			continue;
-
-		// Check geometric distance, continue only if better than before
-		double locDeltaY = dTOFGeometry->bar2y(locTOFPaddleHit->bar) - proj_pos.Y();
-		double locDeltaX = locTOFPaddleHit->pos - proj_pos.X();
-		double locDistance = sqrt(locDeltaY*locDeltaY + locDeltaX*locDeltaX);
-		if(locNorthIsGoodHitFlag != locSouthIsGoodHitFlag)
-		{
-			//no position information along paddle: use delta-y cut only
-			if(fabs(locDeltaY) > fabs(locBestDistance))
-				continue;
-			if(fabs(locDeltaY) > fabs(locBestDeltaY))
-				continue; //no info on delta-x, so make sure not unfair comparison
-			locBestDistance = fabs(locDeltaY);
-		}
-		else
-		{
-			if(locDistance > locBestDistance)
-				continue;
-			locBestDistance = locDistance;
-		}
-
-		locBestDeltaY = locDeltaY;
-		locClosestPaddleHit = locTOFPaddleHit;
-	}
-
-	return locClosestPaddleHit;
+  
+  return locClosestPaddleHit;
 }
 
 const DTOFPaddleHit* DParticleID::Get_ClosestTOFPaddleHit_Vertical(const vector<DTrackFitter::Extrapolation_t> &extrapolations, const vector<const DTOFPaddleHit*>& locTOFPaddleHits, double locInputStartTime, double& locBestDeltaX, double& locBestDistance) const
 {
- if(extrapolations.size()==0)
+  if(extrapolations.size()==0)
     return false;
-
+  
   // Find the track projection to the TOF
-  double locFlightTime = 9.9E9;
-  DVector3 proj_pos, proj_mom;
-  bool got_tof_extrapolation=false;
-  for (unsigned int i=0;i<extrapolations.size();i++){
-    if (extrapolations[i].detector==SYS_TOF){
-      got_tof_extrapolation=true;
-
-      proj_pos=extrapolations[i].position; 
-      proj_mom=extrapolations[i].momentum;
-      double dz=dTOFGeometry->CenterVPlane-proj_pos.z();
-      double px=proj_mom.Px();
-      double py=proj_mom.Py();
-      double pz=proj_mom.Pz();
-      double tx=px/pz;
-      double ty=py/pz;
-      DVector3 delta(tx*dz,ty*dz,dz);
-      proj_pos+=delta;
-      locFlightTime=extrapolations[i].t;
-      break;
-    }
-  }
-  if (got_tof_extrapolation==false) return false;
+  DVector3 proj_pos=extrapolations[0].position; 
+  DVector3 proj_mom=extrapolations[0].momentum;
+  double dz=dTOFGeometry->CenterVPlane-proj_pos.z();
+  double px=proj_mom.Px();
+  double py=proj_mom.Py();
+  double pz=proj_mom.Pz();
+  double tx=px/pz;
+  double ty=py/pz;
+  DVector3 delta(tx*dz,ty*dz,dz);
+  proj_pos+=delta;
+  double locFlightTime=extrapolations[0].t;
 
 	// Evaluate matching solely by physical geometry of the paddle: NOT the distance along the paddle of the hit
 	const DTOFPaddleHit* locClosestPaddleHit = nullptr;
@@ -2589,19 +2531,11 @@ unsigned int DParticleID::PredictSCSector(const vector<DTrackFitter::Extrapolati
     return 0;
 
   // Find the track projection to the Start Counter
-  bool got_sc_extrapolation=false;
-  for (unsigned int i=0;i<extrapolations.size();i++){
-    if (extrapolations[i].detector==SYS_START){
-      got_sc_extrapolation=true;
-      locProjPos=extrapolations[i].position;
-      locProjMom=extrapolations[i].momentum;
-      locFlightTime=extrapolations[i].t;
-      locPathLength=extrapolations[i].s;
-      locFlightTimeVariance=0.; // fill this in!
-      break;
-    }
-  }
-  if (got_sc_extrapolation==false) return 0;
+  locProjPos=extrapolations[0].position;
+  locProjMom=extrapolations[0].momentum;
+  locFlightTime=extrapolations[0].t;
+  locPathLength=extrapolations[0].s;
+  locFlightTimeVariance=0.; // fill this in!
 
   double dphi0=locProjPos.Phi()-sc_pos[0][0].Phi();
   if (dphi0<0) dphi0+=2.*M_PI;
@@ -3037,12 +2971,13 @@ double DParticleID::Get_CorrectedHitTime(const DSCHit* locSCHit,
 
 /************* Routines to get the start time for the track ************/
 
-bool DParticleID::Get_StartTime(const DTrackFitter::Extrapolation_t &extrapolation,
+bool DParticleID::Get_StartTime(const vector<DTrackFitter::Extrapolation_t> &extrapolations,
 				const vector<const DFCALShower*>& FCALShowers,
 				double& StartTime) const{
   if (FCALShowers.size()==0) return false;
+  if (extrapolations.size()==0) return false;
   double StartTimeGuess=StartTime;
-  DVector3 trackpos=extrapolation.position;
+  DVector3 trackpos=extrapolations[0].position;
   double d_min=1e6;
   unsigned int best_fcal_match=0;
   for (unsigned int i=0;i<FCALShowers.size();i++){
@@ -3053,22 +2988,24 @@ bool DParticleID::Get_StartTime(const DTrackFitter::Extrapolation_t &extrapolati
       best_fcal_match=i;
     }
   }
-  StartTime=FCALShowers[best_fcal_match]->getTime()-extrapolation.t;
+  StartTime=FCALShowers[best_fcal_match]->getTime()-extrapolations[0].t;
   if (fabs(StartTime-StartTimeGuess)>OUT_OF_TIME_CUT) return false;
 
-  double p=extrapolation.momentum.Mag();
+  double p=extrapolations[0].momentum.Mag();
   double cut=FCAL_CUT_PAR1+FCAL_CUT_PAR2/p;
   if (d_min<cut) return true;
 
   return false;
 }  
 
-bool DParticleID::Get_StartTime(const DTrackFitter::Extrapolation_t &extrapolation,
+bool DParticleID::Get_StartTime(const vector<DTrackFitter::Extrapolation_t> &extrapolations,
 			    const vector<const DSCHit*>& SCHits, 
 			    double& StartTime) const{
   if (SCHits.size()==0) return false;
+  if (extrapolations.size()==0) return false;
+
   double StartTimeGuess=StartTime;
-  DVector3 trackpos=extrapolation.position;
+  DVector3 trackpos=extrapolations[0].position;
   double z=trackpos.z();
   double dphi_min=1000.;
   unsigned int best_sc_match=0;
@@ -3087,7 +3024,7 @@ bool DParticleID::Get_StartTime(const DTrackFitter::Extrapolation_t &extrapolati
     }
   }	   
   double sc_corrected_time=Get_CorrectedHitTime(SCHits[best_sc_match],trackpos);
-  StartTime=sc_corrected_time-extrapolation.t;
+  StartTime=sc_corrected_time-extrapolations[0].t;
   if (fabs(StartTime-StartTimeGuess)>OUT_OF_TIME_CUT) return false;
 
   double sc_dphi_cut = dSCCutPars_WireBased[0] + dSCCutPars_WireBased[1]*exp(dSCCutPars_WireBased[2]*(trackpos.Z() - dSCCutPars_WireBased[3]));
@@ -3096,14 +3033,16 @@ bool DParticleID::Get_StartTime(const DTrackFitter::Extrapolation_t &extrapolati
   return false;
 } 
 
-bool DParticleID::Get_StartTime(const DTrackFitter::Extrapolation_t &extrapolation,
+bool DParticleID::Get_StartTime(const vector<DTrackFitter::Extrapolation_t> &extrapolations,
 			    const vector<const DTOFPoint*>& TOFPoints, 
 			    double& StartTime) const{
   if (TOFPoints.size()==0) return false;
+  if (extrapolations.size()==0) return false;
+
   double StartTimeGuess=StartTime;
-  DVector3 trackpos=extrapolation.position;
+  DVector3 trackpos=extrapolations[0].position;
   // Set up cuts
-  double locMatchCut_2D = exp(-1.0*TOF_CUT_PAR1*extrapolation.momentum.Mag() + TOF_CUT_PAR2) + TOF_CUT_PAR3;
+  double locMatchCut_2D = exp(-1.0*TOF_CUT_PAR1*extrapolations[0].momentum.Mag() + TOF_CUT_PAR2) + TOF_CUT_PAR3;
   double locMatchCut_1D = locMatchCut_2D;
   
   // loop over TOF points, looking for closest match to track position
@@ -3123,7 +3062,7 @@ bool DParticleID::Get_StartTime(const DTrackFitter::Extrapolation_t &extrapolati
   // Get the start time and check that it is consistent with an initial guess
   // to within some OUT_OF_TIME_CUT
   StartTime=Get_CorrectedHitTime(TOFPoints[best_tof_match],trackpos)
-    -extrapolation.t;
+    -extrapolations[0].t;
   if (fabs(StartTime-StartTimeGuess)>OUT_OF_TIME_CUT) return false;
 
   // Apply matching criteria
@@ -3150,7 +3089,7 @@ bool DParticleID::Get_StartTime(const vector<DTrackFitter::Extrapolation_t> &ext
 			      const vector<const DBCALShower*>& locBCALShowers,
 			      double& StartTime) const{  
   if (locBCALShowers.size()==0) return false; 
-  if (extrapolations.size()==0) return false; // sanity check...
+  if (extrapolations.size()==0) return false;
 
   double StartTimeGuess=StartTime;
   double dphi_min=1e6;
@@ -3162,8 +3101,6 @@ bool DParticleID::Get_StartTime(const vector<DTrackFitter::Extrapolation_t> &ext
     DTrackFitter::Extrapolation_t old_extrapolation=extrapolations[0];
     double d2_old=1.e6,d2=0.;
     for (unsigned int j=0;j<extrapolations.size();j++){
-      if (extrapolations[j].detector!=SYS_BCAL) continue;
-
       DVector3 trackpos=extrapolations[j].position;
       d2=(trackpos-bcalpos).Mag2();
       if (d2>d2_old){

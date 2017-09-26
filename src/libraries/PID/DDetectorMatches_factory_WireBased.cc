@@ -58,6 +58,7 @@ DDetectorMatches* DDetectorMatches_factory_WireBased::Create_DDetectorMatches(ja
 	DDetectorMatches* locDetectorMatches = new DDetectorMatches();
 
 	//Match tracks to showers/hits
+	_DBG_ << endl;
 	for(size_t loc_i = 0; loc_i < locTrackWireBasedVector.size(); ++loc_i)
 	{
 		MatchToBCAL(locParticleID, locTrackWireBasedVector[loc_i], locBCALShowers, locDetectorMatches);
@@ -97,12 +98,17 @@ DDetectorMatches* DDetectorMatches_factory_WireBased::Create_DDetectorMatches(ja
 
 void DDetectorMatches_factory_WireBased::MatchToBCAL(const DParticleID* locParticleID, const DTrackWireBased* locTrackWireBased, const vector<const DBCALShower*>& locBCALShowers, DDetectorMatches* locDetectorMatches) const
 {
+  cout <<  "Matching BCAL " << locTrackWireBased->extrapolations.at(SYS_BCAL).size() << endl;
+  if (locTrackWireBased->extrapolations.at(SYS_BCAL).size()==0) return;
+
 	double locInputStartTime = locTrackWireBased->t0();
-	const vector<DTrackFitter::Extrapolation_t>extrapolations=locTrackWireBased->extrapolations;
+	//const vector<DTrackFitter::Extrapolation_t>extrapolations=locTrackWireBased->extrapolations;
+
+	
 	for(size_t loc_i = 0; loc_i < locBCALShowers.size(); ++loc_i)
 	{
 		DBCALShowerMatchParams locShowerMatchParams;
-		if(locParticleID->Cut_MatchDistance(extrapolations, locBCALShowers[loc_i], locInputStartTime, locShowerMatchParams))
+		if(locParticleID->Cut_MatchDistance(locTrackWireBased->extrapolations.at(SYS_BCAL), locBCALShowers[loc_i], locInputStartTime, locShowerMatchParams))
 			locDetectorMatches->Add_Match(locTrackWireBased, locBCALShowers[loc_i], locShowerMatchParams);
 	}
 }
@@ -110,7 +116,7 @@ void DDetectorMatches_factory_WireBased::MatchToBCAL(const DParticleID* locParti
 void DDetectorMatches_factory_WireBased::MatchToTOF(const DParticleID* locParticleID, const DTrackWireBased* locTrackWireBased, const vector<const DTOFPoint*>& locTOFPoints, DDetectorMatches* locDetectorMatches) const
 {
 	double locInputStartTime = locTrackWireBased->t0();
-	const vector<DTrackFitter::Extrapolation_t>extrapolations=locTrackWireBased->extrapolations;
+	const vector<DTrackFitter::Extrapolation_t>extrapolations=locTrackWireBased->extrapolations.at(SYS_TOF);
 	for(size_t loc_i = 0; loc_i < locTOFPoints.size(); ++loc_i)
 	{
 		DTOFHitMatchParams locTOFHitMatchParams;
@@ -122,7 +128,7 @@ void DDetectorMatches_factory_WireBased::MatchToTOF(const DParticleID* locPartic
 void DDetectorMatches_factory_WireBased::MatchToFCAL(const DParticleID* locParticleID, const DTrackWireBased* locTrackWireBased, const vector<const DFCALShower*>& locFCALShowers, DDetectorMatches* locDetectorMatches) const
 {
 	double locInputStartTime = locTrackWireBased->t0();
-	const vector<DTrackFitter::Extrapolation_t>extrapolations=locTrackWireBased->extrapolations;
+	const vector<DTrackFitter::Extrapolation_t>extrapolations=locTrackWireBased->extrapolations.at(SYS_FCAL);
 	for(size_t loc_i = 0; loc_i < locFCALShowers.size(); ++loc_i)
 	{
 		DFCALShowerMatchParams locShowerMatchParams;
@@ -134,7 +140,7 @@ void DDetectorMatches_factory_WireBased::MatchToFCAL(const DParticleID* locParti
 void DDetectorMatches_factory_WireBased::MatchToSC(const DParticleID* locParticleID, const DTrackWireBased* locTrackWireBased, const vector<const DSCHit*>& locSCHits, DDetectorMatches* locDetectorMatches) const
 {
 	double locInputStartTime = locTrackWireBased->t0();
-	const vector<DTrackFitter::Extrapolation_t>extrapolations=locTrackWireBased->extrapolations;
+	const vector<DTrackFitter::Extrapolation_t>extrapolations=locTrackWireBased->extrapolations.at(SYS_START);
 	for(size_t loc_i = 0; loc_i < locSCHits.size(); ++loc_i)
 	{
 		DSCHitMatchParams locSCHitMatchParams;
@@ -151,7 +157,7 @@ void DDetectorMatches_factory_WireBased::MatchToTrack(const DParticleID* locPart
 	{
 		DBCALShowerMatchParams locShowerMatchParams;
 		double locInputStartTime = locTrackWireBasedVector[loc_i]->t0();
-		const vector<DTrackFitter::Extrapolation_t>extrapolations=locTrackWireBasedVector[loc_i]->extrapolations;
+		const vector<DTrackFitter::Extrapolation_t>extrapolations=locTrackWireBasedVector[loc_i]->extrapolations.at(SYS_BCAL);
 		if(!locParticleID->Distance_ToTrack(extrapolations, locBCALShower, locInputStartTime, locShowerMatchParams))
 			continue;
 
@@ -176,7 +182,7 @@ void DDetectorMatches_factory_WireBased::MatchToTrack(const DParticleID* locPart
 	{
 		DFCALShowerMatchParams locShowerMatchParams;
 		double locInputStartTime = locTrackWireBasedVector[loc_i]->t0();
-		const vector<DTrackFitter::Extrapolation_t>extrapolations=locTrackWireBasedVector[loc_i]->extrapolations;
+		const vector<DTrackFitter::Extrapolation_t>extrapolations=locTrackWireBasedVector[loc_i]->extrapolations.at(SYS_FCAL);
 		if(!locParticleID->Distance_ToTrack(extrapolations, locFCALShower, locInputStartTime, locShowerMatchParams))
 			continue;
 		if(locShowerMatchParams.dDOCAToShower < locMinDistance)
