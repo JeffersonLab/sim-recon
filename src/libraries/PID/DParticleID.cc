@@ -951,18 +951,9 @@ bool DParticleID::Distance_ToTrack(const vector<DTrackFitter::Extrapolation_t> &
   DVector3 locProjPos,locProjMom;
  
   // Find the closest extrapolated position to this BCAL shower
-  bool got_bcal_extrapolation=false;
   DTrackFitter::Extrapolation_t old_extrapolation=extrapolations[0];
   double d2_old=1.e6,d2=0.;
-  DVector3 proj_pos_surface;
   for (unsigned int j=0;j<extrapolations.size();j++){
-    // Save position of first extrapolation point in BCAL
-    if (got_bcal_extrapolation==false){
-      proj_pos_surface=extrapolations[j].position;
-      proj_pos_surface.Print();
-    }
-    got_bcal_extrapolation=true;
-    
     locProjPos=extrapolations[j].position;
     d2=(extrapolations[j].position-bcal_pos).Mag2();
     if (d2>d2_old){
@@ -977,7 +968,6 @@ bool DParticleID::Distance_ToTrack(const vector<DTrackFitter::Extrapolation_t> &
     d2_old=d2;
     old_extrapolation=extrapolations[j];
   }
-  if (got_bcal_extrapolation==false) return false;
 
   // Check that the hit is not out of time with respect to the track
   double locDeltaT = locBCALShower->t - locFlightTime - locInputStartTime;
@@ -999,7 +989,7 @@ bool DParticleID::Distance_ToTrack(const vector<DTrackFitter::Extrapolation_t> &
     locDeltaPhiMin += M_TWO_PI;
 
   // Find intersection of track with inner radius of BCAL to get dx
-  double locDx = (locProjPos - proj_pos_surface).Mag();
+  double locDx = (locProjPos - extrapolations[0].position).Mag();
 
   // The next part of the code tries to take into account curvature
   // of shower cluster distribution
@@ -1408,7 +1398,6 @@ bool DParticleID::Cut_MatchDistance(const vector<DTrackFitter::Extrapolation_t> 
 
 bool DParticleID::Cut_MatchDistance(const vector<DTrackFitter::Extrapolation_t> &extrapolations, const DBCALShower* locBCALShower, double locInputStartTime, DBCALShowerMatchParams& locShowerMatchParams, DVector3 *locOutputProjPos, DVector3 *locOutputProjMom) const
 {
-  cout << " Got here : " <<extrapolations.size() << endl;
 
 	DVector3 locProjPos, locProjMom;
 	if(!Distance_ToTrack(extrapolations, locBCALShower, locInputStartTime, locShowerMatchParams, &locProjPos, &locProjMom))
@@ -2540,11 +2529,12 @@ unsigned int DParticleID::PredictSCSector(const vector<DTrackFitter::Extrapolati
   double dphi0=locProjPos.Phi()-sc_pos[0][0].Phi();
   if (dphi0<0) dphi0+=2.*M_PI;
   unsigned int index=int(floor(dphi0/(2.*M_PI/30.)));
+  if (index>29) index=0;
   for (unsigned int i=0;i<sc_pos[index].size();i++){
     if (locProjPos.z()>sc_pos[index][i].z()) continue;
     
-    locPaddleNorm=sc_norm[index][i-1];
-    locDeltaPhi=locProjPos.Phi()-sc_pos[index][i-1].Phi();
+    locPaddleNorm=sc_norm[index][i];
+    locDeltaPhi=locProjPos.Phi()-sc_pos[index][i].Phi();
     if (locDeltaPhi<0) locDeltaPhi+=2.*M_PI;
 
     break;   
