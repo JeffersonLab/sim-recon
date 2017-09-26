@@ -49,7 +49,9 @@ DReactionStep* DReaction_factory_ReactionFilter::Create_DefaultDecayStep(Particl
 	else if(locPID == phiMeson)
 		return (new DReactionStep(phiMeson, {KMinus, KPlus}));
 	else if(locPID == D0)
-		return (new DReactionStep(D0, {PiMinus, KPlus}));
+		return (new DReactionStep(D0, {KMinus, PiPlus}));
+	else if(locPID == AntiD0)
+		return (new DReactionStep(AntiD0, {KPlus, PiMinus}));
 	else if(locPID == Jpsi)
 		return (new DReactionStep(Jpsi, {Electron, Positron}));
 

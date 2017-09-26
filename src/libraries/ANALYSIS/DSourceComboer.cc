@@ -5,16 +5,6 @@
 /*
  *
  * EVENTUALLY:
- * K0 Sigma+: COMPARE
- * K+ Sigma0: COMPARE
- * K+ K+ pi- Xi0, Xi0 -> pi0, Lambda: COMPARE
- * K0 Sigma+ (pi0): COMPARE
- * omega p: COMPARE
- * omega p missing pi+: COMPARE
- *
- * n, pi+
- * n, pi0, pi+
- * K+ Lambda, Lambda -> n, pi0
  *
  *
  *
