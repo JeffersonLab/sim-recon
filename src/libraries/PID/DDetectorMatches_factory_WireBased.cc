@@ -58,7 +58,6 @@ DDetectorMatches* DDetectorMatches_factory_WireBased::Create_DDetectorMatches(ja
 	DDetectorMatches* locDetectorMatches = new DDetectorMatches();
 
 	//Match tracks to showers/hits
-	_DBG_ << endl;
 	for(size_t loc_i = 0; loc_i < locTrackWireBasedVector.size(); ++loc_i)
 	{
 		MatchToBCAL(locParticleID, locTrackWireBasedVector[loc_i], locBCALShowers, locDetectorMatches);
@@ -98,13 +97,9 @@ DDetectorMatches* DDetectorMatches_factory_WireBased::Create_DDetectorMatches(ja
 
 void DDetectorMatches_factory_WireBased::MatchToBCAL(const DParticleID* locParticleID, const DTrackWireBased* locTrackWireBased, const vector<const DBCALShower*>& locBCALShowers, DDetectorMatches* locDetectorMatches) const
 {
-  cout <<  "Matching BCAL " << locTrackWireBased->extrapolations.at(SYS_BCAL).size() << endl;
   if (locTrackWireBased->extrapolations.at(SYS_BCAL).size()==0) return;
 
 	double locInputStartTime = locTrackWireBased->t0();
-	//const vector<DTrackFitter::Extrapolation_t>extrapolations=locTrackWireBased->extrapolations;
-
-	
 	for(size_t loc_i = 0; loc_i < locBCALShowers.size(); ++loc_i)
 	{
 		DBCALShowerMatchParams locShowerMatchParams;
