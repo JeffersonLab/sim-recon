@@ -310,53 +310,68 @@ jerror_t DParticleID::GroupTracks(vector<const DTrackTimeBased *> &tracks,
 // on the track. Returns a list of dE and dx pairs with the momentum at the 
 // hit.
 jerror_t DParticleID::GetDCdEdxHits(const DTrackTimeBased *track, vector<dedx_t>& dEdxHits_CDC, vector<dedx_t>& dEdxHits_FDC) const{
+ 
+
   // Position and momentum
   DVector3 pos,mom;
   
   //dE and dx pairs
   pair<double,double>de_and_dx;
 
-  // We cast away the const-ness of the reference trajectory so that we can use the DisToRT method
-  DReferenceTrajectory *my_rt=const_cast<DReferenceTrajectory*>(track->rt);
-
   //Get the list of cdc hits used in the fit
   vector<const DCDCTrackHit*>cdchits;
   track->GetT(cdchits);
 
   // Loop over cdc hits
-  for (unsigned int i=0;i<cdchits.size();i++){
-    double locReturnValue = my_rt->DistToRT(cdchits[i]->wire);
-    if(!((locReturnValue >= 0.0) || (locReturnValue <= 0.0)))
-      continue; //NaN
-
-    if (cdchits[i]->dE <= 0.0) continue; // pedestal > signal
-
-    my_rt->GetLastDOCAPoint(pos, mom);
-
-    // Create the dE,dx pair from the position and momentum using a helical approximation for the path 
-    // in the straw and keep track of the momentum in the active region of the detector
-    if (CalcdEdxHit(mom,pos,cdchits[i],de_and_dx)==NOERROR)
-      dEdxHits_CDC.push_back(dedx_t(de_and_dx.first, de_and_dx.second, mom.Mag()));
+  vector<DTrackFitter::Extrapolation_t>cdc_extrapolations=track->extrapolations.at(SYS_CDC);
+  if (cdc_extrapolations.size()>0){
+    for (unsigned int i=0;i<cdchits.size();i++){ 
+      if (cdchits[i]->dE <= 0.0) continue; // pedestal > signal
+      
+      double doca2_old=1e6;
+      for (unsigned int j=0;j<cdc_extrapolations.size();j++){
+	double z=cdc_extrapolations[j].position.z();
+	DVector3 wirepos=cdchits[i]->wire->origin
+	  +((z-cdchits[i]->wire->origin.z())/cdchits[i]->wire->udir.z())
+	  *cdchits[i]->wire->udir;
+	double doca2=(wirepos-cdc_extrapolations[j].position).Mag2();
+	if (doca2>doca2_old){
+	  mom=cdc_extrapolations[j].momentum;
+	  pos=cdc_extrapolations[j].position;
+	  break;
+	}
+	doca2_old=doca2;
+      }
+      // Create the dE,dx pair from the position and momentum using a helical approximation for the path 
+      // in the straw and keep track of the momentum in the active region of the detector
+      if (CalcdEdxHit(mom,pos,cdchits[i],de_and_dx)==NOERROR)
+	dEdxHits_CDC.push_back(dedx_t(de_and_dx.first, de_and_dx.second, mom.Mag()));
+    }
   }
   
   //Get the list of fdc hits used in the fit
   vector<const DFDCPseudo*>fdchits;
   track->GetT(fdchits);
 
-  // loop over fdc hits
-  for (unsigned int i=0;i<fdchits.size();i++){
-    double locReturnValue = my_rt->DistToRT(fdchits[i]->wire);
-    if(!((locReturnValue >= 0.0) || (locReturnValue <= 0.0)))
-      continue; //NaN
-
-    if (fdchits[i]->dE <= 0.0) continue; // pedestal > signal
-
-    my_rt->GetLastDOCAPoint(pos, mom);
+  // loop over fdc hits 
+  vector<DTrackFitter::Extrapolation_t>fdc_extrapolations=track->extrapolations.at(SYS_FDC);
+  if (fdc_extrapolations.size()>0){
+    for (unsigned int i=0;i<fdchits.size();i++){
+      if (fdchits[i]->dE <= 0.0) continue; // pedestal > signal
+      
+      for (unsigned int j=0;j<fdc_extrapolations.size();j++){
+	double z=fdc_extrapolations[j].position.z();
+	if (fabs(z-fdchits[i]->wire->origin.z())<1e-3){
+	  mom=fdc_extrapolations[j].momentum;
+	  break;
+	}
+      }
    
-    double gas_thickness = 1.0; // cm
-    dEdxHits_FDC.push_back(dedx_t(fdchits[i]->dE, gas_thickness/cos(mom.Theta()), mom.Mag()));
+      double gas_thickness = 1.0; // cm
+      dEdxHits_FDC.push_back(dedx_t(fdchits[i]->dE, gas_thickness/cos(mom.Theta()), mom.Mag()));
+    }
   }
-    
+
   // Sort the dEdx entries from smallest to largest
   sort(dEdxHits_FDC.begin(),dEdxHits_FDC.end(),DParticleID_dedx_cmp);  
   sort(dEdxHits_CDC.begin(),dEdxHits_CDC.end(),DParticleID_dedx_cmp);  
