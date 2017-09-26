@@ -180,8 +180,6 @@ void DTrackHitSelectorALT2::GetCDCHits(double Bz,double q,
     double s=0.;
     DVector3 old_trackpos;
     for (unsigned int i=0;i<extrapolations.size();i++){
-      if (extrapolations[i].detector==SYS_FDC) break;
-      if (extrapolations[i].detector==SYS_START) continue;
       DVector3 trackpos=extrapolations[i].position;
       double dz=trackpos.z()-z0;  
       DVector3 wirepos=origin+dz/uz*dir;      

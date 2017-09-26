@@ -597,7 +597,7 @@ void DTrackFitterKalmanSIMD::ResetKalmanSIMD(void)
    cov.clear();
    fcov.clear();
    pulls.clear();
-   extrapolations.clear();
+   ClearExtrapolations();
 
    len = 0.0;
    ftime=0.0;
@@ -3274,11 +3274,11 @@ jerror_t DTrackFitterKalmanSIMD::KalmanLoop(void){
       kalman_error_t cdc_error=FIT_NOT_DONE;
 
       // Save the current state of the extrapolation vector if it exists
-      vector<Extrapolation_t>saved_extrapolations;
+      map<DetectorSystem_t,vector<Extrapolation_t> >saved_extrapolations;
       if (!extrapolations.empty()){
-	saved_extrapolations.assign(extrapolations.begin(),
-				    extrapolations.end());
-	extrapolations.clear();
+	saved_extrapolations=extrapolations;
+	ClearExtrapolations();
+	_DBG_ << "Extrap " << saved_extrapolations.size() <<  " " <<extrapolations.size() << endl;
       }
 
       // Chi-squared, degrees of freedom, and probability
@@ -3350,8 +3350,8 @@ jerror_t DTrackFitterKalmanSIMD::KalmanLoop(void){
                      fcov.assign(fcov_save.begin(),fcov_save.end());
                   }
 		  if (!saved_extrapolations.empty()){
-		    extrapolations.assign(saved_extrapolations.begin(),
-					  saved_extrapolations.end());
+		    extrapolations=saved_extrapolations;
+		    _DBG_ << "Extrap " << saved_extrapolations.size() <<  " " <<extrapolations.size() << endl;
 		  }
 		  
                   //                         _DBG_ << endl;
@@ -3373,9 +3373,9 @@ jerror_t DTrackFitterKalmanSIMD::KalmanLoop(void){
             fcov_save.assign(fcov.begin(),fcov.end());	
 
 	    if (!extrapolations.empty()){
-	      saved_extrapolations.assign(extrapolations.begin(),
-					  extrapolations.end());
-	      extrapolations.clear();
+	      saved_extrapolations=extrapolations;
+	      ClearExtrapolations();
+	_DBG_ << "Extrap " << saved_extrapolations.size() <<  " " <<extrapolations.size() << endl;
 	    }
 
             // Save the list of hits used in the fit
@@ -3442,8 +3442,8 @@ jerror_t DTrackFitterKalmanSIMD::KalmanLoop(void){
             fcov.assign(fcov_save.begin(),fcov_save.end());
 
 	    if (!saved_extrapolations.empty()){
-	      extrapolations.assign(saved_extrapolations.begin(),
-				    saved_extrapolations.end());
+	      extrapolations=saved_extrapolations;
+	      _DBG_ << "Extrap " << saved_extrapolations.size() <<  " " <<extrapolations.size() << endl;
 	    }
 	    
             cdchits_used_in_fit.assign(forward_cdc_used_in_fit.begin(),forward_cdc_used_in_fit.end());
@@ -3467,8 +3467,8 @@ jerror_t DTrackFitterKalmanSIMD::KalmanLoop(void){
          ndf_= ndof_forward;
 
 	 if (!saved_extrapolations.empty()){
-	   extrapolations.assign(saved_extrapolations.begin(),
-				 saved_extrapolations.end());
+	   extrapolations=saved_extrapolations;
+	   _DBG_ << "Extrap " << saved_extrapolations.size() <<  " " <<extrapolations.size() << endl;
 	 }
 
          cdchits_used_in_fit.assign(forward_cdc_used_in_fit.begin(),forward_cdc_used_in_fit.end());	
@@ -7171,7 +7171,7 @@ kalman_error_t DTrackFitterKalmanSIMD::ForwardFit(const DMatrix5x1 &S0,const DMa
 	 // Source for t0 guess
 	 mT0Detector=SYS_CDC;  
 	 // fill vector of extrapolations
-	 extrapolations.clear();
+	 ClearExtrapolations();
 	 ExtrapolateForwardToOtherDetectors();
 
          if (fdc_updates.size()>0){      
@@ -7435,7 +7435,7 @@ kalman_error_t DTrackFitterKalmanSIMD::ForwardCDCFit(const DMatrix5x1 &S0,const 
 	 // source for t0 guess
 	 mT0Detector=SYS_CDC; 
 	 // Fill extrapolation vector
-	 extrapolations.clear();
+	 ClearExtrapolations();
 	 ExtrapolateForwardToOtherDetectors();
 
          chisq_forward=chisq;
@@ -7682,7 +7682,7 @@ kalman_error_t DTrackFitterKalmanSIMD::CentralFit(const DVector2 &startpos,
 	 // source for t0 guess
 	 mT0Detector=SYS_CDC;
 	 // Fill extrapolations vector
-	 extrapolations.clear();
+	 ClearExtrapolations();
 	 ExtrapolateCentralToOtherDetectors();
 
          last_cdc_updates.assign(cdc_updates.begin(),cdc_updates.end());
@@ -9196,8 +9196,8 @@ jerror_t DTrackFitterKalmanSIMD::ExtrapolateForwardToOtherDetectors(){
 	double phi=atan2(bestS(state_ty),bestS(state_tx));
 	DVector3 position(bestS(state_x),bestS(state_y),bestz);
 	DVector3 momentum(pt*cos(phi),pt*sin(phi),pt*tanl);
-	extrapolations.push_back(Extrapolation_t(SYS_START,position,momentum,
-						 t*TIME_UNIT_CONVERSION,s));
+	extrapolations[SYS_START].push_back(Extrapolation_t(position,momentum,
+						    t*TIME_UNIT_CONVERSION,s));
 
 	intersected_start_counter=true;
 	break;
@@ -9233,12 +9233,14 @@ jerror_t DTrackFitterKalmanSIMD::ExtrapolateForwardToOtherDetectors(){
     double ds=(k>1)?(forward_traj[k].s-forward_traj[k-1].s):1.;
     theta2ms_sum+=3.*fabs(forward_traj[k].Q(state_x,state_x))/(ds*ds);
 
-    // Extraplations in CDC region
+    // Extrapolations in CDC region
     if (z<endplate_z){
       DVector3 position(S(state_x),S(state_y),z);
       DVector3 momentum(pt*cos(phi),pt*sin(phi),pt*tanl);
-      extrapolations.push_back(Extrapolation_t(SYS_CDC,position,momentum,t,s,
-					       s_theta_ms_sum,theta2ms_sum));
+      extrapolations[SYS_CDC].push_back(Extrapolation_t(position,momentum,
+						t*TIME_UNIT_CONVERSION,s,
+						s_theta_ms_sum,theta2ms_sum));
+
     }
     else{ // extrapolations in FDC region
       if (fdc_plane==24) break;	
@@ -9247,8 +9249,9 @@ jerror_t DTrackFitterKalmanSIMD::ExtrapolateForwardToOtherDetectors(){
       if (z>fdc_z_wires[fdc_plane]-0.1){
 	DVector3 position(S(state_x),S(state_y),z);
 	DVector3 momentum(pt*cos(phi),pt*sin(phi),pt*tanl);
-	extrapolations.push_back(Extrapolation_t(SYS_FDC,position,momentum,
-						 t,s,s_theta_ms_sum,theta2ms_sum));
+	extrapolations[SYS_FDC].push_back(Extrapolation_t(position,momentum,
+						t*TIME_UNIT_CONVERSION,s,
+						s_theta_ms_sum,theta2ms_sum));
 
 	fdc_plane++;
       }
@@ -9310,9 +9313,10 @@ jerror_t DTrackFitterKalmanSIMD::ExtrapolateForwardToOtherDetectors(){
       double phi=atan2(S(state_ty),S(state_tx));
       DVector3 position(S(state_x),S(state_y),z);
       DVector3 momentum(pt*cos(phi),pt*sin(phi),pt*tanl);
-      extrapolations.push_back(Extrapolation_t(SYS_BCAL,position,momentum,
-					       t*TIME_UNIT_CONVERSION,s));
-  
+      extrapolations[SYS_BCAL].push_back(Extrapolation_t(position,momentum,
+						 t*TIME_UNIT_CONVERSION,s));
+      
+
       if (r2>89.*89.){ // outer radius squared	
 	return NOERROR;
       }
@@ -9399,9 +9403,9 @@ jerror_t DTrackFitterKalmanSIMD::ExtrapolateForwardToOtherDetectors(){
       double phi=atan2(S(state_ty),S(state_tx));
       DVector3 position(S(state_x),S(state_y),z);
       DVector3 momentum(pt*cos(phi),pt*sin(phi),pt*tanl);
-      extrapolations.push_back(Extrapolation_t(SYS_FDC,position,momentum,
-					       t*TIME_UNIT_CONVERSION,s,
-					       s_theta_ms_sum,theta2ms_sum));
+      extrapolations[SYS_FDC].push_back(Extrapolation_t(position,momentum,
+						t*TIME_UNIT_CONVERSION,s,
+						s_theta_ms_sum,theta2ms_sum));
 
       fdc_plane++;
     }       
@@ -9415,8 +9419,8 @@ jerror_t DTrackFitterKalmanSIMD::ExtrapolateForwardToOtherDetectors(){
       double phi=atan2(S(state_ty),S(state_tx));
       DVector3 position(S(state_x),S(state_y),z);
       DVector3 momentum(pt*cos(phi),pt*sin(phi),pt*tanl);
-      extrapolations.push_back(Extrapolation_t(SYS_TOF,position,momentum,
-					       t*TIME_UNIT_CONVERSION,s));
+      extrapolations[SYS_TOF].push_back(Extrapolation_t(position,momentum,
+							t*TIME_UNIT_CONVERSION,s));
     }  
     if (newz>dFCALz){
       double tsquare=S(state_tx)*S(state_tx)+S(state_ty)*S(state_ty);
@@ -9426,8 +9430,8 @@ jerror_t DTrackFitterKalmanSIMD::ExtrapolateForwardToOtherDetectors(){
       double phi=atan2(S(state_ty),S(state_tx));
       DVector3 position(S(state_x),S(state_y),z);
       DVector3 momentum(pt*cos(phi),pt*sin(phi),pt*tanl);
-      extrapolations.push_back(Extrapolation_t(SYS_FCAL,position,momentum,
-					       t*TIME_UNIT_CONVERSION,s));
+      extrapolations[SYS_FCAL].push_back(Extrapolation_t(position,momentum,
+					    t*TIME_UNIT_CONVERSION,s));
 
       return NOERROR;
     }
@@ -9533,7 +9537,7 @@ jerror_t DTrackFitterKalmanSIMD::ExtrapolateCentralToOtherDetectors(){
 	  double phi=bestS(state_phi);
 	  DVector3 position(bestXY.X(),bestXY.Y(),bestS(state_z));
 	  DVector3 momentum(pt*cos(phi),pt*sin(phi),pt*tanl); 
-	  extrapolations.push_back(Extrapolation_t(SYS_START,position,momentum,
+	  extrapolations[SYS_START].push_back(Extrapolation_t(position,momentum,
 	  					   t*TIME_UNIT_CONVERSION,s));
 	}  
 	break;
@@ -9568,8 +9572,9 @@ jerror_t DTrackFitterKalmanSIMD::ExtrapolateCentralToOtherDetectors(){
     if (S(state_z)<endplate_z){
       DVector3 position(xy.X(),xy.Y(),S(state_z));
       DVector3 momentum(pt*cos(phi),pt*sin(phi),pt*tanl); 
-      extrapolations.push_back(Extrapolation_t(SYS_CDC,position,momentum,t,s,
+      extrapolations[SYS_CDC].push_back(Extrapolation_t(position,momentum,t,s,
 					       s_theta_ms_sum,theta2ms_sum));
+      
     }
     else{
       if (fdc_plane==24) break;	
@@ -9577,7 +9582,7 @@ jerror_t DTrackFitterKalmanSIMD::ExtrapolateCentralToOtherDetectors(){
       if (S(state_z)>fdc_z_wires[fdc_plane]-0.1){
 	DVector3 position(xy.X(),xy.Y(),S(state_z));
 	DVector3 momentum(pt*cos(phi),pt*sin(phi),pt*tanl); 
-	extrapolations.push_back(Extrapolation_t(SYS_FDC,position,momentum,t,s,
+	extrapolations[SYS_FDC].push_back(Extrapolation_t(position,momentum,t,s,
 						 s_theta_ms_sum,theta2ms_sum));
 
 	fdc_plane++;
@@ -9675,9 +9680,9 @@ jerror_t DTrackFitterKalmanSIMD::ExtrapolateCentralToOtherDetectors(){
       double phi=S(state_phi);
       DVector3 position(xy.X(),xy.Y(),S(state_z));
       DVector3 momentum(pt*cos(phi),pt*sin(phi),pt*tanl);
-      extrapolations.push_back(Extrapolation_t(SYS_BCAL,position,momentum,
-					       t*TIME_UNIT_CONVERSION, s,
-					       s_theta_ms_sum));
+      extrapolations[SYS_BCAL].push_back(Extrapolation_t(position,momentum,
+						 t*TIME_UNIT_CONVERSION,s));
+      
 
       if (r2>89.*89.){ // outer radius squared	
 	return NOERROR;
@@ -9691,10 +9696,10 @@ jerror_t DTrackFitterKalmanSIMD::ExtrapolateCentralToOtherDetectors(){
       double phi=S(state_phi);
       DVector3 position(xy.X(),xy.Y(),S(state_z));
       DVector3 momentum(pt*cos(phi),pt*sin(phi),pt*tanl);
-      extrapolations.push_back(Extrapolation_t(SYS_FDC,position,momentum,
+      extrapolations[SYS_FDC].push_back(Extrapolation_t(position,momentum,
 					       t*TIME_UNIT_CONVERSION,s,
 					       s_theta_ms_sum));
-
+      
       fdc_plane++;
     }
       

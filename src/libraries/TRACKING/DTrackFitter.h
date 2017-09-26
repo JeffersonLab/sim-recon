@@ -84,12 +84,10 @@ class DTrackFitter:public jana::JObject{
 		};
 		class Extrapolation_t{
 		public:
-		Extrapolation_t(DetectorSystem_t detector,
-				DVector3 position,DVector3 momentum,
+		Extrapolation_t(DVector3 position,DVector3 momentum,
 				double t,double s,double s_theta_ms_sum=0.,
 				double theta2ms_sum=0.):
-		  detector(detector),position(position),momentum(momentum),t(t),s(s),s_theta_ms_sum(s_theta_ms_sum),theta2ms_sum(theta2ms_sum){}
-		  DetectorSystem_t detector;
+		  position(position),momentum(momentum),t(t),s(s),s_theta_ms_sum(s_theta_ms_sum),theta2ms_sum(theta2ms_sum){}
 		  DVector3 position;
 		  DVector3 momentum;
 		  double t;
@@ -139,6 +137,14 @@ class DTrackFitter:public jana::JObject{
 		const vector<const DFDCPseudo*>&   GetFDCInputHits(void) const {return fdchits;}
 		const vector<const DCDCTrackHit*>& GetCDCFitHits(void) const {return cdchits_used_in_fit;}
 		const vector<const DFDCPseudo*>&   GetFDCFitHits(void) const {return fdchits_used_in_fit;}
+		void ClearExtrapolations(void){
+		  extrapolations[SYS_TOF].clear();
+		  extrapolations[SYS_BCAL].clear();
+		  extrapolations[SYS_FCAL].clear();
+		  extrapolations[SYS_FDC].clear();
+		  extrapolations[SYS_CDC].clear();
+		  extrapolations[SYS_START].clear();
+		};
 		
 		// Fit parameter accessor methods
 		const DKinematicData& GetInputParameters(void) const {return input_params;}
@@ -149,8 +155,10 @@ class DTrackFitter:public jana::JObject{
 		unsigned int GetNumPotentialCDCHits(void) const {return potential_cdc_hits_on_track;}
       bool GetIsSmoothed(void) const {return IsSmoothed;}
 		
-		vector<pull_t>& GetPulls(void){return pulls;}
-		vector<Extrapolation_t>& GetExtrapolations(void){return extrapolations;}
+      vector<pull_t>& GetPulls(void){return pulls;}
+      const map<DetectorSystem_t,vector<Extrapolation_t> >&GetExtrapolations(void) const{
+	return extrapolations;
+      }
 
 		fit_type_t GetFitType(void) const {return fit_type;}
 		const DMagneticFieldMap* GetDMagneticFieldMap(void) const {return bfield;}
@@ -173,7 +181,7 @@ class DTrackFitter:public jana::JObject{
 				      ); ///< mass<0 means get it from starting_params
 		fit_status_t 
 		  FindHitsAndFitTrack(const DKinematicData &starting_params, 
-				      const vector<DTrackFitter::Extrapolation_t>&extrapolations,
+				      const map<DetectorSystem_t,vector<DTrackFitter::Extrapolation_t> >&extrapolations,
 				      JEventLoop *loop, 
 				      double mass,int N,double t0,
 				      DetectorSystem_t t0_det);
@@ -213,7 +221,7 @@ class DTrackFitter:public jana::JObject{
 		double chisq;													//< Chi-sq of final track fit (not the chisq/dof!)
 		int Ndof;														//< Number of degrees of freedom for final track
 		vector<pull_t> pulls;										//< pull_t objects for each contribution to chisq (assuming no correlations)
-		vector<Extrapolation_t> extrapolations;
+		map<DetectorSystem_t,vector<Extrapolation_t> > extrapolations;
 
 		fit_status_t fit_status;									//< Status of values in fit_params (kFitSuccess, kFitFailed, ...)
 		vector<const DCDCTrackHit*> cdchits_used_in_fit;	//< The CDC hits actually used in the fit

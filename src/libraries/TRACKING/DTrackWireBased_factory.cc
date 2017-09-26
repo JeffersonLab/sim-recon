@@ -525,8 +525,8 @@ void DTrackWireBased_factory::DoFit(unsigned int c_id,
             track->Ndof = fitter->GetNdof();
             track->FOM = TMath::Prob(track->chisq, track->Ndof);
             track->pulls = fitter->GetPulls(); 
-	    vector<DTrackFitter::Extrapolation_t> extrapolations=fitter->GetExtrapolations();
-	    track->extrapolations.assign(extrapolations.begin(),extrapolations.end());
+	    track->extrapolations=fitter->GetExtrapolations();
+	    _DBG_ << track->extrapolations.size() << endl;
 
             track->candidateid = c_id+1;
 

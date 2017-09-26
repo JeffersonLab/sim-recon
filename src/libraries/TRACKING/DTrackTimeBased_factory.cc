@@ -783,46 +783,37 @@ void DTrackTimeBased_factory
   double track_t0=track->t0();
   double locStartTime = track_t0;  // initial guess from tracking
   DSCHitMatchParams locSCBestMatchParams; 
-  for (unsigned int k=0;k<track->extrapolations.size();k++){
-    DTrackFitter::Extrapolation_t myextrapolation=track->extrapolations[k];
-    locStartTime=track_t0; 
-    switch(myextrapolation.detector){
-    case SYS_START:
-      if (pid_algorithm->Get_StartTime(myextrapolation,sc_hits,locStartTime)){
-	start_time.t0=locStartTime;
-	//    start_time.t0_sigma=sqrt(locTimeVariance); //uncomment when ready
-	start_time.t0_sigma=sqrt(locStartTimeVariance);
-	start_time.system=SYS_START;
-	start_times.push_back(start_time); 
-      }
-      break; 
-    case SYS_TOF:
-      if (pid_algorithm->Get_StartTime(myextrapolation,tof_points,locStartTime)){
-	// Fill in the start time vector
-	start_time.t0=locStartTime;
-	start_time.t0_sigma=sqrt(locStartTimeVariance);
-	//    start_time.t0_sigma=sqrt(locTimeVariance); //uncomment when ready
-	start_time.system=SYS_TOF;
-	start_times.push_back(start_time); 
-      }
-      break; 
-    case SYS_FCAL:
-      if (pid_algorithm->Get_StartTime(myextrapolation,fcal_showers,locStartTime)){
-	// Fill in the start time vector
-	start_time.t0=locStartTime;
-	start_time.t0_sigma=sqrt(locStartTimeVariance);
-	//    start_time.t0_sigma=sqrt(locTimeVariance); //uncomment when ready
-	start_time.system=SYS_FCAL;
-	start_times.push_back(start_time); 
-      }
-      break;
-    default:
-      break;
-    }
+  // Get start time estimate from Start Counter
+  if (pid_algorithm->Get_StartTime(track->extrapolations.at(SYS_START),sc_hits,locStartTime)){
+    start_time.t0=locStartTime;
+    //    start_time.t0_sigma=sqrt(locTimeVariance); //uncomment when ready
+    start_time.t0_sigma=sqrt(locStartTimeVariance);
+    start_time.system=SYS_START;
+    start_times.push_back(start_time);
   }
-  //  Now deal with the BCAL
+  // Get start time estimate from TOF
+  locStartTime = track_t0;  // initial guess from tracking
+  if (pid_algorithm->Get_StartTime(track->extrapolations.at(SYS_TOF),tof_points,locStartTime)){
+    // Fill in the start time vector
+    start_time.t0=locStartTime;
+    start_time.t0_sigma=sqrt(locStartTimeVariance);
+    //    start_time.t0_sigma=sqrt(locTimeVariance); //uncomment when ready
+    start_time.system=SYS_TOF;
+    start_times.push_back(start_time); 
+  }
+  // Get start time estimate from FCAL
+  locStartTime = track_t0;  // initial guess from tracking
+  if (pid_algorithm->Get_StartTime(track->extrapolations.at(SYS_FCAL),fcal_showers,locStartTime)){
+    // Fill in the start time vector
+    start_time.t0=locStartTime;
+    start_time.t0_sigma=sqrt(locStartTimeVariance);
+    //    start_time.t0_sigma=sqrt(locTimeVariance); //uncomment when ready
+    start_time.system=SYS_FCAL;
+    start_times.push_back(start_time); 
+  }
+  // Get start time estimate from BCAL
   locStartTime=track_t0;
-  if (pid_algorithm->Get_StartTime(track->extrapolations,bcal_showers,locStartTime)){
+  if (pid_algorithm->Get_StartTime(track->extrapolations.at(SYS_BCAL),bcal_showers,locStartTime)){
     // Fill in the start time vector
     start_time.t0=locStartTime;
     start_time.t0_sigma=0.5;
@@ -841,6 +832,7 @@ void DTrackTimeBased_factory
   mStartTime=start_times[0].t0;
   mStartDetector=start_times[0].system;
 
+  _DBG_ << mStartDetector << " " << mStartTime << endl;
 
 }
 
@@ -968,9 +960,7 @@ bool DTrackTimeBased_factory::DoFit(const DTrackWireBased *track,
       timebased_track->chisq = fitter->GetChisq();
       timebased_track->Ndof = fitter->GetNdof();
       timebased_track->pulls = fitter->GetPulls();  
-      vector<DTrackFitter::Extrapolation_t> extrapolations=fitter->GetExtrapolations();
-      timebased_track->extrapolations.assign(extrapolations.begin(),extrapolations.end());
-
+      timebased_track->extrapolations=fitter->GetExtrapolations();
       timebased_track->IsSmoothed = fitter->GetIsSmoothed();
       timebased_track->trackid = track->id;
       timebased_track->candidateid=track->candidateid;

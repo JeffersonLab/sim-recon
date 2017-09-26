@@ -54,6 +54,15 @@ DTrackFitter::DTrackFitter(JEventLoop *loop)
 	if(MATERIAL_MAP_MODEL=="DRootGeom"){
 	  RootGeom = dapp->GetRootGeom(run_number);
 	}
+	// Create the extrapolation vectors
+	vector<Extrapolation_t>myvector;
+	extrapolations.emplace(SYS_BCAL,myvector);
+	extrapolations.emplace(SYS_TOF,myvector);
+	extrapolations.emplace(SYS_FCAL,myvector);
+	extrapolations.emplace(SYS_FDC,myvector);
+	extrapolations.emplace(SYS_CDC,myvector);
+	extrapolations.emplace(SYS_START,myvector);
+	
 
 #ifdef PROFILE_TRK_TIMES
 	// Use a special entry to hold how many tracks we fit
@@ -85,6 +94,7 @@ void DTrackFitter::Reset(void)
 	Ndof=0;
 	cdchits_used_in_fit.clear();
 	fdchits_used_in_fit.clear();
+	ClearExtrapolations();
 	fit_status = kFitNotDone;
 	
 #ifdef PROFILE_TRK_TIMES
@@ -175,7 +185,7 @@ DTrackFitter::fit_status_t DTrackFitter::FitTrack(const DKinematicData &starting
 //-------------------
 DTrackFitter::fit_status_t 
 DTrackFitter::FindHitsAndFitTrack(const DKinematicData &starting_params, 
-				  const vector<DTrackFitter::Extrapolation_t>&extrapolations,
+				  const map<DetectorSystem_t,vector<DTrackFitter::Extrapolation_t> >&extrapolations,
 				  JEventLoop *loop, 
 				  double mass,int N,double t0,
 				  DetectorSystem_t t0_det){
@@ -206,13 +216,22 @@ DTrackFitter::FindHitsAndFitTrack(const DKinematicData &starting_params,
 
   // Get Bfield at the position at the middle of the extrapolations, i.e. the 
   // region where we actually have measurements...
-  if (extrapolations.size()>0){
-    DVector3 mypos=extrapolations[extrapolations.size()/2].position;
+  bool got_hits=false;
+  if (extrapolations.at(SYS_CDC).size()>0){
+    vector<Extrapolation_t>extraps=extrapolations.at(SYS_CDC);
+    DVector3 mypos=extraps[extraps.size()/2].position;
     double Bz=GetDMagneticFieldMap()->GetBz(mypos.x(),mypos.y(),mypos.z());
-    hitselector->GetCDCHits(Bz,q,extrapolations,cdctrackhits,this,N);
-    hitselector->GetFDCHits(Bz,q,extrapolations,fdcpseudos,this,N);	
+    hitselector->GetCDCHits(Bz,q,extraps,cdctrackhits,this,N);
+    got_hits=true;
   }
-  else{
+  if (extrapolations.at(SYS_FDC).size()>0){
+    vector<Extrapolation_t>extraps=extrapolations.at(SYS_FDC);
+    DVector3 mypos=extraps[extraps.size()/2].position;
+    double Bz=GetDMagneticFieldMap()->GetBz(mypos.x(),mypos.y(),mypos.z());
+    hitselector->GetFDCHits(Bz,q,extraps,fdcpseudos,this,N);	
+    got_hits=true;
+  }
+  if (got_hits==false){
     return fit_status = kFitNotDone;
   }
 
