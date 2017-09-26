@@ -832,7 +832,7 @@ void DTrackTimeBased_factory
   mStartTime=start_times[0].t0;
   mStartDetector=start_times[0].system;
 
-  _DBG_ << mStartDetector << " " << mStartTime << endl;
+  //  _DBG_ << mStartDetector << " " << mStartTime << endl;
 
 }
 
@@ -860,7 +860,8 @@ bool DTrackTimeBased_factory::DoFit(const DTrackWireBased *track,
     status=fitter->FitTrack(track->position(),track->momentum(),
 			    track->charge(),mass,mStartTime,mStartDetector);
   }   
-  else{
+  else{   
+    fitter->Reset();
     fitter->SetFitType(DTrackFitter::kTimeBased);    
     status = fitter->FindHitsAndFitTrack(*track, track->extrapolations,loop, 
 					 mass,track->Ndof+5,mStartTime,
@@ -871,6 +872,8 @@ bool DTrackTimeBased_factory::DoFit(const DTrackWireBased *track,
     // from the wire-based track
     if (status==DTrackFitter::kFitNotDone){
       //_DBG_ << " Using wire-based hits " << endl;
+      fitter->Reset();
+      fitter->SetFitType(DTrackFitter::kTimeBased);   
       fitter->AddHits(myfdchits);
       fitter->AddHits(mycdchits);
       
