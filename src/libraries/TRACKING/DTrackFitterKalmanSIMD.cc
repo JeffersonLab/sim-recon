@@ -3278,7 +3278,6 @@ jerror_t DTrackFitterKalmanSIMD::KalmanLoop(void){
       if (!extrapolations.empty()){
 	saved_extrapolations=extrapolations;
 	ClearExtrapolations();
-	_DBG_ << "Extrap " << saved_extrapolations.size() <<  " " <<extrapolations.size() << endl;
       }
 
       // Chi-squared, degrees of freedom, and probability
@@ -3351,7 +3350,6 @@ jerror_t DTrackFitterKalmanSIMD::KalmanLoop(void){
                   }
 		  if (!saved_extrapolations.empty()){
 		    extrapolations=saved_extrapolations;
-		    _DBG_ << "Extrap " << saved_extrapolations.size() <<  " " <<extrapolations.size() << endl;
 		  }
 		  
                   //                         _DBG_ << endl;
@@ -3375,7 +3373,6 @@ jerror_t DTrackFitterKalmanSIMD::KalmanLoop(void){
 	    if (!extrapolations.empty()){
 	      saved_extrapolations=extrapolations;
 	      ClearExtrapolations();
-	_DBG_ << "Extrap " << saved_extrapolations.size() <<  " " <<extrapolations.size() << endl;
 	    }
 
             // Save the list of hits used in the fit
@@ -3443,7 +3440,6 @@ jerror_t DTrackFitterKalmanSIMD::KalmanLoop(void){
 
 	    if (!saved_extrapolations.empty()){
 	      extrapolations=saved_extrapolations;
-	      _DBG_ << "Extrap " << saved_extrapolations.size() <<  " " <<extrapolations.size() << endl;
 	    }
 	    
             cdchits_used_in_fit.assign(forward_cdc_used_in_fit.begin(),forward_cdc_used_in_fit.end());
@@ -3468,7 +3464,6 @@ jerror_t DTrackFitterKalmanSIMD::KalmanLoop(void){
 
 	 if (!saved_extrapolations.empty()){
 	   extrapolations=saved_extrapolations;
-	   _DBG_ << "Extrap " << saved_extrapolations.size() <<  " " <<extrapolations.size() << endl;
 	 }
 
          cdchits_used_in_fit.assign(forward_cdc_used_in_fit.begin(),forward_cdc_used_in_fit.end());	

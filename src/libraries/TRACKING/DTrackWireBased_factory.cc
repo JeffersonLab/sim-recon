@@ -477,6 +477,7 @@ void DTrackWireBased_factory::DoFit(unsigned int c_id,
             candidate->charge(),mass,0.);
    }
    else{
+     fitter->Reset();
       fitter->SetFitType(DTrackFitter::kWireBased);
       // Swim a reference trajectory using the candidate starting momentum
       // and position
@@ -526,8 +527,6 @@ void DTrackWireBased_factory::DoFit(unsigned int c_id,
             track->FOM = TMath::Prob(track->chisq, track->Ndof);
             track->pulls = fitter->GetPulls(); 
 	    track->extrapolations=fitter->GetExtrapolations();
-	    _DBG_ << track->extrapolations.size() << endl;
-
             track->candidateid = c_id+1;
 
             // Add hits used as associated objects
