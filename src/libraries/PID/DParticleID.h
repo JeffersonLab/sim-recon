@@ -177,6 +177,9 @@ class DParticleID:public jana::JObject
 
 		unsigned int PredictSCSector(const vector<DTrackFitter::Extrapolation_t> &extrapolations, DVector3* locOutputProjPos = nullptr, bool* locProjBarrelRegion = nullptr, double* locMinDPhi = nullptr) const;
 		unsigned int PredictSCSector(const vector<DTrackFitter::Extrapolation_t> &extrapolations, double& locDeltaPhi, DVector3& locProjPos, DVector3& locProjMom, DVector3& locPaddleNorm, double& locPathLength, double& locFlightTime, double& locFlightTimeVariance, int& locSCPlane) const;
+		bool PredictFCALHit(const vector<DTrackFitter::Extrapolation_t>&extrapolations, unsigned int &row, unsigned int &col, DVector3 *intersection = nullptr) const;
+		bool PredictBCALWedge(const vector<DTrackFitter::Extrapolation_t>&extrapolations, unsigned int &module,unsigned int &sector, DVector3 *intersection = nullptr) const;
+		bool PredictTOFPaddles(const vector<DTrackFitter::Extrapolation_t>&extrapolations, unsigned int &hbar,unsigned int &vbar, DVector3 *intersection = nullptr) const;
 
 		/********************************************************** MISCELLANEOUS **********************************************************/
 

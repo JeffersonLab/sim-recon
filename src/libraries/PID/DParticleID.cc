@@ -2577,6 +2577,82 @@ unsigned int DParticleID::PredictSCSector(const vector<DTrackFitter::Extrapolati
   return locBestSCSector;
 }
 
+bool DParticleID::PredictFCALHit(const vector<DTrackFitter::Extrapolation_t>&extrapolations, unsigned int &row, unsigned int &col, DVector3 *intersection) const
+{
+	// Initialize output variables
+	row=0;
+	col=0;
+	if(extrapolations.size()==0)
+		return false;
+
+	// Find intersection with FCAL plane given by fcal_pos
+	DVector3 fcal_pos(0,0,dFCALz);
+	DVector3 norm(0.0, 0.0, 1.0); //normal vector to FCAL plane
+	DVector3 proj_mom=extrapolations[0].momentum;
+	DVector3 proj_pos=extrapolations[0].position;
+
+	if (intersection) *intersection=proj_pos;
+
+	double x=proj_pos.x();
+	double y=proj_pos.y();
+	row=dFCALGeometry->row(float(y));
+	col=dFCALGeometry->column(float(x));
+	return (dFCALGeometry->isBlockActive(row,col));
+}
+
+// Given a track, predict which BCAL wedge should have a hit
+bool DParticleID::PredictBCALWedge(const vector<DTrackFitter::Extrapolation_t>&extrapolations, unsigned int &module,unsigned int &sector, DVector3 *intersection) const
+{
+	//initialize output variables
+	sector=0;
+	module=0;
+	if(extrapolations.size()==0)
+		return false;
+
+	// Find intersection of track with inner radius of BCAL
+	DVector3 proj_pos=extrapolations[0].position;
+
+	double phi=180./M_PI*proj_pos.Phi();
+	if (phi<0) phi+=360.;
+	double slice=phi/7.5;
+	double mid_slice=round(slice);
+	module=int(mid_slice)+1;
+	sector=int(floor((phi-7.5*mid_slice+3.75)/1.875))+1;
+
+	if (intersection) *intersection=proj_pos;
+
+	return true;
+}
+
+
+// Given a track, predict which TOF paddles should
+// fire due to the charged particle passing through the TOF planes.
+bool DParticleID::PredictTOFPaddles(const vector<DTrackFitter::Extrapolation_t>&extrapolations, unsigned int &hbar,unsigned int &vbar, DVector3 *intersection) const
+{
+	// Initialize output variables
+	vbar=0;
+	hbar=0;
+	if(extrapolations.size()==0)
+		return false;
+
+	// Find intersection with TOF plane given by tof_pos
+	DVector3 tof_pos(0,0,dTOFGeometry->CenterMPlane);
+	DVector3 norm(0.0, 0.0, 1.0); //normal vector to TOF plane
+	DVector3 proj_mom=extrapolations[0].momentum;
+	DVector3 proj_pos=extrapolations[0].position;
+
+	double x=proj_pos.x();
+	double y=proj_pos.y();
+
+	vbar=dTOFGeometry->y2bar(x);
+	hbar=dTOFGeometry->y2bar(y);
+
+	if (intersection) *intersection=proj_pos;
+
+	return true;
+}
+
+
 /****************************************************** MISCELLANEOUS ******************************************************/
 
 double DParticleID::Calc_BCALFlightTimePCorrelation(const DKinematicData* locTrack, DDetectorMatches* locDetectorMatches) const
