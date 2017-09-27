@@ -199,6 +199,7 @@ DBCALCluster_factory::clusterize( vector< const DBCALPoint* > points , vector< c
 			DVector3 track_pos(0.0, 0.0, 0.0);
 			DVector3 track_inner_rad(0.0,0.0,0.0);
 			// Check if a point is matched to a track
+		     
 			for( vector< const DTrackWireBased* >::iterator trk = tracks.begin();
 				trk != tracks.end();
 				++trk ){
@@ -206,8 +207,23 @@ DBCALCluster_factory::clusterize( vector< const DBCALPoint* > points , vector< c
 				double point_r = (**pt).r();
 				double point_z = (**pt).z();
 				double point_theta_global = fabs(atan2(point_r,point_z + m_z_target_center ));  // convert point z-position origin to global frame to match tracks origin
-				(*trk)->rt->GetIntersectionWithRadius(point_r, temp_track_pos);
-				(*trk)->rt->GetIntersectionWithRadius(m_BCALGeom->GetBCAL_inner_rad(), track_inner_rad);
+				vector<DTrackFitter::Extrapolation_t>extrapolations=(*trk)->extrapolations.at(SYS_BCAL);
+				if (extrapolations.size()>0){
+				  track_inner_rad=extrapolations[0].position;
+				  double diff2_old=1e6;
+				  for (unsigned int i=0;i<extrapolations.size();i++){
+				    double point_phi=(**pt).phi();
+				    DVector3 bcalpos(point_r*cos(point_phi),
+						     point_r*sin(point_phi),
+						     point_z);
+				    double diff2=(bcalpos-extrapolations[i].position).Perp2();
+				    if (diff2>diff2_old){
+				      temp_track_pos=extrapolations[i-1].position;
+				      break;
+				    }
+				    diff2_old=diff2;
+				  }
+
 				// convert track phi position to be consistent with point phi positions
 				if(track_inner_rad.Phi() >= 0.) track_phi_inner_r = track_inner_rad.Phi();
 				else track_phi_inner_r = fabs(2*TMath::Pi() + track_inner_rad.Phi());
@@ -227,7 +243,9 @@ DBCALCluster_factory::clusterize( vector< const DBCALPoint* > points , vector< c
 				double dTheta = fabs(point_theta_global - track_pos.Theta());
 				if(dPhi < matched_dphi && dTheta < matched_dtheta){
 					 q = 1; // if point and track are matched then set q = 1
+
 					 tracked_phi = track_phi_inner_r;
+				}
 				}
 			}
 
