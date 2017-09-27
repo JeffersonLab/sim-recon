@@ -241,13 +241,6 @@ jerror_t DTrackTimeBased_factory::brun(jana::JEventLoop *loop, int32_t runnumber
 
 	}
 
-	//Pre-allocate memory for DReferenceTrajectory objects early
-		//The swim-step objects of these arrays take up a significant amount of memory, and it can be difficult to find enough free contiguous space for them.
-		//Therefore, allocate them at the beginning before the available memory becomes randomly populated
-	while(rtv.size() < MAX_DReferenceTrajectoryPoolSize)
-		rtv.push_back(new DReferenceTrajectory(fitter->GetDMagneticFieldMap()));
-
-
 	return NOERROR;
 }
 
@@ -286,8 +279,7 @@ jerror_t DTrackTimeBased_factory::evnt(JEventLoop *loop, uint64_t eventnumber)
       // Copy over DKinematicData part
       DKinematicData *track_kd = timebased_track;
       *track_kd = *track;
-      
-      timebased_track->rt = GetReferenceTrajectory(track_kd);
+   
       timebased_track->chisq = track->chisq;
       timebased_track->Ndof = track->Ndof;
       timebased_track->FOM =  TMath::Prob(timebased_track->chisq,
@@ -387,7 +379,6 @@ jerror_t DTrackTimeBased_factory::evnt(JEventLoop *loop, uint64_t eventnumber)
 	  *track_kd = *track;
 	 	  
 	  timebased_track->setTime(timebased_track->t0());
-	  timebased_track->rt = GetReferenceTrajectory(track_kd);
 	  timebased_track->chisq = track->chisq;
 	  timebased_track->Ndof = track->Ndof;
 	  timebased_track->pulls = track->pulls;
@@ -918,7 +909,6 @@ bool DTrackTimeBased_factory::DoFit(const DTrackWireBased *track,
       timebased_track->trackid = track->id;
       timebased_track->candidateid=track->candidateid;
       timebased_track->FOM=track->FOM;
-      timebased_track->rt=GetReferenceTrajectory(track_kd);
    
       // add the list of start times
       timebased_track->start_times.assign(start_times.begin(),
@@ -959,7 +949,6 @@ bool DTrackTimeBased_factory::DoFit(const DTrackWireBased *track,
 
       timebased_track->setPID(pid_algorithm->IDTrack(timebased_track->charge(), timebased_track->mass()));
       timebased_track->setTime(mStartTime);
-      timebased_track->rt = GetReferenceTrajectory(track_kd);
       timebased_track->chisq = fitter->GetChisq();
       timebased_track->Ndof = fitter->GetNdof();
       timebased_track->pulls = fitter->GetPulls();  
@@ -1079,9 +1068,7 @@ void DTrackTimeBased_factory::AddMissingTrackHypothesis(vector<DTrackTimeBased*>
   // Add list of start times
   timebased_track->start_times.assign(src_track->start_times.begin(),  
 				      src_track->start_times.end());
-  // Get reference trajectory
-  timebased_track->rt=GetReferenceTrajectory(track_kd);
-  
+   
   // Get the hits used in the fit and add them as associated objects 
   vector<const DCDCTrackHit *>cdchits;
   src_track->GetT(cdchits);
@@ -1232,26 +1219,4 @@ bool DTrackTimeBased_factory::InsertMissingHypotheses(void){
   }
 
   return true;
-}
-
-// Swim a reference trajectory for this track
-DReferenceTrajectory *DTrackTimeBased_factory::GetReferenceTrajectory(const DKinematicData *track_kd){
-  // Allocate a DReferenceTrajectory object if needed.
-  // These each have a large enough memory footprint that
-  // it causes noticable performance problems if we allocated
-  // and deallocated them every event. Therefore, we allocate
-  // when needed, but recycle them on the next event.
-  // They are deleted in the fini method.
-  unsigned int locNumInitialReferenceTrajectories = rtv.size();
-  while(rtv.size()<=_data.size())rtv.push_back(new DReferenceTrajectory(fitter->GetDMagneticFieldMap()));
-  DReferenceTrajectory *rt = rtv[_data.size()];
-  if(locNumInitialReferenceTrajectories == rtv.size()) //didn't create a new one
-    rt->Reset();
-  rt->SetMass(track_kd->mass());
-  rt->SetDGeometry(geom);
-  rt->q = track_kd->charge();
-  rt->Swim(track_kd->position(),track_kd->momentum(),track_kd->charge(),
-	   track_kd->errorMatrix());
-      
-  return rt;
 }

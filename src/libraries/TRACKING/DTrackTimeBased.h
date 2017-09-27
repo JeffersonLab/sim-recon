@@ -36,7 +36,6 @@ class DTrackTimeBased:public DKinematicData{
 		vector<DTrackFitter::pull_t> pulls;	///< Holds pulls used in chisq calc. (not including off-diagonals)
 		map<DetectorSystem_t,vector<DTrackFitter::Extrapolation_t> >extrapolations;
 
-		const DReferenceTrajectory *rt; ///< pointer to reference trjectory representing this track
 
       bool IsSmoothed; // Boolean value to indicate whether the smoother was run succesfully over this track.
 
