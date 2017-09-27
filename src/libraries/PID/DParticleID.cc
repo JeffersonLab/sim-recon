@@ -336,8 +336,8 @@ jerror_t DParticleID::GetDCdEdxHits(const DTrackTimeBased *track, vector<dedx_t>
 	  *cdchits[i]->wire->udir;
 	double doca2=(wirepos-cdc_extrapolations[j].position).Mag2();
 	if (doca2>doca2_old){
-	  mom=cdc_extrapolations[j].momentum;
-	  pos=cdc_extrapolations[j].position;
+	  mom=cdc_extrapolations[j-1].momentum;
+	  pos=cdc_extrapolations[j-1].position;
 	  break;
 	}
 	doca2_old=doca2;
@@ -666,8 +666,7 @@ bool DParticleID::Distance_ToTrack(const vector<DTrackFitter::Extrapolation_t> &
 
   double d = Distance_ToTrack(locFCALShower,locProjPos);
   double p=locProjMom.Mag();
-  
-  //SET MATCHING INFORMATION
+    //SET MATCHING INFORMATION
   locShowerMatchParams.dFCALShower = locFCALShower;
   locShowerMatchParams.dx = 45.0*p/(locProjMom.Dot(DVector3(0.,0.,1.)));
   locShowerMatchParams.dFlightTime = locFlightTime;
