@@ -97,56 +97,56 @@ DDetectorMatches* DDetectorMatches_factory::Create_DDetectorMatches(jana::JEvent
 
 void DDetectorMatches_factory::MatchToBCAL(const DParticleID* locParticleID, const DTrackTimeBased* locTrackTimeBased, const vector<const DBCALShower*>& locBCALShowers, DDetectorMatches* locDetectorMatches) const
 {
-	map<DetectorSystem_t,vector<DTrackFitter::Extrapolation_t> >extrapolations=locTrackTimeBased->extrapolations;
+  vector<DTrackFitter::Extrapolation_t>extrapolations=locTrackTimeBased->extrapolations.at(SYS_BCAL);
 	if (extrapolations.size()==0) return;
 
 	double locInputStartTime = locTrackTimeBased->t0();
 	for(size_t loc_i = 0; loc_i < locBCALShowers.size(); ++loc_i)
 	{
 		DBCALShowerMatchParams locShowerMatchParams;
-		if(locParticleID->Cut_MatchDistance(extrapolations.at(SYS_BCAL), locBCALShowers[loc_i], locInputStartTime, locShowerMatchParams))
+		if(locParticleID->Cut_MatchDistance(extrapolations, locBCALShowers[loc_i], locInputStartTime, locShowerMatchParams))
 			locDetectorMatches->Add_Match(locTrackTimeBased, locBCALShowers[loc_i], locShowerMatchParams);
 	}
 }
 
 void DDetectorMatches_factory::MatchToTOF(const DParticleID* locParticleID, const DTrackTimeBased* locTrackTimeBased, const vector<const DTOFPoint*>& locTOFPoints, DDetectorMatches* locDetectorMatches) const
 {
-  	map<DetectorSystem_t,vector<DTrackFitter::Extrapolation_t> >extrapolations=locTrackTimeBased->extrapolations;
+  vector<DTrackFitter::Extrapolation_t> extrapolations=locTrackTimeBased->extrapolations.at(SYS_TOF);
 	if (extrapolations.size()==0) return;
 
 	double locInputStartTime = locTrackTimeBased->t0();
 	for(size_t loc_i = 0; loc_i < locTOFPoints.size(); ++loc_i)
 	{
 		DTOFHitMatchParams locTOFHitMatchParams;
-		if(locParticleID->Cut_MatchDistance(extrapolations.at(SYS_TOF), locTOFPoints[loc_i], locInputStartTime, locTOFHitMatchParams))
+		if(locParticleID->Cut_MatchDistance(extrapolations, locTOFPoints[loc_i], locInputStartTime, locTOFHitMatchParams))
 			locDetectorMatches->Add_Match(locTrackTimeBased, locTOFPoints[loc_i], locTOFHitMatchParams);
 	}
 }
 
 void DDetectorMatches_factory::MatchToFCAL(const DParticleID* locParticleID, const DTrackTimeBased* locTrackTimeBased, const vector<const DFCALShower*>& locFCALShowers, DDetectorMatches* locDetectorMatches) const
 {
-  	map<DetectorSystem_t,vector<DTrackFitter::Extrapolation_t> >extrapolations=locTrackTimeBased->extrapolations;
+  vector<DTrackFitter::Extrapolation_t> extrapolations=locTrackTimeBased->extrapolations.at(SYS_FCAL);
 	if (extrapolations.size()==0) return;
 
 	double locInputStartTime = locTrackTimeBased->t0();
 	for(size_t loc_i = 0; loc_i < locFCALShowers.size(); ++loc_i)
 	{
 		DFCALShowerMatchParams locShowerMatchParams;
-		if(locParticleID->Cut_MatchDistance(extrapolations.at(SYS_FCAL), locFCALShowers[loc_i], locInputStartTime, locShowerMatchParams))
+		if(locParticleID->Cut_MatchDistance(extrapolations, locFCALShowers[loc_i], locInputStartTime, locShowerMatchParams))
 			locDetectorMatches->Add_Match(locTrackTimeBased, locFCALShowers[loc_i], locShowerMatchParams);
 	}
 }
 
 void DDetectorMatches_factory::MatchToSC(const DParticleID* locParticleID, const DTrackTimeBased* locTrackTimeBased, const vector<const DSCHit*>& locSCHits, DDetectorMatches* locDetectorMatches) const
 {
-  	map<DetectorSystem_t,vector<DTrackFitter::Extrapolation_t> >extrapolations=locTrackTimeBased->extrapolations;
+  vector<DTrackFitter::Extrapolation_t> extrapolations=locTrackTimeBased->extrapolations.at(SYS_START);
 	if (extrapolations.size()==0) return;
 
 	double locInputStartTime = locTrackTimeBased->t0();
 	for(size_t loc_i = 0; loc_i < locSCHits.size(); ++loc_i)
 	{
 		DSCHitMatchParams locSCHitMatchParams;
-		if(locParticleID->Cut_MatchDistance(extrapolations.at(SYS_START), locSCHits[loc_i], locInputStartTime, locSCHitMatchParams, true))
+		if(locParticleID->Cut_MatchDistance(extrapolations, locSCHits[loc_i], locInputStartTime, locSCHitMatchParams, true))
 			locDetectorMatches->Add_Match(locTrackTimeBased, locSCHits[loc_i], locSCHitMatchParams);
 	}
 }
