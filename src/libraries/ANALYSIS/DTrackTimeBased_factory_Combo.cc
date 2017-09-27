@@ -233,7 +233,7 @@ DTrackTimeBased* DTrackTimeBased_factory_Combo::Convert_ChargedTrack(const DChar
 	locTrackTimeBased->setMass(ParticleMass(locNewPID));
 	locTrackTimeBased->setPID(locNewPID);
 	locTrackTimeBased->setCharge(ParticleCharge(locNewPID));
-	locTrackTimeBased->rt = NULL;
+	//	locTrackTimeBased->rt = NULL;
 
 	locTrackTimeBased->AddAssociatedObject(locOriginalTrackTimeBased);
 	locTrackTimeBased->AddAssociatedObject(locChargedTrackHypothesis);
