@@ -497,7 +497,7 @@ jerror_t JEventProcessor_BCAL_Hadronic_Eff::evnt(jana::JEventLoop* locEventLoop,
 		//Predict BCAL Surface Hit Location
 		unsigned int locPredictedSurfaceModule = 0, locPredictedSurfaceSector = 0;
 		DVector3 locPredictedSurfacePosition;
-		locParticleID->PredictBCALWedge(locTrackTimeBased->rt, locPredictedSurfaceModule, locPredictedSurfaceSector, &locPredictedSurfacePosition);
+		locParticleID->PredictBCALWedge(locTrackTimeBased->extrapolations.at(SYS_BCAL), locPredictedSurfaceModule, locPredictedSurfaceSector, &locPredictedSurfacePosition);
 		unsigned int locTrackProjectedBCALSector = 4*(locPredictedSurfaceModule - 1) + locPredictedSurfaceSector;
 
 		//STAGE DATA FOR TREE FILL

@@ -390,10 +390,8 @@ jerror_t JEventProcessor_BCAL_TDC_Timing::evnt(JEventLoop *loop, uint64_t eventn
                       dDeltaZToShower, dDeltaPhiToShower, "BCAL Match;#Delta Z [cm]; #Delta#phi [rad]",
                       200, -25, 25, 200, -0.1, 0.1);
 
-      // We also need the reference trajectory, which is buried deep in there
       const DTrackTimeBased *timeBasedTrack = nullptr;
       bestHypothesis->GetSingle(timeBasedTrack);
-      const DReferenceTrajectory *rt = timeBasedTrack->rt;
       if (timeBasedTrack->FOM < 0.0027) continue; // 3-sigma cut on tracking FOM
       Fill1DHistogram("BCAL_Global_Offsets", "Debug", "Success", 6, "Success profile;Step", 16, -0.5, 15.5);
       if (timeBasedTrack->Ndof < 10) continue; // CDC: 5 params in fit, 10 dof => [15 hits]; FDC [10 hits]
@@ -409,12 +407,12 @@ jerror_t JEventProcessor_BCAL_TDC_Timing::evnt(JEventLoop *loop, uint64_t eventn
 
       // Fill histograms based on the shower
       char name[200], title[200];
-      DVector3 proj_pos = rt->GetLastDOCAPoint();
-      double pathLength, flightTime;
+      DVector3 proj_pos;
+      double flightTime=0.;
       //double innerpathLength, innerflightTime;
       double shower_x = thisShower->x;
       double shower_y = thisShower->y;
-      double r_shower = sqrt(shower_x*shower_x+shower_y*shower_y);
+
       double t_shower = thisShower->t;
       double E_shower = thisShower->E;
       double Z_shower = thisShower->z;
@@ -430,7 +428,20 @@ jerror_t JEventProcessor_BCAL_TDC_Timing::evnt(JEventLoop *loop, uint64_t eventn
       //int res1 = rt->GetIntersectionWithRadius(r_shower,proj_pos, &pathLength, &flightTime);
       //int res2 = rt->GetIntersectionWithRadius(dBCALGeom->GetBCAL_inner_rad(),proj_pos, &innerpathLength, &innerflightTime);
       //if (res1==NOERROR && res2==NOERROR) {
-      if (rt->GetIntersectionWithRadius(r_shower,proj_pos, &pathLength, &flightTime)==NOERROR){
+      DVector3 bcalpos(shower_x,shower_y,Z_shower); 
+      vector<DTrackFitter::Extrapolation_t>extrapolations=timeBasedTrack->extrapolations.at(SYS_BCAL);
+      if (extrapolations.size()>0){	
+	double diff2_old=1e6;
+	for (unsigned int i=0;i<extrapolations.size();i++){
+	  double diff2=(bcalpos-extrapolations[i].position).Perp2();
+	  if (diff2>diff2_old){
+	    proj_pos=extrapolations[i-1].position;
+	    flightTime=extrapolations[i-1].t;
+	    break;
+	  }
+	  diff2_old=diff2;
+	}
+
           Fill1DHistogram("BCAL_Global_Offsets", "Debug", "Success", 7, "Success profile;Step", 16, -0.5, 15.5);
           if (thisRFBunch->dNumParticleVotes >= 2){ // Require good RF bunch and this track match the SC
               Fill1DHistogram("BCAL_Global_Offsets", "Debug", "Success", 8, "Success profile;Step", 16, -0.5, 15.5);
@@ -511,8 +522,20 @@ jerror_t JEventProcessor_BCAL_TDC_Timing::evnt(JEventLoop *loop, uint64_t eventn
                           Z_shower, Z_point + Z_TARGET,
                           "Z_{Point} vs Z_{Shower};Z_{Shower}  [cm];Z_{Point} [cm]",
                           225, zminhall, zmaxhall, 225, zminhall, zmaxhall);
- 
-         if (rt->GetIntersectionWithRadius(rpoint,proj_pos, &pathLength, &flightTime)==NOERROR){
+	 if (extrapolations.size()>0){	
+	   double diff2_old=1e6;
+	   double phi=thisPoint->phi();
+	   DVector3 bcalpos(rpoint*cos(phi),rpoint*sin(phi),Z_point);
+	   for (unsigned int i=0;i<extrapolations.size();i++){
+	     double diff2=(bcalpos-extrapolations[i].position).Perp2();
+	     if (diff2>diff2_old){
+	       proj_pos=extrapolations[i-1].position;
+	       flightTime=extrapolations[i-1].t;
+	       break;
+	     }
+	     diff2_old=diff2;
+	   }
+
             // Now proj_pos contains the projected position of the track at this particular point within the BCAL
             // We can plot the difference of the projected position and the BCAL position as a function of the channel
             char channame[255], layername[255], chargename[255];
@@ -716,7 +739,7 @@ jerror_t JEventProcessor_BCAL_TDC_Timing::evnt(JEventLoop *loop, uint64_t eventn
                double hitup_TargetCenterTime   = t_up   - barproptime_up   - flightTime - vertexTime;
                double hitdown_TargetCenterTime = t_down - barproptime_down - flightTime - vertexTime;
                double hittimediff = t_down - t_up - 2*localTrackHitZ/c_effective;
-
+	    
                int the_cell = (thisPoint->module() - 1) * 16 + (thisPoint->layer() - 1) * 4 + thisPoint->sector();
                //int channel = end*768 + the_cell;
                Fill2DHistogram("BCAL_Global_Offsets", "Target Time", "hitDeltaTVsChannel",
@@ -839,18 +862,29 @@ jerror_t JEventProcessor_BCAL_TDC_Timing::evnt(JEventLoop *loop, uint64_t eventn
            // *** Remove matched BCAL showers
            bool matched=0;
            for (unsigned int i=0; i < locTrackTimeBased.size() ; ++i) {
-               DVector3 trackpos(0.0,0.0,0.0);
-               locTrackTimeBased[i]->rt->GetIntersectionWithRadius(R_shower, trackpos);
-               double dPhi = 180./3.14159265358*(trackpos.Phi()-showerpos.Phi());
-               double dZ = (trackpos.Z() - z);
-               sprintf(name, "Matching");
-               sprintf(title, "Shower-Track position difference;dZ [cm]; d#phi [degrees]");
-               Fill2DHistogram("BCAL_Global_Offsets", "Showers_PID", name,
-                               dZ, dPhi, title,
-                               200, -60.0, 60.0, 200, -30, 30);
-               // analysis shows 40 and 15 are better
-               if (TMath::Abs(dZ < 40.0) && TMath::Abs(dPhi) < 15) matched=1;
-           }
+               DVector3 trackpos(0.0,0.0,0.0); 
+	       vector<DTrackFitter::Extrapolation_t>extrapolations=locTrackTimeBased[i]->extrapolations.at(SYS_BCAL);
+	       if (extrapolations.size()>0){	
+		 double diff2_old=1e6;
+		 for (unsigned int i=0;i<extrapolations.size();i++){
+		   double diff2=(showerpos-extrapolations[i].position).Perp2();
+		   if (diff2>diff2_old){
+		     trackpos=extrapolations[i-1].position;
+		     break;
+		   }
+		   diff2_old=diff2;
+		 }
+		 double dPhi = 180./3.14159265358*(trackpos.Phi()-showerpos.Phi());
+		 double dZ = (trackpos.Z() - z);
+		 sprintf(name, "Matching");
+		 sprintf(title, "Shower-Track position difference;dZ [cm]; d#phi [degrees]");
+		 Fill2DHistogram("BCAL_Global_Offsets", "Showers_PID", name,
+				 dZ, dPhi, title,
+				 200, -60.0, 60.0, 200, -30, 30);
+		 // analysis shows 40 and 15 are better
+		 if (TMath::Abs(dZ < 40.0) && TMath::Abs(dPhi) < 15) matched=1;
+	       }
+	   }
            if (matched) continue;
            Fill1DHistogram("BCAL_Global_Offsets", "Debug", "Success", 13, "Success profile;Step", 16, -0.5, 15.5);
 
