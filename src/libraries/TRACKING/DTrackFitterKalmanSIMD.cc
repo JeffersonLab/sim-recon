@@ -92,7 +92,7 @@ unsigned int DTrackFitterKalmanSIMD::locate(vector<double>&xx,double x){
 // Crude approximation for the variance in drift distance due to smearing
 double DTrackFitterKalmanSIMD::fdc_drift_variance(double t){
    //return FDC_ANODE_VARIANCE;
-   if (t<10.) t=10.;
+   if (t<5.) t=5.;
    double sigma=DRIFT_RES_PARMS[0]/(t+1.)+DRIFT_RES_PARMS[1]+DRIFT_RES_PARMS[2]*t*t;
 
    return sigma*sigma;
@@ -230,12 +230,23 @@ void DTrackFitterKalmanSIMD::ComputeCDCDrift(double dphi,double delta,double t,
 
 // parametrization of time-to-distance for FDC
 double DTrackFitterKalmanSIMD::fdc_drift_distance(double time,double Bz){
-   if (time<0.) return 0.;
-   double tsq=time*time;
-   double d=DRIFT_FUNC_PARMS[0]*sqrt(time)+DRIFT_FUNC_PARMS[1]*time
+  if (time<0.) return 0.;
+  double d=0.;
+  double tsq=time*time;
+  double t_high=DRIFT_FUNC_PARMS[4];
+  
+  if (time<t_high){
+    d=DRIFT_FUNC_PARMS[0]*sqrt(time)+DRIFT_FUNC_PARMS[1]*time
       +DRIFT_FUNC_PARMS[2]*tsq+DRIFT_FUNC_PARMS[3]*tsq*time;
-
-   return d;
+  }
+  else{
+    double t_high_sq=t_high*t_high;
+    d=DRIFT_FUNC_PARMS[0]*sqrt(t_high)+DRIFT_FUNC_PARMS[1]*t_high
+      +DRIFT_FUNC_PARMS[2]*t_high_sq+DRIFT_FUNC_PARMS[3]*t_high_sq*t_high;
+    d+=DRIFT_FUNC_PARMS[5]*(time-t_high);
+  }
+    
+  return d;
 }
 
 
@@ -513,6 +524,18 @@ DTrackFitterKalmanSIMD::DTrackFitterKalmanSIMD(JEventLoop *loop):DTrackFitter(lo
    DRIFT_FUNC_PARMS[1]=drift_func_parms["p1"];
    DRIFT_FUNC_PARMS[2]=drift_func_parms["p2"]; 
    DRIFT_FUNC_PARMS[3]=drift_func_parms["p3"];
+   DRIFT_FUNC_PARMS[4]=1000.;
+   DRIFT_FUNC_PARMS[5]=0.;
+   map<string,double>drift_func_ext;
+   if (jcalib->Get("FDC/drift_function_ext",drift_func_ext)==false){
+     DRIFT_FUNC_PARMS[4]=drift_func_ext["p4"]; 
+     DRIFT_FUNC_PARMS[5]=drift_func_ext["p5"]; 
+   }
+   // Factors for taking care of B-dependence of drift time for FDC
+   map<string, double> fdc_drift_parms;
+   jcalib->Get("FDC/fdc_drift_parms", fdc_drift_parms);
+   FDC_DRIFT_BSCALE_PAR1 = fdc_drift_parms["bscale_par1"];
+   FDC_DRIFT_BSCALE_PAR2 = fdc_drift_parms["bscale_par2"];
 
 
    /*
