@@ -17,14 +17,15 @@ using namespace jana;
 #include "BCAL/DBCALCluster.h"
 #include "BCAL/DBCALUnifiedHit.h"
 #include "BCAL/DBCALGeometry.h"
-#include "TRACKING/DTrackWireBased.h"
 
-#include "TF1.h"
+//#include "TTree.h"
+//#include "TFile.h"
+//#include "TF1.h"
 
 class DBCALCluster_factory : public JFactory< DBCALCluster > {
   
 public:
- 
+  
   DBCALCluster_factory();
   ~DBCALCluster_factory(){}
   
@@ -37,12 +38,12 @@ private:
   
   // these routines combine points and clusters together
 
-  vector<DBCALCluster*> clusterize( vector< const DBCALPoint* > points, vector< const DBCALPoint* > usedPoints,  vector< const DBCALUnifiedHit* > hits, vector< const DTrackWireBased* > tracks ) const;
+  vector<DBCALCluster*> clusterize( vector< const DBCALPoint* > points, vector< const DBCALPoint* > usedPoints,  vector< const DBCALUnifiedHit* > hits ) const;
   void merge( vector<DBCALCluster*>& clusters ) const;
 
   // This routine removes a point from its original cluster and adds it to its closest cluster if applicable.
   void recycle_points( vector<const DBCALPoint*> usedPoints, vector<DBCALCluster*>& clusters ) const; 
-
+ 
   // these are the routines used for testing whether things should be
   // combined -- right now very basic, but can be fine tuned in the future
 
@@ -51,10 +52,7 @@ private:
   
   bool overlap( const DBCALCluster& clust,
                 const DBCALPoint* point ) const;
- 
-  bool overlap_charged( const DBCALCluster& clust, 
-			const DBCALPoint* point, float tracked_phi ) const;
- 
+  
   bool overlap( const DBCALCluster& clust, 
                 const DBCALUnifiedHit* hit ) const; 
   
@@ -64,12 +62,11 @@ private:
   float m_clust_hit_timecut;
   float m_timeCut;
   double m_z_target_center;
-
+  
   const DBCALGeometry *m_BCALGeom;
-
+  
   vector<double> effective_velocities;
   vector< vector<double > > attenuation_parameters;
-
   /*
   TF1* sep_inclusion_curve;
   TF1* dtheta_inclusion_curve;
