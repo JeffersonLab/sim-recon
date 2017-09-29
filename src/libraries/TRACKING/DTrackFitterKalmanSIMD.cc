@@ -7187,10 +7187,7 @@ kalman_error_t DTrackFitterKalmanSIMD::ForwardFit(const DMatrix5x1 &S0,const DMa
          else  IsSmoothed = false; 
 
 	 // Source for t0 guess
-	 mT0Detector=SYS_CDC;  
-	 // fill vector of extrapolations
-	 ClearExtrapolations();
-	 ExtrapolateForwardToOtherDetectors();
+	 mT0Detector=SYS_CDC; 
 
          if (fdc_updates.size()>0){      
             last_fdc_updates.assign(fdc_updates.begin(),fdc_updates.end());
@@ -7228,6 +7225,10 @@ kalman_error_t DTrackFitterKalmanSIMD::ForwardFit(const DMatrix5x1 &S0,const DMa
       }
    }
 
+   // fill vector of extrapolations
+   ClearExtrapolations();
+   ExtrapolateForwardToOtherDetectors();
+   
    // Extrapolate to the point of closest approach to the beam line
    z_=last_z;
    if (sqrt(Slast(state_x)*Slast(state_x)+Slast(state_y)*Slast(state_y))
@@ -7452,9 +7453,6 @@ kalman_error_t DTrackFitterKalmanSIMD::ForwardCDCFit(const DMatrix5x1 &S0,const 
 
 	 // source for t0 guess
 	 mT0Detector=SYS_CDC; 
-	 // Fill extrapolation vector
-	 ClearExtrapolations();
-	 ExtrapolateForwardToOtherDetectors();
 
          chisq_forward=chisq;
          Slast=S;
@@ -7485,6 +7483,9 @@ kalman_error_t DTrackFitterKalmanSIMD::ForwardCDCFit(const DMatrix5x1 &S0,const 
          cdchits_used_in_fit.push_back(my_cdchits[m]->hit);
       }
    }  
+   // Fill extrapolation vector
+   ClearExtrapolations();
+   ExtrapolateForwardToOtherDetectors();
 
    // Extrapolate to the point of closest approach to the beam line
    z_=zlast;
@@ -7699,9 +7700,6 @@ kalman_error_t DTrackFitterKalmanSIMD::CentralFit(const DVector2 &startpos,
 
 	 // source for t0 guess
 	 mT0Detector=SYS_CDC;
-	 // Fill extrapolations vector
-	 ClearExtrapolations();
-	 ExtrapolateCentralToOtherDetectors();
 
          last_cdc_updates.assign(cdc_updates.begin(),cdc_updates.end());
          last_cdc_used_in_fit=cdc_used_in_fit;
@@ -7711,7 +7709,11 @@ kalman_error_t DTrackFitterKalmanSIMD::CentralFit(const DVector2 &startpos,
          break;
       }
    }
-
+	 
+   // Fill extrapolations vector
+   ClearExtrapolations();
+   ExtrapolateCentralToOtherDetectors();
+   
    if (last_pos.Mod()>0.001){ // in cm
       if (ExtrapolateToVertex(last_pos,Sclast,Cclast)!=NOERROR) return EXTRAPOLATION_FAILED; 
    }
@@ -9217,6 +9219,8 @@ jerror_t DTrackFitterKalmanSIMD::ExtrapolateForwardToOtherDetectors(){
 	extrapolations[SYS_START].push_back(Extrapolation_t(position,momentum,
 						    t*TIME_UNIT_CONVERSION,s));
 
+	//printf("forward track:\n");
+	//position.Print();
 	intersected_start_counter=true;
 	break;
       }
@@ -9557,6 +9561,8 @@ jerror_t DTrackFitterKalmanSIMD::ExtrapolateCentralToOtherDetectors(){
 	  DVector3 momentum(pt*cos(phi),pt*sin(phi),pt*tanl); 
 	  extrapolations[SYS_START].push_back(Extrapolation_t(position,momentum,
 	  					   t*TIME_UNIT_CONVERSION,s));
+	  //printf("Central track:\n");
+	  //position.Print();
 	}  
 	break;
       }
