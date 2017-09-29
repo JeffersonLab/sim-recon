@@ -39,7 +39,7 @@ jerror_t DChargedTrack_factory::evnt(jana::JEventLoop *locEventLoop, uint64_t ev
 
 	map<JObject::oid_t, vector<const DChargedTrackHypothesis*> > locHypothesesByTrackID;
 	for(size_t loc_i = 0; loc_i < locChargedTrackHypotheses.size(); loc_i++)
-		locHypothesesByTrackID[locChargedTrackHypotheses[loc_i]->candidateid].push_back(locChargedTrackHypotheses[loc_i]);
+		locHypothesesByTrackID[locChargedTrackHypotheses[loc_i]->Get_TrackTimeBased()->candidateid].push_back(locChargedTrackHypotheses[loc_i]);
 
 	map<JObject::oid_t, vector<const DChargedTrackHypothesis*> >::iterator locIterator = locHypothesesByTrackID.begin();
 	for(; locIterator != locHypothesesByTrackID.end(); ++locIterator)

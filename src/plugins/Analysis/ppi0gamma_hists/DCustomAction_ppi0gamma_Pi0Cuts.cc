@@ -14,22 +14,18 @@ void DCustomAction_ppi0gamma_Pi0Cuts::Initialize(JEventLoop* locEventLoop)
 
 bool DCustomAction_ppi0gamma_Pi0Cuts::Perform_Action(JEventLoop* locEventLoop, const DParticleCombo* locParticleCombo)
 {
+	auto locReactionStep = Get_Reaction()->Get_ReactionStep(2);
 	const DParticleComboStep* locParticleComboStep = locParticleCombo->Get_ParticleComboStep(2);
-        if(locParticleComboStep->Get_InitialParticleID() != Pi0)
+        if(locReactionStep->Get_InitialPID() != Pi0)
                 return false;
 	
 	// get final state particles
-        deque<const DKinematicData*> locParticles;
-        if(!Get_UseKinFitResultsFlag()) //measured
-                locParticleComboStep->Get_FinalParticles_Measured(locParticles);
-        else
-                locParticleComboStep->Get_FinalParticles(locParticles);
-
+        auto locParticles = Get_UseKinFitResultsFlag() ? locParticleComboStep->Get_FinalParticles() : locParticleComboStep->Get_FinalParticles_Measured();
 	int nFCAL = 0;
 	
         // loop final state particles
         for(size_t loc_i = 0; loc_i < locParticles.size(); ++loc_i) {
-                if(locParticleComboStep->Is_FinalParticleMissing(loc_i)) continue;
+                if(locParticles[loc_i] == nullptr) continue;
 		
 		// get shower object
 		const DNeutralShower* locNeutralShower = static_cast<const DNeutralShower*>(locParticleComboStep->Get_FinalParticle_SourceObject(loc_i));

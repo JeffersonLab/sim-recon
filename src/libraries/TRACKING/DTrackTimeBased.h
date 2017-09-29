@@ -10,16 +10,19 @@
 
 #include <JANA/JObject.h>
 #include <JANA/JFactory.h>
-#include <PID/DKinematicData.h>
-#include <TRACKING/DTrackFitter.h>
+#include "DTrackingData.h"
+#include "DTrackFitter.h"
 
 class DReferenceTrajectory;
 
+using namespace jana;
+using namespace std;
 
-class DTrackTimeBased:public DKinematicData{
+class DTrackTimeBased:public DTrackingData{
 	public:
 		JOBJECT_PUBLIC(DTrackTimeBased);
 		
+		double dEdx(void) const{return ((dNumHitsUsedFordEdx_CDC >= dNumHitsUsedFordEdx_FDC) ? ddEdx_CDC : ddEdx_FDC);}
 		typedef struct{
 		  unsigned int inner_layer;
 		  unsigned int outer_layer;
