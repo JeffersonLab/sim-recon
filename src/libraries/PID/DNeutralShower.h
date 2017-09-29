@@ -11,6 +11,7 @@
 #include <vector>
 #include <utility>
 #include <string>
+#include <memory>
 
 #include "JANA/JObject.h"
 
@@ -30,7 +31,7 @@ class DNeutralShower : public jana::JObject
 
 		DLorentzVector dSpacetimeVertex;
 		double dEnergy;
-		TMatrixFSym dCovarianceMatrix; //E, x, y, z, t
+		shared_ptr<TMatrixFSym> dCovarianceMatrix; //E, x, y, z, t
 
 		const JObject* dBCALFCALShower; //is either DBCALShower or DFCALShower: dynamic_cast as appropriate (based on dDetectorSystem)
 

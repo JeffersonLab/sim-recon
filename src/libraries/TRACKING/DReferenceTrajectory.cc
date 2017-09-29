@@ -2410,9 +2410,12 @@ jerror_t DReferenceTrajectory::FindPOCAtoLine(const DVector3 &origin,
 					      DVector3 &commonpos, double &doca, double &var_doca) const{ 
   const swim_step_t *swim_step=this->swim_steps;
 
-  TMatrixFSym* cov = (track_kd!=NULL) ? (dynamic_cast<DApplication*>(japp))->Get_CovarianceMatrixResource(7) : NULL;
+  shared_ptr<TMatrixFSym> cov = (track_kd!=NULL) ? dResourcePool_TMatrixFSym->Get_SharedResource() : nullptr;
   if(track_kd!=NULL)
+  {
+	  cov->ResizeTo(7, 7);
 	  *cov = *(track_kd->errorMatrix());
+  }
   doca=1000.;
   double tflight=0.;
   double mass_sq=this->mass_sq;
@@ -2569,10 +2572,12 @@ jerror_t DReferenceTrajectory::IntersectTracks(const DReferenceTrajectory *rt2, 
   const swim_step_t *swim_step2=rt2->swim_steps;
   
   TMatrixFSym cov1(7), cov2(7);
-  TMatrixFSym* locCovarianceMatrix1 = (track1_kd != NULL) ? (dynamic_cast<DApplication*>(japp))->Get_CovarianceMatrixResource(7) : NULL;
-  TMatrixFSym* locCovarianceMatrix2 = (track2_kd != NULL) ? (dynamic_cast<DApplication*>(japp))->Get_CovarianceMatrixResource(7) : NULL;
+  shared_ptr<TMatrixFSym> locCovarianceMatrix1 = (track1_kd != NULL) ? dResourcePool_TMatrixFSym->Get_SharedResource() : nullptr;
+  shared_ptr<TMatrixFSym> locCovarianceMatrix2 = (track2_kd != NULL) ? dResourcePool_TMatrixFSym->Get_SharedResource() : nullptr;
 
   if((track1_kd != NULL) && (track2_kd != NULL)){
+	  locCovarianceMatrix1->ResizeTo(7, 7);
+	  locCovarianceMatrix2->ResizeTo(7, 7);
     cov1=*track1_kd->errorMatrix();
     cov2=*track2_kd->errorMatrix();
   }

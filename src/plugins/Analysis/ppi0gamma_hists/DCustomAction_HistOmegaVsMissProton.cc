@@ -37,8 +37,8 @@ void DCustomAction_HistOmegaVsMissProton::Initialize(JEventLoop* locEventLoop)
 bool DCustomAction_HistOmegaVsMissProton::Perform_Action(JEventLoop* locEventLoop, const DParticleCombo* locParticleCombo)
 {
 	//no duplicate entries: missing p4 is unique for each combo
-	DLorentzVector locMissingP4 = dAnalysisUtilities->Calc_MissingP4(locParticleCombo, false);
-	DLorentzVector locOmegaP4 = dAnalysisUtilities->Calc_FinalStateP4(locParticleCombo, 1, false);
+	DLorentzVector locMissingP4 = dAnalysisUtilities->Calc_MissingP4(Get_Reaction(), locParticleCombo, false);
+	DLorentzVector locOmegaP4 = dAnalysisUtilities->Calc_FinalStateP4(Get_Reaction(), locParticleCombo, 1, false);
 
 	//FILL HISTOGRAMS
 	//Since we are filling histograms local to this action, it will not interfere with other ROOT operations: can use action-wide ROOT lock

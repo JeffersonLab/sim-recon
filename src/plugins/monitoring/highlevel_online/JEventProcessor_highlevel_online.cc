@@ -172,7 +172,6 @@ jerror_t JEventProcessor_highlevel_online::init(void)
 	dTimingCutMap[Positron][SYS_TOF] = 2.0;
 	dTimingCutMap[Positron][SYS_BCAL] = 2.5;
 	dTimingCutMap[Positron][SYS_FCAL] = 3.0;
-	map<Particle_t, map<DetectorSystem_t, double> > dTimingCutMap;
 
 	// All histograms go in the "highlevel" directory
 	TDirectory *main = gDirectory;
@@ -562,8 +561,8 @@ jerror_t JEventProcessor_highlevel_online::evnt(JEventLoop *locEventLoop, uint64
 		//compute shower-E/p, cut
 		double locP = locChargedHypo->momentum().Mag();
 		double locShowerEOverP = 0.0;
-		const DFCALShowerMatchParams* locFCALShowerMatchParams = locChargedHypo->Get_FCALShowerMatchParams();
-		const DBCALShowerMatchParams* locBCALShowerMatchParams = locChargedHypo->Get_BCALShowerMatchParams();
+		auto locFCALShowerMatchParams = locChargedHypo->Get_FCALShowerMatchParams();
+		auto locBCALShowerMatchParams = locChargedHypo->Get_BCALShowerMatchParams();
 		if(locFCALShowerMatchParams != NULL)
 		{
 			const DFCALShower* locFCALShower = locFCALShowerMatchParams->dFCALShower;

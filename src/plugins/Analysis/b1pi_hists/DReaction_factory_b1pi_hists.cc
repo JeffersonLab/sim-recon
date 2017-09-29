@@ -47,12 +47,6 @@ jerror_t DReaction_factory_b1pi_hists::init(void)
 	// Type of kinematic fit to perform:
 	locReaction->Set_KinFitType(d_P4AndVertexFit); //defined in DKinFitResults.h
 
-	// Highly Recommended: When generating particle combinations, reject all photon candidates with a PID confidence level < 5.73303E-7 (+/- 5-sigma)
-	locReaction->Set_MinPhotonPIDFOM(5.73303E-7);
-
-	// Highly Recommended: When generating particle combinations, reject all charged track candidates with a PID confidence level < 5.73303E-7 (+/- 5-sigma)
-	locReaction->Set_MinChargedPIDFOM(5.73303E-7);
-
 	// Highly Recommended: When generating particle combinations, reject all beam photons that match to a different RF bunch (delta_t > 1.002 ns)
 	locReaction->Set_MaxPhotonRFDeltaT(0.5*2.004); //beam bunches are every 2.004 ns, (1.002 should be minimum cut value)
 
@@ -64,14 +58,6 @@ jerror_t DReaction_factory_b1pi_hists::init(void)
 		// Important: Keep cut large: Can lose events if many ghost and accidental tracks
 	locReaction->Set_MaxExtraGoodTracks(4);
 
-/*********************************************** b1pi Combo Pre-Combo Custom Cuts ***********************************************/
-
-	// Loose Pi0 Cut, Applied during Blueprint Construction
-	locReaction->Set_InvariantMassCut(Pi0, 0.07, 0.20);
-
-	// Loose missing mass squared cut, applied just after creating the combination (before saving it)
-	locReaction->Add_ComboPreSelectionAction(new DCutAction_MissingMassSquared(locReaction, false, -0.5, 3.69));
-
 /**************************************************** b1pi Actions ****************************************************/
 
 	//Kinematics
@@ -79,7 +65,7 @@ jerror_t DReaction_factory_b1pi_hists::init(void)
 	locReaction->Add_AnalysisAction(new DHistogramAction_ParticleComboKinematics(locReaction, false));
 
 	//PID
-	locReaction->Add_AnalysisAction(new DHistogramAction_PID(locReaction));
+	locReaction->Add_AnalysisAction(new DHistogramAction_PID(locReaction, false));
 	locReaction->Add_AnalysisAction(new DCutAction_CombinedPIDFOM(locReaction, 0.01)); //1%
 
 	//Kinematic Fit Results and Confidence Level Cut

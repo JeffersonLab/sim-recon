@@ -20,6 +20,7 @@ using std::vector;
 #include <DMatrixDSym.h>
 #include <DMatrix.h>
 #include <PID/DKinematicData.h>
+#include "DResourcePool.h"
 
 #include <DCoordinateSystem.h>
 
@@ -209,6 +210,8 @@ class DReferenceTrajectory{
 		double MIN_STEP_SIZE;
 		double MAX_STEP_SIZE;
 	
+	    static thread_local shared_ptr<DResourcePool<TMatrixFSym>> dResourcePool_TMatrixFSym;
+
 	private:
 		DReferenceTrajectory(){} // force use of constructor with arguments.
 

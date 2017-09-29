@@ -19,17 +19,12 @@ bool DCustomAction_ee_ShowerEoverP_cut::Perform_Action(JEventLoop* locEventLoop,
     // require tracks to have E/p in a certain range
     // reject events with tracks not matched to tracks
 
-    deque<const DKinematicData*> locParticles;
-    if(Get_UseKinFitResultsFlag())
-        locParticleCombo->Get_DetectedFinalChargedParticles(locParticles);
-    else
-        locParticleCombo->Get_DetectedFinalChargedParticles_Measured(locParticles);
-
+	auto locParticles = Get_UseKinFitResultsFlag() ? locParticleCombo->Get_FinalParticles(Get_Reaction(), false, false, d_Charged) : locParticleCombo->Get_FinalParticles_Measured(Get_Reaction(), d_Charged);
     for(size_t loc_i = 0; loc_i < locParticles.size(); ++loc_i)
     {
         const DChargedTrackHypothesis* locChargedTrackHypothesis = static_cast<const DChargedTrackHypothesis*>(locParticles[loc_i]);
-        const DBCALShowerMatchParams* locBCALShowerMatchParams = locChargedTrackHypothesis->Get_BCALShowerMatchParams();
-        const DFCALShowerMatchParams* locFCALShowerMatchParams = locChargedTrackHypothesis->Get_FCALShowerMatchParams();
+        auto locBCALShowerMatchParams = locChargedTrackHypothesis->Get_BCALShowerMatchParams();
+        auto locFCALShowerMatchParams = locChargedTrackHypothesis->Get_FCALShowerMatchParams();
         // require all tracks to have a matched shower
         if( (locBCALShowerMatchParams == NULL) && (locFCALShowerMatchParams == NULL) )
             continue;

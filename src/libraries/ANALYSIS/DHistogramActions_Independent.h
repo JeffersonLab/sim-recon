@@ -19,6 +19,7 @@
 
 #include "JANA/JEventLoop.h"
 #include "particleType.h"
+#include "DResourcePool.h"
 
 #include <DANA/DStatusBits.h>
 #include "RF/DRFTime.h"
@@ -62,20 +63,10 @@
 #include "ANALYSIS/DCutActions.h"
 #include "ANALYSIS/DAnalysisResults.h"
 
-#include "ANALYSIS/DParticleCombo_factory_PreKinFit.h"
-#include "ANALYSIS/DKinFitResults_factory.h"
-#include "ANALYSIS/DParticleCombo_factory.h"
-
-#include "ANALYSIS/DParticleComboBlueprint_factory.h"
 #include "ANALYSIS/DTrackTimeBased_factory_Combo.h"
-#include "ANALYSIS/DEventRFBunch_factory_Combo.h"
-#include "ANALYSIS/DChargedTrackHypothesis_factory_Combo.h"
-#include "ANALYSIS/DNeutralParticleHypothesis_factory_Combo.h"
-#include "ANALYSIS/DBeamPhoton_factory_KinFit.h"
-#include "ANALYSIS/DChargedTrackHypothesis_factory_KinFit.h"
-#include "ANALYSIS/DNeutralParticleHypothesis_factory_KinFit.h"
 
 #include "ANALYSIS/DCutActions.h"
+#include "ANALYSIS/DSourceCombo.h"
 
 using namespace std;
 using namespace jana;
@@ -122,10 +113,34 @@ class DHistogramAction_ObjectMemory : public DAnalysisAction
 
 		unsigned int dEventCounter; //not the same as event #: running with multiple threads over many files, possibly starting at event # != 1
 
-		deque<pair<string, string> > dFactoryPairsToTrack; //class name, tag
+		map<string, int> dBinMap;
 
-		map<pair<string, string>, int> dFactoryPairBinMap;
-		map<string, int> dFactoryPoolBinMap;
+		DResourcePool<TMatrixFSym> dResourcePool_TMatrixFSym;
+		DResourcePool<DKinematicData::DKinematicInfo> dResourcePool_KinematicInfo;
+		DResourcePool<DChargedTrackHypothesis::DTimingInfo> dResourcePool_ChargedHypoTimingInfo;
+		DResourcePool<DChargedTrackHypothesis::DTrackingInfo> dResourcePool_ChargedHypoTrackingInfo;
+		DResourcePool<DNeutralParticleHypothesis::DTimingInfo> dResourcePool_NeutralHypoTimingInfo;
+
+		DResourcePool<DKinematicData> dResourcePool_KinematicData;
+		DResourcePool<DBeamPhoton> dResourcePool_BeamPhotons;
+		DResourcePool<DNeutralParticleHypothesis> dResourcePool_NeutralParticleHypothesis;
+		DResourcePool<DChargedTrackHypothesis> dResourcePool_ChargedTrackHypothesis;
+		DResourcePool<DEventRFBunch> dResourcePool_EventRFBunch;
+
+		DResourcePool<DSourceCombo> dResourcePool_SourceCombo;
+		DResourcePool<vector<const DSourceCombo*>> dResourcePool_SourceComboVector;
+		DResourcePool<DParticleCombo> dResourcePool_ParticleCombo;
+		DResourcePool<DParticleComboStep> dResourcePool_ParticleComboStep;
+
+		DResourcePool<DKinFitParticle> dResourcePool_KinFitParticle;
+		DResourcePool<DKinFitChainStep> dResourcePool_KinFitChainStep;
+		DResourcePool<DKinFitChain> dResourcePool_KinFitChain;
+		DResourcePool<DKinFitResults> dResourcePool_KinFitResults;
+
+		DResourcePool<DKinFitConstraint_Mass> dResourcePool_MassConstraint;
+		DResourcePool<DKinFitConstraint_P4> dResourcePool_P4Constraint;
+		DResourcePool<DKinFitConstraint_Vertex> dResourcePool_VertexConstraint;
+		DResourcePool<DKinFitConstraint_Spacetime> dResourcePool_SpacetimeConstraint;
 
 		TH2I* dHist_NumObjects;
 		TH2F* dHist_Memory;

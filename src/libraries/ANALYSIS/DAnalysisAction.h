@@ -18,6 +18,10 @@
 
 using namespace std;
 using namespace jana;
+using namespace DAnalysis;
+
+namespace DAnalysis
+{
 
 class DAnalysisAction
 {
@@ -37,13 +41,13 @@ class DAnalysisAction
 			//if not creating any objects, just define the function but leave it empty
 		virtual void Initialize(JEventLoop* locEventLoop) = 0;
 
+		//INHERITING CLASSES THAT OVERRIDE THIS METHOD MUST CALL THE BASE METHOD!!!
 		//Reset event (for clearing previously-histogrammed info (duplicate checking)
-		virtual void Reset_NewEvent(void){};
+		virtual void Reset_NewEvent(void){dCalledPriorWithComboFlag = false;}
 
 		//Function-call operators: Execute the action.
 		bool operator()(JEventLoop* locEventLoop); //DON'T CALL THIS FOR COMBO-DEPENDENT ACTIONS
 		bool operator()(JEventLoop* locEventLoop, const DParticleCombo* locParticleCombo); //THIS METHOD ASSUMES THAT ONLY ONE THREAD HAS ACCESS TO THIS OBJECT
-		void operator()(JEventLoop* locEventLoop, set<const DParticleCombo*>& locSurvivingParticleCombos); //THIS METHOD ASSUMES THAT ONLY ONE THREAD HAS ACCESS TO THIS OBJECT
 
 	protected:
 
@@ -76,9 +80,7 @@ class DAnalysisAction
 		template <typename DHistType> DHistType* GetOrCreate_Histogram(string locHistName, string locHistTitle, Int_t locNumBinsX, Double_t locXRangeMin, Double_t locXRangeMax, Int_t locNumBinsY, Double_t locYRangeMin, Double_t locYRangeMax, Int_t locNumBinsZ, Double_t locZRangeMin, Double_t locZRangeMax) const;
 		template <typename DHistType, typename DBinType> DHistType* GetOrCreate_Histogram(string locHistName, string locHistTitle, Int_t locNumBinsX, DBinType* locXBinEdges, Int_t locNumBinsY, DBinType* locYBinEdges, Int_t locNumBinsZ, DBinType* locZBinEdges) const;
 
-		//Valid only during function-call operators (and the functions it calls):
-		size_t Get_NumPreviousParticleCombos(void) const{return dNumPreviousParticleCombos;}
-		size_t Get_NumParticleCombos(void) const{return dNumParticleCombos;}
+		bool Get_CalledPriorWithComboFlag(void) const{return dCalledPriorWithComboFlag;}
 
 		// in case you need to do anything with this action that is shared amongst threads
 			// e.g. filling histograms
@@ -101,8 +103,7 @@ class DAnalysisAction
 		string dOutputFileName;
 
 		//Valid only during function-call operators (and the functions it calls):
-		size_t dNumPreviousParticleCombos;
-		size_t dNumParticleCombos;
+		bool dCalledPriorWithComboFlag = false;
 
 		template <typename DHistType> bool Check_IsValidTH1(string locHistName) const;
 		template <typename DHistType> bool Check_IsValidTH2(string locHistName) const;
@@ -119,18 +120,16 @@ class DAnalysisAction
 
 inline bool DAnalysisAction::operator()(JEventLoop* locEventLoop)
 {
-	dNumPreviousParticleCombos = 0;
-	bool locResult = Perform_Action(locEventLoop, NULL);
+	//ASSUMES ONLY CALLED ONCE PER EVENT
+	bool locResult = Perform_Action(locEventLoop, nullptr);
 	return (dPerformAntiCut ? !locResult : locResult);
 }
 
 inline bool DAnalysisAction::operator()(JEventLoop* locEventLoop, const DParticleCombo* locParticleCombo)
 {
 	//THIS METHOD ASSUMES THAT ONLY ONE THREAD HAS ACCESS TO THIS OBJECT
-	dNumParticleCombos = 1;
-	dNumPreviousParticleCombos = 0;
-
 	bool locResult = Perform_Action(locEventLoop, locParticleCombo);
+	dCalledPriorWithComboFlag = true;
 	return (dPerformAntiCut ? !locResult : locResult);
 }
 
@@ -334,6 +333,8 @@ template <typename DHistType> inline bool DAnalysisAction::Check_IsValidTH1(stri
 	}
 	return true;
 }
+
+} //end namespace
 
 #endif // _DAnalysisAction_
 

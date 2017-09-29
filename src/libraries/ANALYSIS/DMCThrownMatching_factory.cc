@@ -114,7 +114,7 @@ jerror_t DMCThrownMatching_factory::evnt(jana::JEventLoop* locEventLoop, uint64_
 			double locTheta = locChargedTrackHypotheses[loc_i]->momentum().Theta()*180.0/TMath::Pi();
 			double locPhi = locChargedTrackHypotheses[loc_i]->momentum().Phi()*180.0/TMath::Pi();
 			Particle_t locPID = locChargedTrackHypotheses[loc_i]->PID();
-			cout << "charged info: " << locChargedTrackHypotheses[loc_i]->candidateid << ", " << ParticleType(locPID) << ", " << locP << ", " << locTheta << ", " << locPhi << endl;
+			cout << "charged info: " << locChargedTrackHypotheses[loc_i]->Get_TrackTimeBased()->candidateid << ", " << ParticleType(locPID) << ", " << locP << ", " << locTheta << ", " << locPhi << endl;
 			cout << "matched info: ";
 			const DMCThrown* locMCThrown = locMCThrownMatching->Get_MatchingMCThrown(locChargedTrackHypotheses[loc_i], locMatchFOM);
 			if(locMCThrown == NULL)
@@ -517,7 +517,7 @@ void DMCThrownMatching_factory::Find_GenReconMatches_ChargedTrack(const vector<c
 	{
 		for(size_t loc_j = 0; loc_j < locChargedTracks.size(); ++loc_j)
 		{
-			if(locChargedTracks[loc_j]->Get_BestFOM()->candidateid == (locIterator->second.first)[0]->candidateid) //match
+			if(locChargedTracks[loc_j]->candidateid == (locIterator->second.first)[0]->Get_TrackTimeBased()->candidateid) //match
 			{
 				locChargedToThrownMap[locChargedTracks[loc_j]] = pair<const DMCThrown*, double>(locIterator->first, locIterator->second.second);
 				locThrownToChargedMap[locIterator->first] = pair<const DChargedTrack*, double>(locChargedTracks[loc_j], locIterator->second.second);
@@ -546,8 +546,7 @@ void DMCThrownMatching_factory::Find_GenReconMatches_ChargedHypo(const vector<co
 	for(size_t loc_j = 0; loc_j < locChargedTrackHypothesisVector.size(); ++loc_j)
 	{
 		const DChargedTrackHypothesis* locChargedTrackHypothesis = locChargedTrackHypothesisVector[loc_j];
-		const DTrackTimeBased* locTrackTimeBased = NULL;
-		locChargedTrackHypothesis->GetSingle(locTrackTimeBased);
+		auto locTrackTimeBased = locChargedTrackHypothesis->Get_TrackTimeBased();
 
 		if(locMyIDToThrownMap.find(locTrackTimeBased->dMCThrownMatchMyID) == locMyIDToThrownMap.end())
 			continue;
@@ -567,7 +566,7 @@ void DMCThrownMatching_factory::Find_GenReconMatches_ChargedHypo(const vector<co
 			cout << ParticleType((Particle_t)(locMCThrown->type)) << ", " << locMCThrown->momentum().Mag() << ", " << locMCThrown->momentum().Theta()*180.0/TMath::Pi() << ", " << locMCThrown->momentum().Phi()*180.0/TMath::Pi() << endl;
 			cout << "MATCHING: CHARGEDHYPO: ";
 			cout << ParticleType(locChargedTrackHypothesis->PID()) << ", " << locChargedTrackHypothesis->momentum().Mag() << ", " << locChargedTrackHypothesis->momentum().Theta()*180.0/TMath::Pi() << ", " << locChargedTrackHypothesis->momentum().Phi()*180.0/TMath::Pi() << endl;
-			cout << "MATCHING: FOM, candidate id: " << locMatchFOM << ", " << locChargedTrackHypothesis->candidateid << endl;
+			cout << "MATCHING: FOM, candidate id: " << locMatchFOM << ", " << locChargedTrackHypothesis->Get_TrackTimeBased()->candidateid << endl;
 		}
 
 		pair<const DMCThrown*, const DChargedTrackHypothesis*> locTrackPair(locMCThrown, locChargedTrackHypothesis);
@@ -602,9 +601,9 @@ void DMCThrownMatching_factory::Find_GenReconMatches_ChargedHypo(const vector<co
 			{
 				cout << "CHECKING: CHARGEDHYPO: ";
 				cout << ParticleType(locChargedTrackHypothesisVector[loc_i]->PID()) << ", " << locChargedTrackHypothesisVector[loc_i]->momentum().Mag() << ", " << locChargedTrackHypothesisVector[loc_i]->momentum().Theta()*180.0/TMath::Pi() << ", " << locChargedTrackHypothesisVector[loc_i]->momentum().Phi()*180.0/TMath::Pi() << endl;
-				cout << "best id, test id = " << locChargedTrackHypothesis->candidateid << ", " << locChargedTrackHypothesisVector[loc_i]->candidateid << endl;
+				cout << "best id, test id = " << locChargedTrackHypothesis->Get_TrackTimeBased()->candidateid << ", " << locChargedTrackHypothesisVector[loc_i]->Get_TrackTimeBased()->candidateid << endl;
 			}
-			if(locChargedTrackHypothesisVector[loc_i]->candidateid == locChargedTrackHypothesis->candidateid)
+			if(locChargedTrackHypothesisVector[loc_i]->Get_TrackTimeBased()->candidateid == locChargedTrackHypothesis->Get_TrackTimeBased()->candidateid)
 			{
 				if(dDebugLevel > 0)
 					cout << "save!" << endl;
