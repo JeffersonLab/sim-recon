@@ -132,9 +132,13 @@ c  freq > freqMaximum is generated; a few ppm of these is no problem.
          enddo
          freqMaximum = REAL(4*TWOPI)*freqIntegral(nProfileBins)
       endif
+
+c To get pure incoherent radiation, eg. using the amorphous radiator,
+c set the x rotation angle to 0 by assigning Epeak = 0 in control.in
+
       do i=1,1000000000
          call GRNDM(rndm,5)
-         if (rndm(1).gt.1/(Wincoh+1)) then             !try coherent generation
+         if (thx.ne.0.and.rndm(1).gt.1/(Wincoh+1)) then             !try coherent generation
             f = freqIntegral(nProfileBins)*rndm(2)
             do ip=1,nProfileBins
                if (f.le.freqIntegral(ip)) then
@@ -164,7 +168,7 @@ c  freq > freqMaximum is generated; a few ppm of these is no problem.
  5          continue
             freq = freq*freqIntegral(nProfileBins)/fp
             freq = REAL(freq*TWOPI)
-            ppol = polarization(x,theta2)
+            ppol = polarization(x,theta2,phi)
          else                                  !try incoherent generation
             x = xMinimum**rndm(2)
             phi = REAL(rndm(3)*TWOPI)
@@ -177,7 +181,7 @@ c  freq > freqMaximum is generated; a few ppm of these is no problem.
                Wincoh = Wincoh * 0.8
                cycle
             endif
-            ppol = 0
+            ppol = abrems_polarization(x,theta2,phi)
          endif
          if (freq.gt.freqMaximum) then
             print *, 'Warning from beamgen: freq=',freq,
@@ -247,4 +251,27 @@ c  freq > freqMaximum is generated; a few ppm of these is no problem.
       if (genbeam_mode(1).eq.0) then
          call hitTagger(vertex,vertex,plab,plab,0.,1,0,0)
       endif
+      end
+
+      function abrems_polarization(x, theta2, phi)
+      real abrems_polarization
+      real x       ! photon energy in units of endpoint energy E0
+      real theta2  ! photon polar angle**2 in units of (mElectron/E0)**2
+      real phi     ! photon azimuthal angle in radians
+      real pol
+      real Acoeff(3,4)
+      data Acoeff/0.93000, 0.73000, 0.87610,
+     +            0.64250, 1.05648, 0.57510,
+     +            0.66598, 0.84643, 0.74918,
+     +            1.62506, 1.97061, 1.52849/
+      real a(3)
+      do n=1,3
+        a(n) = Acoeff(n,1)**2 +
+     +         Acoeff(n,2)**2 * x**2 +
+     +         Acoeff(n,3)**2 * x**4 +
+     +         Acoeff(n,4)**2 * x**16
+        a(n) = a(n)**2
+      enddo
+      pol = theta2 / (a(1) + a(2) * theta2 + a(3) * theta2**2)
+      abrems_polarization = pol * cos(2*phi)
       end

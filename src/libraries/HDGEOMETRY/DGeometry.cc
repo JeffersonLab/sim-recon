@@ -136,7 +136,7 @@ void DGeometry::ReadMaterialMaps(void) const
 		pthread_mutex_unlock(&materialmap_mutex);
 		return;
 	}
-	jout<<"Found "<<material_namepaths.size()<<" material maps in calib. DB for run "<<runnumber<<endl;
+	jout<<"Found "<<material_namepaths.size()<<" material maps in calib. DB"<<endl;
 	
 	if(false){ // save this to work off configuration parameter
 		jout<<"Will read in the following:"<<endl;
@@ -146,18 +146,24 @@ void DGeometry::ReadMaterialMaps(void) const
 	}
 
 	// Actually read in the maps
-	unsigned int Npoints_total=0;
+	uint32_t Npoints_total=0;
 	//cout<<endl; // make empty line so material map can overwrite it below
 	for(unsigned int i=0; i<material_namepaths.size(); i++){
 		// DMaterialMap constructor prints line so we conserve real
 		// estate by having each recycle the line
 		//cout<<ansi_up(1)<<string(85, ' ')<<"\r";
 		DMaterialMap *mat = new DMaterialMap(material_namepaths[i], jcalib);
+		if( ! mat->IS_VALID ) {
+			// This particular map may not exist for this run/variation
+			// (e.g. CPP uses maps downstream of TOF)
+			delete mat;
+			continue;
+		}
 		materialmaps.push_back(mat);
 		Npoints_total += (unsigned int)(mat->GetNr()*mat->GetNz());
 	}
 	//cout<<ansi_up(1)<<string(85, ' ')<<"\r";
-	jout<<"Read in "<<materialmaps.size()<<" material maps containing "<<Npoints_total<<" grid points total"<<endl;
+	jout<<"Read in "<<materialmaps.size()<<" material maps for run "<<runnumber<<" containing "<<Npoints_total<<" grid points total"<<endl;
 
 	// Set flag that maps have been read and unlock mutex
 	materialmaps_read = true;
@@ -1703,21 +1709,38 @@ bool DGeometry::GetTOFZ(vector<double> &z_tof) const
 //---------------------------------
 bool DGeometry::GetTargetZ(double &z_target) const
 {
+   // Default to nominal center of GlueX target
+   z_target=65.;
+
+   // Check GlueX target is defined
+   bool gluex_target_exists = true;
    vector<double> xyz_vessel;
    vector<double> xyz_target;
    vector<double> xyz_detector;
+   if(gluex_target_exists) gluex_target_exists = Get("//composition[@name='targetVessel']/posXYZ[@volume='targetTube']/@X_Y_Z", xyz_vessel);
+   if(gluex_target_exists) gluex_target_exists = Get("//composition[@name='Target']/posXYZ[@volume='targetVessel']/@X_Y_Z", xyz_target);
+   if(gluex_target_exists) gluex_target_exists = Get("//posXYZ[@volume='Target']/@X_Y_Z", xyz_detector);
+   if(gluex_target_exists) {
+      z_target = xyz_vessel[2] + xyz_target[2] + xyz_detector[2];
+	  return true;
+   }
 
-   z_target=65.;
+   // Check if CPP target is defined
+   bool cpp_target_exists = true;
+   vector<double> xyz_TGT0;
+   vector<double> xyz_TARG;
+   vector<double> xyz_TargetCPP;
+   if(cpp_target_exists) cpp_target_exists = Get("//composition/posXYZ[@volume='TGT0']/@X_Y_Z", xyz_TGT0);
+   if(cpp_target_exists) cpp_target_exists = Get("//composition/posXYZ[@volume='TARG']/@X_Y_Z", xyz_TARG);
+   if(cpp_target_exists) cpp_target_exists = Get("//composition/posXYZ[@volume='TargetCPP']/@X_Y_Z", xyz_TargetCPP);
+   if(cpp_target_exists) {
+      z_target = xyz_TGT0[2] + xyz_TARG[2] + xyz_TargetCPP[2];
+      return true;
+   }
+   
+   jout << " WARNING: Unable to get target location from XML for any of GlueX, or CPP targets. Using default of " << z_target << " cm" << endl;
 
-   if(!Get("//composition[@name='targetVessel']/posXYZ[@volume='targetTube']/@X_Y_Z", xyz_vessel)) return false;
-   if(!Get("//composition[@name='Target']/posXYZ[@volume='targetVessel']/@X_Y_Z", xyz_target)) return false;
-   if(!Get("//posXYZ[@volume='Target']/@X_Y_Z", xyz_detector)) return false;
-
-   z_target = xyz_vessel[2] + xyz_target[2] + xyz_detector[2];
-
-   //_DBG_ << "Target z position: " << z_target <<endl;
-
-   return true;
+   return false;
 }
 
 //---------------------------------

@@ -212,7 +212,9 @@ void BCALSmearer::ApplySamplingFluctuations(map<bcal_index, CellHits> &SiPMHits,
       
       // Find fractional sampling sigma based on deposited energy (whole colorimeter, not just fibers)
       double Etruth = cellhits.Etruth;
-      double sigmaSamp = bcal_config->BCAL_SAMPLINGCOEFA / sqrt( Etruth ) + bcal_config->BCAL_SAMPLINGCOEFB;
+      double sqrtterm = bcal_config->BCAL_SAMPLINGCOEFA / sqrt( Etruth );
+      double linterm = bcal_config->BCAL_SAMPLINGCOEFB;
+      double sigmaSamp = sqrt(sqrtterm*sqrtterm + linterm*linterm);   
 
       // Convert sigma into GeV
       sigmaSamp *= Etruth;

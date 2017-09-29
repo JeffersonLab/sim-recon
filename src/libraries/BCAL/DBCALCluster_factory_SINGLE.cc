@@ -54,10 +54,11 @@ jerror_t DBCALCluster_factory_SINGLE::evnt(JEventLoop *loop, uint64_t eventnumbe
 	// Need at least one DBCALPoint object to make a cluster
 	if(bcalpoints.size() == 0) return NOERROR;
 	
-	// Create DBCALCluster object and all all DBCALPoint objects to it
+	// Create DBCALCluster object and add all DBCALPoint objects to it
 	DBCALCluster *cluster = new DBCALCluster(m_z_target_center, dBCALGeom);
+	int q = 0;
 	for(unsigned int i=0; i<bcalpoints.size(); i++){
-		cluster->addPoint(bcalpoints[i]);
+		cluster->addPoint(bcalpoints[i], q);
 	}
 	
 	// Store in _data so it is published to JANA

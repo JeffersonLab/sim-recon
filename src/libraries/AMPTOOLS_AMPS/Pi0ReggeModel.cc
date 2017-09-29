@@ -66,7 +66,8 @@ complex<double> Pi0PhotAmpS(double pa[],double pb[],double pc[], int hel[]){
    */
   complex<double> amp = 0.0;
   complex<double> Ai[5] = {0}, Fi[5] = {0};
-  double pab[4], pbc[4], pca[4], pd[4];
+  //pbc set but not used: double pab[4], pbc[4], pca[4], pd[4];
+  double pab[4], pca[4], pd[4];
   struct Kin var;
   double mass[5]={0};
   
@@ -76,7 +77,7 @@ complex<double> Pi0PhotAmpS(double pa[],double pb[],double pc[], int hel[]){
   int i;
   for(i=0;i<4;i++){							// compute the Mandelstam invariant
     pab[i] = pa[i] + pb[i];						// from four-vectors
-    pbc[i] = pb[i] - pc[i];						//
+    // pbc set but not used: pbc[i] = pb[i] - pc[i];						//
     pca[i] = pc[i] - pa[i];						//
     pd[i]  = pa[i] + pb[i] - pc[i];				//
   }
