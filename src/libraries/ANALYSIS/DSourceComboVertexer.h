@@ -40,7 +40,7 @@ class DSourceComboVertexer
 		DSourceComboVertexer(void) = delete;
 		DSourceComboVertexer(JEventLoop* locEventLoop, DSourceComboer* locSourceComboer, DSourceComboP4Handler* locSourceComboP4Handler);
 		void Reset(void);
-void Set_Vertex(const DVertex* locVertex){dVertex = locVertex;}
+void Set_Vertex(const DVertex* locVertex){dVertex = locVertex;} //COMPARE
 		//SETUP
 		void Set_SourceComboTimeHandler(const DSourceComboTimeHandler* locSourceComboTimeHandler){dSourceComboTimeHandler = locSourceComboTimeHandler;}
 		void Set_DebugLevel(int locDebugLevel){dDebugLevel = locDebugLevel;}
@@ -98,7 +98,7 @@ void Set_Vertex(const DVertex* locVertex){dVertex = locVertex;}
 
 		//EXPERIMENT INFORMATION
 		DVector3 dTargetCenter;
-const DVertex* dVertex;
+const DVertex* dVertex; //COMPARE
 		double dMinThetaForVertex = 30.0;
 
 		//DETERMINABILITY

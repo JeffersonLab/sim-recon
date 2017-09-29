@@ -3,15 +3,6 @@
 #include "ANALYSIS/DSourceComboTimeHandler.h"
 
 /*
- *
- * EVENTUALLY:
- *
- *
- *
- *
- */
-
-/*
 FAQ:
 Q) If an event has the minimum # tracks, how can it fail to create combos for that event?
 A) It may be that one of the tracks failed cuts for the PIDs that you need, but passed for others. Thus the total #tracks is OK. 
@@ -239,6 +230,7 @@ DSourceComboer::DSourceComboer(JEventLoop* locEventLoop)
 	japp->RootWriteLock(); //ACQUIRE ROOT LOCK!!
 	{
 		//CDC dE/dx Proton, Anti-Proton
+//COMPARE:
 		ddEdxCutMap[Proton][SYS_CDC].first = new TF1("df_dEdxCut_CDC_ProtonLow", "exp(-1.0*[0]*x + [1]) + [2]", 0.0, 12.0);
 		ddEdxCutMap[Proton][SYS_CDC].first->SetParameters(4.0, 2.25, 1.0);
 		ddEdxCutMap[Proton][SYS_CDC].second = new TF1("df_dEdxCut_CDC_ProtonHigh", "[0]", 0.0, 12.0);
@@ -271,7 +263,6 @@ DSourceComboer::DSourceComboer(JEventLoop* locEventLoop)
 		ddEdxCutMap[Electron][SYS_FDC].second = new TF1("df_dEdxCut_CDC_ElectronHigh", "[0]", 0.0, 12.0);
 		ddEdxCutMap[Electron][SYS_FDC].second->SetParameter(0, 3.5);
 		ddEdxCutMap.emplace(Positron, ddEdxCutMap[Electron]);
-
 /*
 		//E/p
 		dEOverPCutMap[Electron][SYS_FCAL] = new TF1("df_EOverPCut_FCAL_Electron", "[0]", 0.0, 12.0);
@@ -904,6 +895,7 @@ dParticleComboCreator->Set_DebugLevel(dDebugLevel);
 	const DDetectorMatches* locDetectorMatches = nullptr;
 	locEventLoop->GetSingle(locDetectorMatches, "Combo");
 
+//COMPARE:
 const DVertex* locVertex = nullptr;
 locEventLoop->GetSingle(locVertex);
 dSourceComboVertexer->Set_Vertex(locVertex);
@@ -998,8 +990,8 @@ bool DSourceComboer::Cut_dEdxAndEOverP(const DChargedTrackHypothesis* locCharged
 		if(!Cut_dEdx(locPID, SYS_CDC, locP, locdEdx))
 			locPassedCutFlag = false;
 	}
-//	else if((locPID == KPlus) || (locPID == KMinus))
-	if((locPID == KPlus) || (locPID == KMinus)) //COMPARE: use this instead
+	else if((locPID == KPlus) || (locPID == KMinus))
+//	if((locPID == KPlus) || (locPID == KMinus)) //COMPARE: use this instead
 	{
 		auto locSystem = locChargedTrackHypothesis->t1_detector();
 		if((locSystem == SYS_START) || (locSystem == SYS_NULL))
@@ -1266,7 +1258,7 @@ DCombosByReaction DSourceComboer::Build_ParticleCombos(const DReactionVertexInfo
 			if(dDebugLevel > 0)
 				cout << "Fully charged." << endl;
 
-//			if(false) //COMPARE: Comparison-to-old mode
+			if(false) //COMPARE: Comparison-to-old mode
 			{
 				dSourceComboTimeHandler->Vote_OldMethod(locReactionChargedCombo, locBeamBunches_Charged);
 				if(locBeamBunches_Charged.empty())
@@ -1405,7 +1397,7 @@ void DSourceComboer::Combo_WithNeutralsAndBeam(const vector<const DReaction*>& l
 				++(dNumCombosSurvivedStageTracker[locReaction][DConstructionStage::NoVertex_RFBunch]);
 		}
 
-//		if(false) //COMPARE: Comparison-to-old mode
+		if(false) //COMPARE: Comparison-to-old mode
 		{
 			dSourceComboTimeHandler->Vote_OldMethod(locReactionFullCombo, locValidRFBunches);
 			if(locValidRFBunches.empty())
@@ -2909,7 +2901,8 @@ void DSourceComboer::Create_Combo_OneDecay(const DSourceComboUse& locComboUseToC
 	//if on the all-showers stage, first copy over ALL fcal-only results
 	auto& locSourceCombosByUseSoFar = Get_CombosSoFar(locComboingStage, dComboInfoChargeContent[locComboInfoToCreate], locChargedCombo_PreviousPresiding);
 	auto& locSourceCombosByUseToSaveTo = Get_CombosSoFar(locComboingStage, dComboInfoChargeContent[locComboInfoToCreate], locChargedCombo_Presiding);
-	locSourceCombosByUseSoFar.emplace(locComboUseToCreate, Get_SourceComboVectorResource());
+	locSourceCombosByUseToSaveTo.emplace(locComboUseToCreate, Get_SourceComboVectorResource());
+
 	if(locComboingStage == d_MixedStage)
 		Copy_ZIndependentMixedResults(locComboUseToCreate, locChargedCombo_Presiding);
 
@@ -2937,7 +2930,7 @@ void DSourceComboer::Create_Combo_OneDecay(const DSourceComboUse& locComboUseToC
 	if(dDebugLevel >= 5)
 	{
 		for(decltype(locNumTabs) locTabNum = 0; locTabNum < locNumTabs; ++locTabNum) cout << "\t";
-		cout << "Combo_Horizontally_OneDecay: NUM SOURCE COMBOS CREATED: " << locSourceCombosByUseToSaveTo[locComboUseToCreate]->size() << endl;
+		cout << "Create_Combo_OneDecay: NUM SOURCE COMBOS CREATED: " << locSourceCombosByUseToSaveTo[locComboUseToCreate]->size() << endl;
 	}
 }
 
@@ -3612,13 +3605,13 @@ const DSourceCombo* DSourceComboer::Get_StepSourceCombo(const DReaction* locReac
 	while(true)
 	{
 		auto locNextStep = locParticleIndices[locParticleIndices.size() - 2].first;
-		auto locInstanceToFind = locParticleIndices.back().second;
+		auto locInstanceIndexToFind = locParticleIndices.back().second;
 		const auto& locUseToFind = dSourceComboUseReactionStepMap.find(locReaction)->second.find(locNextStep)->second;
 		if(dDebugLevel >= 100)
-			cout << "next step, instance to find, use to find: " << locNextStep << ", " << locInstanceToFind << endl;
+			cout << "next step, instance to find, use to find: " << locNextStep << ", " << locInstanceIndexToFind << endl;
 		if(dDebugLevel >= 100)
 			Print_SourceComboUse(locUseToFind);
-		locVertexPrimaryCombo = Find_Combo_AtThisStep(locVertexPrimaryCombo, locUseToFind, locInstanceToFind);
+		locVertexPrimaryCombo = Find_Combo_AtThisStep(locVertexPrimaryCombo, locUseToFind, locInstanceIndexToFind);
 		if(dDebugLevel >= 100)
 			cout << "pointer = " << locVertexPrimaryCombo << endl;
 		if(locVertexPrimaryCombo == nullptr)
@@ -3683,12 +3676,13 @@ const DSourceCombo* DSourceComboer::Find_Combo_AtThisStep(const DSourceCombo* lo
 	return locSourceCombo;
 }
 
-DSourceComboUse DSourceComboer::Get_StepSourceComboUse(const DReaction* locReaction, size_t locDesiredStepIndex, DSourceComboUse locVertexPrimaryComboUse, size_t locVertexPrimaryStepIndex) const
+pair<DSourceComboUse, size_t> DSourceComboer::Get_StepSourceComboUse(const DReaction* locReaction, size_t locDesiredStepIndex, DSourceComboUse locVertexPrimaryComboUse, size_t locVertexPrimaryStepIndex) const
 {
+	//size_t: combo instance
 	if(dDebugLevel >= 100)
 		cout << "reaction, desired step index, current step index: " << locReaction->Get_ReactionName() << ", " << locDesiredStepIndex << ", " << locVertexPrimaryStepIndex << endl;
 	if(locDesiredStepIndex == locVertexPrimaryStepIndex)
-		return locVertexPrimaryComboUse;
+		return std::make_pair(locVertexPrimaryComboUse, size_t(1));
 
 	//Get the list of steps we need to traverse //particle pair: step index, particle instance index
 	vector<pair<size_t, int>> locParticleIndices = {std::make_pair(locDesiredStepIndex, DReactionStep::Get_ParticleIndex_Initial())};
@@ -3708,21 +3702,20 @@ DSourceComboUse DSourceComboer::Get_StepSourceComboUse(const DReaction* locReact
 	while(true)
 	{
 		auto locNextStep = locParticleIndices[locParticleIndices.size() - 2].first;
-		auto locInstanceToFind = locParticleIndices.back().second;
+		auto locInstanceIndexToFind = locParticleIndices.back().second;
 		const auto& locUseToFind = dSourceComboUseReactionStepMap.find(locReaction)->second.find(locNextStep)->second;
 		if(dDebugLevel >= 100)
-			cout << "next step, instance to find, use to find: " << locNextStep << ", " << locInstanceToFind << endl;
+			cout << "next step, instance to find, use to find: " << locNextStep << ", " << locInstanceIndexToFind << endl;
 		if(dDebugLevel >= 100)
 			Print_SourceComboUse(locUseToFind);
-		locVertexPrimaryComboUse = Find_ZDependentUse_AtThisStep(locVertexPrimaryComboUse, locUseToFind, locInstanceToFind);
+		locVertexPrimaryComboUse = Find_ZDependentUse_AtThisStep(locVertexPrimaryComboUse, locUseToFind, locInstanceIndexToFind);
 		if(std::get<2>(locVertexPrimaryComboUse) == nullptr)
-			return locVertexPrimaryComboUse; //e.g. entirely neutral step when input is charged
+			return std::make_pair(locVertexPrimaryComboUse, size_t(locInstanceIndexToFind + 1)); //e.g. entirely neutral step when input is charged
 		if(locNextStep == locDesiredStepIndex)
-			return locVertexPrimaryComboUse;
+			return std::make_pair(locVertexPrimaryComboUse, size_t(locInstanceIndexToFind + 1));
 		locParticleIndices.pop_back();
 	}
-
-	return DSourceComboUse(Unknown, 0, nullptr, 0, Unknown);
+	return std::make_pair(DSourceComboUse(Unknown, 0, nullptr, 0, Unknown), size_t(1));
 }
 
 DSourceComboUse DSourceComboer::Find_ZDependentUse_AtThisStep(const DSourceComboUse& locSourceComboUse, DSourceComboUse locUseToFind, size_t locDecayInstanceIndex) const
@@ -3968,7 +3961,7 @@ bool DSourceComboer::Check_Reactions(vector<const DReaction*>& locReactions)
 	//Check Max neutrals
 	auto locNumNeutralNeeded = locReactions.front()->Get_FinalPIDs(-1, false, false, d_Neutral, true).size(); //no missing, no decaying, include duplicates
 	auto locNumDetectedShowers = dShowersByBeamBunchByZBin[DSourceComboInfo::Get_VertexZIndex_Unknown()][{}].size();
-//	if(false) //COMPARE: Comparison-to-old mode
+	if(false) //COMPARE: Comparison-to-old mode
 	{
 		if(locNumDetectedShowers > dMaxNumNeutrals)
 			return false;

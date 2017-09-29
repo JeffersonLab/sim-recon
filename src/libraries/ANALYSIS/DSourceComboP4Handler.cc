@@ -138,6 +138,7 @@ DSourceComboP4Handler::DSourceComboP4Handler(DSourceComboer* locSourceComboer, b
 	dInvariantMassCuts.emplace(EtaPrime, std::make_pair(0.6, 1.3));
 	dInvariantMassCuts.emplace(phiMeson, std::make_pair(0.8, 1.2));
 	dInvariantMassCuts.emplace(D0, std::make_pair(1.8, 1.92));
+	dInvariantMassCuts.emplace(AntiD0, std::make_pair(1.8, 1.92));
 //	dInvariantMassCuts.emplace(Jpsi, std::make_pair(2.7, 3.5));
 
 	//INVARIANT MASS CUTS: BARYONS
@@ -169,7 +170,7 @@ DSourceComboP4Handler::DSourceComboP4Handler(DSourceComboer* locSourceComboer, b
 		dMissingMassSquaredCuts[Positron].second->SetParameter(0, 1.0);
 		dMissingMassSquaredCuts.emplace(Electron, dMissingMassSquaredCuts[Positron]);
 
-		//Pi+/-
+		//Pi+/-/0
 		dMissingMassSquaredCuts[PiPlus].first = new TF1("df_MissingMassSquaredCut_PiPlusLow", "[0]", 0.0, 12.0);
 		dMissingMassSquaredCuts[PiPlus].first->SetParameter(0, -1.0);
 		dMissingMassSquaredCuts[PiPlus].second = new TF1("df_MissingMassSquaredCut_PiPlusHigh", "[0]", 0.0, 12.0);
@@ -177,13 +178,14 @@ DSourceComboP4Handler::DSourceComboP4Handler(DSourceComboer* locSourceComboer, b
 		dMissingMassSquaredCuts.emplace(PiMinus, dMissingMassSquaredCuts[PiPlus]);
 		dMissingMassSquaredCuts.emplace(Pi0, dMissingMassSquaredCuts[PiPlus]);
 
-		//K+/-
+		//K+/-/S/L
 		dMissingMassSquaredCuts[KPlus].first = new TF1("df_MissingMassSquaredCut_KPlusLow", "[0]", 0.0, 12.0);
 		dMissingMassSquaredCuts[KPlus].first->SetParameter(0, -1.0);
 		dMissingMassSquaredCuts[KPlus].second = new TF1("df_MissingMassSquaredCut_KPlusHigh", "[0]", 0.0, 12.0);
 		dMissingMassSquaredCuts[KPlus].second->SetParameter(0, 2.0);
 		dMissingMassSquaredCuts.emplace(KMinus, dMissingMassSquaredCuts[KPlus]);
 		dMissingMassSquaredCuts.emplace(KShort, dMissingMassSquaredCuts[KPlus]);
+		dMissingMassSquaredCuts.emplace(KLong, dMissingMassSquaredCuts[KPlus]);
 
 		//Proton/Neutron
 		dMissingMassSquaredCuts[Proton].first = new TF1("df_MissingMassSquaredCut_ProtonLow", "[0]", 0.0, 12.0);
@@ -192,23 +194,12 @@ DSourceComboP4Handler::DSourceComboP4Handler(DSourceComboer* locSourceComboer, b
 		dMissingMassSquaredCuts[Proton].second->SetParameter(0, 4.41);
 		dMissingMassSquaredCuts.emplace(Neutron, dMissingMassSquaredCuts[Proton]);
 
-/*
-		//e+/-
-		dMissingMassSquaredCuts[Electron].first = new TF1("df_MissingMassSquaredCut_PiPlusLow", "[0]", 0.0, 12.0);
-		dMissingMassSquaredCuts[Electron].first->SetParameter(0, -1.0);
-		dMissingMassSquaredCuts[Electron].second = new TF1("df_MissingMassSquaredCut_PiPlusHigh", "[0]", 0.0, 12.0);
-		dMissingMassSquaredCuts[Electron].second->SetParameter(0, 1.0);
-		dMissingMassSquaredCuts.emplace(Positron, dMissingMassSquaredCuts[Electron]);
-*/
-
-/*
 		//Missing E cuts
 		dMissingECuts = std::pair<TF1*, TF1*>(nullptr, nullptr); //COMPARE:
 		dMissingECuts.first = new TF1("df_MissingECut_NoneLow", "[0]", 0.0, 12.0);
 		dMissingECuts.first->SetParameter(0, -3.0);
 		dMissingECuts.second = new TF1("df_MissingECut_NoneHigh", "[0]", 0.0, 12.0);
 		dMissingECuts.second->SetParameter(0, 3.0);
-*/
 
 		if(!locCreateHistsFlag)
 		{
@@ -399,7 +390,7 @@ DLorentzVector DSourceComboP4Handler::Calc_MassiveNeutralP4(const DNeutralShower
 	return DLorentzVector(locPath, locEnergy);
 }
 
-DLorentzVector DSourceComboP4Handler::Calc_P4_NoMassiveNeutrals(const DSourceCombo* locReactionCombo, const DSourceCombo* locVertexCombo, const DVector3& locVertex, signed char locVertexZBin, const DKinematicData* locBeamParticle, const DSourceComboUse& locToExcludeUse, bool locAccuratePhotonsFlag)
+DLorentzVector DSourceComboP4Handler::Calc_P4_NoMassiveNeutrals(const DSourceCombo* locReactionCombo, const DSourceCombo* locVertexCombo, const DVector3& locVertex, signed char locVertexZBin, const DKinematicData* locBeamParticle, const DSourceComboUse& locToExcludeUse, size_t locInstanceToExclude, bool locAccuratePhotonsFlag)
 {
 	//locVertexZBin MUST be a separate argument, to signal special bins!!!
 	if(!locVertexCombo->Get_IsComboingZIndependent() && ((locVertexZBin == DSourceComboInfo::Get_VertexZIndex_Unknown()) || (locVertexZBin == DSourceComboInfo::Get_VertexZIndex_OutOfRange())))
@@ -423,16 +414,17 @@ DLorentzVector DSourceComboP4Handler::Calc_P4_NoMassiveNeutrals(const DSourceCom
 	auto locFurtherDecayCombos = locVertexCombo->Get_FurtherDecayCombos();
 	for(const auto& locCombosByUsePair : locFurtherDecayCombos)
 	{
-		if(locCombosByUsePair.first == locToExcludeUse)
-			continue;
 		auto locDetachedVertexFlag = IsDetachedVertex(std::get<0>(locCombosByUsePair.first));
 		auto locDecayVertexZBin = std::get<1>(locCombosByUsePair.first);
-		for(const auto& locCombo : locCombosByUsePair.second)
+		for(size_t loc_i = 0; loc_i < locCombosByUsePair.second.size(); ++loc_i)
 		{
+			const auto& locCombo = (locCombosByUsePair.second)[loc_i];
+			if((locCombosByUsePair.first == locToExcludeUse) && ((loc_i + 1) == locInstanceToExclude))
+				continue;
 			//2nd false: either during charged-only stage, and vertex doesn't matter, or on neutral stage, and is-2nd-combo-use flag is false: just use false
 			auto locIsVertexKnown = dSourceComboVertexer->Get_IsVertexKnown(false, locReactionCombo, locCombo, locBeamParticle, false); //1st false: will be detached if needed
 			auto locDecayVertex = (locDetachedVertexFlag && locIsVertexKnown) ? dSourceComboVertexer->Get_Vertex(false, locReactionCombo, locCombo, locBeamParticle, false) : locVertex;
-			locTotalP4 += Calc_P4_NoMassiveNeutrals(locReactionCombo, locCombo, locDecayVertex, locDecayVertexZBin, locBeamParticle, locToExcludeUse, locAccuratePhotonsFlag);
+			locTotalP4 += Calc_P4_NoMassiveNeutrals(locReactionCombo, locCombo, locDecayVertex, locDecayVertexZBin, locBeamParticle, locToExcludeUse, locInstanceToExclude, locAccuratePhotonsFlag);
 		}
 
 		//Subtract target p4 if necessary (e.g. Lambda, p -> p, p, pi-)
@@ -493,7 +485,7 @@ DLorentzVector DSourceComboP4Handler::Calc_P4_SourceParticles(const DSourceCombo
 	return locTotalP4;
 }
 
-bool DSourceComboP4Handler::Calc_P4_Decay(bool locIsProductionVertex, bool locIsPrimaryProductionVertex, const DSourceCombo* locReactionFullCombo, const DSourceComboUse& locDecayUse, const DSourceCombo* locDecayCombo, DVector3 locVertex, double locTimeOffset, int locRFBunch, double locRFVertexTime, DLorentzVector& locDecayP4, const DKinematicData* locBeamParticle, const DSourceComboUse& locToExcludeUse, bool locAccuratePhotonsFlag)
+bool DSourceComboP4Handler::Calc_P4_Decay(bool locIsProductionVertex, bool locIsPrimaryProductionVertex, const DSourceCombo* locReactionFullCombo, const DSourceComboUse& locDecayUse, const DSourceCombo* locDecayCombo, DVector3 locVertex, double locTimeOffset, int locRFBunch, double locRFVertexTime, DLorentzVector& locDecayP4, const DKinematicData* locBeamParticle, const DSourceComboUse& locToExcludeUse, size_t locInstanceToExclude, bool locAccuratePhotonsFlag)
 {
 	auto locDecayPID = std::get<0>(locDecayUse);
 	auto locDecayVertexZBin = std::get<1>(locDecayUse);
@@ -503,8 +495,8 @@ bool DSourceComboP4Handler::Calc_P4_Decay(bool locIsProductionVertex, bool locIs
 	if(!IsDetachedVertex(locDecayPID))
 	{
 		if(!locHasMassiveNeutrals)
-			locDecayP4 = Calc_P4_NoMassiveNeutrals(locReactionFullCombo, locDecayCombo, locVertex, locDecayVertexZBin, locBeamParticle, locToExcludeUse, locAccuratePhotonsFlag);
-		else if(!Calc_P4_HasMassiveNeutrals(locIsProductionVertex, locIsPrimaryProductionVertex, locReactionFullCombo, locDecayCombo, locVertex, locTimeOffset, locRFBunch, locRFVertexTime, locToExcludeUse, locDecayP4, locBeamParticle, locAccuratePhotonsFlag))
+			locDecayP4 = Calc_P4_NoMassiveNeutrals(locReactionFullCombo, locDecayCombo, locVertex, locDecayVertexZBin, locBeamParticle, locToExcludeUse, locInstanceToExclude, locAccuratePhotonsFlag);
+		else if(!Calc_P4_HasMassiveNeutrals(locIsProductionVertex, locIsPrimaryProductionVertex, locReactionFullCombo, locDecayCombo, locVertex, locTimeOffset, locRFBunch, locRFVertexTime, locToExcludeUse, locInstanceToExclude, locDecayP4, locBeamParticle, locAccuratePhotonsFlag))
 			return false;
 		if(dDebugLevel >= 10)
 			cout << "Calc_P4_Decay: Combo " << locDecayCombo << " P4: " << locDecayP4.Px() << ", " << locDecayP4.Py() << ", " << locDecayP4.Pz() << ", " << locDecayP4.E() << endl;
@@ -521,12 +513,12 @@ bool DSourceComboP4Handler::Calc_P4_Decay(bool locIsProductionVertex, bool locIs
 		}
 		else
 			locVertex.SetXYZ(0.0, 0.0, dSourceComboTimeHandler->Get_PhotonVertexZBinCenter(locDecayVertexZBin));
-		locDecayP4 = Calc_P4_NoMassiveNeutrals(locReactionFullCombo, locDecayCombo, locVertex, locDecayVertexZBin, locBeamParticle, locToExcludeUse, locAccuratePhotonsFlag);
+		locDecayP4 = Calc_P4_NoMassiveNeutrals(locReactionFullCombo, locDecayCombo, locVertex, locDecayVertexZBin, locBeamParticle, locToExcludeUse, locInstanceToExclude, locAccuratePhotonsFlag);
 	}
 	else if(!locAccuratePhotonsFlag)
 	{
 		//p4 better have already been calculated: if not, it means it was uncalcable (e.g. vertex unknown)
-		auto locDecayP4LookupTuple = std::make_tuple(locIsProductionVertex, locReactionFullCombo, locDecayCombo, locRFBunch, locBeamParticle, locToExcludeUse);
+		auto locDecayP4LookupTuple = std::make_tuple(locIsProductionVertex, locReactionFullCombo, locDecayCombo, locRFBunch, locBeamParticle, locToExcludeUse, locInstanceToExclude);
 		auto locDecayIterator = dFinalStateP4ByCombo_HasMassiveNeutrals.find(locDecayP4LookupTuple);
 		if(locDecayIterator == dFinalStateP4ByCombo_HasMassiveNeutrals.end())
 		{
@@ -534,7 +526,7 @@ bool DSourceComboP4Handler::Calc_P4_Decay(bool locIsProductionVertex, bool locIs
 				return false; //failed!
 
 			//try without beam particle
-			locDecayP4LookupTuple = std::make_tuple(locIsProductionVertex, locReactionFullCombo, locDecayCombo, locRFBunch, (const DKinematicData*)nullptr, locToExcludeUse);
+			locDecayP4LookupTuple = std::make_tuple(locIsProductionVertex, locReactionFullCombo, locDecayCombo, locRFBunch, (const DKinematicData*)nullptr, locToExcludeUse, locInstanceToExclude);
 			locDecayIterator = dFinalStateP4ByCombo_HasMassiveNeutrals.find(locDecayP4LookupTuple);
 			if(locDecayIterator == dFinalStateP4ByCombo_HasMassiveNeutrals.end())
 				return false; //failed!
@@ -550,7 +542,7 @@ bool DSourceComboP4Handler::Calc_P4_Decay(bool locIsProductionVertex, bool locIs
 
 		auto locPrimaryVertex = dSourceComboVertexer->Get_Vertex(true, locReactionFullCombo, locReactionFullCombo, locBeamParticle, false);
 		locRFVertexTime = dSourceComboTimeHandler->Calc_PropagatedRFTime(locPrimaryVertex.Z(), locRFBunch, locTimeOffset);
-		if(!Calc_P4_HasMassiveNeutrals(false, locIsPrimaryProductionVertex, locReactionFullCombo, locDecayCombo, locVertex, locTimeOffset, locRFBunch, locRFVertexTime, locToExcludeUse, locDecayP4, locBeamParticle, locAccuratePhotonsFlag))
+		if(!Calc_P4_HasMassiveNeutrals(false, locIsPrimaryProductionVertex, locReactionFullCombo, locDecayCombo, locVertex, locTimeOffset, locRFBunch, locRFVertexTime, locToExcludeUse, locInstanceToExclude, locDecayP4, locBeamParticle, locAccuratePhotonsFlag))
 			return false;
 	}
 
@@ -559,9 +551,9 @@ bool DSourceComboP4Handler::Calc_P4_Decay(bool locIsProductionVertex, bool locIs
 	return true;
 }
 
-bool DSourceComboP4Handler::Calc_P4_HasMassiveNeutrals(bool locIsProductionVertex, bool locIsPrimaryProductionVertex, const DSourceCombo* locReactionFullCombo, const DSourceCombo* locCurrentCombo, DVector3 locVertex, double locTimeOffset, int locRFBunch, double locRFVertexTime, const DSourceComboUse& locToExcludeUse, DLorentzVector& locTotalP4, const DKinematicData* locBeamParticle, bool locAccuratePhotonsFlag)
+bool DSourceComboP4Handler::Calc_P4_HasMassiveNeutrals(bool locIsProductionVertex, bool locIsPrimaryProductionVertex, const DSourceCombo* locReactionFullCombo, const DSourceCombo* locCurrentCombo, DVector3 locVertex, double locTimeOffset, int locRFBunch, double locRFVertexTime, const DSourceComboUse& locToExcludeUse, size_t locInstanceToExclude, DLorentzVector& locTotalP4, const DKinematicData* locBeamParticle, bool locAccuratePhotonsFlag)
 {
-	auto locP4LookupTuple = std::make_tuple(locIsProductionVertex, locReactionFullCombo, locCurrentCombo, locRFBunch, locBeamParticle, locToExcludeUse);
+	auto locP4LookupTuple = std::make_tuple(locIsProductionVertex, locReactionFullCombo, locCurrentCombo, locRFBunch, locBeamParticle, locToExcludeUse, locInstanceToExclude);
 	auto locHasPhotons = !DAnalysis::Get_SourceParticles(locCurrentCombo->Get_SourceParticles(true, d_Neutral), Gamma).empty();
 
 	if(!locHasPhotons || !locAccuratePhotonsFlag)
@@ -587,13 +579,14 @@ bool DSourceComboP4Handler::Calc_P4_HasMassiveNeutrals(bool locIsProductionVerte
 	auto locFurtherDecayCombos = locCurrentCombo->Get_FurtherDecayCombos();
 	for(const auto& locCombosByUsePair : locFurtherDecayCombos)
 	{
-		if(locCombosByUsePair.first == locToExcludeUse)
-			continue; //e.g. when calc'ing missing p4
-
-		for(const auto& locDecayCombo : locCombosByUsePair.second)
+		for(size_t loc_i = 0; loc_i < locCombosByUsePair.second.size(); ++loc_i)
 		{
+			const auto& locDecayCombo = (locCombosByUsePair.second)[loc_i];
+			if((locCombosByUsePair.first == locToExcludeUse) && ((loc_i + 1) == locInstanceToExclude))
+				continue;
+
 			DLorentzVector locDecayP4;
-			if(!Calc_P4_Decay(locIsProductionVertex, locIsPrimaryProductionVertex, locReactionFullCombo, locCombosByUsePair.first, locDecayCombo, locVertex, locTimeOffset, locRFBunch, locRFVertexTime, locDecayP4, locBeamParticle, locToExcludeUse, locAccuratePhotonsFlag))
+			if(!Calc_P4_Decay(locIsProductionVertex, locIsPrimaryProductionVertex, locReactionFullCombo, locCombosByUsePair.first, locDecayCombo, locVertex, locTimeOffset, locRFBunch, locRFVertexTime, locDecayP4, locBeamParticle, locToExcludeUse, locInstanceToExclude, locAccuratePhotonsFlag))
 				return false;
 			if(dDebugLevel >= 20)
 				cout << "combo, add decayp4 = " << locDecayCombo << ", " << locDecayP4.Px() << ", " << locDecayP4.Py() << ", " << locDecayP4.Pz() << ", " << locDecayP4.E() << endl;
@@ -642,7 +635,7 @@ bool DSourceComboP4Handler::Cut_InvariantMass_NoMassiveNeutrals(const DSourceCom
 
 	if(!locVertexCombo->Get_IsComboingZIndependent() && (locVertexZBin == DSourceComboInfo::Get_VertexZIndex_Unknown()) && !locAccuratePhotonsFlag)
 		return true; //don't cut yet: will cut later when vertex known or accurate photons
-	auto locFinalStateP4 = Calc_P4_NoMassiveNeutrals(nullptr, locVertexCombo, locVertex, locVertexZBin, nullptr, DSourceComboUse(Unknown, 0, nullptr, false, Unknown), locAccuratePhotonsFlag);
+	auto locFinalStateP4 = Calc_P4_NoMassiveNeutrals(nullptr, locVertexCombo, locVertex, locVertexZBin, nullptr, DSourceComboUse(Unknown, 0, nullptr, false, Unknown), 1, locAccuratePhotonsFlag);
 
 	//Subtract target p4 if necessary (e.g. Lambda, p -> p, p, pi-)
 	if(locTargetPIDToSubtract != Unknown)
@@ -687,7 +680,7 @@ bool DSourceComboP4Handler::Cut_InvariantMass_HasMassiveNeutral(bool locIsProduc
 		auto locRFVertexTime = dSourceComboTimeHandler->Calc_PropagatedRFTime(locPrimaryVertexZ, locRFBunch, locTimeOffset);
 
 		DLorentzVector locTotalP4(0.0, 0.0, 0.0, 0.0);
-		if(!Calc_P4_HasMassiveNeutrals(locIsProductionVertex, locIsPrimaryProductionVertex, locReactionFullCombo, locVertexCombo, locVertex, locTimeOffset, locRFBunch, locRFVertexTime, DSourceComboUse(Unknown, 0, nullptr, false, Unknown), locTotalP4, locBeamParticle, locAccuratePhotonsFlag))
+		if(!Calc_P4_HasMassiveNeutrals(locIsProductionVertex, locIsPrimaryProductionVertex, locReactionFullCombo, locVertexCombo, locVertex, locTimeOffset, locRFBunch, locRFVertexTime, DSourceComboUse(Unknown, 0, nullptr, false, Unknown), 1, locTotalP4, locBeamParticle, locAccuratePhotonsFlag))
 			return true; //can't cut it yet!
 
 		//Subtract target p4 if necessary (e.g. Lambda, p -> p, p, pi-)
@@ -879,7 +872,10 @@ bool DSourceComboP4Handler::Cut_MissingMassSquared(const DReaction* locReaction,
 			return false;
 	}
 
-	//loop over steps, looking for decaying particles
+//V2 compare, as long as no missing particles!!
+//return true;
+
+	//loop over steps, looking for decaying & missing particles
 	map<size_t, DLorentzVector> locDecayP4sByStep;
 	for(size_t loc_i = 0; loc_i < locReaction->Get_NumReactionSteps(); ++loc_i)
 	{
@@ -957,12 +953,12 @@ bool DSourceComboP4Handler::Cut_MissingMassSquared(const DReaction* locReaction,
 	auto locVertex = dSourceComboVertexer->Get_Vertex(locStepVertexInfo, locFullCombo, locBeamParticle, false);
 	auto locTimeOffset = dSourceComboVertexer->Get_TimeOffset(locReactionVertexInfo, locStepVertexInfo, locFullCombo, locBeamParticle);
 	auto locRFVertexTime = dSourceComboTimeHandler->Calc_PropagatedRFTime(locPrimaryVertexZ, locRFBunch, locTimeOffset);
-	auto locToExcludeUse = (locDecayStepIndex > 0) ? dSourceComboer->Get_StepSourceComboUse(locReaction, locDecayStepIndex, locReactionFullComboUse, 0) : DSourceComboUse(Unknown, 0, nullptr, false, Unknown);
+	auto locToExcludeUsePair = (locDecayStepIndex > 0) ? dSourceComboer->Get_StepSourceComboUse(locReaction, locDecayStepIndex, locReactionFullComboUse, 0) : std::make_pair(DSourceComboUse(Unknown, 0, nullptr, false, Unknown), size_t(1));
 
 	//compute final-state p4
 	DLorentzVector locFinalStateP4(0.0, 0.0, 0.0, 0.0);
 	//it may not have massive neutrals, but this function is the worst-case (hardest, most-complete) scenario
-	if(!Calc_P4_HasMassiveNeutrals(locIsProductionVertex, true, locFullCombo, locSourceCombo, locVertex, locTimeOffset, locRFBunch, locRFVertexTime, locToExcludeUse, locFinalStateP4, locBeamParticle, true))
+	if(!Calc_P4_HasMassiveNeutrals(locIsProductionVertex, true, locFullCombo, locSourceCombo, locVertex, locTimeOffset, locRFBunch, locRFVertexTime, locToExcludeUsePair.first, locToExcludeUsePair.second, locFinalStateP4, locBeamParticle, true))
 	{
 		locMissingP4.SetE(0.0);
 		return true; //failed to calculate somehow

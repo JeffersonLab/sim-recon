@@ -516,7 +516,11 @@ string DReaction_factory_ReactionFilter::Create_StepNameString(const DReactionSt
 		locNameString += ShortName(locFinalPID);
 	auto locMissFinalPID = std::get<3>(locStepTuple);
 	if(locMissFinalPID != Unknown)
+	{
 		locNameString += string("miss") + ShortName(locMissFinalPID);
+		if(locMissFinalPID == Proton)
+			locNameString += "p"; //the ShortName is "" because it is understood, but add "p" here to indicate what is missing
+	}
 
 	if(std::get<4>(locStepTuple) == DReactionStep::Get_ParticleIndex_Inclusive())
 		locNameString += "inc";

@@ -113,7 +113,7 @@ class DSourceComboer : public JObject
 		const DSourceCombo* Get_StepSourceCombo(const DReaction* locReaction, size_t locDesiredStepIndex, const DSourceCombo* locVertexPrimaryCombo, size_t locVertexPrimaryStepIndex = 0) const;
 		const DSourceCombo* Get_VertexPrimaryCombo(const DSourceCombo* locReactionCombo, const DReactionStepVertexInfo* locStepVertexInfo) const;
 		const DSourceCombo* Get_VertexPrimaryCombo(const DSourceCombo* locReactionCombo, const DReactionStepVertexInfo* locStepVertexInfo);
-		DSourceComboUse Get_StepSourceComboUse(const DReaction* locReaction, size_t locDesiredStepIndex, DSourceComboUse locVertexPrimaryComboUse, size_t locVertexPrimaryStepIndex) const;
+		pair<DSourceComboUse, size_t> Get_StepSourceComboUse(const DReaction* locReaction, size_t locDesiredStepIndex, DSourceComboUse locVertexPrimaryComboUse, size_t locVertexPrimaryStepIndex) const;
 
 		//Get combo uses
 		DSourceComboUse Get_SourceComboUse(const DReactionStepVertexInfo* locStepVertexInfo) const{return dSourceComboUseReactionMap.find(locStepVertexInfo)->second;};

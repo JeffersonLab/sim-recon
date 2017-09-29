@@ -58,10 +58,10 @@ class DSourceComboP4Handler
 
 		//GET/CALC COMBO P4
 		//locRFVertexTime: the RF time propagated to the vertex, through any decaying particles if necessary
-		DLorentzVector Calc_P4_NoMassiveNeutrals(const DSourceCombo* locReactionCombo, const DSourceCombo* locVertexCombo, const DVector3& locVertex, signed char locVertexZBin, const DKinematicData* locBeamParticle, const DSourceComboUse& locToExcludeUse, bool locAccuratePhotonsFlag);
+		DLorentzVector Calc_P4_NoMassiveNeutrals(const DSourceCombo* locReactionCombo, const DSourceCombo* locVertexCombo, const DVector3& locVertex, signed char locVertexZBin, const DKinematicData* locBeamParticle, const DSourceComboUse& locToExcludeUse, size_t locInstanceToExclude, bool locAccuratePhotonsFlag);
 		DLorentzVector Calc_P4_SourceParticles(const DSourceCombo* locVertexCombo, const DVector3& locVertex, double locRFVertexTime, bool locAccuratePhotonsFlag);
-		bool Calc_P4_Decay(bool locIsProductionVertex, bool locIsPrimaryProductionVertex, const DSourceCombo* locReactionFullCombo, const DSourceComboUse& locDecayUse, const DSourceCombo* locDecayCombo, DVector3 locVertex, double locTimeOffset, int locRFBunch, double locRFVertexTime, DLorentzVector& locDecayP4, const DKinematicData* locBeamParticle, const DSourceComboUse& locToExcludeUse, bool locAccuratePhotonsFlag);
-		bool Calc_P4_HasMassiveNeutrals(bool locIsProductionVertex, bool locIsPrimaryProductionVertex, const DSourceCombo* locReactionFullCombo, const DSourceCombo* locCurrentCombo, DVector3 locVertex, double locTimeOffset, int locRFBunch, double locRFVertexTime, const DSourceComboUse& locToExcludeUse, DLorentzVector& locTotalP4, const DKinematicData* locBeamParticle, bool locAccuratePhotonsFlag);
+		bool Calc_P4_Decay(bool locIsProductionVertex, bool locIsPrimaryProductionVertex, const DSourceCombo* locReactionFullCombo, const DSourceComboUse& locDecayUse, const DSourceCombo* locDecayCombo, DVector3 locVertex, double locTimeOffset, int locRFBunch, double locRFVertexTime, DLorentzVector& locDecayP4, const DKinematicData* locBeamParticle, const DSourceComboUse& locToExcludeUse, size_t locInstanceToExclude, bool locAccuratePhotonsFlag);
+		bool Calc_P4_HasMassiveNeutrals(bool locIsProductionVertex, bool locIsPrimaryProductionVertex, const DSourceCombo* locReactionFullCombo, const DSourceCombo* locCurrentCombo, DVector3 locVertex, double locTimeOffset, int locRFBunch, double locRFVertexTime, const DSourceComboUse& locToExcludeUse, size_t locInstanceToExclude, DLorentzVector& locTotalP4, const DKinematicData* locBeamParticle, bool locAccuratePhotonsFlag);
 
 		//CUT
 		//use this method when the combo DOES NOT contain massive neutrals
@@ -90,7 +90,8 @@ class DSourceComboP4Handler
 
 		//TOTAL FINAL STATE FOUR-MOMENTUM
 		map<pair<const DSourceCombo*, signed char>, DLorentzVector> dFinalStateP4ByCombo; //signed char: vertex-z bin
-		map<tuple<bool, const DSourceCombo*, const DSourceCombo*, int, const DKinematicData*, DSourceComboUse>, DLorentzVector> dFinalStateP4ByCombo_HasMassiveNeutrals; //int: RF bunch //bool: is prod vertex //first combo: reaction full //kindata: beam //use: to exclude
+		//int: RF bunch //bool: is prod vertex //first combo: reaction full //kindata: beam //use: use to exclude //size_t: instance to exclude
+		map<tuple<bool, const DSourceCombo*, const DSourceCombo*, int, const DKinematicData*, DSourceComboUse, size_t>, DLorentzVector> dFinalStateP4ByCombo_HasMassiveNeutrals;
 
 		//CUTS
 		double dMaxMassiveNeutralBeta = 0.99999;

@@ -95,6 +95,7 @@ inline void DParticleComboStep::Reset(void)
 {
 	dMeasuredStep = nullptr;
 	dInitialParticle = nullptr;
+	dInitialKinFitParticle = nullptr;
 	dFinalParticles.clear();
 	dSpacetimeVertex.SetXYZT(0.0, 0.0, 0.0, 0.0);
 }

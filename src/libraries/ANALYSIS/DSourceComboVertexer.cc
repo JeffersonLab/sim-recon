@@ -401,7 +401,7 @@ DVector3 DSourceComboVertexer::Calc_Vertex(bool locIsProductionVertexFlag, const
 		//vertex is 1/2-way between track POCA to beamline and the beamline itself: if POCA not on beamline, likely due to resolution issues, 
 		auto locTrackPosition = locVertexParticles[0]->position();
 		auto locVertex = DVector3(0.5*locTrackPosition.X(), 0.5*locTrackPosition.Y(), locTrackPosition.Z());
-//		if(false) //COMPARE: Comparison-to-old mode
+		if(false) //COMPARE: Comparison-to-old mode
 			locVertex = dVertex->dSpacetimeVertex.Vect();
 		dVertexMap.emplace(std::make_pair(locIsProductionVertexFlag, locVertexParticles), locVertex);
 		if(dDebugLevel >= 10)
@@ -510,7 +510,7 @@ void DSourceComboVertexer::Construct_DecayingParticle_InvariantMass(const DReact
 		}
 
 		//create a new one
-		auto locP4 = dSourceComboP4Handler->Calc_P4_NoMassiveNeutrals(nullptr, locVertexCombo, locVertex, std::get<1>(locSourceComboUse), nullptr, DSourceComboUse(Unknown, 0, nullptr, false, Unknown), false);
+		auto locP4 = dSourceComboP4Handler->Calc_P4_NoMassiveNeutrals(nullptr, locVertexCombo, locVertex, std::get<1>(locSourceComboUse), nullptr, DSourceComboUse(Unknown, 0, nullptr, false, Unknown), 1, false);
 		auto locKinematicData = dResourcePool_KinematicData.Get_Resource();
 		locKinematicData->Reset();
 		locKinematicData->Set_Members(locDecayPID, locP4.Vect(), locVertex, 0.0);
@@ -568,7 +568,7 @@ void DSourceComboVertexer::Construct_DecayingParticle_MissingMass(const DReactio
 		return;
 
 	auto locDecayStepIndex = Get_DecayStepIndex(locReaction, locToReconParticleIndices.first, locToReconParticleIndices.second);
-	auto locDecayUse = dSourceComboer->Get_StepSourceComboUse(locReaction, locDecayStepIndex, locReactionFullComboUse, 0);
+	auto locDecayUsePair = dSourceComboer->Get_StepSourceComboUse(locReaction, locDecayStepIndex, locReactionFullComboUse, 0);
 
 	auto locReactionStep = locReaction->Get_ReactionStep(locToReconParticleIndices.first);
 	auto locDecayPID = locReactionStep->Get_PID(locToReconParticleIndices.second);
@@ -597,11 +597,11 @@ void DSourceComboVertexer::Construct_DecayingParticle_MissingMass(const DReactio
 	if(dDebugLevel >= 10)
 	{
 		cout << "Calc final-state p4, decay use to exclude: " << endl;
-		DAnalysis::Print_SourceComboUse(locDecayUse);
+		DAnalysis::Print_SourceComboUse(locDecayUsePair.first);
 	}
 
 	auto locTimeOffset = Get_TimeOffset(true, locReactionFullCombo, locFullVertexCombo, locBeamParticle);
-	if(!dSourceComboP4Handler->Calc_P4_HasMassiveNeutrals(locIsProductionVertexFlag, true, locReactionFullCombo, locFullVertexCombo, locVertex, locTimeOffset, locRFBunch, locRFVertexTime, locDecayUse, locFinalStateP4, locBeamParticle, true))
+	if(!dSourceComboP4Handler->Calc_P4_HasMassiveNeutrals(locIsProductionVertexFlag, true, locReactionFullCombo, locFullVertexCombo, locVertex, locTimeOffset, locRFBunch, locRFVertexTime, locDecayUsePair.first, locDecayUsePair.second, locFinalStateP4, locBeamParticle, true))
 		return; //invalid somehow
 
 	//ASSUMES FIXED TARGET EXPERIMENT!
@@ -722,7 +722,7 @@ void DSourceComboVertexer::Calc_TimeOffsets(const DReactionVertexInfo* locReacti
 
 		//compute and save result
 		auto locVertexZBin = Get_VertexZBin_NoBeam(false, locActiveVertexCombo, false); //2nd false: if true, then we're on the charged stage and we can't calc the time offset: wouldn't be here anyway
-		auto locP4 = dSourceComboP4Handler->Calc_P4_NoMassiveNeutrals(nullptr, locActiveVertexCombo, locVertex, locVertexZBin, nullptr, DSourceComboUse(Unknown, 0, nullptr, false, Unknown), false);
+		auto locP4 = dSourceComboP4Handler->Calc_P4_NoMassiveNeutrals(nullptr, locActiveVertexCombo, locVertex, locVertexZBin, nullptr, DSourceComboUse(Unknown, 0, nullptr, false, Unknown), 1, false);
 		auto locTimeOffset = locPathLength/(locP4.Beta()*SPEED_OF_LIGHT) + locParentTimeOffset;
 
 		if(dDebugLevel >= 10)
