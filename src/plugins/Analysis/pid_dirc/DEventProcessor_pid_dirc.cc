@@ -116,14 +116,14 @@ jerror_t DEventProcessor_pid_dirc::evnt(JEventLoop *loop, uint64_t eventnumber) 
     }
   }
   
-  std::cout<<"#hits "<< dircPmtHits.size()<<std::endl;
+  //  std::cout<<"#hits "<< dircPmtHits.size()<<std::endl;
 
   japp->RootWriteLock(); //ACQUIRE ROOT LOCK
   
   // loop over mc/reco tracks
   for (unsigned int m = 0; m < mcthrowns.size(); m++){
 
-    std::cout<<"initial position: x = "<< mcthrowns[m]->position().X()<<", y = "<< mcthrowns[m]->position().Y()<<", z = "<< mcthrowns[m]->position().Z()<<", track # = "<<mcthrowns[m]->myid <<std::endl;
+    //    std::cout<<"initial position: x = "<< mcthrowns[m]->position().X()<<", y = "<< mcthrowns[m]->position().Y()<<", z = "<< mcthrowns[m]->position().Z()<<", track # = "<<mcthrowns[m]->myid <<std::endl;
 
     if(dircPmtHits.size() > 0.){
       fEvent = new DrcEvent();
@@ -135,6 +135,7 @@ jerror_t DEventProcessor_pid_dirc::evnt(JEventLoop *loop, uint64_t eventnumber) 
 	  //cout<<"Bar Hit position: x = "<<dircBarHits[j]->x<<", y = "<<dircBarHits[j]->y<<", z = "<<dircBarHits[j]->z<<endl;
 	  if(j == fabs(dircPmtHits[h]->key_bar)){
 	    relevantBarHit = dircBarHits[j];
+	    // identify the mother particle
 	    for(unsigned int t = 0; t < mcthrowns.size(); t++){
 	      if(mcthrowns[t]->myid == relevantBarHit->track){
 		relevantMCThrown = mcthrowns[t];
@@ -157,16 +158,21 @@ jerror_t DEventProcessor_pid_dirc::evnt(JEventLoop *loop, uint64_t eventnumber) 
       }// for h
         
       if(relevantMCThrown){
-	fEvent->SetMomentum(TVector3(relevantMCThrown->momentum().X(), relevantMCThrown->momentum().Y(), relevantMCThrown->momentum().Z()));
-	fEvent->SetPdg(relevantMCThrown->pdgtype);
-	std::cout<<"pdg = "<<relevantMCThrown->pdgtype<<", momentum = "<<relevantMCThrown->momentum().Mag()<<", px = "<<relevantMCThrown->momentum().X()<<", py = "<<relevantMCThrown->momentum().Y()<<", pz = "<<relevantMCThrown->momentum().Z()<<std::endl;
+	double px = relevantMCThrown->momentum().X();
+	double py = relevantMCThrown->momentum().Y();
+	double pz = relevantMCThrown->momentum().Z();
+	int pdg = relevantMCThrown->pdgtype;
+	fEvent->SetMomentum(TVector3(px,py,pz));
+	fEvent->SetPdg(pdg);
+	//	std::cout<<"pdg = "<<pdg<<", momentum = "<<relevantMCThrown->momentum().Mag()<<", px = "<<px<<", py = "<<py<<", pz = "<<pz<<std::endl;
       }else{
 	fEvent->SetMomentum(TVector3(999.,999.,999.));
 	fEvent->SetPdg(99999.);
       }
       if(relevantBarHit){
 	fEvent->SetId(relevantBarHit->bar);// bar id where the particle hit the detector
-	cout<<"bar id = "<<relevantBarHit->bar<<endl;
+	fEvent->SetPosition(TVector3(relevantBarHit->x, relevantBarHit->y, relevantBarHit->z)); // position where the charged particle hit the radiator
+	//	cout<<"bar id = "<<relevantBarHit->bar<<endl;
       }else{
 	fEvent->SetId(-2);
       }
