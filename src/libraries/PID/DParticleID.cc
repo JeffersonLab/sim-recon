@@ -1115,11 +1115,13 @@ bool DParticleID::Distance_ToTrack(const vector<DTrackFitter::Extrapolation_t> &
   unsigned int sc_index=locSCHit->sector-1;
   double z=locProjPos.z();
   unsigned int locSCPlane=0;
-  for (unsigned int j=0;j<sc_pos[sc_index].size();j++){
-    if (z>sc_pos[sc_index][j].z()) continue;
-    
-    locSCPlane=j;
-    break;
+  if (z>sc_pos[sc_index][0].z()){
+    for (unsigned int j=0;j<sc_pos[sc_index].size();j++){
+      if (z>sc_pos[sc_index][j].z()) continue;
+      
+      locSCPlane=j-1;
+      break;
+    }
   }
   DVector3 sc_pos_at_projz = sc_pos[sc_index][locSCPlane] + (locProjPos.Z() - sc_pos[sc_index][locSCPlane].z())*sc_dir[sc_index][locSCPlane];
   double locDeltaPhi = sc_pos_at_projz.Phi() - locProjPos.Phi();
@@ -2532,32 +2534,48 @@ unsigned int DParticleID::PredictSCSector(const DReferenceTrajectory* rt, double
 unsigned int DParticleID::PredictSCSector(const vector<DTrackFitter::Extrapolation_t> &extrapolations, double& locDeltaPhi, DVector3& locProjPos, DVector3& locProjMom, DVector3& locPaddleNorm, double& locPathLength, double& locFlightTime, double& locFlightTimeVariance, int& locSCPlane) const{
   if(extrapolations.size()==0)
     return 0;
-
+  double max_z=sc_pos[0][sc_pos[0].size()-1].z();
+  double z=extrapolations[0].position.z();
+  if (z>max_z+1. ){ // allow for some slop at end of nose
+    printf("z %f\n",extrapolations[0].position.z());
+    return 0;
+  }
+  
   // Find the track projection to the Start Counter
   locProjPos=extrapolations[0].position;
   locProjMom=extrapolations[0].momentum;
   locFlightTime=extrapolations[0].t;
   locPathLength=extrapolations[0].s;
-  locFlightTimeVariance=0.; // fill this in!
+  locFlightTimeVariance=0.; // fill this in;
 
-  double dphi0=locProjPos.Phi()-sc_pos[0][0].Phi();
-  if (dphi0<0) dphi0+=2.*M_PI;
-  unsigned int index=int(floor(dphi0/(2.*M_PI/30.)));
-  if (index>29) index=0;
-  for (unsigned int i=0;i<sc_pos[index].size();i++){
-    if (locProjPos.z()>sc_pos[index][i].z()) continue;
-    
-    locPaddleNorm=sc_norm[index][i];
-    locDeltaPhi=locProjPos.Phi()-sc_pos[index][i].Phi();
-    if (locDeltaPhi<0) locDeltaPhi+=2.*M_PI;
-
-    break;   
+  double dphi_min=1e6;
+  unsigned int best_index=0;
+  for (unsigned int index=0;index<30;index++){
+    for (unsigned int i=1;i<sc_pos[index].size();i++){
+      if (z>sc_pos[index][i].z() && z<max_z) continue;
+      
+      unsigned int prev_i=i-1;
+      DVector3 sc_pos_at_projz = sc_pos[index][prev_i]
+	+ (locProjPos.Z() - sc_pos[index][prev_i].z())*sc_dir[index][prev_i];
+      double myDeltaPhi=sc_pos_at_projz.Phi()-locProjPos.Phi();
+      if (myDeltaPhi<M_PI) myDeltaPhi+=2.*M_PI;
+      if (myDeltaPhi>M_PI) myDeltaPhi-=2.*M_PI;
+      if (fabs(myDeltaPhi)<dphi_min){
+	locDeltaPhi=myDeltaPhi;
+	dphi_min=fabs(locDeltaPhi);
+	best_index=index;
+	locSCPlane=prev_i;
+	}
+      break;
+    }
   }
-  return index+1;
+  //printf("SC %d\n",best_index+1);
+
+  locPaddleNorm=sc_norm[best_index][locSCPlane];
+  return best_index+1;
 }
 
-// Predict the start counter paddle that would match a track whose reference
-// trajectory is given by rt.
+// Predict the start counter paddle that would match a track 
 unsigned int DParticleID::PredictSCSector(const vector<DTrackFitter::Extrapolation_t> &extrapolations, DVector3* locOutputProjPos, bool* locProjBarrelRegion, double* locMinDPhi) const
 {
   if(extrapolations.size()==0)
