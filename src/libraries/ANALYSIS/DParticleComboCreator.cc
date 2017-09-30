@@ -126,6 +126,7 @@ const DParticleCombo* DParticleComboCreator::Build_ParticleCombo(const DReaction
 	if(dDebugLevel > 0)
 		cout << "Building particle combo" << endl;
 	auto locCreateNeutralErrorMatrixFlag_Combo = Get_CreateNeutralErrorMatrixFlag_Combo(locReactionVertexInfo, locKinFitType);
+	auto locSpactimeIsFitFlag = ((locKinFitType == d_SpacetimeFit) || (locKinFitType == d_P4AndSpacetimeFit));
 	auto locComboTuple = std::make_tuple(locReactionVertexInfo, locFullCombo, locBeamParticle, locRFBunchShift, locCreateNeutralErrorMatrixFlag_Combo);
 	auto locComboIterator = dComboMap.find(locComboTuple);
 	if(locComboIterator != dComboMap.end())
@@ -268,7 +269,9 @@ const DParticleCombo* DParticleComboCreator::Build_ParticleCombo(const DReaction
 					locNewNeutralHypo = locHypoIterator->second;
 				else
 				{
-					auto locVertexCovMatrix = locCreateNeutralErrorMatrixFlag ? &dVertexCovMatrix : nullptr;
+					//even if locCreateNeutralErrorMatrixFlag is false, create it anyway if massive neutral and no time constraint!
+					auto locCreateThisNeutralErrorMatrixFlag = locCreateNeutralErrorMatrixFlag ? true : ((ParticleMass(locPID) > 0.0) && !locSpactimeIsFitFlag);
+					auto locVertexCovMatrix = locCreateThisNeutralErrorMatrixFlag ? &dVertexCovMatrix : nullptr;
 					locNewNeutralHypo = dNeutralParticleHypothesisFactory->Create_DNeutralParticleHypothesis(locNeutralShower, locPID, locEventRFBunch, locSpacetimeVertex, locVertexCovMatrix);
 					dCreated_NeutralHypo.push_back(const_cast<DNeutralParticleHypothesis*>(locNewNeutralHypo));
 					dNeutralHypoMap.emplace(locHypoTuple, locNewNeutralHypo);
