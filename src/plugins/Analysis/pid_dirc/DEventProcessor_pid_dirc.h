@@ -70,7 +70,7 @@ public:
     Int_t hits_cere;	// Number of hits in Cherenkov
   };
 
-  // TClonesArray *fEvent;
+  TClonesArray *fcEvent;
   DrcEvent *fEvent;
   DrcHit *fHit;
   TTree *fTree;
