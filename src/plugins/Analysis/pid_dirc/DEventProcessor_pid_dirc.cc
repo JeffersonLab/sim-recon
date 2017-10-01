@@ -136,9 +136,9 @@ jerror_t DEventProcessor_pid_dirc::evnt(JEventLoop *loop, uint64_t eventnumber) 
 	    double px = mcthrowns[m]->momentum().X();
 	    double py = mcthrowns[m]->momentum().Y();
 	    double pz = mcthrowns[m]->momentum().Z();
-	    int pdg = mcthrowns[m]->pdgtype;
 	    fEvent->SetMomentum(TVector3(px,py,pz));
-	    fEvent->SetPdg(pdg);
+	    fEvent->SetPdg(mcthrowns[m]->pdgtype);
+	    fEvent->SetParent(mcthrowns[m]->parentid);
 	    fEvent->SetId(dircBarHits[j]->bar);// bar id where the particle hit the detector
 	    fEvent->SetPosition(TVector3(dircBarHits[j]->x, dircBarHits[j]->y, dircBarHits[j]->z)); // position where the charged particle hit the radiator
 	    relevant++;
@@ -159,8 +159,6 @@ jerror_t DEventProcessor_pid_dirc::evnt(JEventLoop *loop, uint64_t eventnumber) 
 	fEvent->AddHit(hit);
       }
       if(relevant<1) continue;
-	
-   
 
       Int_t size = cevt.GetEntriesFast();
       new (cevt[size]) DrcEvent(*fEvent);
