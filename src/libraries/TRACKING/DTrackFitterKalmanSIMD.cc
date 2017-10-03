@@ -9327,7 +9327,7 @@ jerror_t DTrackFitterKalmanSIMD::ExtrapolateForwardToOtherDetectors(){
 
     // Check if we have passed into the BCAL
     double r2=S(state_x)*S(state_x)+S(state_y)*S(state_y);
-    if (r2>65.*65. && z<400){
+    if (r2>64.9*64.9 && z<400){
       double tsquare=S(state_tx)*S(state_tx)+S(state_ty)*S(state_ty);
       double tanl=1./sqrt(tsquare);
       double cosl=cos(atan(tanl));
@@ -9349,10 +9349,12 @@ jerror_t DTrackFitterKalmanSIMD::ExtrapolateForwardToOtherDetectors(){
 			   +S(state_ty)*S(state_ty));
     
     // get material properties from the Root Geometry
-    pos.SetXYZ(S(state_x),S(state_y),z);
-    if (geom->FindMatKalman(pos,K_rho_Z_over_A,rho_Z_over_A,LnI,Z,
+    pos.SetXYZ(S(state_x),S(state_y),z); 
+    DVector3 dir(S(state_tx),S(state_ty),1.);
+    double s_to_boundary=0.;
+    if (geom->FindMatKalman(pos,dir,K_rho_Z_over_A,rho_Z_over_A,LnI,Z,
 			    chi2c_factor,chi2a_factor,chi2a_corr,
-			      last_material_map)
+			    last_material_map,&s_to_boundary)
 	  !=NOERROR){
       if (DEBUG_LEVEL>0){
 	_DBG_ << "Material error in ExtrapolateForwardToOuterDetectors!"<< endl;
@@ -9376,6 +9378,7 @@ jerror_t DTrackFitterKalmanSIMD::ExtrapolateForwardToOtherDetectors(){
       ds=DE_PER_STEP/fabs(dEdx);
     }
     if (ds>mStepSizeS) ds=mStepSizeS;
+    if (s_to_boundary<ds) ds=s_to_boundary;
     if (ds<MIN_STEP_SIZE) ds=MIN_STEP_SIZE;
     dz=ds*dz_ds;
     newz=z+dz;
@@ -9652,9 +9655,11 @@ jerror_t DTrackFitterKalmanSIMD::ExtrapolateCentralToOtherDetectors(){
     double rho_Z_over_A=0.,LnI=0.,K_rho_Z_over_A=0.,Z=0.;
     double chi2c_factor=0.,chi2a_factor=0.,chi2a_corr=0.;
     DVector3 pos3d(xy.X(),xy.Y(),S(state_z));
-    if (geom->FindMatKalman(pos3d,K_rho_Z_over_A,rho_Z_over_A,LnI,Z,
+    double s_to_boundary=0.;
+    DVector3 dir(cos(S(state_phi)),sin(S(state_phi)),S(state_tanl));
+    if (geom->FindMatKalman(pos3d,dir,K_rho_Z_over_A,rho_Z_over_A,LnI,Z,
 			    chi2c_factor,chi2a_factor,chi2a_corr,
-			    last_material_map)
+			    last_material_map,&s_to_boundary)
 	!=NOERROR){
       _DBG_ << "Material error in ExtrapolateToVertex! " << endl;
       _DBG_ << " Position (x,y,z)=("<<pos3d.x()<<","<<pos3d.y()<<","
@@ -9672,8 +9677,9 @@ jerror_t DTrackFitterKalmanSIMD::ExtrapolateCentralToOtherDetectors(){
     if (fabs(dedx)>EPS){
       ds=DE_PER_STEP/fabs(dedx);
     }
-    if(fabs(ds)>mStepSizeS) ds=mStepSizeS;
-    if(fabs(ds)<MIN_STEP_SIZE)ds=MIN_STEP_SIZE;
+    if (ds>mStepSizeS) ds=mStepSizeS;
+    if (s_to_boundary<ds) ds=s_to_boundary;
+    if (ds<MIN_STEP_SIZE)ds=MIN_STEP_SIZE;
     s+=ds;
     
     // Flight time
@@ -9698,7 +9704,7 @@ jerror_t DTrackFitterKalmanSIMD::ExtrapolateCentralToOtherDetectors(){
      
     r2=xy.Mod2(); 
     // Check if we have passed into the BCAL
-    if (r2>65.*65. && S(state_z)<400){
+    if (r2>64.9*64.9 && S(state_z)<400){
       double tanl=S(state_tanl);
       double pt=1/fabs(S(state_q_over_pt));
       double phi=S(state_phi);
