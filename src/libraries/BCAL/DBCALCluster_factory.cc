@@ -74,7 +74,18 @@ jerror_t DBCALCluster_factory::brun(JEventLoop *loop, int32_t runnumber) {
 
 	BCALCLUSTERVERBOSE = 0;
 	gPARMS->SetDefaultParameter("BCALCLUSTERVERBOSE", BCALCLUSTERVERBOSE, "VERBOSE level for BCAL Cluster overlap success and conditions");
-	//command line parameter to investigate what points are being added to clusters and what clusters are being merged together.
+	//command line parameter to investigate what points are being added to clusters and what clusters are being merged together. // Track fitterer helper class
+
+
+  vector<const DTrackFitter *> fitters;
+  loop->Get(fitters);
+
+  if(fitters.size()<1){
+    _DBG_<<"Unable to get a DTrackFinder object!"<<endl;
+    return RESOURCE_UNAVAILABLE;
+  }
+
+  fitter = fitters[0];
 
 	return NOERROR;
 }
@@ -208,44 +219,31 @@ DBCALCluster_factory::clusterize( vector< const DBCALPoint* > points , vector< c
 				double point_z = (**pt).z();
 				double point_theta_global = fabs(atan2(point_r,point_z + m_z_target_center ));  // convert point z-position origin to global frame to match tracks origin
 				vector<DTrackFitter::Extrapolation_t>extrapolations=(*trk)->extrapolations.at(SYS_BCAL);
-				if (extrapolations.size()>0){
+				if (fitter->ExtrapolateToRadius(point_r,extrapolations,temp_track_pos)){
 				  track_inner_rad=extrapolations[0].position;
-				  double diff2_old=1e6;
-				  for (unsigned int i=0;i<extrapolations.size();i++){
-				    double point_phi=(**pt).phi();
-				    DVector3 bcalpos(point_r*cos(point_phi),
-						     point_r*sin(point_phi),
-						     point_z);
-				    double diff2=(bcalpos-extrapolations[i].position).Perp2();
-				    if (diff2>diff2_old){
-				      temp_track_pos=extrapolations[i-1].position;
-				      break;
-				    }
-				    diff2_old=diff2;
+	
+				  // convert track phi position to be consistent with point phi positions
+				  if(track_inner_rad.Phi() >= 0.) track_phi_inner_r = track_inner_rad.Phi();
+				  else track_phi_inner_r = fabs(2*TMath::Pi() + track_inner_rad.Phi());
+				  if(track_pos.Phi() >= 0.) track_phi = temp_track_pos.Phi();
+				  else track_phi = fabs(2*TMath::Pi() + temp_track_pos.Phi()); 
+				  double dPhi = track_phi - (**pt).phi();
+				  // deal with 0/2pi BCAL region 
+				  double dPhiAlt = ( track_phi > (**pt).phi() ?
+						     track_phi - (**pt).phi() - 2*TMath::Pi() :
+						     (**pt).phi() - track_phi - 2*TMath::Pi() );
+
+				  dPhi = min( fabs( dPhi ), fabs( dPhiAlt ) );
+				  if(dPhi < closest_dPhi){
+				    track_pos = temp_track_pos;
+				    closest_dPhi = dPhi;
 				  }
-
-				// convert track phi position to be consistent with point phi positions
-				if(track_inner_rad.Phi() >= 0.) track_phi_inner_r = track_inner_rad.Phi();
-				else track_phi_inner_r = fabs(2*TMath::Pi() + track_inner_rad.Phi());
-				if(track_pos.Phi() >= 0.) track_phi = temp_track_pos.Phi();
-				else track_phi = fabs(2*TMath::Pi() + temp_track_pos.Phi()); 
-				double dPhi = track_phi - (**pt).phi();
-				// deal with 0/2pi BCAL region 
-        			double dPhiAlt = ( track_phi > (**pt).phi() ?
-                        	track_phi - (**pt).phi() - 2*TMath::Pi() :
-                        	(**pt).phi() - track_phi - 2*TMath::Pi() );
-
-        			dPhi = min( fabs( dPhi ), fabs( dPhiAlt ) );
-				if(dPhi < closest_dPhi){
-					track_pos = temp_track_pos;
-					closest_dPhi = dPhi;
-				}
-				double dTheta = fabs(point_theta_global - track_pos.Theta());
-				if(dPhi < matched_dphi && dTheta < matched_dtheta){
-					 q = 1; // if point and track are matched then set q = 1
-
-					 tracked_phi = track_phi_inner_r;
-				}
+				  double dTheta = fabs(point_theta_global - track_pos.Theta());
+				  if(dPhi < matched_dphi && dTheta < matched_dtheta){
+				    q = 1; // if point and track are matched then set q = 1
+				    
+				    tracked_phi = track_phi_inner_r;
+				  }
 				}
 			}
 
