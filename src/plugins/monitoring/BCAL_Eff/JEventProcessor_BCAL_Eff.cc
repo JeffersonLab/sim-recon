@@ -312,6 +312,16 @@ jerror_t JEventProcessor_BCAL_Eff::brun(jana::JEventLoop* locEventLoop, int locR
 	locEventLoop->GetSingle(dEventWriterROOT);
 	dEventWriterROOT->Create_DataTrees(locEventLoop);
 	*/
+	vector<const DTrackFitter *> fitters;
+	locEventLoop->Get(fitters);
+
+        if(fitters.size()<1){
+          _DBG_<<"Unable to get a DTrackFinder object!"<<endl;
+          return RESOURCE_UNAVAILABLE;
+        }
+
+        fitter = fitters[0];
+
 
 	return NOERROR;
 }
@@ -379,31 +389,26 @@ jerror_t JEventProcessor_BCAL_Eff::evnt(jana::JEventLoop* locEventLoop, uint64_t
 	      DVector3 pos_bcal(x,y,z);
 	      double R = pos_bcal.Perp();
 	      double phi = pos_bcal.Phi();
-	      // double FOM = TMath::Prob(locTrackTimeBased[i]->chisq, locTrackTimeBased[i]->Ndof);
-	      double diff2_old=1e6;
-	      for (unsigned int i=0;i<extrapolations.size();i++){
-		double diff2=(pos_bcal-extrapolations[i].position).Perp2();
-		if (diff2>diff2_old){
-		  mypos=extrapolations[i-1].position;
-		  break;
-		}
-		diff2_old=diff2;
-	      }
+	      if (fitter->ExtrapolateToRadius(R,extrapolations,mypos)){
 
-	      // double q = locTrackTimeBased[i]->rt->q;
-	      locTrackTimeBased[i]->momentum().Mag();
-	      double trkmass = locTrackTimeBased[i]->mass();
-	      double dPhi = TMath::Abs(mypos.Phi()-phi);
-	      double dZ = TMath::Abs(mypos.Z() - z);
-	      
-	      // save showers matched to tracks
-	      
-	      // assume program is run with plugin -PTRKFIT:MASS_HYPOTHESES_NEGATIVE=0.13957 -PTRKFIT:MASS_HYPOTHESES_POSITIVE=0.13957
-	      // if(dZ < 30.0 && dPhi < 0.18 && mypos.Perp() == R) {
-	      if(dZ < 30.0 && dPhi < 0.18 && mypos.Perp() == R && trkmass < 0.15) {   // select pion hypothesis only
-		matchedShowers.push_back(locBCALShowers[j]);
-		matchedTracks.push_back(locTrackTimeBased[i]);
-		// printf ("Matched event=%d, i=%d, j=%d, p=%f, Ztrk=%f Zshr=%f, Phitrk=%f Phishw=%f\n",locEventNumber,i,j,p,mypos.Z(),z,mypos.Phi(),pos_bcal.Phi());
+		// double q = locTrackTimeBased[i]->rt->q;
+		locTrackTimeBased[i]->momentum().Mag();
+		double trkmass = locTrackTimeBased[i]->mass();
+	        //double dPhi = TMath::Abs(mypos.Phi()-phi);
+		double dPhi = mypos.Phi()-phi;
+		if (dPhi<-M_PI) dPhi+=2.*M_PI;
+		if (dPhi>M_PI) dPhi-=2.*M_PI;
+		double dZ = TMath::Abs(mypos.Z() - z);
+	
+		// save showers matched to tracks
+		
+		// assume program is run with plugin -PTRKFIT:MASS_HYPOTHESES_NEGATIVE=0.13957 -PTRKFIT:MASS_HYPOTHESES_POSITIVE=0.13957
+		// if(dZ < 30.0 && dPhi < 0.18 && mypos.Perp() == R) {
+		if(dZ < 30.0 && fabs(dPhi) < 0.18 && trkmass < 0.15) {   // select pion hypothesis only
+		  matchedShowers.push_back(locBCALShowers[j]);
+		  matchedTracks.push_back(locTrackTimeBased[i]);
+		  // printf ("Matched event=%d, i=%d, j=%d, p=%f, Ztrk=%f Zshr=%f, Phitrk=%f Phishw=%f\n",locEventNumber,i,j,p,mypos.Z(),z,mypos.Phi(),pos_bcal.Phi());
+		}
 	      }
 	    }
 	  }
