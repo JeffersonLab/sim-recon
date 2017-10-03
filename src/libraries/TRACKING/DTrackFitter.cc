@@ -479,6 +479,71 @@ double DTrackFitter::CalcDensityEffect(double betagamma,
   return delta;
 }
 
+
+// Extrapolate to a radius R given two extrapolation points before and after 
+bool DTrackFitter::ExtrapolateToRadius(double R,
+				       const vector<Extrapolation_t>&extraps,
+				       DVector3 &pos,DVector3 &mom,double &t,
+				       double &s) const{
+  if (extraps.size()<2) return false;
+
+  for (unsigned int j=1;j<extraps.size();j++){
+    if (extraps[j].position.Perp()>R){
+      // At this point, the location where the track intersects the cyclinder 
+      // is somewhere between extrapolated point and the previous one.  For
+      // simplicity, we're going to just find the intersection of the cylinder 
+      // with the line that joins the 2 positions. We do this by working in 
+      // the X/Y plane only and finding the value of "alpha" which is the 
+      // fractional distance the intersection point is between our two 
+      // extrapolations.  We'll then apply the alpha found in the 2D X/Y space 
+      // to the 3D x/y/Z space to find the actual intersection point.
+      Extrapolation_t extrap=extraps[j];
+      Extrapolation_t prev=extraps[j-1];
+      pos=extrap.position;
+      mom=extrap.momentum;
+      t=extrap.t;
+      s=extrap.s;
+      // The next part of the code refines the extrapolation
+      DVector3 prevpos=prev.position;
+      DVector3 pos=extrap.position;
+      DVector2 x1(pos.X(),pos.Y());
+      DVector2 x2(prevpos.X(),prevpos.Y());
+      DVector2 dx = x2-x1;
+      double A = dx.Mod2();
+      double B = 2.0*(x1.X()*dx.X() + x1.Y()*dx.Y());
+      double C = x1.Mod2() - R*R;
+      
+      double sqrt_D=sqrt(B*B-4.0*A*C);
+      double one_over_denom=0.5/A;
+      double alpha1 = (-B + sqrt_D)*one_over_denom;
+      double alpha2 = (-B - sqrt_D)*one_over_denom;
+      double alpha = alpha1;
+      if(alpha1<0.0 || alpha1>1.0)alpha=alpha2;
+      if (isfinite(alpha)){
+	DVector3 delta = prevpos - pos;
+	pos+=alpha*delta;
+	// Flight time and path length (approximate)
+	double ds=(1.-alpha)*delta.Mag();
+	double v=(extrap.s-prev.s)/(extrap.t-prev.t);
+	s-=ds;
+	t-=ds/v;
+      }
+      break;
+    }
+  }
+  return true;
+}
+			
+bool DTrackFitter::ExtrapolateToRadius(double R,
+				       const vector<Extrapolation_t>&extraps,
+				       DVector3 &pos) const{
+  double s=0,t=0;
+  DVector3 mom;
+  return ExtrapolateToRadius(R,extraps,pos,mom,s,t);
+}
+
+
+
 //------------------
 // GetProfilingTimes
 //------------------

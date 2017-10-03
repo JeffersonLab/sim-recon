@@ -196,6 +196,13 @@ class DTrackFitter:public jana::JObject{
 #ifdef PROFILE_TRK_TIMES
 		void GetProfilingTimes(std::map<std::string, prof_time::time_diffs> &my_prof_times) const;
 #endif		
+		bool ExtrapolateToRadius(double R,
+					 const vector<Extrapolation_t>&extraps,
+					 DVector3 &pos,DVector3 &mom,double &t,
+					 double &s) const;
+		bool ExtrapolateToRadius(double R,
+					 const vector<Extrapolation_t>&extraps,
+					 DVector3 &pos) const;
 
 		//---- The following need to be supplied by the subclass ----
 		virtual string Name(void) const =0;
