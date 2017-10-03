@@ -191,7 +191,7 @@ jerror_t DEventProcessor_BCAL_gainmatrix::evnt(jana::JEventLoop* locEventLoop, u
 		if (fitter->ExtrapolateToRadius(R,extrapolations,mypos)){
 		  //double dPhi = TMath::Abs(mypos.Phi()-pos_bcal.Phi());
 		  double dPhi=mypos.Phi()-pos_bcal.Phi();
-		  if (dPhi<M_PI) dPhi+=2.*M_PI;
+		  if (dPhi<-M_PI) dPhi+=2.*M_PI;
 		  if (dPhi>M_PI) dPhi-=2.*M_PI;
 		  double dZ = TMath::Abs(mypos.Z() - z);
 		  if(dZ < 30.0 && fabs(dPhi) < 0.18) matchedShowers.push_back(locBCALShowers[j]);
