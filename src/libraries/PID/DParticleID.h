@@ -279,6 +279,7 @@ class DParticleID:public jana::JObject
 		double dTargetZCenter;
 
 		const DTrackFinder *finder;
+		const DTrackFitter *fitter;
 		DTOFPoint_factory* dTOFPointFactory;
 };
 

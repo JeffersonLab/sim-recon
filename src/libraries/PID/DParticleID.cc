@@ -184,6 +184,17 @@ DParticleID::DParticleID(JEventLoop *loop)
   }
 
   finder = finders[0];
+
+  // Track fitterer helper class
+  vector<const DTrackFitter *> fitters;
+  loop->Get(fitters);
+
+  if(fitters.size()<1){
+    _DBG_<<"Unable to get a DTrackFinder object!"<<endl;
+    return;
+  }
+
+  fitter = fitters[0];
   
   // FCAL geometry
   loop->GetSingle(dFCALGeometry);
@@ -954,38 +965,26 @@ bool DParticleID::Distance_ToTrack(const DReferenceTrajectory* rt, const DSCHit*
 
 bool DParticleID::Distance_ToTrack(const vector<DTrackFitter::Extrapolation_t> &extrapolations, const DBCALShower* locBCALShower, double locInputStartTime, DBCALShowerMatchParams& locShowerMatchParams, DVector3* locOutputProjPos, DVector3* locOutputProjMom) const
 { 
-  if(extrapolations.size()==0)
+  if(extrapolations.size()<2)
     return false;
 
+  // Check that the hit is not out of time with respect to the track.  Use 
+  // extrapolation point at entrance to BCAL for a rough guess for flight time
+  double locDeltaT = locBCALShower->t - extrapolations[0].t - locInputStartTime;
+  if(fabs(locDeltaT) > OUT_OF_TIME_CUT)
+    return false;
+  
   // Get the BCAL cluster position
   DVector3 bcal_pos(locBCALShower->x, locBCALShower->y, locBCALShower->z);
   
   // track quantities
-  double locFlightTime = 9.9E9, locPathLength = 9.9E9, locFlightTimeVariance = 9.9E9;
+  double locFlightTime = 0, locPathLength = 0, locFlightTimeVariance = 9.9E9;
   DVector3 locProjPos,locProjMom;
  
   // Find the closest extrapolated position to this BCAL shower
-  DTrackFitter::Extrapolation_t old_extrapolation=extrapolations[0];
-  double d2_old=1.e6,d2=0.;
-  for (unsigned int j=0;j<extrapolations.size();j++){
-    locProjPos=extrapolations[j].position;
-    d2=(extrapolations[j].position-bcal_pos).Mag2();
-    if (d2>d2_old){
-      locProjMom=old_extrapolation.momentum;
-      locProjPos=old_extrapolation.position;
-      locFlightTime=old_extrapolation.t;
-      locPathLength=old_extrapolation.s;
-      locFlightTimeVariance=0.; // fill this in!
-
-      break;
-    }
-    d2_old=d2;
-    old_extrapolation=extrapolations[j];
-  }
-
-  // Check that the hit is not out of time with respect to the track
-  double locDeltaT = locBCALShower->t - locFlightTime - locInputStartTime;
-  if(fabs(locDeltaT) > OUT_OF_TIME_CUT)
+  double R=bcal_pos.Perp();
+  if (fitter->ExtrapolateToRadius(R,extrapolations,locProjPos,locProjMom,
+				  locFlightTime,locPathLength)==false)
     return false;
   
   if(locOutputProjMom != nullptr)
@@ -994,7 +993,7 @@ bool DParticleID::Distance_ToTrack(const vector<DTrackFitter::Extrapolation_t> &
       *locOutputProjMom = locProjMom;
     }
 
-  // Differences in z and phi
+  // Difference in z and phi
   double locDeltaZ = bcal_pos.z() - locProjPos.z();
   double locDeltaPhiMin = bcal_pos.Phi() - locProjPos.Phi();
   while(locDeltaPhiMin > M_PI)
@@ -1034,22 +1033,10 @@ bool DParticleID::Distance_ToTrack(const vector<DTrackFitter::Extrapolation_t> &
   // loop over points associated with this shower, finding
   // the closest match between a point and the track
   for (unsigned int m=0;m<points.size();m++){
-    DVector3 locPointProjPos, locPointProjMom;
-    old_extrapolation=extrapolations[0];
-    d2_old=1e6;
-    for (unsigned int j=0;j<extrapolations.size();j++){
-      bcal_pos.SetMagThetaPhi(points[m]->rho(),points[m]->theta(),
-			      points[m]->phi());
-      locPointProjPos=extrapolations[j].position;
-      d2=(locPointProjPos-bcal_pos).Mag2();
-      if (d2>d2_old){
-	locPointProjMom=old_extrapolation.momentum; 
-	locPointProjPos=old_extrapolation.position;
-	break;
-      }
-      d2_old=d2;
-      old_extrapolation=extrapolations[j];
-    }
+    DVector3 locPointProjPos=extrapolations[0].position;
+    R=points[m]->rho();
+    if (fitter->ExtrapolateToRadius(R,extrapolations,locPointProjPos)==false)
+      return false;
 
     double mydphi=points[m]->phi()-locPointProjPos.Phi();
     while(mydphi > M_PI)
@@ -1060,11 +1047,6 @@ bool DParticleID::Distance_ToTrack(const vector<DTrackFitter::Extrapolation_t> &
       continue;
     
     locDeltaPhiMin=mydphi;
-    if(locOutputProjMom != nullptr)
-      {
-	*locOutputProjPos = locPointProjPos;
-	*locOutputProjMom = locPointProjMom;
-      }
   }
 
   //SET MATCHING INFORMATION
@@ -1433,6 +1415,7 @@ bool DParticleID::Cut_MatchDistance(const vector<DTrackFitter::Extrapolation_t> 
 	double locP = locProjMom.Mag();
 	double locDeltaPhi = 180.0*locShowerMatchParams.dDeltaPhiToShower/TMath::Pi();
 	double locPhiCut = BCAL_PHI_CUT_PAR1 + BCAL_PHI_CUT_PAR2*exp(-1.0*BCAL_PHI_CUT_PAR3*locP);
+
 	if(fabs(locDeltaPhi) > locPhiCut)
 		return false;
 
@@ -3191,43 +3174,33 @@ bool DParticleID::Get_StartTime(const vector<DTrackFitter::Extrapolation_t> &ext
 
   double StartTimeGuess=StartTime;
   double dphi_min=1e6;
-  DTrackFitter::Extrapolation_t closest_extrapolation=extrapolations[0];
-  unsigned int best_bcal_match=0;
+  double locP=0.,dz=0.;
   for (unsigned int i=0;i<locBCALShowers.size();i++){
     DVector3 bcalpos(locBCALShowers[i]->x,locBCALShowers[i]->y,
 		    locBCALShowers[i]->z);
-    DTrackFitter::Extrapolation_t old_extrapolation=extrapolations[0];
-    double d2_old=1.e6,d2=0.;
-    for (unsigned int j=0;j<extrapolations.size();j++){
-      DVector3 trackpos=extrapolations[j].position;
-      d2=(trackpos-bcalpos).Mag2();
-      if (d2>d2_old){
-	double dphi=old_extrapolation.position.Phi()-bcalpos.Phi();
-	if (dphi<-M_PI) dphi+=2.*M_PI;
-	if (dphi>M_PI) dphi-=2.*M_PI;
-	if (fabs(dphi)<dphi_min){
-	  dphi_min=dphi;
-	  closest_extrapolation=old_extrapolation;
-	  best_bcal_match=i;
-	}
-	break;
+    double R=bcalpos.Perp();
+    DVector3 pos,mom;
+    double s=0,t=0;
+    if (fitter->ExtrapolateToRadius(R,extrapolations,pos,mom,t,s)){
+      double dphi=pos.Phi()-bcalpos.Phi();
+      if (dphi<-M_PI) dphi+=2.*M_PI;
+      if (dphi>M_PI) dphi-=2.*M_PI;
+      if (fabs(dphi)<dphi_min){
+	dphi_min=dphi;
+	dz=pos.z()-bcalpos.z();
+	locP=mom.Mag();
+	StartTime=locBCALShowers[i]->t-t;
       }
-      d2_old=d2;
-      old_extrapolation=extrapolations[j];
     }
   }
-  StartTime=locBCALShowers[best_bcal_match]->t-closest_extrapolation.t;
+  // Check that the "start time" is not too far out of time with the rest of 
+  // the event
   if (fabs(StartTime-StartTimeGuess)>OUT_OF_TIME_CUT) return false;
   
   // look for a match in z-position
-  DVector3 bcalpos(locBCALShowers[best_bcal_match]->x,
-		   locBCALShowers[best_bcal_match]->y,
-		   locBCALShowers[best_bcal_match]->z);
-  double dz=closest_extrapolation.position.z()-bcalpos.z();
   if(fabs(dz) > BCAL_Z_CUT) return false;
 
   // .. and in phi
-  double locP = closest_extrapolation.momentum.Mag();
   double locDeltaPhi = 180.0*dphi_min/M_PI;
   double locPhiCut = BCAL_PHI_CUT_PAR1 + BCAL_PHI_CUT_PAR2*exp(-1.0*BCAL_PHI_CUT_PAR3*locP);
   if (fabs(locDeltaPhi)<locPhiCut){    
@@ -3236,3 +3209,4 @@ bool DParticleID::Get_StartTime(const vector<DTrackFitter::Extrapolation_t> &ext
 
   return false;
 }
+
