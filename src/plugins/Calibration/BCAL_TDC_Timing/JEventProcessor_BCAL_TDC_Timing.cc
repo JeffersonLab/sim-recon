@@ -150,6 +150,17 @@ jerror_t JEventProcessor_BCAL_TDC_Timing::brun(JEventLoop *loop, int32_t runnumb
     }
     japp->RootFillUnLock(this);
 
+    vector<const DTrackFitter *> fitters;
+    loop->Get(fitters);
+    
+    if(fitters.size()<1){
+      _DBG_<<"Unable to get a DTrackFinder object!"<<endl;
+      return RESOURCE_UNAVAILABLE;
+    }
+    
+    fitter = fitters[0];
+
+
     return NOERROR;
 }
 
@@ -428,19 +439,13 @@ jerror_t JEventProcessor_BCAL_TDC_Timing::evnt(JEventLoop *loop, uint64_t eventn
       //int res1 = rt->GetIntersectionWithRadius(r_shower,proj_pos, &pathLength, &flightTime);
       //int res2 = rt->GetIntersectionWithRadius(dBCALGeom->GetBCAL_inner_rad(),proj_pos, &innerpathLength, &innerflightTime);
       //if (res1==NOERROR && res2==NOERROR) {
-      DVector3 bcalpos(shower_x,shower_y,Z_shower); 
+      DVector3 bcalpos(shower_x,shower_y,Z_shower);
+      double R=bcalpos.Perp();
+      double pathLength=0.;
+      DVector3 proj_mom;
       vector<DTrackFitter::Extrapolation_t>extrapolations=timeBasedTrack->extrapolations.at(SYS_BCAL);
-      if (extrapolations.size()>0){	
-	double diff2_old=1e6;
-	for (unsigned int i=0;i<extrapolations.size();i++){
-	  double diff2=(bcalpos-extrapolations[i].position).Perp2();
-	  if (diff2>diff2_old){
-	    proj_pos=extrapolations[i-1].position;
-	    flightTime=extrapolations[i-1].t;
-	    break;
-	  }
-	  diff2_old=diff2;
-	}
+      if (fitter->ExtrapolateToRadius(R,extrapolations,proj_pos,proj_mom,
+				      flightTime,pathLength)){	
 
           Fill1DHistogram("BCAL_Global_Offsets", "Debug", "Success", 7, "Success profile;Step", 16, -0.5, 15.5);
           if (thisRFBunch->dNumParticleVotes >= 2){ // Require good RF bunch and this track match the SC
@@ -522,19 +527,9 @@ jerror_t JEventProcessor_BCAL_TDC_Timing::evnt(JEventLoop *loop, uint64_t eventn
                           Z_shower, Z_point + Z_TARGET,
                           "Z_{Point} vs Z_{Shower};Z_{Shower}  [cm];Z_{Point} [cm]",
                           225, zminhall, zmaxhall, 225, zminhall, zmaxhall);
-	 if (extrapolations.size()>0){	
-	   double diff2_old=1e6;
-	   double phi=thisPoint->phi();
-	   DVector3 bcalpos(rpoint*cos(phi),rpoint*sin(phi),Z_point);
-	   for (unsigned int i=0;i<extrapolations.size();i++){
-	     double diff2=(bcalpos-extrapolations[i].position).Perp2();
-	     if (diff2>diff2_old){
-	       proj_pos=extrapolations[i-1].position;
-	       flightTime=extrapolations[i-1].t;
-	       break;
-	     }
-	     diff2_old=diff2;
-	   }
+	 if (fitter->ExtrapolateToRadius(rpoint,extrapolations,proj_pos,
+					 proj_mom,
+					 flightTime,pathLength)){	
 
             // Now proj_pos contains the projected position of the track at this particular point within the BCAL
             // We can plot the difference of the projected position and the BCAL position as a function of the channel
@@ -864,16 +859,8 @@ jerror_t JEventProcessor_BCAL_TDC_Timing::evnt(JEventLoop *loop, uint64_t eventn
            for (unsigned int i=0; i < locTrackTimeBased.size() ; ++i) {
                DVector3 trackpos(0.0,0.0,0.0); 
 	       vector<DTrackFitter::Extrapolation_t>extrapolations=locTrackTimeBased[i]->extrapolations.at(SYS_BCAL);
-	       if (extrapolations.size()>0){	
-		 double diff2_old=1e6;
-		 for (unsigned int i=0;i<extrapolations.size();i++){
-		   double diff2=(showerpos-extrapolations[i].position).Perp2();
-		   if (diff2>diff2_old){
-		     trackpos=extrapolations[i-1].position;
-		     break;
-		   }
-		   diff2_old=diff2;
-		 }
+	       if (fitter->ExtrapolateToRadius(R_shower,extrapolations,trackpos)){	
+
 		 double dPhi = 180./3.14159265358*(trackpos.Phi()-showerpos.Phi());
 		 double dZ = (trackpos.Z() - z);
 		 sprintf(name, "Matching");
