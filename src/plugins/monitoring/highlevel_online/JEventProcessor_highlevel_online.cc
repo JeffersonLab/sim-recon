@@ -10,6 +10,8 @@ using namespace jana;
 #include <BCAL/DBCALUnifiedHit.h>
 #include <RF/DRFTime.h>
 #include <DAQ/DF1TDCHit.h>
+#include <DAQ/DCODAEventInfo.h>
+#include <DAQ/DEPICSvalue.h>
 
 
 // Routine used to create our JEventProcessor
@@ -177,6 +179,11 @@ jerror_t JEventProcessor_highlevel_online::init(void)
 	TDirectory *main = gDirectory;
 
 	gDirectory->mkdir("highlevel")->cd();
+	
+	/************************************************************** Event Info ************************************************************/
+	last_timestamp = 0.0;
+	unix_offset = 0.0;
+	dHist_EventInfo = new TH1D("EventInfo", "Misc. event info used to communicate event time to macros", 2, 0.0 , 2.0);
 
 	/***************************************************************** RF *****************************************************************/
 
@@ -395,6 +402,12 @@ jerror_t JEventProcessor_highlevel_online::evnt(JEventLoop *locEventLoop, uint64
 	vector<const DFCALDigiHit*> locFCALDigiHits;
 	locEventLoop->Get(locFCALDigiHits);
 
+	const DCODAEventInfo* locCODAEventInfo = NULL;
+	try {locEventLoop->GetSingle(locCODAEventInfo);}catch(...){}
+
+	const DEPICSvalue* locEPICSvalue = NULL;
+	try {locEventLoop->GetSingle(locEPICSvalue);}catch(...){}
+
 	const DDetectorMatches* locDetectorMatches = NULL;
 	locEventLoop->GetSingle(locDetectorMatches);
 
@@ -411,7 +424,7 @@ jerror_t JEventProcessor_highlevel_online::evnt(JEventLoop *locEventLoop, uint64
 	vector<const DChargedTrack*> locChargedTracks;
 	locEventLoop->Get(locChargedTracks, "PreSelect");
 
-	// The following decalres containers for all types in F1Types
+	// The following declares containers for all types in F1Types
 	// (defined at top of this file) and fills them.
 	#define GetVect(A) \
 		vector<const A*> v##A; \
@@ -422,6 +435,54 @@ jerror_t JEventProcessor_highlevel_online::evnt(JEventLoop *locEventLoop, uint64
 	F1Types(GetVect)		
 	F1TaggerTypes(GetTaggerVect)		
 
+
+	/************************************************************** Prepare Timestamp ************************************************************/
+
+	// This is a way for us to pass the unix time of the event to the macros
+	// so they can make entries in the HDTSDB (time series DB) based on the
+	// time the event was acquired. This turns out to be a lot trickier than
+	// you might think due to the unix timestamp only going into the data
+	// stream on special event types. The 250MHz system clock is available
+	// for physics events but needs the offset to the unix time of the start
+	// of the event. It is also not available in the special events (EPICS,
+	// scaler, and control).
+	// 
+	// We handle this in the following way:
+	//
+	// 1. remember last 250MHz clock time seen
+	// 2. when special event with unix time is seen, assume it is
+	//    the same time and calculate offset. Remember it so it
+	//    can be used to calculate unix time from 250MHz clock on
+	//    subsequent events. Always assume 250MHz is exact freq.
+	//
+	// This should be good to within a couple of seconds. One drawback
+	// is that no unix time will be available until a special event
+	// is seen. Those should be produced at about 1Hz, but in the
+	// online farm with 20 nodes, that would be roughly 1 every 20seconds.
+	// Thus, is could conceivably be a couple of minutes before all
+	// nodes get initialized.
+	//
+	// Because RootSpy will automatically add 
+	// histograms, we use 2 bins: bin 1 always has "1" so that the macro can
+	// know how many numbers were added. bin 2 contains the actual unix time
+	// stamp. The macro will have to take an average and that will get skewed
+	// if a node drops out mid-run.
+	double unix_time = 0;
+	if(locL1Trigger){
+		// TS scaler event
+		unix_time = locL1Trigger->unix_time; // usually will be zero
+	}
+	if(locEPICSvalue && (unix_time==0)){
+		// EPICS event
+		unix_time = locEPICSvalue->timestamp;
+	}
+	
+	double timestamp = 0.0;  // in seconds from 250MHz clock
+	if(locCODAEventInfo) timestamp = (double)locCODAEventInfo->avg_timestamp / 250.0E6;
+	
+	if(timestamp != 0.0) last_timestamp = timestamp;
+	if(unix_time!=0.0 && last_timestamp!=0.0) unix_offset = (double)unix_time - last_timestamp;
+	if( (unix_time==0) && (timestamp!=0.0) && (unix_offset!=0.0) ) unix_time = (unix_offset + timestamp);
 
 	/********************************************************* PREPARE RF ********************************************************/
 	
@@ -621,6 +682,13 @@ jerror_t JEventProcessor_highlevel_online::evnt(JEventLoop *locEventLoop, uint64
 	#define F1Fill(A) FillF1Hist(v##A);
 	F1Types(F1Fill)		
 	F1TaggerTypes(F1Fill)		
+
+	/************************************************************** Event Info ************************************************************/
+
+	if( unix_time!=0 ){
+		dHist_EventInfo->SetBinContent(1, 1);
+		dHist_EventInfo->SetBinContent(2, unix_time);
+	}
 
 	/***************************************************************** RF *****************************************************************/
 		
