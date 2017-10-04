@@ -203,6 +203,9 @@ class DTrackFitter:public jana::JObject{
 		bool ExtrapolateToRadius(double R,
 					 const vector<Extrapolation_t>&extraps,
 					 DVector3 &pos) const;
+		double DistToWire(const DCoordinateSystem *wire,
+				  const vector<Extrapolation_t>&extrapolations,
+				  DVector3 *pos=NULL,DVector3 *mom=NULL) const;
 
 		//---- The following need to be supplied by the subclass ----
 		virtual string Name(void) const =0;

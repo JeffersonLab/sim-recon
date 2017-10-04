@@ -542,6 +542,59 @@ bool DTrackFitter::ExtrapolateToRadius(double R,
   return ExtrapolateToRadius(R,extraps,pos,mom,s,t);
 }
 
+// Loop through extrapolations to find the distance of closest approach to a 
+// wire.
+double DTrackFitter::DistToWire(const DCoordinateSystem *wire,
+				const vector<Extrapolation_t>&extrapolations,
+				DVector3 *pos, DVector3 *mom) const{
+  if (extrapolations.size()<3) return 1000.;
+
+  // Wire info
+  double z0w=wire->origin.z();
+  double ux=wire->udir.x();
+  double uy=wire->udir.y();
+  double uz=wire->udir.z();
+
+  double doca_old=1000.,doca=1000.;
+  for (unsigned int i=1;i<extrapolations.size();i++){
+    DVector3 trackpos=extrapolations[i].position;
+    double z=trackpos.z();
+    double dzw=z-z0w;
+    DVector3 wirepos=wire->origin+(dzw/uz)*wire->udir;    
+    doca=(wirepos-trackpos).Perp();
+    if (doca>doca_old){
+      DVector3 trackdir=extrapolations[i-1].momentum;
+      trackdir.SetMag(1.);
+      // Variables relating wire direction and track direction
+      double lambda=M_PI_2-trackdir.Theta();
+      double sinl=sin(lambda);
+      double cosl=cos(lambda);
+      double phi=trackdir.Phi();
+      double sinphi=sin(phi);
+      double cosphi=cos(phi);
+      double my_ux=ux*sinl-cosl*cosphi;
+      double my_uy=uy*sinl-cosl*sinphi;
+      double denom=my_ux*my_ux+my_uy*my_uy;
+      double ds=((trackpos.X()-wire->origin.X()-ux*dzw)*my_ux
+		 +(trackpos.Y()-wire->origin.Y()-uy*dzw)*my_uy)/denom;
+      if (fabs(ds)<2.*fabs(extrapolations[i].s-extrapolations[i-1].s)){
+	trackpos+=ds*trackdir;
+	wirepos=wire->origin+((trackpos.z()-z0w)/uz)*wire->udir;
+	double cosstereo=wire->udir.Dot(DVector3(0.,0.,1.));
+	doca=(wirepos-trackpos).Perp()*cosstereo;
+
+	if (pos!=NULL) *pos=trackpos;
+	if (mom!=NULL) *mom=extrapolations[i-1].momentum;
+      }
+      break;
+    }
+    
+    doca_old=doca;
+  }
+
+  return doca;
+}
+
 
 
 //------------------
