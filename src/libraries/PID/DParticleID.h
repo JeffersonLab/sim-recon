@@ -72,6 +72,9 @@ class DParticleID:public jana::JObject
 		jerror_t CalcDCdEdx(const DTrackTimeBased *locTrackTimeBased, const vector<dedx_t>& locdEdxHits_CDC, const vector<dedx_t>& locdEdxHits_FDC, double& locdEdx_FDC, double& locdx_FDC, double& locdEdx_CDC, double& locdx_CDC, unsigned int& locNumHitsUsedFordEdx_FDC, unsigned int& locNumHitsUsedFordEdx_CDC) const;
 
 		jerror_t CalcdEdxHit(const DVector3 &mom, const DVector3 &pos, const DCDCTrackHit *hit, pair <double,double> &dedx) const;
+		double CalcdXHit(const DVector3 &mom,
+				 const DVector3 &pos,
+				 const DCoordinateSystem *wire) const;
 		jerror_t GroupTracks(vector<const DTrackTimeBased *> &tracks, vector<vector<const DTrackTimeBased*> >&grouped_tracks) const;
 
 		void GetScintMPdEandSigma(double p,double M,double x,double &most_prob_dE, double &sigma_dE) const;

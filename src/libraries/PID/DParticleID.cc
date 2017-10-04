@@ -497,6 +497,60 @@ jerror_t DParticleID::CalcdEdxHit(const DVector3 &mom,
   return VALUE_OUT_OF_RANGE;
 }
 
+// Calculate the path length for a single hit in a straw.
+double DParticleID::CalcdXHit(const DVector3 &mom,
+				const DVector3 &pos,
+				const DCoordinateSystem *wire) const{
+  if (wire==NULL) return -1.; // should not get here
+  
+  // Track direction parameters
+  double phi=mom.Phi();
+  double lambda=M_PI_2-mom.Theta();
+  double cosphi=cos(phi);
+  double sinphi=sin(phi);
+  double tanl=tan(lambda);
+  
+  //Position relative to wire origin
+  double dz=pos.z()-wire->origin.z();
+  double dx=pos.x()-wire->origin.x();
+  double dy=pos.y()-wire->origin.y();
+  
+  // square of straw radius
+  double rs2=0.776*0.776;
+  
+  // Useful temporary variables related to the direction of the wire
+  double ux=wire->udir.x();
+  double uy=wire->udir.y();
+  double uz=wire->udir.z();
+  double A=1.-ux*ux;
+  double B=-2.*ux*uy;
+  double C=-2.*ux*uz;
+  double D=-2.*uy*uz;
+  double E=1.-uy*uy;
+  double F=1.-uz*uz;  
+
+  // The path length in the straw is given by  s=sqrt(b*b-4*a*c)/a/cosl.
+  // a, b, and c follow.
+  double a=A*cosphi*cosphi+B*cosphi*sinphi+C*cosphi*tanl+D*sinphi*tanl
+    +E*sinphi*sinphi+F*tanl*tanl;
+  double b=2.*A*dx*cosphi+B*dx*sinphi+B*dy*cosphi+C*dx*tanl+C*cosphi*dz
+    +D*dy*tanl+D*sinphi*dz+2.*E*dy*sinphi+2.*F*dz*tanl;
+  double c=A*dx*dx+B*dx*dy+C*dx*dz+D*dy*dz+E*dy*dy+F*dz*dz-rs2;
+  
+  // Check for valid arc length and compute dEdx
+  double temp=b*b-4.*a*c;
+  if (temp>0){
+    double cosl=fabs(cos(lambda));
+    //    double gas_density=0.0018;
+
+    // arc length and energy deposition
+    //dedx.second=gas_density*sqrt(temp)/a/cosl; // g/cm^2
+    return sqrt(temp)/a/cosl;
+  }
+  
+  return -1.; // should not get here
+}
+
 void DParticleID::GetScintMPdEandSigma(double p,double M,double x,
 					 double &most_probable_dE,
 					 double &sigma_dE) const{
