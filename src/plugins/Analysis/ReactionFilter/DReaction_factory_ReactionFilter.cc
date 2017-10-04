@@ -272,7 +272,7 @@ vector<DReaction*> DReaction_factory_ReactionFilter::Create_Reactions(const map<
 			DReactionStepTuple locDecayStepTuple;
 			if(!Parse_StepPIDString(locDecayStepString, locDecayStepTuple))
 			{
-				cout << "BUILDING DREACTIONS, INVALID PID STRING: " << locDecayStepString << endl;
+				cout << "BUILDING DREACTIONS, INVALID DECAY PID STRING: " << locDecayStepString << endl;
 				continue;
 			}
 			locDecayStepTuples.push_back(locDecayStepTuple);
@@ -571,6 +571,15 @@ map<size_t, tuple<string, string, string, vector<string>>> DReaction_factory_Rea
 			else
 				std::get<3>(locInputStrings[locReactionNumber]).push_back(locKeyValue);
 		}
+
+		if(dDebugFlag)
+		{
+			cout << "reaction #, tuple strings: " << locReactionNumber << ", " << std::get<0>(locInputStrings[locReactionNumber]) << ", " << std::get<1>(locInputStrings[locReactionNumber]) << ", " << std::get<2>(locInputStrings[locReactionNumber]);
+			for(auto& locTempString : std::get<3>(locInputStrings[locReactionNumber]))
+				cout << ", " << locTempString;
+			cout << endl;
+		}
+
 	}
 	return locInputStrings;
 }

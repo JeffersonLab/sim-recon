@@ -18,10 +18,6 @@ Q) How can I speed this up?
 A) You can try reducing the #z-bins by increasing their widths. However, much sure you also increase the uncertainty on the timing & invariant-mass cuts for photons as well.
 */
 
-//TO DO:
-//Undo comparison changes
-//Update master cut values
-
 //TO COMPARE:
 //Look for "COMPARE:"
 
@@ -136,6 +132,70 @@ namespace DAnalysis
  * So we can't actually vote on RF bunches until we choose our massive-neutral particles!!!
  */
 
+
+void DSourceComboer::Define_DefaultCuts(void)
+{
+	//DEFAULT dE/dx CUT FUNCTION
+	dDefaultdEdxCutFunctionString = "[0]";
+
+//COMPARE:
+	//DEFINE DEFAULT dE/dx CUTS
+	//CDC Proton
+	ddEdxCuts_TF1FunctionStrings[Proton][SYS_CDC].first = "exp(-1.0*[0]*x + [1]) + [2]"; //low bound
+	ddEdxCuts_TF1Params[Proton][SYS_CDC].first = {4.0, 2.25, 1.0};
+	ddEdxCuts_TF1FunctionStrings[Proton][SYS_CDC].second = "[0]"; //high bound
+	ddEdxCuts_TF1Params[Proton][SYS_CDC].second = {9.9E9};
+
+	//CDC Pi+
+	ddEdxCuts_TF1FunctionStrings[PiPlus][SYS_CDC].first = "[0]"; //low bound
+	ddEdxCuts_TF1Params[PiPlus][SYS_CDC].first = {-9.9E9};
+	ddEdxCuts_TF1FunctionStrings[PiPlus][SYS_CDC].second = "exp(-1.0*[0]*x + [1]) + [2]"; //high bound
+	ddEdxCuts_TF1Params[PiPlus][SYS_CDC].second = {-0.1, 0.5, 1.2};
+
+	//CDC K+
+	ddEdxCuts_TF1FunctionStrings[KPlus][SYS_CDC].first = "[0]"; //low bound
+	ddEdxCuts_TF1Params[KPlus][SYS_CDC].first = {-9.9E9};
+	ddEdxCuts_TF1FunctionStrings[KPlus][SYS_CDC].second = "exp(-1.0*[0]*x + [1]) + [2]"; //high bound
+	ddEdxCuts_TF1Params[KPlus][SYS_CDC].second = {2.0, 0.8, 3.0};
+
+	//CDC e-
+	ddEdxCuts_TF1FunctionStrings[Electron][SYS_CDC].first = "[0]"; //low bound
+	ddEdxCuts_TF1Params[Electron][SYS_CDC].first = {-9.9E9};
+	ddEdxCuts_TF1FunctionStrings[Electron][SYS_CDC].second = "[0]"; //high bound
+	ddEdxCuts_TF1Params[Electron][SYS_CDC].second = {5.5};
+
+	//FDC e-
+	ddEdxCuts_TF1FunctionStrings[Electron][SYS_FDC].first = "[0]"; //low bound
+	ddEdxCuts_TF1Params[Electron][SYS_FDC].first = {-9.9E9};
+	ddEdxCuts_TF1FunctionStrings[Electron][SYS_FDC].second = "[0]"; //high bound
+	ddEdxCuts_TF1Params[Electron][SYS_FDC].second = {3.5};
+
+	//pbar
+	ddEdxCutMap_TF1FunctionStrings.emplace(AntiProton, ddEdxCutMap_TF1FunctionStrings[Proton]);
+	ddEdxCutMap_TF1Params.emplace(AntiProton, ddEdxCutMap_TF1Params[Proton]);
+
+	//Pi-
+	ddEdxCutMap_TF1FunctionStrings.emplace(PiMinus, ddEdxCutMap_TF1FunctionStrings[PiPlus]);
+	ddEdxCutMap_TF1Params.emplace(PiMinus, ddEdxCutMap_TF1Params[PiPlus]);
+
+	//K-
+	ddEdxCutMap_TF1FunctionStrings.emplace(KMinus, ddEdxCutMap_TF1FunctionStrings[KPlus]);
+	ddEdxCutMap_TF1Params.emplace(KMinus, ddEdxCutMap_TF1Params[KPlus]);
+
+	//e+
+	ddEdxCutMap_TF1FunctionStrings.emplace(Positron, ddEdxCutMap_TF1FunctionStrings[Electron]);
+	ddEdxCutMap_TF1Params.emplace(Positron, ddEdxCutMap_TF1Params[Electron]);
+}
+/*
+		//E/p
+		dEOverPCutMap[Electron][SYS_FCAL] = new TF1("df_EOverPCut_FCAL_Electron", "[0]", 0.0, 12.0);
+		dEOverPCutMap[Electron][SYS_FCAL]->SetParameter(0.0, 0.7);
+		dEOverPCutMap[Electron][SYS_BCAL] = new TF1("df_EOverPCut_BCAL_Electron", "[0]", 0.0, 12.0);
+		dEOverPCutMap[Electron][SYS_BCAL]->SetParameter(0.0, 0.67);
+		dEOverPCutMap.emplace(Positron, dEOverPCutMap[Electron]);
+		dEOverPCutMap.emplace(MuonPlus, dEOverPCutMap[Electron]);
+		dEOverPCutMap.emplace(MuonMinus, dEOverPCutMap[Electron]);
+*/
 /********************************************************************* CONSTRUCTOR **********************************************************************/
 
 DSourceComboer::DSourceComboer(JEventLoop* locEventLoop)
@@ -230,49 +290,7 @@ DSourceComboer::DSourceComboer(JEventLoop* locEventLoop)
 	japp->RootWriteLock(); //ACQUIRE ROOT LOCK!!
 	{
 		//CDC dE/dx Proton, Anti-Proton
-//COMPARE:
-		ddEdxCutMap[Proton][SYS_CDC].first = new TF1("df_dEdxCut_CDC_ProtonLow", "exp(-1.0*[0]*x + [1]) + [2]", 0.0, 12.0);
-		ddEdxCutMap[Proton][SYS_CDC].first->SetParameters(4.0, 2.25, 1.0);
-		ddEdxCutMap[Proton][SYS_CDC].second = new TF1("df_dEdxCut_CDC_ProtonHigh", "[0]", 0.0, 12.0);
-		ddEdxCutMap[Proton][SYS_CDC].second->SetParameter(0, 9.9E9);
-		ddEdxCutMap.emplace(AntiProton, ddEdxCutMap[Proton]);
 
-		//CDC dE/dx Pi+/-
-		ddEdxCutMap[PiPlus][SYS_CDC].first = new TF1("df_dEdxCut_CDC_PionLow", "[0]", 0.0, 12.0);
-		ddEdxCutMap[PiPlus][SYS_CDC].first->SetParameter(0, -9.9E9);
-		ddEdxCutMap[PiPlus][SYS_CDC].second = new TF1("df_dEdxCut_CDC_PionHigh", "exp(-1.0*[0]*x + [1]) + [2]", 0.0, 12.0);
-		ddEdxCutMap[PiPlus][SYS_CDC].second->SetParameters(-0.1, 0.5, 1.2);
-		ddEdxCutMap.emplace(PiMinus, ddEdxCutMap[PiPlus]);
-
-		//CDC dE/dx K+/K-
-		ddEdxCutMap[KPlus][SYS_CDC].first = new TF1("df_dEdxCut_CDC_KaonLow", "[0]", 0.0, 12.0);
-		ddEdxCutMap[KPlus][SYS_CDC].first->SetParameter(0, -9.9E9);
-		ddEdxCutMap[KPlus][SYS_CDC].second = new TF1("df_dEdxCut_CDC_KaonHigh", "exp(-1.0*[0]*x + [1]) + [2]", 0.0, 12.0);
-		ddEdxCutMap[KPlus][SYS_CDC].second->SetParameters(2.0, 0.8, 3.0);
-		ddEdxCutMap.emplace(KMinus, ddEdxCutMap[KPlus]);
-
-		//CDC dE/dx e+/e-
-		ddEdxCutMap[Electron][SYS_CDC].first = new TF1("df_dEdxCut_CDC_ElectronLow", "[0]", 0.0, 12.0);
-		ddEdxCutMap[Electron][SYS_CDC].first->SetParameter(0, -9999999.9);
-		ddEdxCutMap[Electron][SYS_CDC].second = new TF1("df_dEdxCut_CDC_ElectronHigh", "[0]", 0.0, 12.0);
-		ddEdxCutMap[Electron][SYS_CDC].second->SetParameter(0, 5.5);
-
-		//FDC dE/dx e+/e-
-		ddEdxCutMap[Electron][SYS_FDC].first = new TF1("df_dEdxCut_CDC_ElectronLow", "[0]", 0.0, 12.0);
-		ddEdxCutMap[Electron][SYS_FDC].first->SetParameter(0, -9999999.9);
-		ddEdxCutMap[Electron][SYS_FDC].second = new TF1("df_dEdxCut_CDC_ElectronHigh", "[0]", 0.0, 12.0);
-		ddEdxCutMap[Electron][SYS_FDC].second->SetParameter(0, 3.5);
-		ddEdxCutMap.emplace(Positron, ddEdxCutMap[Electron]);
-/*
-		//E/p
-		dEOverPCutMap[Electron][SYS_FCAL] = new TF1("df_EOverPCut_FCAL_Electron", "[0]", 0.0, 12.0);
-		dEOverPCutMap[Electron][SYS_FCAL]->SetParameter(0.0, 0.7);
-		dEOverPCutMap[Electron][SYS_BCAL] = new TF1("df_EOverPCut_BCAL_Electron", "[0]", 0.0, 12.0);
-		dEOverPCutMap[Electron][SYS_BCAL]->SetParameter(0.0, 0.67);
-		dEOverPCutMap.emplace(Positron, dEOverPCutMap[Electron]);
-		dEOverPCutMap.emplace(MuonPlus, dEOverPCutMap[Electron]);
-		dEOverPCutMap.emplace(MuonMinus, dEOverPCutMap[Electron]);
-*/
 		vector<DetectorSystem_t> locdEdxSystems {SYS_CDC, SYS_FDC, SYS_START, SYS_TOF};
 		vector<Particle_t> locPIDs {Electron, Positron, MuonPlus, MuonMinus, PiPlus, PiMinus, KPlus, KMinus, Proton, AntiProton};
 		vector<DetectorSystem_t> locEOverPSystems {SYS_BCAL, SYS_FCAL};

@@ -128,6 +128,7 @@ class DSourceComboer : public JObject
 		/********************************************************** DECLARE MEMBER FUNCTIONS ***********************************************************/
 
 		//SETUP
+		void Define_DefaultCuts(void);
 		void Setup_NeutralShowers(JEventLoop* locEventLoop);
 		void Recycle_Vectors(void);
 
@@ -229,6 +230,11 @@ class DSourceComboer : public JObject
 
 		//EXPERIMENT INFORMATION
 		DVector3 dTargetCenter;
+
+		//INPUT CUTS
+		string dDefaultdEdxCutFunctionString = "[0]";
+		map<Particle_t, map<DetectorSystem_t, pair<string, string>>> ddEdxCuts_TF1FunctionStrings; //pair: low bound, high bound
+		map<Particle_t, map<DetectorSystem_t, pair<vector<double>, vector<double>>>> ddEdxCuts_TF1Params; //pair: low bound, high bound
 
 		//RF BUNCH CUTS
 		pair<bool, size_t> dNumPlusMinusRFBunches = std::make_pair(false, 0); //by default use DReaction cut //only use this if set on command line
