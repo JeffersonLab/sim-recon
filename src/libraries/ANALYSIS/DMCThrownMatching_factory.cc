@@ -627,20 +627,15 @@ void DMCThrownMatching_factory::Find_GenReconMatches_NeutralParticle(const vecto
 	locMCThrownMatching->Get_NeutralHypoToThrownMap(locNeutralHypoToThrownMap);
 	locMCThrownMatching->Get_ThrownToNeutralHypoMap(locThrownToNeutralHypoMap);
 
-	vector<const DNeutralShower*> locNeutralShowerVector_Matched;
-	vector<const DNeutralShower*> locNeutralShowerVector_Check;
-
 	map<const DNeutralParticle*, pair<const DMCThrown*, double> > locNeutralToThrownMap;
 	map<const DMCThrown*, pair<const DNeutralParticle*, double> > locThrownToNeutralMap;
 
 	map<const DMCThrown*, pair<deque<const DNeutralParticleHypothesis*>, double> >::iterator locIterator;
 	for(locIterator = locThrownToNeutralHypoMap.begin(); locIterator != locThrownToNeutralHypoMap.end(); ++locIterator)
 	{
-		(locIterator->second.first)[0]->GetT(locNeutralShowerVector_Matched);
 		for(size_t loc_j = 0; loc_j < locNeutralParticles.size(); ++loc_j)
 		{
-			locNeutralParticles[loc_j]->GetT(locNeutralShowerVector_Check);
-			if(locNeutralShowerVector_Check[0] == locNeutralShowerVector_Matched[0])
+			if((locIterator->second.first)[0]->Get_NeutralShower() == locNeutralParticles[loc_j]->dNeutralShower)
 			{
 				locNeutralToThrownMap[locNeutralParticles[loc_j]] = pair<const DMCThrown*, double>(locIterator->first, locIterator->second.second);
 				locThrownToNeutralMap[locIterator->first] = pair<const DNeutralParticle*, double>(locNeutralParticles[loc_j], locIterator->second.second);
@@ -721,13 +716,9 @@ void DMCThrownMatching_factory::Find_GenReconMatches_NeutralHypo(const vector<co
 
 		//automatically add all other DNeutralParticleHypothesis objects from the same DNeutralShower to this match.
 		deque<const DNeutralParticleHypothesis*> locMatchedNeutralHypos(1, locNeutralParticleHypothesis);
-		vector<const DNeutralShower*> locNeutralShowerVector_Matched;
-		vector<const DNeutralShower*> locNeutralShowerVector_Check;
-		locNeutralParticleHypothesis->GetT(locNeutralShowerVector_Matched);
 		for(size_t loc_i = 0; loc_i < locNeutralParticleHypothesisVector.size(); ++loc_i)
 		{
-			locNeutralParticleHypothesisVector[loc_i]->GetT(locNeutralShowerVector_Check);
-			if(locNeutralShowerVector_Check[0] == locNeutralShowerVector_Matched[0])
+			if(locNeutralParticleHypothesis->Get_NeutralShower() == locNeutralParticleHypothesisVector[loc_i]->Get_NeutralShower())
 			{
 				locNeutralToThrownMap[locNeutralParticleHypothesisVector[loc_i]] = pair<const DMCThrown*, double>(locMCThrown, locMatchFOM);
 				locMatchedNeutralHypos.push_back(locNeutralParticleHypothesisVector[loc_i]);

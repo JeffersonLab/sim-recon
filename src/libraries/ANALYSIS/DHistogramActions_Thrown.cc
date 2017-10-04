@@ -1299,9 +1299,7 @@ bool DHistogramAction_GenReconTrackComparison::Perform_Action(JEventLoop* locEve
 		locDeltaVertexZ = locChargedTrackHypothesis->position().Z() - locMCThrown->position().Z();
 		const TMatrixDSym& locCovarianceMatrix = *(locChargedTrackHypothesis->errorMatrix().get());
 
-		vector<const DTrackTimeBased*> locTrackTimeBasedVector;
-		locChargedTrackHypothesis->Get(locTrackTimeBasedVector);
-		const DTrackTimeBased* locTrackTimeBased = locTrackTimeBasedVector[0];
+		const DTrackTimeBased* locTrackTimeBased = locChargedTrackHypothesis->Get_TrackTimeBased();
 
 		double locStartTime = locThrownEventRFBunch->dTime + (locMCThrown->z() - dTargetZCenter)/29.9792458;
 		double locTimePull = (locStartTime - locChargedTrackHypothesis->time())/sqrt(locCovarianceMatrix(6, 6));
