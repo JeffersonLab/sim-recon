@@ -49,8 +49,8 @@ class JEventProcessor_CDC_Efficiency:public jana::JEventProcessor{
 		jerror_t fini(void);						///< Called after last event of last event source has been processed.
 
 		void GitRDun(unsigned int ringNum, const DTrackTimeBased *thisTimeBasedTrack, map<int, map<int, set<const DCDCTrackHit*> > >& locSorteDCDCTrackHits);
-		bool Expect_Hit(const DTrackTimeBased* thisTimeBasedTrack, DCDCWire* wire, double distanceToWire, double& delta, double& dz);
-		void Fill_MeasuredHit(int ringNum, int wireNum, double distanceToWire, const DTrackTimeBased* thisTimeBasedTrack, DCDCWire* wire, const DCDCHit* locHit);
+		bool Expect_Hit(const DTrackTimeBased* thisTimeBasedTrack, DCDCWire* wire, double distanceToWire, const DVector3 &pos, double& delta, double& dz);
+		void Fill_MeasuredHit(int ringNum, int wireNum, double distanceToWire, const DVector3 &pos, const DVector3 &mom, DCDCWire* wire, const DCDCHit* locHit);
 		void Fill_ExpectedHit(int ringNum, int wireNum, double distanceToWire);
 		const DCDCTrackHit* Find_Hit(int locRing, int locProjectedStraw, map<int, set<const DCDCTrackHit*> >& locSorteDCDCTrackHits);
 
@@ -79,6 +79,10 @@ class JEventProcessor_CDC_Efficiency:public jana::JEventProcessor{
 		TH2I *ChargeVsTrackLength;
 		TH1I * hChi2OverNDF;
 		TH2I *hResVsT;
+		
+		const DTrackFitter *fitter; 
+		const DParticleID* pid_algorithm;
+
 };
 
 #endif // _JEventProcessor_CDC_Efficiency_
