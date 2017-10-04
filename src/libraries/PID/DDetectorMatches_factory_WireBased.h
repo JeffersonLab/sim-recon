@@ -10,6 +10,7 @@
 
 #include <iostream>
 #include <iomanip>
+#include <memory>
 
 #include <JANA/JFactory.h>
 #include <PID/DDetectorMatches.h>
@@ -37,8 +38,6 @@ class DDetectorMatches_factory_WireBased : public jana::JFactory<DDetectorMatche
 		jerror_t init(void);						///< Called once at program start.
 		jerror_t brun(jana::JEventLoop *locEventLoop, int32_t runnumber);	///< Called everytime a new run number is detected.
 		jerror_t evnt(jana::JEventLoop *locEventLoop, uint64_t eventnumber);	///< Called every event.
-		jerror_t erun(void);						///< Called everytime run number changes, provided brun has been called.
-		jerror_t fini(void);						///< Called after last event of last event source has been processed.
 
 		//matching tracks to hits/showers routines
 		void MatchToTOF(const DParticleID* locParticleID, const DTrackWireBased* locTrackWireBased, const vector<const DTOFPoint*>& locTOFPoints, DDetectorMatches* locDetectorMatches) const;

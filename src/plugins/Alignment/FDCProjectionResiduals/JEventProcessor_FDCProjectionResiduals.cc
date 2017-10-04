@@ -167,8 +167,7 @@ jerror_t JEventProcessor_FDCProjectionResiduals::evnt(JEventLoop *loop, uint64_t
 
       
       // Cut very loosely on the track quality
-      const DTrackTimeBased *thisTimeBasedTrack = nullptr;
-      bestHypothesis->GetSingle(thisTimeBasedTrack);
+      auto thisTimeBasedTrack = bestHypothesis->Get_TrackTimeBased();
 
       double t0 = thisTimeBasedTrack->t0();
 

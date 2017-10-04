@@ -32,6 +32,7 @@ class DCustomAction_p2gamma_hists : public DAnalysisAction
 		DAnalysisAction(locReaction, "Custom_p2gamma_hists", locUseKinFitResultsFlag, locActionUniqueString) {}
 
 		void Initialize(JEventLoop* locEventLoop);
+		void Reset_NewEvent(void){dPreviousSourceObjects.clear();}
 
 	private:
 

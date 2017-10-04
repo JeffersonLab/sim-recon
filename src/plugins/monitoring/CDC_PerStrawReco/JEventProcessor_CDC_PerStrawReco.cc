@@ -111,8 +111,7 @@ jerror_t JEventProcessor_CDC_PerStrawReco::evnt(JEventLoop *loop, uint64_t event
         //if (trackCandidateVector.size() != 1) return NOERROR;
         //const DTrackCandidate* thisTrackCandidate = trackCandidateVector[0];
         // Cut very loosely on the track quality
-        const DTrackTimeBased *thisTimeBasedTrack;
-        bestHypothesis->GetSingle(thisTimeBasedTrack);
+        auto thisTimeBasedTrack = bestHypothesis->Get_TrackTimeBased();
         if (thisTimeBasedTrack->FOM < 1E-20) continue;
         if (!thisTimeBasedTrack->IsSmoothed) continue;
         vector<DTrackFitter::pull_t> pulls = thisTimeBasedTrack->pulls;
