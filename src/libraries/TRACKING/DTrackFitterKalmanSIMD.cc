@@ -9267,9 +9267,19 @@ jerror_t DTrackFitterKalmanSIMD::ExtrapolateForwardToOtherDetectors(){
     else{ // extrapolations in FDC region
       if (fdc_plane==24) break;	
 
-      // output step near wire plane
-      if (z>fdc_z_wires[fdc_plane]-0.1){
-	DVector3 position(S(state_x),S(state_y),z);
+      // output step near wire plane  
+      if (z>fdc_z_wires[fdc_plane]-0.25){	
+	double dz=z-fdc_z_wires[fdc_plane];
+	//printf("extrp dz %f\n",dz);
+	if (fabs(dz)>EPS2){
+	  Step(z,fdc_z_wires[fdc_plane],0.,S);
+	  tsquare=S(state_tx)*S(state_tx)+S(state_ty)*S(state_ty);
+	  tanl=1./sqrt(tsquare);
+	  cosl=cos(atan(tanl));
+	  pt=cosl/fabs(S(state_q_over_p));
+	  phi=atan2(S(state_ty),S(state_tx)); 
+	}
+	DVector3 position(S(state_x),S(state_y),fdc_z_wires[fdc_plane]);
 	DVector3 momentum(pt*cos(phi),pt*sin(phi),pt*tanl);
 	extrapolations[SYS_FDC].push_back(Extrapolation_t(position,momentum,
 						t*TIME_UNIT_CONVERSION,s,
