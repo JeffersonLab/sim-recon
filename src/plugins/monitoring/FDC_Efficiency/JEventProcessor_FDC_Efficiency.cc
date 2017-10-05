@@ -378,7 +378,14 @@ jerror_t JEventProcessor_FDC_Efficiency::evnt(JEventLoop *loop, uint64_t eventnu
       DVector3 plane_origin(0.0, 0.0, fdcz[cellIndex]);
       DVector3 plane_normal(0.0, 0.0, 1.0);
       DVector3 interPosition;
-      thisTimeBasedTrack->rt->GetIntersectionWithPlane(plane_origin, plane_normal, interPosition);
+      vector<DTrackFitter::Extrapolation_t>extrapolations=thisTimeBasedTrack->extrapolations.at(SYS_FDC);
+      for (unsigned int i=0;i<extrapolations.size();i++){
+	double dz=plane_origin.z()-extrapolations[i].position.z();
+	if (fabs(dz)<0.5){
+	  interPosition=extrapolations[i].position;
+	  break;
+	}
+      }
       
       // cut out central hole and intersections at too large radii
       int packageIndex = (cellNum - 1) / 6;
@@ -390,8 +397,7 @@ jerror_t JEventProcessor_FDC_Efficiency::evnt(JEventLoop *loop, uint64_t eventnu
       for (unsigned int wireIndex = 0; wireIndex < wireByNumber.size(); wireIndex++){
 	unsigned int wireNum = wireIndex+1;
 	DFDCWire * wire = wireByNumber[wireIndex]; 
-	double wireLength = wire->L;
-	double distanceToWire = thisTimeBasedTrack->rt->DistToRT(wire, &wireLength);
+	double distanceToWire =  (interPosition-wire->origin).Perp();
 	bool expectHit = false;
 
 	// starting from here, only histograms with distance to wire < 0.5, maybe change later
