@@ -10,26 +10,6 @@
 #include "DCustomAction_CutExtraPi0.h"
 #include "DCustomAction_CutExtraTrackPID.h"
 
-void DReaction_factory_p3pi_hists::PIDCuts(DReaction* locReaction)
-{
-	locReaction->Add_AnalysisAction(new DHistogramAction_PID(locReaction, false));
-	locReaction->Add_AnalysisAction(new DCutAction_PIDDeltaT(locReaction, false, 2.0, Proton, SYS_TOF));
-	locReaction->Add_AnalysisAction(new DCutAction_PIDDeltaT(locReaction, false, 2.5, Proton, SYS_BCAL));
-	locReaction->Add_AnalysisAction(new DCutAction_PIDDeltaT(locReaction, false, 3.0, Proton, SYS_FCAL));
-	locReaction->Add_AnalysisAction(new DCutAction_PIDDeltaT(locReaction, false, 2.0, PiPlus, SYS_TOF));
-	locReaction->Add_AnalysisAction(new DCutAction_PIDDeltaT(locReaction, false, 1.5, PiPlus, SYS_BCAL));
-	locReaction->Add_AnalysisAction(new DCutAction_PIDDeltaT(locReaction, false, 3.0, PiPlus, SYS_FCAL));
-	locReaction->Add_AnalysisAction(new DCutAction_PIDDeltaT(locReaction, false, 2.0, PiMinus, SYS_TOF));
-	locReaction->Add_AnalysisAction(new DCutAction_PIDDeltaT(locReaction, false, 1.5, PiMinus, SYS_BCAL));
-	locReaction->Add_AnalysisAction(new DCutAction_PIDDeltaT(locReaction, false, 3.0, PiMinus, SYS_FCAL));
-	locReaction->Add_AnalysisAction(new DCutAction_PIDDeltaT(locReaction, false, 2.0, Gamma, SYS_BCAL)); //false: measured data
-	locReaction->Add_AnalysisAction(new DCutAction_PIDDeltaT(locReaction, false, 3.0, Gamma, SYS_FCAL)); //false: measured data
-	locReaction->Add_AnalysisAction(new DCutAction_dEdx(locReaction));
-	locReaction->Add_AnalysisAction(new DHistogramAction_PID(locReaction, false, "PostPIDCuts"));
-}
-	
-
-
 //------------------
 // brun
 //------------------
@@ -105,7 +85,7 @@ jerror_t DReaction_factory_p3pi_hists::evnt(JEventLoop* locEventLoop, uint64_t l
 	locReaction->Add_AnalysisAction(new DCustomAction_p3pi_Pi0Cuts(locReaction, false, 2));
 
 	// PID
-	PIDCuts(locReaction);
+	locReaction->Add_AnalysisAction(new DHistogramAction_PID(locReaction, false));
 
 	// MASSES
 	locReaction->Add_AnalysisAction(new DHistogramAction_InvariantMass(locReaction, Pi0, false, 850, 0.05, 0.22, "Pi0"));
@@ -133,9 +113,37 @@ jerror_t DReaction_factory_p3pi_hists::evnt(JEventLoop* locEventLoop, uint64_t l
 	/**************************************************** p3pi_preco_FCAL-BCAL Reaction Steps ****************************************************/
 
 	locReaction = new DReaction("p3pi_preco_FCAL-BCAL"); //needs to be a unique name for each DReaction object, CANNOT (!) be "Thrown"
-	locReaction->Add_ReactionStep(dReactionStepPool[0]);
-	locReaction->Add_ReactionStep(dReactionStepPool[1]);
-	locReaction->Add_ReactionStep(dReactionStepPool[2]);
+
+	// g, p -> omega, p
+	locReactionStep = new DReactionStep();
+	locReactionStep->Set_InitialParticleID(Gamma);
+	locReactionStep->Set_TargetParticleID(Proton);
+	locReactionStep->Add_FinalParticleID(omega);
+	locReactionStep->Add_FinalParticleID(Proton); 
+	locReaction->Add_ReactionStep(locReactionStep);
+	dReactionStepPool.push_back(locReactionStep); //register so will be deleted later: prevent memory leak
+
+	// omega -> pi+, pi-, pi0
+	locReactionStep = new DReactionStep();
+	locReactionStep->Set_InitialParticleID(omega);
+	locReactionStep->Add_FinalParticleID(PiPlus);
+	locReactionStep->Add_FinalParticleID(PiMinus);
+	locReactionStep->Add_FinalParticleID(Pi0);
+	locReaction->Add_ReactionStep(locReactionStep);
+	dReactionStepPool.push_back(locReactionStep); //register so will be deleted later: prevent memory leak
+
+	// pi0 -> g, g
+	locReactionStep = new DReactionStep();
+	locReactionStep->Set_InitialParticleID(Pi0);
+	locReactionStep->Add_FinalParticleID(Gamma);
+	locReactionStep->Add_FinalParticleID(Gamma);
+	locReaction->Add_ReactionStep(locReactionStep);
+	dReactionStepPool.push_back(locReactionStep); //register so will be deleted later: prevent memory leak
+
+
+//	locReaction->Add_ReactionStep(new DReactionStep(dReactionStepPool[0]));
+//	locReaction->Add_ReactionStep(new DReactionStep(dReactionStepPool[1]));
+//	locReaction->Add_ReactionStep(new DReactionStep(dReactionStepPool[2]));
 
 	/**************************************************** p3pi_preco_FCAL-BCAL Control Settings ****************************************************/
 
@@ -154,7 +162,7 @@ jerror_t DReaction_factory_p3pi_hists::evnt(JEventLoop* locEventLoop, uint64_t l
 	locReaction->Add_AnalysisAction(new DCustomAction_p3pi_Pi0Cuts(locReaction, false, 1));
 
 	// PID
-	PIDCuts(locReaction);
+	locReaction->Add_AnalysisAction(new DHistogramAction_PID(locReaction, false));
 
 	// MASSES
 	locReaction->Add_AnalysisAction(new DHistogramAction_InvariantMass(locReaction, Pi0, false, 850, 0.05, 0.22, "Pi0"));
@@ -203,7 +211,7 @@ jerror_t DReaction_factory_p3pi_hists::evnt(JEventLoop* locEventLoop, uint64_t l
 	locReaction->Add_AnalysisAction(new DCustomAction_p3pi_Pi0Cuts(locReaction, false, 0));
 
 	// PID
-	PIDCuts(locReaction);
+	locReaction->Add_AnalysisAction(new DHistogramAction_PID(locReaction, false));
 
 	// MASSES
 	locReaction->Add_AnalysisAction(new DHistogramAction_InvariantMass(locReaction, Pi0, false, 850, 0.05, 0.22, "Pi0"));
@@ -224,7 +232,7 @@ jerror_t DReaction_factory_p3pi_hists::evnt(JEventLoop* locEventLoop, uint64_t l
 	// Kinematics of final selection
 	locReaction->Add_AnalysisAction(new DHistogramAction_ParticleComboKinematics(locReaction, false, "Final")); //false: fill histograms with measured particle data
 
-	_data.push_back(locReaction); //Register the DReaction with the factory
+//	_data.push_back(locReaction); //Register the DReaction with the factory
 
 
 
@@ -249,7 +257,7 @@ jerror_t DReaction_factory_p3pi_hists::evnt(JEventLoop* locEventLoop, uint64_t l
 	/**************************************************** p3pi_preco_any Analysis Actions ****************************************************/
 
 	// PID
-	PIDCuts(locReaction);
+	locReaction->Add_AnalysisAction(new DHistogramAction_PID(locReaction, false));
 
 	// Pi0
 	locReaction->Add_AnalysisAction(new DHistogramAction_InvariantMass(locReaction, Pi0, false, 850, 0.05, 0.22, "Pi0"));
@@ -268,7 +276,7 @@ jerror_t DReaction_factory_p3pi_hists::evnt(JEventLoop* locEventLoop, uint64_t l
 	// Kinematics of final selection
 	locReaction->Add_AnalysisAction(new DHistogramAction_ParticleComboKinematics(locReaction, false, "Final")); //false: fill histograms with measured particle data
 
-	_data.push_back(locReaction); //Register the DReaction with the factory
+//	_data.push_back(locReaction); //Register the DReaction with the factory
 
 
 
@@ -293,7 +301,7 @@ jerror_t DReaction_factory_p3pi_hists::evnt(JEventLoop* locEventLoop, uint64_t l
 	/**************************************************** p3pi_preco_any_kinfit Analysis Actions ****************************************************/
 
 	// PID
-	PIDCuts(locReaction);
+	locReaction->Add_AnalysisAction(new DHistogramAction_PID(locReaction, false));
 
 	// MASSES
 	locReaction->Add_AnalysisAction(new DHistogramAction_InvariantMass(locReaction, Pi0, false, 850, 0.05, 0.22, "Pi0"));
@@ -314,7 +322,7 @@ jerror_t DReaction_factory_p3pi_hists::evnt(JEventLoop* locEventLoop, uint64_t l
 	// Kinematics of final selection
 	locReaction->Add_AnalysisAction(new DHistogramAction_ParticleComboKinematics(locReaction, false, "Final")); //false: fill histograms with measured particle data
 
-	_data.push_back(locReaction); //Register the DReaction with the factory
+//	_data.push_back(locReaction); //Register the DReaction with the factory
 
 	return NOERROR;
 }
