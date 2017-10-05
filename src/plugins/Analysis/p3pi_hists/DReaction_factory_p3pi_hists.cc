@@ -113,37 +113,9 @@ jerror_t DReaction_factory_p3pi_hists::evnt(JEventLoop* locEventLoop, uint64_t l
 	/**************************************************** p3pi_preco_FCAL-BCAL Reaction Steps ****************************************************/
 
 	locReaction = new DReaction("p3pi_preco_FCAL-BCAL"); //needs to be a unique name for each DReaction object, CANNOT (!) be "Thrown"
-
-	// g, p -> omega, p
-	locReactionStep = new DReactionStep();
-	locReactionStep->Set_InitialParticleID(Gamma);
-	locReactionStep->Set_TargetParticleID(Proton);
-	locReactionStep->Add_FinalParticleID(omega);
-	locReactionStep->Add_FinalParticleID(Proton); 
-	locReaction->Add_ReactionStep(locReactionStep);
-	dReactionStepPool.push_back(locReactionStep); //register so will be deleted later: prevent memory leak
-
-	// omega -> pi+, pi-, pi0
-	locReactionStep = new DReactionStep();
-	locReactionStep->Set_InitialParticleID(omega);
-	locReactionStep->Add_FinalParticleID(PiPlus);
-	locReactionStep->Add_FinalParticleID(PiMinus);
-	locReactionStep->Add_FinalParticleID(Pi0);
-	locReaction->Add_ReactionStep(locReactionStep);
-	dReactionStepPool.push_back(locReactionStep); //register so will be deleted later: prevent memory leak
-
-	// pi0 -> g, g
-	locReactionStep = new DReactionStep();
-	locReactionStep->Set_InitialParticleID(Pi0);
-	locReactionStep->Add_FinalParticleID(Gamma);
-	locReactionStep->Add_FinalParticleID(Gamma);
-	locReaction->Add_ReactionStep(locReactionStep);
-	dReactionStepPool.push_back(locReactionStep); //register so will be deleted later: prevent memory leak
-
-
-//	locReaction->Add_ReactionStep(new DReactionStep(dReactionStepPool[0]));
-//	locReaction->Add_ReactionStep(new DReactionStep(dReactionStepPool[1]));
-//	locReaction->Add_ReactionStep(new DReactionStep(dReactionStepPool[2]));
+	locReaction->Add_ReactionStep(dReactionStepPool[0]);
+	locReaction->Add_ReactionStep(dReactionStepPool[1]);
+	locReaction->Add_ReactionStep(dReactionStepPool[2]);
 
 	/**************************************************** p3pi_preco_FCAL-BCAL Control Settings ****************************************************/
 
@@ -232,7 +204,7 @@ jerror_t DReaction_factory_p3pi_hists::evnt(JEventLoop* locEventLoop, uint64_t l
 	// Kinematics of final selection
 	locReaction->Add_AnalysisAction(new DHistogramAction_ParticleComboKinematics(locReaction, false, "Final")); //false: fill histograms with measured particle data
 
-//	_data.push_back(locReaction); //Register the DReaction with the factory
+	_data.push_back(locReaction); //Register the DReaction with the factory
 
 
 
@@ -276,7 +248,7 @@ jerror_t DReaction_factory_p3pi_hists::evnt(JEventLoop* locEventLoop, uint64_t l
 	// Kinematics of final selection
 	locReaction->Add_AnalysisAction(new DHistogramAction_ParticleComboKinematics(locReaction, false, "Final")); //false: fill histograms with measured particle data
 
-//	_data.push_back(locReaction); //Register the DReaction with the factory
+	_data.push_back(locReaction); //Register the DReaction with the factory
 
 
 
@@ -322,7 +294,7 @@ jerror_t DReaction_factory_p3pi_hists::evnt(JEventLoop* locEventLoop, uint64_t l
 	// Kinematics of final selection
 	locReaction->Add_AnalysisAction(new DHistogramAction_ParticleComboKinematics(locReaction, false, "Final")); //false: fill histograms with measured particle data
 
-//	_data.push_back(locReaction); //Register the DReaction with the factory
+	_data.push_back(locReaction); //Register the DReaction with the factory
 
 	return NOERROR;
 }
