@@ -876,7 +876,7 @@ void DTrackHitSelectorALT2::GetFDCHits(double Bz,double q,
       DVector3 pos=extrapolations[k].position;
       double dz=pos.z()-z0;
       double s=extrapolations[k].s;
-      if (fabs(pos.z()-hit->wire->origin.z())<0.1){ 	
+      if (fabs(pos.z()-hit->wire->origin.z())<0.5){
 	// Variance in dip angle due to multiple scattering
 	var_lambda = extrapolations[k].theta2ms_sum;
 
@@ -916,7 +916,7 @@ void DTrackHitSelectorALT2::GetFDCHits(double Bz,double q,
 	double dx=hit->xy.X()-x;
 	double dy=hit->xy.Y()-y;
 	double doca=sqrt(dx*dx+dy*dy);
-	
+
 	// Direction variables for wire
 	double cosa=hit->wire->udir.y();
 	double sina=hit->wire->udir.x();
