@@ -575,7 +575,8 @@ void DSourceComboer::Create_SourceComboInfos(const DReactionVertexInfo* locReact
 		dSourceComboUseReactionMap.emplace(locStepVertexInfo, locStepComboUseMap[locStepVertexInfo->Get_StepIndices().front()]);
 	for(const auto& locUseStepPair : locStepComboUseMap)
 		dSourceComboInfoStepMap.emplace(std::make_pair(locReactionVertexInfo->Get_StepVertexInfo(locUseStepPair.first), locUseStepPair.second), locUseStepPair.first);
-	dSourceComboUseReactionStepMap.emplace(locReaction, locStepComboUseMap);
+	for(auto locTempReaction : locReactionVertexInfo->Get_Reactions())
+		dSourceComboUseReactionStepMap.emplace(locTempReaction, locStepComboUseMap);
 
 	if(dDebugLevel > 0)
 		cout << "DSourceComboInfo OBJECTS CREATED" << endl;

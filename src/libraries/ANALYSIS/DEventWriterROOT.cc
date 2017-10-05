@@ -244,10 +244,21 @@ TMap* DEventWriterROOT::Create_UserInfoMaps(DTreeBranchRegister& locBranchRegist
 	//find the # particles of each pid
 	map<Particle_t, unsigned int> locParticleNumberMap;
 	map<Particle_t, unsigned int> locDecayingParticleNumberMap;
+	map<Particle_t, unsigned int> locTargetParticleNumberMap;
 	for(size_t loc_i = 0; loc_i < locReaction->Get_NumReactionSteps(); ++loc_i)
 	{
 		const DReactionStep* locReactionStep = locReaction->Get_ReactionStep(loc_i);
 		auto locFinalParticleIDs = locReactionStep->Get_FinalPIDs();
+
+		auto locTargetPID = locReactionStep->Get_TargetPID();
+		if(locTargetPID != Unknown)
+		{
+			if(locTargetParticleNumberMap.find(locTargetPID) == locTargetParticleNumberMap.end())
+				locTargetParticleNumberMap[locTargetPID] = 1;
+			else
+				++locTargetParticleNumberMap[locTargetPID];
+		}
+
 		for(size_t loc_j = 0; loc_j < locFinalParticleIDs.size(); ++loc_j)
 		{
 			if(locReactionStep->Get_MissingParticleIndex() == int(loc_j)) //missing particle
@@ -274,7 +285,7 @@ TMap* DEventWriterROOT::Create_UserInfoMaps(DTreeBranchRegister& locBranchRegist
 	}
 
 	//Create map objects
-	map<Particle_t, unsigned int> locParticleNumberMap_Current, locDecayingParticleNumberMap_Current;
+	map<Particle_t, unsigned int> locParticleNumberMap_Current, locDecayingParticleNumberMap_Current, locTargetParticleNumberMap_Current;
 	Particle_t locTargetPID = Unknown;
 	TObjString *locObjString_PID, *locObjString_Position, *locObjString_ParticleName;
 	map<int, string> locDecayingParticleNames; //key is step index where they decay
@@ -319,9 +330,14 @@ TMap* DEventWriterROOT::Create_UserInfoMaps(DTreeBranchRegister& locBranchRegist
 
 		//target particle
 		Particle_t locTempTargetPID = locReactionStep->Get_TargetPID();
-		if((loc_i == 0) && (locTempTargetPID != Unknown))
+		if(locTempTargetPID != Unknown)
 		{
 			locTargetPID = locTempTargetPID;
+
+			if(locTargetParticleNumberMap_Current.find(locTargetPID) == locTargetParticleNumberMap_Current.end())
+				locTargetParticleNumberMap_Current[locTargetPID] = 1;
+			else
+				++locTargetParticleNumberMap_Current[locTargetPID];
 
 			ostringstream locPIDStream, locPositionStream, locParticleNameStream;
 			locPIDStream << PDGtype(locTargetPID);
@@ -333,6 +349,8 @@ TMap* DEventWriterROOT::Create_UserInfoMaps(DTreeBranchRegister& locBranchRegist
 			locPositionToPIDMap->Add(locObjString_Position, locObjString_PID);
 
 			locParticleNameStream << "Target";
+			if(locTargetParticleNumberMap[locTargetPID] > 1)
+				locParticleNameStream << locTargetParticleNumberMap_Current[locTargetPID];
 			locObjString_ParticleName = new TObjString(locParticleNameStream.str().c_str());
 
 			locNameToPositionMap->Add(locObjString_ParticleName, locObjString_Position);
