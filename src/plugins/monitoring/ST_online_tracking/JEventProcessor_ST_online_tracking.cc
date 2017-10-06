@@ -215,8 +215,8 @@ jerror_t JEventProcessor_ST_online_tracking::evnt(JEventLoop *eventLoop, uint64_
       bool st_match = locDetectorMatches->Get_SCMatchParams(timeBasedTrack, st_params); 
       // If st_match = true, there is a match between this track and the ST
       if (!st_match) continue;
-
-      bool st_match_pid = dParticleID->Cut_MatchDistance(timeBasedTrack->rt, st_params[0].dSCHit, st_params[0].dSCHit->t, locSCHitMatchParams, true, &IntersectionPoint, &IntersectionMomentum);
+      vector<DTrackFitter::Extrapolation_t>extrapolations=timeBasedTrack->extrapolations.at(SYS_START);
+      bool st_match_pid = dParticleID->Cut_MatchDistance(extrapolations, st_params[0].dSCHit, st_params[0].dSCHit->t, locSCHitMatchParams, true, &IntersectionPoint, &IntersectionMomentum);
       if(!st_match_pid) continue;  
 
       DVector3 momentum_vec;
