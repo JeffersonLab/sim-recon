@@ -273,8 +273,8 @@ void DSourceComboTimeHandler::Get_CommandLineCuts(void)
 		dPIDTimingCuts_TF1Params[locPID][locSystem].clear(); //get rid of previous cut values
 		while(true)
 		{
-			auto locSpaceIndex = locKeyValue.find(' ');
-			auto locValueString = locKeyValue.substr(0, locSpaceIndex);
+			locUnderscoreIndex = locKeyValue.find('_');
+			auto locValueString = locKeyValue.substr(0, locUnderscoreIndex);
 
 			istringstream locValuetream(locValueString);
 			double locParameter;
@@ -286,15 +286,18 @@ void DSourceComboTimeHandler::Get_CommandLineCuts(void)
 
 			//save locParameter and truncate locKeyValue (or break if done)
 			dPIDTimingCuts_TF1Params[locPID][locSystem].push_back(locParameter);
-			if(locSpaceIndex == string::npos)
+			if(locUnderscoreIndex == string::npos)
 				break;
-			locKeyValue = locKeyValue.substr(locSpaceIndex + 1);
+			locKeyValue = locKeyValue.substr(locUnderscoreIndex + 1);
 		}
 	}
 }
 
 void DSourceComboTimeHandler::Create_CutFunctions(void)
 {
+	//No idea why this lock is necessary, but it crashes without it.  Stupid ROOT. 
+	japp->RootWriteLock(); //ACQUIRE ROOT LOCK!!
+
 	for(auto& locPIDPair : dPIDTimingCuts_TF1Params)
 	{
 		auto& locSystemMap = locPIDPair.second;
@@ -333,6 +336,8 @@ void DSourceComboTimeHandler::Create_CutFunctions(void)
 		}
 	}
 	dAllRFDeltaTs = dSelectedRFDeltaTs;
+
+	japp->RootUnLock(); //RELEASE ROOT LOCK!!
 }
 
 DSourceComboTimeHandler::DSourceComboTimeHandler(JEventLoop* locEventLoop, DSourceComboer* locSourceComboer, const DSourceComboVertexer* locSourceComboVertexer) :
@@ -378,7 +383,7 @@ DSourceComboTimeHandler::DSourceComboTimeHandler(JEventLoop* locEventLoop, DSour
 	while(dPhotonVertexZRangeLow + dPhotonVertexZBinWidth > locTargetUpstreamZ);
 	while(dPhotonVertexZRangeLow + locN*dPhotonVertexZBinWidth <= locTargetDownstreamZ)
 		++locN;
-	dNumPhotonVertexZBins = locN + 2; //two extra, for detached vertices
+	dNumPhotonVertexZBins = locN + size_t(ceil(20.0/dPhotonVertexZBinWidth) + 0.001); //20 more cm (two extra bins), for detached vertices
 
 	//print zbins
 	if(dDebugLevel > 0)

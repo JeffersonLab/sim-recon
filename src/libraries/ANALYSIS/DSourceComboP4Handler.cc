@@ -254,8 +254,8 @@ void DSourceComboP4Handler::Get_CommandLineCuts_MM2(void)
 			dMissingMassSquaredCuts_TF1Params[locPID].second.clear(); //get rid of previous cut values
 		while(true)
 		{
-			auto locSpaceIndex = locKeyValue.find(' ');
-			auto locValueString = locKeyValue.substr(0, locSpaceIndex);
+			locUnderscoreIndex = locKeyValue.find('_');
+			auto locValueString = locKeyValue.substr(0, locUnderscoreIndex);
 
 			istringstream locValuetream(locValueString);
 			double locParameter;
@@ -270,9 +270,9 @@ void DSourceComboP4Handler::Get_CommandLineCuts_MM2(void)
 				dMissingMassSquaredCuts_TF1Params[locPID].first.push_back(locParameter);
 			else
 				dMissingMassSquaredCuts_TF1Params[locPID].second.push_back(locParameter);
-			if(locSpaceIndex == string::npos)
+			if(locUnderscoreIndex == string::npos)
 				break;
-			locKeyValue = locKeyValue.substr(locSpaceIndex + 1);
+			locKeyValue = locKeyValue.substr(locUnderscoreIndex + 1);
 		}
 	}
 }
@@ -392,8 +392,8 @@ void DSourceComboP4Handler::Get_CommandLineCuts_MissingEnergy(void)
 			dMissingEnergyCuts_TF1Params.second.clear(); //get rid of previous cut values
 		while(true)
 		{
-			auto locSpaceIndex = locKeyValue.find(' ');
-			auto locValueString = locKeyValue.substr(0, locSpaceIndex);
+			locUnderscoreIndex = locKeyValue.find('_');
+			auto locValueString = locKeyValue.substr(0, locUnderscoreIndex);
 
 			istringstream locValuetream(locValueString);
 			double locParameter;
@@ -408,15 +408,18 @@ void DSourceComboP4Handler::Get_CommandLineCuts_MissingEnergy(void)
 				dMissingEnergyCuts_TF1Params.first.push_back(locParameter);
 			else
 				dMissingEnergyCuts_TF1Params.second.push_back(locParameter);
-			if(locSpaceIndex == string::npos)
+			if(locUnderscoreIndex == string::npos)
 				break;
-			locKeyValue = locKeyValue.substr(locSpaceIndex + 1);
+			locKeyValue = locKeyValue.substr(locUnderscoreIndex + 1);
 		}
 	}
 }
 
 void DSourceComboP4Handler::Create_CutFunctions(void)
 {
+	//No idea why this lock is necessary, but it crashes without it.  Stupid ROOT. 
+	japp->RootWriteLock(); //ACQUIRE ROOT LOCK!!
+
 	//Missing mass squared
 	for(auto& locPIDPair : dMissingMassSquaredCuts_TF1Params)
 	{
@@ -498,6 +501,8 @@ void DSourceComboP4Handler::Create_CutFunctions(void)
 		jout << endl;
 
 	dMissingECuts = std::make_pair(locFunc_Low, locFunc_High);
+
+	japp->RootUnLock(); //RELEASE ROOT LOCK!!
 }
 
 DSourceComboP4Handler::DSourceComboP4Handler(DSourceComboer* locSourceComboer, bool locCreateHistsFlag) : dSourceComboer(locSourceComboer)

@@ -110,7 +110,7 @@ class DSourceComboP4Handler
 
 		//CUTS
 		double dMaxMassiveNeutralBeta = 0.99999;
-		double d2PhotonInvariantMassCutError = 0.02;
+		double d2PhotonInvariantMassCutError = 0.02; //see derivation at top of .cc file
 		map<Particle_t, pair<double, double>> dInvariantMassCuts;
 		map<Particle_t, pair<TF1*, TF1*>> dMissingMassSquaredCuts; //cuts are function of beam energy //For none missing, Particle_t = unknown
 		pair<TF1*, TF1*> dMissingECuts; //for no-missing-particle only

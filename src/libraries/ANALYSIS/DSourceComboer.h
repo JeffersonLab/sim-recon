@@ -129,6 +129,9 @@ class DSourceComboer : public JObject
 
 		//SETUP
 		void Define_DefaultCuts(void);
+		void Get_CommandLineCuts_dEdx(void);
+		void Get_CommandLineCuts_EOverP(void);
+		void Create_CutFunctions(void);
 		void Setup_NeutralShowers(JEventLoop* locEventLoop);
 		void Recycle_Vectors(void);
 
@@ -227,14 +230,10 @@ class DSourceComboer : public JObject
 		uint64_t dEventNumber = 0; //re-setup on new events
 		string dShowerSelectionTag = "PreSelect";
 		int dDebugLevel = 0;
+		bool dPrintCutFlag = false;
 
 		//EXPERIMENT INFORMATION
 		DVector3 dTargetCenter;
-
-		//INPUT CUTS
-		string dDefaultdEdxCutFunctionString = "[0]";
-		map<Particle_t, map<DetectorSystem_t, pair<string, string>>> ddEdxCuts_TF1FunctionStrings; //pair: low bound, high bound
-		map<Particle_t, map<DetectorSystem_t, pair<vector<double>, vector<double>>>> ddEdxCuts_TF1Params; //pair: low bound, high bound
 
 		//RF BUNCH CUTS
 		pair<bool, size_t> dNumPlusMinusRFBunches = std::make_pair(false, 0); //by default use DReaction cut //only use this if set on command line
@@ -315,11 +314,15 @@ class DSourceComboer : public JObject
 		map<vector<const JObject*>, const DSourceCombo*> dNPhotonsToComboMap; //vector contents are auto-sorted by how they're created
 
 		//dE/dx
+		map<Particle_t, map<DetectorSystem_t, pair<string, string>>> ddEdxCuts_TF1FunctionStrings; //pair: low bound, high bound
+		map<Particle_t, map<DetectorSystem_t, pair<vector<double>, vector<double>>>> ddEdxCuts_TF1Params; //pair: low bound, high bound
 		map<Particle_t, map<DetectorSystem_t, pair<TF1*, TF1*>>> ddEdxCutMap; //pair: first is lower bound, second is upper bound
 		map<Particle_t, map<DetectorSystem_t, vector<pair<double, double>>>> ddEdxValueMap; //pair: first is p, 2nd is dE/dx
 		map<Particle_t, map<DetectorSystem_t, TH2*>> dHistMap_dEdx;
 
 		//E/p
+		map<Particle_t, map<DetectorSystem_t, string>> dEOverPCuts_TF1FunctionStrings;
+		map<Particle_t, map<DetectorSystem_t, vector<double>>> dEOverPCuts_TF1Params;
 		map<Particle_t, map<DetectorSystem_t, TF1*>> dEOverPCutMap; //if lepton, select above function, else select below
 		map<Particle_t, map<DetectorSystem_t, vector<pair<double, double>>>> dEOverPValueMap; //pair: first is p, 2nd is E/p
 		map<Particle_t, map<DetectorSystem_t, TH2*>> dHistMap_EOverP;
