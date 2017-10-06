@@ -396,7 +396,6 @@ void DCutAction_BDTSignalCombo::Initialize(JEventLoop* locEventLoop)
 
 bool DCutAction_BDTSignalCombo::Perform_Action(JEventLoop* locEventLoop, const DParticleCombo* locParticleCombo)
 {
-
 #ifdef VTRACE
 	VT_TRACER("DCutAction_BDTSignalCombo::Perform_Action()");
 #endif

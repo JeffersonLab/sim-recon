@@ -140,7 +140,6 @@ inline DReactionStep::DReactionStep(Particle_t locDecayingPID, vector<Particle_t
 // default
 inline DReactionStep::DReactionStep(void) : dReactionStepInfo(std::make_shared<DReactionStepInfo>())
 {
-	cout << "THIS DREACTIONSTEP CONSTRUCTOR IS DEPRECATED.  IT WILL WORK, BUT PLEASE SWITCH TO ONE OF THE NEW CONSTRUCTOR CALLS." << endl;
 }
 
 //operator=
