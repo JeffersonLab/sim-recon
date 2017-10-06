@@ -125,11 +125,8 @@
 namespace DAnalysis
 {
 
-DSourceComboP4Handler::DSourceComboP4Handler(DSourceComboer* locSourceComboer, bool locCreateHistsFlag) : dSourceComboer(locSourceComboer)
+void DSourceComboP4Handler::Define_DefaultCuts(void)
 {
-	gPARMS->SetDefaultParameter("COMBO:DEBUG_LEVEL", dDebugLevel);
-	gPARMS->SetDefaultParameter("COMBO:MAX_MASSIVE_NEUTRAL_BETA", dMaxMassiveNeutralBeta);
-
 	//INVARIANT MASS CUTS: MESONS
 	dInvariantMassCuts.emplace(Pi0, std::make_pair(0.08, 0.19));
 	dInvariantMassCuts.emplace(KShort, std::make_pair(0.3, 0.7));
@@ -152,61 +149,380 @@ DSourceComboP4Handler::DSourceComboP4Handler(DSourceComboer* locSourceComboer, b
 	dInvariantMassCuts.emplace(OmegaMinus, std::make_pair(1.32, 2.22));
 	dInvariantMassCuts.emplace(Lambda_c, std::make_pair(2.0, 2.6));
 
-	//MISSING MASS CUTS & MASS HISTOGRAMS
-	japp->RootWriteLock(); //ACQUIRE ROOT LOCK!! //I have no idea why this is needed, but without it it crashes.  Sigh. 
+
+	//DEFAULT MISSING MASS SQUARED CUT FUNCTION
+	dDefaultMissingMassSquaredCutFunctionString = "[0]"; //vs p
+	//DEFINE FUNCTIONS STRINGS FOR PARTICLES THAT ARE NOT THE DEFAULT HERE (in dMissingMassSquaredCuts_TF1FunctionStrings)
+
+
+	//DEFAULT MISSING MASS SQUARED CUT VALUES //vs p
+	//pair of vectors: params for low bound, high bound
+
+	//Unknown: None missing
+	dMissingMassSquaredCuts_TF1Params[Unknown] = std::make_pair(vector<double>{-0.1}, vector<double>{0.1});
+
+	//Photon
+	dMissingMassSquaredCuts_TF1Params.emplace(Gamma, dMissingMassSquaredCuts_TF1Params[Unknown]);
+
+	//e+/-
+	dMissingMassSquaredCuts_TF1Params[Electron] = std::make_pair(vector<double>{-1.0}, vector<double>{1.0});
+	dMissingMassSquaredCuts_TF1Params.emplace(Positron, dMissingMassSquaredCuts_TF1Params[Electron]);
+
+	//pi+/-/0
+	dMissingMassSquaredCuts_TF1Params[PiPlus] = std::make_pair(vector<double>{-1.0}, vector<double>{1.0});
+	dMissingMassSquaredCuts_TF1Params.emplace(PiMinus, dMissingMassSquaredCuts_TF1Params[PiPlus]);
+	dMissingMassSquaredCuts_TF1Params.emplace(Pi0, dMissingMassSquaredCuts_TF1Params[PiPlus]);
+
+	//K+/-/S/L
+	dMissingMassSquaredCuts_TF1Params[KPlus] = std::make_pair(vector<double>{-1.0}, vector<double>{2.0});
+	dMissingMassSquaredCuts_TF1Params.emplace(KMinus, dMissingMassSquaredCuts_TF1Params[KPlus]);
+	dMissingMassSquaredCuts_TF1Params.emplace(KShort, dMissingMassSquaredCuts_TF1Params[KPlus]);
+	dMissingMassSquaredCuts_TF1Params.emplace(KLong, dMissingMassSquaredCuts_TF1Params[KPlus]);
+
+	//p/n
+	dMissingMassSquaredCuts_TF1Params[Proton] = std::make_pair(vector<double>{-0.5}, vector<double>{4.41});
+	dMissingMassSquaredCuts_TF1Params.emplace(Neutron, dMissingMassSquaredCuts_TF1Params[Proton]);
+
+
+	//DEFAULT MISSING ENERGY CUT //Only applied if nothing is missing
+	dMissingEnergyCuts_TF1FunctionStrings.first = "[0]";
+	dMissingEnergyCuts_TF1FunctionStrings.second = "[0]";
+	dMissingEnergyCuts_TF1Params = std::make_pair(vector<double>{-3.0}, vector<double>{3.0}); //pair: low bound, high bound
+}
+
+void DSourceComboP4Handler::Get_CommandLineCuts_MM2(void)
+{
+	//PARAM EXAMPLES:
+
+	//Cut missing mass squared of protons (14) from -0.7 to 3.7 (GeV/c^2)^2
+	//COMBO_MM2CUT:Low_14=-0.7                 
+	//COMBO_MM2CUT:High_14=3.7
+
+	//Change the cut functions //is function of beam energy
+	//COMBO_MM2CUT:Low_14_FUNC="[0] + [1]*x"
+	//COMBO_MM2CUT:High_14_FUNC="[0] + [1]*x"
+
+	//Cut missing mass squared of protons (14) with params matching above functional form (GeV/c^2)^2
+	//COMBO_MM2CUT:Low_14=-0.7_-0.001
+	//COMBO_MM2CUT:High_14=3.7_0.001
+
+	map<string, string> locParameterMap; //parameter key - filter, value
+	gPARMS->GetParameters(locParameterMap, "COMBO_MM2CUT:"); //gets all parameters with this filter at the beginning of the key
+	for(auto locParamPair : locParameterMap)
 	{
-		//Cuts are vs. beam energy
-		//None missing & photon
-		dMissingMassSquaredCuts[Unknown].first = new TF1("df_MissingMassSquaredCut_NoneLow", "[0]", 0.0, 12.0);
-		dMissingMassSquaredCuts[Unknown].first->SetParameter(0, -0.1);
-		dMissingMassSquaredCuts[Unknown].second = new TF1("df_MissingMassSquaredCut_NoneHigh", "[0]", 0.0, 12.0);
-		dMissingMassSquaredCuts[Unknown].second->SetParameter(0, 0.1);
-		dMissingMassSquaredCuts.emplace(Gamma, dMissingMassSquaredCuts[Unknown]);
+		if(dDebugLevel)
+			cout << "param pair: " << locParamPair.first << ", " << locParamPair.second << endl;
 
-		//e+/-
-		dMissingMassSquaredCuts[Positron].first = new TF1("df_MissingMassSquaredCut_EPlusLow", "[0]", 0.0, 12.0);
-		dMissingMassSquaredCuts[Positron].first->SetParameter(0, -1.0);
-		dMissingMassSquaredCuts[Positron].second = new TF1("df_MissingMassSquaredCut_EPlusHigh", "[0]", 0.0, 12.0);
-		dMissingMassSquaredCuts[Positron].second->SetParameter(0, 1.0);
-		dMissingMassSquaredCuts.emplace(Electron, dMissingMassSquaredCuts[Positron]);
+		//High or low cut?
+		auto locUnderscoreIndex = locParamPair.first.find('_');
+		auto locSideString = locParamPair.first.substr(0, locUnderscoreIndex);
+		auto locHighSideFlag = (locSideString == "Low") ? false : true;
 
-		//Pi+/-/0
-		dMissingMassSquaredCuts[PiPlus].first = new TF1("df_MissingMassSquaredCut_PiPlusLow", "[0]", 0.0, 12.0);
-		dMissingMassSquaredCuts[PiPlus].first->SetParameter(0, -1.0);
-		dMissingMassSquaredCuts[PiPlus].second = new TF1("df_MissingMassSquaredCut_PiPlusHigh", "[0]", 0.0, 12.0);
-		dMissingMassSquaredCuts[PiPlus].second->SetParameter(0, 1.0);
-		dMissingMassSquaredCuts.emplace(PiMinus, dMissingMassSquaredCuts[PiPlus]);
-		dMissingMassSquaredCuts.emplace(Pi0, dMissingMassSquaredCuts[PiPlus]);
+		//Figure out which particle was specified
+		auto locFuncIndex = locParamPair.first.find("_FUNC");
+		auto locParticleString = locParamPair.first.substr(locUnderscoreIndex + 1, locFuncIndex);
+		istringstream locPIDtream(locParticleString);
+		int locPIDInt;
+		locPIDtream >> locPIDInt;
+		if(locPIDtream.fail())
+			continue;
+		Particle_t locPID = (Particle_t)locPIDInt;
 
-		//K+/-/S/L
-		dMissingMassSquaredCuts[KPlus].first = new TF1("df_MissingMassSquaredCut_KPlusLow", "[0]", 0.0, 12.0);
-		dMissingMassSquaredCuts[KPlus].first->SetParameter(0, -1.0);
-		dMissingMassSquaredCuts[KPlus].second = new TF1("df_MissingMassSquaredCut_KPlusHigh", "[0]", 0.0, 12.0);
-		dMissingMassSquaredCuts[KPlus].second->SetParameter(0, 2.0);
-		dMissingMassSquaredCuts.emplace(KMinus, dMissingMassSquaredCuts[KPlus]);
-		dMissingMassSquaredCuts.emplace(KShort, dMissingMassSquaredCuts[KPlus]);
-		dMissingMassSquaredCuts.emplace(KLong, dMissingMassSquaredCuts[KPlus]);
+		if(dDebugLevel)
+			cout << "mm2 cut: pid, side = " << locPID << ", " << locSideString << endl;
 
-		//Proton/Neutron
-		dMissingMassSquaredCuts[Proton].first = new TF1("df_MissingMassSquaredCut_ProtonLow", "[0]", 0.0, 12.0);
-		dMissingMassSquaredCuts[Proton].first->SetParameter(0, -0.5);
-		dMissingMassSquaredCuts[Proton].second = new TF1("df_MissingMassSquaredCut_ProtonHigh", "[0]", 0.0, 12.0);
-		dMissingMassSquaredCuts[Proton].second->SetParameter(0, 4.41);
-		dMissingMassSquaredCuts.emplace(Neutron, dMissingMassSquaredCuts[Proton]);
+		//get the parameter, with hack so that don't get warning message about no default
+		string locKeyValue;
+		string locFullParamName = string("COMBO_MM2CUT:") + locParamPair.first; //have to add back on the filter
+		gPARMS->SetDefaultParameter(locFullParamName, locKeyValue);
 
-		//Missing E cuts
-		dMissingECuts = std::pair<TF1*, TF1*>(nullptr, nullptr); //COMPARE:
-		dMissingECuts.first = new TF1("df_MissingECut_NoneLow", "[0]", 0.0, 12.0);
-		dMissingECuts.first->SetParameter(0, -3.0);
-		dMissingECuts.second = new TF1("df_MissingECut_NoneHigh", "[0]", 0.0, 12.0);
-		dMissingECuts.second->SetParameter(0, 3.0);
-
-		if(!locCreateHistsFlag)
+		//If functional form, save it and continue
+		if(locFuncIndex != string::npos)
 		{
-			japp->RootUnLock(); //RELEASE ROOT LOCK!!
-			return;
+			if(!locHighSideFlag)
+				dMissingMassSquaredCuts_TF1FunctionStrings[locPID].first = locKeyValue;
+			else
+				dMissingMassSquaredCuts_TF1FunctionStrings[locPID].second = locKeyValue;
+			continue;
 		}
 
+		//is cut parameters: extract and save
+		//CUT PARAMETERS SHOULD BE SEPARATED BY SPACES
+		if(!locHighSideFlag)
+			dMissingMassSquaredCuts_TF1Params[locPID].first.clear(); //get rid of previous cut values
+		else
+			dMissingMassSquaredCuts_TF1Params[locPID].second.clear(); //get rid of previous cut values
+		while(true)
+		{
+			locUnderscoreIndex = locKeyValue.find('_');
+			auto locValueString = locKeyValue.substr(0, locUnderscoreIndex);
+
+			istringstream locValuetream(locValueString);
+			double locParameter;
+			locValuetream >> locParameter;
+			if(locValuetream.fail())
+				continue; //must be for a different use
+			if(dDebugLevel)
+				cout << "param: " << locParameter << endl;
+
+			//save locParameter and truncate locKeyValue (or break if done)
+			if(!locHighSideFlag)
+				dMissingMassSquaredCuts_TF1Params[locPID].first.push_back(locParameter);
+			else
+				dMissingMassSquaredCuts_TF1Params[locPID].second.push_back(locParameter);
+			if(locUnderscoreIndex == string::npos)
+				break;
+			locKeyValue = locKeyValue.substr(locUnderscoreIndex + 1);
+		}
+	}
+}
+
+void DSourceComboP4Handler::Get_CommandLineCuts_IM(void)
+{
+	//PARAM EXAMPLES:
+
+	//Cut invariant mass of pi0s (7) from 0.05 to 0.3 (GeV/c^2)
+	//COMBO_IMCUT:Low_7=0.05
+	//COMBO_IMCUT:High_7=0.3
+
+	map<string, string> locParameterMap; //parameter key - filter, value
+	gPARMS->GetParameters(locParameterMap, "COMBO_IMCUT:"); //gets all parameters with this filter at the beginning of the key
+	for(auto locParamPair : locParameterMap)
+	{
+		if(dDebugLevel)
+			cout << "param pair: " << locParamPair.first << ", " << locParamPair.second << endl;
+
+		//High or low cut?
+		auto locUnderscoreIndex = locParamPair.first.find('_');
+		auto locSideString = locParamPair.first.substr(0, locUnderscoreIndex);
+		auto locHighSideFlag = (locSideString == "Low") ? false : true;
+
+		//Figure out which particle was specified
+		auto locParticleString = locParamPair.first.substr(locUnderscoreIndex + 1);
+		istringstream locPIDtream(locParticleString);
+		int locPIDInt;
+		locPIDtream >> locPIDInt;
+		if(locPIDtream.fail())
+			continue;
+		Particle_t locPID = (Particle_t)locPIDInt;
+
+		if(dDebugLevel)
+			cout << "im cut: pid, side = " << locPID << ", " << locSideString << endl;
+
+		//get the parameter, with hack so that don't get warning message about no default
+		string locKeyValue;
+		string locFullParamName = string("COMBO_IMCUT:") + locParamPair.first; //have to add back on the filter
+		gPARMS->SetDefaultParameter(locFullParamName, locKeyValue);
+
+		//is cut parameter: extract and save
+		istringstream locValuetream(locKeyValue);
+		double locParameter;
+		locValuetream >> locParameter;
+		if(locValuetream.fail())
+			continue; //must be for a different use
+		if(dDebugLevel)
+			cout << "param: " << locParameter << endl;
+
+		//save locParameter and truncate locKeyValue (or break if done)
+		if(!locHighSideFlag)
+			dInvariantMassCuts[locPID].first = locParameter;
+		else
+			dInvariantMassCuts[locPID].second = locParameter;
+	}
+
+	//Print cuts
+	if(!dPrintCutFlag)
+		return;
+
+	for(auto& locPIDPair : dInvariantMassCuts)
+		jout << "Invariant mass cut: pid, low cut, high cut = " << locPIDPair.first << ", " << locPIDPair.second.first << ", " << locPIDPair.second.second << endl;
+}
+
+void DSourceComboP4Handler::Get_CommandLineCuts_MissingEnergy(void)
+{
+	//PARAM EXAMPLES:
+
+	//Cut missing energy (if none missing) from -0.7 to 3.7 (GeV)
+	//COMBO_MISSECUT:Low=-0.7                 
+	//COMBO_MISSECUT:High=3.7
+
+	//Change the cut functions //is function of beam energy
+	//COMBO_MISSECUT:Low_FUNC="[0] + [1]*x"
+	//COMBO_MISSECUT:High_FUNC="[0] + [1]*x"
+
+	//Cut missing energy (if none missing) with params matching above functional form (GeV/c^2)^2
+	//COMBO_MISSECUT:Low=-0.7_-0.001
+	//COMBO_MISSECUT:High=3.7_0.001
+
+	map<string, string> locParameterMap; //parameter key - filter, value
+	gPARMS->GetParameters(locParameterMap, "COMBO_MISSECUT:"); //gets all parameters with this filter at the beginning of the key
+	for(auto locParamPair : locParameterMap)
+	{
+		if(dDebugLevel)
+			cout << "param pair: " << locParamPair.first << ", " << locParamPair.second << endl;
+
+		//High or low cut?
+		auto locUnderscoreIndex = locParamPair.first.find('_');
+		auto locSideString = locParamPair.first.substr(0, locUnderscoreIndex);
+		auto locHighSideFlag = (locSideString == "Low") ? false : true;
+		if(dDebugLevel)
+			cout << "missE cut: side = " << locSideString << endl;
+
+		//get the parameter, with hack so that don't get warning message about no default
+		string locKeyValue;
+		string locFullParamName = string("COMBO_MISSECUT:") + locParamPair.first; //have to add back on the filter
+		gPARMS->SetDefaultParameter(locFullParamName, locKeyValue);
+
+		//If functional form, save it and continue
+		auto locFuncIndex = locParamPair.first.find("_FUNC");
+		if(locFuncIndex != string::npos)
+		{
+			if(!locHighSideFlag)
+				dMissingEnergyCuts_TF1FunctionStrings.first = locKeyValue;
+			else
+				dMissingEnergyCuts_TF1FunctionStrings.second = locKeyValue;
+			continue;
+		}
+
+		//is cut parameters: extract and save
+		//CUT PARAMETERS SHOULD BE SEPARATED BY SPACES
+		if(!locHighSideFlag)
+			dMissingEnergyCuts_TF1Params.first.clear(); //get rid of previous cut values
+		else
+			dMissingEnergyCuts_TF1Params.second.clear(); //get rid of previous cut values
+		while(true)
+		{
+			locUnderscoreIndex = locKeyValue.find('_');
+			auto locValueString = locKeyValue.substr(0, locUnderscoreIndex);
+
+			istringstream locValuetream(locValueString);
+			double locParameter;
+			locValuetream >> locParameter;
+			if(locValuetream.fail())
+				continue; //must be for a different use
+			if(dDebugLevel)
+				cout << "param: " << locParameter << endl;
+
+			//save locParameter and truncate locKeyValue (or break if done)
+			if(!locHighSideFlag)
+				dMissingEnergyCuts_TF1Params.first.push_back(locParameter);
+			else
+				dMissingEnergyCuts_TF1Params.second.push_back(locParameter);
+			if(locUnderscoreIndex == string::npos)
+				break;
+			locKeyValue = locKeyValue.substr(locUnderscoreIndex + 1);
+		}
+	}
+}
+
+void DSourceComboP4Handler::Create_CutFunctions(void)
+{
+	//No idea why this lock is necessary, but it crashes without it.  Stupid ROOT. 
+	japp->RootWriteLock(); //ACQUIRE ROOT LOCK!!
+
+	//Missing mass squared
+	for(auto& locPIDPair : dMissingMassSquaredCuts_TF1Params)
+	{
+		auto& locParamVector_Low = locPIDPair.second.first;
+		auto& locParamVector_High = locPIDPair.second.second;
+		if(locParamVector_Low.empty() || locParamVector_High.empty())
+			continue; //should never happen
+
+		//Get cut strings
+		auto locCutFuncString_Low = dDefaultMissingMassSquaredCutFunctionString; //default if nothing special specified
+		auto locCutFuncString_High = dDefaultMissingMassSquaredCutFunctionString; //default if nothing special specified
+		if(dMissingMassSquaredCuts_TF1FunctionStrings.find(locPIDPair.first) != dMissingMassSquaredCuts_TF1FunctionStrings.end())
+		{
+			locCutFuncString_Low = dMissingMassSquaredCuts_TF1FunctionStrings[locPIDPair.first].first;
+			locCutFuncString_High = dMissingMassSquaredCuts_TF1FunctionStrings[locPIDPair.first].second;
+		}
+
+		//Create TF1, Set cut values
+		//These functions can have the same name because we are no longer adding them to the global ROOT list of functions
+
+		//low-side
+		auto locFunc_Low = new TF1("df_MissingMassSquaredCut", locCutFuncString_Low.c_str(), 0.0, 12.0);
+		if(dPrintCutFlag)
+			jout << "Missing Mass Squared Cut, Low-side: PID, func form, params: " << ParticleType(locPIDPair.first) << ", " << locCutFuncString_Low;
+		for(size_t loc_i = 0; loc_i < locParamVector_Low.size(); ++loc_i)
+		{
+			locFunc_Low->SetParameter(loc_i, locParamVector_Low[loc_i]);
+			if(dPrintCutFlag)
+				jout << ", " << locParamVector_Low[loc_i];
+		}
+		if(dPrintCutFlag)
+			jout << endl;
+
+		//High-side
+		auto locFunc_High = new TF1("df_MissingMassSquaredCut", locCutFuncString_High.c_str(), 0.0, 12.0);
+		if(dPrintCutFlag)
+			jout << "Missing Mass Squared Cut, High-side: PID, func form, params: " << ParticleType(locPIDPair.first) << ", " << locCutFuncString_High;
+		for(size_t loc_i = 0; loc_i < locParamVector_High.size(); ++loc_i)
+		{
+			locFunc_High->SetParameter(loc_i, locParamVector_High[loc_i]);
+			if(dPrintCutFlag)
+				jout << ", " << locParamVector_High[loc_i];
+		}
+		if(dPrintCutFlag)
+			jout << endl;
+
+		dMissingMassSquaredCuts[locPIDPair.first] = std::make_pair(locFunc_Low, locFunc_High);
+	}
+
+	//Missing beam energy
+	//Get cut strings
+	auto locCutFuncString_Low = dMissingEnergyCuts_TF1FunctionStrings.first; //default if nothing special specified
+	auto locCutFuncString_High = dMissingEnergyCuts_TF1FunctionStrings.second; //default if nothing special specified
+
+	//low-side
+	auto locFunc_Low = new TF1("df_MissingBeamEnergyCut", locCutFuncString_Low.c_str(), 0.0, 12.0);
+	if(dPrintCutFlag)
+		jout << "Missing Energy Cut (none-missing only), Low-side: func form, params: " << locCutFuncString_Low;
+	for(size_t loc_i = 0; loc_i < dMissingEnergyCuts_TF1Params.first.size(); ++loc_i)
+	{
+		locFunc_Low->SetParameter(loc_i, dMissingEnergyCuts_TF1Params.first[loc_i]);
+		if(dPrintCutFlag)
+			jout << ", " << dMissingEnergyCuts_TF1Params.first[loc_i];
+	}
+	if(dPrintCutFlag)
+		jout << endl;
+
+	//High-side
+	auto locFunc_High = new TF1("df_MissingBeamEnergyCut", locCutFuncString_High.c_str(), 0.0, 12.0);
+	if(dPrintCutFlag)
+		jout << "Missing Energy Cut (none-missing only), High-side: func form, params: " << locCutFuncString_High;
+	for(size_t loc_i = 0; loc_i < dMissingEnergyCuts_TF1Params.second.size(); ++loc_i)
+	{
+		locFunc_High->SetParameter(loc_i, dMissingEnergyCuts_TF1Params.second[loc_i]);
+		if(dPrintCutFlag)
+			jout << ", " << dMissingEnergyCuts_TF1Params.second[loc_i];
+	}
+	if(dPrintCutFlag)
+		jout << endl;
+
+	dMissingECuts = std::make_pair(locFunc_Low, locFunc_High);
+
+	japp->RootUnLock(); //RELEASE ROOT LOCK!!
+}
+
+DSourceComboP4Handler::DSourceComboP4Handler(DSourceComboer* locSourceComboer, bool locCreateHistsFlag) : dSourceComboer(locSourceComboer)
+{
+	gPARMS->SetDefaultParameter("COMBO:DEBUG_LEVEL", dDebugLevel);
+	gPARMS->SetDefaultParameter("COMBO:PRINT_CUTS", dPrintCutFlag);
+	gPARMS->SetDefaultParameter("COMBO:MAX_MASSIVE_NEUTRAL_BETA", dMaxMassiveNeutralBeta);
+
+	Define_DefaultCuts();
+	Get_CommandLineCuts_IM();
+	Get_CommandLineCuts_MM2();
+	Get_CommandLineCuts_MissingEnergy();
+	Create_CutFunctions();
+
+	if(!locCreateHistsFlag)
+		return;
+
+	//MISSING MASS CUTS & MASS HISTOGRAMS
+	japp->RootWriteLock(); //ACQUIRE ROOT LOCK!! //I have no idea why this is needed (for the cuts), but without it it crashes.  Sigh. 
+	{
 		//HISTOGRAMS
 		//get and change to the base (file/global) directory
 		TDirectory* locCurrentDir = gDirectory;

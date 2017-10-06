@@ -79,6 +79,14 @@ class DSourceComboP4Handler
 		void Fill_Histograms(void);
 
 		int dDebugLevel = 0;
+		bool dPrintCutFlag = false;
+
+		//Get/Set Cuts
+		void Define_DefaultCuts(void);
+		void Get_CommandLineCuts_MM2(void);
+		void Get_CommandLineCuts_IM(void);
+		void Get_CommandLineCuts_MissingEnergy(void);
+		void Create_CutFunctions(void);
 
 		//HANDLERS
 		DSourceComboer* dSourceComboer; //for quickly determining whether a combo has a massive neutral or not, and to facilitate access to combo vertices
@@ -93,9 +101,16 @@ class DSourceComboP4Handler
 		//int: RF bunch //bool: is prod vertex //first combo: reaction full //kindata: beam //use: use to exclude //size_t: instance to exclude
 		map<tuple<bool, const DSourceCombo*, const DSourceCombo*, int, const DKinematicData*, DSourceComboUse, size_t>, DLorentzVector> dFinalStateP4ByCombo_HasMassiveNeutrals;
 
+		//CUT DEFAULTS
+		string dDefaultMissingMassSquaredCutFunctionString = "[0]";
+		map<Particle_t, pair<string, string>> dMissingMassSquaredCuts_TF1FunctionStrings; //pair: low bound, high bound
+		map<Particle_t, pair<vector<double>, vector<double>>> dMissingMassSquaredCuts_TF1Params; //pair: low bound, high bound
+		pair<string, string> dMissingEnergyCuts_TF1FunctionStrings; //pair: low bound, high bound
+		pair<vector<double>, vector<double>> dMissingEnergyCuts_TF1Params; //pair: low bound, high bound
+
 		//CUTS
 		double dMaxMassiveNeutralBeta = 0.99999;
-		double d2PhotonInvariantMassCutError = 0.02;
+		double d2PhotonInvariantMassCutError = 0.02; //see derivation at top of .cc file
 		map<Particle_t, pair<double, double>> dInvariantMassCuts;
 		map<Particle_t, pair<TF1*, TF1*>> dMissingMassSquaredCuts; //cuts are function of beam energy //For none missing, Particle_t = unknown
 		pair<TF1*, TF1*> dMissingECuts; //for no-missing-particle only

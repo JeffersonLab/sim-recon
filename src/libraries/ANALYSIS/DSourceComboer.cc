@@ -18,10 +18,6 @@ Q) How can I speed this up?
 A) You can try reducing the #z-bins by increasing their widths. However, much sure you also increase the uncertainty on the timing & invariant-mass cuts for photons as well.
 */
 
-//TO DO:
-//Undo comparison changes
-//Update master cut values
-
 //TO COMPARE:
 //Look for "COMPARE:"
 
@@ -136,6 +132,333 @@ namespace DAnalysis
  * So we can't actually vote on RF bunches until we choose our massive-neutral particles!!!
  */
 
+
+void DSourceComboer::Define_DefaultCuts(void)
+{
+//COMPARE:
+	//DEFINE DEFAULT dE/dx CUTS
+	//CDC Proton
+	ddEdxCuts_TF1FunctionStrings[Proton][SYS_CDC].first = "exp(-1.0*[0]*x + [1]) + [2]"; //low bound
+	ddEdxCuts_TF1Params[Proton][SYS_CDC].first = {4.0, 2.25, 1.0};
+	ddEdxCuts_TF1FunctionStrings[Proton][SYS_CDC].second = "[0]"; //high bound
+	ddEdxCuts_TF1Params[Proton][SYS_CDC].second = {9.9E9};
+
+	//CDC Pi+
+	ddEdxCuts_TF1FunctionStrings[PiPlus][SYS_CDC].first = "[0]"; //low bound
+	ddEdxCuts_TF1Params[PiPlus][SYS_CDC].first = {-9.9E9};
+	ddEdxCuts_TF1FunctionStrings[PiPlus][SYS_CDC].second = "exp(-1.0*[0]*x + [1]) + [2]"; //high bound
+	ddEdxCuts_TF1Params[PiPlus][SYS_CDC].second = {-0.1, 0.5, 1.2};
+
+	//CDC K+
+	ddEdxCuts_TF1FunctionStrings[KPlus][SYS_CDC].first = "[0]"; //low bound
+	ddEdxCuts_TF1Params[KPlus][SYS_CDC].first = {-9.9E9};
+	ddEdxCuts_TF1FunctionStrings[KPlus][SYS_CDC].second = "exp(-1.0*[0]*x + [1]) + [2]"; //high bound
+	ddEdxCuts_TF1Params[KPlus][SYS_CDC].second = {2.0, 0.8, 3.0};
+
+	//CDC e-
+	ddEdxCuts_TF1FunctionStrings[Electron][SYS_CDC].first = "[0]"; //low bound
+	ddEdxCuts_TF1Params[Electron][SYS_CDC].first = {-9.9E9};
+	ddEdxCuts_TF1FunctionStrings[Electron][SYS_CDC].second = "[0]"; //high bound
+	ddEdxCuts_TF1Params[Electron][SYS_CDC].second = {5.5};
+
+	//FDC e-
+	ddEdxCuts_TF1FunctionStrings[Electron][SYS_FDC].first = "[0]"; //low bound
+	ddEdxCuts_TF1Params[Electron][SYS_FDC].first = {-9.9E9};
+	ddEdxCuts_TF1FunctionStrings[Electron][SYS_FDC].second = "[0]"; //high bound
+	ddEdxCuts_TF1Params[Electron][SYS_FDC].second = {3.5};
+
+	//pbar
+	ddEdxCuts_TF1FunctionStrings.emplace(AntiProton, ddEdxCuts_TF1FunctionStrings[Proton]);
+	ddEdxCuts_TF1Params.emplace(AntiProton, ddEdxCuts_TF1Params[Proton]);
+
+	//Pi-
+	ddEdxCuts_TF1FunctionStrings.emplace(PiMinus, ddEdxCuts_TF1FunctionStrings[PiPlus]);
+	ddEdxCuts_TF1Params.emplace(PiMinus, ddEdxCuts_TF1Params[PiPlus]);
+
+	//K-
+	ddEdxCuts_TF1FunctionStrings.emplace(KMinus, ddEdxCuts_TF1FunctionStrings[KPlus]);
+	ddEdxCuts_TF1Params.emplace(KMinus, ddEdxCuts_TF1Params[KPlus]);
+
+	//e+
+	ddEdxCuts_TF1FunctionStrings.emplace(Positron, ddEdxCuts_TF1FunctionStrings[Electron]);
+	ddEdxCuts_TF1Params.emplace(Positron, ddEdxCuts_TF1Params[Electron]);
+
+	//DEFINE DEFAULT E/p CUTS //vs p, cut away everything above if hadron, everything below if lepton
+/* //Uncomment and adjust when Lubomir gives good cuts.
+	//e- FCAL
+	dEOverPCuts_TF1FunctionStrings[Electron][SYS_FCAL] = "[0]";
+	dEOverPCuts_TF1Params[Electron][SYS_FCAL] = {0.7};
+
+	//e- BCAL
+	dEOverPCuts_TF1FunctionStrings[Electron][SYS_BCAL] = "[0]";
+	dEOverPCuts_TF1Params[Electron][SYS_BCAL] = {0.67};
+
+	//e+
+	dEOverPCuts_TF1FunctionStrings.emplace(Positron, dEOverPCuts_TF1FunctionStrings[Electron]);
+	dEOverPCuts_TF1Params.emplace(Positron, dEOverPCuts_TF1Params[Electron]);
+
+	//mu-
+	dEOverPCuts_TF1FunctionStrings.emplace(MuonMinus, dEOverPCuts_TF1FunctionStrings[Electron]);
+	dEOverPCuts_TF1Params.emplace(MuonMinus, dEOverPCuts_TF1Params[Electron]);
+
+	//mu+
+	dEOverPCuts_TF1FunctionStrings.emplace(MuonPlus, dEOverPCuts_TF1FunctionStrings[MuonMinus]);
+	dEOverPCuts_TF1Params.emplace(MuonPlus, dEOverPCuts_TF1Params[MuonMinus]);
+*/
+}
+
+void DSourceComboer::Get_CommandLineCuts_dEdx(void)
+{
+	//PARAM EXAMPLES:
+	//COMBO_DEDXCUT:Low_14_1=0.75_0.5_1.0           //Cut protons (14) in the CDC (1) with the following parameters for the low-side cut
+	//COMBO_DEDXCUT:High_9_256_FUNC="[0] + [1]*x"   //Cut pi-'s (9) in the SC (256) according to the functional form for the high-side cut //x = track momentum
+
+	map<string, string> locParameterMap; //parameter key - filter, value
+	gPARMS->GetParameters(locParameterMap, "COMBO_DEDXCUT:"); //gets all parameters with this filter at the beginning of the key
+	for(auto locParamPair : locParameterMap)
+	{
+		if(dDebugLevel)
+			cout << "param pair: " << locParamPair.first << ", " << locParamPair.second << endl;
+
+		//High or low cut?
+		auto locFirstUnderscoreIndex = locParamPair.first.find('_');
+		auto locSideString = locParamPair.first.substr(0, locFirstUnderscoreIndex);
+		auto locHighSideFlag = (locSideString == "Low") ? false : true;
+
+		//Figure out which particle was specified
+		auto locSecondUnderscoreIndex = locParamPair.first.find('_', locFirstUnderscoreIndex + 1);
+		auto locParticleString = locParamPair.first.substr(locFirstUnderscoreIndex + 1, locSecondUnderscoreIndex);
+		istringstream locPIDtream(locParticleString);
+		int locPIDInt;
+		locPIDtream >> locPIDInt;
+		if(locPIDtream.fail())
+			continue;
+		Particle_t locPID = (Particle_t)locPIDInt;
+
+		//Figure out which detector was specified
+		auto locFuncIndex = locParamPair.first.find("_FUNC");
+		auto locDetectorString = locParamPair.first.substr(locSecondUnderscoreIndex + 1, locFuncIndex);
+		istringstream locDetectorStream(locDetectorString);
+		int locSystemInt;
+		locDetectorStream >> locSystemInt;
+		if(locDetectorStream.fail())
+			continue;
+		DetectorSystem_t locSystem = (DetectorSystem_t)locSystemInt;
+
+		if(dDebugLevel)
+			cout << "dE/dx cut: pid, detector, high-side flag = " << locPID << ", " << locSystem << ", " << locHighSideFlag << endl;
+
+		//get the parameter, with hack so that don't get warning message about no default
+		string locKeyValue;
+		string locFullParamName = string("COMBO_DEDXCUT:") + locParamPair.first; //have to add back on the filter
+		gPARMS->SetDefaultParameter(locFullParamName, locKeyValue);
+
+		//If functional form, save it and continue
+		if(locFuncIndex != string::npos)
+		{
+			if(!locHighSideFlag)
+				ddEdxCuts_TF1FunctionStrings[locPID][locSystem].first = locKeyValue;
+			else
+				ddEdxCuts_TF1FunctionStrings[locPID][locSystem].second = locKeyValue;
+			continue;
+		}
+
+		//is cut parameters: extract and save
+		//CUT PARAMETERS SHOULD BE SEPARATED BY SPACES
+		//get rid of previous cut values
+		if(!locHighSideFlag)
+			ddEdxCuts_TF1Params[locPID][locSystem].first.clear();
+		else
+			ddEdxCuts_TF1Params[locPID][locSystem].second.clear();
+		while(true)
+		{
+			auto locUnderscoreIndex = locKeyValue.find('_');
+			auto locValueString = locKeyValue.substr(0, locUnderscoreIndex);
+
+			istringstream locValuetream(locValueString);
+			double locParameter;
+			locValuetream >> locParameter;
+			if(locValuetream.fail())
+				continue; //must be for a different use
+			if(dDebugLevel)
+				cout << "param: " << locParameter << endl;
+
+			//save locParameter and truncate locKeyValue (or break if done)
+			if(!locHighSideFlag)
+				ddEdxCuts_TF1Params[locPID][locSystem].first.push_back(locParameter);
+			else
+				ddEdxCuts_TF1Params[locPID][locSystem].second.push_back(locParameter);
+			if(locUnderscoreIndex == string::npos)
+				break;
+			locKeyValue = locKeyValue.substr(locUnderscoreIndex + 1);
+		}
+	}
+}
+
+void DSourceComboer::Get_CommandLineCuts_EOverP(void)
+{
+	//PARAM EXAMPLES:
+	//COMBO_EOVERP:14_32_FUNC="[0] + [1]*x"   //Cut protons (14) in the FCAL (32) according to the functional form //x = track momentum
+	//COMBO_EOVERP:14_32=0.75_0.5             //Cut protons (14) in the FCAL (32) with the following parameters
+
+	map<string, string> locParameterMap; //parameter key - filter, value
+	gPARMS->GetParameters(locParameterMap, "COMBO_EOVERP:"); //gets all parameters with this filter at the beginning of the key
+	for(auto locParamPair : locParameterMap)
+	{
+		if(dDebugLevel)
+			cout << "param pair: " << locParamPair.first << ", " << locParamPair.second << endl;
+
+		//Figure out which particle was specified
+		auto locUnderscoreIndex = locParamPair.first.find('_');
+		auto locParticleString = locParamPair.first.substr(0, locUnderscoreIndex);
+		istringstream locPIDtream(locParticleString);
+		int locPIDInt;
+		locPIDtream >> locPIDInt;
+		if(locPIDtream.fail())
+			continue;
+		Particle_t locPID = (Particle_t)locPIDInt;
+
+		//Figure out which detector was specified
+		auto locFuncIndex = locParamPair.first.find("_FUNC");
+		auto locDetectorString = locParamPair.first.substr(locUnderscoreIndex + 1, locFuncIndex);
+		istringstream locDetectorStream(locDetectorString);
+		int locSystemInt;
+		locDetectorStream >> locSystemInt;
+		if(locDetectorStream.fail())
+			continue;
+		DetectorSystem_t locSystem = (DetectorSystem_t)locSystemInt;
+
+		if(dDebugLevel)
+			cout << "E/p cut: pid, detector = " << locPID << ", " << locSystem << endl;
+
+		//get the parameter, with hack so that don't get warning message about no default
+		string locKeyValue;
+		string locFullParamName = string("COMBO_EOVERP:") + locParamPair.first; //have to add back on the filter
+		gPARMS->SetDefaultParameter(locFullParamName, locKeyValue);
+
+		//If functional form, save it and continue
+		if(locFuncIndex != string::npos)
+		{
+			dEOverPCuts_TF1FunctionStrings[locPID][locSystem] = locKeyValue;
+			continue;
+		}
+
+		//is cut parameters: extract and save
+		//CUT PARAMETERS SHOULD BE SEPARATED BY SPACES
+		dEOverPCuts_TF1Params[locPID][locSystem].clear(); //get rid of previous cut values
+		while(true)
+		{
+			auto locUnderscoreIndex = locKeyValue.find('_');
+			auto locValueString = locKeyValue.substr(0, locUnderscoreIndex);
+
+			istringstream locValuetream(locValueString);
+			double locParameter;
+			locValuetream >> locParameter;
+			if(locValuetream.fail())
+				continue; //must be for a different use
+			if(dDebugLevel)
+				cout << "param: " << locParameter << endl;
+
+			//save locParameter and truncate locKeyValue (or break if done)
+			dEOverPCuts_TF1Params[locPID][locSystem].push_back(locParameter);
+			if(locUnderscoreIndex == string::npos)
+				break;
+			locKeyValue = locKeyValue.substr(locUnderscoreIndex + 1);
+		}
+	}
+}
+
+void DSourceComboer::Create_CutFunctions(void)
+{
+	//No idea why this lock is necessary, but it crashes without it.  Stupid ROOT. 
+	japp->RootWriteLock(); //ACQUIRE ROOT LOCK!!
+
+	//dE/dx
+	for(auto& locPIDPair : ddEdxCuts_TF1Params)
+	{
+		auto& locSystemMap = locPIDPair.second;
+		for(auto& locSystemPair : locSystemMap)
+		{
+			auto& locParamsPair = locSystemPair.second;
+			auto& locParamVector_Low = locParamsPair.first;
+			auto& locParamVector_High = locParamsPair.second;
+			if(locParamVector_Low.empty() || locParamVector_High.empty())
+				continue;
+
+			//Get cut strings
+			if(ddEdxCuts_TF1FunctionStrings.find(locPIDPair.first) == ddEdxCuts_TF1FunctionStrings.end())
+				continue;
+			auto locSystemStringMap = ddEdxCuts_TF1FunctionStrings[locPIDPair.first];
+			if(locSystemStringMap.find(locSystemPair.first) == locSystemStringMap.end())
+				continue;
+			auto locCutFuncString_Low = locSystemStringMap[locSystemPair.first].first;
+			auto locCutFuncString_High = locSystemStringMap[locSystemPair.first].second;
+
+			//Create TF1 low-side, Set cut values
+			auto locFunc_Low = new TF1("df_dEdxCut_Low", locCutFuncString_Low.c_str(), 0.0, 12.0);
+			if(dPrintCutFlag)
+				jout << "dE/dx Cut PID, System, low-side func form, params: " << ParticleType(locPIDPair.first) << ", " << SystemName(locSystemPair.first) << ", " << locCutFuncString_Low;
+			ddEdxCutMap[locPIDPair.first][locSystemPair.first].first = locFunc_Low;
+			for(size_t loc_i = 0; loc_i < locParamVector_Low.size(); ++loc_i)
+			{
+				locFunc_Low->SetParameter(loc_i, locParamVector_Low[loc_i]);
+				if(dPrintCutFlag)
+					jout << ", " << locParamVector_Low[loc_i];
+			}
+			if(dPrintCutFlag)
+				jout << endl;
+
+			//Create TF1 high-side, Set cut values
+			auto locFunc_High = new TF1("df_dEdxCut_High", locCutFuncString_High.c_str(), 0.0, 12.0);
+			if(dPrintCutFlag)
+				jout << "dE/dx Cut PID, System, High-side func form, params: " << ParticleType(locPIDPair.first) << ", " << SystemName(locSystemPair.first) << ", " << locCutFuncString_High;
+			ddEdxCutMap[locPIDPair.first][locSystemPair.first].second = locFunc_High;
+			for(size_t loc_i = 0; loc_i < locParamVector_High.size(); ++loc_i)
+			{
+				locFunc_High->SetParameter(loc_i, locParamVector_High[loc_i]);
+				if(dPrintCutFlag)
+					jout << ", " << locParamVector_High[loc_i];
+			}
+			if(dPrintCutFlag)
+				jout << endl;
+		}
+	}
+
+	//E/p
+	for(auto& locPIDPair : dEOverPCuts_TF1Params)
+	{
+		auto& locSystemMap = locPIDPair.second;
+		for(auto& locSystemPair : locSystemMap)
+		{
+			auto& locParamVector = locSystemPair.second;
+
+			//Get cut strings
+			if(dEOverPCuts_TF1FunctionStrings.find(locPIDPair.first) == dEOverPCuts_TF1FunctionStrings.end())
+				continue;
+			auto locSystemStringMap = dEOverPCuts_TF1FunctionStrings[locPIDPair.first];
+			if(locSystemStringMap.find(locSystemPair.first) == locSystemStringMap.end())
+				continue;
+			auto locCutFuncString = locSystemStringMap[locSystemPair.first];
+
+			//Create TF1, Set cut values
+			auto locFunc = new TF1("df_EOverPCut", locCutFuncString.c_str(), 0.0, 12.0);
+			if(dPrintCutFlag)
+				jout << "E/p Cut PID, System, func form, params: " << ParticleType(locPIDPair.first) << ", " << SystemName(locSystemPair.first) << ", " << locCutFuncString;
+			dEOverPCutMap[locPIDPair.first][locSystemPair.first] = locFunc;
+			for(size_t loc_i = 0; loc_i < locParamVector.size(); ++loc_i)
+			{
+				locFunc->SetParameter(loc_i, locParamVector[loc_i]);
+				if(dPrintCutFlag)
+					jout << ", " << locParamVector[loc_i];
+			}
+			if(dPrintCutFlag)
+				jout << endl;
+		}
+	}
+
+	japp->RootUnLock(); //RELEASE ROOT LOCK!!
+}
+
 /********************************************************************* CONSTRUCTOR **********************************************************************/
 
 DSourceComboer::DSourceComboer(JEventLoop* locEventLoop)
@@ -144,6 +467,12 @@ DSourceComboer::DSourceComboer(JEventLoop* locEventLoop)
 	dResourcePool_SourceComboVector.Set_ControlParams(10, 5, 200, 1200, 0);
 	dCreatedCombos.reserve(100000);
 	dCreatedComboVectors.reserve(1000);
+
+	//Get preselect tag, debug level
+	gPARMS->SetDefaultParameter("COMBO:SHOWER_SELECT_TAG", dShowerSelectionTag);
+	gPARMS->SetDefaultParameter("COMBO:DEBUG_LEVEL", dDebugLevel);
+	gPARMS->SetDefaultParameter("COMBO:PRINT_CUTS", dPrintCutFlag);
+	gPARMS->SetDefaultParameter("COMBO:MAX_NEUTRALS", dMaxNumNeutrals);
 
 	//GET THE GEOMETRY
 	DApplication* locApplication = dynamic_cast<DApplication*>(locEventLoop->GetJApplication());
@@ -154,10 +483,11 @@ DSourceComboer::DSourceComboer(JEventLoop* locEventLoop)
 	locGeometry->GetTargetZ(locTargetCenterZ);
 	dTargetCenter.SetXYZ(0.0, 0.0, locTargetCenterZ);
 
-	//Get preselect tag, debug level
-	gPARMS->SetDefaultParameter("COMBO:SHOWER_SELECT_TAG", dShowerSelectionTag);
-	gPARMS->SetDefaultParameter("COMBO:DEBUG_LEVEL", dDebugLevel);
-	gPARMS->SetDefaultParameter("COMBO:MAX_NEUTRALS", dMaxNumNeutrals);
+	//SETUP CUTS
+	Define_DefaultCuts();
+	Get_CommandLineCuts_dEdx();
+	Get_CommandLineCuts_EOverP();
+	Create_CutFunctions();
 
 	//GET THE REACTIONS
 	auto locReactions = DAnalysis::Get_Reactions(locEventLoop);
@@ -226,53 +556,9 @@ DSourceComboer::DSourceComboer(JEventLoop* locEventLoop)
 			dNumCombosSurvivedStageTracker[locReaction][static_cast<DConstructionStage>(locStage)] = 0;
 	}
 
-	//Setup cuts/hists
+	//Setup hists
 	japp->RootWriteLock(); //ACQUIRE ROOT LOCK!!
 	{
-		//CDC dE/dx Proton, Anti-Proton
-//COMPARE:
-		ddEdxCutMap[Proton][SYS_CDC].first = new TF1("df_dEdxCut_CDC_ProtonLow", "exp(-1.0*[0]*x + [1]) + [2]", 0.0, 12.0);
-		ddEdxCutMap[Proton][SYS_CDC].first->SetParameters(4.0, 2.25, 1.0);
-		ddEdxCutMap[Proton][SYS_CDC].second = new TF1("df_dEdxCut_CDC_ProtonHigh", "[0]", 0.0, 12.0);
-		ddEdxCutMap[Proton][SYS_CDC].second->SetParameter(0, 9.9E9);
-		ddEdxCutMap.emplace(AntiProton, ddEdxCutMap[Proton]);
-
-		//CDC dE/dx Pi+/-
-		ddEdxCutMap[PiPlus][SYS_CDC].first = new TF1("df_dEdxCut_CDC_PionLow", "[0]", 0.0, 12.0);
-		ddEdxCutMap[PiPlus][SYS_CDC].first->SetParameter(0, -9.9E9);
-		ddEdxCutMap[PiPlus][SYS_CDC].second = new TF1("df_dEdxCut_CDC_PionHigh", "exp(-1.0*[0]*x + [1]) + [2]", 0.0, 12.0);
-		ddEdxCutMap[PiPlus][SYS_CDC].second->SetParameters(-0.1, 0.5, 1.2);
-		ddEdxCutMap.emplace(PiMinus, ddEdxCutMap[PiPlus]);
-
-		//CDC dE/dx K+/K-
-		ddEdxCutMap[KPlus][SYS_CDC].first = new TF1("df_dEdxCut_CDC_KaonLow", "[0]", 0.0, 12.0);
-		ddEdxCutMap[KPlus][SYS_CDC].first->SetParameter(0, -9.9E9);
-		ddEdxCutMap[KPlus][SYS_CDC].second = new TF1("df_dEdxCut_CDC_KaonHigh", "exp(-1.0*[0]*x + [1]) + [2]", 0.0, 12.0);
-		ddEdxCutMap[KPlus][SYS_CDC].second->SetParameters(2.0, 0.8, 3.0);
-		ddEdxCutMap.emplace(KMinus, ddEdxCutMap[KPlus]);
-
-		//CDC dE/dx e+/e-
-		ddEdxCutMap[Electron][SYS_CDC].first = new TF1("df_dEdxCut_CDC_ElectronLow", "[0]", 0.0, 12.0);
-		ddEdxCutMap[Electron][SYS_CDC].first->SetParameter(0, -9999999.9);
-		ddEdxCutMap[Electron][SYS_CDC].second = new TF1("df_dEdxCut_CDC_ElectronHigh", "[0]", 0.0, 12.0);
-		ddEdxCutMap[Electron][SYS_CDC].second->SetParameter(0, 5.5);
-
-		//FDC dE/dx e+/e-
-		ddEdxCutMap[Electron][SYS_FDC].first = new TF1("df_dEdxCut_CDC_ElectronLow", "[0]", 0.0, 12.0);
-		ddEdxCutMap[Electron][SYS_FDC].first->SetParameter(0, -9999999.9);
-		ddEdxCutMap[Electron][SYS_FDC].second = new TF1("df_dEdxCut_CDC_ElectronHigh", "[0]", 0.0, 12.0);
-		ddEdxCutMap[Electron][SYS_FDC].second->SetParameter(0, 3.5);
-		ddEdxCutMap.emplace(Positron, ddEdxCutMap[Electron]);
-/*
-		//E/p
-		dEOverPCutMap[Electron][SYS_FCAL] = new TF1("df_EOverPCut_FCAL_Electron", "[0]", 0.0, 12.0);
-		dEOverPCutMap[Electron][SYS_FCAL]->SetParameter(0.0, 0.7);
-		dEOverPCutMap[Electron][SYS_BCAL] = new TF1("df_EOverPCut_BCAL_Electron", "[0]", 0.0, 12.0);
-		dEOverPCutMap[Electron][SYS_BCAL]->SetParameter(0.0, 0.67);
-		dEOverPCutMap.emplace(Positron, dEOverPCutMap[Electron]);
-		dEOverPCutMap.emplace(MuonPlus, dEOverPCutMap[Electron]);
-		dEOverPCutMap.emplace(MuonMinus, dEOverPCutMap[Electron]);
-*/
 		vector<DetectorSystem_t> locdEdxSystems {SYS_CDC, SYS_FDC, SYS_START, SYS_TOF};
 		vector<Particle_t> locPIDs {Electron, Positron, MuonPlus, MuonMinus, PiPlus, PiMinus, KPlus, KMinus, Proton, AntiProton};
 		vector<DetectorSystem_t> locEOverPSystems {SYS_BCAL, SYS_FCAL};

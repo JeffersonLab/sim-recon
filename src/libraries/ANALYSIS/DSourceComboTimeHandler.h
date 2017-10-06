@@ -110,6 +110,9 @@ class DSourceComboTimeHandler
 		pair<double, double> Calc_RFDeltaTChiSq(const DNeutralShower* locNeutralShower, const TVector3& locVertex, double locPropagatedRFTime) const;
 		pair<double, double> Calc_RFDeltaTChiSq(const DChargedTrackHypothesis* locHypothesis, double locVertexTime, double locPropagatedRFTime) const;
 
+		void Define_DefaultCuts(void);
+		void Get_CommandLineCuts(void);
+		void Create_CutFunctions(void);
 		void Fill_Histograms(void);
 
 
@@ -118,6 +121,7 @@ class DSourceComboTimeHandler
 		const DSourceComboVertexer* dSourceComboVertexer;
 		const DAnalysisUtilities* dAnalysisUtilities;
 		int dDebugLevel = 0;
+		bool dPrintCutFlag = false;
 
 		//EXPERIMENT INFORMATION
 		DVector3 dTargetCenter;
@@ -164,6 +168,9 @@ class DSourceComboTimeHandler
 		//CUTS
 		//Unknown: initial RF selection for photons (at beginning of event, prior to vertex) //can be separate cut function
 		map<Particle_t, map<DetectorSystem_t, TF1*>> dPIDTimingCuts; //function of p
+		map<Particle_t, map<DetectorSystem_t, string>> dPIDTimingCuts_TF1FunctionString;
+		string dDefaultTimeCutFunctionString; //used if not found in dPIDTimingCuts_TF1FunctionString
+		map<Particle_t, map<DetectorSystem_t, vector<double>>> dPIDTimingCuts_TF1Params;
 
 		//HISTOGRAMS
 		//Unknown: initial RF selection for photons (at beginning of event, prior to vertex) //can be separate cut function

@@ -162,77 +162,49 @@
 namespace DAnalysis
 {
 
-DSourceComboTimeHandler::DSourceComboTimeHandler(JEventLoop* locEventLoop, DSourceComboer* locSourceComboer, const DSourceComboVertexer* locSourceComboVertexer) :
-		dSourceComboer(locSourceComboer), dSourceComboVertexer(locSourceComboVertexer)
+void DSourceComboTimeHandler::Define_DefaultCuts(void)
 {
-	gPARMS->SetDefaultParameter("COMBO:DEBUG_LEVEL", dDebugLevel);
+	//DEFAULT TIME CUT FUNCTION
+	dDefaultTimeCutFunctionString = "[0]";
+	//DEFINE FUNCTIONS STRINGS FOR PARTICLES/SYSTEMS THAT ARE NOT THE DEFAULT HERE (in dPIDTimingCuts_TF1FunctionString)
 
-	//These functions can have the same name because we are no longer adding them to the global ROOT list of functions
+	//DEFINE DEFAULT CUT VALUES //CUTS ARE SYMMETRIC!!
 
-	// Timing Cuts: Photon
-	dPIDTimingCuts[Gamma].emplace(SYS_BCAL, new TF1("df_TimeCut", "[0]", 0.0, 12.0));
-	dPIDTimingCuts[Gamma][SYS_BCAL]->SetParameter(0, 1.5);
-	dPIDTimingCuts[Gamma].emplace(SYS_FCAL, new TF1("df_TimeCut", "[0]", 0.0, 12.0));
-	dPIDTimingCuts[Gamma][SYS_FCAL]->SetParameter(0, 2.5); //2.5!!! //COMPARE
-	dSelectedRFDeltaTs[Gamma][SYS_BCAL].reserve(1000);
-	dSelectedRFDeltaTs[Gamma][SYS_FCAL].reserve(1000);
+	//Photon
+	dPIDTimingCuts_TF1Params[Gamma][SYS_BCAL] = {1.5};
+	dPIDTimingCuts_TF1Params[Gamma][SYS_FCAL] = {2.5};
 
 	//Unknown: initial RF selection for photons (at beginning of event, prior to vertex) //can be separate cut function
-	dPIDTimingCuts.emplace(Unknown, dPIDTimingCuts[Gamma]);
-	dSelectedRFDeltaTs.emplace(Unknown, dSelectedRFDeltaTs[Gamma]);
+	dPIDTimingCuts_TF1Params.emplace(Unknown, dPIDTimingCuts_TF1Params[Gamma]);
 
-	// Timing Cuts: Leptons
-	dPIDTimingCuts[Electron].emplace(SYS_BCAL, new TF1("df_TimeCut", "[0]", 0.0, 12.0));
-	dPIDTimingCuts[Electron][SYS_BCAL]->SetParameter(0, 1.0);
-	dPIDTimingCuts[Electron].emplace(SYS_TOF, new TF1("df_TimeCut", "[0]", 0.0, 12.0));
-	dPIDTimingCuts[Electron][SYS_TOF]->SetParameter(0, 0.5);
-	dPIDTimingCuts[Electron].emplace(SYS_FCAL, new TF1("df_TimeCut", "[0]", 0.0, 12.0));
-	dPIDTimingCuts[Electron][SYS_FCAL]->SetParameter(0, 2.0);
-	dSelectedRFDeltaTs[Electron][SYS_BCAL].reserve(1000);
-	dSelectedRFDeltaTs[Electron][SYS_FCAL].reserve(1000);
-	dSelectedRFDeltaTs[Electron][SYS_TOF].reserve(1000);
-	dSelectedRFDeltaTs[Electron][SYS_START].reserve(1000);
+	//Electrons
+	dPIDTimingCuts_TF1Params[Electron][SYS_BCAL] = {1.0};
+	dPIDTimingCuts_TF1Params[Electron][SYS_TOF] = {0.5};
+	dPIDTimingCuts_TF1Params[Electron][SYS_FCAL] = {2.0};
 
-	dPIDTimingCuts.emplace(Positron, dPIDTimingCuts[Electron]);
-	dPIDTimingCuts.emplace(MuonMinus, dPIDTimingCuts[Electron]);
-	dPIDTimingCuts.emplace(MuonPlus, dPIDTimingCuts[Electron]);
-	dSelectedRFDeltaTs.emplace(Positron, dSelectedRFDeltaTs[Electron]);
-	dSelectedRFDeltaTs.emplace(MuonMinus, dSelectedRFDeltaTs[Electron]);
-	dSelectedRFDeltaTs.emplace(MuonPlus, dSelectedRFDeltaTs[Electron]);
+	//Other Leptons
+	dPIDTimingCuts_TF1Params.emplace(Positron, dPIDTimingCuts_TF1Params[Electron]);
+	dPIDTimingCuts_TF1Params.emplace(MuonMinus, dPIDTimingCuts_TF1Params[Electron]);
+	dPIDTimingCuts_TF1Params.emplace(MuonPlus, dPIDTimingCuts_TF1Params[Electron]);
 
-	// Timing Cuts: Mesons
-	dPIDTimingCuts[PiPlus].emplace(SYS_BCAL, new TF1("df_TimeCut", "[0]", 0.0, 12.0));
-	dPIDTimingCuts[PiPlus][SYS_BCAL]->SetParameter(0, 1.0);
-	dPIDTimingCuts[PiPlus].emplace(SYS_TOF, new TF1("df_TimeCut", "[0]", 0.0, 12.0));
-	dPIDTimingCuts[PiPlus][SYS_TOF]->SetParameter(0, 0.5);
-	dPIDTimingCuts[PiPlus].emplace(SYS_FCAL, new TF1("df_TimeCut", "[0]", 0.0, 12.0));
-	dPIDTimingCuts[PiPlus][SYS_FCAL]->SetParameter(0, 2.0);
-	dPIDTimingCuts.emplace(PiMinus, dPIDTimingCuts[PiPlus]);
-	dSelectedRFDeltaTs.emplace(PiPlus, dSelectedRFDeltaTs[Electron]);
-	dSelectedRFDeltaTs.emplace(PiMinus, dSelectedRFDeltaTs[Electron]);
+	//Pions
+	dPIDTimingCuts_TF1Params[PiPlus][SYS_BCAL] = {1.0};
+	dPIDTimingCuts_TF1Params[PiPlus][SYS_TOF] = {0.5};
+	dPIDTimingCuts_TF1Params[PiPlus][SYS_FCAL] = {2.0};
+	dPIDTimingCuts_TF1Params.emplace(PiMinus, dPIDTimingCuts_TF1Params[PiPlus]);
 
-	dPIDTimingCuts[KPlus].emplace(SYS_BCAL, new TF1("df_TimeCut", "[0]", 0.0, 12.0));
-	dPIDTimingCuts[KPlus][SYS_BCAL]->SetParameter(0, 0.75);
-	dPIDTimingCuts[KPlus].emplace(SYS_TOF, new TF1("df_TimeCut", "[0]", 0.0, 12.0));
-	dPIDTimingCuts[KPlus][SYS_TOF]->SetParameter(0, 0.3);
-	dPIDTimingCuts[KPlus].emplace(SYS_FCAL, new TF1("df_TimeCut", "[0]", 0.0, 12.0));
-	dPIDTimingCuts[KPlus][SYS_FCAL]->SetParameter(0, 2.5); //2.5!!! //COMPARE
-	dPIDTimingCuts.emplace(KMinus, dPIDTimingCuts[KPlus]);
-	dSelectedRFDeltaTs.emplace(KPlus, dSelectedRFDeltaTs[Electron]);
-	dSelectedRFDeltaTs.emplace(KMinus, dSelectedRFDeltaTs[Electron]);
+	//Kaons
+	dPIDTimingCuts_TF1Params[KPlus][SYS_BCAL] = {0.75};
+	dPIDTimingCuts_TF1Params[KPlus][SYS_TOF] = {0.3};
+	dPIDTimingCuts_TF1Params[KPlus][SYS_FCAL] = {2.5};
+	dPIDTimingCuts_TF1Params.emplace(KMinus, dPIDTimingCuts_TF1Params[KPlus]);
 
-	// Timing Cuts: Baryons
-	dPIDTimingCuts[Proton].emplace(SYS_BCAL, new TF1("df_TimeCut", "[0]", 0.0, 12.0));
-	dPIDTimingCuts[Proton][SYS_BCAL]->SetParameter(0, 1.0);
-	dPIDTimingCuts[Proton].emplace(SYS_TOF, new TF1("df_TimeCut", "[0]", 0.0, 12.0));
-	dPIDTimingCuts[Proton][SYS_TOF]->SetParameter(0, 0.6);
-	dPIDTimingCuts[Proton].emplace(SYS_FCAL, new TF1("df_TimeCut", "[0]", 0.0, 12.0));
-	dPIDTimingCuts[Proton][SYS_FCAL]->SetParameter(0, 2.0);
-	dPIDTimingCuts.emplace(AntiProton, dPIDTimingCuts[Proton]);
-	dSelectedRFDeltaTs.emplace(Proton, dSelectedRFDeltaTs[Electron]);
-	dSelectedRFDeltaTs.emplace(AntiProton, dSelectedRFDeltaTs[Electron]);
-	dAllRFDeltaTs = dSelectedRFDeltaTs;
-
+	//Protons
+	dPIDTimingCuts_TF1Params[Proton][SYS_BCAL] = {1.0};
+	dPIDTimingCuts_TF1Params[Proton][SYS_TOF] = {0.6};
+	dPIDTimingCuts_TF1Params[Proton][SYS_FCAL] = {2.0};
+	dPIDTimingCuts_TF1Params.emplace(AntiProton, dPIDTimingCuts_TF1Params[Proton]);
+	
 //COMPARE:
 	// Timing Cuts: Start counter
 	// Start counter is special case: Since next to the target, and lower timing resolution, cannot separate PIDs
@@ -240,13 +212,144 @@ DSourceComboTimeHandler::DSourceComboTimeHandler(JEventLoop* locEventLoop, DSour
 	// But, we have to be careful: If a lot of hits in the SC, we may accidentally choose the wrong SC hit
 	// This is especially true for low-theta tracks: phi not well defined.
 	// So, this cut will only be applied IF no other PID timing information is available, AND if ONLY 1 ST hit matched to the track in space
-	for(auto& locPIDPair : dPIDTimingCuts)
+	for(auto& locPIDPair : dPIDTimingCuts_TF1Params)
 	{
-		if(ParticleCharge(locPIDPair.first) == 0)
-			continue;
-		locPIDPair.second.emplace(SYS_START, new TF1("df_TimeCut", "[0]", 0.0, 12.0));
-		locPIDPair.second[SYS_START]->SetParameter(0, 2.5); //2.5!!!
+		if(ParticleCharge(locPIDPair.first) != 0)
+			locPIDPair.second[SYS_START] = {2.5};
 	}
+}
+
+void DSourceComboTimeHandler::Get_CommandLineCuts(void)
+{
+	//PARAM EXAMPLES:
+	//COMBO_TIMECUT:14_32=0.75               //Cut protons (14) in the FCAL (32) at +/- 0.75
+	//COMBO_TIMECUT:9_8_FUNC="[0] + [1]*x"   //Cut pi-'s (9) in the TOF (8) according to the functional form: +/- ([0] + [1]*p), where p is track momentum
+	//COMBO_TIMECUT:9_8=1.5_0.001            //Set the parameters for the pi- cut function above
+
+	map<string, string> locParameterMap; //parameter key - filter, value
+	gPARMS->GetParameters(locParameterMap, "COMBO_TIMECUT:"); //gets all parameters with this filter at the beginning of the key
+	for(auto locParamPair : locParameterMap)
+	{
+		if(dDebugLevel)
+			cout << "param pair: " << locParamPair.first << ", " << locParamPair.second << endl;
+
+		//Figure out which particle was specified
+		auto locUnderscoreIndex = locParamPair.first.find('_');
+		auto locParticleString = locParamPair.first.substr(0, locUnderscoreIndex);
+		istringstream locPIDtream(locParticleString);
+		int locPIDInt;
+		locPIDtream >> locPIDInt;
+		if(locPIDtream.fail())
+			continue;
+		Particle_t locPID = (Particle_t)locPIDInt;
+
+		//Figure out which detector was specified
+		auto locFuncIndex = locParamPair.first.find("_FUNC");
+		auto locDetectorString = locParamPair.first.substr(locUnderscoreIndex + 1, locFuncIndex);
+		istringstream locDetectorStream(locDetectorString);
+		int locSystemInt;
+		locDetectorStream >> locSystemInt;
+		if(locDetectorStream.fail())
+			continue;
+		DetectorSystem_t locSystem = (DetectorSystem_t)locSystemInt;
+
+		if(dDebugLevel)
+			cout << "time cut: pid, detector = " << locPID << ", " << locSystem << endl;
+
+		//get the parameter, with hack so that don't get warning message about no default
+		string locKeyValue;
+		string locFullParamName = string("COMBO_TIMECUT:") + locParamPair.first; //have to add back on the filter
+		gPARMS->SetDefaultParameter(locFullParamName, locKeyValue);
+
+		//If functional form, save it and continue
+		if(locFuncIndex != string::npos)
+		{
+			dPIDTimingCuts_TF1FunctionString[locPID][locSystem] = locKeyValue;
+			continue;
+		}
+
+		//is cut parameters: extract and save
+		//CUT PARAMETERS SHOULD BE SEPARATED BY SPACES
+		dPIDTimingCuts_TF1Params[locPID][locSystem].clear(); //get rid of previous cut values
+		while(true)
+		{
+			locUnderscoreIndex = locKeyValue.find('_');
+			auto locValueString = locKeyValue.substr(0, locUnderscoreIndex);
+
+			istringstream locValuetream(locValueString);
+			double locParameter;
+			locValuetream >> locParameter;
+			if(locValuetream.fail())
+				continue; //must be for a different use
+			if(dDebugLevel)
+				cout << "param: " << locParameter << endl;
+
+			//save locParameter and truncate locKeyValue (or break if done)
+			dPIDTimingCuts_TF1Params[locPID][locSystem].push_back(locParameter);
+			if(locUnderscoreIndex == string::npos)
+				break;
+			locKeyValue = locKeyValue.substr(locUnderscoreIndex + 1);
+		}
+	}
+}
+
+void DSourceComboTimeHandler::Create_CutFunctions(void)
+{
+	//No idea why this lock is necessary, but it crashes without it.  Stupid ROOT. 
+	japp->RootWriteLock(); //ACQUIRE ROOT LOCK!!
+
+	for(auto& locPIDPair : dPIDTimingCuts_TF1Params)
+	{
+		auto& locSystemMap = locPIDPair.second;
+		for(auto& locSystemPair : locSystemMap)
+		{
+			auto& locParamVector = locSystemPair.second;
+			if(locParamVector.empty())
+				continue; //should never happen
+
+			//Get cut string
+			auto locCutFuncString = dDefaultTimeCutFunctionString; //default if nothing special specified
+			if(dPIDTimingCuts_TF1FunctionString.find(locPIDPair.first) != dPIDTimingCuts_TF1FunctionString.end())
+			{
+				auto locSystemStringMap = dPIDTimingCuts_TF1FunctionString[locPIDPair.first];
+				if(locSystemStringMap.find(locSystemPair.first) != locSystemStringMap.end())
+					locCutFuncString = locSystemStringMap[locSystemPair.first];
+			}
+
+			//Create TF1, Set cut values
+			//These functions can have the same name because we are no longer adding them to the global ROOT list of functions
+			auto locFunc = new TF1("df_TimeCut", locCutFuncString.c_str(), 0.0, 12.0);
+			if(dPrintCutFlag)
+				jout << "Time Cut PID, System, func form, params: " << ParticleType(locPIDPair.first) << ", " << SystemName(locSystemPair.first) << ", " << locCutFuncString;
+			dPIDTimingCuts[locPIDPair.first][locSystemPair.first] = locFunc;
+			for(size_t loc_i = 0; loc_i < locParamVector.size(); ++loc_i)
+			{
+				locFunc->SetParameter(loc_i, locParamVector[loc_i]);
+				if(dPrintCutFlag)
+					jout << ", " << locParamVector[loc_i];
+			}
+			if(dPrintCutFlag)
+				jout << endl;
+
+			//Reserve space for saving to-histogram quantities
+			dSelectedRFDeltaTs[locPIDPair.first][locSystemPair.first].reserve(1000);
+		}
+	}
+	dAllRFDeltaTs = dSelectedRFDeltaTs;
+
+	japp->RootUnLock(); //RELEASE ROOT LOCK!!
+}
+
+DSourceComboTimeHandler::DSourceComboTimeHandler(JEventLoop* locEventLoop, DSourceComboer* locSourceComboer, const DSourceComboVertexer* locSourceComboVertexer) :
+		dSourceComboer(locSourceComboer), dSourceComboVertexer(locSourceComboVertexer)
+{
+	gPARMS->SetDefaultParameter("COMBO:DEBUG_LEVEL", dDebugLevel);
+	gPARMS->SetDefaultParameter("COMBO:PRINT_CUTS", dPrintCutFlag);
+
+	//Setup cuts
+	Define_DefaultCuts();
+	Get_CommandLineCuts();
+	Create_CutFunctions();
 
 	if(locEventLoop == nullptr)
 		return; //only interested in querying cuts
@@ -280,7 +383,7 @@ DSourceComboTimeHandler::DSourceComboTimeHandler(JEventLoop* locEventLoop, DSour
 	while(dPhotonVertexZRangeLow + dPhotonVertexZBinWidth > locTargetUpstreamZ);
 	while(dPhotonVertexZRangeLow + locN*dPhotonVertexZBinWidth <= locTargetDownstreamZ)
 		++locN;
-	dNumPhotonVertexZBins = locN + 2; //two extra, for detached vertices
+	dNumPhotonVertexZBins = locN + size_t(ceil(20.0/dPhotonVertexZBinWidth) + 0.001); //20 more cm (two extra bins), for detached vertices
 
 	//print zbins
 	if(dDebugLevel > 0)
