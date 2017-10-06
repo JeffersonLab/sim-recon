@@ -246,6 +246,9 @@ jerror_t DAnalysisResults_factory::evnt(JEventLoop* locEventLoop, uint64_t event
 	VT_TRACER("DAnalysisResults_factory::evnt()");
 #endif
 
+	if(dDebugLevel > 0)
+		cout << "Analyze event: " << eventnumber << endl;
+
 	//CHECK TRIGGER TYPE
 	const DTrigger* locTrigger = NULL;
 	locEventLoop->GetSingle(locTrigger);
@@ -328,6 +331,9 @@ jerror_t DAnalysisResults_factory::evnt(JEventLoop* locEventLoop, uint64_t event
 				//SAVE COMBO
 				locAnalysisResults->Add_PassedParticleCombo(locPostKinFitCombo);
 			}
+
+			if(dDebugLevel > 0)
+				cout << "Action loop completed, # surviving combos: " << locAnalysisResults->Get_NumPassedParticleCombos() << endl;
 
 			//FILL HISTOGRAMS
 			japp->WriteLock("DAnalysisResults");

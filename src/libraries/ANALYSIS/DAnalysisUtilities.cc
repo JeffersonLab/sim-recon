@@ -44,11 +44,10 @@ bool DAnalysisUtilities::Check_IsBDTSignalEvent(JEventLoop* locEventLoop, const 
 
 	if(dParticleComboCreator == nullptr)
 		dParticleComboCreator = new DParticleComboCreator(locEventLoop, nullptr, nullptr, nullptr);
-
 	DReaction_factory_Thrown* dThrownReactionFactory = static_cast<DReaction_factory_Thrown*>(locEventLoop->GetFactory("DReaction", "Thrown"));
 
 	vector<const DReaction*> locThrownReactions;
-	locEventLoop->Get(locThrownReactions);
+	locEventLoop->Get(locThrownReactions, "Thrown");
 	if(locThrownReactions.empty())
 		return false;
 	auto locActualThrownReaction = locThrownReactions[0];
