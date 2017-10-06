@@ -377,11 +377,13 @@ jerror_t JEventProcessor_FDC_Efficiency::evnt(JEventLoop *loop, uint64_t eventnu
       // Interpolate track to layer
       DVector3 plane_origin(0.0, 0.0, fdcz[cellIndex]);
       DVector3 plane_normal(0.0, 0.0, 1.0);
-      DVector3 interPosition;
+      DVector3 interPosition,trackDirection;
       vector<DTrackFitter::Extrapolation_t>extrapolations=thisTimeBasedTrack->extrapolations.at(SYS_FDC);
       for (unsigned int i=0;i<extrapolations.size();i++){
 	double dz=plane_origin.z()-extrapolations[i].position.z();
 	if (fabs(dz)<0.5){
+	  trackDirection=extrapolations[i].momentum;
+	  trackDirection.SetMag(1.);
 	  interPosition=extrapolations[i].position;
 	  break;
 	}
@@ -397,6 +399,8 @@ jerror_t JEventProcessor_FDC_Efficiency::evnt(JEventLoop *loop, uint64_t eventnu
       for (unsigned int wireIndex = 0; wireIndex < wireByNumber.size(); wireIndex++){
 	unsigned int wireNum = wireIndex+1;
 	DFDCWire * wire = wireByNumber[wireIndex]; 
+	double dz=wire->origin.z()-interPosition.z();
+	interPosition+=(dz/trackDirection.z())*trackDirection;
 	double distanceToWire =  (interPosition-wire->origin).Perp();
 	bool expectHit = false;
 
