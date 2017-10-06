@@ -2574,7 +2574,6 @@ unsigned int DParticleID::PredictSCSector(const vector<DTrackFitter::Extrapolati
   double max_z=sc_pos[0][sc_pos[0].size()-1].z();
   double z=extrapolations[0].position.z();
   if (z>max_z+1. ){ // allow for some slop at end of nose
-    printf("z %f\n",extrapolations[0].position.z());
     return 0;
   }
   
