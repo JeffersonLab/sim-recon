@@ -9650,7 +9650,7 @@ jerror_t DTrackFitterKalmanSIMD::ExtrapolateCentralToOtherDetectors(){
 
   // Track propagation loop
   while (S(state_z)>Z_MIN && S(state_z)<Z_MAX  
-            && r2<R2_MAX){  
+            && r2<89.*89.){  
     // Bail if the transverse momentum has dropped below some minimum
     if (fabs(S(state_q_over_pt))>Q_OVER_PT_MAX){
       if (DEBUG_LEVEL>2)
@@ -9687,6 +9687,7 @@ jerror_t DTrackFitterKalmanSIMD::ExtrapolateCentralToOtherDetectors(){
     if (fabs(dedx)>EPS){
       ds=DE_PER_STEP/fabs(dedx);
     }
+
     if (ds>mStepSizeS) ds=mStepSizeS;
     if (s_to_boundary<ds) ds=s_to_boundary;
     if (ds<MIN_STEP_SIZE)ds=MIN_STEP_SIZE;
@@ -9714,7 +9715,7 @@ jerror_t DTrackFitterKalmanSIMD::ExtrapolateCentralToOtherDetectors(){
      
     r2=xy.Mod2(); 
     // Check if we have passed into the BCAL
-    if (r2>64.9*64.9 && S(state_z)<400){
+    if (r2>64.9*64.9 && S(state_z)<400){  
       double tanl=S(state_tanl);
       double pt=1/fabs(S(state_q_over_pt));
       double phi=S(state_phi);
@@ -9722,14 +9723,9 @@ jerror_t DTrackFitterKalmanSIMD::ExtrapolateCentralToOtherDetectors(){
       DVector3 momentum(pt*cos(phi),pt*sin(phi),pt*tanl);
       extrapolations[SYS_BCAL].push_back(Extrapolation_t(position,momentum,
 						 t*TIME_UNIT_CONVERSION,s));
-      
-
-      if (r2>89.*89.){ // outer radius squared	
-	return NOERROR;
-      }
     }
     // Check if we have more FDC planes to pass by
-    else if (fdc_plane<24 && S(state_z)>fdc_z_wires[fdc_plane]-0.1){   
+    else if (fdc_plane<24 && S(state_z)>fdc_z_wires[fdc_plane]-0.5){   
       // output step near wire plane 
       double tanl=S(state_tanl);
       double pt=1/fabs(S(state_q_over_pt));
