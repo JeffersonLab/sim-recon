@@ -505,7 +505,6 @@ bool DTrackFitter::ExtrapolateToRadius(double R,
       s=extrap.s;
       // The next part of the code refines the extrapolation
       DVector3 prevpos=prev.position;
-      DVector3 pos=extrap.position;
       DVector2 x1(pos.X(),pos.Y());
       DVector2 x2(prevpos.X(),prevpos.Y());
       DVector2 dx = x2-x1;
@@ -527,11 +526,13 @@ bool DTrackFitter::ExtrapolateToRadius(double R,
 	double v=(extrap.s-prev.s)/(extrap.t-prev.t);
 	s-=ds;
 	t-=ds/v;
+
+	return true;
       }
       break;
     }
   }
-  return true;
+  return false;
 }
 			
 bool DTrackFitter::ExtrapolateToRadius(double R,
