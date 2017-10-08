@@ -69,15 +69,15 @@ bool DChargedTrack_factory_PreSelect::Cut_HasDetectorMatch(const DChargedTrackHy
 {
 	if(!dHasDetectorMatchFlag)
 		return true;
-	const DTrackTimeBased* locTrackTimeBased = NULL;
-	locChargedTrackHypothesis->GetSingle(locTrackTimeBased);
+	auto locTrackTimeBased = locChargedTrackHypothesis->Get_TrackTimeBased();
 	return locDetectorMatches->Get_IsMatchedToHit(locTrackTimeBased);
 }
 
 bool DChargedTrack_factory_PreSelect::Cut_TrackingFOM(const DChargedTrackHypothesis* locChargedTrackHypothesis) const
 {
-	double locFOM = TMath::Prob(locChargedTrackHypothesis->dChiSq_Track, locChargedTrackHypothesis->dNDF_Track);
-	return ((locChargedTrackHypothesis->dNDF_Track == 0) ? true : (locFOM >= dMinTrackingFOM));
+	auto locTrackTimeBased = locChargedTrackHypothesis->Get_TrackTimeBased();
+	double locFOM = TMath::Prob(locTrackTimeBased->chisq, locTrackTimeBased->Ndof);
+	return ((locTrackTimeBased->Ndof == 0) ? true : (locFOM >= dMinTrackingFOM));
 }
 
 //------------------

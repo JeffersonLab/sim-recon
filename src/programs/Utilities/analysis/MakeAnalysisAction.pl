@@ -214,17 +214,6 @@ bool DCustomAction_${ActionName}::Perform_Action(JEventLoop* locEventLoop, const
 	//Optional: check whether the user wanted to use the kinematic fit results when performing this action
 	// bool locUseKinFitResultsFlag = Get_UseKinFitResultsFlag();
 
-";
-	if(${ActionType} == 0) # reaction-independent
-	{
-		$content .=	"
-	//Optional: Quit the action if it has already been executed this event (else may result in double-counting when filling histograms)
-	// if(Get_NumPreviousParticleCombos() != 0)
-	//		return true;
-";
-	}
-
-	$content .=	"
 	/*
 	//Optional: FILL HISTOGRAMS
 	//Since we are filling histograms local to this action, it will not interfere with other ROOT operations: can use action-wide ROOT lock

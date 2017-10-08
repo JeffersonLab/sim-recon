@@ -5,32 +5,10 @@
 // Creator: jrsteven (on Linux halldw1.jlab.org 2.6.32-504.8.1.el6.x86_64 x86_64)
 //
 
-
 #include "DReaction_factory_p3pi_hists.h"
 #include "DCustomAction_HistOmegaVsMissProton.h"
-#include "DCustomAction_dEdxCut_p3pi.h"
 #include "DCustomAction_CutExtraPi0.h"
 #include "DCustomAction_CutExtraTrackPID.h"
-
-void DReaction_factory_p3pi_hists::PIDCuts(DReaction* locReaction)
-{
-	locReaction->Add_AnalysisAction(new DHistogramAction_PID(locReaction));
-	locReaction->Add_AnalysisAction(new DCutAction_PIDDeltaT(locReaction, false, 2.0, Proton, SYS_TOF));
-	locReaction->Add_AnalysisAction(new DCutAction_PIDDeltaT(locReaction, false, 2.5, Proton, SYS_BCAL));
-	locReaction->Add_AnalysisAction(new DCutAction_PIDDeltaT(locReaction, false, 3.0, Proton, SYS_FCAL));
-	locReaction->Add_AnalysisAction(new DCutAction_PIDDeltaT(locReaction, false, 2.0, PiPlus, SYS_TOF));
-	locReaction->Add_AnalysisAction(new DCutAction_PIDDeltaT(locReaction, false, 1.5, PiPlus, SYS_BCAL));
-	locReaction->Add_AnalysisAction(new DCutAction_PIDDeltaT(locReaction, false, 3.0, PiPlus, SYS_FCAL));
-	locReaction->Add_AnalysisAction(new DCutAction_PIDDeltaT(locReaction, false, 2.0, PiMinus, SYS_TOF));
-	locReaction->Add_AnalysisAction(new DCutAction_PIDDeltaT(locReaction, false, 1.5, PiMinus, SYS_BCAL));
-	locReaction->Add_AnalysisAction(new DCutAction_PIDDeltaT(locReaction, false, 3.0, PiMinus, SYS_FCAL));
-	locReaction->Add_AnalysisAction(new DCutAction_PIDDeltaT(locReaction, false, 2.0, Gamma, SYS_BCAL)); //false: measured data
-	locReaction->Add_AnalysisAction(new DCutAction_PIDDeltaT(locReaction, false, 3.0, Gamma, SYS_FCAL)); //false: measured data
-	locReaction->Add_AnalysisAction(new DCustomAction_dEdxCut_p3pi(locReaction, false)); //false: focus on keeping signal
-	locReaction->Add_AnalysisAction(new DHistogramAction_PID(locReaction, "PostPIDCuts"));
-}
-	
-
 
 //------------------
 // brun
@@ -101,23 +79,13 @@ jerror_t DReaction_factory_p3pi_hists::evnt(JEventLoop* locEventLoop, uint64_t l
 	// Highly Recommended: When generating particle combinations, reject all beam photons that match to a different RF bunch
 	locReaction->Set_MaxPhotonRFDeltaT(0.5*dBeamBunchPeriod);
 
-	/************************************************** p3pi_preco_2FCAL Pre-Combo Custom Cuts *************************************************/
-
-	// Highly Recommended: Very loose invariant mass cuts, applied during DParticleComboBlueprint construction
-	locReaction->Set_InvariantMassCut(Pi0, 0.05, 0.22);
-	locReaction->Set_InvariantMassCut(omega, 0.4, 1.2);
-
-	// Highly Recommended: Very loose DAnalysisAction cuts, applied just after creating the combination (before saving it)
-	// Example: Missing mass squared of proton
-	locReaction->Add_ComboPreSelectionAction(new DCutAction_MissingMassSquared(locReaction, false, -0.1, 0.1));
-
 	/**************************************************** p3pi_preco_2FCAL Analysis Actions ****************************************************/
 
 	// Require 2 photons in FCAL
 	locReaction->Add_AnalysisAction(new DCustomAction_p3pi_Pi0Cuts(locReaction, false, 2));
 
 	// PID
-	PIDCuts(locReaction);
+	locReaction->Add_AnalysisAction(new DHistogramAction_PID(locReaction, false));
 
 	// MASSES
 	locReaction->Add_AnalysisAction(new DHistogramAction_InvariantMass(locReaction, Pi0, false, 850, 0.05, 0.22, "Pi0"));
@@ -160,23 +128,13 @@ jerror_t DReaction_factory_p3pi_hists::evnt(JEventLoop* locEventLoop, uint64_t l
 	// Highly Recommended: When generating particle combinations, reject all beam photons that match to a different RF bunch
 	locReaction->Set_MaxPhotonRFDeltaT(0.5*dBeamBunchPeriod);
 
-	/************************************************** p3pi_preco_FCAL-BCAL Pre-Combo Custom Cuts *************************************************/
-
-	// Highly Recommended: Very loose invariant mass cuts, applied during DParticleComboBlueprint construction
-	locReaction->Set_InvariantMassCut(Pi0, 0.05, 0.22);
-	locReaction->Set_InvariantMassCut(omega, 0.4, 1.2);
-
-	// Highly Recommended: Very loose DAnalysisAction cuts, applied just after creating the combination (before saving it)
-	// Example: Missing mass squared of proton
-	locReaction->Add_ComboPreSelectionAction(new DCutAction_MissingMassSquared(locReaction, false, -0.1, 0.1));
-
 	/**************************************************** p3pi_preco FCAL-BCAL Analysis Actions ****************************************************/
 
 	// Require 1 photon in FCAL and 1 photon in BCAL
 	locReaction->Add_AnalysisAction(new DCustomAction_p3pi_Pi0Cuts(locReaction, false, 1));
 
 	// PID
-	PIDCuts(locReaction);
+	locReaction->Add_AnalysisAction(new DHistogramAction_PID(locReaction, false));
 
 	// MASSES
 	locReaction->Add_AnalysisAction(new DHistogramAction_InvariantMass(locReaction, Pi0, false, 850, 0.05, 0.22, "Pi0"));
@@ -219,23 +177,13 @@ jerror_t DReaction_factory_p3pi_hists::evnt(JEventLoop* locEventLoop, uint64_t l
 	// Highly Recommended: When generating particle combinations, reject all beam photons that match to a different RF bunch
 	locReaction->Set_MaxPhotonRFDeltaT(0.5*dBeamBunchPeriod);
 
-	/************************************************** p3pi_preco_2BCAL Pre-Combo Custom Cuts *************************************************/
-
-	// Highly Recommended: Very loose invariant mass cuts, applied during DParticleComboBlueprint construction
-	locReaction->Set_InvariantMassCut(Pi0, 0.05, 0.22);
-	locReaction->Set_InvariantMassCut(omega, 0.4, 1.2);
-
-	// Highly Recommended: Very loose DAnalysisAction cuts, applied just after creating the combination (before saving it)
-	// Example: Missing mass squared of proton
-	locReaction->Add_ComboPreSelectionAction(new DCutAction_MissingMassSquared(locReaction, false, -0.1, 0.1));
-
 	/**************************************************** p3pi_preco_2BCAL Analysis Actions ****************************************************/
 
 	// Require 1 photon in FCAL and 1 photon in BCAL
 	locReaction->Add_AnalysisAction(new DCustomAction_p3pi_Pi0Cuts(locReaction, false, 0));
 
 	// PID
-	PIDCuts(locReaction);
+	locReaction->Add_AnalysisAction(new DHistogramAction_PID(locReaction, false));
 
 	// MASSES
 	locReaction->Add_AnalysisAction(new DHistogramAction_InvariantMass(locReaction, Pi0, false, 850, 0.05, 0.22, "Pi0"));
@@ -278,21 +226,10 @@ jerror_t DReaction_factory_p3pi_hists::evnt(JEventLoop* locEventLoop, uint64_t l
 	// Highly Recommended: When generating particle combinations, reject all beam photons that match to a different RF bunch
 	locReaction->Set_MaxPhotonRFDeltaT(0.5*dBeamBunchPeriod);
 
-	/*********************************************** p3pi_preco_any Pre-Combo Custom Cuts ***********************************************/
-
-	// Loose Pi0 Cut, Applied during Blueprint Construction
-	locReaction->Set_InvariantMassCut(Pi0, 0.05, 0.22);
-
-	// Loose omega Cut, Applied during Blueprint Construction
-	locReaction->Set_InvariantMassCut(omega, 0.4, 1.2);
-
-	// Loose missing mass squared cut, applied just after creating the combination (before saving it)
-	locReaction->Add_ComboPreSelectionAction(new DCutAction_MissingMassSquared(locReaction, false, -0.1, 0.1));
-
 	/**************************************************** p3pi_preco_any Analysis Actions ****************************************************/
 
 	// PID
-	PIDCuts(locReaction);
+	locReaction->Add_AnalysisAction(new DHistogramAction_PID(locReaction, false));
 
 	// Pi0
 	locReaction->Add_AnalysisAction(new DHistogramAction_InvariantMass(locReaction, Pi0, false, 850, 0.05, 0.22, "Pi0"));
@@ -333,21 +270,10 @@ jerror_t DReaction_factory_p3pi_hists::evnt(JEventLoop* locEventLoop, uint64_t l
 	// Highly Recommended: When generating particle combinations, reject all beam photons that match to a different RF bunch
 	locReaction->Set_MaxPhotonRFDeltaT(0.5*dBeamBunchPeriod);
 
-	/*********************************************** p3pi_preco_any_kinfit Pre-Combo Custom Cuts ***********************************************/
-
-	// Loose Pi0 Cut, Applied during Blueprint Construction
-	locReaction->Set_InvariantMassCut(Pi0, 0.05, 0.22);
-
-	// Loose omega Cut, Applied during Blueprint Construction
-	locReaction->Set_InvariantMassCut(omega, 0.4, 1.2);
-
-	// Loose missing mass squared cut, applied just after creating the combination (before saving it)
-	locReaction->Add_ComboPreSelectionAction(new DCutAction_MissingMassSquared(locReaction, false, -0.1, 0.1));
-
 	/**************************************************** p3pi_preco_any_kinfit Analysis Actions ****************************************************/
 
 	// PID
-	PIDCuts(locReaction);
+	locReaction->Add_AnalysisAction(new DHistogramAction_PID(locReaction, false));
 
 	// MASSES
 	locReaction->Add_AnalysisAction(new DHistogramAction_InvariantMass(locReaction, Pi0, false, 850, 0.05, 0.22, "Pi0"));

@@ -41,10 +41,10 @@ inline const DNeutralParticleHypothesis* DNeutralParticle::Get_BestFOM(void) con
 	const DNeutralParticleHypothesis* locBestNeutralParticleHypotheses = dNeutralParticleHypotheses[0];
 	for(size_t loc_i = 0; loc_i < dNeutralParticleHypotheses.size(); ++loc_i)
 	{
-		if(dNeutralParticleHypotheses[loc_i]->dFOM > locBestFOM)
+		if(dNeutralParticleHypotheses[loc_i]->Get_FOM() > locBestFOM)
 		{
 			locBestNeutralParticleHypotheses = dNeutralParticleHypotheses[loc_i];
-			locBestFOM = locBestNeutralParticleHypotheses->dFOM;
+			locBestFOM = locBestNeutralParticleHypotheses->Get_FOM();
 		}
 	}
 	return locBestNeutralParticleHypotheses;

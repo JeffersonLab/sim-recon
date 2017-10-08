@@ -17,6 +17,7 @@
 #include <PID/DChargedTrackHypothesis.h>
 #include <FCAL/DFCALShower.h>
 #include <BCAL/DBCALShower.h>
+#include "DResourcePool.h"
 
 using namespace std;
 using namespace jana;
@@ -24,7 +25,7 @@ using namespace jana;
 class DNeutralShower_factory:public jana::JFactory<DNeutralShower>
 {
 	public:
-		DNeutralShower_factory(){};
+		DNeutralShower_factory(){dResourcePool_TMatrixFSym = std::make_shared<DResourcePool<TMatrixFSym>>();}
 		~DNeutralShower_factory(){};
 
 	private:
@@ -33,6 +34,8 @@ class DNeutralShower_factory:public jana::JFactory<DNeutralShower>
 		jerror_t evnt(jana::JEventLoop *locEventLoop, uint64_t eventnumber);	///< Called every event.
 		jerror_t erun(void);						///< Called everytime run number changes, provided brun has been called.
 		jerror_t fini(void);						///< Called after last event of last event source has been processed.
+
+		shared_ptr<DResourcePool<TMatrixFSym>> dResourcePool_TMatrixFSym;
 };
 
 #endif // _DNeutralShower_factory_

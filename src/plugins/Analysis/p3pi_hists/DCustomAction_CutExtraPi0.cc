@@ -27,9 +27,6 @@ void DCustomAction_CutExtraPi0::Initialize(JEventLoop* locEventLoop)
 
 bool DCustomAction_CutExtraPi0::Perform_Action(JEventLoop* locEventLoop, const DParticleCombo* locParticleCombo)
 {
-	if(Get_NumPreviousParticleCombos() == 0)
-		dPreviousSourceObjects.clear();
-
 	vector<const DNeutralParticle*> locUnusedNeutralParticles;
 	dAnalysisUtilities->Get_UnusedNeutralParticles(locEventLoop, locParticleCombo, locUnusedNeutralParticles);
 
