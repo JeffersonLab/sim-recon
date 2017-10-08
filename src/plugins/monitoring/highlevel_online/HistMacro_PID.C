@@ -239,7 +239,7 @@ class FitWrapper{
    			  ftf->SetParLimits(3,0.3,4.);
    			  ftf->SetParLimits(4,0.5,8.);
 
-			Int_t fit_status = h1->Fit(ftf, "0", "", xminfit, xmaxfit); // Fit the BG, the peaks excluded
+			Int_t fit_status = h1->Fit(ftf, "0Q", "", xminfit, xmaxfit); // Fit the BG, the peaks excluded
    			  if(fit_status != 0 ){
 			  cout << "FitPeaksWithBackgr: Fit of backgound failed, code "<< fit_status <<endl;
 			  return 0;
@@ -267,7 +267,7 @@ class FitWrapper{
 			  Double_t wd=ftf->GetParameter(5+i*4+3);
 			  ftf->SetParLimits(5+i*4+3,wd*0.3,wd*3.);
 
-			  fit_status = h1->Fit(ftf, "0", "", xminfit, xmaxfit); // Fit the BG + peak
+			  fit_status = h1->Fit(ftf, "0Q", "", xminfit, xmaxfit); // Fit the BG + peak
 			  if(fit_status != 0 ){
 				 cout << "FitPeaksWithBackgr: Fit of peak+backgound failed, code "<< fit_status <<endl;
 				 return 0;
@@ -440,7 +440,7 @@ class FitWrapper{
 			Double_t xmax_int = h1->GetBinLowEdge(maxbin_int+1); // high edge of integration region
 			Double_t norm = h1->GetBinContent(minbin_int, maxbin_int)/h1->GetBinWidth(minbin_int)/ftf->Integral(xmin_int, xmax_int);
 			ftf->SetParameter(3, norm); // scale background function to match histo integral near edge of excluded region
-			h1->Fit(ftf, "0", "", xminfit, xmaxfit);
+			h1->Fit(ftf, "0Q", "", xminfit, xmaxfit);
 
 			// Release peak parameters and fit to full range
 			ftf->ReleaseParameter(0);
@@ -449,7 +449,7 @@ class FitWrapper{
 			ftf->ReleaseParameter(9);
 			ftf->FixParameter(7, -1.0E6);  // disable excluded region
 			ftf->FixParameter(8, -1.0E6);  // disable excluded region
-			h1->Fit(ftf, "", "", xminfit, xmaxfit);
+			h1->Fit(ftf, "Q", "", xminfit, xmaxfit);
 
 			// Copy parameters into new function for plotting background
 			TF1 *fbg = (TF1 *)gROOT->FindObject(fbgname);
@@ -565,7 +565,7 @@ class FitWrapper{
 		double hi = 0.190;
 
 		// Fit and Draw
-		TwoGammaMass->Fit(fun, "", "", lo, hi);
+		TwoGammaMass->Fit(fun, "Q", "", lo, hi);
 
 		// Release gaussian parameters and fit again
 		fun->ReleaseParameter(0);
@@ -573,7 +573,7 @@ class FitWrapper{
 		fun->ReleaseParameter(2);
 
 		// Fit and Draw again (histogram and function)
-		TwoGammaMass->Fit(fun, "", "", lo, hi);
+		TwoGammaMass->Fit(fun, "Q", "", lo, hi);
 
 		// Second function for drawing background
 		TF1 *fun2 = (TF1*)gDirectory->FindObjectAny("fun_pi0_fit2");
@@ -586,8 +586,21 @@ class FitWrapper{
 		fun2->SetLineStyle(2);
 		fun2->Draw("same");
 		
-		// Add to time series
-		if(unix_time > 0)InsertSeriesMassFit("pi0", pars[1], pars[2], errs[1], errs[2], unix_time);
+		// Get number of pi0's
+		double I = fun->GetParameter(0)*fun->GetParameter(2)*sqrt(TMath::TwoPi());
+		I /= TwoGammaMass->GetBinWidth(1);
+		char str[256];
+		sprintf(str, "num. #pi^{o} : %g", I);
+
+		// Only try adding to time series if we have more than 20 particles in peak
+		cout << "====== pi0: I="<<I<<"  mean: " << pars[1] << " +/- " << errs[1] << "   sigma: "<< pars[2] << " +/- " << errs[2] << endl;
+		if( (I>1000.0) && (errs[1]<0.1*pars[1]) && (errs[2]<0.2*pars[2]) ){
+			// Add to time series
+			InsertSeriesMassFit("pi0", pars[1], pars[2], errs[1], errs[2], unix_time);
+		
+			// Optionally reset the histogram so next fit is independent of this one
+			if(rs_GetFlag("RESET_AFTER_FIT")) rs_ResetHisto("/highlevel/TwoGammaMass");
+		}
 		
 		double max = 1.05*TwoGammaMass->GetMaximum();
 		TLine lin;
@@ -601,12 +614,6 @@ class FitWrapper{
 		latex.SetTextAlign(21);
 		latex.SetTextColor(kMagenta);
 		latex.DrawLatex(0.131, max/2.0, "135 MeV");
-
-		// Get number of pi0's
-		double I = fun->GetParameter(0)*fun->GetParameter(2)*sqrt(TMath::TwoPi());
-		I /= TwoGammaMass->GetBinWidth(1);
-		char str[256];
-		sprintf(str, "num. #pi^{o} : %g", I);
 
 		latex.SetTextColor(kBlack);
 		latex.SetTextAngle(0.0);
@@ -669,8 +676,16 @@ class FitWrapper{
 				latex.DrawLatex(1.4, max*0.65, str);
 			}
 
-			// Add to time series
-			if(unix_time > 0)InsertSeriesMassFit("phi", pars_out[1], pars_out[2], errs_out[1], errs_out[2], unix_time);
+			// Only try adding to time series if we have more than 20 particles in peak
+			cout << "====== phi: I="<<I<<"  mean: " << pars_out[1] << " +/- " << errs_out[1] << "   sigma: "<< pars_out[2] << " +/- " << errs_out[2] << endl;
+			if( (I>40.0) && (errs_out[1]<0.1*pars_out[1]) && (errs_out[2]<0.2*pars_out[2]) ){
+
+				// Add to time series
+				InsertSeriesMassFit("phi", pars_out[1], pars_out[2], errs_out[1], errs_out[2], unix_time);
+		
+				// Optionally reset the histogram so next fit is independent of this one
+				if(rs_GetFlag("RESET_AFTER_FIT")) rs_ResetHisto("/highlevel/KPlusKMinus");
+			}
 		}
 	}
 
@@ -709,8 +724,15 @@ class FitWrapper{
 				latex.DrawLatex(1.010, max*0.65, str);
 			}
 
-			// Add to time series
-			if(unix_time > 0)InsertSeriesMassFit("rho", pars_out[1], pars_out[2], errs_out[1], errs_out[2], unix_time);
+			// Only try adding to time series if we have more than 20 particles in peak
+			cout << "====== rho: I="<<I<<"  mean: " << pars_out[1] << " +/- " << errs_out[1] << "   sigma: "<< pars_out[2] << " +/- " << errs_out[2] << endl;
+			if( (I>200.0) && (errs_out[1]<0.1*pars_out[1]) && (errs_out[2]<0.2*pars_out[2]) ){
+				// Add to time series
+				InsertSeriesMassFit("rho", pars_out[1], pars_out[2], errs_out[1], errs_out[2], unix_time);
+		
+				// Optionally reset the histogram so next fit is independent of this one
+				if(rs_GetFlag("RESET_AFTER_FIT")) rs_ResetHisto("/highlevel/PiPlusPiMinus");
+			}
 		}
 	}
 
@@ -749,8 +771,15 @@ class FitWrapper{
 				latex.DrawLatex(1.010, max*0.65, str);
 			}
 
-			// Add to time series
-			if(unix_time > 0)InsertSeriesMassFit("omega", pars_out[1], pars_out[2], errs_out[1], errs_out[2], unix_time);
+			// Only try adding to time series if we have more than 20 particles in peak
+			cout << "====== omega: I="<<I<<"  mean: " << pars_out[1] << " +/- " << errs_out[1] << "   sigma: "<< pars_out[2] << " +/- " << errs_out[2] << endl;
+			if( (I>50.0) && (errs_out[1]<0.1*pars_out[1]) && (errs_out[2]<0.2*pars_out[2]) ){
+				// Add to time series
+				InsertSeriesMassFit("omega", pars_out[1], pars_out[2], errs_out[1], errs_out[2], unix_time);
+		
+				// Optionally reset the histogram so next fit is independent of this one
+				if(rs_GetFlag("RESET_AFTER_FIT")) rs_ResetHisto("/highlevel/PiPlusPiMinusPiZero");
+			}
 		}
 	}
 }
