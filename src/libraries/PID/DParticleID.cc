@@ -1088,7 +1088,7 @@ bool DParticleID::Distance_ToTrack(const vector<DTrackFitter::Extrapolation_t> &
   // the closest match between a point and the track
   for (unsigned int m=0;m<points.size();m++){
     DVector3 locPointProjPos=extrapolations[0].position;
-    R=points[m]->rho();
+    R=points[m]->r();
     if (fitter->ExtrapolateToRadius(R,extrapolations,locPointProjPos)==false)
       return false;
 
