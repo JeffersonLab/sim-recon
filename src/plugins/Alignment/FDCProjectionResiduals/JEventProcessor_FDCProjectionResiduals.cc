@@ -134,6 +134,15 @@ jerror_t JEventProcessor_FDCProjectionResiduals::brun(JEventLoop *eventLoop, int
       short_drift_func[2][2]=row["c3"];
    }
 
+   vector<const DTrackFitter *> fitters;
+   eventLoop->Get(fitters);
+   
+   if(fitters.size()<1){
+     _DBG_<<"Unable to get a DTrackFinder object!"<<endl;
+     return RESOURCE_UNAVAILABLE;
+   }
+   fitter = fitters[0];
+
 
    MAX_DRIFT_TIME = 1000.0; //ns: from TRKFIND:MAX_DRIFT_TIME in DTrackCandidate_factory_CDC
    PLANE_TO_SKIP = 0;
@@ -360,9 +369,12 @@ bool JEventProcessor_FDCProjectionResiduals::Expect_Hit(const DTrackTimeBased* t
 
    // Loose cut before delta information
    // Need to get phi_doca for each of the wires that pass this cut
-   DVector3 pos, mom;
-   thisTimeBasedTrack->rt->GetLastDOCAPoint(pos, mom);
+   vector<DTrackFitter::Extrapolation_t>extrapolations=thisTimeBasedTrack->extrapolations.at(SYS_CDC);
+   if (extrapolations.size()==0) return false;
+   
    // Form the vector between the wire and the DOCA point
+   DVector3 pos;
+   fitter->DistToWire(wire,extrapolations,&pos);
    DVector3 DOCA = (-1) * ((wire->origin - pos) - (wire->origin - pos).Dot(wire->udir) * wire->udir);
 
    double docaphi = DOCA.Phi();
