@@ -86,6 +86,7 @@ shared_ptr<DKinFitParticle> DKinFitUtils::Make_TargetParticle(int locPID, int lo
 	locKinFitParticle->Set_Charge(locCharge);
 	locKinFitParticle->Set_Mass(locMass);
 	locKinFitParticle->Set_KinFitParticleType(d_TargetParticle);
+	locKinFitParticle->Set_VertexP4AtProductionVertex(true);
 
 	if(dDebugLevel > 5)
 	{
@@ -154,6 +155,7 @@ shared_ptr<DKinFitParticle> DKinFitUtils::Make_MissingParticle(int locPID, int l
 	locKinFitParticle->Set_Charge(locCharge);
 	locKinFitParticle->Set_Mass(locMass);
 	locKinFitParticle->Set_KinFitParticleType(d_MissingParticle);
+	locKinFitParticle->Set_VertexP4AtProductionVertex(true);
 
 	if(dDebugLevel > 5)
 	{
