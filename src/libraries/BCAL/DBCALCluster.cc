@@ -7,7 +7,7 @@
 
 #include "BCAL/DBCALCluster.h"
 #include "BCAL/DBCALPoint.h"
-#include "units.h"m_q
+#include "units.h"
 
 
 #include <math.h>
