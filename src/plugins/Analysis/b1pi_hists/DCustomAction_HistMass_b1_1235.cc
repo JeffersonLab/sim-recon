@@ -65,17 +65,11 @@ bool DCustomAction_HistMass_b1_1235::Perform_Action(JEventLoop* locEventLoop, co
 	locCurrentParticles.insert(locPhoton1);
 	locCurrentParticles.insert(locPhoton2);
 
-	//if new event: clear past particles, else check if duplicate
-	if(Get_NumPreviousParticleCombos() == 0)
-		dPastParticles.clear();
-	else //have had previous combos for this event, check to make sure particles used to compute this quantity aren't duplicate
+	for(size_t loc_i = 0; loc_i < dPastParticles.size(); ++loc_i)
 	{
-		for(size_t loc_i = 0; loc_i < dPastParticles.size(); ++loc_i)
-		{
-			if(locCurrentParticles != dPastParticles[loc_i])
-				continue;
-			return true; //duplicate combo of particles, don't fill histogram!
-		}
+		if(locCurrentParticles != dPastParticles[loc_i])
+			continue;
+		return true; //duplicate combo of particles, don't fill histogram!
 	}
 	dPastParticles.push_back(locCurrentParticles);
 

@@ -86,16 +86,8 @@ bool DCustomAction_p2k_hists::Perform_Action(JEventLoop* locEventLoop, const DPa
 	const DParticleComboStep* locParticleComboStep = locParticleCombo->Get_ParticleComboStep(0);
 
 	// get beam photon energy and final state particles
-        const DKinematicData* locBeamPhoton = NULL;
-        deque<const DKinematicData*> locParticles;
-        if(!Get_UseKinFitResultsFlag()) { //measured
-                locBeamPhoton = locParticleComboStep->Get_InitialParticle_Measured();
-                locParticleComboStep->Get_FinalParticles_Measured(locParticles);
-        }
-        else {
-                locBeamPhoton = locParticleComboStep->Get_InitialParticle();
-                locParticleComboStep->Get_FinalParticles(locParticles);
-        }
+	const DKinematicData* locBeamPhoton = Get_UseKinFitResultsFlag() ? locParticleComboStep->Get_InitialParticle() : locParticleComboStep->Get_InitialParticle_Measured();
+	auto locParticles = Get_UseKinFitResultsFlag() ? locParticleComboStep->Get_FinalParticles() : locParticleComboStep->Get_FinalParticles_Measured();
         double locBeamPhotonEnergy = locBeamPhoton->energy();
 
 	// get k+ and k- tracks
@@ -111,7 +103,7 @@ bool DCustomAction_p2k_hists::Perform_Action(JEventLoop* locEventLoop, const DPa
 			locChargedTrackHypothesis = locChargedTrack->Get_Hypothesis(KPlus);
 			if(locChargedTrackHypothesis == NULL) { cout<<"Missing K+"<<endl; continue; }
 			kplus_beta = locChargedTrackHypothesis->measuredBeta();
-			kplus_deltaInvBeta = locChargedTrackHypothesis->deltaInvBeta();
+			kplus_deltaInvBeta = 1.0/locChargedTrackHypothesis->lorentzMomentum().Beta() - 1.0/kplus_beta;
 
 			const DChargedTrackHypothesis* locChargedTrackPion = locChargedTrack->Get_Hypothesis(PiPlus);
 			if(locChargedTrackPion != NULL)
@@ -124,7 +116,7 @@ bool DCustomAction_p2k_hists::Perform_Action(JEventLoop* locEventLoop, const DPa
 			locChargedTrackHypothesis = locChargedTrack->Get_Hypothesis(KMinus);
 			if(locChargedTrackHypothesis == NULL) { cout<<"Missing K-"<<endl; continue; }
 			kminus_beta = locChargedTrackHypothesis->measuredBeta();
-			kminus_deltaInvBeta = locChargedTrackHypothesis->deltaInvBeta();
+			kplus_deltaInvBeta = 1.0/locChargedTrackHypothesis->lorentzMomentum().Beta() - 1.0/kplus_beta;
 
 			const DChargedTrackHypothesis* locChargedTrackPion = locChargedTrack->Get_Hypothesis(PiMinus);
 			if(locChargedTrackPion != NULL)
@@ -140,14 +132,14 @@ bool DCustomAction_p2k_hists::Perform_Action(JEventLoop* locEventLoop, const DPa
 	DLorentzVector locP4_2pi = kplus_PionHypothesis + kminus_PionHypothesis;
 
 	// calculate missing P4
-	DLorentzVector locMissingP4 = dAnalysisUtilities->Calc_MissingP4(locParticleCombo,Get_UseKinFitResultsFlag());
+	DLorentzVector locMissingP4 = dAnalysisUtilities->Calc_MissingP4(Get_Reaction(), locParticleCombo,Get_UseKinFitResultsFlag());
 
 	// reconstructed proton variables
 	double dEdx = 0.;
 	DLorentzVector locProtonP4;
 	const DChargedTrack* locChargedTrack = static_cast<const DChargedTrack*>(locParticleComboStep->Get_FinalParticle_SourceObject(2));
 	const DChargedTrackHypothesis* locChargedTrackHypothesis = locChargedTrack->Get_Hypothesis(Proton);
-	dEdx = locChargedTrackHypothesis->dEdx()*1e6;
+	dEdx = locChargedTrackHypothesis->Get_TrackTimeBased()->dEdx()*1e6;
 	locProtonP4 = locChargedTrackHypothesis->lorentzMomentum();	
 
 	//FILL HISTOGRAMS
