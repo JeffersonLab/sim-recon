@@ -10,6 +10,7 @@
 
 #include <deque>
 #include <map>
+#include <memory>
 #include <limits>
 #include <cmath>
 
@@ -72,102 +73,72 @@ class DParticleID:public jana::JObject
 		jerror_t CalcDCdEdx(const DTrackTimeBased *locTrackTimeBased, const vector<dedx_t>& locdEdxHits_CDC, const vector<dedx_t>& locdEdxHits_FDC, double& locdEdx_FDC, double& locdx_FDC, double& locdEdx_CDC, double& locdx_CDC, unsigned int& locNumHitsUsedFordEdx_FDC, unsigned int& locNumHitsUsedFordEdx_CDC) const;
 
 		jerror_t CalcdEdxHit(const DVector3 &mom, const DVector3 &pos, const DCDCTrackHit *hit, pair <double,double> &dedx) const;
-		double CalcdXHit(const DVector3 &mom,
-				 const DVector3 &pos,
-				 const DCoordinateSystem *wire) const;
 		jerror_t GroupTracks(vector<const DTrackTimeBased *> &tracks, vector<vector<const DTrackTimeBased*> >&grouped_tracks) const;
 
 		void GetScintMPdEandSigma(double p,double M,double x,double &most_prob_dE, double &sigma_dE) const;
 		double GetMostProbabledEdx_DC(double p,double mass,double dx, bool locIsCDCFlag) const; //bool is false for FDC
 		double GetdEdxSigma_DC(double num_hits,double p,double mass, double mean_path_length, bool locIsCDCFlag) const; //bool is false for FDC
 
-		/*********** Routines to get start time for time-based tracking ***************/
-		bool Get_StartTime(const vector<DTrackFitter::Extrapolation_t> &extrapolations,
-				   const vector<const DSCHit*>& SCHits, 
-				   double& StartTime) const;	
-		bool Get_StartTime(const vector<DTrackFitter::Extrapolation_t> &extrapolations,
-				   const vector<const DTOFPoint*>& TOFPoints, 
-				   double& StartTime) const;
-		bool Get_StartTime(const vector<DTrackFitter::Extrapolation_t> &extrapolations,
-				   const vector<const DFCALShower*>& FCALShowers,
-				   double& StartTime) const;
-		bool Get_StartTime(const vector<DTrackFitter::Extrapolation_t> &extrapolations,
-				   const vector<const DBCALShower*>& locBCALShowers,
-				   double& StartTime) const;  
-
-		/***************** Routines to correct hits using track info **************/
-		double Get_CorrectedHitTime(const DSCHit* locSCHit,
-					      const DVector3 &locProjPos) const;
-		double Get_CorrectedHitEnergy(const DSCHit* locSCHit,
-					      const DVector3 &locProjPos) const;
-		double Get_CorrectedHitTime(const DTOFPoint* locTOFPoint,
-					      const DVector3 &locProjPos) const;
-		double Get_CorrectedHitEnergy(const DTOFPoint* locTOFPoint,
-					      const DVector3 &locProjPos) const;
-
-
 		/****************************************************** DISTANCE TO TRACK ******************************************************/
+
+		// NOTE: For these functions, an initial guess for start time is expected as input so that out-of-time tracks can be skipped
+		bool Distance_ToTrack(const DReferenceTrajectory* rt, const DFCALShower* locFCALShower, double locInputStartTime, shared_ptr<DFCALShowerMatchParams>& locShowerMatchParams, DVector3* locOutputProjPos = nullptr, DVector3* locOutputProjMom = nullptr) const;
+		bool Distance_ToTrack(const DReferenceTrajectory* rt, const DBCALShower* locBCALShower, double locInputStartTime, shared_ptr<DBCALShowerMatchParams>& locShowerMatchParams, DVector3* locOutputProjPos = nullptr, DVector3* locOutputProjMom = nullptr) const;
+		bool Distance_ToTrack(const DReferenceTrajectory* rt, const DTOFPoint* locTOFPoint, double locInputStartTime, shared_ptr<DTOFHitMatchParams>& locTOFHitMatchParams, DVector3* locOutputProjPos = nullptr, DVector3* locOutputProjMom = nullptr) const;
+		bool Distance_ToTrack(const DReferenceTrajectory* rt, const DSCHit* locSCHit, double locInputStartTime, shared_ptr<DSCHitMatchParams>& locSCHitMatchParams, DVector3* locOutputProjPos = nullptr, DVector3* locOutputProjMom = nullptr) const;
+		bool ProjectTo_SC(const DReferenceTrajectory* rt, unsigned int locSCSector, double& locDeltaPhi, DVector3& locProjPos, DVector3& locProjMom, DVector3& locPaddleNorm, double& locPathLength, double& locFlightTime, double& locFlightTimeVariance, int& locSCPlane) const;
 
 		double Distance_ToTrack(const DFCALShower *locFCALShower,
 					const DVector3 &locProjPos) const;
-
-		// NOTE: For these functions, an initial guess for start time is expected as input so that out-of-time tracks can be skipped
-		bool Distance_ToTrack(const DReferenceTrajectory* rt, const DFCALShower* locFCALShower, double locInputStartTime, DFCALShowerMatchParams& locShowerMatchParams, DVector3* locOutputProjPos = nullptr, DVector3* locOutputProjMom = nullptr) const;
-		bool Distance_ToTrack(const DReferenceTrajectory* rt, const DBCALShower* locBCALShower, double locInputStartTime, DBCALShowerMatchParams& locShowerMatchParams, DVector3* locOutputProjPos = nullptr, DVector3* locOutputProjMom = nullptr) const;
-		bool Distance_ToTrack(const DReferenceTrajectory* rt, const DTOFPoint* locTOFPoint, double locInputStartTime, DTOFHitMatchParams& locTOFHitMatchParams, DVector3* locOutputProjPos = nullptr, DVector3* locOutputProjMom = nullptr) const;
-		bool Distance_ToTrack(const DReferenceTrajectory* rt, const DSCHit* locSCHit, double locInputStartTime, DSCHitMatchParams& locSCHitMatchParams, DVector3* locOutputProjPos = nullptr, DVector3* locOutputProjMom = nullptr) const;
-
-		bool Distance_ToTrack(const vector<DTrackFitter::Extrapolation_t> &extrapolations, const DFCALShower* locFCALShower, double locInputStartTime, DFCALShowerMatchParams& locShowerMatchParams, DVector3* locOutputProjPos = nullptr, DVector3* locOutputProjMom = nullptr) const;
-		bool Distance_ToTrack(const vector<DTrackFitter::Extrapolation_t> &extrapolations, const DTOFPoint* locTOFPoint, double locInputStartTime, DTOFHitMatchParams& locTOFHitMatchParams, DVector3* locOutputProjPos = nullptr, DVector3* locOutputProjMom = nullptr) const;
-		bool Distance_ToTrack(const vector<DTrackFitter::Extrapolation_t> &extrapolations, const DBCALShower* locBCALShower, double locInputStartTime, DBCALShowerMatchParams& locShowerMatchParams, DVector3* locOutputProjPos = nullptr, DVector3* locOutputProjMom = nullptr) const;	
-		bool Distance_ToTrack(const vector<DTrackFitter::Extrapolation_t> &extrapolations, const DSCHit* locSCHit, double locInputStartTime, DSCHitMatchParams& locSCHitMatchParams, DVector3* locOutputProjPos = nullptr, DVector3* locOutputProjMom = nullptr) const;
-
-
-		bool ProjectTo_SC(const DReferenceTrajectory* rt, unsigned int locSCSector, double& locDeltaPhi, DVector3& locProjPos, DVector3& locProjMom, DVector3& locPaddleNorm, double& locPathLength, double& locFlightTime, double& locFlightTimeVariance, int& locSCPlane) const;
+		bool Distance_ToTrack(const vector<DTrackFitter::Extrapolation_t> &extrapolations, const DFCALShower* locFCALShower, double locInputStartTime, shared_ptr<DFCALShowerMatchParams>& locShowerMatchParams, DVector3* locOutputProjPos=nullptr, DVector3* locOutputProjMom=nullptr) const;
+		bool Distance_ToTrack(const vector<DTrackFitter::Extrapolation_t>&extrapolations, const DTOFPoint* locTOFPoint, double locInputStartTime,shared_ptr<DTOFHitMatchParams>& locTOFHitMatchParams, DVector3* locOutputProjPos=nullptr, DVector3* locOutputProjMom=nullptr) const;
+		bool Distance_ToTrack(const vector<DTrackFitter::Extrapolation_t> &extrapolations, const DSCHit* locSCHit, double locInputStartTime,shared_ptr<DSCHitMatchParams>& locSCHitMatchParams, DVector3* locOutputProjPos=nullptr, DVector3* locOutputProjMom=nullptr) const;
+		bool Distance_ToTrack(const vector<DTrackFitter::Extrapolation_t> &extrapolations, const DBCALShower* locBCALShower, double locInputStartTime,shared_ptr<DBCALShowerMatchParams>& locShowerMatchParams, DVector3* locOutputProjPos=nullptr, DVector3* locOutputProjMom=nullptr) const;
 
 		/********************************************************** CUT MATCH DISTANCE **********************************************************/
 
 		// NOTE: For these functions, an initial guess for start time is expected as input so that out-of-time tracks can be skipped
-		bool Cut_MatchDistance(const DReferenceTrajectory* rt, const DBCALShower* locBCALShower, double locInputStartTime, DBCALShowerMatchParams& locShowerMatchParams, DVector3 *locOutputProjPos = nullptr, DVector3 *locOutputProjMom = nullptr) const;
-		bool Cut_MatchDistance(const DReferenceTrajectory* rt, const DTOFPoint* locTOFPoint, double locInputStartTime, DTOFHitMatchParams& locTOFHitMatchParams, DVector3 *locOutputProjPos = nullptr, DVector3 *locOutputProjMom = nullptr) const;
-		bool Cut_MatchDistance(const DReferenceTrajectory* rt, const DSCHit* locSCHit, double locInputStartTime, DSCHitMatchParams& locSCHitMatchParams, bool locIsTimeBased, DVector3 *locOutputProjPos = nullptr, DVector3 *locOutputProjMom = nullptr) const;
-		bool Cut_MatchDistance(const DReferenceTrajectory* rt, const DFCALShower* locFCALShower, double locInputStartTime, DFCALShowerMatchParams& locShowerMatchParams, DVector3 *locOutputProjPos = nullptr, DVector3 *locOutputProjMom = nullptr) const;
+		bool Cut_MatchDistance(const DReferenceTrajectory* rt, const DBCALShower* locBCALShower, double locInputStartTime, shared_ptr<DBCALShowerMatchParams>& locShowerMatchParams, DVector3 *locOutputProjPos = nullptr, DVector3 *locOutputProjMom = nullptr) const;
+		bool Cut_MatchDistance(const DReferenceTrajectory* rt, const DTOFPoint* locTOFPoint, double locInputStartTime, shared_ptr<DTOFHitMatchParams>& locTOFHitMatchParams, DVector3 *locOutputProjPos = nullptr, DVector3 *locOutputProjMom = nullptr) const;
+		bool Cut_MatchDistance(const DReferenceTrajectory* rt, const DSCHit* locSCHit, double locInputStartTime, shared_ptr<DSCHitMatchParams>& locSCHitMatchParams, bool locIsTimeBased, DVector3 *locOutputProjPos = nullptr, DVector3 *locOutputProjMom = nullptr) const;
+		bool Cut_MatchDistance(const DReferenceTrajectory* rt, const DFCALShower* locFCALShower, double locInputStartTime, shared_ptr<DFCALShowerMatchParams>& locShowerMatchParams, DVector3 *locOutputProjPos = nullptr, DVector3 *locOutputProjMom = nullptr) const;
 
-	bool Cut_MatchDistance(const vector<DTrackFitter::Extrapolation_t> &extrapolations, const DFCALShower* locFCALShower, double locInputStartTime, DFCALShowerMatchParams& locShowerMatchParams, DVector3 *locOutputProjPos = nullptr, DVector3 *locOutputProjMom = nullptr) const;
-	bool Cut_MatchDistance(const vector<DTrackFitter::Extrapolation_t> &extrapolations, const DTOFPoint* locTOFPoint, double locInputStartTime, DTOFHitMatchParams& locTOFHitMatchParams, DVector3 *locOutputProjPos = nullptr, DVector3 *locOutputProjMom = nullptr) const;
-	bool Cut_MatchDistance(const vector<DTrackFitter::Extrapolation_t> &extrapolations, const DBCALShower* locBCALShower, double locInputStartTime, DBCALShowerMatchParams& locShowerMatchParams, DVector3 *locOutputProjPos = nullptr, DVector3 *locOutputProjMom = nullptr) const;
-	bool Cut_MatchDistance(const vector<DTrackFitter::Extrapolation_t> &extrapolations, const DSCHit* locSCHit, double locInputStartTime, DSCHitMatchParams& locSCHitMatchParams, bool locIsTimeBased, DVector3 *locOutputProjPos = nullptr, DVector3 *locOutputProjMom = nullptr) const;
+		bool Cut_MatchDistance(const vector<DTrackFitter::Extrapolation_t> &extrapolations, const DBCALShower* locBCALShower, double locInputStartTime,shared_ptr<DBCALShowerMatchParams>& locShowerMatchParams, DVector3 *locOutputProjPos=nullptr, DVector3 *locOutputProjMom=nullptr) const;
+		bool Cut_MatchDistance(const vector<DTrackFitter::Extrapolation_t> &extrapolations, const DFCALShower* locFCALShower, double locInputStartTime,shared_ptr<DFCALShowerMatchParams>& locShowerMatchParams, DVector3 *locOutputProjPos=nullptr, DVector3 *locOutputProjMom=nullptr) const;
+		bool Cut_MatchDistance(const vector<DTrackFitter::Extrapolation_t> &extrapolations, const DTOFPoint* locTOFPoint, double locInputStartTime,shared_ptr<DTOFHitMatchParams>& locTOFHitMatchParams, DVector3 *locOutputProjPos=nullptr, DVector3 *locOutputProjMom=nullptr) const;
+		bool Cut_MatchDistance(const vector<DTrackFitter::Extrapolation_t> &extrapolations, const DSCHit* locSCHit, double locInputStartTime,shared_ptr<DSCHitMatchParams>& locSCHitMatchParams, bool locIsTimeBased, DVector3 *locOutputProjPos=nullptr, DVector3 *locOutputProjMom=nullptr) const;
 
 		/********************************************************** GET BEST MATCH **********************************************************/
 
 		// Wrappers
-		bool Get_BestBCALMatchParams(const DKinematicData* locTrack, const DDetectorMatches* locDetectorMatches, DBCALShowerMatchParams& locBestMatchParams) const;
-		bool Get_BestSCMatchParams(const DKinematicData* locTrack, const DDetectorMatches* locDetectorMatches, DSCHitMatchParams& locBestMatchParams) const;
-		bool Get_BestTOFMatchParams(const DKinematicData* locTrack, const DDetectorMatches* locDetectorMatches, DTOFHitMatchParams& locBestMatchParams) const;
-		bool Get_BestFCALMatchParams(const DKinematicData* locTrack, const DDetectorMatches* locDetectorMatches, DFCALShowerMatchParams& locBestMatchParams) const;
+		bool Get_BestBCALMatchParams(const DTrackingData* locTrack, const DDetectorMatches* locDetectorMatches, shared_ptr<const DBCALShowerMatchParams>& locBestMatchParams) const;
+		bool Get_BestSCMatchParams(const DTrackingData* locTrack, const DDetectorMatches* locDetectorMatches, shared_ptr<const DSCHitMatchParams>& locBestMatchParams) const;
+		bool Get_BestTOFMatchParams(const DTrackingData* locTrack, const DDetectorMatches* locDetectorMatches, shared_ptr<const DTOFHitMatchParams>& locBestMatchParams) const;
+		bool Get_BestFCALMatchParams(const DTrackingData* locTrack, const DDetectorMatches* locDetectorMatches, shared_ptr<const DFCALShowerMatchParams>& locBestMatchParams) const;
 
 		// Actual
-		DBCALShowerMatchParams Get_BestBCALMatchParams(vector<DBCALShowerMatchParams>& locShowerMatchParams) const;
-		DSCHitMatchParams Get_BestSCMatchParams(vector<DSCHitMatchParams>& locSCHitMatchParams) const;
-		DTOFHitMatchParams Get_BestTOFMatchParams(vector<DTOFHitMatchParams>& locTOFHitMatchParams) const;
-		DFCALShowerMatchParams Get_BestFCALMatchParams(vector<DFCALShowerMatchParams>& locShowerMatchParams) const;
+		shared_ptr<const DBCALShowerMatchParams> Get_BestBCALMatchParams(DVector3 locMomentum, vector<shared_ptr<const DBCALShowerMatchParams> >& locShowerMatchParams) const;
+		shared_ptr<const DSCHitMatchParams> Get_BestSCMatchParams(vector<shared_ptr<const DSCHitMatchParams> >& locSCHitMatchParams) const;
+		shared_ptr<const DTOFHitMatchParams> Get_BestTOFMatchParams(vector<shared_ptr<const DTOFHitMatchParams> >& locTOFHitMatchParams) const;
+		shared_ptr<const DFCALShowerMatchParams> Get_BestFCALMatchParams(vector<shared_ptr<const DFCALShowerMatchParams> >& locShowerMatchParams) const;
 
 		/********************************************************** GET CLOSEST TO TRACK **********************************************************/
 
 		// NOTE: an initial guess for start time is expected as input so that out-of-time hits can be skipped
-		bool Get_ClosestToTrack(const DReferenceTrajectory* rt, const vector<const DBCALShower*>& locBCALShowers, bool locCutFlag, double& locStartTime, DBCALShowerMatchParams& locBestMatchParams, double* locStartTimeVariance = nullptr, DVector3* locBestProjPos = nullptr, DVector3* locBestProjMom = nullptr) const;
-		bool Get_ClosestToTrack(const DReferenceTrajectory* rt, const vector<const DTOFPoint*>& locTOFPoints, bool locCutFlag, double& locStartTime, DTOFHitMatchParams& locBestMatchParams, double* locStartTimeVariance = nullptr, DVector3* locBestProjPos = nullptr, DVector3* locBestProjMom = nullptr) const;
-		bool Get_ClosestToTrack(const DReferenceTrajectory* rt, const vector<const DFCALShower*>& locFCALShowers, bool locCutFlag, double& locStartTime, DFCALShowerMatchParams& locBestMatchParams, double* locStartTimeVariance = nullptr, DVector3* locBestProjPos = nullptr, DVector3* locBestProjMom = nullptr) const;
-		bool Get_ClosestToTrack(const DReferenceTrajectory* rt, const vector<const DSCHit*>& locSCHits, bool locIsTimeBased, bool locCutFlag, double& locStartTime, DSCHitMatchParams& locBestMatchParams, double* locStartTimeVariance = nullptr, DVector3* locBestProjPos = nullptr, DVector3* locBestProjMom = nullptr) const;
+		bool Get_ClosestToTrack(const DReferenceTrajectory* rt, const vector<const DBCALShower*>& locBCALShowers, bool locCutFlag, double& locStartTime, shared_ptr<const DBCALShowerMatchParams>& locBestMatchParams, double* locStartTimeVariance = nullptr, DVector3* locBestProjPos = nullptr, DVector3* locBestProjMom = nullptr) const;
+		bool Get_ClosestToTrack(const DReferenceTrajectory* rt, const vector<const DTOFPoint*>& locTOFPoints, bool locCutFlag, double& locStartTime, shared_ptr<const DTOFHitMatchParams>& locBestMatchParams, double* locStartTimeVariance = nullptr, DVector3* locBestProjPos = nullptr, DVector3* locBestProjMom = nullptr) const;
+		bool Get_ClosestToTrack(const DReferenceTrajectory* rt, const vector<const DFCALShower*>& locFCALShowers, bool locCutFlag, double& locStartTime, shared_ptr<const DFCALShowerMatchParams>& locBestMatchParams, double* locStartTimeVariance = nullptr, DVector3* locBestProjPos = nullptr, DVector3* locBestProjMom = nullptr) const;
+		bool Get_ClosestToTrack(const DReferenceTrajectory* rt, const vector<const DSCHit*>& locSCHits, bool locIsTimeBased, bool locCutFlag, double& locStartTime, shared_ptr<const DSCHitMatchParams>& locBestMatchParams, double* locStartTimeVariance = nullptr, DVector3* locBestProjPos = nullptr, DVector3* locBestProjMom = nullptr) const;
 		const DTOFPaddleHit* Get_ClosestTOFPaddleHit_Horizontal(const DReferenceTrajectory* locReferenceTrajectory, const vector<const DTOFPaddleHit*>& locTOFPaddleHits, double locInputStartTime, double& locBestDeltaY, double& locBestDistance) const;
 		const DTOFPaddleHit* Get_ClosestTOFPaddleHit_Vertical(const DReferenceTrajectory* locReferenceTrajectory, const vector<const DTOFPaddleHit*>& locTOFPaddleHits, double locInputStartTime, double& locBestDeltaX, double& locBestDistance) const;
 
-		bool Get_ClosestToTrack(const vector<DTrackFitter::Extrapolation_t> &extrapolations, const vector<const DBCALShower*>& locBCALShowers, bool locCutFlag, double& locStartTime, DBCALShowerMatchParams& locBestMatchParams, double* locStartTimeVariance = nullptr, DVector3* locBestProjPos = nullptr, DVector3* locBestProjMom = nullptr) const;
-		bool Get_ClosestToTrack(const vector<DTrackFitter::Extrapolation_t> &extrapolations, const vector<const DTOFPoint*>& locTOFPoints, bool locCutFlag, double& locStartTime, DTOFHitMatchParams& locBestMatchParams, double* locStartTimeVariance = nullptr, DVector3* locBestProjPos = nullptr, DVector3* locBestProjMom = nullptr) const;
-		bool Get_ClosestToTrack(const vector<DTrackFitter::Extrapolation_t> &extrapolations, const vector<const DFCALShower*>& locFCALShowers, bool locCutFlag, double& locStartTime, DFCALShowerMatchParams& locBestMatchParams, double* locStartTimeVariance = nullptr, DVector3* locBestProjPos = nullptr, DVector3* locBestProjMom = nullptr) const;
-		bool Get_ClosestToTrack(const vector<DTrackFitter::Extrapolation_t> &extrapolations, const vector<const DSCHit*>& locSCHits, bool locIsTimeBased, bool locCutFlag, double& locStartTime, DSCHitMatchParams& locBestMatchParams, double* locStartTimeVariance = nullptr, DVector3* locBestProjPos = nullptr, DVector3* locBestProjMom = nullptr) const;	
-		const DTOFPaddleHit* Get_ClosestTOFPaddleHit_Vertical(const vector<DTrackFitter::Extrapolation_t> &extrapolations, const vector<const DTOFPaddleHit*>& locTOFPaddleHits, double locInputStartTime, double& locBestDeltaX, double& locBestDistance) const;
+		// The following routines use extrapolations from the track
+		bool Get_ClosestToTrack(const vector<DTrackFitter::Extrapolation_t> &extrapolations, const vector<const DBCALShower*>& locBCALShowers, bool locCutFlag, double& locStartTime,shared_ptr<const DBCALShowerMatchParams>& locBestMatchParams, double* locStartTimeVariance, DVector3* locBestProjPos, DVector3* locBestProjMom) const;
+		bool Get_ClosestToTrack(const vector<DTrackFitter::Extrapolation_t> &extrapolations, const vector<const DTOFPoint*>& locTOFPoints, bool locCutFlag, double& locStartTime, shared_ptr<const DTOFHitMatchParams>& locBestMatchParams, double* locStartTimeVariance, DVector3* locBestProjPos, DVector3* locBestProjMom) const;
+		bool Get_ClosestToTrack(const vector<DTrackFitter::Extrapolation_t> &extrapolations, const vector<const DFCALShower*>& locFCALShowers, bool locCutFlag, double& locStartTime,shared_ptr<const DFCALShowerMatchParams>& locBestMatchParams, double* locStartTimeVariance, DVector3* locBestProjPos, DVector3* locBestProjMom) const;
+		bool Get_ClosestToTrack(const vector<DTrackFitter::Extrapolation_t> &extrapolations, const vector<const DSCHit*>& locSCHits, bool locIsTimeBased, bool locCutFlag, double& locStartTime,shared_ptr<const DSCHitMatchParams>& locBestMatchParams, double* locStartTimeVariance, DVector3* locBestProjPos, DVector3* locBestProjMom) const;
 		const DTOFPaddleHit* Get_ClosestTOFPaddleHit_Horizontal(const vector<DTrackFitter::Extrapolation_t> &extrapolations, const vector<const DTOFPaddleHit*>& locTOFPaddleHits, double locInputStartTime, double& locBestDeltaY, double& locBestDistance) const;
+		const DTOFPaddleHit* Get_ClosestTOFPaddleHit_Vertical(const vector<DTrackFitter::Extrapolation_t> &extrapolations, const vector<const DTOFPaddleHit*>& locTOFPaddleHits, double locInputStartTime, double& locBestDeltaX, double& locBestDistance) const;
 
 
 		/********************************************************** PREDICT HIT ELEMENT **********************************************************/
@@ -178,35 +149,58 @@ class DParticleID:public jana::JObject
 		unsigned int PredictSCSector(const DReferenceTrajectory* rt, DVector3* locOutputProjPos = nullptr, bool* locProjBarrelRegion = nullptr, double* locMinDPhi = nullptr) const;
 		unsigned int PredictSCSector(const DReferenceTrajectory* rt, double& locDeltaPhi, DVector3& locProjPos, DVector3& locProjMom, DVector3& locPaddleNorm, double& locPathLength, double& locFlightTime, double& locFlightTimeVariance, int& locSCPlane) const;
 
-		unsigned int PredictSCSector(const vector<DTrackFitter::Extrapolation_t> &extrapolations, DVector3* locOutputProjPos = nullptr, bool* locProjBarrelRegion = nullptr, double* locMinDPhi = nullptr) const;
 		unsigned int PredictSCSector(const vector<DTrackFitter::Extrapolation_t> &extrapolations, double& locDeltaPhi, DVector3& locProjPos, DVector3& locProjMom, DVector3& locPaddleNorm, double& locPathLength, double& locFlightTime, double& locFlightTimeVariance, int& locSCPlane) const;
-		bool PredictFCALHit(const vector<DTrackFitter::Extrapolation_t>&extrapolations, unsigned int &row, unsigned int &col, DVector3 *intersection = nullptr) const;
-		bool PredictBCALWedge(const vector<DTrackFitter::Extrapolation_t>&extrapolations, unsigned int &module,unsigned int &sector, DVector3 *intersection = nullptr) const;
-		bool PredictTOFPaddles(const vector<DTrackFitter::Extrapolation_t>&extrapolations, unsigned int &hbar,unsigned int &vbar, DVector3 *intersection = nullptr) const;
+		unsigned int PredictSCSector(const vector<DTrackFitter::Extrapolation_t> &extrapolations, DVector3* locOutputProjPos, bool* locProjBarrelRegion, double* locMinDPhi) const;
+		bool PredictFCALHit(const vector<DTrackFitter::Extrapolation_t>&extrapolations, unsigned int &row, unsigned int &col, DVector3 *intersection) const;
+		bool PredictBCALWedge(const vector<DTrackFitter::Extrapolation_t>&extrapolations, unsigned int &module,unsigned int &sector, DVector3 *intersection) const;
+		bool PredictTOFPaddles(const vector<DTrackFitter::Extrapolation_t>&extrapolations, unsigned int &hbar,unsigned int &vbar, DVector3 *intersection) const;
 
+		/************** Routines to get start time for tracking *****/
+		bool Get_StartTime(const vector<DTrackFitter::Extrapolation_t> &extrapolations,
+				   const vector<const DFCALShower*>& FCALShowers,
+				   double& StartTime) const;
+		bool Get_StartTime(const vector<DTrackFitter::Extrapolation_t> &extrapolations,
+				   const vector<const DSCHit*>& SCHits, 
+				   double& StartTime) const;
+		bool Get_StartTime(const vector<DTrackFitter::Extrapolation_t> &extrapolations,
+				   const vector<const DTOFPoint*>& TOFPoints, 
+				   double& StartTime) const;
+		bool Get_StartTime(const vector<DTrackFitter::Extrapolation_t> &extrapolations,
+				   const vector<const DBCALShower*>& locBCALShowers,
+				   double& StartTime) const;  
+		  
 		/********************************************************** MISCELLANEOUS **********************************************************/
 
-		double Calc_BCALFlightTimePCorrelation(const DKinematicData* locTrack, DDetectorMatches* locDetectorMatches) const;
-		double Calc_FCALFlightTimePCorrelation(const DKinematicData* locTrack, DDetectorMatches* locDetectorMatches) const;
-		double Calc_TOFFlightTimePCorrelation(const DKinematicData* locTrack, DDetectorMatches* locDetectorMatches) const;
-		double Calc_SCFlightTimePCorrelation(const DKinematicData* locTrack, const DDetectorMatches* locDetectorMatches) const;
+		double Calc_BCALFlightTimePCorrelation(const DTrackingData* locTrack, DDetectorMatches* locDetectorMatches) const;
+		double Calc_FCALFlightTimePCorrelation(const DTrackingData* locTrack, DDetectorMatches* locDetectorMatches) const;
+		double Calc_TOFFlightTimePCorrelation(const DTrackingData* locTrack, DDetectorMatches* locDetectorMatches) const;
+		double Calc_SCFlightTimePCorrelation(const DTrackingData* locTrack, const DDetectorMatches* locDetectorMatches) const;
 
 		virtual Particle_t IDTrack(float locCharge, float locMass) const;
 
 		double Calc_PropagatedRFTime(const DKinematicData* locKinematicData, const DEventRFBunch* locEventRFBunch) const;
-		double Calc_TimingChiSq(const DKinematicData* locKinematicData, unsigned int &locNDF, double& locTimingPull) const;
-		void Calc_ChargedPIDFOM(DChargedTrackHypothesis* locChargedTrackHypothesis, const DEventRFBunch* locEventRFBunch) const;
+		double Calc_TimingChiSq(const DChargedTrackHypothesis* locChargedHypo, unsigned int &locNDF, double& locTimingPull) const;
+		double Calc_TimingChiSq(const DNeutralParticleHypothesis* locNeutralHypo, unsigned int &locNDF, double& locTimingPull) const;
+		void Calc_ChargedPIDFOM(DChargedTrackHypothesis* locChargedTrackHypothesis) const;
 
 		unsigned int Get_CDCRingBitPattern(vector<const DCDCTrackHit*>& locCDCTrackHits) const;
 		unsigned int Get_FDCPlaneBitPattern(vector<const DFDCPseudo*>& locFDCPseudos) const;
-		void Get_CDCRings(int locBitPattern, set<int>& locCDCRings) const;
-		void Get_FDCPlanes(int locBitPattern, set<int>& locFDCPlanes) const;
+		void Get_CDCRings(unsigned int locBitPattern, set<int>& locCDCRings) const;
+		void Get_FDCPlanes(unsigned int locBitPattern, set<int>& locFDCPlanes) const;
 
 		void Get_CDCNumHitRingsPerSuperlayer(int locBitPattern, map<int, int>& locNumHitRingsPerSuperlayer) const;
 		void Get_CDCNumHitRingsPerSuperlayer(const set<int>& locCDCRings, map<int, int>& locNumHitRingsPerSuperlayer) const;
 		void Get_FDCNumHitPlanesPerPackage(int locBitPattern, map<int, int>& locNumHitPlanesPerPackage) const;
 		void Get_FDCNumHitPlanesPerPackage(const set<int>& locFDCPlanes, map<int, int>& locNumHitPlanesPerPackage) const;
 
+		double Get_CorrectedHitTime(const DTOFPoint* locTOFPoint,
+					    const DVector3 &locProjPos) const;	
+		double Get_CorrectedHitEnergy(const DTOFPoint* locTOFPoint,
+					      const DVector3 &locProjPos) const;
+		double Get_CorrectedHitEnergy(const DSCHit* locSCHit,
+					      const DVector3 &locProjPos) const;
+		double Get_CorrectedHitTime(const DSCHit* locSCHit,
+					    const DVector3 &locProjPos) const;
 	protected:
 		// gas material properties
 		double dKRhoZoverA_FDC, dRhoZoverA_FDC, dLnI_FDC;	

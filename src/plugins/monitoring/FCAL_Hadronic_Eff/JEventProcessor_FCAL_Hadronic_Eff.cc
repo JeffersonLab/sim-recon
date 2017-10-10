@@ -167,8 +167,7 @@ jerror_t JEventProcessor_FCAL_Hadronic_Eff::evnt(jana::JEventLoop* locEventLoop,
 			if(!Cut_TOFTiming(locChargedTrackHypothesis))
 				continue;
 
-			const DTrackTimeBased* locTrackTimeBased = NULL;
-			locChargedTrackHypothesis->GetSingle(locTrackTimeBased);
+			auto locTrackTimeBased = locChargedTrackHypothesis->Get_TrackTimeBased();
 			if(locTrackTimeBased->FOM < dMinTrackingFOM)
 				continue; //don't trust tracking results: bad tracking FOM
 
@@ -194,8 +193,7 @@ jerror_t JEventProcessor_FCAL_Hadronic_Eff::evnt(jana::JEventLoop* locEventLoop,
 	// Loop over the good tracks, using the best DTrackTimeBased object for each
 	for(auto& locChargedTrackHypothesis : locBestTracks)
 	{
-		const DTrackTimeBased* locTrackTimeBased = NULL;
-		locChargedTrackHypothesis->GetSingle(locTrackTimeBased);
+		auto locTrackTimeBased = locChargedTrackHypothesis->Get_TrackTimeBased();
 
 		//Predict FCAL Surface Hit Location
 		DVector3 locProjectedFCALIntersection;
@@ -209,13 +207,13 @@ jerror_t JEventProcessor_FCAL_Hadronic_Eff::evnt(jana::JEventLoop* locEventLoop,
 
 		//Find closest FCAL Shower
 		const DFCALShower* locFCALShower = nullptr;
-		DFCALShowerMatchParams locClosestMatchParams;
+		shared_ptr<const DFCALShowerMatchParams> locClosestMatchParams;
 		double locStartTime = locTrackTimeBased->t0();
 		if(locParticleID->Get_ClosestToTrack(extrapolations, locFCALShowers, false, locStartTime, locClosestMatchParams))
-			locFCALShower = locClosestMatchParams.dFCALShower;
+			locFCALShower = locClosestMatchParams->dFCALShower;
 
 		//Is match to FCAL shower?
-		const DFCALShowerMatchParams* locFCALShowerMatchParams = locChargedTrackHypothesis->Get_FCALShowerMatchParams();
+		auto locFCALShowerMatchParams = locChargedTrackHypothesis->Get_FCALShowerMatchParams();
 		bool locIsMatchedToTrack = (locFCALShowerMatchParams != nullptr);
 
 		//If so, calc PID info: timing
@@ -283,7 +281,7 @@ jerror_t JEventProcessor_FCAL_Hadronic_Eff::evnt(jana::JEventLoop* locEventLoop,
 
 double JEventProcessor_FCAL_Hadronic_Eff::Calc_FCALTiming(const DChargedTrackHypothesis* locChargedTrackHypothesis, const DParticleID* locParticleID, const DEventRFBunch* locEventRFBunch, double& locDeltaT)
 {
-	const DFCALShowerMatchParams* locFCALShowerMatchParams = locChargedTrackHypothesis->Get_FCALShowerMatchParams();
+	auto locFCALShowerMatchParams = locChargedTrackHypothesis->Get_FCALShowerMatchParams();
 	if(locFCALShowerMatchParams == NULL)
 		return false;
 

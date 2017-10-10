@@ -58,7 +58,7 @@ jerror_t DReaction_factory_p2gamma_hists::init(void)
         locReaction->Add_AnalysisAction(new DCustomAction_p2gamma_hists(locReaction, false, "NoKinFit_Measured"));
 
 	// PID
-        locReaction->Add_AnalysisAction(new DHistogramAction_PID(locReaction));
+        locReaction->Add_AnalysisAction(new DHistogramAction_PID(locReaction, false));
         locReaction->Add_AnalysisAction(new DCutAction_PIDDeltaT(locReaction, false, 1.0, Unknown, SYS_TOF)); //false: measured data //Unknown: All PIDs
         locReaction->Add_AnalysisAction(new DCutAction_PIDDeltaT(locReaction, false, 10.0, Unknown, SYS_BCAL)); //false: measured data //Unknown: All PIDs
         locReaction->Add_AnalysisAction(new DCutAction_PIDDeltaT(locReaction, false, 10.0, Unknown, SYS_FCAL)); //false: measured data //Unknown: All PIDs

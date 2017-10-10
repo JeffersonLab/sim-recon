@@ -73,7 +73,6 @@ DEventSourceHDDM::DEventSourceHDDM(const char* source_name)
    
    dRunNumber = -1;
    
-   pthread_mutex_init(&rt_mutex, NULL);
 }
 
 //----------------
@@ -145,18 +144,6 @@ void DEventSourceHDDM::FreeEvent(JEvent &event)
 {
    hddm_s::HDDM *record = (hddm_s::HDDM*)event.GetRef();
    delete record;
-
-   // Check for DReferenceTrajectory objects we need to delete
-   pthread_mutex_lock(&rt_mutex);
-   map<hddm_s::HDDM*, vector<DReferenceTrajectory*> >::iterator iter =
-                                              rt_by_event.find(record);
-   if(iter != rt_by_event.end()){
-      vector<DReferenceTrajectory*> &rts = iter->second;
-      for (unsigned int i=0; i<rts.size(); i++)
-         rt_pool.push_back(rts[i]);
-      rt_by_event.erase(iter);
-   }
-   pthread_mutex_unlock(&rt_mutex);
 }
 
 //----------------
@@ -1101,8 +1088,6 @@ jerror_t DEventSourceHDDM::Extract_DMCReaction(hddm_s::HDDM *record,
          mcreaction->beam.setPosition(locPosition);
          mcreaction->beam.setMomentum(mom);
          mcreaction->beam.setPID(Gamma);
-         mcreaction->beam.setMass(beam.getProperties().getMass());
-         mcreaction->beam.setCharge(beam.getProperties().getCharge());
          mcreaction->target.setPID(IDTrack(mcreaction->beam.charge(),
                                            mcreaction->beam.mass()));
          mcreaction->beam.setTime(torig - (zorig - locTargetCenterZ)/29.9792458);
@@ -1122,10 +1107,8 @@ jerror_t DEventSourceHDDM::Extract_DMCReaction(hddm_s::HDDM *record,
                       target.getMomentum().getPz());
          mcreaction->target.setPosition(locPosition);
          mcreaction->target.setMomentum(mom);
-         mcreaction->target.setMass(target.getProperties().getMass());
-         mcreaction->target.setCharge(target.getProperties().getCharge());
-         mcreaction->target.setPID(IDTrack(mcreaction->target.charge(),
-                                           mcreaction->target.mass()));
+         mcreaction->target.setPID(IDTrack(target.getProperties().getCharge(),
+        		 target.getProperties().getMass()));
          mcreaction->target.setTime(torig - (zorig - locTargetCenterZ)/29.9792458);
       }
       else {
@@ -1236,11 +1219,9 @@ jerror_t DEventSourceHDDM::Extract_DMCThrown(hddm_s::HDDM *record,
          mcthrown->mech     = piter->getMech();
          mcthrown->pdgtype  = piter->getPdgtype();
          mcthrown->setPID((Particle_t)mcthrown->type);
-         mcthrown->setMass(mass);
          mcthrown->setMomentum(DVector3(px, py, pz));
          mcthrown->setPosition(DVector3(vertex[1], vertex[2], vertex[3]));
          mcthrown->setTime(vertex[0]);
-         mcthrown->setCharge(ParticleCharge(piter->getType()));
          data.push_back(mcthrown);
       }
    }
@@ -2138,6 +2119,106 @@ jerror_t DEventSourceHDDM::Extract_DSCTruthHit(hddm_s::HDDM *record,
    factory->CopyTo(data);
 
    return NOERROR;
+}
+
+//------------------
+// Extract_DTrackTimeBased
+//------------------
+jerror_t DEventSourceHDDM::Extract_DTrackTimeBased(hddm_s::HDDM *record,
+                                   JFactory<DTrackTimeBased> *factory, 
+                                   string tag, int32_t runnumber, JEventLoop* locEventLoop)
+{
+   // Note: Since this is a reconstructed factory, we want to generally return OBJECT_NOT_AVAILABLE
+   // rather than NOERROR. The reason being that the caller interprets "NOERROR" to mean "yes I
+   // usually can provide objects of that type, but this event has none." This will cause it to
+   // skip any attempt at reconstruction. On the other hand, a value of "OBJECT_NOT_AVAILABLE" tells
+   // it "I cannot provide those type of objects for this event."
+
+   if (factory == NULL)
+      return OBJECT_NOT_AVAILABLE;
+   if (tag != "")
+      return OBJECT_NOT_AVAILABLE;
+
+   vector<DTrackTimeBased*> data;
+   vector<DReferenceTrajectory*> rts;
+
+   const hddm_s::TracktimebasedList &ttbs = record->getTracktimebaseds();
+   hddm_s::TracktimebasedList::iterator iter;
+   for (iter = ttbs.begin(); iter != ttbs.end(); ++iter) {
+      DVector3 mom(iter->getMomentum().getPx(),
+                   iter->getMomentum().getPy(),
+                   iter->getMomentum().getPz());
+      DVector3 pos(iter->getOrigin().getVx(),
+                   iter->getOrigin().getVy(),
+                   iter->getOrigin().getVz());
+      DTrackTimeBased *track = new DTrackTimeBased();
+      track->setMomentum(mom);
+      track->setPosition(pos);
+      track->setPID(IDTrack(iter->getProperties().getCharge(),
+    		  iter->getProperties().getMass()));
+      track->chisq = iter->getChisq();
+      track->Ndof = iter->getNdof();
+      track->FOM = iter->getFOM();
+      track->candidateid = iter->getCandidateid();
+      track->id = iter->getId();
+
+      // Reconstitute errorMatrix
+      auto locCovarianceMatrix = dResourcePool_TMatrixFSym->Get_SharedResource();
+      locCovarianceMatrix->ResizeTo(7, 7);
+      string str_vals = iter->getErrorMatrix().getVals();
+      StringToTMatrixFSym(str_vals, locCovarianceMatrix.get(),
+                          iter->getErrorMatrix().getNrows(),
+                          iter->getErrorMatrix().getNcols());
+      track->setErrorMatrix(locCovarianceMatrix);
+
+      // Reconstitute TrackingErrorMatrix
+      str_vals = iter->getTrackingErrorMatrix().getVals();
+      auto TrackingErrorMatrix = dResourcePool_TMatrixFSym->Get_SharedResource();
+      TrackingErrorMatrix->ResizeTo(5, 5);
+      StringToTMatrixFSym(str_vals, TrackingErrorMatrix.get(),
+                          iter->getTrackingErrorMatrix().getNrows(),
+                          iter->getTrackingErrorMatrix().getNcols());
+      track->setTrackingErrorMatrix(TrackingErrorMatrix);
+
+      data.push_back(track);
+   }
+
+   // Copy into factory
+   if (ttbs.size() > 0){
+      factory->CopyTo(data);
+
+      // If the event had a s_Tracktimebased_t pointer, then report
+      // back that we read them in from the file. Otherwise, report
+      // OBJECT_NOT_AVAILABLE
+      return NOERROR;
+   }
+
+   // If we get to here then there was not even a placeholder in the HDDM file.
+   // Return OBJECT_NOT_AVAILABLE to indicate reconstruction should be tried.
+   return OBJECT_NOT_AVAILABLE;
+}
+
+
+//-------------------------------
+// StringToTMatrixFSym
+//-------------------------------
+string DEventSourceHDDM::StringToTMatrixFSym(string &str_vals, TMatrixFSym* mat,
+                                             int Nrows, int Ncols)
+{
+   /// This is the inverse of the DMatrixDSymToString method in the
+   /// danahddm plugin.
+
+   // Convert the given string into a symmetric matrix
+   mat->ResizeTo(Nrows, Ncols);
+   stringstream ss(str_vals);
+   for (int irow=0; irow<mat->GetNrows(); irow++) {
+      for (int icol=irow; icol<mat->GetNcols(); icol++) {
+         ss >> (*mat)[irow][icol];
+         (*mat)[icol][irow] = (*mat)[irow][icol];
+      }
+   }
+   
+   return ss.str();
 }
 
 //------------------

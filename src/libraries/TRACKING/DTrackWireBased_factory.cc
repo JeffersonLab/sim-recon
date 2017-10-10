@@ -233,12 +233,8 @@ jerror_t DTrackWireBased_factory::evnt(JEventLoop *loop, uint64_t eventnumber)
          const DTrackCandidate *cand=candidates[i];
 
          // Make a new wire-based track
-         DTrackWireBased *track = new DTrackWireBased;
-
-         // Copy over DKinematicData part
-         DKinematicData *track_kd = track;
-         *track_kd=*cand;
-
+         DTrackWireBased *track = new DTrackWireBased(); //share the memory: isn't changed below
+         *static_cast<DKinematicData*>(track) = *static_cast<const DKinematicData*>(cand);
          track->IsSmoothed = cand->IsSmoothed;
 
          // candidate id
@@ -514,13 +510,8 @@ void DTrackWireBased_factory::DoFit(unsigned int c_id,
          if(!isfinite(fitter->GetFitParameters().position().X())) break;
          {    
             // Make a new wire-based track
-            DTrackWireBased *track = new DTrackWireBased;
-
-            // Copy over DKinematicData part
-            DKinematicData *track_kd = track;
-            *track_kd = fitter->GetFitParameters();
-            track_kd->setPID(dPIDAlgorithm->IDTrack(track_kd->charge(), track_kd->mass()));
-            track_kd->setTime(track_kd->t0());
+             DTrackWireBased *track = new DTrackWireBased();
+             *static_cast<DTrackingData*>(track) = fitter->GetFitParameters();
 
             track->chisq = fitter->GetChisq();
             track->Ndof = fitter->GetNdof();

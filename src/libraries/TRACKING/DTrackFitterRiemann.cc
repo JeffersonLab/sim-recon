@@ -7,6 +7,7 @@
 #include "DTrackFitterRiemann.h"
 #include "START_COUNTER/DSCHit.h"
 #include "HDGEOMETRY/DMaterialMap.h"
+#include "PID/DParticleID.h"
 #include <TDecompLU.h>
 #include <math.h>
 #include <cmath>
@@ -295,7 +296,7 @@ DTrackFitter::fit_status_t DTrackFitterRiemann::FitTrack(void)
   double pt=0.003*fabs(B)*rc;
   fit_params.setPosition(DVector3(x0,y0,z_vertex));
   fit_params.setMomentum(DVector3(pt*cosphi,pt*sinphi,pt*tanl));
-  fit_params.setCharge(q);
+  fit_params.setPID(dParticleID->IDTrack(q, fit_params.mass()));
   this->chisq=ChiSq();
   
   return kFitSuccess;

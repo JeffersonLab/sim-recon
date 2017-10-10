@@ -249,8 +249,7 @@ jerror_t JEventProcessor_CDC_Efficiency::evnt(JEventLoop *loop, uint64_t eventnu
         const DChargedTrackHypothesis* bestHypothesis = chargedTrackVector[iTrack]->Get_BestTrackingFOM();
 
         // Cut very loosely on the track quality
-        const DTrackTimeBased *thisTimeBasedTrack = nullptr;
-        bestHypothesis->GetSingle(thisTimeBasedTrack);
+	auto thisTimeBasedTrack = bestHypothesis->Get_TrackTimeBased();
 
         japp->RootFillLock(this); //ACQUIRE ROOT FILL LOCK
         hChi2OverNDF->Fill(thisTimeBasedTrack->FOM);

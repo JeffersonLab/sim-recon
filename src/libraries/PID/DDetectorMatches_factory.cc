@@ -103,9 +103,9 @@ void DDetectorMatches_factory::MatchToBCAL(const DParticleID* locParticleID, con
 	double locInputStartTime = locTrackTimeBased->t0();
 	for(size_t loc_i = 0; loc_i < locBCALShowers.size(); ++loc_i)
 	{
-		DBCALShowerMatchParams locShowerMatchParams;
-		if(locParticleID->Cut_MatchDistance(extrapolations, locBCALShowers[loc_i], locInputStartTime, locShowerMatchParams))
-			locDetectorMatches->Add_Match(locTrackTimeBased, locBCALShowers[loc_i], locShowerMatchParams);
+	  shared_ptr<DBCALShowerMatchParams> locShowerMatchParams;
+	  if(locParticleID->Cut_MatchDistance(extrapolations, locBCALShowers[loc_i], locInputStartTime, locShowerMatchParams))
+	    locDetectorMatches->Add_Match(locTrackTimeBased, locBCALShowers[loc_i], locShowerMatchParams);
 	}
 }
 
@@ -117,9 +117,9 @@ void DDetectorMatches_factory::MatchToTOF(const DParticleID* locParticleID, cons
 	double locInputStartTime = locTrackTimeBased->t0();
 	for(size_t loc_i = 0; loc_i < locTOFPoints.size(); ++loc_i)
 	{
-		DTOFHitMatchParams locTOFHitMatchParams;
-		if(locParticleID->Cut_MatchDistance(extrapolations, locTOFPoints[loc_i], locInputStartTime, locTOFHitMatchParams))
-			locDetectorMatches->Add_Match(locTrackTimeBased, locTOFPoints[loc_i], locTOFHitMatchParams);
+	  shared_ptr<DTOFHitMatchParams> locTOFHitMatchParams;
+	  if(locParticleID->Cut_MatchDistance(extrapolations, locTOFPoints[loc_i], locInputStartTime, locTOFHitMatchParams))
+	    locDetectorMatches->Add_Match(locTrackTimeBased, locTOFPoints[loc_i], locTOFHitMatchParams);
 	}
 }
 
@@ -131,9 +131,9 @@ void DDetectorMatches_factory::MatchToFCAL(const DParticleID* locParticleID, con
 	double locInputStartTime = locTrackTimeBased->t0();
 	for(size_t loc_i = 0; loc_i < locFCALShowers.size(); ++loc_i)
 	{
-		DFCALShowerMatchParams locShowerMatchParams;
-		if(locParticleID->Cut_MatchDistance(extrapolations, locFCALShowers[loc_i], locInputStartTime, locShowerMatchParams))
-			locDetectorMatches->Add_Match(locTrackTimeBased, locFCALShowers[loc_i], locShowerMatchParams);
+	  shared_ptr<DFCALShowerMatchParams>locShowerMatchParams;
+	  if(locParticleID->Cut_MatchDistance(extrapolations, locFCALShowers[loc_i], locInputStartTime, locShowerMatchParams))
+	    locDetectorMatches->Add_Match(locTrackTimeBased, locFCALShowers[loc_i], locShowerMatchParams);
 	}
 }
 
@@ -145,9 +145,9 @@ void DDetectorMatches_factory::MatchToSC(const DParticleID* locParticleID, const
 	double locInputStartTime = locTrackTimeBased->t0();
 	for(size_t loc_i = 0; loc_i < locSCHits.size(); ++loc_i)
 	{
-		DSCHitMatchParams locSCHitMatchParams;
-		if(locParticleID->Cut_MatchDistance(extrapolations, locSCHits[loc_i], locInputStartTime, locSCHitMatchParams, true))
-			locDetectorMatches->Add_Match(locTrackTimeBased, locSCHits[loc_i], locSCHitMatchParams);
+	    shared_ptr<DSCHitMatchParams>locSCHitMatchParams;
+	    if(locParticleID->Cut_MatchDistance(extrapolations, locSCHits[loc_i], locInputStartTime, locSCHitMatchParams, true))
+	      locDetectorMatches->Add_Match(locTrackTimeBased, locSCHits[loc_i], locSCHitMatchParams);
 	}
 }
 
@@ -157,7 +157,7 @@ void DDetectorMatches_factory::MatchToTrack(const DParticleID* locParticleID, co
 	double locFinalDeltaPhi = 999.0, locFinalDeltaZ = 999.0;
 	for(size_t loc_i = 0; loc_i < locTrackTimeBasedVector.size(); ++loc_i)
 	{
-		DBCALShowerMatchParams locShowerMatchParams;
+		shared_ptr<DBCALShowerMatchParams> locShowerMatchParams;
 		double locInputStartTime = locTrackTimeBasedVector[loc_i]->t0();
 		
 		map<DetectorSystem_t,vector<DTrackFitter::Extrapolation_t> >extrapolations=locTrackTimeBasedVector[loc_i]->extrapolations;
@@ -167,8 +167,8 @@ void DDetectorMatches_factory::MatchToTrack(const DParticleID* locParticleID, co
 			continue;
 
 		double locRSq = locBCALShower->x*locBCALShower->x + locBCALShower->y*locBCALShower->y;
-		double locDeltaPhi = locShowerMatchParams.dDeltaPhiToShower;
-		double locDeltaZ = locShowerMatchParams.dDeltaZToShower;
+		double locDeltaPhi = locShowerMatchParams->dDeltaPhiToShower;
+		double locDeltaZ = locShowerMatchParams->dDeltaZToShower;
 		double locDistance = sqrt(locDeltaZ*locDeltaZ + locDeltaPhi*locDeltaPhi*locRSq);
 		if(locDistance >= locMinDistance)
 			continue;
@@ -185,31 +185,15 @@ void DDetectorMatches_factory::MatchToTrack(const DParticleID* locParticleID, co
 	double locMinDistance = 999.0;
 	for(size_t loc_i = 0; loc_i < locTrackTimeBasedVector.size(); ++loc_i)
 	{
-		DFCALShowerMatchParams locShowerMatchParams;
-		map<DetectorSystem_t,vector<DTrackFitter::Extrapolation_t> >extrapolations=locTrackTimeBasedVector[loc_i]->extrapolations;
-		if (extrapolations.size()==0) return;
+	  map<DetectorSystem_t,vector<DTrackFitter::Extrapolation_t> >extrapolations=locTrackTimeBasedVector[loc_i]->extrapolations;
+	  if (extrapolations.size()==0) return;
 
-		double locInputStartTime = locTrackTimeBasedVector[loc_i]->t0();
-		if(!locParticleID->Distance_ToTrack(extrapolations.at(SYS_FCAL), locFCALShower, locInputStartTime, locShowerMatchParams))
-			continue;
-		if(locShowerMatchParams.dDOCAToShower < locMinDistance)
-			locMinDistance = locShowerMatchParams.dDOCAToShower;
+	  shared_ptr<DFCALShowerMatchParams> locShowerMatchParams;
+	  double locInputStartTime = locTrackTimeBasedVector[loc_i]->t0();
+	  if(!locParticleID->Distance_ToTrack(extrapolations.at(SYS_FCAL), locFCALShower, locInputStartTime, locShowerMatchParams))
+	    continue;
+	  if(locShowerMatchParams->dDOCAToShower < locMinDistance)
+			locMinDistance = locShowerMatchParams->dDOCAToShower;
 	}
 	locDetectorMatches->Set_DistanceToNearestTrack(locFCALShower, locMinDistance);
-}
-
-//------------------
-// erun
-//------------------
-jerror_t DDetectorMatches_factory::erun(void)
-{
-	return NOERROR;
-}
-
-//------------------
-// fini
-//------------------
-jerror_t DDetectorMatches_factory::fini(void)
-{
-	return NOERROR;
 }

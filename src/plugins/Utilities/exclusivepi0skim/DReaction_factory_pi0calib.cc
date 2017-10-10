@@ -8,7 +8,6 @@
 
 #include "DReaction_factory_pi0calib.h"
 #include "DCustomAction_CutPhotonKin.h"
-#include "DCustomAction_dEdxCut.h"
 
 //------------------
 // init
@@ -66,12 +65,10 @@ jerror_t DReaction_factory_pi0calib::init(void)
 		locReaction->Set_MaxPhotonRFDeltaT(0.5*4.008); //beam bunches are every 4.008 ns, (2.004 should be minimum cut value)
 		locReaction->Set_MaxExtraGoodTracks(1);
 		locReaction->Set_InvariantMassCut(Pi0, 0.05, 0.22);
-		locReaction->Add_ComboPreSelectionAction(new DCutAction_MissingMassSquared(locReaction, false, -0.1, 0.1));
 
 	// Require BCAL photons
 	locReaction->Add_AnalysisAction(new DCustomAction_CutPhotonKin(locReaction));
 
-	locReaction->Add_AnalysisAction(new DCustomAction_dEdxCut(locReaction, false)); //true: focus on rejecting background
 	// Fiducial PID delta T cuts 
 	//Proton
 	locReaction->Add_AnalysisAction(new DCutAction_PIDDeltaT(locReaction, false, 2.5, Proton, SYS_TOF));  //false: measured data

@@ -383,12 +383,13 @@ jerror_t JEventProcessor_BCAL_TDC_Timing::evnt(JEventLoop *loop, uint64_t eventn
       Fill1DHistogram("BCAL_Global_Offsets", "Debug", "Success", 3, "Success profile;Step", 16, -0.5, 15.5);
 
       // Now from this hypothesis we can get the detector matches to the BCAL
-      const DBCALShowerMatchParams* bcalMatch = bestHypothesis->Get_BCALShowerMatchParams();
-      const DSCHitMatchParams* scMatch = bestHypothesis->Get_SCHitMatchParams(); // Needed for quality cut later
+      auto bcalMatch = bestHypothesis->Get_BCALShowerMatchParams();
+      auto scMatch = bestHypothesis->Get_SCHitMatchParams(); // Needed for quality cut later
       DVector3 position = bestHypothesis->position();
       //DVector3 momentum = bestHypothesis->momentum();
       //float Z_track = position.z();
       //float_track = momentum.Mag();
+
       if (bcalMatch == NULL) continue; 
       Fill1DHistogram("BCAL_Global_Offsets", "Debug", "Success", 4, "Success profile;Step", 16, -0.5, 15.5);
       if (scMatch == NULL) continue;
@@ -401,8 +402,7 @@ jerror_t JEventProcessor_BCAL_TDC_Timing::evnt(JEventLoop *loop, uint64_t eventn
                       dDeltaZToShower, dDeltaPhiToShower, "BCAL Match;#Delta Z [cm]; #Delta#phi [rad]",
                       200, -25, 25, 200, -0.1, 0.1);
 
-      const DTrackTimeBased *timeBasedTrack = nullptr;
-      bestHypothesis->GetSingle(timeBasedTrack);
+      const DTrackTimeBased *timeBasedTrack = bestHypothesis->Get_TrackTimeBased();
       if (timeBasedTrack->FOM < 0.0027) continue; // 3-sigma cut on tracking FOM
       Fill1DHistogram("BCAL_Global_Offsets", "Debug", "Success", 6, "Success profile;Step", 16, -0.5, 15.5);
       if (timeBasedTrack->Ndof < 10) continue; // CDC: 5 params in fit, 10 dof => [15 hits]; FDC [10 hits]

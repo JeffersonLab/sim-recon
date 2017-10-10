@@ -10,13 +10,13 @@
 
 #include <JANA/JObject.h>
 #include <JANA/JFactory.h>
-#include <PID/DKinematicData.h>
+#include <TRACKING/DTrackingData.h>
 #include <TRACKING/DTrackFitter.h>
 
 class DReferenceTrajectory;
 
 
-class DTrackWireBased:public DKinematicData{
+class DTrackWireBased:public DTrackingData{
 	public:
 		JOBJECT_PUBLIC(DTrackWireBased);
 		

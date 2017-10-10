@@ -10,6 +10,7 @@
 
 
 #include "DTrackFitter.h"
+#include "PID/DParticleID.h"
 #include "HDGEOMETRY/DRootGeom.h"
 using namespace jana;
 
@@ -34,6 +35,8 @@ DTrackFitter::DTrackFitter(JEventLoop *loop)
 	fit_status = kFitNotDone;
 	unsigned int run_number = (loop->GetJEvent()).GetRunNumber();
 	DEBUG_LEVEL=0;
+
+	loop->GetSingle(dParticleID);
 
 	CORRECT_FOR_ELOSS=true;
 	gPARMS->SetDefaultParameter("TRKFIT:CORRECT_FOR_ELOSS",CORRECT_FOR_ELOSS);
@@ -149,8 +152,8 @@ DTrackFitter::fit_status_t DTrackFitter::FitTrack(const DVector3 &pos, const DVe
 
 	input_params.setPosition(pos);
 	input_params.setMomentum(mom);
-	input_params.setCharge(q);
-	input_params.setMass(mass);
+	input_params.setPID(dParticleID->IDTrack(q, mass));
+	input_params.setTime(t0);
 	input_params.setT0(t0,0.,t0_det);
 
 	DTrackFitter::fit_status_t status = FitTrack();
@@ -165,7 +168,7 @@ DTrackFitter::fit_status_t DTrackFitter::FitTrack(const DVector3 &pos, const DVe
 //-------------------
 // FitTrack
 //-------------------
-DTrackFitter::fit_status_t DTrackFitter::FitTrack(const DKinematicData &starting_params)
+DTrackFitter::fit_status_t DTrackFitter::FitTrack(const DTrackingData &starting_params)
 {
 #ifdef PROFILE_TRK_TIMES
   prof_time start_time;
@@ -236,8 +239,7 @@ DTrackFitter::FindHitsAndFitTrack(const DKinematicData &starting_params,
   }
 
   // In case the subclass doesn't actually set the mass ....
-  //fit_params.setMass(starting_params.mass());
-  fit_params.setMass(mass);
+  fit_params.setPID(dParticleID->IDTrack(q, mass));
   
 #ifdef PROFILE_TRK_TIMES
   start_time.TimeDiffNow(prof_times, "Find Hits");
@@ -258,7 +260,7 @@ DTrackFitter::FindHitsAndFitTrack(const DKinematicData &starting_params,
 // FindHitsAndFitTrack
 //-------------------
 DTrackFitter::fit_status_t 
-DTrackFitter::FindHitsAndFitTrack(const DKinematicData &starting_params, 
+DTrackFitter::FindHitsAndFitTrack(const DKinematicData &starting_params,
 				  const DReferenceTrajectory *rt, JEventLoop *loop, 
 				  double mass,int N,double t0,
 				  DetectorSystem_t t0_det)
@@ -350,8 +352,7 @@ DTrackFitter::FindHitsAndFitTrack(const DKinematicData &starting_params,
 	
 
 	// In case the subclass doesn't actually set the mass ....
-	//fit_params.setMass(starting_params.mass());
-	fit_params.setMass(mass);
+	fit_params.setPID(dParticleID->IDTrack(q, mass));
 
 #ifdef PROFILE_TRK_TIMES
 	start_time.TimeDiffNow(prof_times, "Find Hits");

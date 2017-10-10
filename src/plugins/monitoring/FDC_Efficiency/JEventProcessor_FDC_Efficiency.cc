@@ -249,9 +249,9 @@ jerror_t JEventProcessor_FDC_Efficiency::evnt(JEventLoop *loop, uint64_t eventnu
   }
   
   const DDetectorMatches *detMatches;
-  vector<DSCHitMatchParams> SCMatches;
-  vector<DTOFHitMatchParams> TOFMatches;
-  vector<DBCALShowerMatchParams> BCALMatches;
+  vector<shared_ptr<const DSCHitMatchParams>> SCMatches;
+  vector<shared_ptr<const DTOFHitMatchParams>> TOFMatches;
+  vector<shared_ptr<const DBCALShowerMatchParams>> BCALMatches;
 
   if(!dIsNoFieldFlag){
     loop->GetSingle(detMatches);
@@ -265,9 +265,7 @@ jerror_t JEventProcessor_FDC_Efficiency::evnt(JEventLoop *loop, uint64_t eventnu
     const DChargedTrackHypothesis* bestHypothesis = chargedTrackVector[iTrack]->Get_BestTrackingFOM();
 
     // Cut very loosely on the track quality
-    const DTrackTimeBased *thisTimeBasedTrack;
-
-    bestHypothesis->GetSingle(thisTimeBasedTrack);
+	auto thisTimeBasedTrack = bestHypothesis->Get_TrackTimeBased();
 
     // First loop over the FDC/CDC hits of the track to find out how many cells/rings were hit
     // For the first track selection, use already pseudo hits from fdc

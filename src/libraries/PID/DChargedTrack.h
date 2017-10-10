@@ -74,10 +74,10 @@ inline const DChargedTrackHypothesis* DChargedTrack::Get_BestFOM(void) const
 	const DChargedTrackHypothesis* locBestChargedTrackHypothesis = dChargedTrackHypotheses[0];
 	for(size_t loc_i = 0; loc_i < dChargedTrackHypotheses.size(); ++loc_i)
 	{
-		if(dChargedTrackHypotheses[loc_i]->dFOM > locBestFOM)
+		if(dChargedTrackHypotheses[loc_i]->Get_FOM() > locBestFOM)
 		{
 			locBestChargedTrackHypothesis = dChargedTrackHypotheses[loc_i];
-			locBestFOM = locBestChargedTrackHypothesis->dFOM;
+			locBestFOM = locBestChargedTrackHypothesis->Get_FOM();
 		}
 	}
 	return locBestChargedTrackHypothesis;
@@ -91,8 +91,9 @@ inline const DChargedTrackHypothesis* DChargedTrack::Get_BestTrackingFOM(void) c
 	const DChargedTrackHypothesis* locBestChargedTrackHypothesis = dChargedTrackHypotheses[0];
 	for(size_t loc_i = 0; loc_i < dChargedTrackHypotheses.size(); ++loc_i)
 	{
-		unsigned int locNDF = dChargedTrackHypotheses[loc_i]->dNDF_Track;
-		double locFOM = (locNDF > 0) ? TMath::Prob(dChargedTrackHypotheses[loc_i]->dChiSq_Track, locNDF) : numeric_limits<double>::quiet_NaN();
+		auto locTimeBasedTrack = dChargedTrackHypotheses[loc_i]->Get_TrackTimeBased();
+		unsigned int locNDF = locTimeBasedTrack->Ndof;
+		double locFOM = (locNDF > 0) ? TMath::Prob(locTimeBasedTrack->chisq, locNDF) : numeric_limits<double>::quiet_NaN();
 		if(locFOM > locBestFOM)
 		{
 			locBestChargedTrackHypothesis = dChargedTrackHypotheses[loc_i];
