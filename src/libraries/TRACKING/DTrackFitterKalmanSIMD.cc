@@ -830,7 +830,7 @@ DTrackFitter::fit_status_t DTrackFitterKalmanSIMD::FitTrack(void)
    fit_params.setPosition(pos);
    fit_params.setMomentum(mom);
    fit_params.setTime(mT0MinimumDriftTime);
-   fit_params.setPID(dParticleID->IDTrack(charge, MASS));
+   fit_params.setPID(IDTrack(charge, MASS));
    fit_params.setT0(mT0MinimumDriftTime,4.,mT0Detector);
 
    if (DEBUG_LEVEL>0){

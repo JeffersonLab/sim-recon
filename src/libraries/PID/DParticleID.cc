@@ -3161,33 +3161,6 @@ void DParticleID::Get_FDCNumHitPlanesPerPackage(const set<int>& locFDCPlanes, ma
 	}
 }
 
-Particle_t DParticleID::IDTrack(float locCharge, float locMass) const
-{
-	float locMassTolerance = 0.010;
-	if (locCharge > 0.1) // Positive particles
-	{
-		if (fabs(locMass - ParticleMass(Proton)) < locMassTolerance) return Proton;
-		if (fabs(locMass - ParticleMass(PiPlus)) < locMassTolerance) return PiPlus;
-		if (fabs(locMass - ParticleMass(KPlus)) < locMassTolerance) return KPlus;
-		if (fabs(locMass - ParticleMass(Positron)) < locMassTolerance) return Positron;
-		if (fabs(locMass - ParticleMass(MuonPlus)) < locMassTolerance) return MuonPlus;
-	}
-	else if(locCharge < -0.1) // Negative particles
-	{
-		if (fabs(locMass - ParticleMass(PiMinus)) < locMassTolerance) return PiMinus;
-		if (fabs(locMass - ParticleMass(KMinus)) < locMassTolerance) return KMinus;
-		if (fabs(locMass - ParticleMass(MuonMinus)) < locMassTolerance) return MuonMinus;
-		if (fabs(locMass - ParticleMass(Electron)) < locMassTolerance) return Electron;
-		if (fabs(locMass - ParticleMass(AntiProton)) < locMassTolerance) return AntiProton;
-	}
-	else //Neutral Track
-	{
-		if (fabs(locMass - ParticleMass(Gamma)) < locMassTolerance) return Gamma;
-		if (fabs(locMass - ParticleMass(Neutron)) < locMassTolerance) return Neutron;
-	}
-	return Unknown;
-}
-
 /**** Routines to make corrections to energy deposition and time using track
       information ********/
 

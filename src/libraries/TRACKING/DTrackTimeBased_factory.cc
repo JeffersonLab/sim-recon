@@ -1031,7 +1031,7 @@ void DTrackTimeBased_factory::AddMissingTrackHypothesis(vector<DTrackTimeBased*>
   *static_cast<DTrackingData*>(timebased_track) = *static_cast<const DTrackingData*>(src_track);
 
   // Copy over DKinematicData part from the result of a successful fit
-  timebased_track->setPID(pid_algorithm->IDTrack(q, my_mass));
+  timebased_track->setPID(IDTrack(q, my_mass));
   timebased_track->chisq = src_track->chisq;
   timebased_track->Ndof = src_track->Ndof;
   timebased_track->pulls = src_track->pulls;

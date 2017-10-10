@@ -30,7 +30,6 @@ using namespace std;
 
 class DReferenceTrajectory;
 class DGeometry;
-class DParticleID;
 
 //////////////////////////////////////////////////////////////////////////////////
 /// The DTrackFitter class is a base class for different charged track
@@ -207,7 +206,7 @@ class DTrackFitter:public jana::JObject{
 		double DistToWire(const DCoordinateSystem *wire,
 				  const vector<Extrapolation_t>&extrapolations,
 				  DVector3 *pos=NULL,DVector3 *mom=NULL) const;
-
+	      
 		//---- The following need to be supplied by the subclass ----
 		virtual string Name(void) const =0;
 		virtual fit_status_t FitTrack(void)=0;
@@ -226,7 +225,6 @@ class DTrackFitter:public jana::JObject{
 		const DGeometry *geom;						//< DGeometry pointer used to access materials through calibDB maps for eloss
 		const DRootGeom *RootGeom;					//< ROOT geometry used for accessing material for MULS, energy loss
 		JEventLoop *loop;								//< Pointer to JEventLoop object handling the current event
-		const DParticleID* dParticleID;
 
 		// The following should be set as outputs by FitTrack(void)
 		DTrackingData fit_params;									//< Results of last fit
