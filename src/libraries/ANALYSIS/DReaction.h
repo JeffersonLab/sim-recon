@@ -137,7 +137,7 @@ class DReaction : public JObject
 
 int Get_DecayStepIndex(const DReaction* locReaction, size_t locStepIndex, size_t locParticleIndex);
 pair<int, int> Get_InitialParticleDecayFromIndices(const DReaction* locReaction, int locStepIndex);
-vector<Particle_t> Get_ChainPIDs(const DReaction* locReaction, size_t locStepIndex, int locUpToStepIndex, vector<Particle_t> locUpThroughPIDs, bool locExpandDecayingFlag);
+vector<Particle_t> Get_ChainPIDs(const DReaction* locReaction, size_t locStepIndex, int locUpToStepIndex, vector<Particle_t> locUpThroughPIDs, bool locExpandDecayingFlag, bool locExcludeMissingFlag);
 vector<size_t> Get_DefinedParticleStepIndex(const DReaction* locReaction);
 vector<const DReaction*> Get_Reactions(JEventLoop* locEventLoop);
 size_t Get_ParticleInstanceIndex(const DReactionStep* locStep, size_t locParticleIndex);
@@ -193,7 +193,7 @@ inline bool Check_ChannelEquality(const DReaction* lhs, const DReaction* rhs, bo
 
 /****************************************************** NAMESPACE-SCOPE INLINE FUNCTIONS: PIDS *******************************************************/
 
-inline vector<Particle_t> Get_ChainPIDs(const DReaction* locReaction, Particle_t locInitialPID, int locUpToStepIndex, vector<Particle_t> locUpThroughPIDs, bool locExpandDecayingFlag)
+inline vector<Particle_t> Get_ChainPIDs(const DReaction* locReaction, Particle_t locInitialPID, int locUpToStepIndex, vector<Particle_t> locUpThroughPIDs, bool locExpandDecayingFlag, bool locExcludeMissingFlag)
 {
 	//if multiple decay steps have locInitialPID as the parent, only the first listed is used
 	auto locReactionSteps = locReaction->Get_ReactionSteps();
@@ -203,13 +203,13 @@ inline vector<Particle_t> Get_ChainPIDs(const DReaction* locReaction, Particle_t
 		return {};
 
 	size_t locStepIndex = std::distance(locReactionSteps.begin(), locStepIterator);
-	return Get_ChainPIDs(locReaction, locStepIndex, locUpToStepIndex, locUpThroughPIDs, locExpandDecayingFlag);
+	return Get_ChainPIDs(locReaction, locStepIndex, locUpToStepIndex, locUpThroughPIDs, locExpandDecayingFlag, locExcludeMissingFlag);
 }
 
-inline vector<Particle_t> Get_ChainPIDs(const DReaction* locReaction, Particle_t locInitialPID, bool locExpandDecayingFlag)
+inline vector<Particle_t> Get_ChainPIDs(const DReaction* locReaction, Particle_t locInitialPID, bool locExpandDecayingFlag, bool locExcludeMissingFlag)
 {
 	//if multiple decay steps have locInitialPID as the parent, only the first listed is used
-	return Get_ChainPIDs(locReaction, locInitialPID, -1, vector<Particle_t>(), locExpandDecayingFlag);
+	return Get_ChainPIDs(locReaction, locInitialPID, -1, vector<Particle_t>(), locExpandDecayingFlag, locExcludeMissingFlag);
 }
 
 inline string Convert_PIDsToROOTName(const vector<Particle_t>& locPIDs)

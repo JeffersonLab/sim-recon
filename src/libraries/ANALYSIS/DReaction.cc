@@ -159,11 +159,11 @@ int Get_DecayStepIndex(const DReaction* locReaction, size_t locStepIndex, size_t
 	return (locIterator == locSteps.end()) ? -1 : std::distance(locSteps.begin(), locIterator);
 }
 
-vector<Particle_t> Get_ChainPIDs(const DReaction* locReaction, size_t locStepIndex, int locUpToStepIndex, vector<Particle_t> locUpThroughPIDs, bool locExpandDecayingFlag)
+vector<Particle_t> Get_ChainPIDs(const DReaction* locReaction, size_t locStepIndex, int locUpToStepIndex, vector<Particle_t> locUpThroughPIDs, bool locExpandDecayingFlag, bool locExcludeMissingFlag)
 {
 	//if locKinFitResultsFlag = true: don't expand decaying particles (through decay chain) that were included in the kinfit (still expand resonances)
 	vector<Particle_t> locChainPIDs;
-	auto locPIDs = locReaction->Get_ReactionStep(locStepIndex)->Get_FinalPIDs();
+	auto locPIDs = locReaction->Get_ReactionStep(locStepIndex)->Get_FinalPIDs(!locExcludeMissingFlag);
 	for(size_t loc_j = 0; loc_j < locPIDs.size(); ++loc_j)
 	{
 		Particle_t locPID = locPIDs[loc_j];
@@ -182,7 +182,7 @@ vector<Particle_t> Get_ChainPIDs(const DReaction* locReaction, size_t locStepInd
 			locChainPIDs.push_back(locPID);
 		else
 		{
-			auto locDecayPIDs = Get_ChainPIDs(locReaction, locDecayingStepIndex, locUpToStepIndex, locUpThroughPIDs, locExpandDecayingFlag);
+			auto locDecayPIDs = Get_ChainPIDs(locReaction, locDecayingStepIndex, locUpToStepIndex, locUpThroughPIDs, locExpandDecayingFlag, locExcludeMissingFlag);
 			locChainPIDs.insert(locChainPIDs.end(), locDecayPIDs.begin(), locDecayPIDs.end());
 		}
 	}

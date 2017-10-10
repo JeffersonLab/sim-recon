@@ -791,7 +791,6 @@ DKinematicData* DParticleComboCreator::Build_KinematicData(const DKinFitResults*
 		dKinFitUtils->Propagate_TrackInfoToCommonVertex(locKinematicData, locKinFitParticle, &locKinFitResults->Get_VXi());
 
 	//We are NOT propagating the error matrix if it's at the wrong vertex!
-
 	return locKinematicData;
 }
 
