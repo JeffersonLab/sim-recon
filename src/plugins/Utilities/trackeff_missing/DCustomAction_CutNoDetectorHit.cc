@@ -133,7 +133,7 @@ bool DCustomAction_CutNoDetectorHit::Perform_Action(JEventLoop* locEventLoop, co
 	double locStartTime = locParticleCombo->Get_ParticleComboStep(0)->Get_SpacetimeVertex().T();
 	bool locBCALHitFoundFlag = dParticleID->Get_ClosestToTrack(&rt, locBCALShowers, false, locStartTime, locBestBCALMatchParams, &locStartTimeVariance, &locProjPos, &locProjMom);
 	double locBCALProjectedZ = locProjPos.Z();
-	double locBCALDeltaPhi = locBestBCALMatchParams->dDeltaPhiToShower*180.0/TMath::Pi();
+	double locBCALDeltaPhi = locBCALHitFoundFlag ? locBestBCALMatchParams->dDeltaPhiToShower*180.0/TMath::Pi() : 9.9E9;
 
 	// MATCHING: FCAL
 	shared_ptr<const DFCALShowerMatchParams> locBestFCALMatchParams;
@@ -145,7 +145,7 @@ bool DCustomAction_CutNoDetectorHit::Perform_Action(JEventLoop* locEventLoop, co
 	locStartTime = locParticleCombo->Get_ParticleComboStep(0)->Get_SpacetimeVertex().T();
 	bool locSCHitFoundFlag = dParticleID->Get_ClosestToTrack(&rt, locSCHits, true, false, locStartTime, locBestSCMatchParams, &locStartTimeVariance, &locProjPos, &locProjMom);
 	double locSCProjectedZ = locProjPos.Z();
-	double locSCDeltaPhi = locBestSCMatchParams->dDeltaPhiToHit*180.0/TMath::Pi();
+	double locSCDeltaPhi = locSCHitFoundFlag ? locBestSCMatchParams->dDeltaPhiToHit*180.0/TMath::Pi() : 9.9E9;
 
 	// MATCHING: TOF
 	shared_ptr<const DTOFHitMatchParams> locBestTOFMatchParams;
@@ -229,8 +229,12 @@ bool DCustomAction_CutNoDetectorHit::Perform_Action(JEventLoop* locEventLoop, co
 	if(locBCALHitFoundFlag)
 		return ((fabs(locBCALDeltaPhi) < 10.0) && (fabs(locBestBCALMatchParams->dDeltaZToShower) < 15.0));
 
-	//MUST HAVE FCAL & TOF //extrapolation is poor: wide cuts
+	//FCAL & TOF Hit:
 	if(!locTOFHitFoundFlag || !locFCALHitFoundFlag)
 		return false;
-	return ((locTOFDistance < 50.0) && (locBestFCALMatchParams->dDOCAToShower < 50.0));
+
+	//extrapolation is so poor, don't cut if hits found
+	return true;
+//	return ((locTOFDistance < 50.0) && (locBestFCALMatchParams->dDOCAToShower < 50.0));
 }
+

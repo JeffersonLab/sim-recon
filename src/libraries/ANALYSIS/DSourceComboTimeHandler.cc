@@ -421,7 +421,7 @@ DSourceComboTimeHandler::DSourceComboTimeHandler(JEventLoop* locEventLoop, DSour
 			auto locPID = locStep->Get_InitialPID();
 			if(!IsDetachedVertex(locPID))
 				continue;
-			auto locChainPIDs = DAnalysis::Get_ChainPIDs(locReaction, loc_i, -1, {}, true);
+			auto locChainPIDs = DAnalysis::Get_ChainPIDs(locReaction, loc_i, -1, {}, true, true);
 			if(std::find(locChainPIDs.begin(), locChainPIDs.end(), Gamma) == locChainPIDs.end())
 				continue;
 			if((locPID == XiMinus) || (locPID == OmegaMinus) || (locPID == Xi0))

@@ -1164,7 +1164,7 @@ void DHistogramAction_InvariantMass::Initialize(JEventLoop* locEventLoop)
 	string locParticleNamesForHist = "";
 	if(dInitialPID != Unknown)
 	{
-		auto locChainPIDs = DAnalysis::Get_ChainPIDs(Get_Reaction(), dInitialPID, !Get_UseKinFitResultsFlag());
+		auto locChainPIDs = DAnalysis::Get_ChainPIDs(Get_Reaction(), dInitialPID, !Get_UseKinFitResultsFlag(), true);
 		locParticleNamesForHist = DAnalysis::Convert_PIDsToROOTName(locChainPIDs);
 	}
 	else
@@ -1261,7 +1261,7 @@ void DHistogramAction_MissingMass::Initialize(JEventLoop* locEventLoop)
 	double locMassPerBin = 1000.0*(dMaxMass - dMinMass)/((double)dNumMassBins);
 	string locInitialParticlesROOTName = DAnalysis::Get_InitialParticlesName(Get_Reaction()->Get_ReactionStep(0), true);
 	vector<Particle_t> locMissingMassOffOfPIDs(dMissingMassOffOfPIDs.begin(), dMissingMassOffOfPIDs.end());
-	auto locChainPIDs = DAnalysis::Get_ChainPIDs(Get_Reaction(), Get_Reaction()->Get_ReactionStep(0)->Get_InitialPID(), dMissingMassOffOfStepIndex, locMissingMassOffOfPIDs, !Get_UseKinFitResultsFlag());
+	auto locChainPIDs = DAnalysis::Get_ChainPIDs(Get_Reaction(), Get_Reaction()->Get_ReactionStep(0)->Get_InitialPID(), dMissingMassOffOfStepIndex, locMissingMassOffOfPIDs, !Get_UseKinFitResultsFlag(), true);
 	string locFinalParticlesROOTName = DAnalysis::Convert_PIDsToROOTName(locChainPIDs);
 
 	locEventLoop->GetSingle(dAnalysisUtilities);
@@ -1341,7 +1341,7 @@ void DHistogramAction_MissingMassSquared::Initialize(JEventLoop* locEventLoop)
 	double locMassSqPerBin = 1000.0*1000.0*(dMaxMassSq - dMinMassSq)/((double)dNumMassBins);
 	string locInitialParticlesROOTName = DAnalysis::Get_InitialParticlesName(Get_Reaction()->Get_ReactionStep(0), true);
 	vector<Particle_t> locMissingMassOffOfPIDs(dMissingMassOffOfPIDs.begin(), dMissingMassOffOfPIDs.end());
-	auto locChainPIDs = DAnalysis::Get_ChainPIDs(Get_Reaction(), Get_Reaction()->Get_ReactionStep(0)->Get_InitialPID(), dMissingMassOffOfStepIndex, locMissingMassOffOfPIDs, !Get_UseKinFitResultsFlag());
+	auto locChainPIDs = DAnalysis::Get_ChainPIDs(Get_Reaction(), Get_Reaction()->Get_ReactionStep(0)->Get_InitialPID(), dMissingMassOffOfStepIndex, locMissingMassOffOfPIDs, !Get_UseKinFitResultsFlag(), true);
 	string locFinalParticlesROOTName = DAnalysis::Convert_PIDsToROOTName(locChainPIDs);
 
 	locEventLoop->GetSingle(dAnalysisUtilities);
