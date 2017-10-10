@@ -358,16 +358,16 @@ jerror_t DEventProcessor_fcal_charged::evnt(jana::JEventLoop* locEventLoop, int 
 	  double FOM = TMath::Prob(locTrackTimeBased[0]->chisq, locTrackTimeBased[0]->Ndof);
 
 	  // get intersection with fcal front face and backface;
-
-	  if (locTrackTimeBased[0]->rt->GetIntersectionWithPlane(fcal_origin,fcal_normal,trkpos,proj_mom,NULL,NULL,NULL,SYS_FCAL)==NOERROR){
-	  // if (locTrackTimeBased[0]->rt->GetIntersectionWithPlane(fcal_origin_back,fcal_normal_back,trkpos_fcal_back,proj_mom_back,NULL,NULL,NULL)!=NOERROR)
-	  //  continue;       // get track projection to back of fcal
+	  vector<DTrackFitter::Extrapolation_t>extrapolations=locTrackTimeBased[0]->extrapolations.at(SYS_FCAL);
+	  if (extrapolations.size()>0){
+	    trkpos=extrapolations[0].position;
 	    h1_stats->Fill(0);
-	    if (locTrackTimeBased[0]->rt->GetIntersectionWithPlane(tof_origin,tof_normal,trkpos_tof,proj_mom_tof,NULL,NULL,NULL,SYS_TOF)!=NOERROR) {
-	      continue;     // get track projection to tof plane
-	    }
+
+	    vector<DTrackFitter::Extrapolation_t>tof_extrapolations=locTrackTimeBased[0]->extrapolations.at(SYS_TOF);
+	    if (tof_extrapolations.size()==0) continue;
 	    h1_stats->Fill(1);
-	    
+	    trkpos_tof=tof_extrapolations[0].position;
+
 	    // sum up all energy and Bcal and keep only if likely BCAL trigger
 
 	    float bcal_energy = 0;
@@ -381,7 +381,7 @@ jerror_t DEventProcessor_fcal_charged::evnt(jana::JEventLoop* locEventLoop, int 
 	    h1_stats->Fill(2);
 	    
 
-	    double q = locTrackTimeBased[0]->rt->q;
+	    double q = locTrackTimeBased[0]->charge();
 	    p = locTrackTimeBased[0]->momentum().Mag();
 	    double trkmass = locTrackTimeBased[0]->mass();
 
