@@ -331,8 +331,6 @@ jerror_t DEventSourceREST::Extract_DMCReaction(hddm_r::HDDM *record,
       mcreaction->target.setPosition(locPosition);
       Particle_t ttype = iter->getTargetType();
       mcreaction->target.setPID((Particle_t)ttype);
-      mcreaction->target.setMass(ParticleMass(ttype));
-      mcreaction->target.setCharge(ParticleCharge(ttype));
       mcreaction->target.setTime(torig - (zorig - locTargetCenterZ)/29.9792458);
    }
    
@@ -485,31 +483,9 @@ jerror_t DEventSourceREST::Extract_DBeamPhoton(hddm_r::HDDM *record,
 
 	DVector3 pos(0.0, 0.0, locTargetCenterZ);
 
-	//get cov matrices ahead of time (fewer locks)
-	//first, see how many are needed
-	size_t locNumMatrices = 0;
+	//now get the objects
    const hddm_r::TagmBeamPhotonList &locTagmBeamPhotonList = record->getTagmBeamPhotons();
    hddm_r::TagmBeamPhotonList::iterator locTAGMiter;
-   for(locTAGMiter = locTagmBeamPhotonList.begin(); locTAGMiter != locTagmBeamPhotonList.end(); ++locTAGMiter)
-   {
-      if(locTAGMiter->getJtag() == tag)
-         ++locNumMatrices;
-   }
-
-   const hddm_r::TaghBeamPhotonList &locTaghBeamPhotonList = record->getTaghBeamPhotons();
-   hddm_r::TaghBeamPhotonList::iterator locTAGHiter;
-   for(locTAGHiter = locTaghBeamPhotonList.begin(); locTAGHiter != locTaghBeamPhotonList.end(); ++locTAGHiter)
-   {
-      if(locTAGHiter->getJtag() == tag)
-         ++locNumMatrices;
-   }
-
-	//get the matrices
-   uint64_t locEventNumber = eventLoop->GetJEvent().GetEventNumber();
-	DApplication* locApplication = dynamic_cast<DApplication*>(japp);
-	deque<TMatrixFSym*> locMatrices = locApplication->Get_CovarianceMatrixResources(7, locNumMatrices, locEventNumber);
-
-	//now get the objects
    for(locTAGMiter = locTagmBeamPhotonList.begin(); locTAGMiter != locTagmBeamPhotonList.end(); ++locTAGMiter)
    {
       if (locTAGMiter->getJtag() != tag)
@@ -521,21 +497,19 @@ jerror_t DEventSourceREST::Extract_DBeamPhoton(hddm_r::HDDM *record,
 		gamma->setPID(Gamma);
 		gamma->setMomentum(mom);
 		gamma->setPosition(pos);
-		gamma->setCharge(0);
-		gamma->setMass(0);
 		gamma->setTime(locTAGMiter->getT());
-		gamma->setT0(locTAGMiter->getT(), 0.200, SYS_TAGM);
 
-		TMatrixFSym* loc7x7ErrorMatrix = locMatrices.back();
-		locMatrices.pop_back();
-		loc7x7ErrorMatrix->Zero();
-		gamma->setErrorMatrix(loc7x7ErrorMatrix);
+	      auto locCovarianceMatrix = dResourcePool_TMatrixFSym->Get_SharedResource();
+	      locCovarianceMatrix->ResizeTo(7, 7);
+	      locCovarianceMatrix->Zero();
+		gamma->setErrorMatrix(locCovarianceMatrix);
 
         tagmGeom->E_to_column(locTAGMiter->getE(), gamma->dCounter);
 		dbeam_photons.push_back(gamma);
    }
 
-
+   const hddm_r::TaghBeamPhotonList &locTaghBeamPhotonList = record->getTaghBeamPhotons();
+   hddm_r::TaghBeamPhotonList::iterator locTAGHiter;
    for(locTAGHiter = locTaghBeamPhotonList.begin(); locTAGHiter != locTaghBeamPhotonList.end(); ++locTAGHiter)
    {
       if (locTAGHiter->getJtag() != tag)
@@ -547,15 +521,12 @@ jerror_t DEventSourceREST::Extract_DBeamPhoton(hddm_r::HDDM *record,
 		gamma->setPID(Gamma);
 		gamma->setMomentum(mom);
 		gamma->setPosition(pos);
-		gamma->setCharge(0);
-		gamma->setMass(0);
 		gamma->setTime(locTAGHiter->getT());
-		gamma->setT0(locTAGHiter->getT(), 0.350, SYS_TAGH);
 
-		TMatrixFSym* loc7x7ErrorMatrix = locMatrices.back();
-		locMatrices.pop_back();
-		loc7x7ErrorMatrix->Zero();
-		gamma->setErrorMatrix(loc7x7ErrorMatrix);
+	      auto locCovarianceMatrix = dResourcePool_TMatrixFSym->Get_SharedResource();
+	      locCovarianceMatrix->ResizeTo(7, 7);
+	      locCovarianceMatrix->Zero();
+		gamma->setErrorMatrix(locCovarianceMatrix);
 
 		taghGeom->E_to_counter(locTAGHiter->getE(), gamma->dCounter);
 		dbeam_photons.push_back(gamma);
@@ -617,11 +588,8 @@ jerror_t DEventSourceREST::Extract_DMCThrown(hddm_r::HDDM *record,
          mcthrown->parentid = piter->getParentId();
          mcthrown->mech = 0;
          mcthrown->setPID(ptype);
-         mcthrown->setMass(mass);
          mcthrown->setMomentum(DVector3(px, py, pz));
          mcthrown->setPosition(DVector3(vx, vy, vz));
-         mcthrown->setCharge(ParticleCharge(ptype));
-         mcthrown->setT0(vt,0,SYS_NULL);
          mcthrown->setTime(vt);
          data.push_back(mcthrown);
       }
@@ -951,24 +919,9 @@ jerror_t DEventSourceREST::Extract_DTrackTimeBased(hddm_r::HDDM *record,
 
    vector<DTrackTimeBased*> data;
 
-	//get cov matrices ahead of time (fewer locks)
-	//first, see how many are needed
-	size_t locNumMatrices = 0;
+   // loop over chargedTrack records
    const hddm_r::ChargedTrackList &tracks = record->getChargedTracks();
    hddm_r::ChargedTrackList::iterator iter;
-   for (iter = tracks.begin(); iter != tracks.end(); ++iter)
-   {
-      if(iter->getJtag() == tag)
-         ++locNumMatrices;
-   }
-
-	//get the matrices
-   uint64_t locEventNumber = locEventLoop->GetJEvent().GetEventNumber();
-	DApplication* locApplication = dynamic_cast<DApplication*>(japp);
-	deque<TMatrixFSym*> loc7x7Matrices = locApplication->Get_CovarianceMatrixResources(7, locNumMatrices, locEventNumber);
-	deque<TMatrixFSym*> loc5x5Matrices = locApplication->Get_CovarianceMatrixResources(5, locNumMatrices, locEventNumber);
-
-   // loop over chargedTrack records
    for (iter = tracks.begin(); iter != tracks.end(); ++iter) {
       if (iter->getJtag() != tag) {
          continue;
@@ -977,23 +930,20 @@ jerror_t DEventSourceREST::Extract_DTrackTimeBased(hddm_r::HDDM *record,
       tra->trackid = 0;
       tra->candidateid = iter->getCandidateId();
       Particle_t ptype = iter->getPtype();
-      tra->setMass(ParticleMass(ptype));
-      tra->setCharge(ParticleCharge(ptype));
       tra->setPID(ptype);
 
       const hddm_r::TrackFit &fit = iter->getTrackFit();
       tra->Ndof = fit.getNdof();
       tra->chisq = fit.getChisq();
       tra->FOM = TMath::Prob(tra->chisq, tra->Ndof);
-      tra->setT0(fit.getT0(),fit.getT0err(),(DetectorSystem_t)fit.getT0det());
       tra->setTime(fit.getT0());
       DVector3 track_pos(fit.getX0(),fit.getY0(),fit.getZ0());
       DVector3 track_mom(fit.getPx(),fit.getPy(),fit.getPz());
       tra->setPosition(track_pos);
       tra->setMomentum(track_mom);
 
-      TMatrixFSym* loc5x5ErrorMatrix = loc5x5Matrices.back();
-		loc5x5Matrices.pop_back();
+      auto loc5x5ErrorMatrix = dResourcePool_TMatrixFSym->Get_SharedResource();
+      loc5x5ErrorMatrix->ResizeTo(5, 5);
       (*loc5x5ErrorMatrix)(0,0) = fit.getE11();
       (*loc5x5ErrorMatrix)(0,1) = (*loc5x5ErrorMatrix)(1,0) = fit.getE12();
       (*loc5x5ErrorMatrix)(0,2) = (*loc5x5ErrorMatrix)(2,0) = fit.getE13();
@@ -1026,10 +976,11 @@ jerror_t DEventSourceREST::Extract_DTrackTimeBased(hddm_r::HDDM *record,
       tra->setTrackingStateVector(vect[0], vect[1], vect[2], vect[3], vect[4]);
 
       // Set the 7x7 covariance matrix.
-      TMatrixFSym* loc7x7ErrorMatrix = loc7x7Matrices.back();
-		loc7x7Matrices.pop_back();
-	   Get7x7ErrorMatrix(tra->mass(), vect, loc5x5ErrorMatrix, loc7x7ErrorMatrix);
+      auto loc7x7ErrorMatrix = dResourcePool_TMatrixFSym->Get_SharedResource();
+      loc7x7ErrorMatrix->ResizeTo(7, 7);
+	   Get7x7ErrorMatrix(tra->mass(), vect, loc5x5ErrorMatrix.get(), loc7x7ErrorMatrix.get());
       tra->setErrorMatrix(loc7x7ErrorMatrix);
+      (*loc7x7ErrorMatrix)(6, 6) = fit.getT0err()*fit.getT0err();
 
 		// Hit layers
       const hddm_r::HitlayersList& locHitlayersList = iter->getHitlayerses();
@@ -1075,7 +1026,6 @@ jerror_t DEventSourceREST::Extract_DTrackTimeBased(hddm_r::HDDM *record,
          tra->ddEdx_CDC = diter->getDEdxCDC();
          tra->ddx_FDC = diter->getDxFDC();
          tra->ddx_CDC = diter->getDxCDC();
-         tra->setdEdx((tra->dNumHitsUsedFordEdx_CDC >= tra->dNumHitsUsedFordEdx_FDC) ? tra->ddEdx_CDC : tra->ddEdx_FDC);
       }
       else {
          tra->dNumHitsUsedFordEdx_FDC = 0;
@@ -1084,7 +1034,6 @@ jerror_t DEventSourceREST::Extract_DTrackTimeBased(hddm_r::HDDM *record,
          tra->ddEdx_CDC = 0.0;
          tra->ddx_FDC = 0.0;
          tra->ddx_CDC = 0.0;
-         tra->setdEdx(0.0);
       }
 
       data.push_back(tra);
@@ -1144,16 +1093,16 @@ jerror_t DEventSourceREST::Extract_DDetectorMatches(JEventLoop* locEventLoop, hd
          size_t locShowerIndex = bcalIter->getShower();
          size_t locTrackIndex = bcalIter->getTrack();
 
-         DBCALShowerMatchParams locShowerMatchParams;
-         locShowerMatchParams.dBCALShower = locBCALShowers[locShowerIndex];
-         locShowerMatchParams.dx = bcalIter->getDx();
-         locShowerMatchParams.dFlightTime = bcalIter->getTflight();
-         locShowerMatchParams.dFlightTimeVariance = bcalIter->getTflightvar();
-         locShowerMatchParams.dPathLength = bcalIter->getPathlength();
-         locShowerMatchParams.dDeltaPhiToShower = bcalIter->getDeltaphi();
-         locShowerMatchParams.dDeltaZToShower = bcalIter->getDeltaz();
+         auto locShowerMatchParams = std::make_shared<DBCALShowerMatchParams>();
+         locShowerMatchParams->dBCALShower = locBCALShowers[locShowerIndex];
+         locShowerMatchParams->dx = bcalIter->getDx();
+         locShowerMatchParams->dFlightTime = bcalIter->getTflight();
+         locShowerMatchParams->dFlightTimeVariance = bcalIter->getTflightvar();
+         locShowerMatchParams->dPathLength = bcalIter->getPathlength();
+         locShowerMatchParams->dDeltaPhiToShower = bcalIter->getDeltaphi();
+         locShowerMatchParams->dDeltaZToShower = bcalIter->getDeltaz();
 
-         locDetectorMatches->Add_Match(locTrackTimeBasedVector[locTrackIndex], locBCALShowers[locShowerIndex], locShowerMatchParams);
+         locDetectorMatches->Add_Match(locTrackTimeBasedVector[locTrackIndex], locBCALShowers[locShowerIndex], std::const_pointer_cast<const DBCALShowerMatchParams>(locShowerMatchParams));
       }
 
       const hddm_r::FcalMatchParamsList &fcalList = iter->getFcalMatchParamses();
@@ -1163,15 +1112,15 @@ jerror_t DEventSourceREST::Extract_DDetectorMatches(JEventLoop* locEventLoop, hd
          size_t locShowerIndex = fcalIter->getShower();
          size_t locTrackIndex = fcalIter->getTrack();
 
-         DFCALShowerMatchParams locShowerMatchParams;
-         locShowerMatchParams.dFCALShower = locFCALShowers[locShowerIndex];
-         locShowerMatchParams.dx = fcalIter->getDx();
-         locShowerMatchParams.dFlightTime = fcalIter->getTflight();
-         locShowerMatchParams.dFlightTimeVariance = fcalIter->getTflightvar();
-         locShowerMatchParams.dPathLength = fcalIter->getPathlength();
-         locShowerMatchParams.dDOCAToShower = fcalIter->getDoca();
+         auto locShowerMatchParams = std::make_shared<DFCALShowerMatchParams>();
+         locShowerMatchParams->dFCALShower = locFCALShowers[locShowerIndex];
+         locShowerMatchParams->dx = fcalIter->getDx();
+         locShowerMatchParams->dFlightTime = fcalIter->getTflight();
+         locShowerMatchParams->dFlightTimeVariance = fcalIter->getTflightvar();
+         locShowerMatchParams->dPathLength = fcalIter->getPathlength();
+         locShowerMatchParams->dDOCAToShower = fcalIter->getDoca();
 
-         locDetectorMatches->Add_Match(locTrackTimeBasedVector[locTrackIndex], locFCALShowers[locShowerIndex], locShowerMatchParams);
+         locDetectorMatches->Add_Match(locTrackTimeBasedVector[locTrackIndex], locFCALShowers[locShowerIndex], std::const_pointer_cast<const DFCALShowerMatchParams>(locShowerMatchParams));
       }
 
       const hddm_r::ScMatchParamsList &scList = iter->getScMatchParamses();
@@ -1181,18 +1130,18 @@ jerror_t DEventSourceREST::Extract_DDetectorMatches(JEventLoop* locEventLoop, hd
          size_t locHitIndex = scIter->getHit();
          size_t locTrackIndex = scIter->getTrack();
 
-         DSCHitMatchParams locSCHitMatchParams;
-         locSCHitMatchParams.dSCHit = locSCHits[locHitIndex];
-         locSCHitMatchParams.dEdx = scIter->getDEdx();
-         locSCHitMatchParams.dHitTime = scIter->getThit();
-         locSCHitMatchParams.dHitTimeVariance = scIter->getThitvar();
-         locSCHitMatchParams.dHitEnergy = scIter->getEhit();
-         locSCHitMatchParams.dFlightTime = scIter->getTflight();
-         locSCHitMatchParams.dFlightTimeVariance = scIter->getTflightvar();
-         locSCHitMatchParams.dPathLength = scIter->getPathlength();
-         locSCHitMatchParams.dDeltaPhiToHit = scIter->getDeltaphi();
+         auto locSCHitMatchParams = std::make_shared<DSCHitMatchParams>();
+         locSCHitMatchParams->dSCHit = locSCHits[locHitIndex];
+         locSCHitMatchParams->dEdx = scIter->getDEdx();
+         locSCHitMatchParams->dHitTime = scIter->getThit();
+         locSCHitMatchParams->dHitTimeVariance = scIter->getThitvar();
+         locSCHitMatchParams->dHitEnergy = scIter->getEhit();
+         locSCHitMatchParams->dFlightTime = scIter->getTflight();
+         locSCHitMatchParams->dFlightTimeVariance = scIter->getTflightvar();
+         locSCHitMatchParams->dPathLength = scIter->getPathlength();
+         locSCHitMatchParams->dDeltaPhiToHit = scIter->getDeltaphi();
 
-         locDetectorMatches->Add_Match(locTrackTimeBasedVector[locTrackIndex], locSCHits[locHitIndex], locSCHitMatchParams);
+         locDetectorMatches->Add_Match(locTrackTimeBasedVector[locTrackIndex], locSCHits[locHitIndex], std::const_pointer_cast<const DSCHitMatchParams>(locSCHitMatchParams));
       }
 
       const hddm_r::TofMatchParamsList &tofList = iter->getTofMatchParamses();
@@ -1202,21 +1151,21 @@ jerror_t DEventSourceREST::Extract_DDetectorMatches(JEventLoop* locEventLoop, hd
          size_t locHitIndex = tofIter->getHit();
          size_t locTrackIndex = tofIter->getTrack();
 
-         DTOFHitMatchParams locTOFHitMatchParams;
-         locTOFHitMatchParams.dTOFPoint = locTOFPoints[locHitIndex];
+         auto locTOFHitMatchParams = std::make_shared<DTOFHitMatchParams>();
+         locTOFHitMatchParams->dTOFPoint = locTOFPoints[locHitIndex];
 
-         locTOFHitMatchParams.dHitTime = tofIter->getThit();
-         locTOFHitMatchParams.dHitTimeVariance = tofIter->getThitvar();
-         locTOFHitMatchParams.dHitEnergy = tofIter->getEhit();
+         locTOFHitMatchParams->dHitTime = tofIter->getThit();
+         locTOFHitMatchParams->dHitTimeVariance = tofIter->getThitvar();
+         locTOFHitMatchParams->dHitEnergy = tofIter->getEhit();
 
-         locTOFHitMatchParams.dEdx = tofIter->getDEdx();
-         locTOFHitMatchParams.dFlightTime = tofIter->getTflight();
-         locTOFHitMatchParams.dFlightTimeVariance = tofIter->getTflightvar();
-         locTOFHitMatchParams.dPathLength = tofIter->getPathlength();
-         locTOFHitMatchParams.dDeltaXToHit = tofIter->getDeltax();
-         locTOFHitMatchParams.dDeltaYToHit = tofIter->getDeltay();
+         locTOFHitMatchParams->dEdx = tofIter->getDEdx();
+         locTOFHitMatchParams->dFlightTime = tofIter->getTflight();
+         locTOFHitMatchParams->dFlightTimeVariance = tofIter->getTflightvar();
+         locTOFHitMatchParams->dPathLength = tofIter->getPathlength();
+         locTOFHitMatchParams->dDeltaXToHit = tofIter->getDeltax();
+         locTOFHitMatchParams->dDeltaYToHit = tofIter->getDeltay();
 
-         locDetectorMatches->Add_Match(locTrackTimeBasedVector[locTrackIndex], locTOFPoints[locHitIndex], locTOFHitMatchParams);
+         locDetectorMatches->Add_Match(locTrackTimeBasedVector[locTrackIndex], locTOFPoints[locHitIndex], std::const_pointer_cast<const DTOFHitMatchParams>(locTOFHitMatchParams));
       }
 
       const hddm_r::BcalDOCAtoTrackList &bcaldocaList = iter->getBcalDOCAtoTracks();

@@ -1972,9 +1972,10 @@ void MyProcessor::UpdateTrackLabels(void)
 			fom << "N/A";
 		}
 		else if (chargedtrack){
-		  chisq_per_dof<<setprecision(4)<<chargedtrack->dChiSq_Track/chargedtrack->dNDF_Track;
-			Ndof<<chargedtrack->dNDF_Track;
-			fom << chargedtrack->dFOM;
+			auto locTrackTimeBased = chargedtrack->Get_TrackTimeBased();
+		  chisq_per_dof<<setprecision(4)<<locTrackTimeBased->chisq/locTrackTimeBased->Ndof;
+			Ndof<<locTrackTimeBased->Ndof;
+			fom << locTrackTimeBased->FOM;
 		}
 		else{
 		  chisq_per_dof << "--------";
