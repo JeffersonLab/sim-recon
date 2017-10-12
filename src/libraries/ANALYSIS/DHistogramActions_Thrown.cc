@@ -569,10 +569,10 @@ void DHistogramAction_ParticleComboGenReconComparison::Fill_NeutralHists(const D
 	double locDeltaPhi = locNeutralP3.Phi()*180.0/TMath::Pi() - locMCThrown->momentum().Phi()*180.0/TMath::Pi();
 	double locDeltaT = locNeutralParticleHypothesis->time() - locMCThrown->time(); //time comparison isn't fair if track comes from a detached vertex!!!
 	double locDeltaVertexZ = locNeutralParticleHypothesis->position().Z() - locMCThrown->position().Z();
-	const TMatrixDSym& locCovarianceMatrix = *(locNeutralParticleHypothesis->errorMatrix().get());
+	auto locCovarianceMatrix = locNeutralParticleHypothesis->errorMatrix();
 
 	double locStartTime = locThrownEventRFBunch->dTime + (locMCThrown->z() - dTargetZCenter)/29.9792458;
-	double locTimePull = (locStartTime - locNeutralParticleHypothesis->time())/sqrt(locCovarianceMatrix(6, 6));
+	double locTimePull = (locCovarianceMatrix != nullptr) ? (locStartTime - locNeutralParticleHypothesis->time())/sqrt((*locCovarianceMatrix)(6, 6)) : std::numeric_limits<double>::quiet_NaN();
 
 	double locEPull = 0.0;
 	if(Get_UseKinFitResultsFlag())
@@ -584,10 +584,15 @@ void DHistogramAction_ParticleComboGenReconComparison::Fill_NeutralHists(const D
 		for(unsigned int loc_i = 0; loc_i < 4; ++loc_i)
 			locJacobian(0, 3 + loc_i) = 0.0;
 
-		TMatrixDSym locCovCopy = locCovarianceMatrix;
-		locCovCopy.Similarity(locJacobian);
-		double locEUncertainty = sqrt(locCovCopy(0, 0));
-		locEPull = (locNeutralParticleHypothesis->energy() - locMCThrown->energy())/locEUncertainty;
+		if(locCovarianceMatrix != nullptr)
+		{
+			TMatrixDSym locCovCopy = *locCovarianceMatrix;
+			locCovCopy.Similarity(locJacobian);
+			double locEUncertainty = sqrt(locCovCopy(0, 0));
+			locEPull = (locNeutralParticleHypothesis->energy() - locMCThrown->energy())/locEUncertainty;
+		}
+		else
+			locEPull = std::numeric_limits<double>::quiet_NaN();
 	}
 	else
 		locEPull = (locNeutralShower->dEnergy - locMCThrown->energy())/sqrt((*(locNeutralShower->dCovarianceMatrix))(0, 0));
@@ -626,25 +631,27 @@ void DHistogramAction_ParticleComboGenReconComparison::Fill_NeutralHists(const D
 		dHistDeque_DeltaTVsP[locStepIndex][locPID]->Fill(locThrownP, locDeltaT);
 		dHistDeque_DeltaVertexZVsTheta[locStepIndex][locPID]->Fill(locThrownTheta, locDeltaVertexZ);
 
-		for(size_t loc_j = 0; loc_j < dPullTypes.size(); ++loc_j)
+		if(locCovarianceMatrix != nullptr)
 		{
-			if((dPullTypes[loc_j] >= d_PxPull) && (dPullTypes[loc_j] <= d_PzPull))
-				continue;
-			double locPull = 0.0;
-			if(dPullTypes[loc_j] == d_EPull)
-				locPull = locEPull;
-			else if((dPullTypes[loc_j] >= d_XxPull) && (dPullTypes[loc_j] <= d_XzPull))
+			for(size_t loc_j = 0; loc_j < dPullTypes.size(); ++loc_j)
 			{
-				int locIndex = int(dPullTypes[loc_j] - d_XxPull);
-				locPull = (locNeutralParticleHypothesis->position()(locIndex) - locMCThrown->position()(locIndex))/sqrt(locCovarianceMatrix(locIndex + 3, locIndex + 3));
+				if((dPullTypes[loc_j] >= d_PxPull) && (dPullTypes[loc_j] <= d_PzPull))
+					continue;
+				double locPull = 0.0;
+				if(dPullTypes[loc_j] == d_EPull)
+					locPull = locEPull;
+				else if((dPullTypes[loc_j] >= d_XxPull) && (dPullTypes[loc_j] <= d_XzPull))
+				{
+					int locIndex = int(dPullTypes[loc_j] - d_XxPull);
+					locPull = (locNeutralParticleHypothesis->position()(locIndex) - locMCThrown->position()(locIndex))/sqrt((*locCovarianceMatrix)(locIndex + 3, locIndex + 3));
+				}
+				else if(dPullTypes[loc_j] == d_TPull)
+					locPull = (locNeutralParticleHypothesis->time() - locMCThrown->time())/sqrt((*locCovarianceMatrix)(6, 6));
+				(dHistDeque_Pulls[locStepIndex][locPID])[dPullTypes[loc_j]]->Fill(locPull);
+				(dHistDeque_PullsVsP[locStepIndex][locPID])[dPullTypes[loc_j]]->Fill(locThrownP, locPull);
+				(dHistDeque_PullsVsTheta[locStepIndex][locPID])[dPullTypes[loc_j]]->Fill(locThrownTheta, locPull);
 			}
-			else if(dPullTypes[loc_j] == d_TPull)
-				locPull = (locNeutralParticleHypothesis->time() - locMCThrown->time())/sqrt(locCovarianceMatrix(6, 6));
-			(dHistDeque_Pulls[locStepIndex][locPID])[dPullTypes[loc_j]]->Fill(locPull);
-			(dHistDeque_PullsVsP[locStepIndex][locPID])[dPullTypes[loc_j]]->Fill(locThrownP, locPull);
-			(dHistDeque_PullsVsTheta[locStepIndex][locPID])[dPullTypes[loc_j]]->Fill(locThrownTheta, locPull);
 		}
-
 	}
 	Unlock_Action();
 }
