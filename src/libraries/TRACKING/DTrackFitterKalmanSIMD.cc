@@ -9337,12 +9337,12 @@ jerror_t DTrackFitterKalmanSIMD::ExtrapolateForwardToOtherDetectors(){
 	  _DBG_ << "Bailing: P = " << 1./fabs(S(state_q_over_p))
 		<< endl;
 	}
-      return UNRECOVERABLE_ERROR;
+      return VALUE_OUT_OF_RANGE;
     }
 
     // Check if we have passed into the BCAL
     double r2=S(state_x)*S(state_x)+S(state_y)*S(state_y);
-    if (r2>64.9*64.9 && z<400){
+    if (r2>64.9*64.9 && z<410.){
       double tsquare=S(state_tx)*S(state_tx)+S(state_ty)*S(state_ty);
       double tanl=1./sqrt(tsquare);
       double cosl=cos(atan(tanl));
@@ -9352,11 +9352,11 @@ jerror_t DTrackFitterKalmanSIMD::ExtrapolateForwardToOtherDetectors(){
       DVector3 momentum(pt*cos(phi),pt*sin(phi),pt*tanl);
       extrapolations[SYS_BCAL].push_back(Extrapolation_t(position,momentum,
 						 t*TIME_UNIT_CONVERSION,s));
-      
-
       if (r2>89.*89.){ // outer radius squared	
 	return NOERROR;
       }
+      if (momentum.Mag()<0.1 || extrapolations.at(SYS_BCAL).size()>299)
+	return VALUE_OUT_OF_RANGE;
     }    
    
     // Relationship between arc length and z
@@ -9395,6 +9395,7 @@ jerror_t DTrackFitterKalmanSIMD::ExtrapolateForwardToOtherDetectors(){
     if (ds>mStepSizeS) ds=mStepSizeS;
     if (s_to_boundary<ds) ds=s_to_boundary;
     if (ds<MIN_STEP_SIZE) ds=MIN_STEP_SIZE;
+    if (ds<0.5 && z<400. && r2>65.*65.) ds=0.5;
     dz=ds*dz_ds;
     newz=z+dz;
     if (hit_tof==false && newz>dTOFz){
@@ -9471,7 +9472,23 @@ jerror_t DTrackFitterKalmanSIMD::ExtrapolateForwardToOtherDetectors(){
       DVector3 position(S(state_x),S(state_y),z);
       DVector3 momentum(pt*cos(phi),pt*sin(phi),pt*tanl);
       extrapolations[SYS_FCAL].push_back(Extrapolation_t(position,momentum,
-					    t*TIME_UNIT_CONVERSION,s));
+					    t*TIME_UNIT_CONVERSION,s)); 
+
+      // add another extrapolation point at downstream end of FCAL
+      double zend=newz+45.;
+      Step(newz,zend,dEdx,S); 
+      ds=(zend-newz)/dz_ds;
+      t+=ds*sqrt(one_over_beta2); // in units where c=1 
+      s+=ds;
+      tsquare=S(state_tx)*S(state_tx)+S(state_ty)*S(state_ty);
+      tanl=1./sqrt(tsquare); 
+      cosl=cos(atan(tanl));
+      pt=cosl/fabs(S(state_q_over_p));
+      phi=atan2(S(state_ty),S(state_tx));
+      position.SetXYZ(S(state_x),S(state_y),zend);
+      momentum.SetXYZ(pt*cos(phi),pt*sin(phi),pt*tanl);
+      extrapolations[SYS_FCAL].push_back(Extrapolation_t(position,momentum,
+					    t*TIME_UNIT_CONVERSION,s)); 
 
       return NOERROR;
     }
@@ -9654,7 +9671,7 @@ jerror_t DTrackFitterKalmanSIMD::ExtrapolateCentralToOtherDetectors(){
 
 
   // Track propagation loop
-  while (S(state_z)>Z_MIN && S(state_z)<Z_MAX  
+  while (S(state_z)>0. && S(state_z)<Z_MAX  
             && r2<89.*89.){  
     // Bail if the transverse momentum has dropped below some minimum
     if (fabs(S(state_q_over_pt))>Q_OVER_PT_MAX){
@@ -9663,7 +9680,7 @@ jerror_t DTrackFitterKalmanSIMD::ExtrapolateCentralToOtherDetectors(){
 	  _DBG_ << "Bailing: PT = " << 1./fabs(S(state_q_over_pt))
                     << endl;
 	}
-      return UNRECOVERABLE_ERROR;
+      return VALUE_OUT_OF_RANGE;
     }
     
     // get material properties from the Root Geometry
@@ -9695,7 +9712,8 @@ jerror_t DTrackFitterKalmanSIMD::ExtrapolateCentralToOtherDetectors(){
 
     if (ds>mStepSizeS) ds=mStepSizeS;
     if (s_to_boundary<ds) ds=s_to_boundary;
-    if (ds<MIN_STEP_SIZE)ds=MIN_STEP_SIZE;
+    if (ds<MIN_STEP_SIZE)ds=MIN_STEP_SIZE; 
+    if (ds<0.5 && S(state_z)<400. && pos3d.Perp()>65.) ds=0.5;
     s+=ds;
     
     // Flight time
@@ -9720,14 +9738,17 @@ jerror_t DTrackFitterKalmanSIMD::ExtrapolateCentralToOtherDetectors(){
      
     r2=xy.Mod2(); 
     // Check if we have passed into the BCAL
-    if (r2>64.9*64.9 && S(state_z)<400){  
+    if (r2>64.9*64.9 && S(state_z)<410.){  
       double tanl=S(state_tanl);
       double pt=1/fabs(S(state_q_over_pt));
       double phi=S(state_phi);
-      DVector3 position(xy.X(),xy.Y(),S(state_z));
+      DVector3 position(xy.X(),xy.Y(),S(state_z));   
       DVector3 momentum(pt*cos(phi),pt*sin(phi),pt*tanl);
       extrapolations[SYS_BCAL].push_back(Extrapolation_t(position,momentum,
 						 t*TIME_UNIT_CONVERSION,s));
+
+      if (momentum.Mag()<0.1 || extrapolations.at(SYS_BCAL).size()>299)
+	return VALUE_OUT_OF_RANGE;
     }
     // Check if we have more FDC planes to pass by
     else if (fdc_plane<24 && S(state_z)>fdc_z_wires[fdc_plane]-0.5){   
