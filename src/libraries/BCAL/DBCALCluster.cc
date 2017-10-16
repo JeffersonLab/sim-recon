@@ -68,7 +68,13 @@ if( phi() > point->phi() ){
  
   // We should only be removing points from clusters during the recycle_points routine, where they are also added to a different cluster.
 
-  makeFromPoints();
+  int n = m_points.size();
+  if (n==0) {
+      printf("E = %f               \n",m_E);
+      clear();        // don't process cluster if the last point was removed
+  } else {
+      makeFromPoints();
+  }
 }
 
 void
@@ -155,6 +161,7 @@ DBCALCluster::makeFromPoints(){
   //to calculate the cluster centroid or time.
 
   int n = m_points.size();
+  if (n==0) printf("0 point cluster\n");
   int n4 = 0; //number of 4th layer points in the cluster
   for( vector< const DBCALPoint* >::const_iterator pt = m_points.begin();
        pt != m_points.end();
