@@ -15,6 +15,8 @@ class DMaterialMap{
 		DMaterialMap(string namepath, JCalibration *jcalib);
 		virtual ~DMaterialMap(){};
 
+		bool IS_VALID;
+
 		class MaterialNode
 		{
 			public:

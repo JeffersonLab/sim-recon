@@ -2,35 +2,38 @@
 #define _DKinFitChainStep_
 
 #include <vector>
-#include <set>
-#include <algorithm>
 
 #include "DKinFitParticle.h"
+#include "DResettable.h"
 
 //This class is not necessary to use the kinematic fitter, but it is necessary to use some of the setup help functions in DKinFitUtils
 	//Is mostly useful when coding for the generic situation of ANY possible decay chain (rather than handling a specific one)
 
 using namespace std;
 
-class DKinFitChainStep
+class DKinFitChainStep : public DResettable
 {
 	public:
 
-		DKinFitChainStep(void) : dInitialParticleDecayFromStepIndex(-1), dConstrainDecayingMassFlag(false) {}
 		void Reset(void);
+		void Release(void);
 
 		//GET PARTICLES
-		set<DKinFitParticle*> Get_InitialParticles(void) const{return dInitialParticles;}
-		set<DKinFitParticle*> Get_FinalParticles(void) const{return dFinalParticles;}
-		set<DKinFitParticle*> Get_AllParticles(void) const;
+		vector<shared_ptr<DKinFitParticle>> Get_InitialParticles(void) const{return dInitialParticles;}
+		vector<shared_ptr<DKinFitParticle>> Get_FinalParticles(void) const{return dFinalParticles;}
+		vector<shared_ptr<DKinFitParticle>> Get_AllParticles(void) const;
+		shared_ptr<DKinFitParticle> Get_InitialParticle(size_t locIndex) const{return dInitialParticles[locIndex];}
+		shared_ptr<DKinFitParticle> Get_FinalParticle(size_t locIndex) const{return dFinalParticles[locIndex];}
 
 		//GET CONTROL INFO
-		char Get_InitialParticleDecayFromStepIndex(void) const{return dInitialParticleDecayFromStepIndex;}
+		signed char Get_InitialParticleDecayFromStepIndex(void) const{return dInitialParticleDecayFromStepIndex;}
 		bool Get_ConstrainDecayingMassFlag(void) const{return dConstrainDecayingMassFlag;}
 
 		//ADD PARTICLES
-		void Add_InitialParticle(DKinFitParticle* locInitialParticle){dInitialParticles.insert(locInitialParticle);}
-		void Add_FinalParticle(DKinFitParticle* locFinalParticle){dFinalParticles.insert(locFinalParticle);}
+		void Add_InitialParticle(const shared_ptr<DKinFitParticle>& locInitialParticle){dInitialParticles.push_back(locInitialParticle);}
+		void Add_FinalParticle(const shared_ptr<DKinFitParticle>& locFinalParticle){dFinalParticles.push_back(locFinalParticle);}
+		void Set_InitialParticle(const shared_ptr<DKinFitParticle>& locInitialParticle, size_t locIndex){dInitialParticles[locIndex] = locInitialParticle;}
+		void Set_FinalParticle(const shared_ptr<DKinFitParticle>& locFinalParticle, size_t locIndex){dFinalParticles[locIndex] = locFinalParticle;}
 
 		//SET CONTROL INFO
 		void Set_InitialParticleDecayFromStepIndex(int locDecayFromStepIndex){dInitialParticleDecayFromStepIndex = locDecayFromStepIndex;}
@@ -42,11 +45,11 @@ class DKinFitChainStep
 	private:
 
 		//refers to the decaying particle in dInitialParticles //-1 if none, else index points to step index it is produced at
-		char dInitialParticleDecayFromStepIndex;
-		bool dConstrainDecayingMassFlag; //true to constrain mass of the initial state particle
+		signed char dInitialParticleDecayFromStepIndex = -1;
+		bool dConstrainDecayingMassFlag = false; //true to constrain mass of the initial state particle
 
-		set<DKinFitParticle*> dInitialParticles;
-		set<DKinFitParticle*> dFinalParticles;
+		vector<shared_ptr<DKinFitParticle>> dInitialParticles;
+		vector<shared_ptr<DKinFitParticle>> dFinalParticles;
 };
 
 inline void DKinFitChainStep::Reset(void)
@@ -57,25 +60,41 @@ inline void DKinFitChainStep::Reset(void)
 	dFinalParticles.clear();
 }
 
-inline set<DKinFitParticle*> DKinFitChainStep::Get_AllParticles(void) const
+inline void DKinFitChainStep::Release(void)
 {
-	set<DKinFitParticle*> locAllParticles;
-	set_union(dInitialParticles.begin(), dInitialParticles.end(), dFinalParticles.begin(), dFinalParticles.end(), inserter(locAllParticles, locAllParticles.begin()));
+	dInitialParticles.clear();
+	dFinalParticles.clear();
+}
+
+inline vector<shared_ptr<DKinFitParticle>> DKinFitChainStep::Get_AllParticles(void) const
+{
+	auto locAllParticles = dInitialParticles;
+	locAllParticles.insert(locAllParticles.end(), dFinalParticles.begin(), dFinalParticles.end());
+	locAllParticles.erase(std::remove(locAllParticles.begin(), locAllParticles.end(), nullptr), locAllParticles.end());
 	return locAllParticles;
 }
 
 inline void DKinFitChainStep::Print_InfoToScreen(void) const
 {
-	cout << "DKinFitChainStep decay from, constrain mass flags = " << dInitialParticleDecayFromStepIndex << ", " << dConstrainDecayingMassFlag << endl;
+	cout << "DKinFitChainStep decay from, constrain mass flags = " << int(dInitialParticleDecayFromStepIndex) << ", " << dConstrainDecayingMassFlag << endl;
 
 	cout << "DKinFitChainStep init particles: PIDs, pointers:" << endl;
-	set<DKinFitParticle*>::const_iterator locIterator = dInitialParticles.begin();
-	for(; locIterator != dInitialParticles.end(); ++locIterator)
-		cout << (*locIterator)->Get_PID() << ", " << *locIterator << endl;
+	for(auto& locParticle : dInitialParticles)
+	{
+		if(locParticle == nullptr)
+			cout << "X, nullptr" << endl;
+		else
+			cout << locParticle->Get_PID() << ", " << locParticle << endl;
+	}
 
 	cout << "DKinFitChainStep final particles: PIDs, pointers:" << endl;
-	for(locIterator = dFinalParticles.begin(); locIterator != dFinalParticles.end(); ++locIterator)
-		cout << (*locIterator)->Get_PID() << ", " << *locIterator << endl;
+	for(auto& locParticle : dFinalParticles)
+	{
+		if(locParticle == nullptr)
+			cout << "X, nullptr" << endl;
+		else
+			cout << locParticle->Get_PID() << ", " << locParticle << endl;
+	}
 }
 
 #endif // _DKinFitChainStep_

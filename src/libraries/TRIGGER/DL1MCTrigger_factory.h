@@ -5,8 +5,6 @@
 
 #include "DL1MCTrigger.h"
 
-#include "RCDB/Connection.h"
-#include "RCDB/ConfigParser.h"
 
 #include "TTAB/DTranslationTable.h"
 

@@ -6,11 +6,10 @@
 //
 
 #include "DReaction_factory_OmegaSkim.h"
-#include "DCustomAction_dEdxCut_p3pi.h"
 
 void DReaction_factory_OmegaSkim::PIDCuts(DReaction* locReaction)
 {
-  locReaction->Add_AnalysisAction(new DHistogramAction_PID(locReaction));
+  locReaction->Add_AnalysisAction(new DHistogramAction_PID(locReaction, false));
   locReaction->Add_AnalysisAction(new DCutAction_PIDDeltaT(locReaction, false, 2.0, Proton, SYS_TOF));
   locReaction->Add_AnalysisAction(new DCutAction_PIDDeltaT(locReaction, false, 2.5, Proton, SYS_BCAL));
   locReaction->Add_AnalysisAction(new DCutAction_PIDDeltaT(locReaction, false, 3.0, Proton, SYS_FCAL));
@@ -22,8 +21,7 @@ void DReaction_factory_OmegaSkim::PIDCuts(DReaction* locReaction)
   locReaction->Add_AnalysisAction(new DCutAction_PIDDeltaT(locReaction, false, 3.0, PiMinus, SYS_FCAL));
   locReaction->Add_AnalysisAction(new DCutAction_PIDDeltaT(locReaction, false, 2.0, Gamma, SYS_BCAL)); //false: measured data
   locReaction->Add_AnalysisAction(new DCutAction_PIDDeltaT(locReaction, false, 3.0, Gamma, SYS_FCAL)); //false: measured data
-  locReaction->Add_AnalysisAction(new DCustomAction_dEdxCut_p3pi(locReaction, false)); //false: focus on keeping signal
-  locReaction->Add_AnalysisAction(new DHistogramAction_PID(locReaction, "PostPIDCuts"));
+  locReaction->Add_AnalysisAction(new DHistogramAction_PID(locReaction, false, "PostPIDCuts"));
 
   // Cut low beam energy as tagger settings change during 2017-01
   //	locReaction->Add_AnalysisAction(new DCutAction_BeamEnergy(locReaction, false, 7.0, 12.0));
@@ -93,16 +91,6 @@ jerror_t DReaction_factory_OmegaSkim::evnt(JEventLoop* locEventLoop, uint64_t lo
 
   // Highly Recommended: When generating particle combinations, reject all beam photons that match to a different RF bunch
   locReaction->Set_MaxPhotonRFDeltaT(0.5*dBeamBunchPeriod);
-
-  /************************************************** p3pi_preco_2FCAL Pre-Combo Custom Cuts *************************************************/
-
-  // Highly Recommended: Very loose invariant mass cuts, applied during DParticleComboBlueprint construction
-  locReaction->Set_InvariantMassCut(Pi0, 0.05, 0.22);
-  locReaction->Set_InvariantMassCut(omega, 0.4, 1.2);
-
-  // Highly Recommended: Very loose DAnalysisAction cuts, applied just after creating the combination (before saving it)
-  // Example: Missing mass squared of proton
-  locReaction->Add_ComboPreSelectionAction(new DCutAction_MissingMassSquared(locReaction, false, -0.1, 0.1));
 
   /**************************************************** p3pi_preco_2FCAL Analysis Actions ****************************************************/
 

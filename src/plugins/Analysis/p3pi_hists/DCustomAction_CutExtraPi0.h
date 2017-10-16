@@ -31,6 +31,7 @@ class DCustomAction_CutExtraPi0 : public DAnalysisAction
 		dLowMassCut(locLowMassCut), dHighMassCut(locHighMassCut) {}
 
 		void Initialize(JEventLoop* locEventLoop);
+		void Reset_NewEvent(void){dPreviousSourceObjects.clear();}
 
 	private:
 

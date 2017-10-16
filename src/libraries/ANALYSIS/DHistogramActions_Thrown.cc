@@ -54,9 +54,6 @@ void DHistogramAction_ParticleComboGenReconComparison::Initialize(JEventLoop* lo
 	dHistDeque_TimePullVsP_TOF.resize(locNumSteps);
 	dHistDeque_TimePullVsP_FCAL.resize(locNumSteps);
 
-	deque<deque<Particle_t> > locDetectedFinalPIDs;
-	Get_Reaction()->Get_DetectedFinalPIDs(locDetectedFinalPIDs);
-
 	DApplication* locApplication = dynamic_cast<DApplication*>(locEventLoop->GetJApplication());
 	DGeometry *locGeometry = locApplication->GetDGeometry(locEventLoop->GetJEvent().GetRunNumber());
 
@@ -73,7 +70,7 @@ void DHistogramAction_ParticleComboGenReconComparison::Initialize(JEventLoop* lo
 		dRFBeamBunchDeltaT_Hist = GetOrCreate_Histogram<TH1I>(locHistName, ";RF #Deltat (Reconstructed - Thrown)", dNumRFDeltaTBins, dMinRFDeltaT, dMaxRFDeltaT);
 
 		//beam particle
-		locPID = Get_Reaction()->Get_ReactionStep(0)->Get_InitialParticleID();
+		locPID = Get_Reaction()->Get_ReactionStep(0)->Get_InitialPID();
 		bool locBeamParticleUsed = (locPID == Gamma);
 		if(locBeamParticleUsed)
 		{
@@ -112,21 +109,18 @@ void DHistogramAction_ParticleComboGenReconComparison::Initialize(JEventLoop* lo
 		for(size_t loc_i = 0; loc_i < locNumSteps; ++loc_i)
 		{
 			const DReactionStep* locReactionStep = Get_Reaction()->Get_ReactionStep(loc_i);
-			locStepName = locReactionStep->Get_StepName();
-			locStepROOTName = locReactionStep->Get_StepROOTName();
+			locStepName = DAnalysis::Get_StepName(locReactionStep, true, false);
+			locStepROOTName = DAnalysis::Get_StepName(locReactionStep, true, true);
 
-			Particle_t locInitialPID = locReactionStep->Get_InitialParticleID();
+			Particle_t locInitialPID = locReactionStep->Get_InitialPID();
 
 			//get PIDs
-			if(!Get_UseKinFitResultsFlag()) //measured, ignore missing & decaying particles (ignore target anyway)
-				locPIDs = locDetectedFinalPIDs[loc_i];
-			else //kinematic fit: decaying & missing particles are reconstructed
+			auto locPIDs = Get_Reaction()->Get_FinalPIDs(loc_i, Get_UseKinFitResultsFlag(), Get_UseKinFitResultsFlag(), d_AllCharges, false);
+			if(Get_UseKinFitResultsFlag())
 			{
-				locReactionStep->Get_FinalParticleIDs(locPIDs);
 				if((!locBeamParticleUsed) || (loc_i != 0)) //add decaying parent particle //skip if on beam particle!
 					locPIDs.insert(locPIDs.begin(), locInitialPID);
 			}
-
 			if(locPIDs.empty())
 				continue;
 
@@ -474,7 +468,7 @@ void DHistogramAction_ParticleComboGenReconComparison::Fill_ChargedHists(const D
 	double locDeltaPhi = locChargedTrackHypothesis->momentum().Phi()*180.0/TMath::Pi() - locMCThrown->momentum().Phi()*180.0/TMath::Pi();
 	double locDeltaT = locChargedTrackHypothesis->time() - locMCThrown->time(); //time comparison isn't fair if track comes from a detached vertex!!!
 	double locDeltaVertexZ = locChargedTrackHypothesis->position().Z() - locMCThrown->position().Z();
-	const TMatrixDSym& locCovarianceMatrix = *(locChargedTrackHypothesis->errorMatrix());
+	const TMatrixDSym& locCovarianceMatrix = *(locChargedTrackHypothesis->errorMatrix().get());
 
 	double locStartTime = locThrownEventRFBunch->dTime + (locMCThrown->z() - dTargetZCenter)/29.9792458;
 	double locTimePull = (locStartTime - locChargedTrackHypothesis->time())/sqrt(locCovarianceMatrix(6, 6));
@@ -564,11 +558,7 @@ void DHistogramAction_ParticleComboGenReconComparison::Fill_ChargedHists(const D
 void DHistogramAction_ParticleComboGenReconComparison::Fill_NeutralHists(const DNeutralParticleHypothesis* locNeutralParticleHypothesis, const DMCThrown* locMCThrown, const DEventRFBunch* locThrownEventRFBunch, size_t locStepIndex)
 {
 	Particle_t locPID = locNeutralParticleHypothesis->PID();
-
-	const DNeutralShower* locNeutralShower = NULL;
-	locNeutralParticleHypothesis->GetSingle(locNeutralShower);
-	if(locNeutralShower == NULL)
-		return; //shouldn't be possible ...
+	const DNeutralShower* locNeutralShower = locNeutralParticleHypothesis->Get_NeutralShower();
 
 	double locThrownP = locMCThrown->momentum().Mag();
 	double locThrownTheta = locMCThrown->momentum().Theta()*180.0/TMath::Pi();
@@ -579,10 +569,10 @@ void DHistogramAction_ParticleComboGenReconComparison::Fill_NeutralHists(const D
 	double locDeltaPhi = locNeutralP3.Phi()*180.0/TMath::Pi() - locMCThrown->momentum().Phi()*180.0/TMath::Pi();
 	double locDeltaT = locNeutralParticleHypothesis->time() - locMCThrown->time(); //time comparison isn't fair if track comes from a detached vertex!!!
 	double locDeltaVertexZ = locNeutralParticleHypothesis->position().Z() - locMCThrown->position().Z();
-	const TMatrixDSym& locCovarianceMatrix = *(locNeutralParticleHypothesis->errorMatrix());
+	auto locCovarianceMatrix = locNeutralParticleHypothesis->errorMatrix();
 
 	double locStartTime = locThrownEventRFBunch->dTime + (locMCThrown->z() - dTargetZCenter)/29.9792458;
-	double locTimePull = (locStartTime - locNeutralParticleHypothesis->time())/sqrt(locCovarianceMatrix(6, 6));
+	double locTimePull = (locCovarianceMatrix != nullptr) ? (locStartTime - locNeutralParticleHypothesis->time())/sqrt((*locCovarianceMatrix)(6, 6)) : std::numeric_limits<double>::quiet_NaN();
 
 	double locEPull = 0.0;
 	if(Get_UseKinFitResultsFlag())
@@ -594,13 +584,18 @@ void DHistogramAction_ParticleComboGenReconComparison::Fill_NeutralHists(const D
 		for(unsigned int loc_i = 0; loc_i < 4; ++loc_i)
 			locJacobian(0, 3 + loc_i) = 0.0;
 
-		TMatrixDSym locCovCopy = locCovarianceMatrix;
-		locCovCopy.Similarity(locJacobian);
-		double locEUncertainty = sqrt(locCovCopy(0, 0));
-		locEPull = (locNeutralParticleHypothesis->energy() - locMCThrown->energy())/locEUncertainty;
+		if(locCovarianceMatrix != nullptr)
+		{
+			TMatrixDSym locCovCopy = *locCovarianceMatrix;
+			locCovCopy.Similarity(locJacobian);
+			double locEUncertainty = sqrt(locCovCopy(0, 0));
+			locEPull = (locNeutralParticleHypothesis->energy() - locMCThrown->energy())/locEUncertainty;
+		}
+		else
+			locEPull = std::numeric_limits<double>::quiet_NaN();
 	}
 	else
-		locEPull = (locNeutralShower->dEnergy - locMCThrown->energy())/sqrt(locNeutralShower->dCovarianceMatrix(0, 0));
+		locEPull = (locNeutralShower->dEnergy - locMCThrown->energy())/sqrt((*(locNeutralShower->dCovarianceMatrix))(0, 0));
 
 	//FILL HISTOGRAMS
 	//Since we are filling histograms local to this action, it will not interfere with other ROOT operations: can use action-wide ROOT lock
@@ -636,25 +631,27 @@ void DHistogramAction_ParticleComboGenReconComparison::Fill_NeutralHists(const D
 		dHistDeque_DeltaTVsP[locStepIndex][locPID]->Fill(locThrownP, locDeltaT);
 		dHistDeque_DeltaVertexZVsTheta[locStepIndex][locPID]->Fill(locThrownTheta, locDeltaVertexZ);
 
-		for(size_t loc_j = 0; loc_j < dPullTypes.size(); ++loc_j)
+		if(locCovarianceMatrix != nullptr)
 		{
-			if((dPullTypes[loc_j] >= d_PxPull) && (dPullTypes[loc_j] <= d_PzPull))
-				continue;
-			double locPull = 0.0;
-			if(dPullTypes[loc_j] == d_EPull)
-				locPull = locEPull;
-			else if((dPullTypes[loc_j] >= d_XxPull) && (dPullTypes[loc_j] <= d_XzPull))
+			for(size_t loc_j = 0; loc_j < dPullTypes.size(); ++loc_j)
 			{
-				int locIndex = int(dPullTypes[loc_j] - d_XxPull);
-				locPull = (locNeutralParticleHypothesis->position()(locIndex) - locMCThrown->position()(locIndex))/sqrt(locCovarianceMatrix(locIndex + 3, locIndex + 3));
+				if((dPullTypes[loc_j] >= d_PxPull) && (dPullTypes[loc_j] <= d_PzPull))
+					continue;
+				double locPull = 0.0;
+				if(dPullTypes[loc_j] == d_EPull)
+					locPull = locEPull;
+				else if((dPullTypes[loc_j] >= d_XxPull) && (dPullTypes[loc_j] <= d_XzPull))
+				{
+					int locIndex = int(dPullTypes[loc_j] - d_XxPull);
+					locPull = (locNeutralParticleHypothesis->position()(locIndex) - locMCThrown->position()(locIndex))/sqrt((*locCovarianceMatrix)(locIndex + 3, locIndex + 3));
+				}
+				else if(dPullTypes[loc_j] == d_TPull)
+					locPull = (locNeutralParticleHypothesis->time() - locMCThrown->time())/sqrt((*locCovarianceMatrix)(6, 6));
+				(dHistDeque_Pulls[locStepIndex][locPID])[dPullTypes[loc_j]]->Fill(locPull);
+				(dHistDeque_PullsVsP[locStepIndex][locPID])[dPullTypes[loc_j]]->Fill(locThrownP, locPull);
+				(dHistDeque_PullsVsTheta[locStepIndex][locPID])[dPullTypes[loc_j]]->Fill(locThrownTheta, locPull);
 			}
-			else if(dPullTypes[loc_j] == d_TPull)
-				locPull = (locNeutralParticleHypothesis->time() - locMCThrown->time())/sqrt(locCovarianceMatrix(6, 6));
-			(dHistDeque_Pulls[locStepIndex][locPID])[dPullTypes[loc_j]]->Fill(locPull);
-			(dHistDeque_PullsVsP[locStepIndex][locPID])[dPullTypes[loc_j]]->Fill(locThrownP, locPull);
-			(dHistDeque_PullsVsTheta[locStepIndex][locPID])[dPullTypes[loc_j]]->Fill(locThrownTheta, locPull);
 		}
-
 	}
 	Unlock_Action();
 }
@@ -771,7 +768,7 @@ bool DHistogramAction_ThrownParticleKinematics::Perform_Action(JEventLoop* locEv
 	if(locMCThrowns.empty())
 		return true; //e.g. non-simulated event
 
-	if(Get_NumPreviousParticleCombos() != 0)
+	if(Get_CalledPriorWithComboFlag())
 		return true; //else double-counting!
 
 	Particle_t locPID;
@@ -938,7 +935,7 @@ bool DHistogramAction_ReconnedThrownKinematics::Perform_Action(JEventLoop* locEv
 	if(locMCThrowns.empty())
 		return true; //e.g. non-simulated event
 
-	if(Get_NumPreviousParticleCombos() != 0)
+	if(Get_CalledPriorWithComboFlag())
 		return true; //else double-counting!
 
 	const DMCThrownMatching* locMCThrownMatching = NULL;
@@ -1252,7 +1249,7 @@ bool DHistogramAction_GenReconTrackComparison::Perform_Action(JEventLoop* locEve
 	if(locMCThrowns.empty())
 		return true; //e.g. non-simulated event
 
-	if(Get_NumPreviousParticleCombos() != 0)
+	if(Get_CalledPriorWithComboFlag())
 		return true; //else double-counting!
 
 	Particle_t locPID;
@@ -1307,11 +1304,9 @@ bool DHistogramAction_GenReconTrackComparison::Perform_Action(JEventLoop* locEve
 		locDeltaPhi = locChargedTrackHypothesis->momentum().Phi()*180.0/TMath::Pi() - locMCThrown->momentum().Phi()*180.0/TMath::Pi();
 		locDeltaT = locChargedTrackHypothesis->time() - locMCThrown->time(); //time comparison isn't fair if track comes from a detached vertex!!!
 		locDeltaVertexZ = locChargedTrackHypothesis->position().Z() - locMCThrown->position().Z();
-		const TMatrixDSym& locCovarianceMatrix = *(locChargedTrackHypothesis->errorMatrix());
+		const TMatrixDSym& locCovarianceMatrix = *(locChargedTrackHypothesis->errorMatrix().get());
 
-		vector<const DTrackTimeBased*> locTrackTimeBasedVector;
-		locChargedTrackHypothesis->Get(locTrackTimeBasedVector);
-		const DTrackTimeBased* locTrackTimeBased = locTrackTimeBasedVector[0];
+		const DTrackTimeBased* locTrackTimeBased = locChargedTrackHypothesis->Get_TrackTimeBased();
 
 		double locStartTime = locThrownEventRFBunch->dTime + (locMCThrown->z() - dTargetZCenter)/29.9792458;
 		double locTimePull = (locStartTime - locChargedTrackHypothesis->time())/sqrt(locCovarianceMatrix(6, 6));
@@ -1417,10 +1412,7 @@ bool DHistogramAction_GenReconTrackComparison::Perform_Action(JEventLoop* locEve
 		if(locNeutralParticleHypothesis == NULL)
 			locNeutralParticleHypothesis = locNeutralIterator->second.first->Get_BestFOM();
 
-		const DNeutralShower* locNeutralShower = NULL;
-		locNeutralParticleHypothesis->GetSingle(locNeutralShower);
-		if(locNeutralShower == NULL)
-			continue; //shouldn't be possible ...
+		const DNeutralShower* locNeutralShower = locNeutralParticleHypothesis->Get_NeutralShower();
 
 		locThrownP = locMCThrown->momentum().Mag();
 		locThrownTheta = locMCThrown->momentum().Theta()*180.0/TMath::Pi();
@@ -1429,7 +1421,7 @@ bool DHistogramAction_GenReconTrackComparison::Perform_Action(JEventLoop* locEve
 		locDeltaPhi = locNeutralParticleHypothesis->momentum().Phi()*180.0/TMath::Pi() - locMCThrown->momentum().Phi()*180.0/TMath::Pi();
 		locDeltaT = locNeutralParticleHypothesis->time() - locMCThrown->time(); //time comparison isn't fair if track comes from a detached vertex!!!
 		locDeltaVertexZ = locNeutralParticleHypothesis->position().Z() - locMCThrown->position().Z();
-		const TMatrixDSym& locCovarianceMatrix = *(locNeutralParticleHypothesis->errorMatrix());
+		const TMatrixDSym& locCovarianceMatrix = *(locNeutralParticleHypothesis->errorMatrix().get());
 
 		double locStartTime = locThrownEventRFBunch->dTime + (locMCThrown->z() - dTargetZCenter)/29.9792458;
 		double locTimePull = (locStartTime - locNeutralParticleHypothesis->time())/sqrt(locCovarianceMatrix(6, 6));
@@ -1477,7 +1469,7 @@ bool DHistogramAction_GenReconTrackComparison::Perform_Action(JEventLoop* locEve
 					continue;
 				double locPull = 0.0;
 				if(dPullTypes[loc_j] == d_EPull)
-					locPull = (locNeutralShower->dEnergy - locMCThrown->energy())/sqrt(locNeutralShower->dCovarianceMatrix(0, 0));
+					locPull = (locNeutralShower->dEnergy - locMCThrown->energy())/sqrt((*(locNeutralShower->dCovarianceMatrix))(0, 0));
 				else if((dPullTypes[loc_j] >= d_XxPull) && (dPullTypes[loc_j] <= d_XzPull))
 				{
 					int locIndex = int(dPullTypes[loc_j] - d_XxPull);
@@ -1496,159 +1488,15 @@ bool DHistogramAction_GenReconTrackComparison::Perform_Action(JEventLoop* locEve
 	return true;
 }
 
-void DHistogramAction_TOFHitStudy::Initialize(JEventLoop* locEventLoop)
-{
-	string locHistName, locHistTitle, locParticleName, locParticleROOTName;
-	Particle_t locPID;
-
-	//CREATE THE HISTOGRAMS
-	//Since we are creating histograms, the contents of gDirectory will be modified: must use JANA-wide ROOT lock
-	japp->RootWriteLock(); //ACQUIRE ROOT LOCK!!
-	{
-		CreateAndChangeTo_ActionDirectory();
-
-		for(size_t loc_i = 0; loc_i < dFinalStatePIDs.size(); ++loc_i)
-		{
-			locPID = dFinalStatePIDs[loc_i];
-			locParticleName = ParticleType(locPID);
-			locParticleROOTName = ParticleName_ROOT(locPID);
-			CreateAndChangeTo_Directory(locParticleName, locParticleName);
-
-			// DeltaT
-			locHistName = string("DeltaT_") + locParticleName;
-			locHistTitle = locParticleROOTName + string(";#Deltat (ns) (Reconstructed - Thrown)");
-			dHistMap_DeltaT[locPID] = GetOrCreate_Histogram<TH1I>(locHistName, locHistTitle, dNumDeltaTBins, dMinDeltaT, dMaxDeltaT);
-
-			// DeltaX
-			locHistName = string("DeltaX_") + locParticleName;
-			locHistTitle = locParticleROOTName + string(";#Deltax (cm) (Reconstructed - Thrown)");
-			dHistMap_DeltaX[locPID] = GetOrCreate_Histogram<TH1I>(locHistName, locHistTitle, dNumDeltaXBins, dMinDeltaX, dMaxDeltaX);
-
-			// DeltaY
-			locHistName = string("DeltaY_") + locParticleName;
-			locHistTitle = locParticleROOTName + string(";#Deltay (cm) (Reconstructed - Thrown)");
-			dHistMap_DeltaY[locPID] = GetOrCreate_Histogram<TH1I>(locHistName, locHistTitle, dNumDeltaXBins, dMinDeltaX, dMaxDeltaX);
-
-			// dE
-			locHistName = string("dE_") + locParticleName;
-			locHistTitle = locParticleROOTName + string(";dE (MeV)");
-			dHistMap_dE[locPID] = GetOrCreate_Histogram<TH1I>(locHistName, locHistTitle, dNumdEBins, dMindE, dMaxdE);
-
-			// DeltaT Vs P
-			locHistName = string("DeltaTVsP_") + locParticleName;
-			locHistTitle = locParticleROOTName + string(";p (GeV/c);#Deltat (ns) (Reconstructed - Thrown)");
-			dHistMap_DeltaTVsP[locPID] = GetOrCreate_Histogram<TH2I>(locHistName, locHistTitle, dNum2DPBins, dMinP, dMaxP, dNumDeltaTBins, dMinDeltaT, dMaxDeltaT);
-
-			// DeltaX Vs P
-			locHistName = string("DeltaXVsP_") + locParticleName;
-			locHistTitle = locParticleROOTName + string(";p (GeV/c);#Deltax (cm) (Reconstructed - Thrown)");
-			dHistMap_DeltaXVsP[locPID] = GetOrCreate_Histogram<TH2I>(locHistName, locHistTitle, dNum2DPBins, dMinP, dMaxP, dNumDeltaXBins, dMinDeltaX, dMaxDeltaX);
-
-			// DeltaY Vs P
-			locHistName = string("DeltaYVsP_") + locParticleName;
-			locHistTitle = locParticleROOTName + string(";p (GeV/c);#Deltay (cm) (Reconstructed - Thrown)");
-			dHistMap_DeltaYVsP[locPID] = GetOrCreate_Histogram<TH2I>(locHistName, locHistTitle, dNum2DPBins, dMinP, dMaxP, dNumDeltaXBins, dMinDeltaX, dMaxDeltaX);
-
-			// dE Vs P
-			locHistName = string("dEVsP_") + locParticleName;
-			locHistTitle = locParticleROOTName + string(";p (GeV/c);dE (GeV)");
-			dHistMap_dEVsP[locPID] = GetOrCreate_Histogram<TH2I>(locHistName, locHistTitle, dNum2DPBins, dMinP, dMaxP, dNumdEBins, dMindE, dMaxdE);
-
-			gDirectory->cd("..");
-		}
-
-		//Return to the base directory
-		ChangeTo_BaseDirectory();
-	}
-	japp->RootUnLock(); //RELEASE ROOT LOCK!!
-}
-
-bool DHistogramAction_TOFHitStudy::Perform_Action(JEventLoop* locEventLoop, const DParticleCombo* locParticleCombo)
-{
-	if(Get_NumPreviousParticleCombos() != 0)
-		return true; //else double-counting!
-
-	vector<const DMCThrownMatching*> locMCThrownMatchingVector;
-	locEventLoop->Get(locMCThrownMatchingVector);
-	if(locMCThrownMatchingVector.empty())
-		return true;
-	const DMCThrownMatching* locMCThrownMatching = locMCThrownMatchingVector[0];
-
-	vector<const DMCThrown*> locMCThrownVector;
-	locEventLoop->Get(locMCThrownVector);
-
-	map<const DTOFTruth*, pair<const DTOFPoint*, double> > locTOFTruthToPointMap;
-	locMCThrownMatching->Get_TOFTruthToPointMap(locTOFTruthToPointMap);
-
-	map<const DTOFTruth*, pair< const DTOFPoint*, double> >::iterator locTOFIterator;
-	for(locTOFIterator = locTOFTruthToPointMap.begin(); locTOFIterator != locTOFTruthToPointMap.end(); ++locTOFIterator)
-	{
-		const DTOFTruth* locTOFTruth = locTOFIterator->first;
-		const DTOFPoint* locTOFPoint = locTOFIterator->second.first;
-		const DMCThrown* locMCThrown = NULL;
-		for(size_t loc_i = 0; loc_i < locMCThrownVector.size(); ++loc_i)
-		{
-			if(locMCThrownVector[loc_i]->myid != locTOFTruth->track)
-				continue;
-			locMCThrown = locMCThrownVector[loc_i];
-			break;
-		}
-
-		Particle_t locPID = (locMCThrown == NULL) ? Unknown : locMCThrown->PID();
-		if(dHistMap_DeltaT.find(locPID) == dHistMap_DeltaT.end())
-			continue;
-
-		DVector3 locMomentumAtTOF(locTOFTruth->px, locTOFTruth->py, locTOFTruth->pz);
-		DVector3 locThrownMomentum = (locMCThrown == NULL) ? locMomentumAtTOF : locMCThrown->momentum();
-		double locThrownPMag = locThrownMomentum.Mag();
-
-		//DTOFPoint and DTOFTruth reported at different z's (I think center vs. detector face): propagate truth information to the reconstructed z
-		double locDeltaZ = locTOFPoint->pos.Z() - locTOFTruth->z;
-		double locDeltaPathLength = locDeltaZ/cos(locMomentumAtTOF.Theta());
-		double locPropagatedTrueX = locTOFTruth->x + locDeltaPathLength*sin(locMomentumAtTOF.Theta())*cos(locMomentumAtTOF.Phi());
-		double locPropagatedTrueY = locTOFTruth->y + locDeltaPathLength*sin(locMomentumAtTOF.Theta())*sin(locMomentumAtTOF.Phi());
-		double locVelocity = 29.9792458*locMomentumAtTOF.Mag()/locTOFTruth->E;
-		double locPropagatedTrueT = locTOFTruth->t + locDeltaPathLength/locVelocity;
-
-		double locDeltaT = locTOFPoint->t - locPropagatedTrueT;
-		double locDeltaX = locTOFPoint->pos.X() - locPropagatedTrueX;
-		double locDeltaY = locTOFPoint->pos.Y() - locPropagatedTrueY;
-
-		double locdE_MeV = locTOFPoint->dE*1000.0;
-
-		//FILL HISTOGRAMS
-		//Since we are filling histograms local to this action, it will not interfere with other ROOT operations: can use action-wide ROOT lock
-		//Note, the mutex is unique to this DReaction + action_string combo: actions of same class with different hists will have a different mutex
-		Lock_Action(); //ACQUIRE ROOT LOCK!!
-		{
-			dHistMap_DeltaT[locPID]->Fill(locDeltaT);
-			dHistMap_DeltaX[locPID]->Fill(locDeltaX);
-			dHistMap_DeltaY[locPID]->Fill(locDeltaY);
-			dHistMap_dE[locPID]->Fill(locdE_MeV);
-			dHistMap_DeltaTVsP[locPID]->Fill(locThrownPMag, locDeltaT);
-			dHistMap_DeltaXVsP[locPID]->Fill(locThrownPMag, locDeltaX);
-			dHistMap_DeltaYVsP[locPID]->Fill(locThrownPMag, locDeltaY);
-			dHistMap_dEVsP[locPID]->Fill(locThrownPMag, locdE_MeV);
-		}
-		Unlock_Action(); //RELEASE ROOT LOCK!!
-	}
-
-	return true;
-}
-
 void DHistogramAction_TruePID::Initialize(JEventLoop* locEventLoop)
 {
 	string locStepName, locStepROOTName, locHistTitle, locHistName, locParticleName, locParticleROOTName;
-	Particle_t locPID;
 
 	size_t locNumSteps = Get_Reaction()->Get_NumReactionSteps();
 	dHistDeque_P_CorrectID.resize(locNumSteps);
 	dHistDeque_P_IncorrectID.resize(locNumSteps);
 	dHistDeque_PVsTheta_CorrectID.resize(locNumSteps);
 	dHistDeque_PVsTheta_IncorrectID.resize(locNumSteps);
-
-	deque<deque<Particle_t> > locDetectedPIDs;
-	Get_Reaction()->Get_DetectedFinalPIDs(locDetectedPIDs);
 
 	vector<const DAnalysisUtilities*> locAnalysisUtilitiesVector;
 	locEventLoop->Get(locAnalysisUtilitiesVector);
@@ -1661,17 +1509,17 @@ void DHistogramAction_TruePID::Initialize(JEventLoop* locEventLoop)
 		dAnalysisUtilities = locAnalysisUtilitiesVector[0];
 		for(size_t loc_i = 0; loc_i < locNumSteps; ++loc_i)
 		{
-			if(locDetectedPIDs[loc_i].empty())
+			auto locDetectedPIDs = Get_Reaction()->Get_FinalPIDs(loc_i, false, false, d_AllCharges, false);
+			if(locDetectedPIDs.empty())
 				continue;
 
 			const DReactionStep* locReactionStep = Get_Reaction()->Get_ReactionStep(loc_i);
-			locStepName = locReactionStep->Get_StepName();
-			locStepROOTName = locReactionStep->Get_StepROOTName();
+			locStepName = DAnalysis::Get_StepName(locReactionStep, true, false);
+			locStepROOTName = DAnalysis::Get_StepName(locReactionStep, true, true);
 			CreateAndChangeTo_Directory(locStepName, locStepName);
 
-			for(size_t loc_j = 0; loc_j < locDetectedPIDs[loc_i].size(); ++loc_j)
+			for(auto locPID : locDetectedPIDs)
 			{
-				locPID = locDetectedPIDs[loc_i][loc_j];
 				locParticleName = ParticleType(locPID);
 				locParticleROOTName = ParticleName_ROOT(locPID);
 
@@ -1723,17 +1571,13 @@ bool DHistogramAction_TruePID::Perform_Action(JEventLoop* locEventLoop, const DP
 	const DMCThrown* locMCThrown;
 	Particle_t locPID;
 
-	deque<const DKinematicData*> locParticles;
 	int locComboTruePIDStatus = 1;
 	for(size_t loc_i = 0; loc_i < locParticleCombo->Get_NumParticleComboSteps(); ++loc_i)
 	{
 		const DParticleComboStep* locParticleComboStep = locParticleCombo->Get_ParticleComboStep(loc_i);
-		locParticleComboStep->Get_FinalParticles_Measured(locParticles);
-
+		auto locParticles = locParticleComboStep->Get_FinalParticles_Measured(Get_Reaction()->Get_ReactionStep(loc_i));
 		for(size_t loc_j = 0; loc_j < locParticles.size(); ++loc_j)
 		{
-			if(!locParticleComboStep->Is_FinalParticleDetected(loc_j))
-				continue;
 			locPID = locParticles[loc_j]->PID();
 
 			double locMatchFOM = 0.0;
@@ -1747,7 +1591,7 @@ bool DHistogramAction_TruePID::Perform_Action(JEventLoop* locEventLoop, const DP
 				locComboTruePIDStatus = 0;
 
 			//check if duplicate
-			const JObject* locSourceObject = locParticleComboStep->Get_FinalParticle_SourceObject(loc_j);
+			const JObject* locSourceObject = Get_FinalParticle_SourceObject(locParticles[loc_j]);
 			pair<Particle_t, const JObject*> locParticleInfo(locParticles[loc_j]->PID(), locSourceObject);
 			pair<size_t, pair<Particle_t, const JObject*> > locHistInfo(loc_i, locParticleInfo);
 			if(dPreviouslyHistogrammedParticles.find(locHistInfo) != dPreviouslyHistogrammedParticles.end())

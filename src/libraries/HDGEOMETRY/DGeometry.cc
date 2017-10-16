@@ -136,7 +136,7 @@ void DGeometry::ReadMaterialMaps(void) const
 		pthread_mutex_unlock(&materialmap_mutex);
 		return;
 	}
-	jout<<"Found "<<material_namepaths.size()<<" material maps in calib. DB for run "<<runnumber<<endl;
+	jout<<"Found "<<material_namepaths.size()<<" material maps in calib. DB"<<endl;
 	
 	if(false){ // save this to work off configuration parameter
 		jout<<"Will read in the following:"<<endl;
@@ -146,18 +146,24 @@ void DGeometry::ReadMaterialMaps(void) const
 	}
 
 	// Actually read in the maps
-	unsigned int Npoints_total=0;
+	uint32_t Npoints_total=0;
 	//cout<<endl; // make empty line so material map can overwrite it below
 	for(unsigned int i=0; i<material_namepaths.size(); i++){
 		// DMaterialMap constructor prints line so we conserve real
 		// estate by having each recycle the line
 		//cout<<ansi_up(1)<<string(85, ' ')<<"\r";
 		DMaterialMap *mat = new DMaterialMap(material_namepaths[i], jcalib);
+		if( ! mat->IS_VALID ) {
+			// This particular map may not exist for this run/variation
+			// (e.g. CPP uses maps downstream of TOF)
+			delete mat;
+			continue;
+		}
 		materialmaps.push_back(mat);
 		Npoints_total += (unsigned int)(mat->GetNr()*mat->GetNz());
 	}
 	//cout<<ansi_up(1)<<string(85, ' ')<<"\r";
-	jout<<"Read in "<<materialmaps.size()<<" material maps containing "<<Npoints_total<<" grid points total"<<endl;
+	jout<<"Read in "<<materialmaps.size()<<" material maps for run "<<runnumber<<" containing "<<Npoints_total<<" grid points total"<<endl;
 
 	// Set flag that maps have been read and unlock mutex
 	materialmaps_read = true;

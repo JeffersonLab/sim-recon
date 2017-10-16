@@ -202,7 +202,7 @@ inline const DChargedTrackHypothesis* DMCThrownMatching::Get_MatchingChargedHypo
 			return locHypotheses[loc_i];
 		if(locBestHypothesis == NULL)
 			locBestHypothesis = locHypotheses[loc_i];
-		else if(locHypotheses[loc_i]->dFOM > locBestHypothesis->dFOM)
+		else if(locHypotheses[loc_i]->Get_FOM() > locBestHypothesis->Get_FOM())
 			locBestHypothesis = locHypotheses[loc_i];
 	}
 	return locBestHypothesis;
@@ -223,7 +223,7 @@ inline const DNeutralParticleHypothesis* DMCThrownMatching::Get_MatchingNeutralH
 			return locHypotheses[loc_i];
 		if(locBestHypothesis == NULL)
 			locBestHypothesis = locHypotheses[loc_i];
-		else if(locHypotheses[loc_i]->dFOM > locBestHypothesis->dFOM)
+		else if(locHypotheses[loc_i]->Get_FOM() > locBestHypothesis->Get_FOM())
 			locBestHypothesis = locHypotheses[loc_i];
 	}
 	return locBestHypothesis;
@@ -288,17 +288,15 @@ inline const DMCThrown* DMCThrownMatching::Get_MatchingMCThrown(const DNeutralPa
 		return locIterator->second.first;
 	}
 
-	const DNeutralShower* locAssociatedNeutralShower_Input = NULL;
-	locNeutralParticleHypothesis->GetSingle(locAssociatedNeutralShower_Input);
+	const DNeutralShower* locAssociatedNeutralShower_Input = locNeutralParticleHypothesis->Get_NeutralShower();
 	if(locAssociatedNeutralShower_Input == NULL)
 		return NULL;
 
 	//look for a particle with the same source object
 	map<const DNeutralParticle*, pair<const DMCThrown*, double> >::const_iterator locParticleIterator;
-	const DNeutralShower* locAssociatedNeutralShower_Check = NULL;
 	for(locParticleIterator = dNeutralToThrownMap.begin(); locParticleIterator != dNeutralToThrownMap.end(); ++locParticleIterator)
 	{
-		locParticleIterator->first->GetSingle(locAssociatedNeutralShower_Check);
+		auto locAssociatedNeutralShower_Check = locParticleIterator->first->dNeutralShower;
 		if(locAssociatedNeutralShower_Check->dShowerID == locAssociatedNeutralShower_Input->dShowerID)
 		{
 			locMatchFOM = locParticleIterator->second.second;

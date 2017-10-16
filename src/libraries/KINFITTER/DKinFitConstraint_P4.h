@@ -19,35 +19,37 @@ class DKinFitConstraint_P4 : public DKinFitConstraint
 
 	public:
 
+		DKinFitConstraint_P4(void);
+		~DKinFitConstraint_P4(void){}
+
 		TVector3 Get_InitP3Guess(void) const{return dInitP3Guess;};
 		void Set_InitP3Guess(const TVector3& locInitP3Guess){dInitP3Guess = locInitP3Guess;};
 
 		char Get_FIndex(void) const{return dFIndex;}
-		set<DKinFitParticle*> Get_InitialParticles(void) const{return dInitialParticles;};
-		set<DKinFitParticle*> Get_FinalParticles(void) const{return dFinalParticles;};
+		set<shared_ptr<DKinFitParticle>> Get_InitialParticles(void) const{return dInitialParticles;};
+		set<shared_ptr<DKinFitParticle>> Get_FinalParticles(void) const{return dFinalParticles;};
 
-		DKinFitParticle* Get_MissingParticle(void) const; //NULL if none
-		DKinFitParticle* Get_OpenEndedDecayingParticle(void) const; //NULL if none
-		DKinFitParticle* Get_DefinedParticle(void) const; //missing or open-ended decaying particle
+		shared_ptr<DKinFitParticle> Get_MissingParticle(void) const; //NULL if none
+		shared_ptr<DKinFitParticle> Get_OpenEndedDecayingParticle(void) const; //NULL if none
+		shared_ptr<DKinFitParticle> Get_DefinedParticle(void) const; //missing or open-ended decaying particle
 		bool Get_IsDefinedParticleInFinalState(void) const; //false if initial state or no defined particle
 
-		set<DKinFitParticle*> Get_AllParticles(void) const;
+		set<shared_ptr<DKinFitParticle>> Get_AllParticles(void) const;
 		void Print_ConstraintInfo(void) const;
+
+		void Reset(void);
+		void Release(void);
 
 	private:
 
-		DKinFitConstraint_P4(void);
-		~DKinFitConstraint_P4(void){}
-
-		void Reset(void);
 		void Set_FIndex(char locFIndex){dFIndex = locFIndex;}
 
-		void Set_InitialParticles(const set<DKinFitParticle*>& locInitialParticles){dInitialParticles = locInitialParticles;}
-		void Set_FinalParticles(const set<DKinFitParticle*>& locFinalParticles){dFinalParticles = locFinalParticles;}
+		void Set_InitialParticles(const set<shared_ptr<DKinFitParticle>>& locInitialParticles){dInitialParticles = locInitialParticles;}
+		void Set_FinalParticles(const set<shared_ptr<DKinFitParticle>>& locFinalParticles){dFinalParticles = locFinalParticles;}
 
 		char dFIndex; //starting row index of the equation(s) corresponding to these constraints in the dF matrix term
-		set<DKinFitParticle*> dInitialParticles;
-		set<DKinFitParticle*> dFinalParticles;
+		set<shared_ptr<DKinFitParticle>> dInitialParticles;
+		set<shared_ptr<DKinFitParticle>> dFinalParticles;
 
 		TVector3 dInitP3Guess; //initial guess for missing or open-ended-decaying particle. ignored if not present
 };
@@ -65,51 +67,52 @@ inline void DKinFitConstraint_P4::Reset(void)
 	dFinalParticles.clear();
 }
 
-inline set<DKinFitParticle*> DKinFitConstraint_P4::Get_AllParticles(void) const
+inline void DKinFitConstraint_P4::Release(void)
 {
-	set<DKinFitParticle*> locAllParticles;
+	dInitialParticles.clear();
+	dFinalParticles.clear();
+}
+
+inline set<shared_ptr<DKinFitParticle>> DKinFitConstraint_P4::Get_AllParticles(void) const
+{
+	set<shared_ptr<DKinFitParticle>> locAllParticles;
 	set_union(dInitialParticles.begin(), dInitialParticles.end(), dFinalParticles.begin(), dFinalParticles.end(), inserter(locAllParticles, locAllParticles.begin()));
 	return locAllParticles;
 }
 
-inline DKinFitParticle* DKinFitConstraint_P4::Get_MissingParticle(void) const
+inline shared_ptr<DKinFitParticle> DKinFitConstraint_P4::Get_MissingParticle(void) const
 {
-	set<DKinFitParticle*> locAllParticles = Get_AllParticles();
-	set<DKinFitParticle*>::const_iterator locIterator = locAllParticles.begin();
-	for(; locIterator != locAllParticles.end(); ++locIterator)
+	auto locAllParticles = Get_AllParticles();
+	for(auto& locParticle : locAllParticles)
 	{
-		DKinFitParticle* locKinFitParticle = *locIterator;
-		if(locKinFitParticle->Get_KinFitParticleType() == d_MissingParticle)
-			return locKinFitParticle;
+		if(locParticle->Get_KinFitParticleType() == d_MissingParticle)
+			return locParticle;
 	}
 	return NULL;
 }
 
-inline DKinFitParticle* DKinFitConstraint_P4::Get_OpenEndedDecayingParticle(void) const
+inline shared_ptr<DKinFitParticle> DKinFitConstraint_P4::Get_OpenEndedDecayingParticle(void) const
 {
 	//look for decaying particles
-	set<DKinFitParticle*> locAllParticles = Get_AllParticles();
-	set<DKinFitParticle*>::iterator locIterator = locAllParticles.begin();
-	for(; locIterator != locAllParticles.end(); ++locIterator)
+	auto locAllParticles = Get_AllParticles();
+	for(auto& locParticle : locAllParticles)
 	{
-		DKinFitParticle* locKinFitParticle = *locIterator;
-		if(locKinFitParticle->Get_KinFitParticleType() != d_DecayingParticle)
+		if(locParticle->Get_KinFitParticleType() != d_DecayingParticle)
 			continue;
 
 		//see if any of the defined-from particles match those in the constraint
-		set<DKinFitParticle*> locFromFinalState = locKinFitParticle->Get_FromFinalState();
-		set<DKinFitParticle*> locMatchingParticles;
-		set_intersection(locFromFinalState.begin(), locFromFinalState.end(), locAllParticles.begin(), 
-			locAllParticles.end(), inserter(locMatchingParticles, locMatchingParticles.begin()));
+		auto locFromFinalState = locParticle->Get_FromFinalState();
+		set<shared_ptr<DKinFitParticle>> locMatchingParticles;
+		set_intersection(locFromFinalState.begin(), locFromFinalState.end(), locAllParticles.begin(), locAllParticles.end(), inserter(locMatchingParticles, locMatchingParticles.begin()));
 		if(!locMatchingParticles.empty())
-			return locKinFitParticle; //open-ended decaying particle
+			return locParticle; //open-ended decaying particle
 	}
 	return NULL;
 }
 
-inline DKinFitParticle* DKinFitConstraint_P4::Get_DefinedParticle(void) const
+inline shared_ptr<DKinFitParticle> DKinFitConstraint_P4::Get_DefinedParticle(void) const
 {
-	DKinFitParticle* locKinFitParticle = Get_MissingParticle();
+	auto locKinFitParticle = Get_MissingParticle();
 	if(locKinFitParticle != NULL)
 		return locKinFitParticle;
 	return Get_OpenEndedDecayingParticle();
@@ -118,7 +121,7 @@ inline DKinFitParticle* DKinFitConstraint_P4::Get_DefinedParticle(void) const
 inline bool DKinFitConstraint_P4::Get_IsDefinedParticleInFinalState(void) const
 {
 	//false if initial state or no defined particle
-	DKinFitParticle* locDefinedParticle = Get_DefinedParticle();
+	auto locDefinedParticle = Get_DefinedParticle();
 	if(locDefinedParticle == NULL)
 		return false;
 
@@ -128,13 +131,12 @@ inline bool DKinFitConstraint_P4::Get_IsDefinedParticleInFinalState(void) const
 inline void DKinFitConstraint_P4::Print_ConstraintInfo(void) const
 {
 	cout << "DKinFitConstraint_P4: Initial-state particle PID's, pointers: " << endl;
-	set<DKinFitParticle*>::const_iterator locIterator = dInitialParticles.begin();
-	for(; locIterator != dInitialParticles.end(); ++locIterator)
-		cout << (*locIterator)->Get_PID() << ", " << (*locIterator) << endl;
+	for(auto& locParticle : dInitialParticles)
+		cout << locParticle->Get_PID() << ", " << locParticle << endl;
 
 	cout << "DKinFitConstraint_P4: Final-state particle PID's, pointers: " << endl;
-	for(locIterator = dFinalParticles.begin(); locIterator != dFinalParticles.end(); ++locIterator)
-		cout << (*locIterator)->Get_PID() << ", " << (*locIterator) << endl;
+	for(auto& locParticle : dFinalParticles)
+		cout << locParticle->Get_PID() << ", " << locParticle << endl;
 }
 
 #endif // _DKinFitConstraint_P4_

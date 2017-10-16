@@ -15,11 +15,12 @@ class DBeamPhoton: public DKinematicData
 	public:
 		JOBJECT_PUBLIC(DBeamPhoton);
 		
-		unsigned int dCounter; //is TAGM/TAGH if t0_detector is SYS_TAGM/TAGH
+		unsigned int dCounter;
+		DetectorSystem_t dSystem; //SYS_TAGM or SYS_TAGH
 
 		void toStrings(vector<pair<string,string> > &items)const{
 			AddString(items, "E(GeV)", "%3.3f", momentum().Mag());
-			AddString(items, "System", "%s", SystemName(t0_detector()));
+			AddString(items, "System", "%s", SystemName(dSystem));
 			AddString(items, "Counter", "%d", dCounter);
 			AddString(items, "t(ns)", "%3.1f", time());
 		}
