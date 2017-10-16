@@ -1087,17 +1087,26 @@ bool DParticleID::Distance_ToTrack(const vector<DTrackFitter::Extrapolation_t> &
   if(extrapolations.size()==0)
     return false;
 
-  // Find the track projection to the FCAL
-  DVector3 locProjPos=extrapolations[0].position;
-  DVector3 locProjMom=extrapolations[0].momentum;
+  // Check that the hit is not out of time with respect to the track
   double locFlightTime=extrapolations[0].t;
   double locPathLength=extrapolations[0].s;
   double locFlightTimeVariance=0.; // fill this in!
-
-  // Check that the hit is not out of time with respect to the track
   double locDeltaT = locFCALShower->getTime() - locFlightTime - locInputStartTime;
   if(fabs(locDeltaT) > OUT_OF_TIME_CUT)
     return false;
+
+  // Find the track projection to the FCAL
+  DVector3 locProjPos=extrapolations[0].position;
+  DVector3 locProjMom=extrapolations[0].momentum;
+  double dz=locFCALShower->getPosition().z()-locProjPos.z();
+  locProjPos+=dz*DVector3(locProjMom.x()/locProjMom.z(),
+			  locProjMom.y()/locProjMom.z(),1.);
+  // Correct the flight path and flight time to this point
+  double v=(extrapolations[1].s-extrapolations[0].s)/(extrapolations[1].t-extrapolations[0].t);
+  double ds=dz/cos(locProjMom.Theta());
+  double dt=ds/v;
+  locFlightTime+=dt;
+  locPathLength+=ds;
 
   if(locOutputProjMom != nullptr)
     {
