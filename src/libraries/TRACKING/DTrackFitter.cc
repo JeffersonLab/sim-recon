@@ -58,6 +58,7 @@ DTrackFitter::DTrackFitter(JEventLoop *loop)
 	// Create the extrapolation vectors
 	vector<Extrapolation_t>myvector;
 	extrapolations.emplace(SYS_BCAL,myvector);
+	extrapolations.at(SYS_BCAL).reserve(300);
 	extrapolations.emplace(SYS_TOF,myvector);
 	extrapolations.emplace(SYS_FCAL,myvector);
 	extrapolations.emplace(SYS_FDC,myvector);
