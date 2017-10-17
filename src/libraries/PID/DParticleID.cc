@@ -1292,13 +1292,8 @@ bool DParticleID::Distance_ToTrack(const vector<DTrackFitter::Extrapolation_t> &
       *locOutputProjMom = locProjMom;
     }
 
-  // Difference in z and phi
+  // Difference in z
   double locDeltaZ = bcal_pos.z() - locProjPos.z();
-  double locDeltaPhiMin = bcal_pos.Phi() - locProjPos.Phi();
-  while(locDeltaPhiMin > M_PI)
-    locDeltaPhiMin -= M_TWO_PI;
-  while(locDeltaPhiMin < -M_PI)
-    locDeltaPhiMin += M_TWO_PI;
 
   // Find intersection of track with inner radius of BCAL to get dx
   double locDx = (locProjPos - extrapolations[0].position).Mag();
@@ -1331,6 +1326,7 @@ bool DParticleID::Distance_ToTrack(const vector<DTrackFitter::Extrapolation_t> &
   
   // loop over points associated with this shower, finding
   // the closest match between a point and the track
+  double locDeltaPhiMin=1e6;
   for (unsigned int m=0;m<points.size();m++){
     DVector3 locPointProjPos=extrapolations[0].position;
     double R=points[m]->r();
