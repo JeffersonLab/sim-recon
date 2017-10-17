@@ -36,6 +36,9 @@ void DCustomAction_HistMass_X_2000::Initialize(JEventLoop* locEventLoop)
 			dMassHist = new TH1I("InvariantMass", locHistTitle.c_str(), 500, 1.5, 2.5);
 		else //already created by another thread
 			dMassHist = static_cast<TH1I*>(gDirectory->Get("InvariantMass"));
+
+		//Return to the base directory
+		ChangeTo_BaseDirectory();
 	}
 	japp->RootUnLock(); //RELEASE ROOT LOCK!!
 }

@@ -185,6 +185,9 @@ void DCustomAction_${ActionName}::Initialize(JEventLoop* locEventLoop)
 			// This function will return the histogram if already created by another thread. If not pre-existing, it will create and return it. 
 			// Function arguments are identical to those used for the histogram constructors
 		// dMyHist = GetOrCreate_Histogram<TH1I>(\"MyHistName\", \"MyHistTitle\", 100, 0.0, 1.0);
+
+		//Return to the base directory
+		ChangeTo_BaseDirectory();
 	}
 	japp->RootUnLock(); //RELEASE ROOT LOCK!!
 	*/
