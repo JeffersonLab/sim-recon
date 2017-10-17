@@ -404,7 +404,7 @@ int main(int narg, char *argv[])
 
   // Get coherent peak and collimator diameter
   getline(infile,comment_line);
-  float Epeak=9.0,collDiam=0.0034;
+  float Epeak=9.0,collDiam=0.005;
   float Ee=12.0;
   infile >> Ee;
   infile >> Epeak;
@@ -471,15 +471,15 @@ int main(int narg, char *argv[])
   // Setup coherent bremsstrahlung generator
   //----------------------------------------------------------------------------
   float radColDist=76.0;// meters
-  //float colDiam=0.0034; // meters
   int doPolFlux=0;  // want total flux (1 for polarized flux)
   float emitmr=10.e-9; // electron beam emittance
-  float radt=20.e-6; // radiator thickness in m
+  float radt=50.e-6; // radiator thickness in m
   CobremsGeneration cobrems(Ee, Epeak);
   cobrems.setBeamEmittance(emitmr);
   cobrems.setTargetThickness(radt);
   cobrems.setCollimatorDistance(radColDist);
   cobrems.setCollimatorDiameter(collDiam);
+  cobrems.setCollimatedFlag(true);
   cobrems.setPolarizedFlag(doPolFlux);
   cobrems.setCollimatedFlag(true);
   
