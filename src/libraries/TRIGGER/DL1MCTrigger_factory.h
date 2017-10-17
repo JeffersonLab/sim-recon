@@ -221,6 +221,11 @@ class DL1MCTrigger_factory:public jana::JFactory<DL1MCTrigger>{
 
 		void GetSeeds(JEventLoop *loop,  uint64_t eventnumber, UInt_t &seed1, UInt_t &seed2, UInt_t &seed3);
 
+		TH1F *hfcal_gains;
+		TH2F *hfcal_gains2;
+		TH1F *hfcal_ped;
+
+		int debug;
 		
 };
 

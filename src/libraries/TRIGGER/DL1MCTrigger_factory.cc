@@ -15,11 +15,6 @@ using namespace jana;
 
 #include "DL1MCTrigger_factory.h"
 
-
-static TH1F *test;
-static TH2F *test1;
-static TH1F *test3;
-
 #if HAVE_RCDB
 #include "RCDB/Connection.h"
 #include "RCDB/ConfigParser.h"
@@ -33,9 +28,14 @@ static TH1F *test3;
 jerror_t DL1MCTrigger_factory::init(void)
 {
 
-  test   = new TH1F("test", "test", 80,  -1., 3.);
-  test1  = new TH2F("test1","test1", 71, -142., 142., 71, -142., 142.);
-  test3  = new TH1F("test3", "test3", 800, 0., 200.);
+  debug = 0;
+
+  if(debug){
+    hfcal_gains   = new TH1F("fcal_gains", "fcal_gains",  80,  -1., 3.);
+    hfcal_gains2  = new TH2F("fcal_gains2","fcal_gains2", 71, -142., 142., 71, -142., 142.);
+    hfcal_ped     = new TH1F("fcal_ped", "fcal_ped", 800, 0., 200.);
+  }
+
 
   // Default parameters for the main production trigger are taken from the 
   // spring run of 2017: 25 F + B > 45000
@@ -242,18 +242,21 @@ jerror_t DL1MCTrigger_factory::brun(jana::JEventLoop *eventLoop, int32_t runnumb
     }
   } else {
     LoadFCALConst(fcal_gains, fcal_gains_ch, fcalGeom);
-    for(int ch = 0; ch < fcal_gains_ch.size(); ch++){
+
+    if(debug){
+      for(int ch = 0; ch < fcal_gains_ch.size(); ch++){
 	int row = fcalGeom.row(ch);
 	int col = fcalGeom.column(ch);
 	if(fcalGeom.isBlockActive(row,col)){
-	  test->Fill(fcal_gains[row][col]);
+	  hfcal_gains->Fill(fcal_gains[row][col]);
 	  DVector2 aaa = fcalGeom.positionOnFace(row,col);
-	  test1->Fill(float(aaa.X()), float(aaa.Y()), fcal_gains[row][col]);
+	  hfcal_gains2->Fill(float(aaa.X()), float(aaa.Y()), fcal_gains[row][col]);
 	  //	  cout << aaa.X() << "  " << aaa.Y() << endl;
 	  
-	}
-	
+	}	
+      }
     }
+
   }
 
   if (eventLoop->GetCalib("/FCAL/pedestals", fcal_pedestals_ch)){
@@ -266,13 +269,15 @@ jerror_t DL1MCTrigger_factory::brun(jana::JEventLoop *eventLoop, int32_t runnumb
     }
   } else {
     LoadFCALConst(fcal_pedestals, fcal_pedestals_ch, fcalGeom);
-    for(int ch = 0; ch < fcal_gains_ch.size(); ch++){
-      int row = fcalGeom.row(ch);
-      int col = fcalGeom.column(ch);
-      if(fcalGeom.isBlockActive(row,col)){
-	test3->Fill(fcal_pedestals[row][col]);
-      }
-	
+
+    if(debug){
+      for(int ch = 0; ch < fcal_gains_ch.size(); ch++){
+	int row = fcalGeom.row(ch);
+	int col = fcalGeom.column(ch);
+	if(fcalGeom.isBlockActive(row,col)){
+	  hfcal_ped->Fill(fcal_pedestals[row][col]);
+	}
+      }	
     }
     
   }
@@ -286,9 +291,12 @@ jerror_t DL1MCTrigger_factory::brun(jana::JEventLoop *eventLoop, int32_t runnumb
     simu_gain_fcal = 0;
     simu_gain_bcal = 0;
   }
-
-  for(int ii = 0; ii < 100; ii++){
-    cout << " Channel = " << ii <<  " Value = " << fcal_gains_ch[ii] << endl;
+  
+  if(debug){
+    for(int ii = 0; ii < 100; ii++){
+      cout << " Channel = " << ii <<  " Value = " << 
+	fcal_gains_ch[ii] << endl;
+    }
   }
 
 
@@ -432,8 +440,8 @@ jerror_t DL1MCTrigger_factory::evnt(JEventLoop *loop, uint64_t eventnumber){
 	// Add baseline fluctuations for channels with hits
 	if(simu_baseline_fcal){
 	  for(unsigned int ii = 0; ii < fcal_merged_hits.size(); ii++){
-	    int row     = fcal_signal_hits[ii].row;
-	    int column  = fcal_signal_hits[ii].column;
+	    int row     = fcal_merged_hits[ii].row;
+	    int column  = fcal_merged_hits[ii].column;
 	    double pedestal =  fcal_pedestals[row][column];	    
 	    AddBaseline(fcal_merged_hits[ii].adc_en, pedestal, gDRandom);       
 	  }
@@ -443,7 +451,8 @@ jerror_t DL1MCTrigger_factory::evnt(JEventLoop *loop, uint64_t eventnumber){
 	// Digitize		
 	for(unsigned int ii = 0; ii < fcal_merged_hits.size(); ii++){
 	  Digitize(fcal_merged_hits[ii].adc_en,fcal_merged_hits[ii].adc_amp);
-	  //	  cout << " Digitize " << fcal_merged_hits[ii].adc_en[sample - 3] << "  " <<  fcal_merged_hits[ii].adc_amp[sample - 3] << endl;
+	  //	  cout << " Digitize " << fcal_merged_hits[ii].adc_en[sample - 3] 
+	  //   << "  " <<  fcal_merged_hits[ii].adc_amp[sample - 3] << endl;
 	}
 	
 	
@@ -457,6 +466,7 @@ jerror_t DL1MCTrigger_factory::evnt(JEventLoop *loop, uint64_t eventnumber){
 	status += FADC_SSP(fcal_merged_hits, 1);
 
 	status += GTP(1);
+
 
 
 	// BCAL	energy sum
@@ -1417,9 +1427,11 @@ void DL1MCTrigger_factory::AddBaseline(double adc_amp[sample], double pedestal, 
     //    cout << "  " << tmp;
   }
   
-  cout << endl;
-
-  cout << " Corrected pedestal = " << pedestal_correct << "  " <<  adc_amp[sample - 2] << "  " << pedestal_sigma << endl; 
+  if(debug){
+    cout << endl;    
+    cout << " Corrected pedestals = " << pedestal_correct << "  " <<  adc_amp[sample - 2] 
+	 << "  " << pedestal_sigma << endl; 
+  }
 
 }
 
