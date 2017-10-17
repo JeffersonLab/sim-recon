@@ -1181,8 +1181,16 @@ jerror_t DEventSourceHDDM::Extract_DBeamPhoton(hddm_s::HDDM *record,
    {
       DBeamPhoton *beamphoton = new DBeamPhoton;
       *(DKinematicData*)beamphoton = dmcreactions[loc_i]->beam;
-      if(!tagmGeom->E_to_column(beamphoton->energy(), beamphoton->dCounter))
-    	  taghGeom->E_to_counter(beamphoton->energy(), beamphoton->dCounter);
+      if(tagmGeom->E_to_column(beamphoton->energy(), beamphoton->dCounter)) {
+	      beamphoton->dSystem = SYS_TAGM;
+      }
+      else if(taghGeom->E_to_counter(beamphoton->energy(), beamphoton->dCounter)) {
+	      beamphoton->dSystem = SYS_TAGH;
+      }
+      else {
+	      beamphoton->dSystem = SYS_NULL;
+	      beamphoton->dCounter = 999;
+      }
       dbeam_photons.push_back(beamphoton);
    }
 
