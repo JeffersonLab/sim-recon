@@ -1273,11 +1273,19 @@ bool DParticleID::Distance_ToTrack(const vector<DTrackFitter::Extrapolation_t> &
   DVector3 locProjPos,locProjMom;
  
   // Find the closest extrapolated position to this BCAL shower
-  double R=bcal_pos.Perp();
-  if (fitter->ExtrapolateToRadius(R,extrapolations,locProjPos,locProjMom,
-				  locFlightTime,locPathLength)==false)
-    return false;
-  
+  double doca_old=1e6;
+  for (unsigned int i=1;i<extrapolations.size();i++){
+    double doca=(extrapolations[i].position-bcal_pos).Mag();
+    if (doca>doca_old){
+      unsigned int index=i-1;
+      locProjPos=extrapolations[index].position;
+      locPathLength=extrapolations[index].s;
+      locFlightTime=extrapolations[index].t;
+      break;
+    }
+    doca_old=doca;
+  }
+
   if(locOutputProjMom != nullptr)
     {
       *locOutputProjPos = locProjPos;
@@ -1325,7 +1333,7 @@ bool DParticleID::Distance_ToTrack(const vector<DTrackFitter::Extrapolation_t> &
   // the closest match between a point and the track
   for (unsigned int m=0;m<points.size();m++){
     DVector3 locPointProjPos=extrapolations[0].position;
-    R=points[m]->r();
+    double R=points[m]->r();
     if (fitter->ExtrapolateToRadius(R,extrapolations,locPointProjPos)==false)
       return false;
 
