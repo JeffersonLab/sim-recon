@@ -277,6 +277,13 @@ void hitForwardEMcal (float xin[4], float xout[4],
       float dist = 0.5*LENGTH_OF_BLOCK-xfcal[2];
       float dEcorr = dEsum * exp(-dist/ATTEN_LENGTH);
 
+      // Place holder for the MIP correction function. Currently apply 
+      // simple correction
+      
+      if( (ipart == 5) ||  (ipart == 6) || (ipart == 8) || (ipart == 9) ){
+	dEcorr *= 1.38;
+      }
+      
   
 
       float tcorr = t + dist/C_EFFECTIVE;

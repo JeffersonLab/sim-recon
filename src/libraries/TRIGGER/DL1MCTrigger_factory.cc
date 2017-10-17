@@ -9,6 +9,8 @@ using namespace std;
 #include <DAQ/DCODAROCInfo.h>
 #include <DAQ/DL1Info.h>
 
+#include <HDDM/DEventSourceHDDM.h>
+
 using namespace jana;
 
 #include "DL1MCTrigger_factory.h"
@@ -19,11 +21,21 @@ using namespace jana;
 #endif
 
 
+
 //------------------
 // init
 //------------------
 jerror_t DL1MCTrigger_factory::init(void)
 {
+
+  debug = 0;
+
+  if(debug){
+    hfcal_gains   = new TH1F("fcal_gains", "fcal_gains",  80,  -1., 3.);
+    hfcal_gains2  = new TH2F("fcal_gains2","fcal_gains2", 71, -142., 142., 71, -142., 142.);
+    hfcal_ped     = new TH1F("fcal_ped", "fcal_ped", 800, 0., 200.);
+  }
+
 
   // Default parameters for the main production trigger are taken from the 
   // spring run of 2017: 25 F + B > 45000
@@ -52,6 +64,16 @@ jerror_t DL1MCTrigger_factory::init(void)
   ST_NHIT          =  1;
 
   BCAL_OFFSET      =  2;
+
+  SIMU_BASELINE = 1;
+  SIMU_GAIN = 1;
+  
+
+  simu_baseline_fcal  =  1;
+  simu_baseline_bcal  =  1;
+
+  simu_gain_fcal  =  1;
+  simu_gain_bcal  =  1;
 
 
   gPARMS->SetDefaultParameter("TRIG:FCAL_ADC_PER_MEV", FCAL_ADC_PER_MEV,
@@ -98,17 +120,32 @@ jerror_t DL1MCTrigger_factory::init(void)
 
   gPARMS->SetDefaultParameter("TRIG:BCAL_OFFSET", BCAL_OFFSET,
 			      "Timing offset between BCAL and FCAL energies at GTP (sampels)");
+  
+
+  // Allows to switch off gain and baseline fluctuations
+  gPARMS->SetDefaultParameter("TRIG:SIMU_BASELINE", SIMU_BASELINE,
+			      "Enable simulation of pedestal variations");
+
+  gPARMS->SetDefaultParameter("TRIG:SIMU_GAIN", SIMU_GAIN,
+			      "Enable simulation of gain variations");
 
 
   BCAL_ADC_PER_MEV_CORRECT  =  22.7273;
 
+  pedestal_sigma = 1.2;
 
   time_shift = 100;
 
   time_min  =  0;
   time_max  =  (sample - 1)*max_adc_bins;
-
   
+  vector< vector<double > > fcal_gains_temp(DFCALGeometry::kBlocksTall, 
+					    vector<double>(DFCALGeometry::kBlocksWide));
+  vector< vector<double > > fcal_pedestals_temp(DFCALGeometry::kBlocksTall, 
+						vector<double>(DFCALGeometry::kBlocksWide));
+  
+  fcal_gains      =  fcal_gains_temp;  
+  fcal_pedestals  =  fcal_pedestals_temp;
 
   return NOERROR;
 }
@@ -150,10 +187,16 @@ jerror_t DL1MCTrigger_factory::brun(jana::JEventLoop *eventLoop, int32_t runnumb
   if(getenv("JANA_CALIB_CONTEXT") != NULL ){ 
     if(JANA_CALIB_CONTEXT.find("mc_generic") != string::npos){
       use_rcdb = 0;
+      // Don't simulate baseline fluctuations for mc_generic
+      simu_baseline_fcal = 0;
+      simu_baseline_bcal = 0;
+      // Don't simulate gain fluctuations for mc_generic
+      simu_gain_fcal = 0;
+      simu_gain_bcal = 0;
     }
   }
 
-  // runnumber = 30942;
+  //  runnumber = 30942;
 
   if(use_rcdb == 1){
     status = Read_RCDB(runnumber);
@@ -175,6 +218,87 @@ jerror_t DL1MCTrigger_factory::brun(jana::JEventLoop *eventLoop, int32_t runnumb
 
     cout << " Do not use RCDB for the trigger simulation. Default (spring 2017) trigger settings are used " << endl;
   }
+
+
+   // extract the FCAL Geometry
+  vector<const DFCALGeometry*> fcalGeomVect;
+  eventLoop->Get( fcalGeomVect );
+  if (fcalGeomVect.size() < 1)
+    return OBJECT_NOT_AVAILABLE;
+  const DFCALGeometry& fcalGeom = *(fcalGeomVect[0]);
+  
+  if(print_messages) jout << "In DL1MCTrigger_factory, loading constants..." << endl;
+  
+  vector< double > fcal_gains_ch;
+  vector< double > fcal_pedestals_ch;
+  
+  if (eventLoop->GetCalib("/FCAL/gains", fcal_gains_ch)){
+    jout << "DL1MCTrigger_factory: Error loading /FCAL/gains !" << endl;
+    // Load default values of gains if CCDB table is not found
+    for(int ii = 0; ii < DFCALGeometry::kBlocksTall; ii++){
+      for(int jj = 0; jj < DFCALGeometry::kBlocksWide; jj++){
+	fcal_gains[ii][jj] = 1.;	
+      }
+    }
+  } else {
+    LoadFCALConst(fcal_gains, fcal_gains_ch, fcalGeom);
+
+    if(debug){
+      for(int ch = 0; ch < fcal_gains_ch.size(); ch++){
+	int row = fcalGeom.row(ch);
+	int col = fcalGeom.column(ch);
+	if(fcalGeom.isBlockActive(row,col)){
+	  hfcal_gains->Fill(fcal_gains[row][col]);
+	  DVector2 aaa = fcalGeom.positionOnFace(row,col);
+	  hfcal_gains2->Fill(float(aaa.X()), float(aaa.Y()), fcal_gains[row][col]);
+	  //	  cout << aaa.X() << "  " << aaa.Y() << endl;
+	  
+	}	
+      }
+    }
+
+  }
+
+  if (eventLoop->GetCalib("/FCAL/pedestals", fcal_pedestals_ch)){
+    jout << "DL1MCTrigger_factory: Error loading /FCAL/pedestals !" << endl;
+    // Load default values of pedestals if CCDB table is not found
+    for(int ii = 0; ii < DFCALGeometry::kBlocksTall; ii++){
+      for(int jj = 0; jj < DFCALGeometry::kBlocksWide; jj++){
+	fcal_pedestals[ii][jj] = 100.;	
+      }
+    }
+  } else {
+    LoadFCALConst(fcal_pedestals, fcal_pedestals_ch, fcalGeom);
+
+    if(debug){
+      for(int ch = 0; ch < fcal_gains_ch.size(); ch++){
+	int row = fcalGeom.row(ch);
+	int col = fcalGeom.column(ch);
+	if(fcalGeom.isBlockActive(row,col)){
+	  hfcal_ped->Fill(fcal_pedestals[row][col]);
+	}
+      }	
+    }
+    
+  }
+  
+  if(!SIMU_BASELINE){
+    simu_baseline_fcal = 0;
+    simu_baseline_bcal = 0;
+  }
+
+  if(!SIMU_GAIN){
+    simu_gain_fcal = 0;
+    simu_gain_bcal = 0;
+  }
+  
+  if(debug){
+    for(int ii = 0; ii < 100; ii++){
+      cout << " Channel = " << ii <<  " Value = " << 
+	fcal_gains_ch[ii] << endl;
+    }
+  }
+
 
   return NOERROR;
 }
@@ -208,6 +332,28 @@ jerror_t DL1MCTrigger_factory::evnt(JEventLoop *loop, uint64_t eventnumber){
 	loop->Get(bcal_hits);
 
 
+	// Initialize random number generator
+	// Read seeds from hddm file
+	// Generate seeds according to the event number if they are not stored in hddm
+	// The proceedure is consistent with the mcsmear
+
+	UInt_t seed1 = 0;
+	UInt_t seed2 = 0;
+	UInt_t seed3 = 0;
+	
+	DRandom2 gDRandom(0); // declared extern in DRandom2.h
+	GetSeeds(loop, eventnumber, seed1, seed2, seed3);
+	
+	gDRandom.SetSeeds(seed1, seed2, seed3);
+	
+	//	cout << endl;
+	//	cout << " Event = " << eventnumber << endl;
+	//	cout << " Seed 1: " << seed1 << endl;
+	//	cout << " Seed 2: " << seed2 << endl;
+	//	cout << " Seed 3: " << seed3 << endl;
+	//	cout << endl;
+	       
+
 	DL1MCTrigger *trigger = new DL1MCTrigger;
 
 	//  FCAL energy sum	
@@ -239,25 +385,34 @@ jerror_t DL1MCTrigger_factory::evnt(JEventLoop *loop, uint64_t eventnumber){
 	    
 	    fcal_tmp.row     = row;
 	    fcal_tmp.column  = col;
-	    
+
 	    fcal_tmp.energy  = fcal_hits[ii]->E;
 	    fcal_tmp.time    = time;
 	    memset(fcal_tmp.adc_amp,0,sizeof(fcal_tmp.adc_amp));
-	    
-	    double fcal_adc_en  = fcal_tmp.energy*FCAL_ADC_PER_MEV*1000;
+	    memset(fcal_tmp.adc_en, 0,sizeof(fcal_tmp.adc_en));
 
-	    status = Digitize(fcal_adc_en, fcal_tmp.time, fcal_tmp.adc_amp, 1);
+	    double fcal_adc_en  = fcal_tmp.energy*FCAL_ADC_PER_MEV*1000;
+	    
+	    // Account for gain fluctuations 
+	    if(simu_gain_fcal){
+	      
+	      double gain  =  fcal_gains[row][col];	  
+	      
+	      fcal_adc_en *= gain;
+	    }
+	    
+	    status = SignalPulse(fcal_adc_en, fcal_tmp.time, fcal_tmp.adc_en, 1);
 	    status = 0;
 
 	    fcal_signal_hits.push_back(fcal_tmp);
 	  }
 	  
-	}       
-	
+	}       		
+
 
 	// Merge FCAL hits
 	for(unsigned int ii = 0; ii < fcal_signal_hits.size(); ii++){	  
-
+	  
 	  if(fcal_signal_hits[ii].merged == 1) continue;
 	  
 	  fcal_signal fcal_tmp;
@@ -266,33 +421,52 @@ jerror_t DL1MCTrigger_factory::evnt(JEventLoop *loop, uint64_t eventnumber){
 	  fcal_tmp.energy  = 0.;
 	  fcal_tmp.time    = 0.;
 	  for(int kk = 0; kk < sample; kk++)	      
-	    fcal_tmp.adc_amp[kk] = fcal_signal_hits[ii].adc_amp[kk];
+	    fcal_tmp.adc_en[kk] = fcal_signal_hits[ii].adc_en[kk];
 	  
 	  for(unsigned int jj = ii + 1; jj < fcal_signal_hits.size(); jj++){
 	    if((fcal_signal_hits[ii].row  == fcal_signal_hits[jj].row) &&
 	       (fcal_signal_hits[ii].column == fcal_signal_hits[jj].column)){
 
 	      fcal_signal_hits[jj].merged = 1;
-
+	      
 	      for(int kk = 0; kk < sample; kk++)	      
-		fcal_tmp.adc_amp[kk] += fcal_signal_hits[jj].adc_amp[kk];	
+		fcal_tmp.adc_en[kk] += fcal_signal_hits[jj].adc_en[kk];	
 	    }
 	  }
 	  
 	  fcal_merged_hits.push_back(fcal_tmp);
 	}	
 	
+	// Add baseline fluctuations for channels with hits
+	if(simu_baseline_fcal){
+	  for(unsigned int ii = 0; ii < fcal_merged_hits.size(); ii++){
+	    int row     = fcal_merged_hits[ii].row;
+	    int column  = fcal_merged_hits[ii].column;
+	    double pedestal =  fcal_pedestals[row][column];	    
+	    AddBaseline(fcal_merged_hits[ii].adc_en, pedestal, gDRandom);       
+	  }
+	}
+	
+
+	// Digitize		
+	for(unsigned int ii = 0; ii < fcal_merged_hits.size(); ii++){
+	  Digitize(fcal_merged_hits[ii].adc_en,fcal_merged_hits[ii].adc_amp);
+	  //	  cout << " Digitize " << fcal_merged_hits[ii].adc_en[sample - 3] 
+	  //   << "  " <<  fcal_merged_hits[ii].adc_amp[sample - 3] << endl;
+	}
+	
 	
 	int fcal_hit_adc_en = 0;
 
-	for(unsigned int ii = 0; ii < fcal_signal_hits.size(); ii++)
+	for(unsigned int ii = 0; ii < fcal_merged_hits.size(); ii++)
 	  for(int jj = 0; jj < sample; jj++)
-	    fcal_hit_adc_en += fcal_signal_hits[ii].adc_amp[jj];	  
+	    fcal_hit_adc_en += fcal_merged_hits[ii].adc_amp[jj];	  
 	
 	
 	status += FADC_SSP(fcal_merged_hits, 1);
 
 	status += GTP(1);
+
 
 
 	// BCAL	energy sum
@@ -335,10 +509,11 @@ jerror_t DL1MCTrigger_factory::evnt(JEventLoop *loop, uint64_t eventnumber){
 	    bcal_tmp.energy  = bcal_hits[ii]->E;
 	    bcal_tmp.time    = time;
 	    memset(bcal_tmp.adc_amp,0,sizeof(bcal_tmp.adc_amp));
+	    memset(bcal_tmp.adc_en, 0,sizeof(bcal_tmp.adc_en));
 	    
 	    double bcal_adc_en  = bcal_tmp.energy*BCAL_ADC_PER_MEV*1000;
 
-	    status = Digitize(bcal_adc_en, bcal_tmp.time, bcal_tmp.adc_amp, 2);
+	    status = SignalPulse(bcal_adc_en, bcal_tmp.time, bcal_tmp.adc_en, 2);
 	    status = 0;
  
 	    bcal_signal_hits.push_back(bcal_tmp);
@@ -355,35 +530,50 @@ jerror_t DL1MCTrigger_factory::evnt(JEventLoop *loop, uint64_t eventnumber){
 	  bcal_tmp.module  =  bcal_signal_hits[ii].module;
 	  bcal_tmp.layer   =  bcal_signal_hits[ii].layer;
 	  bcal_tmp.sector  =  bcal_signal_hits[ii].sector;
-	  bcal_tmp.end    =  bcal_signal_hits[ii].end;
+	  bcal_tmp.end     =  bcal_signal_hits[ii].end;
 	  
 	  bcal_tmp.energy  = 0.;
 	  bcal_tmp.time    = 0.;
 	  
 	  for(int kk = 0; kk < sample; kk++)	      
-	    bcal_tmp.adc_amp[kk] = bcal_signal_hits[ii].adc_amp[kk];
+	    bcal_tmp.adc_en[kk] = bcal_signal_hits[ii].adc_en[kk];
 	  
 	  for(unsigned int jj = ii + 1; jj < bcal_signal_hits.size(); jj++){
 	    if((bcal_signal_hits[ii].module == bcal_signal_hits[jj].module) &&
 	       (bcal_signal_hits[ii].layer  == bcal_signal_hits[jj].layer) &&
 	       (bcal_signal_hits[ii].sector == bcal_signal_hits[jj].sector) &&    
 	       (bcal_signal_hits[ii].end    == bcal_signal_hits[jj].end)){
-
+	      
 	      bcal_signal_hits[jj].merged = 1;
-
+	      
 	      for(int kk = 0; kk < sample; kk++)	      
-		bcal_tmp.adc_amp[kk] += bcal_signal_hits[jj].adc_amp[kk];	
+		bcal_tmp.adc_en[kk] += bcal_signal_hits[jj].adc_en[kk];	
 	    }
 	  }
 	  
 	  bcal_merged_hits.push_back(bcal_tmp);
 	}
-	
+
+
+	// Add baseline fluctuations for channels with hits
+	if(simu_baseline_bcal){
+	  for(unsigned int ii = 0; ii < bcal_merged_hits.size(); ii++){
+	    // Assume that all BCAL pedestals are 100
+	    double pedestal = TRIG_BASELINE;	    
+	    AddBaseline(bcal_merged_hits[ii].adc_en, pedestal, gDRandom);       
+	  }
+	}
+
+
+	// Digitize		
+	for(unsigned int ii = 0; ii < bcal_merged_hits.size(); ii++)
+	  Digitize(bcal_merged_hits[ii].adc_en,bcal_merged_hits[ii].adc_amp);
+
 
 	int bcal_hit_adc_en = 0;
-	for(unsigned int ii = 0; ii < bcal_signal_hits.size(); ii++)	  
+	for(unsigned int ii = 0; ii < bcal_merged_hits.size(); ii++)	  
 	  for(int jj = 0; jj < sample; jj++)
-	    bcal_hit_adc_en += bcal_signal_hits[ii].adc_amp[jj];	  
+	    bcal_hit_adc_en += bcal_merged_hits[ii].adc_amp[jj];	  
 	
 	
 	status = FADC_SSP(bcal_merged_hits, 2);
@@ -495,7 +685,7 @@ int  DL1MCTrigger_factory::Read_RCDB(int32_t runnumber){
   auto trig_nsa = result.Sections["FCAL"].NameValues["FADC250_TRIG_NSA"];
   
   if(trig_thr.size() > 0){
-    FCAL_CELL_THR  =  stoi(trig_thr) - 100;
+    FCAL_CELL_THR  =  stoi(trig_thr);
     if(FCAL_CELL_THR < 0) FCAL_CELL_THR = 0;
   }
 
@@ -510,7 +700,7 @@ int  DL1MCTrigger_factory::Read_RCDB(int32_t runnumber){
   trig_nsa = result.Sections["BCAL"].NameValues["FADC250_TRIG_NSA"];
   
   if(trig_thr.size() > 0){
-    BCAL_CELL_THR   =  stoi(trig_thr) - 100;
+    BCAL_CELL_THR   =  stoi(trig_thr);
     if(BCAL_CELL_THR < 0) BCAL_CELL_THR = 0;
   }
 
@@ -820,7 +1010,7 @@ int  DL1MCTrigger_factory::Read_RCDB(int32_t runnumber){
 }
 
 
-int  DL1MCTrigger_factory::Digitize(double en, double time, int amp_array[sample], int type){
+int  DL1MCTrigger_factory::SignalPulse(double en, double time, double amp_array[sample], int type){
    
 
   // Parameterize and digitize pulse shapes. Sum up amplitudes
@@ -840,12 +1030,12 @@ int  DL1MCTrigger_factory::Digitize(double en, double time, int amp_array[sample
   int ind_max = ind_min + pulse_length + 1;
     
   if( (ind_min > sample) || (ind_min < 0)){
-    //    cout << " Digitize() FATAL error: time out of range   "  <<  time <<  "     " << ind_min << endl;
+    //    cout << " SignalPulse() FATAL error: time out of range   "  <<  time <<  "     " << ind_min << endl;
     return 1;
   }
   
   if(ind_max > sample){
-    //    cout << " Digitize: ind_max set to maximum" << time <<  "  "  << ind_max << endl;
+    //    cout << " SignalPulse(): ind_max set to maximum" << time <<  "  "  << ind_max << endl;
     ind_max = sample - 1;
   }
   
@@ -853,11 +1043,13 @@ int  DL1MCTrigger_factory::Digitize(double en, double time, int amp_array[sample
     double adc_t  =  time_stamp*i - time;
     double amp    =  exp_par*exp_par*exp(-adc_t*exp_par)*adc_t;
     
-    amp_array[i] += (int)(amp*time_stamp*en + 0.5);
-
-    if(amp_array[i] > max_adc_bins){
-      amp_array[i] = max_adc_bins;
-    }    
+    //    amp_array[i] += (int)(amp*time_stamp*en + 0.5);
+    //    if(amp_array[i] > max_adc_bins){
+    //      amp_array[i] = max_adc_bins;
+    //    }   
+    
+    amp_array[i] += amp*time_stamp*en;
+    
   }
   
   return 0;  
@@ -965,7 +1157,7 @@ template <typename T>  int DL1MCTrigger_factory::FADC_SSP(vector<T> merged_hits,
       int extend_nsa = 1;
 
       // Extend FADC range if needed
-
+      
       while(extend_nsa){
 	
 	int index_tmp = index_max + 1;
@@ -976,17 +1168,21 @@ template <typename T>  int DL1MCTrigger_factory::FADC_SSP(vector<T> merged_hits,
 	  } else extend_nsa = 0;
 	} else extend_nsa = 0;	
       }
-            
+      
       if(index_max >= sample)
 	index_max = sample - 1;
           
       for(int kk = index_min; kk <= index_max; kk++){
-	if(detector == 1)
-	  fcal_ssp[kk] += merged_hits[hit].adc_amp[kk];
-	else if(detector == 2)
-	  bcal_ssp[kk] += merged_hits[hit].adc_amp[kk];
+	if(detector == 1){
+	  if((merged_hits[hit].adc_amp[kk] - 100) > 0)
+	    fcal_ssp[kk] += (merged_hits[hit].adc_amp[kk] - TRIG_BASELINE);
+	}
+	else if(detector == 2){
+	  if((merged_hits[hit].adc_amp[kk] - 100) > 0)
+	    bcal_ssp[kk] += (merged_hits[hit].adc_amp[kk] - TRIG_BASELINE);
+	}
       }
-
+      
       if(pulse_found == 1){
 	ii = index_max + 1;
 	pulse_found = 0;
@@ -1173,4 +1369,121 @@ int DL1MCTrigger_factory::FindTriggers(DL1MCTrigger *trigger){
 }
 
 
+// Fill fcal calibration tables similar to FCALHit factory
+void DL1MCTrigger_factory::LoadFCALConst(fcal_constants_t &table, const vector<double> &fcal_const_ch, 
+					 const DFCALGeometry  &fcalGeom){
+  
+  char str[256];
+  
+  if (fcalGeom.numActiveBlocks() != FCAL_MAX_CHANNELS) {
+    sprintf(str, "FCAL geometry is wrong size! channels=%d (should be %d)", 
+	    fcalGeom.numActiveBlocks(), FCAL_MAX_CHANNELS);
+    throw JException(str);
+  }
+  
+  
+  for (int ch = 0; ch < static_cast<int>(fcal_const_ch.size()); ch++) {
+    
+    // make sure that we don't try to load info for channels that don't exist
+    if (ch == fcalGeom.numActiveBlocks())
+      break;
+    
+    int row = fcalGeom.row(ch);
+    int col = fcalGeom.column(ch);
+    
+    // results from DFCALGeometry should be self consistent, but add in some
+    // sanity checking just to be sure
+    if (fcalGeom.isBlockActive(row,col) == false) {
+      sprintf(str, "DL1MCTrigger: Loading FCAL constant for inactive channel!  "
+	      "row=%d, col=%d", row, col);
+      throw JException(str);
+    }    
+    
+    table[row][col] = fcal_const_ch[ch];
+  }
+  
+}
 
+void DL1MCTrigger_factory::Digitize(double adc_amp[sample], int adc_count[sample]){
+
+  for(int samp = 0; samp < sample; samp++ ){
+    
+    adc_count[samp] += (int)(adc_amp[samp] + TRIG_BASELINE + 0.5);
+
+    if(adc_count[samp] > max_adc_bins)
+      adc_count[samp] = max_adc_bins;
+
+  }
+}
+
+
+void DL1MCTrigger_factory::AddBaseline(double adc_amp[sample], double pedestal, DRandom2 &gDRandom){
+
+  double pedestal_correct = pedestal - TRIG_BASELINE;
+
+  for(int samp = 0; samp < sample; samp++ ){  
+    double tmp = gDRandom.Gaus(pedestal_correct, pedestal_sigma);   
+    adc_amp[samp] += tmp;
+    //    cout << "  " << tmp;
+  }
+  
+  if(debug){
+    cout << endl;    
+    cout << " Corrected pedestals = " << pedestal_correct << "  " <<  adc_amp[sample - 2] 
+	 << "  " << pedestal_sigma << endl; 
+  }
+
+}
+
+
+
+void DL1MCTrigger_factory::GetSeeds(JEventLoop *loop, uint64_t eventnumber, UInt_t &seed1, UInt_t &seed2, UInt_t &seed3){
+
+  // Use seeds similar to mcsmear
+
+  JEvent& event = loop->GetJEvent();
+  
+  JEventSource *source = event.GetJEventSource();
+  
+  DEventSourceHDDM *hddm_source = dynamic_cast<DEventSourceHDDM*>(source);
+  
+  if (!hddm_source) {
+
+    cerr << "DL1MCTrigger_factory:  This program MUST be used with an HDDM file as input!" << endl;
+    cerr << "   Default seeds will be used for the random generator  " << endl;
+    seed1 = 259921049 + eventnumber;
+    seed2 = 442249570 + eventnumber;
+    seed3 = 709975946 + eventnumber;
+  } else {
+  
+    hddm_s::HDDM *record = (hddm_s::HDDM*)event.GetRef();
+    if (!record){
+      seed1 = 259921049 + eventnumber;
+      seed2 = 442249570 + eventnumber;
+      seed3 = 709975946 + eventnumber;  
+    } else {
+      
+      const hddm_s::ReactionList &reacts = record->getReactions();
+      
+      hddm_s::ReactionList::iterator reiter = record->getReactions().begin();
+      
+      hddm_s::Random my_rand = reiter->getRandom();
+	
+      // Copy seeds from event record to local variables
+      seed1 = my_rand.getSeed1();
+      seed2 = my_rand.getSeed2();
+      seed3 = my_rand.getSeed3();
+      
+      // If no seeds are stored in the hddm file, generate them in the same way
+      // as in mcsmear      
+      if ((seed1 == 0) || (seed2 == 0) || (seed3 == 0)){
+	uint64_t eventNo = record->getPhysicsEvent().getEventNo();
+	seed1 = 259921049 + eventNo;
+	seed2 = 442249570 + eventNo;
+	seed3 = 709975946 + eventNo;
+
+      }
+      
+    }  // Record doesn't exist
+  }    // Not an HDDM file
+}
