@@ -72,15 +72,15 @@ CobremsGeneration::CobremsGeneration(double Emax_GeV, double Epeak_GeV)
    fBeamEmittance = 2.5e-9; // m r
    fCollimatorSpotrms = 0.0005; // m
    fCollimatorDistance = 76.0; // m
-   fCollimatorDiameter = 0.0034; // m
-   fTargetThickness = 20e-6; // m
+   fCollimatorDiameter = 0.005; // m
+   fTargetThickness = 50e-6; // m
    fTargetThetay = 0.050; // radians
    fTargetThetaz = 0; // radians
    setTargetCrystal("diamond");
    setCoherentEdge(Epeak_GeV);
    fPhotonEnergyMin = 0.120; // GeV
    setPolarizedFlag(false);
-   setCollimatedFlag(false);
+   setCollimatedFlag(true);
 
 #if COBREMS_GENERATOR_VERBOSITY > 0
    std::cout << std::endl
