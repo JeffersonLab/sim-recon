@@ -72,6 +72,8 @@ void DCustomAction_p2gamma_hists::Initialize(JEventLoop* locEventLoop)
 		
 		dMinEgamma_M2g = GetOrCreate_Histogram<TH2I>("MinEgamma_M2g", "Minimum E_{#gamma} vs M_{#gamma#gamma}; M_{#gamma#gamma}; Minimum E_{#gamma}", 500, 0., 1., 200, 0., 2.);
 
+		//Return to the base directory
+		ChangeTo_BaseDirectory();
 	}
 	japp->RootUnLock(); //RELEASE ROOT LOCK!!
 }
