@@ -159,9 +159,9 @@ jerror_t JEventProcessor_ST_online_efficiency::evnt(JEventLoop *eventLoop, uint6
       // Grab the charged track
       const DChargedTrack *thisChargedTrack = chargedTrackVector[i];
       // Declare the time based track object
-      const DTrackTimeBased *timeBasedTrack;
       // Grab associated time based track object by selecting charged track with best FOM
-      thisChargedTrack->Get_BestTrackingFOM()->GetSingle(timeBasedTrack);
+      const DTrackTimeBased *timeBasedTrack = thisChargedTrack->Get_BestTrackingFOM()->Get_TrackTimeBased();
+
       float trackingFOMCut = 0.0027;  // 3 sigma cut
       if(timeBasedTrack->FOM  < trackingFOMCut)  continue;
       // Define vertex vector

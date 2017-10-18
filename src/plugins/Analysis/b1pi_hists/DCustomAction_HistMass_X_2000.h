@@ -36,7 +36,7 @@ class DCustomAction_HistMass_X_2000 : public DAnalysisAction
 	private:
 
 		bool Perform_Action(JEventLoop* locEventLoop, const DParticleCombo* locParticleCombo);
-
+		void Reset_NewEvent(void){dPastParticles.clear();}
 		// Optional: Useful utility functions.
 		const DAnalysisUtilities* dAnalysisUtilities;
 

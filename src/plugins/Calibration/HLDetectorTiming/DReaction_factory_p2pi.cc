@@ -85,7 +85,7 @@ jerror_t DReaction_factory_p2pi::init(void)
 		//Pre-defined actions can be found in ANALYSIS/DHistogramActions.h and ANALYSIS/DCutActions.h
 
 	// PID & Kinematics
-	locReaction->Add_AnalysisAction(new DHistogramAction_PID(locReaction));
+	locReaction->Add_AnalysisAction(new DHistogramAction_PID(locReaction, false));
 	//locReaction->Add_AnalysisAction(new DHistogramAction_TruePID(locReaction)); //momentum distributions of tracks with true/false PID (if thrown data available)
 
 	// Transverse Momentum //Recommended for no-missing-particle reactions only!

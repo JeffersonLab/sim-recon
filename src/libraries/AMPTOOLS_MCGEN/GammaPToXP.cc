@@ -27,14 +27,15 @@ m_childMass( 0 ) {
 
   int doPolFlux=0;  // want total flux (1 for polarized flux)
   float emitmr=10.e-9; // electron beam emittance
-  float radt=20.e-6; // radiator thickness in m
-  float collDiam=0.0034; // meters
+  float radt=50.e-6; // radiator thickness in m
+  float collDiam=0.005; // meters
   float Dist = 76.0; // meters
   CobremsGeneration cobrems(Emax, Epeak);
   cobrems.setBeamEmittance(emitmr);
   cobrems.setTargetThickness(radt);
   cobrems.setCollimatorDistance(Dist);
   cobrems.setCollimatorDiameter(collDiam);
+  cobrems.setCollimatedFlag(true);
   cobrems.setPolarizedFlag(doPolFlux);
 
   // Create histogram

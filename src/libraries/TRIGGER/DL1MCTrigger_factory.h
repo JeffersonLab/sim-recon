@@ -8,8 +8,17 @@
 
 #include "TTAB/DTranslationTable.h"
 
+#include "FCAL/DFCALGeometry.h"
 #include <FCAL/DFCALHit.h>
+
 #include <BCAL/DBCALHit.h>
+
+#include <DRandom2.h>
+
+#include <TH1.h>
+#include <TH2.h>
+
+typedef  vector< vector<double> >  fcal_constants_t;
 
 class DL1MCTrigger_factory:public jana::JFactory<DL1MCTrigger>{
 	public:
@@ -19,6 +28,13 @@ class DL1MCTrigger_factory:public jana::JFactory<DL1MCTrigger>{
 		static const int  sample        =  125;
 		static const int  time_stamp    =  4.;
 		static const int  max_adc_bins  =  4096;        /* number of FADC bins */
+
+		static const int FCAL_MAX_CHANNELS = 2800;
+
+		static const int TRIG_BASELINE  = 100;
+
+		fcal_constants_t fcal_gains;
+                fcal_constants_t fcal_pedestals;
  
 		int fcal_ssp[sample];
 		int fcal_gtp[sample];
@@ -33,6 +49,7 @@ class DL1MCTrigger_factory:public jana::JFactory<DL1MCTrigger>{
 		  double energy;
 		  double time;
 		  
+		  double adc_en[sample];
 		  int adc_amp[sample];
 		  
 		  int merged;
@@ -47,7 +64,8 @@ class DL1MCTrigger_factory:public jana::JFactory<DL1MCTrigger>{
 
 		  double time;      /* Pulse time in ns */
 		  double energy;    /* Pulse energy in MeV */
-		  
+
+		  double adc_en[sample];
 		  int adc_amp[sample];
 		  
 		  int merged;
@@ -157,20 +175,36 @@ class DL1MCTrigger_factory:public jana::JFactory<DL1MCTrigger>{
 		
 		int BCAL_OFFSET;
 		
+		int SIMU_BASELINE;
+		int SIMU_GAIN;
+
+
 		double time_shift;
 		double time_min;
 		double time_max;
 		
+		int simu_baseline_fcal;
+		int simu_baseline_bcal;
+		double pedestal_sigma;
+
+		int simu_gain_fcal;
+		int simu_gain_bcal;
+
+
 		int Read_RCDB(int32_t runnumber);		
-		int Digitize(double en, double time, int amp_array[sample], int type);
+		int SignalPulse(double en, double time, double amp_array[sample], int type);
+
+		void AddBaseline(double adc_amp[sample], double pedestal, DRandom2 &gDRandom);
+
+		void Digitize(double adc_amp[sample], int adc_count[sample]);
+
 		template <typename T>  int FADC_SSP(vector<T> merged_hits, 
 						    int detector);
 		int GTP(int detector);
 		int FindTriggers(DL1MCTrigger *trigger);
-		void PrintTriggers();
+		void PrintTriggers();				
 
 		float  BCAL_ADC_PER_MEV_CORRECT;
-
 		
  private:
 		jerror_t init(void);						///< Called once at program start.
@@ -178,6 +212,21 @@ class DL1MCTrigger_factory:public jana::JFactory<DL1MCTrigger>{
 		jerror_t evnt(jana::JEventLoop *eventLoop, uint64_t eventnumber);	///< Called every event.
 		jerror_t erun(void);						///< Called everytime run number changes, provided brun has been called.
 		jerror_t fini(void);						///< Called after last event of last event source has been processed.
+		
+		
+		void LoadFCALConst( fcal_constants_t &table, 
+				    const vector<double> &fcal_const_ch, 
+				    const DFCALGeometry  &fcalGeom);	
+
+
+		void GetSeeds(JEventLoop *loop,  uint64_t eventnumber, UInt_t &seed1, UInt_t &seed2, UInt_t &seed3);
+
+		TH1F *hfcal_gains;
+		TH2F *hfcal_gains2;
+		TH1F *hfcal_ped;
+
+		int debug;
+		
 };
 
 #endif // _DL1MCTrigger_factory_

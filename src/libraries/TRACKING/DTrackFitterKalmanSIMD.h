@@ -17,6 +17,7 @@
 #include <TH2.h>
 #include <TH1I.h>
 #include <TMatrixFSym.h>
+#include "DResourcePool.h"
 
 #ifndef M_TWO_PI
 #define M_TWO_PI 6.28318530717958647692
@@ -343,8 +344,8 @@ class DTrackFitterKalmanSIMD: public DTrackFitter{
 			    double &var_t_factor,
 			    DMatrix5x1 &Sc,bool &stepped_to_boundary);
 
-  TMatrixFSym* Get7x7ErrorMatrix(DMatrixDSym C);
-  TMatrixFSym* Get7x7ErrorMatrixForward(DMatrixDSym C);
+  shared_ptr<TMatrixFSym> Get7x7ErrorMatrix(DMatrixDSym C);
+  shared_ptr<TMatrixFSym> Get7x7ErrorMatrixForward(DMatrixDSym C);
 
   kalman_error_t ForwardFit(const DMatrix5x1 &S,const DMatrix5x5 &C0); 
   kalman_error_t ForwardCDCFit(const DMatrix5x1 &S,const DMatrix5x5 &C0);  
@@ -548,6 +549,7 @@ class DTrackFitterKalmanSIMD: public DTrackFitter{
 
  private:
   unsigned int last_material_map;
+	shared_ptr<DResourcePool<TMatrixFSym>> dResourcePool_TMatrixFSym;
 
 };
 

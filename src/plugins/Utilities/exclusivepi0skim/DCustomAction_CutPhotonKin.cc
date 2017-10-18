@@ -14,8 +14,7 @@ void DCustomAction_CutPhotonKin::Initialize(JEventLoop* locEventLoop)
 
 bool DCustomAction_CutPhotonKin::Perform_Action(JEventLoop* locEventLoop, const DParticleCombo* locParticleCombo)
 {
-	deque<const DKinematicData*> locParticles;
-	locParticleCombo->Get_DetectedFinalParticles_Measured(locParticles);
+    auto locParticles = locParticleCombo->Get_FinalParticles_Measured(Get_Reaction());
 
 	for(size_t loc_i = 0; loc_i < locParticles.size(); ++loc_i)
 	{

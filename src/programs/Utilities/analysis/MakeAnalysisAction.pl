@@ -185,6 +185,9 @@ void DCustomAction_${ActionName}::Initialize(JEventLoop* locEventLoop)
 			// This function will return the histogram if already created by another thread. If not pre-existing, it will create and return it. 
 			// Function arguments are identical to those used for the histogram constructors
 		// dMyHist = GetOrCreate_Histogram<TH1I>(\"MyHistName\", \"MyHistTitle\", 100, 0.0, 1.0);
+
+		//Return to the base directory
+		ChangeTo_BaseDirectory();
 	}
 	japp->RootUnLock(); //RELEASE ROOT LOCK!!
 	*/
@@ -214,17 +217,6 @@ bool DCustomAction_${ActionName}::Perform_Action(JEventLoop* locEventLoop, const
 	//Optional: check whether the user wanted to use the kinematic fit results when performing this action
 	// bool locUseKinFitResultsFlag = Get_UseKinFitResultsFlag();
 
-";
-	if(${ActionType} == 0) # reaction-independent
-	{
-		$content .=	"
-	//Optional: Quit the action if it has already been executed this event (else may result in double-counting when filling histograms)
-	// if(Get_NumPreviousParticleCombos() != 0)
-	//		return true;
-";
-	}
-
-	$content .=	"
 	/*
 	//Optional: FILL HISTOGRAMS
 	//Since we are filling histograms local to this action, it will not interfere with other ROOT operations: can use action-wide ROOT lock

@@ -75,6 +75,9 @@ void DCustomAction_Z2pi_hists::Initialize(JEventLoop* locEventLoop)
 
 	dEgamma_M2pi = GetOrCreate_Histogram<TH2I>("Egamma_M2pi", "E_{#gamma} vs M_{#pi^{+}#pi^{-}}; M_{#pi^{+}#pi^{-}}; E_{#gamma}", 200, 0.0, 2.0, endpoint_energy_bins,0,endpoint_energy);		
 
+	//Return to the base directory
+	ChangeTo_BaseDirectory();
+
 	japp->RootUnLock(); //RELEASE ROOT LOCK!!
 }
 

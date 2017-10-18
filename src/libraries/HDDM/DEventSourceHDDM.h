@@ -72,6 +72,7 @@ using namespace std;
 #include "FMWPC/DFMWPCTruthHit.h"
 #include "FMWPC/DFMWPCHit.h"
 #include "PAIR_SPECTROMETER/DPSGeometry.h"
+#include "DResourcePool.h"
 
 class DEventSourceHDDM:public JEventSource
 {
@@ -159,6 +160,7 @@ class DEventSourceHDDM:public JEventSource
    private:
       bool initialized;
       int dRunNumber;
+      static thread_local shared_ptr<DResourcePool<TMatrixFSym>> dResourcePool_TMatrixFSym;
 
       pthread_mutex_t rt_mutex;
       map<hddm_s::HDDM*, vector<DReferenceTrajectory*> > rt_by_event;

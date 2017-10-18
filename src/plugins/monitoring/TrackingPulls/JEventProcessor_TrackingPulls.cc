@@ -85,15 +85,16 @@ jerror_t JEventProcessor_TrackingPulls::evnt(JEventLoop *loop, uint64_t eventnum
 
       if (bestHypothesis == NULL) continue;
 
-      double trackingFOM = TMath::Prob(bestHypothesis->dChiSq_Track, bestHypothesis->dNDF_Track);
+		auto locTrackTimeBased = bestHypothesis->Get_TrackTimeBased();
+      double trackingFOM = TMath::Prob(locTrackTimeBased->chisq, locTrackTimeBased->Ndof);
 
       // Some quality cuts for the tracks we will use
       // Keep this minimal for now and investigate later
       float trackingFOMCut = 0.001;
-      unsigned int trackingNDFCut = 5;
+      int trackingNDFCut = 5;
 
       if(trackingFOM < trackingFOMCut) continue;
-      if( bestHypothesis->dNDF_Track < trackingNDFCut) continue;
+      if( locTrackTimeBased->Ndof < trackingNDFCut) continue;
 
       double phi = bestHypothesis->momentum().Phi()*TMath::RadToDeg();
       double theta = bestHypothesis->momentum().Theta()*TMath::RadToDeg();
@@ -116,8 +117,7 @@ jerror_t JEventProcessor_TrackingPulls::evnt(JEventLoop *loop, uint64_t eventnum
             "P Vs. #phi; #phi [deg.]; |P| [GeV/c]", 180, -180, 180.0, 50, 0.0, 10.0);
 
       // Get the pulls vector from the track
-      const DTrackTimeBased *thisTimeBasedTrack;
-      bestHypothesis->GetSingle(thisTimeBasedTrack);
+		auto thisTimeBasedTrack = bestHypothesis->Get_TrackTimeBased();
 
       if (!thisTimeBasedTrack->IsSmoothed){
          Fill1DHistogram("TrackingPulls", "TrackInfo_SmoothFailure", "Tracking FOM",
@@ -203,7 +203,7 @@ jerror_t JEventProcessor_TrackingPulls::evnt(JEventLoop *loop, uint64_t eventnum
                theta, resi/err,
                ";#theta ;Residual/Error", 140, 0.0, 140.0, 100, -5.0, 5.0);
          Fill2DHistogram("TrackingPulls", "TrackPulls","All Pulls Vs. NDF",
-               bestHypothesis->dNDF_Track, resi/err,
+        		 locTrackTimeBased->Ndof, resi/err,
                ";Track NDF ;Residual/Error", 140, 0.0, 140.0, 100, -5.0, 5.0);
          Fill2DHistogram("TrackingPulls", "TrackPulls","All Pulls Vs. Tracking FOM",
                trackingFOM, resi/err,
@@ -297,13 +297,13 @@ jerror_t JEventProcessor_TrackingPulls::evnt(JEventLoop *loop, uint64_t eventnum
                   theta, resic,
                   ";#theta ;Residual/Error", 50, 0.0, 25.0, 100, -0.1, 0.1);
             Fill2DHistogram("TrackingPulls", "FDCPulls","All Wire Pulls Vs. NDF",
-                  bestHypothesis->dNDF_Track, resi/err,
+            		locTrackTimeBased->Ndof, resi/err,
                   ";Track NDF ;Residual/Error", 50, 0.5, 50.5, 100, -5.0, 5.0);
             Fill2DHistogram("TrackingPulls", "FDCPulls","All Wire Pulls Vs. Tracking FOM",
                   trackingFOM, resi/err,
                   ";Track FOM ;Residual/Error", 100, 0.0, 1.0, 100, -5.0, 5.0);
             Fill2DHistogram("TrackingPulls", "FDCPulls","All Cathode Pulls Vs. NDF",
-                  bestHypothesis->dNDF_Track, resic/errc,
+            		locTrackTimeBased->Ndof, resic/errc,
                   ";Track NDF ;Residual/Error", 50, 0.5, 50.5, 100, -5.0, 5.0);
             Fill2DHistogram("TrackingPulls", "FDCPulls","All Cathode Pulls Vs. Tracking FOM",
                   trackingFOM, resic/errc,
@@ -448,7 +448,7 @@ jerror_t JEventProcessor_TrackingPulls::evnt(JEventLoop *loop, uint64_t eventnum
                   theta, resi,
                   ";#theta ;Residual", 140, 0.0, 140.0, 100, -0.1, 0.1);
             Fill2DHistogram("TrackingPulls", "CDCPulls","All Pulls Vs. NDF",
-                  bestHypothesis->dNDF_Track, resi/err,
+            		locTrackTimeBased->Ndof, resi/err,
                   ";Track NDF ;Residual/Error", 50, 0.5, 50.5, 100, -5.0, 5.0);
             Fill2DHistogram("TrackingPulls", "CDCPulls","All Pulls Vs. Tracking FOM",
                   trackingFOM, resi/err,

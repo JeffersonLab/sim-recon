@@ -176,8 +176,8 @@ bool DEventProcessor_coherent_peak_skim::Cut_ShowerEOverP(const DChargedTrackHyp
 	//compute shower-E/p, cut
 	double locP = locChargedHypo->momentum().Mag();
 	double locShowerEOverP = -1.0;
-	const DFCALShowerMatchParams* locFCALShowerMatchParams = locChargedHypo->Get_FCALShowerMatchParams();
-	const DBCALShowerMatchParams* locBCALShowerMatchParams = locChargedHypo->Get_BCALShowerMatchParams();
+	auto locFCALShowerMatchParams = locChargedHypo->Get_FCALShowerMatchParams();
+	auto locBCALShowerMatchParams = locChargedHypo->Get_BCALShowerMatchParams();
 	if(locFCALShowerMatchParams != NULL)
 	{
 		const DFCALShower* locFCALShower = locFCALShowerMatchParams->dFCALShower;
