@@ -544,6 +544,7 @@ void DEventWriterROOT::Create_Branches_Thrown(DTreeBranchRegister& locBranchRegi
 	locBranchRegister.Register_Single<Int_t>(Build_BranchName("ThrownBeam", "PID"));
 	locBranchRegister.Register_Single<TLorentzVector>(Build_BranchName("ThrownBeam", "X4")); //reported at target center
 	locBranchRegister.Register_Single<TLorentzVector>(Build_BranchName("ThrownBeam", "P4"));
+	locBranchRegister.Register_Single<Float_t>(Build_BranchName("ThrownBeam", "HitEnergy"));
 
 	//EVENT-WIDE INFO
 	locBranchRegister.Register_Single<ULong64_t>("NumPIDThrown_FinalState"); //19 digits
@@ -1322,6 +1323,8 @@ void DEventWriterROOT::Fill_ThrownInfo(DTreeFillData* locTreeFillData, const DMC
 
 	//THROWN BEAM
 	locTreeFillData->Fill_Single<Int_t>(Build_BranchName("ThrownBeam", "PID"), PDGtype(locMCReaction->beam.PID()));
+//REDO: locMCThrownMatching == null!
+	locTreeFillData->Fill_Single<Float_t>(Build_BranchName("ThrownBeam", "HitEnergy"), locMCThrownMatching->Get_ReconMCGENBeamPhoton()->energy());
 
 	DVector3 locThrownBeamX3 = locMCReaction->beam.position();
 	TLorentzVector locThrownBeamTX4(locThrownBeamX3.X(), locThrownBeamX3.Y(), locThrownBeamX3.Z(), locMCReaction->beam.time());

@@ -19,7 +19,7 @@ class DBeamPhoton: public DKinematicData
 		DetectorSystem_t dSystem; //SYS_TAGM or SYS_TAGH
 
 		void toStrings(vector<pair<string,string> > &items)const{
-			AddString(items, "E(GeV)", "%3.3f", momentum().Mag());
+			AddString(items, "E(GeV)", "%f", momentum().Mag());
 			AddString(items, "System", "%s", SystemName(dSystem));
 			AddString(items, "Counter", "%d", dCounter);
 			AddString(items, "t(ns)", "%3.1f", time());

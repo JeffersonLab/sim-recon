@@ -5,6 +5,7 @@ using namespace jana;
 
 #include "DBeamPhoton_factory.h"
 #include "DBeamPhoton_factory_TRUTH.h"
+#include "DBeamPhoton_factory_TAGGEDMCGEN.h"
 #include "DParticleID_factory.h"
 #include "DParticleID_factory_PID1.h"
 #include "DChargedTrack_factory.h"
@@ -38,6 +39,7 @@ jerror_t PID_init(JEventLoop *loop)
 	loop->AddFactory(new JFactory<DBeamPhoton>("MCGEN"));
 	loop->AddFactory(new DBeamPhoton_factory);
 	loop->AddFactory(new DBeamPhoton_factory_TRUTH);
+	loop->AddFactory(new DBeamPhoton_factory_TAGGEDMCGEN);
 	loop->AddFactory(new DParticleID_factory);
 	loop->AddFactory(new DParticleID_factory_PID1);
 	loop->AddFactory(new DChargedTrack_factory);

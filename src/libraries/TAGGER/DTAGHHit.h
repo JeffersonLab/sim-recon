@@ -24,6 +24,7 @@ class DTAGHHit:public jana::JObject{
       double time_fadc;
       double npe_fadc;
       bool has_fADC, has_TDC, is_double;
+      int bg = -1; //if MC, 0 for the photon that generated the event, nonzero otherwise //ignore if not MC
 
       void toStrings(vector<pair<string,string> > &items)const{
         AddString(items, "counter_id", "%d", counter_id);
@@ -37,6 +38,7 @@ class DTAGHHit:public jana::JObject{
         AddString(items, "has_fADC", "%d", (int)has_fADC);
         AddString(items, "has_TDC", "%d", (int)has_TDC);
         AddString(items, "is_double", "%d", (int)is_double);
+        AddString(items, "bg", "%d", bg);
       }
 };
 

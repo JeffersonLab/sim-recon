@@ -90,6 +90,9 @@ void DCustomAction_p2pi_hists::Initialize(JEventLoop* locEventLoop)
 			dBaryonM_CosTheta_Egamma2 = GetOrCreate_Histogram<TH2I>("BaryonM_CosTheta_Egamma2", "Baryon M_{p#pi^{+}} vs cos#theta: 2.5 < E_{#gamma} < 3.0; cos#theta; M_{p#pi^{+}}", 100, -1, 1, 100, 1.0, 2.5);
 			dBaryonM_CosTheta_Egamma3 = GetOrCreate_Histogram<TH2I>("BaryonM_CosTheta_Egamma3", "Baryon M_{p#pi^{+}} vs cos#theta: E_{#gamma} > 3.0; cos#theta; M_{p#pi^{+}}", 100, -1, 1, 100, 1.0, 2.5);
 		}
+
+		//Return to the base directory
+		ChangeTo_BaseDirectory();
 	}
 	japp->RootUnLock(); //RELEASE ROOT LOCK!!
 }

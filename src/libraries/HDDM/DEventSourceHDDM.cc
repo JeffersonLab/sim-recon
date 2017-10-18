@@ -2341,6 +2341,7 @@ jerror_t DEventSourceHDDM::Extract_DTAGMHit(hddm_s::HDDM *record,
             taghit->row = hiter->getRow();
 	    taghit->has_fADC = true;
 	    taghit->has_TDC = true;           
+	    taghit->bg = hiter->getBg();
 	    data.push_back(taghit);
          }
       }
@@ -2401,6 +2402,7 @@ jerror_t DEventSourceHDDM::Extract_DTAGHHit( hddm_s::HDDM *record,
             taghit->counter_id = hiter->getCounterId();
 	    taghit->has_fADC = true;
 	    taghit->has_TDC = true;
+	    taghit->bg = hiter->getBg();
             data.push_back(taghit);
          }
       }
