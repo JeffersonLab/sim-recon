@@ -28,6 +28,7 @@ using namespace std;
 #include <DANA/DStatusBits.h>
 
 #include "BCAL/DBCALGeometry.h"
+#include "PAIR_SPECTROMETER/DPSGeometry.h"
 
 #include <DVector2.h>
 #include <DEventSourceHDDM.h>
@@ -36,6 +37,7 @@ using namespace std;
 #include <FCAL/DFCALHit.h>
 #include <CCAL/DCCALGeometry.h>
 #include <CCAL/DCCALHit.h>
+
 
 //------------------------------------------------------------------
 // Binary predicate used to sort hits
@@ -217,11 +219,20 @@ jerror_t DEventSourceHDDM::GetObjects(JEvent &event, JFactory_base *factory)
          }     
       }
       // load BCAL geometry
-  	  vector<const DBCALGeometry *> BCALGeomVec;
-  	  loop->Get(BCALGeomVec);
-  	  if(BCALGeomVec.size() == 0)
-		  throw JException("Could not load DBCALGeometry object!");
-	  dBCALGeom = BCALGeomVec[0];
+      vector<const DBCALGeometry *> BCALGeomVec;
+      loop->Get(BCALGeomVec);
+      if(BCALGeomVec.size() == 0)
+	throw JException("Could not load DBCALGeometry object!");
+      dBCALGeom = BCALGeomVec[0];
+      
+      // load PS geometry
+      vector<const DPSGeometry*> psGeomVect;
+      loop->Get(psGeomVect);
+      if (psGeomVect.size() < 1)
+	return OBJECT_NOT_AVAILABLE;
+      psGeom = psGeomVect[0];
+      
+
    }
 
    // Warning: This class is not completely thread-safe and can fail if running
@@ -2392,7 +2403,7 @@ jerror_t DEventSourceHDDM::Extract_DTAGHHit( hddm_s::HDDM *record,
             taghit->time_fadc = hiter->getTADC();
             taghit->counter_id = hiter->getCounterId();
 	    taghit->has_fADC = true;
-	    taghit->has_TDC = true;
+	    taghit->has_TDC  = true;
             data.push_back(taghit);
          }
       }
@@ -2407,7 +2418,7 @@ jerror_t DEventSourceHDDM::Extract_DTAGHHit( hddm_s::HDDM *record,
             taghit->time_fadc = hiter->getT();
             taghit->counter_id = hiter->getCounterId();
 	    taghit->has_fADC = true;
-	    taghit->has_TDC = true;
+	    taghit->has_TDC  = true;
             data.push_back(taghit);
          }
       }
@@ -2446,8 +2457,13 @@ jerror_t DEventSourceHDDM::Extract_DPSHit(hddm_s::HDDM *record,
          else 
              hit->arm = DPSGeometry::Arm::kSouth;
          hit->column = iter->getColumn();
-         hit->npix_fadc = iter->getDE();
+	 double npix_fadc = iter->getDE()*0.5e5; // 100 pixels in 2 MeV
+         hit->npix_fadc   = npix_fadc;
          hit->t = iter->getT();
+	 
+	 hit->E = 0.5*(psGeom->getElow(hit->arm,hit->column) + psGeom->getEhigh(hit->arm,hit->column));
+	 hit->pulse_peak = npix_fadc*21;       // 1 pixel 21 fadc counts
+	 hit->integral   = npix_fadc*21*5.1;   // integral/peak = 5.1  
          data.push_back(hit);
       }
    }
@@ -2541,8 +2557,19 @@ jerror_t DEventSourceHDDM::Extract_DPSCHit(hddm_s::HDDM *record,
          else 
              hit->arm = DPSGeometry::Arm::kSouth;
          hit->module = iter->getModule();
-         hit->npe_fadc = iter->getDE();
+
+	 double npe_fadc = iter->getDE()*2.5e5;
+	 hit->npe_fadc   = npe_fadc;
+	 hit->pulse_peak = npe_fadc*0.4;       //  1000 pe - 400 fadc count
+	 hit->integral   = npe_fadc*0.4*3;     // integral/peak = 3.
+
          hit->t = iter->getT();
+	 hit->time_tdc  = iter->getT();
+	 hit->time_fadc = iter->getT();
+
+	 hit->has_fADC = true;
+	 hit->has_TDC  = true;
+
          data.push_back(hit);
       }
    }

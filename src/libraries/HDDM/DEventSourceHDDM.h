@@ -71,6 +71,7 @@ using namespace std;
 #include "PAIR_SPECTROMETER/DPSCTruthHit.h"
 #include "FMWPC/DFMWPCTruthHit.h"
 #include "FMWPC/DFMWPCHit.h"
+#include "PAIR_SPECTROMETER/DPSGeometry.h"
 
 class DEventSourceHDDM:public JEventSource
 {
@@ -166,7 +167,10 @@ class DEventSourceHDDM:public JEventSource
       map<unsigned int, double> dTargetCenterZMap; //unsigned int is run number
       map<unsigned int, double> dBeamBunchPeriodMap; //unsigned int is run number
 
-	  const DBCALGeometry *dBCALGeom;
+      const DBCALGeometry *dBCALGeom;
+
+      const DPSGeometry * psGeom;
+      
 
       JCalibration *jcalib;
       float uscale[192],vscale[192];
