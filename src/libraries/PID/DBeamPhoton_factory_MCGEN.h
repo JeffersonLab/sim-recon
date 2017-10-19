@@ -11,6 +11,7 @@
 #include <JANA/JFactory.h>
 #include <PID/DBeamPhoton.h>
 #include <PID/DMCReaction.h>
+#include "DANA/DStatusBits.h"
 #include "TAGGER/DTAGHHit.h"
 #include "TAGGER/DTAGMHit.h"
 
@@ -19,7 +20,7 @@ class DBeamPhoton_factory_MCGEN:public jana::JFactory<DBeamPhoton>{
 		const char* Tag(void){return "MCGEN";}
 
 	private:
-		jerror_t init(void);						///< Called once at program start.
+		jerror_t brun(jana::JEventLoop *locEventLoop, int32_t runnumber);
 		jerror_t evnt(jana::JEventLoop *locEventLoop, uint64_t eventnumber);	///< Called every event.
 		jerror_t fini(void);						///< Called after last event of last event source has been processed.
 };

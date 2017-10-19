@@ -454,24 +454,28 @@ jerror_t DEventSourceREST::Extract_DBeamPhoton(hddm_r::HDDM *record,
       return OBJECT_NOT_AVAILABLE;
    const DTAGMGeometry* tagmGeom = tagmGeomVect[0];
 
-   if(tag == "MCGEN")
+	if(tag == "MCGEN")
 	{
 		vector<const DMCReaction*> dmcreactions;
 		eventLoop->Get(dmcreactions);
 
 		for(size_t loc_i = 0; loc_i < dmcreactions.size(); ++loc_i)
 		{
-		   DBeamPhoton *beamphoton = new DBeamPhoton;
-		   *(DKinematicData*)beamphoton = dmcreactions[loc_i]->beam;
-		   if(!tagmGeom->E_to_column(beamphoton->energy(), beamphoton->dCounter))
-		   	  taghGeom->E_to_counter(beamphoton->energy(), beamphoton->dCounter);
-		   dbeam_photons.push_back(beamphoton);
+			DBeamPhoton *beamphoton = new DBeamPhoton;
+			*(DKinematicData*)beamphoton = dmcreactions[loc_i]->beam;
+			if(tagmGeom->E_to_column(beamphoton->energy(), beamphoton->dCounter))
+				beamphoton->dSystem = SYS_TAGM;
+			else if(taghGeom->E_to_counter(beamphoton->energy(), beamphoton->dCounter))
+				beamphoton->dSystem = SYS_TAGH;
+			else
+				beamphoton->dSystem = SYS_NULL;
+			dbeam_photons.push_back(beamphoton);
 		}
 
 		// Copy into factories
 		factory->CopyTo(dbeam_photons);
 
-	   return NOERROR;
+		return NOERROR;
 	}
 
 	double locTargetCenterZ = 0.0;
