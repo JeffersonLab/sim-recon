@@ -55,11 +55,11 @@ jerror_t DEventProcessor_mcthrown_tree::brun(JEventLoop *locEventLoop, int32_t r
 jerror_t DEventProcessor_mcthrown_tree::evnt(JEventLoop *locEventLoop, uint64_t eventnumber)
 {
 	// only keep generated events which hit a tagger counter
-        const DBeamPhoton* locBeamPhoton = NULL;
-        locEventLoop->GetSingle(locBeamPhoton, "MCGEN");
+	vector<const DBeamPhoton*> locBeamPhotons;
+	locEventLoop->Get(locBeamPhotons, "TAGGEDMCGEN");
 
-	// skip events where generated beam photon did not hit TAGM or TAGH counter (ie. dCounter > 274)
-	if(dTagCheck && locBeamPhoton->dCounter > dNC_TAGH)
+	// skip events where generated beam photon did not hit TAGM or TAGH counter
+	if(dTagCheck && locBeamPhotons.empty())
 		return NOERROR;
 
 	const DEventWriterROOT* locEventWriterROOT = NULL;

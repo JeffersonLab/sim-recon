@@ -31,7 +31,8 @@ class DMCThrownMatching : public JObject
 		JOBJECT_PUBLIC(DMCThrownMatching);
 
 		//GETTERS: INDIVIDUAL PARTICLES
-		const DBeamPhoton* Get_ReconMCGENBeamPhoton(void) const{return dReconMCGENBeamPhoton;}
+		const DBeamPhoton* Get_TaggedMCGENBeamPhoton(void) const{return dTaggedMCGENBeamPhoton;}
+		const DBeamPhoton* Get_MCGENBeamPhoton(void) const{return dMCGENBeamPhoton;}
 
 		//the below two functions return the hypothesis with PID = MC PID. if not available, returns one with best PID FOM
 		const DChargedTrackHypothesis* Get_MatchingChargedHypothesis(const DMCThrown* locInputMCThrown, double& locMatchFOM) const;
@@ -111,7 +112,8 @@ class DMCThrownMatching : public JObject
 		inline void Set_BeamPhotonToTruthMap(map<const DBeamPhoton*, const DBeamPhoton*>& locBeamPhotonToTruthMap){dBeamPhotonToTruthMap = locBeamPhotonToTruthMap;}
 		inline void Set_BeamTruthToPhotonMap(map<const DBeamPhoton*, const DBeamPhoton*>& locBeamTruthToPhotonMap){dBeamTruthToPhotonMap = locBeamTruthToPhotonMap;}
 
-		inline void Set_ReconMCGENBeamPhoton(const DBeamPhoton* locBeamPhoton){dReconMCGENBeamPhoton = locBeamPhoton;}
+		inline void Set_TaggedMCGENBeamPhoton(const DBeamPhoton* locBeamPhoton){dTaggedMCGENBeamPhoton = locBeamPhoton;}
+		inline void Set_MCGENBeamPhoton(const DBeamPhoton* locBeamPhoton){dMCGENBeamPhoton = locBeamPhoton;}
 
 	private:
 
@@ -140,7 +142,8 @@ class DMCThrownMatching : public JObject
 		map<const DBeamPhoton*, const DBeamPhoton*> dBeamPhotonToTruthMap;
 		map<const DBeamPhoton*, const DBeamPhoton*> dBeamTruthToPhotonMap;
 
-		const DBeamPhoton* dReconMCGENBeamPhoton; //the reconstructed photon that matches the MCGEN photon
+		const DBeamPhoton* dMCGENBeamPhoton; //the generated photon that caused the event
+		const DBeamPhoton* dTaggedMCGENBeamPhoton; //the reconstructed photon that matches the MCGEN photon
 };
 
 inline const DBeamPhoton* DMCThrownMatching::Get_MatchingReconPhoton(const DBeamPhoton* locTruthBeamPhoton) const

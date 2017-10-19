@@ -656,10 +656,10 @@ DCutAction_TrueCombo::~DCutAction_TrueCombo(void)
 
 bool DCutAction_TrueBeamParticle::Perform_Action(JEventLoop* locEventLoop, const DParticleCombo* locParticleCombo)
 {
-	vector<const DMCThrownMatching*> locMCThrownMatchingVector;
-	locEventLoop->Get(locMCThrownMatchingVector);
-	if(locMCThrownMatchingVector.empty())
-		return false; //not a simulated event
+	vector<const DBeamPhoton*> locBeamPhotons;
+	locEventLoop->Get(locBeamPhotons, "TAGGEDMCGEN");
+	if(locBeamPhotons.empty())
+		return false; //true not tagged
 
 	const DKinematicData* locKinematicData = locParticleCombo->Get_ParticleComboStep(0)->Get_InitialParticle_Measured();
 	if(locKinematicData == NULL)
@@ -669,7 +669,7 @@ bool DCutAction_TrueBeamParticle::Perform_Action(JEventLoop* locEventLoop, const
 	if(locBeamPhoton == NULL)
 		return false; //dunno how could be possible ...
 
-	return (locBeamPhoton == locMCThrownMatchingVector[0]->Get_ReconMCGENBeamPhoton());
+	return (locBeamPhoton == locBeamPhotons[0]);
 }
 
 bool DCutAction_TruePID::Perform_Action(JEventLoop* locEventLoop, const DParticleCombo* locParticleCombo)
