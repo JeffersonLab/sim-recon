@@ -11,13 +11,14 @@
 #include <JANA/JFactory.h>
 #include <PID/DBeamPhoton.h>
 #include "PID/DMCReaction.h"
+#include "DANA/DStatusBits.h"
 
 class DBeamPhoton_factory_TAGGEDMCGEN:public jana::JFactory<DBeamPhoton>{
 	public:
 		const char* Tag(void){return "TAGGEDMCGEN";}
 
 	private:
-		jerror_t init(void);						///< Called once at program start.
+		jerror_t brun(jana::JEventLoop *locEventLoop, int32_t runnumber);
 		jerror_t evnt(jana::JEventLoop *locEventLoop, uint64_t eventnumber);	///< Called every event.
 };
 
