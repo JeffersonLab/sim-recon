@@ -10,6 +10,7 @@
 
 #include <JANA/JFactory.h>
 #include <PID/DBeamPhoton.h>
+#include "PID/DMCReaction.h"
 
 class DBeamPhoton_factory_TAGGEDMCGEN:public jana::JFactory<DBeamPhoton>{
 	public:

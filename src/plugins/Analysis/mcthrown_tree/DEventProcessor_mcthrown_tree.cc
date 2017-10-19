@@ -7,6 +7,8 @@
 
 #include "DEventProcessor_mcthrown_tree.h"
 
+#include <TAGGER/DTAGHGeometry.h>
+
 // The executable should define the ROOTfile global variable. It will
 // be automatically linked when dlopen is called.
 extern TFile *ROOTfile;
@@ -26,6 +28,10 @@ extern "C"
 //------------------
 jerror_t DEventProcessor_mcthrown_tree::init(void)
 {
+	// require tagger hit for MCGEN beam photon by default to write event to TTree
+	dTagCheck = true;
+	gPARMS->SetDefaultParameter("MCTHROWN:TAGCHECK", dTagCheck);
+
 	return NOERROR;
 }
 
@@ -34,6 +40,8 @@ jerror_t DEventProcessor_mcthrown_tree::init(void)
 //------------------
 jerror_t DEventProcessor_mcthrown_tree::brun(JEventLoop *locEventLoop, int32_t runnumber)
 {
+	dNC_TAGH = DTAGHGeometry::kCounterCount;
+
 	const DEventWriterROOT* locEventWriterROOT = NULL;
 	locEventLoop->GetSingle(locEventWriterROOT);
 	locEventWriterROOT->Create_ThrownTree(locEventLoop, "tree_thrown.root");
@@ -46,6 +54,14 @@ jerror_t DEventProcessor_mcthrown_tree::brun(JEventLoop *locEventLoop, int32_t r
 //------------------
 jerror_t DEventProcessor_mcthrown_tree::evnt(JEventLoop *locEventLoop, uint64_t eventnumber)
 {
+	// only keep generated events which hit a tagger counter
+	vector<const DBeamPhoton*> locBeamPhotons;
+	locEventLoop->Get(locBeamPhotons, "TAGGEDMCGEN");
+
+	// skip events where generated beam photon did not hit TAGM or TAGH counter
+	if(dTagCheck && locBeamPhotons.empty())
+		return NOERROR;
+
 	const DEventWriterROOT* locEventWriterROOT = NULL;
 	locEventLoop->GetSingle(locEventWriterROOT);
 	locEventWriterROOT->Fill_ThrownTree(locEventLoop);

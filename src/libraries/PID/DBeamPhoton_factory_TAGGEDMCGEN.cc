@@ -30,6 +30,12 @@ jerror_t DBeamPhoton_factory_TAGGEDMCGEN::evnt(jana::JEventLoop *locEventLoop, u
 {
 	_data.clear();
 
+	//Check if MC
+	vector<const DMCReaction*> locMCReactions;
+	locEventLoop->Get(locMCReactions);
+	if(locMCReactions.empty())
+		return NOERROR; //Not a thrown event
+
 	//Get the MCGEN beam
 	const DBeamPhoton* locMCGenBeam;
 	locEventLoop->GetSingle(locMCGenBeam, "MCGEN");

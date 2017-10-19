@@ -28,6 +28,12 @@ jerror_t DBeamPhoton_factory_MCGEN::evnt(jana::JEventLoop *locEventLoop, uint64_
 		_data.clear();
 	}
 
+	//Check if MC
+	vector<const DMCReaction*> locMCReactions;
+	locEventLoop->Get(locMCReactions);
+	if(locMCReactions.empty())
+		return NOERROR; //Not a thrown event
+
 	//First see if it was tagged: If so, use truth DBeamPhoton
 	vector<const DBeamPhoton*> locTruthPhotons;
 	locEventLoop->Get(locTruthPhotons, "TRUTH");
@@ -54,13 +60,9 @@ jerror_t DBeamPhoton_factory_MCGEN::evnt(jana::JEventLoop *locEventLoop, uint64_
 		}
 	}
 
-	//Photon is NOT TAGGED
-	//Create a beam object from the DMCReaction, set the counter & detector to 0/SYS_NULL and return
-	const DMCReaction* locMCReaction;
-	locEventLoop->GetSingle(locMCReaction);
-
+	//Photon is NOT TAGGED //Create a beam object from the DMCReaction
 	auto *locBeamPhoton = new DBeamPhoton;
-	*(DKinematicData*)locBeamPhoton = locMCReaction->beam;
+	*(DKinematicData*)locBeamPhoton = locMCReactions[0]->beam;
 	_data.push_back(locBeamPhoton);
 
 	return NOERROR;
