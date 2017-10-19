@@ -77,9 +77,11 @@ DEventWriterROOT::~DEventWriterROOT(void)
 
 void DEventWriterROOT::Create_ThrownTree(JEventLoop* locEventLoop, string locOutputFileName) const
 {
-	dThrownTreeInterface = DTreeInterface::Create_DTreeInterface("Thrown_Tree", locOutputFileName);
+	if(dThrownTreeInterface != nullptr)
+		return; //Already setup for this thread!
+	dThrownTreeInterface = DTreeInterface::Create_DTreeInterface("Thrown_Tree", locOutputFileName); //set up this thread
 	if(dThrownTreeInterface->Get_BranchesCreatedFlag())
-		return; //branches already created, then return
+		return; //branches already created: return
 
 	//TTREE BRANCHES
 	DTreeBranchRegister locBranchRegister;
