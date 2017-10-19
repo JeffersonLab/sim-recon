@@ -99,7 +99,7 @@ class DEventWriterROOT : public JObject
 		//TREE INTERFACES, FILL OBJECTS
 		//The non-thrown objects are created during the constructor, and thus the maps can remain const
 		//The thrown objects are created later by the user (so they can specify file name), when the object is const, so they are declared mutable
-		mutable DTreeInterface* dThrownTreeInterface;
+		mutable DTreeInterface* dThrownTreeInterface = nullptr;
 		mutable DTreeFillData dThrownTreeFillData;
 		map<const DReaction*, DTreeInterface*> dTreeInterfaceMap;
 		map<const DReaction*, DTreeFillData*> dTreeFillDataMap;

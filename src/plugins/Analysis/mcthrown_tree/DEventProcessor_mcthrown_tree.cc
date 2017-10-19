@@ -36,24 +36,23 @@ jerror_t DEventProcessor_mcthrown_tree::init(void)
 }
 
 //------------------
-// brun
-//------------------
-jerror_t DEventProcessor_mcthrown_tree::brun(JEventLoop *locEventLoop, int32_t runnumber)
-{
-	dNC_TAGH = DTAGHGeometry::kCounterCount;
-
-	const DEventWriterROOT* locEventWriterROOT = NULL;
-	locEventLoop->GetSingle(locEventWriterROOT);
-	locEventWriterROOT->Create_ThrownTree(locEventLoop, "tree_thrown.root");
-
-	return NOERROR;
-}
-
-//------------------
 // evnt
 //------------------
 jerror_t DEventProcessor_mcthrown_tree::evnt(JEventLoop *locEventLoop, uint64_t eventnumber)
 {
+	const DEventWriterROOT* locEventWriterROOT = NULL;
+	locEventLoop->GetSingle(locEventWriterROOT);
+
+	//This looks bad.  Really bad.  But relax, it's fine. 
+	//This was previously in brun(), but brun() is ONLY CALLED BY ONE THREAD (no matter how many threads you run with!)
+	//So this meant that the event writer wasn't set up for other threads!!
+	//So, we call this here, every event, where every thread can see it. 
+	//However, only the FIRST thread will actually create the tree
+	//And, only the FIRST CALL for each thread will setup the event writer
+	//Subsequent calls will auto-detect that everything is already done and bail early. 
+	//Ugly, yes. But it works, and it's too late now to have each thread call brun().
+	locEventWriterROOT->Create_ThrownTree(locEventLoop, "tree_thrown.root");
+
 	// only keep generated events which hit a tagger counter
 	vector<const DBeamPhoton*> locBeamPhotons;
 	locEventLoop->Get(locBeamPhotons, "TAGGEDMCGEN");
@@ -62,28 +61,8 @@ jerror_t DEventProcessor_mcthrown_tree::evnt(JEventLoop *locEventLoop, uint64_t 
 	if(dTagCheck && locBeamPhotons.empty())
 		return NOERROR;
 
-	const DEventWriterROOT* locEventWriterROOT = NULL;
-	locEventLoop->GetSingle(locEventWriterROOT);
 	locEventWriterROOT->Fill_ThrownTree(locEventLoop);
 
-	return NOERROR;
-}
-
-//------------------
-// erun
-//------------------
-jerror_t DEventProcessor_mcthrown_tree::erun(void)
-{
-	// Any final calculations on histograms (like dividing them)
-	// should be done here. This may get called more than once.
-	return NOERROR;
-}
-
-//------------------
-// fini
-//------------------
-jerror_t DEventProcessor_mcthrown_tree::fini(void)
-{
 	return NOERROR;
 }
 
