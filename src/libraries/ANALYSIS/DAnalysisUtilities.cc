@@ -18,6 +18,8 @@ DAnalysisUtilities::DAnalysisUtilities(JEventLoop* locEventLoop)
 	//Get magnetic field map
 	dMagneticFieldMap = locApplication->GetBfield(locEventLoop->GetJEvent().GetRunNumber());
 
+	dParticleComboCreator = new DParticleComboCreator(locEventLoop, nullptr, nullptr, nullptr);
+
 	//For "Unused" tracks/showers
 	//BEWARE: IF THIS IS CHANGED, CHANGE IN THE BLUEPRINT FACTORY AND THE EVENT WRITER ALSO!!
 	dTrackSelectionTag = "PreSelect";
@@ -42,8 +44,6 @@ bool DAnalysisUtilities::Check_IsBDTSignalEvent(JEventLoop* locEventLoop, const 
 		//locIncludeDecayingToReactionFlag should be true UNLESS you are explicitly checking all possible reactions that could decay to your channel in your BDT
 			//e.g. could kinfit to g, p -> pi+, pi0, K0, Lambda and include it as a BDT variable
 
-	if(dParticleComboCreator == nullptr)
-		dParticleComboCreator = new DParticleComboCreator(locEventLoop, nullptr, nullptr, nullptr);
 	DReaction_factory_Thrown* dThrownReactionFactory = static_cast<DReaction_factory_Thrown*>(locEventLoop->GetFactory("DReaction", "Thrown"));
 
 	vector<const DReaction*> locThrownReactions;
@@ -356,8 +356,6 @@ bool DAnalysisUtilities::Check_ThrownsMatchReaction(JEventLoop* locEventLoop, co
 
 	//note, if you decay a final state particle (e.g. k+, pi+) in your input DReaction*, a match will NOT be found: the thrown reaction/combo is truncated
 	//if locExclusiveMatchFlag = false, then allow the input DReaction to be a subset of the thrown
-	if(dParticleComboCreator == nullptr)
-		dParticleComboCreator = new DParticleComboCreator(locEventLoop, nullptr, nullptr, nullptr);
 	auto locThrownCombo = dParticleComboCreator->Build_ThrownCombo(locEventLoop);
 
 	vector<const DReaction*> locReactions;
