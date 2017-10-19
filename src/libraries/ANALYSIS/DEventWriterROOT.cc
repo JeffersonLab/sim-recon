@@ -1401,7 +1401,7 @@ void DEventWriterROOT::Fill_BeamData(DTreeFillData* locTreeFillData, unsigned in
 	//MATCHING
 	if(locMCThrownMatching != NULL)
 	{
-		Bool_t locIsGeneratorFlag = (locMCThrownMatching->Get_ReconMCGENBeamPhoton() == locBeamPhoton) ? kTRUE : kFALSE;
+		Bool_t locIsGeneratorFlag = (locMCThrownMatching->Get_TaggedMCGENBeamPhoton() == locBeamPhoton) ? kTRUE : kFALSE;
 		locTreeFillData->Fill_Array<Bool_t>(Build_BranchName(locParticleBranchName, "IsGenerator"), locIsGeneratorFlag, locArrayIndex);
 	}
 
