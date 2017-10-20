@@ -58,13 +58,20 @@ DTrackFitter::DTrackFitter(JEventLoop *loop)
 	// Create the extrapolation vectors
 	vector<Extrapolation_t>myvector;
 	extrapolations.emplace(SYS_BCAL,myvector);
-	extrapolations.at(SYS_BCAL).reserve(300);
 	extrapolations.emplace(SYS_TOF,myvector);
 	extrapolations.emplace(SYS_FCAL,myvector);
 	extrapolations.emplace(SYS_FDC,myvector);
 	extrapolations.emplace(SYS_CDC,myvector);
-	extrapolations.emplace(SYS_START,myvector);
+	extrapolations.emplace(SYS_START,myvector);	
+
+	extrapolations[SYS_TOF].reserve(1);
+	extrapolations[SYS_BCAL].reserve(300);
+	extrapolations[SYS_FCAL].reserve(2);
+	extrapolations[SYS_FDC].reserve(24);
+	extrapolations[SYS_CDC].reserve(200);
+	extrapolations[SYS_START].reserve(1);
 	
+	pulls.reserve(30);
 
 #ifdef PROFILE_TRK_TIMES
 	// Use a special entry to hold how many tracks we fit
@@ -97,6 +104,8 @@ void DTrackFitter::Reset(void)
 	cdchits_used_in_fit.clear();
 	fdchits_used_in_fit.clear();
 	ClearExtrapolations();
+	pulls.clear();
+      
 	fit_status = kFitNotDone;
 	
 #ifdef PROFILE_TRK_TIMES
