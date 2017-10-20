@@ -354,7 +354,7 @@ jerror_t DPSPair_factory::evnt(JEventLoop *loop, uint64_t eventnumber)
 
 	  pair->SetPair(clust_left[ii].column, clust_left[ii].pulse_peak, clust_left[ii].integral, clust_left[ii].time_tile, 
 			clust_left[ii].hit_index.size(), clust_left[ii].energy, clust_left[ii].time, 
-			clust_right[jj].column, clust_right[jj].pulse_peak, clust_right[jj].integral, clust_right[ii].time_tile, 
+			clust_right[jj].column, clust_right[jj].pulse_peak, clust_right[jj].integral, clust_right[jj].time_tile, 
 			clust_right[jj].hit_index.size(), clust_right[jj].energy, clust_right[jj].time );
 	  
 	  _data.push_back(pair);
