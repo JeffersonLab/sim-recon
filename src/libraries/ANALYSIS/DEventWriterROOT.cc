@@ -77,7 +77,11 @@ DEventWriterROOT::~DEventWriterROOT(void)
 
 void DEventWriterROOT::Create_ThrownTree(JEventLoop* locEventLoop, string locOutputFileName) const
 {
-	dThrownTreeInterface = DTreeInterface::Create_DTreeInterface("Thrown_Tree", locOutputFileName);
+	if(dThrownTreeInterface != nullptr)
+		return; //Already setup for this thread!
+	dThrownTreeInterface = DTreeInterface::Create_DTreeInterface("Thrown_Tree", locOutputFileName); //set up this thread
+	if(dThrownTreeInterface->Get_BranchesCreatedFlag())
+		return; //branches already created: return
 
 	//TTREE BRANCHES
 	DTreeBranchRegister locBranchRegister;
@@ -544,6 +548,7 @@ void DEventWriterROOT::Create_Branches_Thrown(DTreeBranchRegister& locBranchRegi
 	locBranchRegister.Register_Single<Int_t>(Build_BranchName("ThrownBeam", "PID"));
 	locBranchRegister.Register_Single<TLorentzVector>(Build_BranchName("ThrownBeam", "X4")); //reported at target center
 	locBranchRegister.Register_Single<TLorentzVector>(Build_BranchName("ThrownBeam", "P4"));
+	locBranchRegister.Register_Single<Float_t>(Build_BranchName("ThrownBeam", "GeneratedEnergy"));
 
 	//EVENT-WIDE INFO
 	locBranchRegister.Register_Single<ULong64_t>("NumPIDThrown_FinalState"); //19 digits
@@ -875,12 +880,16 @@ void DEventWriterROOT::Fill_ThrownTree(JEventLoop* locEventLoop) const
 	map<const DMCThrown*, unsigned int> locThrownIndexMap;
 	Group_ThrownParticles(locMCThrowns_FinalState, locMCThrowns_Decaying, locMCThrownsToSave, locThrownIndexMap);
 
+	vector<const DBeamPhoton*> locTaggedMCGenBeams;
+	locEventLoop->Get(locTaggedMCGenBeams, "TAGGEDMCGEN");
+	const DBeamPhoton* locTaggedMCGenBeam = locTaggedMCGenBeams.empty() ? nullptr : locTaggedMCGenBeams[0];
+
 	//primary event info
 	dThrownTreeFillData.Fill_Single<UInt_t>("RunNumber", locEventLoop->GetJEvent().GetRunNumber());
 	dThrownTreeFillData.Fill_Single<ULong64_t>("EventNumber", locEventLoop->GetJEvent().GetEventNumber());
 
 	//throwns
-	Fill_ThrownInfo(&dThrownTreeFillData, locMCReaction, locMCThrownsToSave, locThrownIndexMap, locNumPIDThrown_FinalState, locPIDThrown_Decaying);
+	Fill_ThrownInfo(&dThrownTreeFillData, locMCReaction, locTaggedMCGenBeam, locMCThrownsToSave, locThrownIndexMap, locNumPIDThrown_FinalState, locPIDThrown_Decaying);
 
 	//Custom Branches
 	Fill_CustomBranches_ThrownTree(&dThrownTreeFillData, locEventLoop, locMCReaction, locMCThrownsToSave);
@@ -955,6 +964,10 @@ void DEventWriterROOT::Fill_DataTree(JEventLoop* locEventLoop, const DReaction* 
 	vector<const DMCReaction*> locMCReactions;
 	locEventLoop->Get(locMCReactions);
 	const DMCReaction* locMCReaction = locMCReactions.empty() ? NULL : locMCReactions[0];
+
+	vector<const DBeamPhoton*> locTaggedMCGenBeams;
+	locEventLoop->Get(locTaggedMCGenBeams, "TAGGEDMCGEN");
+	const DBeamPhoton* locTaggedMCGenBeam = locTaggedMCGenBeams.empty() ? nullptr : locTaggedMCGenBeams[0];
 
 	//Pre-compute thrown info
 	ULong64_t locNumPIDThrown_FinalState = 0, locPIDThrown_Decaying = 0;
@@ -1072,7 +1085,7 @@ void DEventWriterROOT::Fill_DataTree(JEventLoop* locEventLoop, const DReaction* 
 	//THROWN INFORMATION
 	if(locMCReaction != NULL)
 	{
-		Fill_ThrownInfo(locTreeFillData, locMCReaction, locMCThrownsToSave, locThrownIndexMap, locNumPIDThrown_FinalState, locPIDThrown_Decaying, locMCThrownMatching);
+		Fill_ThrownInfo(locTreeFillData, locMCReaction, locTaggedMCGenBeam, locMCThrownsToSave, locThrownIndexMap, locNumPIDThrown_FinalState, locPIDThrown_Decaying, locMCThrownMatching);
 		locTreeFillData->Fill_Single<Bool_t>("IsThrownTopology", locIsThrownTopologyFlag);
 	}
 
@@ -1313,7 +1326,7 @@ void DEventWriterROOT::Group_ThrownParticles(const vector<const DMCThrown*>& loc
 		locThrownIndexMap[locMCThrownsToSave[loc_i]] = loc_i;
 }
 
-void DEventWriterROOT::Fill_ThrownInfo(DTreeFillData* locTreeFillData, const DMCReaction* locMCReaction, const vector<const DMCThrown*>& locMCThrowns, const map<const DMCThrown*, unsigned int>& locThrownIndexMap, ULong64_t locNumPIDThrown_FinalState, ULong64_t locPIDThrown_Decaying, const DMCThrownMatching* locMCThrownMatching) const
+void DEventWriterROOT::Fill_ThrownInfo(DTreeFillData* locTreeFillData, const DMCReaction* locMCReaction, const DBeamPhoton* locTaggedMCGenBeam, const vector<const DMCThrown*>& locMCThrowns, const map<const DMCThrown*, unsigned int>& locThrownIndexMap, ULong64_t locNumPIDThrown_FinalState, ULong64_t locPIDThrown_Decaying, const DMCThrownMatching* locMCThrownMatching) const
 {
 	//THIS MUST BE CALLED FROM WITHIN A LOCK, SO DO NOT PASS IN JEVENTLOOP! //TOO TEMPTING TO DO SOMETHING BAD
 
@@ -1322,12 +1335,13 @@ void DEventWriterROOT::Fill_ThrownInfo(DTreeFillData* locTreeFillData, const DMC
 
 	//THROWN BEAM
 	locTreeFillData->Fill_Single<Int_t>(Build_BranchName("ThrownBeam", "PID"), PDGtype(locMCReaction->beam.PID()));
+	locTreeFillData->Fill_Single<Float_t>(Build_BranchName("ThrownBeam", "GeneratedEnergy"), locMCReaction->beam.energy());
 
 	DVector3 locThrownBeamX3 = locMCReaction->beam.position();
 	TLorentzVector locThrownBeamTX4(locThrownBeamX3.X(), locThrownBeamX3.Y(), locThrownBeamX3.Z(), locMCReaction->beam.time());
 	locTreeFillData->Fill_Single<TLorentzVector>(Build_BranchName("ThrownBeam", "X4"), locThrownBeamTX4);
 
-	DLorentzVector locThrownBeamP4 = locMCReaction->beam.lorentzMomentum();
+	DLorentzVector locThrownBeamP4 = (locTaggedMCGenBeam == nullptr) ? DLorentzVector() : locTaggedMCGenBeam->lorentzMomentum();
 	TLorentzVector locThrownBeamTP4(locThrownBeamP4.Px(), locThrownBeamP4.Py(), locThrownBeamP4.Pz(), locThrownBeamP4.E());
 	locTreeFillData->Fill_Single<TLorentzVector>(Build_BranchName("ThrownBeam", "P4"), locThrownBeamTP4);
 
@@ -1398,7 +1412,7 @@ void DEventWriterROOT::Fill_BeamData(DTreeFillData* locTreeFillData, unsigned in
 	//MATCHING
 	if(locMCThrownMatching != NULL)
 	{
-		Bool_t locIsGeneratorFlag = (locMCThrownMatching->Get_ReconMCGENBeamPhoton() == locBeamPhoton) ? kTRUE : kFALSE;
+		Bool_t locIsGeneratorFlag = (locMCThrownMatching->Get_TaggedMCGENBeamPhoton() == locBeamPhoton) ? kTRUE : kFALSE;
 		locTreeFillData->Fill_Array<Bool_t>(Build_BranchName(locParticleBranchName, "IsGenerator"), locIsGeneratorFlag, locArrayIndex);
 	}
 
@@ -1662,7 +1676,7 @@ void DEventWriterROOT::Fill_ComboStepData(DTreeFillData* locTreeFillData, const 
 {
 	auto locReactionVertexInfo = dVertexInfoMap.find(locReaction)->second;
 	auto locReactionStep = locReaction->Get_ReactionStep(locStepIndex);
-	const TList* locUserInfo = dTreeInterfaceMap.find(locReaction)->second->Get_UserInfo();
+	const TList* locUserInfo = dTreeInterfaceMap.find(locReaction)->second->Get_UserInfo(); //No Lock!  But this should be unchanging at this point anyway
 	const TMap* locPositionToNameMap = (TMap*)locUserInfo->FindObject("PositionToNameMap");
 
 	auto locParticleComboStep = locParticleCombo->Get_ParticleComboStep(locStepIndex);

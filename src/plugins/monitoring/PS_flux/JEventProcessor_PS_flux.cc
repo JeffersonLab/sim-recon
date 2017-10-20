@@ -331,16 +331,21 @@ jerror_t JEventProcessor_PS_flux::evnt(JEventLoop *loop, uint64_t eventnumber)
         if (fpairs.size()>=1) {
             psflux_num_events->Fill(3);
             // take pair with smallest time difference from sorted vector
-            const DPSHit* flhit = fpairs[0]->ee.first;  // left hit in fine PS
-            const DPSHit* frhit = fpairs[0]->ee.second; // right hit in fine PS
+            const DPSPair::PSClust* flhit = fpairs[0]->ee.first;  // left hit in fine PS
+            const DPSPair::PSClust* frhit = fpairs[0]->ee.second; // right hit in fine PS
 
 	    // geometry check for PS/PSC matching
 	    if(flhit->column < geomModuleColumn[clhit->module-1][0] || flhit->column > geomModuleColumn[clhit->module-1][1]) {japp->RootFillUnLock(this); return NOERROR;}
 	    if(frhit->column < geomModuleColumn[crhit->module-1][0] || frhit->column > geomModuleColumn[crhit->module-1][1]) {japp->RootFillUnLock(this); return NOERROR;}
 
 	    // energy variables with random spread in energy bite
-	    double E_left_rndm = dRandom->Rndm()*(dPSGeom->getEhigh(flhit->arm,flhit->column)-dPSGeom->getElow(flhit->arm,flhit->column)) + dPSGeom->getElow(flhit->arm,flhit->column);
-	    double E_right_rndm = dRandom->Rndm()*(dPSGeom->getEhigh(frhit->arm,frhit->column)-dPSGeom->getElow(frhit->arm,frhit->column)) + dPSGeom->getElow(frhit->arm,frhit->column);
+	    // left  - arm 0
+	    // right - arm 1
+	    double E_left_rndm = dRandom->Rndm()*(dPSGeom->getEhigh(0,flhit->column) - dPSGeom->getElow(0,flhit->column)) + 
+	      dPSGeom->getElow(0,flhit->column);
+	    double E_right_rndm = dRandom->Rndm()*(dPSGeom->getEhigh(1,frhit->column)-dPSGeom->getElow(1,frhit->column)) + 
+	      dPSGeom->getElow(1,frhit->column);
+
             double E_pair = flhit->E+frhit->E;
 	    double E_pair_uni = E_left_rndm+E_right_rndm;
             double PS_tdiff = flhit->t-frhit->t;

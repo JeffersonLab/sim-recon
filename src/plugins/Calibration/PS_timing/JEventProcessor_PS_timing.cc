@@ -128,10 +128,10 @@ jerror_t JEventProcessor_PS_timing::evnt(JEventLoop *loop, uint64_t eventnumber)
         hPSCRF_tdcTimeDiffVsID->Fill(crhit->module+8,crhit->t-t_RF);
         for (const auto& h : taghhits) hTAGHRF_tdcTimeDiffVsID->Fill(h->counter_id,h->t-t_RF);
         if (fpairs.size() >= 1) { // PS
-            const DPSHit* flhit = fpairs[0]->ee.first;  // left hit in fine PS
-            const DPSHit* frhit = fpairs[0]->ee.second; // right hit in fine PS
-            hPSRF_adcTimeDiffVsID->Fill(flhit->column,flhit->t-t_RF);
-            hPSRF_adcTimeDiffVsID->Fill(frhit->column+145,frhit->t-t_RF);
+	  const DPSPair::PSClust* flhit = fpairs[0]->ee.first;  // left hit in fine PS
+	  const DPSPair::PSClust* frhit = fpairs[0]->ee.second; // right hit in fine PS
+	  hPSRF_adcTimeDiffVsID->Fill(flhit->column,flhit->t_tile-t_RF);
+	  hPSRF_adcTimeDiffVsID->Fill(frhit->column+145,frhit->t_tile-t_RF);
         }
     }
 
