@@ -316,10 +316,6 @@ jerror_t DEventSourceHDDM::GetObjects(JEvent &event, JFactory_base *factory)
    if (dataClassName == "DMCReaction")
       return Extract_DMCReaction(record,
                      dynamic_cast<JFactory<DMCReaction>*>(factory), tag, loop);
-
-   if (dataClassName == "DBeamPhoton")
-      return Extract_DBeamPhoton(record, 
-                     dynamic_cast<JFactory<DBeamPhoton>*>(factory), tag, loop);
  
    if (dataClassName == "DMCThrown")
       return Extract_DMCThrown(record,
@@ -1150,63 +1146,6 @@ jerror_t DEventSourceHDDM::Extract_DMCReaction(hddm_s::HDDM *record,
    //_DBG_<<"Creating "<<dmcreactions.size()<<" DMCReaction objects"<<endl;
 
    factory->CopyTo(dmcreactions);
-
-   return NOERROR;
-}
-
-
-//------------------
-// Extract_DBeamPhoton
-//------------------
-jerror_t DEventSourceHDDM::Extract_DBeamPhoton(hddm_s::HDDM *record,
-                                   JFactory<DBeamPhoton> *factory, string tag,
-                                   JEventLoop *loop)
-{
-   /// If tag="MCGEN" then defer to the Extract_DMCReaction method which
-   /// extracts both the DMCReaction and DBeamPhoton objects at the same time.
-
-   if (factory==NULL)
-      return OBJECT_NOT_AVAILABLE;
-   if (tag != "MCGEN")
-      return OBJECT_NOT_AVAILABLE;
-
-   vector<const DMCReaction*> dmcreactions;
-   loop->Get(dmcreactions);
-
-   // extract the TAGH geometry
-   vector<const DTAGHGeometry*> taghGeomVect;
-   loop->Get(taghGeomVect);
-   if (taghGeomVect.empty())
-      return OBJECT_NOT_AVAILABLE;
-   const DTAGHGeometry* taghGeom = taghGeomVect[0];
-
-   // extract the TAGM geometry
-   vector<const DTAGMGeometry*> tagmGeomVect;
-   loop->Get(tagmGeomVect);
-   if (tagmGeomVect.empty())
-      return OBJECT_NOT_AVAILABLE;
-   const DTAGMGeometry* tagmGeom = tagmGeomVect[0];
-
-   vector<DBeamPhoton*> dbeam_photons;
-   for(size_t loc_i = 0; loc_i < dmcreactions.size(); ++loc_i)
-   {
-      DBeamPhoton *beamphoton = new DBeamPhoton;
-      *(DKinematicData*)beamphoton = dmcreactions[loc_i]->beam;
-      if(tagmGeom->E_to_column(beamphoton->energy(), beamphoton->dCounter)) {
-	      beamphoton->dSystem = SYS_TAGM;
-      }
-      else if(taghGeom->E_to_counter(beamphoton->energy(), beamphoton->dCounter)) {
-	      beamphoton->dSystem = SYS_TAGH;
-      }
-      else {
-	      beamphoton->dSystem = SYS_NULL;
-	      beamphoton->dCounter = 999;
-      }
-      dbeam_photons.push_back(beamphoton);
-   }
-
-   // Copy into factories
-   factory->CopyTo(dbeam_photons);
 
    return NOERROR;
 }

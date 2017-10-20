@@ -401,6 +401,10 @@ bool DHistogramAction_ParticleComboGenReconComparison::Perform_Action(JEventLoop
 				locKinematicData = locParticleComboStep->Get_FinalParticle_Measured(loc_j);
 			if(locKinematicData == NULL)
 				continue; //e.g. a decaying or missing particle whose params aren't set yet
+			if(DAnalysis::Get_DecayStepIndex(Get_Reaction(), loc_i, loc_j) > 0)
+				continue; //decaying: not supported
+			if(Get_Reaction()->Get_ReactionStep(loc_i)->Get_MissingParticleIndex() == int(loc_j))
+				continue; //missing: not supported
 
 			//check if duplicate
 			const JObject* locSourceObject = locParticleComboStep->Get_FinalParticle_SourceObject(loc_j);

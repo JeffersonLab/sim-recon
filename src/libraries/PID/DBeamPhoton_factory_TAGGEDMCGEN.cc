@@ -13,23 +13,15 @@ using namespace std;
 using namespace jana;
 
 //------------------
-// init
-//------------------
-jerror_t DBeamPhoton_factory_TAGGEDMCGEN::init(void)
-{
-	return NOERROR;
-}
-
-//------------------
 // brun
 //------------------
 jerror_t DBeamPhoton_factory_TAGGEDMCGEN::brun(jana::JEventLoop *locEventLoop, int32_t runnumber)
 {
-	DApplication* dapp = dynamic_cast<DApplication*>(locEventLoop->GetJApplication());
-	DGeometry* locGeometry = dapp->GetDGeometry(locEventLoop->GetJEvent().GetRunNumber());
-	dTargetCenterZ = 0.0;
-	locGeometry->GetTargetZ(dTargetCenterZ);
-
+	//Setting this flag makes it so that JANA does not delete the objects in _data.  This factory will manage this memory. 
+		//This is because some/all of these pointers are just copied from earlier objects, and should not be deleted.  
+	bool locIsRESTEvent = locEventLoop->GetJEvent().GetStatusBit(kSTATUS_REST);
+	if(!locIsRESTEvent) //If REST, will grab from file: IS owner
+		SetFactoryFlag(NOT_OBJECT_OWNER);
 	return NOERROR;
 }
 
@@ -38,59 +30,48 @@ jerror_t DBeamPhoton_factory_TAGGEDMCGEN::brun(jana::JEventLoop *locEventLoop, i
 //------------------
 jerror_t DBeamPhoton_factory_TAGGEDMCGEN::evnt(jana::JEventLoop *locEventLoop, uint64_t eventnumber)
 {
-	DVector3 pos(0.0, 0.0, dTargetCenterZ);
+	_data.clear();
 
-	vector<const DTAGMHit*> tagm_hits;
-	locEventLoop->Get(tagm_hits, "TRUTH");
-	for (unsigned int ih=0; ih < tagm_hits.size(); ++ih)
+	//Check if MC
+	vector<const DMCReaction*> locMCReactions;
+	locEventLoop->Get(locMCReactions);
+	if(locMCReactions.empty())
+		return NOERROR; //Not a thrown event
+
+	//Get the MCGEN beam
+	const DBeamPhoton* locMCGenBeam;
+	locEventLoop->GetSingle(locMCGenBeam, "MCGEN");
+
+	//See if it was tagged
+	auto locSystem = locMCGenBeam->dSystem;
+	if(locSystem == SYS_NULL)
+		return NOERROR; //Nope, no objects to create
+
+	//Get reconstructed beam photons
+	vector<const DBeamPhoton*> locBeamPhotons;
+	locEventLoop->Get(locBeamPhotons);
+
+	//Loop over beam photons
+	double locBestDeltaT = 9.9E9;
+	const DBeamPhoton* locBestPhoton = nullptr;
+	for(auto& locBeamPhoton : locBeamPhotons)
 	{
-		if (tagm_hits[ih]->bg != 0) continue;
-		if (tagm_hits[ih]->row > 0) continue;
-		DVector3 mom(0.0, 0.0, tagm_hits[ih]->E);
-		DBeamPhoton *gamma = new DBeamPhoton;
-		gamma->setPID(Gamma);
-		gamma->setMomentum(mom);
-		gamma->setPosition(pos);
-		gamma->setTime(tagm_hits[ih]->t);
-	    gamma->dSystem = SYS_TAGM;
-		gamma->dCounter = tagm_hits[ih]->column;
-		gamma->AddAssociatedObject(tagm_hits[ih]);
-		_data.push_back(gamma);
+		if(locBeamPhoton->dSystem != locSystem)
+			continue;
+		if(locBeamPhoton->dCounter != locMCGenBeam->dCounter)
+			continue;
+
+		auto locDeltaT = fabs(locMCGenBeam->time() - locBeamPhoton->time());
+		if(locDeltaT >= locBestDeltaT)
+			continue;
+		locBestDeltaT = locDeltaT;
+		locBestPhoton = locBeamPhoton;
 	}
 
-	vector<const DTAGHHit*> tagh_hits;
-	locEventLoop->Get(tagh_hits, "TRUTH");
-	for (unsigned int ih=0; ih < tagh_hits.size(); ++ih)
-	{
-		if (tagh_hits[ih]->bg != 0) continue;
-		DVector3 mom(0.0, 0.0, tagh_hits[ih]->E);
-		DBeamPhoton *gamma = new DBeamPhoton;
-		gamma->setPID(Gamma);
-		gamma->setMomentum(mom);
-		gamma->setPosition(pos);
-		gamma->setTime(tagh_hits[ih]->t);
-	    gamma->dSystem = SYS_TAGH;
-		gamma->dCounter = tagh_hits[ih]->counter_id;
-		gamma->AddAssociatedObject(tagh_hits[ih]);
-		_data.push_back(gamma);
-	}
+	if(locBestPhoton == nullptr)
+		return NOERROR; //Uh oh.  Shouldn't be possible. 
 
-	return NOERROR;
-}
-
-//------------------
-// erun
-//------------------
-jerror_t DBeamPhoton_factory_TAGGEDMCGEN::erun(void)
-{
-	return NOERROR;
-}
-
-//------------------
-// fini
-//------------------
-jerror_t DBeamPhoton_factory_TAGGEDMCGEN::fini(void)
-{
+	_data.push_back(const_cast<DBeamPhoton*>(locBestPhoton));
 	return NOERROR;
 }
 

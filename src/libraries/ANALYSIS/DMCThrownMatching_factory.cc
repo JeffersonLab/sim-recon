@@ -177,25 +177,15 @@ void DMCThrownMatching_factory::Find_GenReconMatches_BeamPhotons(JEventLoop* loc
 	vector<const DBeamPhoton*> locBeamPhotons_MCGEN;
 	locEventLoop->Get(locBeamPhotons_MCGEN, "MCGEN");
 
+	vector<const DBeamPhoton*> locBeamPhotons_TAGGEDMCGEN;
+	locEventLoop->Get(locBeamPhotons_TAGGEDMCGEN, "TAGGEDMCGEN");
+
 	vector<const DBeamPhoton*> locBeamPhotons_TRUTH;
 	locEventLoop->Get(locBeamPhotons_TRUTH, "TRUTH");
 
-	//first match MCGEN
-	double locBestDeltaE = 9.9E9;
-	const DBeamPhoton* locBestBeamPhoton = NULL;
-	double locMaxDeltaEFraction = 0.01;
-	for(size_t loc_i = 0; loc_i < locBeamPhotons.size(); ++loc_i)
-	{
-		double locDeltaT = fabs(locBeamPhotons[loc_i]->time() - locBeamPhotons_MCGEN[0]->time());
-		if(locDeltaT > 1.2)
-			continue; // a little wider than 1.002 ns because of tagger timing resolution. most wrong ones should be picked off by delta-E cut
-		double locDeltaE = fabs(locBeamPhotons[loc_i]->energy() - locBeamPhotons_MCGEN[0]->energy());
-		if((locDeltaE > locBestDeltaE) || (locDeltaE/locBeamPhotons_MCGEN[0]->energy() > locMaxDeltaEFraction))
-			continue;
-		locBestDeltaE = locDeltaE;
-		locBestBeamPhoton = locBeamPhotons[loc_i];
-	}
-	locMCThrownMatching->Set_ReconMCGENBeamPhoton(locBestBeamPhoton);
+	//first set MCGEN & tagged MCGEN info
+	locMCThrownMatching->Set_MCGENBeamPhoton(locBeamPhotons_MCGEN.empty() ? nullptr : locBeamPhotons_MCGEN[0]);
+	locMCThrownMatching->Set_TaggedMCGENBeamPhoton(locBeamPhotons_TAGGEDMCGEN.empty() ? nullptr : locBeamPhotons_TAGGEDMCGEN[0]);
 
 	//recon photon, truth photon, delta-t
 	map<const DBeamPhoton*, deque<pair<const DBeamPhoton*, double> > > locPossibleMatches;
