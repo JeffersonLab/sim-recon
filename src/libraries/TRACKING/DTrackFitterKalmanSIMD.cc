@@ -595,6 +595,13 @@ DTrackFitterKalmanSIMD::DTrackFitterKalmanSIMD(JEventLoop *loop):DTrackFitter(lo
    
 	dResourcePool_TMatrixFSym = std::make_shared<DResourcePool<TMatrixFSym>>();
 	dResourcePool_TMatrixFSym->Set_ControlParams(20, 20, 50);
+
+	my_fdchits.reserve(24);
+	my_cdchits.reserve(28);
+	fdc_updates.reserve(24);
+	cdc_updates.reserve(28);
+	cdc_used_in_fit.reserve(28);
+	fdc_used_in_fit.reserve(24);
 }
 
 //-----------------
@@ -621,8 +628,6 @@ void DTrackFitterKalmanSIMD::ResetKalmanSIMD(void)
 
    cov.clear();
    fcov.clear();
-   pulls.clear();
-   ClearExtrapolations();
 
    len = 0.0;
    ftime=0.0;
@@ -7490,7 +7495,7 @@ kalman_error_t DTrackFitterKalmanSIMD::ForwardCDCFit(const DMatrix5x1 &S0,const 
    }  
    // Fill extrapolation vector
    ClearExtrapolations();
-   ExtrapolateForwardToOtherDetectors();
+   ExtrapolateForwardToOtherDetectors(); 
 
    // Extrapolate to the point of closest approach to the beam line
    z_=zlast;
@@ -7718,7 +7723,7 @@ kalman_error_t DTrackFitterKalmanSIMD::CentralFit(const DVector2 &startpos,
    // Fill extrapolations vector
    ClearExtrapolations();
    ExtrapolateCentralToOtherDetectors();
-   
+
    if (last_pos.Mod()>0.001){ // in cm
       if (ExtrapolateToVertex(last_pos,Sclast,Cclast)!=NOERROR) return EXTRAPOLATION_FAILED; 
    }
@@ -9167,7 +9172,7 @@ jerror_t DTrackFitterKalmanSIMD::ExtrapolateForwardToOtherDetectors(){
 	continue;
       }   
       // allow for a little slop at the end of the nose
-      else if (z<sc_pos[index][sc_pos[0].size()-1].z()+1.){
+      else if (z<sc_pos[index][sc_pos[0].size()-1].z()+0.1){
 	// Hone in on intersection with the appropriate segment of the start 
 	// counter
 	int count=0;
@@ -9539,7 +9544,7 @@ jerror_t DTrackFitterKalmanSIMD::ExtrapolateCentralToOtherDetectors(){
 	continue;
       } 
       // allow for a little slop at the end of the nose
-      else if (z<sc_pos[index][sc_pos[0].size()-1].z()+1.){ 
+      else if (z<sc_pos[index][sc_pos[0].size()-1].z()+0.1){ 
 	// Propagate the state and covariance through the field
 	// using a straight-line approximation for each step to zero in on the 
 	// start counter paddle
