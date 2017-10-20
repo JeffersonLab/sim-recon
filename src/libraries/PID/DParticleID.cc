@@ -116,6 +116,9 @@ DParticleID::DParticleID(JEventLoop *loop)
 
 	FCAL_CUT_PAR2=0.0;
 	gPARMS->SetDefaultParameter("FCAL:CUT_PAR2",FCAL_CUT_PAR2);
+	
+	FCAL_CUT_PAR2=0.0044;
+	gPARMS->SetDefaultParameter("FCAL:CUT_PAR3",FCAL_CUT_PAR3);
 
 	TOF_CUT_PAR1 = 1.1;
 	gPARMS->SetDefaultParameter("TOF:CUT_PAR1",TOF_CUT_PAR1);
@@ -125,6 +128,9 @@ DParticleID::DParticleID(JEventLoop *loop)
 
 	TOF_CUT_PAR3 = 6.15;
 	gPARMS->SetDefaultParameter("TOF:CUT_PAR3",TOF_CUT_PAR3);
+
+	TOF_CUT_PAR4 = 0.005;
+	gPARMS->SetDefaultParameter("TOF:CUT_PAR4",TOF_CUT_PAR4);
 
 	BCAL_Z_CUT = 30.0;
 	gPARMS->SetDefaultParameter("BCAL:Z_CUT",BCAL_Z_CUT);
@@ -1413,6 +1419,8 @@ bool DParticleID::Cut_MatchDistance(const DReferenceTrajectory* rt, const DTOFPo
 	//If the position in one dimension is not well-defined, compare distance only in the other direction
 	//Otherwise, cut in R
 	double locMatchCut_2D = exp(-1.0*TOF_CUT_PAR1*locProjMom.Mag() + TOF_CUT_PAR2) + TOF_CUT_PAR3;
+	double locTheta=locProjMom.Theta()*180./M_PI;
+	locMatchCut_2D*=1.+TOF_CUT_PAR4*locTheta*locTheta;
 	double locMatchCut_1D = locMatchCut_2D;
 
 	double locDeltaX = locTOFHitMatchParams->dDeltaXToHit;
@@ -1530,7 +1538,8 @@ bool DParticleID::Cut_MatchDistance(const vector<DTrackFitter::Extrapolation_t> 
 	}
 
 	double p=locProjMom.Mag();
-	double cut=FCAL_CUT_PAR1+FCAL_CUT_PAR2/p;
+	double theta=locProjMom.Theta()*180./M_PI;
+	double cut=(FCAL_CUT_PAR1+FCAL_CUT_PAR2/p)*(1.+FCAL_CUT_PAR3*theta*theta);
 	return (locShowerMatchParams->dDOCAToShower < cut);
 }
 
