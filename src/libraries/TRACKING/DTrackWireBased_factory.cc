@@ -516,8 +516,8 @@ void DTrackWireBased_factory::DoFit(unsigned int c_id,
             track->chisq = fitter->GetChisq();
             track->Ndof = fitter->GetNdof();
             track->FOM = TMath::Prob(track->chisq, track->Ndof);
-            track->pulls = fitter->GetPulls(); 
-	    track->extrapolations=fitter->GetExtrapolations();
+            track->pulls =std::move(fitter->GetPulls()); 
+	    track->extrapolations=std::move(fitter->GetExtrapolations());
             track->candidateid = c_id+1;
 
             // Add hits used as associated objects

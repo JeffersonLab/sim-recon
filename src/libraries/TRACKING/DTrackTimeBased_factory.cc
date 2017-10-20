@@ -934,8 +934,8 @@ bool DTrackTimeBased_factory::DoFit(const DTrackWireBased *track,
       timebased_track->setTime(mStartTime);
       timebased_track->chisq = fitter->GetChisq();
       timebased_track->Ndof = fitter->GetNdof();
-      timebased_track->pulls = fitter->GetPulls();  
-      timebased_track->extrapolations=fitter->GetExtrapolations();
+      timebased_track->pulls = std::move(fitter->GetPulls());  
+      timebased_track->extrapolations=std::move(fitter->GetExtrapolations());
       timebased_track->IsSmoothed = fitter->GetIsSmoothed();
       timebased_track->trackid = track->id;
       timebased_track->candidateid=track->candidateid;
