@@ -7,6 +7,7 @@ DFCALShower::DFCALShower():ExyztCovariance(5)
    fEnergy = 0.;
    fTime = 0.;
    fPosition.SetXYZ(0., 0., 0.) ;
+   fClassifierOutput = 0.;          // is this right?
 }
 
 DFCALShower::~DFCALShower()
@@ -37,3 +38,7 @@ void DFCALShower::setPosition(const DVector3 aPosition )
 }
 
 
+void DFCALShower::setClassifierOutput(const double classOutput)
+{
+        fClassifierOutput = classOutput;
+}
