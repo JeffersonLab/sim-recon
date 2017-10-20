@@ -225,6 +225,10 @@ bool DEventWriterREST::Write_RESTEvent(JEventLoop* locEventLoop, string locOutpu
 		locFcalCorrelationsList().setEycorr(fcalshowers[i]->EYcorr());
 		locFcalCorrelationsList().setTxcorr(fcalshowers[i]->XTcorr());
 		locFcalCorrelationsList().setTycorr(fcalshowers[i]->YTcorr());
+
+        // add in classification based on MVA
+        hddm_r::FcalShowerClassificationList locFcalShowerClassificationList = fcal().addFcalShowerClassifications(1);
+        locFcalShowerClassificationList().setClassifierOuput(fcalshowers[i]->getClassifierOutput());
 	}
 
 	// push any DBCALShower objects to the output record
