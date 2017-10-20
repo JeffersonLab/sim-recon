@@ -13,6 +13,7 @@
 // July 5, 2014 R.T.Jones: changed over from c to c++ API for hddm
 // June 22, 2015 J. Stevens: changed RICH -> DIRC and remove CERE
 // May 7, 2017 R. Dzhygadlo: added DDIRCTruthPmtHit DDIRCTruthBarHit
+// Oct 20, 2017 A. Somov: Added fields for the DPSHit/DPSCHit
 //
 // DEventSourceHDDM methods
 //
