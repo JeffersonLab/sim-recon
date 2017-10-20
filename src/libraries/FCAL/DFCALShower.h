@@ -34,11 +34,13 @@ class DFCALShower:public JObject{
                         DVector3 getPositionError() const;
 			double getEnergy() const;  
 			double getTime() const;  
+            double getClassifierOutput() const;
 
 		// set shower energy and position 
 			void setPosition( const DVector3 aPosition );  
 			void setEnergy(const double energy);  
-			void setTime(const double time);  
+			void setTime(const double time);
+            void setClassifierOutput(const double classOutput);
 
 			TMatrixFSym ExyztCovariance;
 
@@ -117,7 +119,8 @@ class DFCALShower:public JObject{
 
 			double fEnergy; 
 			double fTime; 
-			DVector3 fPosition;  // Shower position in the FCAL
+			DVector3 fPosition;        // Shower position in the FCAL
+            double fClassifierOutput;  // Value obtained from MVA analysis indicating how much the shower is like an EM shower, (values?)
 };
 
 
@@ -134,6 +137,11 @@ inline double DFCALShower::getEnergy() const
 inline double DFCALShower::getTime() const
 {
       return fTime;
+}
+
+inline double DFCALShower::getClassifierOutput() const
+{
+    return fClassifierOutput;
 }
 
 #endif // _DFCALShower_

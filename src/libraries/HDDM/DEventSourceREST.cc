@@ -791,6 +791,13 @@ jerror_t DEventSourceREST::Extract_DFCALShower(hddm_r::HDDM *record,
 	  }
 	  shower->ExyztCovariance = covariance;
 
+      // MVA classifier output
+      const hddm_r::FcalShowerClassificationList& locFcalShowerClassificationList = iter->getFcalShowerClassifications();
+      hddm_r::FcalShowerClassificationList::iterator locFcalShowerClassificationIterator = locFcalShowerClassificationList.begin();
+      if(locFcalShowerClassificationIterator != locFcalShowerClassificationList.end()) {
+          shower->setClassifierOutput(locFcalShowerClassificationIterator->getClassifierOuput());
+      }
+
       data.push_back(shower);
    }
 
