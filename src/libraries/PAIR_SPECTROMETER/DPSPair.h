@@ -17,7 +17,7 @@ class DPSPair:public jana::JObject{
   JOBJECT_PUBLIC(DPSPair);
 
   ~ DPSPair(){
-    //    cout << " DPSPair  distructor is called " << endl;
+    //    cout << " DPSPair  destructor is called " << endl;
     delete left;
     delete right;
   }
