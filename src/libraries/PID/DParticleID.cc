@@ -117,7 +117,7 @@ DParticleID::DParticleID(JEventLoop *loop)
 	FCAL_CUT_PAR2=0.0;
 	gPARMS->SetDefaultParameter("FCAL:CUT_PAR2",FCAL_CUT_PAR2);
 	
-	FCAL_CUT_PAR2=0.0044;
+	FCAL_CUT_PAR3=0.0044;
 	gPARMS->SetDefaultParameter("FCAL:CUT_PAR3",FCAL_CUT_PAR3);
 
 	TOF_CUT_PAR1 = 1.1;

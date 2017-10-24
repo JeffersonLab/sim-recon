@@ -212,7 +212,7 @@ class DParticleID:public jana::JObject
 		double dA_FDC;
 
 		double BCAL_Z_CUT,BCAL_PHI_CUT_PAR1,BCAL_PHI_CUT_PAR2, BCAL_PHI_CUT_PAR3;
-		double FCAL_CUT_PAR1,FCAL_CUT_PAR2;
+		double FCAL_CUT_PAR1,FCAL_CUT_PAR2,FCAL_CUT_PAR3;
 		double TOF_CUT_PAR1, TOF_CUT_PAR2, TOF_CUT_PAR3, TOF_CUT_PAR4;
 		vector<double> dSCCutPars_TimeBased, dSCCutPars_WireBased;
 
