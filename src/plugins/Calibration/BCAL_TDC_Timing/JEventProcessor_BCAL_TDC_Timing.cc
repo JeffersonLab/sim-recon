@@ -372,12 +372,13 @@ jerror_t JEventProcessor_BCAL_TDC_Timing::evnt(JEventLoop *loop, uint64_t eventn
       Fill1DHistogram("BCAL_Global_Offsets", "Debug", "Success", 3, "Success profile;Step", 16, -0.5, 15.5);
 
       // Now from this hypothesis we can get the detector matches to the BCAL
-      const DBCALShowerMatchParams* bcalMatch = bestHypothesis->Get_BCALShowerMatchParams();
-      const DSCHitMatchParams* scMatch = bestHypothesis->Get_SCHitMatchParams(); // Needed for quality cut later
+      auto bcalMatch = bestHypothesis->Get_BCALShowerMatchParams();
+      auto scMatch = bestHypothesis->Get_SCHitMatchParams(); // Needed for quality cut later
       DVector3 position = bestHypothesis->position();
       //DVector3 momentum = bestHypothesis->momentum();
       //float Z_track = position.z();
       //float_track = momentum.Mag();
+
       if (bcalMatch == NULL) continue; 
       Fill1DHistogram("BCAL_Global_Offsets", "Debug", "Success", 4, "Success profile;Step", 16, -0.5, 15.5);
       if (scMatch == NULL) continue;
@@ -391,11 +392,11 @@ jerror_t JEventProcessor_BCAL_TDC_Timing::evnt(JEventLoop *loop, uint64_t eventn
                       200, -25, 25, 200, -0.1, 0.1);
 
       // We also need the reference trajectory, which is buried deep in there
-      const DTrackTimeBased *timeBasedTrack = nullptr;
-      bestHypothesis->GetSingle(timeBasedTrack);
+      const DTrackTimeBased *timeBasedTrack = bestHypothesis->Get_TrackTimeBased();
       const DReferenceTrajectory *rt = timeBasedTrack->rt;
       if (timeBasedTrack->FOM < 0.0027) continue; // 3-sigma cut on tracking FOM
       Fill1DHistogram("BCAL_Global_Offsets", "Debug", "Success", 6, "Success profile;Step", 16, -0.5, 15.5);
+      if (timeBasedTrack->Ndof < 10) continue; // CDC: 5 params in fit, 10 dof => [15 hits]; FDC [10 hits]
 
       // Use CDC dEdx to help reject protons
       double dEdx=1e6*timeBasedTrack->ddEdx_CDC;
@@ -525,22 +526,30 @@ jerror_t JEventProcessor_BCAL_TDC_Timing::evnt(JEventLoop *loop, uint64_t eventn
             //double localBCALHitZ = thisPoint->z() + Z_TARGET - dBCALGeom->GetBCAL_center();
             double deltaZ = trackHitZ-BCALHitZ;
             double Deltat = thisPoint->t_US() - thisPoint->t_DS();
+
             Fill2DHistogram ("BCAL_TDC_Offsets", "ZvsDeltat", "AllPoints",
                              Deltat, trackHitZ,
                              "Z_{Track} vs #Delta t;#Delta t = t_{US}-t_{DS};Z_{Track} [cm]",
-                             300, -30, 30, 250, zminhall, zmaxhall); 
+                             480, -30, 30, 250, zminhall, zmaxhall);  // simulation has 16 values in each Deltat=1
             Fill2DHistogram ("BCAL_TDC_Offsets", "ZvsDeltat", layername,
                              Deltat, trackHitZ,
                              "Z_{Track} vs #Delta t;#Delta t = t_{US}-t_{DS};Z_{Track} [cm]",
-                             300, -30, 30, 250, zminhall, zmaxhall); 
+                             480, -30, 30, 250, zminhall, zmaxhall); 
             Fill2DHistogram ("BCAL_TDC_Offsets", "ZvsDeltat", chargename,
                              Deltat, trackHitZ,
                              "Z_{Track} vs #Delta t;#Delta t = t_{US}-t_{DS};Z_{Track} [cm]",
-                             300, -30, 30, 250, zminhall, zmaxhall);
+                             480, -30, 30, 250, zminhall, zmaxhall);
             sprintf(title, "%s  Z_{Track} vs #Delta t;#Delta t = t_{US}-t_{DS};Z_{Track} [cm]", channame);
             Fill2DHistogram ("BCAL_TDC_Offsets", "ZvsDeltat", channame,
                              Deltat, trackHitZ, title,
-                             300, -30, 30, 250, zminhall, zmaxhall); 
+                             480, -30, 30, 250, zminhall, zmaxhall); 
+
+            double trackTheta = 180/3.14159265358*atan2(timeBasedTrack->pperp(),timeBasedTrack->pz());
+            Fill2DHistogram ("BCAL_TDC_Offsets", "DeltatvsTheta", layername,
+                             trackTheta, Deltat,
+                             "#Delta t vs #theta_{Track};#theta_{Track}  (deg);#Delta t = t_{US}-t_{DS}  (ns)",
+                             360,0,180, 480, -30, 30); 
+
 
             int the_cell = (thisPoint->module() - 1) * 16 + (thisPoint->layer() - 1) * 4 + thisPoint->sector();
             float Deltat_Zcorr = Deltat - (trackHitZ-212)/8.1;
@@ -689,6 +698,11 @@ jerror_t JEventProcessor_BCAL_TDC_Timing::evnt(JEventLoop *loop, uint64_t eventn
                                            the_cell, targetCenterTime - thisRFBunch->dTime, E_point*E_point,
                                            "Charged shower points (E^{2} weighted); CCDB Index; t_{Target} - t_{RF} [ns]",
                                            768, 0.5, 768.5, 200, -10, 10);
+                   sprintf(name , "deltaTVsLayer_q%s", q); // for simulation separate by layer
+                   Fill2DHistogram("BCAL_Global_Offsets", "Target Time", name,
+                                   thisPoint->layer(), targetCenterTime - thisRFBunch->dTime,
+                                   "Charged shower points; CCDB Index; t_{Target} - t_{RF} [ns]",
+                                   4, 0.5, 4.5, 200, -10, 10);
                }
 
                float pulse_peak_max = max(thisADCHit_up->pulse_peak,thisADCHit_down->pulse_peak);

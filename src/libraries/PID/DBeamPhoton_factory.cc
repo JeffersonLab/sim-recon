@@ -41,7 +41,10 @@ jerror_t DBeamPhoton_factory::init(void)
     gPARMS->SetDefaultParameter("BeamPhoton:DELTA_E_DOUBLES_MAX", DELTA_E_DOUBLES_MAX,
     "Maximum energy difference in GeV between a TAGM-TAGH pair of beam photons"
     " for them to be merged into a single photon");
-    return NOERROR;
+
+	//Setting this flag makes it so that JANA does not delete the objects in _data.  This factory will manage this memory.
+	SetFactoryFlag(NOT_OBJECT_OWNER);
+	return NOERROR;
 }
 
 //------------------
@@ -62,6 +65,10 @@ jerror_t DBeamPhoton_factory::brun(jana::JEventLoop *locEventLoop, int32_t runnu
 //------------------
 jerror_t DBeamPhoton_factory::evnt(jana::JEventLoop *locEventLoop, uint64_t locEventNumber)
 {
+	dResourcePool_BeamPhotons->Recycle(dCreated);
+	dCreated.clear();
+	_data.clear();
+
     vector<const DTAGMHit*> tagm_hits;
     locEventLoop->Get(tagm_hits);
 
@@ -69,7 +76,8 @@ jerror_t DBeamPhoton_factory::evnt(jana::JEventLoop *locEventLoop, uint64_t locE
     {
         if (!tagm_hits[ih]->has_fADC) continue; // Skip TDC-only hits (i.e. hits with no ADC info.)
         if (tagm_hits[ih]->row > 0) continue; // Skip individual fiber readouts
-        DBeamPhoton *gamma = new DBeamPhoton;
+        DBeamPhoton* gamma = Get_Resource();
+
         Set_BeamPhoton(gamma, tagm_hits[ih], locEventNumber);
         _data.push_back(gamma);
     }
@@ -96,13 +104,14 @@ jerror_t DBeamPhoton_factory::evnt(jana::JEventLoop *locEventLoop, uint64_t locE
         }
         if (gamma == nullptr)
         {
-            gamma = new DBeamPhoton;
+            gamma = Get_Resource();
             Set_BeamPhoton(gamma, tagh_hits[ih], locEventNumber);
             _data.push_back(gamma);
         }
     }
 
 	sort(_data.begin(), _data.end(), DBeamPhoton_SortByTime);
+	dCreated = _data;
 
     return NOERROR;
 }
@@ -114,14 +123,13 @@ void DBeamPhoton_factory::Set_BeamPhoton(DBeamPhoton* gamma, const DTAGMHit* hit
     gamma->setPID(Gamma);
     gamma->setMomentum(mom);
     gamma->setPosition(pos);
-    gamma->setCharge(0);
-    gamma->setMass(0);
     gamma->setTime(hit->t);
-    gamma->setT0(hit->t, 0.200, SYS_TAGM);
     gamma->dCounter = hit->column;
+    gamma->dSystem = SYS_TAGM;
     gamma->AddAssociatedObject(hit);
 
-	TMatrixFSym* locCovarianceMatrix = (dynamic_cast<DApplication*>(japp))->Get_CovarianceMatrixResource(7, locEventNumber);
+	auto locCovarianceMatrix = dResourcePool_TMatrixFSym->Get_SharedResource();
+	locCovarianceMatrix->ResizeTo(7, 7);
 	locCovarianceMatrix->Zero();
 	gamma->setErrorMatrix(locCovarianceMatrix);
 }
@@ -133,31 +141,13 @@ void DBeamPhoton_factory::Set_BeamPhoton(DBeamPhoton* gamma, const DTAGHHit* hit
     gamma->setPID(Gamma);
     gamma->setMomentum(mom);
     gamma->setPosition(pos);
-    gamma->setCharge(0);
-    gamma->setMass(0);
     gamma->setTime(hit->t);
-    gamma->setT0(hit->t, 0.350, SYS_TAGH);
     gamma->dCounter = hit->counter_id;
+    gamma->dSystem = SYS_TAGH;
     gamma->AddAssociatedObject(hit);
 
-	TMatrixFSym* locCovarianceMatrix = (dynamic_cast<DApplication*>(japp))->Get_CovarianceMatrixResource(7, locEventNumber);
+	auto locCovarianceMatrix = dResourcePool_TMatrixFSym->Get_SharedResource();
+	locCovarianceMatrix->ResizeTo(7, 7);
 	locCovarianceMatrix->Zero();
 	gamma->setErrorMatrix(locCovarianceMatrix);
 }
-
-//------------------
-// erun
-//------------------
-jerror_t DBeamPhoton_factory::erun(void)
-{
-    return NOERROR;
-}
-
-//------------------
-// fini
-//------------------
-jerror_t DBeamPhoton_factory::fini(void)
-{
-    return NOERROR;
-}
-

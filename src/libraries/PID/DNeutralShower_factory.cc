@@ -29,6 +29,7 @@ inline bool DNeutralShower_SortByEnergy(const DNeutralShower* locNeutralShower1,
 //------------------
 jerror_t DNeutralShower_factory::init(void)
 {
+	dResourcePool_TMatrixFSym->Set_ControlParams(20, 20, 20);
 	return NOERROR;
 }
 
@@ -71,8 +72,10 @@ jerror_t DNeutralShower_factory::evnt(jana::JEventLoop *locEventLoop, uint64_t e
 
 		locNeutralShower->dEnergy = locBCALShowers[loc_i]->E;
 		locNeutralShower->dSpacetimeVertex.SetXYZT(locBCALShowers[loc_i]->x, locBCALShowers[loc_i]->y, locBCALShowers[loc_i]->z, locBCALShowers[loc_i]->t);
-		locNeutralShower->dCovarianceMatrix.ResizeTo(5, 5);
-		locNeutralShower->dCovarianceMatrix = locBCALShowers[loc_i]->ExyztCovariance;
+		auto locCovMatrix = dResourcePool_TMatrixFSym->Get_SharedResource();
+		locCovMatrix->ResizeTo(5, 5);
+		*locCovMatrix = locBCALShowers[loc_i]->ExyztCovariance;
+		locNeutralShower->dCovarianceMatrix = locCovMatrix;
 
 		locNeutralShower->AddAssociatedObject(locBCALShowers[loc_i]);
 
@@ -97,8 +100,11 @@ jerror_t DNeutralShower_factory::evnt(jana::JEventLoop *locEventLoop, uint64_t e
 		locNeutralShower->dSpacetimeVertex.SetVect(locFCALShowers[loc_i]->getPosition());
 		locNeutralShower->dSpacetimeVertex.SetT(locFCALShowers[loc_i]->getTime());
 
-		locNeutralShower->dCovarianceMatrix.ResizeTo(5, 5);
-		locNeutralShower->dCovarianceMatrix = locFCALShowers[loc_i]->ExyztCovariance;
+		auto locCovMatrix = dResourcePool_TMatrixFSym->Get_SharedResource();
+		locCovMatrix->ResizeTo(5, 5);
+		*locCovMatrix = locFCALShowers[loc_i]->ExyztCovariance;
+		locNeutralShower->dCovarianceMatrix = locCovMatrix;
+
 		locNeutralShower->AddAssociatedObject(locFCALShowers[loc_i]);
 
 		_data.push_back(locNeutralShower);

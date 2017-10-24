@@ -72,29 +72,20 @@ void DCustomAction_p2gamma_hists::Initialize(JEventLoop* locEventLoop)
 		
 		dMinEgamma_M2g = GetOrCreate_Histogram<TH2I>("MinEgamma_M2g", "Minimum E_{#gamma} vs M_{#gamma#gamma}; M_{#gamma#gamma}; Minimum E_{#gamma}", 500, 0., 1., 200, 0., 2.);
 
+		//Return to the base directory
+		ChangeTo_BaseDirectory();
 	}
 	japp->RootUnLock(); //RELEASE ROOT LOCK!!
 }
 
 bool DCustomAction_p2gamma_hists::Perform_Action(JEventLoop* locEventLoop, const DParticleCombo* locParticleCombo)
 {
-	if(Get_NumPreviousParticleCombos() == 0)
-                dPreviousSourceObjects.clear();
-
 	const DParticleComboStep* locParticleComboStep = locParticleCombo->Get_ParticleComboStep(0);
 
         // get beam photon energy and final state particles
-        const DKinematicData* locBeamPhoton = NULL;
-        deque<const DKinematicData*> locParticles;
-        if(!Get_UseKinFitResultsFlag()) { //measured
-		locBeamPhoton = locParticleComboStep->Get_InitialParticle_Measured();
-                locParticleComboStep->Get_FinalParticles_Measured(locParticles);
-	}
-	else {
-		locBeamPhoton = locParticleComboStep->Get_InitialParticle();
-		locParticleComboStep->Get_FinalParticles(locParticles);
-	}
-        double locBeamPhotonEnergy = locBeamPhoton->energy();
+	auto locBeamPhoton = Get_UseKinFitResultsFlag() ? locParticleComboStep->Get_InitialParticle() : locParticleComboStep->Get_InitialParticle_Measured();
+	auto locParticles = Get_UseKinFitResultsFlag() ? locParticleComboStep->Get_FinalParticles() : locParticleComboStep->Get_FinalParticles_Measured();
+	double locBeamPhotonEnergy = locBeamPhoton->energy();
 	
 	// calculate missing mass
 	DLorentzVector locMissingP4; 
@@ -106,8 +97,9 @@ bool DCustomAction_p2gamma_hists::Perform_Action(JEventLoop* locEventLoop, const
 	// reconstructed proton variables
 	const DChargedTrack* locChargedTrack = static_cast<const DChargedTrack*>(locParticleComboStep->Get_FinalParticle_SourceObject(2));
 	const DChargedTrackHypothesis* locChargedTrackHypothesis = locChargedTrack->Get_Hypothesis(Proton);
-	double dEdx = locChargedTrackHypothesis->dEdx()*1e6; // convert to keV
-	DLorentzVector locProtonP4 = locChargedTrackHypothesis->lorentzMomentum();	
+	auto locTrackTimeBased = locChargedTrackHypothesis->Get_TrackTimeBased();
+	double dEdx = locTrackTimeBased->dEdx()*1e6; // convert to keV
+	DLorentzVector locProtonP4 = locChargedTrackHypothesis->lorentzMomentum();
 	
 	// calculate missing mass
 	DLorentzVector loc2g_P4;

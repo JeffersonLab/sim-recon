@@ -89,7 +89,7 @@ writeEvent( const Kinematics& kin, const vector<int>& ptype,
   for(int i=1; i < nParticles; i++)
   {
       ps(i-1).setType((Particle_t)ptype[i]);
-      ps(i-1).setPdgtype(0);    /* don't bother with the PDG type here */
+      ps(i-1).setPdgtype(PDGtype((Particle_t)ptype[i]));
       ps(i-1).setId(i);         /* unique value for this particle within the event */
       ps(i-1).setParentid(0);   /* All internally generated particles have no parent */
       ps(i-1).setMech(0);       /* maybe this should be set to something? */

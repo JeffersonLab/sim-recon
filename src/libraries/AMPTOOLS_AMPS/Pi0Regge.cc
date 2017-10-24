@@ -24,20 +24,21 @@ UserAmplitude< Pi0Regge >( args )
 	// Do this over the full range since we will be using this as a lookup
 	float Emax  = 12.0;
 	float Epeak = 9.0;
-	float Elow  = 0.139*2;
+	float Elow  = 0.135;
 	float Ehigh = 12.0;
 	
 	int doPolFlux=0;  // want total flux (1 for polarized flux)
 	float emitmr=10.e-9; // electron beam emittance
-	float radt=20.e-6; // radiator thickness in m
-	float collDiam=0.0034; // meters
+	float radt=50.e-6; // radiator thickness in m
+	float collDiam=0.005; // meters
 	float Dist = 76.0; // meters
-    CobremsGeneration cobrems(Emax, Epeak);
-    cobrems.setBeamEmittance(emitmr);
-    cobrems.setTargetThickness(radt);
-    cobrems.setCollimatorDistance(Dist);
-    cobrems.setCollimatorDiameter(collDiam);
-    cobrems.setPolarizedFlag(doPolFlux);
+	CobremsGeneration cobrems(Emax, Epeak);
+	cobrems.setBeamEmittance(emitmr);
+	cobrems.setTargetThickness(radt);
+	cobrems.setCollimatorDistance(Dist);
+	cobrems.setCollimatorDiameter(collDiam);
+	cobrems.setCollimatedFlag(true);
+	cobrems.setPolarizedFlag(doPolFlux);
 	
 	// Create histogram
 	totalFlux_vs_E = new TH1D("totalFlux_vs_E", "Total Flux vs. E_{#gamma}", 1000, Elow, Ehigh);
@@ -54,7 +55,7 @@ UserAmplitude< Pi0Regge >( args )
 	}
 
 	doPolFlux=1;
-    cobrems.setPolarizedFlag(doPolFlux);
+	cobrems.setPolarizedFlag(doPolFlux);
 	// Fill totalFlux
 	for(int i=1;i<=polFlux_vs_E->GetNbinsX(); i++){
 		double x = polFlux_vs_E->GetBinCenter(i)/Emax;

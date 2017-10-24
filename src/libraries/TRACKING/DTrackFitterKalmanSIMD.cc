@@ -9,6 +9,7 @@
 #include "HDGEOMETRY/DRootGeom.h"
 #include "DANA/DApplication.h"
 #include <JANA/JCalibration.h>
+#include "PID/DParticleID.h"
 
 #include <TH2F.h>
 #include <TH1I.h>
@@ -275,7 +276,7 @@ DTrackFitterKalmanSIMD::DTrackFitterKalmanSIMD(JEventLoop *loop):DTrackFitter(lo
 
    ADD_VERTEX_POINT=false; 
    gPARMS->SetDefaultParameter("KALMAN:ADD_VERTEX_POINT", ADD_VERTEX_POINT);
-
+  
    THETA_CUT=70.0; 
    gPARMS->SetDefaultParameter("KALMAN:THETA_CUT", THETA_CUT);
 
@@ -512,7 +513,10 @@ DTrackFitterKalmanSIMD::DTrackFitterKalmanSIMD(JEventLoop *loop):DTrackFitter(lo
    else{
       geom->GetTargetZ(TARGET_Z);
    }
-
+   if (ADD_VERTEX_POINT){
+     gPARMS->SetDefaultParameter("KALMAN:VERTEX_POSITION",TARGET_Z);
+   }
+   
    // Inform user of some configuration settings
    static bool config_printed = false;
    if(!config_printed){
@@ -538,7 +542,8 @@ DTrackFitterKalmanSIMD::DTrackFitterKalmanSIMD(JEventLoop *loop):DTrackFitter(lo
    brentCheckHists[1]=new TH2I("CentralBrentCheck","DOCA vs ds", 100, -5., 5., 100, 0.0, 1.5);
   }
    
-
+	dResourcePool_TMatrixFSym = std::make_shared<DResourcePool<TMatrixFSym>>();
+	dResourcePool_TMatrixFSym->Set_ControlParams(20, 20, 50);
 }
 
 //-----------------
@@ -772,8 +777,8 @@ DTrackFitter::fit_status_t DTrackFitterKalmanSIMD::FitTrack(void)
    double charge = GetCharge();
    fit_params.setPosition(pos);
    fit_params.setMomentum(mom);
-   fit_params.setCharge(charge);
-   fit_params.setMass(MASS);
+   fit_params.setTime(mT0MinimumDriftTime);
+   fit_params.setPID(dParticleID->IDTrack(charge, MASS));
    fit_params.setT0(mT0MinimumDriftTime,4.,mT0Detector);
 
    if (DEBUG_LEVEL>0){
@@ -846,7 +851,8 @@ DTrackFitter::fit_status_t DTrackFitterKalmanSIMD::FitTrack(void)
       // Compute and fill the error matrix needed for kinematic fitting
       fit_params.setErrorMatrix(Get7x7ErrorMatrix(errMatrix));
    }
-   TMatrixFSym* locTrackingCovarianceMatrix = (dynamic_cast<DApplication*>(japp))->Get_CovarianceMatrixResource(5);
+   auto locTrackingCovarianceMatrix = dResourcePool_TMatrixFSym->Get_SharedResource();
+   locTrackingCovarianceMatrix->ResizeTo(5, 5);
    for(unsigned int loc_i = 0; loc_i < 5; ++loc_i)
    {
       for(unsigned int loc_j = 0; loc_j < 5; ++loc_j)
@@ -6409,8 +6415,9 @@ jerror_t DTrackFitterKalmanSIMD::ExtrapolateToVertex(DVector2 &xy,
 
 // Transform the 5x5 tracking error matrix into a 7x7 error matrix in cartesian
 // coordinates
-TMatrixFSym* DTrackFitterKalmanSIMD::Get7x7ErrorMatrixForward(DMatrixDSym C){
-   TMatrixFSym* C7x7 = (dynamic_cast<DApplication*>(japp))->Get_CovarianceMatrixResource(7);
+shared_ptr<TMatrixFSym> DTrackFitterKalmanSIMD::Get7x7ErrorMatrixForward(DMatrixDSym C){
+   auto C7x7 = dResourcePool_TMatrixFSym->Get_SharedResource();
+   C7x7->ResizeTo(7, 7);
    DMatrix J(7,5);
 
    double p=1./fabs(q_over_p_);
@@ -6446,8 +6453,9 @@ TMatrixFSym* DTrackFitterKalmanSIMD::Get7x7ErrorMatrixForward(DMatrixDSym C){
 
 // Transform the 5x5 tracking error matrix into a 7x7 error matrix in cartesian
 // coordinates
-TMatrixFSym* DTrackFitterKalmanSIMD::Get7x7ErrorMatrix(DMatrixDSym C){
-   TMatrixFSym* C7x7 = (dynamic_cast<DApplication*>(japp))->Get_CovarianceMatrixResource(7);
+shared_ptr<TMatrixFSym> DTrackFitterKalmanSIMD::Get7x7ErrorMatrix(DMatrixDSym C){
+   auto C7x7 = dResourcePool_TMatrixFSym->Get_SharedResource();
+   C7x7->ResizeTo(7, 7);
    DMatrix J(7,5);
    //double cosl=cos(atan(tanl_));
    double pt=1./fabs(q_over_pt_);

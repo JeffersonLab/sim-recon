@@ -1,0 +1,134 @@
+
+Aug. 17, 2017  D. Lawrence
+
+The program and scripts in this directory can be
+used to generate material maps used in the tracking
+code. The "Material Map" is a collection of material
+maps covering different regions of the geometry.
+Some maps overlap and the sofware will use the first
+one matching a region when sorted by name.
+
+Setting Source of Geometry Information
+---------------------------------------
+The geometry information used to generate the maps
+comes from the DRootGeom class which in turn gets 
+it from the hddsroot.h file in the directory:
+
+$HDDS_HOME/$BMS_OSNAME/src/
+
+Since this is built into the mkMaterialMap program
+at compile time, it does not matter what any environment
+variable is set to when the program is run. If one 
+wants to generate maps for a different geometry like
+CPP, then they will need to modify the file:
+
+src/libraries/HDGEOMETRY/DRootGeom.cc
+
+and change the include file at the top. For example,
+change:
+
+#include "hddsroot.h"
+
+  to 
+
+#include "cpproot.h"
+
+Then, recompile mkMaterialMap. Of course, make sure
+HDDS_HOME points to the version of HDDS you want to
+use and that it has been built so that the .h file
+is up to date.
+
+
+Generating Maps
+---------------------------------------
+Generate a complete set of map files using the
+mkAllMaterialMaps.py script. Before running it,
+edit the defintion of LABEL at the top to provide
+a useful tag for the CCDB comments. Whatever is
+there will be placed as the first comment in each
+material map file  which means it will show up 
+as the first part of the description in ccdb when
+running the "ccdb vers" command. Setting this to
+the corresponding HDDS version number will make it
+much easier for people to see what it is later.
+
+Also before running the script, decide if you need
+to generate additional maps. Traditionally, GlueX
+only uses the first 17 maps (ending with FDC cables).
+For CPP, 4 additional maps are generated to include
+the TOF, FCAL, and FMWPC regions. Those commands
+are commented out by default though to help minimize
+the maps used by GlueX. (It probably makes no
+significant impact on performance to include those
+extra maps, but at this point I don't want to
+introduce a change that isn't expected to improve
+things.)
+
+Finally, the mkAllMaterialMaps.py program will
+run an instance of mkMaterialMap for each map it
+is producing in parallel. This means you should run
+this on a computer with at least 2.5-3GB of free
+RAM (not just RAM). Run the script with no arguments:
+
+> mkAllMaterialMaps.py
+
+
+Adding Tables to CCDB
+---------------------------------------
+If you are not defining any new material maps (i.e.
+you are just adding constants to tables that
+already exist in CCDB), then you can skip this
+section.
+
+To add a new table, use the mktbl command in ccdb, 
+but give the columns 2 digit numeric names starting
+with "00". The maps all have 11 columns, but will
+vary on the number of rows depending on how many
+grid points are in the map. An example command is:
+
+> ccdb mktbl Material/material_map61_FMWPC    -nq -r 10500 00 01 02 03 04 05 06 07 08 09 10
+
+where the "-nq" option is used to allow names that
+start with a digit.
+
+
+
+Writing maps to CCDB
+---------------------------------------
+The maps are stored in the CCDB in the "Material"
+directory. The script add_to_ccdb.csh is provided
+as an example for writing a set of files to the
+CCDB. You will want to edit this script first to
+change the run range to which the maps will apply.
+You will then need to run it while in the directory
+with all of the maps. It is try and write every
+file whose name starts with "material_map" so make
+sure no extra files are there. Run the (edited)
+script with no arguments:
+
+> add_to_ccdb.csh
+
+
+
+Verifying geometry
+---------------------------------------
+The program "material2root" (in src/programs/Utilities)
+can be used to produce plots of the material maps
+read from CCDB and compare them to ones generated
+from DRootGeom directly. Make sure the material2root
+program has been linked against a HDGEOMTERY library
+that has the correct geometry. e.g. if you modified
+it for CPP before recompiling mkMaterialMap, then
+you also need to recompile material2root.
+
+Run the program giving it an appropriate run number:
+
+> material2root -r 30000
+
+There are two macros in the source directory for
+material2root that can be used to make plots that
+visually compare the two. 
+
+> material2root
+> root -l density_vs_r_vs_z.C
+> root -l radlen_vs_r_vs_z.C

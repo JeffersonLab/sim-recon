@@ -7,270 +7,106 @@
 
 #include "DReaction_factory_trackeff_missing.h"
 #include "DCustomAction_TrackingEfficiency.h"
-#include "DCustomAction_CutExtraPi0.h"
-#include "DCustomAction_CutExtraShowers.h"
-#include "DCustomAction_dEdxCut_trackeff.h"
 #include "DCustomAction_CutNoDetectorHit.h"
-
-//------------------
-// init
-//------------------
-jerror_t DReaction_factory_trackeff_missing::init(void)
-{
-	Define_LooseCuts();
-	return NOERROR;
-}
-
-//------------------
-// brun
-//------------------
-jerror_t DReaction_factory_trackeff_missing::brun(JEventLoop* locEventLoop, int32_t locRunNumber)
-{
-	vector<double> locBeamPeriodVector;
-	locEventLoop->GetCalib("PHOTON_BEAM/RF/beam_period", locBeamPeriodVector);
-	dBeamBunchPeriod = locBeamPeriodVector[0];
-
-	return NOERROR;
-}
 
 //------------------
 // evnt
 //------------------
 jerror_t DReaction_factory_trackeff_missing::evnt(JEventLoop* locEventLoop, uint64_t locEventNumber)
 {
-	// Make as many DReaction objects as desired
-	DReactionStep* locReactionStep = NULL;
-	DReaction* locReaction = new DReaction("TrackEff_MissingProton"); //needs to be a unique name for each DReaction object, CANNOT (!) be "Thrown"
+	//INIT
+	dSourceComboP4Handler = new DSourceComboP4Handler(nullptr, false);
+	dSourceComboTimeHandler = new DSourceComboTimeHandler(nullptr, nullptr, nullptr);
 
 	// DOCUMENTATION:
 	// ANALYSIS library: https://halldweb1.jlab.org/wiki/index.php/GlueX_Analysis_Software
 	// DReaction factory: https://halldweb1.jlab.org/wiki/index.php/Analysis_DReaction
 
 	// DEFINE CHANNELS:
-	deque<DReaction*> locReactions;
+	vector<DReaction*> locReactions;
 
-
-	/**************************************************** TrackEff_MissingProton Reaction Steps ****************************************************/
-
-	locReaction = new DReaction("TrackEff_MissingProton"); //needs to be a unique name for each DReaction object, CANNOT (!) be "Thrown"
+	/**************************************************** Reactions ****************************************************/
 
 	//g, p -> pi+, pi-, (p)
-	locReactionStep = new DReactionStep();
-	locReactionStep->Set_InitialParticleID(Gamma);
-	locReactionStep->Set_TargetParticleID(Proton);
-	locReactionStep->Add_FinalParticleID(PiPlus);
-	locReactionStep->Add_FinalParticleID(PiMinus);
-	locReactionStep->Add_FinalParticleID(Proton, true); //true: proton missing
-	locReaction->Add_ReactionStep(locReactionStep);
-	dReactionStepPool.push_back(locReactionStep); //register so will be deleted later: prevent memory leak
+	auto locReaction = new DReaction("TrackEff_MissingProton");
+	locReaction->Add_ReactionStep(new DReactionStep(Gamma, Proton, {PiPlus, PiMinus}, Proton));
 	locReactions.push_back(locReaction);
-
-	/**************************************************** TrackEff_MissingPiMinus Reaction Steps ****************************************************/
-
-	locReaction = new DReaction("TrackEff_MissingPiMinus"); //needs to be a unique name for each DReaction object, CANNOT (!) be "Thrown"
 
 	//g, p -> pi+, p, (pi-)
-	locReactionStep = new DReactionStep();
-	locReactionStep->Set_InitialParticleID(Gamma);
-	locReactionStep->Set_TargetParticleID(Proton);
-	locReactionStep->Add_FinalParticleID(PiPlus);
-	locReactionStep->Add_FinalParticleID(Proton);
-	locReactionStep->Add_FinalParticleID(PiMinus, true); //true: pi- missing
-	locReaction->Add_ReactionStep(locReactionStep);
-	dReactionStepPool.push_back(locReactionStep); //register so will be deleted later: prevent memory leak
+	locReaction = new DReaction("TrackEff_MissingPiMinus");
+	locReaction->Add_ReactionStep(new DReactionStep(Gamma, Proton, {PiPlus, Proton}, PiMinus));
 	locReactions.push_back(locReaction);
-
-	/**************************************************** TrackEff_MissingPiPlus Reaction Steps ****************************************************/
-
-	locReaction = new DReaction("TrackEff_MissingPiPlus"); //needs to be a unique name for each DReaction object, CANNOT (!) be "Thrown"
 
 	//g, p -> pi-, p, (pi+)
-	locReactionStep = new DReactionStep();
-	locReactionStep->Set_InitialParticleID(Gamma);
-	locReactionStep->Set_TargetParticleID(Proton);
-	locReactionStep->Add_FinalParticleID(PiMinus);
-	locReactionStep->Add_FinalParticleID(Proton);
-	locReactionStep->Add_FinalParticleID(PiPlus, true); //true: pi+ missing
-	locReaction->Add_ReactionStep(locReactionStep);
-	dReactionStepPool.push_back(locReactionStep); //register so will be deleted later: prevent memory leak
+	locReaction = new DReaction("TrackEff_MissingPiPlus");
+	locReaction->Add_ReactionStep(new DReactionStep(Gamma, Proton, {PiMinus, Proton}, PiPlus));
 	locReactions.push_back(locReaction);
-
-	/**************************************************** TrackEff_MissingProton_4pi Reaction Steps ****************************************************/
-
-	locReaction = new DReaction("TrackEff_MissingProton_4pi"); //needs to be a unique name for each DReaction object, CANNOT (!) be "Thrown"
 
 	//Example: g, p -> 2pi+, 2pi-, (p)
-	locReactionStep = new DReactionStep();
-	locReactionStep->Set_InitialParticleID(Gamma);
-	locReactionStep->Set_TargetParticleID(Proton);
-	locReactionStep->Add_FinalParticleID(PiPlus);
-	locReactionStep->Add_FinalParticleID(PiMinus);
-	locReactionStep->Add_FinalParticleID(PiPlus);
-	locReactionStep->Add_FinalParticleID(PiMinus);
-	locReactionStep->Add_FinalParticleID(Proton, true); //true: proton missing
-	locReaction->Add_ReactionStep(locReactionStep);
-	dReactionStepPool.push_back(locReactionStep); //register so will be deleted later: prevent memory leak
+	locReaction = new DReaction("TrackEff_MissingProton_4pi");
+	locReaction->Add_ReactionStep(new DReactionStep(Gamma, Proton, {PiPlus, PiPlus, PiMinus, PiMinus}, Proton));
 	locReactions.push_back(locReaction);
-
-	/**************************************************** TrackEff_MissingPiPlus_4pi Reaction Steps ****************************************************/
-
-	locReaction = new DReaction("TrackEff_MissingPiPlus_4pi"); //needs to be a unique name for each DReaction object, CANNOT (!) be "Thrown"
-
-	//Required: DReactionSteps to specify the channel and decay chain you want to study
-		//Particles are of type Particle_t, an enum defined in sim-recon/src/libraries/include/particleType.h
 
 	//Example: g, p -> pi+, (pi+), 2pi-, p
-	locReactionStep = new DReactionStep();
-	locReactionStep->Set_InitialParticleID(Gamma);
-	locReactionStep->Set_TargetParticleID(Proton);
-	locReactionStep->Add_FinalParticleID(PiPlus, true); //true: piplus missing
-	locReactionStep->Add_FinalParticleID(PiMinus);
-	locReactionStep->Add_FinalParticleID(PiPlus);
-	locReactionStep->Add_FinalParticleID(PiMinus);
-	locReactionStep->Add_FinalParticleID(Proton);
-	locReaction->Add_ReactionStep(locReactionStep);
-	dReactionStepPool.push_back(locReactionStep); //register so will be deleted later: prevent memory leak
+	locReaction = new DReaction("TrackEff_MissingPiPlus_4pi");
+	locReaction->Add_ReactionStep(new DReactionStep(Gamma, Proton, {PiPlus, PiMinus, PiMinus, Proton}, PiPlus));
 	locReactions.push_back(locReaction);
 
-	/**************************************************** TrackEff_MissingPiMinus_4pi Reaction Steps ****************************************************/
-
-	locReaction = new DReaction("TrackEff_MissingPiMinus_4pi"); //needs to be a unique name for each DReaction object, CANNOT (!) be "Thrown"
-
-	//Required: DReactionSteps to specify the channel and decay chain you want to study
-		//Particles are of type Particle_t, an enum defined in sim-recon/src/libraries/include/particleType.h
-
-	//Example: g, p -> 2pi+, pi-, (pi-) p
-	locReactionStep = new DReactionStep();
-	locReactionStep->Set_InitialParticleID(Gamma);
-	locReactionStep->Set_TargetParticleID(Proton);
-	locReactionStep->Add_FinalParticleID(PiPlus);
-	locReactionStep->Add_FinalParticleID(PiMinus, true); //true: piminus missing
-	locReactionStep->Add_FinalParticleID(PiPlus);
-	locReactionStep->Add_FinalParticleID(PiMinus);
-	locReactionStep->Add_FinalParticleID(Proton);
-	locReaction->Add_ReactionStep(locReactionStep);
-	dReactionStepPool.push_back(locReactionStep); //register so will be deleted later: prevent memory leak
+	//g, p -> 2pi+, pi-, (pi-) p
+	locReaction = new DReaction("TrackEff_MissingPiMinus_4pi");
+	locReaction->Add_ReactionStep(new DReactionStep(Gamma, Proton, {PiPlus, PiPlus, PiMinus, Proton}, PiMinus));
 	locReactions.push_back(locReaction);
 
-	/**************************************************** TrackEff_MissingPiMinus_3pi Reaction Steps ****************************************************/
-
+	//g, p -> omega, p
 	//FYI: omega (3pi) with missing proton is hopeless
-	locReaction = new DReaction("TrackEff_MissingPiMinus_3pi"); //needs to be a unique name for each DReaction object, CANNOT (!) be "Thrown"
+	locReaction = new DReaction("TrackEff_MissingPiMinus_3pi");
+	locReaction->Add_ReactionStep(new DReactionStep(Gamma, Proton, {omega, Proton}));
+	locReaction->Add_ReactionStep(new DReactionStep(omega, {PiPlus, Pi0}, PiMinus));
+	locReaction->Add_ReactionStep(new DReactionStep(Pi0, {Gamma, Gamma}));
 
 	//g, p -> omega, p
-	locReactionStep = new DReactionStep();
-	locReactionStep->Set_InitialParticleID(Gamma);
-	locReactionStep->Set_TargetParticleID(Proton);
-	locReactionStep->Add_FinalParticleID(omega);
-	locReactionStep->Add_FinalParticleID(Proton);
-	locReaction->Add_ReactionStep(locReactionStep);
-	dReactionStepPool.push_back(locReactionStep); //register so will be deleted later: prevent memory leak
-
-	//omega -> pi+, (pi-), pi0
-	locReactionStep = new DReactionStep();
-	locReactionStep->Set_InitialParticleID(omega);
-	locReactionStep->Add_FinalParticleID(PiPlus);
-	locReactionStep->Add_FinalParticleID(PiMinus, true); //true: pi- missing
-	locReactionStep->Add_FinalParticleID(Pi0);
-	locReaction->Add_ReactionStep(locReactionStep);
-	dReactionStepPool.push_back(locReactionStep); //register so will be deleted later: prevent memory leak
-
-	//pi0 -> g, g
-	locReactionStep = new DReactionStep();
-	locReactionStep->Set_InitialParticleID(Pi0);
-	locReactionStep->Add_FinalParticleID(Gamma);
-	locReactionStep->Add_FinalParticleID(Gamma);
-	locReaction->Add_ReactionStep(locReactionStep);
-	dReactionStepPool.push_back(locReactionStep); //register so will be deleted later: prevent memory leak
-	locReactions.push_back(locReaction);
-
-	/**************************************************** TrackEff_MissingPiPlus_3pi Reaction Steps ****************************************************/
-
-	locReaction = new DReaction("TrackEff_MissingPiPlus_3pi"); //needs to be a unique name for each DReaction object, CANNOT (!) be "Thrown"
-
-	//g, p -> omega, p
-	locReactionStep = new DReactionStep();
-	locReactionStep->Set_InitialParticleID(Gamma);
-	locReactionStep->Set_TargetParticleID(Proton);
-	locReactionStep->Add_FinalParticleID(omega);
-	locReactionStep->Add_FinalParticleID(Proton);
-	locReaction->Add_ReactionStep(locReactionStep);
-	dReactionStepPool.push_back(locReactionStep); //register so will be deleted later: prevent memory leak
-
-	//omega -> (pi+), pi-, pi0
-	locReactionStep = new DReactionStep();
-	locReactionStep->Set_InitialParticleID(omega);
-	locReactionStep->Add_FinalParticleID(PiPlus, true); //true: pi+ missing
-	locReactionStep->Add_FinalParticleID(PiMinus);
-	locReactionStep->Add_FinalParticleID(Pi0);
-	locReaction->Add_ReactionStep(locReactionStep);
-	dReactionStepPool.push_back(locReactionStep); //register so will be deleted later: prevent memory leak
-
-	//pi0 -> g, g
-	locReactionStep = new DReactionStep();
-	locReactionStep->Set_InitialParticleID(Pi0);
-	locReactionStep->Add_FinalParticleID(Gamma);
-	locReactionStep->Add_FinalParticleID(Gamma);
-	locReaction->Add_ReactionStep(locReactionStep);
-	dReactionStepPool.push_back(locReactionStep); //register so will be deleted later: prevent memory leak
-	locReactions.push_back(locReaction);
-
-
-
+	locReaction = new DReaction("TrackEff_MissingPiPlus_3pi");
+	locReaction->Add_ReactionStep(new DReactionStep(Gamma, Proton, {omega, Proton}));
+	locReaction->Add_ReactionStep(new DReactionStep(omega, {PiMinus, Pi0}, PiPlus));
+	locReaction->Add_ReactionStep(new DReactionStep(Pi0, {Gamma, Gamma}));
 
 	//Loop over reactions and do setup
 	for(auto& locReaction : locReactions)
 	{
 		/**************************************************** Control Settings ****************************************************/
 
-		// Recommended: Type of kinematic fit to perform (default is d_NoFit)
-			//fit types are of type DKinFitType, an enum defined in sim-recon/src/libraries/ANALYSIS/DReaction.h
-			//Options: d_NoFit (default), d_P4Fit, d_VertexFit, d_P4AndVertexFit
-			//P4 fits automatically constrain decaying particle masses, unless they are manually disabled
 		locReaction->Set_KinFitType(d_P4AndVertexFit); //d_P4AndVertexFit //No vertex: can't cut on kinfit conlev anyway, but could distort if alignment is bad
 		locReaction->Set_KinFitUpdateCovarianceMatricesFlag(true);
 
 		// Highly Recommended: When generating particle combinations, reject all beam photons that match to a different RF bunch
-		locReaction->Set_MaxPhotonRFDeltaT(1.5*dBeamBunchPeriod); // +/- 1 bunch for sideband subtraction
-
-		/************************************************** Pre-Combo Custom Cuts *************************************************/
-
-		Add_MassCuts(locReaction, false); //false: measured (not kinfit
-
-		// PID
-		Add_PIDActions(locReaction);
+		locReaction->Set_NumPlusMinusRFBunches(1); // +/- 1 bunch for sideband subtraction
 
 		/**************************************************** Analysis Actions ****************************************************/
 
-		// Recommended: Analysis actions automatically performed by the DAnalysisResults factories to histogram useful quantities.
-			//These actions are executed sequentially, and are executed on each surviving (non-cut) particle combination
-			//Pre-defined actions can be found in ANALYSIS/DHistogramActions_*.h and ANALYSIS/DCutActions.h
-			//If a histogram action is repeated, it should be created with a unique name (string) to distinguish them
+		//TRACK PURITY
+		locReaction->Add_AnalysisAction(new DCutAction_MinTrackHits(locReaction, 12));
 
 		//FURTHER PID
-		locReaction->Add_AnalysisAction(new DCustomAction_dEdxCut_trackeff(locReaction, true)); //true: focus on rejecting background
 		locReaction->Add_AnalysisAction(new DCutAction_TrackFCALShowerEOverP(locReaction, false, 0.5)); //false: measured data //value: cut e+/e- below this, tracks above this
-		locReaction->Add_AnalysisAction(new DCutAction_EachPIDFOM(locReaction, -9.9E9, true)); //cut particles with PID FOM = 0
+		locReaction->Add_AnalysisAction(new DCutAction_EachPIDFOM(locReaction, -9.9E9, true)); //cut particles with PID FOM = NaN
+
+		// HISTOGRAM MASSES
+		Add_MassHistograms(locReaction, false, "PreKinFit"); //false: measured
 
 		// SHOWER BACKGROUND
 		// IT's TOO DANGEROUS TO CUT ON EXTRA SHOWERS:
 		// IF THE TRACK WAS NOT RECONSTRUCTED, IT'S SHOWER IS "EXTRA"!!!! MAY BIAS EFFICIENCY
 //		locReaction->Add_AnalysisAction(new DCustomAction_CutExtraShowers(locReaction, 0.5));
 
-		//TRACK PURITY
-		locReaction->Add_AnalysisAction(new DCutAction_MinTrackHits(locReaction, 12));
-
-		// HISTOGRAM MASSES //false/true: measured/kinfit data
-		Add_MassHistograms(locReaction, false, "PreKinFit");
-
 		// KINEMATIC FIT
 		locReaction->Add_AnalysisAction(new DHistogramAction_KinFitResults(locReaction, 0.05)); //5% confidence level cut on pull histograms only
 
+		//POST-KINFIT PID CUTS
+		Add_PostKinfitTimingCuts(locReaction);
+
 		// KINFIT MASS CUTS
-		Add_MassHistograms(locReaction, true, "KinFit");
-		bool locCutsPlacedFlag = Add_MassCuts(locReaction, true); //true: kinfit
-		if(locCutsPlacedFlag)
-			Add_MassHistograms(locReaction, false, "KinFitMassCut");
+		Add_MassHistograms(locReaction, false, "PostKinFit"); //false: measured
+		Add_MassHistograms(locReaction, true, "PostKinFit_KinFit"); //true: kinfit
 
 		// KINEMATICS
 		locReaction->Add_AnalysisAction(new DHistogramAction_ParticleComboKinematics(locReaction, true, "PreDetectorHitCut")); //true: fill histograms with kinematic-fit particle data
@@ -308,274 +144,171 @@ jerror_t DReaction_factory_trackeff_missing::fini(void)
 
 /************************************************************** ACTIONS AND CUTS **************************************************************/
 
-void DReaction_factory_trackeff_missing::Define_LooseCuts(void)
+void DReaction_factory_trackeff_missing::Add_MassHistograms(DReaction* locReaction, bool locUseKinFitResultsFlag, string locBaseUniqueName)
 {
-	// Missing Mass Cuts: Measured
-	dMissingMassCuts[Unknown] = pair<double, double>(-0.1, 0.1);
-	dMissingMassCuts[Proton] = pair<double, double>(-0.5, 3.0);
-	dMissingMassCuts[Neutron] = dMissingMassCuts[Proton];
-	dMissingMassCuts[PiPlus] = pair<double, double>(-1.0, 1.0);
-	dMissingMassCuts[PiMinus] = dMissingMassCuts[PiPlus];
-	dMissingMassCuts[omega] = pair<double, double>(0.7, 0.9);
+	auto locKinFitType = locReaction->Get_KinFitType();
+	auto locP4Fit = ((locKinFitType != d_NoFit) && (locKinFitType != d_VertexFit) && (locKinFitType != d_SpacetimeFit));
+	auto locNumMissingParticles = locReaction->Get_MissingPIDs().size();
 
-	// Missing Mass Cuts: KinFit
-	dMissingMassCuts_KinFit[omega] = pair<double, double>(0.7, 0.9);
-
-	// Invariant Mass Cuts: Mesons
-	dInvariantMassCuts[Pi0] = pair<double, double>(0.08, 0.19);
-	dInvariantMassCuts[KShort] = pair<double, double>(0.3, 0.7);
-	dInvariantMassCuts[Eta] = pair<double, double>(0.3, 0.8);
-	dInvariantMassCuts[omega] = pair<double, double>(0.7, 0.9);
-	dInvariantMassCuts[EtaPrime] = pair<double, double>(0.6, 1.3);
-	dInvariantMassCuts[phiMeson] = pair<double, double>(0.8, 1.2);
-	dInvariantMassCuts[Jpsi] = pair<double, double>(1.5, 4.0);
-
-	// Invariant Mass Cuts: KinFit
-	dInvariantMassCuts_KinFit[omega] = pair<double, double>(0.74, 0.83);
-
-	// Invariant Mass Cuts: Baryons
-	dInvariantMassCuts[Lambda] = pair<double, double>(1.0, 1.2);
-	dInvariantMassCuts[Sigma0] = pair<double, double>(1.1, 1.3);
-	dInvariantMassCuts[SigmaPlus] = pair<double, double>(1.1, 1.3);
-	dInvariantMassCuts[XiMinus] = pair<double, double>(1.1, 1.5);
-	dInvariantMassCuts[Xi0] = pair<double, double>(1.1, 1.5);
-
-	// Timing Cuts: Photon
-	dPIDTimingCuts[Gamma][SYS_BCAL] = 0.4;
-	dPIDTimingCuts[Gamma][SYS_FCAL] = 1.0;
-
-	// Timing Cuts: Leptons
-	dPIDTimingCuts[Electron][SYS_BCAL] = 0.6;
-	dPIDTimingCuts[Electron][SYS_FCAL] = 1.4;
-	dPIDTimingCuts[Electron][SYS_TOF] = 0.3;
-	dPIDTimingCuts[Positron] = dPIDTimingCuts[Electron];
-	dPIDTimingCuts[MuonMinus] = dPIDTimingCuts[Electron];
-	dPIDTimingCuts[MuonPlus] = dPIDTimingCuts[Electron];
-
-	// Timing Cuts: Mesons
-	dPIDTimingCuts[PiPlus][SYS_BCAL] = 0.4;
-	dPIDTimingCuts[PiPlus][SYS_FCAL] = 1.4;
-	dPIDTimingCuts[PiPlus][SYS_TOF] = 0.2;
-
-	dPIDTimingCuts[PiMinus][SYS_BCAL] = 0.4;
-	dPIDTimingCuts[PiMinus][SYS_FCAL] = 1.4;
-	dPIDTimingCuts[PiMinus][SYS_TOF] = 0.2;
-
-	dPIDTimingCuts[KPlus][SYS_BCAL] = 0.4;
-	dPIDTimingCuts[KPlus][SYS_FCAL] = 0.5;
-	dPIDTimingCuts[KPlus][SYS_TOF] = 0.25;
-	dPIDTimingCuts[KMinus] = dPIDTimingCuts[KPlus];
-
-	// Timing Cuts: Baryons
-	dPIDTimingCuts[Proton][SYS_BCAL] = 0.8;
-	dPIDTimingCuts[Proton][SYS_FCAL] = 1.0;
-	dPIDTimingCuts[Proton][SYS_TOF] = 0.5;
-
-	dPIDTimingCuts[AntiProton] = dPIDTimingCuts[Proton];
-}
-
-set<Particle_t> DReaction_factory_trackeff_missing::Get_InvariantMassPIDs(DReaction* locReaction, bool locKinFitFlag)
-{
-	//bool: if true, only return those not constrained by the kinfit
-	DKinFitType locKinFitType = locReaction->Get_KinFitType();
-	bool locP4FitFlag = (locKinFitFlag && ((locKinFitType == d_P4Fit) || (locKinFitType == d_P4AndVertexFit) || (locKinFitType == d_P4AndSpacetimeFit)));
-
-	set<Particle_t> locDecayingPIDs;
-	for(size_t loc_i = 1; loc_i < locReaction->Get_NumReactionSteps(); ++loc_i)
+	size_t locNumInclusiveSteps = 0;
+	for(auto locReactionStep : locReaction->Get_ReactionSteps())
 	{
-		const DReactionStep* locReactionStep = locReaction->Get_ReactionStep(loc_i);
-		Particle_t locDecayingPID = locReactionStep->Get_InitialParticleID();
-		bool locMissingMassFlag = locReaction->Check_IfMissingDecayProduct(loc_i);
-		if(locMissingMassFlag)
-			continue;
-		if(locP4FitFlag && locReactionStep->Get_KinFitConstrainInitMassFlag() && IsFixedMass(locDecayingPID))
-			continue;
-
-		locDecayingPIDs.insert(locDecayingPID);
-	}
-	return locDecayingPIDs;
-}
-
-map<Particle_t, pair<int, deque<Particle_t> > > DReaction_factory_trackeff_missing::Get_MissingMassPIDs(DReaction* locReaction, bool locKinFitFlag)
-{
-	//int: decay step index
-	//bool: if true, only return those not constrained by the kinfit
-	DKinFitType locKinFitType = locReaction->Get_KinFitType();
-	bool locP4FitFlag = (locKinFitFlag && ((locKinFitType == d_P4Fit) || (locKinFitType == d_P4AndVertexFit) || (locKinFitType == d_P4AndSpacetimeFit)));
-
-	map<Particle_t, pair<int, deque<Particle_t> > > locMissingPIDs;
-	for(size_t loc_i = 1; loc_i < locReaction->Get_NumReactionSteps(); ++loc_i)
-	{
-		const DReactionStep* locReactionStep = locReaction->Get_ReactionStep(loc_i);
-		Particle_t locDecayingPID = locReactionStep->Get_InitialParticleID();
-		bool locMissingMassFlag = locReaction->Check_IfMissingDecayProduct(loc_i);
-		if(!locMissingMassFlag)
-			continue;
-		if(locP4FitFlag && locReactionStep->Get_KinFitConstrainInitMassFlag() && IsFixedMass(locDecayingPID))
-			continue;
-
-		//missing mass cut
-		auto locPIDIterator = dMissingMassCuts.find(locDecayingPID);
-		if(locPIDIterator == dMissingMassCuts.end())
-			continue;
-
-		//get production step, other PIDs in that step
-		deque<Particle_t> locMissingMassOffOfPIDs;
-		int locDecayFromStep = locReaction->Get_InitialParticleDecayFromIndices(loc_i).first;
-		locReaction->Get_ReactionStep(locDecayFromStep)->Get_FinalParticleIDs(locMissingMassOffOfPIDs);
-		for(size_t loc_j = 0; loc_j < locMissingMassOffOfPIDs.size(); ++loc_j)
-		{
-			if(locMissingMassOffOfPIDs[loc_j] != locDecayingPID)
-				continue;
-			locMissingMassOffOfPIDs.erase(locMissingMassOffOfPIDs.begin() + loc_j);
-			break;
-		}
-
-		locMissingPIDs[locDecayingPID] = pair<int, deque<Particle_t> >(locDecayFromStep, locMissingMassOffOfPIDs);
+		if(locReactionStep->Get_IsInclusiveFlag())
+			++locNumInclusiveSteps;
 	}
 
-	//overall missing
-	Particle_t locMissingPID;
-	bool locMissingParticleFlag = locReaction->Get_MissingPID(locMissingPID); //false if none missing
-	if(locMissingParticleFlag && (locMissingPID == Unknown)) //inclusive: no cut
-		return locMissingPIDs;
-	if(locP4FitFlag && (IsFixedMass(locMissingPID) || !locMissingParticleFlag))
-		return locMissingPIDs; //mass constrained by kinfit
-
-	if(!locMissingParticleFlag) //no missing particle
-		locMissingPID = Unknown;
-	locMissingPIDs[locMissingPID] = pair<int, deque<Particle_t> >(0, deque<Particle_t>());
-
-	return locMissingPIDs;
-}
-
-bool DReaction_factory_trackeff_missing::Add_MassCuts(DReaction* locReaction, bool locKinFitFlag)
-{
-	// Highly Recommended: decaying particle mass cuts
-	set<Particle_t> locDecayingPIDs = Get_InvariantMassPIDs(locReaction, locKinFitFlag);
-	bool locCutsPlacedFlag = false;
-	for(auto& locPID : locDecayingPIDs)
-	{
-		auto& locCutMap = locKinFitFlag ? dInvariantMassCuts_KinFit : dInvariantMassCuts;
-		auto locPIDIterator = locCutMap.find(locPID);
-		if(locPIDIterator == locCutMap.end())
-			continue;
-		auto locCutPair = locPIDIterator->second;
-		locCutsPlacedFlag = true;
-		if(locKinFitFlag)
-			locReaction->Add_AnalysisAction(new DCutAction_InvariantMass(locReaction, locPID, true, locCutPair.first, locCutPair.second));
-		else
-			locReaction->Set_InvariantMassCut(locPID, locCutPair.first, locCutPair.second);
-	}
-
-	map<Particle_t, pair<int, deque<Particle_t> > > locDecayingPIDs_Missing = Get_MissingMassPIDs(locReaction, locKinFitFlag);
-	for(auto& locMapPair : locDecayingPIDs_Missing)
-	{
-		auto& locCutMap = locKinFitFlag ? dMissingMassCuts_KinFit : dMissingMassCuts;
-		auto locCutPair = locCutMap[locMapPair.first];
-		int locDecayFromStep = locMapPair.second.first;
-		auto locMissingMassOffOfPIDs = locMapPair.second.second;
-		locCutsPlacedFlag = true;
-
-		//create the cut
-		DAnalysisAction* locMassCut = nullptr;
-		if(locCutPair.first >= 0.0)
-			locMassCut = new DCutAction_MissingMass(locReaction, locDecayFromStep, locMissingMassOffOfPIDs, locKinFitFlag, locCutPair.first, locCutPair.second);
-		else
-			locMassCut = new DCutAction_MissingMassSquared(locReaction, locDecayFromStep, locMissingMassOffOfPIDs, locKinFitFlag, locCutPair.first, locCutPair.second);
-
-		//add the cut
-		if(locKinFitFlag)
-			locReaction->Add_AnalysisAction(locMassCut);
-		else
-			locReaction->Add_ComboPreSelectionAction(locMassCut);
-	}
-
-	return locCutsPlacedFlag;
-}
-
-void DReaction_factory_trackeff_missing::Add_PIDActions(DReaction* locReaction)
-{
-	//Histogram before cuts
-	locReaction->Add_ComboPreSelectionAction(new DHistogramAction_PID(locReaction));
-
-	//Get, loop over detected PIDs in reaction
-	deque<Particle_t> locDetectedPIDs;
-	locReaction->Get_DetectedFinalPIDs(locDetectedPIDs);
-	for(auto locPID : locDetectedPIDs)
-	{
-		if(dPIDTimingCuts.find(locPID) == dPIDTimingCuts.end())
-			continue; //PID timing cut not defined!
-
-		//Add timing cuts //false: measured data
-		for(auto locSystemPair : dPIDTimingCuts[locPID])
-			locReaction->Add_ComboPreSelectionAction(new DCutAction_PIDDeltaT(locReaction, false, locSystemPair.second, locPID, locSystemPair.first));
-
-		//For kaon candidates, cut tracks that don't have a matching hit in a timing detector
-			//Kaons are rare, cut ~necessary to reduce high backgrounds
-		if((locPID == KPlus) || (locPID == KMinus))
-			locReaction->Add_ComboPreSelectionAction(new DCutAction_NoPIDHit(locReaction, locPID));
-	}
-
-	//Loose dE/dx cuts
-	locReaction->Add_ComboPreSelectionAction(new DCustomAction_dEdxCut_trackeff(locReaction, false)); //false: focus on keeping signal
-}
-
-void DReaction_factory_trackeff_missing::Add_MassHistograms(DReaction* locReaction, bool locKinFitFlag, string locBaseUniqueName)
-{
 	//invariant mass
-	set<Particle_t> locInvariantMassPIDs = Get_InvariantMassPIDs(locReaction);
-	for(auto& locPID : locInvariantMassPIDs)
+	set<Particle_t> locDecayPIDsUsed;
+	for(size_t loc_i = 1; loc_i < locReaction->Get_NumReactionSteps(); ++loc_i)
 	{
-		auto& locCutMap = locKinFitFlag ? dInvariantMassCuts_KinFit : dInvariantMassCuts;
-		auto locPIDIterator = locCutMap.find(locPID);
-		if(locPIDIterator == locCutMap.end())
+		//do missing mass squared hists for every decaying and missing particle
+		auto locReactionStep = locReaction->Get_ReactionStep(loc_i);
+
+		if(locP4Fit && locUseKinFitResultsFlag && locReactionStep->Get_KinFitConstrainInitMassFlag())
 			continue;
-		auto locCutPair = locPIDIterator->second;
 
-		//determine #bins
-		int locNumBins = int((locCutPair.second - locCutPair.first)*1000.0 + 0.001);
-		if(locNumBins < 200)
-			locNumBins *= 5; //get close to 1000 bins
-		if(locNumBins < 500)
-			locNumBins *= 2; //get close to 1000 bins
+		auto locDecayPID = locReactionStep->Get_InitialPID();
+		if(locDecayPIDsUsed.find(locDecayPID) != locDecayPIDsUsed.end())
+			continue; //already done!
+		if(DAnalysis::Check_IfMissingDecayProduct(locReaction, loc_i))
+			continue;
 
-		//build name string
-		string locActionUniqueName = string(ParticleType(locPID)) + string("_") + locBaseUniqueName;
-
-		//add histogram action
-		locReaction->Add_AnalysisAction(new DHistogramAction_InvariantMass(locReaction, locPID, locKinFitFlag,
-			locNumBins, locCutPair.first, locCutPair.second, locActionUniqueName));
+		Create_InvariantMassHistogram(locReaction, locDecayPID, locUseKinFitResultsFlag, locBaseUniqueName);
+		locDecayPIDsUsed.insert(locDecayPID);
 	}
 
 	//missing mass
-	map<Particle_t, pair<int, deque<Particle_t> > > locDecayingPIDs_Missing = Get_MissingMassPIDs(locReaction);
-	for(auto& locMapPair : locDecayingPIDs_Missing)
+	for(size_t loc_i = 0; loc_i < locReaction->Get_NumReactionSteps(); ++loc_i)
 	{
-		auto& locCutMap = locKinFitFlag ? dMissingMassCuts_KinFit : dMissingMassCuts;
-		Particle_t locPID = locMapPair.first;
-		auto locPIDIterator = locCutMap.find(locPID);
-		if(locPIDIterator == locCutMap.end())
-			continue;
-		auto locCutPair = locPIDIterator->second;
+		auto locReactionStep = locReaction->Get_ReactionStep(loc_i);
+		set<Particle_t> locMissingDecayPIDsUsed;
+		for(size_t loc_j = 0; loc_j < locReactionStep->Get_NumFinalPIDs(); ++loc_j)
+		{
+			auto locPID = locReactionStep->Get_FinalPID(loc_j);
+//cout << "i, j, pid, missing index: " << loc_i << ", " << loc_j << ", " << locPID  << ", " << locReactionStep->Get_MissingParticleIndex() << endl;
+			if(locMissingDecayPIDsUsed.find(locPID) != locMissingDecayPIDsUsed.end())
+				continue;
 
-		int locDecayFromStep = locMapPair.second.first;
-		auto locMissingMassOffOfPIDs = locMapPair.second.second;
+			//check if missing particle
+			if(int(loc_j) == locReactionStep->Get_MissingParticleIndex())
+			{
+				if((locNumMissingParticles > 1) || (locNumInclusiveSteps > 0))
+					continue;
+				if(locUseKinFitResultsFlag && locP4Fit)
+					continue; //mass is constrained, will be a spike
+				Create_MissingMassSquaredHistogram(locReaction, locPID, locUseKinFitResultsFlag, locBaseUniqueName, 0, {});
+			}
 
-		//determine #bins
-		int locNumBins = int((locCutPair.second - locCutPair.first)*1000.0 + 0.001);
-		if(locNumBins < 200)
-			locNumBins *= 5; //get close to 1000 bins
-		if(locNumBins < 500)
-			locNumBins *= 2; //get close to 1000 bins
+			//check if decaying particle
+			auto locDecayStepIndex = DAnalysis::Get_DecayStepIndex(locReaction, loc_i, loc_j);
+//cout << "decay step index: " << locDecayStepIndex << endl;
+			if(locDecayStepIndex <= 0)
+				continue; //nope
 
-		//build name string
-		string locActionUniqueName = string(ParticleType(locPID)) + string("_") + locBaseUniqueName;
+			//nothing can be missing anywhere, except in it's decay products
+			auto locMissingDecayProducts = DAnalysis::Get_MissingDecayProductIndices(locReaction, locDecayStepIndex);
+//cout << "num missing total/decay: " << locNumMissingParticles << ", " << locMissingDecayProducts.size() << endl;
+			if((locNumMissingParticles - locMissingDecayProducts.size()) > 0)
+				continue; //nope
 
-		//add the cut
-		if(locCutPair.first >= 0.0)
-			locReaction->Add_AnalysisAction(new DHistogramAction_MissingMass(locReaction, locDecayFromStep, locMissingMassOffOfPIDs, locKinFitFlag, locNumBins, locCutPair.first, locCutPair.second, locActionUniqueName));
-		else
-			locReaction->Add_AnalysisAction(new DHistogramAction_MissingMassSquared(locReaction, locDecayFromStep, locMissingMassOffOfPIDs, locKinFitFlag, locNumBins, locCutPair.first, locCutPair.second, locActionUniqueName));
+			//check inclusives, same thing
+			size_t locNumInclusiveDecayProductSteps = 0;
+			for(auto& locParticlePair : locMissingDecayProducts)
+			{
+				if(locParticlePair.second == DReactionStep::Get_ParticleIndex_Inclusive())
+					++locNumInclusiveDecayProductSteps;
+			}
+//cout << "num inclusives total/decay: " << locNumInclusiveSteps << ", " << locNumInclusiveDecayProductSteps << endl;
+			if((locNumInclusiveSteps - locNumInclusiveDecayProductSteps) > 0)
+				continue; //nope
+
+//cout << "p4 fit, use kinfit, constrain flag: " << locP4Fit << ", " << locUseKinFitResultsFlag << ", " << locReaction->Get_ReactionStep(locDecayStepIndex)->Get_KinFitConstrainInitMassFlag() << endl;
+			if(locP4Fit && locUseKinFitResultsFlag && locReaction->Get_ReactionStep(locDecayStepIndex)->Get_KinFitConstrainInitMassFlag())
+				continue; //constrained, will be a spike
+
+			auto locFinalPIDs = locReactionStep->Get_FinalPIDs();
+			locFinalPIDs.erase(locFinalPIDs.begin() + loc_j);
+			deque<Particle_t> locMissingMassOffOfPIDs(locFinalPIDs.begin(), locFinalPIDs.end());
+			Create_MissingMassSquaredHistogram(locReaction, locPID, locUseKinFitResultsFlag, locBaseUniqueName, loc_i, locMissingMassOffOfPIDs);
+
+			locMissingDecayPIDsUsed.insert(locPID);
+		}
+	}
+
+	//if nothing missing, overall missing mass squared
+	if((locNumMissingParticles == 0) && (locNumInclusiveSteps == 0) && (!locUseKinFitResultsFlag || !locP4Fit))
+		Create_MissingMassSquaredHistogram(locReaction, Unknown, locUseKinFitResultsFlag, locBaseUniqueName, 0, {});
+}
+
+void DReaction_factory_trackeff_missing::Add_PostKinfitTimingCuts(DReaction* locReaction)
+{
+	locReaction->Add_AnalysisAction(new DHistogramAction_PID(locReaction, true));
+
+	//Get, loop over detected PIDs in reaction
+	//Will have little effect except for on particles at detached vertices
+	auto locFinalPIDs = locReaction->Get_FinalPIDs(-1, false, false, d_AllCharges, false);
+	for(auto locPID : locFinalPIDs)
+	{
+		//Add timing cuts //false: measured data
+		auto locTimeCuts = dSourceComboTimeHandler->Get_TimeCuts(locPID);
+		for(auto& locSystemPair : locTimeCuts)
+			locReaction->Add_AnalysisAction(new DCutAction_PIDDeltaT(locReaction, true, locSystemPair.second->Eval(12.0), locPID, locSystemPair.first)); //true: kinfit results
 	}
 }
+
+void DReaction_factory_trackeff_missing::Create_InvariantMassHistogram(DReaction* locReaction, Particle_t locPID, bool locUseKinFitResultsFlag, string locBaseUniqueName)
+{
+	pair<float, float> locCutPair;
+	if(!dSourceComboP4Handler->Get_InvariantMassCuts(locPID, locCutPair))
+		return;
+
+	//determine #bins
+	int locNumBins = int((locCutPair.second - locCutPair.first)*1000.0 + 0.001);
+	if(locNumBins < 200)
+		locNumBins *= 5; //get close to 1000 bins
+	if(locNumBins < 500)
+		locNumBins *= 2; //get close to 1000 bins
+
+	//build name string
+	string locActionUniqueName = string(ParticleType(locPID)) + string("_") + locBaseUniqueName;
+
+	//add histogram action
+	locReaction->Add_AnalysisAction(new DHistogramAction_InvariantMass(locReaction, locPID, locUseKinFitResultsFlag, locNumBins, locCutPair.first, locCutPair.second, locActionUniqueName));
+}
+
+void DReaction_factory_trackeff_missing::Create_MissingMassSquaredHistogram(DReaction* locReaction, Particle_t locPID, bool locUseKinFitResultsFlag, string locBaseUniqueName, int locMissingMassOffOfStepIndex, const deque<Particle_t>& locMissingMassOffOfPIDs)
+{
+	pair<TF1*, TF1*> locFuncPair;
+	if(!dSourceComboP4Handler->Get_MissingMassSquaredCuts(locPID, locFuncPair))
+		return;
+	auto locCutPair = std::make_pair(locFuncPair.first->Eval(12.0), locFuncPair.second->Eval(12.0)); //where it's likely widest
+
+	//determine #bins
+	int locNumBins = int((locCutPair.second - locCutPair.first)*1000.0 + 0.001);
+	if(locNumBins < 200)
+		locNumBins *= 5; //get close to 1000 bins
+	if(locNumBins < 500)
+		locNumBins *= 2; //get close to 1000 bins
+
+	//build name string
+	ostringstream locActionUniqueNameStream;
+	if((locPID == Unknown) && (locMissingMassOffOfStepIndex == 0))
+		locActionUniqueNameStream << locBaseUniqueName;
+	else if(locMissingMassOffOfStepIndex == 0)
+		locActionUniqueNameStream << ParticleType(locPID) << "_" << locBaseUniqueName;
+	else if(locPID == Unknown)
+		locActionUniqueNameStream << "Step" << locMissingMassOffOfStepIndex << "_" << locBaseUniqueName;
+	else
+		locActionUniqueNameStream << ParticleType(locPID) << "_Step" << locMissingMassOffOfStepIndex << "_" << locBaseUniqueName;
+
+	if(dDebugFlag)
+	{
+		cout << "create miss mass squared action: off step index, kinfit flag, off pids: " << locMissingMassOffOfStepIndex << ", " << locUseKinFitResultsFlag;
+		for(auto& locPID : locMissingMassOffOfPIDs)
+			cout << ", " << locPID;
+		cout << endl;
+	}
+	//add histogram action
+	locReaction->Add_AnalysisAction(new DHistogramAction_MissingMassSquared(locReaction, locMissingMassOffOfStepIndex, locMissingMassOffOfPIDs, locUseKinFitResultsFlag, locNumBins, locCutPair.first, locCutPair.second, locActionUniqueNameStream.str()));
+}
+

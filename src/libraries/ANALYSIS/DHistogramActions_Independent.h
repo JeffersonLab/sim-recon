@@ -19,6 +19,7 @@
 
 #include "JANA/JEventLoop.h"
 #include "particleType.h"
+#include "DResourcePool.h"
 
 #include <DANA/DStatusBits.h>
 #include "RF/DRFTime.h"
@@ -62,20 +63,10 @@
 #include "ANALYSIS/DCutActions.h"
 #include "ANALYSIS/DAnalysisResults.h"
 
-#include "ANALYSIS/DParticleCombo_factory_PreKinFit.h"
-#include "ANALYSIS/DKinFitResults_factory.h"
-#include "ANALYSIS/DParticleCombo_factory.h"
-
-#include "ANALYSIS/DParticleComboBlueprint_factory.h"
 #include "ANALYSIS/DTrackTimeBased_factory_Combo.h"
-#include "ANALYSIS/DEventRFBunch_factory_Combo.h"
-#include "ANALYSIS/DChargedTrackHypothesis_factory_Combo.h"
-#include "ANALYSIS/DNeutralParticleHypothesis_factory_Combo.h"
-#include "ANALYSIS/DBeamPhoton_factory_KinFit.h"
-#include "ANALYSIS/DChargedTrackHypothesis_factory_KinFit.h"
-#include "ANALYSIS/DNeutralParticleHypothesis_factory_KinFit.h"
 
 #include "ANALYSIS/DCutActions.h"
+#include "ANALYSIS/DSourceCombo.h"
 
 using namespace std;
 using namespace jana;
@@ -122,10 +113,34 @@ class DHistogramAction_ObjectMemory : public DAnalysisAction
 
 		unsigned int dEventCounter; //not the same as event #: running with multiple threads over many files, possibly starting at event # != 1
 
-		deque<pair<string, string> > dFactoryPairsToTrack; //class name, tag
+		map<string, int> dBinMap;
 
-		map<pair<string, string>, int> dFactoryPairBinMap;
-		map<string, int> dFactoryPoolBinMap;
+		DResourcePool<TMatrixFSym> dResourcePool_TMatrixFSym;
+		DResourcePool<DKinematicData::DKinematicInfo> dResourcePool_KinematicInfo;
+		DResourcePool<DChargedTrackHypothesis::DTimingInfo> dResourcePool_ChargedHypoTimingInfo;
+		DResourcePool<DChargedTrackHypothesis::DTrackingInfo> dResourcePool_ChargedHypoTrackingInfo;
+		DResourcePool<DNeutralParticleHypothesis::DTimingInfo> dResourcePool_NeutralHypoTimingInfo;
+
+		DResourcePool<DKinematicData> dResourcePool_KinematicData;
+		DResourcePool<DBeamPhoton> dResourcePool_BeamPhotons;
+		DResourcePool<DNeutralParticleHypothesis> dResourcePool_NeutralParticleHypothesis;
+		DResourcePool<DChargedTrackHypothesis> dResourcePool_ChargedTrackHypothesis;
+		DResourcePool<DEventRFBunch> dResourcePool_EventRFBunch;
+
+		DResourcePool<DSourceCombo> dResourcePool_SourceCombo;
+		DResourcePool<vector<const DSourceCombo*>> dResourcePool_SourceComboVector;
+		DResourcePool<DParticleCombo> dResourcePool_ParticleCombo;
+		DResourcePool<DParticleComboStep> dResourcePool_ParticleComboStep;
+
+		DResourcePool<DKinFitParticle> dResourcePool_KinFitParticle;
+		DResourcePool<DKinFitChainStep> dResourcePool_KinFitChainStep;
+		DResourcePool<DKinFitChain> dResourcePool_KinFitChain;
+		DResourcePool<DKinFitResults> dResourcePool_KinFitResults;
+
+		DResourcePool<DKinFitConstraint_Mass> dResourcePool_MassConstraint;
+		DResourcePool<DKinFitConstraint_P4> dResourcePool_P4Constraint;
+		DResourcePool<DKinFitConstraint_Vertex> dResourcePool_VertexConstraint;
+		DResourcePool<DKinFitConstraint_Spacetime> dResourcePool_SpacetimeConstraint;
 
 		TH2I* dHist_NumObjects;
 		TH2F* dHist_Memory;
@@ -566,8 +581,8 @@ class DHistogramAction_EventVertex : public DAnalysisAction
 	public:
 		DHistogramAction_EventVertex(const DReaction* locReaction, string locActionUniqueString = "") : 
 		DAnalysisAction(locReaction, "Hist_EventVertex", false, locActionUniqueString), 
-		dNumConfidenceLevelBins(400), dNumPullBins(200), dNumVertexZBins(600), dNumTBins(400), dNumRFTBins(300), dNumVertexXYBins(400),
-		dMinVertexZ(0.0), dMaxVertexZ(200.0), dMinT(-20.0), dMaxT(20.0), dMinVertexXY(-10.0), dMaxVertexXY(10.0), 
+		dNumConfidenceLevelBins(400), dNumPullBins(200), dNumVertexZBins(750), dNumTBins(400), dNumRFTBins(300), dNumVertexXYBins(400),
+		dMinVertexZ(-50.0), dMaxVertexZ(200.0), dMinT(-20.0), dMaxT(20.0), dMinVertexXY(-10.0), dMaxVertexXY(10.0), 
 		dMinPull(-4.0), dMaxPull(4.0), dPullHistConfidenceLevelCut(0.05), dTrackSelectionTag("NotATag")
 		{
 			dFinalStatePIDs.push_back(PiPlus);  dFinalStatePIDs.push_back(Proton);  dFinalStatePIDs.push_back(PiMinus);
@@ -575,8 +590,8 @@ class DHistogramAction_EventVertex : public DAnalysisAction
 
 		DHistogramAction_EventVertex(string locActionUniqueString) : 
 		DAnalysisAction(NULL, "Hist_EventVertex", false, locActionUniqueString), 
-		dNumConfidenceLevelBins(400), dNumPullBins(200), dNumVertexZBins(600), dNumTBins(400), dNumRFTBins(300), dNumVertexXYBins(400),
-		dMinVertexZ(0.0), dMaxVertexZ(200.0), dMinT(-20.0), dMaxT(20.0), dMinVertexXY(-10.0), dMaxVertexXY(10.0), 
+		dNumConfidenceLevelBins(400), dNumPullBins(200), dNumVertexZBins(750), dNumTBins(400), dNumRFTBins(300), dNumVertexXYBins(400),
+		dMinVertexZ(-50.0), dMaxVertexZ(200.0), dMinT(-20.0), dMaxT(20.0), dMinVertexXY(-10.0), dMaxVertexXY(10.0), 
 		dMinPull(-4.0), dMaxPull(4.0), dPullHistConfidenceLevelCut(0.05), dTrackSelectionTag("NotATag")
 		{
 			dFinalStatePIDs.push_back(PiPlus);  dFinalStatePIDs.push_back(Proton);  dFinalStatePIDs.push_back(PiMinus);
@@ -584,8 +599,8 @@ class DHistogramAction_EventVertex : public DAnalysisAction
 
 		DHistogramAction_EventVertex(void) : 
 		DAnalysisAction(NULL, "Hist_EventVertex", false, ""), 
-		dNumConfidenceLevelBins(400), dNumPullBins(200), dNumVertexZBins(600), dNumTBins(400), dNumRFTBins(300), dNumVertexXYBins(400),
-		dMinVertexZ(0.0), dMaxVertexZ(200.0), dMinT(-20.0), dMaxT(20.0), dMinVertexXY(-10.0), dMaxVertexXY(10.0), 
+		dNumConfidenceLevelBins(400), dNumPullBins(200), dNumVertexZBins(750), dNumTBins(400), dNumRFTBins(300), dNumVertexXYBins(400),
+		dMinVertexZ(-50.0), dMaxVertexZ(200.0), dMinT(-20.0), dMaxT(20.0), dMinVertexXY(-10.0), dMaxVertexXY(10.0), 
 		dMinPull(-4.0), dMaxPull(4.0), dPullHistConfidenceLevelCut(0.05), dTrackSelectionTag("NotATag")
 		{
 			dFinalStatePIDs.push_back(PiPlus);  dFinalStatePIDs.push_back(Proton);  dFinalStatePIDs.push_back(PiMinus);
@@ -622,9 +637,9 @@ class DHistogramAction_DetectedParticleKinematics : public DAnalysisAction
 	public:
 		DHistogramAction_DetectedParticleKinematics(const DReaction* locReaction, string locActionUniqueString = "") : 
 		DAnalysisAction(locReaction, "Hist_DetectedParticleKinematics", false, locActionUniqueString), 
-		dMinPIDFOM(5.73303E-7), dNumPBins(600), dNumThetaBins(560), dNumPhiBins(360), dNumVertexZBins(600), dNumTBins(400),
+		dMinPIDFOM(5.73303E-7), dNumPBins(600), dNumThetaBins(560), dNumPhiBins(360), dNumVertexZBins(750), dNumTBins(400),
 		dNumVertexXYBins(400), dNumBetaBins(400), dNum2DDeltaBetaBins(400), dNum2DPBins(300), dNum2DThetaBins(140), dNum2DPhiBins(180), dNumBeamEBins(650),
-		dMinT(-20.0), dMaxT(20.0), dMinP(0.0), dMaxP(12.0), dMaxBeamE(13.0), dMinTheta(0.0), dMaxTheta(140.0), dMinPhi(-180.0), dMaxPhi(180.0), dMinVertexZ(0.0), dMaxVertexZ(200.0),
+		dMinT(-20.0), dMaxT(20.0), dMinP(0.0), dMaxP(12.0), dMaxBeamE(13.0), dMinTheta(0.0), dMaxTheta(140.0), dMinPhi(-180.0), dMaxPhi(180.0), dMinVertexZ(-50.0), dMaxVertexZ(200.0),
 		dMinVertexXY(-10.0), dMaxVertexXY(10.0), dMinBeta(-0.2), dMaxBeta(1.2), dMinDeltaBeta(-1.0), dMaxDeltaBeta(1.0),
 		dTrackSelectionTag("NotATag"), dShowerSelectionTag("NotATag")
 		{
@@ -635,9 +650,9 @@ class DHistogramAction_DetectedParticleKinematics : public DAnalysisAction
 
 		DHistogramAction_DetectedParticleKinematics(string locActionUniqueString) : 
 		DAnalysisAction(NULL, "Hist_DetectedParticleKinematics", false, locActionUniqueString), 
-		dMinPIDFOM(5.73303E-7), dNumPBins(600), dNumThetaBins(560), dNumPhiBins(360), dNumVertexZBins(600), dNumTBins(400),
+		dMinPIDFOM(5.73303E-7), dNumPBins(600), dNumThetaBins(560), dNumPhiBins(360), dNumVertexZBins(750), dNumTBins(400),
 		dNumVertexXYBins(400), dNumBetaBins(400), dNum2DDeltaBetaBins(400), dNum2DPBins(300), dNum2DThetaBins(140), dNum2DPhiBins(180), dNumBeamEBins(650),
-		dMinT(-20.0), dMaxT(20.0), dMinP(0.0), dMaxP(12.0), dMaxBeamE(13.0), dMinTheta(0.0), dMaxTheta(140.0), dMinPhi(-180.0), dMaxPhi(180.0), dMinVertexZ(0.0), dMaxVertexZ(200.0),
+		dMinT(-20.0), dMaxT(20.0), dMinP(0.0), dMaxP(12.0), dMaxBeamE(13.0), dMinTheta(0.0), dMaxTheta(140.0), dMinPhi(-180.0), dMaxPhi(180.0), dMinVertexZ(-50.0), dMaxVertexZ(200.0),
 		dMinVertexXY(-10.0), dMaxVertexXY(10.0), dMinBeta(-0.2), dMaxBeta(1.2), dMinDeltaBeta(-1.0), dMaxDeltaBeta(1.0),
 		dTrackSelectionTag("NotATag"), dShowerSelectionTag("NotATag")
 		{
@@ -648,9 +663,9 @@ class DHistogramAction_DetectedParticleKinematics : public DAnalysisAction
 
 		DHistogramAction_DetectedParticleKinematics(void) : 
 		DAnalysisAction(NULL, "Hist_DetectedParticleKinematics", false, ""), 
-		dMinPIDFOM(5.73303E-7), dNumPBins(600), dNumThetaBins(560), dNumPhiBins(360), dNumVertexZBins(600), dNumTBins(400),
+		dMinPIDFOM(5.73303E-7), dNumPBins(600), dNumThetaBins(560), dNumPhiBins(360), dNumVertexZBins(750), dNumTBins(400),
 		dNumVertexXYBins(400), dNumBetaBins(400), dNum2DDeltaBetaBins(400), dNum2DPBins(300), dNum2DThetaBins(140), dNum2DPhiBins(180), dNumBeamEBins(650),
-		dMinT(-20.0), dMaxT(20.0), dMinP(0.0), dMaxP(12.0), dMaxBeamE(13.0), dMinTheta(0.0), dMaxTheta(140.0), dMinPhi(-180.0), dMaxPhi(180.0), dMinVertexZ(0.0), dMaxVertexZ(200.0),
+		dMinT(-20.0), dMaxT(20.0), dMinP(0.0), dMaxP(12.0), dMaxBeamE(13.0), dMinTheta(0.0), dMaxTheta(140.0), dMinPhi(-180.0), dMaxPhi(180.0), dMinVertexZ(-50.0), dMaxVertexZ(200.0),
 		dMinVertexXY(-10.0), dMaxVertexXY(10.0), dMinBeta(-0.2), dMaxBeta(1.2), dMinDeltaBeta(-1.0), dMaxDeltaBeta(1.0),
 		dTrackSelectionTag("NotATag"), dShowerSelectionTag("NotATag")
 		{

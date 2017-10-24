@@ -11,30 +11,33 @@
 #include "TFile.h"
 #include "TROOT.h"
 
-#include <JANA/JApplication.h>
-#include <JANA/JObject.h>
-#include <JANA/JEventLoop.h>
+#include "JANA/JApplication.h"
+#include "JANA/JObject.h"
+#include "JANA/JEventLoop.h"
 
-#include <BCAL/DBCALShower.h>
-#include <FCAL/DFCALShower.h>
-#include <TRACKING/DMCThrown.h>
-#include <TRACKING/DTrackTimeBased.h>
+#include "TRIGGER/DTrigger.h"
+#include "BCAL/DBCALShower.h"
+#include "FCAL/DFCALShower.h"
+#include "TRACKING/DMCThrown.h"
+#include "TRACKING/DTrackTimeBased.h"
 
-#include <PID/DChargedTrack.h>
-#include <PID/DBeamPhoton.h>
-#include <PID/DChargedTrackHypothesis.h>
-#include <PID/DNeutralParticleHypothesis.h>
-#include <PID/DNeutralShower.h>
-#include <PID/DEventRFBunch.h>
-#include <PID/DMCReaction.h>
+#include "PID/DVertex.h"
+#include "PID/DChargedTrack.h"
+#include "PID/DBeamPhoton.h"
+#include "PID/DChargedTrackHypothesis.h"
+#include "PID/DNeutralParticleHypothesis.h"
+#include "PID/DNeutralShower.h"
+#include "PID/DEventRFBunch.h"
+#include "PID/DMCReaction.h"
 
-#include <ANALYSIS/DParticleCombo.h>
-#include <ANALYSIS/DReaction.h>
-#include <ANALYSIS/DAnalysisResults.h>
-#include <ANALYSIS/DAnalysisUtilities.h>
-#include <ANALYSIS/DMCThrownMatching.h>
-#include <ANALYSIS/DCutActions.h>
-#include <ANALYSIS/DTreeInterface.h>
+#include "ANALYSIS/DParticleCombo.h"
+#include "ANALYSIS/DReaction.h"
+#include "ANALYSIS/DAnalysisResults.h"
+#include "ANALYSIS/DAnalysisUtilities.h"
+#include "ANALYSIS/DMCThrownMatching.h"
+#include "ANALYSIS/DCutActions.h"
+#include "ANALYSIS/DTreeInterface.h"
+#include "ANALYSIS/DReactionVertexInfo.h"
 
 using namespace std;
 using namespace jana;
@@ -82,8 +85,6 @@ class DEventWriterROOT : public JObject
 		unsigned int dInitNumComboArraySize;
 
 		double dTargetCenterZ;
-		string dTrackSelectionTag;
-		string dShowerSelectionTag;
 
 		//DEFAULT ACTIONS LISTED SEPARATELY FROM CUSTOM (in case in derived class user does something bizarre)
 		map<const DReaction*, DCutAction_ThrownTopology*> dCutActionMap_ThrownTopology;
@@ -98,12 +99,12 @@ class DEventWriterROOT : public JObject
 		//TREE INTERFACES, FILL OBJECTS
 		//The non-thrown objects are created during the constructor, and thus the maps can remain const
 		//The thrown objects are created later by the user (so they can specify file name), when the object is const, so they are declared mutable
-		mutable DTreeInterface* dThrownTreeInterface;
+		mutable DTreeInterface* dThrownTreeInterface = nullptr;
 		mutable DTreeFillData dThrownTreeFillData;
 		map<const DReaction*, DTreeInterface*> dTreeInterfaceMap;
 		map<const DReaction*, DTreeFillData*> dTreeFillDataMap;
 
-		void Get_Reactions(jana::JEventLoop* locEventLoop, vector<const DReaction*>& locReactions) const;
+		map<const DReaction*, const DReactionVertexInfo*> dVertexInfoMap;
 
 		//TREE CREATION:
 		void Create_DataTree(const DReaction* locReaction, JEventLoop* locEventLoop, bool locIsMCDataFlag);
@@ -129,7 +130,7 @@ class DEventWriterROOT : public JObject
 				ULong64_t& locNumPIDThrown_FinalState, ULong64_t& locPIDThrown_Decaying) const;
 		void Group_ThrownParticles(const vector<const DMCThrown*>& locMCThrowns_FinalState, const vector<const DMCThrown*>& locMCThrowns_Decaying,
 				vector<const DMCThrown*>& locMCThrownsToSave, map<const DMCThrown*, unsigned int>& locThrownIndexMap) const;
-		void Fill_ThrownInfo(DTreeFillData* locTreeFillData, const DMCReaction* locMCReaction, const vector<const DMCThrown*>& locMCThrowns,
+		void Fill_ThrownInfo(DTreeFillData* locTreeFillData, const DMCReaction* locMCReaction, const DBeamPhoton* locTaggedMCGenBeam, const vector<const DMCThrown*>& locMCThrowns,
 				const map<const DMCThrown*, unsigned int>& locThrownIndexMap, ULong64_t locNumPIDThrown_FinalState, ULong64_t locPIDThrown_Decaying,
 				const DMCThrownMatching* locMCThrownMatching = NULL) const;
 		void Fill_ThrownParticleData(DTreeFillData* locTreeFillData, unsigned int locArrayIndex, const DMCThrown* locMCThrown, 
@@ -137,10 +138,10 @@ class DEventWriterROOT : public JObject
 
 		//TREE FILLING: GET HYPOTHESES/BEAM
 		vector<const DBeamPhoton*> Get_BeamPhotons(const deque<const DParticleCombo*>& locParticleCombos) const;
-		vector<const DChargedTrackHypothesis*> Get_ChargedHypotheses(JEventLoop* locEventLoop, const set<Particle_t>& locReactionPIDs) const;
-		vector<const DChargedTrackHypothesis*> Get_ChargedHypotheses_Used(JEventLoop* locEventLoop, const set<Particle_t>& locReactionPIDs, const deque<const DParticleCombo*>& locParticleCombos) const;
+		vector<const DChargedTrackHypothesis*> Get_ChargedHypotheses(JEventLoop* locEventLoop) const;
+		vector<const DChargedTrackHypothesis*> Get_ChargedHypotheses_Used(JEventLoop* locEventLoop, const DReaction* locReaction, const deque<const DParticleCombo*>& locParticleCombos) const;
 		vector<const DNeutralParticleHypothesis*> Get_NeutralHypotheses(JEventLoop* locEventLoop, const set<Particle_t>& locReactionPIDs) const;
-		vector<const DNeutralParticleHypothesis*> Get_NeutralHypotheses_Used(JEventLoop* locEventLoop, const set<Particle_t>& locReactionPIDs, const deque<const DParticleCombo*>& locParticleCombos) const;
+		vector<const DNeutralParticleHypothesis*> Get_NeutralHypotheses_Used(JEventLoop* locEventLoop, const DReaction* locReaction, const set<Particle_t>& locReactionPIDs, const deque<const DParticleCombo*>& locParticleCombos) const;
 
 		//TREE FILLING: INDEPENDENT PARTICLES
 		void Fill_BeamData(DTreeFillData* locTreeFillData, unsigned int locArrayIndex, const DBeamPhoton* locBeamPhoton, const DVertex* locVertex, const DMCThrownMatching* locMCThrownMatching) const;
@@ -150,8 +151,8 @@ class DEventWriterROOT : public JObject
 				const map<const DMCThrown*, unsigned int>& locThrownIndexMap, const DDetectorMatches* locDetectorMatches) const;
 
 		//TREE FILLING: COMBO
-		void Fill_ComboData(DTreeFillData* locTreeFillData, const DParticleCombo* locParticleCombo, unsigned int locComboIndex, const map<pair<oid_t, Particle_t>, size_t>& locObjectToArrayIndexMap) const;
-		void Fill_ComboStepData(DTreeFillData* locTreeFillData, const DParticleCombo* locParticleCombo, unsigned int locStepIndex, unsigned int locComboIndex,
+		void Fill_ComboData(DTreeFillData* locTreeFillData, const DReaction* locReaction, const DParticleCombo* locParticleCombo, unsigned int locComboIndex, const map<pair<oid_t, Particle_t>, size_t>& locObjectToArrayIndexMap) const;
+		void Fill_ComboStepData(DTreeFillData* locTreeFillData, const DReaction* locReaction, const DParticleCombo* locParticleCombo, unsigned int locStepIndex, unsigned int locComboIndex,
 				DKinFitType locKinFitType, const map<pair<oid_t, Particle_t>, size_t>& locObjectToArrayIndexMap) const;
 
 		//TREE FILLING: COMBO PARTICLES

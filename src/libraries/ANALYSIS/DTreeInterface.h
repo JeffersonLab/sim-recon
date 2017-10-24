@@ -57,6 +57,8 @@ class DTreeInterface
 
 		bool Create_Branches(const DTreeBranchRegister& locTreeBranchRegister);
 
+		void Set_TreeIndexBranchNames(string locTreeIndex_MajorBranchName, string locTreeIndex_MinorBranchName = "0");
+
 		//Check/read info
 		bool Get_BranchesCreatedFlag(void) const;
 		const TList* Get_UserInfo(void) const;
@@ -102,8 +104,8 @@ class DTreeInterface
 
 		/******************************************************************* FILL *******************************************************************/
 
-		void Increase_ArraySize(string locBranchName, type_index locTypeIndex, size_t locNewArraySize);
-		template <typename DType> void Increase_ArraySize(string locBranchName, int locNewArraySize);
+		void Change_ArraySize(string locBranchName, type_index locTypeIndex, size_t locNewArraySize);
+		template <typename DType> void Change_ArraySize(string locBranchName, int locNewArraySize);
 		void Fill(string locBranchName, type_index locTypeIndex, void* locVoidPointer, bool locIsArrayFlag, size_t locArrayIndex = 0);
 		template <typename DType> void Fill_TObject(string locBranchName, DType& locObject, bool locIsArrayFlag, size_t locArrayIndex);
 
@@ -140,12 +142,16 @@ class DTreeInterface
 
 		TTree* dTree;
 		string dFileName;
+		string dTreeIndex_MajorBranchName;
+		string dTreeIndex_MinorBranchName;
 
 		/******************************************************** BRANCH MEMORY AND TYPE MAPPING ****************************************************/
 
 		//These objects are kept here because they must be kept somewhere: 
 			//branches addresses of pointers, so pointers must reside somewhere permanent
 			//However, for fundamental objects/arrays: memory stored in the branches themselves: don't need to hold onto them
+		size_t dMaxArraySize = 1000;
+		Long64_t dAutoFlush = -5000000; //if 200 trees at once, and want them to take at most 1GB of RAM before flush, then flush every 5MB: -5000000 //default every 30MB
 		map<string, TClonesArray*> dMemoryMap_ClonesArray;
 		map<string, TObject*> dMemoryMap_TObject;
 };
@@ -246,8 +252,14 @@ template<> struct DTreeInterface::DROOTTypeString<Bool_t> { static const char* G
 
 /******************************************************************* MISCELLANEOUS ********************************************************************/
 
+inline void DTreeInterface::Set_TreeIndexBranchNames(string locTreeIndex_MajorBranchName, string locTreeIndex_MinorBranchName)
+{
+	dTreeIndex_MajorBranchName = locTreeIndex_MajorBranchName;
+	dTreeIndex_MinorBranchName = locTreeIndex_MinorBranchName;
+}
+
 //INCREASE ARRAY SIZE
-template <typename DType> inline void DTreeInterface::Increase_ArraySize(string locBranchName, int locNewArraySize)
+template <typename DType> inline void DTreeInterface::Change_ArraySize(string locBranchName, int locNewArraySize)
 {
 	//create a new, larger array if the current one is too small
 		//DOES NOT copy the old results!  In other words, only call BETWEEN entries, not DURING an entry

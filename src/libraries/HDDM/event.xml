@@ -138,6 +138,7 @@
         <fcalBlock column="int" maxOccurs="unbounded" minOccurs="0" row="int">
           <fcalHit E="float" maxOccurs="unbounded" t="float">
             <fcalDigihit minOccurs="0" integralOverPeak="float"/>
+            <fcalTruthLightGuide dE="float" maxOccurs="unbounded" t="float"/>
           </fcalHit>
           <fcalTruthHit E="float" maxOccurs="unbounded" t="float"/>
         </fcalBlock>

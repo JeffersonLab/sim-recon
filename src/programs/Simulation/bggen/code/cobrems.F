@@ -12,27 +12,36 @@ C
 
       Subroutine cobrems(Emax,Epeak,emitmr,radt,dist,coldiam,polar)
       real Emax,Epeak,emitmr,radt,dist,coldiam
+      integer polar
       include 'cobrems.inc'
       integer i
       real c
       dpi=acos(-1d0)
-      me=5.11e-4        !electron mass (GeV)
-      alpha=7.297e-3    !fine structure constant
-      hbarc=1.97e-16    !Planck's constant * speed of light (GeV m)
-      Z=6               !atomic number of diamond
-      a=3.56e-10        !dimension of diamond unit cell (m)
-      Aphonon=0.5e9     !phonon-free recoil constant (GeV**-2)
+      me=5.1099891e-4          !electron mass (GeV)
+      alpha=7.2973525698e-3    !fine structure constant
+      hbarc=1.973269718e-16    !Planck's constant * speed of light (GeV m)
+      Z=6                      !atomic number of diamond
+c     Z=14                     !atomic number of silicon
+      a=3.56e-10               !dimension of diamond unit cell (m)
+c     a=5.43e-10               !dimension of silicon unit cell (m)
+      Aphonon=0.40e9           !phonon-free recoil constant (GeV**-2)
       betaFF=111*Z**(-1/3.)/me !cutoff for atomic form-factor (/GeV)
-      mospread=20e-6    !crystal r.m.s. mosaic spread
-      E=Emax            !electron beam energy (GeV)
-      Erms=6.0e-4       !electron beam energy rms spread (GeV)
-      emit=emitmr       !electron beam emittance (m r)
-      spot=0.0005       !electron beam spot size at collimator (m)
-      D=dist            !distance from radiator to collimator (m)
-      t=radt            !thickness of radiator (m)
-      collim=coldiam    !collimator diameter (m)
-      thx=-0.0300/E     !rotation of crystal about x (first)
-      thy=0.050         !rotation of crystal about y (second)
+      mospread=20e-6           !crystal r.m.s. mosaic spread
+      E=Emax                   !electron beam energy (GeV)
+      Erms=6.0e-4              !electron beam energy rms spread (GeV)
+      emit=emitmr              !electron beam emittance (m r)
+      spot=0.0005              !electron beam spot size at collimator (m)
+      D=dist                   !distance from radiator to collimator (m)
+      t=radt                   !thickness of radiator (m)
+      collim=coldiam           !collimator diameter (m)
+
+c     spot = spot * 1e-6
+c     emit = emit * 1e-6
+c     t = t * 1e-6
+c     mospread = mospread * 1e-6
+
+      thx=-0.0300/E    !rotation of crystal about x (first)
+      thy=0.050        !rotation of crystal about y (second)
 C-- require Epeak < Emax
       if (Epeak.ge.Emax) then
         return
@@ -40,10 +49,12 @@ C-- require Epeak < Emax
 C-- decide if you want total or polarized flux
       unpolar=(polar.eq.0)
 C-- approximate calculation of angle from primary edge energy
-      edge=Epeak        !desired position of primary edge
-      qtotal=9.8e-6     !Qtot for dominant lattice vector
+      edge=Epeak       !desired position of primary edge
+      qtotal=9.8e-6    !Qtot for dominant lattice vector
       qlong=edge/(E-edge)*me**2/(2*E)
       thx=-qlong/qtotal
+c     thx=48e-6        !special values for NA59 setup
+c     thy=35e-6        !special values for NA59 setup
 C-- PDG formula for radiation length, converted to meters
       c=alpha*Z
       radlen=4*nsites*alpha**3*(hbarc/(a*me))**2/a
@@ -149,8 +160,8 @@ C  define the crystal->lab rotation matrix
       real x
       include 'cobrems.inc'
       real phi
-      phi=dpi/4
-      dNcdx=2*dpi*dNcdxdp(x,phi)
+      phi=REAL(dpi/4)
+      dNcdx=REAL(2*dpi*dNcdxdp(x,phi))
       end
 
       real function dNcdx3(x,dRadCol,diamCol)
@@ -160,8 +171,8 @@ C  define the crystal->lab rotation matrix
       if (dRadCol.gt.0) D=dRadCol
       if (diamCol.gt.0) collim=diamCol
       if (diamCol.lt.0) collim=-2*D*diamCol*me/E
-      phi=dpi/4
-      dNcdx3=2*dpi*dNcdxdp(x,phi)
+      phi=REAL(dpi/4)
+      dNcdx3=REAL(2*dpi*dNcdxdp(x,phi))
       end
 
       real function dNcdxdp(x,phi)
@@ -175,7 +186,7 @@ C  define the crystal->lab rotation matrix
       real q3min
       integer i
       real sigma0
-      sigma0=16*dpi*t*Z**2*alpha**3*E*(hbarc/a**2)*(hbarc/a/me)**4
+      sigma0=REAL(16*dpi*t*Z**2*alpha**3*E*(hbarc/a**2)*(hbarc/a/me)**4)
       q2points=0
       q3min=1
       sum=0
@@ -208,13 +219,13 @@ c         do l=-2,-2
             if (S2.lt.1e-4) then
               goto 10
             endif
-            qnorm=2*dpi*hbarc/a
+            qnorm=REAL(2*dpi*hbarc/a)
             q(1)=qnorm*(rotate(1,1)*h + rotate(1,2)*k + rotate(1,3)*l)
             q(2)=qnorm*(rotate(2,1)*h + rotate(2,2)*k + rotate(2,3)*l)
             q(3)=qnorm*(rotate(3,1)*h + rotate(3,2)*k + rotate(3,3)*l)
             q2=q(1)**2+q(2)**2+q(3)**2
             qT2=q(1)**2+q(2)**2
-            xmax=2*E*q(3)
+            xmax=REAL(2*E*q(3))
             xmax=xmax/(xmax+me**2)
             if ((x.gt.xmax).or.(xmax.gt.1)) then
               goto 10
@@ -223,19 +234,20 @@ c             write(6,*) h,k,l,S2
 c             write(6,*) q2,xmax
             endif
             if (q(3).lt.q3min) then
-              q3min=q(3)
+              q3min=REAL(q(3))
               hmin=h
               kmin=k
               lmin=l
             endif
             theta2=(1-x)*xmax/(x*(1-xmax)) - 1
-            FF=1/(1+q2*betaFF**2)
-            sum=sum+sigma0*qT2*S2*exp(-Aphonon*q2)*(FF*betaFF**2)**2
+            FF=REAL(1/(1+q2*betaFF**2))
+            sum=REAL(sum+sigma0*qT2*S2*exp(-Aphonon*q2)
+     +         * (FF*betaFF**2)**2
      +         * ((1-x)/(x*(1+theta2))**2)
      +         * ((1+(1-x)**2)
      +               - 8*(theta2/(1+theta2)**2)*(1-x)*cos(phi)**2)
      +         * acceptance(theta2)
-     +         * polarization(x,theta2)
+     +         * polarization(x,theta2,phi))
 C comment out the preceding line to disable polarization -RTJ
             q2points=q2points+1
             q2theta2(q2points)=theta2
@@ -343,26 +355,37 @@ c     write(6,*) dNidxdt2
      +      +8*theta2**2*(1-x)*cos(phi)**2*sin(phi)**2
       end
 
-      real function polarization(x,theta2)
-      real x,theta2
+      real function polarization(x,theta2,phi)
+      real x,theta2,phi
+      real Npara,Nperp
+      real paverage
       include 'cobrems.inc'
       if (unpolar) then
         polarization=1
         return
       endif
-      polarization=2*(1-x)/((1+theta2)**2*((1-x)**2+1) - 4*theta2*(1-x))
+
+c  This formula was taken from Eq. A5 of Kaune, Miller, et.al.
+c  PhysRevD.11.479, but it has been averaged over phi already.
+c  8/30/2017 - replacing this with the full phi-dependent
+c              expression below, based on Eq. A4.
+c     paverage=2*(1-x)/((1+theta2)**2*((1-x)**2+1) - 4*theta2*(1-x))
+
+      Npara = 0.5*(2-x)**2*(1+theta2)**2 - 8*theta2*(1-x)*cos(phi)**2 -
+     +        8*theta2**2*(1-x)*(cos(phi)*sin(phi))**2
+      Nperp = 0.5*x**2*(1+theta2)**2 +
+     +        8*theta2**2*(1-x)*(cos(phi)*sin(phi))**2
+      polarization = (Npara - Nperp) / (Npara + Nperp)
       end
 
-      real function acceptance2(theta2,phi)
-      real theta2,phi
+      real function acceptance2(theta2,phi,xshift,yshift)
+      real theta2,phi,xshift,yshift
       include 'cobrems.inc'
       real xc,yc
-      real xshift,yshift
-      parameter (xshift=1.7e-3,yshift=0)
       real theta
       theta=sqrt(theta2)*me/E
-      xc=D*sin(theta)*cos(phi)+xshift
-      yc=D*sin(theta)*sin(phi)+yshift
+      xc=D*tan(theta)*cos(phi)+xshift
+      yc=D*tan(theta)*sin(phi)+yshift
       acceptance2 = acceptance((atan2(sqrt(xc**2+yc**2),D)*(E/me))**2)
       end
 
@@ -417,9 +440,9 @@ Comment out the preceding lines to enable collimation -RTJ
         else
           pu=exp(-u2/(2*var0))/(2*var0)
         endif
-        acceptance=acceptance + pu*du2/dpi
+        acceptance=REAL(acceptance + pu*du2/dpi
      +    * atan2(sqrt((theta2-(thetaC-u)**2)*((thetaC+u)**2-theta2)),
-     +            theta2-thetaC**2+u2)
+     +            theta2-thetaC**2+u2))
       enddo
       end
 
@@ -483,9 +506,9 @@ C  is dominantly responsible for the coherent photons in this bin in x.
 C  I just use the smallest of the two angles, but this does not work when
 C  both angles are small, and you have to be more clever -- BEWARE!!!
 C--In any case, fine-tuning below the mosaic spread limit makes no sense.
-      alph=min(abs(thx),abs(thy))
+      alph=REAL(min(abs(thx),abs(thy)))
       if (alph.eq.0) then
-        alph=max(abs(thx),abs(thy))
+        alph=REAL(max(abs(thx),abs(thy)))
       else
         alph=max(alph,mospread)
       endif
@@ -498,13 +521,13 @@ C--In any case, fine-tuning below the mosaic spread limit makes no sense.
           x=x0+(x1-x0)*(j-0.5)/nbins
           dalph=dx*alph/(x*(1-x))
           if (varMS/var0.gt.1e-4) then
-            term=dalph/varMS
+            term=REAL(dalph/varMS
      +      *(ERF(dalph/sqrt(2*(var0+varMS))) - ERF(dalph/sqrt(2*var0)))
      +         + sqrt(2/dpi)/varMS
      +      *(exp(-dalph**2/(2*(var0+varMS)))*sqrt(var0+varMS)
-     +       -exp(-dalph**2/(2*var0))*sqrt(var0))
+     +       -exp(-dalph**2/(2*var0))*sqrt(var0)))
           else
-            term=exp(-dalph**2/(2*var0))/sqrt(2*dpi*var0)
+            term=REAL(exp(-dalph**2/(2*var0))/sqrt(2*dpi*var0))
           endif
           term=term*alph/x
           norm(j)=norm(j)+term
@@ -524,13 +547,13 @@ c     write(6,*) norm
           x=x0+(x1-x0)*(j-0.5)/nbins
           dalph=dx*alph/(x*(1-x))
           if (varMS/var0.gt.1e-4) then
-            term=dalph/varMS
+            term=REAL(dalph/varMS
      +      *(ERF(dalph/sqrt(2*(var0+varMS))) - ERF(dalph/sqrt(2*var0)))
      +         + sqrt(2/dpi)/varMS
      +      *(exp(-dalph**2/(2*(var0+varMS)))*sqrt(var0+varMS)
-     +       -exp(-dalph**2/(2*var0))*sqrt(var0))
+     +       -exp(-dalph**2/(2*var0))*sqrt(var0)))
           else
-            term=exp(-dalph**2/(2*var0))/sqrt(2*dpi*var0)
+            term=REAL(exp(-dalph**2/(2*var0))/sqrt(2*dpi*var0))
           endif
           term=term*alph/x
           result(ii)=result(ii)+term*hisy(j)/norm(j)
@@ -577,9 +600,10 @@ c  tails in different ways, but both agree that the central part is much
 c  more narrow than the formulation by Kaune et.al. below.
 
       carboncor=4.2/4.6
-      sigma2MS_Kaune=8*dpi*nsites*alpha**2*Z**2*tt*(hbarc/(E*a))**2/a
+      sigma2MS_Kaune=REAL(8*dpi*nsites*alpha**2*Z**2
+     +              *tt*(hbarc/(E*a))**2/a
      +              *log(183*Z**(-1/3.))
-     +              *carboncor
+     +              *carboncor)
       end
 
       real function sigma2MS_pdg(tt)
@@ -627,7 +651,7 @@ c  like this paper because of the excellent agreement between the theory
 c  and experimental data.
       density=3.534 ! g/cm^3
       ttingcm=tt*100*density
-      Atomicweight=12
+      Atomicweight=12.01
       EinMeV=E*1000
       theta2max=0.157*Z*(Z+1)/Atomicweight*(ttingcm/EinMeV**2)
       theta2screen=theta2max*Atomicweight*(1+3.35*(Z*alpha)**2)
