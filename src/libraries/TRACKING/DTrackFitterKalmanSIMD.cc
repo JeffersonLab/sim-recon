@@ -2809,7 +2809,7 @@ void DTrackFitterKalmanSIMD::FastStep(DVector2 &xy,double ds, double dEdx,
   pt=sqrt(px*px+py*py); 
   S(state_q_over_pt)=q/pt;
   S(state_phi)=atan2(py,px);
-  S(state_tanl)=pt/pz;
+  S(state_tanl)=pz/pt;
   if (fabs(dEdx)>EPS){
     double one_over_p_sq=one_over_p*one_over_p;
     double E=sqrt(1./one_over_p_sq+mass2); 
