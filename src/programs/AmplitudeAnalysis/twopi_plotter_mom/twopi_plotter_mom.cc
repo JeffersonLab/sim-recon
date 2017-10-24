@@ -20,14 +20,14 @@
 
 #include "AMPTOOLS_DATAIO/TwoPiPlotGenerator.h"
 #include "AMPTOOLS_DATAIO/ROOTDataReader.h"
-#include "AMPTOOLS_AMPS/TwoPSAngles.h"
+#include "AMPTOOLS_AMPS/TwoPSHelicity.h"
 #include "AMPTOOLS_AMPS/BreitWigner.h"
 
 typedef TwoPiPlotGenerator PlotGen;
 
 void atiSetup(){
   
-  AmpToolsInterface::registerAmplitude( TwoPSAngles() );
+  AmpToolsInterface::registerAmplitude( TwoPSHelicity() );
   AmpToolsInterface::registerAmplitude( BreitWigner() );
   AmpToolsInterface::registerDataReader( ROOTDataReader() );
 }
