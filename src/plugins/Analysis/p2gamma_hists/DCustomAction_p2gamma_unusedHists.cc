@@ -148,6 +148,9 @@ void DCustomAction_p2gamma_unusedHists::Initialize(JEventLoop* locEventLoop)
 				}
 			}
 		}
+
+		//Return to the base directory
+		ChangeTo_BaseDirectory();
 	}
 	japp->RootUnLock(); //RELEASE ROOT LOCK!!
 }

@@ -5,6 +5,7 @@
 #include <string>
 #include <algorithm>
 #include <iostream>
+#include <set>
 
 #include "JANA/JObject.h"
 #include "JANA/JEventLoop.h"
@@ -189,6 +190,17 @@ inline bool Check_ChannelEquality(const DReaction* lhs, const DReaction* rhs, bo
 	auto Equality_Checker = [&locSameOrderFlag, &locRightSubsetOfLeftFlag](const DReactionStep* lhs, const DReactionStep* rhs) -> bool
 		{return DAnalysis::Check_ChannelEquality(lhs, rhs, locSameOrderFlag, locRightSubsetOfLeftFlag);};
 	return std::equal(locSteps_lhs.begin(), locSteps_lhs.end(), locSteps_rhs.begin(), Equality_Checker);
+}
+
+inline set<size_t> Get_NoConstrainMassSteps(const DReaction* locReaction)
+{
+	set<size_t> locNoConstrainMassSteps;
+	for(size_t loc_i = 0; loc_i < locReaction->Get_NumReactionSteps(); ++loc_i)
+	{
+		if(!locReaction->Get_ReactionStep(loc_i)->Get_KinFitConstrainInitMassFlag())
+			locNoConstrainMassSteps.insert(loc_i);
+	}
+	return locNoConstrainMassSteps;
 }
 
 /****************************************************** NAMESPACE-SCOPE INLINE FUNCTIONS: PIDS *******************************************************/

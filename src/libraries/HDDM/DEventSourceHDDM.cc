@@ -13,6 +13,7 @@
 // July 5, 2014 R.T.Jones: changed over from c to c++ API for hddm
 // June 22, 2015 J. Stevens: changed RICH -> DIRC and remove CERE
 // May 7, 2017 R. Dzhygadlo: added DDIRCTruthPmtHit DDIRCTruthBarHit
+// Oct 20, 2017 A. Somov: Added fields for the DPSHit/DPSCHit
 //
 // DEventSourceHDDM methods
 //
@@ -28,6 +29,7 @@ using namespace std;
 #include <DANA/DStatusBits.h>
 
 #include "BCAL/DBCALGeometry.h"
+#include "PAIR_SPECTROMETER/DPSGeometry.h"
 
 #include <DVector2.h>
 #include <DEventSourceHDDM.h>
@@ -36,6 +38,7 @@ using namespace std;
 #include <FCAL/DFCALHit.h>
 #include <CCAL/DCCALGeometry.h>
 #include <CCAL/DCCALHit.h>
+
 
 //------------------------------------------------------------------
 // Binary predicate used to sort hits
@@ -204,11 +207,20 @@ jerror_t DEventSourceHDDM::GetObjects(JEvent &event, JFactory_base *factory)
          }     
       }
       // load BCAL geometry
-  	  vector<const DBCALGeometry *> BCALGeomVec;
-  	  loop->Get(BCALGeomVec);
-  	  if(BCALGeomVec.size() == 0)
-		  throw JException("Could not load DBCALGeometry object!");
-	  dBCALGeom = BCALGeomVec[0];
+      vector<const DBCALGeometry *> BCALGeomVec;
+      loop->Get(BCALGeomVec);
+      if(BCALGeomVec.size() == 0)
+	throw JException("Could not load DBCALGeometry object!");
+      dBCALGeom = BCALGeomVec[0];
+      
+      // load PS geometry
+      vector<const DPSGeometry*> psGeomVect;
+      loop->Get(psGeomVect);
+      if (psGeomVect.size() < 1)
+	return OBJECT_NOT_AVAILABLE;
+      psGeom = psGeomVect[0];
+      
+
    }
 
    // Warning: This class is not completely thread-safe and can fail if running
@@ -292,10 +304,6 @@ jerror_t DEventSourceHDDM::GetObjects(JEvent &event, JFactory_base *factory)
    if (dataClassName == "DMCReaction")
       return Extract_DMCReaction(record,
                      dynamic_cast<JFactory<DMCReaction>*>(factory), tag, loop);
-
-   if (dataClassName == "DBeamPhoton")
-      return Extract_DBeamPhoton(record, 
-                     dynamic_cast<JFactory<DBeamPhoton>*>(factory), tag, loop);
  
    if (dataClassName == "DMCThrown")
       return Extract_DMCThrown(record,
@@ -1121,63 +1129,6 @@ jerror_t DEventSourceHDDM::Extract_DMCReaction(hddm_s::HDDM *record,
    //_DBG_<<"Creating "<<dmcreactions.size()<<" DMCReaction objects"<<endl;
 
    factory->CopyTo(dmcreactions);
-
-   return NOERROR;
-}
-
-
-//------------------
-// Extract_DBeamPhoton
-//------------------
-jerror_t DEventSourceHDDM::Extract_DBeamPhoton(hddm_s::HDDM *record,
-                                   JFactory<DBeamPhoton> *factory, string tag,
-                                   JEventLoop *loop)
-{
-   /// If tag="MCGEN" then defer to the Extract_DMCReaction method which
-   /// extracts both the DMCReaction and DBeamPhoton objects at the same time.
-
-   if (factory==NULL)
-      return OBJECT_NOT_AVAILABLE;
-   if (tag != "MCGEN")
-      return OBJECT_NOT_AVAILABLE;
-
-   vector<const DMCReaction*> dmcreactions;
-   loop->Get(dmcreactions);
-
-   // extract the TAGH geometry
-   vector<const DTAGHGeometry*> taghGeomVect;
-   loop->Get(taghGeomVect);
-   if (taghGeomVect.empty())
-      return OBJECT_NOT_AVAILABLE;
-   const DTAGHGeometry* taghGeom = taghGeomVect[0];
-
-   // extract the TAGM geometry
-   vector<const DTAGMGeometry*> tagmGeomVect;
-   loop->Get(tagmGeomVect);
-   if (tagmGeomVect.empty())
-      return OBJECT_NOT_AVAILABLE;
-   const DTAGMGeometry* tagmGeom = tagmGeomVect[0];
-
-   vector<DBeamPhoton*> dbeam_photons;
-   for(size_t loc_i = 0; loc_i < dmcreactions.size(); ++loc_i)
-   {
-      DBeamPhoton *beamphoton = new DBeamPhoton;
-      *(DKinematicData*)beamphoton = dmcreactions[loc_i]->beam;
-      if(tagmGeom->E_to_column(beamphoton->energy(), beamphoton->dCounter)) {
-	      beamphoton->dSystem = SYS_TAGM;
-      }
-      else if(taghGeom->E_to_counter(beamphoton->energy(), beamphoton->dCounter)) {
-	      beamphoton->dSystem = SYS_TAGH;
-      }
-      else {
-	      beamphoton->dSystem = SYS_NULL;
-	      beamphoton->dCounter = 999;
-      }
-      dbeam_photons.push_back(beamphoton);
-   }
-
-   // Copy into factories
-   factory->CopyTo(dbeam_photons);
 
    return NOERROR;
 }
@@ -2280,6 +2231,7 @@ jerror_t DEventSourceHDDM::Extract_DTAGMHit(hddm_s::HDDM *record,
             taghit->row = hiter->getRow();
 	    taghit->has_fADC = true;
 	    taghit->has_TDC = true;           
+	    taghit->bg = hiter->getBg();
 	    data.push_back(taghit);
          }
       }
@@ -2324,7 +2276,7 @@ jerror_t DEventSourceHDDM::Extract_DTAGHHit( hddm_s::HDDM *record,
             taghit->time_fadc = hiter->getTADC();
             taghit->counter_id = hiter->getCounterId();
 	    taghit->has_fADC = true;
-	    taghit->has_TDC = true;
+	    taghit->has_TDC  = true;
             data.push_back(taghit);
          }
       }
@@ -2339,7 +2291,9 @@ jerror_t DEventSourceHDDM::Extract_DTAGHHit( hddm_s::HDDM *record,
             taghit->time_fadc = hiter->getT();
             taghit->counter_id = hiter->getCounterId();
 	    taghit->has_fADC = true;
-	    taghit->has_TDC = true;
+	    taghit->has_TDC  = true;
+	    taghit->bg = hiter->getBg();
+
             data.push_back(taghit);
          }
       }
@@ -2378,8 +2332,13 @@ jerror_t DEventSourceHDDM::Extract_DPSHit(hddm_s::HDDM *record,
          else 
              hit->arm = DPSGeometry::Arm::kSouth;
          hit->column = iter->getColumn();
-         hit->npix_fadc = iter->getDE();
+	 double npix_fadc = iter->getDE()*0.5e5; // 100 pixels in 2 MeV
+         hit->npix_fadc   = npix_fadc;
          hit->t = iter->getT();
+	 
+	 hit->E = 0.5*(psGeom->getElow(hit->arm,hit->column) + psGeom->getEhigh(hit->arm,hit->column));
+	 hit->pulse_peak = npix_fadc*21;       // 1 pixel 21 fadc counts
+	 hit->integral   = npix_fadc*21*5.1;   // integral/peak = 5.1  
          data.push_back(hit);
       }
    }
@@ -2473,8 +2432,19 @@ jerror_t DEventSourceHDDM::Extract_DPSCHit(hddm_s::HDDM *record,
          else 
              hit->arm = DPSGeometry::Arm::kSouth;
          hit->module = iter->getModule();
-         hit->npe_fadc = iter->getDE();
+
+	 double npe_fadc = iter->getDE()*2.5e5;
+	 hit->npe_fadc   = npe_fadc;
+	 hit->pulse_peak = npe_fadc*0.4;       //  1000 pe - 400 fadc count
+	 hit->integral   = npe_fadc*0.4*3;     // integral/peak = 3.
+
          hit->t = iter->getT();
+	 hit->time_tdc  = iter->getT();
+	 hit->time_fadc = iter->getT();
+
+	 hit->has_fADC = true;
+	 hit->has_TDC  = true;
+
          data.push_back(hit);
       }
    }
