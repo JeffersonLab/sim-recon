@@ -918,9 +918,11 @@ void DEventWriterROOT::Fill_DataTrees(JEventLoop* locEventLoop, string locDReact
 		locAnalysisResultsVector[loc_i]->Get_PassedParticleCombos(locPassedParticleCombos);
 		if(locPassedParticleCombos.empty())
 			continue;
+
 		const DReaction* locReaction = locAnalysisResultsVector[loc_i]->Get_Reaction();
 		if(!locReaction->Get_EnableTTreeOutputFlag())
 			continue;
+
 		bool locReactionFoundFlag = false;
 		for(size_t loc_j = 0; loc_j < locReactionsWithTag.size(); ++loc_j)
 		{
@@ -931,6 +933,7 @@ void DEventWriterROOT::Fill_DataTrees(JEventLoop* locEventLoop, string locDReact
 		}
 		if(!locReactionFoundFlag)
 			continue; //reaction not from this factory, continue
+
 		Fill_DataTree(locEventLoop, locReaction, locPassedParticleCombos);
 	}
 }

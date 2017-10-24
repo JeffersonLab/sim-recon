@@ -242,7 +242,6 @@ void DTreeInterface::Fill(DTreeFillData& locTreeFillData)
 {
 	//MUST CARRY AROUND A REFERENCE TO THIS.  ONLY READ/MODIFY THE MAP WITHIN A FILE LOCK. 
 	map<string, size_t>& locFundamentalArraySizeMap = Get_FundamentalArraySizeMap(dTree);
-return;
 	japp->WriteLock(dFileName); //LOCK FILE
 	{
 		//loop over branches
@@ -264,7 +263,7 @@ return;
 			bool locIsArrayFlag = (locLargestIndexFilledIterator != locTreeFillData.dArrayLargestIndexFilledMap.end());
 			if(!locIsArrayFlag)
 			{
-//				Fill(locBranchName, locTypeIndex, locFillBaseClass->Get(0), false);
+				Fill(locBranchName, locTypeIndex, locFillBaseClass->Get(0), false);
 				continue;
 			}
 
@@ -296,15 +295,15 @@ return;
 			}
 
 			//fill array
-//			for(int locArrayIndex = 0; locArrayIndex <= locLargestIndexFilled; ++locArrayIndex)
-//				Fill(locBranchName, locTypeIndex, locFillBaseClass->Get(locArrayIndex), true, locArrayIndex);
+			for(int locArrayIndex = 0; locArrayIndex <= locLargestIndexFilled; ++locArrayIndex)
+				Fill(locBranchName, locTypeIndex, locFillBaseClass->Get(locArrayIndex), true, locArrayIndex);
 
 			//reset DTreeFillData for next event!
 			locLargestIndexFilled = -1;
 		}
 
 		//fill tree
-//		dTree->Fill();
+		dTree->Fill();
 	}
 	japp->Unlock(dFileName); //UNLOCK FILE
 
