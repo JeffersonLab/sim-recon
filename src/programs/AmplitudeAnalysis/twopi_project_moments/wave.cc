@@ -2,7 +2,6 @@
 #include <iostream>
 
 #include "wave.h"
-#include "event.h"
 
 wave::wave(const wave& o)
 {

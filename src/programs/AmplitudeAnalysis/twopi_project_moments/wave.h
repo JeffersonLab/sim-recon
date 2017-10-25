@@ -33,10 +33,6 @@ struct wave {
 
 };
 
-#include "event.h"
-
-class event;
-
 struct coherent_waves {
   int reflectivity;
   int spinflip;
@@ -45,12 +41,10 @@ struct coherent_waves {
   coherent_waves() {};
   coherent_waves(const coherent_waves& o) { reflectivity = o.reflectivity; spinflip = o.spinflip; waves = o.waves; }
 
-  std::complex<double> sum(const std::vector<double>& x, const event& e) const;
   std::vector<wave>& getWaves() { return waves; }
   const std::vector<wave>& getWaves() const { return waves; }
   size_t getNwaves() const { return waves.size(); }
 
-  double getEventWeight(const std::vector<double>& x, const event& e) const;
   void print() { cout << "| ";for (size_t i = 0; i < waves.size(); i++) { cout << waves[i].getName() << " "; } cout << endl; }
 
 };
@@ -80,13 +74,6 @@ public:
 	  }
       }
     return count;
-  }
-
-  double getEventWeight(const std::vector<double>& x, event& e) const {
-    double result = 0;
-    for (size_t i = 0; i < this->size(); i++)
-      result += (*this)[i].getEventWeight(x, e);
-    return result;
   }
 
 };
