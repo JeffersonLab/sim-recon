@@ -18,6 +18,7 @@ class DCDCHit:public jana::JObject{
 		int ring;
 		int straw;
 		float q;
+        float amp;
 		float t;
 		float d;
 		int itrack;
@@ -27,6 +28,7 @@ class DCDCHit:public jana::JObject{
 			AddString(items, "ring", "%d", ring);
 			AddString(items, "straw", "%d", straw);
 			AddString(items, "q", "%10.4e", q);
+			AddString(items, "amp", "%10.4e", amp);
 			AddString(items, "t", "%6.1f", t);
 			AddString(items, "d", "%10.4e", d);
 			AddString(items, "itrack", "%d", itrack);

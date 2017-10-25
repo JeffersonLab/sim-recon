@@ -328,6 +328,8 @@ bool DEventWriterHDDM::Write_HDDMEvent(JEventLoop* locEventLoop, string locOutpu
 			hddm_s::FdcCathodeHitList::iterator FDC_CathodeStripHitIterator = FDC_CathodeStripHitList->end()-1;
 			FDC_CathodeStripHitIterator->setT(FDCHits[i]->t);
 			FDC_CathodeStripHitIterator->setQ(FDCHits[i]->q);
+            FDC_CathodeStripHitIterator->addFdcDigihits();
+            FDC_CathodeStripHitIterator->getFdcDigihits().begin()->setPeakAmp(FDCHits[i]->pulse_height);
 
 		}
 
@@ -448,6 +450,8 @@ bool DEventWriterHDDM::Write_HDDMEvent(JEventLoop* locEventLoop, string locOutpu
 		hddm_s::StcHitList::iterator schitit = schitl->end()-1;
 		schitit->setT(SCHits[i]->t);
 		schitit->setDE(SCHits[i]->dE);
+        schitit->addStcDigihits();
+        schitit->getStcDigihits().begin()->setPeakAmp(SCHits[i]->pulse_height);
 	}
 
 
@@ -491,6 +495,8 @@ bool DEventWriterHDDM::Write_HDDMEvent(JEventLoop* locEventLoop, string locOutpu
 		BCAL_FADCDigiHitIterator->setEnd(BCALDigiHits[i]->end);
 		BCAL_FADCDigiHitIterator->setPulse_time(BCALDigiHits[i]->pulse_time);
 		BCAL_FADCDigiHitIterator->setPulse_integral(BCALDigiHits[i]->pulse_integral);
+        BCAL_FADCDigiHitIterator->addBcalfADCPeaks();
+        BCAL_FADCDigiHitIterator->getBcalfADCPeaks().begin()->setPeakAmp(BCALDigiHits[i]->pulse_peak);
 	}
 
 	//------------------------TDC-----------------------------
@@ -555,7 +561,7 @@ bool DEventWriterHDDM::Write_HDDMEvent(JEventLoop* locEventLoop, string locOutpu
 			hitv->getForwardEMcal().addFcalBlocks();
 			FCAL_BlockIterator=FCAL_BlockList->end()-1;
 			FCAL_BlockIterator->setColumn(FCALHits[i]->column);
-			FCAL_BlockIterator->setRow(FCALHits[i]->row);
+			FCAL_BlockIterator->setRow(FCALHits[i]->row);            
 		}
 
 
@@ -564,6 +570,8 @@ bool DEventWriterHDDM::Write_HDDMEvent(JEventLoop* locEventLoop, string locOutpu
 		hddm_s::FcalHitList::iterator FCAL_HitIterator = FCAL_HitList->end()-1;
 		FCAL_HitIterator->setT(FCALHits[i]->t);
 		FCAL_HitIterator->setE(FCALHits[i]->E);
+        FCAL_HitIterator->addFcalDigihits();
+        FCAL_HitIterator->getFcalDigihits().begin()->setIntegralOverPeak(FCALHits[i]->intOverPeak);
 	}
 
 
@@ -606,6 +614,8 @@ bool DEventWriterHDDM::Write_HDDMEvent(JEventLoop* locEventLoop, string locOutpu
 		ftofhitit->setEnd(TOFHits[i]->end);
 		ftofhitit->setT(TOFHits[i]->t);//walk corrected time
 		ftofhitit->setDE(TOFHits[i]->dE);
+        ftofhitit->addFtofDigihits();
+        ftofhitit->getFtofDigihits().begin()->setPeakAmp(TOFHits[i]->Amp);
 	}
 
 
@@ -630,6 +640,8 @@ bool DEventWriterHDDM::Write_HDDMEvent(JEventLoop* locEventLoop, string locOutpu
 		hddm_s::CdcStrawHitList::iterator cdcstrawhitit = strawhitl->end()-1;
 		cdcstrawhitit->setQ(CDCHits[i]->q);
 		cdcstrawhitit->setT(CDCHits[i]->t);
+        cdcstrawhitit->addCdcDigihits();
+        cdcstrawhitit->getCdcDigihits().begin()->setPeakAmp(CDCHits[i]->amp);
 	}
 
 
