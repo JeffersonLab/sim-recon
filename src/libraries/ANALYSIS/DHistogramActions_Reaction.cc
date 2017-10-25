@@ -105,6 +105,26 @@ void DHistogramAction_PID::Initialize(JEventLoop* locEventLoop)
 				locHistTitle = locParticleROOTName + string(" Candidates;p (GeV/c);SC #Delta(dE/dX) (MeV/cm)");
 				dHistMap_DeltadEdXVsP[locPID][SYS_START] = GetOrCreate_Histogram<TH2I>(locHistName, locHistTitle, dNum2DPBins, dMinP, dMaxP, dNum2DDeltadEdxBins, dMinDeltadEdx, dMaxDeltadEdx);
 
+				locHistName = "DeltaBetaVsP";
+				locHistTitle = locParticleROOTName + string(" Candidates;p (GeV/c);SC #Delta#beta");
+				dHistMap_DeltaBetaVsP[locPID][SYS_START] = GetOrCreate_Histogram<TH2I>(locHistName, locHistTitle, dNum2DPBins, dMinP, dMaxP, dNum2DDeltaBetaBins, dMinDeltaBeta, dMaxDeltaBeta);
+
+				locHistName = "BetaVsP";
+				locHistTitle = locParticleROOTName + string(" Candidates;p (GeV/c);SC #beta");
+				dHistMap_BetaVsP[locPID][SYS_START] = GetOrCreate_Histogram<TH2I>(locHistName, locHistTitle, dNum2DPBins, dMinP, dMaxP, dNum2DBetaBins, dMinBeta, dMaxBeta);
+
+				locHistName = "DeltaTVsP";
+				locHistTitle = locParticleROOTName + string(" Candidates;p (GeV/c);#Deltat_{SC - RF}");
+				dHistMap_DeltaTVsP[locPID][SYS_START] = GetOrCreate_Histogram<TH2I>(locHistName, locHistTitle, dNum2DPBins, dMinP, dMaxP, dNum2DDeltaTBins, dMinDeltaT, dMaxDeltaT);
+
+				locHistName = string("TimePullVsP_") + locParticleName;
+				locHistTitle = string("SC ") + locParticleROOTName + string(";p (GeV/c);#Deltat/#sigma_{#Deltat}");
+				dHistMap_TimePullVsP[locPID][SYS_START] = GetOrCreate_Histogram<TH2I>(locHistName, locHistTitle, dNum2DPBins, dMinP, dMaxP, dNum2DPullBins, dMinPull, dMaxPull);
+
+				locHistName = string("TimeFOMVsP_") + locParticleName;
+				locHistTitle = string("SC") + locParticleROOTName + string(";p (GeV/c);Timing PID Confidence Level");
+				dHistMap_TimeFOMVsP[locPID][SYS_START] = GetOrCreate_Histogram<TH2I>(locHistName, locHistTitle, dNum2DPBins, dMinP, dMaxP, dNum2DFOMBins, 0.0, 1.0);
+
 				gDirectory->cd("..");
 
 				//TOF
@@ -395,7 +415,7 @@ void DHistogramAction_PID::Fill_ChargedHists(const DChargedTrackHypothesis* locC
 		}
 
 		//Timing
-		if((locTimeDetector == SYS_TOF) || (locTimeDetector == SYS_BCAL) || (locTimeDetector == SYS_FCAL))
+		if(dHistMap_BetaVsP[locPID].find(locTimeDetector) != dHistMap_BetaVsP[locPID].end())
 		{
 			dHistMap_BetaVsP[locPID][locTimeDetector]->Fill(locP, locBeta_Timing);
 			dHistMap_DeltaBetaVsP[locPID][locTimeDetector]->Fill(locP, locDeltaBeta);
