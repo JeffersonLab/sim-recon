@@ -96,6 +96,7 @@ void ParseCommandLineArguments(int narg, char* argv[], mcsmear_config_t *config)
           case 'd': config->DROP_TRUTH_HITS=true;                break;
           case 'D': config->DUMP_RCDB_CONFIG=true;               break;
           case 'e': config->APPLY_EFFICIENCY_CORRECTIONS=false;  break;
+          case 'E': config->FCAL_ADD_LIGHTGUIDE_HITS=true;       break;
 
 	      // BCAL parameters
           case 'G': config->BCAL_NO_T_SMEAR = true;              break;
