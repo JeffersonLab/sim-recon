@@ -27,6 +27,7 @@ int main( int argc, char* argv[] ){
   string fitDir("");
   
   string outfileName("moments.root");
+  bool print = false;
 
   // parse command line
   
@@ -40,10 +41,13 @@ int main( int argc, char* argv[] ){
     if (arg == "-o"){  
       if ((i+1 == argc) || (argv[i+1][0] == '-')) arg = "-h";
       else  outfileName = argv[++i]; }
+    if (arg == "-p")  
+      print = true;
     if (arg == "-h"){
       cout << endl << " Usage for: " << argv[0] << endl << endl;
-      cout << "\t -f <fit dir>\t Fit Directory" << endl;
-      cout << "\t -o <file>\t Output file" << endl;
+      cout << "\t   -f <fit dir>\t : Fit Directory" << endl;
+      cout << "(optional) -o <file>\t : Output file (default: moments.root)" << endl;
+      cout << "(optional) -p\t\t : Print equations" << endl;
       exit(1);}
   }
   
@@ -55,7 +59,7 @@ int main( int argc, char* argv[] ){
   TFile *outfile = new TFile(outfileName.c_str(), "recreate");
   if (!outfile->IsOpen()) exit(1);
 
-  // set waveset, has to be same order as in fit.cfg
+  // Set waveset, has to be same order as in fit.cfg!
 
   vector<wave> negative;
   negative.push_back(wave("S0", 0, 0));
@@ -70,11 +74,9 @@ int main( int argc, char* argv[] ){
 
   coherent_waves wsPos, wsNeg;
   wsPos.reflectivity = +1;
-  wsPos.spinflip = +1;
   wsPos.waves = positive;
 
   wsNeg.reflectivity = -1;
-  wsNeg.spinflip = +1;
   wsNeg.waves = negative;
 
   waveset ws;
@@ -99,44 +101,46 @@ int main( int argc, char* argv[] ){
       snprintf(name, 999, "hMoment%zd%zd", it->first, it->second);
       snprintf(title, 999, "Moment H(%zd,%zd)", it->first, it->second);
       hMoments[*it] = new TH1D(name, title, kNumBins, lowMass, highMass);
-      
-      cout << "H(" << it->first << ", " << it->second << ") = ";
-      for (size_t iCoh = 0; iCoh < ws.size(); iCoh++)
-	{
-	  const coherent_waves& waves = ws[iCoh];
-	  int eps = waves.reflectivity;
 
-	  for (size_t i = 0; i < waves.waves.size(); i++)
-	    {
-	      const wave& w1 = waves.waves[i];
-	      for (size_t j = 0; j <= i; j++)
-		{
-		  const wave& w2 = waves.waves[j];
-
-		  double coeff = getCoefficient(eps, it->first, it->second, w1.getL(), w1.getM(), w2.getL(), w2.getM());
-		  if (coeff == 0)
-		    continue;
-
-		  if (j == i)
-		    {
-		      if (coeff > 0)
-			cout << "+ " << coeff;
-		      else if (coeff < 0)
-			cout << "- " << -coeff;
-		      cout << " |" << w1.getName() << "|^2 ";
-		    }
-		  else
-		    {
-		      if (coeff > 0)
-			cout << "+ " << 2*coeff;
-		      else if (coeff < 0)
-			cout << "- " << -2*coeff;
-		      cout << " Re(" << w1.getName() << "* " << w2.getName() << ") ";
-		    }
-		}
-	    }
-	}
-      cout << endl;
+      if (print){
+	cout << "H(" << it->first << ", " << it->second << ") = ";
+	for (size_t iCoh = 0; iCoh < ws.size(); iCoh++)
+	  {
+	    const coherent_waves& waves = ws[iCoh];
+	    int eps = waves.reflectivity;
+	    
+	    for (size_t i = 0; i < waves.waves.size(); i++)
+	      {
+		const wave& w1 = waves.waves[i];
+		for (size_t j = 0; j <= i; j++)
+		  {
+		    const wave& w2 = waves.waves[j];
+		    
+		    double coeff = getCoefficient(eps, it->first, it->second, w1.getL(), w1.getM(), w2.getL(), w2.getM());
+		    if (coeff == 0)
+		      continue;
+		    
+		    if (j == i)
+		      {
+			if (coeff > 0)
+			  cout << "+ " << coeff;
+			else if (coeff < 0)
+			  cout << "- " << -coeff;
+			cout << " |" << w1.getName() << "|^2 ";
+		      }
+		    else
+		      {
+			if (coeff > 0)
+			  cout << "+ " << 2*coeff;
+			else if (coeff < 0)
+			  cout << "- " << -2*coeff;
+			cout << " Re(" << w1.getName() << "* " << w2.getName() << ") ";
+		      }
+		  }
+	      }
+	  }
+	cout << endl;
+      }
     }
   
   
@@ -158,6 +162,12 @@ int main( int argc, char* argv[] ){
       chdir( ".." );
       continue;
     }
+
+    if (  2*ws.getNwaves() != results.parValueList().size() ){
+      cout << "Different number of waves in fit result. Check waveset!" << endl;
+      outfile->Close();
+      exit(1);
+    }
     
     for (std::vector<std::pair<size_t, size_t> >::const_iterator it = vecMom.begin(); it != vecMom.end(); it++)
       {
@@ -175,6 +185,7 @@ int main( int argc, char* argv[] ){
     }
   
   outfile->Close();
+  cout << "Moment histograms written to " << outfileName << endl;
   
   return 0;
 }
