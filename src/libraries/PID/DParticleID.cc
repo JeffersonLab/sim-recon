@@ -276,13 +276,26 @@ DParticleID::DParticleID(JEventLoop *loop)
 	  }
 
     // Start counter individual paddle resolutions
-    if(loop->GetCalib("START_COUNTER/time_resol_paddle", sc_paddle_resols))
-        jout << "Error in loading START_COUNTER/time_resol_paddle !" << endl;
+    vector< vector<double> > sc_paddle_resolution_params;
+    if(loop->GetCalib("START_COUNTER/time_resol_paddle_v2", sc_paddle_resolution_params))
+        jout << "Error in loading START_COUNTER/time_resol_paddle_v2 !" << endl;
 	else {
-        if(sc_paddle_resols.size() != (unsigned int)DSCHit_factory::MAX_SECTORS)
+        if(sc_paddle_resolution_params.size() != (unsigned int)DSCHit_factory::MAX_SECTORS)
             jerr << "Start counter paddle resolutions table has wrong number of entries:" << endl
-                 << "  loaded = " << sc_paddle_resols.size() 
+                 << "  loaded = " << sc_paddle_resolution_params.size()
                  << "  expected = " << DSCHit_factory::MAX_SECTORS << endl;
+
+        for(int i=0; i<DSCHit_factory::MAX_SECTORS; i++) {
+            SC_MAX_RESOLUTION.push_back( sc_paddle_resolution_params[i][0] );
+            SC_BOUNDARY1.push_back( sc_paddle_resolution_params[i][1] );
+            SC_BOUNDARY2.push_back( sc_paddle_resolution_params[i][2] );
+            SC_SECTION1_P0.push_back( sc_paddle_resolution_params[i][3] ); 
+            SC_SECTION1_P1.push_back( sc_paddle_resolution_params[i][4] );
+            SC_SECTION2_P0.push_back( sc_paddle_resolution_params[i][5] ); 
+            SC_SECTION2_P1.push_back( sc_paddle_resolution_params[i][6] );
+            SC_SECTION3_P0.push_back( sc_paddle_resolution_params[i][7] ); 
+            SC_SECTION3_P1.push_back( sc_paddle_resolution_params[i][8] );
+        }
     }
 
 	//be sure that DRFTime_factory::init() and brun() are called
@@ -992,6 +1005,27 @@ bool DParticleID::Distance_ToTrack(const DReferenceTrajectory* rt, const DSCHit*
 	// compensate for the position in z at which the start counter paddle starts
 	double ds = 0.3*locProjMom.Mag()/fabs(locProjMom.Dot(locPaddleNorm));
 
+    // ============================
+    // Figure out timing resolution 
+    // This is parameterized by 
+    double time_resolution = 0.;
+    double sc_local_z = locProjPos.Z() - sc_pos_soss;    // resolutions are stored as a function of the z distance from the upstream end of the SC
+
+    if(sc_local_z < SC_BOUNDARY1[sc_index]) {
+        time_resolution = SC_SECTION1_P0[sc_index] + SC_SECTION1_P1[sc_index]*sc_local_z;
+    } else if(sc_local_z < SC_BOUNDARY2[sc_index]) {
+        time_resolution = SC_SECTION2_P0[sc_index] + SC_SECTION2_P1[sc_index]*sc_local_z;
+    } else {
+        time_resolution = SC_SECTION3_P0[sc_index] + SC_SECTION3_P1[sc_index]*sc_local_z;
+    }
+        
+    // max sure that we aren't getting some ridiculously large resolution
+    if(time_resolution > SC_MAX_RESOLUTION[sc_index])
+        time_resolution = SC_MAX_RESOLUTION[sc_index];
+    
+    // convert ps to ns
+    time_resolution /= 1000.;
+
 	//SET MATCHING INFORMATION
 	if(locSCHitMatchParams == nullptr)
 		locSCHitMatchParams = std::make_shared<DSCHitMatchParams>();
@@ -999,7 +1033,7 @@ bool DParticleID::Distance_ToTrack(const DReferenceTrajectory* rt, const DSCHit*
 	locSCHitMatchParams->dHitEnergy = locCorrectedHitEnergy;
 	locSCHitMatchParams->dEdx = locSCHitMatchParams->dHitEnergy/ds;
 	locSCHitMatchParams->dHitTime = locCorrectedHitTime;
-	locSCHitMatchParams->dHitTimeVariance = sc_paddle_resols[sc_index]*sc_paddle_resols[sc_index];
+	locSCHitMatchParams->dHitTimeVariance = time_resolution*time_resolution;
 	locSCHitMatchParams->dFlightTime = locFlightTime;
 	locSCHitMatchParams->dFlightTimeVariance = locFlightTimeVariance;
 	locSCHitMatchParams->dPathLength = locPathLength;

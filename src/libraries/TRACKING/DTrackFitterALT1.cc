@@ -36,8 +36,6 @@ extern double GetFDCCovariance(int layer1, int layer2);
 extern double GetFDCCathodeCovariance(int layer1, int layer2);
 
 
-#define NaN std::numeric_limits<double>::quiet_NaN()
-
 // The GNU implementation of STL includes definitions of "greater" and "less"
 // but the SunOS implementation does not. Since it is a bit of a pain to
 // define this only for SunOS, we just define "greaterthan" and use it for

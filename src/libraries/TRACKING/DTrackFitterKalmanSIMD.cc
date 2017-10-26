@@ -25,7 +25,6 @@
 #define MAX_P 12.0
 #define ALPHA 1./137.
 
-#define NaN std::numeric_limits<double>::quiet_NaN()
 
 // Local boolean routines for sorting
 //bool static DKalmanSIMDHit_cmp(DKalmanSIMDHit_t *a, DKalmanSIMDHit_t *b){

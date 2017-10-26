@@ -22,6 +22,7 @@ mcsmear_config_t::mcsmear_config_t()
 	IGNORE_SEEDS   = false;
     DUMP_RCDB_CONFIG = false;
 	APPLY_EFFICIENCY_CORRECTIONS = true;
+    FCAL_ADD_LIGHTGUIDE_HITS = false;
 		
 	TRIGGER_LOOKBACK_TIME = -100; // ns
 		

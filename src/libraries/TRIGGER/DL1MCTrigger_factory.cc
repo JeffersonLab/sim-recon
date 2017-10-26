@@ -182,9 +182,10 @@ jerror_t DL1MCTrigger_factory::brun(jana::JEventLoop *eventLoop, int32_t runnumb
   
   // Don't use RCDB for mc_generic: ideal MC simulation
 
-  string JANA_CALIB_CONTEXT = getenv("JANA_CALIB_CONTEXT");
+  string JANA_CALIB_CONTEXT = "";
 
   if(getenv("JANA_CALIB_CONTEXT") != NULL ){ 
+    JANA_CALIB_CONTEXT = getenv("JANA_CALIB_CONTEXT");
     if(JANA_CALIB_CONTEXT.find("mc_generic") != string::npos){
       use_rcdb = 0;
       // Don't simulate baseline fluctuations for mc_generic

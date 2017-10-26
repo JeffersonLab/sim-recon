@@ -221,6 +221,13 @@ class DParticleID:public jana::JObject
 		double ATTEN_LENGTH; // Start counter attenuation length
 		double OUT_OF_TIME_CUT; //for all matches
 
+        // Start counter resolution parameters
+        vector<double> SC_MAX_RESOLUTION;
+        vector<double> SC_BOUNDARY1, SC_BOUNDARY2;
+        vector<double> SC_SECTION1_P0, SC_SECTION1_P1;
+        vector<double> SC_SECTION2_P0, SC_SECTION2_P1;
+        vector<double> SC_SECTION3_P0, SC_SECTION3_P1;
+
 	private:
 
 		int DEBUG_LEVEL;
@@ -256,8 +263,6 @@ class DParticleID:public jana::JObject
 		vector<double> sc_attn_A[2];
 		vector<double> sc_attn_B[2];
 		vector<double> sc_attn_C[2];
-
-		vector<double> sc_paddle_resols;
 
 		// FCAL geometry
 		double dFCALz;
