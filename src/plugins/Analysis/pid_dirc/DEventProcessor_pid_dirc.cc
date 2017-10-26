@@ -49,8 +49,8 @@ jerror_t DEventProcessor_pid_dirc::evnt(JEventLoop *loop, uint64_t eventnumber) 
   vector<const DMCTrackHit*> mctrackhits;
   vector<const DDIRCTruthBarHit*> dircBarHits;
   vector<const DDIRCTruthPmtHit*> dircPmtHits;
-  const DDIRCTruthBarHit* relevantBarHit;
-  const DMCThrown*  relevantMCThrown;
+  const DDIRCTruthBarHit* relevantBarHit=nullptr;
+  const DMCThrown*  relevantMCThrown=nullptr;
   
   loop->Get(beam_photons);
   loop->Get(mcthrowns);
