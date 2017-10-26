@@ -303,6 +303,10 @@ DTrackFitterKalmanSIMD::DTrackFitterKalmanSIMD(JEventLoop *loop):DTrackFitter(lo
      }
      sc_dir.push_back(temp);
    }
+   SC_END_NOSE_Z=sc_pos[0][12].z();
+   SC_BARREL_R2=sc_pos[0][0].Perp2();
+   SC_PHI_SECTOR1=sc_pos[0][0].Phi();
+   
    // Get z positions of fdc wire planes
    geom->GetFDCZ(fdc_z_wires);
 
@@ -809,13 +813,14 @@ DTrackFitter::fit_status_t DTrackFitterKalmanSIMD::FitTrack(void)
       if (input_params.charge()<0.) IsElectron=true;
       else IsPositron=true;
    }
-   if (DEBUG_LEVEL>0){
-      _DBG_ << "------Starting " 
+   if (DEBUG_LEVEL>0)
+     {
+       _DBG_ << "------Starting " 
          <<(fit_type==kTimeBased?"Time-based":"Wire-based") 
          << " Fit with " << my_fdchits.size() << " FDC hits and " 
          << my_cdchits.size() << " CDC hits.-------" <<endl;
       if (fit_type==kTimeBased){
-         _DBG_ << " Using t0=" << mT0 << " from DET=" 
+	_DBG_ << " Using t0=" << mT0 << " from DET=" 
             << input_params.t0_detector() <<endl;
       }
    }
@@ -924,7 +929,6 @@ DTrackFitter::fit_status_t DTrackFitterKalmanSIMD::FitTrack(void)
    // Check that the momentum is above some minimal amount. If
    // not, return that the fit failed.
    if(fit_params.momentum().Mag() < MIN_FIT_P)fit_status = kFitFailed;
-
 
    //_DBG_  << "========= done!" << endl;
 
@@ -9136,15 +9140,15 @@ jerror_t DTrackFitterKalmanSIMD::BrentCentral(double dedx, DVector2 &xy, const d
 // matching
 jerror_t DTrackFitterKalmanSIMD::ExtrapolateForwardToOtherDetectors(){
   if (forward_traj.size()<2) return RESOURCE_UNAVAILABLE;
- 
+
   // First deal with start counter.  Only do this if the track has a chance
   // to intersect with the start counter volume.
   unsigned int inner_index=forward_traj.size()-1; 
    unsigned int index_beyond_start_counter=inner_index;
   DMatrix5x1 S=forward_traj[inner_index].S;
   bool intersected_start_counter=false;
-  if (S(state_x)*S(state_x)+S(state_y)*S(state_y)<sc_pos[0][12].Perp2()
-      && forward_traj[inner_index].z<sc_pos[0][12].z()){
+  if (S(state_x)*S(state_x)+S(state_y)*S(state_y)<SC_BARREL_R2
+      && forward_traj[inner_index].z<SC_END_NOSE_Z){
     double d_old=1000.,d=1000.,z=0.;
     unsigned int index=0;
     for (unsigned int m=0;m<12;m++){
@@ -9153,13 +9157,12 @@ jerror_t DTrackFitterKalmanSIMD::ExtrapolateForwardToOtherDetectors(){
 	S=forward_traj[k].S;
 	z=forward_traj[k].z;
 
-	double dphi=atan2(S(state_y),S(state_x))-sc_pos[0][0].Phi();
+	double dphi=atan2(S(state_y),S(state_x))-SC_PHI_SECTOR1;
 	if (dphi<0) dphi+=2.*M_PI;
 	index=int(floor(dphi/(2.*M_PI/30.)));
 	if (index>29) index=0;
 	d=sc_norm[index][m].Dot(DVector3(S(state_x),S(state_y),z)
 				-sc_pos[index][m]);
-	    
 	if (d*d_old<0){ // break if we cross the current plane
 	  if (m==0) index_beyond_start_counter=k;
 	  break;
@@ -9201,7 +9204,7 @@ jerror_t DTrackFitterKalmanSIMD::ExtrapolateForwardToOtherDetectors(){
 	  s-=ds;
 
 	  // Find the index for the nearest start counter paddle
-         double dphi=atan2(S(state_y),S(state_x))-sc_pos[0][0].Phi();
+         double dphi=atan2(S(state_y),S(state_x))-SC_PHI_SECTOR1;
          if (dphi<0) dphi+=2.*M_PI;
          index=int(floor(dphi/(2.*M_PI/30.)));
 
@@ -9513,7 +9516,7 @@ jerror_t DTrackFitterKalmanSIMD::ExtrapolateCentralToOtherDetectors(){
   unsigned int index_beyond_start_counter=inner_index;
   DVector2 xy=central_traj[inner_index].xy;
   DMatrix5x1 S=central_traj[inner_index].S;
-  if (xy.Mod()<sc_pos[0][12].Perp()&& S(state_z)<sc_pos[0][12].z()){ 
+  if (xy.Mod2()<SC_BARREL_R2&& S(state_z)<SC_END_NOSE_Z){ 
     double d_old=1000.,d=1000.,z=0.;
     unsigned int index=0;
     for (unsigned int m=0;m<12;m++){
@@ -9523,7 +9526,7 @@ jerror_t DTrackFitterKalmanSIMD::ExtrapolateCentralToOtherDetectors(){
 	z=S(state_z);
 	xy=central_traj[k].xy;
 
-	double dphi=xy.Phi()-sc_pos[0][0].Phi();
+	double dphi=xy.Phi()-SC_PHI_SECTOR1;
 	if (dphi<0) dphi+=2.*M_PI;
 	index=int(floor(dphi/(2.*M_PI/30.)));
 	if (index>29) index=0;
@@ -9576,7 +9579,7 @@ jerror_t DTrackFitterKalmanSIMD::ExtrapolateCentralToOtherDetectors(){
 	  // Step along the trajectory using d to estimate path length 
 	  FastStep(xy,-ds,0.,S);
 	  // Find the index for the nearest start counter paddle
-	  double dphi=xy.Phi()-sc_pos[0][0].Phi();
+	  double dphi=xy.Phi()-SC_PHI_SECTOR1;
 	  if (dphi<0) dphi+=2.*M_PI;
 	  index=int(floor(dphi/(2.*M_PI/30.)));
 	  if (index>29) index=0;  
