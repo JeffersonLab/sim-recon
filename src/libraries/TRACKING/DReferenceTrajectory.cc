@@ -21,7 +21,7 @@ using namespace std;
 #define ONE_THIRD 0.33333333333333333
 #define TWO_THIRD 0.66666666666666667
 #define EPS 1e-8
-#define NaN std::numeric_limits<double>::quiet_NaN()
+#define QuietNaN std::numeric_limits<double>::quiet_NaN()
 
 struct StepStruct {DReferenceTrajectory::swim_step_t steps[256];};
 
@@ -772,9 +772,9 @@ jerror_t DReferenceTrajectory::GetIntersectionWithRadius(double R,
 							 double *s,
 							 double *t,
 							 DVector3 *p_at_intersection) const{
-  mypos.SetXYZ(NaN,NaN,NaN);
+  mypos.SetXYZ(QuietNaN,QuietNaN,QuietNaN);
   if(p_at_intersection)
-    p_at_intersection->SetXYZ(NaN,NaN,NaN);
+    p_at_intersection->SetXYZ(QuietNaN,QuietNaN,QuietNaN);
 
   if(Nswim_steps<1){
     _DBG_<<"No swim steps! You must \"Swim\" the track before calling GetIntersectionWithRadius(...)"<<endl;
@@ -2168,8 +2168,8 @@ void DReferenceTrajectory::GetLastDOCAPoint(DVector3 &pos, DVector3 &mom) const
 			last_swim_step = &swim_steps[0];
 			last_phi = 0.0;
 		}else{
-			pos.SetXYZ(NaN,NaN,NaN);
-			mom.SetXYZ(NaN,NaN,NaN);
+			pos.SetXYZ(QuietNaN,QuietNaN,QuietNaN);
+			mom.SetXYZ(QuietNaN,QuietNaN,QuietNaN);
 			return;
 		}
 	}
@@ -2204,7 +2204,7 @@ DVector3 DReferenceTrajectory::GetLastDOCAPoint(void) const
 			last_swim_step = &swim_steps[0];
 			last_phi = 0.0;
 		}else{
-			return DVector3(NaN,NaN,NaN);
+			return DVector3(QuietNaN,QuietNaN,QuietNaN);
 		}
 	}
 	const DVector3 &xdir = last_swim_step->sdir;
