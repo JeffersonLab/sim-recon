@@ -12,6 +12,8 @@
 #include <vector>
 #include <limits>
 
+#include <TMath.h>
+
 using namespace std;
 
 #include <TOF/DTOFDigiHit.h>
@@ -20,6 +22,7 @@ using namespace std;
 #include <DAQ/Df250PulseIntegral.h>
 #include <DAQ/Df250Config.h>
 #include <DAQ/DCODAROCInfo.h>
+
 using namespace jana;
 
 static bool COSMIC_DATA = false;
@@ -40,7 +43,7 @@ jerror_t DTOFHit_factory::init(void)
   gPARMS->SetDefaultParameter("TOF:USE_NEW_4WALKCORR", USE_NEW_4WALKCORR,
 			      "Use NEW walk correction function with 4 parameters");
   
-  DELTA_T_ADC_TDC_MAX = 10.0; // ns
+  DELTA_T_ADC_TDC_MAX = 20.0; // ns
   //	DELTA_T_ADC_TDC_MAX = 30.0; // ns, value based on the studies from cosmic events
   gPARMS->SetDefaultParameter("TOF:DELTA_T_ADC_TDC_MAX", DELTA_T_ADC_TDC_MAX, 
 			      "Maximum difference in ns between a (calibrated) fADC time and F1TDC time for them to be matched in a single hit");
@@ -104,6 +107,20 @@ jerror_t DTOFHit_factory::brun(jana::JEventLoop *eventLoop, int32_t runnumber)
     
     if(print_messages) jout << "In DTOFHit_factory, loading constants..." << endl;
     
+    // load timing cut values
+    vector<double> time_cut_values;
+    if(eventLoop->GetCalib("/TOF/HitTimeCut", time_cut_values)){
+      jout << "Error loading /TOF/HitTimeCut SET DEFUALT to 0 and 100!" << endl;
+      TimeCenterCut = 0.;
+      TimeWidthCut = 100.;
+    } else {
+      double loli = time_cut_values[0];
+      double hili = time_cut_values[1];
+      TimeCenterCut = hili - (hili-loli)/2.;
+      TimeWidthCut = (hili-loli)/2.;
+      cout<<"TOF Timing Cuts for PRUNING: "<<TimeCenterCut<<" +/- "<<TimeWidthCut<<endl;
+    }
+
     // load scale factors
     map<string,double> scale_factors;
     if(eventLoop->GetCalib("/TOF/digi_scales", scale_factors))
@@ -277,6 +294,9 @@ jerror_t DTOFHit_factory::evnt(JEventLoop *loop, uint64_t eventnumber)
     double dA = A - pedestal;
     
     if (dA<0) continue; 
+
+    // apply Time cut to prune out of time hits
+    if (TMath::Abs(T-TimeCenterCut)> TimeWidthCut ) continue;
     
     DTOFHit *hit = new DTOFHit;
     hit->plane = digihit->plane;
@@ -323,6 +343,9 @@ jerror_t DTOFHit_factory::evnt(JEventLoop *loop, uint64_t eventnumber)
       double T = locTTabUtilities->Convert_DigiTimeToNs_CAEN1290TDC(digihit);
       T += t_base_tdc - GetConstant(tdc_time_offsets, digihit) + tdc_adc_time_offset;
       
+      // do not consider Time hits away from coincidence peak Note: This cut should be wide for uncalibrated data!!!!!
+      if (TMath::Abs(T-TimeCenterCut)> TimeWidthCut ) continue;
+
       /*
 	cout << "TOF TDC hit =  (" << digihit->plane << "," << digihit->bar << "," << digihit->end << ")  " 
 	<< T << "  " << GetConstant(tdc_time_offsets, digihit) << endl;
@@ -343,6 +366,21 @@ jerror_t DTOFHit_factory::evnt(JEventLoop *loop, uint64_t eventnumber)
 	hit->has_fADC=false;
 	
 	_data.push_back(hit);
+      } else if (hit->has_TDC) { // this tof ADC hit has already a matching TDC, make new tof ADC hit
+	DTOFHit *newhit = new DTOFHit;
+	newhit->plane = hit->plane;
+	newhit->bar = hit->bar;
+	newhit->end = hit->end;
+	newhit->dE = hit->dE;
+	newhit->Amp = hit->Amp;
+	newhit->t_fADC = hit->t_fADC;
+	newhit->has_fADC = hit->has_fADC;
+	newhit->t_TDC=numeric_limits<double>::quiet_NaN();
+	newhit->t = hit->t_fADC;  // set initial time to the ADC time, in case there's no matching TDC hit	
+	newhit->has_TDC=false;
+	newhit->AddAssociatedObject(digihit);
+	_data.push_back(newhit);
+	hit = newhit;
       }
       hit->has_TDC=true;
       hit->t_TDC=T;

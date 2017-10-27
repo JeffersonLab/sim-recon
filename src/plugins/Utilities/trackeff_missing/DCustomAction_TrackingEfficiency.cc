@@ -14,9 +14,10 @@ void DCustomAction_TrackingEfficiency::Initialize(JEventLoop* locEventLoop)
 		//This is so that when running multithreaded, only one thread is writing to the ROOT file at a time. 
 
 	const DReaction* locReaction = Get_Reaction();
-	if(!locReaction->Get_MissingPID(dMissingPID))
-		return; //invalid reaction setup
-	if(dMissingPID == Unknown)
+
+	auto locMissingPIDs = Get_Reaction()->Get_MissingPIDs();
+	dMissingPID = (locMissingPIDs.size() == 1) ? locMissingPIDs[0] : Unknown;
+	if(locMissingPIDs.size() != 1)
 		return; //invalid reaction setup
 
 	locEventLoop->GetSingle(dAnalysisUtilities);
@@ -113,17 +114,17 @@ bool DCustomAction_TrackingEfficiency::Perform_Action(JEventLoop* locEventLoop, 
 	if(ParticleCharge(dMissingPID) == 0)
 		return true; //NOT SUPPORTED
 
-	const DKinematicData* locMissingParticle = locParticleCombo->Get_MissingParticle(); //is NULL if no kinfit!!
+	auto locMissingParticle = (locParticleCombo->Get_MissingParticles(Get_Reaction()))[0]; //is NULL if no kinfit!!
 	const DParticleComboStep* locParticleComboStep = locParticleCombo->Get_ParticleComboStep(0);
 
 	// Get missing particle p4 & covariance
-	DLorentzVector locMeasuredMissingP4 = dAnalysisUtilities->Calc_MissingP4(locParticleCombo, false);
+	DLorentzVector locMeasuredMissingP4 = dAnalysisUtilities->Calc_MissingP4(Get_Reaction(), locParticleCombo, false);
 	DVector3 locMissingP3 = locMeasuredMissingP4.Vect();
 	TMatrixDSym locMissingCovarianceMatrix(3);
 	const DKinematicData* locBeamParticle = NULL;
 	if(locKinFitResults == NULL) //no kinfit (yet?), or kinfit failed
 	{
-		TMatrixFSym locFMissingCovarianceMatrix = dAnalysisUtilities->Calc_MissingP3Covariance(locParticleCombo);
+		TMatrixFSym locFMissingCovarianceMatrix = dAnalysisUtilities->Calc_MissingP3Covariance(Get_Reaction(), locParticleCombo);
 		for(unsigned int loc_q = 0; loc_q < 3; ++loc_q)
 		{
 			for(unsigned int loc_r = 0; loc_r < 3; ++loc_r)
@@ -151,7 +152,7 @@ bool DCustomAction_TrackingEfficiency::Perform_Action(JEventLoop* locEventLoop, 
 	for(auto locChargedTrack : locUnusedChargedTracks)
 	{
 		auto locBestHypothesis = locChargedTrack->Get_BestFOM();
-		auto locNumTrackHits = locBestHypothesis->dNDF_Track + 5;
+		auto locNumTrackHits = locBestHypothesis->Get_TrackTimeBased()->Ndof + 5;
 		if(locNumTrackHits >= 10)
 			++locNumExtraTracks;
 	}
@@ -292,6 +293,7 @@ bool DCustomAction_TrackingEfficiency::Perform_Action(JEventLoop* locEventLoop, 
 
 		++locNumTimeBasedTracks;
 	}
+
 	dTreeFillData.Fill_Single<UInt_t>("NumUnusedTimeBased", locNumTimeBasedTracks);
 
 	//FILL TTREE

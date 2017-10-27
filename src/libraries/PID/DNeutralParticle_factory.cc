@@ -37,17 +37,15 @@ jerror_t DNeutralParticle_factory::evnt(jana::JEventLoop *locEventLoop, uint64_t
 	vector<const DNeutralParticleHypothesis*> locNeutralParticleHypotheses;
 	locEventLoop->Get(locNeutralParticleHypotheses);
 
-	map<JObject::oid_t, vector<const DNeutralParticleHypothesis*> > locHypothesesByShowerID;
+	map<const DNeutralShower*, vector<const DNeutralParticleHypothesis*> > locHypothesesByShower;
 	for(size_t loc_i = 0; loc_i < locNeutralParticleHypotheses.size(); loc_i++)
-		locHypothesesByShowerID[locNeutralParticleHypotheses[loc_i]->dNeutralShowerID].push_back(locNeutralParticleHypotheses[loc_i]);
+		locHypothesesByShower[locNeutralParticleHypotheses[loc_i]->Get_NeutralShower()].push_back(locNeutralParticleHypotheses[loc_i]);
 
-	map<JObject::oid_t, vector<const DNeutralParticleHypothesis*> >::iterator locIterator = locHypothesesByShowerID.begin();
-	for(; locIterator != locHypothesesByShowerID.end(); ++locIterator)
+	for(auto& locPair : locHypothesesByShower)
 	{
 		DNeutralParticle* locNeutralParticle = new DNeutralParticle();
-		locNeutralParticle->dNeutralParticleHypotheses = locIterator->second;
-		locIterator->second[0]->GetSingle(locNeutralParticle->dNeutralShower);
-		locNeutralParticle->AddAssociatedObject(locNeutralParticle->dNeutralShower);
+		locNeutralParticle->dNeutralShower = locPair.first;
+		locNeutralParticle->dNeutralParticleHypotheses = locPair.second;
 		_data.push_back(locNeutralParticle);
 	}
 

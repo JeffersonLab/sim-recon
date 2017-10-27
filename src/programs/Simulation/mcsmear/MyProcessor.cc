@@ -159,7 +159,7 @@ jerror_t MyProcessor::brun(JEventLoop *loop, int locRunNumber)
     // we check to see if the variation is set and if it contains the string "mc".
     // Note that for now, we only print a warning and do not exit immediately.
     // It might be advisable to apply some tougher love.
-    jout << "In MyProcessor::brun()" << endl;
+
     if(locCheckCCDBContext) {
         // only do this once
         locCheckCCDBContext = false;        

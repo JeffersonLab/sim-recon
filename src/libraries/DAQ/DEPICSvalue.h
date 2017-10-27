@@ -51,6 +51,10 @@ class DEPICSvalue:public jana::JObject{
 				ss >> uval;
 				ss.str(sval);
 				ss >> fval;
+				
+				// stringstream will set fval to 0.0 if no decimal
+				// point is in the string. Use ival in these cases
+				if( (fval==0.0) && (ival!=0.0) ) fval = (double)ival;
 			}
 		}
 		virtual ~DEPICSvalue(){}

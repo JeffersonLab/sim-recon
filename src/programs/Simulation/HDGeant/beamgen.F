@@ -168,7 +168,7 @@ c set the x rotation angle to 0 by assigning Epeak = 0 in control.in
  5          continue
             freq = freq*freqIntegral(nProfileBins)/fp
             freq = REAL(freq*TWOPI)
-            ppol = polarization(x,theta2)
+            ppol = polarization(x,theta2,phi)
          else                                  !try incoherent generation
             x = xMinimum**rndm(2)
             phi = REAL(rndm(3)*TWOPI)

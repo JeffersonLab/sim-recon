@@ -2386,6 +2386,9 @@ const char* hdv_mainframe::GetFactoryTag(string who)
 //-------------------
 void hdv_mainframe::GetReconFactory(string &name, string &tag)
 {
+	if(!reconfactory) return;
+	if(!reconfactory->GetSelectedEntry()) return;
+	if(!reconfactory->GetSelectedEntry()->GetTitle()) return;
 	string nametag(reconfactory->GetSelectedEntry()->GetTitle());
 	string::size_type pos = nametag.find(":");
 	name = nametag.substr(0, pos);
