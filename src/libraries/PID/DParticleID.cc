@@ -1276,6 +1276,28 @@ bool DParticleID::Distance_ToTrack(const vector<DTrackFitter::Extrapolation_t> &
   DVector3 locPaddleNorm=sc_norm[sc_index][locSCPlane];
   double ds = 0.3*locProjMom.Mag()/fabs(locProjMom.Dot(locPaddleNorm));
   
+  // ============================
+  // Figure out timing resolution 
+  // This is parameterized by 
+  double time_resolution = 0.;
+  double sc_local_z = z - sc_pos[sc_index][0].z();    // resolutions are stored as a function of the z distance from the upstream end of the SC
+  
+  if(sc_local_z < SC_BOUNDARY1[sc_index]) {
+    time_resolution = SC_SECTION1_P0[sc_index] + SC_SECTION1_P1[sc_index]*sc_local_z;
+  } else if(sc_local_z < SC_BOUNDARY2[sc_index]) {
+    time_resolution = SC_SECTION2_P0[sc_index] + SC_SECTION2_P1[sc_index]*sc_local_z;
+  } else {
+    time_resolution = SC_SECTION3_P0[sc_index] + SC_SECTION3_P1[sc_index]*sc_local_z;
+  }
+        
+  // max sure that we aren't getting some ridiculously large resolution
+  if(time_resolution > SC_MAX_RESOLUTION[sc_index])
+    time_resolution = SC_MAX_RESOLUTION[sc_index];
+  
+  // convert ps to ns
+  time_resolution /= 1000.;
+
+  
   //SET MATCHING INFORMATION
   if(locSCHitMatchParams == nullptr)
     locSCHitMatchParams = std::make_shared<DSCHitMatchParams>();
@@ -1283,7 +1305,7 @@ bool DParticleID::Distance_ToTrack(const vector<DTrackFitter::Extrapolation_t> &
   locSCHitMatchParams->dHitEnergy = locCorrectedHitEnergy;
   locSCHitMatchParams->dEdx = locSCHitMatchParams->dHitEnergy/ds;
   locSCHitMatchParams->dHitTime = locCorrectedHitTime;
-  locSCHitMatchParams->dHitTimeVariance = sc_paddle_resols[sc_index]*sc_paddle_resols[sc_index];
+  locSCHitMatchParams->dHitTimeVariance = time_resolution*time_resolution;
   locSCHitMatchParams->dFlightTime = locFlightTime;
   locSCHitMatchParams->dFlightTimeVariance = locFlightTimeVariance;
   locSCHitMatchParams->dPathLength = locPathLength;
