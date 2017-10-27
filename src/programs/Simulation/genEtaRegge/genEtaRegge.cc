@@ -404,16 +404,19 @@ int main(int narg, char *argv[])
 
   // Get coherent peak and collimator diameter
   getline(infile,comment_line);
-  float Epeak=9.0,collDiam=0.005;
+  float Epeak=9.0,collDiam=0.005,radThickness=50e-6;
   float Ee=12.0;
   infile >> Ee;
   infile >> Epeak;
   infile >> collDiam;
+  infile >> radThickness;
   infile.ignore(); // ignore the '\n' at the end of this line
 
   cout << "Electron beam energy = " << Ee << " GeV, Coherent peak = " 
        << Epeak <<" GeV, collimator diameter = " 
-       <<collDiam << " m" << endl;
+       <<collDiam << " m, radiator thickness = " 
+       << radThickness << " m"
+       << endl;
 
   // Get decaying particle mass and width
   string comment_line2;
@@ -473,10 +476,9 @@ int main(int narg, char *argv[])
   float radColDist=76.0;// meters
   int doPolFlux=0;  // want total flux (1 for polarized flux)
   float emitmr=10.e-9; // electron beam emittance
-  float radt=50.e-6; // radiator thickness in m
   CobremsGeneration cobrems(Ee, Epeak);
   cobrems.setBeamEmittance(emitmr);
-  cobrems.setTargetThickness(radt);
+  cobrems.setTargetThickness(radThickness);
   cobrems.setCollimatorDistance(radColDist);
   cobrems.setCollimatorDiameter(collDiam);
   cobrems.setCollimatedFlag(true);
