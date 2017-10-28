@@ -15,7 +15,7 @@ using namespace std;
 
 //--------------------------------------------------------------------------------------
 // Apple compiler does not currently support std::accumulate so define it here if needed
-#ifndef accumulate
+#ifdef __APPLE__
 namespace std{
 template <class InputIterator, class T>
    T accumulate (InputIterator first, InputIterator last, T init)
