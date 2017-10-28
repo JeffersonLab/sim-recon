@@ -38,7 +38,7 @@ void CCALSmearer::SmearEvent(hddm_s::HDDM *record){
       if (!ccalGeom->isBlockActive(iter->getRow(), iter->getColumn()))
 	continue;
       // Smear the energy and timing of the hit
-      double sigma = ccal_config->CCAL_PHOT_STAT_COEF/sqrt(titer->getE()) ;
+      //      double sigma = ccal_config->CCAL_PHOT_STAT_COEF/sqrt(titer->getE()) ;
       
       // A.S.  new calibration of the CCAL
       double E = titer->getE();

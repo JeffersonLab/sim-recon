@@ -25,7 +25,7 @@
 
 using namespace std;
 
-#define NaN std::numeric_limits<double>::quiet_NaN()
+#define QuietNaN std::numeric_limits<double>::quiet_NaN()
 
 
 class DReferenceTrajectory;
@@ -142,7 +142,7 @@ class DTrackFitter:public jana::JObject{
 		void SetInputParameters(const DTrackingData &starting_params){input_params=starting_params;}
 		
 		// Wrappers
-		fit_status_t FitTrack(const DVector3 &pos, const DVector3 &mom, double q, double mass,double t0=NaN,DetectorSystem_t t0_det=SYS_NULL);
+		fit_status_t FitTrack(const DVector3 &pos, const DVector3 &mom, double q, double mass,double t0=QuietNaN,DetectorSystem_t t0_det=SYS_NULL);
 		fit_status_t FitTrack(const DTrackingData &starting_params);
 		
 		// Methods that actually do something
@@ -151,7 +151,7 @@ class DTrackFitter:public jana::JObject{
 				      const DReferenceTrajectory *rt, 
 				      JEventLoop *loop, double mass=-1.0,
 				      int N=0,
-				      double t0=NaN,
+				      double t0=QuietNaN,
 				      DetectorSystem_t t0_det=SYS_NULL
 				      ); ///< mass<0 means get it from starting_params
 		jerror_t CorrectForELoss(const DKinematicData &starting_params, DReferenceTrajectory *rt, DVector3 &pos, DVector3 &mom, double mass);
