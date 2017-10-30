@@ -68,7 +68,7 @@ jerror_t DReaction_factory_Z2pi_trees::evnt(JEventLoop* locEventLoop, uint64_t l
 	locReaction->Set_KinFitType(d_P4Fit); //simultaneously constrain apply four-momentum conservation, invariant masses, NO vertex
 
 	// Highly Recommended: When generating particle combinations, reject all beam photons that match to a different RF bunch
-	locReaction->Set_MaxPhotonRFDeltaT(0.5*dBeamBunchPeriod); //should be minimum cut value
+	locReaction->Set_NumPlusMinusRFBunches(0);
 
 	// Highly Recommended: Cut on number of extra "good" tracks. "Good" tracks are ones that survive the "PreSelect" (or user custom) factory.
 		// Important: Keep cut large: Can have many ghost and accidental tracks that look "good"

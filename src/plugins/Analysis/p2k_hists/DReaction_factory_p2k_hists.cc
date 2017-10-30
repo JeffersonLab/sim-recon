@@ -51,7 +51,7 @@ jerror_t DReaction_factory_p2k_hists::evnt(JEventLoop* locEventLoop, uint64_t lo
 	// Event Store
 	locReaction->Set_EventStoreSkims("2q+,q-"); // boolean-AND of skims
 
-	locReaction->Set_MaxPhotonRFDeltaT(0.5*dBeamBunchPeriod); //beam bunches are every 4.008 ns, (2.004 should be minimum cut value)
+	locReaction->Set_NumPlusMinusRFBunches(0);
 	locReaction->Set_MaxExtraGoodTracks(4);
 
 	/**************************************************** p2k_preco Analysis Actions ****************************************************/
@@ -109,7 +109,7 @@ jerror_t DReaction_factory_p2k_hists::evnt(JEventLoop* locEventLoop, uint64_t lo
 	// KINFIT
 	locReaction->Set_KinFitType(d_P4AndVertexFit); //simultaneously constrain apply four-momentum conservation, invariant masses, and common-vertex constraints
 
-	locReaction->Set_MaxPhotonRFDeltaT(0.5*dBeamBunchPeriod); //beam bunches are every 4.008 ns, (2.004 should be minimum cut value)
+	locReaction->Set_NumPlusMinusRFBunches(0);
 	locReaction->Set_MaxExtraGoodTracks(4);
 
 	/**************************************************** p2k_preco_kinfit Analysis Actions ****************************************************/

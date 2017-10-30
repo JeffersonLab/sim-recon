@@ -48,7 +48,7 @@ jerror_t DReaction_factory_b1pi_hists::init(void)
 	locReaction->Set_KinFitType(d_P4AndVertexFit); //defined in DKinFitResults.h
 
 	// Highly Recommended: When generating particle combinations, reject all beam photons that match to a different RF bunch (delta_t > 1.002 ns)
-	locReaction->Set_MaxPhotonRFDeltaT(0.5*2.004); //beam bunches are every 2.004 ns, (1.002 should be minimum cut value)
+	locReaction->Set_NumPlusMinusRFBunches(0);
 
 	// Enable ROOT TTree Output
 	locReaction->Enable_TTreeOutput("tree_b1pi.root"); //string is file name (must end in ".root"!!)
