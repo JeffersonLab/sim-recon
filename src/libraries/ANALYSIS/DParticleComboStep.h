@@ -131,7 +131,7 @@ inline const DKinematicData* DParticleComboStep::Get_FinalParticle_Measured(size
 inline const DKinematicData* DParticleComboStep::Get_MissingParticle(const DReactionStep* locReactionStep) const
 {
 	int locMissingParticleIndex = locReactionStep->Get_MissingParticleIndex();
-	if(locMissingParticleIndex == -1)
+	if(locMissingParticleIndex == DReactionStep::Get_ParticleIndex_None())
 		return nullptr;
 	return dFinalParticles[locMissingParticleIndex];
 }

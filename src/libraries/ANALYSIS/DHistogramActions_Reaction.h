@@ -508,13 +508,13 @@ class DHistogramAction_KinFitResults : public DAnalysisAction
 		DAnalysisAction(locReaction, "Hist_KinFitResults", true, locActionUniqueString),
 		dHistDependenceFlag(false), dNumConfidenceLevelBins(400), dNumPullBins(200), dNum2DPBins(200), dNum2DThetaBins(140), dNum2DPhiBins(180), dNum2DPullBins(100),
 		dNum2DConfidenceLevelBins(100), dNum2DBeamEBins(240), dMinPull(-4.0), dMaxPull(4.0), dMinP(0.0), dMaxP(10.0), dMinTheta(0.0), dMaxTheta(140.0),
-		dMinPhi(-180.0), dMaxPhi(180.0), dMinBeamE(0.0), dMaxBeamE(12.0), dPullHistConfidenceLevelCut(locPullHistConfidenceLevelCut), dAnalysisUtilities(NULL) {}
+		dMinPhi(-180.0), dMaxPhi(180.0), dMinBeamE(0.0), dMaxBeamE(12.0), dPullHistConfidenceLevelCut(locPullHistConfidenceLevelCut) {}
 
 		DHistogramAction_KinFitResults(const DReaction* locReaction, double locPullHistConfidenceLevelCut, bool locHistDependenceFlag, string locActionUniqueString = "") :
 		DAnalysisAction(locReaction, "Hist_KinFitResults", true, locActionUniqueString), 
 		dHistDependenceFlag(locHistDependenceFlag), dNumConfidenceLevelBins(400), dNumPullBins(200), dNum2DPBins(200), dNum2DThetaBins(140), dNum2DPhiBins(180), dNum2DPullBins(100),
 		dNum2DConfidenceLevelBins(100), dNum2DBeamEBins(240), dMinPull(-4.0), dMaxPull(4.0), dMinP(0.0), dMaxP(10.0), dMinTheta(0.0), dMaxTheta(140.0),
-		dMinPhi(-180.0), dMaxPhi(180.0), dMinBeamE(0.0), dMaxBeamE(12.0), dPullHistConfidenceLevelCut(locPullHistConfidenceLevelCut), dAnalysisUtilities(NULL) {}
+		dMinPhi(-180.0), dMaxPhi(180.0), dMinBeamE(0.0), dMaxBeamE(12.0), dPullHistConfidenceLevelCut(locPullHistConfidenceLevelCut) {}
 
 	private:
 		bool dHistDependenceFlag;
@@ -528,10 +528,19 @@ class DHistogramAction_KinFitResults : public DAnalysisAction
 	private:
 		bool Perform_Action(JEventLoop* locEventLoop, const DParticleCombo* locParticleCombo);
 
-		void Create_ParticlePulls(string locFullROOTName, bool locIsChargedFlag, bool locIsInVertexFitFlag, bool locIsNeutralShowerFlag, map<DKinFitPullType, TH1I*>& locParticlePulls, map<DKinFitPullType, TH2I*>& locParticlePullsVsP, map<DKinFitPullType, TH2I*>& locParticlePullsVsTheta, map<DKinFitPullType, TH2I*>& locParticlePullsVsPhi);
+		void Create_ParticlePulls(string locFullROOTName, bool locIsChargedFlag, bool locIsInVertexFitFlag, bool locIsNeutralShowerFlag, int locStepIndex, Particle_t locPID);
+		void Get_DeltaBinningParams(DKinFitPullType locPullType, bool loc2DFlag, int& locNumBins, double& locMax);
+		void Get_HistNameTitle(DKinFitPullType locPullType, string locFullROOTName, int locVsKey, string& locHistName, string& locHistTitle);
+		double Get_Delta(DKinFitPullType locPullType, const DKinematicData* locMeasured, const DKinematicData* locKinFit);
 
 		double dPullHistConfidenceLevelCut;
-		const DAnalysisUtilities* dAnalysisUtilities;
+	public:
+		unsigned int dNumDeltaPOverPBins = 400, dNumDeltaShowerEBins = 400, dNumDeltaThetaBins = 400, dNumDeltaPhiBins = 400, dNumDeltaVertexXYBins = 1000, dNumDeltaVertexZBins = 800, dNumDeltaTBins = 1000;
+		unsigned int dNum2DDeltaPOverPBins = 200, dNum2DDeltaShowerEBins = 200, dNum2DDeltaThetaBins = 200, dNum2DDeltaPhiBins = 200, dNum2DDeltaVertexXYBins = 500, dNum2DDeltaVertexZBins = 400, dNum2DDeltaTBins = 500;
+		double dMaxDeltaPOverP = 1.0, dMaxDeltaShowerE = 1.0, dMaxDeltaTheta = 10.0, dMaxDeltaPhi = 20.0, dMaxDeltaT = 5.0, dMaxDeltaVertexXY = 10.0, dMaxDeltaVertexZ = 40.0;
+
+	private:
+		const DAnalysisUtilities* dAnalysisUtilities = nullptr;
 		DKinFitUtils_GlueX* dKinFitUtils = nullptr;
 
 		//below maps: int is step index (-1 for beam), 2nd is particle
@@ -539,6 +548,12 @@ class DHistogramAction_KinFitResults : public DAnalysisAction
 		map<pair<int, Particle_t>, TH2I*> dHistMap_ConfidenceLevel_VsP;
 		map<pair<int, Particle_t>, TH2I*> dHistMap_ConfidenceLevel_VsTheta;
 		map<pair<int, Particle_t>, TH2I*> dHistMap_ConfidenceLevel_VsPhi;
+
+		//due to my laziness, pull-type px/py/pz corresponds to delta-theta, delta-phi, delta-p/p
+		map<pair<int, Particle_t>, map<DKinFitPullType, TH1I*> > dHistMap_Deltas;
+		map<pair<int, Particle_t>, map<DKinFitPullType, TH2I*> > dHistMap_DeltasVsP;
+		map<pair<int, Particle_t>, map<DKinFitPullType, TH2I*> > dHistMap_DeltasVsTheta;
+		map<pair<int, Particle_t>, map<DKinFitPullType, TH2I*> > dHistMap_DeltasVsPhi;
 
 		map<pair<int, Particle_t>, map<DKinFitPullType, TH1I*> > dHistMap_Pulls;
 		map<pair<int, Particle_t>, map<DKinFitPullType, TH2I*> > dHistMap_PullsVsP;
