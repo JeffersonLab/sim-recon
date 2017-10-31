@@ -1405,6 +1405,16 @@ bool DTrackCandidate_factory::MatchMethod1(const DTrackCandidate *fdccan,
      DVector3 mom=fdccan->momentum();
      double q=fdccan->charge();
 
+     // Check to see if the outer hit in the CDC does not exceed the radius of  
+     // the FDC position to try to avoid false matches...
+     unsigned int outer_index=cdchits.size()-1;
+     DVector3 origin=cdchits[outer_index]->wire->origin;
+     DVector3 dir=(1./cdchits[outer_index]->wire->udir.z())*cdchits[outer_index]->wire->udir;
+     DVector3 cdc_outer_wire_pos=origin+(167.-origin.z())*dir;
+     if (cdc_outer_wire_pos.Perp()>pos.Perp()) {
+       continue;
+     }
+
      // loop over the cdc hits and count hits that agree with a projection of 
      // the helix into the cdc 
      for (unsigned int m=0;m<cdchits.size();m++){
