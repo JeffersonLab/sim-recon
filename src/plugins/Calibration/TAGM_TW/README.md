@@ -36,10 +36,6 @@ when running TAGM_TW. Occasionally, the initial time difference is very large.**
 
 1. `python timing.py -b <rootfile> <run number> rf <CCDB variation>`
 2. `This produces the file adc_offsets-######.txt and tdc_offsets-######.txt`
-3. `./push-to-ccdb.sh <run number> <variation> adc tdc`
-or
-3. `ccdb add PHOTON_BEAM/microscope/fadc_time_offsets -v <variation> -r #-# adc_offsets-######.txt`
-4. `ccdb add PHOTON_BEAM/microscope/tdc_time_offsets -v <variation> -r #-# tdc_offsets-######.txt`
 
 ## Timewalk corrections
 The timewalk corrections are to be performed after the initial ADC-RF and 
@@ -51,32 +47,20 @@ difference between the TDC time and the RF time is taken. By doing it this
 way, there are not multiple timewalk distributions every beam period. This 
 allows for large timewalks to be included in the fit.
 
-**The constants from the previous step must be pushed to the CCDB and a new root
-file created using TAGM_TW before performing this step.**
-
 1. `python tw.py -b <rootfile> <run number>`
-2. `This creates the files results.root and tw-corr.txt`
+2. `This creates the files results.root and tw-corr-#####.txt`
 3. `root -l -b 'display.C("results.root")' to check the fits`
-4. `./push-to-ccdb.sh <run number> <variation> tw`
+
+## Update CCDB
+At this point, the TAGM timing calibrations should be finished.
+The fadc, tdc, and timewalk constants can now be pushed to the CCDB.
+
+** Note: the script push-to-ccdb.sh requires a run number WITHOUT a leading zero **
+1. `./push-to-ccdb.sh <run number> <variation>
 or
-4. `ccdb add /PHOTON_BEAM/microscope/tdc_timewalk_corrections -v <variation> -r #-# tw-corr.txt`
-
-## Corrected TDC-RF calibration
-At this point, the previous steps should be completed and verified. The 
-ADC-RF distribution should be centered at 0 as well as the raw TDC-ADC.
-
-This step takes the timewalk corrected TDC time and compares it with the ADC. 
-Since the ADC is already aligned with the RF, this will align the TDC with 
-both.
-
-**The constants from the previous step must be pushed to the CCDB and a new root
-file created using TAGM_TW before performing this step.**
-
-1. `python timing.py -b <rootfile> <run number> self <CCDB variation>`
-2. `This overwrites the previous tdc_offsets-#####.txt file`
-3. `./push-to-ccdb.sh <run number> <variation> tdc`
-or
+2. `ccdb add PHOTON_BEAM/microscope/fadc_time_offsets -v <variation> -r #-# adc_offsets-######.txt`
 3. `ccdb add PHOTON_BEAM/microscope/tdc_time_offsets -v <variation> -r #-# tdc_offsets-######.txt`
+4. `ccdb add PHOTON_BEAM/microscope/tdc_timewalk_corrections -v <variation> -r #-# tw-corr-######.txt`
 
 ## Calibration validation
 After all steps are complete, a calibration validation can be performed. Run 
