@@ -45,8 +45,8 @@ public:
 	enum { kMidBlock = ( kBlocksWide - 1 ) / 2 };
 	enum { kBeamHoleSize = 3 };
 
-	static double blockSize()  { return 4*k_cm; }
-	static double radius()  { return 1.2*k_m; }
+	static double blockSize()  { return 4.0157*k_cm; }
+	static double radius()  { return 1.20471*k_m; }
 	static double blockLength()  { return 45.0*k_cm; }
 	//	static double fcalFaceZ()  { return 625.3*k_cm; }
 
