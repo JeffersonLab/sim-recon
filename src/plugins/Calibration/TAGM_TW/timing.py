@@ -54,6 +54,7 @@ def main():
 	print 'Variation to be used: ' + variation
 	adcfile = open('adc_offsets-' + str(run) + '.txt','w')
 	tdcfile = open('tdc_offsets-' + str(run) + '.txt','w')
+	offset_file = open('offsets-' + str(run) + '.txt', 'w')
 	errorfile = open('problem-channels.txt','w')
 
 	baseDir = 'TAGM_TW/'
@@ -123,6 +124,7 @@ def main():
 
 			offset = float(tdc_assignment.constant_set.data_table[channel][2]) + tdc_offset + new_offset
 			tdcfile.write(' 0\t' + str(i) + '\t' + str(offset) + '\n')
+			offset_file.write(' 0\t' + str(i) + '\t' + str(tdc_offset + new_offset) + '\n')
 
 		channel += 1
 
@@ -183,6 +185,7 @@ def main():
 
 					offset = float(tdc_assignment.constant_set.data_table[channel][2]) +tdc_offset + new_offset
 					tdcfile.write(' ' + str(j+1) + '\t' + str(i) + '\t' + str(offset) + '\n')
+					offset_file.write(' ' + str(j+1) + '\t' + str(i) + '\t' + str(tdc_offset + new_offset) + '\n')
 
 				channel += 1
 
@@ -192,6 +195,7 @@ def main():
 
 	adcfile.close()
 	tdcfile.close()
+	offset_file.close()
 	errorfile.close()
 	rootfile.Close()
 	outroot.Close()

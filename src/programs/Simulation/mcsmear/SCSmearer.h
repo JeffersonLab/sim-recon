@@ -31,7 +31,7 @@ class sc_config_t
 
         // convert ps to ns
         time_resolution /= 1000.;
-        cout << " time resolution = " << time_resolution << endl;
+        //cout << " time resolution = " << time_resolution << endl;
         return time_resolution;
 	}
 

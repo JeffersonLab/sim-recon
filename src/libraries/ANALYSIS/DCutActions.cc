@@ -539,7 +539,6 @@ bool DCutAction_TrueCombo::Perform_Action(JEventLoop* locEventLoop, const DParti
 #ifdef VTRACE
 	VT_TRACER("DCutAction_TrueCombo::Perform_Action()");
 #endif
-
 	vector<const DMCThrownMatching*> locMCThrownMatchingVector;
 	locEventLoop->Get(locMCThrownMatchingVector);
 	if(locMCThrownMatchingVector.empty())
@@ -550,8 +549,7 @@ bool DCutAction_TrueCombo::Perform_Action(JEventLoop* locEventLoop, const DParti
 		return false; //not the thrown topology: bail
 
 	//Do we need to pick the beam photon? If so, look for it
-	Particle_t locPID = Get_Reaction()->Get_ReactionStep(0)->Get_InitialPID();
-	if(locPID == Gamma)
+	if(DAnalysis::Get_IsFirstStepBeam(Get_Reaction()))
 	{
 		if(!(*dCutAction_TrueBeamParticle)(locEventLoop, locParticleCombo))
 			return false; //needed the true beam photon, didn't have it

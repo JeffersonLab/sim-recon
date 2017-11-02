@@ -78,8 +78,8 @@ class DHistogramAction_ParticleComboGenReconComparison : public DAnalysisAction
 	public:
 		DHistogramAction_ParticleComboGenReconComparison(const DReaction* locReaction, bool locUseKinFitResultsFlag, string locActionUniqueString = "") : 
 		DAnalysisAction(locReaction, "Hist_ParticleComboGenReconComparison", locUseKinFitResultsFlag, locActionUniqueString), 
-		dNumDeltaPOverPBins(500), dNumDeltaThetaBins(240), dNumDeltaPhiBins(400), dNumDeltaTBins(500), dNumDeltaVertexZBins(300), dNum2DPBins(250), dNum2DThetaBins(140),
-		dNumRFDeltaTBins(202), dNumPullBins(500), dNum2DPullBins(250), dMinDeltaPOverP(-0.4), dMaxDeltaPOverP(0.4), dMinDeltaTheta(-1.0), dMaxDeltaTheta(1.0), dMinDeltaPhi(-6.0), dMaxDeltaPhi(6.0), dMinDeltaT(-5.0), 
+		dNumDeltaPOverPBins(2500), dNumDeltaThetaBins(240), dNumDeltaPhiBins(400), dNumDeltaTBins(500), dNumDeltaVertexZBins(300), dNum2DPBins(250), dNum2DThetaBins(140),
+		dNumRFDeltaTBins(202), dNumPullBins(500), dNum2DPullBins(250), dMinDeltaPOverP(-2.0), dMaxDeltaPOverP(2.0), dMinDeltaTheta(-1.0), dMaxDeltaTheta(1.0), dMinDeltaPhi(-6.0), dMaxDeltaPhi(6.0), dMinDeltaT(-5.0), 
 		dMaxDeltaT(5.0), dMinDeltaVertexZ(-15.0), dMaxDeltaVertexZ(15.0), dMinP(0.0), dMaxP(12.0), dMinTheta(0.0), dMaxTheta(140.0), dMinRFDeltaT(-10.1), dMaxRFDeltaT(10.1)
 		{
 			dPullTypes.resize(8);

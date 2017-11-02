@@ -97,7 +97,7 @@ jerror_t DReaction_factory_ppi0gamma_hists::evnt(JEventLoop* locEventLoop, uint6
 	locReaction->Set_KinFitType(d_P4AndVertexFit); //simultaneously constrain apply four-momentum conservation, invariant masses, and common-vertex constraints
 
 	// Highly Recommended: When generating particle combinations, reject all beam photons that match to a different RF bunch
-	locReaction->Set_MaxPhotonRFDeltaT(0.5*dBeamBunchPeriod);
+	locReaction->Set_NumPlusMinusRFBunches(0);
 
 	/**************************************************** ppi0gamma_preco_2FCAL Analysis Actions ****************************************************/
 
@@ -146,7 +146,7 @@ jerror_t DReaction_factory_ppi0gamma_hists::evnt(JEventLoop* locEventLoop, uint6
 	locReaction->Set_KinFitType(d_P4AndVertexFit); //simultaneously constrain apply four-momentum conservation, invariant masses, and common-vertex constraints
 
 	// Highly Recommended: When generating particle combinations, reject all beam photons that match to a different RF bunch
-	locReaction->Set_MaxPhotonRFDeltaT(0.5*dBeamBunchPeriod);
+	locReaction->Set_NumPlusMinusRFBunches(0);
 
 	/**************************************************** ppi0gamma_preco FCAL-BCAL Analysis Actions ****************************************************/
 
@@ -195,7 +195,7 @@ jerror_t DReaction_factory_ppi0gamma_hists::evnt(JEventLoop* locEventLoop, uint6
 	locReaction->Set_KinFitType(d_P4AndVertexFit); //simultaneously constrain apply four-momentum conservation, invariant masses, and common-vertex constraints
 
 	// Highly Recommended: When generating particle combinations, reject all beam photons that match to a different RF bunch
-	locReaction->Set_MaxPhotonRFDeltaT(0.5*dBeamBunchPeriod);
+	locReaction->Set_NumPlusMinusRFBunches(0);
 
 	/**************************************************** ppi0gamma_preco_2BCAL Analysis Actions ****************************************************/
 
@@ -244,7 +244,7 @@ jerror_t DReaction_factory_ppi0gamma_hists::evnt(JEventLoop* locEventLoop, uint6
 	//locReaction->Set_KinFitType(d_P4AndVertexFit); //simultaneously constrain apply four-momentum conservation, invariant masses, and common-vertex constraints
 
 	// Highly Recommended: When generating particle combinations, reject all beam photons that match to a different RF bunch
-	locReaction->Set_MaxPhotonRFDeltaT(0.5*dBeamBunchPeriod);
+	locReaction->Set_NumPlusMinusRFBunches(0);
 
 	/**************************************************** ppi0gamma_preco_any Analysis Actions ****************************************************/
 
@@ -288,7 +288,7 @@ jerror_t DReaction_factory_ppi0gamma_hists::evnt(JEventLoop* locEventLoop, uint6
 	locReaction->Set_KinFitType(d_P4AndVertexFit); //simultaneously constrain apply four-momentum conservation, invariant masses, and common-vertex constraints
 
 	// Highly Recommended: When generating particle combinations, reject all beam photons that match to a different RF bunch
-	locReaction->Set_MaxPhotonRFDeltaT(0.5*dBeamBunchPeriod);
+	locReaction->Set_NumPlusMinusRFBunches(0);
 
 	/**************************************************** ppi0gamma_preco_any_kinfit Analysis Actions ****************************************************/
 
