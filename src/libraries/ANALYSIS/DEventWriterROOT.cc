@@ -22,7 +22,7 @@ void DEventWriterROOT::Initialize(JEventLoop* locEventLoop)
 		dCutActionMap_ThrownTopology[locReactions[loc_i]] = new DCutAction_ThrownTopology(locReactions[loc_i], true);
 		dCutActionMap_ThrownTopology[locReactions[loc_i]]->Initialize(locEventLoop);
 
-		dCutActionMap_TrueCombo[locReactions[loc_i]] = new DCutAction_TrueCombo(locReactions[loc_i], 5.73303E-7, true); //+/- 5sigma
+		dCutActionMap_TrueCombo[locReactions[loc_i]] = new DCutAction_TrueCombo(locReactions[loc_i], -1.0, true);
 		dCutActionMap_TrueCombo[locReactions[loc_i]]->Initialize(locEventLoop);
 
 		dCutActionMap_BDTSignalCombo[locReactions[loc_i]] = new DCutAction_BDTSignalCombo(locReactions[loc_i], 5.73303E-7, true, true); //+/- 5sigma

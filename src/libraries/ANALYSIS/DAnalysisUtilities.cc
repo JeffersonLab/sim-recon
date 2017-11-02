@@ -383,7 +383,6 @@ bool DAnalysisUtilities::Check_ThrownsMatchReaction(const DReaction* locThrownRe
 
 	if(locThrownCombo == NULL)
 		return false;
-
 	if(locExclusiveMatchFlag)
 	{
 		if(locReaction->Get_NumReactionSteps() != locThrownCombo->Get_NumParticleComboSteps())
@@ -438,8 +437,9 @@ bool DAnalysisUtilities::Check_ThrownsMatchReaction(const DReaction* locThrownRe
 			const DReactionStep* locReactionStep = locReaction->Get_ReactionStep(loc_j);
 			if(locMatchedInputStepIndices.find(loc_j) != locMatchedInputStepIndices.end())
 				continue; //this step was already accounted for
+
 			//when not exact match: allow user step to have a missing unknown particle
-			if(DAnalysis::Check_ChannelEquality(locThrownReaction->Get_ReactionStep(loc_i), locReactionStep, false, !locExclusiveMatchFlag))
+			if(!DAnalysis::Check_ChannelEquality(locThrownReaction->Get_ReactionStep(loc_i), locReactionStep, false, !locExclusiveMatchFlag))
 				continue; //particles aren't the same
 
 			//ok, now check to make sure that the parent particle in this step was produced the same way in both thrown & locReaction
@@ -470,6 +470,7 @@ bool DAnalysisUtilities::Check_ThrownsMatchReaction(const DReaction* locThrownRe
 			locMatchFoundFlag = true;
 			break;
 		}
+
 		if((!locMatchFoundFlag) && (locPossibleMatchIndex != -1))
 		{
 			//need to use the possible match
