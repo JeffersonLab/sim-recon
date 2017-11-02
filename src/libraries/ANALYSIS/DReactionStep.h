@@ -13,6 +13,32 @@
 
 using namespace std;
 
+//--------------------------------------------------------------------------------------
+// Apple compiler does not currently support std::accumulate so define it here if needed
+#ifdef __APPLE__
+namespace std{
+template <class InputIterator, class T>
+   T accumulate (InputIterator first, InputIterator last, T init)
+{
+  while (first!=last) {
+    init = init + *first;
+    ++first;
+  }
+  return init;
+}
+template <class InputIterator, class T, class BinaryOperation>
+   T accumulate (InputIterator first, InputIterator last, T init, BinaryOperation binary_op)
+{
+  while (first!=last) {
+    binary_op(init,*first);
+    ++first;
+  }
+  return init;
+}
+};
+#endif
+//--------------------------------------------------------------------------------------
+
 namespace DAnalysis
 {
 
@@ -288,6 +314,7 @@ inline bool Check_ChannelEquality(const DReactionStep* lhs, const DReactionStep*
 		return false;
 	auto locMissingIndex_lhs = lhs->Get_MissingParticleIndex();
 	auto locMissingIndex_rhs = rhs->Get_MissingParticleIndex();
+
 	//if it's not, then ... one must be inclusive, the other none
 	if((lhs->Get_MissingPID() == Unknown) && (locMissingIndex_lhs != locMissingIndex_rhs))
 	{

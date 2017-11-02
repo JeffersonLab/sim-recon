@@ -2583,6 +2583,8 @@ bool DParticleID::PredictBCALWedge(const DReferenceTrajectory *rt, unsigned int 
 	double slice=phi/7.5;
 	double mid_slice=round(slice);
 	module=int(mid_slice)+1;
+	if(module == 49)
+		module = 1; //e.g. for phi = 357, above gives module = 49 //phi = 0 is middle of module 1
 	sector=int(floor((phi-7.5*mid_slice+3.75)/1.875))+1;
 
 	if (intersection) *intersection=proj_pos;

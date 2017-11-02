@@ -1,9 +1,8 @@
 #ifndef _DParticleCombo_
 #define _DParticleCombo_
 
-#include <deque>
+#include <iostream>
 #include <vector>
-#include <set>
 
 #include "particleType.h"
 #include "DResettable.h"
@@ -162,6 +161,12 @@ inline vector<const DKinematicData*> DParticleCombo::Get_DecayChainParticles_Mea
 			locMeasuredParticles.push_back(locMeasuredParticle);
 	}
 	return locMeasuredParticles;
+}
+
+inline void Print(const DParticleCombo* locCombo)
+{
+	for(auto locStep : locCombo->Get_ParticleComboSteps())
+		DAnalysis::Print(locStep);
 }
 
 } // end namespace

@@ -85,6 +85,11 @@ using namespace std;
  * Solution 2: Have those objects inherit from DResettable (below), and define the member functions.
  *
  **********************************************************************************************************************/
+ 
+// Apple compiler does not currently support alignas. Make this an empty definition if it is not already defined.
+#ifndef alignas
+#define alignas(A) 
+#endif
 
 template <typename DType> class DResourcePool : public std::enable_shared_from_this<DResourcePool<DType>>
 {

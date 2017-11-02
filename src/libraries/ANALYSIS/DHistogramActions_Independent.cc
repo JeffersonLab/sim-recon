@@ -3094,15 +3094,15 @@ void DHistogramAction_TrackShowerErrors::Initialize(JEventLoop* locEventLoop)
 			// Z
 			locHistName = "ZErrorVsP";
 			locHistTitle = locParticleROOTName + string(";p (GeV/c);#sigma_{z} (cm)");
-			dHistMap_ShowerZErrorVsP[locIsBCALFlag] = GetOrCreate_Histogram<TH2I>(locHistName, locHistTitle, dNum2DPBins, dMinP, locMaxP, dNum2DZErrorBins, 0.0, dMaxZError);
+			dHistMap_ShowerZErrorVsP[locIsBCALFlag] = GetOrCreate_Histogram<TH2I>(locHistName, locHistTitle, dNum2DPBins, dMinP, locMaxP, dNum2DShowerZErrorBins, 0.0, dMaxShowerZError);
 
 			locHistName = "ZErrorVsTheta";
 			locHistTitle = locParticleROOTName + string(";#theta#circ;#sigma_{z} (cm)");
-			dHistMap_ShowerZErrorVsTheta[locIsBCALFlag] = GetOrCreate_Histogram<TH2I>(locHistName, locHistTitle, dNum2DThetaBins, locMinTheta, locMaxTheta, dNum2DZErrorBins, 0.0, dMaxZError);
+			dHistMap_ShowerZErrorVsTheta[locIsBCALFlag] = GetOrCreate_Histogram<TH2I>(locHistName, locHistTitle, dNum2DThetaBins, locMinTheta, locMaxTheta, dNum2DShowerZErrorBins, 0.0, dMaxShowerZError);
 
 			locHistName = "ZErrorVsPhi";
 			locHistTitle = locParticleROOTName + string(";#phi#circ;#sigma_{z} (cm)");
-			dHistMap_ShowerZErrorVsPhi[locIsBCALFlag] = GetOrCreate_Histogram<TH2I>(locHistName, locHistTitle, dNum2DPhiBins, dMinPhi, dMaxPhi, dNum2DZErrorBins, 0.0, dMaxZError);
+			dHistMap_ShowerZErrorVsPhi[locIsBCALFlag] = GetOrCreate_Histogram<TH2I>(locHistName, locHistTitle, dNum2DPhiBins, dMinPhi, dMaxPhi, dNum2DShowerZErrorBins, 0.0, dMaxShowerZError);
 
 			// T
 			locHistName = "TErrorVsP";

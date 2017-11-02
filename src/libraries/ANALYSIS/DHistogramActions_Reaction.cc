@@ -1686,15 +1686,13 @@ void DHistogramAction_KinFitResults::Initialize(JEventLoop* locEventLoop)
 				CreateAndChangeTo_Directory("Beam", "Beam");
 				map<DKinFitPullType, TH1I*> locParticlePulls;
 				map<DKinFitPullType, TH2I*> locParticlePullsVsP, locParticlePullsVsTheta, locParticlePullsVsPhi;
-				Create_ParticlePulls(locFullROOTName, locIsChargedFlag, locIsInVertexFitFlag, false, locParticlePulls, locParticlePullsVsP, locParticlePullsVsTheta, locParticlePullsVsPhi);
-				dHistMap_Pulls[pair<int, Particle_t>(-1, locInitialPID)] = locParticlePulls;
-				dHistMap_PullsVsP[pair<int, Particle_t>(-1, locInitialPID)] = locParticlePullsVsP;
+				Create_ParticlePulls(locFullROOTName, locIsChargedFlag, locIsInVertexFitFlag, false, -1, locInitialPID);
 
 				gDirectory->cd("..");
 			}
 		}
 
-		//final particles (pulls & conlev)
+		//final particles
 		for(size_t loc_i = 0; loc_i < Get_Reaction()->Get_NumReactionSteps(); ++loc_i)
 		{
 			const DReactionStep* locReactionStep = Get_Reaction()->Get_ReactionStep(loc_i);
@@ -1772,14 +1770,7 @@ void DHistogramAction_KinFitResults::Initialize(JEventLoop* locEventLoop)
 
 				string locParticleROOTName = ParticleName_ROOT(locPID);
 				string locFullROOTName = locParticleROOTName + string(", ") + locStepROOTName;
-
-				map<DKinFitPullType, TH1I*> locParticlePulls;
-				map<DKinFitPullType, TH2I*> locParticlePullsVsP, locParticlePullsVsTheta, locParticlePullsVsPhi;
-				Create_ParticlePulls(locFullROOTName, locIsChargedFlag, locIsInVertexFitFlag, locIsNeutralShowerFlag, locParticlePulls, locParticlePullsVsP, locParticlePullsVsTheta, locParticlePullsVsPhi);
-				dHistMap_Pulls[pair<int, Particle_t>(loc_i, locPID)] = locParticlePulls;
-				dHistMap_PullsVsP[pair<int, Particle_t>(loc_i, locPID)] = locParticlePullsVsP;
-				dHistMap_PullsVsTheta[pair<int, Particle_t>(loc_i, locPID)] = locParticlePullsVsTheta;
-				dHistMap_PullsVsPhi[pair<int, Particle_t>(loc_i, locPID)] = locParticlePullsVsPhi;
+				Create_ParticlePulls(locFullROOTName, locIsChargedFlag, locIsInVertexFitFlag, locIsNeutralShowerFlag, loc_i, locPID);
 
 				gDirectory->cd("..");
 			} //end of particle loop
@@ -1794,9 +1785,9 @@ void DHistogramAction_KinFitResults::Initialize(JEventLoop* locEventLoop)
 	japp->RootUnLock(); //RELEASE ROOT LOCK!!
 }
 
-void DHistogramAction_KinFitResults::Create_ParticlePulls(string locFullROOTName, bool locIsChargedFlag, bool locIsInVertexFitFlag, bool locIsNeutralShowerFlag, map<DKinFitPullType, TH1I*>& locParticlePulls, map<DKinFitPullType, TH2I*>& locParticlePullsVsP, map<DKinFitPullType, TH2I*>& locParticlePullsVsTheta, map<DKinFitPullType, TH2I*>& locParticlePullsVsPhi)
+void DHistogramAction_KinFitResults::Create_ParticlePulls(string locFullROOTName, bool locIsChargedFlag, bool locIsInVertexFitFlag, bool locIsNeutralShowerFlag, int locStepIndex, Particle_t locPID)
 {
-	locParticlePulls.clear();
+	auto locParticlePair = std::make_pair(locStepIndex, locPID);
 
 	DKinFitType locKinFitType = Get_Reaction()->Get_KinFitType();
 	bool locP4IsFit = ((locKinFitType != d_VertexFit) && (locKinFitType != d_SpacetimeFit));
@@ -1839,32 +1830,150 @@ void DHistogramAction_KinFitResults::Create_ParticlePulls(string locFullROOTName
 	for(; locIterator != locPullTypes.end(); ++locIterator)
 	{
 		pair<string, string> locStrings = (*locIterator).second;
+		auto locPullType = (*locIterator).first;
 
 		//1D
 		locHistName = locStrings.first;
 		locHistTitle = locFullROOTName + string(";") + locStrings.second + string(";# Combos");
-		locParticlePulls[(*locIterator).first] = GetOrCreate_Histogram<TH1I>(locHistName, locHistTitle, dNumPullBins, dMinPull, dMaxPull);
+		dHistMap_Pulls[locParticlePair][locPullType] = GetOrCreate_Histogram<TH1I>(locHistName, locHistTitle, dNumPullBins, dMinPull, dMaxPull);
+
+		int locNumDeltaBins;
+		double locMaxDeltaRange;
+		Get_DeltaBinningParams(locPullType, false, locNumDeltaBins, locMaxDeltaRange);
+		Get_HistNameTitle(locPullType, locFullROOTName, 0, locHistName, locHistTitle);
+		dHistMap_Deltas[locParticlePair][locPullType] = GetOrCreate_Histogram<TH1I>(locHistName, locHistTitle, locNumDeltaBins, -1.0*locMaxDeltaRange, locMaxDeltaRange);
 
 		if(!dHistDependenceFlag)
 			continue;
+		Get_DeltaBinningParams(locPullType, true, locNumDeltaBins, locMaxDeltaRange);
 
 		//vs p
 		locHistName = locStrings.first + string("_VsP");
 		locHistTitle = locFullROOTName + string(";p (GeV/c);") + locStrings.second;
-		locParticlePullsVsP[(*locIterator).first] = GetOrCreate_Histogram<TH2I>(locHistName, locHistTitle, locNum2DPBins, locMinP, locMaxP, dNumPullBins, dMinPull, dMaxPull);
-
+		dHistMap_PullsVsP[locParticlePair][locPullType] = GetOrCreate_Histogram<TH2I>(locHistName, locHistTitle, locNum2DPBins, locMinP, locMaxP, dNumPullBins, dMinPull, dMaxPull);
+		Get_HistNameTitle(locPullType, locFullROOTName, 1, locHistName, locHistTitle);
+		dHistMap_DeltasVsP[locParticlePair][locPullType] = GetOrCreate_Histogram<TH2I>(locHistName, locHistTitle, locNum2DPBins, locMinP, locMaxP, locNumDeltaBins, -1.0*locMaxDeltaRange, locMaxDeltaRange);
 		if(locIsBeamFlag)
 			continue;
 
 		//vs theta
 		locHistName = locStrings.first + string("_VsTheta");
 		locHistTitle = locFullROOTName + string(";#theta#circ;") + locStrings.second;
-		locParticlePullsVsTheta[(*locIterator).first] = GetOrCreate_Histogram<TH2I>(locHistName, locHistTitle, dNum2DThetaBins, dMinTheta, dMaxTheta, dNumPullBins, dMinPull, dMaxPull);
+		dHistMap_PullsVsTheta[locParticlePair][locPullType] = GetOrCreate_Histogram<TH2I>(locHistName, locHistTitle, dNum2DThetaBins, dMinTheta, dMaxTheta, dNumPullBins, dMinPull, dMaxPull);
+		Get_HistNameTitle(locPullType, locFullROOTName, 2, locHistName, locHistTitle);
+		dHistMap_DeltasVsTheta[locParticlePair][locPullType] = GetOrCreate_Histogram<TH2I>(locHistName, locHistTitle, dNum2DThetaBins, dMinTheta, dMaxTheta, locNumDeltaBins, -1.0*locMaxDeltaRange, locMaxDeltaRange);
 
 		//vs phi
 		locHistName = locStrings.first + string("_VsPhi");
 		locHistTitle = locFullROOTName + string(";#phi#circ;") + locStrings.second;
-		locParticlePullsVsPhi[(*locIterator).first] = GetOrCreate_Histogram<TH2I>(locHistName, locHistTitle, dNum2DPhiBins, dMinPhi, dMaxPhi, dNumPullBins, dMinPull, dMaxPull);
+		dHistMap_PullsVsPhi[locParticlePair][locPullType] = GetOrCreate_Histogram<TH2I>(locHistName, locHistTitle, dNum2DPhiBins, dMinPhi, dMaxPhi, dNumPullBins, dMinPull, dMaxPull);
+		Get_HistNameTitle(locPullType, locFullROOTName, 3, locHistName, locHistTitle);
+		dHistMap_DeltasVsPhi[locParticlePair][locPullType] = GetOrCreate_Histogram<TH2I>(locHistName, locHistTitle, dNum2DPhiBins, dMinPhi, dMaxPhi, locNumDeltaBins, -1.0*locMaxDeltaRange, locMaxDeltaRange);
+	}
+}
+
+void DHistogramAction_KinFitResults::Get_HistNameTitle(DKinFitPullType locPullType, string locFullROOTName, int locVsKey, string& locHistName, string& locHistTitle)
+{
+	string locNameParam, locTitleParam;
+	if(locPullType == d_EPull)
+	{
+		locNameParam = "ShowerE";
+		locTitleParam = "E";
+	}
+	else if(locPullType == d_PxPull) //delta-theta!!
+	{
+		locNameParam = "Theta";
+		locTitleParam = "#theta#circ";
+	}
+	else if(locPullType == d_PyPull) //delta-phi!!
+	{
+		locNameParam = "Phi";
+		locTitleParam = "#phi#circ";
+	}
+	else if(locPullType == d_PzPull) //delta-p/p!!
+	{
+		locNameParam = "POverP";
+		locTitleParam = "p/p";
+	}
+	else if(locPullType == d_XxPull)
+	{
+		locNameParam = "X";
+		locTitleParam = "Vertex-X (cm)";
+	}
+	else if(locPullType == d_XyPull)
+	{
+		locNameParam = "Y";
+		locTitleParam = "Vertex-Y (cm)";
+	}
+	else if(locPullType == d_XzPull)
+	{
+		locNameParam = "Z";
+		locTitleParam = "Vertex-Z (cm)";
+	}
+	else if(locPullType == d_TPull)
+	{
+		locNameParam = "T";
+		locTitleParam = "T (ns)";
+	}
+
+	if(locVsKey == 0) //1D
+	{
+		locHistName = string("Delta") + locNameParam;
+		locHistTitle = locFullROOTName + string(";#Delta") + locTitleParam;
+	}
+	else if(locVsKey == 1) //p
+	{
+		locHistName = string("Delta") + locNameParam + string("_VsP");
+		locHistTitle = locFullROOTName + string(";p (GeV/c);#Delta") + locTitleParam;
+	}
+	else if(locVsKey == 2) //theta
+	{
+		locHistName = string("Delta") + locNameParam + string("_VsTheta");
+		locHistTitle = locFullROOTName + string(";#theta#circ;#Delta") + locTitleParam;
+	}
+	else if(locVsKey == 3) //phi
+	{
+		locHistName = string("Delta") + locNameParam + string("_VsPhi");
+		locHistTitle = locFullROOTName + string(";#phi#circ;#Delta") + locTitleParam;
+	}
+}
+
+void DHistogramAction_KinFitResults::Get_DeltaBinningParams(DKinFitPullType locPullType, bool loc2DFlag, int& locNumBins, double& locMax)
+{
+	if(locPullType == d_EPull)
+	{
+		locNumBins = loc2DFlag ? dNum2DDeltaShowerEBins : dNumDeltaShowerEBins;
+		locMax = dMaxDeltaShowerE;
+	}
+	else if(locPullType == d_PxPull) //delta-theta!!
+	{
+		locNumBins = loc2DFlag ? dNum2DDeltaThetaBins : dNumDeltaThetaBins;
+		locMax = dMaxDeltaTheta;
+	}
+	else if(locPullType == d_PyPull) //delta-phi!!
+	{
+		locNumBins = loc2DFlag ? dNum2DDeltaPhiBins : dNumDeltaPhiBins;
+		locMax = dMaxDeltaPhi;
+	}
+	else if(locPullType == d_PzPull) //delta-p/p!!
+	{
+		locNumBins = loc2DFlag ? dNum2DDeltaPOverPBins : dNumDeltaPOverPBins;
+		locMax = dMaxDeltaPOverP;
+	}
+	else if((locPullType == d_XxPull) || (locPullType == d_XyPull))
+	{
+		locNumBins = loc2DFlag ? dNum2DDeltaVertexXYBins : dNumDeltaVertexXYBins;
+		locMax = dMaxDeltaVertexXY;
+	}
+	else if(locPullType == d_XzPull)
+	{
+		locNumBins = loc2DFlag ? dNum2DDeltaVertexZBins : dNumDeltaVertexZBins;
+		locMax = dMaxDeltaVertexZ;
+	}
+	else if(locPullType == d_TPull)
+	{
+		locNumBins = loc2DFlag ? dNum2DDeltaTBins : dNumDeltaTBins;
+		locMax = dMaxDeltaT;
 	}
 }
 
@@ -1918,6 +2027,12 @@ bool DHistogramAction_KinFitResults::Perform_Action(JEventLoop* locEventLoop, co
 							dHistMap_PullsVsP[locParticlePair][locIterator->first]->Fill(locP, locIterator->second);
 					}
 				}
+
+				//deltas
+				double locDeltaPOverP = (locParticleCombo->Get_ParticleComboStep(0)->Get_InitialParticle()->pmag() - locP)/locP;
+				dHistMap_Deltas[locParticlePair][d_PzPull]->Fill(locDeltaPOverP);
+				if(dHistDependenceFlag)
+					dHistMap_DeltasVsP[locParticlePair][d_PzPull]->Fill(locP, locDeltaPOverP);
 			}
 		}
 
@@ -1926,8 +2041,12 @@ bool DHistogramAction_KinFitResults::Perform_Action(JEventLoop* locEventLoop, co
 		{
 			const DParticleComboStep* locParticleComboStep = locParticleCombo->Get_ParticleComboStep(loc_i);
 			auto locParticles = locParticleComboStep->Get_FinalParticles_Measured(Get_Reaction()->Get_ReactionStep(loc_i));
-			for(auto& locParticle : locParticles)
+			auto locKinFitParticles = locParticleComboStep->Get_FinalParticles(Get_Reaction()->Get_ReactionStep(loc_i), false, false);
+			for(size_t loc_j = 0; loc_j < locParticles.size(); ++loc_j)
 			{
+				auto& locParticle = locParticles[loc_j];
+				auto& locKinFitParticle = locKinFitParticles[loc_j];
+
 				//get pulls for this particle
 				map<DKinFitPullType, double> locParticlePulls;
 				map<const JObject*, map<DKinFitPullType, double> >::iterator locParticleIterator = locPulls.find(locParticle);
@@ -1946,6 +2065,20 @@ bool DHistogramAction_KinFitResults::Perform_Action(JEventLoop* locEventLoop, co
 				double locP = locMomentum.Mag();
 				double locTheta = locMomentum.Theta()*180.0/TMath::Pi();
 				double locPhi = locMomentum.Phi()*180.0/TMath::Pi();
+
+				//deltas //loop used to easily figure out what params changed
+				for(auto locIterator = locParticlePulls.begin(); locIterator != locParticlePulls.end(); ++locIterator)
+				{
+					auto locPullType = locIterator->first;
+					auto locDelta = Get_Delta(locPullType, locParticle, locKinFitParticle);
+					dHistMap_Deltas[locParticlePair][locPullType]->Fill(locDelta);
+					if(!dHistDependenceFlag)
+						continue;
+
+					dHistMap_DeltasVsP[locParticlePair][locPullType]->Fill(locP, locDelta);
+					dHistMap_DeltasVsTheta[locParticlePair][locPullType]->Fill(locTheta, locDelta);
+					dHistMap_DeltasVsPhi[locParticlePair][locPullType]->Fill(locPhi, locDelta);
+				}
 
 				//con lev
 				if(dHistDependenceFlag)
@@ -1974,6 +2107,39 @@ bool DHistogramAction_KinFitResults::Perform_Action(JEventLoop* locEventLoop, co
 	Unlock_Action();
 
 	return true;
+}
+
+double DHistogramAction_KinFitResults::Get_Delta(DKinFitPullType locPullType, const DKinematicData* locMeasured, const DKinematicData* locKinFit)
+{
+	//kinfit - measured
+	if(locPullType == d_EPull)
+		return locKinFit->energy() - locMeasured->energy();
+	else if(locPullType == d_PxPull) //delta-theta!!
+		return (locKinFit->momentum().Theta() - locMeasured->momentum().Theta())*180.0/TMath::Pi();
+	else if(locPullType == d_PyPull) //delta-phi!!
+	{
+		auto locDeltaPhi = (locKinFit->momentum().Phi() - locMeasured->momentum().Phi())*180.0/TMath::Pi();
+		while(locDeltaPhi > 180.0)
+			locDeltaPhi -= 360.0;
+		while(locDeltaPhi < -180.0)
+			locDeltaPhi += 360.0;
+		return locDeltaPhi;
+	}
+	else if(locPullType == d_PzPull) //delta-p-over-p!!
+	{
+		auto locP = locMeasured->momentum().Mag();
+		return (locKinFit->momentum().Mag() - locP)/locP;
+	}
+	else if(locPullType == d_XxPull)
+		return locKinFit->position().X() - locMeasured->position().X();
+	else if(locPullType == d_XyPull)
+		return locKinFit->position().Y() - locMeasured->position().Y();
+	else if(locPullType == d_XzPull)
+		return locKinFit->position().Z() - locMeasured->position().Z();
+	else if(locPullType == d_TPull)
+		return locKinFit->time() - locMeasured->time();
+	else
+		return 0.0;
 }
 
 void DHistogramAction_MissingTransverseMomentum::Initialize(JEventLoop* locEventLoop)
