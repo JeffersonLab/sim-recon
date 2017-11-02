@@ -314,6 +314,7 @@ inline bool Check_ChannelEquality(const DReactionStep* lhs, const DReactionStep*
 		return false;
 	auto locMissingIndex_lhs = lhs->Get_MissingParticleIndex();
 	auto locMissingIndex_rhs = rhs->Get_MissingParticleIndex();
+
 	//if it's not, then ... one must be inclusive, the other none
 	if((lhs->Get_MissingPID() == Unknown) && (locMissingIndex_lhs != locMissingIndex_rhs))
 	{
