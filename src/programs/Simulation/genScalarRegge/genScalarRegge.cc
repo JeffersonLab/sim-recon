@@ -15,13 +15,7 @@
 #include <vector>
 #include <string>
 using namespace std;
-
-extern "C"{
-  void cobrems_(float *Ee,float *Epeak, float *emitmr, float *radt,
-		float *dist,float *diameter,int *doPolFlux);
-  float dntdx_(float* x);
-  float dnidx_(float* x);
-}
+#include <CobremsGeneration.hh>
 
 // Masses
 const double m_p=0.93827; // GeV
@@ -36,7 +30,7 @@ double regge_cuts[5]; // dc c_P_omega c_f2_omega c_P_rho c_f2_rho
 double Emin=3.,Emax=12.0; // GeV
 double zmin=50.0,zmax=80.0; // cm, target extent
 int Nevents=10000;
-int runNo=10001;
+int runNo=30300;
 bool debug=false;
 
 // Diagnostic histograms
@@ -58,7 +52,7 @@ void Usage(void){
   printf("   Options:  -N<number of events> (number of events to generate)\n");
   printf("             -O<output.hddm>   (default: scalar_gen.hddm)\n");
   printf("             -I<input.in>      (default: scalar.in)\n");
-  printf("             -R<run number>    (default: 10001)\n");
+  printf("             -R<run number>    (default: 30300)\n");
   printf("             -h                (Print this message and exit.)\n");
   printf("Photon beam energy range, Regge cut parameters, and decay products are\n");
   printf("specified in the <input.in> file.\n");
@@ -2721,16 +2715,18 @@ int main(int narg, char *argv[])
 
   // Get coherent peak and collimator diameter
   getline(infile,comment_line);
-  float Epeak=9.0,collDiam=0.0034;
+  float Epeak=9.0,collDiam=0.0034,radThickness=50e-6;
   float Ee=12.0;
   infile >> Ee;
   infile >> Epeak;
   infile >> collDiam;
+  infile >> radThickness;
   infile.ignore(); // ignore the '\n' at the end of this line
 
   cout << "Electron beam energy = " << Ee << " GeV, Coherent peak = " 
        << Epeak <<" GeV, collimator diameter = " 
-       <<collDiam << " m" << endl;
+       <<collDiam << " m, radiator thickness = " 
+       << radThickness << " m" << endl;
   
   // Set number of decay particles
   int num_decay_particles=2;
@@ -2790,11 +2786,16 @@ int main(int narg, char *argv[])
   // Setup coherent bremsstrahlung generator
   //----------------------------------------------------------------------------
   float radColDist=76.0;// meters
-  //float colDiam=0.0034; // meters
   int doPolFlux=0;  // want total flux (1 for polarized flux)
   float emitmr=10.e-9; // electron beam emittance
-  float radt=20.e-6; // radiator thickness in m
-  cobrems_(&Ee,&Epeak,&emitmr,&radt,&radColDist,&collDiam,&doPolFlux);
+  CobremsGeneration cobrems(Ee, Epeak);
+  cobrems.setBeamEmittance(emitmr);
+  cobrems.setTargetThickness(radThickness);
+  cobrems.setCollimatorDistance(radColDist);
+  cobrems.setCollimatorDiameter(collDiam);
+  cobrems.setCollimatedFlag(true);
+  cobrems.setPolarizedFlag(doPolFlux);
+  cobrems.setCollimatedFlag(true);
   
   // Create some diagonistic histograms
   CreateHistograms();
@@ -2805,10 +2806,11 @@ int main(int narg, char *argv[])
   for (int i=1;i<=1000;i++){
     float x=float(cobrems_vs_E->GetBinCenter(i)/Ee);
     float y=0;
-    if (Epeak<Emin) y=dnidx_(&x);
-    else y=dntdx_(&x);
+    if (Epeak<Emin) y=cobrems.Rate_dNidx(x);
+    else y=cobrems.Rate_dNtdx(x);
     cobrems_vs_E->Fill(Ee*double(x),double(y));
   }
+
 
   // Set up some variables for cross section calculation
   // masses of decay particles
@@ -2887,10 +2889,11 @@ int main(int narg, char *argv[])
       double t0=M_sq*M_sq/(4.*s)-p_diff*p_diff;
       double sin_theta_over_2=0.;
       t=t0;
-      
-      // Generate theta with a uniform distribution and compute the cross 
+
+      // Generate cos(theta) with a uniform distribution and compute the cross 
       // section at this value
-      theta_cm=myrand->Uniform(M_PI);
+      double cos_theta_cm=-1.0+myrand->Uniform(2.);
+      theta_cm=acos(cos_theta_cm);
       // compute t
       sin_theta_over_2=sin(0.5*theta_cm);
       t=t0-4.*p_gamma*p_S*sin_theta_over_2*sin_theta_over_2;

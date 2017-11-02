@@ -1,7 +1,7 @@
 #Emin Emax (photon energy range)
 3.0 11.7
 #Electron beam energy [GeV], coherent peak [GeV] and collimator diameter [m]
-12.0 9.0 0.0034
+12.0 9.0 0.005 58e-6
 #GEANT ids of decay particles (1=gamma,7=pi0, 8=pi+, 9=pi-, 17=eta).
 7 17
 #Regge cut parameters: dc c_P_omega c_f2_omega c_P_rho c_f2_rho 
