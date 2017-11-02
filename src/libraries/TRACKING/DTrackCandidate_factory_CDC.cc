@@ -215,6 +215,9 @@ jerror_t DTrackCandidate_factory_CDC::evnt(JEventLoop *locEventLoop, uint64_t ev
 {
 	// Reset
 	dRejectedPhiRegions.clear();
+	dStereoHitNumUsedMap.clear();
+	for(unsigned int loc_i = 0; loc_i < 7; ++loc_i)
+		dSuperLayerSeeds[loc_i].clear();
 
 	// Reset in case didn't clear before exiting event evaluation on last event. 
 	Reset_Pools();
@@ -243,7 +246,7 @@ jerror_t DTrackCandidate_factory_CDC::evnt(JEventLoop *locEventLoop, uint64_t ev
 	}
 
 	// Build DCDCTrackCircle objects (each corresponds to (at most) one track):
-	deque<DCDCTrackCircle*> locCDCTrackCircles;
+	vector<DCDCTrackCircle*> locCDCTrackCircles;
 	bool locStatusFlag = Build_TrackCircles(locCDCTrackCircles);
 	if(!locStatusFlag)
 	{
@@ -494,7 +497,7 @@ jerror_t DTrackCandidate_factory_CDC::Get_CDCHits(JEventLoop* loop)
 //---------------------
 // Find_SuperLayerSeeds
 //---------------------
-void DTrackCandidate_factory_CDC::Find_SuperLayerSeeds(deque<DCDCTrkHit*>& locSuperLayerHits, unsigned int locSuperLayer)
+void DTrackCandidate_factory_CDC::Find_SuperLayerSeeds(vector<DCDCTrkHit*>& locSuperLayerHits, unsigned int locSuperLayer)
 {
 	// Sort through hits ring by ring to find DCDCRingSeed's from neighboring wires in the same ring. 
 	// What we want is a list of DCDCRingSeed's for each ring, which will then be combined to form DCDCSuperLayerSeeds
@@ -503,12 +506,12 @@ void DTrackCandidate_factory_CDC::Find_SuperLayerSeeds(deque<DCDCTrkHit*>& locSu
 			// Then the first hit is the smallest straw with phi > pi, and the last hit is the largest straw with phi < pi
 
 	// Clear DCDCSuperLayerSeed's
-	deque<DCDCSuperLayerSeed*>& locSuperLayerSeeds = dSuperLayerSeeds[locSuperLayer - 1];
+	vector<DCDCSuperLayerSeed*>& locSuperLayerSeeds = dSuperLayerSeeds[locSuperLayer - 1];
 	locSuperLayerSeeds.clear();
 
 	DCDCRingSeed locCDCRingSeed;
-	deque<DCDCRingSeed> locCDCRingSeeds; //list of DCDCRingSeed's in a given ring
-	deque<deque<DCDCRingSeed> > rings; //1st dimension is ring, 2nd dimension is DCDCRingSeed's in that ring
+	vector<DCDCRingSeed> locCDCRingSeeds; //list of DCDCRingSeed's in a given ring
+	vector<vector<DCDCRingSeed> > rings; //1st dimension is ring, 2nd dimension is DCDCRingSeed's in that ring
 	int last_ring = -1;
 
 	for(size_t i = 0; i < locSuperLayerHits.size(); ++i)
@@ -541,7 +544,7 @@ void DTrackCandidate_factory_CDC::Find_SuperLayerSeeds(deque<DCDCTrkHit*>& locSu
 					locCDCRingSeeds.pop_back();
 				}
 			}
-			//if there was at least one DCDCRingSeed found on the previous ring, save it in the 2d deque
+			//if there was at least one DCDCRingSeed found on the previous ring, save it in the 2d vector
 			if(!locCDCRingSeeds.empty())
 				rings.push_back(locCDCRingSeeds);
 			if(DEBUG_LEVEL > 3)
@@ -621,7 +624,7 @@ void DTrackCandidate_factory_CDC::Find_SuperLayerSeeds(deque<DCDCTrkHit*>& locSu
 	// Loop over rings, creating DCDCSuperLayerSeed's from adjacent rings
 	for(ringiter ring = rings.begin(); ring != rings.end(); ++ring)
 	{
-		deque<DCDCRingSeed>& locCDCRingSeeds = *ring;
+		vector<DCDCRingSeed>& locCDCRingSeeds = *ring;
 		ringiter next_ring = ring;
 		++next_ring;
 		
@@ -632,7 +635,7 @@ void DTrackCandidate_factory_CDC::Find_SuperLayerSeeds(deque<DCDCTrkHit*>& locSu
 				continue;
 
 			// This ringseed hasn't been used in a DCDCSuperLayerSeed yet. Start a new seed with it.
-			deque<DCDCRingSeed*> parent;
+			vector<DCDCRingSeed*> parent;
 			parent.push_back(&locCDCRingSeeds[j]);
 			Link_RingSeeds(parent, next_ring, rings.end(), locSuperLayer, 0);
 		}
@@ -655,7 +658,7 @@ void DTrackCandidate_factory_CDC::Find_SuperLayerSeeds(deque<DCDCTrkHit*>& locSu
 //---------------
 // Link_RingSeeds
 //---------------
-void DTrackCandidate_factory_CDC::Link_RingSeeds(deque<DCDCRingSeed*>& parent, ringiter ring, ringiter ringend, unsigned int locSuperLayer, unsigned int locNumPreviousRingsWithoutHit)
+void DTrackCandidate_factory_CDC::Link_RingSeeds(vector<DCDCRingSeed*>& parent, ringiter ring, ringiter ringend, unsigned int locSuperLayer, unsigned int locNumPreviousRingsWithoutHit)
 {
 	/// Combine DCDCRingSeed's from rings into DCDCSuperLayerSeed's
 	///
@@ -686,7 +689,7 @@ void DTrackCandidate_factory_CDC::Link_RingSeeds(deque<DCDCRingSeed*>& parent, r
 		double r_parent = parent_ringseed->hits[0]->hit->wire->origin.Perp();
 	
 		// Loop over ringseeds in this ring
-		deque<DCDCRingSeed> &locCDCRingSeeds = (*ring);
+		vector<DCDCRingSeed> &locCDCRingSeeds = (*ring);
 		++ring; // increment ring iterator to point to next level down in case we recall ouself below
 		
 		for(size_t i = 0; i < locCDCRingSeeds.size(); ++i)
@@ -700,7 +703,7 @@ void DTrackCandidate_factory_CDC::Link_RingSeeds(deque<DCDCRingSeed*>& parent, r
 			if(locTransverseDist2 < MAX_HIT_DIST2)
 			{
 				// link them together
-				deque<DCDCRingSeed*> myparent = parent;
+				vector<DCDCRingSeed*> myparent = parent;
 				myparent.push_back(&locCDCRingSeeds[i]);
 				locCDCRingSeeds[i].linked = true;
 				// recursive call: try to link this grouping of DCDCRingSeed's to a DCDCRingSeed in the next ring
@@ -776,7 +779,7 @@ void DTrackCandidate_factory_CDC::Link_RingSeeds(deque<DCDCRingSeed*>& parent, r
 		{
 			if((int(i) == locSpiralRingIndex) && locSeparateSeedsFlag)
 				continue;
-			locSuperLayerSeed->dCDCRingSeeds.push_front(*(parent[i])); //input rings were in reverse order!!
+			locSuperLayerSeed->dCDCRingSeeds.insert(locSuperLayerSeed->dCDCRingSeeds.begin(), *(parent[i])); //input rings were in reverse order!!
 			for(size_t loc_j = 0; loc_j < parent[i]->hits.size(); ++loc_j)
 				parent[i]->hits[loc_j]->flags |= USED;
 		}
@@ -789,15 +792,15 @@ void DTrackCandidate_factory_CDC::Link_RingSeeds(deque<DCDCRingSeed*>& parent, r
 //---------
 double DTrackCandidate_factory_CDC::MinDist2(const DCDCRingSeed& locInnerRingSeed, const DCDCRingSeed& locOuterRingSeed)
 {
-	const deque<DCDCTrkHit*>& locInnerSeedHits = locInnerRingSeed.hits;
-	const deque<DCDCTrkHit*>& locOuterSeedHits = locOuterRingSeed.hits;
+	const vector<DCDCTrkHit*>& locInnerSeedHits = locInnerRingSeed.hits;
+	const vector<DCDCTrkHit*>& locOuterSeedHits = locOuterRingSeed.hits;
 	return MinDist2(locInnerSeedHits, locOuterSeedHits);
 }
 
 //---------
 // MinDist2
 //---------
-double DTrackCandidate_factory_CDC::MinDist2(const deque<DCDCTrkHit*>& locInnerSeedHits, const deque<DCDCTrkHit*>& locOuterSeedHits)
+double DTrackCandidate_factory_CDC::MinDist2(const vector<DCDCTrkHit*>& locInnerSeedHits, const vector<DCDCTrkHit*>& locOuterSeedHits)
 {
 	/// Returns the minimum distance squared between the two seeds. Assumes all of the hits in a given set are on the same ring. 
 	/// First it checks if the two seeds overlap in phi: if so, then the radial difference between the rings (squared) is returned. 
@@ -897,7 +900,7 @@ void DTrackCandidate_factory_CDC::Reject_SuperLayerSeeds_HighSeedDensity(unsigne
 	if(SEED_DENSITY_BIN_STRAW_WIDTH == 0)
 		return; //rejection disabled
 
-	deque<DCDCSuperLayerSeed*>& locSuperLayerSeeds = dSuperLayerSeeds[locSuperLayer - 1];
+	vector<DCDCSuperLayerSeed*>& locSuperLayerSeeds = dSuperLayerSeeds[locSuperLayer - 1];
 	if(locSuperLayerSeeds.size() <= MAX_SEEDS_IN_STRAW_BIN)
 		return; //not enough for there to even possibly be an issue
 
@@ -1042,18 +1045,18 @@ void DTrackCandidate_factory_CDC::Reject_SuperLayerSeeds_HighSeedDensity(unsigne
 
 
 	// reject (and recycle) the seeds in areas where the seeds were too dense
-	for(deque<DCDCSuperLayerSeed*>::iterator locDequeIterator = locSuperLayerSeeds.begin(); locDequeIterator != locSuperLayerSeeds.end();)
+	for(vector<DCDCSuperLayerSeed*>::iterator locvectorIterator = locSuperLayerSeeds.begin(); locvectorIterator != locSuperLayerSeeds.end();)
 	{
-		unsigned int locSeedIndex = (*locDequeIterator)->dSeedIndex;
+		unsigned int locSeedIndex = (*locvectorIterator)->dSeedIndex;
 		if((locSeedsToReject.find(locSeedIndex) != locSeedsToReject.end()) && (locSeedsToNotReject.find(locSeedIndex) == locSeedsToNotReject.end()))
 		{
 			if(DEBUG_LEVEL > 10)
 				cout << "seed density too high, reject seed: " << locSeedIndex << endl;
-			dCDCSuperLayerSeedPool_Available.push_back(*locDequeIterator); //recycle memory
-		   locDequeIterator = locSuperLayerSeeds.erase(locDequeIterator);
+			dCDCSuperLayerSeedPool_Available.push_back(*locvectorIterator); //recycle memory
+		   locvectorIterator = locSuperLayerSeeds.erase(locvectorIterator);
 		}
 		else
-			++locDequeIterator;
+			++locvectorIterator;
 	}
 }
 
@@ -1177,7 +1180,7 @@ void DTrackCandidate_factory_CDC::Set_SpiralLinkParams(void)
 		//don't worry about getting every case: it's better to have extra particles reconstructed than to be overzealous and lose some!!
 	for(size_t loc_i = 0; loc_i < dSuperLayerSeeds.size(); ++loc_i)
 	{
-		deque<DCDCSuperLayerSeed*>& locSuperLayerSeeds = dSuperLayerSeeds[loc_i];
+		vector<DCDCSuperLayerSeed*>& locSuperLayerSeeds = dSuperLayerSeeds[loc_i];
 		for(size_t loc_j = 0; loc_j < locSuperLayerSeeds.size(); ++loc_j)
 		{
 			for(size_t loc_k = loc_j + 1; loc_k < locSuperLayerSeeds.size(); ++loc_k)
@@ -1340,7 +1343,7 @@ bool DTrackCandidate_factory_CDC::SearchFor_SpiralTurn_ManyHitsAdjacentRing(DCDC
 	if(locSuperLayerSeed1->Are_AllHitsOnRingShared(locSuperLayerSeed2, locRingToCheck))
 		return false; //these hits are the same
 
-	deque<DCDCTrkHit*> locHits1;
+	vector<DCDCTrkHit*> locHits1;
 	for(size_t loc_i = 0; loc_i < locSuperLayerSeed1->dCDCRingSeeds.size(); ++loc_i)
 	{
 		if(locSuperLayerSeed1->dCDCRingSeeds[loc_i].ring != locRingToCheck)
@@ -1351,7 +1354,7 @@ bool DTrackCandidate_factory_CDC::SearchFor_SpiralTurn_ManyHitsAdjacentRing(DCDC
 	if(locHits1.empty())
 		return false;
 
-	deque<DCDCTrkHit*> locHits2;
+	vector<DCDCTrkHit*> locHits2;
 	for(size_t loc_j = 0; loc_j < locSuperLayerSeed2->dCDCRingSeeds.size(); ++loc_j)
 	{
 		if(locSuperLayerSeed2->dCDCRingSeeds[loc_j].ring != locRingToCheck)
@@ -1400,7 +1403,7 @@ bool DTrackCandidate_factory_CDC::SearchFor_SpiralTurn_MissingOrBetweenRings(DCD
 		int locRing = locSuperLayerSeed1->dCDCRingSeeds[loc_i].ring;
 
 		//make sure there are enough straws on this ring in seed1
-		deque<DCDCTrkHit*>& locHits1 = locSuperLayerSeed1->dCDCRingSeeds[loc_i].hits;
+		vector<DCDCTrkHit*>& locHits1 = locSuperLayerSeed1->dCDCRingSeeds[loc_i].hits;
 		int locNumHits1 = locHits1.size();
 		if(locNumHits1 < int(MIN_STRAWS_POTENTIAL_SPIRAL_TURN))
 			continue; //not enough straws
@@ -1410,7 +1413,7 @@ bool DTrackCandidate_factory_CDC::SearchFor_SpiralTurn_MissingOrBetweenRings(DCD
 			if(locSuperLayerSeed2->dCDCRingSeeds[loc_j].ring != locRing)
 				continue; //select the same ring as in seed1
 
-			deque<DCDCTrkHit*>& locHits2 = locSuperLayerSeed2->dCDCRingSeeds[loc_j].hits;
+			vector<DCDCTrkHit*>& locHits2 = locSuperLayerSeed2->dCDCRingSeeds[loc_j].hits;
 			if(locHits2 == locHits1)
 				break; //hits are shared: if truly was a spiral, will have been picked up earlier
 
@@ -1523,7 +1526,7 @@ void DTrackCandidate_factory_CDC::Print_SuperLayerSeeds(void)
 		{
 			cout << "      Seed Index " << loc_j << ":" << endl;
 			DCDCSuperLayerSeed* locSuperLayerSeed = dSuperLayerSeeds[loc_i][loc_j];
-			deque<DCDCTrkHit*> locHits;
+			vector<DCDCTrkHit*> locHits;
 			locSuperLayerSeed->Get_Hits(locHits);
 			for(unsigned int loc_k = 0; loc_k < locHits.size(); ++loc_k)
 				cout << "ring, straw, E (keV) = " << locHits[loc_k]->hit->wire->ring << ", " << locHits[loc_k]->hit->wire->straw << ", " << 1.0E6*locHits[loc_k]->hit->dE << endl;
@@ -1540,7 +1543,7 @@ void DTrackCandidate_factory_CDC::Print_SuperLayerSeeds(void)
 //-------------------
 // Build_TrackCircles
 //-------------------
-bool DTrackCandidate_factory_CDC::Build_TrackCircles(deque<DCDCTrackCircle*>& locCDCTrackCircles)
+bool DTrackCandidate_factory_CDC::Build_TrackCircles(vector<DCDCTrackCircle*>& locCDCTrackCircles)
 {
 	//return false if had to bail due to failure (i.e. too many track circles)
 	//return true even if no track circles: it worked, it's just there aren't any
@@ -1565,9 +1568,9 @@ bool DTrackCandidate_factory_CDC::Build_TrackCircles(deque<DCDCTrackCircle*>& lo
 				if((locInnerSuperLayer == 1) || (locInnerSuperLayer == 4) || (locInnerSuperLayer == 7))
 					locCDCTrackCircle->dSuperLayerSeeds_Axial.push_back(locSuperLayerSeed);
 				else if((locInnerSuperLayer == 2) || (locInnerSuperLayer == 3))
-					locCDCTrackCircle->dSuperLayerSeeds_InnerStereo.push_back(deque<DCDCSuperLayerSeed*>(1, locSuperLayerSeed));
+					locCDCTrackCircle->dSuperLayerSeeds_InnerStereo.push_back(vector<DCDCSuperLayerSeed*>(1, locSuperLayerSeed));
 				else
-					locCDCTrackCircle->dSuperLayerSeeds_OuterStereo.push_back(deque<DCDCSuperLayerSeed*>(1, locSuperLayerSeed));
+					locCDCTrackCircle->dSuperLayerSeeds_OuterStereo.push_back(vector<DCDCSuperLayerSeed*>(1, locSuperLayerSeed));
 				locCDCTrackCircles.push_back(locCDCTrackCircle);
 			}
 		}
@@ -1633,7 +1636,7 @@ bool DTrackCandidate_factory_CDC::Build_TrackCircles(deque<DCDCTrackCircle*>& lo
 //-----------------
 // Link_SuperLayers
 //-----------------
-bool DTrackCandidate_factory_CDC::Link_SuperLayers(deque<DCDCTrackCircle*>& locCDCTrackCircles, unsigned int locOuterSuperLayer)
+bool DTrackCandidate_factory_CDC::Link_SuperLayers(vector<DCDCTrackCircle*>& locCDCTrackCircles, unsigned int locOuterSuperLayer)
 {
 	/// Loop over the DCDCTrackCircles and the next super layer seeds and compare the positions of
 		/// their first and last hits to see if we should link them together. 
@@ -1727,9 +1730,9 @@ bool DTrackCandidate_factory_CDC::Link_SuperLayers(deque<DCDCTrackCircle*>& locC
 			if((locOuterSuperLayer == 4) || (locOuterSuperLayer == 7))
 				locCDCTrackCircle->dSuperLayerSeeds_Axial.push_back(locSuperLayerSeed);
 			else if((locOuterSuperLayer == 2) || (locOuterSuperLayer == 3))
-				locCDCTrackCircle->dSuperLayerSeeds_InnerStereo.push_back(deque<DCDCSuperLayerSeed*>(1, locSuperLayerSeed));
+				locCDCTrackCircle->dSuperLayerSeeds_InnerStereo.push_back(vector<DCDCSuperLayerSeed*>(1, locSuperLayerSeed));
 			else
-				locCDCTrackCircle->dSuperLayerSeeds_OuterStereo.push_back(deque<DCDCSuperLayerSeed*>(1, locSuperLayerSeed));
+				locCDCTrackCircle->dSuperLayerSeeds_OuterStereo.push_back(vector<DCDCSuperLayerSeed*>(1, locSuperLayerSeed));
 			locCDCTrackCircles.push_back(locCDCTrackCircle);
 		}
 		if(DEBUG_LEVEL > 25)
@@ -1745,7 +1748,7 @@ bool DTrackCandidate_factory_CDC::Link_SuperLayers(deque<DCDCTrackCircle*>& locC
 //---------------------------
 // Link_SuperLayers_FromAxial
 //---------------------------
-void DTrackCandidate_factory_CDC::Link_SuperLayers_FromAxial(deque<DCDCTrackCircle*>& locCDCTrackCircles, unsigned int locOuterSuperLayer, unsigned int locInnerSuperLayer)
+void DTrackCandidate_factory_CDC::Link_SuperLayers_FromAxial(vector<DCDCTrackCircle*>& locCDCTrackCircles, unsigned int locOuterSuperLayer, unsigned int locInnerSuperLayer)
 {
 	//Link locCDCTrackCircles from an axial super layer to a stereo super layer (must be stereo: cannot skip two (both stereo) super layers)
 	for(size_t loc_i = 0; loc_i < locCDCTrackCircles.size(); ++loc_i)
@@ -1786,9 +1789,9 @@ void DTrackCandidate_factory_CDC::Link_SuperLayers_FromAxial(deque<DCDCTrackCirc
 
 			//create new group of stereo seeds (assumes linking to stereo: cannot axial (would skip too many))
 			if(locOuterSuperLayer < 4)
-				locCDCTrackCircle->dSuperLayerSeeds_InnerStereo.push_back(deque<DCDCSuperLayerSeed*>(1, locSuperLayerSeed2));
+				locCDCTrackCircle->dSuperLayerSeeds_InnerStereo.push_back(vector<DCDCSuperLayerSeed*>(1, locSuperLayerSeed2));
 			else
-				locCDCTrackCircle->dSuperLayerSeeds_OuterStereo.push_back(deque<DCDCSuperLayerSeed*>(1, locSuperLayerSeed2));
+				locCDCTrackCircle->dSuperLayerSeeds_OuterStereo.push_back(vector<DCDCSuperLayerSeed*>(1, locSuperLayerSeed2));
 		}
 	}
 }
@@ -1796,13 +1799,13 @@ void DTrackCandidate_factory_CDC::Link_SuperLayers_FromAxial(deque<DCDCTrackCirc
 //------------------------------------
 // Link_SuperLayers_FromStereo_ToAxial
 //------------------------------------
-bool DTrackCandidate_factory_CDC::Link_SuperLayers_FromStereo_ToAxial(deque<DCDCTrackCircle*>& locCDCTrackCircles, unsigned int locOuterSuperLayer, unsigned int locInnerSuperLayer)
+bool DTrackCandidate_factory_CDC::Link_SuperLayers_FromStereo_ToAxial(vector<DCDCTrackCircle*>& locCDCTrackCircles, unsigned int locOuterSuperLayer, unsigned int locInnerSuperLayer)
 {
 	// Link from a stereo super layer to an axial super layer.  Unfortunately, this is extremely messy.  
 		//If you're editing this, I stronly suggest reading the simpler Link_SuperLayers_FromStereo_ToStereo function to make sure you understand it first.  Good luck! :)
 
 	//since linking to axial, will create new track circles (one for each unique combo of axial seeds)
-	deque<DCDCTrackCircle*> locNewCDCTrackCircles; //will eventually return this deque (by setting locCDCTrackCircles to it at the end)
+	vector<DCDCTrackCircle*> locNewCDCTrackCircles; //will eventually return this vector (by setting locCDCTrackCircles to it at the end)
 
 	// first save all track circles for output (into locNewCDCTrackCircles) that definitely will NOT be linked from: 
 		//those that already have an axial layer greater than the stereo we're linking from
@@ -1836,7 +1839,7 @@ bool DTrackCandidate_factory_CDC::Link_SuperLayers_FromStereo_ToAxial(deque<DCDC
 				continue;
 		}
 
-		// determine if linking from the stereo seeds stored in the dSuperLayerSeeds_InnerStereo or dSuperLayerSeeds_OuterStereo deques
+		// determine if linking from the stereo seeds stored in the dSuperLayerSeeds_InnerStereo or dSuperLayerSeeds_OuterStereo vectors
 		bool locFromInnerStereoFlag = (locInnerSuperLayer < 4);
 		if(!locCDCTrackCircle->dSuperLayerSeeds_Axial.empty())
 		{
@@ -1844,8 +1847,8 @@ bool DTrackCandidate_factory_CDC::Link_SuperLayers_FromStereo_ToAxial(deque<DCDC
 				locFromInnerStereoFlag = true; //middle axial layer is missing, store stereo layer as inner
 		}
 
-		//get a deque containing all of the series's of seeds to loop over
-		deque<deque<DCDCSuperLayerSeed*> > locPreLinkedCDCSuperLayerSeeds;
+		//get a vector containing all of the series's of seeds to loop over
+		vector<vector<DCDCSuperLayerSeed*> > locPreLinkedCDCSuperLayerSeeds;
 		if(locFromInnerStereoFlag) //if on outer stereo seeds but axial seed 4 is missing, use inner stereo seeds
 			locPreLinkedCDCSuperLayerSeeds = locCDCTrackCircle->dSuperLayerSeeds_InnerStereo;
 		else //use outer stereo seeds			
@@ -1856,7 +1859,7 @@ bool DTrackCandidate_factory_CDC::Link_SuperLayers_FromStereo_ToAxial(deque<DCDC
 		for(size_t loc_j = 0; loc_j < locPreLinkedCDCSuperLayerSeeds.size(); ++loc_j)
 		{
 			//get the last DCDCSuperLayerSeed in this stereo seed series
-			deque<DCDCSuperLayerSeed*> locStereoSeedSeries = locPreLinkedCDCSuperLayerSeeds[loc_j];
+			vector<DCDCSuperLayerSeed*> locStereoSeedSeries = locPreLinkedCDCSuperLayerSeeds[loc_j];
 			DCDCSuperLayerSeed* locSuperLayerSeed1 = locPreLinkedCDCSuperLayerSeeds[loc_j].back();
 			if(DEBUG_LEVEL > 10)
 				cout << "Seed 1 Super Layer, Seed Index = " << locSuperLayerSeed1->dSuperLayer << ", " << locSuperLayerSeed1->dSeedIndex << endl;
@@ -1884,8 +1887,8 @@ bool DTrackCandidate_factory_CDC::Link_SuperLayers_FromStereo_ToAxial(deque<DCDC
 					locSuperLayerSeed2->linked = true;
 					locInnerSeedLinkSuccessfulFlag = true;
 
-					//make new deque of axial seeds
-					deque<DCDCSuperLayerSeed*> locNewCDCSuperLayerSeeds_Axial = locCDCTrackCircle->dSuperLayerSeeds_Axial;
+					//make new vector of axial seeds
+					vector<DCDCSuperLayerSeed*> locNewCDCSuperLayerSeeds_Axial = locCDCTrackCircle->dSuperLayerSeeds_Axial;
 					locNewCDCSuperLayerSeeds_Axial.push_back(locSuperLayerSeed2);
 
 					//see if should create new DCDCTrackCircle object (axial combo is unique) or use a (probably recently created) existing one (it is not unique)
@@ -1923,7 +1926,7 @@ bool DTrackCandidate_factory_CDC::Link_SuperLayers_FromStereo_ToAxial(deque<DCDC
 			}
 			if(!locInnerSeedLinkSuccessfulFlag)
 			{
-				//this inner seed series was not linked to an axial seed: need to make sure this group is still saved in the "new" deque
+				//this inner seed series was not linked to an axial seed: need to make sure this group is still saved in the "new" vector
 				//see if should create new DCDCTrackCircle object (axial combo is unique) or use a (probably recently created) existing one (it is not unique)
 				DCDCTrackCircle* locNewCDCTrackCircle = NULL;
 				for(size_t loc_l = 0; loc_l < locNewCDCTrackCircles.size(); ++loc_l)
@@ -1969,7 +1972,7 @@ bool DTrackCandidate_factory_CDC::Link_SuperLayers_FromStereo_ToAxial(deque<DCDC
 //-------------------------------------
 // Link_SuperLayers_FromStereo_ToStereo
 //-------------------------------------
-void DTrackCandidate_factory_CDC::Link_SuperLayers_FromStereo_ToStereo(deque<DCDCTrackCircle*>& locCDCTrackCircles, unsigned int locOuterSuperLayer, unsigned int locInnerSuperLayer)
+void DTrackCandidate_factory_CDC::Link_SuperLayers_FromStereo_ToStereo(vector<DCDCTrackCircle*>& locCDCTrackCircles, unsigned int locOuterSuperLayer, unsigned int locInnerSuperLayer)
 {
 	// Link from a stereo super layer to a stereo super layer. 
 
@@ -1986,7 +1989,7 @@ void DTrackCandidate_factory_CDC::Link_SuperLayers_FromStereo_ToStereo(deque<DCD
 				continue;
 		}
 
-		// determine if linking from the stereo seeds stored in the dSuperLayerSeeds_InnerStereo or dSuperLayerSeeds_OuterStereo deques
+		// determine if linking from the stereo seeds stored in the dSuperLayerSeeds_InnerStereo or dSuperLayerSeeds_OuterStereo vectors
 		bool locFromInnerStereoFlag = (locInnerSuperLayer < 4);
 		if(!locCDCTrackCircle->dSuperLayerSeeds_Axial.empty())
 		{
@@ -1995,7 +1998,7 @@ void DTrackCandidate_factory_CDC::Link_SuperLayers_FromStereo_ToStereo(deque<DCD
 		}
 
 		//get series of seeds to loop over
-		deque<deque<DCDCSuperLayerSeed*> > locPreLinkedCDCSuperLayerSeeds;
+		vector<vector<DCDCSuperLayerSeed*> > locPreLinkedCDCSuperLayerSeeds;
 		if(locFromInnerStereoFlag)
 		{
 			//if on outer stereo seeds but axial seed 4 is missing, use inner stereo seeds
@@ -2013,7 +2016,7 @@ void DTrackCandidate_factory_CDC::Link_SuperLayers_FromStereo_ToStereo(deque<DCD
 		for(size_t loc_j = 0; loc_j < locPreLinkedCDCSuperLayerSeeds.size(); ++loc_j)
 		{
 			//get the last DCDCSuperLayerSeed in this stereo seed series
-			deque<DCDCSuperLayerSeed*> locStereoSeedSeries = locPreLinkedCDCSuperLayerSeeds[loc_j];
+			vector<DCDCSuperLayerSeed*> locStereoSeedSeries = locPreLinkedCDCSuperLayerSeeds[loc_j];
 			DCDCSuperLayerSeed* locSuperLayerSeed1 = locPreLinkedCDCSuperLayerSeeds[loc_j].back();
 			if(DEBUG_LEVEL > 10)
 				cout << "Seed 1 Super Layer, Seed Index = " << locSuperLayerSeed1->dSuperLayer << ", " << locSuperLayerSeed1->dSeedIndex << endl;
@@ -2041,8 +2044,8 @@ void DTrackCandidate_factory_CDC::Link_SuperLayers_FromStereo_ToStereo(deque<DCD
 					locSuperLayerSeed2->linked = true;
 					locInnerSeedLinkSuccessfulFlag = true;
 
-					//create deque of new stereo seed series
-					deque<DCDCSuperLayerSeed*> locNewStereoSeedSeries = locStereoSeedSeries;
+					//create vector of new stereo seed series
+					vector<DCDCSuperLayerSeed*> locNewStereoSeedSeries = locStereoSeedSeries;
 					locNewStereoSeedSeries.push_back(locSuperLayerSeed2);
 
 					//save new combination of stereo seeds
@@ -2158,11 +2161,11 @@ bool DTrackCandidate_factory_CDC::Attempt_SeedLink(DCDCRingSeed& locRingSeed1, D
 {
 	//attempt seed link between ring-seeds
 		//should only be called when linking super layers together, and when attempting to link to unused hits
-	deque<DCDCTrkHit*> &hits1 = locRingSeed1.hits; 
+	vector<DCDCTrkHit*> &hits1 = locRingSeed1.hits; 
 	if(hits1.empty())
 		return false;
 
-	deque<DCDCTrkHit*> &hits2 = locRingSeed2.hits; 
+	vector<DCDCTrkHit*> &hits2 = locRingSeed2.hits; 
 	if(hits2.empty())
 		return false;
 
@@ -2214,7 +2217,7 @@ bool DTrackCandidate_factory_CDC::Attempt_SeedLink(DCDCRingSeed& locRingSeed1, D
 //-------------------
 // Print_TrackCircles
 //-------------------
-void DTrackCandidate_factory_CDC::Print_TrackCircles(deque<DCDCTrackCircle*>& locCDCTrackCircles)
+void DTrackCandidate_factory_CDC::Print_TrackCircles(vector<DCDCTrackCircle*>& locCDCTrackCircles)
 {
 	cout << "Track Circle Super Layer Seeds (Axial, Inner/Outer Stereo):" << endl;
 	for(size_t loc_i = 0; loc_i < locCDCTrackCircles.size(); ++loc_i)
@@ -2255,11 +2258,11 @@ void DTrackCandidate_factory_CDC::Print_TrackCircle(DCDCTrackCircle* locCDCTrack
 //--------------------------
 // Reject_DefiniteSpiralArms
 //--------------------------
-void DTrackCandidate_factory_CDC::Reject_DefiniteSpiralArms(deque<DCDCTrackCircle*>& locCDCTrackCircles)
+void DTrackCandidate_factory_CDC::Reject_DefiniteSpiralArms(vector<DCDCTrackCircle*>& locCDCTrackCircles)
 {
 	//disregard all DCDCTrackCircle objects where the innermost super layer is definitely a spiral turn
 		//e.g. the track has already turned backed inwards towards the target, but then turns back outward again towards the BCAL
-	deque<DCDCTrackCircle*>::iterator locIterator;
+	vector<DCDCTrackCircle*>::iterator locIterator;
 	for(locIterator = locCDCTrackCircles.begin(); locIterator != locCDCTrackCircles.end();)
 	{
 		DCDCTrackCircle* locCDCTrackCircle = *locIterator;
@@ -2312,12 +2315,12 @@ void DTrackCandidate_factory_CDC::Reject_DefiniteSpiralArms(deque<DCDCTrackCircl
 //----------------------
 // Drop_IncompleteGroups
 //----------------------
-void DTrackCandidate_factory_CDC::Drop_IncompleteGroups(deque<DCDCTrackCircle*>& locCDCTrackCircles)
+void DTrackCandidate_factory_CDC::Drop_IncompleteGroups(vector<DCDCTrackCircle*>& locCDCTrackCircles)
 {
 	// Only interested in groups that contain either: 
 		// At least super layer 1 (forward going particles)
 		// Or at least one stereo layer and one axial layer 
-	deque<DCDCTrackCircle*>::iterator locIterator;
+	vector<DCDCTrackCircle*>::iterator locIterator;
 	for(locIterator = locCDCTrackCircles.begin(); locIterator != locCDCTrackCircles.end();)
 	{
 		DCDCTrackCircle* locCDCTrackCircle = *locIterator;
@@ -2347,7 +2350,7 @@ void DTrackCandidate_factory_CDC::Drop_IncompleteGroups(deque<DCDCTrackCircle*>&
 //------------
 // Fit_Circles
 //------------
-void DTrackCandidate_factory_CDC::Fit_Circles(deque<DCDCTrackCircle*>& locCDCTrackCircles, bool locFitOnlyIfNullFitFlag, bool locAddStereoLayerIntersectionsFlag, bool locFitDuringLinkingFlag)
+void DTrackCandidate_factory_CDC::Fit_Circles(vector<DCDCTrackCircle*>& locCDCTrackCircles, bool locFitOnlyIfNullFitFlag, bool locAddStereoLayerIntersectionsFlag, bool locFitDuringLinkingFlag)
 {
 	/// Do a quick fit of the 2-D projection of the axial hits in the seed to a circle
 		/// Include intersection between stereo layer seeds if locAddStereoLayerIntersectionsFlag = true (assumes only one stereo seed series for each inner/outer)
@@ -2361,7 +2364,7 @@ void DTrackCandidate_factory_CDC::Fit_Circles(deque<DCDCTrackCircle*>& locCDCTra
 		/// if true, this will skip fitting circles that have DCDCTrackCircle::fit != NULL (i.e. were not truncated)
 
 	double locAxialStrawVariance = 0.214401; //[d/sqrt(12)]^2, d = 1.604 = straw diameter
-	deque<DCDCTrackCircle*>::iterator locIterator;
+	vector<DCDCTrackCircle*>::iterator locIterator;
 	for(locIterator = locCDCTrackCircles.begin(); locIterator != locCDCTrackCircles.end();)
 	{
 		DCDCTrackCircle* locCDCTrackCircle = *locIterator;
@@ -2393,7 +2396,7 @@ void DTrackCandidate_factory_CDC::Fit_Circles(deque<DCDCTrackCircle*>& locCDCTra
 		unsigned int locNumHitsInFit = 0;
 		for(size_t loc_i = 0; loc_i < locNumAxialSuperLayers; ++loc_i)
 		{
-			deque<DCDCTrkHit*> hits;
+			vector<DCDCTrkHit*> hits;
 			locCDCTrackCircle->dSuperLayerSeeds_Axial[loc_i]->Get_Hits(hits);
 			for(size_t k = 0; k < hits.size(); ++k)
 			{
@@ -2465,7 +2468,7 @@ void DTrackCandidate_factory_CDC::Fit_Circles(deque<DCDCTrackCircle*>& locCDCTra
 		unsigned int locTotalNumHits = 0;
 		for(size_t loc_i = 0; loc_i < locNumAxialSuperLayers; ++loc_i)
 		{
-			deque<DCDCTrkHit*> hits;
+			vector<DCDCTrkHit*> hits;
 			locCDCTrackCircle->dSuperLayerSeeds_Axial[loc_i]->Get_Hits(hits);
 			locTotalNumHits += hits.size();
 			for(size_t k = 0; k < hits.size(); ++k)
@@ -2553,7 +2556,7 @@ DVector3 DTrackCandidate_factory_CDC::Find_IntersectionBetweenSuperLayers(const 
 //-----------------------
 // Handle_StereoAndFilter
 //-----------------------
-void DTrackCandidate_factory_CDC::Handle_StereoAndFilter(deque<DCDCTrackCircle*>& locCDCTrackCircles, bool locFinalPassFlag)
+void DTrackCandidate_factory_CDC::Handle_StereoAndFilter(vector<DCDCTrackCircle*>& locCDCTrackCircles, bool locFinalPassFlag)
 {
 	// If not on final (refinement) pass: First (potentially) truncate and then filter track circles based on track circle fit results
 	if(!locFinalPassFlag)
@@ -2570,7 +2573,7 @@ void DTrackCandidate_factory_CDC::Handle_StereoAndFilter(deque<DCDCTrackCircle*>
 
 	// Create new stereo super layer seeds and select the best ones. 
 		//This is done one track at a time to prevent memory spikes (memory is recycled as "new" stereo hits are rejected)
-	deque<DCDCTrackCircle*>::iterator locIterator;
+	vector<DCDCTrackCircle*>::iterator locIterator;
 	size_t locCircleCounter = 0;
 	for(locIterator = locCDCTrackCircles.begin(); locIterator != locCDCTrackCircles.end();)
 	{
@@ -2614,7 +2617,7 @@ void DTrackCandidate_factory_CDC::Handle_StereoAndFilter(deque<DCDCTrackCircle*>
 //------------------------
 // Set_HitBitPattern_Axial
 //------------------------
-void DTrackCandidate_factory_CDC::Set_HitBitPattern_Axial(deque<DCDCTrackCircle*>& locCDCTrackCircles)
+void DTrackCandidate_factory_CDC::Set_HitBitPattern_Axial(vector<DCDCTrackCircle*>& locCDCTrackCircles)
 {
 	unsigned int locNumBits = 8*sizeof(unsigned int);
 	for(size_t loc_i = 0; loc_i < locCDCTrackCircles.size(); ++loc_i)
@@ -2624,7 +2627,7 @@ void DTrackCandidate_factory_CDC::Set_HitBitPattern_Axial(deque<DCDCTrackCircle*
 		locCDCTrackCircle->HitBitPattern.resize(dNumCDCHits/(8*sizeof(unsigned int)) + 1);
 		for(size_t loc_j = 0; loc_j < locCDCTrackCircle->dSuperLayerSeeds_Axial.size(); ++loc_j)
 		{
-			deque<DCDCTrkHit*> locHits;
+			vector<DCDCTrkHit*> locHits;
 			locCDCTrackCircle->dSuperLayerSeeds_Axial[loc_j]->Get_Hits(locHits);
 			for(size_t loc_k = 0; loc_k < locHits.size(); ++loc_k)
 				locCDCTrackCircle->HitBitPattern[locHits[loc_k]->index/locNumBits] |= 1 << locHits[loc_k]->index % locNumBits;
@@ -2635,7 +2638,7 @@ void DTrackCandidate_factory_CDC::Set_HitBitPattern_Axial(deque<DCDCTrackCircle*
 //----------------------
 // Truncate_TrackCircles
 //----------------------
-void DTrackCandidate_factory_CDC::Truncate_TrackCircles(deque<DCDCTrackCircle*>& locCDCTrackCircles)
+void DTrackCandidate_factory_CDC::Truncate_TrackCircles(vector<DCDCTrackCircle*>& locCDCTrackCircles)
 {
 	if(locCDCTrackCircles.empty())
 		return;
@@ -2679,7 +2682,7 @@ void DTrackCandidate_factory_CDC::Truncate_TrackCircles(deque<DCDCTrackCircle*>&
 
 	//assumes input circles are sorted, with largest chisq/ndf first and smallest last
 		//want to compare the worst fit to the best fit
-	deque<DCDCTrackCircle*>::iterator locIterator_Validating, locIterator_ToCompareTo;
+	vector<DCDCTrackCircle*>::iterator locIterator_Validating, locIterator_ToCompareTo;
 
 	// FIRST CHECK FOR SAME SUPER LAYER SEED IN SL7
 	bool locTruncationPerformedFlag = false;
@@ -3032,14 +3035,14 @@ void DTrackCandidate_factory_CDC::Truncate_TrackCircles(deque<DCDCTrackCircle*>&
 //--------------------------
 // Filter_TrackCircles_Axial
 //--------------------------
-void DTrackCandidate_factory_CDC::Filter_TrackCircles_Axial(deque<DCDCTrackCircle*>& locCDCTrackCircles)
+void DTrackCandidate_factory_CDC::Filter_TrackCircles_Axial(vector<DCDCTrackCircle*>& locCDCTrackCircles)
 {
 	if(locCDCTrackCircles.empty())
 		return;
 
 	//assumes input circles are sorted, with largest chisq/ndf first and smallest last
 		//want to compare the worst fit to the best fit
-	deque<DCDCTrackCircle*>::iterator locIterator_Validating, locIterator_ToCompareTo;
+	vector<DCDCTrackCircle*>::iterator locIterator_Validating, locIterator_ToCompareTo;
 
 	//FIRST: If circles share > MAX_COMMON_HIT_FRACTION of axial hits, reject circle with larger chisq/ndf
 	for(locIterator_Validating = locCDCTrackCircles.begin(); locIterator_Validating != locCDCTrackCircles.end();)
@@ -3049,7 +3052,7 @@ void DTrackCandidate_factory_CDC::Filter_TrackCircles_Axial(deque<DCDCTrackCircl
 			continue; //no axial hits to share (somehow)
 
 		size_t locNumHits_Validating = 0;
-		deque<DCDCTrkHit*> hits;
+		vector<DCDCTrkHit*> hits;
 		for(size_t loc_i = 0; loc_i < locCDCTrackCircle_Validating->dSuperLayerSeeds_Axial.size(); ++loc_i)
 		{
 			locCDCTrackCircle_Validating->dSuperLayerSeeds_Axial[loc_i]->Get_Hits(hits);
@@ -3078,7 +3081,7 @@ void DTrackCandidate_factory_CDC::Filter_TrackCircles_Axial(deque<DCDCTrackCircl
       }
 		if(locRejectTrackCircleFlag)
 		{
-			//free up some memory by clearing the seed deques via reset
+			//free up some memory by clearing the seed vectors via reset
 			Recycle_DCDCTrackCircle(locCDCTrackCircle_Validating); //recycle
 			locIterator_Validating = locCDCTrackCircles.erase(locIterator_Validating);
 		}
@@ -3148,8 +3151,8 @@ DTrackCandidate_factory_CDC::DCDCSuperLayerSeed* DTrackCandidate_factory_CDC::Cr
 
 	for(size_t loc_i = 0; loc_i < locCDCSuperLayerSeed->dCDCRingSeeds.size(); ++loc_i)
 	{
-		deque<DCDCTrkHit*>& hits = locCDCSuperLayerSeed->dCDCRingSeeds[loc_i].hits;
-		deque<DCDCTrkHit*> locProjectedHits;
+		vector<DCDCTrkHit*>& hits = locCDCSuperLayerSeed->dCDCRingSeeds[loc_i].hits;
+		vector<DCDCTrkHit*> locProjectedHits;
 		for(size_t loc_l = 0; loc_l < hits.size(); ++loc_l)
 		{
 			if(fabs(hits[loc_l]->hit->tdrift - locCDCTrackCircle->dAverageDriftTime) > MAX_SEED_TIME_DIFF)
@@ -3276,8 +3279,8 @@ bool DTrackCandidate_factory_CDC::Select_CDCSuperLayerSeeds(DCDCTrackCircle* loc
 
 	// Select the best combinations of stereo hits and determine theta/z
 	double locBestTheta = 0.0, locBestZ = TARGET_Z, locBestChiSqPerNDF = 9.9E99;
-	deque<DCDCSuperLayerSeed*> locBestSuperLayerSeeds_Inner;
-	deque<DCDCSuperLayerSeed*> locBestSuperLayerSeeds_Outer;
+	vector<DCDCSuperLayerSeed*> locBestSuperLayerSeeds_Inner;
+	vector<DCDCSuperLayerSeed*> locBestSuperLayerSeeds_Outer;
 	bool locGoodStereoComboFoundFlag = false;
 
 	if((!locCDCTrackCircle->dSuperLayerSeeds_InnerStereo.empty()) && (!locCDCTrackCircle->dSuperLayerSeeds_OuterStereo.empty()))
@@ -3288,7 +3291,7 @@ bool DTrackCandidate_factory_CDC::Select_CDCSuperLayerSeeds(DCDCTrackCircle* loc
 			for(size_t loc_j = 0; loc_j < locCDCTrackCircle->dSuperLayerSeeds_OuterStereo.size(); ++loc_j)
 			{
 				//get the hits from this inner combination
-				deque<DCDCTrkHit*> locComboHits;
+				vector<DCDCTrkHit*> locComboHits;
 				Select_ThetaZStereoHits(locCDCTrackCircle, loc_i, loc_j, locFinalPassFlag, locComboHits);
 
 				//Evaluate theta & z for this combination, returning the chisq/ndf from the fit
@@ -3323,7 +3326,7 @@ bool DTrackCandidate_factory_CDC::Select_CDCSuperLayerSeeds(DCDCTrackCircle* loc
 		for(size_t loc_i = 0; loc_i < locCDCTrackCircle->dSuperLayerSeeds_InnerStereo.size(); ++loc_i)
 		{
 			//get the hits from this inner combination
-			deque<DCDCTrkHit*> locComboHits;
+			vector<DCDCTrkHit*> locComboHits;
 			Select_ThetaZStereoHits(locCDCTrackCircle, loc_i, -1, locFinalPassFlag, locComboHits);
 
 			//Evaluate theta & z for this combination, returning the chisq/ndf from the fit
@@ -3355,7 +3358,7 @@ bool DTrackCandidate_factory_CDC::Select_CDCSuperLayerSeeds(DCDCTrackCircle* loc
 		for(size_t loc_j = 0; loc_j < locCDCTrackCircle->dSuperLayerSeeds_OuterStereo.size(); ++loc_j)
 		{
 			//get the hits from this inner combination
-			deque<DCDCTrkHit*> locComboHits;
+			vector<DCDCTrkHit*> locComboHits;
 			Select_ThetaZStereoHits(locCDCTrackCircle, -1, loc_j, locFinalPassFlag, locComboHits);
 
 			//Evaluate theta & z for this combination, returning the chisq/ndf from the fit
@@ -3457,7 +3460,7 @@ bool DTrackCandidate_factory_CDC::Select_CDCSuperLayerSeeds(DCDCTrackCircle* loc
 //------------------------
 // Select_ThetaZStereoHits
 //------------------------
-void DTrackCandidate_factory_CDC::Select_ThetaZStereoHits(const DCDCTrackCircle* locCDCTrackCircle, int locInnerSeedSeriesIndex, int locOuterSeedSeriesIndex, bool locFinalPassFlag, deque<DCDCTrkHit*>& locComboHits)
+void DTrackCandidate_factory_CDC::Select_ThetaZStereoHits(const DCDCTrackCircle* locCDCTrackCircle, int locInnerSeedSeriesIndex, int locOuterSeedSeriesIndex, bool locFinalPassFlag, vector<DCDCTrkHit*>& locComboHits)
 {
 	//tracks at the edges of the CDC's phase space OFTEN fail because the circle-fit is not perfect
 		//this causes the projected-hit-position on the circle of the stereo hits to be incorrect
@@ -3470,7 +3473,7 @@ void DTrackCandidate_factory_CDC::Select_ThetaZStereoHits(const DCDCTrackCircle*
 	locComboHits.clear();
 
 	// Get super layer seeds for this combination
-	deque<DCDCSuperLayerSeed*> locSuperLayerSeeds;
+	vector<DCDCSuperLayerSeed*> locSuperLayerSeeds;
 	if(locInnerSeedSeriesIndex >= 0)
 	{
 		for(size_t loc_k = 0; loc_k < locCDCTrackCircle->dSuperLayerSeeds_InnerStereo[locInnerSeedSeriesIndex].size(); ++loc_k)
@@ -3483,13 +3486,13 @@ void DTrackCandidate_factory_CDC::Select_ThetaZStereoHits(const DCDCTrackCircle*
 	}
 
 	//select initial hits: prune hits that don't intersect the circle
-	deque<DCDCTrkHit*> locHits;
-	map<unsigned int, deque<DCDCTrkHit*> > locHitsBySuperLayer; //key is super layer
+	vector<DCDCTrkHit*> locHits;
+	map<unsigned int, vector<DCDCTrkHit*> > locHitsBySuperLayer; //key is super layer
 	unsigned int locTotalNumStereoHits = 0;
 	for(size_t loc_k = 0; loc_k < locSuperLayerSeeds.size(); ++loc_k)
 	{
 		locSuperLayerSeeds[loc_k]->Get_Hits(locHits);
-		for(deque<DCDCTrkHit*>::iterator locIterator = locHits.begin(); locIterator != locHits.end();)
+		for(vector<DCDCTrkHit*>::iterator locIterator = locHits.begin(); locIterator != locHits.end();)
 		{
 			if((*locIterator)->dValidStereoHitPosFlag)
 				++locIterator;
@@ -3505,7 +3508,7 @@ void DTrackCandidate_factory_CDC::Select_ThetaZStereoHits(const DCDCTrackCircle*
 	if((!locFinalPassFlag) || (locTotalNumStereoHits <= MIN_PRUNED_STEREO_HITS))
 	{
 		// no more pruning, add hits to locComboHits and return
-		map<unsigned int, deque<DCDCTrkHit*> >::iterator locMapIterator;
+		map<unsigned int, vector<DCDCTrkHit*> >::iterator locMapIterator;
 		for(locMapIterator = locHitsBySuperLayer.begin(); locMapIterator != locHitsBySuperLayer.end(); ++locMapIterator)
 			locComboHits.insert(locComboHits.end(), locMapIterator->second.begin(), locMapIterator->second.end());
 		if(DEBUG_LEVEL > 10)
@@ -3518,7 +3521,7 @@ void DTrackCandidate_factory_CDC::Select_ThetaZStereoHits(const DCDCTrackCircle*
 
 	//calc delta-phi for all remaining hits and sort them
 		//delta-phi: between the intersection-of-the-stereo-hit-with-the-circle and the nearest axial hits
-	deque<pair<DCDCTrkHit*, double> > locDeltaPhis;
+	vector<pair<DCDCTrkHit*, double> > locDeltaPhis;
 	for(size_t loc_k = 0; loc_k < locSuperLayerSeeds.size(); ++loc_k)
 	{
 		unsigned int locSuperLayer = locSuperLayerSeeds[loc_k]->dSuperLayer;
@@ -3576,7 +3579,7 @@ void DTrackCandidate_factory_CDC::Select_ThetaZStereoHits(const DCDCTrackCircle*
 		// this is experimental: it may not be necessary if the above locMaxHitDeltaPhi section is better fine-tuned
 
 	// to keep track of which super layers need hits, delete keys from locHitsBySuperLayer map if hits from them are already selected
-	map<unsigned int, deque<DCDCTrkHit*> >::iterator locMapIterator;
+	map<unsigned int, vector<DCDCTrkHit*> >::iterator locMapIterator;
 	for(size_t loc_i = 0; loc_i < locComboHits.size(); ++loc_i)
 	{
 		unsigned int locSuperLayer = (locComboHits[loc_i]->hit->wire->ring - 1)/4 + 1;
@@ -3611,7 +3614,7 @@ void DTrackCandidate_factory_CDC::Select_ThetaZStereoHits(const DCDCTrackCircle*
 //------------------------
 // Calc_StereoHitDeltaPhis
 //------------------------
-void DTrackCandidate_factory_CDC::Calc_StereoHitDeltaPhis(unsigned int locSuperLayer, deque<DCDCTrkHit*>& locHits, const DCDCTrackCircle* locCDCTrackCircle, deque<pair<DCDCTrkHit*, double> >& locDeltaPhis)
+void DTrackCandidate_factory_CDC::Calc_StereoHitDeltaPhis(unsigned int locSuperLayer, vector<DCDCTrkHit*>& locHits, const DCDCTrackCircle* locCDCTrackCircle, vector<pair<DCDCTrkHit*, double> >& locDeltaPhis)
 {
 	// calc delta-phi for hits: distance from projected-stereo-hit-position to the nearest axial hits
 		// because the circle fit is not perfect, the stereo hit position gets progessively worse the sharper the track is turning
@@ -3653,19 +3656,19 @@ void DTrackCandidate_factory_CDC::Calc_StereoHitDeltaPhis(unsigned int locSuperL
 	// calculate min-delta-phi for each hit (to the nearest axial ring seed)
 	for(size_t loc_i = 0; loc_i < locHits.size(); ++loc_i)
 	{
-		deque<DCDCTrkHit*> locTempDeque(1, locHits[loc_i]);
+		vector<DCDCTrkHit*> locTempvector(1, locHits[loc_i]);
 		double locMinDeltaPhi = M_PI;
 		//compare to prior axial ring
 		if(locPriorAxialRingSeed != NULL)
 		{
-			double locDeltaPhi = MinDeltaPhi(locPriorAxialRingSeed->hits, locTempDeque);
+			double locDeltaPhi = MinDeltaPhi(locPriorAxialRingSeed->hits, locTempvector);
 			if(locDeltaPhi < locMinDeltaPhi)
 				locMinDeltaPhi = locDeltaPhi;
 		}
 		//compare to next axial ring
 		if(locNextAxialRingSeed != NULL)
 		{
-			double locDeltaPhi = MinDeltaPhi(locTempDeque, locNextAxialRingSeed->hits);
+			double locDeltaPhi = MinDeltaPhi(locTempvector, locNextAxialRingSeed->hits);
 			if(locDeltaPhi < locMinDeltaPhi)
 				locMinDeltaPhi = locDeltaPhi;
 		}
@@ -3680,7 +3683,7 @@ void DTrackCandidate_factory_CDC::Calc_StereoHitDeltaPhis(unsigned int locSuperL
 //------------
 // MinDeltaPhi
 //------------
-double DTrackCandidate_factory_CDC::MinDeltaPhi(const deque<DCDCTrkHit*>& locInnerSeedHits, const deque<DCDCTrkHit*>& locOuterSeedHits)
+double DTrackCandidate_factory_CDC::MinDeltaPhi(const vector<DCDCTrkHit*>& locInnerSeedHits, const vector<DCDCTrkHit*>& locOuterSeedHits)
 {
 	/// Returns the minimum delta-phi between the two groups of hits. Assumes all of the hits in a given set are on the same ring. 
 	/// First it checks if the two seeds overlap in phi: if so, then return 0
@@ -3775,7 +3778,7 @@ double DTrackCandidate_factory_CDC::MinDeltaPhi(const deque<DCDCTrkHit*>& locInn
 //------------
 // Find_ThetaZ
 //------------
-bool DTrackCandidate_factory_CDC::Find_ThetaZ(const DHelicalFit* locFit, const deque<DCDCTrkHit*>& locStereoHits, double& locTheta, double& locZ, double& locChiSqPerNDF)
+bool DTrackCandidate_factory_CDC::Find_ThetaZ(const DHelicalFit* locFit, const vector<DCDCTrkHit*>& locStereoHits, double& locTheta, double& locZ, double& locChiSqPerNDF)
 {
 	// Calculate theta/z for the input stereo hits
 	if(locStereoHits.empty())
@@ -3821,7 +3824,7 @@ bool DTrackCandidate_factory_CDC::Find_ThetaZ(const DHelicalFit* locFit, const d
 // This method assumes that there are errors in both the z positions and 
 // the arc lengths.
 // Algorithm from Numerical Recipes in C (2nd. ed.), pp. 668-669.
-bool DTrackCandidate_factory_CDC::Find_ThetaZ_Regression(const DHelicalFit* locFit, const deque<DCDCTrkHit*>& locStereoHits, double& locTheta, double& locZ, double& locChiSqPerNDF)
+bool DTrackCandidate_factory_CDC::Find_ThetaZ_Regression(const DHelicalFit* locFit, const vector<DCDCTrkHit*>& locStereoHits, double& locTheta, double& locZ, double& locChiSqPerNDF)
 {
 	if(DEBUG_LEVEL > 3)
 		cout<<"Finding theta and z via linear regression method."<<endl;
@@ -3978,7 +3981,7 @@ bool DTrackCandidate_factory_CDC::Find_ThetaZ_Regression(const DHelicalFit* locF
 //-----------
 // Find_Theta
 //-----------
-bool DTrackCandidate_factory_CDC::Find_Theta(const DHelicalFit* locFit, const deque<DCDCTrkHit*>& locStereoHits, double& locTheta, double& locThetaMin, double& locThetaMax, double& locChiSqPerNDF)
+bool DTrackCandidate_factory_CDC::Find_Theta(const DHelicalFit* locFit, const vector<DCDCTrkHit*>& locStereoHits, double& locTheta, double& locThetaMin, double& locThetaMax, double& locChiSqPerNDF)
 {
 	if(locStereoHits.empty())
 		return false;
@@ -4077,7 +4080,7 @@ bool DTrackCandidate_factory_CDC::Find_Theta(const DHelicalFit* locFit, const de
 //-------
 // Find_Z
 //-------
-bool DTrackCandidate_factory_CDC::Find_Z(const DHelicalFit* locFit, const deque<DCDCTrkHit*>& locStereoHits, double locThetaMin, double locThetaMax, double& locZ)
+bool DTrackCandidate_factory_CDC::Find_Z(const DHelicalFit* locFit, const vector<DCDCTrkHit*>& locStereoHits, double locThetaMin, double locThetaMax, double& locZ)
 {
 	if(locStereoHits.empty())
 		return false;
@@ -4179,7 +4182,7 @@ void DTrackCandidate_factory_CDC::Recycle_DCDCSuperLayerSeed(DCDCSuperLayerSeed*
 		// this is useful for recycling the memory used by the projected hits and seeds
 	// first loop over the hits: see if can recycle those as well (each hit can be used in multiple seeds)
 
-	deque<DCDCTrkHit*> locHits;
+	vector<DCDCTrkHit*> locHits;
 	locCDCSuperLayerSeed->Get_Hits(locHits);
 	for(size_t loc_i = 0; loc_i < locHits.size(); ++loc_i)
 	{
@@ -4209,7 +4212,7 @@ void DTrackCandidate_factory_CDC::Recycle_DCDCTrackCircle(DCDCTrackCircle* locCD
 //----------------------
 // Set_HitBitPattern_All
 //----------------------
-void DTrackCandidate_factory_CDC::Set_HitBitPattern_All(deque<DCDCTrackCircle*>& locCDCTrackCircles)
+void DTrackCandidate_factory_CDC::Set_HitBitPattern_All(vector<DCDCTrackCircle*>& locCDCTrackCircles)
 {
 	unsigned int locNumBits = 8*sizeof(unsigned int);
 	for(size_t loc_i = 0; loc_i < locCDCTrackCircles.size(); ++loc_i)
@@ -4217,7 +4220,7 @@ void DTrackCandidate_factory_CDC::Set_HitBitPattern_All(deque<DCDCTrackCircle*>&
 		DCDCTrackCircle* locCDCTrackCircle = locCDCTrackCircles[loc_i];
 		locCDCTrackCircle->HitBitPattern.clear();
 		locCDCTrackCircle->HitBitPattern.resize(dNumCDCHits/(8*sizeof(unsigned int)) + 1);
-		deque<DCDCTrkHit*> locHits;
+		vector<DCDCTrkHit*> locHits;
 		for(size_t loc_j = 0; loc_j < locCDCTrackCircle->dSuperLayerSeeds_Axial.size(); ++loc_j)
 		{
 			locCDCTrackCircle->dSuperLayerSeeds_Axial[loc_j]->Get_Hits(locHits);
@@ -4249,7 +4252,7 @@ void DTrackCandidate_factory_CDC::Set_HitBitPattern_All(deque<DCDCTrackCircle*>&
 //---------------------------
 // Filter_TrackCircles_Stereo
 //---------------------------
-void DTrackCandidate_factory_CDC::Filter_TrackCircles_Stereo(deque<DCDCTrackCircle*>& locCDCTrackCircles)
+void DTrackCandidate_factory_CDC::Filter_TrackCircles_Stereo(vector<DCDCTrackCircle*>& locCDCTrackCircles)
 {
 	if(locCDCTrackCircles.empty())
 		return;
@@ -4270,7 +4273,7 @@ void DTrackCandidate_factory_CDC::Filter_TrackCircles_Stereo(deque<DCDCTrackCirc
 	{
 		//assume this track circle has no wrong seeds (since it has the best chisq/ndf of all circles containing any of these seeds)
 		DCDCTrackCircle* locTrackCircle_ToCompareTo = locCDCTrackCircles[loc_i];
-		deque<DCDCSuperLayerSeed*> locStereoSuperLayerSeeds;
+		vector<DCDCSuperLayerSeed*> locStereoSuperLayerSeeds;
 		locTrackCircle_ToCompareTo->Get_AllStereoSuperLayerSeeds(locStereoSuperLayerSeeds);
 		//if any of the following track circles has any of the stereo super layer seeds in this track circle, then delete those seeds from those circles
 			//should recycle...
@@ -4321,7 +4324,7 @@ void DTrackCandidate_factory_CDC::Filter_TrackCircles_Stereo(deque<DCDCTrackCirc
 //---------------
 // Add_UnusedHits
 //---------------
-void DTrackCandidate_factory_CDC::Add_UnusedHits(deque<DCDCTrackCircle*>& locCDCTrackCircles)
+void DTrackCandidate_factory_CDC::Add_UnusedHits(vector<DCDCTrackCircle*>& locCDCTrackCircles)
 {
 	if(DEBUG_LEVEL > 5)
 		cout << "Add unused hits" << endl;
@@ -4533,15 +4536,15 @@ void DTrackCandidate_factory_CDC::Create_TrackCandidiate(DCDCTrackCircle* locCDC
 	locTrackCandidate->rc=locCDCTrackCircle->fit->r0;
 	locTrackCandidate->xc=locCDCTrackCircle->fit->x0;
 	locTrackCandidate->yc=locCDCTrackCircle->fit->y0;
-	locTrackCandidate->setCharge(locCDCTrackCircle->fit->h*dFactorForSenseOfRotation);
-
+	Particle_t locPID = (locCDCTrackCircle->fit->h*dFactorForSenseOfRotation > 0.0) ? PiPlus : PiMinus;
+	locTrackCandidate->setPID(locPID);
 	locTrackCandidate->chisq = locCDCTrackCircle->fit->chisq;
 	locTrackCandidate->Ndof = locCDCTrackCircle->fit->ndof;
 	locTrackCandidate->setPosition(pos);
 	locTrackCandidate->setMomentum(mom);
 
 	// Add axial hits (if any)
-	deque<DCDCTrkHit*> locHits;
+	vector<DCDCTrkHit*> locHits;
 	for(size_t loc_i = 0; loc_i < locCDCTrackCircle->dSuperLayerSeeds_Axial.size(); ++loc_i)
 	{
 		locCDCTrackCircle->dSuperLayerSeeds_Axial[loc_i]->Get_Hits(locHits);
@@ -4763,7 +4766,7 @@ void DTrackCandidate_factory_CDC::DCDCSuperLayerSeed::Reset(void)
 
 bool DTrackCandidate_factory_CDC::DCDCSuperLayerSeed::Are_AllHitsOnRingShared(const DCDCSuperLayerSeed* locCDCSuperLayerSeed, int locRing) const
 {
-	deque<DCDCTrkHit*> locRingHits;
+	vector<DCDCTrkHit*> locRingHits;
 	for(size_t loc_i = 0; loc_i < dCDCRingSeeds.size(); ++loc_i)
 	{
 		if(dCDCRingSeeds[loc_i].ring != locRing)
@@ -4772,7 +4775,7 @@ bool DTrackCandidate_factory_CDC::DCDCSuperLayerSeed::Are_AllHitsOnRingShared(co
 		break;
 	}
 
-	deque<DCDCTrkHit*> locRingHits_CompareTo;
+	vector<DCDCTrkHit*> locRingHits_CompareTo;
 	for(size_t loc_i = 0; loc_i < locCDCSuperLayerSeed->dCDCRingSeeds.size(); ++loc_i)
 	{
 		if(locCDCSuperLayerSeed->dCDCRingSeeds[loc_i].ring != locRing)
@@ -4791,6 +4794,7 @@ void DTrackCandidate_factory_CDC::DCDCTrackCircle::Reset(void)
 	dSuperLayerSeeds_OuterStereo.clear();
 	fit = NULL;
 	dWeightedChiSqPerDF = 0.0;
+	dWeightedChiSqPerDF_Stereo = 0.0;
 	dAverageDriftTime = 0.0;
 	HitBitPattern.clear();
 	dTheta = 0.0;
@@ -4799,7 +4803,6 @@ void DTrackCandidate_factory_CDC::DCDCTrackCircle::Reset(void)
 	dTruncationSourceCircles.clear();
 	dHasNonTruncatedSeedsFlag_InnerStereo = false;
 	dHasNonTruncatedSeedsFlag_OuterStereo = false;
-	dWeightedChiSqPerDF_Stereo = 0.0;
 }
 
 DTrackCandidate_factory_CDC::DCDCSuperLayerSeed* DTrackCandidate_factory_CDC::DCDCTrackCircle::Get_LastSuperLayerSeed(void) const
@@ -4886,7 +4889,7 @@ DTrackCandidate_factory_CDC::DCDCSuperLayerSeed* DTrackCandidate_factory_CDC::DC
 void DTrackCandidate_factory_CDC::DCDCTrackCircle::Strip_StereoSuperLayerSeed(unsigned int locSuperLayer)
 {
 	//assumes at most one stereo series of each type!!!
-	deque<DCDCSuperLayerSeed*>::iterator locIterator;
+	vector<DCDCSuperLayerSeed*>::iterator locIterator;
 	if(!dSuperLayerSeeds_OuterStereo.empty())
 	{
 		for(locIterator = dSuperLayerSeeds_OuterStereo[0].begin(); locIterator != dSuperLayerSeeds_OuterStereo[0].end(); ++locIterator)
@@ -4952,7 +4955,7 @@ void DTrackCandidate_factory_CDC::DCDCTrackCircle::Truncate_Circle(unsigned int 
 	}
 
 	//outer stereo
-	deque<deque<DCDCSuperLayerSeed*> >::iterator locIterator, locIterator2;
+	vector<vector<DCDCSuperLayerSeed*> >::iterator locIterator, locIterator2;
 	if(locNewLastSuperLayer < 5)
 		dSuperLayerSeeds_OuterStereo.clear();
 	else if(locNewLastSuperLayer < 7)
@@ -4960,7 +4963,7 @@ void DTrackCandidate_factory_CDC::DCDCTrackCircle::Truncate_Circle(unsigned int 
 		bool locClippedEveryStereoSeedFlag = true;
 		for(locIterator = dSuperLayerSeeds_OuterStereo.begin(); locIterator != dSuperLayerSeeds_OuterStereo.end();)
 		{
-			deque<DCDCSuperLayerSeed*>& locSeedSeries = *locIterator;
+			vector<DCDCSuperLayerSeed*>& locSeedSeries = *locIterator;
 			bool locClippedstereoSeriesFlag = false;
 			for(size_t loc_j = 0; loc_j < locSeedSeries.size(); ++loc_j)
 			{
@@ -4978,7 +4981,7 @@ void DTrackCandidate_factory_CDC::DCDCTrackCircle::Truncate_Circle(unsigned int 
 				{
 					if(locIterator2 == locIterator)
 						continue;
-					deque<DCDCSuperLayerSeed*>& locSeedSeries2 = *locIterator2;
+					vector<DCDCSuperLayerSeed*>& locSeedSeries2 = *locIterator2;
 					if(locSeedSeries == locSeedSeries2)
 					{
 						locSeedSeries.clear();
@@ -5006,7 +5009,7 @@ void DTrackCandidate_factory_CDC::DCDCTrackCircle::Truncate_Circle(unsigned int 
 		bool locClippedEveryStereoSeedFlag = true;
 		for(locIterator = dSuperLayerSeeds_InnerStereo.begin(); locIterator != dSuperLayerSeeds_InnerStereo.end();)
 		{
-			deque<DCDCSuperLayerSeed*>& locSeedSeries = *locIterator;
+			vector<DCDCSuperLayerSeed*>& locSeedSeries = *locIterator;
 			bool locClippedstereoSeriesFlag = false;
 			for(size_t loc_j = 0; loc_j < locSeedSeries.size(); ++loc_j)
 			{
@@ -5024,7 +5027,7 @@ void DTrackCandidate_factory_CDC::DCDCTrackCircle::Truncate_Circle(unsigned int 
 				{
 					if(locIterator2 == locIterator)
 						continue;
-					deque<DCDCSuperLayerSeed*>& locSeedSeries2 = *locIterator2;
+					vector<DCDCSuperLayerSeed*>& locSeedSeries2 = *locIterator2;
 					if(locSeedSeries == locSeedSeries2)
 					{
 						locSeedSeries.clear();
@@ -5047,7 +5050,7 @@ void DTrackCandidate_factory_CDC::DCDCTrackCircle::Absorb_TrackCircle(const DCDC
 	//used when merging track circles: this track circle will absorb the stereo combinations from the other one
 	for(size_t loc_i = 0; loc_i < locTrackCircle->dSuperLayerSeeds_InnerStereo.size(); ++loc_i)
 	{
-		const deque<DCDCSuperLayerSeed*>& locSeedSeries = locTrackCircle->dSuperLayerSeeds_InnerStereo[loc_i];
+		const vector<DCDCSuperLayerSeed*>& locSeedSeries = locTrackCircle->dSuperLayerSeeds_InnerStereo[loc_i];
 		bool locComboAlreadyPresentFlag = false;
 		for(size_t loc_j = 0; loc_j < dSuperLayerSeeds_InnerStereo.size(); ++loc_j)
 		{
@@ -5068,7 +5071,7 @@ void DTrackCandidate_factory_CDC::DCDCTrackCircle::Absorb_TrackCircle(const DCDC
 
 	for(size_t loc_i = 0; loc_i < locTrackCircle->dSuperLayerSeeds_OuterStereo.size(); ++loc_i)
 	{
-		const deque<DCDCSuperLayerSeed*>& locSeedSeries = locTrackCircle->dSuperLayerSeeds_OuterStereo[loc_i];
+		const vector<DCDCSuperLayerSeed*>& locSeedSeries = locTrackCircle->dSuperLayerSeeds_OuterStereo[loc_i];
 		bool locComboAlreadyPresentFlag = false;
 		for(size_t loc_j = 0; loc_j < dSuperLayerSeeds_OuterStereo.size(); ++loc_j)
 		{
@@ -5135,7 +5138,7 @@ bool DTrackCandidate_factory_CDC::DCDCTrackCircle::Check_IfInputIsSubset(const D
 		return locTrackCircle->dHasNonTruncatedSeedsFlag_InnerStereo;
 }
 
-void DTrackCandidate_factory_CDC::DCDCTrackCircle::Get_AllStereoSuperLayerSeeds(deque<DCDCSuperLayerSeed*>& locStereoSuperLayerSeeds)
+void DTrackCandidate_factory_CDC::DCDCTrackCircle::Get_AllStereoSuperLayerSeeds(vector<DCDCSuperLayerSeed*>& locStereoSuperLayerSeeds)
 {
 	//assumes there is only one seed series
 	locStereoSuperLayerSeeds.clear();

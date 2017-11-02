@@ -49,7 +49,9 @@ jerror_t DEventProcessor_pid_dirc::evnt(JEventLoop *loop, uint64_t eventnumber) 
   vector<const DMCTrackHit*> mctrackhits;
   vector<const DDIRCTruthBarHit*> dircBarHits;
   vector<const DDIRCTruthPmtHit*> dircPmtHits;
-
+  const DDIRCTruthBarHit* relevantBarHit=nullptr;
+  const DMCThrown*  relevantMCThrown=nullptr;
+  
   loop->Get(beam_photons);
   loop->Get(mcthrowns);
   loop->Get(mctrackhits);
@@ -119,35 +121,62 @@ jerror_t DEventProcessor_pid_dirc::evnt(JEventLoop *loop, uint64_t eventnumber) 
   japp->RootWriteLock(); //ACQUIRE ROOT LOCK
   
   // loop over mc/reco tracks
-  for (unsigned int j = 0; j < mcthrowns.size(); j++){
+  for (unsigned int m = 0; m < mcthrowns.size(); m++){
 
-    fEvent = new DrcEvent();
-    DrcHit hit;
-    // loop over PMT's hits
-    for (unsigned int h = 0; h < dircPmtHits.size(); h++){
-      // identify bar id
-      for (unsigned int j = 0; j < dircBarHits.size(); j++){
+    std::cout<<"initial position: x = "<< mcthrowns[m]->position().X()<<", y = "<< mcthrowns[m]->position().Y()<<", z = "<< mcthrowns[m]->position().Z()<<", track # = "<<mcthrowns[m]->myid <<std::endl;
+
+    if(dircPmtHits.size() > 0.){
+      fEvent = new DrcEvent();
+      DrcHit hit;
+      // loop over PMT's hits
+      for (unsigned int h = 0; h < dircPmtHits.size(); h++){
+	// identify bar id
+	for (unsigned int j = 0; j < dircBarHits.size(); j++){
+	  //cout<<"Bar Hit position: x = "<<dircBarHits[j]->x<<", y = "<<dircBarHits[j]->y<<", z = "<<dircBarHits[j]->z<<endl;
+	  if(j == fabs(dircPmtHits[h]->key_bar)){
+	    relevantBarHit = dircBarHits[j];
+	    for(unsigned int t = 0; t < mcthrowns.size(); t++){
+	      if(mcthrowns[t]->myid == relevantBarHit->track){
+		relevantMCThrown = mcthrowns[t];
+	      }
+	    }// for t
+	  }// if j == key_bar
+	}// for j
+	
+	int ch=dircPmtHits[h]->ch;
+	int pmt=ch/64;
+	int pix=ch%64;
+	
+	hit.SetChannel(dircPmtHits[h]->ch);
+	hit.SetPmtId(pmt);
+	hit.SetPixelId(pix);
+	hit.SetPosition(TVector3(dircPmtHits[h]->x,dircPmtHits[h]->y,dircPmtHits[h]->z));
+	hit.SetMomentum(TVector3(0,0,0));
+	hit.SetLeadTime(dircPmtHits[h]->t);
+	fEvent->AddHit(hit);
+      }// for h
+        
+      if(relevantMCThrown){
+	fEvent->SetMomentum(TVector3(relevantMCThrown->momentum().X(), relevantMCThrown->momentum().Y(), relevantMCThrown->momentum().Z()));
+	fEvent->SetPdg(relevantMCThrown->pdgtype);
+	std::cout<<"pdg = "<<relevantMCThrown->pdgtype<<", momentum = "<<relevantMCThrown->momentum().Mag()<<", px = "<<relevantMCThrown->momentum().X()<<", py = "<<relevantMCThrown->momentum().Y()<<", pz = "<<relevantMCThrown->momentum().Z()<<std::endl;
+      }else{
+	fEvent->SetMomentum(TVector3(999.,999.,999.));
+	fEvent->SetPdg(99999.);
       }
-
-      int ch=dircPmtHits[h]->ch;
-      int pmt=ch/64;
-      int pix=ch%64;
+      if(relevantBarHit){
+	fEvent->SetId(relevantBarHit->bar);// bar id where the particle hit the detector
+	cout<<"bar id = "<<relevantBarHit->bar<<endl;
+      }else{
+	fEvent->SetId(-2);
+      }
+      fTree->Fill();
       
-      hit.SetChannel(dircPmtHits[h]->ch);
-      hit.SetPmtId(pmt);
-      hit.SetPixelId(pix);
-      hit.SetPosition(TVector3(dircPmtHits[h]->x,dircPmtHits[h]->y,dircPmtHits[h]->z));
-      hit.SetMomentum(TVector3(0,0,0));
-      hit.SetLeadTime(dircPmtHits[h]->t);
-      fEvent->AddHit(hit);
+      //    fEvent->Clear();
+      //TClonesArray& cevt = *fEvent;
+      //Int_t size = cevt.GetEntriesFast();
+      //new (cevt[size]) DrcEvent(evt);
     }
-    
-    fTree->Fill();
-
-    // fEvent->Clear();
-    // TClonesArray& cevt = *fEvent;
-    // Int_t size = cevt.GetEntriesFast();
-    // new (cevt[size]) DrcEvent(evt);
   }    
 
   japp->RootUnLock(); //RELEASE ROOT LOCK
@@ -172,7 +201,7 @@ Particle DEventProcessor_pid_dirc::MakeParticle(const DKinematicData *kd,
   double x = kd->position().X();
   double y = kd->position().Y();
   double z = kd->position().Z();
-
+  
   Particle part;
   part.p.SetPxPyPzE(px, py, pz, E);
   part.x.SetXYZ(x, y, z);

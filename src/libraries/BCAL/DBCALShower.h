@@ -25,6 +25,7 @@ class DBCALShower:public JObject{
     float sigTrans;
     float sigTheta;
     int N_cell;
+    int Q;
 	TMatrixFSym ExyztCovariance;
 
     float const EErr() const { return sqrt(ExyztCovariance(0,0)); }
@@ -83,6 +84,7 @@ class DBCALShower:public JObject{
 			AddString(items, "phi", "%5.3f",atan2(y,x));
 			AddString(items, "E_preshower", "%5.3f", E_preshower);
 			AddString(items, "N_cell", "%d", N_cell);
+			AddString(items, "Q", "%d", Q);
 			AddString(items, "dE", "%5.3f", EErr());
 			AddString(items, "dx", "%5.3f", xErr());
 			AddString(items, "dy", "%5.3f", yErr());

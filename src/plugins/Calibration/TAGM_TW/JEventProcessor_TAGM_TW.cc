@@ -30,11 +30,11 @@ const int32_t TBIN = (TMAX - TMIN)/0.1;
 
 const double TMIN_RF = -2.0;
 const double TMAX_RF = 2.0;
-const double TBIN_RF = (TMAX_RF - TMIN_RF)/0.1;
+const double TBIN_RF = (TMAX_RF - TMIN_RF)/0.01;
 
 const double TMIN_TW = -10.0;
 const double TMAX_TW = 15.0;
-const double TBIN_TW = (TMAX_RF - TMIN_RF)/0.1;
+const double TBIN_TW = (TMAX_RF - TMIN_RF)/0.01;
 
 // Define histograms
 //    timewalk

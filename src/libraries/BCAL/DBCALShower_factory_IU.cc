@@ -192,6 +192,7 @@ DBCALShower_factory_IU::evnt( JEventLoop *loop, uint64_t eventnumber ){
     shower->x = rho * sinTh * cosPhi;
     shower->y = rho * sinTh * sinPhi;
     shower->z = rho * cosTh + m_zTarget;
+    shower->Q = (**clItr).Q();
 
     //DBCALCluster::t() returns the time at the inner radius
     //so we need to make an adjustment so that the shower t is the time at

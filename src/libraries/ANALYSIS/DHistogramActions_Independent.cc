@@ -5,92 +5,12 @@
 
 void DHistogramAction_ObjectMemory::Initialize(JEventLoop* locEventLoop)
 {
-	string locHistName, locHistTitle;
-	vector<string> locBinLabels; //fill this
-
-	//ANALYSIS
-	dFactoryPoolBinMap["DParticleComboBlueprintStep"] = 1;
-	locBinLabels.push_back("BlueprintStep");
-
-	dFactoryPoolBinMap["DParticleComboBlueprintStep_Shared"] = 2;
-	locBinLabels.push_back("BlueprintStep_Shared");
-
-	dFactoryPairsToTrack.push_back(pair<string, string>("DParticleComboBlueprint", ""));
-	dFactoryPairBinMap[dFactoryPairsToTrack.back()] = 3;
-	locBinLabels.push_back("ComboBlueprint");
-
-	dFactoryPoolBinMap["DParticleComboBlueprint_Shared"] = 4;
-	locBinLabels.push_back("BlueprintCombo_Shared");
-
-	dFactoryPairsToTrack.push_back(pair<string, string>("DTrackTimeBased", "Combo"));
-	dFactoryPairBinMap[dFactoryPairsToTrack.back()] = 5;
-	locBinLabels.push_back("DTrackTimeBased_Combo");
-
-	dFactoryPairsToTrack.push_back(pair<string, string>("DEventRFBunch", "Combo"));
-	dFactoryPairBinMap[dFactoryPairsToTrack.back()] = 6;
-	locBinLabels.push_back("DEventRFBunch_Combo");
-
-	dFactoryPairsToTrack.push_back(pair<string, string>("DChargedTrackHypothesis", "Combo"));
-	dFactoryPairBinMap[dFactoryPairsToTrack.back()] = 7;
-	locBinLabels.push_back("ChargedHypo_Combo");
-
-	dFactoryPairsToTrack.push_back(pair<string, string>("DNeutralParticleHypothesis", "Combo"));
-	dFactoryPairBinMap[dFactoryPairsToTrack.back()] = 8;
-	locBinLabels.push_back("NeutralHypo_Combo");
-
-	dFactoryPoolBinMap["DKinematicData_ComboPreKinFit"] = 9;
-	locBinLabels.push_back("KinData_ComboPreKinFit");
-
-	dFactoryPoolBinMap["DParticleComboStep_PreKinFit"] = 10;
-	locBinLabels.push_back("ComboStep_PreKinFit");
-
-	dFactoryPairsToTrack.push_back(pair<string, string>("DParticleCombo", "PreKinFit"));
-	dFactoryPairBinMap[dFactoryPairsToTrack.back()] = 11;
-	locBinLabels.push_back("Combo_PreKinFit");
-
-	dFactoryPoolBinMap["DKinFitParticle"] = 12;
-	locBinLabels.push_back("DKinFitParticle");
-
-	dFactoryPoolBinMap["DKinFitParticle_Shared"] = 13;
-	locBinLabels.push_back("DKinFitParticle_Shared");
-
-	dFactoryPoolBinMap["DKinFitChainStep"] = 14;
-	locBinLabels.push_back("DKinFitChainStep");
-
-	dFactoryPoolBinMap["DKinFitChain"] = 15;
-	locBinLabels.push_back("DKinFitChain");
-
-	dFactoryPoolBinMap["DKinFitConstraints"] = 16;
-	locBinLabels.push_back("DKinFitConstraints");
-
-	dFactoryPoolBinMap["TMatrixFSym"] = 17;
-	locBinLabels.push_back("TMatrixFSym");
-
-	dFactoryPairsToTrack.push_back(pair<string, string>("DKinFitResults", ""));
-	dFactoryPairBinMap[dFactoryPairsToTrack.back()] = 18;
-	locBinLabels.push_back("DKinFitResults");
-
-	dFactoryPairsToTrack.push_back(pair<string, string>("DBeamPhoton", "KinFit"));
-	dFactoryPairBinMap[dFactoryPairsToTrack.back()] = 19;
-	locBinLabels.push_back("BeamPhoton_KinFit");
-
-	dFactoryPairsToTrack.push_back(pair<string, string>("DChargedTrackHypothesis", "KinFit"));
-	dFactoryPairBinMap[dFactoryPairsToTrack.back()] = 20;
-	locBinLabels.push_back("ChargedHypo_KinFit");
-
-	dFactoryPairsToTrack.push_back(pair<string, string>("DNeutralParticleHypothesis", "KinFit"));
-	dFactoryPairBinMap[dFactoryPairsToTrack.back()] = 21;
-	locBinLabels.push_back("NeutralHypo_KinFit");
-
-	dFactoryPoolBinMap["DKinematicData_Combo"] = 22;
-	locBinLabels.push_back("DKinData_Combo");
-
-	dFactoryPoolBinMap["DParticleComboStep"] = 23;
-	locBinLabels.push_back("DParticleComboStep");
-
-	dFactoryPairsToTrack.push_back(pair<string, string>("DParticleCombo", ""));
-	dFactoryPairBinMap[dFactoryPairsToTrack.back()] = 24;
-	locBinLabels.push_back("DParticleCombo");
+	//setup binning
+	vector<string> locBinLabels = {"TMatrixFSym", "DKinematicInfo", "Charged DTimingInfo", "DTrackingInfo", "Neutral DTimingInfo", "KinematicDatas", "Charged Hypos", "Neutral Hypos", "Beam Photons",
+			"Combo RF Bunches", "Source Combos", "Source Combo Vectors", "Particle Combos", "Particle Combo Steps",
+			"DKinFitParticle", "DKinFitChainStep", "DKinFitChain", "DKinFitResults", "DKinFitConstraint_Mass", "DKinFitConstraint_P4", "DKinFitConstraint_Vertex", "DKinFitConstraint_Spacetime"};
+	for(size_t loc_i = 0; loc_i < locBinLabels.size(); ++loc_i)
+		dBinMap[locBinLabels[loc_i]] = loc_i + 1;
 
 	//CREATE THE HISTOGRAMS
 	//Since we are creating histograms, the contents of gDirectory will be modified: must use JANA-wide ROOT lock
@@ -102,8 +22,8 @@ void DHistogramAction_ObjectMemory::Initialize(JEventLoop* locEventLoop)
 		dResidentMemoryVsEventNumber = new TH1F("ResidentMemoryVsEventNumber", ";Event Counter;Resident Memory (MB)", dMaxNumEvents, 0.5, (double)dMaxNumEvents + 0.5);
 
 		// Total Memory
-		locHistName = "TotalMemory";
-		locHistTitle = ";Event Counter;Total Memory (MB)";
+		string locHistName = "TotalMemory";
+		string locHistTitle = ";Event Counter;Total Memory (MB)";
 		dHist_TotalMemory = GetOrCreate_Histogram<TH1F>(locHistName, locHistTitle, dMaxNumEvents, 0.5, float(dMaxNumEvents) + 0.5);
 
 		// # Objects
@@ -128,13 +48,13 @@ void DHistogramAction_ObjectMemory::Initialize(JEventLoop* locEventLoop)
 
 bool DHistogramAction_ObjectMemory::Perform_Action(JEventLoop* locEventLoop, const DParticleCombo* locParticleCombo)
 {
-	if(Get_NumPreviousParticleCombos() != 0)
+	if(Get_CalledPriorWithComboFlag())
 		return true; //else double-counting!
 
 	if(dEventCounter > dMaxNumEvents)
 		return true;
 
-	if(locParticleCombo != NULL)
+	if(locParticleCombo != nullptr)
 		return true; // Protect against infinite recursion (see below)
 
 	//THIS IS EXTREMELY DANGEROUS, AND SHOULD BE AVOIDED UNLESS YOU KNOW !!!!EXACTLY!!!! WHAT YOU ARE DOING
@@ -145,142 +65,173 @@ bool DHistogramAction_ObjectMemory::Perform_Action(JEventLoop* locEventLoop, con
 	vector<const DAnalysisResults*> locAnalysisResults;
 	locEventLoop->Get(locAnalysisResults);
 
-	//FACTORIES
-	//call get-n-rows first outside of lock, just to make sure 
 	map<int, size_t> locNumObjectsMap; //int is bin
 	map<int, double> locMemoryMap; //int is bin
 	double locTotalMemory = 0.0;
-	for(size_t loc_i = 0; loc_i < dFactoryPairsToTrack.size(); ++loc_i)
-	{
-		string locClassName = dFactoryPairsToTrack[loc_i].first;
-		string locTag = dFactoryPairsToTrack[loc_i].second;
-		JFactory_base* locFactory = locEventLoop->GetFactory(locClassName.c_str(), locTag.c_str());
-		size_t locNumObjects = locFactory->GetNrows();
-		unsigned long long locDataClassSize = locFactory->GetDataClassSize();
 
-		double locMemory = locDataClassSize*locNumObjects;
-		int locBin = dFactoryPairBinMap[dFactoryPairsToTrack[loc_i]];
-		locNumObjectsMap[locBin] = locNumObjects;
-		locMemoryMap[locBin] = locMemory;
-		locTotalMemory += locMemory;
-	}
+	/******************************************************* COMPONENT OBJECTS *******************************************************/
 
-	//RESOURCE POOLS
-	{
-		unsigned long long locMemory;
-		JFactory_base* locBaseFactory;
-		int locBin;
+	//TMatrixFSym
+	auto locBin = dBinMap["TMatrixFSym"];
+	locNumObjectsMap[locBin] = dResourcePool_TMatrixFSym.Get_NumObjectsAllThreads();
+	auto locMemory = (sizeof(TMatrixDSym) + 7*7*4)*locNumObjectsMap[locBin]; //assume 7x7 matrix of floats (4)
+	locMemoryMap[locBin] = locMemory;
+	locTotalMemory += locMemory;
 
-		//DParticleComboBlueprintStep
-		locBin = dFactoryPoolBinMap["DParticleComboBlueprintStep"];
-		locBaseFactory = locEventLoop->GetFactory("DParticleComboBlueprint", "");
-		DParticleComboBlueprint_factory* locParticleComboBlueprintFactory = static_cast<DParticleComboBlueprint_factory*>(locBaseFactory);
-		locNumObjectsMap[locBin] = locParticleComboBlueprintFactory->Get_ParticleComboBlueprintStepPoolSize();
-		locMemory = sizeof(DParticleComboBlueprintStep)*locNumObjectsMap[locBin];
-		locMemoryMap[locBin] = locMemory;
-		locTotalMemory += locMemory;
+	//DKinematicData::DKinematicInfo
+	locBin = dBinMap["DKinematicInfo"];
+	locNumObjectsMap[locBin] = dResourcePool_KinematicInfo.Get_NumObjectsAllThreads();
+	locMemory = sizeof(DKinematicData::DKinematicInfo)*locNumObjectsMap[locBin];
+	locMemoryMap[locBin] = locMemory;
+	locTotalMemory += locMemory;
 
-		//DParticleComboBlueprintStep_Shared
-		locBin = dFactoryPoolBinMap["DParticleComboBlueprintStep_Shared"];
-		locNumObjectsMap[locBin] = locParticleComboBlueprintFactory->Get_ParticleComboBlueprintStepPoolSize_Shared();
-		locMemory = sizeof(DParticleComboBlueprintStep)*locNumObjectsMap[locBin];
-		locMemoryMap[locBin] = locMemory;
-		locTotalMemory += locMemory;
+	//DChargedTrackHypothesis::DTimingInfo
+	locBin = dBinMap["Charged DTimingInfo"];
+	locNumObjectsMap[locBin] = dResourcePool_ChargedHypoTimingInfo.Get_NumObjectsAllThreads();
+	locMemory = sizeof(DChargedTrackHypothesis::DTimingInfo)*locNumObjectsMap[locBin];
+	locMemoryMap[locBin] = locMemory;
+	locTotalMemory += locMemory;
 
-		//DParticleComboBlueprint_Shared
-		locBin = dFactoryPoolBinMap["DParticleComboBlueprint_Shared"];
-		locNumObjectsMap[locBin] = locParticleComboBlueprintFactory->Get_ParticleComboBlueprintPoolSize_Shared();
-		locMemory = sizeof(DParticleComboBlueprint)*locNumObjectsMap[locBin];
-		locMemoryMap[locBin] = locMemory;
-		locTotalMemory += locMemory;
+	//DChargedTrackHypothesis::DTrackingInfo
+	locBin = dBinMap["DTrackingInfo"];
+	locNumObjectsMap[locBin] = dResourcePool_ChargedHypoTrackingInfo.Get_NumObjectsAllThreads();
+	locMemory = sizeof(DChargedTrackHypothesis::DTrackingInfo)*locNumObjectsMap[locBin];
+	locMemoryMap[locBin] = locMemory;
+	locTotalMemory += locMemory;
 
-		//DParticleComboStep_PreKinFit
-		locBin = dFactoryPoolBinMap["DParticleComboStep_PreKinFit"];
-		locBaseFactory = locEventLoop->GetFactory("DParticleCombo", "PreKinFit");
-		DParticleCombo_factory_PreKinFit* locParticleComboFactory_PreKinFit = static_cast<DParticleCombo_factory_PreKinFit*>(locBaseFactory);
-		locNumObjectsMap[locBin] = locParticleComboFactory_PreKinFit->Get_ParticleComboStepPoolSize();
-		locMemory = sizeof(DParticleComboStep)*locNumObjectsMap[locBin];
-		locMemoryMap[locBin] = locMemory;
-		locTotalMemory += locMemory;
+	//DNeutralParticleHypothesis::DTimingInfo
+	locBin = dBinMap["Neutral DTimingInfo"];
+	locNumObjectsMap[locBin] = dResourcePool_NeutralHypoTimingInfo.Get_NumObjectsAllThreads();
+	locMemory = sizeof(DNeutralParticleHypothesis::DTimingInfo)*locNumObjectsMap[locBin];
+	locMemoryMap[locBin] = locMemory;
+	locTotalMemory += locMemory;
 
-		//DKinematicData_ComboPreKinFit
-		locBin = dFactoryPoolBinMap["DKinematicData_ComboPreKinFit"];
-		locNumObjectsMap[locBin] = locParticleComboFactory_PreKinFit->Get_KinematicDataPoolSize();
-		locMemory = sizeof(DKinematicData)*locNumObjectsMap[locBin];
-		locMemoryMap[locBin] = locMemory;
-		locTotalMemory += locMemory;
+	/******************************************************* KINEMATIC DATA OBJECTS *******************************************************/
 
-		//DKinFitParticle
-		locBin = dFactoryPoolBinMap["DKinFitParticle"];
-		locBaseFactory = locEventLoop->GetFactory("DKinFitResults", "");
-		DKinFitResults_factory* locKinFitResultsFactory = static_cast<DKinFitResults_factory*>(locBaseFactory);
-		locNumObjectsMap[locBin] = locKinFitResultsFactory->Get_KinFitParticlePoolSize();
-		locMemory = sizeof(DKinFitParticle)*locNumObjectsMap[locBin];
-		locMemoryMap[locBin] = locMemory;
-		locTotalMemory += locMemory;
+	//DKinematicData
+	locBin = dBinMap["KinematicDatas"];
+	locNumObjectsMap[locBin] = dResourcePool_KinematicData.Get_NumObjectsAllThreads();
+	locMemory = sizeof(DKinematicData)*locNumObjectsMap[locBin];
+	locMemoryMap[locBin] = locMemory;
+	locTotalMemory += locMemory;
 
-		//DKinFitParticle_Shared
-		locBin = dFactoryPoolBinMap["DKinFitParticle_Shared"];
-		locNumObjectsMap[locBin] = locKinFitResultsFactory->Get_KinFitParticlePoolSize_Shared();
-		locMemory = sizeof(DKinFitParticle)*locNumObjectsMap[locBin];
-		locMemoryMap[locBin] = locMemory;
-		locTotalMemory += locMemory;
+	//DChargedTrackHypothesis
+	locBin = dBinMap["Charged Hypos"];
+	locNumObjectsMap[locBin] = dResourcePool_ChargedTrackHypothesis.Get_NumObjectsAllThreads();
+	locMemory = sizeof(DChargedTrackHypothesis)*locNumObjectsMap[locBin];
+	locMemoryMap[locBin] = locMemory;
+	locTotalMemory += locMemory;
 
-		//DKinFitChainStep
-		locBin = dFactoryPoolBinMap["DKinFitChainStep"];
-		locNumObjectsMap[locBin] = locKinFitResultsFactory->Get_KinFitChainStepPoolSize();
-		locMemory = sizeof(DKinFitChainStep)*locNumObjectsMap[locBin];
-		locMemoryMap[locBin] = locMemory;
-		locTotalMemory += locMemory;
+	//DNeutralParticleHypothesis
+	locBin = dBinMap["Neutral Hypos"];
+	locNumObjectsMap[locBin] = dResourcePool_NeutralParticleHypothesis.Get_NumObjectsAllThreads();
+	locMemory = sizeof(DNeutralParticleHypothesis)*locNumObjectsMap[locBin];
+	locMemoryMap[locBin] = locMemory;
+	locTotalMemory += locMemory;
 
-		//DKinFitChain
-		locBin = dFactoryPoolBinMap["DKinFitChain"];
-		locNumObjectsMap[locBin] = locKinFitResultsFactory->Get_KinFitChainPoolSize();
-		locMemory = sizeof(DKinFitChain)*locNumObjectsMap[locBin];
-		locMemoryMap[locBin] = locMemory;
-		locTotalMemory += locMemory;
+	//DBeamPhoton
+	locBin = dBinMap["Beam Photons"];
+	locNumObjectsMap[locBin] = dResourcePool_BeamPhotons.Get_NumObjectsAllThreads();
+	locMemory = sizeof(DBeamPhoton)*locNumObjectsMap[locBin];
+	locMemoryMap[locBin] = locMemory;
+	locTotalMemory += locMemory;
 
-		//DKinFitConstraints
-		locBin = dFactoryPoolBinMap["DKinFitConstraints"];
-		//vertex
-		locNumObjectsMap[locBin] = locKinFitResultsFactory->Get_KinFitConstraintVertexPoolSize();
-		locMemory = sizeof(DKinFitConstraint_Vertex)*locKinFitResultsFactory->Get_KinFitConstraintVertexPoolSize();
-		//spacetime
-		locNumObjectsMap[locBin] += locKinFitResultsFactory->Get_KinFitConstraintSpacetimePoolSize();
-		locMemory += sizeof(DKinFitConstraint_Spacetime)*locKinFitResultsFactory->Get_KinFitConstraintSpacetimePoolSize();
-		//p4
-		locNumObjectsMap[locBin] += locKinFitResultsFactory->Get_KinFitConstraintP4PoolSize();
-		locMemory += sizeof(DKinFitConstraint_P4)*locKinFitResultsFactory->Get_KinFitConstraintP4PoolSize();
-		//mass
-		locNumObjectsMap[locBin] += locKinFitResultsFactory->Get_KinFitConstraintMassPoolSize();
-		locMemory += sizeof(DKinFitConstraint_Mass)*locKinFitResultsFactory->Get_KinFitConstraintMassPoolSize();
-		//save
-		locMemoryMap[locBin] = locMemory;
-		locTotalMemory += locMemory;
+	/******************************************************* COMBO OBJECTS *******************************************************/
 
-		//TMatrixFSym
-		locBin = dFactoryPoolBinMap["TMatrixFSym"];
-		locNumObjectsMap[locBin] = (dynamic_cast<DApplication*>(japp))->Get_NumCovarianceMatrices();
-		locMemory = ((unsigned long long)(sizeof(TMatrixDSym) + 7*7*4))*locNumObjectsMap[locBin]; //assume 7x7 matrix of floats (4)
-		locMemoryMap[locBin] = locMemory;
-		locTotalMemory += locMemory;
+	//DEventRFBunch
+	locBin = dBinMap["Combo RF Bunches"];
+	locNumObjectsMap[locBin] = dResourcePool_EventRFBunch.Get_NumObjectsAllThreads();
+	locMemory = sizeof(DEventRFBunch)*locNumObjectsMap[locBin];
+	locMemoryMap[locBin] = locMemory;
+	locTotalMemory += locMemory;
 
-		//DParticleComboStep
-		locBin = dFactoryPoolBinMap["DParticleComboStep"];
-		locBaseFactory = locEventLoop->GetFactory("DParticleCombo", "");
-		DParticleCombo_factory* locParticleComboFactory = static_cast<DParticleCombo_factory*>(locBaseFactory);
-		locNumObjectsMap[locBin] = locParticleComboFactory->Get_ParticleComboStepPoolSize();
-		locMemory = sizeof(DParticleComboStep)*locNumObjectsMap[locBin];
-		locMemoryMap[locBin] = locMemory;
-		locTotalMemory += locMemory;
+	//DSourceCombo
+	locBin = dBinMap["Source Combos"];
+	locNumObjectsMap[locBin] = dResourcePool_SourceCombo.Get_NumObjectsAllThreads();
+	locMemory = sizeof(DSourceCombo)*locNumObjectsMap[locBin];
+	locMemoryMap[locBin] = locMemory;
+	locTotalMemory += locMemory;
 
-		//DKinematicData_Combo
-		locBin = dFactoryPoolBinMap["DKinematicData_Combo"];
-		locNumObjectsMap[locBin] = locParticleComboFactory->Get_KinematicDataPoolSize();
-		locMemory = sizeof(DKinematicData)*locNumObjectsMap[locBin];
-		locMemoryMap[locBin] = locMemory;
-		locTotalMemory += locMemory;
-	}
+	//DSourceCombo Vectors
+	locBin = dBinMap["Source Combo Vectors"];
+	locNumObjectsMap[locBin] = dResourcePool_SourceComboVector.Get_NumObjectsAllThreads();
+	locMemory = sizeof(vector<const DSourceCombo*>)*locNumObjectsMap[locBin];
+	locMemoryMap[locBin] = locMemory;
+	locTotalMemory += locMemory;
+
+	//DParticleCombo
+	locBin = dBinMap["Particle Combos"];
+	locNumObjectsMap[locBin] = dResourcePool_ParticleCombo.Get_NumObjectsAllThreads();
+	locMemory = sizeof(DParticleCombo)*locNumObjectsMap[locBin];
+	locMemoryMap[locBin] = locMemory;
+	locTotalMemory += locMemory;
+
+	//DParticleComboStep
+	locBin = dBinMap["Particle Combo Steps"];
+	locNumObjectsMap[locBin] = dResourcePool_ParticleComboStep.Get_NumObjectsAllThreads();
+	locMemory = sizeof(DParticleComboStep)*locNumObjectsMap[locBin];
+	locMemoryMap[locBin] = locMemory;
+	locTotalMemory += locMemory;
+
+	/******************************************************* KINFIT OBJECTS *******************************************************/
+
+	//DKinFitParticle
+	locBin = dBinMap["DKinFitParticle"];
+	locNumObjectsMap[locBin] = dResourcePool_KinFitParticle.Get_NumObjectsAllThreads();
+	locMemory = sizeof(DKinFitParticle)*locNumObjectsMap[locBin];
+	locMemoryMap[locBin] = locMemory;
+	locTotalMemory += locMemory;
+
+	//DKinFitChainStep
+	locBin = dBinMap["DKinFitChainStep"];
+	locNumObjectsMap[locBin] = dResourcePool_KinFitChainStep.Get_NumObjectsAllThreads();
+	locMemory = sizeof(DKinFitChainStep)*locNumObjectsMap[locBin];
+	locMemoryMap[locBin] = locMemory;
+	locTotalMemory += locMemory;
+
+	//DKinFitChain
+	locBin = dBinMap["DKinFitChain"];
+	locNumObjectsMap[locBin] = dResourcePool_KinFitChain.Get_NumObjectsAllThreads();
+	locMemory = sizeof(DKinFitChain)*locNumObjectsMap[locBin];
+	locMemoryMap[locBin] = locMemory;
+	locTotalMemory += locMemory;
+
+	//DKinFitResults
+	locBin = dBinMap["DKinFitResults"];
+	locNumObjectsMap[locBin] = dResourcePool_KinFitResults.Get_NumObjectsAllThreads();
+	locMemory = sizeof(DKinFitResults)*locNumObjectsMap[locBin];
+	locMemoryMap[locBin] = locMemory;
+	locTotalMemory += locMemory;
+
+	/******************************************************* KINFIT CONSTRAINTS *******************************************************/
+
+	//DKinFitConstraint_Mass
+	locBin = dBinMap["DKinFitConstraint_Mass"];
+	locNumObjectsMap[locBin] = dResourcePool_MassConstraint.Get_NumObjectsAllThreads();
+	locMemory = sizeof(DKinFitConstraint_Mass)*locNumObjectsMap[locBin];
+	locMemoryMap[locBin] = locMemory;
+	locTotalMemory += locMemory;
+
+	//DKinFitConstraint_P4
+	locBin = dBinMap["DKinFitConstraint_P4"];
+	locNumObjectsMap[locBin] = dResourcePool_P4Constraint.Get_NumObjectsAllThreads();
+	locMemory = sizeof(DKinFitConstraint_P4)*locNumObjectsMap[locBin];
+	locMemoryMap[locBin] = locMemory;
+	locTotalMemory += locMemory;
+
+	//DKinFitConstraint_Vertex
+	locBin = dBinMap["DKinFitConstraint_Vertex"];
+	locNumObjectsMap[locBin] = dResourcePool_VertexConstraint.Get_NumObjectsAllThreads();
+	locMemory = sizeof(DKinFitConstraint_Vertex)*locNumObjectsMap[locBin];
+	locMemoryMap[locBin] = locMemory;
+	locTotalMemory += locMemory;
+
+	//DKinFitConstraint_Spacetime
+	locBin = dBinMap["DKinFitConstraint_Spacetime"];
+	locNumObjectsMap[locBin] = dResourcePool_SpacetimeConstraint.Get_NumObjectsAllThreads();
+	locMemory = sizeof(DKinFitConstraint_Spacetime)*locNumObjectsMap[locBin];
+	locMemoryMap[locBin] = locMemory;
+	locTotalMemory += locMemory;
 
 	//Convert to MB
 	for(auto& locMemoryPair : locMemoryMap)
@@ -529,9 +480,8 @@ bool DHistogramAction_Reconstruction::Perform_Action(JEventLoop* locEventLoop, c
 {
 	//Expect locParticleCombo to be NULL since this is a reaction-independent action.
 
-	//Optional: Quit the action if it has already been executed this event (else may result in double-counting when filling histograms)
-	if(Get_NumPreviousParticleCombos() != 0)
-		return true;
+	if(Get_CalledPriorWithComboFlag())
+		return true; //else double-counting!
 
 	bool locIsRESTEvent = locEventLoop->GetJEvent().GetStatusBit(kSTATUS_REST);
 
@@ -597,11 +547,11 @@ bool DHistogramAction_Reconstruction::Perform_Action(JEventLoop* locEventLoop, c
 		//also, select best sc matches for each track
 	map<JObject::oid_t, const DTrackTimeBased*> locBestTrackTimeBasedMap; //lowest tracking FOM for each candidate id
 	map<const DTrackWireBased*, const DTrackTimeBased*> locWireToTimeBasedTrackMap;
-	map<const DTrackTimeBased*, DSCHitMatchParams> locTimeBasedToBestSCMatchMap;
+	map<const DTrackTimeBased*, shared_ptr<const DSCHitMatchParams>> locTimeBasedToBestSCMatchMap;
 	for(size_t loc_i = 0; loc_i < locTrackTimeBasedVector.size(); ++loc_i)
 	{
 		//Best SC Match Params
-		DSCHitMatchParams locSCHitMatchParams;
+		shared_ptr<const DSCHitMatchParams> locSCHitMatchParams;
 		if(locParticleID->Get_BestSCMatchParams(locTrackTimeBasedVector[loc_i], locDetectorMatches, locSCHitMatchParams))
 			locTimeBasedToBestSCMatchMap[locTrackTimeBasedVector[loc_i]] = locSCHitMatchParams;
 
@@ -659,7 +609,7 @@ bool DHistogramAction_Reconstruction::Perform_Action(JEventLoop* locEventLoop, c
 		for(size_t loc_i = 0; loc_i < locBeamPhotons.size(); ++loc_i)
 		{
 			double locDeltaT = locBeamPhotons[loc_i]->time() - locEventRFBunch->dTime;
-			if(locBeamPhotons[loc_i]->t0_detector() == SYS_TAGM)
+			if(locBeamPhotons[loc_i]->dSystem == SYS_TAGM)
 				dHist_TAGMRFDeltaTVsColumn->Fill(locBeamPhotons[loc_i]->dCounter, locDeltaT);
 			else
 				dHist_TAGHRFDeltaTVsCounter->Fill(locBeamPhotons[loc_i]->dCounter, locDeltaT);
@@ -754,13 +704,13 @@ bool DHistogramAction_Reconstruction::Perform_Action(JEventLoop* locEventLoop, c
 				dHistMap_PVsTheta_TimeBased_HighTrackFOM[locCharge]->Fill(locTheta, locP);
 
 			//SC/RF DELTA-T
-			map<const DTrackTimeBased*, DSCHitMatchParams>::iterator locSCIterator = locTimeBasedToBestSCMatchMap.find(locTrackTimeBased);
+			auto locSCIterator = locTimeBasedToBestSCMatchMap.find(locTrackTimeBased);
 			if(locSCIterator != locTimeBasedToBestSCMatchMap.end())
 			{
-				DSCHitMatchParams& locSCHitMatchParams = locSCIterator->second;
-				double locPropagatedSCTime = locSCHitMatchParams.dHitTime - locSCHitMatchParams.dFlightTime + (dTargetCenter.Z() - locTrackTimeBased->z())/29.9792458;
+				auto& locSCHitMatchParams = locSCIterator->second;
+				double locPropagatedSCTime = locSCHitMatchParams->dHitTime - locSCHitMatchParams->dFlightTime + (dTargetCenter.Z() - locTrackTimeBased->z())/29.9792458;
 				double locDeltaT = locPropagatedSCTime - locEventRFBunch->dTime;
-				dHist_SCRFDeltaTVsSector->Fill(locSCHitMatchParams.dSCHit->sector, locDeltaT);
+				dHist_SCRFDeltaTVsSector->Fill(locSCHitMatchParams->dSCHit->sector, locDeltaT);
 			}
 		}
 
@@ -805,9 +755,7 @@ bool DHistogramAction_Reconstruction::Perform_Action(JEventLoop* locEventLoop, c
 			if(locChargedTrackHypothesis == NULL)
 				continue;
 
-			const DTrackTimeBased* locTrackTimeBased = NULL;
-			locChargedTrackHypothesis->GetSingle(locTrackTimeBased);
-
+			auto locTrackTimeBased = locChargedTrackHypothesis->Get_TrackTimeBased();
 			double locHitFraction = 1.0*locTrackTimeBased->dNumHitsMatchedToThrown/(locTrackTimeBased->Ndof + 5);
 			dHist_MCMatchedHitsVsTheta->Fill(locTrackTimeBased->momentum().Theta()*180.0/TMath::Pi(), locHitFraction);
 			dHist_MCMatchedHitsVsP->Fill(locTrackTimeBased->momentum().Mag(), locHitFraction);
@@ -1137,9 +1085,8 @@ bool DHistogramAction_DetectorMatching::Perform_Action(JEventLoop* locEventLoop,
 {
 	//Expect locParticleCombo to be NULL since this is a reaction-independent action.
 
-	//Optional: Quit the action if it has already been executed this event (else may result in double-counting when filling histograms)
-	if(Get_NumPreviousParticleCombos() != 0)
-		return true;
+	if(Get_CalledPriorWithComboFlag())
+		return true; //else double-counting!
 
 	bool locIsRESTEvent = locEventLoop->GetJEvent().GetStatusBit(kSTATUS_REST);
 
@@ -1160,7 +1107,7 @@ void DHistogramAction_DetectorMatching::Fill_MatchingHists(JEventLoop* locEventL
 	locCutAction_TrackHitPattern.Initialize(locEventLoop);
 
 	//get the best tracks for each candidate id, based on good hit pattern & tracking FOM
-	map<JObject::oid_t, const DKinematicData*> locBestTrackMap; //lowest tracking FOM for each candidate id
+	map<JObject::oid_t, const DTrackingData*> locBestTrackMap; //lowest tracking FOM for each candidate id
 	if(locIsTimeBased)
 	{
 		vector<const DTrackTimeBased*> locTrackTimeBasedVector;
@@ -1222,41 +1169,39 @@ void DHistogramAction_DetectorMatching::Fill_MatchingHists(JEventLoop* locEventL
 	const DDetectorMatches* locDetectorMatches = NULL;
 	locEventLoop->GetSingle(locDetectorMatches, locDetectorMatchesTag.c_str());
 
-	map<JObject::oid_t, const DKinematicData*>::iterator locTrackIterator;
-
 	//TRACK / BCAL CLOSEST MATCHES
-	map<const DKinematicData*, pair<DBCALShowerMatchParams, double> > locBCALTrackDistanceMap; //double = z
-	for(locTrackIterator = locBestTrackMap.begin(); locTrackIterator != locBestTrackMap.end(); ++locTrackIterator)
+	map<const DTrackingData*, pair<shared_ptr<const DBCALShowerMatchParams>, double> > locBCALTrackDistanceMap; //double = z
+	for(auto locTrackIterator = locBestTrackMap.begin(); locTrackIterator != locBestTrackMap.end(); ++locTrackIterator)
 	{
-		DBCALShowerMatchParams locBestMatchParams;
 		const DReferenceTrajectory* rt = Get_ReferenceTrajectory(locTrackIterator->second);
 		if(rt == nullptr)
 			break; //e.g. REST data: no trajectory
 		double locStartTime = locTrackIterator->second->t0();
 		double locStartTimeVariance = 0.0;
 		DVector3 locProjPos, locProjMom;
+		shared_ptr<const DBCALShowerMatchParams> locBestMatchParams;
 		if(locParticleID->Get_ClosestToTrack(rt, locBCALShowers, false, locStartTime, locBestMatchParams, &locStartTimeVariance, &locProjPos, &locProjMom))
-			locBCALTrackDistanceMap[locTrackIterator->second] = pair<DBCALShowerMatchParams, double>(locBestMatchParams, locProjPos.Z());
+			locBCALTrackDistanceMap[locTrackIterator->second] = std::make_pair(locBestMatchParams, locProjPos.Z());
 	}
 
 	//TRACK / FCAL CLOSEST MATCHES
-	map<const DKinematicData*, DFCALShowerMatchParams> locFCALTrackDistanceMap;
-	for(locTrackIterator = locBestTrackMap.begin(); locTrackIterator != locBestTrackMap.end(); ++locTrackIterator)
+	map<const DTrackingData*, shared_ptr<const DFCALShowerMatchParams>> locFCALTrackDistanceMap;
+	for(auto locTrackIterator = locBestTrackMap.begin(); locTrackIterator != locBestTrackMap.end(); ++locTrackIterator)
 	{
-		DFCALShowerMatchParams locBestMatchParams;
+		shared_ptr<const DFCALShowerMatchParams> locBestMatchParams;
 		const DReferenceTrajectory* rt = Get_ReferenceTrajectory(locTrackIterator->second);
 		if(rt == nullptr)
 			break; //e.g. REST data: no trajectory
 		double locStartTime = locTrackIterator->second->t0();
 		if(locParticleID->Get_ClosestToTrack(rt, locFCALShowers, false, locStartTime, locBestMatchParams))
-			locFCALTrackDistanceMap[locTrackIterator->second] = locBestMatchParams;
+			locFCALTrackDistanceMap.emplace(locTrackIterator->second, locBestMatchParams);
 	}
 
 	//TRACK / SC CLOSEST MATCHES
-	map<const DKinematicData*, pair<DSCHitMatchParams, double> > locSCTrackDistanceMap; //double = z
-	for(locTrackIterator = locBestTrackMap.begin(); locTrackIterator != locBestTrackMap.end(); ++locTrackIterator)
+	map<const DTrackingData*, pair<shared_ptr<const DSCHitMatchParams>, double> > locSCTrackDistanceMap; //double = z
+	for(auto locTrackIterator = locBestTrackMap.begin(); locTrackIterator != locBestTrackMap.end(); ++locTrackIterator)
 	{
-		DSCHitMatchParams locBestMatchParams;
+		shared_ptr<const DSCHitMatchParams> locBestMatchParams;
 		const DReferenceTrajectory* rt = Get_ReferenceTrajectory(locTrackIterator->second);
 		if(rt == nullptr)
 			break; //e.g. REST data: no trajectory
@@ -1264,28 +1209,28 @@ void DHistogramAction_DetectorMatching::Fill_MatchingHists(JEventLoop* locEventL
 		double locStartTimeVariance = 0.0;
 		DVector3 locProjPos, locProjMom;
 		if(locParticleID->Get_ClosestToTrack(rt, locSCHits, locIsTimeBased, false, locStartTime, locBestMatchParams, &locStartTimeVariance, &locProjPos, &locProjMom))
-			locSCTrackDistanceMap[locTrackIterator->second] = pair<DSCHitMatchParams, double>(locBestMatchParams, locProjPos.Z());
+			locSCTrackDistanceMap[locTrackIterator->second] = std::make_pair(locBestMatchParams, locProjPos.Z());
 	}
 
 	//TRACK / TOF POINT CLOSEST MATCHES
-	map<const DKinematicData*, DTOFHitMatchParams> locTOFPointTrackDistanceMap;
-	for(locTrackIterator = locBestTrackMap.begin(); locTrackIterator != locBestTrackMap.end(); ++locTrackIterator)
+	map<const DTrackingData*, shared_ptr<const DTOFHitMatchParams>> locTOFPointTrackDistanceMap;
+	for(auto locTrackIterator = locBestTrackMap.begin(); locTrackIterator != locBestTrackMap.end(); ++locTrackIterator)
 	{
-		DTOFHitMatchParams locBestMatchParams;
+		shared_ptr<const DTOFHitMatchParams> locBestMatchParams;
 		const DReferenceTrajectory* rt = Get_ReferenceTrajectory(locTrackIterator->second);
 		if(rt == nullptr)
 			break; //e.g. REST data: no trajectory
 		double locStartTime = locTrackIterator->second->t0();
 		if(locParticleID->Get_ClosestToTrack(rt, locTOFPoints, false, locStartTime, locBestMatchParams))
-			locTOFPointTrackDistanceMap[locTrackIterator->second] = locBestMatchParams;
+			locTOFPointTrackDistanceMap.emplace(locTrackIterator->second, locBestMatchParams);
 	}
 
 	//TRACK / TOF PADDLE CLOSEST MATCHES
-	map<const DKinematicData*, pair<const DTOFPaddleHit*, pair<double, double> > > locHorizontalTOFPaddleTrackDistanceMap; //doubles: delta-y, distance
-	map<const DKinematicData*, pair<const DTOFPaddleHit*, pair<double, double> > > locVerticalTOFPaddleTrackDistanceMap; //doubles: delta-x, distance
-	for(locTrackIterator = locBestTrackMap.begin(); locTrackIterator != locBestTrackMap.end(); ++locTrackIterator)
+	map<const DTrackingData*, pair<const DTOFPaddleHit*, pair<double, double> > > locHorizontalTOFPaddleTrackDistanceMap; //doubles: delta-y, distance
+	map<const DTrackingData*, pair<const DTOFPaddleHit*, pair<double, double> > > locVerticalTOFPaddleTrackDistanceMap; //doubles: delta-x, distance
+	for(auto locTrackIterator = locBestTrackMap.begin(); locTrackIterator != locBestTrackMap.end(); ++locTrackIterator)
 	{
-		const DKinematicData* locKinematicData = locTrackIterator->second;
+		const DTrackingData* locKinematicData = locTrackIterator->second;
 		const DReferenceTrajectory* locReferenceTrajectory = Get_ReferenceTrajectory(locKinematicData);
 		if(locReferenceTrajectory == nullptr)
 			break; //e.g. REST data: no trajectory
@@ -1305,16 +1250,16 @@ void DHistogramAction_DetectorMatching::Fill_MatchingHists(JEventLoop* locEventL
 	}
 
 	//PROJECTED HIT POSITIONS
-	map<const DKinematicData*, pair<int, bool> > locProjectedSCPaddleMap; //pair: paddle, hit-barrel-flag (false if bend/nose)
-	map<const DKinematicData*, pair<int, int> > locProjectedTOF2DPaddlesMap; //pair: vertical, horizontal
-	map<const DKinematicData*, pair<float, float> > locProjectedTOFXYMap; //pair: x, y
-	map<const DKinematicData*, pair<int, int> > locProjectedFCALRowColumnMap; //pair: column, row
-	map<const DKinematicData*, pair<float, float> > locProjectedFCALXYMap; //pair: x, y
-	map<const DKinematicData*, pair<float, int> > locProjectedBCALModuleSectorMap; //pair: z, module
-	map<const DKinematicData*, pair<float, float> > locProjectedBCALPhiZMap; //pair: z, phi
-	for(locTrackIterator = locBestTrackMap.begin(); locTrackIterator != locBestTrackMap.end(); ++locTrackIterator)
+	map<const DTrackingData*, pair<int, bool> > locProjectedSCPaddleMap; //pair: paddle, hit-barrel-flag (false if bend/nose)
+	map<const DTrackingData*, pair<int, int> > locProjectedTOF2DPaddlesMap; //pair: vertical, horizontal
+	map<const DTrackingData*, pair<float, float> > locProjectedTOFXYMap; //pair: x, y
+	map<const DTrackingData*, pair<int, int> > locProjectedFCALRowColumnMap; //pair: column, row
+	map<const DTrackingData*, pair<float, float> > locProjectedFCALXYMap; //pair: x, y
+	map<const DTrackingData*, pair<float, int> > locProjectedBCALModuleSectorMap; //pair: z, module
+	map<const DTrackingData*, pair<float, float> > locProjectedBCALPhiZMap; //pair: z, phi
+	for(auto locTrackIterator = locBestTrackMap.begin(); locTrackIterator != locBestTrackMap.end(); ++locTrackIterator)
 	{
-		const DKinematicData* locTrack = locTrackIterator->second;
+		const DTrackingData* locTrack = locTrackIterator->second;
 		const DReferenceTrajectory* locReferenceTrajectory = Get_ReferenceTrajectory(locTrack);
 		if(locReferenceTrajectory == NULL)
 			break; //e.g. REST data: no trajectory
@@ -1364,23 +1309,23 @@ void DHistogramAction_DetectorMatching::Fill_MatchingHists(JEventLoop* locEventL
 		//BCAL
 		for(auto locMapPair : locBCALTrackDistanceMap)
 		{
-			const DKinematicData* locTrack = locMapPair.first;
-			DBCALShowerMatchParams locMatchParams = locMapPair.second.first;
-			double locDeltaPhi = locMatchParams.dDeltaPhiToShower*180.0/TMath::Pi();
+			auto locTrack = locMapPair.first;
+			auto locMatchParams = locMapPair.second.first;
+			double locDeltaPhi = locMatchParams->dDeltaPhiToShower*180.0/TMath::Pi();
 			double locProjectedZ = locMapPair.second.second;
 			dHistMap_BCALDeltaPhiVsP[locIsTimeBased]->Fill(locTrack->momentum().Mag(), locDeltaPhi);
-			dHistMap_BCALDeltaZVsTheta[locIsTimeBased]->Fill(locTrack->momentum().Theta()*180.0/TMath::Pi(), locMatchParams.dDeltaZToShower);
+			dHistMap_BCALDeltaZVsTheta[locIsTimeBased]->Fill(locTrack->momentum().Theta()*180.0/TMath::Pi(), locMatchParams->dDeltaZToShower);
 
 			dHistMap_BCALDeltaPhiVsZ[locIsTimeBased]->Fill(locProjectedZ, locDeltaPhi);
-			dHistMap_BCALDeltaZVsZ[locIsTimeBased]->Fill(locProjectedZ, locMatchParams.dDeltaZToShower);
+			dHistMap_BCALDeltaZVsZ[locIsTimeBased]->Fill(locProjectedZ, locMatchParams->dDeltaZToShower);
 		}
 
 		//FCAL
 		for(auto locMapPair : locFCALTrackDistanceMap)
 		{
-			const DKinematicData* locTrack = locMapPair.first;
-			dHistMap_FCALTrackDistanceVsP[locIsTimeBased]->Fill(locTrack->momentum().Mag(), locMapPair.second.dDOCAToShower);
-			dHistMap_FCALTrackDistanceVsTheta[locIsTimeBased]->Fill(locTrack->momentum().Theta()*180.0/TMath::Pi(), locMapPair.second.dDOCAToShower);
+			auto locTrack = locMapPair.first;
+			dHistMap_FCALTrackDistanceVsP[locIsTimeBased]->Fill(locTrack->momentum().Mag(), locMapPair.second->dDOCAToShower);
+			dHistMap_FCALTrackDistanceVsTheta[locIsTimeBased]->Fill(locTrack->momentum().Theta()*180.0/TMath::Pi(), locMapPair.second->dDOCAToShower);
 		}
 
 		//TOF Paddle
@@ -1402,10 +1347,10 @@ void DHistogramAction_DetectorMatching::Fill_MatchingHists(JEventLoop* locEventL
 		//TOF Point
 		for(auto locMapPair : locTOFPointTrackDistanceMap)
 		{
-			const DKinematicData* locTrack = locMapPair.first;
-			const DTOFPoint* locTOFPoint = locMapPair.second.dTOFPoint;
-			double locDeltaX = locMapPair.second.dDeltaXToHit;
-			double locDeltaY = locMapPair.second.dDeltaYToHit;
+			auto locTrack = locMapPair.first;
+			const DTOFPoint* locTOFPoint = locMapPair.second->dTOFPoint;
+			double locDeltaX = locMapPair.second->dDeltaXToHit;
+			double locDeltaY = locMapPair.second->dDeltaYToHit;
 
 			double locDistance = sqrt(locDeltaX*locDeltaX + locDeltaY*locDeltaY);
 			if((fabs(locDeltaX) < 500.0) && (fabs(locDeltaY) < 500.0)) //else position not well-defined
@@ -1430,9 +1375,9 @@ void DHistogramAction_DetectorMatching::Fill_MatchingHists(JEventLoop* locEventL
 		{
 			for(auto locMapPair : locSCTrackDistanceMap)
 			{
-				const DKinematicData* locTrack = locMapPair.first;
-				DSCHitMatchParams locMatchParams = locMapPair.second.first;
-				double locDeltaPhi = locMatchParams.dDeltaPhiToHit*180.0/TMath::Pi();
+				auto locTrack = locMapPair.first;
+				auto locMatchParams = locMapPair.second.first;
+				double locDeltaPhi = locMatchParams->dDeltaPhiToHit*180.0/TMath::Pi();
 				double locProjectedZ = locMapPair.second.second;
 				dHistMap_SCTrackDeltaPhiVsP[locIsTimeBased]->Fill(locTrack->momentum().Mag(), locDeltaPhi);
 				dHistMap_SCTrackDeltaPhiVsTheta[locIsTimeBased]->Fill(locTrack->momentum().Theta()*180.0/TMath::Pi(), locDeltaPhi);
@@ -1445,7 +1390,7 @@ void DHistogramAction_DetectorMatching::Fill_MatchingHists(JEventLoop* locEventL
 		//Does-it-match, by detector
 		for(auto locMapPair : locBestTrackMap)
 		{
-			const DKinematicData* locTrack = locMapPair.second;
+			auto locTrack = locMapPair.second;
 			double locTheta = locTrack->momentum().Theta()*180.0/TMath::Pi();
 			double locPhi = locTrack->momentum().Phi()*180.0/TMath::Pi();
 			double locP = locTrack->momentum().Mag();
@@ -1641,7 +1586,7 @@ void DHistogramAction_DetectorMatching::Fill_MatchingHists(JEventLoop* locEventL
 		//Is-Matched to Something
 		for(auto locMapPair : locBestTrackMap)
 		{
-			const DKinematicData* locTrack = locMapPair.second;
+			auto locTrack = locMapPair.second;
 			double locTheta = locTrack->momentum().Theta()*180.0/TMath::Pi();
 			double locP = locTrack->momentum().Mag();
 			if(locDetectorMatches->Get_IsMatchedToHit(locTrack))
@@ -1974,9 +1919,8 @@ bool DHistogramAction_DetectorPID::Perform_Action(JEventLoop* locEventLoop, cons
 {
 	//Expect locParticleCombo to be NULL since this is a reaction-independent action.
 
-	//Optional: Quit the action if it has already been executed this event (else may result in double-counting when filling histograms)
-	if(Get_NumPreviousParticleCombos() != 0)
-		return true;
+	if(Get_CalledPriorWithComboFlag())
+		return true; //else double-counting!
 
 	vector<const DChargedTrack*> locChargedTracks;
 	locEventLoop->Get(locChargedTracks, dTrackSelectionTag.c_str());
@@ -2030,19 +1974,17 @@ bool DHistogramAction_DetectorPID::Perform_Action(JEventLoop* locEventLoop, cons
 				continue;
 
 			double locStartTime = locParticleID->Calc_PropagatedRFTime(locChargedTrackHypothesis, locEventRFBunch);
-
-			const DTrackTimeBased* locTrackTimeBased = NULL;
-			locChargedTrackHypothesis->GetSingle(locTrackTimeBased);
+			auto locTrackTimeBased = locChargedTrackHypothesis->Get_TrackTimeBased();
 
 			Particle_t locPID = locChargedTrackHypothesis->PID();
 			double locP = locTrackTimeBased->momentum().Mag();
 			double locTheta = locTrackTimeBased->momentum().Theta()*180.0/TMath::Pi();
 
 			//if RF time is indeterminate, start time will be NaN
-			const DBCALShowerMatchParams* locBCALShowerMatchParams = locChargedTrackHypothesis->Get_BCALShowerMatchParams();
-			const DFCALShowerMatchParams* locFCALShowerMatchParams = locChargedTrackHypothesis->Get_FCALShowerMatchParams();
-			const DTOFHitMatchParams* locTOFHitMatchParams = locChargedTrackHypothesis->Get_TOFHitMatchParams();
-			const DSCHitMatchParams* locSCHitMatchParams = locChargedTrackHypothesis->Get_SCHitMatchParams();
+			auto locBCALShowerMatchParams = locChargedTrackHypothesis->Get_BCALShowerMatchParams();
+			auto locFCALShowerMatchParams = locChargedTrackHypothesis->Get_FCALShowerMatchParams();
+			auto locTOFHitMatchParams = locChargedTrackHypothesis->Get_TOFHitMatchParams();
+			auto locSCHitMatchParams = locChargedTrackHypothesis->Get_SCHitMatchParams();
 
 			if(locSCHitMatchParams != NULL)
 			{
@@ -2217,9 +2159,8 @@ bool DHistogramAction_Neutrals::Perform_Action(JEventLoop* locEventLoop, const D
 {
 	//Expect locParticleCombo to be NULL since this is a reaction-independent action.
 
-	//Optional: Quit the action if it has already been executed this event (else may result in double-counting when filling histograms)
-	if(Get_NumPreviousParticleCombos() != 0)
-		return true;
+	if(Get_CalledPriorWithComboFlag())
+		return true; //else double-counting!
 
 	vector<const DNeutralShower*> locNeutralShowers;
 	locEventLoop->Get(locNeutralShowers);
@@ -2407,9 +2348,8 @@ bool DHistogramAction_DetectorMatchParams::Perform_Action(JEventLoop* locEventLo
 {
 	//Expect locParticleCombo to be NULL since this is a reaction-independent action.
 
-	//Optional: Quit the action if it has already been executed this event (else may result in double-counting when filling histograms)
-	if(Get_NumPreviousParticleCombos() != 0)
-		return true;
+	if(Get_CalledPriorWithComboFlag())
+		return true; //else double-counting!
 
 	vector<const DMCThrown*> locMCThrowns;
 	locEventLoop->Get(locMCThrowns);
@@ -2457,9 +2397,9 @@ void DHistogramAction_DetectorMatchParams::Fill_Hists(JEventLoop* locEventLoop, 
 			pair<int, bool> locChargePair(locQIndex, locUseTruePIDFlag);
 
 			DVector3 locMomentum = locChargedTrackHypothesis->momentum();
-			const DFCALShowerMatchParams* locFCALShowerMatchParams = locChargedTrackHypothesis->Get_FCALShowerMatchParams();
-			const DSCHitMatchParams* locSCHitMatchParams = locChargedTrackHypothesis->Get_SCHitMatchParams();
-			const DBCALShowerMatchParams* locBCALShowerMatchParams = locChargedTrackHypothesis->Get_BCALShowerMatchParams();
+			auto locFCALShowerMatchParams = locChargedTrackHypothesis->Get_FCALShowerMatchParams();
+			auto locSCHitMatchParams = locChargedTrackHypothesis->Get_SCHitMatchParams();
+			auto locBCALShowerMatchParams = locChargedTrackHypothesis->Get_BCALShowerMatchParams();
 
 			//BCAL
 			if(locBCALShowerMatchParams != NULL)
@@ -2629,7 +2569,7 @@ void DHistogramAction_EventVertex::Initialize(JEventLoop* locEventLoop)
 
 bool DHistogramAction_EventVertex::Perform_Action(JEventLoop* locEventLoop, const DParticleCombo* locParticleCombo)
 {
-	if(Get_NumPreviousParticleCombos() != 0)
+	if(Get_CalledPriorWithComboFlag())
 		return true; //else double-counting!
 
 	const DVertex* locVertex = NULL;
@@ -2664,8 +2604,7 @@ bool DHistogramAction_EventVertex::Perform_Action(JEventLoop* locEventLoop, cons
 	for(size_t loc_i = 0; loc_i < locChargedTracks.size(); ++loc_i)
 	{
 		const DChargedTrackHypothesis* locChargedTrackHypothesis = locChargedTracks[loc_i]->Get_BestFOM();
-		const DTrackTimeBased* locTrackTimeBased = NULL;
-		locChargedTrackHypothesis->GetSingle(locTrackTimeBased);
+		auto locTrackTimeBased = locChargedTrackHypothesis->Get_TrackTimeBased();
 		if(locTrackTimeBased != NULL)
 			locTrackTimeBasedVector.push_back(locTrackTimeBased);
 	}
@@ -2852,7 +2791,7 @@ void DHistogramAction_DetectedParticleKinematics::Initialize(JEventLoop* locEven
 
 bool DHistogramAction_DetectedParticleKinematics::Perform_Action(JEventLoop* locEventLoop, const DParticleCombo* locParticleCombo)
 {
-	if(Get_NumPreviousParticleCombos() != 0)
+	if(Get_CalledPriorWithComboFlag())
 		return true; //else double-counting!
 
 	vector<const DBeamPhoton*> locBeamPhotons;
@@ -2903,9 +2842,9 @@ bool DHistogramAction_DetectedParticleKinematics::Perform_Action(JEventLoop* loc
 		double locTheta = locMomentum.Theta()*180.0/TMath::Pi();
 		double locP = locMomentum.Mag();
 		double locBeta_Timing = locChargedTrackHypothesis->measuredBeta();
-		double locDeltaBeta = locChargedTrackHypothesis->deltaBeta();
+		double locDeltaBeta = locBeta_Timing - locChargedTrackHypothesis->lorentzMomentum().Beta();
 
-		Particle_t locPID = (locChargedTrackHypothesis->dFOM < dMinPIDFOM) ? Unknown : locChargedTrackHypothesis->PID();
+		Particle_t locPID = (locChargedTrackHypothesis->Get_FOM() < dMinPIDFOM) ? Unknown : locChargedTrackHypothesis->PID();
 		if(dHistMap_P.find(locPID) == dHistMap_P.end())
 			continue; //not interested in histogramming
 
@@ -2934,7 +2873,7 @@ bool DHistogramAction_DetectedParticleKinematics::Perform_Action(JEventLoop* loc
 	for(size_t loc_i = 0; loc_i < locNeutralParticles.size(); ++loc_i)
 	{
 		const DNeutralParticleHypothesis* locNeutralParticleHypothesis = locNeutralParticles[loc_i]->Get_Hypothesis(Gamma);
-		if(locNeutralParticleHypothesis->dFOM < dMinPIDFOM)
+		if(locNeutralParticleHypothesis->Get_FOM() < dMinPIDFOM)
 			continue;
 
 		Particle_t locPID = locNeutralParticleHypothesis->PID();
@@ -2947,7 +2886,7 @@ bool DHistogramAction_DetectedParticleKinematics::Perform_Action(JEventLoop* loc
 		double locP = locMomentum.Mag();
 
 		double locBeta_Timing = locNeutralParticleHypothesis->measuredBeta();
-		double locDeltaBeta = locNeutralParticleHypothesis->deltaBeta();
+		double locDeltaBeta = locBeta_Timing - locNeutralParticleHypothesis->lorentzMomentum().Beta();
 
 		//FILL HISTOGRAMS
 		//Since we are filling histograms local to this action, it will not interfere with other ROOT operations: can use action-wide ROOT lock
@@ -3137,15 +3076,15 @@ void DHistogramAction_TrackShowerErrors::Initialize(JEventLoop* locEventLoop)
 			// Z
 			locHistName = "ZErrorVsP";
 			locHistTitle = locParticleROOTName + string(";p (GeV/c);#sigma_{z} (cm)");
-			dHistMap_ShowerZErrorVsP[locIsBCALFlag] = GetOrCreate_Histogram<TH2I>(locHistName, locHistTitle, dNum2DPBins, dMinP, locMaxP, dNum2DZErrorBins, 0.0, dMaxZError);
+			dHistMap_ShowerZErrorVsP[locIsBCALFlag] = GetOrCreate_Histogram<TH2I>(locHistName, locHistTitle, dNum2DPBins, dMinP, locMaxP, dNum2DShowerZErrorBins, 0.0, dMaxShowerZError);
 
 			locHistName = "ZErrorVsTheta";
 			locHistTitle = locParticleROOTName + string(";#theta#circ;#sigma_{z} (cm)");
-			dHistMap_ShowerZErrorVsTheta[locIsBCALFlag] = GetOrCreate_Histogram<TH2I>(locHistName, locHistTitle, dNum2DThetaBins, locMinTheta, locMaxTheta, dNum2DZErrorBins, 0.0, dMaxZError);
+			dHistMap_ShowerZErrorVsTheta[locIsBCALFlag] = GetOrCreate_Histogram<TH2I>(locHistName, locHistTitle, dNum2DThetaBins, locMinTheta, locMaxTheta, dNum2DShowerZErrorBins, 0.0, dMaxShowerZError);
 
 			locHistName = "ZErrorVsPhi";
 			locHistTitle = locParticleROOTName + string(";#phi#circ;#sigma_{z} (cm)");
-			dHistMap_ShowerZErrorVsPhi[locIsBCALFlag] = GetOrCreate_Histogram<TH2I>(locHistName, locHistTitle, dNum2DPhiBins, dMinPhi, dMaxPhi, dNum2DZErrorBins, 0.0, dMaxZError);
+			dHistMap_ShowerZErrorVsPhi[locIsBCALFlag] = GetOrCreate_Histogram<TH2I>(locHistName, locHistTitle, dNum2DPhiBins, dMinPhi, dMaxPhi, dNum2DShowerZErrorBins, 0.0, dMaxShowerZError);
 
 			// T
 			locHistName = "TErrorVsP";
@@ -3171,7 +3110,7 @@ void DHistogramAction_TrackShowerErrors::Initialize(JEventLoop* locEventLoop)
 
 bool DHistogramAction_TrackShowerErrors::Perform_Action(JEventLoop* locEventLoop, const DParticleCombo* locParticleCombo)
 {
-	if(Get_NumPreviousParticleCombos() != 0)
+	if(Get_CalledPriorWithComboFlag())
 		return true; //else double-counting!
 
 	vector<const DChargedTrack*> locPreSelectChargedTracks;
@@ -3181,7 +3120,7 @@ bool DHistogramAction_TrackShowerErrors::Perform_Action(JEventLoop* locEventLoop
 	{
 		const DChargedTrackHypothesis* locChargedTrackHypothesis = locPreSelectChargedTracks[loc_i]->Get_BestFOM();
 
-		Particle_t locPID = (locChargedTrackHypothesis->dFOM < dMinPIDFOM) ? Unknown : locChargedTrackHypothesis->PID();
+		Particle_t locPID = (locChargedTrackHypothesis->Get_FOM() < dMinPIDFOM) ? Unknown : locChargedTrackHypothesis->PID();
 		if(dHistMap_TrackPxErrorVsP.find(locPID) == dHistMap_TrackPxErrorVsP.end())
 			continue; //not interested in histogramming
 
@@ -3190,7 +3129,7 @@ bool DHistogramAction_TrackShowerErrors::Perform_Action(JEventLoop* locEventLoop
 		double locTheta = locMomentum.Theta()*180.0/TMath::Pi();
 		double locP = locMomentum.Mag();
 
-		const TMatrixFSym& locCovarianceMatrix = *(locChargedTrackHypothesis->errorMatrix());
+		const TMatrixFSym& locCovarianceMatrix = *(locChargedTrackHypothesis->errorMatrix().get());
 		double locPxError = sqrt(locCovarianceMatrix(0, 0));
 		double locPyError = sqrt(locCovarianceMatrix(1, 1));
 		double locPzError = sqrt(locCovarianceMatrix(2, 2));
@@ -3236,7 +3175,7 @@ bool DHistogramAction_TrackShowerErrors::Perform_Action(JEventLoop* locEventLoop
 	for(size_t loc_i = 0; loc_i < locNeutralParticles.size(); ++loc_i)
 	{
 		const DNeutralParticleHypothesis* locNeutralParticleHypothesis = locNeutralParticles[loc_i]->Get_Hypothesis(Gamma);
-		if(locNeutralParticleHypothesis->dFOM < dMinPIDFOM)
+		if(locNeutralParticleHypothesis->Get_FOM() < dMinPIDFOM)
 			continue;
 
 		DVector3 locMomentum = locNeutralParticleHypothesis->momentum();
@@ -3245,7 +3184,7 @@ bool DHistogramAction_TrackShowerErrors::Perform_Action(JEventLoop* locEventLoop
 		double locP = locMomentum.Mag();
 
 		const DNeutralShower* locNeutralShower = locNeutralParticles[loc_i]->dNeutralShower;
-		const TMatrixFSym& locCovarianceMatrix = locNeutralShower->dCovarianceMatrix;
+		const TMatrixFSym& locCovarianceMatrix = *(locNeutralShower->dCovarianceMatrix);
 		bool locIsBCALFlag = (locNeutralShower->dDetectorSystem == SYS_BCAL);
 		double locEError = sqrt(locCovarianceMatrix(0, 0));
 		double locXError = sqrt(locCovarianceMatrix(1, 1));
@@ -3430,7 +3369,7 @@ void DHistogramAction_NumReconstructedObjects::Initialize(JEventLoop* locEventLo
 
 bool DHistogramAction_NumReconstructedObjects::Perform_Action(JEventLoop* locEventLoop, const DParticleCombo* locParticleCombo)
 {
-	if(Get_NumPreviousParticleCombos() != 0)
+	if(Get_CalledPriorWithComboFlag())
 		return true; //else double-counting!
 
 	bool locIsRESTEvent = locEventLoop->GetJEvent().GetStatusBit(kSTATUS_REST);
@@ -3716,7 +3655,7 @@ void DHistogramAction_TrackMultiplicity::Initialize(JEventLoop* locEventLoop)
 
 bool DHistogramAction_TrackMultiplicity::Perform_Action(JEventLoop* locEventLoop, const DParticleCombo* locParticleCombo)
 {
-	if(Get_NumPreviousParticleCombos() != 0)
+	if(Get_CalledPriorWithComboFlag())
 		return true; //else double-counting!
 
 	vector<const DChargedTrack*> locChargedTracks;
@@ -3752,7 +3691,7 @@ bool DHistogramAction_TrackMultiplicity::Perform_Action(JEventLoop* locEventLoop
 		const DChargedTrackHypothesis* locChargedTrackHypothesis = locGoodChargedTracks[loc_i]->Get_BestFOM();
 		Particle_t locPID = locChargedTrackHypothesis->PID();
 
-		double locPIDFOM = locChargedTrackHypothesis->dFOM;
+		double locPIDFOM = locChargedTrackHypothesis->Get_FOM();
 
 		if(locChargedTrackHypothesis->charge() > 0.0)
 			++locNumGoodPositiveTracks;
@@ -3778,7 +3717,7 @@ bool DHistogramAction_TrackMultiplicity::Perform_Action(JEventLoop* locEventLoop
 	for(size_t loc_i = 0; loc_i < locNeutralParticles.size(); ++loc_i)
 	{
 		const DNeutralParticleHypothesis* locNeutralParticleHypothesis = locNeutralParticles[loc_i]->Get_BestFOM();
-		if(locNeutralParticleHypothesis->dFOM < dMinPIDFOM)
+		if(locNeutralParticleHypothesis->Get_FOM() < dMinPIDFOM)
 			continue;
 
 		Particle_t locPID = locNeutralParticleHypothesis->PID();
@@ -3792,7 +3731,7 @@ bool DHistogramAction_TrackMultiplicity::Perform_Action(JEventLoop* locEventLoop
 	for(size_t loc_i = 0; loc_i < locGoodNeutralParticles.size(); ++loc_i)
 	{
 		const DNeutralParticleHypothesis* locNeutralParticleHypothesis = locGoodNeutralParticles[loc_i]->Get_BestFOM();
-		if(locNeutralParticleHypothesis->dFOM < dMinPIDFOM)
+		if(locNeutralParticleHypothesis->Get_FOM() < dMinPIDFOM)
 			continue;
 
 		Particle_t locPID = locNeutralParticleHypothesis->PID();

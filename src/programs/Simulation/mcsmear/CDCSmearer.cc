@@ -10,6 +10,10 @@ cdc_config_t::cdc_config_t(JEventLoop *loop)
 	CDC_TIME_WINDOW       = 0.0;
 	CDC_PEDESTAL_SIGMA    = 0.0;
 	CDC_THRESHOLD_FACTOR  = 0.0;
+    CDC_CHARGE_TO_ADC_COUNTS = 1.;
+
+    // temporary? this is a ballpark guess from Naomi (sdobbs, 8/28/2017)
+    CDC_INTEGRAL_TO_AMPLITUDE = 1. / 29.;
  		
  	// load data from CCDB
  	jout << "get CDC/cdc_parms parameters from CCDB..." << endl;
@@ -23,6 +27,13 @@ cdc_config_t::cdc_config_t(JEventLoop *loop)
  		CDC_THRESHOLD_FACTOR = cdcparms["CDC_THRESHOLD_FACTOR"];
 	}
 	
+ 	jout << "get CDC/digi_scales parameters from CCDB..." << endl;
+    map<string, double> digi_scales;
+    if(loop->GetCalib("CDC/digi_scales", cdcparms)) {
+    	jerr << "Problem loading CDC/digi_scales from CCDB!" << endl;
+    } else {
+     	CDC_CHARGE_TO_ADC_COUNTS = 1./cdcparms["CDC_ADC_ASCALE"]; 
+	}
 	
 	// LOAD efficiency correction factors
 
@@ -51,6 +62,27 @@ cdc_config_t::cdc_config_t(JEventLoop *loop)
         	}
 
         	wire_efficiencies[ring].push_back( raw_table[channel] );
+    	}
+    }
+
+
+	if(loop->GetCalib("CDC/hit_thresholds", raw_table)) {
+    	jerr << "Problem loading CDC/hit_thresholds from CCDB!" << endl;
+    } else {
+		// now fill the table
+    	wire_thresholds.resize( Nstraws.size() );
+
+    	int ring = 0;
+    	int straw = 0;
+
+    	for (unsigned int channel=0; channel<raw_table.size(); channel++,straw++) {
+        	// if we've hit the end of the ring, move on to the next
+        	if (straw == (int)Nstraws[ring]) {
+            	ring++;
+            	straw = 0;
+        	}
+
+        	wire_thresholds[ring].push_back( raw_table[channel] );
     	}
     }
 
@@ -100,7 +132,8 @@ void CDCSmearer::SmearEvent(hddm_s::HDDM *record)
    /// objects will be replaced.
 
    double t_max = config->TRIGGER_LOOKBACK_TIME + cdc_config->CDC_TIME_WINDOW;
-   double threshold = cdc_config->CDC_THRESHOLD_FACTOR * cdc_config->CDC_PEDESTAL_SIGMA; // for sparsification
+   // move to wire-dependent sparsification thresholds compared to an overall factor
+   //double threshold = cdc_config->CDC_THRESHOLD_FACTOR * cdc_config->CDC_PEDESTAL_SIGMA; // for sparsification
 
    // Loop over all cdcStraw tags
    hddm_s::CdcStrawList straws = record->getCdcStraws();
@@ -131,12 +164,16 @@ void CDCSmearer::SmearEvent(hddm_s::HDDM *record)
 
          // Pedestal-smeared charge
          double q = titer->getQ() + gDRandom.SampleGaussian(cdc_config->CDC_PEDESTAL_SIGMA);
+         double amplitude = q * cdc_config->CDC_CHARGE_TO_ADC_COUNTS * cdc_config->CDC_INTEGRAL_TO_AMPLITUDE;
 
          // Smear out the CDC drift time using the specified sigma.
          // This is for timing resolution from the electronics;
          // diffusion is handled in hdgeant.
          double t = titer->getT() + gDRandom.SampleGaussian(cdc_config->CDC_TDRIFT_SIGMA)*1.0e9;
-         if (t > config->TRIGGER_LOOKBACK_TIME && t < t_max && q > threshold) {
+         
+         // per-wire threshold in ADC units
+         double threshold = cdc_config->GetWireThreshold(iter->getRing(), iter->getStraw());
+         if (t > config->TRIGGER_LOOKBACK_TIME && t < t_max && amplitude > threshold) {
             hits = iter->addCdcStrawHits();
             hits().setT(t);
             hits().setQ(q);

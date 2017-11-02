@@ -17,16 +17,8 @@ bool DCustomAction_p2gamma_cuts::Perform_Action(JEventLoop* locEventLoop, const 
 	const DParticleComboStep* locParticleComboStep = locParticleCombo->Get_ParticleComboStep(0);
 
         // get beam photon energy and final state particles
-	const DKinematicData* locBeamPhoton = NULL;
-        deque<const DKinematicData*> locParticles;
-        if(!Get_UseKinFitResultsFlag()) { //measured
-		locBeamPhoton = locParticleComboStep->Get_InitialParticle_Measured();
-                locParticleComboStep->Get_FinalParticles_Measured(locParticles);
-	}
-	else {
-		locBeamPhoton = locParticleComboStep->Get_InitialParticle();
-		locParticleComboStep->Get_FinalParticles(locParticles);
-	}
+	auto locBeamPhoton = Get_UseKinFitResultsFlag() ? locParticleComboStep->Get_InitialParticle() : locParticleComboStep->Get_InitialParticle_Measured();
+	auto locParticles = Get_UseKinFitResultsFlag() ? locParticleComboStep->Get_FinalParticles() : locParticleComboStep->Get_FinalParticles_Measured();
        
 	// calculate missing mass
 	DLorentzVector locMissingP4; 

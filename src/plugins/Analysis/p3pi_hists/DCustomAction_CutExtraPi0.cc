@@ -21,15 +21,15 @@ void DCustomAction_CutExtraPi0::Initialize(JEventLoop* locEventLoop)
 		CreateAndChangeTo_ActionDirectory();
 
 		dHist_Pi0InvariantMass = GetOrCreate_Histogram<TH1I>("InvariantMass_Pi0", ";#gamma#gamma Invariant Mass (GeV/c^{2})", 600, 0.0, 0.3);
+
+		//Return to the base directory
+		ChangeTo_BaseDirectory();
 	}
 	japp->RootUnLock(); //RELEASE ROOT LOCK!!
 }
 
 bool DCustomAction_CutExtraPi0::Perform_Action(JEventLoop* locEventLoop, const DParticleCombo* locParticleCombo)
 {
-	if(Get_NumPreviousParticleCombos() == 0)
-		dPreviousSourceObjects.clear();
-
 	vector<const DNeutralParticle*> locUnusedNeutralParticles;
 	dAnalysisUtilities->Get_UnusedNeutralParticles(locEventLoop, locParticleCombo, locUnusedNeutralParticles);
 

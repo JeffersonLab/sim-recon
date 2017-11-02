@@ -268,22 +268,27 @@ c         print *, ngen,' background photons generated this event'
 *           distribute evenly in the log of total momentum(theta).
 *           Otherwise, distribute evenly in total momentum(theta).
 *           3/17/2009  DL
-                            IF (plog_particle_gun.EQ.0) THEN
+*
+            IF (plog_particle_gun.EQ.0) THEN
                PABS=PKINE(1)+PKINE(4)*(RNDM(1)-0.5)
-                            ELSE
+            ELSE
                pmin=PKINE(1)-0.5*PKINE(4)
                pmax=PKINE(1)+0.5*PKINE(4)
-               IF (pmin.LE.0) pmin=0.100
+               IF (pmin.LE.0) THEN
+                  pmin=0.100
+               ENDIF
                PABS=pmin*(pmax/pmin)**RNDM(1)
-                            ENDIF
-                            IF (tlog_particle_gun.EQ.0) THEN
+            ENDIF
+            IF (tlog_particle_gun.EQ.0) THEN
                THETA=REAL((PKINE(2)+PKINE(5)*(RNDM(2)-0.5))*DEGRAD)
-                            ELSE
+            ELSE
                thetamin=PKINE(2)-0.5*PKINE(5)
                thetamax=PKINE(2)+0.5*PKINE(5)
-               IF (thetamin.LE.0) thetamin=0.9
-               THETA=REAL((thetamin*(thetamax/thetamin)**RNDM(2))*DEGRAD)
-                            ENDIF
+               IF (thetamin.LE.0) THEN
+                  thetamin=0.9
+               ENDIF
+               THETA=REAL(thetamin*(thetamax/thetamin)**RNDM(2)*DEGRAD)
+            ENDIF
             PHI=REAL((PKINE(3)+PKINE(6)*(RNDM(3)-0.5))*DEGRAD)
          ELSE
             IK=IKINE
