@@ -42,9 +42,11 @@ DFCALShower_factory::DFCALShower_factory()
   expfit_param2 = 0;
   expfit_param3 = 0;
 	
-  Timewalk_corr = 0;
-
-
+  timeConst0 = 0;
+  timeConst1 = 0; 
+  timeConst2 = 0;
+  timeConst3 = 0; 
+  timeConst4 = 0;
 
   gPARMS->SetDefaultParameter("FCAL:cutoff_enegry", cutoff_energy);
   gPARMS->SetDefaultParameter("FCAL:linfit_slope", linfit_slope);
@@ -52,8 +54,12 @@ DFCALShower_factory::DFCALShower_factory()
   gPARMS->SetDefaultParameter("FCAL:expfit_param1", expfit_param1);
   gPARMS->SetDefaultParameter("FCAL:expfit_param2", expfit_param2);
   gPARMS->SetDefaultParameter("FCAL:expfit_param3", expfit_param3);
-  gPARMS->SetDefaultParameter("FCAL:Timewalk_corr", Timewalk_corr);
 
+  gPARMS->SetDefaultParameter("FCAL:P0", timeConst0);
+  gPARMS->SetDefaultParameter("FCAL:P1", timeConst1);
+  gPARMS->SetDefaultParameter("FCAL:P2", timeConst2);
+  gPARMS->SetDefaultParameter("FCAL:P3", timeConst3);
+  gPARMS->SetDefaultParameter("FCAL:P4", timeConst4);
 
   // Parameters to make shower-depth correction taken from Radphi, 
   // slightly modifed to match photon-polar angle
@@ -124,19 +130,27 @@ jerror_t DFCALShower_factory::brun(JEventLoop *loop, int32_t runnumber)
 	}
     }
 
-    // Get time-walk correction slope
+    // Get timing correction polynomial, J. Mirabelli 10/31/17
     if(LOAD_CCDB_CONSTANTS > 0.1) {
-    map<string,double> timewalk_corr;
-    loop->GetCalib("FCAL/Timewalk_corr", timewalk_corr); 
-    Timewalk_corr = timewalk_corr["timewalk_corr"];
+      map<string,double> timing_correction;
+      loop->GetCalib("FCAL/shower_timing_correction", timing_correction); 
+      timeConst0 = timing_correction["P0"];
+      timeConst1 = timing_correction["P1"];     
+      timeConst2 = timing_correction["P2"];
+      timeConst3 = timing_correction["P3"];
+      timeConst4 = timing_correction["P4"];
 
-    if(debug_level>0) {
+      if(debug_level>0) {
 
-jout << "Timewalk_corr = " << Timewalk_corr << endl;
+        jout << "timeConst0 = " << timeConst0 << endl;
+        jout << "timeConst1 = " << timeConst1 << endl;
+        jout << "timeConst2 = " << timeConst2 << endl;
+        jout << "timeConst3 = " << timeConst3 << endl;
+        jout << "timeConst4 = " << timeConst4 << endl;
+      }
 
-}
+    }
 
-}
 	
 
 
@@ -178,7 +192,8 @@ jerror_t DFCALShower_factory::evnt(JEventLoop *eventLoop, uint64_t eventnumber)
        clItr != fcalClusters.end();  ++clItr ){
     const DFCALCluster* cluster=*clItr;
 
-    double cTime = cluster->getTime();
+    // energy weighted time provides better resolution:
+    double cTime = cluster->getTimeEWeight();
 
     double errZ;  // will be filled by call to GetCorrectedEnergyAndPosition()
 		
@@ -195,9 +210,8 @@ jerror_t DFCALShower_factory::evnt(JEventLoop *eventLoop, uint64_t eventnumber)
       //position pos_corrected	
       cTime -= ( m_FCALfront + DFCALGeometry::blockLength() - pos_corrected.Z() )/FCAL_C_EFFECTIVE;
 
-// Apply time-walk correction by A. Subedi (05/10/2017)
-	cTime -= Timewalk_corr*Ecorrected;
-
+      //Apply time-walk correction/global timing offset
+      cTime += ( timeConst0  +  timeConst1 * Ecorrected  +  timeConst2 * TMath::Power( Ecorrected, 2 ) + timeConst3 * TMath::Power( Ecorrected, 3 )  +  timeConst4 * TMath::Power( Ecorrected, 4 ) );
 
       // Make the DFCALShower object
       DFCALShower* shower = new DFCALShower;
