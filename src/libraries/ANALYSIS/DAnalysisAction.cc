@@ -25,43 +25,12 @@ dPerformAntiCut(false), dReaction(locReaction), dActionName(locActionBaseName), 
 	if(gPARMS->Exists("OUTPUT_FILENAME"))
 		gPARMS->GetParameter("OUTPUT_FILENAME", dOutputFileName);
 
-	dNumPreviousParticleCombos = 0;
-	dNumParticleCombos = 0;
-
 	string locLockName = dActionName;
 	if(dReaction != NULL)
 		locLockName += string("_") + dReaction->Get_ReactionName();
 
 	dActionLock = japp->ReadLock(locLockName); //will create if doesn't exist, else returns it
 	pthread_rwlock_unlock(dActionLock); //unlock
-}
-
-void DAnalysisAction::operator()(JEventLoop* locEventLoop, set<const DParticleCombo*>& locSurvivingParticleCombos)
-{
-#ifdef VTRACE
-	VT_TRACER("DAnalysisAction::operator()");
-#endif
-	//THIS METHOD ASSUMES THAT ONLY ONE THREAD HAS ACCESS TO THIS OBJECT
-	dNumParticleCombos = locSurvivingParticleCombos.size();
-	dNumPreviousParticleCombos = 0;
-
-	if(Get_Reaction() == NULL)
-	{
-		Perform_Action(locEventLoop, NULL);
-		return;
-	}
-
-	set<const DParticleCombo*>::iterator locIterator = locSurvivingParticleCombos.begin();
-	while(locIterator != locSurvivingParticleCombos.end())
-	{
-		bool locResult = Perform_Action(locEventLoop, *locIterator);
-		bool locSaveComboFlag = dPerformAntiCut ? !locResult : locResult;
-		if(locSaveComboFlag)
-			++locIterator;
-		else
-			locSurvivingParticleCombos.erase(locIterator++);
-		++dNumPreviousParticleCombos;
-	}
 }
 
 TDirectoryFile* DAnalysisAction::CreateAndChangeTo_ActionDirectory(void)

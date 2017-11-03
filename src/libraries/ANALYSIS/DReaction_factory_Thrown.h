@@ -14,6 +14,7 @@
 
 using namespace jana;
 using namespace std;
+using namespace DAnalysis;
 
 class DAnalysisUtilities;
 
@@ -35,14 +36,14 @@ class DReaction_factory_Thrown:public jana::JFactory<DReaction>
 		jerror_t erun(void);						///< Called everytime run number changes, provided brun has been called.
 		jerror_t fini(void);						///< Called after last event of last event source has been processed.
 
-		const DAnalysisUtilities* dAnalysisUtilities;
+		const DAnalysisUtilities* dAnalysisUtilities = nullptr;
 
 		DReactionStep* Get_ReactionStepResource(void);
 
 		deque<DReactionStep*> dReactionStepPool_All;
 		deque<DReactionStep*> dReactionStepPool_Available;
 
-		size_t MAX_dReactionStepPoolSize;
+		size_t MAX_dReactionStepPoolSize = 10;
 };
 
 #endif // _DReaction_factory_Thrown_

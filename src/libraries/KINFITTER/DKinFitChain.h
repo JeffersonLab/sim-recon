@@ -2,51 +2,52 @@
 #define _DKinFitChain_
 
 #include <vector>
-#include <set>
 #include <algorithm>
+#include <memory>
 
 #include "DKinFitParticle.h"
 #include "DKinFitChainStep.h"
+#include "DResettable.h"
 
 //This class is not necessary to use the kinematic fitter, but it is necessary to use some of the setup help functions in DKinFitUtils
 	//Is mostly useful when coding for the generic situation of ANY possible decay chain (rather than handling a specific one)
 
 using namespace std;
 
-class DKinFitChain
+class DKinFitChain : public DResettable
 {
 	public:
 
-		DKinFitChain(void) : dDefinedParticleStepIndex(-1), dIsInclusiveChannelFlag(false) {}
 		void Reset(void);
+		void Release(void);
 
 		//GET, ADD STEPS
-		const DKinFitChainStep* Get_KinFitChainStep(size_t locStepIndex) const;
-		void Add_KinFitChainStep(DKinFitChainStep* locKinFitChainStep){dKinFitChainSteps.push_back(locKinFitChainStep);}
+		shared_ptr<const DKinFitChainStep> Get_KinFitChainStep(size_t locStepIndex) const;
+		void Add_KinFitChainStep(const shared_ptr<DKinFitChainStep>& locKinFitChainStep){dKinFitChainSteps.push_back(locKinFitChainStep);}
 		size_t Get_NumKinFitChainSteps(void) const{return dKinFitChainSteps.size();}
 
 		//GET ALL PARTICLES
-		set<DKinFitParticle*> Get_AllParticles(void) const;
+		vector<shared_ptr<DKinFitParticle>> Get_AllParticles(void) const;
 
 		//GET CONTROL INFO
-		char Get_DefinedParticleStepIndex(void) const{return dDefinedParticleStepIndex;}
+		signed char Get_DefinedParticleStepIndex(void) const{return dDefinedParticleStepIndex;}
 		bool Get_IsInclusiveChannelFlag(void) const{return dIsInclusiveChannelFlag;}
-		char Get_DecayStepIndex(DKinFitParticle* locKinFitParticle) const;
+		signed char Get_DecayStepIndex(const shared_ptr<DKinFitParticle>& locKinFitParticle) const;
 
 		//SET CONTROL INFO
-		void Set_DefinedParticleStepIndex(int locDefinedParticleStepIndex){dDefinedParticleStepIndex = locDefinedParticleStepIndex;}
+		void Set_DefinedParticleStepIndex(signed char locDefinedParticleStepIndex){dDefinedParticleStepIndex = locDefinedParticleStepIndex;}
 		void Set_IsInclusiveChannelFlag(bool locIsInclusiveChannelFlag){dIsInclusiveChannelFlag = locIsInclusiveChannelFlag;}
-		void Set_DecayStepIndex(DKinFitParticle* locKinFitParticle, int locDecayStepIndex){dDecayStepIndices[locKinFitParticle] = locDecayStepIndex;}
+		void Set_DecayStepIndex(const shared_ptr<DKinFitParticle>& locKinFitParticle, int locDecayStepIndex){dDecayStepIndices[locKinFitParticle] = locDecayStepIndex;}
 
 		//PRINT INFO
 		void Print_InfoToScreen(void) const;
 
 	private:
 
-		vector<DKinFitChainStep*> dKinFitChainSteps;
-		map<DKinFitParticle*, char> dDecayStepIndices; //key is decaying particle, value is the step representing the particle decay
-		char dDefinedParticleStepIndex; //step containing the missing or open-ended-decaying particle, -1 if none
-		bool dIsInclusiveChannelFlag; //i.e. does the missing particle have PID 0 (unknown)
+		vector<shared_ptr<DKinFitChainStep>> dKinFitChainSteps;
+		map<shared_ptr<DKinFitParticle>, char> dDecayStepIndices; //key is decaying particle, value is the step representing the particle decay
+		signed char dDefinedParticleStepIndex = -1; //step containing the missing or open-ended-decaying particle, -1 if none
+		bool dIsInclusiveChannelFlag = false; //i.e. does the missing particle have PID 0 (unknown)
 };
 
 inline void DKinFitChain::Reset(void)
@@ -57,24 +58,30 @@ inline void DKinFitChain::Reset(void)
 	dDecayStepIndices.clear();
 }
 
-inline char DKinFitChain::Get_DecayStepIndex(DKinFitParticle* locKinFitParticle) const
+inline void DKinFitChain::Release(void)
 {
-	map<DKinFitParticle*, char>::const_iterator locIterator = dDecayStepIndices.find(locKinFitParticle);
+	dKinFitChainSteps.clear();
+	dDecayStepIndices.clear();
+}
+
+inline signed char DKinFitChain::Get_DecayStepIndex(const shared_ptr<DKinFitParticle>& locKinFitParticle) const
+{
+	auto locIterator = dDecayStepIndices.find(locKinFitParticle);
 	return ((locIterator != dDecayStepIndices.end()) ? locIterator->second : -1);
 }
 
-inline const DKinFitChainStep* DKinFitChain::Get_KinFitChainStep(size_t locStepIndex) const
+inline shared_ptr<const DKinFitChainStep> DKinFitChain::Get_KinFitChainStep(size_t locStepIndex) const
 {
-	return ((locStepIndex < dKinFitChainSteps.size()) ? dKinFitChainSteps[locStepIndex] : NULL);
+	return ((locStepIndex < dKinFitChainSteps.size()) ? std::const_pointer_cast<const DKinFitChainStep>(dKinFitChainSteps[locStepIndex]) : nullptr);
 }
 
-inline set<DKinFitParticle*> DKinFitChain::Get_AllParticles(void) const
+inline vector<shared_ptr<DKinFitParticle>> DKinFitChain::Get_AllParticles(void) const
 {
-	set<DKinFitParticle*> locAllParticles;
+	vector<shared_ptr<DKinFitParticle>> locAllParticles;
 	for(size_t loc_i = 0; loc_i < dKinFitChainSteps.size(); ++loc_i)
 	{
-		set<DKinFitParticle*> locStepParticles = dKinFitChainSteps[loc_i]->Get_AllParticles();
-		locAllParticles.insert(locStepParticles.begin(), locStepParticles.end());
+		auto locStepParticles = dKinFitChainSteps[loc_i]->Get_AllParticles();
+		locAllParticles.insert(locAllParticles.end(), locStepParticles.begin(), locStepParticles.end());
 	}
 	return locAllParticles;
 }
@@ -88,11 +95,11 @@ inline void DKinFitChain::Print_InfoToScreen(void) const
 	}
 
 	cout << "DKinFitChain: PID, Pointer, decay-step indices:" << endl;
-	map<DKinFitParticle*, char>::const_iterator locIterator = dDecayStepIndices.begin();
+	auto locIterator = dDecayStepIndices.begin();
 	for(; locIterator != dDecayStepIndices.end(); ++locIterator)
-		cout << locIterator->first->Get_PID() << ", " << locIterator->first << ", " << locIterator->second << endl;
+		cout << locIterator->first->Get_PID() << ", " << locIterator->first << ", " << int(locIterator->second) << endl;
 
-	cout << "DKinFitChain: defined particle step index, inclusive channel flag = " << dDefinedParticleStepIndex << ", " << dIsInclusiveChannelFlag << endl;
+	cout << "DKinFitChain: defined particle step index, inclusive channel flag = " << int(dDefinedParticleStepIndex) << ", " << dIsInclusiveChannelFlag << endl;
 }
 
 #endif // _DKinFitChain_

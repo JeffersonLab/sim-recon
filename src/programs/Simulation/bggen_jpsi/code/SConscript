@@ -1,0 +1,32 @@
+
+import os
+import sbms
+
+# get env object and clone it
+Import('*')
+
+# Verify CERN environment variable is set
+if os.getenv('CERN', 'nada')=='nada':
+	if env.Dir('.').srcnode().abspath.startswith(env.GetLaunchDir()):
+		print '============================================================'
+		print 'CERN environment variable not set. Skipping build of bggen'
+		print '============================================================'
+
+else:
+
+	env = env.Clone()
+	
+	# Turn off warnings for bggen since Pythia has too many
+	env['FORTRANFLAGS'].remove('-Wall')
+
+	sbms.AddCERNLIB(env)
+	sbms.AddHDDM(env)
+
+	# By default SConstruct adds 'include' which turns into
+	# a path in variant directory that doesn't exist. gcc 4.8
+	# then complains about it. Remove that and add the path
+	# to the src directory.
+	# env['FORTRANPATH'].remove('include')	
+	env.AppendUnique(FORTRANPATH=[env.Dir("include").srcnode().abspath])
+
+	sbms.executable(env, 'bggen_jpsi')

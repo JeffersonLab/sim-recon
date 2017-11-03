@@ -72,15 +72,15 @@ CobremsGeneration::CobremsGeneration(double Emax_GeV, double Epeak_GeV)
    fBeamEmittance = 2.5e-9; // m r
    fCollimatorSpotrms = 0.0005; // m
    fCollimatorDistance = 76.0; // m
-   fCollimatorDiameter = 0.0034; // m
-   fTargetThickness = 20e-6; // m
+   fCollimatorDiameter = 0.005; // m
+   fTargetThickness = 50e-6; // m
    fTargetThetay = 0.050; // radians
    fTargetThetaz = 0; // radians
    setTargetCrystal("diamond");
    setCoherentEdge(Epeak_GeV);
    fPhotonEnergyMin = 0.120; // GeV
    setPolarizedFlag(false);
-   setCollimatedFlag(false);
+   setCollimatedFlag(true);
 
 #if COBREMS_GENERATOR_VERBOSITY > 0
    std::cout << std::endl
@@ -575,7 +575,9 @@ double CobremsGeneration::Rate_dNcdxdp(double x, double phi)
    fQ2theta2.clear();
    fQ2weight.clear();
    double qzmin = 99;
+#if COBREMS_GENERATOR_VERBOSITY > 1
    int hmin, kmin, lmin;
+#endif
    double sum = 0;
    // can restrict to h=0 for cpu speedup, if crystal alignment is "reasonable"
    for (int h = -4; h <= 4; ++h) {
@@ -632,9 +634,11 @@ double CobremsGeneration::Rate_dNcdxdp(double x, double phi)
 
             if (q[2] < qzmin) {
                qzmin = q[2];
+#if COBREMS_GENERATOR_VERBOSITY > 1
                hmin = h;
                kmin = k;
                lmin = l;
+#endif
             }
             double theta2 = (1 - x) * xmax / (x * (1 - xmax) + 1e-99) - 1;
             double betaFF2 = pow(fTargetCrystal.betaFF, 2);

@@ -358,7 +358,7 @@ c     write(6,*) dNidxdt2
       real function polarization(x,theta2,phi)
       real x,theta2,phi
       real Npara,Nperp
-      real paverage
+c      real paverage
       include 'cobrems.inc'
       if (unpolar) then
         polarization=1

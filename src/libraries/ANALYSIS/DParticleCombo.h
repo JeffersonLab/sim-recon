@@ -1,80 +1,61 @@
 #ifndef _DParticleCombo_
 #define _DParticleCombo_
 
-#include <deque>
+#include <iostream>
 #include <vector>
-#include <set>
 
-#include "JANA/JObject.h"
 #include "particleType.h"
+#include "DResettable.h"
 #include "PID/DKinematicData.h"
 #include "PID/DEventRFBunch.h"
-#include "ANALYSIS/DReaction.h"
 #include "ANALYSIS/DParticleComboStep.h"
 #include "ANALYSIS/DKinFitResults.h"
+#include "ANALYSIS/DReaction.h"
 
 using namespace std;
-using namespace jana;
+using namespace DAnalysis;
 
-class DParticleCombo : public JObject
+namespace DAnalysis
+{
+
+class DParticleCombo : public DResettable
 {
 	public:
-		JOBJECT_PUBLIC(DParticleCombo);
-
 		void Reset(void);
+		void Release(void){Reset();};
 
 		// SET STEPS
-		inline void Add_ParticleComboStep(const DParticleComboStep* locParticleComboStep){dParticleComboSteps.push_back(locParticleComboStep);}
+		void Add_ParticleComboStep(const DParticleComboStep* locParticleComboStep){dParticleComboSteps.push_back(locParticleComboStep);}
 		void Set_ParticleComboStep(const DParticleComboStep* locParticleComboStep, size_t locStepIndex);
 
 		// SET OBJECT DATA:
-		inline void Set_Reaction(const DReaction* locReaction){dReaction = locReaction;}
-		inline void Set_KinFitResults(const DKinFitResults* locKinFitResults){dKinFitResults = locKinFitResults;}
-		inline void Set_EventRFBunch(const DEventRFBunch* locEventRFBunch){dEventRFBunch = locEventRFBunch;}
+		void Set_KinFitResults(const DKinFitResults* locKinFitResults){dKinFitResults = locKinFitResults;}
+		void Set_EventRFBunch(const DEventRFBunch* locEventRFBunch){dEventRFBunch = locEventRFBunch;}
 
 		// GET OBJECT DATA:
-		inline const DReaction* Get_Reaction(void) const{return dReaction;}
-		inline const DKinFitResults* Get_KinFitResults(void) const{return dKinFitResults;}
-		inline const DEventRFBunch* Get_EventRFBunch(void) const{return dEventRFBunch;}
+		const DKinFitResults* Get_KinFitResults(void) const{return dKinFitResults;}
+		const DEventRFBunch* Get_EventRFBunch(void) const{return dEventRFBunch;}
 
 		// GET PARTCILE COMBO STEPS:
-		inline size_t Get_NumParticleComboSteps(void) const{return dParticleComboSteps.size();}
+		size_t Get_NumParticleComboSteps(void) const{return dParticleComboSteps.size();}
 		const DParticleComboStep* Get_ParticleComboStep(size_t locStepIndex) const;
-		void Get_ParticleComboSteps(Particle_t locInitialPID, deque<const DParticleComboStep*>& locParticleComboStepDeque) const;
+		vector<const DParticleComboStep*> Get_ParticleComboSteps(void) const{return dParticleComboSteps;}
 
-		// GET FINAL PARTICLES - BY PID:
-		void Get_FinalParticles(Particle_t locPID, deque<const DKinematicData*>& locParticles) const;
-		void Get_FinalParticles_Measured(Particle_t locPID, deque<const DKinematicData*>& locParticles) const;
-		void Get_FinalParticles(Particle_t locStepInitialPID, Particle_t locPID, deque<const DKinematicData*>& locParticles) const;
-		void Get_FinalParticles_Measured(Particle_t locStepInitialPID, Particle_t locPID, deque<const DKinematicData*>& locParticles) const;
-
-		// GET FINAL PARTICLES - BY TRAIT:
-		void Get_DetectedFinalChargedParticles_Measured(deque<const DKinematicData*>& locParticles) const;
-		void Get_DetectedFinalNeutralParticles_Measured(deque<const DKinematicData*>& locParticles) const;
-		void Get_DetectedFinalParticles_Measured(deque<const DKinematicData*>& locParticles) const;
-		void Get_DetectedFinalChargedParticles(deque<const DKinematicData*>& locParticles) const;
-		void Get_DetectedFinalNeutralParticles(deque<const DKinematicData*>& locParticles) const;
-		void Get_DetectedFinalParticles(deque<const DKinematicData*>& locParticles) const;
-		const DKinematicData* Get_MissingParticle(void) const;
+		// GET PARTICLES
+		vector<const DKinematicData*> Get_MissingParticles(const DReaction* locReaction) const;
+		vector<const DKinematicData*> Get_FinalParticles(const DReaction* locReaction, bool locIncludeMissingFlag = true, bool locIncludeDecayingFlag = true, Charge_t locCharge = d_AllCharges) const;
+		vector<const DKinematicData*> Get_FinalParticles_Measured(const DReaction* locReaction, Charge_t locCharge = d_AllCharges) const;
+		vector<const JObject*> Get_FinalParticle_SourceObjects(Charge_t locCharge = d_AllCharges) const;
 
 		// GET FINAL PARTICLES - BY DECAY CHAIN:
 		//get all of the measured particles included in the decaychain starting at locStepIndex
-		void Get_DecayChainParticles_Measured(int locStepIndex, deque<const DKinematicData*>& locMeasuredParticles) const;
-
-		// GET FINAL PARTICLE SOURCE OBJECTS - BY TRAIT:
-		void Get_DetectedFinalChargedParticles_SourceObjects(deque<const DChargedTrack*>& locSourceChargedTracks) const;
-		void Get_DetectedFinalNeutralParticles_SourceObjects(deque<const DNeutralShower*>& locSourceNeutralShowers) const;
+		vector<const DKinematicData*> Get_DecayChainParticles_Measured(const DReaction* locReaction, int locStepIndex) const;
 
 		// OTHER:
-		set<pair<const JObject*, Particle_t> > Get_DecayingParticleSourceObjects(size_t locStepIndex) const;
-		bool Check_AreMeasuredParticlesIdentical(const DParticleCombo* locParticleCombo) const;
 		DLorentzVector Get_EventVertex(void) const;
 
 	private:
-		// PRIVATE METHODS:
-		void Get_DecayChainParticles_Measured_Recursive(int locStepIndex, deque<const DKinematicData*>& locMeasuredParticles) const;
 
-		const DReaction* dReaction;
 		const DKinFitResults* dKinFitResults;
 		const DEventRFBunch* dEventRFBunch;
 		vector<const DParticleComboStep*> dParticleComboSteps;
@@ -82,7 +63,6 @@ class DParticleCombo : public JObject
 
 inline void DParticleCombo::Reset(void)
 {
-	dReaction = NULL;
 	dKinFitResults = NULL;
 	dEventRFBunch = NULL;
 	dParticleComboSteps.clear();
@@ -102,167 +82,93 @@ inline void DParticleCombo::Set_ParticleComboStep(const DParticleComboStep* locP
 	dParticleComboSteps[locStepIndex] = locParticleComboStep;
 }
 
-inline void DParticleCombo::Get_ParticleComboSteps(Particle_t locInitialPID, deque<const DParticleComboStep*>& locParticleComboStepDeque) const
-{
-	locParticleComboStepDeque.clear();
-	for(size_t loc_i = 0; loc_i < dParticleComboSteps.size(); ++loc_i)
-	{
-		if(dParticleComboSteps[loc_i]->Get_InitialParticleID() == locInitialPID)
-			locParticleComboStepDeque.push_back(dParticleComboSteps[loc_i]);
-	}
-}
-
-inline void DParticleCombo::Get_DetectedFinalChargedParticles_Measured(deque<const DKinematicData*>& locParticles) const
-{
-	locParticles.clear();
-	deque<const DKinematicData*> locStepParticles;
-	for(size_t loc_i = 0; loc_i < dParticleComboSteps.size(); ++loc_i)
-	{
-		locStepParticles.clear();
-		dParticleComboSteps[loc_i]->Get_DetectedFinalChargedParticles_Measured(locStepParticles);
-		locParticles.insert(locParticles.end(), locStepParticles.begin(), locStepParticles.end());
-	}
-}
-
-inline void DParticleCombo::Get_DetectedFinalNeutralParticles_Measured(deque<const DKinematicData*>& locParticles) const
-{
-	locParticles.clear();
-	deque<const DKinematicData*> locStepParticles;
-	for(size_t loc_i = 0; loc_i < dParticleComboSteps.size(); ++loc_i)
-	{
-		locStepParticles.clear();
-		dParticleComboSteps[loc_i]->Get_DetectedFinalNeutralParticles_Measured(locStepParticles);
-		locParticles.insert(locParticles.end(), locStepParticles.begin(), locStepParticles.end());
-	}
-}
-
-inline void DParticleCombo::Get_DetectedFinalParticles_Measured(deque<const DKinematicData*>& locParticles) const
-{
-	locParticles.clear();
-	deque<const DKinematicData*> locStepParticles;
-	for(size_t loc_i = 0; loc_i < dParticleComboSteps.size(); ++loc_i)
-	{
-		locStepParticles.clear();
-		dParticleComboSteps[loc_i]->Get_DetectedFinalParticles_Measured(locStepParticles);
-		locParticles.insert(locParticles.end(), locStepParticles.begin(), locStepParticles.end());
-	}
-}
-
-inline void DParticleCombo::Get_DetectedFinalChargedParticles(deque<const DKinematicData*>& locParticles) const
-{
-	locParticles.clear();
-	deque<const DKinematicData*> locStepParticles;
-	for(size_t loc_i = 0; loc_i < dParticleComboSteps.size(); ++loc_i)
-	{
-		locStepParticles.clear();
-		dParticleComboSteps[loc_i]->Get_DetectedFinalChargedParticles(locStepParticles);
-		locParticles.insert(locParticles.end(), locStepParticles.begin(), locStepParticles.end());
-	}
-}
-
-inline void DParticleCombo::Get_DetectedFinalNeutralParticles(deque<const DKinematicData*>& locParticles) const
-{
-	locParticles.clear();
-	deque<const DKinematicData*> locStepParticles;
-	for(size_t loc_i = 0; loc_i < dParticleComboSteps.size(); ++loc_i)
-	{
-		locStepParticles.clear();
-		dParticleComboSteps[loc_i]->Get_DetectedFinalNeutralParticles(locStepParticles);
-		locParticles.insert(locParticles.end(), locStepParticles.begin(), locStepParticles.end());
-	}
-}
-
-inline void DParticleCombo::Get_DetectedFinalParticles(deque<const DKinematicData*>& locParticles) const
-{
-	locParticles.clear();
-	deque<const DKinematicData*> locStepParticles;
-	for(size_t loc_i = 0; loc_i < dParticleComboSteps.size(); ++loc_i)
-	{
-		locStepParticles.clear();
-		dParticleComboSteps[loc_i]->Get_DetectedFinalParticles(locStepParticles);
-		locParticles.insert(locParticles.end(), locStepParticles.begin(), locStepParticles.end());
-	}
-}
-
-inline const DKinematicData* DParticleCombo::Get_MissingParticle(void) const
-{
-	const DKinematicData* locKinematicData;
-	for(size_t loc_i = 0; loc_i < dParticleComboSteps.size(); ++loc_i)
-	{
-		locKinematicData = dParticleComboSteps[loc_i]->Get_MissingParticle();
-		if(locKinematicData != NULL)
-			return locKinematicData;
-	}
-	return NULL;
-}
-
-inline void DParticleCombo::Get_FinalParticles(Particle_t locPID, deque<const DKinematicData*>& locParticles) const
-{
-	locParticles.clear();
-	deque<const DKinematicData*> locStepParticles;
-	for(size_t loc_i = 0; loc_i < dParticleComboSteps.size(); ++loc_i)
-	{
-		locStepParticles.clear();
-		dParticleComboSteps[loc_i]->Get_FinalParticles(locPID, locStepParticles);
-		locParticles.insert(locParticles.end(), locStepParticles.begin(), locStepParticles.end());
-	}
-}
-
-inline void DParticleCombo::Get_FinalParticles_Measured(Particle_t locPID, deque<const DKinematicData*>& locParticles) const
-{
-	locParticles.clear();
-	deque<const DKinematicData*> locStepParticles;
-	for(size_t loc_i = 0; loc_i < dParticleComboSteps.size(); ++loc_i)
-	{
-		locStepParticles.clear();
-		dParticleComboSteps[loc_i]->Get_FinalParticles_Measured(locPID, locStepParticles);
-		locParticles.insert(locParticles.end(), locStepParticles.begin(), locStepParticles.end());
-	}
-}
-
-inline void DParticleCombo::Get_FinalParticles(Particle_t locStepInitialPID, Particle_t locPID, deque<const DKinematicData*>& locParticles) const
-{
-	locParticles.clear();
-
-	deque<const DParticleComboStep*> locParticleComboStepDeque;
-	Get_ParticleComboSteps(locStepInitialPID, locParticleComboStepDeque);
-
-	deque<const DKinematicData*> locStepParticles;
-	for(size_t loc_i = 0; loc_i < locParticleComboStepDeque.size(); ++loc_i)
-	{
-		locStepParticles.clear();
-		locParticleComboStepDeque[loc_i]->Get_FinalParticles(locPID, locStepParticles);
-		locParticles.insert(locParticles.end(), locStepParticles.begin(), locStepParticles.end());
-	}
-}
-
-inline void DParticleCombo::Get_FinalParticles_Measured(Particle_t locStepInitialPID, Particle_t locPID, deque<const DKinematicData*>& locParticles) const
-{
-	locParticles.clear();
-
-	deque<const DParticleComboStep*> locParticleComboStepDeque;
-	Get_ParticleComboSteps(locStepInitialPID, locParticleComboStepDeque);
-
-	deque<const DKinematicData*> locStepParticles;
-	for(size_t loc_i = 0; loc_i < locParticleComboStepDeque.size(); ++loc_i)
-	{
-		locStepParticles.clear();
-		locParticleComboStepDeque[loc_i]->Get_FinalParticles_Measured(locPID, locStepParticles);
-		locParticles.insert(locParticles.end(), locStepParticles.begin(), locStepParticles.end());
-	}
-}
-
-inline void DParticleCombo::Get_DecayChainParticles_Measured(int locStepIndex, deque<const DKinematicData*>& locMeasuredParticles) const
-{
-	locMeasuredParticles.clear();
-	Get_DecayChainParticles_Measured_Recursive(locStepIndex, locMeasuredParticles);
-}
-
 inline DLorentzVector DParticleCombo::Get_EventVertex(void) const
 {
 	if(dParticleComboSteps.empty())
 		return DLorentzVector();
 	return dParticleComboSteps[0]->Get_SpacetimeVertex();
 }
+
+inline vector<const DKinematicData*> DParticleCombo::Get_FinalParticles(const DReaction* locReaction, bool locIncludeMissingFlag, bool locIncludeDecayingFlag, Charge_t locCharge) const
+{
+	vector<const DKinematicData*> locParticles;
+	for(size_t loc_i = 0; loc_i < locReaction->Get_NumReactionSteps(); ++loc_i)
+	{
+		auto locStepParticles = dParticleComboSteps[loc_i]->Get_FinalParticles(locReaction->Get_ReactionStep(loc_i), locIncludeMissingFlag, locIncludeDecayingFlag, locCharge);
+		locParticles.insert(locParticles.end(), locStepParticles.begin(), locStepParticles.end());
+	}
+	return locParticles;
+}
+
+inline vector<const DKinematicData*> DParticleCombo::Get_FinalParticles_Measured(const DReaction* locReaction, Charge_t locCharge) const
+{
+	vector<const DKinematicData*> locParticles;
+	for(size_t loc_i = 0; loc_i < locReaction->Get_NumReactionSteps(); ++loc_i)
+	{
+		auto locStepParticles = dParticleComboSteps[loc_i]->Get_FinalParticles_Measured(locReaction->Get_ReactionStep(loc_i), locCharge);
+		locParticles.insert(locParticles.end(), locStepParticles.begin(), locStepParticles.end());
+	}
+	return locParticles;
+}
+
+inline vector<const JObject*> DParticleCombo::Get_FinalParticle_SourceObjects(Charge_t locCharge) const
+{
+	vector<const JObject*> locSourceObjects;
+	for(size_t loc_i = 0; loc_i < Get_NumParticleComboSteps(); ++loc_i)
+	{
+		auto locStepSourceObjects = dParticleComboSteps[loc_i]->Get_FinalParticle_SourceObjects(locCharge);
+		locSourceObjects.insert(locSourceObjects.end(), locStepSourceObjects.begin(), locStepSourceObjects.end());
+	}
+	return locSourceObjects;
+}
+
+inline vector<const DKinematicData*> DParticleCombo::Get_MissingParticles(const DReaction* locReaction) const
+{
+	vector<const DKinematicData*> locParticles;
+	for(size_t loc_i = 0; loc_i < locReaction->Get_NumReactionSteps(); ++loc_i)
+	{
+		auto locMissingParticle = dParticleComboSteps[loc_i]->Get_MissingParticle(locReaction->Get_ReactionStep(loc_i));
+		if(locMissingParticle != nullptr)
+			locParticles.push_back(locMissingParticle);
+	}
+	return locParticles;
+}
+
+inline vector<const DKinematicData*> DParticleCombo::Get_DecayChainParticles_Measured(const DReaction* locReaction, int locStepIndex) const
+{
+	if((locStepIndex < 0) || (locStepIndex >= int(dParticleComboSteps.size())))
+		return {};
+
+	auto locParticleComboStep = dParticleComboSteps[locStepIndex];
+	auto locReactionStep = locReaction->Get_ReactionStep(locStepIndex);
+	auto locMissingIndex = locReactionStep->Get_MissingParticleIndex();
+
+	vector<const DKinematicData*> locMeasuredParticles;
+	if(locParticleComboStep->Get_InitialParticle_Measured() != NULL)
+		locMeasuredParticles.push_back(locParticleComboStep->Get_InitialParticle_Measured());
+	for(size_t loc_i = 0; loc_i < locReactionStep->Get_NumFinalPIDs(); ++loc_i)
+	{
+		if(int(loc_i) == locMissingIndex)
+			continue;
+
+		auto locMeasuredParticle = locParticleComboStep->Get_FinalParticle_Measured(loc_i);
+		if(locMeasuredParticle == nullptr) //decaying!
+		{
+			auto locStepParticles = Get_DecayChainParticles_Measured(locReaction, DAnalysis::Get_DecayStepIndex(locReaction, locStepIndex, loc_i));
+			locMeasuredParticles.insert(locMeasuredParticles.end(), locStepParticles.begin(), locStepParticles.end());
+		}
+		else
+			locMeasuredParticles.push_back(locMeasuredParticle);
+	}
+	return locMeasuredParticles;
+}
+
+inline void Print(const DParticleCombo* locCombo)
+{
+	for(auto locStep : locCombo->Get_ParticleComboSteps())
+		DAnalysis::Print(locStep);
+}
+
+} // end namespace
 
 #endif // _DParticleCombo_
