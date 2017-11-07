@@ -152,8 +152,8 @@ jerror_t JEventProcessor_TPOL_tree::evnt(JEventLoop *loop, uint64_t eventnumber)
         if (fpairs.size()>=1) {
             eventnum++;
             // take pair with smallest time difference from sorted vector
-            const DPSHit* flhit = fpairs[0]->ee.first;  // left hit in fine PS
-            const DPSHit* frhit = fpairs[0]->ee.second; // right hit in fine PS
+            const DPSPair::PSClust* flhit = fpairs[0]->ee.first;  // left hit in fine PS
+            const DPSPair::PSClust* frhit = fpairs[0]->ee.second; // right hit in fine PS
             E_lhit = flhit->E; E_rhit = frhit->E;
             t_lhit = clhit->t; t_rhit = crhit->t;
             double E_pair = flhit->E+frhit->E;

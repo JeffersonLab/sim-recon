@@ -73,27 +73,43 @@ jerror_t JEventProcessor_OmegaSkim::brun(JEventLoop *eventLoop, int32_t runnumbe
 jerror_t JEventProcessor_OmegaSkim::evnt(JEventLoop *loop, uint64_t eventnumber)
 {
 
-  vector<const DAnalysisResults*> analysisResultsVector;
-  loop->Get( analysisResultsVector );
-  
+  vector<const DAnalysisResults*> locAnalysisResultsVector;
+  loop->Get( locAnalysisResultsVector );
+
+    const DEventWriterEVIO* eventWriterEVIO = NULL;
   if( WRITE_EVIO_FILE ){
     
-    const DEventWriterEVIO* eventWriterEVIO = NULL;
+
     loop->GetSingle(eventWriterEVIO);
 
     // write out BOR events
     if(loop->GetJEvent().GetStatusBit(kSTATUS_BOR_EVENT)) {
-
       eventWriterEVIO->Write_EVIOEvent(loop, "omega");
       return NOERROR;
     }
-
-    if( analysisResultsVector[0]->Get_NumPassedParticleCombos() != 0 ){
-
-      eventWriterEVIO->Write_EVIOEvent(loop, "omega");
-    }
   }
-  
+
+	//Make sure that there are combos that survived for ****THIS**** CHANNEL!!!
+	bool locSuccessFlag = false;
+	for(size_t loc_i = 0; loc_i < locAnalysisResultsVector.size(); ++loc_i)
+	{
+		const DReaction* locReaction = locAnalysisResultsVector[loc_i]->Get_Reaction();
+		if(locReaction->Get_ReactionName() != "p3pi_excl")
+			continue;
+
+		deque<const DParticleCombo*> locPassedParticleCombos;
+		locAnalysisResultsVector[loc_i]->Get_PassedParticleCombos(locPassedParticleCombos);
+		locSuccessFlag = !locPassedParticleCombos.empty();
+		break;
+	}
+	if(!locSuccessFlag)
+		return NOERROR;
+
+  if( WRITE_EVIO_FILE ){
+   eventWriterEVIO->Write_EVIOEvent(loop, "omega");
+
+  }
+
   if( WRITE_ROOT_TREE ){
     
     //Recommended: Write surviving particle combinations (if any) to output ROOT TTree

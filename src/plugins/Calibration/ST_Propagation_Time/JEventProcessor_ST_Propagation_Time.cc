@@ -202,17 +202,15 @@ jerror_t JEventProcessor_ST_Propagation_Time::evnt(JEventLoop *loop, uint64_t ev
   // Loop over the charged tracks
   for (uint32_t i = 0; i < chargedTrackVector.size(); i++)
     {   
-      DSCHitMatchParams  locSCHitMatchParams; 
-      DTOFHitMatchParams locTOFHitMatchParams;
+      shared_ptr<const DSCHitMatchParams>  locSCHitMatchParams; 
+      shared_ptr<const DTOFHitMatchParams> locTOFHitMatchParams;
         
       // Grab the charged track and declare time based track object
       const DChargedTrack   *thisChargedTrack = chargedTrackVector[i];
-      const DTrackTimeBased *timeBasedTrack;
       // Grab associated time based track object by selecting charged track with best FOM
-      thisChargedTrack->Get_BestTrackingFOM()->GetSingle(timeBasedTrack);
+      const DTrackTimeBased *timeBasedTrack = thisChargedTrack->Get_BestTrackingFOM()->Get_TrackTimeBased();
 
       // if (thisChargedTrack->Get_Hypothesis(PiMinus) == NULL) continue;
-      // thisChargedTrack->Get_Hypothesis(PiMinus)->GetSingle(timeBasedTrack);
       // pim_pmag_cut = 0.500; // GeV
       // if (timeBasedTrack->pmag() < pim_pmag_cut) continue;
 
@@ -241,8 +239,8 @@ jerror_t JEventProcessor_ST_Propagation_Time::evnt(JEventLoop *loop, uint64_t ev
       // Cut on the number of particle votes to find the best RF time
       if (thisRFBunch->dNumParticleVotes < 1) continue;
       // Calculate the TOF estimate of the target time
-      double locTOFHitTime                 = locTOFHitMatchParams.dHitTime;    // Corrected for timewalk and propagation time 
-      double locTOFTrackFlightTime         = locTOFHitMatchParams.dFlightTime;
+      double locTOFHitTime                 = locTOFHitMatchParams->dHitTime;    // Corrected for timewalk and propagation time 
+      double locTOFTrackFlightTime         = locTOFHitMatchParams->dFlightTime;
       double locFlightTimeCorrectedTOFTime = locTOFHitTime - locTOFTrackFlightTime;
       
       // Calculate the RF estimate of the target time
@@ -259,14 +257,15 @@ jerror_t JEventProcessor_ST_Propagation_Time::evnt(JEventLoop *loop, uint64_t ev
       // Loop over the charged tracks
       for (uint32_t i = 0; i < chargedTrackVector.size(); i++)
       {
-          DSCHitMatchParams  locSCHitMatchParams; 
+          shared_ptr<DSCHitMatchParams>  locSCHitMatchParams;
+          shared_ptr<const DSCHitMatchParams>  locBestSCHitMatchParams;
           //DTOFHitMatchParams locTOFHitMatchParams;
 
           // Grab the charged track and declare time based track object
           const DChargedTrack   *thisChargedTrack = chargedTrackVector[i];
-          const DTrackTimeBased *timeBasedTrack;
           // Grab associated time based track object by selecting charged track with best FOM
-          thisChargedTrack->Get_BestTrackingFOM()->GetSingle(timeBasedTrack);
+	      const DTrackTimeBased *timeBasedTrack = thisChargedTrack->Get_BestTrackingFOM()->Get_TrackTimeBased();
+
 	  
           // Implement quality cuts for the time based tracks 
           if(timeBasedTrack->FOM  < trackingFOMCut) continue;
@@ -281,30 +280,30 @@ jerror_t JEventProcessor_ST_Propagation_Time::evnt(JEventLoop *loop, uint64_t ev
           if (!z_vertex_cut) continue;
           if (!r_vertex_cut) continue;
           // Grab the ST hit match params object and cut on tracks matched to the ST
-          bool foundSC = dParticleID->Get_BestSCMatchParams(timeBasedTrack, locDetectorMatches, locSCHitMatchParams);
+          bool foundSC = dParticleID->Get_BestSCMatchParams(timeBasedTrack, locDetectorMatches, locBestSCHitMatchParams);
           if (!foundSC) continue;
 	  
           // Define sector array index
-          int sc_index = locSCHitMatchParams.dSCHit->sector - 1;
+          int sc_index = locBestSCHitMatchParams->dSCHit->sector - 1;
           // Start Counter geometry in hall coordinates 
           double sc_pos_soss = sc_pos[sc_index][0].z();   // Start of straight section
           double sc_pos_eoss = sc_pos[sc_index][1].z();   // End of straight section
           double sc_pos_eobs = sc_pos[sc_index][11].z();  // End of bend section
           double sc_pos_eons = sc_pos[sc_index][12].z();  // End of nose section
           
-          vector<DSCHitMatchParams> st_params;
+          vector<shared_ptr<const DSCHitMatchParams>> st_params;
           bool sc_match = locDetectorMatches->Get_SCMatchParams(timeBasedTrack, st_params); 
           // If st_match = true, there is a match between this track and the ST
           if (!sc_match) continue;
           DVector3 IntersectionPoint, IntersectionMomentum;
-          bool sc_match_pid = dParticleID->Cut_MatchDistance(timeBasedTrack->rt, st_params[0].dSCHit, st_params[0].dSCHit->t, locSCHitMatchParams, true, &IntersectionPoint, &IntersectionMomentum);
+          bool sc_match_pid = dParticleID->Cut_MatchDistance(timeBasedTrack->rt, st_params[0]->dSCHit, st_params[0]->dSCHit->t, locSCHitMatchParams, true, &IntersectionPoint, &IntersectionMomentum);
           if(!sc_match_pid) continue;
           // For each paddle calculate the hit time, flight time, intersection point (z), and t0 from TOF
           // For each hit we want to calculate thit - tflight - t0 from TOF
           // Then correlate with hit position along z
 	  
-          double locSCHitTime                 = st_params[0].dSCHit->t; //Only corrected for time walk
-          double locSCTrackFlightTime         = locSCHitMatchParams.dFlightTime;  
+          double locSCHitTime                 = st_params[0]->dSCHit->t; //Only corrected for time walk
+          double locSCTrackFlightTime         = locSCHitMatchParams->dFlightTime;  
           double locFlightTimeCorrectedSCTime = locSCHitTime - locSCTrackFlightTime;
 	  
           double locSCPropTime = locFlightTimeCorrectedSCTime - locTOFRFShiftedTime;

@@ -30,6 +30,9 @@ void DCustomAction_HistOmegaVsMissProton::Initialize(JEventLoop* locEventLoop)
 		string locHistTitle = ";#it{#gamma}#it{p}#rightarrow#it{#pi}^{+}#it{#pi}^{-}#it{#gamma}#it{#gamma} Missing Mass (GeV/c^{2})";
 		locHistTitle += string(";#it{#pi}^{+}#it{#pi}^{-}#it{#gamma}#it{#gamma} Invariant Mass (GeV/c^{2})");
 		dHist_OmegaVsMissProton = GetOrCreate_Histogram<TH2I>("OmegaVsMissProton", locHistTitle, 325, 0.3, 1.6, 300, 0.5, 1.1);
+
+		//Return to the base directory
+		ChangeTo_BaseDirectory();
 	}
 	japp->RootUnLock(); //RELEASE ROOT LOCK!!
 }
@@ -37,8 +40,8 @@ void DCustomAction_HistOmegaVsMissProton::Initialize(JEventLoop* locEventLoop)
 bool DCustomAction_HistOmegaVsMissProton::Perform_Action(JEventLoop* locEventLoop, const DParticleCombo* locParticleCombo)
 {
 	//no duplicate entries: missing p4 is unique for each combo
-	DLorentzVector locMissingP4 = dAnalysisUtilities->Calc_MissingP4(locParticleCombo, false);
-	DLorentzVector locOmegaP4 = dAnalysisUtilities->Calc_FinalStateP4(locParticleCombo, 1, false);
+	DLorentzVector locMissingP4 = dAnalysisUtilities->Calc_MissingP4(Get_Reaction(), locParticleCombo, false);
+	DLorentzVector locOmegaP4 = dAnalysisUtilities->Calc_FinalStateP4(Get_Reaction(), locParticleCombo, 1, false);
 
 	//FILL HISTOGRAMS
 	//Since we are filling histograms local to this action, it will not interfere with other ROOT operations: can use action-wide ROOT lock

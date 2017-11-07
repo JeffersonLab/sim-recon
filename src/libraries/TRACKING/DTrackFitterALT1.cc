@@ -20,6 +20,7 @@ using namespace jana;
 
 #include "GlueX.h"
 #include "DANA/DApplication.h"
+#include "PID/DParticleID.h"
 #include "DMagneticFieldStepper.h"
 #include "DTrackCandidate.h"
 #include "DTrackFitterALT1.h"
@@ -34,8 +35,6 @@ extern double GetCDCCovariance(int layer1, int layer2);
 extern double GetFDCCovariance(int layer1, int layer2);
 extern double GetFDCCathodeCovariance(int layer1, int layer2);
 
-
-#define NaN std::numeric_limits<double>::quiet_NaN()
 
 // The GNU implementation of STL includes definitions of "greater" and "less"
 // but the SunOS implementation does not. Since it is a bit of a pain to
@@ -421,8 +420,7 @@ DTrackFitter::fit_status_t DTrackFitterALT1::FitTrack(void)
 	// members are copied in during the ChiSq() method call in LeastSquaresB().
 	fit_params.setPosition(vertex_pos);
 	fit_params.setMomentum(vertex_mom);
-	fit_params.setCharge(rt->q);
-	fit_params.setMass(input_params.mass());
+	fit_params.setPID(dParticleID->IDTrack(rt->q, input_params.mass()));
 	cdchits_used_in_fit = cdchits;
 	fdchits_used_in_fit = fdchits;
 

@@ -1,4 +1,5 @@
 #include "SCSmearer.h"
+#include "START_COUNTER/DSCHit_factory.h"
 
 //-----------
 // sc_config_t  (constructor)
@@ -20,20 +21,58 @@ sc_config_t::sc_config_t(JEventLoop *loop)
      	START_PHOTONS_PERMEV = startparms["START_PHOTONS_PERMEV"];
 	}
 	
-	cout<<"get START_COUNTER/time_resol_paddle from calibDB"<<endl;
-    vector <double> START_TIME_RESOLUTIONS_TEMP;
-    if(loop->GetCalib("START_COUNTER/time_resol_paddle", START_TIME_RESOLUTIONS_TEMP)) {
-    	jerr << "Problem loading START_COUNTER/time_resol_paddle from CCDB!" << endl;
-    } else {
-    	for (unsigned int i = 0; i < START_TIME_RESOLUTIONS_TEMP.size(); i++) {
-       		START_TIME_RESOLUTIONS.push_back(START_TIME_RESOLUTIONS_TEMP.at(i));
-    	}
-    }
-    
 	cout<<"get START_COUNTER/paddle_mc_efficiency from calibDB"<<endl;
     if(loop->GetCalib("START_COUNTER/paddle_mc_efficiency", paddle_efficiencies)) {
     	jerr << "Problem loading START_COUNTER/paddle_mc_efficiency from CCDB!" << endl;
     }
+
+    // Start counter individual paddle resolutions
+    vector< vector<double> > sc_paddle_resolution_params;
+    if(loop->GetCalib("START_COUNTER/time_resol_paddle_v2", sc_paddle_resolution_params))
+        jout << "Error in loading START_COUNTER/time_resol_paddle_v2 !" << endl;
+    else {
+        if(sc_paddle_resolution_params.size() != (unsigned int)DSCHit_factory::MAX_SECTORS)
+            jerr << "Start counter paddle resolutions table has wrong number of entries:" << endl
+                 << "  loaded = " << sc_paddle_resolution_params.size()
+                 << "  expected = " << DSCHit_factory::MAX_SECTORS << endl;
+
+        for(int i=0; i<DSCHit_factory::MAX_SECTORS; i++) {
+            SC_MAX_RESOLUTION.push_back( sc_paddle_resolution_params[i][0] );
+            SC_BOUNDARY1.push_back( sc_paddle_resolution_params[i][1] );
+            SC_BOUNDARY2.push_back( sc_paddle_resolution_params[i][2] );
+            SC_SECTION1_P0.push_back( sc_paddle_resolution_params[i][3] ); 
+            SC_SECTION1_P1.push_back( sc_paddle_resolution_params[i][4] );
+            SC_SECTION2_P0.push_back( sc_paddle_resolution_params[i][5] ); 
+            SC_SECTION2_P1.push_back( sc_paddle_resolution_params[i][6] );
+            SC_SECTION3_P0.push_back( sc_paddle_resolution_params[i][7] ); 
+            SC_SECTION3_P1.push_back( sc_paddle_resolution_params[i][8] );
+        }
+    }
+
+    map<string,double> sc_mc_correction_factors;
+    if(loop->GetCalib("START_COUNTER/mc_time_resol_corr", sc_mc_correction_factors)) {
+        jout << "Error in loading START_COUNTER/mc_time_resol_corr !" << endl;
+    } else {
+        SC_MC_CORRECTION_P0 = sc_mc_correction_factors["P0"];
+        SC_MC_CORRECTION_P1 = sc_mc_correction_factors["P1"];
+    }
+
+    // Get the geometry
+    DApplication* dapp = dynamic_cast<DApplication*>(loop->GetJApplication());
+    if(!dapp){
+        jerr << "Cannot get DApplication from JEventLoop!" << endl;
+        return;
+    }
+    DGeometry* locGeometry = dapp->GetDGeometry(loop->GetJEvent().GetRunNumber());
+
+    // Get start counter geometry
+    vector<vector<DVector3> >sc_norm; 
+    vector<vector<DVector3> >sc_pos;
+    if (locGeometry->GetStartCounterGeom(sc_pos, sc_norm))  {
+        for(int sc_index=0; sc_index<30; sc_index++)
+            SC_START_Z.push_back( sc_pos[sc_index][0].z() );
+    }
+
 }
 
 
@@ -42,6 +81,8 @@ sc_config_t::sc_config_t(JEventLoop *loop)
 //-----------
 void SCSmearer::SmearEvent(hddm_s::HDDM *record)
 {
+   hddm_s::StcTruthPointList truthPoints = record->getStcTruthPoints();
+        
    hddm_s::StcPaddleList pads = record->getStcPaddles();
    hddm_s::StcPaddleList::iterator iter;
    for (iter = pads.begin(); iter != pads.end(); ++iter) {
@@ -55,8 +96,13 @@ void SCSmearer::SmearEvent(hddm_s::HDDM *record)
 		 	continue;
 
          // smear the time
-         //double t = titer->getT() + gDRandom.SampleGaussian(sc_config->START_SIGMA);   // constant smearing
-         double t = titer->getT() + gDRandom.SampleGaussian(sc_config->GetPaddleTimeResolution(iter->getSector()));
+         hddm_s::StcTruthPointList::iterator piter = FindMatchingTruthPoint(titer, truthPoints);
+         // calculate a z-depending timing resolution
+         // z is measured from the readout end of the paddles
+         double z_pos = 30.;    // default value in the middle, in case we can't find a good point.  this shouldn't happen, but you never know...
+         if( piter != truthPoints.end() )
+             z_pos = piter->getZ() - sc_config->SC_START_Z[iter->getSector()-1];
+         double t = titer->getT() + gDRandom.SampleGaussian(sc_config->GetPaddleTimeResolution(iter->getSector()-1, z_pos));
          // smear the energy
          double npe = titer->getDE() * 1000. *  sc_config->START_PHOTONS_PERMEV;
          npe = npe +  gDRandom.SampleGaussian(sqrt(npe));
@@ -71,4 +117,32 @@ void SCSmearer::SmearEvent(hddm_s::HDDM *record)
       if (config->DROP_TRUTH_HITS)
          iter->deleteStcTruthHits();
    }
+}
+
+// ----------------------
+// FindMatchingTruthPoint
+// ----------------------
+hddm_s::StcTruthPointList::iterator SCSmearer::FindMatchingTruthPoint(hddm_s::StcTruthHitList::iterator hiter, hddm_s::StcTruthPointList &truthPoints) 
+{
+    // Match the StcTruthHit with the most likely corresponding StcTruthPoin
+    // This is needed since StcTruthHits correspond to detector hits, and so only have time and
+    // energy values.   If we want to do something with a z-dependence, e.g. time resolutions,
+    // we need the StcTruthPoint, which has a location in detector coordinates.
+    // The only thing they have in common in the energy deposited in the scintillator paddles
+    // since the StcTruthHit has a propagation time correction applied, so we use that
+    // to disambiguate multiple hits in the same paddle
+    hddm_s::StcTruthPointList::iterator piter;
+    hddm_s::StcTruthPointList::iterator best_piter = truthPoints.end();
+    double best_match_deltaE = 100.;
+    for( piter = truthPoints.begin(); piter != truthPoints.end(); piter++) {
+        if( hiter->getSector() == piter->getSector() ) {
+            double deltaE = fabs(hiter->getDE() - piter->getDEdx());
+            if(deltaE < best_match_deltaE) {
+                best_piter = piter;
+                best_match_deltaE = deltaE;
+            }
+        }
+    }
+
+    return best_piter;
 }

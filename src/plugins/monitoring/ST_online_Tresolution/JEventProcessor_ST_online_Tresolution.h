@@ -86,7 +86,7 @@ class JEventProcessor_ST_online_Tresolution:public jana::JEventProcessor{
 	//   through the scintillator with its origin at the intersection point
 		DVector3 IntersectionDir;
 		// Grab the paramteres associated to a track matched to the ST
-		vector<DSCHitMatchParams> st_params;
+		vector<shared_ptr<const DSCHitMatchParams>> st_params;
 		// Declare r and z coord. of track vertex, sc array index
 		double z_v, r_v;
 		int sc_index;

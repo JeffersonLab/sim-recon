@@ -49,6 +49,9 @@ void DCustomAction_p2pi0_hists::Initialize(JEventLoop* locEventLoop)
 
 		dProton_dEdx_P = GetOrCreate_Histogram<TH2I>("Proton_dEdx_P","dE/dx vs p; p; dE/dx",200,0,2,500,0,5);
 		dProton_P_Theta = GetOrCreate_Histogram<TH2I>("Proton_P_Theta","p vs #theta; #theta; p (GeV/c)",180,0,180,120,0,12);
+
+		//Return to the base directory
+		ChangeTo_BaseDirectory();
 	}
 	japp->RootUnLock(); //RELEASE ROOT LOCK!!
 }
@@ -58,24 +61,16 @@ bool DCustomAction_p2pi0_hists::Perform_Action(JEventLoop* locEventLoop, const D
 	const DParticleComboStep* locParticleComboStep = locParticleCombo->Get_ParticleComboStep(0);
 
 	// get beam photon energy and final state particles
-        const DKinematicData* locBeamPhoton = NULL;
-        deque<const DKinematicData*> locParticles;
-        if(!Get_UseKinFitResultsFlag()) { //measured
-		locBeamPhoton = locParticleComboStep->Get_InitialParticle_Measured();
-                locParticleComboStep->Get_FinalParticles_Measured(locParticles);
-	}
-	else {
-		locBeamPhoton = locParticleComboStep->Get_InitialParticle();
-		locParticleComboStep->Get_FinalParticles(locParticles);
-	}
+	const DKinematicData* locBeamPhoton = Get_UseKinFitResultsFlag() ? locParticleComboStep->Get_InitialParticle() : locParticleComboStep->Get_InitialParticle_Measured();
+	auto locParticles = Get_UseKinFitResultsFlag() ? locParticleComboStep->Get_FinalParticles() : locParticleComboStep->Get_FinalParticles_Measured();
         double locBeamPhotonEnergy = locBeamPhoton->energy();
 
 	// calculate missing mass
-	DLorentzVector locMissingP4 = dAnalysisUtilities->Calc_MissingP4(locParticleCombo, Get_UseKinFitResultsFlag());
+	DLorentzVector locMissingP4 = dAnalysisUtilities->Calc_MissingP4(Get_Reaction(), locParticleCombo, Get_UseKinFitResultsFlag());
 	
 	// calculate Pi0 masses
-	DLorentzVector locPi01_P4 = dAnalysisUtilities->Calc_FinalStateP4(locParticleCombo, 1, Get_UseKinFitResultsFlag());
-	DLorentzVector locPi02_P4 = dAnalysisUtilities->Calc_FinalStateP4(locParticleCombo, 2, Get_UseKinFitResultsFlag());
+	DLorentzVector locPi01_P4 = dAnalysisUtilities->Calc_FinalStateP4(Get_Reaction(), locParticleCombo, 1, Get_UseKinFitResultsFlag());
+	DLorentzVector locPi02_P4 = dAnalysisUtilities->Calc_FinalStateP4(Get_Reaction(), locParticleCombo, 2, Get_UseKinFitResultsFlag());
 	DLorentzVector loc2pi0_P4 = locPi01_P4; loc2pi0_P4 += locPi02_P4;
 
 	// reconstructed proton variables
@@ -83,7 +78,7 @@ bool DCustomAction_p2pi0_hists::Perform_Action(JEventLoop* locEventLoop, const D
 	DLorentzVector locProtonP4;
 	const DChargedTrack* locChargedTrack = static_cast<const DChargedTrack*>(locParticleComboStep->Get_FinalParticle_SourceObject(2));
 	const DChargedTrackHypothesis* locChargedTrackHypothesis = locChargedTrack->Get_Hypothesis(Proton);
-	dEdx = locChargedTrackHypothesis->dEdx()*1e6;
+	dEdx = locChargedTrackHypothesis->Get_TrackTimeBased()->dEdx()*1e6;
 	locProtonP4 = locChargedTrackHypothesis->lorentzMomentum();	
 
 	DLorentzVector locPi01P_P4 = locProtonP4; locPi01P_P4 += locPi01_P4;

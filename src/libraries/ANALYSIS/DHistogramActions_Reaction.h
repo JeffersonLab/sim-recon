@@ -77,8 +77,8 @@ class DHistogramAction_PID : public DAnalysisAction
 {
 	public:
 
-		DHistogramAction_PID(const DReaction* locReaction, string locActionUniqueString = "") : 
-		DAnalysisAction(locReaction, "Hist_PID", false, locActionUniqueString), 
+		DHistogramAction_PID(const DReaction* locReaction, bool locUseKinFitResultsFlag = false, string locActionUniqueString = "") :
+		DAnalysisAction(locReaction, "Hist_PID", locUseKinFitResultsFlag, locActionUniqueString),
 		dNum2DPBins(250), dNum2DdEdxBins(400), dNum2DBetaBins(400), dNum2DBCALThetaBins(260), dNum2DFCALThetaBins(120), dNum2DThetaBins(280), dNumBetaBins(700),
 		dNum2DEOverPBins(300), dNum2DDeltaBetaBins(400), dNum2DDeltadEdxBins(300), dNum2DDeltaTBins(400), dNum2DPullBins(200), dNumFOMBins(400), 
 		dNum2DFOMBins(200), dMinP(0.0), dMaxP(10.0), dMaxBCALP(3.0), dMindEdX(0.0), dMaxdEdX(25.0), dMinBeta(-0.2), dMaxBeta(1.2), dMinBCALTheta(10.0), 
@@ -94,7 +94,11 @@ class DHistogramAction_PID : public DAnalysisAction
 		}
 
 		void Initialize(JEventLoop* locEventLoop);
-		void Reset_NewEvent(void){dPreviouslyHistogrammedParticles.clear();}
+		void Reset_NewEvent(void)
+		{
+			DAnalysisAction::Reset_NewEvent();
+			dPreviouslyHistogrammedParticles.clear();
+		}
 
 		unsigned int dNum2DPBins, dNum2DdEdxBins, dNum2DBetaBins, dNum2DBCALThetaBins, dNum2DFCALThetaBins, dNum2DThetaBins, dNumBetaBins;
 		unsigned int dNum2DEOverPBins, dNum2DDeltaBetaBins, dNum2DDeltadEdxBins, dNum2DDeltaTBins, dNum2DPullBins, dNumFOMBins, dNum2DFOMBins;
@@ -197,6 +201,7 @@ class DHistogramAction_ParticleComboKinematics : public DAnalysisAction
 		void Initialize(JEventLoop* locEventLoop);
 		void Reset_NewEvent(void)
 		{
+			DAnalysisAction::Reset_NewEvent();
 			dPreviouslyHistogrammedBeamParticles.clear();
 			dPreviouslyHistogrammedParticles.clear();
 		}
@@ -204,7 +209,7 @@ class DHistogramAction_ParticleComboKinematics : public DAnalysisAction
 	private:
 		bool Perform_Action(JEventLoop* locEventLoop, const DParticleCombo* locParticleCombo);
 
-		void Fill_Hists(JEventLoop* locEventLoop, const DKinematicData* locKinematicData, bool locIsMissingFlag, const DEventRFBunch* locEventRFBunch, size_t locStepIndex);
+		void Fill_Hists(JEventLoop* locEventLoop, const DKinematicData* locKinematicData, bool locIsMissingFlag, size_t locStepIndex);
 		void Fill_BeamHists(const DKinematicData* locKinematicData, const DEventRFBunch* locEventRFBunch);
 
 		const DParticleID* dParticleID;
@@ -265,7 +270,12 @@ class DHistogramAction_InvariantMass : public DAnalysisAction
 		dNumMassBins(locNumMassBins), dMinMass(locMinMass), dMaxMass(locMaxMass), dNum2DMassBins(locNumMassBins/2), dNum2DBeamEBins(600), dMinBeamE(0.0), dMaxBeamE(12.0) {}
 
 		void Initialize(JEventLoop* locEventLoop);
-		void Reset_NewEvent(void){dPreviousSourceObjects.clear();}
+		void Reset_NewEvent(void)
+		{
+			DAnalysisAction::Reset_NewEvent();
+			dPreviousSourceObjects.clear();
+			dPreviousSourceObjects_Beam.clear();
+		}
 
 	private:
 		bool Perform_Action(JEventLoop* locEventLoop, const DParticleCombo* locParticleCombo);
@@ -334,7 +344,11 @@ class DHistogramAction_MissingMass : public DAnalysisAction
 		}
 
 		void Initialize(JEventLoop* locEventLoop);
-		void Reset_NewEvent(void){dPreviousSourceObjects.clear();}
+		void Reset_NewEvent(void)
+		{
+			DAnalysisAction::Reset_NewEvent();
+			dPreviousSourceObjects.clear();
+		}
 
 	private:
 		bool Perform_Action(JEventLoop* locEventLoop, const DParticleCombo* locParticleCombo);
@@ -401,7 +415,11 @@ class DHistogramAction_MissingMassSquared : public DAnalysisAction
 		}
 
 		void Initialize(JEventLoop* locEventLoop);
-		void Reset_NewEvent(void){dPreviousSourceObjects.clear();}
+		void Reset_NewEvent(void)
+		{
+			DAnalysisAction::Reset_NewEvent();
+			dPreviousSourceObjects.clear();
+		}
 
 	private:
 		bool Perform_Action(JEventLoop* locEventLoop, const DParticleCombo* locParticleCombo);
@@ -433,7 +451,11 @@ class DHistogramAction_2DInvariantMass : public DAnalysisAction
 		dMinX(locMinX), dMaxX(locMaxX), dMinY(locMinY), dMaxY(locMaxY), dAnalysisUtilities(NULL) {}
 
 		void Initialize(JEventLoop* locEventLoop);
-		void Reset_NewEvent(void){dPreviousSourceObjects.clear();}
+		void Reset_NewEvent(void)
+		{
+			DAnalysisAction::Reset_NewEvent();
+			dPreviousSourceObjects.clear();
+		}
 
 	private:
 		bool Perform_Action(JEventLoop* locEventLoop, const DParticleCombo* locParticleCombo);
@@ -459,7 +481,11 @@ class DHistogramAction_Dalitz : public DAnalysisAction
 		dMinX(locMinX), dMaxX(locMaxX), dMinY(locMinY), dMaxY(locMaxY), dAnalysisUtilities(NULL) {}
 
 		void Initialize(JEventLoop* locEventLoop);
-		void Reset_NewEvent(void){dPreviousSourceObjects.clear();}
+		void Reset_NewEvent(void)
+		{
+			DAnalysisAction::Reset_NewEvent();
+			dPreviousSourceObjects.clear();
+		}
 
 	private:
 		bool Perform_Action(JEventLoop* locEventLoop, const DParticleCombo* locParticleCombo);
@@ -482,13 +508,13 @@ class DHistogramAction_KinFitResults : public DAnalysisAction
 		DAnalysisAction(locReaction, "Hist_KinFitResults", true, locActionUniqueString),
 		dHistDependenceFlag(false), dNumConfidenceLevelBins(400), dNumPullBins(200), dNum2DPBins(200), dNum2DThetaBins(140), dNum2DPhiBins(180), dNum2DPullBins(100),
 		dNum2DConfidenceLevelBins(100), dNum2DBeamEBins(240), dMinPull(-4.0), dMaxPull(4.0), dMinP(0.0), dMaxP(10.0), dMinTheta(0.0), dMaxTheta(140.0),
-		dMinPhi(-180.0), dMaxPhi(180.0), dMinBeamE(0.0), dMaxBeamE(12.0), dPullHistConfidenceLevelCut(locPullHistConfidenceLevelCut), dAnalysisUtilities(NULL) {}
+		dMinPhi(-180.0), dMaxPhi(180.0), dMinBeamE(0.0), dMaxBeamE(12.0), dPullHistConfidenceLevelCut(locPullHistConfidenceLevelCut) {}
 
 		DHistogramAction_KinFitResults(const DReaction* locReaction, double locPullHistConfidenceLevelCut, bool locHistDependenceFlag, string locActionUniqueString = "") :
 		DAnalysisAction(locReaction, "Hist_KinFitResults", true, locActionUniqueString), 
 		dHistDependenceFlag(locHistDependenceFlag), dNumConfidenceLevelBins(400), dNumPullBins(200), dNum2DPBins(200), dNum2DThetaBins(140), dNum2DPhiBins(180), dNum2DPullBins(100),
 		dNum2DConfidenceLevelBins(100), dNum2DBeamEBins(240), dMinPull(-4.0), dMaxPull(4.0), dMinP(0.0), dMaxP(10.0), dMinTheta(0.0), dMaxTheta(140.0),
-		dMinPhi(-180.0), dMaxPhi(180.0), dMinBeamE(0.0), dMaxBeamE(12.0), dPullHistConfidenceLevelCut(locPullHistConfidenceLevelCut), dAnalysisUtilities(NULL) {}
+		dMinPhi(-180.0), dMaxPhi(180.0), dMinBeamE(0.0), dMaxBeamE(12.0), dPullHistConfidenceLevelCut(locPullHistConfidenceLevelCut) {}
 
 	private:
 		bool dHistDependenceFlag;
@@ -502,17 +528,32 @@ class DHistogramAction_KinFitResults : public DAnalysisAction
 	private:
 		bool Perform_Action(JEventLoop* locEventLoop, const DParticleCombo* locParticleCombo);
 
-		void Create_ParticlePulls(string locFullROOTName, bool locIsChargedFlag, bool locIsInVertexFitFlag, bool locIsNeutralShowerFlag, map<DKinFitPullType, TH1I*>& locParticlePulls, map<DKinFitPullType, TH2I*>& locParticlePullsVsP, map<DKinFitPullType, TH2I*>& locParticlePullsVsTheta, map<DKinFitPullType, TH2I*>& locParticlePullsVsPhi);
+		void Create_ParticlePulls(string locFullROOTName, bool locIsChargedFlag, bool locIsInVertexFitFlag, bool locIsNeutralShowerFlag, int locStepIndex, Particle_t locPID);
+		void Get_DeltaBinningParams(DKinFitPullType locPullType, bool loc2DFlag, int& locNumBins, double& locMax);
+		void Get_HistNameTitle(DKinFitPullType locPullType, string locFullROOTName, int locVsKey, string& locHistName, string& locHistTitle);
+		double Get_Delta(DKinFitPullType locPullType, const DKinematicData* locMeasured, const DKinematicData* locKinFit);
 
 		double dPullHistConfidenceLevelCut;
-		const DAnalysisUtilities* dAnalysisUtilities;
-		DKinFitUtils_GlueX* dKinFitUtils;
+	public:
+		unsigned int dNumDeltaPOverPBins = 400, dNumDeltaShowerEBins = 400, dNumDeltaThetaBins = 400, dNumDeltaPhiBins = 400, dNumDeltaVertexXYBins = 1000, dNumDeltaVertexZBins = 800, dNumDeltaTBins = 1000;
+		unsigned int dNum2DDeltaPOverPBins = 200, dNum2DDeltaShowerEBins = 200, dNum2DDeltaThetaBins = 200, dNum2DDeltaPhiBins = 200, dNum2DDeltaVertexXYBins = 500, dNum2DDeltaVertexZBins = 400, dNum2DDeltaTBins = 500;
+		double dMaxDeltaPOverP = 1.0, dMaxDeltaShowerE = 1.0, dMaxDeltaTheta = 10.0, dMaxDeltaPhi = 20.0, dMaxDeltaT = 5.0, dMaxDeltaVertexXY = 10.0, dMaxDeltaVertexZ = 40.0;
+
+	private:
+		const DAnalysisUtilities* dAnalysisUtilities = nullptr;
+		DKinFitUtils_GlueX* dKinFitUtils = nullptr;
 
 		//below maps: int is step index (-1 for beam), 2nd is particle
 		TH1I* dHist_ConfidenceLevel;
 		map<pair<int, Particle_t>, TH2I*> dHistMap_ConfidenceLevel_VsP;
 		map<pair<int, Particle_t>, TH2I*> dHistMap_ConfidenceLevel_VsTheta;
 		map<pair<int, Particle_t>, TH2I*> dHistMap_ConfidenceLevel_VsPhi;
+
+		//due to my laziness, pull-type px/py/pz corresponds to delta-theta, delta-phi, delta-p/p
+		map<pair<int, Particle_t>, map<DKinFitPullType, TH1I*> > dHistMap_Deltas;
+		map<pair<int, Particle_t>, map<DKinFitPullType, TH2I*> > dHistMap_DeltasVsP;
+		map<pair<int, Particle_t>, map<DKinFitPullType, TH2I*> > dHistMap_DeltasVsTheta;
+		map<pair<int, Particle_t>, map<DKinFitPullType, TH2I*> > dHistMap_DeltasVsPhi;
 
 		map<pair<int, Particle_t>, map<DKinFitPullType, TH1I*> > dHistMap_Pulls;
 		map<pair<int, Particle_t>, map<DKinFitPullType, TH2I*> > dHistMap_PullsVsP;
@@ -531,7 +572,11 @@ class DHistogramAction_MissingTransverseMomentum : public DAnalysisAction
 		}
 
 		void Initialize(JEventLoop* locEventLoop);
-		void Reset_NewEvent(void){dPreviousSourceObjects.clear();}
+		void Reset_NewEvent(void)
+		{
+			DAnalysisAction::Reset_NewEvent();
+			dPreviousSourceObjects.clear();
+		}
 
 	private:
 		bool Perform_Action(JEventLoop* locEventLoop, const DParticleCombo* locParticleCombo);

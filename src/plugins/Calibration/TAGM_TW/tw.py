@@ -28,30 +28,63 @@ def main():
 	outfile = TFile.Open("results.root","recreate")
 	outfile.cd()
 
+	# Get offsets from first calibration step
+	offsets = []
+	offsets_ind = []
+	offset_file = open('offsets-' + str(run) + '.txt', 'r')
+	for line in offset_file:
+		if int(line.split()[0]) == 0:
+			offsets.append( float(line.split()[2]) )
+		else:
+			offsets_ind.append( float(line.split()[2]) )
+
 	# If the histogram is empty use the summed output hist instead
 	base = "TAGM_TW/tdc-rf/h_dt_vs_pp_tdc_"
 	for i in range(1,103):
 		# Summed outputs
 		h = rootfile.Get(base+str(i))
 		h.Write()
-		p = tw_corr(h,0,i,newV)
+		p = tw_corr(h,0,i,newV, offsets, offsets_ind, run)
 		p.Write()
 
 	outfile.Close()
 
-def tw_corr(h,row,col,newV):
+def tw_corr(h,row,col,newV, offsets, offsets_ind, run):
 	# Create list of columns with individual readout
 	indCol = [9,27,81,99]
 	# Open files for writing constants
 	if (row == 0 and col == 1):
-		file1 = open('tw-corr.txt','w')
+		file1 = open('tw-corr-' + str(run) + '.txt','w')
 	else:
-		file1 = open('tw-corr.txt','a')
+		file1 = open('tw-corr-' + str(run) + '.txt','a')
+
+	# shift histogram time axis based on first step calibration results
+	xbins = h.GetXaxis().GetNbins()
+	ybins = h.GetYaxis().GetNbins()
+	hnew = h.Clone()
+	hnew.Reset()
+	for i in range(1,xbins+1):
+		for j in range(1,ybins+1):
+			x = hnew.GetXaxis().GetBinCenter(i)
+			y = hnew.GetYaxis().GetBinCenter(j)
+			y -= offsets[col - 1]
+			n = int(h.GetBinContent(i, j))
+			for k in range(n):
+				hnew.Fill(x, y)
 
 	# Find the reference time difference
-	py = h.ProjectionY()
-	fit = py.Fit("gaus","sq")
+	py = hnew.ProjectionY()
+	ymax = py.GetBinCenter( py.GetMaximumBin() )
+	fit = py.Fit("gaus","sq", "", ymax - 0.5, ymax + 0.5)
 	dtmean = fit.Parameters()[1]
+
+	# For low amplitude channels, remove tail beyond 3ns
+	# This provides a better Profile for fitting the timewalk
+	for i in range(1, xbins+1):
+		for j in range(1, ybins+1):
+			y = hnew.GetYaxis().GetBinCenter(j)
+			if (y - dtmean > 3.0):
+				hnew.SetBinContent(i,j,0)
 	
 	# Make timewalk fit function and apply to hist
 	# New voltage scheme has larger pulse height, adjust the range if needed
@@ -70,8 +103,8 @@ def tw_corr(h,row,col,newV):
 		f1.SetParName(2,"c2")
 		f1.SetParName(3,"c3")
 
-		h.RebinX(16)
-		p = h.ProfileX()
+		#hnew.RebinX(16)
+		p = hnew.ProfileX()
 		fitResult = p.Fit("f1","sRWq")
 
 		c0 = fitResult.Parameters()[0]
@@ -79,6 +112,21 @@ def tw_corr(h,row,col,newV):
 		c2 = fitResult.Parameters()[2]
 		c3 = fitResult.Parameters()[3]
 
+		h_adj = hnew.Clone()
+		h_adj.Reset()
+
+		for i in range(1,xbins+1):
+			for j in range(1,ybins+1):
+				x = hnew.GetXaxis().GetBinCenter(i)
+				y = hnew.GetYaxis().GetBinCenter(j)
+				y = f1.Eval(x) - y
+				n = int(hnew.GetBinContent(i, j))
+				for k in range(n):
+					h_adj.Fill(x, y)
+		py = h_adj.ProjectionY()
+		ymax = py.GetBinCenter( py.GetMaximumBin() )
+		fit = py.Fit("gaus","sq", "", ymax - 0.5, ymax + 0.5)
+		dtmean = fit.Parameters()[1]
 	except:
 		c0 = 1
 		c1 = -1
