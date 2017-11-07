@@ -45,20 +45,12 @@ int main( int argc, char* argv[] ){
       print = true;
     if (arg == "-h"){
       cout << endl << " Usage for: " << argv[0] << endl << endl;
-      cout << "\t   -f <fit dir>\t : Fit Directory" << endl;
+      cout << "(optional) -f <fit dir>\t : Fit Directory" << endl;
       cout << "(optional) -o <file>\t : Output file (default: moments.root)" << endl;
       cout << "(optional) -p\t\t : Print equations" << endl;
       exit(1);}
   }
   
-  if (fitDir.size() == 0){
-    cout << "No fit directory specified. Try -h for usage." << endl;
-    exit(1);
-  }
-  
-  TFile *outfile = new TFile(outfileName.c_str(), "recreate");
-  if (!outfile->IsOpen()) exit(1);
-
   // Set waveset, has to be same order as in fit.cfg!
 
   vector<wave> negative;
@@ -144,6 +136,14 @@ int main( int argc, char* argv[] ){
     }
   
   
+  if (fitDir.size() == 0){
+    cout << "No fit directory specified. Try -h for usage." << endl;
+    exit(1);
+  }
+  
+  TFile *outfile = new TFile(outfileName.c_str(), "recreate");
+  if (!outfile->IsOpen()) exit(1);
+
   // descend into the directory that contains the bins
   chdir( fitDir.c_str() );
   
