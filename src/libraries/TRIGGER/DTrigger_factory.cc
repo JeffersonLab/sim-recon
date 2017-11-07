@@ -1,4 +1,5 @@
 #include "DTrigger_factory.h"
+#include <bitset>
 
 //------------------
 // evnt
@@ -20,6 +21,16 @@ jerror_t DTrigger_factory::evnt(JEventLoop* locEventLoop, uint64_t locEventNumbe
 	else 
     {
         // IF TRIGGER INFO IS NOT IN THE DATA STREAM, LOAD TRIGGER SIMULATIONS LAZILY
+        
+        //cerr << " event status = " << std::bitset<32>(locEventLoop->GetJEvent().GetStatus()) << endl;
+
+        // don't bother simulating the trigger for non-physics events
+        // for now, just don't run this for EVIO (raw data) events
+        if( locEventLoop->GetJEvent().GetStatusBit(kSTATUS_EVIO) ){
+            _data.push_back(locTrigger);
+            return NOERROR;
+        }
+
         // realistic trigger simulation
         vector<const DL1MCTrigger*> locMCTriggers;
         locEventLoop->Get(locMCTriggers);

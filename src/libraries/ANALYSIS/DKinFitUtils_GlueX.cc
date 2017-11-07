@@ -7,7 +7,6 @@ dMagneticFieldMap(locMagneticFieldMap), dAnalysisUtilities(locAnalysisUtilities)
 {
 	dIncludeBeamlineInVertexFitFlag = false;
 	dWillBeamHaveErrorsFlag = false; //Until fixed!
-	dEventNumber = 0;
 
 	dApplication = dynamic_cast<DApplication*>(japp);
 	gPARMS->SetDefaultParameter("KINFIT:LINKVERTICES", dLinkVerticesFlag);
@@ -23,17 +22,9 @@ DKinFitUtils_GlueX::DKinFitUtils_GlueX(JEventLoop* locEventLoop)
 	gPARMS->SetDefaultParameter("KINFIT:LINKVERTICES", dLinkVerticesFlag);
 	dWillBeamHaveErrorsFlag = false; //Until fixed!
 	dIncludeBeamlineInVertexFitFlag = false;
-
-	dEventNumber = locEventLoop->GetJEvent().GetEventNumber();
 }
 
 /*********************************************************** OVERRIDE BASE CLASS FUNCTIONS *********************************************************/
-
-void DKinFitUtils_GlueX::Reset_NewEvent(uint64_t locEventNumber)
-{
-	dEventNumber = locEventNumber;
-	Reset_NewEvent();
-}
 
 void DKinFitUtils_GlueX::Reset_NewEvent(void)
 {
