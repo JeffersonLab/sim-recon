@@ -78,12 +78,12 @@ jerror_t DReaction_factory_OmegaSkim::evnt(JEventLoop* locEventLoop, uint64_t lo
 
   // pi0 -> g, g
   locReactionStep = new DReactionStep();
-  locReactionStep->Set_InitialParticleID(Pi0,false);
+  locReactionStep->Set_InitialParticleID(Pi0);
   locReactionStep->Add_FinalParticleID(Gamma);
   locReactionStep->Add_FinalParticleID(Gamma);
   locReaction->Add_ReactionStep(locReactionStep);
   dReactionStepPool.push_back(locReactionStep); //register so will be deleted later: prevent memory leak
-
+    locReactionStep->Set_KinFitConstrainInitMassFlag(false);
   /**************************************************** p3pi_preco_2FCAL Control Settings ****************************************************/
 
   // KINFIT
