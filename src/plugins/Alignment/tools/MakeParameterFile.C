@@ -3,8 +3,8 @@ void MakeParameterFile(){
    // Choose which parameters you would like to fix
    bool fixCDCWires = true;
    bool fixCDCt0 = true;
-   bool fixCDCGlobalX = true;
-   bool fixCDCGlobalY = true;
+   bool fixCDCGlobalX = false;
+   bool fixCDCGlobalY = false;
    bool fixCDCGlobalZ = true;
    bool fixCDCGlobalPhiX = true;
    bool fixCDCGlobalPhiY = true;

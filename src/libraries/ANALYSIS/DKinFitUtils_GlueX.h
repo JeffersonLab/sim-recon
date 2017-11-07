@@ -46,7 +46,6 @@ class DKinFitUtils_GlueX : public DKinFitUtils
 		//useful for manually using a different field:
 		DKinFitUtils_GlueX(const DMagneticFieldMap* locMagneticFieldMap, const DAnalysisUtilities* locAnalysisUtilities);
 
-		void Reset_NewEvent(uint64_t locEventNumber);
 		void Reset_NewEvent(void);
 		void Set_IncludeBeamlineInVertexFitFlag(bool locIncludeBeamlineInVertexFitFlag){dIncludeBeamlineInVertexFitFlag = locIncludeBeamlineInVertexFitFlag;}
 
@@ -160,7 +159,6 @@ class DKinFitUtils_GlueX : public DKinFitUtils
 		bool dIncludeBeamlineInVertexFitFlag;
 		DApplication* dApplication;
 		bool dWillBeamHaveErrorsFlag;
-		uint64_t dEventNumber;
 };
 
 inline TVector3 DKinFitUtils_GlueX::Make_TVector3(DVector3 locDVector3) const

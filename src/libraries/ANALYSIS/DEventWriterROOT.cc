@@ -637,8 +637,8 @@ void DEventWriterROOT::Create_Branches_ChargedHypotheses(DTreeBranchRegister& lo
 	locBranchRegister.Register_FundamentalArray<Float_t>(Build_BranchName(locParticleBranchName, "Energy_BCAL"), locArraySizeString, dInitNumTrackArraySize);
 	locBranchRegister.Register_FundamentalArray<Float_t>(Build_BranchName(locParticleBranchName, "Energy_BCALPreshower"), locArraySizeString, dInitNumTrackArraySize);
 	locBranchRegister.Register_FundamentalArray<Float_t>(Build_BranchName(locParticleBranchName, "SigLong_BCAL"), locArraySizeString, dInitNumTrackArraySize);
-        locBranchRegister.Register_FundamentalArray<Float_t>(Build_BranchName(locParticleBranchName, "SigTheta_BCAL"), locArraySizeString, dInitNumTrackArraySize);
-        locBranchRegister.Register_FundamentalArray<Float_t>(Build_BranchName(locParticleBranchName, "SigTrans_BCAL"), locArraySizeString, dInitNumTrackArraySize);
+	locBranchRegister.Register_FundamentalArray<Float_t>(Build_BranchName(locParticleBranchName, "SigTheta_BCAL"), locArraySizeString, dInitNumTrackArraySize);
+	locBranchRegister.Register_FundamentalArray<Float_t>(Build_BranchName(locParticleBranchName, "SigTrans_BCAL"), locArraySizeString, dInitNumTrackArraySize);
 	locBranchRegister.Register_FundamentalArray<Float_t>(Build_BranchName(locParticleBranchName, "Energy_FCAL"), locArraySizeString, dInitNumTrackArraySize);
 
 	//SHOWER MATCHING:
