@@ -193,8 +193,8 @@ jerror_t DTrackCandidate_factory::brun(JEventLoop* eventLoop,int32_t runnumber){
 
   gPARMS->SetDefaultParameter("TRKFIND:MAX_NUM_TRACK_CANDIDATES", MAX_NUM_TRACK_CANDIDATES); 
 
-  MIN_NUM_HITS=6;
-  gPARMS->SetDefaultParameter("TRKFIND:MIN_NUM_HITS", MIN_NUM_HITS);
+  //  MIN_NUM_HITS=6;
+  //gPARMS->SetDefaultParameter("TRKFIND:MIN_NUM_HITS", MIN_NUM_HITS);
   
   DEBUG_LEVEL=0;
   gPARMS->SetDefaultParameter("TRKFIND:DEBUG_LEVEL", DEBUG_LEVEL);
@@ -670,7 +670,7 @@ jerror_t DTrackCandidate_factory::evnt(JEventLoop *loop, uint64_t eventnumber)
 	 vector<unsigned int>cdc_hits_to_add;	 
 	 for (unsigned int k=0;k<used_cdc_hits.size();k++){
 	   if (!used_cdc_hits[k]){
-	     double variance=1.0;
+	     double variance=1.6;
 	     // Use a helical approximation to the track to match both axial and
 	     // stereo wires
 	     double doca2=DocaToHelix(mycdchits[k],q,pos,mom);
@@ -680,9 +680,9 @@ jerror_t DTrackCandidate_factory::evnt(JEventLoop *loop, uint64_t eventnumber)
 	     }
 	   }
 	 }
-	 // It's probably not worth doing this unless there are at least few
+	 // It's probably not worth doing this unless there are at least 2
 	 // hits in the cdc that can be associated with the track...
-	 if (cdc_hits_to_add.size()>2){
+	 if (cdc_hits_to_add.size()>1){
 	   // variables needed for average Bz
 	   unsigned int num_hits=0;
 	   double Bz=0;
@@ -708,7 +708,7 @@ jerror_t DTrackCandidate_factory::evnt(JEventLoop *loop, uint64_t eventnumber)
 	       min_ring=mycdchits[ind]->wire->ring;
 	     }
 	   }
-	   if (num_hits>2){
+	   if (num_hits>=2){
 	     for (unsigned int n=0;n<usedfdchits.size();n++){
 	       const DFDCPseudo *fdchit=usedfdchits[n];
 	       fit.AddHit(fdchit);
@@ -785,7 +785,7 @@ jerror_t DTrackCandidate_factory::evnt(JEventLoop *loop, uint64_t eventnumber)
     vector<const DCDCTrackHit *>mycdchits;
     candidate->GetT(mycdchits);
     
-    if (int(mycdchits.size()+myfdchits.size())>=MIN_NUM_HITS){
+    if (mycdchits.size()>=6 || myfdchits.size()>=3){
       _data.push_back(candidate);
     }
     else delete candidate;
@@ -1418,7 +1418,7 @@ bool DTrackCandidate_factory::MatchMethod1(const DTrackCandidate *fdccan,
      // loop over the cdc hits and count hits that agree with a projection of 
      // the helix into the cdc 
      for (unsigned int m=0;m<cdchits.size();m++){
-       double variance=1.0;
+       double variance=1.6;
        // Use a helical approximation to the track to match both axial and
        // stereo wires
        double dr2=DocaToHelix(cdchits[m],q,pos,mom);
