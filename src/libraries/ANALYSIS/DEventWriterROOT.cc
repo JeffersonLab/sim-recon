@@ -882,7 +882,11 @@ void DEventWriterROOT::Fill_ThrownTree(JEventLoop* locEventLoop) const
 
 	vector<const DBeamPhoton*> locTaggedMCGenBeams;
 	locEventLoop->Get(locTaggedMCGenBeams, "TAGGEDMCGEN");
-	const DBeamPhoton* locTaggedMCGenBeam = locTaggedMCGenBeams.empty() ? nullptr : locTaggedMCGenBeams[0];
+
+	vector<const DBeamPhoton*> locMCGenBeams;
+	locEventLoop->Get(locMCGenBeams, "MCGEN");
+
+	const DBeamPhoton* locTaggedMCGenBeam = locTaggedMCGenBeams.empty() ? locMCGenBeams[0] : locTaggedMCGenBeams[0]; //if empty: will have to do. 
 
 	//primary event info
 	dThrownTreeFillData.Fill_Single<UInt_t>("RunNumber", locEventLoop->GetJEvent().GetRunNumber());
