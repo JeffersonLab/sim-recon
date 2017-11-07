@@ -974,7 +974,11 @@ void DEventWriterROOT::Fill_DataTree(JEventLoop* locEventLoop, const DReaction* 
 
 	vector<const DBeamPhoton*> locTaggedMCGenBeams;
 	locEventLoop->Get(locTaggedMCGenBeams, "TAGGEDMCGEN");
-	const DBeamPhoton* locTaggedMCGenBeam = locTaggedMCGenBeams.empty() ? nullptr : locTaggedMCGenBeams[0];
+
+	vector<const DBeamPhoton*> locMCGenBeams;
+	locEventLoop->Get(locMCGenBeams, "MCGEN");
+
+	const DBeamPhoton* locTaggedMCGenBeam = locTaggedMCGenBeams.empty() ? locMCGenBeams[0] : locTaggedMCGenBeams[0]; //if empty: will have to do. 
 
 	//Pre-compute thrown info
 	ULong64_t locNumPIDThrown_FinalState = 0, locPIDThrown_Decaying = 0;
@@ -1348,7 +1352,7 @@ void DEventWriterROOT::Fill_ThrownInfo(DTreeFillData* locTreeFillData, const DMC
 	TLorentzVector locThrownBeamTX4(locThrownBeamX3.X(), locThrownBeamX3.Y(), locThrownBeamX3.Z(), locMCReaction->beam.time());
 	locTreeFillData->Fill_Single<TLorentzVector>(Build_BranchName("ThrownBeam", "X4"), locThrownBeamTX4);
 
-	DLorentzVector locThrownBeamP4 = (locTaggedMCGenBeam == nullptr) ? DLorentzVector() : locTaggedMCGenBeam->lorentzMomentum();
+	DLorentzVector locThrownBeamP4 = locTaggedMCGenBeam->lorentzMomentum();
 	TLorentzVector locThrownBeamTP4(locThrownBeamP4.Px(), locThrownBeamP4.Py(), locThrownBeamP4.Pz(), locThrownBeamP4.E());
 	locTreeFillData->Fill_Single<TLorentzVector>(Build_BranchName("ThrownBeam", "P4"), locThrownBeamTP4);
 
