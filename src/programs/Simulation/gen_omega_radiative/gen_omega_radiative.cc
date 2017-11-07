@@ -14,11 +14,11 @@
 #include "AMPTOOLS_DATAIO/ROOTDataWriter.h"
 #include "AMPTOOLS_DATAIO/HDDMDataWriter.h"
 
-#include "AMPTOOLS_AMPS/ThreePiAnglesSchilling.h"
-#include "AMPTOOLS_AMPS/BreitWigner3body.h"
+#include "AMPTOOLS_AMPS/TwoPiAnglesRadiative.h"
+#include "AMPTOOLS_AMPS/BreitWigner.h"
 
 #include "AMPTOOLS_MCGEN/ProductionMechanism.h"
-#include "AMPTOOLS_MCGEN/GammaPToXYZP.h"
+#include "AMPTOOLS_MCGEN/GammaPToXYP.h"
 
 #include "IUAmpTools/AmpToolsInterface.h"
 #include "IUAmpTools/ConfigFileParser.h"
@@ -51,7 +51,7 @@ int main( int argc, char* argv[] ){
 	double beamLowE   = 7.5;
 	double beamHighE  = 9.5;
 	
-	int runNum = 9001;
+	int runNum = 10000;
 	int seed = 0;
 
 	int nEvents = 10000;
@@ -123,7 +123,7 @@ int main( int argc, char* argv[] ){
 	}
 	
 	if( configfile.size() == 0 || outname.size() == 0 ){
-		cout << "No config file or output specificed:  run gen_omega_3pi -h for help" << endl;
+		cout << "No config file or output specificed:  run gen_omega_radiative -h for help" << endl;
 		exit(1);
 	}
 	
@@ -140,15 +140,15 @@ int main( int argc, char* argv[] ){
    srand48(seed);
 
 	// setup AmpToolsInterface
-	AmpToolsInterface::registerAmplitude( ThreePiAnglesSchilling() );
-	AmpToolsInterface::registerAmplitude( BreitWigner3body() );
+	AmpToolsInterface::registerAmplitude( TwoPiAnglesRadiative() );
+	AmpToolsInterface::registerAmplitude( BreitWigner() );
 	AmpToolsInterface ati( cfgInfo, AmpToolsInterface::kMCGeneration );
 	
 	ProductionMechanism::Type type =
 		( genFlat ? ProductionMechanism::kFlat : ProductionMechanism::kResonant );
 	
 	// generate over a range of mass 
-	GammaPToXYZP resProd( lowMass, highMass, 0.140, 0.140, 0.135, type , beamMaxE, beamPeakE, beamLowE, beamHighE );
+	GammaPToXYP resProd( lowMass, highMass, 0.135, 0.0, beamMaxE, beamPeakE, beamLowE, beamHighE, type );
 	
 	// seed the distribution with a sum of noninterfering Breit-Wigners
 	// we can easily compute the PDF for this and divide by that when
@@ -166,25 +166,23 @@ int main( int argc, char* argv[] ){
 	vector< int > pTypes;
 	pTypes.push_back( Gamma );
 	pTypes.push_back( Proton );
-	pTypes.push_back( PiPlus );
-	pTypes.push_back( PiMinus );
-    pTypes.push_back( Pi0 );
+   pTypes.push_back( Pi0 );
+   pTypes.push_back( Gamma );
 	
 	HDDMDataWriter* hddmOut = NULL;
 	if( hddmname.size() != 0 ) hddmOut = new HDDMDataWriter( hddmname, runNum );
 	ROOTDataWriter rootOut( outname );
 	
-	TFile* diagOut = new TFile( "gen_omega_3pi_diagnostic.root", "recreate" );
+	TFile* diagOut = new TFile( "gen_omega_radiative_diagnostic.root", "recreate" );
 	
 	TH1F* mass = new TH1F( "M", "Resonance Mass; 3#pi Invariant mass [GeV];", 180, lowMass, highMass );
 	//TH1F* massW = new TH1F( "M_W", "Weighted Resonance Mass", 180, lowMass, highMass );
 	//massW->Sumw2();
 	//TH1F* intenW = new TH1F( "intenW", "True PDF / Gen. PDF", 1000, 0, 100 );
 	//TH2F* intenWVsM = new TH2F( "intenWVsM", "Ratio vs. M", 100, lowMass, highMass, 1000, 0, 10 );
-    TH2F* dalitz = new TH2F( "dalitz", "Dalitz plot; M^{2} #pi^{+}#pi^{0}; M^{2} #pi^{-}#pi^{0}", 100, 0., 0.75 , 100, 0., 0.75 );
 	TH2F* CosTheta_psi = new TH2F( "CosTheta_psi", "cos(#theta) vs. #Psi;#Psi; cos(#theta)", 180, -3.14, 3.14, 100, -1, 1);
-    TH2F* CosTheta_VsE = new TH2F( "CosTheta_VsE", "cos(#theta) vs. E_{#gamma}; E_{#gamma} [GeV];cos(#theta)", 100, 0.0, 12.0, 100, -1, 1);
-    TH2F* Psi_VsE      = new TH2F( "Psi_VsE", "#Psi vs. E_{#gamma};E_{#gamma} [GeV];#psi", 100, 0.0, 12.0, 180, -3.14, 3.14);
+   TH2F* CosTheta_VsE = new TH2F( "CosTheta_VsE", "cos(#theta) vs. E_{#gamma}; E_{#gamma} [GeV];cos(#theta)", 100, 0.0, 12.0, 100, -1, 1);
+   TH2F* Psi_VsE      = new TH2F( "Psi_VsE", "#Psi vs. E_{#gamma};E_{#gamma} [GeV];#psi", 100, 0.0, 12.0, 180, -3.14, 3.14);
 	
 	int eventCounter = 0;
 	while( eventCounter < nEvents ){
@@ -216,8 +214,7 @@ int main( int argc, char* argv[] ){
 			
 			Kinematics* evt = ati.kinematics( i );
 			TLorentzVector resonance( evt->particle( 2 ) + 
-                                  evt->particle( 3 ) + 
-                                  evt->particle( 4 ) );
+                                  evt->particle( 3 ) );
 			
 			//double genWeight = evt->weight();
 			
@@ -241,8 +238,7 @@ int main( int argc, char* argv[] ){
 					TLorentzVector beam = evt->particle ( 0 );
 					TLorentzVector recoil = evt->particle ( 1 );
 					TLorentzVector p1 = evt->particle ( 2 );
-                    TLorentzVector p2 = evt->particle ( 3 );
-                    TLorentzVector p3 = evt->particle ( 4 );
+               TLorentzVector p2 = evt->particle ( 3 );
 					
 					TLorentzRotation resonanceBoost( -resonance.BoostVector() );
 					
@@ -250,13 +246,12 @@ int main( int argc, char* argv[] ){
 					TLorentzVector recoil_res = resonanceBoost * recoil;
 					TLorentzVector p1_res = resonanceBoost * p1;
                     TLorentzVector p2_res = resonanceBoost * p2;
-                    TLorentzVector p3_res = resonanceBoost * p3;
 					
 					TVector3 z = -recoil_res.Vect().Unit();
 					TVector3 y = beam_res.Vect().Cross(z).Unit();
 					TVector3 x = y.Cross(z).Unit();
 					
-                    TVector3 norm = p1_res.Vect().Cross(p2_res.Vect()).Unit();
+                    TVector3 norm = p1_res.Vect();
 					TVector3 angles(   norm.Dot(x),
 							   norm.Dot(y),
 							   norm.Dot(z) );
@@ -269,10 +264,9 @@ int main( int argc, char* argv[] ){
 					GDouble psi = phi - Phi;
 					if(psi < -1*PI) psi += 2*PI;
 					if(psi > PI) psi -= 2*PI;
-			        dalitz->Fill((p1_res+p3_res).M2(), (p2_res+p3_res).M2());		
 					CosTheta_psi->Fill( psi, CosTheta);
-				    CosTheta_VsE->Fill(beam.E(), CosTheta);
-                    Psi_VsE->Fill(beam.E(), psi);
+				   CosTheta_VsE->Fill(beam.E(), CosTheta);
+               Psi_VsE->Fill(beam.E(), psi);
 					// we want to save events with weight 1
 					evt->setWeight( 1.0 );
 					
@@ -307,7 +301,6 @@ int main( int argc, char* argv[] ){
 	CosTheta_psi->Write();
     CosTheta_VsE->Write();
     Psi_VsE->Write();
-    dalitz->Write();
 	diagOut->Close();
 	
 	if( hddmOut ) delete hddmOut;

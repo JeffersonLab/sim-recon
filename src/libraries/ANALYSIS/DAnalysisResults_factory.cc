@@ -257,7 +257,7 @@ jerror_t DAnalysisResults_factory::evnt(JEventLoop* locEventLoop, uint64_t event
 
 	//RESET
 	dSourceComboer->Reset_NewEvent(locEventLoop);
-	dKinFitUtils->Reset_NewEvent(locEventLoop->GetJEvent().GetEventNumber());
+	dKinFitUtils->Reset_NewEvent();
 	dKinFitter->Reset_NewEvent();
 	dConstraintResultsMap.clear();
 	dPreToPostKinFitComboMap.clear();
