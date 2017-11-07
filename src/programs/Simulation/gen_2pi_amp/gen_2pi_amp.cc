@@ -190,8 +190,8 @@ int main( int argc, char* argv[] ){
 	TH1F* t = new TH1F( "t", "-t Distribution", 200, 0, 2 );
 
 	TH2F* CosTheta_psi = new TH2F( "CosTheta_psi", "cos#theta vs. #psi", 180, -3.14, 3.14, 100, -1, 1);
-	TH2F* M_CosTheta = new TH2F( "M_CosTheta", "M vs. cos#vartheta", 172, lowMass, highMass, 200, -1, 1);
-	TH2F* M_Phi = new TH2F( "M_Phi", "M vs. #varphi", 172, lowMass, highMass, 200, -3.14, 3.14);
+	TH2F* M_CosTheta = new TH2F( "M_CosTheta", "M vs. cos#vartheta", 180, lowMass, highMass, 200, -1, 1);
+	TH2F* M_Phi = new TH2F( "M_Phi", "M vs. #varphi", 180, lowMass, highMass, 200, -3.14, 3.14);
 	
 	int eventCounter = 0;
 	while( eventCounter < nEvents ){
