@@ -978,7 +978,12 @@ void DEventWriterROOT::Fill_DataTree(JEventLoop* locEventLoop, const DReaction* 
 	vector<const DBeamPhoton*> locMCGenBeams;
 	locEventLoop->Get(locMCGenBeams, "MCGEN");
 
-	const DBeamPhoton* locTaggedMCGenBeam = locTaggedMCGenBeams.empty() ? locMCGenBeams[0] : locTaggedMCGenBeams[0]; //if empty: will have to do. 
+   const DBeamPhoton* locTaggedMCGenBeam = nullptr;
+
+	if (locTaggedMCGenBeams.empty()){
+      if ( !locMCGenBeams.empty() ) locTaggedMCGenBeam = locMCGenBeams[0];
+   }
+   else locTaggedMCGenBeam = locTaggedMCGenBeams[0];
 
 	//Pre-compute thrown info
 	ULong64_t locNumPIDThrown_FinalState = 0, locPIDThrown_Decaying = 0;
