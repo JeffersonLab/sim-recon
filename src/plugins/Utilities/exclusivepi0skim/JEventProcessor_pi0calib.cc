@@ -73,8 +73,8 @@ jerror_t JEventProcessor_pi0calib::brun(JEventLoop *eventLoop, int32_t runnumber
 jerror_t JEventProcessor_pi0calib::evnt(JEventLoop *loop, uint64_t eventnumber)
 {
 
-  vector<const DAnalysisResults*> analysisResultsVector;
-  loop->Get( analysisResultsVector );
+  vector<const DAnalysisResults*> locAnalysisResultsVector;
+  loop->Get( locAnalysisResultsVector );
   
   if( WRITE_EVIO_FILE ){
     
@@ -88,49 +88,64 @@ jerror_t JEventProcessor_pi0calib::evnt(JEventLoop *loop, uint64_t eventnumber)
       return NOERROR;
     }
 
-    if( (analysisResultsVector.size() > 0) && (analysisResultsVector[0]->Get_NumPassedParticleCombos() != 0) ) {
-        // SIMPLE - write out the full event
-        //eventWriterEVIO->Write_EVIOEvent(loop, "exclusivepi0");
+    //Make sure that there are combos that survived for ****THIS**** CHANNEL!!!
+    bool locSuccessFlag = false;
+    for(size_t loc_i = 0; loc_i < locAnalysisResultsVector.size(); ++loc_i)  {
+        const DReaction* locReaction = locAnalysisResultsVector[loc_i]->Get_Reaction();
+        if(locReaction->Get_ReactionName() != "excl_pi0calib")
+            continue;
 
-        // Instead:  Write out each combo as an "event", only saving the combo vertex, RF bunch, and showers associated with the combo
-        // This should be a lot smaller
+        deque<const DParticleCombo*> locPassedParticleCombos;
+        locAnalysisResultsVector[loc_i]->Get_PassedParticleCombos(locPassedParticleCombos);
+        locSuccessFlag = !locPassedParticleCombos.empty();
+        break;
+    }
 
-        vector<const DEventRFBunch*> locEventRFBunches;
-        loop->Get(locEventRFBunches);
-
-        vector<const DVertex*> kinfitVertex;
-        loop->Get(kinfitVertex);
-        if(kinfitVertex.size() > 0) {   // pretty sure this should always be true if we have a combo....
-            for( auto result : analysisResultsVector ) {
-                deque<const DParticleCombo*> combos;
-                result->Get_PassedParticleCombos(combos);
-                for( auto combo : combos ) { 
-                    // one event per combo
-                    vector< const JObject* > locObjectsToSave;
+    if(locSuccessFlag) {  // there are combos that satisfy our reaction
+        if( (locAnalysisResultsVector.size() > 0) && (locAnalysisResultsVector[0]->Get_NumPassedParticleCombos() != 0) ) {
+            // SIMPLE - write out the full event
+            //eventWriterEVIO->Write_EVIOEvent(loop, "exclusivepi0");
+            
+            // Instead:  Write out each combo as an "event", only saving the combo vertex, RF bunch, and showers associated with the combo
+            // This should be a lot smaller
+            
+            vector<const DEventRFBunch*> locEventRFBunches;
+            loop->Get(locEventRFBunches);
+            
+            vector<const DVertex*> kinfitVertex;
+            loop->Get(kinfitVertex);
+            if(kinfitVertex.size() > 0) {   // pretty sure this should always be true if we have a combo....
+                for( auto result : locAnalysisResultsVector ) {
+                    deque<const DParticleCombo*> combos;
+                    result->Get_PassedParticleCombos(combos);
+                    for( auto combo : combos ) { 
+                        // one event per combo
+                        vector< const JObject* > locObjectsToSave;
+                        
+                        // need to save the RF bunch info
+                        locObjectsToSave.push_back(static_cast<const JObject *>(combo->Get_EventRFBunch()));
+                        
+                        // need to make a new vertex object - base it on the old one
+                        // we probably don'e need most of this information, but keep it reasonable I guess
+                        DVertex *comboVertex = new DVertex(*(kinfitVertex[0]));
+                        comboVertex->dSpacetimeVertex = combo->Get_EventVertex();
                     
-                    // need to save the RF bunch info
-                    locObjectsToSave.push_back(static_cast<const JObject *>(combo->Get_EventRFBunch()));
-                    
-                    // need to make a new vertex object - base it on the old one
-                    // we probably don'e need most of this information, but keep it reasonable I guess
-                    DVertex *comboVertex = new DVertex(*(kinfitVertex[0]));
-                    comboVertex->dSpacetimeVertex = combo->Get_EventVertex();
-                    
-                    // Save the actual showers - the EVIO writer will only write out the associated hits
-                    //set< const JObject *> bcalShowers;
-                    auto particles = combo->Get_FinalParticles_Measured(result->Get_Reaction());
-                    for( auto particle : particles ) {
-                        if(ParticleCharge(particle->PID()) == 0) {
-                            auto locNeutralParticleHypothesis = static_cast<const DNeutralParticleHypothesis*>(particle);
-                            auto locNeutralShower = locNeutralParticleHypothesis->Get_NeutralShower();
-                            locObjectsToSave.push_back(locNeutralShower->dBCALFCALShower);
-                            //bcalShowers.insert(locNeutralShower->dBCALFCALShower);
+                        // Save the actual showers - the EVIO writer will only write out the associated hits
+                        //set< const JObject *> bcalShowers;
+                        auto particles = combo->Get_FinalParticles_Measured(result->Get_Reaction());
+                        for( auto particle : particles ) {
+                            if(ParticleCharge(particle->PID()) == 0) {
+                                auto locNeutralParticleHypothesis = static_cast<const DNeutralParticleHypothesis*>(particle);
+                                auto locNeutralShower = locNeutralParticleHypothesis->Get_NeutralShower();
+                                locObjectsToSave.push_back(locNeutralShower->dBCALFCALShower);
+                                //bcalShowers.insert(locNeutralShower->dBCALFCALShower);
+                            }
                         }
-                    }
-
-                    // actually write the event out
-                    eventWriterEVIO->Write_EVIOEvent( loop, "exclusivepi0", locObjectsToSave );                    
-                }            
+                        
+                        // actually write the event out
+                        eventWriterEVIO->Write_EVIOEvent( loop, "exclusivepi0", locObjectsToSave );                    
+                    }            
+                }
             }
         }
 
@@ -150,7 +165,7 @@ jerror_t JEventProcessor_pi0calib::evnt(JEventLoop *loop, uint64_t eventnumber)
 
     const DEventWriterROOT* eventWriterROOT = NULL;
     loop->GetSingle(eventWriterROOT);
-    eventWriterROOT->Fill_DataTrees(loop, "pi0calib");
+    eventWriterROOT->Fill_DataTrees(loop, "excl_pi0calib");
   }
   
   return NOERROR;
