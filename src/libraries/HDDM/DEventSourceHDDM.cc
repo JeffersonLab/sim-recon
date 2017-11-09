@@ -1233,6 +1233,11 @@ jerror_t DEventSourceHDDM::Extract_DCDCHit(JEventLoop* locEventLoop, hddm_s::HDD
       vector<const DCDCHit*> locTruthHits;
       locEventLoop->Get(locTruthHits, "TRUTH");
 
+		//pre-sort truth hits
+		map<pair<int, int>, vector<const DCDCHit*>> locTruthHitMap; //key pair: ring, straw
+		for(auto& locTruthHit : locTruthHits)
+			locTruthHitMap[std::make_pair(locTruthHit->ring, locTruthHit->straw)].push_back(locTruthHit);
+
       const hddm_s::CdcStrawHitList &hits = record->getCdcStrawHits();
       hddm_s::CdcStrawHitList::iterator iter;
       int locIndex = 0;
@@ -1248,8 +1253,22 @@ jerror_t DEventSourceHDDM::Extract_DCDCHit(JEventLoop* locEventLoop, hddm_s::HDD
          hit->d      = 0.; // initialize to zero to avoid any NaN
          hit->itrack = 0;  // track information is in TRUTH tag
          hit->ptype  = 0;  // ditto
-         if((int)locTruthHits.size() == (int)hits.size())
-           hit->AddAssociatedObject(locTruthHits[locIndex]); //guaranteed to be in order
+
+			//match hit between truth & recon
+			auto& locPotentialTruthHits = locTruthHitMap[std::make_pair(hit->ring, hit->straw)];
+			double locBestDeltaT = 9.9E99;
+			const DCDCHit* locBestTruthHit = nullptr;
+			for(auto& locTruthHit : locPotentialTruthHits)
+			{
+				auto locDeltaT = fabs(hit->t - locTruthHit->t);
+				if(locDeltaT >= locBestDeltaT)
+					continue;
+				locBestDeltaT = locDeltaT;
+				locBestTruthHit = locTruthHit;
+			}
+			if(locBestTruthHit != nullptr)
+           hit->AddAssociatedObject(locBestTruthHit);
+
          data.push_back(hit);
          ++locIndex;
       }

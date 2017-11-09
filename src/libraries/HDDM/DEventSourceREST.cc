@@ -503,6 +503,7 @@ jerror_t DEventSourceREST::Extract_DBeamPhoton(hddm_r::HDDM *record,
 		gamma->setMomentum(mom);
 		gamma->setPosition(pos);
 		gamma->setTime(locTAGMiter->getT());
+		gamma->dSystem = SYS_TAGM;
 
 	      auto locCovarianceMatrix = dResourcePool_TMatrixFSym->Get_SharedResource();
 	      locCovarianceMatrix->ResizeTo(7, 7);
@@ -527,6 +528,7 @@ jerror_t DEventSourceREST::Extract_DBeamPhoton(hddm_r::HDDM *record,
 		gamma->setMomentum(mom);
 		gamma->setPosition(pos);
 		gamma->setTime(locTAGHiter->getT());
+		gamma->dSystem = SYS_TAGH;
 
 	      auto locCovarianceMatrix = dResourcePool_TMatrixFSym->Get_SharedResource();
 	      locCovarianceMatrix->ResizeTo(7, 7);
@@ -537,6 +539,8 @@ jerror_t DEventSourceREST::Extract_DBeamPhoton(hddm_r::HDDM *record,
 		dbeam_photons.push_back(gamma);
    }
 
+	if((tag == "TAGGEDMCGEN") && dbeam_photons.empty())
+		return OBJECT_NOT_AVAILABLE; //EITHER: didn't hit a tagger counter //OR: old MC data (pre-saving TAGGEDMCGEN): try using TAGGEDMCGEN factory
 
 	// Copy into factories
 	factory->CopyTo(dbeam_photons);

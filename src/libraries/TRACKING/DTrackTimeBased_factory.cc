@@ -713,7 +713,7 @@ int DTrackTimeBased_factory::GetThrownIndex(vector<const DMCThrown*>& locMCThrow
 		cdctrackhits[loc_i]->GetSingle(locCDCHit);
 		vector<const DCDCHit*> locTruthCDCHits;
       locCDCHit->Get(locTruthCDCHits);
-		if(locTruthCDCHits.empty()) continue; // merged simulation with real data bkgnd will not have truth hits associated
+		if(locTruthCDCHits.empty()) continue;
 
 		int itrack = locTruthCDCHits[0]->itrack;
 		if(locHitMatches.find(itrack) == locHitMatches.end())
