@@ -14,6 +14,8 @@ using namespace std;
 
 #include "HDEVIO.h"
 
+#include <JANA/JParameterManager.h>
+
 //---------------------------------
 // HDEVIO    (Constructor)
 //---------------------------------
@@ -24,13 +26,28 @@ HDEVIO::HDEVIO(string filename, bool read_map_file, int verbose):filename(filena
 	// were never allocated.
 	fbuff = NULL;
 	buff  = NULL;
-
-	is_open = false;
-	ifs.open(filename.c_str());
-	if(!ifs.is_open()){
+	
+	USE_CLASSIC = true;
+	if(gPARMS) gPARMS->SetDefaultParameter("EVIO:CLASSIC", USE_CLASSIC, "Set to 1 to use classic (GlueX authored) EVIO. Set to 0 to use Gagik's HIPO");
+	
+	if( USE_CLASSIC ){
+		ifs.open(filename.c_str());
+		is_open = ifs.is_open();
+	}else{
+		reader.open(filename.c_str());
+		is_open = reader.isOpen();
+	}
+	if( !is_open ){
 		ClearErrorMessage();
 		err_mess << "Unable to open EVIO file: " << filename;
 		return;
+	}
+	
+	if( !USE_CLASSIC ){
+		Nrecords = reader.getRecordCount();
+		irecord  = 0;
+		Nevents_in_record  = 0;
+		ievent   = 0;
 	}
 	
 	fbuff_size = 10000000; // 40MB input buffer
@@ -60,7 +77,7 @@ HDEVIO::HDEVIO(string filename, bool read_map_file, int verbose):filename(filena
 	
 	NB_next_pos = 0;
 	
-	if(read_map_file) ReadFileMap(); // check if a map file exists and read it if it does
+//	if(read_map_file) ReadFileMap(); // check if a map file exists and read it if it does
 	
 	IGNORE_EMPTY_BOR   = false;
 	SKIP_EVENT_MAPPING = false;
@@ -594,7 +611,68 @@ bool HDEVIO::readNoFileBuff(uint32_t *user_buff, uint32_t user_buff_len, bool al
 
 	if(isgood) Nevents++;
 
+//	DumpBinary(user_buff, NULL, 8);
+
 	return isgood;
+}
+
+//------------------------
+// readOptimized
+//------------------------
+bool HDEVIO::readOptimized(uint32_t *user_buff, uint32_t user_buff_len, bool allow_swap)
+{
+	if( USE_CLASSIC ){
+		return readNoFileBuff(user_buff, user_buff_len, allow_swap);
+	}else{
+		return readEVIO6(user_buff, user_buff_len, allow_swap);
+	}
+}
+
+//------------------------
+// readEVIO6
+//------------------------
+bool HDEVIO::readEVIO6(uint32_t *user_buff, uint32_t user_buff_len, bool allow_swap)
+{
+	// Check if we need to read in next record
+	if( ievent>=Nevents_in_record ){
+		if( irecord >= Nrecords ){
+			SetErrorMessage("No more events");
+			err_code = HDEVIO_EOF;
+			return false; // isgood=false
+		}
+
+		reader.readRecord(record, irecord++);
+		Nevents_in_record = record.getEventCount();
+		ievent = 0;
+	}
+
+	// Set pointers etc. to point to next event
+	record.getData(eventData, ievent++);
+
+	// Check if user's buffer is too small
+	uint32_t event_len = (uint32_t)eventData.getDataSize()/sizeof(uint32_t);
+	last_event_len = event_len;
+	if( event_len >= user_buff_len ){
+		ClearErrorMessage();
+		err_mess << "user buffer too small for event (" << user_buff_len << " <= " << event_len << ")";
+		err_code = HDEVIO_USER_BUFFER_TOO_SMALL;
+		return false;
+	}
+	
+	// Copy to user buffer
+	memcpy(user_buff, eventData.getDataPtr(),eventData.getDataSize());
+
+	// WARNING: No option to disallow swapping in EVIO6 library!
+	if( eventData.getDataEndianness()==1 ){
+		if(VERBOSE>1) _DBG_ << "----- swapping EVIO bank";
+		uint32_t Nswapped = swap_bank(user_buff, user_buff, event_len);
+		if(VERBOSE>1) _DBG_ << "-----    " << Nswapped << " words swapped" << endl;
+	}
+	
+	
+//	DumpBinary(user_buff, NULL, 8);
+
+	return true;
 }
 
 //------------------------
@@ -1459,5 +1537,55 @@ void HDEVIO::ReadFileMap(string fname, bool warn_if_not_found)
 	
 	is_mapped = true;
 	cout << "Read EVIO file map from: " << fname << endl;
+}
+
+//----------------
+// DumpBinary
+//----------------
+void HDEVIO::DumpBinary(const uint32_t *iptr, const uint32_t *iend, uint32_t MaxWords, const uint32_t *imark)
+{
+    /// This is used for debugging. It will print to the screen the words
+    /// starting at the address given by iptr and ending just before iend
+    /// or for MaxWords words, whichever comes first. If iend is NULL,
+    /// then MaxWords will be printed. If MaxWords is zero then it is ignored
+    /// and only iend is checked. If both iend==NULL and MaxWords==0, then
+    /// only the word at iptr is printed.
+
+    cout << "Dumping binary: istart=" << hex << iptr << " iend=" << iend << " MaxWords=" << dec << MaxWords << endl;
+
+    if(iend==NULL && MaxWords==0) MaxWords=1;
+    if(MaxWords==0) MaxWords = (uint32_t)0xffffffff;
+
+    uint32_t Nwords=0;
+    while(iptr!=iend && Nwords<MaxWords){
+
+        // line1 is hex and line2 is decimal
+        stringstream line1, line2;
+
+        // print words in columns 8 words wide. First part is
+        // reserved for word number
+        uint32_t Ncols = 8;
+        line1 << setw(5) << Nwords;
+        line2 << string(5, ' ');
+
+        // Loop over columns
+        for(uint32_t i=0; i<Ncols; i++, iptr++, Nwords++){
+
+            if(iptr == iend) break;
+            if(Nwords>=MaxWords) break;
+
+            stringstream iptr_hex;
+            iptr_hex << hex << "0x" << *iptr;
+
+            string mark = (iptr==imark ? "*":" ");
+
+            line1 << setw(12) << iptr_hex.str() << mark;
+            line2 << setw(12) << *iptr << mark;
+        }
+
+        cout << line1.str() << endl;
+        cout << line2.str() << endl;
+        cout << endl;
+    }
 }
 

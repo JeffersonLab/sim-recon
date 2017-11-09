@@ -597,6 +597,7 @@ def AddDANA(env):
 	AddHDDS(env)
 	AddXERCES(env)
 	AddEVIO(env)
+	AddLZ4(env)
 	AddET(env)
 	AddMySQL(env)   # needed for EventStore
 	DANA_LIBS  = "DANA ANALYSIS KINFITTER PID TAGGER TRACKING START_COUNTER"
@@ -1056,4 +1057,17 @@ def AddCobrems(env):
 	env.AppendUnique(LIBS    = 'AMPTOOLS_MCGEN')
 	env.AppendUnique(CCFLAGS = pyincludes.rstrip().split())
 
+##################################
+# LZ4
+##################################
+def AddLZ4(env):
+	lz4home = os.getenv('LZ4_HOME')
+	if lz4home != None:
+		LZ4_CPPPATH = "%s/lib" % (lz4home)
+		LZ4_LIBPATH = "%s/lib" % (lz4home)
+		LZ4_LIBS = "lz4"
+		env.AppendUnique(CXXFLAGS = ['-D__LZ4__'])
+		env.AppendUnique(CPPPATH = LZ4_CPPPATH)
+		env.AppendUnique(LIBPATH = LZ4_LIBPATH)
+		env.AppendUnique(LIBS    = LZ4_LIBS)
 

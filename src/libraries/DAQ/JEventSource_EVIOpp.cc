@@ -348,7 +348,7 @@ void JEventSource_EVIOpp::Dispatcher(void)
 			// ---- Read From File ----
 //			hdevio->read(buff, buff_len, allow_swap);
 //			hdevio->readSparse(buff, buff_len, allow_swap);
-			hdevio->readNoFileBuff(buff, buff_len, allow_swap);
+			hdevio->readOptimized(buff, buff_len, allow_swap);
 			thr->pos = hdevio->last_event_pos;
 			if(hdevio->err_code == HDEVIO::HDEVIO_USER_BUFFER_TOO_SMALL){
 				delete[] buff;
@@ -693,7 +693,7 @@ uint64_t JEventSource_EVIOpp::SearchFileForRunNumber(void)
 	uint32_t buff_len = 4000000;
 	uint32_t *buff = new uint32_t[buff_len];
 	HDEVIO *hdevio = new HDEVIO(source_name, false, VERBOSE);
-	while(hdevio->readNoFileBuff(buff, buff_len)){
+	while(hdevio->readOptimized(buff, buff_len)){
 
 		// Assume first word is number of words in bank
 		uint32_t *iptr = buff;

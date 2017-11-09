@@ -8,11 +8,6 @@
 #ifndef _HDEVIO_
 #define _HDEVIO_
 
-#ifndef _DBG_
-#define _DBG_ cout<<__FILE__<<":"<<__LINE__<<" "
-#define _DBG__ cout<<__FILE__<<":"<<__LINE__<<endl
-#endif
-
 
 #include <stdint.h>
 #include <vector>
@@ -22,6 +17,15 @@
 #include <sstream>
 #include <iostream>
 using namespace std;
+
+#include "reader.h"
+
+
+#ifndef _DBG_
+#define _I_DEFINED_DBG_
+#define _DBG_ cout<<__FILE__<<":"<<__LINE__<<" "
+#define _DBG__ cout<<__FILE__<<":"<<__LINE__<<endl
+#endif
 
 // ----- Stolen from evio.h -----------
 #define swap64(x) ( (((x) >> 56) & 0x00000000000000FFL) | \
@@ -192,6 +196,8 @@ class HDEVIO{
 		bool read(uint32_t *user_buff, uint32_t user_buff_len, bool allow_swap=true);
 		bool readSparse(uint32_t *user_buff, uint32_t user_buff_len, bool allow_swap=true);
 		bool readNoFileBuff(uint32_t *user_buff, uint32_t user_buff_len, bool allow_swap=true);
+		bool readOptimized(uint32_t *user_buff, uint32_t user_buff_len, bool allow_swap=true);
+		bool readEVIO6(uint32_t *user_buff, uint32_t user_buff_len, bool allow_swap=true);
 		void rewind(void);
 
 		uint32_t swap_bank(uint32_t *outbuff, uint32_t *inbuff, uint32_t len);
@@ -209,8 +215,19 @@ class HDEVIO{
 		uint32_t SetEventMask(string types_str);
 		uint32_t AddToEventMask(string type_str);
 		vector<EVIOBlockRecord>& GetEVIOBlockRecords(void);
+
+		void DumpBinary(const uint32_t *iptr, const uint32_t *iend, uint32_t MaxWords=0, const uint32_t *imark=NULL);
 		
 	protected:
+	
+		bool USE_CLASSIC;
+		hipo::reader  reader;
+		hipo::record  record;
+		hipo::data    eventData;
+		int Nrecords;
+		int irecord;
+		int Nevents_in_record;
+		int ievent;
 	
 		uint32_t event_type_mask; 
 
@@ -298,6 +315,12 @@ class HDEVIO{
 		}
 
 };
+
+
+#ifdef _I_DEFINED_DBG_
+#undef _DBG__
+#undef _DBG_
+#endif
 
 #endif // _HDEVIO_
 
