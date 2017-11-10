@@ -479,7 +479,8 @@ void DTrackWireBased_factory::DoFit(unsigned int c_id,
       // and position
       rt->SetMass(mass);
       //rt->Swim(candidate->position(),candidate->momentum(),candidate->charge());
-      rt->FastSwim(candidate->position(),candidate->momentum(),candidate->charge(),2000.0,0.,370.);
+      rt->Rsqmax_exterior=61.*61.;
+      rt->FastSwim(candidate->position(),candidate->momentum(),candidate->charge(),2000.0,0.,345.);
 
       status=fitter->FindHitsAndFitTrack(*candidate,rt,loop,mass,candidate->Ndof+3);
       if (/*false && */status==DTrackFitter::kFitNotDone){
