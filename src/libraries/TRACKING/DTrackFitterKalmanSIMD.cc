@@ -1817,8 +1817,9 @@ jerror_t DTrackFitterKalmanSIMD::SetReferenceTrajectory(DMatrix5x1 &S){
    unsigned int m=0;
    for (m=0;m<my_fdchits.size();m++){
       if (fabs(S(state_q_over_p))>Q_OVER_P_MAX
-            || fabs(S(state_tx))>TAN_MAX
-            || fabs(S(state_ty))>TAN_MAX
+	  || fabs(S(state_tx))>TAN_MAX
+	  || fabs(S(state_ty))>TAN_MAX
+	  || S(state_x)*S(state_x)+S(state_y)*S(state_y)>50.*50.
          ){
          break;
       }
@@ -1827,9 +1828,10 @@ jerror_t DTrackFitterKalmanSIMD::SetReferenceTrajectory(DMatrix5x1 &S){
       if (fabs(old_zhit-zhit)>EPS){
          bool done=false;
          while (!done){
-            if (fabs(S(state_q_over_p))>=Q_OVER_P_MAX
-                  || fabs(S(state_tx))>TAN_MAX
-                  || fabs(S(state_ty))>TAN_MAX
+	   if (fabs(S(state_q_over_p))>=Q_OVER_P_MAX
+	       || fabs(S(state_tx))>TAN_MAX
+	       || fabs(S(state_ty))>TAN_MAX  
+	       || S(state_x)*S(state_x)+S(state_y)*S(state_y)>50.*50.
                ){
                break;
             }
@@ -7240,7 +7242,13 @@ kalman_error_t DTrackFitterKalmanSIMD::ForwardFit(const DMatrix5x1 &S0,const DMa
 
    // fill vector of extrapolations
    ClearExtrapolations();
-   ExtrapolateForwardToOtherDetectors();
+   ExtrapolateForwardToOtherDetectors(); 
+   if (extrapolations.at(SYS_BCAL).size()==1){
+     // There needs to be some steps inside the the volume of the BCAL for 
+     // the extrapolation to be useful.  If this is not the case, clear 
+     // the extrolation vector.
+     extrapolations[SYS_BCAL].clear();
+   }
    
    // Extrapolate to the point of closest approach to the beam line
    z_=last_z;
@@ -7498,7 +7506,13 @@ kalman_error_t DTrackFitterKalmanSIMD::ForwardCDCFit(const DMatrix5x1 &S0,const 
    }  
    // Fill extrapolation vector
    ClearExtrapolations();
-   ExtrapolateForwardToOtherDetectors(); 
+   ExtrapolateForwardToOtherDetectors();  
+   if (extrapolations.at(SYS_BCAL).size()==1){
+     // There needs to be some steps inside the the volume of the BCAL for 
+     // the extrapolation to be useful.  If this is not the case, clear 
+     // the extrolation vector.
+     extrapolations[SYS_BCAL].clear();
+   }
 
    // Extrapolate to the point of closest approach to the beam line
    z_=zlast;
@@ -7726,7 +7740,12 @@ kalman_error_t DTrackFitterKalmanSIMD::CentralFit(const DVector2 &startpos,
    // Fill extrapolations vector
    ClearExtrapolations();
    ExtrapolateCentralToOtherDetectors();
-
+   if (extrapolations.at(SYS_BCAL).size()==1){
+     // There needs to be some steps inside the the volume of the BCAL for 
+     // the extrapolation to be useful.  If this is not the case, clear 
+     // the extrolation vector.
+     extrapolations[SYS_BCAL].clear();
+   }
    if (last_pos.Mod()>0.001){ // in cm
       if (ExtrapolateToVertex(last_pos,Sclast,Cclast)!=NOERROR) return EXTRAPOLATION_FAILED; 
    }
@@ -9143,7 +9162,7 @@ jerror_t DTrackFitterKalmanSIMD::ExtrapolateForwardToOtherDetectors(){
   // First deal with start counter.  Only do this if the track has a chance
   // to intersect with the start counter volume.
   unsigned int inner_index=forward_traj.size()-1; 
-   unsigned int index_beyond_start_counter=inner_index;
+  unsigned int index_beyond_start_counter=inner_index;
   DMatrix5x1 S=forward_traj[inner_index].S;
   bool intersected_start_counter=false;
   if (S(state_x)*S(state_x)+S(state_y)*S(state_y)<SC_BARREL_R2
@@ -9241,6 +9260,8 @@ jerror_t DTrackFitterKalmanSIMD::ExtrapolateForwardToOtherDetectors(){
   // Accumulate multiple-scattering terms for use in matching routines
   double s_theta_ms_sum=0.;
   double theta2ms_sum=0.;
+  unsigned int step_index_for_bcal=0;
+  bool got_bcal_index=false;
   if (intersected_start_counter){
     for (unsigned int k=inner_index;k>index_beyond_start_counter;k--){
       s_theta_ms_sum+=sqrt(fabs(forward_traj[k].Q(state_x,state_x)));
@@ -9262,6 +9283,11 @@ jerror_t DTrackFitterKalmanSIMD::ExtrapolateForwardToOtherDetectors(){
     double pt=cosl/fabs(S(state_q_over_p));
     double phi=atan2(S(state_ty),S(state_tx)); 
 
+    if (got_bcal_index==false && S(state_x)*S(state_x)+S(state_y)*S(state_y)>50.*50.){
+      got_bcal_index=true;
+      step_index_for_bcal=k;	  
+    }
+    
     //multiple scattering terms
     s_theta_ms_sum+=sqrt(fabs(forward_traj[k].Q(state_x,state_x)));  
     double ds=(k>1)?(forward_traj[k].s-forward_traj[k-1].s):1.;
@@ -9277,8 +9303,10 @@ jerror_t DTrackFitterKalmanSIMD::ExtrapolateForwardToOtherDetectors(){
 
     }
     else{ // extrapolations in FDC region
-      if (fdc_plane==24) break;	
-
+      if (fdc_plane==24){
+	break;	
+      }
+    
       // output step near wire plane  
       if (z>fdc_z_wires[fdc_plane]-0.25){	
 	double dz=z-fdc_z_wires[fdc_plane];
@@ -9320,21 +9348,22 @@ jerror_t DTrackFitterKalmanSIMD::ExtrapolateForwardToOtherDetectors(){
   // material properties
   double rho_Z_over_A=0.,LnI=0.,K_rho_Z_over_A=0.,Z=0.;
   double chi2c_factor=0.,chi2a_factor=0.,chi2a_corr=0.;
-  
+
+  //  step_index_for_bcal=inner_index;
   // Position variables
-  double z=forward_traj[0].z;
+  double z=forward_traj[step_index_for_bcal].z;
   double newz=z,dz=0.;
-  S=forward_traj[0].S;
-  DVector3 pos;
+  S=forward_traj[step_index_for_bcal].S;
+
   // Current time and path length
-  double t=forward_traj[0].t;
-  double s=forward_traj[0].s;
+  double t=forward_traj[step_index_for_bcal].t;
+  double s=forward_traj[step_index_for_bcal].s;
   
   // Loop to propagate track to outer detectors
   const double z_outer_max=650.;
   const double x_max=130.;
   const double y_max=130.;
-  bool hit_tof=false;
+  bool hit_tof=false; 
   while (z>Z_MIN && z<z_outer_max && fabs(S(state_x))<x_max 
 	 && fabs(S(state_y))<y_max){   
     // Bail if the momentum has dropped below some minimum
@@ -9349,21 +9378,33 @@ jerror_t DTrackFitterKalmanSIMD::ExtrapolateForwardToOtherDetectors(){
 
     // Check if we have passed into the BCAL
     double r2=S(state_x)*S(state_x)+S(state_y)*S(state_y);
-    if (r2>64.9*64.9 && z<410.){
-      double tsquare=S(state_tx)*S(state_tx)+S(state_ty)*S(state_ty);
-      double tanl=1./sqrt(tsquare);
-      double cosl=cos(atan(tanl));
-      double pt=cosl/fabs(S(state_q_over_p));
-      double phi=atan2(S(state_ty),S(state_tx));
-      DVector3 position(S(state_x),S(state_y),z);
-      DVector3 momentum(pt*cos(phi),pt*sin(phi),pt*tanl);
-      extrapolations[SYS_BCAL].push_back(Extrapolation_t(position,momentum,
-						 t*TIME_UNIT_CONVERSION,s));
+    if (r2>64.9*64.9){
+      if (extrapolations.at(SYS_BCAL).size()>299){
+	return VALUE_OUT_OF_RANGE;
+      }
+      if (fabs(S(state_q_over_p))>20.){
+	return NOERROR;
+      }
       if (r2>89.*89.){ // outer radius squared	
 	return NOERROR;
       }
-      if (momentum.Mag()<0.1 || extrapolations.at(SYS_BCAL).size()>299)
-	return VALUE_OUT_OF_RANGE;
+      if (z<406.){
+	double tsquare=S(state_tx)*S(state_tx)+S(state_ty)*S(state_ty);
+	double tanl=1./sqrt(tsquare);
+	double cosl=cos(atan(tanl));
+	double pt=cosl/fabs(S(state_q_over_p));
+	double phi=atan2(S(state_ty),S(state_tx));
+	DVector3 position(S(state_x),S(state_y),z);
+	DVector3 momentum(pt*cos(phi),pt*sin(phi),pt*tanl);
+	extrapolations[SYS_BCAL].push_back(Extrapolation_t(position,momentum,
+							   t*TIME_UNIT_CONVERSION,s));
+      }
+      else if (extrapolations.at(SYS_BCAL).size()<10){
+	// There needs to be some steps inside the the volume of the BCAL for 
+	// the extrapolation to be useful.  If this is not the case, clear 
+	// the extrolation vector.
+	extrapolations[SYS_BCAL].clear();
+      }
     }    
    
     // Relationship between arc length and z
@@ -9371,7 +9412,7 @@ jerror_t DTrackFitterKalmanSIMD::ExtrapolateForwardToOtherDetectors(){
 			   +S(state_ty)*S(state_ty));
     
     // get material properties from the Root Geometry
-    pos.SetXYZ(S(state_x),S(state_y),z); 
+    DVector3 pos(S(state_x),S(state_y),z); 
     DVector3 dir(S(state_tx),S(state_ty),1.);
     double s_to_boundary=0.;
     if (geom->FindMatKalman(pos,dir,K_rho_Z_over_A,rho_Z_over_A,LnI,Z,
@@ -9402,7 +9443,7 @@ jerror_t DTrackFitterKalmanSIMD::ExtrapolateForwardToOtherDetectors(){
     if (ds>mStepSizeS) ds=mStepSizeS;
     if (s_to_boundary<ds) ds=s_to_boundary;
     if (ds<MIN_STEP_SIZE) ds=MIN_STEP_SIZE;
-    if (ds<0.5 && z<400. && r2>65.*65.) ds=0.5;
+    if (ds<0.5 && z<406. && r2>65.*65.) ds=0.5;
     dz=ds*dz_ds;
     newz=z+dz;
     if (hit_tof==false && newz>dTOFz){
@@ -9613,6 +9654,8 @@ jerror_t DTrackFitterKalmanSIMD::ExtrapolateCentralToOtherDetectors(){
 
    // Accumulate multiple-scattering terms for use in matching routines
   double s_theta_ms_sum=0.,theta2ms_sum=0.;
+  unsigned int step_index_for_bcal=0;
+  bool got_bcal_index=false;
   for (unsigned int k=inner_index;k>index_beyond_start_counter;k--){
     s_theta_ms_sum+=sqrt(fabs(central_traj[k].Q(state_D,state_D)));  
     double ds=central_traj[k].s-central_traj[k-1].s;
@@ -9629,6 +9672,11 @@ jerror_t DTrackFitterKalmanSIMD::ExtrapolateCentralToOtherDetectors(){
     double tanl=S(state_tanl);
     double pt=1/fabs(S(state_q_over_pt));
     double phi=S(state_phi); 
+
+    if (got_bcal_index==false && xy.Mod()>50.){
+      got_bcal_index=true;
+      step_index_for_bcal=k;
+    }
 
     //multiple scattering terms
     s_theta_ms_sum+=sqrt(fabs(central_traj[k].Q(state_D,state_D)));  
@@ -9659,10 +9707,10 @@ jerror_t DTrackFitterKalmanSIMD::ExtrapolateCentralToOtherDetectors(){
   //------------------------------
   // Next swim to outer detectors
   //------------------------------
-  S=central_traj[0].S;
+  S=central_traj[step_index_for_bcal].S;
  
   // Position and step variables 
-  xy=central_traj[0].xy;
+  xy=central_traj[step_index_for_bcal].xy;
   double r2=xy.Mod2();
   double ds=mStepSizeS; // step along path in cm
   
@@ -9670,8 +9718,8 @@ jerror_t DTrackFitterKalmanSIMD::ExtrapolateCentralToOtherDetectors(){
   double dedx=0.;
   
   // Current time and path length
-  double t=central_traj[0].t;
-  double s=central_traj[0].s;
+  double t=central_traj[step_index_for_bcal].t;
+  double s=central_traj[step_index_for_bcal].s;
 
   // Matrix for multiple scattering covariance terms
   DMatrix5x5 Q;
@@ -9745,17 +9793,28 @@ jerror_t DTrackFitterKalmanSIMD::ExtrapolateCentralToOtherDetectors(){
      
     r2=xy.Mod2(); 
     // Check if we have passed into the BCAL
-    if (r2>64.9*64.9 && S(state_z)<410.){  
-      double tanl=S(state_tanl);
-      double pt=1/fabs(S(state_q_over_pt));
-      double phi=S(state_phi);
-      DVector3 position(xy.X(),xy.Y(),S(state_z));   
-      DVector3 momentum(pt*cos(phi),pt*sin(phi),pt*tanl);
-      extrapolations[SYS_BCAL].push_back(Extrapolation_t(position,momentum,
-						 t*TIME_UNIT_CONVERSION,s));
-
-      if (momentum.Mag()<0.1 || extrapolations.at(SYS_BCAL).size()>299)
+    if (r2>64.9*64.9){  
+      if (extrapolations.at(SYS_BCAL).size()>299){
 	return VALUE_OUT_OF_RANGE;
+      }
+      if (S(state_z)<406.&&S(state_z)>17.0){
+	double tanl=S(state_tanl);
+	double pt=1/fabs(S(state_q_over_pt));
+	double phi=S(state_phi);
+	DVector3 position(xy.X(),xy.Y(),S(state_z));   
+	DVector3 momentum(pt*cos(phi),pt*sin(phi),pt*tanl);
+	if (momentum.Mag()<0.05){
+	  return NOERROR;
+	}
+	extrapolations[SYS_BCAL].push_back(Extrapolation_t(position,momentum,
+							   t*TIME_UNIT_CONVERSION,s));
+      }
+      else if (extrapolations.at(SYS_BCAL).size()<10){
+	// There needs to be some steps inside the the volume of the BCAL for 
+	// the extrapolation to be useful.  If this is not the case, clear 
+	// the extrolation vector.
+	extrapolations[SYS_BCAL].clear();
+      }
     }
     // Check if we have more FDC planes to pass by
     else if (fdc_plane<24 && S(state_z)>fdc_z_wires[fdc_plane]-0.5){   
@@ -9773,7 +9832,6 @@ jerror_t DTrackFitterKalmanSIMD::ExtrapolateCentralToOtherDetectors(){
     }
       
   }   
-  
 
   return NOERROR;
 }
