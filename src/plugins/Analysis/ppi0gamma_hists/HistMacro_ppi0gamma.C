@@ -237,10 +237,11 @@
 		n_omega_kinfit = locHist_Omega_KinFitCut->Integral(100./locNumRebin, 400./locNumRebin);
 		
 		// Determine Mass and Width
-		TF1 *fomega = new TF1("fomega", "gaus", 0.6, 0.9);
+		TF1 *fomega = new TF1("fomega", "gaus(0)+pol0(4)", 0.65, 0.9);
 		fomega->SetParameter(1,0.782);
 		fomega->SetParameter(2,0.03);
-		locHist_KinFitOmega_KinFitCut->Fit("fomega", "RQ0");
+		fomega->SetParameter(4,locHist_KinFitOmega_KinFitCut->GetBinContent(1));
+		locHist_KinFitOmega_KinFitCut->Fit("fomega", "Q0");
 		omega_mass = fomega->GetParameter(1);
 		omega_width = fomega->GetParameter(2);
 
