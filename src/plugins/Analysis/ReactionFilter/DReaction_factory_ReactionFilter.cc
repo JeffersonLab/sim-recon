@@ -511,6 +511,7 @@ bool DReaction_factory_ReactionFilter::Convert_StringToPID(string locString, Par
 string DReaction_factory_ReactionFilter::Create_StepNameString(const DReactionStepTuple& locStepTuple, bool locFirstStepFlag)
 {
 	string locNameString = "";
+	auto locFirstStepTargetPID = locFirstStepFlag ? std::get<1>(locStepTuple) : Unknown;
 	if(!locFirstStepFlag)
 	{
 		locNameString = ShortName(std::get<0>(locStepTuple));
@@ -520,14 +521,14 @@ string DReaction_factory_ReactionFilter::Create_StepNameString(const DReactionSt
 		locNameString += "_";
 	}
 	for(auto& locFinalPID : std::get<2>(locStepTuple))
+	{
+		if(locFinalPID == locFirstStepTargetPID)
+			continue; //target PID is understood
 		locNameString += ShortName(locFinalPID);
+	}
 	auto locMissFinalPID = std::get<3>(locStepTuple);
 	if(locMissFinalPID != Unknown)
-	{
 		locNameString += string("miss") + ShortName(locMissFinalPID);
-		if(locMissFinalPID == Proton)
-			locNameString += "p"; //the ShortName is "" because it is understood, but add "p" here to indicate what is missing
-	}
 
 	if(std::get<4>(locStepTuple) == DReactionStep::Get_ParticleIndex_Inclusive())
 		locNameString += "inc";

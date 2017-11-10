@@ -83,7 +83,7 @@ jerror_t DReaction_factory_OmegaSkim::evnt(JEventLoop* locEventLoop, uint64_t lo
   locReactionStep->Add_FinalParticleID(Gamma);
   locReaction->Add_ReactionStep(locReactionStep);
   dReactionStepPool.push_back(locReactionStep); //register so will be deleted later: prevent memory leak
-
+    locReactionStep->Set_KinFitConstrainInitMassFlag(false);
   /**************************************************** p3pi_preco_2FCAL Control Settings ****************************************************/
 
   // KINFIT
@@ -106,7 +106,7 @@ jerror_t DReaction_factory_OmegaSkim::evnt(JEventLoop* locEventLoop, uint64_t lo
   // Kinematic Fit Results
   locReaction->Add_AnalysisAction(new DHistogramAction_KinFitResults(locReaction, 0.05, true)); //5% confidence level cut on pull histograms only
   //  locReaction->Add_AnalysisAction(new DCutAction_KinFitFOM(locReaction, 5.73303E-7)); // confidence level cut //+/- 5 sigma
-  locReaction->Add_AnalysisAction(new DCutAction_KinFitFOM(locReaction, 0.01));
+  locReaction->Add_AnalysisAction(new DCutAction_KinFitFOM(locReaction, 0.05));
 
   // MASSES, POST-KINFIT
   locReaction->Add_AnalysisAction(new DHistogramAction_InvariantMass(locReaction, Pi0, false, 850, 0.05, 0.22, "Pi0_PostKinFitCut"));

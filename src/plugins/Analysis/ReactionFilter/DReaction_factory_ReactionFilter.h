@@ -24,6 +24,7 @@ using namespace jana;
 
 class DReaction_factory_ReactionFilter : public jana::JFactory<DReaction>
 {
+	//return tuple: initial pid, target/2nd-beam pid, detected final pids, missing final pid (if any), missing particle index
 	using DReactionStepTuple = tuple<Particle_t, Particle_t, vector<Particle_t>, Particle_t, int>;
 
 	public:
