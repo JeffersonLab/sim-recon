@@ -24,8 +24,8 @@ const int32_t PMIN = 0;
 const int32_t PMAX = 2000;
 const int32_t PBIN = (PMAX - PMIN)/16;
 
-const int32_t TMIN = -150;
-const int32_t TMAX = 150;
+const int32_t TMIN = -300;
+const int32_t TMAX = 300;
 const int32_t TBIN = (TMAX - TMIN)/0.01;
 
 const double TMIN_RF = -2.0;
