@@ -1329,7 +1329,7 @@ bool DParticleID::Distance_ToTrack(const vector<DTrackFitter::Extrapolation_t> &
   
   // Get the BCAL cluster position
   DVector3 bcal_pos(locBCALShower->x, locBCALShower->y, locBCALShower->z);
-  
+
   // track quantities
   double locFlightTime = 0, locPathLength = 0, locFlightTimeVariance = 9.9E9;
   DVector3 locProjPos,locProjMom;
@@ -1341,6 +1341,7 @@ bool DParticleID::Distance_ToTrack(const vector<DTrackFitter::Extrapolation_t> &
     if (doca>doca_old){
       unsigned int index=i-1;
       locProjPos=extrapolations[index].position;
+      locProjMom=extrapolations[index].momentum;
       locPathLength=extrapolations[index].s;
       locFlightTime=extrapolations[index].t;
       break;
