@@ -9260,8 +9260,6 @@ jerror_t DTrackFitterKalmanSIMD::ExtrapolateForwardToOtherDetectors(){
   // Accumulate multiple-scattering terms for use in matching routines
   double s_theta_ms_sum=0.;
   double theta2ms_sum=0.;
-  unsigned int step_index_for_bcal=0;
-  bool got_bcal_index=false;
   if (intersected_start_counter){
     for (unsigned int k=inner_index;k>index_beyond_start_counter;k--){
       s_theta_ms_sum+=sqrt(fabs(forward_traj[k].Q(state_x,state_x)));
@@ -9282,11 +9280,6 @@ jerror_t DTrackFitterKalmanSIMD::ExtrapolateForwardToOtherDetectors(){
     double cosl=cos(atan(tanl));
     double pt=cosl/fabs(S(state_q_over_p));
     double phi=atan2(S(state_ty),S(state_tx)); 
-
-    if (got_bcal_index==false && S(state_x)*S(state_x)+S(state_y)*S(state_y)>50.*50.){
-      got_bcal_index=true;
-      step_index_for_bcal=k;	  
-    }
     
     //multiple scattering terms
     s_theta_ms_sum+=sqrt(fabs(forward_traj[k].Q(state_x,state_x)));  
@@ -9349,21 +9342,21 @@ jerror_t DTrackFitterKalmanSIMD::ExtrapolateForwardToOtherDetectors(){
   double rho_Z_over_A=0.,LnI=0.,K_rho_Z_over_A=0.,Z=0.;
   double chi2c_factor=0.,chi2a_factor=0.,chi2a_corr=0.;
 
-  //  step_index_for_bcal=inner_index;
   // Position variables
-  double z=forward_traj[step_index_for_bcal].z;
+  double z=forward_traj[0].z;
   double newz=z,dz=0.;
-  S=forward_traj[step_index_for_bcal].S;
+  S=forward_traj[0].S;
 
   // Current time and path length
-  double t=forward_traj[step_index_for_bcal].t;
-  double s=forward_traj[step_index_for_bcal].s;
+  double t=forward_traj[0].t;
+  double s=forward_traj[0].s;
   
   // Loop to propagate track to outer detectors
   const double z_outer_max=650.;
   const double x_max=130.;
   const double y_max=130.;
   bool hit_tof=false; 
+  //  if (false)
   while (z>Z_MIN && z<z_outer_max && fabs(S(state_x))<x_max 
 	 && fabs(S(state_y))<y_max){   
     // Bail if the momentum has dropped below some minimum
@@ -9654,8 +9647,6 @@ jerror_t DTrackFitterKalmanSIMD::ExtrapolateCentralToOtherDetectors(){
 
    // Accumulate multiple-scattering terms for use in matching routines
   double s_theta_ms_sum=0.,theta2ms_sum=0.;
-  unsigned int step_index_for_bcal=0;
-  bool got_bcal_index=false;
   for (unsigned int k=inner_index;k>index_beyond_start_counter;k--){
     s_theta_ms_sum+=sqrt(fabs(central_traj[k].Q(state_D,state_D)));  
     double ds=central_traj[k].s-central_traj[k-1].s;
@@ -9672,11 +9663,6 @@ jerror_t DTrackFitterKalmanSIMD::ExtrapolateCentralToOtherDetectors(){
     double tanl=S(state_tanl);
     double pt=1/fabs(S(state_q_over_pt));
     double phi=S(state_phi); 
-
-    if (got_bcal_index==false && xy.Mod()>50.){
-      got_bcal_index=true;
-      step_index_for_bcal=k;
-    }
 
     //multiple scattering terms
     s_theta_ms_sum+=sqrt(fabs(central_traj[k].Q(state_D,state_D)));  
@@ -9707,10 +9693,10 @@ jerror_t DTrackFitterKalmanSIMD::ExtrapolateCentralToOtherDetectors(){
   //------------------------------
   // Next swim to outer detectors
   //------------------------------
-  S=central_traj[step_index_for_bcal].S;
+  S=central_traj[0].S;
  
   // Position and step variables 
-  xy=central_traj[step_index_for_bcal].xy;
+  xy=central_traj[0].xy;
   double r2=xy.Mod2();
   double ds=mStepSizeS; // step along path in cm
   
@@ -9718,14 +9704,15 @@ jerror_t DTrackFitterKalmanSIMD::ExtrapolateCentralToOtherDetectors(){
   double dedx=0.;
   
   // Current time and path length
-  double t=central_traj[step_index_for_bcal].t;
-  double s=central_traj[step_index_for_bcal].s;
+  double t=central_traj[0].t;
+  double s=central_traj[0].s;
 
   // Matrix for multiple scattering covariance terms
   DMatrix5x5 Q;
 
 
   // Track propagation loop
+  //if (false)
   while (S(state_z)>0. && S(state_z)<Z_MAX  
             && r2<89.*89.){  
     // Bail if the transverse momentum has dropped below some minimum
