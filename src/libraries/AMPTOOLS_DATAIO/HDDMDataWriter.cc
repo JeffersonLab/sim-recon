@@ -1,16 +1,21 @@
 
 #include "TLorentzVector.h"
+#include "TRandom3.h"
 
 #include "AMPTOOLS_DATAIO/HDDMDataWriter.h"
 #include "HDDM/hddm_s.hpp"
 
-HDDMDataWriter::HDDMDataWriter(const string& outFile, int runNumber)
+HDDMDataWriter::HDDMDataWriter(const string& outFile, int runNumber, int seed)
 {
   m_OutputFile = new ofstream(outFile.c_str());
   m_OutputStream = new hddm_s::ostream(*m_OutputFile);
   m_runNumber = runNumber;
   
   m_eventCounter = 0;
+
+  // initialize root's pseudo-random generator
+  gRandom->SetSeed(seed);
+
 }
 
 HDDMDataWriter::~HDDMDataWriter()
@@ -38,7 +43,7 @@ writeEvent( const Kinematics& kin, const vector<int>& ptype,
     vz_min=vz_max;
     vz_max=tmp;
   }
-  writeEvent(kin, ptype,vx, vy, (vz_max - vz_min) * drand48() + vz_min);
+  writeEvent(kin, ptype,vx, vy, (vz_max - vz_min) * gRandom->Uniform() + vz_min);
 }
 
 
