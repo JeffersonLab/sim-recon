@@ -50,7 +50,7 @@ def main():
 	outfile.Close()
 
 def tw_corr(h,row,col,newV, offsets, offsets_ind, run):
-	if (col % 10):
+	if not (col % 10):
 		print('Calibrating column ' + str(col))
 	# Create list of columns with individual readout
 	indCol = [9,27,81,99]
