@@ -143,6 +143,7 @@ int main( int argc, char* argv[] ){
 	// random number initialization (set to 0 by default)
 	TRandom3* gRandom = new TRandom3();
 	gRandom->SetSeed(seed);
+	cout << "TRandom3 Seed : " << gRandom->GetSeed() << endl;
 
 	// setup AmpToolsInterface
 	AmpToolsInterface::registerAmplitude( TwoPiAngles_amp() );
