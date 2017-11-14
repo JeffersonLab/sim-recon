@@ -63,6 +63,12 @@ writeEvent( const Kinematics& kin, const vector<int>& ptype,
   hddm_s::VertexList vs = rs().addVertices();
   hddm_s::OriginList os = vs().addOrigins();
   hddm_s::ProductList ps = vs().addProducts(nParticles-1);
+  hddm_s::RandomList ranl = rs().addRandoms();
+
+  ranl().setSeed1(gRandom->Integer(std::numeric_limits<int32_t>::max()));
+  ranl().setSeed2(gRandom->Integer(std::numeric_limits<int32_t>::max()));
+  ranl().setSeed3(gRandom->Integer(std::numeric_limits<int32_t>::max()));
+  ranl().setSeed4(gRandom->Integer(std::numeric_limits<int32_t>::max()));
 
   os().setT(0.0);
   os().setVx(vx);
