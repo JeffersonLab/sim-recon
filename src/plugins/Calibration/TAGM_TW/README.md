@@ -15,6 +15,9 @@ large offsets.
 
 `hd_root -PPLUGINS=TAGM_TW -PTAGMHit:DELTA_T_ADC_TDC_MAX=300 /path/to/file/hd_rawdata_XXXXXX_00*`
 
+**Please use multiple EVIO files when running!** AMO runs require more files
+in order to have high enough statistics.
+
 Be aware that the CCDB table /PHOTON_BEAM/microscope/integral_cuts can 
 interfere with the pulse height distributions. To set these values to 0 
 on the fly, run with the option -PTAGMHit:CUT_FACTOR=0.
@@ -69,18 +72,19 @@ due to manual updates as well as unrealistically large offsets for the adc and t
 
 1. `python ccdbquery.py`
 
-This provides 3 files: bad-cols.txt, bad-adc.txt, and bad-tdc.txt.
+This provides 3 files: bad-cols.txt, bad-adcs/bad-adc-XXXXX.txt, and bad-tdcs/bad-tdc-XXXXX.txt.
 
 bad-cols.txt lists the run numbers where columns 101 and 102 are 120 and 121.
 
-bad-adc.txt and bad-tdc.txt list the run and channel of the bad offset. 
-** Note: this is channel, not column number. ** The adc/tdc tables have 122 entries.
-Channel corresponds to their entry number. These are typically invidual channels as
-they require more statistics to calibrate.
+bad-adc-XXXXX.txt and bad-tdc-XXXXX.txt list the row and column of the bad offset. 
 
-Using these files, the CCDB constants can be updated either by hand or by a custom script.
-For the adc/tdc offsets, it is recommended to set any large offset to 7 as that is a typical
-timing offset.
+## Update CCDBs that had bad values
+After running `ccdbquery.py`, run `genDefaults.py` to produce updated CCDB tables
+for any run that contained: mis-labeled 101 and 102 columns, any offset > |50|.
+Any value that was >|50| is now 10 and will need to be calibrated with another pass.
+
+The output files are contained in the directories: adc_offsets, tdc_offets, and 
+are able to be pushed to the CCDB.
 
 ## Calibration validation
 After all steps are complete, a calibration validation can be performed. Run 

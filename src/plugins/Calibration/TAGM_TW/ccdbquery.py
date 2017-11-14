@@ -29,19 +29,24 @@ def main():
 	rcdbQuery = '@is_production and @status_approved'
 	rcdbRunList = db.select_runs(rcdbQuery, 30274, 31057)
 
+	dirs = ['bad-adcs', 'bad-tdcs']
+	for i in dirs:
+		if not os.path.exists(i):
+			os.makedirs(i)
+
 	colfile = open('bad-cols.txt','w')
 	colfile.write('Problem runs\n')
-
-	adcfile = open('bad-adc.txt', 'w')
-	adcfile.write('Runs\tChannel\n')
-
-	tdcfile = open('bad-tdc.txt', 'w')
-	tdcfile.write('Runs\tChannel\n')
 
 	variation = 'default'
 
 	for entry in rcdbRunList:
 		run = entry.number
+		adcfile = open('bad-adcs/bad-adc-' + str(run) + '.txt', 'w')
+		adcfile.write('Row\tCol\n')
+
+		tdcfile = open('bad-tdcs/bad-tdc-' + str(run) + '.txt', 'w')
+		tdcfile.write('Row\tCol\n')
+
 
 		# check for wrong 101 and 102 columns
 		fadc_assignment = provider.get_assignment("/PHOTON_BEAM/microscope/fadc_time_offsets",run,variation)
@@ -55,13 +60,29 @@ def main():
 			colfile.write(str(run) + '\n')
 
 		# check for large adc and tdc offsets
-		for i in range(122):
-			adc = float(fadc_assignment.constant_set.data_table[i][2])
-			if (abs(adc) > 100.0):
-				adcfile.write(str(run) + '\t' + str(i) + '\n')
-			tdc = float(tdc_assignment.constant_set.data_table[i][2])
-			if (abs(tdc) > 100.0):
-				tdcfile.write(str(run) + '\t' + str(i) + '\n')
+		ind_cols = [9, 27, 81, 99]
+		channel = 0
+		for i in range(1,103):
+			adc = float(fadc_assignment.constant_set.data_table[channel][2])
+			if (abs(adc) >= 50.0):
+				adcfile.write( '0\t' + str(i) + '\n')
+			tdc = float(tdc_assignment.constant_set.data_table[channel][2])
+			if (abs(tdc) >= 50.0):
+				tdcfile.write( '0\t' + str(i) + '\n')
+			channel += 1
+			
+			if i in ind_cols:
+				for j in range(5):
+					adc = float(fadc_assignment.constant_set.data_table[channel][2])
+					if (abs(adc) >= 50.0):
+						adcfile.write( str(j+1) + '\t' + str(i) + '\n')
+					tdc = float(tdc_assignment.constant_set.data_table[channel][2])
+					if (abs(tdc) >= 50.0):
+						tdcfile.write( str(j+1) + '\t' + str(i) + '\n')
+					channel += 1
+		adcfile.close()
+		tdcfile.close()
+				
 
 if __name__ == "__main__":
 	main()
