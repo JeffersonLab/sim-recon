@@ -290,6 +290,7 @@ int main( int argc, char* argv[] ){
 					if( hddmOut ) hddmOut->writeEvent( *evt, pTypes );
 					rootOut.writeEvent( *evt );
 					++eventCounter;
+					if(eventCounter >= nEvents) break;
 				}
 			}
 			else{
