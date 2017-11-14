@@ -26,15 +26,15 @@ const int32_t PBIN = (PMAX - PMIN)/16;
 
 const int32_t TMIN = -300;
 const int32_t TMAX = 300;
-const int32_t TBIN = (TMAX - TMIN)/0.01;
+const int32_t TBIN = (TMAX - TMIN)/0.005;
 
 const double TMIN_RF = -2.0;
 const double TMAX_RF = 2.0;
-const double TBIN_RF = (TMAX_RF - TMIN_RF)/0.01;
+const double TBIN_RF = (TMAX_RF - TMIN_RF)/0.005;
 
 const double TMIN_TW = -10.0;
 const double TMAX_TW = 15.0;
-const double TBIN_TW = (TMAX_RF - TMIN_RF)/0.01;
+const double TBIN_TW = (TMAX_RF - TMIN_RF)/0.005;
 
 // Define histograms
 //    timewalk
@@ -83,6 +83,7 @@ JEventProcessor_TAGM_TW::~JEventProcessor_TAGM_TW()
 //------------------
 jerror_t JEventProcessor_TAGM_TW::init(void)
 {
+   TDirectory *main = gDirectory;
 
    TDirectory *tagmDir = gDirectory->mkdir("TAGM_TW");
    tagmDir->cd();
@@ -141,6 +142,8 @@ jerror_t JEventProcessor_TAGM_TW::init(void)
                                   TBIN_RF, TMIN_RF, TMAX_RF, NCOLUMNS,1, NCOLUMNS+1);
    h_adc_rf_all_ind =   new TH2I("adc_rf_all_ind","Individual channels;ADC - RF (ns);Column",
                                   TBIN_RF, TMIN_RF, TMAX_RF, NSINGLES,1, NSINGLES+1);
+
+   main->cd();
 
    return NOERROR;
 	
