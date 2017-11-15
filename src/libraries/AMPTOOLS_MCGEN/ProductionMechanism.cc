@@ -13,7 +13,7 @@ const double ProductionMechanism::kPi = 3.14159;
 
 using namespace std;
 
-ProductionMechanism::ProductionMechanism( Recoil recoil, Type type, double slope ) :
+ProductionMechanism::ProductionMechanism( Recoil recoil, Type type, double slope, int seed ) :
 m_type( type ),
 m_lowMass( 0 ),
 m_highMass( 0 ),
@@ -24,6 +24,9 @@ m_lastWeight( 1. )
   kMneutron=ParticleMass(Neutron);
   // kMZ = 108.;      //  mass of Sn116 
   kMZ = 208.*0.931494;      //  use mass of Pb as it is in the particle table
+
+  // initialize pseudo-random generator
+  gRandom->SetSeed(seed);
 
   switch( recoil ){
     // I'm sure the distinction between these doesn't matter!  
@@ -51,10 +54,7 @@ ProductionMechanism::setGeneratorType( Type type ){
 TLorentzVector
 ProductionMechanism::produceResonance( const TLorentzVector& beam ){
 
-        // initialize pseudo-random generator
-        //gRandom = new TRandom3();
-        gRandom->SetSeed(0);
-	
+
 	TLorentzVector target( 0, 0, 0, kMproton );
 	
 	TLorentzRotation lab2cmBoost( -( target + beam ).BoostVector() );
