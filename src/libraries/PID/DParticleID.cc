@@ -1330,20 +1330,24 @@ bool DParticleID::Distance_ToTrack(const vector<DTrackFitter::Extrapolation_t> &
   // Get the BCAL cluster position
   DVector3 bcal_pos(locBCALShower->x, locBCALShower->y, locBCALShower->z);
 
-  // track quantities
-  double locFlightTime = 0, locPathLength = 0, locFlightTimeVariance = 9.9E9;
-  DVector3 locProjPos,locProjMom;
- 
-  // Find the closest extrapolated position to this BCAL shower
-  double doca_old=1e6;
+  // track quantities:  initialize to the point at which the track enters the
+  // BCAL; will refine below.
+  double locFlightTime = extrapolations[0].t;
+  double locPathLength = extrapolations[0].s, locFlightTimeVariance = 9.9E9;
+  DVector3 locProjPos=extrapolations[0].position;
+  DVector3 locProjMom=extrapolations[0].momentum;
+  
+ // Find the closest extrapolated position to this BCAL shower
+  double doca_old=1e6; 
   for (unsigned int i=1;i<extrapolations.size();i++){
-    double doca=(extrapolations[i].position-bcal_pos).Mag();
+    double doca=(extrapolations[i].position-bcal_pos).Perp();
     if (doca>doca_old){
       unsigned int index=i-1;
       locProjPos=extrapolations[index].position;
       locProjMom=extrapolations[index].momentum;
       locPathLength=extrapolations[index].s;
-      locFlightTime=extrapolations[index].t;
+      locFlightTime=extrapolations[index].t; 
+
       break;
     }
     doca_old=doca;
@@ -1357,6 +1361,12 @@ bool DParticleID::Distance_ToTrack(const vector<DTrackFitter::Extrapolation_t> &
 
   // Difference in z
   double locDeltaZ = bcal_pos.z() - locProjPos.z();
+  // Difference in phi (will try to refine with points below
+  double locDeltaPhiMin=bcal_pos.Phi()-locProjPos.Phi();
+  while(locDeltaPhiMin > M_PI)
+    locDeltaPhiMin -= M_TWO_PI;
+  while(locDeltaPhiMin < -M_PI)
+    locDeltaPhiMin += M_TWO_PI;
 
   // Find intersection of track with inner radius of BCAL to get dx
   double locDx = (locProjPos - extrapolations[0].position).Mag();
@@ -1389,12 +1399,11 @@ bool DParticleID::Distance_ToTrack(const vector<DTrackFitter::Extrapolation_t> &
   
   // loop over points associated with this shower, finding
   // the closest match between a point and the track
-  double locDeltaPhiMin=1e6;
   for (unsigned int m=0;m<points.size();m++){
     DVector3 locPointProjPos=extrapolations[0].position;
     double R=points[m]->r();
     if (fitter->ExtrapolateToRadius(R,extrapolations,locPointProjPos)==false)
-      return false;
+      continue;
 
     double mydphi=points[m]->phi()-locPointProjPos.Phi();
     while(mydphi > M_PI)
