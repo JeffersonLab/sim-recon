@@ -674,7 +674,7 @@ jerror_t JEventProcessor_HLDetectorTiming::evnt(JEventLoop *loop, uint64_t event
 
         // Do this the old way for the CDC
         vector < const DCDCTrackHit *> cdcTrackHitVector;
-        pionHypothesis->Get(cdcTrackHitVector);
+        pionHypothesis->Get_TrackTimeBased()->Get(cdcTrackHitVector);
         if (cdcTrackHitVector.size() != 0){
            float earliestTime = 10000; // Initialize high
            for (unsigned int iCDC = 0; iCDC < cdcTrackHitVector.size(); iCDC++){
