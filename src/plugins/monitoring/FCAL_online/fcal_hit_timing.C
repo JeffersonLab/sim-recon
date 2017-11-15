@@ -99,7 +99,7 @@
     }
 
     hitTmT02DRMS->SetMinimum(  0 );
-    hitTmT02DRMS->SetMaximum(  50 );
+    hitTmT02DRMS->SetMaximum(  10 );
     hitTmT02DRMS->SetStats( 0 );
     c1->cd( 4 );
     hitTmT02DRMS->Draw( "colz" );
