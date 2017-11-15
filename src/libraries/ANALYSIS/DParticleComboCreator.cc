@@ -320,7 +320,12 @@ const DChargedTrackHypothesis* DParticleComboCreator::Create_ChargedHypo(const D
 	locNewHypo->Set_TimeAtPOCAToVertex(locTrackPOCAX4.T());
 
 	locNewHypo->Set_T0(locPropagatedRFTime, locOrigHypo->t0_err(), locOrigHypo->t0_detector());
-	locNewHypo->AddAssociatedObject(locChargedTrack);
+
+	vector<const DChargedTrack*> locAssocTracks;
+	locChargedTrack->Get(locAssocTracks);
+	auto locAssocTrack = locAssocTracks.empty() ? locChargedTrack : locAssocTracks[0];
+	locNewHypo->AddAssociatedObject(locAssocTrack);
+
 	dParticleID->Calc_ChargedPIDFOM(locNewHypo);
 
 	return locNewHypo;
