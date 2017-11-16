@@ -24,17 +24,17 @@ const int32_t PMIN = 0;
 const int32_t PMAX = 2000;
 const int32_t PBIN = (PMAX - PMIN)/16;
 
-const int32_t TMIN = -300;
-const int32_t TMAX = 300;
-const int32_t TBIN = (TMAX - TMIN)/0.005;
+const int32_t TMIN = -50;
+const int32_t TMAX = 50;
+const int32_t TBIN = (TMAX - TMIN)/0.05;
 
 const double TMIN_RF = -2.0;
 const double TMAX_RF = 2.0;
-const double TBIN_RF = (TMAX_RF - TMIN_RF)/0.005;
+const double TBIN_RF = (TMAX_RF - TMIN_RF)/0.05;
 
 const double TMIN_TW = -10.0;
 const double TMAX_TW = 15.0;
-const double TBIN_TW = (TMAX_RF - TMIN_RF)/0.005;
+const double TBIN_TW = (TMAX_TW - TMIN_TW)/0.05;
 
 // Define histograms
 //    timewalk
