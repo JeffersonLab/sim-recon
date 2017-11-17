@@ -62,7 +62,7 @@ jerror_t DChargedTrack_factory_Combo::evnt(jana::JEventLoop *locEventLoop, uint6
 		{
 			//create new DChargedTrackHypothesis object
 			auto locNewChargedTrackHypothesis = dChargedTrackHypothesisFactory->Create_ChargedTrackHypothesis(locEventLoop, locTimeBasedTrack, locDetectorMatches, locEventRFBunch);
-			locNewChargedTrackHypothesis->AddAssociatedObject(locChargedTrack);
+			locNewChargedTrackHypothesis->AddAssociatedObject(locNewChargedTrack);
 			dCreatedHypotheses.push_back(locNewChargedTrackHypothesis);
 			locNewChargedTrack->dChargedTrackHypotheses.push_back(locNewChargedTrackHypothesis);
 		}
