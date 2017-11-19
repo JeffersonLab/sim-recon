@@ -535,10 +535,10 @@ void DCutAction_TrueCombo::Initialize(JEventLoop* locEventLoop)
 
 bool DCutAction_TrueCombo::Perform_Action(JEventLoop* locEventLoop, const DParticleCombo* locParticleCombo)
 {
-
 #ifdef VTRACE
 	VT_TRACER("DCutAction_TrueCombo::Perform_Action()");
 #endif
+
 	vector<const DMCThrownMatching*> locMCThrownMatchingVector;
 	locEventLoop->Get(locMCThrownMatchingVector);
 	if(locMCThrownMatchingVector.empty())
@@ -667,7 +667,8 @@ bool DCutAction_TrueBeamParticle::Perform_Action(JEventLoop* locEventLoop, const
 	if(locBeamPhoton == NULL)
 		return false; //dunno how could be possible ...
 
-	return (locBeamPhoton == locBeamPhotons[0]);
+	double locDeltaT = fabs(locBeamPhoton->time() - locBeamPhotons[0]->time());
+	return ((locBeamPhoton->dSystem == locBeamPhotons[0]->dSystem) && (locBeamPhoton->dCounter == locBeamPhotons[0]->dCounter) && (locDeltaT < 1.0));
 }
 
 bool DCutAction_TruePID::Perform_Action(JEventLoop* locEventLoop, const DParticleCombo* locParticleCombo)

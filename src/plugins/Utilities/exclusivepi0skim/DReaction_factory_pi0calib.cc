@@ -43,6 +43,7 @@ jerror_t DReaction_factory_pi0calib::init(void)
 	locReactionStep->Set_InitialParticleID(Pi0);
 	locReactionStep->Add_FinalParticleID(Gamma);
 	locReactionStep->Add_FinalParticleID(Gamma);
+    locReactionStep->Set_KinFitConstrainInitMassFlag(false);
 	locReaction->Add_ReactionStep(locReactionStep);
 	dReactionStepPool.push_back(locReactionStep); //register so will be deleted later: prevent memory leak
 
@@ -59,37 +60,19 @@ jerror_t DReaction_factory_pi0calib::init(void)
 	/**************************************************** pi0calib Analysis Actions ****************************************************/
 
 	// Recommended: Analysis actions automatically performed by the DAnalysisResults factories to histogram useful quantities.
-		//These actions are executed sequentially, and are executed on each surviving (non-cut) particle combination 
-		//Pre-defined actions can be found in ANALYSIS/DHistogramActions.h and ANALYSIS/DCutActions.h
-
-		locReaction->Set_MaxPhotonRFDeltaT(0.5*4.008); //beam bunches are every 4.008 ns, (2.004 should be minimum cut value)
-		locReaction->Set_MaxExtraGoodTracks(1);
-		locReaction->Set_InvariantMassCut(Pi0, 0.05, 0.22);
+    //These actions are executed sequentially, and are executed on each surviving (non-cut) particle combination 
+    //Pre-defined actions can be found in ANALYSIS/DHistogramActions.h and ANALYSIS/DCutActions.h
+    
+    locReaction->Set_MaxExtraGoodTracks(1);
+    //locReaction->Set_InvariantMassCut(Pi0, 0.05, 0.22);   // Use default AnLib cut of M(gg) = 80 - 190 MeV
 
 	// Require BCAL photons
 	locReaction->Add_AnalysisAction(new DCustomAction_CutPhotonKin(locReaction));
 
-	// Fiducial PID delta T cuts 
-	//Proton
-	locReaction->Add_AnalysisAction(new DCutAction_PIDDeltaT(locReaction, false, 2.5, Proton, SYS_TOF));  //false: measured data
-	locReaction->Add_AnalysisAction(new DCutAction_PIDDeltaT(locReaction, false, 2.5, Proton, SYS_BCAL)); //false: measured data
-	locReaction->Add_AnalysisAction(new DCutAction_PIDDeltaT(locReaction, false, 2.5, Proton, SYS_FCAL)); //false: measured data
-	// Pi+
-	locReaction->Add_AnalysisAction(new DCutAction_PIDDeltaT(locReaction, false, 2.0, PiPlus, SYS_TOF));  //false: measured data
-	locReaction->Add_AnalysisAction(new DCutAction_PIDDeltaT(locReaction, false, 2.5, PiPlus, SYS_BCAL)); //false: measured data
-	locReaction->Add_AnalysisAction(new DCutAction_PIDDeltaT(locReaction, false, 2.5, PiPlus, SYS_FCAL)); //false: measured data
-	// Pi-
-	locReaction->Add_AnalysisAction(new DCutAction_PIDDeltaT(locReaction, false, 2.0, PiMinus, SYS_TOF));  //false: measured data
-	locReaction->Add_AnalysisAction(new DCutAction_PIDDeltaT(locReaction, false, 2.5, PiMinus, SYS_BCAL)); //false: measured data
-	locReaction->Add_AnalysisAction(new DCutAction_PIDDeltaT(locReaction, false, 2.5, PiMinus, SYS_FCAL)); //false: measured data
-	// Gamma
-	locReaction->Add_AnalysisAction(new DCutAction_PIDDeltaT(locReaction, false, 3.0, Gamma, SYS_BCAL)); //false: measured data
-	locReaction->Add_AnalysisAction(new DCutAction_PIDDeltaT(locReaction, false, 2.5, Gamma, SYS_FCAL)); //false: measured data 
-//	locReaction->Add_AnalysisAction(new DCutAction_PIDDeltaT(locReaction,false,2.0,Unknown,SYS_NULL,"LooseDeltaTCut"));
+	// Make some back-to-backness and other exclusivity cuts 
+    locReaction->Add_AnalysisAction(new DCustomAction_p2gamma_cuts(locReaction, false));
 
-	// Cuts for future analysis actions applied in CustomAction for now
-        locReaction->Add_AnalysisAction(new DCustomAction_p2gamma_cuts(locReaction, false));
-
+    // Require kin fit CL > 1%
 	locReaction->Add_AnalysisAction(new DCutAction_KinFitFOM(locReaction, 0.01));
 
 	_data.push_back(locReaction); //Register the DReaction with the factory

@@ -21,11 +21,12 @@ bool DCustomAction_CutPhotonKin::Perform_Action(JEventLoop* locEventLoop, const 
 		if(ParticleCharge(locParticles[loc_i]->PID()) == 0)
 		{
 			const DNeutralParticleHypothesis* locNeutralParticleHypothesis = static_cast<const DNeutralParticleHypothesis*>(locParticles[loc_i]);
-			const DNeutralShower* locNeutralShower = NULL;
-			locNeutralParticleHypothesis->GetSingle(locNeutralShower);
+			const DNeutralShower* locNeutralShower = locNeutralParticleHypothesis->Get_NeutralShower();
 
 			// make BCAL cut on photon here
 			if(locNeutralShower->dDetectorSystem != SYS_BCAL) return false;
+            // Require each photon to have at least 500 MeV of energy
+            if(locNeutralShower->dEnergy < 0.5)  return false;
 		}
 	}
 

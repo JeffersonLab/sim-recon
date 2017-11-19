@@ -50,6 +50,8 @@ def main():
 	outfile.Close()
 
 def tw_corr(h,row,col,newV, offsets, offsets_ind, run):
+	if not (col % 10):
+		print('Calibrating column ' + str(col))
 	# Create list of columns with individual readout
 	indCol = [9,27,81,99]
 	# Open files for writing constants
@@ -60,11 +62,14 @@ def tw_corr(h,row,col,newV, offsets, offsets_ind, run):
 
 	# shift histogram time axis based on first step calibration results
 	xbins = h.GetXaxis().GetNbins()
-	ybins = h.GetYaxis().GetNbins()
 	hnew = h.Clone()
 	hnew.Reset()
+	dtmean = GetMean(h)
+	ymax = h.GetYaxis().FindBin(dtmean + 15.0)
+	ymin = h.GetYaxis().FindBin(dtmean - 5.0)
 	for i in range(1,xbins+1):
-		for j in range(1,ybins+1):
+		#for j in range(1,ybins+1):
+		for j in range(ymin,ymax+1):
 			x = hnew.GetXaxis().GetBinCenter(i)
 			y = hnew.GetYaxis().GetBinCenter(j)
 			y -= offsets[col - 1]
@@ -73,15 +78,15 @@ def tw_corr(h,row,col,newV, offsets, offsets_ind, run):
 				hnew.Fill(x, y)
 
 	# Find the reference time difference
-	py = hnew.ProjectionY()
-	ymax = py.GetBinCenter( py.GetMaximumBin() )
-	fit = py.Fit("gaus","sq", "", ymax - 0.5, ymax + 0.5)
-	dtmean = fit.Parameters()[1]
+	dtmean = GetMean(hnew)
+	ymax = h.GetYaxis().FindBin(dtmean + 15.0)
+	ymin = h.GetYaxis().FindBin(dtmean - 5.0)
 
 	# For low amplitude channels, remove tail beyond 3ns
 	# This provides a better Profile for fitting the timewalk
 	for i in range(1, xbins+1):
-		for j in range(1, ybins+1):
+		#for j in range(1, ybins+1):
+		for j in range(ymin, ymax+1):
 			y = hnew.GetYaxis().GetBinCenter(j)
 			if (y - dtmean > 3.0):
 				hnew.SetBinContent(i,j,0)
@@ -103,7 +108,8 @@ def tw_corr(h,row,col,newV, offsets, offsets_ind, run):
 		f1.SetParName(2,"c2")
 		f1.SetParName(3,"c3")
 
-		#hnew.RebinX(16)
+		#hnew.RebinX(4)
+		hnew.GetYaxis().SetRangeUser(dtmean-5.0, dtmean+15.0)
 		p = hnew.ProfileX()
 		fitResult = p.Fit("f1","sRWq")
 
@@ -116,17 +122,15 @@ def tw_corr(h,row,col,newV, offsets, offsets_ind, run):
 		h_adj.Reset()
 
 		for i in range(1,xbins+1):
-			for j in range(1,ybins+1):
+			#for j in range(1,ybins+1):
+			for j in range(ymin,ymax+1):
 				x = hnew.GetXaxis().GetBinCenter(i)
 				y = hnew.GetYaxis().GetBinCenter(j)
 				y = f1.Eval(x) - y
 				n = int(hnew.GetBinContent(i, j))
 				for k in range(n):
 					h_adj.Fill(x, y)
-		py = h_adj.ProjectionY()
-		ymax = py.GetBinCenter( py.GetMaximumBin() )
-		fit = py.Fit("gaus","sq", "", ymax - 0.5, ymax + 0.5)
-		dtmean = fit.Parameters()[1]
+		dtmean = GetMean(h_adj)
 	except:
 		c0 = 1
 		c1 = -1
@@ -144,6 +148,14 @@ def tw_corr(h,row,col,newV, offsets, offsets_ind, run):
 	file1.close()
 
 	return p
+	#return h_adj
+
+def GetMean(hist):
+	py = hist.ProjectionY()
+	ymax = py.GetBinCenter( py.GetMaximumBin() )
+	fit = py.Fit("gaus","sq", "", ymax - 0.5, ymax + 0.5)
+	dtmean = fit.Parameters()[1]
+	return dtmean
 
 
 if __name__ == "__main__":

@@ -16,7 +16,7 @@ class HDDMDataWriter
 
 public:
 	
-  HDDMDataWriter( const string& outFile, int runNumber=9000);
+  HDDMDataWriter( const string& outFile, int runNumber=9000, int seed=0);
   ~HDDMDataWriter();
   
   void writeEvent( const Kinematics& kin, const vector<int>& ptype,
