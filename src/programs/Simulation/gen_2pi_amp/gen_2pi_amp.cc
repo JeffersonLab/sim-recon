@@ -143,6 +143,7 @@ int main( int argc, char* argv[] ){
 	// random number initialization (set to 0 by default)
 	TRandom3* gRandom = new TRandom3();
 	gRandom->SetSeed(seed);
+	cout << "TRandom3 Seed : " << gRandom->GetSeed() << endl;
 
 	// setup AmpToolsInterface
 	AmpToolsInterface::registerAmplitude( TwoPiAngles_amp() );
@@ -154,7 +155,7 @@ int main( int argc, char* argv[] ){
 		( genFlat ? ProductionMechanism::kFlat : ProductionMechanism::kResonant );
 
 	// generate over a range of mass -- the daughters are two charged pions
-	GammaPToXYP resProd( lowMass, highMass, ParticleMass(PiPlus), ParticleMass(PiMinus), beamMaxE, beamPeakE, beamLowE, beamHighE, type, slope );
+	GammaPToXYP resProd( lowMass, highMass, ParticleMass(PiPlus), ParticleMass(PiMinus), beamMaxE, beamPeakE, beamLowE, beamHighE, type, slope, seed );
 	
 	// seed the distribution with a sum of noninterfering Breit-Wigners
 	// we can easily compute the PDF for this and divide by that when
@@ -176,7 +177,7 @@ int main( int argc, char* argv[] ){
 	pTypes.push_back( PiMinus );
 	
 	HDDMDataWriter* hddmOut = NULL;
-	if( hddmname.size() != 0 ) hddmOut = new HDDMDataWriter( hddmname, runNum );
+	if( hddmname.size() != 0 ) hddmOut = new HDDMDataWriter( hddmname, runNum, seed);
 	ROOTDataWriter rootOut( outname );
 	
 	TFile* diagOut = new TFile( "gen_2pi_diagnostic.root", "recreate" );
@@ -289,6 +290,7 @@ int main( int argc, char* argv[] ){
 					if( hddmOut ) hddmOut->writeEvent( *evt, pTypes );
 					rootOut.writeEvent( *evt );
 					++eventCounter;
+					if(eventCounter >= nEvents) break;
 				}
 			}
 			else{

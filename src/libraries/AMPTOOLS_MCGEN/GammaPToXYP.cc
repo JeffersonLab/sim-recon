@@ -18,8 +18,8 @@
 
 GammaPToXYP::GammaPToXYP( float lowMassXY, float highMassXY, 
                           float massX, float massY, float beamMaxE, float beamPeakE, float beamLowE, float beamHighE,
-                          ProductionMechanism::Type type, float slope ) : 
-m_prodMech( ProductionMechanism::kProton, type, slope ), // last arg is t dependence
+                          ProductionMechanism::Type type, float slope, int seed ) : 
+m_prodMech( ProductionMechanism::kProton, type, slope, seed ),
 m_target( 0, 0, 0, 0.938272 ),
 m_childMass( 0 ) {
 

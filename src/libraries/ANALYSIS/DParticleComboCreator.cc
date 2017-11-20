@@ -316,11 +316,11 @@ const DChargedTrackHypothesis* DParticleComboCreator::Create_ChargedHypo(const D
 	locNewHypo->Share_FromInput(locOrigHypo, true, false, true); //share all but timing info
 
 	auto locTrackPOCAX4 = dSourceComboTimeHandler->Get_ChargedPOCAToVertexX4(locOrigHypo, locIsProductionVertex, locReactionFullCombo, locVertexPrimaryFullCombo, locBeamParticle, false, locVertex);
-
 	locNewHypo->Set_TimeAtPOCAToVertex(locTrackPOCAX4.T());
 
 	locNewHypo->Set_T0(locPropagatedRFTime, locOrigHypo->t0_err(), locOrigHypo->t0_detector());
 	locNewHypo->AddAssociatedObject(locChargedTrack);
+
 	dParticleID->Calc_ChargedPIDFOM(locNewHypo);
 
 	return locNewHypo;

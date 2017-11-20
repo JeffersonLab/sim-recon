@@ -50,7 +50,7 @@ def main():
 	outfile.Close()
 
 def tw_corr(h,row,col,newV, offsets, offsets_ind, run):
-	if (col % 10):
+	if not (col % 10):
 		print('Calibrating column ' + str(col))
 	# Create list of columns with individual readout
 	indCol = [9,27,81,99]
@@ -108,7 +108,7 @@ def tw_corr(h,row,col,newV, offsets, offsets_ind, run):
 		f1.SetParName(2,"c2")
 		f1.SetParName(3,"c3")
 
-		hnew.RebinX(2)
+		#hnew.RebinX(4)
 		hnew.GetYaxis().SetRangeUser(dtmean-5.0, dtmean+15.0)
 		p = hnew.ProfileX()
 		fitResult = p.Fit("f1","sRWq")
@@ -147,8 +147,8 @@ def tw_corr(h,row,col,newV, offsets, offsets_ind, run):
         		            str(c2) + '   ' + str(c3) + '   ' + str(dtmean) + '\n')
 	file1.close()
 
-	#return p
-	return h_adj
+	return p
+	#return h_adj
 
 def GetMean(hist):
 	py = hist.ProjectionY()

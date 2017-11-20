@@ -405,11 +405,14 @@ jerror_t JEventProcessor_FCAL_online::evnt(JEventLoop *eventLoop, uint64_t event
 
     if( hits.size() > 1 )
       m_hitTmT0->Fill( locTime );
-
+    
+    if (fabs(locTime) < 20){
+      m_hitTmT02D->Fill( hit.column, hit.row, locTime );
+      m_hitTmT0Sq2D->Fill( hit.column, hit.row, locTime*locTime );
+      m_hitOcc2D->Fill( hit.column, hit.row );
+    }
+    
     m_hitE2D->Fill( hit.column, hit.row, hit.E*k_to_MeV );
-    m_hitTmT02D->Fill( hit.column, hit.row, locTime );
-    m_hitTmT0Sq2D->Fill( hit.column, hit.row, locTime*locTime );
-    m_hitOcc2D->Fill( hit.column, hit.row );
   }
 
 //  japp->RootFillUnLock(this); //RELEASE ROOT FILL LOCK
