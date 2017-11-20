@@ -154,7 +154,7 @@ jerror_t DEventProcessor_pid_dirc::evnt(JEventLoop *loop, uint64_t eventnumber) 
 	hit.SetPmtId(pmt);
 	hit.SetPixelId(pix);
 	hit.SetPosition(TVector3(dircPmtHits[h]->x,dircPmtHits[h]->y,dircPmtHits[h]->z));
-	hit.SetMomentum(TVector3(0,0,0));
+	hit.SetEnergy(dircPmtHits[h]->E);
 	hit.SetLeadTime(dircPmtHits[h]->t);
 	fEvent->AddHit(hit);
       }
