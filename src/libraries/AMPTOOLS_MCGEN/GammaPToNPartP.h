@@ -9,7 +9,7 @@
  */
 
 #include "TLorentzVector.h"
-
+#include "TH1.h"
 #include "AMPTOOLS_MCGEN/ProductionMechanism.h"
 
 class Kinematics;
@@ -20,8 +20,7 @@ public:
   
   GammaPToNPartP( float lowMass, float highMass, 
 		  vector<double> &ChildMass,
-		  ProductionMechanism::Type type,
-		  float tcoef=4.0, float Ebeam=9.0/*GeV*/);
+		  float beamMaxE, float beamPeakE, float beamLowE, float beamHigh, ProductionMechanism::Type type, float slope = 6.0, int seed = 0 );
   
   Kinematics* generate();
   
@@ -38,6 +37,7 @@ private:
   vector<double> m_ChildMass;
   unsigned int m_Npart;
 
+  TH1D *cobrem_vs_E;
 };
 
 #endif
