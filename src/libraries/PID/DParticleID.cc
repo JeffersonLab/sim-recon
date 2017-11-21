@@ -1340,7 +1340,7 @@ bool DParticleID::Distance_ToTrack(const vector<DTrackFitter::Extrapolation_t> &
  // Find the closest extrapolated position to this BCAL shower
   double doca_old=1e6; 
   for (unsigned int i=1;i<extrapolations.size();i++){
-    double doca=(extrapolations[i].position-bcal_pos).Perp();
+    double doca=(extrapolations[i].position-bcal_pos).Mag();
     if (doca>doca_old){
       unsigned int index=i-1;
       locProjPos=extrapolations[index].position;
