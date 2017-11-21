@@ -140,6 +140,15 @@ int main( int argc, char* argv[] ){
 	assert( cfgInfo->reactionList().size() == 1 );
 	ReactionInfo* reaction = cfgInfo->reactionList()[0];
 	
+	// use particletype.h to convert reaction particle names
+	vector<Particle_t> Particles;
+	for (unsigned int i = 0; i < reaction->particleList().size(); i++){
+	  Particle_t locEnum = ParticleEnum(reaction->particleList()[i].c_str());
+	  if (locEnum == 0)
+	    cout << "ConfigFileParser WARNING:  unknown particle type \"" << reaction->particleList()[i] << "\"" << endl;
+	  Particles.push_back(ParticleEnum(reaction->particleList()[i].c_str()));
+	}
+
 	// random number initialization (set to 0 by default)
 	TRandom3* gRandom = new TRandom3();
 	gRandom->SetSeed(seed);
@@ -155,7 +164,7 @@ int main( int argc, char* argv[] ){
 		( genFlat ? ProductionMechanism::kFlat : ProductionMechanism::kResonant );
 
 	// generate over a range of mass -- the daughters are two charged pions
-	GammaPToXYP resProd( lowMass, highMass, ParticleMass(PiPlus), ParticleMass(PiMinus), beamMaxE, beamPeakE, beamLowE, beamHighE, type, slope, seed );
+	GammaPToXYP resProd( lowMass, highMass, ParticleMass(Particles[2]), ParticleMass(Particles[3]), beamMaxE, beamPeakE, beamLowE, beamHighE, type, slope, seed );
 	
 	// seed the distribution with a sum of noninterfering Breit-Wigners
 	// we can easily compute the PDF for this and divide by that when
