@@ -14,12 +14,15 @@
 #include "AMPTOOLS_DATAIO/ROOTDataWriter.h"
 #include "AMPTOOLS_DATAIO/HDDMDataWriter.h"
 
+#include "AMPTOOLS_AMPS/ThreePiAngles.h"
 #include "AMPTOOLS_AMPS/TwoPiAngles_amp.h"
 #include "AMPTOOLS_AMPS/TwoPSHelicity.h"
 #include "AMPTOOLS_AMPS/BreitWigner.h"
+#include "AMPTOOLS_AMPS/BreitWigner3body.h"
 
 #include "AMPTOOLS_MCGEN/ProductionMechanism.h"
 #include "AMPTOOLS_MCGEN/GammaPToXYP.h"
+#include "AMPTOOLS_MCGEN/GammaPToNPartP.h"
 
 #include "IUAmpTools/AmpToolsInterface.h"
 #include "IUAmpTools/ConfigFileParser.h"
@@ -142,11 +145,17 @@ int main( int argc, char* argv[] ){
 	
 	// use particletype.h to convert reaction particle names
 	vector<Particle_t> Particles;
+	vector<double> childMasses;
+	double threshold = 0;
 	for (unsigned int i = 0; i < reaction->particleList().size(); i++){
 	  Particle_t locEnum = ParticleEnum(reaction->particleList()[i].c_str());
 	  if (locEnum == 0)
 	    cout << "ConfigFileParser WARNING:  unknown particle type \"" << reaction->particleList()[i] << "\"" << endl;
 	  Particles.push_back(ParticleEnum(reaction->particleList()[i].c_str()));
+	  if (i>1){
+	    childMasses.push_back(ParticleMass(Particles[i]));
+	    threshold += ParticleMass(Particles[i]);
+	  }
 	}
 
 	// loop to look for resonance in config file
@@ -177,16 +186,19 @@ int main( int argc, char* argv[] ){
 	cout << "TRandom3 Seed : " << gRandom->GetSeed() << endl;
 
 	// setup AmpToolsInterface
+	AmpToolsInterface::registerAmplitude( ThreePiAngles() );
 	AmpToolsInterface::registerAmplitude( TwoPiAngles_amp() );
 	AmpToolsInterface::registerAmplitude( TwoPSHelicity() );
 	AmpToolsInterface::registerAmplitude( BreitWigner() );
+	AmpToolsInterface::registerAmplitude( BreitWigner3body() );
 	AmpToolsInterface ati( cfgInfo, AmpToolsInterface::kMCGeneration );
 	
 	ProductionMechanism::Type type =
 		( genFlat ? ProductionMechanism::kFlat : ProductionMechanism::kResonant );
 
 	// generate over a range of mass
-	GammaPToXYP resProd( lowMass, highMass, ParticleMass(Particles[2]), ParticleMass(Particles[3]), beamMaxE, beamPeakE, beamLowE, beamHighE, type, slope, seed );
+	//GammaPToXYP resProd( lowMass, highMass, ParticleMass(Particles[2]), ParticleMass(Particles[3]), beamMaxE, beamPeakE, beamLowE, beamHighE, type, slope, seed );
+	GammaPToNPartP resProd( threshold, highMass, childMasses, beamMaxE, beamPeakE, beamLowE, beamHighE, type, slope, seed );
 	
 	// seed the distribution with a sum of noninterfering Breit-Wigners
 	// we can easily compute the PDF for this and divide by that when
@@ -202,10 +214,8 @@ int main( int argc, char* argv[] ){
 	}
 	
 	vector< int > pTypes;
-	pTypes.push_back( Gamma );
-	pTypes.push_back( Proton );
-	pTypes.push_back( PiPlus );
-	pTypes.push_back( PiMinus );
+	for (unsigned int i=0; i<Particles.size(); i++)
+	  pTypes.push_back( Particles[i] );
 	
 	HDDMDataWriter* hddmOut = NULL;
 	if( hddmname.size() != 0 ) hddmOut = new HDDMDataWriter( hddmname, runNum, seed);
@@ -220,6 +230,8 @@ int main( int argc, char* argv[] ){
 	TH2F* intenWVsM = new TH2F( "intenWVsM", "Ratio vs. M", 100, lowMass, highMass, 1000, 0, 10 );
 	
 	TH1F* t = new TH1F( "t", "-t Distribution", 200, 0, 2 );
+
+	TH1F* M_isobar = new TH1F( "M_isobar", "Isobar Mass", 180, lowMass, highMass );
 
 	TH2F* CosTheta_psi = new TH2F( "CosTheta_psi", "cos#theta vs. #psi", 180, -3.14, 3.14, 100, -1, 1);
 	TH2F* M_CosTheta = new TH2F( "M_CosTheta", "M vs. cos#vartheta", 180, lowMass, highMass, 200, -1, 1);
@@ -254,8 +266,13 @@ int main( int argc, char* argv[] ){
 		for( int i = 0; i < batchSize; ++i ){
 			
 			Kinematics* evt = ati.kinematics( i );
-			TLorentzVector resonance( evt->particle( 2 ) + 
-                                  evt->particle( 3 ) );
+			TLorentzVector resonance;
+			for (unsigned int i=2; i<Particles.size(); i++)
+			  resonance += evt->particle( i );
+
+			TLorentzVector isobar;
+			for (unsigned int i=3; i<Particles.size(); i++)
+			  isobar += evt->particle( i );
 			
 			double genWeight = evt->weight();
 			
@@ -275,6 +292,8 @@ int main( int argc, char* argv[] ){
 					
 					intenW->Fill( weightedInten );
 					intenWVsM->Fill( resonance.M(), weightedInten );
+
+					M_isobar->Fill( isobar.M() );
 					
 					// calculate angular variables
 					TLorentzVector beam = evt->particle ( 0 );
@@ -346,6 +365,7 @@ int main( int argc, char* argv[] ){
 	massW->Write();
 	intenW->Write();
 	intenWVsM->Write();
+	M_isobar->Write();
 	t->Write();
 	CosTheta_psi->Write();
 	M_CosTheta->Write();
