@@ -149,6 +149,28 @@ int main( int argc, char* argv[] ){
 	  Particles.push_back(ParticleEnum(reaction->particleList()[i].c_str()));
 	}
 
+	// loop to look for resonance in config file
+	// currently only one at a time is supported 
+	const vector<ConfigFileLine> configFileLines = parser.getConfigFileLines();
+	double resonance[]={1.0, 1.0};
+	bool foundResonance = false;
+	for (vector<ConfigFileLine>::const_iterator it=configFileLines.begin(); it!=configFileLines.end(); it++) {
+	  if ((*it).keyword() == "define") {
+	    if ((*it).arguments()[0] == "rho" || (*it).arguments()[0] == "omega" || (*it).arguments()[0] == "phi" || (*it).arguments()[0] == "b1"){
+	      if ( (*it).arguments().size() != 3 )
+		continue;
+	      resonance[0]=atof((*it).arguments()[1].c_str());
+	      resonance[1]=atof((*it).arguments()[2].c_str());
+	      cout << "Distribution seeded with resonance " << (*it).arguments()[0] << " : mass = " << resonance[0] << "GeV , width = " << resonance[1] << "GeV" << endl; 
+	      foundResonance = true;
+	      break;
+	    }
+	  }
+	}
+	if (!foundResonance)
+	  cout << "ConfigFileParser WARNING:  no known resonance found, seed with mass = width = 1GeV" << endl; 
+
+
 	// random number initialization (set to 0 by default)
 	TRandom3* gRandom = new TRandom3();
 	gRandom->SetSeed(seed);
@@ -163,7 +185,7 @@ int main( int argc, char* argv[] ){
 	ProductionMechanism::Type type =
 		( genFlat ? ProductionMechanism::kFlat : ProductionMechanism::kResonant );
 
-	// generate over a range of mass -- the daughters are two charged pions
+	// generate over a range of mass
 	GammaPToXYP resProd( lowMass, highMass, ParticleMass(Particles[2]), ParticleMass(Particles[3]), beamMaxE, beamPeakE, beamLowE, beamHighE, type, slope, seed );
 	
 	// seed the distribution with a sum of noninterfering Breit-Wigners
@@ -176,7 +198,7 @@ int main( int argc, char* argv[] ){
 		// set of amplitudes -- doing so will improve efficiency.  Leaving as is
 		// won't make MC incorrect, it just won't be as fast as it could be
 		
-		resProd.addResonance( 0.775, 0.146,  1.0 );
+		resProd.addResonance( resonance[0], resonance[1],  1.0 );
 	}
 	
 	vector< int > pTypes;
