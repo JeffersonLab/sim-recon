@@ -21,11 +21,14 @@
 
 const double NBodyPhaseSpaceFactory::kPi = 3.14159;
 
-NBodyPhaseSpaceFactory::NBodyPhaseSpaceFactory( double parentMass, const vector<double>& childMass ) :
+NBodyPhaseSpaceFactory::NBodyPhaseSpaceFactory( double parentMass, const vector<double>& childMass, int seed ) :
   m_parentMass( parentMass ),
   m_childMass( childMass )
 {
   m_Nd = (int)childMass.size();
+
+  // initialize pseudo-random generator
+  gRandom->SetSeed(seed);
 }
 
 vector<TLorentzVector>
@@ -120,5 +123,5 @@ NBodyPhaseSpaceFactory::pdk( double a, double b, double c ) const {
 double
 NBodyPhaseSpaceFactory::random( double low, double hi ) const {
 	
-  return( ( hi - low ) * drand48() + low );
+  return( ( hi - low ) * gRandom->Uniform() + low );
 }

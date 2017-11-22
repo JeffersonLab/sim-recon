@@ -37,6 +37,8 @@ private:
   vector<double> m_ChildMass;
   unsigned int m_Npart;
 
+  int m_seed;
+
   TH1D *cobrem_vs_E;
 };
 
