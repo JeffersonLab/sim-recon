@@ -133,7 +133,7 @@ int main( int argc, char* argv[] ){
 	}
 	
 	if( configfile.size() == 0 || outname.size() == 0 ){
-		cout << "No config file or output specificed:  run gen_2pi -h for help" << endl;
+		cout << "No config file or output specificed:  run gen_amp -h for help" << endl;
 		exit(1);
 	}
 	
@@ -221,17 +221,27 @@ int main( int argc, char* argv[] ){
 	if( hddmname.size() != 0 ) hddmOut = new HDDMDataWriter( hddmname, runNum, seed);
 	ROOTDataWriter rootOut( outname );
 	
-	TFile* diagOut = new TFile( "gen_2pi_diagnostic.root", "recreate" );
+	TFile* diagOut = new TFile( "gen_amp_diagnostic.root", "recreate" );
 	
-	TH1F* mass = new TH1F( "M", "Resonance Mass", 180, lowMass, highMass );
-	TH1F* massW = new TH1F( "M_W", "Weighted Resonance Mass", 180, lowMass, highMass );
+	ostringstream locStream;
+	ostringstream locIsobarStream;
+	for (unsigned int i=2; i<Particles.size(); i++){
+	  locStream << ParticleName_ROOT(Particles[i]);
+	  if ( i> 2 )
+	    locIsobarStream << ParticleName_ROOT(Particles[i]);
+	}
+	string locHistTitle = string("Resonance Mass ;") + locStream.str() + string(" Invariant Mass (GeV/c^{2});");
+	string locIsobarTitle = string("Isobar Mass ;") + locIsobarStream.str() + string(" Invariant Mass (GeV/c^{2});");
+
+	TH1F* mass = new TH1F( "M", locHistTitle.c_str(), 180, lowMass, highMass );
+	TH1F* massW = new TH1F( "M_W", ("Weighted "+locHistTitle).c_str(), 180, lowMass, highMass );
 	massW->Sumw2();
 	TH1F* intenW = new TH1F( "intenW", "True PDF / Gen. PDF", 1000, 0, 100 );
 	TH2F* intenWVsM = new TH2F( "intenWVsM", "Ratio vs. M", 100, lowMass, highMass, 1000, 0, 10 );
 	
 	TH1F* t = new TH1F( "t", "-t Distribution", 200, 0, 2 );
 
-	TH1F* M_isobar = new TH1F( "M_isobar", "Isobar Mass", 180, lowMass, highMass );
+	TH1F* M_isobar = new TH1F( "M_isobar", locIsobarTitle.c_str(), 200, 0, 2 );
 
 	TH2F* CosTheta_psi = new TH2F( "CosTheta_psi", "cos#theta vs. #psi", 180, -3.14, 3.14, 100, -1, 1);
 	TH2F* M_CosTheta = new TH2F( "M_CosTheta", "M vs. cos#vartheta", 180, lowMass, highMass, 200, -1, 1);
