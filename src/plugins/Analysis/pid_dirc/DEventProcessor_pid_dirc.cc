@@ -126,10 +126,10 @@ jerror_t DEventProcessor_pid_dirc::evnt(JEventLoop *loop, uint64_t eventnumber) 
     if(dircPmtHits.size() > 0.){
       fEvent = new DrcEvent();
       DrcHit hit;
-      int relevant(0);
       // loop over PMT's hits
       for (unsigned int h = 0; h < dircPmtHits.size(); h++){
-	// identify bar id
+	int relevant(0);
+	// identify bar id	
 	for (unsigned int j = 0; j < dircBarHits.size(); j++){
 	  if(j != fabs(dircPmtHits[h]->key_bar)) continue;
 	  if(mcthrowns[m]->myid == dircBarHits[j]->track){
@@ -158,10 +158,9 @@ jerror_t DEventProcessor_pid_dirc::evnt(JEventLoop *loop, uint64_t eventnumber) 
 	hit.SetLeadTime(dircPmtHits[h]->t);
 	fEvent->AddHit(hit);
       }
-      if(relevant<1) continue;
-
-      Int_t size = cevt.GetEntriesFast();
-      new (cevt[size]) DrcEvent(*fEvent);
+      
+      if(fEvent->GetHitSize()>0) new (cevt[ cevt.GetEntriesFast()]) DrcEvent(*fEvent);
+      
     }
   }
   
