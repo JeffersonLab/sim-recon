@@ -21,8 +21,7 @@ GammaPToNPartP::GammaPToNPartP( float lowMass, float highMass,
 				ProductionMechanism::Type type, float slope, int seed ) : 
 m_prodMech( ProductionMechanism::kProton, type, slope, seed ),
 m_target( 0, 0, 0, ParticleMass(Proton) ),
-m_ChildMass(ChildMass),
-m_seed(seed)
+m_ChildMass(ChildMass)
 {
   m_Npart = ChildMass.size();
   assert(m_Npart>0);
@@ -93,7 +92,7 @@ GammaPToNPartP::generate(){
   genWeight *= Xdecay.Generate();
   */
 
-  NBodyPhaseSpaceFactory psFactory(resonance.M(),m_ChildMass, m_seed);
+  NBodyPhaseSpaceFactory psFactory(resonance.M(),m_ChildMass);
   vector< TLorentzVector > children = psFactory.generateDecay(false);
   genWeight *= psFactory.getLastGeneratedWeight();
 

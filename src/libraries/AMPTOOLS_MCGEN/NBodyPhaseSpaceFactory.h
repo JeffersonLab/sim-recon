@@ -13,7 +13,7 @@ class NBodyPhaseSpaceFactory
 	
  public:
 	
-  NBodyPhaseSpaceFactory( double parentMass, const vector<double>& childMass, int seed = 0);
+  NBodyPhaseSpaceFactory( double parentMass, const vector<double>& childMass);
 
 
   /**
