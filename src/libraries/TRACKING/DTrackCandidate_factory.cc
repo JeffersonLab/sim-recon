@@ -55,7 +55,7 @@ inline bool cdc_fdc_match(double p_fdc,double p_cdc,double dist){
   //double frac2=fabs(1.-p_fdc/p_cdc);
   double p=p_fdc;
   if (p_cdc <p ) p=p_cdc;
-  if (dist<10. && dist <3.25+1.75/p
+  if (dist<10. && dist <4.+1.75/p
       //&& (frac<0.5 || frac2<0.5)
       ) return true;
   return false;
@@ -2528,7 +2528,7 @@ bool DTrackCandidate_factory::MatchMethod9(unsigned int src_index,
 	double dy=fit1.y0-fit2.y0;
 	double circle_center_diff2=dx*dx+dy*dy;
 	double got_match=false;
-	if (circle_center_diff2<4.0) got_match=true;
+	if (circle_center_diff2<9.0) got_match=true;
 	// try another matching method here if got_match==false 
 	else{  	
 	  // Sense of rotation
