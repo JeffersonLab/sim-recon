@@ -1,0 +1,8 @@
+import sbms
+
+Import('*')
+
+Import('env osname')
+
+SConscript(dirs=['code','xsec_table'], exports='env osname', duplicate=0)
+

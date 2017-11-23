@@ -43,7 +43,7 @@ jerror_t DReaction_factory_p2gamma_hists::init(void)
 	locReaction->Set_KinFitType(d_NoFit); //simultaneously constrain apply four-momentum conservation, invariant masses, and common-vertex constraints
 
 	// Highly Recommended: When generating particle combinations, reject all beam photons that match to a different RF bunch (delta_t > 2.004 ns)
-	locReaction->Set_MaxPhotonRFDeltaT(0.5*4.008); //beam bunches are every 4.008 ns, (2.004 should be minimum cut value)
+	locReaction->Set_NumPlusMinusRFBunches(0);
 
 	// Recommended: Enable ROOT TTree output for this DReaction
         locReaction->Enable_TTreeOutput("tree_p2gamma_hists.root"); //string is file name (must end in ".root"!!): doen't need to be unique, feel free to change
@@ -58,7 +58,7 @@ jerror_t DReaction_factory_p2gamma_hists::init(void)
         locReaction->Add_AnalysisAction(new DCustomAction_p2gamma_hists(locReaction, false, "NoKinFit_Measured"));
 
 	// PID
-        locReaction->Add_AnalysisAction(new DHistogramAction_PID(locReaction));
+        locReaction->Add_AnalysisAction(new DHistogramAction_PID(locReaction, false));
         locReaction->Add_AnalysisAction(new DCutAction_PIDDeltaT(locReaction, false, 1.0, Unknown, SYS_TOF)); //false: measured data //Unknown: All PIDs
         locReaction->Add_AnalysisAction(new DCutAction_PIDDeltaT(locReaction, false, 10.0, Unknown, SYS_BCAL)); //false: measured data //Unknown: All PIDs
         locReaction->Add_AnalysisAction(new DCutAction_PIDDeltaT(locReaction, false, 10.0, Unknown, SYS_FCAL)); //false: measured data //Unknown: All PIDs

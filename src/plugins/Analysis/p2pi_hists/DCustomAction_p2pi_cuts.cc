@@ -10,7 +10,8 @@
 void DCustomAction_p2pi_cuts::Initialize(JEventLoop* locEventLoop)
 {
 	// check if a particle is missing
-	Get_Reaction()->Get_MissingPID(dMissingPID);
+	auto locMissingPIDs = Get_Reaction()->Get_MissingPIDs();
+	dMissingPID = (locMissingPIDs.size() == 1) ? locMissingPIDs[0] : Unknown;
 }
 
 bool DCustomAction_p2pi_cuts::Perform_Action(JEventLoop* locEventLoop, const DParticleCombo* locParticleCombo)
@@ -19,13 +20,7 @@ bool DCustomAction_p2pi_cuts::Perform_Action(JEventLoop* locEventLoop, const DPa
 	const DParticleComboStep* locParticleComboStep = locParticleCombo->Get_ParticleComboStep(0);
 
 	// get beam photon energy and final state particles
-        deque<const DKinematicData*> locParticles;
-        if(!Get_UseKinFitResultsFlag()) { //measured
-                locParticleComboStep->Get_FinalParticles_Measured(locParticles);
-	}
-	else {
-		locParticleComboStep->Get_FinalParticles(locParticles);
-	}
+	auto locParticles = Get_UseKinFitResultsFlag() ? locParticleComboStep->Get_FinalParticles() : locParticleComboStep->Get_FinalParticles_Measured();
 
 	// calculate 2pi P4
 	DLorentzVector locP4_2pi;
@@ -36,7 +31,7 @@ bool DCustomAction_p2pi_cuts::Perform_Action(JEventLoop* locEventLoop, const DPa
         }
 
 	// calculate missing P4
-	DLorentzVector locMissingP4 = dAnalysisUtilities->Calc_MissingP4(locParticleCombo,Get_UseKinFitResultsFlag());
+	DLorentzVector locMissingP4 = dAnalysisUtilities->Calc_MissingP4(Get_Reaction(),locParticleCombo,Get_UseKinFitResultsFlag());
 
 	if(dMissingPID != Proton) {
 		

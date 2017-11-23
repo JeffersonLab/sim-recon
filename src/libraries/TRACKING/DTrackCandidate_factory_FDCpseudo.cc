@@ -111,7 +111,7 @@ jerror_t DTrackCandidate_factory_FDCpseudo::evnt(JEventLoop *loop, uint64_t even
 		mom.SetMagThetaPhi(p_trans/sin(theta), theta, phi);
 		can->setPosition(pos);
 		can->setMomentum(mom);
-		can->setCharge(q);
+		can->setPID((q > 0.0) ? PiPlus : PiMinus);
 
 		_data.push_back(can);
 	}

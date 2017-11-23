@@ -6,6 +6,7 @@
 #include "DL1Trigger.h"
 #include "DL3Trigger.h"
 #include "DMCTrigger.h"
+#include "DL1MCTrigger.h"
 #include "DANA/DStatusBits.h"
 
 using namespace std;

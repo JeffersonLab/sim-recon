@@ -43,8 +43,11 @@ class DFCALShower_factory:public JFactory<DFCALShower>{
 		double expfit_param2;
 		double expfit_param3;
 		
-		double Timewalk_corr;
-
+		double timeConst0;
+                double timeConst1;
+		double timeConst2;
+                double timeConst3;
+                double timeConst4;
 
 		double FCAL_RADIATION_LENGTH;
 		double FCAL_CRITICAL_ENERGY;

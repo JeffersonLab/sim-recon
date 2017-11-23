@@ -18,8 +18,8 @@
 
 GammaPToXYP::GammaPToXYP( float lowMassXY, float highMassXY, 
                           float massX, float massY, float beamMaxE, float beamPeakE, float beamLowE, float beamHighE,
-                          ProductionMechanism::Type type, float slope ) : 
-m_prodMech( ProductionMechanism::kProton, type, slope ), // last arg is t dependence
+                          ProductionMechanism::Type type, float slope, int seed ) : 
+m_prodMech( ProductionMechanism::kProton, type, slope, seed ),
 m_target( 0, 0, 0, 0.938272 ),
 m_childMass( 0 ) {
 
@@ -36,14 +36,15 @@ m_childMass( 0 ) {
   
   int doPolFlux=0;  // want total flux (1 for polarized flux)
   float emitmr=10.e-9; // electron beam emittance
-  float radt=20.e-6; // radiator thickness in m
-  float collDiam=0.0034; // meters
+  float radt=50.e-6; // radiator thickness in m
+  float collDiam=0.005; // meters
   float Dist = 76.0; // meters
   CobremsGeneration cobrems(Emax, Epeak);
   cobrems.setBeamEmittance(emitmr);
   cobrems.setTargetThickness(radt);
   cobrems.setCollimatorDistance(Dist);
   cobrems.setCollimatorDiameter(collDiam);
+  cobrems.setCollimatedFlag(true);
   cobrems.setPolarizedFlag(doPolFlux);
 
   // Create histogram

@@ -8,13 +8,12 @@
 
 #include "DReaction_factory_ppi0gamma_hists.h"
 #include "DCustomAction_HistOmegaVsMissProton.h"
-#include "DCustomAction_dEdxCut_ppi0gamma.h"
 #include "DCustomAction_CutExtraPi0.h"
 #include "DCustomAction_CutExtraTrackPID.h"
 
 void DReaction_factory_ppi0gamma_hists::PIDCuts(DReaction* locReaction)
 {
-	locReaction->Add_AnalysisAction(new DHistogramAction_PID(locReaction));
+	locReaction->Add_AnalysisAction(new DHistogramAction_PID(locReaction, false));
 	locReaction->Add_AnalysisAction(new DCutAction_PIDDeltaT(locReaction, false, 2.0, Proton, SYS_TOF));
 	locReaction->Add_AnalysisAction(new DCutAction_PIDDeltaT(locReaction, false, 2.5, Proton, SYS_BCAL));
 	locReaction->Add_AnalysisAction(new DCutAction_PIDDeltaT(locReaction, false, 3.0, Proton, SYS_FCAL));
@@ -26,8 +25,8 @@ void DReaction_factory_ppi0gamma_hists::PIDCuts(DReaction* locReaction)
 	locReaction->Add_AnalysisAction(new DCutAction_PIDDeltaT(locReaction, false, 3.0, PiMinus, SYS_FCAL));
 	locReaction->Add_AnalysisAction(new DCutAction_PIDDeltaT(locReaction, false, 2.0, Gamma, SYS_BCAL)); //false: measured data
 	locReaction->Add_AnalysisAction(new DCutAction_PIDDeltaT(locReaction, false, 3.0, Gamma, SYS_FCAL)); //false: measured data
-	locReaction->Add_AnalysisAction(new DCustomAction_dEdxCut_ppi0gamma(locReaction, false)); //false: focus on keeping signal
-	locReaction->Add_AnalysisAction(new DHistogramAction_PID(locReaction, "PostPIDCuts"));
+	locReaction->Add_AnalysisAction(new DCutAction_dEdx(locReaction));
+	locReaction->Add_AnalysisAction(new DHistogramAction_PID(locReaction, false, "PostPIDCuts"));
 }
 	
 
@@ -98,17 +97,7 @@ jerror_t DReaction_factory_ppi0gamma_hists::evnt(JEventLoop* locEventLoop, uint6
 	locReaction->Set_KinFitType(d_P4AndVertexFit); //simultaneously constrain apply four-momentum conservation, invariant masses, and common-vertex constraints
 
 	// Highly Recommended: When generating particle combinations, reject all beam photons that match to a different RF bunch
-	locReaction->Set_MaxPhotonRFDeltaT(0.5*dBeamBunchPeriod);
-
-	/************************************************** ppi0gamma_preco_2FCAL Pre-Combo Custom Cuts *************************************************/
-
-	// Highly Recommended: Very loose invariant mass cuts, applied during DParticleComboBlueprint construction
-	locReaction->Set_InvariantMassCut(Pi0, 0.05, 0.22);
-	locReaction->Set_InvariantMassCut(omega, 0.4, 1.2);
-
-	// Highly Recommended: Very loose DAnalysisAction cuts, applied just after creating the combination (before saving it)
-	// Example: Missing mass squared of proton
-	locReaction->Add_ComboPreSelectionAction(new DCutAction_MissingMassSquared(locReaction, false, -0.1, 0.1));
+	locReaction->Set_NumPlusMinusRFBunches(0);
 
 	/**************************************************** ppi0gamma_preco_2FCAL Analysis Actions ****************************************************/
 
@@ -157,17 +146,7 @@ jerror_t DReaction_factory_ppi0gamma_hists::evnt(JEventLoop* locEventLoop, uint6
 	locReaction->Set_KinFitType(d_P4AndVertexFit); //simultaneously constrain apply four-momentum conservation, invariant masses, and common-vertex constraints
 
 	// Highly Recommended: When generating particle combinations, reject all beam photons that match to a different RF bunch
-	locReaction->Set_MaxPhotonRFDeltaT(0.5*dBeamBunchPeriod);
-
-	/************************************************** ppi0gamma_preco_FCAL-BCAL Pre-Combo Custom Cuts *************************************************/
-
-	// Highly Recommended: Very loose invariant mass cuts, applied during DParticleComboBlueprint construction
-	locReaction->Set_InvariantMassCut(Pi0, 0.05, 0.22);
-	locReaction->Set_InvariantMassCut(omega, 0.4, 1.2);
-
-	// Highly Recommended: Very loose DAnalysisAction cuts, applied just after creating the combination (before saving it)
-	// Example: Missing mass squared of proton
-	locReaction->Add_ComboPreSelectionAction(new DCutAction_MissingMassSquared(locReaction, false, -0.1, 0.1));
+	locReaction->Set_NumPlusMinusRFBunches(0);
 
 	/**************************************************** ppi0gamma_preco FCAL-BCAL Analysis Actions ****************************************************/
 
@@ -216,17 +195,7 @@ jerror_t DReaction_factory_ppi0gamma_hists::evnt(JEventLoop* locEventLoop, uint6
 	locReaction->Set_KinFitType(d_P4AndVertexFit); //simultaneously constrain apply four-momentum conservation, invariant masses, and common-vertex constraints
 
 	// Highly Recommended: When generating particle combinations, reject all beam photons that match to a different RF bunch
-	locReaction->Set_MaxPhotonRFDeltaT(0.5*dBeamBunchPeriod);
-
-	/************************************************** ppi0gamma_preco_2BCAL Pre-Combo Custom Cuts *************************************************/
-
-	// Highly Recommended: Very loose invariant mass cuts, applied during DParticleComboBlueprint construction
-	locReaction->Set_InvariantMassCut(Pi0, 0.05, 0.22);
-	locReaction->Set_InvariantMassCut(omega, 0.4, 1.2);
-
-	// Highly Recommended: Very loose DAnalysisAction cuts, applied just after creating the combination (before saving it)
-	// Example: Missing mass squared of proton
-	locReaction->Add_ComboPreSelectionAction(new DCutAction_MissingMassSquared(locReaction, false, -0.1, 0.1));
+	locReaction->Set_NumPlusMinusRFBunches(0);
 
 	/**************************************************** ppi0gamma_preco_2BCAL Analysis Actions ****************************************************/
 
@@ -275,18 +244,7 @@ jerror_t DReaction_factory_ppi0gamma_hists::evnt(JEventLoop* locEventLoop, uint6
 	//locReaction->Set_KinFitType(d_P4AndVertexFit); //simultaneously constrain apply four-momentum conservation, invariant masses, and common-vertex constraints
 
 	// Highly Recommended: When generating particle combinations, reject all beam photons that match to a different RF bunch
-	locReaction->Set_MaxPhotonRFDeltaT(0.5*dBeamBunchPeriod);
-
-	/*********************************************** ppi0gamma_preco_any Pre-Combo Custom Cuts ***********************************************/
-
-	// Loose Pi0 Cut, Applied during Blueprint Construction
-	locReaction->Set_InvariantMassCut(Pi0, 0.05, 0.22);
-
-	// Loose omega Cut, Applied during Blueprint Construction
-	locReaction->Set_InvariantMassCut(omega, 0.4, 1.2);
-
-	// Loose missing mass squared cut, applied just after creating the combination (before saving it)
-	locReaction->Add_ComboPreSelectionAction(new DCutAction_MissingMassSquared(locReaction, false, -0.1, 0.1));
+	locReaction->Set_NumPlusMinusRFBunches(0);
 
 	/**************************************************** ppi0gamma_preco_any Analysis Actions ****************************************************/
 
@@ -330,18 +288,7 @@ jerror_t DReaction_factory_ppi0gamma_hists::evnt(JEventLoop* locEventLoop, uint6
 	locReaction->Set_KinFitType(d_P4AndVertexFit); //simultaneously constrain apply four-momentum conservation, invariant masses, and common-vertex constraints
 
 	// Highly Recommended: When generating particle combinations, reject all beam photons that match to a different RF bunch
-	locReaction->Set_MaxPhotonRFDeltaT(0.5*dBeamBunchPeriod);
-
-	/*********************************************** ppi0gamma_preco_any_kinfit Pre-Combo Custom Cuts ***********************************************/
-
-	// Loose Pi0 Cut, Applied during Blueprint Construction
-	locReaction->Set_InvariantMassCut(Pi0, 0.05, 0.22);
-
-	// Loose omega Cut, Applied during Blueprint Construction
-	locReaction->Set_InvariantMassCut(omega, 0.4, 1.2);
-
-	// Loose missing mass squared cut, applied just after creating the combination (before saving it)
-	locReaction->Add_ComboPreSelectionAction(new DCutAction_MissingMassSquared(locReaction, false, -0.1, 0.1));
+	locReaction->Set_NumPlusMinusRFBunches(0);
 
 	/**************************************************** ppi0gamma_preco_any_kinfit Analysis Actions ****************************************************/
 

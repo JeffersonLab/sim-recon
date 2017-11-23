@@ -13,6 +13,7 @@
 // July 5, 2014 R.T.Jones: changed over from c to c++ API for hddm
 // June 22, 2015 J. Stevens: changed RICH -> DIRC and remove CERE
 // May 7, 2017 R. Dzhygadlo: added DDIRCTruthPmtHit DDIRCTruthBarHit
+// Oct 20, 2017 A. Somov: Added fields for the DPSHit/DPSCHit
 //
 // DEventSourceHDDM methods
 //
@@ -28,6 +29,7 @@ using namespace std;
 #include <DANA/DStatusBits.h>
 
 #include "BCAL/DBCALGeometry.h"
+#include "PAIR_SPECTROMETER/DPSGeometry.h"
 
 #include <DVector2.h>
 #include <DEventSourceHDDM.h>
@@ -36,6 +38,7 @@ using namespace std;
 #include <FCAL/DFCALHit.h>
 #include <CCAL/DCCALGeometry.h>
 #include <CCAL/DCCALHit.h>
+
 
 //------------------------------------------------------------------
 // Binary predicate used to sort hits
@@ -217,11 +220,20 @@ jerror_t DEventSourceHDDM::GetObjects(JEvent &event, JFactory_base *factory)
          }     
       }
       // load BCAL geometry
-  	  vector<const DBCALGeometry *> BCALGeomVec;
-  	  loop->Get(BCALGeomVec);
-  	  if(BCALGeomVec.size() == 0)
-		  throw JException("Could not load DBCALGeometry object!");
-	  dBCALGeom = BCALGeomVec[0];
+      vector<const DBCALGeometry *> BCALGeomVec;
+      loop->Get(BCALGeomVec);
+      if(BCALGeomVec.size() == 0)
+	throw JException("Could not load DBCALGeometry object!");
+      dBCALGeom = BCALGeomVec[0];
+      
+      // load PS geometry
+      vector<const DPSGeometry*> psGeomVect;
+      loop->Get(psGeomVect);
+      if (psGeomVect.size() < 1)
+	return OBJECT_NOT_AVAILABLE;
+      psGeom = psGeomVect[0];
+      
+
    }
 
    // Warning: This class is not completely thread-safe and can fail if running
@@ -305,10 +317,6 @@ jerror_t DEventSourceHDDM::GetObjects(JEvent &event, JFactory_base *factory)
    if (dataClassName == "DMCReaction")
       return Extract_DMCReaction(record,
                      dynamic_cast<JFactory<DMCReaction>*>(factory), tag, loop);
-
-   if (dataClassName == "DBeamPhoton")
-      return Extract_DBeamPhoton(record, 
-                     dynamic_cast<JFactory<DBeamPhoton>*>(factory), tag, loop);
  
    if (dataClassName == "DMCThrown")
       return Extract_DMCThrown(record,
@@ -894,6 +902,9 @@ jerror_t DEventSourceHDDM::Extract_DBCALDigiHit(hddm_s::HDDM *record,
       response->sector            = iter->getSector();
       response->pulse_integral    = (uint32_t)iter->getPulse_integral();
       response->pulse_peak        = 0;
+      if(iter->getBcalfADCPeaks().size() > 0) {
+          response->pulse_peak    = iter->getBcalfADCPeak().getPeakAmp();
+      }
       response->pulse_time        = (uint32_t)iter->getPulse_time();
       response->pedestal          = 1;
       response->QF                = 1;
@@ -1106,8 +1117,6 @@ jerror_t DEventSourceHDDM::Extract_DMCReaction(hddm_s::HDDM *record,
          mcreaction->beam.setPosition(locPosition);
          mcreaction->beam.setMomentum(mom);
          mcreaction->beam.setPID(Gamma);
-         mcreaction->beam.setMass(beam.getProperties().getMass());
-         mcreaction->beam.setCharge(beam.getProperties().getCharge());
          mcreaction->target.setPID(IDTrack(mcreaction->beam.charge(),
                                            mcreaction->beam.mass()));
          mcreaction->beam.setTime(torig - (zorig - locTargetCenterZ)/29.9792458);
@@ -1127,10 +1136,8 @@ jerror_t DEventSourceHDDM::Extract_DMCReaction(hddm_s::HDDM *record,
                       target.getMomentum().getPz());
          mcreaction->target.setPosition(locPosition);
          mcreaction->target.setMomentum(mom);
-         mcreaction->target.setMass(target.getProperties().getMass());
-         mcreaction->target.setCharge(target.getProperties().getCharge());
-         mcreaction->target.setPID(IDTrack(mcreaction->target.charge(),
-                                           mcreaction->target.mass()));
+         mcreaction->target.setPID(IDTrack(target.getProperties().getCharge(),
+        		 target.getProperties().getMass()));
          mcreaction->target.setTime(torig - (zorig - locTargetCenterZ)/29.9792458);
       }
       else {
@@ -1143,55 +1150,6 @@ jerror_t DEventSourceHDDM::Extract_DMCReaction(hddm_s::HDDM *record,
    //_DBG_<<"Creating "<<dmcreactions.size()<<" DMCReaction objects"<<endl;
 
    factory->CopyTo(dmcreactions);
-
-   return NOERROR;
-}
-
-
-//------------------
-// Extract_DBeamPhoton
-//------------------
-jerror_t DEventSourceHDDM::Extract_DBeamPhoton(hddm_s::HDDM *record,
-                                   JFactory<DBeamPhoton> *factory, string tag,
-                                   JEventLoop *loop)
-{
-   /// If tag="MCGEN" then defer to the Extract_DMCReaction method which
-   /// extracts both the DMCReaction and DBeamPhoton objects at the same time.
-
-   if (factory==NULL)
-      return OBJECT_NOT_AVAILABLE;
-   if (tag != "MCGEN")
-      return OBJECT_NOT_AVAILABLE;
-
-   vector<const DMCReaction*> dmcreactions;
-   loop->Get(dmcreactions);
-
-   // extract the TAGH geometry
-   vector<const DTAGHGeometry*> taghGeomVect;
-   loop->Get(taghGeomVect);
-   if (taghGeomVect.empty())
-      return OBJECT_NOT_AVAILABLE;
-   const DTAGHGeometry* taghGeom = taghGeomVect[0];
-
-   // extract the TAGM geometry
-   vector<const DTAGMGeometry*> tagmGeomVect;
-   loop->Get(tagmGeomVect);
-   if (tagmGeomVect.empty())
-      return OBJECT_NOT_AVAILABLE;
-   const DTAGMGeometry* tagmGeom = tagmGeomVect[0];
-
-   vector<DBeamPhoton*> dbeam_photons;
-   for(size_t loc_i = 0; loc_i < dmcreactions.size(); ++loc_i)
-   {
-      DBeamPhoton *beamphoton = new DBeamPhoton;
-      *(DKinematicData*)beamphoton = dmcreactions[loc_i]->beam;
-      if(!tagmGeom->E_to_column(beamphoton->energy(), beamphoton->dCounter))
-    	  taghGeom->E_to_counter(beamphoton->energy(), beamphoton->dCounter);
-      dbeam_photons.push_back(beamphoton);
-   }
-
-   // Copy into factories
-   factory->CopyTo(dbeam_photons);
 
    return NOERROR;
 }
@@ -1241,11 +1199,9 @@ jerror_t DEventSourceHDDM::Extract_DMCThrown(hddm_s::HDDM *record,
          mcthrown->mech     = piter->getMech();
          mcthrown->pdgtype  = piter->getPdgtype();
          mcthrown->setPID((Particle_t)mcthrown->type);
-         mcthrown->setMass(mass);
          mcthrown->setMomentum(DVector3(px, py, pz));
          mcthrown->setPosition(DVector3(vertex[1], vertex[2], vertex[3]));
          mcthrown->setTime(vertex[0]);
-         mcthrown->setCharge(ParticleCharge(piter->getType()));
          data.push_back(mcthrown);
       }
    }
@@ -1277,6 +1233,11 @@ jerror_t DEventSourceHDDM::Extract_DCDCHit(JEventLoop* locEventLoop, hddm_s::HDD
       vector<const DCDCHit*> locTruthHits;
       locEventLoop->Get(locTruthHits, "TRUTH");
 
+		//pre-sort truth hits
+		map<pair<int, int>, vector<const DCDCHit*>> locTruthHitMap; //key pair: ring, straw
+		for(auto& locTruthHit : locTruthHits)
+			locTruthHitMap[std::make_pair(locTruthHit->ring, locTruthHit->straw)].push_back(locTruthHit);
+
       const hddm_s::CdcStrawHitList &hits = record->getCdcStrawHits();
       hddm_s::CdcStrawHitList::iterator iter;
       int locIndex = 0;
@@ -1286,11 +1247,28 @@ jerror_t DEventSourceHDDM::Extract_DCDCHit(JEventLoop* locEventLoop, hddm_s::HDD
          hit->straw  = iter->getStraw();
          hit->q      = iter->getQ();
          hit->t      = iter->getT();
+         if(iter->getCdcDigihits().size() > 0) {
+             hit->amp  = iter->getCdcDigihit().getPeakAmp();
+         }
          hit->d      = 0.; // initialize to zero to avoid any NaN
          hit->itrack = 0;  // track information is in TRUTH tag
          hit->ptype  = 0;  // ditto
-         if((int)locTruthHits.size() == (int)hits.size())
-           hit->AddAssociatedObject(locTruthHits[locIndex]); //guaranteed to be in order
+
+			//match hit between truth & recon
+			auto& locPotentialTruthHits = locTruthHitMap[std::make_pair(hit->ring, hit->straw)];
+			double locBestDeltaT = 9.9E99;
+			const DCDCHit* locBestTruthHit = nullptr;
+			for(auto& locTruthHit : locPotentialTruthHits)
+			{
+				auto locDeltaT = fabs(hit->t - locTruthHit->t);
+				if(locDeltaT >= locBestDeltaT)
+					continue;
+				locBestDeltaT = locDeltaT;
+				locBestTruthHit = locTruthHit;
+			}
+			if(locBestTruthHit != nullptr)
+           hit->AddAssociatedObject(locBestTruthHit);
+
          data.push_back(hit);
          ++locIndex;
       }
@@ -1344,7 +1322,7 @@ jerror_t DEventSourceHDDM::Extract_DFDCHit(hddm_s::HDDM *record,
          newHit->module  = ahiter->getModule();
          newHit->element = ahiter->getWire();
          newHit->q       = ahiter->getDE();
-	 newHit->pulse_height = 0.; // not measured
+         newHit->pulse_height = 0.;     // not measured
          newHit->t       = ahiter->getT();
          newHit->d       = 0.; // initialize to zero to avoid any NaN
          newHit->itrack  = 0;  // track information is in TRUTH tag
@@ -1369,7 +1347,10 @@ jerror_t DEventSourceHDDM::Extract_DFDCHit(hddm_s::HDDM *record,
             newHit->element -= 1000;
          newHit->plane   = chiter->getPlane();
          newHit->q       = chiter->getQ();
-	 newHit->pulse_height = newHit->q; 
+         newHit->pulse_height = newHit->q;
+         if(chiter->getFdcDigihits().size() > 0) {
+             newHit->pulse_height  = chiter->getFdcDigihit().getPeakAmp();
+         }
          newHit->t       = chiter->getT();
          newHit->d       = 0.; // initialize to zero to avoid any NaN
          newHit->itrack  = 0;  // track information is in TRUTH tag
@@ -1661,7 +1642,10 @@ jerror_t DEventSourceHDDM::Extract_DFCALHit(hddm_s::HDDM *record,
          mchit->y      = pos.Y();
          mchit->E      = iter->getE();
          mchit->t      = iter->getT();
-	 mchit->intOverPeak = 6.;
+         mchit->intOverPeak = 6.;
+         if(iter->getFcalDigihits().size() > 0) {
+             mchit->intOverPeak  = iter->getFcalDigihit().getIntegralOverPeak();
+         }
          data.push_back(mchit);
        }
     }
@@ -1957,11 +1941,15 @@ jerror_t DEventSourceHDDM::Extract_DTOFHit( hddm_s::HDDM *record,
             tofhit->plane = hiter->getPlane();
             tofhit->end   = hiter->getEnd();
             tofhit->dE    = hiter->getDE();
+            tofhit->Amp   = 0.;
+            if(hiter->getFtofDigihits().size() > 0) {
+                tofhit->Amp  = hiter->getFtofDigihit().getPeakAmp();
+            }
             tofhit->t     = hiter->getT();
-	    tofhit->t_TDC = tofhit->t;
-	    tofhit->t_fADC= tofhit->t;
-	    tofhit->has_TDC=true;
-	    tofhit->has_fADC=true;
+            tofhit->t_TDC = tofhit->t;
+            tofhit->t_fADC= tofhit->t;          
+            tofhit->has_TDC=true;
+            tofhit->has_fADC=true;
             data.push_back(tofhit);
             if (tofhit->end == 0)
                north_hits.push_back(tofhit);
@@ -2075,10 +2063,14 @@ jerror_t DEventSourceHDDM::Extract_DSCHit(hddm_s::HDDM *record,
          hit->sector = iter->getSector();
          hit->dE = iter->getDE();
          hit->t = iter->getT();
-	 hit->t_TDC=hit->t;
-	 hit->t_fADC=hit->t;
-	 hit->has_TDC=true;
-	 hit->has_fADC=true;
+         hit->t_TDC=hit->t;
+         hit->t_fADC=hit->t;
+         hit->pulse_height = 0.;
+         if(iter->getStcDigihits().size() > 0) {
+             hit->pulse_height  = iter->getStcDigihit().getPeakAmp();
+         }
+         hit->has_TDC=true;
+         hit->has_fADC=true;
          data.push_back(hit);
       }
    }
@@ -2090,10 +2082,10 @@ jerror_t DEventSourceHDDM::Extract_DSCHit(hddm_s::HDDM *record,
          hit->sector = iter->getSector();
          hit->dE = iter->getDE();
          hit->t = iter->getT();
-	 hit->t_TDC=hit->t;
-	 hit->t_fADC=hit->t;
-	 hit->has_TDC=true;
-	 hit->has_fADC=true;
+         hit->t_TDC=hit->t;
+         hit->t_fADC=hit->t;
+         hit->has_TDC=true;
+         hit->has_fADC=true;
          data.push_back(hit);
       }
    }
@@ -2200,10 +2192,8 @@ jerror_t DEventSourceHDDM::Extract_DTrackTimeBased(hddm_s::HDDM *record,
       DTrackTimeBased *track = new DTrackTimeBased();
       track->setMomentum(mom);
       track->setPosition(pos);
-      track->setCharge(iter->getProperties().getCharge());
-      track->setMass(iter->getProperties().getMass());
       track->setPID(IDTrack(iter->getProperties().getCharge(),
-                            iter->getProperties().getMass()));
+    		  iter->getProperties().getMass()));
       track->chisq = iter->getChisq();
       track->Ndof = iter->getNdof();
       track->FOM = iter->getFOM();
@@ -2211,18 +2201,19 @@ jerror_t DEventSourceHDDM::Extract_DTrackTimeBased(hddm_s::HDDM *record,
       track->id = iter->getId();
 
       // Reconstitute errorMatrix
-      uint64_t locEventNumber = locEventLoop->GetJEvent().GetEventNumber();
-      TMatrixFSym* locCovarianceMatrix = (dynamic_cast<DApplication*>(japp))->Get_CovarianceMatrixResource(7, locEventNumber);
+      auto locCovarianceMatrix = dResourcePool_TMatrixFSym->Get_SharedResource();
+      locCovarianceMatrix->ResizeTo(7, 7);
       string str_vals = iter->getErrorMatrix().getVals();
-      StringToTMatrixFSym(str_vals, locCovarianceMatrix,
+      StringToTMatrixFSym(str_vals, locCovarianceMatrix.get(),
                           iter->getErrorMatrix().getNrows(),
                           iter->getErrorMatrix().getNcols());
       track->setErrorMatrix(locCovarianceMatrix);
 
       // Reconstitute TrackingErrorMatrix
       str_vals = iter->getTrackingErrorMatrix().getVals();
-      TMatrixFSym* TrackingErrorMatrix = (dynamic_cast<DApplication*>(japp))->Get_CovarianceMatrixResource(7, locEventNumber);
-      StringToTMatrixFSym(str_vals, TrackingErrorMatrix,
+      auto TrackingErrorMatrix = dResourcePool_TMatrixFSym->Get_SharedResource();
+      TrackingErrorMatrix->ResizeTo(5, 5);
+      StringToTMatrixFSym(str_vals, TrackingErrorMatrix.get(),
                           iter->getTrackingErrorMatrix().getNrows(),
                           iter->getTrackingErrorMatrix().getNcols());
       track->setTrackingErrorMatrix(TrackingErrorMatrix);
@@ -2233,7 +2224,7 @@ jerror_t DEventSourceHDDM::Extract_DTrackTimeBased(hddm_s::HDDM *record,
       if (rt) {
          rt->SetMass(track->mass());
          rt->SetDGeometry(geom);
-         rt->Swim(pos, mom, track->charge(),locCovarianceMatrix);
+         rt->Swim(pos, mom, track->charge(),locCovarianceMatrix.get());
          rts.push_back(rt);
       }
       track->rt = rt;
@@ -2348,6 +2339,7 @@ jerror_t DEventSourceHDDM::Extract_DTAGMHit(hddm_s::HDDM *record,
             taghit->row = hiter->getRow();
 	    taghit->has_fADC = true;
 	    taghit->has_TDC = true;           
+	    taghit->bg = hiter->getBg();
 	    data.push_back(taghit);
          }
       }
@@ -2392,7 +2384,7 @@ jerror_t DEventSourceHDDM::Extract_DTAGHHit( hddm_s::HDDM *record,
             taghit->time_fadc = hiter->getTADC();
             taghit->counter_id = hiter->getCounterId();
 	    taghit->has_fADC = true;
-	    taghit->has_TDC = true;
+	    taghit->has_TDC  = true;
             data.push_back(taghit);
          }
       }
@@ -2407,7 +2399,9 @@ jerror_t DEventSourceHDDM::Extract_DTAGHHit( hddm_s::HDDM *record,
             taghit->time_fadc = hiter->getT();
             taghit->counter_id = hiter->getCounterId();
 	    taghit->has_fADC = true;
-	    taghit->has_TDC = true;
+	    taghit->has_TDC  = true;
+	    taghit->bg = hiter->getBg();
+
             data.push_back(taghit);
          }
       }
@@ -2446,8 +2440,13 @@ jerror_t DEventSourceHDDM::Extract_DPSHit(hddm_s::HDDM *record,
          else 
              hit->arm = DPSGeometry::Arm::kSouth;
          hit->column = iter->getColumn();
-         hit->npix_fadc = iter->getDE();
+	 double npix_fadc = iter->getDE()*0.5e5; // 100 pixels in 2 MeV
+         hit->npix_fadc   = npix_fadc;
          hit->t = iter->getT();
+	 
+	 hit->E = 0.5*(psGeom->getElow(hit->arm,hit->column) + psGeom->getEhigh(hit->arm,hit->column));
+	 hit->pulse_peak = npix_fadc*21;       // 1 pixel 21 fadc counts
+	 hit->integral   = npix_fadc*21*5.1;   // integral/peak = 5.1  
          data.push_back(hit);
       }
    }
@@ -2541,8 +2540,19 @@ jerror_t DEventSourceHDDM::Extract_DPSCHit(hddm_s::HDDM *record,
          else 
              hit->arm = DPSGeometry::Arm::kSouth;
          hit->module = iter->getModule();
-         hit->npe_fadc = iter->getDE();
+
+	 double npe_fadc = iter->getDE()*2.5e5;
+	 hit->npe_fadc   = npe_fadc;
+	 hit->pulse_peak = npe_fadc*0.4;       //  1000 pe - 400 fadc count
+	 hit->integral   = npe_fadc*0.4*3;     // integral/peak = 3.
+
          hit->t = iter->getT();
+	 hit->time_tdc  = iter->getT();
+	 hit->time_fadc = iter->getT();
+
+	 hit->has_fADC = true;
+	 hit->has_TDC  = true;
+
          data.push_back(hit);
       }
    }

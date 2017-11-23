@@ -16,7 +16,7 @@
 #include <prof_time.h>
 #endif
 #include <DANA/DApplication.h>
-#include <PID/DKinematicData.h>
+#include <TRACKING/DTrackingData.h>
 #include <HDGEOMETRY/DMagneticFieldMap.h>
 #include "HDGEOMETRY/DLorentzMapCalibDB.h"
 #include <CDC/DCDCTrackHit.h>
@@ -25,11 +25,12 @@
 
 using namespace std;
 
-#define NaN std::numeric_limits<double>::quiet_NaN()
+#define QuietNaN std::numeric_limits<double>::quiet_NaN()
 
 
 class DReferenceTrajectory;
 class DGeometry;
+class DParticleID;
 
 //////////////////////////////////////////////////////////////////////////////////
 /// The DTrackFitter class is a base class for different charged track
@@ -126,7 +127,7 @@ class DTrackFitter:public jana::JObject{
 		
 		// Fit parameter accessor methods
 		const DKinematicData& GetInputParameters(void) const {return input_params;}
-		const DKinematicData& GetFitParameters(void) const {return fit_params;}
+		const DTrackingData& GetFitParameters(void) const {return fit_params;}
 		double GetChisq(void) const {return chisq;}
 		int GetNdof(void) const {return Ndof;}
 		unsigned int GetNumPotentialFDCHits(void) const {return potential_fdc_hits_on_track;}
@@ -138,11 +139,11 @@ class DTrackFitter:public jana::JObject{
 		const DMagneticFieldMap* GetDMagneticFieldMap(void) const {return bfield;}
 
 		void SetFitType(fit_type_t type){fit_type=type;}
-		void SetInputParameters(const DKinematicData &starting_params){input_params=starting_params;}
+		void SetInputParameters(const DTrackingData &starting_params){input_params=starting_params;}
 		
 		// Wrappers
-		fit_status_t FitTrack(const DVector3 &pos, const DVector3 &mom, double q, double mass,double t0=NaN,DetectorSystem_t t0_det=SYS_NULL);
-		fit_status_t FitTrack(const DKinematicData &starting_params);
+		fit_status_t FitTrack(const DVector3 &pos, const DVector3 &mom, double q, double mass,double t0=QuietNaN,DetectorSystem_t t0_det=SYS_NULL);
+		fit_status_t FitTrack(const DTrackingData &starting_params);
 		
 		// Methods that actually do something
 		fit_status_t 
@@ -150,7 +151,7 @@ class DTrackFitter:public jana::JObject{
 				      const DReferenceTrajectory *rt, 
 				      JEventLoop *loop, double mass=-1.0,
 				      int N=0,
-				      double t0=NaN,
+				      double t0=QuietNaN,
 				      DetectorSystem_t t0_det=SYS_NULL
 				      ); ///< mass<0 means get it from starting_params
 		jerror_t CorrectForELoss(const DKinematicData &starting_params, DReferenceTrajectory *rt, DVector3 &pos, DVector3 &mom, double mass);
@@ -175,16 +176,17 @@ class DTrackFitter:public jana::JObject{
 		// The following should be used as inputs by FitTrack(void)
 		vector<const DCDCTrackHit*> cdchits;	//< Hits in the CDC
 		vector<const DFDCPseudo*> fdchits;		//< Hits in the FDC
-		DKinematicData input_params;				//< Starting parameters for the fit
+		DTrackingData input_params;				//< Starting parameters for the fit
 		fit_type_t fit_type;							//< kWireBased or kTimeBased
 		const DMagneticFieldMap *bfield;			//< Magnetic field map for current event (acquired through loop)
 		const DLorentzDeflections *lorentz_def;//< Correction to FDC cathodes due to Lorentz force
 		const DGeometry *geom;						//< DGeometry pointer used to access materials through calibDB maps for eloss
 		const DRootGeom *RootGeom;					//< ROOT geometry used for accessing material for MULS, energy loss
 		JEventLoop *loop;								//< Pointer to JEventLoop object handling the current event
+		const DParticleID* dParticleID;
 
 		// The following should be set as outputs by FitTrack(void)
-		DKinematicData fit_params;									//< Results of last fit
+		DTrackingData fit_params;									//< Results of last fit
 		double chisq;													//< Chi-sq of final track fit (not the chisq/dof!)
 		int Ndof;														//< Number of degrees of freedom for final track
 		vector<pull_t> pulls;										//< pull_t objects for each contribution to chisq (assuming no correlations)

@@ -33,6 +33,7 @@
 #include <RF/DRFTime.h>
 #include <TAGGER/DTAGMGeometry.h>
 #include <TAGGER/DTAGHGeometry.h>
+#include "DResourcePool.h"
 
 #include <TMatrixF.h>
 #include <DMatrix.h>
@@ -91,6 +92,7 @@ class DEventSourceREST:public JEventSource
 
 	map<unsigned int, double> dTargetCenterZMap; //unsigned int is run number
 	map<unsigned int, double> dBeamBunchPeriodMap; //unsigned int is run number
+    static thread_local shared_ptr<DResourcePool<TMatrixFSym>> dResourcePool_TMatrixFSym;
 
    std::ifstream *ifs;		// input hddm file ifstream
    hddm_r::istream *fin;	// provides hddm layer on top of ifstream
