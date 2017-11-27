@@ -16,8 +16,8 @@
 {
 
 // The following are empty versions of routines defined in RootSpy
-// compiled exectuables. These are defined here for when this
-// macro is run outside of a RootSpy executable.
+// compiled executables. These are defined here for when this
+// macro is run outside that context.
 #ifndef ROOTSPY_MACROS
 #define rs_SetFlag(A) cout<<"rs_SetFlag ignored outside of RootSpy context"<<endl
 #define rs_GetFlag(A) 0
