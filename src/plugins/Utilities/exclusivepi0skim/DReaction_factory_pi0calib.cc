@@ -16,7 +16,7 @@ jerror_t DReaction_factory_pi0calib::init(void)
 {
 	// Make as many DReaction objects as desired
 	DReactionStep* locReactionStep = NULL;
-	DReaction* locReaction = new DReaction("pi0calib"); //needs to be a unique name for each DReaction object, CANNOT (!) be "Thrown"
+	DReaction* locReaction = new DReaction("excl_pi0calib"); //needs to be a unique name for each DReaction object, CANNOT (!) be "Thrown"
 
 	// DOCUMENTATION:
 	// ANALYSIS library: https://halldweb1.jlab.org/wiki/index.php/GlueX_Analysis_Software
