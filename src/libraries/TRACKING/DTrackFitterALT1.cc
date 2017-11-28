@@ -732,7 +732,7 @@ void DTrackFitterALT1::GetHits(fit_type_t fit_type, DReferenceTrajectory *rt, hi
 				double tof = s/beta/1.0E-9; // in ns
 				hi.dist = 55E-4*(hit->time-tof);
 				hi.err = SIGMA_FDC_ANODE;
-				
+				/*
 				if(USE_FDC_CATHODE){
 					// Find whether the track is on the "left" or "right" of the wire
 					DVector3 shift = wire->udir.Cross(mom_doca);
@@ -754,9 +754,10 @@ void DTrackFitterALT1::GetHits(fit_type_t fit_type, DReferenceTrajectory *rt, hi
 					hi.u_err = SIGMA_FDC_CATHODE;
 				}else{
 					// User specified not to use FDC cathode information in the fit.
-					hi.u_dist = 0.0;
-					hi.u_err = 0.0; // setting u_err to zero means it's excluded from chi-sq
-				}
+					*/
+				hi.u_dist = 0.0;
+				hi.u_err = 0.0; // setting u_err to zero means it's excluded from chi-sq
+				//	}
 			}
 			hinfo.push_back(hi);
 		}

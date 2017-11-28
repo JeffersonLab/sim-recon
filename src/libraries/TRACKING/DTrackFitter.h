@@ -221,7 +221,6 @@ class DTrackFitter:public jana::JObject{
 		DTrackingData input_params;				//< Starting parameters for the fit
 		fit_type_t fit_type;							//< kWireBased or kTimeBased
 		const DMagneticFieldMap *bfield;			//< Magnetic field map for current event (acquired through loop)
-		const DLorentzDeflections *lorentz_def;//< Correction to FDC cathodes due to Lorentz force
 		const DGeometry *geom;						//< DGeometry pointer used to access materials through calibDB maps for eloss
 		const DRootGeom *RootGeom;					//< ROOT geometry used for accessing material for MULS, energy loss
 		JEventLoop *loop;								//< Pointer to JEventLoop object handling the current event

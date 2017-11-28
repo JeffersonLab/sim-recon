@@ -597,7 +597,7 @@ jerror_t DTrackFitterRiemann::GetFDCPosition(DRiemannHit_t *hit){
   double delta_x=sign*(hit->fdc->time-sperp*one_over_vcosl)*55E-4;
     
   // Next find correction to y from table of deflections
-  double delta_y=lorentz_def->GetLorentzCorrection(XYp.X(),XYp.Y(),hit->z,theta,delta_x);
+  double delta_y=0.;
    
   double u=hit->fdc->w+delta_x;
   double v=hit->fdc->s-delta_y;

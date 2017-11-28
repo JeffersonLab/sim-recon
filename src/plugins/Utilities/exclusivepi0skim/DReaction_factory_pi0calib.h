@@ -29,7 +29,7 @@ class DReaction_factory_pi0calib : public jana::JFactory<DReaction>
 			// This is so that the created DReaction objects persist throughout the life of the program instead of being cleared each event. 
 			SetFactoryFlag(PERSISTANT);
 		}
-		const char* Tag(void){return "pi0calib";}
+		const char* Tag(void){return "excl_pi0calib";}
 
 	private:
 		jerror_t init(void);						///< Called once at program start.
