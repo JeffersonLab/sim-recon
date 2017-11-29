@@ -1998,11 +1998,13 @@ void MyProcessor::UpdateTrackLabels(void)
 	}
 	
 	// Have the pop-up window with the full particle list update it's labels
-	fulllistmf->UpdateTrackLabels(throwns, trks);
-	debugermf->SetTrackCandidates(TrksCand);
-	debugermf->SetTrackWireBased(TrksWireBased);
-	debugermf->SetTrackTimeBased(TrksTimeBased);
-	debugermf->UpdateTrackLabels();
+	if( fulllistmf ) fulllistmf->UpdateTrackLabels(throwns, trks);
+	if( debugermf  ) {
+		debugermf->SetTrackCandidates(TrksCand);
+		debugermf->SetTrackWireBased(TrksWireBased);
+		debugermf->SetTrackTimeBased(TrksTimeBased);
+		debugermf->UpdateTrackLabels();
+	}
 }                 
 
 //------------------------------------------------------------------
