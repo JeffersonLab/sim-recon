@@ -28,6 +28,8 @@ static void show_usage(string argStr)
 
 	cout<<"Necessary arguments to MCWrapper, otherwise optional:"<<endl;
 	cout<<endl;
+	cout<<"\t-p or --polarized"<<endl;
+        cout<<"\t\tDefault: true"<<endl;
 	cout<<"\t--coherent_peak <coherent peak>"<<endl;
 	cout<<"\t\tDefault: 9.0 GeV"<<endl;
 	cout<<"\t\tNote: If set to 0.0, will treat it as an amorphous run."<<endl;
