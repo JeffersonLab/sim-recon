@@ -15,6 +15,19 @@
 
 {
 
+// The following are empty versions of routines defined in RootSpy
+// compiled executables. These are defined here for when this
+// macro is run outside that context.
+#ifndef ROOTSPY_MACROS
+#define rs_SetFlag(A) cout<<"rs_SetFlag ignored outside of RootSpy context"<<endl
+#define rs_GetFlag(A) 0
+#define rs_ResetHisto(A) cout<<"rs_ResetHisto ignored outside of RootSpy context"<<endl
+#define rs_RestoreHisto(A) cout<<"rs_RestoreHisto ignored outside of RootSpy context"<<endl
+#define InsertSeriesData(A) cout<<"InsertSeriesData ignored outside of RootSpy context"<<endl
+#define InsertSeriesMassFit(A,B,C,D,E,F) cout<<"InsertSeriesMassFit ignored outside of RootSpy context"<<endl
+#endif
+
+
 // This is a trick to get ROOT to use a function for a TF1 without
 // defining it in global namespace. This is needed since ROOTSpy
 // requires all macros to be nameless. The start of the actual
