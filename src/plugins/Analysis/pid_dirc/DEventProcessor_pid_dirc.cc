@@ -129,7 +129,9 @@ jerror_t DEventProcessor_pid_dirc::evnt(JEventLoop *loop, uint64_t eventnumber) 
       // loop over PMT's hits
       for (unsigned int h = 0; h < dircPmtHits.size(); h++){
 	int relevant(0);
-	// identify bar id	
+	// identify bar id
+	std::cout<<"dircBarHits.size() "<<dircBarHits.size()<<std::endl;
+	
 	for (unsigned int j = 0; j < dircBarHits.size(); j++){
 	  if(j != fabs(dircPmtHits[h]->key_bar)) continue;
 	  if(mcthrowns[m]->myid == dircBarHits[j]->track){
@@ -156,6 +158,7 @@ jerror_t DEventProcessor_pid_dirc::evnt(JEventLoop *loop, uint64_t eventnumber) 
 	hit.SetPosition(TVector3(dircPmtHits[h]->x,dircPmtHits[h]->y,dircPmtHits[h]->z));
 	hit.SetEnergy(dircPmtHits[h]->E);
 	hit.SetLeadTime(dircPmtHits[h]->t);
+	hit.SetPathId(dircPmtHits[h]->key_bar);
 	fEvent->AddHit(hit);
       }
       

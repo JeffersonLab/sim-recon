@@ -23,8 +23,8 @@ public:
  
   // Accessors 
   Int_t GetType()        { return fType; }
-  Int_t GetNreflectionsInPrizm()  { return fNreflectionsInPrizm; }
-  Double_t GetPathInPrizm()  { return fPathInPrizm; }
+  Int_t GetNreflections()  { return fNreflections; }
+  Double_t GetPathId()  { return fPathId; }
   //  TVector3 GetMomentum()     { return fMomentum; }
   Double_t GetEnergy()       { return fEnergy; }
   TVector3 GetPosition()     { return fPosition; }
@@ -37,8 +37,8 @@ public:
     
   // Mutators
   void SetType(Int_t val)    { fType = val; }
-  void SetNreflectionsInPrizm(Int_t val)  { fNreflectionsInPrizm = val; }
-  void SetPathInPrizm(Double_t val) { fPathInPrizm = val; }
+  void SetNreflections(Int_t val)  { fNreflections = val; }
+  void SetPathId(Double_t val) { fPathId = val; }
   //  void SetMomentum(TVector3 val)    { fMomentum = val; }
   void SetEnergy(Double_t val)    { fEnergy = val; }
   void SetPosition(TVector3 val)    { fPosition = val; }
@@ -52,8 +52,8 @@ public:
 protected:
 
   Int_t fType;
-  Int_t fNreflectionsInPrizm;
-  Double_t fPathInPrizm;
+  Int_t fNreflections;
+  Double_t fPathId;
   //  TVector3 fMomentum;
   Double_t fEnergy;
   TVector3 fPosition;
