@@ -24,13 +24,12 @@ static void show_usage(string argStr)
         cout<<"\t\tDefault: false"<<endl;
         cout<<"\t\tNote: Only use for saving the histogram to a root file for"<<endl;
         cout<<"\t\tstudying the generation beyond the integration value."<<endl;
-        cout<<"\t-p or --print"<<endl;
-        cout<<"\t\tDefault: false"<<endl;
-        cout<<"\t\tNote: Used for seeing the set values in cobrems generator."<<endl;
 	cout<<endl;
 
 	cout<<"Necessary arguments to MCWrapper, otherwise optional:"<<endl;
 	cout<<endl;
+	cout<<"\t-p or --polarized"<<endl;
+        cout<<"\t\tDefault: true"<<endl;
 	cout<<"\t--coherent_peak <coherent peak>"<<endl;
 	cout<<"\t\tDefault: 9.0 GeV"<<endl;
 	cout<<"\t--beam_on_current <beam on current>"<<endl;
@@ -66,6 +65,17 @@ static void show_usage(string argStr)
 	cout<<endl;
 }
 
+double getTargetRadiationLength_Schiff(double Z, double N, double a)
+{
+	const double me = 0.510998910e-3;
+	const double alpha = 7.2973525698e-3;
+	const double hbarc = 0.1973269718e-15;
+
+	double zeta = log(1440 * pow(Z, -2/3.)) / log(183 * pow(Z, -1/3.));
+	double s = 4 * N * pow(alpha, 3) * pow(hbarc/(a*me), 2) / a * Z * (Z + zeta) * log(183 * pow(Z, -1/3.));
+	return 1/s;
+}
+
 int main(const int argc, char* argv[])
 {
 	if (argc == 1)
@@ -76,7 +86,6 @@ int main(const int argc, char* argv[])
 
 	int runNo = 0;
 	bool write = false;
-	bool print = false;
 	double coherent_peak = 9.0;
         double beam_on_current = 0.01;
 	double beam_energy = 12.0;
@@ -93,29 +102,21 @@ int main(const int argc, char* argv[])
 	for(int i = 1; i < argc; i++)
 	{
 		string arg = argv[i];
-		i++;
 		if ((arg == "-h") || (arg == "--help"))
 		{
 			show_usage(argv[0]);
 			return 0;
 		}
 
-		else if ((arg == "-d") || (arg == "--default"))
-		{
-			break;
-		}
-
-		else if ((arg == "-p") || (arg == "--print"))
-		{
-			print = true;
-		}
-
 		else if ((arg == "-w") || (arg == "--write"))
-		{
-			write = true;
-		}
+                {
+                        write = true;
+                        continue;
+                }
 
-		else if (arg == "--runNo")
+		i++;
+		
+		if (arg == "--runNo")
 		{
 			runNo = atoi(argv[i]); 
 		}
@@ -181,21 +182,20 @@ int main(const int argc, char* argv[])
 		}
 	}
 
-	if (print)
-	{
-		cout<<"Run number: "<<runNo<<endl;
-        	cout<<"Coherent peak: "<<coherent_peak<<endl;
-		cout<<"Beam energy: "<<beam_energy<<endl;
-		cout<<"Beam energy rms: "<<beam_energy_rms<<endl;
-		cout<<"Beam emittance: "<<beam_emittance<<endl;
-		cout<<"Collimator diameter: "<<collimator_diameter<<endl;
-		cout<<"Collimator distance: "<<collimator_distance<<endl;
-		cout<<"Radiator thickness: "<<radiator_thickness<<endl;
-		cout<<"Minimum photon energy: "<<photon_energy_min<<endl;
-		cout<<"Endpoint energy low: "<<endpoint_energy_low<<endl;
-		cout<<"Endpoint energy high: "<<endpoint_energy_high<<endl;
-		cout<<"Number of bins: "<<nbins<<endl;
-	}
+	cout<<"Building off given information below"<<endl;
+	cout<<"Run number: "<<runNo<<endl;
+        cout<<"Coherent peak: "<<coherent_peak<<endl;
+	cout<<"Beam energy: "<<beam_energy<<endl;
+	cout<<"Beam energy rms: "<<beam_energy_rms<<endl;
+	cout<<"Beam curret: "<<beam_on_current<<endl;
+	cout<<"Beam emittance: "<<beam_emittance<<endl;
+	cout<<"Collimator diameter: "<<collimator_diameter<<endl;
+	cout<<"Collimator distance: "<<collimator_distance<<endl;
+	cout<<"Radiator thickness: "<<radiator_thickness<<endl;
+	cout<<"Minimum photon energy: "<<photon_energy_min<<endl;
+	cout<<"Endpoint energy low: "<<endpoint_energy_low<<endl;
+	cout<<"Endpoint energy high: "<<endpoint_energy_high<<endl;
+	cout<<"Number of bins: "<<nbins<<endl;
 	
 	CobremsGeneration* cobrems = new CobremsGeneration(beam_energy,coherent_peak);
 	cobrems->setBeamEnergy(beam_energy);
@@ -206,12 +206,11 @@ int main(const int argc, char* argv[])
 	cobrems->setCollimatorDiameter(collimator_diameter);
 	cobrems->setTargetThickness(radiator_thickness);
 	cobrems->setCollimatedFlag(true);
-	cobrems->setPolarizedFlag(false);
 
 	cobrems->printBeamlineInfo();
 
-	double Emin = photon_energy_min;
-	double Emax = beam_energy;
+	double Emin = endpoint_energy_low;
+	double Emax = endpoint_energy_high;
 
 	double x0 = Emin / beam_energy;
 	double x1 = Emax / beam_energy;
@@ -219,10 +218,23 @@ int main(const int argc, char* argv[])
 	double xvals[nbins];
 	double yvals[nbins];
 
-	for(int i=0; i < nbins; i++)
+	if (coherent_peak > 0.0) 
 	{
-		xvals[i] = x0 + (i +0.5) * (x1 - x0) / nbins;
-		yvals[i] = cobrems->Rate_dNtdx(xvals[i]) * beam_on_current / 1.6e-13;
+		cout<<"Polarized BGRate"<<endl;
+		for(int i=0; i < nbins; i++)
+		{
+			xvals[i] = x0 + (i +0.5) * (x1 - x0) / nbins;
+			yvals[i] = cobrems->Rate_dNtdx(xvals[i]) * beam_on_current / 1.6e-13;
+		}
+	}
+	else
+	{
+		cout<<"Amorphous BGRate"<<endl;
+		for(int i=0; i < nbins; i++)
+                {
+                        xvals[i] = x0 + (i +0.5) * (x1 - x0) / nbins;
+                        yvals[i] = cobrems->Rate_dNidx(xvals[i]) * beam_on_current / 1.6e-13;
+                }
 	}
 
 	cobrems->applyBeamCrystalConvolution(nbins, xvals, yvals);
@@ -237,6 +249,11 @@ int main(const int argc, char* argv[])
 
 	double persec = (Emax - Emin) * 1./nbins;
 	double erate = dRtdkH1->Integral(dRtdkH1->FindBin(endpoint_energy_low), dRtdkH1->FindBin(endpoint_energy_high) - 1) * persec;
+
+	if (coherent_peak == 0.0)
+	{
+		erate = erate * getTargetRadiationLength_Schiff(13, 4, 404.95e-12) / cobrems->getTargetRadiationLength_Schiff();
+	}
 
 	if (write == true)
         {
