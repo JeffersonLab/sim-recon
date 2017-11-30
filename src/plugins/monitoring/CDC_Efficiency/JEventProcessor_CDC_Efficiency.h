@@ -53,6 +53,7 @@ class JEventProcessor_CDC_Efficiency:public jana::JEventProcessor{
 		void Fill_MeasuredHit(int ringNum, int wireNum, double distanceToWire, const DTrackTimeBased* thisTimeBasedTrack, DCDCWire* wire, const DCDCHit* locHit);
 		void Fill_ExpectedHit(int ringNum, int wireNum, double distanceToWire);
 		const DCDCTrackHit* Find_Hit(int locRing, int locProjectedStraw, map<int, set<const DCDCTrackHit*> >& locSorteDCDCTrackHits);
+      double GetDOCAFieldOff(DVector3, DVector3, DVector3, DVector3, DVector3&, DVector3&);
 
 		DGeometry * dgeom;
         bool dIsNoFieldFlag;
