@@ -475,7 +475,7 @@ inline static char* ShortName(Particle_t locPID)
   case Neutron:
 	return (char*)"n";
   case Proton:
-	return (char*)""; //understood
+	return (char*)"prot";
   case AntiProton:
 	return (char*)"antip";
   case KShort:

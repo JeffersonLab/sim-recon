@@ -13,19 +13,6 @@ using namespace std;
 using namespace jana;
 
 //------------------
-// brun
-//------------------
-jerror_t DBeamPhoton_factory_TAGGEDMCGEN::brun(jana::JEventLoop *locEventLoop, int32_t runnumber)
-{
-	//Setting this flag makes it so that JANA does not delete the objects in _data.  This factory will manage this memory. 
-		//This is because some/all of these pointers are just copied from earlier objects, and should not be deleted.  
-	bool locIsRESTEvent = locEventLoop->GetJEvent().GetStatusBit(kSTATUS_REST);
-	if(!locIsRESTEvent) //If REST, will grab from file: IS owner
-		SetFactoryFlag(NOT_OBJECT_OWNER);
-	return NOERROR;
-}
-
-//------------------
 // evnt
 //------------------
 jerror_t DBeamPhoton_factory_TAGGEDMCGEN::evnt(jana::JEventLoop *locEventLoop, uint64_t eventnumber)
@@ -71,7 +58,7 @@ jerror_t DBeamPhoton_factory_TAGGEDMCGEN::evnt(jana::JEventLoop *locEventLoop, u
 	if(locBestPhoton == nullptr)
 		return NOERROR; //Uh oh.  Shouldn't be possible. 
 
-	_data.push_back(const_cast<DBeamPhoton*>(locBestPhoton));
+	_data.push_back(new DBeamPhoton(*locBestPhoton));
 	return NOERROR;
 }
 

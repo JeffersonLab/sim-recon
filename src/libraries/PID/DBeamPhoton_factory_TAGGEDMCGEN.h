@@ -18,7 +18,7 @@ class DBeamPhoton_factory_TAGGEDMCGEN:public jana::JFactory<DBeamPhoton>{
 		const char* Tag(void){return "TAGGEDMCGEN";}
 
 	private:
-		jerror_t brun(jana::JEventLoop *locEventLoop, int32_t runnumber);
+
 		jerror_t evnt(jana::JEventLoop *locEventLoop, uint64_t eventnumber);	///< Called every event.
 };
 

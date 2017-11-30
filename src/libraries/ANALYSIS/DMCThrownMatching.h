@@ -275,11 +275,20 @@ inline const DMCThrown* DMCThrownMatching::Get_MatchingMCThrown(const DChargedTr
 
 inline const DMCThrown* DMCThrownMatching::Get_MatchingMCThrown(const DChargedTrack* locChargedTrack, double& locMatchFOM) const
 {
-	map<const DChargedTrack*, pair<const DMCThrown*, double> >::const_iterator locIterator = dChargedToThrownMap.find(locChargedTrack);
-	if(locIterator == dChargedToThrownMap.end())
+	auto locIterator = dChargedToThrownMap.find(locChargedTrack);
+	if(locIterator != dChargedToThrownMap.end())
+	{
+		locMatchFOM = locIterator->second.second;
+		return locIterator->second.first;
+	}
+
+	//See if there's an associated charged track (e.g. input is "Combo" factory charged track, but matching done with default-factory objects
+	vector<const DChargedTrack*> locAssocTracks;
+	locChargedTrack->Get(locAssocTracks);
+	if(locAssocTracks.empty())
 		return NULL;
-	locMatchFOM = locIterator->second.second;
-	return locIterator->second.first;
+
+	return Get_MatchingMCThrown(locAssocTracks[0], locMatchFOM);
 }
 
 inline const DMCThrown* DMCThrownMatching::Get_MatchingMCThrown(const DNeutralParticleHypothesis* locNeutralParticleHypothesis, double& locMatchFOM) const
