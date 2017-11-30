@@ -612,9 +612,13 @@ jerror_t JEventProcessor_TAGM_online::evnt(JEventLoop *eventLoop, uint64_t event
   for (iter = digihits.begin(); iter != digihits.end(); ++iter) {
     int row = (*iter)->row;
     int column = (*iter)->column;
-    uint32_t pedestal_avg = (*iter)->pedestal / (*iter)->nsamples_pedestal;
+    uint32_t pedestal_avg;
+    if ((*iter)->nsamples_pedestal == 0)
+      pedestal_avg = (*iter)->pedestal;
+    else 
+      pedestal_avg = (*iter)->pedestal / (*iter)->nsamples_pedestal;
     if (row == 0) {
-
+      
       // Fill 1D Histograms
       tagm_adc_seen->Fill((*iter)->column);
       tagm_adc_pint->Fill(log10((*iter)->pulse_integral));
