@@ -822,7 +822,7 @@ bool DGeometry::GetCDCWires(vector<vector<DCDCWire *> >&cdcwires) const{
    // Get number of straws for each ring
    for (unsigned int ring=1;ring<=28;ring++){
       // Create search string for the number of straws 
-      ncopy_s << "//CentralDC_s/section/composition/mposPhi/@ncopy/ring[@value='" << ring << "']";
+      ncopy_s << "//section[@name='CentralDC']/composition/mposPhi/@ncopy/ring[@value='" << ring << "']";
       Get(ncopy_s.str(),numstraws[ring-1]);
       ncopy_s.str("");
       ncopy_s.clear();
@@ -1401,7 +1401,7 @@ bool DGeometry::GetFDCRmax(double &rmax_active_fdc) const
 //---------------------------------
 bool DGeometry::GetCDCOption(string &cdc_option) const
 {
-   bool good = Get("//CentralDC_s/section/composition/posXYZ/@volume", cdc_option);
+   bool good = Get("//section[@name='CentralDC_s']/composition/posXYZ/@volume", cdc_option);
 
    if(!good){
       _DBG_<<"Unable to retrieve CDC option string."<<endl;
@@ -1516,7 +1516,7 @@ bool DGeometry::GetCDCEndplate(double &z,double &dz,double &rmin,double &rmax)
 bool DGeometry::GetBCALRmin(float &bcal_rmin) const
 {
    vector<float> bcal_mother_Rio_Z;
-   bool good = Get("//BarrelEMcal_s/section/tubs[@name='BCAL']/@Rio_Z", bcal_mother_Rio_Z);
+   bool good = Get("//section[@name='BarrelEMcal']/tubs[@name='BCAL']/@Rio_Z", bcal_mother_Rio_Z);
    if(!good){
       _DBG_<<"Unable to retrieve BCAL mother RioZ info."<<endl;
       bcal_rmin = 0.0;
@@ -1540,11 +1540,11 @@ bool DGeometry::GetBCALfADCRadii(vector<float> &fADC_radii) const
 {
    vector<float> BM[5];
 
-   if(!Get("//BarrelEMcal_s/section/tubs[@name='BM01']/@Rio_Z", BM[0])) return false;
-   if(!Get("//BarrelEMcal_s/section/tubs[@name='BM02']/@Rio_Z", BM[1])) return false;
-   if(!Get("//BarrelEMcal_s/section/tubs[@name='BM04']/@Rio_Z", BM[2])) return false;
-   if(!Get("//BarrelEMcal_s/section/tubs[@name='BMF7']/@Rio_Z", BM[3])) return false;
-   if(!Get("//BarrelEMcal_s/section/tubs[@name='BMFA']/@Rio_Z", BM[4])) return false;
+   if(!Get("//section[@name='BarrelEMcal']/tubs[@name='BM01']/@Rio_Z", BM[0])) return false;
+   if(!Get("//section[@name='BarrelEMcal']/tubs[@name='BM02']/@Rio_Z", BM[1])) return false;
+   if(!Get("//section[@name='BarrelEMcal']/tubs[@name='BM04']/@Rio_Z", BM[2])) return false;
+   if(!Get("//section[@name='BarrelEMcal']/tubs[@name='BMF7']/@Rio_Z", BM[3])) return false;
+   if(!Get("//section[@name='BarrelEMcal']/tubs[@name='BMFA']/@Rio_Z", BM[4])) return false;
 
    fADC_radii.push_back(BM[0][0]);
    fADC_radii.push_back(BM[1][0]);
@@ -1561,7 +1561,7 @@ bool DGeometry::GetBCALfADCRadii(vector<float> &fADC_radii) const
 bool DGeometry::GetBCALNmodules(unsigned int &bcal_nmodules) const
 {
    vector<unsigned int> ncopy;
-   bool good = Get("//BarrelEMcal_s/section/composition/mposPhi/@ncopy", ncopy);
+   bool good = Get("//section[@name='BarrelEMcal']/composition/mposPhi/@ncopy", ncopy);
    if(!good){
       _DBG_<<"Unable to retrieve BCAL barrelModule ncopy info."<<endl;
       bcal_nmodules = 0;
@@ -1583,7 +1583,7 @@ bool DGeometry::GetBCALNmodules(unsigned int &bcal_nmodules) const
 bool DGeometry::GetBCALCenterZ(float &bcal_center_z) const
 {
    vector<float> z0;
-   bool good = Get("//BarrelEMcal_s/section/parameters/real[@name='z0']/@value", z0);
+   bool good = Get("//section[@name='BarrelEMcal']/parameters/real[@name='z0']/@value", z0);
    if(!good){
       _DBG_<<"Unable to retrieve BCAL parameters z0 info."<<endl;
       bcal_center_z = 0.0;
@@ -1607,7 +1607,7 @@ bool DGeometry::GetBCALCenterZ(float &bcal_center_z) const
 bool DGeometry::GetBCALLength(float &bcal_length) const
 {
    vector<float> module_length;
-   bool good = Get("//BarrelEMcal_s/section/tubs[@name='BM01']/@Rio_Z", module_length);
+   bool good = Get("//section[@name='BarrelEMcal']/tubs[@name='BM01']/@Rio_Z", module_length);
    if(!good){
       _DBG_<<"Unable to retrieve BCAL submodule RioZ info."<<endl;
       bcal_length = 0.0;
@@ -1631,7 +1631,7 @@ bool DGeometry::GetBCALLength(float &bcal_length) const
 bool DGeometry::GetBCALDepth(float &bcal_depth) const
 {
    vector<float> bcal_moth_Rio_Z;
-   bool good = Get("//BarrelEMcal_s/section/tubs[@name='BCAL']/@Rio_Z", bcal_moth_Rio_Z);
+   bool good = Get("//section[@name='BarrelEMcal']/tubs[@name='BCAL']/@Rio_Z", bcal_moth_Rio_Z);
    if(!good){
       _DBG_<<"Unable to retrieve BCAL mother RioZ info."<<endl;
       bcal_depth = 0.0;
@@ -1655,7 +1655,7 @@ bool DGeometry::GetBCALDepth(float &bcal_depth) const
 bool DGeometry::GetBCALPhiShift(float &bcal_phi_shift) const
 {
    vector<float> Phi0;
-   bool good = Get("//BarrelEMcal_s/section/composition/mposPhi/@Phi0", Phi0);
+   bool good = Get("//section[@name='BarrelEMcal']/composition/mposPhi/@Phi0", Phi0);
    if(!good) return false;
    if(Phi0.size() == 1){
       bcal_phi_shift = Phi0[0];
