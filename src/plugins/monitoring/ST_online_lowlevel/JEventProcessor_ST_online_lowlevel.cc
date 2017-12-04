@@ -313,7 +313,7 @@ jerror_t JEventProcessor_ST_online_lowlevel::evnt(JEventLoop *loop, uint64_t eve
       //****************************************************************************
       int hit_channel       = dscdigihits[i]->sector - 1;             // channel hit (ranging from 0 to NCHANNELS-1)
       int adc_sector         = dscdigihits[i]->sector ;                // channel hit (ranging from 1 to NCHANNELS)   
-      uint32_t avg_pedestal  = dscdigihits[i]->pedestal/dscdigihits[i]->nsamples_pedestal;    // average single-sample pedestal (should be around 100 chan1)
+      uint32_t avg_pedestal  = (dscdigihits[i]->nsamples_pedestal == 0 ) ? 0.0 : dscdigihits[i]->pedestal/dscdigihits[i]->nsamples_pedestal;  // average single-sample pedestal (should be around 100 chan1)
       uint32_t pulse_time    = dscdigihits[i]->pulse_time*ADC_PT_RES;  // converted pulse time to ns
       uint32_t pulse_integral= dscdigihits[i]->pulse_integral;         // pulse integral
       //Occupancy Histo
