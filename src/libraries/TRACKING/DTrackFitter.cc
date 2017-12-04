@@ -48,7 +48,6 @@ DTrackFitter::DTrackFitter(JEventLoop *loop)
 		return;
 	}
 	bfield = dapp->GetBfield(run_number); 
-	lorentz_def=dapp->GetLorentzDeflections(run_number);
 	geom = dapp->GetDGeometry(run_number);
 
 	RootGeom=NULL;
