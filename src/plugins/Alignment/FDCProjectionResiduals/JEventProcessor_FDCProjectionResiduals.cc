@@ -102,36 +102,71 @@ jerror_t JEventProcessor_FDCProjectionResiduals::brun(JEventLoop *eventLoop, int
    }
 
    typedef map<string,double>::iterator iter_double;
-   if (jcalib->Get("CDC/cdc_drift_table::NoBField", tvals)==false){    
-      for(unsigned int i=0; i<tvals.size(); i++){
-         map<string, double> &row = tvals[i];
-         iter_double iter = row.find("t");
-         cdc_drift_table.push_back(1000.*iter->second);
+   if (dIsNoFieldFlag){
+      if (jcalib->Get("CDC/cdc_drift_table::NoBField", tvals)==false){    
+         for(unsigned int i=0; i<tvals.size(); i++){
+            map<string, double> &row = tvals[i];
+            iter_double iter = row.find("t");
+            cdc_drift_table.push_back(1000.*iter->second);
+         }
+      }
+
+      if (jcalib->Get("CDC/drift_parameters::NoBField", tvals)==false){
+         map<string, double> &row = tvals[0]; //long drift side
+         long_drift_func[0][0]=row["a1"]; 
+         long_drift_func[0][1]=row["a2"];
+         long_drift_func[0][2]=row["a3"];  
+         long_drift_func[1][0]=row["b1"];
+         long_drift_func[1][1]=row["b2"];
+         long_drift_func[1][2]=row["b3"];
+         long_drift_func[2][0]=row["c1"];
+         long_drift_func[2][1]=row["c2"];
+         long_drift_func[2][2]=row["c3"];
+
+         row = tvals[1]; // short drift side
+         short_drift_func[0][0]=row["a1"];
+         short_drift_func[0][1]=row["a2"];
+         short_drift_func[0][2]=row["a3"];  
+         short_drift_func[1][0]=row["b1"];
+         short_drift_func[1][1]=row["b2"];
+         short_drift_func[1][2]=row["b3"];
+         short_drift_func[2][0]=row["c1"];
+         short_drift_func[2][1]=row["c2"];
+         short_drift_func[2][2]=row["c3"];
       }
    }
+   else{
+      if (jcalib->Get("CDC/cdc_drift_table", tvals)==false){
+         for(unsigned int i=0; i<tvals.size(); i++){
+            map<string, double> &row = tvals[i];
+            iter_double iter = row.find("t");
+            cdc_drift_table.push_back(1000.*iter->second);
+         }
+      }
 
-   if (jcalib->Get("CDC/drift_parameters::NoBField", tvals)==false){
-      map<string, double> &row = tvals[0]; //long drift side
-      long_drift_func[0][0]=row["a1"]; 
-      long_drift_func[0][1]=row["a2"];
-      long_drift_func[0][2]=row["a3"];  
-      long_drift_func[1][0]=row["b1"];
-      long_drift_func[1][1]=row["b2"];
-      long_drift_func[1][2]=row["b3"];
-      long_drift_func[2][0]=row["c1"];
-      long_drift_func[2][1]=row["c2"];
-      long_drift_func[2][2]=row["c3"];
+      if (jcalib->Get("CDC/drift_parameters", tvals)==false){
+         map<string, double> &row = tvals[0]; //long drift side
+         long_drift_func[0][0]=row["a1"];
+         long_drift_func[0][1]=row["a2"];
+         long_drift_func[0][2]=row["a3"];
+         long_drift_func[1][0]=row["b1"];
+         long_drift_func[1][1]=row["b2"];
+         long_drift_func[1][2]=row["b3"];
+         long_drift_func[2][0]=row["c1"];
+         long_drift_func[2][1]=row["c2"];
+         long_drift_func[2][2]=row["c3"];
 
-      row = tvals[1]; // short drift side
-      short_drift_func[0][0]=row["a1"];
-      short_drift_func[0][1]=row["a2"];
-      short_drift_func[0][2]=row["a3"];  
-      short_drift_func[1][0]=row["b1"];
-      short_drift_func[1][1]=row["b2"];
-      short_drift_func[1][2]=row["b3"];
-      short_drift_func[2][0]=row["c1"];
-      short_drift_func[2][1]=row["c2"];
-      short_drift_func[2][2]=row["c3"];
+         row = tvals[1]; // short drift side
+         short_drift_func[0][0]=row["a1"];
+         short_drift_func[0][1]=row["a2"];
+         short_drift_func[0][2]=row["a3"];
+         short_drift_func[1][0]=row["b1"];
+         short_drift_func[1][1]=row["b2"];
+         short_drift_func[1][2]=row["b3"];
+         short_drift_func[2][0]=row["c1"];
+         short_drift_func[2][1]=row["c2"];
+         short_drift_func[2][2]=row["c3"];
+      }
    }
 
 
@@ -165,7 +200,7 @@ jerror_t JEventProcessor_FDCProjectionResiduals::evnt(JEventLoop *loop, uint64_t
 
       const DChargedTrackHypothesis* bestHypothesis = chargedTrackVector[iTrack]->Get_BestTrackingFOM();
 
-      
+
       // Cut very loosely on the track quality
       auto thisTimeBasedTrack = bestHypothesis->Get_TrackTimeBased();
 
@@ -208,11 +243,20 @@ jerror_t JEventProcessor_FDCProjectionResiduals::evnt(JEventLoop *loop, uint64_t
             DVector3 POCAOnTrack(0.0, 0.0, 0.0), POCAOnWire(0.0, 0.0, 0.0);
             double zVertex = thisTimeBasedTrack->position().Z();
             double distanceToBeamline = thisTimeBasedTrack->position().Perp();
-            double distanceToWire = GetDOCA(wire->origin, wire->udir, thisTimeBasedTrack->position(), thisTimeBasedTrack->momentum(), POCAOnTrack, POCAOnWire);
+            double distanceToWire;
+            if (dIsNoFieldFlag) distanceToWire = GetDOCA(wire->origin, wire->udir, thisTimeBasedTrack->position(), thisTimeBasedTrack->momentum(), POCAOnTrack, POCAOnWire);
+            else {
+               distanceToWire=thisTimeBasedTrack->rt->DistToRT(wire);
+               POCAOnTrack=thisTimeBasedTrack->rt->GetLastDOCAPoint();
+               POCAOnWire=wire->origin + thisTimeBasedTrack->rt->GetLastDistAlongWire() * wire->udir;
+               distanceToWire=(POCAOnTrack - POCAOnWire).Mag();
+            }
             double zPOCA = POCAOnTrack.Z();
             DVector3 LOCA = POCAOnTrack - POCAOnWire;
-
             if(distanceToWire > 1.2 || distanceToBeamline > 1.0 || zPOCA < zVertex || POCAOnWire.Z() > endplate_z) continue;
+            jout << " Dist = " << distanceToWire << " POCAOnTrack POCAOnWire Manual Distance = " << LOCA.Mag() << endl;
+            POCAOnTrack.Print();
+            POCAOnWire.Print(); 
 
             double delta = 0.0, dz = 0.0;
             if(!Expect_Hit(thisTimeBasedTrack, wire, distanceToWire, delta, dz))
