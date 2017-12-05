@@ -231,7 +231,7 @@ jerror_t JEventProcessor_pedestal_online::evnt(JEventLoop *loop, uint64_t eventn
 					pedestal_vtime_hist[rocid] = new TH1F(cratename,title,100,0.,0.);
 				}
 				// keep a running stats of the (single event) pedestal
-				if (hit->pedestal>0) pedestal_vtime_hist[rocid]->Fill(hit->pedestal/hit->nsamples_pedestal);
+				if (hit->pedestal>0 && hit->nsamples_pedestal!=0) pedestal_vtime_hist[rocid]->Fill(hit->pedestal/hit->nsamples_pedestal);
 				// if more than periodlength has elapsed, then end the average and fill the tree
 				if (recentwalltime > periodstarttime[rocid]+periodlength) {
 					if (VERBOSE>=3) printf("JEventProcessor_pedestal_online::evnt  filling tree crate %i\n",rocid);
