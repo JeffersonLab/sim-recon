@@ -442,6 +442,7 @@ class DTranslationTable:public jana::JObject{
 		// fADC125
 		DCDCDigiHit* MakeCDCDigiHit(const CDCIndex_t &idx, const Df125PulseIntegral *pi, const Df125PulseTime *pt, const Df125PulsePedestal *pp) const;
 		DCDCDigiHit* MakeCDCDigiHit(const CDCIndex_t &idx, const Df125CDCPulse *p) const;
+		DCDCDigiHit* MakeCDCDigiHit(const CDCIndex_t &idx, const Df125FDCPulse *p) const;
 		DFDCCathodeDigiHit* MakeFDCCathodeDigiHit(const FDC_CathodesIndex_t &idx, const Df125PulseIntegral *pi, const Df125PulseTime *pt, const Df125PulsePedestal *pp) const;
 		DFDCCathodeDigiHit* MakeFDCCathodeDigiHit(const FDC_CathodesIndex_t &idx, const Df125FDCPulse *p) const;
 
