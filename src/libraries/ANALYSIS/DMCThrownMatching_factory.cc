@@ -519,6 +519,7 @@ void DMCThrownMatching_factory::Find_GenReconMatches_ChargedTrack(const vector<c
 	locMCThrownMatching->Set_ThrownToChargedMap(locThrownToChargedMap);
 }
 
+
 void DMCThrownMatching_factory::Find_GenReconMatches_ChargedHypo(const vector<const DMCThrown*>& locMCThrownVector, const vector<const DChargedTrackHypothesis*>& locChargedTrackHypothesisVector, DMCThrownMatching* locMCThrownMatching) const
 {
 	map<const DChargedTrackHypothesis*, pair<const DMCThrown*, double> > locChargedToThrownMap;
@@ -542,7 +543,7 @@ void DMCThrownMatching_factory::Find_GenReconMatches_ChargedHypo(const vector<co
 			continue;
 
 		const DMCThrown* locMCThrown = locMyIDToThrownMap[locTrackTimeBased->dMCThrownMatchMyID];
-		double locNumTrackHits = double(locTrackTimeBased->Ndof + 5);
+		double locNumTrackHits = Get_NumTrackHits(locTrackTimeBased);
 		double locHitFraction = locTrackTimeBased->dNumHitsMatchedToThrown/locNumTrackHits;
 		if(locHitFraction < dMinTrackMatchHitFraction)
 			continue; //not good enough!
