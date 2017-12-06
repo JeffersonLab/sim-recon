@@ -1667,8 +1667,25 @@ void DEVIOWorkerThread::Parsef125Bank(uint32_t rocid, uint32_t* &iptr, uint32_t 
 					uint32_t nsamples_integral = 0;  // must be overwritten later in GetObjects with value from Df125Config value
 					uint32_t nsamples_pedestal = 1;  // The firmware pedestal divided by 2^PBIT where PBIT is a config. parameter
 
+                                        //assign to CDC or FDC based on hard coded rocid
+
 					if( pe ) {
-						pe->NEW_Df125FDCPulse(rocid, slot, channel, itrigger
+                                          if ( rocid<30 ) {
+ 						pe->NEW_Df125CDCPulse(rocid, slot, channel, itrigger
+									, pulse_number        // NPK
+									, pulse_time          // le_time
+									, quality_factor      // time_quality_bit
+									, overflow_count      // overflow_count
+									, pedestal            // pedestal
+									, sum                 // integral
+									, pulse_peak          // peak_amp
+									, word1               // word1
+									, word2               // word2
+									, nsamples_pedestal   // nsamples_pedestal
+									, nsamples_integral   // nsamples_integral
+									, false);             // emulated
+                                          } else {
+ 						pe->NEW_Df125FDCPulse(rocid, slot, channel, itrigger
 									, pulse_number        // NPK
 									, pulse_time          // le_time
 									, quality_factor      // time_quality_bit
@@ -1682,6 +1699,9 @@ void DEVIOWorkerThread::Parsef125Bank(uint32_t rocid, uint32_t* &iptr, uint32_t 
 									, nsamples_pedestal   // nsamples_pedestal
 									, nsamples_integral   // nsamples_integral
 									, false);             // emulated
+                                          }
+
+
 					}
 				}
                 break;
