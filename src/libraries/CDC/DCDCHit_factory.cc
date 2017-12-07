@@ -16,6 +16,7 @@ using namespace std;
 #include <DAQ/Df125PulseIntegral.h>
 #include <DAQ/Df125Config.h>
 #include <DAQ/Df125CDCPulse.h>
+#include <DAQ/Df125FDCPulse.h>
 
 using namespace jana;
 
@@ -219,9 +220,11 @@ jerror_t DCDCHit_factory::evnt(JEventLoop *loop, uint64_t eventnumber)
         // Try to get the new data type, if that fails, try to get the old...
         const Df125CDCPulse *CDCPulseObj = NULL;
         digihit->GetSingle(CDCPulseObj);
-        if (CDCPulseObj != NULL){
+        const Df125FDCPulse *FDCPulseObj = NULL;
+        digihit->GetSingle(FDCPulseObj);
+        if ((CDCPulseObj != NULL) || (FDCPulseObj != NULL)) {
             const Df125Config *config = NULL;
-            CDCPulseObj->GetSingle(config);
+            digihit->GetSingle(config);
 
             // Set some constants to defaults until they appear correctly in the config words in the future
             if(config){
@@ -236,9 +239,9 @@ jerror_t DCDCHit_factory::evnt(JEventLoop *loop, uint64_t eventnumber)
                 }
             }
  
-            maxamp = CDCPulseObj->first_max_amp;
+            maxamp = digihit->pulse_peak;
 
-            raw_amp = CDCPulseObj->first_max_amp;
+            raw_amp = digihit->pulse_peak;
         }
         else{ // Use the old format
             // This code will at some point become deprecated in the future...
