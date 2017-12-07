@@ -9371,16 +9371,14 @@ jerror_t DTrackFitterKalmanSIMD::ExtrapolateForwardToOtherDetectors(){
 
     // Check if we have passed into the BCAL
     double r2=S(state_x)*S(state_x)+S(state_y)*S(state_y);
-    if (r2>64.9*64.9){
+    if (r2>64.9*64.9 && r2<89.*89.){
       if (extrapolations.at(SYS_BCAL).size()>299){
 	return VALUE_OUT_OF_RANGE;
       }
       if (fabs(S(state_q_over_p))>20.){
 	return NOERROR;
       }
-      if (r2>89.*89.){ // outer radius squared	
-	return NOERROR;
-      }
+
       if (z<406.){
 	double tsquare=S(state_tx)*S(state_tx)+S(state_ty)*S(state_ty);
 	double tanl=1./sqrt(tsquare);
