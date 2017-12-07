@@ -206,6 +206,7 @@ class JEventSource_EVIOpp: public jana::JEventSource{
 		bool     IGNORE_EMPTY_BOR;
 		bool     TREAT_TRUNCATED_AS_ERROR;
 		string   SYSTEMS_TO_PARSE;
+        bool     EMULATE_F125_FDC_MODE_ONLY;
 		
 		uint32_t jobtype;
 };
