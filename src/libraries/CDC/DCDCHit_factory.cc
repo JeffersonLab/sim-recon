@@ -206,23 +206,42 @@ jerror_t DCDCHit_factory::evnt(JEventLoop *loop, uint64_t eventnumber)
 
         // Grab the pedestal from the digihit since this should be consistent between the old and new formats
         uint32_t raw_ped           = digihit->pedestal;
-        uint32_t maxamp            = 0; //get this from CDCPulse
+        uint32_t maxamp            = digihit->pulse_peak; 
 
         // There are a few values from the new data type that are critical for the interpretation of the data
         uint16_t ABIT = 0; // 2^{ABIT} Scale factor for amplitude
         uint16_t PBIT = 0; // 2^{PBIT} Scale factor for pedestal
 
-
-        // pulse amplitude
-        double raw_amp = 0.;
-
         // This is the place to make quality cuts on the data. 
-        // Try to get the new data type, if that fails, try to get the old...
-        const Df125CDCPulse *CDCPulseObj = NULL;
-        digihit->GetSingle(CDCPulseObj);
-        const Df125FDCPulse *FDCPulseObj = NULL;
-        digihit->GetSingle(FDCPulseObj);
-        if ((CDCPulseObj != NULL) || (FDCPulseObj != NULL)) {
+        const Df125PulsePedestal* PPobj = NULL;
+        digihit->GetSingle(PPobj);
+        if( PPobj != NULL ) { 
+            // Use the old format - mostly handle error conditions
+            // This code will at some point become deprecated in the future...
+            // This applies to the firmware for data taken until the fall of 2015.
+            // Mode 8: Raw data and processed data (except pulse integral).
+            // Mode 7: Processed data only.
+
+            // This error state is only present in mode 8
+            if (digihit->pulse_time==0.) continue;
+
+            // There is a slight difference between Mode 7 and 8 data
+            // The following condition signals an error state in the flash algorithm
+            // Do not make hits out of these
+            if (PPobj != NULL){
+                if (PPobj->pedestal == 0 || PPobj->pulse_peak == 0) continue;
+                if (PPobj->pulse_number == 1) continue; // Unintentionally had 2 pulses found in fall 2014 data (0-1 counting issue)
+            }
+            
+            const Df125PulseIntegral* PIobj = NULL;
+            digihit->GetSingle(PIobj);
+            if (PPobj == NULL || PIobj == NULL) continue; // We don't want hits where ANY of the associated information is missing
+
+            // this amplitude is not set in the translation table for this old data format, so make a (reasonable?) guess
+            maxamp = digihit->pulse_integral / 28.8;
+        } else {
+            // Use the modern (2017+) data versions
+            // Configuration data needed to interpret the hits is stored in the data stream
             const Df125Config *config = NULL;
             digihit->GetSingle(config);
 
@@ -239,32 +258,6 @@ jerror_t DCDCHit_factory::evnt(JEventLoop *loop, uint64_t eventnumber)
                 }
             }
  
-            maxamp = digihit->pulse_peak;
-
-            raw_amp = digihit->pulse_peak;
-        }
-        else{ // Use the old format
-            // This code will at some point become deprecated in the future...
-            // This applies to the firmware for data taken until the fall of 2015.
-            // Mode 8: Raw data and processed data (except pulse integral).
-            // Mode 7: Processed data only.
-
-            // This error state is only present in mode 8
-            if (digihit->pulse_time==0.) continue;
-
-            // There is a slight difference between Mode 7 and 8 data
-            // The following condition signals an error state in the flash algorithm
-            // Do not make hits out of these
-            const Df125PulsePedestal* PPobj = NULL;
-            digihit->GetSingle(PPobj);
-            if (PPobj != NULL){
-                if (PPobj->pedestal == 0 || PPobj->pulse_peak == 0) continue;
-                if (PPobj->pulse_number == 1) continue; // Unintentionally had 2 pulses found in fall 2014 data (0-1 counting issue)
-            }
-
-            const Df125PulseIntegral* PIobj = NULL;
-            digihit->GetSingle(PIobj);
-            if (PPobj == NULL || PIobj == NULL) continue; // We don't want hits where ANY of the associated information is missing
         }
 
         // Complete the pedestal subtraction here since we should know the correct number of samples.
@@ -276,11 +269,10 @@ jerror_t DCDCHit_factory::evnt(JEventLoop *loop, uint64_t eventnumber)
         maxamp = maxamp - scaled_ped;
 
         // Apply calibration constants here
-
         double t_raw = double(digihit->pulse_time);
 
         double q = a_scale * gains[ring-1][straw-1] * (double)maxamp * 28.8;
-        double amp = a_scale * raw_amp;
+        double amp =  maxamp;
 
         double t = t_scale * t_raw - time_offsets[ring-1][straw-1] + t_base;
 
