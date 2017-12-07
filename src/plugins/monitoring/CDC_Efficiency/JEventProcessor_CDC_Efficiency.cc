@@ -180,34 +180,33 @@ jerror_t JEventProcessor_CDC_Efficiency::brun(JEventLoop *eventLoop, int32_t run
             }
         }
     }
-
-    vector<const DTrackFitter *> fitters;
-    eventLoop->Get(fitters);
-    
-    if(fitters.size()<1){
-      _DBG_<<"Unable to get a DTrackFinder object!"<<endl;
-      return RESOURCE_UNAVAILABLE;
-    }
-    
-    fitter = fitters[0];
-    // Get the particle ID algorithms
-    vector<const DParticleID *> pid_algorithms;
-    eventLoop->Get(pid_algorithms);
-    if(pid_algorithms.size()<1){
-      _DBG_<<"Unable to get a DParticleID object! NO PID will be done!"<<endl;
-      return RESOURCE_UNAVAILABLE;
-    }
-    
-    pid_algorithm = pid_algorithms[0];
-    
-    
-    MAX_DRIFT_TIME = 1000.0; //ns: from TRKFIND:MAX_DRIFT_TIME in DTrackCandidate_factory_CDC
-    //Make sure it gets initialize first, in case we want to change it:
-    if(!dIsNoFieldFlag){
+	MAX_DRIFT_TIME = 1000.0; //ns: from TRKFIND:MAX_DRIFT_TIME in DTrackCandidate_factory_CDC
+	//Make sure it gets initialize first, in case we want to change it:
+   if(!dIsNoFieldFlag){
       vector<const DTrackCandidate*> locTrackCandidates;
       eventLoop->Get(locTrackCandidates);
       gPARMS->GetParameter("TRKFIND:MAX_DRIFT_TIME", MAX_DRIFT_TIME);
    }
+
+   vector<const DTrackFitter *> fitters;
+	eventLoop->Get(fitters);
+	
+	if(fitters.size()<1){
+	  _DBG_<<"Unable to get a DTrackFinder object!"<<endl;
+	  return RESOURCE_UNAVAILABLE;
+	}
+	
+	fitter = fitters[0];
+	// Get the particle ID algorithms
+	vector<const DParticleID *> pid_algorithms;
+	eventLoop->Get(pid_algorithms);
+	if(pid_algorithms.size()<1){
+	  _DBG_<<"Unable to get a DParticleID object! NO PID will be done!"<<endl;
+	  return RESOURCE_UNAVAILABLE;
+	}
+
+	pid_algorithm = pid_algorithms[0];
+
    return NOERROR;
 }
 
@@ -345,136 +344,25 @@ void JEventProcessor_CDC_Efficiency::GitRDun(unsigned int ringNum, const DTrackT
 {
   vector<DTrackFitter::Extrapolation_t>extrapolations=thisTimeBasedTrack->extrapolations.at(SYS_CDC);
   if (extrapolations.size()==0) return;
-
-<<<<<<< HEAD
-    int Nstraws_previous[28] = {0,42,84,138,192,258,324,404,484,577,670,776,882,1005,1128,1263,1398,1544,1690,1848,2006,2176,2346,2528,2710,2907,3104,3313};
-
-	vector< DCDCWire * > wireByNumber = cdcwires[ringNum - 1];
-	for (unsigned int wireIndex = 0; wireIndex < wireByNumber.size(); wireIndex++)
-	{
-		int wireNum = wireIndex+1;
-		DCDCWire * wire = wireByNumber[wireIndex];
-		DVector3 pos,mom;
-		double distanceToWire = fitter->DistToWire(wire,extrapolations,
-							   &pos,&mom);
-
-		//SKIP IF NOT CLOSE
-		if(distanceToWire > 50.0)
-		{
-			wireIndex += 30;
-			continue;
-		}
-		if(distanceToWire > 20.0)
-		{
-			wireIndex += 10;
-			continue;
-		}
-		if(distanceToWire > 10.0)
-		{
-			wireIndex += 5;
-			continue;
-		}
-
-		double delta = 0.0, dz = 0.0;
-		if(!Expect_Hit(thisTimeBasedTrack, wire, distanceToWire, pos, delta, dz))
-			continue;
-
-		//FILL EXPECTED HISTOGRAMS
-		double dx = pid_algorithm->CalcdXHit(mom,pos,wire);
-		double locTheta = thisTimeBasedTrack->momentum().Theta()*TMath::RadToDeg();
-		Fill1DHistogram("CDC_Efficiency", "Offline", "Expected Hits Vs Path Length", dx, "Expected Hits", 100, 0 , 4.0);
-		Fill1DHistogram("CDC_Efficiency", "Offline", "Expected Hits Vs DOCA", distanceToWire, "Expected Hits", 100, 0 , 0.78);
-		Fill1DHistogram("CDC_Efficiency", "Offline", "Expected Hits Vs Tracking FOM", thisTimeBasedTrack->FOM, "Expected Hits", 100, 0 , 1.0);
-		Fill1DHistogram("CDC_Efficiency", "Offline", "Expected Hits Vs theta", locTheta, "Expected Hits", 100, 0, 180);
-		Fill1DHistogram("CDC_Efficiency", "Offline", "Expected Hits Vs p", thisTimeBasedTrack->pmag(), "Expected Hits", 100, 0 , 4.0);
-		Fill1DHistogram("CDC_Efficiency", "Offline", "Expected Hits Vs delta", delta, "Expected Hits", 100, -0.3 , 0.3);
-		Fill2DHistogram("CDC_Efficiency", "Offline", "Expected hits p Vs Theta", locTheta, thisTimeBasedTrack->pmag(), "Expected Hits", 100, 0, 180, 100, 0 , 4.0);
-                //expected hits by straw number
-		Fill1DHistogram("CDC_Efficiency", "Offline", "Expected Hits Vs N", Nstraws_previous[ringNum-1]+wireNum, "Expected Hits", 3522, 0.5, 3522.5);
-
-		// look for a CDC hit match
-		// We need a backwards map from ring/straw to flash channel. Unfortunately there is no easy way
-		// Will construct the map manually
-		const DCDCTrackHit* locTrackHit = Find_Hit(ringNum, wireNum, locSortedCDCTrackHits[ringNum]);
-		const DCDCHit* locHit = nullptr;
-		if(locTrackHit != nullptr)
-			locTrackHit->GetSingle(locHit);
-
-		bool foundHit = (locTrackHit != nullptr);
-		if(foundHit)
-		{
-			const DCDCDigiHit *thisDigiHit = NULL;
-			const Df125CDCPulse *thisPulse = NULL;
-			locHit->GetSingle(thisDigiHit);
-			if (thisDigiHit != NULL)
-				thisDigiHit->GetSingle(thisPulse);
-			if (thisPulse != NULL)
-			{
-				ROCIDFromRingStraw[ringNum - 1][wireNum - 1] = thisPulse->rocid;
-				SlotFromRingStraw[ringNum - 1][wireNum - 1] = thisPulse->slot;
-				ChannelFromRingStraw[ringNum - 1][wireNum - 1] = thisPulse->channel;
-			}
-			Fill1DHistogram("CDC_Efficiency", "Offline", "Measured Hits Vs Path Length", dx, "Measured Hits", 100, 0 , 4.0);
-			Fill1DHistogram("CDC_Efficiency", "Offline", "Measured Hits Vs DOCA", distanceToWire, "Measured Hits", 100, 0 , 0.78);
-			Fill1DHistogram("CDC_Efficiency", "Offline", "Measured Hits Vs Tracking FOM", thisTimeBasedTrack->FOM, "Measured Hits", 100, 0 , 1.0);
-			Fill1DHistogram("CDC_Efficiency", "Offline", "Measured Hits Vs theta", locTheta, "Measured Hits", 100, 0, 180);
-			Fill1DHistogram("CDC_Efficiency", "Offline", "Measured Hits Vs p", thisTimeBasedTrack->pmag(), "Measured Hits", 100, 0 , 4.0);
-			Fill1DHistogram("CDC_Efficiency", "Offline", "Measured Hits Vs delta", delta, "Measured Hits", 100, -0.3 , 0.3);
-			Fill2DHistogram("CDC_Efficiency", "Offline", "Measured hits p Vs Theta", locTheta, thisTimeBasedTrack->pmag(), "Measured Hits", 100, 0, 180, 100, 0 , 4.0);
-
-                        //expected hits by straw number
- 	        	Fill1DHistogram("CDC_Efficiency", "Offline", "Measured Hits Vs N", Nstraws_previous[ringNum-1]+wireNum, "Measured Hits", 3522, 0.5 , 3522.5);
-
-
-		}
-
-		//FILL PROFILES: BASED ON FOUND OR NOT
-		Fill1DProfile("CDC_Efficiency", "Online", "Efficiency Vs Path Length", dx,foundHit, "Efficiency; dx [cm]; Efficiency", 100, 0 , 4.0);
-		Fill1DProfile("CDC_Efficiency", "Online", "Efficiency Vs DOCA", distanceToWire,foundHit, "Efficiency; DOCA [cm]; Efficiency", 100, 0 , 0.78);
-		Fill1DProfile("CDC_Efficiency", "Online", "Efficiency Vs Tracking FOM", thisTimeBasedTrack->FOM,foundHit, "Efficiency; Tracking FOM; Efficiency", 100, 0 , 1.0);
-		Fill1DProfile("CDC_Efficiency", "Online", "Efficiency Vs theta", locTheta,foundHit, "Efficiency; Track #Theta [deg]; Efficiency", 100, 0, 180);
-		Fill1DProfile("CDC_Efficiency", "Online", "Efficiency Vs p", thisTimeBasedTrack->pmag(),foundHit, "Efficiency; Momentum [GeV]; Efficiency", 100, 0 , 4.0);
-		Fill1DProfile("CDC_Efficiency", "Online", "Efficiency Vs delta", delta,foundHit, "Efficiency; #delta [cm]; Efficiency", 100, -0.3 , 0.3);
-
-                //expected hits by straw number
-        	Fill1DProfile("CDC_Efficiency", "Online", "Efficiency Vs N", Nstraws_previous[ringNum-1]+wireNum, foundHit,"Efficiency; N; Efficiency", 3522, 0.5 , 3522.5);
-
-
-		if( ChannelFromRingStraw[ringNum - 1][wireNum - 1] != -1)
-		{
-			Fill1DProfile("CDC_Efficiency", "Online", "Efficiency Vs Channel Number", ChannelFromRingStraw[ringNum - 1][wireNum - 1],foundHit, "Efficiency; Channel Number; Efficiency", 73, -0.5 , 72.5);
-			char name [200];
-			sprintf(name, "Slot Efficiency ROCID %.2i", ROCIDFromRingStraw[ringNum - 1][wireNum - 1]);
-			Fill1DProfile("CDC_Efficiency", "Online", name, SlotFromRingStraw[ringNum - 1][wireNum - 1],foundHit, "Efficiency; Slot Number; Efficiency", 21, -0.5 , 20.5);
-			sprintf(name, "Channel Efficiency ROCID %.2i", ROCIDFromRingStraw[ringNum - 1][wireNum - 1]);
-			Fill1DProfile("CDC_Efficiency", "Online", name, SlotFromRingStraw[ringNum - 1][wireNum - 1] * 100 + ChannelFromRingStraw[ringNum - 1][wireNum - 1],foundHit, "Efficiency; Channel; Efficiency", 1501, 299.5 , 1800.5);
-		}
-
-		Fill2DProfile("CDC_Efficiency", "Online", "Efficiency p Vs Theta", locTheta, thisTimeBasedTrack->pmag(),foundHit, "Efficiency; Track #Theta [deg]; Momentum [GeV]", 100, 0, 180, 100, 0 , 4.0);
-		Fill2DProfile("CDC_Efficiency", "Online", "Efficiency distance Vs delta", delta,distanceToWire,foundHit, "Efficiency;#delta [cm]; DOCA [cm]", 100, -0.3, 0.3, 100, 0 , 1.2);
-		Fill2DProfile("CDC_Efficiency", "Online", "Efficiency z Vs delta", delta,dz,foundHit, "Efficiency;#delta [cm]; z [cm] (CDC local coordinates)", 100, -0.3, 0.3, 150, -75 , 75);
-
-		//FILL AS FUNCTION OF DOCA
-		if (distanceToWire < 0.78)
-		{
-			Fill_ExpectedHit(ringNum, wireNum, distanceToWire);
-			if(foundHit)
-			  Fill_MeasuredHit(ringNum, wireNum, distanceToWire,pos,mom, wire, locHit);
-		}
-	}
-=======
+  
    int Nstraws_previous[28] = {0,42,84,138,192,258,324,404,484,577,670,776,882,1005,1128,1263,1398,1544,1690,1848,2006,2176,2346,2528,2710,2907,3104,3313};
    vector< DCDCWire * > wireByNumber = cdcwires[ringNum - 1];
+   DVector3 pos;
+   DVector3 mom=thisTimeBasedTrack->momentum();
    for (unsigned int wireIndex = 0; wireIndex < wireByNumber.size(); wireIndex++)
    {
       int wireNum = wireIndex+1;
       DCDCWire * wire = wireByNumber[wireIndex];
-      double wireLength = wire->L;
       double distanceToWire;
-      if(!dIsNoFieldFlag) distanceToWire = thisTimeBasedTrack->rt->DistToRT(wire, &wireLength);
+      if(!dIsNoFieldFlag){
+	distanceToWire = fitter->DistToWire(wire,extrapolations,&pos,&mom);
+      }
       else {
          DVector3 POCAOnTrack, POCAOnWire;
-         distanceToWire = GetDOCAFieldOff(wire->origin, wire->udir, thisTimeBasedTrack->position(), thisTimeBasedTrack->momentum(), POCAOnTrack, POCAOnWire);
+         distanceToWire = GetDOCAFieldOff(wire->origin, wire->udir,
+					  thisTimeBasedTrack->position(),mom,
+					  POCAOnTrack, POCAOnWire);
+	 pos=POCAOnTrack;
       }
 
       //SKIP IF NOT CLOSE - Field on
@@ -497,11 +385,11 @@ void JEventProcessor_CDC_Efficiency::GitRDun(unsigned int ringNum, const DTrackT
       }
 
       double delta = 0.0, dz = 0.0;
-      if(!Expect_Hit(thisTimeBasedTrack, wire, distanceToWire, delta, dz))
+      if(!Expect_Hit(thisTimeBasedTrack, wire, distanceToWire, pos, delta, dz))
          continue;
 
       //FILL EXPECTED HISTOGRAMS
-      double dx = thisTimeBasedTrack->rt->Straw_dx(wire, 0.78);
+      double dx = pid_algorithm->CalcdXHit(mom,pos,wire);
       double locTheta = thisTimeBasedTrack->momentum().Theta()*TMath::RadToDeg();
       Fill1DHistogram("CDC_Efficiency", "Offline", "Expected Hits Vs Path Length", dx, "Expected Hits", 100, 0 , 4.0);
       Fill1DHistogram("CDC_Efficiency", "Offline", "Expected Hits Vs DOCA", distanceToWire, "Expected Hits", 100, 0 , 0.78);
@@ -574,41 +462,20 @@ void JEventProcessor_CDC_Efficiency::GitRDun(unsigned int ringNum, const DTrackT
       Fill2DProfile("CDC_Efficiency", "Online", "Efficiency p Vs Theta", locTheta, thisTimeBasedTrack->pmag(),foundHit, "Efficiency; Track #Theta [deg]; Momentum [GeV]", 100, 0, 180, 100, 0 , 4.0);
       Fill2DProfile("CDC_Efficiency", "Online", "Efficiency distance Vs delta", delta,distanceToWire,foundHit, "Efficiency;#delta [cm]; DOCA [cm]", 100, -0.3, 0.3, 100, 0 , 1.2);
       Fill2DProfile("CDC_Efficiency", "Online", "Efficiency z Vs delta", delta,dz,foundHit, "Efficiency;#delta [cm]; z [cm] (CDC local coordinates)", 100, -0.3, 0.3, 150, -75 , 75);
-
+   
       //FILL AS FUNCTION OF DOCA
       if (distanceToWire < 0.78)
       {
          Fill_ExpectedHit(ringNum, wireNum, distanceToWire);
          if(foundHit)
-            Fill_MeasuredHit(ringNum, wireNum, distanceToWire, thisTimeBasedTrack, wire, locHit);
+	   Fill_MeasuredHit(ringNum, wireNum, distanceToWire, pos, mom, wire, 
+			    locHit);
       }
    }
->>>>>>> master
 }
 
-bool JEventProcessor_CDC_Efficiency::Expect_Hit(const DTrackTimeBased* thisTimeBasedTrack, DCDCWire* wire, double distanceToWire, const DVector3 &pos, double& delta, double& dz)
+bool JEventProcessor_CDC_Efficiency::Expect_Hit(const DTrackTimeBased* thisTimeBasedTrack, DCDCWire* wire, double distanceToWire, const DVector3 &pos,double& delta, double& dz)
 {
-<<<<<<< HEAD
-	delta = 0.0;
-	dz = 0.0;
-	if (distanceToWire >= 1.2 )
-		return false;
-
-	// Loose cut before delta information
-	// Need to get phi_doca for each of the wires that pass this cut
-	// Form the vector between the wire and the DOCA point
-	DVector3 DOCA = (-1) * ((wire->origin - pos) - (wire->origin - pos).Dot(wire->udir) * wire->udir);
-
-	double docaphi = DOCA.Phi();
-	dz = (pos - wire->origin).Z();
-	//cout << "distanceToWire = " << distanceToWire << " DOCA = " << DOCA.Mag() << endl;
-	// Get delta at this location for this straw
-	int ring_index = wire->ring - 1;
-	int straw_index = wire->straw - 1;
-	delta = max_sag[ring_index][straw_index] * ( 1. - (dz*dz/5625.)) * TMath::Cos(docaphi + sag_phi_offset[ring_index][straw_index]);
-
-	return (distanceToWire < (0.78 + delta) && fabs(dz) < 65.0);
-=======
    delta = 0.0;
    dz = 0.0;
    if (distanceToWire >= 1.2 )
@@ -618,8 +485,6 @@ bool JEventProcessor_CDC_Efficiency::Expect_Hit(const DTrackTimeBased* thisTimeB
    DVector3 DOCA;
   
    if(!dIsNoFieldFlag) {
-      DVector3 pos, mom;
-      thisTimeBasedTrack->rt->GetLastDOCAPoint(pos, mom);
       DOCA = (-1) * ((wire->origin - pos) - (wire->origin - pos).Dot(wire->udir) * wire->udir);
       dz = (pos - wire->origin).Z();
    }
@@ -638,40 +503,10 @@ bool JEventProcessor_CDC_Efficiency::Expect_Hit(const DTrackTimeBased* thisTimeB
    delta = max_sag[ring_index][straw_index] * ( 1. - (dz*dz/5625.)) * TMath::Cos(docaphi + sag_phi_offset[ring_index][straw_index]);
 
    return (distanceToWire < (0.78 + delta) && fabs(dz) < 65.0);
->>>>>>> master
 }
 
-void JEventProcessor_CDC_Efficiency::Fill_MeasuredHit(int ringNum, int wireNum, double distanceToWire, const DVector3 &pos,const DVector3 &mom, DCDCWire* wire, const DCDCHit* locHit)
+void JEventProcessor_CDC_Efficiency::Fill_MeasuredHit(int ringNum, int wireNum, double distanceToWire, const DVector3 &pos, const DVector3 &mom, DCDCWire* wire, const DCDCHit* locHit)
 {
-<<<<<<< HEAD
-	//Double_t w = cdc_occ_ring[ring]->GetBinContent(straw, 1) + 1.0;
-	//cdc_occ_ring[ring]->SetBinContent(straw, 1, w);
-	//Fill the expected number of hits histogram
-	if (distanceToWire < DOCACUT)
-	{
-		//printf("Matching Hit!!!!!\n");
-		japp->RootFillLock(this); //ACQUIRE ROOT FILL LOCK
-		{
-			Double_t v = cdc_measured_ring[ringNum]->GetBinContent(wireNum, 1) + 1.0;
-			cdc_measured_ring[ringNum]->SetBinContent(wireNum, 1, v);
-			double dx = pid_algorithm->CalcdXHit(mom,pos,wire);
-			ChargeVsTrackLength->Fill(dx, locHit->q);
-
-			// ?	Double_t w = cdc_expected_ring[ringNum]->GetBinContent(wireNum, 1) + 1.0;
-			// ?    cdc_measured_ring[ringNum]->SetBinContent(wireNum, 1, w);
-		}
-		japp->RootFillUnLock(this); //RELEASE ROOT FILL LOCK
-	}
-
-	int locDOCABin = (int) (distanceToWire * 10) % 8;
-	TH2D* locHistToFill = cdc_measured_ringmap[locDOCABin][ringNum];
-	japp->RootFillLock(this); //ACQUIRE ROOT FILL LOCK
-	{
-		Double_t w = locHistToFill->GetBinContent(wireNum, 1) + 1.0;
-		locHistToFill->SetBinContent(wireNum, 1, w);
-	}
-	japp->RootFillUnLock(this); //RELEASE ROOT FILL LOCK
-=======
    //Double_t w = cdc_occ_ring[ring]->GetBinContent(straw, 1) + 1.0;
    //cdc_occ_ring[ring]->SetBinContent(straw, 1, w);
    //Fill the expected number of hits histogram
@@ -682,7 +517,7 @@ void JEventProcessor_CDC_Efficiency::Fill_MeasuredHit(int ringNum, int wireNum, 
       {
          Double_t v = cdc_measured_ring[ringNum]->GetBinContent(wireNum, 1) + 1.0;
          cdc_measured_ring[ringNum]->SetBinContent(wireNum, 1, v);
-         double dx = thisTimeBasedTrack->rt->Straw_dx(wire, 0.78);
+         double dx = pid_algorithm->CalcdXHit(mom,pos,wire);
          ChargeVsTrackLength->Fill(dx, locHit->q);
 
          // ?	Double_t w = cdc_expected_ring[ringNum]->GetBinContent(wireNum, 1) + 1.0;
@@ -699,7 +534,6 @@ void JEventProcessor_CDC_Efficiency::Fill_MeasuredHit(int ringNum, int wireNum, 
       locHistToFill->SetBinContent(wireNum, 1, w);
    }
    japp->RootFillUnLock(this); //RELEASE ROOT FILL LOCK
->>>>>>> master
 }
 
 void JEventProcessor_CDC_Efficiency::Fill_ExpectedHit(int ringNum, int wireNum, double distanceToWire)
