@@ -1008,6 +1008,7 @@ DCDCDigiHit* DTranslationTable::MakeCDCDigiHit(const CDCIndex_t &idx,
 
    h->ring = idx.ring;
    h->straw = idx.straw;
+	h->pulse_peak = 0;
    
    vDCDCDigiHit.push_back(h);
    
