@@ -171,6 +171,16 @@
       endif
       if (itry .eq. 0) then
         itry = loadInput(override_run_number,IDRUN)
+        do while (itry .ne. 0)
+          itry = nextInput()
+          if (itry .eq. 0) then
+            itry = loadInput(override_run_number,IDRUN)
+          else
+            ieorun = 1
+            ieotri = 1
+            return
+          endif
+        enddo
 *
 *       Check for random number seeds in the input file. If they are
 *       there, then the values of iseed1 and iseed2 will be overwritten
