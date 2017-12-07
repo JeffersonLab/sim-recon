@@ -242,22 +242,21 @@ jerror_t DCDCHit_factory::evnt(JEventLoop *loop, uint64_t eventnumber)
         } else {
             // Use the modern (2017+) data versions
             // Configuration data needed to interpret the hits is stored in the data stream
-            const Df125Config *config = NULL;
-            digihit->GetSingle(config);
-
-            // Set some constants to defaults until they appear correctly in the config words in the future
-            if(config){
-                ABIT = config->ABIT == 0xffff ? 3 : config->ABIT;
-                PBIT = config->PBIT == 0xffff ? 0 : config->PBIT;
-            }else{
+            vector<const Df125Config*> configs;
+            digihit->Get(configs);
+            if( configs.empty() ){
                 static int Nwarnings = 0;
                 if(Nwarnings<10){
                     _DBG_ << "NO Df125Config object associated with Df125FDCPulse object!" << endl;
                     Nwarnings++;
                     if(Nwarnings==10) _DBG_ << " --- LAST WARNING!! ---" << endl;
                 }
-            }
- 
+            }else{
+            	// Set some constants to defaults until they appear correctly in the config words in the future
+					const Df125Config *config = configs[0];
+					ABIT = config->ABIT == 0xffff ? 3 : config->ABIT;
+					PBIT = config->PBIT == 0xffff ? 0 : config->PBIT;
+ 				}
         }
 
         // Complete the pedestal subtraction here since we should know the correct number of samples.
