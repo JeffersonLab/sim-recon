@@ -138,25 +138,25 @@ DParticleID::DParticleID(JEventLoop *loop)
 	BCAL_PHI_CUT_PAR1 = 3.0;
 	gPARMS->SetDefaultParameter("BCAL:PHI_CUT_PAR1",BCAL_PHI_CUT_PAR1);
 
-	BCAL_PHI_CUT_PAR2 = 12.0;
+	BCAL_PHI_CUT_PAR2 = 24.0;
 	gPARMS->SetDefaultParameter("BCAL:PHI_CUT_PAR2",BCAL_PHI_CUT_PAR2);
 
 	BCAL_PHI_CUT_PAR3 = 0.8;
 	gPARMS->SetDefaultParameter("BCAL:PHI_CUT_PAR3",BCAL_PHI_CUT_PAR3);
 
-	double locSCCutPar = 7.0;
+	double locSCCutPar = 8.0;
 	gPARMS->SetDefaultParameter("SC:SC_CUT_PAR1",locSCCutPar);
 	dSCCutPars_TimeBased.push_back(locSCCutPar);
 
-	locSCCutPar = 0.1;
+	locSCCutPar = 0.5;
 	gPARMS->SetDefaultParameter("SC:SC_CUT_PAR2",locSCCutPar);
 	dSCCutPars_TimeBased.push_back(locSCCutPar);
 
-	locSCCutPar = 0.28;
+	locSCCutPar = 0.1;
 	gPARMS->SetDefaultParameter("SC:SC_CUT_PAR3",locSCCutPar);
 	dSCCutPars_TimeBased.push_back(locSCCutPar);
 
-	locSCCutPar = 78.0;
+	locSCCutPar = 60.0;
 	gPARMS->SetDefaultParameter("SC:SC_CUT_PAR4",locSCCutPar);
 	dSCCutPars_TimeBased.push_back(locSCCutPar);
 
@@ -164,11 +164,11 @@ DParticleID::DParticleID(JEventLoop *loop)
 	gPARMS->SetDefaultParameter("SC:SC_CUT_PAR1_WB",locSCCutPar);
 	dSCCutPars_WireBased.push_back(locSCCutPar);
 
-	locSCCutPar = 0.1;
+	locSCCutPar = 0.5;
 	gPARMS->SetDefaultParameter("SC:SC_CUT_PAR2_WB",locSCCutPar);
 	dSCCutPars_WireBased.push_back(locSCCutPar);
 
-	locSCCutPar = 0.13;
+	locSCCutPar = 0.1;
 	gPARMS->SetDefaultParameter("SC:SC_CUT_PAR3_WB",locSCCutPar);
 	dSCCutPars_WireBased.push_back(locSCCutPar);
 
