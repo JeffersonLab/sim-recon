@@ -555,7 +555,8 @@ bool DTrackFitter::ExtrapolateToRadius(double R,
 // wire.
 double DTrackFitter::DistToWire(const DCoordinateSystem *wire,
 				const vector<Extrapolation_t>&extrapolations,
-				DVector3 *pos, DVector3 *mom) const{
+				DVector3 *pos, DVector3 *mom,
+				DVector3 *position_along_wire) const{
   if (extrapolations.size()<3) return 1000.;
 
   // Wire info
@@ -594,6 +595,7 @@ double DTrackFitter::DistToWire(const DCoordinateSystem *wire,
 
 	if (pos!=NULL) *pos=trackpos;
 	if (mom!=NULL) *mom=extrapolations[i-1].momentum;
+	if (position_along_wire!=NULL) *position_along_wire=wirepos;
       }
       break;
     }
