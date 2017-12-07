@@ -300,6 +300,9 @@ jerror_t DTrackTimeBased_factory::evnt(JEventLoop *loop, uint64_t eventnumber)
       }
 
       timebased_track->AddAssociatedObject(track);
+      timebased_track->dCDCRings = pid_algorithm->Get_CDCRingBitPattern(cdchits);
+      timebased_track->dFDCPlanes = pid_algorithm->Get_FDCPlaneBitPattern(fdchits);
+
       _data.push_back(timebased_track);
 
     }
@@ -425,7 +428,7 @@ jerror_t DTrackTimeBased_factory::evnt(JEventLoop *loop, uint64_t eventnumber)
       double hitFraction;
       int thrownIndex = GetThrownIndex(mcthrowns, (DKinematicData*)_data[loc_i], hitFraction);
       _data[loc_i]->dMCThrownMatchMyID = thrownIndex;
-      _data[loc_i]->dNumHitsMatchedToThrown = int(hitFraction * float(_data[loc_i]->Ndof + 5) + 0.01); // + 0.01 so that it rounds down properly
+      _data[loc_i]->dNumHitsMatchedToThrown = int(hitFraction * float(Get_NumTrackHits(_data[loc_i])) + 0.01); // + 0.01 so that it rounds down properly
     }
     else
     {

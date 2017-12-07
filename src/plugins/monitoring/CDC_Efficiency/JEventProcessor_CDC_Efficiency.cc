@@ -136,6 +136,7 @@ jerror_t JEventProcessor_CDC_Efficiency::init(void)
 //------------------
 jerror_t JEventProcessor_CDC_Efficiency::brun(JEventLoop *eventLoop, int32_t runnumber)
 {
+
     // This is called whenever the run number changes
     DApplication* dapp=dynamic_cast<DApplication*>(eventLoop->GetJApplication());
     dIsNoFieldFlag = (dynamic_cast<const DMagneticFieldMapNoField*>(dapp->GetBfield(runnumber)) != NULL);
@@ -180,153 +181,164 @@ jerror_t JEventProcessor_CDC_Efficiency::brun(JEventLoop *eventLoop, int32_t run
         }
     }
 
-	MAX_DRIFT_TIME = 1000.0; //ns: from TRKFIND:MAX_DRIFT_TIME in DTrackCandidate_factory_CDC
-	//Make sure it gets initialize first, in case we want to change it:
-	vector<const DTrackCandidate*> locTrackCandidates;
-	eventLoop->Get(locTrackCandidates);
-	gPARMS->GetParameter("TRKFIND:MAX_DRIFT_TIME", MAX_DRIFT_TIME);
-
-	vector<const DTrackFitter *> fitters;
-	eventLoop->Get(fitters);
-	
-	if(fitters.size()<1){
-	  _DBG_<<"Unable to get a DTrackFinder object!"<<endl;
-	  return RESOURCE_UNAVAILABLE;
-	}
-	
-	fitter = fitters[0];
-	// Get the particle ID algorithms
-	vector<const DParticleID *> pid_algorithms;
-	eventLoop->Get(pid_algorithms);
-	if(pid_algorithms.size()<1){
-	  _DBG_<<"Unable to get a DParticleID object! NO PID will be done!"<<endl;
-	  return RESOURCE_UNAVAILABLE;
-	}
-
-	pid_algorithm = pid_algorithms[0];
-
-
-    return NOERROR;
+    vector<const DTrackFitter *> fitters;
+    eventLoop->Get(fitters);
+    
+    if(fitters.size()<1){
+      _DBG_<<"Unable to get a DTrackFinder object!"<<endl;
+      return RESOURCE_UNAVAILABLE;
+    }
+    
+    fitter = fitters[0];
+    // Get the particle ID algorithms
+    vector<const DParticleID *> pid_algorithms;
+    eventLoop->Get(pid_algorithms);
+    if(pid_algorithms.size()<1){
+      _DBG_<<"Unable to get a DParticleID object! NO PID will be done!"<<endl;
+      return RESOURCE_UNAVAILABLE;
+    }
+    
+    pid_algorithm = pid_algorithms[0];
+    
+    
+    MAX_DRIFT_TIME = 1000.0; //ns: from TRKFIND:MAX_DRIFT_TIME in DTrackCandidate_factory_CDC
+    //Make sure it gets initialize first, in case we want to change it:
+    if(!dIsNoFieldFlag){
+      vector<const DTrackCandidate*> locTrackCandidates;
+      eventLoop->Get(locTrackCandidates);
+      gPARMS->GetParameter("TRKFIND:MAX_DRIFT_TIME", MAX_DRIFT_TIME);
+   }
+   return NOERROR;
 }
 
 //------------------
 // evnt
 //------------------
 jerror_t JEventProcessor_CDC_Efficiency::evnt(JEventLoop *loop, uint64_t eventnumber){
+   const DTrigger* locTrigger = NULL; 
+   loop->GetSingle(locTrigger); 
+   if(locTrigger->Get_L1FrontPanelTriggerBits() != 0)
+      return NOERROR;
+   if (!locTrigger->Get_IsPhysicsEvent()){ // do not look at PS triggers
+      return NOERROR;
+   }
 
-        const DTrigger* locTrigger = NULL; 
-	loop->GetSingle(locTrigger); 
-	if(locTrigger->Get_L1FrontPanelTriggerBits() != 0)
-	  return NOERROR;
-	if (!locTrigger->Get_IsPhysicsEvent()){ // do not look at PS triggers
-	  return NOERROR;
-	}
+   //use CDC track hits: have drift time, can cut
+   vector< const DCDCTrackHit *> locCDCTrackHits;
+   loop->Get(locCDCTrackHits);
 
-	//use CDC track hits: have drift time, can cut
-    vector< const DCDCTrackHit *> locCDCTrackHits;
-    loop->Get(locCDCTrackHits);
+   //Pre-sort hits by ring to save time //only need to search within the given ring, straw
+   map<int, map<int, set<const DCDCTrackHit*> > > locSortedCDCTrackHits; //first int: ring //second int: straw
+   for(auto& locTrackHit : locCDCTrackHits)
+   {
+      if(locTrackHit->tdrift <= MAX_DRIFT_TIME)
+         locSortedCDCTrackHits[locTrackHit->wire->ring][locTrackHit->wire->straw].insert(locTrackHit);
+   }
 
-    //Pre-sort hits by ring to save time //only need to search within the given ring, straw
-    map<int, map<int, set<const DCDCTrackHit*> > > locSortedCDCTrackHits; //first int: ring //second int: straw
-	for(auto& locTrackHit : locCDCTrackHits)
-    {
-    	if(locTrackHit->tdrift <= MAX_DRIFT_TIME)
-    		locSortedCDCTrackHits[locTrackHit->wire->ring][locTrackHit->wire->straw].insert(locTrackHit);
-    }
+   const DDetectorMatches *detMatches = nullptr;
+   if(!dIsNoFieldFlag)
+      loop->GetSingle(detMatches);
 
-    const DDetectorMatches *detMatches = nullptr;
-    if(!dIsNoFieldFlag)
-        loop->GetSingle(detMatches);
+   const DParticleID *locParticleID = nullptr;
+   loop->GetSingle(locParticleID);
 
-    const DParticleID *locParticleID = nullptr;
-    loop->GetSingle(locParticleID);
+   vector <const DChargedTrack *> chargedTrackVector;
+   loop->Get(chargedTrackVector);
 
-    vector <const DChargedTrack *> chargedTrackVector;
-    loop->Get(chargedTrackVector);
+   vector <const DTrackTimeBased *> bestTimeBasedTracks;
+   if(!dIsNoFieldFlag){
+      for (unsigned int iTrack = 0; iTrack < chargedTrackVector.size(); iTrack++){
+         const DChargedTrackHypothesis* bestHypothesis = chargedTrackVector[iTrack]->Get_BestTrackingFOM();
+         bestTimeBasedTracks.push_back(bestHypothesis->Get_TrackTimeBased());
+      }
+   }
+   else{
+      loop->Get(bestTimeBasedTracks);
+   }
 
-    for (unsigned int iTrack = 0; iTrack < chargedTrackVector.size(); iTrack++){
+   for (unsigned int iTrack = 0; iTrack < bestTimeBasedTracks.size(); iTrack++){
+      auto thisTimeBasedTrack = bestTimeBasedTracks[iTrack];
 
-        const DChargedTrackHypothesis* bestHypothesis = chargedTrackVector[iTrack]->Get_BestTrackingFOM();
+      japp->RootFillLock(this); //ACQUIRE ROOT FILL LOCK
+      hChi2OverNDF->Fill(thisTimeBasedTrack->FOM);
+      japp->RootFillUnLock(this); //RELEASE ROOT FILL LOCK
 
-        // Cut very loosely on the track quality
-	auto thisTimeBasedTrack = bestHypothesis->Get_TrackTimeBased();
+      if (thisTimeBasedTrack->FOM < dMinTrackingFOM)
+         continue;
 
-        japp->RootFillLock(this); //ACQUIRE ROOT FILL LOCK
-        hChi2OverNDF->Fill(thisTimeBasedTrack->FOM);
-        japp->RootFillUnLock(this); //RELEASE ROOT FILL LOCK
+      //The cuts used for track quality
+      if(!dIsNoFieldFlag){ // Quality cuts for Field on runs.
+         if(thisTimeBasedTrack->ddEdx_CDC > 1E-3) {
+            //cout << "Cut on dEdX" << endl;
+            continue; // Trying to cut out "proton" candidates
+         }
+         if(thisTimeBasedTrack->pmag() < 0.5 || thisTimeBasedTrack->pmag() > 6.0) {
+            //cout << "Cut on momentum" << endl;
+            continue; // Cut on the reconstructed momentum to make sure we have the right
+         }
+         if(!detMatches->Get_IsMatchedToDetector(thisTimeBasedTrack, SYS_TOF) && !detMatches->Get_IsMatchedToDetector(thisTimeBasedTrack, SYS_BCAL))
+         {
+            //cout << "Cut on detector matches" << endl;
+            continue; // Require there to be at least one match to BCAL or TOF //not SC: lights up like xmas tree
+         }
+         if(fabs(thisTimeBasedTrack->position().Z() - dTargetCenterZ) > dTargetLength/2.0 || thisTimeBasedTrack->position().Perp() > 1.0) {
+            //cout << " Cut on vertex " << endl;
+            continue; // Cut on reconstructed vertex location
+         }
+      }
+      // Require many hits on the track for cosmics
+      else{
+         if(thisTimeBasedTrack->Ndof < 11) continue;
+      }
 
-        if (thisTimeBasedTrack->FOM < dMinTrackingFOM)
-        	continue;
+      // Require hits on at least 2 axial layers and at least 2 stereo layers:
+      // necessary to trust reconstructed phi & theta: respectable projection
+      set<int> locCDCRings;
+      locParticleID->Get_CDCRings(thisTimeBasedTrack->dCDCRings, locCDCRings);
 
-        //The cuts used for track quality
-        if(!dIsNoFieldFlag){ // Quality cuts for Field on runs.
-            if(thisTimeBasedTrack->ddEdx_CDC > 1E-3) {
-                //cout << "Cut on dEdX" << endl;
-                continue; // Trying to cut out "proton" candidates
-            }
-            if(thisTimeBasedTrack->pmag() < 0.5 || thisTimeBasedTrack->pmag() > 6.0) {
-                //cout << "Cut on momentum" << endl;
-                continue; // Cut on the reconstructed momentum to make sure we have the right
-            }
-            if(!detMatches->Get_IsMatchedToDetector(thisTimeBasedTrack, SYS_TOF) && !detMatches->Get_IsMatchedToDetector(thisTimeBasedTrack, SYS_BCAL))
+      map<int, int> locNumHitRingsPerSuperlayer; //key: superlayer (1 -> 7) //axial: 1, 4, 7
+      locParticleID->Get_CDCNumHitRingsPerSuperlayer(locCDCRings, locNumHitRingsPerSuperlayer);
+
+      int locNumSuperLayersWith2Hits_Axial = 0;
+      int locNumSuperLayersWith2Hits_Stereo = 0;
+      for(auto& locSuperlayerPair : locNumHitRingsPerSuperlayer)
+      {
+         if(locSuperlayerPair.second < 2)
+            continue;
+         if((locSuperlayerPair.first == 1) || (locSuperlayerPair.first == 4) || (locSuperlayerPair.first == 7))
+            ++locNumSuperLayersWith2Hits_Axial;
+         else
+            ++locNumSuperLayersWith2Hits_Stereo;
+      }
+
+      if((locNumSuperLayersWith2Hits_Axial < 2) || (locNumSuperLayersWith2Hits_Stereo < 2))
+         continue; //don't trust the track projections
+
+      // Alright now we truly have the tracks we are interested in for calculating the efficiency
+      //BUT, we need to make sure that we aren't biased by the fact that the track was reconstructed in the first place
+      //AND by our requirement above that there be at least 2 hits in a few superlayers
+      for(int locCDCSuperlayer = 1; locCDCSuperlayer <= 7; ++locCDCSuperlayer)
+      {
+         if(locNumHitRingsPerSuperlayer[locCDCSuperlayer] < dMinNumRingsToEvalSuperlayer)
+            continue;
+
+         int locFirstRing = 4*(locCDCSuperlayer - 1) + 1;
+         if(locNumHitRingsPerSuperlayer[locCDCSuperlayer] == dMinNumRingsToEvalSuperlayer)
+         {
+            //All hits required: Can only evaluate the rings that do NOT have hits
+            for (int locRing = locFirstRing; locRing < locFirstRing + 4; ++locRing)
             {
-                //cout << "Cut on detector matches" << endl;
-                continue; // Require there to be at least one match to BCAL or TOF //not SC: lights up like xmas tree
+               if(locCDCRings.find(locRing) == locCDCRings.end())
+                  GitRDun(locRing, thisTimeBasedTrack, locSortedCDCTrackHits); // git-r-dun
             }
-            if(fabs(thisTimeBasedTrack->position().Z() - dTargetCenterZ) > dTargetLength/2.0 || thisTimeBasedTrack->position().Perp() > 1.0) {
-                //cout << " Cut on vertex " << endl;
-                continue; // Cut on reconstructed vertex location
-            }
-        }
-
-        // Require hits on at least 2 axial layers and at least 2 stereo layers:
-        // necessary to trust reconstructed phi & theta: respectable projection
-        set<int> locCDCRings;
-    	locParticleID->Get_CDCRings(thisTimeBasedTrack->dCDCRings, locCDCRings);
-
-        map<int, int> locNumHitRingsPerSuperlayer; //key: superlayer (1 -> 7) //axial: 1, 4, 7
-        locParticleID->Get_CDCNumHitRingsPerSuperlayer(locCDCRings, locNumHitRingsPerSuperlayer);
-
-        int locNumSuperLayersWith2Hits_Axial = 0;
-        int locNumSuperLayersWith2Hits_Stereo = 0;
-        for(auto& locSuperlayerPair : locNumHitRingsPerSuperlayer)
-        {
-        	if(locSuperlayerPair.second < 2)
-        		continue;
-        	if((locSuperlayerPair.first == 1) || (locSuperlayerPair.first == 4) || (locSuperlayerPair.first == 7))
-        		++locNumSuperLayersWith2Hits_Axial;
-        	else
-        		++locNumSuperLayersWith2Hits_Stereo;
-        }
-
-        if((locNumSuperLayersWith2Hits_Axial < 2) || (locNumSuperLayersWith2Hits_Stereo < 2))
-        	continue; //don't trust the track projections
-
-        // Alright now we truly have the tracks we are interested in for calculating the efficiency
-        //BUT, we need to make sure that we aren't biased by the fact that the track was reconstructed in the first place
-        	//AND by our requirement above that there be at least 2 hits in a few superlayers
-        for(int locCDCSuperlayer = 1; locCDCSuperlayer <= 7; ++locCDCSuperlayer)
-        {
-			if(locNumHitRingsPerSuperlayer[locCDCSuperlayer] < dMinNumRingsToEvalSuperlayer)
-				continue;
-
-        	int locFirstRing = 4*(locCDCSuperlayer - 1) + 1;
-        	if(locNumHitRingsPerSuperlayer[locCDCSuperlayer] == dMinNumRingsToEvalSuperlayer)
-			{
-				//All hits required: Can only evaluate the rings that do NOT have hits
-	        	for (int locRing = locFirstRing; locRing < locFirstRing + 4; ++locRing)
-	        	{
-	        		if(locCDCRings.find(locRing) == locCDCRings.end())
-	        			GitRDun(locRing, thisTimeBasedTrack, locSortedCDCTrackHits); // git-r-dun
-	        	}
-	        	continue;
-			}
-        	//so many hits that no individual ring was required: evaluate for all
-        	for (int locRing = locFirstRing; locRing < locFirstRing + 4; ++locRing)
-       			GitRDun(locRing, thisTimeBasedTrack, locSortedCDCTrackHits); // git-r-dun
-    	}
-    }
-    return NOERROR;
+            continue;
+         }
+         //so many hits that no individual ring was required: evaluate for all
+         for (int locRing = locFirstRing; locRing < locFirstRing + 4; ++locRing)
+            GitRDun(locRing, thisTimeBasedTrack, locSortedCDCTrackHits); // git-r-dun
+      }
+   }
+   return NOERROR;
 }
 
 void JEventProcessor_CDC_Efficiency::GitRDun(unsigned int ringNum, const DTrackTimeBased *thisTimeBasedTrack, map<int, map<int, set<const DCDCTrackHit*> > >& locSortedCDCTrackHits)
@@ -334,6 +346,7 @@ void JEventProcessor_CDC_Efficiency::GitRDun(unsigned int ringNum, const DTrackT
   vector<DTrackFitter::Extrapolation_t>extrapolations=thisTimeBasedTrack->extrapolations.at(SYS_CDC);
   if (extrapolations.size()==0) return;
 
+<<<<<<< HEAD
     int Nstraws_previous[28] = {0,42,84,138,192,258,324,404,484,577,670,776,882,1005,1128,1263,1398,1544,1690,1848,2006,2176,2346,2528,2710,2907,3104,3313};
 
 	vector< DCDCWire * > wireByNumber = cdcwires[ringNum - 1];
@@ -449,10 +462,133 @@ void JEventProcessor_CDC_Efficiency::GitRDun(unsigned int ringNum, const DTrackT
 			  Fill_MeasuredHit(ringNum, wireNum, distanceToWire,pos,mom, wire, locHit);
 		}
 	}
+=======
+   int Nstraws_previous[28] = {0,42,84,138,192,258,324,404,484,577,670,776,882,1005,1128,1263,1398,1544,1690,1848,2006,2176,2346,2528,2710,2907,3104,3313};
+   vector< DCDCWire * > wireByNumber = cdcwires[ringNum - 1];
+   for (unsigned int wireIndex = 0; wireIndex < wireByNumber.size(); wireIndex++)
+   {
+      int wireNum = wireIndex+1;
+      DCDCWire * wire = wireByNumber[wireIndex];
+      double wireLength = wire->L;
+      double distanceToWire;
+      if(!dIsNoFieldFlag) distanceToWire = thisTimeBasedTrack->rt->DistToRT(wire, &wireLength);
+      else {
+         DVector3 POCAOnTrack, POCAOnWire;
+         distanceToWire = GetDOCAFieldOff(wire->origin, wire->udir, thisTimeBasedTrack->position(), thisTimeBasedTrack->momentum(), POCAOnTrack, POCAOnWire);
+      }
+
+      //SKIP IF NOT CLOSE - Field on
+      if(!dIsNoFieldFlag){
+         if(distanceToWire > 50.0)
+         {
+            wireIndex += 30;
+            continue;
+         }
+         if(distanceToWire > 20.0)
+         {
+            wireIndex += 10;
+            continue;
+         }
+         if(distanceToWire > 10.0)
+         {
+            wireIndex += 5;
+            continue;
+         }
+      }
+
+      double delta = 0.0, dz = 0.0;
+      if(!Expect_Hit(thisTimeBasedTrack, wire, distanceToWire, delta, dz))
+         continue;
+
+      //FILL EXPECTED HISTOGRAMS
+      double dx = thisTimeBasedTrack->rt->Straw_dx(wire, 0.78);
+      double locTheta = thisTimeBasedTrack->momentum().Theta()*TMath::RadToDeg();
+      Fill1DHistogram("CDC_Efficiency", "Offline", "Expected Hits Vs Path Length", dx, "Expected Hits", 100, 0 , 4.0);
+      Fill1DHistogram("CDC_Efficiency", "Offline", "Expected Hits Vs DOCA", distanceToWire, "Expected Hits", 100, 0 , 0.78);
+      Fill1DHistogram("CDC_Efficiency", "Offline", "Expected Hits Vs Tracking FOM", thisTimeBasedTrack->FOM, "Expected Hits", 100, 0 , 1.0);
+      Fill1DHistogram("CDC_Efficiency", "Offline", "Expected Hits Vs theta", locTheta, "Expected Hits", 100, 0, 180);
+      Fill1DHistogram("CDC_Efficiency", "Offline", "Expected Hits Vs p", thisTimeBasedTrack->pmag(), "Expected Hits", 100, 0 , 4.0);
+      Fill1DHistogram("CDC_Efficiency", "Offline", "Expected Hits Vs delta", delta, "Expected Hits", 100, -0.3 , 0.3);
+      Fill2DHistogram("CDC_Efficiency", "Offline", "Expected hits p Vs Theta", locTheta, thisTimeBasedTrack->pmag(), "Expected Hits", 100, 0, 180, 100, 0 , 4.0);
+      //expected hits by straw number
+      Fill1DHistogram("CDC_Efficiency", "Offline", "Expected Hits Vs N", Nstraws_previous[ringNum-1]+wireNum, "Expected Hits", 3522, 0.5, 3522.5);
+
+      // look for a CDC hit match
+      // We need a backwards map from ring/straw to flash channel. Unfortunately there is no easy way
+      // Will construct the map manually
+      const DCDCTrackHit* locTrackHit = Find_Hit(ringNum, wireNum, locSortedCDCTrackHits[ringNum]);
+      const DCDCHit* locHit = nullptr;
+      if(locTrackHit != nullptr)
+         locTrackHit->GetSingle(locHit);
+
+      bool foundHit = (locTrackHit != nullptr);
+      if(foundHit)
+      {
+         const DCDCDigiHit *thisDigiHit = NULL;
+         const Df125CDCPulse *thisPulse = NULL;
+         locHit->GetSingle(thisDigiHit);
+         if (thisDigiHit != NULL)
+            thisDigiHit->GetSingle(thisPulse);
+         if (thisPulse != NULL)
+         {
+            ROCIDFromRingStraw[ringNum - 1][wireNum - 1] = thisPulse->rocid;
+            SlotFromRingStraw[ringNum - 1][wireNum - 1] = thisPulse->slot;
+            ChannelFromRingStraw[ringNum - 1][wireNum - 1] = thisPulse->channel;
+         }
+         Fill1DHistogram("CDC_Efficiency", "Offline", "Measured Hits Vs Path Length", dx, "Measured Hits", 100, 0 , 4.0);
+         Fill1DHistogram("CDC_Efficiency", "Offline", "Measured Hits Vs DOCA", distanceToWire, "Measured Hits", 100, 0 , 0.78);
+         Fill1DHistogram("CDC_Efficiency", "Offline", "Measured Hits Vs Tracking FOM", thisTimeBasedTrack->FOM, "Measured Hits", 100, 0 , 1.0);
+         Fill1DHistogram("CDC_Efficiency", "Offline", "Measured Hits Vs theta", locTheta, "Measured Hits", 100, 0, 180);
+         Fill1DHistogram("CDC_Efficiency", "Offline", "Measured Hits Vs p", thisTimeBasedTrack->pmag(), "Measured Hits", 100, 0 , 4.0);
+         Fill1DHistogram("CDC_Efficiency", "Offline", "Measured Hits Vs delta", delta, "Measured Hits", 100, -0.3 , 0.3);
+         Fill2DHistogram("CDC_Efficiency", "Offline", "Measured hits p Vs Theta", locTheta, thisTimeBasedTrack->pmag(), "Measured Hits", 100, 0, 180, 100, 0 , 4.0);
+
+         //expected hits by straw number
+         Fill1DHistogram("CDC_Efficiency", "Offline", "Measured Hits Vs N", Nstraws_previous[ringNum-1]+wireNum, "Measured Hits", 3522, 0.5 , 3522.5);
+
+
+      }
+
+      //FILL PROFILES: BASED ON FOUND OR NOT
+      Fill1DProfile("CDC_Efficiency", "Online", "Efficiency Vs Path Length", dx,foundHit, "Efficiency; dx [cm]; Efficiency", 100, 0 , 4.0);
+      Fill1DProfile("CDC_Efficiency", "Online", "Efficiency Vs DOCA", distanceToWire,foundHit, "Efficiency; DOCA [cm]; Efficiency", 100, 0 , 0.78);
+      Fill1DProfile("CDC_Efficiency", "Online", "Efficiency Vs Tracking FOM", thisTimeBasedTrack->FOM,foundHit, "Efficiency; Tracking FOM; Efficiency", 100, 0 , 1.0);
+      Fill1DProfile("CDC_Efficiency", "Online", "Efficiency Vs theta", locTheta,foundHit, "Efficiency; Track #Theta [deg]; Efficiency", 100, 0, 180);
+      Fill1DProfile("CDC_Efficiency", "Online", "Efficiency Vs p", thisTimeBasedTrack->pmag(),foundHit, "Efficiency; Momentum [GeV]; Efficiency", 100, 0 , 4.0);
+      Fill1DProfile("CDC_Efficiency", "Online", "Efficiency Vs delta", delta,foundHit, "Efficiency; #delta [cm]; Efficiency", 100, -0.3 , 0.3);
+
+      //expected hits by straw number
+      Fill1DProfile("CDC_Efficiency", "Online", "Efficiency Vs N", Nstraws_previous[ringNum-1]+wireNum, foundHit,"Efficiency; N; Efficiency", 3522, 0.5 , 3522.5);
+
+
+      if( ChannelFromRingStraw[ringNum - 1][wireNum - 1] != -1)
+      {
+         Fill1DProfile("CDC_Efficiency", "Online", "Efficiency Vs Channel Number", ChannelFromRingStraw[ringNum - 1][wireNum - 1],foundHit, "Efficiency; Channel Number; Efficiency", 73, -0.5 , 72.5);
+         char name [200];
+         sprintf(name, "Slot Efficiency ROCID %.2i", ROCIDFromRingStraw[ringNum - 1][wireNum - 1]);
+         Fill1DProfile("CDC_Efficiency", "Online", name, SlotFromRingStraw[ringNum - 1][wireNum - 1],foundHit, "Efficiency; Slot Number; Efficiency", 21, -0.5 , 20.5);
+         sprintf(name, "Channel Efficiency ROCID %.2i", ROCIDFromRingStraw[ringNum - 1][wireNum - 1]);
+         Fill1DProfile("CDC_Efficiency", "Online", name, SlotFromRingStraw[ringNum - 1][wireNum - 1] * 100 + ChannelFromRingStraw[ringNum - 1][wireNum - 1],foundHit, "Efficiency; Channel; Efficiency", 1501, 299.5 , 1800.5);
+      }
+
+      Fill2DProfile("CDC_Efficiency", "Online", "Efficiency p Vs Theta", locTheta, thisTimeBasedTrack->pmag(),foundHit, "Efficiency; Track #Theta [deg]; Momentum [GeV]", 100, 0, 180, 100, 0 , 4.0);
+      Fill2DProfile("CDC_Efficiency", "Online", "Efficiency distance Vs delta", delta,distanceToWire,foundHit, "Efficiency;#delta [cm]; DOCA [cm]", 100, -0.3, 0.3, 100, 0 , 1.2);
+      Fill2DProfile("CDC_Efficiency", "Online", "Efficiency z Vs delta", delta,dz,foundHit, "Efficiency;#delta [cm]; z [cm] (CDC local coordinates)", 100, -0.3, 0.3, 150, -75 , 75);
+
+      //FILL AS FUNCTION OF DOCA
+      if (distanceToWire < 0.78)
+      {
+         Fill_ExpectedHit(ringNum, wireNum, distanceToWire);
+         if(foundHit)
+            Fill_MeasuredHit(ringNum, wireNum, distanceToWire, thisTimeBasedTrack, wire, locHit);
+      }
+   }
+>>>>>>> master
 }
 
 bool JEventProcessor_CDC_Efficiency::Expect_Hit(const DTrackTimeBased* thisTimeBasedTrack, DCDCWire* wire, double distanceToWire, const DVector3 &pos, double& delta, double& dz)
 {
+<<<<<<< HEAD
 	delta = 0.0;
 	dz = 0.0;
 	if (distanceToWire >= 1.2 )
@@ -472,10 +608,42 @@ bool JEventProcessor_CDC_Efficiency::Expect_Hit(const DTrackTimeBased* thisTimeB
 	delta = max_sag[ring_index][straw_index] * ( 1. - (dz*dz/5625.)) * TMath::Cos(docaphi + sag_phi_offset[ring_index][straw_index]);
 
 	return (distanceToWire < (0.78 + delta) && fabs(dz) < 65.0);
+=======
+   delta = 0.0;
+   dz = 0.0;
+   if (distanceToWire >= 1.2 )
+      return false;
+   
+   // Form the vector between the wire and the DOCA point
+   DVector3 DOCA;
+  
+   if(!dIsNoFieldFlag) {
+      DVector3 pos, mom;
+      thisTimeBasedTrack->rt->GetLastDOCAPoint(pos, mom);
+      DOCA = (-1) * ((wire->origin - pos) - (wire->origin - pos).Dot(wire->udir) * wire->udir);
+      dz = (pos - wire->origin).Z();
+   }
+   else {
+      DVector3 POCAOnTrack, POCAOnWire;
+      GetDOCAFieldOff(wire->origin, wire->udir, thisTimeBasedTrack->position(), thisTimeBasedTrack->momentum(), POCAOnTrack, POCAOnWire);
+      DOCA = POCAOnTrack - POCAOnWire;
+      dz = (POCAOnWire - wire->origin).Z();
+   }
+
+   double docaphi = DOCA.Phi();
+   //cout << "distanceToWire = " << distanceToWire << " DOCA = " << DOCA.Mag() << endl;
+   // Get delta at this location for this straw
+   int ring_index = wire->ring - 1;
+   int straw_index = wire->straw - 1;
+   delta = max_sag[ring_index][straw_index] * ( 1. - (dz*dz/5625.)) * TMath::Cos(docaphi + sag_phi_offset[ring_index][straw_index]);
+
+   return (distanceToWire < (0.78 + delta) && fabs(dz) < 65.0);
+>>>>>>> master
 }
 
 void JEventProcessor_CDC_Efficiency::Fill_MeasuredHit(int ringNum, int wireNum, double distanceToWire, const DVector3 &pos,const DVector3 &mom, DCDCWire* wire, const DCDCHit* locHit)
 {
+<<<<<<< HEAD
 	//Double_t w = cdc_occ_ring[ring]->GetBinContent(straw, 1) + 1.0;
 	//cdc_occ_ring[ring]->SetBinContent(straw, 1, w);
 	//Fill the expected number of hits histogram
@@ -503,55 +671,101 @@ void JEventProcessor_CDC_Efficiency::Fill_MeasuredHit(int ringNum, int wireNum, 
 		locHistToFill->SetBinContent(wireNum, 1, w);
 	}
 	japp->RootFillUnLock(this); //RELEASE ROOT FILL LOCK
+=======
+   //Double_t w = cdc_occ_ring[ring]->GetBinContent(straw, 1) + 1.0;
+   //cdc_occ_ring[ring]->SetBinContent(straw, 1, w);
+   //Fill the expected number of hits histogram
+   if (distanceToWire < DOCACUT)
+   {
+      //printf("Matching Hit!!!!!\n");
+      japp->RootFillLock(this); //ACQUIRE ROOT FILL LOCK
+      {
+         Double_t v = cdc_measured_ring[ringNum]->GetBinContent(wireNum, 1) + 1.0;
+         cdc_measured_ring[ringNum]->SetBinContent(wireNum, 1, v);
+         double dx = thisTimeBasedTrack->rt->Straw_dx(wire, 0.78);
+         ChargeVsTrackLength->Fill(dx, locHit->q);
+
+         // ?	Double_t w = cdc_expected_ring[ringNum]->GetBinContent(wireNum, 1) + 1.0;
+         // ?    cdc_measured_ring[ringNum]->SetBinContent(wireNum, 1, w);
+      }
+      japp->RootFillUnLock(this); //RELEASE ROOT FILL LOCK
+   }
+
+   int locDOCABin = (int) (distanceToWire * 10) % 8;
+   TH2D* locHistToFill = cdc_measured_ringmap[locDOCABin][ringNum];
+   japp->RootFillLock(this); //ACQUIRE ROOT FILL LOCK
+   {
+      Double_t w = locHistToFill->GetBinContent(wireNum, 1) + 1.0;
+      locHistToFill->SetBinContent(wireNum, 1, w);
+   }
+   japp->RootFillUnLock(this); //RELEASE ROOT FILL LOCK
+>>>>>>> master
 }
 
 void JEventProcessor_CDC_Efficiency::Fill_ExpectedHit(int ringNum, int wireNum, double distanceToWire)
 {
-	//Double_t w = cdc_occ_ring[ring]->GetBinContent(straw, 1) + 1.0;
-	//cdc_occ_ring[ring]->SetBinContent(straw, 1, w);
-	//Fill the expected number of hits histogram
-	if (distanceToWire < DOCACUT)
-	{
-		japp->RootFillLock(this); //ACQUIRE ROOT FILL LOCK
-		{
-			Double_t w = cdc_expected_ring[ringNum]->GetBinContent(wireNum, 1) + 1.0;
-			cdc_expected_ring[ringNum]->SetBinContent(wireNum, 1, w);
-		}
-		japp->RootFillUnLock(this); //RELEASE ROOT FILL LOCK
-	}
+   //Double_t w = cdc_occ_ring[ring]->GetBinContent(straw, 1) + 1.0;
+   //cdc_occ_ring[ring]->SetBinContent(straw, 1, w);
+   //Fill the expected number of hits histogram
+   if (distanceToWire < DOCACUT)
+   {
+      japp->RootFillLock(this); //ACQUIRE ROOT FILL LOCK
+      {
+         Double_t w = cdc_expected_ring[ringNum]->GetBinContent(wireNum, 1) + 1.0;
+         cdc_expected_ring[ringNum]->SetBinContent(wireNum, 1, w);
+      }
+      japp->RootFillUnLock(this); //RELEASE ROOT FILL LOCK
+   }
 
-	int locDOCABin = (int) (distanceToWire * 10) % 8;
-	TH2D* locHistToFill = cdc_expected_ringmap[locDOCABin][ringNum];
-	japp->RootFillLock(this); //ACQUIRE ROOT FILL LOCK
-	{
-		Double_t w = locHistToFill->GetBinContent(wireNum, 1) + 1.0;
-		locHistToFill->SetBinContent(wireNum, 1, w);
-	}
-	japp->RootFillUnLock(this); //RELEASE ROOT FILL LOCK
+   int locDOCABin = (int) (distanceToWire * 10) % 8;
+   TH2D* locHistToFill = cdc_expected_ringmap[locDOCABin][ringNum];
+   japp->RootFillLock(this); //ACQUIRE ROOT FILL LOCK
+   {
+      Double_t w = locHistToFill->GetBinContent(wireNum, 1) + 1.0;
+      locHistToFill->SetBinContent(wireNum, 1, w);
+   }
+   japp->RootFillUnLock(this); //RELEASE ROOT FILL LOCK
 }
 
 const DCDCTrackHit* JEventProcessor_CDC_Efficiency::Find_Hit(int locRing, int locProjectedStraw, map<int, set<const DCDCTrackHit*> >& locSortedCDCTrackHits)
 {
-	if(!locSortedCDCTrackHits[locProjectedStraw].empty())
-		return *(locSortedCDCTrackHits[locProjectedStraw].begin());
+   if(!locSortedCDCTrackHits[locProjectedStraw].empty())
+      return *(locSortedCDCTrackHits[locProjectedStraw].begin());
 
-	int locNumStraws = cdcwires[locRing - 1].size();
+   int locNumStraws = cdcwires[locRing - 1].size();
 
-	//previous straw
-	int locSearchStraw = locProjectedStraw - 1;
-	if(locSearchStraw <= 0)
-		locSearchStraw += locNumStraws;
-	if(!locSortedCDCTrackHits[locSearchStraw].empty())
-		return *(locSortedCDCTrackHits[locProjectedStraw].begin());
+   //previous straw
+   int locSearchStraw = locProjectedStraw - 1;
+   if(locSearchStraw <= 0)
+      locSearchStraw += locNumStraws;
+   if(!locSortedCDCTrackHits[locSearchStraw].empty())
+      return *(locSortedCDCTrackHits[locProjectedStraw].begin());
 
-	//next straw
-	locSearchStraw = locProjectedStraw + 1;
-	if(locSearchStraw > locNumStraws)
-		locSearchStraw -= locNumStraws;
-	if(!locSortedCDCTrackHits[locSearchStraw].empty())
-		return *(locSortedCDCTrackHits[locProjectedStraw].begin());
+   //next straw
+   locSearchStraw = locProjectedStraw + 1;
+   if(locSearchStraw > locNumStraws)
+      locSearchStraw -= locNumStraws;
+   if(!locSortedCDCTrackHits[locSearchStraw].empty())
+      return *(locSortedCDCTrackHits[locProjectedStraw].begin());
 
-	return nullptr;
+   return nullptr;
+}
+
+double JEventProcessor_CDC_Efficiency::GetDOCAFieldOff(DVector3 wirePosition, DVector3 wireDirection, DVector3 trackPosition, DVector3 trackMomentum, DVector3 &POCAOnTrack, DVector3 &POCAOnWire){
+   // Get the vector pointing from the wire to the doca point
+   Float_t a = trackMomentum.Dot(trackMomentum);
+   Float_t b = trackMomentum.Dot(wireDirection);
+   Float_t c = wireDirection.Dot(wireDirection);
+   DVector3 w0 = trackPosition - wirePosition;
+   Float_t d = trackMomentum.Dot(w0);
+   Float_t e = wireDirection.Dot(w0);
+   Float_t sc = ((b*e - c*d)/(a*c-b*b));
+   Float_t tc = ((a*e - b*d)/(a*c-b*b));
+   //if (sc < 0) continue; // Track must come from location away from origin
+   POCAOnTrack = trackPosition + sc * trackMomentum;
+   POCAOnWire  = wirePosition + tc * wireDirection;
+   DVector3 LOCA = w0 + sc*trackMomentum - tc*wireDirection;
+   return LOCA.Mag();
 }
 
 //------------------
@@ -559,10 +773,10 @@ const DCDCTrackHit* JEventProcessor_CDC_Efficiency::Find_Hit(int locRing, int lo
 //------------------
 jerror_t JEventProcessor_CDC_Efficiency::erun(void)
 {
-    // This is called whenever the run number changes, before it is
-    // changed to give you a chance to clean up before processing
-    // events from the next run number.
-    return NOERROR;
+   // This is called whenever the run number changes, before it is
+   // changed to give you a chance to clean up before processing
+   // events from the next run number.
+   return NOERROR;
 }
 
 //------------------
@@ -570,6 +784,6 @@ jerror_t JEventProcessor_CDC_Efficiency::erun(void)
 //------------------
 jerror_t JEventProcessor_CDC_Efficiency::fini(void)
 {
-    return NOERROR;
+   return NOERROR;
 }
 

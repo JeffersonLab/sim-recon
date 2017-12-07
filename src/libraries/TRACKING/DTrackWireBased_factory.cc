@@ -260,6 +260,8 @@ jerror_t DTrackWireBased_factory::evnt(JEventLoop *loop, uint64_t eventnumber)
          for (unsigned int k=0;k<fdchits.size();k++){
             track->AddAssociatedObject(fdchits[k]);
          }
+         track->dCDCRings = dPIDAlgorithm->Get_CDCRingBitPattern(cdchits);
+         track->dFDCPlanes = dPIDAlgorithm->Get_FDCPlaneBitPattern(fdchits);
 
          _data.push_back(track);
       }
