@@ -1269,7 +1269,7 @@ bool DHistogramAction_InvariantMass::Perform_Action(JEventLoop* locEventLoop, co
 		for(size_t loc_i = 0; loc_i < locMassesToFill.size(); ++loc_i)
 			dHist_InvariantMass->Fill(locMassesToFill[loc_i]);
 		for(size_t loc_i = 0; loc_i < loc2DMassesToFill.size(); ++loc_i)
-			dHist_InvariantMassVsBeamE->Fill(loc2DMassesToFill[loc_i], locBeam->energy());
+			dHist_InvariantMassVsBeamE->Fill(locBeam->energy(), loc2DMassesToFill[loc_i]);
 	}
 	Unlock_Action();
 
