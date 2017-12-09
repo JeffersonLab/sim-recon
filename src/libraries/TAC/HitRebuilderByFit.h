@@ -44,7 +44,7 @@ protected:
 	double decayTime = 2.6;
 	TF1* fitFun = nullptr;
 public:
-	HitRebuilderByFit( JEventLoop* eventLoop) :
+	HitRebuilderByFit( jana::JEventLoop* eventLoop) :
 			HitRebuilderTAC(eventLoop) {
 
 		HitRebuilderByFit::readCCDB( eventLoop );
@@ -72,7 +72,7 @@ public:
 			delete fitFun;
 	}
 
-	jerror_t readCCDB(JEventLoop *eventLoop);
+	jerror_t readCCDB(jana::JEventLoop *eventLoop);
 
 	virtual double getTimeFromRawData(const vector<uint16_t>& samples) override;
 
@@ -106,7 +106,7 @@ public:
 };
 
 template<typename F>
-inline jerror_t HitRebuilderByFit<F>::readCCDB(JEventLoop* eventLoop) {
+inline jerror_t HitRebuilderByFit<F>::readCCDB(jana::JEventLoop* eventLoop) {
 	std::cout << "In HitRebuilderByFit::readCCDB() , reading calibration constants" << std::endl;
 
 	// First re-read the constants for the base class. This is not a virtual method since it is
