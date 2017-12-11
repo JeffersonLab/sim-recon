@@ -97,7 +97,6 @@ JEventSource_EVIOpp::JEventSource_EVIOpp(const char* source_name):JEventSource(s
 	F250_EMULATION_VERSION = 2;
 	RECORD_CALL_STACK = false;
 	TREAT_TRUNCATED_AS_ERROR = false;
-    EMULATE_F125_FDC_MODE_ONLY = 1;
 	SYSTEMS_TO_PARSE = "";
 
 	gPARMS->SetDefaultParameter("EVIO:VERBOSE", VERBOSE, "Set verbosity level for processing and debugging statements while parsing. 0=no debugging messages. 10=all messages");
@@ -134,7 +133,6 @@ JEventSource_EVIOpp::JEventSource_EVIOpp(const char* source_name):JEventSource(s
 
 	gPARMS->SetDefaultParameter("EVIO:F250_EMULATION_MODE", F250_EMULATION_MODE, "Set f250 emulation mode. 0=no emulation, 1=always, 2=auto. Default is 2 (auto).");
 	gPARMS->SetDefaultParameter("EVIO:F125_EMULATION_MODE", F125_EMULATION_MODE, "Set f125 emulation mode. 0=no emulation, 1=always, 2=auto. Default is 2 (auto).");
-    gPARMS->SetDefaultParameter("EVIO:EMULATE_F125_FDC_MODE_ONLY", EMULATE_F125_FDC_MODE_ONLY, "Set whether the emulation should assume different algorithms for CDC and FDC.  0=CDC and FDC algorithms, 1=FDC algorithm only (default).");
 
 	gPARMS->SetDefaultParameter("EVIO:SYSTEMS_TO_PARSE", SYSTEMS_TO_PARSE,
 			"Comma separated list of systems to parse EVIO data for. "
@@ -960,44 +958,29 @@ void JEventSource_EVIOpp::EmulateDf125Firmware(DParsedEvent *pe)
 		Df125FDCPulse *f125FDCPulse = (Df125FDCPulse*)cf125FDCPulse;
 
 		// If the the pulse objects do not exist, create new ones to go with our raw data
-		// This should rarely happen since CDC_long and FDC_long have the raw data
+		// This should rarely happen since CDC_long and FDC_long mores have the raw data
 		// along with the calculated quantities in a pulse word. Pure raw mode would be the only time
 		// when this would not be the case. 
-
-        // Since this is so infrequently used (if ever), for pre-Fall 2017 data conditions
+        // Since this is so infrequently used (if ever), 
 		// we add a hard coded ROCID check for CDC/FDC determination...
 		// ROCID CDC: 25-28
 		// ROCID FDC Cathode: 52,53,55-62
-        // Starting Fall of 2017, we moved to taking both CDC and FDC data in the "FDC" mode,
-        // so there's no point in making the distinction
 
-        if(EMULATE_F125_FDC_MODE_ONLY) {
-            if(f125FDCPulse == NULL) {
-                f125FDCPulse           = pe->NEW_Df125FDCPulse();
-                f125FDCPulse->rocid    = wrd->rocid;
-                f125FDCPulse->slot     = wrd->slot;
-                f125FDCPulse->channel  = wrd->channel;
-                f125FDCPulse->emulated = true;
-                f125FDCPulse->AddAssociatedObject(wrd);
-            }
-        } else {
-            if(f125CDCPulse == NULL && ( wrd->rocid < 30 ) ){
-                f125CDCPulse           = pe->NEW_Df125CDCPulse();
-                f125CDCPulse->rocid    = wrd->rocid;
-                f125CDCPulse->slot     = wrd->slot;
-                f125CDCPulse->channel  = wrd->channel;
-                f125CDCPulse->emulated = true;
-                f125CDCPulse->AddAssociatedObject(wrd);
-            }
-            
-            else if(f125FDCPulse == NULL && ( wrd->rocid > 30 ) ){
-                f125FDCPulse           = pe->NEW_Df125FDCPulse();
-                f125FDCPulse->rocid    = wrd->rocid;
-                f125FDCPulse->slot     = wrd->slot;
-                f125FDCPulse->channel  = wrd->channel;
-                f125FDCPulse->emulated = true;
-                f125FDCPulse->AddAssociatedObject(wrd);
-            }
+        if(f125CDCPulse == NULL && ( wrd->rocid < 30 ) ){
+            f125CDCPulse           = pe->NEW_Df125CDCPulse();
+            f125CDCPulse->rocid    = wrd->rocid;
+            f125CDCPulse->slot     = wrd->slot;
+            f125CDCPulse->channel  = wrd->channel;
+            f125CDCPulse->emulated = true;
+            f125CDCPulse->AddAssociatedObject(wrd);
+        }
+        else if(f125FDCPulse == NULL && ( wrd->rocid > 30 ) ){
+            f125FDCPulse           = pe->NEW_Df125FDCPulse();
+            f125FDCPulse->rocid    = wrd->rocid;
+            f125FDCPulse->slot     = wrd->slot;
+            f125FDCPulse->channel  = wrd->channel;
+            f125FDCPulse->emulated = true;
+            f125FDCPulse->AddAssociatedObject(wrd);
         }
 
 		// Flag all objects as emulated and their values will be replaced with emulated quantities
