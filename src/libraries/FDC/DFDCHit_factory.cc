@@ -202,12 +202,12 @@ jerror_t DFDCHit_factory::evnt(JEventLoop *loop, uint64_t eventnumber)
       digihit->GetSingle(FDCPulseObj);
       if (FDCPulseObj != NULL){
          // Cut on quality factor?
-         const Df125Config *config = NULL;
-         FDCPulseObj->GetSingle(config);
+          vector<const Df125Config*> configs;
+          digihit->Get(configs);
 
          // Set some constants to defaults until they appear correctly in the config words in the future
          // The defaults are taken from Run 4607
-         if(config){
+          if(!config.empty()){
             //IBIT = config->IBIT == 0xffff ? 4 : config->IBIT;
             ABIT = config->ABIT == 0xffff ? 3 : config->ABIT;
             PBIT = config->PBIT == 0xffff ? 0 : config->PBIT;
