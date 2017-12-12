@@ -16,7 +16,6 @@ using namespace std;
 #include <DAQ/Df125PulseIntegral.h>
 #include <DAQ/Df125Config.h>
 #include <DAQ/Df125CDCPulse.h>
-#include <DAQ/Df125FDCPulse.h>
 
 using namespace jana;
 
