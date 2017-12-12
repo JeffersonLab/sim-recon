@@ -207,7 +207,8 @@ jerror_t DFDCHit_factory::evnt(JEventLoop *loop, uint64_t eventnumber)
 
          // Set some constants to defaults until they appear correctly in the config words in the future
          // The defaults are taken from Run 4607
-          if(!config.empty()){
+          if(!configs.empty()){
+            const Df125Config *config = configs[0];
             //IBIT = config->IBIT == 0xffff ? 4 : config->IBIT;
             ABIT = config->ABIT == 0xffff ? 3 : config->ABIT;
             PBIT = config->PBIT == 0xffff ? 0 : config->PBIT;
