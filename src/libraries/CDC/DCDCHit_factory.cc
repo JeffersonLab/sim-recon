@@ -16,7 +16,6 @@ using namespace std;
 #include <DAQ/Df125PulseIntegral.h>
 #include <DAQ/Df125Config.h>
 #include <DAQ/Df125CDCPulse.h>
-#include <DAQ/Df125FDCPulse.h>
 
 using namespace jana;
 
@@ -247,7 +246,7 @@ jerror_t DCDCHit_factory::evnt(JEventLoop *loop, uint64_t eventnumber)
             if( configs.empty() ){
                 static int Nwarnings = 0;
                 if(Nwarnings<10){
-                    _DBG_ << "NO Df125Config object associated with Df125FDCPulse object!" << endl;
+                    _DBG_ << "NO Df125Config object associated with Df125CDCPulse object!" << endl;
                     Nwarnings++;
                     if(Nwarnings==10) _DBG_ << " --- LAST WARNING!! ---" << endl;
                 }
