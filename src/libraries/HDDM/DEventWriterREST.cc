@@ -185,15 +185,15 @@ bool DEventWriterREST::Write_RESTEvent(JEventLoop* locEventLoop, string locOutpu
 		{
 			hddm_r::TagmBeamPhotonList locTagmBeamPhotonList = res().addTagmBeamPhotons(1);
 			locTagmBeamPhotonList().setJtag("TAGGEDMCGEN");
-			locTagmBeamPhotonList().setT(locBeamPhotons[loc_i]->time());
-			locTagmBeamPhotonList().setE(locBeamPhotons[loc_i]->energy());
+			locTagmBeamPhotonList().setT(locBeamPhotons_TAGGEDMCGEN[loc_i]->time());
+			locTagmBeamPhotonList().setE(locBeamPhotons_TAGGEDMCGEN[loc_i]->energy());
 		}
 		else if(locBeamPhotons_TAGGEDMCGEN[loc_i]->dSystem == SYS_TAGH)
 		{
 			hddm_r::TaghBeamPhotonList locTaghBeamPhotonList = res().addTaghBeamPhotons(1);
 			locTaghBeamPhotonList().setJtag("TAGGEDMCGEN");
-			locTaghBeamPhotonList().setT(locBeamPhotons[loc_i]->time());
-			locTaghBeamPhotonList().setE(locBeamPhotons[loc_i]->energy());
+			locTaghBeamPhotonList().setT(locBeamPhotons_TAGGEDMCGEN[loc_i]->time());
+			locTaghBeamPhotonList().setE(locBeamPhotons_TAGGEDMCGEN[loc_i]->energy());
 		}
 	}
 

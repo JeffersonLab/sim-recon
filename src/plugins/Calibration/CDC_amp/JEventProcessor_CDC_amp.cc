@@ -167,11 +167,7 @@ jerror_t JEventProcessor_CDC_amp::evnt(JEventLoop *loop, uint64_t eventnumber)
   vector<const DCDCHit*> hits;
   loop->Get(hits);
 
-  const DCDCHit *hit = NULL;
-  const DCDCDigiHit *digihit = NULL;
-  const Df125CDCPulse *cp = NULL;
-  const Df125Config *config = NULL;
-
+  
   int netamp = 0;
   float scaledped;
   double charge;
@@ -179,26 +175,22 @@ jerror_t JEventProcessor_CDC_amp::evnt(JEventLoop *loop, uint64_t eventnumber)
   const int SIMULATION = 0;
 
 
-  for (uint32_t i=0; i<hits.size(); i++) {
+  for (auto hit : hits ){
 
-    hit = hits[i];
     netamp = 0;
 
     if (!SIMULATION) {
 
-      digihit = NULL;
+      const DCDCDigiHit *digihit = NULL;
       hit->GetSingle(digihit);
       if (!digihit) continue;
 
-      cp = NULL; 
-      digihit->GetSingle(cp);
-      if (!cp) continue; //no CDCPulseData (happens occasionally)
+      // skip if time_quality_bit or overflow_count bit set
+      if(digihit->QF & 0x03) continue;
 
-      if (cp->time_quality_bit) continue;
-      if (cp->overflow_count) continue;
-
-      config = NULL;
-      cp->GetSingle(config);
+		vector<const Df125Config*> configs;
+		digihit->Get(configs);
+      const Df125Config *config = configs.empty() ? NULL:configs[0];
 
       if (config) {
 
@@ -212,8 +204,8 @@ jerror_t JEventProcessor_CDC_amp::evnt(JEventLoop *loop, uint64_t eventnumber)
 
       }
 
-      amp = cp->first_max_amp;
-      ped = cp->pedestal;
+      amp = digihit->pulse_peak;
+      ped = digihit->pedestal;
 
       scaledped = ped*(float)PSCALE/(float)ASCALE;
 
@@ -266,26 +258,22 @@ jerror_t JEventProcessor_CDC_amp::evnt(JEventLoop *loop, uint64_t eventnumber)
 
       if (pulls[j].cdc_hit == NULL) continue;
 
-      hit = NULL;
+      const DCDCHit *hit = NULL;
       pulls[j].cdc_hit->GetSingle(hit);
 
       netamp = 0;  
 
       if (!SIMULATION) {
 
-        digihit = NULL;
+        const DCDCDigiHit *digihit = NULL;
         hit->GetSingle(digihit);
         if (!digihit) continue;
-
-        cp = NULL; 
-        digihit->GetSingle(cp);
-        if (!cp) continue; //no CDCPulseData (happens occasionally)
-
-        if (cp->time_quality_bit) continue;
-        if (cp->overflow_count) continue;
-
-        amp = cp->first_max_amp;
-        ped = cp->pedestal;
+		  
+		  // skip if time_quality_bit or overflow_count bit set
+		  if(digihit->QF & 0x03) continue;
+		  
+		  amp = digihit->pulse_peak;
+		  ped = digihit->pedestal;
 
         scaledped = ped*(float)PSCALE/(float)ASCALE;
 

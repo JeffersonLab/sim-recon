@@ -62,13 +62,13 @@ public:
 	virtual void AppendData( DTACHit* hit ) { _data.push_back(hit) ;};
 //	virtual std::string SetTag( std::string tag ) ;
 
-	virtual jerror_t readCCDB( JEventLoop *loop );
+	virtual jerror_t readCCDB( jana::JEventLoop *loop );
 
 	virtual DTACHit* findMatch(double tdcTime);
 
 
-	virtual void makeFADCHits(JEventLoop *loop, uint64_t eventnumber);
-	virtual void makeTDCHits(JEventLoop *loop, uint64_t eventnumber);
+	virtual void makeFADCHits(jana::JEventLoop *loop, uint64_t eventnumber);
+	virtual void makeTDCHits(jana::JEventLoop *loop, uint64_t eventnumber);
 
 	static bool errorCheckIsNeededForFADC() {
 		return checkErrorsOnFADC;
