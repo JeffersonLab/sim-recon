@@ -24,6 +24,8 @@ class DTrackWireBased:public DTrackingData{
 		float chisq;			///< Chi-squared for the track (not chisq/dof!)
 		int Ndof;				///< Number of degrees of freedom in the fit
 		vector<DTrackFitter::pull_t> pulls;	///< Holds pulls used in chisq calc. (not including off-diagonals)
+		map<DetectorSystem_t,vector<DTrackFitter::Extrapolation_t> >extrapolations;
+		
 		double FOM; //confidence level
 
 		const DReferenceTrajectory *rt; ///< pointer to reference trjectory representing this track

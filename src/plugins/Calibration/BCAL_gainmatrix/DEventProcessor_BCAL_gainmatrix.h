@@ -15,7 +15,7 @@
 #include <HDDM/DEventWriterREST.h>
 #include <ANALYSIS/DHistogramActions.h>
 #include "ANALYSIS/DAnalysisUtilities.h"
-//#include "TRACKING/DTrackFinder.h"
+#include "TRACKING/DTrackFitter.h"
 
 #include "DLorentzVector.h"
 #include "TMatrixD.h"
@@ -84,7 +84,9 @@ class DEventProcessor_BCAL_gainmatrix : public jana::JEventProcessor
 		TH1F* h1D_nhits;
 
 		const DEventWriterROOT* dEventWriterROOT;
-		const DEventWriterREST* dEventWriterREST;
+		const DEventWriterREST* dEventWriterREST;  
+		const DTrackFitter *fitter;
+
 };
 
 #endif // _DEventProcessor_BCAL_gainmatrix_

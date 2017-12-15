@@ -187,6 +187,26 @@ jerror_t JEventProcessor_CDC_Efficiency::brun(JEventLoop *eventLoop, int32_t run
       eventLoop->Get(locTrackCandidates);
       gPARMS->GetParameter("TRKFIND:MAX_DRIFT_TIME", MAX_DRIFT_TIME);
    }
+
+   vector<const DTrackFitter *> fitters;
+	eventLoop->Get(fitters);
+	
+	if(fitters.size()<1){
+	  _DBG_<<"Unable to get a DTrackFinder object!"<<endl;
+	  return RESOURCE_UNAVAILABLE;
+	}
+	
+	fitter = fitters[0];
+	// Get the particle ID algorithms
+	vector<const DParticleID *> pid_algorithms;
+	eventLoop->Get(pid_algorithms);
+	if(pid_algorithms.size()<1){
+	  _DBG_<<"Unable to get a DParticleID object! NO PID will be done!"<<endl;
+	  return RESOURCE_UNAVAILABLE;
+	}
+
+	pid_algorithm = pid_algorithms[0];
+
    return NOERROR;
 }
 
@@ -322,19 +342,27 @@ jerror_t JEventProcessor_CDC_Efficiency::evnt(JEventLoop *loop, uint64_t eventnu
 
 void JEventProcessor_CDC_Efficiency::GitRDun(unsigned int ringNum, const DTrackTimeBased *thisTimeBasedTrack, map<int, map<int, set<const DCDCTrackHit*> > >& locSortedCDCTrackHits)
 {
-
+  vector<DTrackFitter::Extrapolation_t>extrapolations=thisTimeBasedTrack->extrapolations.at(SYS_CDC);
+  if (extrapolations.size()==0) return;
+  
    int Nstraws_previous[28] = {0,42,84,138,192,258,324,404,484,577,670,776,882,1005,1128,1263,1398,1544,1690,1848,2006,2176,2346,2528,2710,2907,3104,3313};
    vector< DCDCWire * > wireByNumber = cdcwires[ringNum - 1];
+   DVector3 pos;
+   DVector3 mom=thisTimeBasedTrack->momentum();
    for (unsigned int wireIndex = 0; wireIndex < wireByNumber.size(); wireIndex++)
    {
       int wireNum = wireIndex+1;
       DCDCWire * wire = wireByNumber[wireIndex];
-      double wireLength = wire->L;
       double distanceToWire;
-      if(!dIsNoFieldFlag) distanceToWire = thisTimeBasedTrack->rt->DistToRT(wire, &wireLength);
+      if(!dIsNoFieldFlag){
+	distanceToWire = fitter->DistToWire(wire,extrapolations,&pos,&mom);
+      }
       else {
          DVector3 POCAOnTrack, POCAOnWire;
-         distanceToWire = GetDOCAFieldOff(wire->origin, wire->udir, thisTimeBasedTrack->position(), thisTimeBasedTrack->momentum(), POCAOnTrack, POCAOnWire);
+         distanceToWire = GetDOCAFieldOff(wire->origin, wire->udir,
+					  thisTimeBasedTrack->position(),mom,
+					  POCAOnTrack, POCAOnWire);
+	 pos=POCAOnTrack;
       }
 
       //SKIP IF NOT CLOSE - Field on
@@ -357,11 +385,11 @@ void JEventProcessor_CDC_Efficiency::GitRDun(unsigned int ringNum, const DTrackT
       }
 
       double delta = 0.0, dz = 0.0;
-      if(!Expect_Hit(thisTimeBasedTrack, wire, distanceToWire, delta, dz))
+      if(!Expect_Hit(thisTimeBasedTrack, wire, distanceToWire, pos, delta, dz))
          continue;
 
       //FILL EXPECTED HISTOGRAMS
-      double dx = thisTimeBasedTrack->rt->Straw_dx(wire, 0.78);
+      double dx = pid_algorithm->CalcdXHit(mom,pos,wire);
       double locTheta = thisTimeBasedTrack->momentum().Theta()*TMath::RadToDeg();
       Fill1DHistogram("CDC_Efficiency", "Offline", "Expected Hits Vs Path Length", dx, "Expected Hits", 100, 0 , 4.0);
       Fill1DHistogram("CDC_Efficiency", "Offline", "Expected Hits Vs DOCA", distanceToWire, "Expected Hits", 100, 0 , 0.78);
@@ -434,18 +462,19 @@ void JEventProcessor_CDC_Efficiency::GitRDun(unsigned int ringNum, const DTrackT
       Fill2DProfile("CDC_Efficiency", "Online", "Efficiency p Vs Theta", locTheta, thisTimeBasedTrack->pmag(),foundHit, "Efficiency; Track #Theta [deg]; Momentum [GeV]", 100, 0, 180, 100, 0 , 4.0);
       Fill2DProfile("CDC_Efficiency", "Online", "Efficiency distance Vs delta", delta,distanceToWire,foundHit, "Efficiency;#delta [cm]; DOCA [cm]", 100, -0.3, 0.3, 100, 0 , 1.2);
       Fill2DProfile("CDC_Efficiency", "Online", "Efficiency z Vs delta", delta,dz,foundHit, "Efficiency;#delta [cm]; z [cm] (CDC local coordinates)", 100, -0.3, 0.3, 150, -75 , 75);
-
+   
       //FILL AS FUNCTION OF DOCA
       if (distanceToWire < 0.78)
       {
          Fill_ExpectedHit(ringNum, wireNum, distanceToWire);
          if(foundHit)
-            Fill_MeasuredHit(ringNum, wireNum, distanceToWire, thisTimeBasedTrack, wire, locHit);
+	   Fill_MeasuredHit(ringNum, wireNum, distanceToWire, pos, mom, wire, 
+			    locHit);
       }
    }
 }
 
-bool JEventProcessor_CDC_Efficiency::Expect_Hit(const DTrackTimeBased* thisTimeBasedTrack, DCDCWire* wire, double distanceToWire, double& delta, double& dz)
+bool JEventProcessor_CDC_Efficiency::Expect_Hit(const DTrackTimeBased* thisTimeBasedTrack, DCDCWire* wire, double distanceToWire, const DVector3 &pos,double& delta, double& dz)
 {
    delta = 0.0;
    dz = 0.0;
@@ -456,8 +485,6 @@ bool JEventProcessor_CDC_Efficiency::Expect_Hit(const DTrackTimeBased* thisTimeB
    DVector3 DOCA;
   
    if(!dIsNoFieldFlag) {
-      DVector3 pos, mom;
-      thisTimeBasedTrack->rt->GetLastDOCAPoint(pos, mom);
       DOCA = (-1) * ((wire->origin - pos) - (wire->origin - pos).Dot(wire->udir) * wire->udir);
       dz = (pos - wire->origin).Z();
    }
@@ -478,7 +505,7 @@ bool JEventProcessor_CDC_Efficiency::Expect_Hit(const DTrackTimeBased* thisTimeB
    return (distanceToWire < (0.78 + delta) && fabs(dz) < 65.0);
 }
 
-void JEventProcessor_CDC_Efficiency::Fill_MeasuredHit(int ringNum, int wireNum, double distanceToWire, const DTrackTimeBased* thisTimeBasedTrack, DCDCWire* wire, const DCDCHit* locHit)
+void JEventProcessor_CDC_Efficiency::Fill_MeasuredHit(int ringNum, int wireNum, double distanceToWire, const DVector3 &pos, const DVector3 &mom, DCDCWire* wire, const DCDCHit* locHit)
 {
    //Double_t w = cdc_occ_ring[ring]->GetBinContent(straw, 1) + 1.0;
    //cdc_occ_ring[ring]->SetBinContent(straw, 1, w);
@@ -490,7 +517,7 @@ void JEventProcessor_CDC_Efficiency::Fill_MeasuredHit(int ringNum, int wireNum, 
       {
          Double_t v = cdc_measured_ring[ringNum]->GetBinContent(wireNum, 1) + 1.0;
          cdc_measured_ring[ringNum]->SetBinContent(wireNum, 1, v);
-         double dx = thisTimeBasedTrack->rt->Straw_dx(wire, 0.78);
+         double dx = pid_algorithm->CalcdXHit(mom,pos,wire);
          ChargeVsTrackLength->Fill(dx, locHit->q);
 
          // ?	Double_t w = cdc_expected_ring[ringNum]->GetBinContent(wireNum, 1) + 1.0;

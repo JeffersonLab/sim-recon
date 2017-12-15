@@ -198,7 +198,8 @@ jerror_t JEventProcessor_FCAL_Hadronic_Eff::evnt(jana::JEventLoop* locEventLoop,
 		//Predict FCAL Surface Hit Location
 		DVector3 locProjectedFCALIntersection;
 		unsigned int locProjectedFCALRow = 0, locProjectedFCALColumn = 0;
-		if(!locParticleID->PredictFCALHit(locTrackTimeBased->rt, locProjectedFCALRow, locProjectedFCALColumn, &locProjectedFCALIntersection))
+		vector<DTrackFitter::Extrapolation_t>extrapolations=locTrackTimeBased->extrapolations.at(SYS_FCAL);
+		if(!locParticleID->PredictFCALHit(extrapolations, locProjectedFCALRow, locProjectedFCALColumn, &locProjectedFCALIntersection))
 		{
 			if(locTrackTimeBased->momentum().Theta()*180.0/TMath::Pi() > dMaxFCALThetaCut)
 				continue; //not predicted to hit FCAL
@@ -208,7 +209,7 @@ jerror_t JEventProcessor_FCAL_Hadronic_Eff::evnt(jana::JEventLoop* locEventLoop,
 		const DFCALShower* locFCALShower = nullptr;
 		shared_ptr<const DFCALShowerMatchParams> locClosestMatchParams;
 		double locStartTime = locTrackTimeBased->t0();
-		if(locParticleID->Get_ClosestToTrack(locTrackTimeBased->rt, locFCALShowers, false, locStartTime, locClosestMatchParams))
+		if(locParticleID->Get_ClosestToTrack(extrapolations, locFCALShowers, false, locStartTime, locClosestMatchParams))
 			locFCALShower = locClosestMatchParams->dFCALShower;
 
 		//Is match to FCAL shower?
