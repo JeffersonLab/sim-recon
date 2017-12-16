@@ -2383,7 +2383,7 @@ bool DParticleID::Get_ClosestToTrack(const vector<DTrackFitter::Extrapolation_t>
 const DTOFPaddleHit* DParticleID::Get_ClosestTOFPaddleHit_Horizontal(const vector<DTrackFitter::Extrapolation_t> &extrapolations, const vector<const DTOFPaddleHit*>& locTOFPaddleHits, double locInputStartTime, double& locBestDeltaY, double& locBestDistance) const
 {
   if(extrapolations.size()==0)
-    return false;
+    return nullptr;
 
   // Find the track projection to the TOF
   DVector3 proj_pos=extrapolations[0].position; 
@@ -2465,7 +2465,7 @@ const DTOFPaddleHit* DParticleID::Get_ClosestTOFPaddleHit_Horizontal(const vecto
 const DTOFPaddleHit* DParticleID::Get_ClosestTOFPaddleHit_Vertical(const vector<DTrackFitter::Extrapolation_t> &extrapolations, const vector<const DTOFPaddleHit*>& locTOFPaddleHits, double locInputStartTime, double& locBestDeltaX, double& locBestDistance) const
 {
   if(extrapolations.size()==0)
-    return false;
+    return nullptr;
   
   // Find the track projection to the TOF
   DVector3 proj_pos=extrapolations[0].position; 
@@ -3246,7 +3246,7 @@ void DParticleID::Get_FDCNumHitPlanesPerPackage(const set<int>& locFDCPlanes, ma
 	for(; locIterator != locFDCPlanes.end(); ++locIterator)
 	{
 		int locFDCPackage = ((*locIterator) - 1)/6 + 1;
-		map<int, int>::iterator locMapIterator = locNumHitPlanesPerPackage.find(locFDCPackage);
+//		map<int, int>::iterator locMapIterator = locNumHitPlanesPerPackage.find(locFDCPackage);
 		++locNumHitPlanesPerPackage[locFDCPackage];
 	}
 }
