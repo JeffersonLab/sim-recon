@@ -10,6 +10,7 @@
 #include "DRandom2.h"
 
 #ifdef HAVE_RCDB
+#define RCDB_MYSQL 1
 #include <RCDB/Connection.h>
 #endif // HAVE_RCDB
 

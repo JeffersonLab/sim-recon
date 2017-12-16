@@ -244,6 +244,12 @@ jerror_t MyProcessor::evnt(JEventLoop *loop, uint64_t eventnumber)
       for (int i=0; i < count; ++i) {
          hddm_s::HDDM record2;
          *iter->first >> record2;
+         hddm_s_merger::set_t_shift_ns(0);
+         hddm_s::RFsubsystemList RFtimes = record2.getRFsubsystems();
+         hddm_s::RFsubsystemList::iterator RFiter;
+         for (RFiter = RFtimes.begin(); RFiter != RFtimes.end(); ++RFiter)
+            if (RFiter->getJtag() == "TAGH")
+               hddm_s_merger::set_t_shift_ns(-RFiter->getTsync());
          if (iter->first->eof()) {
             pthread_mutex_lock(&input_file_mutex);
             input_file_mutex_last_owner = pthread_self();

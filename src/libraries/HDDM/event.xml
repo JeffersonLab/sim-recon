@@ -206,8 +206,9 @@
       <mcTrajectory minOccurs="0">
         <mcTrajectoryPoint E="float" dE="float" maxOccurs="unbounded" mech="int" minOccurs="0" part="int" primary_track="int" px="float" py="float" pz="float" radlen="float" step="float" t="float" track="int" x="float" y="float" z="float"/>
       </mcTrajectory>
-      <RFtime minOccurs="0" jtag="string"
-              tsync="float" tunit="ns"/>
+      <RFtime minOccurs="0" jtag="string" tsync="float" tunit="ns">
+         <RFsubsystem maxOccurs="unbounded" minOccurs="0" jtag="string" tsync="float" tunit="ns"/>
+      </RFtime>
       <forwardMWPC minOccurs="0">
 	    <fmwpcChamber layer="int" maxOccurs="unbounded" minOccurs="0" wire="int">
 		  <fmwpcTruthHit dE="float" dx="float" maxOccurs="unbounded" t="float"/>
