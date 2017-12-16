@@ -1291,6 +1291,7 @@ int main(int argC, char* argV[])
    "      update_streambufs();\n"
    "      if (MY(status_bits) & (k_bz2_compression | k_z_compression)) {\n"
    "         if (MY(status_bits) & k_can_reposition) {\n"
+   "            MY(istr)->clear();\n"
    "            MY(istr)->read(MY(event_buffer),4);\n"
    "            MY(bytes_read) += MY(istr)->gcount();\n"
    "            if (!MY(istr)->good()) {\n"
