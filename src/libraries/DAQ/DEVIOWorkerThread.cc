@@ -622,7 +622,6 @@ void DEVIOWorkerThread::Parsef250scalerBank(uint32_t* &iptr, uint32_t *iend)
 //---------------------------------
 void DEVIOWorkerThread::ParseControlEvent(uint32_t* &iptr, uint32_t *iend)
 {
-	for(auto pe : current_parsed_events) pe->event_status_bits |= (1<<kSTATUS_CONTROL_EVENT);
 
 	time_t t = (time_t)iptr[2];
 	string tstr = ctime(&t);
@@ -638,6 +637,14 @@ void DEVIOWorkerThread::ParseControlEvent(uint32_t* &iptr, uint32_t *iend)
 	}
 	
 	jout << "Control event: " << type << " - " << tstr << endl;
+
+	for(auto pe : current_parsed_events) {
+		pe->event_status_bits |= (1<<kSTATUS_CONTROL_EVENT);
+		auto controlevent = pe->NEW_DCODAControlEvent();
+		controlevent->event_type = iptr[1]>>16;
+		controlevent->unix_time = t;
+		for(auto p = iptr; p!=iend; p++) controlevent->words.push_back(*p);
+	}
 
 	iptr = &iptr[(*iptr) + 1];
 }
