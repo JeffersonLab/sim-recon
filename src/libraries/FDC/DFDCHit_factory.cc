@@ -185,8 +185,8 @@ jerror_t DFDCHit_factory::evnt(JEventLoop *loop, uint64_t eventnumber)
       //double pedestal = a_pedestals[plane_index][strip_index];
 
       // Grab the pedestal from the digihit since this should be consistent between the old and new formats
-      uint32_t raw_ped           = digihit->pedestal;
-      //        uint32_t nsamples_integral;
+      int raw_ped = digihit->pedestal;
+      //        int nsamples_integral;
 
       // There are a few values from the new data type that are critical for the interpretation of the data
       //uint16_t IBIT = 0; // 2^{IBIT} Scale factor for integral
@@ -197,7 +197,7 @@ jerror_t DFDCHit_factory::evnt(JEventLoop *loop, uint64_t eventnumber)
 
       // This is the place to make quality cuts on the data.
       // Try to get the new data type, if that fails, try to get the old...
-      uint32_t pulse_peak = 0;
+      int pulse_peak = 0;
       const Df125FDCPulse *FDCPulseObj = NULL;
       digihit->GetSingle(FDCPulseObj);
       if (FDCPulseObj != NULL){
@@ -249,7 +249,7 @@ jerror_t DFDCHit_factory::evnt(JEventLoop *loop, uint64_t eventnumber)
       }
 
       // Complete the pedestal subtracion here since we should know the correct number of samples.
-      uint32_t scaled_ped = raw_ped << PBIT;
+      int scaled_ped = raw_ped << PBIT;
       //pedestal = double(scaled_ped * nsamples_integral);
 
       //double integral = double(digihit->pulse_integral << IBIT);
