@@ -655,6 +655,24 @@ bool DEventWriterHDDM::Write_HDDMEvent(JEventLoop* locEventLoop, string locOutpu
 		nextRF(0).setTsync(RFtimes[i]->dTime);
 	}
 
+	std::vector<std::string> RFtags = {"TOF", "FDC", "PSC", "TAGH"};
+	hddm_s::RFtimeList mainRF = hitv->getRFtimes();
+	if(mainRF.size() > 0)
+	{
+		for(uint it=0; it < RFtags.size(); ++it)
+		{
+			vector<const DRFTime*> RFsubsys;
+			locEventLoop->Get(RFsubsys, RFtags[it].c_str());
+			for(uint i=0; i < RFsubsys.size(); ++i)
+			{
+				hddm_s::RFsubsystemList nextRF = mainRF(0).addRFsubsystems();
+				nextRF(0).setJtag(RFsubsys[i]->GetTag());
+				nextRF(0).setTsync(RFsubsys[i]->dTime);
+			}
+		}
+	}
+
+
 	//*fout << *record; //stream the new record into the file
 
 	// write the resulting record to the output stream
