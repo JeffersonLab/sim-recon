@@ -245,7 +245,7 @@ jerror_t DL1MCTrigger_factory::brun(jana::JEventLoop *eventLoop, int32_t runnumb
     LoadFCALConst(fcal_gains, fcal_gains_ch, fcalGeom);
 
     if(debug){
-      for(int ch = 0; ch < fcal_gains_ch.size(); ch++){
+      for(int ch = 0; ch < (int)fcal_gains_ch.size(); ch++){
 	int row = fcalGeom.row(ch);
 	int col = fcalGeom.column(ch);
 	if(fcalGeom.isBlockActive(row,col)){
@@ -272,7 +272,7 @@ jerror_t DL1MCTrigger_factory::brun(jana::JEventLoop *eventLoop, int32_t runnumb
     LoadFCALConst(fcal_pedestals, fcal_pedestals_ch, fcalGeom);
 
     if(debug){
-      for(int ch = 0; ch < fcal_gains_ch.size(); ch++){
+      for(int ch = 0; ch < (int)fcal_gains_ch.size(); ch++){
 	int row = fcalGeom.row(ch);
 	int col = fcalGeom.column(ch);
 	if(fcalGeom.isBlockActive(row,col)){

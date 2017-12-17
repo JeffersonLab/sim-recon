@@ -38,6 +38,7 @@ int QUIT = 0;
 
 std::map<hddm_s::istream*,double> files2merge;
 std::map<hddm_s::istream*,hddm_s::streamposition> start2merge;
+std::map<hddm_s::istream*,int> skip2merge;
 
 using namespace jana;
 
@@ -111,7 +112,6 @@ void ParseCommandLineArguments(int narg, char* argv[], mcsmear_config_t *config)
          std::string filename(ptr);
          size_t colon = filename.find_first_of(":");
          if (colon != filename.npos) {
-            std::ifstream *ifs = new std::ifstream(filename.substr(0, colon));
             double wgt = std::stod(filename.substr(colon + 1));
             size_t plus = filename.substr(colon + 1).find_first_of("+");
             size_t decimal = filename.substr(colon + 1, plus).find_first_of(".");
@@ -119,15 +119,16 @@ void ParseCommandLineArguments(int narg, char* argv[], mcsmear_config_t *config)
                wgt += 1e-10;
             int skip = 0;
             if (plus != filename.npos)
-               skip = std::stoi(filename.substr(plus + 1));
-            hddm_s::istream *istr = new hddm_s::istream(*ifs);
-            files2merge[istr] = wgt;
+               skip = std::stoi(filename.substr(colon + plus + 1));
+            std::ifstream fin(filename.substr(0, colon));
+            hddm_s::istream stin(fin);
             hddm_s::HDDM record;
-            *istr >> record;
-            start2merge[istr] = istr->getPosition();
-            istr->setPosition(start2merge[istr]);
-            for (int i=0; i < skip; ++i)
-               *istr >> record;
+            stin >> record;
+            std::ifstream *ifs = new std::ifstream(filename.substr(0, colon));
+            hddm_s::istream *istr = new hddm_s::istream(*ifs);
+            start2merge[istr] = stin.getPosition();
+            files2merge[istr] = wgt;
+            skip2merge[istr] = skip;
             std::fill(ptr, ptr + strlen(ptr), '-');
             continue;
          }

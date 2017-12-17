@@ -172,7 +172,9 @@ private:
     int  zlyr; 
     int  tlyr; 
     
-    float clslyr[6][layermax_bcal+1][clsmax_bcal];
+    // increase range of last index to match DBCALShower_factory_KLOE:1130
+    //float clslyr[6][layermax_bcal+1][clsmax_bcal];
+    float clslyr[6][layermax_bcal+1][clsmax_bcal+1];
     
     float  apx[4][clsmax_bcal+1];
     float  eapx[4][clsmax_bcal+1];
