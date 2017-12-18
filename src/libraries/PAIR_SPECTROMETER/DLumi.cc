@@ -161,13 +161,13 @@ void DLumi::CalcLumi(){
 
     accept = 0.;
     
-    if( (tagm_en < Epeak) && (tagm_en < Epeak)){
+    if( (tagm_en > 2*Emin) && (tagm_en < Epeak)){
       
       accept = 1. - 2.*Emin / tagm_en;
       
       if(accept < 0.) accept = 0.;
       
-    } else if( (tagm_en >= Epeak) && (tagm_en >= Epeak)){
+    } else if( (tagm_en >= Epeak) && (tagm_en < Ebeam)){
       
       accept = 2.*Emax / tagm_en - 1.;
 
@@ -190,11 +190,11 @@ void DLumi::CalcLumi(){
     
     accept = 0.;
     
-    if( (tagh_en < Epeak) && (tagh_en < Epeak)){
+    if( (tagh_en > 2*Emin) && (tagh_en < Epeak)){
       
       accept = 1. - 2.*Emin / tagh_en;
             
-    } else if( (tagh_en >= Epeak) && (tagh_en >= Epeak)){
+    } else if( (tagh_en >= Epeak) && (tagh_en < Ebeam)){
       
       accept = 2.*Emax / tagh_en - 1.;
       
