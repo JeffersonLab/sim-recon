@@ -30,6 +30,7 @@ using namespace std;
 
 class DReferenceTrajectory;
 class DGeometry;
+class DParticleID;
 
 //////////////////////////////////////////////////////////////////////////////////
 /// The DTrackFitter class is a base class for different charged track
@@ -82,20 +83,6 @@ class DTrackFitter:public jana::JObject{
 		    double p;  // momentum at this dE/dx measurement
 
 		};
-		class Extrapolation_t{
-		public:
-		Extrapolation_t(DVector3 position,DVector3 momentum,
-				double t,double s,double s_theta_ms_sum=0.,
-				double theta2ms_sum=0.):
-		  position(position),momentum(momentum),t(t),s(s),s_theta_ms_sum(s_theta_ms_sum),theta2ms_sum(theta2ms_sum){}
-		  DVector3 position;
-		  DVector3 momentum;
-		  double t;
-		  double s;
-		  double s_theta_ms_sum;
-		  double theta2ms_sum;
-		};
-
 
 		class pull_t{
 		public:
@@ -137,14 +124,6 @@ class DTrackFitter:public jana::JObject{
 		const vector<const DFDCPseudo*>&   GetFDCInputHits(void) const {return fdchits;}
 		const vector<const DCDCTrackHit*>& GetCDCFitHits(void) const {return cdchits_used_in_fit;}
 		const vector<const DFDCPseudo*>&   GetFDCFitHits(void) const {return fdchits_used_in_fit;}
-		void ClearExtrapolations(void){
-		  extrapolations[SYS_TOF].clear();
-		  extrapolations[SYS_BCAL].clear();
-		  extrapolations[SYS_FCAL].clear();
-		  extrapolations[SYS_FDC].clear();
-		  extrapolations[SYS_CDC].clear();
-		  extrapolations[SYS_START].clear();
-		};
 		
 		// Fit parameter accessor methods
 		const DKinematicData& GetInputParameters(void) const {return input_params;}
@@ -155,11 +134,7 @@ class DTrackFitter:public jana::JObject{
 		unsigned int GetNumPotentialCDCHits(void) const {return potential_cdc_hits_on_track;}
       bool GetIsSmoothed(void) const {return IsSmoothed;}
 		
-      vector<pull_t>& GetPulls(void){return pulls;}
-      const map<DetectorSystem_t,vector<Extrapolation_t> >&GetExtrapolations(void) const{
-	return extrapolations;
-      }
-
+		vector<pull_t>& GetPulls(void){return pulls;}
 		fit_type_t GetFitType(void) const {return fit_type;}
 		const DMagneticFieldMap* GetDMagneticFieldMap(void) const {return bfield;}
 
@@ -179,13 +154,6 @@ class DTrackFitter:public jana::JObject{
 				      double t0=QuietNaN,
 				      DetectorSystem_t t0_det=SYS_NULL
 				      ); ///< mass<0 means get it from starting_params
-		fit_status_t 
-		  FindHitsAndFitTrack(const DKinematicData &starting_params, 
-				      const map<DetectorSystem_t,vector<DTrackFitter::Extrapolation_t> >&extrapolations,
-				      JEventLoop *loop, 
-				      double mass,int N,double t0,
-				      DetectorSystem_t t0_det);
-		
 		jerror_t CorrectForELoss(const DKinematicData &starting_params, DReferenceTrajectory *rt, DVector3 &pos, DVector3 &mom, double mass);
 		double CalcDensityEffect(double p,double mass,double density,
 					 double Z_over_A,double I);  
@@ -196,18 +164,7 @@ class DTrackFitter:public jana::JObject{
 #ifdef PROFILE_TRK_TIMES
 		void GetProfilingTimes(std::map<std::string, prof_time::time_diffs> &my_prof_times) const;
 #endif		
-		bool ExtrapolateToRadius(double R,
-					 const vector<Extrapolation_t>&extraps,
-					 DVector3 &pos,DVector3 &mom,double &t,
-					 double &s) const;
-		bool ExtrapolateToRadius(double R,
-					 const vector<Extrapolation_t>&extraps,
-					 DVector3 &pos) const;
-		double DistToWire(const DCoordinateSystem *wire,
-				  const vector<Extrapolation_t>&extrapolations,
-				  DVector3 *pos=NULL,DVector3 *mom=NULL,
-				  DVector3 *position_along_wire=NULL) const;
-	      
+
 		//---- The following need to be supplied by the subclass ----
 		virtual string Name(void) const =0;
 		virtual fit_status_t FitTrack(void)=0;
@@ -225,18 +182,16 @@ class DTrackFitter:public jana::JObject{
 		const DGeometry *geom;						//< DGeometry pointer used to access materials through calibDB maps for eloss
 		const DRootGeom *RootGeom;					//< ROOT geometry used for accessing material for MULS, energy loss
 		JEventLoop *loop;								//< Pointer to JEventLoop object handling the current event
+		const DParticleID* dParticleID;
 
 		// The following should be set as outputs by FitTrack(void)
 		DTrackingData fit_params;									//< Results of last fit
 		double chisq;													//< Chi-sq of final track fit (not the chisq/dof!)
 		int Ndof;														//< Number of degrees of freedom for final track
 		vector<pull_t> pulls;										//< pull_t objects for each contribution to chisq (assuming no correlations)
-		map<DetectorSystem_t,vector<Extrapolation_t> > extrapolations;
-
 		fit_status_t fit_status;									//< Status of values in fit_params (kFitSuccess, kFitFailed, ...)
 		vector<const DCDCTrackHit*> cdchits_used_in_fit;	//< The CDC hits actually used in the fit
 		vector<const DFDCPseudo*> fdchits_used_in_fit;		//< The FDC hits actually used in the fit
-
       bool IsSmoothed;                                   //< Indicates if the smoother routine finished successfully
 
 		unsigned int potential_fdc_hits_on_track;

@@ -13,7 +13,7 @@
 
 #include <ANALYSIS/DHistogramActions.h>
 #include "ANALYSIS/DAnalysisUtilities.h"
-#include "TRACKING/DTrackFitter.h"
+//#include "TRACKING/DTrackFinder.h"
 
 #include "DLorentzVector.h"
 #include "TMatrixD.h"
@@ -42,8 +42,6 @@ class JEventProcessor_BCAL_Eff : public jana::JEventProcessor
 		jerror_t erun(void);						///< Called every time run number changes, provided brun has been called.
 		jerror_t fini(void);						///< Called after last event of last event source has been processed.
 
-
-		const DTrackFitter *fitter;
 	   
 
 };

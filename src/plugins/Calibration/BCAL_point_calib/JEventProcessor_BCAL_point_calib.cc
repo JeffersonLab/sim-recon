@@ -330,16 +330,6 @@ jerror_t JEventProcessor_BCAL_point_calib::brun(JEventLoop *eventLoop, int32_t r
 		throw JException("Could not load DBCALGeometry object!");
 	dBCALGeom = BCALGeomVec[0];
 
-	vector<const DTrackFitter *> fitters;
-	eventLoop->Get(fitters);
-	
-	if(fitters.size()<1){
-	  _DBG_<<"Unable to get a DTrackFinder object!"<<endl;
-	  return RESOURCE_UNAVAILABLE;
-	}
-	
-	fitter = fitters[0];
-
 	return NOERROR;
 }
 
@@ -392,9 +382,6 @@ jerror_t JEventProcessor_BCAL_point_calib::evnt(JEventLoop *loop, uint64_t event
 	// the following two loops loop through a) the showers in each event and b) the tracks in each event and determine the z and phi of both. If the quantities dZ and dPhi are "small" enough, the relevant track and shower are appended to the end of the matchedTracks and matchedShowers vectors respectively
 
 	for (unsigned int i=0; i < locTrackTimeBased.size() ; ++i){
-	  vector<DTrackFitter::Extrapolation_t>extrapolations=locTrackTimeBased[i]->extrapolations.at(SYS_BCAL);
-	  if (extrapolations.size()==0) continue;
-
 	  for (unsigned int j=0; j< locBCALShowers.size(); ++j){
 	
 	        double x = locBCALShowers[j]->x;
@@ -405,19 +392,17 @@ jerror_t JEventProcessor_BCAL_point_calib::evnt(JEventLoop *loop, uint64_t event
 		double R = pos_bcal.Perp();
 		double phi = pos_bcal.Phi();
 
-		if (fitter->ExtrapolateToRadius(R,extrapolations,mypos)){
-		  double dPhi = mypos.Phi()-phi;
-		  if (dPhi<-M_PI) dPhi+=2.*M_PI;
-		  if (dPhi>M_PI) dPhi-=2.*M_PI;
+		locTrackTimeBased[i]->rt->GetIntersectionWithRadius(R, mypos); // takes R and returns mypos
 
-		  double dZ = TMath::Abs(mypos.Z() - z);
-		  
-		  // save showers matched to tracks
-		  if(dZ < 30.0 && fabs(dPhi) < 0.18) {
-		    matchedShowers.push_back(locBCALShowers[j]);
-		    matchedTracks.push_back(locTrackTimeBased[i]);
-		  }
+		double dPhi = TMath::Abs(mypos.Phi()-phi);
+		double dZ = TMath::Abs(mypos.Z() - z);
+
+                // save showers matched to tracks
+		if(dZ < 30.0 && dPhi < 0.18 && mypos.Perp() == R) {
+			matchedShowers.push_back(locBCALShowers[j]);
+			matchedTracks.push_back(locTrackTimeBased[i]);
 		}
+
 	  } // end of shower loop
 	} // end of track loop
 
@@ -521,11 +506,10 @@ jerror_t JEventProcessor_BCAL_point_calib::evnt(JEventLoop *loop, uint64_t event
 		}
 
 		// get mypos for given radius R
-		vector<DTrackFitter::Extrapolation_t>extrapolations=matchedTracks[i]->extrapolations.at(SYS_BCAL);
-		fitter->ExtrapolateToRadius(R1,extrapolations,mypos_1); // middle of layer 1
-		fitter->ExtrapolateToRadius(R2,extrapolations,mypos_2); // middle of layer 2
-		fitter->ExtrapolateToRadius(R3,extrapolations,mypos_3); // middle of layer 3
-		fitter->ExtrapolateToRadius(R4,extrapolations,mypos_4); // middle of layer 4
+		matchedTracks[i]->rt->GetIntersectionWithRadius(R1, mypos_1); // middle of layer 1
+		matchedTracks[i]->rt->GetIntersectionWithRadius(R2, mypos_2); // middle of layer 2
+		matchedTracks[i]->rt->GetIntersectionWithRadius(R3, mypos_3); // middle of layer 3
+		matchedTracks[i]->rt->GetIntersectionWithRadius(R4, mypos_4); // middle of layer 4
 
 		// create an array with the values of z_of_track for each layer
 		double mypos_z_array[4] = {};

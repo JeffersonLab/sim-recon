@@ -19,10 +19,6 @@ void DCustomAction_p2pi_unusedHists::Initialize(JEventLoop* locEventLoop)
 	locEventLoop->Get(locFCALGeometry);
 	dFCALGeometry = locFCALGeometry[0];
 	
-	vector<const DTrackFitter*>locFitters;
-	locEventLoop->Get(locFitters);
-	dFitter=locFitters[0];
-	
 	//CREATE THE HISTOGRAMS
 	//Since we are creating histograms, the contents of gDirectory will be modified: must use JANA-wide ROOT lock
 	japp->RootWriteLock(); //ACQUIRE ROOT LOCK!!
@@ -325,19 +321,18 @@ bool DCustomAction_p2pi_unusedHists::Perform_Action(JEventLoop* locEventLoop, co
 
                         const DChargedTrackHypothesis* locChargedTrackHypothesis = locChargedTrack->Get_BestFOM();
 	auto locTrackTimeBased = locChargedTrackHypothesis->Get_TrackTimeBased();
+			const DReferenceTrajectory* rt = locTrackTimeBased->rt;
+			if(rt == NULL) continue;
 
 			const DBCALShower *locBCALShower = locBCALShowers[loc_j];
 			DVector3 bcal_pos(locBCALShower->x, locBCALShower->y, locBCALShower->z);
 				
-			double locFlightTime = 9.9E9, locPathLength = 9.9E9;
-			vector<DTrackFitter::Extrapolation_t>extrapolations=locTrackTimeBased->extrapolations.at(SYS_BCAL);
-			DVector3 proj_pos,proj_mom;
-			if (!dFitter->ExtrapolateToRadius(bcal_pos.Perp(),
-							 extrapolations,
-							 proj_pos,proj_mom,
-							 locFlightTime,
-							 locPathLength))
-			  continue;
+			double locFlightTime = 9.9E9, locPathLength = 9.9E9, locFlightTimeVariance = 9.9E9;
+			rt->DistToRTwithTime(bcal_pos, &locPathLength, &locFlightTime, &locFlightTimeVariance, SYS_BCAL);
+			
+			DVector3 proj_pos = rt->GetLastDOCAPoint();
+			if(proj_pos.Perp() < 65.0)
+				continue;  // not inside BCAL!
 			
 			double dz = bcal_pos.z() - proj_pos.z();
 			double dphi = bcal_pos.Phi() - proj_pos.Phi();
@@ -388,14 +383,16 @@ bool DCustomAction_p2pi_unusedHists::Perform_Action(JEventLoop* locEventLoop, co
 			
                         const DChargedTrackHypothesis* locChargedTrackHypothesis = locChargedTrack->Get_BestFOM();
 	auto locTrackTimeBased = locChargedTrackHypothesis->Get_TrackTimeBased();
-	
+			const DReferenceTrajectory* rt = locTrackTimeBased->rt;
+			if(rt == NULL) continue;
+
 			const DFCALShower *locFCALShower = locFCALShowers[loc_j];
 			DVector3 fcal_pos = locFCALShower->getPosition();
 			DVector3 norm(0.0, 0.0, 1.0); //normal vector for the FCAL plane
-		       
-			vector<DTrackFitter::Extrapolation_t>extrapolations=locTrackTimeBased->extrapolations.at(SYS_FCAL);
-			if (extrapolations.size()==0) continue;
-			DVector3 proj_pos=extrapolations[0].position;
+			DVector3 proj_pos, proj_mom;
+			double locPathLength = 9.9E9, locFlightTime = 9.9E9, locFlightTimeVariance = 9.9e9;
+			if(rt->GetIntersectionWithPlane(fcal_pos, norm, proj_pos, proj_mom, &locPathLength, &locFlightTime, &locFlightTimeVariance, SYS_FCAL) != NOERROR)
+				continue;
 			
 			double dd = (fcal_pos - proj_pos).Mag();
 			double dr = (fcal_pos - proj_pos).Perp();
@@ -546,7 +543,7 @@ void DCustomAction_p2pi_unusedHists::FillTrack(JEventLoop* locEventLoop, const D
         DVector3 fcal_origin(0.0,0.0,zfcal);
         DVector3 fcal_normal(0.0,0.0,1.0);
 	DVector3 trkpos(0.0,0.0,0.0);
-       
+        DVector3 proj_mom(0.0,0.0,0.0);
 	double theta = locTrackTimeBased->momentum().Theta()*180./TMath::Pi();
 	double phi = locTrackTimeBased->momentum().Phi()*180./TMath::Pi();
 	double p = locTrackTimeBased->momentum().Mag();
@@ -556,9 +553,7 @@ void DCustomAction_p2pi_unusedHists::FillTrack(JEventLoop* locEventLoop, const D
         locEventLoop->Get(fcalhits);
 	if(fcalhits.empty()) return;
 
-	vector<DTrackFitter::Extrapolation_t>extrapolations=locTrackTimeBased->extrapolations.at(SYS_FCAL);
-	if (extrapolations.size()>0){
-	  trkpos=extrapolations[0].position;
+	if (locTrackTimeBased->rt->GetIntersectionWithPlane(fcal_origin,fcal_normal,trkpos,proj_mom,NULL,NULL,NULL,SYS_FCAL)==NOERROR){
 		double trkposX = trkpos.X();
 		double trkposY = trkpos.Y();
 		int trkrow = dFCALGeometry->row((float)trkposY);

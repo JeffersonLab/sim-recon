@@ -136,18 +136,8 @@ jerror_t JEventProcessor_BCAL_inv_mass::init(void)
 //------------------
 jerror_t JEventProcessor_BCAL_inv_mass::brun(jana::JEventLoop* locEventLoop, int locRunNumber)
 {
-    vector<const DTrackFitter *> fitters;
-    locEventLoop->Get(fitters);
-    
-    if(fitters.size()<1){
-      _DBG_<<"Unable to get a DTrackFinder object!"<<endl;
-      return RESOURCE_UNAVAILABLE;
-    }
-    
-    fitter = fitters[0];
 
-    
-    return NOERROR;
+	return NOERROR;
 }
 
 //------------------
@@ -203,55 +193,47 @@ jerror_t JEventProcessor_BCAL_inv_mass::evnt(jana::JEventLoop* locEventLoop, uin
 	DVector3 mypos(0.0,0.0,0.0);
 
 	for (unsigned int i=0; i < locTrackTimeBased.size() ; ++i){
-	  vector<DTrackFitter::Extrapolation_t>extrapolations=locTrackTimeBased[i]->extrapolations.at(SYS_BCAL);
-	  if (extrapolations.size()>0){
-	    for (unsigned int j=0; j< locBCALShowers.size(); ++j){
+	  for (unsigned int j=0; j< locBCALShowers.size(); ++j){
 	
-	      double x = locBCALShowers[j]->x;
-	      double y = locBCALShowers[j]->y;
-	      double z = locBCALShowers[j]->z;
-	      DVector3 pos_bcal(x,y,z);
-	      double R = pos_bcal.Perp();
-	      if (fitter->ExtrapolateToRadius(R,extrapolations,mypos)){
-		//double dPhi = TMath::Abs(mypos.Phi()-pos_bcal.Phi());
-		double dPhi = mypos.Phi()-pos_bcal.Phi();
-		if (dPhi<-M_PI) dPhi+=2.*M_PI;
-		if (dPhi>M_PI) dPhi-=2.*M_PI;
+	  	double x = locBCALShowers[j]->x;
+		double y = locBCALShowers[j]->y;
+		double z = locBCALShowers[j]->z;
+		DVector3 pos_bcal(x,y,z);
+		double R = pos_bcal.Perp();
+		locTrackTimeBased[i]->rt->GetIntersectionWithRadius(R, mypos);
+		locTrackTimeBased[i]->momentum().Mag();
+		double dPhi = TMath::Abs(mypos.Phi()-pos_bcal.Phi());
 		double dZ = TMath::Abs(mypos.Z() - z);
 		
-		if(dZ < 30.0 && fabs(dPhi) < 0.18 ) {
+		if(dZ < 30.0 && dPhi < 0.18 && mypos.Perp() == R) {
 		  matchedShowers.push_back(locBCALShowers[j]);
-		  matchedTracks.push_back(locTrackTimeBased[i]);
-		    
+	          matchedTracks.push_back(locTrackTimeBased[i]);
+
 		}
-	      }
-	    }
+
 	  }
 	}
 
    for(unsigned int i = 0 ; i < locTrackTimeBased.size(); ++i)
         {
-	  vector<DTrackFitter::Extrapolation_t>extrapolations=locTrackTimeBased[i]->extrapolations.at(SYS_FCAL);
-	  if (extrapolations.size()>0){  
-	    for(unsigned int j = 0 ; j < locFCALClusters.size(); ++j)
+                for(unsigned int j = 0 ; j < locFCALClusters.size(); ++j)
                 {
-		  const DFCALCluster *c1 = locFCALClusters[j];
-		  double x = c1->getCentroid().X();
-		  double y = c1->getCentroid().Y();
-		  double z = c1->getCentroid().Z();
-		  DVector3 fcalpos(x,y,z);
-		  //cout << " x = " << x << " y = " << y << endl;
-		  DVector3 pos=extrapolations[0].position;
-		  
-		  double diffX = TMath::Abs(x - pos.X());
-		  double diffY = TMath::Abs(y - pos.Y());
-		  if(diffX < 3.0 && diffY < 3.0)
-		    {
-		      matchedFCALClusters.push_back(locFCALClusters[j]);
-		    }
-		}
-	  }
-   
+                        const DFCALCluster *c1 = locFCALClusters[j];
+                        double x = c1->getCentroid().X();
+                        double y = c1->getCentroid().Y();
+                        double z = c1->getCentroid().Z();
+                        DVector3 fcalpos(x,y,z);
+                        //cout << " x = " << x << " y = " << y << endl;
+                        DVector3 norm(0.0,0.0,-1);
+                        DVector3 pos;
+                        locTrackTimeBased[i]->rt->GetIntersectionWithPlane(fcalpos,norm,pos);
+                        double diffX = TMath::Abs(x - pos.X());
+                        double diffY = TMath::Abs(y - pos.Y());
+                        if(diffX < 3.0 && diffY < 3.0)
+                        {
+                             matchedFCALClusters.push_back(locFCALClusters[j]);
+                                                                                                                                                                                                                             }
+                  }
 	}                        
 
  	vector <const DChargedTrackHypothesis*> locParticles;

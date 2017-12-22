@@ -57,8 +57,6 @@ class JEventProcessor_FDCProjectionResiduals:public jana::JEventProcessor{
       int PLANE_TO_SKIP;
       double dMinTrackingFOM;
 
-      const DTrackFitter *fitter;
-
       vector< vector< DCDCWire * > > cdcwires; // CDC Wires Referenced by [ring][straw]
       vector<vector<double> >max_sag;
       vector<vector<double> >sag_phi_offset;
