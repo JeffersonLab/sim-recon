@@ -10,62 +10,18 @@
 
 #include "IUAmpTools/Kinematics.h"
 #include "AMPTOOLS_AMPS/Pi0Regge.h"
-
-#include <CobremsGeneration.hh>
+#include "AMPTOOLS_MCGEN/BeamProperties.h"
 
 Pi0Regge::Pi0Regge( const vector< string >& args ) :
 UserAmplitude< Pi0Regge >( args )
 {
 	assert( args.size() == 1 );
-	// Polarization plane angle (PARA = 0 and PERP = PI/2)
-	PolPlane = atof( args[0].c_str() );
-
-	// Initialize coherent brem table
-	// Do this over the full range since we will be using this as a lookup
-	float Emax  = 12.0;
-	float Epeak = 9.0;
-	float Elow  = 0.135;
-	float Ehigh = 12.0;
 	
-	int doPolFlux=0;  // want total flux (1 for polarized flux)
-	float emitmr=10.e-9; // electron beam emittance
-	float radt=50.e-6; // radiator thickness in m
-	float collDiam=0.005; // meters
-	float Dist = 76.0; // meters
-	CobremsGeneration cobrems(Emax, Epeak);
-	cobrems.setBeamEmittance(emitmr);
-	cobrems.setTargetThickness(radt);
-	cobrems.setCollimatorDistance(Dist);
-	cobrems.setCollimatorDiameter(collDiam);
-	cobrems.setCollimatedFlag(true);
-	cobrems.setPolarizedFlag(doPolFlux);
-	
-	// Create histogram
-	totalFlux_vs_E = new TH1D("totalFlux_vs_E", "Total Flux vs. E_{#gamma}", 1000, Elow, Ehigh);
-	polFlux_vs_E   = new TH1D("polFlux_vs_E", "Polarized Flux vs. E_{#gamma}", 1000, Elow, Ehigh);
-	polFrac_vs_E   = new TH1D("polFrac_vs_E", "Polarization Fraction vs. E_{#gamma}", 1000, Elow, Ehigh);
-
-	// Fill totalFlux
-	for(int i=1;i<=totalFlux_vs_E->GetNbinsX(); i++){
-		double x = totalFlux_vs_E->GetBinCenter(i)/Emax;
-		double y = 0;
-		//if(Epeak<Elow) y = cobrems.Rate_dNidx(x);
-		y = cobrems.Rate_dNtdx(x);
-		totalFlux_vs_E->SetBinContent(i, y);
-	}
-
-	doPolFlux=1;
-	cobrems.setPolarizedFlag(doPolFlux);
-	// Fill totalFlux
-	for(int i=1;i<=polFlux_vs_E->GetNbinsX(); i++){
-		double x = polFlux_vs_E->GetBinCenter(i)/Emax;
-		double y = 0;
-		//if(Epeak<Elow) y = cobrems.Rate_dNidx(x);
-		y = cobrems.Rate_dNcdx(x);
-		polFlux_vs_E->SetBinContent(i, y);
-	}
-	
-	polFrac_vs_E->Divide(polFlux_vs_E, totalFlux_vs_E);
+	// BeamProperties configuration file
+	TString beamConfigFile = args[0].c_str();
+	BeamProperties beamProp(beamConfigFile);
+	polFrac_vs_E = (TH1D*)beamProp.GetPolFrac();
+	polAngle = beamProp.GetPolAngle();
 }
 
 
@@ -86,7 +42,7 @@ Pi0Regge::calcAmplitude( GDouble** pKin ) const {
 	
 	// phi dependence needed for polarized distribution
 	TLorentzVector p1_cm = cmBoost * p1;
-	GDouble phi = p1_cm.Phi() + PolPlane*TMath::Pi()/180.;
+	GDouble phi = p1_cm.Phi() + polAngle*TMath::Pi()/180.;
 	GDouble cos2Phi = cos(2.*phi);
 	
 	// polarization from cobrem.F

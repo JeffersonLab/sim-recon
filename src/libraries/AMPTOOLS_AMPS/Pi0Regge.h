@@ -32,7 +32,7 @@ public:
 	
 private:
 
-	GDouble PolPlane;
+	double polAngle;
 
 	TH1D *totalFlux_vs_E;
 	TH1D *polFlux_vs_E;
