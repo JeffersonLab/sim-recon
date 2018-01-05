@@ -146,7 +146,7 @@ int main( int argc, char* argv[] ){
         else continue;
 
         if (iplot == PlotGenerator::kData) histname += "dat";
-//        if (iplot == PlotGenerator::kBkgnd) histname += "bkgnd";
+        if (iplot == PlotGenerator::kBkgnd) histname += "bkgnd";
         if (iplot == PlotGenerator::kAccMC) histname += "acc";
         if (iplot == PlotGenerator::kGenMC) histname += "gen";
 
