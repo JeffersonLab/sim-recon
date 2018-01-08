@@ -171,7 +171,7 @@
 
       integer openInput, skipInput, openOutput
       external openInput, skipInput, openOutput
-      real beamE0, beamEpeak, beamEmin, radColDist
+      real beamE0, beamEpeak, beamEmin, radColDist, colDiam
       real beamEmit, radThick
       common /beamPars/ beamE0,beamEpeak,beamEmin,radColDist,colDiam,
      +                  beamEmit, radThick
@@ -417,7 +417,7 @@ c        endif
       endif
       if (beamE0 .gt. 0) then
         call cobrems(beamE0,beamEpeak,beamEmit,radThick,
-     +               radColDist,colDiam,1)
+     +               radColDist,colDiam,0)
       elseif (infile(1) .eq. 0) then
         continue    ! single-particle gun (mode 1), ignore background gen.
       elseif (bgrate .gt. 0) then

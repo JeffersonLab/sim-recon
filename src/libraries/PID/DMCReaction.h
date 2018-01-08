@@ -28,7 +28,7 @@ class DMCReaction:public JObject{
 			AddString(items, "type", "%2d", type);
 			AddString(items, "weight", "%3.1f", weight);
 			AddString(items, "mass target(GeV)", "%3.1f", target.mass());
-			AddString(items, "energy beam(GeV/c^2)", "%3.1f", beam.energy());
+			AddString(items, "energy beam(GeV/c^2)", "%f", beam.energy());
 		}
 
 	protected:

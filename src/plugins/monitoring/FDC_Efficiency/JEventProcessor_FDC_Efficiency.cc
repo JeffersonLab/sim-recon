@@ -249,9 +249,9 @@ jerror_t JEventProcessor_FDC_Efficiency::evnt(JEventLoop *loop, uint64_t eventnu
   }
   
   const DDetectorMatches *detMatches;
-  vector<DSCHitMatchParams> SCMatches;
-  vector<DTOFHitMatchParams> TOFMatches;
-  vector<DBCALShowerMatchParams> BCALMatches;
+  vector<shared_ptr<const DSCHitMatchParams>> SCMatches;
+  vector<shared_ptr<const DTOFHitMatchParams>> TOFMatches;
+  vector<shared_ptr<const DBCALShowerMatchParams>> BCALMatches;
 
   if(!dIsNoFieldFlag){
     loop->GetSingle(detMatches);
@@ -265,9 +265,7 @@ jerror_t JEventProcessor_FDC_Efficiency::evnt(JEventLoop *loop, uint64_t eventnu
     const DChargedTrackHypothesis* bestHypothesis = chargedTrackVector[iTrack]->Get_BestTrackingFOM();
 
     // Cut very loosely on the track quality
-    const DTrackTimeBased *thisTimeBasedTrack;
-
-    bestHypothesis->GetSingle(thisTimeBasedTrack);
+	auto thisTimeBasedTrack = bestHypothesis->Get_TrackTimeBased();
 
     // First loop over the FDC/CDC hits of the track to find out how many cells/rings were hit
     // For the first track selection, use already pseudo hits from fdc
@@ -377,8 +375,17 @@ jerror_t JEventProcessor_FDC_Efficiency::evnt(JEventLoop *loop, uint64_t eventnu
       // Interpolate track to layer
       DVector3 plane_origin(0.0, 0.0, fdcz[cellIndex]);
       DVector3 plane_normal(0.0, 0.0, 1.0);
-      DVector3 interPosition;
-      thisTimeBasedTrack->rt->GetIntersectionWithPlane(plane_origin, plane_normal, interPosition);
+      DVector3 interPosition,trackDirection;
+      vector<DTrackFitter::Extrapolation_t>extrapolations=thisTimeBasedTrack->extrapolations.at(SYS_FDC);
+      for (unsigned int i=0;i<extrapolations.size();i++){
+	double dz=plane_origin.z()-extrapolations[i].position.z();
+	if (fabs(dz)<0.5){
+	  trackDirection=extrapolations[i].momentum;
+	  trackDirection.SetMag(1.);
+	  interPosition=extrapolations[i].position;
+	  break;
+	}
+      }
       
       // cut out central hole and intersections at too large radii
       int packageIndex = (cellNum - 1) / 6;
@@ -390,8 +397,9 @@ jerror_t JEventProcessor_FDC_Efficiency::evnt(JEventLoop *loop, uint64_t eventnu
       for (unsigned int wireIndex = 0; wireIndex < wireByNumber.size(); wireIndex++){
 	unsigned int wireNum = wireIndex+1;
 	DFDCWire * wire = wireByNumber[wireIndex]; 
-	double wireLength = wire->L;
-	double distanceToWire = thisTimeBasedTrack->rt->DistToRT(wire, &wireLength);
+	double dz=wire->origin.z()-interPosition.z();
+	interPosition+=(dz/trackDirection.z())*trackDirection;
+	double distanceToWire =  (interPosition-wire->origin).Perp();
 	bool expectHit = false;
 
 	// starting from here, only histograms with distance to wire < 0.5, maybe change later

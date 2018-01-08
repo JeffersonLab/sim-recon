@@ -1,30 +1,30 @@
 /*
  * hddmInput  - functions to handle Monte Carlo generator input to HDGeant
- *		through the standard hddm i/o mechanism.
+ *              through the standard hddm i/o mechanism.
  *
  * Interface:
- *	openInput(filename) - open input stream to file <filename>
- *	skipInput(count) - skip next <count> events on open input file
+ *      openInput(filename) - open input stream to file <filename>
+ *      skipInput(count) - skip next <count> events on open input file
  *      nextInput() - advance to next event on open input stream
  *      loadInput() - push current input event to Geant kine structures
  *      storeInput() - pop current input event from Geant kine structures
- *	closeInput() - close currently open input stream
+ *      closeInput() - close currently open input stream
  *
  * Richard Jones
  * University of Connecticut
  * July 13, 2001
  *
  * Usage Notes:
- * 1)	Most Monte Carlo generators do not care where the vertex is placed
- *	inside the target, and specify only the final-state particles'
- *	momenta.  In this case the vertex position has to be randomized by
- *	the simulation within the beam/target overlap volume.  If the vertex
- *	position from the generator is (0,0,0) then the simulation vertex is
- *	generated uniformly inside the cylinder specified by TARGET_LENGTH,
- *	BEAM_DIAMETER, and TARGET_CENTER defined below.
- * 2)   The start time for the event in HDGeant is defined to be the
- *      instant the beam photon passes through the midplane of the target,
- *      or would have passed through the midplane if it had gotten that far.
+ * 1) Most Monte Carlo generators do not care where the vertex is placed
+ *    inside the target, and specify only the final-state particles'
+ *    momenta.  In this case the vertex position has to be randomized by
+ *    the simulation within the beam/target overlap volume.  If the vertex
+ *    position from the generator is (0,0,0) then the simulation vertex is
+ *    generated uniformly inside the cylinder specified by TARGET_LENGTH,
+ *    BEAM_DIAMETER, and TARGET_CENTER defined below.
+ * 2) The start time for the event in HDGeant is defined to be the
+ *    instant the beam photon passes through the midplane of the target,
+ *    or would have passed through the midplane if it had gotten that far.
  *
  * Revision history:
  *
@@ -34,21 +34,21 @@
  * cleaner printing.
  *
  * > Nov 17, 2006 - Richard Jones
- * 	Added code to load_event that sets the Geant tofg parameter so
+ *      Added code to load_event that sets the Geant tofg parameter so
  *      that the start time of the event conforms to note (2) above.
  * 
  * > Apr 10, 2006 - David Lawrence
- *	Added comments to explain a little what each of these routines is 
- *	doing.  No functional changes.
+ *      Added comments to explain a little what each of these routines is 
+ *      doing.  No functional changes.
  *
  * >  Dec 15, 2004 - Richard Jones
- *	Changed former behaviour of simulation to overwrite the vertex
- *	coordinates from the input record, if the simulation decides to
- *	override the input values.  At present this happens whenever the
+ *      Changed former behaviour of simulation to overwrite the vertex
+ *      coordinates from the input record, if the simulation decides to
+ *      override the input values.  At present this happens whenever the
  *      input record specifies 0,0,0 for the vertex, but in the future it
- * 	may be decided to let the simulator determine the vertex position
- *	in other cases.  Since it is not part of the simulation proper, the
- *	decision was made to store this information in the reaction tag.
+ *      may be decided to let the simulator determine the vertex position
+ *      in other cases.  Since it is not part of the simulation proper, the
+ *      decision was made to store this information in the reaction tag.
  */
 
 #define TARGET_LENGTH 29.9746
@@ -96,7 +96,7 @@ int extractRunNumber(int *runNo) {
  */
 int openInput (char* filename)
 {
-	/* Open HDDM file for reading in "thrown" particle kinematics */
+   /* Open HDDM file for reading in "thrown" particle kinematics */
    thisInputStream = open_s_HDDM(filename);
    return (thisInputStream == 0);
 }
@@ -116,13 +116,13 @@ int skipInput (int count)
  */
 int nextInput ()
 {
-	/* Read in the next HDDM event. This only reads it into the
-	 * HDDM buffer "thisInputEvent" and does not yet define the
-	 * particles to GEANT. See loadInput for that.
-	 */
+   /* Read in the next HDDM event. This only reads it into the
+    * HDDM buffer "thisInputEvent" and does not yet define the
+    * particles to GEANT. See loadInput for that.
+    */
    if (thisInputStream == 0)
    {
-      return 9;		/* input stream was never opened */
+      return 9;     /* input stream was never opened */
    }
    else if (thisInputEvent)
    {
@@ -138,16 +138,18 @@ int nextInput ()
  */
 int loadInput (int override_run_number, int myInputRunNo)
 {
-	/* Extracts the "thrown" particle 4-vectors and types from the
-	 * current HDDM buffer "thisInputEvent" and creates a vertex for
-	 * them (gsvert) and defines the GEANT (gskine) for tracking.
-	 */
+   /* Extracts the "thrown" particle 4-vectors and types from the
+    * current HDDM buffer "thisInputEvent" and creates a vertex for
+    * them (gsvert) and defines the GEANT (gskine) for tracking.
+    */
    s_Reactions_t* reacts;
    int reactCount, ir;
    int runNo = (override_run_number>0)?(myInputRunNo):thisInputEvent->physicsEvents->in[0].runNo;
    int eventNo = thisInputEvent->physicsEvents->in[0].eventNo;
    seteventid_(&runNo,&eventNo);
    reacts = thisInputEvent ->physicsEvents->in[0].reactions;
+   if (reacts == 0)
+      return 1;
    reactCount = reacts->mult;
    for (ir = 0; ir < reactCount; ir++)
    {
@@ -209,34 +211,34 @@ int loadInput (int override_run_number, int myInputRunNo)
             v[0] = 1;
             v[1] = 1;
             v[2] = TARGET_CENTER;
-	    while (v[0]*v[0] + v[1]*v[1] > 0.25)
+            while (v[0]*v[0] + v[1]*v[1] > 0.25)
             {
-	       int len = 3;
+               int len = 3;
                grndm_(v,&len);
                v[0] -= 0.5;
                v[1] -= 0.5;
-	       v[2] -= 0.5;
+               v[2] -= 0.5;
             }
-	    // kludge to include air and FDC gas in addition to plastic target
-	    /*
-	    int done=0;
-	    while (!done){
-	      int len=2;
-	      float myrand[2];
-	      float maxweight=1.2;
-	      float myweight=0.001205;
-	      grndm_(myrand,&len);
-	      
-	      v[2]=-336.7+953.1*myrand[0];
-	      if (v[2]<-336.3825) myweight=1.2;
-	      if (v[2]>64.9 && v[2]<65.1) myweight=1.0;
-	      if ((v[2]>174.4&&v[2]<188.4) || (v[2]>232.6 && v[2]<246.6)
-		  || (v[2]>291.2&&v[2]<305.2) || (v[2]>329.5 && v[2]<343.5))
-		myweight=0.001753;
-		  
-	      if (myweight/maxweight>myrand[1]) done=1;
-	    }
-	    */
+    // kludge to include air and FDC gas in addition to plastic target
+    /*
+       int done=0;
+       while (!done){
+         int len=2;
+         float myrand[2];
+         float maxweight=1.2;
+         float myweight=0.001205;
+         grndm_(myrand,&len);
+ 
+         v[2]=-336.7+953.1*myrand[0];
+         if (v[2]<-336.3825) myweight=1.2;
+         if (v[2]>64.9 && v[2]<65.1) myweight=1.0;
+         if ((v[2]>174.4&&v[2]<188.4) || (v[2]>232.6 && v[2]<246.6)
+             || (v[2]>291.2&&v[2]<305.2) || (v[2]>329.5 && v[2]<343.5))
+            myweight=0.001753;
+  
+         if (myweight/maxweight>myrand[1]) done=1;
+       }
+    */
             v[0] *= BEAM_DIAMETER;
             v[1] *= BEAM_DIAMETER;
             v[2] *= TARGET_LENGTH;
@@ -257,18 +259,18 @@ int loadInput (int override_run_number, int myInputRunNo)
             Particle_t kind;
             s_Product_t* prod = &prods->in[ip];
             kind = prod->type;
-				
-	    /* Don't tell geant to track particles that are intermediary types */
-	    if (kind <= 0)
-              continue;
-				
+
+            /* Don't tell geant to track particles that are intermediary types */
+            if (kind <= 0)
+               continue;
+
             p[0] = prod->momentum->px;
             p[1] = prod->momentum->py;
             p[2] = prod->momentum->pz;
             if (prod->decayVertex == 0)
             {
                gskine_(p, &kind, &nvtx, &ubuf, &nubuf, &ntrk);
-	       gidSet(ntrk, ip + 1);
+               gidSet(ntrk, ip + 1);
             }
          }
       }
@@ -282,13 +284,13 @@ int loadInput (int override_run_number, int myInputRunNo)
  */
 int storeInput (int runNo, int eventNo, int ntracks)
 {
-	/* This is called by the built-in generators (coherent brem. and
-	 * single track) in order to store the "thrown" particle parameters
-	 * in the output HDDM file. What this actually does is free the 
-	 * input buffer "thisInputEvent" if it exists and creates a new
-	 * one. When an external generator is used, the thisInputEvent
-	 * buffer is kept unmodified and this routine is never called.
-         */
+    /* This is called by the built-in generators (coherent brem. and
+     * single track) in order to store the "thrown" particle parameters
+     * in the output HDDM file. What this actually does is free the 
+     * input buffer "thisInputEvent" if it exists and creates a new
+     * one. When an external generator is used, the thisInputEvent
+     * buffer is kept unmodified and this routine is never called.
+     */
    s_PhysicsEvents_t* pes;
    s_Reactions_t* rs;
    s_Vertices_t* vs;
@@ -344,11 +346,11 @@ int storeInput (int runNo, int eventNo, int ntracks)
          ps->mult = 0;
       }
       ps->in[ps->mult].type = kind;
-      ps->in[ps->mult].pdgtype = 0;	/* don't bother with the PDG type here */
-      ps->in[ps->mult].id = itra;	/* unique value for this particle within the event */
-      gidSet(itra, itra);	        /* assume same value for geant id */
-      ps->in[ps->mult].parentid = 0;	/* All internally generated particles have no parent */
-      ps->in[ps->mult].mech = 0;	/* maybe this should be set to something? */
+      ps->in[ps->mult].pdgtype = 0; /* don't bother with the PDG type here */
+      ps->in[ps->mult].id = itra;   /* unique value for this particle within the event */
+      gidSet(itra, itra);           /* assume same value for geant id */
+      ps->in[ps->mult].parentid = 0;/* All internally generated particles have no parent */
+      ps->in[ps->mult].mech = 0;    /* maybe this should be set to something? */
       ps->in[ps->mult].momentum = make_s_Momentum();
       ps->in[ps->mult].momentum->px = plab[0];
       ps->in[ps->mult].momentum->py = plab[1];
@@ -368,14 +370,14 @@ int storeInput (int runNo, int eventNo, int ntracks)
  */
 int storeBeam (float vect[7], float t0)
 {
-	/* This is called from gukine in the case where the user wants to
-	 * halt simulation and save the present (single) track in the
-	 * Monte Carlo reactions header, perhaps for simulation later.
-	 * The original vertex information is moved into the beam tag
-	 * and then overwritten with the state of the current track.
-	 * This function assumes that storeInput has already been called
-	 * at least once for this event.
-     */
+   /* This is called from gukine in the case where the user wants to
+    * halt simulation and save the present (single) track in the
+    * Monte Carlo reactions header, perhaps for simulation later.
+    * The original vertex information is moved into the beam tag
+    * and then overwritten with the state of the current track.
+    * This function assumes that storeInput has already been called
+    * at least once for this event.
+    */
 
    s_PhysicsEvents_t* pes;
    s_Reactions_t* rs;
@@ -434,7 +436,7 @@ int storeBeam (float vect[7], float t0)
       or->vz = vect[2];
       or->t = t0 * 1e9;
       ps->in[ilast].type = kind;
-      ps->in[ilast].pdgtype = 22;	/* assume a beam photon */
+      ps->in[ilast].pdgtype = 22;   /* assume a beam photon */
       ps->in[ilast].id = itra;
       ps->in[ilast].parentid = 0;
       ps->in[ilast].mech = 0;
@@ -453,28 +455,34 @@ int storeBeam (float vect[7], float t0)
  */
 int getseeds_(int *iseed1, int *iseed2)
 {
-	/* This checks to see if thisInputStream already
-	   contains random number seeds for this event. If
-	   it does, then those values are copied into the
-	   iseed1 and iseed2 variables. If not, then the
-	   contents of iseed1 and iseed2 are left unchanged.
-	*/
-	if(thisInputEvent == NULL)return 0;
-	if(thisInputEvent->physicsEvents == NULL)return 0;
-	if(thisInputEvent->physicsEvents->mult<1)return 0;
-	s_PhysicsEvent_t *pe = &thisInputEvent->physicsEvents->in[0];
-	if(pe->reactions == NULL)return 0;
-	if(pe->reactions->mult<1)return 0;
-	s_Random_t *rnd = pe->reactions->in[0].random;
-	if(rnd == NULL || rnd==HDDM_NULL){
-		/* No seeds stored in event. Return */
-		return 0;
-	}else{
-		/* Seeds found in event, copy them back to caller for use */
-		*iseed1 = rnd->seed1;
-		*iseed2 = rnd->seed2;
-		return 1;
-	}
+   /* This checks to see if thisInputStream already
+      contains random number seeds for this event. If
+      it does, then those values are copied into the
+      iseed1 and iseed2 variables. If not, then the
+      contents of iseed1 and iseed2 are left unchanged.
+   */
+   if (thisInputEvent == NULL)
+      return 0;
+   if (thisInputEvent->physicsEvents == NULL)
+      return 0;
+   if (thisInputEvent->physicsEvents->mult < 1)
+      return 0;
+   s_PhysicsEvent_t *pe = &thisInputEvent->physicsEvents->in[0];
+   if (pe->reactions == NULL)
+      return 0;
+   if (pe->reactions->mult < 1)
+      return 0;
+   s_Random_t *rnd = pe->reactions->in[0].random;
+   if (rnd == NULL || rnd == HDDM_NULL) {
+      /* No seeds stored in event. Return */
+      return 0;
+   }
+   else {
+      /* Seeds found in event, copy them back to caller for use */
+      *iseed1 = rnd->seed1;
+      *iseed2 = rnd->seed2;
+      return 1;
+   }
 }
 
 /*-------------------------
@@ -483,28 +491,33 @@ int getseeds_(int *iseed1, int *iseed2)
  */
 int storeseeds_(int *iseed1, int *iseed2)
 {
-	/* This copies the given seed values into
-	   thisInputStream, overwriting any values that
-	   already exist there.
-	*/
-	if(thisInputEvent == NULL)return 0;
-	if(thisInputEvent->physicsEvents == NULL)return 0;
-	if(thisInputEvent->physicsEvents->mult<1)return 0;
-	s_PhysicsEvent_t *pe = &thisInputEvent->physicsEvents->in[0];
-	if(pe->reactions == NULL)return 0;
-	if(pe->reactions->mult<1)return 0;
-	s_Random_t *rnd = pe->reactions->in[0].random;
-	if(rnd == NULL || rnd==HDDM_NULL){
-		/* No seeds stored in event. Add them */
-		rnd = pe->reactions->in[0].random = make_s_Random();
-		rnd->seed3 = 709975946 + pe->eventNo;
-		rnd->seed4 = 912931182 + pe->eventNo;
-	}
+   /* This copies the given seed values into
+      thisInputStream, overwriting any values that
+      already exist there.
+   */
+   if (thisInputEvent == NULL)
+      return 0;
+   if (thisInputEvent->physicsEvents == NULL)
+      return 0;
+   if (thisInputEvent->physicsEvents->mult < 1)
+      return 0;
+   s_PhysicsEvent_t *pe = &thisInputEvent->physicsEvents->in[0];
+   if (pe->reactions == NULL)
+      return 0;
+   if (pe->reactions->mult < 1)
+      return 0;
+   s_Random_t *rnd = pe->reactions->in[0].random;
+   if (rnd == NULL || rnd == HDDM_NULL) {
+      /* No seeds stored in event. Add them */
+      rnd = pe->reactions->in[0].random = make_s_Random();
+      rnd->seed3 = 709975946 + pe->eventNo;
+      rnd->seed4 = 912931182 + pe->eventNo;
+   }
 
-	rnd->seed1 = *iseed1;
-	rnd->seed2 = *iseed2;
-	
-	return 0;
+   rnd->seed1 = *iseed1;
+   rnd->seed2 = *iseed2;
+
+   return 0;
 }
 
 /*-------------------------
@@ -513,7 +526,7 @@ int storeseeds_(int *iseed1, int *iseed2)
  */
 int closeInput ()
 {
-	/* Close the HDDM input file */
+   /* Close the HDDM input file */
    if (thisInputStream)
    {
       close_s_HDDM(thisInputStream);

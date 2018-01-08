@@ -10,20 +10,23 @@
 
 #include <iostream>
 #include <iomanip>
+#include <sstream>
 
-#include <JANA/JFactory.h>
-#include <ANALYSIS/DReaction.h>
-#include <ANALYSIS/DHistogramActions.h>
-#include <ANALYSIS/DCutActions.h>
-
-#include "DCustomAction_dEdxCut.h"
-#include "FSInfo.h"
+#include "JANA/JFactory.h"
+#include "ANALYSIS/DReaction.h"
+#include "ANALYSIS/DHistogramActions.h"
+#include "ANALYSIS/DCutActions.h"
+#include "ANALYSIS/DSourceComboP4Handler.h"
+#include "ANALYSIS/DSourceComboTimeHandler.h"
 
 using namespace std;
 using namespace jana;
 
 class DReaction_factory_ReactionFilter : public jana::JFactory<DReaction>
 {
+	//return tuple: initial pid, target/2nd-beam pid, detected final pids, missing final pid (if any), missing particle index
+	using DReactionStepTuple = tuple<Particle_t, Particle_t, vector<Particle_t>, Particle_t, int>;
+
 	public:
 		DReaction_factory_ReactionFilter()
 		{
@@ -33,35 +36,33 @@ class DReaction_factory_ReactionFilter : public jana::JFactory<DReaction>
 		const char* Tag(void){return "ReactionFilter";}
 
 	private:
-		jerror_t init(void);
-		jerror_t brun(JEventLoop* locEventLoop, int32_t locRunNumber);
+		bool dDebugFlag = false;
+
 		jerror_t evnt(JEventLoop* locEventLoop, uint64_t locEventNumber);
-		jerror_t fini(void);						///< Called after last event of last event source has been processed.
 
-		// Create Reaction Steps
-		void Create_FirstStep(DReaction* locReaction, FSInfo* locFSInfo);
-		void Create_DecaySteps(DReaction* locReaction, FSInfo* locFSInfo);
-		void Create_DecayStep(DReaction* locReaction, FSInfo* locFSInfo, Particle_t locPID);
+		//UTILITY FUNCTIONS
+		map<size_t, tuple<string, string, string, vector<string>>> Parse_Input(void);
+		bool Convert_StringToPID(string locString, Particle_t& locPID, bool& locIsMissingFlag);
+		bool Parse_StepPIDString(string locStepString, DReactionStepTuple& locStepTuple);
+		string Create_StepNameString(const DReactionStepTuple& locStepTuple, bool locFirstStepFlag);
 
-		// Actions & cuts
-		void Define_LooseCuts(void);
-		void Add_PreComboCuts(DReaction* locReaction, FSInfo* locFSInfo);
-		void Add_PIDActions(DReaction* locReaction);
-		void Add_MassHistograms(DReaction* locReaction, FSInfo* locFSInfo, bool locUseKinFitResultsFlag, string locBaseUniqueName = "");
+		//CUSTOMIZATION FUNCTIONS
+		void Set_Flags(DReaction* locReaction, string locRemainingFlagString);
+		DReactionStep* Create_DefaultDecayStep(Particle_t locPID);
 
-		// User-input channels
-		deque<FSInfo*> dFSInfos;
+		//CREATION FUNCTIONS
+		void Create_Steps(DReaction* locReaction, DReactionStep* locCurrentStep, vector<DReactionStepTuple>& locDecayStepTuples);
+		vector<DReaction*> Create_Reactions(const map<size_t, tuple<string, string, string, vector<string>>>& locInputStrings);
+		DReactionStep* Create_ReactionStep(const DReactionStepTuple& locStepTuple);
 
-		// Keep track of DReactionSteps that have been created for decaying particles
-		// These can be re-used between DReactions, allowing the analysis library to save memory for combo steps
-		map<pair<Particle_t, bool>, set<DReactionStep*> > dDecayStepMap_All; //bool: true for mass constrained by kinfit, false if not
+		//ACTIONS
+		void Add_MassHistograms(DReaction* locReaction, bool locUseKinFitResultsFlag, string locBaseUniqueName = "");
+		void Create_InvariantMassHistogram(DReaction* locReaction, Particle_t locPID, bool locUseKinFitResultsFlag, string locBaseUniqueName);
+		void Create_MissingMassSquaredHistogram(DReaction* locReaction, Particle_t locPID, bool locUseKinFitResultsFlag, string locBaseUniqueName, int locMissingMassOffOfStepIndex, const deque<Particle_t>& locMissingMassOffOfPIDs);
+		void Add_PostKinfitTimingCuts(DReaction* locReaction);
 
-		// Cuts
-		map<Particle_t, pair<double, double> > dMissingMassCuts; //Unknown = none missing //if negative, uses missing mass squared instead
-		map<Particle_t, pair<double, double> > dInvariantMassCuts;
-		map<Particle_t, map<DetectorSystem_t, double> > dPIDTimingCuts;
-
-		double dBeamBunchPeriod;
+		DSourceComboP4Handler* dSourceComboP4Handler = nullptr;
+		DSourceComboTimeHandler* dSourceComboTimeHandler = nullptr;
 		deque<DReactionStep*> dReactionStepPool; //to prevent memory leaks
 };
 

@@ -38,6 +38,7 @@ int QUIT = 0;
 
 std::map<hddm_s::istream*,double> files2merge;
 std::map<hddm_s::istream*,hddm_s::streamposition> start2merge;
+std::map<hddm_s::istream*,int> skip2merge;
 
 using namespace jana;
 
@@ -96,6 +97,7 @@ void ParseCommandLineArguments(int narg, char* argv[], mcsmear_config_t *config)
           case 'd': config->DROP_TRUTH_HITS=true;                break;
           case 'D': config->DUMP_RCDB_CONFIG=true;               break;
           case 'e': config->APPLY_EFFICIENCY_CORRECTIONS=false;  break;
+          case 'E': config->FCAL_ADD_LIGHTGUIDE_HITS=true;       break;
 
 	      // BCAL parameters
           case 'G': config->BCAL_NO_T_SMEAR = true;              break;
@@ -103,22 +105,30 @@ void ParseCommandLineArguments(int narg, char* argv[], mcsmear_config_t *config)
           case 'K': config->BCAL_NO_SAMPLING_FLUCTUATIONS = true; break;
           case 'L': config->BCAL_NO_SAMPLING_FLOOR_TERM = true;  break;
           case 'M': config->BCAL_NO_POISSON_STATISTICS = true;   break;
+	  case 'S': config->BCAL_NO_FADC_SATURATION = true;      break;
          }
       }
       else {
          std::string filename(ptr);
          size_t colon = filename.find_first_of(":");
          if (colon != filename.npos) {
-            std::ifstream *ifs = new std::ifstream(filename.substr(0, colon));
             double wgt = std::stod(filename.substr(colon + 1));
-            size_t decimal = filename.substr(colon + 1).find_first_of(".");
+            size_t plus = filename.substr(colon + 1).find_first_of("+");
+            size_t decimal = filename.substr(colon + 1, plus).find_first_of(".");
             if (decimal != filename.npos) // distinguish float from int
                wgt += 1e-10;
-            hddm_s::istream *istr = new hddm_s::istream(*ifs);
-            files2merge[istr] = wgt;
+            int skip = 0;
+            if (plus != filename.npos)
+               skip = std::stoi(filename.substr(colon + plus + 1));
+            std::ifstream fin(filename.substr(0, colon));
+            hddm_s::istream stin(fin);
             hddm_s::HDDM record;
-            *istr >> record;
-            start2merge[istr] = istr->getPosition();
+            stin >> record;
+            std::ifstream *ifs = new std::ifstream(filename.substr(0, colon));
+            hddm_s::istream *istr = new hddm_s::istream(*ifs);
+            start2merge[istr] = stin.getPosition();
+            files2merge[istr] = wgt;
+            skip2merge[istr] = skip;
             std::fill(ptr, ptr + strlen(ptr), '-');
             continue;
          }
@@ -154,12 +164,25 @@ void ParseCommandLineArguments(int narg, char* argv[], mcsmear_config_t *config)
 void Usage(void)
 {
    cout << endl << "Usage:" << endl;
-   cout << "     mcsmear [options] file.hddm" << endl;
+   cout << "     mcsmear [options] file.hddm [noise1.hddm:<N1> [...] ]" << endl;
    cout << endl;
-   cout << " Read the given, Geant-produced HDDM file as input and smear" << endl;
+   cout << "Read the given, Geant-produced HDDM file as input and smear" << endl;
    cout << "the truth values for \"hit\" data before writing out to a" << endl;
    cout << "separate file. The truth values for the thrown particles are" << endl;
-   cout << "not changed. Noise hits can also be added using the -n option (deprecated for the moment)." << endl;
+   cout << "not changed. Noise hits can also be added appending additional" << endl;
+   cout << "input hddm files after the primary input file, denoted above" << endl;
+   cout << "as noise1.hddm:<N1>. Each event in the primary input file will" << endl;
+   cout << "be merged at hits level with <N1> events from the first listed" << endl;
+   cout << "noise file, <N2> events from the second noise file, and so on" << endl;
+   cout << "for as many noise files as are listed. If the pileup factor <N>" << endl;
+   cout << "is a float (contains a decimal point) then the number of events" << endl;
+   cout << "from the noise file that get merged into each event in the" << endl;
+   cout << "primary input file is generated at random from a Poisson" << endl;
+   cout << "distribution with a mean of <N>. When all of the input events" << endl;
+   cout << "in any of the noise files are exhausted, the file is opened" << endl;
+   cout << "again and reading of noise events restarts from the beginning" << endl;
+   cout << "of the file. If you want to skip S events at the beginning of" << endl;
+   cout << "the noise file at startup, append \"+S\" to the <N> argument." << endl;
    cout << "Note that all smearing is done using Gaussians." << endl;
    cout << endl;
    cout << "  options:" << endl;
@@ -192,6 +215,7 @@ void Usage(void)
    cout << "    -K       Don't apply BCAL sampling fluctuations (def. apply)" << endl;
    cout << "    -L       Don't apply BCAL sampling floor term (def. apply)" << endl;
    cout << "    -M       Don't apply BCAL Poisson statistics (def. apply)" << endl;
+   cout << "    -S       Don't apply BCAL fADC saturation (def. apply)" << endl;
  //  cout << "    -f#      TOF sigma in psec (def: " <<  TOF_SIGMA/k_psec << ")" << endl;
    cout << "    -h       Print this usage statement." << endl;
    cout << endl;

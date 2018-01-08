@@ -1,0 +1,6 @@
+
+
+Import('*')
+
+SConscript(dirs=['HallBTCS'], exports='env osname', duplicate=0)
+

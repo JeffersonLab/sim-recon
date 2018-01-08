@@ -31,7 +31,8 @@ class DMCThrownMatching : public JObject
 		JOBJECT_PUBLIC(DMCThrownMatching);
 
 		//GETTERS: INDIVIDUAL PARTICLES
-		const DBeamPhoton* Get_ReconMCGENBeamPhoton(void) const{return dReconMCGENBeamPhoton;}
+		const DBeamPhoton* Get_TaggedMCGENBeamPhoton(void) const{return dTaggedMCGENBeamPhoton;}
+		const DBeamPhoton* Get_MCGENBeamPhoton(void) const{return dMCGENBeamPhoton;}
 
 		//the below two functions return the hypothesis with PID = MC PID. if not available, returns one with best PID FOM
 		const DChargedTrackHypothesis* Get_MatchingChargedHypothesis(const DMCThrown* locInputMCThrown, double& locMatchFOM) const;
@@ -111,7 +112,8 @@ class DMCThrownMatching : public JObject
 		inline void Set_BeamPhotonToTruthMap(map<const DBeamPhoton*, const DBeamPhoton*>& locBeamPhotonToTruthMap){dBeamPhotonToTruthMap = locBeamPhotonToTruthMap;}
 		inline void Set_BeamTruthToPhotonMap(map<const DBeamPhoton*, const DBeamPhoton*>& locBeamTruthToPhotonMap){dBeamTruthToPhotonMap = locBeamTruthToPhotonMap;}
 
-		inline void Set_ReconMCGENBeamPhoton(const DBeamPhoton* locBeamPhoton){dReconMCGENBeamPhoton = locBeamPhoton;}
+		inline void Set_TaggedMCGENBeamPhoton(const DBeamPhoton* locBeamPhoton){dTaggedMCGENBeamPhoton = locBeamPhoton;}
+		inline void Set_MCGENBeamPhoton(const DBeamPhoton* locBeamPhoton){dMCGENBeamPhoton = locBeamPhoton;}
 
 	private:
 
@@ -140,7 +142,8 @@ class DMCThrownMatching : public JObject
 		map<const DBeamPhoton*, const DBeamPhoton*> dBeamPhotonToTruthMap;
 		map<const DBeamPhoton*, const DBeamPhoton*> dBeamTruthToPhotonMap;
 
-		const DBeamPhoton* dReconMCGENBeamPhoton; //the reconstructed photon that matches the MCGEN photon
+		const DBeamPhoton* dMCGENBeamPhoton; //the generated photon that caused the event
+		const DBeamPhoton* dTaggedMCGENBeamPhoton; //the reconstructed photon that matches the MCGEN photon
 };
 
 inline const DBeamPhoton* DMCThrownMatching::Get_MatchingReconPhoton(const DBeamPhoton* locTruthBeamPhoton) const
@@ -202,7 +205,7 @@ inline const DChargedTrackHypothesis* DMCThrownMatching::Get_MatchingChargedHypo
 			return locHypotheses[loc_i];
 		if(locBestHypothesis == NULL)
 			locBestHypothesis = locHypotheses[loc_i];
-		else if(locHypotheses[loc_i]->dFOM > locBestHypothesis->dFOM)
+		else if(locHypotheses[loc_i]->Get_FOM() > locBestHypothesis->Get_FOM())
 			locBestHypothesis = locHypotheses[loc_i];
 	}
 	return locBestHypothesis;
@@ -223,7 +226,7 @@ inline const DNeutralParticleHypothesis* DMCThrownMatching::Get_MatchingNeutralH
 			return locHypotheses[loc_i];
 		if(locBestHypothesis == NULL)
 			locBestHypothesis = locHypotheses[loc_i];
-		else if(locHypotheses[loc_i]->dFOM > locBestHypothesis->dFOM)
+		else if(locHypotheses[loc_i]->Get_FOM() > locBestHypothesis->Get_FOM())
 			locBestHypothesis = locHypotheses[loc_i];
 	}
 	return locBestHypothesis;
@@ -272,11 +275,20 @@ inline const DMCThrown* DMCThrownMatching::Get_MatchingMCThrown(const DChargedTr
 
 inline const DMCThrown* DMCThrownMatching::Get_MatchingMCThrown(const DChargedTrack* locChargedTrack, double& locMatchFOM) const
 {
-	map<const DChargedTrack*, pair<const DMCThrown*, double> >::const_iterator locIterator = dChargedToThrownMap.find(locChargedTrack);
-	if(locIterator == dChargedToThrownMap.end())
+	auto locIterator = dChargedToThrownMap.find(locChargedTrack);
+	if(locIterator != dChargedToThrownMap.end())
+	{
+		locMatchFOM = locIterator->second.second;
+		return locIterator->second.first;
+	}
+
+	//See if there's an associated charged track (e.g. input is "Combo" factory charged track, but matching done with default-factory objects
+	vector<const DChargedTrack*> locAssocTracks;
+	locChargedTrack->Get(locAssocTracks);
+	if(locAssocTracks.empty())
 		return NULL;
-	locMatchFOM = locIterator->second.second;
-	return locIterator->second.first;
+
+	return Get_MatchingMCThrown(locAssocTracks[0], locMatchFOM);
 }
 
 inline const DMCThrown* DMCThrownMatching::Get_MatchingMCThrown(const DNeutralParticleHypothesis* locNeutralParticleHypothesis, double& locMatchFOM) const
@@ -288,17 +300,15 @@ inline const DMCThrown* DMCThrownMatching::Get_MatchingMCThrown(const DNeutralPa
 		return locIterator->second.first;
 	}
 
-	const DNeutralShower* locAssociatedNeutralShower_Input = NULL;
-	locNeutralParticleHypothesis->GetSingle(locAssociatedNeutralShower_Input);
+	const DNeutralShower* locAssociatedNeutralShower_Input = locNeutralParticleHypothesis->Get_NeutralShower();
 	if(locAssociatedNeutralShower_Input == NULL)
 		return NULL;
 
 	//look for a particle with the same source object
 	map<const DNeutralParticle*, pair<const DMCThrown*, double> >::const_iterator locParticleIterator;
-	const DNeutralShower* locAssociatedNeutralShower_Check = NULL;
 	for(locParticleIterator = dNeutralToThrownMap.begin(); locParticleIterator != dNeutralToThrownMap.end(); ++locParticleIterator)
 	{
-		locParticleIterator->first->GetSingle(locAssociatedNeutralShower_Check);
+		auto locAssociatedNeutralShower_Check = locParticleIterator->first->dNeutralShower;
 		if(locAssociatedNeutralShower_Check->dShowerID == locAssociatedNeutralShower_Input->dShowerID)
 		{
 			locMatchFOM = locParticleIterator->second.second;

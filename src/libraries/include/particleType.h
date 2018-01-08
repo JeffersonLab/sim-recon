@@ -50,9 +50,10 @@ typedef enum {
   AntiXiPlus     = 31,
   AntiOmegaPlus  = 32,
   Deuteron       = 45,
+  Triton         = 46,
   Helium         = 47,
   Geantino       = 48,
-  Triton         = 49,
+  He3            = 49,
   
   Pb208          = 111,
 
@@ -111,6 +112,7 @@ typedef enum {
   Dstar0 = 91,
   DstarPlus = 92,
   Lambda_c = 93,
+  AntiD0 = 94, 
 
   /* These are defined in pythia-geant.map in bggen */
 
@@ -121,7 +123,6 @@ typedef enum {
 
 } Particle_t;
 
-
 static inline Particle_t RemapParticleID(Particle_t p)
 {
   // bggen defines these in pythia-geant.dat. However,
@@ -131,6 +132,11 @@ static inline Particle_t RemapParticleID(Particle_t p)
   if(p==80) return Rho0;
   if(p==81) return omega;
   return p;
+}
+
+inline static int IsLepton(Particle_t p)
+{
+	return ((p == Electron) || (p == Positron) || (p == MuonPlus) || (p == MuonMinus) || (p == Neutrino));
 }
 
 inline static char* ParticleType(Particle_t p)
@@ -244,10 +250,12 @@ inline static char* ParticleType(Particle_t p)
     return (char*)"Sigma(1385)+";
   case Deuteron:
     return (char*)"Deuteron";
-  case Helium:
-    return (char*)"Helium";
   case Triton:
     return (char*)"Triton";
+  case Helium:
+    return (char*)"Helium";
+  case He3:
+    return (char*)"Helium-3";
   case Pb208:
     return (char*)"Pb208";
   case DeltaPlusPlus:
@@ -266,6 +274,8 @@ inline static char* ParticleType(Particle_t p)
     return (char*)"Psi(2S)";
   case D0:
     return (char*)"D0";
+  case AntiD0:
+    return (char*)"AntiD0";
   case DPlus:
     return (char*)"D+";
   case Dstar0:
@@ -391,10 +401,12 @@ inline static char* EnumString(Particle_t p)
     return (char*)"Sigma_1385_Plus";
   case Deuteron:
     return (char*)"Deuteron";
-  case Helium:
-    return (char*)"Helium";
   case Triton:
     return (char*)"Triton";
+  case Helium:
+    return (char*)"Helium";
+  case He3:
+    return (char*)"Helium-3";
   case Pb208:
     return (char*)"Pb208";
   case DeltaPlusPlus:
@@ -413,6 +425,8 @@ inline static char* EnumString(Particle_t p)
     return (char*)"Psi2s";
   case D0:
     return (char*)"D0";
+  case AntiD0:
+    return (char*)"AntiD0";
   case DPlus:
     return (char*)"DPlus";
   case Dstar0:
@@ -425,6 +439,161 @@ inline static char* EnumString(Particle_t p)
     return (char*)"Unknown";
   }
 }
+
+inline static char* ShortName(Particle_t locPID)
+{
+  //returns string that is exact match to enum name. for auto-generating code
+  locPID = RemapParticleID(locPID);
+
+  switch (locPID) {
+  case Unknown:
+	return (char*)"x";
+  case Gamma:
+	return (char*)"g";
+  case Positron:
+	return (char*)"ep";
+  case Electron:
+	return (char*)"em";
+  case Neutrino:
+	return (char*)"nu";
+  case MuonPlus:
+	return (char*)"mup";
+  case MuonMinus:
+	return (char*)"mum";
+  case Pi0:
+	return (char*)"pi0";
+  case PiPlus:
+	return (char*)"pip";
+  case PiMinus:
+	return (char*)"pim";
+  case KLong:
+	return (char*)"kl";
+  case KPlus:
+	return (char*)"kp";
+  case KMinus:
+	return (char*)"km";
+  case Neutron:
+	return (char*)"n";
+  case Proton:
+	return (char*)"prot";
+  case AntiProton:
+	return (char*)"antip";
+  case KShort:
+	return (char*)"ks";
+  case Eta:
+	return (char*)"eta";
+  case Lambda:
+	return (char*)"lamb";
+  case SigmaPlus:
+	return (char*)"sigp";
+  case Sigma0:
+	return (char*)"sig0";
+  case SigmaMinus:
+	return (char*)"sigm";
+  case Xi0:
+	return (char*)"xi0";
+  case XiMinus:
+	return (char*)"xim";
+  case OmegaMinus:
+	return (char*)"omegam";
+  case AntiNeutron:
+	return (char*)"antin";
+  case AntiLambda:
+	return (char*)"antilamb";
+  case AntiSigmaMinus:
+	return (char*)"antisigm";
+  case AntiSigma0:
+	return (char*)"antisig0";
+  case AntiSigmaPlus:
+	return (char*)"antisigp";
+  case AntiXi0:
+	return (char*)"antixi0";
+  case AntiXiPlus:
+	return (char*)"antixip";
+  case AntiOmegaPlus:
+	return (char*)"antiomegap";
+  case Geantino:
+	return (char*)"geant";
+  case omega:
+	return (char*)"omega";
+  case EtaPrime:
+	return (char*)"etapr";
+  case phiMeson:
+	return (char*)"phi";
+  case Deuteron:
+	return (char*)"d";
+  case Triton:
+	return (char*)"tri";
+  case Helium:
+	return (char*)"he";
+  case He3:
+	return (char*)"he3";
+  case Pb208:
+	return (char*)"pb208";
+  case Jpsi:
+	return (char*)"jpsi";
+  case Eta_c:
+	return (char*)"etac";
+  case Chi_c0:
+	return (char*)"chic0";
+  case Chi_c1:
+	return (char*)"chic1";
+  case Chi_c2:
+	return (char*)"chic2";
+  case Psi2s:
+	return (char*)"psi2s";
+  case D0:
+	return (char*)"d0";
+  case AntiD0:
+	return (char*)"antid0";
+  case DPlus:
+	return (char*)"dp";
+  case Dstar0:
+	return (char*)"ds0";
+  case DstarPlus:
+	return (char*)"dsp";
+  case Lambda_c:
+	return (char*)"lambc";
+
+  //not really supported
+  case Rho0:
+	return (char*)"Rho0";
+  case RhoPlus:
+	return (char*)"RhoPlus";
+  case RhoMinus:
+	return (char*)"RhoMinus";
+  case a0_980:
+	return (char*)"a0_980";
+  case f0_980:
+	return (char*)"f0_980";
+  case KStar_892_0:
+	return (char*)"KStar_892_0";
+  case KStar_892_Plus:
+	return (char*)"KStar_892_Plus";
+  case KStar_892_Minus:
+	return (char*)"KStar_892_Minus";
+  case AntiKStar_892_0:
+	return (char*)"AntiKStar_892_0";
+  case K1_1400_Plus:
+	return (char*)"K1_1400_Plus";
+  case K1_1400_Minus:
+	return (char*)"K1_1400_Minus";
+  case b1_1235_Plus:
+	return (char*)"b1_1235_Plus";
+  case Sigma_1385_Minus:
+	return (char*)"Sigma_1385_Minus";
+  case Sigma_1385_0:
+	return (char*)"Sigma_1385_0";
+  case Sigma_1385_Plus:
+	return (char*)"Sigma_1385_Plus";
+  case DeltaPlusPlus:
+	return (char*)"DeltaPlusPlus";
+
+  default:
+	return (char*)"x";
+  }
+}
+
 inline static Particle_t ParticleEnum(const char* locParticleName)
 {
   if(strcmp(locParticleName, "Unknown") == 0)
@@ -533,10 +702,12 @@ inline static Particle_t ParticleEnum(const char* locParticleName)
     return Sigma_1385_Plus;
   else if(strcmp(locParticleName, "Deuteron") == 0)
     return Deuteron;
-  else if(strcmp(locParticleName, "Helium") == 0)
-    return Helium;
   else if(strcmp(locParticleName, "Triton") == 0)
     return Triton;
+  else if(strcmp(locParticleName, "Helium") == 0)
+    return Helium;
+  else if(strcmp(locParticleName, "Helium-3") == 0)
+    return He3;
   else if(strcmp(locParticleName, "Pb208") == 0)
     return Pb208;
   else if(strcmp(locParticleName, "Delta++") == 0)
@@ -555,6 +726,8 @@ inline static Particle_t ParticleEnum(const char* locParticleName)
     return Psi2s;
   else if(strcmp(locParticleName, "D0") == 0)
     return D0;
+  else if(strcmp(locParticleName, "AntiD0") == 0)
+    return AntiD0;
   else if(strcmp(locParticleName, "D+") == 0)
     return DPlus;
   else if(strcmp(locParticleName, "D*0") == 0)
@@ -606,8 +779,9 @@ inline static unsigned short int IsFixedMass(Particle_t p)
   case Geantino:	return 1;
   case EtaPrime:	return 1;
   case Deuteron:	return 1;
+  case Triton:   	return 1;
   case Helium:		return 1;
-  case Triton:	return 1;
+  case He3:		return 1;
   case Pb208:	return 1;
   case Jpsi:    return 1;
   //case eta_c:   return 1;
@@ -616,6 +790,7 @@ inline static unsigned short int IsFixedMass(Particle_t p)
   case Chi_c2:  return 1;
   case Psi2s:   return 1;
   case D0:      return 1;
+  case AntiD0:  return 1;
   case DPlus:   return 1;
   case Dstar0:  return 1;
   case DstarPlus:  return 1;
@@ -666,8 +841,9 @@ inline static unsigned short int IsDetachedVertex(Particle_t p)
   case AntiXiPlus:	return 1;
   case AntiOmegaPlus:	return 1;
   case Deuteron:	return 1;
+  case Triton:  	return 1;
   case Helium:		return 1;
-  case Triton:	return 1;
+  case He3:  		return 1;
   default: return 0;
   }
 }
@@ -777,10 +953,12 @@ inline static char* ParticleName_ROOT(Particle_t p)
     return (char*)"b_{1}(1235)^{#plus}";
   case Deuteron:
     return (char*)"d";
-  case Helium:
-    return (char*)"He";
   case Triton:
     return (char*)"t";
+  case Helium:
+    return (char*)"He";
+  case He3:
+    return (char*)"3He";
   case Pb208:
     return (char*)"Pb^{208}";
   case Sigma_1385_Minus:
@@ -805,6 +983,8 @@ inline static char* ParticleName_ROOT(Particle_t p)
     return (char*)"#psi(2S)";
   case D0:
     return (char*)"D^{0}";
+  case AntiD0:
+    return (char*)"#bar{D^{0}}";
   case DPlus:
     return (char*)"D{^+}";
   case Dstar0:
@@ -812,7 +992,7 @@ inline static char* ParticleName_ROOT(Particle_t p)
   case DstarPlus:
     return (char*)"D^{*+}";
   case Lambda_c:
-    return (char*)"Lambda_{c}";
+    return (char*)"#Lambda_{c}";
 		 
   default:
     return (char*)"X";
@@ -874,8 +1054,9 @@ inline static double ParticleMass(Particle_t p)
   case K1_1400_Minus: return 1.403;
   case b1_1235_Plus: return 1.2295;
   case Deuteron:	return 1.875612859;     // from NIST
+  case Triton:	    return 2.808921004;     // from NIST 5.00735630 x 10^-27 kg
   case Helium:		return 3.727379238;     // from NIST 6.64465675 x 10-27 kg
-  case Triton:	        return 2.808921004;     // from NIST 5.00735630 x 10^-27 kg
+  case He3:  		return 2.809413498;
   case Pb208:	        return 193.72899;       // NIST gives 207.976627 AMU
   case Sigma_1385_Minus:	return 1.3872;
   case Sigma_1385_0:		return 1.3837;
@@ -888,6 +1069,7 @@ inline static double ParticleMass(Particle_t p)
   case Chi_c2:          return 3.55620;
   case Psi2s:           return 3.686109;
   case D0:              return 1.86484;
+  case AntiD0:          return 1.86484;
   case DPlus:           return 1.86961;
   case Dstar0:          return 2.01026;
   case DstarPlus:       return 2.00696;
@@ -954,8 +1136,9 @@ inline static int ParticleCharge(Particle_t p)
   case K1_1400_Minus: return -1;
   case b1_1235_Plus: return 1;
   case Deuteron:	return 1;
+  case Triton:  	return 1;
   case Helium:		return 2;
-  case Triton:	return 1;
+  case He3:		return 2;
   case Pb208:	return 82;
   case Sigma_1385_Minus:	return -1;
   case Sigma_1385_0:		return 0;
@@ -968,6 +1151,7 @@ inline static int ParticleCharge(Particle_t p)
   case Chi_c2:  return 0;
   case Psi2s:   return 0;
   case D0:      return 0;
+  case AntiD0:  return 0;
   case DPlus:   return 1;
   case Dstar0:  return 0;
   case DstarPlus:  return 1;
@@ -1009,7 +1193,7 @@ inline static int PDGtype(Particle_t p)
   case SigmaMinus:	return  3112;
   case Xi0:		return  3322;
   case XiMinus:		return  3312;
-  case OmegaMinus:	return  3332;
+  case OmegaMinus:	return  3334;
   case AntiNeutron:	return -2112;
   case AntiLambda:	return -3122;
   case AntiSigmaMinus:	return -3112;
@@ -1017,7 +1201,7 @@ inline static int PDGtype(Particle_t p)
   case AntiSigmaPlus:	return -3222;
   case AntiXi0:		return -3322;
   case AntiXiPlus:	return -3312;
-  case AntiOmegaPlus:	return -3332;
+  case AntiOmegaPlus:	return -3334;
   case Geantino:	return  0;
   case Rho0:		return  113;
   case RhoPlus:		return  213;
@@ -1035,8 +1219,9 @@ inline static int PDGtype(Particle_t p)
   case K1_1400_Minus: return  -20323;
   case b1_1235_Plus: return  10213;
   case Deuteron:		return  45;
+  case Triton:		return  46;
   case Helium:		return  47;
-  case Triton:	return  49;
+  case He3:			return  49;
   case Sigma_1385_Minus:	return 3114;
   case Sigma_1385_0:		return 3214;
   case Sigma_1385_Plus:	return 3224;
@@ -1049,6 +1234,7 @@ inline static int PDGtype(Particle_t p)
   case Chi_c2:        return 445;
   case Psi2s:         return 100443;
   case D0:            return 421;
+  case AntiD0:        return -421; //FIX!!
   case DPlus:         return 411;
   case Dstar0:        return 423;
   case DstarPlus:     return 413;
@@ -1084,7 +1270,7 @@ inline static Particle_t PDGtoPType(int locPDG_PID)
   case 3112:			return SigmaMinus;
   case 3322:			return Xi0;
   case 3312:			return XiMinus;
-  case 3332:			return OmegaMinus;
+  case 3334:			return OmegaMinus;
   case -2112:		return AntiNeutron;
   case -3122:		return AntiLambda;
   case -3112:		return AntiSigmaMinus;
@@ -1092,7 +1278,7 @@ inline static Particle_t PDGtoPType(int locPDG_PID)
   case -3222:		return AntiSigmaPlus;
   case -3322:		return AntiXi0;
   case -3312:		return AntiXiPlus;
-  case -3332:		return AntiOmegaPlus;
+  case -3334:		return AntiOmegaPlus;
   case 113:			return Rho0;
   case 213:			return RhoPlus;
   case -213:			return RhoMinus;
@@ -1109,8 +1295,9 @@ inline static Particle_t PDGtoPType(int locPDG_PID)
   case -20323:		return K1_1400_Minus;
   case 10213:		return b1_1235_Plus;
   case 45:			return Deuteron;
+  case 46:			return Triton;
   case 47:			return Helium;
-  case 49:			return Triton;
+  case 49:			return He3;
   case 3114:			return Sigma_1385_Minus;
   case 3214:			return Sigma_1385_0;
   case 3224:			return Sigma_1385_Plus;
@@ -1123,6 +1310,7 @@ inline static Particle_t PDGtoPType(int locPDG_PID)
   case 445:          return Chi_c2;
   case 100443:       return Psi2s;
   case 421:          return D0;
+  case -421:         return AntiD0;
   case 411:          return DPlus;
   case 423:          return Dstar0;
   case 413:          return DstarPlus;
@@ -1151,8 +1339,9 @@ inline static int Is_FinalStateParticle(Particle_t locPID)
 		case AntiProton:  return 1;
 		case AntiNeutron: return 1;
 		case Deuteron:    return 1;
-		case Helium:      return 1;
 		case Triton:      return 1;
+		case Helium:      return 1;
+		case He3:         return 1;
 		case Pb208:       return 1;
 		default: return 0; //decaying
 	}
@@ -1237,10 +1426,12 @@ inline static char* Get_ShortName(Particle_t locPID)
 
 	case Deuteron:
 		return (char*)"d";
-	case Helium:
-		return (char*)"he";
 	case Triton:
 		return (char*)"tri";
+	case Helium:
+		return (char*)"he";
+	case He3:
+		return (char*)"he3";
 	case Pb208:
 		return (char*)"pb";
 
@@ -1258,6 +1449,8 @@ inline static char* Get_ShortName(Particle_t locPID)
 		return (char*)"psi2S";
 	case D0:
 		return (char*)"d0";
+	case AntiD0:
+		return (char*)"d0bar";
 	case DPlus:
 		return (char*)"dp";
 	case Lambda_c:
@@ -1340,6 +1533,7 @@ inline static int ParticleMultiplexPower(Particle_t locPID)
 		case Dstar0:           return 44;
 		case DstarPlus:        return 45;
 		case Lambda_c:         return 46;
+		case AntiD0:           return 47;
 		default: return -1;
 	}
 }
@@ -1421,8 +1615,69 @@ inline static Particle_t DemultiplexPID(int locBit, int locIsDecayingFlag)
 		case 44:  return Dstar0;
 		case 45:  return DstarPlus;
 		case 46:  return Lambda_c;
+      case 47:  return AntiD0;
 		default:  return Unknown;
 	}
 }
+
+typedef enum
+{
+	d_Charged,
+	d_Positive,
+	d_Negative,
+	d_Neutral,
+	d_AllCharges
+} Charge_t;
+
+inline static int Is_CorrectCharge(Particle_t locPID, Charge_t locCharge)
+{
+	if(locPID == Unknown)
+		return (locCharge == d_AllCharges);
+	int locIntCharge = ParticleCharge(locPID);
+	switch(locCharge)
+	{
+		case d_Neutral:
+			return (locIntCharge == 0);
+		case d_Positive:
+			return (locIntCharge > 0);
+		case d_Negative:
+			return (locIntCharge < 0);
+		case d_Charged:
+			return (locIntCharge != 0);
+		case d_AllCharges:
+			return 1;
+		default:
+			return 0;
+	}
+}
+
+// Deduce particle type from charge and mass
+inline static Particle_t IDTrack(float locCharge, float locMass)
+{
+        float locMassTolerance = 0.010;
+        if (locCharge > 0.1) // Positive particles
+        {
+                if (fabs(locMass - ParticleMass(Proton)) < locMassTolerance) return Proton;
+                if (fabs(locMass - ParticleMass(PiPlus)) < locMassTolerance) return PiPlus;
+                if (fabs(locMass - ParticleMass(KPlus)) < locMassTolerance) return KPlus;
+                if (fabs(locMass - ParticleMass(Positron)) < locMassTolerance) return Positron;
+                if (fabs(locMass - ParticleMass(MuonPlus)) < locMassTolerance) return MuonPlus;
+        }
+        else if(locCharge < -0.1) // Negative particles
+        {
+                if (fabs(locMass - ParticleMass(PiMinus)) < locMassTolerance) return PiMinus;
+                if (fabs(locMass - ParticleMass(KMinus)) < locMassTolerance) return KMinus;
+                if (fabs(locMass - ParticleMass(MuonMinus)) < locMassTolerance) return MuonMinus;
+                if (fabs(locMass - ParticleMass(Electron)) < locMassTolerance) return Electron;
+                if (fabs(locMass - ParticleMass(AntiProton)) < locMassTolerance) return AntiProton;
+        }
+        else //Neutral Track
+        {
+                if (fabs(locMass - ParticleMass(Gamma)) < locMassTolerance) return Gamma;
+                if (fabs(locMass - ParticleMass(Neutron)) < locMassTolerance) return Neutron;
+        }
+        return Unknown;
+}
+
 
 #endif

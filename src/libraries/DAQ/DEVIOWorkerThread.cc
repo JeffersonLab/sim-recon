@@ -622,7 +622,6 @@ void DEVIOWorkerThread::Parsef250scalerBank(uint32_t* &iptr, uint32_t *iend)
 //---------------------------------
 void DEVIOWorkerThread::ParseControlEvent(uint32_t* &iptr, uint32_t *iend)
 {
-	for(auto pe : current_parsed_events) pe->event_status_bits |= (1<<kSTATUS_CONTROL_EVENT);
 
 	time_t t = (time_t)iptr[2];
 	string tstr = ctime(&t);
@@ -638,6 +637,14 @@ void DEVIOWorkerThread::ParseControlEvent(uint32_t* &iptr, uint32_t *iend)
 	}
 	
 	jout << "Control event: " << type << " - " << tstr << endl;
+
+	for(auto pe : current_parsed_events) {
+		pe->event_status_bits |= (1<<kSTATUS_CONTROL_EVENT);
+		auto controlevent = pe->NEW_DCODAControlEvent();
+		controlevent->event_type = iptr[1]>>16;
+		controlevent->unix_time = t;
+		for(auto p = iptr; p!=iend; p++) controlevent->words.push_back(*p);
+	}
 
 	iptr = &iptr[(*iptr) + 1];
 }
@@ -1668,20 +1675,47 @@ void DEVIOWorkerThread::Parsef125Bank(uint32_t rocid, uint32_t* &iptr, uint32_t 
 					uint32_t nsamples_pedestal = 1;  // The firmware pedestal divided by 2^PBIT where PBIT is a config. parameter
 
 					if( pe ) {
-						pe->NEW_Df125FDCPulse(rocid, slot, channel, itrigger
-									, pulse_number        // NPK
-									, pulse_time          // le_time
-									, quality_factor      // time_quality_bit
-									, overflow_count      // overflow_count
-									, pedestal            // pedestal
-									, sum                 // integral
-									, pulse_peak          // peak_amp
-									, peak_time           // peak_time
-									, word1               // word1
-									, word2               // word2
-									, nsamples_pedestal   // nsamples_pedestal
-									, nsamples_integral   // nsamples_integral
-									, false);             // emulated
+					
+						// The following is a temporary fix. In late 2017 the CDC group started
+						// using data type 9 (i.e. FDC pulse peak). This caused many conflicts
+						// with plugins downstream that were built around there being a Df125CDCPulse
+						// object associated with the DCDCDigiHit. In order to quickly solve
+						// the issue as the run was starting, this fix was made to produce Df125CDCPulse
+						// object from this data iff rocid<30 indicating the data came from the
+						// CDC. 
+						if( rocid<30 ){
+
+							pe->NEW_Df125CDCPulse(rocid, slot, channel, itrigger
+										, pulse_number        // NPK
+										, pulse_time          // le_time
+										, quality_factor      // time_quality_bit
+										, overflow_count      // overflow_count
+										, pedestal            // pedestal
+										, sum                 // integral
+										, pulse_peak          // peak_amp
+										, word1               // word1
+										, word2               // word2
+										, nsamples_pedestal   // nsamples_pedestal
+										, nsamples_integral   // nsamples_integral
+										, false);             // emulated
+						
+						}else{
+					
+							pe->NEW_Df125FDCPulse(rocid, slot, channel, itrigger
+										, pulse_number        // NPK
+										, pulse_time          // le_time
+										, quality_factor      // time_quality_bit
+										, overflow_count      // overflow_count
+										, pedestal            // pedestal
+										, sum                 // integral
+										, pulse_peak          // peak_amp
+										, peak_time           // peak_time
+										, word1               // word1
+										, word2               // word2
+										, nsamples_pedestal   // nsamples_pedestal
+										, nsamples_integral   // nsamples_integral
+										, false);             // emulated
+						}
 					}
 				}
                 break;

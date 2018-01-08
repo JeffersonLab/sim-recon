@@ -13,25 +13,7 @@
 #include "AMPTOOLS_MCGEN/DalitzDecayFactory.h"
 #include "IUAmpTools/Kinematics.h"
 
-// FORTRAN routines
-extern "C"{
-void cobrems_(float* Emax, float* Epeak, float* emitmr, float* radt, float* Dist, float* collDiam, int* doPolFluxfloat);
-float dntdx_(float* x);
-float dnidx_(float* x);
-};
-
-// Wrapper function for total
-double dNtdx(double x)
-{
-    float xx = x;
-    return (double)dntdx_(&xx);
-}
-
-double dNidx(double x)
-{
-    float xx = x;
-    return (double)dnidx_(&xx);
-}
+#include <CobremsGeneration.hh>
 
 GammaPToXYZP::GammaPToXYZP( float lowMassXYZ, float highMassXYZ, 
         float massX, float massY, float massZ,
@@ -55,10 +37,16 @@ GammaPToXYZP::GammaPToXYZP( float lowMassXYZ, float highMassXYZ,
 
     int doPolFlux=0;  // want total flux (1 for polarized flux)
     float emitmr=10.e-9; // electron beam emittance
-    float radt=20.e-6; // radiator thickness in m
-    float collDiam=0.0034; // meters
+    float radt=50.e-6; // radiator thickness in m
+    float collDiam=0.005; // meters
     float Dist = 76.0; // meters
-    cobrems_(&Emax, &Epeak, &emitmr, &radt, &Dist, &collDiam, &doPolFlux);
+    CobremsGeneration cobrems(Emax, Epeak);
+    cobrems.setBeamEmittance(emitmr);
+    cobrems.setTargetThickness(radt);
+    cobrems.setCollimatorDistance(Dist);
+    cobrems.setCollimatorDiameter(collDiam);
+    cobrems.setCollimatedFlag(true);
+    cobrems.setPolarizedFlag(doPolFlux);
 
     // Create histogram
     cobrem_vs_E = new TH1D("cobrem_vs_E", "Coherent Bremstrahlung vs. E_{#gamma}", 1000, Elow, Ehigh);
@@ -67,8 +55,8 @@ GammaPToXYZP::GammaPToXYZP( float lowMassXYZ, float highMassXYZ,
     for(int i=1; i<=cobrem_vs_E->GetNbinsX(); i++){
         double x = cobrem_vs_E->GetBinCenter(i)/Emax;
         double y = 0;
-        if(Epeak<Elow) y = dNidx(x);
-        else y = dNtdx(x);
+        if(Epeak<Elow) y = cobrems.Rate_dNidx(x);
+        else y = cobrems.Rate_dNtdx(x);
         cobrem_vs_E->SetBinContent(i, y);
     } 
 }

@@ -29,6 +29,12 @@ inline bool DChargedTrackHypothesis_SortByEnergy(const DChargedTrackHypothesis* 
 //------------------
 jerror_t DChargedTrackHypothesis_factory::init(void)
 {
+	//Setting this flag makes it so that JANA does not delete the objects in _data.  This factory will manage this memory. 
+	SetFactoryFlag(NOT_OBJECT_OWNER);
+	dResourcePool_ChargedTrackHypothesis = new DResourcePool<DChargedTrackHypothesis>();
+	dResourcePool_ChargedTrackHypothesis->Set_ControlParams(30, 20, 200, 2000, 0);
+	dResourcePool_TMatrixFSym = std::make_shared<DResourcePool<TMatrixFSym>>();
+	dResourcePool_TMatrixFSym->Set_ControlParams(20, 20, 50);
 	return NOERROR;
 }
 
@@ -46,6 +52,11 @@ jerror_t DChargedTrackHypothesis_factory::brun(jana::JEventLoop *locEventLoop, i
 //------------------
 jerror_t DChargedTrackHypothesis_factory::evnt(jana::JEventLoop* locEventLoop, uint64_t eventnumber)
 {
+	//Recycle
+	dResourcePool_ChargedTrackHypothesis->Recycle(dCreated);
+	dCreated.clear();
+	_data.clear();
+
  	vector<const DTrackTimeBased*> locTrackTimeBasedVector;
 	locEventLoop->Get(locTrackTimeBasedVector);
 
@@ -61,8 +72,7 @@ jerror_t DChargedTrackHypothesis_factory::evnt(jana::JEventLoop* locEventLoop, u
 	for(size_t loc_i = 0; loc_i < locTrackTimeBasedVector.size(); loc_i++)
 	{
 		DChargedTrackHypothesis* locChargedTrackHypothesis = Create_ChargedTrackHypothesis(locEventLoop, locTrackTimeBasedVector[loc_i], locDetectorMatches, locEventRFBunches[0]);
-		if(locChargedTrackHypothesis != NULL)
-			locChargedTrackHypotheses[locChargedTrackHypothesis->candidateid].push_back(locChargedTrackHypothesis);
+		locChargedTrackHypotheses[locChargedTrackHypothesis->Get_TrackTimeBased()->candidateid].push_back(locChargedTrackHypothesis);
 	}
 
 	//choose the first hypothesis from each track, and sort by increasing energy in the 1's and 0.1s digits (MeV): pseudo-random
@@ -75,145 +85,99 @@ jerror_t DChargedTrackHypothesis_factory::evnt(jana::JEventLoop* locEventLoop, u
 	//now loop through the sorted vector, grab all of the hypotheses for each of those tracks from the map, and save them all in _data
 	for(size_t loc_i = 0; loc_i < locTracksToSort.size(); loc_i++)
 	{
-		JObject::oid_t locTrackID = locTracksToSort[loc_i]->candidateid;
+		JObject::oid_t locTrackID = locTracksToSort[loc_i]->Get_TrackTimeBased()->candidateid;
 		_data.insert(_data.end(), locChargedTrackHypotheses[locTrackID].begin(), locChargedTrackHypotheses[locTrackID].end());
 	}
 
+	dCreated = _data;
 	return NOERROR;
 }
 
-DChargedTrackHypothesis* DChargedTrackHypothesis_factory::Create_ChargedTrackHypothesis(JEventLoop* locEventLoop, const DTrackTimeBased* locTrackTimeBased, const DDetectorMatches* locDetectorMatches, const DEventRFBunch* locEventRFBunch) const
+DChargedTrackHypothesis* DChargedTrackHypothesis_factory::Create_ChargedTrackHypothesis(JEventLoop* locEventLoop, const DTrackTimeBased* locTrackTimeBased, const DDetectorMatches* locDetectorMatches, const DEventRFBunch* locEventRFBunch)
 {
-	DChargedTrackHypothesis* locChargedTrackHypothesis = new DChargedTrackHypothesis();
+	DChargedTrackHypothesis* locChargedTrackHypothesis = Get_Resource();
+	locChargedTrackHypothesis->Share_FromInput_Kinematics(static_cast<const DKinematicData*>(locTrackTimeBased));
+	locChargedTrackHypothesis->Set_TrackTimeBased(locTrackTimeBased);
 
-	//Set DKinematicData Members
-	DKinematicData *locKinematicData = locChargedTrackHypothesis;
-	*locKinematicData = *(static_cast<const DKinematicData*>(locTrackTimeBased));
-
-	// Add associated object
-	locChargedTrackHypothesis->AddAssociatedObject(locTrackTimeBased);
-
-	// Set tracking info
-	locChargedTrackHypothesis->candidateid = locTrackTimeBased->candidateid;
-	locChargedTrackHypothesis->dChiSq_Track = locTrackTimeBased->chisq;
-	locChargedTrackHypothesis->dNDF_Track = locTrackTimeBased->Ndof;
-
-	uint64_t locEventNumber = locEventLoop->GetJEvent().GetEventNumber();
-	TMatrixFSym* locCovarianceMatrix = (dynamic_cast<DApplication*>(japp))->Get_CovarianceMatrixResource(7, locEventNumber);
-	*locCovarianceMatrix = *(locChargedTrackHypothesis->errorMatrix());
-
-	// CDC/FDC: Default if no other timing info
-	locChargedTrackHypothesis->setTime(locTrackTimeBased->t0());
-	locChargedTrackHypothesis->setT0(numeric_limits<double>::quiet_NaN(), numeric_limits<double>::quiet_NaN(), SYS_NULL);
-	locChargedTrackHypothesis->setT1(numeric_limits<double>::quiet_NaN(), numeric_limits<double>::quiet_NaN(), SYS_NULL);
-	locChargedTrackHypothesis->setPathLength(numeric_limits<double>::quiet_NaN(), 0.0);
-	(*locCovarianceMatrix)(6, 6) = locTrackTimeBased->t0_err()*locTrackTimeBased->t0_err();
+	auto locCovarianceMatrix = dResourcePool_TMatrixFSym->Get_SharedResource();
+	locCovarianceMatrix->ResizeTo(7, 7);
+	if(locChargedTrackHypothesis->errorMatrix() != nullptr)
+		*locCovarianceMatrix = *(locChargedTrackHypothesis->errorMatrix());
 
 	// RF Time
 	if(locEventRFBunch->dTimeSource != SYS_NULL)
 	{
 		double locPropagatedRFTime = dPIDAlgorithm->Calc_PropagatedRFTime(locChargedTrackHypothesis, locEventRFBunch);
-		locChargedTrackHypothesis->setT0(locPropagatedRFTime, locEventRFBunch->dTimeVariance, locEventRFBunch->dTimeSource);
+		locChargedTrackHypothesis->Set_T0(locPropagatedRFTime, locEventRFBunch->dTimeVariance, locEventRFBunch->dTimeSource);
 	}
 
 	// Start Counter
-	DSCHitMatchParams locSCHitMatchParams;
+	shared_ptr<const DSCHitMatchParams> locSCHitMatchParams;
 	if(dPIDAlgorithm->Get_BestSCMatchParams(locTrackTimeBased, locDetectorMatches, locSCHitMatchParams))
 	{
 		locChargedTrackHypothesis->Set_SCHitMatchParams(locSCHitMatchParams);
 
-		double locPropagatedTime = locSCHitMatchParams.dHitTime - locSCHitMatchParams.dFlightTime;
+		double locPropagatedTime = locSCHitMatchParams->dHitTime - locSCHitMatchParams->dFlightTime;
 		locChargedTrackHypothesis->setTime(locPropagatedTime);
 
-//		double locPropagatedTimeUncertainty = sqrt(locSCHitMatchParams.dHitTimeVariance + locSCHitMatchParams.dFlightTimeVariance);
+//		double locPropagatedTimeUncertainty = sqrt(locSCHitMatchParams->dHitTimeVariance + locSCHitMatchParams->dFlightTimeVariance);
 		double locPropagatedTimeUncertainty = 0.3;
 //		double locFlightTimePCorrelation = locDetectorMatches->Get_FlightTimePCorrelation(locTrackTimeBased, SYS_START); //uncomment when ready!!
-//		Add_TimeToTrackingMatrix(locChargedTrackHypothesis, locCovarianceMatrix, locSCHitMatchParams.dFlightTimeVariance, locSCHitMatchParams.dHitTimeVariance, locFlightTimePCorrelation); //uncomment when ready!!
-		(*locCovarianceMatrix)(6, 6) = 0.3*0.3+locSCHitMatchParams.dFlightTimeVariance;
+//		Add_TimeToTrackingMatrix(locChargedTrackHypothesis, locCovarianceMatrix, locSCHitMatchParams->dFlightTimeVariance, locSCHitMatchParams->dHitTimeVariance, locFlightTimePCorrelation); //uncomment when ready!!
+		(*locCovarianceMatrix)(6, 6) = 0.3*0.3+locSCHitMatchParams->dFlightTimeVariance;
 
 		if(locEventRFBunch->dTimeSource == SYS_NULL)
-			locChargedTrackHypothesis->setT0(locPropagatedTime, locPropagatedTimeUncertainty, SYS_START); //update when ready
-
-		//add associated objects
-		vector<DSCHitMatchParams> locSCHitMatchParams;
-		locDetectorMatches->Get_SCMatchParams(locTrackTimeBased, locSCHitMatchParams);
-		for(size_t loc_i = 0; loc_i < locSCHitMatchParams.size(); ++loc_i)
-			locChargedTrackHypothesis->AddAssociatedObject(locSCHitMatchParams[loc_i].dSCHit);
+			locChargedTrackHypothesis->Set_T0(locPropagatedTime, locPropagatedTimeUncertainty, SYS_START); //update when ready
 	}
 
-	// BCAL
-	DBCALShowerMatchParams locBCALShowerMatchParams;
+	// MATCHES
+	shared_ptr<const DBCALShowerMatchParams> locBCALShowerMatchParams;
+	shared_ptr<const DTOFHitMatchParams> locTOFHitMatchParams;
+	shared_ptr<const DFCALShowerMatchParams> locFCALShowerMatchParams;
 	if(dPIDAlgorithm->Get_BestBCALMatchParams(locTrackTimeBased, locDetectorMatches, locBCALShowerMatchParams))
-	{
 		locChargedTrackHypothesis->Set_BCALShowerMatchParams(locBCALShowerMatchParams);
-		const DBCALShower* locBCALShower = locBCALShowerMatchParams.dBCALShower;
-		locChargedTrackHypothesis->setT1(locBCALShower->t, locBCALShower->tErr(), SYS_BCAL);
-		locChargedTrackHypothesis->setTime(locBCALShower->t - locBCALShowerMatchParams.dFlightTime);
-		locChargedTrackHypothesis->setPathLength(locBCALShowerMatchParams.dPathLength, 0.0);
-//		double locFlightTimePCorrelation = locDetectorMatches->Get_FlightTimePCorrelation(locTrackTimeBased, SYS_BCAL); //uncomment when ready!!
-//		Add_TimeToTrackingMatrix(locChargedTrackHypothesis, locCovarianceMatrix, locBCALShowerMatchParams.dFlightTimeVariance, locBCALShower->tErr()*locBCALShower->tErr(), locFlightTimePCorrelation); //uncomment when ready!!
-		//(*locCovarianceMatrix)(6, 6) = 0.00255*pow(locChargedTrackHypothesis->momentum().Mag(), -2.52) + 0.220; //delete when ready!!
-		//(*locCovarianceMatrix)(6, 6) *= locCovarianceMatrix(6, 6); //delete when ready!!
-		(*locCovarianceMatrix)(6 , 6) = 0.3*0.3+locBCALShowerMatchParams.dFlightTimeVariance;
+	if(dPIDAlgorithm->Get_BestTOFMatchParams(locTrackTimeBased, locDetectorMatches, locTOFHitMatchParams))
+		locChargedTrackHypothesis->Set_TOFHitMatchParams(locTOFHitMatchParams);
+	if(dPIDAlgorithm->Get_BestFCALMatchParams(locTrackTimeBased, locDetectorMatches, locFCALShowerMatchParams))
+		locChargedTrackHypothesis->Set_FCALShowerMatchParams(locFCALShowerMatchParams);
 
-		//add associated objects
-		vector<DBCALShowerMatchParams> locShowerMatchParams;
-		locDetectorMatches->Get_BCALMatchParams(locTrackTimeBased, locShowerMatchParams);
-		for(size_t loc_i = 0; loc_i < locShowerMatchParams.size(); ++loc_i)
-			locChargedTrackHypothesis->AddAssociatedObject(locShowerMatchParams[loc_i].dBCALShower);
+	//PID
+	if(locChargedTrackHypothesis->t1_detector() == SYS_BCAL)
+	{
+		auto locBCALShowerMatchParams = locChargedTrackHypothesis->Get_BCALShowerMatchParams();
+		const DBCALShower* locBCALShower = locBCALShowerMatchParams->dBCALShower;
+		locChargedTrackHypothesis->setTime(locBCALShower->t - locBCALShowerMatchParams->dFlightTime);
+//		double locFlightTimePCorrelation = locDetectorMatches->Get_FlightTimePCorrelation(locTrackTimeBased, SYS_BCAL); //uncomment when ready!!
+//		Add_TimeToTrackingMatrix(locChargedTrackHypothesis, locCovarianceMatrix.get(), locBCALShowerMatchParams->dFlightTimeVariance, locBCALShower->tErr()*locBCALShower->tErr(), locFlightTimePCorrelation); //uncomment when ready!!
+		(*locCovarianceMatrix)(6 , 6) = 0.3*0.3+locBCALShowerMatchParams->dFlightTimeVariance;
 	}
 
 	// TOF
-	DTOFHitMatchParams locTOFHitMatchParams;
-	if(dPIDAlgorithm->Get_BestTOFMatchParams(locTrackTimeBased, locDetectorMatches, locTOFHitMatchParams))
+	if(locChargedTrackHypothesis->t1_detector() == SYS_TOF)
 	{
-		locChargedTrackHypothesis->Set_TOFHitMatchParams(locTOFHitMatchParams);
-		if(locChargedTrackHypothesis->t1_detector() == SYS_NULL)
-		{
-			locChargedTrackHypothesis->setT1(locTOFHitMatchParams.dHitTime, sqrt(locTOFHitMatchParams.dHitTimeVariance), SYS_TOF);
-			locChargedTrackHypothesis->setTime(locTOFHitMatchParams.dHitTime - locTOFHitMatchParams.dFlightTime);
-
-			locChargedTrackHypothesis->setPathLength(locTOFHitMatchParams.dPathLength, 0.0);
-//			double locFlightTimePCorrelation = locDetectorMatches->Get_FlightTimePCorrelation(locTrackTimeBased, SYS_TOF); //uncomment when ready!!
-//			Add_TimeToTrackingMatrix(locChargedTrackHypothesis, locCovarianceMatrix, locTOFHitMatchParams.dFlightTimeVariance, locTOFHitMatchParams.dHitTimeVariance, locFlightTimePCorrelation); //uncomment when ready!!
-			(*locCovarianceMatrix)(6, 6) = 0.1*0.1+locTOFHitMatchParams.dFlightTimeVariance;
-		}
-
-		//add associated objects
-		vector<DTOFHitMatchParams> locTOFHitMatchParams;
-		locDetectorMatches->Get_TOFMatchParams(locTrackTimeBased, locTOFHitMatchParams);
-		for(size_t loc_i = 0; loc_i < locTOFHitMatchParams.size(); ++loc_i)
-			locChargedTrackHypothesis->AddAssociatedObject(locTOFHitMatchParams[loc_i].dTOFPoint);
+		auto locTOFHitMatchParams = locChargedTrackHypothesis->Get_TOFHitMatchParams();
+		locChargedTrackHypothesis->setTime(locTOFHitMatchParams->dHitTime - locTOFHitMatchParams->dFlightTime);
+//		double locFlightTimePCorrelation = locDetectorMatches->Get_FlightTimePCorrelation(locTrackTimeBased, SYS_TOF); //uncomment when ready!!
+//		Add_TimeToTrackingMatrix(locChargedTrackHypothesis, locCovarianceMatrix.get(), locTOFHitMatchParams->dFlightTimeVariance, locTOFHitMatchParams->dHitTimeVariance, locFlightTimePCorrelation); //uncomment when ready!!
+		(*locCovarianceMatrix)(6, 6) = 0.1*0.1+locTOFHitMatchParams->dFlightTimeVariance;
 	}
 
 	//FCAL
-	DFCALShowerMatchParams locFCALShowerMatchParams;
-	if(dPIDAlgorithm->Get_BestFCALMatchParams(locTrackTimeBased, locDetectorMatches, locFCALShowerMatchParams))
+	if(locChargedTrackHypothesis->t1_detector() == SYS_FCAL)
 	{
-		locChargedTrackHypothesis->Set_FCALShowerMatchParams(locFCALShowerMatchParams);
-		if(locChargedTrackHypothesis->t1_detector() == SYS_NULL)
-		{
-			const DFCALShower* locFCALShower = locFCALShowerMatchParams.dFCALShower;
-//			locChargedTrackHypothesis->setT1(locFCALShower->getTime(), sqrt(locFCALShower->dCovarianceMatrix(4, 4)), SYS_FCAL); //uncomment when ready!!
-			locChargedTrackHypothesis->setT1(locFCALShower->getTime(), 0.5, SYS_FCAL);
-			locChargedTrackHypothesis->setTime(locFCALShower->getTime() - locFCALShowerMatchParams.dFlightTime);
-			locChargedTrackHypothesis->setPathLength(locFCALShowerMatchParams.dPathLength, 0.0);
-//			double locFlightTimePCorrelation = locDetectorMatches->Get_FlightTimePCorrelation(locTrackTimeBased, SYS_FCAL); //uncomment when ready!!
-//			Add_TimeToTrackingMatrix(locChargedTrackHypothesis, locCovarianceMatrix, locFCALShowerMatchParams.dFlightTimeVariance, locFCALShower->dCovarianceMatrix(4, 4), locFlightTimePCorrelation); //uncomment when ready!!
-			(*locCovarianceMatrix)(6, 6) = 0.5*0.5+locFCALShowerMatchParams.dFlightTimeVariance;
-		}
-
-		//add associated objects
-		vector<DFCALShowerMatchParams> locShowerMatchParams;
-		locDetectorMatches->Get_FCALMatchParams(locTrackTimeBased, locShowerMatchParams);
-		for(size_t loc_i = 0; loc_i < locShowerMatchParams.size(); ++loc_i)
-			locChargedTrackHypothesis->AddAssociatedObject(locShowerMatchParams[loc_i].dFCALShower);
+		auto locFCALShowerMatchParams = locChargedTrackHypothesis->Get_FCALShowerMatchParams();
+		const DFCALShower* locFCALShower = locFCALShowerMatchParams->dFCALShower;
+		locChargedTrackHypothesis->setTime(locFCALShower->getTime() - locFCALShowerMatchParams->dFlightTime);
+//		double locFlightTimePCorrelation = locDetectorMatches->Get_FlightTimePCorrelation(locTrackTimeBased, SYS_FCAL); //uncomment when ready!!
+//		Add_TimeToTrackingMatrix(locChargedTrackHypothesis, locCovarianceMatrix.get(), locFCALShowerMatchParams->dFlightTimeVariance, locFCALShower->dCovarianceMatrix(4, 4), locFlightTimePCorrelation); //uncomment when ready!!
+		(*locCovarianceMatrix)(6, 6) = 0.5*0.5+locFCALShowerMatchParams->dFlightTimeVariance;
 	}
 
 	locChargedTrackHypothesis->setErrorMatrix(locCovarianceMatrix);
 
 	//Calculate PID ChiSq, NDF, FOM
-	dPIDAlgorithm->Calc_ChargedPIDFOM(locChargedTrackHypothesis, locEventRFBunch);
+	locChargedTrackHypothesis->Set_TimeAtPOCAToVertex(locChargedTrackHypothesis->time());
+	dPIDAlgorithm->Calc_ChargedPIDFOM(locChargedTrackHypothesis);
 
 	return locChargedTrackHypothesis;
 }

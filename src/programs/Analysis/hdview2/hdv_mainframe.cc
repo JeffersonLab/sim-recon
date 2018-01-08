@@ -93,7 +93,7 @@ hdv_mainframe::hdv_mainframe(const TGWindow *p, UInt_t w, UInt_t h):TGMainFrame(
 {
   //Get pointer to DGeometry object
   DApplication* dapp=dynamic_cast<DApplication*>(japp);
-  const DGeometry *dgeom  = dapp->GetDGeometry(9999);
+  const DGeometry *dgeom  = dapp->GetDGeometry(RUNNUMBER);
   
   dgeom->GetFDCWires(fdcwires);
   
@@ -2447,6 +2447,9 @@ const char* hdv_mainframe::GetFactoryTag(string who)
 //-------------------
 void hdv_mainframe::GetReconFactory(string &name, string &tag)
 {
+	if(!reconfactory) return;
+	if(!reconfactory->GetSelectedEntry()) return;
+	if(!reconfactory->GetSelectedEntry()->GetTitle()) return;
 	string nametag(reconfactory->GetSelectedEntry()->GetTitle());
 	string::size_type pos = nametag.find(":");
 	name = nametag.substr(0, pos);

@@ -65,10 +65,10 @@ jerror_t DReaction_factory_p4pi_hists::evnt(JEventLoop* locEventLoop, uint64_t l
 	//fit types are of type DKinFitType, an enum defined in sim-recon/src/libraries/ANALYSIS/DReaction.h
 	//Options: d_NoFit (default), d_P4Fit, d_VertexFit, d_P4AndVertexFit
 	//P4 fits automatically constrain decaying particle masses, unless they are manually disabled
-	//locReaction->Set_KinFitType(d_P4Fit);
+	locReaction->Set_KinFitType(d_P4AndVertexFit);
 
 	// Highly Recommended: When generating particle combinations, reject all beam photons that match to a different RF bunch
-	locReaction->Set_MaxPhotonRFDeltaT(0.5*dBeamBunchPeriod); //should be minimum cut value
+	locReaction->Set_NumPlusMinusRFBunches(0);
 
 
 	// Highly Recommended: Cut on number of extra "good" tracks. "Good" tracks are ones that survive the "PreSelect" (or user custom) factory.
@@ -79,12 +79,6 @@ jerror_t DReaction_factory_p4pi_hists::evnt(JEventLoop* locEventLoop, uint64_t l
 	// string is file name (must end in ".root"!!): doen't need to be unique, feel free to change
 	// locReaction->Enable_TTreeOutput("tree_p4pi_hists.root", false); //true/false: do/don't save unused hypotheses
 
-	/************************************************** p4pi_hists Pre-Combo Custom Cuts *************************************************/
-
-	// Highly Recommended: Very loose DAnalysisAction cuts, applied just after creating the combination (before saving it)
-	// Example: Missing mass of proton
-	locReaction->Add_ComboPreSelectionAction(new DCutAction_MissingMass(locReaction, false, -0.2, 0.2));
-
 	/**************************************************** p4pi_hists Analysis Actions ****************************************************/
 
 	
@@ -94,7 +88,7 @@ jerror_t DReaction_factory_p4pi_hists::evnt(JEventLoop* locEventLoop, uint64_t l
 	//If a histogram action is repeated, it should be created with a unique name (string) to distinguish them
 	
 	// HISTOGRAM PID
-	locReaction->Add_AnalysisAction(new DHistogramAction_PID(locReaction));
+	locReaction->Add_AnalysisAction(new DHistogramAction_PID(locReaction, false));
 
 	// CUT PID
 	// SYS_TOF, SYS_BCAL, SYS_FCAL, ...: DetectorSystem_t: Defined in libraries/include/GlueX.h
@@ -110,7 +104,7 @@ jerror_t DReaction_factory_p4pi_hists::evnt(JEventLoop* locEventLoop, uint64_t l
 	locReaction->Add_AnalysisAction(new DCutAction_PIDDeltaT(locReaction, false, 2.5, Proton, SYS_BCAL)); //false: measured data
 	locReaction->Add_AnalysisAction(new DCutAction_PIDDeltaT(locReaction, false, 3.0, Proton, SYS_FCAL)); //false: measured data
 	
-	locReaction->Add_AnalysisAction(new DHistogramAction_PID(locReaction, "PostPIDCuts"));
+	locReaction->Add_AnalysisAction(new DHistogramAction_PID(locReaction, false, "PostPIDCuts"));
 
 	// HISTOGRAM MASSES //false/true: measured/kinfit data
 	locReaction->Add_AnalysisAction(new DHistogramAction_MissingMassSquared(locReaction, false, 800, -0.04, 0.04));
@@ -120,8 +114,8 @@ jerror_t DReaction_factory_p4pi_hists::evnt(JEventLoop* locEventLoop, uint64_t l
 	locReaction->Add_AnalysisAction(new DHistogramAction_TrackVertexComparison(locReaction));
 	
 	// KINEMATIC FIT
-	// locReaction->Add_AnalysisAction(new DHistogramAction_KinFitResults(locReaction, 0.05)); //5% confidence level cut on pull histograms only
-	// locReaction->Add_AnalysisAction(new DCutAction_KinFitFOM(locReaction, -1.0)); // -1.0 confidence level cut //require kinematic fit converges
+	locReaction->Add_AnalysisAction(new DHistogramAction_KinFitResults(locReaction, 0.05, true)); //5% confidence level cut on pull histograms only
+	locReaction->Add_AnalysisAction(new DCutAction_KinFitFOM(locReaction, 5.73303E-7)); // confidence level cut //+/- 5 sigma
 
 	// Cut for the Invariant Mass Plots
 	locReaction->Add_AnalysisAction(new DCutAction_MissingMassSquared(locReaction, false, -0.005, 0.005));

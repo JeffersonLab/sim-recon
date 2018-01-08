@@ -21,7 +21,7 @@ using namespace std;
 #define ONE_THIRD 0.33333333333333333
 #define TWO_THIRD 0.66666666666666667
 #define EPS 1e-8
-#define NaN std::numeric_limits<double>::quiet_NaN()
+#define QuietNaN std::numeric_limits<double>::quiet_NaN()
 
 struct StepStruct {DReferenceTrajectory::swim_step_t steps[256];};
 
@@ -772,9 +772,9 @@ jerror_t DReferenceTrajectory::GetIntersectionWithRadius(double R,
 							 double *s,
 							 double *t,
 							 DVector3 *p_at_intersection) const{
-  mypos.SetXYZ(NaN,NaN,NaN);
+  mypos.SetXYZ(QuietNaN,QuietNaN,QuietNaN);
   if(p_at_intersection)
-    p_at_intersection->SetXYZ(NaN,NaN,NaN);
+    p_at_intersection->SetXYZ(QuietNaN,QuietNaN,QuietNaN);
 
   if(Nswim_steps<1){
     _DBG_<<"No swim steps! You must \"Swim\" the track before calling GetIntersectionWithRadius(...)"<<endl;
@@ -794,7 +794,6 @@ jerror_t DReferenceTrajectory::GetIntersectionWithRadius(double R,
     if (t) *t=0.;
     return VALUE_OUT_OF_RANGE;
   }
-
 
   // Loop over swim steps and find the one that crosses the radius
   swim_step_t *swim_step = swim_steps;
@@ -829,7 +828,7 @@ jerror_t DReferenceTrajectory::GetIntersectionWithRadius(double R,
   double A = dx.Mod2();
   double B = 2.0*(x1.X()*dx.X() + x1.Y()*dx.Y());
   double C = x1.Mod2() - R*R;
-  
+
   double sqrt_D=sqrt(B*B-4.0*A*C);
   double one_over_denom=0.5/A;
   double alpha1 = (-B + sqrt_D)*one_over_denom;
@@ -837,10 +836,10 @@ jerror_t DReferenceTrajectory::GetIntersectionWithRadius(double R,
   double alpha = alpha1;
   if(alpha1<0.0 || alpha1>1.0)alpha=alpha2;
   if(!isfinite(alpha))return VALUE_OUT_OF_RANGE;
-	
+
   DVector3 delta = step->origin - last_step->origin;
   mypos = last_step->origin + alpha*delta;
-  
+
   // The value of s actually represents the pathlength
   // to the outside point. Adjust it back to the
   // intersection point (approximately).
@@ -1577,7 +1576,9 @@ DReferenceTrajectory::swim_step_t* DReferenceTrajectory::FindPlaneCrossing(const
 	// trajectory or the end
 	int last_index=Nswim_steps-1;
 	double forward_dist= norm.Dot(swim_step->origin-origin);
+	if( forward_dist == 0.0 ) return swim_step;
 	double backward_dist= norm.Dot(swim_steps[last_index].origin-origin);
+	if( backward_dist ==0.0 ) return &swim_steps[last_index];
 	if (detector==SYS_START || fabs(forward_dist)<fabs(backward_dist)){ // start at beginning
 	  for(int i=first_i; i<Nswim_steps; i++, swim_step++){
 	      
@@ -2167,8 +2168,8 @@ void DReferenceTrajectory::GetLastDOCAPoint(DVector3 &pos, DVector3 &mom) const
 			last_swim_step = &swim_steps[0];
 			last_phi = 0.0;
 		}else{
-			pos.SetXYZ(NaN,NaN,NaN);
-			mom.SetXYZ(NaN,NaN,NaN);
+			pos.SetXYZ(QuietNaN,QuietNaN,QuietNaN);
+			mom.SetXYZ(QuietNaN,QuietNaN,QuietNaN);
 			return;
 		}
 	}
@@ -2203,7 +2204,7 @@ DVector3 DReferenceTrajectory::GetLastDOCAPoint(void) const
 			last_swim_step = &swim_steps[0];
 			last_phi = 0.0;
 		}else{
-			return DVector3(NaN,NaN,NaN);
+			return DVector3(QuietNaN,QuietNaN,QuietNaN);
 		}
 	}
 	const DVector3 &xdir = last_swim_step->sdir;
@@ -2408,9 +2409,12 @@ jerror_t DReferenceTrajectory::FindPOCAtoLine(const DVector3 &origin,
 					      DVector3 &commonpos, double &doca, double &var_doca) const{ 
   const swim_step_t *swim_step=this->swim_steps;
 
-  TMatrixFSym* cov = (track_kd!=NULL) ? (dynamic_cast<DApplication*>(japp))->Get_CovarianceMatrixResource(7) : NULL;
+  shared_ptr<TMatrixFSym> cov = (track_kd!=NULL) ? dResourcePool_TMatrixFSym->Get_SharedResource() : nullptr;
   if(track_kd!=NULL)
+  {
+	  cov->ResizeTo(7, 7);
 	  *cov = *(track_kd->errorMatrix());
+  }
   doca=1000.;
   double tflight=0.;
   double mass_sq=this->mass_sq;
@@ -2567,10 +2571,12 @@ jerror_t DReferenceTrajectory::IntersectTracks(const DReferenceTrajectory *rt2, 
   const swim_step_t *swim_step2=rt2->swim_steps;
   
   TMatrixFSym cov1(7), cov2(7);
-  TMatrixFSym* locCovarianceMatrix1 = (track1_kd != NULL) ? (dynamic_cast<DApplication*>(japp))->Get_CovarianceMatrixResource(7) : NULL;
-  TMatrixFSym* locCovarianceMatrix2 = (track2_kd != NULL) ? (dynamic_cast<DApplication*>(japp))->Get_CovarianceMatrixResource(7) : NULL;
+  shared_ptr<TMatrixFSym> locCovarianceMatrix1 = (track1_kd != NULL) ? dResourcePool_TMatrixFSym->Get_SharedResource() : nullptr;
+  shared_ptr<TMatrixFSym> locCovarianceMatrix2 = (track2_kd != NULL) ? dResourcePool_TMatrixFSym->Get_SharedResource() : nullptr;
 
   if((track1_kd != NULL) && (track2_kd != NULL)){
+	  locCovarianceMatrix1->ResizeTo(7, 7);
+	  locCovarianceMatrix2->ResizeTo(7, 7);
     cov1=*track1_kd->errorMatrix();
     cov2=*track2_kd->errorMatrix();
   }

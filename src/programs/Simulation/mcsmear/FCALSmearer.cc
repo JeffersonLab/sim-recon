@@ -136,25 +136,43 @@ void FCALSmearer::SmearEvent(hddm_s::HDDM *record)
 
          // Smear the energy and timing of the hit
          double sigma = fcal_config->FCAL_PHOT_STAT_COEF/sqrt(titer->getE());
-              
-	 if (mycol>=100 || myrow>=100){
-	   sigma=0.025/sqrt(titer->getE());
-	 }
-
-         // Apply constant scale factor to MC eneregy. 06/22/2016 A. Subedi
-         double E = ((mycol>=100 || myrow>=100)?1.:fcal_config->FCAL_MC_ESCALE )* titer->getE() * (1.0 + gDRandom.SampleGaussian(sigma)); 
-         
-         
-         // Smear the time by 200 ps (fixed for now) 7/2/2009 DL
+            
+	 // Smear the time by 200 ps (fixed for now) 7/2/2009 DL
          double t = titer->getT() + gDRandom.SampleGaussian(fcal_config->FCAL_TSIGMA); 
-         // Apply a single block threshold. 
 
-         // Scale threshold by gains         
-         if (E >= fcal_config->FCAL_BLOCK_THRESHOLD * FCAL_gain ){
+         double E = titer->getE();
+	 if (mycol<100 && myrow<100){
+	   if(fcal_config->FCAL_ADD_LIGHTGUIDE_HITS) {
+             hddm_s::FcalTruthLightGuideList lghits = titer->getFcalTruthLightGuides();
+             hddm_s::FcalTruthLightGuideList::iterator lgiter;
+             for (lgiter = lghits.begin(); lgiter != lghits.end(); lgiter++) {
+	       E += lgiter->getE();
+             }
+	   }
+	   // Apply constant scale factor to MC energy. 06/22/2016 A. Subedi
+	   E *= fcal_config->FCAL_MC_ESCALE * (1.0 + gDRandom.SampleGaussian(sigma)); 
+	   
+	   // Apply a single block threshold. 
+	   
+	   // Scale threshold by gains         
+	   if (E >= fcal_config->FCAL_BLOCK_THRESHOLD * FCAL_gain ){
                hddm_s::FcalHitList hits = iter->addFcalHits();
                hits().setE(E);
                hits().setT(t);
-         }
+	   }
+	 }
+	 else{
+	   sigma=0.025/sqrt(titer->getE());
+
+	   E = titer->getE() * (1.0 + gDRandom.SampleGaussian(sigma)); 
+	     
+	   if (E >= 0 ){
+               hddm_s::FcalHitList hits = iter->addFcalHits();
+               hits().setE(E);
+               hits().setT(t);
+	   }
+	   
+	 }
         
       }
 

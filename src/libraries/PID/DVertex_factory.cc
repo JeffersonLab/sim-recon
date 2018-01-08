@@ -37,7 +37,7 @@ jerror_t DVertex_factory::brun(jana::JEventLoop* locEventLoop, int32_t runnumber
 	locGeometry->GetTargetLength(dTargetLength);
 
 	gPARMS->SetDefaultParameter("VERTEX:NO_KINFIT_FLAG", dNoKinematicFitFlag);
-	gPARMS->SetDefaultParameter("KINFIT:DEBUGLEVEL", dKinFitDebugLevel);
+	gPARMS->SetDefaultParameter("VERTEX:DEBUGLEVEL", dKinFitDebugLevel);
 
 	dKinFitter->Set_DebugLevel(dKinFitDebugLevel);
 
@@ -78,7 +78,7 @@ jerror_t DVertex_factory::evnt(JEventLoop* locEventLoop, uint64_t eventnumber)
 
 	//separate the tracks based on high/low tracking FOM & has hit-match
 	map<JObject::oid_t, const DTrackTimeBased*>::iterator locIterator;
-	deque<const DTrackTimeBased*> locTrackTimeBasedVector_OnePerTrack, locTrackTimeBasedVector_OnePerTrack_Good;
+	vector<const DTrackTimeBased*> locTrackTimeBasedVector_OnePerTrack, locTrackTimeBasedVector_OnePerTrack_Good;
 	for(locIterator = locBestTrackTimeBasedMap.begin(); locIterator != locBestTrackTimeBasedMap.end(); ++locIterator)
 	{
 		const DTrackTimeBased* locTrackTimeBased = locIterator->second;
@@ -87,7 +87,7 @@ jerror_t DVertex_factory::evnt(JEventLoop* locEventLoop, uint64_t eventnumber)
 			locTrackTimeBasedVector_OnePerTrack_Good.push_back(locTrackTimeBased);
 	}
 
-	deque<const DTrackTimeBased*> locTrackTimeBasedVectorToUse = (locTrackTimeBasedVector_OnePerTrack_Good.size() >= 2) ? locTrackTimeBasedVector_OnePerTrack_Good : locTrackTimeBasedVector_OnePerTrack;
+	vector<const DTrackTimeBased*> locTrackTimeBasedVectorToUse = (locTrackTimeBasedVector_OnePerTrack_Good.size() >= 2) ? locTrackTimeBasedVector_OnePerTrack_Good : locTrackTimeBasedVector_OnePerTrack;
 
 	//handle cases of no/one track
 	if(locTrackTimeBasedVectorToUse.empty())
@@ -99,22 +99,21 @@ jerror_t DVertex_factory::evnt(JEventLoop* locEventLoop, uint64_t eventnumber)
 	DVector3 locRoughPosition = dAnalysisUtilities->Calc_CrudeVertex(locTrackTimeBasedVectorToUse);
 
 	// if only want rough guess, save it and exit
-	if(dNoKinematicFitFlag)
+	if(dNoKinematicFitFlag || (locTrackTimeBasedVectorToUse[0]->errorMatrix() == nullptr))
 		return Create_Vertex_Rough(locRoughPosition, locEventRFBunch);
 
 	//prepare for kinematic fit
-	dKinFitUtils->Reset_NewEvent(locEventLoop->GetJEvent().GetEventNumber());
+	dKinFitUtils->Reset_NewEvent();
 	dKinFitter->Reset_NewEvent();
 	TVector3 locTRoughPosition(locRoughPosition.X(), locRoughPosition.Y(), locRoughPosition.Z());
 
 	// create particles for kinematic fit
-	set<DKinFitParticle*> locKinFitParticles;
+	set<shared_ptr<DKinFitParticle>> locKinFitParticles;
 	for(size_t loc_i = 0; loc_i < locTrackTimeBasedVectorToUse.size(); ++loc_i)
 		locKinFitParticles.insert(dKinFitUtils->Make_DetectedParticle(locTrackTimeBasedVectorToUse[loc_i]));
 
 	// create vertex constraint
-	set<DKinFitParticle*> locNoConstrainParticles;
-	DKinFitConstraint_Vertex* locVertexConstraint = dKinFitUtils->Make_VertexConstraint(locKinFitParticles, locNoConstrainParticles, locTRoughPosition);
+	auto locVertexConstraint = dKinFitUtils->Make_VertexConstraint(locKinFitParticles, {}, locTRoughPosition);
 	dKinFitter->Add_Constraint(locVertexConstraint);
 
 	// fit, save, and return
@@ -155,15 +154,18 @@ jerror_t DVertex_factory::Create_Vertex_OneTrack(const DTrackTimeBased* locTrack
 	locVertex->dKinFitChiSq = 0.0;
 
 	//error matrix
-    const TMatrixFSym& locTrackErrorMatrix = *(locTrackTimeBased->errorMatrix());
-	locVertex->dCovarianceMatrix.ResizeTo(4, 4);
-	locVertex->dCovarianceMatrix.Zero();
-	for(size_t loc_i = 0; loc_i < 3; ++loc_i)
+	if(locTrackTimeBased->errorMatrix() != nullptr)
 	{
-		for(size_t loc_j = 0; loc_j < 3; ++loc_j)
-			locVertex->dCovarianceMatrix(loc_i, loc_j) = locTrackErrorMatrix(loc_i + 3, loc_j + 3);
+		const TMatrixFSym& locTrackErrorMatrix = *(locTrackTimeBased->errorMatrix());
+		locVertex->dCovarianceMatrix.ResizeTo(4, 4);
+		locVertex->dCovarianceMatrix.Zero();
+		for(size_t loc_i = 0; loc_i < 3; ++loc_i)
+		{
+			for(size_t loc_j = 0; loc_j < 3; ++loc_j)
+				locVertex->dCovarianceMatrix(loc_i, loc_j) = locTrackErrorMatrix(loc_i + 3, loc_j + 3);
+		}
+		locVertex->dCovarianceMatrix(3, 3) = locEventRFBunch->dTimeVariance; //t variance
 	}
-	locVertex->dCovarianceMatrix(3, 3) = locEventRFBunch->dTimeVariance; //t variance
 
 	_data.push_back(locVertex);
 	return NOERROR;
@@ -192,7 +194,7 @@ jerror_t DVertex_factory::Create_Vertex_Rough(DVector3 locPosition, const DEvent
 
 jerror_t DVertex_factory::Create_Vertex_KinFit(const DEventRFBunch* locEventRFBunch)
 {
-	DKinFitConstraint_Vertex* locResultVertexConstraint = dynamic_cast<DKinFitConstraint_Vertex*>(*dKinFitter->Get_KinFitConstraints().begin());
+	auto locResultVertexConstraint = std::dynamic_pointer_cast<DKinFitConstraint_Vertex>(*dKinFitter->Get_KinFitConstraints().begin());
 
 	TVector3 locFitVertex = locResultVertexConstraint->Get_CommonVertex();
 	DVector3 locDFitVertex(locFitVertex.X(), locFitVertex.Y(), locFitVertex.Z());
@@ -216,15 +218,15 @@ jerror_t DVertex_factory::Create_Vertex_KinFit(const DEventRFBunch* locEventRFBu
 
 	//Particle Maps & Pulls
 	//Build pulls from this:
-	map<DKinFitParticle*, map<DKinFitPullType, double> > locPulls_KinFitParticle;
+	map<shared_ptr<DKinFitParticle>, map<DKinFitPullType, double> > locPulls_KinFitParticle;
 	dKinFitter->Get_Pulls(locPulls_KinFitParticle);
 
 	//By looping over the pulls:
-	map<DKinFitParticle*, map<DKinFitPullType, double> >::iterator locMapIterator = locPulls_KinFitParticle.begin();
+	auto locMapIterator = locPulls_KinFitParticle.begin();
 	for(; locMapIterator != locPulls_KinFitParticle.end(); ++locMapIterator)
 	{
-		DKinFitParticle* locOutputKinFitParticle = locMapIterator->first;
-		DKinFitParticle* locInputKinFitParticle = dKinFitUtils->Get_InputKinFitParticle(locOutputKinFitParticle);
+		auto locOutputKinFitParticle = locMapIterator->first;
+		auto locInputKinFitParticle = dKinFitUtils->Get_InputKinFitParticle(locOutputKinFitParticle);
 
 		const JObject* locSourceJObject = dKinFitUtils->Get_SourceJObject(locInputKinFitParticle);
 		locVertex->dKinFitPulls[locSourceJObject] = locMapIterator->second;

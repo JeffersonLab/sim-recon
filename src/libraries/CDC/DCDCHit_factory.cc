@@ -202,50 +202,20 @@ jerror_t DCDCHit_factory::evnt(JEventLoop *loop, uint64_t eventnumber)
             throw JException(str);
         }
 
-        // Get pedestal. Preference is given to pedestal measured
-        // for event. Otherwise, use statistical one from CCDB
-        double pedestal = pedestals[ring-1][straw-1];
 
         // Grab the pedestal from the digihit since this should be consistent between the old and new formats
-        uint32_t raw_ped           = digihit->pedestal;
-        uint32_t nsamples_integral = digihit->nsamples_integral;
+        int raw_ped           = digihit->pedestal;
+        int maxamp            = digihit->pulse_peak; 
 
         // There are a few values from the new data type that are critical for the interpretation of the data
-        uint16_t IBIT = 0; // 2^{IBIT} Scale factor for integral
-        //        uint16_t ABIT = 0; // 2^{ABIT} Scale factor for amplitude
+        uint16_t ABIT = 0; // 2^{ABIT} Scale factor for amplitude
         uint16_t PBIT = 0; // 2^{PBIT} Scale factor for pedestal
-        uint16_t NW   = 0;
 
         // This is the place to make quality cuts on the data. 
-        // Try to get the new data type, if that fails, try to get the old...
-        const Df125CDCPulse *CDCPulseObj = NULL;
-        digihit->GetSingle(CDCPulseObj);
-        if (CDCPulseObj != NULL){
-            const Df125Config *config = NULL;
-            CDCPulseObj->GetSingle(config);
-
-            // Set some constants to defaults until they appear correctly in the config words in the future
-            if(config){
-                IBIT = config->IBIT == 0xffff ? 4 : config->IBIT;
-                //            ABIT = config->ABIT == 0xffff ? 3 : config->ABIT;
-                PBIT = config->PBIT == 0xffff ? 0 : config->PBIT;
-                NW   = config->NW   == 0xffff ? 180 : config->NW;
-            }else{
-                static int Nwarnings = 0;
-                if(Nwarnings<10){
-                    _DBG_ << "NO Df125Config object associated with Df125CDCPulse object!" << endl;
-                    Nwarnings++;
-                    if(Nwarnings==10) _DBG_ << " --- LAST WARNING!! ---" << endl;
-                }
-            }
-            if(NW==0) NW=180; // some data was taken (<=run 4700) where NW was written as 0 to file
-
-            // The integration window in the CDC should always extend past the end of the window
-            // Only true after about run 4100
-            nsamples_integral = (NW - (digihit->pulse_time / 10));  
-
-        }
-        else{ // Use the old format
+        const Df125PulsePedestal* PPobj = NULL;
+        digihit->GetSingle(PPobj);
+        if( PPobj != NULL ) { 
+            // Use the old format - mostly handle error conditions
             // This code will at some point become deprecated in the future...
             // This applies to the firmware for data taken until the fall of 2015.
             // Mode 8: Raw data and processed data (except pulse integral).
@@ -257,27 +227,51 @@ jerror_t DCDCHit_factory::evnt(JEventLoop *loop, uint64_t eventnumber)
             // There is a slight difference between Mode 7 and 8 data
             // The following condition signals an error state in the flash algorithm
             // Do not make hits out of these
-            const Df125PulsePedestal* PPobj = NULL;
-            digihit->GetSingle(PPobj);
             if (PPobj != NULL){
                 if (PPobj->pedestal == 0 || PPobj->pulse_peak == 0) continue;
                 if (PPobj->pulse_number == 1) continue; // Unintentionally had 2 pulses found in fall 2014 data (0-1 counting issue)
             }
-
+            
             const Df125PulseIntegral* PIobj = NULL;
             digihit->GetSingle(PIobj);
             if (PPobj == NULL || PIobj == NULL) continue; // We don't want hits where ANY of the associated information is missing
+
+            // this amplitude is not set in the translation table for this old data format, so make a (reasonable?) guess
+            maxamp = digihit->pulse_integral / 28.8;
+        } else {
+            // Use the modern (2017+) data versions
+            // Configuration data needed to interpret the hits is stored in the data stream
+            vector<const Df125Config*> configs;
+            digihit->Get(configs);
+            if( configs.empty() ){
+                static int Nwarnings = 0;
+                if(Nwarnings<10){
+                    _DBG_ << "NO Df125Config object associated with Df125CDCPulse object!" << endl;
+                    Nwarnings++;
+                    if(Nwarnings==10) _DBG_ << " --- LAST WARNING!! ---" << endl;
+                }
+            }else{
+            	// Set some constants to defaults until they appear correctly in the config words in the future
+					const Df125Config *config = configs[0];
+					ABIT = config->ABIT == 0xffff ? 3 : config->ABIT;
+					PBIT = config->PBIT == 0xffff ? 0 : config->PBIT;
+ 				}
         }
 
-        // Complete the pedestal subtracion here since we should know the correct number of samples.
-        uint32_t scaled_ped = raw_ped << PBIT;
-        pedestal = double(scaled_ped * nsamples_integral);
+        // Complete the pedestal subtraction here since we should know the correct number of samples.
+        int scaled_ped = raw_ped << PBIT;
+        
+        if (maxamp > 0) maxamp = maxamp << ABIT;
+        if (maxamp <= scaled_ped) continue;
+
+        maxamp = maxamp - scaled_ped;
 
         // Apply calibration constants here
-        double integral = double(digihit->pulse_integral << IBIT);
         double t_raw = double(digihit->pulse_time);
 
-        double q = a_scale * gains[ring-1][straw-1] * (integral - pedestal);
+        double q = a_scale * gains[ring-1][straw-1] * (double)maxamp * 28.8;
+        double amp =  maxamp;
+
         double t = t_scale * t_raw - time_offsets[ring-1][straw-1] + t_base;
 
         if (q < DIGI_THRESHOLD) 
@@ -290,6 +284,7 @@ jerror_t DCDCHit_factory::evnt(JEventLoop *loop, uint64_t eventnumber)
         // Values for d, itrack, ptype only apply to MC data
         // note that ring/straw counting starts at 1
         hit->q = q;
+        hit->amp = amp;
         hit->t = t;
         hit->d = 0.0;
         hit->itrack = -1;

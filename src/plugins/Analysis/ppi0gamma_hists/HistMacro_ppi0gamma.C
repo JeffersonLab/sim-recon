@@ -237,10 +237,11 @@
 		n_omega_kinfit = locHist_Omega_KinFitCut->Integral(100./locNumRebin, 400./locNumRebin);
 		
 		// Determine Mass and Width
-		TF1 *fomega = new TF1("fomega", "gaus", 0.6, 0.9);
+		TF1 *fomega = new TF1("fomega", "gaus(0)+pol0(4)", 0.65, 0.9);
 		fomega->SetParameter(1,0.782);
 		fomega->SetParameter(2,0.03);
-		locHist_KinFitOmega_KinFitCut->Fit("fomega", "RQ0");
+		fomega->SetParameter(4,locHist_KinFitOmega_KinFitCut->GetBinContent(1));
+		locHist_KinFitOmega_KinFitCut->Fit("fomega", "Q0");
 		omega_mass = fomega->GetParameter(1);
 		omega_width = fomega->GetParameter(2);
 
@@ -307,16 +308,14 @@
 	  tx.SetTextAlign(11);
 	  tx.SetTextSize(0.06);
 	  char text[100];
-	  sprintf(text, "E_{#gamma} > 7 GeV");
-	  tx.DrawLatex(0.1, locHist_KinFitConLev->GetMaximum()/4., text);
 	  sprintf(text, "Post KinFit");
-	  tx.DrawLatex(0.1, locHist_KinFitConLev->GetMaximum()/16., text);
+	  tx.DrawLatex(0.1, locHist_KinFitConLev->GetMaximum()/4., text);
 	  sprintf(text, "M(#omega) = %0.3f GeV/c^{2}", omega_mass);
-	  tx.DrawLatex(0.1, locHist_KinFitConLev->GetMaximum()/64., text);
+	  tx.DrawLatex(0.1, locHist_KinFitConLev->GetMaximum()/16., text);
 	  sprintf(text, "#Gamma(#omega) = %0.3f GeV/c^{2}", omega_width);
-	  tx.DrawLatex(0.1, locHist_KinFitConLev->GetMaximum()/256., text);
+	  tx.DrawLatex(0.1, locHist_KinFitConLev->GetMaximum()/64., text);
 	  sprintf(text, "N(#omega) = %0.2f / 1k Trigger", n_omega_kinfit/n_triggers*1000);
-	  tx.DrawLatex(0.1,  locHist_KinFitConLev->GetMaximum()/1024., text);
+	  tx.DrawLatex(0.1,  locHist_KinFitConLev->GetMaximum()/256., text);
 	}
 }
 

@@ -10,16 +10,21 @@
 
 #include <JANA/JObject.h>
 #include <JANA/JFactory.h>
-#include <PID/DKinematicData.h>
-#include <TRACKING/DTrackFitter.h>
+#include "DTrackingData.h"
+#include "DTrackFitter.h"
+#include "CDC/DCDCTrackHit.h"
+#include "FDC/DFDCPseudo.h"
 
 class DReferenceTrajectory;
 
+using namespace jana;
+using namespace std;
 
-class DTrackTimeBased:public DKinematicData{
+class DTrackTimeBased:public DTrackingData{
 	public:
 		JOBJECT_PUBLIC(DTrackTimeBased);
 		
+		double dEdx(void) const{return ((dNumHitsUsedFordEdx_CDC >= dNumHitsUsedFordEdx_FDC) ? ddEdx_CDC : ddEdx_FDC);}
 		typedef struct{
 		  unsigned int inner_layer;
 		  unsigned int outer_layer;
@@ -34,8 +39,10 @@ class DTrackTimeBased:public DKinematicData{
 		float chisq;			///< Chi-squared for the track (not chisq/dof!)
 		int Ndof;				///< Number of degrees of freedom in the fit
 		vector<DTrackFitter::pull_t> pulls;	///< Holds pulls used in chisq calc. (not including off-diagonals)
+		map<DetectorSystem_t,vector<DTrackFitter::Extrapolation_t> >extrapolations;
 
-		const DReferenceTrajectory *rt; ///< pointer to reference trjectory representing this track
+
+      bool IsSmoothed; // Boolean value to indicate whether the smoother was run succesfully over this track.
 
 		typedef struct{
 		  double t0,t0_sigma;
@@ -72,6 +79,21 @@ class DTrackTimeBased:public DKinematicData{
 			AddString(items, "#HitsMCMatched", "%d",dNumHitsMatchedToThrown);
 		}
 };
+
+size_t Get_NumTrackHits(const DTrackTimeBased* locTrackTimeBased);
+inline size_t Get_NumTrackHits(const DTrackTimeBased* locTrackTimeBased)
+{
+	vector<const DCDCTrackHit*> locCDCHits;
+	locTrackTimeBased->Get(locCDCHits);
+	vector<const DFDCPseudo*> locFDCHits;
+	locTrackTimeBased->Get(locFDCHits);
+
+	size_t locNumHits = locCDCHits.size() + locFDCHits.size();
+	if(locNumHits > 0)
+		return locNumHits;
+
+	return locTrackTimeBased->Ndof + 5; //is WRONG because FDC DoF != FDC Hits
+}
 
 #endif // _DTrackTimeBased_
 

@@ -10,13 +10,13 @@
 
 #include <JANA/JObject.h>
 #include <JANA/JFactory.h>
-#include <PID/DKinematicData.h>
+#include <TRACKING/DTrackingData.h>
 #include <TRACKING/DTrackFitter.h>
 
 class DReferenceTrajectory;
 
 
-class DTrackWireBased:public DKinematicData{
+class DTrackWireBased:public DTrackingData{
 	public:
 		JOBJECT_PUBLIC(DTrackWireBased);
 		
@@ -24,9 +24,13 @@ class DTrackWireBased:public DKinematicData{
 		float chisq;			///< Chi-squared for the track (not chisq/dof!)
 		int Ndof;				///< Number of degrees of freedom in the fit
 		vector<DTrackFitter::pull_t> pulls;	///< Holds pulls used in chisq calc. (not including off-diagonals)
+		map<DetectorSystem_t,vector<DTrackFitter::Extrapolation_t> >extrapolations;
+		
 		double FOM; //confidence level
 
 		const DReferenceTrajectory *rt; ///< pointer to reference trjectory representing this track
+
+      bool IsSmoothed; // Boolean value to indicate whether the smoother was run succesfully over this track.
 
 		// Hit CDC Rings & FDC Planes
 		// use the DParticleID Get_CDCRings & Get_FDCPlanes functions to extract the information from these

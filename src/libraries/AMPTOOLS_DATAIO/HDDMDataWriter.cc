@@ -1,16 +1,21 @@
 
 #include "TLorentzVector.h"
+#include "TRandom3.h"
 
 #include "AMPTOOLS_DATAIO/HDDMDataWriter.h"
 #include "HDDM/hddm_s.hpp"
 
-HDDMDataWriter::HDDMDataWriter(const string& outFile, int runNumber)
+HDDMDataWriter::HDDMDataWriter(const string& outFile, int runNumber, int seed)
 {
   m_OutputFile = new ofstream(outFile.c_str());
   m_OutputStream = new hddm_s::ostream(*m_OutputFile);
   m_runNumber = runNumber;
   
   m_eventCounter = 0;
+
+  // initialize root's pseudo-random generator
+  gRandom->SetSeed(seed);
+
 }
 
 HDDMDataWriter::~HDDMDataWriter()
@@ -38,7 +43,7 @@ writeEvent( const Kinematics& kin, const vector<int>& ptype,
     vz_min=vz_max;
     vz_max=tmp;
   }
-  writeEvent(kin, ptype,vx, vy, (vz_max - vz_min) * drand48() + vz_min);
+  writeEvent(kin, ptype,vx, vy, (vz_max - vz_min) * gRandom->Uniform() + vz_min);
 }
 
 
@@ -58,6 +63,12 @@ writeEvent( const Kinematics& kin, const vector<int>& ptype,
   hddm_s::VertexList vs = rs().addVertices();
   hddm_s::OriginList os = vs().addOrigins();
   hddm_s::ProductList ps = vs().addProducts(nParticles-1);
+  hddm_s::RandomList ranl = rs().addRandoms();
+
+  ranl().setSeed1(gRandom->Integer(std::numeric_limits<int32_t>::max()));
+  ranl().setSeed2(gRandom->Integer(std::numeric_limits<int32_t>::max()));
+  ranl().setSeed3(gRandom->Integer(std::numeric_limits<int32_t>::max()));
+  ranl().setSeed4(gRandom->Integer(std::numeric_limits<int32_t>::max()));
 
   os().setT(0.0);
   os().setVx(vx);
@@ -89,7 +100,7 @@ writeEvent( const Kinematics& kin, const vector<int>& ptype,
   for(int i=1; i < nParticles; i++)
   {
       ps(i-1).setType((Particle_t)ptype[i]);
-      ps(i-1).setPdgtype(0);    /* don't bother with the PDG type here */
+      ps(i-1).setPdgtype(PDGtype((Particle_t)ptype[i]));
       ps(i-1).setId(i);         /* unique value for this particle within the event */
       ps(i-1).setParentid(0);   /* All internally generated particles have no parent */
       ps(i-1).setMech(0);       /* maybe this should be set to something? */

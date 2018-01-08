@@ -145,21 +145,22 @@ void BCALSmearer::GetSiPMHits(hddm_s::HDDM *record,
      }
      int table_id = GetCalibIndex( iter->getModule(), layer, iter->getSector() );  // key the cell identification off of the upstream cell
      double cEff = bcal_config->GetEffectiveVelocity(table_id);
-     double attenuation_length = 0; // initialize variable
-     double attenuation_L1=-1., attenuation_L2=-1.;  // these parameters are ignored for now
-     bcal_config->GetAttenuationParameters(table_id, attenuation_length, attenuation_L1, attenuation_L2);
+     //double attenuation_length = 0; // initialize variable
+     //double attenuation_L1=-1., attenuation_L2=-1.;  // these parameters are ignored for now
+     //bcal_config->GetAttenuationParameters(table_id, attenuation_length, attenuation_L1, attenuation_L2);
     
      // Get reference to existing CellHits, or create one if it doesn't exist
      CellHits &cellhitsup = SiPMHits[idxup];
      cellhitsup.Etruth = iter->getE(); // Energy deposited in the cell in GeV
-     cellhitsup.E = iter->getE()*exp(-dist_up/attenuation_length)*1000.; // in attenuated MeV
+     //cellhitsup.E = iter->getE()*exp(-dist_up/attenuation_length)*1000.; // in attenuated MeV
+     cellhitsup.E = iter->getE()*exp(-dist_up/bcal_config->BCAL_ATTENUATION_LENGTH)*1000.; // in attenuated MeV
      cellhitsup.t = iter->getT() + dist_up/cEff; // in ns
      cellhitsup.end = CellHits::kUp; // Keep track of BCal end
 
      // Get reference to existing CellHits, or create one if it doesn't exist
      CellHits &cellhitsdn = SiPMHits[idxdn];
      cellhitsdn.Etruth = iter->getE(); // Energy deposited in the cell in GeV
-     cellhitsdn.E = iter->getE()*exp(-dist_dn/attenuation_length)*1000.; // in attenuated MeV
+     cellhitsdn.E = iter->getE()*exp(-dist_dn/bcal_config->BCAL_ATTENUATION_LENGTH)*1000.; // in attenuated MeV
      cellhitsdn.t = iter->getT() + dist_dn/cEff; // in ns
      cellhitsdn.end = CellHits::kDown; // Keep track of BCal end
    }
@@ -211,7 +212,9 @@ void BCALSmearer::ApplySamplingFluctuations(map<bcal_index, CellHits> &SiPMHits,
       
       // Find fractional sampling sigma based on deposited energy (whole colorimeter, not just fibers)
       double Etruth = cellhits.Etruth;
-      double sigmaSamp = bcal_config->BCAL_SAMPLINGCOEFA / sqrt( Etruth ) + bcal_config->BCAL_SAMPLINGCOEFB;
+      double sqrtterm = bcal_config->BCAL_SAMPLINGCOEFA / sqrt( Etruth );
+      double linterm = bcal_config->BCAL_SAMPLINGCOEFB;
+      double sigmaSamp = sqrt(sqrtterm*sqrtterm + linterm*linterm);   
 
       // Convert sigma into GeV
       sigmaSamp *= Etruth;
@@ -665,7 +668,20 @@ void BCALSmearer::CopyBCALHitsToHDDM(map<int, fADCHitList> &fADCHits,
       	if (integer_time >= 0){
             hddm_s::BcalfADCDigiHitList fadcs = iter->addBcalfADCDigiHits();
             fadcs().setEnd(bcal_index::kUp);
-            fadcs().setPulse_integral(round(hitlist.uphits[i].E/bcal_config->BCAL_MEV_PER_ADC_COUNT));
+	    double integral = round(hitlist.uphits[i].E/bcal_config->BCAL_MEV_PER_ADC_COUNT);
+	    
+	    // fADC saturation based on waveforms from data
+	    if(!bcal_config->NO_FADC_SATURATION) { 
+		    if(integral > bcal_config->fADC_MinIntegral_Saturation[0][hitlist.sumlayer-1]) {
+			    double y = integral; 
+			    double a = bcal_config->fADC_Saturation_Linear[0][hitlist.sumlayer-1];
+			    double b = bcal_config->fADC_Saturation_Quadratic[0][hitlist.sumlayer-1];
+			    double c = bcal_config->fADC_MinIntegral_Saturation[0][hitlist.sumlayer-1];
+			    // "invert" saturation correction for MC
+			    integral = (1 - a*y + 2.*b*c*y - sqrt(1. - 2.*a*y + 4.*b*c*y + (a*a - 4.*b)*y*y))/(2.*b*y);
+		    }
+	    }
+            fadcs().setPulse_integral(integral);
             fadcs().setPulse_time(integer_time);
         }
       }
@@ -674,7 +690,21 @@ void BCALSmearer::CopyBCALHitsToHDDM(map<int, fADCHitList> &fADCHits,
       	if (integer_time >= 0){
             hddm_s::BcalfADCDigiHitList fadcs = iter->addBcalfADCDigiHits();
             fadcs().setEnd(bcal_index::kDown);
-            fadcs().setPulse_integral(round(hitlist.dnhits[i].E/bcal_config->BCAL_MEV_PER_ADC_COUNT));
+	    double integral = round(hitlist.dnhits[i].E/bcal_config->BCAL_MEV_PER_ADC_COUNT);
+	    
+	    // fADC saturation based on waveforms from data
+	    if(!bcal_config->NO_FADC_SATURATION) { 
+		    if(integral > bcal_config->fADC_MinIntegral_Saturation[1][hitlist.sumlayer-1]) {
+			    double y = integral; 
+			    double a = bcal_config->fADC_Saturation_Linear[1][hitlist.sumlayer-1];
+			    double b = bcal_config->fADC_Saturation_Quadratic[1][hitlist.sumlayer-1];
+			    double c = bcal_config->fADC_MinIntegral_Saturation[1][hitlist.sumlayer-1];
+			    // "invert" saturation correction for MC
+			    integral = (1 - a*y + 2.*b*c*y - sqrt(1. - 2.*a*y + 4.*b*c*y + (a*a - 4.*b)*y*y))/(2.*b*y);
+                    }
+
+	    }
+            fadcs().setPulse_integral(integral);
             fadcs().setPulse_time(integer_time);
         } 
       }
@@ -762,18 +792,20 @@ bcal_config_t::bcal_config_t(JEventLoop *loop)
  	NO_SAMPLING_FLUCTUATIONS = false;
  	NO_SAMPLING_FLOOR_TERM = false;
  	NO_POISSON_STATISTICS = false;
+	NO_FADC_SATURATION = false;
 		
 	// Load parameters from CCDB
-    cout << "get BCAL/bcal_smear_parms parameters from CCDB..." << endl;
+    cout << "get BCAL/bcal_smear_parms_v2 parameters from CCDB..." << endl;
     map<string, double> bcalparms;
-    if(loop->GetCalib("BCAL/bcal_smear_parms", bcalparms)) {
-     	jerr << "Problem loading BCAL/bcal_smear_parms from CCDB!" << endl;
+    if(loop->GetCalib("BCAL/bcal_smear_parms_v2", bcalparms)) {
+     	jerr << "Problem loading BCAL/bcal_smear_parms_v2 from CCDB!" << endl;
      } else {
      	BCAL_SAMPLINGCOEFA 		  = bcalparms["BCAL_SAMPLINGCOEFA"];
      	BCAL_SAMPLINGCOEFB 		  = bcalparms["BCAL_SAMPLINGCOEFB"];
      	BCAL_TWO_HIT_RESO 		  = bcalparms["BCAL_TWO_HIT_RESO"];
 	BCAL_mevPerPE			  = bcalparms["BCAL_mevPerPE"];
 	BCAL_C_EFFECTIVE		  = bcalparms["BCAL_C_EFFECTIVE"];
+	BCAL_ATTENUATION_LENGTH		  = bcalparms["BCAL_ATTENUATION_LENGTH"];
 	BCAL_ADC_THRESHOLD_MEV		  = bcalparms["BCAL_ADC_THRESHOLD_MEV"];
 	BCAL_FADC_TIME_RESOLUTION	  = bcalparms["BCAL_FADC_TIME_RESOLUTION"]; 
 	BCAL_TDC_TIME_RESOLUTION	  = bcalparms["BCAL_TDC_TIME_RESOLUTION"];
@@ -785,17 +817,17 @@ bcal_config_t::bcal_config_t(JEventLoop *loop)
 
 	}
 	
-    cout << "Get BCAL/attenuation_parameters from CCDB..." <<endl;
-    vector< vector<double> > in_atten_parameters;
-    if(loop->GetCalib("BCAL/attenuation_parameters", in_atten_parameters)) {
-     	jerr << "Problem loading BCAL/bcal_parms from CCDB!" << endl;
-	} else {
-     	attenuation_parameters.clear();
-
-     	for (unsigned int i = 0; i < in_atten_parameters.size(); i++) {
-     		attenuation_parameters.push_back( in_atten_parameters.at(i) );
-     	}
-	}
+    //cout << "Get BCAL/attenuation_parameters from CCDB..." <<endl;
+    //vector< vector<double> > in_atten_parameters;
+    //if(loop->GetCalib("BCAL/attenuation_parameters", in_atten_parameters)) {
+    // 	jerr << "Problem loading BCAL/bcal_parms from CCDB!" << endl;
+	//} else {
+    // 	attenuation_parameters.clear();
+    //
+    // 	for (unsigned int i = 0; i < in_atten_parameters.size(); i++) {
+    // 		attenuation_parameters.push_back( in_atten_parameters.at(i) );
+    // 	}
+	//}
 		
      cout << "Get BCAL/digi_scales parameters from CCDB..." << endl;
      map<string, double> bcaldigiscales;
@@ -834,6 +866,15 @@ bcal_config_t::bcal_config_t(JEventLoop *loop)
         
     }
 
-
+    std::vector<std::map<string,double> > saturation_ADC_pars;
+    if(loop->GetCalib("/BCAL/ADC_saturation", saturation_ADC_pars))
+	    jout << "Error loading /BCAL/ADC_saturation !" << endl;
+    for (unsigned int i=0; i < saturation_ADC_pars.size(); i++) {
+	    int end = (saturation_ADC_pars[i])["end"];
+	    int layer = (saturation_ADC_pars[i])["layer"] - 1;
+	    fADC_MinIntegral_Saturation[end][layer] = (saturation_ADC_pars[i])["par0"];
+	    fADC_Saturation_Linear[end][layer] = (saturation_ADC_pars[i])["par1"];
+	    fADC_Saturation_Quadratic[end][layer] = (saturation_ADC_pars[i])["par2"];
+    } 
 }
 

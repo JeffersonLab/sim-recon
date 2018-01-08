@@ -150,6 +150,17 @@ jerror_t JEventProcessor_BCAL_TDC_Timing::brun(JEventLoop *loop, int32_t runnumb
     }
     japp->RootFillUnLock(this);
 
+    vector<const DTrackFitter *> fitters;
+    loop->Get(fitters);
+    
+    if(fitters.size()<1){
+      _DBG_<<"Unable to get a DTrackFinder object!"<<endl;
+      return RESOURCE_UNAVAILABLE;
+    }
+    
+    fitter = fitters[0];
+
+
     return NOERROR;
 }
 
@@ -372,12 +383,13 @@ jerror_t JEventProcessor_BCAL_TDC_Timing::evnt(JEventLoop *loop, uint64_t eventn
       Fill1DHistogram("BCAL_Global_Offsets", "Debug", "Success", 3, "Success profile;Step", 16, -0.5, 15.5);
 
       // Now from this hypothesis we can get the detector matches to the BCAL
-      const DBCALShowerMatchParams* bcalMatch = bestHypothesis->Get_BCALShowerMatchParams();
-      const DSCHitMatchParams* scMatch = bestHypothesis->Get_SCHitMatchParams(); // Needed for quality cut later
+      auto bcalMatch = bestHypothesis->Get_BCALShowerMatchParams();
+      auto scMatch = bestHypothesis->Get_SCHitMatchParams(); // Needed for quality cut later
       DVector3 position = bestHypothesis->position();
       //DVector3 momentum = bestHypothesis->momentum();
       //float Z_track = position.z();
       //float_track = momentum.Mag();
+
       if (bcalMatch == NULL) continue; 
       Fill1DHistogram("BCAL_Global_Offsets", "Debug", "Success", 4, "Success profile;Step", 16, -0.5, 15.5);
       if (scMatch == NULL) continue;
@@ -390,12 +402,10 @@ jerror_t JEventProcessor_BCAL_TDC_Timing::evnt(JEventLoop *loop, uint64_t eventn
                       dDeltaZToShower, dDeltaPhiToShower, "BCAL Match;#Delta Z [cm]; #Delta#phi [rad]",
                       200, -25, 25, 200, -0.1, 0.1);
 
-      // We also need the reference trajectory, which is buried deep in there
-      const DTrackTimeBased *timeBasedTrack = nullptr;
-      bestHypothesis->GetSingle(timeBasedTrack);
-      const DReferenceTrajectory *rt = timeBasedTrack->rt;
+      const DTrackTimeBased *timeBasedTrack = bestHypothesis->Get_TrackTimeBased();
       if (timeBasedTrack->FOM < 0.0027) continue; // 3-sigma cut on tracking FOM
       Fill1DHistogram("BCAL_Global_Offsets", "Debug", "Success", 6, "Success profile;Step", 16, -0.5, 15.5);
+      if (timeBasedTrack->Ndof < 10) continue; // CDC: 5 params in fit, 10 dof => [15 hits]; FDC [10 hits]
 
       // Use CDC dEdx to help reject protons
       double dEdx=1e6*timeBasedTrack->ddEdx_CDC;
@@ -408,12 +418,12 @@ jerror_t JEventProcessor_BCAL_TDC_Timing::evnt(JEventLoop *loop, uint64_t eventn
 
       // Fill histograms based on the shower
       char name[200], title[200];
-      DVector3 proj_pos = rt->GetLastDOCAPoint();
-      double pathLength, flightTime;
+      DVector3 proj_pos;
+      double flightTime=0.;
       //double innerpathLength, innerflightTime;
       double shower_x = thisShower->x;
       double shower_y = thisShower->y;
-      double r_shower = sqrt(shower_x*shower_x+shower_y*shower_y);
+
       double t_shower = thisShower->t;
       double E_shower = thisShower->E;
       double Z_shower = thisShower->z;
@@ -429,7 +439,14 @@ jerror_t JEventProcessor_BCAL_TDC_Timing::evnt(JEventLoop *loop, uint64_t eventn
       //int res1 = rt->GetIntersectionWithRadius(r_shower,proj_pos, &pathLength, &flightTime);
       //int res2 = rt->GetIntersectionWithRadius(dBCALGeom->GetBCAL_inner_rad(),proj_pos, &innerpathLength, &innerflightTime);
       //if (res1==NOERROR && res2==NOERROR) {
-      if (rt->GetIntersectionWithRadius(r_shower,proj_pos, &pathLength, &flightTime)==NOERROR){
+      DVector3 bcalpos(shower_x,shower_y,Z_shower);
+      double R=bcalpos.Perp();
+      double pathLength=0.;
+      DVector3 proj_mom;
+      vector<DTrackFitter::Extrapolation_t>extrapolations=timeBasedTrack->extrapolations.at(SYS_BCAL);
+      if (fitter->ExtrapolateToRadius(R,extrapolations,proj_pos,proj_mom,
+				      flightTime,pathLength)){	
+
           Fill1DHistogram("BCAL_Global_Offsets", "Debug", "Success", 7, "Success profile;Step", 16, -0.5, 15.5);
           if (thisRFBunch->dNumParticleVotes >= 2){ // Require good RF bunch and this track match the SC
               Fill1DHistogram("BCAL_Global_Offsets", "Debug", "Success", 8, "Success profile;Step", 16, -0.5, 15.5);
@@ -510,8 +527,10 @@ jerror_t JEventProcessor_BCAL_TDC_Timing::evnt(JEventLoop *loop, uint64_t eventn
                           Z_shower, Z_point + Z_TARGET,
                           "Z_{Point} vs Z_{Shower};Z_{Shower}  [cm];Z_{Point} [cm]",
                           225, zminhall, zmaxhall, 225, zminhall, zmaxhall);
- 
-         if (rt->GetIntersectionWithRadius(rpoint,proj_pos, &pathLength, &flightTime)==NOERROR){
+	 if (fitter->ExtrapolateToRadius(rpoint,extrapolations,proj_pos,
+					 proj_mom,
+					 flightTime,pathLength)){	
+
             // Now proj_pos contains the projected position of the track at this particular point within the BCAL
             // We can plot the difference of the projected position and the BCAL position as a function of the channel
             char channame[255], layername[255], chargename[255];
@@ -525,22 +544,40 @@ jerror_t JEventProcessor_BCAL_TDC_Timing::evnt(JEventLoop *loop, uint64_t eventn
             //double localBCALHitZ = thisPoint->z() + Z_TARGET - dBCALGeom->GetBCAL_center();
             double deltaZ = trackHitZ-BCALHitZ;
             double Deltat = thisPoint->t_US() - thisPoint->t_DS();
+
             Fill2DHistogram ("BCAL_TDC_Offsets", "ZvsDeltat", "AllPoints",
                              Deltat, trackHitZ,
                              "Z_{Track} vs #Delta t;#Delta t = t_{US}-t_{DS};Z_{Track} [cm]",
-                             300, -30, 30, 250, zminhall, zmaxhall); 
+                             480, -30, 30, 250, zminhall, zmaxhall);  // simulation has 16 values in each Deltat=1
             Fill2DHistogram ("BCAL_TDC_Offsets", "ZvsDeltat", layername,
                              Deltat, trackHitZ,
                              "Z_{Track} vs #Delta t;#Delta t = t_{US}-t_{DS};Z_{Track} [cm]",
-                             300, -30, 30, 250, zminhall, zmaxhall); 
+                             480, -30, 30, 250, zminhall, zmaxhall); 
             Fill2DHistogram ("BCAL_TDC_Offsets", "ZvsDeltat", chargename,
                              Deltat, trackHitZ,
                              "Z_{Track} vs #Delta t;#Delta t = t_{US}-t_{DS};Z_{Track} [cm]",
-                             300, -30, 30, 250, zminhall, zmaxhall); 
+                             480, -30, 30, 250, zminhall, zmaxhall);
+            sprintf(title, "%s  Z_{Track} vs #Delta t;#Delta t = t_{US}-t_{DS};Z_{Track} [cm]", channame);
             Fill2DHistogram ("BCAL_TDC_Offsets", "ZvsDeltat", channame,
-                             Deltat, trackHitZ,
-                             "Z_{Track} vs #Delta t;#Delta t = t_{US}-t_{DS};Z_{Track} [cm]",
-                             300, -30, 30, 250, zminhall, zmaxhall); 
+                             Deltat, trackHitZ, title,
+                             480, -30, 30, 250, zminhall, zmaxhall); 
+
+            double trackTheta = 180/3.14159265358*atan2(timeBasedTrack->pperp(),timeBasedTrack->pz());
+            Fill2DHistogram ("BCAL_TDC_Offsets", "DeltatvsTheta", layername,
+                             trackTheta, Deltat,
+                             "#Delta t vs #theta_{Track};#theta_{Track}  (deg);#Delta t = t_{US}-t_{DS}  (ns)",
+                             360,0,180, 480, -30, 30); 
+
+
+            int the_cell = (thisPoint->module() - 1) * 16 + (thisPoint->layer() - 1) * 4 + thisPoint->sector();
+            float Deltat_Zcorr = Deltat - (trackHitZ-212)/8.1;
+            sprintf(title, "#Delta t (Hit) corrected for Z;#Delta t - Z_{Track}/v_{eff}");
+            Fill1DHistogram ("BCAL_Global_Offsets", "Deltat", "AllPoints",
+                             Deltat_Zcorr, title, 70, -10, 14);
+            Fill2DHistogram ("BCAL_Global_Offsets", "Deltat", "VsCell",
+                             the_cell, Deltat_Zcorr,
+                             "#Delta t (Hit) corrected for Z;#Delta t - Z_{Track}/v_{eff}",
+                             768, 0.5, 768.5, 70, -10, 14);
 
             Fill2DHistogram ("BCAL_TDC_Offsets", "Delta Z", "AllPoints",
                              trackHitZ, deltaZ,
@@ -575,6 +612,40 @@ jerror_t JEventProcessor_BCAL_TDC_Timing::evnt(JEventLoop *loop, uint64_t eventn
                              trackHitZ, BCALHitZ,
                              "Z_{point} Vs. Z_{Track}; Z_{Track} [cm]; Z_{Point} [cm]",
                              500, zminhall, zmaxhall, 500, zminhall, zmaxhall); 
+
+            // Get the unifiedhits
+            vector <const DBCALUnifiedHit*> unifiedhitVector;
+            thisPoint->Get(unifiedhitVector);
+            int up   = unifiedhitVector[0]->end; // up=1   if unifiedhitVector[0]->end = 1 (is downstream)
+            int down = unifiedhitVector[1]->end; // down=1 if unifiedhitVector[1]->end = 1 (is downstream)
+            const DBCALUnifiedHit *thisUnifiedhitup   = unifiedhitVector[up];
+            const DBCALUnifiedHit *thisUnifiedhitdown = unifiedhitVector[down];
+            float t_up = thisUnifiedhitup->t;
+            float t_ADC_up = thisUnifiedhitup->t_ADC;
+            float t_TDC_up = thisUnifiedhitup->t_TDC;
+            float t_down = thisUnifiedhitdown->t;
+            float t_ADC_down = thisUnifiedhitdown->t_ADC;
+            float t_TDC_down = thisUnifiedhitdown->t_TDC;
+            char type[10];
+            sprintf(type,"Mixed");
+            if (t_up == t_ADC_up && t_down == t_ADC_down) sprintf(type,"ADC");
+            if (t_up == t_TDC_up && t_down == t_TDC_down) sprintf(type,"TDC");
+
+            const DBCALHit * thisADCHit_up;
+            thisUnifiedhitup->GetSingle(thisADCHit_up);
+            const DBCALHit * thisADCHit_down;
+            thisUnifiedhitdown->GetSingle(thisADCHit_down);
+
+            // Get raw times
+            float Deltat_raw = thisADCHit_up->t_raw - thisADCHit_down->t_raw;
+            float Deltat_raw_Zcorr = Deltat_raw - (trackHitZ-212)/8.1;
+            Fill2DHistogram("BCAL_Global_Offsets", "Deltat_raw", "VsCell",
+                            the_cell, Deltat_raw_Zcorr,
+                            "#Delta t (Hit) corrected for Z;#Delta t_{raw} - Z_{Track}/v_{eff}",
+                            768, 0.5, 768.5, 70, -10, 14);
+            sprintf(title, "#Delta t (Hit) corrected for Z;#Delta t_{raw} - Z_{Track}/v_{eff}");
+            Fill1DHistogram ("BCAL_Global_Offsets", "Deltat_raw", "AllPoints",
+                             Deltat_raw_Zcorr, title, 70, -10, 14);
 
             // Attenuation Length
             vector<const DBCALDigiHit*> digihits;
@@ -626,7 +697,6 @@ jerror_t JEventProcessor_BCAL_TDC_Timing::evnt(JEventLoop *loop, uint64_t eventn
 
                // Now we just plot the difference in from the RF Time to get out the correction
                if (E_point > 0.05) { // The timing is known not to be great for very low energy, so only use our best info 
-                   int the_cell = (thisPoint->module() - 1) * 16 + (thisPoint->layer() - 1) * 4 + thisPoint->sector();
                    Fill2DHistogram("BCAL_Global_Offsets", "Target Time", "deltaTVsCell",
                                    the_cell, targetCenterTime - thisRFBunch->dTime,
                                    "Charged shower points; CCDB Index; t_{Target} - t_{RF} [ns]",
@@ -646,49 +716,12 @@ jerror_t JEventProcessor_BCAL_TDC_Timing::evnt(JEventLoop *loop, uint64_t eventn
                                            the_cell, targetCenterTime - thisRFBunch->dTime, E_point*E_point,
                                            "Charged shower points (E^{2} weighted); CCDB Index; t_{Target} - t_{RF} [ns]",
                                            768, 0.5, 768.5, 200, -10, 10);
+                   sprintf(name , "deltaTVsLayer_q%s", q); // for simulation separate by layer
+                   Fill2DHistogram("BCAL_Global_Offsets", "Target Time", name,
+                                   thisPoint->layer(), targetCenterTime - thisRFBunch->dTime,
+                                   "Charged shower points; CCDB Index; t_{Target} - t_{RF} [ns]",
+                                   4, 0.5, 4.5, 200, -10, 10);
                }
-               // Get the unifiedhits
-               vector <const DBCALUnifiedHit*> unifiedhitVector;
-               thisPoint->Get(unifiedhitVector);
-
-               // const DBCALUnifiedHit *thisUnifiedhit1 = unifiedhitVector[0];
-               // const DBCALUnifiedHit *thisUnifiedhit2 = unifiedhitVector[1];
-               // if (thisUnifiedhit1->end==0)
-               // float t1 = thisUnifiedhit1->t;
-               // float t_ADC1 = thisUnifiedhit1->t_ADC;
-               // float t_TDC1 = thisUnifiedhit1->t_TDC;
-               // float t2 = thisUnifiedhit2->t;
-               // float t_ADC2 = thisUnifiedhit2->t_ADC;
-               // float t_TDC2 = thisUnifiedhit2->t_TDC;
-               // char type[10];
-               // sprintf(type,"Mixed");
-               // if (t1 == t_ADC1 && t2 == t_ADC2) sprintf(type,"ADC");
-               // if (t1 == t_TDC1 && t2 == t_TDC2) sprintf(type,"TDC");
-
-               // const DBCALHit * thisADCHit1;
-               // thisUnifiedhit1->GetSingle(thisADCHit1);
-               // const DBCALHit * thisADCHit2;
-               // thisUnifiedhit2->GetSingle(thisADCHit2);
-
-               int up   = unifiedhitVector[0]->end; // up=1   if unifiedhitVector[0]->end = 1 (is downstream)
-               int down = unifiedhitVector[1]->end; // down=1 if unifiedhitVector[1]->end = 1 (is downstream)
-               const DBCALUnifiedHit *thisUnifiedhitup   = unifiedhitVector[up];
-               const DBCALUnifiedHit *thisUnifiedhitdown = unifiedhitVector[down];
-               float t_up = thisUnifiedhitup->t;
-               float t_ADC_up = thisUnifiedhitup->t_ADC;
-               float t_TDC_up = thisUnifiedhitup->t_TDC;
-               float t_down = thisUnifiedhitdown->t;
-               float t_ADC_down = thisUnifiedhitdown->t_ADC;
-               float t_TDC_down = thisUnifiedhitdown->t_TDC;
-               char type[10];
-               sprintf(type,"Mixed");
-               if (t_up == t_ADC_up && t_down == t_ADC_down) sprintf(type,"ADC");
-               if (t_up == t_TDC_up && t_down == t_TDC_down) sprintf(type,"TDC");
-
-               const DBCALHit * thisADCHit_up;
-               thisUnifiedhitup->GetSingle(thisADCHit_up);
-               const DBCALHit * thisADCHit_down;
-               thisUnifiedhitdown->GetSingle(thisADCHit_down);
 
                float pulse_peak_max = max(thisADCHit_up->pulse_peak,thisADCHit_down->pulse_peak);
                float pulse_peak_min = min(thisADCHit_up->pulse_peak,thisADCHit_down->pulse_peak);
@@ -701,7 +734,7 @@ jerror_t JEventProcessor_BCAL_TDC_Timing::evnt(JEventLoop *loop, uint64_t eventn
                double hitup_TargetCenterTime   = t_up   - barproptime_up   - flightTime - vertexTime;
                double hitdown_TargetCenterTime = t_down - barproptime_down - flightTime - vertexTime;
                double hittimediff = t_down - t_up - 2*localTrackHitZ/c_effective;
-
+	    
                int the_cell = (thisPoint->module() - 1) * 16 + (thisPoint->layer() - 1) * 4 + thisPoint->sector();
                //int channel = end*768 + the_cell;
                Fill2DHistogram("BCAL_Global_Offsets", "Target Time", "hitDeltaTVsChannel",
@@ -824,18 +857,21 @@ jerror_t JEventProcessor_BCAL_TDC_Timing::evnt(JEventLoop *loop, uint64_t eventn
            // *** Remove matched BCAL showers
            bool matched=0;
            for (unsigned int i=0; i < locTrackTimeBased.size() ; ++i) {
-               DVector3 trackpos(0.0,0.0,0.0);
-               locTrackTimeBased[i]->rt->GetIntersectionWithRadius(R_shower, trackpos);
-               double dPhi = 180./3.14159265358*(trackpos.Phi()-showerpos.Phi());
-               double dZ = (trackpos.Z() - z);
-               sprintf(name, "Matching");
-               sprintf(title, "Shower-Track position difference;dZ [cm]; d#phi [degrees]");
-               Fill2DHistogram("BCAL_Global_Offsets", "Showers_PID", name,
-                               dZ, dPhi, title,
-                               200, -60.0, 60.0, 200, -30, 30);
-               // analysis shows 40 and 15 are better
-               if (TMath::Abs(dZ < 40.0) && TMath::Abs(dPhi) < 15) matched=1;
-           }
+               DVector3 trackpos(0.0,0.0,0.0); 
+	       vector<DTrackFitter::Extrapolation_t>extrapolations=locTrackTimeBased[i]->extrapolations.at(SYS_BCAL);
+	       if (fitter->ExtrapolateToRadius(R_shower,extrapolations,trackpos)){	
+
+		 double dPhi = 180./3.14159265358*(trackpos.Phi()-showerpos.Phi());
+		 double dZ = (trackpos.Z() - z);
+		 sprintf(name, "Matching");
+		 sprintf(title, "Shower-Track position difference;dZ [cm]; d#phi [degrees]");
+		 Fill2DHistogram("BCAL_Global_Offsets", "Showers_PID", name,
+				 dZ, dPhi, title,
+				 200, -60.0, 60.0, 200, -30, 30);
+		 // analysis shows 40 and 15 are better
+		 if (TMath::Abs(dZ < 40.0) && TMath::Abs(dPhi) < 15) matched=1;
+	       }
+	   }
            if (matched) continue;
            Fill1DHistogram("BCAL_Global_Offsets", "Debug", "Success", 13, "Success profile;Step", 16, -0.5, 15.5);
 

@@ -15,8 +15,9 @@
 #include "FDC/DFDCPseudo.h"
 #include <TH3.h>
 #include <TH2.h>
-#include <TH1.h>
+#include <TH1I.h>
 #include <TMatrixFSym.h>
+#include "DResourcePool.h"
 
 #ifndef M_TWO_PI
 #define M_TWO_PI 6.28318530717958647692
@@ -46,9 +47,7 @@
 #define ONE_OVER_C TIME_UNIT_CONVERSION
 #define CDC_DRIFT_SPEED 55e-4
 #define VAR_S 0.09
-#define Q_OVER_P_MAX 100. // 10 MeV/c
 #define Q_OVER_PT_MAX 100. // 10 MeV/c
-#define PT_MIN 0.01 // 10 MeV/c
 #define MAX_PATH_LENGTH 500.
 #define TAN_MAX 10.
 
@@ -110,6 +109,7 @@ typedef struct{
 
 typedef struct{ 
   double t,cosa,sina;
+  double phiX,phiY,phiZ; // Alignment constants
   double uwire,vstrip,vvar,z,dE;
   double nr,nz;
   int status;
@@ -141,6 +141,7 @@ typedef struct{
   DMatrix5x1 S;
   double doca;
   double tcorr,tdrift;
+  double dDdt0;
   double variance;
   DMatrix2x2 V;
   bool used_in_fit;
@@ -186,11 +187,12 @@ class DTrackFitterKalmanSIMD: public DTrackFitter{
   jerror_t AddCDCHit(const DCDCTrackHit *cdchit);
   jerror_t AddFDCHit(const DFDCPseudo *fdchit);
 
-  jerror_t SetSeed(double q,DVector3 pos, DVector3 mom);
   jerror_t KalmanLoop(void);
   virtual kalman_error_t KalmanForward(double fdc_anneal,double cdc_anneal,DMatrix5x1 &S,DMatrix5x5 &C,
 				 double &chisq,unsigned int &numdof);
   virtual jerror_t SmoothForward(void);   
+  virtual jerror_t ExtrapolateForwardToOtherDetectors(void);  
+  jerror_t ExtrapolateCentralToOtherDetectors(void);
 
   kalman_error_t KalmanForwardCDC(double anneal,DMatrix5x1 &S,DMatrix5x5 &C,
 			    double &chisq,unsigned int &numdof);
@@ -271,6 +273,8 @@ class DTrackFitterKalmanSIMD: public DTrackFitter{
 
   double Step(double oldz,double newz, double dEdx,DMatrix5x1 &S);
   double FasterStep(double oldz,double newz, double dEdx,DMatrix5x1 &S);
+  void FastStep(double &z,double ds, double dEdx,DMatrix5x1 &S); 
+  void FastStep(DVector2 &xy,double ds, double dEdx,DMatrix5x1 &S);
   jerror_t StepJacobian(double oldz,double newz,const DMatrix5x1 &S,
 			double dEdx,DMatrix5x5 &J);
   jerror_t CalcDerivAndJacobian(double z,double dz,const DMatrix5x1 &S,
@@ -304,7 +308,7 @@ class DTrackFitterKalmanSIMD: public DTrackFitter{
 				  const DMatrix5x1 &S,DMatrix5x5 &Q);  
   jerror_t SmoothForwardCDC(void);   
   jerror_t SmoothCentral(void);  
-  void FillPullsVectorEntry(const DMatrix5x1 &Ss,const DMatrix5x5 &Cs,
+  jerror_t FillPullsVectorEntry(const DMatrix5x1 &Ss,const DMatrix5x5 &Cs,
 			    const DKalmanForwardTrajectory_t &traj,
 			    const DKalmanSIMDCDCHit_t *hit,
 			    const DKalmanUpdate_t &update);
@@ -322,6 +326,17 @@ class DTrackFitterKalmanSIMD: public DTrackFitter{
 			   const DVector2 &origin,
 			   const DVector2 &dir,DMatrix5x1 &S,
 			   double &dz_out);
+  jerror_t BrentForward(double z, double dedx, 
+            const double z0w,
+            const DVector2 &origin, 
+            const DVector2 &dir, DMatrix5x1 &S, 
+            double &dz);
+  jerror_t BrentCentral(double dedx, 
+        DVector2 &xy, 
+        const double z0w, 
+        const DVector2 &origin, 
+        const DVector2 &dir, 
+        DMatrix5x1 &Sc, double &ds);
   
   jerror_t PropagateForwardCDC(int length,int &index,double &z,double &r2,
 			       DMatrix5x1 &S, bool &stepped_to_boundary); 
@@ -333,8 +348,8 @@ class DTrackFitterKalmanSIMD: public DTrackFitter{
 			    double &var_t_factor,
 			    DMatrix5x1 &Sc,bool &stepped_to_boundary);
 
-  TMatrixFSym* Get7x7ErrorMatrix(DMatrixDSym C);
-  TMatrixFSym* Get7x7ErrorMatrixForward(DMatrixDSym C);
+  shared_ptr<TMatrixFSym> Get7x7ErrorMatrix(DMatrixDSym C);
+  shared_ptr<TMatrixFSym> Get7x7ErrorMatrixForward(DMatrixDSym C);
 
   kalman_error_t ForwardFit(const DMatrix5x1 &S,const DMatrix5x5 &C0); 
   kalman_error_t ForwardCDCFit(const DMatrix5x1 &S,const DMatrix5x5 &C0);  
@@ -422,6 +437,8 @@ class DTrackFitterKalmanSIMD: public DTrackFitter{
   double endplate_z_downstream;
   // upstream cdc start position
   vector<double>cdc_origin;
+  // outer detectors
+  double dTOFz,dFCALz;
 
   // Mass hypothesis
   double MASS,mass2;
@@ -482,6 +499,7 @@ class DTrackFitterKalmanSIMD: public DTrackFitter{
   int RING_TO_SKIP,PLANE_TO_SKIP;
   double PHOTON_ENERGY_CUTOFF;
   bool USE_FDC_DRIFT_TIMES;
+  bool ALIGNMENT,ALIGNMENT_CENTRAL,ALIGNMENT_FORWARD;
 
   bool USE_CDC_HITS,USE_FDC_HITS;
 
@@ -496,11 +514,19 @@ class DTrackFitterKalmanSIMD: public DTrackFitter{
   double MIN_FIT_P;
   // Maximum seed momentum
   double MAX_SEED_P;
+  
+  // Minimum proton momentum
+  double MIN_PROTON_P;
+  // Minimum pion momentum
+  double MIN_PION_P;
+  // minimum pt or p
+  double PT_MIN;
+  double Q_OVER_P_MAX;
 
   // parameters for scaling drift table for CDC
   double CDC_DRIFT_BSCALE_PAR1,CDC_DRIFT_BSCALE_PAR2;
   // parameters for CDC resolution function
-  double CDC_RES_PAR1,CDC_RES_PAR2;
+  double CDC_RES_PAR1,CDC_RES_PAR2,CDC_RES_PAR3;
   // parameter for scaling CDC hit variance for fits involving FDC hits.
   double CDC_VAR_SCALE_FACTOR;
   // minimum drift time to use CDC hit (can be negative)
@@ -515,7 +541,7 @@ class DTrackFitterKalmanSIMD: public DTrackFitter{
   // Parameters for drift resolution
   double DRIFT_RES_PARMS[3];
   // parameters for time-to-distance function for FDC
-  double DRIFT_FUNC_PARMS[4];
+  double DRIFT_FUNC_PARMS[6];
 
   // Identity matrix
   DMatrix5x5 I5x5;
@@ -523,10 +549,22 @@ class DTrackFitterKalmanSIMD: public DTrackFitter{
   DMatrix5x5 Zero5x5;
   DMatrix5x1 Zero5x1;
   
+  // FDC wire info
+  vector<double>fdc_z_wires;
+
+  // start counter geom info
+  vector<vector<DVector3> >sc_dir; // direction vector in plane of plastic
+  vector<vector<DVector3> >sc_pos;
+  vector<vector<DVector3> >sc_norm;
+  double SC_BARREL_R2,SC_END_NOSE_Z,SC_PHI_SECTOR1;
+
   bool IsHadron,IsElectron,IsPositron;
+  TH1I *alignDerivHists[46];
+  TH2I *brentCheckHists[2];
 
  private:
   unsigned int last_material_map;
+	shared_ptr<DResourcePool<TMatrixFSym>> dResourcePool_TMatrixFSym;
 
 };
 

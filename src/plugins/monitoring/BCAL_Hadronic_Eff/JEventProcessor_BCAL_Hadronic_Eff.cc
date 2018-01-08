@@ -257,8 +257,7 @@ jerror_t JEventProcessor_BCAL_Hadronic_Eff::evnt(jana::JEventLoop* locEventLoop,
 			if(!Cut_BCALTiming(locChargedTrackHypothesis))
 				continue; //also requires match to BCAL: no need for separate check
 
-			const DTrackTimeBased* locTrackTimeBased = NULL;
-			locChargedTrackHypothesis->GetSingle(locTrackTimeBased);
+			auto locTrackTimeBased = locChargedTrackHypothesis->Get_TrackTimeBased();
 			if(locTrackTimeBased->FOM < dMinTrackingFOM)
 				continue; //don't trust tracking results: bad tracking FOM
 
@@ -291,13 +290,12 @@ jerror_t JEventProcessor_BCAL_Hadronic_Eff::evnt(jana::JEventLoop* locEventLoop,
 	// Loop over the good tracks, using the best DTrackTimeBased object for each
 	for(auto& locChargedTrackHypothesis : locBestTracks)
 	{
-		const DTrackTimeBased* locTrackTimeBased = NULL;
-		locChargedTrackHypothesis->GetSingle(locTrackTimeBased);
+		auto locTrackTimeBased = locChargedTrackHypothesis->Get_TrackTimeBased();
 
 		/************************************************ CHECK SHOWER MATCH EFFICIENCY ************************************************/
 
 		//get the best-matched DBCALShower for this track (if any)
-		const DBCALShowerMatchParams* locBCALShowerMatchParams = locChargedTrackHypothesis->Get_BCALShowerMatchParams();
+		auto locBCALShowerMatchParams = locChargedTrackHypothesis->Get_BCALShowerMatchParams();
 		if(locBCALShowerMatchParams == NULL)
 			continue; //don't compute hit efficiencies
 
@@ -497,7 +495,7 @@ jerror_t JEventProcessor_BCAL_Hadronic_Eff::evnt(jana::JEventLoop* locEventLoop,
 		//Predict BCAL Surface Hit Location
 		unsigned int locPredictedSurfaceModule = 0, locPredictedSurfaceSector = 0;
 		DVector3 locPredictedSurfacePosition;
-		locParticleID->PredictBCALWedge(locTrackTimeBased->rt, locPredictedSurfaceModule, locPredictedSurfaceSector, &locPredictedSurfacePosition);
+		locParticleID->PredictBCALWedge(locTrackTimeBased->extrapolations.at(SYS_BCAL), locPredictedSurfaceModule, locPredictedSurfaceSector, &locPredictedSurfacePosition);
 		unsigned int locTrackProjectedBCALSector = 4*(locPredictedSurfaceModule - 1) + locPredictedSurfaceSector;
 
 		//STAGE DATA FOR TREE FILL

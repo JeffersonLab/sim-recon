@@ -9,7 +9,7 @@
 //         OCt 10, 2012 Yi Qiang: modifed Cerenkov classes with general Cere hits
 //         Oct 8, 2013 Yi Qiang: added dedicated object for RICH Truth Hit
 //         June 22, 2015 J. Stevens: changed RICH -> DIRC and remove CERE
-//
+//         May 7, 2017 R. Dzhygadlo: added DDIRCTruthPmtHit DDIRCTruthBarHit
 
 #ifndef _JEVENT_SOURCEHDDM_H_
 #define _JEVENT_SOURCEHDDM_H_
@@ -61,6 +61,8 @@ using namespace std;
 #include <CERE/DCereHit.h>
 #include "DIRC/DDIRCHit.h"
 #include "DIRC/DDIRCTruthHit.h"
+#include "DIRC/DDIRCTruthBarHit.h"
+#include "DIRC/DDIRCTruthPmtHit.h"
 #include <RF/DRFTime.h>
 #include <DANA/DApplication.h>
 #include "PAIR_SPECTROMETER/DPSHit.h"
@@ -69,6 +71,8 @@ using namespace std;
 #include "PAIR_SPECTROMETER/DPSCTruthHit.h"
 #include "FMWPC/DFMWPCTruthHit.h"
 #include "FMWPC/DFMWPCHit.h"
+#include "PAIR_SPECTROMETER/DPSGeometry.h"
+#include "DResourcePool.h"
 
 class DEventSourceHDDM:public JEventSource
 {
@@ -101,7 +105,6 @@ class DEventSourceHDDM:public JEventSource
       jerror_t Extract_DBCALIncidentParticle(hddm_s::HDDM *record, JFactory<DBCALIncidentParticle> *factory, string tag);
       jerror_t Extract_DBCALTDCDigiHit(hddm_s::HDDM *record, JFactory<DBCALTDCDigiHit> *factory, string tag);
       jerror_t Extract_DMCReaction(hddm_s::HDDM *record, JFactory<DMCReaction> *factory, string tag, JEventLoop *loop);
-      jerror_t Extract_DBeamPhoton(hddm_s::HDDM *record, JFactory<DBeamPhoton> *factory, string tag, JEventLoop *loop);
       jerror_t Extract_DMCThrown(hddm_s::HDDM *record, JFactory<DMCThrown> *factory, string tag);
       jerror_t Extract_DCDCHit(JEventLoop* locEventLoop, hddm_s::HDDM *record, JFactory<DCDCHit> *factory, string tag);
       jerror_t Extract_DFDCHit(hddm_s::HDDM *record, JFactory<DFDCHit> *factory, string tag);
@@ -120,7 +123,7 @@ class DEventSourceHDDM:public JEventSource
 
       jerror_t Extract_DTrackTimeBased(hddm_s::HDDM *record,  JFactory<DTrackTimeBased> *factory, string tag, int32_t runnumber, JEventLoop* locEventLoop);
       string StringToTMatrixFSym(string &str_vals, TMatrixFSym* mat, int Nrows, int Ncols);
-
+      
       jerror_t Extract_DTAGMHit( hddm_s::HDDM *record,  JFactory<DTAGMHit>* factory, string tag);
       jerror_t Extract_DTAGHHit( hddm_s::HDDM *record,  JFactory<DTAGHHit>* factory, string tag);
 
@@ -144,6 +147,8 @@ class DEventSourceHDDM:public JEventSource
       jerror_t Extract_DCereHit(hddm_s::HDDM *record, JFactory<DCereHit> *factory, string tag);
       jerror_t Extract_DDIRCHit(hddm_s::HDDM *record, JFactory<DDIRCHit> *factory, string tag);
       jerror_t Extract_DDIRCTruthHit(hddm_s::HDDM *record, JFactory<DDIRCTruthHit> *factory, string tag);
+      jerror_t Extract_DDIRCTruthBarHit(hddm_s::HDDM *record, JFactory<DDIRCTruthBarHit> *factory, string tag);
+      jerror_t Extract_DDIRCTruthPmtHit(hddm_s::HDDM *record, JFactory<DDIRCTruthPmtHit> *factory, string tag);
 
       std::ifstream *ifs;
       hddm_s::istream *fin;
@@ -154,15 +159,15 @@ class DEventSourceHDDM:public JEventSource
    private:
       bool initialized;
       int dRunNumber;
-
-      pthread_mutex_t rt_mutex;
-      map<hddm_s::HDDM*, vector<DReferenceTrajectory*> > rt_by_event;
-      list<DReferenceTrajectory*> rt_pool;
+      static thread_local shared_ptr<DResourcePool<TMatrixFSym>> dResourcePool_TMatrixFSym;
 
       map<unsigned int, double> dTargetCenterZMap; //unsigned int is run number
       map<unsigned int, double> dBeamBunchPeriodMap; //unsigned int is run number
 
-	  const DBCALGeometry *dBCALGeom;
+      const DBCALGeometry *dBCALGeom;
+
+      const DPSGeometry * psGeom;
+      
 
       JCalibration *jcalib;
       float uscale[192],vscale[192];

@@ -1,3 +1,4 @@
+// hnamepath: /highlevel/EventInfo
 // hnamepath: /highlevel/TwoGammaMass
 // hnamepath: /highlevel/PiPlusPiMinus
 // hnamepath: /highlevel/KPlusKMinus
@@ -10,7 +11,22 @@
 // e-mail: sdobbs@jlab.org
 //
 
+#include <time.h>
+
 {
+
+// The following are empty versions of routines defined in RootSpy
+// compiled executables. These are defined here for when this
+// macro is run outside that context.
+#ifndef ROOTSPY_MACROS
+#define rs_SetFlag(A) cout<<"rs_SetFlag ignored outside of RootSpy context"<<endl
+#define rs_GetFlag(A) 0
+#define rs_ResetHisto(A) cout<<"rs_ResetHisto ignored outside of RootSpy context"<<endl
+#define rs_RestoreHisto(A) cout<<"rs_RestoreHisto ignored outside of RootSpy context"<<endl
+#define InsertSeriesData(A) cout<<"InsertSeriesData ignored outside of RootSpy context"<<endl
+#define InsertSeriesMassFit(A,B,C,D,E,F) cout<<"InsertSeriesMassFit ignored outside of RootSpy context"<<endl
+#endif
+
 
 // This is a trick to get ROOT to use a function for a TF1 without
 // defining it in global namespace. This is needed since ROOTSpy
@@ -48,7 +64,7 @@ class FitWrapper{
 			Double_t gs;
 			gs=0.;
 			if(abs(p[2])>1.E-20){
-				gs=p[0]/sqrt(2.*3.1416)/p[2]*exp(-pow((x-p[1])/p[2],2)/2.);
+				gs=p[0]/sqrt(2.0*3.1416)/p[2] * exp(-pow((x-p[1])/p[2],2)/2.0);
 			}
 			return gs;
 		}
@@ -98,7 +114,9 @@ class FitWrapper{
 			Double_t peak_pos_3   = 0.0,             // 2-nd peak position (mass)
 			Double_t peak_width_3 = 0.0,             // 2-nd peak width,  =0 - peak ignored
 			Double_t peak_pos_4   = 0.0,             // 2-nd peak position (mass)
-			Double_t peak_width_4 = 0.0)             // 2-nd peak width,  =0 - peak ignored
+			Double_t peak_width_4 = 0.0,             // 2-nd peak width,  =0 - peak ignored
+			Double_t *pars_out    = NULL,            // fit pars (if not NULL)
+			Double_t *errs_out    = NULL)            // fit par errors (if not NULL)
 		{
 
 			if(h1 == NULL){
@@ -125,7 +143,7 @@ class FitWrapper{
 	   			  return 0;
 			}
 
-			if(h1->GetEntries()<500){
+			if(h1->GetEntries()<20){
 			  cout << "FitPeaksWithBackgr: No fit - too few entries " << h1->GetEntries() << endl;
 				return 0;
 			}
@@ -234,7 +252,7 @@ class FitWrapper{
    			  ftf->SetParLimits(3,0.3,4.);
    			  ftf->SetParLimits(4,0.5,8.);
 
-			Int_t fit_status = h1->Fit(ftf, "0", "", xminfit, xmaxfit); // Fit the BG, the peaks excluded
+			Int_t fit_status = h1->Fit(ftf, "0Q", "", xminfit, xmaxfit); // Fit the BG, the peaks excluded
    			  if(fit_status != 0 ){
 			  cout << "FitPeaksWithBackgr: Fit of backgound failed, code "<< fit_status <<endl;
 			  return 0;
@@ -262,7 +280,7 @@ class FitWrapper{
 			  Double_t wd=ftf->GetParameter(5+i*4+3);
 			  ftf->SetParLimits(5+i*4+3,wd*0.3,wd*3.);
 
-			  fit_status = h1->Fit(ftf, "0", "", xminfit, xmaxfit); // Fit the BG + peak
+			  fit_status = h1->Fit(ftf, "0Q", "", xminfit, xmaxfit); // Fit the BG + peak
 			  if(fit_status != 0 ){
 				 cout << "FitPeaksWithBackgr: Fit of peak+backgound failed, code "<< fit_status <<endl;
 				 return 0;
@@ -304,6 +322,8 @@ class FitWrapper{
 			  for(int j=0;j<3;j++){
 				 par[j]=ftf->GetParameter(5+i*4+1+j);
 				 epar[j]=ftf->GetParError(5+i*4+1+j);
+				 if(pars_out) pars_out[i*3 + j] = par[j];
+				 if(errs_out) errs_out[i*3 + j] = epar[j];
 			  }
 			  printf(" %d   %8.1f +/- %7.1f   ",i+1,par[0]/xbin,epar[0]/xbin);
 			  printf("  %8.4f +/- %7.4f   ",par[1],epar[1]);
@@ -433,7 +453,7 @@ class FitWrapper{
 			Double_t xmax_int = h1->GetBinLowEdge(maxbin_int+1); // high edge of integration region
 			Double_t norm = h1->GetBinContent(minbin_int, maxbin_int)/h1->GetBinWidth(minbin_int)/ftf->Integral(xmin_int, xmax_int);
 			ftf->SetParameter(3, norm); // scale background function to match histo integral near edge of excluded region
-			h1->Fit(ftf, "0", "", xminfit, xmaxfit);
+			h1->Fit(ftf, "0Q", "", xminfit, xmaxfit);
 
 			// Release peak parameters and fit to full range
 			ftf->ReleaseParameter(0);
@@ -442,7 +462,7 @@ class FitWrapper{
 			ftf->ReleaseParameter(9);
 			ftf->FixParameter(7, -1.0E6);  // disable excluded region
 			ftf->FixParameter(8, -1.0E6);  // disable excluded region
-			h1->Fit(ftf, "", "", xminfit, xmaxfit);
+			h1->Fit(ftf, "Q", "", xminfit, xmaxfit);
 
 			// Copy parameters into new function for plotting background
 			TF1 *fbg = (TF1 *)gROOT->FindObject(fbgname);
@@ -491,6 +511,7 @@ class FitWrapper{
 		return;
 	locDirectory->cd();
 
+	TH1* EventInfo           = (TH1*)gDirectory->Get("EventInfo");
 	TH1* TwoGammaMass        = (TH1*)gDirectory->Get("TwoGammaMass");
 	TH1* PiPlusPiMinus       = (TH1*)gDirectory->Get("PiPlusPiMinus");
 	TH1* KPlusKMinus         = (TH1*)gDirectory->Get("KPlusKMinus");
@@ -511,9 +532,21 @@ class FitWrapper{
 			if(trig[itrig-1]) Ntrig_tot += (double)L1bits_gtp->GetBinContent(itrig);
 		}
 	}	
-
+	
+	// Get unix time for time series DB entries
+	double unix_time =  0;
+	if(EventInfo){
+		Double_t Nunix = EventInfo->GetBinContent(1);
+		if(Nunix>0.0){
+			Double_t sum_unix_time = EventInfo->GetBinContent(2);
+			unix_time = (sum_unix_time/Nunix);
+			time_t t = (time_t)unix_time;
+			cout << ctime(&t);
+		}
+	}
 
 	TLatex latex;
+
 
 	//----------- Pi0 --------------
 	locCanvas->cd(1);
@@ -545,7 +578,7 @@ class FitWrapper{
 		double hi = 0.190;
 
 		// Fit and Draw
-		TwoGammaMass->Fit(fun, "", "", lo, hi);
+		TwoGammaMass->Fit(fun, "Q", "", lo, hi);
 
 		// Release gaussian parameters and fit again
 		fun->ReleaseParameter(0);
@@ -553,17 +586,34 @@ class FitWrapper{
 		fun->ReleaseParameter(2);
 
 		// Fit and Draw again (histogram and function)
-		TwoGammaMass->Fit(fun, "", "", lo, hi);
+		TwoGammaMass->Fit(fun, "Q", "", lo, hi);
 
 		// Second function for drawing background
 		TF1 *fun2 = (TF1*)gDirectory->FindObjectAny("fun_pi0_fit2");
 		if(!fun2) fun2 = new TF1("fun_pi0_fit", "pol2(0)" , lo, hi);
 		double pars[10];
 		fun->GetParameters(pars);
+		const Double_t *errs = fun->GetParErrors();
 		fun2->SetParameters(&pars[3]);
 		fun2->SetLineColor(kMagenta);
 		fun2->SetLineStyle(2);
 		fun2->Draw("same");
+		
+		// Get number of pi0's
+		double I = fun->GetParameter(0)*fun->GetParameter(2)*sqrt(TMath::TwoPi());
+		I /= TwoGammaMass->GetBinWidth(1);
+		char str[256];
+		sprintf(str, "num. #pi^{o} : %g", I);
+
+		// Only try adding to time series if we have more than 20 particles in peak
+		cout << "====== pi0: I="<<I<<"  mean: " << pars[1] << " +/- " << errs[1] << "   sigma: "<< pars[2] << " +/- " << errs[2] << endl;
+		if( (I>1000.0) && (errs[1]<0.1*pars[1]) && (errs[2]<0.2*pars[2]) ){
+			// Add to time series
+			InsertSeriesMassFit("pi0", pars[1], pars[2], errs[1], errs[2], unix_time);
+		
+			// Optionally reset the histogram so next fit is independent of this one
+			if(rs_GetFlag("RESET_AFTER_FIT")) rs_ResetHisto("/highlevel/TwoGammaMass");
+		}
 		
 		double max = 1.05*TwoGammaMass->GetMaximum();
 		TLine lin;
@@ -577,12 +627,6 @@ class FitWrapper{
 		latex.SetTextAlign(21);
 		latex.SetTextColor(kMagenta);
 		latex.DrawLatex(0.131, max/2.0, "135 MeV");
-
-		// Get number of pi0's
-		double I = fun->GetParameter(0)*fun->GetParameter(2)*sqrt(TMath::TwoPi());
-		I /= TwoGammaMass->GetBinWidth(1);
-		char str[256];
-		sprintf(str, "num. #pi^{o} : %g", I);
 
 		latex.SetTextColor(kBlack);
 		latex.SetTextAngle(0.0);
@@ -610,7 +654,6 @@ class FitWrapper{
 		}	
 	}
 
-
 	//----------- Phi --------------
 	locCanvas->cd(2);
 	gPad->SetTicks();
@@ -624,7 +667,9 @@ class FitWrapper{
 		KPlusKMinus->SetStats(0);
 		KPlusKMinus->GetXaxis()->SetRangeUser(0.8, 2.0);
 		
-		Double_t I = FitWrapper::FitPeaksWithBackgr(KPlusKMinus, 0.494*2, 1.8, "GG", 1.02, 0.01, 1.22, 0.05);
+		Double_t pars_out[3*2];
+		Double_t errs_out[3*2];
+		Double_t I = FitWrapper::FitPeaksWithBackgr(KPlusKMinus, 0.494*2, 1.8, "GG", 1.02, 0.01, 1.22, 0.05, 0.0, 0.0, 0.0, 0.0, pars_out, errs_out);
 
 		if(I>0.0){
 			char str[256];
@@ -643,89 +688,18 @@ class FitWrapper{
 				latex.SetTextSize(0.06);
 				latex.DrawLatex(1.4, max*0.65, str);
 			}
-		}
 
-#if 0
-		// Only do fit if there are at least 25 entries in the
-		// bin at 1020MeV
-		Int_t Npeak = KPlusKMinus->GetBinContent(KPlusKMinus->FindBin(1.020));
-		double max = 1.05*KPlusKMinus->GetMaximum();
-		if(Npeak < 25){
-			KPlusKMinus->Draw();
-		}else{
+			// Only try adding to time series if we have more than 20 particles in peak
+			cout << "====== phi: I="<<I<<"  mean: " << pars_out[1] << " +/- " << errs_out[1] << "   sigma: "<< pars_out[2] << " +/- " << errs_out[2] << endl;
+			if( (I>40.0) && (errs_out[1]<0.1*pars_out[1]) && (errs_out[2]<0.2*pars_out[2]) ){
+
+				// Add to time series
+				InsertSeriesMassFit("phi", pars_out[1], pars_out[2], errs_out[1], errs_out[2], unix_time);
 		
-			// Fit to phi peak
-			TF1 *fun = (TF1*)gDirectory->FindObjectAny("fun_phi_fit");
-			if(!fun)fun = new TF1("fun_phi_fit", "[0]*TMath::Voigt(x-[1], [2], [3]) + pol2(4)");
-
-			// Fit once with fixed parameters to force finding of polynomial params
-			fun->FixParameter(0, Npeak*0.5);
-			fun->FixParameter(1, 1.020);
-			fun->FixParameter(2, 0.2);
-			fun->FixParameter(3, 0.1);
-			fun->SetParameter(4, 0.0);
-			fun->FixParameter(5, 0.0);
-			fun->SetParameter(6, 0.0);
-			fun->SetParameter(7, 0.0);
-			//fun->SetParameter(8, 0.0);
-
-			// Region of interest for fit
-			double lo = 0.98;
-			double hi = 1.07;
-
-			// Fit and Draw
-			KPlusKMinus->Fit(fun, "", "", lo, hi);
-
-			// Release Voigt parameters and fit again
-			fun->ReleaseParameter(0);
-			fun->ReleaseParameter(1);
-			fun->ReleaseParameter(2);
-			fun->ReleaseParameter(3);
-
-			// Fit and Draw again (histogram and function)
-			KPlusKMinus->Fit(fun, "", "", lo, hi);
-
-			// Second function for drawing background
-			TF1 *fun2 = (TF1*)gDirectory->FindObjectAny("fun_phi_fit2");
-			if(!fun2) fun2 = new TF1("fun_phi_fit2", "pol3(0)" , lo, hi);
-			double pars[10];
-			fun->GetParameters(pars);
-			fun2->SetParameters(&pars[4]);
-			fun2->SetLineColor(kMagenta);
-			fun2->SetLineStyle(2);
-			fun2->Draw("same");
-
-			// Get number of rho's
-			double I = fun->Integral(lo, hi) - fun2->Integral(lo,hi);
-			I /= TwoGammaMass->GetBinWidth(1);
-			char str[256];
-			sprintf(str, "num. #phi : %g", I);
-
-			latex.SetTextColor(kBlack);
-			latex.SetTextAngle(0.0);
-			latex.SetTextAlign(11);
-			latex.SetTextSize(0.075);
-			latex.DrawLatex(0.81, max*0.93, str);
-
-			// Print rate per trigger
-			if(Ntrig_tot>0.0){
-				sprintf(str, "%3.3f per 1k triggers", I/Ntrig_tot*1000.0);
-				latex.SetTextSize(0.06);
-				latex.DrawLatex(0.81, max*0.85, str);
+				// Optionally reset the histogram so next fit is independent of this one
+				if(rs_GetFlag("RESET_AFTER_FIT")) rs_ResetHisto("/highlevel/KPlusKMinus");
 			}
 		}
-
-		TLine lin;
-		lin.SetLineColor(kMagenta);
-		lin.SetLineWidth(1);
-		lin.DrawLine(1.020, 0.0, 1.020, max);
-		
-		latex.SetTextAngle(90.0);
-		latex.SetTextSize(0.035);
-		latex.SetTextAlign(21);
-		latex.SetTextColor(kMagenta);
-		latex.DrawLatex(1.015, max/2.0, "1020 MeV");
-#endif
 	}
 
 	//----------- Rho --------------
@@ -740,8 +714,10 @@ class FitWrapper{
 		PiPlusPiMinus->GetYaxis()->SetLabelSize(0.035);
 		PiPlusPiMinus->SetStats(0);
 
+		Double_t pars_out[3*2];
+		Double_t errs_out[3*2];
 		//Double_t I = FitWrapper::FitWithBackground(PiPlusPiMinus, 0.770, 0.1, 0.3, 1.6);
-		Double_t I = FitWrapper::FitPeaksWithBackgr(PiPlusPiMinus, 0.139*2, 1.8, "G", 0.770, 0.085);
+		Double_t I = FitWrapper::FitPeaksWithBackgr(PiPlusPiMinus, 0.139*2, 1.8, "G", 0.770, 0.085, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, pars_out, errs_out);
 		
 		if(I>0.0){
 			char str[256];
@@ -760,6 +736,16 @@ class FitWrapper{
 				latex.SetTextSize(0.06);
 				latex.DrawLatex(1.010, max*0.65, str);
 			}
+
+			// Only try adding to time series if we have more than 20 particles in peak
+			cout << "====== rho: I="<<I<<"  mean: " << pars_out[1] << " +/- " << errs_out[1] << "   sigma: "<< pars_out[2] << " +/- " << errs_out[2] << endl;
+			if( (I>200.0) && (errs_out[1]<0.1*pars_out[1]) && (errs_out[2]<0.2*pars_out[2]) ){
+				// Add to time series
+				InsertSeriesMassFit("rho", pars_out[1], pars_out[2], errs_out[1], errs_out[2], unix_time);
+		
+				// Optionally reset the histogram so next fit is independent of this one
+				if(rs_GetFlag("RESET_AFTER_FIT")) rs_ResetHisto("/highlevel/PiPlusPiMinus");
+			}
 		}
 	}
 
@@ -775,8 +761,10 @@ class FitWrapper{
 		PiPlusPiMinusPiZero->GetYaxis()->SetLabelSize(0.035);
 		PiPlusPiMinusPiZero->SetStats(0);
 	
+		Double_t pars_out[3*2];
+		Double_t errs_out[3*2];
 		//Double_t I = FitWrapper::FitWithBackground(PiPlusPiMinusPiZero, 0.782, 0.03, 0.42, 1.6);
-		Double_t I = FitWrapper::FitPeaksWithBackgr(PiPlusPiMinusPiZero, 0.139*2+0.135, 1.3, "G", 0.782, 0.009);
+		Double_t I = FitWrapper::FitPeaksWithBackgr(PiPlusPiMinusPiZero, 0.139*2+0.135, 1.3, "G", 0.782, 0.009, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, pars_out, errs_out);
 		
 		if(I>0.0){
 			char str[256];
@@ -795,7 +783,16 @@ class FitWrapper{
 				latex.SetTextSize(0.06);
 				latex.DrawLatex(1.010, max*0.65, str);
 			}
-		}
 
+			// Only try adding to time series if we have more than 20 particles in peak
+			cout << "====== omega: I="<<I<<"  mean: " << pars_out[1] << " +/- " << errs_out[1] << "   sigma: "<< pars_out[2] << " +/- " << errs_out[2] << endl;
+			if( (I>50.0) && (errs_out[1]<0.1*pars_out[1]) && (errs_out[2]<0.2*pars_out[2]) ){
+				// Add to time series
+				InsertSeriesMassFit("omega", pars_out[1], pars_out[2], errs_out[1], errs_out[2], unix_time);
+		
+				// Optionally reset the histogram so next fit is independent of this one
+				if(rs_GetFlag("RESET_AFTER_FIT")) rs_ResetHisto("/highlevel/PiPlusPiMinusPiZero");
+			}
+		}
 	}
 }

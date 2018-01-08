@@ -1270,16 +1270,15 @@ void MyProcessor::FillGraphics(void)
 		DGraphicSet gset(kYellow+2, kMarker, 1.25);
 		gset.marker_style=21;
 		for(unsigned int i=0; i<neutrals.size(); i++){
-		  vector<const DNeutralShower*> locNeutralShowers;
-		  neutrals[i]->GetT(locNeutralShowers);
-		  DetectorSystem_t locDetectorSystem = locNeutralShowers[0]->dDetectorSystem;
+		  auto locNeutralShower = neutrals[i]->dNeutralShower;
+		  DetectorSystem_t locDetectorSystem = locNeutralShower->dDetectorSystem;
 		  if(locDetectorSystem == SYS_BCAL){
-		    TVector3 pos( locNeutralShowers[0]->dSpacetimeVertex.X(), 
-				  locNeutralShowers[0]->dSpacetimeVertex.Y(), 
-				  locNeutralShowers[0]->dSpacetimeVertex.Z());
+		    TVector3 pos( locNeutralShower->dSpacetimeVertex.X(), 
+				  locNeutralShower->dSpacetimeVertex.Y(), 
+				  locNeutralShower->dSpacetimeVertex.Z());
 		    gset.points.push_back(pos);
 		    
-		    double dist2 = 2.0 + 5.0*locNeutralShowers[0]->dEnergy;
+		    double dist2 = 2.0 + 5.0*locNeutralShower->dEnergy;
 		    TEllipse *e = new TEllipse(pos.X(), pos.Y(), dist2, dist2);
 		    e->SetLineColor(kGreen);
 		    e->SetFillStyle(0);
@@ -1297,17 +1296,16 @@ void MyProcessor::FillGraphics(void)
 		DGraphicSet gset(kOrange, kMarker, 1.25);
 		gset.marker_style=2;
 		for(unsigned int i=0; i<neutrals.size(); i++){
-		  vector<const DNeutralShower*> locNeutralShowers;
-		  neutrals[i]->GetT(locNeutralShowers);
-		  DetectorSystem_t locDetectorSystem = locNeutralShowers[0]->dDetectorSystem;
+		  auto locNeutralShower = neutrals[i]->dNeutralShower;
+		  DetectorSystem_t locDetectorSystem = locNeutralShower->dDetectorSystem;
 		  if(locDetectorSystem == SYS_FCAL){
 			
-			TVector3 pos( locNeutralShowers[0]->dSpacetimeVertex.X(), 
-				      locNeutralShowers[0]->dSpacetimeVertex.Y(), 
-				      locNeutralShowers[0]->dSpacetimeVertex.Z());
+			TVector3 pos( locNeutralShower->dSpacetimeVertex.X(), 
+				      locNeutralShower->dSpacetimeVertex.Y(), 
+				      locNeutralShower->dSpacetimeVertex.Z());
 			gset.points.push_back(pos);
 			
-			double dist2 = 2.0 + 10.0*locNeutralShowers[0]->dEnergy;
+			double dist2 = 2.0 + 10.0*locNeutralShower->dEnergy;
 			TEllipse *e = new TEllipse(pos.X(), pos.Y(), dist2, dist2);
 			e->SetLineColor(kGreen);
 			e->SetFillStyle(0);
@@ -1340,17 +1338,18 @@ void MyProcessor::FillGraphics(void)
 		  locCTrack->GetT(locNeutralShowers);
 
 		  if (!locNeutralShowers.size()) continue;
+		  const DNeutralShower *locNeutralShower = locNeutralShowers[0];
 		  
 		  
 		  // Decide if this hit BCAL of FCAL based on z of position on calorimeter
-		  bool is_bcal = (locNeutralShowers[0]->dDetectorSystem == SYS_BCAL );
+		  bool is_bcal = (locNeutralShower->dDetectorSystem == SYS_BCAL );
 		  
 		  // Draw on all frames except FCAL frame
 		  DGraphicSet gset(kRed, kMarker, 1.25);
 		  gset.marker_style = is_bcal ? 22:3;
-		  TVector3 tpos( locNeutralShowers[0]->dSpacetimeVertex.X(), 
-				 locNeutralShowers[0]->dSpacetimeVertex.Y(), 
-				 locNeutralShowers[0]->dSpacetimeVertex.Z());
+		  TVector3 tpos( locNeutralShower->dSpacetimeVertex.X(), 
+				 locNeutralShower->dSpacetimeVertex.Y(), 
+				 locNeutralShower->dSpacetimeVertex.Z());
 		  gset.points.push_back(tpos);
 		  graphics.push_back(gset);
 		  
@@ -1358,7 +1357,7 @@ void MyProcessor::FillGraphics(void)
 		  if(is_bcal)continue;
 		  
 		  // Draw on FCAL pane
-		  double dist2 = 2.0 + 2.0*locNeutralShowers[0]->dEnergy;
+		  double dist2 = 2.0 + 2.0*locNeutralShower->dEnergy;
 		  TEllipse *e = new TEllipse(tpos.X(), tpos.Y(), dist2, dist2);
 		  e->SetLineColor(gset.color);
 		  e->SetFillStyle(0);
@@ -1647,9 +1646,8 @@ void MyProcessor::FillGraphics(void)
     
 		for(unsigned int i=0; i<photons.size(); i++){
 		  int color = kBlack;
-		  vector<const DNeutralShower*> locNeutralShowers;
-		  photons[i]->GetT(locNeutralShowers);
-		  DetectorSystem_t locDetSys = locNeutralShowers[0]->dDetectorSystem;
+		  auto locNeutralShower = photons[i]->dNeutralShower;
+		  DetectorSystem_t locDetSys = locNeutralShower->dDetectorSystem;
 		  if(locDetSys==SYS_FCAL)color = kOrange;
 		  if(locDetSys==SYS_BCAL)color = kYellow+2;
 		  //if(locDetSys==DPhoton::kCharge)color = kRed;
@@ -1972,9 +1970,10 @@ void MyProcessor::UpdateTrackLabels(void)
 			fom << "N/A";
 		}
 		else if (chargedtrack){
-		  chisq_per_dof<<setprecision(4)<<chargedtrack->dChiSq_Track/chargedtrack->dNDF_Track;
-			Ndof<<chargedtrack->dNDF_Track;
-			fom << chargedtrack->dFOM;
+			auto locTrackTimeBased = chargedtrack->Get_TrackTimeBased();
+		  chisq_per_dof<<setprecision(4)<<locTrackTimeBased->chisq/locTrackTimeBased->Ndof;
+			Ndof<<locTrackTimeBased->Ndof;
+			fom << locTrackTimeBased->FOM;
 		}
 		else{
 		  chisq_per_dof << "--------";
@@ -1999,11 +1998,13 @@ void MyProcessor::UpdateTrackLabels(void)
 	}
 	
 	// Have the pop-up window with the full particle list update it's labels
-	fulllistmf->UpdateTrackLabels(throwns, trks);
-	debugermf->SetTrackCandidates(TrksCand);
-	debugermf->SetTrackWireBased(TrksWireBased);
-	debugermf->SetTrackTimeBased(TrksTimeBased);
-	debugermf->UpdateTrackLabels();
+	if( fulllistmf ) fulllistmf->UpdateTrackLabels(throwns, trks);
+	if( debugermf  ) {
+		debugermf->SetTrackCandidates(TrksCand);
+		debugermf->SetTrackWireBased(TrksWireBased);
+		debugermf->SetTrackTimeBased(TrksTimeBased);
+		debugermf->UpdateTrackLabels();
+	}
 }                 
 
 //------------------------------------------------------------------
@@ -2179,8 +2180,10 @@ _DBG__;
 		pos = chargedtracks[index]->Get_BestFOM()->position();
 		mom = chargedtracks[index]->Get_BestFOM()->momentum();
 		chargedtracks[index]->Get_BestFOM()->GetT(timebasedtracks);
-		timebasedtracks[0]->Get(cdchits);
-		mass = chargedtracks[index]->Get_BestFOM()->mass();
+		if(!timebasedtracks.empty()){
+			timebasedtracks[0]->Get(cdchits);
+			mass = chargedtracks[index]->Get_BestFOM()->mass();
+		}
 	}
 
 	if(dataname=="DTrackTimeBased"){

@@ -15,6 +15,7 @@
 #include "AMPTOOLS_DATAIO/HDDMDataWriter.h"
 
 #include "AMPTOOLS_AMPS/TwoPiAngles_amp.h"
+#include "AMPTOOLS_AMPS/TwoPSHelicity.h"
 #include "AMPTOOLS_AMPS/BreitWigner.h"
 
 #include "AMPTOOLS_MCGEN/ProductionMechanism.h"
@@ -53,6 +54,8 @@ int main( int argc, char* argv[] ){
 	
 	int runNum = 9001;
 	int seed = 0;
+
+	double slope = 6.0;
 
 	int nEvents = 10000;
 	int batchSize = 10000;
@@ -98,6 +101,9 @@ int main( int argc, char* argv[] ){
 		if (arg == "-s"){
                         if ((i+1 == argc) || (argv[i+1][0] == '-')) arg = "-h";
                         else  seed = atoi( argv[++i] ); }
+		if (arg == "-t"){
+                        if ((i+1 == argc) || (argv[i+1][0] == '-')) arg = "-h";
+                        else  slope = atof( argv[++i] ); }
 		if (arg == "-d"){
 			diag = true; }
 		if (arg == "-f"){
@@ -116,6 +122,7 @@ int main( int argc, char* argv[] ){
                         cout << "\t -b  <value>\t Maximum photon energy to simulate events [optional]" << endl;
 			cout << "\t -r  <value>\t Run number assigned to generated events [optional]" << endl;
 			cout << "\t -s  <value>\t Random number seed initialization [optional]" << endl;
+			cout << "\t -t  <value>\t Momentum transfer slope [optional]" << endl;
 			cout << "\t -f \t\t Generate flat in M(X) (no physics) [optional]" << endl;
 			cout << "\t -d \t\t Plot only diagnostic histograms [optional]" << endl << endl;
 			exit(1);
@@ -134,18 +141,21 @@ int main( int argc, char* argv[] ){
 	ReactionInfo* reaction = cfgInfo->reactionList()[0];
 	
 	// random number initialization (set to 0 by default)
+	TRandom3* gRandom = new TRandom3();
 	gRandom->SetSeed(seed);
+	cout << "TRandom3 Seed : " << gRandom->GetSeed() << endl;
 
 	// setup AmpToolsInterface
 	AmpToolsInterface::registerAmplitude( TwoPiAngles_amp() );
+	AmpToolsInterface::registerAmplitude( TwoPSHelicity() );
 	AmpToolsInterface::registerAmplitude( BreitWigner() );
 	AmpToolsInterface ati( cfgInfo, AmpToolsInterface::kMCGeneration );
 	
 	ProductionMechanism::Type type =
 		( genFlat ? ProductionMechanism::kFlat : ProductionMechanism::kResonant );
-	
+
 	// generate over a range of mass -- the daughters are two charged pions
-	GammaPToXYP resProd( lowMass, highMass, 0.140, 0.140, beamMaxE, beamPeakE, beamLowE, beamHighE, type );
+	GammaPToXYP resProd( lowMass, highMass, ParticleMass(PiPlus), ParticleMass(PiMinus), beamMaxE, beamPeakE, beamLowE, beamHighE, type, slope, seed );
 	
 	// seed the distribution with a sum of noninterfering Breit-Wigners
 	// we can easily compute the PDF for this and divide by that when
@@ -167,7 +177,7 @@ int main( int argc, char* argv[] ){
 	pTypes.push_back( PiMinus );
 	
 	HDDMDataWriter* hddmOut = NULL;
-	if( hddmname.size() != 0 ) hddmOut = new HDDMDataWriter( hddmname, runNum );
+	if( hddmname.size() != 0 ) hddmOut = new HDDMDataWriter( hddmname, runNum, seed);
 	ROOTDataWriter rootOut( outname );
 	
 	TFile* diagOut = new TFile( "gen_2pi_diagnostic.root", "recreate" );
@@ -178,7 +188,11 @@ int main( int argc, char* argv[] ){
 	TH1F* intenW = new TH1F( "intenW", "True PDF / Gen. PDF", 1000, 0, 100 );
 	TH2F* intenWVsM = new TH2F( "intenWVsM", "Ratio vs. M", 100, lowMass, highMass, 1000, 0, 10 );
 	
+	TH1F* t = new TH1F( "t", "-t Distribution", 200, 0, 2 );
+
 	TH2F* CosTheta_psi = new TH2F( "CosTheta_psi", "cos#theta vs. #psi", 180, -3.14, 3.14, 100, -1, 1);
+	TH2F* M_CosTheta = new TH2F( "M_CosTheta", "M vs. cos#vartheta", 180, lowMass, highMass, 200, -1, 1);
+	TH2F* M_Phi = new TH2F( "M_Phi", "M vs. #varphi", 180, lowMass, highMass, 200, -3.14, 3.14);
 	
 	int eventCounter = 0;
 	while( eventCounter < nEvents ){
@@ -215,9 +229,8 @@ int main( int argc, char* argv[] ){
 			double genWeight = evt->weight();
 			
 			// cannot ask for the intensity if we haven't called process events above
-			double intensity_i = ati.intensity( i );
 			double weightedInten = ( genFlat ? 1 : ati.intensity( i ) ); 
-			cout << " i=" << i << "  intensity_i=" << intensity_i << endl;
+			// cout << " i=" << i << "  intensity_i=" << weightedInten << endl;
 
 			if( !diag ){
 				
@@ -236,7 +249,10 @@ int main( int argc, char* argv[] ){
 					TLorentzVector beam = evt->particle ( 0 );
 					TLorentzVector recoil = evt->particle ( 1 );
 					TLorentzVector p1 = evt->particle ( 2 );
-			
+					TLorentzVector target(0,0,0,recoil[3]);
+					
+					t->Fill(-1*(evt->particle(1)-target).M2());
+
 					TLorentzRotation resonanceBoost( -resonance.BoostVector() );
 					
 					TLorentzVector beam_res = resonanceBoost * beam;
@@ -256,7 +272,10 @@ int main( int argc, char* argv[] ){
                                         double cosTheta = angles.CosTheta();
                                         double phi = angles.Phi();
 
-                                        TVector3 eps(1.0, 0.0, 0.0); // beam polarization vector
+					M_CosTheta->Fill( resonance.M(), cosTheta);
+					M_Phi->Fill( resonance.M(), phi);
+					
+					TVector3 eps(1.0, 0.0, 0.0); // beam polarization vector
                                         double Phi = atan2(y.Dot(eps), beam.Vect().Unit().Dot(eps.Cross(y)));
 
                                         GDouble psi = phi - Phi;
@@ -271,6 +290,7 @@ int main( int argc, char* argv[] ){
 					if( hddmOut ) hddmOut->writeEvent( *evt, pTypes );
 					rootOut.writeEvent( *evt );
 					++eventCounter;
+					if(eventCounter >= nEvents) break;
 				}
 			}
 			else{
@@ -295,7 +315,10 @@ int main( int argc, char* argv[] ){
 	massW->Write();
 	intenW->Write();
 	intenWVsM->Write();
+	t->Write();
 	CosTheta_psi->Write();
+	M_CosTheta->Write();
+	M_Phi->Write();
 	diagOut->Close();
 	
 	if( hddmOut ) delete hddmOut;

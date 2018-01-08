@@ -29,12 +29,12 @@ class bcal_config_t
   public:
 	bcal_config_t(JEventLoop *loop);
 	
-	void inline GetAttenuationParameters(int id, double &attenuation_length, double &attenuation_L1, double &attenuation_L2) {
-   		vector<double> &parms = attenuation_parameters.at(id);
-		attenuation_length = parms[0];
-		attenuation_L1 = parms[1];
-		attenuation_L2 = parms[2];
-	}
+	//void inline GetAttenuationParameters(int id, double &attenuation_length, double &attenuation_L1, double &attenuation_L2) {
+   	//	vector<double> &parms = attenuation_parameters.at(id);
+	//	attenuation_length = parms[0];
+	//	attenuation_L1 = parms[1];
+	//	attenuation_L2 = parms[2];
+    //}
 
 	double inline GetEffectiveVelocity(int id) {
 		return BCAL_C_EFFECTIVE;
@@ -49,6 +49,7 @@ class bcal_config_t
 	double BCAL_TWO_HIT_RESO;
 	double BCAL_mevPerPE;
 	double BCAL_C_EFFECTIVE;
+    double BCAL_ATTENUATION_LENGTH;
 
 	double BCAL_LAYER1_SIGMA_SCALE;
 	double BCAL_LAYER2_SIGMA_SCALE;
@@ -75,8 +76,9 @@ class bcal_config_t
 	bool NO_SAMPLING_FLUCTUATIONS;
 	bool NO_SAMPLING_FLOOR_TERM;
 	bool NO_POISSON_STATISTICS;
+	bool NO_FADC_SATURATION;
 
-	vector<vector<double> > attenuation_parameters; // Avg. of 525 (from calibDB BCAL/attenuation_parameters)
+	//vector<vector<double> > attenuation_parameters; // Avg. of 525 (from calibDB BCAL/attenuation_parameters)
 	// Assume constant effective velocity instead of channel-dependent one
 	//vector<double> effective_velocities; // 16.75 (from calibDB BCAL/effective_velocities)
 
@@ -88,6 +90,10 @@ class bcal_config_t
 		else 
 			return channel_efficiencies.at(index).second;
 	}
+
+	double fADC_MinIntegral_Saturation[2][4];
+    double fADC_Saturation_Linear[2][4];
+    double fADC_Saturation_Quadratic[2][4];
 };
 
 
@@ -266,6 +272,7 @@ class BCALSmearer : public Smearer
 			bcal_config->NO_SAMPLING_FLUCTUATIONS = in_config->BCAL_NO_SAMPLING_FLUCTUATIONS;
 			bcal_config->NO_SAMPLING_FLOOR_TERM = in_config->BCAL_NO_SAMPLING_FLOOR_TERM;
 			bcal_config->NO_POISSON_STATISTICS = in_config->BCAL_NO_POISSON_STATISTICS;
+			bcal_config->NO_FADC_SATURATION = in_config->BCAL_NO_FADC_SATURATION;
 			
 			// load BCAL geometry
   			vector<const DBCALGeometry *> BCALGeomVec;
@@ -307,7 +314,7 @@ class BCALSmearer : public Smearer
 		void CopyBCALHitsToHDDM(map<int, fADCHitList> &fADCHits,
                         		map<int, TDCHitList> &TDCHits,
                         		hddm_s::HDDM *record);
-
+		
 };
 
 

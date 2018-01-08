@@ -55,7 +55,7 @@ inline bool cdc_fdc_match(double p_fdc,double p_cdc,double dist){
   //double frac2=fabs(1.-p_fdc/p_cdc);
   double p=p_fdc;
   if (p_cdc <p ) p=p_cdc;
-  if (dist<10. && dist <3.25+1.75/p
+  if (dist<10. && dist <4.+1.75/p
       //&& (frac<0.5 || frac2<0.5)
       ) return true;
   return false;
@@ -193,8 +193,8 @@ jerror_t DTrackCandidate_factory::brun(JEventLoop* eventLoop,int32_t runnumber){
 
   gPARMS->SetDefaultParameter("TRKFIND:MAX_NUM_TRACK_CANDIDATES", MAX_NUM_TRACK_CANDIDATES); 
 
-  MIN_NUM_HITS=6;
-  gPARMS->SetDefaultParameter("TRKFIND:MIN_NUM_HITS", MIN_NUM_HITS);
+  //  MIN_NUM_HITS=6;
+  //gPARMS->SetDefaultParameter("TRKFIND:MIN_NUM_HITS", MIN_NUM_HITS);
   
   DEBUG_LEVEL=0;
   gPARMS->SetDefaultParameter("TRKFIND:DEBUG_LEVEL", DEBUG_LEVEL);
@@ -418,7 +418,7 @@ jerror_t DTrackCandidate_factory::evnt(JEventLoop *loop, uint64_t eventnumber)
 
       can->setMomentum(cdccan->momentum());
       can->setPosition(cdccan->position());
-      can->setCharge(cdccan->charge());
+      can->setPID(cdccan->PID());
       
       for (unsigned int n=0;n<cdchits.size();n++){
 	used_cdc_hits[cdccan->used_cdc_indexes[n]]=1;
@@ -482,7 +482,7 @@ jerror_t DTrackCandidate_factory::evnt(JEventLoop *loop, uint64_t eventnumber)
       DTrackCandidate *can = new DTrackCandidate;
       can->setMomentum(mom);
       can->setPosition(pos);
-      can->setCharge(cdccan->charge());
+      can->setPID(cdccan->PID());
 
       // circle parameters
       can->rc=cdccan->rc;
@@ -546,7 +546,7 @@ jerror_t DTrackCandidate_factory::evnt(JEventLoop *loop, uint64_t eventnumber)
 	  
 	  can->setMomentum(fdccan->momentum());
 	  can->setPosition(fdccan->position());
-	  can->setCharge(fdccan->charge());
+      can->setPID(fdccan->PID());
 	  can->chisq=fdccan->chisq;
 	  can->Ndof=fdccan->Ndof; 
 	  for (unsigned int m=0;m<segments.size();m++){		  
@@ -630,7 +630,7 @@ jerror_t DTrackCandidate_factory::evnt(JEventLoop *loop, uint64_t eventnumber)
 
 	  can->Ndof=srccan->Ndof;
 	  can->chisq=srccan->chisq;
-	  can->setCharge(srccan->charge());
+      can->setPID(srccan->PID());
 	  can->setMomentum(srccan->momentum());
 	  can->setPosition(srccan->position());
 	  for (unsigned int n=0;n<segments[0]->hits.size();n++){
@@ -670,7 +670,7 @@ jerror_t DTrackCandidate_factory::evnt(JEventLoop *loop, uint64_t eventnumber)
 	 vector<unsigned int>cdc_hits_to_add;	 
 	 for (unsigned int k=0;k<used_cdc_hits.size();k++){
 	   if (!used_cdc_hits[k]){
-	     double variance=1.0;
+	     double variance=1.6;
 	     // Use a helical approximation to the track to match both axial and
 	     // stereo wires
 	     double doca2=DocaToHelix(mycdchits[k],q,pos,mom);
@@ -680,9 +680,9 @@ jerror_t DTrackCandidate_factory::evnt(JEventLoop *loop, uint64_t eventnumber)
 	     }
 	   }
 	 }
-	 // It's probably not worth doing this unless there are at least few
+	 // It's probably not worth doing this unless there are at least 2
 	 // hits in the cdc that can be associated with the track...
-	 if (cdc_hits_to_add.size()>2){
+	 if (cdc_hits_to_add.size()>1){
 	   // variables needed for average Bz
 	   unsigned int num_hits=0;
 	   double Bz=0;
@@ -708,7 +708,7 @@ jerror_t DTrackCandidate_factory::evnt(JEventLoop *loop, uint64_t eventnumber)
 	       min_ring=mycdchits[ind]->wire->ring;
 	     }
 	   }
-	   if (num_hits>2){
+	   if (num_hits>=2){
 	     for (unsigned int n=0;n<usedfdchits.size();n++){
 	       const DFDCPseudo *fdchit=usedfdchits[n];
 	       fit.AddHit(fdchit);
@@ -785,7 +785,7 @@ jerror_t DTrackCandidate_factory::evnt(JEventLoop *loop, uint64_t eventnumber)
     vector<const DCDCTrackHit *>mycdchits;
     candidate->GetT(mycdchits);
     
-    if (int(mycdchits.size()+myfdchits.size())>=MIN_NUM_HITS){
+    if (mycdchits.size()>=6 || myfdchits.size()>=3){
       _data.push_back(candidate);
     }
     else delete candidate;
@@ -1357,7 +1357,8 @@ bool DTrackCandidate_factory::MatchMethod1(const DTrackCandidate *fdccan,
 
 	can->chisq=fit.chisq;
 	can->Ndof=fit.ndof;
-	can->setCharge(FactorForSenseOfRotation*fit.h);
+	Particle_t locPID = (FactorForSenseOfRotation*fit.h > 0.0) ? PiPlus : PiMinus;
+    can->setPID(locPID);
 	can->setMomentum(mom);
 	can->setPosition(pos);
     
@@ -1404,10 +1405,20 @@ bool DTrackCandidate_factory::MatchMethod1(const DTrackCandidate *fdccan,
      DVector3 mom=fdccan->momentum();
      double q=fdccan->charge();
 
+     // Check to see if the outer hit in the CDC does not exceed the radius of  
+     // the FDC position to try to avoid false matches...
+     unsigned int outer_index=cdchits.size()-1;
+     DVector3 origin=cdchits[outer_index]->wire->origin;
+     DVector3 dir=(1./cdchits[outer_index]->wire->udir.z())*cdchits[outer_index]->wire->udir;
+     DVector3 cdc_outer_wire_pos=origin+(167.-origin.z())*dir;
+     if (cdc_outer_wire_pos.Perp()>pos.Perp()) {
+       continue;
+     }
+
      // loop over the cdc hits and count hits that agree with a projection of 
      // the helix into the cdc 
      for (unsigned int m=0;m<cdchits.size();m++){
-       double variance=1.0;
+       double variance=1.6;
        // Use a helical approximation to the track to match both axial and
        // stereo wires
        double dr2=DocaToHelix(cdchits[m],q,pos,mom);
@@ -1424,7 +1435,7 @@ bool DTrackCandidate_factory::MatchMethod1(const DTrackCandidate *fdccan,
      if (num_match>=3 && double(num_match)/double(num_cdc)>0.33){
        // Put the fdc candidate in the combined list
        DTrackCandidate *can = new DTrackCandidate;
-       can->setCharge(q);
+       can->setPID((q > 0.0) ? PiPlus : PiMinus);
        
        // copy the list of cdc indices over from the cdc candidate
        can->used_cdc_indexes=cdccan->used_cdc_indexes;
@@ -1490,7 +1501,8 @@ bool DTrackCandidate_factory::MatchMethod1(const DTrackCandidate *fdccan,
 	   double sperp=(ratio<1.)?tworc*asin(ratio):tworc*M_PI_2;
 	   
 	   pos.SetZ(fdchit->wire->origin.z()-sperp*fit.tanl);
-	   can->setCharge(FactorForSenseOfRotation*fit.h);
+       Particle_t locPID = ((FactorForSenseOfRotation*fit.h > 0.0) ? PiPlus : PiMinus);
+	   can->setPID(locPID);
 	 }
 	 else{
 	   //Set the charge for the stepper 
@@ -1605,7 +1617,7 @@ bool DTrackCandidate_factory::MatchMethod1(const DTrackCandidate *fdccan,
 	       || (num_match>0 && double(num_match)/double(num_hits)>0.33)){
 	     DTrackCandidate *can = new DTrackCandidate;
 	     
-	     can->setCharge(cdccan->charge());
+	     can->setPID(cdccan->PID());
 	     can->used_cdc_indexes=cdccan->used_cdc_indexes;
 	     
 	     // mark the fdc track candidate as matched
@@ -1645,7 +1657,8 @@ bool DTrackCandidate_factory::MatchMethod1(const DTrackCandidate *fdccan,
 	       
 	       // Set the charge
 	       fit.FindSenseOfRotation();   
-	       can->setCharge(FactorForSenseOfRotation*fit.h);
+	       Particle_t locPID = ((FactorForSenseOfRotation*fit.h > 0.0) ? PiPlus : PiMinus);
+		   can->setPID(locPID);
 	       
 	       if (GetPositionAndMomentum(fit,Bz_avg,cdchits[0]->wire->origin,
 					  pos,mom)==NOERROR){
@@ -1826,7 +1839,8 @@ bool DTrackCandidate_factory::MatchMethod4(const DTrackCandidate *srccan,
 	    
 	    // Guess charge from fit
 	    fit.h=GetSenseOfRotation(fit,firsthit,srccan->position());
-	    can->setCharge(FactorForSenseOfRotation*fit.h);
+	    Particle_t locPID = ((FactorForSenseOfRotation*fit.h > 0.0) ? PiPlus : PiMinus);
+		can->setPID(locPID);
 
 	    // put z position just upstream of the first hit in z
 	    const DHFHit_t *myhit=fit.GetHits()[0];
@@ -1950,7 +1964,8 @@ bool DTrackCandidate_factory::MatchMethod5(DTrackCandidate *can,
 	    double sperp=(ratio<1.)?tworc*asin(ratio):tworc*M_PI_2;
 	    
 	    pos.SetZ(fdchit->wire->origin.z()-sperp*fit.tanl);
-	    can->setCharge(FactorForSenseOfRotation*fit.h);
+		Particle_t locPID = ((FactorForSenseOfRotation*fit.h > 0.0) ? PiPlus : PiMinus);
+		can->setPID(locPID);
 	  }    
 	  can->chisq=fit.chisq;
 	  can->Ndof=fit.ndof;
@@ -2418,7 +2433,7 @@ bool DTrackCandidate_factory::MatchMethod8(const DTrackCandidate *cdccan,
 		can->xc=fit.x0;
 		can->yc=fit.y0;
 
-		can->setCharge(q);
+		can->setPID((q > 0.0) ? PiPlus : PiMinus);
 		can->setMomentum(my_mom);
 		can->setPosition(my_pos);
 		can->chisq=fit.chisq;
@@ -2513,7 +2528,7 @@ bool DTrackCandidate_factory::MatchMethod9(unsigned int src_index,
 	double dy=fit1.y0-fit2.y0;
 	double circle_center_diff2=dx*dx+dy*dy;
 	double got_match=false;
-	if (circle_center_diff2<4.0) got_match=true;
+	if (circle_center_diff2<9.0) got_match=true;
 	// try another matching method here if got_match==false 
 	else{  	
 	  // Sense of rotation
@@ -2591,7 +2606,7 @@ bool DTrackCandidate_factory::MatchMethod9(unsigned int src_index,
 	  can->xc=fit1.x0;
 	  can->yc=fit1.y0;
 	  
-	  can->setCharge(q);
+	  can->setPID((q > 0.0) ? PiPlus : PiMinus);
 	  can->setPosition(pos);
 	  can->setMomentum(mom);
 	  
@@ -2735,7 +2750,7 @@ bool DTrackCandidate_factory::MatchMethod10(unsigned int src_index,
 	  can->xc=fit1.x0;
 	  can->yc=fit1.y0;
 
-	  can->setCharge(q);
+	  can->setPID((q > 0.0) ? PiPlus : PiMinus);
 	  can->setPosition(pos);
 	  can->setMomentum(mom);
 	  
@@ -2959,7 +2974,8 @@ bool DTrackCandidate_factory::MatchMethod12(DTrackCandidate *can,
 	      }
 	      can->chisq=fit.chisq;
 	      can->Ndof=fit.ndof;
-	      can->setCharge(FactorForSenseOfRotation*fit.h);
+	      Particle_t locPID = (FactorForSenseOfRotation*fit.h > 0.0) ? PiPlus : PiMinus;
+	      can->setPID(locPID);
 	      can->setMomentum(mom);
 	       
 	      // FDC hit
@@ -3058,7 +3074,8 @@ bool DTrackCandidate_factory::MatchMethod12(DTrackCandidate *can,
 
 	    can->chisq=fit.chisq;
 	    can->Ndof=fit.ndof;
-	    can->setCharge(FactorForSenseOfRotation*fit.h);
+		Particle_t locPID = (FactorForSenseOfRotation*fit.h > 0.0) ? PiPlus : PiMinus;
+		can->setPID(locPID);
 	    can->setMomentum(mom);
 
 	    forward_matches[i]=1;

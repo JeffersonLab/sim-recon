@@ -7,6 +7,7 @@
 #include "DTrackFitterRiemann.h"
 #include "START_COUNTER/DSCHit.h"
 #include "HDGEOMETRY/DMaterialMap.h"
+#include "PID/DParticleID.h"
 #include <TDecompLU.h>
 #include <math.h>
 #include <cmath>
@@ -295,7 +296,7 @@ DTrackFitter::fit_status_t DTrackFitterRiemann::FitTrack(void)
   double pt=0.003*fabs(B)*rc;
   fit_params.setPosition(DVector3(x0,y0,z_vertex));
   fit_params.setMomentum(DVector3(pt*cosphi,pt*sinphi,pt*tanl));
-  fit_params.setCharge(q);
+  fit_params.setPID(IDTrack(q, fit_params.mass()));
   this->chisq=ChiSq();
   
   return kFitSuccess;
@@ -596,7 +597,7 @@ jerror_t DTrackFitterRiemann::GetFDCPosition(DRiemannHit_t *hit){
   double delta_x=sign*(hit->fdc->time-sperp*one_over_vcosl)*55E-4;
     
   // Next find correction to y from table of deflections
-  double delta_y=lorentz_def->GetLorentzCorrection(XYp.X(),XYp.Y(),hit->z,theta,delta_x);
+  double delta_y=0.;
    
   double u=hit->fdc->w+delta_x;
   double v=hit->fdc->s-delta_y;

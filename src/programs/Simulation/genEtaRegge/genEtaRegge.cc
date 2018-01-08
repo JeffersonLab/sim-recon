@@ -16,12 +16,7 @@
 #include <string>
 using namespace std;
 
-extern "C"{
-  void cobrems_(float *Ee,float *Epeak, float *emitmr, float *radt,
-		float *dist,float *diameter,int *doPolFlux);
-  float dntdx_(float* x);
-  float dnidx_(float* x);
-}
+#include <CobremsGeneration.hh>
 
 // Masses
 const double m_p=0.93827; // GeV
@@ -299,8 +294,8 @@ void WriteEvent(unsigned int eventNumber,TLorentzVector &beam, float vert[3],
 // Create some diagnostic histograms
 void CreateHistograms(){
 
-  thrown_t=new TH1D("thrown_t","Thrown t distribution",1000,-0.99,0.01);
-  thrown_t->SetXTitle("t [GeV^{2}]");
+  thrown_t=new TH1D("thrown_t","Thrown -t distribution",1000,0.,2.0);
+  thrown_t->SetXTitle("-t [GeV^{2}]");
   thrown_dalitzZ=new TH1D("thrown_dalitzZ","thrown dalitz Z",110,-0.05,1.05);
   thrown_Egamma=new TH1D("thrown_Egamma","Thrown E_{#gamma} distribution",
 			       1000,0,12.);
@@ -409,16 +404,19 @@ int main(int narg, char *argv[])
 
   // Get coherent peak and collimator diameter
   getline(infile,comment_line);
-  float Epeak=9.0,collDiam=0.0034;
+  float Epeak=9.0,collDiam=0.005,radThickness=50e-6;
   float Ee=12.0;
   infile >> Ee;
   infile >> Epeak;
   infile >> collDiam;
+  infile >> radThickness;
   infile.ignore(); // ignore the '\n' at the end of this line
 
   cout << "Electron beam energy = " << Ee << " GeV, Coherent peak = " 
        << Epeak <<" GeV, collimator diameter = " 
-       <<collDiam << " m" << endl;
+       <<collDiam << " m, radiator thickness = " 
+       << radThickness << " m"
+       << endl;
 
   // Get decaying particle mass and width
   string comment_line2;
@@ -476,11 +474,16 @@ int main(int narg, char *argv[])
   // Setup coherent bremsstrahlung generator
   //----------------------------------------------------------------------------
   float radColDist=76.0;// meters
-  //float colDiam=0.0034; // meters
   int doPolFlux=0;  // want total flux (1 for polarized flux)
   float emitmr=10.e-9; // electron beam emittance
-  float radt=20.e-6; // radiator thickness in m
-  cobrems_(&Ee,&Epeak,&emitmr,&radt,&radColDist,&collDiam,&doPolFlux);
+  CobremsGeneration cobrems(Ee, Epeak);
+  cobrems.setBeamEmittance(emitmr);
+  cobrems.setTargetThickness(radThickness);
+  cobrems.setCollimatorDistance(radColDist);
+  cobrems.setCollimatorDiameter(collDiam);
+  cobrems.setCollimatedFlag(true);
+  cobrems.setPolarizedFlag(doPolFlux);
+  cobrems.setCollimatedFlag(true);
   
   // Create some diagonistic histographs
   CreateHistograms();
@@ -491,8 +494,8 @@ int main(int narg, char *argv[])
   for (int i=1;i<=1000;i++){
     float x=float(cobrems_vs_E->GetBinCenter(i)/Ee);
     float y=0;
-    if (Epeak<Emin) y=dnidx_(&x);
-    else y=dntdx_(&x);
+    if (Epeak<Emin) y=cobrems.Rate_dNidx(x);
+    else y=cobrems.Rate_dNtdx(x);
     cobrems_vs_E->Fill(Ee*double(x),double(y));
   }
 
@@ -543,9 +546,10 @@ int main(int narg, char *argv[])
       double sin_theta_over_2=0.;
       t=t0;
       
-      // Generate theta with a uniform distribution and compute the cross 
+      // Generate cos(theta) with a uniform distribution and compute the cross 
       // section at this value
-      theta_cm=myrand->Uniform(M_PI);
+      double cos_theta_cm=-1.0+myrand->Uniform(2.);
+      theta_cm=acos(cos_theta_cm);
       
       sin_theta_over_2=sin(0.5*theta_cm);
       t=t0-4.*p_gamma*p_eta*sin_theta_over_2*sin_theta_over_2;
@@ -625,7 +629,7 @@ int main(int narg, char *argv[])
       thrown_dalitzZ->Fill(z_dalitz);
     }
     // Other diagnostic histograms
-    thrown_t->Fill(t);
+    thrown_t->Fill(-t);
 
     // Randomly generate z position in target
     vert[2]=zmin+myrand->Uniform(zmax-zmin);

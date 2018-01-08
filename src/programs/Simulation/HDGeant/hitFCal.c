@@ -11,6 +11,9 @@
  *
  *			3/23/2012 B. Schaefer
  *          Removed radiation hard insert functionality
+ *
+ *			9/12/2017 R.T. Jones
+ *			Added readout of energy deposited in light guides
  */
 
 #include <stdlib.h>
@@ -54,7 +57,8 @@ static int initialized = 0;
 
 void hitForwardEMcal (float xin[4], float xout[4],
                       float pin[5], float pout[5], float dEsum,
-                      int track, int stack, int history, int ipart)
+                      int track, int stack, int history, int ipart,
+                      int lgflag)
 {
    float x[3], t;
    float xfcal[3];
@@ -132,6 +136,103 @@ void hitForwardEMcal (float xin[4], float xout[4],
    t    = (xin[3] + xout[3])/2 * 1e9;
    transformCoord(x,"global",xfcal,"FCAL");
 
+   /* if a light guide hit, record that here, no threshold */
+
+   if (lgflag)
+   {
+      int nhit;
+      s_FcalTruthHits_t* hits;
+      int row = getrow_wrapper_();
+      int column = getcolumn_wrapper_();
+      int mark = ((row+1)<<16) + (column+1);
+      void** twig = getTwig(&forwardEMcalTree, mark);
+      if (*twig == 0)
+      {
+         s_ForwardEMcal_t* cal = *twig = make_s_ForwardEMcal();
+         s_FcalBlocks_t* blocks = make_s_FcalBlocks(1);
+         blocks->mult = 1;
+         blocks->in[0].row = row;
+         blocks->in[0].column = column;
+         blocks->in[0].fcalTruthHits = hits = make_s_FcalTruthHits(MAX_HITS);
+         cal->fcalBlocks = blocks;
+         blockCount++;
+      }
+      else
+      {
+         s_ForwardEMcal_t* cal = *twig;
+         hits = cal->fcalBlocks->in[0].fcalTruthHits;
+      }
+
+      for (nhit = 0; nhit < hits->mult; nhit++)
+      {
+         if (fabs(hits->in[nhit].t - t) < TWO_HIT_RESOL)
+         {
+            break;
+         }
+      }
+      if (nhit < hits->mult)		/* merge with former hit */
+      {
+         int lghit;
+         s_FcalTruthLightGuides_t *lghits;
+         lghits = hits->in[nhit].fcalTruthLightGuides;
+         if (lghits == HDDM_NULL) {
+            hits->in[nhit].fcalTruthLightGuides = lghits = 
+                           make_s_FcalTruthLightGuides(MAX_HITS);
+            lghits->in[0].dE = dEsum;
+            lghits->in[0].t = t;
+            lghits->mult = 1;
+         }
+         else {
+            for (lghit = 0; lghit < lghits->mult; lghit++)
+            {
+               if (fabs(lghits->in[lghit].t - t) < TWO_HIT_RESOL)
+               {
+                  break;
+               }
+            }
+            if (lghit < lghits->mult)
+            {
+               lghits->in[lghit].t =
+                       (lghits->in[lghit].t * lghits->in[lghit].dE + t*dEsum)
+                       / (lghits->in[lghit].dE + dEsum);
+			   lghits->in[lghit].dE += dEsum;
+            }
+            else if (lghit < MAX_HITS)         /* create new hit */
+            {
+               lghits->in[lghit].dE = dEsum;
+               lghits->in[lghit].t = t;
+               lghits->mult += 1;
+            }
+            else
+            {
+               fprintf(stderr,"HDGeant error in hitforwardEMcal: ");
+               fprintf(stderr,"max hit count %d exceeded, truncating!\n",MAX_HITS);
+               exit(2);
+            }
+         }
+      }
+      else if (nhit < MAX_HITS)              /* create a new hit */ 
+      {
+         s_FcalTruthLightGuides_t *lghits;
+         hits->in[nhit].fcalTruthLightGuides = lghits = 
+                        make_s_FcalTruthLightGuides(MAX_HITS);
+         lghits->in[0].dE = dEsum;
+         lghits->in[0].t = t;
+         lghits->mult = 1;
+         hits->in[nhit].t = t;
+         hits->in[nhit].E = 0;
+         hits->mult++;
+      }
+      else
+      {
+         fprintf(stderr,"HDGeant error in hitforwardEMcal: ");
+         fprintf(stderr,"max hit count %d exceeded, truncating!\n",MAX_HITS);
+         exit(2);
+      }
+
+      return;
+   }
+
    /* post the hit to the truth tree */
 
    int itrack = (stack == 0)? gidGetId(track) : -1;
@@ -179,6 +280,13 @@ void hitForwardEMcal (float xin[4], float xout[4],
       float dist = 0.5*LENGTH_OF_BLOCK-xfcal[2];
       float dEcorr = dEsum * exp(-dist/ATTEN_LENGTH);
 
+      // Place holder for the MIP correction function. Currently apply 
+      // simple correction
+      
+      if( (ipart == 5) ||  (ipart == 6) || (ipart == 8) || (ipart == 9) ){
+	dEcorr *= 1.38;
+      }
+      
       float tcorr = t + dist/C_EFFECTIVE;
       int mark = ((row+1)<<16) + (column+1);
       void** twig = getTwig(&forwardEMcalTree, mark);
@@ -232,9 +340,11 @@ void hitForwardEMcal (float xin[4], float xout[4],
 
 void hitforwardemcal_(float* xin, float* xout,
                       float* pin, float* pout, float* dEsum,
-                      int* track, int* stack, int* history, int* ipart)
+                      int* track, int* stack, int* history, int* ipart,
+                      int* lgflag)
 {
-   hitForwardEMcal(xin,xout,pin,pout,*dEsum,*track,*stack,*history, *ipart);
+   hitForwardEMcal(xin,xout,pin,pout,*dEsum,*track,*stack,*history,
+                   *ipart,*lgflag);
 }
 
 

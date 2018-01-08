@@ -28,45 +28,68 @@ def main():
 	outfile = TFile.Open("results.root","recreate")
 	outfile.cd()
 
+	# Get offsets from first calibration step
+	offsets = []
+	offsets_ind = []
+	offset_file = open('offsets-' + str(run) + '.txt', 'r')
+	for line in offset_file:
+		if int(line.split()[0]) == 0:
+			offsets.append( float(line.split()[2]) )
+		else:
+			offsets_ind.append( float(line.split()[2]) )
+
 	# If the histogram is empty use the summed output hist instead
-	indCol = [9,27,81,99]
 	base = "TAGM_TW/tdc-rf/h_dt_vs_pp_tdc_"
 	for i in range(1,103):
 		# Summed outputs
 		h = rootfile.Get(base+str(i))
 		h.Write()
-		p = tw_corr(h,0,i,newV)
+		p = tw_corr(h,0,i,newV, offsets, offsets_ind, run)
 		p.Write()
 
-		# Individual fiber readouts
-		if i in indCol:
-			for j in range(5):
-				h = rootfile.Get(base+"ind_"+str(j+1)+"_"+str(indCol.index(i)+1))
-				h.Write()
-				if not (h.GetEntries() > 300):
-					h = rootfile.Get(base + str(i)).Clone()
-					h.SetName(base+"ind_"+str(j+1)+"_"+str(indCol.index(i)+1))
-				p = tw_corr(h,j+1,i,newV)
-                                p.Write()
-			
-	# Include defaults for columns 101 and 102
-	#file1 = open('tw-corr.txt','a')
-	#for i in range(2):
-	#	file1.write('0   ' + str(101 + i) + '   ' + '1   ' + '-1   ' +
-        #            	    '0   ' + '8   ' + '0\n')
 	outfile.Close()
 
-def tw_corr(h,row,col,newV):
+def tw_corr(h,row,col,newV, offsets, offsets_ind, run):
+	if not (col % 10):
+		print('Calibrating column ' + str(col))
+	# Create list of columns with individual readout
+	indCol = [9,27,81,99]
 	# Open files for writing constants
 	if (row == 0 and col == 1):
-		file1 = open('tw-corr.txt','w')
+		file1 = open('tw-corr-' + str(run) + '.txt','w')
 	else:
-		file1 = open('tw-corr.txt','a')
+		file1 = open('tw-corr-' + str(run) + '.txt','a')
+
+	# shift histogram time axis based on first step calibration results
+	xbins = h.GetXaxis().GetNbins()
+	hnew = h.Clone()
+	hnew.Reset()
+	dtmean = GetMean(h)
+	ymax = h.GetYaxis().FindBin(dtmean + 15.0)
+	ymin = h.GetYaxis().FindBin(dtmean - 5.0)
+	for i in range(1,xbins+1):
+		#for j in range(1,ybins+1):
+		for j in range(ymin,ymax+1):
+			x = hnew.GetXaxis().GetBinCenter(i)
+			y = hnew.GetYaxis().GetBinCenter(j)
+			y -= offsets[col - 1]
+			n = int(h.GetBinContent(i, j))
+			for k in range(n):
+				hnew.Fill(x, y)
 
 	# Find the reference time difference
-	py = h.ProjectionY()
-	fit = py.Fit("gaus","sq")
-	dtmean = fit.Parameters()[1]
+	dtmean = GetMean(hnew)
+	ymax = h.GetYaxis().FindBin(dtmean + 15.0)
+	ymin = h.GetYaxis().FindBin(dtmean - 5.0)
+
+	# For low amplitude channels, remove tail beyond 3ns
+	# This provides a better Profile for fitting the timewalk
+	for i in range(1, xbins+1):
+		#for j in range(1, ybins+1):
+		for j in range(ymin, ymax+1):
+			y = hnew.GetYaxis().GetBinCenter(j)
+			if (y - dtmean > 3.0):
+				hnew.SetBinContent(i,j,0)
 	
 	# Make timewalk fit function and apply to hist
 	# New voltage scheme has larger pulse height, adjust the range if needed
@@ -85,7 +108,9 @@ def tw_corr(h,row,col,newV):
 		f1.SetParName(2,"c2")
 		f1.SetParName(3,"c3")
 
-		p = h.ProfileX()
+		#hnew.RebinX(4)
+		hnew.GetYaxis().SetRangeUser(dtmean-5.0, dtmean+15.0)
+		p = hnew.ProfileX()
 		fitResult = p.Fit("f1","sRWq")
 
 		c0 = fitResult.Parameters()[0]
@@ -93,6 +118,19 @@ def tw_corr(h,row,col,newV):
 		c2 = fitResult.Parameters()[2]
 		c3 = fitResult.Parameters()[3]
 
+		h_adj = hnew.Clone()
+		h_adj.Reset()
+
+		for i in range(1,xbins+1):
+			#for j in range(1,ybins+1):
+			for j in range(ymin,ymax+1):
+				x = hnew.GetXaxis().GetBinCenter(i)
+				y = hnew.GetYaxis().GetBinCenter(j)
+				y = f1.Eval(x) - y
+				n = int(hnew.GetBinContent(i, j))
+				for k in range(n):
+					h_adj.Fill(x, y)
+		dtmean = GetMean(h_adj)
 	except:
 		c0 = 1
 		c1 = -1
@@ -103,9 +141,21 @@ def tw_corr(h,row,col,newV):
 	# Write constants to file
 	file1.write(str(row) + '   ' + str(col) + '   ' + str(c0) + '   ' + str(c1) + '   ' +
                     str(c2) + '   ' + str(c3) + '   ' + str(dtmean) + '\n')
+	if col in indCol:
+		for j in range(1,6):
+			file1.write(str(j) + '   ' + str(col) + '   ' + str(c0) + '   ' + str(c1) + '   ' +
+        		            str(c2) + '   ' + str(c3) + '   ' + str(dtmean) + '\n')
 	file1.close()
 
 	return p
+	#return h_adj
+
+def GetMean(hist):
+	py = hist.ProjectionY()
+	ymax = py.GetBinCenter( py.GetMaximumBin() )
+	fit = py.Fit("gaus","sq", "", ymax - 0.5, ymax + 0.5)
+	dtmean = fit.Parameters()[1]
+	return dtmean
 
 
 if __name__ == "__main__":

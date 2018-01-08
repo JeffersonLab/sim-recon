@@ -6,16 +6,26 @@ TDC and ADC.
 
 To fully align the TAGM with the rest of the detectors, use HLDetectorTiming.
 
-CCDB version 1.06 or greater is needed for timing.py to work.
+**CCDB version 1.06 or greater is needed for timing.py to work.**
 
 ## Running TAGM_TW
-Follow these steps after running `hd_root` with the **TAGM_TW** plugin. 
+When running `hd_root` with the **TAGM_TW** plugin, make sure to include 
+the option `-PTAGMHit:DELTA_T_ADC_TDC_MAX=300` in order to pick up any 
+large offsets.
+
+`hd_root -PPLUGINS=TAGM_TW -PTAGMHit:DELTA_T_ADC_TDC_MAX=300 /path/to/file/hd_rawdata_XXXXXX_00*`
+
+**Please use multiple EVIO files when running!** AMO runs require more files
+in order to have high enough statistics.
+
 Be aware that the CCDB table /PHOTON_BEAM/microscope/integral_cuts can 
 interfere with the pulse height distributions. To set these values to 0 
 on the fly, run with the option -PTAGMHit:CUT_FACTOR=0.
 
 Also, be aware that the reference RF source for this plugin is the TAGH. 
 Make sure that the TAGH RF signal is calibrated before proceeding.
+
+Follow these steps after running `hd_root`. 
 
 ## Initial ADC-RF and raw TDC-ADC calibration
 This is the first step to calibrate the TAGM. Because the ADC is already 
@@ -24,13 +34,15 @@ At the same time, the uncorrected TDC time can be adjusted to be aligned
 with the new ADC time. This is a rough calibration of the raw TDC time 
 which will avoid the timewalk from absorbing large offsets.
 
+**For this step, it is important to include -PTAGMHit:DELTA_T_ADC_TDC_MAX=300
+when running TAGM_TW. Occasionally, the initial time difference is very large.**
+
 1. `python timing.py -b <rootfile> <run number> rf <CCDB variation>`
 2. `This produces the file adc_offsets-######.txt and tdc_offsets-######.txt`
-3. `ccdb add PHOTON_BEAM/microscope/fadc_time_offsets -v <variation> -r #-# adc_offsets-######.txt`
-3. `ccdb add PHOTON_BEAM/microscope/tdc_time_offsets -v <variation> -r #-# tdc_offsets-######.txt`
 
 ## Timewalk corrections
-The timewalk corrections are to be performed after the initial ADC-RF and raw TDC-ADC calibrations have been performed.
+The timewalk corrections are to be performed after the initial ADC-RF and 
+raw TDC-ADC calibrations have been performed.
 
 The timewalk plugin uses the TAGH RF as a reference. For a given hit, the 
 RF time closest to the ADC time is selected and set as the RF time. The time 
@@ -39,25 +51,47 @@ way, there are not multiple timewalk distributions every beam period. This
 allows for large timewalks to be included in the fit.
 
 1. `python tw.py -b <rootfile> <run number>`
-2. `This creates the files results.root and tw-corr.txt`
+2. `This creates the files results.root and tw-corr-#####.txt`
 3. `root -l -b 'display.C("results.root")' to check the fits`
-4. `ccdb add /PHOTON_BEAM/microscope/tdc_timewalk_corrections -v <variation> -r #-# tw-corr.txt`
 
-## Corrected TDC-RF calibration
-At this point, the previous steps should be completed and verified. The 
-ADC-RF distribution should be centered at 0 as well as the raw TDC-ADC.
+## Update CCDB
+At this point, the TAGM timing calibrations should be finished.
+The fadc, tdc, and timewalk constants can now be pushed to the CCDB.
 
-This step takes the timewalk corrected TDC time and compares it with the ADC. 
-Since the ADC is already aligned with the RF, this will align the TDC with 
-both.
-
-1. `python timing.py -b <rootfile> <run number> self <CCDB variation>`
-2. `This overwrites the previous tdc_offsets-#####.txt file`
+** Note: the script push-to-ccdb.sh requires a run number WITHOUT a leading zero **
+1. `./push-to-ccdb.sh <run number> <variation>
+or
+2. `ccdb add PHOTON_BEAM/microscope/fadc_time_offsets -v <variation> -r #-# adc_offsets-######.txt`
 3. `ccdb add PHOTON_BEAM/microscope/tdc_time_offsets -v <variation> -r #-# tdc_offsets-######.txt`
+4. `ccdb add PHOTON_BEAM/microscope/tdc_timewalk_corrections -v <variation> -r #-# tw-corr-######.txt`
+
+## Check for bad CCDB values
+Sometimes bad constants make their way into the CCDB. These can be found by 
+running ccdbquery.py. The likely problems are wrong names for columns 101 and 102 
+due to manual updates as well as unrealistically large offsets for the adc and tdc.
+
+1. `python ccdbquery.py`
+
+This provides 3 files: bad-cols.txt, bad-adcs/bad-adc-XXXXX.txt, and bad-tdcs/bad-tdc-XXXXX.txt.
+
+bad-cols.txt lists the run numbers where columns 101 and 102 are 120 and 121.
+
+bad-adc-XXXXX.txt and bad-tdc-XXXXX.txt list the row and column of the bad offset. 
+
+## Update CCDBs that had bad values
+After running `ccdbquery.py`, run `genDefaults.py` to produce updated CCDB tables
+for any run that contained: mis-labeled 101 and 102 columns, any offset > |50|.
+Any value that was >|50| is now 10 and will need to be calibrated with another pass.
+
+The output files are contained in the directories: adc_offsets, tdc_offets, and 
+are able to be pushed to the CCDB.
 
 ## Calibration validation
 After all steps are complete, a calibration validation can be performed. Run 
 the plugin again with the new constants.
+
+**The constants from the previous step must be pushed to the CCDB and a new root
+file created using TAGM_TW before performing this step.**
 
 1. `python timing.py -b <rootfile> <run number> validate <CCDB variation>`
 2. `This produces a file problem-channels.txt containing any errors or fits 

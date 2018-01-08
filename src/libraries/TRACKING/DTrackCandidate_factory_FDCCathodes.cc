@@ -286,7 +286,9 @@ jerror_t DTrackCandidate_factory_FDCCathodes::evnt(JEventLoop *loop, uint64_t ev
     // Create the fit object and add the hits
     DHelicalFit fit;
     double max_r=0.;
+    rc=0.; // create a guess for rc
     for (unsigned int m=0;m<mytracks[i].size();m++){
+      rc+=mytracks[i][m]->rc;
       for (unsigned int n=0;n<mytracks[i][m]->hits.size();n++){
 	const DFDCPseudo *hit=mytracks[i][m]->hits[n];
 	fit.AddHit(hit);
@@ -297,6 +299,7 @@ jerror_t DTrackCandidate_factory_FDCCathodes::evnt(JEventLoop *loop, uint64_t ev
 	}
       }
     }
+    rc/=double(mytracks[i].size());
     // Fake point at origin
     bool use_fake_point=false;
     if (max_r<MAX_R_VERTEX_LIMIT){
@@ -347,7 +350,7 @@ jerror_t DTrackCandidate_factory_FDCCathodes::evnt(JEventLoop *loop, uint64_t ev
     
     track->chisq=fit.chisq;
     track->Ndof=fit.ndof;
-    track->setCharge(q);
+    track->setPID((q > 0.0) ? PiPlus : PiMinus);
     track->setPosition(pos);
     track->setMomentum(mom);
     
@@ -390,8 +393,8 @@ jerror_t DTrackCandidate_factory_FDCCathodes::evnt(JEventLoop *loop, uint64_t ev
 	track->yc=segment->yc;
 	
 	track->setPosition(pos);
-	track->setMomentum(mom);    
-	track->setCharge(segment->q);
+	track->setMomentum(mom);
+	track->setPID((segment->q > 0.0) ? PiPlus : PiMinus);
 	track->Ndof=segment->Ndof;
 	track->chisq=segment->chisq;
       
@@ -483,7 +486,7 @@ DFDCSegment *DTrackCandidate_factory_FDCCathodes::GetTrackMatch(DFDCSegment *seg
     
     if (circle_center_diff2<circle_center_diff2_min){
       circle_center_diff2_min=circle_center_diff2;
-      if (circle_center_diff2_min<4.0){
+      if (circle_center_diff2_min<9.0){
 	match=segment2;
 	match_id=j;
       }
@@ -741,7 +744,7 @@ bool DTrackCandidate_factory_FDCCathodes::LinkStraySegment(const DFDCSegment *se
 	  
 	  _data[i]->chisq=fit.chisq;
 	  _data[i]->Ndof=fit.ndof;
-	  _data[i]->setCharge(q);
+	  _data[i]->setPID((q > 0.0) ? PiPlus : PiMinus);
 	  _data[i]->setPosition(pos);
 	  _data[i]->setMomentum(mom); 
 	}

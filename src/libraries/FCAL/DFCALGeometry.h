@@ -17,41 +17,47 @@ using namespace jana;
 
 class DFCALGeometry : public JObject {
 
-#define kBlocksWide 59
-#define kBlocksTall 59
-#define kInnerBlocksWide 51
-#define kInnerBlocksTall 51
-#define kMaxChannels kBlocksWide * kBlocksTall * 2
+  //#define kBlocksWide 59
+  //#define kBlocksTall 59
+#define kInnerBlocksWide 29
+#define kInnerBlocksTall 29
+  //#define kMaxChannels kBlocksWide * kBlocksTall * 2
 // Do not forget to adjust below formula if number of blocks chage in any direction:
 //   this is now used to convert from row/col to coordiantes y/x and back - MK
-#define kMidBlock (kBlocksWide-1)/2
+//#define kMidBlock (kBlocksWide-1)/2
 #define kInnerMidBlock (kInnerBlocksWide-1)/2 			
-#define kBeamHoleSize 3
+  //#define kBeamHoleSize 3
 
 public:
-	
-  JOBJECT_PUBLIC(DFCALGeometry);
+	JOBJECT_PUBLIC(DFCALGeometry);
 
-  //static const int kBlocksWide      = 53;
-  //static const int kBlocksTall      = 53;
-  //static const int kMaxChannels     = kBlocksWide * kBlocksTall;
-  //static const int kBeamHoleSize    =  3;
-  
-  DFCALGeometry();
-  ~DFCALGeometry(){}
-  
-  static double blockSize(int calor)  
-  { if (calor==1) return 2.075*k_cm;
-    return 4*k_cm; }
-  static double radius()  { return 1.2*k_m; }
-  static double blockLength(int calor)  {
-    if (calor==1) return 18.0*k_cm;
-    return 45.0*k_cm; }
+	DFCALGeometry();
+	~DFCALGeometry(){}
 
-  static double fcalFaceZ()  { return 625.3*k_cm; }
+	// these numbers are fixed for the FCAL as constructed
+	// it probably doesn't make sense to retrieve them
+	// from a database as they aren't going to change unless
+	// the detector is reconstructed
 
-  static double fcalMidplane() { return fcalFaceZ() + 0.5 * blockLength(0) ; } 
-	
+	enum { kBlocksWide = 59 };
+	enum { kBlocksTall = 59 };
+	enum { kMaxChannels = kBlocksWide * kBlocksTall };
+	enum { kMidBlock = ( kBlocksWide - 1 ) / 2 };
+	enum { kBeamHoleSize = 3 };
+
+	static double blockSize(int calor)  { 
+	  if (calor==1) return 2.075*k_cm;
+	  return 4.0157*k_cm; 
+	}
+	static double radius()  { return 1.20471*k_m; }
+	static double blockLength(int calor)  { 
+	  if (calor==1) return 18.0*k_cm;
+	  return 45.0*k_cm; 
+	}
+	//	static double fcalFaceZ()  { return 625.3*k_cm; }
+
+	//	static double fcalMidplane() { return fcalFaceZ + 0.5 * blockLength(0) ; }
+
   bool isBlockActive( int row, int column) const;
   int  numActiveBlocks() const { return m_numActiveBlocks; }
 

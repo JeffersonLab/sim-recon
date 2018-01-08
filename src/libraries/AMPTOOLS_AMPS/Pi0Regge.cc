@@ -11,34 +11,7 @@
 #include "IUAmpTools/Kinematics.h"
 #include "AMPTOOLS_AMPS/Pi0Regge.h"
 
-// We will use cobrems to get the polarization fraction as a function on photon energy
-// FORTRAN routines
-
-extern "C"{
-void cobrems_(float* Emax, float* Epeak, float* emitmr, float* radt, float* Dist, float* collDiam, int* doPolFluxfloat);
-float dntdx_(float* x);
-float dnidx_(float* x);
-float dncdx_(float* x);
-};
-
-// Wrapper function for total
-static double dNtdx(double x)
-{
-    float xx = x;
-    return (double)dntdx_(&xx);
-}
-
-static double dNidx(double x)
-{
-    float xx = x;
-    return (double)dnidx_(&xx);
-}
-
-static double dNcdx(double x)
-{
-    float xx = x;
-    return (double)dncdx_(&xx);
-}
+#include <CobremsGeneration.hh>
 
 Pi0Regge::Pi0Regge( const vector< string >& args ) :
 UserAmplitude< Pi0Regge >( args )
@@ -51,15 +24,21 @@ UserAmplitude< Pi0Regge >( args )
 	// Do this over the full range since we will be using this as a lookup
 	float Emax  = 12.0;
 	float Epeak = 9.0;
-	float Elow  = 0.139*2;
+	float Elow  = 0.135;
 	float Ehigh = 12.0;
 	
 	int doPolFlux=0;  // want total flux (1 for polarized flux)
 	float emitmr=10.e-9; // electron beam emittance
-	float radt=20.e-6; // radiator thickness in m
-	float collDiam=0.0034; // meters
+	float radt=50.e-6; // radiator thickness in m
+	float collDiam=0.005; // meters
 	float Dist = 76.0; // meters
-	cobrems_(&Emax, &Epeak, &emitmr, &radt, &Dist, &collDiam, &doPolFlux);
+	CobremsGeneration cobrems(Emax, Epeak);
+	cobrems.setBeamEmittance(emitmr);
+	cobrems.setTargetThickness(radt);
+	cobrems.setCollimatorDistance(Dist);
+	cobrems.setCollimatorDiameter(collDiam);
+	cobrems.setCollimatedFlag(true);
+	cobrems.setPolarizedFlag(doPolFlux);
 	
 	// Create histogram
 	totalFlux_vs_E = new TH1D("totalFlux_vs_E", "Total Flux vs. E_{#gamma}", 1000, Elow, Ehigh);
@@ -70,19 +49,19 @@ UserAmplitude< Pi0Regge >( args )
 	for(int i=1;i<=totalFlux_vs_E->GetNbinsX(); i++){
 		double x = totalFlux_vs_E->GetBinCenter(i)/Emax;
 		double y = 0;
-		//if(Epeak<Elow) y = dNidx(x);
-		y = dNtdx(x);
+		//if(Epeak<Elow) y = cobrems.Rate_dNidx(x);
+		y = cobrems.Rate_dNtdx(x);
 		totalFlux_vs_E->SetBinContent(i, y);
 	}
 
 	doPolFlux=1;
-	cobrems_(&Emax, &Epeak, &emitmr, &radt, &Dist, &collDiam, &doPolFlux);
+	cobrems.setPolarizedFlag(doPolFlux);
 	// Fill totalFlux
 	for(int i=1;i<=polFlux_vs_E->GetNbinsX(); i++){
 		double x = polFlux_vs_E->GetBinCenter(i)/Emax;
 		double y = 0;
-		//if(Epeak<Elow) y = dNidx(x);
-		y = dNcdx(x);
+		//if(Epeak<Elow) y = cobrems.Rate_dNidx(x);
+		y = cobrems.Rate_dNcdx(x);
 		polFlux_vs_E->SetBinContent(i, y);
 	}
 	
