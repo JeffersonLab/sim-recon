@@ -43,13 +43,6 @@ private:
   TH2F *CovarianceLookupTable[5][5];
 
   double LOAD_CCDB_CONSTANTS;
-  double energy_cutoff;
-  double linear_intercept;
-  double linear_slope;
-  double exponential_param0;
-  double exponential_param1;
-  double exponential_param2;
-  double nonlin_form;
   double const_term;
   double first_term_scale_factor;
   double first_exp_param0;
