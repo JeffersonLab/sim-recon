@@ -24,7 +24,7 @@ class HitRebuilderInterfaceTAC {
 protected:
 	virtual double getTimeFromRawData(const std::vector<uint16_t>& samples) = 0;
 	virtual const Df250WindowRawData* getRawData(const DTACHit* baseHit) = 0;
-	jerror_t readCCDB(JEventLoop* eventLoop) = delete;
+	jerror_t readCCDB(jana::JEventLoop* eventLoop) = delete;
 
 public:
 	HitRebuilderInterfaceTAC() {

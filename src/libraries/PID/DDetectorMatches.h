@@ -25,7 +25,7 @@ class DBCALShowerMatchParams
 {
 	public:
 		DBCALShowerMatchParams(void) : dBCALShower(NULL),
-		dx(0.0), dFlightTime(0.0), dFlightTimeVariance(0.0), dPathLength(0.0), dDeltaPhiToShower(0.0), dDeltaZToShower(0.0){}
+    dx(0.0), dFlightTime(0.0), dFlightTimeVariance(0.0), dPathLength(0.0), dDeltaPhiToShower(0.0), dDeltaPhiToShowerCut(0.0),dDeltaZToShower(0.0){}
 
 		const DBCALShower* dBCALShower;
 
@@ -34,6 +34,7 @@ class DBCALShowerMatchParams
 		double dFlightTimeVariance;
 		double dPathLength; //path length from DKinematicData::position() to the shower
 		double dDeltaPhiToShower; //between track and shower //is signed: BCAL - Track //in radians
+		double dDeltaPhiToShowerCut; //momentum-dependent cut //in degrees
 		double dDeltaZToShower; //between track and shower //is signed: BCAL - Track
 
 		double Get_DistanceToTrack(void) const

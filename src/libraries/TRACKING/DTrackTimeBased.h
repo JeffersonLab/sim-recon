@@ -12,6 +12,8 @@
 #include <JANA/JFactory.h>
 #include "DTrackingData.h"
 #include "DTrackFitter.h"
+#include "CDC/DCDCTrackHit.h"
+#include "FDC/DFDCPseudo.h"
 
 class DReferenceTrajectory;
 
@@ -37,8 +39,8 @@ class DTrackTimeBased:public DTrackingData{
 		float chisq;			///< Chi-squared for the track (not chisq/dof!)
 		int Ndof;				///< Number of degrees of freedom in the fit
 		vector<DTrackFitter::pull_t> pulls;	///< Holds pulls used in chisq calc. (not including off-diagonals)
+		map<DetectorSystem_t,vector<DTrackFitter::Extrapolation_t> >extrapolations;
 
-		const DReferenceTrajectory *rt; ///< pointer to reference trjectory representing this track
 
       bool IsSmoothed; // Boolean value to indicate whether the smoother was run succesfully over this track.
 
@@ -77,6 +79,21 @@ class DTrackTimeBased:public DTrackingData{
 			AddString(items, "#HitsMCMatched", "%d",dNumHitsMatchedToThrown);
 		}
 };
+
+size_t Get_NumTrackHits(const DTrackTimeBased* locTrackTimeBased);
+inline size_t Get_NumTrackHits(const DTrackTimeBased* locTrackTimeBased)
+{
+	vector<const DCDCTrackHit*> locCDCHits;
+	locTrackTimeBased->Get(locCDCHits);
+	vector<const DFDCPseudo*> locFDCHits;
+	locTrackTimeBased->Get(locFDCHits);
+
+	size_t locNumHits = locCDCHits.size() + locFDCHits.size();
+	if(locNumHits > 0)
+		return locNumHits;
+
+	return locTrackTimeBased->Ndof + 5; //is WRONG because FDC DoF != FDC Hits
+}
 
 #endif // _DTrackTimeBased_
 

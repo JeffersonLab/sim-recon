@@ -76,7 +76,6 @@ DEventSourceHDDM::DEventSourceHDDM(const char* source_name)
    
    dRunNumber = -1;
    
-   pthread_mutex_init(&rt_mutex, NULL);
 }
 
 //----------------
@@ -148,18 +147,6 @@ void DEventSourceHDDM::FreeEvent(JEvent &event)
 {
    hddm_s::HDDM *record = (hddm_s::HDDM*)event.GetRef();
    delete record;
-
-   // Check for DReferenceTrajectory objects we need to delete
-   pthread_mutex_lock(&rt_mutex);
-   map<hddm_s::HDDM*, vector<DReferenceTrajectory*> >::iterator iter =
-                                              rt_by_event.find(record);
-   if(iter != rt_by_event.end()){
-      vector<DReferenceTrajectory*> &rts = iter->second;
-      for (unsigned int i=0; i<rts.size(); i++)
-         rt_pool.push_back(rts[i]);
-      rt_by_event.erase(iter);
-   }
-   pthread_mutex_unlock(&rt_mutex);
 }
 
 //----------------
@@ -406,11 +393,6 @@ jerror_t DEventSourceHDDM::GetObjects(JEvent &event, JFactory_base *factory)
    if (dataClassName == "DSCTruthHit")
       return Extract_DSCTruthHit(record, 
                      dynamic_cast<JFactory<DSCTruthHit>*>(factory), tag);
-
-   if (dataClassName == "DTrackTimeBased")
-      return Extract_DTrackTimeBased(record,
-                     dynamic_cast<JFactory<DTrackTimeBased>*>(factory), tag,
-                     event.GetRunNumber(), loop);
 
    if (dataClassName == "DFMWPCTruthHit")
       return Extract_DFMWPCTruthHit(record, 
@@ -2159,28 +2141,6 @@ jerror_t DEventSourceHDDM::Extract_DTrackTimeBased(hddm_s::HDDM *record,
    vector<DReferenceTrajectory*> rts;
 
    const hddm_s::TracktimebasedList &ttbs = record->getTracktimebaseds();
-
-   // Get enough DReferenceTrajectory objects for all of the DTrackTimeBased Objects
-   // we're about to read in. This seems a little complicated, but that's because it
-   // is expensive to allocate these things so we recycle as much as possible.
-   list<DReferenceTrajectory*> my_rts;
-   pthread_mutex_lock(&rt_mutex);
-   while (my_rts.size() < (unsigned int)ttbs.size()) {
-      if (rt_pool.size() > 0) {
-         my_rts.push_back(rt_pool.back());
-         rt_pool.pop_back();
-      }
-      else {
-         if (dapp && !bfield)
-            // delay getting the bfield object until we have to!
-            bfield = dapp->GetBfield(runnumber);
-         if (dapp && !geom)
-            geom = dapp->GetDGeometry(runnumber);
-         my_rts.push_back(new DReferenceTrajectory(bfield));
-      }
-   }
-   pthread_mutex_unlock(&rt_mutex);
-
    hddm_s::TracktimebasedList::iterator iter;
    for (iter = ttbs.begin(); iter != ttbs.end(); ++iter) {
       DVector3 mom(iter->getMomentum().getPx(),
@@ -2217,17 +2177,6 @@ jerror_t DEventSourceHDDM::Extract_DTrackTimeBased(hddm_s::HDDM *record,
                           iter->getTrackingErrorMatrix().getNrows(),
                           iter->getTrackingErrorMatrix().getNcols());
       track->setTrackingErrorMatrix(TrackingErrorMatrix);
- 
-      // Use DReferenceTrajectory objects (either recycled or new)
-      DReferenceTrajectory *rt = my_rts.back();
-      my_rts.pop_back();
-      if (rt) {
-         rt->SetMass(track->mass());
-         rt->SetDGeometry(geom);
-         rt->Swim(pos, mom, track->charge(),locCovarianceMatrix.get());
-         rts.push_back(rt);
-      }
-      track->rt = rt;
 
       data.push_back(track);
    }
@@ -2235,24 +2184,6 @@ jerror_t DEventSourceHDDM::Extract_DTrackTimeBased(hddm_s::HDDM *record,
    // Copy into factory
    if (ttbs.size() > 0){
       factory->CopyTo(data);
-      
-      // Add DReferenceTrajectory objects to rt_by_event so they can be
-      // deleted later. The rt_by_event maintains lists indexed by the
-      // hddm record pointer since multiple threads may be calling us.
-      // Note that we first look to see if a list already exists for
-      // this event and append to it if it does. This is so we can the
-      // same list for all objects that use DReferenceTrajectories.
-      pthread_mutex_lock(&rt_mutex);
-      map<hddm_s::HDDM*, vector<DReferenceTrajectory*> >::iterator iter =
-                                                   rt_by_event.find(record);
-      if (iter != rt_by_event.end()) {
-         vector<DReferenceTrajectory*> &my_rts = iter->second;
-         my_rts.insert(my_rts.end(), rts.begin(), rts.end());
-      }
-      else {
-         rt_by_event[record] = rts;
-      }
-      pthread_mutex_unlock(&rt_mutex);
 
       // If the event had a s_Tracktimebased_t pointer, then report
       // back that we read them in from the file. Otherwise, report

@@ -70,6 +70,8 @@ private:
   vector<double> effective_velocities;
   vector< vector<double > > attenuation_parameters;
 
+  const DTrackFitter *fitter;
+  
   /*
   TF1* sep_inclusion_curve;
   TF1* dtheta_inclusion_curve;

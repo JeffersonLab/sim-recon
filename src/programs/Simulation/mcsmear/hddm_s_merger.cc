@@ -16,7 +16,7 @@
 // 3) The merging operators maintain the intended ordering of hits elements
 //    in the merged HDDM record. This is not strictly required by the hddm_s 
 //    data model, but it is a good convention and makes sure that the origin
-//    or any particular tag cannot feed forward and affect how it is used in
+//    of any particular tag cannot feed forward and affect how it is used in
 //    subsequent analysis.
 
 #include <iostream>

@@ -10,6 +10,7 @@
 
 #include <JANA/JEventProcessor.h>
 #include <BCAL/DBCALGeometry.h>
+#include <TRACKING/DTrackFitter.h>
 
 class JEventProcessor_BCAL_TDC_Timing:public jana::JEventProcessor{
 	public:
@@ -58,7 +59,10 @@ class JEventProcessor_BCAL_TDC_Timing:public jana::JEventProcessor{
             float a_thresh,c0,c1,c2;
       };
 
-      map<readout_channel,timewalk_coefficients> tdc_timewalk_map;
+      map<readout_channel,timewalk_coefficients> tdc_timewalk_map; 
+
+      const DTrackFitter *fitter;
+
 };
 
 #endif // _JEventProcessor_BCAL_TDC_Timing_

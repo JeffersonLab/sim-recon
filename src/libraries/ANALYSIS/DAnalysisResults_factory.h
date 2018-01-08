@@ -65,7 +65,7 @@ class DAnalysisResults_factory : public jana::JFactory<DAnalysisResults>
 		unsigned int dDebugLevel = 0;
 		DApplication* dApplication;
 		double dMinThrownMatchFOM;
-		DSourceComboer* dSourceComboer;
+		DSourceComboer* dSourceComboer = nullptr;
 		DParticleComboCreator* dParticleComboCreator;
 		bool dIsMCFlag = false;
 

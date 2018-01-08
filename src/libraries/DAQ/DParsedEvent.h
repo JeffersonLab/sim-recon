@@ -48,6 +48,7 @@ using namespace jana;
 #include <DAQ/DCAEN1290TDCConfig.h>
 #include <DAQ/DCAEN1290TDCHit.h>
 #include <DAQ/DCODAEventInfo.h>
+#include <DAQ/DCODAControlEvent.h>
 #include <DAQ/DCODAROCInfo.h>
 #include <DAQ/DL1Info.h>
 #include <DAQ/DEPICSvalue.h>
@@ -94,6 +95,7 @@ using namespace jana;
 		X(DCAEN1290TDCConfig) \
 		X(DCAEN1290TDCHit) \
 		X(DCODAEventInfo) \
+		X(DCODAControlEvent) \
 		X(DCODAROCInfo) \
 		X(DL1Info) \
 		X(DEPICSvalue) \

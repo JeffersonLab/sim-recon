@@ -185,8 +185,8 @@ jerror_t DFDCHit_factory::evnt(JEventLoop *loop, uint64_t eventnumber)
       //double pedestal = a_pedestals[plane_index][strip_index];
 
       // Grab the pedestal from the digihit since this should be consistent between the old and new formats
-      uint32_t raw_ped           = digihit->pedestal;
-      //        uint32_t nsamples_integral;
+      int raw_ped = digihit->pedestal;
+      //        int nsamples_integral;
 
       // There are a few values from the new data type that are critical for the interpretation of the data
       //uint16_t IBIT = 0; // 2^{IBIT} Scale factor for integral
@@ -197,17 +197,18 @@ jerror_t DFDCHit_factory::evnt(JEventLoop *loop, uint64_t eventnumber)
 
       // This is the place to make quality cuts on the data.
       // Try to get the new data type, if that fails, try to get the old...
-      uint32_t pulse_peak = 0;
+      int pulse_peak = 0;
       const Df125FDCPulse *FDCPulseObj = NULL;
       digihit->GetSingle(FDCPulseObj);
       if (FDCPulseObj != NULL){
          // Cut on quality factor?
-         const Df125Config *config = NULL;
-         FDCPulseObj->GetSingle(config);
+          vector<const Df125Config*> configs;
+          digihit->Get(configs);
 
          // Set some constants to defaults until they appear correctly in the config words in the future
          // The defaults are taken from Run 4607
-         if(config){
+          if(!configs.empty()){
+            const Df125Config *config = configs[0];
             //IBIT = config->IBIT == 0xffff ? 4 : config->IBIT;
             ABIT = config->ABIT == 0xffff ? 3 : config->ABIT;
             PBIT = config->PBIT == 0xffff ? 0 : config->PBIT;
@@ -248,7 +249,7 @@ jerror_t DFDCHit_factory::evnt(JEventLoop *loop, uint64_t eventnumber)
       }
 
       // Complete the pedestal subtracion here since we should know the correct number of samples.
-      uint32_t scaled_ped = raw_ped << PBIT;
+      int scaled_ped = raw_ped << PBIT;
       //pedestal = double(scaled_ped * nsamples_integral);
 
       //double integral = double(digihit->pulse_integral << IBIT);

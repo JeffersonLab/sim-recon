@@ -13,6 +13,7 @@ using namespace jana;
 
 #include <DAQ/DL1Info.h>
 #include <DAQ/DCODAEventInfo.h>
+#include <DAQ/DCODAControlEvent.h>
 
 
 // Routine used to create our JEventProcessor
@@ -36,6 +37,9 @@ JEventProcessor_syncskim::JEventProcessor_syncskim()
 	sum_y = 0.0;
 	sum_xy = 0.0;
 	sum_x2 = 0.0;
+	
+	last_control_event_t = 0.0;
+	last_physics_event_t = 0.0;
 }
 
 //------------------
@@ -103,14 +107,25 @@ jerror_t JEventProcessor_syncskim::brun(JEventLoop *eventLoop, int32_t runnumber
 //------------------
 jerror_t JEventProcessor_syncskim::evnt(JEventLoop *loop, uint64_t eventnumber)
 {
-	vector<const DL1Info*> l1infos;
-	loop->Get(l1infos);
-	if(l1infos.empty()) return NOERROR;
+	vector<const DCODAControlEvent*> controlevents;
+	loop->Get(controlevents);
+	if(!controlevents.empty()){
+		last_control_event_t = (double) controlevents[0]->unix_time;
+		last_physics_event_t = 0.0;
+	}
 	
 	vector<const DCODAEventInfo*> codainfos;
 	loop->Get(codainfos);
 	if(codainfos.empty()) return NOERROR;
 	const DCODAEventInfo *codainfo = codainfos[0];
+	
+	if( (last_control_event_t!=0.0) && (last_physics_event_t==0.0) ){
+		last_physics_event_t = (double)codainfo->avg_timestamp / 250.0E6;
+	}
+
+	vector<const DL1Info*> l1infos;
+	loop->Get(l1infos);
+	if(l1infos.empty()) return NOERROR;
 
 	japp->RootFillLock(this);
 	
@@ -177,6 +192,14 @@ jerror_t JEventProcessor_syncskim::fini(void)
 	// scale shift back
 	b += 13.0E8;
 	double one_over_m = 250.0E6/m;
+	
+	// Fallback if no sync events
+	if(sum_n==0.0){
+		cout << endl << "No sync events found! Conversion values will be taken from control+physics events." << endl;
+		
+		one_over_m = 250.0E6;
+		b = last_control_event_t - last_physics_event_t;
+	}
 	
 	typedef std::numeric_limits< double > dbl;
 	cout.precision(dbl::max_digits10);

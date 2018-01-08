@@ -91,6 +91,17 @@ jerror_t JEventProcessor_pi0bcalskim::brun(JEventLoop *eventLoop, int32_t runnum
         locEventWriterEVIO->SetDetectorsToWriteOut("BCAL","pi0bcalskim");
     }
     */
+  vector<const DTrackFitter*>fitters;
+  eventLoop->Get(fitters);
+  
+  if(fitters.size()<1){
+    _DBG_<<"Unable to get a DTrackFinder object!"<<endl;
+    return RESOURCE_UNAVAILABLE;
+  }
+  
+  fitter = fitters[0];
+
+
     return NOERROR;
 }
 
@@ -134,6 +145,8 @@ jerror_t JEventProcessor_pi0bcalskim::evnt(JEventLoop *loop, uint64_t eventnumbe
 	DVector3 mypos(0.0,0.0,0.0);
 	for(unsigned int i = 0 ; i < locTrackTimeBased.size() ; ++i)
 	{
+	  vector<DTrackFitter::Extrapolation_t>extrapolations=locTrackTimeBased[i]->extrapolations.at(SYS_BCAL);
+	  if (extrapolations.size()>0){
 		for(unsigned int j = 0 ; j < locBCALShowers.size() ; ++j)
 		{
 			double x = locBCALShowers[j]->x;
@@ -147,13 +160,18 @@ jerror_t JEventProcessor_pi0bcalskim::evnt(JEventLoop *loop, uint64_t eventnumbe
 		//	double L3 = L2 + 0.81*2.54*2;
 		//	double L4 = L3 + 0.81*2.54*3;
 		//	double L5 = L4 + 0.97*2.54*4;
-			locTrackTimeBased[i]->rt->GetIntersectionWithRadius(R, mypos);
-			double dPhi = TMath::Abs(mypos.Phi()-pos_bcal.Phi());
+			if (fitter->ExtrapolateToRadius(R,extrapolations,mypos)){
+
+			double dPhi =mypos.Phi()-pos_bcal.Phi();
+			if (dPhi< -M_PI) dPhi+=2.*M_PI;
+			if (dPhi> M_PI) dPhi-=2.*M_PI;
 			double dZ = TMath::Abs(mypos.Z() - z);	
-			if(dZ < 30.0 && dPhi < 0.18 && mypos.Perp() == R) {
-				 matchedShowers.push_back(locBCALShowers[j]);
+			if(dZ < 30.0 && fabs(dPhi) < 0.18) {
+			  matchedShowers.push_back(locBCALShowers[j]);
+			}
 			}
 		}
+	  }
 	}
 
 

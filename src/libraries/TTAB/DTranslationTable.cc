@@ -559,7 +559,8 @@ void DTranslationTable::ApplyTranslationTable(JEventLoop *loop) const
 
       // Create the appropriate hit type based on detector type
       switch (chaninfo.det_sys) {
-		case FDC_CATHODES:  MakeFDCCathodeDigiHit(chaninfo.fdc_cathodes, p); break;
+			case FDC_CATHODES:  MakeFDCCathodeDigiHit(chaninfo.fdc_cathodes, p); break;
+         case CDC         :  MakeCDCDigiHit(chaninfo.cdc, p); break;
          default: 
              if (VERBOSE > 4) ttout << "       - Don't know how to make DigiHit objects for this detector type!" << std::endl;
              break;
@@ -1007,6 +1008,7 @@ DCDCDigiHit* DTranslationTable::MakeCDCDigiHit(const CDCIndex_t &idx,
 
    h->ring = idx.ring;
    h->straw = idx.straw;
+	h->pulse_peak = 0;
    
    vDCDCDigiHit.push_back(h);
    
@@ -1022,6 +1024,31 @@ DCDCDigiHit* DTranslationTable::MakeCDCDigiHit(const CDCIndex_t &idx,
 	DCDCDigiHit *h = new DCDCDigiHit();
 	h->ring              = idx.ring;
 	h->straw             = idx.straw;
+	h->pulse_peak        = p->first_max_amp;
+	h->pulse_integral    = p->integral;
+	h->pulse_time        = p->le_time;
+	h->pedestal          = p->pedestal;
+	h->QF                = p->time_quality_bit + (p->overflow_count<<1);
+	h->nsamples_integral = p->nsamples_integral;
+	h->nsamples_pedestal = p->nsamples_pedestal;
+
+	h->AddAssociatedObject(p);
+
+	vDCDCDigiHit.push_back(h);
+   
+	return h;
+}
+
+//---------------------------------
+// MakeCDCDigiHit
+//---------------------------------
+DCDCDigiHit* DTranslationTable::MakeCDCDigiHit(const CDCIndex_t &idx,
+                                               const Df125FDCPulse *p) const
+{
+	DCDCDigiHit *h = new DCDCDigiHit();
+	h->ring              = idx.ring;
+	h->straw             = idx.straw;
+	h->pulse_peak        = p->peak_amp;
 	h->pulse_integral    = p->integral;
 	h->pulse_time        = p->le_time;
 	h->pedestal          = p->pedestal;

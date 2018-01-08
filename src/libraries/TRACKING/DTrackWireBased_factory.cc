@@ -207,13 +207,15 @@ jerror_t DTrackWireBased_factory::brun(jana::JEventLoop *loop, int32_t runnumber
 //------------------
 jerror_t DTrackWireBased_factory::evnt(JEventLoop *loop, uint64_t eventnumber)
 {
-   if(!fitter)return NOERROR;
 
+   if(!fitter)return NOERROR; 
+   
    if(rtv.size() > MAX_DReferenceTrajectoryPoolSize){
-      for(size_t loc_i = MAX_DReferenceTrajectoryPoolSize; loc_i < rtv.size(); ++loc_i)
-         delete rtv[loc_i];
-      rtv.resize(MAX_DReferenceTrajectoryPoolSize);
+     for(size_t loc_i = MAX_DReferenceTrajectoryPoolSize; loc_i < rtv.size(); ++loc_i)
+       delete rtv[loc_i];
+     rtv.resize(MAX_DReferenceTrajectoryPoolSize);
    }
+
 
    // Get candidates and hits
    vector<const DTrackCandidate*> candidates;
@@ -234,19 +236,6 @@ jerror_t DTrackWireBased_factory::evnt(JEventLoop *loop, uint64_t eventnumber)
          DTrackWireBased *track = new DTrackWireBased(); //share the memory: isn't changed below
          *static_cast<DKinematicData*>(track) = *static_cast<const DKinematicData*>(cand);
          track->IsSmoothed = cand->IsSmoothed;
-
-         // Attach a reference trajectory --  make sure there are enough DReferenceTrajectory objects
-         unsigned int locNumInitialReferenceTrajectories = rtv.size();
-         while(rtv.size()<=num_used_rts){
-            //printf("Adding %d %d\n",rtv.size(),_data.size());
-            rtv.push_back(new DReferenceTrajectory(fitter->GetDMagneticFieldMap()));
-         }
-         DReferenceTrajectory *rt = rtv[num_used_rts];
-         if(locNumInitialReferenceTrajectories == rtv.size()) //didn't create a new one
-            rt->Reset();
-         rt->SetDGeometry(geom);
-         rt->FastSwim(track->position(),track->momentum(),track->charge());
-         track->rt=rt;
 
          // candidate id
          track->candidateid=i+1;
@@ -271,6 +260,8 @@ jerror_t DTrackWireBased_factory::evnt(JEventLoop *loop, uint64_t eventnumber)
          for (unsigned int k=0;k<fdchits.size();k++){
             track->AddAssociatedObject(fdchits[k]);
          }
+         track->dCDCRings = dPIDAlgorithm->Get_CDCRingBitPattern(cdchits);
+         track->dFDCPlanes = dPIDAlgorithm->Get_FDCPlaneBitPattern(fdchits);
 
          _data.push_back(track);
       }
@@ -484,12 +475,14 @@ void DTrackWireBased_factory::DoFit(unsigned int c_id,
             candidate->charge(),mass,0.);
    }
    else{
+     fitter->Reset();
       fitter->SetFitType(DTrackFitter::kWireBased);
       // Swim a reference trajectory using the candidate starting momentum
       // and position
       rt->SetMass(mass);
       //rt->Swim(candidate->position(),candidate->momentum(),candidate->charge());
-      rt->FastSwim(candidate->position(),candidate->momentum(),candidate->charge(),2000.0,0.,370.);
+      rt->Rsqmax_exterior=61.*61.;
+      rt->FastSwim(candidate->position(),candidate->momentum(),candidate->charge(),2000.0,0.,345.);
 
       status=fitter->FindHitsAndFitTrack(*candidate,rt,loop,mass,candidate->Ndof+3);
       if (/*false && */status==DTrackFitter::kFitNotDone){
@@ -523,24 +516,11 @@ void DTrackWireBased_factory::DoFit(unsigned int c_id,
              DTrackWireBased *track = new DTrackWireBased();
              *static_cast<DTrackingData*>(track) = fitter->GetFitParameters();
 
-            // Fill reference trajectory
-            rt->q = candidate->charge();
-            rt->SetMass(track->mass());
-            //rt->Swim(track->position(), track->momentum(), track->charge());
-            rt->FastSwim(track->position(), track->momentum(), track->charge());
-
-            if(rt->Nswim_steps <= 1)
-            {
-               //Track parameters are bogus (e.g. track position closer to infinity than the beamline)
-               delete track;
-               return;
-            }
-
-            track->rt = rt;
             track->chisq = fitter->GetChisq();
             track->Ndof = fitter->GetNdof();
             track->FOM = TMath::Prob(track->chisq, track->Ndof);
-            track->pulls = fitter->GetPulls();
+            track->pulls =std::move(fitter->GetPulls()); 
+	    track->extrapolations=std::move(fitter->GetExtrapolations());
             track->candidateid = c_id+1;
 
             // Add hits used as associated objects

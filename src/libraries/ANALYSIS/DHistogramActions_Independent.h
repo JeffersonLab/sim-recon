@@ -293,13 +293,13 @@ class DHistogramAction_DetectorMatching : public DAnalysisAction
 		bool Perform_Action(JEventLoop* locEventLoop, const DParticleCombo* locParticleCombo = NULL);
 		void Fill_MatchingHists(JEventLoop* locEventLoop, bool locIsTimeBased);
 
-		const DReferenceTrajectory* Get_ReferenceTrajectory(const DKinematicData* locTrack) const
-		{
-			const DTrackTimeBased* locTrackTimeBased = dynamic_cast<const DTrackTimeBased*>(locTrack);
-			const DTrackWireBased* locTrackWireBased = dynamic_cast<const DTrackWireBased*>(locTrack);
-			if((locTrackTimeBased == NULL) && (locTrackWireBased == NULL))
-				return NULL;
-			return (locTrackTimeBased != NULL) ? locTrackTimeBased->rt : locTrackWireBased->rt;
+		bool Get_Extrapolations(const DKinematicData* locTrack,map<DetectorSystem_t,vector<DTrackFitter::Extrapolation_t> >&extrapolations) const{
+		  const DTrackTimeBased* locTrackTimeBased = dynamic_cast<const DTrackTimeBased*>(locTrack);
+		  const DTrackWireBased* locTrackWireBased = dynamic_cast<const DTrackWireBased*>(locTrack);
+		  if((locTrackTimeBased == NULL) && (locTrackWireBased == NULL))
+		    return false;
+		  (locTrackTimeBased != NULL) ? (extrapolations=locTrackTimeBased->extrapolations) : (extrapolations=locTrackWireBased->extrapolations);
+		  return true;
 		}
 
 		double TOF_E_THRESHOLD;
