@@ -176,8 +176,7 @@ jerror_t JEventProcessor_ST_online_efficiency::evnt(JEventLoop *eventLoop, uint6
       // applied vertex cut
       if (!z_vertex_cut) continue;
       if (!r_vertex_cut) continue;
-	 vector<DTrackFitter::Extrapolation_t>extrapolations=timeBasedTrack->extrapolations.at(SYS_START);
-      int st_pred_id = pid_algorithm[0]->PredictSCSector(extrapolations,&locProjPos,&Barrel);
+      int st_pred_id = pid_algorithm[0]->PredictSCSector(timeBasedTrack->rt,&locProjPos,&Barrel);
       int st_pred_id_index = st_pred_id - 1;
       // Z intersection of charged track and SC 
       locSCzIntersection = locProjPos.z();
@@ -303,31 +302,6 @@ jerror_t JEventProcessor_ST_online_efficiency::fini(void)
       h_N_recd_hit_bs->Fill(i+1,double(N_recd_hit_bs[i]));
       h_N_trck_prd_ns->Fill(i+1,double(N_trck_prd_ns[i]));
       h_N_recd_hit_ns->Fill(i+1,double(N_recd_hit_ns[i]));
-      
-      double r_all=double(N_recd_hit_All[i])/double(N_trck_prd_All[i]);
-      double dr_all=r_all*sqrt(1./double(N_recd_hit_All[i])
-			       +1./double(N_trck_prd_All[i]));
-      h_ST_Eff_All->SetBinContent(i+1,r_all);
-      h_ST_Eff_All->SetBinError(i+1,dr_all);
-
-      double r_ss=double(N_recd_hit_ss[i])/double(N_trck_prd_ss[i]);
-      double dr_ss=r_ss*sqrt(1./double(N_recd_hit_ss[i])
-			       +1./double(N_trck_prd_ss[i]));
-      h_ST_Eff_ss->SetBinContent(i+1,r_ss);
-      h_ST_Eff_ss->SetBinError(i+1,dr_ss); 
-
-      double r_ns=double(N_recd_hit_ns[i])/double(N_trck_prd_ns[i]);
-      double dr_ns=r_ns*sqrt(1./double(N_recd_hit_ns[i])
-			       +1./double(N_trck_prd_ns[i]));
-      h_ST_Eff_ns->SetBinContent(i+1,r_ns);
-      h_ST_Eff_ns->SetBinError(i+1,dr_ns);
-            
-      double r_bs=double(N_recd_hit_bs[i])/double(N_trck_prd_bs[i]);
-      double dr_bs=r_bs*sqrt(1./double(N_recd_hit_bs[i])
-			       +1./double(N_trck_prd_bs[i]));
-      h_ST_Eff_bs->SetBinContent(i+1,r_bs);
-      h_ST_Eff_bs->SetBinError(i+1,dr_bs);
-
     }
   return NOERROR;
 }

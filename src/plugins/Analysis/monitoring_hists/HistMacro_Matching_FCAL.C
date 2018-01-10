@@ -80,7 +80,7 @@
 		locHist_FCAL_TrackDistanceVsTheta->GetXaxis()->SetLabelSize(0.05);
 		locHist_FCAL_TrackDistanceVsTheta->GetYaxis()->SetLabelSize(0.05);
 		locHist_FCAL_TrackDistanceVsTheta->Draw("COLZ");
-		TF1* locFunc = new TF1("FCAL_LCut_VsTheta", "4.5*(1.+0.0044*x*x)", 0.0, 20.0);
+		TF1* locFunc = new TF1("FCAL_LCut_VsTheta", "4.5", 0.0, 20.0);
 		locFunc->Draw("SAME");
 	}
 

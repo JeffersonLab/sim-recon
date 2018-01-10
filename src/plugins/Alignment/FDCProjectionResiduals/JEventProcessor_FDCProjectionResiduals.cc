@@ -169,15 +169,6 @@ jerror_t JEventProcessor_FDCProjectionResiduals::brun(JEventLoop *eventLoop, int
       }
    }
 
-   vector<const DTrackFitter *> fitters;
-   eventLoop->Get(fitters);
-   
-   if(fitters.size()<1){
-     _DBG_<<"Unable to get a DTrackFinder object!"<<endl;
-     return RESOURCE_UNAVAILABLE;
-   }
-   fitter = fitters[0];
-
 
    MAX_DRIFT_TIME = 1000.0; //ns: from TRKFIND:MAX_DRIFT_TIME in DTrackCandidate_factory_CDC
    PLANE_TO_SKIP = 0;
@@ -242,38 +233,38 @@ jerror_t JEventProcessor_FDCProjectionResiduals::evnt(JEventLoop *loop, uint64_t
          }
       }
 
-      vector<DTrackFitter::Extrapolation_t>extrapolations=thisTimeBasedTrack->extrapolations.at(SYS_CDC);
-      if (extrapolations.size()>0){
-	for (auto ringPtr=cdcwires.begin(); ringPtr < cdcwires.end(); ringPtr++){
-	  vector< DCDCWire * > wireByNumber = (*ringPtr);
-	  for (auto wirePtr = wireByNumber.begin(); wirePtr < wireByNumber.end(); wirePtr++)
-	    {
-	      DCDCWire * wire = *wirePtr;
-	      //double wireLength = wire->L;
-	      //double distanceToWire = thisTimeBasedTrack->rt->DistToRT(wire, &wireLength);
-	      DVector3 POCAOnTrack(0.0, 0.0, 0.0), POCAOnWire(0.0, 0.0, 0.0);
-	      double zVertex = thisTimeBasedTrack->position().Z();
-	      double distanceToBeamline = thisTimeBasedTrack->position().Perp();
-	      double distanceToWire;
-	      if (dIsNoFieldFlag) distanceToWire = GetDOCA(wire->origin, wire->udir, thisTimeBasedTrack->position(), thisTimeBasedTrack->momentum(), POCAOnTrack, POCAOnWire);
-	      else {
-		distanceToWire=fitter->DistToWire(wire,extrapolations,
-						  &POCAOnTrack,NULL,&POCAOnWire);
-	      }
-	      double zPOCA = POCAOnTrack.Z();
-	      DVector3 LOCA = POCAOnTrack - POCAOnWire;
-	      if(distanceToWire > 1.2 || distanceToBeamline > 1.0 || zPOCA < zVertex || POCAOnWire.Z() > endplate_z) continue;
-	      jout << " Dist = " << distanceToWire << " POCAOnTrack POCAOnWire Manual Distance = " << LOCA.Mag() << endl;
-	      POCAOnTrack.Print();
-	      POCAOnWire.Print(); 
-	      
-	      double delta = 0.0, dz = 0.0;
-	      if(!Expect_Hit(thisTimeBasedTrack, wire, distanceToWire, delta, dz))
-		continue;
-	      // Check for a CDC Hit on this wire
-	      for (auto cdcHit = cdcHitVector.begin(); cdcHit != cdcHitVector.end(); cdcHit++){
-		const DCDCHit *thisHit = (*cdcHit);
-		if (thisHit->ring == wire->ring && thisHit->straw == wire->straw){
+      for (auto ringPtr=cdcwires.begin(); ringPtr < cdcwires.end(); ringPtr++){
+         vector< DCDCWire * > wireByNumber = (*ringPtr);
+         for (auto wirePtr = wireByNumber.begin(); wirePtr < wireByNumber.end(); wirePtr++)
+         {
+            DCDCWire * wire = *wirePtr;
+            //double wireLength = wire->L;
+            //double distanceToWire = thisTimeBasedTrack->rt->DistToRT(wire, &wireLength);
+            DVector3 POCAOnTrack(0.0, 0.0, 0.0), POCAOnWire(0.0, 0.0, 0.0);
+            double zVertex = thisTimeBasedTrack->position().Z();
+            double distanceToBeamline = thisTimeBasedTrack->position().Perp();
+            double distanceToWire;
+            if (dIsNoFieldFlag) distanceToWire = GetDOCA(wire->origin, wire->udir, thisTimeBasedTrack->position(), thisTimeBasedTrack->momentum(), POCAOnTrack, POCAOnWire);
+            else {
+               distanceToWire=thisTimeBasedTrack->rt->DistToRT(wire);
+               POCAOnTrack=thisTimeBasedTrack->rt->GetLastDOCAPoint();
+               POCAOnWire=wire->origin + thisTimeBasedTrack->rt->GetLastDistAlongWire() * wire->udir;
+               distanceToWire=(POCAOnTrack - POCAOnWire).Mag();
+            }
+            double zPOCA = POCAOnTrack.Z();
+            DVector3 LOCA = POCAOnTrack - POCAOnWire;
+            if(distanceToWire > 1.2 || distanceToBeamline > 1.0 || zPOCA < zVertex || POCAOnWire.Z() > endplate_z) continue;
+            jout << " Dist = " << distanceToWire << " POCAOnTrack POCAOnWire Manual Distance = " << LOCA.Mag() << endl;
+            POCAOnTrack.Print();
+            POCAOnWire.Print(); 
+
+            double delta = 0.0, dz = 0.0;
+            if(!Expect_Hit(thisTimeBasedTrack, wire, distanceToWire, delta, dz))
+               continue;
+            // Check for a CDC Hit on this wire
+            for (auto cdcHit = cdcHitVector.begin(); cdcHit != cdcHitVector.end(); cdcHit++){
+               const DCDCHit *thisHit = (*cdcHit);
+               if (thisHit->ring == wire->ring && thisHit->straw == wire->straw){
                   // We found the hit on the wire and have all of the information we need.
                   // Get the corrected drift time
                   //DReferenceTrajectory::swim_step_t* swimstep = thisTimeBasedTrack->rt->FindClosestSwimStep(wire);
@@ -287,25 +278,25 @@ jerror_t JEventProcessor_FDCProjectionResiduals::evnt(JEventLoop *loop, uint64_t
                   sprintf(name,"Ring %i Residual Vs. Straw Number", thisHit->ring);
                   sprintf(title,"Ring %i Residual Vs. Straw Number; Straw Number; Residual [cm]", thisHit->ring);
                   Fill2DHistogram("FDCProjectionResiduals","ResidualVsStrawNumber",name,
-				  thisHit->straw, residual,
-				  title,
-				  numstraws[thisHit->ring-1], 0.5, numstraws[thisHit->ring-1] + 0.5, 1000, -0.5, 0.5);
+                        thisHit->straw, residual,
+                        title,
+                        numstraws[thisHit->ring-1], 0.5, numstraws[thisHit->ring-1] + 0.5, 1000, -0.5, 0.5);
                   sprintf(name,"Ring %i rPhi Residual Vs. phi", thisHit->ring);
                   sprintf(title,"Ring %i #Deltar#phi Vs. #phi; Straw Number; Residual [cm]", thisHit->ring);
                   Fill2DHistogram("FDCProjectionResiduals","ResidualVsPhi",name,
-				  thisTimeBasedTrack->momentum().Phi(), signedResidual,
+                        thisTimeBasedTrack->momentum().Phi(), signedResidual,
                         title,
-				  numstraws[thisHit->ring-1], -3.14, 3.14, 1000, -0.5, 0.5);
+                        numstraws[thisHit->ring-1], -3.14, 3.14, 1000, -0.5, 0.5);
                   if (thisHit->ring == 1){
-		    sprintf(name,"Ring %i Straw %i Distance Vs. Time", thisHit->ring, thisHit->straw);
-		    sprintf(title,"Ring %i Straw %i Distance Vs. Time ; Time [ns]; Distance [cm]", thisHit->ring, thisHit->straw);
-		    Fill2DHistogram("FDCProjectionResiduals","DistanceVsTimeRing1",name,
+                     sprintf(name,"Ring %i Straw %i Distance Vs. Time", thisHit->ring, thisHit->straw);
+                     sprintf(title,"Ring %i Straw %i Distance Vs. Time ; Time [ns]; Distance [cm]", thisHit->ring, thisHit->straw);
+                     Fill2DHistogram("FDCProjectionResiduals","DistanceVsTimeRing1",name,
                            tdrift, distanceToWire,
-				    title,
-				    500, -50.0, 1000, 120, 0.0, 1.2);
+                           title,
+                           500, -50.0, 1000, 120, 0.0, 1.2);
                   }
-		}
-	      }
+
+               }
             }
          }
       }
@@ -412,12 +403,9 @@ bool JEventProcessor_FDCProjectionResiduals::Expect_Hit(const DTrackTimeBased* t
 
    // Loose cut before delta information
    // Need to get phi_doca for each of the wires that pass this cut
-   vector<DTrackFitter::Extrapolation_t>extrapolations=thisTimeBasedTrack->extrapolations.at(SYS_CDC);
-   if (extrapolations.size()==0) return false;
-   
+   DVector3 pos, mom;
+   thisTimeBasedTrack->rt->GetLastDOCAPoint(pos, mom);
    // Form the vector between the wire and the DOCA point
-   DVector3 pos;
-   fitter->DistToWire(wire,extrapolations,&pos);
    DVector3 DOCA = (-1) * ((wire->origin - pos) - (wire->origin - pos).Dot(wire->udir) * wire->udir);
 
    double docaphi = DOCA.Phi();

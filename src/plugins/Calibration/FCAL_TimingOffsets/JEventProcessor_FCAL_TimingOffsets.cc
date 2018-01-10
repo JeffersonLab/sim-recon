@@ -168,23 +168,25 @@ jerror_t JEventProcessor_FCAL_TimingOffsets::evnt(JEventLoop *eventLoop,
   DVector3 pos,mom;
   
  
-  for (unsigned int i=0; i < locTrackTimeBased.size() ; ++i){ 
-    vector<DTrackFitter::Extrapolation_t>extrapolations=locTrackTimeBased[i]->extrapolations.at(SYS_FCAL);
-    if (extrapolations.size()>0){
-      for (unsigned int j=0; j< locFCALShowers.size(); ++j){
-	
-	Double_t x = locFCALShowers[j]->getPosition().X();
-	Double_t y = locFCALShowers[j]->getPosition().Y();
-	pos=extrapolations[0].position;
-	Double_t trkmass = locTrackTimeBased[i]->mass();
-	Double_t FOM = TMath::Prob(locTrackTimeBased[i]->chisq, locTrackTimeBased[i]->Ndof);
-	Double_t dRho = sqrt(((pos.X() - x)*(pos.X() - x)) + ((pos.Y() - y)* (pos.Y() - y)));
+for (unsigned int i=0; i < locTrackTimeBased.size() ; ++i){
+    for (unsigned int j=0; j< locFCALShowers.size(); ++j){
 
-	if(trkmass < 0.15 && dRho < 5 && FOM > 0.0001 ) {  
-	  matchedShowers.push_back(locFCALShowers[j]);
-	}
-      }
+      Double_t x = locFCALShowers[j]->getPosition().X();
+      Double_t y = locFCALShowers[j]->getPosition().Y();
       
+     
+      DVector3 pos_FCAL(0,0,638);
+
+      if (locTrackTimeBased[i]->rt->GetIntersectionWithPlane(pos_FCAL,norm,pos,mom,NULL,NULL,NULL,SYS_FCAL)==NOERROR)
+	{
+	  Double_t trkmass = locTrackTimeBased[i]->mass();
+	  Double_t FOM = TMath::Prob(locTrackTimeBased[i]->chisq, locTrackTimeBased[i]->Ndof);
+	  Double_t dRho = sqrt(((pos.X() - x)*(pos.X() - x)) + ((pos.Y() - y)* (pos.Y() - y)));
+	  if(trkmass < 0.15 && dRho < 5 && FOM > 0.0001 ) {  
+	    matchedShowers.push_back(locFCALShowers[j]);
+	  }
+	}
+
     }
   }
 

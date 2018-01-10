@@ -50,7 +50,6 @@ class DCustomAction_p2pi_unusedHists : public DAnalysisAction
 		// need PID algos for SC matching
 		const DParticleID* dParticleID;
 		const DFCALGeometry* dFCALGeometry;
-		const DTrackFitter* dFitter;
 
 		// maps of histograms by track charge and match flag
 		map<bool, map<int, TH2I*> > dHistMap_TrackNhits_Theta;

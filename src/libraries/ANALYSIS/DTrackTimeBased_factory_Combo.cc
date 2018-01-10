@@ -124,7 +124,8 @@ DTrackTimeBased* DTrackTimeBased_factory_Combo::Convert_ChargedTrack(const DChar
 	auto locOriginalTrackTimeBased = locChargedTrackHypothesis->Get_TrackTimeBased();
 	auto locTrackTimeBased = new DTrackTimeBased(*locOriginalTrackTimeBased);
 	locTrackTimeBased->setPID(locNewPID);
-	
+	locTrackTimeBased->rt = nullptr;
 	locTrackTimeBased->AddAssociatedObject(locOriginalTrackTimeBased);
 	return locTrackTimeBased;
 }
+
