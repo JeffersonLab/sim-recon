@@ -15,8 +15,6 @@
 #include "CDC/DCDCTrackHit.h"
 #include "FDC/DFDCPseudo.h"
 
-class DReferenceTrajectory;
-
 using namespace jana;
 using namespace std;
 
@@ -40,6 +38,9 @@ class DTrackTimeBased:public DTrackingData{
 		int Ndof;				///< Number of degrees of freedom in the fit
 		vector<DTrackFitter::pull_t> pulls;	///< Holds pulls used in chisq calc. (not including off-diagonals)
 		map<DetectorSystem_t,vector<DTrackFitter::Extrapolation_t> >extrapolations;
+
+		bool GetProjection(DetectorSystem_t detector,DVector3 &pos,
+				   DVector3 *mom=nullptr,double *t=nullptr) const;
 
 
       bool IsSmoothed; // Boolean value to indicate whether the smoother was run succesfully over this track.
@@ -93,6 +94,25 @@ inline size_t Get_NumTrackHits(const DTrackTimeBased* locTrackTimeBased)
 		return locNumHits;
 
 	return locTrackTimeBased->Ndof + 5; //is WRONG because FDC DoF != FDC Hits
+}
+
+inline bool DTrackTimeBased::GetProjection(DetectorSystem_t detector,
+					   DVector3 &pos,
+					   DVector3 *mom,double *t) const{
+  if (detector>SYS_BCAL && extrapolations.at(detector).size()>0){
+    DTrackFitter::Extrapolation_t extrapolation=extrapolations.at(detector)[0];
+    pos=extrapolation.position;
+    if (mom){
+      *mom=extrapolation.momentum;
+    }
+    if (t){
+      *t=extrapolation.t;
+    }
+    return true;
+  }
+
+  
+  return false;
 }
 
 #endif // _DTrackTimeBased_
