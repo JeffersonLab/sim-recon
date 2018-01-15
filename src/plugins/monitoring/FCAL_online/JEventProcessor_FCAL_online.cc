@@ -131,7 +131,7 @@ jerror_t JEventProcessor_FCAL_online::init(void) {
   m_clusXYLow = new TH2I( "clusXYLow", "FCAL Cluster Positions (E < 200 MeV); x [cm]; y [cm]", 100, -150, 150, 100, -150, 150 );
   m_clusPhi = new TH1I( "clusPhi", "FCAL Cluster #phi; #phi [rad]; Clusters / 62.8 mrad", 100, -3.14, 3.14 );
   m_clusPhi->SetMinimum( 0 );
-  m_clus2GMass = new TH1I( "clus2GMass", "FCAL 2 Cluster Invariant Mass E > 1 GeV; Invariant Mass [GeV]", 500, 0.0, 1.0 );
+  m_clus2GMass = new TH1I( "clus2GMass", "FCAL 2 Cluster Invariant Mass E > 1 GeV; Invariant Mass [GeV]", 500, 0.0, 0.6 );
 
   //
   // these with "show" are after energy dependent non-linear correction
