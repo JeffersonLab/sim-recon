@@ -33,7 +33,8 @@ void BeamProperties::createHistograms( TString configFile ) {
 
 	// First parse configuration file
 	mConfigFile = configFile;
-	parseConfig();
+	bool isParsed = parseConfig();
+	if(!isParsed) exit(1);
 
 	// Fill beam property histograms based on config file
 	if(mIsROOT) 
@@ -45,9 +46,9 @@ void BeamProperties::createHistograms( TString configFile ) {
 		
 }
 
-void BeamProperties::parseConfig(){
+bool BeamProperties::parseConfig(){
 
-	cout<<endl<<"Parsing BeamProperty config file: "<<mConfigFile.Data()<<endl<<endl;
+	//cout<<endl<<"Parsing BeamProperty config file: "<<mConfigFile.Data()<<endl<<endl;
 
 	// start assuming parameters for CobremsGeneration
 	mIsROOT = false;
@@ -55,37 +56,62 @@ void BeamProperties::parseConfig(){
 
 	ifstream inputFile;
 	inputFile.open(mConfigFile.Data());
+	if (!inputFile.is_open()){
+		cout << "BeamProperties ERROR:  Could not open configuration file: " << mConfigFile << endl;
+		return false;
+	}
 
-	while(true) { 
-		if(!inputFile.good()) break;
+	while(inputFile) { 
 		
-		string line_string;
-		getline(inputFile,line_string);
+		string line;
+		getline(inputFile,line);
 
-		// skip blank lines and comments
-		if(line_string.length() == 0 || line_string[0] == '/') continue;
+		// parse the line into words (from AmpTools ConfigFileParser)
+		vector<string> words;
+		string word("");
+		for (unsigned int j = 0; j < line.size(); j++){
+			if (!isspace(line[j])){
+				word += line[j];
+				if ((j == (line.size()-1))&&(!word.empty())){
+					words.push_back(word);
+					word = "";
+				}
+			}
+			else if (!word.empty()){
+				words.push_back(word);
+				word = "";
+			}
+		}	
 
-		TString line = line_string;
-		int firstEquals = line.First("=");
-		TString varName = TString(line(0,firstEquals));
-		int firstDash = line.First("/");
-		TString varValue = TString(line(firstEquals+1,firstDash-(firstEquals+1)));
-		varValue.ReplaceAll(" ","");
+		// skip blank or incomplete lines and comments
+		if(words.size() < 2 || words[0][0] == '#') 
+			continue;
 
-		if(varName.Contains("ROOT")) {
+		// 1st is variable name and 2nd word is value
+		if(words[0].find("ROOT") != std::string::npos) {
 			mIsROOT = true;
-			mBeamHistNameMap.insert( std::pair<std::string,std::string>( varName.Data(), varValue.Data() ) );
+			mBeamHistNameMap.insert( std::pair<std::string,std::string>( words[0].data(), words[1].data() ) );
 		}
 		else 
-			mBeamParametersMap.insert( std::pair<std::string,double>( varName.Data(), atof(varValue.Data()) ) );
+			mBeamParametersMap.insert( std::pair<std::string,double>( words[0].data(), atof(words[1].data()) ));
 	}
 	inputFile.close();
 
-	return;
+	return true;
 }
 
 // create histograms for flux and polarization fraction using CobremsGeneration
 void BeamProperties::generateCobrems(){
+
+	// check that required parameters are provided
+	const int nParameters = 8;
+	string parameterNames[nParameters] = {"ElectronBeamEnergy", "CoherentPeakEnergy", "PhotonBeamLowEnergy", "PhotonBeamHighEnergy",  "Emittance", "RadiatorThickness", "CollimatorDiameter", "CollimatorDistance"};
+	for(int i=0; i<nParameters; i++) {
+		if(!mBeamParametersMap.count(parameterNames[i].data())) {
+			cout << "BeamProperties ERROR:  generateCombrems parameter " << parameterNames[i] << " missing" << endl;
+			exit(1);
+		}
+	}
 
 	// Set parameters from config file
 	double Emax  = mBeamParametersMap.at("ElectronBeamEnergy");
@@ -136,13 +162,41 @@ void BeamProperties::generateCobrems(){
 // load ROOT histograms for flux and polarization fraction from external file
 void BeamProperties::fillFromROOT() {
 
-	TFile *fFlux = TFile::Open(mBeamHistNameMap.at("ROOTFluxFile").data());
-	fluxVsEgamma = (TH1D*)fFlux->Get(mBeamHistNameMap.at("ROOTFluxName").data())->Clone("BeamProperties_FluxVsEgamma");
+	// open files and check that they exist
+	TFile *fFlux, *fPol;
+	if(mBeamHistNameMap.count("ROOTFluxFile") && mBeamHistNameMap.count("ROOTPolFile")) {
+		fFlux = TFile::Open(mBeamHistNameMap.at("ROOTFluxFile").data());
+		fPol = TFile::Open(mBeamHistNameMap.at("ROOTPolFile").data());
+	}
+	else {
+		cout << "BeamProperties ERROR:  ROOT flux or polarization file name not defined in configuration file" << endl;
+		exit(1);
+	}
+	if(!fFlux->IsOpen() || !fPol->IsOpen()) {
+		cout << "BeamProperties ERROR:  Could not open ROOT flux " << mBeamHistNameMap.at("ROOTFluxFile").data() << " or polarization " << mBeamHistNameMap.at("ROOTPolFile").data() << " files don't exist" << endl;
+		exit(1);
+	}
+	
+	// open histograms and check that they exist
+	if(mBeamHistNameMap.count("ROOTFluxName") && mBeamHistNameMap.count("ROOTPolName")) {
+		fluxVsEgamma = (TH1D*)fFlux->Get(mBeamHistNameMap.at("ROOTFluxName").data())->Clone("BeamProperties_FluxVsEgamma");
+		polFracVsEgamma = (TH1D*)fPol->Get(mBeamHistNameMap.at("ROOTPolName").data())->Clone("BeamProperties_PolFracVsEgamma");
+	}
+	else {
+		cout << "BeamProperties ERROR:  ROOT flux or polarization histogram name not defined in configuration file" << endl;
+		exit(1);
+	}
+	if(!fluxVsEgamma || !polFracVsEgamma) {
+		cout << "BeamProperties ERROR:  ROOT flux " << mBeamHistNameMap.at("ROOTFluxFile").data() << " or polarization " << mBeamHistNameMap.at("ROOTPolFile").data() << " histograms don't exist" << endl;
+		exit(1);
+	}
+	
 	// set energy range for event generation
+	if(!mBeamParametersMap.count("PhotonBeamLowEnergy") || !mBeamParametersMap.count("PhotonBeamHighEnergy")) {
+		cout << "BeamProperties ERROR:  PhotonBeamLowEnergy or PhotonBeamHighEnergy not specified for event generation" << endl;
+		exit(1);
+	}
 	fluxVsEgamma->GetXaxis()->SetRangeUser(mBeamParametersMap.at("PhotonBeamLowEnergy"), mBeamParametersMap.at("PhotonBeamHighEnergy")); 
-
-	TFile *fPol = TFile::Open(mBeamHistNameMap.at("ROOTPolFile").data());
-	polFracVsEgamma = (TH1D*)fPol->Get(mBeamHistNameMap.at("ROOTPolName").data())->Clone("BeamProperties_PolFracVsEgamma");
 
 	// keep in memory after file is closed
 	fluxVsEgamma->SetDirectory(gROOT);
@@ -164,7 +218,7 @@ double BeamProperties::GetPolAngle() {
 	if(mBeamParametersMap.count("PolarizationAngle"))
 		return mBeamParametersMap.at("PolarizationAngle");
 	else 
-		cout<<endl<<"Warning: Polarization angle requeseted by generator/fitter but not found in beam configuration file.  Using PolAngle = 0 degrees by default"<<endl<<endl;
+		cout<<endl<<"WARNING: Polarization angle requeseted by generator/fitter but not found in beam configuration file.  Using PolAngle = 0 degrees by default"<<endl<<endl;
 
 	return 0.;
 }

@@ -28,7 +28,7 @@ public:
 private:
 
   void createHistograms( TString configFile );
-  void parseConfig();
+  bool parseConfig();
   void generateCobrems();
   void fillFromROOT();
   void fillFromCCDB();

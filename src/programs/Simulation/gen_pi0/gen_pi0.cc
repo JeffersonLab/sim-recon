@@ -115,7 +115,7 @@ int main( int argc, char* argv[] ){
 			TString beamArgument =  (*it).arguments()[0].c_str();
 			if(beamArgument.Contains("beam")) {
 				beamConfigFile = (*it).arguments()[1].c_str();
-				cout<<beamConfigFile.Data()<<endl;
+				//cout<<beamConfigFile.Data()<<endl;
 			}
 		}
 	}
