@@ -235,6 +235,15 @@ jerror_t JEventProcessor_HLDetectorTiming::evnt(JEventLoop *loop, uint64_t event
         if(fdcHitVector[i]->type == 0 ) {
             Fill1DHistogram ("HLDetectorTiming", "FDC", "FDCHit Wire time", fdcHitVector[i]->t,
                     "FDCHit Wire time;t [ns];", nBins, xMin, xMax);
+	    // two F1TDC modules per layer
+	    int module = 2 * fdcHitVector[i]->gLayer;
+	    if(fdcHitVector[i]->element > 48)
+		    module++;
+	    Fill2DHistogram ("HLDetectorTiming", "FDC", "FDCHit Wire time vs. module",
+			     module, fdcHitVector[i]->t,
+			     "FDCHit Wire time; module number; t [ns];", 
+			     48, 0.5, 48.5, 700, -200, 1200);
+
         }
         else{
             Fill1DHistogram ("HLDetectorTiming", "FDC", "FDCHit Cathode time", fdcHitVector[i]->t,
