@@ -4,7 +4,7 @@
 // hnamepath: /HLDetectorTiming/TRACKING/Earliest CDC Time Minus Matched SC Time
 // hnamepath: /HLDetectorTiming/TRACKING/Earliest Flight-time Corrected CDC Time
 // hnamepath: /HLDetectorTiming/TRACKING/Earliest Flight-time Corrected FDC Time
-
+// hnamepath: /HLDetectorTiming/TRACKING/FDCHit Wire time vs. module
 {
 	//Goto Path
 	TDirectory *locDirectory = (TDirectory*)gDirectory->FindObjectAny("HLDetectorTiming");
@@ -13,12 +13,13 @@
 	locDirectory->cd();
 
 	//Get Histograms
-    TH1I* CDC_Timing     = (TH1I*)gDirectory->Get("CDC/CDCHit time");
+	TH1I* CDC_Timing     = (TH1I*)gDirectory->Get("CDC/CDCHit time");
 	TH1I* CDC_SC_Timing  = (TH1I*)gDirectory->Get("TRACKING/Earliest CDC Time Minus Matched SC Time");
 	TH1I* CDC_Earliest_Time  = (TH1I*)gDirectory->Get("TRACKING/Earliest Flight-time Corrected CDC Time");
-    TH1I* FDC_Strip_Timing     = (TH1I*)gDirectory->Get("FDC/FDCHit Cathode time");
-    TH1I* FDC_Wire_Timing     = (TH1I*)gDirectory->Get("FDC/FDCHit Wire time");
+	TH1I* FDC_Strip_Timing     = (TH1I*)gDirectory->Get("FDC/FDCHit Cathode time");
+	TH1I* FDC_Wire_Timing     = (TH1I*)gDirectory->Get("FDC/FDCHit Wire time");
 	TH1I* FDC_Earliest_Time  = (TH1I*)gDirectory->Get("TRACKING/Earliest Flight-time Corrected FDC Time");
+	TH2I* FDC_Wire_Module_Time  = (TH1I*)gDirectory->Get("FDC/FDCHit Wire time vs. module");
 
 	//Get/Make Canvas
 	TCanvas *locCanvas = NULL;
@@ -76,6 +77,7 @@
     gPad->SetGrid();
     if(FDC_Strip_Timing != NULL)
     {
+        FDC_Strip_Timing->GetXaxis()->SetRangeUser(-150,350);
         FDC_Strip_Timing->Draw();
         FDC_Strip_Timing->SetFillColor(kGray);
     }
@@ -102,6 +104,17 @@
     locCanvas->cd(6);
     gPad->SetTicks();
     gPad->SetGrid();
+    if(FDC_Wire_Module_Time != NULL)
+    {
+        FDC_Wire_Module_Time->Draw("COLZ");
+    }
+    else{
+        TPaveText *text = new TPaveText(0.1, 0.4, 0.9, 0.6);
+        text->AddText("No FDC Wire Hit times");
+        text->Draw();
+    }
+
+    /*
     if(FDC_Earliest_Time != NULL)
     {
         FDC_Earliest_Time->Draw();
@@ -112,5 +125,6 @@
         text->AddText("No FDC tracks matced to SC/TOF with reasonable FOM");
         text->Draw();
     }
+    */
 }
 
