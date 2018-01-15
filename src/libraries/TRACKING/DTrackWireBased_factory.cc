@@ -256,14 +256,14 @@ jerror_t DTrackWireBased_factory::evnt(JEventLoop *loop, uint64_t eventnumber)
    num_used_rts=0;
 
    if (dIsNoFieldFlag){
-      // Copy results over from the StraightLine or CDCCOSMIC candidate and add reference
-      // trajectory
+      // Copy results over from the StraightLine or CDCCOSMIC candidate and
+     // add extrapolations
       for (unsigned int i=0;i<candidates.size();i++){
          const DTrackCandidate *cand=candidates[i];
 
          // Make a new wire-based track
          DTrackWireBased *track = new DTrackWireBased(); //share the memory: isn't changed below
-         *static_cast<DKinematicData*>(track) = *static_cast<const DKinematicData*>(cand);
+         *static_cast<DTrackingData*>(track) = *static_cast<const DTrackingData*>(cand);
          track->IsSmoothed = cand->IsSmoothed;
 
          // candidate id
