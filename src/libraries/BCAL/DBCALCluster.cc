@@ -9,11 +9,12 @@
 #include "BCAL/DBCALPoint.h"
 #include "units.h"
 
+
 #include <math.h>
 #include <TMath.h>
 
 DBCALCluster::DBCALCluster( const DBCALPoint* point, double z_target_center, double q, const DBCALGeometry *locGeom )
-  : m_points ( 0 ),  m_hit_E_unattenuated_sum(0.0),  m_z_target_center(z_target_center), m_q(q), m_BCALGeom(locGeom) {
+  : m_points ( 0 ),  m_hit_E_unattenuated_sum(0.0),  m_z_target_center(z_target_center), new_point_q(q), m_BCALGeom(locGeom) {
 
   m_points.push_back( point );
   makeFromPoints();
@@ -45,8 +46,8 @@ DBCALCluster::addPoint( const DBCALPoint* point, int q ){
   }
   
   m_points.push_back( point );
-  if( q!=2 ) m_q = q;
-  else m_q = 0; 
+  if( q!=2 ) new_point_q = q;
+  else new_point_q = 0; 
  
   makeFromPoints();
 }
@@ -67,7 +68,13 @@ if( phi() > point->phi() ){
  
   // We should only be removing points from clusters during the recycle_points routine, where they are also added to a different cluster.
 
-  makeFromPoints();
+  int n = m_points.size();
+  if (n==0) {
+      printf("E = %f               \n",m_E);
+      clear();        // don't process cluster if the last point was removed
+  } else {
+      makeFromPoints();
+  }
 }
 
 void
@@ -154,6 +161,7 @@ DBCALCluster::makeFromPoints(){
   //to calculate the cluster centroid or time.
 
   int n = m_points.size();
+  if (n==0) printf("0 point cluster\n");
   int n4 = 0; //number of 4th layer points in the cluster
   for( vector< const DBCALPoint* >::const_iterator pt = m_points.begin();
        pt != m_points.end();
@@ -188,7 +196,7 @@ DBCALCluster::makeFromPoints(){
  
     m_E_points += E;
     m_E = m_E_points + m_hit_E_unattenuated_sum;  // add the energy sum from points to the energy sum from single ended hits
-    if( E == m_E_points || ( (**pt).layer()==1 && charge == 0 ) ) charge = m_q;
+    if( E == m_E_points || ( (**pt).layer()==1 && charge == 0 ) ) charge = new_point_q;
     	
     if ((**pt).layer() == 1) m_E_preshower += E;
     double wt1, wt2;
