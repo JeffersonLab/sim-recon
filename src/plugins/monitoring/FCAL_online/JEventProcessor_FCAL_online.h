@@ -16,6 +16,7 @@ class TH2I;
 class TH2F;
 class TH1F;
 class TProfile;
+class TProfile2D;
 
 class JEventProcessor_FCAL_online:public jana::JEventProcessor{
  public:
@@ -54,7 +55,7 @@ class JEventProcessor_FCAL_online:public jana::JEventProcessor{
   TH1I* m_digNOver;
   TH1I* m_digN;
   TH1I* m_digPeakV;
-  TH2F* m_digPeakV2D;
+  TProfile2D* m_digPeakV2D;
   TH2F* m_digOcc2D;
   TH2I* m_digIntVsPeak;
   TH1I* m_digIntToPeak;

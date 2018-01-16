@@ -97,7 +97,7 @@ private:
   float m_sig_phi;
 
   float m_z_target_center;
-  int m_q; 
+  int new_point_q; 
   int charge;
   const DBCALGeometry *m_BCALGeom;
  
