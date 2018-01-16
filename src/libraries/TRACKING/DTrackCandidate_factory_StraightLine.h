@@ -35,6 +35,16 @@ class DTrackCandidate_factory_StraightLine:public jana::JFactory<DTrackCandidate
          state_tx,
          state_ty,
       };
+      enum state_cartesian{
+	state_Px,
+	state_Py,
+	state_Pz,
+	state_X,
+	state_Y,
+	state_Z,
+	state_T
+      };
+
 
       class trajectory_t{
          public:
@@ -109,6 +119,8 @@ class DTrackCandidate_factory_StraightLine:public jana::JFactory<DTrackCandidate
             vector<cdc_update_t>&cdc_pulls,
             vector<const DCDCTrackHit *>&cdc_hits,
             DTrackCandidate *cand); 
+
+      shared_ptr<TMatrixFSym> Get7x7ErrorMatrix(shared_ptr<TMatrixFSym>C,DMatrix4x1 &S);
 
       double CDCDriftDistance(double t);
       double CDCDriftDistance(double dphi, double delta,double t);
