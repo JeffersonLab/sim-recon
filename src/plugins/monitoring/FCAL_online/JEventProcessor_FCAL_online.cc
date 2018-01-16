@@ -97,7 +97,7 @@ jerror_t JEventProcessor_FCAL_online::init(void) {
 			 100, -0.5, 99.5 );
   m_digN = new TH1I( "digN", "FCAL Number of Raw Hits per Event; Number of Hits; Events / 5", 600, 0, 3000 );
   m_digPeakV = new TH1I( "digPeakV", "FCAL Pulse Peak; Peak Sample [Volts]; Pulses / 10 mV", 210, 0, 2.1 );
-  m_digPeakV2D = new TH2F( "digPeakV2D", "FCAL Pulse Peak [Volts]; column; row", 61, -1.5, 59.5, 61, -1.5, 59.5 );
+  m_digPeakV2D = new TProfile2D( "digPeakV2D", "FCAL Pulse Peak [Volts]; column; row", 61, -1.5, 59.5, 61, -1.5, 59.5 );
   m_digOcc2D = new TH2F( "digOcc2D", "FCAL Pulse Occupancy; column; row", 61, -1.5, 59.5, 61, -1.5, 59.5 );
   m_digIntVsPeak = new TH2I( "digIntVsPeak", "FCAL Pulse Integral vs. Peak Sample; Peak Sample [ADC Units]; Integral [ADC Units]", 200, 0, 4000, 200, 0, 40000 );
   m_digIntToPeak = new TH1I( "digIntToPeak", "Pedestal Subtracted Integral to Peak Ratio (Peak > 200); Ratio; Pulses / 0.1", 200, 0, 20 );
