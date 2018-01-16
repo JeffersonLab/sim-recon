@@ -184,6 +184,29 @@ jerror_t JEventProcessor_FCAL_online::evnt(JEventLoop *eventLoop, uint64_t event
   vector< const DFCALHit*      > hits;
   vector< const DFCALCluster*  > clusterVec;
   vector< const DFCALShower*   > showerVec;
+
+  // First check that this is not a font panel trigger or no trigger
+  bool goodtrigger=1;
+  
+  const DL1Trigger *trig = NULL;
+  try {
+      loop->GetSingle(trig);
+  } catch (...) {}
+  if (trig) {
+      if (trig->fp_trig_mask){
+          goodtrigger=0;
+      }
+  } else {
+      // HDDM files are from simulation, so keep them even though they have no trigger
+      bool locIsHDDMEvent = loop->GetJEvent().GetStatusBit(kSTATUS_HDDM);
+      if (!locIsHDDMEvent) goodtrigger=0;		
+  }
+	
+  if (!goodtrigger) {
+      return NOERROR;
+  }
+
+
   eventLoop->Get( geomVec );
   eventLoop->Get( digiHits );
   eventLoop->Get( hits );
