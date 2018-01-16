@@ -24,12 +24,15 @@
 #include "DVector3.h"
 #include "HDGEOMETRY/DGeometry.h"
 #include "DANA/DApplication.h"
+#include "DANA/DStatusBits.h"
+#include "TRIGGER/DL1Trigger.h"
 
 #include <TDirectory.h>
 #include <TH2F.h>
 #include <TH1I.h>
 #include <TH2I.h>
 #include <TProfile.h>
+#include <TProfile2D.h>
 
 using namespace std;
 using namespace jana;
@@ -190,7 +193,7 @@ jerror_t JEventProcessor_FCAL_online::evnt(JEventLoop *eventLoop, uint64_t event
   
   const DL1Trigger *trig = NULL;
   try {
-      loop->GetSingle(trig);
+      eventLoop->GetSingle(trig);
   } catch (...) {}
   if (trig) {
       if (trig->fp_trig_mask){
@@ -198,7 +201,7 @@ jerror_t JEventProcessor_FCAL_online::evnt(JEventLoop *eventLoop, uint64_t event
       }
   } else {
       // HDDM files are from simulation, so keep them even though they have no trigger
-      bool locIsHDDMEvent = loop->GetJEvent().GetStatusBit(kSTATUS_HDDM);
+      bool locIsHDDMEvent = eventLoop->GetJEvent().GetStatusBit(kSTATUS_HDDM);
       if (!locIsHDDMEvent) goodtrigger=0;		
   }
 	
