@@ -10,7 +10,7 @@
   //    gROOT->ForceStyle();
 
 
-        gStyle->SetLineWidth(1.5);
+        gStyle->SetLineWidth(1);
         gStyle->SetTextSize(1.5);
 
         gStyle->SetTitleFont(132,"xy");

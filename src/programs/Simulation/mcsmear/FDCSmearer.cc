@@ -60,9 +60,9 @@ fdc_config_t::fdc_config_t(JEventLoop *loop)
         }
 
 		for(int chamber=0; chamber<6; chamber++) {
-        	channel_efficiencies.push_back( new_strip_efficiencies[2*chamber] );
-        	channel_efficiencies.push_back( new_wire_efficiencies[chamber] );
         	channel_efficiencies.push_back( new_strip_efficiencies[2*chamber+1] );
+        	channel_efficiencies.push_back( new_wire_efficiencies[chamber] );
+        	channel_efficiencies.push_back( new_strip_efficiencies[2*chamber] );
 		}
 	}
 	

@@ -58,6 +58,10 @@ private:
   AmpParameter rho102;
   AmpParameter rho1m12;
 
+  AmpParameter polAngle;
+
+  double polFraction;
+
   TH1D *totalFlux_vs_E;
   TH1D *polFlux_vs_E;
   TH1D *polFrac_vs_E;

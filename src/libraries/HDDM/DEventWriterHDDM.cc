@@ -65,6 +65,7 @@ bool DEventWriterHDDM::Write_HDDMEvent(JEventLoop* locEventLoop, string locOutpu
 	vector<const DTAGHHit*> TAGHHits;
 	vector<const DTAGMHit*> TAGMHits;
 	vector<const DTPOLHit*> TPOLHits;
+	vector<const DRFTime*> RFtimes;
 
 	locEventLoop->Get(CDCHits);
 	locEventLoop->Get(TOFHits);
@@ -78,9 +79,10 @@ bool DEventWriterHDDM::Write_HDDMEvent(JEventLoop* locEventLoop, string locOutpu
 	locEventLoop->Get(TAGHHits);
 	locEventLoop->Get(TAGMHits);
 	locEventLoop->Get(TPOLHits);
+	locEventLoop->Get(RFtimes);
 
 
-	if(CDCHits.size()== uint(0) && TOFHits.size()==uint(0) && FCALHits.size()==uint(0) && BCALDigiHits.size()==uint(0) && BCALTDCDigiHits.size()==uint(0) && SCHits.size()==uint(0) && PSHits.size()==uint(0) && PSCHits.size()==uint(0) && FDCHits.size()==uint(0) && TAGHHits.size()==uint(0) && TAGMHits.size()==uint(0) && TPOLHits.size()==uint(0))
+	if(CDCHits.size()== uint(0) && TOFHits.size()==uint(0) && FCALHits.size()==uint(0) && BCALDigiHits.size()==uint(0) && BCALTDCDigiHits.size()==uint(0) && SCHits.size()==uint(0) && PSHits.size()==uint(0) && PSCHits.size()==uint(0) && FDCHits.size()==uint(0) && TAGHHits.size()==uint(0) && TAGMHits.size()==uint(0) && TPOLHits.size()==uint(0) && RFtimes.size()==uint(0))
 	{
 		return false;
 	}
@@ -328,6 +330,8 @@ bool DEventWriterHDDM::Write_HDDMEvent(JEventLoop* locEventLoop, string locOutpu
 			hddm_s::FdcCathodeHitList::iterator FDC_CathodeStripHitIterator = FDC_CathodeStripHitList->end()-1;
 			FDC_CathodeStripHitIterator->setT(FDCHits[i]->t);
 			FDC_CathodeStripHitIterator->setQ(FDCHits[i]->q);
+            FDC_CathodeStripHitIterator->addFdcDigihits();
+            FDC_CathodeStripHitIterator->getFdcDigihits().begin()->setPeakAmp(FDCHits[i]->pulse_height);
 
 		}
 
@@ -448,6 +452,8 @@ bool DEventWriterHDDM::Write_HDDMEvent(JEventLoop* locEventLoop, string locOutpu
 		hddm_s::StcHitList::iterator schitit = schitl->end()-1;
 		schitit->setT(SCHits[i]->t);
 		schitit->setDE(SCHits[i]->dE);
+        schitit->addStcDigihits();
+        schitit->getStcDigihits().begin()->setPeakAmp(SCHits[i]->pulse_height);
 	}
 
 
@@ -491,6 +497,8 @@ bool DEventWriterHDDM::Write_HDDMEvent(JEventLoop* locEventLoop, string locOutpu
 		BCAL_FADCDigiHitIterator->setEnd(BCALDigiHits[i]->end);
 		BCAL_FADCDigiHitIterator->setPulse_time(BCALDigiHits[i]->pulse_time);
 		BCAL_FADCDigiHitIterator->setPulse_integral(BCALDigiHits[i]->pulse_integral);
+        BCAL_FADCDigiHitIterator->addBcalfADCPeaks();
+        BCAL_FADCDigiHitIterator->getBcalfADCPeaks().begin()->setPeakAmp(BCALDigiHits[i]->pulse_peak);
 	}
 
 	//------------------------TDC-----------------------------
@@ -555,7 +563,7 @@ bool DEventWriterHDDM::Write_HDDMEvent(JEventLoop* locEventLoop, string locOutpu
 			hitv->getForwardEMcal().addFcalBlocks();
 			FCAL_BlockIterator=FCAL_BlockList->end()-1;
 			FCAL_BlockIterator->setColumn(FCALHits[i]->column);
-			FCAL_BlockIterator->setRow(FCALHits[i]->row);
+			FCAL_BlockIterator->setRow(FCALHits[i]->row);            
 		}
 
 
@@ -564,6 +572,8 @@ bool DEventWriterHDDM::Write_HDDMEvent(JEventLoop* locEventLoop, string locOutpu
 		hddm_s::FcalHitList::iterator FCAL_HitIterator = FCAL_HitList->end()-1;
 		FCAL_HitIterator->setT(FCALHits[i]->t);
 		FCAL_HitIterator->setE(FCALHits[i]->E);
+        FCAL_HitIterator->addFcalDigihits();
+        FCAL_HitIterator->getFcalDigihits().begin()->setIntegralOverPeak(FCALHits[i]->intOverPeak);
 	}
 
 
@@ -606,6 +616,8 @@ bool DEventWriterHDDM::Write_HDDMEvent(JEventLoop* locEventLoop, string locOutpu
 		ftofhitit->setEnd(TOFHits[i]->end);
 		ftofhitit->setT(TOFHits[i]->t);//walk corrected time
 		ftofhitit->setDE(TOFHits[i]->dE);
+        ftofhitit->addFtofDigihits();
+        ftofhitit->getFtofDigihits().begin()->setPeakAmp(TOFHits[i]->Amp);
 	}
 
 
@@ -630,6 +642,34 @@ bool DEventWriterHDDM::Write_HDDMEvent(JEventLoop* locEventLoop, string locOutpu
 		hddm_s::CdcStrawHitList::iterator cdcstrawhitit = strawhitl->end()-1;
 		cdcstrawhitit->setQ(CDCHits[i]->q);
 		cdcstrawhitit->setT(CDCHits[i]->t);
+        cdcstrawhitit->addCdcDigihits();
+        cdcstrawhitit->getCdcDigihits().begin()->setPeakAmp(CDCHits[i]->amp);
+	}
+
+	//========================================RFtime=======================================================
+
+	for(uint i=0; i<RFtimes.size(); ++i)
+	{
+		hddm_s::RFtimeList nextRF = hitv->addRFtimes();
+		nextRF(0).setJtag(RFtimes[i]->GetTag());
+		nextRF(0).setTsync(RFtimes[i]->dTime);
+	}
+
+	std::vector<std::string> RFtags = {"TOF", "FDC", "PSC", "TAGH"};
+	hddm_s::RFtimeList mainRF = hitv->getRFtimes();
+	if(mainRF.size() > 0)
+	{
+		for(uint it=0; it < RFtags.size(); ++it)
+		{
+			vector<const DRFTime*> RFsubsys;
+			locEventLoop->Get(RFsubsys, RFtags[it].c_str());
+			for(uint i=0; i < RFsubsys.size(); ++i)
+			{
+				hddm_s::RFsubsystemList nextRF = mainRF(0).addRFsubsystems();
+				nextRF(0).setJtag(RFsubsys[i]->GetTag());
+				nextRF(0).setTsync(RFsubsys[i]->dTime);
+			}
+		}
 	}
 
 
@@ -652,6 +692,7 @@ bool DEventWriterHDDM::Write_HDDMEvent(JEventLoop* locEventLoop, string locOutpu
 	TAGHHits.clear();
 	TAGMHits.clear();
 	TPOLHits.clear();
+	RFtimes.clear();
 
 	return locWriteStatus;
 }

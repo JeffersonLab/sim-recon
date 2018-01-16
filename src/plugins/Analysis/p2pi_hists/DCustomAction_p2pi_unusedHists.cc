@@ -19,6 +19,10 @@ void DCustomAction_p2pi_unusedHists::Initialize(JEventLoop* locEventLoop)
 	locEventLoop->Get(locFCALGeometry);
 	dFCALGeometry = locFCALGeometry[0];
 	
+	vector<const DTrackFitter*>locFitters;
+	locEventLoop->Get(locFitters);
+	dFitter=locFitters[0];
+	
 	//CREATE THE HISTOGRAMS
 	//Since we are creating histograms, the contents of gDirectory will be modified: must use JANA-wide ROOT lock
 	japp->RootWriteLock(); //ACQUIRE ROOT LOCK!!
@@ -242,6 +246,8 @@ void DCustomAction_p2pi_unusedHists::Initialize(JEventLoop* locEventLoop)
 				}
 			}
 		}
+		//Return to the base directory
+		ChangeTo_BaseDirectory();
 	}
 	japp->RootUnLock(); //RELEASE ROOT LOCK!!
 }
@@ -253,16 +259,8 @@ bool DCustomAction_p2pi_unusedHists::Perform_Action(JEventLoop* locEventLoop, co
 	const DParticleComboStep* locParticleComboStep = locParticleCombo->Get_ParticleComboStep(0);
 
 	// get beam photon energy and final state particles
-        const DKinematicData* locBeamPhoton = NULL;
-        deque<const DKinematicData*> locParticles;
-        if(!Get_UseKinFitResultsFlag()) { //measured
-		locBeamPhoton = locParticleComboStep->Get_InitialParticle_Measured();
-                locParticleComboStep->Get_FinalParticles_Measured(locParticles);
-	}
-	else {
-		locBeamPhoton = locParticleComboStep->Get_InitialParticle();
-		locParticleComboStep->Get_FinalParticles(locParticles);
-	}
+	auto locBeamPhoton = Get_UseKinFitResultsFlag() ? locParticleComboStep->Get_InitialParticle() : locParticleComboStep->Get_InitialParticle_Measured();
+	auto locParticles = Get_UseKinFitResultsFlag() ? locParticleComboStep->Get_FinalParticles() : locParticleComboStep->Get_FinalParticles_Measured();
 	double locBeamPhotonTime = locBeamPhoton->time();
 
 	// detector matches for charged track -to- shower matching
@@ -303,8 +301,7 @@ bool DCustomAction_p2pi_unusedHists::Perform_Action(JEventLoop* locEventLoop, co
                         const DChargedTrack* locChargedTrack = static_cast<const DChargedTrack*>(locParticleComboStep->Get_FinalParticle_SourceObject(loc_i));
                         if(locChargedTrack == NULL) continue; // should never happen
 
-                        const DChargedTrackHypothesis* locChargedTrackHypothesis = locChargedTrack->Get_BestFOM();
-			if(locChargedTracks[loc_j]->Get_BestFOM()->candidateid == locChargedTrackHypothesis->candidateid) {
+			if(locChargedTracks[loc_j]->candidateid == locChargedTrack->candidateid) {
                                 nMatched++;
 				FillTrack(locEventLoop, locChargedTracks[loc_j], true, locMCThrown);
 			}
@@ -327,20 +324,20 @@ bool DCustomAction_p2pi_unusedHists::Perform_Action(JEventLoop* locEventLoop, co
                         if(locChargedTrack == NULL) continue; // should never happen
 
                         const DChargedTrackHypothesis* locChargedTrackHypothesis = locChargedTrack->Get_BestFOM();
-			const DTrackTimeBased* locTrackTimeBased = NULL;
-			locChargedTrackHypothesis->GetSingleT(locTrackTimeBased);
-			const DReferenceTrajectory* rt = locTrackTimeBased->rt;
-			if(rt == NULL) continue;
+	auto locTrackTimeBased = locChargedTrackHypothesis->Get_TrackTimeBased();
 
 			const DBCALShower *locBCALShower = locBCALShowers[loc_j];
 			DVector3 bcal_pos(locBCALShower->x, locBCALShower->y, locBCALShower->z);
 				
-			double locFlightTime = 9.9E9, locPathLength = 9.9E9, locFlightTimeVariance = 9.9E9;
-			rt->DistToRTwithTime(bcal_pos, &locPathLength, &locFlightTime, &locFlightTimeVariance, SYS_BCAL);
-			
-			DVector3 proj_pos = rt->GetLastDOCAPoint();
-			if(proj_pos.Perp() < 65.0)
-				continue;  // not inside BCAL!
+			double locFlightTime = 9.9E9, locPathLength = 9.9E9;
+			vector<DTrackFitter::Extrapolation_t>extrapolations=locTrackTimeBased->extrapolations.at(SYS_BCAL);
+			DVector3 proj_pos,proj_mom;
+			if (!dFitter->ExtrapolateToRadius(bcal_pos.Perp(),
+							 extrapolations,
+							 proj_pos,proj_mom,
+							 locFlightTime,
+							 locPathLength))
+			  continue;
 			
 			double dz = bcal_pos.z() - proj_pos.z();
 			double dphi = bcal_pos.Phi() - proj_pos.Phi();
@@ -364,16 +361,16 @@ bool DCustomAction_p2pi_unusedHists::Perform_Action(JEventLoop* locEventLoop, co
 			}
 			Unlock_Action(); //RELEASE ROOT LOCK!!
 
-			DBCALShowerMatchParams locBCALShowerMatchParams;
+			shared_ptr<const DBCALShowerMatchParams> locBCALShowerMatchParams;
 			bool foundBCAL = dParticleID->Get_BestBCALMatchParams(locTrackTimeBased, locDetectorMatches, locBCALShowerMatchParams);
 			if(foundBCAL){
-				if(locBCALShowerMatchParams.dBCALShower == locBCALShower) {
+				if(locBCALShowerMatchParams->dBCALShower == locBCALShower) {
 					DNeutralShower* locNeutralShower = new DNeutralShower();
 					locNeutralShower->dDetectorSystem = SYS_BCAL;
 					locNeutralShower->dEnergy = locBCALShowers[loc_j]->E;
 					locNeutralShower->dSpacetimeVertex.SetXYZT(locBCALShowers[loc_j]->x, locBCALShowers[loc_j]->y, locBCALShowers[loc_j]->z, locBCALShowers[loc_j]->t);
 					locNeutralShower->AddAssociatedObject(locBCALShowers[loc_j]);
-					double locFlightTime = locBCALShowerMatchParams.dFlightTime;
+					double locFlightTime = locBCALShowerMatchParams->dFlightTime;
 					FillShower(locNeutralShower, true, locBeamPhotonTime, locFlightTime);
 					delete locNeutralShower;
 				}
@@ -390,18 +387,15 @@ bool DCustomAction_p2pi_unusedHists::Perform_Action(JEventLoop* locEventLoop, co
                         if(locChargedTrack == NULL) continue; // should never happen
 			
                         const DChargedTrackHypothesis* locChargedTrackHypothesis = locChargedTrack->Get_BestFOM();
-			const DTrackTimeBased* locTrackTimeBased = NULL;
-			locChargedTrackHypothesis->GetSingleT(locTrackTimeBased);
-			const DReferenceTrajectory* rt = locTrackTimeBased->rt;
-			if(rt == NULL) continue;
-
+	auto locTrackTimeBased = locChargedTrackHypothesis->Get_TrackTimeBased();
+	
 			const DFCALShower *locFCALShower = locFCALShowers[loc_j];
 			DVector3 fcal_pos = locFCALShower->getPosition();
 			DVector3 norm(0.0, 0.0, 1.0); //normal vector for the FCAL plane
-			DVector3 proj_pos, proj_mom;
-			double locPathLength = 9.9E9, locFlightTime = 9.9E9, locFlightTimeVariance = 9.9e9;
-			if(rt->GetIntersectionWithPlane(fcal_pos, norm, proj_pos, proj_mom, &locPathLength, &locFlightTime, &locFlightTimeVariance, SYS_FCAL) != NOERROR)
-				continue;
+		       
+			vector<DTrackFitter::Extrapolation_t>extrapolations=locTrackTimeBased->extrapolations.at(SYS_FCAL);
+			if (extrapolations.size()==0) continue;
+			DVector3 proj_pos=extrapolations[0].position;
 			
 			double dd = (fcal_pos - proj_pos).Mag();
 			double dr = (fcal_pos - proj_pos).Perp();
@@ -426,17 +420,17 @@ bool DCustomAction_p2pi_unusedHists::Perform_Action(JEventLoop* locEventLoop, co
 			}
 			Unlock_Action(); //RELEASE ROOT LOCK!!
 
-			DFCALShowerMatchParams locFCALShowerMatchParams;
+			shared_ptr<const DFCALShowerMatchParams> locFCALShowerMatchParams;
 			bool foundFCAL = dParticleID->Get_BestFCALMatchParams(locTrackTimeBased, locDetectorMatches, locFCALShowerMatchParams);
 			if(foundFCAL){
-				if(locFCALShowerMatchParams.dFCALShower == locFCALShower) {
+				if(locFCALShowerMatchParams->dFCALShower == locFCALShower) {
 					DNeutralShower* locNeutralShower = new DNeutralShower();
 					locNeutralShower->dDetectorSystem = SYS_FCAL;
 					locNeutralShower->dEnergy = locFCALShowers[loc_j]->getEnergy();
 					locNeutralShower->dSpacetimeVertex.SetVect(locFCALShowers[loc_j]->getPosition());
 					locNeutralShower->dSpacetimeVertex.SetT(locFCALShowers[loc_j]->getTime());
 					locNeutralShower->AddAssociatedObject(locFCALShowers[loc_j]);
-					double locFlightTime = locFCALShowerMatchParams.dFlightTime;
+					double locFlightTime = locFCALShowerMatchParams->dFlightTime;
 					FillShower(locNeutralShower, true, locBeamPhotonTime, locFlightTime);
 					delete locNeutralShower;
 				}
@@ -482,8 +476,7 @@ void DCustomAction_p2pi_unusedHists::FillTrack(JEventLoop* locEventLoop, const D
 	const DChargedTrackHypothesis* locChargedTrackHypothesis = locChargedTrack->Get_BestFOM();
 	int locCharge = locChargedTrackHypothesis->charge();
 
-	const DTrackTimeBased* locTrackTimeBased = NULL;
-	locChargedTrackHypothesis->GetSingleT(locTrackTimeBased);
+	auto locTrackTimeBased = locChargedTrackHypothesis->Get_TrackTimeBased();
 	
 	double nHits = locTrackTimeBased->Ndof + 5.;
 	double locTheta = locTrackTimeBased->momentum().Theta()*180/TMath::Pi();
@@ -553,7 +546,7 @@ void DCustomAction_p2pi_unusedHists::FillTrack(JEventLoop* locEventLoop, const D
         DVector3 fcal_origin(0.0,0.0,zfcal);
         DVector3 fcal_normal(0.0,0.0,1.0);
 	DVector3 trkpos(0.0,0.0,0.0);
-        DVector3 proj_mom(0.0,0.0,0.0);
+       
 	double theta = locTrackTimeBased->momentum().Theta()*180./TMath::Pi();
 	double phi = locTrackTimeBased->momentum().Phi()*180./TMath::Pi();
 	double p = locTrackTimeBased->momentum().Mag();
@@ -563,7 +556,9 @@ void DCustomAction_p2pi_unusedHists::FillTrack(JEventLoop* locEventLoop, const D
         locEventLoop->Get(fcalhits);
 	if(fcalhits.empty()) return;
 
-	if (locTrackTimeBased->rt->GetIntersectionWithPlane(fcal_origin,fcal_normal,trkpos,proj_mom,NULL,NULL,NULL,SYS_FCAL)==NOERROR){
+	vector<DTrackFitter::Extrapolation_t>extrapolations=locTrackTimeBased->extrapolations.at(SYS_FCAL);
+	if (extrapolations.size()>0){
+	  trkpos=extrapolations[0].position;
 		double trkposX = trkpos.X();
 		double trkposY = trkpos.Y();
 		int trkrow = dFCALGeometry->row((float)trkposY);

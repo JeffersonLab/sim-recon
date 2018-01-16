@@ -54,6 +54,7 @@ def main():
 	print 'Variation to be used: ' + variation
 	adcfile = open('adc_offsets-' + str(run) + '.txt','w')
 	tdcfile = open('tdc_offsets-' + str(run) + '.txt','w')
+	offset_file = open('offsets-' + str(run) + '.txt', 'w')
 	errorfile = open('problem-channels.txt','w')
 
 	baseDir = 'TAGM_TW/'
@@ -70,6 +71,15 @@ def main():
 	res_hist2 = TProfile("1sig","Timing resolution (1 sigma) of each TAGM channel;Channel;Resolution [ns]",122,1,123)
 	for i in range(1,NCOLUMNS+1):
 		# Get summed channels
+		init_adc = float(fadc_assignment.constant_set.data_table[channel][2])
+		if (abs(init_adc) > 50):
+			errorfile.write('Initial fadc offset for col ' + str(i) + ' is too large. Manually adjust and re-run plugin before proceeding\n')
+			print('Initial fadc offset for col ' + str(i) + ' is too large. Manually adjust and re-run plugin before proceeding\n')
+		init_tdc = float(tdc_assignment.constant_set.data_table[channel][2])
+		if (abs(init_tdc) > 50):
+			errorfile.write('Initial tdc offset for col ' + str(i) + ' is too large. Manually adjust and re-run plugin before proceeding\n')
+			print('Initial tdc offset for col ' + str(i) + ' is too large. Manually adjust and re-run plugin before proceeding\n')
+
 		if (calib_type == 'self'):
 			h_name = baseDir+"t_adc_all"
 			hist = rootfile.Get(h_name).Clone().ProjectionX(h_name+"_"+str(i),i,i)
@@ -116,13 +126,26 @@ def main():
 		# Write offset to file
 		if (calib_type == 'self'):
 			offset = float(tdc_assignment.constant_set.data_table[channel][2]) + new_offset
-			tdcfile.write(' 0\t' + str(i) + '\t' + str(offset) + '\n')
+			if (abs(offset) > 50):
+				errorfile.write(' 0\t' + str(i) + '\t' + str(offset) + '\n')
+				tdcfile.write(' 0\t' + str(i) + '\t' + '10.0' + '\n')
+			else:
+				tdcfile.write(' 0\t' + str(i) + '\t' + str(offset) + '\n')
 		elif (calib_type == 'rf'):
 			offset = float(fadc_assignment.constant_set.data_table[channel][2]) + new_offset
-			adcfile.write(' 0\t' + str(i) + '\t' + str(offset) + '\n')
+			if (abs(offset) > 50):
+				errorfile.write(' 0\t' + str(i) + '\t' + str(offset) + '\n')
+				adcfile.write(' 0\t' + str(i) + '\t' + '10.0' + '\n')
+			else:
+				adcfile.write(' 0\t' + str(i) + '\t' + str(offset) + '\n')
 
 			offset = float(tdc_assignment.constant_set.data_table[channel][2]) + tdc_offset + new_offset
-			tdcfile.write(' 0\t' + str(i) + '\t' + str(offset) + '\n')
+			if (abs(offset) > 50):
+				errorfile.write(' 0\t' + str(i) + '\t' + str(offset) + '\n')
+				tdcfile.write(' 0\t' + str(i) + '\t' + '10.0' + '\n')
+			else:
+				tdcfile.write(' 0\t' + str(i) + '\t' + str(offset) + '\n')
+			offset_file.write(' 0\t' + str(i) + '\t' + str(tdc_offset + new_offset) + '\n')
 
 		channel += 1
 
@@ -176,13 +199,26 @@ def main():
 				# Write offset to file
 				if (calib_type == 'self'):
 					offset = float(tdc_assignment.constant_set.data_table[channel][2]) + new_offset
-					tdcfile.write(' ' + str(j+1) + '\t' + str(i) + '\t' + str(offset) + '\n')
+					if (abs(offset) > 50):
+						errorfile.write(' ' + str(j+1) + '\t' + str(i) + '\t' + str(offset) + '\n')
+						tdcfile.write(' ' + str(j+1) + '\t' + str(i) + '\t' + '10.0' + '\n')
+					else:
+						tdcfile.write(' ' + str(j+1) + '\t' + str(i) + '\t' + str(offset) + '\n')
 				elif (calib_type == 'rf'):
 					offset = float(fadc_assignment.constant_set.data_table[channel][2]) + new_offset
-					adcfile.write(' ' + str(j+1) + '\t' + str(i) + '\t' + str(offset) + '\n')
+					if (abs(offset) > 50):
+						errorfile.write(' ' + str(j+1) + '\t' + str(i) + '\t' + str(offset) + '\n')
+						adcfile.write(' ' + str(j+1) + '\t' + str(i) + '\t' + '10.0' + '\n')
+					else:
+						adcfile.write(' ' + str(j+1) + '\t' + str(i) + '\t' + str(offset) + '\n')
 
 					offset = float(tdc_assignment.constant_set.data_table[channel][2]) +tdc_offset + new_offset
-					tdcfile.write(' ' + str(j+1) + '\t' + str(i) + '\t' + str(offset) + '\n')
+					if (abs(offset) > 50):
+						errorfile.write(' ' + str(j+1) + '\t' + str(i) + '\t' + str(offset) + '\n')
+						tdcfile.write(' ' + str(j+1) + '\t' + str(i) + '\t' + '10.0' + '\n')
+					else:
+						tdcfile.write(' ' + str(j+1) + '\t' + str(i) + '\t' + str(offset) + '\n')
+					offset_file.write(' ' + str(j+1) + '\t' + str(i) + '\t' + str(tdc_offset + new_offset) + '\n')
 
 				channel += 1
 
@@ -192,6 +228,7 @@ def main():
 
 	adcfile.close()
 	tdcfile.close()
+	offset_file.close()
 	errorfile.close()
 	rootfile.Close()
 	outroot.Close()
@@ -202,6 +239,8 @@ def GetRFTiming(hist,beamPeriod):
 	if (hist.GetMaximum() < 5):
 		print 'Insufficient number of entries for histogram ' + histname
 		return 0
+	if (hist.GetEntries() < 10000):
+		hist.RebinX(4)
 	maximum = GetMaximum(hist)
 	try:
 		if (maximum < -0.5):
@@ -238,8 +277,10 @@ def GetSelfTiming(hist):
 		print 'Insufficient number of entries for histogram ' + histname
 		return 0
 	maximum = GetMaximum(hist)
+	if (hist.GetEntries() < 10000):
+		hist.RebinX(4)
 	try:
-		FitResult = hist.Fit("gaus","sRWq","",maximum-2,maximum+2)
+		FitResult = hist.Fit("gaus","sRWq","",maximum-0.5,maximum+0.5)
 		offset = FitResult.Parameters()[1]
 		sigma = FitResult.Parameters()[2]
 	except:

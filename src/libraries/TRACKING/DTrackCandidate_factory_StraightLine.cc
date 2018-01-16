@@ -246,6 +246,10 @@ jerror_t DTrackCandidate_factory_StraightLine::brun(jana::JEventLoop *loop, int 
       hFDCOccTrkSmooth=new TH1I("Occ form track smoothing", "Occ per plane", 24,0.5,24.5);
    }
 
+   // TMatrix pool
+   dResourcePool_TMatrixFSym = std::make_shared<DResourcePool<TMatrixFSym>>();
+   dResourcePool_TMatrixFSym->Set_ControlParams(20, 20, 50);
+  
    return NOERROR;
 }
 
@@ -544,9 +548,19 @@ DTrackCandidate_factory_StraightLine::DoFilter(double t0,double OuterZ,
 
          cand->Ndof=ndof_old;
          cand->chisq=chi2_old;
-         cand->setCharge(1.0);
-         cand->setPID(Unknown);
-         cand->setT0(t0,10.0,SYS_CDC);
+         cand->setPID(PiPlus);
+
+	 auto locTrackingCovarianceMatrix = dResourcePool_TMatrixFSym->Get_SharedResource();
+	 locTrackingCovarianceMatrix->ResizeTo(5, 5);
+	 for(unsigned int loc_i = 0; loc_i < 4; ++loc_i)
+	   {
+	     for(unsigned int loc_j = 0; loc_j < 4; ++loc_j)
+	       (*locTrackingCovarianceMatrix)(loc_i, loc_j) = Cbest(loc_i, loc_j);
+
+	   }
+	 (*locTrackingCovarianceMatrix)(4,4)=1.;
+	 cand->setTrackingErrorMatrix(locTrackingCovarianceMatrix);
+
 
          // Smooth the result
          if (Smooth(best_trajectory,best_updates,hits,cand) == NOERROR) cand->IsSmoothed=true;
@@ -1435,10 +1449,19 @@ DTrackCandidate_factory_StraightLine::DoFilter(double t0,double start_z,
 
       cand->Ndof=ndof_old;
       cand->chisq=chi2_old;
-      cand->setCharge(-1.0);
-      cand->setPID(Unknown);
-      cand->setT0(t0,10.0,SYS_FDC);
+      cand->setPID(PiMinus);	
 
+      auto locTrackingCovarianceMatrix = dResourcePool_TMatrixFSym->Get_SharedResource();
+      locTrackingCovarianceMatrix->ResizeTo(5, 5);
+      for(unsigned int loc_i = 0; loc_i < 4; ++loc_i)
+	{
+	  for(unsigned int loc_j = 0; loc_j < 4; ++loc_j)
+	    (*locTrackingCovarianceMatrix)(loc_i, loc_j) = Cbest(loc_i, loc_j);
+	  
+	}
+      (*locTrackingCovarianceMatrix)(4,4)=1.;
+      cand->setTrackingErrorMatrix(locTrackingCovarianceMatrix);
+      
       _data.push_back(cand);
 
    }

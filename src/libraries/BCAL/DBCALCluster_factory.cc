@@ -74,7 +74,18 @@ jerror_t DBCALCluster_factory::brun(JEventLoop *loop, int32_t runnumber) {
 
 	BCALCLUSTERVERBOSE = 0;
 	gPARMS->SetDefaultParameter("BCALCLUSTERVERBOSE", BCALCLUSTERVERBOSE, "VERBOSE level for BCAL Cluster overlap success and conditions");
-	//command line parameter to investigate what points are being added to clusters and what clusters are being merged together.
+	//command line parameter to investigate what points are being added to clusters and what clusters are being merged together. // Track fitterer helper class
+
+
+  vector<const DTrackFitter *> fitters;
+  loop->Get(fitters);
+
+  if(fitters.size()<1){
+    _DBG_<<"Unable to get a DTrackFinder object!"<<endl;
+    return RESOURCE_UNAVAILABLE;
+  }
+
+  fitter = fitters[0];
 
 	return NOERROR;
 }
@@ -155,279 +166,231 @@ DBCALCluster_factory::evnt( JEventLoop *loop, uint64_t eventnumber ){
 vector<DBCALCluster*>
 DBCALCluster_factory::clusterize( vector< const DBCALPoint* > points , vector< const DBCALPoint* > usedPoints ,  vector< const DBCALUnifiedHit* > hits, vector< const DTrackWireBased* > tracks ) const {
 
-	// first sort the points by energy
-	sort( points.begin(), points.end(), PointSort );
+  // first sort the points by energy
+  sort( points.begin(), points.end(), PointSort );
+  
+  vector<DBCALCluster*> clusters(0);
+  
+  // ahh.. more hard coded numbers that should probably
+  // come from a database or something
+  float seedThresh = 1.*k_GeV;
+  float minSeed = 10*k_MeV;
+  //We have a big problem with noise in the outer layer of the detector
+  //(the noise is the greatest in the outer layer, since the number of SiPMs
+  //being summed is also the greatest here).
+  //Thus there are a lot of DBCALPoint's in this layer that are pure noise hits.
+  //The simplest way to deal with this is to prevent outer layer points
+  //from seeding clusters. So hits in the outer layer can be associated
+  //with existing clusters, but cannot create their own cluster.
+  //This is okay since since isolated hits in the outer layer
+  //is not really a signature we expect for many physical showers.
+  //However, if a hit is sufficiently energetic, it is unlikely to be a noise
+  //hit. For this reason, we allow 4th layer hits to seed clusters,
+  //but we need a different (higher) minimum seed energy.
+  float layer4_minSeed = 50*k_MeV;
+  float tracked_phi = 0.;
+  float matched_dphi = .175;
+  float matched_dtheta = .087; 
+  
+  while( seedThresh > minSeed ) {
+    
+    bool usedPoint = false;
 
-	vector<DBCALCluster*> clusters(0);
+    for( vector< const DBCALPoint* >::iterator pt = points.begin();
+	 pt != points.end();
+	 ++pt ){
 
-	// ahh.. more hard coded numbers that should probably
-	// come from a database or something
-	float seedThresh = 1.*k_GeV;
-	float minSeed = 10*k_MeV;
-	//We have a big problem with noise in the outer layer of the detector
-	//(the noise is the greatest in the outer layer, since the number of SiPMs
-	//being summed is also the greatest here).
-	//Thus there are a lot of DBCALPoint's in this layer that are pure noise hits.
-	//The simplest way to deal with this is to prevent outer layer points
-	//from seeding clusters. So hits in the outer layer can be associated
-	//with existing clusters, but cannot create their own cluster.
-	//This is okay since since isolated hits in the outer layer
-	//is not really a signature we expect for many physical showers.
-	//However, if a hit is sufficiently energetic, it is unlikely to be a noise
-	//hit. For this reason, we allow 4th layer hits to seed clusters,
-	//but we need a different (higher) minimum seed energy.
-	float layer4_minSeed = 50*k_MeV;
-	float tracked_phi = 0.;
-	float matched_dphi = .175;
-	float matched_dtheta = .087; 
-	
-	while( seedThresh > minSeed ) {
+      // first see if point should be added to an existing
+      // cluster
+      
+      int q = 0;
 
-		bool usedPoint = false;
-
-		for( vector< const DBCALPoint* >::iterator pt = points.begin();
-				pt != points.end();
-				++pt ){
-
-			// first see if point should be added to an existing
-			// cluster
-			
-			int q = 0;
-			double track_phi;	
-			double track_phi_inner_r = 0.;		
-			double closest_dPhi = 7.;
-			DVector3 track_pos(0.0, 0.0, 0.0);
-			DVector3 track_inner_rad(0.0,0.0,0.0);
-			// Check if a point is matched to a track
-			for( vector< const DTrackWireBased* >::iterator trk = tracks.begin();
-				trk != tracks.end();
-				++trk ){
-				DVector3 temp_track_pos(0.0, 0.0, 0.0);
-				double point_r = (**pt).r();
-				double point_z = (**pt).z();
-				double point_theta_global = fabs(atan2(point_r,point_z + m_z_target_center ));  // convert point z-position origin to global frame to match tracks origin
-				(*trk)->rt->GetIntersectionWithRadius(point_r, temp_track_pos);
-				(*trk)->rt->GetIntersectionWithRadius(m_BCALGeom->GetBCAL_inner_rad(), track_inner_rad);
-				// convert track phi position to be consistent with point phi positions
-				if(track_inner_rad.Phi() >= 0.) track_phi_inner_r = track_inner_rad.Phi();
-				else track_phi_inner_r = fabs(2*TMath::Pi() + track_inner_rad.Phi());
-				if(track_pos.Phi() >= 0.) track_phi = temp_track_pos.Phi();
-				else track_phi = fabs(2*TMath::Pi() + temp_track_pos.Phi()); 
-				double dPhi = track_phi - (**pt).phi();
-				// deal with 0/2pi BCAL region 
-        			double dPhiAlt = ( track_phi > (**pt).phi() ?
-                        	track_phi - (**pt).phi() - 2*TMath::Pi() :
-                        	(**pt).phi() - track_phi - 2*TMath::Pi() );
-
-        			dPhi = min( fabs( dPhi ), fabs( dPhiAlt ) );
-				if(dPhi < closest_dPhi){
-					track_pos = temp_track_pos;
-					closest_dPhi = dPhi;
-				}
-				double dTheta = fabs(point_theta_global - track_pos.Theta());
-				if(dPhi < matched_dphi && dTheta < matched_dtheta){
-					 q = 1; // if point and track are matched then set q = 1
-					 tracked_phi = track_phi_inner_r;
-				}
-			}
-
-			for( vector<DBCALCluster*>::iterator clust = clusters.begin();
-					clust != clusters.end();
-					++clust ){
-
-				if((**clust).Q()==1){
-                                        if(overlap_charged( **clust,*pt, tracked_phi ) ){
-                                        	usedPoints.push_back( *pt );
-                                        	int point_q = 1;
-                                        	(**clust).addPoint( *pt, point_q  );
-                                        	points.erase( pt );
-						usedPoint = true;
-					}
-					if( usedPoint ) break;
-				}
-				if( overlap( **clust, *pt ) ){
-					if( (**pt).layer()==1 && fabs((**pt).phi() - track_phi_inner_r) < matched_dphi ) q = 1; // assign point q=1 if it's in layer 1 because track matching tends to be improved in layer 1 than later layers where the cluster seed is. This would allow us to jump into the charged clustering routines on the fly.
-					else q = 0;
-					usedPoints.push_back( *pt );  
-					(**clust).addPoint( *pt , q);
-					points.erase( pt );
-					usedPoint = true;
-				}
-
-				// once we erase a point the iterator is no longer useful
-				// and we start the loop over, so that a point doesn't get added to
-				// multiple clusters. We will recycle through points later to 
-				// check if a point was added to its closeset cluster.
-				if( usedPoint ) break;
-			}
-
-			if( usedPoint ) break;
-		
-			// if the point doesn't overlap with a cluster
-			// see if it can become a new seed
-			if( (**pt).E() > seedThresh && ((**pt).layer() != 4 || (**pt).E() > layer4_minSeed) ){
-				clusters.push_back(new DBCALCluster( *pt, m_z_target_center, q, m_BCALGeom  ) );
-				usedPoints.push_back( *pt );
-				points.erase( pt );
-				usedPoint = true;
-			}
-
-			if( usedPoint ) break;
-		}
-
-		recycle_points( usedPoints, clusters);	
-		// recycle through points that were added to a cluster and check if they
-		// were added to their closest cluster. If they weren't then we remove 
-		// the point from its original cluster and add it to its closest cluster.
-	
-		merge( clusters );
-		// lower the threshold to look for new seeds if none of 
-		// the existing points were used as new clusters or assigned
-		// to existing clusters
-		if( !usedPoint ) seedThresh /= 2;
+      // Check if a point is matched to a track      
+      for( vector< const DTrackWireBased* >::iterator trk = tracks.begin();
+	   trk != tracks.end();
+	   ++trk ){
+	DVector3 track_pos(0.0, 0.0, 0.0);
+	double point_r = (**pt).r();
+	vector<DTrackFitter::Extrapolation_t>extrapolations=(*trk)->extrapolations.at(SYS_BCAL);
+	if (fitter->ExtrapolateToRadius(point_r,extrapolations,track_pos)){
+	  double dPhi=track_pos.Phi()-(**pt).phi();
+	  if (dPhi<-M_PI) dPhi+=2.*M_PI;
+	  if (dPhi>M_PI) dPhi-=2.*M_PI;
+	  double point_z = (**pt).z();
+	  double point_theta_global = fabs(atan2(point_r,point_z + m_z_target_center ));  // convert point z-position origin to global frame to match tracks origin
+	  double dTheta = fabs(point_theta_global - track_pos.Theta());
+	  matched_dphi=0.175+0.175*exp(-0.8*extrapolations[0].momentum.Mag());
+	  if(fabs(dPhi) < matched_dphi && dTheta < matched_dtheta){
+	    q = 1; // if point and track are matched then set q = 1
+	    tracked_phi = extrapolations[0].position.Phi();
+	    break;
+	  }
 	}
+      }
 
-	// add the single-ended hits that overlap with a cluster that was made from points
-	for( vector< const DBCALUnifiedHit* >::iterator ht = hits.begin();
-			ht != hits.end();
-			++ht){
-		bool usedHit = false;	 
+      for( vector<DBCALCluster*>::iterator clust = clusters.begin();
+	   clust != clusters.end();
+	   ++clust ){
+	
+	if((**clust).Q()==1){
+	  if(overlap_charged( **clust,*pt, tracked_phi ) ){
+	    usedPoints.push_back( *pt );
+	    int point_q = 1;
+	    (**clust).addPoint( *pt, point_q  );
+	    points.erase( pt );
+	    usedPoint = true;
+	    break;
+	  }
+	}
+	if( overlap( **clust, *pt ) ){
+	  if (q==1 && (**pt).layer()!=1) q=0;
+	  // assign point q=1 if it's in layer 1 because track matching tends to be improved in layer 1 than later layers where the cluster seed is. This would allow us to jump into the charged clustering routines on the fly.
+	  usedPoints.push_back( *pt );  
+	  (**clust).addPoint( *pt , q);
+	  points.erase( pt );
+	  usedPoint = true;
+	  break;
+	}
+	// once we erase a point the iterator is no longer useful
+	// and we start the loop over, so that a point doesn't get added to
+	// multiple clusters. We will recycle through points later to 
+	// check if a point was added to its closest cluster.
+      }
+    
+      if( usedPoint ) break;
+      
+      // if the point doesn't overlap with a cluster see if it can become a 
+      // new seed
+      if( (**pt).E() > seedThresh && ((**pt).layer() != 4 || (**pt).E() > layer4_minSeed) ){
+	clusters.push_back(new DBCALCluster( *pt, m_z_target_center, q, m_BCALGeom  ) );
+	usedPoints.push_back( *pt );
+	points.erase( pt );
+	usedPoint = true;
+	break;
+      }
+    }
 
-		for( vector<DBCALCluster*>::iterator clust = clusters.begin();
-				clust != clusters.end();
-				++clust ){
+    recycle_points( usedPoints, clusters);	
+    // recycle through points that were added to a cluster and check if they
+    // were added to their closest cluster. If they weren't then we remove 
+    // the point from its original cluster and add it to its closest cluster.
+    
+    merge( clusters );
+    // lower the threshold to look for new seeds if none of 
+    // the existing points were used as new clusters or assigned
+    // to existing clusters
+    if( !usedPoint ) seedThresh /= 2;
+  }
 
-			if( overlap( **clust, *ht ) ){
+  // add the single-ended hits that overlap with a cluster that was made from points
+  for( vector< const DBCALUnifiedHit* >::iterator ht = hits.begin();
+       ht != hits.end();
+       ++ht){
+    bool usedHit = false;	 
 
-				int channel_calib = 16*((**ht).module-1)+4*((**ht).layer-1)+(**ht).sector-1; // need to use cellID for objects in DBCALGeometry but the CCDB uses a different channel numbering scheme, so use channel_calib when accessing CCDB tables.
+    for( vector<DBCALCluster*>::iterator clust = clusters.begin();
+	 clust != clusters.end();
+	 ++clust ){
+      
+      if( overlap( **clust, *ht ) ){
 
-				// given the location of the cluster, we need the best guess
-				// for z with respect to target at this radius
+	int channel_calib = 16*((**ht).module-1)+4*((**ht).layer-1)+(**ht).sector-1; // need to use cellID for objects in DBCALGeometry but the CCDB uses a different channel numbering scheme, so use channel_calib when accessing CCDB tables.
 
-				double z = (**clust).rho()*cos((**clust).theta()) + m_z_target_center;
-				double d = ( ((**ht).end == 0) ? (z  - m_BCALGeom->GetBCAL_center() + m_BCALGeom->GetBCAL_length()/2.0) : (m_BCALGeom->GetBCAL_center() + m_BCALGeom->GetBCAL_length()/2.0 - z));  // d gives the distance to upstream or downstream end of BCAL depending on where the hit was with respect to the cluster z position.
-				double lambda = attenuation_parameters[channel_calib][0];
-				double hit_E = (**ht).E;
-				double hit_E_unattenuated = hit_E/exp(-d/lambda);  // hit energy unattenuated wrt the cluster z position
-
-				(**clust).addHit( *ht, hit_E_unattenuated );
-				usedHit = true;
-			}
-			if( usedHit ) break;
-		}
-	}     
-	return clusters;
+	// given the location of the cluster, we need the best guess
+	// for z with respect to target at this radius
+	
+	double z = (**clust).rho()*cos((**clust).theta()) + m_z_target_center;
+	double d = ( ((**ht).end == 0) ? (z  - m_BCALGeom->GetBCAL_center() + m_BCALGeom->GetBCAL_length()/2.0) : (m_BCALGeom->GetBCAL_center() + m_BCALGeom->GetBCAL_length()/2.0 - z));  // d gives the distance to upstream or downstream end of BCAL depending on where the hit was with respect to the cluster z position.
+	double lambda = attenuation_parameters[channel_calib][0];
+	double hit_E = (**ht).E;
+	double hit_E_unattenuated = hit_E/exp(-d/lambda);  // hit energy unattenuated wrt the cluster z position
+	
+	(**clust).addHit( *ht, hit_E_unattenuated );
+	usedHit = true;
+      }
+      if( usedHit ) break;
+    }
+  }     
+  return clusters;
 }
 
 void
 DBCALCluster_factory::recycle_points( vector<const DBCALPoint*> usedPoints, vector<DBCALCluster*>& clusters) const{
 
-	vector<double> sep_vector;
-	vector<double> deltPhi;
-	vector<double>::const_iterator min_sep;
-	vector<double>::const_iterator min_phi;
-        int q = 2;       
- 
-	if ( clusters.size() <= 1 ) return;
-	
-	sort( clusters.begin(), clusters.end(), ClusterSort );
+  if ( clusters.size() <= 1 ) return;
 
-	for( vector<const DBCALPoint*>::const_iterator usedpt = usedPoints.begin();
-		usedpt != usedPoints.end();
-		++usedpt ){		
+  int q = 2;
 	
-		int overlap_counter = 0;				
-		sep_vector.clear();
-		deltPhi.clear();
-		double sep = 0.;
+  sort( clusters.begin(), clusters.end(), ClusterSort );
+
+  for( vector<const DBCALPoint*>::const_iterator usedpt = usedPoints.begin();
+       usedpt != usedPoints.end();
+       ++usedpt ){		
+    
+    bool got_overlap=false;				
+    double min_phi=1e6;
 		
-		for( vector<DBCALCluster*>::iterator clust = clusters.begin();
-			clust != clusters.end();
-			++clust ){
-	
-			if( overlap( **clust, *usedpt ) ){
-				overlap_counter++;
-				// If a point satisfies the overlap condition with a cluster, then we want to calculate the
-				// distance along the sphere between the point and cluster centroid position.
-				float deltaTheta = fabs( (**clust).theta() - (*usedpt)->theta() );
-				float deltaPhi = (**clust).phi() - (*usedpt)->phi();
-        			float deltaPhiAlt = ( (**clust).phi() > (*usedpt)->phi() ?
-                        	(**clust).phi() - (*usedpt)->phi() - 2*TMath::Pi() :
-                        	(*usedpt)->phi() - (**clust).phi() - 2*TMath::Pi() );
+    for( vector<DBCALCluster*>::iterator clust = clusters.begin();
+	 clust != clusters.end();
+	 ++clust ){
+      
+      if( overlap( **clust, *usedpt ) ){
+	got_overlap=true;
 
-        			deltaPhi = min( fabs( deltaPhi ), fabs( deltaPhiAlt ) );
-					
-				deltPhi.push_back(deltaPhi);
-
-				float rho = ( (**clust).rho() + (*usedpt)->rho() ) / 2.;
-	        		float theta = ( (**clust).theta() + (*usedpt)->theta() ) / 2.;
-	
-				sep =  sqrt( ( rho * deltaTheta ) * ( rho * deltaTheta ) + ( rho * sin( theta ) * deltaPhi ) * ( rho * sin( theta ) * deltaPhi ) );
-				sep_vector.push_back(sep);
-
-			}
-						
-		}
-	
-		if(overlap_counter==0) break;
-		
-		min_sep = min_element(sep_vector.begin(),sep_vector.end());
-		min_phi = min_element(deltPhi.begin(),deltPhi.end());
-		// Find the points closest cluster in distance along the sphere and in phi.			
-
-		for( vector<DBCALCluster*>::iterator clust = clusters.begin();
-			clust != clusters.end();
-			++clust ){
-			bool sep_match;
-			bool clust_match;
-			bool point_match;
-			int best_clust = 0;
-			vector<const DBCALPoint*>associated_points=(**clust).points();
-			float deltaTheta = fabs( (**clust).theta() - (*usedpt)->theta() );
-			float deltaPhi = (**clust).phi() - (*usedpt)->phi();
-			float deltaPhiAlt = ( (**clust).phi() > (*usedpt)->phi() ?
-			(**clust).phi() - (*usedpt)->phi() - 2*TMath::Pi() :
-			(*usedpt)->phi() - (**clust).phi() - 2*TMath::Pi() );
-
-			deltaPhi = min( fabs( deltaPhi ), fabs( deltaPhiAlt ) );
-
-			float rho = ( (**clust).rho() + (*usedpt)->rho() ) / 2.;
-			float theta = ( (**clust).theta() + (*usedpt)->theta() ) / 2.;
-
-			sep =  sqrt( ( rho * deltaTheta ) * ( rho * deltaTheta ) + ( rho * sin( theta ) * deltaPhi ) * ( rho * sin( theta ) * deltaPhi ) );
-				
-			for(unsigned int j = 0 ; j < associated_points.size(); j++){
-				// Check to see if the point we are comparing to the cluster
-				// is already in that cluster.
-				sep_match = ((sep > *min_sep-.1) && ( sep < *min_sep+.1));
-				clust_match = ((*usedpt)->E() == associated_points[j]->E());
-				if ( (deltaPhi==*min_phi) && clust_match==1) best_clust=1;
-				if(BCALCLUSTERVERBOSE>1)cout << " clust E = " << (**clust).E() <<" assoc point E = " << associated_points[j]->E() << " points E = " << (*usedpt)->E() <<  " clust match = " << clust_match <<" sep = " << sep << " min sep = " << *min_sep << " sep match = " << sep_match <<  endl;
-			}
-			if(best_clust==1) break;
-			// if the point was originally placed in its "best" cluster then we don't want to touch it.
-			if(best_clust==0){
-				int added_point = 0;
-				int removed_point = 0;
-				for(unsigned int i = 0 ; i < associated_points.size(); i++){
-					point_match = ((*usedpt)->E() == associated_points[i]->E());
-					if( point_match==0 && added_point==0 && deltaPhi == *min_phi){
-						(**clust).addPoint( *usedpt , q );
-						// if the point found a closer cluster then we add it to the closer cluster.
-						// The point is now an associated object of the closer cluster.
-						added_point=1;
-					}
-                                	if( point_match==1 && removed_point==0 && deltaPhi != *min_phi){
-						(**clust).removePoint( *usedpt );
-						// Now we remove the point from its original cluster since it has been added
-						// to its closest cluster. The point is no longer an associated object of
-						// the original cluster.
-						removed_point=1;
-					}
-				}
-			}   
-		}
+	float deltaPhi = (**clust).phi() - (*usedpt)->phi();
+	if (deltaPhi<-M_PI) deltaPhi+=2.*M_PI;
+	if (deltaPhi>M_PI) deltaPhi-=2.*M_PI;
+	if (fabs(deltaPhi)<min_phi){
+	  min_phi=fabs(deltaPhi);
 	}
+      }
+    }
+    
+    if(got_overlap==false) break;
+
+    // Find the points closest cluster in distance along the sphere and in phi
+    for( vector<DBCALCluster*>::iterator clust = clusters.begin();
+	 clust != clusters.end();
+	 ++clust ){
+      bool best_clust = false;
+      vector<const DBCALPoint*>associated_points=(**clust).points();
+
+      float deltaPhi = (**clust).phi() - (*usedpt)->phi();
+      if (deltaPhi<-M_PI) deltaPhi+=2.*M_PI;
+      if (deltaPhi>M_PI) deltaPhi-=2.*M_PI;
+      deltaPhi=fabs(deltaPhi);
+    
+      for(unsigned int j = 0 ; j < associated_points.size(); j++){
+	// Check to see if the point we are comparing to the cluster
+	// is already in that cluster.
+	if (fabs((*usedpt)->E()-associated_points[j]->E())<1e-4
+	    && fabs(deltaPhi-min_phi)<1e-4) best_clust=true;
+	if(BCALCLUSTERVERBOSE>1)cout << " clust E = " << (**clust).E() <<" assoc point E = " << associated_points[j]->E() << " points E = " << (*usedpt)->E() <<  " clust match = " << best_clust <<  endl;
+      }
+      if(best_clust==true) break;
+      // if the point was originally placed in its "best" cluster then we don't want to touch it.
+      if(best_clust==0){
+	int added_point = 0;
+	int removed_point = 0;
+	for(unsigned int i = 0 ; i < associated_points.size(); i++){
+	  bool point_match = (fabs((*usedpt)->E()-associated_points[i]->E())<1e-4);
+	  if( point_match==0 && added_point==0 && fabs(deltaPhi-min_phi)<1e-4){
+	    (**clust).addPoint( *usedpt , q );
+	    // if the point found a closer cluster then we add it to the closer cluster.
+	    // The point is now an associated object of the closer cluster.
+	    added_point=1;
+	  }
+	  if( point_match==1 && removed_point==0 && fabs(deltaPhi-min_phi)>1e-4){
+	    (**clust).removePoint( *usedpt );
+	    // Now we remove the point from its original cluster since it has been added
+	    // to its closest cluster. The point is no longer an associated object of
+	    // the original cluster.
+	    removed_point=1;
+	  }
+	}
+      }   
+    }
+  }
 }	
 
 void

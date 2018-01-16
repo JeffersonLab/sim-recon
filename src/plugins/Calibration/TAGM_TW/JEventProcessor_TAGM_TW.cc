@@ -24,17 +24,17 @@ const int32_t PMIN = 0;
 const int32_t PMAX = 2000;
 const int32_t PBIN = (PMAX - PMIN)/16;
 
-const int32_t TMIN = -150;
-const int32_t TMAX = 150;
-const int32_t TBIN = (TMAX - TMIN)/0.1;
+const int32_t TMIN = -50;
+const int32_t TMAX = 50;
+const int32_t TBIN = (TMAX - TMIN)/0.05;
 
 const double TMIN_RF = -2.0;
 const double TMAX_RF = 2.0;
-const double TBIN_RF = (TMAX_RF - TMIN_RF)/0.1;
+const double TBIN_RF = (TMAX_RF - TMIN_RF)/0.05;
 
 const double TMIN_TW = -10.0;
 const double TMAX_TW = 15.0;
-const double TBIN_TW = (TMAX_RF - TMIN_RF)/0.1;
+const double TBIN_TW = (TMAX_TW - TMIN_TW)/0.05;
 
 // Define histograms
 //    timewalk
@@ -83,6 +83,7 @@ JEventProcessor_TAGM_TW::~JEventProcessor_TAGM_TW()
 //------------------
 jerror_t JEventProcessor_TAGM_TW::init(void)
 {
+   TDirectory *main = gDirectory;
 
    TDirectory *tagmDir = gDirectory->mkdir("TAGM_TW");
    tagmDir->cd();
@@ -93,7 +94,7 @@ jerror_t JEventProcessor_TAGM_TW::init(void)
       h_dt_vs_pp_tdc[i] = new TH2I(Form("h_dt_vs_pp_tdc_%i", i+1),
                                Form("#delta t vs. pulse peak for TAGM column %i;\
                                Pulse peak (adc counts);TDC - RF (ns)", i+1), \
-                               PBIN, PMIN, PMAX, TBIN_TW, TMIN_TW, TMAX_TW);
+                               PBIN, PMIN, PMAX, TBIN, TMIN, TMAX);
    }
    for (uint32_t i = 0; i < NROWS; ++i)
    {
@@ -102,7 +103,7 @@ jerror_t JEventProcessor_TAGM_TW::init(void)
          h_dt_vs_pp_tdc_ind[i][j] = new TH2I(Form("h_dt_vs_pp_tdc_ind_%i_%i", i+1, j+1),
                                         Form("#delta t vs. pulse peak for TAGM ind. column %i, row %i;\
                                         Pulse peak (adc counts);TDC - RF (ns)", j+1, i+1),
-                                        PBIN, PMIN, PMAX, TBIN_TW, TMIN_TW, TMAX_TW);
+                                        PBIN, PMIN, PMAX, TBIN, TMIN, TMAX);
 
       }
    }
@@ -130,17 +131,19 @@ jerror_t JEventProcessor_TAGM_TW::init(void)
    tagmDir->cd();
 
    h_tdc_adc_all =      new TH2I("tdc_adc_all","Summed channels;TDC - ADC (ns);Column",
-                                  TBIN, TMIN, TMAX, NCOLUMNS,1, NCOLUMNS+1);
+                                  TBIN/10, TMIN, TMAX, NCOLUMNS,1, NCOLUMNS+1);
    h_tdc_adc_all_ind =  new TH2I("tdc_adc_all_ind","Individual channels;TDC - ADC (ns);Column",
-                                  TBIN, TMIN, TMAX, NSINGLES,1, NSINGLES+1);
+                                  TBIN/10, TMIN, TMAX, NSINGLES,1, NSINGLES+1);
    h_t_adc_all =        new TH2I("t_adc_all","Summed channels;TDC - ADC (ns);Column",
-                                  TBIN, TMIN, TMAX, NCOLUMNS,1, NCOLUMNS+1);
+                                  TBIN/10, TMIN, TMAX, NCOLUMNS,1, NCOLUMNS+1);
    h_t_adc_all_ind =    new TH2I("t_adc_all_ind","Individual channels;TDC - ADC (ns);Column",
-                                  TBIN, TMIN, TMAX, NSINGLES,1, NSINGLES+1);
+                                  TBIN/10, TMIN, TMAX, NSINGLES,1, NSINGLES+1);
    h_adc_rf_all =       new TH2I("adc_rf_all","Summed channels;ADC - RF (ns);Column",
                                   TBIN_RF, TMIN_RF, TMAX_RF, NCOLUMNS,1, NCOLUMNS+1);
    h_adc_rf_all_ind =   new TH2I("adc_rf_all_ind","Individual channels;ADC - RF (ns);Column",
                                   TBIN_RF, TMIN_RF, TMAX_RF, NSINGLES,1, NSINGLES+1);
+
+   main->cd();
 
    return NOERROR;
 	

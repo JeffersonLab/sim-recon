@@ -19,6 +19,8 @@ class fcal_config_t
 	
 	vector<double> FCAL_GAINS;
 	double FCAL_MC_ESCALE;
+
+    bool FCAL_ADD_LIGHTGUIDE_HITS;
 	
 	vector< vector<double > > block_efficiencies;
 	
@@ -35,6 +37,7 @@ class FCALSmearer : public Smearer
 	FCALSmearer(JEventLoop *loop, mcsmear_config_t *in_config) : Smearer(loop, in_config) {
 		fcalGeom = new DFCALGeometry();
 		fcal_config = new fcal_config_t(loop, fcalGeom);
+        fcal_config->FCAL_ADD_LIGHTGUIDE_HITS = in_config->FCAL_ADD_LIGHTGUIDE_HITS;
 	}
 	~FCALSmearer() {
 		delete fcal_config;

@@ -12,7 +12,7 @@
 #include <JANA/JFactory.h>
 using namespace jana;
 
-#include "PID/DKinematicData.h"
+#include <TRACKING/DTrackingData.h>
 #include <TRACKING/DTrackFitter.h>
 
 class DReferenceTrajectory;
@@ -30,7 +30,7 @@ class DReferenceTrajectory;
 /// these and then merging them. For the default, see
 /// DTrackCandidate_factory .
 
-class DTrackCandidate:public DKinematicData{
+class DTrackCandidate:public DTrackingData{
 	public:
 		JOBJECT_PUBLIC(DTrackCandidate);
 		

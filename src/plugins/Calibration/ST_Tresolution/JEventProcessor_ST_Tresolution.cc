@@ -188,17 +188,17 @@ jerror_t JEventProcessor_ST_Tresolution::evnt(JEventLoop *loop, uint64_t eventnu
     {   
       // Grab the charged track and declare time based track object
       const DChargedTrack   *thisChargedTrack = chargedTrackVector[i];
-      const DTrackTimeBased *timeBasedTrack;
       // Grab associated time based track object by selecting charged track with best FOM
-      thisChargedTrack->Get_BestTrackingFOM()->GetSingle(timeBasedTrack);
+      const DTrackTimeBased *timeBasedTrack = thisChargedTrack->Get_BestTrackingFOM()->Get_TrackTimeBased();
+
       // Implement quality cuts for the time based tracks 
       //trackingFOMCut = 0.0027;  // 3 sigma cut
       //trackingFOMCut = 0.0001;  // 5 sigma cut
       if(timeBasedTrack->FOM  < trackingFOMCut) continue;
 
       // Grab the ST hit match params object and cut on only tracks matched to the ST
-      DSCHitMatchParams locSCHitMatchParams;
-      bool foundSC = dParticleID->Get_BestSCMatchParams(timeBasedTrack, locDetectorMatches, locSCHitMatchParams);
+      shared_ptr<const DSCHitMatchParams> locBestSCHitMatchParams;
+      bool foundSC = dParticleID->Get_BestSCMatchParams(timeBasedTrack, locDetectorMatches, locBestSCHitMatchParams);
       if (!foundSC) continue;
       
       // Define vertex vector and cut on target/scattering chamber geometry
@@ -211,13 +211,16 @@ jerror_t JEventProcessor_ST_Tresolution::evnt(JEventLoop *loop, uint64_t eventnu
       // Apply  vertex cut
       if (!z_vertex_cut) continue;
       if (!r_vertex_cut) continue;
-      vector<DSCHitMatchParams> st_params;
+      vector<shared_ptr<const DSCHitMatchParams>> st_params;
       bool st_match = locDetectorMatches->Get_SCMatchParams(timeBasedTrack, st_params); 
       // If st_match = true, there is a match between this track and the ST
       if (!st_match) continue;
 
       DVector3 IntersectionPoint, IntersectionMomentum;
-      bool sc_match_pid = dParticleID->Cut_MatchDistance(timeBasedTrack->rt, st_params[0].dSCHit, st_params[0].dSCHit->t, locSCHitMatchParams, true, &IntersectionPoint, &IntersectionMomentum);
+      shared_ptr<DSCHitMatchParams> locSCHitMatchParams;
+      vector<DTrackFitter::Extrapolation_t>extrapolations=timeBasedTrack->extrapolations.at(SYS_START);
+      bool sc_match_pid = dParticleID->Cut_MatchDistance(extrapolations, st_params[0]->dSCHit, st_params[0]->dSCHit->t, locSCHitMatchParams, true, &IntersectionPoint, &IntersectionMomentum);
+
       if(!sc_match_pid) continue; 
       // Cut on the number of particle votes to find the best RF time
       if (thisRFBunch->dNumParticleVotes < 2) continue;
@@ -228,16 +231,16 @@ jerror_t JEventProcessor_ST_Tresolution::evnt(JEventLoop *loop, uint64_t eventnu
       // RF time at center of target
       double locCenterToVertexRFTime = (timeBasedTrack->z() - z_target_center)*(1.0/speed_light);  // Time correction for photon from target center to vertex of track
       double locVertexRFTime         = locCenteredRFTime + locCenterToVertexRFTime;
-      int sc_index= locSCHitMatchParams.dSCHit->sector - 1;
+      int sc_index= locSCHitMatchParams->dSCHit->sector - 1;
       // Start Counter geometry in hall coordinates 
       double sc_pos_soss = sc_pos[sc_index][0].z();   // Start of straight section
       double sc_pos_eoss = sc_pos[sc_index][1].z();   // End of straight section
       double sc_pos_eobs = sc_pos[sc_index][11].z();  // End of bend section
       double sc_pos_eons = sc_pos[sc_index][12].z();  // End of nose section
       //Get the ST time walk corrected time
-      double st_time = st_params[0].dSCHit->t;
+      double st_time = st_params[0]->dSCHit->t;
       // Get the Flight time 
-      double FlightTime = locSCHitMatchParams.dFlightTime; 
+      double FlightTime = locSCHitMatchParams->dFlightTime; 
       //St time corrected for the flight time
       double st_corr_FlightTime =  st_time - FlightTime;
       // SC_RFShiftedTime = dRFTimeFactory->Step_TimeToNearInputTime(locVertexRFTime,  st_corr_FlightTime);

@@ -302,7 +302,8 @@ jerror_t JEventProcessor_MilleFieldOn::evnt(JEventLoop *loop, uint64_t eventnumb
 
       if (bestHypothesis == NULL) continue;
 
-      double trackingFOM = TMath::Prob(bestHypothesis->dChiSq_Track, bestHypothesis->dNDF_Track);
+      auto thisTimeBasedTrack = bestHypothesis->Get_TrackTimeBased();
+      double trackingFOM = TMath::Prob(thisTimeBasedTrack->chisq, thisTimeBasedTrack->Ndof);
 
       // Some quality cuts for the tracks we will use
       // Keep this minimal for now and investigate later
@@ -310,9 +311,6 @@ jerror_t JEventProcessor_MilleFieldOn::evnt(JEventLoop *loop, uint64_t eventnumb
       if(trackingFOM < trackingFOMCut) continue;
 
       // Get the pulls vector from the track
-      const DTrackTimeBased *thisTimeBasedTrack;
-      bestHypothesis->GetSingle(thisTimeBasedTrack);
-
       if (!thisTimeBasedTrack->IsSmoothed) continue;
 
       vector<DTrackFitter::pull_t> pulls = thisTimeBasedTrack->pulls;
@@ -320,7 +318,7 @@ jerror_t JEventProcessor_MilleFieldOn::evnt(JEventLoop *loop, uint64_t eventnumb
       bool isCDCOnly=true; //bool isFDCOnly=true;
       bool anyNaN=false;
       int nCDC=0, nFDC=0;
-      unsigned int pullsNDF=0;
+      int pullsNDF=0;
       for (size_t iPull = 0; iPull < pulls.size(); iPull++){
          const DCDCTrackHit *cdc_hit = pulls[iPull].cdc_hit;
          //const DFDCPseudo *fdc_hit   = pulls[iPull].fdc_hit;
@@ -333,12 +331,12 @@ jerror_t JEventProcessor_MilleFieldOn::evnt(JEventLoop *loop, uint64_t eventnumb
       }
       pullsNDF-=5;
       if (anyNaN)  continue;
-      if(pullsNDF != bestHypothesis->dNDF_Track) continue;
+      if(pullsNDF != thisTimeBasedTrack->Ndof) continue;
 
-      unsigned int trackingNDFCut = 22;
+      int trackingNDFCut = 22;
       if (isCDCOnly) trackingNDFCut = 10;
 
-      if( bestHypothesis->dNDF_Track < trackingNDFCut) continue;
+      if( thisTimeBasedTrack->Ndof < trackingNDFCut) continue;
       /*
          double phi = bestHypothesis->momentum().Phi()*TMath::RadToDeg();
          double theta = bestHypothesis->momentum().Theta()*TMath::RadToDeg();

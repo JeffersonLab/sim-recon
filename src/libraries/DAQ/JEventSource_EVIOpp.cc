@@ -958,30 +958,30 @@ void JEventSource_EVIOpp::EmulateDf125Firmware(DParsedEvent *pe)
 		Df125FDCPulse *f125FDCPulse = (Df125FDCPulse*)cf125FDCPulse;
 
 		// If the the pulse objects do not exist, create new ones to go with our raw data
-		// This should rarely happen since CDC_long and FDC_long have the raw data
+		// This should rarely happen since CDC_long and FDC_long mores have the raw data
 		// along with the calculated quantities in a pulse word. Pure raw mode would be the only time
-		// when this would not be the case. Since this is so infrequently used (if ever), 
-		// the ROCID check for CDC/FDC determination is hard coded...
+		// when this would not be the case. 
+        // Since this is so infrequently used (if ever), 
+		// we add a hard coded ROCID check for CDC/FDC determination...
 		// ROCID CDC: 25-28
 		// ROCID FDC Cathode: 52,53,55-62
 
-		if(f125CDCPulse == NULL && ( wrd->rocid < 30 ) ){
-			f125CDCPulse           = pe->NEW_Df125CDCPulse();
-			f125CDCPulse->rocid    = wrd->rocid;
-			f125CDCPulse->slot     = wrd->slot;
-			f125CDCPulse->channel  = wrd->channel;
-			f125CDCPulse->emulated = true;
-			f125CDCPulse->AddAssociatedObject(wrd);
-		}
-
-		else if(f125FDCPulse == NULL && ( wrd->rocid > 30 ) ){
-			f125FDCPulse           = pe->NEW_Df125FDCPulse();
-			f125FDCPulse->rocid    = wrd->rocid;
-			f125FDCPulse->slot     = wrd->slot;
-			f125FDCPulse->channel  = wrd->channel;
-			f125FDCPulse->emulated = true;
-			f125FDCPulse->AddAssociatedObject(wrd);
-		}
+        if(f125CDCPulse == NULL && ( wrd->rocid < 30 ) ){
+            f125CDCPulse           = pe->NEW_Df125CDCPulse();
+            f125CDCPulse->rocid    = wrd->rocid;
+            f125CDCPulse->slot     = wrd->slot;
+            f125CDCPulse->channel  = wrd->channel;
+            f125CDCPulse->emulated = true;
+            f125CDCPulse->AddAssociatedObject(wrd);
+        }
+        else if(f125FDCPulse == NULL && ( wrd->rocid > 30 ) ){
+            f125FDCPulse           = pe->NEW_Df125FDCPulse();
+            f125FDCPulse->rocid    = wrd->rocid;
+            f125FDCPulse->slot     = wrd->slot;
+            f125FDCPulse->channel  = wrd->channel;
+            f125FDCPulse->emulated = true;
+            f125FDCPulse->AddAssociatedObject(wrd);
+        }
 
 		// Flag all objects as emulated and their values will be replaced with emulated quantities
 		if (F125_EMULATION_MODE == kEmulationAlways){

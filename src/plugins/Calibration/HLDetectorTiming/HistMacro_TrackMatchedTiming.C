@@ -76,6 +76,7 @@
     gPad->SetGrid();
     if(FDC_Timing != NULL)
     {
+        FDC_Timing->GetXaxis()->SetRangeUser(-150,350);
         FDC_Timing->Draw();
         FDC_Timing->SetFillColor(kGray);
     }

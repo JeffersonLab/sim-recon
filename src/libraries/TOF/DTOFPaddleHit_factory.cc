@@ -25,7 +25,7 @@ using namespace std;
 #include <math.h>
 
 //#define NaN std::numeric_limits<double>::quiet_NaN()
-#define NaN __builtin_nan("")
+#define BuiltInNaN __builtin_nan("")
 
 //------------------
 // brun
@@ -317,11 +317,11 @@ jerror_t DTOFPaddleHit_factory::evnt(JEventLoop *loop, uint64_t eventnumber)
 	( TMath::Exp(-xr/d1) +  TMath::Exp(-xr/d2));
       hit->dE = (hit->E_north*att_left + hit->E_south*att_right)/2.;
     } else {
-      hit->meantime = NaN;
-      hit->timediff = NaN;
-      hit->pos = NaN;
-      hit->dpos = NaN;
-      hit->dE = NaN;
+      hit->meantime = BuiltInNaN;
+      hit->timediff = BuiltInNaN;
+      hit->pos = BuiltInNaN;
+      hit->dpos = BuiltInNaN;
+      hit->dE = BuiltInNaN;
    }
 
   }

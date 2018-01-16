@@ -20,6 +20,7 @@ using namespace jana;
 
 #include "GlueX.h"
 #include "DANA/DApplication.h"
+#include "PID/DParticleID.h"
 #include "DMagneticFieldStepper.h"
 #include "DTrackCandidate.h"
 #include "DTrackFitterALT1.h"
@@ -34,8 +35,6 @@ extern double GetCDCCovariance(int layer1, int layer2);
 extern double GetFDCCovariance(int layer1, int layer2);
 extern double GetFDCCathodeCovariance(int layer1, int layer2);
 
-
-#define NaN std::numeric_limits<double>::quiet_NaN()
 
 // The GNU implementation of STL includes definitions of "greater" and "less"
 // but the SunOS implementation does not. Since it is a bit of a pain to
@@ -421,8 +420,7 @@ DTrackFitter::fit_status_t DTrackFitterALT1::FitTrack(void)
 	// members are copied in during the ChiSq() method call in LeastSquaresB().
 	fit_params.setPosition(vertex_pos);
 	fit_params.setMomentum(vertex_mom);
-	fit_params.setCharge(rt->q);
-	fit_params.setMass(input_params.mass());
+	fit_params.setPID(IDTrack(rt->q, input_params.mass()));
 	cdchits_used_in_fit = cdchits;
 	fdchits_used_in_fit = fdchits;
 
@@ -734,7 +732,7 @@ void DTrackFitterALT1::GetHits(fit_type_t fit_type, DReferenceTrajectory *rt, hi
 				double tof = s/beta/1.0E-9; // in ns
 				hi.dist = 55E-4*(hit->time-tof);
 				hi.err = SIGMA_FDC_ANODE;
-				
+				/*
 				if(USE_FDC_CATHODE){
 					// Find whether the track is on the "left" or "right" of the wire
 					DVector3 shift = wire->udir.Cross(mom_doca);
@@ -756,9 +754,10 @@ void DTrackFitterALT1::GetHits(fit_type_t fit_type, DReferenceTrajectory *rt, hi
 					hi.u_err = SIGMA_FDC_CATHODE;
 				}else{
 					// User specified not to use FDC cathode information in the fit.
-					hi.u_dist = 0.0;
-					hi.u_err = 0.0; // setting u_err to zero means it's excluded from chi-sq
-				}
+					*/
+				hi.u_dist = 0.0;
+				hi.u_err = 0.0; // setting u_err to zero means it's excluded from chi-sq
+				//	}
 			}
 			hinfo.push_back(hi);
 		}

@@ -241,13 +241,6 @@ jerror_t DTrackTimeBased_factory::brun(jana::JEventLoop *loop, int32_t runnumber
 
 	}
 
-	//Pre-allocate memory for DReferenceTrajectory objects early
-		//The swim-step objects of these arrays take up a significant amount of memory, and it can be difficult to find enough free contiguous space for them.
-		//Therefore, allocate them at the beginning before the available memory becomes randomly populated
-	while(rtv.size() < MAX_DReferenceTrajectoryPoolSize)
-		rtv.push_back(new DReferenceTrajectory(fitter->GetDMagneticFieldMap()));
-
-
 	return NOERROR;
 }
 
@@ -276,23 +269,19 @@ jerror_t DTrackTimeBased_factory::evnt(JEventLoop *loop, uint64_t eventnumber)
 
   if (dIsNoFieldFlag){
     // Copy wire-based results -- no further steps are currently needed for the
-    // StraightLine fitter
+    // StraightLine fitter except for creation of a reference trajectory
     for (unsigned int i=0;i<tracks.size();i++){
       const DTrackWireBased *track = tracks[i];
 
       // Copy over the results of the wire-based fit to DTrackTimeBased
-      DTrackTimeBased *timebased_track = new DTrackTimeBased;
-      
-      // Copy over DKinematicData part
-      DKinematicData *track_kd = timebased_track;
-      *track_kd = *track;
-      
-      timebased_track->rt = track->rt;
+      DTrackTimeBased *timebased_track = new DTrackTimeBased(); //share the memory (isn't changed below)
+      *static_cast<DTrackingData*>(timebased_track) = *static_cast<const DTrackingData*>(track);
+
       timebased_track->chisq = track->chisq;
       timebased_track->Ndof = track->Ndof;
-      timebased_track->FOM =  TMath::Prob(timebased_track->chisq,
-					  timebased_track->Ndof);
+      timebased_track->FOM =  TMath::Prob(timebased_track->chisq, timebased_track->Ndof);
       timebased_track->pulls = track->pulls;
+      timebased_track->extrapolations = track->extrapolations;
       timebased_track->trackid = track->id;
       timebased_track->candidateid=track->candidateid;
       timebased_track->IsSmoothed = track->IsSmoothed;
@@ -311,6 +300,9 @@ jerror_t DTrackTimeBased_factory::evnt(JEventLoop *loop, uint64_t eventnumber)
       }
 
       timebased_track->AddAssociatedObject(track);
+      timebased_track->dCDCRings = pid_algorithm->Get_CDCRingBitPattern(cdchits);
+      timebased_track->dFDCPlanes = pid_algorithm->Get_FDCPlaneBitPattern(fdchits);
+
       _data.push_back(timebased_track);
 
     }
@@ -379,17 +371,12 @@ jerror_t DTrackTimeBased_factory::evnt(JEventLoop *loop, uint64_t eventnumber)
 	if (fdchits.size()>0
 	    && cdchits.size()<MIN_CDC_HITS_FOR_TB_FORWARD_TRACKING){
 	  // Copy over the results of the wire-based fit to DTrackTimeBased
-	  DTrackTimeBased *timebased_track = new DTrackTimeBased;
-	  
-	  // Copy over DKinematicData part
-	  DKinematicData *track_kd = timebased_track;
-	  *track_kd = *track;
-	  
-	  timebased_track->setTime(timebased_track->t0());
-	  timebased_track->rt = track->rt;
+	  DTrackTimeBased *timebased_track = new DTrackTimeBased();
+      *static_cast<DTrackingData*>(timebased_track) = *static_cast<const DTrackingData*>(track);
 	  timebased_track->chisq = track->chisq;
 	  timebased_track->Ndof = track->Ndof;
 	  timebased_track->pulls = track->pulls;
+	  timebased_track->extrapolations = track->extrapolations;
 	  timebased_track->trackid = track->id;
 	  timebased_track->candidateid=track->candidateid;
 	  
@@ -441,7 +428,7 @@ jerror_t DTrackTimeBased_factory::evnt(JEventLoop *loop, uint64_t eventnumber)
       double hitFraction;
       int thrownIndex = GetThrownIndex(mcthrowns, (DKinematicData*)_data[loc_i], hitFraction);
       _data[loc_i]->dMCThrownMatchMyID = thrownIndex;
-      _data[loc_i]->dNumHitsMatchedToThrown = int(hitFraction * float(_data[loc_i]->Ndof + 5) + 0.01); // + 0.01 so that it rounds down properly
+      _data[loc_i]->dNumHitsMatchedToThrown = int(hitFraction * float(Get_NumTrackHits(_data[loc_i])) + 0.01); // + 0.01 so that it rounds down properly
     }
     else
     {
@@ -721,7 +708,7 @@ int DTrackTimeBased_factory::GetThrownIndex(vector<const DMCThrown*>& locMCThrow
 		cdctrackhits[loc_i]->GetSingle(locCDCHit);
 		vector<const DCDCHit*> locTruthCDCHits;
       locCDCHit->Get(locTruthCDCHits);
-		if(locTruthCDCHits.empty()) continue; // merged simulation with real data bkgnd will not have truth hits associated
+		if(locTruthCDCHits.empty()) continue;
 
 		int itrack = locTruthCDCHits[0]->itrack;
 		if(locHitMatches.find(itrack) == locHitMatches.end())
@@ -774,72 +761,64 @@ void DTrackTimeBased_factory
 			vector<const DBCALShower*>&bcal_showers,	
 			vector<const DFCALShower*>&fcal_showers,
 			vector<DTrackTimeBased::DStartTime_t>&start_times){
-  // Add the t0 estimate from the tracking
   DTrackTimeBased::DStartTime_t start_time;
-  start_time.t0=track->t0();
+   
+  // Match to the start counter and the outer detectors
+  double locStartTimeVariance = 0.0;
+  double track_t0=track->t0();
+  double locStartTime = track_t0;  // initial guess from tracking
+  DSCHitMatchParams locSCBestMatchParams; 
+  // Get start time estimate from Start Counter
+  if (pid_algorithm->Get_StartTime(track->extrapolations.at(SYS_START),sc_hits,locStartTime)){
+    start_time.t0=locStartTime;
+    //    start_time.t0_sigma=sqrt(locTimeVariance); //uncomment when ready
+    start_time.t0_sigma=sqrt(locStartTimeVariance);
+    start_time.system=SYS_START;
+    start_times.push_back(start_time);
+  }
+  // Get start time estimate from TOF
+  locStartTime = track_t0;  // initial guess from tracking
+  if (pid_algorithm->Get_StartTime(track->extrapolations.at(SYS_TOF),tof_points,locStartTime)){
+    // Fill in the start time vector
+    start_time.t0=locStartTime;
+    start_time.t0_sigma=sqrt(locStartTimeVariance);
+    //    start_time.t0_sigma=sqrt(locTimeVariance); //uncomment when ready
+    start_time.system=SYS_TOF;
+    start_times.push_back(start_time); 
+  }
+  // Get start time estimate from FCAL
+  locStartTime = track_t0;  // initial guess from tracking
+  if (pid_algorithm->Get_StartTime(track->extrapolations.at(SYS_FCAL),fcal_showers,locStartTime)){
+    // Fill in the start time vector
+    start_time.t0=locStartTime;
+    start_time.t0_sigma=sqrt(locStartTimeVariance);
+    //    start_time.t0_sigma=sqrt(locTimeVariance); //uncomment when ready
+    start_time.system=SYS_FCAL;
+    start_times.push_back(start_time); 
+  }
+  // Get start time estimate from BCAL
+  locStartTime=track_t0;
+  if (pid_algorithm->Get_StartTime(track->extrapolations.at(SYS_BCAL),bcal_showers,locStartTime)){
+    // Fill in the start time vector
+    start_time.t0=locStartTime;
+    start_time.t0_sigma=0.5;
+    //    start_time.t0_sigma=sqrt(locTimeVariance); //uncomment when ready
+    start_time.system=SYS_BCAL;
+    start_times.push_back(start_time);    
+  }
+  // Add the t0 estimate from the tracking 
+  start_time.t0=track_t0;
   start_time.t0_sigma=5.;
   start_time.system=track->t0_detector();
   start_times.push_back(start_time);
 
-  // Match to the start counter and the outer detectors
-  double locStartTimeVariance = 0.0, locStartTime = track->t0();  // initial guess from tracking
-  DSCHitMatchParams locSCBestMatchParams;
-  if(pid_algorithm->Get_ClosestToTrack(track->rt, sc_hits, false, true, locStartTime, locSCBestMatchParams, &locStartTimeVariance))
-  {
-    // Fill in the start time vector
-    start_time.t0=locStartTime;
-//    start_time.t0_sigma=sqrt(locTimeVariance); //uncomment when ready
-    start_time.t0_sigma=sqrt(locStartTimeVariance);
-    start_time.system=SYS_START;
-    start_times.push_back(start_time); 
-  }
-
-  locStartTime = track->t0();
-  DTOFHitMatchParams locTOFBestMatchParams;
-  if(pid_algorithm->Get_ClosestToTrack(track->rt, tof_points, true, locStartTime, locTOFBestMatchParams, &locStartTimeVariance))
-  {
-    // Fill in the start time vector
-    start_time.t0=locStartTime;
-    start_time.t0_sigma=sqrt(locStartTimeVariance);
-//    start_time.t0_sigma=sqrt(locTimeVariance); //uncomment when ready
-    start_time.system=SYS_TOF;
-    start_times.push_back(start_time); 
-  }
-
-  locStartTime = track->t0();
-  DBCALShowerMatchParams locBCALBestMatchParams;
-  if(pid_algorithm->Get_ClosestToTrack(track->rt, bcal_showers, true, locStartTime, locBCALBestMatchParams, &locStartTimeVariance))
-  {
-    // Fill in the start time vector
-    start_time.t0=locStartTime;
-    start_time.t0_sigma=sqrt(locStartTimeVariance);
-//    start_time.t0_sigma=sqrt(locTimeVariance); //uncomment when ready
-    start_time.system=SYS_BCAL;
-    start_times.push_back(start_time);
-  }
-
-  locStartTime = track->t0();
-  DFCALShowerMatchParams locFCALBestMatchParams;
-  if(pid_algorithm->Get_ClosestToTrack(track->rt, fcal_showers, true, locStartTime, locFCALBestMatchParams, &locStartTimeVariance))
-  {
-    // Fill in the start time vector
-    start_time.t0=locStartTime;
-    start_time.t0_sigma=sqrt(locStartTimeVariance);
-//    start_time.t0_sigma=sqrt(locTimeVariance); //uncomment when ready
-    start_time.system=SYS_FCAL;
-    start_times.push_back(start_time);
-  }
-
-  // Sort the list of start times according to uncertainty and set 
-  // t0 for the fit to the first entry
-  sort(start_times.begin(),start_times.end(),DTrackTimeBased_T0_cmp);
+  // Set t0 for the fit to the first entry in the list. Usually this will be
+  // from the start counter.
   mStartTime=start_times[0].t0;
   mStartDetector=start_times[0].system;
 
-  //    for (unsigned int i=0;i<start_times.size();i++){
-  //  printf("%d t0 %f sys %d\n",i,start_times[i].t0,start_times[i].system);
-  // }
-  
+  //  _DBG_ << mStartDetector << " " << mStartTime << endl;
+
 }
 
 // Create a list of start times and do the fit for a particular mass hypothesis
@@ -866,15 +845,20 @@ bool DTrackTimeBased_factory::DoFit(const DTrackWireBased *track,
     status=fitter->FitTrack(track->position(),track->momentum(),
 			    track->charge(),mass,mStartTime,mStartDetector);
   }   
-  else{
-    fitter->SetFitType(DTrackFitter::kTimeBased);	
-    status = fitter->FindHitsAndFitTrack(*track, track->rt,loop, mass,track->Ndof+5,mStartTime,
-					 mStartDetector);
+  else{   
+    fitter->Reset();
+    fitter->SetFitType(DTrackFitter::kTimeBased);    
+    status = fitter->FindHitsAndFitTrack(*track, track->extrapolations,loop, 
+					 mass,track->Ndof+5,mStartTime,
+    					 mStartDetector);
+    
     // If the status is kFitNotDone, then not enough hits were attached to this
     // track using the hit-gathering algorithm.  In this case get the hits 
     // from the wire-based track
     if (status==DTrackFitter::kFitNotDone){
       //_DBG_ << " Using wire-based hits " << endl;
+      fitter->Reset();
+      fitter->SetFitType(DTrackFitter::kTimeBased);   
       fitter->AddHits(myfdchits);
       fitter->AddHits(mycdchits);
       
@@ -906,20 +890,17 @@ bool DTrackTimeBased_factory::DoFit(const DTrackWireBased *track,
   case DTrackFitter::kFitNoImprovement:
     {
       // Create a new time-based track object
-      DTrackTimeBased *timebased_track = new DTrackTimeBased;
-
-      // Copy over DKinematicData part
-      DKinematicData *track_kd = timebased_track;
-      *track_kd = *track;
+      DTrackTimeBased *timebased_track = new DTrackTimeBased();
+      *static_cast<DTrackingData*>(timebased_track) = *static_cast<const DTrackingData*>(track);
 
       timebased_track->chisq = track->chisq;
       timebased_track->Ndof = track->Ndof;
-      timebased_track->pulls = track->pulls;
+      timebased_track->pulls = track->pulls; 
+      timebased_track->extrapolations = track->extrapolations;
       timebased_track->trackid = track->id;
       timebased_track->candidateid=track->candidateid;
       timebased_track->FOM=track->FOM;
-      timebased_track->rt=track->rt;
-      
+   
       // add the list of start times
       timebased_track->start_times.assign(start_times.begin(),
 					  start_times.end());
@@ -940,7 +921,6 @@ bool DTrackTimeBased_factory::DoFit(const DTrackWireBased *track,
       timebased_track->ddEdx_CDC = locdEdx_CDC;
       timebased_track->ddx_CDC = locdx_CDC;
       timebased_track->dNumHitsUsedFordEdx_CDC = locNumHitsUsedFordEdx_CDC;
-      timebased_track->setdEdx((locNumHitsUsedFordEdx_CDC >= locNumHitsUsedFordEdx_FDC) ? locdEdx_CDC : locdEdx_FDC);
       
       timebased_track->AddAssociatedObject(track);
       _data.push_back(timebased_track);
@@ -950,51 +930,22 @@ bool DTrackTimeBased_factory::DoFit(const DTrackWireBased *track,
     }
   case DTrackFitter::kFitSuccess:
     {
-      // Allocate a DReferenceTrajectory object if needed.
-      // These each have a large enough memory footprint that
-      // it causes noticable performance problems if we allocated
-      // and deallocated them every event. Therefore, we allocate
-      // when needed, but recycle them on the next event.
-      // They are deleted in the fini method.
-      unsigned int locNumInitialReferenceTrajectories = rtv.size();
-      while(rtv.size()<=_data.size())rtv.push_back(new DReferenceTrajectory(fitter->GetDMagneticFieldMap()));
-      DReferenceTrajectory *rt = rtv[_data.size()];
-      if(locNumInitialReferenceTrajectories == rtv.size()) //didn't create a new one
-        rt->Reset();
-
       // Create a new time-based track object
-      DTrackTimeBased *timebased_track = new DTrackTimeBased;
-      
-      // Copy over DKinematicData part
-      DKinematicData *track_kd = timebased_track;
-      *track_kd = fitter->GetFitParameters();
-      rt->SetMass(mass);
-      rt->SetDGeometry(geom);
-      rt->q = timebased_track->charge();
-      rt->Swim(timebased_track->position(), timebased_track->momentum(), timebased_track->charge(),timebased_track->errorMatrix());
+      DTrackTimeBased *timebased_track = new DTrackTimeBased();
+      *static_cast<DTrackingData*>(timebased_track) = fitter->GetFitParameters();
 
-      if(rt->Nswim_steps <= 1)
-      {
-         //Track parameters are bogus (e.g. track position closer to infinity than the beamline)
-         delete timebased_track;
-         return false;
-      }
-
-      timebased_track->setPID(pid_algorithm->IDTrack(timebased_track->charge(), timebased_track->mass()));
       timebased_track->setTime(mStartTime);
-      timebased_track->rt = rt;
       timebased_track->chisq = fitter->GetChisq();
       timebased_track->Ndof = fitter->GetNdof();
-      timebased_track->pulls = fitter->GetPulls();
+      timebased_track->pulls = std::move(fitter->GetPulls());  
+      timebased_track->extrapolations=std::move(fitter->GetExtrapolations());
       timebased_track->IsSmoothed = fitter->GetIsSmoothed();
       timebased_track->trackid = track->id;
       timebased_track->candidateid=track->candidateid;
       
       // Set the start time and add the list of start times
-      timebased_track->setT0(mStartTime,start_times[0].t0_sigma, 
-			     mStartDetector);
-      timebased_track->start_times.assign(start_times.begin(),
-					      start_times.end());
+      timebased_track->setT0(mStartTime,start_times[0].t0_sigma, mStartDetector);
+      timebased_track->start_times.assign(start_times.begin(), start_times.end());
 	  
       if (DEBUG_HISTS){
 	int id=0;
@@ -1051,7 +1002,6 @@ bool DTrackTimeBased_factory::DoFit(const DTrackWireBased *track,
       timebased_track->ddEdx_CDC = locdEdx_CDC;
       timebased_track->ddx_CDC = locdx_CDC;
       timebased_track->dNumHitsUsedFordEdx_CDC = locNumHitsUsedFordEdx_CDC;
-      timebased_track->setdEdx((locNumHitsUsedFordEdx_CDC >= locNumHitsUsedFordEdx_FDC) ? locdEdx_CDC : locdEdx_FDC);
       
       // Add DTrack object as associate object
       timebased_track->AddAssociatedObject(track);
@@ -1080,20 +1030,18 @@ void DTrackTimeBased_factory::AddMissingTrackHypothesis(vector<DTrackTimeBased*>
 							double my_mass,
 							double q){
   // Create a new time-based track object
-  DTrackTimeBased *timebased_track = new DTrackTimeBased;
-	  
+  DTrackTimeBased *timebased_track = new DTrackTimeBased();
+  *static_cast<DTrackingData*>(timebased_track) = *static_cast<const DTrackingData*>(src_track);
+
   // Copy over DKinematicData part from the result of a successful fit
-  DKinematicData *track_kd = timebased_track;
-  *track_kd = *src_track;
-  timebased_track->setMass(my_mass);
-  timebased_track->setCharge(q);
+  timebased_track->setPID(IDTrack(q, my_mass));
   timebased_track->chisq = src_track->chisq;
   timebased_track->Ndof = src_track->Ndof;
   timebased_track->pulls = src_track->pulls;
+  timebased_track->extrapolations = src_track->extrapolations;
   timebased_track->trackid = src_track->id;
   timebased_track->candidateid=src_track->candidateid;
   timebased_track->FOM=src_track->FOM;
-  timebased_track->setPID(pid_algorithm->IDTrack(timebased_track->charge(), timebased_track->mass()));
   timebased_track->cdc_hit_usage=src_track->cdc_hit_usage;
   timebased_track->fdc_hit_usage=src_track->fdc_hit_usage;
   
@@ -1101,18 +1049,6 @@ void DTrackTimeBased_factory::AddMissingTrackHypothesis(vector<DTrackTimeBased*>
   timebased_track->start_times.assign(src_track->start_times.begin(),  
 				      src_track->start_times.end());
 
-  // reference trajectory
-  unsigned int locNumInitialReferenceTrajectories = rtv.size();
-  while(rtv.size()<=_data.size())rtv.push_back(new DReferenceTrajectory(fitter->GetDMagneticFieldMap()));
-  DReferenceTrajectory *rt = rtv[_data.size()];
-  if(locNumInitialReferenceTrajectories == rtv.size()) //didn't create a new one
-    rt->Reset();
-  rt->SetMass(my_mass);
-  rt->SetDGeometry(geom);
-  rt->q = timebased_track->charge();
-  rt->Swim(timebased_track->position(), timebased_track->momentum(), timebased_track->charge(),timebased_track->errorMatrix());
-  timebased_track->rt=rt;
-  
   // Get the hits used in the fit and add them as associated objects 
   vector<const DCDCTrackHit *>cdchits;
   src_track->GetT(cdchits);
@@ -1139,8 +1075,6 @@ void DTrackTimeBased_factory::AddMissingTrackHypothesis(vector<DTrackTimeBased*>
   timebased_track->ddEdx_CDC = locdEdx_CDC;
   timebased_track->ddx_CDC = locdx_CDC;
   timebased_track->dNumHitsUsedFordEdx_CDC = locNumHitsUsedFordEdx_CDC;
-  timebased_track->setdEdx((locNumHitsUsedFordEdx_CDC >= locNumHitsUsedFordEdx_FDC) ? locdEdx_CDC : locdEdx_FDC);
-  
    
   tracks_to_add.push_back(timebased_track);
 }

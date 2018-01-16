@@ -79,7 +79,7 @@ jerror_t DTACHit_factory::brun(jana::JEventLoop *eventLoop, int32_t runnumber) {
 //------------------
 // evnt
 //------------------
-jerror_t DTACHit_factory::evnt(JEventLoop *eventLoop, uint64_t eventNumber) {
+jerror_t DTACHit_factory::evnt(jana::JEventLoop *eventLoop, uint64_t eventNumber) {
 //	cout << "Building basic DTACHit objects" << endl;
 	makeFADCHits(eventLoop, eventNumber);
 	makeTDCHits(eventLoop, eventNumber);
@@ -87,7 +87,7 @@ jerror_t DTACHit_factory::evnt(JEventLoop *eventLoop, uint64_t eventNumber) {
 	return NOERROR;
 }
 
-jerror_t DTACHit_factory::readCCDB(JEventLoop *eventLoop) {
+jerror_t DTACHit_factory::readCCDB(jana::JEventLoop *eventLoop) {
 	// load scale factors
 	map<string, double> scaleFactors;
 	// a_scale (TAC_ADC_SCALE)
@@ -143,7 +143,7 @@ jerror_t DTACHit_factory::readCCDB(JEventLoop *eventLoop) {
 	return NOERROR;
 }
 
-void DTACHit_factory::makeFADCHits(JEventLoop *eventLoop,
+void DTACHit_factory::makeFADCHits(jana::JEventLoop *eventLoop,
 		uint64_t eventNumber) {
 	const DTTabUtilities* locTTabUtilities = nullptr;
 	eventLoop->GetSingle(locTTabUtilities);
@@ -223,7 +223,7 @@ void DTACHit_factory::makeFADCHits(JEventLoop *eventLoop,
 	return;
 }
 
-void DTACHit_factory::makeTDCHits(JEventLoop *eventLoop, uint64_t eventnumber) {
+void DTACHit_factory::makeTDCHits(jana::JEventLoop *eventLoop, uint64_t eventnumber) {
 	// Next, loop over TDC hits, matching them to the
 	// existing fADC hits where possible and updating
 	// their time information. If no match is found, then

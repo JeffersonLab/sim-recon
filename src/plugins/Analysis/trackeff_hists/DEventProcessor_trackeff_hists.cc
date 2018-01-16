@@ -136,8 +136,8 @@ jerror_t DEventProcessor_trackeff_hists::evnt(JEventLoop *loop, uint64_t eventnu
 	for(unsigned int i=0; i<trackcandidates.size(); i++)FillTrackInfo(trackcandidates[i], ti_can);
 	for(unsigned int i=0; i<trackWBs.size(); i++)FillTrackInfo(trackWBs[i], ti_trkwb);
 	for(unsigned int i=0; i<trackTBs.size(); i++){
-		trackTBs[i]->dChargedTrackHypotheses[0]->GetT(locAssociatedTrackTimeBasedVector);
-		FillTrackInfo(locAssociatedTrackTimeBasedVector[0], ti_trktb);
+		auto locTrackTimeBased = trackTBs[i]->dChargedTrackHypotheses[0]->Get_TrackTimeBased();
+		FillTrackInfo(locTrackTimeBased, ti_trktb);
 	}
 
 	// The highest (and therefore, most interesting) GEANT mechansim for each track in the
@@ -160,7 +160,7 @@ jerror_t DEventProcessor_trackeff_hists::evnt(JEventLoop *loop, uint64_t eventnu
 		}
 		last_p[track] = p;
 	}
-	
+
 	// Although we are only filling objects local to this plugin, TTree::Fill() periodically writes to file: Global ROOT lock
 	japp->RootWriteLock(); //ACQUIRE ROOT LOCK
 
@@ -190,7 +190,7 @@ jerror_t DEventProcessor_trackeff_hists::evnt(JEventLoop *loop, uint64_t eventnu
 	}
 	
 	japp->RootUnLock(); //RELEASE ROOT LOCK
-	
+
 	return NOERROR;
 }
 

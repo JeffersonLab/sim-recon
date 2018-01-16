@@ -92,15 +92,13 @@ jerror_t DTrackWireBased_factory_THROWN::evnt(JEventLoop *loop, uint64_t eventnu
 
 	for(unsigned int i=0; i< mcthrowns.size(); i++){
 		const DMCThrown *thrown = mcthrowns[i];
-		const DKinematicData *kd_thrown = thrown;
 
 		if(fabs(thrown->charge())<1)continue;
 
 		// First, copy over the DKinematicData part
-		DTrackWireBased *track = new DTrackWireBased;
-		DKinematicData *kd_track = track;
-		*kd_track = *kd_thrown;
-		
+		DTrackWireBased *track = new DTrackWireBased();
+	  *static_cast<DKinematicData*>(track) = *static_cast<const DKinematicData*>(thrown);
+
 		// Add DMCThrown as associated object
 		track->AddAssociatedObject(thrown);
 
@@ -118,7 +116,7 @@ jerror_t DTrackWireBased_factory_THROWN::evnt(JEventLoop *loop, uint64_t eventnu
       if(locNumInitialReferenceTrajectories == rt_pool.size()) //didn't create a new one
         rt->Reset();
       rt->q = track->charge();
-		track->rt = rt;
+	       
 		DVector3 pos = track->position();
 		DVector3 mom = track->momentum();
 		rt->SetMass(thrown->mass());

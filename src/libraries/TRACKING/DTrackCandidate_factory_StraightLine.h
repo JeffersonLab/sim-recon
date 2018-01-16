@@ -148,6 +148,10 @@ class DTrackCandidate_factory_StraightLine:public jana::JFactory<DTrackCandidate
       // Diagnostic histograms
       TH2F *Hvres;
       TH1I *hFDCOccTrkFind, *hFDCOccTrkFit, *hFDCOccTrkSmooth;
+
+      // pool of TMatrix's
+      shared_ptr<DResourcePool<TMatrixFSym>> dResourcePool_TMatrixFSym;
+
 };
 
 #endif // _DTrackCandidate_factory_StraightLine_
