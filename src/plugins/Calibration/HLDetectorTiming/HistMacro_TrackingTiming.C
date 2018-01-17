@@ -19,7 +19,7 @@
 	TH1I* FDC_Strip_Timing     = (TH1I*)gDirectory->Get("FDC/FDCHit Cathode time");
 	TH1I* FDC_Wire_Timing     = (TH1I*)gDirectory->Get("FDC/FDCHit Wire time");
 	TH1I* FDC_Earliest_Time  = (TH1I*)gDirectory->Get("TRACKING/Earliest Flight-time Corrected FDC Time");
-	TH2I* FDC_Wire_Module_Time  = (TH1I*)gDirectory->Get("FDC/FDCHit Wire time vs. module");
+	TH2I* FDC_Wire_Module_Time  = (TH2I*)gDirectory->Get("FDC/FDCHit Wire time vs. module");
 
 	//Get/Make Canvas
 	TCanvas *locCanvas = NULL;
