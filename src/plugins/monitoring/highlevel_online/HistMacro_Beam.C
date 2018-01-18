@@ -164,7 +164,7 @@ string amorphous_label = "Normalized to Amorphous run 40861";
 			locHist_BeamEnergy_norm->SetLineWidth(2);
 			locHist_BeamEnergy_norm->SetStats(0);		
 			locHist_BeamEnergy_norm->GetYaxis()->SetRangeUser(min, max);
-			locHist_BeamEnergy_norm->Draw();
+			locHist_BeamEnergy_norm->Draw("HIST");
 			
 			// If diff is > 0.3 then assume this is not an amorphous run
 			// and draw a label of the peak energy
