@@ -10,9 +10,9 @@
 
 {
 // This taken from the bin contents of the BeamEnergy histogram from the
-// online monitoring root file for run 40859, an amorphous target run.
+// online monitoring root file for run 40861, an amorphous target run.
 // The macro used is in /gluonwork1/Users/davidl/2017.02.08.amorphous_norm
-string amorphous_label = "Normalized to Amorphous run 40859"
+string amorphous_label = "Normalized to Amorphous run 40861";
 
 	Double_t amorphous_data[] = {
 		        0.0,         0.0,         0.0,         0.0,         0.0,         0.0,         0.0,         0.0,         0.0,         0.0, 
@@ -20,26 +20,27 @@ string amorphous_label = "Normalized to Amorphous run 40859"
 		        0.0,         0.0,         0.0,         0.0,         0.0,         0.0,         0.0,         0.0,         0.0,         0.0, 
 		        0.0,         0.0,         0.0,         0.0,         0.0,         0.0,         0.0,         0.0,         0.0,         0.0, 
 		        0.0,         0.0,         0.0,         0.0,         0.0,         0.0,         0.0,         0.0,         0.0,         0.0, 
-		        0.0,         0.0,         0.0,         0.0,         0.0,         0.0,         0.0,         0.0,         0.0,         0.0, 
-		        0.0,         0.0,         0.0,         0.0,         0.0,         0.0,         0.0,         0.0,         0.0,         0.0, 
-		        0.0,         0.0,         0.0,         0.0,         0.0,         0.0,         0.0,         0.0,         0.0,         0.0, 
-		        0.0,         0.0,         0.0,         0.0,         0.0,         0.0,         0.0,         0.0,         0.0,         0.0, 
-		        0.0,         0.0,         0.0,         0.0,         0.0,         0.0,         0.0,         0.0,         0.0,         0.0, 
-		        0.0,         0.0,         0.0,         0.0,         0.0,         0.0,         0.0,         0.0,         0.0,         0.0, 
-		        0.0,         0.0,         0.0,         0.0,         0.0,         0.0,         0.0,         0.0,         0.0,         0.0, 
-		        0.0,         0.0,         0.0,         0.0,         0.0,         0.0,         0.0,         0.0,         0.0,         0.0, 
-		        0.0,         0.0,         0.0,         0.0,         0.0,         0.0,         0.0,         0.0,         0.0,         0.0, 
-		        0.0,         0.0,         0.0,         0.0,         0.0,         0.0,         0.0,         0.0,         0.0,         0.0, 
-		        0.0,         0.0,         0.0,         0.0,         0.0,         0.0,         0.0,    138246.0,    617290.0,    502454.0, 
-		   616685.0,    257471.0,    479456.0,    594804.0,    563412.0,    571236.0,    580771.0,    560437.0,    537792.0,    530927.0, 
-		   589641.0,    578713.0,    560731.0,    634862.0,    820555.0,    471492.0,    599485.0,    410705.0,         0.0,         0.0, 
-		   304424.0,    604123.0,    824376.0,    525834.0,    787048.0,    541615.0,    814464.0,    786618.0,    777251.0,    738247.0, 
-		   708714.0,    724749.0,    665962.0,    656366.0,    763830.0,    650872.0,    655272.0,    627753.0,    622752.0,    583896.0, 
-		   558070.0,    869944.0,    597334.0,    592839.0,    626209.0,    603560.0,    595774.0,    587302.0,    833660.0,    542953.0, 
-		   782018.0,    498139.0,    691038.0,    704388.0,    348854.0,    651323.0,    610404.0,    825191.0,    530057.0,    499624.0, 
-		   694203.0,    425595.0,    722407.0,    431025.0,    586531.0,    618416.0,    477663.0,    360525.0,     71304.0,         0.0, 
+		        0.0,         0.0,         0.0,         0.0,         0.0,         0.0,         0.0,         0.0,    152560.0,    153062.0, 
+		   141356.0,    138275.0,         0.0,    129647.0,    137310.0,    133829.0,    131843.0,    129178.0,    127134.0,         0.0, 
+		   120260.0,    121782.0,    129086.0,    121160.0,    119901.0,    114748.0,    109240.0,         0.0,    105599.0,    105109.0, 
+		   102468.0,    102240.0,         0.0,     99774.0,     99206.0,     93636.0,         0.0,     95037.0,     89455.0,     87777.0, 
+		    88522.0,     86530.0,     84880.0,         0.0,     86920.0,     79782.0,     77948.0,     84728.0,     76387.0,     79790.0, 
+		        0.0,     78672.0,     76306.0,     72385.0,     72400.0,     67975.0,     72838.0,     68420.0,         0.0,     67216.0, 
+		    63762.0,     65526.0,     65630.0,     63138.0,     62310.0,     60979.0,         0.0,     57212.0,     58397.0,     58115.0, 
+		    60111.0,     56963.0,     54533.0,         0.0,     53315.0,     69082.0,     65955.0,     81938.0,     62944.0,     80592.0, 
+		        0.0,     61786.0,     63703.0,     73993.0,     75311.0,     70699.0,     69845.0,     69653.0,         0.0,     67629.0, 
+		    56616.0,     56736.0,     56472.0,     54619.0,         0.0,     41760.0,     75588.0,     51521.0,     52402.0,     49899.0, 
+		    46421.0,         0.0,     83111.0,    106978.0,    139786.0,    158621.0,    129152.0,    109128.0,     76117.0,     62367.0, 
+		    76471.0,     47080.0,     59620.0,     73721.0,     69994.0,     71386.0,     72468.0,     69943.0,     67193.0,     65427.0, 
+		    68838.0,     69974.0,     68273.0,     77890.0,     95574.0,     58184.0,     73246.0,     79133.0,     57526.0,     77487.0, 
+		   113940.0,     75896.0,    102969.0,     65882.0,     97830.0,     67337.0,    101541.0,     97758.0,     97338.0,     92297.0, 
+		    87740.0,     90587.0,     82741.0,     81521.0,     95737.0,     81202.0,     81716.0,     78106.0,     77413.0,     72959.0, 
+		    69698.0,    108195.0,     74656.0,     74089.0,     77941.0,     75088.0,     74084.0,     73449.0,    104021.0,     67345.0, 
+		    97073.0,     61825.0,     86248.0,     87746.0,     43149.0,     81087.0,     76011.0,    101917.0,     65418.0,     62122.0, 
+		    85810.0,     52782.0,     88565.0,     52779.0,     71546.0,     73957.0,     56979.0,     41076.0,      8051.0,         0.0, 
 		        0.0,         0.0,         0.0,         0.0,         0.0,         0.0,         0.0,         0.0,         0.0,         0.0, 
 	0.0};
+
 
 	TDirectory *locTopDirectory = gDirectory;
 
@@ -115,20 +116,12 @@ string amorphous_label = "Normalized to Amorphous run 40859"
 		}
 		if(locHist_BeamEnergy_norm){
 
-			locHist_BeamEnergy_norm->GetXaxis()->SetTitleSize(0.05);
-			locHist_BeamEnergy_norm->GetXaxis()->SetLabelSize(0.05);
-			locHist_BeamEnergy_norm->GetYaxis()->SetLabelSize(0.03);
-			locHist_BeamEnergy_norm->SetFillStyle(3001);
-			locHist_BeamEnergy_norm->SetFillColor(kOrange);
-			locHist_BeamEnergy_norm->SetLineColor(kRed-2);
-			locHist_BeamEnergy_norm->SetLineWidth(2);
-			locHist_BeamEnergy_norm->SetStats(0);		
 
 			// Normalize to amorphous baseline 
 			double scale = 0.0;
 			for(int ibin=1; ibin<=locHist_BeamEnergy_norm->GetNbinsX(); ibin++){
 				Double_t norm = amorphous_data[ibin-1];
-				if( norm < 100000.0) continue;
+				if( norm < 10000.0) continue;
 
 				Double_t v = (Double_t)locHist_BeamEnergy->GetBinContent(ibin);
 				v /= norm;
@@ -142,7 +135,7 @@ string amorphous_label = "Normalized to Amorphous run 40859"
 			// Find leftmost non-zero bin 
 			double left_scale = 0.0;
 			for(int ibin=1; ibin<=locHist_BeamEnergy_norm->GetNbinsX(); ibin++){
-				if( amorphous_data[ibin-1] < 100000.0) continue;
+				if( amorphous_data[ibin-1] < 10000.0) continue;
 				Double_t v = (Double_t)locHist_BeamEnergy_norm->GetBinContent(ibin);
 				if(v>0.1){
 					left_scale = v;
@@ -155,13 +148,21 @@ string amorphous_label = "Normalized to Amorphous run 40859"
 			double min = left_scale - diff*0.1;
 			double max = left_scale + diff*1.2;
 			if( (max-min) < 0.4 ){
-				min = 0.5;
-				max =1.5;
+				min = 0.25;
+				if(max<1.50) max =1.50;
 			}
 			
-			max = 1.50;
-			min = 0.25;
+			// max = 1.50;
+			// min = 0.25;
 			
+			locHist_BeamEnergy_norm->GetXaxis()->SetTitleSize(0.05);
+			locHist_BeamEnergy_norm->GetXaxis()->SetLabelSize(0.05);
+			locHist_BeamEnergy_norm->GetYaxis()->SetLabelSize(0.03);
+			locHist_BeamEnergy_norm->SetFillStyle(3001);
+			locHist_BeamEnergy_norm->SetFillColor(kOrange);
+			locHist_BeamEnergy_norm->SetLineColor(kRed-2);
+			locHist_BeamEnergy_norm->SetLineWidth(2);
+			locHist_BeamEnergy_norm->SetStats(0);		
 			locHist_BeamEnergy_norm->GetYaxis()->SetRangeUser(min, max);
 			locHist_BeamEnergy_norm->Draw();
 			

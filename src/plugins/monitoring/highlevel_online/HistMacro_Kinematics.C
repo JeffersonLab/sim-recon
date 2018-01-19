@@ -65,7 +65,7 @@
 		BetaVsP->GetYaxis()->SetLabelSize(0.05);
 		BetaVsP->SetStats(0);
 		BetaVsP->Draw("colz");
-		//gPad->SetLogz();
+		gPad->SetLogz();
 		gPad->Update();
 	}
 
