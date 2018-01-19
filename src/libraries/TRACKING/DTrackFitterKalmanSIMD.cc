@@ -575,8 +575,7 @@ DTrackFitterKalmanSIMD::DTrackFitterKalmanSIMD(JEventLoop *loop):DTrackFitter(lo
    map<string, double> beam_vals;
    jcalib->Get("PHOTON_BEAM/beam_spot",beam_vals);
    beam_center.Set(beam_vals["x"],beam_vals["y"]); 
-   double beam_dir_z=beam_vals["zdir"];
-   beam_dir.Set(beam_vals["xdir"]/beam_dir_z,beam_vals["y"]/beam_dir_z);
+   beam_dir.Set(beam_vals["dxdz"],beam_vals["dydz"]);
    beam_z0=beam_vals["z"];
    
    // Inform user of some configuration settings
