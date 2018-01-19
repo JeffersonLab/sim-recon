@@ -49,16 +49,17 @@
 	if(rf_occ){
 		
 		// Draw axes
-		TH1D *rf_axes = (TH1D *)dir->Get("rf_axes");
-		if(!rf_axes) rf_axes = (TH1D*)rf_occ->Clone("rf_axes");
+		//TH1D *rf_axes = (TH1D *)dir->Get("rf_axes");
+		//if(!rf_axes) rf_axes = (TH1D*)rf_occ->Clone("rf_axes");
 
-		rf_axes->SetStats(0);
-		rf_axes->GetYaxis()->SetRangeUser(0.0, 1.05*rf_occ->GetMaximum());
-		rf_axes->Draw();
+		//rf_axes->SetStats(0);
+		//rf_axes->GetYaxis()->SetRangeUser(0.0, 1.05*rf_occ->GetMaximum());
+		//rf_axes->Draw();
+		rf_occ->SetStats(0);
 		rf_occ->SetFillColor(kBlue);
 		rf_occ->SetLineColor(kBlack);
 		rf_occ->SetLineWidth(5);
-		rf_occ->Draw("same");
+		rf_occ->Draw("HIST");
 		
 		char str[256];
 		sprintf(str,"%0.0f events", Nevents);
@@ -77,7 +78,7 @@
 		tpol_occ->SetFillColor(kOrange);
 		tpol_occ->SetLineWidth(5);
 		tpol_occ->SetLineColor(kBlack);
-		tpol_occ->Draw();
+		tpol_occ->Draw("HIST");
 	}
 
 }

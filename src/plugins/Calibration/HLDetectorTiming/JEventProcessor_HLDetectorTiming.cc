@@ -29,6 +29,63 @@ void InitPlugin(JApplication *app){
 }
 } // "C"
 
+static int Get_FDCTDC_crate_slot(int mod, string &act_crate, int &act_slot){ //expected mod range from 1 to 48
+  int LH_module=(mod-1)%2; //low (1-48) or high (49-96) wire number (0/1)
+  int package=(mod-1)/12; //package number (0-3)
+  int cell=(mod-1-package*12)/2;  //cell number (0-5)
+
+  int rotation = -45 + 90*LH_module -60*cell;
+  if(rotation<-180)rotation+=360;
+
+  int crate=0; // (0-3) actual crates are ROCFDC1,4,13,14
+  if(package<2){
+    crate=0;
+    if(rotation>0)crate=3;
+  } else {
+    crate=1;
+    if(rotation>0)crate=2;
+  }
+
+  int slot=0; //(0-11) actual slots are 3-10,13-16
+  if(rotation<0){
+    if(cell==0){
+      slot=0;
+    } else if (cell==1) {
+      slot=1+LH_module;
+    } else if (cell==2) {
+      slot=3+LH_module;
+    } else {
+      slot=5;
+    }
+  } else {
+    if(cell==0){
+      slot=0;
+    } else if (cell==3) {
+      slot=1;
+    } else if (cell==4) {
+      slot=2+LH_module;
+    } else {
+      slot=4+LH_module;
+    }
+  } 
+  slot+=(package%2)*6;
+
+  //string act_crate="ROCFDC1";
+  act_crate="ROCFDC1";
+  if(crate==1)act_crate="ROCFDC4";
+  if(crate==2)act_crate="ROCFDC13";
+  if(crate==3)act_crate="ROCFDC14";
+  //int act_slot=slot+3;
+  act_slot=slot+3;
+  if(act_slot>10)act_slot+=2;
+
+  //cout<<"        "<<act_crate<<endl;
+  //cout<<" actual slot="<<act_slot<<endl;
+
+  return crate*12+slot+1; //returns modules in crate/slot sequence (1-48)
+
+}
+
 
 //------------------
 // JEventProcessor_HLDetectorTiming (Constructor)
@@ -98,7 +155,8 @@ jerror_t JEventProcessor_HLDetectorTiming::init(void)
 	    NBINS_MATCHING = 1000; MIN_MATCHING_T = -10; MAX_MATCHING_T = 10;
 	} else {
 	    NBINS_TAGGER_TIME = 1600; MIN_TAGGER_TIME = -200; MAX_TAGGER_TIME = 400;
-	    NBINS_MATCHING = 1000; MIN_MATCHING_T = -100; MAX_MATCHING_T = 400;
+	    //NBINS_MATCHING = 1000; MIN_MATCHING_T = -100; MAX_MATCHING_T = 400;
+	    NBINS_MATCHING = 800; MIN_MATCHING_T = -100; MAX_MATCHING_T = 100;
 	}
     } else if (DO_VERIFY){
         NBINS_TAGGER_TIME = 200; MIN_TAGGER_TIME = -20; MAX_TAGGER_TIME = 20;
@@ -237,12 +295,12 @@ jerror_t JEventProcessor_HLDetectorTiming::evnt(JEventLoop *loop, uint64_t event
                     "FDCHit Wire time;t [ns];", nBins, xMin, xMax);
 	    // Keep track of module/crate level shifts
 	    // two F1TDC modules per wire layer
-	    int module = 2 * fdcHitVector[i]->gLayer;
+	    int module = 2 * fdcHitVector[i]->gLayer - 1;  // layers start counting at 1
 	    if(fdcHitVector[i]->element > 48)
 		    module++;
 	    Fill2DHistogram ("HLDetectorTiming", "FDC", "FDCHit Wire time vs. module",
 			     module, fdcHitVector[i]->t,
-			     "FDCHit Wire time; module number; t [ns];", 
+			     "FDCHit Wire time; module/slot; t [ns];", 
 			     48, 0.5, 48.5, 400, -200, 600);
 
         }
@@ -848,6 +906,23 @@ jerror_t JEventProcessor_HLDetectorTiming::erun(void)
    // This is called whenever the run number changes, before it is
    // changed to give you a chance to clean up before processing
    // events from the next run number.
+
+  // set some histogram properties
+
+
+  TH2I *fdc_time_module_hist = (TH2I*)gDirectory->Get("HLDetectorTiming/FDC/FDCHit Wire time vs. module");
+  if(fdc_time_module_hist != NULL) {
+    string act_crate;
+    int act_slot;
+    for(int ibin=1; ibin<=48; ibin++){
+      int mod = Get_FDCTDC_crate_slot(ibin, act_crate, act_slot);
+      stringstream ss;
+      ss << act_crate << "/" << act_slot;
+      fdc_time_module_hist->GetXaxis()->SetBinLabel(ibin, ss.str().c_str());
+    }
+    fdc_time_module_hist->LabelsOption("v");
+  }
+  
 
    return NOERROR;
 }

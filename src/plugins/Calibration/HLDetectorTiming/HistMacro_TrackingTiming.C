@@ -106,7 +106,9 @@
     gPad->SetGrid();
     if(FDC_Wire_Module_Time != NULL)
     {
-        FDC_Wire_Module_Time->Draw("COLZ");
+      gPad->SetMargin(0.1,0.1,0.15,0.1);
+      FDC_Wire_Module_Time->GetXaxis()->SetTitle();
+      FDC_Wire_Module_Time->Draw("COLZ");
     }
     else{
         TPaveText *text = new TPaveText(0.1, 0.4, 0.9, 0.6);
