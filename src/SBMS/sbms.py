@@ -632,24 +632,35 @@ def AddCCDB(env):
 		env.AppendUnique(LIBPATH = CCDB_LIBPATH)
 		env.AppendUnique(LIBS    = CCDB_LIBS)
 
+##################################
+# SQLite
+##################################
+def AddSQLite(env):
+	AddSQLite.SQLITE_LINKFLAGS= "-lsqlite3"
+	AddLinkFlags(env, AddSQLite.SQLITE_LINKFLAGS)
+
 
 ##################################
 # RCDB
 ##################################
 def AddRCDB(env):
 	rcdb_home = os.getenv('RCDB_HOME')
-	env.Append(CPPDEFINES='RCDB_MYSQL')
-#	env.Append(CPPDEFINES='RCDB_SQLITE')
 	if(rcdb_home != None) :
 		env.AppendUnique(CXXFLAGS = ['-DHAVE_RCDB'])
-		RCDB_CPPPATH = ["%s/cpp/include" % (rcdb_home), "%s/cpp/include/SQLite" % (rcdb_home)]
-		RCDB_LIBPATH = "%s/cpp/lib" % (rcdb_home)
-		RCDB_LIBS = ["rcdb"]
+		RCDB_CPPPATH = ["%s/cpp/include" % (rcdb_home)]
 		env.AppendUnique(CPPPATH = RCDB_CPPPATH)
-		env.AppendUnique(LIBPATH = RCDB_LIBPATH)
-		env.AppendUnique(LIBS    = RCDB_LIBS)
+ 
+		# add MySQL
+		env.Append(CPPDEFINES='RCDB_MYSQL')
 		AddMySQL(env)
 
+		# add SQlite
+		env.Append(CPPDEFINES='RCDB_SQLITE')
+		env.Append(CPPDEFINES='SQLITE_USE_LEGACY_STRUCT=ON')
+		env.AppendUnique(CPPPATH = '/home/marki/Desktop/SQLiteCpp/include')
+		env.AppendUnique(LIBPATH = '/home/marki/Desktop/SQLiteCpp/build')
+		env.AppendUnique(LIBS    = 'SQLiteCpp')
+		AddSQLite(env)
 
 ##################################
 # EVIO
