@@ -636,6 +636,13 @@ def AddCCDB(env):
 # SQLite
 ##################################
 def AddSQLite(env):
+	sqlitecpp_home = os.getenv('SQLITECPP_HOME')
+        env.Append(CPPDEFINES='SQLITE_USE_LEGACY_STRUCT=ON')
+        SQLITECPP_CPPPATH = ["%s/include" % (sqlitecpp_home)]
+        env.AppendUnique(CPPPATH = SQLITECPP_CPPPATH)
+        SQLITECPP_LIBPATH = ["%s/lib" % (sqlitecpp_home)]
+        env.AppendUnique(LIBPATH = SQLITECPP_LIBPATH)
+        env.AppendUnique(LIBS    = 'SQLiteCpp')
 	AddSQLite.SQLITE_LINKFLAGS= "-lsqlite3"
 	AddLinkFlags(env, AddSQLite.SQLITE_LINKFLAGS)
 
@@ -656,10 +663,6 @@ def AddRCDB(env):
 
 		# add SQlite
 		env.Append(CPPDEFINES='RCDB_SQLITE')
-		env.Append(CPPDEFINES='SQLITE_USE_LEGACY_STRUCT=ON')
-		env.AppendUnique(CPPPATH = '/home/marki/Desktop/SQLiteCpp/include')
-		env.AppendUnique(LIBPATH = '/home/marki/Desktop/SQLiteCpp/build')
-		env.AppendUnique(LIBS    = 'SQLiteCpp')
 		AddSQLite(env)
 
 ##################################
