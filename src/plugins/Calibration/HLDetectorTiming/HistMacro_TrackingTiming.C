@@ -4,7 +4,7 @@
 // hnamepath: /HLDetectorTiming/TRACKING/Earliest CDC Time Minus Matched SC Time
 // hnamepath: /HLDetectorTiming/TRACKING/Earliest Flight-time Corrected CDC Time
 // hnamepath: /HLDetectorTiming/TRACKING/Earliest Flight-time Corrected FDC Time
-// hnamepath: /HLDetectorTiming/TRACKING/FDCHit Wire time vs. module
+// hnamepath: /HLDetectorTiming/FDC/FDCHit Wire time vs. module
 {
 	//Goto Path
 	TDirectory *locDirectory = (TDirectory*)gDirectory->FindObjectAny("HLDetectorTiming");
