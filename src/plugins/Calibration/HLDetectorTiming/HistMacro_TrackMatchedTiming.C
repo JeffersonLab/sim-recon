@@ -1,5 +1,5 @@
 // hnamepath: /HLDetectorTiming/CDC/CDCHit time
-// hnamepath: /HLDetectorTiming/FDC/FDCHit time
+// hnamepath: /HLDetectorTiming/FDC/FDCHit Cathode time
 // hnamepath: /HLDetectorTiming/TRACKING/Earliest CDC Time Minus Matched SC Time
 // hnamepath: /HLDetectorTiming/TRACKING/FCAL - SC Target Time
 // hnamepath: /HLDetectorTiming/TRACKING/TOF - SC Target Time
