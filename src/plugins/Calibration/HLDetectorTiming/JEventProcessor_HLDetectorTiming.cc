@@ -410,15 +410,13 @@ jerror_t JEventProcessor_HLDetectorTiming::evnt(JEventLoop *loop, uint64_t event
 	Fill2DHistogram("HLDetectorTiming", "FCAL", "FCALHit Occupancy",
 			fcalHitVector[i]->row, fcalHitVector[i]->column, 
 			"FCAL Hit Occupancy; column; row",
-			fcalGeom.numActiveBlocks(), 0.5, fcalGeom.numActiveBlocks() + 0.5, 
-			fcalGeom.numActiveBlocks(), 0.5, fcalGeom.numActiveBlocks() + 0.5); 
+			61, -1.5, 59.5, 61, -1.5, 59.5);
 	double locTime = ( fcalHitVector[i]->t - fcalHitEwtT )*k_to_nsec;
 	//Fill2DHistogram("HLDetectorTiming", "FCAL", "FCALHit Local Time",
 	Fill2DWeightedHistogram("HLDetectorTiming", "FCAL", "FCALHit Local Time",
 				fcalHitVector[i]->row, fcalHitVector[i]->column, locTime,
 				"FCAL Hit Local Time [ns]; column; row",
-				fcalGeom.numActiveBlocks(), 0.5, fcalGeom.numActiveBlocks() + 0.5, 
-				fcalGeom.numActiveBlocks(), 0.5, fcalGeom.numActiveBlocks() + 0.5); 
+				61, -1.5, 59.5, 61, -1.5, 59.5);
 
         if (DO_OPTIONAL){
             Fill2DHistogram("HLDetectorTiming", "FCAL", "FCALHit Per Channel Time",
