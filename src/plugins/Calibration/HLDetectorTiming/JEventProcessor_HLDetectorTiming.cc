@@ -385,18 +385,42 @@ jerror_t JEventProcessor_HLDetectorTiming::evnt(JEventLoop *loop, uint64_t event
         Fill1DHistogram ("HLDetectorTiming", "TOF", "TOFHit time", tofHitVector[i]->t,
                 "TOFHit time;t [ns];", nBins, xMin, xMax);
     }
+
+    // from FCAL_online:  find energy weighted average time for FCAL hits, useful as a t0
+    double fcalHitETot = 0;
+    double fcalHitEwtT = 0;
+    for (i = 0; i < fcalHitVector.size(); i++){
+      fcalHitETot += fcalHitVector[i]->E;
+      fcalHitEwtT += fcalHitVector[i]->E * fcalHitVector[i]->t;
+    }
+    fcalHitEwtT /= fcalHitETot;
+
     for (i = 0; i < fcalHitVector.size(); i++){
         Fill1DHistogram ("HLDetectorTiming", "FCAL", "FCALHit time", fcalHitVector[i]->t,
                 "FCALHit time;t [ns];", nBins, xMin, xMax);
+
+	// extract the FCAL Geometry
+	vector<const DFCALGeometry*> fcalGeomVect;
+	loop->Get( fcalGeomVect );
+	if (fcalGeomVect.size() < 1){
+	  cout << "FCAL Geometry not available?" << endl;
+	  return OBJECT_NOT_AVAILABLE;
+	}
+	const DFCALGeometry& fcalGeom = *(fcalGeomVect[0]);
+	Fill2DHistogram("HLDetectorTiming", "FCAL", "FCALHit Occupancy",
+			fcalHitVector[i]->row, fcalHitVector[i]->column, 
+			"FCAL Hit Occupancy; column; row",
+			fcalGeom.numActiveBlocks(), 0.5, fcalGeom.numActiveBlocks() + 0.5, 
+			fcalGeom.numActiveBlocks(), 0.5, fcalGeom.numActiveBlocks() + 0.5); 
+	double locTime = ( fcalHitVector[i]->t - fcalHitEwtT )*k_to_nsec;
+	//Fill2DHistogram("HLDetectorTiming", "FCAL", "FCALHit Local Time",
+	Fill2DWeightedHistogram("HLDetectorTiming", "FCAL", "FCALHit Local Time",
+				fcalHitVector[i]->row, fcalHitVector[i]->column, locTime,
+				"FCAL Hit Local Time [ns]; column; row",
+				fcalGeom.numActiveBlocks(), 0.5, fcalGeom.numActiveBlocks() + 0.5, 
+				fcalGeom.numActiveBlocks(), 0.5, fcalGeom.numActiveBlocks() + 0.5); 
+
         if (DO_OPTIONAL){
-            // extract the FCAL Geometry
-            vector<const DFCALGeometry*> fcalGeomVect;
-            loop->Get( fcalGeomVect );
-            if (fcalGeomVect.size() < 1){
-                cout << "FCAL Geometry not available?" << endl;
-                return OBJECT_NOT_AVAILABLE;
-            }
-            const DFCALGeometry& fcalGeom = *(fcalGeomVect[0]);
             Fill2DHistogram("HLDetectorTiming", "FCAL", "FCALHit Per Channel Time",
                     fcalGeom.channel(fcalHitVector[i]->row, fcalHitVector[i]->column), fcalHitVector[i]->t,
                     "FCAL Per Channel Hit time; channel; t [ns]",
@@ -728,6 +752,10 @@ jerror_t JEventProcessor_HLDetectorTiming::evnt(JEventLoop *loop, uint64_t event
                 flightTimeCorrectedSCTime - locShiftedTime,
                 title,
                 NBINS_RF_COMPARE, MIN_RF_COMPARE, MAX_RF_COMPARE);
+           Fill1DHistogram("HLDetectorTiming", "TRACKING", "SC - RF Time",
+                 flightTimeCorrectedSCTime - thisRFBunch->dTime,
+                 "t_{SC} - t_{RF} at Target; t_{SC} - t_{RF} at Target [ns]; Entries",
+                 NBINS_MATCHING, MIN_MATCHING_T, MAX_MATCHING_T);
 
         // Get the pulls vector from the track
 			auto thisTimeBasedTrack = pionHypothesis->Get_TrackTimeBased();
