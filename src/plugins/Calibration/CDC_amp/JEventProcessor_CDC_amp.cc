@@ -6,49 +6,7 @@
 //
 
 #include "JEventProcessor_CDC_amp.h"
-using namespace std;
-using namespace jana;
 
-
-#include <TRACKING/DTrackFitter.h>
-#include <TRACKING/DTrackTimeBased.h>
-
-#include "CDC/DCDCTrackHit.h"
-#include "CDC/DCDCHit.h"
-#include "CDC/DCDCDigiHit.h"
-#include "DAQ/Df125CDCPulse.h"
-
-#include "DAQ/Df125Config.h"
-#include "TRIGGER/DTrigger.h"
-
-#include <stdint.h>
-#include <vector>
-#include <TMath.h>
-
-#include <TDirectory.h>
-
-#include <TH2.h>
-#include <TH1.h>
-
-
-static TH1I *asum = NULL; 
-static TH2I *an = NULL; 
-
-static TH1I *atsum = NULL; 
-static TH2I *atn = NULL; 
-
-static TH1I *attsum = NULL; 
-static TH2I *attn = NULL; 
-
-
-static TH1D *qsum = NULL; 
-static TH2D *qn = NULL; 
-
-static TH1D *qtsum = NULL; 
-static TH2D *qtn = NULL; 
-
-static TH1D *qttsum = NULL; 
-static TH2D *qttn = NULL; 
 
 
 // Routine used to create our JEventProcessor
@@ -90,17 +48,17 @@ jerror_t JEventProcessor_CDC_amp::init(void)
 
 
 
-  asum = new TH1I("asum","CDC amplitude (all hits);amplitude - pedestal",512,0,512);
-  an = new TH2I("an","CDC amplitude vs n (all hits); n; amplitude - pedestal",3522,0,3522,512,0,512);
+  asum = new TH1I("asum","CDC amplitude (all hits);amplitude - pedestal",4096,0,4096);
+  an = new TH2I("an","CDC amplitude vs n (all hits); n; amplitude - pedestal",3522,0,3522,4096,0,4096);
 
-  atsum = new TH1I("atsum","CDC amplitude (hits on tracks);amplitude - pedestal",512,0,512);
-  atn = new TH2I("atn","CDC amplitude vs n (hits on tracks); n; amplitude - pedestal",3522,0,3522,512,0,512);
-
-
-  attsum = new TH1I("attsum","CDC amplitude (tracks, theta 85-95 deg, z 50-80cm);amplitude - pedestal",512,0,512);
-  attn = new TH2I("attn","CDC amplitude vs n (tracks, theta 85-95 deg, z 50-80cm); n; amplitude - pedestal",3522,0,3522,512,0,512);
+  atsum = new TH1I("atsum","CDC amplitude (hits on tracks);amplitude - pedestal",4096,0,4096);
+  atn = new TH2I("atn","CDC amplitude vs n (hits on tracks); n; amplitude - pedestal",3522,0,3522,4096,0,4096);
 
 
+  attsum = new TH1I("attsum","CDC amplitude (tracks, theta 85-95 deg, z 50-80cm);amplitude - pedestal",4096,0,4096);
+  attn = new TH2I("attn","CDC amplitude vs n (tracks, theta 85-95 deg, z 50-80cm); n; amplitude - pedestal",3522,0,3522,4096,0,4096);
+
+  atheta = new TH2D("atheta","CDC amplitude vs theta (hits on tracks); theta; amplitude - pedestal",180,0,180,4096,0,4096);
 
 
   qsum = new TH1D("qsum","charge (all hits);charge",1000,0,4e4);
@@ -111,6 +69,10 @@ jerror_t JEventProcessor_CDC_amp::init(void)
 
   qttsum = new TH1D("qttsum","charge (tracks, theta 85-95 deg, z 50-80 cm);charge",1000,0,4e4);
   qttn = new TH2D("qttn","charge vs n (tracks, theta 85-95 deg, z 50-80 cm); n; charge",3522,0,3522,400,0,4e4);
+
+  qtheta = new TH2D("qtheta","charge vs theta (hits on tracks); theta; charge",180,0,180,1000,0,4e4);
+
+
 
   main->cd();
 
@@ -123,6 +85,9 @@ jerror_t JEventProcessor_CDC_amp::init(void)
 jerror_t JEventProcessor_CDC_amp::brun(JEventLoop *eventLoop, int32_t runnumber)
 {
 	// This is called whenever the run number changes
+
+        if (runnumber<40000) ASCALE = 8;    // default for ASCALE before run 40,000 to be used if Df125config is not present
+
 	return NOERROR;
 }
 
@@ -142,7 +107,7 @@ jerror_t JEventProcessor_CDC_amp::evnt(JEventLoop *loop, uint64_t eventnumber)
 	// loop->Get(mydataclasses);
 	//
 	// japp->RootFillLock(this);
-	//  ... fill historgrams or trees ...
+	//  ... fill histograms or trees ...
 	// japp->RootFillUnLock(this);
 
   int ring, straw, n;   // ring number, straw number within ring, straw number overall (1 to 3522)
@@ -150,8 +115,8 @@ jerror_t JEventProcessor_CDC_amp::evnt(JEventLoop *loop, uint64_t eventnumber)
   uint32_t amp,ped;     // dcdcdigihits raw quantities: time, pedestal, amplitude, quality factor, overflow count
 
   //scaling factors will be overridden by Df125Config if presqnt
-  uint16_t ASCALE = 8;   //amplitude
-  uint16_t PSCALE = 1;   //ped
+  //  uint16_t ASCALE = 8;   //amplitude
+  //  uint16_t PSCALE = 1;   //ped
 
   //add extra 0 at front to use offset[1] for ring 1  //used to calculate straw number n 
   int straw_offset[29] = {0,0,42,84,138,192,258,324,404,484,577,670,776,882,1005,1128,1263,1398,1544,1690,1848,2006,2176,2346,2528,2710,2907,3104,3313};
@@ -163,49 +128,57 @@ jerror_t JEventProcessor_CDC_amp::evnt(JEventLoop *loop, uint64_t eventnumber)
   if(locTrigger->Get_L1FrontPanelTriggerBits() != 0) 
     return NOERROR;
 
+  // test whether this is simulated or real data (skip digihits for sim data)
+  int SIMULATION;
+  vector<const DMCThrown*> MCThrowns;
+  loop->Get(MCThrowns);
+  if (MCThrowns.empty()) SIMULATION = 0;
+  if (!MCThrowns.empty()) SIMULATION = 1;
+
 
   vector<const DCDCHit*> hits;
   loop->Get(hits);
 
-  
+  const DCDCHit *hit = NULL;
+  const DCDCDigiHit *digihit = NULL;
+  const Df125CDCPulse *cp = NULL;
+  const Df125Config *config = NULL;
+
   int netamp = 0;
   float scaledped;
   double charge;
 
-  const int SIMULATION = 0;
 
+  for (uint32_t i=0; i<hits.size(); i++) {
 
-  for (auto hit : hits ){
-
+    hit = hits[i];
     netamp = 0;
 
     if (!SIMULATION) {
 
-      const DCDCDigiHit *digihit = NULL;
+      digihit = NULL;
       hit->GetSingle(digihit);
       if (!digihit) continue;
 
-      // skip if time_quality_bit or overflow_count bit set
-      if(digihit->QF & 0x03) continue;
+      cp = NULL; 
+      digihit->GetSingle(cp);
+      if (!cp) continue; //no CDCPulseData (happens occasionally)
 
-		vector<const Df125Config*> configs;
-		digihit->Get(configs);
-      const Df125Config *config = configs.empty() ? NULL:configs[0];
+      if (cp->time_quality_bit) continue;
+      if (cp->overflow_count) continue;
 
-      if (config) {
+      config = NULL;
+      cp->GetSingle(config);
+
+      if (config) {  //defaults were set already in case config does not exist
 
         PSCALE = 1<<config->PBIT;
         ASCALE = 1<<config->ABIT;
 
-      } else {
+      } 
 
-        PSCALE = 1;
-        ASCALE = 8;
-
-      }
-
-      amp = digihit->pulse_peak;
-      ped = digihit->pedestal;
+      amp = cp->first_max_amp;
+      ped = cp->pedestal;
 
       scaledped = ped*(float)PSCALE/(float)ASCALE;
 
@@ -258,22 +231,26 @@ jerror_t JEventProcessor_CDC_amp::evnt(JEventLoop *loop, uint64_t eventnumber)
 
       if (pulls[j].cdc_hit == NULL) continue;
 
-      const DCDCHit *hit = NULL;
+      hit = NULL;
       pulls[j].cdc_hit->GetSingle(hit);
 
       netamp = 0;  
 
       if (!SIMULATION) {
 
-        const DCDCDigiHit *digihit = NULL;
+        digihit = NULL;
         hit->GetSingle(digihit);
         if (!digihit) continue;
-		  
-		  // skip if time_quality_bit or overflow_count bit set
-		  if(digihit->QF & 0x03) continue;
-		  
-		  amp = digihit->pulse_peak;
-		  ped = digihit->pedestal;
+
+        cp = NULL; 
+        digihit->GetSingle(cp);
+        if (!cp) continue; //no CDCPulseData (happens occasionally)
+
+        if (cp->time_quality_bit) continue;
+        if (cp->overflow_count) continue;
+
+        amp = cp->first_max_amp;
+        ped = cp->pedestal;
 
         scaledped = ped*(float)PSCALE/(float)ASCALE;
 
@@ -293,11 +270,13 @@ jerror_t JEventProcessor_CDC_amp::evnt(JEventLoop *loop, uint64_t eventnumber)
       if (netamp > 0) {
         atsum->Fill(netamp);
         atn->Fill(n,netamp);
+        atheta->Fill(theta,netamp);
       }
 
       if (charge > 0) {
         qtsum->Fill(charge);
         qtn->Fill(n,charge);
+        qtheta->Fill(theta,charge);
       }
 
       double z = pulls[j].z;
@@ -342,5 +321,18 @@ jerror_t JEventProcessor_CDC_amp::erun(void)
 jerror_t JEventProcessor_CDC_amp::fini(void)
 {
 	// Called before program exit after event processing is finished.
+
+  if (!asum->GetEntries()) delete asum;
+  if (!an->GetEntries()) delete an;
+
+  if (!atsum->GetEntries()) delete atsum;
+  if (!atn->GetEntries()) delete atn;
+
+  if (!attsum->GetEntries()) delete attsum;
+  if (!attn->GetEntries()) delete attn;
+
+  if (!atheta->GetEntries()) delete atheta;
+
+
 	return NOERROR;
 }
