@@ -570,6 +570,13 @@ DTrackFitterKalmanSIMD::DTrackFitterKalmanSIMD(JEventLoop *loop):DTrackFitter(lo
    if (ADD_VERTEX_POINT){
      gPARMS->SetDefaultParameter("KALMAN:VERTEX_POSITION",TARGET_Z);
    }
+
+   // Beam position and direction
+   map<string, double> beam_vals;
+   jcalib->Get("PHOTON_BEAM/beam_spot",beam_vals);
+   beam_center.Set(beam_vals["x"],beam_vals["y"]); 
+   beam_dir.Set(beam_vals["dxdz"],beam_vals["dydz"]);
+   beam_z0=beam_vals["z"];
    
    // Inform user of some configuration settings
    static bool config_printed = false;
@@ -5968,13 +5975,11 @@ jerror_t DTrackFitterKalmanSIMD::ExtrapolateToVertex(DMatrix5x1 &S,
    DMatrix5x5 Q;  // multiple scattering matrix
    DMatrix5x1 S1(S);  // copy of S
 
-   // Direction and origin of beam line
-   DVector2 dir;
-   DVector2 origin;
-
    // position variables
    double z=z_,newz=z_;
-   double r2_old=S(state_x)*S(state_x)+S(state_y)*S(state_y);
+
+   DVector2 beam_pos=beam_center+(z-beam_z0)*beam_dir;
+   double r2_old=(DVector2(S(state_x),S(state_y))-beam_pos).Mod2();
    double dz_old=0.;
    double dEdx=0.;
    double sign=1.;
@@ -6034,8 +6039,10 @@ jerror_t DTrackFitterKalmanSIMD::ExtrapolateToVertex(DMatrix5x1 &S,
                << endl;
          }
          return UNRECOVERABLE_ERROR;
-      }
-      double r2minus=S1(state_x)*S1(state_x)+S1(state_y)*S1(state_y);    
+      } 
+      beam_pos=beam_center+(z-dz-beam_z0)*beam_dir;
+      double r2minus=(DVector2(S1(state_x),S1(state_y))-beam_pos).Mod2();
+
       Step(z,z+dz,dEdx,S2);	
       // Bail if the momentum has dropped below some minimum
       if (fabs(S2(state_q_over_p))>Q_OVER_P_MAX){
@@ -6046,14 +6053,13 @@ jerror_t DTrackFitterKalmanSIMD::ExtrapolateToVertex(DMatrix5x1 &S,
          }
          return UNRECOVERABLE_ERROR;
       }
-      double r2plus=S2(state_x)*S2(state_x)+S2(state_y)*S2(state_y);
+      beam_pos=beam_center+(z+dz-beam_z0)*beam_dir;
+      double r2plus=(DVector2(S2(state_x),S2(state_y))-beam_pos).Mod2();
       // Check to see if we have already bracketed the minimum
       if (r2plus>r2_old && r2minus>r2_old){
          newz=z+dz;  
-         DVector2 dir;
-         DVector2 origin;
          double dz2=0.;
-         if (BrentsAlgorithm(newz,dz,dEdx,0.,origin,dir,S2,dz2)!=NOERROR){
+         if (BrentsAlgorithm(newz,dz,dEdx,0.,beam_center,beam_dir,S2,dz2)!=NOERROR){
             if (DEBUG_LEVEL>2)
             {
                _DBG_ << "Bailing: P = " << 1./fabs(S2(state_q_over_p))
@@ -6201,14 +6207,16 @@ jerror_t DTrackFitterKalmanSIMD::ExtrapolateToVertex(DMatrix5x1 &S,
       Step(z,newz,dEdx,S);
 
       // Check if we passed the minimum doca to the beam line
-      r2=S(state_x)*S(state_x)+S(state_y)*S(state_y);
+      beam_pos=beam_center+(newz-beam_z0)*beam_dir;
+      r2=(DVector2(S(state_x),S(state_y))-beam_pos).Mod2();
+      //r2=S(state_x)*S(state_x)+S(state_y)*S(state_y);
       if (r2>r2_old){
          double two_step=dz+dz_old;
 
          // Find the increment/decrement in z to get to the minimum doca to the
          // beam line   
          S1=S;
-         if (BrentsAlgorithm(newz,0.5*two_step,dEdx,0.,origin,dir,S,dz)!=NOERROR){
+         if (BrentsAlgorithm(newz,0.5*two_step,dEdx,0.,beam_center,beam_dir,S,dz)!=NOERROR){
             //_DBG_<<endl;
             return UNRECOVERABLE_ERROR;
          }
@@ -6250,7 +6258,8 @@ jerror_t DTrackFitterKalmanSIMD::ExtrapolateToVertex(DMatrix5x1 &S){
 
    // position variables
    double z=z_,newz=z_;
-   double r2_old=S(state_x)*S(state_x)+S(state_y)*S(state_y);
+   DVector2 beam_pos=beam_center+(z-beam_z0)*beam_dir;
+   double r2_old=(DVector2(S(state_x),S(state_y))-beam_pos).Mod2();
    double dz_old=0.;
    double dEdx=0.;
 
@@ -6309,14 +6318,15 @@ jerror_t DTrackFitterKalmanSIMD::ExtrapolateToVertex(DMatrix5x1 &S){
       Step(z,newz,dEdx,S);
 
       // Check if we passed the minimum doca to the beam line
-      r2=S(state_x)*S(state_x)+S(state_y)*S(state_y);
+      beam_pos=beam_center+(newz-beam_z0)*beam_dir;
+      r2=(DVector2(S(state_x),S(state_y))-beam_pos).Mod2();
 
       if (r2>r2_old && newz<endplate_z){
          double two_step=dz+dz_old;
 
          // Find the increment/decrement in z to get to the minimum doca to the
          // beam line   
-         if (BrentsAlgorithm(newz,0.5*two_step,dEdx,0.,origin,dir,S,dz)!=NOERROR){
+         if (BrentsAlgorithm(newz,0.5*two_step,dEdx,0.,beam_center,beam_dir,S,dz)!=NOERROR){
             return UNRECOVERABLE_ERROR;
          }
          // update internal variables
@@ -6349,12 +6359,9 @@ jerror_t DTrackFitterKalmanSIMD::ExtrapolateToVertex(DVector2 &xy,
    DMatrix5x5 Jc=I5x5;  //Jacobian matrix
    DMatrix5x5 Q; // multiple scattering matrix
 
-   // Initialize the beam position = center of target, and the direction
-   DVector2 origin;  
-   DVector2 dir;
-
    // Position and step variables
-   double r2=xy.Mod2();
+   DVector2 beam_pos=beam_center+(Sc(state_z)-beam_z0)*beam_dir;
+   double r2=(xy-beam_pos).Mod2();
    double ds=-mStepSizeS; // step along path in cm
    double r2_old=r2;
 
@@ -6376,7 +6383,8 @@ jerror_t DTrackFitterKalmanSIMD::ExtrapolateToVertex(DVector2 &xy,
       }
       return UNRECOVERABLE_ERROR;
    }
-   r2=xy0.Mod2();
+   beam_pos=beam_center+(S0(state_z)-beam_z0)*beam_dir;
+   r2=(xy0-beam_pos).Mod2();
    if (r2>r2_old) ds*=-1.;
    double ds_old=ds;
 
@@ -6446,35 +6454,19 @@ jerror_t DTrackFitterKalmanSIMD::ExtrapolateToVertex(DVector2 &xy,
       // Add contribution due to multiple scattering
       Cc=Q.AddSym(Cc);
 
-      r2=xy.Mod2();
+      beam_pos=beam_center+(Sc(state_z)-beam_z0)*beam_dir;
+      r2=(xy-beam_pos).Mod2();
       //printf("r %f r_old %f \n",sqrt(r2),sqrt(r2_old));
       if (r2>r2_old) {
          // We've passed the true minimum; backtrack to find the "vertex" 
          // position
-         double cosl=cos(atan(Sc(state_tanl)));
          double my_ds=0.;
-         if (fabs((ds+ds_old)*cosl*Sc(state_q_over_pt)*Bz*qBr2p)<0.01){
-            my_ds=-(xy.X()*cos(Sc(state_phi))+xy.Y()*sin(Sc(state_phi)))
-               /cosl;
-            Step(xy,my_ds,Sc,dedx);
-            // Bail if the transverse momentum has dropped below some minimum
-            if (fabs(Sc(state_q_over_pt))>Q_OVER_PT_MAX){
-               if (DEBUG_LEVEL>2)
-               {
-                  _DBG_ << "Bailing: PT = " << 1./fabs(Sc(state_q_over_pt))
-                     << endl;
-               }
-               return UNRECOVERABLE_ERROR;
-            }
-            //printf ("min r %f\n",xy.Mod());
-         }
-         else{  
-            if (BrentsAlgorithm(ds,ds_old,dedx,xy,0.,origin,dir,Sc,my_ds)!=NOERROR){
+	 if (BrentsAlgorithm(ds,ds_old,dedx,xy,0.,beam_center,beam_dir,Sc,my_ds)!=NOERROR){
                //_DBG_ <<endl;
-               return UNRECOVERABLE_ERROR;
-            }
-            //printf ("Brent min r %f\n",xy.Mod());
-         }
+	   return UNRECOVERABLE_ERROR;
+	 }
+	 //printf ("Brent min r %f\n",xy.Mod());
+         
          // Find the field and gradient at (old_x,old_y,old_z)
          bfield->GetFieldAndGradient(old_xy.X(),old_xy.Y(),S0(state_z),Bx,By,Bz,
                dBxdx,dBxdy,dBxdz,dBydx,
@@ -6506,7 +6498,8 @@ jerror_t DTrackFitterKalmanSIMD::ExtrapolateToVertex(DVector2 &xy,
    DVector2 dir;
 
    // Position and step variables
-   double r2=xy.Mod2();
+   DVector2 beam_pos=beam_center+(Sc(state_z)-beam_z0)*beam_dir;
+   double r2=(xy-beam_pos).Mod2();
    double ds=-mStepSizeS; // step along path in cm
    double r2_old=r2;
 
@@ -6519,7 +6512,8 @@ jerror_t DTrackFitterKalmanSIMD::ExtrapolateToVertex(DVector2 &xy,
    DVector2 xy0=xy;
    DVector2 xy1=xy;
    Step(xy0,ds,S0,dedx);
-   r2=xy0.Mod2();
+   beam_pos=beam_center+(S0(state_z)-beam_z0)*beam_dir;
+   r2=(xy0-beam_pos).Mod2();
    if (r2>r2_old) ds*=-1.;
    double ds_old=ds;
 
@@ -6554,23 +6548,15 @@ jerror_t DTrackFitterKalmanSIMD::ExtrapolateToVertex(DVector2 &xy,
       // Propagate the state through the field
       Step(xy,ds,Sc,dedx);
 
-      r2=xy.Mod2();
+      beam_pos=beam_center+(Sc(state_z)-beam_z0)*beam_dir;
+      r2=(xy-beam_pos).Mod2();
       //printf("r %f r_old %f \n",r,r_old);
       if (r2>r2_old) {
          // We've passed the true minimum; backtrack to find the "vertex" 
          // position
-         double cosl=cos(atan(Sc(state_tanl)));
          double my_ds=0.;
-         if (fabs((ds+ds_old)*cosl*Sc(state_q_over_pt)*Bz*qBr2p)<0.01){
-            my_ds=-(xy.X()*cos(Sc(state_phi))+xy.Y()*sin(Sc(state_phi)))
-               /cosl;
-            Step(xy,my_ds,Sc,dedx);
-            //printf ("min r %f\n",pos.Perp());
-         }
-         else{  
-            BrentsAlgorithm(ds,ds_old,dedx,xy,0.,origin,dir,Sc,my_ds);
-            //printf ("Brent min r %f\n",pos.Perp());
-         }
+	 BrentsAlgorithm(ds,ds_old,dedx,xy,0.,beam_center,beam_dir,Sc,my_ds);
+	 //printf ("Brent min r %f\n",pos.Perp());
          break;
       }
       r2_old=r2;

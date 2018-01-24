@@ -169,20 +169,6 @@ bool DEventWriterEVIO::Write_EVIOEvent(JEventLoop* locEventLoop, string locOutpu
 	JEventSource* locEventSource = locEvent.GetJEventSource();
 	if(locEventSource == NULL)
 		return false;
-
-#if 0
-#if !HAVE_EVIO
-	jerr << "Compiled without EVIO! Cannot write event." << endl;
-	return false;
-#endif // HAVE_EVIO
-
-	JEventSource_EVIO* locEvioSource = dynamic_cast<JEventSource_EVIO*>(locEventSource);
-	JEventSource_EVIOpp* locEvioSourcepp = dynamic_cast<JEventSource_EVIOpp*>(locEventSource);
-	if( (locEvioSource == NULL) && (locEvioSourcepp == NULL) ) {
-		jerr << "WARNING!!! You MUST use this only with EVIO formatted data!!!" << endl;
-		return false;
-	}
-#endif
 	
 	// Optionally write input buffer to a debug file
     // Note that this only works with JEventSource_EVIO (old-style parser)
@@ -268,11 +254,6 @@ bool DEventWriterEVIO::Write_EVIOBuffer(JEventLoop* locEventLoop, vector<uint32_
 	if(locEventSource == NULL)
 		return false;
 
-#if !HAVE_EVIO
-	jerr << "Compiled without EVIO! Cannot write event." << endl;
-	return false;
-#endif // HAVE_EVIO
-
 	JEventSource_EVIO* locEvioSource = dynamic_cast<JEventSource_EVIO*>(locEventSource);
 	if(locEvioSource == NULL) {
 		jerr << "WARNING!!! You MUST use this only with EVIO formatted data!!!" << endl;
@@ -285,8 +266,12 @@ bool DEventWriterEVIO::Write_EVIOBuffer(JEventLoop* locEventLoop, vector<uint32_
 		//check to see if the EVIO file is open
 		if(Get_EVIOOutputters().find(locOutputFileName) == Get_EVIOOutputters().end())  {
 			//not open, open it
-			if(!Open_OutputFile(locEventLoop, locOutputFileName))
+			if(!Open_OutputFile(locEventLoop, locOutputFileName)){
+				jerr << "Unable to open EVIO file \""<< locOutputFileName << "\" for writing!" << endl;
+				japp->Quit();
+				japp->Unlock("EVIOWriter");
 				return false; //failed to open
+			}
 		}
 
 		//open: get handle, write event
@@ -333,10 +318,6 @@ bool DEventWriterEVIO::Open_OutputFile(JEventLoop* locEventLoop, string locOutpu
 {
 	//ASSUMES A LOCK HAS ALREADY BEEN ACQUIRED (by WriteEVIOEvent)
 	// and assume that it doesn't exist
-#if !HAVE_EVIO
-	jerr << "Compiled without EVIO! Cannot open file:" << locOutputFileName << endl;
-	return false;
-#endif // HAVE_EVIO
 
 	// Create object to write the selected events to a file or ET system
 	// Run each connection in their own thread
@@ -362,7 +343,6 @@ bool DEventWriterEVIO::Open_OutputFile(JEventLoop* locEventLoop, string locOutpu
 
 DEventWriterEVIO::~DEventWriterEVIO(void)
 {
-#if HAVE_EVIO
 	japp->WriteLock("EVIOWriter");
 	{
 		--Get_NumEVIOOutputThreads();
@@ -394,6 +374,5 @@ DEventWriterEVIO::~DEventWriterEVIO(void)
 		Get_EVIOOutputThreads().clear();
 	}
 	japp->Unlock("EVIOWriter");
-#endif // HAVE_EVIO
 }
 
