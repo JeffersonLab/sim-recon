@@ -3,7 +3,7 @@
 // hnamepath: /HLDetectorTiming/TOF/TOFHit Matched time
 // hnamepath: /HLDetectorTiming/TOF/TOFHit TDC_ADC Difference
 
-
+{
 	//Goto Path
 	TDirectory *locDirectory = (TDirectory*)gDirectory->FindObjectAny("HLDetectorTiming");
 	if(!locDirectory)

@@ -39,7 +39,7 @@
 	  TAGH_Timing->SetFillColor(kGray);
 	  locCanvas->Update();
 
-	  TLine *ln = new TLine(nominalSCTime, gPad->GetUymin(), nominalSCTime, gPad->GetUymax());
+	  TLine *ln = new TLine(nominalTAGHTime, gPad->GetUymin(), nominalTAGHTime, gPad->GetUymax());
 	  ln->SetLineColor(2);
 	  ln->Draw();
 	}
@@ -72,7 +72,7 @@
 	  TAGM_Timing->SetFillColor(kGray);
 	  locCanvas->Update();
 
-	  TLine *ln = new TLine(nominalSCTime, gPad->GetUymin(), nominalSCTime, gPad->GetUymax());
+	  TLine *ln = new TLine(nominalTAGMTime, gPad->GetUymin(), nominalTAGMTime, gPad->GetUymax());
 	  ln->SetLineColor(2);
 	  ln->Draw();
     }
