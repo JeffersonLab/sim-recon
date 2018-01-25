@@ -4,7 +4,7 @@
 // hnamepath: /HLDetectorTiming/TRACKING/Earliest CDC Time Minus Matched SC Time
 // hnamepath: /HLDetectorTiming/TRACKING/Earliest Flight-time Corrected CDC Time
 // hnamepath: /HLDetectorTiming/TRACKING/Earliest Flight-time Corrected FDC Time
-// hnamepath: /HLDetectorTiming/TRACKING/FDCHit Wire time vs. module
+// hnamepath: /HLDetectorTiming/FDC/FDCHit Wire time vs. module
 {
 	//Goto Path
 	TDirectory *locDirectory = (TDirectory*)gDirectory->FindObjectAny("HLDetectorTiming");
@@ -19,7 +19,7 @@
 	TH1I* FDC_Strip_Timing     = (TH1I*)gDirectory->Get("FDC/FDCHit Cathode time");
 	TH1I* FDC_Wire_Timing     = (TH1I*)gDirectory->Get("FDC/FDCHit Wire time");
 	TH1I* FDC_Earliest_Time  = (TH1I*)gDirectory->Get("TRACKING/Earliest Flight-time Corrected FDC Time");
-	TH2I* FDC_Wire_Module_Time  = (TH1I*)gDirectory->Get("FDC/FDCHit Wire time vs. module");
+	TH2I* FDC_Wire_Module_Time  = (TH2I*)gDirectory->Get("FDC/FDCHit Wire time vs. module");
 
 	//Get/Make Canvas
 	TCanvas *locCanvas = NULL;
@@ -106,7 +106,9 @@
     gPad->SetGrid();
     if(FDC_Wire_Module_Time != NULL)
     {
-        FDC_Wire_Module_Time->Draw("COLZ");
+      gPad->SetMargin(0.1,0.1,0.15,0.1);
+      FDC_Wire_Module_Time->GetXaxis()->SetTitle();
+      FDC_Wire_Module_Time->Draw("COLZ");
     }
     else{
         TPaveText *text = new TPaveText(0.1, 0.4, 0.9, 0.6);

@@ -558,6 +558,10 @@ class DTrackFitterKalmanSIMD: public DTrackFitter{
   vector<vector<DVector3> >sc_norm;
   double SC_BARREL_R2,SC_END_NOSE_Z,SC_PHI_SECTOR1;
 
+  // Beam position and direction
+  DVector2 beam_center, beam_dir;
+  double beam_z0;
+
   bool IsHadron,IsElectron,IsPositron;
   TH1I *alignDerivHists[46];
   TH2I *brentCheckHists[2];
