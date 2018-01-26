@@ -319,6 +319,12 @@ jerror_t DTrackWireBased_factory::evnt(JEventLoop *loop, uint64_t eventnumber)
 	 s=diff.Mag();
 	 t=s/29.98;
 	 track->extrapolations[SYS_FCAL].push_back(DTrackFitter::Extrapolation_t(pos,dir,t,s));  
+	 // extrapolate to exit of FCAL
+	 diff=((dFCALz+45.-z0)/uz)*dir;
+	 pos=pos0+diff;
+	 s=diff.Mag();
+	 t=s/29.98;
+	 track->extrapolations[SYS_FCAL].push_back(DTrackFitter::Extrapolation_t(pos,dir,t,s));
 	  
 	 // Extrapolate to Start Counter and BCAL
 	 double R=pos0.Perp();
