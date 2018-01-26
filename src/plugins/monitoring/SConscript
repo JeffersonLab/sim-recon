@@ -47,7 +47,8 @@ subdirs = [
 'FCAL_Hadronic_Eff',
 'SC_Eff','TOF_Eff',
 'TS_scaler',
-'TrackingPulls'
+'TrackingPulls',
+'timing_online'
 ]
 
 #'L3_online',
