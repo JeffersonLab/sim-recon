@@ -7,7 +7,9 @@
 // hnamepath: /occupancy/rf_num_events
 //
 // e-mail: davidl@jlab.org
-// e-mail: nsparks@jlab.org
+// e-mail: dugger@jlab.org
+// e-mail: scole@jlab.org
+// e-mail: tbritton@jlab.org
 //
 
 {

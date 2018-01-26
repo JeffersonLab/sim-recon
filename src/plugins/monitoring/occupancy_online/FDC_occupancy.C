@@ -9,6 +9,7 @@
 // e-mail: davidl@jlab.org
 // e-mail: pentchev@jlab.org
 // e-mail: staylor@jlab.org
+// e-mail: tbritton@jlab.org
 //
 
 {
