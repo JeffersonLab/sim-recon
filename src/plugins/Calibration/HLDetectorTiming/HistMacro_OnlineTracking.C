@@ -1,5 +1,5 @@
 // hnamepath: /HLDetectorTiming/CDC/CDCHit time
-// hnamepath: /HLDetectorTiming/CDC/CDCHit time per Straw
+// hnamepath: /HLDetectorTiming/CDC/CDCHit time per Straw Raw
 // hnamepath: /HLDetectorTiming/FDC/FDCHit Cathode time
 // hnamepath: /HLDetectorTiming/FDC/FDCHit Wire time
 // hnamepath: /HLDetectorTiming/FDC/FDCHit Wire time vs. module
