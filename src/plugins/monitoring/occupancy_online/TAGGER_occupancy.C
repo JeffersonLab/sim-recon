@@ -36,9 +36,10 @@
 //
 // e-mail: davidl@jlab.org
 // e-mail: aebarnes@jlab.org
-// e-mail: nsparks@jlab.org
+// e-mail: somov@jlab.org
+// e-mail: richard.t.jones@uconn.edu
+// e-mail: tbritton@jlab.org
 //
-
 {
 	// RootSpy saves the current directory and style before
 	// calling the macro and restores it after so it is OK to
@@ -130,8 +131,18 @@
 	TVirtualPad *pad1 = c1->cd(1);
 	pad1->SetTicks();
 	pad1->SetGridy();
-	if(tagm_adc_occ) tagm_tdc_occ->Draw("BAR");
-	if(tagm_tdc_occ) tagm_adc_occ->Draw("BAR sames");
+	if(tagm_adc_occ && tagm_tdc_occ){
+		if( tagm_adc_occ->GetMaximum()> tagm_tdc_occ->GetMaximum()){
+			tagm_adc_occ->Draw("BAR");
+			tagm_tdc_occ->Draw("BAR same");
+		}else{
+			tagm_tdc_occ->Draw("BAR");
+			tagm_adc_occ->Draw("BAR same");
+		}
+	}else{
+		if(tagm_adc_occ) tagm_tdc_occ->Draw("BAR");
+		if(tagm_tdc_occ) tagm_adc_occ->Draw("BAR");
+	}
 
 	legend_s->Draw();
 	legend_n->Draw();
@@ -139,8 +150,18 @@
 	pad1 = c1->cd(2);
 	pad1->SetTicks();
 	pad1->SetGridy();
-	if(tagh_adc_occ) tagh_tdc_occ->Draw("BAR");
-	if(tagh_tdc_occ) tagh_adc_occ->Draw("BAR sames");
+	if(tagh_adc_occ && tagh_tdc_occ){
+		if( tagh_adc_occ->GetMaximum()> tagh_tdc_occ->GetMaximum()){
+			tagh_adc_occ->Draw("BAR");
+			tagh_tdc_occ->Draw("BAR same");
+		}else{
+			tagh_tdc_occ->Draw("BAR");
+			tagh_adc_occ->Draw("BAR same");
+		}
+	}else{
+		if(tagh_adc_occ) tagh_tdc_occ->Draw("BAR");
+		if(tagh_tdc_occ) tagh_adc_occ->Draw("BAR");
+	}
 
 	legend_sa->Draw();
 	legend_na->Draw();
