@@ -42,6 +42,12 @@
 		return;
 	}
 
+	char nevents_str[256];
+	sprintf(nevents_str,"%g events", Nevents);
+	TLatex lat;
+	lat.SetTextAlign(22);
+	lat.SetTextSize(0.035);
+
 	TCanvas *c1 = gPad->GetCanvas();
 	c1->cd(0);
 	c1->Clear();
@@ -62,6 +68,7 @@
 		h->Scale(1./Nevents);
 		h->GetZaxis()->SetRangeUser(0.001, 1.0);
 	}
+	lat.DrawLatex(25.0, 225.0 ,nevents_str);
 
 	c1->cd(0);
 	TPad *fdcpad2 = (TPad*)gDirectory->FindObjectAny("fdcpad2");
@@ -80,5 +87,6 @@
 		h->Scale(1./Nevents);
 		h->GetZaxis()->SetRangeUser(0.001, 1.0);
 	}
+	lat.DrawLatex(13.5, 100.0,nevents_str);
 
 }
