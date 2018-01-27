@@ -116,6 +116,7 @@ string amorphous_label = "Normalized to Amorphous run 40861";
 		}
 		if(locHist_BeamEnergy_norm){
 
+			locHist_BeamEnergy_norm->Reset();
 
 			// Normalize to amorphous baseline 
 			double scale = 0.0;
@@ -130,7 +131,7 @@ string amorphous_label = "Normalized to Amorphous run 40861";
 			}
 
 			// Find maximum and scale histogram so peak is at 1
-			locHist_BeamEnergy_norm->Scale(1.0/scale);		
+			if(scale != 0.0) locHist_BeamEnergy_norm->Scale(1.0/scale);		
 
 			// Find leftmost non-zero bin 
 			double left_scale = 0.0;
