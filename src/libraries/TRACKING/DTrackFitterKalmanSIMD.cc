@@ -7047,10 +7047,10 @@ kalman_error_t DTrackFitterKalmanSIMD::ForwardFit(const DMatrix5x1 &S0,const DMa
 
    // Vectors to keep track of updated state vectors and covariance matrices (after
    // adding the hit information)
-   vector<DKalmanUpdate_t>last_cdc_updates;
-   vector<DKalmanUpdate_t>last_fdc_updates;
    vector<bool>last_fdc_used_in_fit(num_fdchits);
    vector<bool>last_cdc_used_in_fit(num_cdchits);
+   vector<pull_t>forward_pulls;
+   vector<pull_t>last_forward_pulls;
 
    // Charge
    // double q=input_params.charge();
@@ -7183,19 +7183,15 @@ kalman_error_t DTrackFitterKalmanSIMD::ForwardFit(const DMatrix5x1 &S0,const DMa
          Clast=C;	 
          last_z=z_;
 
-         pulls.clear();
-         if(fit_type==kTimeBased &&  SmoothForward() == NOERROR) IsSmoothed = true;
+         forward_pulls.clear();
+         if(fit_type==kTimeBased &&  SmoothForward(forward_pulls) == NOERROR){
+	   IsSmoothed = true;
+	   last_forward_pulls.assign(forward_pulls.begin(),forward_pulls.end());
+	 }
          else  IsSmoothed = false; 
 
 	 // Source for t0 guess
 	 mT0Detector=SYS_CDC; 
-
-         if (fdc_updates.size()>0){      
-            last_fdc_updates.assign(fdc_updates.begin(),fdc_updates.end());
-         }
-         if (cdc_updates.size()>0){
-            last_cdc_updates.assign(cdc_updates.begin(),cdc_updates.end());
-         }
 
          last_fdc_used_in_fit=fdc_used_in_fit;
          last_cdc_used_in_fit=cdc_used_in_fit;
@@ -7224,6 +7220,10 @@ kalman_error_t DTrackFitterKalmanSIMD::ForwardFit(const DMatrix5x1 &S0,const DMa
       if (last_fdc_used_in_fit[m]){
          fdchits_used_in_fit.push_back(my_fdchits[m]->hit);
       }
+   }
+   // fill pull vector
+   if (IsSmoothed){
+     pulls.assign(last_forward_pulls.begin(),last_forward_pulls.end());
    }
 
    // fill vector of extrapolations
@@ -7304,7 +7304,8 @@ kalman_error_t DTrackFitterKalmanSIMD::ForwardCDCFit(const DMatrix5x1 &S0,const 
 
    // Vectors to keep track of updated state vectors and covariance matrices (after
    // adding the hit information)
-   vector<DKalmanUpdate_t>last_cdc_updates;
+   vector<pull_t>cdc_pulls;
+   vector<pull_t>last_cdc_pulls;
    vector<bool>last_cdc_used_in_fit;
 
    double anneal_scale=ANNEAL_SCALE; // variable for scaling cut for hit pruning
@@ -7454,8 +7455,11 @@ kalman_error_t DTrackFitterKalmanSIMD::ForwardCDCFit(const DMatrix5x1 &S0,const 
                || fabs(new_reduced_chisq-old_reduced_chisq)<0.1) break;
 
          // Run the smoother
-         pulls.clear();
-         if(fit_type==kTimeBased && SmoothForwardCDC() == NOERROR) IsSmoothed = true;
+         cdc_pulls.clear();
+         if(fit_type==kTimeBased && SmoothForwardCDC(cdc_pulls) == NOERROR){
+	   IsSmoothed = true;
+	   last_cdc_pulls.assign(cdc_pulls.begin(),cdc_pulls.end());
+	 }
          else IsSmoothed = false; 
 
 	 // source for t0 guess
@@ -7467,7 +7471,6 @@ kalman_error_t DTrackFitterKalmanSIMD::ForwardCDCFit(const DMatrix5x1 &S0,const 
          last_ndf=my_ndf;
          zlast=z_;
 
-         last_cdc_updates.assign(cdc_updates.begin(),cdc_updates.end());
          last_cdc_used_in_fit=cdc_used_in_fit;
       } //iteration
       else{
@@ -7490,6 +7493,11 @@ kalman_error_t DTrackFitterKalmanSIMD::ForwardCDCFit(const DMatrix5x1 &S0,const 
          cdchits_used_in_fit.push_back(my_cdchits[m]->hit);
       }
    }  
+   // output pulls vector
+   if (IsSmoothed){
+     pulls.assign(last_cdc_pulls.begin(),last_cdc_pulls.end());
+   }
+
    // Fill extrapolation vector
    ClearExtrapolations();
    ExtrapolateForwardToOtherDetectors();  
@@ -7565,7 +7573,8 @@ kalman_error_t DTrackFitterKalmanSIMD::CentralFit(const DVector2 &startpos,
 
    // Vectors to keep track of updated state vectors and covariance matrices (after
    // adding the hit information)
-   vector<DKalmanUpdate_t>last_cdc_updates;
+   vector<pull_t>last_cdc_pulls;
+   vector<pull_t>cdc_pulls;
    vector<bool>last_cdc_used_in_fit(num_cdchits);
 
    double anneal_factor=ANNEAL_SCALE+1.; // variable for scaling cut for hit pruning
@@ -7707,14 +7716,16 @@ kalman_error_t DTrackFitterKalmanSIMD::CentralFit(const DVector2 &startpos,
          last_ndf=my_ndf;
 
          // Run smoother and fill pulls vector
-         pulls.clear();
-         if(fit_type==kTimeBased && SmoothCentral() == NOERROR) IsSmoothed = true;
+         cdc_pulls.clear();
+         if(fit_type==kTimeBased && SmoothCentral(cdc_pulls) == NOERROR){
+	   IsSmoothed = true;
+	   last_cdc_pulls.assign(cdc_pulls.begin(),cdc_pulls.end());
+	 }
          else IsSmoothed = false;
 
 	 // source for t0 guess
 	 mT0Detector=SYS_CDC;
 
-         last_cdc_updates.assign(cdc_updates.begin(),cdc_updates.end());
          last_cdc_used_in_fit=cdc_used_in_fit;
       }
       else{	
@@ -7745,6 +7756,10 @@ kalman_error_t DTrackFitterKalmanSIMD::CentralFit(const DVector2 &startpos,
       if (last_cdc_used_in_fit[m]){
          cdchits_used_in_fit.push_back(my_cdchits[m]->hit);
       }
+   }
+   // output the pull information
+   if (IsSmoothed){
+     pulls.assign(last_cdc_pulls.begin(),last_cdc_pulls.end());
    }
 
    // Track Parameters at "vertex"
@@ -7798,7 +7813,7 @@ kalman_error_t DTrackFitterKalmanSIMD::CentralFit(const DVector2 &startpos,
 // at each step (going in the reverse direction to the filter) based on the 
 // information from all the steps and outputs the state vector at the
 // outermost step.
-jerror_t DTrackFitterKalmanSIMD::SmoothForward(void){ 
+jerror_t DTrackFitterKalmanSIMD::SmoothForward(vector<pull_t>&forward_pulls){ 
    if (forward_traj.size()<2) return RESOURCE_UNAVAILABLE;
 
    unsigned int max=forward_traj.size()-1;
@@ -8063,7 +8078,7 @@ jerror_t DTrackFitterKalmanSIMD::SmoothForward(void){
                      forward_traj[m].z,0.,
                      resi,sqrt(V(1,1)));
                thisPull.AddTrackDerivatives(alignmentDerivatives);
-               pulls.push_back(thisPull);
+               forward_pulls.push_back(thisPull);
             }
             else{
                A=forward_traj[m].Ckk*JT*C.InvertSym();
@@ -8092,7 +8107,7 @@ jerror_t DTrackFitterKalmanSIMD::SmoothForward(void){
 
                // Fill in pulls information for cdc hits
                if(FillPullsVectorEntry(Ss,Cs,forward_traj[m],my_cdchits[id],
-                        cdc_updates[id]) != NOERROR) return VALUE_OUT_OF_RANGE;
+				       cdc_updates[id],forward_pulls) != NOERROR) return VALUE_OUT_OF_RANGE;
             }
             else{
                A=forward_traj[m].Ckk*JT*C.InvertSym();
@@ -8117,7 +8132,7 @@ jerror_t DTrackFitterKalmanSIMD::SmoothForward(void){
 
 // at each step (going in the reverse direction to the filter) based on the 
 // information from all the steps.
-jerror_t DTrackFitterKalmanSIMD::SmoothCentral(void){ 
+jerror_t DTrackFitterKalmanSIMD::SmoothCentral(vector<pull_t>&cdc_pulls){ 
    if (central_traj.size()<2) return RESOURCE_UNAVAILABLE;
 
    unsigned int max = central_traj.size()-1;
@@ -8494,7 +8509,7 @@ jerror_t DTrackFitterKalmanSIMD::SmoothCentral(void){
                   cdc_updates[id].tcorr);
 
             thisPull.AddTrackDerivatives(alignmentDerivatives);
-            pulls.push_back(thisPull);
+            cdc_pulls.push_back(thisPull);
          }
          else{
             if (firstHit) A=central_traj[m].Ckk*JT*C.InvertSym();
@@ -8526,7 +8541,7 @@ jerror_t DTrackFitterKalmanSIMD::SmoothCentral(void){
 // at each step (going in the reverse direction to the filter) based on the 
 // information from all the steps and outputs the state vector at the
 // outermost step.
-jerror_t DTrackFitterKalmanSIMD::SmoothForwardCDC(void){  
+jerror_t DTrackFitterKalmanSIMD::SmoothForwardCDC(vector<pull_t>&cdc_pulls){  
    if (forward_traj.size()<2) return RESOURCE_UNAVAILABLE;
 
    unsigned int max=forward_traj.size()-1;
@@ -8567,7 +8582,7 @@ jerror_t DTrackFitterKalmanSIMD::SmoothForwardCDC(void){
                return VALUE_OUT_OF_RANGE;
             }
             if(FillPullsVectorEntry(Ss,Cs,forward_traj[m],my_cdchits[cdc_index],
-                     cdc_updates[cdc_index]) != NOERROR) return VALUE_OUT_OF_RANGE;
+				    cdc_updates[cdc_index],cdc_pulls) != NOERROR) return VALUE_OUT_OF_RANGE;
 
          }
          else{
@@ -8595,7 +8610,8 @@ jerror_t DTrackFitterKalmanSIMD::SmoothForwardCDC(void){
 // approach to the wire hit.
 jerror_t DTrackFitterKalmanSIMD::FillPullsVectorEntry(const DMatrix5x1 &Ss,
       const DMatrix5x5 &Cs,
-      const DKalmanForwardTrajectory_t &traj,const DKalmanSIMDCDCHit_t *hit,const DKalmanUpdate_t &update){
+						      const DKalmanForwardTrajectory_t &traj,const DKalmanSIMDCDCHit_t *hit,const DKalmanUpdate_t &update,
+						      vector<pull_t>&my_pulls){
 
    // Get estimate for energy loss
    double dEdx=GetdEdx(Ss(state_q_over_p),traj.K_rho_Z_over_A,traj.rho_Z_over_A,
@@ -8907,7 +8923,7 @@ jerror_t DTrackFitterKalmanSIMD::FillPullsVectorEntry(const DMatrix5x1 &Ss,
    pull_t thisPull(update.doca-d,sqrt(V),traj.s,update.tdrift,d,hit->hit,
          NULL,diff.Phi(),new_z,update.tcorr);
    thisPull.AddTrackDerivatives(alignmentDerivatives);
-   pulls.push_back(thisPull);
+   my_pulls.push_back(thisPull);
    return NOERROR;
 }
 
