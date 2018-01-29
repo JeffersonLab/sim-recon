@@ -150,7 +150,6 @@ jerror_t JEventProcessor_CDC_amp::evnt(JEventLoop *loop, uint64_t eventnumber)
 
   int used[3522] = {0};
 
-
   for (uint32_t i=0; i<hits.size(); i++) {
 
     hit = hits[i];

@@ -212,6 +212,7 @@ jerror_t JEventProcessor_HLDetectorTiming::evnt(JEventLoop *loop, uint64_t event
     if(locTrigger->Get_L1FrontPanelTriggerBits() != 0) 
       return NOERROR;
 
+#if 1
     // Get the EPICs events and update beam current. Skip event if current too low (<10 nA).
     vector<const DEPICSvalue *> epicsValues;
     loop->Get(epicsValues);
@@ -250,6 +251,7 @@ jerror_t JEventProcessor_HLDetectorTiming::evnt(JEventLoop *loop, uint64_t event
         japp->Quit();
         return NOERROR;
     }
+#endif
 
     // Get the objects from the event loop
     vector<const DCDCHit *> cdcHitVector;
@@ -273,10 +275,11 @@ jerror_t JEventProcessor_HLDetectorTiming::evnt(JEventLoop *loop, uint64_t event
     // TTabUtilities object used for RF time conversion
     const DTTabUtilities* locTTabUtilities = NULL;
     loop->GetSingle(locTTabUtilities);
-
     unsigned int i = 0;
     int nBins = 2000;
     float xMin = -500, xMax = 1500;
+
+#if 0
     for (i = 0; i < cdcHitVector.size(); i++){
         Fill1DHistogram ("HLDetectorTiming", "CDC", "CDCHit time", cdcHitVector[i]->t, 
                 "CDCHit time;t [ns];", nBins, xMin, xMax);
@@ -288,6 +291,7 @@ jerror_t JEventProcessor_HLDetectorTiming::evnt(JEventLoop *loop, uint64_t event
                     750, -500, 1000, nStraws, 0.5, nStraws + 0.5);
         }
     }
+#endif
 
     for (i = 0; i < fdcHitVector.size(); i++){
         if(fdcHitVector[i]->type == 0 ) {
@@ -310,6 +314,7 @@ jerror_t JEventProcessor_HLDetectorTiming::evnt(JEventLoop *loop, uint64_t event
         }
     }
 
+#if 0
     for (i = 0; i < scHitVector.size(); i++){
         //if(!scHitVector[i]->has_fADC || !scHitVector[i]->has_TDC) continue;
         Fill1DHistogram ("HLDetectorTiming", "SC", "SCHit time", scHitVector[i]->t,
@@ -920,6 +925,7 @@ jerror_t JEventProcessor_HLDetectorTiming::evnt(JEventLoop *loop, uint64_t event
           }
        }
     }
+#endif
     return NOERROR;
 }
 

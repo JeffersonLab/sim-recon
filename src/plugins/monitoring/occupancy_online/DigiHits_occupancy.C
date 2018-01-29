@@ -8,6 +8,7 @@
 // hnamepath: /occupancy/digihits_scale_factors
 //
 // e-mail: davidl@jlab.org
+// e-mail: tbritton@jlab.org
 //
 
 {

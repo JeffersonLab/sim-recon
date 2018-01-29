@@ -4,9 +4,9 @@
 // hnamepath: /highlevel/PSPairEnergy
 //
 // e-mail: davidl@jlab.org
-// e-mail: pmatt@jlab.org
 // e-mail: staylor@jlab.org
 // e-mail: sdobbs@jlab.org
+// e-mail: tbritton@jlab.org
 //
 
 {
@@ -63,10 +63,9 @@
 		BetaVsP->GetYaxis()->SetTitleSize(0.045);
 		BetaVsP->GetXaxis()->SetLabelSize(0.05);
 		BetaVsP->GetYaxis()->SetLabelSize(0.05);
-		BetaVsP->SetLogZ();
 		BetaVsP->SetStats(0);
 		BetaVsP->Draw("colz");
-		//gPad->SetLogz();
+		gPad->SetLogz();
 		gPad->Update();
 	}
 

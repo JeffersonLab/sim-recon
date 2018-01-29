@@ -3,9 +3,9 @@
 // hnamepath: /highlevel/BeamEnergy
 //
 // e-mail: davidl@jlab.org
-// e-mail: pmatt@jlab.org
 // e-mail: staylor@jlab.org
 // e-mail: sdobbs@jlab.org
+// e-mail: tbritton@jlab.org
 //
 
 {
@@ -116,6 +116,7 @@ string amorphous_label = "Normalized to Amorphous run 40861";
 		}
 		if(locHist_BeamEnergy_norm){
 
+			locHist_BeamEnergy_norm->Reset();
 
 			// Normalize to amorphous baseline 
 			double scale = 0.0;
@@ -130,7 +131,7 @@ string amorphous_label = "Normalized to Amorphous run 40861";
 			}
 
 			// Find maximum and scale histogram so peak is at 1
-			locHist_BeamEnergy_norm->Scale(1.0/scale);		
+			if(scale != 0.0) locHist_BeamEnergy_norm->Scale(1.0/scale);		
 
 			// Find leftmost non-zero bin 
 			double left_scale = 0.0;
@@ -164,7 +165,7 @@ string amorphous_label = "Normalized to Amorphous run 40861";
 			locHist_BeamEnergy_norm->SetLineWidth(2);
 			locHist_BeamEnergy_norm->SetStats(0);		
 			locHist_BeamEnergy_norm->GetYaxis()->SetRangeUser(min, max);
-			locHist_BeamEnergy_norm->Draw();
+			locHist_BeamEnergy_norm->Draw("HIST");
 			
 			// If diff is > 0.3 then assume this is not an amorphous run
 			// and draw a label of the peak energy

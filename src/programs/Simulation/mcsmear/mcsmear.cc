@@ -69,12 +69,15 @@ int main(int narg,char* argv[])
    TFile *hfile = new TFile("smear.root","RECREATE","smearing histograms");  // note: not used for anything right now
 
    MyProcessor myproc(config);   
-   dapp.Run(&myproc);
-   
+   jerror_t error_code = dapp.Run(&myproc);
+
    hfile->Write();
    hfile->Close();
 
-   return 0;
+   if(error_code != NOERROR) 
+       return static_cast<int>(error_code);
+   else
+       return 0;
 }
 
 //-----------

@@ -16,11 +16,6 @@ using namespace std;
 #include <deque>
 using namespace std;
 
-#ifdef HAVE_EVIO
-#include <evioUtil.hxx>
-//#include <evioFileChannel.hxx>
-using namespace evio;
-#endif  // HAVE_EVIO
 
 #ifdef HAVE_ET
 //#include <evioETChannel.hxx>
